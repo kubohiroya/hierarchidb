@@ -78,7 +78,7 @@ describe('useIdeGsmImportOnEntry', () => {
     const deferred = createDeferred<void>();
     mocks.importIdeGsmLocations.mockImplementation(
       async (_request: unknown, onProgress: ImportProgressCallback) => {
-        onProgress({ phase: 'fetch' });
+        onProgress({ phase: 'source' });
         await deferred.promise;
         onProgress({ phase: 'completed', processed: 1, total: 1, chunk: 1 });
         return { total: 1 };

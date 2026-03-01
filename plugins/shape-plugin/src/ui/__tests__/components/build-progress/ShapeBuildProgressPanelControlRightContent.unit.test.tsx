@@ -20,8 +20,8 @@ describe('ShapeBuildProgressPanelControlRightContent', () => {
     const searchInput = screen.getByPlaceholderText('Search tasks') as HTMLInputElement;
     fireEvent.mouseDown(searchInput);
     fireEvent.click(searchInput);
-    fireEvent.change(searchInput, { target: { value: 'transform' } });
+    fireEvent.change(searchInput, { target: { value: 'geometry' } });
 
-    expect(searchInput.value).toBe('transform');
+    expect(searchInput.value).toBe('geometry');
   });
 });

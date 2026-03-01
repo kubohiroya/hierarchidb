@@ -1,60 +1,60 @@
 import { Paper, Stack, Typography } from '@mui/material';
 import { DeleteSweep as DeleteSweepIcon } from '@mui/icons-material';
-import { FetchConfigFormControls } from './FetchConfigFormControls.tsx';
+import { SourceConfigFormControls } from './SourceConfigFormControls.tsx';
 import { getBuildConfigHoverCardSx } from '@hierarchidb/ui-accordion-config';
 
 export type DeleteBuildOutputsCardProps = {
   title: string;
-  deleteFetchApiLabel: string;
-  deleteFetchFilteredLabel: string;
-  deleteTransformFilterLabel: string;
-  deleteVTLabel: string;
+  deleteSourceApiLabel: string;
+  deleteSourceFilteredLabel: string;
+  deleteGeometryCacheLabel: string;
+  deleteTileEmitLabel: string;
   deleteMetadataLabel: string;
   countsLoading?: boolean;
-  deleteFetchApiLoading?: boolean;
-  deleteFetchFilteredLoading?: boolean;
-  deleteTransformLoading?: boolean;
-  deleteVTLoading?: boolean;
+  deleteSourceApiLoading?: boolean;
+  deleteSourceFilteredLoading?: boolean;
+  deleteGeometryLoading?: boolean;
+  deleteTileEmitLoading?: boolean;
   deleteMetadataLoading?: boolean;
-  canDeleteFetchApiCache: boolean;
-  canDeleteFetchFilteredCache: boolean;
-  canDeleteTransformCache: boolean;
-  canDeleteVTCache: boolean;
+  canDeleteSourceApiCache: boolean;
+  canDeleteSourceFilteredCache: boolean;
+  canDeleteGeometryCache: boolean;
+  canDeleteTileEmitCache: boolean;
   canDeleteMetadata: boolean;
   resetDisabled?: boolean;
   disabled?: boolean;
-  onDeleteFetchApiCache: () => void;
-  onDeleteFetchFilteredCache: () => void;
-  onDeleteTransformCache: () => void;
-  onDeleteVTCache: () => void;
+  onDeleteSourceApiCache: () => void;
+  onDeleteSourceFilteredCache: () => void;
+  onDeleteGeometryCache: () => void;
+  onDeleteTileEmitCache: () => void;
   onDeleteMetadata: () => void;
   onResetDefaults: () => void;
 };
 
 export const DeleteBuildOutputsCard: React.FC<DeleteBuildOutputsCardProps> = ({
   title,
-  deleteFetchApiLabel,
-  deleteFetchFilteredLabel,
-  deleteTransformFilterLabel,
-  deleteVTLabel,
+  deleteSourceApiLabel,
+  deleteSourceFilteredLabel,
+  deleteGeometryCacheLabel,
+  deleteTileEmitLabel,
   deleteMetadataLabel,
   countsLoading,
-  deleteFetchApiLoading,
-  deleteFetchFilteredLoading,
-  deleteTransformLoading,
-  deleteVTLoading,
+  deleteSourceApiLoading,
+  deleteSourceFilteredLoading,
+  deleteGeometryLoading,
+  deleteTileEmitLoading,
   deleteMetadataLoading,
-  canDeleteFetchApiCache,
-  canDeleteFetchFilteredCache,
-  canDeleteTransformCache,
-  canDeleteVTCache,
+  canDeleteSourceApiCache,
+  canDeleteSourceFilteredCache,
+  canDeleteGeometryCache,
+  canDeleteTileEmitCache,
   canDeleteMetadata,
   resetDisabled,
   disabled,
-  onDeleteFetchApiCache,
-  onDeleteFetchFilteredCache,
-  onDeleteTransformCache,
-  onDeleteVTCache,
+  onDeleteSourceApiCache,
+  onDeleteSourceFilteredCache,
+  onDeleteGeometryCache,
+  onDeleteTileEmitCache,
   onDeleteMetadata,
   onResetDefaults,
 }) => {
@@ -67,27 +67,27 @@ export const DeleteBuildOutputsCard: React.FC<DeleteBuildOutputsCardProps> = ({
           <DeleteSweepIcon fontSize="small" color="primary" />
           <Typography variant="subtitle2">{title}</Typography>
         </Stack>
-        <FetchConfigFormControls
-          deleteFetchApiLabel={deleteFetchApiLabel}
-          deleteFetchFilteredLabel={deleteFetchFilteredLabel}
-          deleteTransformFilterLabel={deleteTransformFilterLabel}
-          deleteVTLabel={deleteVTLabel}
+        <SourceConfigFormControls
+          deleteSourceApiLabel={deleteSourceApiLabel}
+          deleteSourceFilteredLabel={deleteSourceFilteredLabel}
+          deleteGeometryCacheLabel={deleteGeometryCacheLabel}
+          deleteTileEmitLabel={deleteTileEmitLabel}
           deleteMetadataLabel={deleteMetadataLabel}
           countsLoading={countsLoading}
-          deleteFetchApiLoading={deleteFetchApiLoading}
-          deleteFetchFilteredLoading={deleteFetchFilteredLoading}
-          deleteTransformLoading={deleteTransformLoading}
-          deleteVTLoading={deleteVTLoading}
+          deleteSourceApiLoading={deleteSourceApiLoading}
+          deleteSourceFilteredLoading={deleteSourceFilteredLoading}
+          deleteGeometryLoading={deleteGeometryLoading}
+          deleteTileEmitLoading={deleteTileEmitLoading}
           deleteMetadataLoading={deleteMetadataLoading}
-          canDeleteFetchApiCache={canDeleteFetchApiCache}
-          canDeleteFetchFilteredCache={canDeleteFetchFilteredCache}
-          canDeleteTransformCache={canDeleteTransformCache}
-          canDeleteVTCache={canDeleteVTCache}
+          canDeleteSourceApiCache={canDeleteSourceApiCache}
+          canDeleteSourceFilteredCache={canDeleteSourceFilteredCache}
+          canDeleteGeometryCache={canDeleteGeometryCache}
+          canDeleteTileEmitCache={canDeleteTileEmitCache}
           canDeleteMetadata={canDeleteMetadata}
-          onDeleteFetchApiCache={onDeleteFetchApiCache}
-          onDeleteFetchFilteredCache={onDeleteFetchFilteredCache}
-          onDeleteTransformCache={onDeleteTransformCache}
-          onDeleteVTCache={onDeleteVTCache}
+          onDeleteSourceApiCache={onDeleteSourceApiCache}
+          onDeleteSourceFilteredCache={onDeleteSourceFilteredCache}
+          onDeleteGeometryCache={onDeleteGeometryCache}
+          onDeleteTileEmitCache={onDeleteTileEmitCache}
           onDeleteMetadata={onDeleteMetadata}
           onResetDefaults={onResetDefaults}
           resetDisabled={resetDisabled}

@@ -1,7 +1,7 @@
 import { DexieChunkStore } from '@hierarchidb/chunk-store';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { GeometryEngine } from '@hierarchidb/gis-sdk';
-import type { VectorTileProgress, VTWorkerAPI } from '~/types';
+import type { TileEmitWorkerAPI, VectorTileProgress } from '~/types';
 
 export type VectorTileStageInput = {
   bufferId: string;
@@ -32,8 +32,8 @@ export type VectorTileStageInput = {
 };
 
 export type VectorTileStageResult = {
-  generated: Awaited<ReturnType<VTWorkerAPI['generateTiles']>>;
-  tiles: Awaited<ReturnType<VTWorkerAPI['listTiles']>>;
+  generated: Awaited<ReturnType<TileEmitWorkerAPI['generateTiles']>>;
+  tiles: Awaited<ReturnType<TileEmitWorkerAPI['listTiles']>>;
 };
 
 export type VectorTileStageOptions = {
@@ -42,7 +42,7 @@ export type VectorTileStageOptions = {
   tileId?: string;
 };
 
-const DEFAULT_NODE_ID = 'vectortile-shared' as NodeId;
+const DEFAULT_NODE_ID = 'tile-emit-shared' as NodeId;
 const DEFAULT_CHUNK_STORE = 'hidb-chunks';
 
 type VectorTileInputFormat = 'geojson' | 'flatgeobuf';
@@ -111,7 +111,7 @@ export async function writeVectorTileInput(
 
 export async function runVectorTileStage(
   input: VectorTileStageInput,
-  client: VTWorkerAPI,
+  client: TileEmitWorkerAPI,
   options: VectorTileStageOptions = {}
 ): Promise<VectorTileStageResult> {
   const { bufferId, buffer, contentType, config, onProgress } = input;

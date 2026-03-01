@@ -62,9 +62,9 @@ const buildMonitorConfig = {
   maxSamples: 3,
   memoryPressureRatio: 0.85,
 } as const;
-const FETCH_STAGE_MAX = 33;
-const TRANSFORM_STAGE_MAX = 66;
-const VT_STAGE_MAX = 100;
+const SOURCE_STAGE_MAX = 33;
+const GEOMETRY_STAGE_MAX = 66;
+const TILE_EMIT_STAGE_MAX = 100;
 const DEFAULT_MIN_ZOOM = 5;
 const DEFAULT_MAX_ZOOM = 12;
 const DEFAULT_BUFFER = 256;
@@ -78,12 +78,12 @@ const getRouteBuildTransitionStatusLabel = (
       return t('stage.status.startingLock', 'Starting build (acquiring lock)...');
     case 'initializing-worker':
       return t('stage.status.startingWorker', 'Starting build (initializing worker)...');
-    case 'fetch-stage':
-      return t('stage.status.fetching', 'Build running (fetch stage)...');
-    case 'transform-stage':
-      return t('stage.status.transforming', 'Build running (transform stage)...');
-    case 'vt-stage':
-      return t('stage.status.vt', 'Build running (vector tile stage)...');
+    case 'source-stage':
+      return t('stage.status.fetching', 'Build running (source stage)...');
+    case 'geometry-stage':
+      return t('stage.status.transforming', 'Build running (geometry stage)...');
+    case 'tile-emit-stage':
+      return t('stage.status.tileEmit', 'Build running (tile emit stage)...');
     case 'finalizing':
       return t('stage.status.finalizing', 'Finalizing build result...');
     default:
@@ -146,17 +146,17 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     t,
     includeDescriptions: true,
     overrides: {
-      fetch: {
-        title: t('processing.fetch.title', 'Fetch'),
-        description: t('stage.route.fetch.description', 'Download, parse, and save route features.'),
+      source: {
+        title: t('processing.source.title', 'Source'),
+        description: t('stage.route.source.description', 'Download, parse, and save source route features.'),
       },
-      transform: {
-        title: t('processing.transform.title', 'Transform'),
-        description: t('stage.route.transform.description', 'Build tile index for route lookup.'),
+      geometry: {
+        title: t('processing.geometry.title', 'Geometry'),
+        description: t('stage.route.geometry.description', 'Build tile index for route lookup.'),
       },
-      vt: {
-        title: t('processing.vt.title', 'Vector Tiles'),
-        description: t('stage.route.vt.description', 'Generate vector tiles for rendering.'),
+      tileEmit: {
+        title: t('processing.tileEmit.title', 'TileEmit'),
+        description: t('stage.route.tileEmit.description', 'Generate tile artifacts for rendering.'),
         icon: <CheckCircle />,
       },
     },
@@ -167,9 +167,9 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
       return zoomRange;
     }
     const buildConfig = (draft.buildConfig ?? DEFAULT_ROUTE_BUILD_CONFIG) as {
-      transformConfig?: { zoomBandBoundaries?: number[] };
+      geometryConfig?: { zoomBandBoundaries?: number[] };
     };
-    const boundaries = buildConfig.transformConfig?.zoomBandBoundaries ?? [DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM];
+    const boundaries = buildConfig.geometryConfig?.zoomBandBoundaries ?? [DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM];
     const minZoom = boundaries[0] ?? DEFAULT_MIN_ZOOM;
     const maxZoom = boundaries[boundaries.length - 1] ?? DEFAULT_MAX_ZOOM;
     return [minZoom, maxZoom];
@@ -177,27 +177,27 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
 
   const resolveVectorTileConfig = useCallback(() => {
     const buildConfig = (draft.buildConfig ?? DEFAULT_ROUTE_BUILD_CONFIG) as {
-      vtConfig?: { bufferSize?: number; inputFormat?: 'geojson' | 'flatgeobuf'; inputCompression?: 'gzip' | 'none' };
+      tileEmitConfig?: { bufferSize?: number; inputFormat?: 'geojson' | 'flatgeobuf'; inputCompression?: 'gzip' | 'none' };
     };
     return {
-      bufferSize: buildConfig.vtConfig?.bufferSize ?? DEFAULT_BUFFER,
-      inputFormat: buildConfig.vtConfig?.inputFormat ?? 'geojson',
-      inputCompression: buildConfig.vtConfig?.inputCompression ?? 'none',
+      bufferSize: buildConfig.tileEmitConfig?.bufferSize ?? DEFAULT_BUFFER,
+      inputFormat: buildConfig.tileEmitConfig?.inputFormat ?? 'geojson',
+      inputCompression: buildConfig.tileEmitConfig?.inputCompression ?? 'none',
     };
   }, [draft]);
 
-  const resolveRouteTransformConfig = useCallback(() => {
+  const resolveRouteGeometryConfig = useCallback(() => {
     const buildConfig = (draft.buildConfig ?? DEFAULT_ROUTE_BUILD_CONFIG) as {
-      transformConfig?: { zoomBandBoundaries?: number[] };
-      routeTransformConfig?: {
+      geometryConfig?: { zoomBandBoundaries?: number[] };
+      routeGeometryConfig?: {
         minDistanceMetersByBand?: number[];
         simplifyToleranceByBand?: number[];
       };
     };
     return {
-      zoomBandBoundaries: buildConfig.transformConfig?.zoomBandBoundaries,
-      minDistanceMetersByBand: buildConfig.routeTransformConfig?.minDistanceMetersByBand,
-      simplifyToleranceByBand: buildConfig.routeTransformConfig?.simplifyToleranceByBand,
+      zoomBandBoundaries: buildConfig.geometryConfig?.zoomBandBoundaries,
+      minDistanceMetersByBand: buildConfig.routeGeometryConfig?.minDistanceMetersByBand,
+      simplifyToleranceByBand: buildConfig.routeGeometryConfig?.simplifyToleranceByBand,
     };
   }, [draft]);
 
@@ -223,7 +223,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     const ratio = total > 0 ? Math.min(1, processed / total) : 0;
     let percent = 0;
     switch (progress.phase) {
-      case 'fetch':
+      case 'source':
         percent = 10;
         break;
       case 'parse':
@@ -244,13 +244,13 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
       default:
         percent = 0;
     }
-    return Math.round((percent / 100) * FETCH_STAGE_MAX);
+    return Math.round((percent / 100) * SOURCE_STAGE_MAX);
   }, []);
 
   const resolveIdeGsmLabel = useCallback((progress: IdeGsmImportProgress): string => {
     switch (progress.phase) {
-      case 'fetch':
-        return t('stage.ideGsm.fetch', 'IDE-GSM: downloading');
+      case 'source':
+        return t('stage.ideGsm.source', 'IDE-GSM: downloading');
       case 'parse':
         return t('stage.ideGsm.parse', 'IDE-GSM: parsing rows');
       case 'waypoints':
@@ -294,12 +294,12 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     onUpdate,
     routeNodeId,
     resolveZoomRange,
-    resolveRouteTransformConfig,
+    resolveRouteGeometryConfig,
     resolveVectorTileConfig,
     mapIdeGsmProgress,
-    fetchStageMax: FETCH_STAGE_MAX,
-    transformStageMax: TRANSFORM_STAGE_MAX,
-    vtStageMax: VT_STAGE_MAX,
+    sourceStageMax: SOURCE_STAGE_MAX,
+    geometryStageMax: GEOMETRY_STAGE_MAX,
+    tileEmitStageMax: TILE_EMIT_STAGE_MAX,
     t,
   });
   const { event: heapEvent, dismiss: dismissHeapEvent } = useHeapPressureGuard({
@@ -310,12 +310,12 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
   const stageProgress = useMemo(() => {
     const map: Record<string, number> = {};
     const ranges: Record<string, { start: number; end: number }> = {
-      fetch: { start: 0, end: FETCH_STAGE_MAX },
-      transform: { start: FETCH_STAGE_MAX, end: TRANSFORM_STAGE_MAX },
-      vt: { start: TRANSFORM_STAGE_MAX, end: VT_STAGE_MAX },
+      source: { start: 0, end: SOURCE_STAGE_MAX },
+      geometry: { start: SOURCE_STAGE_MAX, end: GEOMETRY_STAGE_MAX },
+      tileEmit: { start: GEOMETRY_STAGE_MAX, end: TILE_EMIT_STAGE_MAX },
     };
     stages.forEach((stage) => {
-      const range = ranges[stage.id] ?? { start: 0, end: VT_STAGE_MAX };
+      const range = ranges[stage.id] ?? { start: 0, end: TILE_EMIT_STAGE_MAX };
       if (overallProgress <= range.start) {
         map[stage.id] = 0;
         return;
@@ -619,8 +619,8 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
 
 const resolveMonitorStage = (phase?: string): BuildMonitorStage => {
   switch (phase) {
-    case 'fetch':
-      return 'fetch';
+    case 'source':
+      return 'source';
     case 'parse':
       return 'parse';
     case 'waypoints':

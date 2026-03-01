@@ -14,6 +14,8 @@ export type TaskQueueRecord<TInput = unknown, TOutput = unknown> = CommonTaskQue
 export type TaskQueueEvent = CommonTaskQueueEvent;
 export type TaskStage = CommonTaskStage;
 export type TaskStatus = CommonTaskStatus;
+export type CanonicalStageId = 'source-stage' | 'geometry-stage' | 'tile-emit-stage';
+export type StageCapability = 'io' | 'geometry' | 'tile-emit';
 
 export type FailureHandling = 'continue' | 'stop' | 'skip';
 
@@ -77,10 +79,71 @@ export const DEFAULT_TASK_SPLIT = {
   maxBand3Reservations: 50_000,
 } as const;
 
+const TASK_STAGE_TO_STAGE_ID = {
+  source: 'source-stage',
+  geometry: 'geometry-stage',
+  tileEmit: 'tile-emit-stage',
+} as const satisfies Record<TaskStage, CanonicalStageId>;
+
+const STAGE_ID_TO_TASK_STAGE = {
+  'source-stage': 'source',
+  'geometry-stage': 'geometry',
+  'tile-emit-stage': 'tileEmit',
+} as const satisfies Record<CanonicalStageId, TaskStage>;
+
+const STAGE_ID_TO_CAPABILITY = {
+  'source-stage': 'io',
+  'geometry-stage': 'geometry',
+  'tile-emit-stage': 'tile-emit',
+} as const satisfies Record<CanonicalStageId, StageCapability>;
+
+const normalizeStageId = (
+  stage: TaskStage | undefined,
+  stageId: CanonicalStageId | undefined,
+): CanonicalStageId => {
+  if (stageId !== undefined && stage !== undefined) {
+    const expected = STAGE_ID_TO_TASK_STAGE[stageId];
+    if (expected !== stage) {
+      throw new Error(
+        `Mismatched runStageTasks stage identity: stage=${stage}, stageId=${stageId}, expectedStage=${expected}`,
+      );
+    }
+  }
+  if (stageId !== undefined) return stageId;
+  if (stage === undefined) {
+    throw new Error('runStageTasks requires either stage or stageId');
+  }
+  return TASK_STAGE_TO_STAGE_ID[stage];
+};
+
+const normalizeCapability = (
+  stageId: CanonicalStageId,
+  capability: StageCapability | undefined,
+): StageCapability => {
+  const expected = STAGE_ID_TO_CAPABILITY[stageId];
+  if (capability !== undefined && capability !== expected) {
+    throw new Error(
+      `Mismatched runStageTasks capability: stageId=${stageId}, capability=${capability}, expectedCapability=${expected}`,
+    );
+  }
+  return expected;
+};
+
+export const resolveRunStageIdentity = (options: {
+  stage?: TaskStage;
+  stageId?: CanonicalStageId;
+  capability?: StageCapability;
+}): { stage: TaskStage; stageId: CanonicalStageId; capability: StageCapability } => {
+  const stageId = normalizeStageId(options.stage, options.stageId);
+  const stage = STAGE_ID_TO_TASK_STAGE[stageId];
+  const capability = normalizeCapability(stageId, options.capability);
+  return { stage, stageId, capability };
+};
+
 export type TransformByBandTaskInput = {
-  fetchCacheId: string;
-  fetchCacheFormat?: 'flatgeobuf' | 'topojson';
-  fetchCacheCompression?: 'gzip' | 'none';
+  sourceCacheId: string;
+  sourceCacheFormat?: 'flatgeobuf' | 'topojson';
+  sourceCacheCompression?: 'gzip' | 'none';
   bandIndex: number;
   bandMinZoom?: number;
   bandMaxZoom?: number;
@@ -108,7 +171,9 @@ export type VtTaskInput = {
 export interface RunStageOptions<TInput = unknown, TOutput = unknown> {
   nodeId: TaskQueueRecord['nodeId'];
   //db: VtTaskQueueDb;
-  stage: TaskStage;
+  stage?: TaskStage;
+  stageId?: CanonicalStageId;
+  capability?: StageCapability;
   handler: StageHandler<TInput, TOutput>;
   waitIfPaused?: () => Promise<void>;
   maxConcurrent?: number;

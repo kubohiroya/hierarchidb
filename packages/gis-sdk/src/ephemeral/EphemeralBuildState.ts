@@ -1,16 +1,16 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
   ShapeBuildProgressSummary,
-  ShapeTransformErrorRecord,
+  ShapeGeometryErrorRecord,
 } from '@hierarchidb/shape-api';
 
-export type EphemeralDomainType = 'shape' | 'route' | 'vt';
+export type EphemeralDomainType = 'shape' | 'route' | 'tileEmit';
 
 export type BuildStatus = 'idle' | 'running' | 'paused' | 'completed' | 'failed';
 
 export type StopReason = 'route-leave' | 'user-pause' | 'failed' | 'completed' | 'unknown';
 
-export type BuildStage = 'fetch' | 'transform' | 'vt';
+export type BuildStage = 'source' | 'geometry' | 'tileEmit';
 
 export type BuildTaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'recycled';
 
@@ -39,7 +39,7 @@ export interface EphemeralStageStatus {
   message?: string;
 }
 
-export interface EphemeralFetchStageMaxima {
+export interface EphemeralSourceStageMaxima {
   featureMax: number;
   polygonMax: number;
 }
@@ -68,7 +68,7 @@ export interface EphemeralBuildSessionRecord {
   stageId?: string;
   elapsedMs?: number;
   elapsedByStage?: Record<string, number>;
-  fetchStageMaxima?: EphemeralFetchStageMaxima;
+  sourceStageMaxima?: EphemeralSourceStageMaxima;
 }
 
 export interface EphemeralBuildTaskRecord<TInput = unknown, TOutput = unknown> {
@@ -153,7 +153,7 @@ export interface EphemeralTransformCacheMetaRecord {
   timestamp: number;
 }
 
-export interface EphemeralTransformErrorRecord extends ShapeTransformErrorRecord {
+export interface EphemeralGeometryErrorRecord extends ShapeGeometryErrorRecord {
   domainType?: EphemeralDomainType;
 }
 
@@ -176,17 +176,17 @@ export const EPHEMERAL_DB_SCHEMA: Record<string, string> = {
     '&taskId, nodeId, status, index, stagePriority'
     + ', [nodeId+status], [nodeId+stage]'
     + ', [nodeId+index], [nodeId+status+index], [nodeId+stage+index], [nodeId+stage+status+index]',
-  fetchCache:
+  sourceCache:
     '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
-  fetchCacheMeta:
+  sourceCacheMeta:
     '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
-  transformCache:
+  geometryCache:
     '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
-  transformCacheMeta:
+  geometryCacheMeta:
     '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
-  transformErrors:
+  geometryErrors:
     '&id, nodeId',
-  tileIdToBufferRelations:
+  tileEmitBufferRelations:
     '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
 };
 
@@ -197,17 +197,17 @@ export const EPHEMERAL_DB_SCHEMA_V1: Record<string, string> = {
     '&taskId, nodeId, status, index, stagePriority, sequence'
     + ', [nodeId+status], [nodeId+stage]'
     + ', [nodeId+index], [nodeId+status+index], [nodeId+stage+index], [nodeId+stage+status+index]',
-  fetchCache:
+  sourceCache:
     '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
-  fetchCacheMeta:
+  sourceCacheMeta:
     '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
-  transformCache:
+  geometryCache:
     '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
-  transformCacheMeta:
+  geometryCacheMeta:
     '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
-  transformErrors:
+  geometryErrors:
     '&id, nodeId',
-  tileIdToBufferRelations:
+  tileEmitBufferRelations:
     '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
 };
 
@@ -218,16 +218,16 @@ export const EPHEMERAL_DB_SCHEMA_V2: Record<string, string> = {
     '&taskId, nodeId, status, index, stagePriority, sequence'
     + ', [nodeId+status], [nodeId+stage]'
     + ', [nodeId+index], [nodeId+status+index], [nodeId+stage+index], [nodeId+stage+status+index]',
-  fetchCache:
+  sourceCache:
     '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
-  fetchCacheMeta:
+  sourceCacheMeta:
     '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
-  transformCache:
+  geometryCache:
     '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
-  transformCacheMeta:
+  geometryCacheMeta:
     '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
-  transformErrors:
+  geometryErrors:
     '&id, nodeId',
-  tileIdToBufferRelations:
+  tileEmitBufferRelations:
     '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
 };

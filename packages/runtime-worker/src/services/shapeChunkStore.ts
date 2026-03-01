@@ -70,7 +70,7 @@ export const listRawDataDataSourceMetadataForNode = async (
   return store.listMetadataForNode(nodeId);
 };
 
-export const countFetchDataDataSourceBuffersForNode = async (nodeId: NodeId): Promise<number> => {
+export const countSourceDataSourceBuffersForNode = async (nodeId: NodeId): Promise<number> => {
   const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
   return metadata.filter((entry) => entry.cacheKey?.startsWith(RAW_DATA_CACHE_PREFIX)).length;
 };

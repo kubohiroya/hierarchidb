@@ -106,7 +106,7 @@ test.describe('Shape build background (real pipeline)', () => {
 
     const buildConfig = {
       dataSourceName: 'geoboundaries',
-      fetchConfig: {
+      sourceConfig: {
         maxConcurrent: 1,
         deleteOnComplete: false,
         timeoutMs: 300000,
@@ -115,7 +115,7 @@ test.describe('Shape build background (real pipeline)', () => {
         retryLimit: 3,
         retryBackoff: 'linear',
       },
-      transformConfig: {
+      geometryConfig: {
         zoomBandBoundaries: [1, 2, 3, 6],
         maxConcurrent: 1,
         enableFeatureFiltering: true,
@@ -140,7 +140,7 @@ test.describe('Shape build background (real pipeline)', () => {
         minRingVertices: 4,
         boundaryDisableAtZoomOrAbove: 3,
       },
-      vtConfig: {
+      tileEmitConfig: {
         enableTopojsonSimplify: true,
         maxConcurrent: 1,
         dynamicConcurrency: {
@@ -155,7 +155,7 @@ test.describe('Shape build background (real pipeline)', () => {
         extent: 4096,
         bufferSize: 256,
         boundaryDedupe: true,
-        indexMaxPoints: 0,
+        indexMaxPoints: 100000,
         layerSetName: 'shape',
         promoteId: 'id',
         tileSize: 256,
@@ -242,7 +242,7 @@ test.describe('Shape build background (real pipeline)', () => {
         dataSourceName,
         selectedArrayByCountries,
       );
-      const result = await api.startBuildSession('shape', nodeId, payloads, 'finish_all_stages');
+      const result = await api.startBuildSession('shape', nodeId, payloads);
       const tasks = await api.getBuildTasks('shape', nodeId).catch(() => []);
       return {
         status: result?.status ?? null,

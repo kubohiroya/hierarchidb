@@ -2,13 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObjec
 import { useTheme } from '@mui/material/styles';
 import type {
   DataSourceName,
-  FetchTaskPayload,
+  SourceTaskPayload,
   ShapeEntity,
 } from '~/common/types/index';
 import { isShapePreviewMetadataEnabled } from '~/common/config/previewFlags';
 import { toNodeId, type NodeId } from '@hierarchidb/core-types';
 import { useTranslation } from '~/ui/i18n';
-import type { ShapeFeatureMetadata, ShapeDataSourceMetadata, ShapeTransformErrorRecord } from '@hierarchidb/shape-api';
+import type { ShapeFeatureMetadata, ShapeDataSourceMetadata, ShapeGeometryErrorRecord } from '@hierarchidb/shape-api';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { parseAdminLevelValue } from './adminLevel';
 import {
@@ -101,9 +101,9 @@ export const useShapePreviewStep = (
   const processingStatus = data?.processingStatus ?? null;
   const baseLayerId = 'shape-preview';
   const baseSourceId = 'shape-preview-source';
-  const layerSetName = data.buildConfig?.vtConfig?.layerSetName ?? 'shape';
+  const layerSetName = data.buildConfig?.tileEmitConfig?.layerSetName ?? 'shape';
   const tileDbName = getDBName('shape');
-  const [selectionMetadata, setSelectionMetadata] = useState<FetchTaskPayload[]>([]);
+  const [selectionMetadata, setSelectionMetadata] = useState<SourceTaskPayload[]>([]);
   const workerClientHook = useMemo(() => {
     try {
       return getWorkerClientHook<WorkerClientRef | null>();
@@ -130,7 +130,7 @@ export const useShapePreviewStep = (
           selectionMatrix,
         );
         if (!cancelled) {
-          setSelectionMetadata(payloads as FetchTaskPayload[]);
+          setSelectionMetadata(payloads as SourceTaskPayload[]);
         }
       } catch (error) {
         if (!cancelled) {
@@ -159,7 +159,7 @@ export const useShapePreviewStep = (
 
   const loadTransformErrorRows = useCallback(
     (targetNodeId: NodeId) =>
-      shapeQueryAPIImpl.listTransformErrorRecords(targetNodeId) as Promise<ShapeTransformErrorRecord[]>,
+      shapeQueryAPIImpl.listGeometryErrorRecords(targetNodeId) as Promise<ShapeGeometryErrorRecord[]>,
     [],
   );
 
@@ -228,8 +228,8 @@ export const useShapePreviewStep = (
   }, [selectionMetadata]);
 
   const selectionLookup = useMemo(() => {
-    const byCode = new Map<string, FetchTaskPayload>();
-    const byName = new Map<string, FetchTaskPayload>();
+    const byCode = new Map<string, SourceTaskPayload>();
+    const byName = new Map<string, SourceTaskPayload>();
     selectionMetadata.forEach((entry) => {
       const code = normalizeCountryCodeValue(entry.countryCode);
       const name = normalizeText(entry.countryName)?.toLowerCase();
@@ -885,7 +885,7 @@ export const useShapePreviewStep = (
     });
   }, [mapInstance, selectedErrorBounds]);
 
-  const errorLineCollection = useMemo<ShapeTransformErrorRecord['lineFeatures'] | null>(() => {
+  const errorLineCollection = useMemo<ShapeGeometryErrorRecord['lineFeatures'] | null>(() => {
     if (normalizedTransformErrorRows.length === 0) return null;
     const features = normalizedTransformErrorRows.flatMap((row) => {
       const isSelected = row.featureId ? selectedFeatureIdSet.has(row.featureId) : false;

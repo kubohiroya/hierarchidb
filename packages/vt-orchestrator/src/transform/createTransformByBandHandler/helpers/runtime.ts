@@ -56,7 +56,7 @@ export const runWithStallTimeout = async <T>(params: {
       const lastProgressAt = getLastProgressAt();
       const idleMs = now - lastProgressAt;
       if (idleMs >= timeoutMs) {
-        reject(new Error(`transform failed: ${stage} stalled (${idleMs}ms without progress)`));
+        reject(new Error(`geometry failed: ${stage} stalled (${idleMs}ms without progress)`));
         return;
       }
       if (now - lastHeartbeatAt >= heartbeatMs) {

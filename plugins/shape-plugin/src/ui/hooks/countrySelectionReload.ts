@@ -30,7 +30,7 @@ export async function invalidateCountrySelectionCaches(dataSource: string, nodeI
       textStore.deleteForNode(nodeId, buildShapeCacheKey('gadm:maps', GADM_MAPS_URL)),
     );
     // Country pages are keyed by gadm:country:ISO3 but ISO3 list is only known after fetching maps.
-    // We at least delete the maps index. After re-fetch, metadata will be rebuilt.
+    // We at least delete the maps index. After reload, metadata will be rebuilt.
     return Promise.all(tasks).then(() => undefined);
   }
 

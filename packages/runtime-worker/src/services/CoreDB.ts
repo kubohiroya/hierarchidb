@@ -472,7 +472,7 @@ export class CoreDB extends Dexie {
       if (seen.has(id)) continue;
       seen.add(id);
 
-      // Fetch direct children and append to result, then schedule their children
+      // Load direct children and append to result, then schedule their children
       const children = await this.listChildren(id);
       if (!children || children.length === 0) continue;
       for (const ch of children) {

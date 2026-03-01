@@ -60,7 +60,7 @@ The behavior is observable: open the user menu, start maintenance, confirm on `/
 
 Implemented the full maintenance URL flow with explicit consent and one-time session gating, integrated from avatar menu to a new `/maintenance` route. The route now validates short-lived session credentials, requires typed destructive confirmation (and email confirmation when available), executes worker shutdown/reset plus IndexedDB deletion with blocked handling, and re-initializes the worker runtime to trigger upgrades.
 
-New unit tests (`maintenanceSession`, `maintenanceLock`, `maintenanceExecution`) all pass, and router compatibility test (`configure-router-mode`) also passes after mock adjustment. Runtime-worker and ui-usermenu typechecks pass. Full `@hierarchidb/app` turbo typecheck remains blocked by pre-existing `@hierarchidb/shape-plugin` readonly/mutable mismatch (`vtConfig.debug.tiles`), which was logged in `TASKS.md`.
+New unit tests (`maintenanceSession`, `maintenanceLock`, `maintenanceExecution`) all pass, and router compatibility test (`configure-router-mode`) also passes after mock adjustment. Runtime-worker and ui-usermenu typechecks pass. Full `@hierarchidb/app` turbo typecheck remains blocked by pre-existing `@hierarchidb/shape-plugin` readonly/mutable mismatch (`tileEmitConfig.debug.tiles`), which was logged in `TASKS.md`.
 
 ## Context and Orientation
 

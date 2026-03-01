@@ -1,5 +1,5 @@
 import type { Feature, FeatureCollection, Geometry, Polygon, MultiPolygon } from 'geojson';
-import type { GeometryEngine, TransformSimplifyAlgorithm } from '@hierarchidb/gis-sdk';
+import type { GeometryEngine, GeometrySimplifyAlgorithm } from '@hierarchidb/gis-sdk';
 import { geometryUnkinkPolygons } from '@hierarchidb/gis-sdk';
 import {
   decodeFetchCache,
@@ -15,7 +15,7 @@ export const decodeFetchCacheByFormat = async (params: {
   zTarget: number;
   toleranceK: number;
   quantize?: number;
-  simplifyAlgorithm?: TransformSimplifyAlgorithm;
+  simplifyAlgorithm?: GeometrySimplifyAlgorithm;
   skipSimplification?: boolean;
 }): Promise<FeatureCollection | null> => {
   if (params.format === 'topojson') {

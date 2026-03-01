@@ -53,7 +53,7 @@ export const handleTileWithLayers = async ({
 }): Promise<TileVisitResult> => {
   const {
     taskContext,
-    vtConfig,
+    tileEmitConfig,
     vtpbf,
     tileWriter,
     debugCollect,
@@ -72,7 +72,7 @@ export const handleTileWithLayers = async ({
     y,
     layers,
     taskContext,
-    vtConfig,
+    tileEmitConfig,
     vtpbf,
     tileWriter,
     debugCollect,

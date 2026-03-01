@@ -12,7 +12,7 @@ export type TileBBox = {
   maxY: number;
 };
 
-type VtGeometryPreviewMapProps = {
+type TileEmitGeometryPreviewMapProps = {
   tileBBox: TileBBox;
   bufferBBox: TileBBox;
   features: Feature<Geometry>[];
@@ -46,7 +46,7 @@ const toFeatureCollection = (features: Feature<Geometry>[]): FeatureCollection =
   features,
 });
 
-export const VtGeometryPreviewMap = ({
+export const TileEmitGeometryPreviewMap = ({
   tileBBox,
   bufferBBox,
   features,
@@ -55,7 +55,7 @@ export const VtGeometryPreviewMap = ({
   baseColor,
   hoverColor,
   onMouseLeave,
-}: VtGeometryPreviewMapProps) => {
+}: TileEmitGeometryPreviewMapProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const baseLayerRef = useRef<L.LayerGroup | null>(null);

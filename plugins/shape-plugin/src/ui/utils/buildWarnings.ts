@@ -1,13 +1,14 @@
 import type { CrashInsight } from '@hierarchidb/ui-monitoring';
+import { normalizeUiStageId } from '~/ui/components/build-progress/stageIdAliases';
 
 export type ShapeBuildStage =
-  | 'fetch'
-  | 'transform'
-  | 'vt';
+  | 'source'
+  | 'geometry'
+  | 'tileEmit';
 
 export type ShapeBuildConfigSnapshot = {
   downloadConcurrency?: number;
-  transformWorkers?: number;
+  geometryWorkers?: number;
   tileWorkers?: number;
 };
 
@@ -16,18 +17,19 @@ export const getStageConcurrencyWarning = (
   stage: ShapeBuildStage,
   currentValue?: number,
 ): { message: string; threshold?: number } | null => {
-  const insightStage = insight?.stage;
-  if (!insight || !stage || insightStage !== stage) return null;
+  const insightStage = normalizeUiStageId(insight?.stage);
+  const normalizedStage = normalizeUiStageId(stage);
+  if (!insight || !normalizedStage || insightStage !== normalizedStage) return null;
   if (!insight.memoryPressure) return null;
   if (currentValue == null) return null;
   const snapshot = insight.configSnapshot;
   const threshold = (() => {
-    switch (stage) {
-      case 'fetch':
+    switch (normalizedStage) {
+      case 'source':
         return snapshot?.downloadConcurrency;
-      case 'transform':
-        return snapshot?.transformWorkers;
-      case 'vt':
+      case 'geometry':
+        return snapshot?.geometryWorkers;
+      case 'tileEmit':
         return snapshot?.tileWorkers;
       default:
         return undefined;
@@ -37,16 +39,16 @@ export const getStageConcurrencyWarning = (
   const ratioText = insight.peakRatio ? `peak ${(insight.peakRatio * 100).toFixed(1)}%` : 'peak unknown';
   return {
     threshold,
-    message: `Last crash suspected in ${stage} (${ratioText}). Reduce concurrency below ${threshold}.`,
+    message: `Last crash suspected in ${normalizedStage} (${ratioText}). Reduce concurrency below ${threshold}.`,
   };
 };
 
 export const getBuildConfigSnapshot = (config?: {
-  fetch?: { maxConcurrent?: number };
-  transform?: { maxConcurrent?: number };
-  vt?: { maxConcurrent?: number };
+  source?: { maxConcurrent?: number };
+  geometry?: { maxConcurrent?: number };
+  tileEmit?: { maxConcurrent?: number };
 }): ShapeBuildConfigSnapshot => ({
-  downloadConcurrency: config?.fetch?.maxConcurrent,
-  transformWorkers: config?.transform?.maxConcurrent,
-  tileWorkers: config?.vt?.maxConcurrent,
+  downloadConcurrency: config?.source?.maxConcurrent,
+  geometryWorkers: config?.geometry?.maxConcurrent,
+  tileWorkers: config?.tileEmit?.maxConcurrent,
 });

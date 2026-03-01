@@ -1,9 +1,12 @@
 type StageRef = { id: string };
+import { normalizeUiStageId } from './stageIdAliases';
 
-const CANONICAL_STAGE_ORDER = ['fetch', 'transform', 'vt'] as const;
+const CANONICAL_STAGE_ORDER = ['source', 'geometry', 'tileEmit'] as const;
 
 const resolveCanonicalStageRank = (stageId: string): number | null => {
-  const index = CANONICAL_STAGE_ORDER.indexOf(stageId as (typeof CANONICAL_STAGE_ORDER)[number]);
+  const canonical = normalizeUiStageId(stageId);
+  if (!canonical) return null;
+  const index = CANONICAL_STAGE_ORDER.indexOf(canonical);
   return index >= 0 ? index : null;
 };
 

@@ -346,7 +346,7 @@
         "zoomBands": {
           "title": "ズーム帯",
           "helper": "共通ズーム帯設定は、新規の Shape/Route ビルドのデフォルト値として使われます。",
-          "summary": "新規作成時の Transform のズーム帯設定に反映されます。",
+          "summary": "新規作成時の Geometry のズーム帯設定に反映されます。",
           "rangeCount": "範囲数",
           "rangeCountHelp": "変換に使うズーム範囲の数を設定します。",
           "boundaries": "境界ズーム",

@@ -18,7 +18,7 @@ const buildTask = (
 ): TestTask => ({
   taskId,
   nodeId: 'node-1' as NodeId,
-  stage: 'fetch',
+  stage: 'source',
   status: 'queued',
   index: 0,
   progress: 0,

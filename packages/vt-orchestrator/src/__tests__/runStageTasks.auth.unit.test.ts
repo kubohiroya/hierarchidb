@@ -18,7 +18,7 @@ describe('runStageTasks auth required handling', () => {
     await putTasks(db, [{
       taskId,
       nodeId: NODE_ID,
-      stage: 'fetch',
+      stage: 'source',
       status: 'queued',
       index: 0,
       progress: 0,
@@ -35,15 +35,15 @@ describe('runStageTasks auth required handling', () => {
 
     await runStageTasks({
       nodeId: NODE_ID,
-      stage: 'fetch',
+      stage: 'source',
       handler,
       maxConcurrent: 1,
       failureHandling: 'continue',
     });
 
     const [queued, failed] = await Promise.all([
-      listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'queued'),
-      listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'failed'),
+      listTasksByStageAndStatus(db, NODE_ID, 'source', 'queued'),
+      listTasksByStageAndStatus(db, NODE_ID, 'source', 'failed'),
     ]);
 
     expect(handler).toHaveBeenCalledTimes(1);

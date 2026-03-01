@@ -61,7 +61,7 @@
     "loadError": "Failed to load country list",
     "emptyCountries": "No countries available. Please try again later.",
     "defaultSelectionNote": "Default selections are applied based on the data source.",
-    "customSelectionNote": "Choose the Route Selection to fetch for each country.",
+    "customSelectionNote": "Choose the Route Selection to include for each country.",
     "conditionOr": "OR",
     "conditionAnd": "AND",
     "transportModeLabel": "Transport mode",
@@ -141,7 +141,16 @@
     "deleteLineStrings": "Delete route line data ({count})",
     "cleanupMissingNode": "NodeId is missing.",
     "cleanupMissingApi": "Worker API is unavailable.",
-    "cleanupDone": "Deleted route line data."
+    "cleanupDone": "Deleted route line data.",
+    "source": {
+      "title": "Source"
+    },
+    "geometry": {
+      "title": "Geometry"
+    },
+    "tileEmit": {
+      "title": "TileEmit"
+    }
   },
   "tileSettings": {
     "description": "Configure vector tile generation parameters.",
@@ -165,7 +174,7 @@
     "panelDescription": "Monitor and control route build progress.",
     "started": "Route vector tile build started (session {{sessionId}})",
     "ideGsm": {
-      "fetch": "IDE-GSM: downloading",
+      "source": "IDE-GSM: downloading",
       "parse": "IDE-GSM: parsing rows",
       "waypoints": "IDE-GSM: generating waypoints",
       "save": "IDE-GSM: saving routes",
@@ -256,7 +265,7 @@
       "download": "Download",
       "extract1": "Extracting Geometry",
       "extract2": "Validating Geometry",
-      "vectortile": "Vector Tile Generation"
+      "tileEmit": "TileEmit Generation"
     },
     "phases": {
       "running": "Running",
@@ -295,5 +304,35 @@
   "errors": {
     "geolocationNotSupported": "Geolocation is not supported",
     "geolocationError": "Failed to get current location"
+  },
+  "stage": {
+    "status": {
+      "startingLock": "Starting build (acquiring lock)...",
+      "startingWorker": "Starting build (initializing worker)...",
+      "fetching": "Build running (source stage)...",
+      "transforming": "Build running (geometry stage)...",
+      "tileEmit": "Build running (tile emit stage)...",
+      "finalizing": "Finalizing build result...",
+      "starting": "Starting stage..."
+    },
+    "route": {
+      "source": {
+        "description": "Download, parse, and save source route features."
+      },
+      "geometry": {
+        "description": "Build tile index for route lookup."
+      },
+      "tileEmit": {
+        "description": "Generate tile artifacts for rendering."
+      }
+    },
+    "ideGsm": {
+      "source": "IDE-GSM: downloading",
+      "parse": "IDE-GSM: parsing rows",
+      "waypoints": "IDE-GSM: generating waypoints",
+      "save": "IDE-GSM: saving routes",
+      "completed": "IDE-GSM: import completed",
+      "failed": "IDE-GSM: import failed"
+    }
   }
 }

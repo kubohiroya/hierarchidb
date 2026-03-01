@@ -4,10 +4,10 @@ import type {
   ShapeBuildTaskRecordInput,
   ShapeBuildTaskRecordUpdate,
   ShapeFeatureMetadata,
-  ShapeFetchCache,
+  ShapeSourceCache,
   ShapeMutationAPI,
   ShapeDataSourceMetadata,
-  ShapeTransformCache,
+  ShapeGeometryCache,
   ShapeVectorTileRecord,
 } from '@hierarchidb/shape-api';
 import {
@@ -61,9 +61,9 @@ const toStageMap = (stages: Record<string, unknown>): Record<BuildStage, StageSt
     return isStageStatus(candidate) ? candidate : empty;
   };
   return {
-    fetch: read('fetch'),
-    transform: read('transform'),
-    vt: read('vt'),
+    source: read('source'),
+    geometry: read('geometry'),
+    tileEmit: read('tileEmit'),
   };
 };
 
@@ -251,7 +251,7 @@ export class ShapeMutationService implements ShapeMutationAPI {
     await ephemeralDB.buildTasks.update?.(taskId, updates);
   }
 
-  async putFetchCaches(buffers: ShapeFetchCache[]): Promise<void> {
+  async putSourceCaches(buffers: ShapeSourceCache[]): Promise<void> {
     if (buffers.length === 0) return;
     await Promise.all(
       buffers.map((buffer) =>
@@ -264,19 +264,19 @@ export class ShapeMutationService implements ShapeMutationAPI {
     );
   }
 
-  async putTransformCaches(buffers: ShapeTransformCache[]): Promise<void> {
+  async putGeometryCaches(buffers: ShapeGeometryCache[]): Promise<void> {
     if (buffers.length === 0) return;
     const emptyBuffer = buffers.find((buffer) => buffer.data.byteLength === 0);
     if (emptyBuffer) {
-      throw new Error(`[shape-mutation] empty transform cache buffer: ${emptyBuffer.id}`);
+      throw new Error(`[shape-mutation] empty geometry cache buffer: ${emptyBuffer.id}`);
     }
     const pending = buffers.map((buffer) => ({ ...buffer, timestamp: 0 }));
-    await ephemeralDB.transaction('rw', [ephemeralDB.transformCache, ephemeralDB.transformCacheMeta], async () => {
-      await ephemeralDB.transformCache.bulkPut(pending);
+    await ephemeralDB.transaction('rw', [ephemeralDB.geometryCache, ephemeralDB.geometryCacheMeta], async () => {
+      await ephemeralDB.geometryCache.bulkPut(pending);
       const completedAt = Date.now();
       await Promise.all(
         pending.map((buffer) =>
-          ephemeralDB.transformCache.update(buffer.id, { timestamp: completedAt })
+          ephemeralDB.geometryCache.update(buffer.id, { timestamp: completedAt })
         )
       );
     });

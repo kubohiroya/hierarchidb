@@ -7,17 +7,17 @@ import type {
   ShapeBuildTaskRecord,
   ShapeBuildTaskSummary,
   ShapeFeatureMetadata,
-  ShapeFetchCache,
+  ShapeSourceCache,
   ShapeProcessingStatus,
   ShapeQueryAPI,
   ShapeDataSourceMetadata,
   ShapeTileInfo,
   ShapeTileSummary,
   ShapeTileSummaryEntry,
-  ShapeTransformCache,
-  ShapeTransformErrorRecord,
+  ShapeGeometryCache,
+  ShapeGeometryErrorRecord,
   ShapeVectorTileRecord,
-  ShapeVTMetadata,
+  ShapeTileEmitMetadata,
 } from '@hierarchidb/shape-api';
 import type {
   BuildSessionRecord,
@@ -34,37 +34,48 @@ import {
 } from '@hierarchidb/gis-sdk';
 import { SingletonMixin } from '@hierarchidb/util';
 import {
-  countFetchDataDataSourceBuffersForNode,
+  countSourceDataSourceBuffersForNode,
   listRawDataDataSourceMetadataForNode,
   readRawDataDataSourceBuffer,
 } from './shapeChunkStore.js';
+import { toCanonicalStageIdFromLegacyStage, toLegacyBuildStage } from './stageAlias.js';
 
-const toBuildStage = (stage: ShapeBuildProgressSummary['stage']): ProgressInfo['stage'] => {
-  if (stage === 'fetch' || stage === 'transform' || stage === 'vt') return stage;
-  return undefined;
+const toBuildStage = (
+  stage: ShapeBuildProgressSummary['stage'],
+  stageId?: string,
+): ProgressInfo['stage'] => {
+  return toLegacyBuildStage(stage, stageId);
 };
 
-const toProgressInfo = (progress: ShapeBuildProgressSummary): ProgressInfo => ({
+const toProgressInfo = (
+  progress: ShapeBuildProgressSummary,
+  stageId?: string,
+): ProgressInfo => ({
   total: progress.total,
   completed: progress.completed,
   failed: progress.failed,
   skipped: progress.skipped,
   percentage: progress.percentage,
-  stage: toBuildStage(progress.stage),
+  stage: toBuildStage(progress.stage, stageId),
 });
 
-const toShapeBuildStage = (stage?: ProgressInfo['stage']): ShapeBuildStage | undefined => {
-  if (stage === 'fetch' || stage === 'transform' || stage === 'vt') return stage;
-  return undefined;
+const toShapeBuildStage = (
+  stage?: ProgressInfo['stage'],
+  stageId?: string,
+): ShapeBuildStage | undefined => {
+  return toLegacyBuildStage(stage, stageId);
 };
 
-const toShapeBuildProgressSummary = (progress: ProgressInfo): ShapeBuildProgressSummary => ({
+const toShapeBuildProgressSummary = (
+  progress: ProgressInfo,
+  stageId?: string,
+): ShapeBuildProgressSummary => ({
   total: progress.total,
   completed: progress.completed,
   failed: progress.failed,
   skipped: progress.skipped,
   percentage: progress.percentage,
-  stage: toShapeBuildStage(progress.stage),
+  stage: toShapeBuildStage(progress.stage, stageId),
 });
 
 const toShapeBuildSessionRecord = (session: BuildSessionRecord): ShapeBuildSessionRecord => {
@@ -78,7 +89,7 @@ const toShapeBuildSessionRecord = (session: BuildSessionRecord): ShapeBuildSessi
     startedAt: session.startedAt,
     updatedAt: session.updatedAt,
     completedAt: session.completedAt,
-    progress: toShapeBuildProgressSummary(session.progress),
+    progress: toShapeBuildProgressSummary(session.progress, session.stageId),
     stages,
     resourceUsage,
     stopReason: session.stopReason,
@@ -106,13 +117,14 @@ const toSessionSummary = (session: BuildSessionRecord): ShapeBuildSessionSummary
   startedAt: session.startedAt,
   updatedAt: session.updatedAt,
   completedAt: session.completedAt,
-  progress: toShapeBuildProgressSummary(session.progress),
+  progress: toShapeBuildProgressSummary(session.progress, session.stageId),
 });
 
 const toTaskSummary = (task: ShapeBuildTaskRecord): ShapeBuildTaskSummary => ({
   taskId: task.taskId,
   nodeId: task.nodeId,
   stage: task.stage,
+  stageId: toCanonicalStageIdFromLegacyStage(task.stage),
   status: task.status,
   index: task.index,
   progress: task.progress,
@@ -158,16 +170,16 @@ const isProgressSummary = (value: unknown): value is ShapeBuildProgressSummary =
     && isNumber(value.failed)
     && isNumber(value.skipped)
     && isNumber(value.percentage)
-    && (value.stage === undefined || value.stage === 'fetch' || value.stage === 'transform' || value.stage === 'vt');
+    && (value.stage === undefined || value.stage === 'source' || value.stage === 'geometry' || value.stage === 'tileEmit');
 };
 
 const readStageMap = (value: unknown): Record<BuildTaskType, StageStatus> | null => {
   if (!isRecord(value)) return null;
-  const fetch = value.fetch;
-  const transform = value.transform;
-  const vt = value.vt;
-  if (!isStageStatus(fetch) || !isStageStatus(transform) || !isStageStatus(vt)) return null;
-  return { fetch, transform, vt };
+  const source = value.source;
+  const geometry = value.geometry;
+  const tileEmit = value.tileEmit;
+  if (!isStageStatus(source) || !isStageStatus(geometry) || !isStageStatus(tileEmit)) return null;
+  return { source, geometry, tileEmit };
 };
 
 const readResourceUsage = (value: unknown): ResourceUsage | undefined => {
@@ -203,7 +215,7 @@ const toBuildSessionRecordFromEphemeral = (
     startedAt: session.startedAt,
     updatedAt: session.updatedAt,
     completedAt: session.completedAt,
-    progress: toProgressInfo(session.progress),
+    progress: toProgressInfo(session.progress, session.stageId),
     stages,
     resourceUsage: readResourceUsage(session.resourceUsage),
     stopReason: session.stopReason,
@@ -220,7 +232,7 @@ const toBuildSessionRecordFromEphemeral = (
 };
 
 const isShapeBuildStage = (value: unknown): value is ShapeBuildStage => {
-  return value === 'fetch' || value === 'transform' || value === 'vt';
+  return value === 'source' || value === 'geometry' || value === 'tileEmit';
 };
 
 const toShapeBuildTaskRecordFromEphemeral = (
@@ -445,7 +457,7 @@ export class ShapeQueryService implements ShapeQueryAPI {
     };
   }
 
-  async listFetchCaches(nodeId: NodeId): Promise<ShapeFetchCache[]> {
+  async listSourceCaches(nodeId: NodeId): Promise<ShapeSourceCache[]> {
     const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
     const records = await Promise.all(
       metadata.map(async (entry) => {
@@ -465,10 +477,10 @@ export class ShapeQueryService implements ShapeQueryAPI {
         };
       })
     );
-    return records.filter(Boolean) as ShapeFetchCache[];
+    return records.filter(Boolean) as ShapeSourceCache[];
   }
 
-  async getFetchCache(nodeId: NodeId, bufferId: string): Promise<ShapeFetchCache | null> {
+  async getSourceCache(nodeId: NodeId, bufferId: string): Promise<ShapeSourceCache | null> {
     const data = await readRawDataDataSourceBuffer(nodeId, bufferId);
     if (!data) return null;
     return {
@@ -483,29 +495,29 @@ export class ShapeQueryService implements ShapeQueryAPI {
     };
   }
 
-  async countFetchCaches(nodeId: NodeId): Promise<number> {
-    return countFetchDataDataSourceBuffersForNode(nodeId);
+  async countSourceCaches(nodeId: NodeId): Promise<number> {
+    return countSourceDataSourceBuffersForNode(nodeId);
   }
 
-  async listTransformCaches(nodeId: NodeId): Promise<ShapeTransformCache[]> {
-    const idsRaw = await ephemeralDB.transformCacheMeta.where('nodeId').equals(nodeId).primaryKeys();
+  async listGeometryCaches(nodeId: NodeId): Promise<ShapeGeometryCache[]> {
+    const idsRaw = await ephemeralDB.geometryCacheMeta.where('nodeId').equals(nodeId).primaryKeys();
     if (idsRaw.length === 0) return [];
     const ids = idsRaw.map((id) => String(id));
-    const records = await ephemeralDB.transformCache.bulkGet(ids);
+    const records = await ephemeralDB.geometryCache.bulkGet(ids);
     return records
       .filter(isDefined)
-      .filter((record): record is ShapeTransformCache => record.nodeId === nodeId && record.timestamp > 0);
+      .filter((record): record is ShapeGeometryCache => record.nodeId === nodeId && record.timestamp > 0);
   }
 
-  async getTransformCache(bufferId: string): Promise<ShapeTransformCache | null> {
-    return await ephemeralDB.transaction('r', ephemeralDB.transformCache, async () => {
-      const record = await ephemeralDB.transformCache.get(bufferId);
+  async getGeometryCache(bufferId: string): Promise<ShapeGeometryCache | null> {
+    return await ephemeralDB.transaction('r', ephemeralDB.geometryCache, async () => {
+      const record = await ephemeralDB.geometryCache.get(bufferId);
       if (!record || record.timestamp <= 0) return null;
       return record;
     });
   }
 
-  async listVTMetadata(nodeId: NodeId): Promise<ShapeVTMetadata[]> {
+  async listTileEmitMetadata(nodeId: NodeId): Promise<ShapeTileEmitMetadata[]> {
     const rows = await this.db.vectorTiles.where('nodeId').equals(nodeId).toArray();
     return rows.map((row) => ({
       key: row.tileId,
@@ -531,7 +543,7 @@ export class ShapeQueryService implements ShapeQueryAPI {
     >;
   }
 
-  async listTransformErrorRecords(nodeId: NodeId): Promise<ShapeTransformErrorRecord[]> {
-    return ephemeralDB.transformErrors.where('nodeId').equals(nodeId).toArray();
+  async listGeometryErrorRecords(nodeId: NodeId): Promise<ShapeGeometryErrorRecord[]> {
+    return ephemeralDB.geometryErrors.where('nodeId').equals(nodeId).toArray();
   }
 }

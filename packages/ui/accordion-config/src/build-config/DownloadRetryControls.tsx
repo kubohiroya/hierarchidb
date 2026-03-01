@@ -14,13 +14,13 @@ import {
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
-import type { FetchConfig } from '@hierarchidb/gis-sdk';
+import type { SourceConfig } from '@hierarchidb/gis-sdk';
 import { getBuildConfigHoverCardSx } from './buildConfigCardStyles.js';
 
 type TranslateFn = (key: string, fallback?: string, options?: Record<string, unknown>) => string;
 
 export type DownloadRetryConfig = Pick<
-  FetchConfig,
+  SourceConfig,
   'timeoutMs' | 'retryAttempts' | 'retryDelay' | 'retryLimit' | 'retryBackoff'
 >;
 
@@ -61,7 +61,7 @@ export const DownloadRetryControls: React.FC<Props> = ({
             <Stack direction="row" spacing={1} alignItems="center">
               <AccessTimeIcon fontSize="small" color="primary" />
               <Typography variant="subtitle2">
-                {t('processing.download.fetchRetryTitle', 'Fetch Retry')}
+                {t('processing.download.sourceRetryTitle', 'Source Retry')}
               </Typography>
             </Stack>
             <Grid container spacing={2}>

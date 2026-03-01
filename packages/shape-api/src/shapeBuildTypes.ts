@@ -2,12 +2,12 @@ import type { NodeId } from '@hierarchidb/core-types';
 
 export type ShapeDataSourceName = 'naturalearth' | 'geoboundaries' | 'geoboundaries-topojson' | 'gadm' | 'openstreetmap';
 export type ShapeBuildStage =
-  | 'fetch'
-  | 'transform'
-  | 'vt';
+  | 'source'
+  | 'geometry'
+  | 'tileEmit';
 export type ShapeBuildTaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'recycled';
 
-export type ShapeFetchTaskPayload = {
+export type ShapeSourceTaskPayload = {
   url?: string;
   dataSource?: ShapeDataSourceName;
   countryCode?: string;
@@ -29,13 +29,13 @@ export type ShapeFetchTaskPayload = {
   retryDelay?: number;
 };
 
-export type ShapeFetchTaskResult = {
+export type ShapeSourceTaskResult = {
   outputBufferId?: string;
   bytesWritten?: number;
   featureCount?: number;
 };
 
-export type ShapeTransformTaskPayload = {
+export type ShapeGeometryTaskPayload = {
   inputBufferId?: string;
   sourceUrl?: string;
   featureId?: string;
@@ -52,7 +52,7 @@ export type ShapeTransformTaskPayload = {
   countryName?: string;
 };
 
-export type ShapeTransformTaskResult = {
+export type ShapeGeometryTaskResult = {
   outputBufferId?: string;
   featureCount?: number;
   extractionRatio?: number;
@@ -93,7 +93,7 @@ export type ShapeExtract2TaskResult = {
 };
 */
 
-export type ShapeVTTaskPayload = {
+export type ShapeTileEmitTaskPayload = {
   inputBufferId: string;
   tileZ?: number;
   tileX?: number;
@@ -121,7 +121,7 @@ export type ShapeVTTaskPayload = {
   };
 };
 
-export type ShapeVTTaskResult = {
+export type ShapeTileEmitTaskResult = {
   tileId: string;
   tileCount?: number;
   totalBytes?: number;
@@ -129,15 +129,15 @@ export type ShapeVTTaskResult = {
 };
 
 export type ShapeBuildTaskPayload =
-  | ShapeFetchTaskPayload
-  | ShapeTransformTaskPayload
+  | ShapeSourceTaskPayload
+  | ShapeGeometryTaskPayload
   //| ShapeExtract2TaskPayload
-  | ShapeVTTaskPayload;
+  | ShapeTileEmitTaskPayload;
 
 export type ShapeBuildTaskResult =
-  | ShapeFetchTaskResult
-  | ShapeTransformTaskResult
-  | ShapeVTTaskResult;
+  | ShapeSourceTaskResult
+  | ShapeGeometryTaskResult
+  | ShapeTileEmitTaskResult;
 
 export interface ShapeBuildTaskRecord<
   TInput = ShapeBuildTaskPayload,
@@ -167,7 +167,7 @@ export type ShapeBuildTaskRecordUpdate = Partial<Omit<ShapeBuildTaskRecord, 'tas
 };
 
 
-export interface ShapeFetchCache {
+export interface ShapeSourceCache {
   id: string;
   nodeId: NodeId;
   data: ArrayBuffer;
@@ -178,7 +178,7 @@ export interface ShapeFetchCache {
   timestamp: number;
 }
 
-export interface ShapeTransformCache {
+export interface ShapeGeometryCache {
   id: string;
   nodeId: NodeId;
   bandIndex: number;
@@ -196,7 +196,7 @@ export interface ShapeTransformCache {
   adminLevel?: number;
 }
 
-export interface ShapeVTMetadata {
+export interface ShapeTileEmitMetadata {
   key: string;
   nodeId: string;
   z: number;
@@ -226,8 +226,8 @@ export interface ShapeFeatureMetadata {
   polygonCount: number;
   fetchVertexCount?: number;
   fetchPolygonCount?: number;
-  transformVertexCount?: number;
-  transformPolygonCount?: number;
+  geometryVertexCount?: number;
+  geometryPolygonCount?: number;
   geojsonByteSize?: number;
   bbox?: [number, number, number, number];
   area: number;
@@ -250,8 +250,8 @@ export interface ShapeDataSourceMetadata {
   updatedAt: number;
   fetchVertexCount?: number;
   fetchPolygonCount?: number;
-  transformVertexCount?: number;
-  transformPolygonCount?: number;
+  geometryVertexCount?: number;
+  geometryPolygonCount?: number;
   vtVertexCount?: number;
   vtPolygonCount?: number;
   bbox?: [number, number, number, number];
@@ -274,7 +274,7 @@ export type ShapeErrorLineFeatureCollection = {
   features: ShapeErrorLineFeature[];
 };
 
-export interface ShapeTransformErrorRecord {
+export interface ShapeGeometryErrorRecord {
   id: string;
   nodeId: NodeId;
   taskId: string;

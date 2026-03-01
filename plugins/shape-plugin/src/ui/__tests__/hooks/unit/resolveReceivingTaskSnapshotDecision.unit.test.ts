@@ -131,14 +131,14 @@ describe('resolveReceivingTaskSnapshotDecision', () => {
       taskCount: 0,
       isTaskSnapshotProgressConnected: false,
       expectTaskGeneration: true,
-      sessionStageId: 'pipeline:fetch-stage:error',
+      sessionStageId: 'pipeline:source-stage:error',
     });
     expect(decision).toEqual({
       kind: 'error',
       reason: 'failed-before-task-start',
       transitionFinish: {
         level: 'error',
-        message: 'Build failed before task execution started (worker stage: pipeline:fetch-stage:error).',
+        message: 'Build failed before task execution started (worker stage: pipeline:source-stage:error).',
       },
     });
   });
@@ -153,7 +153,7 @@ describe('resolveReceivingTaskSnapshotDecision', () => {
       isTaskSnapshotProgressConnected: false,
       expectTaskGeneration: true,
       sessionProgressTotal: 2,
-      sessionStageId: 'pipeline:fetch-stage:error',
+      sessionStageId: 'pipeline:source-stage:error',
     });
     expect(decision).toEqual({ kind: 'continue' });
   });
@@ -180,7 +180,7 @@ describe('resolveReceivingTaskSnapshotDecision', () => {
       taskCount: 0,
       isTaskSnapshotProgressConnected: false,
       expectTaskGeneration: true,
-      sessionStageId: 'startup:plan-fetch-total:start',
+      sessionStageId: 'startup:plan-source-total:start',
     });
     expect(decision).toEqual({ kind: 'continue' });
   });

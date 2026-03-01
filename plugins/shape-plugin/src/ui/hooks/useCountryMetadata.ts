@@ -40,7 +40,7 @@ export function useCountryMetadata({
     }
 
     if (options?.force) {
-      // Clear in-memory cache so we can re-fetch from the underlying chunk-store/network.
+      // Clear in-memory cache so we can reload from the underlying chunk-store/network.
       metadataLoader.clearCache(dataSource);
     }
 

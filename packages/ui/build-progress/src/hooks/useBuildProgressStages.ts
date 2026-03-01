@@ -3,7 +3,7 @@ import { CloudDownload, Layers, Tune } from '@mui/icons-material';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
 import type { BuildSessionProgressPanelProps } from '@hierarchidb/components';
 
-type BuildStageId = 'fetch' | 'transform' | 'vt';
+type BuildStageId = 'source' | 'geometry' | 'tileEmit';
 
 type Translate = (key: string, fallback?: string) => string;
 
@@ -21,7 +21,7 @@ export type ResolveBuildStagesOptions = {
 
 type SplitViewInitialSizes = [number[], number[], number[], number[]];
 
-const DEFAULT_STAGE_ORDER: BuildStageId[] = ['fetch', 'transform', 'vt'];
+const DEFAULT_STAGE_ORDER: BuildStageId[] = ['source', 'geometry', 'tileEmit'];
 
 export type BuildSessionProgressPanelSplitViewLayoutProps = Pick<
   BuildSessionProgressPanelProps,
@@ -39,9 +39,9 @@ export const resolveBuildStages = ({
       ? overrides[id]?.description ?? t(`processing.${id}.description`, fallbackDescriptionById(id))
       : undefined;
     const icon = overrides[id]?.icon
-      ?? (id === 'fetch'
+      ?? (id === 'source'
         ? createElement(CloudDownload, { color: 'primary' })
-        : id === 'transform'
+        : id === 'geometry'
           ? createElement(Tune, { color: 'primary' })
           : createElement(Layers, { color: 'primary' }));
 
@@ -56,12 +56,12 @@ export const resolveBuildStages = ({
 
 const fallbackLabelById = (id: BuildStageId): string => {
   switch (id) {
-    case 'fetch':
-      return 'Fetch';
-    case 'transform':
-      return 'Transform';
-    case 'vt':
-      return 'Vector Tiles';
+    case 'source':
+      return 'Source';
+    case 'geometry':
+      return 'Geometry';
+    case 'tileEmit':
+      return 'TileEmit';
     default:
       return 'Build';
   }
@@ -69,11 +69,11 @@ const fallbackLabelById = (id: BuildStageId): string => {
 
 const fallbackDescriptionById = (id: BuildStageId): string => {
   switch (id) {
-    case 'fetch':
+    case 'source':
       return 'Download and prepare data.';
-    case 'transform':
-      return 'Transform and normalize prepared data.';
-    case 'vt':
+    case 'geometry':
+      return 'Process and normalize prepared geometry data.';
+    case 'tileEmit':
       return 'Generate output artifacts.';
     default:
       return '';

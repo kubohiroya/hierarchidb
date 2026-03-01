@@ -19,7 +19,7 @@ const createTask = (
 ): TaskQueueRecord => ({
   taskId,
   nodeId: NODE_ID,
-  stage: 'fetch',
+  stage: 'source',
   index: 0,
   status,
   progress: status === 'completed' ? 100 : 0,
@@ -38,37 +38,37 @@ describe('shapePipelineStageHelpers', () => {
 
   it('allows explicit failed-to-queued retry transitions', async () => {
     db = createDb();
-    const taskId = 'fetch-failed-1';
+    const taskId = 'source-failed-1';
     await putTasks(db, [createTask(taskId, 'failed')]);
 
     await updateTask(db, taskId, { status: 'queued' });
-    let failed = await listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'failed');
-    let queued = await listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'queued');
+    let failed = await listTasksByStageAndStatus(db, NODE_ID, 'source', 'failed');
+    let queued = await listTasksByStageAndStatus(db, NODE_ID, 'source', 'queued');
     expect(failed).toHaveLength(1);
     expect(queued).toHaveLength(0);
 
     await updateTask(db, taskId, { status: 'queued' }, { allowTerminalStatusTransition: true });
-    failed = await listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'failed');
-    queued = await listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'queued');
+    failed = await listTasksByStageAndStatus(db, NODE_ID, 'source', 'failed');
+    queued = await listTasksByStageAndStatus(db, NODE_ID, 'source', 'queued');
     expect(failed).toHaveLength(0);
     expect(queued).toHaveLength(1);
   });
 
   it('persists failure reason into both message and errorMessage', async () => {
     db = createDb();
-    await putTasks(db, [createTask('fetch-queued-1', 'queued')]);
+    await putTasks(db, [createTask('source-queued-1', 'queued')]);
 
-    const failureReason = 'aborted: fetch stage completed with pending tasks';
+    const failureReason = 'aborted: source stage completed with pending tasks';
     await finalizePendingStageTasks(
       db,
       NODE_ID,
-      'fetch',
+      'source',
       failureReason,
       '[test] finalizePendingStageTasks',
       'run-1',
     );
 
-    const failed = await listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'failed');
+    const failed = await listTasksByStageAndStatus(db, NODE_ID, 'source', 'failed');
     expect(failed).toHaveLength(1);
     expect(failed[0]?.message).toBe(failureReason);
     expect(failed[0]?.errorMessage).toBe(failureReason);
@@ -76,23 +76,23 @@ describe('shapePipelineStageHelpers', () => {
 
   it('keeps auth-pending tasks queued when finalizing pending tasks', async () => {
     db = createDb();
-    await putTasks(db, [createTask('fetch-auth-pending-1', 'queued')]);
-    await updateTask(db, 'fetch-auth-pending-1', {
+    await putTasks(db, [createTask('source-auth-pending-1', 'queued')]);
+    await updateTask(db, 'source-auth-pending-1', {
       metadata: { authState: 'required' },
     });
 
-    const failureReason = 'aborted: fetch stage completed with pending tasks';
+    const failureReason = 'aborted: source stage completed with pending tasks';
     const finalized = await finalizePendingStageTasks(
       db,
       NODE_ID,
-      'fetch',
+      'source',
       failureReason,
       '[test] finalizePendingStageTasks',
       'run-auth-pending',
     );
 
-    const failed = await listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'failed');
-    const queued = await listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'queued');
+    const failed = await listTasksByStageAndStatus(db, NODE_ID, 'source', 'failed');
+    const queued = await listTasksByStageAndStatus(db, NODE_ID, 'source', 'queued');
     expect(finalized.authPending).toBe(1);
     expect(failed).toHaveLength(0);
     expect(queued).toHaveLength(1);
@@ -100,7 +100,7 @@ describe('shapePipelineStageHelpers', () => {
 
   it('does not let late running updates overwrite completed message', async () => {
     db = createDb();
-    const taskId = 'fetch-completed-1';
+    const taskId = 'source-completed-1';
     await putTasks(db, [createTask(taskId, 'queued')]);
 
     await updateTask(db, taskId, {
@@ -115,7 +115,7 @@ describe('shapePipelineStageHelpers', () => {
       message: 'encode',
     });
 
-    const completed = await listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'completed');
+    const completed = await listTasksByStageAndStatus(db, NODE_ID, 'source', 'completed');
     expect(completed).toHaveLength(1);
     expect(completed[0]?.message).toBe('Completed successfully');
     expect(completed[0]?.progress).toBe(100);

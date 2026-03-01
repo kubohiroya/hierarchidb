@@ -149,7 +149,7 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = (props) => {
       )}
       {translations && dataSourceName && !policy.defaultChecked && (
         <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-          {t('routeConfig.customSelectionNote', 'Choose the Route Selection to fetch for each country.')}
+          {t('routeConfig.customSelectionNote', 'Choose the Route Selection to include for each country.')}
         </Typography>
       )}
     </Box>

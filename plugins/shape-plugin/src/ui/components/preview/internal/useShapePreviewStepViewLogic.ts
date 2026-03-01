@@ -460,7 +460,7 @@ export const useShapePreviewStepView = (
     });
   }, [countryByCode, preview.displayedFeatureRows]);
 
-  const layerSetName = data.buildConfig?.vtConfig?.layerSetName ?? 'shape';
+  const layerSetName = data.buildConfig?.tileEmitConfig?.layerSetName ?? 'shape';
   const layerSetDefinition = useMemo(
     () => getLayerSetDefinition(layerSetName),
     [layerSetName],
@@ -899,7 +899,7 @@ export const useShapePreviewStepView = (
     if (!preview.errorLineCollection || preview.errorLineCollection.features.length === 0) {
       return [];
     }
-    const sourceId = 'shape-transform-errors';
+    const sourceId = 'shape-geometry-errors';
     const selectedFilter = ['==', ['get', 'selected'], true] as const;
     const unselectedFilter = ['!=', ['get', 'selected'], true] as const;
     const issueKindColor = [
@@ -930,7 +930,7 @@ export const useShapePreviewStepView = (
     ] as const;
     return [
       {
-        layerId: 'shape-transform-errors-selected-outline-glow',
+        layerId: 'shape-geometry-errors-selected-outline-glow',
         sourceId,
         data: preview.errorLineCollection,
         layerType: 'line',
@@ -943,7 +943,7 @@ export const useShapePreviewStepView = (
         filter: ['all', ['==', ['get', 'ringRole'], 'outline'], selectedFilter],
       },
       {
-        layerId: 'shape-transform-errors-selected-outline',
+        layerId: 'shape-geometry-errors-selected-outline',
         sourceId,
         data: preview.errorLineCollection,
         layerType: 'line',
@@ -954,7 +954,7 @@ export const useShapePreviewStepView = (
         filter: ['all', ['==', ['get', 'ringRole'], 'outline'], selectedFilter],
       },
       {
-        layerId: 'shape-transform-errors-selected-hole-glow',
+        layerId: 'shape-geometry-errors-selected-hole-glow',
         sourceId,
         data: preview.errorLineCollection,
         layerType: 'line',
@@ -968,7 +968,7 @@ export const useShapePreviewStepView = (
         filter: ['all', ['==', ['get', 'ringRole'], 'hole'], selectedFilter],
       },
       {
-        layerId: 'shape-transform-errors-selected-hole',
+        layerId: 'shape-geometry-errors-selected-hole',
         sourceId,
         data: preview.errorLineCollection,
         layerType: 'line',
@@ -980,7 +980,7 @@ export const useShapePreviewStepView = (
         filter: ['all', ['==', ['get', 'ringRole'], 'hole'], selectedFilter],
       },
       {
-        layerId: 'shape-transform-errors-outline',
+        layerId: 'shape-geometry-errors-outline',
         sourceId,
         data: preview.errorLineCollection,
         layerType: 'line',
@@ -991,7 +991,7 @@ export const useShapePreviewStepView = (
         filter: ['all', ['==', ['get', 'ringRole'], 'outline'], unselectedFilter],
       },
       {
-        layerId: 'shape-transform-errors-hole',
+        layerId: 'shape-geometry-errors-hole',
         sourceId,
         data: preview.errorLineCollection,
         layerType: 'line',

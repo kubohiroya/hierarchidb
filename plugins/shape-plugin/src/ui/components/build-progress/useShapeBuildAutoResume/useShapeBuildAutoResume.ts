@@ -10,7 +10,7 @@ type Args = {
   runtimeStatus: string | null;
   handleStartOrResume: (options: { forceRestart: boolean; autoResume?: boolean }) => Promise<boolean>;
   handlePause: (reason?: 'route-leave' | 'user-pause') => void;
-  hasFailedFetchTasks: boolean;
+  hasFailedSourceTasks: boolean;
   hasDataSource: boolean;
   hasSelection: boolean;
   isProcessingValid: boolean;
@@ -24,7 +24,7 @@ export const useShapeBuildAutoResume = ({
   runtimeStatus,
   handleStartOrResume,
   handlePause,
-  hasFailedFetchTasks,
+  hasFailedSourceTasks,
   hasDataSource,
   hasSelection,
   isProcessingValid,
@@ -105,13 +105,13 @@ export const useShapeBuildAutoResume = ({
     if (!isLockSupported) return;
     setStartPending(true);
     const ok = await handleStartOrResume({
-      forceRestart: hasFailedFetchTasks,
+      forceRestart: hasFailedSourceTasks,
       autoResume: options?.autoResume,
     });
     if (!ok) {
       setStartPending(false);
     }
-  }, [handleStartOrResume, hasFailedFetchTasks, isLockSupported, setStartPending]);
+  }, [handleStartOrResume, hasFailedSourceTasks, isLockSupported, setStartPending]);
   const clearStartPending = useCallback(() => {
     setStartPending(false);
   }, [setStartPending]);

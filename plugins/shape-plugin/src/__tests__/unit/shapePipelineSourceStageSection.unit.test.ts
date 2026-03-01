@@ -4,8 +4,8 @@ import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { DataSourceName } from '../../common/types/index';
 import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants';
-import { FetchStageAuthPendingError, runShapeFetchStageSection } from '../../services/vt/shapePipelineFetchStage';
-import * as shapeFetchStageModule from '../../services/vt/shapeFetchStage';
+import { SourceStageAuthPendingError, runShapeSourceStageSection } from '../../services/vt/shapePipelineSourceStage';
+import * as shapeSourceStageModule from '../../services/vt/shapeSourceStage';
 import {
   listTasksByStageAndStatus,
   putTasks,
@@ -13,14 +13,14 @@ import {
   VtTaskQueueDb,
 } from '@hierarchidb/vt-orchestrator';
 
-const NODE_ID = 'shape-fetch-stage-section-node' as NodeId;
+const NODE_ID = 'shape-source-stage-section-node' as NodeId;
 
 const createDb = (): VtTaskQueueDb => new VtTaskQueueDb();
 
-const createRunningFetchTask = (taskId: string): TaskQueueRecord => ({
+const createRunningSourceTask = (taskId: string): TaskQueueRecord => ({
   taskId,
   nodeId: NODE_ID,
-  stage: 'fetch',
+  stage: 'source',
   index: 0,
   status: 'running',
   progress: 1,
@@ -28,10 +28,10 @@ const createRunningFetchTask = (taskId: string): TaskQueueRecord => ({
   updatedAt: Date.now(),
 });
 
-const createFailedFetchTask = (taskId: string): TaskQueueRecord => ({
+const createFailedSourceTask = (taskId: string): TaskQueueRecord => ({
   taskId,
   nodeId: NODE_ID,
-  stage: 'fetch',
+  stage: 'source',
   index: 0,
   status: 'failed',
   progress: 100,
@@ -42,10 +42,10 @@ const createFailedFetchTask = (taskId: string): TaskQueueRecord => ({
   completedAt: Date.now(),
 });
 
-const createAuthPendingFetchTask = (taskId: string): TaskQueueRecord => ({
+const createAuthPendingSourceTask = (taskId: string): TaskQueueRecord => ({
   taskId,
   nodeId: NODE_ID,
-  stage: 'fetch',
+  stage: 'source',
   index: 0,
   status: 'queued',
   progress: 0,
@@ -54,10 +54,10 @@ const createAuthPendingFetchTask = (taskId: string): TaskQueueRecord => ({
   updatedAt: Date.now(),
 });
 
-const createQueuedFetchTask = (taskId: string): TaskQueueRecord => ({
+const createQueuedSourceTask = (taskId: string): TaskQueueRecord => ({
   taskId,
   nodeId: NODE_ID,
-  stage: 'fetch',
+  stage: 'source',
   index: 0,
   status: 'queued',
   progress: 0,
@@ -65,7 +65,7 @@ const createQueuedFetchTask = (taskId: string): TaskQueueRecord => ({
   updatedAt: Date.now(),
 });
 
-describe('runShapeFetchStageSection', () => {
+describe('runShapeSourceStageSection', () => {
   let db: VtTaskQueueDb | null = null;
 
   afterEach(async () => {
@@ -74,11 +74,11 @@ describe('runShapeFetchStageSection', () => {
     db = null;
   });
 
-  it('finalizes pending fetch tasks when fetch stage throws', async () => {
+  it('finalizes pending source tasks when source stage throws', async () => {
     db = createDb();
-    await putTasks(db, [createRunningFetchTask('fetch-running-1')]);
+    await putTasks(db, [createRunningSourceTask('source-running-1')]);
 
-    await expect(runShapeFetchStageSection({
+    await expect(runShapeSourceStageSection({
       nodeId: NODE_ID,
       dataSource: '__invalid_source__' as DataSourceName,
       buildConfig: DEFAULT_BUILD_CONFIG,
@@ -90,9 +90,9 @@ describe('runShapeFetchStageSection', () => {
     })).rejects.toThrow();
 
     const [failed, running, queued] = await Promise.all([
-      listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'failed'),
-      listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'running'),
-      listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'queued'),
+      listTasksByStageAndStatus(db, NODE_ID, 'source', 'failed'),
+      listTasksByStageAndStatus(db, NODE_ID, 'source', 'running'),
+      listTasksByStageAndStatus(db, NODE_ID, 'source', 'queued'),
     ]);
 
     expect(failed).toHaveLength(1);
@@ -102,19 +102,19 @@ describe('runShapeFetchStageSection', () => {
     expect(failed[0]?.errorMessage).toBe(failed[0]?.message);
   });
 
-  it('stops pipeline when fetch stage has only failed tasks even with finish_all_stages policy', async () => {
+  it('stops pipeline when source stage has only failed tasks even with finish_all_stages policy', async () => {
     db = createDb();
     await putTasks(db, [
-      createFailedFetchTask('fetch-failed-1'),
-      createFailedFetchTask('fetch-failed-2'),
+      createFailedSourceTask('source-failed-1'),
+      createFailedSourceTask('source-failed-2'),
     ]);
 
-    const runShapeFetchStageSpy = vi
-      .spyOn(shapeFetchStageModule, 'runShapeFetchStage')
+    const runShapeSourceStageSpy = vi
+      .spyOn(shapeSourceStageModule, 'runShapeSourceStage')
       .mockResolvedValue(undefined);
 
     try {
-      const stopAfterStage = await runShapeFetchStageSection({
+      const stopAfterStage = await runShapeSourceStageSection({
         nodeId: NODE_ID,
         dataSource: 'geoboundaries',
         buildConfig: DEFAULT_BUILD_CONFIG,
@@ -127,20 +127,20 @@ describe('runShapeFetchStageSection', () => {
 
       expect(stopAfterStage).toBe(true);
     } finally {
-      runShapeFetchStageSpy.mockRestore();
+      runShapeSourceStageSpy.mockRestore();
     }
   });
 
-  it('throws auth-pending error without failing auth-pending fetch tasks', async () => {
+  it('throws auth-pending error without failing auth-pending source tasks', async () => {
     db = createDb();
-    await putTasks(db, [createAuthPendingFetchTask('fetch-auth-pending-1')]);
+    await putTasks(db, [createAuthPendingSourceTask('source-auth-pending-1')]);
 
-    const runShapeFetchStageSpy = vi
-      .spyOn(shapeFetchStageModule, 'runShapeFetchStage')
+    const runShapeSourceStageSpy = vi
+      .spyOn(shapeSourceStageModule, 'runShapeSourceStage')
       .mockResolvedValue(undefined);
 
     try {
-      await expect(runShapeFetchStageSection({
+      await expect(runShapeSourceStageSection({
         nodeId: NODE_ID,
         dataSource: 'geoboundaries',
         buildConfig: DEFAULT_BUILD_CONFIG,
@@ -149,29 +149,29 @@ describe('runShapeFetchStageSection', () => {
         failureHandling: 'continue',
         buildContinuationPolicy: 'finish_all_stages',
         pipelineRunId: 'test-run-auth',
-      })).rejects.toBeInstanceOf(FetchStageAuthPendingError);
+      })).rejects.toBeInstanceOf(SourceStageAuthPendingError);
     } finally {
-      runShapeFetchStageSpy.mockRestore();
+      runShapeSourceStageSpy.mockRestore();
     }
 
     const [failed, queued] = await Promise.all([
-      listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'failed'),
-      listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'queued'),
+      listTasksByStageAndStatus(db, NODE_ID, 'source', 'failed'),
+      listTasksByStageAndStatus(db, NODE_ID, 'source', 'queued'),
     ]);
     expect(failed).toHaveLength(0);
     expect(queued).toHaveLength(1);
   });
 
-  it('keeps queued fetch tasks as queued during resume runs instead of marking them failed', async () => {
+  it('keeps queued source tasks as queued during resume runs instead of marking them failed', async () => {
     db = createDb();
-    await putTasks(db, [createQueuedFetchTask('fetch-queued-1')]);
+    await putTasks(db, [createQueuedSourceTask('source-queued-1')]);
 
-    const runShapeFetchStageSpy = vi
-      .spyOn(shapeFetchStageModule, 'runShapeFetchStage')
+    const runShapeSourceStageSpy = vi
+      .spyOn(shapeSourceStageModule, 'runShapeSourceStage')
       .mockResolvedValue(undefined);
 
     try {
-      const stopAfterStage = await runShapeFetchStageSection({
+      const stopAfterStage = await runShapeSourceStageSection({
         nodeId: NODE_ID,
         dataSource: 'geoboundaries',
         buildConfig: DEFAULT_BUILD_CONFIG,
@@ -183,12 +183,12 @@ describe('runShapeFetchStageSection', () => {
       });
       expect(stopAfterStage).toBe(false);
     } finally {
-      runShapeFetchStageSpy.mockRestore();
+      runShapeSourceStageSpy.mockRestore();
     }
 
     const [failed, queued] = await Promise.all([
-      listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'failed'),
-      listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'queued'),
+      listTasksByStageAndStatus(db, NODE_ID, 'source', 'failed'),
+      listTasksByStageAndStatus(db, NODE_ID, 'source', 'queued'),
     ]);
     expect(failed).toHaveLength(0);
     expect(queued).toHaveLength(1);
@@ -198,13 +198,13 @@ describe('runShapeFetchStageSection', () => {
 
   it('retries queued drain once on fresh runs before finalizing pending tasks', async () => {
     db = createDb();
-    await putTasks(db, [createQueuedFetchTask('fetch-queued-drain-1')]);
+    await putTasks(db, [createQueuedSourceTask('source-queued-drain-1')]);
 
-    const runShapeFetchStageSpy = vi
-      .spyOn(shapeFetchStageModule, 'runShapeFetchStage')
+    const runShapeSourceStageSpy = vi
+      .spyOn(shapeSourceStageModule, 'runShapeSourceStage')
       .mockImplementationOnce(async () => {})
       .mockImplementationOnce(async () => {
-        await updateTask(db!, 'fetch-queued-drain-1', {
+        await updateTask(db!, 'source-queued-drain-1', {
           status: 'completed',
           progress: 100,
           completedAt: Date.now(),
@@ -214,7 +214,7 @@ describe('runShapeFetchStageSection', () => {
       });
 
     try {
-      const stopAfterStage = await runShapeFetchStageSection({
+      const stopAfterStage = await runShapeSourceStageSection({
         nodeId: NODE_ID,
         dataSource: 'geoboundaries',
         buildConfig: DEFAULT_BUILD_CONFIG,
@@ -225,17 +225,17 @@ describe('runShapeFetchStageSection', () => {
         pipelineRunId: 'test-run-fresh-pending-drain',
       });
       expect(stopAfterStage).toBe(false);
-      expect(runShapeFetchStageSpy).toHaveBeenCalledTimes(2);
-      expect(runShapeFetchStageSpy.mock.calls[0]?.[0]?.resumeExistingTasks).toBe(false);
-      expect(runShapeFetchStageSpy.mock.calls[1]?.[0]?.resumeExistingTasks).toBe(true);
+      expect(runShapeSourceStageSpy).toHaveBeenCalledTimes(2);
+      expect(runShapeSourceStageSpy.mock.calls[0]?.[0]?.resumeExistingTasks).toBe(false);
+      expect(runShapeSourceStageSpy.mock.calls[1]?.[0]?.resumeExistingTasks).toBe(true);
     } finally {
-      runShapeFetchStageSpy.mockRestore();
+      runShapeSourceStageSpy.mockRestore();
     }
 
     const [failed, completed, queued] = await Promise.all([
-      listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'failed'),
-      listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'completed'),
-      listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'queued'),
+      listTasksByStageAndStatus(db, NODE_ID, 'source', 'failed'),
+      listTasksByStageAndStatus(db, NODE_ID, 'source', 'completed'),
+      listTasksByStageAndStatus(db, NODE_ID, 'source', 'queued'),
     ]);
     expect(failed).toHaveLength(0);
     expect(completed).toHaveLength(1);

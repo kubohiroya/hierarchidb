@@ -1,6 +1,6 @@
 import { ZoomBandConfigSection as SharedZoomBandConfigSection } from '@hierarchidb/ui-accordion-config';
 import { useTranslation } from '~/ui/i18n';
-import { useTransformConfigSection } from '~/ui/hooks/useTransformConfigSection';
+import { useGeometryConfigSection } from '~/ui/hooks/useGeometryConfigSection';
 import type { ShapeBuildConfig } from '~/common/types/index';
 import { resampleToleranceByBand } from '~/services/utils/toleranceByBand';
 
@@ -18,24 +18,24 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
   disableHoverLift = false,
 }) => {
   const { t } = useTranslation();
-  const { baseTransformConfig, update } = useTransformConfigSection({ config, onChange });
+  const { baseGeometryConfig, update } = useGeometryConfigSection({ config, onChange });
   const toleranceFallback = 0.1;
-  const simplifyToleranceByAdminLevel = baseTransformConfig.simplifyToleranceByAdminLevel;
+  const simplifyToleranceByAdminLevel = baseGeometryConfig.simplifyToleranceByAdminLevel;
 
   return (
     <SharedZoomBandConfigSection
       t={t}
-      boundaries={baseTransformConfig.zoomBandBoundaries}
+      boundaries={baseGeometryConfig.zoomBandBoundaries}
       onBoundariesChange={(zoomBandBoundaries: number[]) => {
         const nextToleranceByBand = resampleToleranceByBand(
-          baseTransformConfig.toleranceByBand,
-          baseTransformConfig.zoomBandBoundaries,
+          baseGeometryConfig.toleranceByBand,
+          baseGeometryConfig.zoomBandBoundaries,
           zoomBandBoundaries,
           toleranceFallback,
         );
         const nextRetryToleranceByBand = resampleToleranceByBand(
-          baseTransformConfig.retryToleranceByBand,
-          baseTransformConfig.zoomBandBoundaries,
+          baseGeometryConfig.retryToleranceByBand,
+          baseGeometryConfig.zoomBandBoundaries,
           zoomBandBoundaries,
           toleranceFallback,
         );
@@ -45,13 +45,13 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
               ...simplifyToleranceByAdminLevel.admin0,
               toleranceByBand: resampleToleranceByBand(
                 simplifyToleranceByAdminLevel.admin0?.toleranceByBand,
-                baseTransformConfig.zoomBandBoundaries,
+                baseGeometryConfig.zoomBandBoundaries,
                 zoomBandBoundaries,
                 toleranceFallback,
               ),
               retryToleranceByBand: resampleToleranceByBand(
                 simplifyToleranceByAdminLevel.admin0?.retryToleranceByBand,
-                baseTransformConfig.zoomBandBoundaries,
+                baseGeometryConfig.zoomBandBoundaries,
                 zoomBandBoundaries,
                 toleranceFallback,
               ),
@@ -60,13 +60,13 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
               ...simplifyToleranceByAdminLevel.admin1,
               toleranceByBand: resampleToleranceByBand(
                 simplifyToleranceByAdminLevel.admin1?.toleranceByBand,
-                baseTransformConfig.zoomBandBoundaries,
+                baseGeometryConfig.zoomBandBoundaries,
                 zoomBandBoundaries,
                 toleranceFallback,
               ),
               retryToleranceByBand: resampleToleranceByBand(
                 simplifyToleranceByAdminLevel.admin1?.retryToleranceByBand,
-                baseTransformConfig.zoomBandBoundaries,
+                baseGeometryConfig.zoomBandBoundaries,
                 zoomBandBoundaries,
                 toleranceFallback,
               ),
@@ -75,13 +75,13 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
               ...simplifyToleranceByAdminLevel.admin2,
               toleranceByBand: resampleToleranceByBand(
                 simplifyToleranceByAdminLevel.admin2?.toleranceByBand,
-                baseTransformConfig.zoomBandBoundaries,
+                baseGeometryConfig.zoomBandBoundaries,
                 zoomBandBoundaries,
                 toleranceFallback,
               ),
               retryToleranceByBand: resampleToleranceByBand(
                 simplifyToleranceByAdminLevel.admin2?.retryToleranceByBand,
-                baseTransformConfig.zoomBandBoundaries,
+                baseGeometryConfig.zoomBandBoundaries,
                 zoomBandBoundaries,
                 toleranceFallback,
               ),
@@ -90,13 +90,13 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
               ...simplifyToleranceByAdminLevel.admin3Plus,
               toleranceByBand: resampleToleranceByBand(
                 simplifyToleranceByAdminLevel.admin3Plus?.toleranceByBand,
-                baseTransformConfig.zoomBandBoundaries,
+                baseGeometryConfig.zoomBandBoundaries,
                 zoomBandBoundaries,
                 toleranceFallback,
               ),
               retryToleranceByBand: resampleToleranceByBand(
                 simplifyToleranceByAdminLevel.admin3Plus?.retryToleranceByBand,
-                baseTransformConfig.zoomBandBoundaries,
+                baseGeometryConfig.zoomBandBoundaries,
                 zoomBandBoundaries,
                 toleranceFallback,
               ),
@@ -104,7 +104,7 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
           }
           : undefined;
         update({
-          transformConfig: {
+          geometryConfig: {
             toleranceByBand: nextToleranceByBand,
             retryToleranceByBand: nextRetryToleranceByBand,
             simplifyToleranceByAdminLevel: nextSimplifyToleranceByAdminLevel,

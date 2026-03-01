@@ -52,7 +52,7 @@ const createDefaultDynamicConcurrency = (maxConcurrent: number): DynamicConcurre
   sampleMs: 2000,
 });
 
-export const VTConfigSection = <TDataSourceName,>({
+export const TileEmitConfigSection = <TDataSourceName,>({
   t,
   buildConfig,
   disabled,
@@ -60,41 +60,41 @@ export const VTConfigSection = <TDataSourceName,>({
   showConcurrencyCard = true,
   disableHoverLift = false,
 }: Props<TDataSourceName>) => {
-  const resolvedMaxConcurrent = Number.isFinite(buildConfig.vtConfig.maxConcurrent)
-    ? buildConfig.vtConfig.maxConcurrent
+  const resolvedMaxConcurrent = Number.isFinite(buildConfig.tileEmitConfig.maxConcurrent)
+    ? buildConfig.tileEmitConfig.maxConcurrent
     : 1;
   const dynamicConcurrency = useMemo(
-    () => buildConfig.vtConfig.dynamicConcurrency
+    () => buildConfig.tileEmitConfig.dynamicConcurrency
       ?? createDefaultDynamicConcurrency(resolvedMaxConcurrent),
-    [buildConfig.vtConfig.dynamicConcurrency, resolvedMaxConcurrent],
+    [buildConfig.tileEmitConfig.dynamicConcurrency, resolvedMaxConcurrent],
   );
   const dynamicConcurrencyActive = showConcurrencyCard && resolvedMaxConcurrent >= 2;
-  const tileToleranceMax = Math.max(10, buildConfig.vtConfig.tolerance);
+  const tileToleranceMax = Math.max(10, buildConfig.tileEmitConfig.tolerance);
   const hoverCardSx = getBuildConfigHoverCardSx(disabled, disableHoverLift);
 
   useEffect(() => {
     if (!showConcurrencyCard) return;
     if (dynamicConcurrency.enabled === dynamicConcurrencyActive) return;
     update({
-      vtConfig: {
-        ...buildConfig.vtConfig,
+      tileEmitConfig: {
+        ...buildConfig.tileEmitConfig,
         dynamicConcurrency: {
           ...dynamicConcurrency,
           enabled: dynamicConcurrencyActive,
         },
       },
     });
-  }, [buildConfig.vtConfig, dynamicConcurrency, dynamicConcurrencyActive, showConcurrencyCard, update]);
+  }, [buildConfig.tileEmitConfig, dynamicConcurrency, dynamicConcurrencyActive, showConcurrencyCard, update]);
 
   return (
     <Accordion defaultExpanded>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <BuildConfigAccordionSummary
           icon={<LayersIcon color="primary" />}
-          title={t('processing.vt.title', 'VT generation')}
+          title={t('processing.tileEmit.title', 'TileEmit generation')}
           info={t(
             'processing.tile.descriptionTooltip',
-            'Generate VT tiles for the selected zoom range.',
+            'Generate TileEmit outputs for the selected zoom range.',
           )}
         />
       </AccordionSummary>
@@ -112,7 +112,7 @@ export const VTConfigSection = <TDataSourceName,>({
                     fullWidth
                     type="number"
                     label={t('processing.tile.extent', 'Tile extent')}
-                    value={buildConfig.vtConfig.extent}
+                    value={buildConfig.tileEmitConfig.extent}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -123,8 +123,8 @@ export const VTConfigSection = <TDataSourceName,>({
                     onChange={(event) => {
                       const extent = Number(event.target.value);
                       update({
-                        vtConfig: {
-                          ...buildConfig.vtConfig,
+                        tileEmitConfig: {
+                          ...buildConfig.tileEmitConfig,
                           extent,
                         },
                       });
@@ -142,7 +142,7 @@ export const VTConfigSection = <TDataSourceName,>({
                     fullWidth
                     type="number"
                     label={t('processing.tile.tileSize', 'Tile size')}
-                    value={buildConfig.vtConfig.tileSize}
+                    value={buildConfig.tileEmitConfig.tileSize}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -153,8 +153,8 @@ export const VTConfigSection = <TDataSourceName,>({
                     onChange={(event) => {
                       const tileSize = Number(event.target.value);
                       update({
-                        vtConfig: {
-                          ...buildConfig.vtConfig,
+                        tileEmitConfig: {
+                          ...buildConfig.tileEmitConfig,
                           tileSize,
                         },
                       });
@@ -176,7 +176,7 @@ export const VTConfigSection = <TDataSourceName,>({
                       <DensitySmallIcon fontSize="small" color="action" />
                       <Slider
                         sx={{ flex: 1 }}
-                        value={buildConfig.vtConfig.tolerance}
+                        value={buildConfig.tileEmitConfig.tolerance}
                         min={0}
                         max={tileToleranceMax}
                         step={0.1}
@@ -186,8 +186,8 @@ export const VTConfigSection = <TDataSourceName,>({
                           const tolerance = Number(value);
                           if (!Number.isFinite(tolerance)) return;
                           update({
-                            vtConfig: {
-                              ...buildConfig.vtConfig,
+                            tileEmitConfig: {
+                              ...buildConfig.tileEmitConfig,
                               tolerance,
                             },
                           });
@@ -209,7 +209,7 @@ export const VTConfigSection = <TDataSourceName,>({
                     fullWidth
                     type="number"
                     label={t('processing.tile.bufferSize', 'Tile margin (px)')}
-                    value={buildConfig.vtConfig.bufferSize}
+                    value={buildConfig.tileEmitConfig.bufferSize}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -220,8 +220,8 @@ export const VTConfigSection = <TDataSourceName,>({
                     onChange={(event) => {
                       const bufferSize = Number(event.target.value);
                       update({
-                        vtConfig: {
-                          ...buildConfig.vtConfig,
+                        tileEmitConfig: {
+                          ...buildConfig.tileEmitConfig,
                           bufferSize,
                         },
                       });
@@ -249,15 +249,15 @@ export const VTConfigSection = <TDataSourceName,>({
                   <Grid size={{ xs: 12, md: 6 }}>
                     <WorkerNumberConfigCard
                       icon={<LayersIcon fontSize="small" color="primary" />}
-                      title={t('processing.tile.workers', 'Concurrent VT Workers')}
+                      title={t('processing.tile.workers', 'Concurrent TileEmit Workers')}
                       value={resolvedMaxConcurrent}
-                      helperText={t('processing.tile.workersHelp', 'Concurrent workers for VT generation.')}
+                      helperText={t('processing.tile.workersHelp', 'Concurrent workers for TileEmit generation.')}
                       warningText={undefined}
                       disableHoverEffect={disableHoverLift}
                       onChange={(maxConcurrent) =>
                         update({
-                          vtConfig: {
-                            ...buildConfig.vtConfig,
+                          tileEmitConfig: {
+                            ...buildConfig.tileEmitConfig,
                             maxConcurrent,
                             dynamicConcurrency: {
                               ...dynamicConcurrency,
@@ -275,7 +275,7 @@ export const VTConfigSection = <TDataSourceName,>({
                   </Grid>
                   <Grid size={{ xs: 12 }}>
                     <Typography variant="subtitle2">
-                      {t('processing.tile.dynamicConcurrencyTitle', 'Dynamic VT concurrency')}
+                      {t('processing.tile.dynamicConcurrencyTitle', 'Dynamic TileEmit concurrency')}
                     </Typography>
                   </Grid>
                   <Grid size={{ xs: 12, md: 8, lg: 6 }}>
@@ -303,8 +303,8 @@ export const VTConfigSection = <TDataSourceName,>({
                             const lowWatermark = Math.min(lowValue, highValue);
                             const highWatermark = Math.max(lowValue, highValue);
                             update({
-                              vtConfig: {
-                                ...buildConfig.vtConfig,
+                              tileEmitConfig: {
+                                ...buildConfig.tileEmitConfig,
                                 dynamicConcurrency: {
                                   ...dynamicConcurrency,
                                   lowWatermark,
@@ -329,8 +329,8 @@ export const VTConfigSection = <TDataSourceName,>({
                       onChange={(event) => {
                         const adjustStep = Number(event.target.value);
                         update({
-                          vtConfig: {
-                            ...buildConfig.vtConfig,
+                          tileEmitConfig: {
+                            ...buildConfig.tileEmitConfig,
                             dynamicConcurrency: {
                               ...dynamicConcurrency,
                               adjustStep: Number.isFinite(adjustStep)
@@ -359,8 +359,8 @@ export const VTConfigSection = <TDataSourceName,>({
                       onChange={(event) => {
                         const sampleMs = Number(event.target.value);
                         update({
-                          vtConfig: {
-                            ...buildConfig.vtConfig,
+                          tileEmitConfig: {
+                            ...buildConfig.tileEmitConfig,
                             dynamicConcurrency: {
                               ...dynamicConcurrency,
                               sampleMs: Number.isFinite(sampleMs)
@@ -377,7 +377,7 @@ export const VTConfigSection = <TDataSourceName,>({
                 <Typography variant="caption" color="text.secondary">
                   {t(
                     'processing.tile.dynamicConcurrencyHelp',
-                    'Adjusts VT worker counts based on runtime load.',
+                    'Adjusts TileEmit worker counts based on runtime load.',
                   )}
                 </Typography>
               </Stack>
@@ -394,12 +394,12 @@ export const VTConfigSection = <TDataSourceName,>({
                 fullWidth
                 type="number"
                 label={t('processing.tile.indexMaxPoints', 'Index max points')}
-                value={buildConfig.vtConfig.indexMaxPoints}
+                value={buildConfig.tileEmitConfig.indexMaxPoints}
                 onChange={(event) => {
                   const indexMaxPoints = Number(event.target.value);
                   update({
-                    vtConfig: {
-                      ...buildConfig.vtConfig,
+                    tileEmitConfig: {
+                      ...buildConfig.tileEmitConfig,
                       indexMaxPoints,
                     },
                   });

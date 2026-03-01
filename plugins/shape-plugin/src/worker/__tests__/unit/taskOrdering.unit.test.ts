@@ -13,7 +13,7 @@ const nodeId = 'node-1' as NodeId;
 const buildTask = (overrides: TaskOverrides): TaskQueueRecord => ({
   taskId: overrides.taskId,
   nodeId,
-  stage: overrides.stage ?? 'vt',
+  stage: overrides.stage ?? 'tileEmit',
   status: overrides.status ?? 'running',
   index: overrides.index ?? 0,
   progress: overrides.progress ?? 0,

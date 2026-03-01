@@ -20,8 +20,8 @@ import {
   Settings as SettingsIcon,
 } from '@mui/icons-material';
 import type { ShapeBuildConfig } from '~/common/types/index';
-import { useTransformConfigSection } from '~/ui/hooks/useTransformConfigSection';
-import type { FetchConfigSectionState } from '~/ui/hooks/useFetchConfigSection';
+import { useGeometryConfigSection } from '~/ui/hooks/useGeometryConfigSection';
+import type { SourceConfigSectionState } from '~/ui/hooks/useSourceConfigSection';
 import { useTranslation } from '~/ui/i18n';
 import {
   BuildConfigAccordionSummary,
@@ -33,7 +33,7 @@ import { UrlBuildConfigRulesSection } from './UrlBuildConfigRulesSection.tsx';
 type Props = {
   config: ShapeBuildConfig;
   onChange: (next: ShapeBuildConfig | ((prev: ShapeBuildConfig) => ShapeBuildConfig)) => void;
-  fetchState: FetchConfigSectionState;
+  fetchState: SourceConfigSectionState;
   disabled?: boolean;
   disableHoverLift?: boolean;
 };
@@ -51,17 +51,17 @@ export const CacheManagementSection: React.FC<Props> = ({
     handleResetDefaults,
     update,
   } = fetchState;
-  const { update: updateTransformConfig } = useTransformConfigSection({
+  const { update: updateGeometryConfig } = useGeometryConfigSection({
     config,
     onChange,
   });
 
   const hoverCardSx = getBuildConfigHoverCardSx(disabled, disableHoverLift);
-  const executionLogLevel = config.transformConfig.executionLogLevel ?? 'summary';
+  const executionLogLevel = config.geometryConfig.executionLogLevel ?? 'summary';
 
   const onChangeExecutionLogLevel = (next: 'off' | 'summary' | 'verbose') => {
-    updateTransformConfig({
-      transformConfig: {
+    updateGeometryConfig({
+      geometryConfig: {
         executionLogLevel: next,
       },
     });
@@ -121,20 +121,20 @@ export const CacheManagementSection: React.FC<Props> = ({
                     <FormControlLabel
                       control={
                         <Switch
-                          checked={!config.cleanupConfig?.deleteFetchApiCache}
+                          checked={!config.cleanupConfig?.deleteSourceApiCache}
                           onChange={(event) => {
                             const retainFiles = event.target.checked;
                             update({
                               cleanupConfig: {
                                 ...config.cleanupConfig,
-                                deleteFetchApiCache: !retainFiles,
+                                deleteSourceApiCache: !retainFiles,
                               },
                             });
                           }}
                           disabled={disabled}
                           inputProps={{
-                            id: `${switchId}-retain-fetch-api-cache`,
-                            name: 'retain-fetch-api-cache',
+                            id: `${switchId}-retain-source-api-cache`,
+                            name: 'retain-source-api-cache',
                           }}
                         />
                       }
@@ -143,20 +143,20 @@ export const CacheManagementSection: React.FC<Props> = ({
                     <FormControlLabel
                       control={
                         <Switch
-                          checked={!config.cleanupConfig?.deleteFetchFilteredCache}
+                          checked={!config.cleanupConfig?.deleteSourceFilteredCache}
                           onChange={(event) => {
                             const retainCache = event.target.checked;
                             update({
                               cleanupConfig: {
                                 ...config.cleanupConfig,
-                                deleteFetchFilteredCache: !retainCache,
+                                deleteSourceFilteredCache: !retainCache,
                               },
                             });
                           }}
                           disabled={disabled}
                           inputProps={{
-                            id: `${switchId}-retain-fetch-filtered-cache`,
-                            name: 'retain-fetch-filtered-cache',
+                            id: `${switchId}-retain-source-filtered-cache`,
+                            name: 'retain-source-filtered-cache',
                           }}
                         />
                       }
@@ -165,13 +165,13 @@ export const CacheManagementSection: React.FC<Props> = ({
                     <FormControlLabel
                       control={
                         <Switch
-                          checked={!config.cleanupConfig?.deleteTransformCache}
+                          checked={!config.cleanupConfig?.deleteGeometryCache}
                           onChange={(event) => {
                             const retainCache = event.target.checked;
                             update({
                               cleanupConfig: {
                                 ...config.cleanupConfig,
-                                deleteTransformCache: !retainCache,
+                                deleteGeometryCache: !retainCache,
                               },
                             });
                           }}
@@ -187,24 +187,24 @@ export const CacheManagementSection: React.FC<Props> = ({
                     <FormControlLabel
                       control={
                         <Switch
-                          checked={!config.cleanupConfig?.deleteVTCache}
+                          checked={!config.cleanupConfig?.deleteTileEmitCache}
                           onChange={(event) => {
                             const retainCache = event.target.checked;
                             update({
                               cleanupConfig: {
                                 ...config.cleanupConfig,
-                                deleteVTCache: !retainCache,
+                                deleteTileEmitCache: !retainCache,
                               },
                             });
                           }}
                           disabled={disabled}
                           inputProps={{
-                            id: `${switchId}-retain-vt-cache`,
-                            name: 'retain-vt-cache',
+                            id: `${switchId}-retain-tile-emit-cache`,
+                            name: 'retain-tile-emit-cache',
                           }}
                         />
                       }
-                      label={t('processing.download.retainVtCache', 'Tile data')}
+                      label={t('processing.download.retainTileEmitCache', 'Tile data')}
                     />
                   </Stack>
                 </Stack>
@@ -221,11 +221,11 @@ export const CacheManagementSection: React.FC<Props> = ({
             <Stack spacing={2}>
               <BuildConfigSectionTitle
                 icon={<InfoOutlinedIcon fontSize="small" color="primary" />}
-                title={t('processing.transform.logging.title', 'Execution logging')}
+                title={t('processing.geometry.logging.title', 'Execution logging')}
               />
               <FormControl fullWidth disabled={disabled}>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  {t('processing.transform.executionLogLevel.label', 'Execution Log Level')}
+                  {t('processing.geometry.executionLogLevel.label', 'Execution Log Level')}
                 </Typography>
                 <ToggleButtonGroup
                   size="small"
@@ -242,9 +242,9 @@ export const CacheManagementSection: React.FC<Props> = ({
                     onChangeExecutionLogLevel(value);
                   }}
                 >
-                  <ToggleButton value="off">{t('processing.transform.executionLogLevel.off', 'off')}</ToggleButton>
-                  <ToggleButton value="summary">{t('processing.transform.executionLogLevel.summary', 'summary')}</ToggleButton>
-                  <ToggleButton value="verbose">{t('processing.transform.executionLogLevel.verbose', 'verbose')}</ToggleButton>
+                  <ToggleButton value="off">{t('processing.geometry.executionLogLevel.off', 'off')}</ToggleButton>
+                  <ToggleButton value="summary">{t('processing.geometry.executionLogLevel.summary', 'summary')}</ToggleButton>
+                  <ToggleButton value="verbose">{t('processing.geometry.executionLogLevel.verbose', 'verbose')}</ToggleButton>
                 </ToggleButtonGroup>
               </FormControl>
             </Stack>

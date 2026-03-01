@@ -66,7 +66,7 @@ export type UseShapeBuildStepStageStateReturn = {
   inFlightStageIdFromTasks: string | null;
   snapshotTaskCountByStage: Record<string, number>;
   terminalTaskCountByStage: Record<string, number>;
-  hasFailedFetchTasks: boolean;
+  hasFailedSourceTasks: boolean;
   taskListViewPhase: TaskListViewPhase;
   taskProgressTotal: number | undefined;
   sessionProgressTotal: number | undefined;
@@ -309,7 +309,7 @@ export const useShapeBuildStepStageState = ({
     terminalTaskCountByStage,
     hasTaskSnapshotByStage,
     stageBuildStateById,
-    hasFailedFetchTasks: hasFailedRestartStageTasks,
+    hasFailedSourceTasks: hasFailedRestartStageTasks,
     taskListViewPhase,
     isTerminalStageCompleted,
     terminalStageId,

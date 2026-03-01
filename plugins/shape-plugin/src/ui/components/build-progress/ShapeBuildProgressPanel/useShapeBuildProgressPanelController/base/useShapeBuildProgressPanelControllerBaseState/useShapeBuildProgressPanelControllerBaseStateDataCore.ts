@@ -1,6 +1,6 @@
 import { createElement, type ReactNode, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { Stack, Typography } from '@mui/material';
-import type { FetchConfig } from '@hierarchidb/gis-sdk';
+import type { SourceConfig } from '@hierarchidb/gis-sdk';
 import type { ShapeProcessingConfig } from '~/common/types/build';
 import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/shape-api';
 import { applyBuildConfigPatch, mergeProcessingConfig } from '~/services/utils/utils';
@@ -13,6 +13,7 @@ import type { BuildControlMenuItem, BuildStepStageMenu } from '@hierarchidb/comp
 import { useShapeBuildProgressPanelControllerBaseStateDataDisplay } from './useShapeBuildProgressPanelControllerBaseStateDataDisplay.js';
 import type { TranslateFn } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelStateComputedHelpers';
 import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
+import { normalizeUiStageId, resolveStageAliasArray } from '~/ui/components/build-progress/stageIdAliases';
 
 type StageMetadataMap<T> = Record<string, T>;
 
@@ -22,12 +23,12 @@ type ShapeBuildProgressPanelControllerBaseProps = {
   onChange?: (patch: Partial<ShapeEntity>) => void;
 };
 
-type FetchRetryConfigPatch = {
+type SourceRetryConfigPatch = {
   timeoutMs: number;
   retryAttempts: number;
   retryDelay: number;
   retryLimit: number;
-  retryBackoff: FetchConfig['retryBackoff'];
+  retryBackoff: SourceConfig['retryBackoff'];
 };
 
 const formatDuration = (
@@ -110,16 +111,16 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     counts: cacheCounts,
     resultCounts: cacheResultCounts,
     deleteLoading: cacheDeleteLoading,
-    canDeleteFetchApiCache: cacheCanDeleteFetchApiCache,
-    canDeleteFetchFilteredCache: cacheCanDeleteFetchFilteredCache,
-    canDeleteTransformCache: cacheCanDeleteTransformCache,
-    canDeleteVTCache: cacheCanDeleteVTCache,
+    canDeleteSourceApiCache: cacheCanDeleteSourceApiCache,
+    canDeleteSourceFilteredCache: cacheCanDeleteSourceFilteredCache,
+    canDeleteGeometryCache: cacheCanDeleteGeometryCache,
+    canDeleteTileEmitCache: cacheCanDeleteTileEmitCache,
     canDeleteTransposeIndex: cacheCanDeleteTransposeIndex,
     canDeleteMetadata: cacheCanDeleteMetadata,
-    handleDeleteFetchApiCache: cacheHandleDeleteFetchApiCache,
-    handleDeleteFetchFilteredCache: cacheHandleDeleteFetchFilteredCache,
-    handleDeleteTransformCache: cacheHandleDeleteTransformCache,
-    handleDeleteVTCache: cacheHandleDeleteVTCache,
+    handleDeleteSourceApiCache: cacheHandleDeleteSourceApiCache,
+    handleDeleteSourceFilteredCache: cacheHandleDeleteSourceFilteredCache,
+    handleDeleteGeometryCache: cacheHandleDeleteGeometryCache,
+    handleDeleteTileEmitCache: cacheHandleDeleteTileEmitCache,
     handleDeleteTransposeIndex: cacheHandleDeleteTransposeIndex,
     handleDeleteMetadata: cacheHandleDeleteMetadata,
     handleResetSession: cacheHandleResetSession,
@@ -131,14 +132,14 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
   const [stagePreviewWindowPendingMap, setStagePreviewWindowPendingMap] = useState<Record<string, boolean>>({});
   const [stagePreviewWindowOpenMap, setStagePreviewWindowOpenMap] = useState<Record<string, boolean>>({});
   const [stagePreviewWindowZIndexMap, setStagePreviewWindowZIndexMap] = useState<Record<string, number>>({
-    fetch: 1,
-    transform: 2,
-    vt: 3,
+    source: 1,
+    geometry: 2,
+    tileEmit: 3,
   });
   const stagePreviewWindowZCounterRef = useRef(4);
   const [concurrencyEditorAnchor, setConcurrencyEditorAnchor] = useState<HTMLElement | null>(null);
-  const [concurrencyEditorStageId, setConcurrencyEditorStageId] = useState<'fetch' | 'transform' | 'vt' | null>(null);
-  const [fetchRetryEditorAnchor, setFetchRetryEditorAnchor] = useState<HTMLElement | null>(null);
+  const [concurrencyEditorStageId, setConcurrencyEditorStageId] = useState<'source' | 'geometry' | 'tileEmit' | null>(null);
+  const [sourceRetryEditorAnchor, setSourceRetryEditorAnchor] = useState<HTMLElement | null>(null);
   const [startupNoticeDismissed, setStartupNoticeDismissed] = useState(false);
 
   const isBuildSessionStarted = controls.startPending || summary.buildStatus === 'running';
@@ -169,7 +170,7 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
   }, [controls.startPending]);
 
   const hasAnyTasks = useMemo(() => (
-    stages.some((stage: { id: string }) => (tasksByStage[stage.id] ?? []).length > 0)
+    stages.some((stage: { id: string }) => resolveStageAliasArray(tasksByStage, stage.id).length > 0)
   ), [stages, tasksByStage]);
 
   const hasAnySummaryTasks = useMemo(
@@ -330,36 +331,36 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     count > 0 ? `${label} (${count}${unit})` : label
   ), [deleteCountUnit]);
 
-  const fetchApiDeleteLabel = useMemo(() => (
+  const sourceApiDeleteLabel = useMemo(() => (
     formatDeleteLabelWithCount(
       t('processing.download.deleteApiCache', 'Delete API cache'),
-      cacheCounts.fetchApi ?? 0,
+      cacheCounts.sourceApi ?? 0,
     )
-  ), [cacheCounts.fetchApi, formatDeleteLabelWithCount, t]);
-  const fetchFilteredDeleteLabel = useMemo(() => (
+  ), [cacheCounts.sourceApi, formatDeleteLabelWithCount, t]);
+  const sourceFilteredDeleteLabel = useMemo(() => (
     formatDeleteLabelWithCount(
       t('processing.download.deleteFilteredCache', 'Delete filtered cache'),
-      cacheCounts.fetchFiltered ?? 0,
+      cacheCounts.sourceFiltered ?? 0,
     )
-  ), [cacheCounts.fetchFiltered, formatDeleteLabelWithCount, t]);
-  const transformDeleteLabel = useMemo(() => (
+  ), [cacheCounts.sourceFiltered, formatDeleteLabelWithCount, t]);
+  const geometryDeleteLabel = useMemo(() => (
     formatDeleteLabelWithCount(
       t('processing.download.deleteStage1Cache', 'Delete simplified cache'),
-      cacheCounts.transform ?? 0,
+      cacheCounts.geometry ?? 0,
     )
-  ), [cacheCounts.transform, formatDeleteLabelWithCount, t]);
-  const vtDeleteLabel = useMemo(() => (
+  ), [cacheCounts.geometry, formatDeleteLabelWithCount, t]);
+  const tileEmitDeleteLabel = useMemo(() => (
     formatDeleteLabelWithCount(
       t('processing.download.deleteTiles', 'Delete tile data'),
-      cacheCounts.vt ?? 0,
+      cacheCounts.tileEmit ?? 0,
     )
-  ), [cacheCounts.vt, formatDeleteLabelWithCount, t]);
+  ), [cacheCounts.tileEmit, formatDeleteLabelWithCount, t]);
   const transposeIndexDeleteLabel = useMemo(() => (
     formatDeleteLabelWithCount(
       t('processing.download.deleteTransposeIndex', 'Delete transpose index'),
-      cacheCounts.vt ?? 0,
+      cacheCounts.tileEmit ?? 0,
     )
-  ), [cacheCounts.vt, formatDeleteLabelWithCount, t]);
+  ), [cacheCounts.tileEmit, formatDeleteLabelWithCount, t]);
   const metadataDeleteLabel = useMemo(() => (
     formatDeleteLabelWithCount(
       t('processing.download.deleteMetadata', 'Delete feature metadata'),
@@ -376,72 +377,80 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
 
   const stageMenus = useMemo<StageMetadataMap<BuildStepStageMenu>>(() => {
     const menusByStage: Record<string, BuildStepStageMenu> = {};
-    menusByStage.fetch = {
-      disabled: isResetSessionLoading || isBuildSessionStarted,
-      items: [
-        {
-          id: 'delete-fetch-api-cache',
-          label: fetchApiDeleteLabel,
-          onClick: cacheHandleDeleteFetchApiCache,
-          disabled: isResetSessionLoading || !cacheCanDeleteFetchApiCache || cacheDeleteLoading.fetchApi,
-        },
-        {
-          id: 'delete-fetch-filtered-cache',
-          label: fetchFilteredDeleteLabel,
-          onClick: cacheHandleDeleteFetchFilteredCache,
-          disabled: isResetSessionLoading || !cacheCanDeleteFetchFilteredCache || cacheDeleteLoading.fetchFiltered,
-        },
-      ],
-      ariaLabel: controlMenuAriaLabel,
-    };
-    menusByStage.transform = {
-      disabled: isResetSessionLoading || isBuildSessionStarted,
-      items: [
-        {
-          id: 'delete-transform-cache',
-          label: transformDeleteLabel,
-          onClick: cacheHandleDeleteTransformCache,
-          disabled: isResetSessionLoading || !cacheCanDeleteTransformCache || cacheDeleteLoading.transform,
-        },
-      ],
-      ariaLabel: controlMenuAriaLabel,
-    };
-    menusByStage.vt = {
-      disabled: isResetSessionLoading || isBuildSessionStarted,
-      items: [
-        {
-          id: 'delete-vt-cache',
-          label: vtDeleteLabel,
-          onClick: cacheHandleDeleteVTCache,
-          disabled: isResetSessionLoading || !cacheCanDeleteVTCache || cacheDeleteLoading.vt,
-        },
-      ],
-      ariaLabel: controlMenuAriaLabel,
-    };
+    for (const stage of stages) {
+      const canonicalStageId = normalizeUiStageId(stage.id);
+      if (canonicalStageId === 'source') {
+        menusByStage[stage.id] = {
+          disabled: isResetSessionLoading || isBuildSessionStarted,
+          items: [
+            {
+              id: 'delete-source-api-cache',
+              label: sourceApiDeleteLabel,
+              onClick: cacheHandleDeleteSourceApiCache,
+              disabled: isResetSessionLoading || !cacheCanDeleteSourceApiCache || cacheDeleteLoading.sourceApi,
+            },
+            {
+              id: 'delete-source-filtered-cache',
+              label: sourceFilteredDeleteLabel,
+              onClick: cacheHandleDeleteSourceFilteredCache,
+              disabled: isResetSessionLoading || !cacheCanDeleteSourceFilteredCache || cacheDeleteLoading.sourceFiltered,
+            },
+          ],
+          ariaLabel: controlMenuAriaLabel,
+        };
+      } else if (canonicalStageId === 'geometry') {
+        menusByStage[stage.id] = {
+          disabled: isResetSessionLoading || isBuildSessionStarted,
+          items: [
+            {
+              id: 'delete-geometry-cache',
+              label: geometryDeleteLabel,
+              onClick: cacheHandleDeleteGeometryCache,
+              disabled: isResetSessionLoading || !cacheCanDeleteGeometryCache || cacheDeleteLoading.geometry,
+            },
+          ],
+          ariaLabel: controlMenuAriaLabel,
+        };
+      } else if (canonicalStageId === 'tileEmit') {
+        menusByStage[stage.id] = {
+          disabled: isResetSessionLoading || isBuildSessionStarted,
+          items: [
+            {
+              id: 'delete-tile-emit-cache',
+              label: tileEmitDeleteLabel,
+              onClick: cacheHandleDeleteTileEmitCache,
+              disabled: isResetSessionLoading || !cacheCanDeleteTileEmitCache || cacheDeleteLoading.tileEmit,
+            },
+          ],
+          ariaLabel: controlMenuAriaLabel,
+        };
+      }
+    }
     return menusByStage;
   }, [
-    cacheCanDeleteFetchApiCache,
-    cacheCanDeleteFetchFilteredCache,
+    cacheCanDeleteSourceApiCache,
+    cacheCanDeleteSourceFilteredCache,
     cacheCanDeleteMetadata,
-    cacheCanDeleteTransformCache,
-    cacheCanDeleteVTCache,
-    cacheDeleteLoading.fetchApi,
-    cacheDeleteLoading.fetchFiltered,
+    cacheCanDeleteGeometryCache,
+    cacheCanDeleteTileEmitCache,
+    cacheDeleteLoading.sourceApi,
+    cacheDeleteLoading.sourceFiltered,
     cacheDeleteLoading.metadata,
-    cacheDeleteLoading.transform,
-    cacheDeleteLoading.vt,
-    fetchApiDeleteLabel,
-    fetchFilteredDeleteLabel,
+    cacheDeleteLoading.geometry,
+    cacheDeleteLoading.tileEmit,
+    sourceApiDeleteLabel,
+    sourceFilteredDeleteLabel,
     handleResetSessionWithSkeleton,
     isResetSessionLoading,
     controlMenuAriaLabel,
-    transformDeleteLabel,
-    vtDeleteLabel,
-    cacheHandleDeleteFetchApiCache,
-    cacheHandleDeleteFetchFilteredCache,
-    cacheHandleDeleteTransformCache,
-    cacheHandleDeleteVTCache,
+    geometryDeleteLabel,
+    tileEmitDeleteLabel,
+    cacheHandleDeleteSourceApiCache,
+    cacheHandleDeleteSourceFilteredCache,
+    cacheHandleDeleteGeometryCache,
+    cacheHandleDeleteTileEmitCache,
     cacheHandleDeleteMetadata,
+    stages,
   ]);
 
   const controlMenuItems = useMemo<BuildControlMenuItem[]>(() => ([
@@ -530,18 +539,18 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     [data?.buildConfig],
   );
 
-  const fetchRetryConfigForEdit = useMemo(() => ({
-    timeoutMs: buildConfigForEdit.fetchConfig.timeoutMs,
-    retryAttempts: processingConfigForEdit.fetch.retryAttempts,
-    retryDelay: processingConfigForEdit.fetch.retryDelay,
-    retryLimit: processingConfigForEdit.fetch.retryLimit,
-    retryBackoff: processingConfigForEdit.fetch.retryBackoff,
+  const sourceRetryConfigForEdit = useMemo(() => ({
+    timeoutMs: buildConfigForEdit.sourceConfig.timeoutMs,
+    retryAttempts: processingConfigForEdit.source.retryAttempts,
+    retryDelay: processingConfigForEdit.source.retryDelay,
+    retryLimit: processingConfigForEdit.source.retryLimit,
+    retryBackoff: processingConfigForEdit.source.retryBackoff,
   }), [
-    buildConfigForEdit.fetchConfig.timeoutMs,
-    processingConfigForEdit.fetch.retryAttempts,
-    processingConfigForEdit.fetch.retryDelay,
-    processingConfigForEdit.fetch.retryLimit,
-    processingConfigForEdit.fetch.retryBackoff,
+    buildConfigForEdit.sourceConfig.timeoutMs,
+    processingConfigForEdit.source.retryAttempts,
+    processingConfigForEdit.source.retryDelay,
+    processingConfigForEdit.source.retryLimit,
+    processingConfigForEdit.source.retryBackoff,
   ]);
 
   const applyProcessingConfigUpdate = useCallback((partial: Partial<ShapeProcessingConfig>) => {
@@ -550,17 +559,17 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     onChange({ processingConfig: merged });
   }, [onChange, processingConfigForEdit]);
 
-  const applyFetchRetryConfigUpdate = useCallback((next: FetchRetryConfigPatch) => {
+  const applySourceRetryConfigUpdate = useCallback((next: SourceRetryConfigPatch) => {
     if (!onChange) return;
     const nextBuildConfig = applyBuildConfigPatch(buildConfigForEdit, {
-      fetchConfig: {
-        ...buildConfigForEdit.fetchConfig,
+      sourceConfig: {
+        ...buildConfigForEdit.sourceConfig,
         timeoutMs: next.timeoutMs,
       },
     });
     const nextProcessingConfig = mergeProcessingConfig(processingConfigForEdit, {
-      fetch: {
-        ...processingConfigForEdit.fetch,
+      source: {
+        ...processingConfigForEdit.source,
         retryAttempts: next.retryAttempts,
         retryDelay: next.retryDelay,
         retryLimit: next.retryLimit,
@@ -578,15 +587,15 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     setConcurrencyEditorStageId(null);
   }, []);
 
-  const handleFetchRetryIndicatorClick = useCallback((event: MouseEvent<HTMLElement>) => {
+  const handleSourceRetryIndicatorClick = useCallback((event: MouseEvent<HTMLElement>) => {
     if (isBuildSessionStarted) return;
     setConcurrencyEditorAnchor(null);
     setConcurrencyEditorStageId(null);
-    setFetchRetryEditorAnchor(event.currentTarget);
+    setSourceRetryEditorAnchor(event.currentTarget);
   }, [isBuildSessionStarted]);
 
-  const closeFetchRetryEditor = useCallback(() => {
-    setFetchRetryEditorAnchor(null);
+  const closeSourceRetryEditor = useCallback(() => {
+    setSourceRetryEditorAnchor(null);
   }, []);
 
   const handleStageConcurrencyIndicatorClick = useCallback((
@@ -594,9 +603,10 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     event: MouseEvent<HTMLElement>,
   ) => {
     if (isBuildSessionStarted) return;
-    if (stageId !== 'fetch' && stageId !== 'transform' && stageId !== 'vt') return;
-    setFetchRetryEditorAnchor(null);
-    setConcurrencyEditorStageId(stageId);
+    const canonicalStageId = normalizeUiStageId(stageId);
+    if (!canonicalStageId) return;
+    setSourceRetryEditorAnchor(null);
+    setConcurrencyEditorStageId(canonicalStageId);
     setConcurrencyEditorAnchor(event.currentTarget);
   }, [isBuildSessionStarted]);
 
@@ -604,7 +614,7 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     if (!isBuildSessionStarted) return;
     setConcurrencyEditorAnchor(null);
     setConcurrencyEditorStageId(null);
-    setFetchRetryEditorAnchor(null);
+    setSourceRetryEditorAnchor(null);
   }, [isBuildSessionStarted]);
 
   return useShapeBuildProgressPanelControllerBaseStateDataDisplay({
@@ -633,15 +643,15 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     cacheCounts,
     cacheResultCounts,
     cacheDeleteLoading,
-    cacheCanDeleteFetchApiCache,
-    cacheCanDeleteFetchFilteredCache,
-    cacheCanDeleteTransformCache,
-    cacheCanDeleteVTCache,
+    cacheCanDeleteSourceApiCache,
+    cacheCanDeleteSourceFilteredCache,
+    cacheCanDeleteGeometryCache,
+    cacheCanDeleteTileEmitCache,
     cacheCanDeleteMetadata,
-    cacheHandleDeleteFetchApiCache,
-    cacheHandleDeleteFetchFilteredCache,
-    cacheHandleDeleteTransformCache,
-    cacheHandleDeleteVTCache,
+    cacheHandleDeleteSourceApiCache,
+    cacheHandleDeleteSourceFilteredCache,
+    cacheHandleDeleteGeometryCache,
+    cacheHandleDeleteTileEmitCache,
     cacheHandleDeleteMetadata,
     stages,
     summary,
@@ -667,19 +677,19 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     matchesSearchQuery,
     buildConfigForDisplay: buildConfigForEdit,
     processingConfigForEdit,
-    fetchRetryConfigForEdit,
+    sourceRetryConfigForEdit,
     applyProcessingConfigUpdate,
-    applyFetchRetryConfigUpdate,
+    applySourceRetryConfigUpdate,
     handleStartClickWithHold,
     handleConfirmStartWithHold,
     handleResetSessionWithSkeleton,
-    handleFetchRetryIndicatorClick,
+    handleSourceRetryIndicatorClick,
     handleStageConcurrencyIndicatorClick,
     concurrencyEditorAnchor,
     concurrencyEditorStageId,
-    fetchRetryEditorAnchor,
+    sourceRetryEditorAnchor,
     closeConcurrencyEditor,
-    closeFetchRetryEditor,
+    closeSourceRetryEditor,
     onChange,
     warningMessage,
     startWarning,

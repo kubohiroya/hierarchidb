@@ -9,61 +9,61 @@ import { useTranslation } from '~/ui/i18n';
 import { LoadingButton } from '@hierarchidb/components';
 
 type Props = {
-  deleteFetchApiLabel: string;
-  deleteFetchFilteredLabel: string;
-  deleteTransformFilterLabel: string;
-  deleteVTLabel: string;
+  deleteSourceApiLabel: string;
+  deleteSourceFilteredLabel: string;
+  deleteGeometryCacheLabel: string;
+  deleteTileEmitLabel: string;
   deleteMetadataLabel: string;
   countsLoading?: boolean;
-  deleteFetchApiLoading?: boolean;
-  deleteFetchFilteredLoading?: boolean;
-  deleteTransformLoading?: boolean;
-  deleteVTLoading?: boolean;
+  deleteSourceApiLoading?: boolean;
+  deleteSourceFilteredLoading?: boolean;
+  deleteGeometryLoading?: boolean;
+  deleteTileEmitLoading?: boolean;
   deleteMetadataLoading?: boolean;
-  canDeleteFetchApiCache: boolean;
-  canDeleteFetchFilteredCache: boolean;
-  canDeleteTransformCache: boolean;
-  canDeleteVTCache: boolean;
+  canDeleteSourceApiCache: boolean;
+  canDeleteSourceFilteredCache: boolean;
+  canDeleteGeometryCache: boolean;
+  canDeleteTileEmitCache: boolean;
   canDeleteMetadata: boolean;
   resetDisabled?: boolean;
-  onDeleteFetchApiCache: () => void;
-  onDeleteFetchFilteredCache: () => void;
-  onDeleteTransformCache: () => void;
-  onDeleteVTCache: () => void;
+  onDeleteSourceApiCache: () => void;
+  onDeleteSourceFilteredCache: () => void;
+  onDeleteGeometryCache: () => void;
+  onDeleteTileEmitCache: () => void;
   onDeleteMetadata: () => void;
   onResetDefaults: () => void;
 };
 
-export const FetchConfigFormControls: React.FC<Props> = ({
-  deleteFetchApiLabel,
-  deleteFetchFilteredLabel,
-  deleteTransformFilterLabel,
-  deleteVTLabel,
+export const SourceConfigFormControls: React.FC<Props> = ({
+  deleteSourceApiLabel,
+  deleteSourceFilteredLabel,
+  deleteGeometryCacheLabel,
+  deleteTileEmitLabel,
   deleteMetadataLabel,
   countsLoading = false,
-  deleteFetchApiLoading = false,
-  deleteFetchFilteredLoading = false,
-  deleteTransformLoading = false,
-  deleteVTLoading = false,
+  deleteSourceApiLoading = false,
+  deleteSourceFilteredLoading = false,
+  deleteGeometryLoading = false,
+  deleteTileEmitLoading = false,
   deleteMetadataLoading = false,
-  canDeleteFetchApiCache,
-  canDeleteFetchFilteredCache,
-  canDeleteTransformCache,
-  canDeleteVTCache,
+  canDeleteSourceApiCache,
+  canDeleteSourceFilteredCache,
+  canDeleteGeometryCache,
+  canDeleteTileEmitCache,
   canDeleteMetadata,
   resetDisabled,
-  onDeleteFetchApiCache,
-  onDeleteFetchFilteredCache,
-  onDeleteTransformCache,
-  onDeleteVTCache,
+  onDeleteSourceApiCache,
+  onDeleteSourceFilteredCache,
+  onDeleteGeometryCache,
+  onDeleteTileEmitCache,
   onDeleteMetadata,
   onResetDefaults,
 }) => {
   const { t } = useTranslation();
-  const apiDisabled = countsLoading || deleteFetchApiLoading || !canDeleteFetchApiCache;
-  const filteredDisabled = countsLoading || deleteFetchFilteredLoading || !canDeleteFetchFilteredCache;
-  const transformDisabled = deleteTransformLoading || !canDeleteTransformCache;
-  const vtDisabled = deleteVTLoading || !canDeleteVTCache;
+  const apiDisabled = countsLoading || deleteSourceApiLoading || !canDeleteSourceApiCache;
+  const filteredDisabled = countsLoading || deleteSourceFilteredLoading || !canDeleteSourceFilteredCache;
+  const geometryDisabled = deleteGeometryLoading || !canDeleteGeometryCache;
+  const tileEmitDisabled = deleteTileEmitLoading || !canDeleteTileEmitCache;
   const metadataDisabled = deleteMetadataLoading || !canDeleteMetadata;
 
   return (
@@ -76,14 +76,14 @@ export const FetchConfigFormControls: React.FC<Props> = ({
             color="error"
             startIcon={<CloudDownloadIcon />}
             disabled={apiDisabled}
-            loading={deleteFetchApiLoading}
-            onClick={onDeleteFetchApiCache}
+            loading={deleteSourceApiLoading}
+            onClick={onDeleteSourceApiCache}
           >
             <Typography
               component="span"
               sx={{ display: 'inline-flex', alignItems: 'center', minHeight: '1.2em' }}
             >
-              {deleteFetchApiLabel}
+              {deleteSourceApiLabel}
             </Typography>
           </LoadingButton>
         </Grid>
@@ -94,10 +94,10 @@ export const FetchConfigFormControls: React.FC<Props> = ({
             color="error"
             startIcon={<FilterAltIcon />}
             disabled={filteredDisabled}
-            loading={deleteFetchFilteredLoading}
-            onClick={onDeleteFetchFilteredCache}
+            loading={deleteSourceFilteredLoading}
+            onClick={onDeleteSourceFilteredCache}
           >
-            {deleteFetchFilteredLabel}
+            {deleteSourceFilteredLabel}
           </LoadingButton>
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
@@ -106,11 +106,11 @@ export const FetchConfigFormControls: React.FC<Props> = ({
             variant="outlined"
             color="error"
             startIcon={<FilterAltIcon />}
-            disabled={transformDisabled}
-            loading={deleteTransformLoading}
-            onClick={onDeleteTransformCache}
+            disabled={geometryDisabled}
+            loading={deleteGeometryLoading}
+            onClick={onDeleteGeometryCache}
           >
-            {deleteTransformFilterLabel}
+            {deleteGeometryCacheLabel}
           </LoadingButton>
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
@@ -119,11 +119,11 @@ export const FetchConfigFormControls: React.FC<Props> = ({
             variant="outlined"
             color="error"
             startIcon={<LayersIcon />}
-            disabled={vtDisabled}
-            loading={deleteVTLoading}
-            onClick={onDeleteVTCache}
+            disabled={tileEmitDisabled}
+            loading={deleteTileEmitLoading}
+            onClick={onDeleteTileEmitCache}
           >
-            {deleteVTLabel}
+            {deleteTileEmitLabel}
           </LoadingButton>
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
@@ -168,19 +168,19 @@ export const FetchConfigFormControls: React.FC<Props> = ({
         <Typography variant="caption" color="text.secondary">
           {t(
             'processing.download.deleteFilteredCacheHelp',
-            'Filtered cache: fetch-stage filtered feature collections per zoom band.',
+            'Filtered cache: source-stage filtered feature collections per zoom band.',
           )}
         </Typography>
         <Typography variant="caption" color="text.secondary">
           {t(
-            'processing.download.deleteTransformHelp',
-            'Simplified cache: simplified geometries by zoom band plus transform error records.',
+            'processing.download.deleteGeometryHelp',
+            'Simplified cache: simplified geometries by zoom band plus geometry error records.',
           )}
         </Typography>
         <Typography variant="caption" color="text.secondary">
           {t(
-            'processing.download.deleteVtHelp',
-            'Tile data: generated vector tiles (tile index is also cleared).',
+            'processing.download.deleteTileEmitHelp',
+            'TileEmit data: generated vector tiles (tile index is also cleared).',
           )}
         </Typography>
         <Typography variant="caption" color="text.secondary">

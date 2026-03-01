@@ -18,20 +18,20 @@ import {
   ZOOM_BAND_MIN_ZOOM,
 } from '@hierarchidb/util';
 import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
-import type { CountryMetadata, FetchTaskPayload, SelectedArrayByCountries } from '~/common/types/index';
+import type { CountryMetadata, SourceTaskPayload, SelectedArrayByCountries } from '~/common/types/index';
 import type { ShapeTileLayerInfo, ShapeVectorTileRecord } from '@hierarchidb/shape-api';
 import { extractGeometryStats } from './featureMetadataUtils.ts';
 import { buildStableSignature } from './taskSignatures.ts';
 import { deleteTasksByIds, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { ephemeralDB, type EphemeralDB } from '@hierarchidb/gis-sdk';
-import { buildTransformTaskCacheIdentity, buildVtTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
-import { resolveFetchArtifactHashFromRecord } from './shapeFetchArtifactHash.ts';
+import { buildGeometryTaskCacheIdentity, buildTileEmitTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
+import { resolveSourceArtifactHashFromRecord } from './shapeSourceArtifactHash.ts';
 
-export type ShapeTransformByBandTaskInput = {
-  fetchCacheId: string;
-  fetchArtifactHash: string;
-  fetchCacheFormat?: 'flatgeobuf' | 'topojson';
-  fetchCacheCompression?: 'gzip' | 'none';
+export type ShapeGeometryByBandTaskInput = {
+  sourceCacheId: string;
+  sourceArtifactHash: string;
+  sourceCacheFormat?: 'flatgeobuf' | 'topojson';
+  sourceCacheCompression?: 'gzip' | 'none';
   bandIndex: number;
   bandMinZoom?: number;
   bandMaxZoom?: number;
@@ -51,7 +51,7 @@ export type ShapeTransformByBandTaskInput = {
   inputHash?: string;
 };
 
-export type ShapeVtTaskInput = {
+export type ShapeTileEmitTaskInput = {
   bandIndex: number;
   bandMinZoom: number;
   bandMaxZoom: number;
@@ -143,7 +143,7 @@ const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureColl
   return null;
 };
 
-export const decodeTransformCache = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
+export const decodeGeometryCache = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
   try {
     const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
     return await normalizeFeatureCollection(decoded);
@@ -218,7 +218,7 @@ export const describeBuffer = (buffer: ArrayBuffer): {
   };
 };
 
-export const isTransformCacheComplete = (record: { timestamp: number } | null | undefined): record is { timestamp: number } => (
+export const isGeometryCacheComplete = (record: { timestamp: number } | null | undefined): record is { timestamp: number } => (
   Boolean(record && record.timestamp > 0)
 );
 
@@ -337,7 +337,7 @@ const collectTileIdsForCollection = (
   return [...tileIds];
 };
 
-export const backfillTileRelationsFromTransformCache = async (params: {
+export const backfillTileRelationsFromGeometryCache = async (params: {
   nodeId: NodeId;
   bandIndex: number;
   zBase: number;
@@ -345,7 +345,7 @@ export const backfillTileRelationsFromTransformCache = async (params: {
   ephemeralStore: EphemeralDB;
 }): Promise<{ relationCount: number; tileBuffers: Map<number, string[]>; bufferFeatureCounts: Map<string, number> }> => {
   const { nodeId, bandIndex, zBase, geometryEngine, ephemeralStore } = params;
-  const idsRaw = await ephemeralStore.transformCacheMeta
+  const idsRaw = await ephemeralStore.geometryCacheMeta
     .where('[nodeId+bandIndex]')
     .equals([nodeId, bandIndex])
     .primaryKeys();
@@ -353,14 +353,14 @@ export const backfillTileRelationsFromTransformCache = async (params: {
     return { relationCount: 0, tileBuffers: new Map(), bufferFeatureCounts: new Map() };
   }
   const ids = idsRaw.map((id) => String(id));
-  const buffers = await ephemeralStore.transformCache.bulkGet(ids);
+  const buffers = await ephemeralStore.geometryCache.bulkGet(ids);
   const completedBuffers = buffers.filter((buffer): buffer is NonNullable<typeof buffer> => (
-    Boolean(buffer && isTransformCacheComplete(buffer))
+    Boolean(buffer && isGeometryCacheComplete(buffer))
   ));
   if (completedBuffers.length === 0) return { relationCount: 0, tileBuffers: new Map(), bufferFeatureCounts: new Map() };
   const createdAt = Date.now();
   const bufferIds = completedBuffers.map((buffer) => buffer.id);
-  await ephemeralStore.tileIdToBufferRelations.where('bufferId').anyOf(bufferIds).delete();
+  await ephemeralStore.tileEmitBufferRelations.where('bufferId').anyOf(bufferIds).delete();
   const pending: Array<{
     id: string;
     nodeId: NodeId;
@@ -376,15 +376,15 @@ export const backfillTileRelationsFromTransformCache = async (params: {
   let written = 0;
   const flushPending = async () => {
     if (pending.length === 0) return;
-    await ephemeralStore.tileIdToBufferRelations.bulkPut(pending);
+    await ephemeralStore.tileEmitBufferRelations.bulkPut(pending);
     written += pending.length;
     pending.length = 0;
   };
   for (const buffer of completedBuffers) {
-    const collection = await decodeTransformCache(buffer.data);
+    const collection = await decodeGeometryCache(buffer.data);
     if (!collection) {
       const debug = describeBuffer(buffer.data);
-      console.warn('[shape-vt] failed to decode transform cache', {
+      console.warn('[shape-tile-emit] failed to decode geometry cache', {
         nodeId,
         bandIndex,
         bufferId: buffer.id,
@@ -427,36 +427,36 @@ export const backfillTileRelationsFromTransformCache = async (params: {
 
 export const hasHighDetailSelection = (
   selection?: SelectedArrayByCountries,
-  payloads?: FetchTaskPayload[],
+  payloads?: SourceTaskPayload[],
 ): boolean => {
   if (payloads?.some((payload) => payload.adminLevel >= 2)) return true;
   if (!selection) return false;
   return Object.values(selection).some((row) => row?.some((selected, index) => selected && index >= 2));
 };
 
-export const buildTransformByBandTasks = async (
+export const buildGeometryByBandTasks = async (
   nodeId: NodeId,
   bands: Array<{ bandIndex: number; zMin: number; zMax: number; zBase: number }>,
   enableHighDetailBands: boolean,
   countryLookup: Map<string, CountryMetadata>,
   configSignature: string,
-): Promise<Array<TaskQueueRecord<ShapeTransformByBandTaskInput>>> => {
-  const tasks: Array<TaskQueueRecord<ShapeTransformByBandTaskInput>> = [];
+): Promise<Array<TaskQueueRecord<ShapeGeometryByBandTaskInput>>> => {
+  const tasks: Array<TaskQueueRecord<ShapeGeometryByBandTaskInput>> = [];
   let index = 0;
   let offset = 0;
   while (true) {
-    const fetchBufferChunk = await ephemeralDB.fetchCacheMeta
+    const sourceBufferChunk = await ephemeralDB.sourceCacheMeta
       .where('nodeId')
       .equals(nodeId)
       .offset(offset)
       .limit(FETCH_CACHE_META_CHUNK_SIZE)
       .toArray();
-    if (fetchBufferChunk.length === 0) {
+    if (sourceBufferChunk.length === 0) {
       break;
     }
-    offset += fetchBufferChunk.length;
-    const fullBufferChunk = await ephemeralDB.fetchCache.bulkGet(
-      fetchBufferChunk.map((buffer) => buffer.id),
+    offset += sourceBufferChunk.length;
+    const fullBufferChunk = await ephemeralDB.sourceCache.bulkGet(
+      sourceBufferChunk.map((buffer) => buffer.id),
     );
     const fullBufferById = new Map(
       fullBufferChunk
@@ -464,12 +464,12 @@ export const buildTransformByBandTasks = async (
         .map((buffer) => [buffer.id, buffer] as const),
     );
 
-    for (const buffer of fetchBufferChunk) {
+    for (const buffer of sourceBufferChunk) {
       if (buffer.featureCount === 0) continue;
       const fullBuffer = fullBufferById.get(buffer.id);
       if (!fullBuffer) continue;
-      const fetchArtifactHash = await resolveFetchArtifactHashFromRecord(
-        ephemeralDB.fetchCache,
+      const sourceArtifactHash = await resolveSourceArtifactHashFromRecord(
+        ephemeralDB.sourceCache,
         fullBuffer,
       );
       const adminLevel = buffer.adminLevel;
@@ -481,26 +481,26 @@ export const buildTransformByBandTasks = async (
           if (!enableHighDetailBands) continue;
           if (typeof adminLevel !== 'number' || adminLevel < 2) continue;
         }
-        const cacheIdentity = buildTransformTaskCacheIdentity({
+        const cacheIdentity = buildGeometryTaskCacheIdentity({
           nodeId,
           sourceKey: buffer.sourceKey,
           bandIndex: band.bandIndex,
-          fetchArtifactHash,
+          sourceArtifactHash: sourceArtifactHash,
           bandMinZoom: band.zMin,
           bandMaxZoom: band.zMax,
           configSignature,
         });
         tasks.push({
-          taskId: `${String(nodeId)}:transform:${band.bandIndex}:${buffer.sourceKey}`,
+          taskId: `${String(nodeId)}:geometry:${band.bandIndex}:${buffer.sourceKey}`,
           nodeId,
-          stage: 'transform',
+          stage: 'geometry',
           status: 'queued',
           index,
           stagePriority,
           progress: 0,
           inputData: {
-            fetchCacheId: buffer.id,
-            fetchArtifactHash,
+            sourceCacheId: buffer.id,
+            sourceArtifactHash: sourceArtifactHash,
             bandIndex: band.bandIndex,
             bandMinZoom: band.zMin,
             bandMaxZoom: band.zMax,
@@ -550,15 +550,15 @@ export const buildContinentLookup = (metadata: CountryMetadata[]): Map<string, s
   return map;
 };
 
-export const buildVtTasks = async (
+export const buildTileEmitTasks = async (
   nodeId: NodeId,
   ephemeralStore: EphemeralDB,
   bands: Array<{ bandIndex: number; zMin: number; zMax: number; zBase: number }>,
   enableHighDetailBands: boolean,
   configSignature: string,
   geometryEngine: GeometryEngine,
-): Promise<Array<TaskQueueRecord<ShapeVtTaskInput>>> => {
-  const tasks: Array<TaskQueueRecord<ShapeVtTaskInput>> = [];
+): Promise<Array<TaskQueueRecord<ShapeTileEmitTaskInput>>> => {
+  const tasks: Array<TaskQueueRecord<ShapeTileEmitTaskInput>> = [];
   let index = 0;
 
   for (const band of bands) {
@@ -568,7 +568,7 @@ export const buildVtTasks = async (
     const bufferFeatureCounts = new Map<string, number>();
     let relationCount = 0;
     const buildTileBuffers = async () => {
-      await ephemeralStore.tileIdToBufferRelations
+      await ephemeralStore.tileEmitBufferRelations
         .where('[nodeId+bandIndex]')
         .equals([nodeId, band.bandIndex])
         .each((row) => {
@@ -591,7 +591,7 @@ export const buildVtTasks = async (
     };
     await buildTileBuffers();
     if (relationCount === 0) {
-      const backfilled = await backfillTileRelationsFromTransformCache({
+      const backfilled = await backfillTileRelationsFromGeometryCache({
         nodeId,
         bandIndex: band.bandIndex,
         zBase: band.zBase,
@@ -607,14 +607,14 @@ export const buildVtTasks = async (
         backfilled.bufferFeatureCounts.forEach((value, key) => {
           bufferFeatureCounts.set(key, value);
         });
-        console.warn('[shape-vt] rebuilt missing tile relations', {
+        console.warn('[shape-tile-emit] rebuilt missing tile relations', {
           nodeId,
           bandIndex: band.bandIndex,
           relationCount,
         });
       }
     }
-    console.info('[shape-vt] tile relation snapshot', {
+    console.info('[shape-tile-emit] tile relation snapshot', {
       nodeId,
       bandIndex: band.bandIndex,
       zBase: band.zBase,
@@ -629,7 +629,7 @@ export const buildVtTasks = async (
       const usableBufferIds = [...new Set(bufferIds)];
       if (usableBufferIds.length === 0) continue;
       const featureCount = usableBufferIds.reduce((sum, bufferId) => sum + (bufferFeatureCounts.get(bufferId) ?? 0), 0);
-      const cacheIdentity = buildVtTaskCacheIdentity({
+      const cacheIdentity = buildTileEmitTaskCacheIdentity({
         nodeId,
         bandIndex: band.bandIndex,
         zBase: band.zBase,
@@ -640,9 +640,9 @@ export const buildVtTasks = async (
         configSignature,
       });
       tasks.push({
-        taskId: `${String(nodeId)}:vt:${band.bandIndex}:${band.zBase}:${tileId}`,
+        taskId: `${String(nodeId)}:tileEmit:${band.bandIndex}:${band.zBase}:${tileId}`,
         nodeId,
-        stage: 'vt',
+        stage: 'tileEmit',
         status: 'queued',
         index,
         progress: 0,
@@ -668,9 +668,9 @@ export const buildVtTasks = async (
   return tasks;
 };
 
-export const resolveTransformConfig = (config: ShapeRuntimeBuildConfig) => config.transformConfig;
+export const resolveGeometryConfig = (config: ShapeRuntimeBuildConfig) => config.geometryConfig;
 
-export const resolveVtConfig = (config: ShapeRuntimeBuildConfig) => config.vtConfig;
+export const resolveTileEmitConfig = (config: ShapeRuntimeBuildConfig) => config.tileEmitConfig;
 
 const buildTileLayerInfo = (layers: Record<string, Tile>, z: number): ShapeTileLayerInfo[] => (
   Object.entries(layers).map(([name, tile]) => ({

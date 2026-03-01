@@ -4,7 +4,7 @@ import type { CrashInsight } from '@hierarchidb/ui-monitoring';
 import type { ShapeEntity } from '~/common/types/index';
 import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '~/common/types/index';
 import type { ShapeBuildConfigSnapshot, ShapeBuildStage } from '~/ui/utils/buildWarnings';
-import {getStageConcurrencyWarning} from '~/ui/utils/buildWarnings';
+import { getStageConcurrencyWarning } from '~/ui/utils/buildWarnings';
 export type StartWarning = {
   title: string;
   message: string;
@@ -51,12 +51,12 @@ export const useShapeBuildProgressWarnings = ({
       : DEFAULT_PROCESSING_CONFIG;
     const currentValue = (() => {
       switch (stageId) {
-        case 'fetch':
-          return processingConfig.fetch.maxConcurrent;
-        case 'transform':
-          return processingConfig.transform.maxConcurrent;
-        case 'vt':
-          return processingConfig.vt.maxConcurrent;
+        case 'source':
+          return processingConfig.source.maxConcurrent;
+        case 'geometry':
+          return processingConfig.geometry.maxConcurrent;
+        case 'tileEmit':
+          return processingConfig.tileEmit.maxConcurrent;
         default:
           return undefined;
       }

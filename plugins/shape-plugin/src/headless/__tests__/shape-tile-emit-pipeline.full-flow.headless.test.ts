@@ -3,7 +3,7 @@ import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { NodeId } from '@hierarchidb/core-types';
 import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants';
-import type { FetchTaskPayload } from '../../common/types/index';
+import type { SourceTaskPayload } from '../../common/types/index';
 
 const nodeId = 'shape-full-flow-test-node' as NodeId;
 
@@ -24,31 +24,31 @@ let resolveCountryCodeForDataSource: typeof import('../../services/utils/utils.j
 const buildConfig = {
   ...DEFAULT_BUILD_CONFIG,
   dataSourceName: 'geoboundaries',
-  fetchConfig: {
-    ...DEFAULT_BUILD_CONFIG.fetchConfig,
+  sourceConfig: {
+    ...DEFAULT_BUILD_CONFIG.sourceConfig,
     maxConcurrent: 1,
     retryAttempts: 1,
     retryLimit: 1,
   },
-  transformConfig: {
-    ...DEFAULT_BUILD_CONFIG.transformConfig,
+  geometryConfig: {
+    ...DEFAULT_BUILD_CONFIG.geometryConfig,
     maxConcurrent: 1,
     zoomBandBoundaries: [1, 2, 4],
   },
-  vtConfig: {
-    ...DEFAULT_BUILD_CONFIG.vtConfig,
+  tileEmitConfig: {
+    ...DEFAULT_BUILD_CONFIG.tileEmitConfig,
     maxConcurrent: 1,
   },
   cleanupConfig: {
     ...DEFAULT_BUILD_CONFIG.cleanupConfig,
-    deleteFetchApiCache: false,
-    deleteFetchFilteredCache: false,
-    deleteTransformCache: false,
-    deleteVTCache: false,
+    deleteSourceApiCache: false,
+    deleteSourceFilteredCache: false,
+    deleteGeometryCache: false,
+    deleteTileEmitCache: false,
   },
 };
 
-const selectGeoBoundariesPayload = async (): Promise<FetchTaskPayload> => {
+const selectGeoBoundariesPayload = async (): Promise<SourceTaskPayload> => {
   const metadata = await metadataLoader.loadMetadata('geoboundaries', nodeId);
   const candidate = metadata.find((entry) => (
     entry.availableAdminLevels.includes(0)
@@ -106,9 +106,9 @@ describeNetwork('Shape full-flow pipeline', () => {
 
     const taskQueue = new VtTaskQueueDb();
     const [failedFetch, failedTransform, failedVt] = await Promise.all([
-      listTasksByStageAndStatus(taskQueue, nodeId, 'fetch', 'failed'),
-      listTasksByStageAndStatus(taskQueue, nodeId, 'transform', 'failed'),
-      listTasksByStageAndStatus(taskQueue, nodeId, 'vt', 'failed'),
+      listTasksByStageAndStatus(taskQueue, nodeId, 'source', 'failed'),
+      listTasksByStageAndStatus(taskQueue, nodeId, 'geometry', 'failed'),
+      listTasksByStageAndStatus(taskQueue, nodeId, 'tileEmit', 'failed'),
     ]);
     taskQueue.close();
 
@@ -123,8 +123,8 @@ describeNetwork('Shape full-flow pipeline', () => {
       );
     }
 
-    const fetchCount = await ephemeralDB.fetchCache.where('nodeId').equals(nodeId).count();
-    const transformCount = await ephemeralDB.transformCache.where('nodeId').equals(nodeId).count();
+    const fetchCount = await ephemeralDB.sourceCache.where('nodeId').equals(nodeId).count();
+    const transformCount = await ephemeralDB.geometryCache.where('nodeId').equals(nodeId).count();
     const tileCount = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).count();
     const featureMetaCount = await shapeDB.featureMetadata.where('nodeId').equals(nodeId).count();
     const dataSourceMetaCount = await shapeDB.dataSourceMetadata.where('nodeId').equals(nodeId).count();

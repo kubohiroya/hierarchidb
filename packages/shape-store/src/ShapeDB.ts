@@ -14,8 +14,8 @@ import type { Geometry } from 'geojson';
 import { VectorTileDbBase } from '@hierarchidb/vectortile-store';
 import type { TabularTableMetadataLike } from '@hierarchidb/tabular-store';
 import type {
-  FeatureFilterMethod, FetchConfig,
-  HybridFilterConfig, TransformConfig, VTConfig } from '@hierarchidb/gis-sdk';
+  FeatureFilterMethod, SourceConfig,
+  HybridFilterConfig, GeometryConfig, TileEmitConfig } from '@hierarchidb/gis-sdk';
 
 export type DataSourceName = 'naturalearth' | 'geoboundaries' | 'geoboundaries-topojson' | 'gadm' | 'openstreetmap';
 
@@ -24,9 +24,9 @@ export interface CommonSessionConfig {
 }
 
 export interface BuildSessionConfig extends CommonSessionConfig {
-  fetchConfig: FetchConfig;
-  transformConfig: TransformConfig;
-  vectorTiles: VTConfig;
+  sourceConfig: SourceConfig;
+  geometryConfig: GeometryConfig;
+  vectorTiles: TileEmitConfig;
   quantize?: number;
   extract?: number;
   tolerance?: number;
@@ -43,7 +43,7 @@ export interface BuildSessionConfig extends CommonSessionConfig {
 }
 
 export type BuildProcessConfig = BuildSessionConfig;
-export type BuildTaskType = 'fetch' | 'transform' | 'vt';
+export type BuildTaskType = 'source' | 'geometry' | 'tileEmit';
 export type BuildStage = BuildTaskType;
 export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'recycled';
 
@@ -100,7 +100,7 @@ export interface LayerInfo {
   fields: string[];
 }
 
-export interface FetchStageMaxima {
+export interface SourceStageMaxima {
   featureMax: number;
   polygonMax: number;
 }
@@ -127,10 +127,10 @@ export interface BuildSessionRecord {
   stageId?: string;
   elapsedMs?: number;
   elapsedByStage?: Record<string, number>;
-  fetchStageMaxima?: FetchStageMaxima;
+  sourceStageMaxima?: SourceStageMaxima;
 }
 
-export type FetchTaskPayload = {
+export type SourceTaskPayload = {
   url?: string;
   dataSource?: DataSourceName;
   countryCode?: string;
@@ -152,7 +152,7 @@ export type FetchTaskPayload = {
   retryDelay?: number;
 };
 
-export type FetchTaskResult = {
+export type SourceTaskResult = {
   outputBufferId?: string;
   bytesWritten?: number;
   featureCount?: number;
@@ -210,7 +210,7 @@ export type TransformByZoomTaskResult = {
   retry?: number;
 };
 
-export type VTTaskPayload = {
+export type TileEmitTaskPayload = {
   inputBufferId: string;
   tileZ?: number;
   tileX?: number;
@@ -236,7 +236,7 @@ export type VTTaskPayload = {
   };
 };
 
-export type VTTaskResult = {
+export type TileEmitTaskResult = {
   tileId: string;
   tileCount?: number;
   totalBytes?: number;
@@ -244,16 +244,16 @@ export type VTTaskResult = {
 };
 
 export type ShapeBuildTaskPayload =
-  | FetchTaskPayload
+  | SourceTaskPayload
   | TransformByBandTaskPayload
   | TransormByZoomTaskPayload
-  | VTTaskPayload;
+  | TileEmitTaskPayload;
 
 export type ShapeBuildTaskResult =
-  | FetchTaskResult
+  | SourceTaskResult
   | TransformByBandTaskResult
   | TransformByZoomTaskResult
-  | VTTaskResult;
+  | TileEmitTaskResult;
 
 export interface BuildTaskRecord<TInput = ShapeBuildTaskPayload, TOutput = ShapeBuildTaskResult> {
   taskId: string;

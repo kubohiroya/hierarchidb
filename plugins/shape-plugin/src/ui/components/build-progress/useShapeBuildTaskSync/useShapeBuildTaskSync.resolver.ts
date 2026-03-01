@@ -1,8 +1,8 @@
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import {
-  buildVtParentInputSummaryMessage,
+  buildTileEmitParentInputSummaryMessage,
   mergeTaskMessage,
-  readVtParentInputSummary,
+  readTileEmitParentInputSummary,
   resolveTaskDisplayStatus,
   resolveTaskProgress,
 } from './useShapeBuildTaskSync.task-utils.js';
@@ -13,6 +13,7 @@ import {
   resolveTaskSummaryFromRaw,
 } from './useShapeBuildTaskSync.comparison.utils.js';
 import { isTaskSkipped, resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
+import { isTileEmitLikeStageId } from '~/ui/components/build-progress/stageIdAliases';
 
 const resolveTaskMetadataText = (task: ReturnType<typeof resolveTaskSummaryFromRaw>): string => {
   const metadataMessage = resolveTaskMetadataMessage(task.metadata)?.trim();
@@ -73,10 +74,11 @@ export const useShapeBuildTaskSyncResolver = ({
       resolvedTask.retryAttempt = Math.floor(rawRetryAttempt);
     }
 
-    if (resolvedTask.stage === 'vt') {
-      const parentInputSummary = readVtParentInputSummary(resolvedTask.metadata);
+    const resolvedStageId = resolvedTask.stageId ?? resolvedTask.stage;
+    if (isTileEmitLikeStageId(resolvedStageId)) {
+      const parentInputSummary = readTileEmitParentInputSummary(resolvedTask.metadata);
       if (parentInputSummary) {
-        const parentInputMessage = buildVtParentInputSummaryMessage(parentInputSummary);
+        const parentInputMessage = buildTileEmitParentInputSummaryMessage(parentInputSummary);
         const baseMessage = resolveTaskMetadataText(resolvedTask);
         const mergedMessage = mergeTaskMessage(baseMessage, parentInputMessage);
         resolvedTask.metadata = {
@@ -87,7 +89,7 @@ export const useShapeBuildTaskSyncResolver = ({
           const logKey = `${resolvedTask.taskId}:${parentInputMessage}`;
           if (!vtParentInputDebugLogKeysRef.current.has(logKey)) {
             vtParentInputDebugLogKeysRef.current.add(logKey);
-            console.debug('[ShapeVtParentInputSummary]', {
+            console.debug('[ShapeTileEmitParentInputSummary]', {
               nodeId: sessionNodeId,
               taskId: resolvedTask.taskId,
               message: parentInputMessage,

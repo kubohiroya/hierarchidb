@@ -7,7 +7,7 @@ export type BuildSessionPersistedStatus =
   | 'completed'
   | 'failed';
 
-export type BuildExecutionStage = 'undefined' | 'idle' | 'fetch' | 'transform' | 'vt';
+export type BuildExecutionStage = 'undefined' | 'idle' | 'source' | 'geometry' | 'tileEmit';
 
 export type BuildSessionUiRequestState = 'none' | 'startRequested' | 'stopRequested';
 

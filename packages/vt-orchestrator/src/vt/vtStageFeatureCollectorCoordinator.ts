@@ -49,7 +49,7 @@ export const runFeatureCollectionCoordinator = async (
   if (debugCollect) {
     const countStartedAt = logCollectCountStart(nodeId);
     logCollectBuffersStart({ nodeId, bufferCount: bufferIds.length, testTimeoutMs, useBulkGet });
-    const count = await context.ephemeralDB.transformCache.count();
+    const count = await context.ephemeralDB.geometryCache.count();
     logCollectCountDone(nodeId, count, countStartedAt);
   }
 

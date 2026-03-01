@@ -6,15 +6,15 @@ import type { ShapeBuildConfig } from '~/common/types/build';
 import { DEFAULT_BUILD_CONFIG } from '@hierarchidb/shape-api';
 import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
-import { buildBands, decodeTransformCache } from '~/services/vt/shapePipelineShared';
+import { buildBands, decodeGeometryCache } from '~/services/vt/shapePipelineShared';
 import { unpackTileId } from '@hierarchidb/vt-orchestrator';
 import type { TaskDetailSelection } from '~/ui/components/build-progress/TaskItemCard/TaskItemDetailTypes';
 import { FeaturePreviewLauncherButtonGroupCard } from './FeaturePreviewLauncherButtonGroupCard';
-import { VtGeometryPreviewMap, type TileBBox } from './VtGeometryPreviewMap';
+import { TileEmitGeometryPreviewMap, type TileBBox } from './TileEmitGeometryPreviewMap';
 import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
 
-type VtTaskTileInfo = {
+type TileEmitTaskTileInfo = {
   bandIndex: number;
   zBase: number;
   tileId: number;
@@ -28,8 +28,8 @@ type FeaturePreviewEntry = {
   geojsonBytes: number;
 };
 
-type VtPreviewData = {
-  tileInfo: VtTaskTileInfo | null;
+type TileEmitPreviewData = {
+  tileInfo: TileEmitTaskTileInfo | null;
   tileBBox: TileBBox | null;
   bufferBBox: TileBBox | null;
   features: Feature<Geometry>[];
@@ -53,12 +53,12 @@ const formatNumber = (value: number | null | undefined): string => {
 };
 
 
-const parseVtTaskId = (taskId: string | undefined): VtTaskTileInfo | null => {
+const parseTileEmitTaskId = (taskId: string | undefined): TileEmitTaskTileInfo | null => {
   if (!taskId) return null;
   const parts = taskId.split(':');
   if (parts.length < 5) return null;
   const [nodeIdPart, stage, bandIndexRaw, zBaseRaw, tileIdRaw] = parts;
-  if (!nodeIdPart || stage !== 'vt') return null;
+  if (!nodeIdPart || stage !== 'tileEmit') return null;
   const bandIndex = Number.parseInt(bandIndexRaw ?? '', 10);
   const zBase = Number.parseInt(zBaseRaw ?? '', 10);
   const tileId = Number.parseInt(tileIdRaw ?? '', 10);
@@ -172,7 +172,7 @@ const sumGeojsonBytes = (features: FeaturePreviewEntry[]): number => (
 
 const resolveParentInputSummaryBytes = (metadata: Record<string, unknown> | undefined): number | null => {
   if (!metadata || typeof metadata !== 'object') return null;
-  const summary = (metadata as Record<string, unknown>).vtParentInputSummary as Record<string, unknown> | undefined;
+  const summary = (metadata as Record<string, unknown>).tileEmitParentInputSummary as Record<string, unknown> | undefined;
   const rawBytes = summary?.intersectingGeojsonByteSize;
   if (typeof rawBytes === 'number' && Number.isFinite(rawBytes)) {
     return Math.max(0, Math.round(rawBytes));
@@ -188,7 +188,7 @@ const toNodeId = (value: string | undefined | null): NodeId | null => {
 };
 
 const resolveBandRange = (buildConfig: ShapeBuildConfig, bandIndex: number) => {
-  const boundaries = buildConfig.transformConfig?.zoomBandBoundaries;
+  const boundaries = buildConfig.geometryConfig?.zoomBandBoundaries;
   const bands = Array.isArray(boundaries) ? buildBands(boundaries) : [];
   return bands.find((band) => band.bandIndex === bandIndex) ?? null;
 };
@@ -203,16 +203,16 @@ const tileWithinParent = (parent: { z: number; x: number; y: number }, tile: { z
   return tile.x >= xStart && tile.x <= xEnd && tile.y >= yStart && tile.y <= yEnd;
 };
 
-type VTTaskItemDetailWindowProps = {
+type TileEmitTaskItemDetailWindowProps = {
   detail: TaskDetailSelection;
   buildConfig?: ShapeBuildConfig;
 };
 
-export const VTTaskItemDetailWindow = ({
+export const TileEmitTaskItemDetailWindow = ({
   detail,
   buildConfig,
-}: VTTaskItemDetailWindowProps) => {
-  const [previewData, setPreviewData] = useState<VtPreviewData>({
+}: TileEmitTaskItemDetailWindowProps) => {
+  const [previewData, setPreviewData] = useState<TileEmitPreviewData>({
     tileInfo: null,
     tileBBox: null,
     bufferBBox: null,
@@ -229,13 +229,13 @@ export const VTTaskItemDetailWindow = ({
   const theme = useTheme();
 
   const resolvedBuildConfig = buildConfig ?? DEFAULT_BUILD_CONFIG;
-  const vtConfig = resolvedBuildConfig.vtConfig ?? DEFAULT_BUILD_CONFIG.vtConfig;
+  const tileEmitConfig = resolvedBuildConfig.tileEmitConfig ?? DEFAULT_BUILD_CONFIG.tileEmitConfig;
 
   useEffect(() => {
-    if (detail.task.stage !== 'vt') return;
+    if (detail.task.stage !== 'tileEmit') return;
     const nodeId = detail.task.nodeId ?? toNodeId(detail.task.taskId?.split(':')[0] ?? null);
     if (!nodeId) return;
-    const tileInfo = parseVtTaskId(detail.task.taskId);
+    const tileInfo = parseTileEmitTaskId(detail.task.taskId);
     if (!tileInfo) return;
     let cancelled = false;
     setLoading(true);
@@ -243,20 +243,20 @@ export const VTTaskItemDetailWindow = ({
     setHoveredFeatureId(null);
     void (async () => {
       const tileBBox = tileToBBox(tileInfo.tile.z, tileInfo.tile.x, tileInfo.tile.y);
-      const bufferBBox = expandTileBBox(tileBBox, vtConfig.bufferSize, vtConfig.extent);
-      const relations = await ephemeralDB.tileIdToBufferRelations
+      const bufferBBox = expandTileBBox(tileBBox, tileEmitConfig.bufferSize, tileEmitConfig.extent);
+      const relations = await ephemeralDB.tileEmitBufferRelations
         .where('[nodeId+bandIndex+tileId]')
         .equals([String(nodeId), tileInfo.bandIndex, String(tileInfo.tileId)])
         .toArray();
       const bufferIds = relations.map((relation) => relation.bufferId);
       const [featureMetadata, vtMetadata] = await Promise.all([
         shapeQueryAPIImpl.listFeatureMetadata(nodeId),
-        shapeQueryAPIImpl.listVTMetadata(nodeId),
+        shapeQueryAPIImpl.listTileEmitMetadata(nodeId),
       ]);
       const metadataById = new Map(featureMetadata.map((row) => [row.featureId, row]));
       const collections = await Promise.all(bufferIds.map((bufferId) => (
-        shapeQueryAPIImpl.getTransformCache(bufferId).then((record) => (
-          record?.data ? decodeTransformCache(record.data) : null
+        shapeQueryAPIImpl.getGeometryCache(bufferId).then((record) => (
+          record?.data ? decodeGeometryCache(record.data) : null
         ))
       )));
       const features: Feature<Geometry>[] = [];
@@ -329,7 +329,7 @@ export const VTTaskItemDetailWindow = ({
     return () => {
       cancelled = true;
     };
-  }, [detail, resolvedBuildConfig, vtConfig.bufferSize, vtConfig.extent]);
+  }, [detail, resolvedBuildConfig, tileEmitConfig.bufferSize, tileEmitConfig.extent]);
 
   const handleResetSelection = useCallback(() => {
     setSelectedFeatureId(null);
@@ -345,7 +345,7 @@ export const VTTaskItemDetailWindow = ({
               <Allotment.Pane minSize={300} preferredSize={300}>
                 <Allotment>
                   <Allotment.Pane minSize={300} preferredSize={300}>
-                    <VtGeometryPreviewMap
+                    <TileEmitGeometryPreviewMap
                       tileBBox={previewData.tileBBox}
                       bufferBBox={previewData.bufferBBox}
                       features={previewData.features}
@@ -383,16 +383,16 @@ export const VTTaskItemDetailWindow = ({
                       <Paper variant="outlined" sx={{ p: 1 }}>
                         <Stack spacing={0.5}>
                           <Typography variant="caption" color="text.secondary">geojson-vt parameters</Typography>
-                          <Typography variant="caption">tolerance: {formatNumber(vtConfig.tolerance)}</Typography>
-                          <Typography variant="caption">extent: {formatNumber(vtConfig.extent)}</Typography>
-                          <Typography variant="caption">bufferSize: {formatNumber(vtConfig.bufferSize)}</Typography>
-                          <Typography variant="caption">tileSize: {formatNumber(vtConfig.tileSize)}</Typography>
-                          <Typography variant="caption">indexMaxPoints: {formatNumber(vtConfig.indexMaxPoints)}</Typography>
-                          <Typography variant="caption">promoteId: {vtConfig.promoteId ?? 'N/A'}</Typography>
-                          <Typography variant="caption">layerSet: {vtConfig.layerSetName ?? 'N/A'}</Typography>
-                          <Typography variant="caption">format: {vtConfig.format ?? 'N/A'}</Typography>
-                          <Typography variant="caption">compression: {vtConfig.compression ?? 'N/A'}</Typography>
-                          <Typography variant="caption">enableTopojsonSimplify: {vtConfig.enableTopojsonSimplify ? 'true' : 'false'}</Typography>
+                          <Typography variant="caption">tolerance: {formatNumber(tileEmitConfig.tolerance)}</Typography>
+                          <Typography variant="caption">extent: {formatNumber(tileEmitConfig.extent)}</Typography>
+                          <Typography variant="caption">bufferSize: {formatNumber(tileEmitConfig.bufferSize)}</Typography>
+                          <Typography variant="caption">tileSize: {formatNumber(tileEmitConfig.tileSize)}</Typography>
+                          <Typography variant="caption">indexMaxPoints: {formatNumber(tileEmitConfig.indexMaxPoints)}</Typography>
+                          <Typography variant="caption">promoteId: {tileEmitConfig.promoteId ?? 'N/A'}</Typography>
+                          <Typography variant="caption">layerSet: {tileEmitConfig.layerSetName ?? 'N/A'}</Typography>
+                          <Typography variant="caption">format: {tileEmitConfig.format ?? 'N/A'}</Typography>
+                          <Typography variant="caption">compression: {tileEmitConfig.compression ?? 'N/A'}</Typography>
+                          <Typography variant="caption">enableTopojsonSimplify: {tileEmitConfig.enableTopojsonSimplify ? 'true' : 'false'}</Typography>
                         </Stack>
                       </Paper>
                     )}

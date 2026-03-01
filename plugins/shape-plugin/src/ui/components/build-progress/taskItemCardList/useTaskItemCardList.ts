@@ -5,6 +5,7 @@ import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { taskViewportRangeAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { TASK_ITEM_HEIGHT } from '~/ui/components/build-progress/TaskItem/taskItem.constants';
 import { type TaskItemWithMetadata } from './types.js';
+import { isGeometryLikeStageId, isTileEmitLikeStageId } from '~/ui/components/build-progress/stageIdAliases';
 
 type TaskItemCardListArgs = {
   stageId: string;
@@ -52,7 +53,7 @@ export const sortVectorTileTasks = (tasks: ShapeBuildTaskSummary[]): ShapeBuildT
   return sorted;
 };
 
-export const sortTransformTasks = (tasks: ShapeBuildTaskSummary[]): ShapeBuildTaskSummary[] => {
+export const sortGeometryTasks = (tasks: ShapeBuildTaskSummary[]): ShapeBuildTaskSummary[] => {
   const sorted = [...tasks];
   sorted.sort((a, b) => {
     const pa = typeof a.stagePriority === 'number' ? a.stagePriority : Number.POSITIVE_INFINITY;
@@ -65,6 +66,8 @@ export const sortTransformTasks = (tasks: ShapeBuildTaskSummary[]): ShapeBuildTa
   });
   return sorted;
 };
+
+export const sortTransformTasks = sortGeometryTasks;
 
 export const useTaskItemCardList = ({
   stageId,
@@ -96,8 +99,8 @@ export const useTaskItemCardList = ({
     total: number;
   } | null>(null);
   const orderedTasks = useMemo(() => {
-    if (stageId === 'vt') return sortVectorTileTasks(tasks);
-    if (stageId === 'transform') return sortTransformTasks(tasks);
+    if (isTileEmitLikeStageId(stageId)) return sortVectorTileTasks(tasks);
+    if (isGeometryLikeStageId(stageId)) return sortGeometryTasks(tasks);
     return tasks;
   }, [stageId, tasks]);
   const virtualizer = useVirtualizer<HTMLDivElement, Element>({

@@ -25,7 +25,7 @@ export const buildByContinentGrouping = async (
     featuresByContinent: continentLayerGroups,
     debugCollect,
     assertNotAborted,
-    vtConfigBoundaryDedupe: context.vtConfig.boundaryDedupe,
+    tileEmitConfigBoundaryDedupe: context.tileEmitConfig.boundaryDedupe,
   });
   return buildLayerResultFromBranch({
     branchResult: {

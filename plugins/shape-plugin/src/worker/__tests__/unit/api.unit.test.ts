@@ -108,8 +108,8 @@ describe('Shape Plugin API', () => {
       const draftId = 'node-123' as NodeId;
       const buildConfig = createBuildConfig();
       const processingConfig = createProcessingConfig({
-        fetch: {
-          ...DEFAULT_PROCESSING_CONFIG.fetch,
+        source: {
+          ...DEFAULT_PROCESSING_CONFIG.source,
           maxConcurrent: 20,
         },
       });

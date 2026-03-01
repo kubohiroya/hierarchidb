@@ -346,7 +346,7 @@
         "zoomBands": {
           "title": "Zoom bands",
           "helper": "Default zoom band settings for new Shape/Route builds.",
-          "summary": "Used as the default Transform zoom bands when creating new Shape/Route nodes.",
+          "summary": "Used as the default Geometry zoom bands when creating new Shape/Route nodes.",
           "rangeCount": "Number of ranges",
           "rangeCountHelp": "Set how many zoom ranges to use for transforms.",
           "boundaries": "Range boundaries",

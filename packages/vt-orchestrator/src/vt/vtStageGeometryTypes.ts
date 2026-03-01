@@ -17,7 +17,7 @@ export type InputFeatureStats = {
   featureAreaSqMeters?: number;
 };
 
-export const VT_PARENT_INPUT_SUMMARY_METADATA_KEY = 'vtParentInputSummary';
+export const TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY = 'tileEmitParentInputSummary';
 
 export type VtParentInputSummaryMetadata = {
   parentTile: {

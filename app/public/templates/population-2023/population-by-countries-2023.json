@@ -18,7 +18,7 @@
           "draftData": {
             "buildConfig": {
               "dataSourceName": "geoboundaries",
-              "fetchConfig": {
+              "sourceConfig": {
                 "maxConcurrent": 2,
                 "deleteOnComplete": false,
                 "timeoutMs": 300000,
@@ -27,7 +27,7 @@
                 "retryLimit": 3,
                 "retryBackoff": "linear"
               },
-              "transformConfig": {
+              "geometryConfig": {
                 "zoomBandBoundaries": [
                   1,
                   2,
@@ -83,7 +83,7 @@
                   "dropSmallPolygons": true
                 }
               },
-              "vtConfig": {
+              "tileEmitConfig": {
                 "enableTopojsonSimplify": false,
                 "maxConcurrent": 1,
                 "tolerance": 1,

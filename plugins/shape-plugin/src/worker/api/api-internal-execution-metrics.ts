@@ -95,9 +95,9 @@ const buildBuildSessionConfig = (buildConfig: ShapeRuntimeBuildConfig): BuildSes
   );
   return {
     dataSource: resolvedDataSource,
-    fetchConfig: buildConfig.fetchConfig,
-    transformConfig: buildConfig.transformConfig,
-    vectorTiles: buildConfig.vtConfig,
+    sourceConfig: buildConfig.sourceConfig,
+    geometryConfig: buildConfig.geometryConfig,
+    vectorTiles: buildConfig.tileEmitConfig,
   };
 };
 
@@ -108,6 +108,26 @@ type TaskQueueStatusCounts = {
   failed: number;
   recycled: number;
 };
+
+type CanonicalStageId = 'source-stage' | 'geometry-stage' | 'tile-emit-stage';
+
+const toCanonicalStageId = (stage: TaskQueueRecord['stage']): CanonicalStageId => {
+  if (stage === 'source') return 'source-stage';
+  if (stage === 'geometry') return 'geometry-stage';
+  return 'tile-emit-stage';
+};
+
+const isSourceStage = (stage: TaskQueueRecord['stage']): boolean => (
+  toCanonicalStageId(stage) === 'source-stage'
+);
+
+const isGeometryStage = (stage: TaskQueueRecord['stage']): boolean => (
+  toCanonicalStageId(stage) === 'geometry-stage'
+);
+
+const isTileEmitStage = (stage: TaskQueueRecord['stage']): boolean => (
+  toCanonicalStageId(stage) === 'tile-emit-stage'
+);
 
 const countTaskQueueStatuses = async (
   taskQueue: VtTaskQueueDb,
@@ -213,7 +233,7 @@ const shapeEntityHandlerSingleton = new ShapeEntityHandler();
 const getShapeEntityHandler = (): ShapeEntityHandler => shapeEntityHandlerSingleton;
 
 const resolveEffectiveTaskStatus = (task: TaskQueueRecord): TaskQueueRecord['status'] => {
-  if (task.stage !== 'vt') return task.status;
+  if (!isTileEmitStage(task.stage)) return task.status;
   if (task.status !== 'completed') return task.status;
   const progress = typeof task.progress === 'number' ? task.progress : 0;
   const isFinal = typeof task.completedAt === 'number' || progress >= 100;
@@ -404,10 +424,10 @@ const buildPreviewMetadataFromTask = (task: TaskQueueRecord): Record<string, unk
   const input = asRecord(task.inputData);
   const output = asRecord(task.outputData);
 
-  if (task.stage === 'fetch') {
+  if (isSourceStage(task.stage)) {
     const sourceKey = readString(preview?.sourceKey) ?? readString(input?.sourceKey);
-    const fetchCacheId = readString(preview?.fetchCacheId)
-      ?? readString(output?.fetchCacheId)
+    const sourceCacheId = readString(preview?.sourceCacheId)
+      ?? readString(output?.sourceCacheId)
       ?? (sourceKey ? `${String(task.nodeId)}-shape-${sourceKey}` : null);
     const dataSource = readString(preview?.dataSource) ?? readString(input?.dataSource);
     const sourceUrl = readString(preview?.sourceUrl) ?? readString(input?.url);
@@ -416,27 +436,27 @@ const buildPreviewMetadataFromTask = (task: TaskQueueRecord): Record<string, unk
       ?? readString(input?.countryCode);
     const adminLevel = readNumber(preview?.adminLevel) ?? readNumber(input?.adminLevel);
 
-    if (!fetchCacheId && !sourceKey && !sourceUrl) return preview;
+    if (!sourceCacheId && !sourceKey && !sourceUrl) return preview;
     return {
-      stage: 'fetch',
+      stage: 'source',
       sourceKey: sourceKey ?? null,
       dataSource: dataSource ?? null,
       sourceUrl: sourceUrl ?? null,
       sourceCountryCode: sourceCountryCode ?? null,
       adminLevel: adminLevel ?? null,
-      fetchCacheId: fetchCacheId ?? null,
-      fetchCacheFormat: readString(preview?.fetchCacheFormat) ?? 'flatgeobuf',
-      fetchCacheCompression: readString(preview?.fetchCacheCompression) ?? 'none',
+      sourceCacheId: sourceCacheId ?? null,
+      sourceCacheFormat: readString(preview?.sourceCacheFormat) ?? 'flatgeobuf',
+      sourceCacheCompression: readString(preview?.sourceCacheCompression) ?? 'none',
     };
   }
 
-  if (task.stage === 'transform') {
+  if (isGeometryStage(task.stage)) {
     const sourceKey = readString(preview?.sourceKey) ?? readString(input?.sourceKey);
     const bandIndex = readNumber(preview?.bandIndex) ?? readNumber(input?.bandIndex);
     const domainType = readString(input?.domainType) ?? 'shape';
-    const fetchCacheId = readString(preview?.fetchCacheId) ?? readString(input?.fetchCacheId);
-    const transformCacheId = readString(preview?.transformCacheId)
-      ?? readString(output?.transformCacheId)
+    const sourceCacheId = readString(preview?.sourceCacheId) ?? readString(input?.sourceCacheId);
+    const geometryCacheId = readString(preview?.geometryCacheId)
+      ?? readString(output?.geometryCacheId)
       ?? (sourceKey && bandIndex !== null
         ? `${String(task.nodeId)}-b${Math.floor(bandIndex)}-${domainType}-${sourceKey}`
         : null);
@@ -445,19 +465,19 @@ const buildPreviewMetadataFromTask = (task: TaskQueueRecord): Record<string, unk
       ?? readString(input?.countryCode);
     const adminLevel = readNumber(preview?.adminLevel) ?? readNumber(input?.adminLevel);
 
-    if (!fetchCacheId && !transformCacheId && !sourceKey) return preview;
+    if (!sourceCacheId && !geometryCacheId && !sourceKey) return preview;
     return {
-      stage: 'transform',
+      stage: 'geometry',
       sourceKey: sourceKey ?? null,
       bandIndex: bandIndex ?? null,
       dataSource: readString(preview?.dataSource) ?? readString(input?.dataSource) ?? null,
       sourceUrl: readString(preview?.sourceUrl) ?? readString(input?.sourceUrl) ?? null,
       sourceCountryCode: sourceCountryCode ?? null,
       adminLevel: adminLevel ?? null,
-      fetchCacheId: fetchCacheId ?? null,
-      fetchCacheFormat: readString(preview?.fetchCacheFormat) ?? readString(input?.fetchCacheFormat) ?? 'flatgeobuf',
-      fetchCacheCompression: readString(preview?.fetchCacheCompression) ?? readString(input?.fetchCacheCompression) ?? 'none',
-      transformCacheId: transformCacheId ?? null,
+      sourceCacheId: sourceCacheId ?? null,
+      sourceCacheFormat: readString(preview?.sourceCacheFormat) ?? readString(input?.sourceCacheFormat) ?? 'flatgeobuf',
+      sourceCacheCompression: readString(preview?.sourceCacheCompression) ?? readString(input?.sourceCacheCompression) ?? 'none',
+      geometryCacheId: geometryCacheId ?? null,
     };
   }
 
@@ -477,6 +497,7 @@ const mapTaskQueueRecordToTaskSummary = (
     taskId: task.taskId,
     nodeId: task.nodeId,
     stage: task.stage,
+    stageId: toCanonicalStageId(task.stage),
     status: resolveEffectiveTaskStatus(task),
     progress: resolveTaskProgress(task),
     display: task.display,
@@ -509,13 +530,20 @@ type ProgressTaskMeta = {
 };
 
 const resolveTaskType = (tasks: TaskQueueRecord[]): TaskQueueRecord['stage'] | undefined => {
-  const stageOrder: Array<TaskQueueRecord['stage']> = ['fetch', 'transform', 'vt'];
-  return stageOrder.find((stage) => (
+  const stageOrder: CanonicalStageId[] = ['source-stage', 'geometry-stage', 'tile-emit-stage'];
+  const matchedStageId = stageOrder.find((stageId) => (
     tasks.some((task) => {
       const status = resolveEffectiveTaskStatus(task);
-      return task.stage === stage && status !== 'completed' && status !== 'failed' && status !== 'recycled';
+      return toCanonicalStageId(task.stage) === stageId
+        && status !== 'completed'
+        && status !== 'failed'
+        && status !== 'recycled';
     })
   ));
+  if (matchedStageId === 'source-stage') return 'source';
+  if (matchedStageId === 'geometry-stage') return 'geometry';
+  if (matchedStageId === 'tile-emit-stage') return 'tileEmit';
+  return undefined;
 };
 
 const summarizeTaskQueueStatus = (tasks: TaskQueueRecord[]) => {
@@ -556,9 +584,9 @@ const summarizeTaskQueueProgress = async (
     skipped: number;
     recycled: number;
   }> = {
-    fetch: { total: 0, completed: 0, failed: 0, skipped: 0, recycled: 0 },
-    transform: { total: 0, completed: 0, failed: 0, skipped: 0, recycled: 0 },
-    vt: { total: 0, completed: 0, failed: 0, skipped: 0, recycled: 0 },
+    source: { total: 0, completed: 0, failed: 0, skipped: 0, recycled: 0 },
+    geometry: { total: 0, completed: 0, failed: 0, skipped: 0, recycled: 0 },
+    tileEmit: { total: 0, completed: 0, failed: 0, skipped: 0, recycled: 0 },
   };
   tasks.forEach((task) => {
     const bucket = stageCounts[task.stage];
@@ -580,9 +608,9 @@ const summarizeTaskQueueProgress = async (
       bucket.completed += 1;
     }
   });
-  const completed = stageCounts.fetch.completed + stageCounts.transform.completed + stageCounts.vt.completed;
-  const failed = stageCounts.fetch.failed + stageCounts.transform.failed + stageCounts.vt.failed;
-  const skipped = stageCounts.fetch.skipped + stageCounts.transform.skipped + stageCounts.vt.skipped;
+  const completed = stageCounts.source.completed + stageCounts.geometry.completed + stageCounts.tileEmit.completed;
+  const failed = stageCounts.source.failed + stageCounts.geometry.failed + stageCounts.tileEmit.failed;
+  const skipped = stageCounts.source.skipped + stageCounts.geometry.skipped + stageCounts.tileEmit.skipped;
   const plan = getStagePlan(nodeId);
   const resolveStageTotal = (
     counts: typeof stageCounts[keyof typeof stageCounts],
@@ -592,15 +620,15 @@ const summarizeTaskQueueProgress = async (
     const adjustedPlan = Math.max(0, planned - counts.recycled);
     return Math.max(counts.total, adjustedPlan);
   };
-  const total = resolveStageTotal(stageCounts.fetch, plan?.fetchTotal)
-    + resolveStageTotal(stageCounts.transform, plan?.transformTotal)
-    + resolveStageTotal(stageCounts.vt);
+  const total = resolveStageTotal(stageCounts.source, plan?.sourceTotal)
+    + resolveStageTotal(stageCounts.geometry, plan?.geometryTotal)
+    + resolveStageTotal(stageCounts.tileEmit);
   let resolvedStage = stage;
-  if (!resolvedStage && tasks.length === 0 && plan?.fetchTotal && plan.fetchTotal > 0) {
-    resolvedStage = 'fetch';
+  if (!resolvedStage && tasks.length === 0 && plan?.sourceTotal && plan.sourceTotal > 0) {
+    resolvedStage = 'source';
   }
-  if (!resolvedStage && tasks.length === 0 && plan?.transformTotal && plan.transformTotal > 0) {
-    resolvedStage = 'transform';
+  if (!resolvedStage && tasks.length === 0 && plan?.geometryTotal && plan.geometryTotal > 0) {
+    resolvedStage = 'geometry';
   }
   const doneCount = Math.min(total, completed + skipped + failed);
   const percentage = total > 0 ? Math.round((doneCount / total) * 100) : 0;
@@ -668,20 +696,20 @@ const buildProgressPayloadFromTasks = async (
     meta.source = options.source;
   }
   meta.stageTotals = {
-    fetch: {
-      total: stageStatusMap.fetch.tasksTotal,
-      completed: stageStatusMap.fetch.tasksCompleted,
-      failed: stageStatusMap.fetch.tasksFailed,
+    source: {
+      total: stageStatusMap.source.tasksTotal,
+      completed: stageStatusMap.source.tasksCompleted,
+      failed: stageStatusMap.source.tasksFailed,
     },
-    transform: {
-      total: stageStatusMap.transform.tasksTotal,
-      completed: stageStatusMap.transform.tasksCompleted,
-      failed: stageStatusMap.transform.tasksFailed,
+    geometry: {
+      total: stageStatusMap.geometry.tasksTotal,
+      completed: stageStatusMap.geometry.tasksCompleted,
+      failed: stageStatusMap.geometry.tasksFailed,
     },
-    vt: {
-      total: stageStatusMap.vt.tasksTotal,
-      completed: stageStatusMap.vt.tasksCompleted,
-      failed: stageStatusMap.vt.tasksFailed,
+    tileEmit: {
+      total: stageStatusMap.tileEmit.tasksTotal,
+      completed: stageStatusMap.tileEmit.tasksCompleted,
+      failed: stageStatusMap.tileEmit.tasksFailed,
     },
   };
   return {
@@ -754,10 +782,13 @@ const buildStageStatusMap = (
   tasks: TaskQueueRecord[]
 ): Record<TaskQueueRecord['stage'], StageStatus> => {
   const plan = getStagePlan(nodeId);
+  const sourceTasks = tasks.filter((task) => isSourceStage(task.stage));
+  const geometryTasks = tasks.filter((task) => isGeometryStage(task.stage));
+  const tileEmitTasks = tasks.filter((task) => isTileEmitStage(task.stage));
   return {
-    fetch: buildStageStatus(tasks.filter((task) => task.stage === 'fetch'), plan?.fetchTotal),
-    transform: buildStageStatus(tasks.filter((task) => task.stage === 'transform'), plan?.transformTotal),
-    vt: buildStageStatus(tasks.filter((task) => task.stage === 'vt')),
+    source: buildStageStatus(sourceTasks, plan?.sourceTotal),
+    geometry: buildStageStatus(geometryTasks, plan?.geometryTotal),
+    tileEmit: buildStageStatus(tileEmitTasks),
   };
 };
 
@@ -866,7 +897,7 @@ const upsertBuildSessionSnapshot = async (
     stageStartedAt: existing?.stageStartedAt,
     stageHeartbeatAt: existing?.stageHeartbeatAt,
     stageId: existing?.stageId,
-    fetchStageMaxima: existing?.fetchStageMaxima,
+    sourceStageMaxima: existing?.sourceStageMaxima,
   };
   await shapeMutationAPIImpl.upsertBuildSession(record);
 };
@@ -1079,7 +1110,7 @@ const emitProgressSnapshot = async (
     const payload = await buildProgressPayloadFromTasks(nodeId, vtTasks, { source: 'snapshot' });
     sub.callback({
       nodeId,
-      stage: statusSummary.stage ?? 'fetch',
+      stage: statusSummary.stage ?? 'source',
       phase,
       timestamp: Date.now(),
       message,

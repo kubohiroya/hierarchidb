@@ -43,64 +43,64 @@ describe('resolveCompletionFailedStageLabel', () => {
   it('uses failed stage title when available', () => {
     expect(resolveCompletionFailedStageLabel({
       stages: [
-        { id: 'fetch', title: 'Fetch', icon: null },
-        { id: 'vt', title: 'VT', icon: null },
+        { id: 'source', title: 'Source', icon: null },
+        { id: 'tileEmit', title: 'TileEmit', icon: null },
       ],
-      failedStageId: 'vt',
-      fallbackStageLabel: 'Fetch',
-    })).toBe('VT');
+      failedStageId: 'tileEmit',
+      fallbackStageLabel: 'Source',
+    })).toBe('TileEmit');
   });
 
   it('falls back when failed stage is unavailable', () => {
     expect(resolveCompletionFailedStageLabel({
-      stages: [{ id: 'fetch', title: 'Fetch', icon: null }],
+      stages: [{ id: 'source', title: 'Source', icon: null }],
       failedStageId: undefined,
-      fallbackStageLabel: 'Fetch',
-    })).toBe('Fetch');
+      fallbackStageLabel: 'Source',
+    })).toBe('Source');
   });
 });
 
 describe('resolveActiveRunningStageId', () => {
   const stages = [
-    { id: 'fetch', title: 'Fetch', icon: null },
-    { id: 'transform', title: 'Transform', icon: null },
-    { id: 'vt', title: 'VT', icon: null },
+    { id: 'source', title: 'Source', icon: null },
+    { id: 'geometry', title: 'Geometry', icon: null },
+    { id: 'tileEmit', title: 'TileEmit', icon: null },
   ];
 
   it('returns the most advanced running stage when overlap exists', () => {
     expect(resolveActiveRunningStageId({
       stages,
       stageTaskScan: {
-        fetch: { hasRunning: false },
-        transform: { hasRunning: true },
-        vt: { hasRunning: true },
+        source: { hasRunning: false },
+        geometry: { hasRunning: true },
+        tileEmit: { hasRunning: true },
       },
-    })).toBe('vt');
+    })).toBe('tileEmit');
   });
 
   it('returns null when no stage is running', () => {
     expect(resolveActiveRunningStageId({
       stages,
       stageTaskScan: {
-        fetch: { hasRunning: false },
-        transform: { hasRunning: false },
-        vt: { hasRunning: false },
+        source: { hasRunning: false },
+        geometry: { hasRunning: false },
+        tileEmit: { hasRunning: false },
       },
     })).toBeNull();
   });
 
-  it('prefers canonical vt stage even when stage order is stale', () => {
+  it('prefers canonical tileEmit stage even when stage order is stale', () => {
     expect(resolveActiveRunningStageId({
       stages: [
-        { id: 'fetch', title: 'Fetch', icon: null },
-        { id: 'vt', title: 'VT', icon: null },
-        { id: 'transform', title: 'Transform', icon: null },
+        { id: 'source', title: 'Source', icon: null },
+        { id: 'tileEmit', title: 'TileEmit', icon: null },
+        { id: 'geometry', title: 'Geometry', icon: null },
       ],
       stageTaskScan: {
-        fetch: { hasRunning: false },
-        transform: { hasRunning: true },
-        vt: { hasRunning: true },
+        source: { hasRunning: false },
+        geometry: { hasRunning: true },
+        tileEmit: { hasRunning: true },
       },
-    })).toBe('vt');
+    })).toBe('tileEmit');
   });
 });

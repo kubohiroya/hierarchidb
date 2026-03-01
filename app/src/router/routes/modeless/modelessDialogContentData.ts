@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
   ShapeFeatureMetadata,
-  ShapeTransformErrorRecord,
+  ShapeGeometryErrorRecord,
 } from '@hierarchidb/shape-api';
 import type { RouteLineString } from '@hierarchidb/route-api';
 import { RouteDB } from '@hierarchidb/route-store';
@@ -606,9 +606,9 @@ export const useShapeListState = (_nodeId: NodeId | null): ShapeListState => {
     await bridgeRef.current.initialize();
     const query = await bridgeRef.current.getShapeQueryAPI();
     const entries = await Promise.all(
-      shapeNodeIds.map((shapeNodeId) => query.listTransformErrorRecords(shapeNodeId as NodeId))
+      shapeNodeIds.map((shapeNodeId) => query.listGeometryErrorRecords(shapeNodeId as NodeId))
     );
-    return entries.flat() as ShapeTransformErrorRecord[];
+    return entries.flat() as ShapeGeometryErrorRecord[];
   }, [shapeNodeIds]);
 
   const {

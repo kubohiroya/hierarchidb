@@ -23,7 +23,7 @@ import {
 } from '@hierarchidb/ui-accordion-config';
 import { useTranslation } from '~/ui/i18n';
 import { type ShapeBuildConfig } from '~/common/types/index';
-import { useTransformConfigSection } from '~/ui/hooks/useTransformConfigSection';
+import { useGeometryConfigSection } from '~/ui/hooks/useGeometryConfigSection';
 import type { ChangeEvent } from 'react';
 import { useCallback } from 'react';
 import { SimplifyToleranceByAdminLevelCard } from './SimplifyToleranceByAdminLevelCard.tsx';
@@ -35,33 +35,33 @@ type Props = {
   disableHoverLift?: boolean;
 };
 
-export const TransformConfigSection: React.FC<Props> = ({
+export const GeometryConfigSection: React.FC<Props> = ({
   config,
   onChange,
   disabled,
   disableHoverLift = false,
 }) => {
   const { t } = useTranslation();
-  const { baseTransformConfig, update } = useTransformConfigSection({ config, onChange });
+  const { baseGeometryConfig, update } = useGeometryConfigSection({ config, onChange });
   const hoverCardSx = getBuildConfigHoverCardSx(disabled, disableHoverLift);
 
-  const simplifyAlgorithm = baseTransformConfig.simplifyAlgorithm ?? 'topojson';
-  const preserveTopology = baseTransformConfig.preserveTopology ?? true;
+  const simplifyAlgorithm = baseGeometryConfig.simplifyAlgorithm ?? 'topojson';
+  const preserveTopology = baseGeometryConfig.preserveTopology ?? true;
 
-  const updateTransformConfig = useCallback((partial: Partial<ShapeBuildConfig['transformConfig']>) => (
+  const updateGeometryConfig = useCallback((partial: Partial<ShapeBuildConfig['geometryConfig']>) => (
     update({
-      transformConfig: partial,
+      geometryConfig: partial,
     })
   ), [update]);
 
   const summaryHelp = simplifyAlgorithm === 'topojson'
     ? t(
-      'processing.transform.summaryHelpTopojson',
-      'Transform uses topojson simplify first, then runs topology repair checks.',
+      'processing.geometry.summaryHelpTopojson',
+      'Geometry uses topojson simplify first, then runs topology repair checks.',
     )
     : t(
-      'processing.transform.summaryHelpGeojson',
-      'Transform runs turf.simplify with the configured tolerance.',
+      'processing.geometry.summaryHelpGeojson',
+      'Geometry runs turf.simplify with the configured tolerance.',
     );
 
   return (
@@ -69,7 +69,7 @@ export const TransformConfigSection: React.FC<Props> = ({
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <BuildConfigAccordionSummary
           icon={<TuneIcon color="primary" />}
-          title={t('processing.transform.title', 'Transform')}
+          title={t('processing.geometry.title', 'Geometry')}
           info={summaryHelp}
         />
       </AccordionSummary>
@@ -79,32 +79,32 @@ export const TransformConfigSection: React.FC<Props> = ({
             <Stack spacing={2}>
               <BuildConfigSectionTitle
                 icon={<TuneIcon fontSize="small" color="primary" />}
-                title={t('processing.transform.algorithmSettings.title', 'Algorithm settings')}
+                title={t('processing.geometry.algorithmSettings.title', 'Algorithm settings')}
               />
 
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <FormControl disabled={disabled}>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      {t('processing.transform.algorithm.label', 'Simplify Algorithm')}
+                      {t('processing.geometry.algorithm.label', 'Simplify Algorithm')}
                     </Typography>
                     <RadioGroup
                       row
                       value={simplifyAlgorithm}
                       onChange={(_event, value) => {
                         if (value !== 'geojson' && value !== 'topojson') return;
-                        updateTransformConfig({ simplifyAlgorithm: value });
+                        updateGeometryConfig({ simplifyAlgorithm: value });
                       }}
                     >
                       <FormControlLabel
                         value="topojson"
                         control={<Radio size="small" />}
-                        label={t('processing.transform.algorithm.topojson', 'topojson (topology-preserving)')}
+                        label={t('processing.geometry.algorithm.topojson', 'topojson (topology-preserving)')}
                       />
                       <FormControlLabel
                         value="geojson"
                         control={<Radio size="small" />}
-                        label={t('processing.transform.algorithm.geojson', 'geojson (turf simplify)')}
+                        label={t('processing.geometry.algorithm.geojson', 'geojson (turf simplify)')}
                       />
                     </RadioGroup>
                   </FormControl>
@@ -117,17 +117,17 @@ export const TransformConfigSection: React.FC<Props> = ({
                         <Switch
                           checked={preserveTopology}
                           onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                            updateTransformConfig({ preserveTopology: event.target.checked });
+                            updateGeometryConfig({ preserveTopology: event.target.checked });
                           }}
                         />
                       )}
                       disabled={disabled || simplifyAlgorithm === 'topojson'}
-                      label={t('processing.transform.preserveTopology.label', 'Preserve topology')}
+                      label={t('processing.geometry.preserveTopology.label', 'Preserve topology')}
                     />
                     {simplifyAlgorithm === 'topojson' ? (
                       <Typography variant="caption" color="text.secondary">
                         {t(
-                          'processing.transform.preserveTopology.topojsonHint',
+                          'processing.geometry.preserveTopology.topojsonHint',
                           'topojson mode always preserves topology in decode simplify path.',
                         )}
                       </Typography>
@@ -139,10 +139,10 @@ export const TransformConfigSection: React.FC<Props> = ({
           </Paper>
 
           <SimplifyToleranceByAdminLevelCard
-            transformConfig={baseTransformConfig}
+            geometryConfig={baseGeometryConfig}
             disabled={disabled}
             disableHoverLift={disableHoverLift}
-            onChange={updateTransformConfig}
+            onChange={updateGeometryConfig}
           />
         </Stack>
       </AccordionDetails>

@@ -32,7 +32,7 @@ describe('shouldResetElapsedState', () => {
       buildElapsedMs: 0,
       stageElapsedByStage: {},
       localElapsedByStage: {
-        fetch: 2_000,
+        source: 2_000,
       },
     })).toBe(false);
   });
@@ -42,7 +42,7 @@ describe('shouldResetElapsedState', () => {
       buildStatus: 'completed',
       buildElapsedMs: 0,
       stageElapsedByStage: {
-        vt: 1_000,
+        tileEmit: 1_000,
       },
       localElapsedByStage: {},
     })).toBe(false);
@@ -103,44 +103,44 @@ describe('shouldRefreshTasksSnapshot', () => {
 });
 
 describe('resolveMostAdvancedRunningStageId', () => {
-  it('prefers vt when transform and vt both report running', () => {
+  it('prefers tileEmit when geometry and tileEmit both report running', () => {
     expect(resolveMostAdvancedRunningStageId({
-      stages: [{ id: 'fetch' }, { id: 'transform' }, { id: 'vt' }],
+      stages: [{ id: 'source' }, { id: 'geometry' }, { id: 'tileEmit' }],
       tasks: [
-        { stage: 'transform', status: 'running' },
-        { stage: 'vt', status: 'running' },
+        { stage: 'geometry', status: 'running' },
+        { stage: 'tileEmit', status: 'running' },
       ],
-    })).toBe('vt');
+    })).toBe('tileEmit');
   });
 
   it('returns null when no running tasks exist', () => {
     expect(resolveMostAdvancedRunningStageId({
-      stages: [{ id: 'fetch' }, { id: 'transform' }, { id: 'vt' }],
+      stages: [{ id: 'source' }, { id: 'geometry' }, { id: 'tileEmit' }],
       tasks: [
-        { stage: 'fetch', status: 'completed' },
+        { stage: 'source', status: 'completed' },
       ],
     })).toBeNull();
   });
 
   it('uses canonical stage priority even when stage array order is stale', () => {
     expect(resolveMostAdvancedRunningStageId({
-      stages: [{ id: 'fetch' }, { id: 'vt' }, { id: 'transform' }],
+      stages: [{ id: 'source' }, { id: 'tileEmit' }, { id: 'geometry' }],
       tasks: [
-        { stage: 'transform', status: 'running' },
-        { stage: 'vt', status: 'running' },
+        { stage: 'geometry', status: 'running' },
+        { stage: 'tileEmit', status: 'running' },
       ],
-    })).toBe('vt');
+    })).toBe('tileEmit');
   });
 });
 
 describe('resolveMostAdvancedInFlightStageId', () => {
-  it('promotes queued transform above completed fetch during handoff', () => {
+  it('promotes queued geometry above completed source during handoff', () => {
     expect(resolveMostAdvancedInFlightStageId({
-      stages: [{ id: 'fetch' }, { id: 'transform' }, { id: 'vt' }],
+      stages: [{ id: 'source' }, { id: 'geometry' }, { id: 'tileEmit' }],
       tasks: [
-        { stage: 'fetch', status: 'completed' },
-        { stage: 'transform', status: 'queued' },
+        { stage: 'source', status: 'completed' },
+        { stage: 'geometry', status: 'queued' },
       ],
-    })).toBe('transform');
+    })).toBe('geometry');
   });
 });

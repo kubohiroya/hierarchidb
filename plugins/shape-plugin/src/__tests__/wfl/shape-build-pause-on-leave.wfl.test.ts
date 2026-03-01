@@ -20,7 +20,7 @@ vi.mock('@hierarchidb/vt-orchestrator', async () => {
     return async (task: HandlerTask) => {
       const input = task.inputData;
       if (!input) {
-        return { status: 'failed', errorMessage: 'vt task input is missing' };
+        return { status: 'failed', errorMessage: 'tileEmit task input is missing' };
       }
       const parent = unpackTileId(input.tileId, input.zBase);
       await context.tileWriter({
@@ -100,12 +100,12 @@ const createBaseSession = (nodeId: NodeId, timestamp: number): ShapeBuildSession
     failed: 0,
     skipped: 0,
     percentage: 0,
-    taskType: 'fetch',
+    taskType: 'source',
   },
   stages: {
-    fetch: { status: 'queued', progress: 0, tasksTotal: 0, tasksCompleted: 0, tasksFailed: 0 },
-    transform: { status: 'queued', progress: 0, tasksTotal: 0, tasksCompleted: 0, tasksFailed: 0 },
-    vt: { status: 'queued', progress: 0, tasksTotal: 0, tasksCompleted: 0, tasksFailed: 0 },
+    source: { status: 'queued', progress: 0, tasksTotal: 0, tasksCompleted: 0, tasksFailed: 0 },
+    geometry: { status: 'queued', progress: 0, tasksTotal: 0, tasksCompleted: 0, tasksFailed: 0 },
+    tileEmit: { status: 'queued', progress: 0, tasksTotal: 0, tasksCompleted: 0, tasksFailed: 0 },
   },
 });
 

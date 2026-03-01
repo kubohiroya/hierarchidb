@@ -1,4 +1,4 @@
-import type { TransformConfig, TransformSimplifyToleranceByAdminLevelConfig } from '@hierarchidb/gis-sdk';
+import type { GeometryConfig, GeometrySimplifyToleranceByAdminLevelConfig } from '@hierarchidb/gis-sdk';
 
 export type SimplifyToleranceProfile = {
   toleranceByBand: number[];
@@ -17,19 +17,19 @@ const resolveSimplifyAdminLevelKey = (adminLevel: number | undefined): SimplifyA
 };
 
 const resolveProfileByKey = (
-  transformConfig: TransformConfig,
-  config: TransformSimplifyToleranceByAdminLevelConfig | undefined,
+  geometryConfig: GeometryConfig,
+  config: GeometrySimplifyToleranceByAdminLevelConfig | undefined,
   key: SimplifyAdminLevelKey,
   previous: SimplifyToleranceProfile | null,
 ): SimplifyToleranceProfile => {
-  const fallbackRetryCount = typeof transformConfig.retryCount === 'number' && Number.isFinite(transformConfig.retryCount)
-    ? Math.max(0, Math.min(10, Math.round(transformConfig.retryCount)))
+  const fallbackRetryCount = typeof geometryConfig.retryCount === 'number' && Number.isFinite(geometryConfig.retryCount)
+    ? Math.max(0, Math.min(10, Math.round(geometryConfig.retryCount)))
     : 4;
-  const fallbackToleranceByBand = Array.isArray(transformConfig.toleranceByBand)
-    ? transformConfig.toleranceByBand
+  const fallbackToleranceByBand = Array.isArray(geometryConfig.toleranceByBand)
+    ? geometryConfig.toleranceByBand
     : [];
-  const fallbackRetryToleranceByBand = Array.isArray(transformConfig.retryToleranceByBand)
-    ? transformConfig.retryToleranceByBand
+  const fallbackRetryToleranceByBand = Array.isArray(geometryConfig.retryToleranceByBand)
+    ? geometryConfig.retryToleranceByBand
     : [];
 
   const raw = config?.[key];
@@ -56,14 +56,14 @@ const resolveProfileByKey = (
 };
 
 export const resolveSimplifyToleranceProfile = (
-  transformConfig: TransformConfig,
+  geometryConfig: GeometryConfig,
   adminLevel: number | undefined,
 ): SimplifyToleranceProfile => {
-  const simplifyToleranceByAdminLevel = transformConfig.simplifyToleranceByAdminLevel;
-  const admin0 = resolveProfileByKey(transformConfig, simplifyToleranceByAdminLevel, 'admin0', null);
-  const admin1 = resolveProfileByKey(transformConfig, simplifyToleranceByAdminLevel, 'admin1', admin0);
-  const admin2 = resolveProfileByKey(transformConfig, simplifyToleranceByAdminLevel, 'admin2', admin1);
-  const admin3Plus = resolveProfileByKey(transformConfig, simplifyToleranceByAdminLevel, 'admin3Plus', admin2);
+  const simplifyToleranceByAdminLevel = geometryConfig.simplifyToleranceByAdminLevel;
+  const admin0 = resolveProfileByKey(geometryConfig, simplifyToleranceByAdminLevel, 'admin0', null);
+  const admin1 = resolveProfileByKey(geometryConfig, simplifyToleranceByAdminLevel, 'admin1', admin0);
+  const admin2 = resolveProfileByKey(geometryConfig, simplifyToleranceByAdminLevel, 'admin2', admin1);
+  const admin3Plus = resolveProfileByKey(geometryConfig, simplifyToleranceByAdminLevel, 'admin3Plus', admin2);
   const lookup: Record<SimplifyAdminLevelKey, SimplifyToleranceProfile> = {
     admin0,
     admin1,

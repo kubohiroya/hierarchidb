@@ -15,11 +15,11 @@ export const collectLayerForTile = (
   z: number,
   x: number,
   y: number,
-  vtConfigBoundaryDedupe: boolean,
+  tileEmitConfigBoundaryDedupe: boolean,
 ): Tile | null => {
   const tile = index.getTile(z, x, y) as Tile | null;
   if (!tile || !Array.isArray(tile.features) || tile.features.length === 0) return null;
-  const finalTile = vtConfigBoundaryDedupe && isBoundaryLayerName(layerName)
+  const finalTile = tileEmitConfigBoundaryDedupe && isBoundaryLayerName(layerName)
     ? dedupeTileLines(tile)
     : tile;
   if (!Array.isArray(finalTile.features) || finalTile.features.length === 0) return null;
@@ -31,11 +31,11 @@ export const collectLayersForTileFromIndexes = (
   z: number,
   x: number,
   y: number,
-  vtConfigBoundaryDedupe: boolean,
+  tileEmitConfigBoundaryDedupe: boolean,
 ): Record<string, Tile> | null => {
   const layers: Record<string, Tile> = {};
   for (const [layerName, index] of indexes.entries()) {
-    const tile = collectLayerForTile(index, layerName, z, x, y, vtConfigBoundaryDedupe);
+    const tile = collectLayerForTile(index, layerName, z, x, y, tileEmitConfigBoundaryDedupe);
     if (!tile) continue;
     layers[layerName] = tile;
   }

@@ -17,8 +17,8 @@ const resolveInitialBuildConfig = (dataSourceName?: string) => {
   return {
     ...DEFAULT_ROUTE_BUILD_CONFIG,
     dataSourceName: dataSourceName ?? DEFAULT_ROUTE_BUILD_CONFIG.dataSourceName,
-    transformConfig: {
-      ...DEFAULT_ROUTE_BUILD_CONFIG.transformConfig,
+    geometryConfig: {
+      ...DEFAULT_ROUTE_BUILD_CONFIG.geometryConfig,
       zoomBandBoundaries,
     },
   };
@@ -42,7 +42,7 @@ export const useRouteBuildConfigStep = ({ data, onChange }: Args) => {
       onChange({ buildConfig: baseConfig });
       return;
     }
-    const coefficient = data.buildConfig.transformConfig?.excludePolygonAreaCoefficient;
+    const coefficient = data.buildConfig.geometryConfig?.excludePolygonAreaCoefficient;
     if (!Number.isFinite(coefficient)) {
       onChange({ buildConfig: mergeRouteBuildConfig(baseConfig, data.buildConfig) });
       return;

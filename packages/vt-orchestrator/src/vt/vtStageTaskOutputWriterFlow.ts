@@ -56,7 +56,7 @@ export const runVtTileOutputWriter = async (
     totalTiles,
     aggregatedLayersByTileId,
     indexes,
-    vtConfig: vtContext.vtConfig,
+    tileEmitConfig: vtContext.tileEmitConfig,
     tileWriter: vtContext.tileWriter,
     vtpbf,
     debugCollect,

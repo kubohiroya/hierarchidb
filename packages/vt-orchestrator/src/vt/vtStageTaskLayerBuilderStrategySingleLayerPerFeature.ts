@@ -43,7 +43,7 @@ export const buildLayerByFeatureIndex = async ({
   assertNotAborted,
   buildLayerIndexForTile,
 }: SingleLayerPerFeatureInput): Promise<Map<number, Record<string, Tile>>> => {
-  const { bufferSize, extent } = context.vtConfig;
+  const { bufferSize, extent } = context.tileEmitConfig;
   const aggregatedLayersByTileId = new Map<number, Record<string, Tile>>();
   for (const feature of features) {
     assertNotAborted(context.abortSignal);

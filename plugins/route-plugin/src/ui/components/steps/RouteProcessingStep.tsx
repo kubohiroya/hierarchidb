@@ -6,7 +6,7 @@
 import type React from 'react';
 import { useCallback, useMemo } from 'react';
 import { Stack, TextField, Typography } from '@mui/material';
-import { BuildConfigShell, FetchConfigSection, VTConfigSection, ZoomBandConfigSection } from '@hierarchidb/ui-accordion-config';
+import { BuildConfigShell, SourceConfigSection, TileEmitConfigSection, ZoomBandConfigSection } from '@hierarchidb/ui-accordion-config';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BaseBuildConfig } from '@hierarchidb/gis-sdk';
 import type { RouteEntity } from '@hierarchidb/route-api';
@@ -46,15 +46,15 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
     medium: filteringMediumUrl,
     strong: filteringHighUrl,
   }), []);
-  const boundaries = config.transformConfig.zoomBandBoundaries ?? [];
+  const boundaries = config.geometryConfig.zoomBandBoundaries ?? [];
   const bandCount = Math.max(0, boundaries.length - 1);
   const minDistanceValue = useMemo(
-    () => (config.routeTransformConfig?.minDistanceMetersByBand ?? []).slice(0, bandCount).join(', '),
-    [bandCount, config.routeTransformConfig?.minDistanceMetersByBand],
+    () => (config.routeGeometryConfig?.minDistanceMetersByBand ?? []).slice(0, bandCount).join(', '),
+    [bandCount, config.routeGeometryConfig?.minDistanceMetersByBand],
   );
   const simplifyToleranceValue = useMemo(
-    () => (config.routeTransformConfig?.simplifyToleranceByBand ?? []).slice(0, bandCount).join(', '),
-    [bandCount, config.routeTransformConfig?.simplifyToleranceByBand],
+    () => (config.routeGeometryConfig?.simplifyToleranceByBand ?? []).slice(0, bandCount).join(', '),
+    [bandCount, config.routeGeometryConfig?.simplifyToleranceByBand],
   );
   const parseBandNumbers = useCallback((raw: string): number[] => (
     raw
@@ -68,25 +68,25 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
     <BuildConfigShell padding={0} spacing={3}>
       <ZoomBandConfigSection
         t={t}
-        boundaries={config.transformConfig.zoomBandBoundaries}
+        boundaries={config.geometryConfig.zoomBandBoundaries}
         onBoundariesChange={(zoomBandBoundaries) =>
           updateBuildConfig({
-            transformConfig: {
-              ...config.transformConfig,
+            geometryConfig: {
+              ...config.geometryConfig,
               zoomBandBoundaries,
             },
           })
         }
         disabled={disabled}
       />
-      <FetchConfigSection
+      <SourceConfigSection
         t={t}
         buildConfig={config}
         update={updateBuildConfig}
         filteringPreviewImages={filteringPreviewImages}
         disabled={disabled}
       />
-      <VTConfigSection
+      <TileEmitConfigSection
         t={t}
         buildConfig={config}
         update={updateBuildConfig}
@@ -94,7 +94,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
       />
       <Stack spacing={1.5}>
         <Typography variant="subtitle2">
-          {t('route.processing.routeTransform.title', 'Route transform by zoom band')}
+          {t('route.processing.routeTransform.title', 'Route geometry by zoom band')}
         </Typography>
         <Typography variant="body2" color="text.secondary">
           {t(
@@ -107,8 +107,8 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
           value={minDistanceValue}
           onChange={(event) => {
             updateBuildConfig({
-              routeTransformConfig: {
-                ...config.routeTransformConfig,
+              routeGeometryConfig: {
+                ...config.routeGeometryConfig,
                 minDistanceMetersByBand: parseBandNumbers(event.target.value),
               },
             });
@@ -117,12 +117,12 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
           fullWidth
         />
         <TextField
-          label={t('route.processing.routeTransform.tolerance', 'Simplify tolerance per band')}
+          label={t('route.processing.routeTransform.tolerance', 'Geometry simplify tolerance per band')}
           value={simplifyToleranceValue}
           onChange={(event) => {
             updateBuildConfig({
-              routeTransformConfig: {
-                ...config.routeTransformConfig,
+              routeGeometryConfig: {
+                ...config.routeGeometryConfig,
                 simplifyToleranceByBand: parseBandNumbers(event.target.value),
               },
             });

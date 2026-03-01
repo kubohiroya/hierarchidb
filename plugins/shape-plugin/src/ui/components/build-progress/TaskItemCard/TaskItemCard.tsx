@@ -7,10 +7,14 @@ import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskIt
 import { TaskItem, type TaskOutcomeSummary } from '~/ui/components/build-progress/TaskItem/TaskItem';
 import {
   type TaskOutcomeSummaryBuilder,
-  buildFetchTaskOutcomeSummary,
+  buildSourceTaskOutcomeSummary,
   buildSimpleTaskOutcomeSummary,
-  buildTransformTaskOutcomeSummary,
+  buildGeometryTaskOutcomeSummary,
 } from './taskOutcomeSummaryBuilders';
+import {
+  isGeometryLikeStageId,
+  isTileEmitLikeStageId,
+} from '~/ui/components/build-progress/stageIdAliases';
 
 type Translate = (key: string, fallback?: string) => string;
 
@@ -77,13 +81,13 @@ const toFlagEmoji = (countryCode: string | null): string | null => {
   return String.fromCodePoint(first, second);
 };
 
-const resolveVtTopCountryCodes = (task: ShapeBuildTaskSummary): string[] => {
-  if (task.stage !== 'vt') return [];
+const resolveTileEmitTopCountryCodes = (task: ShapeBuildTaskSummary): string[] => {
+  if (!isTileEmitLikeStageId(task.stage)) return [];
   const metadata = (task.metadata && typeof task.metadata === 'object')
     ? task.metadata as Record<string, unknown>
     : null;
-  const summary = (metadata?.vtParentInputSummary && typeof metadata.vtParentInputSummary === 'object')
-    ? metadata.vtParentInputSummary as Record<string, unknown>
+  const summary = (metadata?.tileEmitParentInputSummary && typeof metadata.tileEmitParentInputSummary === 'object')
+    ? metadata.tileEmitParentInputSummary as Record<string, unknown>
     : null;
   const rows = Array.isArray(summary?.topCountriesByIntersectingArea)
     ? summary.topCountriesByIntersectingArea as unknown[]
@@ -121,9 +125,9 @@ export const TaskItemCard = ({
   const taskTitle = resolveTaskTitle(task as TaskItemWithMetadata);
   const builder = summaryBuilder
     ?? (
-      stageId === 'transform'
-        ? buildTransformTaskOutcomeSummary
-        : (stageId === 'fetch' ? buildFetchTaskOutcomeSummary : buildSimpleTaskOutcomeSummary)
+      isGeometryLikeStageId(stageId)
+        ? buildGeometryTaskOutcomeSummary
+        : (isTileEmitLikeStageId(stageId) ? buildSimpleTaskOutcomeSummary : buildSourceTaskOutcomeSummary)
     );
   const summary = builder({
     task,
@@ -133,7 +137,7 @@ export const TaskItemCard = ({
   });
 
   const normalizedRetryAttempt = resolveRetryAttemptFromTask(task);
-  const statusLabel = stageId === 'transform'
+  const statusLabel = isGeometryLikeStageId(stageId)
     && (task.status === 'completed' || task.status === 'failed')
     ? (
       normalizedRetryAttempt !== null && normalizedRetryAttempt > 0
@@ -144,11 +148,11 @@ export const TaskItemCard = ({
 
   const countryCode = resolveCountryCodeFromTask(task, taskTitle);
   const flag = toFlagEmoji(countryCode);
-  const vtTopCountryCodes = resolveVtTopCountryCodes(task);
-  const leadingIcon: ReactNode = vtTopCountryCodes.length > 0
+  const tileEmitTopCountryCodes = resolveTileEmitTopCountryCodes(task);
+  const leadingIcon: ReactNode = tileEmitTopCountryCodes.length > 0
     ? (
       <Box
-        data-testid="task-icon-vt-flag-overlay"
+        data-testid="task-icon-tileEmit-flag-overlay"
         sx={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -162,7 +166,7 @@ export const TaskItemCard = ({
           width={29}
           height={21}
           defaultFlagSize={17}
-          items={vtTopCountryCodes.map((isoCode, index) => ({
+          items={tileEmitTopCountryCodes.map((isoCode, index) => ({
             isoCode,
             x: index === 0 ? 0 : 9,
             y: index === 0 ? 0 : 3,

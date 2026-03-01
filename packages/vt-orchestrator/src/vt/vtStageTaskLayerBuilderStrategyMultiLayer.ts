@@ -16,7 +16,7 @@ export const buildLayersWithMultipleLayers = async ({
   layerMap,
   debugCollect,
   assertNotAborted,
-  vtConfigBoundaryDedupe,
+  tileEmitConfigBoundaryDedupe,
 }: {
   context: VTStageContext;
   taskContext: TaskLayerContext;
@@ -25,7 +25,7 @@ export const buildLayersWithMultipleLayers = async ({
   layerMap: Map<string, Feature<Geometry>[]>;
   debugCollect: boolean;
   assertNotAborted: (signal?: AbortSignal) => void;
-  vtConfigBoundaryDedupe: boolean;
+  tileEmitConfigBoundaryDedupe: boolean;
 }): Promise<Map<number, Record<string, Tile>>> => {
   const aggregatedLayersByTileId = new Map<number, Record<string, Tile>>();
   for (const [layerName, features] of layerMap.entries()) {
@@ -58,7 +58,7 @@ export const buildLayersWithMultipleLayers = async ({
       assertNotAborted,
       abortSignal: context.abortSignal,
       collectLayersForTile: (z, x, y) => {
-        const tile = collectLayerForTile(layerIndex, layerName, z, x, y, vtConfigBoundaryDedupe);
+        const tile = collectLayerForTile(layerIndex, layerName, z, x, y, tileEmitConfigBoundaryDedupe);
         return tile ? { [layerName]: tile } : null;
       },
     });

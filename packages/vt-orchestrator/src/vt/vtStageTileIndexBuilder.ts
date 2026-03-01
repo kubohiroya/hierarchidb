@@ -36,11 +36,11 @@ export const buildLayerIndexes = async (
     const index = instance(collection, {
       maxZoom: band.zMax,
       indexMaxZoom: band.zMax,
-      extent: context.vtConfig.extent,
-      buffer: context.vtConfig.bufferSize,
-      tolerance: context.vtConfig.tolerance,
-      promoteId: context.vtConfig.promoteId,
-      indexMaxPoints: resolveMaxVerticesPerTile(context.vtConfig.indexMaxPoints),
+      extent: context.tileEmitConfig.extent,
+      buffer: context.tileEmitConfig.bufferSize,
+      tolerance: context.tileEmitConfig.tolerance,
+      promoteId: context.tileEmitConfig.promoteId,
+      indexMaxPoints: resolveMaxVerticesPerTile(context.tileEmitConfig.indexMaxPoints),
     });
     indexes.set(layerName, index as GeojsonVtIndex);
   }

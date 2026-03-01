@@ -12,7 +12,7 @@ import type {
   ShapeBuildTaskSummary,
   ShapeEphemeralSessionRecord,
   ShapeFeatureMetadata,
-  ShapeFetchCache,
+  ShapeSourceCache,
   ShapeMutationAPI,
   ShapeProcessingStatus,
   ShapeQueryAPI,
@@ -21,10 +21,10 @@ import type {
   ShapeTileInfo,
   ShapeTileSummary,
   ShapeTileSummaryEntry,
-  ShapeTransformCache,
-  ShapeTransformErrorRecord,
+  ShapeGeometryCache,
+  ShapeGeometryErrorRecord,
   ShapeVectorTileRecord,
-  ShapeVTMetadata,
+  ShapeTileEmitMetadata,
 } from '@hierarchidb/shape-api';
 import {
   deleteRawDataDataSourceBuffersForNode,
@@ -43,7 +43,7 @@ import { shapeDB } from '@hierarchidb/shape-store';
 import type {
   BuildSessionRecord,
   BuildTaskType,
-  FetchStageMaxima,
+  SourceStageMaxima,
   ResourceUsage,
   StageStatus,
   VectorTileRecord,
@@ -102,11 +102,11 @@ const isNumberRecord = (value: unknown): value is Record<string, number> => {
 
 const readStageMap = (value: unknown): Record<BuildTaskType, StageStatus> | null => {
   if (!isRecord(value)) return null;
-  const fetch = value.fetch;
-  const transform = value.transform;
-  const vt = value.vt;
-  if (!isStageStatus(fetch) || !isStageStatus(transform) || !isStageStatus(vt)) return null;
-  return { fetch, transform, vt };
+  const sourceStage = value.source;
+  const geometryStage = value.geometry;
+  const tileEmitStage = value.tileEmit;
+  if (!isStageStatus(sourceStage) || !isStageStatus(geometryStage) || !isStageStatus(tileEmitStage)) return null;
+  return { source: sourceStage, geometry: geometryStage, tileEmit: tileEmitStage };
 };
 
 const readResourceUsage = (value: unknown): ResourceUsage | undefined => {
@@ -129,7 +129,7 @@ const readResourceUsage = (value: unknown): ResourceUsage | undefined => {
   };
 };
 
-const readFetchStageMaxima = (value: unknown): FetchStageMaxima | undefined => {
+const readSourceStageMaxima = (value: unknown): SourceStageMaxima | undefined => {
   if (!isRecord(value)) return undefined;
   if (!isNumber(value.featureMax) || !isNumber(value.polygonMax)) return undefined;
   if (value.featureMax < 0 || value.polygonMax < 0) return undefined;
@@ -184,7 +184,7 @@ const toBuildSessionRecordFromEphemeral = (
     stageId: session.stageId,
     elapsedMs: session.elapsedMs,
     elapsedByStage: isNumberRecord(session.elapsedByStage) ? session.elapsedByStage : undefined,
-    fetchStageMaxima: readFetchStageMaxima(session.fetchStageMaxima),
+    sourceStageMaxima: readSourceStageMaxima(session.sourceStageMaxima),
   };
 };
 
@@ -206,7 +206,7 @@ const readAllBuildSessions = async (): Promise<BuildSessionRecord[]> => {
   return sessions.map(toBuildSessionRecordFromEphemeral).filter(isNonNull);
 };
 
-const listVtTilesByNode = async (nodeId: NodeId): Promise<VectorTileRecord[]> => (
+const listTileEmitTilesByNode = async (nodeId: NodeId): Promise<VectorTileRecord[]> => (
   shapeDB.vectorTiles.where('nodeId').equals(nodeId).toArray()
 );
 
@@ -215,7 +215,7 @@ const pickLatestTile = (tiles: VectorTileRecord[]): VectorTileRecord | null => {
   return tiles.reduce((latest, tile) => (tile.generatedAt > latest.generatedAt ? tile : latest));
 };
 
-const getVtTileByXYZ = async (nodeId: NodeId, z: number, x: number, y: number): Promise<VectorTileRecord | null> => {
+const getTileEmitTileByXYZ = async (nodeId: NodeId, z: number, x: number, y: number): Promise<VectorTileRecord | null> => {
   const tiles = await shapeDB.vectorTiles
     .where('[nodeId+z+x+y]')
     .equals([nodeId, z, x, y])
@@ -240,33 +240,33 @@ const toShapeVectorTileRecord = (tile: VectorTileRecord): ShapeVectorTileRecord 
   version: tile.version,
 });
 
-const isTransformCacheComplete = <T extends { timestamp: number }>(record: T | null | undefined): record is T => (
+const isGeometryCacheComplete = <T extends { timestamp: number }>(record: T | null | undefined): record is T => (
   Boolean(record && record.timestamp > 0)
 );
 
-const markTransformCacheWriteComplete = async (buffers: Array<{ id: string }>): Promise<void> => {
+const markGeometryCacheWriteComplete = async (buffers: Array<{ id: string }>): Promise<void> => {
   if (buffers.length === 0) return;
   const completedAt = Date.now();
   await Promise.all(buffers.map((buffer) => (
-    ephemeralDB.transformCache.update(buffer.id, { timestamp: completedAt })
+    ephemeralDB.geometryCache.update(buffer.id, { timestamp: completedAt })
   )));
 };
 
-const assertNonEmptyTransformCacheBuffer = (buffer: Pick<ShapeTransformCache, 'id' | 'data'>): void => {
+const assertNonEmptyGeometryCacheBuffer = (buffer: Pick<ShapeGeometryCache, 'id' | 'data'>): void => {
   if (buffer.data.byteLength === 0) {
-    throw new Error(`[shape-build] empty transform cache buffer: ${buffer.id}`);
+    throw new Error(`[shape-build] empty geometry cache buffer: ${buffer.id}`);
   }
 };
 
-const assertNonEmptyTransformCacheBuffers = (buffers: Array<Pick<ShapeTransformCache, 'id' | 'data'>>): void => {
-  buffers.forEach(assertNonEmptyTransformCacheBuffer);
+const assertNonEmptyGeometryCacheBuffers = (buffers: Array<Pick<ShapeGeometryCache, 'id' | 'data'>>): void => {
+  buffers.forEach(assertNonEmptyGeometryCacheBuffer);
 };
 
 const isDefined = <T>(value: T | null | undefined): value is T => (
   value !== null && value !== undefined
 );
 
-const toShapeFetchCache = (record: {
+const toShapeSourceCache = (record: {
   id: string;
   nodeId: NodeId;
   data: ArrayBuffer;
@@ -275,7 +275,7 @@ const toShapeFetchCache = (record: {
   downloadTime: number;
   size: number;
   timestamp: number;
-}): ShapeFetchCache => ({
+}): ShapeSourceCache => ({
   id: record.id,
   nodeId: record.nodeId,
   data: record.data,
@@ -286,26 +286,26 @@ const toShapeFetchCache = (record: {
   timestamp: record.timestamp,
 });
 
-const listFetchCachesWithoutHeavyIteration = async (nodeId: NodeId): Promise<ShapeFetchCache[]> => {
-  const idsRaw = await ephemeralDB.fetchCacheMeta.where('nodeId').equals(nodeId).primaryKeys();
+const listSourceCachesWithoutHeavyIteration = async (nodeId: NodeId): Promise<ShapeSourceCache[]> => {
+  const idsRaw = await ephemeralDB.sourceCacheMeta.where('nodeId').equals(nodeId).primaryKeys();
   if (idsRaw.length === 0) return [];
   const ids = idsRaw.map((id) => String(id));
-  const records = await ephemeralDB.fetchCache.bulkGet(ids);
+  const records = await ephemeralDB.sourceCache.bulkGet(ids);
   return records
     .filter(isDefined)
     .filter((record) => record.nodeId === nodeId)
-    .map((record) => toShapeFetchCache(record));
+    .map((record) => toShapeSourceCache(record));
 };
 
-const listTransformCachesWithoutHeavyIteration = async (nodeId: NodeId): Promise<ShapeTransformCache[]> => {
-  const idsRaw = await ephemeralDB.transformCacheMeta.where('nodeId').equals(nodeId).primaryKeys();
+const listGeometryCachesWithoutHeavyIteration = async (nodeId: NodeId): Promise<ShapeGeometryCache[]> => {
+  const idsRaw = await ephemeralDB.geometryCacheMeta.where('nodeId').equals(nodeId).primaryKeys();
   if (idsRaw.length === 0) return [];
   const ids = idsRaw.map((id) => String(id));
-  const records = await ephemeralDB.transformCache.bulkGet(ids);
+  const records = await ephemeralDB.geometryCache.bulkGet(ids);
   return records
     .filter(isDefined)
-    .filter((record): record is ShapeTransformCache => (
-      record.nodeId === nodeId && isTransformCacheComplete(record)
+    .filter((record): record is ShapeGeometryCache => (
+      record.nodeId === nodeId && isGeometryCacheComplete(record)
     ));
 };
 
@@ -417,7 +417,7 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
   }
 
   async getVectorTileInfo(nodeId: NodeId, z: number, x: number, y: number): Promise<ShapeTileInfo | null> {
-    const tile = await getVtTileByXYZ(nodeId, z, x, y);
+    const tile = await getTileEmitTileByXYZ(nodeId, z, x, y);
     if (!tile) return null;
     return {
       exists: true,
@@ -430,18 +430,18 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
   }
 
   async getVectorTileRecord(nodeId: NodeId, z: number, x: number, y: number): Promise<ShapeVectorTileRecord | null> {
-    const tile = await getVtTileByXYZ(nodeId, z, x, y);
+    const tile = await getTileEmitTileByXYZ(nodeId, z, x, y);
     return tile ? toShapeVectorTileRecord(tile) : null;
   }
 
   async getVectorTile(nodeId: NodeId, z: number, x: number, y: number): Promise<Uint8Array | null> {
-    const tile = await getVtTileByXYZ(nodeId, z, x, y);
+    const tile = await getTileEmitTileByXYZ(nodeId, z, x, y);
     if (!tile) return null;
     return new Uint8Array(tile.data_Uint8Array);
   }
 
   async listVectorTiles(nodeId: NodeId): Promise<ShapeTileSummaryEntry[]> {
-    const tiles = await listVtTilesByNode(nodeId);
+    const tiles = await listTileEmitTilesByNode(nodeId);
     return tiles.map((tile) => ({
       z: tile.z,
       x: tile.x,
@@ -464,12 +464,12 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
     };
   }
 
-  async listFetchCaches(nodeId: NodeId): Promise<ShapeFetchCache[]> {
-    return listFetchCachesWithoutHeavyIteration(nodeId);
+  async listSourceCaches(nodeId: NodeId): Promise<ShapeSourceCache[]> {
+    return listSourceCachesWithoutHeavyIteration(nodeId);
   }
 
-  async getFetchCache(nodeId: NodeId, bufferId: string): Promise<ShapeFetchCache | null> {
-    const record = await ephemeralDB.fetchCache.get(bufferId);
+  async getSourceCache(nodeId: NodeId, bufferId: string): Promise<ShapeSourceCache | null> {
+    const record = await ephemeralDB.sourceCache.get(bufferId);
     if (!record || record.nodeId !== nodeId) return null;
     return {
       id: record.id,
@@ -483,23 +483,23 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
     };
   }
 
-  async getTransformCache(
+  async getGeometryCache(
     bufferId: string
-  ): Promise<ShapeTransformCache|null> {
-    return await ephemeralDB.transaction('r', ephemeralDB.transformCache, async () => {
-      const record = await ephemeralDB.transformCache.get(bufferId);
-      return isTransformCacheComplete(record) ? record : null;
+  ): Promise<ShapeGeometryCache|null> {
+    return await ephemeralDB.transaction('r', ephemeralDB.geometryCache, async () => {
+      const record = await ephemeralDB.geometryCache.get(bufferId);
+      return isGeometryCacheComplete(record) ? record : null;
     });
   }
 
-  async listTransformCaches(
+  async listGeometryCaches(
     nodeId: NodeId
-  ): Promise<ShapeTransformCache[]> {
-    return listTransformCachesWithoutHeavyIteration(nodeId);
+  ): Promise<ShapeGeometryCache[]> {
+    return listGeometryCachesWithoutHeavyIteration(nodeId);
   }
 
-  async listVTMetadata(nodeId: NodeId): Promise<ShapeVTMetadata[]> {
-    const rows = await listVtTilesByNode(nodeId);
+  async listTileEmitMetadata(nodeId: NodeId): Promise<ShapeTileEmitMetadata[]> {
+    const rows = await listTileEmitTilesByNode(nodeId);
     return rows.map((row) => ({
       key: row.tileId,
       nodeId: String(nodeId),
@@ -520,8 +520,8 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
     return shapeDB.featureMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<ShapeFeatureMetadata[]>;
   }
 
-  async listTransformErrorRecords(nodeId: NodeId): Promise<ShapeTransformErrorRecord[]> {
-    const rows = await ephemeralDB.transformErrors
+  async listGeometryErrorRecords(nodeId: NodeId): Promise<ShapeGeometryErrorRecord[]> {
+    const rows = await ephemeralDB.geometryErrors
       .where('nodeId')
       .equals(nodeId)
       .toArray();
@@ -551,7 +551,7 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
         }
       }),
     );
-    const updates: ShapeTransformErrorRecord[] = [];
+    const updates: ShapeGeometryErrorRecord[] = [];
     const merged = rows.map((row) => {
       const code = row.countryCode?.trim().toUpperCase();
       if (!code) return row;
@@ -568,9 +568,9 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
     });
     if (updates.length > 0) {
       try {
-        await ephemeralDB.transformErrors.bulkPut(updates);
+        await ephemeralDB.geometryErrors.bulkPut(updates);
       } catch (error) {
-        console.warn('[ShapeBuildAPIClient] Failed to update transform error names', error);
+        console.warn('[ShapeBuildAPIClient] Failed to update geometry error names', error);
       }
     }
     return merged;
@@ -636,7 +636,7 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
     await ephemeralDB.updateBuildTask(taskId, updates);
   }
 
-  async putFetchCaches(buffers: ShapeFetchCache[]): Promise<void> {
+  async putSourceCaches(buffers: ShapeSourceCache[]): Promise<void> {
     if (buffers.length === 0) return;
     await Promise.all(buffers.map((buffer) => (
       storeRawDataDataSourceBufferForNode({
@@ -646,13 +646,13 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
       })
     )));
   }
-  async putTransformCaches(buffers: ShapeTransformCache[]): Promise<void>{
+  async putGeometryCaches(buffers: ShapeGeometryCache[]): Promise<void>{
     if (buffers.length === 0) return;
-    assertNonEmptyTransformCacheBuffers(buffers);
+    assertNonEmptyGeometryCacheBuffers(buffers);
     const pending = buffers.map((buffer) => ({ ...buffer, timestamp: 0 }));
-    await ephemeralDB.transaction('rw', [ephemeralDB.transformCache, ephemeralDB.transformCacheMeta], async () => {
-      await ephemeralDB.transformCache.bulkPut(pending);
-      await markTransformCacheWriteComplete(pending);
+    await ephemeralDB.transaction('rw', [ephemeralDB.geometryCache, ephemeralDB.geometryCacheMeta], async () => {
+      await ephemeralDB.geometryCache.bulkPut(pending);
+      await markGeometryCacheWriteComplete(pending);
     });
   }
 
@@ -733,12 +733,12 @@ export class EphemeralShapeApiImpl {
     await ephemeralDB.updateBuildTask(taskId, updates);
   }
 
-  async listFetchCaches(nodeId: NodeId): Promise<ShapeFetchCache[]> {
-    return listFetchCachesWithoutHeavyIteration(nodeId);
+  async listSourceCaches(nodeId: NodeId): Promise<ShapeSourceCache[]> {
+    return listSourceCachesWithoutHeavyIteration(nodeId);
   }
 
-  async getFetchCache(nodeId: NodeId, bufferId: string): Promise<ShapeFetchCache | null> {
-    const record = await ephemeralDB.fetchCache.get(bufferId);
+  async getSourceCache(nodeId: NodeId, bufferId: string): Promise<ShapeSourceCache | null> {
+    const record = await ephemeralDB.sourceCache.get(bufferId);
     if (!record || record.nodeId !== nodeId) return null;
     return {
       id: record.id,
@@ -752,11 +752,11 @@ export class EphemeralShapeApiImpl {
     };
   }
 
-  async countFetchCaches(nodeId: NodeId): Promise<number> {
-    return ephemeralDB.fetchCacheMeta.where('nodeId').equals(nodeId).count();
+  async countSourceCaches(nodeId: NodeId): Promise<number> {
+    return ephemeralDB.sourceCacheMeta.where('nodeId').equals(nodeId).count();
   }
 
-  async putFetchCache(buffer: ShapeFetchCache): Promise<void> {
+  async putSourceCache(buffer: ShapeSourceCache): Promise<void> {
     await storeRawDataDataSourceBufferForNode({
       nodeId: buffer.nodeId,
       cacheKey: buffer.id,
@@ -764,7 +764,7 @@ export class EphemeralShapeApiImpl {
     });
   }
 
-  async putFetchCaches(buffers: ShapeFetchCache[]): Promise<void> {
+  async putSourceCaches(buffers: ShapeSourceCache[]): Promise<void> {
     if (buffers.length === 0) return;
     await Promise.all(buffers.map((buffer) => (
       storeRawDataDataSourceBufferForNode({
@@ -775,53 +775,53 @@ export class EphemeralShapeApiImpl {
     )));
   }
 
-  async listTransformCaches(
+  async listGeometryCaches(
     nodeId: NodeId
-  ): Promise<ShapeTransformCache[]> {
-    return listTransformCachesWithoutHeavyIteration(nodeId);
+  ): Promise<ShapeGeometryCache[]> {
+    return listGeometryCachesWithoutHeavyIteration(nodeId);
   }
 
-  async getTransformCache(bufferId: string): Promise<ShapeTransformCache | null> {
-    return await ephemeralDB.transaction('r', ephemeralDB.transformCache, async () => {
-      const record = await ephemeralDB.transformCache.get(bufferId);
-      return isTransformCacheComplete(record) ? record : null;
+  async getGeometryCache(bufferId: string): Promise<ShapeGeometryCache | null> {
+    return await ephemeralDB.transaction('r', ephemeralDB.geometryCache, async () => {
+      const record = await ephemeralDB.geometryCache.get(bufferId);
+      return isGeometryCacheComplete(record) ? record : null;
     });
   }
 
-  async countTransformCaches(nodeId: NodeId): Promise<number> {
-    return ephemeralDB.transaction('r', ephemeralDB.transformCacheMeta, async () => (
-      ephemeralDB.transformCacheMeta
+  async countGeometryCaches(nodeId: NodeId): Promise<number> {
+    return ephemeralDB.transaction('r', ephemeralDB.geometryCacheMeta, async () => (
+      ephemeralDB.geometryCacheMeta
         .where('[nodeId+timestamp]')
         .between([nodeId, 1], [nodeId, Number.MAX_SAFE_INTEGER])
         .count()
     ));
   }
 
-  async putTransformCache(buffer: ShapeTransformCache): Promise<void> {
-    assertNonEmptyTransformCacheBuffer(buffer);
+  async putGeometryCache(buffer: ShapeGeometryCache): Promise<void> {
+    assertNonEmptyGeometryCacheBuffer(buffer);
     const pending = { ...buffer, timestamp: 0 };
-    await ephemeralDB.transaction('rw', [ephemeralDB.transformCache, ephemeralDB.transformCacheMeta], async () => {
-      await ephemeralDB.transformCache.put(pending);
-      await markTransformCacheWriteComplete([pending]);
+    await ephemeralDB.transaction('rw', [ephemeralDB.geometryCache, ephemeralDB.geometryCacheMeta], async () => {
+      await ephemeralDB.geometryCache.put(pending);
+      await markGeometryCacheWriteComplete([pending]);
     });
   }
 
-  async putTransformCaches(buffers: ShapeTransformCache[]): Promise<void> {
+  async putGeometryCaches(buffers: ShapeGeometryCache[]): Promise<void> {
     if (buffers.length === 0) return;
-    assertNonEmptyTransformCacheBuffers(buffers);
+    assertNonEmptyGeometryCacheBuffers(buffers);
     const pending = buffers.map((buffer) => ({ ...buffer, timestamp: 0 }));
-    await ephemeralDB.transaction('rw', [ephemeralDB.transformCache, ephemeralDB.transformCacheMeta], async () => {
-      await ephemeralDB.transformCache.bulkPut(pending);
-      await markTransformCacheWriteComplete(pending);
+    await ephemeralDB.transaction('rw', [ephemeralDB.geometryCache, ephemeralDB.geometryCacheMeta], async () => {
+      await ephemeralDB.geometryCache.bulkPut(pending);
+      await markGeometryCacheWriteComplete(pending);
     });
   }
 
   async listTileIdRelations(nodeId: NodeId): Promise<ShapeTileIdToBufferRelation[]> {
-    return ephemeralDB.tileIdToBufferRelations.where('nodeId').equals(nodeId).toArray() as Promise<ShapeTileIdToBufferRelation[]>;
+    return ephemeralDB.tileEmitBufferRelations.where('nodeId').equals(nodeId).toArray() as Promise<ShapeTileIdToBufferRelation[]>;
   }
 
   async listTileIdRelationsByTileId(nodeId: NodeId, bandIndex: number, tileId: string): Promise<ShapeTileIdToBufferRelation[]> {
-    return ephemeralDB.tileIdToBufferRelations
+    return ephemeralDB.tileEmitBufferRelations
       .where('[nodeId+bandIndex+tileId]')
       .equals([nodeId, bandIndex, tileId])
       .toArray() as Promise<ShapeTileIdToBufferRelation[]>;
@@ -829,11 +829,11 @@ export class EphemeralShapeApiImpl {
 
   async putTileIdRelations(relations: ShapeTileIdToBufferRelation[]): Promise<void> {
     if (relations.length === 0) return;
-    await ephemeralDB.tileIdToBufferRelations.bulkPut(relations);
+    await ephemeralDB.tileEmitBufferRelations.bulkPut(relations);
   }
 
   async deleteTileIdRelations(nodeId: NodeId): Promise<void> {
-    await ephemeralDB.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
+    await ephemeralDB.tileEmitBufferRelations.where('nodeId').equals(nodeId).delete();
   }
 
   async getSessionRecord(nodeId: NodeId): Promise<ShapeEphemeralSessionRecord | null> {
@@ -846,7 +846,7 @@ export class EphemeralShapeApiImpl {
 
   async clearStage(nodeId: NodeId, stage: ShapeBuildStage): Promise<void> {
     await ephemeralDB.clearStage(nodeId, stage);
-    if (stage === 'fetch') {
+    if (stage === 'source') {
       try {
         await deleteRawDataDataSourceBuffersForNode(nodeId);
       } catch (error) {
@@ -864,8 +864,8 @@ export class EphemeralShapeApiImpl {
   }
 
   async getNumCaches(): Promise<{
-    numFetchCaches: number;
-    numTransformCaches: number;
+    numSourceCaches: number;
+    numGeometryCaches: number;
     numSessions: number;
     totalSize: number;
   }> {

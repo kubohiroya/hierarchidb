@@ -204,7 +204,7 @@ export const runTransformByBandOutputPhase = async (
         status: 'Skipped',
       };
       await persistTransformCacheMetadata(skippedMetadata).catch((error) => {
-        console.error('[ShapeTransform] failed to persist skipped transform cache metadata', {
+        console.error('[ShapeGeometry] failed to persist skipped geometry cache metadata', {
           taskId,
           nodeId,
           error,
@@ -231,7 +231,7 @@ export const runTransformByBandOutputPhase = async (
 
   const boundaryDiagnostics = buildBoundaryDiagnostics(outputCollectionValue);
   if (boundaryDiagnostics && isTaskDebugLoggingEnabled()) {
-    console.debug('[ShapeTransform][BoundaryDiagnostics]', JSON.stringify({
+    console.debug('[ShapeGeometry][BoundaryDiagnostics]', JSON.stringify({
       nodeId,
       taskId,
       sourceKey: input.sourceKey,
@@ -246,7 +246,7 @@ export const runTransformByBandOutputPhase = async (
   const issues = validateOutputForVt(outputCollectionValue);
   if (issues.length > 0) {
     const sample = issues.slice(0, 5);
-    console.error('[ShapeTransform][GeojsonValidation]', JSON.stringify({
+    console.error('[ShapeGeometry][GeojsonValidation]', JSON.stringify({
       nodeId,
       taskId,
       sourceKey: input.sourceKey,
@@ -256,7 +256,7 @@ export const runTransformByBandOutputPhase = async (
       issueCount: issues.length,
       sample,
     }));
-    throw new Error(`transform failed: invalid geojson for vt (issues=${issues.length})`);
+    throw new Error(`geometry failed: invalid geojson for vt (issues=${issues.length})`);
   }
 
   const cacheId = `${nodeId}-b${input.bandIndex}-${input.domainType}-${input.sourceKey}`;
@@ -267,17 +267,17 @@ export const runTransformByBandOutputPhase = async (
   setStageLabel('encode');
   await updateTaskPhase(taskId, 'output:build:done', taskProgressRange.outputBuildEnd);
   await updateTaskPhase(taskId, 'encode:start', taskProgressRange.encodeStart, {
-    key: 'stage.taskPhase.transformCacheEncodeStart',
+    key: 'stage.taskPhase.geometryCacheEncodeStart',
   });
   logDebugPhase('encode:start', { featureCount: outputCollectionValue.features.length });
   const encoded = await runStageWithLabel('encode', () => encodeFlatGeobufFromFeatureCollection(outputCollectionValue));
   if (encoded.byteLength === 0) {
-    throw new Error('transform failed: empty transform cache buffer');
+    throw new Error('geometry failed: empty geometry cache buffer');
   }
 
   if ((globalThis as { __HDB_VT_DEBUG_COLLECT?: boolean }).__HDB_VT_DEBUG_COLLECT === true) {
     const probe = collectArrayBufferSnapshot(encoded);
-    console.info('[ShapeTransform][TaskDebug] transform cache encode probe', {
+    console.info('[ShapeGeometry][TaskDebug] geometry cache encode probe', {
       tag: TASKDEBUG_BUILD_TAG,
       nodeId: String(nodeId),
       cacheId,
@@ -289,7 +289,7 @@ export const runTransformByBandOutputPhase = async (
   await runStageWithLabel('encode:validate', () => validateEncodedFlatGeobuf(encoded));
   logDebugPhase('encode:done', { byteLength: encoded.byteLength });
   await updateTaskPhase(taskId, 'encode:done', taskProgressRange.encodeEnd, {
-    key: 'stage.taskPhase.transformCacheEncodeDone',
+    key: 'stage.taskPhase.geometryCacheEncodeDone',
   });
 
   const extractionRatio = inputFeatureCount > 0 ? simplified.features.length / inputFeatureCount : 0;
@@ -334,10 +334,10 @@ export const runTransformByBandOutputPhase = async (
   });
 
   if ((globalThis as { __HDB_VT_DEBUG_COLLECT?: boolean }).__HDB_VT_DEBUG_COLLECT === true) {
-    const saved = await ephemeralDB.transformCache.get(cacheId);
+    const saved = await ephemeralDB.geometryCache.get(cacheId);
     const data = saved?.data ?? null;
     const probe = collectArrayBufferSnapshot(data);
-    console.info('[ShapeTransform][TaskDebug] transform cache readback probe', {
+    console.info('[ShapeGeometry][TaskDebug] geometry cache readback probe', {
       tag: TASKDEBUG_BUILD_TAG,
       nodeId: String(nodeId),
       cacheId: String(cacheId),
@@ -350,7 +350,7 @@ export const runTransformByBandOutputPhase = async (
   logDebugPhase('cache-put:done', { cacheId });
 
   const tileIds = collectTileIdsForCollection(outputCollectionValue, band.zBase, geometryOps);
-  console.info('[ShapeTransform][TileIndex]', JSON.stringify({
+  console.info('[ShapeGeometry][TileIndex]', JSON.stringify({
     nodeId: String(nodeId),
     bandIndex: input.bandIndex,
     zBase: band.zBase,
@@ -378,21 +378,21 @@ export const runTransformByBandOutputPhase = async (
         operation: 'tile-index:rebuild-relations',
         timeoutMs: TRANSFORM_DB_WRITE_TIMEOUT_MS,
         promise: ephemeralDB.transaction('rw', [
-          ephemeralDB.tileIdToBufferRelations,
+          ephemeralDB.tileEmitBufferRelations,
         ], async () => {
-          await ephemeralDB.tileIdToBufferRelations.where('bufferId').equals(cacheId).delete();
-          await ephemeralDB.tileIdToBufferRelations.bulkPut(relations);
+          await ephemeralDB.tileEmitBufferRelations.where('bufferId').equals(cacheId).delete();
+          await ephemeralDB.tileEmitBufferRelations.bulkPut(relations);
         }),
       });
     } catch (storageError) {
       const reason = storageError instanceof Error ? storageError.message : String(storageError);
-      throw new Error(`transform failed: tile index relation write failed (taskId=${taskId}, reason=${reason})`);
+      throw new Error(`geometry failed: tile index relation write failed (taskId=${taskId}, reason=${reason})`);
     }
   }
 
   if (persistTransformCacheMetadata) {
     await persistTransformCacheMetadata(resultMetadata).catch((error) => {
-      console.error('[ShapeTransform] failed to persist completed transform cache metadata', {
+      console.error('[ShapeGeometry] failed to persist completed geometry cache metadata', {
         taskId,
         nodeId,
         error,

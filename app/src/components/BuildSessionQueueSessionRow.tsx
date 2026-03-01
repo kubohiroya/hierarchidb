@@ -71,15 +71,15 @@ const formatElapsed = (elapsedMs: number): string => {
 
 const resolveStageIcon = (stage: string | undefined) => {
   const sizeProps = { fontSize: 'small' as const };
-  if (stage === 'fetch') {
+  if (stage === 'source') {
     return <CloudDownloadIcon {...sizeProps} />;
   }
 
-  if (stage === 'transform') {
+  if (stage === 'geometry') {
     return <TuneIcon {...sizeProps} />;
   }
 
-  if (stage === 'vt') {
+  if (stage === 'tileEmit') {
     return <LayersIcon {...sizeProps} />;
   }
 

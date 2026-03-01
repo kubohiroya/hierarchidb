@@ -88,6 +88,7 @@ export interface BuildProgressEvent<P = BuildProgressPayload> {
 export interface BuildTaskSummary {
   taskId: string;
   stage: StageKey;
+  stageId?: string;
   status: ProgressPhase;
   progress: number;
   sequence?: number;

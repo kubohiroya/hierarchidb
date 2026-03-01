@@ -115,7 +115,7 @@ export class RouteMutationService implements RouteMutationAPI {
       progress?.({ ...payload, timestamp: Date.now() });
     };
     try {
-      emit({ phase: 'fetch' });
+      emit({ phase: 'source' });
 
       const locationNodeIds =
         request.locationNodeIds && request.locationNodeIds.length > 0
@@ -168,24 +168,24 @@ export class RouteMutationService implements RouteMutationAPI {
           speed: result.speed,
         };
       });
-      const fetchStageErrors = errors.map((error, index) => (
+      const sourceStageErrors = errors.map((error, index) => (
         buildRouteBuildErrorRecord({
           nodeId: request.nodeId,
-          stage: 'fetch',
+          stage: 'source',
           message: error.reason,
           sourceKey: `${error.start}:${error.end}`,
           featureId: error.id,
           sequence: index,
         })
       ));
-      const fetchCacheRecords: EphemeralFetchCacheRecord[] = [];
+      const sourceCacheRecords: EphemeralFetchCacheRecord[] = [];
       linesWithWaypoints.forEach((line, index) => {
         const sourceKey = buildRouteFetchSourceKey(line);
         if (!sourceKey) {
-          fetchStageErrors.push(
+          sourceStageErrors.push(
             buildRouteBuildErrorRecord({
               nodeId: request.nodeId,
-              stage: 'fetch',
+              stage: 'source',
               message: 'Route line is missing start/end locationId.',
               sourceKey: line.featureId,
               featureId: String(line.id),
@@ -196,10 +196,10 @@ export class RouteMutationService implements RouteMutationAPI {
         }
         const coordinates = resolveRoutePoints(line);
         if (coordinates.length < 2) {
-          fetchStageErrors.push(
+          sourceStageErrors.push(
             buildRouteBuildErrorRecord({
               nodeId: request.nodeId,
-              stage: 'fetch',
+              stage: 'source',
               message: 'Route line has fewer than 2 points.',
               sourceKey,
               featureId: String(line.id),
@@ -231,7 +231,7 @@ export class RouteMutationService implements RouteMutationAPI {
         const now = Date.now();
         const bbox = computeLineBbox(coordinates);
         const record: EphemeralFetchCacheRecord = {
-          id: `${String(request.nodeId)}:fetch:${sourceKey}`,
+          id: `${String(request.nodeId)}:source:${sourceKey}`,
           nodeId: request.nodeId,
           domainType: 'route',
           sourceKey,
@@ -248,7 +248,7 @@ export class RouteMutationService implements RouteMutationAPI {
           inputVertexCount: coordinates.length,
           inputPolygonCount: 0,
           metadata: {
-            stage: 'fetch',
+            stage: 'source',
             status: 'completed',
             sourceKey,
             featureCount: 1,
@@ -260,7 +260,7 @@ export class RouteMutationService implements RouteMutationAPI {
           },
           timestamp: now,
         };
-        fetchCacheRecords.push(record);
+        sourceCacheRecords.push(record);
       });
 
       await this.ensureOpen();
@@ -285,25 +285,25 @@ export class RouteMutationService implements RouteMutationAPI {
       await ephemeralDB.transaction(
         'rw',
         [
-          ephemeralDB.fetchCache,
-          ephemeralDB.fetchCacheMeta,
-          ephemeralDB.transformCache,
-          ephemeralDB.transformCacheMeta,
-          ephemeralDB.tileIdToBufferRelations,
-          ephemeralDB.transformErrors,
+          ephemeralDB.sourceCache,
+          ephemeralDB.sourceCacheMeta,
+          ephemeralDB.geometryCache,
+          ephemeralDB.geometryCacheMeta,
+          ephemeralDB.tileEmitBufferRelations,
+          ephemeralDB.geometryErrors,
         ],
         async () => {
-          await ephemeralDB.fetchCache.where('nodeId').equals(request.nodeId).delete();
-          await ephemeralDB.fetchCacheMeta.where('nodeId').equals(request.nodeId).delete();
-          await ephemeralDB.transformCache.where('nodeId').equals(request.nodeId).delete();
-          await ephemeralDB.transformCacheMeta.where('nodeId').equals(request.nodeId).delete();
-          await ephemeralDB.tileIdToBufferRelations.where('nodeId').equals(request.nodeId).delete();
-          await ephemeralDB.transformErrors.where('nodeId').equals(request.nodeId).delete();
-          if (fetchCacheRecords.length > 0) {
-            await ephemeralDB.fetchCache.bulkPut(fetchCacheRecords);
+          await ephemeralDB.sourceCache.where('nodeId').equals(request.nodeId).delete();
+          await ephemeralDB.sourceCacheMeta.where('nodeId').equals(request.nodeId).delete();
+          await ephemeralDB.geometryCache.where('nodeId').equals(request.nodeId).delete();
+          await ephemeralDB.geometryCacheMeta.where('nodeId').equals(request.nodeId).delete();
+          await ephemeralDB.tileEmitBufferRelations.where('nodeId').equals(request.nodeId).delete();
+          await ephemeralDB.geometryErrors.where('nodeId').equals(request.nodeId).delete();
+          if (sourceCacheRecords.length > 0) {
+            await ephemeralDB.sourceCache.bulkPut(sourceCacheRecords);
           }
-          if (fetchStageErrors.length > 0) {
-            await ephemeralDB.transformErrors.bulkPut(fetchStageErrors);
+          if (sourceStageErrors.length > 0) {
+            await ephemeralDB.geometryErrors.bulkPut(sourceStageErrors);
           }
         },
       );
@@ -336,7 +336,7 @@ export class RouteMutationService implements RouteMutationAPI {
       zMax: index === ranges.length - 1 ? range.max : Math.max(range.min, range.max - 1),
       zBase: range.min,
     }));
-    const fetchBuffers = await ephemeralDB.fetchCacheMeta.where('nodeId').equals(request.nodeId).toArray();
+    const fetchBuffers = await ephemeralDB.sourceCacheMeta.where('nodeId').equals(request.nodeId).toArray();
     const transformRecords: Array<{
       id: string;
       nodeId: NodeId;
@@ -352,20 +352,20 @@ export class RouteMutationService implements RouteMutationAPI {
       timestamp: number;
     }> = [];
     const relationRecords: EphemeralTileIdToBufferRelation[] = [];
-    const transformErrors = await ephemeralDB.transformErrors.where('nodeId').equals(request.nodeId).toArray();
+    const transformErrors = await ephemeralDB.geometryErrors.where('nodeId').equals(request.nodeId).toArray();
     const tileIndex = new Map<string, Set<string>>();
     let transformErrorSequence = transformErrors.length;
     const now = Date.now();
 
     for (const meta of fetchBuffers) {
-      const full = await ephemeralDB.fetchCache.get(meta.id);
+      const full = await ephemeralDB.sourceCache.get(meta.id);
       if (!full) continue;
       const sourceFeature = decodeRouteFeatureCollection(full.data);
       if (!sourceFeature) {
         transformErrors.push(buildRouteBuildErrorRecord({
           nodeId: request.nodeId,
-          stage: 'transform',
-          message: 'Failed to decode fetch cache payload.',
+          stage: 'geometry',
+          message: 'Failed to decode source cache payload.',
           sourceKey: meta.sourceKey,
           sequence: transformErrorSequence,
         }));
@@ -381,7 +381,7 @@ export class RouteMutationService implements RouteMutationAPI {
         if (distanceMeters < minDistance) {
           transformErrors.push(buildRouteBuildErrorRecord({
             nodeId: request.nodeId,
-            stage: 'transform',
+            stage: 'geometry',
             message: `Dropped by minDistance rule: ${distanceMeters.toFixed(0)}m < ${minDistance.toFixed(0)}m`,
             sourceKey: meta.sourceKey,
             featureId: sourceLineId,
@@ -395,7 +395,7 @@ export class RouteMutationService implements RouteMutationAPI {
         if (simplified.length < 2) {
           transformErrors.push(buildRouteBuildErrorRecord({
             nodeId: request.nodeId,
-            stage: 'transform',
+            stage: 'geometry',
             message: 'Simplification removed required route vertices.',
             sourceKey: meta.sourceKey,
             featureId: sourceLineId,
@@ -404,7 +404,7 @@ export class RouteMutationService implements RouteMutationAPI {
           transformErrorSequence += 1;
           continue;
         }
-        const bufferId = `${String(request.nodeId)}:transform:${band.bandIndex}:${meta.sourceKey}`;
+        const bufferId = `${String(request.nodeId)}:geometry:${band.bandIndex}:${meta.sourceKey}`;
         const payload = {
           type: 'FeatureCollection' as const,
           features: [{
@@ -489,23 +489,23 @@ export class RouteMutationService implements RouteMutationAPI {
     await ephemeralDB.transaction(
       'rw',
       [
-        ephemeralDB.transformCache,
-        ephemeralDB.transformCacheMeta,
-        ephemeralDB.tileIdToBufferRelations,
-        ephemeralDB.transformErrors,
+        ephemeralDB.geometryCache,
+        ephemeralDB.geometryCacheMeta,
+        ephemeralDB.tileEmitBufferRelations,
+        ephemeralDB.geometryErrors,
       ],
       async () => {
-        await ephemeralDB.transformCache.where('nodeId').equals(request.nodeId).delete();
-        await ephemeralDB.transformCacheMeta.where('nodeId').equals(request.nodeId).delete();
-        await ephemeralDB.tileIdToBufferRelations.where('nodeId').equals(request.nodeId).delete();
+        await ephemeralDB.geometryCache.where('nodeId').equals(request.nodeId).delete();
+        await ephemeralDB.geometryCacheMeta.where('nodeId').equals(request.nodeId).delete();
+        await ephemeralDB.tileEmitBufferRelations.where('nodeId').equals(request.nodeId).delete();
         if (transformRecords.length > 0) {
-          await ephemeralDB.transformCache.bulkPut(transformRecords);
+          await ephemeralDB.geometryCache.bulkPut(transformRecords);
         }
         if (relationRecords.length > 0) {
-          await ephemeralDB.tileIdToBufferRelations.bulkPut(relationRecords);
+          await ephemeralDB.tileEmitBufferRelations.bulkPut(relationRecords);
         }
         if (transformErrors.length > 0) {
-          await ephemeralDB.transformErrors.bulkPut(transformErrors);
+          await ephemeralDB.geometryErrors.bulkPut(transformErrors);
         }
       },
     );
@@ -539,13 +539,13 @@ export class RouteMutationService implements RouteMutationAPI {
       zMin: range.min,
       zMax: index === ranges.length - 1 ? range.max : Math.max(range.min, range.max - 1),
     }));
-    const metas = await ephemeralDB.transformCacheMeta.where('nodeId').equals(request.nodeId).toArray();
+    const metas = await ephemeralDB.geometryCacheMeta.where('nodeId').equals(request.nodeId).toArray();
     let tilesGenerated = 0;
     let totalBytes = 0;
     for (const band of bands) {
       const bandMetas = metas.filter((meta) => meta.bandIndex === band.bandIndex);
       if (bandMetas.length === 0) continue;
-      const buffers = await ephemeralDB.transformCache.bulkGet(bandMetas.map((meta) => meta.id));
+      const buffers = await ephemeralDB.geometryCache.bulkGet(bandMetas.map((meta) => meta.id));
       const features = buffers
         .flatMap((buffer) => (buffer ? decodeRouteFeaturesFromTransform(buffer.data) : []));
       if (features.length === 0) continue;
@@ -554,7 +554,7 @@ export class RouteMutationService implements RouteMutationAPI {
         features,
       };
       const encoded = new TextEncoder().encode(JSON.stringify(collection)).buffer;
-      const bufferId = `${String(request.nodeId)}-route-vt-band-${band.bandIndex}`;
+      const bufferId = `${String(request.nodeId)}-route-tile-emit-band-${band.bandIndex}`;
       await writeVectorTileInput(bufferId, encoded, {
         inputFormat: request.inputFormat ?? 'geojson',
         inputCompression: request.inputCompression ?? 'none',
@@ -562,7 +562,7 @@ export class RouteMutationService implements RouteMutationAPI {
         tileId: bufferId,
         chunkStoreName: 'hidb-chunks',
       });
-      const result = await stage.vectortile.generateTiles(bufferId, {
+      const result = await stage.tileEmit.generateTiles(bufferId, {
         format: 'mvt',
         compression: 'gzip',
         minZoom: band.zMin,
@@ -877,7 +877,7 @@ const collectRouteTileIds = (coords: [number, number][], zBase: number): string[
 
 const buildRouteBuildErrorRecord = (params: {
   nodeId: NodeId;
-  stage: 'fetch' | 'transform' | 'vt';
+  stage: 'source' | 'geometry' | 'tileEmit';
   message: string;
   sourceKey?: string;
   featureId?: string;

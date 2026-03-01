@@ -14,25 +14,25 @@ type Args = {
   onResetSession?: () => void;
 };
 
-export const useFetchConfigSection = ({ config, nodeId, disabled, onChange, onResetSession }: Args) => {
+export const useSourceConfigSection = ({ config, nodeId, disabled, onChange, onResetSession }: Args) => {
   const { t } = useTranslation();
   const switchId = useId();
-  const baseFetchConfig = config.fetchConfig;
+  const baseSourceConfig = config.sourceConfig;
 
   const {
     counts,
     resultCounts,
     countsLoading,
     deleteLoading,
-    canDeleteFetchApiCache,
-    canDeleteFetchFilteredCache,
-    canDeleteTransformCache,
-    canDeleteVTCache,
+    canDeleteSourceApiCache,
+    canDeleteSourceFilteredCache,
+    canDeleteGeometryCache,
+    canDeleteTileEmitCache,
     canDeleteMetadata,
-    handleDeleteFetchApiCache,
-    handleDeleteFetchFilteredCache,
-    handleDeleteTransformCache,
-    handleDeleteVTCache,
+    handleDeleteSourceApiCache,
+    handleDeleteSourceFilteredCache,
+    handleDeleteGeometryCache,
+    handleDeleteTileEmitCache,
     handleDeleteMetadata,
   } = useShapeBuildCacheActions({ nodeId, disabled, onResetSession });
 
@@ -49,38 +49,38 @@ export const useFetchConfigSection = ({ config, nodeId, disabled, onChange, onRe
       })
       : fallback
   ), [countUnit, t]);
-  const fetchApiDeleteCount = counts.fetchApi;
-  const fetchFilteredDeleteCount = counts.fetchFiltered;
-  const transformDeleteCount = counts.transform;
-  const vtDeleteCount = counts.vt;
+  const sourceApiDeleteCount = counts.sourceApi;
+  const sourceFilteredDeleteCount = counts.sourceFiltered;
+  const geometryDeleteCount = counts.geometry;
+  const tileEmitDeleteCount = counts.tileEmit;
   const metadataDeleteCount = resultCounts.featureMetadata;
-  const deleteFetchApiLabel = useMemo(() => (
+  const deleteSourceApiLabel = useMemo(() => (
     formatDeleteLabelI18n(
       'processing.download.deleteApiCacheWithCount',
       t('processing.download.deleteApiCache', 'Delete API cache'),
-      fetchApiDeleteCount,
+      sourceApiDeleteCount,
     )
-  ), [fetchApiDeleteCount, formatDeleteLabelI18n, t]);
-  const deleteFetchFilteredLabel = useMemo(() => (
+  ), [sourceApiDeleteCount, formatDeleteLabelI18n, t]);
+  const deleteSourceFilteredLabel = useMemo(() => (
     formatDeleteLabelI18n(
       'processing.download.deleteFilteredCacheWithCount',
       t('processing.download.deleteFilteredCache', 'Delete filtered cache'),
-      fetchFilteredDeleteCount,
+      sourceFilteredDeleteCount,
     )
-  ), [fetchFilteredDeleteCount, formatDeleteLabelI18n, t]);
-  const deleteTransformLabel = useMemo(() => (
+  ), [sourceFilteredDeleteCount, formatDeleteLabelI18n, t]);
+  const deleteGeometryLabel = useMemo(() => (
     formatDeleteLabelI18n(
       'processing.download.deleteStage1CacheWithCount',
       t('processing.download.deleteStage1Cache', 'Delete simplified cache'),
-      transformDeleteCount,
+      geometryDeleteCount,
     )
-  ), [formatDeleteLabelI18n, t, transformDeleteCount]);
-  const deleteVTLabel = useMemo(() => (
+  ), [formatDeleteLabelI18n, t, geometryDeleteCount]);
+  const deleteTileEmitLabel = useMemo(() => (
     formatDeleteLabel(
       t('processing.download.deleteTiles', 'Delete tile data'),
-      vtDeleteCount,
+      tileEmitDeleteCount,
     )
-  ), [formatDeleteLabel, t, vtDeleteCount]);
+  ), [formatDeleteLabel, t, tileEmitDeleteCount]);
   const deleteMetadataLabel = useMemo(() => (
     formatDeleteLabel(t('processing.download.deleteMetadata', 'Delete feature metadata'), metadataDeleteCount)
   ), [formatDeleteLabel, metadataDeleteCount, t]);
@@ -99,31 +99,31 @@ export const useFetchConfigSection = ({ config, nodeId, disabled, onChange, onRe
   return {
     t,
     switchId,
-    baseFetchConfig: baseFetchConfig,
-    deleteFetchApiLabel,
-    deleteFetchFilteredLabel,
-    deleteTransformFilterLabel: deleteTransformLabel,
-    deleteVTLabel,
+    baseSourceConfig,
+    deleteSourceApiLabel,
+    deleteSourceFilteredLabel,
+    deleteGeometryCacheLabel: deleteGeometryLabel,
+    deleteTileEmitLabel,
     deleteMetadataLabel,
     countsLoading,
-    deleteFetchApiLoading: deleteLoading.fetchApi,
-    deleteFetchFilteredLoading: deleteLoading.fetchFiltered,
-    deleteTransformLoading: deleteLoading.transform,
-    deleteVTLoading: deleteLoading.vt,
+    deleteSourceApiLoading: deleteLoading.sourceApi,
+    deleteSourceFilteredLoading: deleteLoading.sourceFiltered,
+    deleteGeometryLoading: deleteLoading.geometry,
+    deleteTileEmitLoading: deleteLoading.tileEmit,
     deleteMetadataLoading: deleteLoading.metadata,
-    canDeleteFetchApiCache,
-    canDeleteFetchFilteredCache,
-    canDeleteTransformCache,
-    canDeleteVTCache,
+    canDeleteSourceApiCache,
+    canDeleteSourceFilteredCache,
+    canDeleteGeometryCache,
+    canDeleteTileEmitCache,
     canDeleteMetadata,
-    handleDeleteFetchApiCache,
-    handleDeleteFetchFilteredCache,
-    handleDeleteTransformCache,
-    handleDeleteVTCache,
+    handleDeleteSourceApiCache,
+    handleDeleteSourceFilteredCache,
+    handleDeleteGeometryCache,
+    handleDeleteTileEmitCache,
     handleDeleteMetadata,
     handleResetDefaults,
     update,
   };
 };
 
-export type FetchConfigSectionState = ReturnType<typeof useFetchConfigSection>;
+export type SourceConfigSectionState = ReturnType<typeof useSourceConfigSection>;

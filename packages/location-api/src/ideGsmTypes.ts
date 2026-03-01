@@ -2,7 +2,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { IdeGsmSelectionEntry } from './locationTypes.js';
 
 export type IdeGsmImportPhase =
-  | 'fetch'
+  | 'source'
   | 'parse'
   | 'filter'
   | 'waypoints'

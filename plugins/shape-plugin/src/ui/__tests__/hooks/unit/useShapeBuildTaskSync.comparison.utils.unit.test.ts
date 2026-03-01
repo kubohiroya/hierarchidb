@@ -9,7 +9,7 @@ import type { RawTaskSummary } from '../../../components/build-progress/useShape
 
 const makeTask = (overrides: Partial<ShapeBuildTaskSummary>): ShapeBuildTaskSummary => ({
   taskId: 'task-unknown',
-  stage: 'fetch',
+  stage: 'source',
   status: 'queued',
   progress: 0,
   message: 'queued',
@@ -20,8 +20,8 @@ const makeTask = (overrides: Partial<ShapeBuildTaskSummary>): ShapeBuildTaskSumm
 describe('reconcileSnapshotWithCurrentTasks', () => {
   it('replaces current list with snapshot content only', () => {
     const snapshotTasks = [
-      makeTask({ taskId: 'task-a', stage: 'transform', progress: 15, index: 1 }),
-      makeTask({ taskId: 'task-b', stage: 'transform', progress: 30, index: 2 }),
+      makeTask({ taskId: 'task-a', stage: 'geometry', progress: 15, index: 1 }),
+      makeTask({ taskId: 'task-b', stage: 'geometry', progress: 30, index: 2 }),
     ];
 
     const next = replaceSnapshotTasks(snapshotTasks);
@@ -62,7 +62,7 @@ describe('shouldPreferNextTask', () => {
 describe('resolveTaskSummaryFromRaw', () => {
   const buildRawTask = (overrides: Partial<RawTaskSummary>): RawTaskSummary => ({
     taskId: 'task-unknown',
-    stage: 'fetch',
+    stage: 'source',
     status: 'queued',
     progress: 0,
     message: 'queued',
@@ -75,7 +75,25 @@ describe('resolveTaskSummaryFromRaw', () => {
   });
 
   it('keeps canonical stage', () => {
-    const task = resolveTaskSummaryFromRaw(buildRawTask({ stage: 'transform', progress: 100 }));
-    expect(task.stage).toBe('transform');
+    const task = resolveTaskSummaryFromRaw(buildRawTask({ stage: 'geometry', progress: 100 }));
+    expect(task.stage).toBe('geometry');
+  });
+
+  it('normalizes stage from canonical stageId when stage is legacy-incompatible', () => {
+    const task = resolveTaskSummaryFromRaw(buildRawTask({
+      stage: 'invalid' as never,
+      stageId: 'source-stage',
+      progress: 10,
+    }));
+    expect(task.stage).toBe('source');
+  });
+
+  it('prioritizes stageId over stage when both are present', () => {
+    const task = resolveTaskSummaryFromRaw(buildRawTask({
+      stage: 'tileEmit',
+      stageId: 'geometry-stage',
+      progress: 25,
+    }));
+    expect(task.stage).toBe('geometry');
   });
 });

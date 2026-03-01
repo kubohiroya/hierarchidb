@@ -1,4 +1,4 @@
-import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
+import { listTasks, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import { deleteRawDataDataSourceBuffersForNodeMetadataIds } from '~/services/utils/chunkStore';
@@ -8,6 +8,7 @@ import { type BuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import type { NodeId } from '@hierarchidb/core-types';
 import { buildSelectionSet } from './selectionUtils.js';
 import type { EphemeralTileIdToBufferRelation } from '@hierarchidb/gis-sdk';
+import { normalizeUiStageId } from '~/ui/components/build-progress/stageIdAliases';
 
 type BuildSessionUpdater = {
   initialize: () => Promise<void>;
@@ -49,11 +50,12 @@ export const invalidateBuildForSelectionChange = async (params: InvalidateParams
     [nodeId, entry.countryCode, entry.adminLevel] as const
   ));
 
-  const [fetchCacheIdsRaw, transformCacheIdsRaw, vtTasks] = await Promise.all([
-    ephemeralDB.fetchCacheMeta.where('[nodeId+countryCode+adminLevel]').anyOf(removedKeyTuples).primaryKeys(),
-    ephemeralDB.transformCacheMeta.where('[nodeId+countryCode+adminLevel]').anyOf(removedKeyTuples).primaryKeys(),
-    taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'vt']).toArray(),
+  const [sourceCacheIdsRaw, geometryCacheIdsRaw, allNodeTasks] = await Promise.all([
+    ephemeralDB.sourceCacheMeta.where('[nodeId+countryCode+adminLevel]').anyOf(removedKeyTuples).primaryKeys(),
+    ephemeralDB.geometryCacheMeta.where('[nodeId+countryCode+adminLevel]').anyOf(removedKeyTuples).primaryKeys(),
+    listTasks(taskQueue, nodeId),
   ]);
+  const tileEmitTasks = allNodeTasks.filter((task) => normalizeUiStageId(task.stageId ?? task.stage) === 'tileEmit');
 
   const toStringArray = (ids: readonly unknown[]): string[] => (
     ids
@@ -63,33 +65,33 @@ export const invalidateBuildForSelectionChange = async (params: InvalidateParams
       })
       .filter((id): id is string => id !== null)
   );
-  const fetchCacheIds = toStringArray(fetchCacheIdsRaw as readonly unknown[]);
-  const transformCacheIds = toStringArray(transformCacheIdsRaw as readonly unknown[]);
+  const sourceCacheIds = toStringArray(sourceCacheIdsRaw as readonly unknown[]);
+  const geometryCacheIds = toStringArray(geometryCacheIdsRaw as readonly unknown[]);
 
-  if (fetchCacheIds.length > 0) {
+  if (sourceCacheIds.length > 0) {
     await Promise.all([
-      ephemeralDB.fetchCache.where('[nodeId+countryCode+adminLevel]').anyOf(removedKeyTuples).delete(),
-      ephemeralDB.fetchCacheMeta.where('[nodeId+countryCode+adminLevel]').anyOf(removedKeyTuples).delete(),
+      ephemeralDB.sourceCache.where('[nodeId+countryCode+adminLevel]').anyOf(removedKeyTuples).delete(),
+      ephemeralDB.sourceCacheMeta.where('[nodeId+countryCode+adminLevel]').anyOf(removedKeyTuples).delete(),
     ]);
-    await deleteRawDataDataSourceBuffersForNodeMetadataIds(nodeId, fetchCacheIds);
+    await deleteRawDataDataSourceBuffersForNodeMetadataIds(nodeId, sourceCacheIds);
   }
 
-  const removedBufferSet = new Set(transformCacheIds);
-  if (transformCacheIds.length > 0) {
+  const removedBufferSet = new Set(geometryCacheIds);
+  if (geometryCacheIds.length > 0) {
     await Promise.all([
-      ephemeralDB.transformCache.where('[nodeId+countryCode+adminLevel]').anyOf(removedKeyTuples).delete(),
-      ephemeralDB.transformCacheMeta.where('[nodeId+countryCode+adminLevel]').anyOf(removedKeyTuples).delete(),
+      ephemeralDB.geometryCache.where('[nodeId+countryCode+adminLevel]').anyOf(removedKeyTuples).delete(),
+      ephemeralDB.geometryCacheMeta.where('[nodeId+countryCode+adminLevel]').anyOf(removedKeyTuples).delete(),
     ]);
-    const relations = await ephemeralDB.tileIdToBufferRelations
+    const relations = await ephemeralDB.tileEmitBufferRelations
       .where('bufferId')
-      .anyOf(transformCacheIds)
+      .anyOf(geometryCacheIds)
       .toArray();
     const affectedTileIds = new Set(
       relations.map((row: EphemeralTileIdToBufferRelation) => row.tileId),
     );
-    await ephemeralDB.tileIdToBufferRelations.where('bufferId').anyOf(transformCacheIds).delete();
+    await ephemeralDB.tileEmitBufferRelations.where('bufferId').anyOf(geometryCacheIds).delete();
 
-    const tileIdsToDelete = vtTasks
+    const tileIdsToDelete = tileEmitTasks
       .map((task) => {
         const input = task.inputData as { bufferIds?: string[]; tileId?: number } | undefined;
         if (!input?.bufferIds?.length || typeof input.tileId !== 'number') return null;
@@ -107,16 +109,17 @@ export const invalidateBuildForSelectionChange = async (params: InvalidateParams
     }
   }
 
-  const tasks = await taskQueue.tasks.where('nodeId').equals(nodeId).toArray();
+  const tasks = allNodeTasks;
   const removedSet = new Set(removed.map((entry) => entry.toUpperCase()));
   const removedTaskIds = tasks
     .filter((task) => {
-      if (task.stage === 'fetch' || task.stage === 'transform') {
+      const canonicalStage = normalizeUiStageId(task.stageId ?? task.stage);
+      if (canonicalStage === 'source' || canonicalStage === 'geometry') {
         const input = task.inputData as { countryCode?: string; adminLevel?: number } | undefined;
         if (!input?.countryCode || typeof input.adminLevel !== 'number') return false;
         return removedSet.has(`${input.countryCode.toUpperCase()}:${input.adminLevel}`);
       }
-      if (task.stage === 'vt') {
+      if (canonicalStage === 'tileEmit') {
         const input = task.inputData as { bufferIds?: string[] } | undefined;
         if (!input?.bufferIds?.length) return false;
         return input.bufferIds.some((bufferId) => removedBufferSet.has(bufferId));

@@ -22,9 +22,9 @@ import { ROUTE_MODE_COLUMNS } from './useRouteSelectionStep.js';
 export type RouteBuildSessionTransitionPhase =
   | 'acquiring-lock'
   | 'initializing-worker'
-  | 'fetch-stage'
-  | 'transform-stage'
-  | 'vt-stage'
+  | 'source-stage'
+  | 'geometry-stage'
+  | 'tile-emit-stage'
   | 'finalizing';
 
 const sanitizeForComlink = <T>(value: T, seen = new WeakMap<object, unknown>()): T => {
@@ -123,7 +123,7 @@ type UseRouteBuildSessionLifecycleArgs = {
   onUpdate: (updates: Partial<RouteEntity>) => void;
   routeNodeId: NodeId | undefined;
   resolveZoomRange: () => [number, number];
-  resolveRouteTransformConfig: () => {
+  resolveRouteGeometryConfig: () => {
     zoomBandBoundaries?: number[];
     minDistanceMetersByBand?: number[];
     simplifyToleranceByBand?: number[];
@@ -134,9 +134,9 @@ type UseRouteBuildSessionLifecycleArgs = {
     inputCompression: 'gzip' | 'none';
   };
   mapIdeGsmProgress: (progress: IdeGsmImportProgress) => number;
-  fetchStageMax: number;
-  transformStageMax: number;
-  vtStageMax: number;
+  sourceStageMax: number;
+  geometryStageMax: number;
+  tileEmitStageMax: number;
   t: (key: string, fallback?: string) => string;
 };
 
@@ -197,12 +197,12 @@ export const useRouteBuildSessionLifecycle = ({
   onUpdate,
   routeNodeId,
   resolveZoomRange,
-  resolveRouteTransformConfig,
+  resolveRouteGeometryConfig,
   resolveVectorTileConfig,
   mapIdeGsmProgress,
-  fetchStageMax,
-  transformStageMax,
-  vtStageMax,
+  sourceStageMax,
+  geometryStageMax,
+  tileEmitStageMax,
   t,
 }: UseRouteBuildSessionLifecycleArgs) => {
   const [status, setStatus] = useState<BuildStatus>('idle');
@@ -319,7 +319,7 @@ export const useRouteBuildSessionLifecycle = ({
       await initialize();
       const resolvedRouteNodeId = routeNodeId as NodeId;
       const routeMutation = await api.getRouteMutationAPI();
-      advanceBuildSessionTransitionPhase('fetch-stage');
+      advanceBuildSessionTransitionPhase('source-stage');
       const result = await routeMutation.importIdeGsmRoutes(
         {
           nodeId: resolvedRouteNodeId,
@@ -339,37 +339,37 @@ export const useRouteBuildSessionLifecycle = ({
         setErrorDialogOpen(true);
       }
       setIdeGsmPhase(null);
-      setOverallProgress(fetchStageMax);
+      setOverallProgress(sourceStageMax);
 
       const [minZoom, maxZoom] = resolveZoomRange();
-      const routeTransformConfig = resolveRouteTransformConfig();
-      advanceBuildSessionTransitionPhase('transform-stage');
-      setOverallProgress(fetchStageMax + 1);
+      const routeGeometryConfig = resolveRouteGeometryConfig();
+      advanceBuildSessionTransitionPhase('geometry-stage');
+      setOverallProgress(sourceStageMax + 1);
       await routeMutation.buildRouteTileIndex({
         nodeId: resolvedRouteNodeId,
         minZoom,
         maxZoom,
-        zoomBandBoundaries: routeTransformConfig.zoomBandBoundaries,
-        minDistanceMetersByBand: routeTransformConfig.minDistanceMetersByBand,
-        simplifyToleranceByBand: routeTransformConfig.simplifyToleranceByBand,
+        zoomBandBoundaries: routeGeometryConfig.zoomBandBoundaries,
+        minDistanceMetersByBand: routeGeometryConfig.minDistanceMetersByBand,
+        simplifyToleranceByBand: routeGeometryConfig.simplifyToleranceByBand,
       });
-      setOverallProgress(transformStageMax);
+      setOverallProgress(geometryStageMax);
 
-      const vtConfig = resolveVectorTileConfig();
-      advanceBuildSessionTransitionPhase('vt-stage');
-      setOverallProgress(transformStageMax + 1);
+      const tileEmitConfig = resolveVectorTileConfig();
+      advanceBuildSessionTransitionPhase('tile-emit-stage');
+      setOverallProgress(geometryStageMax + 1);
       await routeMutation.generateRouteVectorTiles({
         nodeId: resolvedRouteNodeId,
         minZoom,
         maxZoom,
-        zoomBandBoundaries: routeTransformConfig.zoomBandBoundaries,
-        bufferSize: vtConfig.bufferSize,
-        inputFormat: vtConfig.inputFormat,
-        inputCompression: vtConfig.inputCompression,
+        zoomBandBoundaries: routeGeometryConfig.zoomBandBoundaries,
+        bufferSize: tileEmitConfig.bufferSize,
+        inputFormat: tileEmitConfig.inputFormat,
+        inputCompression: tileEmitConfig.inputCompression,
       });
 
       setStatus('completed');
-      setOverallProgress(vtStageMax);
+      setOverallProgress(tileEmitStageMax);
       advanceBuildSessionTransitionPhase('finalizing');
       onUpdate({ processingStatus: 'completed', processedAt: Date.now(), buildFinishedAt: Date.now() });
       finishBuildSessionTransition({
@@ -393,19 +393,19 @@ export const useRouteBuildSessionLifecycle = ({
     advanceBuildSessionTransitionPhase,
     beginBuildSessionTransition,
     draft,
-    fetchStageMax,
+    sourceStageMax,
     finishBuildSessionTransition,
     initialize,
     mapIdeGsmProgress,
     onUpdate,
-    resolveRouteTransformConfig,
+    resolveRouteGeometryConfig,
     resolveVectorTileConfig,
     resolveZoomRange,
     routeNodeId,
     sessionId,
     t,
-    transformStageMax,
-    vtStageMax,
+    geometryStageMax,
+    tileEmitStageMax,
   ]);
 
   useEffect(() => {

@@ -64,7 +64,7 @@ First, define the GIS wrapper API in a new module (for example `packages/gis-sdk
 
 Second, update all direct turf imports across the repo to call this wrapper instead. This includes `packages/vt-orchestrator`, `packages/gis-sdk` internal modules, and `plugins/shape-plugin` VT-related helpers. Replace turf kinks usage with `geometryIsValid` when in geos mode. If any function has no geos equivalent, throw an explicit error in the geos path and document the limitation.
 
-Third, ensure geometryEngine is propagated to all call sites, not only transform. For modules that already receive `TransformConfig`, use `transformConfig.geometryEngine`. For other modules, add a `geometryEngine` parameter or read from existing build config structures where available. Avoid implicit defaults beyond the current `geometryEngine ?? 'turf'` behavior.
+Third, ensure geometryEngine is propagated to all call sites, not only transform. For modules that already receive `TransformConfig`, use `geometryConfig.geometryEngine`. For other modules, add a `geometryEngine` parameter or read from existing build config structures where available. Avoid implicit defaults beyond the current `geometryEngine ?? 'turf'` behavior.
 
 Fourth, run typechecks for `@hierarchidb/gis-sdk`, `@hierarchidb/vt-orchestrator`, and `@hierarchidb/shape-plugin`, updating TASKS.md logs as you complete milestones.
 

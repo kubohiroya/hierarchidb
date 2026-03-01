@@ -1,11 +1,11 @@
 import type { BuildContinuationPolicy } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { DataSourceName, FetchTaskPayload, SelectedArrayByCountries } from '~/common/types/index';
+import type { DataSourceName, SourceTaskPayload, SelectedArrayByCountries } from '~/common/types/index';
 import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { listTasksByStage } from '@hierarchidb/vt-orchestrator';
 import { shapeMutationAPIImpl } from '~/services/build/ShapeBuildAPIClient';
-import { runShapeFetchStage } from './shapeFetchStage.js';
+import { runShapeSourceStage } from './shapeSourceStage.js';
 import {
   finalizePendingStageTasks,
   markStageTasksRecycled,
@@ -14,11 +14,11 @@ import {
   summarizeStageCounts,
 } from './shapePipelineStageHelpers.ts';
 
-export type ShapeFetchStageParams = {
+export type ShapeSourceStageParams = {
   nodeId: NodeId;
   dataSource: DataSourceName;
   selectedArrayByCountries?: SelectedArrayByCountries;
-  downloadTaskPayloads?: FetchTaskPayload[];
+  downloadTaskPayloads?: SourceTaskPayload[];
   buildConfig: ShapeRuntimeBuildConfig;
   taskQueue: VtTaskQueueDb;
   waitIfPaused?: () => Promise<void>;
@@ -28,27 +28,27 @@ export type ShapeFetchStageParams = {
   pipelineRunId?: string;
   onTasksEnqueued?: (payload: {
     nodeId: NodeId;
-    stage: 'fetch';
+    stage: 'source';
     taskCount: number;
     source: 'created' | 'reused';
   }) => Promise<void> | void;
 };
 
-export class FetchStageAuthPendingError extends Error {
-  constructor(message = 'fetch stage paused: authentication required') {
+export class SourceStageAuthPendingError extends Error {
+  constructor(message = 'source stage paused: authentication required') {
     super(message);
-    this.name = 'FetchStageAuthPendingError';
+    this.name = 'SourceStageAuthPendingError';
   }
 }
 
-export const runShapeFetchStageSection = async (params: ShapeFetchStageParams): Promise<boolean> => {
-  const fetchAbortController = new AbortController();
-  await resetStageRunningTasks(params.taskQueue, params.nodeId, 'fetch');
+export const runShapeSourceStageSection = async (params: ShapeSourceStageParams): Promise<boolean> => {
+  const sourceAbortController = new AbortController();
+  await resetStageRunningTasks(params.taskQueue, params.nodeId, 'source');
   if (params.resumeExistingTasks) {
-    await markStageTasksRecycled(params.taskQueue, params.nodeId, 'fetch');
+    await markStageTasksRecycled(params.taskQueue, params.nodeId, 'source');
   }
-  const runFetchPass = async (resumeExistingTasks: boolean): Promise<void> => {
-    await runShapeFetchStage({
+  const runSourcePass = async (resumeExistingTasks: boolean): Promise<void> => {
+    await runShapeSourceStage({
       nodeId: params.nodeId,
       dataSource: params.dataSource,
       selectedArrayByCountries: params.selectedArrayByCountries,
@@ -57,13 +57,13 @@ export const runShapeFetchStageSection = async (params: ShapeFetchStageParams): 
       taskQueue: params.taskQueue,
       waitIfPaused: params.waitIfPaused,
       resumeExistingTasks,
-      abortController: fetchAbortController,
+      abortController: sourceAbortController,
       failureHandling: params.failureHandling,
       onTasksEnqueued: params.onTasksEnqueued,
     });
   };
   try {
-    await runFetchPass(params.resumeExistingTasks);
+    await runSourcePass(params.resumeExistingTasks);
   } catch (error) {
     const baseMessage = error instanceof Error ? error.message : String(error);
     const failedTaskId = error && typeof error === 'object'
@@ -73,34 +73,34 @@ export const runShapeFetchStageSection = async (params: ShapeFetchStageParams): 
     await finalizePendingStageTasks(
       params.taskQueue,
       params.nodeId,
-      'fetch',
+      'source',
       `aborted: ${reason}`,
-      '[ShapeFetch][PipelineDiagnostics] fetch stage aborted',
+      '[ShapeSource][PipelineDiagnostics] source stage aborted',
       params.pipelineRunId,
     );
     throw error;
   }
-  let stageCounts = await summarizeStageCounts(params.taskQueue, params.nodeId, 'fetch');
-  console.warn('[ShapeFetch][PipelineDiagnostics] stage fetch completed', JSON.stringify({
+  let stageCounts = await summarizeStageCounts(params.taskQueue, params.nodeId, 'source');
+  console.warn('[ShapeSource][PipelineDiagnostics] stage source completed', JSON.stringify({
     nodeId: params.nodeId,
     runId: params.pipelineRunId ?? null,
     counts: stageCounts,
   }));
   if (!params.resumeExistingTasks && (stageCounts.queued > 0 || stageCounts.running > 0)) {
-    console.warn('[ShapeFetch][PipelineDiagnostics] fetch stage left pending tasks on fresh run; retrying queued drain once', JSON.stringify({
+    console.warn('[ShapeSource][PipelineDiagnostics] source stage left pending tasks on fresh run; retrying queued drain once', JSON.stringify({
       nodeId: params.nodeId,
       runId: params.pipelineRunId ?? null,
       counts: stageCounts,
     }));
-    await resetStageRunningTasks(params.taskQueue, params.nodeId, 'fetch');
-    await runFetchPass(true);
-    stageCounts = await summarizeStageCounts(params.taskQueue, params.nodeId, 'fetch');
+    await resetStageRunningTasks(params.taskQueue, params.nodeId, 'source');
+    await runSourcePass(true);
+    stageCounts = await summarizeStageCounts(params.taskQueue, params.nodeId, 'source');
   }
   if (params.resumeExistingTasks && (stageCounts.queued > 0 || stageCounts.running > 0)) {
-    await resetStageRunningTasks(params.taskQueue, params.nodeId, 'fetch');
-    stageCounts = await summarizeStageCounts(params.taskQueue, params.nodeId, 'fetch');
+    await resetStageRunningTasks(params.taskQueue, params.nodeId, 'source');
+    stageCounts = await summarizeStageCounts(params.taskQueue, params.nodeId, 'source');
     if (stageCounts.queued > 0 || stageCounts.running > 0) {
-      console.warn('[ShapeFetch][PipelineDiagnostics] fetch stage left pending tasks during resume; keep queued for next retry', JSON.stringify({
+      console.warn('[ShapeSource][PipelineDiagnostics] source stage left pending tasks during resume; keep queued for next retry', JSON.stringify({
         nodeId: params.nodeId,
         runId: params.pipelineRunId ?? null,
         counts: stageCounts,
@@ -111,21 +111,21 @@ export const runShapeFetchStageSection = async (params: ShapeFetchStageParams): 
   const finalizedPending = await finalizePendingStageTasks(
     params.taskQueue,
     params.nodeId,
-    'fetch',
-    'aborted: fetch stage completed with pending tasks',
-    '[ShapeFetch][PipelineDiagnostics] fetch stage finalized pending tasks',
+    'source',
+    'aborted: source stage completed with pending tasks',
+    '[ShapeSource][PipelineDiagnostics] source stage finalized pending tasks',
     params.pipelineRunId,
     {
       markFailed: shouldFinalizePending,
     },
   );
   if (finalizedPending.authPending > 0) {
-    throw new FetchStageAuthPendingError();
+    throw new SourceStageAuthPendingError();
   }
   if (finalizedPending.queued > 0 || finalizedPending.running > 0) {
-    stageCounts = await summarizeStageCounts(params.taskQueue, params.nodeId, 'fetch');
+    stageCounts = await summarizeStageCounts(params.taskQueue, params.nodeId, 'source');
   }
-  const fetchTasks = await listTasksByStage(params.taskQueue, params.nodeId, 'fetch');
+  const fetchTasks = await listTasksByStage(params.taskQueue, params.nodeId, 'source');
   let featureMax = 0;
   let polygonMax = 0;
   fetchTasks.forEach((task) => {
@@ -168,7 +168,7 @@ export const runShapeFetchStageSection = async (params: ShapeFetchStageParams): 
     }
   });
   await shapeMutationAPIImpl.updateBuildSession(params.nodeId, {
-    fetchStageMaxima: {
+    sourceStageMaxima: {
       featureMax,
       polygonMax,
     },

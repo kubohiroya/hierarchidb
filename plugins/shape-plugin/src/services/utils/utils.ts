@@ -7,7 +7,7 @@ import type {
   CountryMetadata,
   DataSourceName,
   ShapeEntity,
-  FetchTaskPayload,
+  SourceTaskPayload,
   ShapeStepValidationResult,
   SelectedArrayByCountries,
 } from '~/common/types/index';
@@ -29,7 +29,7 @@ import {
   ZOOM_BAND_MIN_RANGES,
   ZOOM_BAND_MIN_ZOOM,
 } from '@hierarchidb/util';
-export { resolveFetchStageStrategy } from '~/services/build/strategies/resolveFetchStageStrategy';
+export { resolveSourceStageStrategy } from '~/services/build/strategies/resolveSourceStageStrategy';
 
 export function getDataSourceConfig(dataSource?: DataSourceName | null) {
   if (!dataSource) return undefined;
@@ -98,19 +98,19 @@ export function validateBuildConfig(
 
   const mergedBuildConfig = applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, buildConfig);
   const mergedProcessingConfig = mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG, processingConfig);
-  const transformConfig = mergedBuildConfig.transformConfig;
+  const geometryConfig = mergedBuildConfig.geometryConfig;
 
-  const fetchConcurrency = mergedProcessingConfig.fetch.maxConcurrent;
-  if (fetchConcurrency < 1 || fetchConcurrency > 4) {
-    errors.push('Concurrent downloads must be between 1 and 4');
+  const sourceConcurrency = mergedProcessingConfig.source.maxConcurrent;
+  if (sourceConcurrency < 1 || sourceConcurrency > 4) {
+    errors.push('Concurrent source workers must be between 1 and 4');
   }
 
-  const transformConcurrentProcesses = mergedProcessingConfig.transform.maxConcurrent;
-  if (transformConcurrentProcesses < 1 || transformConcurrentProcesses > 8) {
-    errors.push('Concurrent transform processes must be between 1 and 8');
+  const geometryConcurrentProcesses = mergedProcessingConfig.geometry.maxConcurrent;
+  if (geometryConcurrentProcesses < 1 || geometryConcurrentProcesses > 8) {
+    errors.push('Concurrent geometry processes must be between 1 and 8');
   }
 
-  const zoomBandBoundaries = transformConfig.zoomBandBoundaries;
+  const zoomBandBoundaries = geometryConfig.zoomBandBoundaries;
   const zoomBandCount = Math.max(0, zoomBandBoundaries.length - 1);
   if (zoomBandCount < ZOOM_BAND_MIN_RANGES || zoomBandCount > ZOOM_BAND_MAX_RANGES) {
     errors.push(`Zoom band count must be between ${ZOOM_BAND_MIN_RANGES} and ${ZOOM_BAND_MAX_RANGES}`);
@@ -140,7 +140,7 @@ export function validateBuildConfig(
     }
   }
 
-  const areaThreshold = transformConfig.featureAreaThreshold;
+  const areaThreshold = geometryConfig.featureAreaThreshold;
   if (areaThreshold < 0 || areaThreshold > 10000) {
     errors.push('Feature area threshold must be between 0 and 10000');
   }
@@ -180,8 +180,8 @@ export function generateDownloadTaskPayloads(
   countries: string[],
   adminLevels: number[],
   countryMetadata: CountryMetadata[],
-): FetchTaskPayload[] {
-  const payloads: FetchTaskPayload[] = [];
+): SourceTaskPayload[] {
+  const payloads: SourceTaskPayload[] = [];
   const countryMap = new Map<string, CountryMetadata>();
   countryMetadata.forEach((country) => {
     const add = (code?: string) => {
@@ -227,7 +227,7 @@ export function generateDownloadTaskPayloadsFromSelection(
   dataSource: DataSourceName,
   selectedArrayByCountries: SelectedArrayByCountries | undefined,
   countryMetadata: CountryMetadata[],
-): FetchTaskPayload[] {
+): SourceTaskPayload[] {
   if (!selectedArrayByCountries || !Object.keys(selectedArrayByCountries).length || !countryMetadata.length) {
     return [];
   }
@@ -282,7 +282,7 @@ export function generateDownloadTaskPayloadsFromSelection(
   });
 }
 
-export const buildFetchTaskId = (nodeId: string, payload: FetchTaskPayload): string => {
+export const buildSourceTaskId = (nodeId: string, payload: SourceTaskPayload): string => {
   const countryId = payload.countryCode.trim();
   if (!countryId) {
     throw new Error(`[shape-plugin] DownloadTaskPayload.countryCode is required (${nodeId})`);
@@ -341,31 +341,31 @@ export function applyBuildConfigPatch(
 ): ShapeBuildConfig {
   if (!overrides) return base;
 
-  const fetchConfig = overrides.fetchConfig
+  const sourceConfig = overrides.sourceConfig
     ? {
-      ...base.fetchConfig,
-      ...overrides.fetchConfig,
-      geometryIntakeGuard: overrides.fetchConfig.geometryIntakeGuard
+      ...base.sourceConfig,
+      ...overrides.sourceConfig,
+      geometryIntakeGuard: overrides.sourceConfig.geometryIntakeGuard
         ? {
-          ...(base.fetchConfig.geometryIntakeGuard ?? {}),
-          ...overrides.fetchConfig.geometryIntakeGuard,
+          ...(base.sourceConfig.geometryIntakeGuard ?? {}),
+          ...overrides.sourceConfig.geometryIntakeGuard,
         }
-        : base.fetchConfig.geometryIntakeGuard,
-      invalidGeometryFilter: overrides.fetchConfig.invalidGeometryFilter
+        : base.sourceConfig.geometryIntakeGuard,
+      invalidGeometryFilter: overrides.sourceConfig.invalidGeometryFilter
         ? {
-          ...(base.fetchConfig.invalidGeometryFilter ?? {}),
-          ...overrides.fetchConfig.invalidGeometryFilter,
+          ...(base.sourceConfig.invalidGeometryFilter ?? {}),
+          ...overrides.sourceConfig.invalidGeometryFilter,
         }
-        : base.fetchConfig.invalidGeometryFilter,
+        : base.sourceConfig.invalidGeometryFilter,
     }
-    : base.fetchConfig;
+    : base.sourceConfig;
 
-  const bandOverrides = overrides.transformConfig;
+  const bandOverrides = overrides.geometryConfig;
   const resolveOmitDetailsLevel = (
     level: unknown,
-  ): ShapeBuildConfig['transformConfig']['omitDetailsConfig']['level'] => {
+  ): ShapeBuildConfig['geometryConfig']['omitDetailsConfig']['level'] => {
     if (level === undefined) {
-      return base.transformConfig.omitDetailsConfig.level;
+      return base.geometryConfig.omitDetailsConfig.level;
     }
     if (level === 'weak' || level === 'medium' || level === 'strong') {
       return level;
@@ -378,25 +378,25 @@ export function applyBuildConfigPatch(
     }
     throw new Error(`unsupported omit-details level: ${String(level)}`);
   };
-  const transformConfig = bandOverrides
+  const geometryConfig = bandOverrides
     ? {
-      ...base.transformConfig,
+      ...base.geometryConfig,
       ...bandOverrides,
       hybridFilterConfig: bandOverrides.hybridFilterConfig
-        ? { ...base.transformConfig.hybridFilterConfig, ...bandOverrides.hybridFilterConfig }
-        : base.transformConfig.hybridFilterConfig,
+        ? { ...base.geometryConfig.hybridFilterConfig, ...bandOverrides.hybridFilterConfig }
+        : base.geometryConfig.hybridFilterConfig,
       omitDetailsConfig: bandOverrides.omitDetailsConfig
         ? {
-          ...base.transformConfig.omitDetailsConfig,
+          ...base.geometryConfig.omitDetailsConfig,
           ...bandOverrides.omitDetailsConfig,
           level: resolveOmitDetailsLevel(bandOverrides.omitDetailsConfig.level),
         }
-        : base.transformConfig.omitDetailsConfig,
+        : base.geometryConfig.omitDetailsConfig,
     }
-    : base.transformConfig;
-  const vtConfig = overrides.vtConfig
-    ? { ...base.vtConfig, ...overrides.vtConfig }
-    : base.vtConfig;
+    : base.geometryConfig;
+  const tileEmitConfig = overrides.tileEmitConfig
+    ? { ...base.tileEmitConfig, ...overrides.tileEmitConfig }
+    : base.tileEmitConfig;
 
   const cleanupConfig = overrides.cleanupConfig
     ? { ...(base.cleanupConfig ?? {}), ...overrides.cleanupConfig }
@@ -405,9 +405,9 @@ export function applyBuildConfigPatch(
   return {
     ...base,
     ...overrides,
-    fetchConfig,
-    transformConfig,
-    vtConfig,
+    sourceConfig,
+    geometryConfig,
+    tileEmitConfig,
     cleanupConfig,
   };
 }
@@ -418,31 +418,31 @@ export function mergeProcessingConfig(
 ): ShapeProcessingConfig {
   if (!overrides) return base;
 
-  const fetch = overrides.fetch
-    ? { ...base.fetch, ...overrides.fetch }
-    : base.fetch;
-  const transform = overrides.transform
-    ? { ...base.transform, ...overrides.transform }
-    : base.transform;
-  const vt = overrides.vt
+  const source = overrides.source
+    ? { ...base.source, ...overrides.source }
+    : base.source;
+  const geometry = overrides.geometry
+    ? { ...base.geometry, ...overrides.geometry }
+    : base.geometry;
+  const tileEmit = overrides.tileEmit
     ? {
-      ...base.vt,
-      ...overrides.vt,
-      dynamicConcurrency: overrides.vt.dynamicConcurrency
+      ...base.tileEmit,
+      ...overrides.tileEmit,
+      dynamicConcurrency: overrides.tileEmit.dynamicConcurrency
         ? {
-          ...(base.vt.dynamicConcurrency ?? {}),
-          ...overrides.vt.dynamicConcurrency,
+          ...(base.tileEmit.dynamicConcurrency ?? {}),
+          ...overrides.tileEmit.dynamicConcurrency,
         }
-        : base.vt.dynamicConcurrency,
+        : base.tileEmit.dynamicConcurrency,
     }
-    : base.vt;
+    : base.tileEmit;
 
   return {
     ...base,
     ...overrides,
-    fetch,
-    transform,
-    vt,
+    source,
+    geometry,
+    tileEmit,
   };
 }
 
@@ -452,22 +452,22 @@ export function composeRuntimeBuildConfig(
 ): ShapeRuntimeBuildConfig {
   return {
     ...buildConfig,
-    fetchConfig: {
-      ...buildConfig.fetchConfig,
-      maxConcurrent: processingConfig.fetch.maxConcurrent,
-      retryAttempts: processingConfig.fetch.retryAttempts,
-      retryDelay: processingConfig.fetch.retryDelay,
-      retryLimit: processingConfig.fetch.retryLimit,
-      retryBackoff: processingConfig.fetch.retryBackoff,
+    sourceConfig: {
+      ...buildConfig.sourceConfig,
+      maxConcurrent: processingConfig.source.maxConcurrent,
+      retryAttempts: processingConfig.source.retryAttempts,
+      retryDelay: processingConfig.source.retryDelay,
+      retryLimit: processingConfig.source.retryLimit,
+      retryBackoff: processingConfig.source.retryBackoff,
     },
-    transformConfig: {
-      ...buildConfig.transformConfig,
-      maxConcurrent: processingConfig.transform.maxConcurrent,
+    geometryConfig: {
+      ...buildConfig.geometryConfig,
+      maxConcurrent: processingConfig.geometry.maxConcurrent,
     },
-    vtConfig: {
-      ...buildConfig.vtConfig,
-      maxConcurrent: processingConfig.vt.maxConcurrent,
-      dynamicConcurrency: processingConfig.vt.dynamicConcurrency,
+    tileEmitConfig: {
+      ...buildConfig.tileEmitConfig,
+      maxConcurrent: processingConfig.tileEmit.maxConcurrent,
+      dynamicConcurrency: processingConfig.tileEmit.dynamicConcurrency,
     },
   };
 }

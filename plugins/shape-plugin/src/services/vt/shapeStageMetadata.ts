@@ -101,9 +101,9 @@ type DataSourceMetadata = {
   featureLabel?: string;
   createdAt: number;
   updatedAt: number;
-  fetch: StageTotals;
-  transform: StageTotals;
-  vt: StageTotals;
+  source: StageTotals;
+  geometry: StageTotals;
+  tileEmit: StageTotals;
 };
 
 const buildOriginBase = (
@@ -126,9 +126,9 @@ const buildOriginBase = (
   continent: info.continent,
   createdAt: info.createdAt,
   updatedAt: info.createdAt,
-  fetch: { vertexCount: 0, polygonCount: 0 },
-  transform: { vertexCount: 0, polygonCount: 0 },
-  vt: { vertexCount: 0, polygonCount: 0 },
+  source: { vertexCount: 0, polygonCount: 0 },
+  geometry: { vertexCount: 0, polygonCount: 0 },
+  tileEmit: { vertexCount: 0, polygonCount: 0 },
 });
 
 const ensureOrigin = (
@@ -212,7 +212,7 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
 
   const origins = new Map<string, DataSourceMetadata>();
 
-  await params.shapeStore.fetchCacheMeta.where('nodeId').equals(params.nodeId).each((buffer) => {
+  await params.shapeStore.sourceCacheMeta.where('nodeId').equals(params.nodeId).each((buffer) => {
     const originKey = buildOriginKey(params.dataSource, buffer.sourceKey);
     const info = resolveOriginInfo(originKey, lookup);
     const origin = ensureOrigin(origins, originKey, {
@@ -223,13 +223,13 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
       continent: info.continent,
       createdAt: createdAtByOrigin.get(originKey) ?? now,
     });
-    accumulate(origin.fetch, {
+    accumulate(origin.source, {
       vertexCount: buffer.vertexCount ?? 0,
       polygonCount: buffer.polygonCount ?? 0,
     });
   });
 
-  await params.shapeStore.transformCacheMeta.where('nodeId').equals(params.nodeId).each((buffer) => {
+  await params.shapeStore.geometryCacheMeta.where('nodeId').equals(params.nodeId).each((buffer) => {
     if (buffer.domainType !== 'shape') return;
     const originKey = buildOriginKey(params.dataSource, buffer.sourceKey);
     const info = resolveOriginInfo(originKey, lookup);
@@ -241,7 +241,7 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
       continent: info.continent,
       createdAt: createdAtByOrigin.get(originKey) ?? now,
     });
-    accumulate(origin.transform, {
+    accumulate(origin.geometry, {
       vertexCount: buffer.vertexCount ?? 0,
       polygonCount: buffer.polygonCount ?? 0,
     });
@@ -264,7 +264,7 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
         continent: info.continent,
         createdAt: createdAtByOrigin.get(originKey) ?? now,
       });
-      accumulate(origin.vt, stats);
+      accumulate(origin.tileEmit, stats);
     });
   });
 
@@ -282,12 +282,12 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
     featureLabel: origin.featureLabel,
     createdAt: origin.createdAt,
     updatedAt: now,
-    fetchVertexCount: origin.fetch.vertexCount,
-    fetchPolygonCount: origin.fetch.polygonCount,
-    transformVertexCount: origin.transform.vertexCount,
-    transformPolygonCount: origin.transform.polygonCount,
-    vtVertexCount: origin.vt.vertexCount,
-    vtPolygonCount: origin.vt.polygonCount,
+    fetchVertexCount: origin.source.vertexCount,
+    fetchPolygonCount: origin.source.polygonCount,
+    geometryVertexCount: origin.geometry.vertexCount,
+    geometryPolygonCount: origin.geometry.polygonCount,
+    vtVertexCount: origin.tileEmit.vertexCount,
+    vtPolygonCount: origin.tileEmit.polygonCount,
   }));
 
   await shapeMutationAPIImpl.deleteDataSourceMetadataByNode(params.nodeId);

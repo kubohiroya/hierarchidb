@@ -6,6 +6,7 @@ import {
   logRunningResiduePanel,
   shouldUpdateElapsedSnapshot,
 } from './useBuildProgressPanelState.utils.js';
+import { resolveStageAliasArray } from '~/ui/components/build-progress/stageIdAliases';
 
 type StageTask = {
   taskId: string;
@@ -252,7 +253,7 @@ export const useBuildProgressPanelStateSideEffects = (args: {
         }
         return;
       }
-      const runningTaskIds = (tasksByStage[stage.id] ?? [])
+      const runningTaskIds = resolveStageAliasArray(tasksByStage, stage.id)
         .filter((task) => task.status === 'running')
         .slice(0, 8)
         .map((task) => task.taskId);

@@ -66,13 +66,13 @@
     "cacheMissing": "先にデータソースを選択してください。",
     "cacheMissingNode": "NodeId が不足しています。"
   },
-  "processing": {
-    "fetch": {
-      "title": "Fetch",
-      "descriptionTooltip": "取得したデータを取り込み、フィルタリングを準備して transform へ渡します。",
+    "processing": {
+      "source": {
+      "title": "Source",
+      "descriptionTooltip": "取得したデータを取り込み、フィルタリングを準備して Geometry へ渡します。",
       "geometryIntakeGuard": {
-        "title": "Fetch Geometry Intake Guard",
-        "description": "Transform 前に取得済みジオメトリを正規化・検証し、不安定な簡略化アーティファクトを抑制します。",
+        "title": "Source Geometry Intake Guard",
+        "description": "Geometry 前に取得済みジオメトリを正規化・検証し、不安定な簡略化アーティファクトを抑制します。",
         "validationLevel": "検証レベル",
         "level": {
           "off": "off",
@@ -94,11 +94,11 @@
         "triangleRingRatio": "三角形リング比率"
       }
     },
-    "transform": {
-      "title": "Transform",
-      "summaryHelpTurf": "Transform は設定した tolerance を使って turf.simplify を実行します。",
-      "summaryHelpTopojson": "Transform はデコード時に topology-preserving な topojson 簡略化を適用し、simplify ステージで geojson 簡略化をスキップします。",
-      "summaryHelpGeojson": "Transform は先にジオメトリをデコードし、その後に設定した tolerance で geojson 簡略化を実行します。",
+    "geometry": {
+      "title": "Geometry",
+      "summaryHelpTurf": "Geometry は設定した tolerance を使って turf.simplify を実行します。",
+      "summaryHelpTopojson": "Geometry はデコード時に topology-preserving な topojson 簡略化を適用し、simplify ステージで geojson 簡略化をスキップします。",
+      "summaryHelpGeojson": "Geometry は先にジオメトリをデコードし、その後に設定した tolerance で geojson 簡略化を実行します。",
       "simplifyTolerance": {
         "label": "簡略化 tolerance"
       },
@@ -160,7 +160,7 @@
       }
     },
     "transformByZoom": {
-      "title": "Transform by zoom"
+      "title": "Geometry by zoom"
     },
     "buildRunning": {
       "title": "ビルド実行中",
@@ -171,19 +171,19 @@
       "title": "その他",
       "descriptionTooltip": "ステージごとの生成物の保持・削除動作を設定します。"
     },
-    "vt": {
-      "title": "VT 生成"
+    "tileEmit": {
+      "title": "TileEmit"
     },
     "download": {
-      "title": "Fetchステージ設定",
-      "workers": "Fetch の同時ワーカー数",
-      "workersHelp": "同時に実行する fetch 数を指定します。",
+      "title": "Sourceステージ設定",
+      "workers": "Source の同時ワーカー数",
+      "workersHelp": "同時に実行する source タスク数を指定します。",
       "retainTitle": "ビルド終了時の中間生成物の保持",
       "retainApiCache": "APIキャッシュ",
       "retainFilteredCache": "フィルター処理キャッシュ",
       "retainStage1Cache": "簡略化キャッシュ",
-      "retainVtCache": "タイルデータ",
-      "retainStage2Cache": "Transform キャッシュ（前処理）",
+      "retainTileEmitCache": "タイルデータ",
+      "retainStage2Cache": "Geometry キャッシュ（前処理）",
       "deleteNowTitle": "即時でのビルド生成物の削除",
       "deleteApiCache": "APIキャッシュを削除",
       "deleteApiCacheWithCount": "APIキャッシュを削除 ({{count}}件)",
@@ -199,14 +199,14 @@
       "deleteMetadata": "フィーチャーメタデータを削除",
       "resetSession": "ビルドセッションをリセット",
       "deleteApiCacheHelp": "APIキャッシュ: このノードの取得済み生データ（フィルタ前）。",
-      "deleteFilteredCacheHelp": "フィルター処理キャッシュ: fetchステージのズーム帯別フィルター済みコレクション。",
-      "deleteTransformHelp": "簡略化キャッシュ: ズーム帯別に簡略化したジオメトリとtransformエラーログ。",
-      "deleteVtHelp": "タイルデータ: 生成済みベクトルタイル（タイルインデックスも削除）。",
+      "deleteFilteredCacheHelp": "フィルター処理キャッシュ: sourceステージのズーム帯別フィルター済みコレクション。",
+      "deleteGeometryHelp": "簡略化キャッシュ: ズーム帯別に簡略化したジオメトリとGeometryエラーログ。",
+      "deleteTileEmitHelp": "タイルデータ: 生成済みベクトルタイル（タイルインデックスも削除）。",
       "deleteMetadataHelp": "フィーチャーメタデータ（検索/プレビュー用）を削除（タイルは削除しません）。",
       "resetDefaultsAction": "設定値をデフォルトに戻す",
-      "fetchRetryTitle": "Fetch リトライ",
+      "sourceRetryTitle": "Source Request リトライ",
       "timeoutMs": "タイムアウト (ms)",
-      "timeoutHelp": "各 fetch の待機時間上限です。",
+      "timeoutHelp": "各 source request の待機時間上限です。",
       "retryAttempts": "リトライ回数",
       "retryAttemptsHelp": "失敗時に再試行する回数です。",
       "retryLimit": "リトライ上限",
@@ -222,14 +222,14 @@
       "title": "URL単位のビルド設定ルール",
       "sectionTitle": "URL別ルール",
       "description": "URLごとの上書き設定をJSONで定義します。JSONは順番に評価され、該当するURLへ適用されます。",
-      "example": "Example:\n[\n  { \"key\": \"default\", \"matchType\": \"default\", \"buildConfig\": { \"transformConfig\": { \"toleranceByBand\": [0.12, 0.11, 0.1, 0.09, 0.08] } } },\n  { \"key\": \"russia-coast\", \"matchType\": \"regexp\", \"pattern\": \"(?i).*russia.*\", \"buildConfig\": { \"transformConfig\": { \"toleranceByBand\": [0.3, 0.25, 0.2, 0.18, 0.16] } }\n]"
+      "example": "Example:\n[\n  { \"key\": \"default\", \"matchType\": \"default\", \"buildConfig\": { \"geometryConfig\": { \"toleranceByBand\": [0.12, 0.11, 0.1, 0.09, 0.08] } } },\n  { \"key\": \"russia-coast\", \"matchType\": \"regexp\", \"pattern\": \"(?i).*russia.*\", \"buildConfig\": { \"geometryConfig\": { \"toleranceByBand\": [0.3, 0.25, 0.2, 0.18, 0.16] } }\n]"
     },
     "extract1": {
-      "title": "Transform（フィルタリング）",
+      "title": "Geometry（フィルタリング）",
       "omissionHelp": "除外ポリゴン面積係数やフィーチャーフィルタにより小さなポリゴンが除外されます。"
     },
     "extract2": {
-      "title": "Transform（タイル前処理）",
+      "title": "Geometry（タイル前処理）",
       "omissionHelp": "有効化の場合には、前処理で形状が空になる場合に、形状が省略されることがあります。",
       "extractionModeTitle": "前処理方式",
       "extractionModeHelp": "タイル前処理で使用する方式を選択します。",
@@ -238,10 +238,10 @@
       "extractionModeGeo": "GeoJSONでフィルタリング"
     },
     "filter": {
-      "title": "Transform 設定",
-      "workersStage1": "Transform のワーカー数（簡略化）",
+      "title": "Geometry 設定",
+      "workersStage1": "Geometry のワーカー数（簡略化）",
       "workersStage1Help": "並列度を増やすと高速化しますがブラウザがメモリ不足で不安定化することがあります。",
-      "workersStage2": "Transform のワーカー数（前処理）",
+      "workersStage2": "Geometry のワーカー数（前処理）",
       "workersStage2Help": "並列度を増やすと高速化しますがブラウザがメモリ不足で不安定化することがあります。",
       "method": "フィルタリング方法",
       "methodNone": "パススルー",
@@ -249,18 +249,18 @@
       "methodPolygon": "ポリゴンのみ",
       "methodHybrid": "ハイブリッド (推奨)",
       "areaFilterTitle": "面積フィルター",
-      "areaFilterHelp": "Transform のフィルタ処理（feature filtering とアスペクト比/面積判定）で適用されます。",
+      "areaFilterHelp": "Geometry のフィルタ処理（feature filtering とアスペクト比/面積判定）で適用されます。",
       "enableFeatureFiltering": "フィーチャーフィルタを有効化",
       "extractionTitle": "簡略化",
-      "methodHelp": "Transform 前に小さな地物を除外する方法を選びます。",
+      "methodHelp": "Geometry 前に小さな地物を除外する方法を選びます。",
       "minimumArea": "最小面積(平方km)",
-      "minimumAreaHelp": "Transform のフィルタ処理で、この面積より小さい特徴を除外します。",
+      "minimumAreaHelp": "Geometry のフィルタ処理で、この面積より小さい特徴を除外します。",
       "aspectRatioThreshold": "アスペクト比しきい値",
-      "aspectRatioThresholdHelp": "Transform でアスペクト比がこの値を超える細長い地物を除外します。",
+      "aspectRatioThresholdHelp": "Geometry でアスペクト比がこの値を超える細長い地物を除外します。",
       "areaThreshold": "面積しきい値(平方km)",
-      "areaThresholdHelp": "Transform のアスペクト比フィルタで使用する最小面積です。",
+      "areaThresholdHelp": "Geometry のアスペクト比フィルタで使用する最小面積です。",
       "excludePolygonAreaCoefficient": "除外ポリゴン面積係数",
-      "excludePolygonAreaCoefficientHelp": "Fetch フィルタで、面積 < 係数 × グリッド長 × 外周長 / 2 のポリゴンを除外します。",
+      "excludePolygonAreaCoefficientHelp": "Source フィルタで、面積 < 係数 × グリッド長 × 外周長 / 2 のポリゴンを除外します。",
       "omitDetailsTitle": "小さな形状のフィルタリング（島・飛地）",
       "omitDetailsLevelWeak": "低（高精度）",
       "omitDetailsLevelMedium": "中（バランス）",
@@ -270,10 +270,10 @@
       "omitDetailsLevelStrongHelp": "大きな島だけが残ります。",
       "tolerance": "簡略化の強さ",
       "toleranceSecondary": "簡略化の強さ（前処理）",
-      "toleranceHelp": "境界線がより直線的になり、細かな入り組みが消える。面積の小さな地物や細い地物が、フィルタ条件と組み合わさって除外されやすくなる。後段（Transform 前処理／VT 生成）の処理負荷・出力サイズは下がるが、地形の精度は落ちる。",
-      "toleranceHelpStage2": "タイル前処理として Transform の前処理を行います。",
+      "toleranceHelp": "境界線がより直線的になり、細かな入り組みが消える。面積の小さな地物や細い地物が、フィルタ条件と組み合わさって除外されやすくなる。後段（Geometry 前処理／TileEmit）の処理負荷・出力サイズは下がるが、地形の精度は落ちる。",
+      "toleranceHelpStage2": "タイル前処理として Geometry の前処理を行います。",
       "minVertexCount": "最小頂点数",
-      "minVertexCountHelp": "Transform の面積フィルタを頂点数がこの値以上の特徴に適用します。",
+      "minVertexCountHelp": "Geometry の面積フィルタを頂点数がこの値以上の特徴に適用します。",
       "quickRejectThreshold": "クイック除外しきい値",
       "quickRejectHelp": "値が低いほど小さな特徴を素早く除外します。",
       "simpleShapeVertexThreshold": "シンプル形状の頂点しきい値",
@@ -285,9 +285,9 @@
       "regularShapeMaxRatio": "正規形状の最大比率",
       "regularShapeMaxRatioHelp": "正規形状と見なす最大比率です。",
       "hybridFilterTitle": "ハイブリッドフィルタ調整",
-      "enablePerFeatureExtraction": "Transform により国や自治体の省略を許容",
+      "enablePerFeatureExtraction": "Geometry により国や自治体の省略を許容",
       "enablePerFeatureExtractionHelp": "形状は省略される場合がありますが、メタデータは残ります。",
-      "outputTitle": "Transform 出力",
+      "outputTitle": "Geometry 出力",
       "ringFixMinRingVertices": "最小リング頂点数",
       "boundaryDisableAtZoomOrAbove": "このズーム以上で境界保持を無効化",
       "boundaryDisableAtZoomOrAboveHelp": "指定ズーム以上で境界保持を停止します。",
@@ -309,8 +309,8 @@
       "descriptionTooltip": "ステージごとの生成物の保持・削除動作を設定します。"
     },
     "tile": {
-      "title": "VT 生成",
-      "descriptionTooltip": "選択したズーム範囲のVTタイルを生成します。",
+      "title": "TileEmit",
+      "descriptionTooltip": "選択したズーム範囲のベクトルタイルを生成します。",
       "basicSettings": "基本設定",
       "basicPerformance": "並列数",
       "basicGeometry": "タイル形状/余白",
@@ -318,8 +318,8 @@
       "basicFormats": "形式",
       "basicBuffer": "タイル余白",
       "advancedSettings": "詳細設定",
-      "workers": "同時VTワーカー数",
-      "workersHelp": "VT生成の同時ワーカー数です。動的VT並列は2以上で利用可能です。",
+      "workers": "同時TileEmitワーカー数",
+      "workersHelp": "TileEmit の同時ワーカー数です。動的並列は2以上で利用可能です。",
       "extent": "タイルExtent",
       "extentHelp": "タイル座標の解像度を指定します。",
       "tileSize": "タイルサイズ",
@@ -353,13 +353,13 @@
       "bufferSize": "タイルマージン (px)",
       "bufferSizeHelp": "0で余白なし。値を大きくすると継ぎ目は減りますがオーバーラップが増えます。",
       "zoomBands": "ズーム帯",
-      "zoomBandsSummary": "ズーム帯は Transform の範囲境界に従います。代表ズームは各帯の最小ズーム率です。",
+      "zoomBandsSummary": "ズーム帯は Geometry の範囲境界に従います。代表ズームは各帯の最小ズーム率です。",
       "expandFactor": "タイル拡張係数",
       "expandFactorHelp": "TopoJSON バッファ生成時にタイルグループを拡張します。",
       "expandMargin": "タイル拡張マージン",
       "expandMarginHelp": "周辺抽出用の追加マージン（タイル単位）。",
-      "dynamicConcurrencyTitle": "動的VT並列",
-      "dynamicConcurrencyEnabled": "動的VT並列を有効化",
+      "dynamicConcurrencyTitle": "動的TileEmit並列",
+      "dynamicConcurrencyEnabled": "動的TileEmit並列を有効化",
       "dynamicConcurrencyMinConcurrent": "最小並列数",
       "dynamicConcurrencyMaxConcurrent": "最大並列数",
       "dynamicConcurrencyHighWatermark": "高水位マーク",
@@ -367,7 +367,7 @@
       "dynamicConcurrencyWatermarkRange": "ウォーターマーク範囲",
       "dynamicConcurrencyAdjustStep": "調整ステップ",
       "dynamicConcurrencySampleMs": "サンプル間隔 (ms)",
-      "dynamicConcurrencyHelp": "実行時負荷に応じてVTワーカー数を調整します。",
+      "dynamicConcurrencyHelp": "実行時負荷に応じてTileEmitワーカー数を調整します。",
       "tileCountThreshold": "タイル数しきい値",
       "tileCountThresholdHelp": "タイル数がこの値を超えたら生成を停止します。",
       "zoomLevels": "ズームレベル (カンマ区切り)",
@@ -409,12 +409,12 @@
         "createdAt": "作成日",
         "originLabel": "由来",
         "originKey": "由来キー",
-        "fetchVertexCount": "Fetch 頂点数",
-        "fetchPolygonCount": "Fetch ポリゴン数",
-        "transformVertexCount": "Transform 頂点数",
-        "transformPolygonCount": "Transform ポリゴン数",
-        "vtVertexCount": "VT 頂点数",
-        "vtPolygonCount": "VT ポリゴン数",
+        "fetchVertexCount": "Source 頂点数",
+        "fetchPolygonCount": "Source ポリゴン数",
+        "geometryVertexCount": "Geometry 頂点数",
+        "geometryPolygonCount": "Geometry ポリゴン数",
+        "vtVertexCount": "TileEmit 頂点数",
+        "vtPolygonCount": "TileEmit ポリゴン数",
         "vertexCount": "頂点数",
         "polygonCount": "ポリゴン数",
         "status": "状態",
@@ -427,9 +427,9 @@
     },
     "fitSelection": "選択範囲へフィット",
     "errors": {
-      "missingSession": "ビルドを実行してTransformエラーを記録してください。",
-      "empty": "Transformエラーはまだ記録されていません。",
-      "loading": "Transformエラーを読み込み中...",
+      "missingSession": "ビルドを実行してGeometryエラーを記録してください。",
+      "empty": "Geometryエラーはまだ記録されていません。",
+      "loading": "Geometryエラーを読み込み中...",
       "searchPlaceholder": "エラーを検索",
       "searchAriaLabel": "エラーを検索",
       "matches": "一致",
@@ -475,8 +475,8 @@
       "countsWithUnit": "{{percentage}}% ・ {{completed}}/{{total}} {{unit}}完了 ・ 失敗 {{failed}} ・ スキップ {{skipped}}"
     },
     "taskPhase": {
-      "fetchCacheStart": "キャッシュ取得を開始",
-      "fetchCacheDone": "キャッシュ取得完了",
+      "sourceCacheStart": "キャッシュ取得を開始",
+      "sourceCacheDone": "キャッシュ取得完了",
       "decodeStart": "デコード開始",
       "decodeProgress": "デコード中... {{elapsedSeconds}}秒",
       "decodeDone": "デコード完了（次処理へ）",
@@ -504,8 +504,8 @@
       "outputCountsStart": "出力集計開始",
       "encodeStart": "エンコード開始",
       "encodeDone": "エンコード完了",
-      "transformCacheEncodeStart": "Transform キャッシュの FlatGeobuf エンコード開始",
-      "transformCacheEncodeDone": "Transform キャッシュの FlatGeobuf エンコード完了",
+      "geometryCacheEncodeStart": "Geometry キャッシュの FlatGeobuf エンコード開始",
+      "geometryCacheEncodeDone": "Geometry キャッシュの FlatGeobuf エンコード完了",
       "cachePutStart": "キャッシュ保存開始",
       "cachePutDone": "キャッシュ保存完了"
     },
@@ -551,36 +551,36 @@
       "failed": "ビルド失敗"
     },
     "stages": {
-      "fetch": {
-        "title": "Fetch",
+      "source": {
+        "title": "Source",
         "description": "データを取得して正規化します。"
       },
-      "transform": {
-        "title": "Transform",
+      "geometry": {
+        "title": "Geometry",
         "description": "ズーム帯ごとに簡略化します。"
       },
       "transformByZoom": {
-        "title": "Transform by zoom",
+        "title": "Geometry by zoom",
         "description": "ズーム帯ごとにタイル索引を作成します。"
       },
-      "vt": {
-        "title": "VT",
+      "tileEmit": {
+        "title": "TileEmit",
         "description": "指定したズーム帯のベクトルタイルを生成します。"
       },
       "download": {
-        "title": "Fetch",
+        "title": "Source",
         "description": "データを取得して正規化します。"
       },
       "extract1": {
-        "title": "Transform（フィルタリング）",
+        "title": "Geometry（フィルタリング）",
         "description": "元データをフィルタリングして簡略化します。"
       },
       "extract2": {
-        "title": "Transform（前処理）",
+        "title": "Geometry（前処理）",
         "description": "タイル生成のために前処理を行います。"
       },
       "vectorTiles": {
-        "title": "VT",
+        "title": "TileEmit",
         "description": "選択したズーム範囲のベクトルタイルを生成します。"
       }
     }

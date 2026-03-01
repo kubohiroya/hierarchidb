@@ -93,7 +93,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         tasks: [
           {
             taskId: 'task-1',
-            stage: 'fetch',
+            stage: 'source',
             status: 'queued',
             progress: 0,
             message: 'Queued',
@@ -114,7 +114,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         nodeId: 'node-1' as NodeId,
         task: {
           taskId: 'task-1',
-          stage: 'fetch',
+          stage: 'source',
           status: 'completed',
           progress: 100,
           message: 'Done'
@@ -132,7 +132,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         nodeId: 'node-1' as NodeId,
         task: {
           taskId: 'task-1',
-          stage: 'fetch',
+          stage: 'source',
           status: 'running',
           progress: 50,
           message: 'Late'
@@ -149,8 +149,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
   it('refreshes task snapshot from worker', async () => {
     getBuildTasksMock.mockResolvedValue([
       {
-        taskId: 'node-refresh:fetch:JP:0',
-        stage: 'fetch',
+        taskId: 'node-refresh:source:JP:0',
+        stage: 'source',
         status: 'completed',
         progress: 100,
         message: 'Done',
@@ -187,7 +187,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         tasks: [
           {
             taskId: 'task-stage-priority',
-            stage: 'vt',
+            stage: 'tileEmit',
             status: 'queued',
             progress: 0,
 
@@ -197,7 +197,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.tasks[0]?.stage).toBe('vt');
+      expect(result.current.tasks[0]?.stage).toBe('tileEmit');
     });
   });
 
@@ -215,7 +215,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         tasks: [
           {
             taskId: 'task-2',
-            stage: 'vt',
+            stage: 'tileEmit',
             status: 'running',
             progress: 100,
             message: 'Cache saving',
@@ -236,7 +236,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         nodeId: 'node-2' as NodeId,
         task: {
           taskId: 'task-2',
-          stage: 'vt',
+          stage: 'tileEmit',
           status: 'completed',
           progress: 100,
           message: 'Done'
@@ -255,7 +255,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         nodeId: 'node-2' as NodeId,
         task: {
           taskId: 'task-2',
-          stage: 'vt',
+          stage: 'tileEmit',
           status: 'running',
           progress: 100,
           message: 'Late running'
@@ -281,8 +281,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         type: 'update',
         nodeId: 'node-2x' as NodeId,
         task: {
-          taskId: 'node-2x:fetch:JP:0',
-          stage: 'fetch',
+          taskId: 'node-2x:source:JP:0',
+          stage: 'source',
           status: 'running',
           progress: 42,
           message: 'running'
@@ -301,8 +301,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         nodeId: 'node-2x' as NodeId,
         tasks: [
           {
-            taskId: 'node-2x:fetch:JP:0',
-            stage: 'fetch',
+            taskId: 'node-2x:source:JP:0',
+            stage: 'source',
             status: 'queued',
             progress: 42,
             message: 'queued',
@@ -331,17 +331,17 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         nodeId: 'node-2b' as NodeId,
         task: {
           taskId: 'task-2b',
-          stage: 'transform',
+          stage: 'geometry',
           status: 'completed',
           progress: 100,
-          message: 'transform done',
+          message: 'geometry done',
         },
       });
     });
 
     await waitFor(() => {
       expect(result.current.tasks[0]?.status).toBe('completed');
-      expect(result.current.tasks[0]?.message).toBe('transform done');
+      expect(result.current.tasks[0]?.message).toBe('geometry done');
     });
 
     act(() => {
@@ -350,7 +350,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         nodeId: 'node-2b' as NodeId,
         task: {
           taskId: 'task-2b',
-          stage: 'transform',
+          stage: 'geometry',
           status: 'running',
           progress: 100,
           message: 'finalize'
@@ -360,7 +360,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
 
     await waitFor(() => {
       expect(result.current.tasks[0]?.status).toBe('completed');
-      expect(result.current.tasks[0]?.message).toBe('transform done');
+      expect(result.current.tasks[0]?.message).toBe('geometry done');
     });
   });
 
@@ -376,8 +376,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         type: 'update',
         nodeId: 'node-retry-failed' as NodeId,
         task: {
-          taskId: 'node-retry-failed:fetch:JP:0',
-          stage: 'fetch',
+          taskId: 'node-retry-failed:source:JP:0',
+          stage: 'source',
           status: 'failed',
           progress: 100,
           message: 'Failed',
@@ -394,8 +394,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         type: 'update',
         nodeId: 'node-retry-failed' as NodeId,
         task: {
-          taskId: 'node-retry-failed:fetch:JP:0',
-          stage: 'fetch',
+          taskId: 'node-retry-failed:source:JP:0',
+          stage: 'source',
           status: 'queued',
           progress: 0,
           message: 'Queued',
@@ -421,8 +421,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         type: 'update',
         nodeId: 'node-retry-skipped' as NodeId,
         task: {
-          taskId: 'node-retry-skipped:fetch:JP:0',
-          stage: 'fetch',
+          taskId: 'node-retry-skipped:source:JP:0',
+          stage: 'source',
           status: 'completed',
           progress: 100,
           message: 'Skipped: retryable',
@@ -440,8 +440,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         type: 'update',
         nodeId: 'node-retry-skipped' as NodeId,
         task: {
-          taskId: 'node-retry-skipped:fetch:JP:0',
-          stage: 'fetch',
+          taskId: 'node-retry-skipped:source:JP:0',
+          stage: 'source',
           status: 'queued',
           progress: 0,
           message: 'Queued',
@@ -468,7 +468,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         nodeId: 'node-2d' as NodeId,
         task: {
           taskId: 'task-2d',
-          stage: 'transform',
+          stage: 'geometry',
           status: 'completed',
           progress: 100,
           message: 'Cache write done'
@@ -488,7 +488,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         nodeId: 'node-2d' as NodeId,
         task: {
           taskId: 'task-2d',
-          stage: 'transform',
+          stage: 'geometry',
           status: 'running',
           progress: 97,
           message: 'Encode start'
@@ -515,8 +515,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         type: 'update',
         nodeId: 'node-8' as NodeId,
         task: {
-          taskId: 'node-8:fetch:US:0',
-          stage: 'fetch',
+          taskId: 'node-8:source:US:0',
+          stage: 'source',
           status: 'completed',
           progress: 100,
           message: 'Done'
@@ -535,8 +535,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         type: 'update',
         nodeId: 'node-8' as NodeId,
         task: {
-          taskId: 'node-8:fetch:US:0',
-          stage: 'fetch',
+          taskId: 'node-8:source:US:0',
+          stage: 'source',
           status: 'running',
           progress: 50,
           message: 'Recovered'
@@ -563,11 +563,11 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         type: 'update',
         nodeId: 'node-9' as NodeId,
         task: {
-          taskId: 'node-9:transform:DE:0',
-          stage: 'transform',
+          taskId: 'node-9:geometry:DE:0',
+          stage: 'geometry',
           status: 'failed',
           progress: 40,
-          message: 'transform failed'
+          message: 'geometry failed'
         },
       });
     });
@@ -582,8 +582,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         type: 'update',
         nodeId: 'node-9' as NodeId,
         task: {
-          taskId: 'node-9:transform:DE:0',
-          stage: 'transform',
+          taskId: 'node-9:geometry:DE:0',
+          stage: 'geometry',
           status: 'running',
           progress: 95,
           message: 'retrying'
@@ -594,7 +594,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
     await waitFor(() => {
       expect(result.current.tasks[0]?.status).toBe('failed');
       expect(result.current.tasks[0]?.progress).toBe(100);
-      expect(result.current.tasks[0]?.message).toBe('transform failed');
+      expect(result.current.tasks[0]?.message).toBe('geometry failed');
     });
   });
 
@@ -610,11 +610,11 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         type: 'update',
         nodeId: 'node-10' as NodeId,
         task: {
-          taskId: 'node-10:vt:BR:0',
-          stage: 'vt',
+          taskId: 'node-10:tileEmit:BR:0',
+          stage: 'tileEmit',
           status: 'running',
           progress: 30,
-          message: 'skipped: vt source missing',
+          message: 'skipped: tileEmit source missing',
           display: { kind: 'skip' },
         },
       });
@@ -630,8 +630,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         type: 'update',
         nodeId: 'node-10' as NodeId,
         task: {
-          taskId: 'node-10:vt:BR:0',
-          stage: 'vt',
+          taskId: 'node-10:tileEmit:BR:0',
+          stage: 'tileEmit',
           status: 'running',
           progress: 45,
           message: 'running'
@@ -658,18 +658,18 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         nodeId: 'node-stage-multi' as NodeId,
         tasks: [
           {
-            taskId: 'node-stage-multi:fetch:JP:0',
-            stage: 'fetch',
+            taskId: 'node-stage-multi:source:JP:0',
+            stage: 'source',
             status: 'completed',
             progress: 100,
-            message: 'Fetch done'
+            message: 'Source done'
           },
           {
-            taskId: 'node-stage-multi:transform:JP:1',
-            stage: 'transform',
+            taskId: 'node-stage-multi:geometry:JP:1',
+            stage: 'geometry',
             status: 'running',
             progress: 10,
-            message: 'Transform running',
+            message: 'Geometry running',
 
           },
         ],
@@ -679,8 +679,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
     await waitFor(() => {
       expect(result.current.tasks).toHaveLength(2);
       expect(result.current.tasks.map((task) => task.taskId)).toEqual([
-        'node-stage-multi:fetch:JP:0',
-        'node-stage-multi:transform:JP:1',
+        'node-stage-multi:source:JP:0',
+        'node-stage-multi:geometry:JP:1',
       ]);
     });
 
@@ -690,11 +690,11 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         nodeId: 'node-stage-multi' as NodeId,
         tasks: [
           {
-            taskId: 'node-stage-multi:vt:JP:2',
-            stage: 'vt',
+            taskId: 'node-stage-multi:tileEmit:JP:2',
+            stage: 'tileEmit',
             status: 'running',
             progress: 0,
-            message: 'VT queued',
+            message: 'TileEmit queued',
 
           },
         ],
@@ -704,9 +704,9 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
     await waitFor(() => {
       expect(result.current.tasks).toHaveLength(3);
       expect(result.current.tasks.map((task) => task.taskId)).toEqual([
-        'node-stage-multi:fetch:JP:0',
-        'node-stage-multi:transform:JP:1',
-        'node-stage-multi:vt:JP:2',
+        'node-stage-multi:source:JP:0',
+        'node-stage-multi:geometry:JP:1',
+        'node-stage-multi:tileEmit:JP:2',
       ]);
     });
   });
@@ -724,16 +724,16 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         nodeId: 'node-stage-count-retain' as NodeId,
         tasks: [
           {
-            taskId: 'node-stage-count-retain:fetch:JP:0',
-            stage: 'fetch',
+            taskId: 'node-stage-count-retain:source:JP:0',
+            stage: 'source',
             status: 'queued',
             progress: 0,
             message: 'Queued',
 
           },
           {
-            taskId: 'node-stage-count-retain:fetch:JP:1',
-            stage: 'fetch',
+            taskId: 'node-stage-count-retain:source:JP:1',
+            stage: 'source',
             status: 'queued',
             progress: 0,
             message: 'Queued',
@@ -744,7 +744,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.snapshotTaskCountByStage).toMatchObject({ fetch: 2 });
+      expect(result.current.snapshotTaskCountByStage).toMatchObject({ source: 2 });
       expect(result.current.terminalTaskCountByStage).toMatchObject({});
       expect(result.current.tasks).toHaveLength(2);
     });
@@ -754,8 +754,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         type: 'update',
         nodeId: 'node-stage-count-retain' as NodeId,
         task: {
-          taskId: 'node-stage-count-retain:fetch:JP:0',
-          stage: 'fetch',
+          taskId: 'node-stage-count-retain:source:JP:0',
+          stage: 'source',
           status: 'completed',
           progress: 100,
           message: 'Done'
@@ -764,7 +764,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.terminalTaskCountByStage).toMatchObject({ fetch: 1 });
+      expect(result.current.terminalTaskCountByStage).toMatchObject({ source: 1 });
       expect(result.current.tasks).toHaveLength(2);
     });
 
@@ -774,8 +774,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         nodeId: 'node-stage-count-retain' as NodeId,
         tasks: [
           {
-            taskId: 'node-stage-count-retain:fetch:JP:1',
-            stage: 'fetch',
+            taskId: 'node-stage-count-retain:source:JP:1',
+            stage: 'source',
             status: 'running',
             progress: 10,
             message: 'Running',
@@ -785,8 +785,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.snapshotTaskCountByStage).toMatchObject({ fetch: 2 });
-      expect(result.current.terminalTaskCountByStage).toMatchObject({ fetch: 1 });
+      expect(result.current.snapshotTaskCountByStage).toMatchObject({ source: 2 });
+      expect(result.current.terminalTaskCountByStage).toMatchObject({ source: 1 });
       expect(result.current.tasks).toHaveLength(2);
     });
 
@@ -795,8 +795,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         type: 'update',
         nodeId: 'node-stage-count-retain' as NodeId,
         task: {
-          taskId: 'node-stage-count-retain:fetch:JP:1',
-          stage: 'fetch',
+          taskId: 'node-stage-count-retain:source:JP:1',
+          stage: 'source',
           status: 'completed',
           progress: 100,
           message: 'Done',
@@ -806,7 +806,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.terminalTaskCountByStage).toMatchObject({ fetch: 2 });
+      expect(result.current.terminalTaskCountByStage).toMatchObject({ source: 2 });
     });
 
     act(() => {
@@ -815,11 +815,11 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         nodeId: 'node-stage-count-retain' as NodeId,
         tasks: [
           {
-            taskId: 'node-stage-count-retain:vt:JP:0',
-            stage: 'vt',
+            taskId: 'node-stage-count-retain:tileEmit:JP:0',
+            stage: 'tileEmit',
             status: 'running',
             progress: 0,
-            message: 'VT queued',
+            message: 'TileEmit queued',
 
           },
         ],
@@ -827,8 +827,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.snapshotTaskCountByStage).toMatchObject({ fetch: 2, vt: 1 });
-      expect(result.current.terminalTaskCountByStage).toMatchObject({ fetch: 2 });
+      expect(result.current.snapshotTaskCountByStage).toMatchObject({ source: 2, tileEmit: 1 });
+      expect(result.current.terminalTaskCountByStage).toMatchObject({ source: 2 });
       expect(result.current.tasks).toHaveLength(3);
     });
   });
@@ -846,19 +846,19 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         nodeId: 'node-2e' as NodeId,
         tasks: [
           {
-            taskId: 'node-2e:fetch:JP:0',
-            stage: 'fetch',
+            taskId: 'node-2e:source:JP:0',
+            stage: 'source',
             status: 'completed',
             progress: 100,
-            message: 'Fetch done',
+            message: 'Source done',
 
           },
           {
-            taskId: 'node-2e:fetch:JP:1',
-            stage: 'fetch',
+            taskId: 'node-2e:source:JP:1',
+            stage: 'source',
             status: 'completed',
             progress: 100,
-            message: 'Fetch done',
+            message: 'Source done',
 
           },
         ],
@@ -866,8 +866,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.terminalTaskCountByStage).toMatchObject({ fetch: 2 });
-      expect(result.current.snapshotTaskCountByStage).toMatchObject({ fetch: 2 });
+      expect(result.current.terminalTaskCountByStage).toMatchObject({ source: 2 });
+      expect(result.current.snapshotTaskCountByStage).toMatchObject({ source: 2 });
     });
 
     act(() => {
@@ -876,19 +876,19 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         nodeId: 'node-2e' as NodeId,
         tasks: [
           {
-            taskId: 'node-2e:vt:JP:0',
-            stage: 'vt',
+            taskId: 'node-2e:tileEmit:JP:0',
+            stage: 'tileEmit',
             status: 'running',
             progress: 10,
-            message: 'VT queued',
+            message: 'TileEmit queued',
           },
         ],
       });
     });
 
     await waitFor(() => {
-      expect(result.current.terminalTaskCountByStage).toMatchObject({ fetch: 2 });
-      expect(result.current.snapshotTaskCountByStage).toMatchObject({ fetch: 2, vt: 1 });
+      expect(result.current.terminalTaskCountByStage).toMatchObject({ source: 2 });
+      expect(result.current.snapshotTaskCountByStage).toMatchObject({ source: 2, tileEmit: 1 });
       expect(result.current.tasks).toHaveLength(3);
     });
   });
@@ -906,7 +906,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         nodeId: 'node-2c' as NodeId,
         task: {
           taskId: 'task-2c',
-          stage: 'transform',
+          stage: 'geometry',
           status: 'running',
           progress: 100,
           message: 'encode:start'
@@ -925,17 +925,17 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         nodeId: 'node-2c' as NodeId,
         task: {
           taskId: 'task-2c',
-          stage: 'transform',
+          stage: 'geometry',
           status: 'completed',
           progress: 100,
-          message: 'transform cache stored'
+          message: 'geometry cache stored'
         },
       });
     });
 
     await waitFor(() => {
       expect(result.current.tasks[0]?.status).toBe('completed');
-      expect(result.current.tasks[0]?.message).toBe('transform cache stored');
+      expect(result.current.tasks[0]?.message).toBe('geometry cache stored');
     });
 
     act(() => {
@@ -944,7 +944,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         nodeId: 'node-2c' as NodeId,
         task: {
           taskId: 'task-2c',
-          stage: 'transform',
+          stage: 'geometry',
           status: 'running',
           progress: 100,
           message: 'post-process'
@@ -954,7 +954,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
 
     await waitFor(() => {
       expect(result.current.tasks[0]?.status).toBe('completed');
-      expect(result.current.tasks[0]?.message).toBe('transform cache stored');
+      expect(result.current.tasks[0]?.message).toBe('geometry cache stored');
     });
   });
 
@@ -972,7 +972,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         tasks: [
           {
             taskId: 'task-3',
-            stage: 'fetch',
+            stage: 'source',
             status: 'running',
             progress: 100,
             message: 'Cache saving',
@@ -980,14 +980,14 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
           },
           {
             taskId: 'task-4',
-            stage: 'transform',
+            stage: 'geometry',
             status: 'running',
             progress: 100,
             message: 'Cache saving',
           },
           {
             taskId: 'task-5',
-            stage: 'vt',
+            stage: 'tileEmit',
             status: 'running',
             progress: 100,
             message: 'Cache saving',
@@ -1018,7 +1018,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         tasks: [
           {
             taskId: 'task-3b',
-            stage: 'fetch',
+            stage: 'source',
             status: 'recycled',
             progress: 100,
             message: 'recycled for retry',
@@ -1039,7 +1039,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         nodeId: 'node-3b' as NodeId,
         task: {
           taskId: 'task-3b',
-          stage: 'fetch',
+          stage: 'source',
           status: 'running',
           progress: 100,
           message: 'still active'
@@ -1066,8 +1066,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         type: 'update',
         nodeId: 'node-4' as NodeId,
         task: {
-          taskId: 'node-4:fetch:JPN:1',
-          stage: 'fetch',
+          taskId: 'node-4:source:JPN:1',
+          stage: 'source',
           status: 'completed',
           progress: 100,
           message: 'Done'
@@ -1092,8 +1092,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         type: 'update',
         nodeId: 'node-5' as NodeId,
         task: {
-          taskId: 'node-5:fetch:JPN:1',
-          stage: 'fetch',
+          taskId: 'node-5:source:JPN:1',
+          stage: 'source',
           status: 'running',
           progress: 99,
           message: 'Working'
@@ -1118,8 +1118,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         type: 'update',
         nodeId: 'node-other' as NodeId,
         task: {
-          taskId: 'node-other:fetch:JP:0',
-          stage: 'fetch',
+          taskId: 'node-other:source:JP:0',
+          stage: 'source',
           status: 'running',
           progress: 50,
           message: 'running'
@@ -1144,8 +1144,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         type: 'update',
         nodeId: 'node-6' as NodeId,
         task: {
-          taskId: 'node-6:fetch:BY:0',
-          stage: 'fetch',
+          taskId: 'node-6:source:BY:0',
+          stage: 'source',
           status: 'queued',
           progress: 0,
           message: 'Queued'
@@ -1162,8 +1162,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         type: 'update',
         nodeId: 'node-6' as NodeId,
         task: {
-          taskId: 'node-6:fetch:BY:0',
-          stage: 'fetch',
+          taskId: 'node-6:source:BY:0',
+          stage: 'source',
           status: 'running',
           progress: 50,
           message: 'Running'
@@ -1180,8 +1180,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         type: 'update',
         nodeId: 'node-6' as NodeId,
         task: {
-          taskId: 'node-6:fetch:BY:0',
-          stage: 'fetch',
+          taskId: 'node-6:source:BY:0',
+          stage: 'source',
           status: 'queued',
           progress: 0,
           message: 'Late queued'
@@ -1198,8 +1198,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         type: 'update',
         nodeId: 'node-6' as NodeId,
         task: {
-          taskId: 'node-6:fetch:BY:0',
-          stage: 'fetch',
+          taskId: 'node-6:source:BY:0',
+          stage: 'source',
           status: 'completed',
           progress: 100,
           message: 'Done'
@@ -1226,16 +1226,16 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         nodeId: 'node-7' as NodeId,
         tasks: [
           {
-            taskId: 'node-7:fetch:ABW:0',
-            stage: 'fetch',
+            taskId: 'node-7:source:ABW:0',
+            stage: 'source',
             status: 'running',
             progress: 70,
             message: 'Running',
 
           },
           {
-            taskId: 'node-7:fetch:ABW:1',
-            stage: 'fetch',
+            taskId: 'node-7:source:ABW:1',
+            stage: 'source',
             status: 'queued',
             progress: 0,
             message: 'Queued',
@@ -1255,8 +1255,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         nodeId: 'node-7'  as NodeId,
         tasks: [
           {
-            taskId: 'node-7:fetch:ABW:1',
-            stage: 'fetch',
+            taskId: 'node-7:source:ABW:1',
+            stage: 'source',
             status: 'running',
             progress: 10,
             message: 'Start',
@@ -1267,8 +1267,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
 
     await waitFor(() => {
       expect(result.current.tasks).toHaveLength(2);
-      expect(result.current.tasks[0]?.taskId).toBe('node-7:fetch:ABW:0');
-      expect(result.current.tasks[1]?.taskId).toBe('node-7:fetch:ABW:1');
+      expect(result.current.tasks[0]?.taskId).toBe('node-7:source:ABW:0');
+      expect(result.current.tasks[1]?.taskId).toBe('node-7:source:ABW:1');
       expect(result.current.tasks[0]?.progress).toBe(70);
       expect(result.current.tasks[1]?.progress).toBe(10);
     });
@@ -1287,8 +1287,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         type: 'update',
         nodeId: 'node-other' as NodeId,
         task: {
-          taskId: 'node-other:fetch:JP:0',
-          stage: 'fetch',
+          taskId: 'node-other:source:JP:0',
+          stage: 'source',
           status: 'running',
           progress: 15,
           message: 'foreign'
@@ -1326,8 +1326,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         type: 'update',
         nodeId: 'node-old' as NodeId,
         task: {
-          taskId: 'node-old:fetch:JP:0',
-          stage: 'fetch',
+          taskId: 'node-old:source:JP:0',
+          stage: 'source',
           status: 'running',
           progress: 20,
           message: 'stale'
@@ -1346,8 +1346,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         type: 'update',
         nodeId: 'node-new' as NodeId,
         task: {
-          taskId: 'node-new:fetch:JP:0',
-          stage: 'fetch',
+          taskId: 'node-new:source:JP:0',
+          stage: 'source',
           status: 'queued',
           progress: 0,
           message: 'queued'
@@ -1357,12 +1357,12 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
 
     await waitFor(() => {
       expect(result.current.tasks).toHaveLength(1);
-      expect(result.current.tasks[0]?.taskId).toBe('node-new:fetch:JP:0');
+      expect(result.current.tasks[0]?.taskId).toBe('node-new:source:JP:0');
     });
   });
 
-  it('composes vt parent input summary metadata into task message', async () => {
-    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-vt-meta' as NodeId));
+  it('composes tileEmit parent input summary metadata into task message', async () => {
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-tileEmit-meta' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -1371,15 +1371,15 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-vt-meta' as NodeId,
+        nodeId: 'node-tileEmit-meta' as NodeId,
         task: {
-          taskId: 'node-vt-meta:vt:2:6:123',
-          stage: 'vt',
+          taskId: 'node-tileEmit-meta:tileEmit:2:6:123',
+          stage: 'tileEmit',
           status: 'running',
           progress: 30,
           message: 'tiles 12/40',
           metadata: {
-            vtParentInputSummary: {
+            tileEmitParentInputSummary: {
               parentTile: { z: 6, x: 15, y: 23 },
               intersectingFeatureCount: 9,
               intersectingGeojsonByteSize: 2316360,
@@ -1393,7 +1393,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
       expect(result.current.tasks).toHaveLength(1);
       const message = resolveTaskMetadataMessage(result.current.tasks[0]?.metadata);
       expect(message).toBe(
-        'tiles 12/40 | vt parent input z=6 x=15 y=23 intersects(features=9, geojsonBytes=2316360)',
+        'tiles 12/40 | tileEmit parent input z=6 x=15 y=23 intersects(features=9, geojsonBytes=2316360)',
       );
     });
   });
@@ -1401,8 +1401,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
   it('can refresh task snapshot manually when updates are absent', async () => {
     getBuildTasksMock.mockResolvedValue([
       {
-        taskId: 'node-refresh-missing:fetch:JP:0',
-        stage: 'fetch',
+        taskId: 'node-refresh-missing:source:JP:0',
+        stage: 'source',
         status: 'running',
         progress: 20,
         message: 'Running'
@@ -1451,8 +1451,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
           type: 'update',
           nodeId: 'node-raf-fallback' as NodeId,
           task: {
-            taskId: 'node-raf-fallback:fetch:JP:0',
-            stage: 'fetch',
+            taskId: 'node-raf-fallback:source:JP:0',
+            stage: 'source',
             status: 'queued',
             progress: 0,
             message: 'Queued',

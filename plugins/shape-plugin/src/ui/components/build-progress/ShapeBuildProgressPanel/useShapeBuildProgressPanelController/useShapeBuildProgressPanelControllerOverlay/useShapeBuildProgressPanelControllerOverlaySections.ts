@@ -5,6 +5,7 @@ import {
   ShapeBuildProgressPanelOverlaySectionContent,
   ShapeBuildProgressPanelOverlaySectionProgressContent,
 } from './useShapeBuildProgressPanelControllerOverlaySectionsView.js';
+import { resolveStageAliasArray, resolveStageAliasValue } from '~/ui/components/build-progress/stageIdAliases';
 
 type StageRecord = Record<string, ReactNode>;
 
@@ -126,7 +127,7 @@ export const useShapeBuildProgressPanelControllerOverlaySections = ({
   buildConfigForDisplay,
 }: UseShapeBuildProgressPanelControllerOverlaySectionsArgs): UseShapeBuildProgressPanelControllerOverlaySectionsResult => {
   const stageProgressContent = stages.reduce<StageRecord>((acc: StageRecord, stage: BuildStage) => {
-    const stageTasks = tasksByStageForDisplay[stage.id] ?? [];
+    const stageTasks = resolveStageAliasArray(tasksByStageForDisplay, stage.id);
     acc[stage.id] = ShapeBuildProgressPanelStageProgressContent({
       summary,
       resolveTaskTitle,
@@ -139,7 +140,7 @@ export const useShapeBuildProgressPanelControllerOverlaySections = ({
   const stageContents = stages.reduce<StageRecord>((acc: StageRecord, stage: BuildStage) => {
     acc[stage.id] = ShapeBuildProgressPanelStageContent({
       stage,
-      stageValue: stageProgressForDisplay[stage.id] ?? 0,
+      stageValue: resolveStageAliasValue(stageProgressForDisplay, stage.id) ?? 0,
       paneProgress: paneProgressForDisplay,
       tasksByStageForDisplay,
       isTasksLoadingForDisplay,

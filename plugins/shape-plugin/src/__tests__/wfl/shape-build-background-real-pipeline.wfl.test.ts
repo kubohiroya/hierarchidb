@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import type { BuildContinuationPolicy } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildSessionRecord, ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
-import type { FetchTaskPayload, ShapeBuildConfig } from '../../common/types/index';
+import type { SourceTaskPayload, ShapeBuildConfig } from '../../common/types/index';
 import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import * as Comlink from 'comlink';
@@ -130,19 +130,19 @@ import { MessageChannel, type MessagePort as NodeMessagePort } from 'worker_thre
 import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint';
 
 type EphemeralCacheType =
-  | 'fetchCache'
-  | 'transformCache'
-  | 'transformErrors'
-  | 'tileIdToBufferRelations'
+  | 'sourceCache'
+  | 'geometryCache'
+  | 'geometryErrors'
+  | 'tileEmitBufferRelations'
   | 'buildTasks';
 
 type ShapeEphemeralAdminAPI = {
   clearShapeEphemeralCache(nodeId: NodeId, cacheType: EphemeralCacheType): Promise<void>;
   getShapeEphemeralCounts(nodeId: NodeId): Promise<{
-    fetchCache: number;
-    transformCache: number;
-    transformErrors: number;
-    tileIdToBufferRelations: number;
+    sourceCache: number;
+    geometryCache: number;
+    geometryErrors: number;
+    tileEmitBufferRelations: number;
     buildTasks: number;
   }>;
 };
@@ -152,7 +152,7 @@ type PipelineState = 'idle' | 'running' | 'paused' | 'completed' | 'failed';
 type ShapePipelineRunParams = {
   nodeId: NodeId;
   buildConfig: ShapeBuildConfig;
-  downloadTaskPayloads?: FetchTaskPayload[];
+  downloadTaskPayloads?: SourceTaskPayload[];
   resumeExistingTasks?: boolean;
   buildContinuationPolicy?: BuildContinuationPolicy;
   startPaused?: boolean;
@@ -275,34 +275,34 @@ const createBaseSession = (nodeId: NodeId, timestamp: number): ShapeBuildSession
     failed: 0,
     skipped: 0,
     percentage: 0,
-    taskType: 'fetch',
+    taskType: 'source',
   },
   stages: {
-    fetch: { status: 'queued', progress: 0, tasksTotal: 1, tasksCompleted: 0, tasksFailed: 0 },
-    transform: { status: 'queued', progress: 0, tasksTotal: 1, tasksCompleted: 0, tasksFailed: 0 },
-    vt: { status: 'queued', progress: 0, tasksTotal: 1, tasksCompleted: 0, tasksFailed: 0 },
+    source: { status: 'queued', progress: 0, tasksTotal: 1, tasksCompleted: 0, tasksFailed: 0 },
+    geometry: { status: 'queued', progress: 0, tasksTotal: 1, tasksCompleted: 0, tasksFailed: 0 },
+    tileEmit: { status: 'queued', progress: 0, tasksTotal: 1, tasksCompleted: 0, tasksFailed: 0 },
   },
 });
 
 const createTestBuildConfig = (): ShapeBuildConfig => {
-  const dynamicBase = DEFAULT_BUILD_CONFIG.vtConfig.dynamicConcurrency;
+  const dynamicBase = DEFAULT_BUILD_CONFIG.tileEmitConfig.dynamicConcurrency;
   return {
     ...DEFAULT_BUILD_CONFIG,
     dataSourceName: 'geoboundaries',
-    fetchConfig: {
-      ...DEFAULT_BUILD_CONFIG.fetchConfig,
+    sourceConfig: {
+      ...DEFAULT_BUILD_CONFIG.sourceConfig,
       maxConcurrent: 1,
       retryAttempts: 0,
       retryLimit: 0,
     },
-    transformConfig: {
-      ...DEFAULT_BUILD_CONFIG.transformConfig,
+    geometryConfig: {
+      ...DEFAULT_BUILD_CONFIG.geometryConfig,
       zoomBandBoundaries: [2, 3],
       maxConcurrent: 1,
       enableFeatureFiltering: false,
     },
-    vtConfig: {
-      ...DEFAULT_BUILD_CONFIG.vtConfig,
+    tileEmitConfig: {
+      ...DEFAULT_BUILD_CONFIG.tileEmitConfig,
       maxConcurrent: 1,
       dynamicConcurrency: dynamicBase
         ? { ...dynamicBase, enabled: false }
@@ -311,7 +311,7 @@ const createTestBuildConfig = (): ShapeBuildConfig => {
   };
 };
 
-const downloadTaskPayloads: FetchTaskPayload[] = [
+const downloadTaskPayloads: SourceTaskPayload[] = [
   {
     url: 'mock://geoboundaries/jp/admin0',
     countryCode: 'JP',
@@ -337,12 +337,12 @@ const completeSession = async (
       failed: 0,
       skipped: 0,
       percentage: 100,
-      taskType: 'vt',
+      taskType: 'tileEmit',
     },
     stages: {
-      fetch: { status: 'completed', progress: 100, tasksTotal: 1, tasksCompleted: 1, tasksFailed: 0 },
-      transform: { status: 'completed', progress: 100, tasksTotal: 1, tasksCompleted: 1, tasksFailed: 0 },
-      vt: { status: 'completed', progress: 100, tasksTotal: 1, tasksCompleted: 1, tasksFailed: 0 },
+      source: { status: 'completed', progress: 100, tasksTotal: 1, tasksCompleted: 1, tasksFailed: 0 },
+      geometry: { status: 'completed', progress: 100, tasksTotal: 1, tasksCompleted: 1, tasksFailed: 0 },
+      tileEmit: { status: 'completed', progress: 100, tasksTotal: 1, tasksCompleted: 1, tasksFailed: 0 },
     },
   });
 };
@@ -366,10 +366,10 @@ const waitFor = async (
   throw new Error(`Timed out waiting for ${label} after ${timeoutMs}ms`);
 };
 
-const debugTransformCacheAccess = async (nodeId: NodeId): Promise<void> => {
-  const relations = await ephemeralDB.tileIdToBufferRelations.where('nodeId').equals(nodeId).toArray();
+const debugGeometryCacheAccess = async (nodeId: NodeId): Promise<void> => {
+  const relations = await ephemeralDB.tileEmitBufferRelations.where('nodeId').equals(nodeId).toArray();
   const bufferIds = Array.from(new Set(relations.map((relation) => relation.bufferId)));
-  console.info('[test][debug] transformCache buffers', JSON.stringify({
+  console.info('[test][debug] geometryCache buffers', JSON.stringify({
     nodeId,
     relationCount: relations.length,
     bufferCount: bufferIds.length,
@@ -378,7 +378,7 @@ const debugTransformCacheAccess = async (nodeId: NodeId): Promise<void> => {
   if (bufferIds.length === 0) return;
   const sampleId = bufferIds[0];
   const getStartedAt = Date.now();
-  const record = await ephemeralDB.transformCache.get(sampleId);
+  const record = await ephemeralDB.geometryCache.get(sampleId);
   const recordData = record?.data;
   const recordDataKeys = recordData && typeof recordData === 'object'
     ? Object.keys(recordData as Record<string, unknown>).slice(0, 8)
@@ -386,7 +386,7 @@ const debugTransformCacheAccess = async (nodeId: NodeId): Promise<void> => {
   const isBuffer = typeof Buffer !== 'undefined' && typeof Buffer.isBuffer === 'function'
     ? Buffer.isBuffer(recordData)
     : false;
-  console.info('[test][debug] transformCache get done', JSON.stringify({
+  console.info('[test][debug] geometryCache get done', JSON.stringify({
     nodeId,
     bufferId: sampleId,
     hasRecord: Boolean(record),
@@ -408,7 +408,7 @@ const debugTransformCacheAccess = async (nodeId: NodeId): Promise<void> => {
       : null,
   }));
   const bulkStartedAt = Date.now();
-  const bulk = await ephemeralDB.transformCache.bulkGet([sampleId]);
+  const bulk = await ephemeralDB.geometryCache.bulkGet([sampleId]);
   const bulkCount = bulk.filter((item) => Boolean(item)).length;
   const bulkRecord = bulk.find((item) => Boolean(item));
   const bulkData = bulkRecord?.data;
@@ -418,7 +418,7 @@ const debugTransformCacheAccess = async (nodeId: NodeId): Promise<void> => {
   const bulkIsBuffer = typeof Buffer !== 'undefined' && typeof Buffer.isBuffer === 'function'
     ? Buffer.isBuffer(bulkData)
     : false;
-  console.info('[test][debug] transformCache bulkGet done', JSON.stringify({
+  console.info('[test][debug] geometryCache bulkGet done', JSON.stringify({
     nodeId,
     bufferId: sampleId,
     recordCount: bulkCount,
@@ -550,10 +550,10 @@ describe('Comlink + fake-indexeddb integration: shape build background (real pip
 
       await mutation.deleteBuildSession(nodeId);
       await mutation.deleteBuildTasks(nodeId);
-      await admin.clearShapeEphemeralCache(nodeId, 'fetchCache');
-      await admin.clearShapeEphemeralCache(nodeId, 'transformCache');
-      await admin.clearShapeEphemeralCache(nodeId, 'transformErrors');
-      await admin.clearShapeEphemeralCache(nodeId, 'tileIdToBufferRelations');
+      await admin.clearShapeEphemeralCache(nodeId, 'sourceCache');
+      await admin.clearShapeEphemeralCache(nodeId, 'geometryCache');
+      await admin.clearShapeEphemeralCache(nodeId, 'geometryErrors');
+      await admin.clearShapeEphemeralCache(nodeId, 'tileEmitBufferRelations');
 
       await mutation.upsertBuildSession(createBaseSession(nodeId, Date.now()));
 
@@ -565,9 +565,9 @@ describe('Comlink + fake-indexeddb integration: shape build background (real pip
       });
 
       await waitFor(async () => {
-        const tasks = await query.listBuildTaskRecordsByStage(nodeId, 'fetch');
+        const tasks = await query.listBuildTaskRecordsByStage(nodeId, 'source');
         return tasks.length > 0;
-      }, { label: 'fetch task creation' });
+      }, { label: 'source task creation' });
 
       const observer = await setupAdditionalClient();
       try {
@@ -607,10 +607,10 @@ describe('Comlink + fake-indexeddb integration: shape build background (real pip
       logProgress(`${label}: cleanup start`);
       await mutation.deleteBuildSession(nodeId);
       await mutation.deleteBuildTasks(nodeId);
-      await admin.clearShapeEphemeralCache(nodeId, 'fetchCache');
-      await admin.clearShapeEphemeralCache(nodeId, 'transformCache');
-      await admin.clearShapeEphemeralCache(nodeId, 'transformErrors');
-      await admin.clearShapeEphemeralCache(nodeId, 'tileIdToBufferRelations');
+      await admin.clearShapeEphemeralCache(nodeId, 'sourceCache');
+      await admin.clearShapeEphemeralCache(nodeId, 'geometryCache');
+      await admin.clearShapeEphemeralCache(nodeId, 'geometryErrors');
+      await admin.clearShapeEphemeralCache(nodeId, 'tileEmitBufferRelations');
       logProgress(`${label}: cleanup done`);
 
 
@@ -626,10 +626,10 @@ describe('Comlink + fake-indexeddb integration: shape build background (real pip
       logProgress(`${label}: pipeline started`);
 
       await waitFor(async () => {
-        const tasks = await query.listBuildTaskRecordsByStage(nodeId, 'fetch');
+        const tasks = await query.listBuildTaskRecordsByStage(nodeId, 'source');
         return tasks.length > 0;
-      }, { label: 'fetch task creation' });
-      logProgress(`${label}: fetch tasks created`);
+      }, { label: 'source task creation' });
+      logProgress(`${label}: source tasks created`);
 
       const observer = await setupAdditionalClient();
       try {
@@ -640,20 +640,20 @@ describe('Comlink + fake-indexeddb integration: shape build background (real pip
         const observerAdmin = await observer.client.getShapeEphemeralAdminAPI();
         await logStructuredCloneSanity();
         logProgress(`${label}: wait for tile relations`);
-        const preRelationCount = await ephemeralDB.tileIdToBufferRelations
+        const preRelationCount = await ephemeralDB.tileEmitBufferRelations
           .where('nodeId')
           .equals(nodeId)
           .count();
         logProgress(`${label}: pre tile relations count`, { count: preRelationCount });
         await withTimeout(
           waitFor(async () => (
-            (await ephemeralDB.tileIdToBufferRelations.where('nodeId').equals(nodeId).count()) > 0
+            (await ephemeralDB.tileEmitBufferRelations.where('nodeId').equals(nodeId).count()) > 0
           ), { label: 'tile relation creation' }),
           { label: 'waitFor tile relations', timeoutMs: 12000 },
         );
         logProgress(`${label}: tile relations created`);
-        await debugTransformCacheAccess(nodeId);
-        logProgress(`${label}: debug transform cache done`);
+        await debugGeometryCacheAccess(nodeId);
+        logProgress(`${label}: debug geometry cache done`);
         if (step === 1) return;
         logProgress(`${label}: wait for pipeline completion`);
         await withTimeout(
@@ -673,35 +673,35 @@ describe('Comlink + fake-indexeddb integration: shape build background (real pip
         logProgress(`${label}: taskQueue tasks loaded`, { count: queueTasks.length });
         if (step === 3) return;
         const stageOf = (task: { stage?: string }) => task.stage ?? 'unknown';
-        const fetchTasks = queueTasks.filter((task) => stageOf(task) === 'fetch');
-        const transformTasks = queueTasks.filter((task) => stageOf(task) === 'transform');
-        const vtTasks = queueTasks.filter((task) => stageOf(task) === 'vt');
-        if (fetchTasks.length === 0 || transformTasks.length === 0 || vtTasks.length === 0) {
-          const fetchSummary = fetchTasks.map((task) => (
+        const sourceTasks = queueTasks.filter((task) => stageOf(task) === 'source');
+        const geometryTasks = queueTasks.filter((task) => stageOf(task) === 'geometry');
+        const tileEmitTasks = queueTasks.filter((task) => stageOf(task) === 'tileEmit');
+        if (sourceTasks.length === 0 || geometryTasks.length === 0 || tileEmitTasks.length === 0) {
+          const sourceSummary = sourceTasks.map((task) => (
             `${task.taskId}:${task.status}:${task.errorMessage ?? 'ok'}`
           ));
           throw new Error(
-            `taskQueue stage counts: fetch=${fetchTasks.length}, transform=${transformTasks.length}, vt=${vtTasks.length} (fetch=${fetchSummary.join(', ')})`
+            `taskQueue stage counts: source=${sourceTasks.length}, geometry=${geometryTasks.length}, tileEmit=${tileEmitTasks.length} (source=${sourceSummary.join(', ')})`
           );
         }
-        const failedFetch = fetchTasks.filter((task) => task.status === 'failed');
-        if (failedFetch.length > 0) {
-          throw new Error(`fetch tasks failed: ${failedFetch.map((task) => task.errorMessage ?? 'unknown').join('; ')}`);
+        const failedSource = sourceTasks.filter((task) => task.status === 'failed');
+        if (failedSource.length > 0) {
+          throw new Error(`source tasks failed: ${failedSource.map((task) => task.errorMessage ?? 'unknown').join('; ')}`);
         }
-        const failedTransform = transformTasks.filter((task) => task.status === 'failed');
-        if (failedTransform.length > 0) {
-          throw new Error(`transform tasks failed: ${failedTransform.map((task) => task.errorMessage ?? 'unknown').join('; ')}`);
+        const failedGeometry = geometryTasks.filter((task) => task.status === 'failed');
+        if (failedGeometry.length > 0) {
+          throw new Error(`geometry tasks failed: ${failedGeometry.map((task) => task.errorMessage ?? 'unknown').join('; ')}`);
         }
-        const failedVt = vtTasks.filter((task) => task.status === 'failed');
-        if (failedVt.length > 0) {
-          throw new Error(`vt tasks failed: ${failedVt.map((task) => task.errorMessage ?? 'unknown').join('; ')}`);
+        const failedTileEmit = tileEmitTasks.filter((task) => task.status === 'failed');
+        if (failedTileEmit.length > 0) {
+          throw new Error(`tileEmit tasks failed: ${failedTileEmit.map((task) => task.errorMessage ?? 'unknown').join('; ')}`);
         }
         expect(strategyCreateCount).toBeGreaterThan(0);
         const counts = await observerAdmin.getShapeEphemeralCounts(nodeId);
         expect(counts.buildTasks).toBeGreaterThan(0);
-        expect(counts.fetchCache).toBeGreaterThan(0);
-        expect(counts.transformCache).toBeGreaterThan(0);
-        expect(counts.tileIdToBufferRelations).toBeGreaterThan(0);
+        expect(counts.sourceCache).toBeGreaterThan(0);
+        expect(counts.geometryCache).toBeGreaterThan(0);
+        expect(counts.tileEmitBufferRelations).toBeGreaterThan(0);
         logProgress(`${label}: ephemeral counts ok`, counts);
         await completeSession(await observer.client.getShapeMutationAPI(), nodeId, Date.now());
         const record = await observerQuery.getBuildSessionRecord(nodeId);

@@ -1,44 +1,44 @@
 import { describe, expect, it } from 'vitest';
 import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import {
-  buildFetchTaskCacheIdentity,
-  buildTransformTaskCacheIdentity,
-  buildVtTaskCacheIdentity,
+  buildSourceTaskCacheIdentity,
+  buildGeometryTaskCacheIdentity,
+  buildTileEmitTaskCacheIdentity,
   resolveTaskCacheIdentity,
 } from '../../services/vt/shapeTaskCacheIdentity';
 import type { NodeId } from "@hierarchidb/core-types";
 
 describe('shapeTaskCacheIdentity', () => {
-  it('uses namespace policy to switch fetch key space', () => {
-    const nodeScoped = buildFetchTaskCacheIdentity({
+  it('uses namespace policy to switch source key space', () => {
+    const nodeScoped = buildSourceTaskCacheIdentity({
       nodeId: 'node-1' as NodeId,
       dataSource: 'gadm',
       sourceKey: 'JP:0',
       url: 'https://example.com/a',
       configSignature: 'sig-1',
-      namespacePolicy: { fetch: 'node' },
+      namespacePolicy: { source: 'node' },
     });
-    const globalScoped = buildFetchTaskCacheIdentity({
+    const globalScoped = buildSourceTaskCacheIdentity({
       nodeId: 'node-1' as NodeId,
       dataSource: 'gadm',
       sourceKey: 'JP:0',
       url: 'https://example.com/a',
       configSignature: 'sig-1',
-      namespacePolicy: { fetch: 'global' },
+      namespacePolicy: { source: 'global' },
     });
-    expect(nodeScoped.cacheKey).toContain('node:node-1:shape:fetch');
-    expect(globalScoped.cacheKey).toContain('global:shape:fetch');
+    expect(nodeScoped.cacheKey).toContain('node:node-1:shape:source');
+    expect(globalScoped.cacheKey).toContain('global:shape:source');
   });
 
-  it('keeps fetch inputHash stable when cache-key-only fields change', () => {
-    const first = buildFetchTaskCacheIdentity({
+  it('keeps source inputHash stable when cache-key-only fields change', () => {
+    const first = buildSourceTaskCacheIdentity({
       nodeId: 'node-1' as NodeId,
       dataSource: 'gadm',
       sourceKey: 'JP:0',
       url: 'https://example.com/a',
       configSignature: 'sig-1',
     });
-    const second = buildFetchTaskCacheIdentity({
+    const second = buildSourceTaskCacheIdentity({
       nodeId: 'node-1' as NodeId,
       dataSource: 'gadm',
       sourceKey: 'JP:1',
@@ -49,21 +49,21 @@ describe('shapeTaskCacheIdentity', () => {
     expect(first.inputHash).toEqual(second.inputHash);
   });
 
-  it('changes transform inputHash when output-affecting payload changes', () => {
-    const first = buildTransformTaskCacheIdentity({
+  it('changes geometry inputHash when output-affecting payload changes', () => {
+    const first = buildGeometryTaskCacheIdentity({
       nodeId: 'node-1' as NodeId,
       sourceKey: 'JP:0',
       bandIndex: 2,
-      fetchArtifactHash: 'artifact:a',
+      sourceArtifactHash: 'artifact:a',
       bandMinZoom: 6,
       bandMaxZoom: 8,
       configSignature: 'sig-1',
     });
-    const second = buildTransformTaskCacheIdentity({
+    const second = buildGeometryTaskCacheIdentity({
       nodeId: 'node-1' as NodeId,
       sourceKey: 'JP:0',
       bandIndex: 2,
-      fetchArtifactHash: 'artifact:b',
+      sourceArtifactHash: 'artifact:b',
       bandMinZoom: 6,
       bandMaxZoom: 8,
       configSignature: 'sig-1',
@@ -72,8 +72,8 @@ describe('shapeTaskCacheIdentity', () => {
     expect(first.inputHash).not.toEqual(second.inputHash);
   });
 
-  it('changes fetch inputHash when upstreamRevision changes', () => {
-    const first = buildFetchTaskCacheIdentity({
+  it('changes source inputHash when upstreamRevision changes', () => {
+    const first = buildSourceTaskCacheIdentity({
       nodeId: 'node-1' as NodeId,
       dataSource: 'gadm',
       sourceKey: 'JP:0',
@@ -81,7 +81,7 @@ describe('shapeTaskCacheIdentity', () => {
       upstreamRevision: 'etag:v1',
       configSignature: 'sig-1',
     });
-    const second = buildFetchTaskCacheIdentity({
+    const second = buildSourceTaskCacheIdentity({
       nodeId: 'node-1' as NodeId,
       dataSource: 'gadm',
       sourceKey: 'JP:0',
@@ -93,8 +93,8 @@ describe('shapeTaskCacheIdentity', () => {
     expect(first.inputHash).not.toEqual(second.inputHash);
   });
 
-  it('normalizes vt buffer set for stable inputHash', () => {
-    const first = buildVtTaskCacheIdentity({
+  it('normalizes tileEmit buffer set for stable inputHash', () => {
+    const first = buildTileEmitTaskCacheIdentity({
       nodeId: 'node-1' as NodeId,
       bandIndex: 3,
       zBase: 6,
@@ -104,7 +104,7 @@ describe('shapeTaskCacheIdentity', () => {
       bandMaxZoom: 8,
       configSignature: 'sig-1',
     });
-    const second = buildVtTaskCacheIdentity({
+    const second = buildTileEmitTaskCacheIdentity({
       nodeId: 'node-1' as NodeId,
       bandIndex: 3,
       zBase: 6,
@@ -121,7 +121,7 @@ describe('shapeTaskCacheIdentity', () => {
     const task: TaskQueueRecord = {
       taskId: 'task-1',
       nodeId: 'node-1' as NodeId,
-      stage: 'fetch',
+      stage: 'source',
       status: 'queued',
       index: 0,
       progress: 0,

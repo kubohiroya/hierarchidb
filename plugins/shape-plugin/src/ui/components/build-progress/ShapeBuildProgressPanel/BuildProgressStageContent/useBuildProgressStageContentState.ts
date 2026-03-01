@@ -3,11 +3,17 @@ import { useBuildStageFilter } from '@hierarchidb/components';
 import { useAtomValue, useSetAtom } from 'jotai';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import { type TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
-import { sortTransformTasks, sortVectorTileTasks } from '~/ui/components/build-progress/taskItemCardList/useTaskItemCardList';
+import { sortGeometryTasks, sortVectorTileTasks } from '~/ui/components/build-progress/taskItemCardList/useTaskItemCardList';
 import { taskScrollTargetAtom, taskViewportRangeAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { isTaskSkipped } from '~/common/utils/taskMessages';
 import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
 import type { ShapeBuildConfig } from '~/common/types/build';
+import {
+  isGeometryLikeStageId,
+  isTileEmitLikeStageId,
+  normalizeUiStageId,
+  resolveStageAliasArray,
+} from '~/ui/components/build-progress/stageIdAliases';
 
 type BuildProgressStageContentStateArgs = {
   stage: {
@@ -103,7 +109,7 @@ export const useBuildProgressStageContentState = ({
   onRequestBringFloatingWindowToFront,
 }: BuildProgressStageContentStateArgs): BuildProgressStageContentState => {
   const filter = useBuildStageFilter();
-  const stageTasks = tasksByStage[stage.id] ?? [];
+  const stageTasks = resolveStageAliasArray(tasksByStage, stage.id);
   const isBuildInProgressState = buildStatus === 'running' || buildStatus === 'paused';
   const cachedTasksByStageRef = useRef<Record<string, TaskItemWithMetadata[]>>({});
   const previousBuildStatusRef = useRef<BuildStatus>(buildStatus);
@@ -136,7 +142,9 @@ export const useBuildProgressStageContentState = ({
   const viewportRange = useAtomValue(taskViewportRangeAtom);
   const listScrollRef = useRef<HTMLDivElement | null>(null);
   const listWrapperRef = useRef<HTMLDivElement | null>(null);
-  const scrollToTaskId = scrollTarget?.stageId === stage.id ? scrollTarget.taskId : undefined;
+  const scrollToTaskId = normalizeUiStageId(scrollTarget?.stageId) === normalizeUiStageId(stage.id)
+    ? scrollTarget?.taskId
+    : undefined;
   const scrollRequestId = scrollTarget?.requestedAt;
   const disableVirtualization = typeof window !== 'undefined'
     && new URLSearchParams(window.location.search).has('noTaskVirtual');
@@ -150,13 +158,13 @@ export const useBuildProgressStageContentState = ({
   }), [filter, matchesSearchQuery, stageTasksForDisplay]);
 
   const orderedTasks = useMemo(() => {
-    if (stage.id === 'vt') return sortVectorTileTasks(filteredTasks);
-    if (stage.id === 'transform') return sortTransformTasks(filteredTasks);
+    if (isTileEmitLikeStageId(stage.id)) return sortVectorTileTasks(filteredTasks);
+    if (isGeometryLikeStageId(stage.id)) return sortGeometryTasks(filteredTasks);
     return filteredTasks;
   }, [filteredTasks, stage.id]);
 
   const hasTasks = filteredTasks.length > 0;
-  const stagePane = paneProgress?.find((entry) => entry.paneId === stage.id);
+  const stagePane = paneProgress?.find((entry) => normalizeUiStageId(entry.paneId) === normalizeUiStageId(stage.id));
   const hasSummaryTasks = (stagePane?.taskCount ?? 0) > 0;
   const showSummarySkeleton = isTaskSummaryLoading && !hasTasks && !hasSummaryTasks;
   const showTaskSkeleton = !hasTasks
@@ -172,7 +180,7 @@ export const useBuildProgressStageContentState = ({
 
   const viewportIndices = useMemo(() => {
     if (orderedTasks.length === 0) return null;
-    if (viewportRange?.stageId !== stage.id || viewportRange == null) return null;
+    if (viewportRange == null || normalizeUiStageId(viewportRange.stageId) !== normalizeUiStageId(stage.id)) return null;
     const maxIndex = orderedTasks.length - 1;
     const clampedStart = Math.min(Math.max(viewportRange.startIndex, 0), maxIndex);
     const clampedEnd = Math.min(Math.max(viewportRange.endIndex, clampedStart), maxIndex);

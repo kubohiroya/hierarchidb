@@ -58,7 +58,7 @@ const minimalBuildConfig = {
     retryDelay: 1,
     timeoutMs: 1000,
   },
-  transformConfig: {
+  geometryConfig: {
     workers: 1,
     zoomBandBoundaries: [1, 2, 3, 6],
     tolerance: 0.01,
@@ -76,10 +76,10 @@ const minimalBuildConfig = {
     workers: 1,
   },
   cleanupConfig: {
-    deleteFetchApiCache: false,
-    deleteFetchFilteredCache: false,
-    deleteTransformCache: false,
-    deleteVTCache: false,
+    deleteSourceApiCache: false,
+    deleteSourceFilteredCache: false,
+    deleteGeometryCache: false,
+    deleteTileEmitCache: false,
   },
 };
 

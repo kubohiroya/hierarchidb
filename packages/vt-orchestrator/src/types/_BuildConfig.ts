@@ -1,15 +1,15 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
   ExtractionMode as CommonExtractionMode,
-  FetchConfig as CommonFetchConfig,
+  SourceConfig as CommonSourceConfig,
   FeatureFilterMethod as CommonFeatureFilterMethod,
   HybridFilterConfig as CommonHybridFilterConfig,
-  TransformConfig as CommonTransformConfig,
-  VTConfig as CommonVTConfig,
+  GeometryConfig as CommonGeometryConfig,
+  TileEmitConfig as CommonTileEmitConfig,
 } from '@hierarchidb/gis-sdk';
 export type ZIP_TYPE = 'gzip' | 'bz';
 export type VECTOR_TILE_FORMAT = 'mvt' | 'pbf';
-export type BuildTaskType = 'fetch' | 'transform' | 'vt';
+export type BuildTaskType = 'source' | 'geometry' | 'tileEmit';
 export type FILTER_OPERATOR = 'eq' | 'ne' | 'exists' | 'not_exists';
 export const BuildTaskResult = {
   WAIT: 'wait',
@@ -33,7 +33,7 @@ export interface BuildTaskBase {
   error?: string;
   message?: string;
 }
-export interface FetchTaskInput<DataSourceName> {
+export interface SourceTaskInput<DataSourceName> {
   url?: string;
   dataSource?: DataSourceName;
   countryCode?: string;
@@ -56,9 +56,9 @@ export interface FetchTaskInput<DataSourceName> {
   retryDelay?: number;
 }
 
-export interface FetchTask<DataSourceName> extends BuildTaskBase {
+export interface SourceTask<DataSourceName> extends BuildTaskBase {
   url?: string;
-  type: 'fetch';
+  type: 'source';
   dataSourceName?: DataSourceName;
   countryCode?: string;
   adminLevel?: number;
@@ -97,23 +97,23 @@ export type BoundingBox = [number, number, number, number];
 /*
 export interface BatchConfig<DataSourceName> {
   dataSource?: DataSourceName;
-  fetchConfig?: FetchConfig;
-  transformConfig?: TransformConfig;
-  vtConfig?: VTConfig;
+  sourceConfig?: SourceConfig;
+  geometryConfig?: GeometryConfig;
+  tileEmitConfig?: TileEmitConfig;
   cleanupConfig?: CleanupBatchConfig;
   // source?: string;
 }*/
 
-export type FetchConfig = CommonFetchConfig;
+export type SourceConfig = CommonSourceConfig;
 export type FeatureFilterMethod = CommonFeatureFilterMethod;
 export type HybridFilterConfig = CommonHybridFilterConfig;
 export type ExtractionMode = CommonExtractionMode;
-export type TransformConfig = CommonTransformConfig;
-export type VTConfig = CommonVTConfig;
+export type GeometryConfig = CommonGeometryConfig;
+export type TileEmitConfig = CommonTileEmitConfig;
 
 export interface CleanupBatchConfig {
-  deleteFetchApiCache?: boolean;
-  deleteFetchFilteredCache?: boolean;
-  deleteTransformCache?: boolean;
-  deleteVTCache?: boolean;
+  deleteSourceApiCache?: boolean;
+  deleteSourceFilteredCache?: boolean;
+  deleteGeometryCache?: boolean;
+  deleteTileEmitCache?: boolean;
 }

@@ -5,15 +5,15 @@ import { createStore } from 'jotai/vanilla';
 import type { ReactNode } from 'react';
 
 const mocks = vi.hoisted(() => ({
-  countFetchCaches: vi.fn(),
-  countTransformCaches: vi.fn(),
+  countSourceCaches: vi.fn(),
+  countGeometryCaches: vi.fn(),
   clearShapeArtifacts: vi.fn(),
   deleteFeatureMetadataByNode: vi.fn(),
   deleteDataSourceMetadataByNode: vi.fn(),
   deleteBuildSession: vi.fn(),
   getVectorTileSummary: vi.fn(),
   listFeatureMetadata: vi.fn(),
-  listTransformErrorRecords: vi.fn(),
+  listGeometryErrorRecords: vi.fn(),
   countRawDataDataSourceBuffersForNode: vi.fn(),
   deleteRawDataDataSourceBuffersForNode: vi.fn(),
   deleteTasksByNode: vi.fn(),
@@ -50,8 +50,8 @@ vi.mock('../../../../services/utils/chunkStore.js', () => ({
 
 vi.mock('../../../../services/build/ShapeBuildAPIClient.ts', () => ({
   ephemeralShapeAPIImpl: {
-    countFetchCaches: mocks.countFetchCaches,
-    countTransformCaches: mocks.countTransformCaches,
+    countSourceCaches: mocks.countSourceCaches,
+    countGeometryCaches: mocks.countGeometryCaches,
     listBuildTasksByStage: mocks.listBuildTasksByStage,
     deleteBuildTasksByIds: mocks.deleteBuildTasksByIds,
   },
@@ -64,7 +64,7 @@ vi.mock('../../../../services/build/ShapeBuildAPIClient.ts', () => ({
   shapeQueryAPIImpl: {
     getVectorTileSummary: mocks.getVectorTileSummary,
     listFeatureMetadata: mocks.listFeatureMetadata,
-    listTransformErrorRecords: mocks.listTransformErrorRecords,
+    listGeometryErrorRecords: mocks.listGeometryErrorRecords,
   },
 }));
 
@@ -106,15 +106,15 @@ const wrapper = ({ children }: { children: ReactNode }) => (
 describe('useShapeBuildCacheActions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.countFetchCaches.mockResolvedValue(0);
-    mocks.countTransformCaches.mockResolvedValue(0);
+    mocks.countSourceCaches.mockResolvedValue(0);
+    mocks.countGeometryCaches.mockResolvedValue(0);
     mocks.clearShapeArtifacts.mockResolvedValue(undefined);
     mocks.deleteFeatureMetadataByNode.mockResolvedValue(undefined);
     mocks.deleteDataSourceMetadataByNode.mockResolvedValue(undefined);
     mocks.deleteBuildSession.mockResolvedValue(undefined);
     mocks.getVectorTileSummary.mockResolvedValue({ tiles: 0 });
     mocks.listFeatureMetadata.mockResolvedValue([]);
-    mocks.listTransformErrorRecords.mockResolvedValue([]);
+    mocks.listGeometryErrorRecords.mockResolvedValue([]);
     mocks.countRawDataDataSourceBuffersForNode.mockResolvedValue(0);
     mocks.deleteRawDataDataSourceBuffersForNode.mockResolvedValue(undefined);
     mocks.deleteTasksByNode.mockResolvedValue(undefined);
@@ -128,9 +128,9 @@ describe('useShapeBuildCacheActions', () => {
     mocks.countRawDataDataSourceBuffersForNode
       .mockResolvedValueOnce(2)
       .mockResolvedValueOnce(0);
-    mocks.countFetchCaches.mockResolvedValue(0);
+    mocks.countSourceCaches.mockResolvedValue(0);
     mocks.listBuildTasksByStage
-      .mockResolvedValueOnce([{ taskId: 'task-fetch' }])
+      .mockResolvedValueOnce([{ taskId: 'task-source' }])
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);
     mocks.deleteBuildTasksByIds.mockResolvedValue(undefined);
@@ -141,22 +141,22 @@ describe('useShapeBuildCacheActions', () => {
     );
 
     await waitFor(() => {
-      expect(result.current.counts.fetchApi).toBe(2);
-      expect(result.current.canDeleteFetchApiCache).toBe(true);
+      expect(result.current.counts.sourceApi).toBe(2);
+      expect(result.current.canDeleteSourceApiCache).toBe(true);
     });
 
     await act(async () => {
-      await result.current.handleDeleteFetchApiCache();
+      await result.current.handleDeleteSourceApiCache();
     });
 
     await waitFor(() => {
-      expect(result.current.counts.fetchApi).toBe(0);
-      expect(result.current.canDeleteFetchApiCache).toBe(false);
+      expect(result.current.counts.sourceApi).toBe(0);
+      expect(result.current.canDeleteSourceApiCache).toBe(false);
     });
 
     expect(mocks.deleteRawDataDataSourceBuffersForNode).toHaveBeenCalledWith('node-1');
-    expect(mocks.listBuildTasksByStage).toHaveBeenCalledWith('node-1', 'fetch');
-    expect(mocks.deleteBuildTasksByIds).toHaveBeenCalledWith(['task-fetch']);
+    expect(mocks.listBuildTasksByStage).toHaveBeenCalledWith('node-1', 'source');
+    expect(mocks.deleteBuildTasksByIds).toHaveBeenCalledWith(['task-source']);
     expect(mocks.notifySuccess).toHaveBeenCalledWith('Deleted API cache');
   });
 
@@ -164,7 +164,7 @@ describe('useShapeBuildCacheActions', () => {
     mocks.countRawDataDataSourceBuffersForNode
       .mockResolvedValueOnce(2)
       .mockResolvedValueOnce(0);
-    mocks.countFetchCaches.mockResolvedValue(0);
+    mocks.countSourceCaches.mockResolvedValue(0);
     mocks.listBuildTasksByStage.mockResolvedValueOnce([{ taskId: 'task-1' }]);
     mocks.deleteBuildTasksByIds.mockRejectedValue(new Error('task clear failed'));
     mocks.deleteBuildTasksByIds.mockResolvedValue(undefined);
@@ -176,16 +176,16 @@ describe('useShapeBuildCacheActions', () => {
     );
 
     await waitFor(() => {
-      expect(result.current.counts.fetchApi).toBe(2);
+      expect(result.current.counts.sourceApi).toBe(2);
     });
 
     await act(async () => {
-      await result.current.handleDeleteFetchApiCache();
+      await result.current.handleDeleteSourceApiCache();
     });
 
     await waitFor(() => {
-      expect(result.current.counts.fetchApi).toBe(0);
-      expect(result.current.canDeleteFetchApiCache).toBe(false);
+      expect(result.current.counts.sourceApi).toBe(0);
+      expect(result.current.canDeleteSourceApiCache).toBe(false);
     });
 
     expect(mocks.notifyError).toHaveBeenCalledWith('Failed to remove API cache related task data.');
@@ -198,7 +198,7 @@ describe('useShapeBuildCacheActions', () => {
     );
 
     await waitFor(() => {
-      expect(mocks.countFetchCaches).toHaveBeenCalledWith('node-1');
+      expect(mocks.countSourceCaches).toHaveBeenCalledWith('node-1');
     });
 
     await act(async () => {

@@ -2,9 +2,9 @@ export * from './data-source.js';
 export * from './build.ts';
 export type {
   ShapeBuildConfig,
-  ShapeBuildFetchConfig,
-  ShapeBuildTransformConfig,
-  ShapeBuildVtConfig,
+  ShapeBuildSourceConfig,
+  ShapeBuildGeometryConfig,
+  ShapeBuildTileEmitConfig,
   ShapeBuildConfigPatch,
   ShapeBuildUrlConfigPatch,
   ShapeBuildUrlRule,
@@ -31,12 +31,12 @@ export type {
   CleanupConfig,
   ExtractionMode,
   FeatureFilterMethod,
-  FetchConfig,
+  SourceConfig,
   HybridFilterConfig,
   OmitDetailsConfig,
   OmitDetailsLevel,
-  TransformConfig,
-  VTConfig,
+  GeometryConfig,
+  TileEmitConfig,
 } from '@hierarchidb/gis-sdk';
 export {
   composeRuntimeBuildConfig,

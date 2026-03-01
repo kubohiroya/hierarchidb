@@ -17,7 +17,7 @@ import { geojson as geojsonApi } from 'flatgeobuf';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeFetchCache } from '@hierarchidb/shape-api';
+import type { ShapeSourceCache } from '@hierarchidb/shape-api';
 import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import type { DataSourceName } from '~/common/types';
 import {
@@ -29,8 +29,13 @@ import { buildStagesAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
 import type { TaskOutcomeSummary } from '~/ui/components/build-progress/TaskItem/TaskItem';
 import type { TaskDetailPayload, TaskDetailSelection } from './TaskItemDetailTypes';
 import type { ShapeBuildConfig } from '~/common/types/build';
-import { VTTaskItemDetailWindow } from '~/ui/components/build-progress/vt/VTTaskItemDetailWindow';
+import { TileEmitTaskItemDetailWindow } from '~/ui/components/build-progress/tile-emit/TileEmitTaskItemDetailWindow';
 import { FloatingWindow, useFloatingWindow } from '@hierarchidb/ui-floating-window';
+import {
+  isGeometryLikeStageId,
+  isTileEmitLikeStageId,
+  normalizeUiStageId,
+} from '~/ui/components/build-progress/stageIdAliases';
 
 export type { TaskDetailSelection };
 
@@ -42,7 +47,7 @@ type PreviewData = {
   resultBytes: number;
 };
 
-type FetchStageMaxima = {
+type SourceStageMaxima = {
   featureMax: number;
   polygonMax: number;
 };
@@ -129,7 +134,7 @@ const formatKb = (bytes: number): string => {
   return `${numberFormatter.format(Math.max(0, Math.round(bytes / 1024)))} kB`;
 };
 
-const readFetchStageMaxima = (value: unknown): FetchStageMaxima | null => {
+const readSourceStageMaxima = (value: unknown): SourceStageMaxima | null => {
   const candidate = asRecord(value);
   const featureMax = readNumber(candidate?.featureMax);
   const polygonMax = readNumber(candidate?.polygonMax);
@@ -188,8 +193,8 @@ const decodeTopoJsonCollection = async (buffer: ArrayBuffer): Promise<FeatureCol
   return { type: 'FeatureCollection', features: [geojson] };
 };
 
-const decodeFetchCacheCollection = async (
-  cache: ShapeFetchCache,
+const decodeSourceCacheCollection = async (
+  cache: ShapeSourceCache,
   format: 'flatgeobuf' | 'topojson',
   compression: 'none' | 'gzip',
 ): Promise<FeatureCollection | null> => {
@@ -201,24 +206,24 @@ const decodeFetchCacheCollection = async (
   return normalizeFeatureCollection(decoded);
 };
 
-const decodeFetchCacheCollectionWithFallback = async (
-  cache: ShapeFetchCache,
+const decodeSourceCacheCollectionWithFallback = async (
+  cache: ShapeSourceCache,
   format: 'flatgeobuf' | 'topojson',
   compression: 'none' | 'gzip',
 ): Promise<FeatureCollection | null> => {
-  const preferred = await decodeFetchCacheCollection(cache, format, compression).catch(() => null);
+  const preferred = await decodeSourceCacheCollection(cache, format, compression).catch(() => null);
   if (preferred) return preferred;
   const fallbackFormat = format === 'topojson' ? 'flatgeobuf' : 'topojson';
-  return decodeFetchCacheCollection(cache, fallbackFormat, compression).catch(() => null);
+  return decodeSourceCacheCollection(cache, fallbackFormat, compression).catch(() => null);
 };
 
-const decodeTransformCacheCollection = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
+const decodeGeometryCacheCollection = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
   const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
   return normalizeFeatureCollection(decoded);
 };
 
-const decodeTransformCacheCollectionWithFallback = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
-  const preferred = await decodeTransformCacheCollection(buffer).catch(() => null);
+const decodeGeometryCacheCollectionWithFallback = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
+  const preferred = await decodeGeometryCacheCollection(buffer).catch(() => null);
   if (preferred) return preferred;
   return decodeTopoJsonCollection(buffer).catch(() => null);
 };
@@ -255,7 +260,7 @@ const decodeJsonSourceCollection = async (buffer: ArrayBuffer): Promise<FeatureC
 const decodeRawSourceCollectionWithFallback = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
   const json = await decodeJsonSourceCollection(buffer).catch(() => null);
   if (json) return json;
-  const fgb = await decodeTransformCacheCollection(buffer).catch(() => null);
+  const fgb = await decodeGeometryCacheCollection(buffer).catch(() => null);
   if (fgb) return fgb;
   return null;
 };
@@ -300,7 +305,7 @@ const resolveSourcePreviewParams = (nodeId: NodeId, preview: Record<string, unkn
 const resolveCacheId = (
   preview: Record<string, unknown> | null,
   task: ShapeBuildTaskSummary,
-  key: 'fetchCacheId' | 'transformCacheId',
+  key: 'sourceCacheId' | 'geometryCacheId',
 ): string | null => {
   const taskRecord = task as unknown as Record<string, unknown>;
   const previewId = readString(preview?.[key]);
@@ -315,6 +320,7 @@ const resolveCacheId = (
 const loadPreviewData = async (detail: TaskDetailPayload): Promise<PreviewData> => {
   const preview = asRecord(detail.task.metadata?.preview);
   const nodeId = resolveNodeIdFromTask(detail.task);
+  const taskStage = normalizeUiStageId(detail.task.stage);
   if (!nodeId) {
     return {
       original: null,
@@ -326,56 +332,56 @@ const loadPreviewData = async (detail: TaskDetailPayload): Promise<PreviewData> 
   }
   const sourceParams = resolveSourcePreviewParams(nodeId, preview);
 
-  if (detail.task.stage === 'fetch') {
-    const fetchCacheId = resolveCacheId(preview, detail.task, 'fetchCacheId');
-    const fetchCacheFormat = readString(preview?.fetchCacheFormat) === 'topojson' ? 'topojson' : 'flatgeobuf';
-    const fetchCacheCompression = readString(preview?.fetchCacheCompression) === 'gzip' ? 'gzip' : 'none';
-    const [sourceCollection, fetchCache] = await Promise.all([
+  if (taskStage === 'source') {
+    const sourceCacheId = resolveCacheId(preview, detail.task, 'sourceCacheId');
+    const sourceCacheFormat = readString(preview?.sourceCacheFormat) === 'topojson' ? 'topojson' : 'flatgeobuf';
+    const sourceCacheCompression = readString(preview?.sourceCacheCompression) === 'gzip' ? 'gzip' : 'none';
+    const [sourceCollection, sourceCache] = await Promise.all([
       loadSourceCollectionFromCache(nodeId, sourceParams, preview).catch(() => null),
-      fetchCacheId ? shapeQueryAPIImpl.getFetchCache(nodeId, fetchCacheId) : Promise.resolve(null),
+      sourceCacheId ? shapeQueryAPIImpl.getSourceCache(nodeId, sourceCacheId) : Promise.resolve(null),
     ]);
-    const resultCollection = fetchCache
-      ? await decodeFetchCacheCollectionWithFallback(fetchCache, fetchCacheFormat, fetchCacheCompression)
+    const resultCollection = sourceCache
+      ? await decodeSourceCacheCollectionWithFallback(sourceCache, sourceCacheFormat, sourceCacheCompression)
       : null;
     return {
       original: sourceCollection,
       result: resultCollection,
       previousOriginal: null,
       originalBytes: measureCollectionBytes(sourceCollection),
-      resultBytes: (fetchCache?.size && fetchCache.size > 0)
-        ? fetchCache.size
+      resultBytes: (sourceCache?.size && sourceCache.size > 0)
+        ? sourceCache.size
         : measureCollectionBytes(resultCollection),
     };
   }
 
-  if (detail.task.stage === 'transform') {
-    const fetchCacheId = resolveCacheId(preview, detail.task, 'fetchCacheId');
-    const fetchCacheFormat = readString(preview?.fetchCacheFormat) === 'topojson' ? 'topojson' : 'flatgeobuf';
-    const fetchCacheCompression = readString(preview?.fetchCacheCompression) === 'gzip' ? 'gzip' : 'none';
-    const transformCacheId = resolveCacheId(preview, detail.task, 'transformCacheId');
+  if (isGeometryLikeStageId(taskStage)) {
+    const sourceCacheId = resolveCacheId(preview, detail.task, 'sourceCacheId');
+    const sourceCacheFormat = readString(preview?.sourceCacheFormat) === 'topojson' ? 'topojson' : 'flatgeobuf';
+    const sourceCacheCompression = readString(preview?.sourceCacheCompression) === 'gzip' ? 'gzip' : 'none';
+    const geometryCacheId = resolveCacheId(preview, detail.task, 'geometryCacheId');
 
-    const [sourceCollection, fetchCache, transformCache] = await Promise.all([
+    const [sourceCollection, sourceCache, geometryCache] = await Promise.all([
       loadSourceCollectionFromCache(nodeId, sourceParams, preview).catch(() => null),
-      fetchCacheId ? shapeQueryAPIImpl.getFetchCache(nodeId, fetchCacheId) : Promise.resolve(null),
-      transformCacheId ? shapeQueryAPIImpl.getTransformCache(transformCacheId) : Promise.resolve(null),
+      sourceCacheId ? shapeQueryAPIImpl.getSourceCache(nodeId, sourceCacheId) : Promise.resolve(null),
+      geometryCacheId ? shapeQueryAPIImpl.getGeometryCache(geometryCacheId) : Promise.resolve(null),
     ]);
 
-    const originalCollection = fetchCache
-      ? await decodeFetchCacheCollectionWithFallback(fetchCache, fetchCacheFormat, fetchCacheCompression)
+    const originalCollection = sourceCache
+      ? await decodeSourceCacheCollectionWithFallback(sourceCache, sourceCacheFormat, sourceCacheCompression)
       : null;
-    const resultCollection = transformCache
-      ? await decodeTransformCacheCollectionWithFallback(transformCache.data)
+    const resultCollection = geometryCache
+      ? await decodeGeometryCacheCollectionWithFallback(geometryCache.data)
       : null;
 
     return {
       original: originalCollection,
       result: resultCollection,
       previousOriginal: sourceCollection,
-      originalBytes: (fetchCache?.size && fetchCache.size > 0)
-        ? fetchCache.size
+      originalBytes: (sourceCache?.size && sourceCache.size > 0)
+        ? sourceCache.size
         : measureCollectionBytes(originalCollection),
-      resultBytes: (transformCache?.data.byteLength && transformCache.data.byteLength > 0)
-        ? transformCache.data.byteLength
+      resultBytes: (geometryCache?.data.byteLength && geometryCache.data.byteLength > 0)
+        ? geometryCache.data.byteLength
         : measureCollectionBytes(resultCollection),
     };
   }
@@ -497,25 +503,25 @@ const renderTransformScaledRow = (
   label: string,
   output: number | null | undefined,
   input: number | null | undefined,
-  fetchStageMax: number | null | undefined,
+  sourceStageMax: number | null | undefined,
   colorToken: string,
 ): React.ReactNode => {
   const safeOutput = typeof output === 'number' && Number.isFinite(output) && output >= 0 ? output : null;
   const safeInput = typeof input === 'number' && Number.isFinite(input) && input > 0 ? input : null;
-  const safeFetchMax = typeof fetchStageMax === 'number' && Number.isFinite(fetchStageMax) && fetchStageMax > 0
-    ? fetchStageMax
+  const safeSourceMax = typeof sourceStageMax === 'number' && Number.isFinite(sourceStageMax) && sourceStageMax > 0
+    ? sourceStageMax
     : null;
   const firstRatio = (safeOutput !== null && safeInput !== null) ? Math.max(0, Math.min(1, safeOutput / safeInput)) : null;
-  const secondRatio = (safeInput !== null && safeFetchMax !== null) ? Math.max(0, Math.min(1, safeInput / safeFetchMax)) : null;
+  const secondRatio = (safeInput !== null && safeSourceMax !== null) ? Math.max(0, Math.min(1, safeInput / safeSourceMax)) : null;
   const combinedRatio = (firstRatio !== null && secondRatio !== null)
     ? Math.max(0, Math.min(1, firstRatio * secondRatio))
     : null;
-  const inputScale = (safeInput !== null && safeFetchMax !== null) ? Math.max(0, Math.min(1, safeInput / safeFetchMax)) : null;
-  const outputScale = (safeOutput !== null && safeFetchMax !== null) ? Math.max(0, Math.min(1, safeOutput / safeFetchMax)) : null;
+  const inputScale = (safeInput !== null && safeSourceMax !== null) ? Math.max(0, Math.min(1, safeInput / safeSourceMax)) : null;
+  const outputScale = (safeOutput !== null && safeSourceMax !== null) ? Math.max(0, Math.min(1, safeOutput / safeSourceMax)) : null;
   const text = (
-    safeOutput !== null && safeInput !== null && safeFetchMax !== null
-      ? `${formatNumber(safeOutput)} / ${formatNumber(safeInput)} x ${formatNumber(safeInput)} / ${formatNumber(safeFetchMax)} (${formatPercent(combinedRatio)})`
-      : `${formatNumber(output)} / ${formatNumber(input)} x ${formatNumber(input)} / ${formatNumber(fetchStageMax)} (N/A)`
+    safeOutput !== null && safeInput !== null && safeSourceMax !== null
+      ? `${formatNumber(safeOutput)} / ${formatNumber(safeInput)} x ${formatNumber(safeInput)} / ${formatNumber(safeSourceMax)} (${formatPercent(combinedRatio)})`
+      : `${formatNumber(output)} / ${formatNumber(input)} x ${formatNumber(input)} / ${formatNumber(sourceStageMax)} (N/A)`
   );
 
   return (
@@ -865,7 +871,7 @@ type TaskDetailContentProps = {
   previewLoading: boolean;
   overlays: OverlaySpec[];
   sizeAccentColor: string;
-  fetchStageMaxima: FetchStageMaxima | null;
+  sourceStageMaxima: SourceStageMaxima | null;
   previewBoxHeight: number;
   withDownloadButton: boolean;
   onDownload?: () => void;
@@ -881,7 +887,7 @@ const TaskDetailContent = ({
   previewLoading,
   overlays,
   sizeAccentColor,
-  fetchStageMaxima,
+  sourceStageMaxima,
   previewBoxHeight,
   withDownloadButton,
   onDownload,
@@ -945,14 +951,14 @@ const TaskDetailContent = ({
               'Features',
               summary.metrics?.features.output,
               summary.metrics?.features.input,
-              fetchStageMaxima?.featureMax ?? null,
+              sourceStageMaxima?.featureMax ?? null,
               chartColor,
             )}
             {renderTransformScaledRow(
               'Polygons',
               summary.metrics?.polygons.output,
               summary.metrics?.polygons.input,
-              fetchStageMaxima?.polygonMax ?? null,
+              sourceStageMaxima?.polygonMax ?? null,
               chartColor,
             )}
             {renderVolumeRow(
@@ -974,7 +980,7 @@ const TaskDetailContent = ({
               summary.fetchDetails?.features.output,
               summary.fetchDetails?.features.input,
               chartColor,
-              fetchStageMaxima?.featureMax ?? null,
+              sourceStageMaxima?.featureMax ?? null,
               true,
             )}
             {renderStackedRatioRow(
@@ -982,7 +988,7 @@ const TaskDetailContent = ({
               summary.fetchDetails?.polygons.output,
               summary.fetchDetails?.polygons.input,
               chartColor,
-              fetchStageMaxima?.polygonMax ?? null,
+              sourceStageMaxima?.polygonMax ?? null,
               true,
             )}
           </Stack>
@@ -1058,7 +1064,7 @@ export const TaskItemDetailWindow = ({
   const theme = useTheme();
   const stages = useAtomValue(buildStagesAtom);
   const activeDetail = detail;
-  const effectiveStageId = activeDetail?.task.stage ?? stageId ?? 'unknown';
+  const effectiveStageId = normalizeUiStageId(activeDetail?.task.stage ?? stageId) ?? 'unknown';
   const stageIconMap = useMemo(
     () => new Map(stages.map((stage) => [stage.id, stage.icon])),
     [stages],
@@ -1071,7 +1077,7 @@ export const TaskItemDetailWindow = ({
 
   const [preview, setPreview] = useState<PreviewData | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
-  const [fetchStageMaxima, setFetchStageMaxima] = useState<FetchStageMaxima | null>(null);
+  const [sourceStageMaxima, setSourceStageMaxima] = useState<SourceStageMaxima | null>(null);
   const floatingWindow = useFloatingWindow({
     persistKey: 'hierarchidb:ui:floating-window:shape:task-detail',
     initialPosition: { x: 8, y: 8 },
@@ -1090,7 +1096,7 @@ export const TaskItemDetailWindow = ({
       setPreviewLoading(false);
       return;
     }
-    const canPreview = activeDetail.task.stage === 'fetch' || activeDetail.task.stage === 'transform';
+    const canPreview = !isTileEmitLikeStageId(activeDetail.task.stage);
     if (!canPreview) {
       setPreview(null);
       setPreviewLoading(false);
@@ -1120,23 +1126,23 @@ export const TaskItemDetailWindow = ({
 
   useEffect(() => {
     if (!activeDetail) {
-      setFetchStageMaxima(null);
+      setSourceStageMaxima(null);
       return;
     }
     const nodeId = activeDetail.task.nodeId ?? resolveNodeIdFromTask(activeDetail.task);
     if (!nodeId) {
-      setFetchStageMaxima(null);
+      setSourceStageMaxima(null);
       return;
     }
     let cancelled = false;
     void shapeQueryAPIImpl.getBuildSessionRecord(nodeId)
       .then((session) => {
         if (cancelled) return;
-        setFetchStageMaxima(readFetchStageMaxima(session?.fetchStageMaxima));
+        setSourceStageMaxima(readSourceStageMaxima(session?.sourceStageMaxima));
       })
       .catch(() => {
         if (cancelled) return;
-        setFetchStageMaxima(null);
+        setSourceStageMaxima(null);
       });
     return () => {
       cancelled = true;
@@ -1222,9 +1228,9 @@ export const TaskItemDetailWindow = ({
     URL.revokeObjectURL(url);
   };
 
-  const isVtTask = activeDetail?.task.stage === 'vt';
+  const isVtTask = isTileEmitLikeStageId(activeDetail?.task.stage);
   const content = isVtTask && activeDetail ? (
-    <VTTaskItemDetailWindow detail={activeDetail} buildConfig={buildConfig} />
+    <TileEmitTaskItemDetailWindow detail={activeDetail} buildConfig={buildConfig} />
   ) : (summary ? TaskDetailContent({
     title,
     summary,
@@ -1235,7 +1241,7 @@ export const TaskItemDetailWindow = ({
     previewLoading,
     overlays,
     sizeAccentColor: theme.palette.success.main,
-    fetchStageMaxima,
+    sourceStageMaxima,
     previewBoxHeight: Math.max(140, Math.floor(windowState.size.height * 0.45)),
     withDownloadButton: true,
     onDownload: handleDownload,
@@ -1262,11 +1268,11 @@ export const TaskItemDetailWindow = ({
   }, [handleFloatingClose, onClose]);
 
   if (!open || !windowState.isVisible) return null;
-  const stageLabel = effectiveStageId === 'fetch'
-    ? 'Fetch'
-    : (effectiveStageId === 'transform' ? 'Transform' : (effectiveStageId === 'vt' ? 'VT' : effectiveStageId));
+  const stageLabel = effectiveStageId === 'source'
+    ? 'Source'
+    : (effectiveStageId === 'geometry' ? 'Geometry' : (effectiveStageId === 'tileEmit' ? 'TileEmit' : effectiveStageId));
   const stageIcon = stageIconMap.get(effectiveStageId) ?? <LayersIcon fontSize="small" />;
-  const buildVtBandLabel = (taskId: string | undefined): string => {
+  const buildTileEmitBandLabel = (taskId: string | undefined): string => {
     if (!taskId) return 'band ? z?';
     const parts = taskId.split(':');
     if (parts.length < 5) return 'band ? z?';
@@ -1276,8 +1282,8 @@ export const TaskItemDetailWindow = ({
     return `band ${bandIndex} z${zBase}/z${zBase + 1}/z${zBase + 2}`;
   };
   const windowTitle = isVtTask
-    ? `VT Geometry Preview: ${buildVtBandLabel(activeDetail?.task.taskId)}`
-    : (effectiveStageId === 'vt' ? 'VT Geometry Preview' : `Geometry Preview: ${stageLabel}`);
+    ? `TileEmit Geometry Preview: ${buildTileEmitBandLabel(activeDetail?.task.taskId)}`
+    : (effectiveStageId === 'tileEmit' ? 'TileEmit Geometry Preview' : `Geometry Preview: ${stageLabel}`);
 
   return (
     <FloatingWindow

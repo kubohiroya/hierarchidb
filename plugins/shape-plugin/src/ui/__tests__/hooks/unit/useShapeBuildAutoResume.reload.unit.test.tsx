@@ -15,7 +15,7 @@ describe('useShapeBuildAutoResume reload behavior', () => {
       runtimeStatus: 'processing',
       handleStartOrResume,
       handlePause,
-      hasFailedFetchTasks: false,
+      hasFailedSourceTasks: false,
       hasDataSource: true,
       hasSelection: true,
       isProcessingValid: true,

@@ -64,7 +64,7 @@ const makeTaskSummary = (
   overrides: Partial<RawTaskSummary>,
 ): RawTaskSummary => ({
   taskId,
-  stage: 'fetch',
+  stage: 'source',
   status: 'queued',
   progress: 0,
   message: 'queued',
@@ -97,8 +97,8 @@ describe('useShapeBuildTaskSync', () => {
     act(() => {
       result.current.handleSnapshot([
         {
-          taskId: 'node-running:fetch:1',
-          stage: 'fetch',
+          taskId: 'node-running:source:1',
+          stage: 'source',
           status: 'running',
           progress: 35,
           message: 'running',
@@ -112,8 +112,8 @@ describe('useShapeBuildTaskSync', () => {
 
     act(() => {
       result.current.handleUpdate({
-        taskId: 'node-running:fetch:1',
-        stage: 'fetch',
+        taskId: 'node-running:source:1',
+        stage: 'source',
         status: 'running',
         progress: 35,
         message: 'running',
@@ -162,8 +162,8 @@ describe('useShapeBuildTaskSync', () => {
     act(() => {
       result.current.handleSnapshot([
         {
-          taskId: 'node-running:fetch:1',
-          stage: 'fetch',
+          taskId: 'node-running:source:1',
+          stage: 'source',
           status: 'running',
           progress: 10,
           message: 'running',
@@ -177,8 +177,8 @@ describe('useShapeBuildTaskSync', () => {
 
     act(() => {
       result.current.handleUpdate({
-        taskId: 'node-running:fetch:1',
-        stage: 'fetch',
+        taskId: 'node-running:source:1',
+        stage: 'source',
         status: 'running',
         progress: 10,
         message: 'running',
@@ -188,15 +188,15 @@ describe('useShapeBuildTaskSync', () => {
 
     await waitFor(() => {
       expect(result.current.tasks).toHaveLength(1);
-      expect(result.current.tasks[0]?.stage).toBe('fetch');
+      expect(result.current.tasks[0]?.stage).toBe('source');
     });
 
     expect(() => {
       act(() => {
         result.current.handleSnapshot([
           {
-            taskId: 'node-running:fetch:1',
-            stage: 'transform',
+            taskId: 'node-running:source:1',
+            stage: 'geometry',
             status: 'running',
             progress: 15,
             message: 'moved',
@@ -208,7 +208,7 @@ describe('useShapeBuildTaskSync', () => {
 
     await waitFor(() => {
       expect(result.current.tasks).toHaveLength(1);
-      expect(result.current.tasks[0]?.stage).toBe('fetch');
+      expect(result.current.tasks[0]?.stage).toBe('source');
       expect(result.current.tasks[0]?.progress).toBe(10);
     });
   });
@@ -225,7 +225,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
     getBuildTasksMock.mockResolvedValue([]);
   });
 
-  it('keeps transform metadata handoff for effectiveTolerance and retryAttempt', async () => {
+  it('keeps geometry metadata handoff for effectiveTolerance and retryAttempt', async () => {
     const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-progress' as NodeId));
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -235,8 +235,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
       type: 'snapshot',
       nodeId: 'node-progress' as NodeId,
       tasks: [
-        makeTaskSummary('node-progress:transform:jp:0', {
-          stage: 'transform',
+        makeTaskSummary('node-progress:geometry:jp:0', {
+          stage: 'geometry',
           status: 'completed',
           progress: 100,
           metadata: {
@@ -258,7 +258,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
 
     await waitFor(() => {
       expect(result.current.tasks).toHaveLength(1);
-      expect(result.current.tasks[0]?.stage).toBe('transform');
+      expect(result.current.tasks[0]?.stage).toBe('geometry');
       expect((result.current.tasks[0]?.metadata as { effectiveTolerance?: number })?.effectiveTolerance).toBe(0.2);
       expect(result.current.tasks[0]?.retryAttempt).toBe(2);
     });
@@ -274,14 +274,14 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
       type: 'snapshot',
       nodeId: 'node-progress' as NodeId,
       tasks: [
-        makeTaskSummary('node-progress:fetch:0', { status: 'running', progress: 20, index: 1 }),
-        makeTaskSummary('node-progress:fetch:1', { status: 'running', progress: 10, index: 2 }),
+        makeTaskSummary('node-progress:source:0', { status: 'running', progress: 20, index: 1 }),
+        makeTaskSummary('node-progress:source:1', { status: 'running', progress: 10, index: 2 }),
       ],
     });
 
     await waitFor(() => {
       expect(result.current.tasks).toHaveLength(2);
-      expect(result.current.snapshotTaskCountByStage).toEqual({ fetch: 2 });
+      expect(result.current.snapshotTaskCountByStage).toEqual({ source: 2 });
       expect(result.current.terminalTaskCountByStage).toEqual({});
       expect(result.current.tasks[0]?.status).toBe('running');
       expect(result.current.tasks[1]?.status).toBe('running');
@@ -290,7 +290,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
     emitEvent('node-progress', {
       type: 'update',
       nodeId: 'node-progress' as NodeId,
-      task: makeTaskSummary('node-progress:fetch:0', {
+      task: makeTaskSummary('node-progress:source:0', {
         status: 'completed',
         progress: 100,
         message: 'done',
@@ -299,7 +299,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.terminalTaskCountByStage).toEqual({ fetch: 1 });
+      expect(result.current.terminalTaskCountByStage).toEqual({ source: 1 });
       expect(result.current.tasks[0]?.status).toBe('completed');
       expect(result.current.tasks[0]?.progress).toBe(100);
       expect(result.current.tasks[0]?.message).toBe('done');
@@ -318,8 +318,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
         type: 'snapshot',
         nodeId: 'node-progress' as NodeId,
         tasks: [
-          makeTaskSummary('node-progress:fetch:0', { status: 'running', progress: 20, index: 1 }),
-          makeTaskSummary('node-progress:fetch:1', { status: 'running', progress: 10, index: 2 }),
+          makeTaskSummary('node-progress:source:0', { status: 'running', progress: 20, index: 1 }),
+          makeTaskSummary('node-progress:source:1', { status: 'running', progress: 10, index: 2 }),
         ],
       });
 
@@ -332,7 +332,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
       emitEvent('node-progress', {
         type: 'update',
         nodeId: 'node-progress' as NodeId,
-        task: makeTaskSummary('node-progress:fetch:unknown', {
+        task: makeTaskSummary('node-progress:source:unknown', {
           status: 'running',
           progress: 50,
           message: 'invalid',
@@ -359,32 +359,32 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
       type: 'snapshot',
       nodeId: 'node-progress' as NodeId,
       tasks: [
-        makeTaskSummary('node-progress:transform:0', { stage: 'transform', status: 'running', progress: 20, index: 1 }),
-        makeTaskSummary('node-progress:transform:1', { stage: 'transform', status: 'queued', progress: 0, index: 2 }),
-        makeTaskSummary('node-progress:transform:2', { stage: 'transform', status: 'queued', progress: 0, index: 3 }),
-        makeTaskSummary('node-progress:transform:3', { stage: 'transform', status: 'queued', progress: 0, index: 4 }),
+        makeTaskSummary('node-progress:geometry:0', { stage: 'geometry', status: 'running', progress: 20, index: 1 }),
+        makeTaskSummary('node-progress:geometry:1', { stage: 'geometry', status: 'queued', progress: 0, index: 2 }),
+        makeTaskSummary('node-progress:geometry:2', { stage: 'geometry', status: 'queued', progress: 0, index: 3 }),
+        makeTaskSummary('node-progress:geometry:3', { stage: 'geometry', status: 'queued', progress: 0, index: 4 }),
       ],
     });
 
     await waitFor(() => {
       expect(result.current.tasks).toHaveLength(4);
-      expect(result.current.tasks[0]?.taskId).toContain('transform:0');
+      expect(result.current.tasks[0]?.taskId).toContain('geometry:0');
     });
 
     emitEvent('node-progress', {
       type: 'update',
       nodeId: 'node-progress' as NodeId,
-      task: makeTaskSummary('node-progress:transform:0', {
+      task: makeTaskSummary('node-progress:geometry:0', {
         status: 'running',
         progress: 45,
         index: 1,
-        stage: 'transform',
+        stage: 'geometry',
       }),
     });
 
     await waitFor(() => {
       expect(result.current.tasks).toHaveLength(4);
-      expect(result.current.tasks.find((task) => task.taskId === 'node-progress:transform:0')?.progress).toBe(45);
+      expect(result.current.tasks.find((task) => task.taskId === 'node-progress:geometry:0')?.progress).toBe(45);
     });
   });
 });

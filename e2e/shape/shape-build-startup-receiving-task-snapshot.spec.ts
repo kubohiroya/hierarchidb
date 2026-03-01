@@ -283,7 +283,7 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
     const buildConfig = await page.evaluate(() => {
       return {
         dataSourceName: 'geoboundaries',
-        fetchConfig: {
+        sourceConfig: {
           maxConcurrent: 1,
           deleteOnComplete: false,
           timeoutMs: 300000,
@@ -292,7 +292,7 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
           retryLimit: 3,
           retryBackoff: 'linear',
         },
-        transformConfig: {
+        geometryConfig: {
           zoomBandBoundaries: [1, 2, 3],
           maxConcurrent: 1,
           enableFeatureFiltering: true,
@@ -317,7 +317,7 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
           minRingVertices: 4,
           boundaryDisableAtZoomOrAbove: 3,
         },
-        vtConfig: {
+        tileEmitConfig: {
           enableTopojsonSimplify: true,
           maxConcurrent: 1,
           dynamicConcurrency: {
@@ -332,7 +332,7 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
           extent: 4096,
           bufferSize: 256,
           boundaryDedupe: true,
-          indexMaxPoints: 0,
+          indexMaxPoints: 100000,
           layerSetName: 'shape',
           promoteId: 'id',
           tileSize: 256,
@@ -639,7 +639,7 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
     const buildConfig = await page.evaluate(() => {
       return {
         dataSourceName: 'geoboundaries',
-        fetchConfig: {
+        sourceConfig: {
           maxConcurrent: 1,
           deleteOnComplete: false,
           timeoutMs: 300000,
@@ -648,7 +648,7 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
           retryLimit: 3,
           retryBackoff: 'linear',
         },
-        transformConfig: {
+        geometryConfig: {
           zoomBandBoundaries: [1, 2, 3],
           maxConcurrent: 1,
           enableFeatureFiltering: true,
@@ -673,7 +673,7 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
           minRingVertices: 4,
           boundaryDisableAtZoomOrAbove: 3,
         },
-        vtConfig: {
+        tileEmitConfig: {
           enableTopojsonSimplify: true,
           maxConcurrent: 1,
           dynamicConcurrency: {
@@ -688,7 +688,7 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
           extent: 4096,
           bufferSize: 256,
           boundaryDedupe: true,
-          indexMaxPoints: 0,
+          indexMaxPoints: 100000,
           layerSetName: 'shape',
           promoteId: 'id',
           tileSize: 256,

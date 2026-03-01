@@ -2,7 +2,7 @@ import type { BuildContinuationPolicy } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TaskStage } from '@hierarchidb/build-api';
 import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
-import type { CountryMetadata, DataSourceName, FetchTaskPayload, SelectedArrayByCountries } from '~/common/types/index';
+import type { CountryMetadata, DataSourceName, SourceTaskPayload, SelectedArrayByCountries } from '~/common/types/index';
 import { VtTaskQueueDb, deleteTasksByNode } from '@hierarchidb/vt-orchestrator';
 import { shapeDB } from '@hierarchidb/shape-store';
 import { ephemeralDB, type EphemeralDB } from '@hierarchidb/gis-sdk';
@@ -18,25 +18,31 @@ import {
   hasHighDetailSelection,
 } from './shapePipelineShared.ts';
 import { resolveFailureHandling } from './shapePipelineStageHelpers.ts';
-import { runShapeFetchStageSection } from './shapePipelineFetchStage.ts';
-import { runShapeTransformStageSection } from './shapePipelineTransformStage.ts';
-import { runShapeVtStageSection } from './shapePipelineVtStage.ts';
+import { runShapeSourceStageSection } from './shapePipelineSourceStage.ts';
+import { runShapeGeometryStageSection } from './shapePipelineTransformStage.ts';
+import { runShapeTileEmitStageSection } from './shapePipelineTileEmitStage.ts';
 import { runShapeMetadataStage } from './shapePipelineMetadataStage.ts';
 import { runShapePipelineCleanup } from './shapePipelineCleanup.ts';
+import {
+  createDefaultShapeStageProfile,
+  flattenShapeStageProfile,
+  validateShapeStageProfile,
+  type ShapeStageProfileEntry,
+} from './stageProfile';
 
 export type ShapePipelineParams = {
   nodeId: NodeId;
   dataSource: DataSourceName;
   buildConfig: ShapeRuntimeBuildConfig;
   selectedArrayByCountries?: SelectedArrayByCountries;
-  downloadTaskPayloads?: FetchTaskPayload[];
+  downloadTaskPayloads?: SourceTaskPayload[];
   waitIfPaused?: () => Promise<void>;
   resumeExistingTasks?: boolean;
   buildContinuationPolicy?: BuildContinuationPolicy;
   pipelineRunId?: string;
   onTasksEnqueued?: (payload: {
     nodeId: NodeId;
-    stage: 'fetch';
+    stage: 'source';
     taskCount: number;
     source: 'created' | 'reused';
   }) => Promise<void> | void;
@@ -100,7 +106,7 @@ const createShapePipelineContext = async (params: ShapePipelineParams): Promise<
     params.selectedArrayByCountries,
     params.downloadTaskPayloads,
   );
-  const bands = buildBands(params.buildConfig.transformConfig.zoomBandBoundaries);
+  const bands = buildBands(params.buildConfig.geometryConfig.zoomBandBoundaries);
 
   let metadataCache: CountryMetadata[] | null = null;
   let countryLookup: Map<string, CountryMetadata> | null = null;
@@ -154,15 +160,15 @@ const preparePipelineRun = async (context: ShapePipelineContext): Promise<void> 
   }
 };
 
-const runFetchStage = async (context: ShapePipelineContext): Promise<boolean> => {
+const runSourceStage = async (context: ShapePipelineContext): Promise<boolean> => {
   const { params, taskQueue, resumeExistingTasks, failureHandling, buildContinuationPolicy } = context;
-  console.warn('[ShapePipeline][Stage] fetch start', JSON.stringify({
+  console.warn('[ShapePipeline][Stage] source start', JSON.stringify({
     nodeId: params.nodeId,
     runId: params.pipelineRunId ?? null,
     resumeExistingTasks,
     buildContinuationPolicy,
   }));
-  const stopAfterStage = await runShapeFetchStageSection({
+  const stopAfterStage = await runShapeSourceStageSection({
     nodeId: params.nodeId,
     dataSource: params.dataSource,
     selectedArrayByCountries: params.selectedArrayByCountries,
@@ -176,7 +182,7 @@ const runFetchStage = async (context: ShapePipelineContext): Promise<boolean> =>
     pipelineRunId: params.pipelineRunId,
     onTasksEnqueued: params.onTasksEnqueued,
   });
-  console.warn('[ShapePipeline][Stage] fetch done', JSON.stringify({
+  console.warn('[ShapePipeline][Stage] source done', JSON.stringify({
     nodeId: params.nodeId,
     runId: params.pipelineRunId ?? null,
     stopAfterStage,
@@ -184,7 +190,7 @@ const runFetchStage = async (context: ShapePipelineContext): Promise<boolean> =>
   return stopAfterStage;
 };
 
-const runTransformStage = async (context: ShapePipelineContext): Promise<boolean> => {
+const runGeometryStage = async (context: ShapePipelineContext): Promise<boolean> => {
   const {
     params,
     taskQueue,
@@ -198,12 +204,12 @@ const runTransformStage = async (context: ShapePipelineContext): Promise<boolean
     loadCountryLookup,
     ephemeralStore,
   } = context;
-  console.warn('[ShapePipeline][Stage] transform start', JSON.stringify({
+  console.warn('[ShapePipeline][Stage] geometry start', JSON.stringify({
     nodeId: params.nodeId,
     runId: params.pipelineRunId ?? null,
     resumeExistingTasks,
-    maxConcurrent: params.buildConfig.transformConfig.maxConcurrent,
-    geometryEngine: params.buildConfig.transformConfig.geometryEngine ?? 'turf',
+    maxConcurrent: params.buildConfig.geometryConfig.maxConcurrent,
+    geometryEngine: params.buildConfig.geometryConfig.geometryEngine ?? 'turf',
   }));
   const runTransitionStep = async <T>(step: string, action: () => Promise<T>): Promise<T> => {
     const startedAt = Date.now();
@@ -279,10 +285,10 @@ const runTransformStage = async (context: ShapePipelineContext): Promise<boolean
       throw error;
     }
   };
-  const countryLookup = await runTransitionStep('load-country-lookup-for-transform', async () => (
+  const countryLookup = await runTransitionStep('load-country-lookup-for-geometry', async () => (
     loadCountryLookup()
   ));
-  const stopAfterStage = await runTransitionStep('run-transform-stage-section', async () => runShapeTransformStageSection({
+  const stopAfterStage = await runTransitionStep('run-geometry-stage-section', async () => runShapeGeometryStageSection({
     nodeId: params.nodeId,
     buildConfig: params.buildConfig,
     bands,
@@ -298,7 +304,7 @@ const runTransformStage = async (context: ShapePipelineContext): Promise<boolean
     diffBuildEnabled,
     recyclingAllowlist,
   }));
-  console.warn('[ShapePipeline][Stage] transform done', JSON.stringify({
+  console.warn('[ShapePipeline][Stage] geometry done', JSON.stringify({
     nodeId: params.nodeId,
     runId: params.pipelineRunId ?? null,
     stopAfterStage,
@@ -306,7 +312,7 @@ const runTransformStage = async (context: ShapePipelineContext): Promise<boolean
   return stopAfterStage;
 };
 
-const runVtStage = async (context: ShapePipelineContext): Promise<void> => {
+const runTileEmitStage = async (context: ShapePipelineContext): Promise<void> => {
   const {
     params,
     taskQueue,
@@ -317,13 +323,13 @@ const runVtStage = async (context: ShapePipelineContext): Promise<void> => {
     loadContinentLookup,
     ephemeralStore,
   } = context;
-  console.warn('[ShapePipeline][Stage] vt start', JSON.stringify({
+  console.warn('[ShapePipeline][Stage] tileEmit start', JSON.stringify({
     nodeId: params.nodeId,
     runId: params.pipelineRunId ?? null,
     resumeExistingTasks,
-    maxConcurrent: params.buildConfig.vtConfig.maxConcurrent,
+    maxConcurrent: params.buildConfig.tileEmitConfig.maxConcurrent,
   }));
-  await runShapeVtStageSection({
+  await runShapeTileEmitStageSection({
     nodeId: params.nodeId,
     buildConfig: params.buildConfig,
     bands,
@@ -336,15 +342,32 @@ const runVtStage = async (context: ShapePipelineContext): Promise<void> => {
     ephemeralStore,
     loadContinentLookup,
   });
-  console.warn('[ShapePipeline][Stage] vt done', JSON.stringify({
+  console.warn('[ShapePipeline][Stage] tileEmit done', JSON.stringify({
     nodeId: params.nodeId,
     runId: params.pipelineRunId ?? null,
   }));
 };
 
+const runProfileStage = async (
+  stage: ShapeStageProfileEntry,
+  context: ShapePipelineContext,
+): Promise<boolean> => {
+  if (stage.stageKey === 'primary-source') {
+    return runSourceStage(context);
+  }
+  if (stage.stageKey === 'intermediate-geometry') {
+    return runGeometryStage(context);
+  }
+  if (stage.stageKey === 'final-tile-emit') {
+    await runTileEmitStage(context);
+    return false;
+  }
+  throw new Error(`[shape-pipeline] Unsupported stageKey in profile: ${stage.stageKey}`);
+};
+
 const runMetadataStage = async (context: ShapePipelineContext): Promise<void> => {
   const { params, diffBuildEnabled, recyclingAllowlist, recyclingByFeatureId, ephemeralStore } = context;
-  const geometryEngine = params.buildConfig.transformConfig.geometryEngine ?? 'turf';
+  const geometryEngine = params.buildConfig.geometryConfig.geometryEngine ?? 'turf';
   await runShapeMetadataStage({
     nodeId: params.nodeId,
     dataSource: params.dataSource,
@@ -368,6 +391,9 @@ const runCleanupStage = async (context: ShapePipelineContext): Promise<void> => 
 
 export const runShapePipeline = async (params: ShapePipelineParams): Promise<void> => {
   const context = await createShapePipelineContext(params);
+  const stageProfile = createDefaultShapeStageProfile();
+  validateShapeStageProfile(stageProfile);
+  const executionStages = flattenShapeStageProfile(stageProfile);
   const markPipelineCheckpoint = (stage: string, phase: 'start' | 'success' | 'error'): void => {
     void shapeMutationAPIImpl.updateBuildSession(params.nodeId, {
       stageId: `pipeline:${stage}:${phase}`,
@@ -375,18 +401,12 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
     }).catch(() => {});
   };
 
-  const resolveProgressStage = (checkpointStage: string): TaskStage => {
-    if (checkpointStage === 'transform-stage') {
-      return 'transform';
-    }
-    if (checkpointStage === 'vt-stage') {
-      return 'vt';
-    }
-    if (checkpointStage === 'fetch-stage') {
-      return 'fetch';
-    }
-    return 'fetch';
-  };
+  const checkpointToProgressStage = new Map<string, TaskStage>(
+    executionStages.map((stage) => [stage.checkpointStage, stage.canonicalStage]),
+  );
+  const resolveProgressStage = (checkpointStage: string): TaskStage => (
+    checkpointToProgressStage.get(checkpointStage) ?? 'source'
+  );
 
   const checkpoint = async <T>(stage: string, action: () => Promise<T>): Promise<T> => {
     const progressStage = resolveProgressStage(stage);
@@ -442,12 +462,13 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
 
   await checkpoint('prepare-pipeline-run', async () => preparePipelineRun(context));
 
-  let stopAfterStage = await checkpoint('fetch-stage', async () => runFetchStage(context));
-  if (!stopAfterStage) {
-    stopAfterStage = await checkpoint('transform-stage', async () => runTransformStage(context));
-  }
-  if (!stopAfterStage) {
-    await checkpoint('vt-stage', async () => runVtStage(context));
+  let stopAfterStage = false;
+  for (const stage of executionStages) {
+    if (stopAfterStage) break;
+    stopAfterStage = await checkpoint(
+      stage.checkpointStage,
+      async () => runProfileStage(stage, context),
+    );
   }
   await checkpoint('metadata-stage', async () => runMetadataStage(context));
   await checkpoint('cleanup-stage', async () => runCleanupStage(context));

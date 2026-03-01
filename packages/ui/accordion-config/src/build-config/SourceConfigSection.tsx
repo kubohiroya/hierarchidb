@@ -53,7 +53,7 @@ const DEFAULT_DETAIL_PRESETS: Record<OmitDetailsLevel, DetailPreset> = {
 
 const FILTERING_PREVIEW_LEVELS: OmitDetailsLevel[] = ['weak', 'medium', 'strong'];
 
-export const FetchConfigSection = <TDataSourceName,>({
+export const SourceConfigSection = <TDataSourceName,>({
   t,
   buildConfig,
   update,
@@ -67,8 +67,8 @@ export const FetchConfigSection = <TDataSourceName,>({
   additionalCards,
   disableHoverLift = false,
 }: Props<TDataSourceName>) => {
-  const baseFetchConfig = buildConfig.fetchConfig;
-  const baseTransformConfig = buildConfig.transformConfig;
+  const baseFetchConfig = buildConfig.sourceConfig;
+  const baseTransformConfig = buildConfig.geometryConfig;
   const omitDetailsLevel = baseTransformConfig.omitDetailsConfig.level;
   const resolvedPresets = {
     ...DEFAULT_DETAIL_PRESETS,
@@ -92,7 +92,7 @@ export const FetchConfigSection = <TDataSourceName,>({
   const applyDetailPreset = (level: OmitDetailsLevel): void => {
     const preset = resolvedPresets[level];
     update({
-      transformConfig: {
+      geometryConfig: {
         ...baseTransformConfig,
         omitDetailsConfig: {
           level,
@@ -110,10 +110,10 @@ export const FetchConfigSection = <TDataSourceName,>({
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <BuildConfigAccordionSummary
           icon={<CloudDownloadIcon color="primary" />}
-          title={t('processing.fetch.title', 'Fetch')}
+          title={t('processing.source.title', 'Source')}
           info={t(
-            'processing.fetch.descriptionTooltip',
-            'Fetches source data, prepares filters, and provides input for transform.',
+            'processing.source.descriptionTooltip',
+            'Loads source data, applies intake filtering, and prepares input for Geometry.',
           )}
         />
       </AccordionSummary>
@@ -122,14 +122,14 @@ export const FetchConfigSection = <TDataSourceName,>({
           {showConcurrencyCard ? (
             <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
               <WorkerNumberConfigCard
-                title={t('processing.download.workers', 'Concurrent Fetch Workers')}
+                title={t('processing.download.workers', 'Concurrent Source Workers')}
                 value={baseFetchConfig.maxConcurrent}
                 icon={<CloudDownloadIcon fontSize="small" color="primary" />}
-                helperText={t('processing.download.workersHelp', 'Controls how many fetches run in parallel.')}
+                helperText={t('processing.download.workersHelp', 'Controls how many source tasks run in parallel.')}
                 warningText={undefined}
                 onChange={(maxConcurrent) =>
                   update({
-                    fetchConfig: {
+                    sourceConfig: {
                       ...baseFetchConfig,
                       maxConcurrent,
                     },
@@ -153,7 +153,7 @@ export const FetchConfigSection = <TDataSourceName,>({
                   return;
                 }
                 update({
-                  fetchConfig: {
+                  sourceConfig: {
                     ...baseFetchConfig,
                     ...next,
                   },

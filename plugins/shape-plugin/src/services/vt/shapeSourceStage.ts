@@ -23,7 +23,7 @@ import { geojson as geojsonApi } from 'flatgeobuf';
 import type {
   CountryMetadata,
   DataSourceName,
-  FetchTaskPayload,
+  SourceTaskPayload,
   SelectedArrayByCountries,
   ShapeFeaturePayload,
 } from '~/common/types/index';
@@ -57,11 +57,11 @@ import {
 import { fetchRawDataWithPipeline } from '~/services/utils/rawDataPipeline';
 import { buildGeoBoundariesMetadataUrl } from '~/services/utils/geoboundariesEndpoints';
 import type { GeoBoundariesApiResponse } from '~/services/datasources/GeoBoundariesStrategy';
-import { setFetchPlannedTotal } from './shapeProgressPlan.ts';
-import { buildFetchTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
-import { hashFetchArtifact, resolveFetchArtifactHashFromRecord } from './shapeFetchArtifactHash.ts';
+import { setSourcePlannedTotal } from './shapeProgressPlan.ts';
+import { buildSourceTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
+import { hashSourceArtifact, resolveSourceArtifactHashFromRecord } from './shapeSourceArtifactHash.ts';
 
-export type ShapeFetchTaskInput = {
+export type ShapeSourceTaskInput = {
   url: string;
   dataSource: DataSourceName;
   sourceKey: string;
@@ -75,9 +75,9 @@ export type ShapeFetchTaskInput = {
   inputHash?: string;
 };
 
-export type ShapeFetchTaskOutput = {
-  fetchCacheId?: string;
-  fetchArtifactHash?: string;
+export type ShapeSourceTaskOutput = {
+  sourceCacheId?: string;
+  sourceArtifactHash?: string;
   featureCount?: number;
   vertexCount?: number;
   polygonCount?: number;
@@ -192,11 +192,11 @@ const mergeGeojsonCollection = (collection: FeatureCollection): FeatureCollectio
   return merged ?? collection;
 };
 
-export type ShapeFetchStageParams = {
+export type ShapeSourceStageParams = {
   nodeId: NodeId;
   dataSource: DataSourceName;
   selectedArrayByCountries?: SelectedArrayByCountries;
-  downloadTaskPayloads?: FetchTaskPayload[];
+  downloadTaskPayloads?: SourceTaskPayload[];
   buildConfig: ShapeRuntimeBuildConfig;
   taskQueue: VtTaskQueueDb;
   metadata?: CountryMetadata[];
@@ -207,14 +207,14 @@ export type ShapeFetchStageParams = {
   failureHandling?: 'continue' | 'stop' | 'skip';
   onTasksEnqueued?: (payload: {
     nodeId: NodeId;
-    stage: 'fetch';
+    stage: 'source';
     taskCount: number;
     source: 'created' | 'reused';
   }) => Promise<void> | void;
 };
 
 const buildRetryConfig = (config: ShapeRuntimeBuildConfig): RetryConfig => {
-  const downloadConfig = config.fetchConfig;
+  const downloadConfig = config.sourceConfig;
   const retryAttempts = downloadConfig.retryAttempts;
   const retryDelay = downloadConfig.retryDelay;
   const retryLimit = downloadConfig.retryLimit;
@@ -331,11 +331,11 @@ const buildCountryLookup = (metadata: CountryMetadata[]): Map<string, CountryMet
   return map;
 };
 
-const buildShapeFetchTaskId = (nodeId: NodeId, sourceKey: string): string => (
-  `${String(nodeId)}:fetch:${sourceKey}`
+const buildShapeSourceTaskId = (nodeId: NodeId, sourceKey: string): string => (
+  `${String(nodeId)}:source:${sourceKey}`
 );
 
-const buildFetchCacheId = (nodeId: NodeId, sourceKey: string): string => (
+const buildSourceCacheId = (nodeId: NodeId, sourceKey: string): string => (
   `${String(nodeId)}-shape-${sourceKey}`
 );
 
@@ -356,7 +356,7 @@ const formatChangeSummary = (label: string, input: number, output: number): stri
   return `${label}: ${formatCount(safeInput)} -> ${formatCount(safeOutput)} (${formatSignedPercent(safeOutput, safeInput)})`;
 };
 
-const buildFetchFilterReductionSummary = (inputSummary: {
+const buildSourceFilterReductionSummary = (inputSummary: {
   featureCount: number;
   polygonCount: number;
   vertexCount: number;
@@ -389,7 +389,7 @@ const readNumericProperty = (properties: Record<string, unknown>, key: string): 
   return Number.isFinite(value) ? value : undefined;
 };
 
-const decodeFetchCacheData = async (params: {
+const decodeSourceCacheData = async (params: {
   data: ArrayBuffer;
   format?: string;
   compression?: string;
@@ -414,14 +414,14 @@ const decodeFetchCacheData = async (params: {
   }
 };
 
-const getFetchCache = async (nodeId: NodeId, sourceKey: string) => (
-  await ephemeralDB.fetchCache
+const getSourceCache = async (nodeId: NodeId, sourceKey: string) => (
+  await ephemeralDB.sourceCache
     .where('[nodeId+sourceKey]')
     .equals([nodeId, sourceKey])
     .first()
 );
 
-const buildFetchCacheMetadata = (params: {
+const buildSourceCacheMetadata = (params: {
   status: 'completed' | 'failed' | 'skipped';
   dataSource: DataSourceName;
   sourceKey: string;
@@ -437,7 +437,7 @@ const buildFetchCacheMetadata = (params: {
   inputPolygonPerFeatureMax?: number;
   retryAttempt?: number;
 }): Record<string, unknown> => ({
-  stage: 'fetch',
+  stage: 'source',
   status: params.status,
   dataSource: params.dataSource,
   sourceKey: params.sourceKey,
@@ -456,7 +456,7 @@ const buildFetchCacheMetadata = (params: {
     : undefined,
 });
 
-const putFetchCache = async (params: {
+const putSourceCache = async (params: {
   nodeId: NodeId;
   sourceKey: string;
   countryCode: ISO2;
@@ -474,9 +474,9 @@ const putFetchCache = async (params: {
   inputPolygonCount?: number;
   metadata?: Record<string, unknown>;
 }): Promise<{ id: string; contentHash: string }> => {
-  const recordId = buildFetchCacheId(params.nodeId, params.sourceKey);
-  const contentHash = hashFetchArtifact(params.data);
-  await ephemeralDB.fetchCache.put({
+  const recordId = buildSourceCacheId(params.nodeId, params.sourceKey);
+  const contentHash = hashSourceArtifact(params.data);
+  await ephemeralDB.sourceCache.put({
     id: recordId,
     nodeId: params.nodeId,
     domainType: 'shape',
@@ -502,7 +502,7 @@ const putFetchCache = async (params: {
   return { id: recordId, contentHash };
 };
 
-const buildFetchFeatureCollection = (
+const buildSourceFeatureCollection = (
   entities: ShapeFeaturePayload[],
   originKey: string
 ): FeatureCollection => {
@@ -592,7 +592,7 @@ const buildEmptyFeatureMetadata = (params: {
   };
 };
 
-const buildFetchFeatureMetadata = (params: {
+const buildSourceFeatureMetadata = (params: {
   nodeId: NodeId;
   dataSource: DataSourceName;
   collection: FeatureCollection;
@@ -757,25 +757,25 @@ const summarizeFeatureCollection = async (
   return { featureCount, vertexCount, polygonCount, maxPolygonPerFeature, bbox };
 };
 
-const buildFetchTasks = (
+const buildSourceTasks = (
   nodeId: NodeId,
-  payloads: FetchTaskPayload[],
+  payloads: SourceTaskPayload[],
   metadata: CountryMetadata[],
   configSignature: string,
-): Array<TaskQueueRecord<ShapeFetchTaskInput, ShapeFetchTaskOutput>> => {
+): Array<TaskQueueRecord<ShapeSourceTaskInput, ShapeSourceTaskOutput>> => {
   const lookup = buildCountryLookup(metadata);
   return payloads.map((payload, index) => {
     const countryCode = payload.countryCode.trim().toUpperCase();
     const countryMeta = lookup.get(countryCode);
     if (!countryMeta) {
-      throw new Error(`[shape-fetch] Missing metadata for ${payload.countryCode}`);
+      throw new Error(`[shape-source] Missing metadata for ${payload.countryCode}`);
     }
     const iso2 = (countryMeta.countryCode ?? countryMeta.iso2 ?? '').trim().toUpperCase() as ISO2;
     if (!iso2) {
-      throw new Error(`[shape-fetch] Missing ISO2 for ${payload.countryCode}`);
+      throw new Error(`[shape-source] Missing ISO2 for ${payload.countryCode}`);
     }
     const sourceKey = `${iso2}:${payload.adminLevel}`;
-    const cacheIdentity = buildFetchTaskCacheIdentity({
+    const cacheIdentity = buildSourceTaskCacheIdentity({
       nodeId,
       dataSource: payload.dataSource,
       sourceKey,
@@ -784,9 +784,9 @@ const buildFetchTasks = (
       configSignature,
     });
     return {
-      taskId: buildShapeFetchTaskId(nodeId, sourceKey),
+      taskId: buildShapeSourceTaskId(nodeId, sourceKey),
       nodeId,
-      stage: 'fetch',
+      stage: 'source',
       status: 'queued',
       index,
       progress: 0,
@@ -807,25 +807,25 @@ const buildFetchTasks = (
   });
 };
 
-const createFetchHandler = (params: {
+const createSourceHandler = (params: {
   nodeId: NodeId;
   buildConfig: ShapeRuntimeBuildConfig;
   dataSource: DataSourceName;
   recyclingByFeatureId?: Map<string, boolean>;
   abortSignal?: AbortSignal;
-}): StageHandler<ShapeFetchTaskInput, ShapeFetchTaskOutput> => {
+}): StageHandler<ShapeSourceTaskInput, ShapeSourceTaskOutput> => {
   const factory = new DataSourceStrategyFactory();
-  const geometryEngine: GeometryEngine = params.buildConfig.transformConfig.geometryEngine ?? 'turf';
+  const geometryEngine: GeometryEngine = params.buildConfig.geometryConfig.geometryEngine ?? 'turf';
   const isTopoJsonSource = params.dataSource === 'geoboundaries-topojson';
   const strategySource = isTopoJsonSource ? 'geoboundaries' : params.dataSource;
   const strategyId = resolveStrategyIdFromDataSource(strategySource);
   if (!strategyId) {
-    throw new Error(`[shape-fetch] Unsupported data source: ${params.dataSource}`);
+    throw new Error(`[shape-source] Unsupported data source: ${params.dataSource}`);
   }
   const strategy = factory.create(strategyId);
   const taskQueue = new VtTaskQueueDb();
   const retryConfig = buildRetryConfig(params.buildConfig);
-  const invalidGeometryFilter = params.buildConfig.fetchConfig.invalidGeometryFilter;
+  const invalidGeometryFilter = params.buildConfig.sourceConfig.invalidGeometryFilter;
   const hasInvalidGeometryFilter = Boolean(
     invalidGeometryFilter
     && (
@@ -854,7 +854,7 @@ const createFetchHandler = (params: {
       try {
         await updateTask(taskQueue, taskId, { message });
       } catch (error) {
-        console.warn('[ShapeFetch] failed to update task message', { taskId, message, error });
+        console.warn('[ShapeSource] failed to update task message', { taskId, message, error });
       }
     };
   };
@@ -867,7 +867,7 @@ const createFetchHandler = (params: {
         metadata: { ...currentMetadata, retryAttempt: nextRetryAttempt },
       });
     } catch (error) {
-      console.warn('[ShapeFetch] failed to update task retryAttempt', {
+      console.warn('[ShapeSource] failed to update task retryAttempt', {
         taskId,
         retryAttempt,
         error,
@@ -888,8 +888,8 @@ const createFetchHandler = (params: {
     typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.round(value)) : null
   );
 
-  const buildFetchDetailMetadata = (
-    input: ShapeFetchTaskInput,
+  const buildSourceDetailMetadata = (
+    input: ShapeSourceTaskInput,
     counts: {
       inputFeatureCount?: number | null;
       featureCount?: number | null;
@@ -899,9 +899,9 @@ const createFetchHandler = (params: {
       polygonPerFeatureMax?: number | null;
     },
     preview?: {
-      fetchCacheId?: string | null;
-      fetchCacheFormat?: 'flatgeobuf' | 'topojson';
-      fetchCacheCompression?: 'gzip' | 'none';
+      sourceCacheId?: string | null;
+      sourceCacheFormat?: 'flatgeobuf' | 'topojson';
+      sourceCacheCompression?: 'gzip' | 'none';
     },
   ): Record<string, unknown> => ({
     fetchDetail: {
@@ -923,7 +923,7 @@ const createFetchHandler = (params: {
       },
     },
     preview: {
-      stage: 'fetch',
+      stage: 'source',
       sourceKey: input.sourceKey,
       dataSource: input.dataSource,
       sourceUrl: input.url,
@@ -935,16 +935,16 @@ const createFetchHandler = (params: {
         adminLevel: input.adminLevel,
         url: input.url,
       }),
-      fetchCacheId: preview?.fetchCacheId ?? null,
-      fetchCacheFormat: preview?.fetchCacheFormat ?? 'flatgeobuf',
-      fetchCacheCompression: preview?.fetchCacheCompression ?? 'none',
+      sourceCacheId: preview?.sourceCacheId ?? null,
+      sourceCacheFormat: preview?.sourceCacheFormat ?? 'flatgeobuf',
+      sourceCacheCompression: preview?.sourceCacheCompression ?? 'none',
     },
   });
 
   return async (task) => {
     const input = task.inputData;
     if (!input) {
-      return { status: 'failed', errorMessage: 'fetch task input is missing' };
+      return { status: 'failed', errorMessage: 'source task input is missing' };
     }
 
     const reportTaskMessage = createTaskMessageReporter(task.taskId);
@@ -968,10 +968,10 @@ const createFetchHandler = (params: {
     void updateRetryAttempt(task.taskId, 0);
 
     assertNotAborted(params.abortSignal);
-    const existing = await getFetchCache(params.nodeId, input.sourceKey);
+    const existing = await getSourceCache(params.nodeId, input.sourceKey);
     if (existing) {
       const createdAt = Date.now();
-      let fetchArtifactHash = await resolveFetchArtifactHashFromRecord(ephemeralDB.fetchCache, existing);
+      let sourceArtifactHash = await resolveSourceArtifactHashFromRecord(ephemeralDB.sourceCache, existing);
       const existingMetadata = isRecord(existing.metadata) ? existing.metadata : {};
       const existingInputFeatureCount = existing.inputFeatureCount ?? existing.featureCount;
       const existingOutputFeatureCount = existing.featureCount;
@@ -983,12 +983,12 @@ const createFetchHandler = (params: {
         ?? (existingInputFeatureCount > 0
           ? (existing.inputPolygonCount ?? existing.polygonCount ?? 0) / existingInputFeatureCount
           : 0);
-      const cachedCollection = await decodeFetchCacheData({
+      const cachedCollection = await decodeSourceCacheData({
         data: existing.data,
         format: existing.format,
         compression: existing.compression,
       });
-      const fetchMetadata = buildFetchCacheMetadata({
+      const sourceMetadata = buildSourceCacheMetadata({
         status: 'completed',
         dataSource: input.dataSource,
         sourceKey: input.sourceKey,
@@ -1009,7 +1009,7 @@ const createFetchHandler = (params: {
           return typeof props?.__hdbFeatureId !== 'string' || props.__hdbFeatureId.length === 0;
         });
         const countryLookup = await getMetadataLookup();
-        const cachedMetadata = buildFetchFeatureMetadata({
+        const cachedMetadata = buildSourceFeatureMetadata({
           nodeId: params.nodeId,
           dataSource: input.dataSource,
           collection: cachedCollection,
@@ -1033,18 +1033,18 @@ const createFetchHandler = (params: {
             data = await encodeFlatGeobufFromFeatureCollection(cachedCollection);
           }
           if (data) {
-            fetchArtifactHash = hashFetchArtifact(data);
-            await ephemeralDB.fetchCache.update(existing.id, {
+            sourceArtifactHash = hashSourceArtifact(data);
+            await ephemeralDB.sourceCache.update(existing.id, {
               data,
               size: data.byteLength,
-              contentHash: fetchArtifactHash,
+              contentHash: sourceArtifactHash,
               timestamp: Date.now(),
-              metadata: fetchMetadata,
+              metadata: sourceMetadata,
             });
           }
         } else if (existing.metadata?.status !== 'completed') {
-          await ephemeralDB.fetchCache.update(existing.id, {
-            metadata: fetchMetadata,
+          await ephemeralDB.sourceCache.update(existing.id, {
+            metadata: sourceMetadata,
           });
         }
       } else if (existing.featureCount === 0) {
@@ -1058,9 +1058,9 @@ const createFetchHandler = (params: {
           recyclingByFeatureId: params.recyclingByFeatureId,
         });
         await shapeMutationAPIImpl.putFeatureMetadata([emptyMetadata]);
-        await ephemeralDB.fetchCache.update(existing.id, {
+        await ephemeralDB.sourceCache.update(existing.id, {
           metadata: {
-            ...fetchMetadata,
+            ...sourceMetadata,
             status: 'completed',
           },
         });
@@ -1074,8 +1074,8 @@ const createFetchHandler = (params: {
       ].join(', ');
       return {
         status: 'completed',
-        message: `reused: fetch cache exists (${cachedSummary})`,
-        metadata: buildFetchDetailMetadata(input, {
+        message: `reused: source cache exists (${cachedSummary})`,
+        metadata: buildSourceDetailMetadata(input, {
           inputFeatureCount: existingInputFeatureCount,
           featureCount: existing.featureCount,
           inputPolygonCount: existing.inputPolygonCount ?? cachedPolygonCount,
@@ -1083,13 +1083,13 @@ const createFetchHandler = (params: {
           inputPolygonPerFeatureMax: cachedInputPolygonPerFeatureMax,
           polygonPerFeatureMax: cachedPolygonPerFeatureMax,
         }, {
-          fetchCacheId: existing.id,
-          fetchCacheFormat: existing.format === 'topojson' ? 'topojson' : 'flatgeobuf',
-          fetchCacheCompression: existing.compression === 'gzip' ? 'gzip' : 'none',
+          sourceCacheId: existing.id,
+          sourceCacheFormat: existing.format === 'topojson' ? 'topojson' : 'flatgeobuf',
+          sourceCacheCompression: existing.compression === 'gzip' ? 'gzip' : 'none',
         }),
         outputData: {
-          fetchCacheId: existing.id,
-          fetchArtifactHash,
+          sourceCacheId: existing.id,
+          sourceArtifactHash,
           featureCount: existing.featureCount,
           vertexCount: cachedVertexCount,
         },
@@ -1098,7 +1098,7 @@ const createFetchHandler = (params: {
 
     assertNotAborted(params.abortSignal);
     const originKey = buildOriginKey(input.dataSource, input.sourceKey);
-    const zoomRanges = buildZoomBandRanges(params.buildConfig.transformConfig.zoomBandBoundaries);
+    const zoomRanges = buildZoomBandRanges(params.buildConfig.geometryConfig.zoomBandBoundaries);
     const filterZoom = zoomRanges[0]?.max;
 
     if (isTopoJsonSource) {
@@ -1110,7 +1110,7 @@ const createFetchHandler = (params: {
         signal: params.abortSignal,
         cacheKeyMode: 'url',
         retryConfig,
-        timeoutMs: params.buildConfig.fetchConfig.timeoutMs,
+        timeoutMs: params.buildConfig.sourceConfig.timeoutMs,
         onRetryAttempt,
       });
       const downloadTime = Date.now() - downloadStart;
@@ -1133,9 +1133,9 @@ const createFetchHandler = (params: {
       const filteredCollection = Number.isFinite(filterZoom)
         ? await filterFetchCollectionByZoom(baseCollection, {
           zTarget: filterZoom!,
-          omitDetailsConfig: params.buildConfig.transformConfig.omitDetailsConfig,
-          excludePolygonAreaCoefficient: params.buildConfig.transformConfig.excludePolygonAreaCoefficient,
-          minRingVertices: params.buildConfig.transformConfig.minRingVertices,
+          omitDetailsConfig: params.buildConfig.geometryConfig.omitDetailsConfig,
+          excludePolygonAreaCoefficient: params.buildConfig.geometryConfig.excludePolygonAreaCoefficient,
+          minRingVertices: params.buildConfig.geometryConfig.minRingVertices,
           geometryEngine,
           invalidGeometryFilter,
           onInvalidGeometryCheck: hasInvalidGeometryFilter ? onInvalidGeometryCheck : undefined,
@@ -1156,8 +1156,8 @@ const createFetchHandler = (params: {
         await shapeMutationAPIImpl.putFeatureMetadata([emptyMetadata]);
         return {
           status: 'completed',
-          message: buildFetchFilterReductionSummary(inputSummary),
-          metadata: buildFetchDetailMetadata(input, {
+          message: buildSourceFilterReductionSummary(inputSummary),
+          metadata: buildSourceDetailMetadata(input, {
             inputFeatureCount: inputSummary.featureCount,
             featureCount: 0,
             inputPolygonCount: inputSummary.polygonCount,
@@ -1171,7 +1171,7 @@ const createFetchHandler = (params: {
       const collectionWithOrigin = applyOriginPropertiesToCollection(filteredCollection, originKey);
       const createdAt = Date.now();
       const countryLookup = await getMetadataLookup();
-      const featureMetadata = buildFetchFeatureMetadata({
+      const featureMetadata = buildSourceFeatureMetadata({
         nodeId: params.nodeId,
         dataSource: input.dataSource,
         collection: collectionWithOrigin,
@@ -1192,7 +1192,7 @@ const createFetchHandler = (params: {
       const encodedTopology = encodeTopoJson(cachedTopology);
       const compressedTopology = await compressGzip(encodedTopology);
       assertNotAborted(params.abortSignal);
-      const fetchCacheRecord = await putFetchCache({
+      const sourceCacheRecord = await putSourceCache({
         nodeId: params.nodeId,
         sourceKey: input.sourceKey,
         countryCode: input.countryCode,
@@ -1208,7 +1208,7 @@ const createFetchHandler = (params: {
         polygonCount: outputSummary.polygonCount,
         inputVertexCount: inputSummary.vertexCount,
         inputPolygonCount: inputSummary.polygonCount,
-        metadata: buildFetchCacheMetadata({
+        metadata: buildSourceCacheMetadata({
           status: 'completed',
           dataSource: input.dataSource,
           sourceKey: input.sourceKey,
@@ -1233,7 +1233,7 @@ const createFetchHandler = (params: {
       return {
         status: 'completed',
         message: reductionSummary,
-        metadata: buildFetchDetailMetadata(input, {
+        metadata: buildSourceDetailMetadata(input, {
           inputFeatureCount: inputSummary.featureCount,
           featureCount: outputSummary.featureCount,
           inputPolygonCount: inputSummary.polygonCount,
@@ -1241,13 +1241,13 @@ const createFetchHandler = (params: {
           inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
           polygonPerFeatureMax: outputSummary.maxPolygonPerFeature,
         }, {
-          fetchCacheId: fetchCacheRecord.id,
-          fetchCacheFormat: 'topojson',
-          fetchCacheCompression: 'gzip',
+          sourceCacheId: sourceCacheRecord.id,
+          sourceCacheFormat: 'topojson',
+          sourceCacheCompression: 'gzip',
         }),
         outputData: {
-          fetchCacheId: fetchCacheRecord.id,
-          fetchArtifactHash: fetchCacheRecord.contentHash,
+          sourceCacheId: sourceCacheRecord.id,
+          sourceArtifactHash: sourceCacheRecord.contentHash,
           featureCount: outputSummary.featureCount,
           vertexCount: outputSummary.vertexCount,
           polygonCount: outputSummary.polygonCount,
@@ -1263,7 +1263,7 @@ const createFetchHandler = (params: {
       endpoint: input.url,
       cacheKeyMode: 'url',
       retryConfig,
-      timeout: params.buildConfig.fetchConfig.timeoutMs,
+      timeout: params.buildConfig.sourceConfig.timeoutMs,
       onRetryAttempt,
     });
     const downloadTime = Date.now() - downloadStart;
@@ -1274,7 +1274,7 @@ const createFetchHandler = (params: {
       transformations: strategy.config.processing.transformations,
       validation: true,
     });
-    let collection = buildFetchFeatureCollection(processed, originKey);
+    let collection = buildSourceFeatureCollection(processed, originKey);
     if (shouldMergeGeoBoundaries({
       dataSource: input.dataSource,
       adminLevel: input.adminLevel,
@@ -1289,9 +1289,9 @@ const createFetchHandler = (params: {
     const filteredCollection = Number.isFinite(filterZoom)
       ? await filterFetchCollectionByZoom(collection, {
         zTarget: filterZoom!,
-        omitDetailsConfig: params.buildConfig.transformConfig.omitDetailsConfig,
-        excludePolygonAreaCoefficient: params.buildConfig.transformConfig.excludePolygonAreaCoefficient,
-        minRingVertices: params.buildConfig.transformConfig.minRingVertices,
+        omitDetailsConfig: params.buildConfig.geometryConfig.omitDetailsConfig,
+        excludePolygonAreaCoefficient: params.buildConfig.geometryConfig.excludePolygonAreaCoefficient,
+        minRingVertices: params.buildConfig.geometryConfig.minRingVertices,
         geometryEngine,
         invalidGeometryFilter,
         onInvalidGeometryCheck: hasInvalidGeometryFilter ? onInvalidGeometryCheck : undefined,
@@ -1311,8 +1311,8 @@ const createFetchHandler = (params: {
       await shapeMutationAPIImpl.putFeatureMetadata([emptyMetadata]);
       return {
         status: 'completed',
-        message: buildFetchFilterReductionSummary(inputSummary),
-        metadata: buildFetchDetailMetadata(input, {
+        message: buildSourceFilterReductionSummary(inputSummary),
+        metadata: buildSourceDetailMetadata(input, {
           inputFeatureCount: inputSummary.featureCount,
           featureCount: 0,
           inputPolygonCount: inputSummary.polygonCount,
@@ -1325,7 +1325,7 @@ const createFetchHandler = (params: {
 
     const createdAt = Date.now();
     const countryLookup = await getMetadataLookup();
-    const featureMetadata = buildFetchFeatureMetadata({
+    const featureMetadata = buildSourceFeatureMetadata({
       nodeId: params.nodeId,
       dataSource: input.dataSource,
       collection: filteredCollection,
@@ -1344,7 +1344,7 @@ const createFetchHandler = (params: {
     });
     const data = await encodeFlatGeobufFromFeatureCollection(filteredCollection);
     assertNotAborted(params.abortSignal);
-    const fetchCacheRecord = await putFetchCache({
+    const sourceCacheRecord = await putSourceCache({
       nodeId: params.nodeId,
       sourceKey: input.sourceKey,
       countryCode: input.countryCode,
@@ -1360,7 +1360,7 @@ const createFetchHandler = (params: {
       polygonCount,
       inputVertexCount: inputSummary.vertexCount,
       inputPolygonCount: inputSummary.polygonCount,
-      metadata: buildFetchCacheMetadata({
+      metadata: buildSourceCacheMetadata({
         status: 'completed',
         dataSource: input.dataSource,
         sourceKey: input.sourceKey,
@@ -1385,7 +1385,7 @@ const createFetchHandler = (params: {
     return {
       status: 'completed',
       message: reductionSummary,
-      metadata: buildFetchDetailMetadata(input, {
+      metadata: buildSourceDetailMetadata(input, {
         inputFeatureCount: inputSummary.featureCount,
         featureCount,
         inputPolygonCount: inputSummary.polygonCount,
@@ -1393,13 +1393,13 @@ const createFetchHandler = (params: {
         inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
         polygonPerFeatureMax: maxPolygonPerFeature,
       }, {
-        fetchCacheId: fetchCacheRecord.id,
-        fetchCacheFormat: 'flatgeobuf',
-        fetchCacheCompression: 'none',
+        sourceCacheId: sourceCacheRecord.id,
+        sourceCacheFormat: 'flatgeobuf',
+        sourceCacheCompression: 'none',
       }),
       outputData: {
-        fetchCacheId: fetchCacheRecord.id,
-        fetchArtifactHash: fetchCacheRecord.contentHash,
+        sourceCacheId: sourceCacheRecord.id,
+        sourceArtifactHash: sourceCacheRecord.contentHash,
         featureCount,
         vertexCount,
         polygonCount,
@@ -1408,7 +1408,7 @@ const createFetchHandler = (params: {
   };
 };
 
-export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise<void> => {
+export const runShapeSourceStage = async (params: ShapeSourceStageParams): Promise<void> => {
   const abortSignal = params.abortController?.signal;
   const resumeExistingTasks = Boolean(params.resumeExistingTasks);
   const notifyTasksEnqueued = async (payload: {
@@ -1419,23 +1419,23 @@ export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise
     try {
       await params.onTasksEnqueued({
         nodeId: params.nodeId,
-        stage: 'fetch',
+        stage: 'source',
         taskCount: payload.taskCount,
         source: payload.source,
       });
     } catch (error) {
-      console.warn('[ShapeFetch] notify tasks enqueued failed', error);
+      console.warn('[ShapeSource] notify tasks enqueued failed', error);
     }
   };
   if (!resumeExistingTasks) {
-    const staleTasks = await listTasksByStage(params.taskQueue, params.nodeId, 'fetch');
+    const staleTasks = await listTasksByStage(params.taskQueue, params.nodeId, 'source');
     await deleteTasksByIds(params.taskQueue, staleTasks.map((task) => task.taskId));
   }
   const existingTasks = resumeExistingTasks
-    ? await listTasksByStage(params.taskQueue, params.nodeId, 'fetch')
+    ? await listTasksByStage(params.taskQueue, params.nodeId, 'source')
     : [];
   let metadataForPayloads = params.metadata ?? await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
-  let payloads = resolveFetchPayloads(params, metadataForPayloads);
+  let payloads = resolveSourcePayloads(params, metadataForPayloads);
   const selectedAdminPairCount = countSelectedAdminPairs(params.selectedArrayByCountries);
   if (
     payloads.length === 0
@@ -1446,34 +1446,35 @@ export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise
     metadataLoader.clearCache(params.dataSource);
     const refreshedMetadata = await metadataLoader.loadMetadata(params.dataSource, params.nodeId, { force: true });
     metadataForPayloads = refreshedMetadata;
-    payloads = resolveFetchPayloads(params, metadataForPayloads);
+    payloads = resolveSourcePayloads(params, metadataForPayloads);
   }
   const reuseExistingTasks = resumeExistingTasks && existingTasks.length > 0 && payloads.length === 0;
   if (payloads.length === 0 && !reuseExistingTasks) {
     if (selectedAdminPairCount > 0) {
       throw new Error(
-        `[shape-fetch] No fetch tasks generated for ${selectedAdminPairCount}`
+        `[shape-source] No source tasks generated for ${selectedAdminPairCount}`
         + ' selected entries. Metadata may be stale or incompatible with the selection.',
       );
     }
-    setFetchPlannedTotal(params.nodeId, 0);
+    setSourcePlannedTotal(params.nodeId, 0);
     await notifyTasksEnqueued({ taskCount: 0, source: 'created' });
     return;
   }
-  const configSignature = buildStableSignature(params.buildConfig.fetchConfig ?? null);
+  const configSignature = buildStableSignature(params.buildConfig.sourceConfig ?? null);
   if (!reuseExistingTasks) {
-    const tasks = buildFetchTasks(params.nodeId, payloads, metadataForPayloads, configSignature);
-    setFetchPlannedTotal(params.nodeId, tasks.length);
-    await reconcileFetchTasks(params, existingTasks, tasks, resumeExistingTasks);
+    const tasks = buildSourceTasks(params.nodeId, payloads, metadataForPayloads, configSignature);
+    setSourcePlannedTotal(params.nodeId, tasks.length);
+    await reconcileSourceTasks(params, existingTasks, tasks, resumeExistingTasks);
     await notifyTasksEnqueued({ taskCount: tasks.length, source: 'created' });
   } else {
-    setFetchPlannedTotal(params.nodeId, existingTasks.length);
+    setSourcePlannedTotal(params.nodeId, existingTasks.length);
     await notifyTasksEnqueued({ taskCount: existingTasks.length, source: 'reused' });
   }
-  await runStageTasks({
+  await runStageTasks<ShapeSourceTaskInput, ShapeSourceTaskOutput>({
     nodeId: params.nodeId,
-    stage: 'fetch',
-    handler: createFetchHandler({
+    stageId: 'source-stage',
+    capability: 'io',
+    handler: createSourceHandler({
       nodeId: params.nodeId,
       buildConfig: params.buildConfig,
       dataSource: params.dataSource,
@@ -1481,16 +1482,16 @@ export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise
       abortSignal,
     }),
     waitIfPaused: params.waitIfPaused,
-    maxConcurrent: params.buildConfig.fetchConfig.maxConcurrent,
+    maxConcurrent: params.buildConfig.sourceConfig.maxConcurrent,
     failureHandling: params.failureHandling,
     abortController: params.abortController,
   });
 };
 
-const resolveFetchPayloads = (
-  params: ShapeFetchStageParams,
+const resolveSourcePayloads = (
+  params: ShapeSourceStageParams,
   metadata: CountryMetadata[],
-): FetchTaskPayload[] => {
+): SourceTaskPayload[] => {
   if (params.downloadTaskPayloads && params.downloadTaskPayloads.length > 0) {
     return params.downloadTaskPayloads;
   }
@@ -1501,8 +1502,8 @@ const resolveFetchPayloads = (
   );
 };
 
-const reconcileFetchTasks = async (
-  params: ShapeFetchStageParams,
+const reconcileSourceTasks = async (
+  params: ShapeSourceStageParams,
   existingTasks: TaskQueueRecord[],
   desiredTasks: TaskQueueRecord[],
   resumeExistingTasks: boolean,

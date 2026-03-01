@@ -20,10 +20,10 @@ type ConcurrencyEditorCardArgs = Pick<
   toLabel: ToLabel;
 };
 
-type FetchRetryEditorCardArgs = Pick<
+type SourceRetryEditorCardArgs = Pick<
   ShapeBuildProgressPanelControllerOverlayDialogsArgs,
-  | 'fetchRetryConfigForEdit'
-  | 'applyFetchRetryConfigUpdate'
+  | 'sourceRetryConfigForEdit'
+  | 'applySourceRetryConfigUpdate'
   | 't'
 > & {
   disabledEditors: boolean;
@@ -48,11 +48,11 @@ type FooterArgs = Pick<
 > & {
   concurrencyEditorAnchor: ShapeBuildProgressPanelControllerOverlayDialogsArgs['concurrencyEditorAnchor'];
   concurrencyEditorStageId: ShapeBuildProgressPanelControllerOverlayDialogsArgs['concurrencyEditorStageId'];
-  fetchRetryEditorAnchor: ShapeBuildProgressPanelControllerOverlayDialogsArgs['fetchRetryEditorAnchor'];
-  fetchRetryEditorCard: ReactNode;
+  sourceRetryEditorAnchor: ShapeBuildProgressPanelControllerOverlayDialogsArgs['sourceRetryEditorAnchor'];
+  sourceRetryEditorCard: ReactNode;
   concurrencyEditorCard: ReactNode;
   closeConcurrencyEditor: () => void;
-  closeFetchRetryEditor: () => void;
+  closeSourceRetryEditor: () => void;
   warningDialogOpen: boolean;
   setWarningDialogOpen: (open: boolean) => void;
   sizeWarningOpen: boolean;
@@ -78,17 +78,17 @@ export const ShapeBuildProgressPanelConcurrencyEditorCard = ({
 }: ConcurrencyEditorCardArgs): ReactNode => {
   if (!concurrencyEditorStageId) return null;
 
-  if (concurrencyEditorStageId === 'fetch') {
+  if (concurrencyEditorStageId === 'source') {
     return (
       <WorkerNumberConfigCard
-        title={t('processing.download.workers', 'Concurrent Fetch Workers')}
-        value={processingConfigForEdit.fetch.maxConcurrent}
-        helperText={toLabel(t('processing.download.workersHelp', 'Controls how many fetches run in parallel.'))}
+        title={t('processing.download.workers', 'Concurrent Source Workers')}
+        value={processingConfigForEdit.source.maxConcurrent}
+        helperText={toLabel(t('processing.download.workersHelp', 'Controls how many source tasks run in parallel.'))}
         warningText={undefined}
         onChange={(maxConcurrent) => {
           applyProcessingConfigUpdate({
-            fetch: {
-              ...processingConfigForEdit.fetch,
+            source: {
+              ...processingConfigForEdit.source,
               maxConcurrent,
             },
           });
@@ -103,20 +103,20 @@ export const ShapeBuildProgressPanelConcurrencyEditorCard = ({
     );
   }
 
-  if (concurrencyEditorStageId === 'transform') {
+  if (concurrencyEditorStageId === 'geometry') {
     return (
       <WorkerNumberConfigCard
-        title={t('processing.transform.workersStage1', 'Transform Workers (Simplification)')}
-        value={processingConfigForEdit.transform.maxConcurrent}
+        title={t('processing.geometry.workersStage1', 'Geometry Workers (Simplification)')}
+        value={processingConfigForEdit.geometry.maxConcurrent}
         helperText={toLabel(t(
-          'processing.transform.workersStage1Help',
+          'processing.geometry.workersStage1Help',
           'Higher concurrency can speed up processing but may exhaust browser memory.',
         ))}
         warningText={undefined}
         onChange={(maxConcurrent) => {
           applyProcessingConfigUpdate({
-            transform: {
-              ...processingConfigForEdit.transform,
+            geometry: {
+              ...processingConfigForEdit.geometry,
               maxConcurrent,
             },
           });
@@ -133,12 +133,12 @@ export const ShapeBuildProgressPanelConcurrencyEditorCard = ({
 
   return (
     <WorkerNumberConfigCard
-      title={t('processing.tile.workers', 'Concurrent VT Workers')}
-      value={processingConfigForEdit.vt.maxConcurrent}
-      helperText={toLabel(t('processing.tile.workersHelp', 'Concurrent workers for VT generation.'))}
+      title={t('processing.tile.workers', 'Concurrent TileEmit Workers')}
+      value={processingConfigForEdit.tileEmit.maxConcurrent}
+      helperText={toLabel(t('processing.tile.workersHelp', 'Concurrent workers for TileEmit generation.'))}
       warningText={undefined}
       onChange={(maxConcurrent) => {
-        const dynamicConcurrency = processingConfigForEdit.vt.dynamicConcurrency ?? {
+        const dynamicConcurrency = processingConfigForEdit.tileEmit.dynamicConcurrency ?? {
           enabled: false,
           minConcurrent: maxConcurrent,
           maxConcurrent,
@@ -148,8 +148,8 @@ export const ShapeBuildProgressPanelConcurrencyEditorCard = ({
           sampleMs: 2000,
         };
         applyProcessingConfigUpdate({
-          vt: {
-            ...processingConfigForEdit.vt,
+          tileEmit: {
+            ...processingConfigForEdit.tileEmit,
             maxConcurrent,
             dynamicConcurrency: {
               ...dynamicConcurrency,
@@ -168,15 +168,15 @@ export const ShapeBuildProgressPanelConcurrencyEditorCard = ({
   );
 };
 
-export const ShapeBuildProgressPanelFetchRetryEditorCard = ({
+export const ShapeBuildProgressPanelSourceRetryEditorCard = ({
   t,
-  fetchRetryConfigForEdit,
-  applyFetchRetryConfigUpdate,
+  sourceRetryConfigForEdit,
+  applySourceRetryConfigUpdate,
   disabledEditors,
-}: FetchRetryEditorCardArgs): ReactNode => (
+}: SourceRetryEditorCardArgs): ReactNode => (
   <DownloadRetryControls
-    baseRetryConfig={fetchRetryConfigForEdit}
-    onChange={applyFetchRetryConfigUpdate}
+    baseRetryConfig={sourceRetryConfigForEdit}
+    onChange={applySourceRetryConfigUpdate}
     disabled={disabledEditors}
     t={t}
     disableHoverEffect
@@ -214,8 +214,8 @@ export const ShapeBuildProgressPanelCompletionDialogContent = ({
 
 export const ShapeBuildProgressPanelOverlayFooter = ({
   isBuildStartupPending,
-  fetchRetryEditorAnchor,
-  closeFetchRetryEditor,
+  sourceRetryEditorAnchor,
+  closeSourceRetryEditor,
   startupNoticeDismissed,
   setStartupNoticeDismissed,
   startupStatusMessage,
@@ -227,7 +227,7 @@ export const ShapeBuildProgressPanelOverlayFooter = ({
   concurrencyEditorAnchor,
   concurrencyEditorStageId,
   concurrencyEditorCard,
-  fetchRetryEditorCard,
+  sourceRetryEditorCard,
   crashHint,
   crashHintOpen,
   setCrashHintOpen,
@@ -238,14 +238,14 @@ export const ShapeBuildProgressPanelOverlayFooter = ({
 }: FooterArgs): ReactNode => (
   <>
     <DialogSafePopover
-      open={Boolean(fetchRetryEditorAnchor)}
-      anchorEl={fetchRetryEditorAnchor}
-      onClose={closeFetchRetryEditor}
+      open={Boolean(sourceRetryEditorAnchor)}
+      anchorEl={sourceRetryEditorAnchor}
+      onClose={closeSourceRetryEditor}
       anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
       transformOrigin={{ vertical: 'top', horizontal: 'left' }}
     >
       <Box sx={{ p: 2, width: 820, maxWidth: 'calc(100vw - 24px)' }}>
-        {fetchRetryEditorCard}
+        {sourceRetryEditorCard}
       </Box>
     </DialogSafePopover>
     <DialogSafePopover

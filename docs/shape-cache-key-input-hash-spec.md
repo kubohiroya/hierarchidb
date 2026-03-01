@@ -78,7 +78,7 @@ All keys below are prefixed with `{namespacePrefix}:`.
 - `bandMinZoom`
 - `bandMaxZoom`
 - `zBase`
-- `transformConfigAffectingOutput`
+- `geometryConfigAffectingOutput`
 - `pipelineVersion`
 
 ### 5.3 VT Stage
@@ -87,7 +87,7 @@ All keys below are prefixed with `{namespacePrefix}:`.
 
 #### `inputHash` payload (exclude key fields)
 - `transformArtifactSetHash` (derived from ordered transform artifacts used for the tile)
-- `vtConfigAffectingOutput`
+- `tileEmitConfigAffectingOutput`
 - `layerSchema`
 - `geometryEngine` (if output-relevant)
 - `pipelineVersion`

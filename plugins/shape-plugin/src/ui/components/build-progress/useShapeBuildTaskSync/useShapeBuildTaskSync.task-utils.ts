@@ -1,9 +1,9 @@
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
-import type { VtParentInputSummary } from './useShapeBuildTaskSync.types.js';
+import type { TileEmitParentInputSummary } from './useShapeBuildTaskSync.types.js';
 import { isTaskSkipped } from '~/common/utils/taskMessages';
 
 const UNKNOWN_SCOPE_VALUE = 'unknown';
-const VT_PARENT_INPUT_SUMMARY_METADATA_KEY = 'vtParentInputSummary';
+const TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY = 'tileEmitParentInputSummary';
 
 const asRecord = (value: unknown): Record<string, unknown> | null => (
   value && typeof value === 'object' ? value as Record<string, unknown> : null
@@ -35,8 +35,8 @@ const parseTopCountriesByIntersectingArea = (
     .slice(0, 2);
 };
 
-export const readVtParentInputSummary = (metadata: Record<string, unknown> | undefined): VtParentInputSummary | null => {
-  const summaryRecord = asRecord(metadata?.[VT_PARENT_INPUT_SUMMARY_METADATA_KEY]);
+export const readTileEmitParentInputSummary = (metadata: Record<string, unknown> | undefined): TileEmitParentInputSummary | null => {
+  const summaryRecord = asRecord(metadata?.[TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY]);
   if (!summaryRecord) return null;
   const parentTileRecord = asRecord(summaryRecord.parentTile);
   if (!parentTileRecord) return null;
@@ -56,8 +56,8 @@ export const readVtParentInputSummary = (metadata: Record<string, unknown> | und
   };
 };
 
-export const buildVtParentInputSummaryMessage = (summary: VtParentInputSummary): string => (
-  `vt parent input z=${summary.parentTile.z} x=${summary.parentTile.x} y=${summary.parentTile.y}`
+export const buildTileEmitParentInputSummaryMessage = (summary: TileEmitParentInputSummary): string => (
+  `tileEmit parent input z=${summary.parentTile.z} x=${summary.parentTile.x} y=${summary.parentTile.y}`
   + ` intersects(features=${summary.intersectingFeatureCount}, geojsonBytes=${summary.intersectingGeojsonByteSize})`
 );
 
@@ -99,14 +99,14 @@ export const resolveTaskProgress = (
 };
 
 export const parseScopeFromTaskId = (taskId: string): { iso2: string; adminLevel: string } | null => {
-  const fetchMatch = taskId.match(/:fetch:([A-Za-z]{2,3}):(\d+)$/);
+  const fetchMatch = taskId.match(/:source:([A-Za-z]{2,3}):(\d+)$/);
   if (fetchMatch?.[1] && fetchMatch[2]) {
     return {
       iso2: fetchMatch[1].trim().toUpperCase(),
       adminLevel: fetchMatch[2],
     };
   }
-  const transformMatch = taskId.match(/:transform:[^:]+:([A-Za-z]{2,3}):(\d+)$/);
+  const transformMatch = taskId.match(/:geometry:[^:]+:([A-Za-z]{2,3}):(\d+)$/);
   if (transformMatch?.[1] && transformMatch[2]) {
     return {
       iso2: transformMatch[1].trim().toUpperCase(),

@@ -14,7 +14,7 @@ export const DEFAULT_ROUTE_BUILD_CONFIG: RouteBuildConfig = {
     retryOnFailure: false,
     maxRetries: 0,
   },
-  fetchConfig: {
+  sourceConfig: {
     maxConcurrent: 2,
     deleteOnComplete: false,
     timeoutMs: 300000,
@@ -23,7 +23,7 @@ export const DEFAULT_ROUTE_BUILD_CONFIG: RouteBuildConfig = {
     retryLimit: 3,
     retryBackoff: 'linear',
   },
-  transformConfig: {
+  geometryConfig: {
     zoomBandBoundaries: DEFAULT_ZOOM_BAND_BOUNDARIES,
     maxConcurrent: 2,
     enableFeatureFiltering: true,
@@ -48,7 +48,7 @@ export const DEFAULT_ROUTE_BUILD_CONFIG: RouteBuildConfig = {
     minRingVertices: 4,
     boundaryDisableAtZoomOrAbove: 3,
   },
-  vtConfig: {
+  tileEmitConfig: {
     enableTopojsonSimplify: false,
     maxConcurrent: 1,
     dynamicConcurrency: {
@@ -63,7 +63,7 @@ export const DEFAULT_ROUTE_BUILD_CONFIG: RouteBuildConfig = {
     extent: 4096,
     bufferSize: 256,
     boundaryDedupe: true,
-    indexMaxPoints: 0,
+    indexMaxPoints: 100000,
     layerSetName: 'shape',
     promoteId: 'id',
     tileSize: 256,
@@ -75,12 +75,12 @@ export const DEFAULT_ROUTE_BUILD_CONFIG: RouteBuildConfig = {
     compression: 'gzip',
   },
   cleanupConfig: {
-    deleteFetchApiCache: false,
-    deleteFetchFilteredCache: false,
-    deleteTransformCache: false,
-    deleteVTCache: false,
+    deleteSourceApiCache: false,
+    deleteSourceFilteredCache: false,
+    deleteGeometryCache: false,
+    deleteTileEmitCache: false,
   },
-  routeTransformConfig: {
+  routeGeometryConfig: {
     minDistanceMetersByBand: [0, 5_000, 10_000],
     simplifyToleranceByBand: [0.00005, 0.0001, 0.0002],
   },
@@ -92,35 +92,35 @@ export const mergeRouteBuildConfig = (
 ): RouteBuildConfig => {
   if (!overrides) return base;
 
-  const fetchConfig = overrides.fetchConfig
-    ? { ...base.fetchConfig, ...overrides.fetchConfig }
-    : base.fetchConfig;
+  const sourceConfig = overrides.sourceConfig
+    ? { ...base.sourceConfig, ...overrides.sourceConfig }
+    : base.sourceConfig;
 
-  const transformOverrides = overrides.transformConfig;
-  const transformConfig = transformOverrides
+  const transformOverrides = overrides.geometryConfig;
+  const geometryConfig = transformOverrides
     ? {
-      ...base.transformConfig,
+      ...base.geometryConfig,
       ...transformOverrides,
       hybridFilterConfig: transformOverrides.hybridFilterConfig
-        ? { ...base.transformConfig.hybridFilterConfig, ...transformOverrides.hybridFilterConfig }
-        : base.transformConfig.hybridFilterConfig,
+        ? { ...base.geometryConfig.hybridFilterConfig, ...transformOverrides.hybridFilterConfig }
+        : base.geometryConfig.hybridFilterConfig,
     }
-    : base.transformConfig;
+    : base.geometryConfig;
 
-  const vtConfig = overrides.vtConfig
-    ? { ...base.vtConfig, ...overrides.vtConfig }
-    : base.vtConfig;
+  const tileEmitConfig = overrides.tileEmitConfig
+    ? { ...base.tileEmitConfig, ...overrides.tileEmitConfig }
+    : base.tileEmitConfig;
 
   const cleanupConfig = overrides.cleanupConfig
     ? { ...(base.cleanupConfig ?? {}), ...overrides.cleanupConfig }
     : base.cleanupConfig;
 
-  const routeTransformConfig = overrides.routeTransformConfig
+  const routeGeometryConfig = overrides.routeGeometryConfig
     ? {
-      ...(base.routeTransformConfig ?? {}),
-      ...overrides.routeTransformConfig,
+      ...(base.routeGeometryConfig ?? {}),
+      ...overrides.routeGeometryConfig,
     }
-    : base.routeTransformConfig;
+    : base.routeGeometryConfig;
 
   const routeGeneration = overrides.routeGeneration
     ? { ...base.routeGeneration, ...overrides.routeGeneration }
@@ -129,11 +129,11 @@ export const mergeRouteBuildConfig = (
   return {
     ...base,
     ...overrides,
-    fetchConfig,
-    transformConfig,
-    vtConfig,
+    sourceConfig,
+    geometryConfig,
+    tileEmitConfig,
     routeGeneration,
     cleanupConfig,
-    routeTransformConfig,
+    routeGeometryConfig,
   };
 };

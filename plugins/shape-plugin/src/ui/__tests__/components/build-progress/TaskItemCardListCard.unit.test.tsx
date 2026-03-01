@@ -13,9 +13,9 @@ vi.mock('../../../i18n.js', () => ({
 }));
 vi.mock('../../../components/build-progress/useShapeBuildStages/useShapeBuildStages', () => ({
   useShapeBuildStages: () => [
-    { id: 'fetch', title: 'Fetch', icon: createElement('span', null, 'fetch') },
-    { id: 'transform', title: 'Transform', icon: createElement('span', null, 'transform') },
-    { id: 'vt', title: 'Vector Tiles', icon: createElement('span', null, 'vt') },
+    { id: 'source', title: 'Source', icon: createElement('span', null, 'source') },
+    { id: 'geometry', title: 'Geometry', icon: createElement('span', null, 'geometry') },
+    { id: 'tileEmit', title: 'Vector Tiles', icon: createElement('span', null, 'tileEmit') },
   ],
 }));
 
@@ -23,18 +23,18 @@ describe('TaskItemCardListCard', () => {
   it('renders country flag icon when country code is available', () => {
     const tasks: ShapeBuildTaskSummary[] = [
       {
-        taskId: 'fetch:JP:0',
+        taskId: 'source:JP:0',
         nodeId: 'node-1' as NodeId,
-        stage: 'fetch',
-        taskType: 'fetch',
+        stage: 'source',
+        taskType: 'source',
         status: 'recycled',
         progress: 100,
       } as ShapeBuildTaskSummary,
       {
         taskId: 'task-2',
         nodeId: 'node-1' as NodeId,
-        stage: 'fetch',
-        taskType: 'fetch',
+        stage: 'source',
+        taskType: 'source',
         status: 'completed',
         progress: 100,
       } as ShapeBuildTaskSummary,
@@ -44,7 +44,7 @@ describe('TaskItemCardListCard', () => {
     const view = render(
       <Provider store={store}>
         <TaskItemCardListCard
-          stageId="fetch"
+          stageId="source"
           tasks={tasks}
           stageValue={0}
           resolveStatusLabel={() => 'Done'}
@@ -58,17 +58,17 @@ describe('TaskItemCardListCard', () => {
     expect(screen.getAllByTestId('task-icon-flag')).toHaveLength(1);
   });
 
-  it('renders vt flag overlay from parent tile intersecting countries', () => {
+  it('renders tileEmit flag overlay from parent tile intersecting countries', () => {
     const tasks: ShapeBuildTaskSummary[] = [
       {
-        taskId: 'node-1:vt:2:6:123',
+        taskId: 'node-1:tileEmit:2:6:123',
         nodeId: 'node-1' as NodeId,
-        stage: 'vt',
-        taskType: 'vt',
+        stage: 'tileEmit',
+        taskType: 'tileEmit',
         status: 'running',
         progress: 40,
         metadata: {
-          vtParentInputSummary: {
+          tileEmitParentInputSummary: {
             parentTile: { z: 6, x: 10, y: 20 },
             intersectingFeatureCount: 3,
             intersectingGeojsonByteSize: 1024,
@@ -85,7 +85,7 @@ describe('TaskItemCardListCard', () => {
     render(
       <Provider store={store}>
         <TaskItemCardListCard
-          stageId="vt"
+          stageId="tileEmit"
           tasks={tasks}
           stageValue={0}
           resolveStatusLabel={() => 'Running'}
@@ -96,17 +96,17 @@ describe('TaskItemCardListCard', () => {
       </Provider>
     );
 
-    expect(screen.getByTestId('task-icon-vt-flag-overlay')).toBeTruthy();
+    expect(screen.getByTestId('task-icon-tileEmit-flag-overlay')).toBeTruthy();
     expect(screen.queryByTestId('task-icon-flag')).toBeNull();
   });
 
-  it('shows compact transform summary from metadata', () => {
+  it('shows compact geometry summary from metadata', () => {
     const tasks: ShapeBuildTaskSummary[] = [
       {
-        taskId: 'transform-task-1',
+        taskId: 'geometry-task-1',
         nodeId: 'node-1' as NodeId,
-        stage: 'transform',
-        taskType: 'transform',
+        stage: 'geometry',
+        taskType: 'geometry',
         status: 'failed',
         progress: 100,
         metadata: {
@@ -120,7 +120,7 @@ describe('TaskItemCardListCard', () => {
     const view = render(
       <Provider store={store}>
         <TaskItemCardListCard
-          stageId="transform"
+          stageId="geometry"
           tasks={tasks}
           stageValue={0}
           resolveStatusLabel={() => 'Failed'}
@@ -136,27 +136,27 @@ describe('TaskItemCardListCard', () => {
     expect(screen.getByText('Failed: retry 2')).toBeTruthy();
   });
 
-  it('keeps fetch and vt with simple summary without N/A charts', () => {
+  it('keeps source and tileEmit with simple summary without N/A charts', () => {
     const tasks: ShapeBuildTaskSummary[] = [
       {
-        taskId: 'fetch-task-1',
+        taskId: 'source-task-1',
         nodeId: 'node-1' as NodeId,
-        stage: 'fetch',
-        taskType: 'fetch',
+        stage: 'source',
+        taskType: 'source',
         status: 'completed',
         progress: 100,
         metadata: {
-          message: 'Fetched data',
+          message: 'Loaded source data',
         },
       } as ShapeBuildTaskSummary,
       {
-        taskId: 'vt-task-1',
+        taskId: 'tileEmit-task-1',
         nodeId: 'node-1' as NodeId,
-        stage: 'vt',
-        taskType: 'vt',
+        stage: 'tileEmit',
+        taskType: 'tileEmit',
         status: 'failed',
         progress: 100,
-        errorMessage: 'vt failed: tile encode',
+        errorMessage: 'tileEmit failed: tile encode',
       } as ShapeBuildTaskSummary,
     ];
     const store = createStore();
@@ -164,7 +164,7 @@ describe('TaskItemCardListCard', () => {
     const view = render(
       <Provider store={store}>
         <TaskItemCardListCard
-          stageId="fetch"
+          stageId="source"
           tasks={tasks}
           stageValue={0}
           resolveStatusLabel={() => 'Done'}
@@ -178,17 +178,17 @@ describe('TaskItemCardListCard', () => {
     expect(screen.queryByText('N/A')).toBeNull();
     const summaries = screen.getAllByTestId('task-inline-summary')
       .map((element) => element.textContent ?? '');
-    expect(summaries.some((text) => /Completed|Fetched data/.test(text))).toBe(true);
+    expect(summaries.some((text) => /Completed|Loaded source data/.test(text))).toBe(true);
     expect(summaries.some((text) => /Failed:/.test(text))).toBe(true);
   });
 
-  it('accepts injected summary builder for fetch stage', () => {
+  it('accepts injected summary builder for source stage', () => {
     const tasks: ShapeBuildTaskSummary[] = [
       {
-        taskId: 'fetch-task-2',
+        taskId: 'source-task-2',
         nodeId: 'node-1' as NodeId,
-        stage: 'fetch',
-        taskType: 'fetch',
+        stage: 'source',
+        taskType: 'source',
         status: 'completed',
         progress: 100,
       } as ShapeBuildTaskSummary,
@@ -197,35 +197,35 @@ describe('TaskItemCardListCard', () => {
     const fetchBuilder: TaskOutcomeSummaryBuilder = () => ({
       kind: 'completed',
       visualization: 'none',
-      summaryLine: 'Injected fetch summary',
-      detailLines: ['Injected fetch detail'],
+      summaryLine: 'Injected source summary',
+      detailLines: ['Injected source detail'],
     });
 
     const view = render(
       <Provider store={store}>
         <TaskItemCardListCard
-          stageId="fetch"
+          stageId="source"
           tasks={tasks}
           stageValue={0}
           resolveStatusLabel={() => 'Done'}
           resolveStatusColor={() => 'success'}
           resolveTaskTitle={(task) => task.taskId}
           virtualize={false}
-          summaryBuilders={{ fetch: fetchBuilder }}
+          summaryBuilders={{ source: fetchBuilder }}
         />
       </Provider>
     );
 
-    expect(screen.getByText('Injected fetch summary')).toBeTruthy();
+    expect(screen.getByText('Injected source summary')).toBeTruthy();
   });
 
-  it('shows fetch detail in floating window with url and reduced counts', () => {
+  it('shows source detail in floating window with url and reduced counts', () => {
     const tasks: ShapeBuildTaskSummary[] = [
       {
-        taskId: 'fetch-task-snackbar-1',
+        taskId: 'source-task-snackbar-1',
         nodeId: 'node-1' as NodeId,
-        stage: 'fetch',
-        taskType: 'fetch',
+        stage: 'source',
+        taskType: 'source',
         status: 'completed',
         progress: 100,
         metadata: {
@@ -245,7 +245,7 @@ describe('TaskItemCardListCard', () => {
     const view = render(
       <Provider store={store}>
         <TaskItemCardListCard
-          stageId="fetch"
+          stageId="source"
           tasks={tasks}
           stageValue={0}
           resolveStatusLabel={() => 'Completed'}
@@ -276,10 +276,10 @@ describe('TaskItemCardListCard', () => {
   it('toggles selected chip and keeps preview fixed while selected', () => {
     const tasks: ShapeBuildTaskSummary[] = [
       {
-        taskId: 'fetch-task-1',
+        taskId: 'source-task-1',
         nodeId: 'node-1' as NodeId,
-        stage: 'fetch',
-        taskType: 'fetch',
+        stage: 'source',
+        taskType: 'source',
         status: 'completed',
         progress: 100,
         metadata: {
@@ -294,10 +294,10 @@ describe('TaskItemCardListCard', () => {
         },
       } as ShapeBuildTaskSummary,
       {
-        taskId: 'fetch-task-2',
+        taskId: 'source-task-2',
         nodeId: 'node-1' as NodeId,
-        stage: 'fetch',
-        taskType: 'fetch',
+        stage: 'source',
+        taskType: 'source',
         status: 'completed',
         progress: 100,
         metadata: {
@@ -317,7 +317,7 @@ describe('TaskItemCardListCard', () => {
     const view = render(
       <Provider store={store}>
         <TaskItemCardListCard
-          stageId="fetch"
+          stageId="source"
           tasks={tasks}
           stageValue={0}
           resolveStatusLabel={() => 'Completed'}
@@ -347,10 +347,10 @@ describe('TaskItemCardListCard', () => {
   it('opens floating window when first chip selection happens while hidden', () => {
     const tasks: ShapeBuildTaskSummary[] = [
       {
-        taskId: 'fetch-task-auto-open-1',
+        taskId: 'source-task-auto-open-1',
         nodeId: 'node-1' as NodeId,
-        stage: 'fetch',
-        taskType: 'fetch',
+        stage: 'source',
+        taskType: 'source',
         status: 'completed',
         progress: 100,
         metadata: {
@@ -371,7 +371,7 @@ describe('TaskItemCardListCard', () => {
     const view = render(
       <Provider store={store}>
         <TaskItemCardListCard
-          stageId="fetch"
+          stageId="source"
           tasks={tasks}
           stageValue={0}
           resolveStatusLabel={() => 'Completed'}
@@ -393,10 +393,10 @@ describe('TaskItemCardListCard', () => {
   it('clears selected chip when floating window is closed from close button', () => {
     const tasks: ShapeBuildTaskSummary[] = [
       {
-        taskId: 'fetch-task-close-sync-1',
+        taskId: 'source-task-close-sync-1',
         nodeId: 'node-1' as NodeId,
-        stage: 'fetch',
-        taskType: 'fetch',
+        stage: 'source',
+        taskType: 'source',
         status: 'completed',
         progress: 100,
         metadata: {
@@ -411,10 +411,10 @@ describe('TaskItemCardListCard', () => {
         },
       } as ShapeBuildTaskSummary,
       {
-        taskId: 'fetch-task-close-sync-2',
+        taskId: 'source-task-close-sync-2',
         nodeId: 'node-1' as NodeId,
-        stage: 'fetch',
-        taskType: 'fetch',
+        stage: 'source',
+        taskType: 'source',
         status: 'completed',
         progress: 100,
         metadata: {
@@ -437,7 +437,7 @@ describe('TaskItemCardListCard', () => {
         <>
           <button type="button" onClick={() => setOpen(true)}>Reopen preview</button>
           <TaskItemCardListCard
-            stageId="fetch"
+            stageId="source"
             tasks={tasks}
             stageValue={0}
             resolveStatusLabel={() => 'Completed'}

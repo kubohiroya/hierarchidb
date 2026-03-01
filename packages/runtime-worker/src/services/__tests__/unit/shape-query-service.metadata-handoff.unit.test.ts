@@ -43,9 +43,9 @@ describe('ShapeQueryService listBuildTasks metadata handoff', () => {
   it('keeps effectiveTolerance and retryAttempt from metadata in returned task summary', async () => {
     hoisted.buildTasksToArray.mockResolvedValue([
       {
-        taskId: 'node-1:transform:CR:0',
+        taskId: 'node-1:geometry:CR:0',
         nodeId: 'node-1',
-        stage: 'transform',
+        stage: 'geometry',
         status: 'completed',
         index: 1,
         progress: 100,
@@ -61,7 +61,8 @@ describe('ShapeQueryService listBuildTasks metadata handoff', () => {
     const tasks = await service.listBuildTasks('node-1' as NodeId);
 
     expect(tasks).toHaveLength(1);
-    expect(tasks[0]?.taskId).toBe('node-1:transform:CR:0');
+    expect(tasks[0]?.taskId).toBe('node-1:geometry:CR:0');
+    expect(tasks[0]?.stageId).toBe('geometry-stage');
     expect((tasks[0]?.metadata as { effectiveTolerance?: number })?.effectiveTolerance).toBe(0.9);
     expect(tasks[0]?.retryAttempt).toBe(2);
     expect(hoisted.buildTasksWhere).toHaveBeenCalledWith('nodeId');
@@ -79,9 +80,9 @@ describe('ShapeQueryService listBuildTasks metadata handoff', () => {
         progress: 100,
       },
       {
-        taskId: 'node-1:fetch:0',
+        taskId: 'node-1:source:0',
         nodeId: 'node-1',
-        stage: 'fetch',
+        stage: 'source',
         status: 'completed',
         index: 1,
         progress: 100,
@@ -96,7 +97,8 @@ describe('ShapeQueryService listBuildTasks metadata handoff', () => {
     const tasks = await service.listBuildTasks('node-1' as NodeId);
 
     expect(tasks).toHaveLength(1);
-    expect(tasks[0]?.stage).toBe('fetch');
-    expect(tasks[0]?.taskId).toBe('node-1:fetch:0');
+    expect(tasks[0]?.stage).toBe('source');
+    expect(tasks[0]?.stageId).toBe('source-stage');
+    expect(tasks[0]?.taskId).toBe('node-1:source:0');
   });
 });

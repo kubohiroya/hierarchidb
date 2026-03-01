@@ -143,7 +143,7 @@ export function TreeConsoleToolbarContent({
     ),
     zoomBandsSummary: tCommon(
       'treeConsole.toolbar.settings.zoomBands.summary',
-      'Used as the default Transform zoom bands when creating new Shape/Route nodes.',
+      'Used as the default Geometry zoom bands when creating new Shape/Route nodes.',
     ),
     zoomBandsRangeCount: tCommon('treeConsole.toolbar.settings.zoomBands.rangeCount', 'Number of ranges'),
     zoomBandsRangeCountHelp: tCommon(

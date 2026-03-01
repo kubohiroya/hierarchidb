@@ -6,7 +6,7 @@ PLANS.md はリポジトリ直下の `PLANS.md` を参照し、この ExecPlan �
 
 ## Purpose / Big Picture
 
-shape のビルドを fetch → transform → vt の3段階に再編し、transform-by-zoom を撤去する。ユーザーは Step4 でズーム帯の境界（`transformConfig.zoomBandBoundaries`）と vt 段の topojson+簡略化の有無（`vtConfig.enableTopojsonSimplify`）を設定でき、Step5 は3ステージの進捗で動き、vt 段が tile の PBF を生成する。処理はズーム帯の代表ズーム（帯内の最小ズーム）を基準に計算量を抑え、vt 段は必要に応じて topojson+簡略化を省略して品質と性能のトレードオフを制御できる。
+shape のビルドを fetch → transform → vt の3段階に再編し、transform-by-zoom を撤去する。ユーザーは Step4 でズーム帯の境界（`geometryConfig.zoomBandBoundaries`）と vt 段の topojson+簡略化の有無（`tileEmitConfig.enableTopojsonSimplify`）を設定でき、Step5 は3ステージの進捗で動き、vt 段が tile の PBF を生成する。処理はズーム帯の代表ズーム（帯内の最小ズーム）を基準に計算量を抑え、vt 段は必要に応じて topojson+簡略化を省略して品質と性能のトレードオフを制御できる。
 
 ## Progress
 
@@ -33,10 +33,10 @@ shape のビルドを fetch → transform → vt の3段階に再編し、transf
 - Decision: vt 段の topojson+簡略化は設定で省略可能とする。
   Rationale: vt 段の軽い簡略化ではなく、事前の transform で品質を担保する設計と両立させるため。
   Date/Author: 2026-01-16, Codex
-- Decision: ズーム帯の境界は `transformConfig.zoomBandBoundaries` とし、境界となるズーム率の配列で表す。
+- Decision: ズーム帯の境界は `geometryConfig.zoomBandBoundaries` とし、境界となるズーム率の配列で表す。
   Rationale: UI の可変範囲入力と一致し、帯の定義を明確にできるため。
   Date/Author: 2026-01-16, Codex
-- Decision: vt 段の topojson+簡略化の設定名は `vtConfig.enableTopojsonSimplify` とする。
+- Decision: vt 段の topojson+簡略化の設定名は `tileEmitConfig.enableTopojsonSimplify` とする。
   Rationale: topojson 化と簡略化を一体の任意処理として示し、挙動が明確になるため。
   Date/Author: 2026-01-16, Codex
 - Decision: taskQueue のステージ名は `fetch` / `transform` / `vt` に統一する。
@@ -55,7 +55,7 @@ shape のビルドを fetch → transform → vt の3段階に再編し、transf
 
 ## Plan of Work
 
-最初に、3段階に再編するための設定と UI を整理する。`TransformByZoomConfig` と transform-by-zoom ステージの参照を撤去し、`TransformConfig` にズーム帯の境界を表す必須プロパティ `zoomBandBoundaries` を追加する。vt 段の topojson+簡略化の ON/OFF を表す `vtConfig.enableTopojsonSimplify` を追加し、Step4 の UI で設定できるようにする。この作業は既存の型必須化タスクと衝突しやすいので、関連タスクの完了を前提に着手し、必須化ポリシーに従ってすべての新規プロパティも必須で定義する。
+最初に、3段階に再編するための設定と UI を整理する。`TransformByZoomConfig` と transform-by-zoom ステージの参照を撤去し、`TransformConfig` にズーム帯の境界を表す必須プロパティ `zoomBandBoundaries` を追加する。vt 段の topojson+簡略化の ON/OFF を表す `tileEmitConfig.enableTopojsonSimplify` を追加し、Step4 の UI で設定できるようにする。この作業は既存の型必須化タスクと衝突しやすいので、関連タスクの完了を前提に着手し、必須化ポリシーに従ってすべての新規プロパティも必須で定義する。
 
 次に、shape の pipeline と vt-orchestrator を3段階に組み替える。`shapePipeline.ts` から transform-by-zoom タスク作成・実行・削除処理を削除し、transform の出力を vt 段で直接参照するようにする。vt-orchestrator 側では `createTransformByZoomHandler.ts` と関連する types を削除または使用箇所から外し、transform の結果に tile index を併設する現在の仕様を保ちつつ、vt 段が参照するストアの形を明示する。taskQueue のステージ名は `fetch` / `transform` / `vt` に統一し、UI に表示されるステージ名と整合させる。
 
@@ -67,7 +67,7 @@ shape のビルドを fetch → transform → vt の3段階に再編し、transf
 
 ## Milestones
 
-Milestone 1 は設定と UI の更新に集中する。`packages//src/config.ts` で `transformConfig.zoomBandBoundaries` と `vtConfig.enableTopojsonSimplify` を必須プロパティとして追加し、`TransformByZoomConfig` を削除する。Step4 の UI（`plugins/shape-plugin/src/ui/components/step4`）で新プロパティを編集できるようにし、既存の transform-by-zoom 設定入力を撤去する。完了時点で型チェックが通り、Step4 の画面にズーム帯の境界設定と topojson+簡略化の設定が表示されることを確認する。検証は `pnpm --filter @hierarchidb/gis-sdk build` と `pnpm typecheck` を実行する。\n\nMilestone 2 は pipeline と taskQueue の3段階化を行う。`plugins/shape-plugin/src/services/vt/shapePipeline.ts` から transform-by-zoom のタスク生成・実行・削除処理を削除し、`fetch`/`transform`/`vt` の3ステージだけを組み立てる。`packages/vt-orchestrator` の taskQueue 型とステージ定義を3段階に合わせて更新する。完了時点で Step5 の進捗が3列になり、旧 transform-by-zoom が表示されないことを確認する。検証は UI 手動操作で行い、ログに taskQueue の stage 名が `fetch` / `transform` / `vt` のみであることを確認する。\n\nMilestone 3 は transform と vt の責務整理に集中する。transform 段は代表ズームでの量子化・重複頂点除去・無効ポリゴン除去を担い、vt 段はタイル収集と `vtConfig.enableTopojsonSimplify` による topojson+簡略化を任意で実施するようにする。デフォルト値は invalid polygon が多発しない値に見直し、見直し理由を ExecPlan の Artifacts に残す。完了時点で transform 段の失敗時に即 failed となり、vt 段は設定に応じて topojson+簡略化を行う。検証は Step5 の実行ログと、既存のエラーデータ（minRingVertices / minRingArea 等）に基づく確認を行う。\n\nMilestone 4 は不要コード削除と検証を行う。transform-by-zoom に関連する UI・設定・ストア・テスト・型の残骸を削除し、Step5 で3段階表示のみが残ることを確認する。Dexie の transform-by-zoom テーブルは互換性維持を行わないため削除対象とし、再実行時のデータ削除手順を明記する。完了時点で `pnpm typecheck` が通り、手動で Step2〜Step6 を実行して vt タイル生成とプレビューが確認できることを受け入れ基準とする。
+Milestone 1 は設定と UI の更新に集中する。`packages//src/config.ts` で `geometryConfig.zoomBandBoundaries` と `tileEmitConfig.enableTopojsonSimplify` を必須プロパティとして追加し、`TransformByZoomConfig` を削除する。Step4 の UI（`plugins/shape-plugin/src/ui/components/step4`）で新プロパティを編集できるようにし、既存の transform-by-zoom 設定入力を撤去する。完了時点で型チェックが通り、Step4 の画面にズーム帯の境界設定と topojson+簡略化の設定が表示されることを確認する。検証は `pnpm --filter @hierarchidb/gis-sdk build` と `pnpm typecheck` を実行する。\n\nMilestone 2 は pipeline と taskQueue の3段階化を行う。`plugins/shape-plugin/src/services/vt/shapePipeline.ts` から transform-by-zoom のタスク生成・実行・削除処理を削除し、`fetch`/`transform`/`vt` の3ステージだけを組み立てる。`packages/vt-orchestrator` の taskQueue 型とステージ定義を3段階に合わせて更新する。完了時点で Step5 の進捗が3列になり、旧 transform-by-zoom が表示されないことを確認する。検証は UI 手動操作で行い、ログに taskQueue の stage 名が `fetch` / `transform` / `vt` のみであることを確認する。\n\nMilestone 3 は transform と vt の責務整理に集中する。transform 段は代表ズームでの量子化・重複頂点除去・無効ポリゴン除去を担い、vt 段はタイル収集と `tileEmitConfig.enableTopojsonSimplify` による topojson+簡略化を任意で実施するようにする。デフォルト値は invalid polygon が多発しない値に見直し、見直し理由を ExecPlan の Artifacts に残す。完了時点で transform 段の失敗時に即 failed となり、vt 段は設定に応じて topojson+簡略化を行う。検証は Step5 の実行ログと、既存のエラーデータ（minRingVertices / minRingArea 等）に基づく確認を行う。\n\nMilestone 4 は不要コード削除と検証を行う。transform-by-zoom に関連する UI・設定・ストア・テスト・型の残骸を削除し、Step5 で3段階表示のみが残ることを確認する。Dexie の transform-by-zoom テーブルは互換性維持を行わないため削除対象とし、再実行時のデータ削除手順を明記する。完了時点で `pnpm typecheck` が通り、手動で Step2〜Step6 を実行して vt タイル生成とプレビューが確認できることを受け入れ基準とする。
 
 ## Concrete Steps
 
@@ -96,7 +96,7 @@ pipeline の再編後は Step5 の表示と taskQueue のステージ名が3段�
 
 ## Interfaces and Dependencies
 
-この再編で触れる主要なインターフェースは次の通りである。`packages//src/config.ts` は build 設定の単一ソースであり、transform-by-zoom を撤去したうえで、`transformConfig.zoomBandBoundaries` と `vtConfig.enableTopojsonSimplify` を必須プロパティとして追加する。`plugins/shape-plugin/src/ui/components/step4` はこれらの設定を編集する UI を提供し、`plugins/shape-plugin/src/services/vt/shapePipeline.ts` は taskQueue を `fetch`/`transform`/`vt` の3段階で組み立てる。`packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts` は代表ズームの量子化・簡略化・無効ポリゴン除去の責務を持ち、`packages/vt-orchestrator/src/vt/vtStage.ts` はタイル収集と optional な topojson+簡略化を行う。transform-by-zoom 関連の handler と types は撤去または使用箇所から切り離し、taskQueue の types は3段階に合わせて更新する。
+この再編で触れる主要なインターフェースは次の通りである。`packages//src/config.ts` は build 設定の単一ソースであり、transform-by-zoom を撤去したうえで、`geometryConfig.zoomBandBoundaries` と `tileEmitConfig.enableTopojsonSimplify` を必須プロパティとして追加する。`plugins/shape-plugin/src/ui/components/step4` はこれらの設定を編集する UI を提供し、`plugins/shape-plugin/src/services/vt/shapePipeline.ts` は taskQueue を `fetch`/`transform`/`vt` の3段階で組み立てる。`packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts` は代表ズームの量子化・簡略化・無効ポリゴン除去の責務を持ち、`packages/vt-orchestrator/src/vt/vtStage.ts` はタイル収集と optional な topojson+簡略化を行う。transform-by-zoom 関連の handler と types は撤去または使用箇所から切り離し、taskQueue の types は3段階に合わせて更新する。
 
 外部依存は既存の geojson-vt / vt-pbf を継続利用し、turf simplify などの簡略化処理は transform 段に集約する。vt 段で topojson+簡略化を行う場合は既存の処理を再利用し、設定によりスキップできるようにする。
 

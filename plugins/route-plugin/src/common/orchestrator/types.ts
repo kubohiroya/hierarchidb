@@ -27,8 +27,8 @@ export interface RouteBuildSpec {
   defaults?: { engine?: EngineMethod; mode?: TransportMode };
 }
 
-export interface FetchTask {
-  kind: 'fetch';
+export interface SourceTask {
+  kind: 'source';
   url: string;
   opts?: RequestInit;
 }
@@ -40,7 +40,7 @@ export interface ParseTask {
 }
 
 export interface TaskPlan {
-  fetch: FetchTask[];
+  source: SourceTask[];
   parse: ParseTask[];
 }
 

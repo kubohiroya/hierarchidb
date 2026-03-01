@@ -811,7 +811,7 @@
   - 運用ログ start/update/done/blocked を追記する
 - 運用ログ:
   - start: 2026-02-10 08:29 JST Shape Step4 の Retry Delay/Retry Attempts デフォルト値および Retry Attempts max 値を2倍化する修正に着手。
-  - update: 2026-02-10 08:32 JST HTTP 502 が散見される運用状況に対し、Step4 UI の再試行設定（デフォルト値と上限）を調整。`DEFAULT_BUILD_CONFIG.fetchConfig` の `retryDelay/retryAttempts/retryLimit` を 1000/3/3 から 2000/6/6 へ変更し、`DownloadRetryControls` の `RETRY_ATTEMPTS_MAX` を 5 から 10 へ変更。
+  - update: 2026-02-10 08:32 JST HTTP 502 が散見される運用状況に対し、Step4 UI の再試行設定（デフォルト値と上限）を調整。`DEFAULT_BUILD_CONFIG.sourceConfig` の `retryDelay/retryAttempts/retryLimit` を 1000/3/3 から 2000/6/6 へ変更し、`DownloadRetryControls` の `RETRY_ATTEMPTS_MAX` を 5 から 10 へ変更。
   - done: 2026-02-10 08:32 JST `pnpm -w turbo run build --filter @hierarchidb/shape-api --filter @hierarchidb/ui-accordion-config` exit 0。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-api --filter @hierarchidb/ui-accordion-config` exit 0。
   - update: 2026-02-10 08:34 JST 追加要望により Step4 UI の `Retry Attempts` max 値を 10 から 8 へ調整（デフォルト値 6 は維持）。
   - update: 2026-02-10 08:36 JST 追加要望により Step4 UI の `Retry Delay (ms)` デフォルト値を 2000 から 5000 へ調整。
@@ -1099,7 +1099,7 @@
   - update: 2026-02-10 00:20 JST sessions に selectedArrayByCountries を保存する型拡張を追加。`pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-api --filter @hierarchidb/shape-store --filter @hierarchidb/shape-plugin` が gis-sdk の dist 未更新で失敗したため、`pnpm -w turbo run build --filter @hierarchidb/gis-sdk` を実行。
   - update: 2026-02-10 00:45 JST start/resume 統一のため UI から resume 分岐を撤去し、前回タスク残存時の Resume 表示条件を追加。selection diff の削除処理を worker 側に実装。`pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-api --filter @hierarchidb/shape-store` が components の dist 未更新で失敗したため、`pnpm -w turbo run build --filter @hierarchidb/components` を実行。
   - done: 2026-02-10 00:47 JST `pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-api --filter @hierarchidb/shape-store` exit 0。
-  - update: 2026-02-09 19:22 JST fetch ステージは buildConfig.fetchConfig から retryConfig を構築し、rawDataPipeline/getOrFetchWithRetry で外側の再試行を実施。内部の FetchNetworkPort は smartFetch のデフォルトリトライ（retries=3, baseDelayMs=300, maxDelayMs=5000）を持つため二層リトライ構成。`HTTP 502` は両レイヤの再試行を尽くした最終失敗として投げられる経路を確認。再ビルド時は worker の resetFailedTasks が failed を queued に戻して再実行し、完了済みタスクは保持されるが「タスク再作成＋結果マージ」を明示する追加整理が必要。
+  - update: 2026-02-09 19:22 JST fetch ステージは buildConfig.sourceConfig から retryConfig を構築し、rawDataPipeline/getOrFetchWithRetry で外側の再試行を実施。内部の FetchNetworkPort は smartFetch のデフォルトリトライ（retries=3, baseDelayMs=300, maxDelayMs=5000）を持つため二層リトライ構成。`HTTP 502` は両レイヤの再試行を尽くした最終失敗として投げられる経路を確認。再ビルド時は worker の resetFailedTasks が failed を queued に戻して再実行し、完了済みタスクは保持されるが「タスク再作成＋結果マージ」を明示する追加整理が必要。
   - update: 2026-02-09 19:28 JST ブラウザ再読込時の warning は UI 側 `useShapeBuildTasks` が subscribeBatchTasks の snapshot に含まれる `status=failed` を検知して必ず `console.warn('[ShapeBuildStep] task failed', ...)` を出しているため発生。タスク実行のトリガではなく、停止/永続化された failed タスクの表示ログである点を確認。
   - update: 2026-02-09 19:36 JST 停止セッションでは failed タスク warning を出さないよう、`useShapeBuildTasks` に `reportFailures` オプションを追加し、`useShapeBuildStep` で `processing` 状態のみ warning を有効化するよう変更。
   - done: 2026-02-09 19:40 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
@@ -2686,16 +2686,16 @@
 2559) fix/shape-transform/default-tolerance-0.5 (P1) — 完了 (2026-02-07)
 - ブランチ名: fix/shape-transform/default-tolerance-0.5
 - 依存: なし
-- 受け入れ基準: shape の既定 transformConfig.tolerance が 0.5 になる／他の既定値は変更しない／TASKS.md に運用ログを記載する
+- 受け入れ基準: shape の既定 geometryConfig.tolerance が 0.5 になる／他の既定値は変更しない／TASKS.md に運用ログを記載する
 - 影響範囲: `plugins/shape-plugin/src/common/types/constants.ts`
 - ロールバック手順: tolerance の既定値を 0.2 に戻す
 - チェックリスト:
-  - transformConfig.tolerance の既定値を更新する
+  - geometryConfig.tolerance の既定値を更新する
   - 既定値変更の影響を確認する
   - 運用ログ start/update/done/blocked を追記する
 - 運用ログ:
   - start: 2026-02-07 13:20 JST shape transform の既定 tolerance を 0.5 に変更する作業に着手。
-  - update: 2026-02-07 13:22 JST transformConfig.tolerance の既定値を 0.5 に更新。
+  - update: 2026-02-07 13:22 JST geometryConfig.tolerance の既定値を 0.5 に更新。
   - done: 2026-02-07 13:23 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
 
 2558) fix/shape-preview/map-event-timestamps (P1) — 完了 (2026-02-07)
@@ -3134,7 +3134,7 @@
   - update: 2026-02-07 10:28 JST Step5 ビルド中のタスク一覧更新で再現（データ量不問）。useBatchProgress.ts:49 から setState が連鎖し Maximum update depth exceeded が発生するログを確認。
   - update: 2026-02-07 10:46 JST useBatchProgress の進捗更新を単調化（percentage 低下のクランプ）し、phase=completed でもタスク完了前は確定更新を抑止。
   - update: 2026-02-07 10:47 JST pnpm --filter @hierarchidb/batch typecheck exit 0 を確認。
-  - update: 2026-02-07 11:18 JST transform ステージの簡略化実装（vt-orchestrator/createTransformByBandHandler）と既定パラメータ（DEFAULT_BUILD_CONFIG.transformConfig）を確認。
+  - update: 2026-02-07 11:18 JST transform ステージの簡略化実装（vt-orchestrator/createTransformByBandHandler）と既定パラメータ（DEFAULT_BUILD_CONFIG.geometryConfig）を確認。
   - update: 2026-02-07 11:25 JST resolveTransformTolerance が baseTolerance を無視して固定値を返す問題を修正するための対応に着手。
   - update: 2026-02-07 11:30 JST resolveTransformTolerance が baseTolerance をそのまま返すよう修正し、pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
   - update: 2026-02-07 11:36 JST Step4 で transform/vt のタスク+キャッシュ削除後に Step5 再開でタスクを再生成する要件に対応するため調査を開始。
@@ -3613,7 +3613,7 @@
 - 依存: なし
 - 受け入れ基準: Fetch の同時ワーカー数デフォルトが 2→3 に変更される／既存保存値は上書きされない／UI 表示と保存値が一致する／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0 もしくは blocked を記録／TASKS.md に運用ログを記載する
 - 影響範囲: `plugins/shape-plugin/src/common/types/constants.ts`（必要に応じて追加）
-- ロールバック手順: fetchConfig.maxConcurrent のデフォルトを 2 に戻す
+- ロールバック手順: sourceConfig.maxConcurrent のデフォルトを 2 に戻す
 - チェックリスト:
   - Fetch Workers のデフォルト値を 3 に更新する
   - 既存保存値が優先されることを確認する
@@ -3621,7 +3621,7 @@
   - 運用ログ start/update/done を追記する
 - 運用ログ:
   - start: 2026-02-05 22:22 JST Fetch Workers のデフォルト値変更に着手。
-  - update: 2026-02-05 22:24 JST fetchConfig.maxConcurrent のデフォルトを 3 に変更。
+  - update: 2026-02-05 22:24 JST sourceConfig.maxConcurrent のデフォルトを 3 に変更。
   - update: 2026-02-05 22:24 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
 
 2524) fix/shape-transform/default-workers-4 (P1) — 進行中 (2026-02-05)
@@ -3629,7 +3629,7 @@
 - 依存: なし
 - 受け入れ基準: Transform Workers (Simplification) のデフォルト値が 2→4 に変更される／既存保存値は上書きされない／UI 表示と保存値が一致する／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
 - 影響範囲: `plugins/shape-plugin/src/common/types/constants.ts`（必要に応じて追加）
-- ロールバック手順: transformConfig.maxConcurrent のデフォルトを 2 に戻す
+- ロールバック手順: geometryConfig.maxConcurrent のデフォルトを 2 に戻す
 - チェックリスト:
   - Transform Workers のデフォルト値を 4 に更新する
   - 既存保存値が優先されることを確認する
@@ -3637,7 +3637,7 @@
   - 運用ログ start/update/done を追記する
 - 運用ログ:
   - start: 2026-02-05 22:18 JST Transform Workers のデフォルト値変更に着手。
-  - update: 2026-02-05 22:19 JST transformConfig.maxConcurrent のデフォルトを 4 に変更。
+  - update: 2026-02-05 22:19 JST geometryConfig.maxConcurrent のデフォルトを 4 に変更。
   - blocked: 2026-02-05 22:19 JST pnpm --filter @hierarchidb/shape-plugin typecheck が既存の未使用変数エラー（stopSessionTracking）で失敗。
 
 2523) fix/location-preview/terrain-toggle-blink (P1) — 進行中 (2026-02-05)
@@ -4182,12 +4182,12 @@
 - 影響範囲: `plugins/shape-plugin/src/common/types/constants.ts`（必要に応じて追加）
 - ロールバック手順: tolerance を 0.1 に戻す
 - チェックリスト:
-  - DEFAULT_BUILD_CONFIG の transformConfig.tolerance を更新する
+  - DEFAULT_BUILD_CONFIG の geometryConfig.tolerance を更新する
   - shape-plugin の typecheck を実行する
   - 運用ログ start/update/done を追記する
 - 運用ログ:
   - start: 2026-02-04 17:22 JST Transform の既定 tolerance を 0.2 に変更する作業に着手。
-  - update: 2026-02-04 17:23 JST DEFAULT_BUILD_CONFIG の transformConfig.tolerance を 0.2 に更新。
+  - update: 2026-02-04 17:23 JST DEFAULT_BUILD_CONFIG の geometryConfig.tolerance を 0.2 に更新。
   - update: 2026-02-04 17:23 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
 
 2511) investigation/shape-build-resume-after-cache-purge (P2) — 進行中 (2026-02-04)
@@ -4580,12 +4580,12 @@
 - 影響範囲: `plugins/shape-plugin/src/services/utils/utils.ts`
 - ロールバック手順: 該当差分を revert して元の参照に戻す
 - チェックリスト:
-  - transformConfig/areaBasedTolerance の既定値を適用する
+  - geometryConfig/areaBasedTolerance の既定値を適用する
   - shape-plugin の typecheck を実行する
   - 運用ログ start/update/done を追記する
 - 運用ログ:
   - start: 2026-02-04 18:50 JST validateBatchConfig の undefined 参照クラッシュ対応に着手。
-  - update: 2026-02-04 18:55 JST validateBatchConfig で transformConfig/areaBasedTolerance の既定値を適用。
+  - update: 2026-02-04 18:55 JST validateBatchConfig で geometryConfig/areaBasedTolerance の既定値を適用。
   - blocked: 2026-02-04 18:56 JST pnpm --filter @hierarchidb/shape-plugin typecheck が ShapeBuildAPIClient 等の既存型エラーで失敗（進行には対応方針の指示が必要）。
 
 2516) fix/runtime-worker/ts6307-shape-test-entry (P1) — 進行中 (2026-02-04)
@@ -4815,7 +4815,7 @@
 2497) feat/shape/vt-low-zoom-serial (P2) — 進行中 (2026-02-03)
 - ブランチ名: feat/shape/vt-low-zoom-serial
 - 依存: なし
-- 受け入れ基準: 低ズーム帯（z0-2）の vt タスクは maxConcurrent=1 で処理される／高ズーム帯は既定の vtConfig.maxConcurrent を維持する／必要範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
+- 受け入れ基準: 低ズーム帯（z0-2）の vt タスクは maxConcurrent=1 で処理される／高ズーム帯は既定の tileEmitConfig.maxConcurrent を維持する／必要範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
 - 影響範囲: `plugins/shape-plugin/src/services/vt/shapePipelineVtStage.ts`, `packages/vt-orchestrator/src/types/types.ts`, `packages/vt-orchestrator/src/compareTaskOrder.ts`
 - ロールバック手順: 該当差分を revert して vt の並列制御を元に戻す
 - チェックリスト:
@@ -9846,7 +9846,7 @@
 - 運用ログ：
   - start: 2026-01-22 20:55 JST vtの動的並列度制御の対応に着手。
   - update: 2026-01-22 21:20 JST min=1/max=Step4設定/閾値0.85-0.60/1ずつ増減の仕様で実装準備。
-  - update: 2026-01-22 21:30 JST vtの動的並列度制御を追加し、vtConfigへdynamicConcurrencyを追加。
+  - update: 2026-01-22 21:30 JST vtの動的並列度制御を追加し、tileEmitConfigへdynamicConcurrencyを追加。
   - update: 2026-01-22 21:32 JST pnpm --filter @hierarchidb/gis-sdk build/typecheck が exit 0（tsdownのdefine警告あり）。
 
 2293) fix/map/feature-highlight-source-layer (P1) — 進行中 (2026-01-20)
@@ -10232,7 +10232,7 @@
   - update: 2026-01-20 21:45 JST selfIntersectionTuningConfig.disableAtZoomOrBelow を 11 に調整し、検証エラーを回避。
   - update: 2026-01-20 22:05 JST WorkerProvider テストで transform の tolerance と maxVerticesPerFeature を調整し処理時間を短縮。
   - update: 2026-01-20 22:30 JST transform の自己交差修正に metrics ログを追加し、vt ステージ開始/終了時の heap スナップショットを出力するよう調整。
-  - update: 2026-01-20 22:55 JST vtConfig.maxConcurrent のデフォルトを 1 に下げてブラウザ VT 生成の負荷を抑制。
+  - update: 2026-01-20 22:55 JST tileEmitConfig.maxConcurrent のデフォルトを 1 に下げてブラウザ VT 生成の負荷を抑制。
   - start: 2026-01-20 23:40 JST vtステージのクラッシュ区間を特定するための詳細計測追加に着手。
   - update: 2026-01-20 23:50 JST vtステージの collect/index/tiling/vtpbf 各区間に heap/duration を出す計測ログを追加。
   - update: 2026-01-20 23:55 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
@@ -10573,7 +10573,7 @@
   - update: 2026-01-19 04:40 JST Step6 フィーチャー一覧の Country/Admin/DataSource 正規化と FeatureID 一意化の対応に着手。
   - update: 2026-01-19 05:02 JST Step6 フィーチャー一覧の Country/Admin/DataSource 正規化と Transform エラー行の FeatureID 一意化を実装。
   - done: 2026-01-19 05:03 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
-  - update: 2026-01-19 05:16 JST VT 並列度のデフォルトを 1 に統一し、テンプレートの vtConfig.maxConcurrent を更新。
+  - update: 2026-01-19 05:16 JST VT 並列度のデフォルトを 1 に統一し、テンプレートの tileEmitConfig.maxConcurrent を更新。
 
 2247) feat/shape/transform-preprocess-diagnostics (P1) — 完了 (2026-01-18)
 - ブランチ名: feat/shape/transform-preprocess-diagnostics
@@ -11676,7 +11676,7 @@
   - update: 2026-01-16 18:45 JST ツールバーメニューの Zoom bands 文言を Transform 設定に合わせた説明へ更新。検証: 未実施。
   - update: 2026-01-16 19:10 JST Step4 のズーム帯範囲 UI（境界スライダー/一覧表示）を追加する対応に着手。
   - blocked: 2026-01-16 19:25 JST pnpm typecheck が zoomBands.ts/TransformConfigSection 由来の型エラーで失敗。
-  - update: 2026-01-16 19:35 JST ズーム帯範囲 UI と transformConfig を更新し、pnpm --filter @hierarchidb/gis-sdk build（exit 0、tsdown define 警告あり）/ pnpm typecheck（exit 0）を確認。
+  - update: 2026-01-16 19:35 JST ズーム帯範囲 UI と geometryConfig を更新し、pnpm --filter @hierarchidb/gis-sdk build（exit 0、tsdown define 警告あり）/ pnpm typecheck（exit 0）を確認。
 
 2212) fix/shape/geometry-simplify-invalid-polygon (P1) — 進行中 (2026-01-17)
 - ブランチ名: fix/shape/geometry-simplify-invalid-polygon
@@ -16733,7 +16733,7 @@
 - 依存: なし
 - 受け入れ基準: Transform の retry で tolerance が上限 clamp されず再簡略化が有効になる／shape の default build config が更新される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
 - 影響範囲: `plugins/shape-plugin/src/common/types/constants.ts`
-- ロールバック手順: transformConfig.areaBasedTolerance.largeAreaTolerance を元の値へ戻す
+- ロールバック手順: geometryConfig.areaBasedTolerance.largeAreaTolerance を元の値へ戻す
 - チェックリスト:
   - largeAreaTolerance を引き上げる
   - shape-plugin typecheck を実行する
@@ -16771,7 +16771,7 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-02-05 23:12 JST Invalid build session config の修正に着手。
-  - update: 2026-02-05 23:14 JST build session config 判定を現行(fetchConfig/transformConfig/vectorTiles)と旧形式に対応。
+  - update: 2026-02-05 23:14 JST build session config 判定を現行(sourceConfig/geometryConfig/vectorTiles)と旧形式に対応。
   - update: 2026-02-05 23:14 JST build session config を dataSource/vectorTiles 形式で保存するよう修正。
   - update: 2026-02-05 23:14 JST getBuildSession は ShapeBuildConfig を返すように戻し型エラーを解消。
   - update: 2026-02-06 00:01 JST build session config の旧形式 fallback を撤去し現行形式のみ許可。
@@ -18943,7 +18943,7 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - update: 2026-02-09 02:29 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` exit 0（core-types/plugin-base などで tsdown define 警告あり）。
   - update: 2026-02-09 02:40 JST TaskDebug が出ないため vt-orchestrator 読み込み確認ログの追加に着手。
   - blocked: 2026-02-09 02:42 JST `pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator` が TransformByBandStageContext に nodeId/geometryEngine が存在しないため TS2339 で exit 2。
-  - update: 2026-02-09 02:43 JST handler created ログの参照を transformConfig/bands に修正し、`pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator` exit 0（core-types build で tsdown define 警告あり）。
+  - update: 2026-02-09 02:43 JST handler created ログの参照を geometryConfig/bands に修正し、`pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator` exit 0（core-types build で tsdown define 警告あり）。
   - update: 2026-02-09 02:49 JST runStageTasks の updateTask 後ログを追加する修正に着手。
   - update: 2026-02-09 02:50 JST `pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator` exit 0（core-types build で tsdown define 警告あり）。
   - update: 2026-02-09 02:56 JST updateTask の transaction 内ログ/待機ログを追加する修正に着手。

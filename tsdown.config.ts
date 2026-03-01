@@ -196,23 +196,23 @@ if (normalizedOutExtension !== undefined) {
   finalConfig.outExtensions = normalizedOutExtension;
 }
 
-const transformConfig: Record<string, unknown> =
+const geometryConfig: Record<string, unknown> =
   typeof finalConfig.transform === 'object' && finalConfig.transform !== null
     ? { ...(finalConfig.transform as Record<string, unknown>) }
     : {};
 
 if ('define' in finalConfig) {
-  transformConfig.define = finalConfig.define;
+  geometryConfig.define = finalConfig.define;
   delete finalConfig.define;
 }
 
 if ('inject' in finalConfig) {
-  transformConfig.inject = finalConfig.inject;
+  geometryConfig.inject = finalConfig.inject;
   delete finalConfig.inject;
 }
 
-if (Object.keys(transformConfig).length > 0) {
-  finalConfig.transform = transformConfig;
+if (Object.keys(geometryConfig).length > 0) {
+  finalConfig.transform = geometryConfig;
 }
 
 const proxiedConfig = new Proxy(finalConfig, {

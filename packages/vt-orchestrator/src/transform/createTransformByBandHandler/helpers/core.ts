@@ -8,7 +8,7 @@ import {
   geometryIsValid,
   geometrySimplify,
   type GeometryEngine,
-  type TransformSimplifyAlgorithm,
+  type GeometrySimplifyAlgorithm,
 } from '@hierarchidb/gis-sdk';
 import { quantizeTopoJsonToGrid } from '~/transform/topojsonGrid.js';
 import { getTopojsonRuntime } from '~/transform/topojsonRuntimeAdapter.js';
@@ -155,7 +155,7 @@ export const decodeTopoJsonFetchCache = async (params: {
   zTarget: number;
   toleranceK: number;
   quantize?: number;
-  simplifyAlgorithm?: TransformSimplifyAlgorithm;
+  simplifyAlgorithm?: GeometrySimplifyAlgorithm;
   skipSimplification?: boolean;
 }): Promise<FeatureCollection | null> => {
   const decompressed = params.compression === 'gzip'
@@ -199,7 +199,7 @@ export const DEFAULT_RETRY_VERTEX_LIMIT = 6553;
 export const LARGE_COUNTRY_RETRY_VERTEX_LIMIT = 32768;
 export const LARGE_COUNTRY_CODES = new Set(['RU', 'CA', 'AU']);
 export const TRANSFORM_CACHE_WRITE_SLOW_LOG_MS = 20_000;
-export const DEFAULT_SIMPLIFY_ALGORITHM: TransformSimplifyAlgorithm = 'topojson';
+export const DEFAULT_SIMPLIFY_ALGORITHM: GeometrySimplifyAlgorithm = 'topojson';
 export const TASK_PHASE_PROGRESS_UPDATE_INTERVAL_MS = 2_000;
 
 export const resolveRetryVertexLimit = (countryCode?: string): number => {
@@ -209,7 +209,7 @@ export const resolveRetryVertexLimit = (countryCode?: string): number => {
     : DEFAULT_RETRY_VERTEX_LIMIT;
 };
 
-export const resolveSimplifyAlgorithm = (algorithm?: TransformSimplifyAlgorithm): TransformSimplifyAlgorithm => (
+export const resolveSimplifyAlgorithm = (algorithm?: GeometrySimplifyAlgorithm): GeometrySimplifyAlgorithm => (
   algorithm === 'geojson' ? 'geojson' : DEFAULT_SIMPLIFY_ALGORITHM
 );
 
@@ -240,7 +240,7 @@ export const emitTransformTrace = (
   payload: Record<string, unknown>
 ): void => {
   if (!shouldLogTransformTrace(configuredLevel, requestedLevel)) return;
-  console.info('[ShapeTransform][ExecutionTrace]', message, payload);
+  console.info('[ShapeGeometry][ExecutionTrace]', message, payload);
 };
 
 export const metersPerPixel = (z: number): number => {

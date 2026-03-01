@@ -1,6 +1,6 @@
 import type { BandConfig, StageHandlerResult } from '~/types/types';
 import { parentToChildRange } from '~/tiles/tileId';
-import { VT_PARENT_INPUT_SUMMARY_METADATA_KEY } from './vtStageGeometryTypes.js';
+import { TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY } from './vtStageGeometryTypes.js';
 import { tileToBBox } from './vtStageGeometryTile.js';
 import {
   buildAdminFeatureSummary,
@@ -39,7 +39,7 @@ export const buildVtParentMetadata = (
     parentTile: parent,
   });
   const parentInputMetadata = {
-    [VT_PARENT_INPUT_SUMMARY_METADATA_KEY]: parentInputSummary,
+    [TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY]: parentInputSummary,
   };
   const totalTiles = Array.from(tilesByZoom.values()).reduce((sum, counts) => sum + counts.total, 0);
   return {

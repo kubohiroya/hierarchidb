@@ -1,6 +1,7 @@
 import type { BuildProgressPayload, BuildSessionStatus, BuildUnifiedProgressInfo, TaskDisplayPayload } from '@hierarchidb/build-api';
 import { toBuildSessionStatusFromUnifiedProgress } from '@hierarchidb/ui-build-sessions';
 import { computePercentage } from '@hierarchidb/ui-build-sessions';
+import { normalizeUiStageId } from '~/ui/components/build-progress/stageIdAliases';
 
 export interface BuildProgress {
   total: number;
@@ -17,7 +18,7 @@ export interface BuildProgress {
   progressTaskProgress?: number;
   progressTaskTitle?: string;
   progressTaskDisplay?: TaskDisplayPayload;
-  stageTotals?: Partial<Record<'fetch' | 'transform' | 'vt', {
+  stageTotals?: Partial<Record<'source' | 'geometry' | 'tileEmit', {
     total: number;
     completed: number;
     failed: number;
@@ -52,7 +53,7 @@ type ProgressTaskMeta = {
   display?: unknown;
 };
 
-type StageTotalsMeta = Partial<Record<'fetch' | 'transform' | 'vt', {
+type StageTotalsMeta = Partial<Record<'source' | 'geometry' | 'tileEmit', {
   total: number;
   completed: number;
   failed: number;
@@ -102,8 +103,10 @@ const readStageTotalsMeta = (info: ExtendedProgress): StageTotalsMeta | undefine
   const stageTotals = asRecord(meta.stageTotals);
   if (!stageTotals) return undefined;
   const result: StageTotalsMeta = {};
-  (['fetch', 'transform', 'vt'] as const).forEach((stageId) => {
-    const entry = asRecord(stageTotals[stageId]);
+  Object.entries(stageTotals).forEach(([rawStageId, rawEntry]) => {
+    const stageId = normalizeUiStageId(rawStageId);
+    if (!stageId) return;
+    const entry = asRecord(rawEntry);
     if (!entry) return;
     const total = readNumber(entry.total);
     const completed = readNumber(entry.completed);

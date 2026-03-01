@@ -1,8 +1,13 @@
 import type { BuildStage } from '@hierarchidb/components/build-stage';
 import { isTaskSkipped } from '~/common/utils/taskMessages';
 import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
-import { sortTransformTasks, sortVectorTileTasks } from '~/ui/components/build-progress/taskItemCardList/useTaskItemCardList';
+import { sortGeometryTasks, sortVectorTileTasks } from '~/ui/components/build-progress/taskItemCardList/useTaskItemCardList';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
+import {
+  isGeometryLikeStageId,
+  isTileEmitLikeStageId,
+  normalizeUiStageId,
+} from '~/ui/components/build-progress/stageIdAliases';
 
 export type ViewportRange = {
   stageId: string;
@@ -75,11 +80,11 @@ export const resolveViewportIndices = (
   let viewportStartIndex: number | null = null;
   let viewportEndIndex: number | null = null;
   if (viewportRange?.stageId && viewportRange.startTaskId && viewportRange.endTaskId) {
-    const stageTasks = tasksByStage[viewportRange.stageId] ?? [];
-    const ordered = viewportRange.stageId === 'vt'
+    const stageTasks = resolveTasksByStageId(tasksByStage, viewportRange.stageId);
+    const ordered = isTileEmitLikeStageId(viewportRange.stageId)
       ? sortVectorTileTasks(stageTasks)
-      : viewportRange.stageId === 'transform'
-        ? sortTransformTasks(stageTasks)
+      : isGeometryLikeStageId(viewportRange.stageId)
+        ? sortGeometryTasks(stageTasks)
         : stageTasks;
     const start = ordered.findIndex((task) => task.taskId === viewportRange.startTaskId);
     const end = ordered.findIndex((task) => task.taskId === viewportRange.endTaskId);
@@ -92,16 +97,30 @@ export const resolveViewportIndices = (
 };
 
 const resolveSourceStageId = (stage: BuildStage, stages: BuildStage[], tasksByStage: Record<string, TaskItemWithMetadata[]>) => {
-  const isTransformStage = stage.id === 'transform';
-  const isSingleTransformFlow = stages.length === 1;
-  const hasSingleTransformSource = (tasksByStage.fetch?.length ?? 0) > 0;
-  const hasNoTransformTasks = (tasksByStage.transform?.length ?? 0) === 0;
+  const isGeometryStage = isGeometryLikeStageId(stage.id);
+  const isSingleGeometryFlow = stages.length === 1;
+  const hasSingleGeometrySource = resolveTasksByStageId(tasksByStage, 'source').length > 0;
+  const hasNoGeometryTasks = resolveTasksByStageId(tasksByStage, 'geometry').length === 0;
 
-  if (isTransformStage && isSingleTransformFlow && hasNoTransformTasks && hasSingleTransformSource) {
-    return 'fetch';
+  if (isGeometryStage && isSingleGeometryFlow && hasNoGeometryTasks && hasSingleGeometrySource) {
+    return 'source';
   }
 
   return stage.id;
+};
+
+const resolveTasksByStageId = (
+  tasksByStage: Record<string, TaskItemWithMetadata[]>,
+  stageId: string,
+): TaskItemWithMetadata[] => {
+  const direct = tasksByStage[stageId];
+  if (direct) return direct;
+  const canonical = normalizeUiStageId(stageId);
+  if (!canonical) return [];
+  const canonicalTasks = tasksByStage[canonical];
+  if (canonicalTasks) return canonicalTasks;
+  const aliasEntry = Object.entries(tasksByStage).find(([key]) => normalizeUiStageId(key) === canonical);
+  return aliasEntry?.[1] ?? [];
 };
 
 export const buildTaskProgressSegments = (params: TaskProgressComputeInput) => {
@@ -126,13 +145,13 @@ export const buildTaskProgressSegments = (params: TaskProgressComputeInput) => {
 
   stages.forEach((stage) => {
     const sourceStageId = resolveSourceStageId(stage, stages, tasksByStage);
-    const stageTasks = tasksByStage[sourceStageId] ?? [];
+    const stageTasks = resolveTasksByStageId(tasksByStage, sourceStageId);
     nextStageOffsets.set(stage.id, totalCount);
     const plannedStageTotal = Math.max(0, stageTotals?.[stage.id]?.total ?? 0);
-    const orderedTasks = sourceStageId === 'vt'
+    const orderedTasks = isTileEmitLikeStageId(sourceStageId)
       ? sortVectorTileTasks(stageTasks)
-      : sourceStageId === 'transform'
-        ? sortTransformTasks(stageTasks)
+      : isGeometryLikeStageId(sourceStageId)
+        ? sortGeometryTasks(stageTasks)
         : stageTasks;
     const expectedStageTotal = Math.max(orderedTasks.length, plannedStageTotal);
     nextStageCounts.set(stage.id, expectedStageTotal);

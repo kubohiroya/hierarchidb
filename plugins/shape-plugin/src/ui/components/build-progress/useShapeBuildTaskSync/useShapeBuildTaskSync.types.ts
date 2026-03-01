@@ -4,6 +4,7 @@ import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 
 export type RawTaskSummary = BuildTaskSummary & {
   stage: TaskStage;
+  stageId?: string;
   title?: string;
   metadata?: Record<string, unknown>;
   error?: string;
@@ -48,7 +49,7 @@ export type RunningResidueLogPayload = {
 export type TaskSyncDebugChannel = 'taskUpdate100' | 'runningResidue';
 export type TaskSyncDebugConfig = Partial<Record<TaskSyncDebugChannel | 'all', boolean>>;
 
-export type VtParentInputSummary = {
+export type TileEmitParentInputSummary = {
   parentTile: {
     z: number;
     x: number;

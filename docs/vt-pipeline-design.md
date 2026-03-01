@@ -462,8 +462,8 @@ vt-orchestrator は fetch の実行は行わない。
 
 ### transform
 
-- **判定キー**: `domainType + sourceKey + bandIndex + transformConfigHash`
-  - transformConfigHash に含める項目:
+- **判定キー**: `domainType + sourceKey + bandIndex + geometryConfigHash`
+  - geometryConfigHash に含める項目:
     - `bandIndex`, `bandRange`（zMin/zMax）
     - `gridSnap`（extent=4096、round）
     - `simplificationTolerance`（Transform の係数）
@@ -482,10 +482,10 @@ vt-orchestrator は fetch の実行は行わない。
 
 ### vt
 
-- **判定キー**: `domainType + bandIndex + zBase + tileId + bufferSetHash + vtConfigHash`
+- **判定キー**: `domainType + bandIndex + zBase + tileId + bufferSetHash + tileEmitConfigHash`
   - bufferSetHash に含める項目:
     - `bufferIds[]` をソートした配列
-  - vtConfigHash に含める項目:
+  - tileEmitConfigHash に含める項目:
     - `extent`（4096）
     - `buffer`（tile buffer）
     - `tileSize`（256/512）
@@ -543,8 +543,8 @@ vt-orchestrator は fetch の実行は行わない。
 - `vt`: `${nodeId}:vt:${bandIndex}:${zBase}:${tileId}:${bufferSetHash}`
 
 **拡張例（hash を含める場合）**
-- `transform`: `${nodeId}:transform:${bandIndex}:${domainType}:${sourceKey}:${transformConfigHash}`
-- `vt`: `${nodeId}:vt:${bandIndex}:${zBase}:${tileId}:${bufferSetHash}:${vtConfigHash}`
+- `transform`: `${nodeId}:transform:${bandIndex}:${domainType}:${sourceKey}:${geometryConfigHash}`
+- `vt`: `${nodeId}:vt:${bandIndex}:${zBase}:${tileId}:${bufferSetHash}:${tileEmitConfigHash}`
 
 **補足**
 - `bufferSetHash` は `bufferIds[]` の内容を安定ハッシュ化した値
@@ -1061,7 +1061,7 @@ vt-orchestrator は fetch の実行は行わない。
 - Download → Fetch（ステージ名の統一）
 - Extract1/Extract2 → Transform（2段抽出を統合）
 - vectorTiles → vt（ステージ名の統一）
-- extract1Config / extract2Config → transformConfig（実装名は残っても UI 表記は統一）
+- extract1Config / extract2Config → geometryConfig（実装名は残っても UI 表記は統一）
 
 **(D) 新規に追加すべき項目**
 - maxBuffersPerTask（vt タスク分割の上限）

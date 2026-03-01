@@ -76,7 +76,7 @@ export {
   type EphemeralFetchCacheMetaRecord,
   type EphemeralTransformCacheRecord,
   type EphemeralTransformCacheMetaRecord,
-  type EphemeralTransformErrorRecord,
+  type EphemeralGeometryErrorRecord,
   type EphemeralTileIdToBufferRelation,
   type StopReason,
 } from './ephemeral/EphemeralBuildState';

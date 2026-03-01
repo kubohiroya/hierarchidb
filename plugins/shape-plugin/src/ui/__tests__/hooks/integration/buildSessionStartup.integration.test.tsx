@@ -65,8 +65,8 @@ describe('buildSessionStartup integration baseline', () => {
           type: 'update',
           nodeId: 'node-integration',
           task: {
-            taskId: 'node-integration:fetch:JP:0',
-            stage: 'fetch',
+            taskId: 'node-integration:source:JP:0',
+            stage: 'source',
             status: 'queued',
             progress: 0,
             message: 'Queued',

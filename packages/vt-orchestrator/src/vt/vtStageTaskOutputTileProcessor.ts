@@ -19,7 +19,7 @@ type VtTileProcessorInput = {
   layers: TileLayerMap;
   featureStats: InputFeatureStats[];
   bufferSizes: Map<string, number>;
-  vtConfig: VTStageContext['vtConfig'];
+  tileEmitConfig: VTStageContext['tileEmitConfig'];
   vtpbf: typeof import('@maplibre/vt-pbf');
   tileWriter: VTStageContext['tileWriter'];
   debugCollect: boolean;
@@ -43,7 +43,7 @@ export const processTileForVtOutput = async (
     layers,
     featureStats,
     bufferSizes,
-    vtConfig,
+    tileEmitConfig,
     vtpbf,
     tileWriter,
     debugCollect,
@@ -56,7 +56,7 @@ export const processTileForVtOutput = async (
   const inputStats = calculateInputTileStats(
     featureStats,
     bufferSizes,
-    expandTileBBox(tileBBox, vtConfig.bufferSize, vtConfig.extent),
+    expandTileBBox(tileBBox, tileEmitConfig.bufferSize, tileEmitConfig.extent),
   );
   const outputStats = calculateOutputTileStats(layers);
 
@@ -71,7 +71,7 @@ export const processTileForVtOutput = async (
     inputStats,
     outputStats,
     taskContext,
-    vtConfig,
+    tileEmitConfig,
     vtpbf,
   });
   recordEncodeStats(totals, 1, bytes.byteLength, encodeDurationMs);
