@@ -47,14 +47,14 @@ export const collectFeaturesFromRecord = async (
   if (!record || record.timestamp <= 0) return;
   bufferSizes.set(record.id, record.data.byteLength);
   if (debugCollect) {
-    console.info('[vt][debug] record loop entry', JSON.stringify({
+    console.info('[tileEmit][debug] record loop entry', JSON.stringify({
       nodeId,
       bufferId: record.id,
       byteLength: record.data.byteLength,
     }));
   }
   if (debugCollect) {
-    console.info('[vt][debug] decode start', JSON.stringify({
+    console.info('[tileEmit][debug] decode start', JSON.stringify({
       nodeId,
       bufferId: record.id,
       byteLength: record.data.byteLength,
@@ -62,7 +62,7 @@ export const collectFeaturesFromRecord = async (
   }
   const collection = await decodeTransformByBandCache(record.data);
   if (debugCollect) {
-    console.info('[vt][debug] decode done', JSON.stringify({
+    console.info('[tileEmit][debug] decode done', JSON.stringify({
       nodeId,
       bufferId: record.id,
       hasCollection: Boolean(collection),
@@ -71,7 +71,7 @@ export const collectFeaturesFromRecord = async (
   }
   if (!collection) {
     const debug = describeBuffer(record.data);
-    console.warn('[shape-vt] failed to decode transform cache for vt stage', JSON.stringify({
+    console.warn('[shape-tileEmit] failed to decode geometry cache for tileEmit stage', JSON.stringify({
       nodeId,
       bufferId: record.id,
       timestamp: record.timestamp,

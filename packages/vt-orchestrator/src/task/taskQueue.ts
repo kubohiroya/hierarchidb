@@ -59,7 +59,7 @@ function emitTaskEvent(nodeId: NodeId, task: TaskQueueRecord): void {
     try {
       cb({ nodeId, task, type: 'update' });
     } catch (error) {
-      console.error('[vt-task-queue] listener failed', error);
+      console.error('[tileEmit-task-queue] listener failed', error);
     }
   });
 }
@@ -71,7 +71,7 @@ function emitTaskDeleteEvent(nodeId: NodeId, taskId: string): void {
     try {
       cb({ nodeId, taskId, type: 'delete' });
     } catch (error) {
-      console.error('[vt-task-queue] listener failed', error);
+      console.error('[tileEmit-task-queue] listener failed', error);
     }
   });
 }

@@ -41,14 +41,14 @@ export const prepareVtTaskExecution = (params: VtTaskPreparationInput): VtTaskPr
   if (!layerSetName) {
     return {
       kind: 'skipped',
-      result: { status: 'failed', errorMessage: 'vt stage requires layerSetName' },
+      result: { status: 'failed', errorMessage: 'tileEmit stage requires layerSetName' },
     };
   }
   const input = task.inputData;
   if (!input) {
     return {
       kind: 'skipped',
-      result: { status: 'failed', errorMessage: 'vt task input is missing' },
+      result: { status: 'failed', errorMessage: 'tileEmit task input is missing' },
     };
   }
 

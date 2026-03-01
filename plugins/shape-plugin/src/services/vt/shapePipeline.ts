@@ -28,7 +28,7 @@ import {
   flattenShapeStageProfile,
   validateShapeStageProfile,
   type ShapeStageProfileEntry,
-} from './stageProfile';
+} from '../stageProfile';
 
 export type ShapePipelineParams = {
   nodeId: NodeId;

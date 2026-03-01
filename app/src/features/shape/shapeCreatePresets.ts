@@ -337,8 +337,8 @@ const SHAPE_CREATE_PRESET_DEFINITIONS: readonly ShapeCreatePresetDefinition[] = 
       },
     },
     processingConfigPatch: {
-      transform: { maxConcurrent: 3 },
-      vt: { maxConcurrent: 2 },
+      geometry: { maxConcurrent: 3 },
+      tileEmit: { maxConcurrent: 2 },
     },
     buildSelection: buildJapanLevel01Selection,
   },
@@ -368,8 +368,8 @@ const SHAPE_CREATE_PRESET_DEFINITIONS: readonly ShapeCreatePresetDefinition[] = 
       },
     },
     processingConfigPatch: {
-      transform: { maxConcurrent: 4 },
-      vt: { maxConcurrent: 2 },
+      geometry: { maxConcurrent: 4 },
+      tileEmit: { maxConcurrent: 2 },
     },
     buildSelection: buildWorldLevel0Selection,
   },
@@ -399,8 +399,8 @@ const SHAPE_CREATE_PRESET_DEFINITIONS: readonly ShapeCreatePresetDefinition[] = 
       },
     },
     processingConfigPatch: {
-      transform: { maxConcurrent: 3 },
-      vt: { maxConcurrent: 1 },
+      geometry: { maxConcurrent: 3 },
+      tileEmit: { maxConcurrent: 1 },
     },
     buildSelection: buildWorldLevel1CnInLevel12Selection,
   },

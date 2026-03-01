@@ -7,12 +7,12 @@ export const logCollectBuffersStart = (input: {
   useBulkGet: boolean;
 }): void => {
   const { nodeId, bufferCount, testTimeoutMs, useBulkGet } = input;
-  console.info('[vt][debug] collect buffers', JSON.stringify({
+  console.info('[tileEmit][debug] collect buffers', JSON.stringify({
     nodeId,
     bufferCount,
     testTimeoutMs: typeof testTimeoutMs === 'number' ? testTimeoutMs : null,
   }));
-  console.info('[vt][debug] collect fetch start', JSON.stringify({
+  console.info('[tileEmit][debug] collect fetch start', JSON.stringify({
     nodeId,
     useBulkGet,
     bufferCount,
@@ -20,7 +20,7 @@ export const logCollectBuffersStart = (input: {
 };
 
 export const logCollectCountStart = (nodeId: string): number => {
-  console.info('[vt][debug] collect count start', JSON.stringify({ nodeId }));
+  console.info('[tileEmit][debug] collect count start', JSON.stringify({ nodeId }));
   return Date.now();
 };
 
@@ -29,7 +29,7 @@ export const logCollectCountDone = (
   count: number,
   startedAt: number,
 ): void => {
-  console.info('[vt][debug] collect count done', JSON.stringify({
+  console.info('[tileEmit][debug] collect count done', JSON.stringify({
     nodeId,
     count,
     durationMs: Date.now() - startedAt,
@@ -53,7 +53,7 @@ export const logCollectTransactionResolved = (
   nodeId: string,
   count: number,
 ): void => {
-  console.info('[vt][debug] collect transaction resolved', JSON.stringify({
+  console.info('[tileEmit][debug] collect transaction resolved', JSON.stringify({
     nodeId,
     recordCount: count,
   }));
@@ -63,7 +63,7 @@ export const logCollectTransactionRejected = (
   nodeId: string,
   error: unknown,
 ): void => {
-  console.info('[vt][debug] collect transaction rejected', JSON.stringify({
+  console.info('[tileEmit][debug] collect transaction rejected', JSON.stringify({
     nodeId,
     error: error instanceof Error ? error.message : String(error),
   }));
@@ -75,7 +75,7 @@ export const logCollectSummary = (
   featureStatsCount: number,
   bufferSizeCount: number,
 ): void => {
-  console.info('[vt][debug] collect features summary', JSON.stringify({
+  console.info('[tileEmit][debug] collect features summary', JSON.stringify({
     nodeId,
     allFeatures: allFeaturesCount,
     featureStats: featureStatsCount,
@@ -90,7 +90,7 @@ export const logCollectRecordSnapshot = (
   try {
     const first = records[0];
     const recordSample = records.slice(0, Math.min(records.length, 3)).map((record) => record.id);
-    console.log('[vt][debug] collect transaction return', JSON.stringify({
+    console.log('[tileEmit][debug] collect transaction return', JSON.stringify({
       nodeId,
       recordCount: records.length,
       recordSample,
@@ -98,7 +98,7 @@ export const logCollectRecordSnapshot = (
       byteLength: first?.data?.byteLength ?? null,
     }));
     if (!first) {
-      console.info('[vt][debug] record shape probe', JSON.stringify({
+      console.info('[tileEmit][debug] record shape probe', JSON.stringify({
         nodeId,
         hasRecord: false,
       }));
@@ -122,7 +122,7 @@ export const logCollectRecordSnapshot = (
       : null;
     const isArrayBuffer = typeof ArrayBuffer !== 'undefined' && data instanceof ArrayBuffer;
 
-    console.info('[vt][debug] record shape probe', JSON.stringify({
+    console.info('[tileEmit][debug] record shape probe', JSON.stringify({
       nodeId,
       hasRecord: true,
       recordKeys: Object.keys(first),
@@ -138,7 +138,7 @@ export const logCollectRecordSnapshot = (
       sourceKey: first.sourceKey ?? null,
     }));
   } catch (error) {
-    console.info('[vt][debug] record loop start failed', JSON.stringify({
+    console.info('[tileEmit][debug] record loop start failed', JSON.stringify({
       nodeId,
       error: error instanceof Error ? error.message : String(error),
     }));

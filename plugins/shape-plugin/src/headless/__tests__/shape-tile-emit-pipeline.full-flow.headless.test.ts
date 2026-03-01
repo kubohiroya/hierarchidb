@@ -95,7 +95,7 @@ describeNetwork('Shape full-flow pipeline', () => {
     await clearNodeArtifacts();
   });
 
-  it('runs fetch/transform/vt with real data and persists outputs', async () => {
+  it('runs source/geometry/tileEmit with real data and persists outputs', async () => {
     const downloadTaskPayloads = [await selectGeoBoundariesPayload()];
     await runShapePipeline({
       nodeId,
@@ -105,33 +105,33 @@ describeNetwork('Shape full-flow pipeline', () => {
     });
 
     const taskQueue = new VtTaskQueueDb();
-    const [failedFetch, failedTransform, failedVt] = await Promise.all([
+    const [failedSource, failedGeometry, failedTileEmit] = await Promise.all([
       listTasksByStageAndStatus(taskQueue, nodeId, 'source', 'failed'),
       listTasksByStageAndStatus(taskQueue, nodeId, 'geometry', 'failed'),
       listTasksByStageAndStatus(taskQueue, nodeId, 'tileEmit', 'failed'),
     ]);
     taskQueue.close();
 
-    if (failedFetch.length || failedTransform.length || failedVt.length) {
-      const format = (tasks: typeof failedFetch) => (
+    if (failedSource.length || failedGeometry.length || failedTileEmit.length) {
+      const format = (tasks: typeof failedSource) => (
         tasks.map((task) => `${task.taskId}:${task.errorMessage ?? task.message ?? 'unknown'}`).join('; ')
       );
       throw new Error(
-        `Pipeline failures: fetch=${failedFetch.length} (${format(failedFetch)}), `
-        + `transform=${failedTransform.length} (${format(failedTransform)}), `
-        + `vt=${failedVt.length} (${format(failedVt)})`,
+        `Pipeline failures: source=${failedSource.length} (${format(failedSource)}), `
+        + `geometry=${failedGeometry.length} (${format(failedGeometry)}), `
+        + `tileEmit=${failedTileEmit.length} (${format(failedTileEmit)})`,
       );
     }
 
-    const fetchCount = await ephemeralDB.sourceCache.where('nodeId').equals(nodeId).count();
-    const transformCount = await ephemeralDB.geometryCache.where('nodeId').equals(nodeId).count();
+    const sourceCount = await ephemeralDB.sourceCache.where('nodeId').equals(nodeId).count();
+    const geometryCount = await ephemeralDB.geometryCache.where('nodeId').equals(nodeId).count();
     const tileCount = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).count();
     const featureMetaCount = await shapeDB.featureMetadata.where('nodeId').equals(nodeId).count();
     const dataSourceMetaCount = await shapeDB.dataSourceMetadata.where('nodeId').equals(nodeId).count();
     const tileSample = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).first();
 
-    expect(fetchCount).toBeGreaterThan(0);
-    expect(transformCount).toBeGreaterThan(0);
+    expect(sourceCount).toBeGreaterThan(0);
+    expect(geometryCount).toBeGreaterThan(0);
     expect(tileCount).toBeGreaterThan(0);
     expect(featureMetaCount).toBeGreaterThan(0);
     expect(dataSourceMetaCount).toBeGreaterThan(0);

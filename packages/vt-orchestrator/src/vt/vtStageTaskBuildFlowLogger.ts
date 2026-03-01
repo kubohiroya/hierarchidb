@@ -18,7 +18,7 @@ export const logFeatureCollectionReady = ({
   collection,
   bufferSizes,
 }: FeatureCollectionBuildContext): void => {
-  console.info('[vt] feature collection ready', JSON.stringify({
+  console.info('[tileEmit] feature collection ready', JSON.stringify({
     ...taskContext,
     features: collection.features.length,
     bufferBytes: Array.from(bufferSizes.values()).reduce((sum, size) => sum + size, 0),

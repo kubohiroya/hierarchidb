@@ -49,7 +49,7 @@ export const executeFeatureCollectLoop = async (
       debugCollect,
     }, record);
     if (debugCollect) {
-      console.info('[vt][debug] feature loop done', JSON.stringify({
+      console.info('[tileEmit][debug] feature loop done', JSON.stringify({
         nodeId,
         bufferId: record.id,
         featureCount: allFeatures.length,

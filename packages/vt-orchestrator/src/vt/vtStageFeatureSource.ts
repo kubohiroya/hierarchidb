@@ -21,7 +21,7 @@ export const normalizeFeatureCollection = async (decoded: unknown): Promise<Feat
       const next = typeof testIterTimeoutMs === 'number' && testIterTimeoutMs > 0
         ? await new Promise<IteratorResult<FeatureCollection['features'][number]>>((resolve, reject) => {
           const timeoutId = setTimeout(() => {
-            reject(new Error(`[vt] async iterator timeout after ${testIterTimeoutMs}ms`));
+            reject(new Error(`[tileEmit] async iterator timeout after ${testIterTimeoutMs}ms`));
           }, testIterTimeoutMs);
           iterator.next()
             .then((value) => resolve(value))

@@ -54,7 +54,7 @@ export const encodeTileForVt = ({
     }) as Uint8Array;
     return { bytes, durationMs: Date.now() - encodeStartedAt };
   } catch (error) {
-    console.error('[vt] failed to encode tile', JSON.stringify({
+    console.error('[tileEmit] failed to encode tile', JSON.stringify({
       ...taskContext,
       stage: 'encode',
       z,
@@ -87,7 +87,7 @@ export const storeTileForVt = async ({
 }): Promise<TimedTileOperationResult> => {
   const storeStartedAt = Date.now();
   if (debugCollect) {
-    console.info('[vt][debug] tileWriter start', JSON.stringify({
+    console.info('[tileEmit][debug] tileWriter start', JSON.stringify({
       ...taskContext,
       tileId,
       z,
@@ -107,7 +107,7 @@ export const storeTileForVt = async ({
       layers,
     });
     if (debugCollect) {
-      console.info('[vt][debug] tileWriter done', JSON.stringify({
+      console.info('[tileEmit][debug] tileWriter done', JSON.stringify({
         ...taskContext,
         tileId,
         durationMs: Date.now() - storeStartedAt,
@@ -115,7 +115,7 @@ export const storeTileForVt = async ({
     }
     return { byteLength: bytes.byteLength, durationMs: Date.now() - storeStartedAt };
   } catch (error) {
-    console.error('[vt] tileWriter failed', JSON.stringify({
+    console.error('[tileEmit] tileWriter failed', JSON.stringify({
       ...taskContext,
       stage: 'tileWriter',
       z,

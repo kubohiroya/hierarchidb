@@ -16,7 +16,7 @@ export const logSingleLayerPerFeatureNoResult = ({
   layerName,
   featureCount,
 }: NoFeatureLayerInput): void => {
-  console.warn('[vt] per-feature index produced no layers', JSON.stringify({
+  console.warn('[tileEmit] per-feature index produced no layers', JSON.stringify({
     ...taskContext,
     parentTile: parent,
     zRange: [band.zMin, band.zMax],

@@ -98,7 +98,7 @@ export const handleTileWithLayers = async ({
     outputStats,
     layerFeatureCounts,
   });
-  console.debug('[vt] tile persisted', JSON.stringify({
+  console.debug('[tileEmit] tile persisted', JSON.stringify({
     ...taskContext,
     z,
     x,

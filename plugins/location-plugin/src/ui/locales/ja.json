@@ -239,7 +239,7 @@
       "index": "プレビュー用のベクトルタイルを生成します。"
     },
     "ideGsm": {
-      "fetch": "IDE-GSM: ダウンロード中",
+      "source": "IDE-GSM: ダウンロード中",
       "parse": "IDE-GSM: 行を解析中",
       "filter": "IDE-GSM: フィルタ中",
       "save": "IDE-GSM: 保存中",

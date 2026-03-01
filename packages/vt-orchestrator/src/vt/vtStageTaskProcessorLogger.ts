@@ -20,12 +20,12 @@ export const logVtTaskStart = (input: VtTaskProcessorLogContext): void => {
   } = input;
 
   if (groupByContinent) {
-    console.info('[vt] continent grouping enabled', JSON.stringify({
+    console.info('[tileEmit] continent grouping enabled', JSON.stringify({
       ...taskContext,
       zRange: [band.zMin, band.zMax],
     }));
   }
-  console.info('[vt] task start', JSON.stringify({
+  console.info('[tileEmit] task start', JSON.stringify({
     ...taskContext,
     zRange: [band.zMin, band.zMax],
     layerSetName,
@@ -40,7 +40,7 @@ export const logVtTaskFocusConfig = (
   if (!debugFocusConfig.enabled) {
     return;
   }
-  console.info('[vt][focus] enabled', JSON.stringify({
+  console.info('[tileEmit][focus] enabled', JSON.stringify({
     ...taskContext,
     logAll: debugFocusConfig.logAll,
     tileFilters: Array.from(debugFocusConfig.tileKeys).slice(0, 20),
@@ -53,7 +53,7 @@ export const logVtCollectStart = (
   bufferCount: number,
   heap?: ReturnType<typeof getHeapSnapshotType> | string | null,
 ): void => {
-  console.info('[vt] collect start', JSON.stringify({
+  console.info('[tileEmit] collect start', JSON.stringify({
     ...taskContext,
     bufferCount,
     ...(heap === undefined ? {} : { heap }),
@@ -64,7 +64,7 @@ export const logVtCollectDuration = (
   taskContext: TaskContextForVt,
   durationMs: number,
 ): void => {
-  console.info('[vt] collect duration', JSON.stringify({
+  console.info('[tileEmit] collect duration', JSON.stringify({
     ...taskContext,
     duration: durationMs,
   }));
@@ -74,7 +74,7 @@ export const logVtTaskFailure = (
   taskContext: TaskContextForVt,
   error: unknown,
 ): void => {
-  console.error('[vt] task failed', JSON.stringify({
+  console.error('[tileEmit] task failed', JSON.stringify({
     ...taskContext,
     stage: 'task',
     error: error instanceof Error ? error.message : String(error),

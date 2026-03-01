@@ -14,7 +14,7 @@ describe('runStageTasks auth required handling', () => {
   });
 
   it('requeues auth-required task without marking it failed', async () => {
-    const taskId = 'fetch-auth-1';
+    const taskId = 'source-auth-1';
     await putTasks(db, [{
       taskId,
       nodeId: NODE_ID,

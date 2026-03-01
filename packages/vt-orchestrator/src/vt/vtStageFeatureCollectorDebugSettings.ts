@@ -23,5 +23,5 @@ export const getCollectDebugSettings = (): VtCollectDebugSettings => ({
 
 export const collectDebugTimeoutError = (nodeId: string, timeoutMs?: number): Error => {
   const finalTimeoutMs = timeoutMs ?? getGlobalNumber('__HDB_VT_COLLECT_TIMEOUT_MS') ?? 15000;
-  return new Error(`[vt][debug] collect transaction timeout after ${finalTimeoutMs}ms (nodeId=${String(nodeId)})`);
+  return new Error(`[tileEmit][debug] collect transaction timeout after ${finalTimeoutMs}ms (nodeId=${String(nodeId)})`);
 };

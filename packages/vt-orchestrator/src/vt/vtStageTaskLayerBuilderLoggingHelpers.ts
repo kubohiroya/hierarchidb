@@ -17,7 +17,7 @@ export const logLayerIndexBuildStart = ({
   if (!debugCollect) {
     return;
   }
-  console.info('[vt][debug] buildLayerIndexes start', JSON.stringify({
+  console.info('[tileEmit][debug] buildLayerIndexes start', JSON.stringify({
     ...taskContext,
     ...extra,
     layerCount,
@@ -36,7 +36,7 @@ export const logLayerIndexBuildDone = ({
   if (!debugCollect) {
     return;
   }
-  console.info('[vt][debug] buildLayerIndexes done', JSON.stringify({
+  console.info('[tileEmit][debug] buildLayerIndexes done', JSON.stringify({
     ...taskContext,
     ...extra,
     indexCount,

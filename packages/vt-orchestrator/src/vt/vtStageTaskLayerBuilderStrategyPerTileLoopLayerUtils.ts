@@ -25,7 +25,7 @@ export const buildFeaturesWithBBoxByLayer = (
   for (const [layerName, features] of layerMap.entries()) {
     const featuresWithBBox = buildFeaturesWithBBox(features);
     if (features.length > 0 && featuresWithBBox.length === 0) {
-      console.warn('[vt] layer has features but no bbox', JSON.stringify({
+      console.warn('[tileEmit] layer has features but no bbox', JSON.stringify({
         ...taskContext,
         layerName,
         featureCount: features.length,
@@ -86,7 +86,7 @@ export const resolvePerTileLayerContribution = async ({
     };
 
   if (debugFocusMatch.shouldLog) {
-    console.info('[vt][focus] per-tile layer input', JSON.stringify({
+    console.info('[tileEmit][focus] per-tile layer input', JSON.stringify({
       ...context,
       parentTile: parent,
       tile: { z, x, y },
@@ -116,7 +116,7 @@ export const resolvePerTileLayerContribution = async ({
       : {}),
   };
   if (debugFocusMatch.shouldLog) {
-    console.warn('[vt][focus] geojson-vt empty tile', JSON.stringify({
+    console.warn('[tileEmit][focus] geojson-vt empty tile', JSON.stringify({
       ...context,
       parentTile: parent,
       tile: { z, x, y },

@@ -23,18 +23,18 @@ export const loadTransformCacheRecords = async (
   } = config;
   return context.ephemeralDB.transaction('r', [context.ephemeralDB.geometryCache], async () => {
     if (debugCollect) {
-      console.info('[vt][debug] collect transaction start', JSON.stringify({ nodeId }));
+      console.info('[tileEmit][debug] collect transaction start', JSON.stringify({ nodeId }));
     }
     let loaded: EphemeralTransformCacheRecord[];
     if (useGetEach) {
       const collected: EphemeralTransformCacheRecord[] = [];
       for (const bufferId of bufferIds) {
         if (debugCollect) {
-          console.info('[vt][debug] collect get start', JSON.stringify({ nodeId, bufferId }));
+          console.info('[tileEmit][debug] collect get start', JSON.stringify({ nodeId, bufferId }));
         }
         const record = await context.ephemeralDB.geometryCache.get(bufferId);
         if (debugCollect) {
-          console.info('[vt][debug] collect get done', JSON.stringify({
+          console.info('[tileEmit][debug] collect get done', JSON.stringify({
             nodeId,
             bufferId,
             hasRecord: Boolean(record),
@@ -55,7 +55,7 @@ export const loadTransformCacheRecords = async (
         .toArray();
     }
     if (debugCollect) {
-      console.info('[vt][debug] collect transaction done', JSON.stringify({ nodeId }));
+      console.info('[tileEmit][debug] collect transaction done', JSON.stringify({ nodeId }));
     }
     return loaded;
   });

@@ -13,7 +13,7 @@ export const logLayerBuildStart = (
 ): void => {
   const { taskContext, band, parent, totalTiles } = input;
 
-  console.info('[vt] tiling start', JSON.stringify({
+  console.info('[tileEmit] tiling start', JSON.stringify({
     ...taskContext,
     zRange: [band.zMin, band.zMax],
     totalTiles,

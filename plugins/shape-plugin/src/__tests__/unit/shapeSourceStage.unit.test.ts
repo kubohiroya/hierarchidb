@@ -71,7 +71,7 @@ describe('runShapeSourceStage message', () => {
   let nodeId: NodeId;
 
   beforeEach(() => {
-    nodeId = `shape-fetch-stage-message-node-${Date.now()}-${Math.random()}` as NodeId;
+    nodeId = `shape-source-stage-message-node-${Date.now()}-${Math.random()}` as NodeId;
     mockFetchData.mockReset();
     mockProcessData.mockReset();
     mockPutFeatureMetadata.mockReset();
@@ -86,7 +86,7 @@ describe('runShapeSourceStage message', () => {
     db = null;
   });
 
-  it('uses reduction summary when fetch filter removes all features', async () => {
+  it('uses reduction summary when source filter removes all features', async () => {
     db = createDb();
 
     await runShapeSourceStage({

@@ -22,7 +22,7 @@ export const buildLayerIndexes = async (
   const indexes = new Map<string, GeojsonVtIndex>();
   const startAt = Date.now();
   if (debugContext) {
-    console.info('[vt] index build start', JSON.stringify({
+    console.info('[tileEmit] index build start', JSON.stringify({
       ...debugContext,
       layerCount: layers.size,
       featureCount: Array.from(layers.values()).reduce((sum, features) => sum + features.length, 0),
@@ -46,7 +46,7 @@ export const buildLayerIndexes = async (
   }
 
   if (debugContext) {
-    console.info('[vt] index build done', JSON.stringify({
+    console.info('[tileEmit] index build done', JSON.stringify({
       ...debugContext,
       indexCount: indexes.size,
       duration: Date.now() - startAt,
