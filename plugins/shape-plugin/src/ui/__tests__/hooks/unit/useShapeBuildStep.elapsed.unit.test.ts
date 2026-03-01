@@ -6,6 +6,10 @@ import {
   shouldRefreshTasksSnapshot,
   shouldResetElapsedState,
 } from '../../../components/build-progress/internal/useShapeBuildStepLogic';
+import {
+  buildElapsedByStageWithActiveStage,
+  resolveTotalElapsedMs,
+} from '../../../components/build-progress/internal/useShapeBuildStepHelpers/elapsed';
 
 describe('shouldResetElapsedState', () => {
   it('returns false while build is running', () => {
@@ -142,5 +146,48 @@ describe('resolveMostAdvancedInFlightStageId', () => {
         { stage: 'geometry', status: 'queued' },
       ],
     })).toBe('geometry');
+  });
+});
+
+describe('buildElapsedByStageWithActiveStage', () => {
+  it('applies live elapsed to running stage when larger than current snapshot', () => {
+    const result = buildElapsedByStageWithActiveStage({
+      elapsedByStage: {
+        source: 5_000,
+        geometry: 2_000,
+      },
+      timingStageId: 'geometry',
+      timingStageElapsedMs: 8_000,
+    });
+    expect(result).toEqual({
+      source: 5_000,
+      geometry: 8_000,
+    });
+  });
+});
+
+describe('resolveTotalElapsedMs', () => {
+  it('uses sum of per-stage elapsed while running', () => {
+    const total = resolveTotalElapsedMs({
+      buildStatus: 'running',
+      elapsedByStage: {
+        source: 10_000,
+        geometry: 20_000,
+      },
+      sessionElapsedMs: 99_000,
+    });
+    expect(total).toBe(30_000);
+  });
+
+  it('keeps larger of stage-sum and session elapsed after running stops', () => {
+    const total = resolveTotalElapsedMs({
+      buildStatus: 'completed',
+      elapsedByStage: {
+        source: 10_000,
+        geometry: 20_000,
+      },
+      sessionElapsedMs: 40_000,
+    });
+    expect(total).toBe(40_000);
   });
 });
