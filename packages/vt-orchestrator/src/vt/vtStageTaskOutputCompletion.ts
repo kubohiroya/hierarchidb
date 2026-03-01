@@ -24,7 +24,7 @@ export const logVtTaskOutputCompletion = ({
   tilingStartedAt,
   finalTileSummary,
 }: VtTaskOutputCompletionInput & { finalTileSummary: string; }): void => {
-  console.info('[vt] tiling done', JSON.stringify({
+  console.info('[tileEmit] tiling done', JSON.stringify({
     ...taskContext,
     processedTiles,
     generatedTiles,
@@ -37,7 +37,7 @@ export const logVtTaskOutputCompletion = ({
     heap: getHeapSnapshot(),
   }));
   if (generatedTiles === 0) {
-    console.warn('[vt] generated zero tiles', JSON.stringify({
+    console.warn('[tileEmit] generated zero tiles', JSON.stringify({
       ...taskContext,
       parentTile: parent,
       zRange: [band.zMin, band.zMax],
@@ -47,12 +47,12 @@ export const logVtTaskOutputCompletion = ({
       tileSummary: finalTileSummary,
     }));
   }
-  console.info('[vt] output tile totals', JSON.stringify({
+  console.info('[tileEmit] output tile totals', JSON.stringify({
     ...taskContext,
     generatedTiles,
     outputTotals: totals.totalOutputStats,
   }));
-  console.info('[vt] task completed', JSON.stringify({
+  console.info('[tileEmit] task completed', JSON.stringify({
     ...taskContext,
     processedTiles,
     generatedTiles,

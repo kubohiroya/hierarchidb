@@ -21,7 +21,7 @@ export const runVtTileOutputFlow = async (
     adminFeatureSummary,
   } = outputContext;
 
-  console.info('[vt] encode/store start', JSON.stringify({
+  console.info('[tileEmit] encode/store start', JSON.stringify({
     ...taskContext,
     totalTiles,
     bufferCount: input.bufferIds.length,

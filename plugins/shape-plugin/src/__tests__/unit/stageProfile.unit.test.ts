@@ -3,7 +3,7 @@ import {
   createDefaultShapeStageProfile,
   flattenShapeStageProfile,
   validateShapeStageProfile,
-} from '~/services/vt/stageProfile';
+} from '~/services/stageProfile';
 
 describe('stageProfile', () => {
   it('provides ordered primary -> intermediate* -> final stages', () => {
@@ -34,4 +34,3 @@ describe('stageProfile', () => {
     expect(() => validateShapeStageProfile(profile)).toThrow(/duplicate stageKey/i);
   });
 });
-

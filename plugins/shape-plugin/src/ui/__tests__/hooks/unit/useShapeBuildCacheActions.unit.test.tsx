@@ -124,7 +124,7 @@ describe('useShapeBuildCacheActions', () => {
     mocks.getBuildSessionStatus.mockResolvedValue({ status: 'idle' });
   });
 
-  it('reloads cache counts after deleting fetch API cache', async () => {
+  it('reloads cache counts after deleting source API cache', async () => {
     mocks.countRawDataDataSourceBuffersForNode
       .mockResolvedValueOnce(2)
       .mockResolvedValueOnce(0);

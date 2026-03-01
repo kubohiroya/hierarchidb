@@ -13,7 +13,7 @@ export async function runTransformByBand(
 ): Promise<void> {
   const handler = buildConfig.transformByBandHandler;
   if (!handler) {
-    throw new Error('transformByBandHandler is required to run transform stage.');
+    throw new Error('transformByBandHandler is required to run geometry stage.');
   }
   await runStageTasks({
     nodeId: buildConfig.nodeId,
@@ -28,7 +28,7 @@ export async function runVt(
 ): Promise<void> {
   const handler = buildConfig.vtHandler;
   if (!handler) {
-    throw new Error('vtHandler is required to run vt stage.');
+    throw new Error('vtHandler is required to run tileEmit stage.');
   }
   await runStageTasks({
     nodeId: buildConfig.nodeId,

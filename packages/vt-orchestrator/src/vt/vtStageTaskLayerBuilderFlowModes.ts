@@ -18,7 +18,7 @@ const executeLayerBuildByPolicyByMode: Record<LayerBuildExecutionMode, LayerBuil
 export const executeLayerBuildByPolicy = async (input: LayerBuildFlowInput) => {
   const mode = input.layerBuildPolicy.mode;
   if (!isLayerBuildExecutionMode(mode)) {
-    throw new Error(`[vt] unexpected skip mode in layer build flow: ${mode}`);
+    throw new Error(`[tileEmit] unexpected skip mode in layer build flow: ${mode}`);
   }
   const handler: LayerBuildModeHandler = executeLayerBuildByPolicyByMode[mode];
   return handler(input);

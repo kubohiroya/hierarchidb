@@ -260,7 +260,7 @@
       "areaThreshold": "Area Threshold (sq km)",
       "areaThresholdHelp": "Minimum area used with the geometry aspect ratio filter.",
       "excludePolygonAreaCoefficient": "Polygon Area Exclusion Coefficient",
-      "excludePolygonAreaCoefficientHelp": "Excludes polygons smaller than coefficient × grid size × outline length / 2 in fetch filtering.",
+      "excludePolygonAreaCoefficientHelp": "Excludes polygons smaller than coefficient × grid size × outline length / 2 in source filtering.",
       "omitDetailsTitle": "Filtering small shapes (islands and enclaves)",
       "omitDetailsLevelWeak": "High detail",
       "omitDetailsLevelMedium": "Medium detail",

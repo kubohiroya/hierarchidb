@@ -82,7 +82,7 @@ describe('applyBuildConfigPatch', () => {
     expect(merged.geometryConfig.simplifyAlgorithm).toBe('geojson');
   });
 
-  it('normalizes incomplete toleranceByBand with default transform preset values', () => {
+  it('normalizes incomplete toleranceByBand with default geometry preset values', () => {
     const merged = applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, {
       geometryConfig: {
         toleranceByBand: [0.12],

@@ -223,7 +223,7 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
     if (loggedSummary) return;
     loggedSummary = true;
     const heapRatio = readHeapUsageRatio();
-    console.warn('[vt-orchestrator][runStageTasks] stage summary', {
+    console.warn('[tileEmit-orchestrator][runStageTasks] stage summary', {
       nodeId,
       stage,
       stageId,
@@ -268,7 +268,7 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
           const pauseWaitElapsedMs = Date.now() - pauseWaitStartedAt;
           if (pauseWaitElapsedMs > 0 && loggedPauseWait < maxTaskLogs) {
             loggedPauseWait += 1;
-            console.warn('[vt-orchestrator][runStageTasks] pause wait resolved', {
+            console.warn('[tileEmit-orchestrator][runStageTasks] pause wait resolved', {
               nodeId,
               stage,
               taskId: task.taskId,
@@ -282,7 +282,7 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
           const inputKeys = task.inputData && typeof task.inputData === 'object'
             ? Object.keys(task.inputData as Record<string, unknown>)
             : null;
-          console.warn('[vt-orchestrator][runStageTasks] task start', {
+          console.warn('[tileEmit-orchestrator][runStageTasks] task start', {
             nodeId,
             stage,
             taskId: task.taskId,
@@ -297,7 +297,7 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
         });
         if (loggedTaskUpdate < maxTaskLogs) {
           loggedTaskUpdate += 1;
-          console.warn('[vt-orchestrator][runStageTasks] task status updated', {
+          console.warn('[tileEmit-orchestrator][runStageTasks] task status updated', {
             nodeId,
             stage,
             taskId: task.taskId,
@@ -307,7 +307,7 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
         const result = await handler(task as TaskQueueRecord<TInput, TOutput>);
         if (loggedTaskDone < maxTaskLogs) {
           loggedTaskDone += 1;
-          console.warn('[vt-orchestrator][runStageTasks] task done', {
+          console.warn('[tileEmit-orchestrator][runStageTasks] task done', {
             nodeId,
             stage,
             taskId: task.taskId,
@@ -357,7 +357,7 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
           loggedTaskError += 1;
           const errorMessage = error instanceof Error ? error.message : String(error);
           console.warn(
-            `[vt-orchestrator][runStageTasks] task error`
+            `[tileEmit-orchestrator][runStageTasks] task error`
             + ` nodeId=${nodeId}`
             + ` stage=${stage}`
             + ` taskId=${task.taskId}`

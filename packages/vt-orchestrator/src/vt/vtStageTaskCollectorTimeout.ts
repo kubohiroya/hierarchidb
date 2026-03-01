@@ -25,7 +25,7 @@ export const withCollectTimeout = async <T>(
     promise,
     timeoutMs,
     errorFactory = ({ nodeId, taskId, timeoutMs }) => new Error(
-      `[vt] collect timeout after ${timeoutMs}ms (nodeId=${nodeId}, taskId=${taskId ?? 'unknown'})`,
+      `[tileEmit] collect timeout after ${timeoutMs}ms (nodeId=${nodeId}, taskId=${taskId ?? 'unknown'})`,
     ),
   } = input;
   if (!(typeof timeoutMs === 'number' && timeoutMs > 0)) {

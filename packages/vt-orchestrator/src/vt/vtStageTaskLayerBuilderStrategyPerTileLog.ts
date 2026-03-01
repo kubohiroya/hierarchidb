@@ -36,7 +36,7 @@ export const logPerTileLayerNoResult = ({
   intersectingFeatureCount,
   layerStats,
 }: NoLayerWarningInput): void => {
-  console.warn('[vt] per-tile index produced no layers', JSON.stringify({
+  console.warn('[tileEmit] per-tile index produced no layers', JSON.stringify({
     ...taskContext,
     parentTile: parent,
     zRange: [band.zMin, band.zMax],
@@ -62,7 +62,7 @@ export const logPerTileEmptyTilesSummary = ({
     ? buildGeojsonVtEmptyTileSummaryReason(emptyTilesWithFeatures.length, firstEmptyTileDetail)
     : 'geojson-vt produced empty tile for clipped features';
 
-  console.warn('[vt] geojson-vt produced empty tile for clipped features', JSON.stringify({
+  console.warn('[tileEmit] geojson-vt produced empty tile for clipped features', JSON.stringify({
     ...taskContext,
     parentTile: parent,
     zRange: [band.zMin, band.zMax],
@@ -72,7 +72,7 @@ export const logPerTileEmptyTilesSummary = ({
     sampleEmptyTiles: emptyTilesWithFeatures.slice(0, GEOJSON_VT_EMPTY_TILE_LOG_SAMPLE_LIMIT),
   }));
   if (debugFocusConfig.enabled && firstEmptyTileDetail) {
-    console.warn('[vt][focus] empty tile summary', JSON.stringify({
+    console.warn('[tileEmit][focus] empty tile summary', JSON.stringify({
       ...taskContext,
       parentTile: parent,
       reason: emptyTileReason,

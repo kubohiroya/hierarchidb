@@ -239,7 +239,7 @@
       "index": "Generate vector tiles for previews."
     },
     "ideGsm": {
-      "fetch": "IDE-GSM: downloading",
+      "source": "IDE-GSM: downloading",
       "parse": "IDE-GSM: parsing rows",
       "filter": "IDE-GSM: filtering rows",
       "save": "IDE-GSM: saving locations",

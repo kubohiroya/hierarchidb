@@ -40,7 +40,7 @@ const logNoLayerResult = ({
   extra,
 }: LayerBuildResultLogInput): void => {
   if (!extra) {
-    console.warn('[vt] no layers', JSON.stringify({
+    console.warn('[tileEmit] no layers', JSON.stringify({
       ...taskContext,
       parentTile: parent,
       reason: message,
@@ -49,7 +49,7 @@ const logNoLayerResult = ({
   }
 
   console.warn(
-    `[vt] ${message}`,
+    `[tileEmit] ${message}`,
     JSON.stringify({
       ...taskContext,
       parentTile: parent,

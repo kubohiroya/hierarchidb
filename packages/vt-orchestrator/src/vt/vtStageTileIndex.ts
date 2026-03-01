@@ -52,7 +52,7 @@ export const buildTileLayerIndexFromFeatures = async (params: {
             attemptMaxVertices: maxVertices,
             targetMaxVertices: maxVerticesPerTile,
           };
-          console.info('[vt][debug] topojson simplify attempt', JSON.stringify(details));
+          console.info('[tileEmit][debug] topojson simplify attempt', JSON.stringify(details));
         }
       },
     });

@@ -241,7 +241,7 @@ export const createTransformByBandHandler = (
     }, 'phase:update:retry-simplify-feature');
     await updateTaskRetryAttempt(taskId, params.attempt);
   };
-  // Feature filtering is intentionally disabled during transform stage while investigating geometry distortion.
+  // Feature filtering is intentionally disabled during geometry stage while investigating geometry distortion.
   const enableFeatureFiltering = false;
   const simplifyAlgorithm = resolveSimplifyAlgorithm(geometryConfig.simplifyAlgorithm);
   const geometryEngine = geometryConfig.geometryEngine ?? 'turf';
@@ -545,9 +545,9 @@ export const createTransformByBandHandler = (
     }
 
     try {
-      stageLabel = 'fetch:cache';
+      stageLabel = 'source:cache';
       logDebugPhase('source-cache:start', { sourceCacheId: input.sourceCacheId });
-      await updateTaskPhase(taskId, 'transform:start', taskProgressRange.transformStart);
+      await updateTaskPhase(taskId, 'geometry:start', taskProgressRange.transformStart);
       await updateTaskPhase(taskId, 'source-cache:start', taskProgressRange.fetchStart);
       assertNotAborted(abortSignal);
       let fetchWaitTimer: ReturnType<typeof setInterval> | null = null;
@@ -799,7 +799,7 @@ export const createTransformByBandHandler = (
       await reportPolygonProgress(taskId, 0, inputPolygonCount);
       const shouldCollectBaselineMetrics = false;
       if (shouldCollectBaselineMetrics) {
-        // Reserved for future: consume fetch-stage precomputed baseline metrics only.
+        // Reserved for future: consume source-stage precomputed baseline metrics only.
       }
       if (input.adminLevel === 0 && band.zMax >= 6) {
         const samples = inputCollection.features.slice(0, 5).map((feature, index) => {
@@ -1178,7 +1178,7 @@ export const createTransformByBandHandler = (
           try {
             await ephemeralDB.geometryErrors.bulkPut(errorRecords);
           } catch (storageError) {
-            console.warn('[ShapeGeometry] failed to persist transform error details', storageError);
+            console.warn('[ShapeGeometry] failed to persist geometry error details', storageError);
           }
         }
         const avgRingVertices = ringCount > 0 ? ringVertexTotal / ringCount : null;

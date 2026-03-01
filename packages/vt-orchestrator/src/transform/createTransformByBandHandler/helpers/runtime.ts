@@ -61,7 +61,7 @@ export const runWithStallTimeout = async <T>(params: {
       }
       if (now - lastHeartbeatAt >= heartbeatMs) {
         lastHeartbeatAt = now;
-        console.warn('[transform] stage heartbeat', {
+        console.warn('[geometry] stage heartbeat', {
           nodeId,
           taskId,
           stage,

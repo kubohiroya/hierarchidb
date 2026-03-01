@@ -8,10 +8,10 @@ describe('stageAlias (shape-plugin)', () => {
     expect(toLegacyBuildStageFromStageId('tile-emit-stage')).toBe('tileEmit');
   });
 
-  it('accepts historical pipeline-style stageId markers', () => {
-    expect(toLegacyBuildStageFromStageId('pipeline:fetch-stage:running')).toBe('source');
-    expect(toLegacyBuildStageFromStageId('pipeline:transform-stage:done')).toBe('geometry');
-    expect(toLegacyBuildStageFromStageId('pipeline:vt-stage:done')).toBe('tileEmit');
+  it('accepts pipeline-style stageId markers', () => {
+    expect(toLegacyBuildStageFromStageId('pipeline:source-stage:running')).toBe('source');
+    expect(toLegacyBuildStageFromStageId('pipeline:geometry-stage:done')).toBe('geometry');
+    expect(toLegacyBuildStageFromStageId('pipeline:tile-emit-stage:done')).toBe('tileEmit');
   });
 
   it('prioritizes stageId over stage when both are provided', () => {

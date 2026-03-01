@@ -62,7 +62,7 @@ export const createTileProgressReporter = (input: ProgressTrackerInput) => {
         progress: calculateProgress(processedTiles, totalTiles),
       });
     } catch (error) {
-      console.warn('[vt] failed to report tile progress', JSON.stringify({
+      console.warn('[tileEmit] failed to report tile progress', JSON.stringify({
         taskId: fixedTaskInfo.taskId,
         nodeId: String(fixedTaskInfo.nodeId),
         error: error instanceof Error ? error.message : String(error),

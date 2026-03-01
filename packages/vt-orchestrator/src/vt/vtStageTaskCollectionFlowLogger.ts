@@ -7,7 +7,7 @@ export const logCollectDone = (
   durationMs: number,
   collected: boolean,
 ): void => {
-  console.info('[vt] collect done', JSON.stringify({
+  console.info('[tileEmit] collect done', JSON.stringify({
     ...taskContext,
     bufferCount,
     duration: durationMs,
