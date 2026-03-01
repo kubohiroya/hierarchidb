@@ -149,6 +149,7 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- update: 2026-03-02 00:08 JST #667 `optimizeDeps.entries` の workspace-wide glob（`../packages/**/src/**/*.{ts,tsx}`, `../plugins/*-plugin/src/**/*.{ts,tsx}`）を撤去し app 局所（`index.html`, `src/**/*.{ts,tsx}`）へ固定。加えて `optimizeDeps.include` に初回アクセス時の反復最適化対象（`@tanstack/react-table`, `@tanstack/react-virtual`, `@vis.gl/react-maplibre`, `maplibre-gl`, `shpjs`, `topojson-*`, 主要 MUI deep import など）を追加。検証: `pnpm dev` 起動後に `curl /` + `curl /src/entry.client.tsx` を実施し、`optimized dependencies changed. reloading` は 1 回のみ確認（連続多発なし）。`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0。
 - start: 2026-03-01 23:42 JST #667 を起票（https://github.com/kubohiroya/hierarchidb/issues/667）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/app/vite-reload-suppression-safe-667` を `main` 起点で作成し、`optimizeDeps.entries` を app 局所に維持したまま初回連続リロード抑制の再調整に着手。
 - start: 2026-03-01 16:22 JST #663 を起票（https://github.com/kubohiroya/hierarchidb/issues/663）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/tileemit-default-extent-buffer-663` を `main` 起点で作成し、TileEmit のデフォルト `extent=8192` / `buffer=128` 変更に着手。
 - update: 2026-03-01 16:02 JST #656 `Primary/Intermediate/Final` 抽象化移行の分割PR計画に着手。`plans/primary-intermediate-final-split-pr-plan.md` を新規追加し、feature flag なし・interface-first・descriptor駆動（`Intermediate` 1..N）を前提とした PR-1..PR-7 の実行順、DoD、検証マトリクス、直近着手タスクを定義。
