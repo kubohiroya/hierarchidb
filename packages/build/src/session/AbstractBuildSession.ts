@@ -37,7 +37,7 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
       total: 0,
       completed: 0,
       failed: 0,
-      stage: 'fetch',
+      stage: 'source',
       percentage: 0,
     };
   }

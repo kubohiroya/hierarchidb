@@ -68,7 +68,7 @@ export class RouteBuildManager {
         taskId: crypto.randomUUID(),
         treeNodeId: nodeId,
         nodeId,
-        stage: 'fetch',
+        stage: 'source',
         status: 'queued',
         index: routeTasks.length,
         routeData: createRouteTaskData(route, config),
@@ -84,7 +84,7 @@ export class RouteBuildManager {
         taskId: crypto.randomUUID(),
         treeNodeId: nodeId,
         nodeId,
-        stage: 'transform',
+        stage: 'geometry',
         status: 'queued',
         index: routeTasks.length,
         routeData: createRouteTaskData(route, config),
@@ -95,7 +95,7 @@ export class RouteBuildManager {
       taskId: crypto.randomUUID(),
       treeNodeId: nodeId,
       nodeId,
-      stage: 'vt',
+      stage: 'tileEmit',
       status: 'queued',
       index: routeTasks.length,
     });
@@ -137,27 +137,27 @@ export class RouteBuildManager {
     const completedTasks = tasks.filter((task) => task.status === 'completed');
     const failedTasks = tasks.filter((task) => task.status === 'failed');
 
-    const fetchTasks = tasks.filter((task) => task.stage === 'fetch');
-    const completedRoutes = fetchTasks.filter((task) => task.status === 'completed').length;
+    const sourceTasks = tasks.filter((task) => task.stage === 'source');
+    const completedRoutes = sourceTasks.filter((task) => task.status === 'completed').length;
     const totalTasks = tasks.length;
     const percentage = totalTasks > 0
       ? Math.min(100, Math.max(0, (completedTasks.length / totalTasks) * 100))
       : 0;
 
     let phase = 'idle';
-    if (tasks.some((task) => task.stage === 'fetch' && task.status === 'running')) {
-      phase = 'fetching_routes';
-    } else if (tasks.some((task) => task.stage === 'transform' && task.status === 'running')) {
-      phase = 'simplifying_routes';
-    } else if (tasks.some((task) => task.stage === 'vt' && task.status === 'running')) {
-      phase = 'generating_vector_tiles';
+    if (tasks.some((task) => task.stage === 'source' && task.status === 'running')) {
+      phase = 'sourcing_routes';
+    } else if (tasks.some((task) => task.stage === 'geometry' && task.status === 'running')) {
+      phase = 'geometry_processing_routes';
+    } else if (tasks.some((task) => task.stage === 'tileEmit' && task.status === 'running')) {
+      phase = 'tile_emitting_routes';
     }
 
     return {
       phase,
       progress: Number.isFinite(percentage) ? percentage : 0,
       completedRoutes,
-      totalRoutes: fetchTasks.length,
+      totalRoutes: sourceTasks.length,
       errors: failedTasks.map((task) => task.error ?? 'Unknown error'),
     };
   }
@@ -219,12 +219,12 @@ function toTaskQueueRecord(task: RouteBuildTask): TaskQueueRecord {
 
 function normalizeRouteProgressStage(stage: string): string {
   switch (stage) {
-    case 'fetch':
-      return 'fetching_routes';
-    case 'transform':
-      return 'simplifying_routes';
-    case 'vt':
-      return 'generating_vector_tiles';
+    case 'source':
+      return 'sourcing_routes';
+    case 'geometry':
+      return 'geometry_processing_routes';
+    case 'tileEmit':
+      return 'tile_emitting_routes';
     default:
       return stage;
   }

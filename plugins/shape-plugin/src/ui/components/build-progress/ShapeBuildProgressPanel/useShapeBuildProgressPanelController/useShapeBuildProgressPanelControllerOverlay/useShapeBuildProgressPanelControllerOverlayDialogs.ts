@@ -4,7 +4,7 @@ import {
   ShapeBuildProgressPanelCompletionDialogContent,
   ShapeBuildProgressPanelConcurrencyEditorCard,
   ShapeBuildProgressPanelControlRightContent,
-  ShapeBuildProgressPanelFetchRetryEditorCard,
+  ShapeBuildProgressPanelSourceRetryEditorCard,
   ShapeBuildProgressPanelOverlayFooter,
 } from './ShapeBuildProgressPanelControllerOverlayDialogsView.js';
 
@@ -47,9 +47,9 @@ export const useShapeBuildProgressPanelControllerOverlayDialogs = (
     t,
     concurrencyEditorAnchor,
     concurrencyEditorStageId,
-    fetchRetryEditorAnchor,
+    sourceRetryEditorAnchor,
     closeConcurrencyEditor,
-    closeFetchRetryEditor,
+    closeSourceRetryEditor,
     startupNoticeDismissed,
     setStartupNoticeDismissed,
     startupStatusMessage,
@@ -75,9 +75,9 @@ export const useShapeBuildProgressPanelControllerOverlayDialogs = (
     taskSearchText,
     setTaskSearchText,
     applyProcessingConfigUpdate,
-    applyFetchRetryConfigUpdate,
+    applySourceRetryConfigUpdate,
     processingConfigForEdit,
-    fetchRetryConfigForEdit,
+    sourceRetryConfigForEdit,
     crashHintOpen,
     setCrashHintOpen,
     sizeWarningOpen,
@@ -119,14 +119,14 @@ export const useShapeBuildProgressPanelControllerOverlayDialogs = (
     processingConfigForEdit,
   ]);
 
-  const fetchRetryEditorCard = useMemo(() => (
-    ShapeBuildProgressPanelFetchRetryEditorCard({
+  const sourceRetryEditorCard = useMemo(() => (
+    ShapeBuildProgressPanelSourceRetryEditorCard({
       t,
-      fetchRetryConfigForEdit,
-      applyFetchRetryConfigUpdate,
+      sourceRetryConfigForEdit,
+      applySourceRetryConfigUpdate,
       disabledEditors,
     })
-  ), [applyFetchRetryConfigUpdate, disabledEditors, fetchRetryConfigForEdit, t]);
+  ), [applySourceRetryConfigUpdate, disabledEditors, sourceRetryConfigForEdit, t]);
 
   const completionDialog = {
     open: completionDialogOpen,
@@ -171,8 +171,8 @@ export const useShapeBuildProgressPanelControllerOverlayDialogs = (
 
   const footer = ShapeBuildProgressPanelOverlayFooter({
     isBuildStartupPending,
-    fetchRetryEditorAnchor,
-    closeFetchRetryEditor,
+    sourceRetryEditorAnchor,
+    closeSourceRetryEditor,
     startupNoticeDismissed,
     setStartupNoticeDismissed,
     startupStatusMessage,
@@ -184,7 +184,7 @@ export const useShapeBuildProgressPanelControllerOverlayDialogs = (
     concurrencyEditorAnchor,
     concurrencyEditorStageId,
     concurrencyEditorCard,
-    fetchRetryEditorCard,
+    sourceRetryEditorCard,
     crashHint,
     crashHintOpen,
     setCrashHintOpen,

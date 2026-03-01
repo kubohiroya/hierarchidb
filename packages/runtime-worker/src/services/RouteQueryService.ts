@@ -25,6 +25,7 @@ import {
   tileToBbox,
   toTileCoord,
 } from './nearest/tileNearest.js';
+import { toLegacyBuildStage } from './stageAlias.js';
 
 type RoutePointSummary = {
   name?: string;
@@ -145,7 +146,7 @@ export class RouteQueryService implements RouteQueryAPI {
   }
 
   async listRouteBuildErrors(nodeId: NodeId): Promise<RouteBuildError[]> {
-    const rows = await ephemeralDB.transformErrors.where('nodeId').equals(nodeId).toArray();
+    const rows = await ephemeralDB.geometryErrors.where('nodeId').equals(nodeId).toArray();
     return rows
       .filter((row) => row.domainType === 'route')
       .sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0))
@@ -491,6 +492,6 @@ const equalsNullableString = (left?: string | null, right?: string | null): bool
 );
 
 const normalizeRouteBuildErrorStage = (stage: unknown): RouteBuildError['stage'] => {
-  if (stage === 'fetch' || stage === 'transform' || stage === 'vt') return stage;
-  return 'transform';
+  const stageId = typeof stage === 'string' ? stage : undefined;
+  return toLegacyBuildStage(stage, stageId) ?? 'geometry';
 };

@@ -5,7 +5,7 @@ import {
   type CountryMetadata,
   type DataSourceConfig,
   type DataSourceName,
-  type FetchTaskPayload,
+  type SourceTaskPayload,
   type ProgressInfo,
   type ShapeBuildConfig,
   type ShapeProcessingConfig,
@@ -22,7 +22,7 @@ import { normalizeCountryCodeFormat } from '~/services/utils/iso3166';
 import {
   generateDownloadTaskPayloads,
 } from '~/services/utils/utils';
-import { resolveFetchStageStrategy } from '~/services/build/strategies/resolveFetchStageStrategy';
+import { resolveSourceStageStrategy } from '~/services/build/strategies/resolveSourceStageStrategy';
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { shapeBuildMonitoringAPI } from './api-public-monitoring.js';
@@ -49,7 +49,7 @@ export const shapeBuildAPI = {
     dataSource: DataSourceName,
     countries: string[],
     adminLevels: number[],
-  ): Promise<FetchTaskPayload[]> => {
+  ): Promise<SourceTaskPayload[]> => {
     const resolvedDataSource = requireDataSourceName(dataSource, 'generateDownloadTaskPayloads');
     // Get country metadata first
     const preferredFormat = getPreferredCountryCodeFormat(resolvedDataSource);
@@ -64,11 +64,11 @@ export const shapeBuildAPI = {
     nodeId: NodeId,
     dataSource: DataSourceName,
     selectedArrayByCountries: SelectedArrayByCountries,
-  ): Promise<FetchTaskPayload[]> => {
+  ): Promise<SourceTaskPayload[]> => {
     const resolvedDataSource = requireDataSourceName(dataSource, 'generateDownloadTaskPayloadsFromSelection');
     const countryMetadata = await shapeBuildAPI.getCountryMetadata(nodeId, resolvedDataSource);
-    const strategy = resolveFetchStageStrategy(resolvedDataSource);
-    return strategy.buildFetchTaskPayloads({
+    const strategy = resolveSourceStageStrategy(resolvedDataSource);
+    return strategy.buildSourceTaskPayloads({
       selectedArrayByCountries,
       countryMetadata,
     });
@@ -115,7 +115,7 @@ export const shapeBuildAPI = {
     draftId: NodeId,
     buildConfig: ShapeBuildConfig,
     processingConfig: ShapeProcessingConfig | undefined,
-    downloadTaskPayloads: FetchTaskPayload[],
+    downloadTaskPayloads: SourceTaskPayload[],
     buildContinuationPolicy?: BuildContinuationPolicy,
     progressCallback?: (event: BuildProgressEvent) => void,
   ): Promise<NodeId> => shapeBuildRuntime.startBuildSessionInternal(

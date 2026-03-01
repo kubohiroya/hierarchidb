@@ -54,7 +54,7 @@ export const finalizeTransformByBandCache = async (params: {
   if ((globalThis as { __HDB_VT_DEBUG_COLLECT?: boolean }).__HDB_VT_DEBUG_COLLECT === true) {
     const cloneFn = globalThis.structuredClone;
     const cloneText = typeof cloneFn === 'function' ? String(cloneFn) : '';
-    console.info('[ShapeTransform][TaskDebug] structuredClone probe', {
+    console.info('[ShapeGeometry][TaskDebug] structuredClone probe', {
       tag: TASKDEBUG_BUILD_TAG,
       name: typeof cloneFn === 'function' ? cloneFn.name : null,
       type: typeof cloneFn,
@@ -67,7 +67,7 @@ export const finalizeTransformByBandCache = async (params: {
   let cacheWaitLogged = false;
   const cacheWaitTimer = setTimeout(() => {
     cacheWaitLogged = true;
-    logDebug('log', 'ShapeTransform', 'transform cache write waiting', {
+    logDebug('log', 'ShapeGeometry', 'geometry cache write waiting', {
       tag: TASKDEBUG_BUILD_TAG,
       taskId: params.taskId,
       elapsedMs: Date.now() - cacheStartedAt,
@@ -81,7 +81,7 @@ export const finalizeTransformByBandCache = async (params: {
         },
       },
     }, 'cache-put:slow-warning').catch((error) => {
-      console.error('[ShapeTransform] failed to publish cache write warning', {
+      console.error('[ShapeGeometry] failed to publish cache write warning', {
         taskId: params.taskId,
         error,
       });
@@ -90,7 +90,7 @@ export const finalizeTransformByBandCache = async (params: {
 
   try {
     const slowWriteLogId = setTimeout(() => {
-      logDebug('log', 'ShapeTransform', 'transform cache write is still in progress', {
+      logDebug('log', 'ShapeGeometry', 'geometry cache write is still in progress', {
         tag: TASKDEBUG_BUILD_TAG,
         taskId: params.taskId,
         elapsedMs: Date.now() - cacheStartedAt,
@@ -101,13 +101,13 @@ export const finalizeTransformByBandCache = async (params: {
     try {
       await withTimeout({
         taskId: params.taskId,
-        operation: 'cache-write:transformCache.put',
+        operation: 'cache-write:geometryCache.put',
         timeoutMs: TRANSFORM_DB_WRITE_TIMEOUT_MS,
         promise: params.ephemeralDB.transaction('rw', [
-          params.ephemeralDB.transformCache,
-          params.ephemeralDB.transformCacheMeta,
+          params.ephemeralDB.geometryCache,
+          params.ephemeralDB.geometryCacheMeta,
         ], async () => {
-          await params.ephemeralDB.transformCache.put({
+          await params.ephemeralDB.geometryCache.put({
             ...params.cacheRecord,
             timestamp: completedAt,
           });
@@ -119,13 +119,13 @@ export const finalizeTransformByBandCache = async (params: {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(
-      `transform failed: cache write failed (taskId=${params.taskId}, elapsedMs=${Date.now() - cacheStartedAt}, reason=${message})`
+      `geometry failed: cache write failed (taskId=${params.taskId}, elapsedMs=${Date.now() - cacheStartedAt}, reason=${message})`
     );
   }
 
   clearTimeout(cacheWaitTimer);
   if (cacheWaitLogged) {
-    logDebug('log', 'ShapeTransform', 'transform cache write done', {
+    logDebug('log', 'ShapeGeometry', 'geometry cache write done', {
       tag: TASKDEBUG_BUILD_TAG,
       taskId: params.taskId,
       elapsedMs: Date.now() - cacheStartedAt,
@@ -136,7 +136,7 @@ export const finalizeTransformByBandCache = async (params: {
   let taskWaitLogged = false;
   const taskWaitTimer = setTimeout(() => {
     taskWaitLogged = true;
-    logDebug('log', 'ShapeTransform', 'transform task update waiting', {
+    logDebug('log', 'ShapeGeometry', 'geometry task update waiting', {
       tag: TASKDEBUG_BUILD_TAG,
       taskId: params.taskId,
       elapsedMs: Date.now() - taskStartedAt,
@@ -158,7 +158,7 @@ export const finalizeTransformByBandCache = async (params: {
 
   clearTimeout(taskWaitTimer);
   if (taskWaitLogged) {
-    logDebug('log', 'ShapeTransform', 'transform task update done', {
+    logDebug('log', 'ShapeGeometry', 'geometry task update done', {
       tag: TASKDEBUG_BUILD_TAG,
       taskId: params.taskId,
       elapsedMs: Date.now() - taskStartedAt,

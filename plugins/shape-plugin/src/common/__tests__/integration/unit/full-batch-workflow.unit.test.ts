@@ -90,20 +90,20 @@ describe('Full Build Workflow Integration Tests', () => {
       const startTime = Date.now();
 
       try {
-        // Stage 1: Fetch
-        console.log('🔄 Starting fetch stage...');
+        // Stage 1: Source
+        console.log('🔄 Starting source stage...');
         const fetchResult = await simulateFetchStage(japanEntity);
         expect(fetchResult.success).toBe(true);
         expect(fetchResult.filesDownloaded).toBe(EXPECTED_BATCH_RESULTS.japanOnly.fetchStage.expectedFiles);
 
-        // Stage 2: Transform
-        console.log('🔄 Starting transform stage...');
+        // Stage 2: Geometry
+        console.log('🔄 Starting geometry stage...');
         const transformResult = await simulateTransformStage(fetchResult.data);
         expect(transformResult.success).toBe(true);
         expect(transformResult.transformedFeatures).toBe(EXPECTED_BATCH_RESULTS.japanOnly.transformStage.expectedTransformedFeatures);
 
         // Stage 3: Vector Tiles Generation
-        console.log('🔄 Starting vt stage...');
+        console.log('🔄 Starting tileEmit stage...');
         const vectorTilesResult = await simulateVtStage(transformResult.data);
         expect(vectorTilesResult.success).toBe(true);
         expect(vectorTilesResult.tilesGenerated).toBeGreaterThanOrEqual(EXPECTED_BATCH_RESULTS.japanOnly.vtStage.expectedMinTiles);
@@ -132,21 +132,21 @@ describe('Full Build Workflow Integration Tests', () => {
       const startTime = Date.now();
 
       try {
-        // Stage 1: Fetch (multiple countries)
-        console.log('🔄 Starting fetch stage for 3 countries...');
+        // Stage 1: Source (multiple countries)
+        console.log('🔄 Starting source stage for 3 countries...');
         const fetchResult = await simulateFetchStage(testEntity);
         expect(fetchResult.success).toBe(true);
         expect(fetchResult.filesDownloaded).toBe(EXPECTED_BATCH_RESULTS.threeCountries.fetchStage.expectedFiles);
         expect(fetchResult.countriesProcessed).toEqual(['JPN', 'DEU', 'USA']);
 
-        // Stage 2: Transform (bulk processing)
-        console.log('🔄 Starting transform stage for 3 countries...');
+        // Stage 2: Geometry (bulk processing)
+        console.log('🔄 Starting geometry stage for 3 countries...');
         const transformResult = await simulateTransformStage(fetchResult.data);
         expect(transformResult.success).toBe(true);
         expect(transformResult.transformedFeatures).toBe(EXPECTED_BATCH_RESULTS.threeCountries.transformStage.expectedTransformedFeatures);
 
         // Stage 3: Vector Tiles (multi-country coverage)
-        console.log('🔄 Starting vt stage for 3 countries...');
+        console.log('🔄 Starting tileEmit stage for 3 countries...');
         const vectorTilesResult = await simulateVtStage(transformResult.data);
         expect(vectorTilesResult.success).toBe(true);
         expect(vectorTilesResult.tilesGenerated).toBeGreaterThanOrEqual(EXPECTED_BATCH_RESULTS.threeCountries.vtStage.expectedMinTiles);
@@ -165,11 +165,11 @@ describe('Full Build Workflow Integration Tests', () => {
   });
 
   describe('Error Handling Integration', () => {
-    it('should handle network errors gracefully during fetch', async () => {
+    it('should handle network errors gracefully during source', async () => {
       // Given: Network error scenario
       (global.fetch).mockRejectedValueOnce(new Error('Network request failed'));
 
-      // When: Execute fetch with network failure
+      // When: Execute source with network failure
       const fetchResult = await simulateFetchStage(testEntity);
 
       // Then: Error should be handled gracefully
@@ -182,7 +182,7 @@ describe('Full Build Workflow Integration Tests', () => {
       // Given: Corrupt data scenario
       const corruptData = { invalid: 'data', missing: 'geometry' };
 
-      // When: Execute transform with corrupt data
+      // When: Execute geometry with corrupt data
       const transformResult = await simulateTransformStage(corruptData);
 
       // Then: Data error should be handled  
@@ -197,8 +197,8 @@ describe('Full Build Workflow Integration Tests', () => {
         ...testEntity,
         buildConfig: {
           ...testEntity.buildConfig,
-          fetchConfig: {
-            ...testEntity.buildConfig?.fetchConfig,
+          sourceConfig: {
+            ...testEntity.buildConfig?.sourceConfig,
             // Invalid configuration to trigger errors
             maxConcurrent: -1,
           },
@@ -222,13 +222,13 @@ describe('Full Build Workflow Integration Tests', () => {
 
   async function simulateFetchStage(entity: ShapeEntity): Promise<unknown> {
     try {
-      // Simulate fetch stage logic
+      // Simulate source stage logic
       const allCountries = Object.keys(GEOBOUNDARIES_TEST_ENDPOINTS.download);
       const selectionCount = Object.keys(entity.selectedArrayByCountries ?? {}).length;
       const countries = selectionCount > 0 ? allCountries.slice(0, selectionCount) : allCountries;
       const filesDownloaded = countries.length;
 
-      // Check if fetch was mocked and successful
+      // Check if source load was mocked and successful
       if (global.fetch) {
         for (const country of countries) {
           await fetch(GEOBOUNDARIES_TEST_ENDPOINTS.download[country as keyof typeof GEOBOUNDARIES_TEST_ENDPOINTS.download]);
@@ -262,7 +262,7 @@ describe('Full Build Workflow Integration Tests', () => {
         throw new Error('Invalid data format');
       }
 
-      // Simulate transform processing
+      // Simulate geometry processing
       const transformedFeatures = data.features.length;
 
       return {

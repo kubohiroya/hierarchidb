@@ -21,10 +21,10 @@ import type { ShapeBuildConfig } from '~/common/types/index';
 import { buildToneCurveAnchorsFromToleranceByBand, buildToleranceByBandFromToneCurveAnchors } from '~/services/utils/toleranceByBand';
 
 type Props = {
-  transformConfig: ShapeBuildConfig['transformConfig'];
+  geometryConfig: ShapeBuildConfig['geometryConfig'];
   disabled?: boolean;
   disableHoverLift?: boolean;
-  onChange: (partial: Partial<ShapeBuildConfig['transformConfig']>) => void;
+  onChange: (partial: Partial<ShapeBuildConfig['geometryConfig']>) => void;
 };
 
 type AdminLevelTabKey = 'admin0' | 'admin1' | 'admin2' | 'admin3Plus';
@@ -98,9 +98,9 @@ const resolveRetryCount = (input: number | undefined, fallback: number): number 
 };
 
 const resolveStoredProfiles = (
-  transformConfig: ShapeBuildConfig['transformConfig'],
+  geometryConfig: ShapeBuildConfig['geometryConfig'],
 ): StoredAdminLevelProfiles => {
-  const raw = transformConfig.simplifyToleranceByAdminLevel;
+  const raw = geometryConfig.simplifyToleranceByAdminLevel;
   if (!raw || typeof raw !== 'object') {
     return {};
   }
@@ -109,35 +109,35 @@ const resolveStoredProfiles = (
 
 const resolveEditableProfile = (
   key: AdminLevelTabKey,
-  transformConfig: ShapeBuildConfig['transformConfig'],
+  geometryConfig: ShapeBuildConfig['geometryConfig'],
   storedProfiles: StoredAdminLevelProfiles,
 ): AdminLevelProfile => {
   const raw = storedProfiles[key];
   return {
     usePrevious: key === 'admin0' ? false : raw?.usePrevious === true,
     toleranceByBand: resolveToleranceByBand(
-      raw?.toleranceByBand ?? transformConfig.toleranceByBand,
-      transformConfig.zoomBandBoundaries,
+      raw?.toleranceByBand ?? geometryConfig.toleranceByBand,
+      geometryConfig.zoomBandBoundaries,
       DEFAULT_MAIN_ANCHORS,
     ),
     retryToleranceByBand: resolveToleranceByBand(
-      raw?.retryToleranceByBand ?? transformConfig.retryToleranceByBand,
-      transformConfig.zoomBandBoundaries,
+      raw?.retryToleranceByBand ?? geometryConfig.retryToleranceByBand,
+      geometryConfig.zoomBandBoundaries,
       DEFAULT_RETRY_ANCHORS,
     ),
-    retryCount: resolveRetryCount(raw?.retryCount, transformConfig.retryCount ?? DEFAULT_RETRY_COUNT),
+    retryCount: resolveRetryCount(raw?.retryCount, geometryConfig.retryCount ?? DEFAULT_RETRY_COUNT),
   };
 };
 
 const resolveEffectiveProfiles = (
-  transformConfig: ShapeBuildConfig['transformConfig'],
+  geometryConfig: ShapeBuildConfig['geometryConfig'],
   storedProfiles: StoredAdminLevelProfiles,
 ): Record<AdminLevelTabKey, AdminLevelProfile> => {
   const base: Record<AdminLevelTabKey, AdminLevelProfile> = {
-    admin0: resolveEditableProfile('admin0', transformConfig, storedProfiles),
-    admin1: resolveEditableProfile('admin1', transformConfig, storedProfiles),
-    admin2: resolveEditableProfile('admin2', transformConfig, storedProfiles),
-    admin3Plus: resolveEditableProfile('admin3Plus', transformConfig, storedProfiles),
+    admin0: resolveEditableProfile('admin0', geometryConfig, storedProfiles),
+    admin1: resolveEditableProfile('admin1', geometryConfig, storedProfiles),
+    admin2: resolveEditableProfile('admin2', geometryConfig, storedProfiles),
+    admin3Plus: resolveEditableProfile('admin3Plus', geometryConfig, storedProfiles),
   };
 
   const admin1UsePrevious = base.admin1.usePrevious;
@@ -155,7 +155,7 @@ const resolveEffectiveProfiles = (
 };
 
 export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
-  transformConfig,
+  geometryConfig,
   disabled,
   disableHoverLift = false,
   onChange,
@@ -167,19 +167,19 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
   const hoverCardSx = getBuildConfigHoverCardSx(disabled, disableHoverLift);
 
   const storedProfiles = useMemo(
-    () => resolveStoredProfiles(transformConfig),
-    [transformConfig],
+    () => resolveStoredProfiles(geometryConfig),
+    [geometryConfig],
   );
   const editableProfiles = useMemo(() => ({
-    admin0: resolveEditableProfile('admin0', transformConfig, storedProfiles),
-    admin1: resolveEditableProfile('admin1', transformConfig, storedProfiles),
-    admin2: resolveEditableProfile('admin2', transformConfig, storedProfiles),
-    admin3Plus: resolveEditableProfile('admin3Plus', transformConfig, storedProfiles),
-  }), [storedProfiles, transformConfig]);
+    admin0: resolveEditableProfile('admin0', geometryConfig, storedProfiles),
+    admin1: resolveEditableProfile('admin1', geometryConfig, storedProfiles),
+    admin2: resolveEditableProfile('admin2', geometryConfig, storedProfiles),
+    admin3Plus: resolveEditableProfile('admin3Plus', geometryConfig, storedProfiles),
+  }), [storedProfiles, geometryConfig]);
 
   const effectiveProfiles = useMemo(
-    () => resolveEffectiveProfiles(transformConfig, storedProfiles),
-    [storedProfiles, transformConfig],
+    () => resolveEffectiveProfiles(geometryConfig, storedProfiles),
+    [storedProfiles, geometryConfig],
   );
 
   const activeEditable = editableProfiles[activeTab];
@@ -190,19 +190,19 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
   const controlsDisabled = Boolean(disabled || usePrevious);
   const activeValues = usePrevious ? activeEffective : activeEditable;
 
-  const xMarks = transformConfig.zoomBandBoundaries.map((value) => ({ value, label: String(value) }));
+  const xMarks = geometryConfig.zoomBandBoundaries.map((value) => ({ value, label: String(value) }));
   const retryCountMarks = [0, 2, 4, 6, 8, 10].map((value) => ({ value, label: String(value) }));
 
   const resolvedMainAnchors = buildToneCurveAnchorsFromToleranceByBand(
     activeValues.toleranceByBand,
-    transformConfig.zoomBandBoundaries,
+    geometryConfig.zoomBandBoundaries,
     DEFAULT_MAIN_ANCHORS[0] ?? DEFAULT_TOLERANCE_FALLBACK,
     DEFAULT_MAIN_ANCHORS,
   );
 
   const resolvedRetryAnchors = buildToneCurveAnchorsFromToleranceByBand(
     activeValues.retryToleranceByBand,
-    transformConfig.zoomBandBoundaries,
+    geometryConfig.zoomBandBoundaries,
     DEFAULT_RETRY_ANCHORS[0] ?? DEFAULT_TOLERANCE_FALLBACK,
     DEFAULT_RETRY_ANCHORS,
   );
@@ -222,7 +222,7 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
       ...partial,
     };
 
-    const patch: Partial<ShapeBuildConfig['transformConfig']> = {
+    const patch: Partial<ShapeBuildConfig['geometryConfig']> = {
       simplifyToleranceByAdminLevel: nextProfiles,
     };
 
@@ -253,7 +253,7 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
 
     const next = buildToleranceByBandFromToneCurveAnchors(
       nextAnchors,
-      transformConfig.zoomBandBoundaries,
+      geometryConfig.zoomBandBoundaries,
       DEFAULT_MAIN_ANCHORS[0] ?? DEFAULT_TOLERANCE_FALLBACK,
     ).map((value) => normalizeToleranceValue(value));
 
@@ -272,7 +272,7 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
     activeTab,
     controlsDisabled,
     resolvedMainAnchors,
-    transformConfig.zoomBandBoundaries,
+    geometryConfig.zoomBandBoundaries,
     updateStoredProfile,
   ]);
 
@@ -287,7 +287,7 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
 
     const next = buildToleranceByBandFromToneCurveAnchors(
       nextAnchors,
-      transformConfig.zoomBandBoundaries,
+      geometryConfig.zoomBandBoundaries,
       DEFAULT_RETRY_ANCHORS[0] ?? DEFAULT_TOLERANCE_FALLBACK,
     ).map((value) => normalizeToleranceValue(value));
 
@@ -306,7 +306,7 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
     activeTab,
     controlsDisabled,
     resolvedRetryAnchors,
-    transformConfig.zoomBandBoundaries,
+    geometryConfig.zoomBandBoundaries,
     updateStoredProfile,
   ]);
 
@@ -366,7 +366,7 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
       <Stack spacing={2}>
         <BuildConfigSectionTitle
           icon={<TuneIcon fontSize="small" color="primary" />}
-          title={t('processing.transform.simplifySettings.title', 'Simplify settings')}
+          title={t('processing.geometry.simplifySettings.title', 'Simplify settings')}
         />
 
         <Tabs
@@ -392,14 +392,14 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                   disabled={disabled}
                 />
               )}
-              label={t('processing.transform.adminLevel.usePrevious', 'Use values from previous tab')}
+              label={t('processing.geometry.adminLevel.usePrevious', 'Use values from previous tab')}
             />
             <Button
               variant="outlined"
               onClick={copyFromPreviousTab}
               disabled={Boolean(disabled || usePrevious)}
             >
-              {t('processing.transform.adminLevel.copyPrevious', 'Copy values from previous tab')}
+              {t('processing.geometry.adminLevel.copyPrevious', 'Copy values from previous tab')}
             </Button>
           </Stack>
         ) : null}
@@ -409,7 +409,7 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
             <Grid size={{ xs: 12, md: 8 }}>
               <Stack spacing={0.5}>
                 <Typography variant="body2" color="text.secondary">
-                  {t('processing.transform.simplifyTolerance.label', 'Simplify tolerance')}
+                  {t('processing.geometry.simplifyTolerance.label', 'Simplify tolerance')}
                 </Typography>
                 <div
                   ref={curveWidthRef}
@@ -419,8 +419,8 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                     width={simplifyCurveWidth}
                     height={180}
                     xRange={[
-                      transformConfig.zoomBandBoundaries[0] ?? 1,
-                      transformConfig.zoomBandBoundaries.at(-1) ?? 11,
+                      geometryConfig.zoomBandBoundaries[0] ?? 1,
+                      geometryConfig.zoomBandBoundaries.at(-1) ?? 11,
                     ]}
                     yRange={CURVE_Y_RANGE}
                     lineStyles={toneCurveLineStyles}
@@ -443,7 +443,7 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                           if (controlsDisabled) return;
                           const next = buildToleranceByBandFromToneCurveAnchors(
                             overlayAnchors,
-                            transformConfig.zoomBandBoundaries,
+                            geometryConfig.zoomBandBoundaries,
                             DEFAULT_RETRY_ANCHORS[0] ?? DEFAULT_TOLERANCE_FALLBACK,
                           ).map((value) => normalizeToleranceValue(value));
 
@@ -463,7 +463,7 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                       if (controlsDisabled) return;
                       const next = buildToleranceByBandFromToneCurveAnchors(
                         anchors,
-                        transformConfig.zoomBandBoundaries,
+                        geometryConfig.zoomBandBoundaries,
                         DEFAULT_MAIN_ANCHORS[0] ?? DEFAULT_TOLERANCE_FALLBACK,
                       ).map((value) => normalizeToleranceValue(value));
 
@@ -553,7 +553,7 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
             <Grid size={{ xs: 12, md: 4 }}>
               <Stack spacing={0.5} alignItems="flex-start">
                 <Typography variant="body2" color="text.secondary">
-                  {t('processing.transform.retryToleranceStep.label', 'Retry count')}
+                  {t('processing.geometry.retryToleranceStep.label', 'Retry count')}
                 </Typography>
                 <Stack direction="row" spacing={2} alignItems="center" sx={{ paddingTop: '20px' }}>
                   <Slider
@@ -581,7 +581,7 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
 
         <Typography variant="caption" color="text.secondary">
           {t(
-            'processing.transform.adminLevel.description',
+            'processing.geometry.adminLevel.description',
             'Configure simplify tolerance by admin level. Admin 1+ can reference values from the previous tab.',
           )}
         </Typography>

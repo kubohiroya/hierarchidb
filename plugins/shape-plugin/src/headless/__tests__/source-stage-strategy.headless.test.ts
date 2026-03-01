@@ -3,12 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildProcessConfig } from '../../services/build/types';
-import type { FetchTaskPayload } from '../../common/types/index';
+import type { SourceTaskPayload } from '../../common/types/index';
 import { DEFAULT_BUILD_CONFIG } from '../../common/types/index';
 //import { getShapeDbApiClient } from '../services/build/ShapeBuildApiClient.js';
 import { encodeFlatGeoJson } from '../../services/build/strategies/flatgeobuf';
-import { GadmFetchStageStrategy } from '../../services/build/strategies/GadmFetchStageStrategy';
-import { GeoBoundariesFetchStageStrategy } from '../../services/build/strategies/GeoBoundariesFetchStageStrategy';
+import { GadmSourceStageStrategy } from '../../services/build/strategies/GadmSourceStageStrategy';
+import { GeoBoundariesSourceStageStrategy } from '../../services/build/strategies/GeoBoundariesSourceStageStrategy';
 import { NaturalEarthDownloadStrategy } from '../../services/build/strategies/NaturalEarthDownloadStrategy';
 import type { Feature, FeatureCollection } from 'geojson';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
@@ -21,12 +21,12 @@ import {
 
 const createConfig = (dataSource: string): BuildProcessConfig => ({
   dataSource: dataSource as BuildProcessConfig['dataSource'],
-  fetchConfig: {
-    ...DEFAULT_BUILD_CONFIG.fetchConfig,
+  sourceConfig: {
+    ...DEFAULT_BUILD_CONFIG.sourceConfig,
     maxConcurrent: 1,
   },
-  transformConfig: {
-    ...DEFAULT_BUILD_CONFIG.transformConfig,
+  geometryConfig: {
+    ...DEFAULT_BUILD_CONFIG.geometryConfig,
     maxConcurrent: 1,
     featureAreaThreshold: 0,
     minVertexCountForAreaFilter: 0,
@@ -34,12 +34,12 @@ const createConfig = (dataSource: string): BuildProcessConfig => ({
     areaThreshold: 0,
   },
   vectorTiles: {
-    ...DEFAULT_BUILD_CONFIG.vtConfig,
+    ...DEFAULT_BUILD_CONFIG.tileEmitConfig,
     maxConcurrent: 1,
   },
 });
 
-const createFetchTaskPayload = (overrides: Partial<FetchTaskPayload>[]): FetchTaskPayload[] => (
+const createFetchTaskPayload = (overrides: Partial<SourceTaskPayload>[]): SourceTaskPayload[] => (
   overrides.map((item, index) => ({
     url: `https://example.com/${index}`,
     countryCode: 'JP',
@@ -50,7 +50,7 @@ const createFetchTaskPayload = (overrides: Partial<FetchTaskPayload>[]): FetchTa
   }))
 );
 
-describe('Fetch stage strategies', () => {
+describe('Source stage strategies', () => {
   const nodeId = 'node-1' as NodeId;
 
   beforeEach(async () => {
@@ -64,15 +64,15 @@ describe('Fetch stage strategies', () => {
     await deleteRawDataDataSourceBuffersForNode(nodeId);
   });
 
-  it('GADM strategy keeps 1:1 mapping between fetch tasks and outputs', async () => {
-    const strategy = new GadmFetchStageStrategy();
-    const fetchTaskPayloads = createFetchTaskPayload([
+  it('GADM strategy keeps 1:1 mapping between source tasks and outputs', async () => {
+    const strategy = new GadmSourceStageStrategy();
+    const sourceTaskPayloads = createFetchTaskPayload([
       { countryCode: 'JP', adminLevel: 0, dataSource: 'gadm' },
       { countryCode: 'ID', adminLevel: 1, dataSource: 'gadm' },
     ]);
-    const { tasks, inputsByTaskId } = await strategy.buildFetchTasks({
+    const { tasks, inputsByTaskId } = await strategy.buildSourceTasks({
       nodeId,
-      fetchTaskPayloads,
+      sourceTaskPayloads,
       config: createConfig('gadm'),
       options: {},
     });
@@ -80,11 +80,11 @@ describe('Fetch stage strategies', () => {
     expect(tasks).toHaveLength(2);
     const postprocess = await strategy.buildPostprocessOutputs({
       nodeId,
-      fetchTaskPayloads,
+      sourceTaskPayloads,
       config: createConfig('gadm'),
       options: {},
-      fetchTask: tasks,
-      fetchTaskInputsById: inputsByTaskId,
+      sourceTasks: tasks,
+      sourceTaskInputsById: inputsByTaskId,
     });
     expect(postprocess.outputs).toHaveLength(2);
     expect(postprocess.outputs[0]?.inputBufferId).toBe(
@@ -92,7 +92,7 @@ describe('Fetch stage strategies', () => {
         dataSource: 'gadm',
         countryCode: 'JP',
         adminLevel: 0,
-        url: fetchTaskPayloads[0]?.url,
+        url: sourceTaskPayloads[0]?.url,
       }),
     );
     expect(postprocess.outputs[1]?.inputBufferId).toBe(
@@ -100,20 +100,20 @@ describe('Fetch stage strategies', () => {
         dataSource: 'gadm',
         countryCode: 'ID',
         adminLevel: 1,
-        url: fetchTaskPayloads[1]?.url,
+        url: sourceTaskPayloads[1]?.url,
       }),
     );
   });
 
-  it('GeoBoundaries strategy keeps 1:1 mapping between fetch tasks and outputs', async () => {
-    const strategy = new GeoBoundariesFetchStageStrategy();
-    const fetchTaskPayloads = createFetchTaskPayload([
+  it('GeoBoundaries strategy keeps 1:1 mapping between source tasks and outputs', async () => {
+    const strategy = new GeoBoundariesSourceStageStrategy();
+    const sourceTaskPayloads = createFetchTaskPayload([
       { countryCode: 'JP', adminLevel: 0, dataSource: 'geoboundaries' },
       { countryCode: 'ID', adminLevel: 1, dataSource: 'geoboundaries' },
     ]);
-    const { tasks, inputsByTaskId } = await strategy.buildFetchTasks({
+    const { tasks, inputsByTaskId } = await strategy.buildSourceTasks({
       nodeId,
-      fetchTaskPayloads,
+      sourceTaskPayloads,
       config: createConfig('geoboundaries'),
       options: {},
     });
@@ -121,11 +121,11 @@ describe('Fetch stage strategies', () => {
     expect(tasks).toHaveLength(2);
     const postprocess = await strategy.buildPostprocessOutputs({
       nodeId,
-      fetchTaskPayloads,
+      sourceTaskPayloads,
       config: createConfig('geoboundaries'),
       options: {},
-      fetchTask: tasks,
-      fetchTaskInputsById: inputsByTaskId,
+      sourceTasks: tasks,
+      sourceTaskInputsById: inputsByTaskId,
     });
     expect(postprocess.outputs).toHaveLength(2);
     expect(postprocess.outputs[0]?.inputBufferId).toBe(
@@ -133,7 +133,7 @@ describe('Fetch stage strategies', () => {
         dataSource: 'geoboundaries',
         countryCode: 'JP',
         adminLevel: 0,
-        url: fetchTaskPayloads[0]?.url,
+        url: sourceTaskPayloads[0]?.url,
       }),
     );
     expect(postprocess.outputs[1]?.inputBufferId).toBe(
@@ -141,22 +141,22 @@ describe('Fetch stage strategies', () => {
         dataSource: 'geoboundaries',
         countryCode: 'ID',
         adminLevel: 1,
-        url: fetchTaskPayloads[1]?.url,
+        url: sourceTaskPayloads[1]?.url,
       }),
     );
   });
 
-  it('NaturalEarth strategy groups fetch tasks by level and splits outputs by country', async () => {
+  it('NaturalEarth strategy groups source tasks by level and splits outputs by country', async () => {
     const strategy = new NaturalEarthDownloadStrategy();
-    const fetchTaskPayloads = createFetchTaskPayload([
+    const sourceTaskPayloads = createFetchTaskPayload([
       { countryCode: 'JP', countryName: 'Japan', adminLevel: 0, dataSource: 'naturalearth' },
       { countryCode: 'ID', countryName: 'Indonesia', adminLevel: 0, dataSource: 'naturalearth' },
       { countryCode: 'JP', countryName: 'Japan', adminLevel: 1, dataSource: 'naturalearth' },
       { countryCode: 'ID', countryName: 'Indonesia', adminLevel: 1, dataSource: 'naturalearth' },
     ]);
-    const { tasks, inputsByTaskId } = await strategy.buildFetchTasks({
+    const { tasks, inputsByTaskId } = await strategy.buildSourceTasks({
       nodeId,
-      fetchTaskPayloads,
+      sourceTaskPayloads,
       config: createConfig('naturalearth'),
       options: {},
     });
@@ -210,11 +210,11 @@ describe('Fetch stage strategies', () => {
 
     const postprocess = await strategy.buildPostprocessOutputs({
       nodeId,
-      fetchTaskPayloads,
+      sourceTaskPayloads,
       config: createConfig('naturalearth'),
       options: {},
-      fetchTask: tasks,
-      fetchTaskInputsById: inputsByTaskId,
+      sourceTasks: tasks,
+      sourceTaskInputsById: inputsByTaskId,
     });
     expect(postprocess.outputs.length).toBeGreaterThanOrEqual(4);
     const outputIds = new Set(postprocess.outputs.map((output) => output.inputBufferId));

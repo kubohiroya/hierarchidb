@@ -8,10 +8,10 @@ export class GeoJsonStrategy implements DataSourceStrategy {
 
   async plan(spec: DataSourceSpec, ctx: StrategyContext): Promise<TaskPlan> {
     const id = `${ctx.planId}:geojson:0`;
-    if (spec.inline && !spec.url) return { fetch: [], parse: [{ kind: 'parse', source: 'geojson', payloadRef: id }] };
+    if (spec.inline && !spec.url) return { source: [], parse: [{ kind: 'parse', source: 'geojson', payloadRef: id }] };
     if (!spec.url) throw new Error('GeoJSON strategy requires url or inline');
     return {
-      fetch: [{ kind: 'fetch', url: spec.url }],
+      source: [{ kind: 'source', url: spec.url }],
       parse: [{ kind: 'parse', source: 'geojson', payloadRef: spec.url }],
     };
   }

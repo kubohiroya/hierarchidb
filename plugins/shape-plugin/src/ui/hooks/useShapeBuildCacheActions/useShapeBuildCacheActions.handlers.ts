@@ -2,9 +2,9 @@ import type { BuildSessionStatus } from '@hierarchidb/build-api';
 import type { BuildTaskType } from '@hierarchidb/shape-store';
 import type { NodeId } from '@hierarchidb/core-types';
 import { notify } from '@hierarchidb/components';
-import { deleteTasksByNode, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
+import { deleteTasksByNode, VtTaskQueueDb as TileEmitTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { ephemeralShapeAPIImpl, shapeMutationAPIImpl } from '~/services/build/ShapeBuildAPIClient';
-import { deleteFetchRawCache } from './useShapeBuildCacheActions.helpers.js';
+import { deleteSourceRawCache } from './useShapeBuildCacheActions.helpers.js';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 
 type BuildTaskFilterDeps = {
@@ -21,7 +21,7 @@ type FilterContext = BuildTaskFilterDeps & {
   runClearTaskQueueStages: (taskTypes: BuildTaskType[]) => Promise<void>;
 };
 
-export type CacheActionKey = 'fetchApi' | 'fetchFiltered' | 'transform' | 'vt' | 'transposeIndex' | 'metadata' | 'resetSession';
+export type CacheActionKey = 'sourceApi' | 'sourceFiltered' | 'geometry' | 'tileEmit' | 'transposeIndex' | 'metadata' | 'resetSession';
 
 type ActionDeps = BuildTaskFilterDeps & {
   sessionStatus: BuildSessionStatus['status'] | null;
@@ -71,12 +71,12 @@ const clearMetadataAndTaskStates = async (deps: ActionDeps, taskTypes: BuildTask
   await filterByStage(deps, taskTypes);
 };
 
-const handleDeleteVtArtifacts = async (deps: ActionDeps, successMessage: string): Promise<void> => {
+const handleDeleteTileEmitArtifacts = async (deps: ActionDeps, successMessage: string): Promise<void> => {
   const nodeId = deps.nodeId;
   if (!nodeId) return;
-  const taskTypes: BuildTaskType[] = ['vt'];
-  const taskQueue = new VtTaskQueueDb();
-  await ephemeralShapeAPIImpl.clearStage(nodeId, 'vt');
+  const taskTypes: BuildTaskType[] = ['tileEmit'];
+  const taskQueue = new TileEmitTaskQueueDb();
+  await ephemeralShapeAPIImpl.clearStage(nodeId, 'tileEmit');
   await shapeMutationAPIImpl.deleteVectorTiles(nodeId);
   await clearMetadataAndTaskStates(deps, taskTypes);
   await taskQueue.tasks.where('nodeId').equals(nodeId).delete();
@@ -90,17 +90,17 @@ const handleDeleteVtArtifacts = async (deps: ActionDeps, successMessage: string)
   notify.success(successMessage);
 };
 
-export const handleDeleteFetchApiCache = async (deps: ActionDeps): Promise<void> => {
+export const handleDeleteSourceApiCache = async (deps: ActionDeps): Promise<void> => {
   if (!deps.nodeId) return;
   const nodeId = deps.nodeId;
-  const taskTypes: BuildTaskType[] = ['fetch', 'transform', 'vt'];
-  await deps.runDelete('fetchApi', async () => {
+  const taskTypes: BuildTaskType[] = ['source', 'geometry', 'tileEmit'];
+  await deps.runDelete('sourceApi', async () => {
     let deletedApiCache = false;
     try {
-      await deleteFetchRawCache(nodeId);
+      await deleteSourceRawCache(nodeId);
       deletedApiCache = true;
     } catch (error) {
-      console.warn('[shapeBuildCache] failed to delete fetch API cache', error);
+      console.warn('[shapeBuildCache] failed to delete source API cache', error);
       notify.error('Failed to delete API cache.');
     }
 
@@ -119,12 +119,12 @@ export const handleDeleteFetchApiCache = async (deps: ActionDeps): Promise<void>
   });
 };
 
-export const handleDeleteFetchFilteredCache = async (deps: ActionDeps): Promise<void> => {
+export const handleDeleteSourceFilteredCache = async (deps: ActionDeps): Promise<void> => {
   if (!deps.nodeId) return;
   const nodeId = deps.nodeId;
-  const taskTypes: BuildTaskType[] = ['fetch', 'transform', 'vt'];
-  await deps.runDelete('fetchFiltered', async () => {
-    await ephemeralShapeAPIImpl.clearStage(nodeId, 'fetch');
+  const taskTypes: BuildTaskType[] = ['source', 'geometry', 'tileEmit'];
+  await deps.runDelete('sourceFiltered', async () => {
+    await ephemeralShapeAPIImpl.clearStage(nodeId, 'source');
     await clearMetadataAndTaskStates(deps, taskTypes);
 
     const shouldPreserveSession = deps.sessionStatus === 'completed' || (await deps.hasPersistedOutputs());
@@ -135,34 +135,34 @@ export const handleDeleteFetchFilteredCache = async (deps: ActionDeps): Promise<
     }
 
     await deps.loadCountsSafely();
-    notify.success('Deleted filtered cache');
+    notify.success('Deleted source filtered cache');
   });
 };
 
-export const handleDeleteTransformCache = async (deps: ActionDeps): Promise<void> => {
+export const handleDeleteGeometryCache = async (deps: ActionDeps): Promise<void> => {
   if (!deps.nodeId) return;
   const nodeId = deps.nodeId;
-  const taskTypes: BuildTaskType[] = ['transform', 'vt'];
-  await deps.runDelete('transform', async () => {
-    await ephemeralShapeAPIImpl.clearStage(nodeId, 'transform');
+  const taskTypes: BuildTaskType[] = ['geometry', 'tileEmit'];
+  await deps.runDelete('geometry', async () => {
+    await ephemeralShapeAPIImpl.clearStage(nodeId, 'geometry');
     await clearMetadataAndTaskStates(deps, taskTypes);
     await clearSessionQueueIfNeeded(deps, true);
     await deps.loadCountsSafely();
-    notify.success('Deleted transform cache');
+    notify.success('Deleted geometry cache');
   });
 };
 
-export const handleDeleteVTCache = async (deps: ActionDeps): Promise<void> => {
+export const handleDeleteTileEmitCache = async (deps: ActionDeps): Promise<void> => {
   if (!deps.nodeId) return;
-  await deps.runDelete('vt', async () => {
-    await handleDeleteVtArtifacts(deps, 'Deleted tile data');
+  await deps.runDelete('tileEmit', async () => {
+    await handleDeleteTileEmitArtifacts(deps, 'Deleted tile data');
   });
 };
 
 export const handleDeleteTransposeIndex = async (deps: ActionDeps): Promise<void> => {
   if (!deps.nodeId) return;
   await deps.runDelete('transposeIndex', async () => {
-    await handleDeleteVtArtifacts(deps, 'Deleted transpose index');
+    await handleDeleteTileEmitArtifacts(deps, 'Deleted transpose index');
   });
 };
 
@@ -179,7 +179,7 @@ export const handleDeleteFeatureMetadata = async (deps: ActionDeps): Promise<voi
 export const handleResetSession = async (deps: ActionDeps): Promise<void> => {
   if (!deps.nodeId) return;
   const nodeId = deps.nodeId;
-  const taskQueue = new VtTaskQueueDb();
+  const taskQueue = new TileEmitTaskQueueDb();
   await deps.runDelete('resetSession', async () => {
     await deleteTasksByNode(taskQueue, nodeId);
     await shapeMutationAPIImpl.clearShapeArtifacts(nodeId);

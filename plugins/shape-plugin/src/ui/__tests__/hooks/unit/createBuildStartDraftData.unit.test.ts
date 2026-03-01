@@ -51,7 +51,7 @@ describe('createBuildStartDraftData', () => {
       matchType: 'regexp',
       pattern: '.*',
       buildConfig: {
-        transformConfig: {
+        geometryConfig: {
           toleranceByBand: [0.2],
         },
       },
@@ -60,9 +60,9 @@ describe('createBuildStartDraftData', () => {
       currentDraftData: {
         buildConfig: {
           dataSourceName: 'gadm',
-          fetchConfig: {},
-          transformConfig: {},
-          vtConfig: {},
+          sourceConfig: {},
+          geometryConfig: {},
+          tileEmitConfig: {},
         },
       },
       patch: {

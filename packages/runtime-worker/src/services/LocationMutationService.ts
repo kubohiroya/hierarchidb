@@ -224,7 +224,7 @@ export class LocationMutationService implements LocationMutationAPI {
       progress?.({ ...payload, timestamp: Date.now() });
     };
     try {
-      emit({ phase: 'fetch' });
+      emit({ phase: 'source' });
 
       const { headers, rows } = await loadTabularTableRows('location', request.tabularSourceId, request.tabularDbPrefix);
       const parsed = await parseIdeGsmRecords(headers, rows);
@@ -387,7 +387,7 @@ export class LocationMutationService implements LocationMutationAPI {
       }
     });
     for (const routeNodeId of impactedRouteNodeIds) {
-      await this.clearFetchCacheAndReserveRouteRebuild(routeNodeId);
+      await this.clearSourceCacheAndReserveRouteRebuild(routeNodeId);
     }
   }
 
@@ -462,7 +462,7 @@ export class LocationMutationService implements LocationMutationAPI {
     });
 
     for (const routeNodeId of structuralRouteNodes) {
-      await this.clearFetchCacheAndReserveRouteRebuild(routeNodeId);
+      await this.clearSourceCacheAndReserveRouteRebuild(routeNodeId);
     }
   }
 
@@ -544,15 +544,15 @@ export class LocationMutationService implements LocationMutationAPI {
     return Array.from(matchedIds);
   }
 
-  private async clearFetchCacheAndReserveRouteRebuild(routeNodeId: NodeId): Promise<void> {
+  private async clearSourceCacheAndReserveRouteRebuild(routeNodeId: NodeId): Promise<void> {
     await ephemeralDB.open?.();
     const now = Date.now();
     await ephemeralDB.transaction(
       'rw',
-      [ephemeralDB.fetchCache, ephemeralDB.fetchCacheMeta, ephemeralDB.sessions],
+      [ephemeralDB.sourceCache, ephemeralDB.sourceCacheMeta, ephemeralDB.sessions],
       async () => {
-        await ephemeralDB.fetchCache.where('nodeId').equals(routeNodeId).delete();
-        await ephemeralDB.fetchCacheMeta.where('nodeId').equals(routeNodeId).delete();
+        await ephemeralDB.sourceCache.where('nodeId').equals(routeNodeId).delete();
+        await ephemeralDB.sourceCacheMeta.where('nodeId').equals(routeNodeId).delete();
         const current = await ephemeralDB.sessions.get(routeNodeId);
         if (current?.status === 'running') return;
         await ephemeralDB.sessions.put({
@@ -560,7 +560,7 @@ export class LocationMutationService implements LocationMutationAPI {
           nodeId: routeNodeId,
           domainType: 'route',
           status: 'idle',
-          stage: 'fetch',
+          stage: 'source',
           progress: 0,
           updatedAt: now,
           startedAt: current?.startedAt ?? now,

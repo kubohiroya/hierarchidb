@@ -1,10 +1,10 @@
 import type { EphemeralDB } from '@hierarchidb/gis-sdk';
-import type { GeometryEngine, TransformConfig, VTConfig } from '@hierarchidb/gis-sdk';
+import type { GeometryEngine, GeometryConfig, TileEmitConfig } from '@hierarchidb/gis-sdk';
 import type { BandConfig } from './types/types.js';
 
 export type TransformByBandStageContext = {
   ephemeralDB: EphemeralDB;
-  transformConfig: TransformConfig;
+  geometryConfig: GeometryConfig;
   bands: BandConfig[];
   featureIdAllowlist?: Set<string>;
   abortSignal?: AbortSignal;
@@ -22,7 +22,7 @@ export type VtTileWriter = (tile: {
 
 export type VTStageContext = {
   ephemeralDB: EphemeralDB;
-  vtConfig: VTConfig;
+  tileEmitConfig: TileEmitConfig;
   bands: BandConfig[];
   geometryEngine: GeometryEngine;
   topojsonSource?: boolean;

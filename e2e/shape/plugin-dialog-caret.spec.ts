@@ -98,7 +98,7 @@ const createShapeNodeWithDraft = async (page: Page): Promise<ShapeNode> => {
       description: 'E2E caret validation',
       buildConfig: {
         dataSourceName: 'geoboundaries',
-        fetchConfig: {
+        sourceConfig: {
           maxConcurrent: 1,
           deleteOnComplete: false,
           timeoutMs: 300000,
@@ -107,7 +107,7 @@ const createShapeNodeWithDraft = async (page: Page): Promise<ShapeNode> => {
           retryLimit: 1,
           retryBackoff: 'linear',
         },
-        transformConfig: {
+        geometryConfig: {
           zoomBandBoundaries: [1, 2, 3],
           maxConcurrent: 1,
           enableFeatureFiltering: true,
@@ -132,7 +132,7 @@ const createShapeNodeWithDraft = async (page: Page): Promise<ShapeNode> => {
           minRingVertices: 4,
           boundaryDisableAtZoomOrAbove: 3,
         },
-        vtConfig: {
+        tileEmitConfig: {
           enableTopojsonSimplify: true,
           maxConcurrent: 1,
           dynamicConcurrency: {
@@ -147,7 +147,7 @@ const createShapeNodeWithDraft = async (page: Page): Promise<ShapeNode> => {
           extent: 4096,
           bufferSize: 256,
           boundaryDedupe: true,
-          indexMaxPoints: 0,
+          indexMaxPoints: 100000,
           layerSetName: 'shape',
           promoteId: 'id',
           tileSize: 256,

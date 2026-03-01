@@ -13,6 +13,7 @@ Pure-function-first implementation is mandatory for stage planning/derivation/va
 
 - `plans/shape-5stage-pure-function-spec.md`
 - `plans/shape-stage-keyword-removal-backlog.md` (code migration backlog for removing stage-keyword-coupled control paths)
+- `plans/stage-rename-risk-audit-source-geometry-tileemit.md` (pre-audit guardrails for `Source/Geometry/TileEmit` rename safety)
 
 ## Scope / Non-goals
 
@@ -21,7 +22,7 @@ Pure-function-first implementation is mandatory for stage planning/derivation/va
 - Define execution stages as `Stage1..Stage5` with explicit contracts.
 - Define lifecycle hooks around stages (`Stage0`, `Stage6`) as non-stage hooks.
 - Define TaskQueue state transitions, error classification, retry policy, and UI mapping.
-- Define rollout, feature-flag defaults, rollback, and validation matrix.
+- Define interface-first rollout, module replacement order, rollback, and validation matrix.
 
 ### Non-goals
 
@@ -190,11 +191,11 @@ Under this specification, stage-name-agnostic orchestration is authoritative:
 
 | Stage | Input | Output | Persistence | Primary key | Idempotency rule | Failure behavior |
 | --- | --- | --- | --- | --- | --- | --- |
-| Stage1 Fetch | country/adminLevel selection + data source config + nodeId/sessionId | fetch cache + feature metadata | `ephemeral fetch cache` + metadata tables | `cacheKey = nodeId + sourceKey + fetchConfigHash` | same input MUST regenerate same `cacheKey` | retriable for transient network errors; fail-fast for schema/validation errors |
+| Stage1 Fetch | country/adminLevel selection + data source config + nodeId/sessionId | fetch cache + feature metadata | `ephemeral fetch cache` + metadata tables | `cacheKey = nodeId + sourceKey + sourceConfigHash` | same input MUST regenerate same `cacheKey` | retriable for transient network errors; fail-fast for schema/validation errors |
 | Stage2 GraphIndex | Stage1 outputs + graph config | tile-country index + adjacency + arc IDs + graphVersion | graph index tables in ephemeral/shared store | `graphKey = nodeId + sessionId + graphConfigHash` | same input MUST regenerate same graph index set | fail-fast on corruption/geometry topology hard-fail |
-| Stage3 PlanTransform | Stage2 outputs + build config | transform task plan (`country x band` task set) | task planning records in TaskQueue metadata | `planKey = nodeId + graphVersion + transformConfigHash` | same input MUST regenerate equivalent plan | fail-fast on invalid config; no partial implicit fallback |
+| Stage3 PlanTransform | Stage2 outputs + build config | transform task plan (`country x band` task set) | task planning records in TaskQueue metadata | `planKey = nodeId + graphVersion + geometryConfigHash` | same input MUST regenerate equivalent plan | fail-fast on invalid config; no partial implicit fallback |
 | Stage4 GeometryTransform | Stage3 tasks + Stage1 cache + Stage2 graph artifacts | transform cache artifacts | transform cache tables | `transformCacheKey = nodeId + taskIdentity + toleranceProfile` | same task identity + same inputs MUST produce same cache identity | retry on transient compute/resource; fail-fast on `ValidationError`/`DataCorruptionError` |
-| Stage5 VT | Stage4 transform cache + vt config | vector tiles + stage metadata | tile store + stage metadata store | `tileKey = nodeId + z + x + y + band + vtConfigHash` | same inputs MUST upsert identical tile key space | retry on transient writer errors; fail-fast on missing required upstream cache |
+| Stage5 VT | Stage4 transform cache + vt config | vector tiles + stage metadata | tile store + stage metadata store | `tileKey = nodeId + z + x + y + band + tileEmitConfigHash` | same inputs MUST upsert identical tile key space | retry on transient writer errors; fail-fast on missing required upstream cache |
 
 ### Identity/key design
 
@@ -216,11 +217,11 @@ Determinism requirement:
 ### Canonical references (existing paths)
 
 - `plugins/shape-plugin/src/services/vt/shapePipeline.ts`
-- `plugins/shape-plugin/src/services/vt/shapePipelineFetchStage.ts`
-- `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts`
+- `plugins/shape-plugin/src/services/vt/shapePipelineSourceStage.ts`
+- `plugins/shape-plugin/src/services/vt/shapeSourceStage.ts`
 - `plugins/shape-plugin/src/services/vt/shapePipelineTransformStage.ts`
 - `packages/vt-orchestrator/src/transform/createTransformByBandHandler/execute.ts`
-- `plugins/shape-plugin/src/services/vt/shapePipelineVtStage.ts`
+- `plugins/shape-plugin/src/services/vt/shapePipelineTileEmitStage.ts`
 - `packages/vt-orchestrator/src/vt/vtStageHandler.ts`
 
 ## TaskQueue State Machine
@@ -322,6 +323,7 @@ Condition notes:
 5. Rollback section defines actor, target, and order.
 6. Implementer can start coding without unresolved design questions.
 7. Revision note exists at the end.
+8. No feature-flag branch is introduced in orchestrator/runtime/UI integration paths.
 
 ### Test matrix to include in implementation phase
 
@@ -333,13 +335,27 @@ Condition notes:
 | Cache reuse with same input | Stage1/2 recomputation suppressed, deterministic keys reused |
 | Partial task failures | session-level policy explicitly applied and UI reflects terminal status |
 
-## Rollout / Feature Flag / Rollback
+## Rollout / Integration / Rollback
 
-### Rollout defaults
+### Rollout defaults (feature-flag free)
 
-- Feature flag default: `OFF`.
-- Enablement scope: shape pipeline only.
-- Route pipeline: unaffected and out of scope.
+- Feature flags are not used for this migration.
+- Enablement scope is shape pipeline only; route pipeline is out of scope.
+- Integration is staged by module replacement order, not by runtime branch toggles.
+
+### Integration order (interface-first)
+
+1. Fix abstract contracts (`ScenarioStepDescriptor`, state transition contracts, pure-function contracts).
+2. Replace implementation modules behind the same contracts (planner/executor/adapters).
+3. Switch composition wiring to descriptor-driven assembly.
+4. Remove obsolete keyword-coupled modules and aliases once tests pass.
+
+Gate for each step:
+
+- contract tests green
+- affected unit/integration tests green
+- no new keyword-coupled dispatch branches
+- no schema/API drift without explicit migration spec
 
 ### Compatibility policy
 
@@ -354,11 +370,11 @@ Actor: implementer/releaser for shape pipeline change.
 
 Order:
 
-1. Turn feature flag OFF.
-2. Stop new sessions using 5-stage path.
-3. Revert pipeline wiring commits affecting Stage1..5 execution.
+1. Stop new sessions from starting the updated 5-stage wiring.
+2. Revert contract-adapter wiring commits affecting Stage1..5 execution.
+3. Restore prior stable module bindings for planner/executor integration.
 4. Remove/clear newly introduced 5-stage temporary artifacts if incompatible.
-5. Run smoke validation on 3-stage baseline behavior.
+5. Run smoke validation on baseline 3-stage behavior.
 
 ## Idempotence and Recovery
 
@@ -387,8 +403,8 @@ Order:
   Rationale: Keep behavior deterministic and bounded while allowing practical recovery from borderline geometry issues.
   Date/Author: 2026-02-28 / Codex
 
-- Decision: Feature flag default remains OFF and route remains out of scope.
-  Rationale: Limit blast radius and keep rollout reversible.
+- Decision: Feature flags are not used; rollout proceeds by contract-first module replacement.
+  Rationale: Avoid scattered runtime branches and keep migration control at module boundaries.
   Date/Author: 2026-02-28 / Codex
 
 - Decision: Keep stage words (`Fetch`, `PlanTransform`, `GeometryTransform`, `VT`) as documentation/UI labels only, and enforce capability-based orchestration keys.
@@ -407,6 +423,10 @@ Order:
   Rationale: Compatibility projection re-introduces stage-keyword coupling and weakens the stage-name-agnostic architecture goal.
   Date/Author: 2026-02-28 / Codex
 
+- Decision: Keep persisted/API stage keys (`fetch|transform|vt`) unchanged during #655, and migrate only UI wording plus boundary adapters.
+  Rationale: Reduce migration risk by separating internal-control refactor from storage/API breaking changes.
+  Date/Author: 2026-03-01 / Codex
+
 ## Revision Note
 
 - 2026-02-28: Full replacement of the previous diagram-centric draft with a decision-complete pre-implementation specification. Reason: remove ambiguity and enforce implementation/rollback/validation contracts before coding.
@@ -414,3 +434,5 @@ Order:
 - 2026-02-28: Added explicit alignment rules with runtime-worker build-session SSOT/state-transition docs (terminology, single-entry execution semantics, bootstrap normalization, snapshot/progress consistency).
 - 2026-02-28: Added mandatory reference to pure-function catalog (`plans/shape-5stage-pure-function-spec.md`) and codified pure-function-first implementation boundary.
 - 2026-02-28: Removed compatibility stage projection requirement (`sessions.stage` projection) and standardized the execution truth source to descriptor/capability + persisted/runtime status dimensions.
+- 2026-03-01: Replaced feature-flag rollout wording with interface-first module replacement policy and explicit integration gates. Reason: prevent branch proliferation and enforce contract-driven migration.
+- 2026-03-01: Fixed rollout policy for #655 to keep persisted/API stage keys stable (`fetch|transform|vt`) while allowing canonical stageId (`source-stage|geometry-stage|tile-emit-stage`) at adapter boundaries and applying `Source/Geometry/TileEmit` to UI wording.

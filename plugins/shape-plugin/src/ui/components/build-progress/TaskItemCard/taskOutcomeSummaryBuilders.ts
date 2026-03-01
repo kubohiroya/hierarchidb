@@ -149,7 +149,7 @@ const resolveRatio = (output: number | null, input: number | null): number | nul
   return Math.max(0, Math.min(1, output / input));
 };
 
-export const buildFetchTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task, taskTitle, translate }) => {
+export const buildSourceTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task, taskTitle, translate }) => {
   const kind = resolveSummaryKind(task);
   const displayMessage = formatTaskDisplayMessage(task.display, translate);
   const failedMessage = resolveFailedMessage(task);
@@ -184,7 +184,7 @@ export const buildFetchTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task, 
   ]);
   const featuresRatio = resolveRatio(featuresOutput, featuresInput);
   const polygonsRatio = resolveRatio(polygonsOutput, polygonsInput);
-  const hasFetchDetails = url !== null
+  const hasSourceDetails = url !== null
     || featuresInput !== null
     || featuresOutput !== null
     || polygonsInput !== null
@@ -222,7 +222,7 @@ export const buildFetchTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task, 
       : (displayMessage || 'Completed');
     return {
       kind,
-      visualization: hasFetchDetails ? 'fetchMetrics' : 'none',
+      visualization: hasSourceDetails ? 'fetchMetrics' : 'none',
       summaryLine,
       detailLines: [summaryLine],
       fetchDetails: {
@@ -239,7 +239,7 @@ export const buildFetchTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task, 
   const info = displayMessage || resolveTaskMetadataMessage(task.metadata) || taskTitle;
   return {
     kind,
-    visualization: hasFetchDetails ? 'fetchMetrics' : 'none',
+    visualization: hasSourceDetails ? 'fetchMetrics' : 'none',
     summaryLine: info,
     detailLines: [info],
     fetchDetails: {
@@ -253,7 +253,7 @@ export const buildFetchTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task, 
   };
 };
 
-export const buildTransformTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task, taskTitle, translate }) => {
+export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task, taskTitle, translate }) => {
   const kind = resolveSummaryKind(task);
   const displayMessage = formatTaskDisplayMessage(task.display, translate);
   const failedMessage = resolveFailedMessage(task);
@@ -379,3 +379,6 @@ export const buildTransformTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ ta
     detailLines: [info],
   };
 };
+
+export const buildFetchTaskOutcomeSummary = buildSourceTaskOutcomeSummary;
+export const buildTransformTaskOutcomeSummary = buildGeometryTaskOutcomeSummary;

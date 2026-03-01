@@ -1,22 +1,22 @@
 import type {
-  FetchStageBuildContext,
-  FetchStagePostprocessContext,
-  FetchStagePostprocessResult,
-  FetchStageStrategy,
-  FetchPayloadBuildContext,
-} from './FetchStageStrategy.ts';
-import type { DataSourceName, FetchTask, FetchTaskPayload } from '~/common/types/index';
-import { buildFetchTaskId, generateDownloadTaskPayloadsFromSelection } from '~/services/utils/utils';
+  SourceStageBuildContext,
+  SourceStagePostprocessContext,
+  SourceStagePostprocessResult,
+  SourceStageStrategy,
+  SourcePayloadBuildContext,
+} from './SourceStageStrategy.ts';
+import type { DataSourceName, SourceTask, SourceTaskPayload } from '~/common/types/index';
+import { buildSourceTaskId, generateDownloadTaskPayloadsFromSelection } from '~/services/utils/utils';
 import { buildRawDataDataSourceCacheKey } from '~/services/utils/chunkStore';
 
-export class GeoBoundariesFetchStageStrategy implements FetchStageStrategy {
+export class GeoBoundariesSourceStageStrategy implements SourceStageStrategy {
   private readonly dataSource: DataSourceName;
 
   constructor(dataSource: DataSourceName = 'geoboundaries') {
     this.dataSource = dataSource;
   }
 
-  buildFetchTaskPayloads(context: FetchPayloadBuildContext) {
+  buildSourceTaskPayloads(context: SourcePayloadBuildContext) {
     return generateDownloadTaskPayloadsFromSelection(
       this.dataSource,
       context.selectedArrayByCountries,
@@ -24,11 +24,11 @@ export class GeoBoundariesFetchStageStrategy implements FetchStageStrategy {
     );
   }
 
-  async buildFetchTasks(context: FetchStageBuildContext) {
-    const inputsByTaskId = new Map<string, FetchTaskPayload>();
-    const tasks: FetchTask[] = context.fetchTaskPayloads.map((metadata, index) => {
-      const taskId = buildFetchTaskId(String(context.nodeId), metadata);
-      const payload: FetchTaskPayload = {
+  async buildSourceTasks(context: SourceStageBuildContext) {
+    const inputsByTaskId = new Map<string, SourceTaskPayload>();
+    const tasks: SourceTask[] = context.sourceTaskPayloads.map((metadata, index) => {
+      const taskId = buildSourceTaskId(String(context.nodeId), metadata);
+      const payload: SourceTaskPayload = {
         url: metadata.url,
         countryCode: metadata.countryCode,
         countryName: metadata.countryName,
@@ -40,7 +40,7 @@ export class GeoBoundariesFetchStageStrategy implements FetchStageStrategy {
         taskId,
         nodeId: context.nodeId,
         stage: 'wait',
-        type: 'fetch',
+        type: 'source',
         status: 'queued',
         index,
         progress: 0,
@@ -53,10 +53,10 @@ export class GeoBoundariesFetchStageStrategy implements FetchStageStrategy {
   }
 
   async buildPostprocessOutputs(
-    context: FetchStagePostprocessContext,
-  ): Promise<FetchStagePostprocessResult> {
-    const outputs = context.fetchTask.map((task) => {
-      const input = context.fetchTaskInputsById.get(task.taskId);
+    context: SourceStagePostprocessContext,
+  ): Promise<SourceStagePostprocessResult> {
+    const outputs = context.sourceTasks.map((task) => {
+      const input = context.sourceTaskInputsById.get(task.taskId);
       if (!input) {
         throw new Error(`[GeoBoundariesDownloadStrategy] Missing input for task ${task.taskId}`);
       }

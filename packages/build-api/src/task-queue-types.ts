@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
 
-export type TaskStage = 'fetch' | 'transform' | 'vt';
+export type TaskStage = 'source' | 'geometry' | 'tileEmit';
 export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'recycled';
 
 export type TaskDisplayKind = 'phase' | 'summary' | 'skip' | 'error' | 'info';
@@ -23,6 +23,7 @@ export type TaskQueueRecord<TInput = unknown, TOutput = unknown> = {
   taskId: string;
   nodeId: NodeId;
   stage: TaskStage;
+  stageId?: string;
   status: TaskStatus;
   index: number;
   stagePriority?: number;

@@ -26,7 +26,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> => (
   typeof value === 'object' && value !== null
 );
 
-const buildFetchTitle = (input: Record<string, unknown>): string | undefined => {
+const buildSourceTitle = (input: Record<string, unknown>): string | undefined => {
   const admin0Name = readString(input.admin0Name)
     ?? readString(input.countryName)
     ?? readString(input.countryCode)
@@ -43,7 +43,7 @@ const buildFetchTitle = (input: Record<string, unknown>): string | undefined => 
   return title.length > 0 ? title : undefined;
 };
 
-const buildTransformTitle = (input: Record<string, unknown>): string | undefined => {
+const buildGeometryTitle = (input: Record<string, unknown>): string | undefined => {
   const admin0Name = readString(input.admin0Name)
     ?? readString(input.countryName)
     ?? readString(input.countryCode)
@@ -67,7 +67,7 @@ const buildTransformTitle = (input: Record<string, unknown>): string | undefined
   return title.length > 0 ? title : undefined;
 };
 
-const buildVtTitle = (input: Record<string, unknown>): string | undefined => {
+const buildTileEmitTitle = (input: Record<string, unknown>): string | undefined => {
   const TILE_INDEX_BITS = 22;
   const TILE_INDEX_SCALE = 2 ** TILE_INDEX_BITS;
   const TILE_INDEX_STRIDE = TILE_INDEX_SCALE * TILE_INDEX_SCALE;
@@ -99,9 +99,9 @@ export const buildShapeTaskTitle = (task: StageLike): string | undefined => {
   const input = isRecord(task.inputData) ? task.inputData : undefined;
   if (!input) return undefined;
   const stage = resolveStageKey(task);
-  if (stage === 'fetch') return buildFetchTitle(input);
-  if (stage === 'transform') return buildTransformTitle(input);
-  if (stage === 'vt') return buildVtTitle(input);
+  if (stage === 'source') return buildSourceTitle(input);
+  if (stage === 'geometry') return buildGeometryTitle(input);
+  if (stage === 'tileEmit') return buildTileEmitTitle(input);
   return undefined;
 };
 

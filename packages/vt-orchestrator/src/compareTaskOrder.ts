@@ -6,6 +6,7 @@ import type {
   TaskQueueRecord,
   TaskFilter,
 } from './types/types.js';
+import { resolveRunStageIdentity } from './types/types.js';
 
 const compareTaskOrder = (a: TaskQueueRecord, b: TaskQueueRecord): number => {
   const pa = a.stagePriority ?? 0;
@@ -81,13 +82,13 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
 ): Promise<void> {
   const {
     nodeId,
-    stage,
     handler,
     waitIfPaused,
     maxConcurrent,
     taskFilter,
     lanePolicy,
   } = options;
+  const { stage, stageId, capability } = resolveRunStageIdentity(options);
   const failureHandling: FailureHandling = options.failureHandling ?? 'continue';
   const stopOnFailure = failureHandling === 'stop';
   const skipOnFailure = failureHandling === 'skip';
@@ -225,6 +226,8 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
     console.warn('[vt-orchestrator][runStageTasks] stage summary', {
       nodeId,
       stage,
+      stageId,
+      capability,
       pending: pending.length,
       desiredConcurrent,
       maxConcurrentLimit,

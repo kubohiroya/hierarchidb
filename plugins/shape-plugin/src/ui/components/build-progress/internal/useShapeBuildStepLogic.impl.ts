@@ -222,7 +222,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     totalElapsedMs,
     displayStageRemainingMs,
     progressSummary,
-    hasFailedFetchTasks,
+    hasFailedSourceTasks,
     isTaskSummaryLoading,
   } = useShapeBuildStepProgressState({
     buildStatus,
@@ -386,7 +386,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     runtimeStatus,
     handleStartOrResume,
     handlePause,
-    hasFailedFetchTasks,
+    hasFailedSourceTasks,
     hasDataSource,
     hasSelection,
     isProcessingValid,

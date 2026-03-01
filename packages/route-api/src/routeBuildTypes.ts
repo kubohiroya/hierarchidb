@@ -35,7 +35,7 @@ export type RouteVectorTileBuildResult = {
 
 export type RouteBuildError = {
   id: string;
-  stage: 'fetch' | 'transform' | 'vt';
+  stage: 'source' | 'geometry' | 'tileEmit';
   message: string;
   sourceKey?: string;
   featureId?: string;

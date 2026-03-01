@@ -30,19 +30,19 @@ export const RouteTileSettingsStep: React.FC<RouteTileSettingsStepProps> = ({ dr
   const { t } = useTranslation();
   const rawConfig = draft.draftData?.buildConfig as Partial<RouteBuildConfig> | undefined;
   const buildConfig = mergeRouteBuildConfig(DEFAULT_ROUTE_BUILD_CONFIG, rawConfig);
-  const zoomBandBoundaries = buildConfig.transformConfig.zoomBandBoundaries;
+  const zoomBandBoundaries = buildConfig.geometryConfig.zoomBandBoundaries;
   const minZoom = clamp(zoomBandBoundaries[0] ?? DEFAULT_MIN_ZOOM, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
   const maxZoom = clamp(zoomBandBoundaries[zoomBandBoundaries.length - 1] ?? DEFAULT_MAX_ZOOM, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
-  const buffer = clamp(buildConfig.vtConfig.bufferSize ?? DEFAULT_BUFFER, MIN_BUFFER, MAX_BUFFER);
+  const buffer = clamp(buildConfig.tileEmitConfig.bufferSize ?? DEFAULT_BUFFER, MIN_BUFFER, MAX_BUFFER);
 
   useEffect(() => {
     const nextConfig = mergeRouteBuildConfig(buildConfig, {
-      transformConfig: {
-        ...buildConfig.transformConfig,
+      geometryConfig: {
+        ...buildConfig.geometryConfig,
         zoomBandBoundaries: [minZoom, maxZoom],
       },
-      vtConfig: {
-        ...buildConfig.vtConfig,
+      tileEmitConfig: {
+        ...buildConfig.tileEmitConfig,
         bufferSize: buffer,
       },
     });
@@ -57,8 +57,8 @@ export const RouteTileSettingsStep: React.FC<RouteTileSettingsStepProps> = ({ dr
     const raw = Array.isArray(value) ? value[0] ?? buffer : value ?? buffer;
     const nextBuffer = clamp(Number(raw), MIN_BUFFER, MAX_BUFFER);
     const nextConfig = mergeRouteBuildConfig(buildConfig, {
-      vtConfig: {
-        ...buildConfig.vtConfig,
+      tileEmitConfig: {
+        ...buildConfig.tileEmitConfig,
         bufferSize: nextBuffer,
       },
     });
@@ -70,8 +70,8 @@ export const RouteTileSettingsStep: React.FC<RouteTileSettingsStepProps> = ({ dr
     const nextMin = clamp(raw, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
     const adjustedMax = Math.max(nextMin, maxZoom);
     const nextConfig = mergeRouteBuildConfig(buildConfig, {
-      transformConfig: {
-        ...buildConfig.transformConfig,
+      geometryConfig: {
+        ...buildConfig.geometryConfig,
         zoomBandBoundaries: [nextMin, adjustedMax],
       },
     });
@@ -83,8 +83,8 @@ export const RouteTileSettingsStep: React.FC<RouteTileSettingsStepProps> = ({ dr
     const nextMax = clamp(raw, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
     const adjustedMin = Math.min(nextMax, minZoom);
     const nextConfig = mergeRouteBuildConfig(buildConfig, {
-      transformConfig: {
-        ...buildConfig.transformConfig,
+      geometryConfig: {
+        ...buildConfig.geometryConfig,
         zoomBandBoundaries: [adjustedMin, nextMax],
       },
     });

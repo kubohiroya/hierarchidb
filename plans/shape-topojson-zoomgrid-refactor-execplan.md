@@ -59,7 +59,7 @@ Key files involved:
 - `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts` (TopoJSON decode and simplify during transform).
 - `packages/vt-orchestrator/src/transform/geometry.ts` (grid snap helpers, currently internal).
 
-“Common zoom bands” means the globally persisted zoom band boundaries stored in `localStorage` via `packages/util/src/treeConsoleSettings.ts`. “Per-ShapeEntity zoom bands” refers to the `transformConfig.zoomBandBoundaries` stored in each Shape entity’s build config.
+“Common zoom bands” means the globally persisted zoom band boundaries stored in `localStorage` via `packages/util/src/treeConsoleSettings.ts`. “Per-ShapeEntity zoom bands” refers to the `geometryConfig.zoomBandBoundaries` stored in each Shape entity’s build config.
 
 ## Plan of Work
 

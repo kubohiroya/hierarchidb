@@ -2,13 +2,13 @@ import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import { buildStableSignature } from './taskSignatures.ts';
 
-export type ShapeStage = 'fetch' | 'transform' | 'vt';
+export type ShapeStage = 'source' | 'geometry' | 'tileEmit';
 export type ShapeCacheNamespaceMode = 'node' | 'global';
 
 export type ShapeStageCacheNamespacePolicy = {
-  fetch: ShapeCacheNamespaceMode;
-  transform: ShapeCacheNamespaceMode;
-  vt: ShapeCacheNamespaceMode;
+  source: ShapeCacheNamespaceMode;
+  geometry: ShapeCacheNamespaceMode;
+  tileEmit: ShapeCacheNamespaceMode;
 };
 
 export type ShapeTaskCacheIdentity = {
@@ -22,14 +22,14 @@ type CacheIdentityEnvelope = {
 };
 
 const SHAPE_CACHE_KEY_VERSION = 'v1';
-const SHAPE_FETCH_PIPELINE_VERSION = 'fetch-v1';
-const SHAPE_TRANSFORM_PIPELINE_VERSION = 'transform-v1';
-const SHAPE_VT_PIPELINE_VERSION = 'vt-v1';
+const SHAPE_SOURCE_PIPELINE_VERSION = 'source-v1';
+const SHAPE_GEOMETRY_PIPELINE_VERSION = 'geometry-v1';
+const SHAPE_TILE_EMIT_PIPELINE_VERSION = 'tile-emit-v1';
 
 const DEFAULT_STAGE_CACHE_NAMESPACE_POLICY: ShapeStageCacheNamespacePolicy = {
-  fetch: 'global',
-  transform: 'node',
-  vt: 'node',
+  source: 'global',
+  geometry: 'node',
+  tileEmit: 'node',
 };
 
 const normalizeString = (value: unknown): string => (
@@ -92,7 +92,7 @@ const readPersistedIdentity = (inputData: unknown): ShapeTaskCacheIdentity | nul
   return { cacheKey, inputHash };
 };
 
-export const buildFetchTaskCacheIdentity = (params: {
+export const buildSourceTaskCacheIdentity = (params: {
   nodeId: NodeId;
   dataSource: string;
   sourceKey: string;
@@ -103,25 +103,25 @@ export const buildFetchTaskCacheIdentity = (params: {
 }): ShapeTaskCacheIdentity => {
   const namespacePrefix = resolveNamespacePrefix(
     params.nodeId,
-    resolveNamespaceMode('fetch', params.namespacePolicy),
+    resolveNamespaceMode('source', params.namespacePolicy),
   );
   const dataSource = normalizeString(params.dataSource) || 'unknown';
   const sourceKey = normalizeString(params.sourceKey) || 'unknown:0';
   const endpointId = encodeURIComponent(normalizeEndpointId(params.url));
-  const cacheKey = `${namespacePrefix}:shape:fetch:${SHAPE_CACHE_KEY_VERSION}:${dataSource}:${sourceKey}:${endpointId}`;
+  const cacheKey = `${namespacePrefix}:shape:source:${SHAPE_CACHE_KEY_VERSION}:${dataSource}:${sourceKey}:${endpointId}`;
   const inputHash = buildStableSignature({
     upstreamRevision: normalizeString(params.upstreamRevision) || null,
     fetchOutputShapingSignature: normalizeString(params.configSignature) || null,
-    pipelineVersion: SHAPE_FETCH_PIPELINE_VERSION,
+    pipelineVersion: SHAPE_SOURCE_PIPELINE_VERSION,
   });
   return { cacheKey, inputHash };
 };
 
-export const buildTransformTaskCacheIdentity = (params: {
+export const buildGeometryTaskCacheIdentity = (params: {
   nodeId: NodeId;
   sourceKey: string;
   bandIndex: number;
-  fetchArtifactHash: string;
+  sourceArtifactHash: string;
   bandMinZoom?: number;
   bandMaxZoom?: number;
   configSignature?: string;
@@ -129,22 +129,22 @@ export const buildTransformTaskCacheIdentity = (params: {
 }): ShapeTaskCacheIdentity => {
   const namespacePrefix = resolveNamespacePrefix(
     params.nodeId,
-    resolveNamespaceMode('transform', params.namespacePolicy),
+    resolveNamespaceMode('geometry', params.namespacePolicy),
   );
   const sourceKey = normalizeString(params.sourceKey) || 'unknown:0';
   const bandIndex = normalizeInteger(params.bandIndex, 0);
-  const cacheKey = `${namespacePrefix}:shape:transform:${SHAPE_CACHE_KEY_VERSION}:${sourceKey}:band${bandIndex}`;
+  const cacheKey = `${namespacePrefix}:shape:geometry:${SHAPE_CACHE_KEY_VERSION}:${sourceKey}:band${bandIndex}`;
   const inputHash = buildStableSignature({
-    fetchArtifactHash: normalizeString(params.fetchArtifactHash),
+    sourceArtifactHash: normalizeString(params.sourceArtifactHash),
     bandMinZoom: normalizeInteger(params.bandMinZoom, 0),
     bandMaxZoom: normalizeInteger(params.bandMaxZoom, 0),
-    transformConfigSignature: normalizeString(params.configSignature) || null,
-    pipelineVersion: SHAPE_TRANSFORM_PIPELINE_VERSION,
+    geometryConfigSignature: normalizeString(params.configSignature) || null,
+    pipelineVersion: SHAPE_GEOMETRY_PIPELINE_VERSION,
   });
   return { cacheKey, inputHash };
 };
 
-export const buildVtTaskCacheIdentity = (params: {
+export const buildTileEmitTaskCacheIdentity = (params: {
   nodeId: NodeId;
   bandIndex: number;
   zBase: number;
@@ -157,19 +157,19 @@ export const buildVtTaskCacheIdentity = (params: {
 }): ShapeTaskCacheIdentity => {
   const namespacePrefix = resolveNamespacePrefix(
     params.nodeId,
-    resolveNamespaceMode('vt', params.namespacePolicy),
+    resolveNamespaceMode('tileEmit', params.namespacePolicy),
   );
   const bandIndex = normalizeInteger(params.bandIndex, 0);
   const zBase = normalizeInteger(params.zBase, 0);
   const tileId = normalizeInteger(params.tileId, 0);
-  const cacheKey = `${namespacePrefix}:shape:vt:${SHAPE_CACHE_KEY_VERSION}:band${bandIndex}:z${zBase}:tile${tileId}`;
+  const cacheKey = `${namespacePrefix}:shape:tileEmit:${SHAPE_CACHE_KEY_VERSION}:band${bandIndex}:z${zBase}:tile${tileId}`;
   const transformArtifactSet = normalizeBufferIds(params.bufferIds);
   const inputHash = buildStableSignature({
     transformArtifactSet,
     bandMinZoom: normalizeInteger(params.bandMinZoom, 0),
     bandMaxZoom: normalizeInteger(params.bandMaxZoom, 0),
-    vtConfigSignature: normalizeString(params.configSignature) || null,
-    pipelineVersion: SHAPE_VT_PIPELINE_VERSION,
+    tileEmitConfigSignature: normalizeString(params.configSignature) || null,
+    pipelineVersion: SHAPE_TILE_EMIT_PIPELINE_VERSION,
   });
   return { cacheKey, inputHash };
 };
@@ -185,8 +185,8 @@ export const resolveTaskCacheIdentity = (
 
   const input = asRecord(task.inputData) ?? {};
   const stage = task.stage;
-  if (stage === 'fetch') {
-    return buildFetchTaskCacheIdentity({
+  if (stage === 'source') {
+    return buildSourceTaskCacheIdentity({
       nodeId: task.nodeId,
       dataSource: normalizeString(input.dataSource) || 'unknown',
       sourceKey: normalizeString(input.sourceKey) || `${normalizeCountryCode(input.countryCode)}:${normalizeInteger(input.adminLevel, 0)}`,
@@ -196,20 +196,20 @@ export const resolveTaskCacheIdentity = (
       namespacePolicy,
     });
   }
-  if (stage === 'transform') {
-    return buildTransformTaskCacheIdentity({
+  if (stage === 'geometry') {
+    return buildGeometryTaskCacheIdentity({
       nodeId: task.nodeId,
       sourceKey: normalizeString(input.sourceKey) || `${normalizeCountryCode(input.countryCode)}:${normalizeInteger(input.adminLevel, 0)}`,
       bandIndex: normalizeInteger(input.bandIndex, 0),
-      fetchArtifactHash: normalizeString(input.fetchArtifactHash),
+      sourceArtifactHash: normalizeString(input.sourceArtifactHash),
       bandMinZoom: normalizeInteger(input.bandMinZoom, 0),
       bandMaxZoom: normalizeInteger(input.bandMaxZoom, 0),
       configSignature: normalizeString(input.configSignature) || undefined,
       namespacePolicy,
     });
   }
-  if (stage === 'vt') {
-    return buildVtTaskCacheIdentity({
+  if (stage === 'tileEmit') {
+    return buildTileEmitTaskCacheIdentity({
       nodeId: task.nodeId,
       bandIndex: normalizeInteger(input.bandIndex, 0),
       zBase: normalizeInteger(input.zBase, 0),

@@ -6,7 +6,7 @@ const DEFAULT_SIMPLIFY_RETRY_COUNT = 4;
 
 export const DEFAULT_BUILD_CONFIG = {
   dataSourceName: 'geoboundaries',
-  fetchConfig: {
+  sourceConfig: {
     deleteOnComplete: false,
     timeoutMs: 300000,
     geometryIntakeGuard: {
@@ -24,7 +24,7 @@ export const DEFAULT_BUILD_CONFIG = {
       triangleRingRatio: false,
     },
   },
-  transformConfig: {
+  geometryConfig: {
     zoomBandBoundaries: DEFAULT_ZOOM_BAND_BOUNDARIES,
     geometryEngine: 'turf',
     simplifyAlgorithm: 'topojson',
@@ -81,7 +81,7 @@ export const DEFAULT_BUILD_CONFIG = {
     minRingVertices: 4,
     boundaryDisableAtZoomOrAbove: 3,
   },
-  vtConfig: {
+  tileEmitConfig: {
     enableTopojsonSimplify: false,
     tolerance: 0,
     extent: 4096,
@@ -104,25 +104,25 @@ export const DEFAULT_BUILD_CONFIG = {
     },
   },
   cleanupConfig: {
-    deleteFetchApiCache: false,
-    deleteFetchFilteredCache: false,
-    deleteTransformCache: false,
-    deleteVTCache: false,
+    deleteSourceApiCache: false,
+    deleteSourceFilteredCache: false,
+    deleteGeometryCache: false,
+    deleteTileEmitCache: false,
   },
 } as const;
 
 export const DEFAULT_PROCESSING_CONFIG = {
-  fetch: {
+  source: {
     maxConcurrent: 4,
     retryAttempts: 6,
     retryDelay: 5000,
     retryLimit: 6,
     retryBackoff: 'linear',
   },
-  transform: {
+  geometry: {
     maxConcurrent: 3,
   },
-  vt: {
+  tileEmit: {
     maxConcurrent: 1,
     dynamicConcurrency: {
       enabled: true,

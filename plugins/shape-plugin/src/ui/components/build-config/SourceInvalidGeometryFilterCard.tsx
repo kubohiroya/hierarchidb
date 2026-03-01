@@ -25,7 +25,7 @@ type Props = {
   disableHoverLift?: boolean;
 };
 
-export const FetchInvalidGeometryFilterCard: React.FC<Props> = ({
+export const SourceInvalidGeometryFilterCard: React.FC<Props> = ({
   config,
   onChange,
   disabled,
@@ -33,15 +33,15 @@ export const FetchInvalidGeometryFilterCard: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
   const hoverCardSx = getBuildConfigHoverCardSx(disabled, disableHoverLift);
-  const guard = config.fetchConfig.geometryIntakeGuard;
+  const guard = config.sourceConfig.geometryIntakeGuard;
 
   const resolved = useMemo(()=>({
-    area: config.fetchConfig.invalidGeometryFilter?.area ?? false,
-    lineLength: config.fetchConfig.invalidGeometryFilter?.lineLength ?? false,
-    maxEdgeLength: config.fetchConfig.invalidGeometryFilter?.maxEdgeLength ?? false,
-    selfIntersection: config.fetchConfig.invalidGeometryFilter?.selfIntersection ?? false,
-    triangleRingRatio: config.fetchConfig.invalidGeometryFilter?.triangleRingRatio ?? false,
-  } as const),[config.fetchConfig.invalidGeometryFilter?.area, config.fetchConfig.invalidGeometryFilter?.lineLength, config.fetchConfig.invalidGeometryFilter?.maxEdgeLength, config.fetchConfig.invalidGeometryFilter?.selfIntersection, config.fetchConfig.invalidGeometryFilter?.triangleRingRatio]);
+    area: config.sourceConfig.invalidGeometryFilter?.area ?? false,
+    lineLength: config.sourceConfig.invalidGeometryFilter?.lineLength ?? false,
+    maxEdgeLength: config.sourceConfig.invalidGeometryFilter?.maxEdgeLength ?? false,
+    selfIntersection: config.sourceConfig.invalidGeometryFilter?.selfIntersection ?? false,
+    triangleRingRatio: config.sourceConfig.invalidGeometryFilter?.triangleRingRatio ?? false,
+  } as const),[config.sourceConfig.invalidGeometryFilter?.area, config.sourceConfig.invalidGeometryFilter?.lineLength, config.sourceConfig.invalidGeometryFilter?.maxEdgeLength, config.sourceConfig.invalidGeometryFilter?.selfIntersection, config.sourceConfig.invalidGeometryFilter?.triangleRingRatio]);
   const resolvedGuard = useMemo(()=>({
     validationLevel: guard?.validationLevel ?? 'off',
     dedupeEpsilon: guard?.dedupeEpsilon ?? 0.000001,
@@ -54,10 +54,10 @@ export const FetchInvalidGeometryFilterCard: React.FC<Props> = ({
 
   const updateFilter = useCallback((partial: Partial<typeof resolved>): void => {
     onChange((prevConfig) => {
-      const current = prevConfig.fetchConfig.invalidGeometryFilter ?? resolved;
+      const current = prevConfig.sourceConfig.invalidGeometryFilter ?? resolved;
       return applyBuildConfigPatch(prevConfig, {
-        fetchConfig: {
-          ...prevConfig.fetchConfig,
+        sourceConfig: {
+          ...prevConfig.sourceConfig,
           invalidGeometryFilter: {
             ...current,
             ...partial,
@@ -68,10 +68,10 @@ export const FetchInvalidGeometryFilterCard: React.FC<Props> = ({
   }, [onChange, resolved]);
   const updateGuard = useCallback((partial: Partial<typeof resolvedGuard>): void => {
     onChange((prevConfig) => {
-      const current = prevConfig.fetchConfig.geometryIntakeGuard ?? resolvedGuard;
+      const current = prevConfig.sourceConfig.geometryIntakeGuard ?? resolvedGuard;
       return applyBuildConfigPatch(prevConfig, {
-        fetchConfig: {
-          ...prevConfig.fetchConfig,
+        sourceConfig: {
+          ...prevConfig.sourceConfig,
           geometryIntakeGuard: {
             ...current,
             ...partial,
@@ -92,13 +92,13 @@ export const FetchInvalidGeometryFilterCard: React.FC<Props> = ({
       {
         checked: resolvedGuard.normalizeRingOrientation,
         disabled: isDisabled,
-        label: t('processing.fetch.geometryIntakeGuard.normalizeRingOrientation', 'Normalize ring orientation'),
+        label: t('processing.source.geometryIntakeGuard.normalizeRingOrientation', 'Normalize ring orientation'),
         onChange: (event) => updateGuard({ normalizeRingOrientation: event.target.checked }),
       },
       {
         checked: resolvedGuard.keepBaselineSnapshot,
         disabled: isDisabled,
-        label: t('processing.fetch.geometryIntakeGuard.keepBaselineSnapshot', 'Keep baseline snapshot for anomaly scoring'),
+        label: t('processing.source.geometryIntakeGuard.keepBaselineSnapshot', 'Keep baseline snapshot for anomaly scoring'),
         onChange: (event) => updateGuard({ keepBaselineSnapshot: event.target.checked }),
       },
     ],
@@ -106,13 +106,13 @@ export const FetchInvalidGeometryFilterCard: React.FC<Props> = ({
       {
         checked: resolved.selfIntersection,
         disabled: isDisabled,
-        label: t('processing.fetch.invalidGeometryFilter.selfIntersection', 'Self intersection'),
+        label: t('processing.source.invalidGeometryFilter.selfIntersection', 'Self intersection'),
         onChange: (event) => updateFilter({ selfIntersection: event.target.checked }),
       },
       {
         checked: resolved.triangleRingRatio,
         disabled: isDisabled,
-        label: t('processing.fetch.invalidGeometryFilter.triangleRingRatio', 'Triangle ring ratio'),
+        label: t('processing.source.invalidGeometryFilter.triangleRingRatio', 'Triangle ring ratio'),
         onChange: (event) => updateFilter({ triangleRingRatio: event.target.checked }),
       },
     ],
@@ -120,19 +120,19 @@ export const FetchInvalidGeometryFilterCard: React.FC<Props> = ({
       {
         checked: resolved.area,
         disabled: isDisabled,
-        label: t('processing.fetch.invalidGeometryFilter.area', 'Area'),
+        label: t('processing.source.invalidGeometryFilter.area', 'Area'),
         onChange: (event) => updateFilter({ area: event.target.checked }),
       },
       {
         checked: resolved.lineLength,
         disabled: isDisabled,
-        label: t('processing.fetch.invalidGeometryFilter.lineLength', 'Line length'),
+        label: t('processing.source.invalidGeometryFilter.lineLength', 'Line length'),
         onChange: (event) => updateFilter({ lineLength: event.target.checked }),
       },
       {
         checked: resolved.maxEdgeLength,
         disabled: isDisabled,
-        label: t('processing.fetch.invalidGeometryFilter.maxEdgeLength', 'Max edge length'),
+        label: t('processing.source.invalidGeometryFilter.maxEdgeLength', 'Max edge length'),
         onChange: (event) => updateFilter({ maxEdgeLength: event.target.checked }),
       },
     ],
@@ -143,11 +143,11 @@ export const FetchInvalidGeometryFilterCard: React.FC<Props> = ({
       <Stack spacing={1.5} sx={{ opacity: disabled ? 0.6 : 1 }}>
         <BuildConfigSectionTitle
           icon={<RuleIcon fontSize="small" color="primary" />}
-          title={t('processing.fetch.invalidGeometryFilter.title', 'Invalid geometry filtering')}
+          title={t('processing.source.invalidGeometryFilter.title', 'Invalid geometry filtering')}
         />
         <Typography variant="body2" color="text.secondary">
           {t(
-            'processing.fetch.invalidGeometryFilter.description',
+            'processing.source.invalidGeometryFilter.description',
             'Run additional invalid-shape checks after small-shape filtering.',
           )}
         </Typography>
@@ -155,7 +155,7 @@ export const FetchInvalidGeometryFilterCard: React.FC<Props> = ({
           <Grid size={{ xs: 12, md: 4 }}>
             <FormControl fullWidth disabled={disabled}>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                {t('processing.fetch.geometryIntakeGuard.validationLevel', 'Validation Level')}
+                {t('processing.source.geometryIntakeGuard.validationLevel', 'Validation Level')}
               </Typography>
               <ToggleButtonGroup
                 size="small"
@@ -172,9 +172,9 @@ export const FetchInvalidGeometryFilterCard: React.FC<Props> = ({
                   updateGuard({ validationLevel: value });
                 }}
               >
-                <ToggleButton value="off">{t('processing.fetch.geometryIntakeGuard.level.off', 'off')}</ToggleButton>
-                <ToggleButton value="basic">{t('processing.fetch.geometryIntakeGuard.level.basic', 'basic')}</ToggleButton>
-                <ToggleButton value="strict">{t('processing.fetch.geometryIntakeGuard.level.strict', 'strict')}</ToggleButton>
+                <ToggleButton value="off">{t('processing.source.geometryIntakeGuard.level.off', 'off')}</ToggleButton>
+                <ToggleButton value="basic">{t('processing.source.geometryIntakeGuard.level.basic', 'basic')}</ToggleButton>
+                <ToggleButton value="strict">{t('processing.source.geometryIntakeGuard.level.strict', 'strict')}</ToggleButton>
               </ToggleButtonGroup>
             </FormControl>
           </Grid>
@@ -182,7 +182,7 @@ export const FetchInvalidGeometryFilterCard: React.FC<Props> = ({
             <TextField
               size="small"
               type="number"
-              label={t('processing.fetch.geometryIntakeGuard.dedupeEpsilon', 'Duplicate vertex epsilon')}
+              label={t('processing.source.geometryIntakeGuard.dedupeEpsilon', 'Duplicate vertex epsilon')}
               value={resolvedGuard.dedupeEpsilon}
               disabled={disabled}
               onChange={(event) => {
@@ -196,7 +196,7 @@ export const FetchInvalidGeometryFilterCard: React.FC<Props> = ({
             <TextField
               size="small"
               type="number"
-              label={t('processing.fetch.geometryIntakeGuard.minRingAreaThreshold', 'Minimum ring area threshold')}
+              label={t('processing.source.geometryIntakeGuard.minRingAreaThreshold', 'Minimum ring area threshold')}
               value={resolvedGuard.minRingAreaThreshold}
               disabled={disabled}
               onChange={(event) => {

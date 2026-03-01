@@ -31,7 +31,7 @@ export const buildTileLayerIndexFromFeatures = async (params: {
   debugCollect?: boolean;
 }): Promise<Tile | null> => {
   if (params.features.length === 0) return null;
-  const maxVerticesPerTile = resolveMaxVerticesPerTile(params.context.vtConfig.indexMaxPoints);
+  const maxVerticesPerTile = resolveMaxVerticesPerTile(params.context.tileEmitConfig.indexMaxPoints);
   let collection: FeatureCollection = { type: 'FeatureCollection', features: params.features };
   if (params.topojsonSimplify?.enabled) {
     const simplifyResult = await simplifyTileFeatureCollectionWithTopojson({
@@ -41,7 +41,7 @@ export const buildTileLayerIndexFromFeatures = async (params: {
       retryToleranceStep: params.topojsonSimplify.retryToleranceStep,
       maxVerticesPerTile,
       quantize: params.topojsonSimplify.quantize,
-      extent: params.context.vtConfig.extent,
+      extent: params.context.tileEmitConfig.extent,
       onAttempt: (attempt, toleranceK, maxVertices) => {
         if (params.debugCollect) {
           const details = {
@@ -62,10 +62,10 @@ export const buildTileLayerIndexFromFeatures = async (params: {
   const index = params.geojsonVt(collection, {
     maxZoom: params.z,
     indexMaxZoom: params.z,
-    extent: params.context.vtConfig.extent,
-    buffer: params.context.vtConfig.bufferSize,
-    tolerance: params.topojsonSimplify?.enabled ? 0 : params.context.vtConfig.tolerance,
-    promoteId: params.context.vtConfig.promoteId,
+    extent: params.context.tileEmitConfig.extent,
+    buffer: params.context.tileEmitConfig.bufferSize,
+    tolerance: params.topojsonSimplify?.enabled ? 0 : params.context.tileEmitConfig.tolerance,
+    promoteId: params.context.tileEmitConfig.promoteId,
     indexMaxPoints: maxVerticesPerTile,
   }) as GeojsonVtIndex;
 

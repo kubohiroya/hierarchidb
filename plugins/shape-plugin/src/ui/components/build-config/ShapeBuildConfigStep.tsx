@@ -4,19 +4,19 @@ import { Alert, Button, Stack, Typography } from '@mui/material';
 import type { AlertColor } from '@mui/material';
 import {
   BuildConfigShell,
-  FetchConfigSection,
-  VTConfigSection,
+  SourceConfigSection,
+  TileEmitConfigSection,
 } from '@hierarchidb/ui-accordion-config';
-import { TransformConfigSection } from './TransformConfigSection.js';
+import { GeometryConfigSection } from './GeometryConfigSection.js';
 import { ZoomBandConfigSection } from './ZoomBandConfigSection.js';
 import { CacheManagementSection } from './CacheManagementSection.tsx';
-import { FetchInvalidGeometryFilterCard } from './FetchInvalidGeometryFilterCard.tsx';
+import { SourceInvalidGeometryFilterCard } from './SourceInvalidGeometryFilterCard.tsx';
 import { useShapeBuildConfigStep } from './useShapeBuildConfigStep.js';
 import { useHeapPressureMonitor } from '@hierarchidb/ui-memory';
 import { useTranslation } from '~/ui/i18n';
 import type { ShapeDialogStepProps } from '~/ui/components/ShapeDialogStepProps';
 import type { NodeId } from '@hierarchidb/core-types';
-import { useFetchConfigSection } from '~/ui/hooks/useFetchConfigSection';
+import { useSourceConfigSection } from '~/ui/hooks/useSourceConfigSection';
 import {
   filteringHighUrl,
   filteringLowUrl,
@@ -41,28 +41,28 @@ const toBuildConfigUpdate = (
   if (partial.dataSourceName !== undefined) {
     next.dataSourceName = partial.dataSourceName;
   }
-  if (partial.fetchConfig) {
+  if (partial.sourceConfig) {
     const {
       maxConcurrent: _ignoredConcurrency,
       retryAttempts: _ignoredRetryAttempts,
       retryDelay: _ignoredRetryDelay,
       retryLimit: _ignoredRetryLimit,
       retryBackoff: _ignoredRetryBackoff,
-      ...fetchConfig
-    } = partial.fetchConfig;
-    next.fetchConfig = fetchConfig;
+      ...sourceConfig
+    } = partial.sourceConfig;
+    next.sourceConfig = sourceConfig;
   }
-  if (partial.transformConfig) {
-    const { maxConcurrent: _ignoredConcurrency, ...transformConfig } = partial.transformConfig;
-    next.transformConfig = transformConfig;
+  if (partial.geometryConfig) {
+    const { maxConcurrent: _ignoredConcurrency, ...geometryConfig } = partial.geometryConfig;
+    next.geometryConfig = geometryConfig;
   }
-  if (partial.vtConfig) {
+  if (partial.tileEmitConfig) {
     const {
       maxConcurrent: _ignoredConcurrency,
       dynamicConcurrency: _ignoredDynamicConcurrency,
-      ...vtConfig
-    } = partial.vtConfig;
-    next.vtConfig = vtConfig;
+      ...tileEmitConfig
+    } = partial.tileEmitConfig;
+    next.tileEmitConfig = tileEmitConfig;
   }
   if (partial.cleanupConfig) {
     next.cleanupConfig = partial.cleanupConfig;
@@ -157,7 +157,7 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
     return unregister;
   }, [registerStepDraftCommitter]);
 
-  const fetchState = useFetchConfigSection({
+  const fetchState = useSourceConfigSection({
     config: workingConfig,
     nodeId: nodeId as NodeId,
     disabled,
@@ -194,7 +194,7 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
         disabled={disabled}
         disableHoverLift
       />
-      <FetchConfigSection
+      <SourceConfigSection
         t={t}
         buildConfig={runtimeBuildConfig}
         update={updateRuntimeBuildConfig}
@@ -204,7 +204,7 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
         disabled={disabled}
         disableHoverLift
         additionalCards={
-          <FetchInvalidGeometryFilterCard
+          <SourceInvalidGeometryFilterCard
             config={workingConfig}
             onChange={updateWorkingConfig}
             disabled={disabled}
@@ -212,13 +212,13 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
           />
         }
       />
-      <TransformConfigSection
+      <GeometryConfigSection
         config={workingConfig}
         onChange={updateWorkingConfig}
         disabled={disabled}
         disableHoverLift
       />
-      <VTConfigSection
+      <TileEmitConfigSection
         t={t}
         buildConfig={runtimeBuildConfig}
         update={updateRuntimeBuildConfig}

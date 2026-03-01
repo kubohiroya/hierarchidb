@@ -10,12 +10,12 @@ import type {
 import type {
   ShapeBuildTaskRecord,
   ShapeBuildStage,
-  ShapeTransformCache,
-  ShapeTransformErrorRecord,
+  ShapeGeometryCache,
+  ShapeGeometryErrorRecord,
   ShapeFeatureMetadata,
-  ShapeFetchCache,
+  ShapeSourceCache,
   ShapeDataSourceMetadata,
-  ShapeVTMetadata,
+  ShapeTileEmitMetadata,
 } from './shapeBuildTypes.js';
 import type { ShapeBuildSessionRecord, ShapeVectorTileRecord } from './shapeDbTypes.js';
 
@@ -38,12 +38,12 @@ export interface ShapeQueryAPI {
   getVectorTile(nodeId: NodeId, z: number, x: number, y: number): Promise<Uint8Array | null>;
   listVectorTiles(nodeId: NodeId): Promise<ShapeTileSummaryEntry[]>;
   getVectorTileSummary(nodeId: NodeId): Promise<ShapeTileSummary>;
-  listFetchCaches(nodeId: NodeId): Promise<ShapeFetchCache[]>;
-  getFetchCache(nodeId: NodeId, bufferId: string): Promise<ShapeFetchCache | null>;
-  listTransformCaches(nodeId: NodeId): Promise<ShapeTransformCache[]>;
-  getTransformCache(bufferId: string): Promise<ShapeTransformCache | null>;
-  listVTMetadata(nodeId: NodeId): Promise<ShapeVTMetadata[]>;
+  listSourceCaches(nodeId: NodeId): Promise<ShapeSourceCache[]>;
+  getSourceCache(nodeId: NodeId, bufferId: string): Promise<ShapeSourceCache | null>;
+  listGeometryCaches(nodeId: NodeId): Promise<ShapeGeometryCache[]>;
+  getGeometryCache(bufferId: string): Promise<ShapeGeometryCache | null>;
+  listTileEmitMetadata(nodeId: NodeId): Promise<ShapeTileEmitMetadata[]>;
   listDataSourceMetadata(nodeId: NodeId): Promise<ShapeDataSourceMetadata[]>;
   listFeatureMetadata(nodeId: NodeId): Promise<ShapeFeatureMetadata[]>;
-  listTransformErrorRecords(nodeId: NodeId): Promise<ShapeTransformErrorRecord[]>;
+  listGeometryErrorRecords(nodeId: NodeId): Promise<ShapeGeometryErrorRecord[]>;
 }

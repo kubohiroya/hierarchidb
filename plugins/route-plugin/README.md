@@ -27,7 +27,7 @@ OpenStreetMapやNatural Earth等のオープンデータソースから、航路
 - Step3 は国×交通モードの OR/AND マトリクス（1国あたり 10 チェック）で `selectedArrayByCountries` を更新する。
   - OR を選択したモードは同一行の AND が自動 `checked/disabled` になる。
   - チェックボックスは Step2 で読み込んだデータ上で実在する国×モードのみ生成し、初期状態は `checked`。
-- Step4 は shape の build 設定 UI（VT 設定カードを含む）を共用する。
+- Step4 は shape の build 設定 UI（TileEmit 設定カードを含む）を共用する。
 - Step5 は shape と同じ UI/実行構成を最大限共用するが、route は transform で filtering と simplification を一括実行する。
   - fetch の `featureCache` はズーム帯別コピーではなく、オリジナルの LineString GeoJSON 1 本のみ保存する。
   - metadata には location 由来の座標、admin0〜2 の name/code、距離、中継点数を保存する。

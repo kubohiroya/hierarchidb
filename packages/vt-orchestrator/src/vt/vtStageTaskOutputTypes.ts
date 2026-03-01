@@ -62,7 +62,7 @@ export type VtTileOutputWriterInput = {
   totalTiles: number;
   aggregatedLayersByTileId: Map<number, Record<string, import('geojson-vt').Tile>> | null;
   indexes: Map<string, import('./vtStageTileIndex.js').GeojsonVtIndex> | null;
-  vtConfig: import('~/contexts').VTStageContext['vtConfig'];
+  tileEmitConfig: import('~/contexts').VTStageContext['tileEmitConfig'];
   tileWriter: import('~/contexts').VTStageContext['tileWriter'];
   vtpbf: typeof import('@maplibre/vt-pbf');
   debugCollect: boolean;

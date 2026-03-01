@@ -2,11 +2,11 @@ import type { BuildSessionStatus, TaskStage } from '@hierarchidb/build-api';
 import type { BuildTaskType } from '@hierarchidb/shape-store';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { ephemeralShapeAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
-import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
+import { VtTaskQueueDb as TileEmitTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { countRawDataDataSourceBuffersForNode, deleteRawDataDataSourceBuffersForNode } from '~/services/utils/chunkStore';
 
 export const SHAPE_NODE_TYPE = 'shape' as NodeType;
-export const KNOWN_TASK_STAGES: TaskStage[] = ['fetch', 'transform', 'vt'];
+export const KNOWN_TASK_STAGES: TaskStage[] = ['source', 'geometry', 'tileEmit'];
 
 export type StageLikeTask = {
   stage: TaskStage;
@@ -23,22 +23,22 @@ type SessionBridgeLike = {
 };
 
 export type CacheCounts = {
-  fetchApi: number;
-  fetchFiltered: number;
-  transform: number;
-  vt: number;
+  sourceApi: number;
+  sourceFiltered: number;
+  geometry: number;
+  tileEmit: number;
 };
 
 export type ResultCounts = {
   tiles: number;
   featureMetadata: number;
-  transformErrors: number;
+  geometryErrors: number;
 };
 
 export const isTaskInStages = (task: StageLikeTask, stages: TaskStage[]): boolean =>
   stages.includes(task.stage);
 
-const verifyTaskQueueStages = async (taskQueue: VtTaskQueueDb, nodeId: NodeId): Promise<void> => {
+const verifyTaskQueueStages = async (taskQueue: TileEmitTaskQueueDb, nodeId: NodeId): Promise<void> => {
   const recordCount = await taskQueue.tasks.where('nodeId').equals(nodeId).count();
   if (recordCount > 0) {
     console.debug('[shapeBuildCache][TaskDebug] task queue stage verification', {
@@ -57,25 +57,25 @@ export const loadCacheCounts = async (args: {
   sessionStatus: BuildSessionStatus['status'] | null;
 }> => {
   const { nodeId, sessionBridge } = args;
-  const taskQueue = new VtTaskQueueDb();
+  const taskQueue = new TileEmitTaskQueueDb();
   const [
-    fetchCacheCount,
+    sourceCacheCount,
     rawCacheCount,
-    transformTaskCount,
-    vtTaskCount,
-    transformCacheCount,
+    geometryTaskCount,
+    tileEmitTaskCount,
+    geometryCacheCount,
     vectorTileSummary,
     featureMetadata,
-    transformErrors,
+    geometryErrors,
   ] = await Promise.all([
-    ephemeralShapeAPIImpl.countFetchCaches(nodeId),
+    ephemeralShapeAPIImpl.countSourceCaches(nodeId),
     countRawDataDataSourceBuffersForNode(nodeId),
-    taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'transform']).count(),
-    taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'vt']).count(),
-    ephemeralShapeAPIImpl.countTransformCaches(nodeId),
+    taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'geometry']).count(),
+    taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'tileEmit']).count(),
+    ephemeralShapeAPIImpl.countGeometryCaches(nodeId),
     shapeQueryAPIImpl.getVectorTileSummary(nodeId),
     shapeQueryAPIImpl.listFeatureMetadata(nodeId),
-    shapeQueryAPIImpl.listTransformErrorRecords(nodeId),
+    shapeQueryAPIImpl.listGeometryErrorRecords(nodeId),
   ]);
 
   const sessionStatus = await sessionBridge
@@ -85,22 +85,22 @@ export const loadCacheCounts = async (args: {
 
   return {
     counts: {
-      fetchApi: rawCacheCount,
-      fetchFiltered: fetchCacheCount,
-      transform: transformTaskCount + transformCacheCount + transformErrors.length,
-      vt: vtTaskCount + vectorTileSummary.tiles,
+      sourceApi: rawCacheCount,
+      sourceFiltered: sourceCacheCount,
+      geometry: geometryTaskCount + geometryCacheCount + geometryErrors.length,
+      tileEmit: tileEmitTaskCount + vectorTileSummary.tiles,
     },
     resultCounts: {
       tiles: vectorTileSummary.tiles,
       featureMetadata: featureMetadata.length,
-      transformErrors: transformErrors.length,
+      geometryErrors: geometryErrors.length,
     },
     sessionStatus: sessionStatus?.status ?? null,
   };
 };
 
 export const clearBuildTasksForStages = async (
-  taskQueue: VtTaskQueueDb,
+  taskQueue: TileEmitTaskQueueDb,
   nodeId: NodeId,
   stagesToClear: BuildTaskType[],
 ): Promise<void> => {
@@ -115,7 +115,7 @@ export const clearBuildTasksForStages = async (
     await ephemeralShapeAPIImpl.deleteBuildTasksByIds(taskIds);
   }
 
-  if (uniqueTypes.includes('transform')) {
+  if (uniqueTypes.includes('geometry')) {
     await verifyTaskQueueStages(taskQueue, nodeId);
   }
 
@@ -125,7 +125,7 @@ export const clearBuildTasksForStages = async (
     )),
   );
 
-  if (uniqueTypes.includes('transform')) {
+  if (uniqueTypes.includes('geometry')) {
     await taskQueue.tasks
       .where('nodeId')
       .equals(nodeId)
@@ -138,6 +138,6 @@ export const clearBuildTasksForStages = async (
   }
 };
 
-export const deleteFetchRawCache = async (nodeId: NodeId): Promise<void> => {
+export const deleteSourceRawCache = async (nodeId: NodeId): Promise<void> => {
   await deleteRawDataDataSourceBuffersForNode(nodeId);
 };

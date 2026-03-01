@@ -22,11 +22,11 @@ interface ShapeEntity {
 
 interface BuildConfig {
   dataSourceName?: string;
-  fetchConfig: {
+  sourceConfig: {
     maxConcurrent: number;
     deleteOnComplete?: boolean;
   };
-  transformConfig: {
+  geometryConfig: {
     zoomBandBoundaries: number[];
     maxConcurrent: number;
     enableFeatureFiltering: boolean;
@@ -45,7 +45,7 @@ interface BuildConfig {
     minRingVertices: number;
     boundaryDisableAtZoomOrAbove?: number;
   };
-  vtConfig: {
+  tileEmitConfig: {
     maxConcurrent: number;
   };
 }
@@ -64,11 +64,11 @@ export function createTestBuildConfig(): BuildConfig {
 
   return {
     dataSourceName: 'geoboundaries',
-    fetchConfig: {
+    sourceConfig: {
       maxConcurrent: 2,
       deleteOnComplete: false,
     },
-    transformConfig: {
+    geometryConfig: {
       zoomBandBoundaries: [1, 2, 3, 6],
       maxConcurrent: 2,
       enableFeatureFiltering: true,
@@ -93,7 +93,7 @@ export function createTestBuildConfig(): BuildConfig {
       minRingVertices: 4,
       boundaryDisableAtZoomOrAbove: 3,
     },
-    vtConfig: {
+    tileEmitConfig: {
       maxConcurrent: 2,
     },
   };
@@ -129,12 +129,12 @@ export function createTestShapeEntityJapanOnly(): ShapeEntity {
     selectedArrayByCountries: { JP: [true] },
     buildConfig: {
       ...baseEntity.buildConfig!,
-      transformConfig: {
-        ...baseEntity.buildConfig!.transformConfig,
+      geometryConfig: {
+        ...baseEntity.buildConfig!.geometryConfig,
         toleranceByBand: [0.03],
       },
-      vtConfig: {
-        ...baseEntity.buildConfig!.vtConfig,
+      tileEmitConfig: {
+        ...baseEntity.buildConfig!.tileEmitConfig,
       },
     },
   };
@@ -193,8 +193,8 @@ export const GEOBOUNDARIES_TEST_ENDPOINTS = {
 /**
     */
 export const TEST_TIMEOUTS = {
-  fetch: 30000,    //  30 -
-  transform: 60000,   //  60 -
-  vt: 90000, //  90 -
+  source: 30000,    //  30 -
+  geometry: 60000,   //  60 -
+  tileEmit: 90000, //  90 -
   fullWorkflow: 300000, //  5 -
 };

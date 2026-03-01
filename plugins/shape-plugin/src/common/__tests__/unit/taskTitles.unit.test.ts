@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { buildShapeTaskTitle } from '../../utils/taskTitles';
 
 describe('taskTitles', () => {
-  it('formats transform task title as country code + level + band + zoom range', () => {
+  it('formats geometry task title as country code + level + band + zoom range', () => {
     const title = buildShapeTaskTitle({
-      stage: 'transform',
+      stage: 'geometry',
       inputData: {
         countryName: 'Japan',
         countryCode: 'JP',
@@ -20,7 +20,7 @@ describe('taskTitles', () => {
 
   it('keeps explicit title when task already has title', () => {
     const title = buildShapeTaskTitle({
-      stage: 'transform',
+      stage: 'geometry',
       title: 'Custom title',
       inputData: {
         countryName: 'Japan',

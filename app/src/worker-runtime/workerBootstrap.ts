@@ -202,7 +202,7 @@ const resolveShapeBuildAPI = (mod: unknown): ShapeBuildAPI | null => {
 };
 
 const isTaskStage = (value: unknown): value is StageKey => (
-  value === 'fetch' || value === 'transform' || value === 'vt'
+  value === 'source' || value === 'geometry' || value === 'tileEmit'
 );
 
 type BuildProgressLike = {
@@ -221,7 +221,7 @@ const toBuildProgress = (progress: BuildProgressLike | undefined): BuildProgress
   failed: (progress?.failed as number | undefined) ?? 0,
   skipped: (progress?.skipped as number | undefined) ?? 0,
   percentage: (progress?.percentage as number | undefined) ?? 0,
-  stage: isTaskStage((progress as { stage?: unknown } | undefined)?.stage) ? (progress?.stage as StageKey) : 'fetch',
+  stage: isTaskStage((progress as { stage?: unknown } | undefined)?.stage) ? (progress?.stage as StageKey) : 'source',
   estimatedTimeRemaining: (progress?.estimatedTimeRemaining as number | undefined),
 });
 

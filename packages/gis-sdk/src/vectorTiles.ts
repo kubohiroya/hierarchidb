@@ -500,7 +500,7 @@ export const generateVectorTilesFromFeatureCollection = async (
         buffer: bufferValue,
         indexMaxZoom,
         promoteId: 'id',
-        indexMaxPoints: 65536,
+        indexMaxPoints: 100000,
       }),
     );
   });

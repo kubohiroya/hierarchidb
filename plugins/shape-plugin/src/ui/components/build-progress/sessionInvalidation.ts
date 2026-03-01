@@ -3,7 +3,7 @@ import { toNodeId, type NodeId } from '@hierarchidb/core-types';
 import { ephemeralShapeAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import type { ShapeBuildConfig } from '~/common/types/build';
 
-const STAGE_ORDER: ShapeBuildStage[] = ['fetch', 'transform', 'vt'];
+const STAGE_ORDER: ShapeBuildStage[] = ['source', 'geometry', 'tileEmit'];
 
 type SimpleRecord = object;
 
@@ -52,26 +52,26 @@ export function resolveBuildConfigInvalidation(
 
   const stages = new Set<ShapeBuildStage>();
 
-  if (hasDiff(prev.fetchConfig, next.fetchConfig)) {
-    stages.add('fetch');
-    stages.add('transform');
-    stages.add('vt');
+  if (hasDiff(prev.sourceConfig, next.sourceConfig)) {
+    stages.add('source');
+    stages.add('geometry');
+    stages.add('tileEmit');
   }
 
-  if (hasDiff(prev.transformConfig, next.transformConfig)) {
-    stages.add('transform');
-    stages.add('vt');
+  if (hasDiff(prev.geometryConfig, next.geometryConfig)) {
+    stages.add('geometry');
+    stages.add('tileEmit');
   }
 
-  if (hasDiff(prev.vtConfig, next.vtConfig)) {
-    stages.add('vt');
+  if (hasDiff(prev.tileEmitConfig, next.tileEmitConfig)) {
+    stages.add('tileEmit');
   }
 
   return uniqueStages(Array.from(stages));
 }
 
 export const FULL_INVALIDATION_STAGES: ShapeBuildStage[] = [
-  'fetch',
-  'transform',
-  'vt'
+  'source',
+  'geometry',
+  'tileEmit'
 ];

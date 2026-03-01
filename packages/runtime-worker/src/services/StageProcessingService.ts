@@ -11,10 +11,10 @@ import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
 import type { VectorTileItemBase } from '../entity/store.js';
 import { getRouteDB } from '@hierarchidb/route-store';
 import type {
-  FetchWorkerAPI,
-  TransformWorkerAPI,
+  SourceWorkerAPI,
+  GeometryWorkerAPI,
   VectorTileProgress,
-  VTWorkerAPI,
+  TileEmitWorkerAPI,
 } from '../types.js';
 import type { SharedFetchService } from './downloadAdapter.js';
 import { createSharedDownloadService } from './downloadAdapter.js';
@@ -51,7 +51,7 @@ type VectorTileStoreItem = VectorTileItemBase & {
  *       Implementations can be incrementally replaced with real worker logic.
  */
 
-class RealFetchWorker implements FetchWorkerAPI {
+class RealSourceWorker implements SourceWorkerAPI {
   private sharedPromise: Promise<SharedFetchService> | null = null;
 
   private async getShared(): Promise<SharedFetchService> {
@@ -76,13 +76,13 @@ class RealFetchWorker implements FetchWorkerAPI {
 const bufferRegistry: Map<string, { parent?: string; stage: 's1' | 's2' | 'src'; ts: number }> =
   new Map();
 
-class RealTransformWorker implements TransformWorkerAPI {
-  async transformStage(inputBufferId: string, _config: { tolerance: number; minArea: number }) {
+class RealGeometryWorker implements GeometryWorkerAPI {
+  async geometryStage(inputBufferId: string, _config: { tolerance: number; minArea: number }) {
     const out = `${inputBufferId}-s1`;
     bufferRegistry.set(out, { parent: inputBufferId, stage: 's1', ts: Date.now() });
     return { outputBufferId: out };
   }
-  async transformStage2(
+  async geometryStage2(
     inputBufferId: string,
     _config: { zoomLevels: number[]; tileSize: number }
   ) {
@@ -92,7 +92,7 @@ class RealTransformWorker implements TransformWorkerAPI {
   }
 }
 
-class RealVTWorker implements VTWorkerAPI {
+class RealTileEmitWorker implements TileEmitWorkerAPI {
   private sharedPromise: Promise<SharedFetchService> | null = null;
   private readonly abortControllers = new Map<string, AbortController>();
 
@@ -478,9 +478,9 @@ class RealVTWorker implements VTWorkerAPI {
 }
 
 export type StageProcessingService = {
-  download: FetchWorkerAPI;
-  extract: TransformWorkerAPI;
-  vectortile: VTWorkerAPI;
+  source: SourceWorkerAPI;
+  geometry: GeometryWorkerAPI;
+  tileEmit: TileEmitWorkerAPI;
 };
 
 let singleton: StageProcessingService | null = null;
@@ -489,9 +489,9 @@ export async function getStageProcessingService(): Promise<StageProcessingServic
   if (!singleton) {
     await ensureShapeVectorTileStore();
     singleton = {
-      download: new RealFetchWorker(),
-      extract: new RealTransformWorker(),
-      vectortile: new RealVTWorker(),
+      source: new RealSourceWorker(),
+      geometry: new RealGeometryWorker(),
+      tileEmit: new RealTileEmitWorker(),
     };
   }
   return singleton;

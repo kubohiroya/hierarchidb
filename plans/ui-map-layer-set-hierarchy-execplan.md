@@ -23,8 +23,8 @@ Users need layer sets that do not depend on admin level names, can be toggled in
 
 ## Decision Log
 
-- Decision: Use vtConfig.layerSetName as the logical selector for shape layer set definitions rather than requiring admin0/admin1 names.
-  Rationale: Decouples UI configuration from admin level names while preserving the existing vtConfig field as the selector.
+- Decision: Use tileEmitConfig.layerSetName as the logical selector for shape layer set definitions rather than requiring admin0/admin1 names.
+  Rationale: Decouples UI configuration from admin level names while preserving the existing tileEmitConfig field as the selector.
   Date/Author: 2026-01-22 / Codex
 - Decision: Apply layer set priority to hover and selection by sorting candidate features with a layer priority map rather than relying only on MapLibre render order.
   Rationale: Ensures consistent priority even when point-distance sorting is used or layer order differs.
@@ -76,7 +76,7 @@ Finally, update the vector layer construction in useShapePreviewStepView.ts to u
    - In plugins/shape-plugin/src/ui/components/step6/ShapePreviewStep.tsx, add a small floating panel with layer set toggles and a grouped list of resolved entries.
 
 5) Update shape preview layer generation.
-   - Update plugins/shape-plugin/src/ui/components/step6/useShapePreviewStepView.ts to read layerSetName from buildConfig.vtConfig.layerSetName (default to "shape" only if missing).
+   - Update plugins/shape-plugin/src/ui/components/step6/useShapePreviewStepView.ts to read layerSetName from buildConfig.tileEmitConfig.layerSetName (default to "shape" only if missing).
    - Use the layer set resolver to build ResourceVectorLayer entries in the defined order and respect visibility toggles.
 
 6) Run pnpm typecheck and record the results in TASKS.md.

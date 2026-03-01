@@ -53,7 +53,7 @@ export const executePerTileLayerBuild = async (
     buildLayerIndexForTile,
   } = input;
 
-  const { bufferSize, extent } = context.vtConfig;
+  const { bufferSize, extent } = context.tileEmitConfig;
   const aggregatedLayersByTileId = new Map<number, Record<string, Tile>>();
   const emptyTilesWithFeatures: GeojsonVtEmptyTileDetail[] = [];
   const featuresWithBBoxByLayer: PerTileLayerFeatureMap = buildFeaturesWithBBoxByLayer({

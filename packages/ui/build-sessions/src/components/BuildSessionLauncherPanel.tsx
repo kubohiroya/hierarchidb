@@ -170,21 +170,21 @@ const useBuildStages = (t: (key: string, fallback: string) => string): BuildStag
   return useMemo(
     () => [
       {
-        id: 'fetch',
-        title: t('processing.fetch.title', 'Fetch'),
-        description: t('stage.stages.fetch.description', 'Fetch and normalize source data.'),
+        id: 'source',
+        title: t('processing.source.title', 'Source'),
+        description: t('stage.stages.source.description', 'Load and normalize source data.'),
         icon: createElement(CloudDownloadIcon, { color: 'primary' }),
       },
       {
-        id: 'transform',
-        title: t('processing.transform.title', 'Transform'),
-        description: t('stage.stages.transform.description', 'Simplify features per zoom band.'),
+        id: 'geometry',
+        title: t('processing.geometry.title', 'Geometry'),
+        description: t('stage.stages.geometry.description', 'Simplify features per zoom band.'),
         icon: createElement(TuneIcon, { color: 'primary' }),
       },
       {
-        id: 'vt',
-        title: t('processing.vt.title', 'VT Generation'),
-        description: t('stage.stages.vt.description', 'Generate vector tiles for the selected zoom range.'),
+        id: 'tileEmit',
+        title: t('processing.tileEmit.title', 'TileEmit Generation'),
+        description: t('stage.stages.tileEmit.description', 'Generate vector tiles for the selected zoom range.'),
         icon: createElement(LayersIcon, { color: 'primary' }),
       },
     ],

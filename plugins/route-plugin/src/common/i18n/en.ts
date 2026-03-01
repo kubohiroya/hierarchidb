@@ -98,7 +98,7 @@ export const en: RoutePluginTranslations = {
       download: 'Download',
       extract1: 'Extracting Geometry',
       extract2: 'Validating Geometry',
-      vectortile: 'Vector Tile Generation',
+      tileEmit: 'TileEmit Generation',
     },
     phases: {
       running: 'Running',

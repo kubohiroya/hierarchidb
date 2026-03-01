@@ -5,7 +5,7 @@ import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAto
 import { useShapeBuildProgressSummaryComputation as useShapeBuildProgressSummary } from '../../../components/build-progress/shapeBuildProgressSummaryComputation';
 
 const stages: BuildStage[] = [
-  { id: 'fetch', title: 'Fetch', icon: null },
+  { id: 'source', title: 'Source', icon: null },
 ];
 
 describe('useShapeBuildProgressSummary', () => {
@@ -14,7 +14,7 @@ describe('useShapeBuildProgressSummary', () => {
       {
         taskId: 'task-recycled',
         nodeId: 'node-1',
-        stage: 'fetch',
+        stage: 'source',
         status: 'recycled',
         progress: 100,
       } as ShapeBuildTaskSummary,
@@ -40,15 +40,15 @@ describe('useShapeBuildProgressSummary', () => {
 
   it('groups tasks by stage only', () => {
     const multiStages: BuildStage[] = [
-      { id: 'fetch', title: 'Fetch', icon: null },
-      { id: 'transform', title: 'Transform', icon: null },
-      { id: 'vt', title: 'VT', icon: null },
+      { id: 'source', title: 'Source', icon: null },
+      { id: 'geometry', title: 'Geometry', icon: null },
+      { id: 'tileEmit', title: 'TileEmit', icon: null },
     ];
     const tasks: ShapeBuildTaskSummary[] = [
       {
-        taskId: 'task-vt-running',
+        taskId: 'task-tileEmit-running',
         nodeId: 'node-2',
-        stage: 'vt',
+        stage: 'tileEmit',
         status: 'running',
         progress: 10,
       } as ShapeBuildTaskSummary,
@@ -56,39 +56,39 @@ describe('useShapeBuildProgressSummary', () => {
 
     const { result } = renderHook(() => useShapeBuildProgressSummary({
       stages: multiStages,
-      resolvedTaskType: 'vt',
+      resolvedTaskType: 'tileEmit',
       overallProgress: 10,
       buildStatus: 'running',
       effectiveProgress: null,
       effectiveStatus: null,
-      stage: 'vt',
+      stage: 'tileEmit',
       tasks,
       isSkippedTask: () => false,
       timingStageMs: 0,
     }));
 
-    expect(result.current.tasksByStage.vt).toHaveLength(1);
-    expect(result.current.tasksByStage.fetch ?? []).toHaveLength(0);
+    expect(result.current.tasksByStage.tileEmit).toHaveLength(1);
+    expect(result.current.tasksByStage.source ?? []).toHaveLength(0);
   });
 
-  it('keeps display stage on in-flight transform when vt is only planned', () => {
+  it('keeps display stage on in-flight geometry when tileEmit is only planned', () => {
     const multiStages: BuildStage[] = [
-      { id: 'fetch', title: 'Fetch', icon: null },
-      { id: 'transform', title: 'Transform', icon: null },
-      { id: 'vt', title: 'VT', icon: null },
+      { id: 'source', title: 'Source', icon: null },
+      { id: 'geometry', title: 'Geometry', icon: null },
+      { id: 'tileEmit', title: 'TileEmit', icon: null },
     ];
     const tasks: ShapeBuildTaskSummary[] = [
       {
-        taskId: 'task-fetch-completed',
+        taskId: 'task-source-completed',
         nodeId: 'node-3',
-        stage: 'fetch',
+        stage: 'source',
         status: 'completed',
         progress: 100,
       } as ShapeBuildTaskSummary,
       {
-        taskId: 'task-transform-running',
+        taskId: 'task-geometry-running',
         nodeId: 'node-3',
-        stage: 'transform',
+        stage: 'geometry',
         status: 'running',
         progress: 5,
       } as ShapeBuildTaskSummary,
@@ -96,7 +96,7 @@ describe('useShapeBuildProgressSummary', () => {
 
     const { result } = renderHook(() => useShapeBuildProgressSummary({
       stages: multiStages,
-      resolvedTaskType: 'fetch',
+      resolvedTaskType: 'source',
       overallProgress: 5,
       buildStatus: 'running',
       effectiveProgress: {
@@ -105,41 +105,41 @@ describe('useShapeBuildProgressSummary', () => {
         failed: 0,
         skipped: 0,
         percentage: 12,
-        stage: 'fetch',
+        stage: 'source',
         stageTotals: {
-          fetch: { total: 2, completed: 1, failed: 0, skipped: 0 },
-          transform: { total: 4, completed: 0, failed: 0, skipped: 0 },
-          vt: { total: 2, completed: 0, failed: 0, skipped: 0 },
+          source: { total: 2, completed: 1, failed: 0, skipped: 0 },
+          geometry: { total: 4, completed: 0, failed: 0, skipped: 0 },
+          tileEmit: { total: 2, completed: 0, failed: 0, skipped: 0 },
         },
       },
       effectiveStatus: { status: 'processing', progress: 12 },
-      stage: 'fetch',
+      stage: 'source',
       tasks,
       isSkippedTask: () => false,
       timingStageMs: 0,
     }));
 
-    expect(result.current.displayStageId).toBe('transform');
+    expect(result.current.displayStageId).toBe('geometry');
   });
 
   it('uses task-level progress while running even if no completion counts exist yet', () => {
     const multiStages: BuildStage[] = [
-      { id: 'fetch', title: 'Fetch', icon: null },
-      { id: 'transform', title: 'Transform', icon: null },
-      { id: 'vt', title: 'VT', icon: null },
+      { id: 'source', title: 'Source', icon: null },
+      { id: 'geometry', title: 'Geometry', icon: null },
+      { id: 'tileEmit', title: 'TileEmit', icon: null },
     ];
     const tasks: ShapeBuildTaskSummary[] = [
       {
-        taskId: 'task-fetch-running-1',
+        taskId: 'task-source-running-1',
         nodeId: 'node-4',
-        stage: 'fetch',
+        stage: 'source',
         status: 'running',
         progress: 20,
       } as ShapeBuildTaskSummary,
       {
-        taskId: 'task-fetch-running-2',
+        taskId: 'task-source-running-2',
         nodeId: 'node-4',
-        stage: 'fetch',
+        stage: 'source',
         status: 'running',
         progress: 40,
       } as ShapeBuildTaskSummary,
@@ -147,7 +147,7 @@ describe('useShapeBuildProgressSummary', () => {
 
     const { result } = renderHook(() => useShapeBuildProgressSummary({
       stages: multiStages,
-      resolvedTaskType: 'fetch',
+      resolvedTaskType: 'source',
       overallProgress: 20,
       buildStatus: 'running',
       effectiveProgress: {
@@ -156,15 +156,15 @@ describe('useShapeBuildProgressSummary', () => {
         failed: 0,
         skipped: 0,
         percentage: 0,
-        stage: 'fetch',
+        stage: 'source',
         stageTotals: {
-          fetch: { total: 2, completed: 0, failed: 0, skipped: 0 },
-          transform: { total: 0, completed: 0, failed: 0, skipped: 0 },
-          vt: { total: 0, completed: 0, failed: 0, skipped: 0 },
+          source: { total: 2, completed: 0, failed: 0, skipped: 0 },
+          geometry: { total: 0, completed: 0, failed: 0, skipped: 0 },
+          tileEmit: { total: 0, completed: 0, failed: 0, skipped: 0 },
         },
       },
       effectiveStatus: { status: 'processing', progress: 0 },
-      stage: 'fetch',
+      stage: 'source',
       tasks,
       isSkippedTask: () => false,
       timingStageMs: 0,

@@ -52,8 +52,8 @@ describe('shapeCreatePresets', () => {
     for (const presetId of SHAPE_CREATE_PRESET_IDS) {
       const patch = buildShapePresetDraftDataPatch(presetId);
       const level = (
-        patch.buildConfig as { transformConfig?: { omitDetailsConfig?: { level?: string } } } | undefined
-      )?.transformConfig?.omitDetailsConfig?.level;
+        patch.buildConfig as { geometryConfig?: { omitDetailsConfig?: { level?: string } } } | undefined
+      )?.geometryConfig?.omitDetailsConfig?.level;
       expect(level).toBeDefined();
       expect(supportedLevels.has(level ?? '')).toBe(true);
     }

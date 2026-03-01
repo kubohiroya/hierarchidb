@@ -1,22 +1,22 @@
 import type { NodeId } from '@hierarchidb/core-types';
 
 type ShapeStagePlan = {
-  fetchTotal?: number;
-  transformTotal?: number;
+  sourceTotal?: number;
+  geometryTotal?: number;
 };
 
 const planByNodeId = new Map<string, ShapeStagePlan>();
 
-export const setFetchPlannedTotal = (nodeId: NodeId, total: number): void => {
+export const setSourcePlannedTotal = (nodeId: NodeId, total: number): void => {
   const key = String(nodeId);
   const existing = planByNodeId.get(key) ?? {};
-  planByNodeId.set(key, { ...existing, fetchTotal: total });
+  planByNodeId.set(key, { ...existing, sourceTotal: total });
 };
 
-export const setTransformPlannedTotal = (nodeId: NodeId, total: number): void => {
+export const setGeometryPlannedTotal = (nodeId: NodeId, total: number): void => {
   const key = String(nodeId);
   const existing = planByNodeId.get(key) ?? {};
-  planByNodeId.set(key, { ...existing, transformTotal: total });
+  planByNodeId.set(key, { ...existing, geometryTotal: total });
 };
 
 export const getStagePlan = (nodeId: NodeId): ShapeStagePlan | null => {

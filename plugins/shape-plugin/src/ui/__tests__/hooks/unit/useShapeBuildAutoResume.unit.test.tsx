@@ -27,7 +27,7 @@ const createArgs = (overrides: Partial<Parameters<typeof useShapeBuildAutoResume
   runtimeStatus: 'paused',
   handleStartOrResume: vi.fn(async () => true),
   handlePause: vi.fn(),
-  hasFailedFetchTasks: false,
+  hasFailedSourceTasks: false,
   hasDataSource: true,
   hasSelection: true,
   isProcessingValid: true,

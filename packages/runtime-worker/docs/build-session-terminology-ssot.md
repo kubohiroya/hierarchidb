@@ -25,12 +25,15 @@ used across runtime, worker API, UI, and plugin implementations.
   - In-memory live runtime state for UI/runtime reflection.
 - `stage`
   - Build pipeline stage: `fetch | transform | vt | idle | undefined`.
+  - Persisted/API compatibility field in current rollout; not the orchestrator dispatch key.
 - `phase`
   - Progress lifecycle phase: `starting | running | pausing | paused | ...`.
 - `taskType`
   - UI-facing aggregation key for task grouping/summaries.
 - `stageId`
-  - Diagnostic identifier only (trace/log category), not a control-state key.
+  - Canonical stage identity (`source-stage | geometry-stage | tile-emit-stage`) accepted at adapter boundaries.
+  - Treated as higher-priority hint than legacy `stage` when both are present in boundary normalization.
+  - Not a standalone orchestrator control-state key.
 
 ### 2.3 UI State Vocabulary
 

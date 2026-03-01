@@ -18,11 +18,11 @@ type TileEncodeInput = {
   inputStats: VtInputTileStats;
   outputStats: VtOutputTileStats;
   taskContext: VtTileTaskContext;
-  vtConfig: VTStageContext['vtConfig'];
+  tileEmitConfig: VTStageContext['tileEmitConfig'];
   vtpbf: typeof import('@maplibre/vt-pbf');
 };
 
-type TileStoreInput = Omit<TileEncodeInput, 'vtConfig' | 'vtpbf'> & {
+type TileStoreInput = Omit<TileEncodeInput, 'tileEmitConfig' | 'vtpbf'> & {
   tileId: number;
   bytes: Uint8Array;
   tileWriter: TileWriter;
@@ -42,7 +42,7 @@ export const encodeTileForVt = ({
   inputStats,
   outputStats,
   taskContext,
-  vtConfig,
+  tileEmitConfig,
   vtpbf,
 }: TileEncodeInput): { bytes: Uint8Array; durationMs: number } => {
   const encodeStartedAt = Date.now();
@@ -50,7 +50,7 @@ export const encodeTileForVt = ({
     const layersArg = Object.values(layers);
     const bytes = vtpbf.fromGeojsonVt(layersArg, {
       version: 2,
-      extent: vtConfig.extent,
+      extent: tileEmitConfig.extent,
     }) as Uint8Array;
     return { bytes, durationMs: Date.now() - encodeStartedAt };
   } catch (error) {

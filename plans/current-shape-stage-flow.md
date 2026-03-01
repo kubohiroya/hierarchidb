@@ -163,7 +163,7 @@ packages/vt-orchestrator/src/transform/createTransformByBandHandler/execute.ts]
 - 目標条件:
   - 簡略化 feature の各頂点数が `retryVertexLimit` 未満に収まること。
   - `maxRetrySteps = 12`
-  - `retryToleranceStep = configuredRetryToleranceStep * 4`（`configuredRetryToleranceStep` は `transformConfig.retryToleranceStep`、上限 `0~2`）
+  - `retryToleranceStep = configuredRetryToleranceStep * 4`（`configuredRetryToleranceStep` は `geometryConfig.retryToleranceStep`、上限 `0~2`）
 - 再試行ループ（各 feature）:
   - `nextTolerance = baseTolerance + retryToleranceStep * (i + 1)` を `i=0..maxRetrySteps-1` で試行
   - 各試行で `retry-simplify-feature` フェーズを更新

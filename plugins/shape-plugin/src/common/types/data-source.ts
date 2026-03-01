@@ -31,7 +31,7 @@ export interface CountryMetadata {
   dataQuality?: 'high' | 'medium' | 'low';
 }
 
-export interface FetchTaskPayload {
+export interface SourceTaskPayload {
   url: string;
   upstreamRevision?: string;
   countryCode: CountryCode;

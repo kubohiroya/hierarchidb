@@ -9,7 +9,12 @@ import type { TaskQueueEvent, TaskQueueRecord, TaskStage, TaskStatus } from '~/t
 
 export type StoredTaskRecord = EphemeralBuildTaskRecord;
 
-const TASK_STAGES = ['fetch', 'transform', 'vt'] as const;
+const TASK_STAGES = ['source', 'geometry', 'tileEmit'] as const;
+const TASK_STAGE_TO_STAGE_ID: Record<TaskStage, string> = {
+  source: 'source-stage',
+  geometry: 'geometry-stage',
+  tileEmit: 'tile-emit-stage',
+};
 
 const isTaskStage = (value: unknown): value is TaskStage => (
   typeof value === 'string' && TASK_STAGES.includes(value as TaskStage)
@@ -28,6 +33,7 @@ export const toTaskQueueRecord = (
   return {
     ...task,
     stage,
+    stageId: TASK_STAGE_TO_STAGE_ID[stage],
   };
 };
 

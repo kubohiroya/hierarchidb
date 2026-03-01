@@ -3,6 +3,7 @@ import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import type { RawTaskSummary } from './useShapeBuildTaskSync.types.js';
 import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
 import { isTaskSkipped } from '~/common/utils/taskMessages';
+import { normalizeUiStageId, toLegacyUiStageId } from '~/ui/components/build-progress/stageIdAliases';
 
 export const resolveProgressValue = (value: unknown): number => (
   typeof value === 'number' && Number.isFinite(value) ? value : 0
@@ -343,24 +344,46 @@ export const resolveTaskSummaryFromRaw = (task: RawTaskSummary): ShapeBuildTaskS
 
 export const resolveTaskStageFromRaw = (task: RawTaskSummary): TaskStage => resolveTaskStage(task);
 
-const taskStages = ['fetch', 'transform', 'vt'] as const;
+const taskStages = ['source', 'geometry', 'tileEmit'] as const;
 
 export const resolveTaskStage = (task: RawTaskSummary): TaskStage => {
-  if (isTaskStage(task.stage)) {
-    return task.stage;
+  const canonicalFromStageId = normalizeUiStageId(task.stageId);
+  if (canonicalFromStageId) {
+    const canonicalFromStage = normalizeUiStageId(task.stage);
+    if (canonicalFromStage && canonicalFromStage !== canonicalFromStageId) {
+      console.warn('[ShapeBuildTaskSync] normalize task stage by stageId precedence', {
+        taskId: task.taskId,
+        stage: task.stage,
+        stageId: task.stageId,
+        resolvedStage: canonicalFromStageId,
+      });
+    } else if (task.stage !== toLegacyUiStageId(canonicalFromStageId)) {
+      console.warn('[ShapeBuildTaskSync] normalize task stage from stageId', {
+        taskId: task.taskId,
+        stage: task.stage,
+        stageId: task.stageId,
+        resolvedStage: canonicalFromStageId,
+      });
+    }
+    return toLegacyUiStageId(canonicalFromStageId);
+  }
+
+  const canonicalFromStage = normalizeUiStageId(task.stage);
+  if (canonicalFromStage) {
+    return toLegacyUiStageId(canonicalFromStage);
   }
 
   const taskId = typeof task.taskId === 'string' ? task.taskId : '';
-  const [, taskIdStage] = taskId.split(':');
-  if (isTaskStage(taskIdStage)) {
-    if (task.stage !== taskIdStage) {
+  const canonicalFromTaskId = normalizeUiStageId(taskId);
+  if (canonicalFromTaskId) {
+    if (normalizeUiStageId(task.stage) !== canonicalFromTaskId) {
       console.warn('[ShapeBuildTaskSync] normalize task stage from taskId', {
         taskId,
         stage: task.stage,
-        resolvedStage: taskIdStage,
+        resolvedStage: canonicalFromTaskId,
       });
     }
-    return taskIdStage;
+    return toLegacyUiStageId(canonicalFromTaskId);
   }
 
   throw new Error('invalid task stage');

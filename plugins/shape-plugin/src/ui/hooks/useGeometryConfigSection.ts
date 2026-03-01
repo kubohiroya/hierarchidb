@@ -7,16 +7,16 @@ type Args = {
   onChange: (next: ShapeBuildConfig | ((prev: ShapeBuildConfig) => ShapeBuildConfig)) => void;
 };
 
-export const useTransformConfigSection = ({ config, onChange }: Args) => {
-  const baseTransformConfig = config.transformConfig;
-  if (!baseTransformConfig) {
-    throw new Error('TransformConfigSection: baseTransformConfig is not defined');
+export const useGeometryConfigSection = ({ config, onChange }: Args) => {
+  const baseGeometryConfig = config.geometryConfig;
+  if (!baseGeometryConfig) {
+    throw new Error('GeometryConfigSection: baseGeometryConfig is not defined');
   }
-  if (!baseTransformConfig.hybridFilterConfig) {
-    throw new Error('TransformConfigSection: hybridFilterConfig is not defined');
+  if (!baseGeometryConfig.hybridFilterConfig) {
+    throw new Error('GeometryConfigSection: hybridFilterConfig is not defined');
   }
-  if (!baseTransformConfig.omitDetailsConfig) {
-    throw new Error('TransformConfigSection: omitDetailsConfig is not defined');
+  if (!baseGeometryConfig.omitDetailsConfig) {
+    throw new Error('GeometryConfigSection: omitDetailsConfig is not defined');
   }
 
   const update = useCallback((partial: ShapeBuildConfigPatch) => {
@@ -24,7 +24,7 @@ export const useTransformConfigSection = ({ config, onChange }: Args) => {
   }, [onChange]);
 
   return {
-    baseTransformConfig,
+    baseGeometryConfig,
     update,
   };
 };

@@ -17,7 +17,8 @@ export async function runTransformByBand(
   }
   await runStageTasks({
     nodeId: buildConfig.nodeId,
-    stage: 'transform',
+    stageId: 'geometry-stage',
+    capability: 'geometry',
     handler,
   });
 }
@@ -31,7 +32,8 @@ export async function runVt(
   }
   await runStageTasks({
     nodeId: buildConfig.nodeId,
-    stage: 'vt',
+    stageId: 'tile-emit-stage',
+    capability: 'tile-emit',
     handler,
   });
 }

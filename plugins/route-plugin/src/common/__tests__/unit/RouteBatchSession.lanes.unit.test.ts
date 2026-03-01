@@ -32,7 +32,7 @@ function makeTasks(nodeId: NodeId, n: number, method: RouteGenerationMethod): Ro
     taskId: `${method}-${i}`,
     treeNodeId: nodeId,
     nodeId,
-    stage: 'fetch',
+    stage: 'source',
     status: 'pending',
     index: i,
     routeData: { method, startCoordinates: [0, 0], endCoordinates: [1, 1] },
@@ -40,12 +40,12 @@ function makeTasks(nodeId: NodeId, n: number, method: RouteGenerationMethod): Ro
 }
 
 describe('RouteBuildSession lane gating', () => {
-  const mapTaskQueueStage = (stage: RouteBuildTask['stage']): 'fetch' | 'transform' | 'vt' => {
+  const mapTaskQueueStage = (stage: RouteBuildTask['stage']): 'source' | 'geometry' | 'tileEmit' => {
     if (stage === 'location-resolution' || stage === 'route-generation') {
-      return 'fetch';
+      return 'source';
     }
-    if (stage === 'transform') return 'transform';
-    return 'vt';
+    if (stage === 'geometry') return 'geometry';
+    return 'tileEmit';
   };
 
   it('keeps osm_route concurrency at 1 even when maxConcurrent is high', async () => {

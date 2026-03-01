@@ -57,7 +57,7 @@ export const ZoomBandConfigSection: React.FC<ZoomBandConfigSectionProps> = ({
           title={t('processing.zoomBandSettings.title', 'Zoom band settings')}
           info={t(
             'processing.tile.zoomBandsSummary',
-            'Zoom bands follow the Transform range boundaries. The representative zoom is the smallest in each band.',
+            'Zoom bands follow the Geometry range boundaries. The representative zoom is the smallest in each band.',
           )}
         />
       </AccordionSummary>

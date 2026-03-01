@@ -3,7 +3,7 @@ import { buildErrorSummaryById, type MapPreviewErrorSummaryById } from '@hierarc
 import { shapeMutationAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import type {
   ShapeFeatureMetadata,
-  ShapeTransformErrorRecord,
+  ShapeGeometryErrorRecord,
 } from '@hierarchidb/shape-api';
 import type { ShapePreviewFeatureRow } from '@hierarchidb/ui-map';
 import {
@@ -41,7 +41,7 @@ export type ShapePreviewFeatureSectionResult = {
 
 type ShapePreviewFeatureSectionParams = {
   featureMetadataRows: ShapeFeatureMetadata[];
-  normalizedTransformErrorRows: ShapeTransformErrorRecord[];
+  normalizedTransformErrorRows: ShapeGeometryErrorRecord[];
   resolveSourceContext: ResolveSourceContext;
   setFeatureMetadataOverride: (value: ShapeFeatureMetadata[] | null) => void;
 };

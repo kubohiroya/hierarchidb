@@ -8,10 +8,10 @@ export class TabularStrategy implements DataSourceStrategy {
 
   async plan(spec: DataSourceSpec, ctx: StrategyContext): Promise<TaskPlan> {
     const id = `${ctx.planId}:csv:0`;
-    if (spec.inline && !spec.url) return { fetch: [], parse: [{ kind: 'parse', source: 'csv', payloadRef: id }] };
+    if (spec.inline && !spec.url) return { source: [], parse: [{ kind: 'parse', source: 'csv', payloadRef: id }] };
     if (!spec.url) throw new Error('Tabular strategy requires url or inline');
     return {
-      fetch: [{ kind: 'fetch', url: spec.url }],
+      source: [{ kind: 'source', url: spec.url }],
       parse: [{ kind: 'parse', source: 'csv', payloadRef: spec.url }],
     };
   }

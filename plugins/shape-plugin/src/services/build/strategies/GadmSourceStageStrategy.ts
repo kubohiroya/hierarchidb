@@ -1,16 +1,16 @@
 import type {
-  FetchStageBuildContext,
-  FetchStagePostprocessContext,
-  FetchStagePostprocessResult,
-  FetchStageStrategy,
-  FetchPayloadBuildContext,
-} from './FetchStageStrategy.ts';
-import type { FetchTask, FetchTaskPayload } from '~/common/types/index';
-import { buildFetchTaskId, generateDownloadTaskPayloadsFromSelection } from '~/services/utils/utils';
+  SourceStageBuildContext,
+  SourceStagePostprocessContext,
+  SourceStagePostprocessResult,
+  SourceStageStrategy,
+  SourcePayloadBuildContext,
+} from './SourceStageStrategy.ts';
+import type { SourceTask, SourceTaskPayload } from '~/common/types/index';
+import { buildSourceTaskId, generateDownloadTaskPayloadsFromSelection } from '~/services/utils/utils';
 import { buildRawDataDataSourceCacheKey } from '~/services/utils/chunkStore';
 
-export class GadmFetchStageStrategy implements FetchStageStrategy {
-  buildFetchTaskPayloads(context: FetchPayloadBuildContext) {
+export class GadmSourceStageStrategy implements SourceStageStrategy {
+  buildSourceTaskPayloads(context: SourcePayloadBuildContext) {
     return generateDownloadTaskPayloadsFromSelection(
       'gadm',
       context.selectedArrayByCountries,
@@ -18,11 +18,11 @@ export class GadmFetchStageStrategy implements FetchStageStrategy {
     );
   }
 
-  async buildFetchTasks(context: FetchStageBuildContext) {
-    const inputsByTaskId = new Map<string, FetchTaskPayload>();
-    const tasks: FetchTask[] = context.fetchTaskPayloads.map((metadata, index) => {
-      const taskId = buildFetchTaskId(String(context.nodeId), metadata);
-      const payload: FetchTaskPayload = {
+  async buildSourceTasks(context: SourceStageBuildContext) {
+    const inputsByTaskId = new Map<string, SourceTaskPayload>();
+    const tasks: SourceTask[] = context.sourceTaskPayloads.map((metadata, index) => {
+      const taskId = buildSourceTaskId(String(context.nodeId), metadata);
+      const payload: SourceTaskPayload = {
         url: metadata.url,
         countryCode: metadata.countryCode,
         countryName: metadata.countryName,
@@ -32,7 +32,7 @@ export class GadmFetchStageStrategy implements FetchStageStrategy {
       inputsByTaskId.set(taskId, payload);
       return {
         taskId,
-        type: 'fetch',
+        type: 'source',
         nodeId: context.nodeId,
         stage: 'wait',
         status: 'queued',
@@ -47,10 +47,10 @@ export class GadmFetchStageStrategy implements FetchStageStrategy {
   }
 
   async buildPostprocessOutputs(
-    context: FetchStagePostprocessContext,
-  ): Promise<FetchStagePostprocessResult> {
-    const outputs = context.fetchTask.map((task) => {
-      const input = context.fetchTaskInputsById.get(task.taskId);
+    context: SourceStagePostprocessContext,
+  ): Promise<SourceStagePostprocessResult> {
+    const outputs = context.sourceTasks.map((task) => {
+      const input = context.sourceTaskInputsById.get(task.taskId);
       if (!input) {
         throw new Error(`[GadmDownloadStrategy] Missing input for task ${task.taskId}`);
       }

@@ -12,11 +12,11 @@ export class RouteSourceOrchestrator {
   async plan(spec: RouteBuildSpec): Promise<TaskPlan> {
     const planId = crypto.randomUUID();
     const ctx: StrategyContext = { planId };
-    const aggregate: TaskPlan = { fetch: [], parse: [] };
+    const aggregate: TaskPlan = { source: [], parse: [] };
     for (const s of spec.sources) {
       const strat = this.pickStrategy(s);
       const p = await strat.plan(s, ctx);
-      aggregate.fetch.push(...p.fetch);
+      aggregate.source.push(...p.source);
       aggregate.parse.push(...p.parse);
     }
     return aggregate;
@@ -26,7 +26,7 @@ export class RouteSourceOrchestrator {
     const plan = await this.plan(spec);
     const blobs = new Map<string, Blob>();
     const net = this.getNetworkPort();
-    for (const f of plan.fetch) {
+    for (const f of plan.source) {
       try {
         const response = await net.get(f.url);
         if (response.status === 401 || response.status === 403) {

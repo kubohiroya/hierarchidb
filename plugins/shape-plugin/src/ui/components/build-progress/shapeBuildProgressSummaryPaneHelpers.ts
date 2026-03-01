@@ -4,6 +4,7 @@ import type { BuildStage } from '@hierarchidb/components/build-stage';
 import type { BuildTaskSummary, TaskStage } from '@hierarchidb/build-api';
 import { resolveMostAdvancedStageId } from './stagePriority.js';
 import type { StageCountInfo } from './shapeBuildProgressSummaryCountHelpers.js';
+import { resolveStageAliasArray } from './stageIdAliases';
 
 type TaskStageCarrier = BuildTaskSummary & { stage: TaskStage };
 
@@ -125,7 +126,7 @@ export const chooseInFlightStage = ({
 
   const runningStageIds = stages
     .filter((stage) =>
-      (tasksByStage[stage.id] ?? []).some((task) => task.status === 'running' || task.status === 'queued'),
+      resolveStageAliasArray(tasksByStage, stage.id).some((task) => task.status === 'running' || task.status === 'queued'),
     )
     .map((stage) => stage.id);
 

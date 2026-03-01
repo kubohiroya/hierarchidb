@@ -23,6 +23,17 @@ All functions listed here are intended to be pure unless otherwise stated.
 - Idempotent where applicable (especially key generation and plan derivation).
 - Error output should be structured (`code`, `message`, `details`) instead of throw-by-default.
 
+### 2.1 Integration Policy (Feature-flag free)
+
+- Do not introduce feature flags for stage migration.
+- Integrate by replacing modules behind fixed contracts.
+- Keep call sites bound to abstract contracts (`step descriptor`, `state transition`, `task derivation`) only.
+- Execute replacement in small slices:
+  1. lock contract tests,
+  2. replace implementation module,
+  3. run affected unit/integration tests,
+  4. remove obsolete branch/alias paths.
+
 ## 3. Shared Types (Contract Layer)
 
 ```ts
@@ -464,7 +475,7 @@ function buildTileKey(input: {
   x: number;
   y: number;
   band: number;
-  vtConfigHash: string;
+  tileEmitConfigHash: string;
 }): string;
 ```
 
@@ -472,11 +483,11 @@ Input constraints:
 
 - `z >= 0`, `x >= 0`, `y >= 0`, integers.
 - `band >= 0`, integer.
-- `vtConfigHash` non-empty.
+- `tileEmitConfigHash` non-empty.
 
 Output:
 
-- canonical key string (recommended: `v:<nodeId>:<band>:<z>:<x>:<y>:<vtConfigHash>`).
+- canonical key string (recommended: `v:<nodeId>:<band>:<z>:<x>:<y>:<tileEmitConfigHash>`).
 
 ## 5. Orchestrator-Shared Pure Functions
 

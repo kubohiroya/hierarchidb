@@ -7,7 +7,7 @@ import { RouteGenerator } from '@hierarchidb/route-engine';
 import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import { runStageTasks } from '@hierarchidb/vt-orchestrator';
 
-export type RouteBuildTaskStage = 'fetch' | 'transform' | 'vt';
+export type RouteBuildTaskStage = 'source' | 'geometry' | 'tileEmit';
 
 export type RouteBuildTask = {
   taskId: string;
@@ -70,9 +70,9 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
 
     await runStageTasks<RouteBuildTaskQueueInput>({
       nodeId: this.nodeId,
-      stage: 'fetch',
-      taskFilter: resolveTaskFilter('fetch'),
-      handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => this.handleFetchRouteTask(task),
+      stage: 'source',
+      taskFilter: resolveTaskFilter('source'),
+      handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => this.handleSourceRouteTask(task),
       maxConcurrent: this.config.routeGeneration?.parallel ? Math.max(1, this.config.routeGeneration.maxConcurrent) : 1,
       failureHandling: 'continue',
       lanePolicy: {
@@ -85,28 +85,28 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
       },
     });
     ({ completed, failed } = this.countTaskResults());
-    this.updateProgress({ total, completed, failed }, 'fetch');
+    this.updateProgress({ total, completed, failed }, 'source');
 
     await runStageTasks<RouteBuildTaskQueueInput>({
       nodeId: this.nodeId,
-      stage: 'transform',
-      taskFilter: resolveTaskFilter('transform'),
-      handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => this.handleTransformRouteTask(task),
-      maxConcurrent: this.config.transformConfig?.maxConcurrent ?? 1,
+      stage: 'geometry',
+      taskFilter: resolveTaskFilter('geometry'),
+      handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => this.handleGeometryRouteTask(task),
+      maxConcurrent: this.config.geometryConfig?.maxConcurrent ?? 1,
       failureHandling: 'continue',
     });
     ({ completed, failed } = this.countTaskResults());
-    this.updateProgress({ total, completed, failed }, 'transform');
+    this.updateProgress({ total, completed, failed }, 'geometry');
 
     await runStageTasks<RouteBuildTaskQueueInput>({
       nodeId: this.nodeId,
-      stage: 'vt',
-      taskFilter: resolveTaskFilter('vt'),
-      handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => this.handleVtRouteTask(task),
+      stage: 'tileEmit',
+      taskFilter: resolveTaskFilter('tileEmit'),
+      handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => this.handleTileEmitRouteTask(task),
       failureHandling: 'continue',
     });
     ({ completed, failed } = this.countTaskResults());
-    this.updateProgress({ total, completed, failed }, 'vt');
+    this.updateProgress({ total, completed, failed }, 'tileEmit');
 
     if (failed > 0) {
       throw new Error('Route build completed with failures');
@@ -115,15 +115,15 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
 
   protected onBuildProgressEvent(_event: BuildProgressEvent): void {}
 
-  private async handleFetchRouteTask(
+  private async handleSourceRouteTask(
     task: TaskQueueRecord<RouteBuildTaskQueueInput>,
   ): Promise<{ status: 'completed'; progress: number }> {
     const localTask = this.findTask(task.taskId);
     if (!localTask) {
       throw new Error(`Unknown route task ${task.taskId}`);
     }
-    if (localTask.stage !== 'fetch') {
-      return this.failRouteTask(localTask, 'fetch', `Unexpected route task stage. expected=fetch, actual=${localTask.stage}`);
+    if (localTask.stage !== 'source') {
+      return this.failRouteTask(localTask, 'source', `Unexpected route task stage. expected=source, actual=${localTask.stage}`);
     }
 
     localTask.status = 'running';
@@ -136,42 +136,42 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
 
     if (!start || !end) {
       const message = 'Route build task missing coordinates';
-      return this.failRouteTask(localTask, 'fetch', message);
+      return this.failRouteTask(localTask, 'source', message);
     }
 
     await this.runRouteTask([start, end], method, options);
 
-    return this.completeRouteTask(localTask, 'fetch');
+    return this.completeRouteTask(localTask, 'source');
   }
 
-  private async handleTransformRouteTask(task: TaskQueueRecord<RouteBuildTaskQueueInput>): Promise<{ status: 'completed'; progress: number }> {
+  private async handleGeometryRouteTask(task: TaskQueueRecord<RouteBuildTaskQueueInput>): Promise<{ status: 'completed'; progress: number }> {
     const localTask = this.findTask(task.taskId);
     if (!localTask) {
       throw new Error(`Unknown route task ${task.taskId}`);
     }
-    if (localTask.stage !== 'transform') {
-      return this.failRouteTask(localTask, 'transform', `Unexpected route task stage. expected=transform, actual=${localTask.stage}`);
+    if (localTask.stage !== 'geometry') {
+      return this.failRouteTask(localTask, 'geometry', `Unexpected route task stage. expected=geometry, actual=${localTask.stage}`);
     }
 
     localTask.status = 'running';
     localTask.error = undefined;
-    // Transform logic for route tasks will be implemented as needed.
-    return this.completeRouteTask(localTask, 'transform');
+    // Geometry-stage logic for route tasks will be implemented as needed.
+    return this.completeRouteTask(localTask, 'geometry');
   }
 
-  private async handleVtRouteTask(task: TaskQueueRecord<RouteBuildTaskQueueInput>): Promise<{ status: 'completed'; progress: number }> {
+  private async handleTileEmitRouteTask(task: TaskQueueRecord<RouteBuildTaskQueueInput>): Promise<{ status: 'completed'; progress: number }> {
     const localTask = this.findTask(task.taskId);
     if (!localTask) {
       throw new Error(`Unknown route task ${task.taskId}`);
     }
-    if (localTask.stage !== 'vt') {
-      return this.failRouteTask(localTask, 'vt', `Unexpected route task stage. expected=vt, actual=${localTask.stage}`);
+    if (localTask.stage !== 'tileEmit') {
+      return this.failRouteTask(localTask, 'tileEmit', `Unexpected route task stage. expected=tileEmit, actual=${localTask.stage}`);
     }
 
     localTask.status = 'running';
     localTask.error = undefined;
-    // VT creation for route tasks will be implemented as needed.
-    return this.completeRouteTask(localTask, 'vt');
+    // TileEmit-stage logic for route tasks will be implemented as needed.
+    return this.completeRouteTask(localTask, 'tileEmit');
   }
 
   private async runRouteTask(

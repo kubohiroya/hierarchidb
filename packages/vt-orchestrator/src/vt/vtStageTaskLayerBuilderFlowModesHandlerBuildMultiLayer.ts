@@ -25,7 +25,7 @@ export const buildMultiLayer = async (
     layerMap,
     debugCollect,
     assertNotAborted,
-    vtConfigBoundaryDedupe: context.vtConfig.boundaryDedupe,
+    tileEmitConfigBoundaryDedupe: context.tileEmitConfig.boundaryDedupe,
   });
   return buildLayerResultFromBranch({
     branchResult: {

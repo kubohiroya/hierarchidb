@@ -4,20 +4,20 @@ import type {
   BaseBuildConfig,
   CleanupConfig,
   DynamicConcurrencyConfig,
-  FetchConfig,
-  TransformConfig,
+  SourceConfig,
+  GeometryConfig,
   VectorTileFormat,
-  VTConfig,
+  TileEmitConfig,
 } from '@hierarchidb/gis-sdk';
 import type { BuildSessionConfig, ResourceUsage, StageStatus } from '@hierarchidb/shape-store';
 import type { DataSourceName } from './data-source.js';
 
-export type ShapeBuildFetchConfig = Omit<
-  FetchConfig,
+export type ShapeBuildSourceConfig = Omit<
+  SourceConfig,
   'maxConcurrent' | 'retryAttempts' | 'retryDelay' | 'retryLimit' | 'retryBackoff'
 >;
-export type ShapeBuildTransformConfig = Omit<TransformConfig, 'maxConcurrent'>;
-export type ShapeBuildVtConfig = Omit<VTConfig, 'maxConcurrent' | 'dynamicConcurrency'>;
+export type ShapeBuildGeometryConfig = Omit<GeometryConfig, 'maxConcurrent'>;
+export type ShapeBuildTileEmitConfig = Omit<TileEmitConfig, 'maxConcurrent' | 'dynamicConcurrency'>;
 
 export type ShapeUrlMatchType = 'default' | 'regexp' | 'prefix';
 
@@ -32,32 +32,32 @@ export interface ShapeBuildUrlRule {
 export type ShapeBuildUrlConfigPatch = Omit<Partial<ShapeBuildConfig>, 'urlBuildConfigRules'>;
 export type ShapeBuildConfigPatch = Omit<
   Partial<ShapeBuildConfig>,
-  'fetchConfig' | 'transformConfig' | 'vtConfig' | 'cleanupConfig'
+  'sourceConfig' | 'geometryConfig' | 'tileEmitConfig' | 'cleanupConfig'
 > & {
-  fetchConfig?: Partial<ShapeBuildConfig['fetchConfig']>;
-  transformConfig?: Partial<ShapeBuildConfig['transformConfig']>;
-  vtConfig?: Partial<ShapeBuildConfig['vtConfig']>;
+  sourceConfig?: Partial<ShapeBuildConfig['sourceConfig']>;
+  geometryConfig?: Partial<ShapeBuildConfig['geometryConfig']>;
+  tileEmitConfig?: Partial<ShapeBuildConfig['tileEmitConfig']>;
   cleanupConfig?: Partial<NonNullable<ShapeBuildConfig['cleanupConfig']>>;
 };
 
 export interface ShapeBuildConfig {
   dataSourceName: DataSourceName;
-  fetchConfig: ShapeBuildFetchConfig;
-  transformConfig: ShapeBuildTransformConfig;
-  vtConfig: ShapeBuildVtConfig;
+  sourceConfig: ShapeBuildSourceConfig;
+  geometryConfig: ShapeBuildGeometryConfig;
+  tileEmitConfig: ShapeBuildTileEmitConfig;
   cleanupConfig?: CleanupConfig;
   urlBuildConfigRules?: ShapeBuildUrlRule[];
 }
 
 export interface ShapeProcessingConfig {
-  fetch: Pick<
-    FetchConfig,
+  source: Pick<
+    SourceConfig,
     'maxConcurrent' | 'retryAttempts' | 'retryDelay' | 'retryLimit' | 'retryBackoff'
   >;
-  transform: {
+  geometry: {
     maxConcurrent: number;
   };
-  vt: {
+  tileEmit: {
     maxConcurrent: number;
     dynamicConcurrency?: DynamicConcurrencyConfig;
   };
@@ -102,8 +102,8 @@ export interface BuildTaskBase {
 
 export type BuildTask = BuildTaskBase;
 
-export interface FetchTask extends BuildTaskBase {
-  type: 'fetch';
+export interface SourceTask extends BuildTaskBase {
+  type: 'source';
   url?: string;
   countryCode?: string;
   countryName?: string;
@@ -166,7 +166,7 @@ export interface Extract2Task extends ExtractTask {
 }
 */
 
-export interface VtTaskInput {
+export interface TileEmitTaskInput {
   inputBufferId?: string;
   tileZ?: number;
   tileX?: number;
@@ -187,8 +187,8 @@ export interface VtTaskInput {
   retry?: number;
 }
 
-export interface VtTask extends BuildTaskBase {
-  taskType: 'vt';
+export interface TileEmitTask extends BuildTaskBase {
+  taskType: 'tileEmit';
 }
 
 export interface ProgressInfo {

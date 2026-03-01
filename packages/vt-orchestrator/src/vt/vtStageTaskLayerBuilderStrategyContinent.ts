@@ -20,7 +20,7 @@ type Input = {
   featuresByContinent: Map<string, Feature<Geometry>[]>;
   debugCollect: boolean;
   assertNotAborted: (signal?: AbortSignal) => void;
-  vtConfigBoundaryDedupe: boolean;
+  tileEmitConfigBoundaryDedupe: boolean;
 };
 
 export const buildLayersByContinentGrouping = async ({
@@ -31,7 +31,7 @@ export const buildLayersByContinentGrouping = async ({
   featuresByContinent,
   debugCollect,
   assertNotAborted,
-  vtConfigBoundaryDedupe,
+  tileEmitConfigBoundaryDedupe,
 }: Input): Promise<Map<number, Record<string, Tile>>> => {
   const aggregatedLayersByTileId = new Map<number, Record<string, Tile>>();
   for (const [continent, features] of featuresByContinent.entries()) {
@@ -69,7 +69,7 @@ export const buildLayersByContinentGrouping = async ({
         z,
         x,
         y,
-        vtConfigBoundaryDedupe,
+        tileEmitConfigBoundaryDedupe,
       ),
     });
     mergeAggregatedLayerMaps(aggregatedLayersByTileId, continentTileLayers);

@@ -1,11 +1,11 @@
 /**
   * @file DataSourceManagerMigration.test.ts
  * @description ERIA-CartographDataSourceManager (TDD Red Phase)
-   * - fetch-metadataDataSourceManager
+   * - source-metadataDataSourceManager
  * - GeoBoundariesOpenStreetMap
  * -
    * - @hierarchidb/runtime-worker-ui-datasource
- * - fetch-save-metadata
+ * - source-save-metadata
  * - DataSourceManager
   */
 
@@ -21,8 +21,8 @@ describe('DataSourceManager Migration Tests', () => {
     dataSourceManager = new DataSourceManager();
   });
 
-  describe('fetch-metadataとの統合テスト', () => {
-    it('fetch-metadataから生成された実際のメタデータでDataSourceManagerが正常動作する', async () => {
+  describe('source-metadataとの統合テスト', () => {
+    it('source-metadataから生成された実際のメタデータでDataSourceManagerが正常動作する', async () => {
       //  Given:
       const dataSource: DataSourceName = 'naturalearth';
 

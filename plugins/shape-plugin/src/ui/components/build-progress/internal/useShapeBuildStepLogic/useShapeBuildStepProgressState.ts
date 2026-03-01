@@ -262,7 +262,7 @@ export const useShapeBuildStepProgressState = ({
   const failedProbeStageId = useMemo<StageId | null>(() => (
     stages[0]?.id ?? null
   ), [stages]);
-  const hasFailedFetchTasks = useMemo(() => {
+  const hasFailedSourceTasks = useMemo(() => {
     if (!failedProbeStageId) {
       return false;
     }
@@ -370,7 +370,7 @@ export const useShapeBuildStepProgressState = ({
     totalElapsedMs,
     displayStageRemainingMs,
     progressSummary,
-    hasFailedFetchTasks,
+    hasFailedSourceTasks,
     isTaskSummaryLoading,
     runningStageIdFromTasks,
     inFlightStageIdFromTasks,

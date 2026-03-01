@@ -12,24 +12,24 @@ export type ShapeCleanupStageParams = {
 
 export const runShapePipelineCleanup = async (params: ShapeCleanupStageParams): Promise<void> => {
   const cleanupConfig = params.buildConfig.cleanupConfig;
-  if (cleanupConfig?.deleteFetchFilteredCache) {
-    await params.ephemeralStore.fetchCache
+  if (cleanupConfig?.deleteSourceFilteredCache) {
+    await params.ephemeralStore.sourceCache
       .where('nodeId')
       .equals(params.nodeId)
       .delete();
-    await params.ephemeralStore.fetchCacheMeta
+    await params.ephemeralStore.sourceCacheMeta
       .where('nodeId')
       .equals(params.nodeId)
       .delete();
   }
-  if (cleanupConfig?.deleteFetchApiCache) {
+  if (cleanupConfig?.deleteSourceApiCache) {
     await deleteRawDataDataSourceBuffersForNode(params.nodeId);
   }
-  if (cleanupConfig?.deleteTransformCache) {
-    await params.ephemeralStore.transformCache.where('nodeId').equals(params.nodeId).delete();
-    await params.ephemeralStore.transformCacheMeta.where('nodeId').equals(params.nodeId).delete();
+  if (cleanupConfig?.deleteGeometryCache) {
+    await params.ephemeralStore.geometryCache.where('nodeId').equals(params.nodeId).delete();
+    await params.ephemeralStore.geometryCacheMeta.where('nodeId').equals(params.nodeId).delete();
   }
-  if (cleanupConfig?.deleteVTCache) {
+  if (cleanupConfig?.deleteTileEmitCache) {
     await shapeMutationAPIImpl.deleteVectorTiles(params.nodeId);
   }
 };

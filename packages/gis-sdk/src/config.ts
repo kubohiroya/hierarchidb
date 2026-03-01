@@ -8,7 +8,7 @@ export interface CommonSessionConfig {
   dataSourceName?: DataSourceName;
 }
 
-export interface FetchConfig {
+export interface SourceConfig {
   maxConcurrent: number;
   deleteOnComplete: boolean;
   timeoutMs: number;
@@ -39,10 +39,10 @@ export type FetchInvalidGeometryFilterConfig = {
 };
 
 export interface CleanupConfig {
-  deleteFetchApiCache?: boolean;
-  deleteFetchFilteredCache?: boolean;
-  deleteTransformCache?: boolean;
-  deleteVTCache?: boolean;
+  deleteSourceApiCache?: boolean;
+  deleteSourceFilteredCache?: boolean;
+  deleteGeometryCache?: boolean;
+  deleteTileEmitCache?: boolean;
 }
 
 export type FeatureFilterMethod = 'bbox_only' | 'polygon_only' | 'hybrid' | 'none';
@@ -95,8 +95,8 @@ export type SelfIntersectionTuningConfig = {
 };
 
 export type GeometryEngine = 'turf';
-export type TransformSimplifyAlgorithm = 'geojson' | 'topojson';
-export type TransformExecutionLogLevel = 'off' | 'summary' | 'verbose';
+export type GeometrySimplifyAlgorithm = 'geojson' | 'topojson';
+export type GeometryExecutionLogLevel = 'off' | 'summary' | 'verbose';
 export type VTOutputQualityGuardAction =
   | 'mark_warning'
   | 'fallback_less_simplified'
@@ -119,25 +119,25 @@ export type VTOutputQualityGuardConfig = {
 
 export type SimplifyToleranceAdminLevelKey = 'admin0' | 'admin1' | 'admin2' | 'admin3Plus';
 
-export interface TransformSimplifyAdminLevelProfile {
+export interface GeometrySimplifyAdminLevelProfile {
   usePrevious?: boolean;
   toleranceByBand?: number[];
   retryToleranceByBand?: number[];
   retryCount?: number;
 }
 
-export type TransformSimplifyToleranceByAdminLevelConfig = Record<
+export type GeometrySimplifyToleranceByAdminLevelConfig = Record<
   SimplifyToleranceAdminLevelKey,
-  TransformSimplifyAdminLevelProfile
+  GeometrySimplifyAdminLevelProfile
 >;
 
-export interface TransformConfig {
+export interface GeometryConfig {
   zoomBandBoundaries: number[];
   maxConcurrent: number;
   geometryEngine?: GeometryEngine;
-  simplifyAlgorithm?: TransformSimplifyAlgorithm;
+  simplifyAlgorithm?: GeometrySimplifyAlgorithm;
   preserveTopology?: boolean;
-  executionLogLevel?: TransformExecutionLogLevel;
+  executionLogLevel?: GeometryExecutionLogLevel;
   enableFeatureFiltering: boolean;
   featureAreaThreshold: number;
   minVertexCountForAreaFilter: number;
@@ -148,7 +148,7 @@ export interface TransformConfig {
   toleranceByBand: number[];
   retryCount?: number;
   retryToleranceByBand?: number[];
-  simplifyToleranceByAdminLevel?: TransformSimplifyToleranceByAdminLevelConfig;
+  simplifyToleranceByAdminLevel?: GeometrySimplifyToleranceByAdminLevelConfig;
   retryToleranceStep?: number;
   quantize?: number;
   areaThreshold: number;
@@ -168,7 +168,7 @@ export type DynamicConcurrencyConfig = {
   sampleMs: number;
 };
 
-export interface VTConfig {
+export interface TileEmitConfig {
   enableTopojsonSimplify: boolean;
   maxConcurrent: number;
   dynamicConcurrency?: DynamicConcurrencyConfig;
@@ -194,16 +194,16 @@ export interface VTConfig {
   };
 }
 
-export interface RouteTransformConfig {
+export interface RouteGeometryConfig {
   minDistanceMetersByBand?: number[];
   simplifyToleranceByBand?: number[];
 }
 
 export interface BaseBuildConfig<TDataSourceName = unknown> {
   dataSourceName?: TDataSourceName;
-  fetchConfig: FetchConfig;
-  transformConfig: TransformConfig;
-  vtConfig: VTConfig;
+  sourceConfig: SourceConfig;
+  geometryConfig: GeometryConfig;
+  tileEmitConfig: TileEmitConfig;
   cleanupConfig?: CleanupConfig;
-  routeTransformConfig?: RouteTransformConfig;
+  routeGeometryConfig?: RouteGeometryConfig;
 }

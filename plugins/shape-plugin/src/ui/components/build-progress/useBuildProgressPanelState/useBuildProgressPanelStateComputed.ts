@@ -213,12 +213,12 @@ export const useBuildProgressPanelStateComputed = (args: ComputeArgs): BuildProg
 
     return stages.reduce<Record<string, { maxConcurrent: number; isRunning: boolean }>>((acc, stage) => {
       const isStageRunning = isBuildRunning && Boolean(stageTaskScan[stage.id]?.hasRunning);
-      const maxConcurrent = stage.id === 'fetch'
-        ? processingConfig.fetch.maxConcurrent
-        : stage.id === 'transform'
-          ? processingConfig.transform.maxConcurrent
-          : stage.id === 'vt'
-            ? processingConfig.vt.maxConcurrent
+      const maxConcurrent = stage.id === 'source'
+        ? processingConfig.source.maxConcurrent
+        : stage.id === 'geometry'
+          ? processingConfig.geometry.maxConcurrent
+          : stage.id === 'tileEmit'
+            ? processingConfig.tileEmit.maxConcurrent
             : undefined;
       if (maxConcurrent === undefined) return acc;
       acc[stage.id] = { maxConcurrent, isRunning: isStageRunning };

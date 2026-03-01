@@ -10,7 +10,7 @@ import type {
 } from '@hierarchidb/build-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
-import type { CountryMetadata, FetchTaskPayload, SelectedArrayByCountries, ShapeBuildConfig, ShapeProcessingConfig } from '../common/types/index';
+import type { CountryMetadata, SourceTaskPayload, SelectedArrayByCountries, ShapeBuildConfig, ShapeProcessingConfig } from '../common/types/index';
 import type { Endpoint as ComlinkEndpoint } from 'comlink';
 import { expose, proxy } from 'comlink';
 import { shapeDB } from '@hierarchidb/shape-store';
@@ -20,9 +20,9 @@ import { metadataLoader } from '../../services/metadata/MetadataLoader';
 import { shapeBuildAPI } from '../../worker/api';
 import { shapeMutationAPIImpl } from '../services/build/ShapeBuildAPIClient';
 import { buildBands, buildContinentLookup, buildCountryLookup, hasHighDetailSelection } from '../services/vt/shapePipelineShared';
-import { runShapeFetchStageSection } from '../services/vt/shapePipelineFetchStage';
-import { runShapeTransformStageSection } from '../services/vt/shapePipelineTransformStage';
-import { runShapeVtStageSection } from '../services/vt/shapePipelineVtStage';
+import { runShapeSourceStageSection } from '../services/vt/shapePipelineSourceStage';
+import { runShapeGeometryStageSection } from '../services/vt/shapePipelineTransformStage';
+import { runShapeTileEmitStageSection } from '../services/vt/shapePipelineTileEmitStage';
 import { runShapeMetadataStage } from '../services/vt/shapePipelineMetadataStage';
 import { runShapePipelineCleanup } from '../services/vt/shapePipelineCleanup';
 import { resolveFailureHandling } from '../services/vt/shapePipelineStageHelpers';
@@ -31,17 +31,17 @@ import { CoreDB, ShapeMutationService, ShapeQueryService } from '@hierarchidb/ru
 type Endpoint = MessagePort | Worker | ComlinkEndpoint;
 
 type EphemeralCacheType =
-  | 'fetchCache'
-  | 'transformCache'
-  | 'transformErrors'
-  | 'tileIdToBufferRelations'
+  | 'sourceCache'
+  | 'geometryCache'
+  | 'geometryErrors'
+  | 'tileEmitBufferRelations'
   | 'buildTasks';
 
 type EphemeralCacheCounts = {
-  fetchCache: number;
-  transformCache: number;
-  transformErrors: number;
-  tileIdToBufferRelations: number;
+  sourceCache: number;
+  geometryCache: number;
+  geometryErrors: number;
+  tileEmitBufferRelations: number;
   buildTasks: number;
 };
 
@@ -56,7 +56,7 @@ type PipelineState = 'idle' | 'running' | 'paused' | 'completed' | 'failed';
 type ShapePipelineRunParams = {
   nodeId: NodeId;
   buildConfig: ShapeBuildConfig;
-  downloadTaskPayloads?: FetchTaskPayload[];
+  downloadTaskPayloads?: SourceTaskPayload[];
   selectedArrayByCountries?: SelectedArrayByCountries;
   resumeExistingTasks?: boolean;
   buildContinuationPolicy?: BuildContinuationPolicy;
@@ -84,7 +84,7 @@ type ShapeBuildTestAPI = {
     nodeId: NodeId;
     buildConfig: ShapeBuildConfig;
     processingConfig: ShapeProcessingConfig;
-    downloadTaskPayloads: FetchTaskPayload[];
+    downloadTaskPayloads: SourceTaskPayload[];
     buildContinuationPolicy?: BuildContinuationPolicy;
   }): Promise<NodeId>;
   subscribeToProgress(
@@ -128,11 +128,11 @@ async function main(endpoint?: Endpoint): Promise<void> {
       await ensureEphemeralOpen();
       const now = Date.now();
       const data = new Uint8Array([1, 2, 3]).buffer;
-      await ephemeralDB.fetchCache.put({
-        id: `${nodeId}-fetch-cache`,
+      await ephemeralDB.sourceCache.put({
+        id: `${nodeId}-source-cache`,
         nodeId,
         domainType: 'shape',
-        sourceKey: 'seed-fetch',
+        sourceKey: 'seed-source',
         countryCode: 'JP',
         adminLevel: 0,
         data,
@@ -149,12 +149,12 @@ async function main(endpoint?: Endpoint): Promise<void> {
         inputPolygonCount: 1,
         timestamp: now,
       });
-      await ephemeralDB.transformCache.put({
-        id: `${nodeId}-transform-cache`,
+      await ephemeralDB.geometryCache.put({
+        id: `${nodeId}-geometry-cache`,
         nodeId,
         domainType: 'shape',
         bandIndex: 0,
-        sourceKey: 'seed-transform',
+        sourceKey: 'seed-geometry',
         countryCode: 'JP',
         adminLevel: 0,
         data,
@@ -165,12 +165,12 @@ async function main(endpoint?: Endpoint): Promise<void> {
         tolerance: 0,
         timestamp: now,
       });
-      await ephemeralDB.transformErrors.put({
-        id: `${nodeId}-transform-error`,
+      await ephemeralDB.geometryErrors.put({
+        id: `${nodeId}-geometry-error`,
         nodeId,
         domainType: 'shape',
-        taskId: `${nodeId}-transform-task`,
-        stage: 'transform',
+        taskId: `${nodeId}-geometry-task`,
+        stage: 'geometry',
         polygonCount: 0,
         ringCount: 0,
         polygonErrorCount: 0,
@@ -181,30 +181,30 @@ async function main(endpoint?: Endpoint): Promise<void> {
           features: [],
         },
       });
-      await ephemeralDB.tileIdToBufferRelations.put({
+      await ephemeralDB.tileEmitBufferRelations.put({
         id: `${nodeId}-tile-buffer`,
         nodeId,
         domainType: 'shape',
         bandIndex: 0,
         tileId: 'z0-0-0',
-        bufferId: `${nodeId}-transform-cache`,
+        bufferId: `${nodeId}-geometry-cache`,
         createdAt: now,
       });
     },
     clearShapeEphemeralCache: async (nodeId: NodeId, cacheType: EphemeralCacheType): Promise<void> => {
       await ensureEphemeralOpen();
       switch (cacheType) {
-        case 'fetchCache':
-          await ephemeralDB.fetchCache.where('nodeId').equals(nodeId).delete();
+        case 'sourceCache':
+          await ephemeralDB.sourceCache.where('nodeId').equals(nodeId).delete();
           return;
-        case 'transformCache':
-          await ephemeralDB.transformCache.where('nodeId').equals(nodeId).delete();
+        case 'geometryCache':
+          await ephemeralDB.geometryCache.where('nodeId').equals(nodeId).delete();
           return;
-        case 'transformErrors':
-          await ephemeralDB.transformErrors.where('nodeId').equals(nodeId).delete();
+        case 'geometryErrors':
+          await ephemeralDB.geometryErrors.where('nodeId').equals(nodeId).delete();
           return;
-        case 'tileIdToBufferRelations':
-          await ephemeralDB.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
+        case 'tileEmitBufferRelations':
+          await ephemeralDB.tileEmitBufferRelations.where('nodeId').equals(nodeId).delete();
           return;
         case 'buildTasks':
           await ephemeralDB.buildTasks.where('nodeId').equals(nodeId).delete();
@@ -215,18 +215,18 @@ async function main(endpoint?: Endpoint): Promise<void> {
     },
     getShapeEphemeralCounts: async (nodeId: NodeId): Promise<EphemeralCacheCounts> => {
       await ensureEphemeralOpen();
-      const [fetchCache, transformCache, transformErrors, tileIdToBufferRelations, buildTasks] = await Promise.all([
-        ephemeralDB.fetchCache.where('nodeId').equals(nodeId).count(),
-        ephemeralDB.transformCache.where('nodeId').equals(nodeId).count(),
-        ephemeralDB.transformErrors.where('nodeId').equals(nodeId).count(),
-        ephemeralDB.tileIdToBufferRelations.where('nodeId').equals(nodeId).count(),
+      const [sourceCache, geometryCache, geometryErrors, tileEmitBufferRelations, buildTasks] = await Promise.all([
+        ephemeralDB.sourceCache.where('nodeId').equals(nodeId).count(),
+        ephemeralDB.geometryCache.where('nodeId').equals(nodeId).count(),
+        ephemeralDB.geometryErrors.where('nodeId').equals(nodeId).count(),
+        ephemeralDB.tileEmitBufferRelations.where('nodeId').equals(nodeId).count(),
         ephemeralDB.buildTasks.where('nodeId').equals(nodeId).count(),
       ]);
       return {
-        fetchCache,
-        transformCache,
-        transformErrors,
-        tileIdToBufferRelations,
+        sourceCache,
+        geometryCache,
+        geometryErrors,
+        tileEmitBufferRelations,
         buildTasks,
       };
     },
@@ -272,7 +272,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
       params.selectedArrayByCountries,
       params.downloadTaskPayloads,
     );
-    const bands = buildBands(params.buildConfig.transformConfig.zoomBandBoundaries);
+    const bands = buildBands(params.buildConfig.geometryConfig.zoomBandBoundaries);
     const recyclingAllowlist = new Set<string>();
 
     if (!resumeExistingTasks) {
@@ -296,7 +296,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
     const waitForPause = () => waitIfPaused(params.nodeId);
 
     await waitForPause();
-    const stopAfterFetch = await runShapeFetchStageSection({
+    const stopAfterFetch = await runShapeSourceStageSection({
       nodeId: params.nodeId,
       dataSource,
       selectedArrayByCountries: params.selectedArrayByCountries,
@@ -311,7 +311,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
     if (stopAfterFetch) return;
 
     await waitForPause();
-    const stopAfterTransform = await runShapeTransformStageSection({
+    const stopAfterGeometry = await runShapeGeometryStageSection({
       nodeId: params.nodeId,
       buildConfig: params.buildConfig,
       bands,
@@ -326,10 +326,10 @@ async function main(endpoint?: Endpoint): Promise<void> {
       diffBuildEnabled: false,
       recyclingAllowlist,
     });
-    if (stopAfterTransform) return;
+    if (stopAfterGeometry) return;
 
     await waitForPause();
-    await runShapeVtStageSection({
+    await runShapeTileEmitStageSection({
       nodeId: params.nodeId,
       buildConfig: params.buildConfig,
       bands,
@@ -347,7 +347,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
       dataSource,
       ephemeralStore: ephemeralDB,
       shapeDb: shapeDB,
-      geometryEngine: params.buildConfig.transformConfig.geometryEngine ?? 'turf',
+      geometryEngine: params.buildConfig.geometryConfig.geometryEngine ?? 'turf',
       recyclingAllowlist,
       diffBuildEnabled: false,
     });

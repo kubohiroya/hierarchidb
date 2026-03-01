@@ -10,7 +10,7 @@ import type {
   ShapeRuntimeBuildConfig,
   CountryMetadata,
   DataSourceName,
-  FetchTaskPayload,
+  SourceTaskPayload,
   SelectedArrayByCountries,
   ShapeProcessingConfig,
 } from '~/common/types/index';
@@ -32,7 +32,7 @@ import {
 import {
   deleteRawDataDataSourceBuffersForNodeMetadataIds,
 } from '~/services/utils/chunkStore';
-import { resolveFetchStageStrategy } from '~/services/build/strategies/resolveFetchStageStrategy';
+import { resolveSourceStageStrategy } from '~/services/build/strategies/resolveSourceStageStrategy';
 import {
   VtTaskQueueDb,
   deleteTasksByNode,
@@ -48,7 +48,7 @@ import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import { runShapePipeline } from '~/services/vt/shapePipeline';
 import { ephemeralShapeAPIImpl, shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
-import { setFetchPlannedTotal } from '~/services/vt/shapeProgressPlan';
+import { setSourcePlannedTotal } from '~/services/vt/shapeProgressPlan';
 import { shouldReuseTaskQueueOnStart } from '../shouldReuseTaskQueueOnStart.js';
 import { shapeBuildRuntimeExecutionMetrics } from './api-internal-execution-metrics.js';
 
@@ -72,6 +72,23 @@ const {
   isStopReason,
 } = shapeBuildRuntimeExecutionMetrics;
 
+type CanonicalStageId = 'source-stage' | 'geometry-stage' | 'tile-emit-stage';
+
+const toCanonicalStageId = (stage: TaskStage): CanonicalStageId => {
+  if (stage === 'source') return 'source-stage';
+  if (stage === 'geometry') return 'geometry-stage';
+  return 'tile-emit-stage';
+};
+
+const isSourceOrGeometryStage = (stage: TaskStage): boolean => {
+  const stageId = toCanonicalStageId(stage);
+  return stageId === 'source-stage' || stageId === 'geometry-stage';
+};
+
+const isTileEmitStage = (stage: TaskStage): boolean => (
+  toCanonicalStageId(stage) === 'tile-emit-stage'
+);
+
 const buildBuildSessionConfig = (buildConfig: ShapeRuntimeBuildConfig): BuildSessionConfig => {
   const resolvedDataSource = requireDataSourceName(
     buildConfig.dataSourceName,
@@ -80,16 +97,16 @@ const buildBuildSessionConfig = (buildConfig: ShapeRuntimeBuildConfig): BuildSes
 
   return {
     dataSource: resolvedDataSource,
-    fetchConfig: buildConfig.fetchConfig,
-    transformConfig: buildConfig.transformConfig,
-    vectorTiles: buildConfig.vtConfig,
+    sourceConfig: buildConfig.sourceConfig,
+    geometryConfig: buildConfig.geometryConfig,
+    vectorTiles: buildConfig.tileEmitConfig,
   };
 };
 
-const buildFetchStageOptions = (buildConfig: ShapeRuntimeBuildConfig) => ({
-  timeoutMs: buildConfig.fetchConfig.timeoutMs,
-  retryAttempts: buildConfig.fetchConfig.retryAttempts,
-  retryDelay: buildConfig.fetchConfig.retryDelay,
+const buildSourceStageOptions = (buildConfig: ShapeRuntimeBuildConfig) => ({
+  timeoutMs: buildConfig.sourceConfig.timeoutMs,
+  retryAttempts: buildConfig.sourceConfig.retryAttempts,
+  retryDelay: buildConfig.sourceConfig.retryDelay,
 });
 
 const summarizeSelectedArrayByCountries = (
@@ -116,21 +133,21 @@ const summarizeSelectedArrayByCountries = (
   return { selectedCountryCount, selectedAdminPairCount };
 };
 
-const resolveFetchTaskPayloadsForPlan = async (input: {
+const resolveSourceTaskPayloadsForPlan = async (input: {
   nodeId: NodeId;
   dataSource: DataSourceName;
   selectedArrayByCountries?: SelectedArrayByCountries;
-  downloadTaskPayloads?: FetchTaskPayload[];
-}): Promise<FetchTaskPayload[]> => {
+  downloadTaskPayloads?: SourceTaskPayload[];
+}): Promise<SourceTaskPayload[]> => {
   if (input.downloadTaskPayloads && input.downloadTaskPayloads.length > 0) {
     return input.downloadTaskPayloads;
   }
   if (!input.selectedArrayByCountries) {
     return [];
   }
-  const strategy = resolveFetchStageStrategy(input.dataSource);
+  const strategy = resolveSourceStageStrategy(input.dataSource);
   const selectedAdminPairCount = countSelectedAdminPairs(input.selectedArrayByCountries);
-  const buildPayloads = (countryMetadata: CountryMetadata[]): FetchTaskPayload[] => strategy.buildFetchTaskPayloads({
+  const buildPayloads = (countryMetadata: CountryMetadata[]): SourceTaskPayload[] => strategy.buildSourceTaskPayloads({
     selectedArrayByCountries: input.selectedArrayByCountries,
     countryMetadata,
   });
@@ -139,7 +156,7 @@ const resolveFetchTaskPayloadsForPlan = async (input: {
   if (payloadsFromCache.length > 0 || selectedAdminPairCount === 0) {
     return payloadsFromCache;
   }
-  console.warn('[shapeBuildAPI] no fetch payloads from cached metadata; retrying with force refresh', {
+  console.warn('[shapeBuildAPI] no source payloads from cached metadata; retrying with force refresh', {
     nodeId: input.nodeId,
     dataSource: input.dataSource,
     selectedAdminPairCount,
@@ -151,39 +168,39 @@ const resolveFetchTaskPayloadsForPlan = async (input: {
     return payloadsFromRefreshedMetadata;
   }
   throw new Error(
-    `[shapeBuildAPI] No fetch task payloads generated for ${selectedAdminPairCount}`
+    `[shapeBuildAPI] No source task payloads generated for ${selectedAdminPairCount}`
     + ' selected entries. Metadata may be stale or incompatible with the current selection.',
   );
 };
 
-const estimatePlannedFetchTotal = async (input: {
+const estimatePlannedSourceTotal = async (input: {
   nodeId: NodeId;
   buildConfig: ShapeRuntimeBuildConfig;
   selectedArrayByCountries?: SelectedArrayByCountries;
-  downloadTaskPayloads?: FetchTaskPayload[];
-}): Promise<{ plannedFetchTotal: number; payloadCount: number }> => {
+  downloadTaskPayloads?: SourceTaskPayload[];
+}): Promise<{ plannedSourceTotal: number; payloadCount: number }> => {
   const dataSource = requireDataSourceName(
     input.buildConfig.dataSourceName,
-    'estimatePlannedFetchTotal',
+    'estimatePlannedSourceTotal',
   );
-  const payloads = await resolveFetchTaskPayloadsForPlan({
+  const payloads = await resolveSourceTaskPayloadsForPlan({
     nodeId: input.nodeId,
     dataSource,
     selectedArrayByCountries: input.selectedArrayByCountries,
     downloadTaskPayloads: input.downloadTaskPayloads,
   });
   if (payloads.length === 0) {
-    return { plannedFetchTotal: 0, payloadCount: 0 };
+    return { plannedSourceTotal: 0, payloadCount: 0 };
   }
-  const strategy = resolveFetchStageStrategy(dataSource);
-  const { tasks } = await strategy.buildFetchTasks({
+  const strategy = resolveSourceStageStrategy(dataSource);
+  const { tasks } = await strategy.buildSourceTasks({
     nodeId: input.nodeId,
-    fetchTaskPayloads: payloads,
+    sourceTaskPayloads: payloads,
     config: buildBuildSessionConfig(input.buildConfig),
-    options: buildFetchStageOptions(input.buildConfig),
+    options: buildSourceStageOptions(input.buildConfig),
   });
   return {
-    plannedFetchTotal: tasks.length,
+    plannedSourceTotal: tasks.length,
     payloadCount: payloads.length,
   };
 };
@@ -201,14 +218,14 @@ const hasConfigDiff = <T extends object>(left: T, right: T): boolean => {
 const resolveConfigInvalidationPlan = (
   prevConfig: ShapeRuntimeBuildConfig | null,
   nextConfig: ShapeRuntimeBuildConfig | null,
-): { fetch: boolean; transform: boolean; vt: boolean } => {
+): { source: boolean; geometry: boolean; tileEmit: boolean } => {
   if (!prevConfig || !nextConfig) {
-    return { fetch: false, transform: false, vt: false };
+    return { source: false, geometry: false, tileEmit: false };
   }
   return {
-    fetch: hasConfigDiff(prevConfig.fetchConfig, nextConfig.fetchConfig),
-    transform: hasConfigDiff(prevConfig.transformConfig, nextConfig.transformConfig),
-    vt: hasConfigDiff(prevConfig.vtConfig, nextConfig.vtConfig),
+    source: hasConfigDiff(prevConfig.sourceConfig, nextConfig.sourceConfig),
+    geometry: hasConfigDiff(prevConfig.geometryConfig, nextConfig.geometryConfig),
+    tileEmit: hasConfigDiff(prevConfig.tileEmitConfig, nextConfig.tileEmitConfig),
   };
 };
 
@@ -258,57 +275,57 @@ const applySelectionDiffCleanup = async (
   const removedKeyTuples = removedPairs.map((entry) => (
     [nodeId, normalizeSelectionKey(entry.countryCode), entry.adminLevel] as const
   ));
-  const [fetchCacheIdsRaw, transformCacheIdsRaw, vtTasks] = await Promise.all([
-    ephemeralDB.fetchCacheMeta
+  const [sourceCacheIdsRaw, geometryCacheIdsRaw, tileEmitTasks] = await Promise.all([
+    ephemeralDB.sourceCacheMeta
       .where('[nodeId+countryCode+adminLevel]')
       .anyOf(removedKeyTuples)
       .primaryKeys(),
-    ephemeralDB.transformCacheMeta
+    ephemeralDB.geometryCacheMeta
       .where('[nodeId+countryCode+adminLevel]')
       .anyOf(removedKeyTuples)
       .primaryKeys(),
-    taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'vt']).toArray(),
+    taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'tileEmit']).toArray(),
   ]);
-  const fetchCacheIds = fetchCacheIdsRaw.map((id: unknown) => String(id));
-  if (fetchCacheIds.length > 0) {
+  const sourceCacheIds = sourceCacheIdsRaw.map((id: unknown) => String(id));
+  if (sourceCacheIds.length > 0) {
     await Promise.all([
-      ephemeralDB.fetchCache
+      ephemeralDB.sourceCache
         .where('[nodeId+countryCode+adminLevel]')
         .anyOf(removedKeyTuples)
         .delete(),
-      ephemeralDB.fetchCacheMeta
+      ephemeralDB.sourceCacheMeta
         .where('[nodeId+countryCode+adminLevel]')
         .anyOf(removedKeyTuples)
         .delete(),
     ]);
-      await deleteRawDataDataSourceBuffersForNodeMetadataIds(nodeId, fetchCacheIds);
+      await deleteRawDataDataSourceBuffersForNodeMetadataIds(nodeId, sourceCacheIds);
   }
 
-  const transformCacheIds = transformCacheIdsRaw.map((id: unknown) => String(id));
-  const removedBufferSet = new Set(transformCacheIds);
-  if (transformCacheIds.length > 0) {
+  const geometryCacheIds = geometryCacheIdsRaw.map((id: unknown) => String(id));
+  const removedBufferSet = new Set(geometryCacheIds);
+  if (geometryCacheIds.length > 0) {
     await Promise.all([
-      ephemeralDB.transformCache
+      ephemeralDB.geometryCache
         .where('[nodeId+countryCode+adminLevel]')
         .anyOf(removedKeyTuples)
         .delete(),
-      ephemeralDB.transformCacheMeta
+      ephemeralDB.geometryCacheMeta
         .where('[nodeId+countryCode+adminLevel]')
         .anyOf(removedKeyTuples)
         .delete(),
     ]);
-    const relations = await ephemeralDB.tileIdToBufferRelations
+    const relations = await ephemeralDB.tileEmitBufferRelations
       .where('bufferId')
-      .anyOf(transformCacheIds)
+      .anyOf(geometryCacheIds)
       .toArray();
     const affectedTileIds = new Set(relations.map((row) => row.tileId));
-    await ephemeralDB.tileIdToBufferRelations
+    await ephemeralDB.tileEmitBufferRelations
       .where('bufferId')
-      .anyOf(transformCacheIds)
+      .anyOf(geometryCacheIds)
       .delete();
     const encoder = new TextEncoder();
     const hasher = new NobleSha3HashPort();
-    const tileIdsToDelete = vtTasks
+    const tileIdsToDelete = tileEmitTasks
       .map((task) => {
         const input = task.inputData as { bufferIds?: string[]; tileId?: number } | undefined;
         if (!input?.bufferIds?.length || typeof input.tileId !== 'number') return null;
@@ -331,12 +348,12 @@ const applySelectionDiffCleanup = async (
   const removedTaskIds = tasks
     .filter((task) => {
       const stage = task.stage;
-      if (stage === 'fetch' || stage === 'transform') {
+      if (isSourceOrGeometryStage(stage)) {
         const input = task.inputData as { countryCode?: string; adminLevel?: number } | undefined;
         if (!input?.countryCode || typeof input.adminLevel !== 'number') return false;
         return removedSet.has(`${normalizeSelectionKey(input.countryCode)}:${input.adminLevel}`);
       }
-      if (stage === 'vt') {
+      if (isTileEmitStage(stage)) {
         const input = task.inputData as { bufferIds?: string[] } | undefined;
         if (!input?.bufferIds?.length) return false;
         return input.bufferIds.some((bufferId) => removedBufferSet.has(bufferId));
@@ -379,22 +396,22 @@ const applyConfigInvalidation = async (
   nextConfig: ShapeRuntimeBuildConfig | null,
 ): Promise<void> => {
   const plan = resolveConfigInvalidationPlan(prevConfig, nextConfig);
-  if (!plan.fetch && !plan.transform && !plan.vt) return;
+  if (!plan.source && !plan.geometry && !plan.tileEmit) return;
 
   const stagesToClear: TaskStage[] = [];
-  if (plan.fetch) {
-    stagesToClear.push('fetch', 'transform', 'vt');
-    await ephemeralShapeAPIImpl.clearStage(nodeId, 'fetch');
-    await ephemeralShapeAPIImpl.clearStage(nodeId, 'transform');
+  if (plan.source) {
+    stagesToClear.push('source', 'geometry', 'tileEmit');
+    await ephemeralShapeAPIImpl.clearStage(nodeId, 'source');
+    await ephemeralShapeAPIImpl.clearStage(nodeId, 'geometry');
     await shapeMutationAPIImpl.deleteVectorTiles(nodeId);
     await shapeMutationAPIImpl.deleteFeatureMetadataByNode(nodeId);
-  } else if (plan.transform) {
-    stagesToClear.push('transform', 'vt');
-    await ephemeralShapeAPIImpl.clearStage(nodeId, 'transform');
+  } else if (plan.geometry) {
+    stagesToClear.push('geometry', 'tileEmit');
+    await ephemeralShapeAPIImpl.clearStage(nodeId, 'geometry');
     await shapeMutationAPIImpl.deleteVectorTiles(nodeId);
     await shapeMutationAPIImpl.deleteFeatureMetadataByNode(nodeId);
-  } else if (plan.vt) {
-    stagesToClear.push('vt');
+  } else if (plan.tileEmit) {
+    stagesToClear.push('tileEmit');
     await shapeMutationAPIImpl.deleteVectorTiles(nodeId);
   }
 
@@ -403,9 +420,9 @@ const applyConfigInvalidation = async (
 
   console.warn('[shapeBuildAPI] config invalidation applied', {
     nodeId,
-    fetch: plan.fetch,
-    transform: plan.transform,
-    vt: plan.vt,
+    source: plan.source,
+    geometry: plan.geometry,
+    tileEmit: plan.tileEmit,
   });
 };
 
@@ -416,7 +433,7 @@ const startBuildSessionInternal = async (
   draftId: NodeId,
   buildConfig: ShapeBuildConfig,
   processingConfig: ShapeProcessingConfig | undefined,
-  downloadTaskPayloads: FetchTaskPayload[],
+  downloadTaskPayloads: SourceTaskPayload[],
   buildContinuationPolicy?: BuildContinuationPolicy,
   progressCallback?: (event: BuildProgressEvent) => void,
 ): Promise<NodeId> => {
@@ -505,9 +522,9 @@ const startBuildSessionInternal = async (
   }
   emitStartupStepLog('finish', 'resolve-runtime-config', {
     outcome: 'success',
-    transformMaxConcurrent: mergedRuntimeConfig.transformConfig.maxConcurrent,
-    fetchMaxConcurrent: mergedRuntimeConfig.fetchConfig.maxConcurrent,
-    vtMaxConcurrent: mergedRuntimeConfig.vtConfig.maxConcurrent,
+    transformMaxConcurrent: mergedRuntimeConfig.geometryConfig.maxConcurrent,
+    sourceMaxConcurrent: mergedRuntimeConfig.sourceConfig.maxConcurrent,
+    vtMaxConcurrent: mergedRuntimeConfig.tileEmitConfig.maxConcurrent,
     source: {
       draftBuildConfig: Boolean(draftBuildConfig),
       payloadBuildConfig: Boolean(buildConfig),
@@ -555,9 +572,9 @@ const startBuildSessionInternal = async (
     await emitProgressSnapshot(nodeForSession, `${startupScope} ignored: pipeline already active`);
     return nodeForSession;
   }
-  const fetchPlan = await executeStartupStep(
-    'plan-fetch-total',
-    async () => estimatePlannedFetchTotal({
+  const sourcePlan = await executeStartupStep(
+    'plan-source-total',
+    async () => estimatePlannedSourceTotal({
       nodeId: nodeForSession,
       buildConfig: mergedRuntimeConfig,
       selectedArrayByCountries: draftEntity.selectedArrayByCountries,
@@ -569,13 +586,13 @@ const startBuildSessionInternal = async (
       selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
     },
   );
-  if ((downloadTaskPayloads.length > 0 || selectedAdminPairCount > 0) && fetchPlan.plannedFetchTotal === 0) {
+  if ((downloadTaskPayloads.length > 0 || selectedAdminPairCount > 0) && sourcePlan.plannedSourceTotal === 0) {
     throw new Error(
-      '[shapeBuildAPI] Build has selected inputs but generated 0 fetch tasks.'
+      '[shapeBuildAPI] Build has selected inputs but generated 0 source tasks.'
       + ' Please reload country metadata and retry.',
     );
   }
-  setFetchPlannedTotal(nodeForSession, fetchPlan.plannedFetchTotal);
+  setSourcePlannedTotal(nodeForSession, sourcePlan.plannedSourceTotal);
   const buildStartedAt = Date.now();
   const pipelineRunId = `${nodeForSession}:${buildStartedAt}`;
 
@@ -599,7 +616,7 @@ const startBuildSessionInternal = async (
     );
     await executeStartupStep(
       'clear-build-task-history',
-      async () => clearBuildTasksByStage(nodeForSession, ['fetch', 'transform', 'vt']),
+      async () => clearBuildTasksByStage(nodeForSession, ['source', 'geometry', 'tileEmit']),
     );
     let existingTaskCount = await executeStartupStep(
       'count-existing-tasks',
@@ -620,13 +637,13 @@ const startBuildSessionInternal = async (
       );
     }
     const resumeExistingTasks = false;
-    const existingFetchTaskCount = await executeStartupStep(
-      'count-existing-fetch-tasks',
-      async () => taskQueue.tasks.where('[nodeId+stage]').equals([nodeForSession, 'fetch']).count(),
+    const existingSourceTaskCount = await executeStartupStep(
+      'count-existing-source-tasks',
+      async () => taskQueue.tasks.where('[nodeId+stage]').equals([nodeForSession, 'source']).count(),
       { existingTaskCount },
     );
-    const plannedFetchTotal = Math.max(fetchPlan.plannedFetchTotal, existingFetchTaskCount);
-    setFetchPlannedTotal(nodeForSession, plannedFetchTotal);
+    const plannedSourceTotal = Math.max(sourcePlan.plannedSourceTotal, existingSourceTaskCount);
+    setSourcePlannedTotal(nodeForSession, plannedSourceTotal);
     await executeStartupStep(
       'upsert-session-snapshot',
       async () => upsertBuildSessionSnapshot({
@@ -637,16 +654,16 @@ const startBuildSessionInternal = async (
         startedAt: buildStartedAt,
         canResume: false,
       }),
-      { existingTaskCount, plannedFetchTotal },
+      { existingTaskCount, plannedSourceTotal },
     );
     const emitQueuedProgressSnapshot = async (payload: {
       nodeId: NodeId;
-      stage: 'fetch';
+      stage: 'source';
       taskCount: number;
       source: 'created' | 'reused';
     }): Promise<void> => {
-      if (payload.stage !== 'fetch') return;
-      await emitProgressSnapshot(payload.nodeId, 'Fetch task plan prepared.');
+      if (payload.stage !== 'source') return;
+      await emitProgressSnapshot(payload.nodeId, 'Source task plan prepared.');
     };
     emitStartupStepLog('start', 'pipeline-dispatch', {
       runId: pipelineRunId,
@@ -713,7 +730,7 @@ const startBuildSessionInternal = async (
         });
         return;
       }
-      console.error('[shapeBuildAPI] vt pipeline failed', error);
+      console.error('[shapeBuildAPI] tileEmit pipeline failed', error);
       console.error('[shapeBuildAPI] startup', JSON.stringify({
         scope: startupScope,
         phase: 'finish',
@@ -892,7 +909,7 @@ const invokeShapeBuildCommand = async (
       return;
     }
     setPaused(nodeId, false);
-    setFetchPlannedTotal(nodeId, 0);
+    setSourcePlannedTotal(nodeId, 0);
     const taskQueue = new VtTaskQueueDb();
     await deleteTasksByNode(taskQueue, nodeId);
     await upsertBuildSessionSnapshot({
@@ -927,7 +944,7 @@ const toErrorDiagnostics = (error: unknown): {
 
 const isAuthPendingPipelineError = (error: unknown): boolean => {
   if (!(error instanceof Error)) return false;
-  return error.name === 'FetchStageAuthPendingError';
+  return error.name === 'SourceStageAuthPendingError';
 };
 
 export const shapeBuildRuntimeExecutionControl = {

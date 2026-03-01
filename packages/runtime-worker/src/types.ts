@@ -66,7 +66,7 @@ export interface LifecycleEvent {
 
 // Stage worker APIs (draft contracts for shape-plugin processing)
 
-export interface FetchWorkerAPI {
+export interface SourceWorkerAPI {
   download(
     url: string,
     fileId: string,
@@ -78,8 +78,8 @@ export interface FetchWorkerAPI {
   }>;
 }
 
-export interface TransformWorkerAPI {
-  transformStage(
+export interface GeometryWorkerAPI {
+  geometryStage(
     inputBufferId: string,
     config: {
       tolerance: number;
@@ -87,7 +87,7 @@ export interface TransformWorkerAPI {
     }
   ): Promise<{ outputBufferId: string }>;
 
-  transformStage2(
+  geometryStage2(
     inputBufferId: string,
     config: {
       zoomLevels: number[];
@@ -96,7 +96,7 @@ export interface TransformWorkerAPI {
   ): Promise<{ outputBufferId: string }>;
 }
 
-export interface VTWorkerAPI {
+export interface TileEmitWorkerAPI {
   storeTiles(
     nodeId: NodeId,
     nodeType: string,

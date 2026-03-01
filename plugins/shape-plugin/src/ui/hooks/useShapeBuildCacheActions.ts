@@ -3,7 +3,7 @@ import type { BuildSessionStatus } from '@hierarchidb/build-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useSetAtom } from 'jotai';
-import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
+import { VtTaskQueueDb as TileEmitTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { persistedTasksAtom, tasksAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
 import {
   loadCacheCounts,
@@ -13,13 +13,13 @@ import {
   type ResultCounts,
 } from './useShapeBuildCacheActions/useShapeBuildCacheActions.helpers.js';
 import {
-  handleDeleteFetchApiCache as handleDeleteFetchApiCacheAction,
-  handleDeleteFetchFilteredCache as handleDeleteFetchFilteredCacheAction,
+  handleDeleteSourceApiCache as handleDeleteSourceApiCacheAction,
+  handleDeleteSourceFilteredCache as handleDeleteSourceFilteredCacheAction,
   handleDeleteFeatureMetadata,
   handleResetSession as handleResetSessionAction,
-  handleDeleteVTCache as handleDeleteVTCacheAction,
+  handleDeleteTileEmitCache as handleDeleteTileEmitCacheAction,
   handleDeleteTransposeIndex as handleDeleteTransposeIndexAction,
-  handleDeleteTransformCache as handleDeleteTransformCacheAction,
+  handleDeleteGeometryCache as handleDeleteGeometryCacheAction,
   type CacheActionKey,
 } from './useShapeBuildCacheActions/useShapeBuildCacheActions.handlers.js';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
@@ -30,10 +30,10 @@ type BuildBridge = {
 };
 
 export type DeleteLoadingState = {
-  fetchApi: boolean;
-  fetchFiltered: boolean;
-  transform: boolean;
-  vt: boolean;
+  sourceApi: boolean;
+  sourceFiltered: boolean;
+  geometry: boolean;
+  tileEmit: boolean;
   transposeIndex: boolean;
   metadata: boolean;
   resetSession: boolean;
@@ -46,16 +46,16 @@ type Args = {
 };
 
 const initialCounts: CacheCounts = {
-  fetchApi: 0,
-  fetchFiltered: 0,
-  transform: 0,
-  vt: 0,
+  sourceApi: 0,
+  sourceFiltered: 0,
+  geometry: 0,
+  tileEmit: 0,
 };
 
 const initialResultCounts: ResultCounts = {
   tiles: 0,
   featureMetadata: 0,
-  transformErrors: 0,
+  geometryErrors: 0,
 };
 
 type ActionDeps = {
@@ -78,10 +78,10 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
   const [counts, setCounts] = useState(initialCounts);
   const [resultCounts, setResultCounts] = useState(initialResultCounts);
   const [deleteLoading, setDeleteLoading] = useState<DeleteLoadingState>({
-    fetchApi: false,
-    fetchFiltered: false,
-    transform: false,
-    vt: false,
+    sourceApi: false,
+    sourceFiltered: false,
+    geometry: false,
+    tileEmit: false,
     transposeIndex: false,
     metadata: false,
     resetSession: false,
@@ -93,7 +93,7 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
   const runClearTaskQueueStages = useCallback(
     async (taskTypes: Parameters<typeof clearBuildTasksForStages>[2]) => {
       if (!nodeId) return;
-      const taskQueue = new VtTaskQueueDb();
+      const taskQueue = new TileEmitTaskQueueDb();
       await clearBuildTasksForStages(taskQueue, nodeId, taskTypes);
     },
     [nodeId],
@@ -155,12 +155,12 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
 
   const hasPersistedOutputs = useCallback(async (): Promise<boolean> => {
     if (!nodeId) return false;
-    const [summary, featureMetadata, transformErrors] = await Promise.all([
+    const [summary, featureMetadata, geometryErrors] = await Promise.all([
       shapeQueryAPIImpl.getVectorTileSummary(nodeId),
       shapeQueryAPIImpl.listFeatureMetadata(nodeId),
-      shapeQueryAPIImpl.listTransformErrorRecords(nodeId),
+      shapeQueryAPIImpl.listGeometryErrorRecords(nodeId),
     ]);
-    return summary.tiles > 0 || featureMetadata.length > 0 || transformErrors.length > 0;
+    return summary.tiles > 0 || featureMetadata.length > 0 || geometryErrors.length > 0;
   }, [nodeId]);
 
   const hasRunningBuildSession = useCallback(async (): Promise<boolean> => {
@@ -213,17 +213,17 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
     ],
   );
 
-  const handleDeleteFetchApiCache = useCallback(async () => {
-    await handleDeleteFetchApiCacheAction(deps);
+  const handleDeleteSourceApiCache = useCallback(async () => {
+    await handleDeleteSourceApiCacheAction(deps);
   }, [deps]);
-  const handleDeleteFetchFilteredCache = useCallback(async () => {
-    await handleDeleteFetchFilteredCacheAction(deps);
+  const handleDeleteSourceFilteredCache = useCallback(async () => {
+    await handleDeleteSourceFilteredCacheAction(deps);
   }, [deps]);
-  const handleDeleteTransformCache = useCallback(async () => {
-    await handleDeleteTransformCacheAction(deps);
+  const handleDeleteGeometryCache = useCallback(async () => {
+    await handleDeleteGeometryCacheAction(deps);
   }, [deps]);
-  const handleDeleteVTCache = useCallback(async () => {
-    await handleDeleteVTCacheAction(deps);
+  const handleDeleteTileEmitCache = useCallback(async () => {
+    await handleDeleteTileEmitCacheAction(deps);
   }, [deps]);
   const handleDeleteTransposeIndex = useCallback(async () => {
     await handleDeleteTransposeIndexAction(deps);
@@ -239,11 +239,11 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
     sessionStatus !== null && ['running', 'paused', 'failed', 'queued'].includes(sessionStatus)
   );
   const deleteEnabled = allowDeleteWhileBusy || !disabled;
-  const canDeleteFetchApiCache = deleteEnabled && counts.fetchApi > 0;
-  const canDeleteFetchFilteredCache = deleteEnabled && counts.fetchFiltered > 0;
-  const canDeleteTransformCache = deleteEnabled && counts.transform > 0;
-  const canDeleteVTCache = deleteEnabled && counts.vt > 0;
-  const canDeleteTransposeIndex = deleteEnabled && counts.vt > 0;
+  const canDeleteSourceApiCache = deleteEnabled && counts.sourceApi > 0;
+  const canDeleteSourceFilteredCache = deleteEnabled && counts.sourceFiltered > 0;
+  const canDeleteGeometryCache = deleteEnabled && counts.geometry > 0;
+  const canDeleteTileEmitCache = deleteEnabled && counts.tileEmit > 0;
+  const canDeleteTransposeIndex = deleteEnabled && counts.tileEmit > 0;
   const canDeleteMetadata = deleteEnabled && resultCounts.featureMetadata > 0;
 
   return {
@@ -251,16 +251,16 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
     resultCounts,
     countsLoading,
     deleteLoading,
-    canDeleteFetchApiCache,
-    canDeleteFetchFilteredCache,
-    canDeleteTransformCache,
-    canDeleteVTCache,
+    canDeleteSourceApiCache,
+    canDeleteSourceFilteredCache,
+    canDeleteGeometryCache,
+    canDeleteTileEmitCache,
     canDeleteTransposeIndex,
     canDeleteMetadata,
-    handleDeleteFetchApiCache,
-    handleDeleteFetchFilteredCache,
-    handleDeleteTransformCache,
-    handleDeleteVTCache,
+    handleDeleteSourceApiCache,
+    handleDeleteSourceFilteredCache,
+    handleDeleteGeometryCache,
+    handleDeleteTileEmitCache,
     handleDeleteTransposeIndex,
     handleDeleteMetadata,
     handleResetSession,

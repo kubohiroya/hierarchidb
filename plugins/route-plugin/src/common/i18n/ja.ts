@@ -94,7 +94,7 @@ export const ja: RoutePluginTranslations = {
       download: 'ダウンロード',
       extract1: '形状の抽出',
       extract2: '形状の検証',
-      vectortile: 'ベクタタイル生成',
+      tileEmit: 'TileEmit 生成',
     },
     phases: {
       running: '実行中',

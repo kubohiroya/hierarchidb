@@ -21,7 +21,7 @@ export const loadTransformCacheRecords = async (
     useGetEach,
     debugCollect,
   } = config;
-  return context.ephemeralDB.transaction('r', [context.ephemeralDB.transformCache], async () => {
+  return context.ephemeralDB.transaction('r', [context.ephemeralDB.geometryCache], async () => {
     if (debugCollect) {
       console.info('[vt][debug] collect transaction start', JSON.stringify({ nodeId }));
     }
@@ -32,7 +32,7 @@ export const loadTransformCacheRecords = async (
         if (debugCollect) {
           console.info('[vt][debug] collect get start', JSON.stringify({ nodeId, bufferId }));
         }
-        const record = await context.ephemeralDB.transformCache.get(bufferId);
+        const record = await context.ephemeralDB.geometryCache.get(bufferId);
         if (debugCollect) {
           console.info('[vt][debug] collect get done', JSON.stringify({
             nodeId,
@@ -46,10 +46,10 @@ export const loadTransformCacheRecords = async (
       }
       loaded = collected;
     } else if (useBulkGet) {
-      loaded = (await context.ephemeralDB.transformCache.bulkGet(bufferIds))
+      loaded = (await context.ephemeralDB.geometryCache.bulkGet(bufferIds))
         .filter((record): record is EphemeralTransformCacheRecord => Boolean(record));
     } else {
-      loaded = await context.ephemeralDB.transformCache
+      loaded = await context.ephemeralDB.geometryCache
         .where('id')
         .anyOf(bufferIds)
         .toArray();

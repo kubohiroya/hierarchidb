@@ -1,5 +1,6 @@
 import type { BuildStage } from '@hierarchidb/components/build-stage';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import { resolveStageAliasArray } from '~/ui/components/build-progress/stageIdAliases';
 
 export type StageTaskScan = Record<string, {
   hasRunning: boolean;
@@ -20,7 +21,7 @@ export const buildStageTaskScan = (
   tasksByStage: Record<string, ShapeBuildTaskSummary[]>,
 ): StageTaskScan => (
   stages.reduce<StageTaskScan>((acc, stage) => {
-    const stageTasks = tasksByStage[stage.id] ?? [];
+    const stageTasks = resolveStageAliasArray(tasksByStage, stage.id);
     let hasRunning = false;
     let failedTask: ShapeBuildTaskSummary | null = null;
     let runningCount = 0;

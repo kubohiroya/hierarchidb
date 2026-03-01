@@ -43,7 +43,7 @@ vi.mock('../../services/build/ShapeBuildAPIClient.ts', () => ({
   },
 }));
 
-import { runShapeFetchStage } from '../../services/vt/shapeFetchStage';
+import { runShapeSourceStage } from '../../services/vt/shapeSourceStage';
 
 const createDb = (): VtTaskQueueDb => new VtTaskQueueDb();
 
@@ -66,7 +66,7 @@ const FEATURE_PAYLOAD: ShapeFeaturePayload = {
   },
 };
 
-describe('runShapeFetchStage message', () => {
+describe('runShapeSourceStage message', () => {
   let db: VtTaskQueueDb | null = null;
   let nodeId: NodeId;
 
@@ -89,7 +89,7 @@ describe('runShapeFetchStage message', () => {
   it('uses reduction summary when fetch filter removes all features', async () => {
     db = createDb();
 
-    await runShapeFetchStage({
+    await runShapeSourceStage({
       nodeId,
       dataSource: 'geoboundaries',
       buildConfig: DEFAULT_BUILD_CONFIG,
@@ -105,7 +105,7 @@ describe('runShapeFetchStage message', () => {
       failureHandling: 'continue',
     });
 
-    const completed = await listTasksByStageAndStatus(db, nodeId, 'fetch', 'completed');
+    const completed = await listTasksByStageAndStatus(db, nodeId, 'source', 'completed');
     expect(completed).toHaveLength(1);
     expect(completed[0]?.message).toBe(
       'features: 1 -> 0 (-100.0%), polygons: 1 -> 0 (-100.0%), vertices: 5 -> 0 (-100.0%)',

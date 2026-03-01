@@ -92,7 +92,7 @@ const buildStageTotalsSignature = (info: BuildUnifiedProgressInfo | null): strin
   const meta = readPayloadMeta(info);
   if (!meta) return undefined;
   if (!stageTotals) return undefined;
-  const stages = ['fetch', 'transform', 'vt'] as const;
+  const stages = ['source', 'geometry', 'tileEmit'] as const;
   return stages
     .map((stage) => {
       const stageValue = asRecord(stageTotals[stage]);

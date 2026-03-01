@@ -36,9 +36,9 @@ vi.mock('../../../components/build-progress/useShapeBuildProgressWarnings.js', (
 
 vi.mock('@hierarchidb/ui-build-progress', () => {
   const mockStages = [
-    { id: 'fetch', title: 'Fetch', description: '', icon: null },
-    { id: 'transform', title: 'Transform', description: '', icon: null },
-    { id: 'vt', title: 'VT', description: '', icon: null },
+    { id: 'source', title: 'Source', description: '', icon: null },
+    { id: 'geometry', title: 'Geometry', description: '', icon: null },
+    { id: 'tileEmit', title: 'TileEmit', description: '', icon: null },
   ];
 
   return {
@@ -73,17 +73,17 @@ import {
 const makeStore = () => {
   const store = createStore();
   store.set(buildStagesAtom, [
-    { id: 'fetch', title: 'Fetch', description: '', icon: null },
-    { id: 'transform', title: 'Transform', description: '', icon: null },
-    { id: 'vt', title: 'VT', description: '', icon: null },
+    { id: 'source', title: 'Source', description: '', icon: null },
+    { id: 'geometry', title: 'Geometry', description: '', icon: null },
+    { id: 'tileEmit', title: 'TileEmit', description: '', icon: null },
   ]);
-  store.set(buildStageProgressAtom, { fetch: 100, transform: 50, vt: 0 });
+  store.set(buildStageProgressAtom, { source: 100, geometry: 50, tileEmit: 0 });
   store.set(taskPaneProgressAtom, []);
   store.set(tasksLoadingAtom, false);
   store.set(taskSummaryLoadingAtom, false);
   store.set(taskListViewPhaseAtom, 'idle');
   store.set(taskWarningMessageAtom, null);
-  store.set(tasksByStageAtom, { fetch: [], transform: [], vt: [] });
+  store.set(tasksByStageAtom, { source: [], geometry: [], tileEmit: [] });
   store.set(taskProgressControlsAtom, {
     canStartOrResume: false,
     statusLabel: '',
@@ -101,16 +101,16 @@ describe('ShapeBuildProgressPanel', () => {
     const failedTask: ShapeBuildTaskSummary = {
       taskId: 'task-1',
       nodeId: 'node-1',
-      stage: 'transform',
-      taskType: 'transform',
+      stage: 'geometry',
+      taskType: 'geometry',
       status: 'failed',
       progress: 100,
       message: 'simplify-only:done',
-      errorMessage: 'transform failed: max vertices per feature exceeded',
+      errorMessage: 'geometry failed: max vertices per feature exceeded',
     } as ShapeBuildTaskSummary;
-    store.set(tasksByStageAtom, { transform: [failedTask] });
+    store.set(tasksByStageAtom, { geometry: [failedTask] });
     store.set(taskProgressSummaryAtom, {
-      stageLabel: 'Transform',
+      stageLabel: 'Geometry',
       taskLabel: 'Running',
       taskUnitLabel: 'Tasks',
       overallProgress: 50,
@@ -127,7 +127,7 @@ describe('ShapeBuildProgressPanel', () => {
       stageRemainingMs: null,
     });
     const failedSummary = {
-      stageLabel: 'Transform',
+      stageLabel: 'Geometry',
       taskLabel: 'Failed',
       taskUnitLabel: 'Tasks',
       overallProgress: 50,
@@ -153,7 +153,7 @@ describe('ShapeBuildProgressPanel', () => {
     await within(view.container).findByText('Build controls');
     store.set(taskProgressSummaryAtom, failedSummary);
     await waitFor(() => {
-      expect(document.body.textContent).toContain('transform failed: max vertices per feature exceeded');
+      expect(document.body.textContent).toContain('geometry failed: max vertices per feature exceeded');
     });
   });
 
@@ -165,7 +165,7 @@ describe('ShapeBuildProgressPanel', () => {
       showResumeLabel: true,
     });
     store.set(taskProgressSummaryAtom, {
-      stageLabel: 'Fetch',
+      stageLabel: 'Source',
       taskLabel: 'Idle',
       taskUnitLabel: 'Tasks',
       overallProgress: 0,
@@ -206,7 +206,7 @@ describe('ShapeBuildProgressPanel', () => {
       handleStartOrResume: () => startPromise,
     });
     store.set(taskProgressSummaryAtom, {
-      stageLabel: 'Fetch',
+      stageLabel: 'Source',
       taskLabel: 'Idle',
       taskUnitLabel: 'Tasks',
       overallProgress: 0,
@@ -251,7 +251,7 @@ describe('ShapeBuildProgressPanel', () => {
     });
     store.set(tasksLoadingAtom, false);
     store.set(taskSummaryLoadingAtom, false);
-    store.set(tasksByStageAtom, { fetch: [], transform: [], vt: [] });
+    store.set(tasksByStageAtom, { source: [], geometry: [], tileEmit: [] });
     store.set(taskProgressControlsAtom, {
       canStartOrResume: true,
       statusLabel: '',
@@ -260,7 +260,7 @@ describe('ShapeBuildProgressPanel', () => {
       handleStartOrResume: () => startPromise,
     });
     store.set(taskProgressSummaryAtom, {
-      stageLabel: 'Fetch',
+      stageLabel: 'Source',
       taskLabel: 'Idle',
       taskUnitLabel: 'Tasks',
       overallProgress: 0,
@@ -304,7 +304,7 @@ describe('ShapeBuildProgressPanel', () => {
       startPending: true,
     });
     store.set(taskProgressSummaryAtom, {
-      stageLabel: 'Fetch',
+      stageLabel: 'Source',
       taskLabel: 'Idle',
       taskUnitLabel: 'Tasks',
       overallProgress: 0,
@@ -336,9 +336,9 @@ describe('ShapeBuildProgressPanel', () => {
     const store = makeStore();
     store.set(tasksLoadingAtom, true);
     store.set(taskSummaryLoadingAtom, false);
-    store.set(tasksByStageAtom, { fetch: [], transform: [], vt: [] });
+    store.set(tasksByStageAtom, { source: [], geometry: [], tileEmit: [] });
     store.set(taskProgressSummaryAtom, {
-      stageLabel: 'Fetch',
+      stageLabel: 'Source',
       taskLabel: 'Idle',
       taskUnitLabel: 'Tasks',
       overallProgress: 0,
@@ -375,9 +375,9 @@ describe('ShapeBuildProgressPanel', () => {
     store.set(tasksLoadingAtom, false);
     store.set(taskSummaryLoadingAtom, false);
     store.set(taskListViewPhaseAtom, 'awaitingSnapshot');
-    store.set(tasksByStageAtom, { fetch: [], transform: [], vt: [] });
+    store.set(tasksByStageAtom, { source: [], geometry: [], tileEmit: [] });
     store.set(taskProgressSummaryAtom, {
-      stageLabel: 'Fetch',
+      stageLabel: 'Source',
       taskLabel: 'Running',
       taskUnitLabel: 'Tasks',
       overallProgress: 0,
@@ -419,7 +419,7 @@ describe('ShapeBuildProgressPanel', () => {
       handlePause: vi.fn(),
     });
     store.set(taskProgressSummaryAtom, {
-      stageLabel: 'Transform',
+      stageLabel: 'Geometry',
       taskLabel: 'Running',
       taskUnitLabel: 'Tasks',
       overallProgress: 45,
@@ -458,7 +458,7 @@ describe('ShapeBuildProgressPanel', () => {
       handleCancelQueued: vi.fn(),
     });
     store.set(taskProgressSummaryAtom, {
-      stageLabel: 'Fetch',
+      stageLabel: 'Source',
       taskLabel: 'Queued',
       taskUnitLabel: 'Tasks',
       overallProgress: 0,
@@ -490,9 +490,9 @@ describe('ShapeBuildProgressPanel', () => {
     const store = makeStore();
     store.set(tasksLoadingAtom, true);
     store.set(taskSummaryLoadingAtom, false);
-    store.set(tasksByStageAtom, { fetch: [], transform: [], vt: [] });
+    store.set(tasksByStageAtom, { source: [], geometry: [], tileEmit: [] });
     store.set(taskProgressSummaryAtom, {
-      stageLabel: 'Fetch',
+      stageLabel: 'Source',
       taskLabel: 'Idle',
       taskUnitLabel: 'Tasks',
       overallProgress: 0,
@@ -528,7 +528,7 @@ describe('ShapeBuildProgressPanel', () => {
     const store = makeStore();
     store.set(tasksLoadingAtom, false);
     store.set(taskSummaryLoadingAtom, false);
-    store.set(tasksByStageAtom, { fetch: [], transform: [], vt: [] });
+    store.set(tasksByStageAtom, { source: [], geometry: [], tileEmit: [] });
     store.set(taskProgressControlsAtom, {
       canStartOrResume: true,
       statusLabel: '',
@@ -536,7 +536,7 @@ describe('ShapeBuildProgressPanel', () => {
       handleStartOrResume: () => Promise.resolve(),
     });
     store.set(taskProgressSummaryAtom, {
-      stageLabel: 'Fetch',
+      stageLabel: 'Source',
       taskLabel: 'Idle',
       taskUnitLabel: 'Tasks',
       overallProgress: 0,
@@ -576,7 +576,7 @@ describe('ShapeBuildProgressPanel', () => {
       startPending: true,
     });
     store.set(taskProgressSummaryAtom, {
-      stageLabel: 'Fetch',
+      stageLabel: 'Source',
       taskLabel: 'Idle',
       taskUnitLabel: 'Tasks',
       overallProgress: 0,
@@ -615,8 +615,8 @@ describe('ShapeBuildProgressPanel', () => {
     const runningTask: ShapeBuildTaskSummary = {
       taskId: 'task-running-0',
       nodeId: 'node-1',
-      stage: 'fetch',
-      taskType: 'fetch',
+      stage: 'source',
+      taskType: 'source',
       status: 'running',
       progress: 10,
       message: 'Running',
@@ -624,15 +624,15 @@ describe('ShapeBuildProgressPanel', () => {
     const queuedTask: ShapeBuildTaskSummary = {
       taskId: 'task-queued-1',
       nodeId: 'node-1',
-      stage: 'fetch',
-      taskType: 'fetch',
+      stage: 'source',
+      taskType: 'source',
       status: 'queued',
       progress: 0,
       message: 'Queued',
     } as ShapeBuildTaskSummary;
-    store.set(tasksByStageAtom, { fetch: [runningTask, queuedTask], transform: [], vt: [] });
+    store.set(tasksByStageAtom, { source: [runningTask, queuedTask], geometry: [], tileEmit: [] });
     store.set(taskProgressSummaryAtom, {
-      stageLabel: 'Fetch',
+      stageLabel: 'Source',
       taskLabel: 'Running',
       taskUnitLabel: 'Tasks',
       overallProgress: 0,
@@ -649,7 +649,7 @@ describe('ShapeBuildProgressPanel', () => {
       stageRemainingMs: null,
     });
     store.set(taskViewportRangeAtom, {
-      stageId: 'fetch',
+      stageId: 'source',
       startTaskId: 'task-running-0',
       endTaskId: 'task-running-0',
       startIndex: 0,
@@ -673,7 +673,7 @@ describe('ShapeBuildProgressPanel', () => {
 
     await waitFor(() => {
       const target = store.get(taskScrollTargetAtom);
-      expect(target?.stageId).toBe('fetch');
+      expect(target?.stageId).toBe('source');
       expect(target?.taskId).toBe('task-queued-1');
       expect(typeof target?.requestedAt).toBe('number');
     });
@@ -684,8 +684,8 @@ describe('ShapeBuildProgressPanel', () => {
     const queuedTaskA: ShapeBuildTaskSummary = {
       taskId: 'task-queued-a',
       nodeId: 'node-1',
-      stage: 'fetch',
-      taskType: 'fetch',
+      stage: 'source',
+      taskType: 'source',
       status: 'queued',
       progress: 0,
       message: 'Queued',
@@ -693,15 +693,15 @@ describe('ShapeBuildProgressPanel', () => {
     const queuedTaskB: ShapeBuildTaskSummary = {
       taskId: 'task-queued-b',
       nodeId: 'node-1',
-      stage: 'fetch',
-      taskType: 'fetch',
+      stage: 'source',
+      taskType: 'source',
       status: 'queued',
       progress: 0,
       message: 'Queued',
     } as ShapeBuildTaskSummary;
-    store.set(tasksByStageAtom, { fetch: [queuedTaskA, queuedTaskB], transform: [], vt: [] });
+    store.set(tasksByStageAtom, { source: [queuedTaskA, queuedTaskB], geometry: [], tileEmit: [] });
     store.set(taskProgressSummaryAtom, {
-      stageLabel: 'Fetch',
+      stageLabel: 'Source',
       taskLabel: 'Queued',
       taskUnitLabel: 'Tasks',
       overallProgress: 0,
@@ -738,8 +738,8 @@ describe('ShapeBuildProgressPanel', () => {
     const queuedTop: ShapeBuildTaskSummary = {
       taskId: 'task-queued-top',
       nodeId: 'node-1',
-      stage: 'fetch',
-      taskType: 'fetch',
+      stage: 'source',
+      taskType: 'source',
       status: 'queued',
       progress: 0,
       message: 'Queued',
@@ -747,8 +747,8 @@ describe('ShapeBuildProgressPanel', () => {
     const queuedVisible: ShapeBuildTaskSummary = {
       taskId: 'task-queued-visible',
       nodeId: 'node-1',
-      stage: 'fetch',
-      taskType: 'fetch',
+      stage: 'source',
+      taskType: 'source',
       status: 'queued',
       progress: 0,
       message: 'Queued',
@@ -756,8 +756,8 @@ describe('ShapeBuildProgressPanel', () => {
     const runningBottom: ShapeBuildTaskSummary = {
       taskId: 'task-running-bottom',
       nodeId: 'node-1',
-      stage: 'fetch',
-      taskType: 'fetch',
+      stage: 'source',
+      taskType: 'source',
       status: 'running',
       progress: 10,
       message: 'Running',
@@ -765,15 +765,15 @@ describe('ShapeBuildProgressPanel', () => {
     const queuedBottom: ShapeBuildTaskSummary = {
       taskId: 'task-queued-bottom',
       nodeId: 'node-1',
-      stage: 'fetch',
-      taskType: 'fetch',
+      stage: 'source',
+      taskType: 'source',
       status: 'queued',
       progress: 0,
       message: 'Queued',
     } as ShapeBuildTaskSummary;
-    store.set(tasksByStageAtom, { fetch: [queuedTop, queuedVisible, runningBottom, queuedBottom], transform: [], vt: [] });
+    store.set(tasksByStageAtom, { source: [queuedTop, queuedVisible, runningBottom, queuedBottom], geometry: [], tileEmit: [] });
     store.set(taskProgressSummaryAtom, {
-      stageLabel: 'Fetch',
+      stageLabel: 'Source',
       taskLabel: 'Running',
       taskUnitLabel: 'Tasks',
       overallProgress: 5,
@@ -790,7 +790,7 @@ describe('ShapeBuildProgressPanel', () => {
       stageRemainingMs: null,
     });
     store.set(taskViewportRangeAtom, {
-      stageId: 'fetch',
+      stageId: 'source',
       startTaskId: 'task-queued-visible',
       endTaskId: 'task-queued-visible',
       startIndex: 1,
@@ -820,8 +820,8 @@ describe('ShapeBuildProgressPanel', () => {
       {
         taskId: 'task-running-0',
         nodeId: 'node-1',
-        stage: 'fetch',
-        taskType: 'fetch',
+        stage: 'source',
+        taskType: 'source',
         status: 'running',
         progress: 40,
         message: 'Running',
@@ -829,8 +829,8 @@ describe('ShapeBuildProgressPanel', () => {
       {
         taskId: 'task-running-1',
         nodeId: 'node-1',
-        stage: 'fetch',
-        taskType: 'fetch',
+        stage: 'source',
+        taskType: 'source',
         status: 'running',
         progress: 20,
         message: 'Running',
@@ -838,8 +838,8 @@ describe('ShapeBuildProgressPanel', () => {
       {
         taskId: 'task-queued-2',
         nodeId: 'node-1',
-        stage: 'fetch',
-        taskType: 'fetch',
+        stage: 'source',
+        taskType: 'source',
         status: 'queued',
         progress: 0,
         message: 'Queued',
@@ -847,8 +847,8 @@ describe('ShapeBuildProgressPanel', () => {
       {
         taskId: 'task-queued-3',
         nodeId: 'node-1',
-        stage: 'fetch',
-        taskType: 'fetch',
+        stage: 'source',
+        taskType: 'source',
         status: 'queued',
         progress: 0,
         message: 'Queued',
@@ -856,8 +856,8 @@ describe('ShapeBuildProgressPanel', () => {
       {
         taskId: 'task-queued-4',
         nodeId: 'node-1',
-        stage: 'fetch',
-        taskType: 'fetch',
+        stage: 'source',
+        taskType: 'source',
         status: 'queued',
         progress: 0,
         message: 'Queued',
@@ -865,8 +865,8 @@ describe('ShapeBuildProgressPanel', () => {
       {
         taskId: 'task-queued-5',
         nodeId: 'node-1',
-        stage: 'fetch',
-        taskType: 'fetch',
+        stage: 'source',
+        taskType: 'source',
         status: 'queued',
         progress: 0,
         message: 'Queued',
@@ -874,8 +874,8 @@ describe('ShapeBuildProgressPanel', () => {
       {
         taskId: 'task-queued-6',
         nodeId: 'node-1',
-        stage: 'fetch',
-        taskType: 'fetch',
+        stage: 'source',
+        taskType: 'source',
         status: 'queued',
         progress: 0,
         message: 'Queued',
@@ -883,17 +883,17 @@ describe('ShapeBuildProgressPanel', () => {
       {
         taskId: 'task-queued-7',
         nodeId: 'node-1',
-        stage: 'fetch',
-        taskType: 'fetch',
+        stage: 'source',
+        taskType: 'source',
         status: 'queued',
         progress: 0,
         message: 'Queued',
       } as ShapeBuildTaskSummary,
     ];
 
-    store.set(tasksByStageAtom, { fetch: tasks, transform: [], vt: [] });
+    store.set(tasksByStageAtom, { source: tasks, geometry: [], tileEmit: [] });
     store.set(taskProgressSummaryAtom, {
-      stageLabel: 'Fetch',
+      stageLabel: 'Source',
       taskLabel: 'Running',
       taskUnitLabel: 'Tasks',
       overallProgress: 5,
@@ -910,7 +910,7 @@ describe('ShapeBuildProgressPanel', () => {
       stageRemainingMs: null,
     });
     store.set(taskViewportRangeAtom, {
-      stageId: 'fetch',
+      stageId: 'source',
       startTaskId: 'task-running-0',
       endTaskId: 'task-queued-5',
       startIndex: 0,
@@ -939,8 +939,8 @@ describe('ShapeBuildProgressPanel', () => {
     const runningTop: ShapeBuildTaskSummary = {
       taskId: 'a-running-target',
       nodeId: 'node-1',
-      stage: 'transform',
-      taskType: 'transform',
+      stage: 'geometry',
+      taskType: 'geometry',
       status: 'running',
       progress: 40,
       message: 'Running',
@@ -948,15 +948,15 @@ describe('ShapeBuildProgressPanel', () => {
     const queuedBottom: ShapeBuildTaskSummary = {
       taskId: 'z-queued-next',
       nodeId: 'node-1',
-      stage: 'transform',
-      taskType: 'transform',
+      stage: 'geometry',
+      taskType: 'geometry',
       status: 'queued',
       progress: 0,
       message: 'Queued',
     } as ShapeBuildTaskSummary;
-    store.set(tasksByStageAtom, { fetch: [], transform: [runningTop, queuedBottom], vt: [] });
+    store.set(tasksByStageAtom, { source: [], geometry: [runningTop, queuedBottom], tileEmit: [] });
     store.set(taskProgressSummaryAtom, {
-      stageLabel: 'Transform',
+      stageLabel: 'Geometry',
       taskLabel: 'Running',
       taskUnitLabel: 'Tasks',
       overallProgress: 30,
@@ -973,12 +973,12 @@ describe('ShapeBuildProgressPanel', () => {
       stageRemainingMs: null,
     });
     store.set(taskScrollTargetAtom, {
-      stageId: 'transform',
+      stageId: 'geometry',
       taskId: 'a-running-target',
       requestedAt: 1,
     });
     store.set(taskViewportRangeAtom, {
-      stageId: 'transform',
+      stageId: 'geometry',
       startTaskId: 'a-running-target',
       endTaskId: 'a-running-target',
       startIndex: 0,

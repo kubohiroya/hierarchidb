@@ -4,7 +4,7 @@ import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 
 import {
   useTaskItemCardList,
-  sortTransformTasks,
+  sortGeometryTasks,
   sortVectorTileTasks,
 } from '~/ui/components/build-progress/taskItemCardList/useTaskItemCardList';
 import { TaskItemCard } from '~/ui/components/build-progress/TaskItemCard/TaskItemCard';
@@ -12,16 +12,23 @@ import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useShapeBuildStages } from '~/ui/components/build-progress/useShapeBuildStages/useShapeBuildStages';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 import {
-  buildFetchTaskOutcomeSummary,
+  buildSourceTaskOutcomeSummary,
   type TaskOutcomeSummaryBuilder,
   buildSimpleTaskOutcomeSummary,
-  buildTransformTaskOutcomeSummary,
+  buildGeometryTaskOutcomeSummary,
 } from '~/ui/components/build-progress/TaskItemCard/taskOutcomeSummaryBuilders';
+import {
+  isGeometryLikeStageId,
+  isTileEmitLikeStageId,
+} from '~/ui/components/build-progress/stageIdAliases';
 import { TaskItemDetailWindow } from '~/ui/components/build-progress/TaskItemCard/TaskItemDetailWindow';
 import type { TaskDetailSelection } from '~/ui/components/build-progress/TaskItemCard/TaskItemDetailTypes';
 import type { ShapeBuildConfig } from '~/common/types/build';
 
-type TaskStageSummaryBuilderMap = Partial<Record<'fetch' | 'transform' | 'vt', TaskOutcomeSummaryBuilder>>;
+type TaskStageSummaryBuilderMap = Partial<Record<
+  'source' | 'geometry' | 'tileEmit',
+  TaskOutcomeSummaryBuilder
+>>;
 
 type TaskItemCardListCardProps = {
   stageId: string;
@@ -116,14 +123,16 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
   const renderTaskItemCard = useCallback((task: ShapeBuildTaskSummary, key: string, style?: CSSProperties) => {
     const taskStageId = task.stage;
     const stageIcon = resolveStageIcon(taskStageId);
-    const injectedBuilder = (taskStageId === 'transform'
-      ? summaryBuilders?.transform
-      : (taskStageId === 'fetch' ? summaryBuilders?.fetch : summaryBuilders?.vt));
+    const injectedBuilder = (isGeometryLikeStageId(taskStageId)
+      ? summaryBuilders?.geometry
+      : (isTileEmitLikeStageId(taskStageId)
+        ? summaryBuilders?.tileEmit
+        : summaryBuilders?.source));
     const summaryBuilder = injectedBuilder
       ?? (
-        taskStageId === 'transform'
-          ? buildTransformTaskOutcomeSummary
-          : (taskStageId === 'fetch' ? buildFetchTaskOutcomeSummary : buildSimpleTaskOutcomeSummary)
+        isGeometryLikeStageId(taskStageId)
+          ? buildGeometryTaskOutcomeSummary
+          : (isTileEmitLikeStageId(taskStageId) ? buildSimpleTaskOutcomeSummary : buildSourceTaskOutcomeSummary)
       );
     const currentTaskDetailId = task.taskId ?? resolveTaskTitle(task as TaskItemWithMetadata);
     const selectedTaskDetailId = selectedDetail?.task.taskId ?? selectedDetail?.title;
@@ -160,7 +169,7 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
         />
       </Box>
     );
-  }, [hoveredDetail, isDetailFloatingWindowOpen, onOpenDetailFloatingWindow, resolveStageIcon, resolveStatusColor, resolveStatusLabel, resolveTaskTitle, selectedDetail, stageId, stageValue, summaryBuilders, t]);
+  }, [hoveredDetail, resolveStageIcon, resolveStatusColor, resolveStatusLabel, resolveTaskTitle, selectedDetail, stageValue, summaryBuilders, t]);
 
   return (
     <Box
@@ -215,5 +224,5 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
   );
 });
 
-export { sortTransformTasks, sortVectorTileTasks };
+export { sortGeometryTasks, sortVectorTileTasks };
 export type { TaskItemWithMetadata };

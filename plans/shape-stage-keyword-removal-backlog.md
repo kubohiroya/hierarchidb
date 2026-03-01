@@ -8,6 +8,15 @@ This backlog tracks concrete code-level migration work to remove hard-coded stag
 - Keep runtime truth source as `stepId + capability + persistedStatus/runtimeStatus/phase`.
 - Prevent re-introducing stage-keyword dispatch as implementation proceeds.
 
+## 1.1 Stage-Key Migration Policy (Fixed)
+
+- UI wording migration (`Fetch/Transform/VT` -> `Source/Geometry/TileEmit`) is allowed independently.
+- Storage/API keys (`fetch|transform|vt`) remain stable during #655 for compatibility and scope control.
+- New canonical identifiers (`source-stage|geometry-stage|tile-emit-stage`) must be accepted at adapter boundaries.
+- Control truth must not depend on legacy display words; normalization adapters are boundary-only.
+- Full key rename of persisted/API stage fields is a separate, explicit breaking-change task.
+- Feature flags are prohibited for this migration; integration must be done by contract-first module replacement.
+
 ## 2. Scan Basis
 
 Scan command used (2026-02-28 JST):
@@ -100,6 +109,7 @@ Exit criteria:
 
 - `plans/shape-graph-5stage-pipeline-plan.md`
 - `plans/shape-5stage-pure-function-spec.md`
+- `plans/stage-rename-risk-audit-source-geometry-tileemit.md`
 - `packages/runtime-worker/docs/build-session-terminology-ssot.md`
 - `packages/runtime-worker/docs/build-session-orchestrator-state-transitions.md`
 

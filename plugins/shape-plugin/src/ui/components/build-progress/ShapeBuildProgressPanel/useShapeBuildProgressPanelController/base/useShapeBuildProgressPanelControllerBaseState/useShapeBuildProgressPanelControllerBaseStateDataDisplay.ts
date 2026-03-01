@@ -46,17 +46,17 @@ type StateLike = {
 };
 
 type CacheCounts = {
-  fetchApi: number;
-  fetchFiltered: number;
-  transform: number;
-  vt: number;
+  sourceApi: number;
+  sourceFiltered: number;
+  geometry: number;
+  tileEmit: number;
   [key: string]: number;
 };
 
 type CacheResultCounts = {
   tiles: number;
   featureMetadata: number;
-  transformErrors: number;
+  geometryErrors: number;
   [key: string]: number;
 };
 
@@ -90,15 +90,15 @@ type DisplayArgs = {
     resetSession: boolean;
     [key: string]: boolean;
   };
-  cacheCanDeleteFetchApiCache: boolean;
-  cacheCanDeleteFetchFilteredCache: boolean;
-  cacheCanDeleteTransformCache: boolean;
-  cacheCanDeleteVTCache: boolean;
+  cacheCanDeleteSourceApiCache: boolean;
+  cacheCanDeleteSourceFilteredCache: boolean;
+  cacheCanDeleteGeometryCache: boolean;
+  cacheCanDeleteTileEmitCache: boolean;
   cacheCanDeleteMetadata: boolean;
-  cacheHandleDeleteFetchApiCache: () => Promise<void>;
-  cacheHandleDeleteFetchFilteredCache: () => Promise<void>;
-  cacheHandleDeleteTransformCache: () => Promise<void>;
-  cacheHandleDeleteVTCache: () => Promise<void>;
+  cacheHandleDeleteSourceApiCache: () => Promise<void>;
+  cacheHandleDeleteSourceFilteredCache: () => Promise<void>;
+  cacheHandleDeleteGeometryCache: () => Promise<void>;
+  cacheHandleDeleteTileEmitCache: () => Promise<void>;
   cacheHandleDeleteMetadata: () => Promise<void>;
   stages: BuildStage[];
   summary: StateLike['summary'];
@@ -124,31 +124,31 @@ type DisplayArgs = {
   matchesSearchQuery: (task: TaskItemWithMetadata) => boolean;
   buildConfigForDisplay: ShapeBuildConfig;
   processingConfigForEdit: ShapeProcessingConfig;
-  fetchRetryConfigForEdit: {
+  sourceRetryConfigForEdit: {
     timeoutMs: number;
     retryAttempts: number;
     retryDelay: number;
     retryLimit: number;
-    retryBackoff: ShapeProcessingConfig['fetch']['retryBackoff'];
+    retryBackoff: ShapeProcessingConfig['source']['retryBackoff'];
   };
   applyProcessingConfigUpdate: (partial: Partial<ShapeProcessingConfig>) => void;
-  applyFetchRetryConfigUpdate: (next: {
+  applySourceRetryConfigUpdate: (next: {
     timeoutMs: number;
     retryAttempts: number;
     retryDelay: number;
     retryLimit: number;
-    retryBackoff: ShapeProcessingConfig['fetch']['retryBackoff'];
+    retryBackoff: ShapeProcessingConfig['source']['retryBackoff'];
   }) => void;
   handleStartClickWithHold: () => Promise<void>;
   handleConfirmStartWithHold: () => Promise<void>;
   handleResetSessionWithSkeleton: () => Promise<void>;
-  handleFetchRetryIndicatorClick: (event: MouseEvent<HTMLElement>) => void;
+  handleSourceRetryIndicatorClick: (event: MouseEvent<HTMLElement>) => void;
   handleStageConcurrencyIndicatorClick: (stageId: string, event: MouseEvent<HTMLElement>) => void;
   concurrencyEditorAnchor: HTMLElement | null;
-  concurrencyEditorStageId: 'fetch' | 'transform' | 'vt' | null;
-  fetchRetryEditorAnchor: HTMLElement | null;
+  concurrencyEditorStageId: 'source' | 'geometry' | 'tileEmit' | null;
+  sourceRetryEditorAnchor: HTMLElement | null;
   closeConcurrencyEditor: () => void;
-  closeFetchRetryEditor: () => void;
+  closeSourceRetryEditor: () => void;
   onChange?: (patch: Partial<ShapeEntity>) => void;
   warningMessage?: string | null;
   startWarning?: StartWarning | null;
@@ -206,15 +206,15 @@ export const useShapeBuildProgressPanelControllerBaseStateDataDisplay = (args: D
     cacheCounts,
     cacheResultCounts,
     cacheDeleteLoading,
-    cacheCanDeleteFetchApiCache,
-    cacheCanDeleteFetchFilteredCache,
-    cacheCanDeleteTransformCache,
-    cacheCanDeleteVTCache,
+    cacheCanDeleteSourceApiCache,
+    cacheCanDeleteSourceFilteredCache,
+    cacheCanDeleteGeometryCache,
+    cacheCanDeleteTileEmitCache,
     cacheCanDeleteMetadata,
-    cacheHandleDeleteFetchApiCache,
-    cacheHandleDeleteFetchFilteredCache,
-    cacheHandleDeleteTransformCache,
-    cacheHandleDeleteVTCache,
+    cacheHandleDeleteSourceApiCache,
+    cacheHandleDeleteSourceFilteredCache,
+    cacheHandleDeleteGeometryCache,
+    cacheHandleDeleteTileEmitCache,
     cacheHandleDeleteMetadata,
     stages,
     summary,
@@ -240,19 +240,19 @@ export const useShapeBuildProgressPanelControllerBaseStateDataDisplay = (args: D
     matchesSearchQuery,
     buildConfigForDisplay,
     processingConfigForEdit,
-    fetchRetryConfigForEdit,
+    sourceRetryConfigForEdit,
     applyProcessingConfigUpdate,
-    applyFetchRetryConfigUpdate,
+    applySourceRetryConfigUpdate,
     handleStartClickWithHold,
     handleConfirmStartWithHold,
     handleResetSessionWithSkeleton,
-    handleFetchRetryIndicatorClick,
+    handleSourceRetryIndicatorClick,
     handleStageConcurrencyIndicatorClick,
     concurrencyEditorAnchor,
     concurrencyEditorStageId,
-    fetchRetryEditorAnchor,
+    sourceRetryEditorAnchor,
     closeConcurrencyEditor,
-    closeFetchRetryEditor,
+    closeSourceRetryEditor,
     onChange,
     warningMessage,
     startWarning,
@@ -354,10 +354,10 @@ export const useShapeBuildProgressPanelControllerBaseStateDataDisplay = (args: D
     matchesSearchQuery,
     buildConfigForDisplay,
     applyProcessingConfigUpdate,
-    applyFetchRetryConfigUpdate,
+    applySourceRetryConfigUpdate,
     processingConfigForEdit,
-    fetchRetryConfigForEdit,
-    handleFetchRetryIndicatorClick,
+    sourceRetryConfigForEdit,
+    handleSourceRetryIndicatorClick,
     handleStageConcurrencyIndicatorClick,
     stageLoadingState,
     stagePreviewWindowOpenMap,
@@ -374,20 +374,20 @@ export const useShapeBuildProgressPanelControllerBaseStateDataDisplay = (args: D
     onStageConcurrencyIndicatorClick: handleStageConcurrencyIndicatorClick,
     onChange,
     closeConcurrencyEditor,
-    closeFetchRetryEditor,
+    closeSourceRetryEditor,
     concurrencyEditorAnchor,
     concurrencyEditorStageId,
-    fetchRetryEditorAnchor,
+    sourceRetryEditorAnchor,
     deleteLoading: cacheDeleteLoading,
-    canDeleteFetchApiCache: cacheCanDeleteFetchApiCache,
-    canDeleteFetchFilteredCache: cacheCanDeleteFetchFilteredCache,
-    canDeleteTransformCache: cacheCanDeleteTransformCache,
-    canDeleteVTCache: cacheCanDeleteVTCache,
+    canDeleteSourceApiCache: cacheCanDeleteSourceApiCache,
+    canDeleteSourceFilteredCache: cacheCanDeleteSourceFilteredCache,
+    canDeleteGeometryCache: cacheCanDeleteGeometryCache,
+    canDeleteTileEmitCache: cacheCanDeleteTileEmitCache,
     canDeleteMetadata: cacheCanDeleteMetadata,
-    handleDeleteFetchApiCache: cacheHandleDeleteFetchApiCache,
-    handleDeleteFetchFilteredCache: cacheHandleDeleteFetchFilteredCache,
-    handleDeleteTransformCache: cacheHandleDeleteTransformCache,
-    handleDeleteVTCache: cacheHandleDeleteVTCache,
+    handleDeleteSourceApiCache: cacheHandleDeleteSourceApiCache,
+    handleDeleteSourceFilteredCache: cacheHandleDeleteSourceFilteredCache,
+    handleDeleteGeometryCache: cacheHandleDeleteGeometryCache,
+    handleDeleteTileEmitCache: cacheHandleDeleteTileEmitCache,
     handleDeleteMetadata: cacheHandleDeleteMetadata,
     hasBuildPayload: tasksByStageForDisplay != null,
     stageProgress,

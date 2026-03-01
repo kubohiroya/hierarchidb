@@ -34,7 +34,10 @@ This specification is shared by shape/route and future build-session plugins.
 - `runtimeStatus`:
   - In-memory status used for live UI/runtime reflection.
 - `stage`:
-  - Build stage (`fetch | transform | vt | idle | undefined`).
+  - Build stage compatibility field (`fetch | transform | vt | idle | undefined`).
+- `stageId`:
+  - Canonical stage identity (`source-stage | geometry-stage | tile-emit-stage`) accepted by boundary adapters.
+  - When both `stageId` and `stage` are present, normalization must prefer `stageId`.
 - `phase`:
   - Runtime phase (`starting`, `running`, `pausing`, ...).
 - `StartAccepted`:
@@ -120,6 +123,7 @@ Notes:
 
 - `stage=undefined` means normalized abnormal residue (not runnable until explicit request).
 - Runnable queue source is sessions accepted for execution and not normalized out.
+- For current rollout scope, persisted/API stage keys remain `fetch|transform|vt`; UI wording may use `Source|Geometry|TileEmit`.
 
 ## 6. Build Step Initialization Sequence
 

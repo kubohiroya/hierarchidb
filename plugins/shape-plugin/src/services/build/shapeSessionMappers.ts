@@ -7,7 +7,7 @@ import type { EphemeralBuildSessionRecord } from '@hierarchidb/gis-sdk';
 import type {
   BuildSessionConfig,
   BuildSessionRecord,
-  FetchStageMaxima,
+  SourceStageMaxima,
   BuildTaskType,
   LayerInfo,
   ProgressInfo,
@@ -15,6 +15,7 @@ import type {
   StageStatus,
   VectorTileRecord,
 } from '@hierarchidb/shape-store';
+import { toLegacyBuildStage } from './stageAlias.js';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -27,7 +28,7 @@ const isNumberRecord = (value: unknown): value is Record<string, number> => {
   return Object.values(value).every((entry) => isNumber(entry));
 };
 
-const isFetchStageMaxima = (value: unknown): value is FetchStageMaxima => {
+const isSourceStageMaxima = (value: unknown): value is SourceStageMaxima => {
   if (!isRecord(value)) return false;
   return isNumber(value.featureMax)
     && isNumber(value.polygonMax)
@@ -54,45 +55,49 @@ const isStageStatus = (value: unknown): value is StageStatus => {
 
 export const isBuildProcessConfig = (value: unknown): value is BuildSessionConfig => {
   if (!isRecord(value)) return false;
-  return isRecord(value.fetchConfig)
-    && isRecord(value.transformConfig)
+  return isRecord(value.sourceConfig)
+    && isRecord(value.geometryConfig)
     && isRecord(value.vectorTiles);
 };
 
 export const toProcessingStage = (
   stage: ShapeBuildProgressSummary['stage'],
+  stageId?: string,
 ): BuildTaskType | undefined => {
-  if (stage === 'fetch' || stage === 'transform' || stage === 'vt') {
-    return stage;
-  }
-  return undefined;
+  return toLegacyBuildStage(stage, stageId);
 };
 
-export const toProgressInfo = (progress: ShapeBuildProgressSummary): ProgressInfo => ({
+export const toProgressInfo = (
+  progress: ShapeBuildProgressSummary,
+  stageId?: string,
+): ProgressInfo => ({
   total: progress.total,
   completed: progress.completed,
   failed: progress.failed,
   skipped: progress.skipped,
   percentage: progress.percentage,
-  stage: toProcessingStage(progress.stage),
+  stage: toProcessingStage(progress.stage, stageId),
 });
 
-export const toProgressSummary = (progress: ProgressInfo): ShapeBuildProgressSummary => ({
+export const toProgressSummary = (
+  progress: ProgressInfo,
+  stageId?: string,
+): ShapeBuildProgressSummary => ({
   total: progress.total,
   completed: progress.completed,
   failed: progress.failed,
   skipped: progress.skipped,
   percentage: progress.percentage,
-  stage: progress.stage === 'fetch' || progress.stage === 'transform' || progress.stage === 'vt'
-    ? progress.stage
-    : undefined,
+  stage: (() => {
+    return toLegacyBuildStage(progress.stage, stageId);
+  })(),
 });
 
 export const toEphemeralBuildSessionRecord = (session: ShapeBuildSessionRecord): EphemeralBuildSessionRecord => ({
   nodeId: session.nodeId,
   status: session.status,
-  stage: session.progress.stage,
-  progress: toProgressSummary(session.progress),
+  stage: toProcessingStage(session.progress.stage, session.stageId),
+  progress: toProgressSummary(session.progress, session.stageId),
   selectedArrayByCountries: session.selectedArrayByCountries,
   stages: toStageMap(session.stages as Record<string, unknown> | undefined),
   resourceUsage: toResourceUsage(session.resourceUsage as Record<string, unknown> | undefined),
@@ -111,7 +116,7 @@ export const toEphemeralBuildSessionRecord = (session: ShapeBuildSessionRecord):
   stageId: session.stageId,
   elapsedMs: session.elapsedMs,
   elapsedByStage: isNumberRecord(session.elapsedByStage) ? session.elapsedByStage : undefined,
-  fetchStageMaxima: isFetchStageMaxima(session.fetchStageMaxima) ? session.fetchStageMaxima : undefined,
+  sourceStageMaxima: isSourceStageMaxima(session.sourceStageMaxima) ? session.sourceStageMaxima : undefined,
 });
 
 const toStageMap = (stages: Record<string, unknown> | undefined): Record<BuildTaskType, StageStatus> => {
@@ -126,10 +131,13 @@ const toStageMap = (stages: Record<string, unknown> | undefined): Record<BuildTa
     const candidate = stages?.[stage];
     return isStageStatus(candidate) ? candidate : empty;
   };
+  const sourceStage = read('source');
+  const geometryStage = read('geometry');
+  const tileEmitStage = read('tileEmit');
   return {
-    fetch: read('fetch'),
-    transform: read('transform'),
-    vt: read('vt'),
+    source: sourceStage,
+    geometry: geometryStage,
+    tileEmit: tileEmitStage,
   };
 };
 
@@ -164,7 +172,7 @@ export const toBuildSessionRecord = (session: ShapeBuildSessionRecord): BuildSes
     startedAt: session.startedAt,
     updatedAt: session.updatedAt,
     completedAt: session.completedAt,
-    progress: toProgressInfo(session.progress),
+    progress: toProgressInfo(session.progress, session.stageId),
     stages: toStageMap(session.stages),
     resourceUsage: toResourceUsage(session.resourceUsage),
     canResume: session.canResume,
@@ -178,7 +186,7 @@ export const toBuildSessionRecord = (session: ShapeBuildSessionRecord): BuildSes
     stageId: session.stageId,
     elapsedMs: session.elapsedMs,
     elapsedByStage: isNumberRecord(session.elapsedByStage) ? session.elapsedByStage : undefined,
-    fetchStageMaxima: isFetchStageMaxima(session.fetchStageMaxima) ? session.fetchStageMaxima : undefined,
+    sourceStageMaxima: isSourceStageMaxima(session.sourceStageMaxima) ? session.sourceStageMaxima : undefined,
   };
 };
 
@@ -193,7 +201,7 @@ export const toBuildSessionUpdates = (
   if (updates.startedAt !== undefined) next.startedAt = updates.startedAt;
   if (updates.updatedAt !== undefined) next.updatedAt = updates.updatedAt;
   if (updates.completedAt !== undefined) next.completedAt = updates.completedAt;
-  if (updates.progress !== undefined) next.progress = toProgressInfo(updates.progress);
+  if (updates.progress !== undefined) next.progress = toProgressInfo(updates.progress, updates.stageId);
   if (updates.stages !== undefined) next.stages = toStageMap(updates.stages);
   if (updates.resourceUsage !== undefined) next.resourceUsage = toResourceUsage(updates.resourceUsage);
   if (updates.stopReason !== undefined) next.stopReason = updates.stopReason;
@@ -211,9 +219,9 @@ export const toBuildSessionUpdates = (
     if (!isNumberRecord(updates.elapsedByStage)) return null;
     next.elapsedByStage = updates.elapsedByStage;
   }
-  if (updates.fetchStageMaxima !== undefined) {
-    if (!isFetchStageMaxima(updates.fetchStageMaxima)) return null;
-    next.fetchStageMaxima = updates.fetchStageMaxima;
+  if (updates.sourceStageMaxima !== undefined) {
+    if (!isSourceStageMaxima(updates.sourceStageMaxima)) return null;
+    next.sourceStageMaxima = updates.sourceStageMaxima;
   }
   return next;
 };
@@ -229,7 +237,7 @@ export const toEphemeralBuildSessionUpdates = (
   if (updates.startedAt !== undefined) next.startedAt = updates.startedAt;
   if (updates.updatedAt !== undefined) next.updatedAt = updates.updatedAt;
   if (updates.completedAt !== undefined) next.completedAt = updates.completedAt;
-  if (updates.progress !== undefined) next.progress = toProgressSummary(updates.progress);
+  if (updates.progress !== undefined) next.progress = toProgressSummary(updates.progress, updates.stageId);
   if (updates.stages !== undefined) {
     next.stages = toStageMap(updates.stages as Record<string, unknown> | undefined);
   }
@@ -251,9 +259,9 @@ export const toEphemeralBuildSessionUpdates = (
     if (!isNumberRecord(updates.elapsedByStage)) return null;
     next.elapsedByStage = updates.elapsedByStage;
   }
-  if (updates.fetchStageMaxima !== undefined) {
-    if (!isFetchStageMaxima(updates.fetchStageMaxima)) return null;
-    next.fetchStageMaxima = updates.fetchStageMaxima;
+  if (updates.sourceStageMaxima !== undefined) {
+    if (!isSourceStageMaxima(updates.sourceStageMaxima)) return null;
+    next.sourceStageMaxima = updates.sourceStageMaxima;
   }
   return next;
 };
@@ -265,7 +273,7 @@ export const toShapeBuildSessionRecord = (session: BuildSessionRecord): ShapeBui
   startedAt: session.startedAt,
   updatedAt: session.updatedAt,
   completedAt: session.completedAt,
-  progress: toProgressSummary(session.progress),
+  progress: toProgressSummary(session.progress, session.stageId),
   stages: { ...session.stages },
   resourceUsage: toResourceUsageRecord(session.resourceUsage),
   stopReason: session.stopReason,
@@ -280,7 +288,7 @@ export const toShapeBuildSessionRecord = (session: BuildSessionRecord): ShapeBui
   stageId: session.stageId,
   elapsedMs: session.elapsedMs,
   elapsedByStage: session.elapsedByStage,
-  fetchStageMaxima: isFetchStageMaxima(session.fetchStageMaxima) ? session.fetchStageMaxima : undefined,
+  sourceStageMaxima: isSourceStageMaxima(session.sourceStageMaxima) ? session.sourceStageMaxima : undefined,
 });
 
 export const toShapeBuildSessionUpdates = (
@@ -294,7 +302,7 @@ export const toShapeBuildSessionUpdates = (
   if (updates.startedAt !== undefined) next.startedAt = updates.startedAt;
   if (updates.updatedAt !== undefined) next.updatedAt = updates.updatedAt;
   if (updates.completedAt !== undefined) next.completedAt = updates.completedAt;
-  if (updates.progress !== undefined) next.progress = toProgressSummary(updates.progress);
+  if (updates.progress !== undefined) next.progress = toProgressSummary(updates.progress, updates.stageId);
   if (updates.stages !== undefined) next.stages = { ...updates.stages };
   if (updates.resourceUsage !== undefined) next.resourceUsage = toResourceUsageRecord(updates.resourceUsage);
   if (updates.stopReason !== undefined) next.stopReason = updates.stopReason;
@@ -309,7 +317,7 @@ export const toShapeBuildSessionUpdates = (
   if (updates.stageId !== undefined) next.stageId = updates.stageId;
   if (updates.elapsedMs !== undefined) next.elapsedMs = updates.elapsedMs;
   if (updates.elapsedByStage !== undefined) next.elapsedByStage = updates.elapsedByStage;
-  if (updates.fetchStageMaxima !== undefined) next.fetchStageMaxima = updates.fetchStageMaxima;
+  if (updates.sourceStageMaxima !== undefined) next.sourceStageMaxima = updates.sourceStageMaxima;
   return next;
 };
 

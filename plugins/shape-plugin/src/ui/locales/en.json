@@ -52,7 +52,7 @@
     "loading": "Loading country metadata...",
     "loadError": "Failed to load country metadata: {{message}}",
     "title": "Select Countries & Administrative Levels",
-    "description": "Select countries and their administrative levels to fetch. Use the matrix to make precise selections."
+    "description": "Select countries and their administrative levels to include. Use the matrix to make precise selections."
   },
   "dataSource": {
     "title": "Data Source",
@@ -66,13 +66,13 @@
     "cacheMissing": "Select a data source first.",
     "cacheMissingNode": "NodeId is missing."
   },
-  "processing": {
-    "fetch": {
-      "title": "Fetch",
-      "descriptionTooltip": "Fetches source data, prepares filters, and provides input for transform.",
+    "processing": {
+      "source": {
+      "title": "Source",
+      "descriptionTooltip": "Acquires source data, prepares filters, and provides input for Geometry.",
       "geometryIntakeGuard": {
-        "title": "Fetch Geometry Intake Guard",
-        "description": "Normalize and validate fetched geometry before transform to reduce unstable simplification artifacts.",
+        "title": "Source Geometry Intake Guard",
+        "description": "Normalize and validate source geometry before Geometry to reduce unstable simplification artifacts.",
         "validationLevel": "Validation level",
         "level": {
           "off": "off",
@@ -94,11 +94,11 @@
         "triangleRingRatio": "Triangle ring ratio"
       }
     },
-    "transform": {
-      "title": "Transform",
-      "summaryHelpTurf": "Transform runs turf.simplify with the configured tolerance.",
-      "summaryHelpTopojson": "Transform uses topology-preserving topojson simplify during decode and skips geojson simplify in the simplify stage.",
-      "summaryHelpGeojson": "Transform decodes geometry first, then runs geojson simplify with the configured tolerance.",
+    "geometry": {
+      "title": "Geometry",
+      "summaryHelpTurf": "Geometry runs turf.simplify with the configured tolerance.",
+      "summaryHelpTopojson": "Geometry uses topology-preserving topojson simplify during decode and skips geojson simplify in the simplify stage.",
+      "summaryHelpGeojson": "Geometry decodes geometry first, then runs geojson simplify with the configured tolerance.",
       "simplifyTolerance": {
         "label": "Simplify tolerance"
       },
@@ -160,7 +160,7 @@
       }
     },
     "transformByZoom": {
-      "title": "Transform by zoom"
+      "title": "Geometry by zoom"
     },
     "buildRunning": {
       "title": "Build is running",
@@ -171,19 +171,19 @@
       "title": "Miscellaneous",
       "descriptionTooltip": "Control how build outputs are retained or removed for each stage."
     },
-    "vt": {
-      "title": "VT generation"
+    "tileEmit": {
+      "title": "TileEmit"
     },
     "download": {
-      "title": "Fetch stage settings",
-      "workers": "Concurrent Fetch Workers",
-      "workersHelp": "Controls how many fetches run in parallel.",
+      "title": "Source stage settings",
+      "workers": "Concurrent Source Workers",
+      "workersHelp": "Controls how many source tasks run in parallel.",
       "retainTitle": "Retail intermediate outputs after build",
       "retainApiCache": "API cache",
       "retainFilteredCache": "Filtered cache",
       "retainStage1Cache": "Simplified cache",
-      "retainVtCache": "Tile data",
-      "retainStage2Cache": "Transform cache (preprocessing)",
+      "retainTileEmitCache": "Tile data",
+      "retainStage2Cache": "Geometry cache (preprocessing)",
       "deleteNowTitle": "Delete build outputs immediately",
       "deleteApiCache": "Delete API cache",
       "deleteApiCacheWithCount": "Delete API cache ({{count}} items)",
@@ -199,20 +199,20 @@
       "deleteMetadata": "Delete feature metadata",
       "resetSession": "Reset build session",
       "deleteApiCacheHelp": "API cache: fetched raw data for this node (before filtering).",
-      "deleteFilteredCacheHelp": "Filtered cache: fetch-stage filtered feature collections per zoom band.",
-      "deleteTransformHelp": "Simplified cache: simplified geometries by zoom band plus transform error records.",
-      "deleteVtHelp": "Tile data: generated vector tiles (tile index is also cleared).",
+      "deleteFilteredCacheHelp": "Filtered cache: source-stage filtered feature collections per zoom band.",
+      "deleteGeometryHelp": "Simplified cache: simplified geometries by zoom band plus Geometry error records.",
+      "deleteTileEmitHelp": "Tile data: generated vector tiles (tile index is also cleared).",
       "deleteMetadataHelp": "Feature metadata for search/preview (does not remove tiles).",
       "resetDefaultsAction": "Reset to defaults",
-      "fetchRetryTitle": "Fetch Retry",
+      "sourceRetryTitle": "Source Retry",
       "timeoutMs": "Timeout (ms)",
-      "timeoutHelp": "Maximum time to wait for each fetch before failing.",
+      "timeoutHelp": "Maximum time to wait for each source request before failing.",
       "retryAttempts": "Retry Attempts",
-      "retryAttemptsHelp": "Number of retries per failed fetch request.",
+      "retryAttemptsHelp": "Number of retries per failed source request.",
       "retryLimit": "Retry Limit",
       "retryLimitHelp": "Retry limit follows retry attempts.",
       "retryDelay": "Retry Delay (ms)",
-      "retryDelayHelp": "Wait time between retry attempts when a fetch fails.",
+      "retryDelayHelp": "Wait time between retry attempts when a source request fails.",
       "retryBackoff": "Retry Backoff",
       "retryBackoffHelp": "Spacing pattern used between retries.",
       "retryBackoffLinear": "Linear",
@@ -222,14 +222,14 @@
       "title": "URL specific build config rules",
       "sectionTitle": "URL-specific rules",
       "description": "Define per-URL overrides in JSON. This JSON is evaluated in order and each entry applies to matching URLs.",
-      "example": "Example:\n[\n  { \"key\": \"default\", \"matchType\": \"default\", \"buildConfig\": { \"transformConfig\": { \"toleranceByBand\": [0.12, 0.11, 0.1, 0.09, 0.08] } } },\n  { \"key\": \"russia-coast\", \"matchType\": \"regexp\", \"pattern\": \"(?i).*russia.*\", \"buildConfig\": { \"transformConfig\": { \"toleranceByBand\": [0.3, 0.25, 0.2, 0.18, 0.16] } }\n]"
+      "example": "Example:\n[\n  { \"key\": \"default\", \"matchType\": \"default\", \"buildConfig\": { \"geometryConfig\": { \"toleranceByBand\": [0.12, 0.11, 0.1, 0.09, 0.08] } } },\n  { \"key\": \"russia-coast\", \"matchType\": \"regexp\", \"pattern\": \"(?i).*russia.*\", \"buildConfig\": { \"geometryConfig\": { \"toleranceByBand\": [0.3, 0.25, 0.2, 0.18, 0.16] } }\n]"
     },
     "extract1": {
-      "title": "Transform (Filtering)",
+      "title": "Geometry (Filtering)",
       "omissionHelp": "Small polygons may be excluded based on the polygon area coefficient and feature filtering."
     },
     "extract2": {
-      "title": "Transform (Tile Preprocessing)",
+      "title": "Geometry (Tile Preprocessing)",
       "omissionHelp": "When enabled, preprocessing can remove empty geometries.",
       "extractionModeTitle": "Preprocessing Mode",
       "extractionModeHelp": "Choose how geometry is prepared during tile preprocessing.",
@@ -238,10 +238,10 @@
       "extractionModeGeo": "GeoJSON"
     },
     "filter": {
-      "title": "Transform Settings",
-      "workersStage1": "Transform Workers (Simplification)",
+      "title": "Geometry Settings",
+      "workersStage1": "Geometry Workers (Simplification)",
       "workersStage1Help": "Higher concurrency can speed up processing but may exhaust browser memory.",
-      "workersStage2": "Transform Workers (Preprocessing)",
+      "workersStage2": "Geometry Workers (Preprocessing)",
       "workersStage2Help": "Higher concurrency can speed up processing but may exhaust browser memory.",
       "method": "Filtering Method",
       "methodNone": "Pass-through",
@@ -249,16 +249,16 @@
       "methodPolygon": "Polygon Only",
       "methodHybrid": "Hybrid (Recommended)",
       "areaFilterTitle": "Area Filter",
-      "areaFilterHelp": "Applied during transform filtering (feature filtering and aspect/area checks).",
+      "areaFilterHelp": "Applied during geometry filtering (feature filtering and aspect/area checks).",
       "enableFeatureFiltering": "Enable feature filtering",
       "extractionTitle": "Simplification",
-      "methodHelp": "Selects how small features are filtered before transform.",
+      "methodHelp": "Selects how small features are filtered before geometry.",
       "minimumArea": "Minimum Area (sq km)",
-      "minimumAreaHelp": "Filters out features smaller than this area during transform filtering.",
+      "minimumAreaHelp": "Filters out features smaller than this area during geometry filtering.",
       "aspectRatioThreshold": "Aspect Ratio Threshold",
-      "aspectRatioThresholdHelp": "Filters elongated features during transform when their aspect ratio exceeds this value.",
+      "aspectRatioThresholdHelp": "Filters elongated features during geometry when their aspect ratio exceeds this value.",
       "areaThreshold": "Area Threshold (sq km)",
-      "areaThresholdHelp": "Minimum area used with the transform aspect ratio filter.",
+      "areaThresholdHelp": "Minimum area used with the geometry aspect ratio filter.",
       "excludePolygonAreaCoefficient": "Polygon Area Exclusion Coefficient",
       "excludePolygonAreaCoefficientHelp": "Excludes polygons smaller than coefficient × grid size × outline length / 2 in fetch filtering.",
       "omitDetailsTitle": "Filtering small shapes (islands and enclaves)",
@@ -270,10 +270,10 @@
       "omitDetailsLevelStrongHelp": "Keeps only large islands.",
       "tolerance": "Simplification Strength",
       "toleranceSecondary": "Simplification strength (preprocessing)",
-      "toleranceHelp": "Higher values straighten boundaries and remove fine details. Small or thin features are more likely to be filtered out in combination with the filters. Downstream (transform preprocessing and VT generation) becomes lighter and smaller, but geometric fidelity decreases.",
-      "toleranceHelpStage2": "Applies transform preprocessing for tile generation.",
+      "toleranceHelp": "Higher values straighten boundaries and remove fine details. Small or thin features are more likely to be filtered out in combination with the filters. Downstream (Geometry preprocessing and TileEmit) becomes lighter and smaller, but geometric fidelity decreases.",
+      "toleranceHelpStage2": "Applies Geometry preprocessing for tile emission.",
       "minVertexCount": "Min Vertex Count",
-      "minVertexCountHelp": "Only apply transform area filtering when feature vertices exceed this count.",
+      "minVertexCountHelp": "Only apply geometry area filtering when feature vertices exceed this count.",
       "quickRejectThreshold": "Quick Reject Threshold",
       "quickRejectHelp": "Lower values reject more tiny features quickly.",
       "simpleShapeVertexThreshold": "Simple Shape Vertex Threshold",
@@ -285,9 +285,9 @@
       "regularShapeMaxRatio": "Regular Shape Max Ratio",
       "regularShapeMaxRatioHelp": "Maximum ratio considered a regular-shaped feature.",
       "hybridFilterTitle": "Hybrid filter tuning",
-      "enablePerFeatureExtraction": "Allow transform to omit countries or municipalities",
+      "enablePerFeatureExtraction": "Allow geometry to omit countries or municipalities",
       "enablePerFeatureExtractionHelp": "Geometries may be omitted, but metadata is retained.",
-      "outputTitle": "Transform output",
+      "outputTitle": "Geometry output",
       "ringFixMinRingVertices": "Min ring vertices",
       "boundaryDisableAtZoomOrAbove": "Disable boundary handling at zoom or above",
       "boundaryDisableAtZoomOrAboveHelp": "Stops boundary preservation above this zoom.",
@@ -309,8 +309,8 @@
       "descriptionTooltip": "Controls build output retention and cleanup behavior by stage."
     },
     "tile": {
-      "title": "VT generation",
-      "descriptionTooltip": "Generate VT tiles for the selected zoom range.",
+      "title": "TileEmit",
+      "descriptionTooltip": "Emit vector tiles for the selected zoom range.",
       "basicSettings": "Basic settings",
       "basicPerformance": "Concurrency",
       "basicGeometry": "Tile geometry & margin",
@@ -318,8 +318,8 @@
       "basicFormats": "Formats",
       "basicBuffer": "Tile margin",
       "advancedSettings": "Advanced settings",
-      "workers": "Concurrent VT Workers",
-      "workersHelp": "Concurrent workers for VT generation. Dynamic VT concurrency requires 2+.",
+      "workers": "Concurrent TileEmit Workers",
+      "workersHelp": "Concurrent workers for TileEmit. Dynamic TileEmit concurrency requires 2+.",
       "extent": "Tile extent",
       "extentHelp": "Controls the resolution of tile coordinates.",
       "tileSize": "Tile size",
@@ -353,13 +353,13 @@
       "bufferSize": "Tile Margin (px)",
       "bufferSizeHelp": "0 disables the margin. Larger values reduce seams but increase overlap.",
       "zoomBands": "Zoom bands",
-      "zoomBandsSummary": "Zoom bands follow the Transform range boundaries. The representative zoom is the smallest in each band.",
+      "zoomBandsSummary": "Zoom bands follow the Geometry range boundaries. The representative zoom is the smallest in each band.",
       "expandFactor": "Tile Expansion Factor",
       "expandFactorHelp": "Expand tile groups when assembling TopoJSON buffers.",
       "expandMargin": "Tile Expansion Margin",
       "expandMarginHelp": "Extra margin (in tiles) for neighbor selection.",
-      "dynamicConcurrencyTitle": "Dynamic VT concurrency",
-      "dynamicConcurrencyEnabled": "Enable dynamic VT concurrency",
+      "dynamicConcurrencyTitle": "Dynamic TileEmit concurrency",
+      "dynamicConcurrencyEnabled": "Enable dynamic TileEmit concurrency",
       "dynamicConcurrencyMinConcurrent": "Min concurrent",
       "dynamicConcurrencyMaxConcurrent": "Max concurrent",
       "dynamicConcurrencyHighWatermark": "High watermark",
@@ -367,7 +367,7 @@
       "dynamicConcurrencyWatermarkRange": "Watermark range",
       "dynamicConcurrencyAdjustStep": "Adjust step",
       "dynamicConcurrencySampleMs": "Sample interval (ms)",
-      "dynamicConcurrencyHelp": "Adjusts VT worker counts based on runtime load.",
+      "dynamicConcurrencyHelp": "Adjusts TileEmit worker counts based on runtime load.",
       "tileCountThreshold": "Tile Count Threshold",
       "tileCountThresholdHelp": "Stops tile generation once the tile count exceeds this value.",
       "zoomLevels": "Zoom Levels (comma separated)",
@@ -409,12 +409,12 @@
         "createdAt": "Created At",
         "originLabel": "Origin",
         "originKey": "Origin Key",
-        "fetchVertexCount": "Fetch Vertices",
-        "fetchPolygonCount": "Fetch Polygons",
-        "transformVertexCount": "Transform Vertices",
-        "transformPolygonCount": "Transform Polygons",
-        "vtVertexCount": "VT Vertices",
-        "vtPolygonCount": "VT Polygons",
+        "fetchVertexCount": "Source Vertices",
+        "fetchPolygonCount": "Source Polygons",
+        "geometryVertexCount": "Geometry Vertices",
+        "geometryPolygonCount": "Geometry Polygons",
+        "vtVertexCount": "TileEmit Vertices",
+        "vtPolygonCount": "TileEmit Polygons",
         "vertexCount": "Vertices",
         "polygonCount": "Polygons",
         "status": "Status",
@@ -427,9 +427,9 @@
     },
     "fitSelection": "Fit selection",
     "errors": {
-      "missingSession": "Build the dataset to capture transform errors.",
-      "empty": "No transform errors have been recorded yet.",
-      "loading": "Loading transform errors...",
+      "missingSession": "Build the dataset to capture geometry errors.",
+      "empty": "No geometry errors have been recorded yet.",
+      "loading": "Loading geometry errors...",
       "searchPlaceholder": "Search errors",
       "searchAriaLabel": "Search errors",
       "matches": "Matched",
@@ -475,8 +475,8 @@
       "countsWithUnit": "{{percentage}}% ・ {{completed}}/{{total}} {{unit}} completed ・ failed {{failed}} ・ skipped {{skipped}}"
     },
     "taskPhase": {
-      "fetchCacheStart": "Fetch cache start",
-      "fetchCacheDone": "Fetch cache done",
+      "sourceCacheStart": "Source cache start",
+      "sourceCacheDone": "Source cache done",
       "decodeStart": "Decode start",
       "decodeProgress": "Decoding... {{elapsedSeconds}}s",
       "decodeDone": "Decode complete",
@@ -504,8 +504,8 @@
       "outputCountsStart": "Output counts start",
       "encodeStart": "Encode start",
       "encodeDone": "Encode done",
-      "transformCacheEncodeStart": "Transform cache FlatGeobuf encode start",
-      "transformCacheEncodeDone": "Transform cache FlatGeobuf encode done",
+      "geometryCacheEncodeStart": "Geometry cache FlatGeobuf encode start",
+      "geometryCacheEncodeDone": "Geometry cache FlatGeobuf encode done",
       "cachePutStart": "Cache write start",
       "cachePutDone": "Cache write done"
     },
@@ -551,37 +551,37 @@
       "failed": "Build failed"
     },
     "stages": {
-      "fetch": {
-        "title": "Fetch",
-        "description": "Fetch and normalize source data."
+      "source": {
+        "title": "Source",
+        "description": "Acquire and normalize source data."
       },
-      "transform": {
-        "title": "Transform",
-        "description": "Simplify features per zoom band."
+      "geometry": {
+        "title": "Geometry",
+        "description": "Simplify geometry artifacts per zoom band."
       },
       "transformByZoom": {
-        "title": "Transform by zoom",
-        "description": "Build tile indexes per zoom band."
+        "title": "Geometry by zoom",
+        "description": "Build geometry indexes per zoom band."
       },
-      "vt": {
-        "title": "VT",
-        "description": "Generate vector tiles for the selected zoom range."
+      "tileEmit": {
+        "title": "TileEmit",
+        "description": "Emit vector tiles for the selected zoom range."
       },
       "download": {
-        "title": "Fetch",
-        "description": "Fetch and normalize source data."
+        "title": "Source",
+        "description": "Acquire and normalize source data."
       },
       "extract1": {
-        "title": "Transform (Filtering)",
+        "title": "Geometry (Filtering)",
         "description": "Filter and simplify source buffers."
       },
       "extract2": {
-        "title": "Transform (Preprocessing)",
+        "title": "Geometry (Preprocessing)",
         "description": "Prepare buffers for tile generation."
       },
       "vectorTiles": {
-        "title": "VT",
-        "description": "Generate vector tiles for the selected zoom range."
+        "title": "TileEmit",
+        "description": "Emit vector tiles for the selected zoom range."
       }
     }
   }

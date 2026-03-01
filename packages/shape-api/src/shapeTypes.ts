@@ -74,6 +74,7 @@ export interface ShapeBuildTaskSummary {
   taskId: string;
   nodeId: NodeId;
   stage: ShapeBuildStage;
+  stageId?: string;
   status: string;
   index: number;
   progress: number;

@@ -325,13 +325,13 @@ const SHAPE_CREATE_PRESET_DEFINITIONS: readonly ShapeCreatePresetDefinition[] = 
       'Preset: Japan admin level 0+1 boundaries. Includes tuned simplify settings.',
     buildConfigPatch: {
       dataSourceName: 'geoboundaries',
-      transformConfig: {
+      geometryConfig: {
         toleranceByBand: [0.12],
         simplifyToleranceByAdminLevel: createSimplifyToleranceByAdminLevelPatch([0.12]),
         omitDetailsConfig: { level: 'weak' },
         boundaryDisableAtZoomOrAbove: 5,
       },
-      vtConfig: {
+      tileEmitConfig: {
         tolerance: 0,
         tileExpandFactor: 1,
       },
@@ -356,13 +356,13 @@ const SHAPE_CREATE_PRESET_DEFINITIONS: readonly ShapeCreatePresetDefinition[] = 
       'Preset: world countries admin level 0. Prioritizes compact simplification.',
     buildConfigPatch: {
       dataSourceName: 'geoboundaries',
-      transformConfig: {
+      geometryConfig: {
         toleranceByBand: [0.9],
         simplifyToleranceByAdminLevel: createSimplifyToleranceByAdminLevelPatch([0.9]),
         omitDetailsConfig: { level: 'strong' },
         boundaryDisableAtZoomOrAbove: 2,
       },
-      vtConfig: {
+      tileEmitConfig: {
         tolerance: 1,
         tileExpandFactor: 1,
       },
@@ -387,13 +387,13 @@ const SHAPE_CREATE_PRESET_DEFINITIONS: readonly ShapeCreatePresetDefinition[] = 
       'Preset: world level 1, plus China/India level 2 with balanced simplify settings.',
     buildConfigPatch: {
       dataSourceName: 'geoboundaries',
-      transformConfig: {
+      geometryConfig: {
         toleranceByBand: [0.45],
         simplifyToleranceByAdminLevel: createSimplifyToleranceByAdminLevelPatch([0.45]),
         omitDetailsConfig: { level: 'medium' },
         boundaryDisableAtZoomOrAbove: 3,
       },
-      vtConfig: {
+      tileEmitConfig: {
         tolerance: 0,
         tileExpandFactor: 1,
       },

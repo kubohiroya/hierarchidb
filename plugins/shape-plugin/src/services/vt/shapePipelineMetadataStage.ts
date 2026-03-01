@@ -15,8 +15,8 @@ import type { EphemeralDB } from '@hierarchidb/gis-sdk';
 import type { shapeDB } from '@hierarchidb/shape-store';
 import {
   buildCountryLookup,
-  decodeTransformCache,
-  isTransformCacheComplete,
+  decodeGeometryCache,
+  isGeometryCacheComplete,
   readNumericProperty,
   resolveFeatureOriginInfo,
 } from './shapePipelineShared.ts';
@@ -33,7 +33,7 @@ export type ShapeMetadataStageParams = {
 };
 
 export const runShapeMetadataStage = async (params: ShapeMetadataStageParams): Promise<void> => {
-  const featureMetadataRows = await buildFeatureMetadataFromTransformCaches(
+  const featureMetadataRows = await buildFeatureMetadataFromGeometryCaches(
     params.nodeId,
     params.dataSource,
     params.ephemeralStore,
@@ -63,7 +63,7 @@ export const runShapeMetadataStage = async (params: ShapeMetadataStageParams): P
   }
 };
 
-const buildFeatureMetadataFromTransformCaches = async (
+const buildFeatureMetadataFromGeometryCaches = async (
   nodeId: NodeId,
   dataSource: DataSourceName,
   ephemeralStore: EphemeralDB,
@@ -74,13 +74,13 @@ const buildFeatureMetadataFromTransformCaches = async (
   const createdAt = Date.now();
   const metadata = await metadataLoader.loadMetadata(dataSource, nodeId);
   const countryLookup = buildCountryLookup(metadata as CountryMetadata[]);
-  const transformCacheIdsRaw = await ephemeralStore.transformCacheMeta.where('nodeId').equals(nodeId).primaryKeys();
-  const transformCacheIds = transformCacheIdsRaw.map((id) => String(id));
-  if (transformCacheIds.length === 0) return records;
-  const buffers = await ephemeralStore.transformCache.bulkGet(transformCacheIds);
+  const geometryCacheIdsRaw = await ephemeralStore.geometryCacheMeta.where('nodeId').equals(nodeId).primaryKeys();
+  const geometryCacheIds = geometryCacheIdsRaw.map((id) => String(id));
+  if (geometryCacheIds.length === 0) return records;
+  const buffers = await ephemeralStore.geometryCache.bulkGet(geometryCacheIds);
   for (const buffer of buffers) {
-    if (!buffer || !isTransformCacheComplete(buffer)) continue;
-    const collection = await decodeTransformCache(buffer.data);
+    if (!buffer || !isGeometryCacheComplete(buffer)) continue;
+    const collection = await decodeGeometryCache(buffer.data);
     if (!collection) continue;
     for (let index = 0; index < collection.features.length; index += 1) {
       const feature = collection.features[index];
@@ -125,8 +125,8 @@ const buildFeatureMetadataFromTransformCaches = async (
         polygonCount: stats.polygonCount,
         fetchVertexCount,
         fetchPolygonCount,
-        transformVertexCount: stats.vertexCount,
-        transformPolygonCount: stats.polygonCount,
+        geometryVertexCount: stats.vertexCount,
+        geometryPolygonCount: stats.polygonCount,
         geojsonByteSize: measureFeatureGeoJsonByteSize(feature),
         bbox: stats.bbox,
         area: stats.area,

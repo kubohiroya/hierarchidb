@@ -36,8 +36,8 @@ export type VtTaskPreparationResult =
 
 export const prepareVtTaskExecution = (params: VtTaskPreparationInput): VtTaskPreparationResult => {
   const { context, task } = params;
-  const { bands, vtConfig } = context;
-  const layerSetName = vtConfig.layerSetName;
+  const { bands, tileEmitConfig } = context;
+  const layerSetName = tileEmitConfig.layerSetName;
   if (!layerSetName) {
     return {
       kind: 'skipped',
@@ -122,7 +122,7 @@ export const prepareVtTaskExecution = (params: VtTaskPreparationInput): VtTaskPr
     parent,
     layerSetName,
     debugCollect: (globalThis as { __HDB_VT_DEBUG_COLLECT?: boolean }).__HDB_VT_DEBUG_COLLECT === true,
-    debugFocusConfig: resolveVtDebugFocusConfig(vtConfig.debug),
+    debugFocusConfig: resolveVtDebugFocusConfig(tileEmitConfig.debug),
     groupByContinent,
     useTopojsonTileSimplify,
     topojsonSimplify,

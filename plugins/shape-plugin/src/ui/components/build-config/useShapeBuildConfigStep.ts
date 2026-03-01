@@ -32,8 +32,8 @@ const resolveInitialBuildConfig = (): ShapeBuildConfig => {
   });
   return {
     ...DEFAULT_BUILD_CONFIG,
-    transformConfig: {
-      ...DEFAULT_BUILD_CONFIG.transformConfig,
+    geometryConfig: {
+      ...DEFAULT_BUILD_CONFIG.geometryConfig,
       zoomBandBoundaries,
     },
   };
@@ -44,9 +44,9 @@ const normalizeZoomBandConfig = (
   overrides?: Partial<ShapeBuildConfig>,
 ): ShapeBuildConfig => {
   const merged = overrides ? applyBuildConfigPatch(baseConfig, overrides) : baseConfig;
-  const rawBoundaries = merged.transformConfig.zoomBandBoundaries;
+  const rawBoundaries = merged.geometryConfig.zoomBandBoundaries;
   const normalizedBoundaries = normalizeZoomBandBoundaries(
-    Array.isArray(rawBoundaries) ? rawBoundaries : baseConfig.transformConfig.zoomBandBoundaries,
+    Array.isArray(rawBoundaries) ? rawBoundaries : baseConfig.geometryConfig.zoomBandBoundaries,
     ZOOM_BAND_MIN_ZOOM,
     ZOOM_BAND_MAX_ZOOM,
     ZOOM_BAND_MAX_RANGES,
@@ -56,8 +56,8 @@ const normalizeZoomBandConfig = (
   }
   return {
     ...merged,
-    transformConfig: {
-      ...merged.transformConfig,
+    geometryConfig: {
+      ...merged.geometryConfig,
       zoomBandBoundaries: normalizedBoundaries,
     },
   };

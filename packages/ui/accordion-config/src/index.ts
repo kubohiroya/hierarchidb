@@ -33,8 +33,8 @@ export { BuildConfigAccordionSummary } from './build-config/BuildConfigAccordion
 export { BuildConfigShell } from './build-config/BuildConfigShell.js';
 export { DownloadRetryControls } from './build-config/DownloadRetryControls.js';
 export type { DownloadRetryConfig } from './build-config/DownloadRetryControls.js';
-export { FetchConfigSection } from './build-config/FetchConfigSection.js';
-export { VTConfigSection } from './build-config/VTConfigSection.js';
+export { SourceConfigSection } from './build-config/SourceConfigSection.js';
+export { TileEmitConfigSection } from './build-config/TileEmitConfigSection.js';
 export { WorkerNumberConfigCard } from './build-config/WorkerNumberConfigCard.js';
 export { ZoomBandConfigSection } from './build-config/ZoomBandConfigSection.js';
 export { ZoomBandRangeCard } from './build-config/ZoomBandRangeCard.js';

@@ -36,6 +36,6 @@ export const expandTileBBox = (bbox: TileBBox, buffer: number, extent: number): 
 };
 
 export const resolveMaxVerticesPerTile = (indexMaxPoints: number): number => (
-  Number.isFinite(indexMaxPoints) && indexMaxPoints > 0 ? indexMaxPoints : 65536
+  Number.isFinite(indexMaxPoints) && indexMaxPoints > 0 ? indexMaxPoints : 100000
 );
 
