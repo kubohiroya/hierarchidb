@@ -52,6 +52,20 @@ const formatNumber = (value: number | null | undefined): string => {
   return numberFormatter.format(Math.round(value));
 };
 
+const resolveTileBuffer = (config: { buffer?: number; bufferSize?: number }): number => {
+  if (Number.isFinite(config.buffer) && (config.buffer as number) >= 0) {
+    return config.buffer as number;
+  }
+  if (Number.isFinite(config.bufferSize) && (config.bufferSize as number) >= 0) {
+    return config.bufferSize as number;
+  }
+  return 64;
+};
+
+const resolveIndexMaxPoints = (value: number | null | undefined): number => (
+  Number.isFinite(value) && (value as number) > 0 ? (value as number) : 100000
+);
+
 
 const parseTileEmitTaskId = (taskId: string | undefined): TileEmitTaskTileInfo | null => {
   if (!taskId) return null;
@@ -230,6 +244,8 @@ export const TileEmitTaskItemDetailWindow = ({
 
   const resolvedBuildConfig = buildConfig ?? DEFAULT_BUILD_CONFIG;
   const tileEmitConfig = resolvedBuildConfig.tileEmitConfig ?? DEFAULT_BUILD_CONFIG.tileEmitConfig;
+  const tileBuffer = resolveTileBuffer(tileEmitConfig);
+  const effectiveIndexMaxPoints = resolveIndexMaxPoints(tileEmitConfig.indexMaxPoints);
 
   useEffect(() => {
     if (detail.task.stage !== 'tileEmit') return;
@@ -243,7 +259,7 @@ export const TileEmitTaskItemDetailWindow = ({
     setHoveredFeatureId(null);
     void (async () => {
       const tileBBox = tileToBBox(tileInfo.tile.z, tileInfo.tile.x, tileInfo.tile.y);
-      const bufferBBox = expandTileBBox(tileBBox, tileEmitConfig.bufferSize, tileEmitConfig.extent);
+      const bufferBBox = expandTileBBox(tileBBox, tileBuffer, tileEmitConfig.extent);
       const relations = await ephemeralDB.tileEmitBufferRelations
         .where('[nodeId+bandIndex+tileId]')
         .equals([String(nodeId), tileInfo.bandIndex, String(tileInfo.tileId)])
@@ -329,7 +345,7 @@ export const TileEmitTaskItemDetailWindow = ({
     return () => {
       cancelled = true;
     };
-  }, [detail, resolvedBuildConfig, tileEmitConfig.bufferSize, tileEmitConfig.extent]);
+  }, [detail, resolvedBuildConfig, tileBuffer, tileEmitConfig.extent]);
 
   const handleResetSelection = useCallback(() => {
     setSelectedFeatureId(null);
@@ -385,9 +401,8 @@ export const TileEmitTaskItemDetailWindow = ({
                           <Typography variant="caption" color="text.secondary">geojson-vt parameters</Typography>
                           <Typography variant="caption">tolerance: {formatNumber(tileEmitConfig.tolerance)}</Typography>
                           <Typography variant="caption">extent: {formatNumber(tileEmitConfig.extent)}</Typography>
-                          <Typography variant="caption">bufferSize: {formatNumber(tileEmitConfig.bufferSize)}</Typography>
-                          <Typography variant="caption">tileSize: {formatNumber(tileEmitConfig.tileSize)}</Typography>
-                          <Typography variant="caption">indexMaxPoints: {formatNumber(tileEmitConfig.indexMaxPoints)}</Typography>
+                          <Typography variant="caption">buffer: {formatNumber(tileBuffer)}</Typography>
+                          <Typography variant="caption">indexMaxPoints: {formatNumber(effectiveIndexMaxPoints)}</Typography>
                           <Typography variant="caption">promoteId: {tileEmitConfig.promoteId ?? 'N/A'}</Typography>
                           <Typography variant="caption">layerSet: {tileEmitConfig.layerSetName ?? 'N/A'}</Typography>
                           <Typography variant="caption">format: {tileEmitConfig.format ?? 'N/A'}</Typography>

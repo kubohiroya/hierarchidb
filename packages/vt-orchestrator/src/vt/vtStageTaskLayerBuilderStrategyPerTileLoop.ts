@@ -14,7 +14,7 @@ import {
   buildFeaturesWithBBoxByLayer,
   resolvePerTileLayerContribution,
 } from './vtStageTaskLayerBuilderStrategyPerTileLoopLayerUtils.js';
-import { expandTileBBox, tileToBBox } from './vtStageGeometryTile.js';
+import { expandTileBBox, resolveTileBufferPx, tileToBBox } from './vtStageGeometryTile.js';
 
 type PerTileLayerExecutionInput = {
   context: VTStageContext;
@@ -53,7 +53,8 @@ export const executePerTileLayerBuild = async (
     buildLayerIndexForTile,
   } = input;
 
-  const { bufferSize, extent } = context.tileEmitConfig;
+  const { extent } = context.tileEmitConfig;
+  const tileBuffer = resolveTileBufferPx(context.tileEmitConfig);
   const aggregatedLayersByTileId = new Map<number, Record<string, Tile>>();
   const emptyTilesWithFeatures: GeojsonVtEmptyTileDetail[] = [];
   const featuresWithBBoxByLayer: PerTileLayerFeatureMap = buildFeaturesWithBBoxByLayer({
@@ -67,7 +68,7 @@ export const executePerTileLayerBuild = async (
     assertNotAborted,
     abortSignal: context.abortSignal,
   })) {
-    const tileBBox = expandTileBBox(tileToBBox(z, x, y), bufferSize, extent);
+    const tileBBox = expandTileBBox(tileToBBox(z, x, y), tileBuffer, extent);
     const layersForTile: Record<string, Tile> = {};
     for (const [layerName, featuresWithBBox] of featuresWithBBoxByLayer.entries()) {
       if (featuresWithBBox.length === 0) continue;

@@ -1,7 +1,7 @@
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { Tile } from 'geojson-vt';
 import type { VTStageContext } from '~/contexts';
-import { resolveMaxVerticesPerTile } from './vtStageGeometryTile.js';
+import { resolveMaxVerticesPerTile, resolveTileBufferPx } from './vtStageGeometryTile.js';
 import { simplifyTileFeatureCollectionWithTopojson } from './vtStageTileIndexSimplification.js';
 
 export type GeojsonVtIndex = { getTile: (z: number, x: number, y: number) => Tile | null };
@@ -12,6 +12,7 @@ export const buildTileLayerIndexFromFeatures = async (params: {
   z: number;
   x: number;
   y: number;
+  bandMaxZoom: number;
   context: VTStageContext;
   geojsonVt: (collection: FeatureCollection, options: {
     maxZoom: number;
@@ -32,6 +33,7 @@ export const buildTileLayerIndexFromFeatures = async (params: {
 }): Promise<Tile | null> => {
   if (params.features.length === 0) return null;
   const maxVerticesPerTile = resolveMaxVerticesPerTile(params.context.tileEmitConfig.indexMaxPoints);
+  const tileBuffer = resolveTileBufferPx(params.context.tileEmitConfig);
   let collection: FeatureCollection = { type: 'FeatureCollection', features: params.features };
   if (params.topojsonSimplify?.enabled) {
     const simplifyResult = await simplifyTileFeatureCollectionWithTopojson({
@@ -60,10 +62,10 @@ export const buildTileLayerIndexFromFeatures = async (params: {
   }
 
   const index = params.geojsonVt(collection, {
-    maxZoom: params.z,
-    indexMaxZoom: params.z,
+    maxZoom: params.bandMaxZoom,
+    indexMaxZoom: params.bandMaxZoom,
     extent: params.context.tileEmitConfig.extent,
-    buffer: params.context.tileEmitConfig.bufferSize,
+    buffer: tileBuffer,
     tolerance: params.topojsonSimplify?.enabled ? 0 : params.context.tileEmitConfig.tolerance,
     promoteId: params.context.tileEmitConfig.promoteId,
     indexMaxPoints: maxVerticesPerTile,
