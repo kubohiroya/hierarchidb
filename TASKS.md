@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #663 / `codex/fix/shape/tileemit-default-extent-buffer-663` / start: 2026-03-01 16:22 JST
 - #658 / `codex/feat/shape-geojsonvt-params-alignment` / start: 2026-03-01 15:58 JST
 - #659 / `codex/feat/dev/vite-optimize-reload-suppression` / start: 2026-03-01 15:55 JST
 - #655 / `codex/refactor/stage/safe-stage-key-rename-655` / start: 2026-03-01 08:07 JST
@@ -147,6 +148,7 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- start: 2026-03-01 16:22 JST #663 を起票（https://github.com/kubohiroya/hierarchidb/issues/663）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/tileemit-default-extent-buffer-663` を `main` 起点で作成し、TileEmit のデフォルト `extent=8192` / `buffer=128` 変更に着手。
 - update: 2026-03-01 16:02 JST #656 `Primary/Intermediate/Final` 抽象化移行の分割PR計画に着手。`plans/primary-intermediate-final-split-pr-plan.md` を新規追加し、feature flag なし・interface-first・descriptor駆動（`Intermediate` 1..N）を前提とした PR-1..PR-7 の実行順、DoD、検証マトリクス、直近着手タスクを定義。
 - update: 2026-03-01 15:58 JST #656 `app/packages/plugins` の旧ステージ語彙最終監査を追加実施。`shapeCreatePresets` の `processingConfigPatch.transform/vt` を `geometry/tileEmit` へ置換し、`vt-orchestrator` の stage 文脈メッセージ（`fetch/transform/vt stage` 表現）を `source/geometry/tileEmit` に統一。`shape`/`location` のテスト・locale 残件（`fetch API cache`/`IDE-GSM fetch` 等）も新語彙へ更新。
 - update: 2026-03-01 15:58 JST #656 監査結果: ステージ語彙としての旧用語は実装・テスト本体から除去完了。残件は `plugins/shape-plugin/vitest.config.ts` の依存パス `@hierarchidb/vt-orchestrator`（パッケージ名由来）1件のみで、stage語彙ではなくモジュール識別子として据え置き。

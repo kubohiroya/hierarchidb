@@ -84,9 +84,9 @@ export const DEFAULT_BUILD_CONFIG = {
   tileEmitConfig: {
     enableTopojsonSimplify: false,
     tolerance: 0,
-    extent: 4096,
-    buffer: 64,
-    bufferSize: 64,
+    extent: 8192,
+    buffer: 128,
+    bufferSize: 128,
     boundaryDedupe: true,
     indexMaxPoints: 100000,
     layerSetName: 'shape',

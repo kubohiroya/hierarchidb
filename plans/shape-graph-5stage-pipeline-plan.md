@@ -5,7 +5,7 @@ It must be maintained in accordance with `/PLANS.md`.
 
 ## Purpose / Big Picture
 
-Current shape build flow is treated operationally as `fetch -> transform -> vt`, while internal responsibilities are already split across multiple modules. This spec fixes the execution contract as five explicit stages so implementers can add/modify code without making ad-hoc design decisions during implementation.
+Current shape build flow is treated operationally as `source -> geometry -> tile-emit`, while internal responsibilities are already split across multiple modules. This spec fixes the execution contract as five explicit stages so implementers can add/modify code without making ad-hoc design decisions during implementation.
 
 The user-visible objective is stable Step5 execution and predictable recovery behavior, with explicit stage boundaries and deterministic retry/fail-fast rules.
 
@@ -42,11 +42,11 @@ These are lifecycle hooks and **not counted** in the 5 execution stages.
 
 ### Execution stages (counted)
 
-- `Stage1 Fetch`
+- `Stage1 Source`
 - `Stage2 GraphIndex`
-- `Stage3 PlanTransform`
-- `Stage4 GeometryTransform`
-- `Stage5 VT`
+- `Stage3 PlanGeometry`
+- `Stage4 Geometry`
+- `Stage5 TileEmit`
 
 Stage names in this document are scenario labels for shape UX/docs. In `vt-orchestrator`, execution must be descriptor-driven and must not depend on hard-coded domain stage keywords.
 
@@ -54,7 +54,7 @@ Stage names in this document are scenario labels for shape UX/docs. In `vt-orche
 
 ### Design intent
 
-- Keep orchestrator logic independent from domain stage words such as `fetch`, `transform`, and `vt`.
+- Keep orchestrator logic independent from domain stage words such as `source`, `geometry`, and `tile-emit`.
 - Compose build sessions from scenario descriptors and capability contracts.
 - Allow different node types/scenarios to reuse the same scheduler/executor without keyword-branch growth.
 - Follow runtime-worker terminology SSOT before introducing any new term:
@@ -74,7 +74,7 @@ Stage names in this document are scenario labels for shape UX/docs. In `vt-orche
 
 ### Prohibited implementation patterns
 
-- Switching execution behavior by string comparisons like `if (stage === 'fetch')`.
+- Switching execution behavior by string comparisons like `if (stage === 'source')`.
 - Branching retry/queue/persistence behavior directly on domain stage names.
 - Encoding domain stage words into orchestrator-internal state keys where capability keys are sufficient.
 - Introducing new `*Batch*` aliases on SharedWorker/build control surfaces.
@@ -126,10 +126,10 @@ This contract is prescriptive for implementation design docs and code reviews. E
 
 | Legacy stage keyword | New orchestration basis | Notes |
 | --- | --- | --- |
-| `fetch` | capability=`io` | covers remote/local source materialization |
-| `transform` (planning aspects) | capability=`plan` | task expansion and scheduling preparation |
-| `transform` (geometry aspects) | capability=`geometry` | simplification/validation/reconstruction |
-| `vt` | capability=`tile-emit` | tile assembly/encoding/persistence |
+| `source` | capability=`io` | covers remote/local source materialization |
+| `geometry` (planning aspects) | capability=`plan` | task expansion and scheduling preparation |
+| `geometry` (processing aspects) | capability=`geometry` | simplification/validation/reconstruction |
+| `tile-emit` | capability=`tile-emit` | tile assembly/encoding/persistence |
 | `graph-index` (new explicit stage) | capability=`graph-index` | shared topology/index preparation |
 
 ### Boundary rule
@@ -144,7 +144,7 @@ This contract is prescriptive for implementation design docs and code reviews. E
 
 ### Transition strategy against current runtime state model
 
-The runtime-worker docs currently define persisted/runtime `stage` values with domain words (`fetch|transform|vt|idle|undefined`).
+The runtime-worker docs currently define persisted/runtime `stage` values with domain words (`source|geometry|tile-emit|idle|undefined`).
 Under this specification, stage-name-agnostic orchestration is authoritative:
 
 1. Use `stepId + capability + persistedStatus/runtimeStatus/phase` as the execution truth source.
@@ -172,7 +172,7 @@ Under this specification, stage-name-agnostic orchestration is authoritative:
    - store `stepId`, `capability`, attempt, terminal reason
    - emit snapshot/progress streams
 5. UI mapping:
-   - map `stepId/capability` to scenario labels (`Fetch`, `GraphIndex`, ...)
+   - map `stepId/capability` to scenario labels (`Source`, `GraphIndex`, ...)
    - do not consume orchestrator-internal dispatch identifiers directly
 
 ## Interfaces and Data Contracts
@@ -191,11 +191,11 @@ Under this specification, stage-name-agnostic orchestration is authoritative:
 
 | Stage | Input | Output | Persistence | Primary key | Idempotency rule | Failure behavior |
 | --- | --- | --- | --- | --- | --- | --- |
-| Stage1 Fetch | country/adminLevel selection + data source config + nodeId/sessionId | fetch cache + feature metadata | `ephemeral fetch cache` + metadata tables | `cacheKey = nodeId + sourceKey + sourceConfigHash` | same input MUST regenerate same `cacheKey` | retriable for transient network errors; fail-fast for schema/validation errors |
+| Stage1 Source | country/adminLevel selection + data source config + nodeId/sessionId | source cache + feature metadata | `ephemeral source cache` + metadata tables | `cacheKey = nodeId + sourceKey + sourceConfigHash` | same input MUST regenerate same `cacheKey` | retriable for transient network errors; fail-fast for schema/validation errors |
 | Stage2 GraphIndex | Stage1 outputs + graph config | tile-country index + adjacency + arc IDs + graphVersion | graph index tables in ephemeral/shared store | `graphKey = nodeId + sessionId + graphConfigHash` | same input MUST regenerate same graph index set | fail-fast on corruption/geometry topology hard-fail |
-| Stage3 PlanTransform | Stage2 outputs + build config | transform task plan (`country x band` task set) | task planning records in TaskQueue metadata | `planKey = nodeId + graphVersion + geometryConfigHash` | same input MUST regenerate equivalent plan | fail-fast on invalid config; no partial implicit fallback |
-| Stage4 GeometryTransform | Stage3 tasks + Stage1 cache + Stage2 graph artifacts | transform cache artifacts | transform cache tables | `transformCacheKey = nodeId + taskIdentity + toleranceProfile` | same task identity + same inputs MUST produce same cache identity | retry on transient compute/resource; fail-fast on `ValidationError`/`DataCorruptionError` |
-| Stage5 VT | Stage4 transform cache + vt config | vector tiles + stage metadata | tile store + stage metadata store | `tileKey = nodeId + z + x + y + band + tileEmitConfigHash` | same inputs MUST upsert identical tile key space | retry on transient writer errors; fail-fast on missing required upstream cache |
+| Stage3 PlanGeometry | Stage2 outputs + build config | geometry task plan (`country x band` task set) | task planning records in TaskQueue metadata | `planKey = nodeId + graphVersion + geometryConfigHash` | same input MUST regenerate equivalent plan | fail-fast on invalid config; no partial implicit fallback |
+| Stage4 Geometry | Stage3 tasks + Stage1 cache + Stage2 graph artifacts | geometry cache artifacts | geometry cache tables | `geometryCacheKey = nodeId + taskIdentity + toleranceProfile` | same task identity + same inputs MUST produce same cache identity | retry on transient compute/resource; fail-fast on `ValidationError`/`DataCorruptionError` |
+| Stage5 TileEmit | Stage4 geometry cache + tile emit config | vector tiles + stage metadata | tile store + stage metadata store | `tileKey = nodeId + z + x + y + band + tileEmitConfigHash` | same inputs MUST upsert identical tile key space | retry on transient writer errors; fail-fast on missing required upstream cache |
 
 ### Identity/key design
 
@@ -291,11 +291,11 @@ Determinism requirement:
 
 ```mermaid
 flowchart TD
-  A[Stage0 MetadataWarmup (non-stage)] --> B[Stage1 Fetch]
+  A[Stage0 MetadataWarmup (non-stage)] --> B[Stage1 Source]
   B --> C[Stage2 GraphIndex]
-  C --> D[Stage3 PlanTransform]
-  D --> E[Stage4 GeometryTransform]
-  E --> F[Stage5 VT]
+  C --> D[Stage3 PlanGeometry]
+  D --> E[Stage4 Geometry]
+  E --> F[Stage5 TileEmit]
   F --> G[Stage6 CleanupAndSyncGuard (non-stage)]
   G --> H[Done]
 
@@ -329,7 +329,7 @@ Condition notes:
 
 | Scenario | Expected |
 | --- | --- |
-| Happy path | Stage1..Stage5 complete, VT saved, session completed |
+| Happy path | Stage1..Stage5 complete, tiles saved, session completed |
 | Stage4 strict failure then relax retry | retries follow profile order, final state deterministic |
 | Resume after Stage3 completion | Stage1/2/3 are reused (not recomputed), re-entry at Stage4 |
 | Cache reuse with same input | Stage1/2 recomputation suppressed, deterministic keys reused |
@@ -395,7 +395,7 @@ Order:
   Rationale: Preserve operational hooks while keeping execution stage count exactly five.
   Date/Author: 2026-02-28 / Codex
 
-- Decision: Rename stage roles to responsibility-based names (`PlanTransform`, `GeometryTransform`) in this spec.
+- Decision: Rename stage roles to responsibility-based names (`PlanGeometry`, `Geometry`) in this spec.
   Rationale: Reduce implementation ambiguity from ordinal names (`Transform1/2`).
   Date/Author: 2026-02-28 / Codex
 
@@ -407,7 +407,7 @@ Order:
   Rationale: Avoid scattered runtime branches and keep migration control at module boundaries.
   Date/Author: 2026-02-28 / Codex
 
-- Decision: Keep stage words (`Fetch`, `PlanTransform`, `GeometryTransform`, `VT`) as documentation/UI labels only, and enforce capability-based orchestration keys.
+- Decision: Keep stage words (`Source`, `PlanGeometry`, `Geometry`, `TileEmit`) as documentation/UI labels only, and enforce capability-based orchestration keys.
   Rationale: Preserve product readability while preventing keyword-coupled orchestrator design.
   Date/Author: 2026-02-28 / Codex
 
@@ -423,8 +423,8 @@ Order:
   Rationale: Compatibility projection re-introduces stage-keyword coupling and weakens the stage-name-agnostic architecture goal.
   Date/Author: 2026-02-28 / Codex
 
-- Decision: Keep persisted/API stage keys (`fetch|transform|vt`) unchanged during #655, and migrate only UI wording plus boundary adapters.
-  Rationale: Reduce migration risk by separating internal-control refactor from storage/API breaking changes.
+- Decision: Keep persisted/API stage keys aligned with current naming (`source|geometry|tile-emit`) and remove legacy wording from new documents.
+  Rationale: Keep design docs and implementation vocabulary consistent and reduce operator confusion.
   Date/Author: 2026-03-01 / Codex
 
 ## Revision Note
@@ -435,4 +435,4 @@ Order:
 - 2026-02-28: Added mandatory reference to pure-function catalog (`plans/shape-5stage-pure-function-spec.md`) and codified pure-function-first implementation boundary.
 - 2026-02-28: Removed compatibility stage projection requirement (`sessions.stage` projection) and standardized the execution truth source to descriptor/capability + persisted/runtime status dimensions.
 - 2026-03-01: Replaced feature-flag rollout wording with interface-first module replacement policy and explicit integration gates. Reason: prevent branch proliferation and enforce contract-driven migration.
-- 2026-03-01: Fixed rollout policy for #655 to keep persisted/API stage keys stable (`fetch|transform|vt`) while allowing canonical stageId (`source-stage|geometry-stage|tile-emit-stage`) at adapter boundaries and applying `Source/Geometry/TileEmit` to UI wording.
+- 2026-03-01: Updated document vocabulary to match current implementation naming (`source|geometry|tile-emit`) and replaced legacy stage words in stage labels/contracts.
