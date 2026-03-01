@@ -1418,6 +1418,14 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
       },
     },
     optimizeDeps: {
+      // Crawl app + workspace sources up front so dependency discovery does not happen
+      // incrementally during the first browser session.
+      entries: [
+        'index.html',
+        'src/**/*.{ts,tsx}',
+        '../packages/**/src/**/*.{ts,tsx}',
+        '../plugins/*-plugin/src/**/*.{ts,tsx}',
+      ],
       include: [
         'react',
         'react-dom',
