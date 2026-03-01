@@ -25,12 +25,27 @@ describe('resolveReceivingTaskSnapshotDecision', () => {
     });
   });
 
-  it('returns success with no-task-completion when snapshot is already received and empty', () => {
+  it('continues waiting when snapshot is received and empty but build is still running', () => {
     const decision = resolveReceivingTaskSnapshotDecision({
       hasReceivingTaskSnapshotSignal: true,
       hasStartedTasks: false,
       hasProgressTaskSignal: false,
       buildStatus: 'running',
+      taskCount: 0,
+      isTaskSnapshotProgressConnected: true,
+      expectTaskGeneration: true,
+    });
+    expect(decision).toEqual({
+      kind: 'continue',
+    });
+  });
+
+  it('returns success with no-task-completion when snapshot is received and build is completed', () => {
+    const decision = resolveReceivingTaskSnapshotDecision({
+      hasReceivingTaskSnapshotSignal: true,
+      hasStartedTasks: false,
+      hasProgressTaskSignal: false,
+      buildStatus: 'completed',
       taskCount: 0,
       isTaskSnapshotProgressConnected: true,
       expectTaskGeneration: true,

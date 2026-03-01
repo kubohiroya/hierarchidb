@@ -78,6 +78,9 @@ export const resolveReceivingTaskSnapshotDecision = (
 ): ReceivingTaskSnapshotDecision => {
   if (input.hasReceivingTaskSnapshotSignal) {
     if (typeof input.taskCount === 'number' && input.taskCount === 0) {
+      if (input.buildStatus !== 'completed') {
+        return { kind: 'continue' };
+      }
       return {
         kind: 'success',
         reason: 'completed-without-generating-tasks',
