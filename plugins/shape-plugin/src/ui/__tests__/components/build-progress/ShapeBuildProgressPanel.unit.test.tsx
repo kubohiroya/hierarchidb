@@ -243,6 +243,47 @@ describe('ShapeBuildProgressPanel', () => {
     });
   });
 
+  it('keeps Build Session menu button disabled while start is pending', async () => {
+    const store = makeStore();
+    store.set(taskProgressControlsAtom, {
+      canStartOrResume: true,
+      statusLabel: '',
+      showResumeLabel: false,
+      startPending: true,
+      handleStartOrResume: async () => {},
+    });
+    store.set(taskProgressSummaryAtom, {
+      stageLabel: 'Source',
+      taskLabel: 'Idle',
+      taskUnitLabel: 'Tasks',
+      overallProgress: 0,
+      completed: 0,
+      total: 0,
+      failed: 0,
+      skipped: 0,
+      buildStatus: 'idle',
+      hasProgressData: false,
+      timingStageId: null,
+      completedStageElapsedMs: {},
+      totalElapsedMs: 0,
+      stageElapsedMs: 0,
+      stageRemainingMs: null,
+    });
+
+    const view = render(
+      <Provider store={store}>
+        <ShapeBuildProgressPanel data={{}} />
+      </Provider>
+    );
+    const local = within(view.container);
+    await local.findByText('Build Session');
+
+    const menuButton = await local.findByTestId('build-session-menu-button') as HTMLButtonElement;
+    await waitFor(() => {
+      expect(menuButton.disabled).toBe(true);
+    });
+  });
+
   it('keeps task skeleton after start resolves until tasks arrive', async () => {
     const store = makeStore();
     let resolveStart: (() => void) | null = null;
