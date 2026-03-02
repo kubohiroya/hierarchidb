@@ -48,7 +48,9 @@ import {
 } from './helpers/runtime.js';
 import {
   countVertexLimitOverages,
+  findBaseToleranceByBisection,
   retrySimplifyFeatureWithinVertexLimit,
+  selectMaxVertexFeature,
 } from './transformByBandRetrySimplify.js';
 import { resolveSimplifyToleranceProfile } from './helpers/simplifyProfile.js';
 
@@ -264,8 +266,7 @@ export const createTransformByBandHandler = (
   let debugNodeId: NodeId | null = null;
   let debugSelectionLogged = false;
   let firstTaskLogged = false;
-  const DEFAULT_RETRY_TOLERANCE_OFFSET = 1;
-  const MAX_RETRY_ATTEMPTS = 10;
+  const MAX_TOLERANCE_SEARCH_ITERATIONS = 64;
   const debugResetAfterMs = 30000;
   const readHeapUsageRatio = (): number | null => {
     const performance = (globalThis as {
@@ -315,6 +316,13 @@ export const createTransformByBandHandler = (
       return `${Number.parseFloat(value.toFixed(6))}`;
     };
     let finalToleranceSummary: number | undefined;
+    let baseToleranceSummary: number | undefined;
+    let toleranceSearchIterationsSummary = 0;
+    let toleranceSearchConvergedSummary = false;
+    let toleranceMultiplierSummary: number | undefined;
+    let toleranceMinRatioSummary: number | undefined;
+    let toleranceMaxRatioSummary: number | undefined;
+    let vertexLimitSummary: number | undefined;
     const toResultMetadata = (
       status: 'completed' | 'failed' | 'skipped',
       effectiveTolerance: number,
@@ -330,6 +338,25 @@ export const createTransformByBandHandler = (
       }
       if (Number.isFinite(effectiveTolerance)) {
         metadata.effectiveTolerance = effectiveTolerance;
+      }
+      if (Number.isFinite(baseToleranceSummary)) {
+        metadata.baseTolerance = baseToleranceSummary;
+      }
+      if (Number.isFinite(toleranceSearchIterationsSummary)) {
+        metadata.toleranceSearchIterations = toleranceSearchIterationsSummary;
+      }
+      metadata.toleranceSearchConverged = toleranceSearchConvergedSummary;
+      if (Number.isFinite(toleranceMultiplierSummary)) {
+        metadata.toleranceMultiplier = toleranceMultiplierSummary;
+      }
+      if (Number.isFinite(toleranceMinRatioSummary)) {
+        metadata.toleranceMinRatio = toleranceMinRatioSummary;
+      }
+      if (Number.isFinite(toleranceMaxRatioSummary)) {
+        metadata.toleranceMaxRatio = toleranceMaxRatioSummary;
+      }
+      if (Number.isFinite(vertexLimitSummary)) {
+        metadata.vertexLimit = vertexLimitSummary;
       }
       if (Number.isFinite(retryAttempt) && retryAttempt >= 0) {
         metadata.retryAttempt = Math.max(0, Math.floor(retryAttempt));
@@ -443,44 +470,51 @@ export const createTransformByBandHandler = (
       };
     }
     const simplifyProfile = resolveSimplifyToleranceProfile(geometryConfig, input.adminLevel);
-    if (!Array.isArray(simplifyProfile.toleranceByBand) || simplifyProfile.toleranceByBand.length === 0) {
+    if (!Array.isArray(simplifyProfile.multiplierByBand) || simplifyProfile.multiplierByBand.length === 0) {
       const resultMetadata = await persistResultMetadata('failed');
       return {
         status: 'failed',
         ...resultMetadata,
-        errorMessage: 'geometry failed: simplify tolerance by band is missing',
+        errorMessage: 'geometry failed: tolerance multiplier profile is missing',
       };
     }
-    const toleranceByBand = simplifyProfile.toleranceByBand;
-    const retryToleranceByBand = Array.isArray(simplifyProfile.retryToleranceByBand)
-      ? simplifyProfile.retryToleranceByBand
-      : [];
-    const configuredRetryCount = simplifyProfile.retryCount;
-    const tolerance = resolveTransformTolerance(toleranceByBand, band.bandIndex, 0.1);
+    const fallbackTolerance = 0.1;
+    const toleranceSearchMaxIterations = simplifyProfile.toleranceSearchMaxIterations;
+    const clampRatioValue = (value: number, fallback: number): number => {
+      const candidate = Number.isFinite(value) ? value : fallback;
+      return Math.max(0, Math.min(2, candidate));
+    };
+    const rawMultiplier = resolveTransformTolerance(simplifyProfile.multiplierByBand, band.bandIndex, 1);
+    const rawMinRatio = resolveTransformTolerance(simplifyProfile.minRatioByBand, band.bandIndex, 0);
+    const rawMaxRatio = resolveTransformTolerance(simplifyProfile.maxRatioByBand, band.bandIndex, 2);
+    const resolvedMinRatio = clampRatioValue(Math.min(rawMinRatio, rawMaxRatio), 0);
+    const resolvedMaxRatio = clampRatioValue(Math.max(rawMinRatio, rawMaxRatio), 2);
+    const resolvedMultiplier = clampRatioValue(rawMultiplier, 1);
+    const resolveAppliedTolerance = (baseTolerance: number): number => {
+      const candidate = baseTolerance * resolvedMultiplier;
+      const minTolerance = baseTolerance * resolvedMinRatio;
+      const maxTolerance = baseTolerance * resolvedMaxRatio;
+      return Math.max(minTolerance, Math.min(maxTolerance, candidate));
+    };
+    let tolerance = fallbackTolerance;
     finalToleranceSummary = tolerance;
     updateFinalEffectiveTolerance(tolerance);
     const retryVertexLimit = resolveRetryVertexLimit(input.countryCode);
-    const bandTolerance = toleranceByBand[band.bandIndex];
-    if (bandTolerance === undefined || tolerance !== bandTolerance) {
-      console.info('[ShapeGeometry][Tolerance]', JSON.stringify({
-        nodeId: task.nodeId,
-        taskId,
-        sourceKey: input.sourceKey,
-        adminLevel: input.adminLevel,
-        bandIndex: input.bandIndex,
-        zTarget: band.zMax,
-        baseTolerance: bandTolerance,
-        appliedTolerance: tolerance,
-      }));
-    }
+    vertexLimitSummary = retryVertexLimit;
+    toleranceMultiplierSummary = resolvedMultiplier;
+    toleranceMinRatioSummary = resolvedMinRatio;
+    toleranceMaxRatioSummary = resolvedMaxRatio;
     emitTransformTrace(traceLogLevel, 'summary', 'task-config', {
       sessionId: String(task.nodeId),
       taskId,
       stage: 'geometry',
       simplifyAlgorithm,
       preserveTopology,
-      tolerance,
+      fallbackTolerance,
       fetchIntakeGuard: intakeGuardConfig,
+      toleranceMultiplier: resolvedMultiplier,
+      toleranceMinRatio: resolvedMinRatio,
+      toleranceMaxRatio: resolvedMaxRatio,
     });
 
     let workingCollection: FeatureCollection | null = null;
@@ -848,6 +882,64 @@ export const createTransformByBandHandler = (
           limit: memory.jsHeapSizeLimit ?? null,
         };
       };
+      const representativeFeature = selectMaxVertexFeature(inputCollection, countVerticesFromGeometry);
+      if (representativeFeature) {
+        const runBaseSimplifyAttempt = async (nextTolerance: number): Promise<Feature | null> => {
+          const retryCollection = await runStageWithLabel('simplify-only:base-search', () => (
+            simplifyOnlyCollection(
+              { type: 'FeatureCollection', features: [representativeFeature.feature] },
+              band.zMax,
+              nextTolerance,
+              geometryOps,
+            )
+          ));
+          const firstFeature = retryCollection.features[0];
+          return firstFeature ?? null;
+        };
+        const baseSearch = await findBaseToleranceByBisection({
+          feature: representativeFeature.feature,
+          retryVertexLimit,
+          maxIterations: toleranceSearchMaxIterations,
+          initialLow: 0,
+          initialHigh: Math.max(0.1, fallbackTolerance),
+          highCap: 12,
+          runSimplifyAttempt: runBaseSimplifyAttempt,
+          countVerticesFromGeometry,
+        });
+        baseToleranceSummary = baseSearch.tolerance;
+        toleranceSearchIterationsSummary = baseSearch.iterations;
+        toleranceSearchConvergedSummary = baseSearch.converged;
+        if (baseSearch.converged && Number.isFinite(baseSearch.tolerance)) {
+          tolerance = resolveAppliedTolerance(baseSearch.tolerance);
+        } else {
+          tolerance = fallbackTolerance;
+        }
+        finalToleranceSummary = tolerance;
+        updateFinalEffectiveTolerance(tolerance);
+        console.info('[ShapeGeometry][Tolerance]', JSON.stringify({
+          nodeId: task.nodeId,
+          taskId,
+          sourceKey: input.sourceKey,
+          adminLevel: input.adminLevel,
+          bandIndex: input.bandIndex,
+          zTarget: band.zMax,
+          baseTolerance: baseToleranceSummary,
+          appliedTolerance: tolerance,
+          fallbackTolerance,
+          multiplier: resolvedMultiplier,
+          minRatio: resolvedMinRatio,
+          maxRatio: resolvedMaxRatio,
+          searchIterations: baseSearch.iterations,
+          searchConverged: baseSearch.converged,
+          representativeVertexCount: representativeFeature.vertexCount,
+          representativeFeatureIndex: representativeFeature.featureIndex + 1,
+          representativeFinalVertexCount: baseSearch.finalVertexCount,
+        }));
+      } else {
+        tolerance = fallbackTolerance;
+        finalToleranceSummary = tolerance;
+        updateFinalEffectiveTolerance(tolerance);
+      }
       const summarizeVertexLimit = (collection: FeatureCollection | null): {
         featureCount: number;
         overLimitFeatureCount: number;
@@ -1197,13 +1289,8 @@ export const createTransformByBandHandler = (
       }
       if (!shouldDeferSimplifyToVt) {
         await updateTaskPhase(taskId, 'vertex-limit-retry:start', taskProgressRange.simplifyEnd);
-        const maxRetryAttempts = Math.min(MAX_RETRY_ATTEMPTS, configuredRetryCount);
-        const resolveRetryTolerance2 = (): number => {
-          const fallback = Math.min(12, tolerance + DEFAULT_RETRY_TOLERANCE_OFFSET);
-          const candidate = resolveTransformTolerance(retryToleranceByBand, band.bandIndex, fallback);
-          return Number.isFinite(candidate) ? candidate : fallback;
-        };
-        const retryTolerance2 = resolveRetryTolerance2();
+        const maxRetryAttempts = Math.max(1, Math.min(MAX_TOLERANCE_SEARCH_ITERATIONS, toleranceSearchMaxIterations));
+        const maxToleranceForRetry = Math.max(tolerance + 1e-9, (baseToleranceSummary ?? tolerance) * resolvedMaxRatio);
 
         const runRetrySimplifyAttempt = async (feature: Feature, nextToleranceValue: number): Promise<Feature | null> => {
           const retrySimplifyPromise = runStageWithLabel('simplify-only:retry', () => (
@@ -1251,11 +1338,12 @@ export const createTransformByBandHandler = (
                   feature,
                   baseTolerance: tolerance,
                   retryVertexLimit,
-                  retryToleranceSecond: retryTolerance2,
                   maxRetryAttempts,
-              featureIndex: featureIndex + 1,
-              featureTotal: adjustedSimplified.features.length,
-              runRetrySimplifyAttempt: (nextTolerance) => runRetrySimplifyAttempt(feature, nextTolerance),
+                  maxTolerance: maxToleranceForRetry,
+                  minTolerance: tolerance,
+                  featureIndex: featureIndex + 1,
+                  featureTotal: adjustedSimplified.features.length,
+                  runRetrySimplifyAttempt: (nextTolerance) => runRetrySimplifyAttempt(feature, nextTolerance),
               countVerticesFromGeometry,
               updateRetrySimplifyAttemptPhase: (params) => updateRetrySimplifyAttemptPhase(taskId, params),
             });
@@ -1370,7 +1458,7 @@ export const createTransformByBandHandler = (
             `retryAttemptsTotal=${retryAttemptsTotal}`,
             `retriedFeatures=${retryAttemptedFeatureCount}/${simplifiedFeatureCountForLimit}`,
             `maxRetriesPerFeature=${maxRetryAttemptsPerFeature}`,
-            `retryCount=${maxRetryAttempts}`,
+            `searchMaxIterations=${maxRetryAttempts}`,
             `finalToleranceRange=${formatToleranceForMessage(finalToleranceMinValue)}..${formatToleranceForMessage(finalToleranceMaxValue)}`,
           ].join(', ');
           if (vertexLimitRecords.length > 0) {

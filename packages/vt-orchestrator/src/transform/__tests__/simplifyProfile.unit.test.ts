@@ -22,9 +22,10 @@ const createBaseTransformConfig = (): GeometryConfig => ({
     elongatedShapeCorrectionFactor: 1.3,
   },
   deleteOnComplete: false,
-  toleranceByBand: [0.1, 0.2],
-  retryCount: 4,
-  retryToleranceByBand: [3, 2],
+  toleranceMultiplierByBand: [1, 1],
+  toleranceMinRatioByBand: [0, 0],
+  toleranceMaxRatioByBand: [2, 2],
+  toleranceSearchMaxIterations: 24,
   areaThreshold: 1,
   excludePolygonAreaCoefficient: 1,
   omitDetailsConfig: {
@@ -40,22 +41,23 @@ describe('resolveSimplifyToleranceProfile', () => {
 
     const profile = resolveSimplifyToleranceProfile(config, 2);
 
-    expect(profile.toleranceByBand).toEqual([0.1, 0.2]);
-    expect(profile.retryToleranceByBand).toEqual([3, 2]);
-    expect(profile.retryCount).toBe(4);
+    expect(profile.multiplierByBand).toEqual([1, 1]);
+    expect(profile.minRatioByBand).toEqual([0, 0]);
+    expect(profile.maxRatioByBand).toEqual([2, 2]);
+    expect(profile.toleranceSearchMaxIterations).toBe(24);
   });
 
   it('resolves admin 1 from admin0 when usePrevious is enabled', () => {
     const config = createBaseTransformConfig();
     config.simplifyToleranceByAdminLevel = {
       admin0: {
-        toleranceByBand: [0.25, 0.35],
-        retryToleranceByBand: [2.5, 2],
-        retryCount: 5,
+        multiplierByBand: [0.9, 1.1],
+        minRatioByBand: [0.2, 0.3],
+        maxRatioByBand: [1.6, 1.7],
+        toleranceSearchMaxIterations: 30,
       },
       admin1: {
         usePrevious: true,
-        toleranceByBand: [0.9, 0.9],
       },
       admin2: {
         usePrevious: true,
@@ -67,25 +69,24 @@ describe('resolveSimplifyToleranceProfile', () => {
 
     const profile = resolveSimplifyToleranceProfile(config, 1);
 
-    expect(profile.toleranceByBand).toEqual([0.25, 0.35]);
-    expect(profile.retryToleranceByBand).toEqual([2.5, 2]);
-    expect(profile.retryCount).toBe(5);
+    expect(profile.multiplierByBand).toEqual([0.9, 1.1]);
+    expect(profile.minRatioByBand).toEqual([0.2, 0.3]);
+    expect(profile.maxRatioByBand).toEqual([1.6, 1.7]);
+    expect(profile.toleranceSearchMaxIterations).toBe(30);
   });
 
   it('uses dedicated admin 2 profile when usePrevious is disabled', () => {
     const config = createBaseTransformConfig();
     config.simplifyToleranceByAdminLevel = {
-      admin0: {
-        toleranceByBand: [0.11, 0.21],
-      },
+      admin0: {},
       admin1: {
         usePrevious: true,
       },
       admin2: {
         usePrevious: false,
-        toleranceByBand: [0.31, 0.41],
-        retryToleranceByBand: [1.9, 1.7],
-        retryCount: 2,
+        multiplierByBand: [0.8, 0.7],
+        minRatioByBand: [0.1, 0.1],
+        maxRatioByBand: [1.4, 1.3],
       },
       admin3Plus: {
         usePrevious: true,
@@ -94,36 +95,33 @@ describe('resolveSimplifyToleranceProfile', () => {
 
     const profile = resolveSimplifyToleranceProfile(config, 2);
 
-    expect(profile.toleranceByBand).toEqual([0.31, 0.41]);
-    expect(profile.retryToleranceByBand).toEqual([1.9, 1.7]);
-    expect(profile.retryCount).toBe(2);
+    expect(profile.multiplierByBand).toEqual([0.8, 0.7]);
+    expect(profile.minRatioByBand).toEqual([0.1, 0.1]);
+    expect(profile.maxRatioByBand).toEqual([1.4, 1.3]);
   });
 
   it('maps admin level 3+ to admin3Plus profile', () => {
     const config = createBaseTransformConfig();
     config.simplifyToleranceByAdminLevel = {
-      admin0: {
-        toleranceByBand: [0.15, 0.25],
-      },
+      admin0: {},
       admin1: {
         usePrevious: true,
       },
       admin2: {
         usePrevious: false,
-        toleranceByBand: [0.35, 0.45],
       },
       admin3Plus: {
         usePrevious: false,
-        toleranceByBand: [0.55, 0.65],
-        retryToleranceByBand: [1.5, 1.4],
-        retryCount: 1,
+        multiplierByBand: [1.2, 1.1],
+        minRatioByBand: [0.4, 0.35],
+        maxRatioByBand: [1.9, 1.8],
       },
     };
 
     const profile = resolveSimplifyToleranceProfile(config, 5);
 
-    expect(profile.toleranceByBand).toEqual([0.55, 0.65]);
-    expect(profile.retryToleranceByBand).toEqual([1.5, 1.4]);
-    expect(profile.retryCount).toBe(1);
+    expect(profile.multiplierByBand).toEqual([1.2, 1.1]);
+    expect(profile.minRatioByBand).toEqual([0.4, 0.35]);
+    expect(profile.maxRatioByBand).toEqual([1.9, 1.8]);
   });
 });
