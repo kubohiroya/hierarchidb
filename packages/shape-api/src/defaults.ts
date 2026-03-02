@@ -20,13 +20,6 @@ export const DEFAULT_BUILD_CONFIG = {
       normalizeRingOrientation: true,
       keepBaselineSnapshot: true,
     },
-    invalidGeometryFilter: {
-      area: false,
-      lineLength: false,
-      maxEdgeLength: false,
-      selfIntersection: false,
-      triangleRingRatio: false,
-    },
   },
   geometryConfig: {
     zoomBandBoundaries: DEFAULT_ZOOM_BAND_BOUNDARIES,
@@ -94,6 +87,13 @@ export const DEFAULT_BUILD_CONFIG = {
     boundaryDisableAtZoomOrAbove: 3,
   },
   tileEmitConfig: {
+    invalidGeometryFilter: {
+      area: false,
+      lineLength: false,
+      maxEdgeLength: false,
+      selfIntersection: false,
+      triangleRingRatio: false,
+    },
     enableTopojsonSimplify: false,
     tolerance: 0,
     extent: 8192,

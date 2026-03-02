@@ -24,6 +24,7 @@ import {
   Update as UpdateIcon,
 } from '@mui/icons-material';
 import { useEffect, useMemo } from 'react';
+import type { ReactNode } from 'react';
 import type { BaseBuildConfig, DynamicConcurrencyConfig } from '@hierarchidb/gis-sdk';
 import { BuildConfigAccordionSummary } from './BuildConfigAccordionSummary.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
@@ -39,6 +40,7 @@ type Props<TDataSourceName = unknown> = {
   update: (partial: Partial<BaseBuildConfig<TDataSourceName>>) => void;
   showConcurrencyCard?: boolean;
   disableHoverLift?: boolean;
+  additionalCards?: ReactNode;
 };
 
 const createDefaultDynamicConcurrency = (maxConcurrent: number): DynamicConcurrencyConfig => ({
@@ -58,6 +60,7 @@ export const TileEmitConfigSection = <TDataSourceName,>({
   update,
   showConcurrencyCard = true,
   disableHoverLift = false,
+  additionalCards,
 }: Props<TDataSourceName>) => {
   const resolvedMaxConcurrent = Number.isFinite(buildConfig.tileEmitConfig.maxConcurrent)
     ? buildConfig.tileEmitConfig.maxConcurrent
@@ -374,6 +377,11 @@ export const TileEmitConfigSection = <TDataSourceName,>({
                   )}
                 </Typography>
               </Stack>
+            </Paper>
+          ) : null}
+          {additionalCards ? (
+            <Paper variant="outlined" sx={{ p: 2, ...hoverCardSx }}>
+              {additionalCards}
             </Paper>
           ) : null}
 

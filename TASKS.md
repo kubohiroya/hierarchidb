@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #680 / `codex/feat/shape/invalid-geometry-filter-tileemit-680` / start: 2026-03-02 11:12 JST
 - #677 / `codex/feat/shape/tolerance-bisection-pipeline-677` / start: 2026-03-02 11:03 JST
 - #675 / `codex/docs/shape4/tolerance-bisection-spec-plan-675` / start: 2026-03-02 10:27 JST
 - #670 / `codex/fix/shape/step5-elapsed-time-consistency-670` / start: 2026-03-02 01:02 JST
@@ -152,6 +153,8 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- update: 2026-03-02 11:18 JST #680 invalid geometry filtering の設定保持先を `sourceConfig` から `tileEmitConfig` へ移設。原因は Stage責務に対して設定配置が不整合だったこと。発生範囲は `packages/gis-sdk` 型定義、`packages/shape-api` デフォルト、`plugins/shape-plugin` の build-config UI/patch merge/source stage 実行参照、および `packages/ui/accordion-config` の TileEmit セクション拡張。修正として `TileEmitConfig.invalidGeometryFilter` を追加し Source 側定義を除去、Sourceカードを Intake Guard と Invalid Filter に分離して後者を TileEmit セクションへ移設。旧設定互換読み込みは未実装（追加しない方針）。検証: `pnpm -w turbo run build --filter @hierarchidb/gis-sdk --filter @hierarchidb/ui-accordion-config --filter @hierarchidb/shape-api` exit 0、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/vt-orchestrator` exit 0、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/unit/mergeBuildConfig.unit.test.ts` exit 0。
+- start: 2026-03-02 11:12 JST #680 を起票（https://github.com/kubohiroya/hierarchidb/issues/680）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/feat/shape/invalid-geometry-filter-tileemit-680` を作成して、invalid geometry filtering 設定の Source→TileEmit 移設に着手。
 - start: 2026-03-02 11:03 JST #677 を再オープンし実装タスクへ再定義（https://github.com/kubohiroya/hierarchidb/issues/677）。Project `hierarchidb` の Status を `In Progress` に更新し、ブランチ `codex/feat/shape/tolerance-bisection-pipeline-677` を作成。#675（仕様/計画）は main 反映済みのため close し、#675→#677 の順で Shape ビルドパイプライン改修を一体運用で開始。
 - update: 2026-03-02 10:40 JST #675 Shape4 Geometry tolerance 新方式の文書化を実施。`docs/spec/shape4-geometry-tolerance-bisection-spec.md` に仕様（`t_base` 2分法、`multiplier/minRatio/maxRatio`、ToneCurveEditor 3線化、失敗時挙動、段階移行）を記載し、`plans/shape4-geometry-tolerance-bisection-execplan.md` に実装マイルストーンと検証手順を定義。確認: `test -f docs/spec/shape4-geometry-tolerance-bisection-spec.md` exit 0、`test -f plans/shape4-geometry-tolerance-bisection-execplan.md` exit 0、`rg -n \"t_base|2分法|multiplier|minRatio|maxRatio|ToneCurveEditor|0.0..2.0|6553\" docs/spec/shape4-geometry-tolerance-bisection-spec.md plans/shape4-geometry-tolerance-bisection-execplan.md` exit 0。
 - start: 2026-03-02 10:27 JST #675 を起票（https://github.com/kubohiroya/hierarchidb/issues/675）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/docs/shape4/tolerance-bisection-spec-plan-675` を作成し、Shape4 の tolerance 新方式（`t_base` 2分法 + `multiplier/min/max`）仕様/作業計画ドキュメント整備に着手。

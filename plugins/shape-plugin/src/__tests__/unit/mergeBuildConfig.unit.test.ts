@@ -112,13 +112,6 @@ describe('applyBuildConfigPatch', () => {
           normalizeRingOrientation: true,
           keepBaselineSnapshot: true,
         },
-        invalidGeometryFilter: {
-          area: true,
-          lineLength: false,
-          maxEdgeLength: true,
-          selfIntersection: false,
-          triangleRingRatio: true,
-        },
       },
       geometryConfig: {
         executionLogLevel: 'verbose',
@@ -146,6 +139,13 @@ describe('applyBuildConfigPatch', () => {
         },
       },
       tileEmitConfig: {
+        invalidGeometryFilter: {
+          area: true,
+          lineLength: false,
+          maxEdgeLength: true,
+          selfIntersection: false,
+          triangleRingRatio: true,
+        },
         outputQualityGuard: {
           enabled: true,
           minZoom: 3,
@@ -163,8 +163,8 @@ describe('applyBuildConfigPatch', () => {
     });
 
     expect(merged.sourceConfig.geometryIntakeGuard?.validationLevel).toBe('strict');
-    expect(merged.sourceConfig.invalidGeometryFilter?.area).toBe(true);
-    expect(merged.sourceConfig.invalidGeometryFilter?.triangleRingRatio).toBe(true);
+    expect(merged.tileEmitConfig.invalidGeometryFilter?.area).toBe(true);
+    expect(merged.tileEmitConfig.invalidGeometryFilter?.triangleRingRatio).toBe(true);
     expect(merged.geometryConfig.executionLogLevel).toBe('verbose');
     expect(merged.geometryConfig.anomalyDetection?.scoreThreshold).toBe(1.8);
     expect(merged.geometryConfig.anomalyDetection?.geojson?.maxTriangleShareDriftPercent).toBe(4);
