@@ -215,6 +215,11 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
 
   const xMarks = geometryConfig.zoomBandBoundaries.map((value) => ({ value, label: String(value) }));
   const iterationMarks = [8, 16, 24, 32, 48, 64].map((value) => ({ value, label: String(value) }));
+  const buildZoomLabel = useCallback((zoomValue: number): string => (
+    t('processing.geometry.simplifyTolerance.zoomLabel', 'Zoom {{zoom}}', {
+      zoom: Number.isFinite(zoomValue) ? Number.parseFloat(zoomValue.toFixed(3)) : '-',
+    })
+  ), [t]);
 
   const resolvedMultiplierAnchors = buildToneCurveAnchorsFromToleranceByBand(
     activeValues.multiplierByBand,
@@ -479,6 +484,43 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                   sx={{
                     mt: 1,
                     p: 1,
+                    borderColor: '#ef4444',
+                    width: '100%',
+                    overflow: 'visible',
+                  }}
+                >
+                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'nowrap', overflowX: 'auto', pt: 1 }}>
+                    {resolvedMaxAnchors.map((anchor, index) => (
+                      <TextField
+                        key={`max-anchor-${index}`}
+                        label={buildZoomLabel(anchor.x)}
+                        type="number"
+                        size="small"
+                        value={clampRatio(anchor.y)}
+                        inputProps={{
+                          step: 0.05,
+                          min: CURVE_Y_RANGE[0],
+                          max: CURVE_Y_RANGE[1],
+                        }}
+                        disabled={controlsDisabled}
+                        onChange={(event) => {
+                          const nextValue = Number.parseFloat(event.target.value);
+                          if (!Number.isFinite(nextValue)) return;
+                          const next = [...activeEditable.maxRatioByBand];
+                          next[index] = clampRatio(nextValue);
+                          updateBands({ maxRatioByBand: next });
+                        }}
+                        sx={spinnerTextFieldSx}
+                      />
+                    ))}
+                  </Stack>
+                </Paper>
+
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    mt: 1,
+                    p: 1,
                     borderColor: '#0b5ed7',
                     width: '100%',
                     overflow: 'visible',
@@ -488,7 +530,7 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                     {resolvedMultiplierAnchors.map((anchor, index) => (
                       <TextField
                         key={`multiplier-anchor-${index}`}
-                        label={String(clampRatio(anchor.x))}
+                        label={buildZoomLabel(anchor.x)}
                         type="number"
                         size="small"
                         value={clampRatio(anchor.y)}
@@ -525,7 +567,7 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                     {resolvedMinAnchors.map((anchor, index) => (
                       <TextField
                         key={`min-anchor-${index}`}
-                        label={String(clampRatio(anchor.x))}
+                        label={buildZoomLabel(anchor.x)}
                         type="number"
                         size="small"
                         value={clampRatio(anchor.y)}
@@ -541,43 +583,6 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                           const next = [...activeEditable.minRatioByBand];
                           next[index] = clampRatio(nextValue);
                           updateBands({ minRatioByBand: next });
-                        }}
-                        sx={spinnerTextFieldSx}
-                      />
-                    ))}
-                  </Stack>
-                </Paper>
-
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    mt: 1,
-                    p: 1,
-                    borderColor: '#ef4444',
-                    width: '100%',
-                    overflow: 'visible',
-                  }}
-                >
-                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'nowrap', overflowX: 'auto', pt: 1 }}>
-                    {resolvedMaxAnchors.map((anchor, index) => (
-                      <TextField
-                        key={`max-anchor-${index}`}
-                        label={String(clampRatio(anchor.x))}
-                        type="number"
-                        size="small"
-                        value={clampRatio(anchor.y)}
-                        inputProps={{
-                          step: 0.05,
-                          min: CURVE_Y_RANGE[0],
-                          max: CURVE_Y_RANGE[1],
-                        }}
-                        disabled={controlsDisabled}
-                        onChange={(event) => {
-                          const nextValue = Number.parseFloat(event.target.value);
-                          if (!Number.isFinite(nextValue)) return;
-                          const next = [...activeEditable.maxRatioByBand];
-                          next[index] = clampRatio(nextValue);
-                          updateBands({ maxRatioByBand: next });
                         }}
                         sx={spinnerTextFieldSx}
                       />
