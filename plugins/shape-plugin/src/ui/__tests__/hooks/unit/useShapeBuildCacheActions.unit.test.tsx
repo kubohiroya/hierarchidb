@@ -21,6 +21,8 @@ const mocks = vi.hoisted(() => ({
   getBuildSessionStatus: vi.fn(),
   listBuildTasksByStage: vi.fn(),
   deleteBuildTasksByIds: vi.fn(),
+  clearStage: vi.fn(),
+  markSourceCachesRawCacheInvalidated: vi.fn(),
   notifySuccess: vi.fn(),
   notifyError: vi.fn(),
 }));
@@ -54,6 +56,8 @@ vi.mock('../../../../services/build/ShapeBuildAPIClient.ts', () => ({
     countGeometryCaches: mocks.countGeometryCaches,
     listBuildTasksByStage: mocks.listBuildTasksByStage,
     deleteBuildTasksByIds: mocks.deleteBuildTasksByIds,
+    clearStage: mocks.clearStage,
+    markSourceCachesRawCacheInvalidated: mocks.markSourceCachesRawCacheInvalidated,
   },
   shapeMutationAPIImpl: {
     clearShapeArtifacts: mocks.clearShapeArtifacts,
@@ -74,7 +78,9 @@ vi.mock('@hierarchidb/vt-orchestrator', () => {
       where: (query: string) => {
         if (query === 'nodeId') {
           return {
-            equals: async () => ({
+            equals: () => ({
+              count: async () => 0,
+              delete: async () => 0,
               toArray: async () => [],
               and: () => ({
                 delete: async () => 0,
@@ -120,6 +126,8 @@ describe('useShapeBuildCacheActions', () => {
     mocks.deleteTasksByNode.mockResolvedValue(undefined);
     mocks.listBuildTasksByStage.mockResolvedValue([]);
     mocks.deleteBuildTasksByIds.mockResolvedValue(undefined);
+    mocks.clearStage.mockResolvedValue(undefined);
+    mocks.markSourceCachesRawCacheInvalidated.mockResolvedValue(undefined);
     mocks.initializeBridge.mockResolvedValue(undefined);
     mocks.getBuildSessionStatus.mockResolvedValue({ status: 'idle' });
   });
@@ -155,9 +163,40 @@ describe('useShapeBuildCacheActions', () => {
     });
 
     expect(mocks.deleteRawDataDataSourceBuffersForNode).toHaveBeenCalledWith('node-1');
+    expect(mocks.markSourceCachesRawCacheInvalidated).toHaveBeenCalledWith('node-1');
     expect(mocks.listBuildTasksByStage).toHaveBeenCalledWith('node-1', 'source');
     expect(mocks.deleteBuildTasksByIds).toHaveBeenCalledWith(['task-source']);
     expect(mocks.notifySuccess).toHaveBeenCalledWith('Deleted API cache');
+  });
+
+  it('deletes source filtered cache without deleting raw API cache', async () => {
+    mocks.countRawDataDataSourceBuffersForNode
+      .mockResolvedValueOnce(2)
+      .mockResolvedValueOnce(2);
+    mocks.countSourceCaches
+      .mockResolvedValueOnce(3)
+      .mockResolvedValueOnce(0);
+    mocks.listBuildTasksByStage
+      .mockResolvedValueOnce([{ taskId: 'task-source' }])
+      .mockResolvedValueOnce([{ taskId: 'task-geometry' }])
+      .mockResolvedValueOnce([{ taskId: 'task-tile' }]);
+
+    const { result } = renderHook(
+      () => useShapeBuildCacheActions({ nodeId: 'node-1' }),
+      { wrapper },
+    );
+
+    await waitFor(() => {
+      expect(result.current.canDeleteSourceFilteredCache).toBe(true);
+    });
+
+    await act(async () => {
+      await result.current.handleDeleteSourceFilteredCache();
+    });
+
+    expect(mocks.clearStage).toHaveBeenCalledWith('node-1', 'source');
+    expect(mocks.deleteRawDataDataSourceBuffersForNode).not.toHaveBeenCalled();
+    expect(mocks.notifySuccess).toHaveBeenCalledWith('Deleted source filtered cache');
   });
 
   it('still refreshes counts when task metadata cleanup fails during API cache deletion', async () => {
@@ -167,7 +206,6 @@ describe('useShapeBuildCacheActions', () => {
     mocks.countSourceCaches.mockResolvedValue(0);
     mocks.listBuildTasksByStage.mockResolvedValueOnce([{ taskId: 'task-1' }]);
     mocks.deleteBuildTasksByIds.mockRejectedValue(new Error('task clear failed'));
-    mocks.deleteBuildTasksByIds.mockResolvedValue(undefined);
     mocks.getBuildSessionStatus.mockResolvedValue({ status: 'idle' });
 
     const { result } = renderHook(

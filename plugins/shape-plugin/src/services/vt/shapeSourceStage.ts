@@ -969,9 +969,11 @@ const createSourceHandler = (params: {
     assertNotAborted(params.abortSignal);
     const existing = await getSourceCache(params.nodeId, input.sourceKey);
     if (existing) {
-      const createdAt = Date.now();
-      let sourceArtifactHash = await resolveSourceArtifactHashFromRecord(ephemeralDB.sourceCache, existing);
       const existingMetadata = isRecord(existing.metadata) ? existing.metadata : {};
+      const isRawCacheInvalidated = existingMetadata.rawCacheInvalidated === true;
+      if (!isRawCacheInvalidated) {
+        const createdAt = Date.now();
+        let sourceArtifactHash = await resolveSourceArtifactHashFromRecord(ephemeralDB.sourceCache, existing);
       const existingInputFeatureCount = existing.inputFeatureCount ?? existing.featureCount;
       const existingOutputFeatureCount = existing.featureCount;
       const cachedPolygonPerFeatureMax = readNumericProperty(existingMetadata, 'polygonPerFeatureMax')
@@ -1093,6 +1095,7 @@ const createSourceHandler = (params: {
           vertexCount: cachedVertexCount,
         },
       };
+      }
     }
 
     assertNotAborted(params.abortSignal);

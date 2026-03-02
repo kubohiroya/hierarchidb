@@ -98,6 +98,7 @@ export const handleDeleteSourceApiCache = async (deps: ActionDeps): Promise<void
     let deletedApiCache = false;
     try {
       await deleteSourceRawCache(nodeId);
+      await ephemeralShapeAPIImpl.markSourceCachesRawCacheInvalidated(nodeId);
       deletedApiCache = true;
     } catch (error) {
       console.warn('[shapeBuildCache] failed to delete source API cache', error);

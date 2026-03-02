@@ -27,7 +27,6 @@ import type {
   ShapeTileEmitMetadata,
 } from '@hierarchidb/shape-api';
 import {
-  deleteRawDataDataSourceBuffersForNode,
   storeRawDataDataSourceBufferForNode,
 } from '~/services/utils/chunkStore';
 import { resolveCountryContinentName, resolveCountryName } from '~/services/utils/iso3166';
@@ -846,13 +845,16 @@ export class EphemeralShapeApiImpl {
 
   async clearStage(nodeId: NodeId, stage: ShapeBuildStage): Promise<void> {
     await ephemeralDB.clearStage(nodeId, stage);
-    if (stage === 'source') {
-      try {
-        await deleteRawDataDataSourceBuffersForNode(nodeId);
-      } catch (error) {
-        console.warn('[shapeBuildAPI] failed to clear download chunk-store entries', error);
-      }
-    }
+  }
+
+  async markSourceCachesRawCacheInvalidated(nodeId: NodeId): Promise<void> {
+    await ephemeralDB.sourceCache
+      .where('nodeId')
+      .equals(nodeId)
+      .modify((record) => {
+        const metadata = isRecord(record.metadata) ? record.metadata : {};
+        record.metadata = { ...metadata, rawCacheInvalidated: true };
+      });
   }
 
   async clearNodeData(nodeId: NodeId): Promise<void> {
