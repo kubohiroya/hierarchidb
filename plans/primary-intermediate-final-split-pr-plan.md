@@ -17,6 +17,15 @@
 4. UI/Worker は固定ステージ名で分岐せず、セッション構成を参照して動作する。
 5. 旧語彙は段階的に削除し、最終PRで禁止ルールを有効化する。
 
+## 命名方針（UI とコードの分離）
+- コード契約は抽象名で固定する。
+  - `Primary / Intermediate / Final` を唯一の実行ロール名として扱う。
+- UI 表示名はドメイン文脈で具体化する。
+  - 例: shape では `Source / GraphIndex / Plan / Transform / TileEmit` を表示する。
+  - route/location など他ドメインでは、同じ抽象ロールに別ラベルを割り当て可能にする。
+- UI 文言は固定文字列を直書きせず、`StageDescriptor` + resolver 経由で解決する。
+- `Intermediate` は複数段を許可し、`Intermediate-1/2/3` 等の表示はドメイン設定から決定する。
+
 ## 先行で固定する契約（SSOT）
 - `StageRole = 'primary' | 'intermediate' | 'final'`
 - `BuildSessionStageDescriptor`
@@ -24,9 +33,23 @@
   - `role: StageRole`
   - `capability: string`（例: `source-fetch`, `geometry-simplify`, `tile-emit`）
   - `order: number`
+  - `labelKey: string`, `fallbackLabel: string`（UI の表示名解決用）
   - `retryPolicy`, `guard`, `ioContractRef`
 - `BuildSessionScenario`
-  - `scenarioId`, `stageDescriptors[]`, `uiHints`, `taskDisplayPolicy`
+  - `scenarioId`, `stageDescriptors[]`, `uiHints`, `taskDisplayPolicy`, `domainContext`
+
+## UI 表示名解決契約
+- `displayNameResolver(domainContext, stageDescriptor) -> string` を導入する。
+- `domainContext` の最低項目:
+  - `nodeType`
+  - `dataSource`
+  - `scenarioId`
+  - `locale`
+- UI コンポーネントは resolver の戻り値のみ表示し、`Source/Geometry/TileEmit` 等を直接分岐に使わない。
+- 文言優先順位:
+  1. `labelKey`（i18n）
+  2. `fallbackLabel`
+  3. 最終フォールバック（`Primary/Intermediate/Final`）
 
 ## 分割PR計画
 

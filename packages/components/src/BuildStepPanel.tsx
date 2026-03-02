@@ -1,4 +1,4 @@
-import { type MouseEvent as ReactMouseEvent, type ReactNode, useCallback, useMemo, useState } from 'react';
+import { type MouseEvent as ReactMouseEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
 import { Box, IconButton, MenuItem, Stack, Typography } from '@mui/material';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
@@ -279,13 +279,21 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   })();
   const hasControlMenuItems = (controlMenuItems?.length ?? 0) > 0;
   const controlMenuOpen = Boolean(controlMenuAnchorEl);
-  const controlMenuDisabledState = Boolean(controlMenuDisabled) || !hasControlMenuItems;
+  const controlMenuDisabledState = Boolean(controlMenuDisabled)
+    || Boolean(startPending)
+    || Boolean(startLoading)
+    || !hasControlMenuItems;
   const handleControlMenuOpen = (event: ReactMouseEvent<HTMLButtonElement>) => {
     setControlMenuAnchorEl(event.currentTarget);
   };
   const handleControlMenuClose = () => {
     setControlMenuAnchorEl(null);
   };
+  useEffect(() => {
+    if (controlMenuDisabledState && controlMenuAnchorEl) {
+      setControlMenuAnchorEl(null);
+    }
+  }, [controlMenuAnchorEl, controlMenuDisabledState]);
   const handleControlMenuItemClick = (item: BuildControlMenuItem) => {
     item.onClick();
     handleControlMenuClose();
