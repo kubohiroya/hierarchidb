@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #689 / `codex/fix/shape/step5-dataclone-hardening-689` / start: 2026-03-02 21:28 JST
 - #688 / `codex/fix/shape/step5-datacloneerror-688` / start: 2026-03-02 20:55 JST
 - #687 / `codex/fix/shape/step5-menu-relocate-687` / start: 2026-03-02 16:49 JST
 - #686 / `codex/refactor/shape/common-stage-reconcile-686` / start: 2026-03-02 15:47 JST
@@ -159,6 +160,7 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- start: 2026-03-02 21:28 JST #689 を起票（https://github.com/kubohiroya/hierarchidb/issues/689）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。別ワークツリー `/Users/hiroya/WebstormProjects/hierarchidb-codex-step5-689` とブランチ `codex/fix/shape/step5-dataclone-hardening-689` を作成し、Step5 の `DataCloneError` クラッシュ抑止（payload軽量化・task同期最適化・previewメモリ解放）に着手。
 - update: 2026-03-02 21:18 JST #688 Step5 クラッシュ調査。`DataCloneError (Performance.measure)` は React dev 計測層で表面化しているが、根本は Step5 の再レンダー負荷/メモリ肥大が主因と判断。確認した発生範囲は (1) `plugins/shape-plugin/src/worker/api/api-internal-execution-metrics.ts` の `mapTaskQueueRecordToTaskSummary` が `task.metadata` をそのままUIへ流し込む経路、(2) `plugins/shape-plugin/src/ui/components/build-progress/internal/useShapeBuildStepStageState.ts` の `persistedTasksAtom` への全タスク配列複製、(3) `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.sync.ts` の flush ごとの全件 Map 再構築、(4) `plugins/shape-plugin/src/ui/components/build-progress/TaskItemCard/TaskItemDetailWindow.tsx` の GeoJSON プレビュー常駐保持。修正方針は task summary payload の軽量化（metadata whitelist化）、persisted tasks 複製抑止、task sync の増分更新化/flush間引き、プレビューの遅延読込・上限制御。
 - start: 2026-03-02 20:55 JST #688 を起票（https://github.com/kubohiroya/hierarchidb/issues/688）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/step5-datacloneerror-688` を作成して、shape Step5 の `DataCloneError`（`Performance.measure`）クラッシュ原因調査と修正ポイント特定に着手。
 - update: 2026-03-02 17:02 JST #687 原因は Step5 のメニュー配置が操作対象ステージと不一致だったこと（`Delete transpose index` が Build Session にあり、TileEmit 側に `Delete tile data` が残存）。発生範囲は `plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildProgressPanel/useShapeBuildProgressPanelController/base/useShapeBuildProgressPanelControllerBaseState/useShapeBuildProgressPanelControllerBaseStateDataCore.ts` の `stageMenus` と `controlMenuItems` 構成。修正として `Delete transpose index` を Build Session メニューから除去して TileEmit メニューへ移設し、TileEmit メニューの `Delete tile data` を削除。適用範囲は Step5 メニューUIのみで、削除処理ハンドラ本体は変更なし。検証: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/components --filter @hierarchidb/ui-accordion-config` exit 0、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` exit 0。

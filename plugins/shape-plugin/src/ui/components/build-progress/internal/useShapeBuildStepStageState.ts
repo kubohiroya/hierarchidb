@@ -12,6 +12,7 @@ import {
   type StageId,
   type BuildStageStateById,
 } from '~/ui/components/build-progress/useShapeBuildTaskSnapshotProgressState/useShapeBuildTaskSnapshotProgressState';
+import { areTaskListsEquivalentForView } from '~/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparison.utils';
 import { resolveMostAdvancedInFlightStageId, resolveMostAdvancedRunningStageId } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/stage';
 import { resolveDisplayBuildStatus } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/status';
 
@@ -154,8 +155,9 @@ export const useShapeBuildStepStageState = ({
 
   useEffect(() => {
     if (tasks.length === 0) return;
+    if (areTaskListsEquivalentForView(persistedTasks, tasks)) return;
     setPersistedTasks(tasks);
-  }, [setPersistedTasks, tasks]);
+  }, [persistedTasks, setPersistedTasks, tasks]);
 
   const rawDisplayTasks = tasks.length > 0 ? tasks : persistedTasks;
   const displayTasks = useMemo<ShapeBuildTaskSummary[]>(() => (

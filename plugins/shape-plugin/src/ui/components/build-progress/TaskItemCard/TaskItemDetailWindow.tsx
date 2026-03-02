@@ -1091,7 +1091,7 @@ export const TaskItemDetailWindow = ({
   }), [windowState, zIndex]);
 
   useEffect(() => {
-    if (!activeDetail) {
+    if (!open || !activeDetail) {
       setPreview(null);
       setPreviewLoading(false);
       return;
@@ -1122,10 +1122,10 @@ export const TaskItemDetailWindow = ({
     return () => {
       cancelled = true;
     };
-  }, [activeDetail]);
+  }, [activeDetail, open]);
 
   useEffect(() => {
-    if (!activeDetail) {
+    if (!open || !activeDetail) {
       setSourceStageMaxima(null);
       return;
     }
@@ -1147,7 +1147,7 @@ export const TaskItemDetailWindow = ({
     return () => {
       cancelled = true;
     };
-  }, [activeDetail]);
+  }, [activeDetail, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -1170,6 +1170,13 @@ export const TaskItemDetailWindow = ({
     hide();
   }, [hide, open, show]);
 
+  useEffect(() => {
+    if (open) return;
+    setPreview(null);
+    setPreviewLoading(false);
+    setSourceStageMaxima(null);
+  }, [open]);
+
   const resultColor = useMemo(() => {
     if (!summary) return theme.palette.info.main;
     if (summary.kind === 'failed') return theme.palette.error.main;
@@ -1178,7 +1185,7 @@ export const TaskItemDetailWindow = ({
   }, [summary, theme.palette.error.main, theme.palette.info.main, theme.palette.success.main, theme.palette.warning.main]);
 
   const overlays = useMemo<OverlaySpec[]>(() => {
-    if (!preview) return [];
+    if (!open || !preview) return [];
     const next: OverlaySpec[] = [];
     if (preview.previousOriginal) {
       next.push({
@@ -1208,7 +1215,7 @@ export const TaskItemDetailWindow = ({
       });
     }
     return next;
-  }, [preview, resultColor, theme.palette.grey]);
+  }, [open, preview, resultColor, theme.palette.grey]);
 
   const handleDownload = () => {
     if (!activeDetail) return;

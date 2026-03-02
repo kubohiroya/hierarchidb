@@ -418,6 +418,102 @@ const readNumber = (value: unknown): number | null => (
   typeof value === 'number' && Number.isFinite(value) ? value : null
 );
 
+const pickPrimitiveMetadataField = (metadata: Record<string, unknown>, key: string): unknown => {
+  const value = metadata[key];
+  if (value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return value;
+  }
+  return undefined;
+};
+
+const pickRecordMetadataField = (metadata: Record<string, unknown>, key: string): Record<string, unknown> | undefined => {
+  const value = asRecord(metadata[key]);
+  if (!value) return undefined;
+  return value;
+};
+
+const sanitizeTaskMetadataForSummary = (
+  task: TaskQueueRecord,
+  preview: Record<string, unknown> | null,
+): Record<string, unknown> | undefined => {
+  const metadata = asRecord(task.metadata);
+  const next: Record<string, unknown> = {};
+
+  if (preview) {
+    next.preview = preview;
+  }
+
+  if (!metadata) {
+    return Object.keys(next).length > 0 ? next : undefined;
+  }
+
+  const primitiveKeys = [
+    'message',
+    'retryAttempt',
+    'retryCount',
+    'retryLimit',
+    'maxRetryAttempts',
+    'effectiveTolerance',
+    'effective_tolerance',
+    'finalTolerance',
+    'finalEffectiveTolerance',
+    'extractionRatio',
+    'retryVertexLimit',
+    'vertexLimit',
+    'maxVerticesPerFeature',
+    'cacheReuse',
+    'authState',
+  ] as const;
+
+  for (const key of primitiveKeys) {
+    const value = pickPrimitiveMetadataField(metadata, key);
+    if (value !== undefined) {
+      next[key] = value;
+    }
+  }
+
+  const fetchDetail = pickRecordMetadataField(metadata, 'fetchDetail');
+  if (fetchDetail) {
+    next.fetchDetail = fetchDetail;
+  }
+
+  const tileEmitParentInputSummary = pickRecordMetadataField(metadata, 'tileEmitParentInputSummary');
+  if (tileEmitParentInputSummary) {
+    next.tileEmitParentInputSummary = tileEmitParentInputSummary;
+  }
+
+  const nestedMetadata = pickRecordMetadataField(metadata, 'metadata');
+  if (nestedMetadata) {
+    const compactNested: Record<string, unknown> = {};
+    for (const key of [
+      'effectiveTolerance',
+      'finalTolerance',
+      'extractionRatio',
+      'retryCount',
+      'retryLimit',
+      'maxRetryAttempts',
+      'retryVertexLimit',
+      'vertexLimit',
+      'maxVerticesPerFeature',
+    ]) {
+      const value = pickPrimitiveMetadataField(nestedMetadata, key);
+      if (value !== undefined) {
+        compactNested[key] = value;
+      }
+    }
+    if (Object.keys(compactNested).length > 0) {
+      next.metadata = compactNested;
+    }
+  }
+
+  if (isTileEmitStage(task.stage) && !next.tileEmitParentInputSummary) {
+    // TileEmit tasks are high-cardinality; avoid carrying non-essential metadata per task.
+    return Object.keys(next).length > 0 ? next : undefined;
+  }
+
+  return Object.keys(next).length > 0 ? next : undefined;
+};
+
 const buildPreviewMetadataFromTask = (task: TaskQueueRecord): Record<string, unknown> | null => {
   const metadata = asRecord(task.metadata);
   const preview = asRecord(metadata?.preview);
@@ -489,10 +585,7 @@ const mapTaskQueueRecordToTaskSummary = (
 ): ShapeBuildTaskSummary => {
   const base = buildTaskSummaryFields(task);
   const preview = buildPreviewMetadataFromTask(task);
-  const metadata = {
-    ...(base.metadata ?? {}),
-    ...(preview ? { preview } : {}),
-  };
+  const metadata = sanitizeTaskMetadataForSummary(task, preview);
   return {
     taskId: task.taskId,
     nodeId: task.nodeId,

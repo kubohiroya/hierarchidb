@@ -178,13 +178,6 @@ export const useShapeBuildTaskSyncScheduling = ({
       changed = changed || result.changed;
     });
 
-    tasksMapRef.current = new Map(nextList.map((task) => [task.taskId, task]));
-    completedTasksRef.current = new Map(
-      nextList
-        .filter((task) => isCompletedAtFullProgress(task))
-        .map((task) => [task.taskId, task]),
-    );
-
     return { nextList, changed };
   }, [
     bufferedSnapshotRef,
