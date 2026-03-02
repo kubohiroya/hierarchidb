@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #695 / `refactor/shape/unify-max-ratio-default` / start: 2026-03-03 JST
 - #694 / `fix/shape-plugin/task-filter-visibility` / start: 2026-03-02 JST
 - #689 / `codex/fix/shape/step5-dataclone-hardening-689` / start: 2026-03-02 21:28 JST
 - #688 / `codex/fix/shape/step5-datacloneerror-688` / start: 2026-03-02 20:55 JST
