@@ -145,6 +145,7 @@ export const TaskProgressBarView = ({
         onPointerLeave={onPointerUp}
         style={{ touchAction: 'none' }}
       >
+        <title>Task progress bar</title>
         {flowBandRange ? (
           <defs>
             <clipPath id={`task-progress-flow-${flowBandClipId}`}>
