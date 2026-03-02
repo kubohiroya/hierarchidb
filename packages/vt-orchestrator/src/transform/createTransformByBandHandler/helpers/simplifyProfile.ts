@@ -1,9 +1,10 @@
 import type { GeometryConfig, GeometrySimplifyToleranceByAdminLevelConfig } from '@hierarchidb/gis-sdk';
 
 export type SimplifyToleranceProfile = {
-  toleranceByBand: number[];
-  retryToleranceByBand: number[];
-  retryCount: number;
+  multiplierByBand: number[];
+  minRatioByBand: number[];
+  maxRatioByBand: number[];
+  toleranceSearchMaxIterations: number;
 };
 
 type SimplifyAdminLevelKey = 'admin0' | 'admin1' | 'admin2' | 'admin3Plus';
@@ -22,14 +23,18 @@ const resolveProfileByKey = (
   key: SimplifyAdminLevelKey,
   previous: SimplifyToleranceProfile | null,
 ): SimplifyToleranceProfile => {
-  const fallbackRetryCount = typeof geometryConfig.retryCount === 'number' && Number.isFinite(geometryConfig.retryCount)
-    ? Math.max(0, Math.min(10, Math.round(geometryConfig.retryCount)))
-    : 4;
-  const fallbackToleranceByBand = Array.isArray(geometryConfig.toleranceByBand)
-    ? geometryConfig.toleranceByBand
+  const fallbackSearchIterations = typeof geometryConfig.toleranceSearchMaxIterations === 'number'
+    && Number.isFinite(geometryConfig.toleranceSearchMaxIterations)
+    ? Math.max(1, Math.min(64, Math.round(geometryConfig.toleranceSearchMaxIterations)))
+    : 24;
+  const fallbackMultiplierByBand = Array.isArray(geometryConfig.toleranceMultiplierByBand)
+    ? geometryConfig.toleranceMultiplierByBand
     : [];
-  const fallbackRetryToleranceByBand = Array.isArray(geometryConfig.retryToleranceByBand)
-    ? geometryConfig.retryToleranceByBand
+  const fallbackMinRatioByBand = Array.isArray(geometryConfig.toleranceMinRatioByBand)
+    ? geometryConfig.toleranceMinRatioByBand
+    : [];
+  const fallbackMaxRatioByBand = Array.isArray(geometryConfig.toleranceMaxRatioByBand)
+    ? geometryConfig.toleranceMaxRatioByBand
     : [];
 
   const raw = config?.[key];
@@ -38,20 +43,31 @@ const resolveProfileByKey = (
     return previous;
   }
 
-  const toleranceByBand = Array.isArray(raw?.toleranceByBand) && raw.toleranceByBand.length > 0
-    ? raw.toleranceByBand
-    : fallbackToleranceByBand;
-  const retryToleranceByBand = Array.isArray(raw?.retryToleranceByBand) && raw.retryToleranceByBand.length > 0
-    ? raw.retryToleranceByBand
-    : fallbackRetryToleranceByBand;
-  const retryCount = typeof raw?.retryCount === 'number' && Number.isFinite(raw.retryCount)
-    ? Math.max(0, Math.min(10, Math.round(raw.retryCount)))
-    : fallbackRetryCount;
+  const multiplierByBand = Array.isArray(raw?.multiplierByBand) && raw.multiplierByBand.length > 0
+    ? raw.multiplierByBand
+    : (fallbackMultiplierByBand.length > 0
+      ? fallbackMultiplierByBand
+      : []);
+  const minRatioByBand = Array.isArray(raw?.minRatioByBand) && raw.minRatioByBand.length > 0
+    ? raw.minRatioByBand
+    : (fallbackMinRatioByBand.length > 0
+      ? fallbackMinRatioByBand
+      : []);
+  const maxRatioByBand = Array.isArray(raw?.maxRatioByBand) && raw.maxRatioByBand.length > 0
+    ? raw.maxRatioByBand
+    : (fallbackMaxRatioByBand.length > 0
+      ? fallbackMaxRatioByBand
+      : []);
+  const toleranceSearchMaxIterations = typeof raw?.toleranceSearchMaxIterations === 'number'
+    && Number.isFinite(raw.toleranceSearchMaxIterations)
+    ? Math.max(1, Math.min(64, Math.round(raw.toleranceSearchMaxIterations)))
+    : fallbackSearchIterations;
 
   return {
-    toleranceByBand,
-    retryToleranceByBand,
-    retryCount,
+    multiplierByBand,
+    minRatioByBand,
+    maxRatioByBand,
+    toleranceSearchMaxIterations,
   };
 };
 

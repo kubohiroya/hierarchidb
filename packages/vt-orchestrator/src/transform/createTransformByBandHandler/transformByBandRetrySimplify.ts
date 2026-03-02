@@ -25,14 +25,39 @@ export type RetryFeatureParams = {
   feature: Feature;
   baseTolerance: number;
   retryVertexLimit: number;
-  retryToleranceSecond: number;
   maxRetryAttempts: number;
+  maxTolerance: number;
+  minTolerance?: number;
+  toleranceEpsilon?: number;
   featureIndex: number;
   featureTotal: number;
   runRetrySimplifyAttempt: (tolerance: number) => Promise<Feature | null>;
   countVerticesFromGeometry: (geometry: Feature['geometry'] | null | undefined) => number;
   updateRetrySimplifyAttemptPhase: (params: UpdateRetryAttemptParams) => Promise<void>;
 };
+
+export type BaseToleranceSearchResult = {
+  tolerance: number;
+  converged: boolean;
+  iterations: number;
+  finalVertexCount: number;
+};
+
+export type BaseToleranceSearchParams = {
+  feature: Feature;
+  retryVertexLimit: number;
+  maxIterations: number;
+  initialLow?: number;
+  initialHigh?: number;
+  highCap?: number;
+  toleranceEpsilon?: number;
+  runSimplifyAttempt: (tolerance: number) => Promise<Feature | null>;
+  countVerticesFromGeometry: (geometry: Feature['geometry'] | null | undefined) => number;
+};
+
+const DEFAULT_BISECTION_EPSILON = 1e-7;
+const DEFAULT_INITIAL_HIGH = 1;
+const DEFAULT_MAX_HIGH = 12;
 
 export const countVertexLimitOverages = (
   collection: FeatureCollection,
@@ -54,6 +79,121 @@ export const countVertexLimitOverages = (
   };
 };
 
+export const selectMaxVertexFeature = (
+  collection: FeatureCollection,
+  countVerticesFromGeometry: (geometry: Feature['geometry'] | null | undefined) => number,
+): { feature: Feature; featureIndex: number; vertexCount: number } | null => {
+  let bestFeature: Feature | null = null;
+  let bestVertexCount = -1;
+  let bestIndex = -1;
+  for (const [featureIndex, feature] of collection.features.entries()) {
+    if (!feature?.geometry) continue;
+    const vertexCount = countVerticesFromGeometry(feature.geometry);
+    if (vertexCount <= bestVertexCount) continue;
+    bestFeature = feature;
+    bestVertexCount = vertexCount;
+    bestIndex = featureIndex;
+  }
+  if (!bestFeature || bestIndex < 0 || bestVertexCount < 0) return null;
+  return {
+    feature: bestFeature,
+    featureIndex: bestIndex,
+    vertexCount: bestVertexCount,
+  };
+};
+
+export const findBaseToleranceByBisection = async (
+  params: BaseToleranceSearchParams,
+): Promise<BaseToleranceSearchResult> => {
+  const {
+    feature,
+    retryVertexLimit,
+    maxIterations,
+    runSimplifyAttempt,
+    countVerticesFromGeometry,
+  } = params;
+
+  const epsilon = Math.max(1e-12, params.toleranceEpsilon ?? DEFAULT_BISECTION_EPSILON);
+  const boundedMaxIterations = Math.max(1, Math.min(64, Math.round(maxIterations)));
+  const lowStart = Number.isFinite(params.initialLow) ? Math.max(0, params.initialLow ?? 0) : 0;
+  let low = lowStart;
+  let high = Number.isFinite(params.initialHigh) && (params.initialHigh ?? 0) > low
+    ? (params.initialHigh as number)
+    : DEFAULT_INITIAL_HIGH;
+  const highCap = Number.isFinite(params.highCap) && (params.highCap ?? 0) > 0
+    ? (params.highCap as number)
+    : DEFAULT_MAX_HIGH;
+
+  const baseVertexCount = countVerticesFromGeometry(feature.geometry);
+  if (baseVertexCount < retryVertexLimit) {
+    return {
+      tolerance: low,
+      converged: true,
+      iterations: 0,
+      finalVertexCount: baseVertexCount,
+    };
+  }
+
+  let attempts = 0;
+  let highFeature: Feature | null = null;
+  let highVertexCount = Number.POSITIVE_INFINITY;
+  while (high <= highCap) {
+    const retryFeature = await runSimplifyAttempt(high);
+    attempts += 1;
+    if (retryFeature?.geometry) {
+      highFeature = retryFeature;
+      highVertexCount = countVerticesFromGeometry(retryFeature.geometry);
+      if (highVertexCount < retryVertexLimit) {
+        break;
+      }
+    }
+    high *= 2;
+  }
+
+  if (!highFeature || highVertexCount >= retryVertexLimit) {
+    return {
+      tolerance: Math.min(highCap, high),
+      converged: false,
+      iterations: attempts,
+      finalVertexCount: Number.isFinite(highVertexCount) ? highVertexCount : baseVertexCount,
+    };
+  }
+
+  let bestTolerance = high;
+  let bestVertexCount = highVertexCount;
+  for (let index = 0; index < boundedMaxIterations; index += 1) {
+    if (Math.abs(high - low) < epsilon) {
+      return {
+        tolerance: bestTolerance,
+        converged: true,
+        iterations: attempts,
+        finalVertexCount: bestVertexCount,
+      };
+    }
+    const mid = (low + high) / 2;
+    const retryFeature = await runSimplifyAttempt(mid);
+    attempts += 1;
+    if (!retryFeature?.geometry) {
+      low = mid;
+      continue;
+    }
+    const retryVertexCount = countVerticesFromGeometry(retryFeature.geometry);
+    if (retryVertexCount < retryVertexLimit) {
+      high = mid;
+      bestTolerance = mid;
+      bestVertexCount = retryVertexCount;
+      continue;
+    }
+    low = mid;
+  }
+  return {
+    tolerance: bestTolerance,
+    converged: true,
+    iterations: attempts,
+    finalVertexCount: bestVertexCount,
+  };
+};
+
 export const retrySimplifyFeatureWithinVertexLimit = async (
   params: RetryFeatureParams,
 ): Promise<RetrySimplifyFeatureResult> => {
@@ -61,8 +201,10 @@ export const retrySimplifyFeatureWithinVertexLimit = async (
     feature,
     baseTolerance,
     retryVertexLimit,
-    retryToleranceSecond,
     maxRetryAttempts,
+    maxTolerance,
+    minTolerance,
+    toleranceEpsilon,
     featureIndex,
     featureTotal,
     runRetrySimplifyAttempt,
@@ -96,7 +238,14 @@ export const retrySimplifyFeatureWithinVertexLimit = async (
   let lastAttemptTolerance = baseTolerance;
   let retryAttempts = 0;
 
-  if (maxRetryAttempts <= 0 || !Number.isFinite(retryToleranceSecond)) {
+  const boundedAttempts = Math.max(0, Math.min(64, Math.floor(maxRetryAttempts)));
+  const epsilon = Math.max(1e-12, toleranceEpsilon ?? DEFAULT_BISECTION_EPSILON);
+  const lowStart = Number.isFinite(minTolerance)
+    ? Math.max(0, Math.min(minTolerance ?? 0, baseTolerance))
+    : baseTolerance;
+  const highStart = Number.isFinite(maxTolerance) ? maxTolerance : baseTolerance;
+
+  if (boundedAttempts <= 0 || !Number.isFinite(highStart) || highStart <= baseTolerance) {
     return {
       feature,
       vertexCount: baseVertexCount,
@@ -106,16 +255,52 @@ export const retrySimplifyFeatureWithinVertexLimit = async (
     };
   }
 
-  for (let attempt = 0; attempt < maxRetryAttempts; attempt += 1) {
-    const attemptNumber = attempt + 2;
-    const nextToleranceValue = attemptNumber === 2
-      ? retryToleranceSecond
-      : baseTolerance + (retryToleranceSecond - baseTolerance) * (2 ** (attemptNumber - 2));
+  let low = lowStart;
+  let high = highStart;
+
+  await updateRetrySimplifyAttemptPhase({
+    featureIndex,
+    featureTotal,
+    attempt: 1,
+    attemptTotal: boundedAttempts + 1,
+    tolerance: high,
+  });
+  const highFeature = await runRetrySimplifyAttempt(high);
+  retryAttempts += 1;
+  if (highFeature?.geometry) {
+    const highVertexCount = countVerticesFromGeometry(highFeature.geometry);
+    lastAttemptFeature = highFeature;
+    lastAttemptVertexCount = highVertexCount;
+    lastAttemptTolerance = high;
+    if (highVertexCount >= retryVertexLimit) {
+      return {
+        feature: lastAttemptFeature,
+        vertexCount: lastAttemptVertexCount,
+        overLimit: true,
+        retryAttempts,
+        finalTolerance: lastAttemptTolerance,
+      };
+    }
+  } else {
+    return {
+      feature: lastAttemptFeature,
+      vertexCount: lastAttemptVertexCount,
+      overLimit: true,
+      retryAttempts,
+      finalTolerance: lastAttemptTolerance,
+    };
+  }
+
+  for (let attempt = 0; attempt < boundedAttempts; attempt += 1) {
+    if (Math.abs(high - low) < epsilon) {
+      break;
+    }
+    const nextToleranceValue = (low + high) / 2;
     await updateRetrySimplifyAttemptPhase({
       featureIndex,
       featureTotal,
       attempt: retryAttempts + 1,
-      attemptTotal: maxRetryAttempts,
+      attemptTotal: boundedAttempts + 1,
       tolerance: nextToleranceValue,
     });
     const retryFeature = await runRetrySimplifyAttempt(nextToleranceValue);
@@ -128,8 +313,10 @@ export const retrySimplifyFeatureWithinVertexLimit = async (
     lastAttemptVertexCount = retryVertexCount;
 
     if (retryVertexCount < retryVertexLimit) {
-      break;
+      high = nextToleranceValue;
+      continue;
     }
+    low = nextToleranceValue;
   }
 
   return {

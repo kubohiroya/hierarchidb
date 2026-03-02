@@ -121,9 +121,10 @@ export type SimplifyToleranceAdminLevelKey = 'admin0' | 'admin1' | 'admin2' | 'a
 
 export interface GeometrySimplifyAdminLevelProfile {
   usePrevious?: boolean;
-  toleranceByBand?: number[];
-  retryToleranceByBand?: number[];
-  retryCount?: number;
+  multiplierByBand?: number[];
+  minRatioByBand?: number[];
+  maxRatioByBand?: number[];
+  toleranceSearchMaxIterations?: number;
 }
 
 export type GeometrySimplifyToleranceByAdminLevelConfig = Record<
@@ -148,6 +149,10 @@ export interface GeometryConfig {
   toleranceByBand: number[];
   retryCount?: number;
   retryToleranceByBand?: number[];
+  toleranceMultiplierByBand?: number[];
+  toleranceMinRatioByBand?: number[];
+  toleranceMaxRatioByBand?: number[];
+  toleranceSearchMaxIterations?: number;
   simplifyToleranceByAdminLevel?: GeometrySimplifyToleranceByAdminLevelConfig;
   retryToleranceStep?: number;
   quantize?: number;

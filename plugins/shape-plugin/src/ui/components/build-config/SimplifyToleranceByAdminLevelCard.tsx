@@ -31,25 +31,28 @@ type AdminLevelTabKey = 'admin0' | 'admin1' | 'admin2' | 'admin3Plus';
 
 type AdminLevelProfile = {
   usePrevious: boolean;
-  toleranceByBand: number[];
-  retryToleranceByBand: number[];
-  retryCount: number;
+  multiplierByBand: number[];
+  minRatioByBand: number[];
+  maxRatioByBand: number[];
+  toleranceSearchMaxIterations: number;
 };
 
 type StoredAdminLevelProfile = {
   usePrevious?: boolean;
-  toleranceByBand?: number[];
-  retryToleranceByBand?: number[];
-  retryCount?: number;
+  multiplierByBand?: number[];
+  minRatioByBand?: number[];
+  maxRatioByBand?: number[];
+  toleranceSearchMaxIterations?: number;
 };
 
 type StoredAdminLevelProfiles = Partial<Record<AdminLevelTabKey, StoredAdminLevelProfile>>;
 
-const CURVE_Y_RANGE: [number, number] = [0, 12];
-const DEFAULT_RETRY_COUNT = 4;
-const DEFAULT_TOLERANCE_FALLBACK = 0.1;
-const DEFAULT_MAIN_ANCHORS = [0.1, 0.1, 0.1, 0.1] as const;
-const DEFAULT_RETRY_ANCHORS = [0.2, 0.2, 0.3, 0.4] as const;
+const CURVE_Y_RANGE: [number, number] = [0, 2];
+const DEFAULT_ITERATIONS = 24;
+const DEFAULT_FALLBACK = 1;
+const DEFAULT_MULTIPLIER_ANCHORS = [1, 1, 1, 1] as const;
+const DEFAULT_MIN_RATIO_ANCHORS = [0, 0, 0, 0] as const;
+const DEFAULT_MAX_RATIO_ANCHORS = [2, 2, 2, 2] as const;
 
 const ADMIN_LEVEL_TABS: ReadonlyArray<{ key: AdminLevelTabKey; label: string }> = [
   { key: 'admin0', label: 'Admin 0' },
@@ -64,37 +67,23 @@ const PREVIOUS_TAB_BY_KEY: Partial<Record<AdminLevelTabKey, AdminLevelTabKey>> =
   admin3Plus: 'admin2',
 };
 
-const clampRetryCount = (value: number): number => Math.min(10, Math.max(0, Math.round(value)));
-
+const clampIterations = (value: number): number => Math.min(64, Math.max(1, Math.round(value)));
+const clampRatio = (value: number): number => Math.max(0, Math.min(2, Number.parseFloat(value.toFixed(3))));
 const resolveSliderNumber = (value: number | number[]) => (Array.isArray(value) ? value[0] ?? 0 : value);
+const areRatioValuesEqual = (left: number, right: number): boolean => Math.abs(clampRatio(left) - clampRatio(right)) < 1e-9;
 
-const normalizeToleranceValue = (value: number): number => Number.parseFloat(value.toFixed(3));
-
-const clampToCurveYRange = (value: number): number => Math.max(CURVE_Y_RANGE[0], Math.min(CURVE_Y_RANGE[1], value));
-
-const areToleranceValuesEqual = (left: number, right: number): boolean => (
-  Math.abs(normalizeToleranceValue(left) - normalizeToleranceValue(right)) < 1e-9
-);
-
-const resolveToleranceByBand = (
+const resolveRatioByBand = (
   input: number[] | undefined,
   zoomBandBoundaries: number[],
   fallbackAnchors: readonly [number, number, number, number],
 ): number[] => {
-  const fallback = fallbackAnchors[0] ?? DEFAULT_TOLERANCE_FALLBACK;
+  const fallback = fallbackAnchors[0] ?? DEFAULT_FALLBACK;
   return buildToneCurveAnchorsFromToleranceByBand(
     input,
     zoomBandBoundaries,
     fallback,
     fallbackAnchors,
-  ).map((anchor) => normalizeToleranceValue(anchor.y));
-};
-
-const resolveRetryCount = (input: number | undefined, fallback: number): number => {
-  if (typeof input === 'number' && Number.isFinite(input)) {
-    return clampRetryCount(input);
-  }
-  return clampRetryCount(fallback);
+  ).map((anchor) => clampRatio(anchor.y));
 };
 
 const resolveStoredProfiles = (
@@ -115,17 +104,24 @@ const resolveEditableProfile = (
   const raw = storedProfiles[key];
   return {
     usePrevious: key === 'admin0' ? false : raw?.usePrevious === true,
-    toleranceByBand: resolveToleranceByBand(
-      raw?.toleranceByBand ?? geometryConfig.toleranceByBand,
+    multiplierByBand: resolveRatioByBand(
+      raw?.multiplierByBand ?? geometryConfig.toleranceMultiplierByBand,
       geometryConfig.zoomBandBoundaries,
-      DEFAULT_MAIN_ANCHORS,
+      DEFAULT_MULTIPLIER_ANCHORS,
     ),
-    retryToleranceByBand: resolveToleranceByBand(
-      raw?.retryToleranceByBand ?? geometryConfig.retryToleranceByBand,
+    minRatioByBand: resolveRatioByBand(
+      raw?.minRatioByBand ?? geometryConfig.toleranceMinRatioByBand,
       geometryConfig.zoomBandBoundaries,
-      DEFAULT_RETRY_ANCHORS,
+      DEFAULT_MIN_RATIO_ANCHORS,
     ),
-    retryCount: resolveRetryCount(raw?.retryCount, geometryConfig.retryCount ?? DEFAULT_RETRY_COUNT),
+    maxRatioByBand: resolveRatioByBand(
+      raw?.maxRatioByBand ?? geometryConfig.toleranceMaxRatioByBand,
+      geometryConfig.zoomBandBoundaries,
+      DEFAULT_MAX_RATIO_ANCHORS,
+    ),
+    toleranceSearchMaxIterations: typeof raw?.toleranceSearchMaxIterations === 'number'
+      ? clampIterations(raw.toleranceSearchMaxIterations)
+      : clampIterations(geometryConfig.toleranceSearchMaxIterations ?? DEFAULT_ITERATIONS),
   };
 };
 
@@ -151,6 +147,33 @@ const resolveEffectiveProfiles = (
     admin3Plus: admin3UsePrevious
       ? (admin2UsePrevious ? (admin1UsePrevious ? base.admin0 : base.admin1) : base.admin2)
       : base.admin3Plus,
+  };
+};
+
+const clampProfileBands = (
+  multiplierByBand: number[],
+  minRatioByBand: number[],
+  maxRatioByBand: number[],
+): Pick<AdminLevelProfile, 'multiplierByBand' | 'minRatioByBand' | 'maxRatioByBand'> => {
+  const maxLength = Math.max(multiplierByBand.length, minRatioByBand.length, maxRatioByBand.length);
+  const nextMultiplier: number[] = [];
+  const nextMin: number[] = [];
+  const nextMax: number[] = [];
+  for (let index = 0; index < maxLength; index += 1) {
+    const rawMin = clampRatio(minRatioByBand[index] ?? 0);
+    const rawMax = clampRatio(maxRatioByBand[index] ?? 2);
+    const minValue = Math.min(rawMin, rawMax);
+    const maxValue = Math.max(rawMin, rawMax);
+    const rawMultiplier = clampRatio(multiplierByBand[index] ?? 1);
+    const multiplierValue = Math.max(minValue, Math.min(maxValue, rawMultiplier));
+    nextMin.push(minValue);
+    nextMax.push(maxValue);
+    nextMultiplier.push(multiplierValue);
+  }
+  return {
+    multiplierByBand: nextMultiplier,
+    minRatioByBand: nextMin,
+    maxRatioByBand: nextMax,
   };
 };
 
@@ -191,20 +214,25 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
   const activeValues = usePrevious ? activeEffective : activeEditable;
 
   const xMarks = geometryConfig.zoomBandBoundaries.map((value) => ({ value, label: String(value) }));
-  const retryCountMarks = [0, 2, 4, 6, 8, 10].map((value) => ({ value, label: String(value) }));
+  const iterationMarks = [8, 16, 24, 32, 48, 64].map((value) => ({ value, label: String(value) }));
 
-  const resolvedMainAnchors = buildToneCurveAnchorsFromToleranceByBand(
-    activeValues.toleranceByBand,
+  const resolvedMultiplierAnchors = buildToneCurveAnchorsFromToleranceByBand(
+    activeValues.multiplierByBand,
     geometryConfig.zoomBandBoundaries,
-    DEFAULT_MAIN_ANCHORS[0] ?? DEFAULT_TOLERANCE_FALLBACK,
-    DEFAULT_MAIN_ANCHORS,
+    DEFAULT_MULTIPLIER_ANCHORS[0] ?? DEFAULT_FALLBACK,
+    DEFAULT_MULTIPLIER_ANCHORS,
   );
-
-  const resolvedRetryAnchors = buildToneCurveAnchorsFromToleranceByBand(
-    activeValues.retryToleranceByBand,
+  const resolvedMinAnchors = buildToneCurveAnchorsFromToleranceByBand(
+    activeValues.minRatioByBand,
     geometryConfig.zoomBandBoundaries,
-    DEFAULT_RETRY_ANCHORS[0] ?? DEFAULT_TOLERANCE_FALLBACK,
-    DEFAULT_RETRY_ANCHORS,
+    DEFAULT_MIN_RATIO_ANCHORS[0] ?? 0,
+    DEFAULT_MIN_RATIO_ANCHORS,
+  );
+  const resolvedMaxAnchors = buildToneCurveAnchorsFromToleranceByBand(
+    activeValues.maxRatioByBand,
+    geometryConfig.zoomBandBoundaries,
+    DEFAULT_MAX_RATIO_ANCHORS[0] ?? 2,
+    DEFAULT_MAX_RATIO_ANCHORS,
   );
 
   const updateStoredProfile = useCallback((
@@ -228,87 +256,50 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
 
     if (key === 'admin0') {
       const admin0 = nextProfiles.admin0 ?? {};
-      if (Array.isArray(admin0.toleranceByBand)) {
-        patch.toleranceByBand = admin0.toleranceByBand;
+      if (Array.isArray(admin0.multiplierByBand)) {
+        patch.toleranceMultiplierByBand = admin0.multiplierByBand;
       }
-      if (Array.isArray(admin0.retryToleranceByBand)) {
-        patch.retryToleranceByBand = admin0.retryToleranceByBand;
+      if (Array.isArray(admin0.minRatioByBand)) {
+        patch.toleranceMinRatioByBand = admin0.minRatioByBand;
       }
-      if (typeof admin0.retryCount === 'number' && Number.isFinite(admin0.retryCount)) {
-        patch.retryCount = clampRetryCount(admin0.retryCount);
+      if (Array.isArray(admin0.maxRatioByBand)) {
+        patch.toleranceMaxRatioByBand = admin0.maxRatioByBand;
+      }
+      if (typeof admin0.toleranceSearchMaxIterations === 'number' && Number.isFinite(admin0.toleranceSearchMaxIterations)) {
+        patch.toleranceSearchMaxIterations = clampIterations(admin0.toleranceSearchMaxIterations);
       }
     }
 
     onChange(patch);
   }, [onChange, storedProfiles]);
 
-  const handleMainAnchorYChange = useCallback((index: number, rawValue: number) => {
-    if (controlsDisabled || !Number.isFinite(rawValue)) {
+  const updateBands = useCallback((nextPartial: {
+    multiplierByBand?: number[];
+    minRatioByBand?: number[];
+    maxRatioByBand?: number[];
+  }) => {
+    const mergedMultiplier = nextPartial.multiplierByBand ?? activeEditable.multiplierByBand;
+    const mergedMin = nextPartial.minRatioByBand ?? activeEditable.minRatioByBand;
+    const mergedMax = nextPartial.maxRatioByBand ?? activeEditable.maxRatioByBand;
+    const normalized = clampProfileBands(mergedMultiplier, mergedMin, mergedMax);
+
+    const isSameMultiplier = normalized.multiplierByBand.length === activeEditable.multiplierByBand.length
+      && normalized.multiplierByBand.every((value, index) => areRatioValuesEqual(value, activeEditable.multiplierByBand[index] ?? value));
+    const isSameMin = normalized.minRatioByBand.length === activeEditable.minRatioByBand.length
+      && normalized.minRatioByBand.every((value, index) => areRatioValuesEqual(value, activeEditable.minRatioByBand[index] ?? value));
+    const isSameMax = normalized.maxRatioByBand.length === activeEditable.maxRatioByBand.length
+      && normalized.maxRatioByBand.every((value, index) => areRatioValuesEqual(value, activeEditable.maxRatioByBand[index] ?? value));
+
+    if (isSameMultiplier && isSameMin && isSameMax) {
       return;
     }
 
-    const nextAnchors = resolvedMainAnchors.map((anchor, anchorIndex) => (
-      anchorIndex === index ? { ...anchor, y: clampToCurveYRange(rawValue) } : anchor
-    ));
-
-    const next = buildToleranceByBandFromToneCurveAnchors(
-      nextAnchors,
-      geometryConfig.zoomBandBoundaries,
-      DEFAULT_MAIN_ANCHORS[0] ?? DEFAULT_TOLERANCE_FALLBACK,
-    ).map((value) => normalizeToleranceValue(value));
-
-    if (next.length === activeEditable.toleranceByBand.length
-      && next.every((value, toleranceIndex) => areToleranceValuesEqual(
-        value,
-        activeEditable.toleranceByBand[toleranceIndex] ?? value,
-      ))
-    ) {
-      return;
-    }
-
-    updateStoredProfile(activeTab, { toleranceByBand: next });
-  }, [
-    activeEditable.toleranceByBand,
-    activeTab,
-    controlsDisabled,
-    resolvedMainAnchors,
-    geometryConfig.zoomBandBoundaries,
-    updateStoredProfile,
-  ]);
-
-  const handleRetryAnchorYChange = useCallback((index: number, rawValue: number) => {
-    if (controlsDisabled || !Number.isFinite(rawValue)) {
-      return;
-    }
-
-    const nextAnchors = resolvedRetryAnchors.map((anchor, anchorIndex) => (
-      anchorIndex === index ? { ...anchor, y: clampToCurveYRange(rawValue) } : anchor
-    ));
-
-    const next = buildToleranceByBandFromToneCurveAnchors(
-      nextAnchors,
-      geometryConfig.zoomBandBoundaries,
-      DEFAULT_RETRY_ANCHORS[0] ?? DEFAULT_TOLERANCE_FALLBACK,
-    ).map((value) => normalizeToleranceValue(value));
-
-    if (next.length === activeEditable.retryToleranceByBand.length
-      && next.every((value, toleranceIndex) => areToleranceValuesEqual(
-        value,
-        activeEditable.retryToleranceByBand[toleranceIndex] ?? value,
-      ))
-    ) {
-      return;
-    }
-
-    updateStoredProfile(activeTab, { retryToleranceByBand: next });
-  }, [
-    activeEditable.retryToleranceByBand,
-    activeTab,
-    controlsDisabled,
-    resolvedRetryAnchors,
-    geometryConfig.zoomBandBoundaries,
-    updateStoredProfile,
-  ]);
+    updateStoredProfile(activeTab, {
+      multiplierByBand: normalized.multiplierByBand,
+      minRatioByBand: normalized.minRatioByBand,
+      maxRatioByBand: normalized.maxRatioByBand,
+    });
+  }, [activeEditable.maxRatioByBand, activeEditable.minRatioByBand, activeEditable.multiplierByBand, activeTab, updateStoredProfile]);
 
   const copyFromPreviousTab = useCallback(() => {
     if (!previousTabKey || controlsDisabled) {
@@ -317,9 +308,10 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
     const source = effectiveProfiles[previousTabKey];
     updateStoredProfile(activeTab, {
       usePrevious: false,
-      toleranceByBand: source.toleranceByBand,
-      retryToleranceByBand: source.retryToleranceByBand,
-      retryCount: source.retryCount,
+      multiplierByBand: source.multiplierByBand,
+      minRatioByBand: source.minRatioByBand,
+      maxRatioByBand: source.maxRatioByBand,
+      toleranceSearchMaxIterations: source.toleranceSearchMaxIterations,
     });
   }, [activeTab, controlsDisabled, effectiveProfiles, previousTabKey, updateStoredProfile]);
 
@@ -328,6 +320,12 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
       lineColor: '#0b5ed7',
       anchorPointColor: '#0b5ed7',
       lineWidth: 2,
+    },
+    {
+      lineColor: '#6b7280',
+      anchorPointColor: '#6b7280',
+      lineWidth: 2,
+      lineDashArray: '6 4',
     },
     {
       lineColor: '#ef4444',
@@ -409,7 +407,7 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
             <Grid size={{ xs: 12, md: 8 }}>
               <Stack spacing={0.5}>
                 <Typography variant="body2" color="text.secondary">
-                  {t('processing.geometry.simplifyTolerance.label', 'Simplify tolerance')}
+                  {t('processing.geometry.simplifyTolerance.label', 'Simplify tolerance profile')}
                 </Typography>
                 <div
                   ref={curveWidthRef}
@@ -425,18 +423,17 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                     yRange={CURVE_Y_RANGE}
                     lineStyles={toneCurveLineStyles}
                     xMarks={xMarks}
-                    anchors={resolvedMainAnchors}
-                    xFixedValues={resolvedMainAnchors.map((anchor) => anchor.x)}
+                    anchors={resolvedMultiplierAnchors}
+                    xFixedValues={resolvedMultiplierAnchors.map((anchor) => anchor.x)}
                     allowAnchorCountChange={false}
                     horizontalZoom={false}
                     verticalZoom
                     xSnapStep={0.1}
-                    ySnapStep={0.1}
+                    ySnapStep={0.05}
                     overlaySeries={[
                       {
-                        anchors: resolvedRetryAnchors,
-                        xFixedValues: resolvedRetryAnchors.map((anchor) => anchor.x),
-                        yFixedValues: [],
+                        anchors: resolvedMinAnchors,
+                        xFixedValues: resolvedMinAnchors.map((anchor) => anchor.x),
                         allowAnchorCountChange: false,
                         editable: !controlsDisabled,
                         onChange: (overlayAnchors) => {
@@ -444,18 +441,24 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                           const next = buildToleranceByBandFromToneCurveAnchors(
                             overlayAnchors,
                             geometryConfig.zoomBandBoundaries,
-                            DEFAULT_RETRY_ANCHORS[0] ?? DEFAULT_TOLERANCE_FALLBACK,
-                          ).map((value) => normalizeToleranceValue(value));
-
-                          if (next.length === activeEditable.retryToleranceByBand.length
-                            && next.every((value, index) => areToleranceValuesEqual(
-                              value,
-                              activeEditable.retryToleranceByBand[index] ?? value,
-                            ))
-                          ) {
-                            return;
-                          }
-                          updateStoredProfile(activeTab, { retryToleranceByBand: next });
+                            DEFAULT_MIN_RATIO_ANCHORS[0] ?? 0,
+                          ).map((value) => clampRatio(value));
+                          updateBands({ minRatioByBand: next });
+                        },
+                      },
+                      {
+                        anchors: resolvedMaxAnchors,
+                        xFixedValues: resolvedMaxAnchors.map((anchor) => anchor.x),
+                        allowAnchorCountChange: false,
+                        editable: !controlsDisabled,
+                        onChange: (overlayAnchors) => {
+                          if (controlsDisabled) return;
+                          const next = buildToleranceByBandFromToneCurveAnchors(
+                            overlayAnchors,
+                            geometryConfig.zoomBandBoundaries,
+                            DEFAULT_MAX_RATIO_ANCHORS[0] ?? 2,
+                          ).map((value) => clampRatio(value));
+                          updateBands({ maxRatioByBand: next });
                         },
                       },
                     ]}
@@ -464,55 +467,12 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                       const next = buildToleranceByBandFromToneCurveAnchors(
                         anchors,
                         geometryConfig.zoomBandBoundaries,
-                        DEFAULT_MAIN_ANCHORS[0] ?? DEFAULT_TOLERANCE_FALLBACK,
-                      ).map((value) => normalizeToleranceValue(value));
-
-                      if (next.length === activeEditable.toleranceByBand.length
-                        && next.every((value, index) => areToleranceValuesEqual(
-                          value,
-                          activeEditable.toleranceByBand[index] ?? value,
-                        ))
-                      ) {
-                        return;
-                      }
-                      updateStoredProfile(activeTab, { toleranceByBand: next });
+                        DEFAULT_MULTIPLIER_ANCHORS[0] ?? DEFAULT_FALLBACK,
+                      ).map((value) => clampRatio(value));
+                      updateBands({ multiplierByBand: next });
                     }}
                   />
                 </div>
-
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    mt: 1.5,
-                    p: 1,
-                    borderColor: '#ef4444',
-                    width: '100%',
-                    overflow: 'visible',
-                  }}
-                >
-                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'nowrap', overflowX: 'auto', pt: 1 }}>
-                    {resolvedRetryAnchors.map((anchor, index) => (
-                      <TextField
-                        key={`retry-anchor-${index}`}
-                        label={String(normalizeToleranceValue(anchor.x))}
-                        type="number"
-                        size="small"
-                        value={normalizeToleranceValue(anchor.y)}
-                        inputProps={{
-                          step: 0.1,
-                          min: CURVE_Y_RANGE[0],
-                          max: CURVE_Y_RANGE[1],
-                        }}
-                        disabled={controlsDisabled}
-                        onChange={(event) => {
-                          const nextValue = Number.parseFloat(event.target.value);
-                          handleRetryAnchorYChange(index, nextValue);
-                        }}
-                        sx={spinnerTextFieldSx}
-                      />
-                    ))}
-                  </Stack>
-                </Paper>
 
                 <Paper
                   variant="outlined"
@@ -525,22 +485,99 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                   }}
                 >
                   <Stack direction="row" spacing={1} sx={{ flexWrap: 'nowrap', overflowX: 'auto', pt: 1 }}>
-                    {resolvedMainAnchors.map((anchor, index) => (
+                    {resolvedMultiplierAnchors.map((anchor, index) => (
                       <TextField
-                        key={`anchor-${index}`}
-                        label={String(normalizeToleranceValue(anchor.x))}
+                        key={`multiplier-anchor-${index}`}
+                        label={String(clampRatio(anchor.x))}
                         type="number"
                         size="small"
-                        value={normalizeToleranceValue(anchor.y)}
+                        value={clampRatio(anchor.y)}
                         inputProps={{
-                          step: 0.1,
+                          step: 0.05,
                           min: CURVE_Y_RANGE[0],
                           max: CURVE_Y_RANGE[1],
                         }}
                         disabled={controlsDisabled}
                         onChange={(event) => {
                           const nextValue = Number.parseFloat(event.target.value);
-                          handleMainAnchorYChange(index, nextValue);
+                          if (!Number.isFinite(nextValue)) return;
+                          const next = [...activeEditable.multiplierByBand];
+                          next[index] = clampRatio(nextValue);
+                          updateBands({ multiplierByBand: next });
+                        }}
+                        sx={spinnerTextFieldSx}
+                      />
+                    ))}
+                  </Stack>
+                </Paper>
+
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    mt: 1,
+                    p: 1,
+                    borderColor: '#6b7280',
+                    width: '100%',
+                    overflow: 'visible',
+                  }}
+                >
+                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'nowrap', overflowX: 'auto', pt: 1 }}>
+                    {resolvedMinAnchors.map((anchor, index) => (
+                      <TextField
+                        key={`min-anchor-${index}`}
+                        label={String(clampRatio(anchor.x))}
+                        type="number"
+                        size="small"
+                        value={clampRatio(anchor.y)}
+                        inputProps={{
+                          step: 0.05,
+                          min: CURVE_Y_RANGE[0],
+                          max: CURVE_Y_RANGE[1],
+                        }}
+                        disabled={controlsDisabled}
+                        onChange={(event) => {
+                          const nextValue = Number.parseFloat(event.target.value);
+                          if (!Number.isFinite(nextValue)) return;
+                          const next = [...activeEditable.minRatioByBand];
+                          next[index] = clampRatio(nextValue);
+                          updateBands({ minRatioByBand: next });
+                        }}
+                        sx={spinnerTextFieldSx}
+                      />
+                    ))}
+                  </Stack>
+                </Paper>
+
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    mt: 1,
+                    p: 1,
+                    borderColor: '#ef4444',
+                    width: '100%',
+                    overflow: 'visible',
+                  }}
+                >
+                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'nowrap', overflowX: 'auto', pt: 1 }}>
+                    {resolvedMaxAnchors.map((anchor, index) => (
+                      <TextField
+                        key={`max-anchor-${index}`}
+                        label={String(clampRatio(anchor.x))}
+                        type="number"
+                        size="small"
+                        value={clampRatio(anchor.y)}
+                        inputProps={{
+                          step: 0.05,
+                          min: CURVE_Y_RANGE[0],
+                          max: CURVE_Y_RANGE[1],
+                        }}
+                        disabled={controlsDisabled}
+                        onChange={(event) => {
+                          const nextValue = Number.parseFloat(event.target.value);
+                          if (!Number.isFinite(nextValue)) return;
+                          const next = [...activeEditable.maxRatioByBand];
+                          next[index] = clampRatio(nextValue);
+                          updateBands({ maxRatioByBand: next });
                         }}
                         sx={spinnerTextFieldSx}
                       />
@@ -553,24 +590,24 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
             <Grid size={{ xs: 12, md: 4 }}>
               <Stack spacing={0.5} alignItems="flex-start">
                 <Typography variant="body2" color="text.secondary">
-                  {t('processing.geometry.retryToleranceStep.label', 'Retry count')}
+                  {t('processing.geometry.retryToleranceStep.label', 'Max search iterations')}
                 </Typography>
                 <Stack direction="row" spacing={2} alignItems="center" sx={{ paddingTop: '20px' }}>
                   <Slider
                     sx={{ flex: 1, minWidth: 220, mt: '16px' }}
-                    value={activeValues.retryCount}
-                    min={0}
-                    max={10}
+                    value={activeValues.toleranceSearchMaxIterations}
+                    min={1}
+                    max={64}
                     step={1}
-                    marks={retryCountMarks}
+                    marks={iterationMarks}
                     disabled={controlsDisabled}
                     valueLabelDisplay="on"
                     onChange={(_event, value) => {
-                      const next = clampRetryCount(resolveSliderNumber(value));
-                      if (next === activeEditable.retryCount) {
+                      const next = clampIterations(resolveSliderNumber(value));
+                      if (next === activeEditable.toleranceSearchMaxIterations) {
                         return;
                       }
-                      updateStoredProfile(activeTab, { retryCount: next });
+                      updateStoredProfile(activeTab, { toleranceSearchMaxIterations: next });
                     }}
                   />
                 </Stack>
