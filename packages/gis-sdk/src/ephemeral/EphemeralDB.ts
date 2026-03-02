@@ -7,7 +7,6 @@ import type {
   BuildSessionStatus,
   BuildStage,
   BuildStageStatus,
-  EphemeralBuildSessionRecord,
   EphemeralBuildTaskRecord,
   EphemeralFetchCacheMetaRecord,
   EphemeralFetchCacheRecord,
