@@ -102,6 +102,12 @@ export const TileEmitConfigSection = <TDataSourceName,>({
       </AccordionSummary>
       <AccordionDetails sx={{ p: 1 }}>
         <Stack spacing={3}>
+          {additionalCards ? (
+            <Paper variant="outlined" sx={{ p: 2, ...hoverCardSx }}>
+              {additionalCards}
+            </Paper>
+          ) : null}
+
           <Paper variant="outlined" sx={{ p: 2, ...hoverCardSx }}>
             <Stack spacing={2}>
               <BuildConfigSectionTitle
@@ -377,11 +383,6 @@ export const TileEmitConfigSection = <TDataSourceName,>({
                   )}
                 </Typography>
               </Stack>
-            </Paper>
-          ) : null}
-          {additionalCards ? (
-            <Paper variant="outlined" sx={{ p: 2, ...hoverCardSx }}>
-              {additionalCards}
             </Paper>
           ) : null}
 

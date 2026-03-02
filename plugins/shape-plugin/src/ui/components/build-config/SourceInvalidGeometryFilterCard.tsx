@@ -66,11 +66,11 @@ const resolveInvalidGeometryFilter = (config: ShapeBuildConfig): InvalidGeometry
 export const SourceGeometryIntakeGuardCard: React.FC<Props> = ({
   config,
   onChange,
-  disabled,
   disableHoverLift = false,
 }) => {
   const { t } = useTranslation();
-  const hoverCardSx = getBuildConfigHoverCardSx(disabled, disableHoverLift);
+  const guardCardDisabled = true;
+  const hoverCardSx = getBuildConfigHoverCardSx(guardCardDisabled, disableHoverLift);
   const resolvedGuard = useMemo(() => resolveGeometryIntakeGuard(config), [config]);
 
   const updateGuard = useCallback((partial: Partial<GeometryIntakeGuardState>): void => {
@@ -88,11 +88,11 @@ export const SourceGeometryIntakeGuardCard: React.FC<Props> = ({
     });
   }, [onChange]);
 
-  const isDisabled = Boolean(disabled);
+  const isDisabled = true;
 
   return (
     <Paper variant="outlined" sx={{ p: 2, ...hoverCardSx }}>
-      <Stack spacing={1.5} sx={{ opacity: disabled ? 0.6 : 1 }}>
+      <Stack spacing={1.5} sx={{ opacity: guardCardDisabled ? 0.6 : 1 }}>
         <BuildConfigSectionTitle
           icon={<SecurityIcon fontSize="small" color="primary" />}
           title={t('processing.source.geometryIntakeGuard.title', 'Geometry intake guard')}
@@ -103,10 +103,16 @@ export const SourceGeometryIntakeGuardCard: React.FC<Props> = ({
             'Configure normalization and strictness for source geometry intake checks.',
           )}
         </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {t(
+            'processing.source.geometryIntakeGuard.comingSoon',
+            'This guard is reserved for a future implementation. Editing is currently disabled.',
+          )}
+        </Typography>
 
         <Grid container spacing={1.5} alignItems="flex-start">
           <Grid size={{ xs: 12, md: 4 }}>
-            <FormControl fullWidth disabled={disabled}>
+            <FormControl fullWidth disabled>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 {t('processing.source.geometryIntakeGuard.validationLevel', 'Validation Level')}
               </Typography>
@@ -133,7 +139,7 @@ export const SourceGeometryIntakeGuardCard: React.FC<Props> = ({
               type="number"
               label={t('processing.source.geometryIntakeGuard.dedupeEpsilon', 'Duplicate vertex epsilon')}
               value={resolvedGuard.dedupeEpsilon}
-              disabled={disabled}
+              disabled
               onChange={(event) => {
                 const value = Number(event.target.value);
                 if (!Number.isFinite(value)) return;
@@ -147,7 +153,7 @@ export const SourceGeometryIntakeGuardCard: React.FC<Props> = ({
               type="number"
               label={t('processing.source.geometryIntakeGuard.minRingAreaThreshold', 'Minimum ring area threshold')}
               value={resolvedGuard.minRingAreaThreshold}
-              disabled={disabled}
+              disabled
               onChange={(event) => {
                 const value = Number(event.target.value);
                 if (!Number.isFinite(value)) return;
