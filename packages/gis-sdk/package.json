@@ -15,6 +15,8 @@
   "scripts": {
     "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
     "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "dependencies": {
@@ -36,6 +38,7 @@
     "@turf/helpers": "^7.0.0",
     "@turf/simplify": "^7.0.0",
     "@turf/unkink-polygon": "^7.3.3",
+    "dexie": "4.2.0",
     "flatgeobuf": "^4.4.0",
     "geojson-vt": "^3.2.1",
     "pbf": "^4.0.1",
@@ -44,6 +47,9 @@
   "devDependencies": {
     "@types/geojson": "^7946.0.14",
     "@types/vt-pbf": "^3.1.0",
-    "typescript": "workspace:^5.9.3"
+    "dexie": "4.2.0",
+    "fast-check": "^4.5.3",
+    "typescript": "workspace:^5.9.3",
+    "vitest": "^3.2.4"
   }
 }

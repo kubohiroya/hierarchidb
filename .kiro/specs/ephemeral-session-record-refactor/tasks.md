@@ -1,0 +1,199 @@
+# Implementation Plan
+
+- [x] 1. Write bug condition exploration test
+  - **Property 1: Fault Condition** - Normalized Session Schema Eliminates Redundancy
+  - **CRITICAL**: This test MUST FAIL on unfixed code - failure confirms the bug exists
+  - **DO NOT attempt to fix the test or the code when it fails**
+  - **NOTE**: This test encodes the expected behavior - it will validate the fix when it passes after implementation
+  - **GOAL**: Surface counterexamples that demonstrate redundant fields, inefficient serialization, and stage history loss
+  - **Scoped PBT Approach**: Scope the property to concrete failing cases: session creation with redundant fields, heartbeat updates serializing entire record, stage transitions losing history
+  - Test that session operations with redundant/unused fields (from Fault Condition in design) fail to meet normalization requirements
+  - The test assertions should match the Expected Behavior Properties from design:
+    - Session creation stores only immutable config in `BuildSessionRecord`
+    - Heartbeat updates only touch `BuildSessionHeartbeat` table (16 bytes vs 2KB+)
+    - Stage transitions create new `BuildStageStatus` records preserving history
+    - Unused fields (`expiresAt`, `canResume`, `resourceUsage`) are absent
+    - Four distinct tables separate responsibilities by update frequency
+  - Run test on UNFIXED code (current monolithic `EphemeralBuildSessionRecord`)
+  - **EXPECTED OUTCOME**: Test FAILS (this is correct - it proves the bug exists)
+  - Document counterexamples found:
+    - Heartbeat updates serialize entire 2KB+ record instead of 16-byte record
+    - Stage transitions overwrite `stage` field, losing historical data
+    - Redundant fields (`progress`, `stages`, `selectedArrayByCountries`) stored when computable
+    - Unused fields present in schema
+  - Mark task complete when test is written, run, and failure is documented
+  - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
+
+- [x] 2. Write preservation property tests (BEFORE implementing fix)
+  - **Property 2: Preservation** - Query Interface Compatibility
+  - **IMPORTANT**: Follow observation-first methodology
+  - Observe behavior on UNFIXED code for non-buggy inputs (existing query patterns)
+  - Write property-based tests capturing observed behavior patterns from Preservation Requirements:
+    - Querying current session status returns expected information
+    - UI displays build progress computed from task queues
+    - Session resume and cancel operations work correctly
+    - Existing code querying `ephemeralDB.sessions` gets expected data
+    - Session cleanup removes all related records atomically
+  - Property-based testing generates many test cases for stronger guarantees
+  - Test various session states: idle, running, paused, completed, failed
+  - Test different stage configurations: source only, source+geometry, all three stages
+  - Test edge cases: sessions with no tasks, sessions with all tasks completed, sessions with mixed task statuses
+  - Run tests on UNFIXED code (current monolithic schema)
+  - **EXPECTED OUTCOME**: Tests PASS (this confirms baseline behavior to preserve)
+  - Mark task complete when tests are written, run, and passing on unfixed code
+  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+
+- [x] 3. Refactor session record schema into four normalized tables
+
+  - [x] 3.1 Define new interfaces and schema in EphemeralBuildState.ts
+    - Create `BuildSessionRecord` interface (immutable config: nodeId, domainType, selectedArrayByCountries, selectedArrayVersion, startedAt, sourceStageMaxima)
+    - Create `BuildSessionHeartbeat` interface (nodeId, lastHeartbeatAt)
+    - Create `BuildSessionStatus` interface (nodeId, status, stopReason, completedAt)
+    - Create `BuildStageStatus` interface (id, nodeId, stage, status, startedAt, completedAt, inactiveMs, stageId)
+    - Update `EPHEMERAL_DB_SCHEMA` to version 3 with new tables
+    - Remove old `sessions` table from schema
+    - Add Dexie schema definitions:
+      - `buildSessions: '&nodeId'`
+      - `buildSessionHeartbeats: '&nodeId'`
+      - `buildSessionStatuses: '&nodeId, status'`
+      - `buildStageStatuses: '&id, nodeId, [nodeId+stage], [nodeId+startedAt]'`
+    - _Bug_Condition: Session records contain redundant fields (selectedArrayByCountries, progress, stages), unused fields (expiresAt, canResume, resourceUsage), and mix update frequencies (immutable, heartbeat, state transition, per-stage)_
+    - _Expected_Behavior: Four distinct tables with clear responsibilities - BuildSessionRecord (immutable), BuildSessionHeartbeat (1-second updates), BuildSessionStatus (state transitions), BuildStageStatus (per-stage tracking with history)_
+    - _Preservation: Existing query patterns must continue to work through unified query interface_
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
+
+  - [x] 3.2 Apply parallel schema changes to ShapeDB.ts with migration
+    - Bump ShapeDB version to 2
+    - Add new tables: `buildSessions`, `buildSessionHeartbeats`, `buildSessionStatuses`, `buildStageStatuses`
+    - Implement migration logic in `.upgrade()` to transform existing `sessions` records:
+      - Split old `BuildSessionRecord` into four new tables
+      - Preserve immutable config in `buildSessions`
+      - Preserve last heartbeat in `buildSessionHeartbeats`
+      - Preserve status in `buildSessionStatuses`
+      - Create current stage record in `buildStageStatuses` (historical data lost for existing sessions)
+      - Discard computed fields (progress, stages)
+      - Discard unused fields (expiresAt, canResume, resourceUsage, lastActivity, updatedAt, elapsedMs, elapsedByStage, stageHeartbeatAt)
+    - Test migration with sample data
+    - _Bug_Condition: ShapeDB has same monolithic structure as EphemeralDB_
+    - _Expected_Behavior: ShapeDB uses same four-table structure with migration preserving existing data_
+    - _Preservation: Existing ShapeDB records must be migrated without data loss (except historical stage data which cannot be recovered)_
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
+
+  - [x] 3.3 Create helper functions for computing progress and stages from tasks
+    - Implement `computeProgressFromTasks(tasks: EphemeralBuildTaskRecord[]): ProgressInfo`
+      - Calculate total, completed, failed, skipped counts
+      - Calculate percentage: (completed / total) * 100
+    - Implement `computeStagesFromTasks(tasks: EphemeralBuildTaskRecord[]): Record<BuildStage, EphemeralStageStatus>`
+      - Aggregate tasks by stage (source, geometry, tileEmit)
+      - Calculate per-stage progress, tasksTotal, tasksCompleted, tasksFailed
+      - Determine stage status (queued, running, completed, failed)
+    - Add unit tests for helper functions with various task configurations
+    - _Bug_Condition: Progress and stages are stored redundantly in session record_
+    - _Expected_Behavior: Progress and stages are computed on-demand from task queue_
+    - _Preservation: Computed values must match stored values in old schema_
+    - _Requirements: 2.1_
+
+  - [x] 3.4 Create unified query interface for session data
+    - Implement `getSessionWithDetails(nodeId: NodeId): Promise<EphemeralBuildSessionRecord | null>`
+      - Query all four tables in parallel: buildSessions, buildSessionHeartbeats, buildSessionStatuses, buildStageStatuses
+      - Query buildTasks for progress/stages computation
+      - Compute progress using `computeProgressFromTasks()`
+      - Compute stages using `computeStagesFromTasks()`
+      - Get current stage (latest by startedAt from buildStageStatuses)
+      - Return unified record matching old `EphemeralBuildSessionRecord` structure
+    - Add similar query function for ShapeDB
+    - Add unit tests verifying query returns same structure as old schema
+    - _Bug_Condition: N/A (this is new functionality)_
+    - _Expected_Behavior: Unified query interface provides same information as old schema_
+    - _Preservation: All existing query patterns must work through this interface_
+    - _Requirements: 3.1, 3.2, 3.3, 3.4_
+
+  - [x] 3.5 Update ShapeMutationService session write operations
+    - Update `toBuildSessionRecord()` mapper to `toBuildSessionRecords()` returning four separate records
+    - Update session creation to insert into all four tables:
+      - Insert `BuildSessionRecord` with immutable config
+      - Insert `BuildSessionHeartbeat` with initial timestamp
+      - Insert `BuildSessionStatus` with initial status
+      - Insert `BuildStageStatus` for initial stage (if applicable)
+    - Update heartbeat operations to only update `buildSessionHeartbeats` table
+    - Update status transitions to only update `buildSessionStatuses` table
+    - Update stage transitions to:
+      - Update previous stage's `completedAt` in `buildStageStatuses`
+      - Create new `buildStageStatuses` record for new stage
+    - Update session cleanup to delete from all four tables atomically
+    - _Bug_Condition: Current code writes entire monolithic record on every update_
+    - _Expected_Behavior: Updates only touch relevant table (heartbeat updates only touch buildSessionHeartbeats)_
+    - _Preservation: External API for session mutations remains unchanged_
+    - _Requirements: 2.2, 2.3, 2.5_
+
+  - [x] 3.6 Update ShapeQueryService session read operations
+    - Replace direct `ephemeralDB.sessions.get()` calls with `getSessionWithDetails()`
+    - Replace direct `shapeDB.sessions.get()` calls with ShapeDB equivalent
+    - Update session listing queries to join across four tables
+    - Update session status checks to query `buildSessionStatuses` table
+    - Verify all query patterns return same data structure as before
+    - _Bug_Condition: Current code reads monolithic record_
+    - _Expected_Behavior: Reads use unified query interface joining four tables_
+    - _Preservation: Query results match old schema structure exactly_
+    - _Requirements: 3.1, 3.2, 3.3, 3.4_
+
+  - [x] 3.7 Update shapeSessionMappers.ts mapper functions
+    - Update `toEphemeralBuildSessionRecord()` to work with four-table structure
+    - Update `fromEphemeralBuildSessionRecord()` to split into four records
+    - Remove mapping for unused fields (expiresAt, canResume, resourceUsage, etc.)
+    - Add mapping for computed fields (progress, stages) using helper functions
+    - Update mapper tests to verify correct transformation
+    - _Bug_Condition: Mappers handle monolithic record with redundant fields_
+    - _Expected_Behavior: Mappers work with normalized four-table structure_
+    - _Preservation: Mapper output structure remains unchanged for consumers_
+    - _Requirements: 2.1, 2.4_
+
+  - [x] 3.8 Update ShapeBuildAPIClient if needed
+    - Review API client for direct session record access
+    - Update to use unified query interface if applicable
+    - Verify API responses maintain same structure
+    - _Bug_Condition: API client may access monolithic record directly_
+    - _Expected_Behavior: API client uses unified query interface_
+    - _Preservation: API responses unchanged_
+    - _Requirements: 3.1, 3.3_
+
+  - [x] 3.9 Verify bug condition exploration test now passes
+    - **Property 1: Expected Behavior** - Normalized Session Schema Eliminates Redundancy
+    - **IMPORTANT**: Re-run the SAME test from task 1 - do NOT write a new test
+    - The test from task 1 encodes the expected behavior
+    - When this test passes, it confirms the expected behavior is satisfied
+    - Run bug condition exploration test from step 1
+    - **EXPECTED OUTCOME**: Test PASSES (confirms bug is fixed)
+    - Verify all assertions pass:
+      - Session creation stores only immutable config in `BuildSessionRecord`
+      - Heartbeat updates only touch `BuildSessionHeartbeat` (16 bytes vs 2KB+)
+      - Stage transitions create new `BuildStageStatus` records preserving history
+      - Unused fields are absent from schema
+      - Four distinct tables separate responsibilities
+    - Measure performance improvements:
+      - Heartbeat update serialization: <1ms (vs ~5ms with old schema)
+      - Stage history: All stages preserved with timestamps
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
+
+  - [x] 3.10 Verify preservation tests still pass
+    - **Property 2: Preservation** - Query Interface Compatibility
+    - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
+    - Run preservation property tests from step 2
+    - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
+    - Verify all query patterns work correctly:
+      - Session status queries return expected information
+      - UI displays build progress correctly
+      - Session resume and cancel operations work
+      - Existing code querying sessions gets expected data
+      - Session cleanup removes all related records atomically
+    - Test across all session states and stage configurations
+    - Confirm all tests still pass after fix (no regressions)
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+
+- [x] 4. Checkpoint - Ensure all tests pass
+  - Run full test suite: `pnpm test`
+  - Run type checking: `pnpm typecheck`
+  - Run linting: `pnpm lint`
+  - Verify no regressions in existing functionality
+  - Verify performance improvements (heartbeat update <1ms, stage history preserved)
+  - Ensure all tests pass, ask the user if questions arise

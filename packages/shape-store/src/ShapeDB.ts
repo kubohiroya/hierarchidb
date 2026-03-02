@@ -16,6 +16,12 @@ import type { TabularTableMetadataLike } from '@hierarchidb/tabular-store';
 import type {
   FeatureFilterMethod, SourceConfig,
   HybridFilterConfig, GeometryConfig, TileEmitConfig } from '@hierarchidb/gis-sdk';
+import type {
+  BuildSessionRecord as NewBuildSessionRecord,
+  BuildSessionHeartbeat,
+  BuildSessionStatus,
+  BuildStageStatus,
+} from '@hierarchidb/gis-sdk';
 
 export type DataSourceName = 'naturalearth' | 'geoboundaries' | 'geoboundaries-topojson' | 'gadm' | 'openstreetmap';
 
@@ -105,6 +111,14 @@ export interface SourceStageMaxima {
   polygonMax: number;
 }
 
+/**
+ * @deprecated Legacy BuildSessionRecord - kept for migration from version 1 to version 2
+ * Use the new four-table structure instead:
+ * - BuildSessionRecord (immutable config)
+ * - BuildSessionHeartbeat (heartbeat tracking)
+ * - BuildSessionStatus (session status)
+ * - BuildStageStatus (per-stage tracking)
+ */
 export interface BuildSessionRecord {
   nodeId: ShapeContainerNodeId;
   status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
@@ -128,6 +142,7 @@ export interface BuildSessionRecord {
   elapsedMs?: number;
   elapsedByStage?: Record<string, number>;
   sourceStageMaxima?: SourceStageMaxima;
+  stage?: BuildStage;
 }
 
 export type SourceTaskPayload = {
@@ -337,17 +352,128 @@ export class ShapeDB extends VectorTileDbBase {
   tileSummaries!: Table<ShapeTileSummaryRecord, ShapeContainerNodeId>;
   tabularMetadata!: Table<TabularTableMetadataLike, string>;
 
+  // New session tables (version 2)
+  buildSessions!: Table<NewBuildSessionRecord, NodeId>;
+  buildSessionHeartbeats!: Table<BuildSessionHeartbeat, NodeId>;
+  buildSessionStatuses!: Table<BuildSessionStatus, NodeId>;
+  buildStageStatuses!: Table<BuildStageStatus, string>;
+
   constructor() {
     super(getDBName('shape'));
 
+    // Version 1: Original schema with monolithic sessions table
     this.version(1).stores(this.mergeVectorTileStores({
       vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
       tileSummaries: '&nodeId',
     }));
 
+    // Version 2: Refactored session schema with four normalized tables
+    this.version(2).stores(this.mergeVectorTileStores({
+      vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
+      tileSummaries: '&nodeId',
+      buildSessions: '&nodeId',
+      buildSessionHeartbeats: '&nodeId',
+      buildSessionStatuses: '&nodeId, status',
+      buildStageStatuses: '&id, nodeId, [nodeId+stage], [nodeId+startedAt]',
+    })).upgrade(async (tx) => {
+      // Migration logic: Transform old BuildSessionRecord into four new tables
+      // Check if the old sessions table exists (it won't exist on fresh installs)
+      const tableNames = Array.from(tx.idbtrans.objectStoreNames);
+      if (!tableNames.includes('sessions')) {
+        // No old sessions table to migrate (fresh install or already migrated)
+        return;
+      }
+
+      const oldSessionsTable = tx.idbtrans.objectStore('sessions');
+      const oldSessions: BuildSessionRecord[] = [];
+      const cursorRequest = oldSessionsTable.openCursor();
+      
+      await new Promise<void>((resolve, reject) => {
+        cursorRequest.onsuccess = (event) => {
+          const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+          if (cursor) {
+            oldSessions.push(cursor.value as BuildSessionRecord);
+            cursor.continue();
+          } else {
+            resolve();
+          }
+        };
+        cursorRequest.onerror = () => reject(cursorRequest.error);
+      });
+
+      // Transform each old session into four new table records
+      for (const old of oldSessions) {
+        // 1. Create BuildSessionRecord (immutable config)
+        const sessionConfig: NewBuildSessionRecord = {
+          nodeId: old.nodeId,
+          domainType: 'shape', // ShapeDB is always 'shape' domain
+          selectedArrayByCountries: old.selectedArrayByCountries,
+          selectedArrayVersion: undefined, // Not present in old schema
+          startedAt: old.startedAt,
+          sourceStageMaxima: old.sourceStageMaxima ? {
+            featureMax: old.sourceStageMaxima.featureMax,
+            polygonMax: old.sourceStageMaxima.polygonMax,
+          } : undefined,
+        };
+        await tx.table('buildSessions').add(sessionConfig);
+
+        // 2. Create BuildSessionHeartbeat (if lastHeartbeatAt exists)
+        if (old.lastHeartbeatAt !== undefined) {
+          const heartbeat: BuildSessionHeartbeat = {
+            nodeId: old.nodeId,
+            lastHeartbeatAt: old.lastHeartbeatAt,
+          };
+          await tx.table('buildSessionHeartbeats').add(heartbeat);
+        }
+
+        // 3. Create BuildSessionStatus (session-level status)
+        const sessionStatus: BuildSessionStatus = {
+          nodeId: old.nodeId,
+          status: old.status,
+          stopReason: old.stopReason,
+          completedAt: old.completedAt,
+        };
+        await tx.table('buildSessionStatuses').add(sessionStatus);
+
+        // 4. Create BuildStageStatus (current stage only - historical data lost)
+        // Note: Old schema only stored current stage, so we can only migrate that
+        if (old.stage) {
+          const stageStatus: BuildStageStatus = {
+            id: `${old.nodeId}:${old.stage}`,
+            nodeId: old.nodeId,
+            stage: old.stage,
+            status: old.status === 'running' ? 'running' : 'completed', // Infer from session status
+            startedAt: old.stageStartedAt ?? old.startedAt,
+            completedAt: old.status === 'completed' ? old.completedAt : undefined,
+            inactiveMs: old.stageInactiveMs,
+            stageId: old.stageId,
+          };
+          await tx.table('buildStageStatuses').add(stageStatus);
+        }
+
+        // Discarded fields (as per design):
+        // - progress: Computed from buildTasks
+        // - stages: Computed from buildTasks
+        // - resourceUsage: Unused/unimplemented
+        // - canResume: Unused/unimplemented
+        // - lastActivity: Redundant with lastHeartbeatAt
+        // - expiresAt: Unused/unimplemented
+        // - updatedAt: Redundant with status-specific timestamps
+        // - elapsedMs: Computed from startedAt
+        // - elapsedByStage: Computed from BuildStageStatus records
+        // - stageHeartbeatAt: Redundant with lastHeartbeatAt
+      }
+    });
+
     this.initVectorTileTables();
     this.tileSummaries = this.table('tileSummaries');
     this.tabularMetadata = this.table('tabularMetadata');
+    
+    // Initialize new session tables
+    this.buildSessions = this.table('buildSessions');
+    this.buildSessionHeartbeats = this.table('buildSessionHeartbeats');
+    this.buildSessionStatuses = this.table('buildSessionStatuses');
+    this.buildStageStatuses = this.table('buildStageStatuses');
   }
 
   protected mergeVectorTileStores(stores: Record<string, string>): Record<string, string> {
