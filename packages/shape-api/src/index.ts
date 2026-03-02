@@ -34,7 +34,7 @@ export type {
   ShapeErrorLineFeatureCollection,
   ShapeGeometryErrorRecord,
 } from './shapeBuildTypes.js';
-export { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from './defaults.js';
+export { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG, DEFAULT_MAX_RATIO_VALUE } from './defaults.js';
 export type {
   ShapeBuildStopReason,
   ShapeSourceStageMaxima,
