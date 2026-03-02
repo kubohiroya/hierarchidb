@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #684 / `codex/fix/shape/source-intake-guard-validation-disable-684` / start: 2026-03-02 11:44 JST
 - #682 / `codex/fix/shape/disable-intake-guard-and-card-order-682` / start: 2026-03-02 11:36 JST
 - #680 / `codex/feat/shape/invalid-geometry-filter-tileemit-680` / start: 2026-03-02 11:12 JST
 - #677 / `codex/feat/shape/tolerance-bisection-pipeline-677` / start: 2026-03-02 11:03 JST
@@ -154,6 +155,8 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- update: 2026-03-02 11:47 JST #684 原因は `Source Geometry Intake Guard` の `Validation level` が `FormControl disabled` だけに依存しており、`ToggleButtonGroup` 自体が明示 disable されていなかったこと。発生範囲は `plugins/shape-plugin/src/ui/components/build-config/SourceInvalidGeometryFilterCard.tsx` の Validation level 制御。修正として `ToggleButtonGroup` に `disabled` を追加し、`off/basic/strict` の直接操作を抑止。適用範囲は同ファイルのみ。検証: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+- start: 2026-03-02 11:44 JST #684 を起票（https://github.com/kubohiroya/hierarchidb/issues/684）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/source-intake-guard-validation-disable-684` を作成して、Source Geometry Intake Guard の Validation level 明示 disabled 化に着手。
 - update: 2026-03-02 11:40 JST #682 原因は Source Geometry Intake Guard が実行ロジック未接続のまま編集可能UIとして残っていたこと、および Simplify 3線カード順と入力ラベルが運用意図（赤/青/灰・ズーム表記）に一致していなかったこと。発生範囲は `plugins/shape-plugin` の build-config UI（`SourceInvalidGeometryFilterCard.tsx`, `SimplifyToleranceByAdminLevelCard.tsx`）と `packages/ui/accordion-config` の `TileEmitConfigSection.tsx`。修正として Intake Guard を常時 disabled + 将来実装注記へ変更、Simplify カード順を `max(赤)→multiplier(青)→min(灰)` に変更しラベルを `Zoom {{zoom}}` へ修正、TileEmit カード順を `Invalid geometry filtering → Tile geometry & margin` へ変更。検証: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/ui-accordion-config` exit 0、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/unit/mergeBuildConfig.unit.test.ts` exit 0。
 - start: 2026-03-02 11:36 JST #682 を起票（https://github.com/kubohiroya/hierarchidb/issues/682）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/disable-intake-guard-and-card-order-682` を作成して、Step5 の Source Geometry Intake Guard 無効化、Simplify 3線順序修正、TileEmit カード順序修正、ラベル不具合修正に着手。
 - update: 2026-03-02 11:18 JST #680 invalid geometry filtering の設定保持先を `sourceConfig` から `tileEmitConfig` へ移設。原因は Stage責務に対して設定配置が不整合だったこと。発生範囲は `packages/gis-sdk` 型定義、`packages/shape-api` デフォルト、`plugins/shape-plugin` の build-config UI/patch merge/source stage 実行参照、および `packages/ui/accordion-config` の TileEmit セクション拡張。修正として `TileEmitConfig.invalidGeometryFilter` を追加し Source 側定義を除去、Sourceカードを Intake Guard と Invalid Filter に分離して後者を TileEmit セクションへ移設。旧設定互換読み込みは未実装（追加しない方針）。検証: `pnpm -w turbo run build --filter @hierarchidb/gis-sdk --filter @hierarchidb/ui-accordion-config --filter @hierarchidb/shape-api` exit 0、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/vt-orchestrator` exit 0、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/unit/mergeBuildConfig.unit.test.ts` exit 0。
