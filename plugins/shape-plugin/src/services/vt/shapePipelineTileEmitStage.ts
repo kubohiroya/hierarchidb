@@ -3,7 +3,6 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
 import {
   createVtHandler as createTileEmitHandler,
-  deleteTasksByIds,
   listTasksByStage,
   listTasksByStageAndStatus,
   putTasks,
@@ -16,7 +15,7 @@ import { buildStableSignature } from './taskSignatures.ts';
 import type { ShapeTileEmitTaskInput } from './shapePipelineShared.ts';
 import { buildShapeVectorTileRecord, buildTileEmitTasks, resolveTileEmitConfig } from './shapePipelineShared.ts';
 import type { Tile } from 'geojson-vt';
-import { reconcileStageTasksByMetadata } from './shapeStageReconcile.ts';
+import { applyStageTaskReconcile } from './shapeStageReconcile.ts';
 import {
   finalizePendingStageTasks,
   markStageTasksRecycled,
@@ -110,16 +109,16 @@ export const runShapeTileEmitStageSection = async (params: ShapeTileEmitStagePar
   );
   let missingTileEmitTasks: Array<TaskQueueRecord<ShapeTileEmitTaskInput>> = [];
   if (params.resumeExistingTasks && existingTileEmitTasks.length > 0) {
-    const reconciled = reconcileStageTasksByMetadata(desiredTileEmitTasks, existingTileEmitTasks);
-    if (reconciled.obsoleteTaskIds.length > 0) {
-      await deleteTasksByIds(params.taskQueue, reconciled.obsoleteTaskIds);
-    }
-    const obsoleteSet = new Set(reconciled.obsoleteTaskIds);
-    existingTileEmitTasks = existingTileEmitTasks.filter((task) => !obsoleteSet.has(task.taskId));
+    const reconciled = await applyStageTaskReconcile({
+      taskQueue: params.taskQueue,
+      nodeId: params.nodeId,
+      stage: 'tileEmit',
+      desiredTasks: desiredTileEmitTasks,
+      existingTasks: existingTileEmitTasks,
+      resumeExistingTasks: true,
+    });
+    existingTileEmitTasks = reconciled.existingTasks as Array<TaskQueueRecord<ShapeTileEmitTaskInput>>;
     missingTileEmitTasks = reconciled.missingTasks as Array<TaskQueueRecord<ShapeTileEmitTaskInput>>;
-    if (missingTileEmitTasks.length > 0) {
-      await putTasks(params.taskQueue, missingTileEmitTasks);
-    }
   }
   if (params.resumeExistingTasks && existingTileEmitTasks.length > 0) {
     const runningTileEmitTasks = await listTasksByStageAndStatus(params.taskQueue, params.nodeId, 'tileEmit', 'running');

@@ -349,12 +349,6 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
       cacheCounts.geometry ?? 0,
     )
   ), [cacheCounts.geometry, formatDeleteLabelWithCount, t]);
-  const tileEmitDeleteLabel = useMemo(() => (
-    formatDeleteLabelWithCount(
-      t('processing.download.deleteTiles', 'Delete tile data'),
-      cacheCounts.tileEmit ?? 0,
-    )
-  ), [cacheCounts.tileEmit, formatDeleteLabelWithCount, t]);
   const transposeIndexDeleteLabel = useMemo(() => (
     formatDeleteLabelWithCount(
       t('processing.download.deleteTransposeIndex', 'Delete transpose index'),
@@ -416,10 +410,10 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
           disabled: isResetSessionLoading || isBuildSessionStarted,
           items: [
             {
-              id: 'delete-tile-emit-cache',
-              label: tileEmitDeleteLabel,
-              onClick: cacheHandleDeleteTileEmitCache,
-              disabled: isResetSessionLoading || !cacheCanDeleteTileEmitCache || cacheDeleteLoading.tileEmit,
+              id: 'delete-transpose-index',
+              label: transposeIndexDeleteLabel,
+              onClick: cacheHandleDeleteTransposeIndex,
+              disabled: isResetSessionLoading || !cacheCanDeleteTransposeIndex || cacheDeleteLoading.transposeIndex,
             },
           ],
           ariaLabel: controlMenuAriaLabel,
@@ -432,24 +426,23 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     cacheCanDeleteSourceFilteredCache,
     cacheCanDeleteMetadata,
     cacheCanDeleteGeometryCache,
-    cacheCanDeleteTileEmitCache,
+    cacheCanDeleteTransposeIndex,
     cacheDeleteLoading.sourceApi,
     cacheDeleteLoading.sourceFiltered,
     cacheDeleteLoading.metadata,
     cacheDeleteLoading.geometry,
-    cacheDeleteLoading.tileEmit,
+    cacheDeleteLoading.transposeIndex,
     sourceApiDeleteLabel,
     sourceFilteredDeleteLabel,
     handleResetSessionWithSkeleton,
     isResetSessionLoading,
     controlMenuAriaLabel,
     geometryDeleteLabel,
-    tileEmitDeleteLabel,
+    transposeIndexDeleteLabel,
     cacheHandleDeleteSourceApiCache,
     cacheHandleDeleteSourceFilteredCache,
     cacheHandleDeleteGeometryCache,
-    cacheHandleDeleteTileEmitCache,
-    cacheHandleDeleteMetadata,
+    cacheHandleDeleteTransposeIndex,
     stages,
   ]);
 
@@ -461,12 +454,6 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
       disabled: isResetSessionLoading || !cacheCanDeleteMetadata || cacheDeleteLoading.metadata,
     },
     {
-      id: 'delete-transpose-index',
-      label: transposeIndexDeleteLabel,
-      onClick: cacheHandleDeleteTransposeIndex,
-      disabled: isResetSessionLoading || !cacheCanDeleteTransposeIndex || cacheDeleteLoading.transposeIndex,
-    },
-    {
       id: 'reset-build-session',
       label: resetSessionLabel,
       onClick: handleResetSessionWithSkeleton,
@@ -474,14 +461,10 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     },
   ]), [
     cacheCanDeleteMetadata,
-    cacheCanDeleteTransposeIndex,
     cacheDeleteLoading.metadata,
-    cacheDeleteLoading.transposeIndex,
     cacheHandleDeleteMetadata,
-    cacheHandleDeleteTransposeIndex,
     handleResetSessionWithSkeleton,
     isResetSessionLoading,
-    transposeIndexDeleteLabel,
     metadataDeleteLabel,
     resetSessionLabel,
   ]);

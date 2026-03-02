@@ -4,7 +4,6 @@ import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
 import type { CountryMetadata } from '~/common/types/index';
 import {
   createTransformByBandHandler,
-  deleteTasksByIds,
   listTasksByStage,
   putTasks,
   runStageTasks,
@@ -13,7 +12,7 @@ import {
 import { buildStableSignature } from './taskSignatures.ts';
 import type { ShapeGeometryByBandTaskInput } from './shapePipelineShared.ts';
 import { resolveGeometryConfig } from './shapePipelineShared.ts';
-import { reconcileStageTasksByMetadata } from './shapeStageReconcile.ts';
+import { applyStageTaskReconcile } from './shapeStageReconcile.ts';
 import {
   finalizePendingStageTasks,
   getFailedTaskCount,
@@ -406,21 +405,16 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
         return desired;
       });
       preparation = await runGeometryStep(params, 'reconcile-geometry-tasks', async () => {
-        let missingGeometryTasks: Array<TaskQueueRecord<ShapeGeometryByBandTaskInput>>;
-        if (existingGeometryByBandTasks.length > 0) {
-          const reconciled = reconcileStageTasksByMetadata(desiredGeometryTasks, existingGeometryByBandTasks);
-          if (reconciled.obsoleteTaskIds.length > 0) {
-            await deleteTasksByIds(params.taskQueue, reconciled.obsoleteTaskIds);
-          }
-          const obsoleteSet = new Set(reconciled.obsoleteTaskIds);
-          existingGeometryByBandTasks = existingGeometryByBandTasks.filter((task) => !obsoleteSet.has(task.taskId));
-          missingGeometryTasks = reconciled.missingTasks as Array<TaskQueueRecord<ShapeGeometryByBandTaskInput>>;
-        } else {
-          missingGeometryTasks = desiredGeometryTasks;
-        }
-        if (missingGeometryTasks.length > 0) {
-          await putTasks(params.taskQueue, missingGeometryTasks);
-        }
+        const reconciled = await applyStageTaskReconcile({
+          taskQueue: params.taskQueue,
+          nodeId: params.nodeId,
+          stage: 'geometry',
+          desiredTasks: desiredGeometryTasks,
+          existingTasks: existingGeometryByBandTasks,
+          resumeExistingTasks: true,
+        });
+        existingGeometryByBandTasks = reconciled.existingTasks as Array<TaskQueueRecord<ShapeGeometryByBandTaskInput>>;
+        const missingGeometryTasks = reconciled.missingTasks as Array<TaskQueueRecord<ShapeGeometryByBandTaskInput>>;
         return {
           planned: desiredGeometryTasks.length,
           existing: existingGeometryByBandTasks.length,

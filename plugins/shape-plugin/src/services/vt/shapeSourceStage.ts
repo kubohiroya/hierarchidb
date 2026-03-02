@@ -7,7 +7,6 @@ import {
   VtTaskQueueDb,
   deleteTasksByIds,
   listTasksByStage,
-  putTasks,
   runStageTasks,
   updateTask,
 } from '@hierarchidb/vt-orchestrator';
@@ -45,7 +44,7 @@ import {
 import { filterFetchCollectionByZoom } from './fetchGeometryFilters.ts';
 import { buildZoomBandRanges } from '@hierarchidb/util';
 import { buildStableSignature } from './taskSignatures.ts';
-import { reconcileStageTasksByMetadata } from './shapeStageReconcile.ts';
+import { applyStageTaskReconcile } from './shapeStageReconcile.ts';
 import {
   buildRawDataDataSourceCacheKey,
   buildShapeCacheKey,
@@ -1464,7 +1463,14 @@ export const runShapeSourceStage = async (params: ShapeSourceStageParams): Promi
   if (!reuseExistingTasks) {
     const tasks = buildSourceTasks(params.nodeId, payloads, metadataForPayloads, configSignature);
     setSourcePlannedTotal(params.nodeId, tasks.length);
-    await reconcileSourceTasks(params, existingTasks, tasks, resumeExistingTasks);
+    await applyStageTaskReconcile({
+      taskQueue: params.taskQueue,
+      nodeId: params.nodeId,
+      stage: 'source',
+      desiredTasks: tasks,
+      existingTasks,
+      resumeExistingTasks,
+    });
     await notifyTasksEnqueued({ taskCount: tasks.length, source: 'created' });
   } else {
     setSourcePlannedTotal(params.nodeId, existingTasks.length);
@@ -1500,23 +1506,4 @@ const resolveSourcePayloads = (
     params.selectedArrayByCountries,
     metadata,
   );
-};
-
-const reconcileSourceTasks = async (
-  params: ShapeSourceStageParams,
-  existingTasks: TaskQueueRecord[],
-  desiredTasks: TaskQueueRecord[],
-  resumeExistingTasks: boolean,
-): Promise<void> => {
-  if (!resumeExistingTasks) {
-    await putTasks(params.taskQueue, desiredTasks);
-    return;
-  }
-  const { missingTasks, obsoleteTaskIds } = reconcileStageTasksByMetadata(desiredTasks, existingTasks);
-  if (obsoleteTaskIds.length > 0) {
-    await deleteTasksByIds(params.taskQueue, obsoleteTaskIds);
-  }
-  if (missingTasks.length > 0) {
-    await putTasks(params.taskQueue, missingTasks);
-  }
 };
