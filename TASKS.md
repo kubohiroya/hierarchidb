@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #675 / `codex/docs/shape4/tolerance-bisection-spec-plan-675` / start: 2026-03-02 10:27 JST
 - #670 / `codex/fix/shape/step5-elapsed-time-consistency-670` / start: 2026-03-02 01:02 JST
 - #668 / `codex/fix/shape/step5-build-control-card-header-menu-668` / start: 2026-03-02 00:40 JST
 - #663 / `codex/fix/shape/tileemit-default-extent-buffer-663` / start: 2026-03-01 16:22 JST
@@ -150,6 +151,8 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- update: 2026-03-02 10:40 JST #675 Shape4 Geometry tolerance 新方式の文書化を実施。`docs/spec/shape4-geometry-tolerance-bisection-spec.md` に仕様（`t_base` 2分法、`multiplier/minRatio/maxRatio`、ToneCurveEditor 3線化、失敗時挙動、段階移行）を記載し、`plans/shape4-geometry-tolerance-bisection-execplan.md` に実装マイルストーンと検証手順を定義。確認: `test -f docs/spec/shape4-geometry-tolerance-bisection-spec.md` exit 0、`test -f plans/shape4-geometry-tolerance-bisection-execplan.md` exit 0、`rg -n \"t_base|2分法|multiplier|minRatio|maxRatio|ToneCurveEditor|0.0..2.0|6553\" docs/spec/shape4-geometry-tolerance-bisection-spec.md plans/shape4-geometry-tolerance-bisection-execplan.md` exit 0。
+- start: 2026-03-02 10:27 JST #675 を起票（https://github.com/kubohiroya/hierarchidb/issues/675）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/docs/shape4/tolerance-bisection-spec-plan-675` を作成し、Shape4 の tolerance 新方式（`t_base` 2分法 + `multiplier/min/max`）仕様/作業計画ドキュメント整備に着手。
 - update: 2026-03-02 01:09 JST #670 実行中ステージ elapsed が停止する原因は stage map への live elapsed 合成不足と total elapsed の `max(stageSum, sessionElapsed)` 算出にあった。`useShapeBuildStepProgressState` で live 値を stage map に反映し、実行中 total elapsed を stage 合算へ統一。`useShapeBuildProgressPanelControllerBaseStateDataCore` で実行中ステージの表示に `summary.stageElapsedMs` を使用。検証: `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildStep.elapsed.unit.test.ts` すべて exit 0。参考として `pnpm -w turbo run test --filter @hierarchidb/shape-plugin` は既存失敗5件で exit 1（本件外）。
 - start: 2026-03-02 01:02 JST #670 を起票（https://github.com/kubohiroya/hierarchidb/issues/670）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/step5-elapsed-time-consistency-670` を `main` 起点で作成し、Step5 のステージ経過時間停止・`-` 表示崩れ・BuildControl 合計時間不整合の修正に着手。
 - update: 2026-03-02 00:57 JST #668 追加要件対応として Build Control Card 内の「アイコン Build Controls ▼」を撤去し、同じメニュー機能を含む「アイコン Build Session ▼」をカード左脇（カード外）へ移設。原因は Build Session 操作ヘッダをカード内に混在させていたため視覚構造が不明瞭だったこと。発生範囲は `packages/components/src/BuildControlCard.tsx`（ヘッダ/メニュー撤去）、`packages/components/src/BuildStepPanel.tsx`（左脇 Build Session ヘッダ＋メニュー新設）、`plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildProgressPanel/useShapeBuildProgressPanelViewModel.ts`（ラベル `Build Session` へ更新）、`plugins/shape-plugin/src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx`（表示文言更新）。検証: `pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin` exit 0、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` exit 0。
