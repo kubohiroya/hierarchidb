@@ -5,7 +5,7 @@ import {
   applyFeatureFiltering,
   type EphemeralTransformCacheMetaRecord,
 } from '@hierarchidb/gis-sdk';
-import type { ShapeGeometryErrorRecord } from '@hierarchidb/shape-api';
+import { DEFAULT_MAX_RATIO_VALUE, type ShapeGeometryErrorRecord } from '@hierarchidb/shape-api';
 import type { TransformByBandStageContext } from '~/contexts';
 import type { StageHandler, StageHandlerResult, TransformByBandTaskInput } from '~/types/types';
 import { VtTaskQueueDb, updateTask } from '~/task/taskQueue';
@@ -482,13 +482,13 @@ export const createTransformByBandHandler = (
     const toleranceSearchMaxIterations = simplifyProfile.toleranceSearchMaxIterations;
     const clampRatioValue = (value: number, fallback: number): number => {
       const candidate = Number.isFinite(value) ? value : fallback;
-      return Math.max(0, Math.min(2, candidate));
+      return Math.max(0, Math.min(DEFAULT_MAX_RATIO_VALUE, candidate));
     };
     const rawMultiplier = resolveTransformTolerance(simplifyProfile.multiplierByBand, band.bandIndex, 1);
     const rawMinRatio = resolveTransformTolerance(simplifyProfile.minRatioByBand, band.bandIndex, 0);
-    const rawMaxRatio = resolveTransformTolerance(simplifyProfile.maxRatioByBand, band.bandIndex, 2);
+    const rawMaxRatio = resolveTransformTolerance(simplifyProfile.maxRatioByBand, band.bandIndex, DEFAULT_MAX_RATIO_VALUE);
     const resolvedMinRatio = clampRatioValue(Math.min(rawMinRatio, rawMaxRatio), 0);
-    const resolvedMaxRatio = clampRatioValue(Math.max(rawMinRatio, rawMaxRatio), 2);
+    const resolvedMaxRatio = clampRatioValue(Math.max(rawMinRatio, rawMaxRatio), DEFAULT_MAX_RATIO_VALUE);
     const resolvedMultiplier = clampRatioValue(rawMultiplier, 1);
     const resolveAppliedTolerance = (baseTolerance: number): number => {
       const candidate = baseTolerance * resolvedMultiplier;

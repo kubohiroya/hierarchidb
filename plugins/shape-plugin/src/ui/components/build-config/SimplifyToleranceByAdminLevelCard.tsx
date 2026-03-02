@@ -16,6 +16,7 @@ import {
 import { Tune as TuneIcon } from '@mui/icons-material';
 import { ToneCurveEditor } from '@hierarchidb/ui-tone-curve-editor';
 import { BuildConfigSectionTitle, getBuildConfigHoverCardSx } from '@hierarchidb/ui-accordion-config';
+import { DEFAULT_MAX_RATIO_VALUE } from '@hierarchidb/shape-api';
 import { useTranslation } from '~/ui/i18n';
 import type { ShapeBuildConfig } from '~/common/types/index';
 import { buildToneCurveAnchorsFromToleranceByBand, buildToleranceByBandFromToneCurveAnchors } from '~/services/utils/toleranceByBand';
@@ -47,12 +48,12 @@ type StoredAdminLevelProfile = {
 
 type StoredAdminLevelProfiles = Partial<Record<AdminLevelTabKey, StoredAdminLevelProfile>>;
 
-const CURVE_Y_RANGE: [number, number] = [0, 2];
+const CURVE_Y_RANGE: [number, number] = [0, DEFAULT_MAX_RATIO_VALUE];
 const DEFAULT_ITERATIONS = 24;
 const DEFAULT_FALLBACK = 1;
 const DEFAULT_MULTIPLIER_ANCHORS = [1, 1, 1, 1] as const;
 const DEFAULT_MIN_RATIO_ANCHORS = [0, 0, 0, 0] as const;
-const DEFAULT_MAX_RATIO_ANCHORS = [2, 2, 2, 2] as const;
+const DEFAULT_MAX_RATIO_ANCHORS = [DEFAULT_MAX_RATIO_VALUE, DEFAULT_MAX_RATIO_VALUE, DEFAULT_MAX_RATIO_VALUE, DEFAULT_MAX_RATIO_VALUE] as const;
 
 const ADMIN_LEVEL_TABS: ReadonlyArray<{ key: AdminLevelTabKey; label: string }> = [
   { key: 'admin0', label: 'Admin 0' },
@@ -68,7 +69,7 @@ const PREVIOUS_TAB_BY_KEY: Partial<Record<AdminLevelTabKey, AdminLevelTabKey>> =
 };
 
 const clampIterations = (value: number): number => Math.min(64, Math.max(1, Math.round(value)));
-const clampRatio = (value: number): number => Math.max(0, Math.min(2, Number.parseFloat(value.toFixed(3))));
+const clampRatio = (value: number): number => Math.max(0, Math.min(DEFAULT_MAX_RATIO_VALUE, Number.parseFloat(value.toFixed(3))));
 const resolveSliderNumber = (value: number | number[]) => (Array.isArray(value) ? value[0] ?? 0 : value);
 const areRatioValuesEqual = (left: number, right: number): boolean => Math.abs(clampRatio(left) - clampRatio(right)) < 1e-9;
 
@@ -161,7 +162,7 @@ const clampProfileBands = (
   const nextMax: number[] = [];
   for (let index = 0; index < maxLength; index += 1) {
     const rawMin = clampRatio(minRatioByBand[index] ?? 0);
-    const rawMax = clampRatio(maxRatioByBand[index] ?? 2);
+    const rawMax = clampRatio(maxRatioByBand[index] ?? DEFAULT_MAX_RATIO_VALUE);
     const minValue = Math.min(rawMin, rawMax);
     const maxValue = Math.max(rawMin, rawMax);
     const rawMultiplier = clampRatio(multiplierByBand[index] ?? 1);
@@ -236,7 +237,7 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
   const resolvedMaxAnchors = buildToneCurveAnchorsFromToleranceByBand(
     activeValues.maxRatioByBand,
     geometryConfig.zoomBandBoundaries,
-    DEFAULT_MAX_RATIO_ANCHORS[0] ?? 2,
+    DEFAULT_MAX_RATIO_ANCHORS[0] ?? DEFAULT_MAX_RATIO_VALUE,
     DEFAULT_MAX_RATIO_ANCHORS,
   );
 
@@ -461,7 +462,7 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                           const next = buildToleranceByBandFromToneCurveAnchors(
                             overlayAnchors,
                             geometryConfig.zoomBandBoundaries,
-                            DEFAULT_MAX_RATIO_ANCHORS[0] ?? 2,
+                            DEFAULT_MAX_RATIO_ANCHORS[0] ?? DEFAULT_MAX_RATIO_VALUE,
                           ).map((value) => clampRatio(value));
                           updateBands({ maxRatioByBand: next });
                         },
@@ -490,9 +491,10 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                   }}
                 >
                   <Stack direction="row" spacing={1} sx={{ flexWrap: 'nowrap', overflowX: 'auto', pt: 1 }}>
+                    <Typography width={80}>Max ratio</Typography>
                     {resolvedMaxAnchors.map((anchor, index) => (
                       <TextField
-                        key={`max-anchor-${index}`}
+                        key={`max-anchor-${String(index)}`}
                         label={buildZoomLabel(anchor.x)}
                         type="number"
                         size="small"
@@ -527,9 +529,10 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                   }}
                 >
                   <Stack direction="row" spacing={1} sx={{ flexWrap: 'nowrap', overflowX: 'auto', pt: 1 }}>
+                    <Typography width={80}>Multiplier</Typography>
                     {resolvedMultiplierAnchors.map((anchor, index) => (
                       <TextField
-                        key={`multiplier-anchor-${index}`}
+                        key={`multiplier-anchor-${String(index)}`}
                         label={buildZoomLabel(anchor.x)}
                         type="number"
                         size="small"
@@ -564,9 +567,10 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                   }}
                 >
                   <Stack direction="row" spacing={1} sx={{ flexWrap: 'nowrap', overflowX: 'auto', pt: 1 }}>
+                    <Typography width={80}>Min ratio</Typography>
                     {resolvedMinAnchors.map((anchor, index) => (
                       <TextField
-                        key={`min-anchor-${index}`}
+                        key={`min-anchor-${String(index)}`}
                         label={buildZoomLabel(anchor.x)}
                         type="number"
                         size="small"
