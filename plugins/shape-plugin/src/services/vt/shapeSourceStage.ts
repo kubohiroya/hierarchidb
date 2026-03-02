@@ -825,7 +825,7 @@ const createSourceHandler = (params: {
   const strategy = factory.create(strategyId);
   const taskQueue = new VtTaskQueueDb();
   const retryConfig = buildRetryConfig(params.buildConfig);
-  const invalidGeometryFilter = params.buildConfig.sourceConfig.invalidGeometryFilter;
+  const invalidGeometryFilter = params.buildConfig.tileEmitConfig.invalidGeometryFilter;
   const hasInvalidGeometryFilter = Boolean(
     invalidGeometryFilter
     && (

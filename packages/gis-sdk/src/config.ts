@@ -17,7 +17,6 @@ export interface SourceConfig {
   retryLimit: number;
   retryBackoff: 'linear' | 'exponential';
   geometryIntakeGuard?: FetchGeometryIntakeGuardConfig;
-  invalidGeometryFilter?: FetchInvalidGeometryFilterConfig;
 }
 
 export type GeometryIntakeValidationLevel = 'off' | 'basic' | 'strict';
@@ -177,6 +176,7 @@ export interface TileEmitConfig {
   enableTopojsonSimplify: boolean;
   maxConcurrent: number;
   dynamicConcurrency?: DynamicConcurrencyConfig;
+  invalidGeometryFilter?: FetchInvalidGeometryFilterConfig;
   tolerance: number;
   extent: number;
   buffer?: number;

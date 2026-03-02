@@ -351,12 +351,6 @@ export function applyBuildConfigPatch(
           ...overrides.sourceConfig.geometryIntakeGuard,
         }
         : base.sourceConfig.geometryIntakeGuard,
-      invalidGeometryFilter: overrides.sourceConfig.invalidGeometryFilter
-        ? {
-          ...(base.sourceConfig.invalidGeometryFilter ?? {}),
-          ...overrides.sourceConfig.invalidGeometryFilter,
-        }
-        : base.sourceConfig.invalidGeometryFilter,
     }
     : base.sourceConfig;
 
@@ -395,7 +389,16 @@ export function applyBuildConfigPatch(
     }
     : base.geometryConfig;
   const tileEmitConfig = overrides.tileEmitConfig
-    ? { ...base.tileEmitConfig, ...overrides.tileEmitConfig }
+    ? {
+      ...base.tileEmitConfig,
+      ...overrides.tileEmitConfig,
+      invalidGeometryFilter: overrides.tileEmitConfig.invalidGeometryFilter
+        ? {
+          ...(base.tileEmitConfig.invalidGeometryFilter ?? {}),
+          ...overrides.tileEmitConfig.invalidGeometryFilter,
+        }
+        : base.tileEmitConfig.invalidGeometryFilter,
+    }
     : base.tileEmitConfig;
 
   const cleanupConfig = overrides.cleanupConfig

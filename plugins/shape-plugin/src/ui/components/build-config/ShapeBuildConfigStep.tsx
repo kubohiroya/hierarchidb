@@ -10,7 +10,10 @@ import {
 import { GeometryConfigSection } from './GeometryConfigSection.js';
 import { ZoomBandConfigSection } from './ZoomBandConfigSection.js';
 import { CacheManagementSection } from './CacheManagementSection.tsx';
-import { SourceInvalidGeometryFilterCard } from './SourceInvalidGeometryFilterCard.tsx';
+import {
+  SourceGeometryIntakeGuardCard,
+  TileEmitInvalidGeometryFilterCard,
+} from './SourceInvalidGeometryFilterCard.tsx';
 import { useShapeBuildConfigStep } from './useShapeBuildConfigStep.js';
 import { useHeapPressureMonitor } from '@hierarchidb/ui-memory';
 import { useTranslation } from '~/ui/i18n';
@@ -204,7 +207,7 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
         disabled={disabled}
         disableHoverLift
         additionalCards={
-          <SourceInvalidGeometryFilterCard
+          <SourceGeometryIntakeGuardCard
             config={workingConfig}
             onChange={updateWorkingConfig}
             disabled={disabled}
@@ -225,6 +228,14 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
         showConcurrencyCard={false}
         disabled={disabled}
         disableHoverLift
+        additionalCards={(
+          <TileEmitInvalidGeometryFilterCard
+            config={workingConfig}
+            onChange={updateWorkingConfig}
+            disabled={disabled}
+            disableHoverLift
+          />
+        )}
       />
       <CacheManagementSection
         config={workingConfig}
