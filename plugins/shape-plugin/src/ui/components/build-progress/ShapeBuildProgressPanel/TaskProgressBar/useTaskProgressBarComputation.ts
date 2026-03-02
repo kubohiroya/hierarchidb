@@ -123,6 +123,30 @@ const resolveTasksByStageId = (
   return aliasEntry?.[1] ?? [];
 };
 
+const shouldIncludeTask = (params: {
+  statusValue: string;
+  isSkipped: boolean;
+  filter: {
+    skippedMode: boolean;
+    failedMode: boolean;
+    completedMode: boolean;
+  };
+}) => {
+  const { statusValue, isSkipped, filter } = params;
+  
+  // If all filters are off, include all tasks
+  if (!filter.skippedMode && !filter.failedMode && !filter.completedMode) {
+    return true;
+  }
+  
+  // OR logic: include if any active filter matches
+  if (filter.skippedMode && isSkipped) return true;
+  if (filter.failedMode && statusValue === 'failed') return true;
+  if (filter.completedMode && (statusValue === 'completed' || statusValue === 'recycled')) return true;
+  
+  return false;
+};
+
 export const buildTaskProgressSegments = (params: TaskProgressComputeInput) => {
   const {
     stages,
@@ -159,6 +183,12 @@ export const buildTaskProgressSegments = (params: TaskProgressComputeInput) => {
     orderedTasks.forEach((task) => {
       const statusValue = (task.status ?? '').toString().toLowerCase();
       const isSkipped = isTaskSkipped(task.display, resolveTaskMetadataMessage(task.metadata));
+      
+      // Check if task should be included based on filter
+      if (!shouldIncludeTask({ statusValue, isSkipped, filter })) {
+        return;
+      }
+      
       const fill = resolveStatusColor({
         taskStatus: statusValue,
         isSkipped,
@@ -169,14 +199,10 @@ export const buildTaskProgressSegments = (params: TaskProgressComputeInput) => {
         pausedColor,
         skippedColor,
       });
-      const isDimmed =
-        (isSkipped && !filter.skippedMode)
-        || (statusValue === 'failed' && !filter.failedMode)
-        || ((statusValue === 'completed' || statusValue === 'recycled') && !filter.completedMode);
       const isExternalStage = sourceStageId !== stage.id;
       nextSegments.push({
         fill,
-        fillOpacity: isDimmed ? 0.4 : 1,
+        fillOpacity: 1,
         stageId: stage.id,
         taskId: isExternalStage ? undefined : task.taskId,
         title: resolveTaskTitle(task),
