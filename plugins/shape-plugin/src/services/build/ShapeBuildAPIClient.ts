@@ -50,6 +50,11 @@ import type {
 import {
   ephemeralDB,
   type EphemeralBuildSessionRecord,
+  getSessionWithDetails,
+  type BuildSessionRecord as GisBuildSessionRecord,
+  type BuildSessionHeartbeat,
+  type BuildSessionStatus,
+  type BuildStageStatus,
 } from '@hierarchidb/gis-sdk';
 
 const shapeBuildTaskTable = (): Table<ShapeBuildTaskRecord, string> =>
@@ -189,20 +194,40 @@ const toBuildSessionRecordFromEphemeral = (
 
 const isNonNull = <T>(value: T | null): value is T => value !== null;
 
+/**
+ * Helper function to query session data using the unified query interface
+ * This replaces direct access to the old monolithic ephemeralDB.sessions table
+ */
+const getEphemeralSessionWithDetails = async (nodeId: NodeId): Promise<EphemeralBuildSessionRecord | null> => {
+  return getSessionWithDetails(nodeId, {
+    getConfig: async (nodeId) => ephemeralDB.buildSessions.get(nodeId),
+    getHeartbeat: async (nodeId) => ephemeralDB.buildSessionHeartbeats.get(nodeId),
+    getStatus: async (nodeId) => ephemeralDB.buildSessionStatuses.get(nodeId),
+    getStageStatuses: async (nodeId) => ephemeralDB.buildStageStatuses.where('nodeId').equals(nodeId).toArray(),
+    getTasks: async (nodeId) => ephemeralDB.buildTasks.where('nodeId').equals(nodeId).toArray(),
+  });
+};
+
 const readBuildSessionsByNode = async (nodeId: NodeId): Promise<BuildSessionRecord[]> => {
-  const sessions = await ephemeralDB.sessions.where('nodeId').equals(nodeId).toArray();
-  return sessions.map(toBuildSessionRecordFromEphemeral).filter(isNonNull);
+  const session = await getEphemeralSessionWithDetails(nodeId);
+  if (!session) return [];
+  const buildSessionRecord = toBuildSessionRecordFromEphemeral(session);
+  return buildSessionRecord ? [buildSessionRecord] : [];
 };
 
 const readBuildSession = async (nodeId: NodeId): Promise<BuildSessionRecord | undefined> => {
-  const session = await ephemeralDB.sessions.get(nodeId);
+  const session = await getEphemeralSessionWithDetails(nodeId);
   if (!session) return undefined;
   return toBuildSessionRecordFromEphemeral(session) ?? undefined;
 };
 
 const readAllBuildSessions = async (): Promise<BuildSessionRecord[]> => {
-  const sessions = await ephemeralDB.sessions.toArray();
-  return sessions.map(toBuildSessionRecordFromEphemeral).filter(isNonNull);
+  // Get all session configs, then query each one using the unified interface
+  const configs = await ephemeralDB.buildSessions.toArray();
+  const sessions = await Promise.all(
+    configs.map(config => getEphemeralSessionWithDetails(config.nodeId))
+  );
+  return sessions.map(session => session ? toBuildSessionRecordFromEphemeral(session) : null).filter(isNonNull);
 };
 
 const listTileEmitTilesByNode = async (nodeId: NodeId): Promise<VectorTileRecord[]> => (
@@ -582,7 +607,51 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
     if (!record) {
       throw new Error('Invalid build session config');
     }
-    await ephemeralDB.sessions.put(record);
+    
+    // Ensure required fields are present
+    if (record.startedAt === undefined) {
+      throw new Error('startedAt is required for session creation');
+    }
+    
+    // Split the monolithic record into four normalized tables
+    const config: GisBuildSessionRecord = {
+      nodeId: record.nodeId,
+      domainType: record.domainType,
+      selectedArrayByCountries: record.selectedArrayByCountries,
+      selectedArrayVersion: record.selectedArrayVersion,
+      startedAt: record.startedAt,
+      sourceStageMaxima: record.sourceStageMaxima,
+    };
+    
+    const heartbeat: BuildSessionHeartbeat | undefined = record.lastHeartbeatAt ? {
+      nodeId: record.nodeId,
+      lastHeartbeatAt: record.lastHeartbeatAt,
+    } : undefined;
+    
+    const status: BuildSessionStatus = {
+      nodeId: record.nodeId,
+      status: record.status,
+      stopReason: record.stopReason,
+      completedAt: record.completedAt,
+    };
+    
+    const stageStatus: BuildStageStatus | undefined = record.stage ? {
+      id: `${record.nodeId}:${record.stage}`,
+      nodeId: record.nodeId,
+      stage: record.stage,
+      status: 'running',
+      startedAt: record.stageStartedAt ?? record.startedAt,
+      inactiveMs: record.stageInactiveMs,
+      stageId: record.stageId,
+    } : undefined;
+    
+    // Insert into all four tables
+    await Promise.all([
+      ephemeralDB.buildSessions.put(config),
+      heartbeat ? ephemeralDB.buildSessionHeartbeats.put(heartbeat) : Promise.resolve(),
+      ephemeralDB.buildSessionStatuses.put(status),
+      stageStatus ? ephemeralDB.buildStageStatuses.put(stageStatus) : Promise.resolve(),
+    ]);
   }
 
   async updateBuildSession(nodeId: NodeId, updates: Partial<ShapeBuildSessionRecord>): Promise<void> {
@@ -590,14 +659,88 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
     if (!patch) {
       throw new Error('Invalid build session config update');
     }
-    await ephemeralDB.sessions.update(nodeId, {
-      ...patch,
-      updatedAt: Date.now(),
-    });
+    
+    // Update the appropriate tables based on what fields are being updated
+    const updatePromises: Promise<unknown>[] = [];
+    
+    // Heartbeat updates
+    if (patch.lastHeartbeatAt !== undefined) {
+      updatePromises.push(
+        ephemeralDB.buildSessionHeartbeats.put({
+          nodeId,
+          lastHeartbeatAt: patch.lastHeartbeatAt,
+        })
+      );
+    }
+    
+    // Status updates
+    if (patch.status !== undefined || patch.stopReason !== undefined || patch.completedAt !== undefined) {
+      const currentStatus = await ephemeralDB.buildSessionStatuses.get(nodeId);
+      if (currentStatus) {
+        updatePromises.push(
+          ephemeralDB.buildSessionStatuses.put({
+            nodeId,
+            status: patch.status ?? currentStatus.status,
+            stopReason: patch.stopReason ?? currentStatus.stopReason,
+            completedAt: patch.completedAt ?? currentStatus.completedAt,
+          })
+        );
+      }
+    }
+    
+    // Stage updates
+    if (patch.stage !== undefined || patch.stageStartedAt !== undefined || 
+        patch.stageInactiveMs !== undefined || patch.stageId !== undefined) {
+      const currentConfig = await ephemeralDB.buildSessions.get(nodeId);
+      if (currentConfig && patch.stage) {
+        updatePromises.push(
+          ephemeralDB.buildStageStatuses.put({
+            id: `${nodeId}:${patch.stage}`,
+            nodeId,
+            stage: patch.stage,
+            status: 'running',
+            startedAt: patch.stageStartedAt ?? Date.now(),
+            inactiveMs: patch.stageInactiveMs,
+            stageId: patch.stageId,
+          })
+        );
+      }
+    }
+    
+    // Config updates (immutable fields - should rarely be updated)
+    if (patch.selectedArrayByCountries !== undefined || patch.selectedArrayVersion !== undefined || 
+        patch.sourceStageMaxima !== undefined) {
+      const currentConfig = await ephemeralDB.buildSessions.get(nodeId);
+      if (currentConfig) {
+        updatePromises.push(
+          ephemeralDB.buildSessions.put({
+            ...currentConfig,
+            selectedArrayByCountries: patch.selectedArrayByCountries ?? currentConfig.selectedArrayByCountries,
+            selectedArrayVersion: patch.selectedArrayVersion ?? currentConfig.selectedArrayVersion,
+            sourceStageMaxima: patch.sourceStageMaxima ?? currentConfig.sourceStageMaxima,
+          })
+        );
+      }
+    }
+    
+    await Promise.all(updatePromises);
   }
 
   async deleteBuildSession(nodeId: NodeId): Promise<void> {
-    await ephemeralDB.sessions.delete(nodeId);
+    // Delete from all four tables atomically
+    await ephemeralDB.transaction('rw', [
+      ephemeralDB.buildSessions,
+      ephemeralDB.buildSessionHeartbeats,
+      ephemeralDB.buildSessionStatuses,
+      ephemeralDB.buildStageStatuses,
+    ], async () => {
+      await Promise.all([
+        ephemeralDB.buildSessions.delete(nodeId),
+        ephemeralDB.buildSessionHeartbeats.delete(nodeId),
+        ephemeralDB.buildSessionStatuses.delete(nodeId),
+        ephemeralDB.buildStageStatuses.where('nodeId').equals(nodeId).delete(),
+      ]);
+    });
   }
 
   async deleteBuildTasks(nodeId: NodeId): Promise<void> {
@@ -836,7 +979,8 @@ export class EphemeralShapeApiImpl {
   }
 
   async getSessionRecord(nodeId: NodeId): Promise<ShapeEphemeralSessionRecord | null> {
-    return (await ephemeralDB.sessions.get(nodeId)) ?? null;
+    // Use the unified query interface to get session data
+    return await getEphemeralSessionWithDetails(nodeId);
   }
 
   async hasStageData(nodeId: NodeId, stage: ShapeBuildStage): Promise<boolean> {

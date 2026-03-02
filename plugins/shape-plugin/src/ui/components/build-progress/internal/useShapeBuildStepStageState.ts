@@ -79,7 +79,7 @@ export type UseShapeBuildStepStageStateReturn = {
   terminalStageId: StageId | null;
 };
 
-const resolveTaskListViewPhase = (input: {
+export const resolveTaskListViewPhase = (input: {
   baseBuildStatus: BuildStatus;
   displayTaskCount: number;
   isLoading: boolean;
@@ -91,7 +91,6 @@ const resolveTaskListViewPhase = (input: {
   }
   if (
     input.isLoading
-    || input.baseBuildStatus === 'running'
     || input.hasProgressTaskSignal
     || (input.baseBuildStatus === 'paused' && !input.hasAnyTaskSnapshot)
   ) {

@@ -18,7 +18,14 @@ import {
   type StageStatus,
   type VectorTileRecord,
 } from '@hierarchidb/shape-store';
-import { ephemeralDB, type EphemeralBuildSessionRecord } from '@hierarchidb/gis-sdk';
+import {
+  ephemeralDB,
+  type BuildSessionRecord,
+  type BuildSessionHeartbeat,
+  type BuildSessionStatus,
+  type BuildStageStatus,
+  type EphemeralBuildSessionRecord,
+} from '@hierarchidb/gis-sdk';
 import { SingletonMixin } from '@hierarchidb/util';
 import { publishBuildSessionUpdate } from './buildSessionBroadcast.js';
 import { storeRawDataDataSourceBufferForNode } from './shapeChunkStore.js';
@@ -26,115 +33,60 @@ import { storeRawDataDataSourceBufferForNode } from './shapeChunkStore.js';
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
-const isNumber = (value: unknown): value is number =>
-  typeof value === 'number' && Number.isFinite(value);
+/**
+ * Convert ShapeBuildSessionRecord to four normalized table records
+ * 
+ * Splits the monolithic session record into:
+ * - config: Immutable session configuration (BuildSessionRecord)
+ * - heartbeat: High-frequency heartbeat tracking (BuildSessionHeartbeat)
+ * - status: Session-level status (BuildSessionStatus)
+ * - stageStatus: Current stage status (BuildStageStatus)
+ */
+const toBuildSessionRecords = (session: ShapeBuildSessionRecord): {
+  config: BuildSessionRecord;
+  heartbeat?: BuildSessionHeartbeat;
+  status: BuildSessionStatus;
+  stageStatus?: BuildStageStatus;
+} => {
+  // Extract stage from stages map if available
+  const stageEntries = Object.entries(session.stages);
+  const currentStageEntry = stageEntries.find(([_, stageData]) => {
+    if (isRecord(stageData) && 'status' in stageData) {
+      return stageData.status === 'running';
+    }
+    return false;
+  });
+  const currentStage = currentStageEntry?.[0] as BuildStage | undefined;
 
-const isTaskStatus = (value: unknown): value is StageStatus['status'] =>
-  value === 'queued' ||
-  value === 'running' ||
-  value === 'completed' ||
-  value === 'failed' ||
-  value === 'recycled';
-
-const isStageStatus = (value: unknown): value is StageStatus => {
-  if (!isRecord(value)) return false;
-  return (
-    isTaskStatus(value.status) &&
-    isNumber(value.progress) &&
-    isNumber(value.tasksTotal) &&
-    isNumber(value.tasksCompleted) &&
-    isNumber(value.tasksFailed) &&
-    (value.message === undefined || typeof value.message === 'string')
-  );
-};
-
-const toStageMap = (stages: Record<string, unknown>): Record<BuildStage, StageStatus> => {
-  const empty: StageStatus = {
-    status: 'queued',
-    progress: 0,
-    tasksTotal: 0,
-    tasksCompleted: 0,
-    tasksFailed: 0,
-  };
-  const read = (stage: BuildStage): StageStatus => {
-    const candidate = stages[stage];
-    return isStageStatus(candidate) ? candidate : empty;
-  };
   return {
-    source: read('source'),
-    geometry: read('geometry'),
-    tileEmit: read('tileEmit'),
+    config: {
+      nodeId: session.nodeId,
+      domainType: 'shape',
+      selectedArrayByCountries: session.selectedArrayByCountries,
+      selectedArrayVersion: undefined, // Not available in ShapeBuildSessionRecord
+      startedAt: session.startedAt,
+      sourceStageMaxima: session.sourceStageMaxima,
+    },
+    heartbeat: session.lastHeartbeatAt ? {
+      nodeId: session.nodeId,
+      lastHeartbeatAt: session.lastHeartbeatAt,
+    } : undefined,
+    status: {
+      nodeId: session.nodeId,
+      status: session.status,
+      stopReason: session.stopReason,
+      completedAt: session.completedAt,
+    },
+    stageStatus: currentStage ? {
+      id: `${session.nodeId}:${currentStage}`,
+      nodeId: session.nodeId,
+      stage: currentStage,
+      status: 'running',
+      startedAt: session.stageStartedAt ?? session.startedAt,
+      inactiveMs: session.stageInactiveMs,
+      stageId: session.stageId,
+    } : undefined,
   };
-};
-
-const toResourceUsage = (usage: Record<string, unknown> | undefined): ResourceUsage | undefined => {
-  if (!usage) return undefined;
-  if (
-    !isNumber(usage.memoryUsed) ||
-    !isNumber(usage.memoryPeak) ||
-    !isNumber(usage.cpuPercent) ||
-    !isNumber(usage.storageUsed) ||
-    !isNumber(usage.networkBytesReceived) ||
-    !isNumber(usage.networkBytesSent)
-  ) {
-    return undefined;
-  }
-  return {
-    memoryUsed: usage.memoryUsed,
-    memoryPeak: usage.memoryPeak,
-    cpuPercent: usage.cpuPercent,
-    storageUsed: usage.storageUsed,
-    networkBytesReceived: usage.networkBytesReceived,
-    networkBytesSent: usage.networkBytesSent,
-  };
-};
-
-const toBuildSessionRecord = (session: ShapeBuildSessionRecord): EphemeralBuildSessionRecord => {
-  return {
-    nodeId: session.nodeId,
-    status: session.status,
-    startedAt: session.startedAt,
-    updatedAt: session.updatedAt,
-    completedAt: session.completedAt,
-    progress: session.progress,
-    stages: toStageMap(session.stages),
-    resourceUsage: toResourceUsage(session.resourceUsage),
-    stopReason: session.stopReason,
-    canResume: session.canResume,
-    lastActivity: session.lastActivity,
-    expiresAt: session.expiresAt,
-    inactiveMs: session.inactiveMs,
-    lastHeartbeatAt: session.lastHeartbeatAt,
-    stageInactiveMs: session.stageInactiveMs,
-    stageStartedAt: session.stageStartedAt,
-    stageHeartbeatAt: session.stageHeartbeatAt,
-    stageId: session.stageId,
-  };
-};
-
-const toBuildSessionUpdates = (
-  updates: Partial<ShapeBuildSessionRecord>
-): Partial<EphemeralBuildSessionRecord> => {
-  const next: Partial<EphemeralBuildSessionRecord> = {};
-  if (updates.status !== undefined) next.status = updates.status;
-  if (updates.startedAt !== undefined) next.startedAt = updates.startedAt;
-  if (updates.updatedAt !== undefined) next.updatedAt = updates.updatedAt;
-  if (updates.completedAt !== undefined) next.completedAt = updates.completedAt;
-  if (updates.progress !== undefined) next.progress = updates.progress;
-  if (updates.stages !== undefined) next.stages = toStageMap(updates.stages);
-  if (updates.resourceUsage !== undefined)
-    next.resourceUsage = toResourceUsage(updates.resourceUsage);
-  if (updates.stopReason !== undefined) next.stopReason = updates.stopReason;
-  if (updates.canResume !== undefined) next.canResume = updates.canResume;
-  if (updates.lastActivity !== undefined) next.lastActivity = updates.lastActivity;
-  if (updates.expiresAt !== undefined) next.expiresAt = updates.expiresAt;
-  if (updates.inactiveMs !== undefined) next.inactiveMs = updates.inactiveMs;
-  if (updates.lastHeartbeatAt !== undefined) next.lastHeartbeatAt = updates.lastHeartbeatAt;
-  if (updates.stageInactiveMs !== undefined) next.stageInactiveMs = updates.stageInactiveMs;
-  if (updates.stageStartedAt !== undefined) next.stageStartedAt = updates.stageStartedAt;
-  if (updates.stageHeartbeatAt !== undefined) next.stageHeartbeatAt = updates.stageHeartbeatAt;
-  if (updates.stageId !== undefined) next.stageId = updates.stageId;
-  return next;
 };
 
 const toVectorTileRecord = (tile: ShapeVectorTileRecord): VectorTileRecord => {
@@ -185,7 +137,18 @@ export class ShapeMutationService implements ShapeMutationAPI {
   async upsertBuildSession(session: ShapeBuildSessionRecord): Promise<void> {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
-    await ephemeralDB.sessions.put(toBuildSessionRecord(session));
+    
+    // Split session into four normalized records
+    const records = toBuildSessionRecords(session);
+    
+    // Insert into all four tables
+    await Promise.all([
+      ephemeralDB.buildSessions.put(records.config),
+      records.heartbeat ? ephemeralDB.buildSessionHeartbeats.put(records.heartbeat) : Promise.resolve(),
+      ephemeralDB.buildSessionStatuses.put(records.status),
+      records.stageStatus ? ephemeralDB.buildStageStatuses.put(records.stageStatus) : Promise.resolve(),
+    ]);
+    
     publishBuildSessionUpdate({ nodeId: session.nodeId, status: session.status });
   }
 
@@ -195,18 +158,86 @@ export class ShapeMutationService implements ShapeMutationAPI {
   ): Promise<void> {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
-    const patch = toBuildSessionUpdates(updates);
-    await ephemeralDB.sessions.update(nodeId, {
-      ...patch,
-      updatedAt: Date.now(),
-    });
+    
+    const updatePromises: Promise<unknown>[] = [];
+    
+    // Heartbeat update - only update buildSessionHeartbeats table
+    if (updates.lastHeartbeatAt !== undefined) {
+      updatePromises.push(
+        ephemeralDB.buildSessionHeartbeats.put({
+          nodeId,
+          lastHeartbeatAt: updates.lastHeartbeatAt,
+        })
+      );
+    }
+    
+    // Status update - only update buildSessionStatuses table
+    const statusFields = ['status', 'stopReason', 'completedAt'] as const;
+    const hasStatusUpdate = statusFields.some(field => updates[field] !== undefined);
+    if (hasStatusUpdate) {
+      const statusUpdate: Partial<BuildSessionStatus> = { nodeId };
+      if (updates.status !== undefined) statusUpdate.status = updates.status;
+      if (updates.stopReason !== undefined) statusUpdate.stopReason = updates.stopReason;
+      if (updates.completedAt !== undefined) statusUpdate.completedAt = updates.completedAt;
+      
+      updatePromises.push(
+        ephemeralDB.buildSessionStatuses.update(nodeId, statusUpdate)
+      );
+    }
+    
+    // Stage update - update buildStageStatuses table
+    // Note: For stage transitions (moving from one stage to another), the caller should:
+    // 1. Update the previous stage's completedAt by calling buildStageStatuses.update()
+    // 2. Create a new stage record by calling buildStageStatuses.put()
+    // This method handles updates to the current stage's fields.
+    const stageFields = ['stageInactiveMs', 'stageStartedAt', 'stageId'] as const;
+    const hasStageUpdate = stageFields.some(field => updates[field] !== undefined);
+    if (hasStageUpdate || updates.stages !== undefined) {
+      // Extract current stage from stages map if available
+      let currentStage: BuildStage | undefined;
+      if (updates.stages) {
+        const stageEntries = Object.entries(updates.stages);
+        const currentStageEntry = stageEntries.find(([_, stageData]) => {
+          if (isRecord(stageData) && 'status' in stageData) {
+            return stageData.status === 'running';
+          }
+          return false;
+        });
+        currentStage = currentStageEntry?.[0] as BuildStage | undefined;
+      }
+      
+      if (currentStage) {
+        const stageId = `${nodeId}:${currentStage}`;
+        const stageUpdate: Partial<BuildStageStatus> = {};
+        
+        if (updates.stageInactiveMs !== undefined) stageUpdate.inactiveMs = updates.stageInactiveMs;
+        if (updates.stageStartedAt !== undefined) stageUpdate.startedAt = updates.stageStartedAt;
+        if (updates.stageId !== undefined) stageUpdate.stageId = updates.stageId;
+        
+        updatePromises.push(
+          ephemeralDB.buildStageStatuses.update(stageId, stageUpdate)
+        );
+      }
+    }
+    
+    // Execute all updates in parallel
+    await Promise.all(updatePromises);
+    
     publishBuildSessionUpdate({ nodeId, status: updates.status });
   }
 
   async deleteBuildSession(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
-    await ephemeralDB.sessions.delete(nodeId);
+    
+    // Delete from all four tables atomically
+    await Promise.all([
+      ephemeralDB.buildSessions.delete(nodeId),
+      ephemeralDB.buildSessionHeartbeats.delete(nodeId),
+      ephemeralDB.buildSessionStatuses.delete(nodeId),
+      ephemeralDB.buildStageStatuses.where('nodeId').equals(nodeId).delete(),
+    ]);
+    
     publishBuildSessionUpdate({ nodeId, status: 'deleted' });
   }
 

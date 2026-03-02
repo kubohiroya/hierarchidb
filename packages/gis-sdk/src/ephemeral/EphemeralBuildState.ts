@@ -52,6 +52,7 @@ export interface EphemeralBuildSessionRecord {
   stage?: BuildStage;
   progress?: ShapeBuildProgressSummary | number;
   selectedArrayByCountries?: Record<string, boolean[]>;
+  selectedArrayVersion?: string;
   stages?: Record<BuildStage, EphemeralStageStatus>;
   resourceUsage?: unknown;
   startedAt?: number;
@@ -69,6 +70,62 @@ export interface EphemeralBuildSessionRecord {
   elapsedMs?: number;
   elapsedByStage?: Record<string, number>;
   sourceStageMaxima?: EphemeralSourceStageMaxima;
+}
+
+/**
+ * BuildSessionRecord - Immutable session configuration
+ * Stores configuration data that never changes after session creation.
+ * Update frequency: Once at creation, never updated
+ */
+export interface BuildSessionRecord {
+  nodeId: NodeId;
+  domainType?: EphemeralDomainType;
+  selectedArrayByCountries?: Record<string, boolean[]>;
+  selectedArrayVersion?: string;
+  startedAt: number;
+  sourceStageMaxima?: EphemeralSourceStageMaxima;
+}
+
+/**
+ * BuildSessionHeartbeat - High-frequency heartbeat tracking
+ * Stores only the last heartbeat timestamp, updated every 1 second.
+ * Update frequency: Every 1 second during active session
+ */
+export interface BuildSessionHeartbeat {
+  nodeId: NodeId;
+  lastHeartbeatAt: number;
+}
+
+/**
+ * BuildSessionStatus - Session-level status tracking
+ * Stores session-level status that changes on state transitions.
+ * Update frequency: On state transitions (idle → running → paused/completed/failed)
+ */
+export interface BuildSessionStatus {
+  nodeId: NodeId;
+  status: BuildStatus;
+  stopReason?: StopReason;
+  completedAt?: number;
+}
+
+/**
+ * BuildStageStatus - Per-stage status tracking with history
+ * Stores per-stage status, creating a new record for each stage transition.
+ * This preserves historical stage information.
+ * Update frequency: On stage transitions and stage completion
+ * 
+ * Note: The `id` field uses format `${nodeId}:${stage}` for efficient current stage lookup.
+ * Historical records can be queried using `[nodeId+startedAt]` compound index.
+ */
+export interface BuildStageStatus {
+  id: string;
+  nodeId: NodeId;
+  stage: BuildStage;
+  status: BuildTaskStatus;
+  startedAt: number;
+  completedAt?: number;
+  inactiveMs?: number;
+  stageId?: string;
 }
 
 export interface EphemeralBuildTaskRecord<TInput = unknown, TOutput = unknown> {
@@ -214,6 +271,42 @@ export const EPHEMERAL_DB_SCHEMA_V1: Record<string, string> = {
 export const EPHEMERAL_DB_SCHEMA_V2: Record<string, string> = {
   sessions:
     '&nodeId',
+  buildTasks:
+    '&taskId, nodeId, status, index, stagePriority, sequence'
+    + ', [nodeId+status], [nodeId+stage]'
+    + ', [nodeId+index], [nodeId+status+index], [nodeId+stage+index], [nodeId+stage+status+index]',
+  sourceCache:
+    '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+  sourceCacheMeta:
+    '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+  geometryCache:
+    '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
+  geometryCacheMeta:
+    '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
+  geometryErrors:
+    '&id, nodeId',
+  tileEmitBufferRelations:
+    '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
+};
+
+/**
+ * EPHEMERAL_DB_SCHEMA_V3 - Refactored session schema
+ * 
+ * Changes from V2:
+ * - Removed old `sessions` table
+ * - Added `buildSessions` table for immutable session configuration
+ * - Added `buildSessionHeartbeats` table for high-frequency heartbeat updates
+ * - Added `buildSessionStatuses` table for session-level status tracking
+ * - Added `buildStageStatuses` table for per-stage status tracking with history
+ * 
+ * This refactor eliminates data duplication, removes unused fields, reduces
+ * serialization overhead, and preserves historical stage information.
+ */
+export const EPHEMERAL_DB_SCHEMA_V3: Record<string, string> = {
+  buildSessions: '&nodeId',
+  buildSessionHeartbeats: '&nodeId',
+  buildSessionStatuses: '&nodeId, status',
+  buildStageStatuses: '&id, nodeId, [nodeId+stage], [nodeId+startedAt]',
   buildTasks:
     '&taskId, nodeId, status, index, stagePriority, sequence'
     + ', [nodeId+status], [nodeId+stage]'

@@ -66,7 +66,11 @@ export {
 } from './ephemeral/EphemeralDB';
 export {
   EPHEMERAL_DB_SCHEMA,
+  type BuildSessionRecord,
+  type BuildSessionHeartbeat,
+  type BuildSessionStatus,
   type BuildStage,
+  type BuildStageStatus,
   type BuildStatus,
   type BuildTaskStatus,
   type EphemeralBuildSessionRecord,
@@ -78,8 +82,16 @@ export {
   type EphemeralTransformCacheMetaRecord,
   type EphemeralGeometryErrorRecord,
   type EphemeralTileIdToBufferRelation,
+  type EphemeralSourceStageMaxima,
+  type EphemeralStageStatus,
   type StopReason,
 } from './ephemeral/EphemeralBuildState';
+export {
+  computeProgressFromTasks,
+  computeStagesFromTasks,
+  getSessionWithDetails,
+  type ProgressInfo,
+} from './ephemeral/sessionHelpers';
 export * from './config';
 export * from './geos/index';
 export * from './geometryEngine';

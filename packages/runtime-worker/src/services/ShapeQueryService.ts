@@ -31,6 +31,7 @@ import {
   ephemeralDB,
   type EphemeralBuildSessionRecord,
   type EphemeralBuildTaskRecord,
+  getSessionWithDetails,
 } from '@hierarchidb/gis-sdk';
 import { SingletonMixin } from '@hierarchidb/util';
 import {
@@ -259,6 +260,32 @@ const isShapeBuildTaskRecord = (
   value: ShapeBuildTaskRecord | null
 ): value is ShapeBuildTaskRecord => value !== null;
 
+/**
+ * Query session data from EphemeralDB using the unified query interface
+ */
+async function getEphemeralSessionWithDetails(nodeId: NodeId): Promise<EphemeralBuildSessionRecord | null> {
+  return getSessionWithDetails(nodeId, {
+    getConfig: async (nodeId) => ephemeralDB.buildSessions.get(nodeId),
+    getHeartbeat: async (nodeId) => ephemeralDB.buildSessionHeartbeats.get(nodeId),
+    getStatus: async (nodeId) => ephemeralDB.buildSessionStatuses.get(nodeId),
+    getStageStatuses: async (nodeId) => ephemeralDB.buildStageStatuses.where('nodeId').equals(nodeId).toArray(),
+    getTasks: async (nodeId) => ephemeralDB.buildTasks.where('nodeId').equals(nodeId).toArray(),
+  });
+}
+
+/**
+ * Query session data from ShapeDB using the unified query interface
+ */
+async function getShapeSessionWithDetails(db: ShapeDB, nodeId: NodeId): Promise<EphemeralBuildSessionRecord | null> {
+  return getSessionWithDetails(nodeId, {
+    getConfig: async (nodeId) => db.buildSessions.get(nodeId),
+    getHeartbeat: async (nodeId) => db.buildSessionHeartbeats.get(nodeId),
+    getStatus: async (nodeId) => db.buildSessionStatuses.get(nodeId),
+    getStageStatuses: async (nodeId) => db.buildStageStatuses.where('nodeId').equals(nodeId).toArray(),
+    getTasks: async (nodeId) => ephemeralDB.buildTasks.where('nodeId').equals(nodeId).toArray(),
+  });
+}
+
 export class ShapeQueryService implements ShapeQueryAPI {
   static async getSingleton(db: ShapeDB): Promise<ShapeQueryService> {
     return SingletonMixin.getSingleton('ShapeQueryService', async () => new ShapeQueryService(db));
@@ -277,32 +304,60 @@ export class ShapeQueryService implements ShapeQueryAPI {
   async listBuildSessions(nodeId: NodeId): Promise<ShapeBuildSessionSummary[]> {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
-    const sessions = await ephemeralDB.sessions.where('nodeId').equals(nodeId).toArray();
-    const records = sessions.map(toBuildSessionRecordFromEphemeral).filter(isNonNull);
+    
+    // Get all session configs for this node
+    const configs = await ephemeralDB.buildSessions.where('nodeId').equals(nodeId).toArray();
+    
+    // Query each session using unified interface
+    const sessions = await Promise.all(
+      configs.map(config => getEphemeralSessionWithDetails(config.nodeId))
+    );
+    
+    const records = sessions
+      .filter(isNonNull)
+      .map(toBuildSessionRecordFromEphemeral)
+      .filter(isNonNull);
+    
     return records.map(toSessionSummary);
   }
 
   async getBuildSession(nodeId: NodeId): Promise<ShapeBuildSessionSummary | null> {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
-    const session = await ephemeralDB.sessions.get(nodeId);
+    
+    const session = await getEphemeralSessionWithDetails(nodeId);
     const record = session ? toBuildSessionRecordFromEphemeral(session) : null;
+    
     return record ? toSessionSummary(record) : null;
   }
 
   async listBuildSessionRecords(nodeId: NodeId): Promise<ShapeBuildSessionRecord[]> {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
-    const sessions = await ephemeralDB.sessions.where('nodeId').equals(nodeId).toArray();
-    const records = sessions.map(toBuildSessionRecordFromEphemeral).filter(isNonNull);
+    
+    // Get all session configs for this node
+    const configs = await ephemeralDB.buildSessions.where('nodeId').equals(nodeId).toArray();
+    
+    // Query each session using unified interface
+    const sessions = await Promise.all(
+      configs.map(config => getEphemeralSessionWithDetails(config.nodeId))
+    );
+    
+    const records = sessions
+      .filter(isNonNull)
+      .map(toBuildSessionRecordFromEphemeral)
+      .filter(isNonNull);
+    
     return records.map(toShapeBuildSessionRecord);
   }
 
   async getBuildSessionRecord(nodeId: NodeId): Promise<ShapeBuildSessionRecord | null> {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
-    const session = await ephemeralDB.sessions.get(nodeId);
+    
+    const session = await getEphemeralSessionWithDetails(nodeId);
     const record = session ? toBuildSessionRecordFromEphemeral(session) : null;
+    
     return record ? toShapeBuildSessionRecord(record) : null;
   }
 
@@ -311,9 +366,23 @@ export class ShapeQueryService implements ShapeQueryAPI {
   ): Promise<ShapeBuildSessionRecord[]> {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
-    const sessions = await ephemeralDB.sessions.toArray();
-    const filtered = sessions.filter((session) => statuses.includes(session.status));
-    const records = filtered.map(toBuildSessionRecordFromEphemeral).filter(isNonNull);
+    
+    // Query buildSessionStatuses table for matching statuses
+    const statusRecords = await ephemeralDB.buildSessionStatuses
+      .where('status')
+      .anyOf(statuses)
+      .toArray();
+    
+    // Get full session details for each matching status
+    const sessions = await Promise.all(
+      statusRecords.map(status => getEphemeralSessionWithDetails(status.nodeId))
+    );
+    
+    const records = sessions
+      .filter(isNonNull)
+      .map(toBuildSessionRecordFromEphemeral)
+      .filter(isNonNull);
+    
     return records.map(toShapeBuildSessionRecord);
   }
 
@@ -349,8 +418,28 @@ export class ShapeQueryService implements ShapeQueryAPI {
   async getProcessingStatus(nodeId: NodeId): Promise<ShapeProcessingStatus | null> {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
-    const sessions = await ephemeralDB.sessions.where('nodeId').equals(nodeId).toArray();
-    const latest = sessions.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))[0];
+    
+    // Get all session configs for this node
+    const configs = await ephemeralDB.buildSessions.where('nodeId').equals(nodeId).toArray();
+    
+    if (configs.length === 0) {
+      return {
+        status: 'idle',
+        hasErrors: false,
+        errorMessages: [],
+      };
+    }
+    
+    // Query each session using unified interface
+    const sessions = await Promise.all(
+      configs.map(config => getEphemeralSessionWithDetails(config.nodeId))
+    );
+    
+    // Get latest session by startedAt (from config)
+    const latest = sessions
+      .filter(isNonNull)
+      .sort((a, b) => (b.startedAt ?? 0) - (a.startedAt ?? 0))[0];
+    
     if (!latest) {
       return {
         status: 'idle',
@@ -358,6 +447,7 @@ export class ShapeQueryService implements ShapeQueryAPI {
         errorMessages: [],
       };
     }
+    
     const latestSession = toBuildSessionRecordFromEphemeral(latest);
     if (!latestSession) {
       return {
@@ -366,8 +456,10 @@ export class ShapeQueryService implements ShapeQueryAPI {
         errorMessages: [],
       };
     }
+    
     const totalFeatures = await this.getProcessedFeatureCount(nodeId);
     const totalVectorTiles = await this.db.vectorTiles.where('nodeId').equals(nodeId).count();
+    
     return {
       status: mapStatus(latestSession.status),
       lastProcessed: latestSession.completedAt ?? latestSession.updatedAt,

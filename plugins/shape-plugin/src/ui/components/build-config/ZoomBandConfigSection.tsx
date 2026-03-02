@@ -22,7 +22,7 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
   const toleranceFallback = 0.1;
   const multiplierFallback = 1;
   const minRatioFallback = 0;
-  const maxRatioFallback = 2;
+  const maxRatioFallback = 3;
   const simplifyToleranceByAdminLevel = baseGeometryConfig.simplifyToleranceByAdminLevel;
 
   return (

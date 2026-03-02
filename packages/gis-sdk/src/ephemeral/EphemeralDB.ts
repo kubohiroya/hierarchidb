@@ -2,7 +2,11 @@ import { Dexie, type Table } from 'dexie';
 import type { NodeId } from '@hierarchidb/core-types';
 import { getDBName } from '@hierarchidb/util';
 import type {
+  BuildSessionRecord,
+  BuildSessionHeartbeat,
+  BuildSessionStatus,
   BuildStage,
+  BuildStageStatus,
   EphemeralBuildSessionRecord,
   EphemeralBuildTaskRecord,
   EphemeralFetchCacheMetaRecord,
@@ -13,9 +17,9 @@ import type {
   EphemeralGeometryErrorRecord,
 } from './EphemeralBuildState.js';
 import {
-  EPHEMERAL_DB_SCHEMA,
   EPHEMERAL_DB_SCHEMA_V1,
   EPHEMERAL_DB_SCHEMA_V2,
+  EPHEMERAL_DB_SCHEMA_V3,
 } from './EphemeralBuildState.js';
 
 const applyTopLevelMods = <T extends object>(
@@ -144,7 +148,13 @@ const fireAndForgetMetaOperation = (operation: () => Promise<unknown>, label: st
 };
 
 export class EphemeralDB extends Dexie {
-  sessions!: Table<EphemeralBuildSessionRecord, string>;
+  // V3 normalized tables
+  buildSessions!: Table<BuildSessionRecord, string>;
+  buildSessionHeartbeats!: Table<BuildSessionHeartbeat, string>;
+  buildSessionStatuses!: Table<BuildSessionStatus, string>;
+  buildStageStatuses!: Table<BuildStageStatus, string>;
+  
+  // Other tables
   buildTasks!: Table<EphemeralBuildTaskRecord, string>;
   sourceCache!: Table<EphemeralFetchCacheRecord, string>;
   sourceCacheMeta!: Table<EphemeralFetchCacheMetaRecord, string>;
@@ -157,10 +167,20 @@ export class EphemeralDB extends Dexie {
     super(dbName);
     this.version(1).stores(EPHEMERAL_DB_SCHEMA_V1);
     this.version(2).stores(EPHEMERAL_DB_SCHEMA_V2);
-    this.version(3).stores(EPHEMERAL_DB_SCHEMA);
-    this.version(4).stores(EPHEMERAL_DB_SCHEMA);
+    this.version(3).stores(EPHEMERAL_DB_SCHEMA_V3);
+    // V4: Explicitly remove old sessions table
+    this.version(4).stores({
+      ...EPHEMERAL_DB_SCHEMA_V3,
+      sessions: null, // Remove old sessions table
+    });
 
-    this.sessions = this.table('sessions');
+    // V3 normalized tables
+    this.buildSessions = this.table('buildSessions');
+    this.buildSessionHeartbeats = this.table('buildSessionHeartbeats');
+    this.buildSessionStatuses = this.table('buildSessionStatuses');
+    this.buildStageStatuses = this.table('buildStageStatuses');
+    
+    // Other tables
     this.buildTasks = this.table('buildTasks');
     this.sourceCache = this.table('sourceCache');
     this.sourceCacheMeta = this.table('sourceCacheMeta');
@@ -249,7 +269,10 @@ export class EphemeralDB extends Dexie {
       this.sourceCacheMeta,
       this.geometryCache,
       this.geometryCacheMeta,
-      this.sessions,
+      this.buildSessions,
+      this.buildSessionHeartbeats,
+      this.buildSessionStatuses,
+      this.buildStageStatuses,
       this.tileEmitBufferRelations,
       this.buildTasks,
       this.geometryErrors,
@@ -258,7 +281,10 @@ export class EphemeralDB extends Dexie {
       await this.sourceCacheMeta.where('nodeId').equals(nodeId).delete();
       await this.geometryCache.where('nodeId').equals(nodeId).delete();
       await this.geometryCacheMeta.where('nodeId').equals(nodeId).delete();
-      await this.sessions.where('nodeId').equals(nodeId).delete();
+      await this.buildSessions.where('nodeId').equals(nodeId).delete();
+      await this.buildSessionHeartbeats.where('nodeId').equals(nodeId).delete();
+      await this.buildSessionStatuses.where('nodeId').equals(nodeId).delete();
+      await this.buildStageStatuses.where('nodeId').equals(nodeId).delete();
       await this.tileEmitBufferRelations.where('nodeId').equals(nodeId).delete();
       await this.buildTasks.where('nodeId').equals(nodeId).delete();
       await this.geometryErrors.where('nodeId').equals(nodeId).delete();
@@ -289,7 +315,10 @@ export class EphemeralDB extends Dexie {
       this.sourceCacheMeta,
       this.geometryCache,
       this.geometryCacheMeta,
-      this.sessions,
+      this.buildSessions,
+      this.buildSessionHeartbeats,
+      this.buildSessionStatuses,
+      this.buildStageStatuses,
       this.tileEmitBufferRelations,
       this.geometryErrors,
     ], async () => {
@@ -310,7 +339,10 @@ export class EphemeralDB extends Dexie {
         default:
           break;
       }
-      await this.sessions.where('nodeId').equals(nodeId).delete();
+      await this.buildSessions.where('nodeId').equals(nodeId).delete();
+      await this.buildSessionHeartbeats.where('nodeId').equals(nodeId).delete();
+      await this.buildSessionStatuses.where('nodeId').equals(nodeId).delete();
+      await this.buildStageStatuses.where('nodeId').equals(nodeId).delete();
     });
   }
 
@@ -320,11 +352,11 @@ export class EphemeralDB extends Dexie {
     numSessions: number;
     totalSize: number;
   }> {
-    return this.transaction('r', [this.sourceCacheMeta, this.geometryCacheMeta, this.sessions], async () => {
+    return this.transaction('r', [this.sourceCacheMeta, this.geometryCacheMeta, this.buildSessions], async () => {
       const [numSourceCaches, numGeometryCaches, numSessions] = await Promise.all([
         this.sourceCacheMeta.count(),
         this.geometryCacheMeta.count(),
-        this.sessions.count(),
+        this.buildSessions.count(),
       ]);
       const rawBuffers = await this.sourceCacheMeta.toArray();
       const totalSize = rawBuffers.reduce((sum, buffer) => (
@@ -345,7 +377,10 @@ export class EphemeralDB extends Dexie {
       this.sourceCacheMeta,
       this.geometryCache,
       this.geometryCacheMeta,
-      this.sessions,
+      this.buildSessions,
+      this.buildSessionHeartbeats,
+      this.buildSessionStatuses,
+      this.buildStageStatuses,
       this.tileEmitBufferRelations,
       this.buildTasks,
       this.geometryErrors,
@@ -355,7 +390,10 @@ export class EphemeralDB extends Dexie {
         this.sourceCacheMeta.clear(),
         this.geometryCache.clear(),
         this.geometryCacheMeta.clear(),
-        this.sessions.clear(),
+        this.buildSessions.clear(),
+        this.buildSessionHeartbeats.clear(),
+        this.buildSessionStatuses.clear(),
+        this.buildStageStatuses.clear(),
         this.tileEmitBufferRelations.clear(),
         this.buildTasks.clear(),
         this.geometryErrors.clear(),

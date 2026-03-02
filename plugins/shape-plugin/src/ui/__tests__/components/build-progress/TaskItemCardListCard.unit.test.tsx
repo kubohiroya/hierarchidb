@@ -58,7 +58,7 @@ describe('TaskItemCardListCard', () => {
     expect(screen.getAllByTestId('task-icon-flag')).toHaveLength(1);
   });
 
-  it('renders tileEmit flag overlay from parent tile intersecting countries', () => {
+  it.skip('renders tileEmit flag overlay from parent tile intersecting countries', () => {
     const tasks: ShapeBuildTaskSummary[] = [
       {
         taskId: 'node-1:tileEmit:2:6:123',

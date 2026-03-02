@@ -11,7 +11,6 @@ import type {
   BuildTaskType,
   LayerInfo,
   ProgressInfo,
-  ResourceUsage,
   StageStatus,
   VectorTileRecord,
 } from '@hierarchidb/shape-store';
@@ -22,11 +21,6 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const isNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
-
-const isNumberRecord = (value: unknown): value is Record<string, number> => {
-  if (!isRecord(value)) return false;
-  return Object.values(value).every((entry) => isNumber(entry));
-};
 
 const isSourceStageMaxima = (value: unknown): value is SourceStageMaxima => {
   if (!isRecord(value)) return false;
@@ -100,22 +94,13 @@ export const toEphemeralBuildSessionRecord = (session: ShapeBuildSessionRecord):
   progress: toProgressSummary(session.progress, session.stageId),
   selectedArrayByCountries: session.selectedArrayByCountries,
   stages: toStageMap(session.stages as Record<string, unknown> | undefined),
-  resourceUsage: toResourceUsage(session.resourceUsage as Record<string, unknown> | undefined),
   stopReason: session.stopReason,
-  canResume: session.canResume,
-  lastActivity: session.lastActivity,
-  expiresAt: session.expiresAt,
   startedAt: session.startedAt,
-  updatedAt: session.updatedAt,
   completedAt: session.completedAt,
-  inactiveMs: session.inactiveMs,
   lastHeartbeatAt: session.lastHeartbeatAt,
   stageInactiveMs: session.stageInactiveMs,
   stageStartedAt: session.stageStartedAt,
-  stageHeartbeatAt: session.stageHeartbeatAt,
   stageId: session.stageId,
-  elapsedMs: session.elapsedMs,
-  elapsedByStage: isNumberRecord(session.elapsedByStage) ? session.elapsedByStage : undefined,
   sourceStageMaxima: isSourceStageMaxima(session.sourceStageMaxima) ? session.sourceStageMaxima : undefined,
 });
 
@@ -141,29 +126,6 @@ const toStageMap = (stages: Record<string, unknown> | undefined): Record<BuildTa
   };
 };
 
-const toResourceUsage = (usage: Record<string, unknown> | undefined): ResourceUsage | undefined => {
-  if (!usage) return undefined;
-  if (!isNumber(usage.memoryUsed)
-    || !isNumber(usage.memoryPeak)
-    || !isNumber(usage.cpuPercent)
-    || !isNumber(usage.storageUsed)
-    || !isNumber(usage.networkBytesReceived)
-    || !isNumber(usage.networkBytesSent)) {
-    return undefined;
-  }
-  return {
-    memoryUsed: usage.memoryUsed,
-    memoryPeak: usage.memoryPeak,
-    cpuPercent: usage.cpuPercent,
-    storageUsed: usage.storageUsed,
-    networkBytesReceived: usage.networkBytesReceived,
-    networkBytesSent: usage.networkBytesSent,
-  };
-};
-
-const toResourceUsageRecord = (usage: ResourceUsage | undefined): Record<string, unknown> | undefined =>
-  usage ? { ...usage } : undefined;
-
 export const toBuildSessionRecord = (session: ShapeBuildSessionRecord): BuildSessionRecord | null => {
   return {
     nodeId: session.nodeId,
@@ -174,18 +136,11 @@ export const toBuildSessionRecord = (session: ShapeBuildSessionRecord): BuildSes
     completedAt: session.completedAt,
     progress: toProgressInfo(session.progress, session.stageId),
     stages: toStageMap(session.stages),
-    resourceUsage: toResourceUsage(session.resourceUsage),
-    canResume: session.canResume,
-    lastActivity: session.lastActivity,
-    expiresAt: session.expiresAt,
-    inactiveMs: session.inactiveMs,
+    stopReason: session.stopReason,
     lastHeartbeatAt: session.lastHeartbeatAt,
     stageInactiveMs: session.stageInactiveMs,
     stageStartedAt: session.stageStartedAt,
-    stageHeartbeatAt: session.stageHeartbeatAt,
     stageId: session.stageId,
-    elapsedMs: session.elapsedMs,
-    elapsedByStage: isNumberRecord(session.elapsedByStage) ? session.elapsedByStage : undefined,
     sourceStageMaxima: isSourceStageMaxima(session.sourceStageMaxima) ? session.sourceStageMaxima : undefined,
   };
 };
@@ -203,22 +158,11 @@ export const toBuildSessionUpdates = (
   if (updates.completedAt !== undefined) next.completedAt = updates.completedAt;
   if (updates.progress !== undefined) next.progress = toProgressInfo(updates.progress, updates.stageId);
   if (updates.stages !== undefined) next.stages = toStageMap(updates.stages);
-  if (updates.resourceUsage !== undefined) next.resourceUsage = toResourceUsage(updates.resourceUsage);
   if (updates.stopReason !== undefined) next.stopReason = updates.stopReason;
-  if (updates.canResume !== undefined) next.canResume = updates.canResume;
-  if (updates.lastActivity !== undefined) next.lastActivity = updates.lastActivity;
-  if (updates.expiresAt !== undefined) next.expiresAt = updates.expiresAt;
-  if (updates.inactiveMs !== undefined) next.inactiveMs = updates.inactiveMs;
   if (updates.lastHeartbeatAt !== undefined) next.lastHeartbeatAt = updates.lastHeartbeatAt;
   if (updates.stageInactiveMs !== undefined) next.stageInactiveMs = updates.stageInactiveMs;
   if (updates.stageStartedAt !== undefined) next.stageStartedAt = updates.stageStartedAt;
-  if (updates.stageHeartbeatAt !== undefined) next.stageHeartbeatAt = updates.stageHeartbeatAt;
   if (updates.stageId !== undefined) next.stageId = updates.stageId;
-  if (updates.elapsedMs !== undefined) next.elapsedMs = updates.elapsedMs;
-  if (updates.elapsedByStage !== undefined) {
-    if (!isNumberRecord(updates.elapsedByStage)) return null;
-    next.elapsedByStage = updates.elapsedByStage;
-  }
   if (updates.sourceStageMaxima !== undefined) {
     if (!isSourceStageMaxima(updates.sourceStageMaxima)) return null;
     next.sourceStageMaxima = updates.sourceStageMaxima;
@@ -235,30 +179,16 @@ export const toEphemeralBuildSessionUpdates = (
     next.selectedArrayByCountries = updates.selectedArrayByCountries;
   }
   if (updates.startedAt !== undefined) next.startedAt = updates.startedAt;
-  if (updates.updatedAt !== undefined) next.updatedAt = updates.updatedAt;
   if (updates.completedAt !== undefined) next.completedAt = updates.completedAt;
   if (updates.progress !== undefined) next.progress = toProgressSummary(updates.progress, updates.stageId);
   if (updates.stages !== undefined) {
     next.stages = toStageMap(updates.stages as Record<string, unknown> | undefined);
   }
-  if (updates.resourceUsage !== undefined) {
-    next.resourceUsage = toResourceUsage(updates.resourceUsage as Record<string, unknown> | undefined);
-  }
   if (updates.stopReason !== undefined) next.stopReason = updates.stopReason;
-  if (updates.canResume !== undefined) next.canResume = updates.canResume;
-  if (updates.lastActivity !== undefined) next.lastActivity = updates.lastActivity;
-  if (updates.expiresAt !== undefined) next.expiresAt = updates.expiresAt;
-  if (updates.inactiveMs !== undefined) next.inactiveMs = updates.inactiveMs;
   if (updates.lastHeartbeatAt !== undefined) next.lastHeartbeatAt = updates.lastHeartbeatAt;
   if (updates.stageInactiveMs !== undefined) next.stageInactiveMs = updates.stageInactiveMs;
   if (updates.stageStartedAt !== undefined) next.stageStartedAt = updates.stageStartedAt;
-  if (updates.stageHeartbeatAt !== undefined) next.stageHeartbeatAt = updates.stageHeartbeatAt;
   if (updates.stageId !== undefined) next.stageId = updates.stageId;
-  if (updates.elapsedMs !== undefined) next.elapsedMs = updates.elapsedMs;
-  if (updates.elapsedByStage !== undefined) {
-    if (!isNumberRecord(updates.elapsedByStage)) return null;
-    next.elapsedByStage = updates.elapsedByStage;
-  }
   if (updates.sourceStageMaxima !== undefined) {
     if (!isSourceStageMaxima(updates.sourceStageMaxima)) return null;
     next.sourceStageMaxima = updates.sourceStageMaxima;
@@ -275,19 +205,11 @@ export const toShapeBuildSessionRecord = (session: BuildSessionRecord): ShapeBui
   completedAt: session.completedAt,
   progress: toProgressSummary(session.progress, session.stageId),
   stages: { ...session.stages },
-  resourceUsage: toResourceUsageRecord(session.resourceUsage),
   stopReason: session.stopReason,
-  canResume: session.canResume,
-  lastActivity: session.lastActivity,
-  expiresAt: session.expiresAt,
-  inactiveMs: session.inactiveMs,
   lastHeartbeatAt: session.lastHeartbeatAt,
   stageInactiveMs: session.stageInactiveMs,
   stageStartedAt: session.stageStartedAt,
-  stageHeartbeatAt: session.stageHeartbeatAt,
   stageId: session.stageId,
-  elapsedMs: session.elapsedMs,
-  elapsedByStage: session.elapsedByStage,
   sourceStageMaxima: isSourceStageMaxima(session.sourceStageMaxima) ? session.sourceStageMaxima : undefined,
 });
 
@@ -304,19 +226,11 @@ export const toShapeBuildSessionUpdates = (
   if (updates.completedAt !== undefined) next.completedAt = updates.completedAt;
   if (updates.progress !== undefined) next.progress = toProgressSummary(updates.progress, updates.stageId);
   if (updates.stages !== undefined) next.stages = { ...updates.stages };
-  if (updates.resourceUsage !== undefined) next.resourceUsage = toResourceUsageRecord(updates.resourceUsage);
   if (updates.stopReason !== undefined) next.stopReason = updates.stopReason;
-  if (updates.canResume !== undefined) next.canResume = updates.canResume;
-  if (updates.lastActivity !== undefined) next.lastActivity = updates.lastActivity;
-  if (updates.expiresAt !== undefined) next.expiresAt = updates.expiresAt;
-  if (updates.inactiveMs !== undefined) next.inactiveMs = updates.inactiveMs;
   if (updates.lastHeartbeatAt !== undefined) next.lastHeartbeatAt = updates.lastHeartbeatAt;
   if (updates.stageInactiveMs !== undefined) next.stageInactiveMs = updates.stageInactiveMs;
   if (updates.stageStartedAt !== undefined) next.stageStartedAt = updates.stageStartedAt;
-  if (updates.stageHeartbeatAt !== undefined) next.stageHeartbeatAt = updates.stageHeartbeatAt;
   if (updates.stageId !== undefined) next.stageId = updates.stageId;
-  if (updates.elapsedMs !== undefined) next.elapsedMs = updates.elapsedMs;
-  if (updates.elapsedByStage !== undefined) next.elapsedByStage = updates.elapsedByStage;
   if (updates.sourceStageMaxima !== undefined) next.sourceStageMaxima = updates.sourceStageMaxima;
   return next;
 };
