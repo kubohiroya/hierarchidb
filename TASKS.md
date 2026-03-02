@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #677 / `codex/docs/shape/step4-invalid-geometry-tileemit-warning-spec-677` / start: 2026-03-02 10:44 JST
 - #675 / `codex/docs/shape4/tolerance-bisection-spec-plan-675` / start: 2026-03-02 10:27 JST
 - #670 / `codex/fix/shape/step5-elapsed-time-consistency-670` / start: 2026-03-02 01:02 JST
 - #668 / `codex/fix/shape/step5-build-control-card-header-menu-668` / start: 2026-03-02 00:40 JST
@@ -151,6 +152,7 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- start: 2026-03-02 10:44 JST #677 を起票（https://github.com/kubohiroya/hierarchidb/issues/677）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/docs/shape/step4-invalid-geometry-tileemit-warning-spec-677` を作成して、Step4 Invalid geometry filtering の TileEmit 移設仕様と作業計画の文書化に着手。
 - update: 2026-03-02 10:40 JST #675 Shape4 Geometry tolerance 新方式の文書化を実施。`docs/spec/shape4-geometry-tolerance-bisection-spec.md` に仕様（`t_base` 2分法、`multiplier/minRatio/maxRatio`、ToneCurveEditor 3線化、失敗時挙動、段階移行）を記載し、`plans/shape4-geometry-tolerance-bisection-execplan.md` に実装マイルストーンと検証手順を定義。確認: `test -f docs/spec/shape4-geometry-tolerance-bisection-spec.md` exit 0、`test -f plans/shape4-geometry-tolerance-bisection-execplan.md` exit 0、`rg -n \"t_base|2分法|multiplier|minRatio|maxRatio|ToneCurveEditor|0.0..2.0|6553\" docs/spec/shape4-geometry-tolerance-bisection-spec.md plans/shape4-geometry-tolerance-bisection-execplan.md` exit 0。
 - start: 2026-03-02 10:27 JST #675 を起票（https://github.com/kubohiroya/hierarchidb/issues/675）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/docs/shape4/tolerance-bisection-spec-plan-675` を作成し、Shape4 の tolerance 新方式（`t_base` 2分法 + `multiplier/min/max`）仕様/作業計画ドキュメント整備に着手。
 - update: 2026-03-02 01:09 JST #670 実行中ステージ elapsed が停止する原因は stage map への live elapsed 合成不足と total elapsed の `max(stageSum, sessionElapsed)` 算出にあった。`useShapeBuildStepProgressState` で live 値を stage map に反映し、実行中 total elapsed を stage 合算へ統一。`useShapeBuildProgressPanelControllerBaseStateDataCore` で実行中ステージの表示に `summary.stageElapsedMs` を使用。検証: `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildStep.elapsed.unit.test.ts` すべて exit 0。参考として `pnpm -w turbo run test --filter @hierarchidb/shape-plugin` は既存失敗5件で exit 1（本件外）。
