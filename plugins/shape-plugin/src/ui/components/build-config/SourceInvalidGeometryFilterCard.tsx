@@ -120,6 +120,7 @@ export const SourceGeometryIntakeGuardCard: React.FC<Props> = ({
                 size="small"
                 fullWidth
                 exclusive
+                disabled
                 value={resolvedGuard.validationLevel}
                 onChange={(_event, value) => {
                   if (value === null) return;
