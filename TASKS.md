@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #675 / `codex/docs/shape4/tolerance-bisection-spec-plan-675` / start: 2026-03-02 10:27 JST
 - #674 / `codex/fix/shape/source-stage-progress-sync-674` / start: 2026-03-02 07:10 JST
 - #672 / `codex/fix/shape/build-session-menu-disabled-while-starting-672` / start: 2026-03-02 01:12 JST
 - #670 / `codex/fix/shape/step5-elapsed-time-consistency-670` / start: 2026-03-02 01:02 JST
@@ -152,6 +153,8 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- update: 2026-03-02 10:40 JST #675 Shape4 Geometry tolerance 新方式の文書化を実施。`docs/spec/shape4-geometry-tolerance-bisection-spec.md` に仕様（`t_base` 2分法、`multiplier/minRatio/maxRatio`、ToneCurveEditor 3線化、失敗時挙動、段階移行）を記載し、`plans/shape4-geometry-tolerance-bisection-execplan.md` に実装マイルストーンと検証手順を定義。確認: `test -f docs/spec/shape4-geometry-tolerance-bisection-spec.md` exit 0、`test -f plans/shape4-geometry-tolerance-bisection-execplan.md` exit 0、`rg -n \"t_base|2分法|multiplier|minRatio|maxRatio|ToneCurveEditor|0.0..2.0|6553\" docs/spec/shape4-geometry-tolerance-bisection-spec.md plans/shape4-geometry-tolerance-bisection-execplan.md` exit 0。
+- start: 2026-03-02 10:27 JST #675 を起票（https://github.com/kubohiroya/hierarchidb/issues/675）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/docs/shape4/tolerance-bisection-spec-plan-675` を作成し、Shape4 の tolerance 新方式（`t_base` 2分法 + `multiplier/min/max`）仕様/作業計画ドキュメント整備に着手。
 - update: 2026-03-02 08:07 JST #656 `plans/primary-intermediate-final-split-pr-plan.md` を追記し、命名方針を明文化。実行コードは `Primary/Intermediate/Final` 抽象名で固定し、UI は `displayNameResolver(domainContext, stageDescriptor)` でドメイン別具体名（例: Source/GraphIndex/Plan/Transform/TileEmit）を解決する方針を追加。`BuildSessionStageDescriptor` に `labelKey/fallbackLabel`、`BuildSessionScenario` に `domainContext` を契約項目として明示。
 - update: 2026-03-02 07:13 JST #674 原因は `resolveReceivingTaskSnapshotDecision.ts` が `hasReceivingTaskSnapshotSignal && taskCount===0` の瞬間に `buildStatus` を見ず即 `completed-without-generating-tasks` へ遷移していたこと。発生範囲は `plugins/shape-plugin/src/ui/components/build-progress/resolveReceivingTaskSnapshotDecision.ts` とその判定を使用する起動遷移 (`useShapeBuildSessionReceivingTaskSnapshotDecision.ts`)。修正として no-task 完了判定を `buildStatus==='completed'` の場合に限定し、実行中は `continue` で待機するよう変更。適用範囲は `resolveReceivingTaskSnapshotDecision.ts` と対応unit test `resolveReceivingTaskSnapshotDecision.unit.test.ts`。検証: `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` exit 0、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/resolveReceivingTaskSnapshotDecision.unit.test.ts` exit 0。
 - start: 2026-03-02 07:10 JST #674 を起票（https://github.com/kubohiroya/hierarchidb/issues/674）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/source-stage-progress-sync-674` を作成し、Sourceステージ進捗表示の早期完了不整合修正に着手。
