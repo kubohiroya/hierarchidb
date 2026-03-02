@@ -385,11 +385,6 @@ export const TileEmitConfigSection = <TDataSourceName,>({
               </Stack>
             </Paper>
           ) : null}
-          {additionalCards ? (
-            <Paper variant="outlined" sx={{ p: 2, ...hoverCardSx }}>
-              {additionalCards}
-            </Paper>
-          ) : null}
 
         </Stack>
       </AccordionDetails>
