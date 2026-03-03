@@ -1,5 +1,12 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildContinuationPolicy, BuildTaskSummary, BuildTaskUpdateEvent, BuildProgressEvent } from '@hierarchidb/build-api';
+import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
+import type {
+  SessionStateChangeEvent,
+  StageSnapshotEvent,
+  SessionHeartbeatEvent,
+  TaskProgressEvent,
+} from '~/common/types/session-events';
 import {
   type BuildSession,
   type CountryMetadata,
@@ -408,6 +415,98 @@ export const shapeBuildAPI = {
       }
       unsubscribe();
     };
+  },
+
+  // ===================================
+  // Real-time Session State Subscription (4 channels)
+  // ===================================
+
+  subscribeToSessionState: (nodeId: NodeId, callback: (event: SessionStateChangeEvent) => void): (() => void) => {
+    const key = String(nodeId);
+    const existing = shapeBuildRuntime.sessionStateCallbacks.get(key);
+    existing?.unsubscribe?.();
+
+    const unsubscribe = () => {
+      shapeBuildRuntime.sessionStateCallbacks.delete(key);
+    };
+
+    shapeBuildRuntime.sessionStateCallbacks.set(key, { unsubscribe, callback });
+
+    return () => {
+      const active = shapeBuildRuntime.sessionStateCallbacks.get(key);
+      if (active?.unsubscribe === unsubscribe) {
+        shapeBuildRuntime.sessionStateCallbacks.delete(key);
+      }
+      unsubscribe();
+    };
+  },
+
+  subscribeToStageSnapshots: (nodeId: NodeId, callback: (event: StageSnapshotEvent) => void): (() => void) => {
+    const key = String(nodeId);
+    const existing = shapeBuildRuntime.stageSnapshotCallbacks.get(key);
+    existing?.unsubscribe?.();
+
+    const unsubscribe = () => {
+      shapeBuildRuntime.stageSnapshotCallbacks.delete(key);
+    };
+
+    shapeBuildRuntime.stageSnapshotCallbacks.set(key, { unsubscribe, callback });
+
+    return () => {
+      const active = shapeBuildRuntime.stageSnapshotCallbacks.get(key);
+      if (active?.unsubscribe === unsubscribe) {
+        shapeBuildRuntime.stageSnapshotCallbacks.delete(key);
+      }
+      unsubscribe();
+    };
+  },
+
+  subscribeToHeartbeat: (nodeId: NodeId, callback: (event: SessionHeartbeatEvent) => void): (() => void) => {
+    const key = String(nodeId);
+    const existing = shapeBuildRuntime.heartbeatCallbacks.get(key);
+    existing?.unsubscribe?.();
+
+    const unsubscribe = () => {
+      shapeBuildRuntime.heartbeatCallbacks.delete(key);
+    };
+
+    shapeBuildRuntime.heartbeatCallbacks.set(key, { unsubscribe, callback });
+
+    return () => {
+      const active = shapeBuildRuntime.heartbeatCallbacks.get(key);
+      if (active?.unsubscribe === unsubscribe) {
+        shapeBuildRuntime.heartbeatCallbacks.delete(key);
+      }
+      unsubscribe();
+    };
+  },
+
+  subscribeToTaskProgress: (nodeId: NodeId, callback: (event: TaskProgressEvent) => void): (() => void) => {
+    const key = String(nodeId);
+    const existing = shapeBuildRuntime.taskProgressCallbacks.get(key);
+    existing?.unsubscribe?.();
+
+    const unsubscribe = () => {
+      shapeBuildRuntime.taskProgressCallbacks.delete(key);
+    };
+
+    shapeBuildRuntime.taskProgressCallbacks.set(key, { unsubscribe, callback });
+
+    return () => {
+      const active = shapeBuildRuntime.taskProgressCallbacks.get(key);
+      if (active?.unsubscribe === unsubscribe) {
+        shapeBuildRuntime.taskProgressCallbacks.delete(key);
+      }
+      unsubscribe();
+    };
+  },
+
+  // ===================================
+  // On-demand Session State Query
+  // ===================================
+
+  getSessionStateOnDemand: async (nodeId: NodeId): Promise<ShapeBuildSessionRecord | null> => {
+    return shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
   },
 
   forceCleanup: async (): Promise<{

@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import type { BuildProgressStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
-import { UI_POLL_INTERVAL_MS, UI_QUIET_THRESHOLD_MS } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/constants.js';
+import { UI_QUIET_THRESHOLD_MS } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/constants.js';
+
+const POLL_INTERVAL_MS = 1000; // Local constant for backward compatibility
 
 type UseShapeBuildProgressResidueMonitorArgs = {
   activeNodeId: NodeId | null;
@@ -83,7 +85,7 @@ export const useShapeBuildProgressResidueMonitor = ({
     if (elapsedSinceStart < UI_QUIET_THRESHOLD_MS) return;
 
     const stageHeartbeatAt = sessionRecord?.stageHeartbeatAt ?? sessionRecord?.updatedAt ?? null;
-    const suspectWindowMs = UI_QUIET_THRESHOLD_MS + UI_POLL_INTERVAL_MS * 2;
+    const suspectWindowMs = UI_QUIET_THRESHOLD_MS + POLL_INTERVAL_MS * 2;
     if (stageHeartbeatAt && now - stageHeartbeatAt <= suspectWindowMs) {
       if (crashSuspectOpen) {
         closeCrashSuspectInternal();

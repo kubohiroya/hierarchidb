@@ -17,8 +17,9 @@ import { useShapeBuildStages } from '~/ui/components/build-progress/useShapeBuil
 import { useShapeBuildLabels } from '~/ui/components/build-progress/useShapeBuildLabels/useShapeBuildLabels';
 import { resolveBuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
 import type { BuildProgressStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
-import { useShapeBuildSessionRecord } from './useShapeBuildSessionRecord.js';
-import { UI_POLL_INTERVAL_MS } from './useShapeBuildStepHelpers/constants.js';
+import { useShapeBuildSessionState } from './useShapeBuildSessionState.js';
+
+const POLL_INTERVAL_MS = 1000; // Local constant for backward compatibility
 import {
   getBuildSessionTransitionStatusLabel,
 } from './useShapeBuildStepHelpers/startupTrace.js';
@@ -99,7 +100,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const waitForBuildLock = useCallback(async (_requestedAt: number): Promise<boolean> => {
     if (!activeNodeId) return false;
     while (!cancelStartRequestRef.current) {
-      await sleep(UI_POLL_INTERVAL_MS);
+      await sleep(POLL_INTERVAL_MS);
       return true;
     }
     return false;
@@ -109,7 +110,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const {
     sessionRecord,
     updateSessionRecord,
-  } = useShapeBuildSessionRecord({
+  } = useShapeBuildSessionState({
     activeNodeId,
   });
   const lastReceivingTaskSnapshotDecisionTraceKeyRef = useRef<string | null>(null);

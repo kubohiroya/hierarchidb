@@ -16,6 +16,10 @@ export const shapeBuildRuntimePublic = {
   buildTaskSummarySnapshot: shapeBuildRuntimeExecutionMetrics.buildTaskSummarySnapshot,
   progressCallbacks: shapeBuildRuntimeExecutionMetrics.progressCallbacks,
   taskCallbacks: shapeBuildRuntimeExecutionMetrics.taskCallbacks,
+  sessionStateCallbacks: shapeBuildRuntimeExecutionMetrics.sessionStateCallbacks,
+  stageSnapshotCallbacks: shapeBuildRuntimeExecutionMetrics.stageSnapshotCallbacks,
+  heartbeatCallbacks: shapeBuildRuntimeExecutionMetrics.heartbeatCallbacks,
+  taskProgressCallbacks: shapeBuildRuntimeExecutionMetrics.taskProgressCallbacks,
 } as const;
 
 export type ShapeBuildRuntimePublic = typeof shapeBuildRuntimePublic;

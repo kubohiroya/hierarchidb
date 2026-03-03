@@ -20,16 +20,14 @@ import {
   Typography,
 } from '@mui/material';
 import {
-  TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES,
   TREE_CONSOLE_ZOOM_BAND_MAX_RANGES,
   TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
   TREE_CONSOLE_ZOOM_BAND_MIN_RANGES,
   TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
-  buildEvenZoomBandBoundaries,
-  normalizeZoomBandBoundaries,
 } from '@hierarchidb/util';
-import { useCallback, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import type { TreeConsoleToolbarActionParams } from '~/types';
+import { useSettingsMenu } from './useSettingsMenu.js';
 
 interface SettingsMenuProps {
   rowClickAction: 'Select/Navigate' | 'Edit';
@@ -72,104 +70,26 @@ export function SettingsMenu({
   portalContainer,
   labels,
 }: SettingsMenuProps) {
-  const [settingsAnchorEl, setSettingsAnchorEl] = useState<HTMLElement | null>(null);
-
-  const settingsOpen = Boolean(settingsAnchorEl);
-  const resolvedBoundaries = Array.isArray(zoomBandBoundaries)
-    ? zoomBandBoundaries
-    : TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES;
-  const normalizedBoundaries = useMemo(
-    () =>
-      normalizeZoomBandBoundaries(
-        resolvedBoundaries,
-        TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
-        TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
-        TREE_CONSOLE_ZOOM_BAND_MAX_RANGES,
-      ),
-    [resolvedBoundaries],
-  );
-
-  const rangeCount = Math.min(
-    Math.max(normalizedBoundaries.length - 1, TREE_CONSOLE_ZOOM_BAND_MIN_RANGES),
-    TREE_CONSOLE_ZOOM_BAND_MAX_RANGES,
-  );
-  const sliderValues = normalizedBoundaries;
-
-  const scheduleCloseSettingsMenu = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      window.setTimeout(() => {
-        setSettingsAnchorEl(null);
-      }, 0);
-    } else {
-      setSettingsAnchorEl(null);
-    }
-  }, []);
-
-  const handleSettingsClick = (event: MouseEvent<HTMLElement>) => {
-    setSettingsAnchorEl(event.currentTarget);
-  };
-
-  const handleRowClickChange = (value: 'Select/Navigate' | 'Edit') => {
-    if (onRowClickActionChange) {
-      onRowClickActionChange(value);
-    } else {
-      onAction('setRowClickAction', value);
-    }
-    scheduleCloseSettingsMenu();
-  };
-
-  const handleAutosaveChange = (value: boolean) => {
-    if (onAutosaveEnabledChange) {
-      onAutosaveEnabledChange(value);
-    } else {
-      onAction('setAutosaveEnabled', value);
-    }
-    scheduleCloseSettingsMenu();
-  };
-
-  const handleDialogBackdropDismissChange = (value: boolean) => {
-    if (onDialogBackdropDismissEnabledChange) {
-      onDialogBackdropDismissEnabledChange(value);
-    } else {
-      onAction('setDialogBackdropDismissEnabled', value);
-    }
-    scheduleCloseSettingsMenu();
-  };
-
-  const handleZoomBandBoundariesChange = (nextBoundaries: number[]) => {
-    if (onZoomBandBoundariesChange) {
-      onZoomBandBoundariesChange(nextBoundaries);
-    } else {
-      onAction('setZoomBandBoundaries', nextBoundaries);
-    }
-  };
-
-  const handleRangeCountChange = (_event: Event, value: number | number[]) => {
-    const raw = Array.isArray(value) ? value[0] : value;
-    if (typeof raw !== 'number') return;
-    const currentMax = normalizedBoundaries[normalizedBoundaries.length - 1] ?? TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM;
-    const nextBoundaries = buildEvenZoomBandBoundaries(
-      raw,
-      TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
-      currentMax,
-    );
-    handleZoomBandBoundariesChange(nextBoundaries);
-  };
-
-  const handleBoundariesChange = (_event: Event, value: number | number[]) => {
-    if (!Array.isArray(value)) return;
-    const nextValues = [...value];
-    if (nextValues.length > 0) {
-      nextValues[0] = TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM;
-    }
-    const nextBoundaries = normalizeZoomBandBoundaries(
-      nextValues,
-      TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
-      TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
-      TREE_CONSOLE_ZOOM_BAND_MAX_RANGES,
-    );
-    handleZoomBandBoundariesChange(nextBoundaries);
-  };
+  const {
+    settingsAnchorEl,
+    settingsOpen,
+    rangeCount,
+    sliderValues,
+    handleSettingsClick,
+    handleMenuClose,
+    handleRowClickChange,
+    handleAutosaveChange,
+    handleDialogBackdropDismissChange,
+    handleRangeCountChange,
+    handleBoundariesChange,
+  } = useSettingsMenu({
+    onRowClickActionChange,
+    onAutosaveEnabledChange,
+    onDialogBackdropDismissEnabledChange,
+    zoomBandBoundaries,
+    onZoomBandBoundariesChange,
+    onAction,
+  });
 
   return (
     <>
@@ -185,7 +105,7 @@ export function SettingsMenu({
         open={settingsOpen}
         anchorEl={settingsAnchorEl}
         container={portalContainer}
-        onClose={() => setSettingsAnchorEl(null)}
+        onClose={handleMenuClose}
       >
         <MenuItem>
           <Paper

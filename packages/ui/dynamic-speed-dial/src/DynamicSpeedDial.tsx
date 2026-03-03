@@ -1,17 +1,14 @@
 import { Box, Portal, SpeedDial, SpeedDialIcon } from '@mui/material';
-import { useMemo } from 'react';
-import type { MouseEvent } from 'react';
 import type {
   DynamicSpeedDialIconResolver,
   DynamicSpeedDialMenuItem,
   DynamicSpeedDialTranslator,
 } from './types.js';
 import {
-  type SpeedDialSubmenuAction,
   SpeedDialSubmenuActions,
-  type SpeedDialSubmenuItem,
 } from '@hierarchidb/ui-speeddial-submenu';
 import { useDynamicSpeedDial } from './useDynamicSpeedDial.js';
+import { useDynamicSpeedDialSubmenuActions } from './useDynamicSpeedDialSubmenuActions.js';
 
 export interface DynamicSpeedDialProps<TNode = unknown> {
   treeId?: string;
@@ -67,92 +64,14 @@ export function DynamicSpeedDial<TNode = unknown>(props: DynamicSpeedDialProps<T
 
   const createLabel = translateWithFallback('treeConsole.contextMenu.create', 'Create');
   const effectiveHidden = hidden || dialogOpen;
-
-  const submenuActions = useMemo<SpeedDialSubmenuAction[]>(() => {
-    if (!useVM) return [];
-
-    const actions: SpeedDialSubmenuAction[] = [];
-
-    const buildItemLabel = (item: DynamicSpeedDialMenuItem) => {
-      if (item.labelKey) {
-        return translateWithFallback(item.labelKey, item.label);
-      }
-      return translateWithFallback(`plugins.${item.nodeType}.name`, item.label);
-    };
-
-    const buildTooltipLabel = (item: DynamicSpeedDialMenuItem) => {
-      const localizedLabel = buildItemLabel(item);
-      const localizedDescription = item.descriptionKey
-        ? translateWithFallback(item.descriptionKey, (item.description ?? '').trim()).trim()
-        : translateWithFallback(`plugins.${item.nodeType}.description`, (item.description ?? '').trim()).trim();
-      const tooltipTemplate = translateWithFallback(
-        'treeConsole.contextMenu.createTooltip',
-        '{{label}}: {{description}}'
-      );
-      if (localizedDescription.length === 0) {
-        return localizedLabel;
-      }
-      return tooltipTemplate
-        .replace('{{label}}', localizedLabel)
-        .replace('{{description}}', localizedDescription);
-    };
-
-    const toCreateType = (item: DynamicSpeedDialMenuItem) => item.createType ?? item.nodeType;
-
-    const buildLeafAction = (item: DynamicSpeedDialMenuItem, testId: string): SpeedDialSubmenuItem => ({
-      id: `create:${toCreateType(item)}:${language}`,
-      label: buildItemLabel(item),
-      icon: resolveIcon({ nodeType: item.nodeType, icon: item.icon }),
-      onClick: (event: MouseEvent<HTMLElement>) =>
-        handleVMActionClick(toCreateType(item), { openInNewTab: event.shiftKey }),
-      testId,
-    });
-
-    for (const item of vmItems) {
-      const hasChildren = Array.isArray(item.children) && item.children.length > 0;
-      const testIdBase = `create-${item.nodeType}`;
-      if (hasChildren) {
-        actions.push({
-          id: `create:${toCreateType(item)}:${language}`,
-          label: buildItemLabel(item),
-          icon: resolveIcon({ nodeType: item.nodeType, icon: item.icon }),
-          tooltipTitle: buildTooltipLabel(item),
-          onClick: (event: MouseEvent<HTMLElement>) =>
-            handleVMActionClick(toCreateType(item), { openInNewTab: event.shiftKey }),
-          backgroundColor: item.backgroundColor,
-          hoverBackgroundColor: (() => {
-            if (!item.icon || typeof item.icon !== 'object') return item.backgroundColor;
-            const icon = item.icon as Record<string, unknown>;
-            return typeof icon.color === 'string' ? `${icon.color}33` : item.backgroundColor;
-          })(),
-          testId: `${testIdBase}-action`,
-          submenuTestId: `${testIdBase}-submenu`,
-          submenuTriggerTestId: `${testIdBase}-submenu-trigger`,
-          children: item.children!.map((child, childIndex) =>
-            buildLeafAction(child, `${testIdBase}-submenu-action-${childIndex + 1}`)
-          ),
-        });
-      } else {
-        actions.push({
-          id: `create:${toCreateType(item)}:${language}`,
-          label: buildItemLabel(item),
-          icon: resolveIcon({ nodeType: item.nodeType, icon: item.icon }),
-          tooltipTitle: buildTooltipLabel(item),
-          onClick: (event: MouseEvent<HTMLElement>) =>
-            handleVMActionClick(toCreateType(item), { openInNewTab: event.shiftKey }),
-          backgroundColor: item.backgroundColor,
-          hoverBackgroundColor: (() => {
-            if (!item.icon || typeof item.icon !== 'object') return item.backgroundColor;
-            const icon = item.icon as Record<string, unknown>;
-            return typeof icon.color === 'string' ? `${icon.color}33` : item.backgroundColor;
-          })(),
-          testId: `${testIdBase}-action`,
-        });
-      }
-    }
-
-    return actions;
-  }, [handleVMActionClick, language, resolveIcon, translateWithFallback, useVM, vmItems]);
+  const submenuActions = useDynamicSpeedDialSubmenuActions({
+    useVM,
+    vmItems,
+    language,
+    resolveIcon,
+    translateWithFallback,
+    handleVMActionClick,
+  });
 
   if (effectiveHidden) {
     return null;

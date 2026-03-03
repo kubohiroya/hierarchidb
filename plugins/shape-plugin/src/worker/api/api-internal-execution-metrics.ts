@@ -32,6 +32,15 @@ import {
   type BuildTaskSummary,
   type BuildTaskUpdateEvent,
 } from '@hierarchidb/build-api';
+import type {
+  SessionStateChangeEvent,
+  SessionHeartbeatEvent,
+  TaskProgressEvent,
+  SessionStateSubscription,
+  StageSnapshotSubscription,
+  HeartbeatSubscription,
+  TaskProgressSubscription,
+} from '~/common/types/session-events';
 import { Dexie } from 'dexie';
 import {
   VtTaskQueueDb,
@@ -223,7 +232,60 @@ type PauseState = {
 
 const progressCallbacks = new Map<string, ProgressSubscription>();
 const taskCallbacks = new Map<string, TaskSubscription>();
+const sessionStateCallbacks = new Map<string, SessionStateSubscription>();
+const stageSnapshotCallbacks = new Map<string, StageSnapshotSubscription>();
+const heartbeatCallbacks = new Map<string, HeartbeatSubscription>();
+const taskProgressCallbacks = new Map<string, TaskProgressSubscription>();
 const pauseStates = new Map<string, PauseState>();
+const sessionHeartbeatTimers = new Map<string, ReturnType<typeof setInterval>>();
+const HEARTBEAT_INTERVAL_MS = 1000; // 1 second
+
+const startSessionHeartbeat = (nodeId: NodeId): void => {
+  const key = String(nodeId);
+
+  // Clear existing heartbeat if any
+  const existingTimer = sessionHeartbeatTimers.get(key);
+  if (existingTimer) {
+    clearInterval(existingTimer);
+  }
+
+  const timer = setInterval(() => {
+    const subscription = heartbeatCallbacks.get(key);
+    if (!subscription?.callback) {
+      clearInterval(timer);
+      sessionHeartbeatTimers.delete(key);
+      return;
+    }
+
+    const isActive = activePipelines.has(key);
+    const lastActivity = Date.now(); // TODO: Get actual last activity from session
+
+    const event: SessionHeartbeatEvent = {
+      nodeId,
+      timestamp: Date.now(),
+      isActive,
+      lastActivity,
+    };
+
+    try {
+      subscription.callback(event);
+    } catch (error) {
+      console.error('[shapeBuildAPI] heartbeat callback failed', error);
+    }
+  }, HEARTBEAT_INTERVAL_MS);
+
+  sessionHeartbeatTimers.set(key, timer);
+};
+
+const stopSessionHeartbeat = (nodeId: NodeId): void => {
+  const key = String(nodeId);
+  const timer = sessionHeartbeatTimers.get(key);
+  if (timer) {
+    clearInterval(timer);
+    sessionHeartbeatTimers.delete(key);
+  }
+};
+
 const activePipelines = new Set<string>();
 const activePipelineRuns = new Map<string, string>();
 const sessionSubscriptions = new Map<string, () => void>();
@@ -995,6 +1057,11 @@ const upsertBuildSessionSnapshot = async (
     sourceStageMaxima: existing?.sourceStageMaxima,
   };
   await shapeMutationAPIImpl.upsertBuildSession(record);
+
+  // Emit session state change event if status changed
+  if (previousStatus !== input.status) {
+    emitSessionStateChange(input.nodeId, previousStatus, input.status, record);
+  }
 };
 
 type BuildSessionUpdateState = {
@@ -1056,10 +1123,25 @@ const scheduleBuildSessionUpdate = (
 const startSessionTracking = (nodeId: NodeId): void => {
   const key = String(nodeId);
   if (sessionSubscriptions.has(key)) return;
-  const unsubscribe = onTaskQueueUpdate(nodeId, () => {
+  const unsubscribe = onTaskQueueUpdate(nodeId, (event) => {
     scheduleBuildSessionUpdate(nodeId);
+
+    // Emit task progress event
+    if (event.type === 'update') {
+      emitTaskProgress(
+        event.nodeId,
+        event.task.taskId,
+        event.task.stage,
+        event.task.progress ?? 0,
+        event.task.status,
+        event.task.metadata,
+      );
+    }
   });
   sessionSubscriptions.set(key, unsubscribe);
+
+  // Start heartbeat for this session
+  startSessionHeartbeat(nodeId);
 };
 
 const stopSessionTracking = (nodeId: NodeId): void => {
@@ -1069,6 +1151,9 @@ const stopSessionTracking = (nodeId: NodeId): void => {
     unsubscribe();
   }
   sessionSubscriptions.delete(key);
+
+  // Stop heartbeat for this session
+  stopSessionHeartbeat(nodeId);
 };
 
 const readPipelineStartedAt = (nodeId: NodeId): number | null => {
@@ -1089,6 +1174,12 @@ const clearActivePipelineRuntimeState = (nodeId: NodeId): void => {
   sessionAbortControllers.delete(pipelineKey);
   sessionWorkerInstances.delete(pipelineKey);
   stopSessionTracking(nodeId);
+
+  // Clean up all session callbacks
+  sessionStateCallbacks.delete(pipelineKey);
+  stageSnapshotCallbacks.delete(pipelineKey);
+  heartbeatCallbacks.delete(pipelineKey);
+  taskProgressCallbacks.delete(pipelineKey);
 };
 
 const clearStalePipelineStateIfInactive = async (
@@ -1185,6 +1276,60 @@ const resolveProgressPhase = (nodeId: NodeId, tasks: TaskQueueRecord[]): BuildPr
   }
 };
 
+const emitSessionStateChange = (
+  nodeId: NodeId,
+  previousStatus: ShapeBuildSessionRecord['status'] | undefined,
+  currentStatus: ShapeBuildSessionRecord['status'],
+  sessionRecord: ShapeBuildSessionRecord,
+): void => {
+  const key = String(nodeId);
+  const subscription = sessionStateCallbacks.get(key);
+  if (!subscription?.callback) return;
+
+  const event: SessionStateChangeEvent = {
+    nodeId,
+    timestamp: Date.now(),
+    previousStatus,
+    currentStatus,
+    sessionRecord,
+  };
+
+  try {
+    subscription.callback(event);
+  } catch (error) {
+    console.error('[shapeBuildAPI] session state change callback failed', error);
+  }
+};
+
+const emitTaskProgress = (
+  nodeId: NodeId,
+  taskId: string,
+  stage: string,
+  progress: number,
+  status: string,
+  metadata?: Record<string, unknown>,
+): void => {
+  const key = String(nodeId);
+  const subscription = taskProgressCallbacks.get(key);
+  if (!subscription?.callback) return;
+
+  const event: TaskProgressEvent = {
+    nodeId,
+    timestamp: Date.now(),
+    taskId,
+    stage,
+    progress,
+    status,
+    metadata,
+  };
+
+  try {
+    subscription.callback(event);
+  } catch (error) {
+    console.error('[shapeBuildAPI] task progress callback failed', error);
+  }
+};
+
 const emitProgressSnapshot = async (
   nodeId: NodeId,
   message?: string,
@@ -1249,6 +1394,10 @@ export const shapeBuildRuntimeExecutionMetrics = {
   summarizeTaskQueueStatus,
   progressCallbacks,
   taskCallbacks,
+  sessionStateCallbacks,
+  stageSnapshotCallbacks,
+  heartbeatCallbacks,
+  taskProgressCallbacks,
   upsertBuildSessionSnapshot,
   updateBuildSessionFromTasks,
   resolveTaskActivityTimestamp,

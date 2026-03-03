@@ -11,6 +11,9 @@ import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { HeapPressureEvent } from '@hierarchidb/memory';
 import type { TreeNodeData } from '@hierarchidb/tree-api';
 import { proxy, type Remote } from 'comlink';
+import { toNodeType } from '@hierarchidb/core-types';
+
+const SHAPE_NODE_TYPE = toNodeType('shape');
 
 type WorkerApi = WorkerAPI<TreeNodeData>;
 
@@ -59,6 +62,21 @@ export interface BuildWorkerBridge {
     cb: (event: BuildProgressEvent) => void
   ): Promise<() => void>;
   subscribeHeapPressure(cb: (event: HeapPressureEvent) => void): Promise<() => void>;
+  subscribeSessionState(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    cb: (event: any) => void
+  ): Promise<() => void>;
+  subscribeSessionHeartbeat(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    cb: (event: any) => void
+  ): Promise<() => void>;
+  subscribeTaskProgress(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    cb: (event: any) => void
+  ): Promise<() => void>;
 }
 
 type WorkerClientRefLike = {
@@ -325,6 +343,84 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
         console.warn('[BuildWorkerBridge] unsubscribe failed', error);
       }
     };
+  }
+
+  async subscribeSessionState(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    cb: (event: any) => void
+  ): Promise<() => void> {
+    const api = await ensureWorkerAPI();
+    // Get the appropriate API based on nodeType
+    if (nodeType === SHAPE_NODE_TYPE) {
+      const shapeAPI = await api.getShapeQueryAPI();
+      if ('subscribeToSessionState' in shapeAPI) {
+        const unsubscribe = await (shapeAPI as any).subscribeToSessionState(nodeId, proxy((event: any) => {
+          cb(sanitizeForComlink(event));
+        }));
+        return () => {
+          try {
+            unsubscribe();
+          } catch (error) {
+            console.warn('[BuildWorkerBridge] subscribeSessionState unsubscribe failed', error);
+          }
+        };
+      }
+    }
+    // Fallback: return no-op unsubscribe
+    return () => { };
+  }
+
+  async subscribeSessionHeartbeat(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    cb: (event: any) => void
+  ): Promise<() => void> {
+    const api = await ensureWorkerAPI();
+    // Get the appropriate API based on nodeType
+    if (nodeType === SHAPE_NODE_TYPE) {
+      const shapeAPI = await api.getShapeQueryAPI();
+      if ('subscribeToHeartbeat' in shapeAPI) {
+        const unsubscribe = await (shapeAPI as any).subscribeToHeartbeat(nodeId, proxy((event: any) => {
+          cb(sanitizeForComlink(event));
+        }));
+        return () => {
+          try {
+            unsubscribe();
+          } catch (error) {
+            console.warn('[BuildWorkerBridge] subscribeSessionHeartbeat unsubscribe failed', error);
+          }
+        };
+      }
+    }
+    // Fallback: return no-op unsubscribe
+    return () => { };
+  }
+
+  async subscribeTaskProgress(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    cb: (event: any) => void
+  ): Promise<() => void> {
+    const api = await ensureWorkerAPI();
+    // Get the appropriate API based on nodeType
+    if (nodeType === SHAPE_NODE_TYPE) {
+      const shapeAPI = await api.getShapeQueryAPI();
+      if ('subscribeToTaskProgress' in shapeAPI) {
+        const unsubscribe = await (shapeAPI as any).subscribeToTaskProgress(nodeId, proxy((event: any) => {
+          cb(sanitizeForComlink(event));
+        }));
+        return () => {
+          try {
+            unsubscribe();
+          } catch (error) {
+            console.warn('[BuildWorkerBridge] subscribeTaskProgress unsubscribe failed', error);
+          }
+        };
+      }
+    }
+    // Fallback: return no-op unsubscribe
+    return () => { };
   }
 }
 

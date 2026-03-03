@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import type { NodeId } from '@hierarchidb/core-types';
-import { UI_POLL_INTERVAL_MS } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/constants';
 
 type UseShapeBuildSessionRecordArgs = {
   activeNodeId: NodeId | null;
@@ -77,31 +76,20 @@ export const useShapeBuildSessionRecord = ({
     }
   }, [activeNodeId]);
 
-  // 初期読み込みとポーリング
+  // 初期読み込み（ポーリング削除）
   useEffect(() => {
     let cancelled = false;
-    let interval: ReturnType<typeof setInterval> | null = null;
 
     const load = async () => {
       if (cancelled) return;
       await refreshSessionRecord();
     };
 
-    // 初回読み込み
+    // 初回読み込みのみ
     void load();
-
-    // ポーリング開始
-    interval = setInterval(() => {
-      if (!cancelled) {
-        void load();
-      }
-    }, UI_POLL_INTERVAL_MS);
 
     return () => {
       cancelled = true;
-      if (interval) {
-        clearInterval(interval);
-      }
     };
   }, [refreshSessionRecord]);
 

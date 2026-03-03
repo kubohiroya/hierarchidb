@@ -15,7 +15,8 @@ import type {
   BuildStartupStep,
   BuildStartupStepOutcome,
 } from './useShapeBuildStepHelpers/startupTrace';
-import { UI_POLL_INTERVAL_MS } from './useShapeBuildStepHelpers/constants';
+
+const POLL_INTERVAL_MS = 1000; // Local constant for backward compatibility
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 
 type UseShapeBuildSessionStartupLifecycleArgs = {
@@ -137,6 +138,6 @@ export const useShapeBuildSessionStartupLifecycle = ({
 
   return {
     buildSessionTransitionElapsedMs,
-    pollIntervalMs: UI_POLL_INTERVAL_MS,
+    pollIntervalMs: POLL_INTERVAL_MS,
   };
 };

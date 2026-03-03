@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { resolveStartupTransitionWatchdogEvent } from '../../resolveStartupTransitionWatchdogEvent';
-import { UI_POLL_INTERVAL_MS } from '../useShapeBuildStepHelpers/constants';
+
+const POLL_INTERVAL_MS = 1000; // Local constant for backward compatibility
 import type {
   BuildSessionTransitionNotificationLevel,
   BuildSessionTransitionState,
@@ -169,17 +170,17 @@ export const useShapeBuildSessionStartupTransitionTimers = ({
     }
     const tick = () => {
       const elapsedMs = Date.now() - buildSessionTransition.startedAt;
-      const nextStep = Math.floor(elapsedMs / UI_POLL_INTERVAL_MS);
+      const nextStep = Math.floor(elapsedMs / POLL_INTERVAL_MS);
       if (nextStep <= buildSessionTransitionWaitLogStepRef.current) return;
       buildSessionTransitionWaitLogStepRef.current = nextStep;
       emitBuildSessionTransitionLog('info', 'build session waiting for lock', {
         phase: buildSessionTransition.phase,
         elapsedMs,
-        pollIntervalMs: UI_POLL_INTERVAL_MS,
+        pollIntervalMs: POLL_INTERVAL_MS,
       });
     };
     tick();
-    const intervalId = window.setInterval(tick, UI_POLL_INTERVAL_MS);
+    const intervalId = window.setInterval(tick, POLL_INTERVAL_MS);
     return () => {
       window.clearInterval(intervalId);
     };
