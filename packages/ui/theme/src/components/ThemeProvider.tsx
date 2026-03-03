@@ -1,8 +1,8 @@
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode } from 'react';
 
 import { ThemeContext } from '~/components/ThemeContext';
-import type { ThemeContextType, ThemeMode } from '~/types';
-import { getStoredThemeMode, getSystemTheme, storeThemeMode } from '~/utils/storage';
+import type { ThemeMode } from '~/types';
+import { useThemeProviderView } from './useThemeProviderView';
 
 export interface ThemeProviderProps {
   children: ReactNode;
@@ -10,39 +10,7 @@ export interface ThemeProviderProps {
 }
 
 export const ThemeProvider = ({ children, defaultMode = 'system' }: ThemeProviderProps) => {
-  const [themeMode, setThemeModeState] = useState<ThemeMode>(
-    () => getStoredThemeMode() || defaultMode,
-  );
-  const [systemTheme, setSystemTheme] = useState<'light' | 'dark'>(getSystemTheme);
-
-  const setThemeMode = (mode: ThemeMode) => {
-    setThemeModeState(mode);
-    storeThemeMode(mode);
-  };
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-    const handleChange = (e: MediaQueryListEvent) => {
-      setSystemTheme(e.matches ? 'dark' : 'light');
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-
-    return () => {
-      mediaQuery.removeEventListener('change', handleChange);
-    };
-  }, []);
-
-  const actualTheme = themeMode === 'system' ? systemTheme : themeMode;
-
-  const value: ThemeContextType = {
-    mode: themeMode,
-    actualTheme,
-    setMode: setThemeMode,
-  };
+  const { value } = useThemeProviderView({ defaultMode });
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 };

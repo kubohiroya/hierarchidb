@@ -66,6 +66,9 @@
 - 2026-03-04: Issue #705 進捗 - `ui-accordion-config` の `ConcurrencySection`/`DownloadRetryControls`/`BaseAccordion` を `useConcurrencySectionView`/`useDownloadRetryControlsView`/`useBaseAccordion` へ分離し、`ui-plugin-basic-info` の `TagChipsInput` を `useTagChipsInput` へ分離（`typecheck/build` と `pnpm check:ui-hooks-tsx` 成功）
 - 2026-03-04: Issue #705 進捗 - `ui-plugin-basic-info` の `BasicInfoFields` で ID生成/文言解決/入力ハンドラを `useBasicInfoFieldsView` へ分離（`typecheck/build` と `pnpm check:ui-hooks-tsx` 成功）
 - 2026-03-04: Issue #705 進捗 - `ui-plugin-basic-info` の `BasicInfoStep` で入力更新/タグ削除確認/初期フォーカス/validation 合成を `useBasicInfoStepView` へ分離（`typecheck/build` と `pnpm check:ui-hooks-tsx` 成功）
+- 2026-03-04: Issue #705 進捗 - `ui-accordion-config` の `SettingsAccordion`/`WorkflowAccordion` でアクション状態・イベント処理・ステップ表示解決ロジックを `useSettingsAccordionView`/`useWorkflowAccordionView` へ分離（`typecheck/build` と `pnpm check:ui-hooks-tsx` 成功）
+- 2026-03-04: Issue #705 進捗 - `ui-theme` の `ThemeProvider` で mode保持/保存・system theme 監視・context値構築を `useThemeProviderView` へ分離（`typecheck/build` と `pnpm check:ui-hooks-tsx` 成功）
+- 2026-03-04: Issue #705 進捗 - `ui-tour` の `GuidedTourDemo` で run state と start/finish 操作を `useGuidedTourDemoView` へ分離し、`ui-navigation` の `MenuListItemLinkButton` でメニュー開閉・path/style・key解決を `useMenuListItemLinkButtonView` へ分離（`typecheck/build` と `pnpm check:ui-hooks-tsx` 成功）
 - 2026-03-03: blocked - `gh issue comment 705` 実行時に `error connecting to api.github.com`（ネットワーク復旧待ち）
 - 2026-03-03: Issue #703 完了 - Shape Plugin Pauseボタン状態管理とセッション復元の修正
   - Pauseボタンが「Pausing」状態で固まる問題を修正

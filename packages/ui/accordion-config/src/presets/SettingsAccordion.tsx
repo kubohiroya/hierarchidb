@@ -2,6 +2,7 @@ import React from 'react';
 import { StyledAccordion, type StyledAccordionProps } from '~/components/StyledAccordion';
 import { Restore, Save, Settings } from '@mui/icons-material';
 import { Box, IconButton, Tooltip } from '@mui/material';
+import { useSettingsAccordionView } from './useSettingsAccordionView.js';
 
 export interface SettingsAccordionProps extends Omit<StyledAccordionProps, 'headerActions'> {
   /** Whether to show settings icon */
@@ -35,61 +36,53 @@ export const SettingsAccordion: React.FC<SettingsAccordionProps> = ({
                                                                       icon,
                                                                       ...accordionProps
                                                                     }) => {
-  const headerActions = React.useMemo(() => {
-    const actions = [];
-
-    if (onSave) {
-      actions.push(
-        <Tooltip key="save" title={saveTooltip}>
+  const {
+    showDefaultSettingsIcon,
+    hasChanges: hasPendingChanges,
+    hasSaveAction,
+    hasResetAction,
+    hasHeaderActions,
+    isSaveDisabled,
+    handleSaveClick,
+    handleResetClick,
+  } = useSettingsAccordionView({
+    icon,
+    showSettingsIcon,
+    hasChanges,
+    customActions,
+    onSave,
+    onReset,
+  });
+  const settingsIcon = showDefaultSettingsIcon ? <Settings /> : icon;
+  const headerActions = hasHeaderActions ? (
+    <Box sx={{ display: 'flex', gap: 0.5 }}>
+      {hasSaveAction ? (
+        <Tooltip title={saveTooltip}>
           <span>
             <IconButton
               size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                onSave();
-              }}
-              disabled={!hasChanges}
-              color={hasChanges ? 'primary' : 'default'}
+              onClick={handleSaveClick}
+              disabled={isSaveDisabled}
+              color={hasPendingChanges ? 'primary' : 'default'}
             >
               <Save fontSize="small" />
             </IconButton>
           </span>
-        </Tooltip>,
-      );
-    }
-
-    if (onReset) {
-      actions.push(
-        <Tooltip key="reset" title={resetTooltip}>
+        </Tooltip>
+      ) : null}
+      {hasResetAction ? (
+        <Tooltip title={resetTooltip}>
           <IconButton
             size="small"
-            onClick={(e) => {
-              e.stopPropagation();
-              onReset();
-            }}
+            onClick={handleResetClick}
           >
             <Restore fontSize="small" />
           </IconButton>
-        </Tooltip>,
-      );
-    }
-
-    if (customActions) {
-      actions.push(
-        <React.Fragment key="custom">
-          {customActions}
-        </React.Fragment>,
-      );
-    }
-
-    return actions.length > 0 ? (
-      <Box sx={{ display: 'flex', gap: 0.5 }}>
-        {actions}
-      </Box>
-    ) : null;
-  }, [hasChanges, onSave, onReset, customActions, saveTooltip, resetTooltip]);
-
-  const settingsIcon = showSettingsIcon && !icon ? <Settings /> : icon;
+        </Tooltip>
+      ) : null}
+      {customActions ?? null}
+    </Box>
+  ) : null;
 
   return (
     <StyledAccordion
@@ -97,7 +90,7 @@ export const SettingsAccordion: React.FC<SettingsAccordionProps> = ({
       icon={settingsIcon}
       headerActions={headerActions}
       sx={{
-        ...(hasChanges && {
+        ...(hasPendingChanges && {
           borderLeft: '3px solid',
           borderLeftColor: 'warning.main',
         }),
