@@ -9,7 +9,6 @@ type CallbackInput = {
   handleProviderSelect?: (provider: AuthProviderType) => void;
   setCrashSuspectOpenFromHook: () => void;
   setSuspendSuspectOpenFromHook: () => void;
-  forceResetStopState?: () => void;
 };
 
 type ShapeBuildStepAtomSyncCallbacks = {
@@ -18,7 +17,6 @@ type ShapeBuildStepAtomSyncCallbacks = {
   handleCancelQueuedRef: MutableRefObject<(() => void | Promise<void>) | null>;
   closeAuthDialogRef: MutableRefObject<(() => void) | null>;
   handleProviderSelectRef: MutableRefObject<((provider: AuthProviderType) => void) | null>;
-  forceResetStopStateRef: MutableRefObject<(() => void) | null>;
   stableHandleStartOrResume: () => Promise<void>;
   stableHandlePause: () => void;
   stableHandleCancelQueued: () => void;
@@ -26,7 +24,6 @@ type ShapeBuildStepAtomSyncCallbacks = {
   stableHandleProviderSelect: (provider: AuthProviderType) => void;
   stableCloseCrashSuspect: () => void;
   stableCloseSuspendSuspect: () => void;
-  stableForceResetStopState: () => void;
 };
 
 export const useShapeBuildStepAtomSyncCallbacks = ({
@@ -37,14 +34,12 @@ export const useShapeBuildStepAtomSyncCallbacks = ({
   handleProviderSelect,
   setCrashSuspectOpenFromHook,
   setSuspendSuspectOpenFromHook,
-  forceResetStopState,
 }: CallbackInput): ShapeBuildStepAtomSyncCallbacks => {
   const handleStartOrResumeRef = useRef<(() => Promise<void>) | null>(null);
   const handlePauseRef = useRef<(() => void | Promise<void>) | null>(null);
   const handleCancelQueuedRef = useRef<(() => void | Promise<void>) | null>(null);
   const closeAuthDialogRef = useRef<(() => void) | null>(null);
   const handleProviderSelectRef = useRef<((provider: AuthProviderType) => void) | null>(null);
-  const forceResetStopStateRef = useRef<(() => void) | null>(null);
 
   const stableHandleStartOrResume = useCallback(() => {
     return handleStartOrResumeRef.current ? handleStartOrResumeRef.current() : Promise.resolve();
@@ -74,18 +69,13 @@ export const useShapeBuildStepAtomSyncCallbacks = ({
     setSuspendSuspectOpenFromHook();
   }, [setSuspendSuspectOpenFromHook]);
 
-  const stableForceResetStopState = useCallback(() => {
-    forceResetStopStateRef.current?.();
-  }, []);
-
   useEffect(() => {
     handleStartOrResumeRef.current = handleStartOrResume ?? null;
     handlePauseRef.current = handlePause ?? null;
     handleCancelQueuedRef.current = handleCancelQueued ?? null;
     closeAuthDialogRef.current = closeAuthDialog ?? null;
     handleProviderSelectRef.current = handleProviderSelect ?? null;
-    forceResetStopStateRef.current = forceResetStopState ?? null;
-  }, [handleStartOrResume, handlePause, handleCancelQueued, closeAuthDialog, handleProviderSelect, forceResetStopState]);
+  }, [handleStartOrResume, handlePause, handleCancelQueued, closeAuthDialog, handleProviderSelect]);
 
   return {
     handleStartOrResumeRef,
@@ -93,7 +83,6 @@ export const useShapeBuildStepAtomSyncCallbacks = ({
     handleCancelQueuedRef,
     closeAuthDialogRef,
     handleProviderSelectRef,
-    forceResetStopStateRef,
     stableHandleStartOrResume,
     stableHandlePause,
     stableHandleCancelQueued,
@@ -101,6 +90,5 @@ export const useShapeBuildStepAtomSyncCallbacks = ({
     stableHandleProviderSelect,
     stableCloseCrashSuspect,
     stableCloseSuspendSuspect,
-    stableForceResetStopState,
   };
 };

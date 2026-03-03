@@ -70,7 +70,6 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     authDialogOpen,
     closeAuthDialog,
     handleProviderSelect,
-    forceResetStopState,
   } = useShapeBuildStep({ data, onChange, nodeId: resolvedNodeId });
 
   const setStages = useSetAtom(buildStagesAtom);
@@ -149,7 +148,6 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     stableHandleProviderSelect,
     stableCloseCrashSuspect,
     stableCloseSuspendSuspect,
-    stableForceResetStopState,
   } = useShapeBuildStepAtomSyncCallbacks({
     handleStartOrResume,
     handlePause,
@@ -158,7 +156,6 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     handleProviderSelect,
     setCrashSuspectOpenFromHook,
     setSuspendSuspectOpenFromHook,
-    forceResetStopState,
   });
 
   useEffect(() => {
@@ -229,7 +226,6 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     stableHandleStartOrResume,
     stableHandlePause,
     stableHandleCancelQueued,
-    stableForceResetStopState,
     authDialogOpen,
     stableCloseAuthDialog,
     stableHandleProviderSelect,

@@ -5,7 +5,7 @@
  * completely decoupled from specific data types or storage implementations.
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState, useId, type ReactElement } from 'react';
+import React, { useId, type ReactElement } from 'react';
 import {
   Alert,
   Box,
@@ -36,17 +36,13 @@ import {
   ViewColumn,
 } from '@mui/icons-material';
 import { alpha } from '@mui/material/styles';
-import { useVirtualizer } from '@tanstack/react-virtual';
 import type {
   ColumnDefinition,
-  DataChangeEvent,
   DataItem,
   DataProvider,
-  FilterParams,
   QueryParams,
-  QueryResult,
-  SortParams,
 } from './types/DataProvider.js';
+import { useAbstractDataGridView } from './useAbstractDataGridView.js';
 
 const getItemValue = <T extends DataItem>(item: T, field: ColumnDefinition<T>['field']): unknown => {
   const key = typeof field === 'string' ? field : String(field);
@@ -173,227 +169,53 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
                                                                   loadingComponent,
                                                                   toolbarActions,
                                                                 }: AbstractDataGridProps<T>): ReactElement {
-  // State
-  const [data, setData] = useState<T[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(initialQuery.pagination?.page || 0);
-  const [pageSize, setPageSize] = useState(initialQuery.pagination?.pageSize || 50);
-  const [sort, setSort] = useState<SortParams[]>(initialQuery.sort || []);
-  const [filters, setFilters] = useState<FilterParams[]>(initialQuery.filters || []);
-  const [search, setSearch] = useState(initialQuery.search || '');
-  const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [columns, setColumns] = useState(initialColumns);
-  const [showFilters, setShowFilters] = useState(false);
-  const [showColumnSelector, setShowColumnSelector] = useState(false);
   const controlId = useId();
-
-  // Refs
-  const parentRef = useRef<HTMLDivElement>(null);
-  const unsubscribeRef = useRef<(() => void) | null>(null);
-
-  // Virtual scrolling
-  const virtualizer = useVirtualizer({
-    count: data.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: useCallback(() => rowHeight, [rowHeight]),
-    overscan: 5,
-    enabled: virtual,
+  const {
+    columns,
+    currentSort,
+    data,
+    error,
+    fetchData,
+    filters,
+    handleColumnToggle,
+    handleExport,
+    handleFilterChange,
+    handlePageChange,
+    handlePageSizeChange,
+    handleSearchChange,
+    handleSelectAll,
+    handleSelectRow,
+    handleSort,
+    loading,
+    page,
+    pageSize,
+    parentRef,
+    search,
+    selectedIds,
+    showColumnSelector,
+    showFilters,
+    toggleColumnSelector,
+    toggleFilters,
+    total,
+    virtualizer,
+    visibleColumns,
+  } = useAbstractDataGridView<T>({
+    dataProvider,
+    initialColumns,
+    initialQuery,
+    paginate,
+    sortable,
+    filterable,
+    selectable,
+    selectionMode,
+    exportable,
+    realtime,
+    rowHeight,
+    virtual,
+    onSelectionChange,
+    onExport,
+    onError,
   });
-
-  // Build query parameters
-  const queryParams = useMemo((): QueryParams => {
-    const params: QueryParams = {};
-
-    if (paginate) {
-      params.pagination = { page, pageSize };
-    }
-
-    if (sort.length > 0) {
-      params.sort = sort;
-    }
-
-    if (filters.length > 0) {
-      params.filters = filters;
-    }
-
-    if (search) {
-      params.search = search;
-    }
-
-    const visibleFields = columns
-      .filter((col) => col.visible !== false)
-      .map((col) => String(col.field));
-
-    if (visibleFields.length > 0) {
-      params.fields = visibleFields;
-    }
-
-    return params;
-  }, [page, pageSize, sort, filters, search, columns, paginate]);
-
-  // Fetch data
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const result: QueryResult<T> = await dataProvider.query(queryParams);
-      setData(result.data);
-      setTotal(result.total);
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to fetch data');
-      setError(error);
-      onError?.(error);
-    } finally {
-      setLoading(false);
-    }
-  }, [dataProvider, queryParams, onError]);
-
-  // Fetch data on query change
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  // Subscribe to real-time updates
-  useEffect(() => {
-    if (!realtime || !dataProvider.subscribe) return;
-
-    const handleUpdate = (_event: DataChangeEvent<T>) => {
-      // Simple implementation - refetch data
-      // Could be optimized to update locally
-      fetchData();
-    };
-
-    unsubscribeRef.current = dataProvider.subscribe(handleUpdate);
-
-    return () => {
-      unsubscribeRef.current?.();
-    };
-  }, [realtime, dataProvider, fetchData]);
-
-  // Selected items
-  /*
-  const selectedItems = useMemo(() => {
-    return data.filter(item => selectedIds.has(item.id));
-  }, [data, selectedIds]);
-   */
-
-  // Handlers
-  const handlePageChange = (_: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handlePageSizeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setPageSize(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const handleSort = (field: string) => {
-    if (!sortable) return;
-
-    const existingSort = sort.find((s) => s.field === field);
-    let newSort: SortParams[];
-
-    if (!existingSort) {
-      newSort = [{ field, direction: 'asc' }];
-    } else if (existingSort.direction === 'asc') {
-      newSort = [{ field, direction: 'desc' }];
-    } else {
-      newSort = [];
-    }
-
-    setSort(newSort);
-    setPage(0);
-  };
-
-  const handleFilterChange = (field: string, value: string) => {
-    if (!filterable) return;
-
-    const newFilters = filters.filter((f) => f.field !== field);
-    if (value) {
-      newFilters.push({
-        field,
-        operator: 'contains',
-        value,
-      });
-    }
-
-    setFilters(newFilters);
-    setPage(0);
-  };
-
-  const handleSearchChange = (value: string) => {
-    setSearch(value);
-    setPage(0);
-  };
-
-  const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.checked) {
-      setSelectedIds(new Set(data.map((item) => item.id)));
-    } else {
-      setSelectedIds(new Set());
-    }
-
-    onSelectionChange?.(event.target.checked ? data : []);
-  };
-
-  const handleSelectRow = (item: T) => {
-    if (!selectable) return;
-
-    const newSelection = new Set(selectedIds);
-
-    if (selectionMode === 'single') {
-      newSelection.clear();
-      newSelection.add(item.id);
-    } else {
-      if (newSelection.has(item.id)) {
-        newSelection.delete(item.id);
-      } else {
-        newSelection.add(item.id);
-      }
-    }
-
-    setSelectedIds(newSelection);
-
-    const selected = data.filter((d) => newSelection.has(d.id));
-    onSelectionChange?.(selected);
-  };
-
-  const handleExport = async (format: 'csv' | 'json' | 'excel') => {
-    if (!exportable) return;
-
-    if (onExport) {
-      await onExport(format);
-    } else if (dataProvider.export) {
-      try {
-        const blob = await dataProvider.export(format, queryParams);
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `export.${format}`;
-        a.click();
-        URL.revokeObjectURL(url);
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error('Export failed');
-        setError(error);
-        onError?.(error);
-      }
-    }
-  };
-
-  const handleColumnToggle = (field: string) => {
-    setColumns((prev) =>
-      prev.map((col) => (String(col.field) === field ? { ...col, visible: !col.visible } : col)),
-    );
-  };
-
-  // Visible columns
-  const visibleColumns = useMemo(() => columns.filter((col) => col.visible !== false), [columns]);
-
-  // Current sort atoms
-  const currentSort = sort[0];
 
   // Render error atoms
   if (error && !loading) {
@@ -442,7 +264,7 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
 
         {filterable && (
           <Tooltip title="Toggle Filters">
-            <IconButton onClick={() => setShowFilters(!showFilters)}>
+            <IconButton onClick={toggleFilters}>
               <FilterList />
             </IconButton>
           </Tooltip>
@@ -450,7 +272,7 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
 
         {columnToggle && (
           <Tooltip title="Column Visibility">
-            <IconButton onClick={() => setShowColumnSelector(!showColumnSelector)}>
+            <IconButton onClick={toggleColumnSelector}>
               <ViewColumn />
             </IconButton>
           </Tooltip>

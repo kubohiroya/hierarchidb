@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 
 type UseShapeBuildStopStateArgs = {
@@ -17,6 +17,13 @@ export const useShapeBuildStopState = ({ sessionRecord }: UseShapeBuildStopState
 
 
   useEffect(() => {
+    console.log('[ShapeBuildStopState] useEffect triggered', {
+      isStopRequestedInFlight,
+      sessionStatus: sessionRecord?.status,
+      isStopRequested,
+      isStopAccepted,
+    });
+
     if (!isStopRequestedInFlight) return;
 
     // セッション状態が更新されたら状態をリセット
@@ -25,6 +32,9 @@ export const useShapeBuildStopState = ({ sessionRecord }: UseShapeBuildStopState
       || sessionRecord?.status === 'completed'
       || sessionRecord?.status === 'failed'
     ) {
+      console.log('[ShapeBuildStopState] Resetting stop state due to session status change', {
+        sessionStatus: sessionRecord.status,
+      });
       setIsStopRequested(false);
       setIsStopAccepted(false);
       if (forceResetTimerRef.current) {
@@ -36,6 +46,7 @@ export const useShapeBuildStopState = ({ sessionRecord }: UseShapeBuildStopState
 
     // 30秒後に強制リセット（セッション状態が更新されない場合のフォールバック）
     if (!forceResetTimerRef.current) {
+      console.log('[ShapeBuildStopState] Setting timeout for force reset');
       forceResetTimerRef.current = setTimeout(() => {
         console.warn('[ShapeBuildStopState] Force resetting stop state due to timeout');
         setIsStopRequested(false);
@@ -43,7 +54,7 @@ export const useShapeBuildStopState = ({ sessionRecord }: UseShapeBuildStopState
         forceResetTimerRef.current = null;
       }, 30000); // 30秒
     }
-  }, [isStopRequestedInFlight, sessionRecord?.status]);
+  }, [isStopRequestedInFlight, sessionRecord?.status, isStopRequested, isStopAccepted]);
 
   // クリーンアップ
   useEffect(() => {

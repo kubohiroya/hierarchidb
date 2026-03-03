@@ -13,14 +13,14 @@ import {
   TextField,
   Tooltip,
   Typography,
-  type SelectChangeEvent,
 } from '@mui/material';
 import { Add, Delete, FilterAlt, ViewColumn } from '@mui/icons-material';
 import { GenericDataGrid } from './GenericDataGrid.js';
 import { CrossViewSnackbar } from './CrossViewSnackbar.js';
 import { useTranslation } from '@hierarchidb/ui-i18n';
-import { useDataGridPreview, type DataGridPreviewOp } from './hooks/useDataGridPreview.js';
 import type { ReactNode } from 'react';
+import type { DataGridPreviewOp } from './hooks/useDataGridPreview.js';
+import { useDataGridPreviewView } from './useDataGridPreviewView.js';
 
 export function DataGridPreview({
   pluginId = 'generic',
@@ -54,7 +54,6 @@ export function DataGridPreview({
   onRowSummaryChange?: (summary: { query: string; filtered: number; total: number }) => void;
 }): ReactNode {
   const { t } = useTranslation('common');
-  const hasProvidedRows = Array.isArray(providedRows) && providedRows.length > 0;
   const {
     controlId,
     columns,
@@ -62,7 +61,6 @@ export function DataGridPreview({
     error,
     filters,
     visibleCols,
-    setVisibleCols,
     gridColumns,
     matchedRowSet,
     rowSets,
@@ -74,7 +72,11 @@ export function DataGridPreview({
     addFilter,
     removeFilter,
     updateFilter,
-  } = useDataGridPreview({ pluginId, tableId, rows: providedRows, columns: providedColumns });
+    operatorOptions,
+    handleVisibleColsChange,
+    renderVisibleColsValue,
+    shouldShowTablePlaceholder,
+  } = useDataGridPreviewView({ pluginId, tableId, rows: providedRows, columns: providedColumns });
 
   // Minimal column type compatible with GenericDataGrid
 
@@ -92,15 +94,8 @@ export function DataGridPreview({
           <FormControl size="small" sx={{ minWidth: 180 }}>
           <InputLabel htmlFor="tp-cols-label"><ViewColumn fontSize="small" sx={{ mr: 0.5 }} />{t('dataGrid.preview.visibleColumns', 'Visible columns')}</InputLabel>
           <Select<string[]> multiple labelId="tp-cols-label" input={<OutlinedInput label={t('dataGrid.preview.visibleColumns', 'Visible columns')} />} value={visibleCols || []}
-                  onChange={(e: SelectChangeEvent<string[]>) => {
-                    const value = e.target.value;
-                    setVisibleCols(Array.isArray(value) ? value : [value]);
-                  }}
-                  renderValue={(selected) => {
-                    const values = Array.isArray(selected) ? selected : [];
-                    const preview = values.slice(0, 3).join(', ');
-                    return `${preview}${values.length > 3 ? '…' : ''}`;
-                  }}>
+                  onChange={handleVisibleColsChange}
+                  renderValue={renderVisibleColsValue}>
             {columns.map((name) => (
               <MenuItem key={name} value={name}>
                 <Checkbox checked={(visibleCols || []).indexOf(name) > -1} />
@@ -132,7 +127,7 @@ export function DataGridPreview({
                 <InputLabel id={`${controlId}-op-${i}`} htmlFor={`${controlId}-op-select-${i}`}>{t('dataGrid.preview.operator', 'Operator')}</InputLabel>
                 <Select labelId={`${controlId}-op-${i}`} id={`${controlId}-op-select-${i}`} label={t('dataGrid.preview.operator', 'Operator')} value={f.op}
                         onChange={(e) => updateFilter(i, { op: e.target.value as DataGridPreviewOp })}>
-                  {(['eq', 'contains', 'gt', 'gte', 'lt', 'lte', 'neq'] as DataGridPreviewOp[]).map((op) => (
+                  {operatorOptions.map((op) => (
                     <MenuItem key={op} value={op}>{op}</MenuItem>))}
                 </Select>
               </FormControl>
@@ -145,7 +140,7 @@ export function DataGridPreview({
         </Box>
       ) : null}
 
-      {!tableId && !hasProvidedRows ? (
+      {shouldShowTablePlaceholder ? (
         <Paper sx={{ p: 2, textAlign: 'center' }}>
           <Typography variant="body2" color="text.secondary">{t('dataGrid.preview.noTable', 'Table not created yet')}</Typography>
         </Paper>

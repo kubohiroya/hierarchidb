@@ -25,6 +25,9 @@
 - 2026-03-03: Issue #705 進捗 - `ui-auth` の `AuthMethodSettings` を `useAuthMethodSettingsView` へ分離し、`typecheck/build/test` を完了
 - 2026-03-03: Issue #705 進捗 - `ui-auth` の `AuthErrorListener` を `useAuthErrorListenerView` へ分離し、`typecheck/build/test` を完了
 - 2026-03-03: Issue #705 進捗 - `ui-auth` の `OidcProvider` を `useOidcProviderView` へ分離し、`typecheck/build/test` を完了
+- 2026-03-03: Issue #705 進捗 - `ui-grid` の `CrossViewSnackbar` を `useCrossViewSnackbarView` へ分離し、`typecheck/build/test` を完了
+- 2026-03-03: Issue #705 進捗 - `ui-grid` の `DataGridPreview` を `useDataGridPreviewView` へ分離し、`typecheck/build/test` を完了
+- 2026-03-03: Issue #705 進捗 - `ui-grid` の `AbstractDataGrid` を `useAbstractDataGridView` へ分離し、`typecheck/build/test` を完了
 - 2026-03-03: Issue #705 進捗 - `ui-map` の `LocationPreviewList`/`RoutePreviewList`/`ShapePreviewList` を各 `use*PreviewListView` へ分離し、`typecheck/build/test` を完了
 - 2026-03-03: blocked - `gh issue comment 705` 実行時に `error connecting to api.github.com`（ネットワーク復旧待ち）
 - 2026-03-03: Issue #703 完了 - Shape Plugin Pauseボタン状態管理とセッション復元の修正
@@ -38,3 +41,8 @@
   - forceResetStopState 関数を UI コンポーネントに適切に統合
   - 既存のタイムアウト機構とリセット機能が正常に動作することを確認
   - デバッグテストスイートが全て成功することを確認
+- 2026-03-03: Shape Plugin Pauseボタン問題の根本修正開始
+  - デバッグボタンとメニューを撤去（問題の本質ではないため）
+  - 状態同期の問題を調査：Worker SSOT → Event propagation → UI SSOT → UI rendering
+  - useShapeBuildStopStateにログを追加して状態遷移を詳細に追跡
+  - typecheck/buildが成功し、調査準備完了

@@ -168,7 +168,6 @@ export const useShapeBuildProgressPanelViewModel = ({
     controlRightContent: ShapeBuildProgressPanelControlRightContent({
       nodeId,
       controlRightContent,
-      forceResetStopState: controls.forceResetStopState,
     }),
     completionDialog,
     suspendDialog,

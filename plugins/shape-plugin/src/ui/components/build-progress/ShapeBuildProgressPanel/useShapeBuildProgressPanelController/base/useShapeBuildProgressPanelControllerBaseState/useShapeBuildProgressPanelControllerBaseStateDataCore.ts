@@ -462,19 +462,6 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
       },
     ];
 
-    // デバッグメニューを開発環境でのみ追加
-    if (import.meta.env.DEV && controls.forceResetStopState) {
-      baseItems.push({
-        id: 'force-reset-stop-state',
-        label: t('debug.forceResetStopState', 'Force Reset Stop State'),
-        onClick: () => {
-          console.log('[Debug] Force resetting stop state');
-          controls.forceResetStopState?.();
-        },
-        disabled: false,
-      });
-    }
-
     return baseItems;
   }, [
     cacheCanDeleteMetadata,
@@ -484,7 +471,6 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     isResetSessionLoading,
     metadataDeleteLabel,
     resetSessionLabel,
-    controls.forceResetStopState,
     t,
   ]);
 

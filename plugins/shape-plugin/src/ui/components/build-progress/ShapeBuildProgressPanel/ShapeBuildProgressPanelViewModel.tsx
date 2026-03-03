@@ -21,26 +21,10 @@ type ShapeBuildProgressPanelControlRightContentProps = {
 export const ShapeBuildProgressPanelControlRightContent = ({
   nodeId,
   controlRightContent,
-  forceResetStopState,
 }: ShapeBuildProgressPanelControlRightContentProps): ReactNode => {
-  const isDevelopment = import.meta.env.DEV;
-
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
       <BuildSessionLauncherPanel nodeType={toNodeType('shape')} excludeNodeId={nodeId} />
-      {isDevelopment && forceResetStopState && (
-        <Button
-          size="small"
-          variant="outlined"
-          color="warning"
-          startIcon={<BugReportIcon />}
-          onClick={forceResetStopState}
-          sx={{ minWidth: 'auto', fontSize: '0.75rem' }}
-          title="Debug: Force Reset Stop State"
-        >
-          Reset Stop
-        </Button>
-      )}
       {controlRightContent}
     </Box>
   );

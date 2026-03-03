@@ -118,7 +118,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     isSessionStopping,
     setIsStopRequested,
     setIsStopAccepted,
-    forceResetStopState,
   } = useShapeBuildStopState({ sessionRecord });
   const [requestedControlAction, setRequestedControlAction] = useState<'none' | 'start' | 'pause' | 'cancel'>('none');
   const {
@@ -447,6 +446,5 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     suspendSuspectOpen,
     suspendSuspectMessage,
     setSuspendSuspectOpen: closeSuspendSuspect,
-    forceResetStopState,
   };
 };
