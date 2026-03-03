@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, InputAdornment, TextField } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
+import { useSearchFieldView } from './useSearchFieldView.js';
 
 const BASE_SEARCH_FIELD_WIDTH_PX = 300;
 export const SEARCH_FIELD_WIDTH_PX = Math.round(BASE_SEARCH_FIELD_WIDTH_PX * 1.4);
@@ -39,12 +40,11 @@ export function SearchField({
   placeholder,
   ariaLabel,
 }: SearchFieldProps): React.JSX.Element {
-  const handleChange = React.useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      handleSearchTextChange(event.target.value);
-    },
-    [handleSearchTextChange],
-  );
+  const { handleChange, handleBlur, handleKeyDown, inputProps } = useSearchFieldView({
+    ariaLabel,
+    handleSearchTextChange,
+    handleSearchCommit,
+  });
 
   return (
     <SearchTextFieldContainer>
@@ -71,13 +71,8 @@ export function SearchField({
         placeholder={placeholder}
         value={searchText}
         onChange={handleChange}
-        onBlur={() => handleSearchCommit?.()}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            handleSearchCommit?.();
-          }
-        }}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
@@ -88,21 +83,7 @@ export function SearchField({
             width: `${SEARCH_FIELD_WIDTH_PX}px`,
             borderRadius: '30px',
           },
-          inputProps: {
-            'aria-label': ariaLabel,
-            autoComplete: 'new-password',
-            name: 'hdb-search',
-            type: 'search',
-            inputMode: 'search',
-            spellCheck: false,
-            'data-1p-ignore': 'true',
-            'data-1p-skip': 'true',
-            'data-lpignore': 'true',
-            'data-bwignore': 'true',
-            'data-form-type': 'other',
-            autoCapitalize: 'off',
-            autoCorrect: 'off',
-          },
+          inputProps,
         }}
       />
     </SearchTextFieldContainer>

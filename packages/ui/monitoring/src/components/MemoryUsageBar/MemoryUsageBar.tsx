@@ -2,8 +2,7 @@ import { formatBytes } from '@hierarchidb/util';
 import { Box, Paper, Tooltip, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import type React from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { isDevEnv } from '~/utils/env';
+import { useMemoryUsageBarView } from './useMemoryUsageBarView.js';
 
 export interface MemoryUsageBarProps {
   /**
@@ -38,17 +37,6 @@ export interface MemoryUsageBarProps {
    * -
    */
   maxMemory?: number;
-}
-
-interface MemoryInfo {
-  used: number;
-  total: number;
-  percentage: number;
-  breakdown?: Array<{
-    url?: string;
-    bytes?: number;
-    types?: string[];
-  }>;
 }
 
 const BarContainer = styled(Box)(({ theme }) => ({
@@ -91,110 +79,19 @@ export const MemoryUsageBar: React.FC<MemoryUsageBarProps> = ({
   compact = false,
   maxMemory = 4 * 1024 * 1024 * 1024, //  4GB
 }) => {
-  const [memoryInfo, setMemoryInfo] = useState<MemoryInfo>({
-    used: 0,
-    total: maxMemory,
-    percentage: 0,
+  const {
+    memoryInfo,
+    isSupported,
+    severity,
+    valueColor,
+    percentageTextColorCompact,
+    percentageTextColorInline,
+  } = useMemoryUsageBarView({
+    maxMemory,
+    updateInterval,
+    warningThreshold,
+    criticalThreshold,
   });
-  const [isSupported, setIsSupported] = useState(true);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const updateMemoryInfo = useCallback(async () => {
-    try {
-      //  API
-      if ('measureUserAgentSpecificMemory' in performance) {
-        const result = await (
-          performance as {
-            measureUserAgentSpecificMemory: () => Promise<{ breakdown: Array<{ bytes?: number }> }>;
-          }
-        ).measureUserAgentSpecificMemory();
-
-        const totalUsed = result.breakdown.reduce(
-          (sum: number, entry: { bytes?: number }) => sum + (entry.bytes || 0),
-          0
-        );
-
-        //  performance.memory
-        let totalMemory = maxMemory;
-        if ('memory' in performance) {
-          const memory = (performance as { memory: { jsHeapSizeLimit?: number } })
-            .memory;
-          if (memory.jsHeapSizeLimit) {
-            totalMemory = memory.jsHeapSizeLimit;
-          }
-        }
-
-        const percentage = totalMemory > 0 ? (totalUsed / totalMemory) * 100 : 0;
-
-        setMemoryInfo({
-          used: totalUsed,
-          total: totalMemory,
-          percentage: Math.min(percentage, 100),
-          breakdown: result.breakdown,
-        });
-      } else if ('memory' in performance) {
-        //  : performance.memory API
-        const memory = (
-          performance as { memory: { usedJSHeapSize: number; jsHeapSizeLimit?: number } }
-        ).memory;
-        const used = memory.usedJSHeapSize;
-        const total = memory.jsHeapSizeLimit || maxMemory;
-        const percentage = total > 0 ? (used / total) * 100 : 0;
-
-        setMemoryInfo({
-          used,
-          total,
-          percentage: Math.min(percentage, 100),
-        });
-      } else {
-        setIsSupported(false);
-      }
-    } catch (error) {
-      if (isDevEnv()) {
-        console.warn('Memory measurement failed:', String(error));
-      }
-
-      //  API
-      if ('memory' in performance) {
-        const memory = (
-          performance as { memory: { usedJSHeapSize: number; jsHeapSizeLimit?: number } }
-        ).memory;
-        const used = memory.usedJSHeapSize;
-        const total = memory.jsHeapSizeLimit || maxMemory;
-        const percentage = total > 0 ? (used / total) * 100 : 0;
-
-        setMemoryInfo({
-          used,
-          total,
-          percentage: Math.min(percentage, 100),
-        });
-      }
-    }
-  }, [maxMemory]);
-
-  useEffect(() => {
-    updateMemoryInfo();
-
-    //  10measureUserAgentSpecificMemory
-    const safeInterval = Math.max(updateInterval, 10000);
-
-    intervalRef.current = setInterval(updateMemoryInfo, safeInterval);
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [updateInterval, updateMemoryInfo]);
-
-  const getSeverity = (): 'normal' | 'warning' | 'critical' => {
-    const ratio = memoryInfo.percentage / 100;
-    if (ratio >= criticalThreshold) return 'critical';
-    if (ratio >= warningThreshold) return 'warning';
-    return 'normal';
-  };
-
-  const severity = getSeverity();
 
   if (!isSupported) {
     return (
@@ -273,7 +170,7 @@ export const MemoryUsageBar: React.FC<MemoryUsageBarProps> = ({
                 variant="caption"
                 sx={{
                   fontWeight: 'bold',
-                  color: memoryInfo.percentage > 50 ? 'white' : 'text.primary',
+                  color: percentageTextColorCompact,
                   textShadow: '0 1px 2px rgba(0,0,0,0.3)',
                 }}
               >
@@ -296,13 +193,7 @@ export const MemoryUsageBar: React.FC<MemoryUsageBarProps> = ({
           {showValues && (
             <Typography
               variant="body2"
-              color={
-                severity === 'critical'
-                  ? 'error.main'
-                  : severity === 'warning'
-                    ? 'warning.main'
-                    : 'text.secondary'
-              }
+              color={valueColor}
               sx={{ fontFamily: 'monospace' }}
             >
               {formatBytes(memoryInfo.used)} / {formatBytes(memoryInfo.total)}
@@ -332,7 +223,7 @@ export const MemoryUsageBar: React.FC<MemoryUsageBarProps> = ({
                 variant="body2"
                 sx={{
                   fontWeight: 'medium',
-                  color: memoryInfo.percentage > 70 ? 'white' : 'text.primary',
+                  color: percentageTextColorInline,
                   textShadow: '0 1px 2px rgba(0,0,0,0.3)',
                 }}
               >

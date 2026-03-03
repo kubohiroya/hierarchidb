@@ -1,7 +1,7 @@
 import type React from 'react';
-import { useCallback, useRef, useState } from 'react';
 import { Box, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Typography } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
+import { useAutoHideFullScreenDialogView } from './useAutoHideFullScreenDialogView.js';
 
 export interface AutoHideFullScreenDialogProps {
   /**
@@ -66,42 +66,17 @@ export function AutoHideFullScreenDialog({
                                            autoHideDelay = 300,
                                            hoverZoneHeight = 40,
                                          }: AutoHideFullScreenDialogProps): React.ReactElement {
-  const [headerVisible, setHeaderVisible] = useState(!autoHide);
-  const [footerVisible, setFooterVisible] = useState(!autoHide);
-  const headerTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const footerTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  const handleHeaderMouseEnter = useCallback(() => {
-    if (autoHide) {
-      clearTimeout(headerTimeoutRef.current);
-      setHeaderVisible(true);
-    }
-  }, [autoHide]);
-
-  const handleHeaderMouseLeave = useCallback(() => {
-    if (autoHide) {
-      clearTimeout(headerTimeoutRef.current);
-      headerTimeoutRef.current = setTimeout(() => {
-        setHeaderVisible(false);
-      }, autoHideDelay);
-    }
-  }, [autoHide, autoHideDelay]);
-
-  const handleFooterMouseEnter = useCallback(() => {
-    if (autoHide) {
-      clearTimeout(footerTimeoutRef.current);
-      setFooterVisible(true);
-    }
-  }, [autoHide]);
-
-  const handleFooterMouseLeave = useCallback(() => {
-    if (autoHide) {
-      clearTimeout(footerTimeoutRef.current);
-      footerTimeoutRef.current = setTimeout(() => {
-        setFooterVisible(false);
-      }, autoHideDelay);
-    }
-  }, [autoHide, autoHideDelay]);
+  const {
+    headerVisible,
+    footerVisible,
+    handleHeaderMouseEnter,
+    handleHeaderMouseLeave,
+    handleFooterMouseEnter,
+    handleFooterMouseLeave,
+  } = useAutoHideFullScreenDialogView({
+    autoHide,
+    autoHideDelay,
+  });
 
   return (
     <Dialog
