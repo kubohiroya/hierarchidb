@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyledAccordion, type StyledAccordionProps } from '~/components/StyledAccordion';
 import { Chip } from '@mui/material';
-import type { ChipProps } from '@mui/material';
+import { useWorkflowAccordionView } from './useWorkflowAccordionView.js';
 
 export interface WorkflowStep {
   /** Step number or identifier */
@@ -23,21 +23,6 @@ export interface WorkflowAccordionProps extends Omit<StyledAccordionProps, 'icon
   renderStep?: (step: WorkflowStep) => React.ReactNode;
 }
 
-const getStatusColor = (status?: WorkflowStep['status']) => {
-  switch (status) {
-    case 'completed':
-      return 'success';
-    case 'active':
-      return 'primary';
-    case 'error':
-      return 'error';
-    case 'skipped':
-      return 'default';
-    default:
-      return 'default';
-  }
-};
-
 /**
  * Accordion designed for workflow/process steps
  * Can be used for wizards, multi-step forms, build processes, etc.
@@ -48,34 +33,27 @@ export const WorkflowAccordion: React.FC<WorkflowAccordionProps> = ({
                                                                       renderStep,
                                                                       ...accordionProps
                                                                     }) => {
-  const stepElement = React.useMemo(() => {
-    if (!step || !showStepBadge) return null;
-
-    if (renderStep) {
-      return renderStep(step);
-    }
-
-    const label = step.label || `Step ${step.id}`;
-    const color = step.badgeColor || getStatusColor(step.status);
-    const muiColors: Array<ChipProps['color']> = ['default', 'primary', 'secondary', 'error', 'info', 'success', 'warning'];
-    const muiColor = muiColors.includes(color as ChipProps['color']) ? (color as ChipProps['color']) : undefined;
-    const chipSx = muiColor
-      ? undefined
-      : {
-        backgroundColor: color,
-        color: '#fff',
-      };
-
-    return (
+  const {
+    shouldRenderStepBadge,
+    label,
+    color,
+    chipSx,
+    variant,
+  } = useWorkflowAccordionView({
+    step,
+    showStepBadge,
+  });
+  const stepElement = step && shouldRenderStepBadge
+    ? (renderStep?.(step) ?? (
       <Chip
         label={label}
-        color={muiColor}
+        color={color}
         size="small"
-        variant={step.status === 'active' ? 'filled' : 'outlined'}
+        variant={variant}
         sx={chipSx}
       />
-    );
-  }, [step, showStepBadge, renderStep]);
+    ))
+    : null;
 
   return (
     <StyledAccordion

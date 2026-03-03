@@ -3,9 +3,10 @@
  */
 
 import { Box, Button, Typography } from '@mui/material';
-import { useId, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import type { Step } from 'react-joyride';
 import { GenericGuidedTour } from './GenericGuidedTour.js';
+import { useGuidedTourDemoView } from './useGuidedTourDemoView.js';
 
 const createDemoSteps = (buttonId: string, contentId: string): Step[] => [
   {
@@ -45,9 +46,7 @@ const createDemoSteps = (buttonId: string, contentId: string): Step[] => [
 ];
 
 export const GuidedTourDemo = () => {
-  const [runTour, setRunTour] = useState(true);
-  const buttonId = useId();
-  const contentId = useId();
+  const { runTour, buttonId, contentId, startTour, finishTour } = useGuidedTourDemoView();
   const demoSteps = useMemo(() => createDemoSteps(buttonId, contentId), [buttonId, contentId]);
 
   return (
@@ -56,7 +55,7 @@ export const GuidedTourDemo = () => {
         GuidedTour Demo
       </Typography>
 
-      <Button id={buttonId} variant="contained" onClick={() => setRunTour(true)} sx={{ mb: 4 }}>
+      <Button id={buttonId} variant="contained" onClick={startTour} sx={{ mb: 4 }}>
         Start Tour
       </Button>
 
@@ -79,7 +78,7 @@ export const GuidedTourDemo = () => {
         run={runTour}
         steps={demoSteps}
         tourType="mainTour"
-        onFinish={() => setRunTour(false)}
+        onFinish={finishTour}
       />
     </Box>
   );
