@@ -17,19 +17,17 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useId } from 'react';
-
-// import { AuthService } from "@/shared/auth/services/AuthService"; // TODO: Implement AuthService
-const AuthService = {
-  getInstance: () => ({
-    getAuthMethod: () => 'google' as const,
-  }),
-};
+import { useAuthMethodSettingsView } from './useAuthMethodSettingsView.js';
 
 export function AuthMethodSettings() {
-  const authService = AuthService.getInstance();
-  const currentMethod = authService.getAuthMethod();
-  const controlId = useId();
+  const {
+    currentMethod,
+    labelId,
+    popupId,
+    redirectId,
+    handleChange,
+    noteText,
+  } = useAuthMethodSettingsView();
 
   return (
     <Paper sx={{ p: 3, mb: 3 }}>
@@ -48,21 +46,19 @@ export function AuthMethodSettings() {
       </Alert>
 
       <FormControl component="fieldset" disabled>
-        <FormLabel component="legend" id={`${controlId}-auth-method-label`}>
+        <FormLabel component="legend" id={labelId}>
           Select authentication method
         </FormLabel>
         <RadioGroup
-          aria-labelledby={`${controlId}-auth-method-label`}
+          aria-labelledby={labelId}
           name="auth-method"
           value={currentMethod}
-          onChange={() => {
-            // No-op as changing is disabled
-          }}
+          onChange={handleChange}
         >
           <FormControlLabel
             value="popup"
             control={
-              <Radio inputProps={{ id: `${controlId}-auth-method-popup`, name: 'auth-method' }} />
+              <Radio inputProps={{ id: popupId, name: 'auth-method' }} />
             }
             label={
               <Box>
@@ -72,13 +68,13 @@ export function AuthMethodSettings() {
                 </Typography>
               </Box>
             }
-            htmlFor={`${controlId}-auth-method-popup`}
+            htmlFor={popupId}
           />
           <FormControlLabel
             value="redirect"
             control={
               <Radio
-                inputProps={{ id: `${controlId}-auth-method-redirect`, name: 'auth-method' }}
+                inputProps={{ id: redirectId, name: 'auth-method' }}
               />
             }
             label={
@@ -89,14 +85,13 @@ export function AuthMethodSettings() {
                 </Typography>
               </Box>
             }
-            htmlFor={`${controlId}-auth-method-redirect`}
+            htmlFor={redirectId}
           />
         </RadioGroup>
       </FormControl>
 
       <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
-        Note: Page redirect option will be available in a future update with full state persistence
-        support.
+        {noteText}
       </Typography>
     </Paper>
   );

@@ -1,7 +1,7 @@
 import { Box, Button, Stack, Typography } from '@mui/material';
 import type React from 'react';
 import type { AuthProviderType } from '~/types/AuthProviderType';
-import { AuthProviderOptions } from './AuthProviderOptions.js';
+import { useAuthProviderPromptView } from './useAuthProviderPromptView.js';
 
 interface AuthProviderPromptProps {
   isLoadingAuth: boolean;
@@ -19,9 +19,7 @@ export const AuthProviderPrompt: React.FC<AuthProviderPromptProps> = ({
   title = 'Authentication Required',
   subtitle = 'Please sign in to continue',
 }) => {
-  const handleSignIn = (provider: AuthProviderType) => {
-    onSignIn(provider);
-  };
+  const { availableProviders, handleSignIn } = useAuthProviderPromptView({ onSignIn });
 
   return (
     <Box
@@ -38,7 +36,7 @@ export const AuthProviderPrompt: React.FC<AuthProviderPromptProps> = ({
       </Typography>
 
       <Stack spacing={2} sx={{ maxWidth: 300, mx: 'auto' }}>
-        {AuthProviderOptions.filter((provider) => provider.available).map((provider) => (
+        {availableProviders.map((provider) => (
           <Button
             key={provider.type}
             variant="contained"

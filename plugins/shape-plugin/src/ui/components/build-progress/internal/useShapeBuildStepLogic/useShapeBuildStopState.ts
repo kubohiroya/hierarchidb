@@ -14,16 +14,7 @@ export const useShapeBuildStopState = ({ sessionRecord }: UseShapeBuildStopState
   // 強制リセット用のタイマー参照
   const forceResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 手動リセット機能
-  const forceResetStopState = useCallback(() => {
-    console.log('[ShapeBuildStopState] Force resetting stop state');
-    setIsStopRequested(false);
-    setIsStopAccepted(false);
-    if (forceResetTimerRef.current) {
-      clearTimeout(forceResetTimerRef.current);
-      forceResetTimerRef.current = null;
-    }
-  }, []);
+
 
   useEffect(() => {
     if (!isStopRequestedInFlight) return;
@@ -70,6 +61,5 @@ export const useShapeBuildStopState = ({ sessionRecord }: UseShapeBuildStopState
     setIsStopAccepted,
     isStopRequestedInFlight,
     isSessionStopping,
-    forceResetStopState,
   };
 };

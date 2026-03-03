@@ -1,36 +1,11 @@
 import { Alert, Dialog, DialogActions, DialogContent, DialogTitle, Button, Typography } from '@mui/material';
 import type React from 'react';
-import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  BFF_WARNING_EVENT,
-  type BffWarning,
-  isBffWarning,
-} from '~/services/BffWarning';
-
-const buildDetailKey = (operation: BffWarning['operation']): string =>
-  `auth.kvFallback.detail.${operation}`;
+import { useBffKvWarningDialogView } from './useBffKvWarningDialogView.js';
 
 export const BffKvWarningDialog: React.FC = () => {
   const { t } = useTranslation('common');
-  const [warning, setWarning] = useState<BffWarning | null>(null);
-
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent).detail;
-      if (!isBffWarning(detail)) return;
-      setWarning(detail);
-    };
-    window.addEventListener(BFF_WARNING_EVENT, handler);
-    return () => window.removeEventListener(BFF_WARNING_EVENT, handler);
-  }, []);
-
-  const detailText = useMemo(() => {
-    if (!warning) return '';
-    return t(buildDetailKey(warning.operation), '');
-  }, [t, warning]);
-
-  const handleClose = () => setWarning(null);
+  const { warning, detailText, handleClose } = useBffKvWarningDialogView();
 
   return (
     <Dialog open={Boolean(warning)} onClose={handleClose} maxWidth="sm" fullWidth>

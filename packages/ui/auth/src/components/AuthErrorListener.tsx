@@ -1,29 +1,6 @@
-import { useNavigate } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import { useAuthErrorListenerView } from './useAuthErrorListenerView.js';
 
-//import { APP_PREFIX } from "@/config/appDescription";
-//`/${APP_PREFIX}/`
-/**
- */
 export function AuthErrorListener({ fallbackTo }: { fallbackTo: string }): null {
-  const navigate = useNavigate();
-  useEffect(() => {
-    const handleAuthErrorEvent = (_event: CustomEvent) => {
-      // if (import.meta.env.DEV) {
-      console.log('認証エラーを検出しました:', _event.detail?.message);
-      // }
-
-      localStorage.setItem('oidc.redirect', window.location.pathname);
-
-      void navigate({ to: fallbackTo, replace: true });
-    };
-
-    window.addEventListener('Auth-error', handleAuthErrorEvent as EventListener);
-
-    return () => {
-      window.removeEventListener('Auth-error', handleAuthErrorEvent as EventListener);
-    };
-  }, [navigate, fallbackTo]);
-
+  useAuthErrorListenerView({ fallbackTo });
   return null;
 }

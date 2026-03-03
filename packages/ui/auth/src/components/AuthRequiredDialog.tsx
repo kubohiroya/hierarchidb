@@ -8,10 +8,7 @@
 
 import {
   Close as CloseIcon,
-  GitHub as GitHubIcon,
-  Google as GoogleIcon,
   Lock as LockIcon,
-  Microsoft as MicrosoftIcon,
   PlayArrow as PlayIcon,
   Stop as StopIcon,
 } from '@mui/icons-material';
@@ -27,8 +24,8 @@ import {
   IconButton,
   Typography,
 } from '@mui/material';
-import type React from 'react';
-import { useAuthRequiredDialog, type AuthProvider } from '../hooks/useAuthRequiredDialog';
+import { useAuthRequiredDialog } from '../hooks/useAuthRequiredDialog';
+import { useAuthRequiredDialogView } from './useAuthRequiredDialogView.js';
 
 // Local minimal type to avoid workspace linking issues during typecheck.
 // Aligns with @hierarchidb/_obsolate_common-auth AuthRequiredNotification shape used here.
@@ -76,34 +73,6 @@ export type AuthUserInfo = {
   picture?: string;
 };
 
-interface AuthProviderInfo {
-  name: string;
-  icon: React.ComponentType;
-  color: string;
-  description: string;
-}
-
-const AUTH_PROVIDERS: Record<AuthProvider, AuthProviderInfo> = {
-  google: {
-    name: 'Google',
-    icon: GoogleIcon,
-    color: '#4285f4',
-    description: 'Sign in with your Google account',
-  },
-  github: {
-    name: 'GitHub',
-    icon: GitHubIcon,
-    color: '#333',
-    description: 'Sign in with your GitHub account',
-  },
-  microsoft: {
-    name: 'Microsoft',
-    icon: MicrosoftIcon,
-    color: '#0078d4',
-    description: 'Sign in with your Microsoft account',
-  },
-};
-
 export function AuthRequiredDialog({
   open,
   title = 'Authentication Required',
@@ -140,40 +109,25 @@ export function AuthRequiredDialog({
   });
 
   const { sessionId, pluginType } = context;
-
-  const getProviderButton = (provider: AuthProvider) => {
-    const info = AUTH_PROVIDERS[provider];
-    const Icon = info.icon;
-    const isSelected = selectedProvider === provider;
-    const isDisabled = isMicrosoftProviderDisabled(provider) || (isAuthenticating && !isSelected);
-
-    return (
-      <Button
-        key={provider}
-        variant="contained"
-        color="secondary"
-        size="large"
-        startIcon={
-          isSelected && isAuthenticating ? <CircularProgress size={20} color="inherit" /> : <Icon />
-        }
-        onClick={() => handleSignIn(provider)}
-        disabled={isDisabled}
-        sx={{
-          minWidth: 220,
-          height: 52,
-          px: 2,
-          justifyContent: 'center',
-          textTransform: 'none',
-          fontWeight: 700,
-          '&:disabled': { opacity: 0.5 },
-        }}
-      >
-        {isSelected && isAuthenticating ? 'Signing in...' : info.name}
-      </Button>
-    );
-  };
-
-  const cancelButtonLabel = cancelLabel ?? 'Cancel';
+  const {
+    providerEntries,
+    pluginLabel,
+    resolvedMessage,
+    retryMessage,
+    cancelButtonLabel,
+    sessionSuffix,
+    shouldShowSessionInfo,
+  } = useAuthRequiredDialogView({
+    pluginType,
+    retryCount,
+    message,
+    cancelLabel,
+    sessionId,
+    showSessionDetails,
+    selectedProvider,
+    isAuthenticating,
+    isMicrosoftProviderDisabled,
+  });
 
   return (
     <Dialog
@@ -212,25 +166,24 @@ export function AuthRequiredDialog({
         {/* Main Alert */}
         <Alert severity={getErrorSeverity()} icon={false} sx={{ mb: 3 }}>
           <Typography variant="body1">
-            {message ||
-              `The ${pluginType} plugin requires authentication to continue batch processing.`}
+            {resolvedMessage}
           </Typography>
-          {retryCount > 0 && (
+          {retryMessage && (
             <Typography variant="body2" sx={{ mt: 1, opacity: 0.8 }}>
-              This is attempt #{retryCount + 1} to resolve the authentication issue.
+              {retryMessage}
             </Typography>
           )}
         </Alert>
 
         {/* Session Information */}
-        {showSessionDetails && sessionId && (
+        {shouldShowSessionInfo && sessionSuffix && (
           <Alert severity="info" sx={{ mb: 3 }}>
             <Box>
               <Typography variant="body2" gutterBottom>
-                <strong>Build Session:</strong> {sessionId.slice(-12)}
+                <strong>Build Session:</strong> {sessionSuffix}
               </Typography>
               <Typography variant="body2">
-                <strong>Plugin:</strong> {pluginType.charAt(0).toUpperCase() + pluginType.slice(1)}
+                <strong>Plugin:</strong> {pluginLabel}
               </Typography>
             </Box>
           </Alert>
@@ -271,7 +224,33 @@ export function AuthRequiredDialog({
             justifyContent="center"
             sx={{ mt: 2 }}
           >
-            {(Object.keys(AUTH_PROVIDERS) as AuthProvider[]).map(getProviderButton)}
+            {providerEntries.map(({ provider, info, isSelected, isDisabled }) => {
+              const Icon = info.icon;
+              return (
+                <Button
+                  key={provider}
+                  variant="contained"
+                  color="secondary"
+                  size="large"
+                  startIcon={
+                    isSelected && isAuthenticating ? <CircularProgress size={20} color="inherit" /> : <Icon />
+                  }
+                  onClick={() => handleSignIn(provider)}
+                  disabled={isDisabled}
+                  sx={{
+                    minWidth: 220,
+                    height: 52,
+                    px: 2,
+                    justifyContent: 'center',
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    '&:disabled': { opacity: 0.5 },
+                  }}
+                >
+                  {isSelected && isAuthenticating ? 'Signing in...' : info.name}
+                </Button>
+              );
+            })}
           </Box>
         </Box>
 

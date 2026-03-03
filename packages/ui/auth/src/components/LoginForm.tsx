@@ -1,7 +1,6 @@
 import { Alert, Box, Button, Typography } from '@mui/material';
 import type React from 'react';
-import { useState } from 'react';
-import type { AuthProviderType } from '~/types/AuthProviderType';
+import { useLoginFormView } from './useLoginFormView.js';
 
 interface LoginFormProps {
   onLogin?: (provider: string, turnstileToken: string) => void;
@@ -14,26 +13,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   title = 'Sign In',
   subtitle = 'Choose your authentication provider',
 }) => {
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const handleProviderClick = async (provider: AuthProviderType) => {
-    setError(null);
-    setLoading(true);
-
-    try {
-      // For now, we'll use a dummy token since Turnstile integration may not be complete
-      const turnstileToken = 'dummy-token';
-
-      if (onLogin) {
-        await onLogin(provider, turnstileToken);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Authentication failed');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { error, loading, handleProviderClick } = useLoginFormView({ onLogin });
 
   return (
     <Box sx={{ textAlign: 'center' }}>

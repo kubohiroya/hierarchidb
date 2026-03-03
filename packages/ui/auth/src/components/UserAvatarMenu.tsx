@@ -21,9 +21,10 @@ import {
   MenuItem,
   Typography,
 } from '@mui/material';
-import { type ReactNode, useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { type ReactNode, useId, useMemo } from 'react';
 import { type AuthContextProps, withAuth } from 'react-oidc-context';
 import { UserAvatar } from './UserAvatar.js';
+import { useUserAvatarMenuView } from './useUserAvatarMenuView.js';
 
 type MenuEntry =
   | {
@@ -47,142 +48,29 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
   //  : UserAvatarMenu.test.tsx
   //  :
   const auth = props.auth;
-  const signIn = useCallback(() => {
-    void auth.signinRedirect();
-  }, [auth]);
-  const signOut = useCallback(() => {
-    void auth.signoutRedirect();
-  }, [auth]);
-  const [clearCacheDialogOpen, setClearCacheDialogOpen] = useState(false);
-  // Working copy cleanup removed - functionality was deprecated
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [themeAnchorEl, setThemeAnchorEl] = useState<null | HTMLElement>(null);
-  const [languageAnchorEl, setLanguageAnchorEl] = useState<null | HTMLElement>(null);
-  const open = Boolean(anchorEl);
-  const isAuthenticated = Boolean(auth.user);
-  const handleClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  }, []);
-  const handleCloseAll = useCallback(() => {
-    setAnchorEl(null);
-    setThemeAnchorEl(null);
-    setLanguageAnchorEl(null);
-  }, []);
-
-  const [themeMode, setThemeMode] = useState<'system' | 'light' | 'dark'>(() => {
-    if (typeof window === 'undefined') return 'system';
-    const stored = localStorage.getItem('app.theme');
-    return (stored as 'system' | 'light' | 'dark') ?? 'system';
-  });
-  const [language, setLanguage] = useState<string>(() => {
-    if (typeof window === 'undefined') return 'system';
-    return localStorage.getItem('app.lang') ?? 'system';
-  });
-
-  useEffect(() => {
-    // Sync with external changes (e.g., TreeConsole dispatch)
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { mode?: string; lang?: string };
-      if (
-        detail?.mode &&
-        (detail.mode === 'system' || detail.mode === 'light' || detail.mode === 'dark')
-      ) {
-        setThemeMode(detail.mode);
-      }
-      if (detail?.lang) {
-        setLanguage(detail.lang);
-      }
-    };
-    window.addEventListener('hierarchidb-theme-change', handler);
-    window.addEventListener('hierarchidb-language-change', handler);
-    return () => {
-      window.removeEventListener('hierarchidb-theme-change', handler);
-      window.removeEventListener('hierarchidb-language-change', handler);
-    };
-  }, []);
-
-  const selectTheme = (mode: 'system' | 'light' | 'dark') => {
-    setThemeMode(mode);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('app.theme', mode);
-      window.dispatchEvent(new CustomEvent('hierarchidb-theme-change', { detail: { mode } }));
-    }
-    setThemeAnchorEl(null);
-    setAnchorEl(null);
-  };
-
-  const selectLanguage = (lang: string) => {
-    setLanguage(lang);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('app.lang', lang);
-      window.dispatchEvent(new CustomEvent('hierarchidb-language-change', { detail: { lang } }));
-    }
-    setLanguageAnchorEl(null);
-    setAnchorEl(null);
-  };
-
-  const deleteIndexedDbDatabases = async (): Promise<{ blocked: string[]; failed: string[] }> => {
-    if (!('indexedDB' in window) || typeof indexedDB.databases !== 'function') {
-      return { blocked: [], failed: [] };
-    }
-    const databases = await indexedDB.databases();
-    const names = databases
-      .map((db) => db.name)
-      .filter((name): name is string => typeof name === 'string' && name.length > 0);
-    const results = await Promise.all(
-      names.map(
-        (name) =>
-          new Promise<{ name: string; status: 'deleted' | 'blocked' | 'failed' }>((resolve) => {
-            const req = indexedDB.deleteDatabase(name);
-            let settled = false;
-            const finish = (status: 'deleted' | 'blocked' | 'failed') => {
-              if (settled) return;
-              settled = true;
-              resolve({ name, status });
-            };
-            req.onsuccess = () => finish('deleted');
-            req.onerror = () => finish('failed');
-            req.onblocked = () => finish('blocked');
-          })
-      )
-    );
-    return {
-      blocked: results.filter((r) => r.status === 'blocked').map((r) => r.name),
-      failed: results.filter((r) => r.status === 'failed').map((r) => r.name),
-    };
-  };
-
-  const handleClearCache = async () => {
-    try {
-      // Clear Cache API
-      if ('caches' in window) {
-        const cacheNames = await caches.keys();
-        await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
-      }
-
-      // Clear IndexedDB
-      const indexedDbResult = await deleteIndexedDbDatabases();
-
-      // Clear localStorage
-      localStorage.clear();
-
-      if (indexedDbResult.blocked.length > 0 || indexedDbResult.failed.length > 0) {
-        if (import.meta.env.DEV) {
-          console.warn('IndexedDB delete blocked/failed:', indexedDbResult);
-        }
-        alert('Some IndexedDB data could not be cleared. Close other tabs and try again.');
-      }
-
-      // Close base-dialog and reload page to apply changes
-      setClearCacheDialogOpen(false);
-      window.location.reload();
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error('Failed to clear cache:', error);
-      }
-      alert('Failed to clear some cache data. Please try again.');
-    }
-  };
+  const {
+    signIn,
+    signOut,
+    clearCacheDialogOpen,
+    setClearCacheDialogOpen,
+    anchorEl,
+    themeAnchorEl,
+    languageAnchorEl,
+    open,
+    isAuthenticated,
+    themeMode,
+    language,
+    handleClick,
+    handleCloseAll,
+    openThemeMenu,
+    closeThemeMenu,
+    openLanguageMenu,
+    closeLanguageMenu,
+    selectTheme,
+    selectLanguage,
+    handleClearCache,
+    menuButtonTitle,
+  } = useUserAvatarMenuView(auth);
 
   const menuId = useId();
   const clearCacheTitleId = useId();
@@ -202,9 +90,6 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
     [isAuthenticated, signOut]
   );
 
-  const menuButtonTitle = isAuthenticated
-    ? `${auth.user?.profile.name ?? ''} ${auth.user?.profile.email ?? ''}`.trim()
-    : 'Login';
   return (
     <Box
       style={{
@@ -247,11 +132,11 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
             <Divider />
           </>
         )}
-        <MenuItem onClick={(e) => setThemeAnchorEl(e.currentTarget)}>
+        <MenuItem onClick={openThemeMenu}>
           <SystemThemeIcon fontSize="small" sx={{ mr: 1 }} />
           Theme
         </MenuItem>
-        <MenuItem onClick={(e) => setLanguageAnchorEl(e.currentTarget)}>
+        <MenuItem onClick={openLanguageMenu}>
           <TransformIcon fontSize="small" sx={{ mr: 1 }} />
           Language
         </MenuItem>
@@ -276,7 +161,7 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
       <Menu
         anchorEl={themeAnchorEl}
         open={Boolean(themeAnchorEl)}
-        onClose={() => setThemeAnchorEl(null)}
+        onClose={closeThemeMenu}
       >
         <MenuItem selected={themeMode === 'system'} onClick={() => selectTheme('system')}>
           <SystemThemeIcon fontSize="small" sx={{ mr: 1 }} />
@@ -295,7 +180,7 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
       <Menu
         anchorEl={languageAnchorEl}
         open={Boolean(languageAnchorEl)}
-        onClose={() => setLanguageAnchorEl(null)}
+        onClose={closeLanguageMenu}
       >
         <MenuItem selected={language === 'system'} onClick={() => selectLanguage('system')}>
           System
@@ -333,65 +218,6 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* Draft cleanup removed - functionality was deprecated */}
-      {/* <Dialog
-        open={clearDraftDialogOpen}
-        onClose={() => setClearDraftDialogOpen(false)}
-        aria-labelledby="clear-draft-base-dialog-title"
-        aria-describedby="clear-draft-base-dialog-description"
-      >
-        <DialogTitle id="clear-draft-base-dialog-title">
-          Clear DraftTypes Garbage?
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText id="clear-draft-base-dialog-description" component="div">
-            {draftStats ? (
-              <>
-                <Typography variant="body2" gutterBottom>
-                  Found {draftStats.total} DraftTypes entities:
-                </Typography>
-                <ul style={{ marginTop: 8, marginBottom: 8 }}>
-                  <li>Orphaned (original deleted): {draftStats.orphaned}</li>
-                  <li>Stale (older than 24 hours): {draftStats.stale}</li>
-                </ul>
-                {Object.keys(draftStats.byType).length > 0 && (
-                  <>
-                    <Typography variant="body2" gutterBottom>
-                      By type:
-                    </Typography>
-                    <ul style={{ marginTop: 8, marginBottom: 8 }}>
-                      {Object.entries(draftStats.byType).map(([type, count]) => (
-                        <li key={type}>{type}: {count as number}</li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-                <Typography variant="body2" color="warning.main">
-                  <strong>Note:</strong> This will delete orphaned and stale Drafts.
-                  Active Drafts (less than 24 hours old with existing originals) will be preserved.
-                </Typography>
-              </>
-            ) : (
-              <Typography>Loading DraftTypes statistics...</Typography>
-            )}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setClearDraftDialogOpen(false)}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleClearDrafts} 
-            color="warning" 
-            variant="contained" 
-            autoFocus
-            disabled={!draftStats}
-          >
-            Clear Garbage
-          </Button>
-        </DialogActions>
-      </Dialog> */}
     </Box>
   );
 };

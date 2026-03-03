@@ -9,9 +9,9 @@ import { createElement } from 'react';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import type { useShapeBuildProgressPanelController } from './useShapeBuildProgressPanelController.js';
 import {
-  renderShapeBuildProgressPanelControlRightContent,
-  renderShapeBuildProgressPanelHeaderIcon,
-  renderShapeBuildProgressPanelStartIcon,
+  ShapeBuildProgressPanelControlRightContent,
+  ShapeBuildProgressPanelHeaderIcon,
+  ShapeBuildProgressPanelStartIcon,
 } from './ShapeBuildProgressPanelViewModel.js';
 
 type UseShapeBuildProgressPanelViewModelArgs = {
@@ -149,8 +149,8 @@ export const useShapeBuildProgressPanelViewModel = ({
     onResume: controls.canStartOrResume ? handleStartClickWithHold : undefined,
     onPause: controls.stopRequested ? undefined : controls.handlePause,
     onCancel: controls.handleCancelQueued,
-    controlHeaderIcon: renderShapeBuildProgressPanelHeaderIcon(),
-    startIcon: renderShapeBuildProgressPanelStartIcon(),
+    controlHeaderIcon: ShapeBuildProgressPanelHeaderIcon(),
+    startIcon: ShapeBuildProgressPanelStartIcon(),
     controlLabel: t('stage.controls.sessionTitle', 'Build Session'),
     controlMenuItems,
     controlMenuAriaLabel,
@@ -165,9 +165,10 @@ export const useShapeBuildProgressPanelViewModel = ({
     resumeLabel: t('stage.controls.resume', 'Resume Build'),
     statusLabel: controls.statusLabel,
     controlDetails,
-    controlRightContent: renderShapeBuildProgressPanelControlRightContent({
+    controlRightContent: ShapeBuildProgressPanelControlRightContent({
       nodeId,
       controlRightContent,
+      forceResetStopState: controls.forceResetStopState,
     }),
     completionDialog,
     suspendDialog,

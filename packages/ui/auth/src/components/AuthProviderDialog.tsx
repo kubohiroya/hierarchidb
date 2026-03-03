@@ -10,9 +10,9 @@ import {
   ListItemText,
 } from '@mui/material';
 import type React from 'react';
-import { useId } from 'react';
 import type { AuthProviderType } from '~/types/AuthProviderType';
 import { AuthProviderOptions } from './AuthProviderOptions.js';
+import { useAuthProviderDialogView } from './useAuthProviderDialogView.js';
 
 interface AuthProviderDialogProps {
   open: boolean;
@@ -28,12 +28,7 @@ export const AuthProviderDialog: React.FC<AuthProviderDialogProps> = ({
   onClose,
   onSelectProvider,
 }) => {
-  const titleId = useId();
-
-  const handleProviderSelect = (provider: AuthProviderType) => {
-    onSelectProvider(provider);
-    onClose();
-  };
+  const { titleId, handleProviderSelect } = useAuthProviderDialogView({ onSelectProvider, onClose });
 
   return (
     <Dialog
