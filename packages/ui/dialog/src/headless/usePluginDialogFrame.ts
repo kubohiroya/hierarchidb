@@ -4,8 +4,8 @@ import type { CSSObject, SxProps, Theme } from '@mui/material/styles';
 import { useTheme } from '@mui/material/styles';
 import { FRAME_CONSTANTS } from './frameHelpers.js';
 import type { HeadlessDialogProps } from './types.js';
-import { getDialogSurfaceColor } from '~/utils/dialogSurfaceColor';
-import { useDialogInteractionGuards } from '~/hooks/useDialogInteractionGuards';
+import { getDialogSurfaceColor } from '../utils/dialogSurfaceColor.js';
+import { useDialogInteractionGuards } from '../hooks/useDialogInteractionGuards.js';
 import type { PluginDialogFrameComponentProps } from './PluginDialogFrame.types.js';
 
 const DEFAULT_DIALOG_SIZE = { width: 960, height: 640 } as const;

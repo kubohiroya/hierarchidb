@@ -11,8 +11,8 @@ import { createPortal } from 'react-dom';
 import { FRAME_CONSTANTS } from './frameHelpers.js';
 import { AbstractDialog } from './AbstractDialog.js';
 import type { HeadlessDialogHeaderProps, HeadlessDialogProps } from './types.js';
-import { getDialogSurfaceColor } from '~/utils/dialogSurfaceColor';
-import { useDialogInteractionGuards } from '~/hooks/useDialogInteractionGuards';
+import { getDialogSurfaceColor } from '../utils/dialogSurfaceColor.js';
+import { useDialogInteractionGuards } from '../hooks/useDialogInteractionGuards.js';
 
 export interface ModelessDialogFrameProps<TData> {
   headlessProps: HeadlessDialogProps<TData>;

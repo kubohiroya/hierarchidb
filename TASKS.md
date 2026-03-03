@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #699 / `fix/test-suite-quality-improvement` / start: 2026-03-03 JST
 - #695 / `refactor/shape/unify-max-ratio-default` / start: 2026-03-03 JST
 - #694 / `fix/shape-plugin/task-filter-visibility` / start: 2026-03-02 JST
 - #689 / `codex/fix/shape/step5-dataclone-hardening-689` / start: 2026-03-02 21:28 JST
@@ -162,6 +163,7 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- done: 2026-03-03 JST runtime-worker の ephemeralDB.sessions 型エラーを修正完了。原因は V4 スキーマで `sessions` テーブルが削除され、`buildSessions` / `buildSessionStatuses` に正規化されたが、一部コードが旧テーブルを参照していたこと。発生範囲は `packages/runtime-worker/src/services/LocationMutationService.ts`（source cache 削除時の session 更新）、`TreeMutationService.ts`（trash 時の running session チェック）、`WorkerService.ts`（warm start 時の session 復旧）。修正として `ephemeralDB.sessions` を `ephemeralDB.buildSessions` に置換し、status クエリは `buildSessionStatuses` テーブルを使用するよう変更。検証: `pnpm -w turbo run typecheck --filter @hierarchidb/runtime-worker` exit 0、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
 - update: 2026-03-03 JST #694 追加修正として queued/running/paused タスクを常に表示するよう変更。原因は `shouldIncludeTask` がフィルター有効時に queued/running/paused を除外していたこと。これらのステータスには UI 上のフィルターチップが存在しないため、常に表示すべき。修正として queued/running/paused を最優先で `return true` するロジックを追加。検証: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は差分外既知ブロッカー（`@hierarchidb/runtime-worker` の `ephemeralDB.sessions` 型エラー）で exit 2 だが shape-plugin 自体は通過、`pnpm -w turbo run build --filter @hierarchidb/shape-plugin` exit 0。
 - done: 2026-03-03 JST #695 maxRatioByBand のデフォルト値を 2 から 3 に統一し、定数化完了。原因は `packages/shape-api/src/defaults.ts` で `[2,2,2,2]`、`packages/vt-orchestrator` でハードコード `2`、`plugins/shape-plugin` でハードコード `3` が混在していたこと。発生範囲は `packages/shape-api/src/defaults.ts`（定数定義）、`packages/vt-orchestrator/src/transform/createTransformByBandHandler/execute.ts`（clampRatioValue / rawMaxRatio / resolvedMaxRatio）、`plugins/shape-plugin/src/ui/components/build-config/SimplifyToleranceByAdminLevelCard.tsx`（CURVE_Y_RANGE / DEFAULT_MAX_RATIO_ANCHORS / clampRatio / clampProfileBands / resolvedMaxAnchors / onChange）。修正として `DEFAULT_MAX_RATIO_VALUE = 3` を export し、全箇所で定数参照に統一。検証: `pnpm -w turbo run build --filter @hierarchidb/shape-api` exit 0、`pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` exit 0（既知ブロッカー `@hierarchidb/gis-sdk` の未使用 import で exit 2 だが本件外）、`pnpm -w turbo run test --filter @hierarchidb/vt-orchestrator -- --run simplifyProfile` exit 0。
 - start: 2026-03-03 JST #695 を起票（https://github.com/kubohiroya/hierarchidb/issues/695）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `refactor/shape/unify-max-ratio-default` を作成して、maxRatioByBand デフォルト値の統一と定数化に着手。
@@ -1409,3 +1411,5 @@
 - done: 2026-03-01 15:45 JST #656 検証: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --only` exit 0、`pnpm --filter @hierarchidb/shape-plugin exec vitest run src/__tests__/unit/shapePipelineSourceStageSection.unit.test.ts src/__tests__/unit/shapePipelineStageHelpers.unit.test.ts src/__tests__/unit/shapeTaskCacheIdentity.unit.test.ts` exit 0（15 tests passed）。
 - update: 2026-03-01 15:45 JST #656 migrationテスト説明文の語彙を補正。`fetch-metadata` / `fetch-save-metadata` を `source-metadata` / `source-save-metadata` に更新。
 - done: 2026-03-01 15:45 JST #656 検証: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/route-plugin --only` exit 0。
+
+- start: 2026-03-03 JST #699 を起票（https://github.com/kubohiroya/hierarchidb/issues/699）し、Project `hierarchidb` へ追加。ブランチ `fix/test-suite-quality-improvement` を作成して、テストスイート品質改善（失敗・スキップテストの修正と整理）に着手。分析結果を `test-failure-analysis.md` に記録。主な問題: AuthService/MultiAuthContext テスト約186件失敗、folder-plugin ビルド失敗、shape-plugin タイムアウト3件、LinkButton 約15件失敗、import-export 2件失敗、resolver-plugin パフォーマンステスト1件、Backend/SpreadsheetTabularApiDriver 約50件スキップ。

@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import type { ReactElement } from 'react';
-import { useDialogContext } from '~/hooks/useDialogContext';
+import { useDialogContext } from '../hooks/useDialogContext.js';
 import type { HeadlessFooterRenderProps, HeadlessDialogFooterProps } from './types.js';
 
 function buildFooterRenderProps<TData>(ctx: ReturnType<typeof useDialogContext<TData>>): HeadlessFooterRenderProps<TData> {
