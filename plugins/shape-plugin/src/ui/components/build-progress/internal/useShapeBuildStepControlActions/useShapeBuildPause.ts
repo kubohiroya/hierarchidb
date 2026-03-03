@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { notify } from '@hierarchidb/components/notify';
 import type { PauseWithCancelHookActionsArgs, ShapeBuildPauseReason } from './types.js';
 import { runWithTimeout, waitForSessionStateSync } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/elapsed';
@@ -20,6 +20,11 @@ export const useShapeBuildPause = ({
   sessionRecord,
   handleCancelQueued,
 }: PauseWithCancelHookActionsArgs) => {
+  const sessionRecordRef = useRef(sessionRecord);
+  useEffect(() => {
+    sessionRecordRef.current = sessionRecord;
+  }, [sessionRecord]);
+
   const handlePause = useCallback(async (reason: ShapeBuildPauseReason = 'user-pause'): Promise<void> => {
     if (!activeNodeId) {
       notify.warning('NodeId is missing.');
@@ -86,7 +91,7 @@ export const useShapeBuildPause = ({
 
       // セッション状態の同期を待機（オプション）
       const sessionSyncSuccess = await waitForSessionStateSync(
-        () => sessionRecord?.status === 'paused',
+        () => sessionRecordRef.current?.status === 'paused',
         PAUSE_STATE_SYNC_TIMEOUT_MS,
       );
 
@@ -136,7 +141,6 @@ export const useShapeBuildPause = ({
     handleCancelQueued,
     setIsStopRequested,
     setIsStopAccepted,
-    sessionRecord,
   ]);
 
   return handlePause;

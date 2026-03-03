@@ -1,6 +1,7 @@
 # 運用ハブ
 
 ## Doing
+- #711 / codex/fix/shape/pause-session-ref-sync / 2026-03-03 23:45
 - #705 / codex/refactor/ui-extract-logic-hooks / 2026-03-03 20:25
 - #708 / codex/chore/ci-build-checks-separation / 2026-03-03 22:10
 
@@ -8,6 +9,8 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-03: Issue #711 開始 - pause同期判定の stale closure 問題を `sessionRecordRef` で修正
+- 2026-03-03: Issue #711 進捗 - `useShapeBuildPause` に `sessionRecordRef` + `useEffect` を追加し、同期判定を `sessionRecordRef.current?.status === 'paused'` へ変更（`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` 成功）
 - 2026-03-03: Issue #709 開始 - Shape build pause同期判定を `sessionRecord` ベースへ修正
 - 2026-03-03: Issue #709 進捗 - `PauseWithCancelHookActionsArgs` へ `sessionRecord` を追加し、pause同期判定を `sessionRecord?.status === 'paused'` へ更新（`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` 成功）
 - 2026-03-03: Issue #709 完了 - PR #710 を main へ squash merge、Issue #709 close、作業ブランチ追跡を prune
