@@ -24,9 +24,8 @@ import {
 import { useTranslation } from '~/ui/i18n';
 import { type ShapeBuildConfig } from '~/common/types/index';
 import { useGeometryConfigSection } from '~/ui/hooks/useGeometryConfigSection';
-import type { ChangeEvent } from 'react';
-import { useCallback } from 'react';
 import { SimplifyToleranceByAdminLevelCard } from './SimplifyToleranceByAdminLevelCard.tsx';
+import { useGeometryConfigSectionView } from './useGeometryConfigSectionView.js';
 
 type Props = {
   config: ShapeBuildConfig;
@@ -47,22 +46,15 @@ export const GeometryConfigSection: React.FC<Props> = ({
 
   const simplifyAlgorithm = baseGeometryConfig.simplifyAlgorithm ?? 'topojson';
   const preserveTopology = baseGeometryConfig.preserveTopology ?? true;
-
-  const updateGeometryConfig = useCallback((partial: Partial<ShapeBuildConfig['geometryConfig']>) => (
-    update({
-      geometryConfig: partial,
-    })
-  ), [update]);
-
-  const summaryHelp = simplifyAlgorithm === 'topojson'
-    ? t(
-      'processing.geometry.summaryHelpTopojson',
-      'Geometry uses topojson simplify first, then runs topology repair checks.',
-    )
-    : t(
-      'processing.geometry.summaryHelpGeojson',
-      'Geometry runs turf.simplify with the configured tolerance.',
-    );
+  const {
+    summaryHelp,
+    handleSimplifyAlgorithmChange,
+    handlePreserveTopologyChange,
+  } = useGeometryConfigSectionView({
+    simplifyAlgorithm,
+    preserveTopology,
+    update: (partial) => update({ geometryConfig: partial }),
+  });
 
   return (
     <Accordion defaultExpanded>
@@ -91,10 +83,7 @@ export const GeometryConfigSection: React.FC<Props> = ({
                     <RadioGroup
                       row
                       value={simplifyAlgorithm}
-                      onChange={(_event, value) => {
-                        if (value !== 'geojson' && value !== 'topojson') return;
-                        updateGeometryConfig({ simplifyAlgorithm: value });
-                      }}
+                      onChange={handleSimplifyAlgorithmChange}
                     >
                       <FormControlLabel
                         value="topojson"
@@ -116,9 +105,7 @@ export const GeometryConfigSection: React.FC<Props> = ({
                       control={(
                         <Switch
                           checked={preserveTopology}
-                          onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                            updateGeometryConfig({ preserveTopology: event.target.checked });
-                          }}
+                          onChange={handlePreserveTopologyChange}
                         />
                       )}
                       disabled={disabled || simplifyAlgorithm === 'topojson'}
@@ -142,7 +129,7 @@ export const GeometryConfigSection: React.FC<Props> = ({
             geometryConfig={baseGeometryConfig}
             disabled={disabled}
             disableHoverLift={disableHoverLift}
-            onChange={updateGeometryConfig}
+            onChange={(partial) => update({ geometryConfig: partial })}
           />
         </Stack>
       </AccordionDetails>

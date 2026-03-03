@@ -1,6 +1,7 @@
 # 運用ハブ
 
 ## Doing
+- #722 / codex/refactor/shape-plugin-tsx-hook-separation / 2026-03-04 02:24
 - #705 / codex/refactor/ui-p2-p3-hook-extract-batch / 2026-03-04 01:18
 - #705 / codex/refactor/ui-p1-hook-extract-batch / 2026-03-04 00:52
 - #713 / codex/refactor/ui/hook-cleanup-followup / 2026-03-04 00:01
@@ -12,6 +13,9 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-04: Issue #722 進捗 - shape-plugin で 12 ファイルをフック分離し、`use*.tsx` 命名違反（実装コード側）を解消。残りは `SimplifyToleranceByAdminLevelCard.tsx` と `TaskItemDetailWindow.tsx`
+- 2026-03-04: blocked - `pnpm -w turbo run test --filter @hierarchidb/shape-plugin` で既存失敗を確認（`useShapeBuildTaskSnapshotProgressState.unit.test.tsx` の stage count 期待差分、`TaskItemCardListCard.unit.test.tsx` の summary text 期待差分、`taskOutcomeSummaryBuilders.transform-metadata.unit.test.ts` および `TaskItemCard/__tests__/i18n-*` 系）
+- 2026-03-04: Issue #722 開始 - shape-plugin 配下 TSX のロジック分離（カスタムフック化、use*.tsx→use*.ts を含む）に着手
 - 2026-03-04: Issue #705 進捗 - P2/P3対象27ファイルのhook分離を完了し、対象 `.tsx` の `useState/useEffect/useMemo/useCallback/useRef/useId` 直書き 0 件を確認
 - 2026-03-04: blocked - `pnpm -w turbo run test --only --filter @hierarchidb/ui-accordion-config --filter @hierarchidb/ui-auth --filter @hierarchidb/ui-floating-window --filter @hierarchidb/ui-i18n --filter @hierarchidb/ui-json-treeview --filter @hierarchidb/ui-lru-splitview --filter @hierarchidb/ui-map --filter @hierarchidb/ui-routing --filter @hierarchidb/ui-search-result-window --filter @hierarchidb/ui-tour --filter @hierarchidb/ui-treeconsole-base --filter @hierarchidb/ui-treeconsole-toolbar --filter @hierarchidb/ui-treeconsole-treetable --filter @hierarchidb/ui-worker-provider` で既存失敗（`@hierarchidb/ui-treeconsole-base` の `treeViewController.mutations.test.tsx`、`@hierarchidb/ui-routing`/`@hierarchidb/ui-worker-provider` 実行時の `shape-store` property tests timeout）を確認
 - 2026-03-04: Issue #705 進捗 - P2/P3対象（packages/ui）のhook分離バッチ `codex/refactor/ui-p2-p3-hook-extract-batch` を開始

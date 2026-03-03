@@ -4,7 +4,7 @@ import type { ShapeBuildProgressPanelControllerBaseResult } from '~/ui/component
 import {
   ShapeBuildProgressPanelOverlaySectionContent,
   ShapeBuildProgressPanelOverlaySectionProgressContent,
-} from './useShapeBuildProgressPanelControllerOverlaySectionsView.js';
+} from './ShapeBuildProgressPanelControllerOverlaySectionsView.js';
 import { resolveStageAliasArray, resolveStageAliasValue } from '~/ui/components/build-progress/stageIdAliases';
 
 type StageRecord = Record<string, ReactNode>;

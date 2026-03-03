@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode, forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, type CSSProperties } from 'react';
 import { Box } from '@mui/material';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 
@@ -8,22 +8,13 @@ import {
   sortVectorTileTasks,
 } from '~/ui/components/build-progress/taskItemCardList/useTaskItemCardList';
 import { TaskItemCard } from '~/ui/components/build-progress/TaskItemCard/TaskItemCard';
-import { useTranslation } from '@hierarchidb/ui-i18n';
-import { useShapeBuildStages } from '~/ui/components/build-progress/useShapeBuildStages/useShapeBuildStages';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 import {
-  buildSourceTaskOutcomeSummary,
   type TaskOutcomeSummaryBuilder,
-  buildSimpleTaskOutcomeSummary,
-  buildGeometryTaskOutcomeSummary,
 } from '~/ui/components/build-progress/TaskItemCard/taskOutcomeSummaryBuilders';
-import {
-  isGeometryLikeStageId,
-  isTileEmitLikeStageId,
-} from '~/ui/components/build-progress/stageIdAliases';
 import { TaskItemDetailWindow } from '~/ui/components/build-progress/TaskItemCard/TaskItemDetailWindow';
-import type { TaskDetailSelection } from '~/ui/components/build-progress/TaskItemCard/TaskItemDetailTypes';
 import type { ShapeBuildConfig } from '~/common/types/build';
+import { useTaskItemCardListCardView } from './useTaskItemCardListCardView.js';
 
 type TaskStageSummaryBuilderMap = Partial<Record<
   'source' | 'geometry' | 'tileEmit',
@@ -69,44 +60,21 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
   floatingWindowZIndex = 1,
   onRequestBringFloatingWindowToFront,
 }: TaskItemCardListCardProps, ref) => {
-  const [hoveredDetail, setHoveredDetail] = useState<TaskDetailSelection | null>(null);
-  const [selectedDetail, setSelectedDetail] = useState<TaskDetailSelection | null>(null);
-  const wasDetailFloatingWindowOpenRef = useRef(isDetailFloatingWindowOpen);
-  const openRequestRef = useRef<string | null>(null);
-  const suppressOpenRef = useRef(false);
-  const { t } = useTranslation();
-  const stages = useShapeBuildStages({ t: (key, fallback): string => String(t(key, fallback ?? key)) });
-  const stageIconById = useMemo(() => {
-    return new Map(stages.map((stage) => [stage.id, stage.icon]));
-  }, [stages]);
-  const resolveStageIcon = useCallback((taskStageId: string): ReactNode | null => (
-    stageIconById.get(taskStageId) ?? null
-  ), [stageIconById]);
-  useEffect(() => {
-    const wasOpen = wasDetailFloatingWindowOpenRef.current;
-    if (wasOpen && !isDetailFloatingWindowOpen) {
-      setSelectedDetail(null);
-      setHoveredDetail(null);
-      openRequestRef.current = null;
-      suppressOpenRef.current = false;
-    }
-    wasDetailFloatingWindowOpenRef.current = isDetailFloatingWindowOpen;
-  }, [isDetailFloatingWindowOpen]);
-  useEffect(() => {
-    if (!selectedDetail || isDetailFloatingWindowOpen) return;
-    if (suppressOpenRef.current) return;
-    const selectedId = selectedDetail.task.taskId ?? selectedDetail.title;
-    if (openRequestRef.current === selectedId) return;
-    openRequestRef.current = selectedId;
-    onOpenDetailFloatingWindow?.();
-  }, [isDetailFloatingWindowOpen, onOpenDetailFloatingWindow, selectedDetail]);
-  const handleCloseDetail = useCallback(() => {
-    suppressOpenRef.current = true;
-    setSelectedDetail(null);
-    setHoveredDetail(null);
-    openRequestRef.current = null;
-    onCloseDetailFloatingWindow?.();
-  }, [onCloseDetailFloatingWindow]);
+  const {
+    detail,
+    handleCloseDetail,
+    resolveTaskCardView,
+    createTaskCardStyle,
+  } = useTaskItemCardListCardView({
+    isDetailFloatingWindowOpen,
+    onOpenDetailFloatingWindow,
+    onCloseDetailFloatingWindow,
+    resolveTaskTitle,
+    resolveStatusLabel,
+    resolveStatusColor,
+    stageValue,
+    summaryBuilders,
+  });
   const {
     orderedTasks,
     shouldVirtualize,
@@ -120,56 +88,28 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
     virtualize,
     ref,
   });
-  const renderTaskItemCard = useCallback((task: ShapeBuildTaskSummary, key: string, style?: CSSProperties) => {
-    const taskStageId = task.stage;
-    const stageIcon = resolveStageIcon(taskStageId);
-    const injectedBuilder = (isGeometryLikeStageId(taskStageId)
-      ? summaryBuilders?.geometry
-      : (isTileEmitLikeStageId(taskStageId)
-        ? summaryBuilders?.tileEmit
-        : summaryBuilders?.source));
-    const summaryBuilder = injectedBuilder
-      ?? (
-        isGeometryLikeStageId(taskStageId)
-          ? buildGeometryTaskOutcomeSummary
-          : (isTileEmitLikeStageId(taskStageId) ? buildSimpleTaskOutcomeSummary : buildSourceTaskOutcomeSummary)
-      );
-    const currentTaskDetailId = task.taskId ?? resolveTaskTitle(task as TaskItemWithMetadata);
-    const selectedTaskDetailId = selectedDetail?.task.taskId ?? selectedDetail?.title;
-    const hoveredTaskDetailId = hoveredDetail?.task.taskId ?? hoveredDetail?.title;
-    const isDetailSelected = selectedTaskDetailId === currentTaskDetailId;
-    const isDetailHoverPreviewActive = !selectedDetail && hoveredTaskDetailId === currentTaskDetailId;
+  const renderTaskItemCard = (task: ShapeBuildTaskSummary, key: string, style?: CSSProperties) => {
+    const cardView = resolveTaskCardView(task);
     return (
       <Box key={key} sx={style} data-task-id={task.taskId ?? undefined}>
         <TaskItemCard
           task={task}
-          stageId={taskStageId}
-          stageValue={stageValue}
-          resolveStatusLabel={resolveStatusLabel}
-          resolveStatusColor={resolveStatusColor}
+          stageId={cardView.taskStageId}
+          stageValue={cardView.stageValue}
+          resolveStatusLabel={cardView.resolveStatusLabel}
+          resolveStatusColor={cardView.resolveStatusColor}
           resolveTaskTitle={resolveTaskTitle}
-          stageIcon={stageIcon}
-          translate={t}
-          summaryBuilder={summaryBuilder}
-          isDetailSelected={isDetailSelected}
-          isDetailHoverPreviewActive={isDetailHoverPreviewActive}
-          onDetailHoverChange={(value) => {
-            if (selectedDetail) return;
-            setHoveredDetail(value);
-          }}
-          onDetailClick={(value) => {
-            setHoveredDetail(null);
-            setSelectedDetail((previous) => {
-              const previousId = previous?.task.taskId ?? previous?.title;
-              const clickedId = value.task.taskId ?? value.title;
-              if (previousId === clickedId) return null;
-              return value;
-            });
-          }}
+          stageIcon={cardView.stageIcon}
+          translate={cardView.t}
+          summaryBuilder={cardView.summaryBuilder}
+          isDetailSelected={cardView.isDetailSelected}
+          isDetailHoverPreviewActive={cardView.isDetailHoverPreviewActive}
+          onDetailHoverChange={cardView.handleDetailHoverChange}
+          onDetailClick={cardView.handleDetailClick}
         />
       </Box>
     );
-  }, [hoveredDetail, resolveStageIcon, resolveStatusColor, resolveStatusLabel, resolveTaskTitle, selectedDetail, stageValue, summaryBuilders, t]);
+  };
 
   return (
     <Box
@@ -192,13 +132,7 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
             const taskTitle = resolveTaskTitle(task as TaskItemWithMetadata);
             const key = task.taskId ?? `${virtualRow.index}-${taskTitle}`;
             return renderTaskItemCard(task, key, {
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              transform: `translateY(${virtualRow.start}px)`,
-              paddingRight: 2,
-              height: `${virtualRow.size}px`,
+              ...createTaskCardStyle(virtualRow.start, virtualRow.size),
             });
           })}
         </Box>
@@ -213,7 +147,7 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
       )}
       <TaskItemDetailWindow
         open={isDetailFloatingWindowOpen}
-        detail={selectedDetail ?? hoveredDetail}
+        detail={detail}
         onClose={handleCloseDetail}
         zIndex={floatingWindowZIndex}
         onRequestBringToFront={onRequestBringFloatingWindowToFront}

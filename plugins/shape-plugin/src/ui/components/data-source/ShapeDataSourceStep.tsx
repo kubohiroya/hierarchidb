@@ -1,13 +1,10 @@
 import type React from 'react';
-import { useCallback, useState } from 'react';
 import { Box, Button } from '@mui/material';
-import { notify } from '@hierarchidb/components';
 import { DataSourceSelectionStep } from '@hierarchidb/ui-datasource';
 import { useShapeDataSourceStep } from './useShapeDataSourceStep.js';
 import { useTranslation } from '~/ui/i18n';
-import { clearShapeDataSourceCache } from '~/ui/utils/clearDataSourceCache';
-import { toNodeId } from '@hierarchidb/core-types';
 import type { ShapeDialogStepProps } from '~/ui/components/ShapeDialogStepProps';
+import { useShapeDataSourceStepView } from './useShapeDataSourceStepView.js';
 
 /**
  * Data Source Selection step for Shape plugin
@@ -16,29 +13,7 @@ export const ShapeDataSourceStep: React.FC<ShapeDialogStepProps> = ({ data, onCh
   const draftData = data ?? {};
   const { options, dataSourceId, handleChange } = useShapeDataSourceStep({ data: draftData, onChange });
   const { t } = useTranslation();
-  const [isClearing, setIsClearing] = useState(false);
-  const resolvedNodeId = nodeId ? toNodeId(String(nodeId)) : undefined;
-
-  const handleClearCache = useCallback(async () => {
-    if (!resolvedNodeId) {
-      notify.warning(t('dataSource.cacheMissingNode', 'NodeId is missing.'));
-      return;
-    }
-    if (!dataSourceId) {
-      notify.warning(t('dataSource.cacheMissing', 'Select a data source first.'));
-      return;
-    }
-    try {
-      setIsClearing(true);
-      await clearShapeDataSourceCache(resolvedNodeId, dataSourceId);
-      notify.success(t('dataSource.cacheCleared', 'Cleared cache for selected data source.'));
-    } catch (error) {
-      console.error('[shape] failed to clear data source cache', error);
-      notify.error(t('dataSource.cacheClearFailed', 'Failed to clear data source cache.'));
-    } finally {
-      setIsClearing(false);
-    }
-  }, [dataSourceId, resolvedNodeId, t]);
+  const { isClearing, handleClearCache } = useShapeDataSourceStepView({ dataSourceId, nodeId, t });
 
   return (
     <Box sx={{ p: 3 }}>

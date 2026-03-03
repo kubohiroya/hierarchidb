@@ -7,6 +7,7 @@ import { useTranslation } from '~/ui/i18n';
 import type { NodeId } from '@hierarchidb/core-types';
 import { AuthReadyGate } from '@hierarchidb/ui-auth';
 import type { ShapeDialogStepProps } from '~/ui/components/ShapeDialogStepProps';
+import { useShapeCountrySelectionContentView } from './useShapeCountrySelectionContentView.js';
 
 const ShapeCountrySelectionContent: React.FC<ShapeDialogStepProps> = ({ data, onChange, nodeId }) => {
   const { t } = useTranslation();
@@ -21,19 +22,10 @@ const ShapeCountrySelectionContent: React.FC<ShapeDialogStepProps> = ({ data, on
     isCellEnabled,
     reloadAll,
   } = useShapeCountrySelectionStep({ data, onChange, nodeId: nodeId as NodeId });
-
-  const metadataReloadTooltip = React.useMemo(() => {
-    if (!availabilityInfo?.fetchedAt) {
-      return t('countrySelection.reload', 'Reload');
-    }
-    try {
-      const ts = new Date(availabilityInfo.fetchedAt);
-      const iso = ts.toISOString().replace('T', ' ').slice(0, 16);
-      return `Reload Metadata (Current: downloaded at ${iso})`;
-    } catch {
-      return t('countrySelection.reload', 'Reload');
-    }
-  }, [availabilityInfo?.fetchedAt, t]);
+  const { metadataReloadTooltip } = useShapeCountrySelectionContentView({
+    fetchedAt: availabilityInfo?.fetchedAt,
+    t,
+  });
 
   if (error) {
     return (
