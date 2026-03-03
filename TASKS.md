@@ -1,6 +1,7 @@
 # 運用ハブ
 
 ## Doing
+- #726 / codex/docs/app-ts-naming-guideline-note / 2026-03-04 07:39
 - #724 / codex/docs/ts-file-naming-guideline / 2026-03-04 07:19
 - #722 / codex/refactor/shape-plugin-tsx-hook-separation / 2026-03-04 02:24
 - #705 / codex/refactor/ui-p2-p3-hook-extract-batch / 2026-03-04 01:18
@@ -14,6 +15,8 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-04: Issue #726 進捗 - `app/src` 向け注記（router規約優先・共通適用領域の表）を命名指針へ追加し、`pnpm lint` 成功を確認
+- 2026-03-04: Issue #726 開始 - `docs/ts-file-naming-guideline.md` に app/src 固有例外（router命名優先）と適用範囲注記を追記
 - 2026-03-04: Issue #724 進捗 - `docs/ts-file-naming-guideline.md` を新規作成し、`pnpm lint` と `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` の成功を確認
 - 2026-03-04: Issue #724 開始 - `src` 配下全体を対象に `*.ts` 命名指針ドキュメント（適用範囲・必須/禁止規約・例示・改名移行手順）を作成
 - 2026-03-04: Issue #722 進捗 - shape-plugin で 12 ファイルをフック分離し、`use*.tsx` 命名違反（実装コード側）を解消。残りは `SimplifyToleranceByAdminLevelCard.tsx` と `TaskItemDetailWindow.tsx`
