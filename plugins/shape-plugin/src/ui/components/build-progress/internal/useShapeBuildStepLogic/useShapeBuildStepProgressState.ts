@@ -211,15 +211,18 @@ export const useShapeBuildStepProgressState = ({
 
   useEffect(() => {
     if (isElapsedResetState) {
-      if (!shallowEqualNumberRecord(completedStageElapsedMs, {})) {
-        setCompletedStageElapsedMs({});
-      }
+      setCompletedStageElapsedMs((current) => {
+        if (shallowEqualNumberRecord(current, {})) return current;
+        return {};
+      });
       return;
     }
-    const merged = mergeElapsedByStage(completedStageElapsedMs, persistedStageElapsedByStage);
-    if (shallowEqualNumberRecord(completedStageElapsedMs, merged)) return;
-    setCompletedStageElapsedMs(merged);
-  }, [completedStageElapsedMs, isElapsedResetState, persistedStageElapsedByStage]);
+    setCompletedStageElapsedMs((current) => {
+      const merged = mergeElapsedByStage(current, persistedStageElapsedByStage);
+      if (shallowEqualNumberRecord(current, merged)) return current;
+      return merged;
+    });
+  }, [isElapsedResetState, persistedStageElapsedByStage]);
 
   useEffect(() => {
     if (!isElapsedResetState) return;
@@ -253,10 +256,14 @@ export const useShapeBuildStepProgressState = ({
     if (!timingStageId) return;
     if (!isTimingStageActive) return;
     const intervalId = window.setInterval(() => {
-      setCompletedStageElapsedMs((current) => ({
-        ...current,
-        [timingStageId]: (current[timingStageId] ?? 0) + 1000,
-      }));
+      setCompletedStageElapsedMs((current) => {
+        const nextValue = (current[timingStageId] ?? 0) + 1000;
+        if (current[timingStageId] === nextValue) return current;
+        return {
+          ...current,
+          [timingStageId]: nextValue,
+        };
+      });
     }, 1000);
     return () => {
       window.clearInterval(intervalId);

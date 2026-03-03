@@ -194,8 +194,8 @@ export function useShapeBuildTaskSnapshotProgressState(
     buildTerminalTaskCountByStage(stageBuildStateById)
   ), [stageBuildStateById]);
   const reportedFailuresRef = useRef<Set<string>>(new Set());
-  const handleSnapshotRef = useRef<(tasks: ShapeBuildTaskSummary[]) => void>(() => {});
-  const handleUpdateRef = useRef<(task: RawTaskSummary) => void>(() => {});
+  const handleSnapshotRef = useRef<(tasks: ShapeBuildTaskSummary[]) => void>(() => { });
+  const handleUpdateRef = useRef<(task: RawTaskSummary) => void>(() => { });
   const subscriptionRef = useRef<(() => void) | null>(null);
   const subscriptionIdRef = useRef(0);
 
@@ -221,8 +221,12 @@ export function useShapeBuildTaskSnapshotProgressState(
     markTaskSnapshotProgressSynchronized,
     onTaskSnapshot: (snapshotTasks) => {
       setHasAnyTaskSnapshot(true);
-      setHasTaskSnapshotByStage((prev) => markSnapshotReceivedByStage(snapshotTasks, prev));
-      onTaskSnapshot?.(snapshotTasks);
+      setHasTaskSnapshotByStage((prev) => {
+        const next = markSnapshotReceivedByStage(snapshotTasks, prev);
+        if (next === prev) return prev;
+        Promise.resolve().then(() => onTaskSnapshot?.(snapshotTasks));
+        return next;
+      });
     },
   });
 

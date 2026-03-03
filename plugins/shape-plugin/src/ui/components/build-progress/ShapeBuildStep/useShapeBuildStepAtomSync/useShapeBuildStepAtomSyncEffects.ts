@@ -30,7 +30,7 @@ type UseShapeBuildStepAtomSyncAtomEffectsParams = {
   taskUnitLabel: string;
   totalElapsedMs: number;
   timingStageId: string | null;
-  completedStageElapsedMs: Record<string, number>;
+  completedStageElapsedMsRef: MutableRefObject<Record<string, number>>;
   stageElapsedMs: number;
   stageRemainingMs: number | null;
   setSummary: Dispatch<SetStateAction<TaskProgressSummary>>;
@@ -73,7 +73,7 @@ export const useShapeBuildStepAtomSyncAtomEffects = ({
   taskUnitLabel,
   totalElapsedMs,
   timingStageId,
-  completedStageElapsedMs,
+  completedStageElapsedMsRef,
   stageElapsedMs,
   stageRemainingMs,
   setSummary,
@@ -114,7 +114,7 @@ export const useShapeBuildStepAtomSyncAtomEffects = ({
       buildStatus,
       hasProgressData,
       timingStageId,
-      completedStageElapsedMs,
+      completedStageElapsedMs: completedStageElapsedMsRef.current,
       totalElapsedMs,
       stageElapsedMs,
       stageRemainingMs,
@@ -138,10 +138,10 @@ export const useShapeBuildStepAtomSyncAtomEffects = ({
     total,
     totalElapsedMs,
     timingStageId,
-    completedStageElapsedMs,
     stageElapsedMs,
     stageRemainingMs,
     summaryRef,
+    completedStageElapsedMsRef,
   ]);
 
   useEffect(() => {
