@@ -27,7 +27,7 @@ export type {
   WorkerInitState,
 } from './types.js';
 export * from './types.js';
-export * from './utils.js';
+export * from './workerInitializationUtils.js';
 export { WorkerInitializationChannel } from './WorkerInitializationChannel.js';
 export { WorkerInitializationReporter } from './WorkerInitializationReporter.js';
 export {

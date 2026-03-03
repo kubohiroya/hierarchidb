@@ -129,6 +129,7 @@ The workspace relies on `pnpm`. `app/` contains the main UI, with shared documen
 
 ## Coding Style & Naming Conventions
 TypeScript is standard. Keep one primary export per file, match CamelCase filenames to exported symbols, and avoid deep `../src` imports. Use `import.meta.env` instead of `process.env`, keep browser code free of Node globals, and run `pnpm format` plus `pnpm lint` or `pnpm biome:check` before review. Runtime feature flags backed by `FEATURE_FLAGS` have been retired—prefer explicit configuration modules or environment variables documented in Issue/Project（運用ルールは `docs/task-management.md`） when conditional behavior is unavoidable.
+- `*.ts` / `*.tsx` ファイルを新規作成するとき、および主要な内容を編集するときは、必ず `docs/ts-file-naming-guideline.md` を参照して命名・構成ルールに従うこと。
 - 再エクスポートは禁止。例外は `src/index.ts` と package.json の export エントリに対応するトップレベルの `index.ts` のみ。
 - テストファイル（`__tests__` 配下）は、ビルド用エイリアス解決の揺れを避けるため `~/*` などの絶対パス import を使わず、同一パッケージ内では相対パス import を原則とする。
 

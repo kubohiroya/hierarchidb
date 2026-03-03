@@ -4,7 +4,7 @@ import type { OnNameConflict, TreeNodeEvent } from '@hierarchidb/tree-api';
 import { TreeMutationCommandsAdapter } from './commands/TreeMutationCommands.js';
 import { DraftCommandsAdapter, type DraftEditSession } from './commands/DraftCommands.js';
 import { SubscriptionManager } from './subscriptions/SubscriptionManager.js';
-import { createAdapterGroupId } from './utils.js';
+import { createAdapterGroupId } from './commandEnvelopeFactories.js';
 import type { AdapterContext, CommandAdapterOptions, UnsubscribeFunction, WorkerAPIAdapterConfig } from './types.js';
 
 type TreeNodeEventCallback = (event: TreeNodeEvent) => void;

@@ -58,7 +58,7 @@ import {
   reuseNumberArray,
   useAutosavePreference,
   WINDOW_STATE_PERSIST_DEBOUNCE_MS,
-} from './usePluginDialogController/helpers.js';
+} from './usePluginDialogController/dialogSyncUtils.js';
 import { useStepCapabilities } from './usePluginDialogController/capabilities.js';
 import { useConflictGuard } from './usePluginDialogController/conflict-guard.js';
 import type {

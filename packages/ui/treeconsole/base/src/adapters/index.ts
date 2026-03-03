@@ -28,4 +28,4 @@ export {
   createAdapterGroupId,
   createAdapterCommandId,
   createTimestamp,
-} from './utils.js';
+} from './commandEnvelopeFactories.js';
