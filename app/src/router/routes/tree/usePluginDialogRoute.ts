@@ -4,7 +4,7 @@ import { loadTreeConsoleSettings, TREE_CONSOLE_SETTINGS_STORAGE_KEY } from '@hie
 import { useLocation, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { shiftBuildQueue } from '~/router/pages/tree/console/buildQueue';
-import { treeRouteIds } from './shared.ts';
+import { treeRouteIds } from './treeRouteIds.ts';
 import type { PluginDialogLoaderData } from './PluginDialogRoute.tsx';
 
 const resolveDialogDisplayMode = (value?: string): 'normal' | 'maximize' | 'full-screen' => {
