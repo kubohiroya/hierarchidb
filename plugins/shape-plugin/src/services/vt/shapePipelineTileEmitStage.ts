@@ -35,6 +35,7 @@ export type ShapeTileEmitStageParams = {
   resumeExistingTasks: boolean;
   failureHandling: 'continue' | 'stop';
   pipelineRunId?: string;
+  abortSignal?: AbortSignal;
   ephemeralStore: EphemeralDB;
   loadContinentLookup: () => Promise<Map<string, string>>;
 };

@@ -257,11 +257,18 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
       cursor += 1;
       const task = pending[index];
       if (!task) return;
+
+      // Check abort signal before acquiring lane gate
+      if (aborted || abortSignal?.aborted) return;
+
       const laneGate = getLaneGate(task);
       if (laneGate) {
         await acquire(laneGate);
       }
       try {
+        // Check abort signal after acquiring lane gate
+        if (aborted || abortSignal?.aborted) return;
+
         if (waitIfPaused) {
           const pauseWaitStartedAt = Date.now();
           await waitIfPaused();
@@ -276,6 +283,8 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
             });
           }
         }
+
+        // Check abort signal after pause wait
         if (aborted || abortSignal?.aborted) return;
         if (loggedTaskStart < maxTaskLogs) {
           loggedTaskStart += 1;
@@ -290,6 +299,10 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
             inputKeys,
           });
         }
+
+        // Check abort signal before updating task status
+        if (aborted || abortSignal?.aborted) return;
+
         await updateTask(db, task.taskId, {
           status: 'running',
           startedAt: Date.now(),
@@ -303,6 +316,9 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
             taskId: task.taskId,
           });
         }
+
+        // Check abort signal before executing handler
+        if (aborted || abortSignal?.aborted) return;
 
         const result = await handler(task as TaskQueueRecord<TInput, TOutput>);
         if (loggedTaskDone < maxTaskLogs) {
@@ -445,8 +461,8 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
       [...queued, ...running]
         .filter((task) => trackedTaskIds.has(task.taskId))
         .map((task) => (
-        markTaskFailed(task.taskId, `aborted: ${reason}`)
-      ))
+          markTaskFailed(task.taskId, `aborted: ${reason}`)
+        ))
     );
     throw failureError;
   }

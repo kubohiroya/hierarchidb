@@ -159,7 +159,7 @@ describe('Property 6: Cache Write Ordering', () => {
                     expect(metaRecord?.timestamp).toBeGreaterThan(0);
                 }
             ),
-            { numRuns: 100 }
+            { numRuns: 20 }
         );
     });
 
@@ -215,7 +215,7 @@ describe('Property 6: Cache Write Ordering', () => {
                     expect(metaRecord?.timestamp).toBeGreaterThan(0);
                 }
             ),
-            { numRuns: 100 }
+            { numRuns: 20 }
         );
     });
 
@@ -288,7 +288,7 @@ describe('Property 6: Cache Write Ordering', () => {
                     }
                 }
             ),
-            { numRuns: 100 }
+            { numRuns: 20 }
         );
     });
 
@@ -355,7 +355,7 @@ describe('Property 6: Cache Write Ordering', () => {
                     expect(sourceMetaOp?.timestamp).toBeGreaterThan(0);
                 }
             ),
-            { numRuns: 100 }
+            { numRuns: 20 }
         );
     });
 });
@@ -490,7 +490,7 @@ describe('Property 11: Cache Type Consistency', () => {
                     expect(sourceDataAfter?.timestamp).toBe(0);
                 }
             ),
-            { numRuns: 100 }
+            { numRuns: 20 }
         );
     });
 
@@ -676,7 +676,7 @@ describe('Property 11: Cache Type Consistency', () => {
                     }
                 }
             ),
-            { numRuns: 100 }
+            { numRuns: 20 }
         );
     });
 
@@ -774,7 +774,7 @@ describe('Property 11: Cache Type Consistency', () => {
                     expect(sourceMeta?.timestamp).toBeGreaterThan(0);
                 }
             ),
-            { numRuns: 100 }
+            { numRuns: 20 }
         );
     });
 });

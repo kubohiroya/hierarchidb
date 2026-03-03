@@ -72,7 +72,9 @@ export class CacheValidator {
      * 
      * A cache entry is valid if:
      * - Both cache data and cache metadata exist
-     * - The cache data has a non-zero timestamp
+     * 
+     * Note: Data timestamp is always 0 (as per two-phase write protocol).
+     * Validity is determined by the presence of metadata, not data timestamp.
      * 
      * @param cacheId - The cache entry ID to check
      * @param cacheType - The type of cache ('geometry' or 'source')
@@ -85,16 +87,16 @@ export class CacheValidator {
                 ephemeralDB.geometryCacheMeta.get(cacheId),
             ]);
 
-            // Entry is valid only if both data and metadata exist, and timestamp > 0
-            return Boolean(data && meta && data.timestamp > 0);
+            // Entry is valid only if both data and metadata exist
+            return Boolean(data && meta);
         } else {
             const [data, meta] = await Promise.all([
                 ephemeralDB.sourceCache.get(cacheId),
                 ephemeralDB.sourceCacheMeta.get(cacheId),
             ]);
 
-            // Entry is valid only if both data and metadata exist, and timestamp > 0
-            return Boolean(data && meta && data.timestamp > 0);
+            // Entry is valid only if both data and metadata exist
+            return Boolean(data && meta);
         }
     }
 }

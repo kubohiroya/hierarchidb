@@ -524,7 +524,7 @@ export async function getStageWorkerProxy<T extends (...args: never[]) => unknow
 }
 
 // Comlink-based client factory for browser Worker threads
-export async function createStageWorkerClient(): Promise<StageProcessingService> {
+export async function createStageWorkerClient(): Promise<StageProcessingService & { terminate?: () => void }> {
   // Note: stageWorker.entry is built to JS and emitted alongside index.ts
   const worker = new Worker(new URL('./stageWorker.entry.js', import.meta.url), { type: 'module' });
   const mod = await getComlinkModule();
@@ -537,5 +537,5 @@ export async function createStageWorkerClient(): Promise<StageProcessingService>
       return Reflect.get(client, prop);
     },
   });
-  return proxy as StageProcessingService;
+  return proxy as StageProcessingService & { terminate?: () => void };
 }

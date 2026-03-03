@@ -38,6 +38,8 @@
 ## Kanban
 
 ### Doing
+
+- #702 / feat/worker-terminate-fallback / start
 - #699 / `fix/test-suite-quality-improvement` / start: 2026-03-03 JST
 - #695 / `refactor/shape/unify-max-ratio-default` / start: 2026-03-03 JST
 - #694 / `fix/shape-plugin/task-filter-visibility` / start: 2026-03-02 JST

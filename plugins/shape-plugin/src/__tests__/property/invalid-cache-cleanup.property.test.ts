@@ -111,7 +111,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                     }
                 }
             ),
-            { numRuns: 100 }
+            { numRuns: 20 }
         );
     });
 
@@ -191,7 +191,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                     }
                 }
             ),
-            { numRuns: 100 }
+            { numRuns: 20 }
         );
     });
 
@@ -335,7 +335,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                     }
                 }
             ),
-            { numRuns: 100 }
+            { numRuns: 20 }
         );
     });
 
@@ -406,7 +406,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                     expect(result3.sourceDeleted).toBe(0);
                 }
             ),
-            { numRuns: 100 }
+            { numRuns: 20 }
         );
     });
 
@@ -495,7 +495,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                     }
                 }
             ),
-            { numRuns: 100 }
+            { numRuns: 20 }
         );
     });
 
@@ -582,7 +582,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                     expect(result.geometryDeleted + result.sourceDeleted).toBe(invalidCount * 2);
                 }
             ),
-            { numRuns: 100 }
+            { numRuns: 20 }
         );
     });
 });

@@ -13,14 +13,14 @@ Key technical changes:
 
 ## Tasks
 
-- [-] 1. Add cache table schema changes for timestamp-based validation
+- [x] 1. Add cache table schema changes for timestamp-based validation
   - Add `timestamp` field to `geometryCache` and `sourceCache` tables in Dexie schema
   - Update cache table type definitions to include `timestamp: number` field
   - Create migration script to add timestamp field with default value 0 for existing entries
   - _Requirements: 3.1, 3.2, 6.3, 6.4_
 
-- [~] 2. Implement lock-free cache write flow
-  - [~] 2.1 Refactor geometry cache write to use two-phase write (data with timestamp:0, then metadata)
+- [x] 2. Implement lock-free cache write flow
+  - [x] 2.1 Refactor geometry cache write to use two-phase write (data with timestamp:0, then metadata)
     - Update `writeGeometryCache` to write data with `timestamp: 0` first
     - Write `geometryCacheMeta` with `Date.now()` timestamp after data write completes
     - Remove any Dexie transaction blocks coordinating data and metadata writes
@@ -40,7 +40,7 @@ Key technical changes:
     - **Property 11: Cache Type Consistency**
     - **Validates: Requirements 6.1, 6.2**
 
-- [ ] 3. Implement cache validation and cleanup logic
+- [x] 3. Implement cache validation and cleanup logic
   - [x] 3.1 Create `CacheValidator` service with invalid entry detection
     - Implement `cleanupInvalidEntries(nodeId)` to query cache entries where `timestamp === 0`
     - Delete invalid geometry cache entries and return count
@@ -64,39 +64,46 @@ Key technical changes:
 - [x] 4. Checkpoint - Ensure cache validation tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 5. Add AbortController to session management
-  - [~] 5.1 Add AbortController to session state
+- [x] 5. Add AbortController to session management
+  - [x] 5.1 Add AbortController to session state
     - Add `abortController?: AbortController` field to session state interface
     - Create new AbortController when session starts
     - Store AbortController reference in session state
     - _Requirements: 1.1, 1.2_
 
-  - [~] 5.2 Implement immediate abort on pause
+  - [x] 5.2 Implement immediate abort on pause
     - Update `pause()` method to call `abortController.abort()` immediately after `setPaused(true)`
     - Add timing measurement to verify termination completes within 500ms
     - Log warning if termination takes longer than 500ms
     - _Requirements: 1.1, 1.2, 1.3_
 
-  - [~] 5.3 Write property test for immediate worker termination
+  - [x] 5.3 Write property test for immediate worker termination
     - **Property 1: Immediate Worker Termination**
     - **Validates: Requirements 1.1, 1.2**
 
-  - [~] 5.4 Write property test for termination time bound
+  - [x] 5.4 Write property test for termination time bound
     - **Property 2: Termination Time Bound**
     - **Validates: Requirements 1.3**
 
-  - [~] 5.5 Pass AbortSignal to stage orchestrators
+  - [x] 5.5 Pass AbortSignal to stage orchestrators
     - Update `runShapeSourceStageSection` to accept and pass `abortSignal` parameter
     - Update `runShapeGeometryStageSection` to accept and pass `abortSignal` parameter
     - Update `runShapeTileEmitStageSection` to accept and pass `abortSignal` parameter
     - Pass `abortController.signal` from session to all stage functions
     - _Requirements: 1.1, 1.2_
 
-  - [~] 5.6 Update vectortile-orchestrator to handle AbortSignal
+  - [x] 5.6 Update vectortile-orchestrator to handle AbortSignal
     - Add `abortSignal?: AbortSignal` parameter to `runVectorTileStageOrchestrator`
     - Check `abortSignal.aborted` before processing each task
     - Throw abort error if signal is aborted during task processing
     - _Requirements: 1.1, 1.2_
+
+- [x] 5.7 worker.terminate() フォールバック実装
+  - [x] Issue #702 を起票
+  - [x] StageProcessingService で worker インスタンスへのアクセス手段を追加
+  - [x] pause ハンドラで 1000ms タイムアウト後に worker.terminate() を呼び出す仕組みを実装
+  - [x] 強制終了時の適切なログ出力を追加
+  - [x] セッション状態の適切なクリーンアップを実装
 
 - [ ] 6. Update task state management for pause/resume
   - [~] 6.1 Implement task state preservation on termination

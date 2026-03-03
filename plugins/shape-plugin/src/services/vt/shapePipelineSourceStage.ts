@@ -26,6 +26,7 @@ export type ShapeSourceStageParams = {
   failureHandling: 'continue' | 'stop';
   buildContinuationPolicy: BuildContinuationPolicy;
   pipelineRunId?: string;
+  abortSignal?: AbortSignal;
   onTasksEnqueued?: (payload: {
     nodeId: NodeId;
     stage: 'source';

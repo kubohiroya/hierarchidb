@@ -38,6 +38,7 @@ export type ShapeGeometryStageParams = {
   failureHandling: 'continue' | 'stop';
   buildContinuationPolicy: BuildContinuationPolicy;
   pipelineRunId?: string;
+  abortSignal?: AbortSignal;
   ephemeralStore: EphemeralDB;
   diffBuildEnabled: boolean;
   recyclingAllowlist: Set<string>;

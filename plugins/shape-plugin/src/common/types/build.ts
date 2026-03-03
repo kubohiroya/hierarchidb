@@ -224,6 +224,7 @@ export interface BuildSession {
   stageId?: string;
   stages?: Partial<Record<BuildTaskType, StageStatus>>;
   resourceUsage?: ResourceUsage;
+  abortController?: AbortController;
 }
 
 export type ShapeBuildCommandMap = {
