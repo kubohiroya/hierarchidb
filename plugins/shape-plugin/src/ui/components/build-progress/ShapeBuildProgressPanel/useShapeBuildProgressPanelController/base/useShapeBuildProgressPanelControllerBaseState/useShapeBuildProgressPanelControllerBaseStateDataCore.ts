@@ -446,20 +446,37 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     stages,
   ]);
 
-  const controlMenuItems = useMemo<BuildControlMenuItem[]>(() => ([
-    {
-      id: 'delete-metadata-cache',
-      label: metadataDeleteLabel,
-      onClick: cacheHandleDeleteMetadata,
-      disabled: isResetSessionLoading || !cacheCanDeleteMetadata || cacheDeleteLoading.metadata,
-    },
-    {
-      id: 'reset-build-session',
-      label: resetSessionLabel,
-      onClick: handleResetSessionWithSkeleton,
-      disabled: isResetSessionLoading,
-    },
-  ]), [
+  const controlMenuItems = useMemo<BuildControlMenuItem[]>(() => {
+    const baseItems: BuildControlMenuItem[] = [
+      {
+        id: 'delete-metadata-cache',
+        label: metadataDeleteLabel,
+        onClick: cacheHandleDeleteMetadata,
+        disabled: isResetSessionLoading || !cacheCanDeleteMetadata || cacheDeleteLoading.metadata,
+      },
+      {
+        id: 'reset-build-session',
+        label: resetSessionLabel,
+        onClick: handleResetSessionWithSkeleton,
+        disabled: isResetSessionLoading,
+      },
+    ];
+
+    // デバッグメニューを開発環境でのみ追加
+    if (import.meta.env.DEV && controls.forceResetStopState) {
+      baseItems.push({
+        id: 'force-reset-stop-state',
+        label: t('debug.forceResetStopState', 'Force Reset Stop State'),
+        onClick: () => {
+          console.log('[Debug] Force resetting stop state');
+          controls.forceResetStopState?.();
+        },
+        disabled: false,
+      });
+    }
+
+    return baseItems;
+  }, [
     cacheCanDeleteMetadata,
     cacheDeleteLoading.metadata,
     cacheHandleDeleteMetadata,
@@ -467,6 +484,8 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     isResetSessionLoading,
     metadataDeleteLabel,
     resetSessionLabel,
+    controls.forceResetStopState,
+    t,
   ]);
 
   const stageHeaderMeta = useMemo<StageMetadataMap<ReactNode>>(() => {
@@ -474,7 +493,7 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     for (const stage of stages) {
       const elapsedValue = formatDuration(
         summary.completedStageElapsedMs[stage.id]
-          ?? (summary.timingStageId === stage.id ? summary.stageElapsedMs : undefined),
+        ?? (summary.timingStageId === stage.id ? summary.stageElapsedMs : undefined),
         t,
       );
       const remainingValue = summary.timingStageId === stage.id

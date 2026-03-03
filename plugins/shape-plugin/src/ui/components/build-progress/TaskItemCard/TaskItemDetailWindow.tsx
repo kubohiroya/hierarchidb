@@ -1004,8 +1004,8 @@ const TaskDetailContent = ({
                 return normalized.length > 0 && normalized !== summaryNormalized;
               })
               .map((line, index) => (
-              <Typography key={`${line}-${String(index)}`} variant="caption" color="text.secondary">{line}</Typography>
-            ))}
+                <Typography key={`${line}-${String(index)}`} variant="caption" color="text.secondary">{line}</Typography>
+              ))}
           </Stack>
         ) : null}
       </Box>
@@ -1078,17 +1078,20 @@ export const TaskItemDetailWindow = ({
   const [preview, setPreview] = useState<PreviewData | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [sourceStageMaxima, setSourceStageMaxima] = useState<SourceStageMaxima | null>(null);
+
+  // Create stage-specific persist key for better state management
+  const persistKey = useMemo(() => {
+    const stageKey = effectiveStageId === 'source' ? 'source' : 'geometry';
+    return `hierarchidb:ui:floating-window:shape:task-detail:${stageKey}`;
+  }, [effectiveStageId]);
+
   const floatingWindow = useFloatingWindow({
-    persistKey: 'hierarchidb:ui:floating-window:shape:task-detail',
+    persistKey,
     initialPosition: { x: 8, y: 8 },
     initialSize: { width: 450, height: 450 },
   });
   const { windowState, handlers } = floatingWindow;
   const { show, hide, onStateChange, onClose: handleFloatingClose } = handlers;
-  const initialWindowState = useMemo(() => ({
-    ...windowState,
-    zIndex,
-  }), [windowState, zIndex]);
 
   useEffect(() => {
     if (!open || !activeDetail) {
@@ -1300,7 +1303,10 @@ export const TaskItemDetailWindow = ({
           {stageIcon}
         </Box>
       ) : undefined}
-      initialState={initialWindowState}
+      initialState={{
+        ...windowState,
+        zIndex, // Apply zIndex from props without resetting position/size
+      }}
       onStateChange={onStateChange}
       onClose={handleWindowClose}
       onRequestFocus={onRequestBringToFront}

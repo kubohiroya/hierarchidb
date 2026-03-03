@@ -83,7 +83,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const { t } = useTranslation();
   const activeNodeId = nodeId ?? null;
 
-  const releaseBuildLock = useCallback(() => {}, []);
+  const releaseBuildLock = useCallback(() => { }, []);
 
   const tryAcquireBuildLock = useCallback(async (options?: { notifyOnFailure?: boolean }): Promise<boolean> => {
     if (options?.notifyOnFailure && typeof navigator !== 'undefined' && typeof navigator.locks?.request !== 'function') {
@@ -118,6 +118,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     isSessionStopping,
     setIsStopRequested,
     setIsStopAccepted,
+    forceResetStopState,
   } = useShapeBuildStopState({ sessionRecord });
   const [requestedControlAction, setRequestedControlAction] = useState<'none' | 'start' | 'pause' | 'cancel'>('none');
   const {
@@ -138,7 +139,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     activeNodeId,
     clearStartPendingRef,
   });
-  
+
 
   const { progress, status, error } = useBuildProgress(activeNodeId, { autoSubscribe: Boolean(activeNodeId) });
   const hasNodeId = Boolean(activeNodeId && !error);
@@ -170,15 +171,15 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     activeNodeId,
     isSessionStopping,
     stages,
-      processingStatus,
-      runtimeStatus: runtimeStatusForBuildStatus,
-      effectiveProgress: effectiveProgress
-        ? {
-          percentage: effectiveProgress.percentage,
+    processingStatus,
+    runtimeStatus: runtimeStatusForBuildStatus,
+    effectiveProgress: effectiveProgress
+      ? {
+        percentage: effectiveProgress.percentage,
         stage: effectiveProgress.stage,
         progressTaskId: effectiveProgress.progressTaskId,
-          progressTaskStage: (effectiveProgress as { progressTaskStage?: string | null }).progressTaskStage ?? null,
-        }
+        progressTaskStage: (effectiveProgress as { progressTaskStage?: string | null }).progressTaskStage ?? null,
+      }
       : null,
     sessionProgressTotal: sessionRecord?.progress?.total,
     hasNodeId,
@@ -318,8 +319,8 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     workerClient,
   });
   const authDialogOpen = false;
-  const closeAuthDialog = useCallback(() => {}, []);
-  const handleProviderSelect = useCallback((_provider: AuthProviderType) => {}, []);
+  const closeAuthDialog = useCallback(() => { }, []);
+  const handleProviderSelect = useCallback((_provider: AuthProviderType) => { }, []);
   const displayTotalElapsedMs = totalElapsedMs;
 
   const {
@@ -338,8 +339,8 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     sessionRecord,
     shouldMonitor: sessionRecord?.status === 'running' && !sessionRecord?.completedAt,
     t: (key: string, fallback: string) => t(key, fallback),
-    closeCrashSuspect: () => {},
-    closeSuspendSuspect: () => {},
+    closeCrashSuspect: () => { },
+    closeSuspendSuspect: () => { },
   });
 
   const {
@@ -446,5 +447,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     suspendSuspectOpen,
     suspendSuspectMessage,
     setSuspendSuspectOpen: closeSuspendSuspect,
+    forceResetStopState,
   };
 };

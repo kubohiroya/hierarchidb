@@ -20,7 +20,7 @@ import {
   Typography,
 } from '@mui/material';
 import type React from 'react';
-import { useTranslation } from 'react-i18next';
+import { useUserMenuView } from './useUserMenuView.js';
 
 interface UserMenuProps {
   anchorEl: HTMLElement | null;
@@ -39,17 +39,6 @@ interface UserMenuProps {
   languageLabel: string;
 }
 
-const getThemeLabel = (mode: ThemeMode, t: (key: string, defaultValue?: string) => string) => {
-  switch (mode) {
-    case 'dark':
-      return t('userMenu.theme.dark', 'Dark');
-    case 'light':
-      return t('userMenu.theme.light', 'Light');
-    default:
-      return t('userMenu.theme.system', 'System');
-  }
-};
-
 export const UserMenu: React.FC<UserMenuProps> = ({
   anchorEl,
   onClose,
@@ -66,12 +55,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
   themeMode,
   languageLabel,
 }) => {
-  const { t } = useTranslation('common');
-  const themeLabel = getThemeLabel(themeMode, t);
-  const handleThemeMenu = (event: React.MouseEvent<HTMLLIElement>) =>
-    onOpenThemeMenu(event.currentTarget as HTMLElement);
-  const handleLanguageMenu = (event: React.MouseEvent<HTMLLIElement>) =>
-    onOpenLanguageMenu(event.currentTarget as HTMLElement);
+  const view = useUserMenuView({ themeMode, onOpenThemeMenu, onOpenLanguageMenu });
 
   return (
     <Menu
@@ -102,15 +86,15 @@ export const UserMenu: React.FC<UserMenuProps> = ({
             startIcon={<LoginIcon fontSize="small" />}
             onClick={onLogin}
           >
-            {t('auth.login', 'Login')}
+            {view.t('auth.login', 'Login')}
           </Button>
         )}
       </Box>
       <Divider />
 
       <MenuItem
-        onClick={handleThemeMenu}
-        aria-label={String(t('auth.themeSelection', 'Theme Selection'))}
+        onClick={view.handleThemeMenu}
+        aria-label={String(view.t('auth.themeSelection', 'Theme Selection'))}
       >
         <ListItemIcon>
           {themeMode === 'dark' ? (
@@ -121,18 +105,21 @@ export const UserMenu: React.FC<UserMenuProps> = ({
             <SystemThemeIcon fontSize="small" />
           )}
         </ListItemIcon>
-        <ListItemText primary={t('userMenu.theme.label', 'Theme')} secondary={themeLabel} />
+        <ListItemText
+          primary={view.t('userMenu.theme.label', 'Theme')}
+          secondary={view.themeLabel}
+        />
       </MenuItem>
 
       <MenuItem
-        onClick={handleLanguageMenu}
-        aria-label={String(t('auth.languageSelection', 'Language Selection'))}
+        onClick={view.handleLanguageMenu}
+        aria-label={String(view.t('auth.languageSelection', 'Language Selection'))}
       >
         <ListItemIcon>
           <LanguageIcon fontSize="small" />
         </ListItemIcon>
         <ListItemText
-          primary={t('userMenu.language.label', 'Language')}
+          primary={view.t('userMenu.language.label', 'Language')}
           secondary={languageLabel}
         />
       </MenuItem>
@@ -141,23 +128,25 @@ export const UserMenu: React.FC<UserMenuProps> = ({
 
       <MenuItem
         onClick={onOpenClearDialog}
-        aria-label={String(t('auth.clearAllData', 'Clear All Data'))}
+        aria-label={String(view.t('auth.clearAllData', 'Clear All Data'))}
       >
         <ListItemIcon>
           <DeleteForeverIcon fontSize="small" />
         </ListItemIcon>
-        <ListItemText>{t('userMenu.clear.label', 'Clear All Data')}</ListItemText>
+        <ListItemText>{view.t('userMenu.clear.label', 'Clear All Data')}</ListItemText>
       </MenuItem>
 
       {onOpenMaintenance && isAuthenticated ? (
         <MenuItem
           onClick={onOpenMaintenance}
-          aria-label={String(t('userMenu.maintenance.label', 'IndexedDB Maintenance'))}
+          aria-label={String(view.t('userMenu.maintenance.label', 'IndexedDB Maintenance'))}
         >
           <ListItemIcon>
             <EngineeringIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>{t('userMenu.maintenance.label', 'IndexedDB Maintenance')}</ListItemText>
+          <ListItemText>
+            {view.t('userMenu.maintenance.label', 'IndexedDB Maintenance')}
+          </ListItemText>
         </MenuItem>
       ) : null}
 
@@ -165,13 +154,13 @@ export const UserMenu: React.FC<UserMenuProps> = ({
 
       <MenuItem
         onClick={onLogout}
-        aria-label={String(t('auth.logout', 'Logout'))}
+        aria-label={String(view.t('auth.logout', 'Logout'))}
         disabled={!isAuthenticated}
       >
         <ListItemIcon>
           <LogoutIcon fontSize="small" />
         </ListItemIcon>
-        <ListItemText>{t('userMenu.logout', 'Logout')}</ListItemText>
+        <ListItemText>{view.t('userMenu.logout', 'Logout')}</ListItemText>
       </MenuItem>
     </Menu>
   );

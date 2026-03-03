@@ -2,12 +2,12 @@ import { AuthProviderDialog, UserAvatar } from '@hierarchidb/ui-auth';
 import LoginIcon from '@mui/icons-material/Login';
 import { IconButton } from '@mui/material';
 import type React from 'react';
-import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ClearDatabaseDialog } from './ClearDatabaseDialog.js';
-import { LanguageMenu, type LanguageOption } from './LanguageMenu.js';
+import { LanguageMenu } from './LanguageMenu.js';
 import { ThemeMenu } from './ThemeMenu.js';
 import { UserMenu } from './UserMenu.js';
+import { useUserLoginButtonView } from './useUserLoginButtonView.js';
 import { useUserMenu } from './useUserMenu.js';
 
 export interface OpenMaintenanceContext {
@@ -19,44 +19,10 @@ interface UserLoginButtonProps {
   onOpenMaintenance?: (context: OpenMaintenanceContext) => void;
 }
 
-const buildLanguageOptions = (
-  supportedLanguages: Array<{ code: string; name?: string; nativeName?: string; flag?: string }>,
-  t: (key: string, defaultValue?: string) => string
-): LanguageOption[] => {
-  const systemOption: LanguageOption = {
-    code: 'system',
-    name: t('userMenu.language.system', 'System default'),
-    nativeName: t('userMenu.language.system', 'System default'),
-    flag: '🖥️',
-    isSystem: true,
-  };
-  const mapped = supportedLanguages.map<LanguageOption>((lang) => ({
-    code: lang.code,
-    name: lang.name,
-    nativeName: lang.nativeName,
-    flag: lang.flag,
-  }));
-  return [systemOption, ...mapped];
-};
-
 export const UserLoginButton: React.FC<UserLoginButtonProps> = ({ onOpenMaintenance }) => {
   const { t } = useTranslation('common');
-  const [pendingAuthDialogOpen, setPendingAuthDialogOpen] = useState(false);
-
   const menu = useUserMenu();
-
-  const languageOptions = useMemo(
-    () => buildLanguageOptions(menu.supportedLanguages, t),
-    [menu.supportedLanguages, t]
-  );
-
-  const languageLabel = useMemo(() => {
-    if (menu.languageSelection === 'system') {
-      return t('userMenu.language.system', 'System default');
-    }
-    const matched = languageOptions.find((lang) => lang.code === menu.languageSelection);
-    return matched?.nativeName || matched?.name || menu.languageSelection;
-  }, [languageOptions, menu.languageSelection, t]);
+  const view = useUserLoginButtonView({ menu, t, onOpenMaintenance });
 
   if (!menu.themeContextAvailable || !menu.hasDom) return null;
 
@@ -72,49 +38,10 @@ export const UserLoginButton: React.FC<UserLoginButtonProps> = ({ onOpenMaintena
     );
   }
 
-  const handleClearDatabase = async () => {
-    try {
-      await menu.handleClearDatabase();
-    } catch {
-      alert(t('userMenu.clear.error', 'Failed to clear some cache data. Please try again.'));
-    }
-  };
-
-  const handleOpenMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.currentTarget.blur();
-    menu.openUserMenu(event.currentTarget as HTMLElement);
-  };
-
-  const handleMenuClose = () => {
-    if (menu.userMenuAnchorEl) {
-      menu.userMenuAnchorEl.blur();
-    }
-    menu.closeUserMenu();
-  };
-
-  const handleLogin = () => {
-    setPendingAuthDialogOpen(true);
-    handleMenuClose();
-  };
-
-  const handleMenuExited = () => {
-    if (!pendingAuthDialogOpen) return;
-    setPendingAuthDialogOpen(false);
-    menu.openAuthDialog();
-  };
-
-  const handleOpenMaintenance = () => {
-    onOpenMaintenance?.({
-      userEmail: menu.userEmail || null,
-      isAuthenticated: menu.isAuthenticated,
-    });
-    handleMenuClose();
-  };
-
   return (
     <>
       <IconButton
-        onClick={handleOpenMenu}
+        onClick={view.handleOpenMenu}
         sx={
           menu.isAuthenticated
             ? { p: 0 }
@@ -145,19 +72,19 @@ export const UserLoginButton: React.FC<UserLoginButtonProps> = ({ onOpenMaintena
 
       <UserMenu
         anchorEl={menu.userMenuAnchorEl}
-        onClose={handleMenuClose}
+        onClose={view.handleMenuClose}
         onOpenThemeMenu={menu.openThemeMenu}
         onOpenLanguageMenu={menu.openLanguageMenu}
         onOpenClearDialog={menu.openClearDatabaseDialog}
-        onOpenMaintenance={onOpenMaintenance ? handleOpenMaintenance : undefined}
-        onLogin={handleLogin}
-        onMenuExited={handleMenuExited}
+        onOpenMaintenance={onOpenMaintenance ? view.handleOpenMaintenance : undefined}
+        onLogin={view.handleLogin}
+        onMenuExited={view.handleMenuExited}
         onLogout={menu.handleLogout}
         isAuthenticated={menu.isAuthenticated}
         userName={menu.userName}
         userEmail={menu.userEmail}
         themeMode={menu.themeMode}
-        languageLabel={languageLabel}
+        languageLabel={view.languageLabel}
       />
 
       <ThemeMenu
@@ -171,7 +98,7 @@ export const UserLoginButton: React.FC<UserLoginButtonProps> = ({ onOpenMaintena
         anchorEl={menu.languageMenuAnchorEl}
         onClose={menu.closeLanguageMenu}
         languageSelection={menu.languageSelection}
-        languages={languageOptions}
+        languages={view.languageOptions}
         onSelect={menu.applyLanguage}
       />
 
@@ -180,7 +107,7 @@ export const UserLoginButton: React.FC<UserLoginButtonProps> = ({ onOpenMaintena
         titleId={menu.clearDatabaseDialogTitleId}
         descriptionId={menu.clearDatabaseDialogDescriptionId}
         onClose={menu.closeClearDatabaseDialog}
-        onConfirm={handleClearDatabase}
+        onConfirm={view.handleClearDatabase}
       />
 
       <AuthProviderDialog

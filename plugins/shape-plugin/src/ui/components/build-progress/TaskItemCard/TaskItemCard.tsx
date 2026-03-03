@@ -141,8 +141,8 @@ export const TaskItemCard = ({
     && (task.status === 'completed' || task.status === 'failed')
     ? (
       normalizedRetryAttempt !== null && normalizedRetryAttempt > 0
-        ? `${task.status === 'failed' ? 'Failed' : 'Completed'}: retry ${normalizedRetryAttempt}`
-        : (task.status === 'failed' ? 'Failed' : 'Completed')
+        ? `${task.status === 'failed' ? translate('task.status.failed', 'Failed') : translate('task.status.completed', 'Completed')}: ${translate('task.status.attempt', 'Attempt')} ${normalizedRetryAttempt}`
+        : (task.status === 'failed' ? translate('task.status.failed', 'Failed') : translate('task.status.completed', 'Completed'))
     )
     : statusLabelValue;
 
@@ -176,20 +176,20 @@ export const TaskItemCard = ({
     )
     : flag
       ? (
-      <Box
-        data-testid="task-icon-flag"
-        sx={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 16,
-          lineHeight: 1,
-          width: 18,
-          opacity: task.status === 'recycled' ? 0.5 : 1,
-        }}
-      >
-        <span title={countryCode ?? 'country-flag'}>{flag}</span>
-      </Box>
+        <Box
+          data-testid="task-icon-flag"
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 16,
+            lineHeight: 1,
+            width: 18,
+            opacity: task.status === 'recycled' ? 0.5 : 1,
+          }}
+        >
+          <span title={countryCode ?? 'country-flag'}>{flag}</span>
+        </Box>
       )
       : (stageIcon ?? null);
 

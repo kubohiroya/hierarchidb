@@ -18,6 +18,33 @@ export const runWithTimeout = async <T>(
   }
 };
 
+// セッション状態の同期を待機する関数
+export const waitForSessionStateSync = async (
+  checkCondition: () => boolean,
+  timeoutMs: number,
+  pollIntervalMs: number = 500,
+): Promise<boolean> => {
+  const startTime = Date.now();
+
+  return new Promise((resolve) => {
+    const check = () => {
+      if (checkCondition()) {
+        resolve(true);
+        return;
+      }
+
+      if (Date.now() - startTime >= timeoutMs) {
+        resolve(false);
+        return;
+      }
+
+      setTimeout(check, pollIntervalMs);
+    };
+
+    check();
+  });
+};
+
 export const shallowEqualNumberRecord = (left: Record<string, number>, right: Record<string, number>): boolean => {
   if (left === right) return true;
   const leftKeys = Object.keys(left);
