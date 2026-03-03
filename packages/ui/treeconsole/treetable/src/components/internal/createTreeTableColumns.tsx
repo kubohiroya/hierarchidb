@@ -17,8 +17,8 @@ import {
   isFolderNodeType,
 } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { Link as RouterLink } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
 import type { ComponentType, KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useSparkleVisibility } from './useSparkleVisibility.js';
 
 type NodeTypeIconLikeProps = {
   nodeType: string;
@@ -112,18 +112,7 @@ const SparkleAnimation: React.FC<{ showSparkle: boolean; duration?: number }> = 
   showSparkle,
   duration = 5000,
 }) => {
-  const [isVisible, setIsVisible] = useState(showSparkle);
-
-  useEffect(() => {
-    if (!showSparkle) {
-      setIsVisible(false);
-      return;
-    }
-
-    setIsVisible(true);
-    const timer = window.setTimeout(() => setIsVisible(false), duration);
-    return () => window.clearTimeout(timer);
-  }, [showSparkle, duration]);
+  const isVisible = useSparkleVisibility(showSparkle, duration);
 
   if (!isVisible) return null;
 

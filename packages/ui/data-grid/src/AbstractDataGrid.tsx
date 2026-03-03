@@ -5,7 +5,7 @@
  * completely decoupled from specific data types or storage implementations.
  */
 
-import React, { useId, type ReactElement } from 'react';
+import React, { type ReactElement } from 'react';
 import {
   Alert,
   Box,
@@ -43,6 +43,7 @@ import type {
   QueryParams,
 } from './types/DataProvider.js';
 import { useAbstractDataGridView } from './useAbstractDataGridView.js';
+import { useAbstractDataGridControlId } from './useAbstractDataGridControlId.js';
 
 const getItemValue = <T extends DataItem>(item: T, field: ColumnDefinition<T>['field']): unknown => {
   const key = typeof field === 'string' ? field : String(field);
@@ -169,7 +170,7 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
                                                                   loadingComponent,
                                                                   toolbarActions,
                                                                 }: AbstractDataGridProps<T>): ReactElement {
-  const controlId = useId();
+  const controlId = useAbstractDataGridControlId();
   const {
     columns,
     currentSort,

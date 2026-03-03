@@ -28,6 +28,7 @@ import {
 import { Download, FilterList, KeyboardArrowDown, KeyboardArrowUp, Refresh, Search } from '@mui/icons-material';
 import { alpha, type SxProps, type Theme } from '@mui/material/styles';
 import { useGenericDataGridView } from './useGenericDataGridView.js';
+import { useGenericDataGridControlId } from './useGenericDataGridControlId.js';
 
 /**
  * Generic column definition
@@ -320,7 +321,7 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
                                           toolbarComponent,
                                           headerCellSx,
                                         }: GenericDataGridProps<T>): ReactElement {
-  const controlId = React.useId();
+  const controlId = useGenericDataGridControlId();
   const parentRef = React.useRef<HTMLDivElement>(null);
   const {
     displayRows,

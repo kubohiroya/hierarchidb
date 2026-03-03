@@ -1,6 +1,7 @@
 # 運用ハブ
 
 ## Doing
+- #705 / codex/refactor/ui-p1-hook-extract-batch / 2026-03-04 00:52
 - #713 / codex/refactor/ui/hook-cleanup-followup / 2026-03-04 00:01
 - #711 / codex/fix/shape/pause-session-ref-sync / 2026-03-03 23:45
 - #705 / codex/refactor/ui-extract-logic-hooks / 2026-03-03 20:25
@@ -10,6 +11,9 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-04: Issue #705 進捗 - P1対象19ファイルを一括フック分離（`use*.ts` 化、フック内JSX禁止）し、再判定で `useState/useEffect/useMemo/useCallback/useRef/useId` の直書き 0 件を確認
+- 2026-03-04: blocked - `pnpm -w turbo run test --only --filter @hierarchidb/ui-*` 実行時に `@hierarchidb/ui-treeconsole-base` の既存テスト `src/hooks/treeViewController.mutations.test.tsx` が失敗（`console.error` 呼び出し期待不一致、解除条件: 当該テスト期待値の現行仕様追従 or 回帰原因特定）
+- 2026-03-04: Issue #705 進捗 - P1未完了19件（packages/ui）を対象に一括hook分離バッチ `codex/refactor/ui-p1-hook-extract-batch` で着手
 - 2026-03-04: Issue #718 開始 - hook抽出フォローアップ指摘（error再送出・未使用API削除・型重複/死蔵コード整理）に着手
 - 2026-03-04: Issue #718 進捗 - `useCommonDialogView` の submit/saveDraft で error 再送出を追加し、`useMenuListItemLinkButtonView` は `MenuItemLinkType` へ型統合（`pnpm -w turbo run typecheck --filter @hierarchidb/ui-dialog --filter @hierarchidb/ui-navigation --filter @hierarchidb/ui-accordion-config --filter @hierarchidb/ui-search-result-window` / `pnpm -w turbo run test --filter @hierarchidb/ui-dialog --filter @hierarchidb/ui-navigation --filter @hierarchidb/ui-accordion-config --filter @hierarchidb/ui-search-result-window` 成功）
 - 2026-03-04: Issue #718 完了 - PR #719 を main へ squash merge、Issue #718 close、作業ブランチ追跡を prune

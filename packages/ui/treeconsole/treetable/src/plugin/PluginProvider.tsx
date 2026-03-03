@@ -3,29 +3,15 @@
   * TreeTableReact
    */
 
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState, type ReactElement } from 'react';
-import { PluginRegistry } from './PluginRegistry.js';
+import { createContext, type ReactNode, useContext, type ReactElement } from 'react';
 import type {
   PluginContext as IPluginContext,
   PluginEvent,
   PluginRegistry as IPluginRegistry,
   TreeTablePlugin,
   TreeTablePluginConfig,
-  PluginLifecycleState,
-  PluginPriority,
 } from './types.js';
-
-type PluginStats = {
-  name: string;
-  version: string;
-  state: PluginLifecycleState;
-  priority: PluginPriority;
-  registeredAt: number;
-  lastExecuted?: number;
-  executionCount: number;
-  errorCount: number;
-  recentErrors: Error[];
-};
+import { usePluginDebugPanelState, usePluginProviderState, type PluginStats } from './usePluginProviderState.js';
 
 // =============================================================================
 // Context Definition
@@ -68,127 +54,12 @@ export function PluginProvider({
                                  debugMode = false,
                                  onPluginEvent,
                                }: PluginProviderProps): ReactElement {
-  //  Plugin Registry
-  const registry = useMemo(() => {
-    return new PluginRegistry({
-      debugMode,
-      // config?.global has different properties than HookExecutionConfig
-      defaultHookConfig: undefined,
-    });
-  }, [debugMode]);
-
-  const [events, setEvents] = useState<Array<PluginEvent<unknown>>>([]);
-  const [pluginStates, setPluginStates] = useState<Record<string, PluginStats | undefined>>({});
-
-  useEffect(() => {
-    const registerPlugins = async () => {
-      // Avoid direct `process` in browser builds; prefer Vite-style DEV flag when available.
-      const isDev = (() => {
-        try {
-          return (
-            (typeof globalThis !== 'undefined' &&
-              (globalThis as { import?: { meta?: { env?: { DEV?: boolean } } } })?.import?.meta?.env?.DEV) || false
-          );
-        } catch {
-          return false;
-        }
-      })();
-
-      if (isDev) {
-        for (const pluginName of registry.getPlugins().map(p => p.name)) {
-          registry.unregister(pluginName);
-        }
-      }
-
-      const sortedPlugins = sortPluginsByDependencies(plugins);
-
-      for (const plugin of sortedPlugins) {
-        try {
-          const pluginConfig = config?.plugins[plugin.name];
-          if (pluginConfig && !pluginConfig.enabled) {
-            continue;
-          }
-
-          registry.register(plugin);
-
-        } catch (error) {
-          console.error(`Failed to register plugin ${plugin.name}:`, error);
-
-          const errorEvent: PluginEvent = {
-            type: 'plugin:registration-error',
-            plugin: plugin.name,
-            timestamp: Date.now(),
-            data: { error },
-          };
-          onPluginEvent?.(errorEvent);
-        }
-      }
-    };
-
-    registerPlugins();
-  }, [plugins, config, registry, onPluginEvent]);
-
-  useEffect(() => {
-    const handlePluginEvent = (event: unknown) => {
-      const payload = (typeof event === 'object' && event !== null) ? (event as Record<string, unknown>) : undefined;
-      const pluginEvent: PluginEvent<unknown> = {
-        type: (payload?.type as string | undefined) ?? 'unknown',
-        plugin: (payload?.plugin as string | undefined) ?? 'unknown',
-        timestamp: Date.now(),
-        data: event,
-      };
-
-      setEvents((prev) => [...prev.slice(-99), pluginEvent]);
-      onPluginEvent?.(pluginEvent);
-    };
-
-    registry.on('plugin:registered', handlePluginEvent);
-    registry.on('plugin:unregistered', handlePluginEvent);
-    registry.on('plugin:error', handlePluginEvent);
-    registry.on('hook:executed', handlePluginEvent);
-
-    return () => {
-      registry.off('plugin:registered', handlePluginEvent);
-      registry.off('plugin:unregistered', handlePluginEvent);
-      registry.off('plugin:error', handlePluginEvent);
-      registry.off('hook:executed', handlePluginEvent);
-    };
-  }, [registry, onPluginEvent]);
-
-  const executeHook = useCallback(<T extends keyof import('./types.js').TreeTableHooks>(
-    hookName: T,
-    ...args: Parameters<NonNullable<import('./types.js').TreeTableHooks[T]>>
-  ) => {
-    return registry.executeHook(hookName, ...args);
-  }, [registry]);
-
-  useEffect(() => {
-    const updatePluginStates = () => {
-      const states: Record<string, PluginStats | undefined> = {};
-      for (const plugin of registry.getPlugins()) {
-        states[plugin.name] = registry.getPluginStats(plugin.name) as PluginStats | undefined;
-      }
-      setPluginStates(states);
-    };
-
-    updatePluginStates();
-
-    let interval: ReturnType<typeof setInterval> | undefined;
-    if (debugMode) {
-      interval = setInterval(updatePluginStates, 1000);
-    }
-
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
-  }, [registry, debugMode]);
-
-  const contextValue = useMemo<IPluginContext>(() => ({
-    registry,
-    executeHook,
-  }), [registry, executeHook]);
+  const { events, pluginStates, contextValue } = usePluginProviderState({
+    plugins,
+    config,
+    debugMode,
+    onPluginEvent,
+  });
 
   return (
     <PluginContext.Provider value={contextValue}>
@@ -246,49 +117,6 @@ export function usePluginEnabled(pluginName: string): boolean {
 }
 
 // =============================================================================
-// Utility Functions
-// =============================================================================
-
-/**
-    */
-function sortPluginsByDependencies(plugins: TreeTablePlugin[]): TreeTablePlugin[] {
-  const sorted: TreeTablePlugin[] = [];
-  const visited = new Set<string>();
-  const visiting = new Set<string>();
-
-  function visit(plugin: TreeTablePlugin) {
-    if (visiting.has(plugin.name)) {
-      throw new Error(`Circular dependency detected involving plugin: ${plugin.name}`);
-    }
-
-    if (visited.has(plugin.name)) {
-      return;
-    }
-
-    visiting.add(plugin.name);
-
-    if (plugin.dependencies) {
-      for (const depName of plugin.dependencies) {
-        const depPlugin = plugins.find(p => p.name === depName);
-        if (depPlugin) {
-          visit(depPlugin);
-        }
-      }
-    }
-
-    visiting.delete(plugin.name);
-    visited.add(plugin.name);
-    sorted.push(plugin);
-  }
-
-  for (const plugin of plugins) {
-    visit(plugin);
-  }
-
-  return sorted;
-}
-
-// =============================================================================
 // Debug Panel Component
 // =============================================================================
 
@@ -298,7 +126,7 @@ interface PluginDebugPanelProps {
 }
 
 function PluginDebugPanel({ events, pluginStates }: PluginDebugPanelProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const { isExpanded, openPanel, closePanel } = usePluginDebugPanelState();
 
   if (!isExpanded) {
     return (
@@ -317,7 +145,7 @@ function PluginDebugPanel({ events, pluginStates }: PluginDebugPanelProps) {
           cursor: 'pointer',
           border: 'none',
         }}
-        onClick={() => setIsExpanded(true)}
+        onClick={openPanel}
       >
         🔌 Plugins ({Object.keys(pluginStates).length})
       </button>
@@ -352,7 +180,7 @@ function PluginDebugPanel({ events, pluginStates }: PluginDebugPanelProps) {
         <strong>Plugin Debug Panel</strong>
         <button
           type="button"
-          onClick={() => setIsExpanded(false)}
+          onClick={closePanel}
           style={{
             background: 'none',
             border: 'none',

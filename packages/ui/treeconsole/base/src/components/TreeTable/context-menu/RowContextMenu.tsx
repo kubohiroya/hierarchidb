@@ -1,5 +1,4 @@
-import { memo, type MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { CreateMenuBuilder, CreateMenuEntry, GlobalMenuBuilders } from '~/types/menu-types';
+import { memo } from 'react';
 import { Divider, ListItemIcon, ListItemText, Menu, MenuItem, Switch, Tooltip } from '@mui/material';
 import {
   Add as AddIcon,
@@ -12,8 +11,7 @@ import {
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
-import { useIconRegistry } from '@hierarchidb/ui-icon';
-import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
+import { useRowContextMenu } from './useRowContextMenu.js';
 
 // Defer resolving ui-core to runtime-worker to avoid stage-time type resolution issues
 
@@ -50,176 +48,30 @@ export interface RowContextMenuProps {
 
 export const RowContextMenu = memo(
   function RowContextMenu(props: RowContextMenuProps) {
-    const [addMenuOpen, setAddMenuOpen] = useState(false);
-    const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
-    const [localInvisible, setLocalInvisible] = useState<boolean | null>(null);
-    const { t, language } = useGlobalI18nTranslator();
-    const { resolveIcon } = useIconRegistry();
-    const isVisible = props.isVisible;
-    const effectiveVisible =
-      localInvisible !== null ? !localInvisible : (typeof isVisible === 'boolean' ? isVisible : true);
-    const effectiveInvisible = !effectiveVisible;
-    const translateWithFallback = useMemo(() => {
-      return (key: string, fallback: string) => {
-        const safeFallback = fallback?.trim?.() ?? '';
-        const translated = t(key, safeFallback);
-        if (translated === key) {
-          return safeFallback || key;
-        }
-        return translated;
-      };
-    }, [t]);
-
-    const formatCreateTooltip = useCallback(
-      (label: string, description?: string) => {
-        if (!description || description.trim().length === 0) return label;
-        const template = translateWithFallback(
-          'treeConsole.contextMenu.createTooltip',
-          '{{label}}: {{description}}'
-        );
-        return template.replace('{{label}}', label).replace('{{description}}', description);
-      },
-      [translateWithFallback]
-    );
-
-    // Use refs to store the latest props to avoid stale closures
-    const propsRef = useRef(props);
-    useEffect(() => {
-      propsRef.current = props;
-    });
-
-    useEffect(() => {
-      if (!props.parentElem) {
-        setLocalInvisible(null);
-        return;
-      }
-      const resolvedVisible = typeof isVisible === 'boolean' ? isVisible : true;
-      if (localInvisible !== null && localInvisible === !resolvedVisible) {
-        setLocalInvisible(null);
-      }
-    }, [props.parentElem, isVisible, localInvisible]);
-
-    const handleAddMenuClick = (event: MouseEvent<HTMLElement>) => {
-      event.stopPropagation();
-      event.preventDefault();
-      // Get the menu item element as anchor
-      const menuItem = event.currentTarget.closest('li');
-      if (menuItem) {
-        setAddMenuAnchor(menuItem as HTMLElement);
-        setAddMenuOpen(true);
-      }
-    };
-
-    // No registry dependency: use global menu-builders injected by the host app
-
-    const handleOpenClick = () => {
-      const onOpen = propsRef.current.onOpen;
-      handleMainMenuClose();
-      // Call onOpen after menu is closed to avoid conflicts
-      requestAnimationFrame(() => {
-        onOpen();
-      });
-    };
-
-    const handleMainMenuClose = () => {
-      // Close all submenus as well
-      setAddMenuOpen(false);
-      setAddMenuAnchor(null);
-      propsRef.current.onClose();
-    };
-
-    const handleCreateClick = (type: string) => {
-      const onCreate = propsRef.current.onCreate;
-      handleMainMenuClose();
-      // Call onCreate after menu is closed to avoid conflicts
-      requestAnimationFrame(() => {
-        onCreate(type);
-      });
-    };
-
-    const handleOpenFolderClick = () => {
-      const onOpenFolder = propsRef.current.onOpenFolder;
-      handleMainMenuClose();
-      // Call onOpenFolder after menu is closed to avoid conflicts
-      requestAnimationFrame(() => {
-        onOpenFolder();
-      });
-    };
-
-    const handleToggleVisible = () => {
-      const onToggleVisible = propsRef.current.onToggleVisible;
-      const nextVisible = !effectiveVisible;
-      setLocalInvisible(!nextVisible);
-      requestAnimationFrame(() => {
-        onToggleVisible?.(nextVisible);
-      });
-    };
-
-    const handleEditClick = () => {
-      const onEdit = propsRef.current.onEdit;
-      // Close the menu first before opening Edit base-dialog
-      handleMainMenuClose();
-      // Open Edit base-dialog after a slight delay
-      requestAnimationFrame(() => {
-        onEdit();
-      });
-    };
-
-    const handleDuplicateClick = () => {
-      const onDuplicate = propsRef.current.onDuplicate;
-      handleMainMenuClose();
-      requestAnimationFrame(() => {
-        onDuplicate();
-      });
-    };
-
-    const handleArchiveClick = () => {
-      const current = propsRef.current;
-      const handler = current.onArchive ?? current.onRemove;
-      handleMainMenuClose();
-      requestAnimationFrame(() => {
-        handler?.();
-      });
-    };
-
-    const handlePreviewClick = () => {
-      const onPreview = propsRef.current.onPreview;
-      handleMainMenuClose();
-      requestAnimationFrame(() => {
-        onPreview();
-      });
-    };
-
-    // Effect to ensure menus are closed when parentElem changes
-    useEffect(() => {
-      if (!props.parentElem) {
-        setAddMenuOpen(false);
-        setAddMenuAnchor(null);
-      }
-    }, [props.parentElem]);
-
-    const isFolder = props.nodeType === 'folder';
-
-    // Guard: ensure anchorEl is part of document layout
-    const safeAnchorEl = (() => {
-      const el = props.parentElem;
-      try {
-        if (!el) return null;
-        const doc = el.ownerDocument || document;
-        return doc.contains(el) ? el : null;
-      } catch {
-        return null;
-      }
-    })();
-
-    useEffect(() => {
-      if (safeAnchorEl === null && propsRef.current.parentElem && propsRef.current.onClose) {
-        // Parent element disappeared; close the menu to avoid MUI warnings
-        requestAnimationFrame(() => propsRef.current.onClose());
-      }
-    }, [safeAnchorEl]);
-
-    const allowArchive = (props.canArchive ?? props.canRemove ?? true);
+    const {
+      t,
+      language,
+      addMenuOpen,
+      addMenuAnchor,
+      effectiveVisible,
+      effectiveInvisible,
+      isFolder,
+      safeAnchorEl,
+      allowArchive,
+      localizedCreateMenuEntries,
+      createMenuUnavailable,
+      formatCreateTooltip,
+      handleAddMenuClick,
+      handleOpenClick,
+      handleMainMenuClose,
+      handleCreateClick,
+      handleOpenFolderClick,
+      handleToggleVisible,
+      handleEditClick,
+      handleDuplicateClick,
+      handleArchiveClick,
+      handlePreviewClick,
+    } = useRowContextMenu(props);
 
     return (
       <>
@@ -406,67 +258,43 @@ export const RowContextMenu = memo(
           }}
         >
           {/* Dynamic plugin-driven create menu via global menu-builders */}
-          {(() => {
-            try {
-              const g = (globalThis as { __HDB_MENU_BUILDERS__?: GlobalMenuBuilders }).__HDB_MENU_BUILDERS__;
-              const builder: CreateMenuBuilder | undefined = g?.buildMenuItemsForTreeId || g?.buildMenuItemsForContext;
-              if (typeof builder !== 'function') {
-                return (
-                  <MenuItem disabled>
-                    <ListItemText>
-                      {t('treeConsole.contextMenu.createUnavailable', 'Create menu unavailable')}
-                    </ListItemText>
-                  </MenuItem>
-                );
-              }
-
-              // Build items from treeId (resources/projects context)
-              const items = builder(props.treeId) as CreateMenuEntry[];
-              return (items || []).map((i) => {
-                const IconEl = resolveIcon({ nodeType: i.nodeType, icon: i.icon });
-                const localizedLabel = translateWithFallback(`plugins.${i.nodeType}.name`, i.label);
-                const localizedDescription = translateWithFallback(`plugins.${i.nodeType}.description`, i.description ?? '').trim();
-
-                if (localizedDescription.length === 0) {
-                  return (
-                    <MenuItem
-                      key={`${i.key}-${language}`}
-                      onClick={() => handleCreateClick(i.nodeType)}
-                      aria-label={localizedLabel}
-                    >
-                      <ListItemIcon>{IconEl}</ListItemIcon>
-                      <ListItemText primary={localizedLabel} />
-                    </MenuItem>
-                  );
-                }
-
-                return (
-                  <Tooltip
-                    key={`${i.key}-${language}`}
-                    title={formatCreateTooltip(localizedLabel, localizedDescription)}
-                    placement="right"
-                    enterDelay={300}
-                    arrow
-                  >
-                    <span style={{ display: 'block' }}>
-                      <MenuItem onClick={() => handleCreateClick(i.nodeType)} aria-label={localizedLabel}>
-                        <ListItemIcon>{IconEl}</ListItemIcon>
-                        <ListItemText primary={localizedLabel} />
-                      </MenuItem>
-                    </span>
-                  </Tooltip>
-                );
-              });
-            } catch {
+          {createMenuUnavailable ? (
+            <MenuItem disabled>
+              <ListItemText>
+                {t('treeConsole.contextMenu.createUnavailable', 'Create menu unavailable')}
+              </ListItemText>
+            </MenuItem>
+          ) : localizedCreateMenuEntries.map((entry) => {
+            if (entry.description.length === 0) {
               return (
-                <MenuItem disabled>
-                  <ListItemText>
-                    {t('treeConsole.contextMenu.createUnavailable', 'Create menu unavailable')}
-                  </ListItemText>
+                <MenuItem
+                  key={`${entry.key}-${language}`}
+                  onClick={() => handleCreateClick(entry.nodeType)}
+                  aria-label={entry.label}
+                >
+                  <ListItemIcon>{entry.icon}</ListItemIcon>
+                  <ListItemText primary={entry.label} />
                 </MenuItem>
-             );
+              );
             }
-          })()}
+
+            return (
+              <Tooltip
+                key={`${entry.key}-${language}`}
+                title={formatCreateTooltip(entry.label, entry.description)}
+                placement="right"
+                enterDelay={300}
+                arrow
+              >
+                <span style={{ display: 'block' }}>
+                  <MenuItem onClick={() => handleCreateClick(entry.nodeType)} aria-label={entry.label}>
+                    <ListItemIcon>{entry.icon}</ListItemIcon>
+                    <ListItemText primary={entry.label} />
+                  </MenuItem>
+                </span>
+              </Tooltip>
+            );
+          })}
         </Menu>
       </>
     );
