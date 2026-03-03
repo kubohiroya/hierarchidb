@@ -6,6 +6,7 @@ import type {
   ToneCurveEditorProps,
   ToneCurveOverlaySeries,
 } from './ToneCurveEditor';
+import { formatAnchorValueLabel } from './formatAnchorValueLabel.js';
 
 const ANCHOR_EPSILON = 1e-6;
 const DEFAULT_LINE_COLOR = '#0b5ed7';
@@ -128,18 +129,6 @@ const normalizeAxisValues = (
   }
 
   return result;
-};
-
-export const formatAnchorValueLabel = (value: number): string => {
-  if (!Number.isFinite(value)) {
-    return '';
-  }
-
-  if (Math.abs(value - Math.round(value)) < 1e-9) {
-    return String(Math.round(value));
-  }
-
-  return String(Number.parseFloat(value.toFixed(3)));
 };
 
 const areAnchorsEqual = (left: ReadonlyArray<ToneCurveAnchor>, right: ReadonlyArray<ToneCurveAnchor>): boolean => {

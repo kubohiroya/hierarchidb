@@ -3,7 +3,7 @@
  * @description Customizable toast notification provider with hide/show functionality
  */
 
-import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, type ReactNode, useCallback, useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
 import { Alert, type AlertColor, Box, Button, IconButton, Snackbar } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
@@ -101,7 +101,7 @@ export interface ToastConfig {
 /**
  * Toast theme interface
  */
-interface ToastContextType {
+export interface ToastContextType {
   showToast: (config: ToastConfig) => string;
   hideToast: (id?: string) => void;
   hideAllToasts: () => void;
@@ -109,7 +109,7 @@ interface ToastContextType {
   updateToast: (id: string, updates: Partial<ToastConfig>) => void;
 }
 
-const ToastContext = createContext<ToastContextType | undefined>(undefined);
+export const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 /**
  * Active toast atoms
@@ -342,38 +342,4 @@ export function ToastProvider({
       ))}
     </ToastContext.Provider>
   );
-}
-
-/**
- * Hook to use toast functionality
- */
-export function useToast(): ToastContextType {
-  const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
-  }
-  return context;
-}
-
-/**
- * Convenience hooks for _obsolate_common toast types
- */
-export function useToastNotifications() {
-  const { showToast } = useToast();
-
-  return {
-    success: (message: ReactNode, options?: Partial<ToastConfig>) =>
-      showToast({ ...options, message, severity: 'success' }),
-
-    error: (message: ReactNode, options?: Partial<ToastConfig>) =>
-      showToast({ ...options, message, severity: 'error' }),
-
-    warning: (message: ReactNode, options?: Partial<ToastConfig>) =>
-      showToast({ ...options, message, severity: 'warning' }),
-
-    info: (message: ReactNode, options?: Partial<ToastConfig>) =>
-      showToast({ ...options, message, severity: 'info' }),
-
-    custom: (config: ToastConfig) => showToast(config),
-  };
 }
