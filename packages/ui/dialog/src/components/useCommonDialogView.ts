@@ -53,6 +53,7 @@ export function useCommonDialogView({
       await onSubmit();
     } catch (error) {
       console.error('Dialog submission failed:', error);
+      throw error;
     } finally {
       setIsSubmitting(false);
     }
@@ -66,6 +67,7 @@ export function useCommonDialogView({
       onCancel();
     } catch (error) {
       console.error('Save draft failed:', error);
+      throw error;
     }
   }, [onCancel, onSaveDraft]);
 
