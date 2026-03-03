@@ -43,7 +43,7 @@ export {
   type FeatureFilterMethod,
   type FeatureFilterSettings,
   type HybridFilterConfig,
-} from './processing/featureFiltering';
+} from './processing/applyFeatureFiltering';
 export {
   buildShapeSourceLayerName,
   parseShapeSourceLayerName,
@@ -51,7 +51,7 @@ export {
   type ShapeLayerBoundarySymbol,
   type ShapeSourceLayerName,
 } from './shapeLayerNames';
-export { extractGeoJson, type ExtractOptions } from './processing/geometryExtract';
+export { extractGeoJson, type ExtractOptions } from './processing/extractGeoJson';
 export {
   createVectorTileGeocodeCache,
   geocodePointInShapeTiles,

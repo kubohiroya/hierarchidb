@@ -3,7 +3,7 @@ import { Alert, Box, CircularProgress, IconButton, Tooltip, Typography } from '@
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { CountryMatrixSelector } from '@hierarchidb/ui-country-select';
 import { useShapeCountrySelectionStep } from './useShapeCountrySelectionStep.js';
-import { useTranslation } from '~/ui/i18n';
+import { useTranslation } from '~/ui/useTranslation';
 import type { NodeId } from '@hierarchidb/core-types';
 import { AuthReadyGate } from '@hierarchidb/ui-auth';
 import type { ShapeDialogStepProps } from '~/ui/components/ShapeDialogStepProps';

@@ -14,7 +14,7 @@ export * from './common/types/index.js';
 // Extension (UI) exports omitted from public API for now
 
 //  Backward compatibility -
-export { ShapeMetadata } from './common/types/metadata.js';
+export { ShapeMetadata } from './common/types/ShapeMetadata.js';
 export { PLUGIN_MANIFEST as ShapePluginManifest } from './plugin-manifest.js';
 //export type { CreateShapeData, UpdateShapeData, BuildTaskResultType, BuildTaskResult } from './common/types/index.js';
 

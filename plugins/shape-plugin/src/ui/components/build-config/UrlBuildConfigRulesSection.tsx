@@ -7,7 +7,7 @@ import {
 } from '@mui/material';
 import { Link as LinkIcon } from '@mui/icons-material';
 import { BuildConfigSectionTitle } from '@hierarchidb/ui-accordion-config';
-import { useTranslation } from '~/ui/i18n';
+import { useTranslation } from '~/ui/useTranslation';
 import type {
   ShapeBuildConfig,
 } from '~/common/types/index';

@@ -18,7 +18,7 @@ import { LocationSelectionStep } from '~/ui/components/steps/LocationSelectionSt
 import { LocationBuildParametersStep } from '~/ui/components/steps/LocationBuildParametersStep';
 import { LocationMapPreviewStep } from '~/ui/components/steps/LocationMapPreviewStep';
 import { listLocationPoints } from '~/services/pointRepository';
-import { runLocationTabularBuild } from '~/worker/tabular/task';
+import { runLocationTabularBuild } from '~/worker/tabular/runLocationTabularBuild';
 import {
   TabularProvider,
   TabularDataFilter,

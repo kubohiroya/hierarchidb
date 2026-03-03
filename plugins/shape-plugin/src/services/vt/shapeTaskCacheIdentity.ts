@@ -1,6 +1,6 @@
 import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import { buildStableSignature } from './taskSignatures.ts';
+import { buildStableSignature } from './buildStableSignature.ts';
 
 export type ShapeStage = 'source' | 'geometry' | 'tileEmit';
 export type ShapeCacheNamespaceMode = 'node' | 'global';

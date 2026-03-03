@@ -3,5 +3,5 @@
  */
 
 export type { StylerStepData } from '~/common/types/StylerEntity';
-export type { StylerExtensionData } from './handler.js';
-export { StylerExtensionHandler } from './handler.js';
+export type { StylerExtensionData } from './StylerExtensionHandler.js';
+export { StylerExtensionHandler } from './StylerExtensionHandler.js';

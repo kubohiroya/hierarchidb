@@ -3,7 +3,7 @@ import type { BuildStage } from '@hierarchidb/components/build-stage';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { BuildControlMenuItem, BuildStepStageMenu } from '@hierarchidb/components';
 import type { PaneProgress } from '@hierarchidb/ui-lru-splitview';
-import type { ShapeBuildConfig, ShapeProcessingConfig } from '~/common/types/build';
+import type { ShapeBuildConfig, ShapeProcessingConfig } from '~/common/types/BuildTaskResult';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import type {
   CrashSuspectControls,

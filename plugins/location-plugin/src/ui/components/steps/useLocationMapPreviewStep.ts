@@ -7,7 +7,7 @@ import type { LocationEntity, LocationType } from '~/common/types/index';
 import { useTranslation } from '~/common/i18n/index';
 import { useFloatingWindow } from '@hierarchidb/ui-floating-window';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
-import { resolveLocationAttribution } from '~/common/datasources/attribution';
+import { resolveLocationAttribution } from '~/common/datasources/resolveLocationAttribution';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
 import { useIdeGsmImportOnEntry } from '~/ui/hooks/useIdeGsmImportOnEntry';
 import { subscribeIdeGsmProgress } from '~/ui/state/ideGsmProgress';

@@ -2,7 +2,7 @@ import { renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { BuildStage } from '@hierarchidb/components';
 import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms';
-import { useShapeBuildProgressSummaryComputation as useShapeBuildProgressSummary } from '../../../components/build-progress/shapeBuildProgressSummaryComputation';
+import { useShapeBuildProgressSummaryComputation as useShapeBuildProgressSummary } from '../../../components/build-progress/useShapeBuildProgressSummaryComputation';
 
 const stages: BuildStage[] = [
   { id: 'source', title: 'Source', icon: null },

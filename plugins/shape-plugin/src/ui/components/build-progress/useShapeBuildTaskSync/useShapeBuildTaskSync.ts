@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import type { SyncArgs } from './useShapeBuildTaskSync.types.js';
-import { useShapeBuildTaskSyncHandlers } from './useShapeBuildTaskSync.handlers.js';
+import { useShapeBuildTaskSyncHandlers } from './useShapeBuildTaskSyncHandlers.js';
 
 export const useShapeBuildTaskSync = ({
   sessionNodeId,

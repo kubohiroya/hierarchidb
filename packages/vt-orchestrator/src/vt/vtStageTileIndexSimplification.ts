@@ -1,6 +1,6 @@
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { Topology } from 'topojson-specification';
-import { quantizeTopoJsonToGrid } from '~/transform/topojsonGrid';
+import { quantizeTopoJsonToGrid } from '~/transform/quantizeTopoJsonToGrid';
 import { getTopojsonRuntime } from '~/transform/topojsonRuntimeAdapter';
 import { countVerticesFromGeometry } from './vtStageGeometryCounts.js';
 

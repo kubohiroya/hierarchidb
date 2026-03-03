@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
-import type { ShapeBuildProgressPanelControllerBaseResult } from '~/ui/components/build-progress/ShapeBuildProgressPanel/useShapeBuildProgressPanelController/base/useShapeBuildProgressPanelControllerBaseState';
+import type { ShapeBuildProgressPanelControllerBaseResult } from '~/ui/components/build-progress/ShapeBuildProgressPanel/useShapeBuildProgressPanelController/base/useShapeBuildProgressPanelControllerBase';
 import {
   ShapeBuildProgressPanelOverlaySectionContent,
   ShapeBuildProgressPanelOverlaySectionProgressContent,

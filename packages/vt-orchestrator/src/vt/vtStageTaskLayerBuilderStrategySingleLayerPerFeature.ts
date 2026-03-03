@@ -10,7 +10,7 @@ import { countVerticesFromGeometry } from './vtStageGeometryCounts.js';
 import { bboxIntersects, expandTileBBox, resolveTileBufferPx, tileToBBox } from './vtStageGeometryTile.js';
 import { mergeLayerTiles } from './vtStageTaskLayerBuilderHelpers.js';
 import type { BuildLayerIndexForTile } from './vtStageTaskLayerBuilderTypes.js';
-import { logSingleLayerPerFeatureNoResult } from './vtStageTaskLayerBuilderStrategySingleLayerLog.js';
+import { logSingleLayerPerFeatureNoResult } from './logSingleLayerPerFeatureNoResult.js';
 
 type SingleLayerPerFeatureInput = {
   context: VTStageContext;

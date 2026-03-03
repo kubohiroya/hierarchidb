@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeChangeEventType } from './command-types.js';
-import type { TreeNode } from './tree-node-types.js';
+import type { TreeNode } from './NODE_TYPES.js';
 
 export interface TreeNodeEvent {
   type: 'created' | 'updated' | 'deleted' | 'moved';

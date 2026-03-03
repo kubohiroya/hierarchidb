@@ -1,9 +1,9 @@
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { resolveProgressValue } from './useShapeBuildTaskSync.comparison.utils.js';
 import { resetTaskSyncDebugLogCounters } from './useShapeBuildTaskSync.debug.js';
-import { useShapeBuildTaskSyncResolver } from './useShapeBuildTaskSync.resolver.js';
+import { useShapeBuildTaskSyncResolver } from './useShapeBuildTaskSyncResolver.js';
 import type { RawTaskSummary, SyncArgs, SyncResult } from './useShapeBuildTaskSync.types.js';
-import { useShapeBuildTaskSyncScheduling } from './useShapeBuildTaskSync.sync.js';
+import { useShapeBuildTaskSyncScheduling } from './useShapeBuildTaskSyncScheduling.js';
 import type { HandlerRefs } from './useShapeBuildTaskSync.types.js';
 
 type CoreDeps = {

@@ -4,6 +4,6 @@ export type {
   CommandMeta,
   CommandResult,
   WorkerErrorCode,
-} from './services/command-types.js';
+} from './services/WorkerErrorCodeValue.js';
 
-export { WorkerErrorCodeValue } from './services/command-types.js';
+export { WorkerErrorCodeValue } from './services/WorkerErrorCodeValue.js';

@@ -6,8 +6,8 @@
  * This module merges both responsibilities into the runtime API surface used by API assembly.
  */
 
-import { shapeBuildRuntimeExecutionControl } from './api-internal-execution-core.js';
-import { shapeBuildRuntimeExecutionMetrics } from './api-internal-execution-metrics.js';
+import { shapeBuildRuntimeExecutionControl } from './shapeBuildRuntimeExecutionControl.js';
+import { shapeBuildRuntimeExecutionMetrics } from './shapeBuildRuntimeExecutionMetrics.js';
 
 export const shapeBuildRuntime = {
   ...shapeBuildRuntimeExecutionMetrics,

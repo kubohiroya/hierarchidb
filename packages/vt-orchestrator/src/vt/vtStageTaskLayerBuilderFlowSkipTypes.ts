@@ -1,6 +1,6 @@
 import type { StageHandlerResult } from '~/types/types';
 import type { LayerBuildPolicy } from './vtStageTaskLayerBuilderPolicy.js';
-import type { InputFeatureStats } from './vtStageGeometryTypes.js';
+import type { InputFeatureStats } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
 
 export type SkipCheckInput = {
   taskContext: {

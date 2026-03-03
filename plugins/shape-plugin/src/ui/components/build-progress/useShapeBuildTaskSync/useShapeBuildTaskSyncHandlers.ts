@@ -1,0 +1,112 @@
+import { useShapeBuildTaskSyncCore } from './useShapeBuildTaskSync.core.js';
+import { useShapeBuildTaskSyncEventHandlers } from './useShapeBuildTaskSyncEventHandlers.js';
+import { useMemo } from 'react';
+import type { SyncArgs } from './useShapeBuildTaskSync.types.js';
+import type { HandlerRefs } from './useShapeBuildTaskSync.types.js';
+import type { RawTaskSummary } from './useShapeBuildTaskSync.types.js';
+
+type HandlerDeps = {
+  sessionNodeId: SyncArgs['sessionNodeId'];
+  markTaskSnapshotProgressSynchronized?: SyncArgs['markTaskSnapshotProgressSynchronized'];
+  onTaskSnapshot?: SyncArgs['onTaskSnapshot'];
+  onTaskTerminalProgressUpdate?: SyncArgs['onTaskTerminalProgressUpdate'];
+  refs: HandlerRefs;
+  setTasks: SyncArgs['setTasks'];
+  setIsLoading: SyncArgs['setIsLoading'];
+  setError: SyncArgs['setError'];
+};
+
+export const useShapeBuildTaskSyncHandlers = ({
+  sessionNodeId,
+  markTaskSnapshotProgressSynchronized,
+  onTaskSnapshot,
+  onTaskTerminalProgressUpdate,
+  refs,
+  setTasks,
+  setIsLoading,
+  setError,
+}: HandlerDeps) => {
+  const {
+    tasksRef,
+    isLoadingRef,
+    errorRef,
+    committedTasksRef,
+    tasksMapRef,
+    completedTasksRef,
+    vtParentInputDebugLogKeysRef,
+    pendingTasksRef,
+    bufferedSnapshotRef,
+    bufferedUpdatesRef,
+    pendingDirtyRef,
+    flushScheduledRef,
+    flushFrameRef,
+    flushTimeoutRef,
+    isMountedRef,
+  } = refs;
+
+  const core = useShapeBuildTaskSyncCore({
+    sessionNodeId,
+    markTaskSnapshotProgressSynchronized,
+    refs: {
+      tasksRef,
+      isLoadingRef,
+      errorRef,
+      committedTasksRef,
+      tasksMapRef,
+      completedTasksRef,
+      vtParentInputDebugLogKeysRef,
+      pendingTasksRef,
+      bufferedSnapshotRef,
+      bufferedUpdatesRef,
+      pendingDirtyRef,
+      flushScheduledRef,
+      flushFrameRef,
+      flushTimeoutRef,
+      isMountedRef,
+    },
+    setTasks,
+  });
+
+  const events = useShapeBuildTaskSyncEventHandlers({
+    refs: {
+      tasksMapRef,
+      errorRef,
+      isLoadingRef,
+      bufferedSnapshotRef,
+      bufferedUpdatesRef,
+      sessionNodeId,
+    },
+    resolveTaskSummary: core.resolveTaskSummary,
+    scheduleBufferedFlush: core.scheduleBufferedFlush,
+    bufferTaskUpdate: core.bufferTaskUpdate,
+    onTaskSnapshot,
+    onTaskTerminalProgressUpdate,
+    setIsLoading,
+    setError,
+    markTaskSnapshotProgressSynchronized,
+  });
+
+  const handleSnapshot = useMemo(() => {
+    return (snapshot: RawTaskSummary[]) => events.handleSnapshot(snapshot);
+  }, [events.handleSnapshot]);
+
+  return useMemo(() => ({
+    handleSnapshot,
+    handleUpdate: (task: RawTaskSummary) => events.handleUpdate(task),
+    syncTasksRef: core.syncTasksRef,
+    syncLoadingRef: core.syncLoadingRef,
+    syncErrorRef: core.syncErrorRef,
+    resetPending: core.resetPending,
+    scheduleFlush: core.scheduleFlush,
+    resetDebugCounters: core.resetDebugCounters,
+  }), [
+    core.syncTasksRef,
+    core.syncLoadingRef,
+    core.syncErrorRef,
+    core.resetPending,
+    core.scheduleFlush,
+    core.resetDebugCounters,
+    events.handleUpdate,
+    handleSnapshot,
+  ]);
+};

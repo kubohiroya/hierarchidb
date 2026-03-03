@@ -10,7 +10,7 @@ import {
   type GeometryEngine,
   type GeometrySimplifyAlgorithm,
 } from '@hierarchidb/gis-sdk';
-import { quantizeTopoJsonToGrid } from '~/transform/topojsonGrid.js';
+import { quantizeTopoJsonToGrid } from '~/transform/quantizeTopoJsonToGrid.js';
 import { getTopojsonRuntime } from '~/transform/topojsonRuntimeAdapter.js';
 
 export const TASKDEBUG_BUILD_TAG = 'taskdebug-2026-02-09-0240';

@@ -1,5 +1,5 @@
 import { type ReactNode, useMemo } from 'react';
-import type { ShapeBuildProgressPanelControllerBaseResult } from '~/ui/components/build-progress/ShapeBuildProgressPanel/useShapeBuildProgressPanelController/base/useShapeBuildProgressPanelControllerBaseState';
+import type { ShapeBuildProgressPanelControllerBaseResult } from '~/ui/components/build-progress/ShapeBuildProgressPanel/useShapeBuildProgressPanelController/base/useShapeBuildProgressPanelControllerBase';
 import {
   ShapeBuildProgressPanelCompletionDialogContent,
   ShapeBuildProgressPanelConcurrencyEditorCard,

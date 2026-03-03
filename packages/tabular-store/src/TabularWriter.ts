@@ -63,7 +63,7 @@ export class TabularWriter {
         };
         await db.rowChunks.add(chunk);
         if (this.indexColumns.length > 0) {
-          const { TabularIndexer } = await import('./Indexer.js');
+          const { TabularIndexer } = await import('./TabularIndexer.js');
           await new TabularIndexer(this.pluginId).indexRows(this.tableId!, this.indexColumns);
         }
         this.rowCursor += this.rowsBuffered.length;
@@ -91,7 +91,7 @@ export class TabularWriter {
     };
     await db.rowChunks.add(chunk);
     if (this.indexColumns.length > 0) {
-      const { TabularIndexer } = await import('./Indexer.js');
+      const { TabularIndexer } = await import('./TabularIndexer.js');
       await new TabularIndexer(this.pluginId).indexRows(this.tableId!, this.indexColumns);
     }
     this.rowCursor += this.rowsBuffered.length;

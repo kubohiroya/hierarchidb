@@ -1,7 +1,7 @@
 import type React from 'react';
 import { Box, Chip, LinearProgress, Stack, Typography } from '@mui/material';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
-import { TASK_ITEM_HEIGHT } from './taskItem.constants.ts';
+import { TASK_ITEM_HEIGHT } from './TASK_ITEM_HEIGHT.ts';
 
 type TaskMetric = {
   input: number | null;

@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { notify } from '@hierarchidb/components/notify';
 import type { StartOrResumeControlActionsArgs, StartOrResumeOptions } from './types.js';
 import { shouldResumeBuildSession } from '~/ui/components/build-progress/shouldResumeBuildSession';
-import { executeStartOrResumeFlow } from './useShapeBuildStartOrResumeExecution.js';
+import { executeStartOrResumeFlow } from './executeStartOrResumeFlow.js';
 import { isShapeBuildPanelDebugEnabled } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelState.utils.js';
 
 export const useShapeBuildStartOrResume = ({

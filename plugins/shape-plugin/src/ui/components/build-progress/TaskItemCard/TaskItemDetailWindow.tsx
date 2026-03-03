@@ -28,7 +28,7 @@ import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { buildStagesAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
 import type { TaskOutcomeSummary } from '~/ui/components/build-progress/TaskItem/TaskItem';
 import type { TaskDetailPayload, TaskDetailSelection } from './TaskItemDetailTypes';
-import type { ShapeBuildConfig } from '~/common/types/build';
+import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 import { TileEmitTaskItemDetailWindow } from '~/ui/components/build-progress/tile-emit/TileEmitTaskItemDetailWindow';
 import { FloatingWindow, useFloatingWindow } from '@hierarchidb/ui-floating-window';
 import {

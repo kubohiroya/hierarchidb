@@ -13,7 +13,7 @@ import {
   type TaskOutcomeSummaryBuilder,
 } from '~/ui/components/build-progress/TaskItemCard/taskOutcomeSummaryBuilders';
 import { TaskItemDetailWindow } from '~/ui/components/build-progress/TaskItemCard/TaskItemDetailWindow';
-import type { ShapeBuildConfig } from '~/common/types/build';
+import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 import { useTaskItemCardListCardView } from './useTaskItemCardListCardView.js';
 
 type TaskStageSummaryBuilderMap = Partial<Record<

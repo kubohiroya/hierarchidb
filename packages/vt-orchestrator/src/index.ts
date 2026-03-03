@@ -12,10 +12,10 @@ export {
 } from './task/taskQueue.js';
 export {
   runStageTasks,
-} from './compareTaskOrder.js';
-export { createTransformByBandHandler } from './transform/createTransformByBandHandler/execute.js';
-export { quantizeTopoJsonToGrid } from './transform/topojsonGrid.js';
-export { createVtHandler } from './vt/vtStageHandler.js';
+} from './runStageTasks.js';
+export { createTransformByBandHandler } from './transform/createTransformByBandHandler/createTransformByBandHandler.js';
+export { quantizeTopoJsonToGrid } from './transform/quantizeTopoJsonToGrid.js';
+export { createVtHandler } from './vt/createVtHandler.js';
 export {unpackTileId} from './tiles/tileId.js';
 
 export { DEFAULT_TASK_SPLIT } from './types/types.js';

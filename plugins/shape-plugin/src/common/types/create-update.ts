@@ -1,4 +1,4 @@
-import type { ShapeBuildConfig, ShapeProcessingConfig } from './build.js';
+import type { ShapeBuildConfig, ShapeProcessingConfig } from './BuildTaskResult.js';
 import type { SelectedArrayByCountries } from './ShapeEntity.ts';
 
 export interface CreateShapeData {

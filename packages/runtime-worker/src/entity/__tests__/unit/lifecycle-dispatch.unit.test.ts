@@ -8,7 +8,7 @@ import type {
 } from '@hierarchidb/tree-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../../../services/CoreDB';
-import type { CommandEnvelope } from '../../../services/command-types';
+import type { CommandEnvelope } from '../../../services/WorkerErrorCodeValue';
 import { EntityLifecycleManager } from '../../EntityLifecycleManager';
 
 describe('EntityLifecycleManager dispatch', () => {

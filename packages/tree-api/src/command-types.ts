@@ -1,6 +1,6 @@
 import type { CommitStatus } from './commit-types.js';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { TreeNode } from './tree-node-types.js';
+import type { TreeNode } from './NODE_TYPES.js';
 
 /**
  * @deprecated Unused across the repository; scheduled for removal.

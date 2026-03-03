@@ -21,7 +21,7 @@ import {
   BuildConfigSectionTitle,
   getBuildConfigHoverCardSx,
 } from '@hierarchidb/ui-accordion-config';
-import { useTranslation } from '~/ui/i18n';
+import { useTranslation } from '~/ui/useTranslation';
 import { type ShapeBuildConfig } from '~/common/types/index';
 import { useGeometryConfigSection } from '~/ui/hooks/useGeometryConfigSection';
 import { SimplifyToleranceByAdminLevelCard } from './SimplifyToleranceByAdminLevelCard.tsx';

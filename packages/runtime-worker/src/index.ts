@@ -4,7 +4,7 @@ export {
   resetWorkerContainerForTesting,
 } from './di/container.js';
 export type { PluginWorkerModuleLoaderContract } from './di/PluginWorkerModuleLoaderContract.js';
-export { WorkerDiTokens } from './di/tokens.js';
+export { WorkerDiTokens } from './di/WorkerDiTokens.js';
 // Public re-exports for plugin-side stores and registry
 export type {
   FeatureItemBase,
@@ -22,7 +22,7 @@ export * from './module-paths.js';
 // CoreDB and draft utilities (for plugin-side usage)
 export { CoreDB } from './services/CoreDB.js';
 export * from './services/downloadAdapter.js';
-export { discardTreeNodeDraft } from './services/draft/cleanupOperations.js';
+export { discardTreeNodeDraft } from './services/draft/discardTreeNodeDraft.js';
 export { commitTreeNodeDraft } from './services/draft/commitOperations.js';
 export {
   getTreeNode,
@@ -32,7 +32,7 @@ export {
 export {
   type RuntimeWorkerAdapterOptions,
   registerPluginRuntimeWorkerAdapters,
-} from './services/pluginRuntimeWorkerAdapters.js';
+} from './services/registerPluginRuntimeWorkerAdapters.js';
 export {
   getRuntimeWorkerClient,
   hasRuntimeWorkerClient,
@@ -54,7 +54,7 @@ export {
   type VectorTileStageResult,
   writeVectorTileInput,
 } from './services/vectorTileStageRunner.js';
-export { resolveDefaultNodeName } from './utils/default-node-name.js';
+export { resolveDefaultNodeName } from './utils/resolveDefaultNodeName.js';
 export { ShapeMutationService } from './services/ShapeMutationService.js';
 export { publishBuildSessionUpdate, subscribeToBuildSessionBroadcast } from './services/buildSessionBroadcast.js';
 export { ShapeQueryService } from './services/ShapeQueryService.js';

@@ -1,6 +1,6 @@
 import type { Tile } from 'geojson-vt';
 import type { StageHandlerResult } from '~/types/types';
-import type { GeojsonVtIndex } from './vtStageTileIndex.js';
+import type { GeojsonVtIndex } from './buildTileLayerIndexFromFeatures.js';
 import type { VtLayerBuildResult, TaskLayerContext, LayerBuildBranchResult } from './vtStageTaskLayerBuilderTypes.js';
 import { layerBuildSkipReason } from './vtStageTaskLayerBuilderPolicy.js';
 

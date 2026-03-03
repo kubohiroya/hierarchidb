@@ -1,6 +1,6 @@
 export * from './locationTypes.js';
 export * from './locationPointId.js';
-export * from './ideGsmTypes.js';
+export * from './IDE_GSM_BULK_CHUNK_SIZE.js';
 export * from './LocationQueryAPI.js';
 export * from './LocationMutationAPI.js';
 export type { CsvTable } from './csvUtils.js';

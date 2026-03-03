@@ -4,7 +4,7 @@ import type {
   RouteMetadataSyncSummary,
   RouteNearestLineQuery,
   RouteNearestLineResponse,
-} from './routeTypes.js';
+} from './ROUTE_MODES.js';
 import type { RouteBuildError } from './routeBuildTypes.js';
 
 /**

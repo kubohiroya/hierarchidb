@@ -3,5 +3,5 @@
  * @description BaseMap shared exports
  */
 
-export * from './metadata.js';
+export * from './BaseMapPluginManifest.js';
 export * from './utils.js';

@@ -2,7 +2,7 @@ import type { NodeId, NodeType, PeerEntity, ValidationResult } from '@hierarchid
 import type { OnNameConflict } from './command-types.js';
 import type { CommitResult } from './commit-types.js';
 import type { DialogUIState } from './dialog-state.js';
-import type { TreeNode, TreeNodeMetadata } from './tree-node-types.js';
+import type { TreeNode, TreeNodeMetadata } from './NODE_TYPES.js';
 
 /**
  * Tree node updater API (formerly DraftAPI).

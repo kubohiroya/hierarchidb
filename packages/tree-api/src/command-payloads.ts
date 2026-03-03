@@ -1,7 +1,7 @@
 import type { NodeId, NodeType, PeerEntity, Timestamp, TreeId } from '@hierarchidb/core-types';
 import type { DialogUIState } from './dialog-state.js';
 import type { OnNameConflict } from './command-types.js';
-import type { TreeNode, TreeNodeMetadata } from './tree-node-types.js';
+import type { TreeNode, TreeNodeMetadata } from './NODE_TYPES.js';
 
 export interface CommandMeta {
   commandId: string;

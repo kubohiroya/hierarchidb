@@ -18,7 +18,7 @@ import {
   type RetryConfig,
 } from '~/services/utils/chunkStore';
 import { bufferToStream, fetchRawDataWithPipeline, streamToBuffer } from '~/services/utils/rawDataPipeline';
-import { summarizeGeojsonFeatures } from './geojsonStats.js';
+import { summarizeGeojsonFeatures } from './summarizeGeojsonFeatures.js';
 
 //  GADM
 export interface GADMRawData {

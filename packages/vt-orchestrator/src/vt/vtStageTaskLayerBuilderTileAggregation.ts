@@ -1,5 +1,5 @@
 import type { Tile } from 'geojson-vt';
-import { iterateChildTiles } from './vtStageTileTraversal.js';
+import { iterateChildTiles } from './iterateChildTiles.js';
 import { mergeLayerTiles } from './vtStageTaskLayerBuilderHelpers.js';
 
 export type TileLayerCollector = (

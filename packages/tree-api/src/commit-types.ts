@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { TreeNode } from './tree-node-types.js';
+import type { TreeNode } from './NODE_TYPES.js';
 
 export type CommitStatus = 'ok' | 'COMMIT_CONFLICT' | 'NAME_CONFLICT';
 

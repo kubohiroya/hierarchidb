@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hasReceivingTaskSnapshotSignal } from '../../../components/build-progress/receivingTaskSnapshotSignal';
+import { hasReceivingTaskSnapshotSignal } from '../../../components/build-progress/hasReceivingTaskSnapshotSignal';
 
 describe('hasReceivingTaskSnapshotSignal', () => {
   it('returns true when started task exists', () => {

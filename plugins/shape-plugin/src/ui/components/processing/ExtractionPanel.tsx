@@ -9,7 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import type { ReactNode } from 'react';
-import { useTranslation } from '~/ui/i18n';
+import { useTranslation } from '~/ui/useTranslation';
 
 type ValueTransform = {
   toSlider: (value: number) => number;

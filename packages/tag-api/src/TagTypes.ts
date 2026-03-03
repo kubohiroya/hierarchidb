@@ -1,4 +1,4 @@
-import type { TagId } from './tag-entity-types.js';
+import type { TagId } from './toTagId.js';
 
 export type TagSuggestion = {
   id: TagId;

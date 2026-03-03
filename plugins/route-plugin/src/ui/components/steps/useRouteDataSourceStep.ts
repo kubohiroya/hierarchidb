@@ -5,7 +5,7 @@ import {
 } from '@hierarchidb/ui-datasource';
 import { useTranslation } from '~/common/i18n/index';
 import type { RouteEntity } from '@hierarchidb/route-api';
-import { ROUTE_DATA_SOURCES } from '~/common/datasource/configs';
+import { ROUTE_DATA_SOURCES } from '~/common/datasource/ROUTE_DATA_SOURCES';
 import { createRouteTabularApi } from '~/common/tabular/createRouteTabularApi';
 
 export interface RouteDataSourceStepHookParams {

@@ -14,7 +14,7 @@ import type {
 import * as Comlink from 'comlink';
 import { describe, expect, it } from 'vitest';
 import { MessageChannel } from 'worker_threads';
-import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint';
+import { createEndpointFromMessagePort } from '../../e2e/test-utils/createEndpointFromMessagePort';
 import { exposeTestAPI } from '../../e2e/test-worker.entry';
 
 type ExtendedTreeMutationAPI = import('@hierarchidb/tree-api').TreeMutationAPI & {

@@ -3,20 +3,20 @@ import type { CommandId, Seq, TreeChangeEvent } from '@hierarchidb/tree-api';
 import { generateUUID, SingletonMixin } from '@hierarchidb/util';
 import { EntityLifecycleManager } from '~/entity/EntityLifecycleManager';
 import { recordCommandLatency } from '~/utils/metrics';
-import { PERFORMANCE_CONFIG } from '~/utils/performance-config';
+import { PERFORMANCE_CONFIG } from '~/utils/PERFORMANCE_CONFIG';
 import type { CoreDB } from './CoreDB.js';
 import { executeCoreCommand } from './command/core-handlers/index.js';
 import { CommandExecutionRunner } from './command/execution/CommandExecutionRunner.js';
 import { CommandHistoryManager } from './command/history/CommandHistoryManager.js';
-import { type CommandHandlerContext, commandRegistry } from './command/registry.js';
+import { type CommandHandlerContext, commandRegistry } from './command/commandRegistry.js';
 import type {
   CommandEnvelope,
   CommandEvent,
   CommandMeta,
   CommandResult,
   WorkerErrorCode,
-} from './command-types.js';
-import { WorkerErrorCodeValue } from './command-types.js';
+} from './WorkerErrorCodeValue.js';
+import { WorkerErrorCodeValue } from './WorkerErrorCodeValue.js';
 import { TreeSubscriptionService } from './TreeSubscriptionService.js';
 import { classifyWorkerError, sanitizeMessageText } from './utils/error-adapter.js';
 import { isValidationFailure, validateAndNormalizeEnvelope } from './validation/envelope.js';

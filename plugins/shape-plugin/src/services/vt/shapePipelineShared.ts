@@ -21,7 +21,7 @@ import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
 import type { CountryMetadata, SourceTaskPayload, SelectedArrayByCountries } from '~/common/types/index';
 import type { ShapeTileLayerInfo, ShapeVectorTileRecord } from '@hierarchidb/shape-api';
 import { extractGeometryStats } from './featureMetadataUtils.ts';
-import { buildStableSignature } from './taskSignatures.ts';
+import { buildStableSignature } from './buildStableSignature.ts';
 import { deleteTasksByIds, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { ephemeralDB, type EphemeralDB } from '@hierarchidb/gis-sdk';
 import { buildGeometryTaskCacheIdentity, buildTileEmitTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';

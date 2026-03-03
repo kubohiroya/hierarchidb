@@ -12,7 +12,7 @@ import type {
   ShapeStageTimingSnapshot,
   SelectedArrayByCountries,
 } from '~/common/types/index';
-import type { ShapeBuildConfig } from '~/common/types/build';
+import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import { CoreDB } from '@hierarchidb/runtime-worker';
 

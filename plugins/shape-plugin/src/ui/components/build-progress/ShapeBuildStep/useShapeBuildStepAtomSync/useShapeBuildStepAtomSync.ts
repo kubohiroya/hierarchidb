@@ -22,7 +22,7 @@ import {
   buildStagesAtom,
 } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { useShapeBuildStepAtomSyncCallbacks } from './useShapeBuildStepAtomSyncCallbacks.js';
-import { useShapeBuildStepAtomSyncAtomEffects } from './useShapeBuildStepAtomSyncEffects.js';
+import { useShapeBuildStepAtomSyncAtomEffects } from './useShapeBuildStepAtomSyncAtomEffects.js';
 import type { ShapeDialogStepProps } from '~/ui/components/ShapeDialogStepProps';
 import { useShapeBuildStep } from '~/ui/components/build-progress/internal/useShapeBuildStepLogic';
 

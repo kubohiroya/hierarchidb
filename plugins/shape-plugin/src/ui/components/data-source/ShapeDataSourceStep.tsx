@@ -2,7 +2,7 @@ import type React from 'react';
 import { Box, Button } from '@mui/material';
 import { DataSourceSelectionStep } from '@hierarchidb/ui-datasource';
 import { useShapeDataSourceStep } from './useShapeDataSourceStep.js';
-import { useTranslation } from '~/ui/i18n';
+import { useTranslation } from '~/ui/useTranslation';
 import type { ShapeDialogStepProps } from '~/ui/components/ShapeDialogStepProps';
 import { useShapeDataSourceStepView } from './useShapeDataSourceStepView.js';
 

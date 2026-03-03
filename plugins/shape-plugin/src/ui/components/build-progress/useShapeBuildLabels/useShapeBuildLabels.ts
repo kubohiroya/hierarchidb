@@ -3,7 +3,7 @@ import type { BuildStage } from '@hierarchidb/components/build-stage';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { TaskCountSummary } from '@hierarchidb/ui-build-sessions';
 import type { BuildProgress, BuildProgressStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
-import { formatTaskDisplayMessage } from '~/ui/components/build-progress/taskDisplayText';
+import { formatTaskDisplayMessage } from '~/ui/components/build-progress/formatTaskDisplayMessage';
 
 type Translate = (key: string, fallback?: string, options?: Record<string, unknown>) => string;
 

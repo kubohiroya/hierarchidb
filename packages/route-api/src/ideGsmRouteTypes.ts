@@ -1,6 +1,6 @@
 import type { ISO2, NodeId } from '@hierarchidb/core-types';
 import type { IdeGsmRouteError } from './ideGsmRouteCsv.js';
-import type { RouteMode } from './routeTypes.js';
+import type { RouteMode } from './ROUTE_MODES.js';
 
 export type IdeGsmRouteSelectionEntry = {
   countryCode: ISO2;

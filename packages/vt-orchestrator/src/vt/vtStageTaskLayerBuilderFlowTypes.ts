@@ -1,7 +1,7 @@
 import type { StageHandlerResult } from '~/types/types';
 import type { VtLayerBuildInput } from './vtStageTaskLayerBuilderTypes.js';
 import type { VtDebugFocusConfig } from './vtStageDebug.js';
-import type { PreparedLayerBuildContext } from './vtStageTaskLayerBuilderPrepare.js';
+import type { PreparedLayerBuildContext } from './buildLayerBuildExecutionContext.js';
 
 export type LayerBuildFlowInput = Omit<VtLayerBuildInput, 'completedWithParentInputSummary'> &
   Omit<PreparedLayerBuildContext, 'completedWithParentInputSummary'> & {

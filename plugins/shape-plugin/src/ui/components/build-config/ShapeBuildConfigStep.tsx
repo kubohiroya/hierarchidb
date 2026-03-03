@@ -13,7 +13,7 @@ import {
   TileEmitInvalidGeometryFilterCard,
 } from './SourceInvalidGeometryFilterCard.tsx';
 import { useShapeBuildConfigStep } from './useShapeBuildConfigStep.js';
-import { useTranslation } from '~/ui/i18n';
+import { useTranslation } from '~/ui/useTranslation';
 import type { ShapeDialogStepProps } from '~/ui/components/ShapeDialogStepProps';
 import { useDialogContext } from '@hierarchidb/ui-dialog';
 import {
