@@ -56,6 +56,8 @@
 - 2026-03-03: Issue #705 進捗 - `ui-dialog` の `AutoHideFullScreenDialog` で可視状態/タイマー制御を `useAutoHideFullScreenDialogView` へ分離し、`ui-search-field` の `SearchField` で入力イベント/属性組み立てを `useSearchFieldView` へ分離（`typecheck/build` 成功）
 - 2026-03-03: Issue #705 進捗 - `ui-layout` の `ResizableSidebar` で幅計算/ドラッグイベント購読/close処理を `useResizableSidebarView` へ分離し、`ui-speeddial-submenu` の `SpeedDialSubmenuActions` で submenu 状態/close タイマー/イベント処理を `useSpeedDialSubmenuActionsView` へ分離（`typecheck/build` 成功）
 - 2026-03-03: Issue #705 進捗 - `ui-monitoring` の `MemoryUsageChart` でメモリ計測・履歴管理を `useMemoryUsageChartData` へ、canvas描画副作用を `useMemoryUsageChartCanvas` へ分離（`typecheck/build` 成功）
+- 2026-03-03: Issue #705 進捗 - `ui-i18n` の `LanguageSelector` で言語切替イベント処理と表示ラベル解決を `useLanguageSelectorView` へ分離（`typecheck/build` 成功）
+- 2026-03-03: Issue #705 進捗 - `ui-dialog` の `CommonDialog` で表示モード/未保存確認/送信状態管理を `useCommonDialogView` へ分離（`typecheck/build` 成功）
 - 2026-03-03: blocked - `gh issue comment 705` 実行時に `error connecting to api.github.com`（ネットワーク復旧待ち）
 - 2026-03-03: Issue #703 完了 - Shape Plugin Pauseボタン状態管理とセッション復元の修正
   - Pauseボタンが「Pausing」状態で固まる問題を修正

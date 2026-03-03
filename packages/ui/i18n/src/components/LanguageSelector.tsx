@@ -4,12 +4,12 @@ import {
   InputLabel,
   MenuItem,
   Select,
-  type SelectChangeEvent,
   Typography,
 } from '@mui/material';
 import type React from 'react';
 import type { LanguageConfig } from '~/provider/LanguageProvider';
 import { useLanguage } from '~/provider/LanguageProvider';
+import { useLanguageSelectorView } from './useLanguageSelectorView.js';
 
 export interface LanguageSelectorProps {
   variant?: 'dropdown' | 'buttons' | 'compact';
@@ -29,16 +29,16 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   disabled = false,
 }) => {
   const { currentLanguage, changeLanguage, supportedLanguages } = useLanguage();
-
-  const handleChange = (event: SelectChangeEvent<string>) => {
-    changeLanguage(event.target.value);
-  };
+  const { handleChange, getLanguageLabelText } = useLanguageSelectorView({
+    showNativeNames,
+    changeLanguage,
+  });
 
   const renderLanguageLabel = (lang: LanguageConfig) => {
     return (
       <Box display="flex" alignItems="center" gap={1}>
         {showFlags && <span>{lang.flag}</span>}
-        <Typography variant="body2">{showNativeNames ? lang.nativeName : lang.name}</Typography>
+        <Typography variant="body2">{getLanguageLabelText(lang)}</Typography>
       </Box>
     );
   };
