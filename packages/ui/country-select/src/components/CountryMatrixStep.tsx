@@ -4,11 +4,11 @@
  */
 
 import type React from 'react';
-import { useMemo } from 'react';
 import { Accordion, AccordionDetails, AccordionSummary, Alert, Box, Chip, Stack, Typography } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon, Info as InfoIcon } from '@mui/icons-material';
 
 import { CountryMatrixSelector } from './CountryMatrixSelector.js';
+import { useCountryMatrixStepView } from './useCountryMatrixStepView.js';
 import type { Country } from '~/types/Country';
 import type { ColumnSet, MatrixConfig, MatrixSelection } from '~/types/MatrixColumn';
 
@@ -53,51 +53,12 @@ export const CountryMatrixStep: React.FC<CountryMatrixStepProps> = ({
                                                                       minSelections = 1,
                                                                       showConfiguration = false,
                                                                     }) => {
-  // Convert ColumnSet to MatrixConfig if needed
-  const matrixConfig: MatrixConfig = useMemo(() => {
-    if ('type' in rawMatrixConfig) {
-      // It's a ColumnSet, convert to MatrixConfig
-      return {
-        columns: rawMatrixConfig.columns,
-        allowBulkSelect: true,
-        showColumnHeaders: true,
-        showFilters: true,
-        virtualization: {
-          rowHeight: 56,
-          overscan: 5,
-        },
-      };
-    }
-    return rawMatrixConfig;
-  }, [rawMatrixConfig]);
-
-  // Calculate selection statistics
-  const stats = useMemo(() => {
-    const totalCountries = countries.length;
-    const selectedCountries = selections.length;
-    const totalSelections = selections.reduce((sum, selection) => {
-      return sum + Object.values(selection.selections).filter(Boolean).length;
-    }, 0);
-
-    return {
-      totalCountries,
-      selectedCountries,
-      totalSelections,
-      isValid: selectedCountries >= minSelections,
-    };
-  }, [countries, selections, minSelections]);
-
-  // Get column set info if available
-  const columnSetInfo = useMemo(() => {
-    if ('type' in rawMatrixConfig) {
-      return {
-        name: rawMatrixConfig.name,
-        description: rawMatrixConfig.description,
-        type: rawMatrixConfig.type,
-      };
-    }
-    return null;
-  }, [rawMatrixConfig]);
+  const { matrixConfig, stats, columnSetInfo, validationMessage } = useCountryMatrixStepView({
+    countries,
+    matrixConfig: rawMatrixConfig,
+    selections,
+    minSelections,
+  });
 
   return (
     <Box>
@@ -204,7 +165,7 @@ export const CountryMatrixStep: React.FC<CountryMatrixStepProps> = ({
       {/* Validation message */}
       {showValidationInfo && !stats.isValid && (
         <Alert severity="warning" sx={{ mt: 2 }}>
-          Please select at least {minSelections} {minSelections === 1 ? 'country' : 'countries'} to continue.
+          {validationMessage}
         </Alert>
       )}
     </Box>

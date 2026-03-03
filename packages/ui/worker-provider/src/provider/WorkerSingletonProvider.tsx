@@ -7,19 +7,14 @@
  */
 
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import { WorkerInitializationChannel } from '@hierarchidb/ui-worker-client';
 import type React from 'react';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext } from 'react';
+import {
+  useWorkerSingletonProviderView,
+  type WorkerSingletonProviderState as WorkerState,
+} from './useWorkerSingletonProviderView.js';
 
 type WorkerClient = WorkerAPI<Record<string, unknown>>;
-
-interface WorkerState {
-  client: WorkerClient | null;
-  isReady: boolean;
-  error: Error | null;
-  progress: number;
-  message: string;
-}
 
 interface WorkerProviderProps {
   children: React.ReactNode;
@@ -38,98 +33,10 @@ export const WorkerSingletonProvider: React.FC<WorkerProviderProps> = ({
   getWorkerClient,
   getRawWorker,
 }) => {
-  const [state, setState] = useState<WorkerState>({
-    client: null,
-    isReady: false,
-    error: null,
-    progress: 0,
-    message: 'Initializing...',
+  const { state } = useWorkerSingletonProviderView({
+    getWorkerClient,
+    getRawWorker,
   });
-
-  useEffect(() => {
-    let mounted = true;
-    let retryCount = 0;
-    const maxRetries = 3;
-    const retryDelay = 1000;
-
-    const initializeWorker = async () => {
-      while (retryCount < maxRetries && mounted) {
-        try {
-          // Get the Worker client
-          const client = await getWorkerClient();
-
-          // Get the raw Worker instance for initialization detection
-          const workerInstance = getRawWorker();
-          if (!workerInstance) {
-            throw new Error('Raw Worker instance not accessible');
-          }
-
-          const initChannel = new WorkerInitializationChannel();
-
-          // Wait for Worker-side initialization to complete
-          const initResult = await initChannel.waitForInitialization({
-            worker: workerInstance,
-            timeout: 10000,
-            debug: false,
-          });
-
-          if (!initResult.success) {
-            const errorMessage =
-              typeof initResult.error === 'string'
-                ? initResult.error
-                : initResult.error instanceof Error
-                  ? initResult.error.message
-                  : 'Worker initialization failed';
-            throw new Error(errorMessage);
-          }
-
-          // Now verify Comlink communication is working
-          const pingable = client as WorkerClient & { ping?: () => Promise<unknown> };
-          if (typeof pingable.ping === 'function') {
-            try {
-              await pingable.ping();
-            } catch (verifyError) {
-              throw new Error(`Comlink verification failed: ${verifyError}`);
-            }
-          }
-
-          if (mounted) {
-            setState({
-              client,
-              isReady: true,
-              error: null,
-              progress: 100,
-              message: 'Ready',
-            });
-          }
-          return;
-        } catch (error) {
-          retryCount++;
-
-          if (retryCount >= maxRetries) {
-            if (mounted) {
-              setState({
-                client: null,
-                isReady: false,
-                error: error instanceof Error ? error : new Error('Failed to initialize Worker'),
-                progress: 0,
-                message: 'Failed to initialize',
-              });
-            }
-            return;
-          }
-
-          await new Promise((resolve) => setTimeout(resolve, retryDelay));
-        }
-      }
-    };
-
-    initializeWorker();
-
-    return () => {
-      mounted = false;
-    };
-  }, [getWorkerClient, getRawWorker]);
 
   // Show loading screen while initializing
   if (!state.isReady && !state.error) {
