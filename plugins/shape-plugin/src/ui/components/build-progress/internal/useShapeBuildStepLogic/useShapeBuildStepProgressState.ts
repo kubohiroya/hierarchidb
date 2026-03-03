@@ -211,14 +211,17 @@ export const useShapeBuildStepProgressState = ({
 
   useEffect(() => {
     if (isElapsedResetState) {
-      if (!shallowEqualNumberRecord(completedStageElapsedMs, {})) {
-        setCompletedStageElapsedMs({});
-      }
+      setCompletedStageElapsedMs((current) => {
+        if (shallowEqualNumberRecord(current, {})) return current;
+        return {};
+      });
       return;
     }
-    const merged = mergeElapsedByStage(completedStageElapsedMs, persistedStageElapsedByStage);
-    if (shallowEqualNumberRecord(completedStageElapsedMs, merged)) return;
-    setCompletedStageElapsedMs(merged);
+    setCompletedStageElapsedMs((current) => {
+      const merged = mergeElapsedByStage(current, persistedStageElapsedByStage);
+      if (shallowEqualNumberRecord(current, merged)) return current;
+      return merged;
+    });
   }, [isElapsedResetState, persistedStageElapsedByStage]);
 
   useEffect(() => {

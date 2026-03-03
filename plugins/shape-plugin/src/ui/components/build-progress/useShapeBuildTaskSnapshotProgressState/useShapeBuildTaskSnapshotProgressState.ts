@@ -224,7 +224,7 @@ export function useShapeBuildTaskSnapshotProgressState(
       setHasTaskSnapshotByStage((prev) => {
         const next = markSnapshotReceivedByStage(snapshotTasks, prev);
         if (next === prev) return prev;
-        onTaskSnapshot?.(snapshotTasks);
+        Promise.resolve().then(() => onTaskSnapshot?.(snapshotTasks));
         return next;
       });
     },
