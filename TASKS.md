@@ -61,6 +61,11 @@
 - 2026-03-03: Issue #705 進捗 - `ui-monitoring` の `MemoryUsageChart` でメモリ計測・履歴管理を `useMemoryUsageChartData` へ、canvas描画副作用を `useMemoryUsageChartCanvas` へ分離（`typecheck/build` 成功）
 - 2026-03-03: Issue #705 進捗 - `ui-i18n` の `LanguageSelector` で言語切替イベント処理と表示ラベル解決を `useLanguageSelectorView` へ分離（`typecheck/build` 成功）
 - 2026-03-03: Issue #705 進捗 - `ui-dialog` の `CommonDialog` で表示モード/未保存確認/送信状態管理を `useCommonDialogView` へ分離（`typecheck/build` 成功）
+- 2026-03-04: Issue #705 進捗 - `ui-dialog` の `UnsavedChangesDialog` で container/slotProps 解決を `useUnsavedChangesDialogView` へ分離し、`CommonDialogActions` で表示条件/submitラベル/disabled判定を `useCommonDialogActionsView` へ分離（`typecheck/build` 成功）
+- 2026-03-04: Issue #705 進捗 - `ui-accordion-config` の `CacheSection` で削除実行フロー/進行状態/結果通知/トグル変更処理を `useCacheSectionView` へ分離（`typecheck/build` 成功）
+- 2026-03-04: Issue #705 進捗 - `ui-accordion-config` の `ConcurrencySection`/`DownloadRetryControls`/`BaseAccordion` を `useConcurrencySectionView`/`useDownloadRetryControlsView`/`useBaseAccordion` へ分離し、`ui-plugin-basic-info` の `TagChipsInput` を `useTagChipsInput` へ分離（`typecheck/build` と `pnpm check:ui-hooks-tsx` 成功）
+- 2026-03-04: Issue #705 進捗 - `ui-plugin-basic-info` の `BasicInfoFields` で ID生成/文言解決/入力ハンドラを `useBasicInfoFieldsView` へ分離（`typecheck/build` と `pnpm check:ui-hooks-tsx` 成功）
+- 2026-03-04: Issue #705 進捗 - `ui-plugin-basic-info` の `BasicInfoStep` で入力更新/タグ削除確認/初期フォーカス/validation 合成を `useBasicInfoStepView` へ分離（`typecheck/build` と `pnpm check:ui-hooks-tsx` 成功）
 - 2026-03-03: blocked - `gh issue comment 705` 実行時に `error connecting to api.github.com`（ネットワーク復旧待ち）
 - 2026-03-03: Issue #703 完了 - Shape Plugin Pauseボタン状態管理とセッション復元の修正
   - Pauseボタンが「Pausing」状態で固まる問題を修正

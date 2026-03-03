@@ -4,6 +4,7 @@
 
 import type React from 'react';
 import { Button, DialogActions, Stack } from '@mui/material';
+import { useCommonDialogActionsView } from './useCommonDialogActionsView.js';
 
 export interface CommonDialogActionsProps {
   mode: 'create' | 'edit' | 'preview';
@@ -24,7 +25,14 @@ export const CommonDialogActions: React.FC<CommonDialogActionsProps> = ({
                                                                           additionalActions,
                                                                           displayMode = 'normal',
                                                                         }) => {
-  if (displayMode !== 'full-screen') {
+  const { shouldRender, submitLabel, submitDisabled } = useCommonDialogActionsView({
+    displayMode,
+    mode,
+    isValid,
+    isSubmitting,
+  });
+
+  if (!shouldRender) {
     return null;
   }
   return (
@@ -41,9 +49,9 @@ export const CommonDialogActions: React.FC<CommonDialogActionsProps> = ({
             onClick={onSubmit}
             variant="contained"
             size="large"
-            disabled={!isValid || isSubmitting}
+            disabled={submitDisabled}
           >
-            {isSubmitting ? 'Saving...' : mode === 'create' ? 'Create' : 'Save'}
+            {submitLabel}
           </Button>
         </Stack>
       </Stack>

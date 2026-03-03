@@ -3,8 +3,8 @@
  * Shared name/description form fields for Step1 across plugin-loader.
  */
 
-import { useMemo, useId } from 'react';
 import { Box, FormControl, TextField, Typography } from '@mui/material';
+import { useBasicInfoFieldsView } from './useBasicInfoFieldsView.js';
 
 export interface BasicInfoValue {
   name?: string;
@@ -47,20 +47,18 @@ export const BasicInfoFields: React.FC<BasicInfoFieldsProps> = ({
                                                                   title,
                                                                   subtitle,
 }) => {
-  const controlId = useId();
-  const nameInputId = `${controlId}-name`;
-  const descriptionInputId = `${controlId}-description`;
-  const texts = useMemo(() => ({
-    title: title ?? 'Basic Information',
-    subtitle: subtitle ?? 'Enter a name and optional description.',
-    nameLabel: nameLabel ?? 'Name',
-    nameHelperText: nameHelperText ?? 'Enter a descriptive name',
-    nameRequiredText: nameRequiredText ?? 'Name is required',
-    namePlaceholder: namePlaceholder ?? 'Enter name',
-    descriptionLabel: descriptionLabel ?? 'Description',
-    descriptionHelperText: descriptionHelperText ?? 'Describe the purpose or contents (optional)',
-    descriptionPlaceholder: descriptionPlaceholder ?? 'Enter description (optional)',
-  }), [
+  const {
+    nameInputId,
+    descriptionInputId,
+    texts,
+    name,
+    description,
+    nameError,
+    handleNameChange,
+    handleDescriptionChange,
+  } = useBasicInfoFieldsView({
+    value,
+    onChange,
     title,
     subtitle,
     nameLabel,
@@ -70,11 +68,7 @@ export const BasicInfoFields: React.FC<BasicInfoFieldsProps> = ({
     descriptionLabel,
     descriptionHelperText,
     descriptionPlaceholder,
-  ]);
-
-  const name = value.name ?? '';
-  const description = value.description ?? '';
-  const nameError = !name.trim();
+  });
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -99,7 +93,7 @@ export const BasicInfoFields: React.FC<BasicInfoFieldsProps> = ({
           id={nameInputId}
           name="name"
           value={name}
-          onChange={(e) => onChange({ name: e.target.value })}
+          onChange={(e) => handleNameChange(e.target.value)}
           required
           fullWidth
           disabled={disabled}
@@ -116,7 +110,7 @@ export const BasicInfoFields: React.FC<BasicInfoFieldsProps> = ({
           id={descriptionInputId}
           name="description"
           value={description}
-          onChange={(e) => onChange({ description: e.target.value })}
+          onChange={(e) => handleDescriptionChange(e.target.value)}
           multiline
           rows={3}
           fullWidth

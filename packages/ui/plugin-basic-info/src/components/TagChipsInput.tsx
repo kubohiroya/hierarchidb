@@ -1,5 +1,6 @@
-import { type KeyboardEvent, useMemo, useState, useId, type ReactNode } from 'react'
+import { type KeyboardEvent, type ReactNode } from 'react';
 import { Box, Chip, Stack, TextField, Typography, useTheme } from '@mui/material';
+import { useTagChipsInput } from './useTagChipsInput.js';
 
 export interface TagChipsInputProps {
   value?: string[];
@@ -31,30 +32,26 @@ export const TagChipsInput: React.FC<TagChipsInputProps> = ({
   suggestions = [],
 }) => {
   const theme = useTheme();
-  const [input, setInput] = useState('');
-  const controlId = useId();
-  const inputId = `${controlId}-tags`;
-  const labelId = `${controlId}-label`;
-
-  const addTag = (tag: string) => {
-    const t = tag.trim();
-    if (!t || value.includes(t) || value.length >= maxTags) return;
-    onChange?.([...value, t]);
-    setInput('');
-  };
-
-  const removeTag = (tag: string) => {
-    onChange?.(value.filter((v) => v !== tag));
-  };
+  const {
+    input,
+    inputId,
+    labelId,
+    availableSuggestions,
+    setInputValue,
+    addTag,
+    removeTag,
+    handleEnterKey,
+  } = useTagChipsInput({
+    value,
+    onChange,
+    maxTags,
+    suggestions,
+  });
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addTag(input);
-    }
+    if (!handleEnterKey(e.key)) return;
+    e.preventDefault();
   };
-
-  const availableSuggestions = useMemo(() => suggestions.filter((s) => s && !value.includes(s)), [suggestions, value]);
 
   return (
     <Box data-ui-core="TagChipsInput" sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
@@ -96,7 +93,7 @@ export const TagChipsInput: React.FC<TagChipsInputProps> = ({
         id={inputId}
         name="tags"
         value={input}
-        onChange={(e) => setInput(e.target.value)}
+        onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         disabled={disabled || value.length >= maxTags}
