@@ -1,6 +1,7 @@
 # 運用ハブ
 
 ## Doing
+- #728 / codex/refactor/packages-ts-file-naming-guideline / 2026-03-04 07:44
 - #726 / codex/docs/app-ts-naming-guideline-note / 2026-03-04 07:39
 - #724 / codex/docs/ts-file-naming-guideline / 2026-03-04 07:19
 - #722 / codex/refactor/shape-plugin-tsx-hook-separation / 2026-03-04 02:24
@@ -15,6 +16,9 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-04: Issue #728 進捗 - `packages/*/src` の命名違反4件を rename（`helpers.ts`/`utils.ts`/`misc.ts` 系）し、`pnpm lint` と `pnpm typecheck` の成功を確認
+- 2026-03-04: blocked - `pnpm typecheck` で `@hierarchidb/ui-treeconsole-base` の `~/adapters/utils` 解決失敗（TS2307）を確認。`commandEnvelopeFactories` への import 更新で解消
+- 2026-03-04: Issue #728 開始 - `packages/*/src/**/*.ts` へ命名指針を適用（違反抽出→rename→import更新）に着手
 - 2026-03-04: Issue #726 進捗 - `app/src` 向け注記（router規約優先・共通適用領域の表）を命名指針へ追加し、`pnpm lint` 成功を確認
 - 2026-03-04: Issue #726 開始 - `docs/ts-file-naming-guideline.md` に app/src 固有例外（router命名優先）と適用範囲注記を追記
 - 2026-03-04: Issue #724 進捗 - `docs/ts-file-naming-guideline.md` を新規作成し、`pnpm lint` と `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` の成功を確認
