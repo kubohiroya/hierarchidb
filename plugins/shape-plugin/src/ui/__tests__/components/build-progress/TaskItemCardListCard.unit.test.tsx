@@ -201,7 +201,7 @@ describe('TaskItemCardListCard', () => {
       detailLines: ['Injected source detail'],
     });
 
-    const view = render(
+    render(
       <Provider store={store}>
         <TaskItemCardListCard
           stageId="source"
