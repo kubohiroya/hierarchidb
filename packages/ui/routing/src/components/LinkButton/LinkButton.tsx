@@ -10,8 +10,9 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
-import { type FC, useId } from 'react';
+import { type FC } from 'react';
 import { useLinkButton } from './useLinkButton.js';
+import { useLinkButtonView } from './useLinkButtonView.js';
 
 // Toast configuration type (placeholder)
 export interface ToastConfig {
@@ -234,37 +235,9 @@ export interface LinkButtonProps extends Omit<ButtonProps, 'onClick'> {
  * ```
  */
 export const LinkButton: FC<LinkButtonProps> = (props) => {
-  const {
-    // Extract all LinkButton-specific props that shouldn't go to Button
-    to: _to,
-    replace: _replace,
-    state: _state,
-    validate: _validate,
-    confirmDialog,
-    onSave: _onSave,
-    onCleanup: _onCleanup,
-    steps: _steps,
-    onBeforeNavigate: _onBeforeNavigate,
-    onBeforeAction: _onBeforeAction,
-    onSuccessNavigate: _onSuccessNavigate,
-    onSuccess: _onSuccess,
-    onError: _onError,
-    loadingText,
-    preventDoubleClick: _preventDoubleClick,
-    showSuccessMessage: _showSuccessMessage,
-    successMessage: _successMessage,
-    successToast: _successToast,
-    errorToast: _errorToast,
-    onToast: _onToast,
-    ariaLabel,
-    children,
-    validationErrors: _validationErrors,
-    ...buttonProps
-  } = props;
-
+  const { buttonProps, children, ariaLabel, confirmDialog, loadingText, titleId, descriptionId } =
+    useLinkButtonView(props);
   const { loading, confirmOpen, handleClick, handleConfirm, handleCancel } = useLinkButton(props);
-  const titleId = useId();
-  const descriptionId = useId();
 
   return (
     <>

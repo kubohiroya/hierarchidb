@@ -1,10 +1,10 @@
 import type React from 'react';
-import { useMemo } from 'react';
 import { Box, CircularProgress, Dialog, DialogContent, DialogTitle, IconButton, Stack, Typography } from '@mui/material';
 import { Place as PlaceIcon, Recycling as RecyclingIcon } from '@mui/icons-material';
 import { FloatingWindow } from '@hierarchidb/ui-floating-window';
 import { JsonTreeView } from '@hierarchidb/ui-json-treeview';
 import { MapPreviewFloatingTable } from './MapPreviewFloatingTable.js';
+import { useLocationPreviewList } from './useLocationPreviewList.js';
 import { useLocationPreviewListView } from './useLocationPreviewListView.js';
 
 export type LocationPreviewListProps = {
@@ -77,34 +77,38 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
     columnFormatters,
     rowFilterConfig,
   });
+  const { shouldShowEmpty, shouldShowTable, recyclingDisabled, recyclingIconColor } = useLocationPreviewList({
+    tableId,
+    normalizedRowsLength: normalizedRows.length,
+    loading,
+    errorText,
+    recyclingState,
+  });
 
-  const content = useMemo(() => {
-    if (loading) {
-      return (
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <CircularProgress size={16} />
-          <Typography variant="body2" color="text.secondary">
-            {loadingText}
-          </Typography>
-        </Stack>
-      );
-    }
-    if (errorText) {
-      return (
-        <Typography variant="body2" color="error.main">
-          {errorText}
-        </Typography>
-      );
-    }
-    const hasRows = normalizedRows.length > 0;
-    if (!tableId && !hasRows) {
-      return (
+  let content: React.ReactNode = null;
+  if (loading) {
+    content = (
+      <Stack direction="row" alignItems="center" spacing={1}>
+        <CircularProgress size={16} />
         <Typography variant="body2" color="text.secondary">
-          {emptyText}
+          {loadingText}
         </Typography>
-      );
-    }
-    return (
+      </Stack>
+    );
+  } else if (errorText) {
+    content = (
+      <Typography variant="body2" color="error.main">
+        {errorText}
+      </Typography>
+    );
+  } else if (shouldShowEmpty) {
+    content = (
+      <Typography variant="body2" color="text.secondary">
+        {emptyText}
+      </Typography>
+    );
+  } else if (shouldShowTable) {
+    content = (
       <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         <MapPreviewFloatingTable
           title={resolvedTitle}
@@ -132,12 +136,9 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
                   aria-label="Toggle recycling"
                   size="small"
                   onClick={onToggleRecycling}
-                  disabled={recyclingState === 'none'}
+                  disabled={recyclingDisabled}
                 >
-                  <RecyclingIcon
-                    fontSize="small"
-                    color={recyclingState === 'on' ? 'success' : recyclingState === 'partial' ? 'warning' : 'inherit'}
-                  />
+                  <RecyclingIcon fontSize="small" color={recyclingIconColor} />
                 </IconButton>
               ) : null}
               {toolbarActions}
@@ -158,7 +159,7 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
         />
       </Box>
     );
-  }, [emptyText, errorText, filteredRows, gridColumns, handleCellClick, loading, loadingText, normalizedRows.length, onSelectionChange, onToggleRecycling, recyclingState, resolvedTitle, rowFilterConfig, searchValue, selectedRows, tableId, toolbarActions]);
+  }
 
   return (
     <FloatingWindow

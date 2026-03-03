@@ -10,36 +10,22 @@ import type { InitializationResult } from '@hierarchidb/ui-worker-client';
 import type { Remote } from 'comlink';
 import React, { type ReactNode } from 'react';
 import { createWorkerClientProvider } from './WorkerClientProvider.js';
+import { useWorkerProviderView } from './useWorkerProviderView.js';
 
 export interface WorkerProviderProps<T> {
-  /** Function to create the Worker instance */
   createWorker: () => Worker;
-  /** Function to wrap Worker with Comlink (can be async for lazy initialization) */
   wrapWorker: (worker: Worker) => Remote<T> | Promise<Remote<T>>;
-  /** Children to render after full initialization */
   children: ReactNode;
-  /** Component to show during Worker initialization */
   loadingWorkerComponent?: ReactNode;
-  /** Component to show during Comlink setup */
   loadingClientComponent?: ReactNode;
-  /** Component to show on Worker initialization error */
   errorWorkerComponent?: (error: Error) => ReactNode;
-
-  /** Worker initialization timeout in milliseconds */
   workerTimeout?: number;
-  /** Health check interval for Comlink connection (0 to disable) */
   healthCheckInterval?: number;
-  /** Enable debug logging */
   debug?: boolean;
-  /** Callback when Worker is initialized */
   onWorkerInitialized?: (worker: Worker, result: InitializationResult) => void;
-  /** Callback when Comlink client is ready */
   onClientReady?: (client: Remote<T>) => void;
 }
 
-/**
- * Create a dual-layer Worker provider for a specific Worker type
- */
 export function createWorkerProvider<T>() {
   const { WorkerClientProvider, useWorker } = createWorkerClientProvider<T>();
 
@@ -49,21 +35,11 @@ export function createWorkerProvider<T>() {
     children,
     loadingWorkerComponent = <div>Initializing Worker...</div>,
     loadingClientComponent = <div>Setting up Worker client...</div>,
-    // errorWorkerComponent,
-    // workerTimeout = 30000,
     healthCheckInterval = 30000,
     debug = false,
-    // onWorkerInitialized,
     onClientReady,
   }) => {
-    // Temporary workaround: directly render WorkerClientProvider
-    // TODO: Fix WorkerSingletonProvider to support render props properly
-    const [worker, setWorker] = React.useState<Worker | undefined>();
-
-    React.useEffect(() => {
-      const w = createWorker();
-      setWorker(w);
-    }, [createWorker]);
+    const { worker } = useWorkerProviderView({ createWorker });
 
     if (!worker) {
       return <>{loadingWorkerComponent}</>;

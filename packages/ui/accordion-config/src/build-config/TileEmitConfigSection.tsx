@@ -23,13 +23,12 @@ import {
   DensitySmall as DensitySmallIcon,
   Update as UpdateIcon,
 } from '@mui/icons-material';
-import { useEffect, useMemo } from 'react';
 import type { ReactNode } from 'react';
-import type { BaseBuildConfig, DynamicConcurrencyConfig } from '@hierarchidb/gis-sdk';
+import type { BaseBuildConfig } from '@hierarchidb/gis-sdk';
 import { BuildConfigAccordionSummary } from './BuildConfigAccordionSummary.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { BuildConfigSectionTitle } from './BuildConfigSectionTitle.js';
-import { getBuildConfigHoverCardSx } from './buildConfigCardStyles.js';
+import { useTileEmitConfigSection } from './useTileEmitConfigSection.js';
 
 type TranslateFn = (key: string, fallback?: string, options?: Record<string, unknown>) => string;
 
@@ -43,16 +42,6 @@ type Props<TDataSourceName = unknown> = {
   additionalCards?: ReactNode;
 };
 
-const createDefaultDynamicConcurrency = (maxConcurrent: number): DynamicConcurrencyConfig => ({
-  enabled: false,
-  minConcurrent: maxConcurrent,
-  maxConcurrent,
-  highWatermark: 0.85,
-  lowWatermark: 0.6,
-  adjustStep: 1,
-  sampleMs: 2000,
-});
-
 export const TileEmitConfigSection = <TDataSourceName,>({
   t,
   buildConfig,
@@ -62,31 +51,27 @@ export const TileEmitConfigSection = <TDataSourceName,>({
   disableHoverLift = false,
   additionalCards,
 }: Props<TDataSourceName>) => {
-  const resolvedMaxConcurrent = Number.isFinite(buildConfig.tileEmitConfig.maxConcurrent)
-    ? buildConfig.tileEmitConfig.maxConcurrent
-    : 1;
-  const dynamicConcurrency = useMemo(
-    () => buildConfig.tileEmitConfig.dynamicConcurrency
-      ?? createDefaultDynamicConcurrency(resolvedMaxConcurrent),
-    [buildConfig.tileEmitConfig.dynamicConcurrency, resolvedMaxConcurrent],
-  );
-  const dynamicConcurrencyActive = showConcurrencyCard && resolvedMaxConcurrent >= 2;
-  const tileToleranceMax = Math.max(10, buildConfig.tileEmitConfig.tolerance);
-  const hoverCardSx = getBuildConfigHoverCardSx(disabled, disableHoverLift);
-
-  useEffect(() => {
-    if (!showConcurrencyCard) return;
-    if (dynamicConcurrency.enabled === dynamicConcurrencyActive) return;
-    update({
-      tileEmitConfig: {
-        ...buildConfig.tileEmitConfig,
-        dynamicConcurrency: {
-          ...dynamicConcurrency,
-          enabled: dynamicConcurrencyActive,
-        },
-      },
-    });
-  }, [buildConfig.tileEmitConfig, dynamicConcurrency, dynamicConcurrencyActive, showConcurrencyCard, update]);
+  const {
+    resolvedMaxConcurrent,
+    dynamicConcurrency,
+    dynamicConcurrencyActive,
+    tileToleranceMax,
+    hoverCardSx,
+    onExtentChange,
+    onToleranceChange,
+    onBufferChange,
+    onIndexMaxPointsChange,
+    onMaxConcurrentChange,
+    onWatermarkRangeChange,
+    onAdjustStepChange,
+    onSampleMsChange,
+  } = useTileEmitConfigSection({
+    buildConfig,
+    disabled,
+    disableHoverLift,
+    showConcurrencyCard,
+    update,
+  });
 
   return (
     <Accordion defaultExpanded>
@@ -128,15 +113,7 @@ export const TileEmitConfigSection = <TDataSourceName,>({
                         </InputAdornment>
                       ),
                     }}
-                    onChange={(event) => {
-                      const extent = Number(event.target.value);
-                      update({
-                        tileEmitConfig: {
-                          ...buildConfig.tileEmitConfig,
-                          extent,
-                        },
-                      });
-                    }}
+                    onChange={(event) => onExtentChange(event.target.value)}
                     helperText={t(
                       'processing.tile.extentHelp',
                       'Controls the resolution of tile coordinates.',
@@ -159,17 +136,7 @@ export const TileEmitConfigSection = <TDataSourceName,>({
                         max={tileToleranceMax}
                         step={0.1}
                         valueLabelDisplay="auto"
-                        onChange={(_, value) => {
-                          if (Array.isArray(value)) return;
-                          const tolerance = Number(value);
-                          if (!Number.isFinite(tolerance)) return;
-                          update({
-                            tileEmitConfig: {
-                              ...buildConfig.tileEmitConfig,
-                              tolerance,
-                            },
-                          });
-                        }}
+                        onChange={(_, value) => onToleranceChange(value)}
                         disabled={disabled}
                       />
                       <DensityLargeIcon fontSize="small" color="action" />
@@ -195,16 +162,7 @@ export const TileEmitConfigSection = <TDataSourceName,>({
                         </InputAdornment>
                       ),
                     }}
-                    onChange={(event) => {
-                      const buffer = Number(event.target.value);
-                      update({
-                        tileEmitConfig: {
-                          ...buildConfig.tileEmitConfig,
-                          buffer,
-                          bufferSize: buffer,
-                        },
-                      });
-                    }}
+                    onChange={(event) => onBufferChange(event.target.value)}
                     helperText={t(
                       'processing.tile.bufferHelp',
                       'Tile buffer on each side in px.',
@@ -219,15 +177,7 @@ export const TileEmitConfigSection = <TDataSourceName,>({
                     type="number"
                     label={t('processing.tile.indexMaxPoints', 'Index max points')}
                     value={buildConfig.tileEmitConfig.indexMaxPoints}
-                    onChange={(event) => {
-                      const indexMaxPoints = Number(event.target.value);
-                      update({
-                        tileEmitConfig: {
-                          ...buildConfig.tileEmitConfig,
-                          indexMaxPoints,
-                        },
-                      });
-                    }}
+                    onChange={(event) => onIndexMaxPointsChange(event.target.value)}
                     helperText={t(
                       'processing.tile.indexMaxPointsHelp',
                       'Maximum number of points per tile in the initial index.',
@@ -256,18 +206,7 @@ export const TileEmitConfigSection = <TDataSourceName,>({
                       helperText={t('processing.tile.workersHelp', 'Concurrent workers for TileEmit generation.')}
                       warningText={undefined}
                       disableHoverEffect={disableHoverLift}
-                      onChange={(maxConcurrent) =>
-                        update({
-                          tileEmitConfig: {
-                            ...buildConfig.tileEmitConfig,
-                            maxConcurrent,
-                            dynamicConcurrency: {
-                              ...dynamicConcurrency,
-                              enabled: maxConcurrent >= 2,
-                            },
-                          },
-                        })
-                      }
+                      onChange={onMaxConcurrentChange}
                       min={1}
                       max={8}
                       step={1}
@@ -297,24 +236,7 @@ export const TileEmitConfigSection = <TDataSourceName,>({
                           max={1}
                           step={0.01}
                           valueLabelDisplay="auto"
-                          onChange={(_, value) => {
-                            if (!Array.isArray(value) || value.length < 2) return;
-                            const [lowValue, highValue] = value;
-                            if (typeof lowValue !== 'number' || typeof highValue !== 'number') return;
-                            if (!Number.isFinite(lowValue) || !Number.isFinite(highValue)) return;
-                            const lowWatermark = Math.min(lowValue, highValue);
-                            const highWatermark = Math.max(lowValue, highValue);
-                            update({
-                              tileEmitConfig: {
-                                ...buildConfig.tileEmitConfig,
-                                dynamicConcurrency: {
-                                  ...dynamicConcurrency,
-                                  lowWatermark,
-                                  highWatermark,
-                                },
-                              },
-                            });
-                          }}
+                          onChange={(_, value) => onWatermarkRangeChange(value)}
                           disabled={disabled || !dynamicConcurrencyActive}
                           getAriaLabel={() => t('processing.tile.dynamicConcurrencyWatermarkRange', 'Watermark range')}
                         />
@@ -328,20 +250,7 @@ export const TileEmitConfigSection = <TDataSourceName,>({
                       type="number"
                       label={t('processing.tile.dynamicConcurrencyAdjustStep', 'Adjust step')}
                       value={dynamicConcurrency.adjustStep}
-                      onChange={(event) => {
-                        const adjustStep = Number(event.target.value);
-                        update({
-                          tileEmitConfig: {
-                            ...buildConfig.tileEmitConfig,
-                            dynamicConcurrency: {
-                              ...dynamicConcurrency,
-                              adjustStep: Number.isFinite(adjustStep)
-                                ? adjustStep
-                                : dynamicConcurrency.adjustStep,
-                            },
-                          },
-                        });
-                      }}
+                      onChange={(event) => onAdjustStepChange(event.target.value)}
                       disabled={disabled || !dynamicConcurrencyActive}
                     />
                   </Grid>
@@ -358,20 +267,7 @@ export const TileEmitConfigSection = <TDataSourceName,>({
                           </InputAdornment>
                         ),
                       }}
-                      onChange={(event) => {
-                        const sampleMs = Number(event.target.value);
-                        update({
-                          tileEmitConfig: {
-                            ...buildConfig.tileEmitConfig,
-                            dynamicConcurrency: {
-                              ...dynamicConcurrency,
-                              sampleMs: Number.isFinite(sampleMs)
-                                ? sampleMs
-                                : dynamicConcurrency.sampleMs,
-                            },
-                          },
-                        });
-                      }}
+                      onChange={(event) => onSampleMsChange(event.target.value)}
                       disabled={disabled || !dynamicConcurrencyActive}
                     />
                   </Grid>

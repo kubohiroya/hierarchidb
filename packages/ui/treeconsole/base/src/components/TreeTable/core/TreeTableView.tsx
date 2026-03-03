@@ -1,5 +1,5 @@
 import type React from 'react';
-import { memo, useCallback, useMemo } from 'react';
+import { memo } from 'react';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import {
   Box,
@@ -16,15 +16,14 @@ import {
   TableSortLabel,
   Typography,
 } from '@mui/material';
-import { rainbowColors } from '@hierarchidb/ui-theme';
 import {
   ChevronRight as ChevronRightIcon,
   ExpandMore as ExpandMoreIcon,
   Folder as FolderIcon,
   InsertDriveFile as FileIcon,
 } from '@mui/icons-material';
-import { getPluginIconColor, isFolderNodeType } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { HierarchicalTreeNode } from '~/types/index';
+import { useTreeTableViewState } from './useTreeTableViewState.js';
 
 export interface TreeTableColumn {
   readonly id: string;
@@ -80,95 +79,37 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
     stickyHeader = true,
   } = props;
 
-  const expandedSet = useMemo(() => new Set(expandedIds.map(String)), [expandedIds]);
-  const parentMap = useMemo(() => {
-    const map = new Map<string, string | undefined>();
-    data.forEach((node) => {
-      const parent = (node as TreeNode).parentId;
-      if (parent !== null && parent !== undefined) {
-        map.set(node.id, String(parent));
-      } else {
-        map.set(node.id, undefined);
-      }
-    });
-    return map;
-  }, [data]);
-
-  const baseDepth = useMemo(() => {
-    const depths = data
-      .map((node) => (typeof node.depth === 'number' ? node.depth : undefined))
-      .filter((value): value is number => typeof value === 'number');
-    if (depths.length === 0) {
-      return 0;
-    }
-    return Math.min(...depths);
-  }, [data]);
-
-  const isSelected = useCallback((nodeId: string) => selectedIds.includes(nodeId), [selectedIds]);
-  const isExpanded = useCallback((nodeId: string) => expandedSet.has(String(nodeId)), [expandedSet]);
-
-  const isVisible = useCallback(
-    (nodeId: string): boolean => {
-      let current = parentMap.get(nodeId);
-      const seen = new Set<string>();
-      while (current) {
-        if (seen.has(current)) break;
-        seen.add(current);
-        if (!expandedSet.has(current)) {
-          // Parent collapsed (and present in map) => hide
-          if (parentMap.has(current)) {
-            return false;
-          }
-        }
-        current = parentMap.get(current);
-      }
-      return true;
-    },
-    [parentMap, expandedSet],
-  );
-
-  const handleSelectAll = (checked: boolean) => {
-    if (!onNodeSelect) return;
-    const targets = data
-      .filter((node) => isVisible(node.id) && isSelected(node.id) !== checked)
-      .map((node) => node.id);
-    if (targets.length) {
-      onNodeSelect(targets, checked);
-    }
-  };
-
-  const visibleNodes = useMemo(() => data.filter((node) => isVisible(node.id)), [data, isVisible]);
-
-  const allSelected =
-    visibleNodes.length > 0 && visibleNodes.every((node) => isSelected(node.id));
-  const someSelected = visibleNodes.some((node) => isSelected(node.id));
+  const {
+    visibleNodes,
+    allSelected,
+    someSelected,
+    isSelected,
+    isExpanded,
+    getNodeLevel,
+    getNodeIconColor,
+    handleRowClick,
+    handleSelectAll,
+  } = useTreeTableViewState({
+    data,
+    selectedIds,
+    expandedIds,
+    onNodeClick,
+    onNodeSelect,
+  });
 
   const renderRow = (node: HierarchicalTreeNode): React.ReactNode => {
     const hasChildren = Boolean(node.hasChildren) || Boolean(node.children?.length);
     const expanded = isExpanded(node.id);
     const selected = isSelected(node.id);
-    const nodeWithAbsolute = node as HierarchicalTreeNode & { absoluteDepth?: number };
-    const absoluteDepth = typeof nodeWithAbsolute.absoluteDepth === 'number'
-      ? nodeWithAbsolute.absoluteDepth
-      : typeof node.depth === 'number'
-        ? node.depth
-        : 0;
-    const level = Math.max(0, absoluteDepth - baseDepth);
-
-    const handleRowClick = (event: React.MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (target.closest('[data-no-row-click]')) {
-        return;
-      }
-      onNodeClick?.(node);
-    };
+    const level = getNodeLevel(node);
+    const iconColor = getNodeIconColor(node, hasChildren);
 
     return (
       <TableRow
         key={node.id}
         hover
         selected={selected}
-        onClick={handleRowClick}
+        onClick={(event) => handleRowClick(event, node)}
         sx={{
           cursor: 'pointer',
           '&.Mui-selected': {
@@ -239,19 +180,11 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
                   {/* Node icon */}
                   {showIcons && (
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      {(() => {
-                        const baseIconColor = rainbowColors[Math.max(0, Math.round(absoluteDepth)) % rainbowColors.length];
-                        const nodeType = node.nodeType ?? (hasChildren ? 'folder' : 'file');
-                        const manifestIconColor = getPluginIconColor(nodeType);
-                        const iconColor = isFolderNodeType(nodeType)
-                          ? baseIconColor
-                          : (manifestIconColor ?? baseIconColor);
-                        return hasChildren ? (
-                          <FolderIcon fontSize="small" color="inherit" htmlColor={iconColor} />
-                        ) : (
-                          <FileIcon fontSize="small" color="inherit" htmlColor={iconColor} />
-                        );
-                      })()}
+                      {hasChildren ? (
+                        <FolderIcon fontSize="small" color="inherit" htmlColor={iconColor} />
+                      ) : (
+                        <FileIcon fontSize="small" color="inherit" htmlColor={iconColor} />
+                      )}
                     </Box>
                   )}
 

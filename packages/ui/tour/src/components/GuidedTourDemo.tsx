@@ -3,14 +3,14 @@
  */
 
 import { Box, Button, Typography } from '@mui/material';
-import { useMemo } from 'react';
 import type { Step } from 'react-joyride';
 import { GenericGuidedTour } from './GenericGuidedTour.js';
-import { useGuidedTourDemoView } from './useGuidedTourDemoView.js';
+import { useGuidedTourDemo } from './useGuidedTourDemo.js';
 
-const createDemoSteps = (buttonId: string, contentId: string): Step[] => [
+const createDemoSteps = (buttonTarget: string, contentTarget: string): Step[] => [
   {
-    target: `#${buttonId}`,
+    target: buttonTarget,
+    placement: 'bottom',
     content: (
       <Box>
         <Typography variant="h6" gutterBottom>
@@ -26,10 +26,10 @@ const createDemoSteps = (buttonId: string, contentId: string): Step[] => [
         </Typography>
       </Box>
     ),
-    placement: 'bottom',
   },
   {
-    target: `#${contentId}`,
+    target: contentTarget,
+    placement: 'top',
     content: (
       <Box>
         <Typography variant="h6" gutterBottom>
@@ -41,13 +41,12 @@ const createDemoSteps = (buttonId: string, contentId: string): Step[] => [
         </Typography>
       </Box>
     ),
-    placement: 'top',
   },
 ];
 
 export const GuidedTourDemo = () => {
-  const { runTour, buttonId, contentId, startTour, finishTour } = useGuidedTourDemoView();
-  const demoSteps = useMemo(() => createDemoSteps(buttonId, contentId), [buttonId, contentId]);
+  const { runTour, buttonId, contentId, startTour, finishTour, stepTargets } = useGuidedTourDemo();
+  const demoSteps = createDemoSteps(stepTargets.buttonTarget, stepTargets.contentTarget);
 
   return (
     <Box sx={{ p: 4 }}>

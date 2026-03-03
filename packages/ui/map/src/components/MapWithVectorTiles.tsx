@@ -4,44 +4,16 @@
  */
 
 import type React from 'react';
-import { useCallback, useEffect, useState } from 'react';
 import type { MapLibreMapInstance } from '~/types/maplibre-public';
 import { VectorTileLayer } from './VectorTileLayer.js';
 import {
   type BaseMapProps,
-  DEFAULT_MAP_CONFIG,
   type MapClickEvent,
   type VectorTileDataSource,
   type VectorTileLayerConfig,
 } from '~/types/unified-map-props';
 import type { MapLibreMapProps } from './MapLibreMap.js';
-
-type MapLibreComponent = React.ComponentType<MapLibreMapProps>;
-
-let cachedMapLibreComponent: MapLibreComponent | null = null;
-let mapLibreComponentPromise: Promise<MapLibreComponent> | null = null;
-
-const getCachedMapComponent = (): MapLibreComponent | null => cachedMapLibreComponent;
-
-type SafeStyle = Omit<React.CSSProperties, 'background'> & { background?: string };
-
-const normalizeStyle = (style?: React.CSSProperties): SafeStyle | undefined => {
-  if (!style) return undefined;
-  const { background, ...rest } = style;
-  const safeBackground = typeof background === 'string' ? background : undefined;
-  return safeBackground !== undefined ? { ...rest, background: safeBackground } : { ...rest };
-};
-
-const loadMapLibreComponent = async (): Promise<MapLibreComponent> => {
-  if (cachedMapLibreComponent) return cachedMapLibreComponent;
-  if (!mapLibreComponentPromise) {
-    mapLibreComponentPromise = import('./MapLibreMap.js').then((mod) => {
-      cachedMapLibreComponent = mod.MapLibreMap;
-      return cachedMapLibreComponent;
-    });
-  }
-  return mapLibreComponentPromise;
-};
+import { useMapWithVectorTiles } from './useMapWithVectorTiles.js';
 
 // Re-export for backward compatibility - but mark as deprecated
 /**
@@ -73,81 +45,70 @@ export type MapWithVectorTilesProps = BaseMapProps & VectorTileDataSource & {
   onMapClick?: (event: MapClickEvent) => void;
 };
 
-// Default values from unified config
-const { viewState: defaultViewState, vectorTileLayer: defaultLayerConfig } = DEFAULT_MAP_CONFIG;
-
 export const MapWithVectorTiles: React.FC<MapWithVectorTilesProps> = ({
-                                                                        // Vector tile data source props
-                                                                        dbName,
-                                                                        nodeId,
-                                                                        tiles,
-                                                                        tileDataProvider,
+  // Vector tile data source props
+  dbName,
+  nodeId,
+  tiles,
+  tileDataProvider,
 
-                                                                        // Base map props
-                                                                        initialViewState = defaultViewState,
-                                                                        mapStyleUrl = DEFAULT_MAP_CONFIG.mapStyleUrl,
-                                                                        mapStyleObject,
-                                                                        width = DEFAULT_MAP_CONFIG.dimensions.width,
-                                                                        height = DEFAULT_MAP_CONFIG.dimensions.height,
-                                                                        style,
-                                                                        onLoad,
-                                                                        onViewStateChange,
-                                                                        onClick,
-                                                                        mapOptions,
-                                                                        controls,
-                                                                        identifyFeatureOnClick,
+  // Base map props
+  initialViewState,
+  mapStyleUrl,
+  mapStyleObject,
+  width,
+  height,
+  style,
+  onLoad,
+  onViewStateChange,
+  onClick,
+  mapOptions,
+  controls,
+  identifyFeatureOnClick,
 
-                                                                        // Layer configuration
-                                                                        layerConfig = {},
+  // Layer configuration
+  layerConfig,
 
-                                                                        // Backward compatibility props - deprecated
-                                                                        layerOptions = {},
-                                                                        onMapLoad,
-                                                                        onMapClick,
-                                                                      }) => {
-  const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
-  const [MapComponent, setMapComponent] = useState<MapLibreComponent | null>(getCachedMapComponent);
-
-  useEffect(() => {
-    if (MapComponent) return;
-    let mounted = true;
-    void loadMapLibreComponent().then((component) => {
-      if (mounted) setMapComponent(() => component);
-    });
-    return () => {
-      mounted = false;
-    };
-  }, [MapComponent]);
-
-  const handleMapLoad = useCallback((map: MapLibreMapInstance) => {
-    setMapInstance(map);
-    // Support both new and old callback names
-    onLoad?.(map);
-    onMapLoad?.(map); // Backward compatibility
-  }, [onLoad, onMapLoad]);
+  // Backward compatibility props - deprecated
+  layerOptions,
+  onMapLoad,
+  onMapClick,
+}) => {
+  const {
+    MapComponent,
+    mapInstance,
+    handleMapLoad,
+    initialViewState: resolvedInitialViewState,
+    width: resolvedWidth,
+    height: resolvedHeight,
+    normalizedStyle,
+    fallbackStyle,
+    mergedLayerConfig,
+    mapStyleProps,
+  } = useMapWithVectorTiles({
+    initialViewState,
+    mapStyleUrl,
+    mapStyleObject,
+    width,
+    height,
+    style,
+    onLoad,
+    onMapLoad,
+    layerConfig,
+    layerOptions,
+  });
 
   if (!MapComponent) {
-    const fallbackStyle: React.CSSProperties = {
-      width,
-      height,
-      position: 'relative',
-      ...(normalizeStyle(style) ?? {}),
-    };
     return <div style={fallbackStyle} />;
   }
 
-  // Merge layer config with backward compatibility support
-  const mergedLayerConfig = { ...defaultLayerConfig, ...layerConfig, ...layerOptions };
-
-  const mapStyleProps = mapStyleObject ? { mapStyleObject } : { mapStyleUrl };
-
   return (
     <MapComponent
-      initialViewState={initialViewState}
+      initialViewState={resolvedInitialViewState}
       {...mapStyleProps}
-      width={width}
-      height={height}
-      style={normalizeStyle(style)}
+      width={resolvedWidth}
+      height={resolvedHeight}
+      style={normalizedStyle}
       onLoad={handleMapLoad}
       onViewStateChange={onViewStateChange}
       onClick={onClick || onMapClick}

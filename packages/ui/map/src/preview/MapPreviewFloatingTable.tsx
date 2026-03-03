@@ -1,6 +1,5 @@
 import type React from 'react';
 import { FeatureTableToolbar, type FeatureTableSearchConfig } from './FeatureTableToolbar.js';
-import { useMemo } from 'react';
 import {
   Box,
   Button,
@@ -25,6 +24,7 @@ import {
   type GridGroupingState,
   type GridSortingState,
 } from '@hierarchidb/ui-grid';
+import { useMapPreviewFloatingTable } from './useMapPreviewFloatingTable.js';
 import { useMapPreviewFloatingTableView } from './useMapPreviewFloatingTableView.js';
 
 export type MapPreviewErrorSummary = {
@@ -163,17 +163,13 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
     containerSx,
     rowFilterConfig,
   } = props;
-  const resolvedStatusLabels: MapPreviewStatusLabels = statusLabels ?? {
-    completed: 'Completed',
-    failed: 'Failed',
-  };
-  const resolvedErrorLabels: MapPreviewErrorColumnLabels | null = errorColumnLabels ?? null;
-  const resolvedFormatMessage = useMemo(
-    () => formatErrorMessage ?? ((summary: { messages: string[] }) => summary.messages.slice(0, 2).join(' / ')),
-    [formatErrorMessage],
-  );
-  const resolvedColumns = useMemo(() => {
-    if (!resolvedErrorLabels || !errorSummaryById) return columns;
+  const { resolvedStatusLabels, resolvedErrorLabels, resolvedFormatMessage } = useMapPreviewFloatingTable({
+    statusLabels,
+    errorColumnLabels,
+    formatErrorMessage,
+  });
+  let resolvedColumns = columns;
+  if (resolvedErrorLabels && errorSummaryById) {
     const statusColumn: GridColumn<Row> = {
       id: 'status',
       label: resolvedErrorLabels.status,
@@ -214,16 +210,8 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
         return resolvedFormatMessage(summary);
       },
     };
-    return [statusColumn, ...columns, errorCountColumn, errorMessageColumn];
-  }, [
-    columns,
-    errorSummaryById,
-    resolvedErrorLabels,
-    resolvedFormatMessage,
-    resolvedStatusLabels.completed,
-    resolvedStatusLabels.failed,
-    statusAdornment,
-  ]);
+    resolvedColumns = [statusColumn, ...columns, errorCountColumn, errorMessageColumn];
+  }
 
   const {
     columnSelectorOpen,

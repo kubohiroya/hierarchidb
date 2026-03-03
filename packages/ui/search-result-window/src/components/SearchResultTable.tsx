@@ -1,4 +1,4 @@
-import React, { useId } from 'react';
+import React from 'react';
 import {
   Box,
   Checkbox,
@@ -15,6 +15,7 @@ import { styled } from '@mui/material/styles';
 import type { SearchResult } from '~/types/index';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useSearchResultTable } from './useSearchResultTable.js';
+import { useSearchResultTableView } from './useSearchResultTableView.js';
 
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
   maxHeight: 400,
@@ -75,7 +76,6 @@ export const SearchResultTable: React.FC<SearchResultTableProps> = ({
                                                                       onResultSelect,
                                                                       onMapFocus,
                                                                     }) => {
-  const controlId = useId();
   const {
     selectedResults,
     allSelected,
@@ -91,8 +91,13 @@ export const SearchResultTable: React.FC<SearchResultTableProps> = ({
     onResultSelect,
     onMapFocus,
   });
+  const { controlId, hasResults, rows } = useSearchResultTableView({
+    results,
+    selectedResults,
+    getRowChips,
+  });
 
-  if (results.length === 0) {
+  if (!hasResults) {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
         <Typography variant="body2" color="text.secondary">
@@ -131,13 +136,10 @@ export const SearchResultTable: React.FC<SearchResultTableProps> = ({
           </TableRow>
         </TableHead>
         <TableBody>
-          {results.map((result) => {
-            const isSelected = selectedResults.has(result.nodeId);
-            const rowChips = getRowChips(result);
-
+          {rows.map(({ key, result, isSelected, rowChips }) => {
             return (
               <StyledTableRow
-                key={`${result.nodeId}-${result.rowIndex || 0}`}
+                key={key}
                 selected={isSelected}
                 onClick={(event) => handleRowClick(result, event)}
                 onDoubleClick={() => handleRowDoubleClick(result)}

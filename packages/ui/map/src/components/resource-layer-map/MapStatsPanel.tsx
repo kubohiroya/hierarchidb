@@ -1,10 +1,10 @@
 import { Box as MuiBox, Typography } from '@mui/material';
 import type { BoxProps } from '@mui/material';
 import type React from 'react';
-import { useMemo, useSyncExternalStore } from 'react';
 import type { WindowState } from '@hierarchidb/ui-floating-window';
-import { isRenderableNode, normalizeChildren, formatBytes } from './resourceLayerMapHelpers.js';
+import { normalizeChildren, formatBytes } from './resourceLayerMapHelpers.js';
 import type { MapStatsStore } from '../useResourceLayerMapStats.js';
+import { useMapStatsPanel } from './useMapStatsPanel.js';
 
 const Box: React.FC<BoxProps> = ({ children, ...props }) => (
   <MuiBox {...props}>{normalizeChildren(children)}</MuiBox>
@@ -17,12 +17,7 @@ const MapStatsPanel: React.FC<{
   showTitle?: boolean;
   title?: string;
 }> = ({ store, vectorLayerEntries, renderExtra, showTitle = true, title = 'Dexie Tile Stats' }) => {
-  const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
-  const extraNode = useMemo(() => {
-    if (!renderExtra) return null;
-    const rendered = renderExtra();
-    return isRenderableNode(rendered) ? rendered : null;
-  }, [renderExtra]);
+  const { snapshot, extraNode } = useMapStatsPanel({ store, renderExtra });
   return (
     <Box
       display="flex"

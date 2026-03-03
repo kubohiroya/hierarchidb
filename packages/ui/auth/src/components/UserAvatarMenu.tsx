@@ -21,32 +21,13 @@ import {
   MenuItem,
   Typography,
 } from '@mui/material';
-import { type ReactNode, useId, useMemo } from 'react';
+import type { ReactNode } from 'react';
 import { type AuthContextProps, withAuth } from 'react-oidc-context';
 import { UserAvatar } from './UserAvatar.js';
 import { useUserAvatarMenuView } from './useUserAvatarMenuView.js';
-
-type MenuEntry =
-  | {
-      kind: 'item';
-      id: string;
-      label: string;
-      icon?: ReactNode;
-      onClick?: () => void;
-      disabled?: boolean;
-    }
-  | {
-      kind: 'divider';
-      id: string;
-    };
-
-// Working copy cleanup removed - functionality was deprecated
+import { useUserProfileView } from './useUserProfileView.js';
 
 export const UserProfile = (props: { auth: AuthContextProps }) => {
-  //  :
-  //  : provider-oidc-contextAuthContextProps
-  //  : UserAvatarMenu.test.tsx
-  //  :
   const auth = props.auth;
   const {
     signIn,
@@ -72,23 +53,16 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
     menuButtonTitle,
   } = useUserAvatarMenuView(auth);
 
-  const menuId = useId();
-  const clearCacheTitleId = useId();
-  const clearCacheDescriptionId = useId();
-
-  const userMenu: MenuEntry[] = useMemo(
-    () => [
-      {
-        kind: 'item',
-        id: 'logout',
-        label: 'Logout',
-        icon: <LogoutIcon sx={{ mr: 1 }} />,
-        onClick: () => signOut(),
-        disabled: !isAuthenticated,
-      },
-    ],
-    [isAuthenticated, signOut]
-  );
+  const {
+    menuId,
+    clearCacheTitleId,
+    clearCacheDescriptionId,
+    userMenu,
+    displayName,
+    pictureUrl,
+    email,
+    name,
+  } = useUserProfileView(auth, isAuthenticated);
 
   return (
     <Box
@@ -108,14 +82,9 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
         onClick={handleClick}
       >
         <Box sx={{ mr: 1 }}>
-          <UserAvatar
-            pictureUrl={auth.user?.profile.picture}
-            email={auth.user?.profile.email}
-            name={auth.user?.profile.name}
-            size={32}
-          />
+          <UserAvatar pictureUrl={pictureUrl} email={email} name={name} size={32} />
         </Box>
-        <Typography>{auth.user?.profile.name ?? 'Login'}</Typography>
+        <Typography>{displayName}</Typography>
       </Button>
       <Menu id={menuId} anchorEl={anchorEl} open={open} onClose={handleCloseAll}>
         {!isAuthenticated && (
@@ -146,23 +115,15 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
           Clear All Cache
         </MenuItem>
         <Divider />
-        {userMenu.map((entry) =>
-          entry.kind === 'item' ? (
-            <MenuItem key={entry.id} onClick={entry.onClick} disabled={entry.disabled}>
-              {entry.icon}
-              {entry.label}
-            </MenuItem>
-          ) : (
-            <Divider key={entry.id} />
-          )
-        )}
+        {userMenu.map((entry) => (
+          <MenuItem key={entry.id} onClick={() => signOut()} disabled={entry.disabled}>
+            <LogoutIcon sx={{ mr: 1 }} />
+            {entry.label}
+          </MenuItem>
+        ))}
       </Menu>
 
-      <Menu
-        anchorEl={themeAnchorEl}
-        open={Boolean(themeAnchorEl)}
-        onClose={closeThemeMenu}
-      >
+      <Menu anchorEl={themeAnchorEl} open={Boolean(themeAnchorEl)} onClose={closeThemeMenu}>
         <MenuItem selected={themeMode === 'system'} onClick={() => selectTheme('system')}>
           <SystemThemeIcon fontSize="small" sx={{ mr: 1 }} />
           System
@@ -177,11 +138,7 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
         </MenuItem>
       </Menu>
 
-      <Menu
-        anchorEl={languageAnchorEl}
-        open={Boolean(languageAnchorEl)}
-        onClose={closeLanguageMenu}
-      >
+      <Menu anchorEl={languageAnchorEl} open={Boolean(languageAnchorEl)} onClose={closeLanguageMenu}>
         <MenuItem selected={language === 'system'} onClick={() => selectLanguage('system')}>
           System
         </MenuItem>

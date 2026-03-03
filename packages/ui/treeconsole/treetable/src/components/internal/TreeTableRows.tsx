@@ -1,15 +1,15 @@
 import type { Dispatch, SetStateAction, MouseEvent as ReactMouseEvent } from 'react';
-import { useCallback } from 'react';
 import { TableBody, TableCell, TableRow, Checkbox, Box } from '@mui/material';
-import type { SxProps } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
-import { darken } from '@mui/material/styles';
 import type { NodeId } from '@hierarchidb/core-types';
 import { getTreeNodeDescription, getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
 import { flexRender } from '@tanstack/react-table';
 import type { Table as ReactTable } from '@tanstack/react-table';
 import { NameCell, IndentSpace, StyledTableRow } from '~/components/TreeTableStyles';
 import { Link as RouterLink } from '@tanstack/react-router';
+import { getArchiveRowSx, useTreeTableRows } from './useTreeTableRows.js';
+
+export { getArchiveRowSx } from './useTreeTableRows.js';
 
 export interface TreeTableRowsProps {
   table: ReactTable<TreeNode>;
@@ -39,22 +39,6 @@ export interface TreeTableRowsProps {
   archiveAction?: 'restore' | 'empty';
 }
 
-export function getArchiveRowSx(theme: Theme): Record<string, unknown> {
-  if (theme.palette.mode !== 'dark') {
-    return {};
-  }
-
-  const base = darken(theme.palette.background.paper, 0.08);
-  const hover = darken(theme.palette.background.paper, 0.14);
-
-  return {
-    backgroundColor: base,
-    '&:hover': {
-      backgroundColor: hover,
-    },
-  };
-}
-
 export function TreeTableRows({
   table,
   visibleData,
@@ -80,13 +64,35 @@ export function TreeTableRows({
   visualSelectionSet,
   useArchiveColumns,
 }: TreeTableRowsProps) {
-  const renderFallbackRow = useCallback((node: TreeNode) => {
-    const inheritedSelection = hasSelectedAncestor(node.id as NodeId);
-    const forcedSelectAll = selectAll;
-    const visuallyChecked = forcedSelectAll || visualSelectionSet.has(node.id as NodeId);
-    const disableCheckbox = forcedSelectAll || inheritedSelection || (!!pageNodeId && !selectAllHydrated);
-    const baseDepth = Math.max(0, ((node.depth ?? 1) + depthOffset) - 1);
-    const indentDepth = useArchiveColumns ? Math.max(0, baseDepth - 1) : baseDepth;
+  const {
+    getFallbackRowState,
+    handleFallbackCheckboxChange,
+    getRowRenderState,
+    createRowDragHandlers,
+    formatDateValue,
+  } = useTreeTableRows({
+    selectAll,
+    selectAllHydrated,
+    hasSelectedAncestor,
+    collectDescendantIds,
+    batchSelect,
+    depthOffset,
+    pageNodeId,
+    hoverDropTargetId,
+    setHoverDropTargetId,
+    forbiddenTargets,
+    setForbiddenTargets,
+    getDescendants,
+    controller,
+    disableDragAndDrop,
+    visualSelectionSet,
+    useArchiveColumns,
+  });
+
+  const renderFallbackRow = (node: TreeNode) => {
+    const fallbackState = getFallbackRowState(node.id as NodeId, node.depth);
+    const createdAt = formatDateValue(node.createdAt);
+    const updatedAt = formatDateValue(node.updatedAt);
 
     return (
       <StyledTableRow
@@ -98,13 +104,10 @@ export function TreeTableRows({
       >
         <TableCell sx={{ width: `${columnWidths.selection}px`, minWidth: `${columnWidths.selection}px`, maxWidth: `${columnWidths.selection}px` }}>
           <Checkbox
-            checked={visuallyChecked}
-            disabled={disableCheckbox}
+            checked={fallbackState.visuallyChecked}
+            disabled={fallbackState.disableCheckbox}
             onChange={(e) => {
-              if (disableCheckbox) return;
-              const targets = collectDescendantIds(node.id as NodeId);
-              if (targets.length === 0) return;
-              batchSelect(targets, e.target.checked);
+              handleFallbackCheckboxChange(node.id as NodeId, e.target.checked, fallbackState.disableCheckbox);
             }}
             size="small"
             onClick={(e) => e.stopPropagation()}
@@ -112,7 +115,7 @@ export function TreeTableRows({
         </TableCell>
         <TableCell sx={{ width: `${columnWidths.name}px`, minWidth: `${columnWidths.name}px`, maxWidth: `${columnWidths.name}px, paddingLeft: '4px'` }}>
           <NameCell>
-            <IndentSpace depth={indentDepth} />
+            <IndentSpace depth={fallbackState.indentDepth} />
             <Box
               component={RouterLink}
               to={`/${['t', String(treeId || ''), String(node.id)].filter(Boolean).join('/')}`}
@@ -126,32 +129,22 @@ export function TreeTableRows({
           {getTreeNodeDescription(node) || '-'}
         </TableCell>
         <TableCell sx={{ width: `${columnWidths.createdAt}px`, minWidth: `${columnWidths.createdAt}px`, maxWidth: `${columnWidths.createdAt}px` }}>
-          {(() => {
-            const v = node.createdAt;
-            if (!v) return '-';
-            const d = new Date(v);
-            return (
-              <span title={d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}>
-                {d.toLocaleDateString()}
-              </span>
-            );
-          })()}
+          {createdAt ? (
+            <span title={createdAt.timeLabel}>{createdAt.dateLabel}</span>
+          ) : (
+            '-'
+          )}
         </TableCell>
         <TableCell sx={{ width: `${columnWidths.updatedAt}px`, minWidth: `${columnWidths.updatedAt}px`, maxWidth: `${columnWidths.updatedAt}px`, paddingLeft: '4px' }}>
-          {(() => {
-            const v = node.updatedAt;
-            if (!v) return '-';
-            const d = new Date(v);
-            return (
-              <span title={d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}>
-                {d.toLocaleDateString()}
-              </span>
-            );
-          })()}
+          {updatedAt ? (
+            <span title={updatedAt.timeLabel}>{updatedAt.dateLabel}</span>
+          ) : (
+            '-'
+          )}
         </TableCell>
       </StyledTableRow>
     );
-  }, [batchSelect, collectDescendantIds, columnWidths, depthOffset, handleRowClick, hasSelectedAncestor, pageNodeId, selectAll, selectAllHydrated, treeId, useArchiveColumns, visualSelectionSet]);
+  };
 
   return (
     <TableBody>
@@ -169,80 +162,24 @@ export function TreeTableRows({
 
       {table.getRowModel().rows.map((row) => {
         const node = row.original;
-        const isSelected = visualSelectionSet.has(node.id as NodeId) || selectAll;
-        const isBlockedTarget = forbiddenTargets.has(row.original.id as NodeId);
-
-        const baseRowSx: SxProps<Theme> = {
-          cursor:
-            hoverDropTargetId === row.original.id && isBlockedTarget
-              ? 'not-allowed'
-              : 'pointer',
-          outline:
-            hoverDropTargetId === row.original.id
-              ? isBlockedTarget
-                ? '2px dashed rgba(211,47,47,0.7)'
-                : '2px dashed rgba(25,118,210,0.6)'
-              : 'none',
-          outlineOffset: '-2px',
-        };
-
-        const appliedRowSx: SxProps<Theme> = useArchiveColumns
-          ? (theme: Theme) => ({
-              ...getArchiveRowSx(theme),
-              ...baseRowSx,
-            })
-          : baseRowSx;
+        const rowRenderState = getRowRenderState(row.original.id);
+        const dragHandlers = createRowDragHandlers(row.original.id);
 
         return (
           <StyledTableRow
             key={row.id}
-            selected={isSelected}
+            selected={rowRenderState.isSelected}
             draggable={!disableDragAndDrop}
-            onDragStart={(e) => {
-              if (disableDragAndDrop) return;
-              const src = row.original.id;
-              e.dataTransfer?.setData('text/hdb-node', src);
-              const forb = getDescendants(src as NodeId);
-              setForbiddenTargets(forb);
-              try {
-                e.dataTransfer?.setData('application/hdb-node-descendants', JSON.stringify(Array.from(forb)));
-              } catch {
-                // ignore serialization errors but maintain drag atoms
-              }
-            }}
-            onDragOver={(e) => {
-              if (disableDragAndDrop) return;
-              if (e.dataTransfer?.types?.includes('text/hdb-node')) {
-                const targetId = row.original.id;
-                const blocked = forbiddenTargets.has(targetId);
-                if (!blocked) e.preventDefault();
-                setHoverDropTargetId(targetId);
-              }
-            }}
-            onDrop={(e) => {
-              if (disableDragAndDrop) return;
-              const sourceId = e.dataTransfer?.getData('text/hdb-node');
-              const targetId = row.original.id;
-              if (!sourceId || !targetId || sourceId === targetId) return;
-              if (forbiddenTargets.has(targetId as NodeId)) return;
-              controller?.onMoveNodes?.([sourceId], targetId);
-              setHoverDropTargetId(null);
-              setForbiddenTargets(new Set<NodeId>());
-            }}
-            onDragEnd={() => {
-              if (disableDragAndDrop) return;
-              setHoverDropTargetId(null);
-              setForbiddenTargets(new Set<NodeId>());
-            }}
-            onDragLeave={() => {
-              if (disableDragAndDrop) return;
-              setHoverDropTargetId((id) => (id === row.original.id ? null : id));
-            }}
+            onDragStart={dragHandlers.onDragStart}
+            onDragOver={dragHandlers.onDragOver}
+            onDrop={dragHandlers.onDrop}
+            onDragEnd={dragHandlers.onDragEnd}
+            onDragLeave={dragHandlers.onDragLeave}
             onClick={(e) => handleRowClick(node, e)}
             onDoubleClick={(e) => handleRowDoubleClick(node, e)}
-            sx={appliedRowSx}
-            aria-disabled={hoverDropTargetId === row.original.id && isBlockedTarget ? true : undefined}
-            title={hoverDropTargetId === row.original.id && isBlockedTarget ? 'Cannot move to descendants' : undefined}
+            sx={rowRenderState.appliedRowSx}
+            aria-disabled={rowRenderState.ariaDisabled}
+            title={rowRenderState.title}
           >
             {row.getVisibleCells().map((cell) => (
               <TableCell

@@ -11,7 +11,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Delete as DeleteIcon, Info } from '@mui/icons-material';
-import { useId } from 'react';
+import { useCacheSection } from './useCacheSection.js';
 import { useCacheSectionView } from './useCacheSectionView.js';
 
 export interface CacheStats {
@@ -46,9 +46,8 @@ export function CacheSection({
                                onDeleteOnCompleteChange,
                                config,
                                sx = {},
-                               severity = 'warning',
+                             severity = 'warning',
                              }: CacheSectionProps) {
-  const switchId = useId();
   const {
     isDeleting,
     deleteResult,
@@ -58,6 +57,9 @@ export function CacheSection({
     nodeId,
     config,
     onDeleteOnCompleteChange,
+  });
+  const { switchInputProps, onDeleteOnCompleteSwitchChange } = useCacheSection({
+    onDeleteOnCompleteChange: handleDeleteOnCompleteChange,
   });
 
   return (
@@ -79,12 +81,9 @@ export function CacheSection({
             control={
               <Switch
                 checked={deleteOnComplete}
-                onChange={(e) => handleDeleteOnCompleteChange(e.target.checked)}
+                onChange={(event) => onDeleteOnCompleteSwitchChange(event.target.checked)}
                 size="small"
-                inputProps={{
-                  id: `${switchId}-delete-on-complete`,
-                  name: 'delete-on-complete',
-                }}
+                inputProps={switchInputProps}
               />
             }
             label="Delete cache automatically when this session completes"
