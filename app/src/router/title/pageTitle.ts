@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { loadAppConfig } from '~/loadAppConfig';
-import { treeRouteIds } from '~/router/routes/tree/shared';
+import { treeRouteIds } from '~/router/routes/tree/treeRouteIds';
 import type {
   LoadPageNodeReturn,
   LoadTargetNodeReturn,

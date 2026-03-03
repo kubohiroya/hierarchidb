@@ -5,7 +5,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import { buildVisibleRows } from '~/state/treeconsole.derive';
 import type { TreeConsoleActionDeps } from '~/hooks/treeconsole/types';
-import { attachChildrenToIndex, getOrCreateIndex } from './helpers.ts';
+import { attachChildrenToIndex, getOrCreateIndex } from './treeConsoleActionUtils.ts';
 
 export const createSelectionActions = (deps: TreeConsoleActionDeps) => {
   const { client, expandedIds, setSSOT, ssot, selectedIds } = deps;
