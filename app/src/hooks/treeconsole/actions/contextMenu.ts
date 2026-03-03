@@ -24,7 +24,7 @@ import {
   getOrCreateIndex,
   resolvePreviewStepIndex,
   showCommandError,
-} from './helpers.ts';
+} from './treeConsoleActionUtils.ts';
 import type { NavigationHelpers } from './navigation.js';
 
 type OpenEditDialog = (

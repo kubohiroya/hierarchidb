@@ -6,7 +6,7 @@ import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import type { Tree } from '@hierarchidb/tree-api';
 import type { BuildWorkerAPI } from '../../../types/worker-api.ts';
 import type { Remote } from 'comlink';
-import { treeRouteIds } from '../../routes/tree/shared.ts';
+import { treeRouteIds } from '../../routes/tree/treeRouteIds.ts';
 import { usePluginDialogRoute } from '../../routes/tree/usePluginDialogRoute.ts';
 
 const mockNavigate = vi.fn();

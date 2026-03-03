@@ -1,6 +1,7 @@
 # 運用ハブ
 
 ## Doing
+- #731 / codex/refactor/app-ts-file-naming-guideline-apply / 2026-03-04 07:50
 - #728 / codex/refactor/packages-ts-file-naming-guideline / 2026-03-04 07:44
 - #726 / codex/docs/app-ts-naming-guideline-note / 2026-03-04 07:39
 - #724 / codex/docs/ts-file-naming-guideline / 2026-03-04 07:19
@@ -16,6 +17,7 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-04: Issue #731 進捗 - `app/src/router/routes/tree/shared.ts` を `treeRouteIds.ts` へ、`app/src/hooks/treeconsole/actions/helpers.ts` を `treeConsoleActionUtils.ts` へ改名し、関連 import を更新（`pnpm -w turbo run lint --filter @hierarchidb/app` / `pnpm -w turbo run typecheck --filter @hierarchidb/app` 成功）
 - 2026-03-04: Issue #728 進捗 - `packages/*/src` の命名違反4件を rename（`helpers.ts`/`utils.ts`/`misc.ts` 系）し、`pnpm lint` と `pnpm typecheck` の成功を確認
 - 2026-03-04: blocked - `pnpm typecheck` で `@hierarchidb/ui-treeconsole-base` の `~/adapters/utils` 解決失敗（TS2307）を確認。`commandEnvelopeFactories` への import 更新で解消
 - 2026-03-04: Issue #728 開始 - `packages/*/src/**/*.ts` へ命名指針を適用（違反抽出→rename→import更新）に着手

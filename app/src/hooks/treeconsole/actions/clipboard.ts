@@ -11,7 +11,7 @@ import {
   type GlobalWithClipboard,
   isNameConflictError,
   showCommandError,
-} from './helpers.ts';
+} from './treeConsoleActionUtils.ts';
 
 export const createClipboardActions = (deps: TreeConsoleActionDeps) => {
   const {

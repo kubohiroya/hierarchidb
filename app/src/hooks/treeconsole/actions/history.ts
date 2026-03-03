@@ -4,7 +4,7 @@
 
 import type { NodeId } from '@hierarchidb/core-types';
 import type { MaybeCP, TreeConsoleActionDeps } from '~/hooks/treeconsole/types';
-import { fireCmdEvent, isCommandResult, showCommandError } from './helpers.ts';
+import { fireCmdEvent, isCommandResult, showCommandError } from './treeConsoleActionUtils.ts';
 
 export const createHistoryActions = (deps: TreeConsoleActionDeps) => {
   const { client, treeId, pageNodeId, loadChildrenOf, refreshUndoRedo } = deps;

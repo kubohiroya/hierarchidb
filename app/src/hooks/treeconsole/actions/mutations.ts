@@ -12,7 +12,7 @@ import {
   isNameConflictError,
   resolveArchiveNavigationTarget,
   showCommandError,
-} from './helpers.ts';
+} from './treeConsoleActionUtils.ts';
 import type { NavigationHelpers } from './navigation.ts';
 import { notify } from '@hierarchidb/components';
 

@@ -3,7 +3,7 @@
  */
 
 import type { TreeConsoleActionDeps } from '~/hooks/treeconsole/types';
-import { fireCmdEvent } from './helpers.ts';
+import { fireCmdEvent } from './treeConsoleActionUtils.ts';
 
 export const createImportExportActions = (deps: TreeConsoleActionDeps) => {
   const { importExport, loadChildrenOf, pageNodeId, refreshUndoRedo, selectedIds, setState } = deps;
