@@ -1,5 +1,4 @@
 import type { ReactElement } from 'react';
-import { useCallback, useEffect, useRef } from 'react';
 import { type PluginStepProps, PluginStepRegistry } from '@hierarchidb/plugin-base';
 import type {
   ShapeEntity,
@@ -19,49 +18,20 @@ import type { ShapeDialogStepProps } from './ShapeDialogStepProps.js';
 import { ShapeBuildConfigStep } from './build-config/ShapeBuildConfigStep.tsx';
 import { ShapeCountrySelectionStep } from './country-selection/ShapeCountrySelectionStep.tsx';
 import { ShapeBuildStep } from './build-progress/ShapeBuildStep/ShapeBuildStep.tsx';
+import { useShapeStepAdapter } from './useShapeStepAdapter.js';
 
 const registry = PluginStepRegistry.getInstance();
 
 type ShapeStepProps = PluginStepProps<Partial<ShapeEntity>>;
 
-const isSameShapeData = (
-  left?: Partial<ShapeEntity> | null,
-  right?: Partial<ShapeEntity> | null,
-): boolean => {
-  if (left === right) return true;
-  if (left === null || left === undefined || right === null || right === undefined) return false;
-  try {
-    return JSON.stringify(left) === JSON.stringify(right);
-  } catch {
-    return false;
-  }
-};
-
 function createStepAdapter(
   Component: React.ComponentType<ShapeDialogStepProps>,
 ): (props: ShapeStepProps) => ReactElement {
   return function ShapeStepAdapter(props: ShapeStepProps) {
-    const latestDataRef = useRef<Partial<ShapeEntity> | undefined>(undefined);
-    useEffect(() => {
-      latestDataRef.current = {
-        ...(latestDataRef.current ?? {}),
-        ...(props.data ?? {}),
-      };
-    }, [props.data]);
-    const data = ({
-      ...(props.data ?? {}),
-    }) as Partial<ShapeEntity>;
-    const handleChange = useCallback((updates: Partial<ShapeEntity>) => {
-      const next = {
-        ...(latestDataRef.current ?? {}),
-        ...updates,
-      } as Partial<ShapeEntity>;
-      if (isSameShapeData(next, latestDataRef.current)) {
-        return;
-      }
-      latestDataRef.current = next;
-      props.onChange(next);
-    }, [props.onChange]);
+    const { data, handleChange } = useShapeStepAdapter({
+      data: props.data,
+      onChange: props.onChange,
+    });
 
     return (
       <Component

@@ -1,38 +1,11 @@
 import React from 'react';
 import { Box, Alert, Button, CircularProgress, FormControlLabel, LinearProgress, Stack, Switch } from '@mui/material';
 import { Hexagon as HexagonIcon, Layers as LayersIcon } from '@mui/icons-material';
-import type { MapViewState } from '@hierarchidb/ui-map';
 import { MapPreviewShell, ScreenCenterSnackbar, ShapePreviewList } from '@hierarchidb/ui-map';
-import { FloatingWindow, useFloatingWindow } from '@hierarchidb/ui-floating-window';
+import { FloatingWindow } from '@hierarchidb/ui-floating-window';
 import { useShapePreviewStepView } from './useShapePreviewStepView.js';
-import type { ShapeEntity, ShapePreviewMapView } from '~/common/types/index';
-
-type ShapePreviewDebugFlags = {
-  hideLayerSetsFloatingWindow: boolean;
-  hideMapPreview: boolean;
-};
-
-const parseDebugFlag = (value: string | null): boolean => {
-  if (value === null) return false;
-  const normalized = value.trim().toLowerCase();
-  return normalized === '1' || normalized === 'true' || normalized === 'on' || normalized === 'yes';
-};
-
-const getShapePreviewDebugFlags = (): ShapePreviewDebugFlags => {
-  if (typeof window === 'undefined') {
-    return { hideLayerSetsFloatingWindow: false, hideMapPreview: false };
-  }
-
-  const params = new URLSearchParams(window.location.search);
-  const queryValue = params.get('hdbNoShapeLayerSetsWindow');
-  const mapQueryValue = params.get('hdbNoShapePreviewMap');
-  const storageValue = window.localStorage.getItem('hdbNoShapeLayerSetsWindow');
-  const mapStorageValue = window.localStorage.getItem('hdbNoShapePreviewMap');
-  return {
-    hideLayerSetsFloatingWindow: parseDebugFlag(queryValue ?? storageValue),
-    hideMapPreview: parseDebugFlag(mapQueryValue ?? mapStorageValue),
-  };
-};
+import type { ShapeEntity } from '~/common/types/index';
+import { isShapeLayerParentToggle, useShapePreviewStepSceneView } from './useShapePreviewStepSceneView.js';
 
 export type ShapeDialogStepProps = {
   nodeId: string;
@@ -41,35 +14,7 @@ export type ShapeDialogStepProps = {
   disabled?: boolean;
 };
 
-const isFiniteNumber = (value: unknown): value is number =>
-  typeof value === 'number' && Number.isFinite(value);
-
-const arePreviewViewsClose = (a?: ShapePreviewMapView | null, b?: ShapePreviewMapView | null): boolean => {
-  if (!a || !b) return false;
-  const eps = 1e-6;
-  return (
-    Math.abs(a.longitude - b.longitude) < eps &&
-    Math.abs(a.latitude - b.latitude) < eps &&
-    Math.abs(a.zoom - b.zoom) < eps
-  );
-};
-
-const toPreviewMapView = (viewState: MapViewState): ShapePreviewMapView | null => {
-  const { longitude, latitude, zoom } = viewState;
-  if (!isFiniteNumber(longitude) || !isFiniteNumber(latitude) || !isFiniteNumber(zoom)) {
-    return null;
-  }
-  return { longitude, latitude, zoom };
-};
-
-const isShapeLayerParentToggle = (toggleId: string): boolean => (
-  toggleId === 'adm0' || toggleId === 'adm1' || toggleId === 'adm2'
-);
-
 export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId, onChange }) => {
-  const [featureWindowOpen, setFeatureWindowOpen] = React.useState(true);
-  const debugFlags = React.useMemo(() => getShapePreviewDebugFlags(), []);
-  const lastPersistedViewRef = React.useRef<ShapePreviewMapView | null>(data.previewMapView ?? null);
   const {
     t,
     featureMetadataLoading,
@@ -110,38 +55,27 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
     toggleShapePreviewLayerVisibility,
     shapePreviewLayerToggleItems,
   } = useShapePreviewStepView(data ?? {}, nodeId);
-  const selectedFeatureIdSet = React.useMemo(
-    () => new Set(selectedFeatureIds),
-    [selectedFeatureIds],
-  );
-  React.useEffect(() => {
-    setFeatureWindowOpen(true);
-  }, []);
-  React.useEffect(() => {
-    lastPersistedViewRef.current = data.previewMapView ?? null;
-  }, [data.previewMapView, data.previewMapView?.latitude, data.previewMapView?.longitude, data.previewMapView?.zoom]);
-
-  const layerSetsWindow = useFloatingWindow({
-    persistKey: 'hierarchidb:ui:floating-window:shape:layer-sets',
-    initialPosition: { x: 320, y: 96 },
-    initialSize: { width: 260, height: 420 },
+  const {
+    featureWindowOpen,
+    setFeatureWindowOpen,
+    layerSetsWindow,
+    handleViewStateCommit,
+    hideMapPreview,
+    showLayerSetsWindow,
+    showLayerSetsReopenButton,
+    showMetadataReopenButton,
+    reserveMetadataReopenSlot,
+    resolveLayerToggleCountLabel,
+  } = useShapePreviewStepSceneView({
+    previewMapView: data.previewMapView,
+    onChange: (patch) => onChange(patch),
+    shapePreviewLayerFeatureCounts,
+    t,
   });
+  const selectedFeatureIdSet = new Set(selectedFeatureIds);
 
-  const handleViewStateCommit = React.useCallback(
-    (viewState: MapViewState) => {
-      const next = toPreviewMapView(viewState);
-      if (!next) return;
-      if (arePreviewViewsClose(lastPersistedViewRef.current, next)) return;
-      lastPersistedViewRef.current = next;
-      onChange({ previewMapView: next });
-    },
-    [onChange],
-  );
-  const renderLayerToggleLabel = React.useCallback((item: { id: string; label: string }) => {
-    const count = shapePreviewLayerFeatureCounts[item.id as keyof typeof shapePreviewLayerFeatureCounts];
-    const countLabel = typeof count === 'number'
-      ? count.toLocaleString()
-      : t('preview.layerSets.counts.unavailable', '—');
+  const renderLayerToggleLabel = (item: { id: string; label: string }) => {
+    const countLabel = resolveLayerToggleCountLabel(item.id);
     return (
       <Box display="flex" alignItems="center" justifyContent="space-between" width="100%" gap={1}>
         <Box component="span">{item.label}</Box>
@@ -150,13 +84,9 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
         </Box>
       </Box>
     );
-  }, [shapePreviewLayerFeatureCounts, t]);
-  const showLayerSetsWindow = !debugFlags.hideLayerSetsFloatingWindow && layerSetsWindow.windowState.isVisible;
-  const showLayerSetsReopenButton = !debugFlags.hideLayerSetsFloatingWindow && !layerSetsWindow.windowState.isVisible;
-  const showMetadataReopenButton = !featureWindowOpen;
-  const reserveMetadataReopenSlot = showLayerSetsReopenButton && !showMetadataReopenButton;
+  };
   const renderMapPreview = () => {
-    if (debugFlags.hideMapPreview) {
+    if (hideMapPreview) {
       return (
         <Box
           sx={{
