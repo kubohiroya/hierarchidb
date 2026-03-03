@@ -17,7 +17,7 @@ import {
   useBuildSessionTransition,
 } from '@hierarchidb/components';
 import { PLUGIN_NODE_TYPE } from '~/plugin-manifest';
-import { ROUTE_MODE_COLUMNS } from './useRouteSelectionStep.js';
+import { ROUTE_MODE_COLUMNS } from './routeSelectionConstants.js';
 
 export type RouteBuildSessionTransitionPhase =
   | 'acquiring-lock'

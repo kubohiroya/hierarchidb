@@ -17,5 +17,5 @@ export {
   useDialogViewState,
   type UseDialogViewStateOptions,
 } from './hooks/useDialogViewState.js';
-export { createTreeNodeUpdaterActions } from './hooks/useTreeNodeUpdater.js';
+export { createTreeNodeUpdaterActions } from './hooks/createTreeNodeUpdaterActions.js';
 export type { BasicInfoStepProps } from './dialog/steps/BasicInfoStep.js';

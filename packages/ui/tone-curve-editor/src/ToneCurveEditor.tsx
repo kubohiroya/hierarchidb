@@ -1,6 +1,7 @@
 import React from 'react';
 
-import { formatAnchorValueLabel, useToneCurveEditor } from './useToneCurveEditor';
+import { useToneCurveEditor } from './useToneCurveEditor';
+import { formatAnchorValueLabel } from './formatAnchorValueLabel.js';
 
 export interface ToneCurveAnchor {
   x: number;

@@ -40,7 +40,7 @@ import {
   LINE_WIDTH_MIN,
   ROUTE_MODE_COLUMNS,
   ROUTE_STYLE_OPTIONS,
-} from './useRouteSelectionStep.js';
+} from './routeSelectionConstants.js';
 import { ROUTE_MODES, type RouteMode } from '@hierarchidb/route-api';
 import { ROUTE_DATA_SOURCES } from '~/common/datasource/ROUTE_DATA_SOURCES';
 import { getDBName } from '@hierarchidb/util';

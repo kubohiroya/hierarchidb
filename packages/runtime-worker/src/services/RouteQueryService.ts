@@ -26,6 +26,7 @@ import {
   toTileCoord,
 } from './nearest/tileNearest.js';
 import { toLegacyBuildStage } from './stageAlias.js';
+import { DEFAULT_TILE_CACHE_SIZE, LINESTRING_CACHE_TTL_MS } from './routeQueryCacheConfig.js';
 
 type RoutePointSummary = {
   name?: string;
@@ -43,9 +44,6 @@ type RouteNearestSegment = {
   segmentEnd: [number, number];
   keyLongitude: number;
 };
-
-export const DEFAULT_TILE_CACHE_SIZE = 256;
-export const LINESTRING_CACHE_TTL_MS = 5_000;
 
 export class RouteQueryService implements RouteQueryAPI {
   static async getSingleton(db: RouteDatabaseHandle): Promise<RouteQueryService> {

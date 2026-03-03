@@ -1,0 +1,2 @@
+export const DEFAULT_TILE_CACHE_SIZE = 256;
+export const LINESTRING_CACHE_TTL_MS = 5_000;

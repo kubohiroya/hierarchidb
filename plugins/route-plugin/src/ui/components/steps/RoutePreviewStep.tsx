@@ -29,7 +29,7 @@ import {
   LINE_WIDTH_MIN,
   ROUTE_MODE_COLUMNS,
   ROUTE_STYLE_OPTIONS,
-} from './useRouteSelectionStep.js';
+} from './routeSelectionConstants.js';
 
 interface RoutePreviewStepProps {
   draft: Partial<RouteEntity>;
