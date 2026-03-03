@@ -4,7 +4,6 @@
  */
 
 import type React from 'react';
-import { useCallback, useEffect, useRef, useState, useId } from 'react';
 import {
   Alert,
   Box,
@@ -20,7 +19,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import type { SelectChangeEvent } from '@mui/material/Select';
 import {
   CloudUpload,
   Download,
@@ -29,9 +27,9 @@ import {
   InsertDriveFile,
 } from '@mui/icons-material';
 import type { TabularProcessingConfig } from '../types/index';
-import { useTabularData } from '../hooks/useTabularData';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { ModalSelect } from '@hierarchidb/ui-modal-select';
+import { useTabularDataImport } from './useTabularDataImport.js';
 
 export interface TabularDataImportProps {
   onFileImported: (metadata: TabularTableMetadata) => void;
@@ -70,173 +68,24 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
                                                                       importSucceeded = false,
                                                                       autoStartDownload = false,
                                                                     }) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [urlInput, setUrlInput] = useState(initialUrl);
-  const [importMethod, setImportMethod] = useState<'file' | 'url'>(initialImportMethod);
-  const [processingConfig, setProcessingConfig] = useState<TabularProcessingConfig>(
-    initialProcessingConfig ?? {
-      delimiter: ',',
-      encoding: 'utf-8',
-      hasHeader: true,
-      quoteChar: '"',
-      escapeChar: '\\',
-      skipEmptyLines: true,
-    }
-  );
-
-  const {
-    importTabularFile,
-    downloadTabularFromUrl,
-    isImporting,
-    imortError,
-  } = useTabularData({
+  const view = useTabularDataImport({
+    onFileImported,
+    onError,
+    disabled,
+    acceptedFileTypes,
+    maxFileSize,
     pluginId,
     nodeId,
-    onImportSuccess: onFileImported,
-    onImportError: onError,
+    menuContainer,
+    initialImportMethod,
+    initialUrl,
+    initialProcessingConfig,
+    onProcessingConfigChange,
+    onImportMethodChange,
+    onUrlChange,
+    importSucceeded,
+    autoStartDownload,
   });
-  const idPrefix = useId();
-  const importMethodLabelId = `${idPrefix}-import-method`;
-  const delimiterLabelId = `${idPrefix}-delimiter`;
-  const encodingLabelId = `${idPrefix}-encoding`;
-  const quoteLabelId = `${idPrefix}-quote-char`;
-  const modalRoot = menuContainer ?? null;
-  const showDownloadSuccess = importMethod === 'url' && importSucceeded;
-  const urlFieldId = `${idPrefix}-tabular-url`;
-  const importMethodSelectId = `${importMethodLabelId}-select`;
-  const delimiterSelectId = `${delimiterLabelId}-select`;
-  const encodingSelectId = `${encodingLabelId}-select`;
-  const quoteSelectId = `${quoteLabelId}-select`;
-  const hasHeaderSwitchId = `${idPrefix}-has-header`;
-  const skipEmptyLinesSwitchId = `${idPrefix}-skip-empty-lines`;
-  const autoDownloadTriggeredRef = useRef(false);
-
-  useEffect(() => {
-    setImportMethod(initialImportMethod);
-  }, [initialImportMethod]);
-
-  useEffect(() => {
-    setUrlInput(initialUrl);
-  }, [initialUrl]);
-
-  const processFile = (file: File) => {
-    // Validate file type
-    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
-    if (!acceptedFileTypes.includes(fileExtension)) {
-      onError(`Unsupported file type: ${fileExtension}. Accepted types: ${acceptedFileTypes.join(', ')}`);
-      return;
-    }
-
-    // Validate file size
-    if (file.size > maxFileSize) {
-      onError(`File size (${Math.round(file.size / 1024 / 1024)}MB) exceeds maximum allowed size (${Math.round(maxFileSize / 1024 / 1024)}MB)`);
-      return;
-    }
-
-    importTabularFile(file, processingConfig);
-  };
-
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    processFile(file);
-  };
-
-  const handleUrlDownload = useCallback(() => {
-    if (!urlInput.trim()) {
-      onError('Please enter a valid URL');
-      return;
-    }
-
-    try {
-      new URL(urlInput); // Validate URL format
-      downloadTabularFromUrl(urlInput, processingConfig);
-    } catch {
-      onError('Invalid URL format');
-    }
-  }, [downloadTabularFromUrl, onError, processingConfig, urlInput]);
-
-  useEffect(() => {
-    if (!autoStartDownload) {
-      autoDownloadTriggeredRef.current = false;
-      return;
-    }
-    if (autoDownloadTriggeredRef.current) return;
-    if (disabled || isImporting) return;
-    if (importMethod !== 'url') return;
-    if (!urlInput.trim()) return;
-    if (importSucceeded) return;
-    autoDownloadTriggeredRef.current = true;
-    handleUrlDownload();
-  }, [autoStartDownload, disabled, handleUrlDownload, importMethod, importSucceeded, isImporting, urlInput]);
-
-  const handleImportClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const [dragActive, setDragActive] = useState(false);
-  const [dragError, setDragError] = useState(false);
-  const dragDepthRef = useRef(0);
-
-  const hasFileItems = (dt: DataTransfer | null): boolean => {
-    if (!dt) return false;
-    if (dt.items && dt.items.length) {
-      return Array.from(dt.items).some((item) => item.kind === 'file');
-    }
-    if (dt.types?.includes?.('Files')) return true;
-    if (dt.files && dt.files.length > 0) return true;
-    return false;
-  };
-
-  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setDragActive(false);
-    setDragError(false);
-    dragDepthRef.current = 0;
-    if (disabled || isImporting) return;
-    const file = event.dataTransfer.files?.[0];
-    if (!file) return;
-    processFile(file);
-  };
-
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    if (!hasFileItems(event.dataTransfer)) return;
-    event.preventDefault();
-    event.stopPropagation();
-    if (disabled || isImporting) return;
-    setDragActive(true);
-  };
-
-  const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
-    if (!hasFileItems(event.dataTransfer)) return;
-    event.preventDefault();
-    event.stopPropagation();
-    if (disabled || isImporting) return;
-    dragDepthRef.current += 1;
-    const item = event.dataTransfer?.items?.[0];
-    const file = item?.kind === 'file' ? item.getAsFile() : null;
-    const name = file?.name || item?.type || '';
-    const ext = name.includes('.') ? `.${name.split('.').pop()?.toLowerCase()}` : '';
-    const matches = ext !== '' && acceptedFileTypes.includes(ext);
-    setDragActive(matches);
-    setDragError(!matches);
-  };
-
-  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
-    if (!hasFileItems(event.dataTransfer)) {
-      setDragActive(false);
-      setDragError(false);
-      dragDepthRef.current = 0;
-      return;
-    }
-    event.preventDefault();
-    event.stopPropagation();
-    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
-    if (dragDepthRef.current === 0) {
-      setDragActive(false);
-      setDragError(false);
-    }
-  };
 
   return (
     <Box sx={{ p: 3 }}>
@@ -246,20 +95,16 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
 
       {/* Import Method Selection */}
       <FormControl sx={{ mb: 3, minWidth: 200 }}>
-        <InputLabel id={importMethodLabelId} htmlFor={importMethodSelectId}>Import Method</InputLabel>
+        <InputLabel id={view.importMethodLabelId} htmlFor={view.importMethodSelectId}>Import Method</InputLabel>
         <ModalSelect
-          id={importMethodSelectId}
-          labelId={importMethodLabelId}
-          value={importMethod}
+          id={view.importMethodSelectId}
+          labelId={view.importMethodLabelId}
+          value={view.importMethod}
           label="Import Method"
           name="import-method"
-          onChange={(e: SelectChangeEvent) => {
-            const method = e.target.value as 'file' | 'url';
-            setImportMethod(method);
-            onImportMethodChange?.(method);
-          }}
-          disabled={disabled || isImporting}
-          menuContainer={modalRoot}
+          onChange={view.handleImportMethodChange}
+          disabled={disabled || view.isImporting}
+          menuContainer={view.modalRoot}
         >
         <MenuItem value="file">
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -277,33 +122,33 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
       </FormControl>
 
       {/* File Import Section */}
-      {importMethod === 'file' && (
+      {view.importMethod === 'file' && (
         <Paper
           variant="outlined"
           sx={{
             p: 1.25,
             mb: 2,
             border: '2px dashed',
-            borderColor: dragError ? 'error.main' : dragActive ? 'success.main' : 'divider',
-            cursor: disabled || isImporting ? 'not-allowed' : 'pointer',
-            '&:hover': disabled || isImporting ? {} : {
+            borderColor: view.dragError ? 'error.main' : view.dragActive ? 'success.main' : 'divider',
+            cursor: disabled || view.isImporting ? 'not-allowed' : 'pointer',
+            '&:hover': disabled || view.isImporting ? {} : {
               borderColor: 'primary.main',
               bgcolor: 'action.hover',
             },
           }}
-          onClick={disabled || isImporting ? undefined : handleImportClick}
-          onDragOver={handleDragOver}
-          onDragEnter={handleDragEnter}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
+          onClick={disabled || view.isImporting ? undefined : view.handleImportClick}
+          onDragOver={view.handleDragOver}
+          onDragEnter={view.handleDragEnter}
+          onDragLeave={view.handleDragLeave}
+          onDrop={view.handleDrop}
         >
           <input
-            ref={fileInputRef}
+            ref={view.fileInputRef}
             type="file"
             accept={acceptedFileTypes.join(',')}
-            onChange={handleFileSelect}
+            onChange={view.handleFileSelect}
             style={{ display: 'none' }}
-            disabled={disabled || isImporting}
+            disabled={disabled || view.isImporting}
           />
 
           <Box
@@ -318,14 +163,14 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
             <CloudUpload sx={{ fontSize: 32, color: 'text.secondary' }} />
             <Box sx={{ display: 'grid', gap: 0.3 }}>
               <Typography variant="subtitle1">
-                {isImporting ? 'Processing...' : 'Drag & Drop or Click to select a file'}
+                {view.isImporting ? 'Processing...' : 'Drag & Drop or Click to select a file'}
               </Typography>
               <Typography variant="caption" color="text.secondary">
                 {acceptedFileTypes.join(', ')} · {Math.round(maxFileSize / 1024 / 1024)}MB max
               </Typography>
             </Box>
           </Box>
-          {isImporting && (
+          {view.isImporting && (
             <Box sx={{ mt: 1, display: 'flex', justifyContent: 'center' }}>
               <CircularProgress size={18} />
             </Box>
@@ -334,7 +179,7 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
       )}
 
       {/* URL Download Section */}
-      {importMethod === 'url' && (
+      {view.importMethod === 'url' && (
         <Box sx={{ mb: 3 }}>
           <Box
             sx={{
@@ -347,25 +192,22 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
             <TextField
               fullWidth
               label="Tabular File URL"
-              id={urlFieldId}
+              id={view.urlFieldId}
               name="tabular-file-url"
               placeholder="https://example.com/data.csv"
-              value={urlInput}
-              onChange={(e) => {
-                setUrlInput(e.target.value);
-                onUrlChange?.(e.target.value);
-              }}
-              disabled={disabled || isImporting}
+              value={view.urlInput}
+              onChange={view.handleUrlInputChange}
+              disabled={disabled || view.isImporting}
             />
 
             <Button
               color="secondary"
               variant="contained"
-              endIcon={isImporting ? <Downloading /> : showDownloadSuccess ? <DownloadDone /> : <Download />}
-              onClick={handleUrlDownload}
-              disabled={disabled || isImporting || !urlInput.trim()}
+              endIcon={view.isImporting ? <Downloading /> : view.showDownloadSuccess ? <DownloadDone /> : <Download />}
+              onClick={view.handleUrlDownload}
+              disabled={disabled || view.isImporting || !view.urlInput.trim()}
             >
-              {isImporting ? 'Downloading...' : 'Download'}
+              {view.isImporting ? 'Downloading...' : 'Download'}
             </Button>
           </Box>
         </Box>
@@ -388,25 +230,16 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
         }}
       >
         <FormControl size="small" sx={{ minWidth: 140 }}>
-        <InputLabel id={delimiterLabelId} htmlFor={delimiterSelectId}>Delimiter</InputLabel>
+        <InputLabel id={view.delimiterLabelId} htmlFor={view.delimiterSelectId}>Delimiter</InputLabel>
           <ModalSelect
-            id={delimiterSelectId}
-            labelId={delimiterLabelId}
+            id={view.delimiterSelectId}
+            labelId={view.delimiterLabelId}
             name="delimiter"
-            value={processingConfig.delimiter}
+            value={view.processingConfig.delimiter}
             label="Delimiter"
-            onChange={(e: SelectChangeEvent<string>) => {
-              setProcessingConfig(prev => {
-                const next: TabularProcessingConfig = {
-                  ...prev,
-                  delimiter: e.target.value as TabularProcessingConfig['delimiter'],
-                };
-                onProcessingConfigChange?.(next);
-                return next;
-              });
-            }}
-            disabled={disabled || isImporting}
-            menuContainer={modalRoot}
+            onChange={view.handleDelimiterChange}
+            disabled={disabled || view.isImporting}
+            menuContainer={view.modalRoot}
           >
             <MenuItem value=",">Comma (,)</MenuItem>
             <MenuItem value=";">Semicolon (;)</MenuItem>
@@ -416,25 +249,16 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
         </FormControl>
 
         <FormControl size="small" sx={{ minWidth: 140 }}>
-          <InputLabel id={encodingLabelId} htmlFor={encodingSelectId}>Encoding</InputLabel>
+          <InputLabel id={view.encodingLabelId} htmlFor={view.encodingSelectId}>Encoding</InputLabel>
           <ModalSelect
-            id={encodingSelectId}
-            labelId={encodingLabelId}
+            id={view.encodingSelectId}
+            labelId={view.encodingLabelId}
             name="encoding"
-            value={processingConfig.encoding}
+            value={view.processingConfig.encoding}
             label="Encoding"
-            onChange={(e: SelectChangeEvent<string>) => {
-              setProcessingConfig(prev => {
-                const next: TabularProcessingConfig = {
-                  ...prev,
-                  encoding: e.target.value as TabularProcessingConfig['encoding'],
-                };
-                onProcessingConfigChange?.(next);
-                return next;
-              });
-            }}
-            disabled={disabled || isImporting}
-            menuContainer={modalRoot}
+            onChange={view.handleEncodingChange}
+            disabled={disabled || view.isImporting}
+            menuContainer={view.modalRoot}
           >
             <MenuItem value="utf-8">UTF-8</MenuItem>
             <MenuItem value="iso-8859-1">ISO-8859-1</MenuItem>
@@ -443,25 +267,16 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
         </FormControl>
 
         <FormControl size="small" sx={{ minWidth: 140 }}>
-          <InputLabel id={quoteLabelId} htmlFor={quoteSelectId}>Quote Character</InputLabel>
+          <InputLabel id={view.quoteLabelId} htmlFor={view.quoteSelectId}>Quote Character</InputLabel>
           <ModalSelect
-            id={quoteSelectId}
-            labelId={quoteLabelId}
+            id={view.quoteSelectId}
+            labelId={view.quoteLabelId}
             name="quote-char"
-            value={processingConfig.quoteChar}
+            value={view.processingConfig.quoteChar}
             label="Quote Character"
-            onChange={(e: SelectChangeEvent<string>) => {
-              setProcessingConfig(prev => {
-                const next: TabularProcessingConfig = {
-                  ...prev,
-                  quoteChar: e.target.value as TabularProcessingConfig['quoteChar'],
-                };
-                onProcessingConfigChange?.(next);
-                return next;
-              });
-            }}
-            disabled={disabled || isImporting}
-            menuContainer={modalRoot}
+            onChange={view.handleQuoteCharChange}
+            disabled={disabled || view.isImporting}
+            menuContainer={view.modalRoot}
           >
             <MenuItem value='"'>Double Quote (")</MenuItem>
             <MenuItem value="'">Single Quote (')</MenuItem>
@@ -471,19 +286,12 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
         <FormControlLabel
           control={(
             <Switch
-              id={hasHeaderSwitchId}
-              checked={processingConfig.hasHeader}
-              onChange={(e) => {
-                const checked = e.target.checked;
-                setProcessingConfig(prev => {
-                  const next = { ...prev, hasHeader: checked };
-                  onProcessingConfigChange?.(next);
-                  return next;
-                });
-              }}
-              disabled={disabled || isImporting}
+              id={view.hasHeaderSwitchId}
+              checked={view.processingConfig.hasHeader}
+              onChange={view.handleHasHeaderChange}
+              disabled={disabled || view.isImporting}
               inputProps={{
-                id: hasHeaderSwitchId,
+                id: view.hasHeaderSwitchId,
                 name: 'has-header',
               }}
             />
@@ -494,19 +302,12 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
         <FormControlLabel
           control={(
             <Switch
-              id={skipEmptyLinesSwitchId}
-              checked={processingConfig.skipEmptyLines}
-              onChange={(e) => {
-                const checked = e.target.checked;
-                setProcessingConfig(prev => {
-                  const next = { ...prev, skipEmptyLines: checked };
-                  onProcessingConfigChange?.(next);
-                  return next;
-                });
-              }}
-              disabled={disabled || isImporting}
+              id={view.skipEmptyLinesSwitchId}
+              checked={view.processingConfig.skipEmptyLines}
+              onChange={view.handleSkipEmptyLinesChange}
+              disabled={disabled || view.isImporting}
               inputProps={{
-                id: skipEmptyLinesSwitchId,
+                id: view.skipEmptyLinesSwitchId,
                 name: 'skip-empty-lines',
               }}
             />
@@ -516,9 +317,9 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
       </Box>
 
       {/* Error Display */}
-      {imortError && (
+      {view.imortError && (
         <Alert severity="error" sx={{ mt: 3 }}>
-          {imortError}
+          {view.imortError}
         </Alert>
       )}
     </Box>

@@ -345,8 +345,8 @@ const toTaskSummary = (task: ShapeBuildTaskRecord): ShapeBuildTaskSummary => ({
   metadata: task.metadata,
   retryAttempt: typeof (task.metadata as { retryAttempt?: unknown } | undefined)?.retryAttempt === 'number'
     && Number.isFinite((task.metadata as { retryAttempt?: unknown } | undefined)?.retryAttempt ?? NaN)
-      ? Math.max(0, Math.floor((task.metadata as { retryAttempt: number }).retryAttempt))
-      : undefined,
+    ? Math.max(0, Math.floor((task.metadata as { retryAttempt: number }).retryAttempt))
+    : undefined,
 });
 
 export class ShapeQueryAPIImpl implements ShapeQueryAPI {
@@ -417,8 +417,8 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
     if (!latest) {
       return {
         status: 'idle',
-      hasErrors: false,
-      errorMessages: [],
+        hasErrors: false,
+        errorMessages: [],
       };
     }
     const totalFeatures = await this.getProcessedFeatureCount(nodeId);
@@ -509,7 +509,7 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
 
   async getGeometryCache(
     bufferId: string
-  ): Promise<ShapeGeometryCache|null> {
+  ): Promise<ShapeGeometryCache | null> {
     return await ephemeralDB.transaction('r', ephemeralDB.geometryCache, async () => {
       const record = await ephemeralDB.geometryCache.get(bufferId);
       return isGeometryCacheComplete(record) ? record : null;
@@ -607,12 +607,12 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
     if (!record) {
       throw new Error('Invalid build session config');
     }
-    
+
     // Ensure required fields are present
     if (record.startedAt === undefined) {
       throw new Error('startedAt is required for session creation');
     }
-    
+
     // Split the monolithic record into four normalized tables
     const config: GisBuildSessionRecord = {
       nodeId: record.nodeId,
@@ -622,19 +622,19 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
       startedAt: record.startedAt,
       sourceStageMaxima: record.sourceStageMaxima,
     };
-    
+
     const heartbeat: BuildSessionHeartbeat | undefined = record.lastHeartbeatAt ? {
       nodeId: record.nodeId,
       lastHeartbeatAt: record.lastHeartbeatAt,
     } : undefined;
-    
+
     const status: BuildSessionStatus = {
       nodeId: record.nodeId,
       status: record.status,
       stopReason: record.stopReason,
       completedAt: record.completedAt,
     };
-    
+
     const stageStatus: BuildStageStatus | undefined = record.stage ? {
       id: `${record.nodeId}:${record.stage}`,
       nodeId: record.nodeId,
@@ -644,7 +644,7 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
       inactiveMs: record.stageInactiveMs,
       stageId: record.stageId,
     } : undefined;
-    
+
     // Insert into all four tables
     await Promise.all([
       ephemeralDB.buildSessions.put(config),
@@ -659,10 +659,10 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
     if (!patch) {
       throw new Error('Invalid build session config update');
     }
-    
+
     // Update the appropriate tables based on what fields are being updated
     const updatePromises: Promise<unknown>[] = [];
-    
+
     // Heartbeat updates
     if (patch.lastHeartbeatAt !== undefined) {
       updatePromises.push(
@@ -672,7 +672,7 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
         })
       );
     }
-    
+
     // Status updates
     if (patch.status !== undefined || patch.stopReason !== undefined || patch.completedAt !== undefined) {
       const currentStatus = await ephemeralDB.buildSessionStatuses.get(nodeId);
@@ -687,10 +687,10 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
         );
       }
     }
-    
+
     // Stage updates
-    if (patch.stage !== undefined || patch.stageStartedAt !== undefined || 
-        patch.stageInactiveMs !== undefined || patch.stageId !== undefined) {
+    if (patch.stage !== undefined || patch.stageStartedAt !== undefined ||
+      patch.stageInactiveMs !== undefined || patch.stageId !== undefined) {
       const currentConfig = await ephemeralDB.buildSessions.get(nodeId);
       if (currentConfig && patch.stage) {
         updatePromises.push(
@@ -706,10 +706,10 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
         );
       }
     }
-    
+
     // Config updates (immutable fields - should rarely be updated)
-    if (patch.selectedArrayByCountries !== undefined || patch.selectedArrayVersion !== undefined || 
-        patch.sourceStageMaxima !== undefined) {
+    if (patch.selectedArrayByCountries !== undefined || patch.selectedArrayVersion !== undefined ||
+      patch.sourceStageMaxima !== undefined) {
       const currentConfig = await ephemeralDB.buildSessions.get(nodeId);
       if (currentConfig) {
         updatePromises.push(
@@ -722,7 +722,7 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
         );
       }
     }
-    
+
     await Promise.all(updatePromises);
   }
 
@@ -788,7 +788,7 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
       })
     )));
   }
-  async putGeometryCaches(buffers: ShapeGeometryCache[]): Promise<void>{
+  async putGeometryCaches(buffers: ShapeGeometryCache[]): Promise<void> {
     if (buffers.length === 0) return;
     assertNonEmptyGeometryCacheBuffers(buffers);
     const pending = buffers.map((buffer) => ({ ...buffer, timestamp: 0 }));
@@ -942,20 +942,20 @@ export class EphemeralShapeApiImpl {
   async putGeometryCache(buffer: ShapeGeometryCache): Promise<void> {
     assertNonEmptyGeometryCacheBuffer(buffer);
     const pending = { ...buffer, timestamp: 0 };
-    await ephemeralDB.transaction('rw', [ephemeralDB.geometryCache, ephemeralDB.geometryCacheMeta], async () => {
-      await ephemeralDB.geometryCache.put(pending);
-      await markGeometryCacheWriteComplete([pending]);
-    });
+    // Phase 1: Write data with timestamp: 0 (invalid state)
+    await ephemeralDB.geometryCache.put(pending);
+    // Phase 2: Mark write complete with non-zero timestamp (valid state)
+    await markGeometryCacheWriteComplete([pending]);
   }
 
   async putGeometryCaches(buffers: ShapeGeometryCache[]): Promise<void> {
     if (buffers.length === 0) return;
     assertNonEmptyGeometryCacheBuffers(buffers);
     const pending = buffers.map((buffer) => ({ ...buffer, timestamp: 0 }));
-    await ephemeralDB.transaction('rw', [ephemeralDB.geometryCache, ephemeralDB.geometryCacheMeta], async () => {
-      await ephemeralDB.geometryCache.bulkPut(pending);
-      await markGeometryCacheWriteComplete(pending);
-    });
+    // Phase 1: Write data with timestamp: 0 (invalid state)
+    await ephemeralDB.geometryCache.bulkPut(pending);
+    // Phase 2: Mark write complete with non-zero timestamp (valid state)
+    await markGeometryCacheWriteComplete(pending);
   }
 
   async listTileIdRelations(nodeId: NodeId): Promise<ShapeTileIdToBufferRelation[]> {

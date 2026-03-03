@@ -4,7 +4,6 @@
  */
 
 import type React from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
 import { Box } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material';
 import { Allotment } from 'allotment';
@@ -13,6 +12,7 @@ import 'allotment/dist/style.css';
 import { useLRUPanes } from '~/hooks/useLRUPanes';
 import { PaneHeader } from './PaneHeader.js';
 import type { LRUSplitViewConfig } from '~/types/LRUSplitView';
+import { useLRUSplitViewLayout } from './useLRUSplitViewLayout.js';
 
 export interface LRUSplitViewProps extends LRUSplitViewConfig {
   /** Component height */
@@ -22,18 +22,6 @@ export interface LRUSplitViewProps extends LRUSplitViewConfig {
   /** Additional CSS styles */
   sx?: SxProps<Theme>;
 }
-
-const resolveBreakpointIndex = (width: number, breakpoints?: number[]) => {
-  if (!breakpoints || breakpoints.length === 0) return 0;
-  const foundIndex = breakpoints.findIndex((bp) => width <= bp);
-  return foundIndex === -1 ? breakpoints.length : foundIndex;
-};
-
-const resolveByBreakpoint = <T,>(values: T[] | undefined, index: number) => {
-  if (!values || values.length === 0) return undefined;
-  const safeIndex = Math.min(index, values.length - 1);
-  return values[safeIndex];
-};
 
 /**
  * LRUSplitView - Intelligent split view with LRU pane management
@@ -62,52 +50,15 @@ export const LRUSplitView: React.FC<LRUSplitViewProps> = ({
                                                             width = '100%',
                                                             sx,
                                                           }) => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
-
-  useEffect(() => {
-    if (!containerRef.current || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) {
-        setContainerWidth(entry.contentRect.width);
-      }
-    });
-    observer.observe(containerRef.current);
-    return () => observer.disconnect();
-  }, []);
-
-  const breakpointIndex = useMemo(
-    () => resolveBreakpointIndex(containerWidth, responsiveBreakpoints),
-    [containerWidth, responsiveBreakpoints],
-  );
-  const autoCloseCount = useMemo(
-    () => resolveByBreakpoint(autoCloseCountsByBreakpoint, breakpointIndex),
-    [autoCloseCountsByBreakpoint, breakpointIndex],
-  );
-  const responsiveMaxExpandedPanes = useMemo(() => {
-    if (autoCloseCount === undefined) return maxExpandedPanes;
-    const maxClosable = Math.max(0, panes.length - 1);
-    const effectiveCloseCount = Math.min(autoCloseCount, maxClosable);
-    return Math.max(1, panes.length - effectiveCloseCount);
-  }, [autoCloseCount, maxExpandedPanes, panes.length]);
-  const responsiveInitialSizes = useMemo(() => {
-    const sizes = resolveByBreakpoint(initialPaneSizesByBreakpoint, breakpointIndex);
-    if (!sizes || sizes.length !== panes.length) return undefined;
-    return sizes;
-  }, [initialPaneSizesByBreakpoint, breakpointIndex, panes.length]);
-  const responsiveAutoExpand = useMemo(() => {
-    if (autoCloseCount === undefined) return autoExpand;
-    return autoCloseCount === 0 ? undefined : autoExpand;
-  }, [autoCloseCount, autoExpand]);
-  const equalizeOnAllExpanded = autoCloseCount === 0;
-  const effectivePanes = useMemo(() => {
-    if (autoCloseCount !== 0) return panes;
-    return panes.map((pane) => ({
-      ...pane,
-      defaultExpanded: true,
-    }));
-  }, [autoCloseCount, panes]);
+  const layout = useLRUSplitViewLayout({
+    panes,
+    maxExpandedPanes,
+    responsiveBreakpoints,
+    initialPaneSizesByBreakpoint,
+    autoCloseCountsByBreakpoint,
+    autoExpand,
+    progress,
+  });
 
   const {
     paneStates,
@@ -115,36 +66,26 @@ export const LRUSplitView: React.FC<LRUSplitViewProps> = ({
     getSizes,
   } = useLRUPanes({
     panes,
-    maxExpandedPanes: responsiveMaxExpandedPanes,
-    initialSizes: responsiveInitialSizes,
-    equalizeOnAllExpanded,
+    maxExpandedPanes: layout.responsiveMaxExpandedPanes,
+    initialSizes: layout.responsiveInitialSizes,
+    equalizeOnAllExpanded: layout.equalizeOnAllExpanded,
     defaultCollapsedSize,
-    autoExpand: responsiveAutoExpand,
+    autoExpand: layout.responsiveAutoExpand,
     progress,
     onPaneToggle,
   });
 
-  const sizes = getSizes(containerWidth > 0 ? containerWidth : undefined);
-
-  // Find progress info for each pane
-  const getProgressForPane = (paneId: string) => {
-    return progress.find(p => p.paneId === paneId);
-  };
-
-  // Get pane config by ID
-  const getPaneConfig = (paneId: string) => {
-    return effectivePanes.find(p => p.id === paneId);
-  };
+  const sizes = getSizes(layout.containerWidth > 0 ? layout.containerWidth : undefined);
 
   const expandedKey = paneStates
     .filter((pane) => pane.isExpanded)
     .map((pane) => pane.id)
     .join('-');
-  const layoutKey = `${expandedKey}-${breakpointIndex}`;
+  const layoutKey = `${expandedKey}-${layout.breakpointIndex}`;
 
   return (
-    <Box ref={containerRef} sx={[{ height, width }, sx] as SxProps<Theme>}>
-      {containerWidth > 0 ? (
+    <Box ref={layout.containerRef} sx={[{ height, width }, sx] as SxProps<Theme>}>
+      {layout.containerWidth > 0 ? (
         <Allotment
           key={layoutKey}
           vertical={vertical}
@@ -157,9 +98,9 @@ export const LRUSplitView: React.FC<LRUSplitViewProps> = ({
           }}
         >
           {paneStates.map((state, index) => {
-            const config = getPaneConfig(state.id);
+            const config = layout.getPaneConfig(state.id);
             if (!config) return null;
-            const progressInfo = getProgressForPane(state.id);
+            const progressInfo = layout.getProgressForPane(state.id);
 
             return (
               <Allotment.Pane

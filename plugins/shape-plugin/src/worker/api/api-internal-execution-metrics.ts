@@ -227,6 +227,8 @@ const pauseStates = new Map<string, PauseState>();
 const activePipelines = new Set<string>();
 const activePipelineRuns = new Map<string, string>();
 const sessionSubscriptions = new Map<string, () => void>();
+const sessionAbortControllers = new Map<string, AbortController>();
+const sessionWorkerInstances = new Map<string, { terminate?: () => void }>();
 const STALE_PIPELINE_GRACE_MS = 30_000;
 
 const shapeEntityHandlerSingleton = new ShapeEntityHandler();
@@ -1084,6 +1086,8 @@ const clearActivePipelineRuntimeState = (nodeId: NodeId): void => {
   activePipelines.delete(pipelineKey);
   activePipelineRuns.delete(pipelineKey);
   pauseStates.delete(pipelineKey);
+  sessionAbortControllers.delete(pipelineKey);
+  sessionWorkerInstances.delete(pipelineKey);
   stopSessionTracking(nodeId);
 };
 
@@ -1159,7 +1163,7 @@ const setPaused = (nodeId: NodeId, paused: boolean): void => {
   if (!paused && state.waiters.length > 0) {
     const pending = [...state.waiters];
     state.waiters.length = 0;
-    pending.forEach((resolve) => {resolve()});
+    pending.forEach((resolve) => { resolve() });
   }
 };
 
@@ -1220,6 +1224,8 @@ export const shapeBuildRuntimeExecutionMetrics = {
   mapTaskQueueRecordToTaskSummary,
   activePipelines,
   activePipelineRuns,
+  sessionAbortControllers,
+  sessionWorkerInstances,
   seedTaskQueueFromBuildTasks,
   isStopReason,
   buildTaskQueueSummary,

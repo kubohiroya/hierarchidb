@@ -4,7 +4,6 @@
  */
 
 import type React from 'react';
-import { useEffect, useState, useId } from 'react';
 import {
   Accordion,
   AccordionDetails,
@@ -37,7 +36,8 @@ import type {
   TabularColumnMapping,
   TabularDataResult,
 } from '../types/index';
-import { TabularColumnInfo, TabularColumnType, TabularTableMetadata } from '@hierarchidb/tabular-store';
+import { TabularTableMetadata } from '@hierarchidb/tabular-store';
+import { useTabularColumnSelect } from './useTabularColumnSelect.js';
 
 export interface TabularColumnSelectProps {
   tableMetadata: TabularTableMetadata;
@@ -60,130 +60,12 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
   allowTypeChange = true,
   maxPreviewRows = 50,
 }) => {
-  const controlId = useId();
-  const [columnMappings, setColumnMappings] = useState<TabularColumnMapping[]>([]);
-  const [showPreview, setShowPreview] = useState(true);
-  const [selectAll, setSelectAll] = useState(true);
-
-  // Initialize column mappings
-  useEffect(() => {
-    const normalizeType = (type?: TabularColumnType): TabularColumnType => type ?? 'string';
-    const cols: TabularColumnInfo[] = tableMetadata.columns ?? [];
-    const initialMappings: TabularColumnMapping[] = cols.map((col: TabularColumnInfo, index: number) => ({
-      sourceColumn: col.name,
-      sourceType: normalizeType(col.type),
-      targetColumn: col.name,
-      targetType: normalizeType(col.type),
-      included: true,
-      order: index,
-      transform: 'none',
-    }));
-
-    setColumnMappings(initialMappings);
-  }, [tableMetadata.columns]);
-
-  // Update parent when mappings change
-  useEffect(() => {
-    onSelectionChanged(columnMappings);
-  }, [columnMappings, onSelectionChanged]);
-
-  // Update preview visibility
-  useEffect(() => {
-    onPreviewChanged?.(showPreview);
-  }, [showPreview, onPreviewChanged]);
-
-  const handleToggleColumn = (sourceColumn: string, included: boolean) => {
-    setColumnMappings(prev =>
-      prev.map(mapping =>
-        mapping.sourceColumn === sourceColumn
-          ? { ...mapping, included }
-          : mapping,
-      ),
-    );
-  };
-
-  const handleSelectAll = (checked: boolean) => {
-    setSelectAll(checked);
-    setColumnMappings(prev =>
-      prev.map(mapping => ({ ...mapping, included: checked })),
-    );
-  };
-
-  const handleColumnRename = (sourceColumn: string, targetColumn: string) => {
-    setColumnMappings(prev =>
-      prev.map(mapping =>
-        mapping.sourceColumn === sourceColumn
-          ? { ...mapping, targetColumn }
-          : mapping,
-      ),
-    );
-  };
-
-  const handleTypeChange = (sourceColumn: string, targetType: string) => {
-    setColumnMappings(prev =>
-      prev.map(mapping =>
-        mapping.sourceColumn === sourceColumn
-          ? { ...mapping, targetType: targetType as TabularColumnType }
-          : mapping,
-      ),
-    );
-  };
-
-  const handleTargetMapping = (sourceColumn: string, targetColumn: string) => {
-    setColumnMappings(prev =>
-      prev.map(mapping =>
-        mapping.sourceColumn === sourceColumn
-          ? { ...mapping, targetColumn }
-          : mapping,
-      ),
-    );
-  };
-
-  const handleOrderChange = (sourceColumn: string, order: number) => {
-    setColumnMappings(prev =>
-      prev.map(mapping =>
-        mapping.sourceColumn === sourceColumn
-          ? { ...mapping, order }
-          : mapping,
-      ),
-    );
-  };
-
-  const getSelectedColumns = () => columnMappings.filter(m => m.included);
-
-  const getMappingValidation = () => {
-    const errors: string[] = [];
-    const selectedMappings = getSelectedColumns();
-
-    // Check for required target columns
-    const requiredColumns = targetColumns.filter(tc => tc.required);
-    const mappedTargets = selectedMappings.map(m => m.targetColumn);
-
-    for (const required of requiredColumns) {
-      if (!mappedTargets.includes(required.name)) {
-        errors.push(`Required column "${required.name}" is not mapped`);
-      }
-    }
-
-    // Check for duplicate target column names
-    const targetCounts = new Map<string, number>();
-    mappedTargets.forEach(target => {
-      targetCounts.set(target, (targetCounts.get(target) || 0) + 1);
-    });
-
-    for (const [target, count] of targetCounts) {
-      if (count > 1) {
-        errors.push(`Target column "${target}" is mapped multiple times`);
-      }
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-    };
-  };
-
-  const validation = getMappingValidation();
+  const view = useTabularColumnSelect({
+    tableMetadata,
+    targetColumns,
+    onSelectionChanged,
+    onPreviewChanged,
+  });
 
   return (
     <Box sx={{ p: 3 }}>
@@ -201,9 +83,9 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
           <FormControlLabel
             control={
               <Checkbox
-                checked={selectAll}
-                indeterminate={selectAll !== (getSelectedColumns().length === columnMappings.length)}
-                onChange={(e) => handleSelectAll(e.target.checked)}
+                checked={view.selectAll}
+                indeterminate={view.selectAllIndeterminate}
+                onChange={(e) => view.handleSelectAll(e.target.checked)}
               />
             }
             label="Select All Columns"
@@ -211,14 +93,14 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Typography variant="body2" color="text.secondary">
-              {getSelectedColumns().length} of {columnMappings.length} columns selected
+              {view.selectedColumns.length} of {view.columnMappings.length} columns selected
             </Typography>
 
             <FormControlLabel
               control={
                 <Switch
-                  checked={showPreview}
-                  onChange={(e) => setShowPreview(e.target.checked)}
+                  checked={view.showPreview}
+                  onChange={(e) => view.setShowPreview(e.target.checked)}
                 />
               }
               label="Show Preview"
@@ -243,7 +125,7 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {columnMappings.map((mapping) => {
+            {view.columnMappings.map((mapping) => {
               const sampleData = previewData?.rows
                 .slice(0, 3)
                 .map(row => row[mapping.sourceColumn])
@@ -255,7 +137,7 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
                   <TableCell padding="checkbox">
                     <Checkbox
                       checked={mapping.included}
-                      onChange={(e) => handleToggleColumn(mapping.sourceColumn, e.target.checked)}
+                      onChange={(e) => view.handleToggleColumn(mapping.sourceColumn, e.target.checked)}
                     />
                   </TableCell>
 
@@ -276,10 +158,10 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
             <TableCell>
               <TextField
                 size="small"
-                id={`${controlId}-target-column-${mapping.sourceColumn}`}
+                id={`${view.controlId}-target-column-${mapping.sourceColumn}`}
                 name={`target-column-${mapping.sourceColumn}`}
                 value={mapping.targetColumn}
-                onChange={(e) => handleColumnRename(mapping.sourceColumn, e.target.value)}
+                onChange={(e) => view.handleColumnRename(mapping.sourceColumn, e.target.value)}
                 disabled={!mapping.included}
                 placeholder="Target column name"
               />
@@ -290,9 +172,9 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
                     <TableCell>
               <FormControl size="small" sx={{ minWidth: 100 }}>
                 <Select
-                  id={`${controlId}-type-${mapping.sourceColumn}`}
+                  id={`${view.controlId}-type-${mapping.sourceColumn}`}
                   value={mapping.targetType}
-                  onChange={(e) => handleTypeChange(mapping.sourceColumn, e.target.value)}
+                  onChange={(e) => view.handleTypeChange(mapping.sourceColumn, e.target.value)}
                   disabled={!mapping.included}
                 >
                           <MenuItem value="string">String</MenuItem>
@@ -308,9 +190,9 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
                     <TableCell>
               <FormControl size="small" sx={{ minWidth: 150 }}>
                 <Select
-                  id={`${controlId}-mapping-${mapping.sourceColumn}`}
+                  id={`${view.controlId}-mapping-${mapping.sourceColumn}`}
                   value={mapping.targetColumn}
-                  onChange={(e) => handleTargetMapping(mapping.sourceColumn, e.target.value)}
+                  onChange={(e) => view.handleTargetMapping(mapping.sourceColumn, e.target.value)}
                   disabled={!mapping.included}
                   displayEmpty
                 >
@@ -334,12 +216,12 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
             <TextField
               type="number"
               size="small"
-              id={`${controlId}-order-${mapping.sourceColumn}`}
+              id={`${view.controlId}-order-${mapping.sourceColumn}`}
               name={`order-${mapping.sourceColumn}`}
               value={mapping.order}
-              onChange={(e) => handleOrderChange(mapping.sourceColumn, parseInt(e.target.value))}
+              onChange={(e) => view.handleOrderChange(mapping.sourceColumn, parseInt(e.target.value))}
               disabled={!mapping.included}
-              inputProps={{ min: 0, max: columnMappings.length - 1, style: { width: 60 } }}
+              inputProps={{ min: 0, max: view.columnMappings.length - 1, style: { width: 60 } }}
             />
                   </TableCell>
 
@@ -365,13 +247,13 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
       </TableContainer>
 
       {/* Validation Errors */}
-      {!validation.isValid && (
+      {!view.validation.isValid && (
         <Alert severity="error" sx={{ mb: 3 }}>
           <Typography variant="subtitle2" gutterBottom>
             Column Mapping Issues:
           </Typography>
           <ul style={{ margin: 0 }}>
-            {validation.errors.map((error, index) => (
+            {view.validation.errors.map((error, index) => (
               <li key={index}>{error}</li>
             ))}
           </ul>
@@ -400,7 +282,7 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
                 </TableHead>
                 <TableBody>
                   {targetColumns.map(tc => {
-                    const mapping = columnMappings.find(m => m.targetColumn === tc.name && m.included);
+                    const mapping = view.columnMappings.find(m => m.targetColumn === tc.name && m.included);
                     return (
                       <TableRow key={tc.name}>
                         <TableCell>{tc.name}</TableCell>
@@ -444,7 +326,7 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
       )}
 
       {/* Preview Data (if enabled) */}
-      {showPreview && previewData && (
+      {view.showPreview && previewData && (
         <Accordion sx={{ mt: 3 }}>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography variant="subtitle1">
@@ -456,9 +338,7 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    {getSelectedColumns()
-                      .sort((a, b) => a.order - b.order)
-                      .map(mapping => (
+                    {view.selectedColumnsSorted.map(mapping => (
                         <TableCell key={mapping.sourceColumn}>
                           <Typography variant="subtitle2">
                             {mapping.targetColumn}
@@ -473,9 +353,7 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
                 <TableBody>
                   {previewData.rows.slice(0, maxPreviewRows).map((row, index) => (
                     <TableRow key={index}>
-                      {getSelectedColumns()
-                        .sort((a, b) => a.order - b.order)
-                        .map(mapping => (
+                      {view.selectedColumnsSorted.map(mapping => (
                           <TableCell key={mapping.sourceColumn}>
                             {row[mapping.sourceColumn]?.toString() || ''}
                           </TableCell>
@@ -499,16 +377,16 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
             <Typography variant="body2" color="text.secondary">
               Selected Columns
             </Typography>
-            <Typography variant="h6">
-              {getSelectedColumns().length} of {columnMappings.length}
+              <Typography variant="h6">
+              {view.selectedColumns.length} of {view.columnMappings.length}
             </Typography>
           </Box>
           <Box>
             <Typography variant="body2" color="text.secondary">
               Mapping Status
             </Typography>
-            <Typography variant="h6" color={validation.isValid ? 'success.main' : 'error.main'}>
-              {validation.isValid ? 'Valid' : 'Invalid'}
+            <Typography variant="h6" color={view.validation.isValid ? 'success.main' : 'error.main'}>
+              {view.validation.isValid ? 'Valid' : 'Invalid'}
             </Typography>
           </Box>
           {targetColumns.length > 0 && (
@@ -517,7 +395,7 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
                 Required Columns Mapped
               </Typography>
               <Typography variant="h6">
-                {targetColumns.filter(tc => tc.required && columnMappings.some(m => m.targetColumn === tc.name && m.included)).length} of {targetColumns.filter(tc => tc.required).length}
+                {view.requiredColumnsMappedCount} of {view.requiredColumnsCount}
               </Typography>
             </Box>
           )}

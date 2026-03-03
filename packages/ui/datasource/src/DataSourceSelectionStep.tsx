@@ -1,10 +1,10 @@
 import type React from 'react';
-import { useCallback } from 'react';
 import { Box, Typography } from '@mui/material';
 import { LicenseAgreementStep } from '@hierarchidb/ui-license';
 import type { DataSourceSelectorProps, DataSourceOption } from './DataSourceSelector.js';
 import { DataSourceDetailsCard } from './DataSourceDetailsCard.js';
 import { DataSourceSelectionCard } from './DataSourceSelectionCard.js';
+import { useDataSourceSelectionStep } from './useDataSourceSelectionStep.js';
 
 export interface DataSourceSelectionOption extends DataSourceOption {
   licenseName: string;
@@ -57,40 +57,13 @@ export const DataSourceSelectionStep = <TAgreedAt,>({
   renderDetails,
   detailsTitle = 'Data Source Details',
 }: DataSourceSelectionStepProps<TAgreedAt>): React.JSX.Element => {
-  const fallbackValue = options[0]?.id ?? '';
-  const value = state.dataSourceId ?? fallbackValue;
-  const selected = options.find((option) => option.id === value);
-  const agreedAtIso = state.licenseAgreedAt
-    ? typeof state.licenseAgreedAt === 'number'
-      ? new Date(state.licenseAgreedAt).toISOString()
-      : String(state.licenseAgreedAt)
-    : undefined;
-
-  const handleSelect = useCallback((next: string) => {
-    if (next === value) return;
-    onChange({
-      dataSourceId: next,
-      licenseAgreement: false,
-      licenseAgreedAt: undefined,
-    });
-  }, [onChange, value]);
-
-  const handleAgree = () => {
-    const buildAgreedAt =
-      createAgreedAt ??
-      (() => new Date().toISOString() as TAgreedAt);
-    if (selected?.licenseUrl) {
-      window.open(selected.licenseUrl, '_blank', 'noopener,noreferrer');
-    }
-    onChange({
-      licenseAgreement: true,
-      licenseAgreedAt: buildAgreedAt(),
-    });
-  };
-
-  const detailsContent = selected
-    ? renderDetails?.(selected, { agreedAtIso, onAgree: handleAgree, state })
-    : null;
+  const view = useDataSourceSelectionStep({
+    options,
+    state,
+    onChange,
+    createAgreedAt,
+    renderDetails,
+  });
 
   return (
     <Box display="flex" flexDirection="column" gap={3}>
@@ -113,27 +86,27 @@ export const DataSourceSelectionStep = <TAgreedAt,>({
 
       <DataSourceSelectionCard
         options={options}
-        value={value}
-        onChange={handleSelect}
+        value={view.value}
+        onChange={view.handleSelect}
         disabled={disabled}
         renderOption={renderOption}
       />
 
-      {selected && showDetailsCard ? (
+      {view.selected && showDetailsCard ? (
         <DataSourceDetailsCard title={detailsTitle}>
-          {detailsContent ?? (
+          {view.detailsContent ?? (
             <LicenseAgreementStep
-              sourceName={selected.name}
+              sourceName={view.selected.name}
               details={{
-                licenseName: selected.licenseName,
-                attribution: selected.attribution,
-                url: selected.licenseUrl,
+                licenseName: view.selected.licenseName,
+                attribution: view.selected.attribution,
+                url: view.selected.licenseUrl,
               }}
               state={{
                 agreed: Boolean(state.licenseAgreement),
-                agreedAt: agreedAtIso,
+                agreedAt: view.agreedAtIso,
               }}
-              onAgree={handleAgree}
+              onAgree={view.handleAgree}
               disabled={disabled}
               renderExtra={
                 licenseRequired

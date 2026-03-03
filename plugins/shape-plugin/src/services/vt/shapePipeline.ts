@@ -40,6 +40,7 @@ export type ShapePipelineParams = {
   resumeExistingTasks?: boolean;
   buildContinuationPolicy?: BuildContinuationPolicy;
   pipelineRunId?: string;
+  abortSignal?: AbortSignal;
   onTasksEnqueued?: (payload: {
     nodeId: NodeId;
     stage: 'source';
@@ -180,6 +181,7 @@ const runSourceStage = async (context: ShapePipelineContext): Promise<boolean> =
     failureHandling,
     buildContinuationPolicy,
     pipelineRunId: params.pipelineRunId,
+    abortSignal: params.abortSignal,
     onTasksEnqueued: params.onTasksEnqueued,
   });
   console.warn('[ShapePipeline][Stage] source done', JSON.stringify({
@@ -300,6 +302,7 @@ const runGeometryStage = async (context: ShapePipelineContext): Promise<boolean>
     failureHandling,
     buildContinuationPolicy,
     pipelineRunId: params.pipelineRunId,
+    abortSignal: params.abortSignal,
     ephemeralStore,
     diffBuildEnabled,
     recyclingAllowlist,
@@ -339,6 +342,7 @@ const runTileEmitStage = async (context: ShapePipelineContext): Promise<void> =>
     resumeExistingTasks,
     failureHandling,
     pipelineRunId: params.pipelineRunId,
+    abortSignal: params.abortSignal,
     ephemeralStore,
     loadContinentLookup,
   });
@@ -398,7 +402,7 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
     void shapeMutationAPIImpl.updateBuildSession(params.nodeId, {
       stageId: `pipeline:${stage}:${phase}`,
       stageHeartbeatAt: Date.now(),
-    }).catch(() => {});
+    }).catch(() => { });
   };
 
   const checkpointToProgressStage = new Map<string, TaskStage>(

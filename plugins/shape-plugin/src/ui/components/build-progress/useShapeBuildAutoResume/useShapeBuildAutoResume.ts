@@ -122,19 +122,42 @@ export const useShapeBuildAutoResume = ({
     if (typeof window === 'undefined') return;
     const storage = window.localStorage;
     if (!storage || typeof storage.getItem !== 'function' || typeof storage.removeItem !== 'function') return;
+
     try {
       const stored = storage.getItem('autoResumeBuild');
       if (!stored || stored !== String(activeNodeId)) return;
+
+      // セッション状態との整合性をチェック
       if (!canAutoResume) {
+        console.log('[ShapeBuildAutoResume] Removing autoResumeBuild flag - cannot auto resume', {
+          buildStatus,
+          runtimeStatus,
+          stopReason,
+        });
         storage.removeItem('autoResumeBuild');
         return;
       }
+
+      // 実際のセッション状態を確認してから自動再開
+      console.log('[ShapeBuildAutoResume] Attempting auto resume', {
+        nodeId: String(activeNodeId),
+        buildStatus,
+        runtimeStatus,
+        stopReason,
+      });
+
       storage.removeItem('autoResumeBuild');
       void startOrResume({ autoResume: true });
     } catch (error) {
       console.warn('[ShapeBuildStep] auto-resume build failed', error);
+      // エラー時はautoResumeBuildフラグを削除
+      try {
+        storage.removeItem('autoResumeBuild');
+      } catch (cleanupError) {
+        console.warn('[ShapeBuildStep] failed to cleanup autoResumeBuild flag', cleanupError);
+      }
     }
-  }, [activeNodeId, canAutoResume, canStartOrResume, isStartPending, startOrResume]);
+  }, [activeNodeId, canAutoResume, canStartOrResume, isStartPending, startOrResume, buildStatus, runtimeStatus, stopReason]);
 
   return {
     canStartOrResume,

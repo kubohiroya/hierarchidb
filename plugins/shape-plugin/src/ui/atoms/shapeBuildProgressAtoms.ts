@@ -51,6 +51,7 @@ export type TaskProgressControls = {
   handlePause?: () => void;
   handleCancelQueued?: () => Promise<void> | void;
   stopRequested?: boolean;
+  forceResetStopState?: () => void;
 };
 
 export type TaskScrollTarget = {
@@ -117,7 +118,7 @@ export type CrashSuspectControls = {
   close: () => void;
 };
 export const crashSuspectControlsAtom = atom<CrashSuspectControls>({
-  close: () => {},
+  close: () => { },
 });
 export const suspendSuspectMessageAtom = atom<string | null>(null);
 export const suspendSuspectOpenAtom = atom(false);
@@ -125,20 +126,21 @@ export type SuspendSuspectControls = {
   close: () => void;
 };
 export const suspendSuspectControlsAtom = atom<SuspendSuspectControls>({
-  close: () => {},
+  close: () => { },
 });
 export const taskProgressControlsAtom = atom<TaskProgressControls>({
   canStartOrResume: false,
   statusLabel: '',
   startPending: false,
   requestedControlAction: 'none',
-  handleStartOrResume: async () => {},
-  handlePause: () => {},
-  handleCancelQueued: async () => {},
+  handleStartOrResume: async () => { },
+  handlePause: () => { },
+  handleCancelQueued: async () => { },
   stopRequested: false,
+  forceResetStopState: () => { },
 });
 export const taskProgressAuthAtom = atom<TaskProgressAuthState>({
   authDialogOpen: false,
-  closeAuthDialog: () => {},
-  handleProviderSelect: () => {},
+  closeAuthDialog: () => { },
+  handleProviderSelect: () => { },
 });

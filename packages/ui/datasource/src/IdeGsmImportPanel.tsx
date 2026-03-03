@@ -19,8 +19,8 @@ import {
   Typography,
 } from '@mui/material';
 import type React from 'react';
-import { useMemo, useState } from 'react';
 import { FileInputWithUrl } from '@hierarchidb/ui-file';
+import { useIdeGsmImportPanel } from './useIdeGsmImportPanel.js';
 
 export type IdeGsmFileEntry = {
   fileName: string;
@@ -137,66 +137,7 @@ export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = (props) => {
     defaultDownloadUrl,
     accept = '.csv,.xlsx,.xls',
   } = props;
-  const [localDialogOpen, setLocalDialogOpen] = useState(false);
-  const [remoteDialogOpen, setRemoteDialogOpen] = useState(false);
-  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
-  const [lastAction, setLastAction] = useState<'local' | 'remote'>('local');
-  const menuOpen = Boolean(menuAnchor);
-  const isMulti = 'files' in props;
-  const files = useMemo<IdeGsmFileEntry[]>(() => {
-    if (isMulti) {
-      return props.files;
-    }
-    if (props.fileName || props.sourceId) {
-      const sourceId = props.sourceId ?? '';
-      return [{
-        fileName: props.fileName ?? labels.fileFallback,
-        sourceId,
-        sourceType: 'local',
-        sizeBytes: props.sizeBytes,
-      }];
-    }
-    return [];
-  }, [isMulti, labels.fileFallback, props]);
-
-  const closeDialogs = () => {
-    setLocalDialogOpen(false);
-    setRemoteDialogOpen(false);
-  };
-
-  const handleFileSelect = async (file: File, downloadUrl?: string) => {
-    const sourceType = downloadUrl ? 'remote' : 'local';
-    if (isMulti) {
-      props.onAddFile({
-        file,
-        downloadUrl,
-        sourceType,
-      });
-    } else {
-      props.onChange({
-        file,
-        downloadUrl,
-        sourceType,
-      });
-    }
-    closeDialogs();
-  };
-
-  const handleRemove = (event: React.MouseEvent<HTMLButtonElement>, index: number) => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (isMulti) {
-      try {
-        props.onRemoveFile(index);
-      } catch (error) {
-        console.log('onRemoveFile error', error);
-      }
-    } else {
-      props.onClear();
-    }
-  };
-
-  const mainButtonLabel = lastAction === 'remote' ? labels.importRemote : labels.importLocal;
+  const view = useIdeGsmImportPanel({ props, labels });
 
   return (
     <>
@@ -212,14 +153,14 @@ export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = (props) => {
         }}
       >
         <Stack spacing={1}>
-          {files.length > 0 ? (
+          {view.files.length > 0 ? (
             <Box display="flex" sx={{ flexFlow: 'row wrap', gap: 0.75 }}>
-              {files.map((entry, index) => (
+              {view.files.map((entry, index) => (
                 <IdeGsmFileCard
                   key={`${entry.fileName}-${entry.sourceId}-${index}`}
                   entry={entry}
                   sizeLabel={formatBytes(entry.sizeBytes)}
-                  onRemove={(event) => handleRemove(event, index)}
+                  onRemove={(event) => view.handleRemove(event, index)}
                   removeLabel={labels.removeFile}
                   disabled={disabled}
                 />
@@ -244,42 +185,25 @@ export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = (props) => {
             >
               <Button
                 startIcon={<Add />}
-                onClick={(event) => {
-                  event.currentTarget.blur();
-                  event.stopPropagation();
-                  if (lastAction === 'remote') {
-                    setRemoteDialogOpen(true);
-                  } else {
-                    setLocalDialogOpen(true);
-                  }
-                }}
+                onClick={view.handlePrimaryButtonClick}
                 disabled={disabled}
               >
-                {mainButtonLabel}
+                {view.mainButtonLabel}
               </Button>
               <Button
-                onClick={(event) => {
-                  event.currentTarget.blur();
-                  event.stopPropagation();
-                  setMenuAnchor(event.currentTarget);
-                }}
+                onClick={view.handleMenuButtonClick}
                 disabled={disabled}
               >
                 <ArrowDropDown />
               </Button>
             </ButtonGroup>
             <Menu
-              anchorEl={menuAnchor}
-              open={menuOpen}
-              onClose={() => setMenuAnchor(null)}
+              anchorEl={view.menuAnchor}
+              open={view.menuOpen}
+              onClose={() => view.setMenuAnchor(null)}
             >
               <MenuItem
-                onClick={() => {
-                  menuAnchor?.blur();
-                  setMenuAnchor(null);
-                  setLastAction('local');
-                  setLocalDialogOpen(true);
-                }}
+                onClick={view.handleSelectLocal}
               >
                 <ListItemIcon>
                   <InsertDriveFile fontSize="small" />
@@ -287,12 +211,7 @@ export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = (props) => {
                 {labels.importLocal}
               </MenuItem>
               <MenuItem
-                onClick={() => {
-                  menuAnchor?.blur();
-                  setMenuAnchor(null);
-                  setLastAction('remote');
-                  setRemoteDialogOpen(true);
-                }}
+                onClick={view.handleSelectRemote}
               >
                 <ListItemIcon>
                   <CloudDownload fontSize="small" />
@@ -303,10 +222,10 @@ export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = (props) => {
           </Box>
         </Stack>
       </Box>
-      <Dialog open={localDialogOpen} onClose={() => setLocalDialogOpen(false)} fullWidth maxWidth="sm">
+      <Dialog open={view.localDialogOpen} onClose={() => view.setLocalDialogOpen(false)} fullWidth maxWidth="sm">
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, pt: 2 }}>
           <Typography variant="subtitle1">{labels.importLocal}</Typography>
-          <IconButton aria-label="Close" onClick={() => setLocalDialogOpen(false)} autoFocus>
+          <IconButton aria-label="Close" onClick={() => view.setLocalDialogOpen(false)} autoFocus>
             <Close />
           </IconButton>
         </Box>
@@ -315,16 +234,16 @@ export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = (props) => {
             accept={accept}
             buttonLabel={labels.buttonLabel}
             instructions={labels.instructions}
-            onFileSelect={handleFileSelect}
+            onFileSelect={view.handleFileSelect}
             disabled={disabled}
             mode="local"
           />
         </DialogContent>
       </Dialog>
-      <Dialog open={remoteDialogOpen} onClose={() => setRemoteDialogOpen(false)} fullWidth maxWidth="sm">
+      <Dialog open={view.remoteDialogOpen} onClose={() => view.setRemoteDialogOpen(false)} fullWidth maxWidth="sm">
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, pt: 2 }}>
           <Typography variant="subtitle1">{labels.importRemote}</Typography>
-          <IconButton aria-label="Close" onClick={() => setRemoteDialogOpen(false)} autoFocus>
+          <IconButton aria-label="Close" onClick={() => view.setRemoteDialogOpen(false)} autoFocus>
             <Close />
           </IconButton>
         </Box>
@@ -334,7 +253,7 @@ export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = (props) => {
             buttonLabel={labels.buttonLabel}
             instructions={labels.instructions}
             defaultDownloadUrl={defaultDownloadUrl}
-            onFileSelect={handleFileSelect}
+            onFileSelect={view.handleFileSelect}
             disabled={disabled}
             mode="url"
           />

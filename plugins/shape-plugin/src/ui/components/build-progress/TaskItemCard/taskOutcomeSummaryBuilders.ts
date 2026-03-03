@@ -218,7 +218,7 @@ export const buildSourceTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task,
       && polygonsOutput !== null
     )
       ? `F ${formatInt(featuresOutput)}/${formatInt(featuresInput)} (${formatPercent(featuresRatio)}), `
-        + `P ${formatInt(polygonsOutput)}/${formatInt(polygonsInput)} (${formatPercent(polygonsRatio)})`
+      + `P ${formatInt(polygonsOutput)}/${formatInt(polygonsInput)} (${formatPercent(polygonsRatio)})`
       : (displayMessage || 'Completed');
     return {
       kind,
@@ -260,12 +260,13 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
   const geometryDetails = parseGeometrySimplifyError(failedMessage ?? undefined);
 
   const effectiveToleranceRaw = readMetadataNumber(task.metadata, [
-    'effectiveTolerance',
-    'effective_tolerance',
     'finalTolerance',
     'finalEffectiveTolerance',
-    'metadata.effectiveTolerance',
+    'effectiveTolerance',
+    'effective_tolerance',
     'metadata.finalTolerance',
+    'metadata.finalEffectiveTolerance',
+    'metadata.effectiveTolerance',
     'tolerance',
   ]);
   const effectiveTolerance = effectiveToleranceRaw;
@@ -277,9 +278,13 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
   const retryAttempt = retryAttemptRaw !== null && retryAttemptRaw >= 0 ? Math.floor(retryAttemptRaw) : null;
 
   const retryMaxRaw = readMetadataNumber(task.metadata, [
+    'finalRetryCount',
+    'finalRetryLimit',
     'retryCount',
     'retryLimit',
     'maxRetryAttempts',
+    'metadata.finalRetryCount',
+    'metadata.finalRetryLimit',
     'metadata.retryCount',
     'metadata.retryLimit',
     'metadata.maxRetryAttempts',
@@ -327,31 +332,29 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
     return {
       kind,
       visualization: 'none',
-      summaryLine: `Skipped: ${compact(reason)}`,
-      detailLines: [`Reason: ${reason}`],
+      summaryLine: `${translate('task.status.skipped', 'Skipped')}: ${compact(reason)}`,
+      detailLines: [`${translate('task.status.reason', 'Reason')}: ${reason}`],
     };
   }
 
   if (kind === 'completed' || kind === 'failed') {
-    const prefix = kind === 'failed' ? 'Failed(final)' : 'Completed';
-    const vertexReductionText = vertexReductionRate === null ? 'N/A' : `-${formatPercent(vertexReductionRate)}`;
-    const summaryLine = `${prefix}: Tol ${effectiveToleranceText}, Retry ${retryAttempt ?? 'N/A'}/${retryMax ?? 'N/A'}, `
-      + `F/P/V ${formatInt(metrics.features.output)}/${formatInt(metrics.polygons.output)}/${formatInt(metrics.vertices.output)}, `
-      + `Vertex ${vertexReductionText}`;
+    const prefix = kind === 'failed' ? translate('task.status.failed', 'Failed') : translate('task.status.completed', 'Completed');
+    const retryText = retryAttempt !== null ? `${translate('task.status.attempt', 'Attempt')}: ${retryAttempt}/${retryMax ?? 'N/A'}` : `${translate('task.status.attempt', 'Attempt')}: N/A/${retryMax ?? 'N/A'}`;
+    const summaryLine = `${prefix} (Tol: ${effectiveToleranceText}, ${retryText}, F/Pol/V: ${formatInt(metrics.features.output)}/${formatInt(metrics.polygons.output)}/${formatInt(metrics.vertices.output)})`;
 
     const detailLines = [
-      `Effective tolerance: ${effectiveToleranceText}`,
-      `Retry attempts: ${retryAttempt ?? 'N/A'} / ${retryMax ?? 'N/A'}`,
-      `Final data size (F/P/V): ${formatInt(metrics.features.output)} / ${formatInt(metrics.polygons.output)} / ${formatInt(metrics.vertices.output)}`,
-      `Original data size (F/P/V): ${formatInt(metrics.features.input)} / ${formatInt(metrics.polygons.input)} / ${formatInt(metrics.vertices.input)}`,
-      `Vertex reduction: ${formatPercent(vertexReductionRate)}`,
-      `Extraction ratio: ${formatPercent(extractionRatio)}`,
+      `${translate('task.details.effectiveTolerance', 'Effective Tolerance')}: ${effectiveToleranceText}`,
+      `${translate('task.details.retryCount', 'Retry Count')}: ${retryAttempt ?? 'N/A'} / ${retryMax ?? 'N/A'}`,
+      `${translate('task.details.finalDataSize', 'Final Data Size (F/Pol/V)')}: ${formatInt(metrics.features.output)} / ${formatInt(metrics.polygons.output)} / ${formatInt(metrics.vertices.output)}`,
+      `${translate('task.details.originalDataSize', 'Original Data Size (F/Pol/V)')}: ${formatInt(metrics.features.input)} / ${formatInt(metrics.polygons.input)} / ${formatInt(metrics.vertices.input)}`,
+      `${translate('task.details.vertexReductionRate', 'Vertex Reduction Rate')}: ${formatPercent(vertexReductionRate)}`,
+      `${translate('task.details.extractionRate', 'Extraction Rate')}: ${formatPercent(extractionRatio)}`,
     ];
     if (vertexLimit !== null) {
-      detailLines.push(`Vertex limit: ${formatInt(vertexLimit)}`);
+      detailLines.push(`${translate('task.details.vertexLimit', 'Vertex Limit')}: ${formatInt(vertexLimit)}`);
     }
     if (kind === 'failed') {
-      detailLines.push(`Failure: ${failedMessage ?? 'N/A'}`);
+      detailLines.push(`${translate('task.details.failureReason', 'Failure Reason')}: ${failedMessage ?? 'N/A'}`);
     }
     if (geometryDetails) {
       detailLines.push(...formatGeometrySimplifySummary(geometryDetails));

@@ -69,6 +69,8 @@ const {
   getShapeEntityHandler,
   activePipelines,
   activePipelineRuns,
+  sessionAbortControllers,
+  sessionWorkerInstances,
   isStopReason,
 } = shapeBuildRuntimeExecutionMetrics;
 
@@ -298,7 +300,7 @@ const applySelectionDiffCleanup = async (
         .anyOf(removedKeyTuples)
         .delete(),
     ]);
-      await deleteRawDataDataSourceBuffersForNodeMetadataIds(nodeId, sourceCacheIds);
+    await deleteRawDataDataSourceBuffersForNodeMetadataIds(nodeId, sourceCacheIds);
   }
 
   const geometryCacheIds = geometryCacheIdsRaw.map((id: unknown) => String(id));
@@ -453,7 +455,7 @@ const startBuildSessionInternal = async (
     void shapeMutationAPIImpl.updateBuildSession(startupNodeId, {
       stageId: `startup:${step}:${phase}`,
       stageHeartbeatAt: Date.now(),
-    }).catch(() => {});
+    }).catch(() => { });
     const payload = {
       scope: startupScope,
       phase,
@@ -600,6 +602,10 @@ const startBuildSessionInternal = async (
   activePipelines.add(pipelineKey);
   activePipelineRuns.set(pipelineKey, pipelineRunId);
 
+  // Create AbortController for immediate termination on pause
+  const abortController = new AbortController();
+  sessionAbortControllers.set(pipelineKey, abortController);
+
   try {
     const taskQueue = new VtTaskQueueDb();
     await executeStartupStep(
@@ -683,7 +689,7 @@ const startBuildSessionInternal = async (
     void shapeMutationAPIImpl.updateBuildSession(nodeForSession, {
       stageId: 'startup:pipeline-dispatch:start',
       stageHeartbeatAt: Date.now(),
-    }).catch(() => {});
+    }).catch(() => { });
     let terminalProgressMessage: string | undefined;
     void runShapePipeline({
       nodeId: nodeForSession,
@@ -695,6 +701,7 @@ const startBuildSessionInternal = async (
       buildContinuationPolicy,
       resumeExistingTasks,
       pipelineRunId,
+      abortSignal: abortController.signal,
       onTasksEnqueued: emitQueuedProgressSnapshot,
     }).then(async () => {
       const completedAt = Date.now();
@@ -708,7 +715,7 @@ const startBuildSessionInternal = async (
           ? 'startup:pipeline-dispatch:error'
           : 'startup:pipeline-dispatch:success',
         stageHeartbeatAt: completedAt,
-      }).catch(() => {});
+      }).catch(() => { });
       await updateBuildSessionFromTasks(nodeForSession, {
         status: pipelineFinishedWithFailure ? 'failed' : 'completed',
         stopReason: pipelineFinishedWithFailure ? 'failed' : 'completed',
@@ -745,7 +752,7 @@ const startBuildSessionInternal = async (
       void shapeMutationAPIImpl.updateBuildSession(nodeForSession, {
         stageId: 'startup:pipeline-dispatch:error',
         stageHeartbeatAt: failedAt,
-      }).catch(() => {});
+      }).catch(() => { });
       await updateBuildSessionFromTasks(nodeForSession, {
         status: 'failed',
         stopReason: 'failed',
@@ -859,30 +866,117 @@ const invokeShapeBuildCommand = async (
       nodeId,
       stopReason: stopReason ?? null,
     });
+
+    // Measure termination time
+    const terminationStartTime = Date.now();
+
     setPaused(nodeId, true);
+
+    // Immediately abort all running tasks
+    const pipelineKey = String(nodeId);
+    const abortController = sessionAbortControllers.get(pipelineKey);
+    if (abortController) {
+      abortController.abort();
+    }
+
+    // Implement timeout mechanism for force termination
+    const FORCE_TERMINATION_TIMEOUT_MS = 1000;
+    let forceTerminationExecuted = false;
+
+    // Set up force termination timeout
+    const forceTerminationTimer = setTimeout(async () => {
+      if (forceTerminationExecuted) return;
+      forceTerminationExecuted = true;
+
+      const elapsedMs = Date.now() - terminationStartTime;
+      console.warn('[shapeBuildAPI][PauseTrace] force-termination-triggered', {
+        nodeId,
+        elapsedMs,
+        timeoutMs: FORCE_TERMINATION_TIMEOUT_MS,
+      });
+
+      // Attempt to terminate worker if available
+      const workerInstance = sessionWorkerInstances.get(pipelineKey);
+      if (workerInstance?.terminate) {
+        try {
+          workerInstance.terminate();
+          console.warn('[shapeBuildAPI][PauseTrace] worker-terminated', {
+            nodeId,
+            elapsedMs: Date.now() - terminationStartTime,
+          });
+        } catch (error) {
+          console.error('[shapeBuildAPI][PauseTrace] worker-termination-failed', {
+            nodeId,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      } else {
+        console.warn('[shapeBuildAPI][PauseTrace] worker-instance-not-available', {
+          nodeId,
+          elapsedMs: Date.now() - terminationStartTime,
+        });
+      }
+
+      // Force reset running tasks regardless of worker termination
+      await resetRunningTasks(nodeId);
+
+      // Update session state
+      await upsertBuildSessionSnapshot({
+        nodeId,
+        status: 'paused',
+        stopReason,
+        canResume: true,
+      });
+      await emitProgressSnapshot(nodeId, 'Force termination completed.');
+    }, FORCE_TERMINATION_TIMEOUT_MS);
+
     await resetRunningTasks(nodeId);
     void (async () => {
       try {
         const initialDrain = await waitForRunningTasksToDrain(nodeId, { timeoutMs: 3_000 });
+
+        // Check if cooperative termination completed within timeout
+        const terminationElapsed = Date.now() - terminationStartTime;
+        if (terminationElapsed <= FORCE_TERMINATION_TIMEOUT_MS && !forceTerminationExecuted) {
+          // Cooperative termination succeeded, cancel force termination
+          clearTimeout(forceTerminationTimer);
+          console.warn('[shapeBuildAPI][PauseTrace] cooperative-termination-success', {
+            nodeId,
+            elapsedMs: terminationElapsed,
+            targetMs: FORCE_TERMINATION_TIMEOUT_MS,
+          });
+        } else if (terminationElapsed > FORCE_TERMINATION_TIMEOUT_MS) {
+          console.warn('[shapeBuildAPI][PauseTrace] termination-timeout-exceeded', {
+            nodeId,
+            elapsedMs: terminationElapsed,
+            targetMs: FORCE_TERMINATION_TIMEOUT_MS,
+          });
+        }
+
         if (initialDrain.running > 0) {
           console.warn('[shapeBuildAPI][PauseTrace] pause-requeue-not-complete', {
             nodeId,
             ...initialDrain,
           });
         }
-        await upsertBuildSessionSnapshot({
-          nodeId,
-          status: 'paused',
-          stopReason,
-          canResume: true,
-        });
-        await emitProgressSnapshot(nodeId, 'Pause requested.');
+
+        // Only update session state if force termination hasn't been executed
+        if (!forceTerminationExecuted) {
+          await upsertBuildSessionSnapshot({
+            nodeId,
+            status: 'paused',
+            stopReason,
+            canResume: true,
+          });
+          await emitProgressSnapshot(nodeId, 'Pause requested.');
+        }
+
         const drain = await waitForRunningTasksToDrain(nodeId);
         console.warn('[shapeBuildAPI][PauseTrace] pause-settled', {
           nodeId,
           ...drain,
         });
-        if (!drain.drained) {
+        if (!drain.drained && !forceTerminationExecuted) {
           await emitProgressSnapshot(
             nodeId,
             `Pause requested; waiting for ${drain.running} running task(s) to reach a pause point.`

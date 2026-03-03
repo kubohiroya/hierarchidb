@@ -4,23 +4,11 @@
  */
 
 import type React from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Box, Chip, IconButton, Stack, Typography, useTheme } from '@mui/material';
-import {
-  ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon,
-  CheckCircle as CheckCircleIcon,
-  ErrorOutline as ErrorOutlineIcon,
-  PauseCircle as PauseCircleIcon,
-  PauseCircleOutline as PauseCircleOutlineIcon,
-  PlayCircle as PlayCircleIcon,
-  ExpandLess as ExpandLessIcon,
-  ExpandMore as ExpandMoreIcon,
-} from '@mui/icons-material';
-import AutorenewIcon from '@mui/icons-material/Autorenew';
+import { Box, Chip, IconButton, Stack, Typography } from '@mui/material';
 
 import type { PaneHeaderProps } from '~/types/LRUSplitView';
 import { PaneProgressSummary } from './PaneProgressSummary.js';
+import { usePaneHeaderView } from './usePaneHeaderView.js';
 
 export interface PaneHeaderComponentProps extends PaneHeaderProps {
   /** Whether to use vertical orientation icon */
@@ -48,82 +36,18 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
                                                                  onToggle,
                                                                  clickable = true,
                                                                  vertical = false,
-                                                                 showProgress = true,
-                                                                 onClick,
-                                                               }) => {
-  const theme = useTheme();
-  const headerRef = useRef<HTMLDivElement | null>(null);
-  const [headerWidth, setHeaderWidth] = useState(0);
-  const compactBreakpoint = 220;
-  const countBreakpoint = 260;
-  const isCompact = headerWidth > 0 && headerWidth < compactBreakpoint;
-  const showCounts = headerWidth >= countBreakpoint;
-
-  const handleClick = () => {
-    if (onClick) {
-      onClick();
-    } else if (clickable) {
-      onToggle(pane.id);
-    }
-  };
-
-  useEffect(() => {
-    if (!headerRef.current || typeof ResizeObserver === 'undefined') {
-      return;
-    }
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) {
-        setHeaderWidth(entry.contentRect.width);
-      }
-    });
-    observer.observe(headerRef.current);
-    return () => observer.disconnect();
-  }, []);
-
-  // Choose appropriate expand/collapse icon
-  const getToggleIcon = () => {
-    if (vertical) {
-      return state.isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />;
-    } else {
-      return state.isExpanded ? <ChevronLeftIcon /> : <ChevronRightIcon />;
-    }
-  };
-
-  const statusIcon = useMemo(() => {
-    if (!progress) return null;
-    const summaryTotal = progress.summary?.total ?? 0;
-    const isZeroTasks = summaryTotal === 0
-      || ((progress.taskCount ?? 0) === 0 && (progress.completedCount ?? 0) === 0);
-    const status = progress.status;
-    if (status === 'failed') return <ErrorOutlineIcon fontSize="small" />;
-    if (isZeroTasks) return <PauseCircleOutlineIcon fontSize="small" />;
-    if (status === 'running') return <PlayCircleIcon fontSize="small" />;
-    if (status === 'paused') return <PauseCircleIcon fontSize="small" />;
-    if (status === 'completed' || progress.progress >= 100) return <CheckCircleIcon fontSize="small" />;
-    if (status === 'idle') return <PauseCircleOutlineIcon fontSize="small" />;
-    if (progress.progress > 0) return <AutorenewIcon fontSize="small" />;
-    return <PauseCircleOutlineIcon fontSize="small" />;
-  }, [progress]);
-
-  const statusColor = useMemo(() => {
-    if (!progress) return theme.palette.text.secondary;
-    const summaryTotal = progress.summary?.total ?? 0;
-    const isZeroTasks = summaryTotal === 0
-      || ((progress.taskCount ?? 0) === 0 && (progress.completedCount ?? 0) === 0);
-    if (progress.status === 'failed') return theme.palette.error.main;
-    if (isZeroTasks) return theme.palette.text.secondary;
-    switch (progress.status) {
-      case 'running':
-        return theme.palette.primary.main;
-      case 'paused':
-        return theme.palette.warning.main;
-      case 'completed':
-        return theme.palette.success.main;
-      default:
-        return theme.palette.text.secondary;
-    }
-  }, [progress, theme.palette]);
+                                                               showProgress = true,
+                                                               onClick,
+                                                             }) => {
+  const view = usePaneHeaderView({
+    pane,
+    state,
+    progress,
+    onToggle,
+    clickable,
+    vertical,
+    onClick,
+  });
 
   return (
     <Box
@@ -133,7 +57,7 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
         borderColor: 'divider',
         //backgroundColor: atoms.color,
         color: 'primary',
-        backgroundColor: theme.palette.background.paper,
+        backgroundColor: view.theme.palette.background.paper,
         cursor: clickable ? 'pointer' : 'default',
         display: 'flex',
         alignItems: 'center',
@@ -142,22 +66,22 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
         transition: 'background-color 0.2s ease-in-out',
         '&:hover': clickable
           ? {
-            backgroundColor: theme.palette.action.hover,
+            backgroundColor: view.theme.palette.action.hover,
           }
           : {},
       }}
-      ref={headerRef}
-      onClick={handleClick}
+      ref={view.headerRef}
+      onClick={view.handleClick}
     >
       {/* Left side: Toggle button, icon, and title */}
       <Stack direction="row" alignItems="center" spacing={1} sx={{ flex: 1, minWidth: 0 }}>
         <IconButton size="small" sx={{ p: 0.5 }}>
-          {getToggleIcon()}
+          {view.toggleIcon}
         </IconButton>
 
-        {!isCompact && pane.icon && <Box sx={{ display: 'flex', alignItems: 'center' }}>{pane.icon}</Box>}
+        {!view.isCompact && pane.icon && <Box sx={{ display: 'flex', alignItems: 'center' }}>{pane.icon}</Box>}
 
-        {!isCompact && (
+        {!view.isCompact && (
           <Typography variant="subtitle2" noWrap sx={{ flex: 1 }}>
             {pane.title}
           </Typography>
@@ -170,9 +94,9 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
         {showProgress && progress && (
           <>
             {/* Task count chip */}
-            {showCounts && progress.summary ? (
+            {view.showCounts && progress.summary ? (
               <PaneProgressSummary summary={progress.summary} />
-            ) : showCounts && (progress.taskCount !== undefined || progress.completedCount !== undefined) && (
+            ) : view.showCounts && (progress.taskCount !== undefined || progress.completedCount !== undefined) && (
               <Chip
                 label={
                   progress.taskCount !== undefined && progress.completedCount !== undefined
@@ -198,22 +122,22 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
             )}
 
             {/* Progress percentage */}
-            {!isCompact && progress.progress >= 0 && (
+            {!view.isCompact && progress.progress >= 0 && (
               <Typography variant="caption" color="text.secondary" sx={{ minWidth: 'auto' }}>
                 {progress.progress.toFixed(0)}%
               </Typography>
             )}
 
             {/* Status icon */}
-            {statusIcon && (
-              <Box sx={{ display: 'flex', alignItems: 'center', color: statusColor }}>
-                {statusIcon}
+            {view.statusIcon && (
+              <Box sx={{ display: 'flex', alignItems: 'center', color: view.statusColor }}>
+                {view.statusIcon}
               </Box>
             )}
           </>
         )}
         {/* Header actions */}
-        {!isCompact && pane.headerActions && (
+        {!view.isCompact && pane.headerActions && (
           <Box sx={{ display: 'flex', alignItems: 'center' }}>{pane.headerActions}</Box>
         )}
       </Stack>
