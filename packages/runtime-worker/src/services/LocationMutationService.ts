@@ -549,21 +549,22 @@ export class LocationMutationService implements LocationMutationAPI {
     const now = Date.now();
     await ephemeralDB.transaction(
       'rw',
-      [ephemeralDB.sourceCache, ephemeralDB.sourceCacheMeta, ephemeralDB.sessions],
+      [ephemeralDB.sourceCache, ephemeralDB.sourceCacheMeta, ephemeralDB.buildSessions, ephemeralDB.buildSessionStatuses],
       async () => {
         await ephemeralDB.sourceCache.where('nodeId').equals(routeNodeId).delete();
         await ephemeralDB.sourceCacheMeta.where('nodeId').equals(routeNodeId).delete();
-        const current = await ephemeralDB.sessions.get(routeNodeId);
-        if (current?.status === 'running') return;
-        await ephemeralDB.sessions.put({
+        const currentStatus = await ephemeralDB.buildSessionStatuses.get(routeNodeId);
+        if (currentStatus?.status === 'running') return;
+        const current = await ephemeralDB.buildSessions.get(routeNodeId);
+        await ephemeralDB.buildSessions.put({
           ...(current ?? {}),
           nodeId: routeNodeId,
           domainType: 'route',
-          status: 'idle',
-          stage: 'source',
-          progress: 0,
-          updatedAt: now,
           startedAt: current?.startedAt ?? now,
+        });
+        await ephemeralDB.buildSessionStatuses.put({
+          nodeId: routeNodeId,
+          status: 'idle',
           completedAt: undefined,
           stopReason: 'unknown',
         });

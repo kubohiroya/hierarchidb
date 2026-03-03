@@ -191,7 +191,7 @@ export class WorkerService {
   private static async recoverBuildSessionRuntimeRecordsOnWarmStart(): Promise<void> {
     try {
       await ephemeralDB.open?.();
-      const sessions = await ephemeralDB.sessions.toArray();
+      const sessions = await ephemeralDB.buildSessions.toArray();
       if (sessions.length === 0) return;
       // Keep session records for resume/recovery flow; runtime state can be reconstructed.
       return;

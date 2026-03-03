@@ -177,7 +177,7 @@ export class TreeMutationService implements TreeMutationAPI {
       return { blocked: false };
     }
 
-    const sessions = await ephemeralDB.sessions.bulkGet(shapeNodeIds);
+    const sessions = await ephemeralDB.buildSessionStatuses.bulkGet(shapeNodeIds);
     if (sessions.some((session) => session?.status === RUNNING_BUILD_SESSION_STATUS)) {
       return {
         blocked: true,
