@@ -69,6 +69,8 @@
 - 2026-03-04: Issue #705 進捗 - `ui-accordion-config` の `SettingsAccordion`/`WorkflowAccordion` でアクション状態・イベント処理・ステップ表示解決ロジックを `useSettingsAccordionView`/`useWorkflowAccordionView` へ分離（`typecheck/build` と `pnpm check:ui-hooks-tsx` 成功）
 - 2026-03-04: Issue #705 進捗 - `ui-theme` の `ThemeProvider` で mode保持/保存・system theme 監視・context値構築を `useThemeProviderView` へ分離（`typecheck/build` と `pnpm check:ui-hooks-tsx` 成功）
 - 2026-03-04: Issue #705 進捗 - `ui-tour` の `GuidedTourDemo` で run state と start/finish 操作を `useGuidedTourDemoView` へ分離し、`ui-navigation` の `MenuListItemLinkButton` でメニュー開閉・path/style・key解決を `useMenuListItemLinkButtonView` へ分離（`typecheck/build` と `pnpm check:ui-hooks-tsx` 成功）
+- 2026-03-04: Issue #705 進捗 - `ui-country-select` の `CountryMatrixStep` で matrix config 正規化/統計算出/column set info 解決を `useCountryMatrixStepView` へ分離し、`ui-navigation` の `NavLinkMenu` でリンクスタイル/表示モデル解決を `useNavLinkMenuView` へ分離（`typecheck/build` と `pnpm check:ui-hooks-tsx` 成功）
+- 2026-03-04: Issue #705 進捗 - `ui-session-coordinator` の `SessionCoordinatorProvider` で coordinator 初期化を `useTabSessionCoordinatorProviderView` へ分離し、`ui-worker-provider` の `WorkerSingletonProvider` で Worker 初期化/retry/ready 判定を `useWorkerSingletonProviderView` へ分離（`typecheck/build` と `pnpm check:ui-hooks-tsx` 成功）
 - 2026-03-03: blocked - `gh issue comment 705` 実行時に `error connecting to api.github.com`（ネットワーク復旧待ち）
 - 2026-03-03: Issue #703 完了 - Shape Plugin Pauseボタン状態管理とセッション復元の修正
   - Pauseボタンが「Pausing」状態で固まる問題を修正

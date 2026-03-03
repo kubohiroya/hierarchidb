@@ -1,6 +1,7 @@
 import { MenuItem, MenuList, Typography } from '@mui/material';
 import { Link } from '@tanstack/react-router';
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { useNavLinkMenuView } from './useNavLinkMenuView.js';
 
 // InlineIcon should be imported from @hierarchidb/ui package
 // For now, we'll create a simple inline version
@@ -14,25 +15,34 @@ export type NavLinkItemType = {
   url: string;
 };
 
-const baseLinkStyle: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  width: '100%',
-  textDecoration: 'none',
-};
-
 export const NavLinkMenu = ({ items }: { items: NavLinkItemType[] }) => {
-  if (items.length === 0) return null;
+  const {
+    hasItems,
+    activeLinkStyle,
+    inactiveLinkStyle,
+    itemViewModels,
+  } = useNavLinkMenuView(items.map((item) => ({
+    name: item.name,
+    url: item.url,
+  })));
+  if (!hasItems) return null;
 
   return (
     <MenuList sx={{ marginBottom: '30px', backgroundColor: 'red' }}>
-      {items.map((item) => (
-        <MenuItem key={item.url || item.name} sx={{ padding: 0, margin: 0 }} aria-label={item.name}>
+      {itemViewModels.map((viewModel, index) => {
+        const item = items[index];
+        if (!item) return null;
+        return (
+        <MenuItem
+          key={viewModel.key}
+          sx={{ padding: 0, margin: 0 }}
+          aria-label={viewModel.name}
+        >
           <Link
-            to={item.url}
+            to={viewModel.target}
             preload="intent"
-            activeProps={{ style: { ...baseLinkStyle, color: '#c34' } }}
-            inactiveProps={{ style: { ...baseLinkStyle, color: '#545e6f' } }}
+            activeProps={{ style: activeLinkStyle }}
+            inactiveProps={{ style: inactiveLinkStyle }}
           >
             <InlineIcon icon={item.icon} />
             <Typography sx={{ marginLeft: 1 }} component="span">
@@ -40,7 +50,7 @@ export const NavLinkMenu = ({ items }: { items: NavLinkItemType[] }) => {
             </Typography>
           </Link>
         </MenuItem>
-      ))}
+      )})}
     </MenuList>
   );
 };
