@@ -1,7 +1,6 @@
 # 運用ハブ
 
 ## Doing
-- #718 / codex/fix/ui/hook-review-followups / 2026-03-04 00:46
 - #713 / codex/refactor/ui/hook-cleanup-followup / 2026-03-04 00:01
 - #711 / codex/fix/shape/pause-session-ref-sync / 2026-03-03 23:45
 - #705 / codex/refactor/ui-extract-logic-hooks / 2026-03-03 20:25
@@ -13,6 +12,7 @@
 ## 今日の運用ログ
 - 2026-03-04: Issue #718 開始 - hook抽出フォローアップ指摘（error再送出・未使用API削除・型重複/死蔵コード整理）に着手
 - 2026-03-04: Issue #718 進捗 - `useCommonDialogView` の submit/saveDraft で error 再送出を追加し、`useMenuListItemLinkButtonView` は `MenuItemLinkType` へ型統合（`pnpm -w turbo run typecheck --filter @hierarchidb/ui-dialog --filter @hierarchidb/ui-navigation --filter @hierarchidb/ui-accordion-config --filter @hierarchidb/ui-search-result-window` / `pnpm -w turbo run test --filter @hierarchidb/ui-dialog --filter @hierarchidb/ui-navigation --filter @hierarchidb/ui-accordion-config --filter @hierarchidb/ui-search-result-window` 成功）
+- 2026-03-04: Issue #718 完了 - PR #719 を main へ squash merge、Issue #718 close、作業ブランチ追跡を prune
 - 2026-03-04: Issue #713 開始 - `useCollapsibleSection`/`useSearchResultTable` の未使用APIと死蔵コードを整理
 - 2026-03-04: Issue #713 進捗 - `showHeader` と `selectedResults` フォールバックを削除し、不要 import/atom 参照を整理（`pnpm -w turbo run typecheck --filter @hierarchidb/ui-accordion-config --filter @hierarchidb/ui-search-result-window` 成功）
 - 2026-03-03: Issue #711 開始 - pause同期判定の stale closure 問題を `sessionRecordRef` で修正
