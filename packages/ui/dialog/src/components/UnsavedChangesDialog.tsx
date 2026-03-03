@@ -16,8 +16,8 @@ import {
 } from '@mui/material';
 import type { DialogProps } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { useMemo } from 'react';
 import { Delete as DeleteIcon, Save as SaveIcon, Warning as WarningIcon } from '@mui/icons-material';
+import { useUnsavedChangesDialogView } from './useUnsavedChangesDialogView.js';
 
 export interface UnsavedChangesDialogProps {
   open: boolean;
@@ -65,24 +65,10 @@ export const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
   container,
 }) => {
   const { t } = useTranslation('common');
-
-  const defaultContainer = useMemo<DialogProps['container']>(() => {
-    if (typeof document === 'undefined') return undefined;
-    return document.body;
-  }, []);
-
-  const dialogSlotProps: DialogProps['slotProps'] = slotProps ?? {
-    backdrop: {
-      sx: {
-        zIndex: (theme) => (theme?.zIndex?.modal ?? 1300) + 5000,
-      },
-    },
-    paper: {
-      sx: {
-        zIndex: (theme) => (theme?.zIndex?.modal ?? 1300) + 5001,
-      },
-    },
-  };
+  const { resolvedContainer, resolvedSlotProps } = useUnsavedChangesDialogView({
+    container,
+    slotProps,
+  });
 
   return (
     <Dialog
@@ -90,10 +76,10 @@ export const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
       onClose={onCancel}
       maxWidth="sm"
       fullWidth
-      slotProps={dialogSlotProps}
+      slotProps={resolvedSlotProps}
       PaperProps={PaperProps}
       BackdropProps={BackdropProps}
-      container={container ?? defaultContainer}
+      container={resolvedContainer}
       disablePortal={false}
     >
       <DialogTitle>

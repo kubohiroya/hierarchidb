@@ -2,6 +2,7 @@ import { Box, FormControlLabel, IconButton, Slider, Switch, Tooltip, Typography 
 import { Calculate, Info } from '@mui/icons-material';
 import { useId } from 'react';
 import type { ChangeEvent } from 'react';
+import { useConcurrencySectionView } from './useConcurrencySectionView.js';
 
 export interface ConcurrencyConfig {
   /** Label for the concurrency control */
@@ -35,27 +36,18 @@ export interface ConcurrencySectionProps {
   sx?: object;
 }
 
-const defaultConfig: ConcurrencyConfig = {
-  label: 'Max concurrent processing sessions',
-  tooltipText: 'Controls how many CPU cores are used for processing. Using hardware concurrency (auto-detect) is recommended. Higher values speed up processing but may cause browser instability.',
-  defaultLabel: 'Use hardware concurrency default',
-  icon: <Calculate />,
-  min: 1,
-  max: 16,
-  defaultConcurrency: typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 4 : 4,
-};
-
 export const ConcurrencySection = ({
                                      value,
                                      useDefault,
-                                     config = defaultConfig,
+                                     config,
                                      onValueChange,
                                      onUseDefaultChange,
                                      sx = {},
                                    }: ConcurrencySectionProps) => {
   const switchId = useId();
-  const finalConfig = { ...defaultConfig, ...config };
-  const { label, tooltipText, defaultLabel, icon, min, max, defaultConcurrency } = finalConfig;
+  const { resolvedConfig, sliderMarks } = useConcurrencySectionView({ config });
+  const { label, tooltipText, defaultLabel, min, max, defaultConcurrency } = resolvedConfig;
+  const icon = config?.icon ?? <Calculate />;
 
   return (
     <Box sx={sx}>
@@ -94,10 +86,7 @@ export const ConcurrencySection = ({
           disabled={useDefault}
           onChange={onValueChange}
           valueLabelDisplay="auto"
-          marks={[
-            { value: min!, label: min!.toString() },
-            { value: max!, label: max!.toString() },
-          ]}
+          marks={sliderMarks}
         />
       </Box>
     </Box>

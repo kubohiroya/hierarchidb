@@ -10,12 +10,10 @@ import {
   FullscreenExit as FullscreenExitIcon,
 } from '@mui/icons-material';
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
-
-const DISPLAY_MODE_LABELS: Record<'normal' | 'maximize' | 'full-screen', string> = {
-  normal: 'Normal (通常)',
-  maximize: 'Maximize (最大)',
-  'full-screen': 'Full-screen (全画面)',
-};
+import {
+  DISPLAY_MODE_LABELS,
+  useCommonDialogTitleView,
+} from './useCommonDialogTitleView.js';
 
 export interface CommonDialogTitleProps {
   title: string;
@@ -46,14 +44,21 @@ export const CommonDialogTitle: React.FC<CommonDialogTitleProps> = ({
   onChangeDisplayMode,
   showDisplayModeControls = true,
 }) => {
-  const [modeMenuAnchor, setModeMenuAnchor] = React.useState<null | HTMLElement>(null);
-  const openModeMenu = (event: React.MouseEvent<HTMLElement>) => setModeMenuAnchor(event.currentTarget);
-  const closeModeMenu = () => setModeMenuAnchor(null);
-
-  const selectDisplayMode = (next: 'normal' | 'maximize' | 'full-screen') => {
-    onChangeDisplayMode?.(next);
-    closeModeMenu();
-  };
+  const {
+    modeMenuAnchor,
+    isModeMenuOpen,
+    showMaximizeToggle,
+    maximizeToggleLabel,
+    fullscreenToggleLabel,
+    openModeMenu,
+    closeModeMenu,
+    selectDisplayMode,
+    toggleMaximize,
+    toggleFullscreen,
+  } = useCommonDialogTitleView({
+    displayMode,
+    onChangeDisplayMode,
+  });
 
   return (
     <DialogTitle>
@@ -75,7 +80,7 @@ export const CommonDialogTitle: React.FC<CommonDialogTitleProps> = ({
               <IconButton aria-label="Display mode" onClick={openModeMenu} size="small">
                 <OpenInFullIcon />
               </IconButton>
-              <Menu anchorEl={modeMenuAnchor} open={Boolean(modeMenuAnchor)} onClose={closeModeMenu} keepMounted>
+              <Menu anchorEl={modeMenuAnchor} open={isModeMenuOpen} onClose={closeModeMenu} keepMounted>
                 <MenuItem selected={displayMode === 'normal'} onClick={() => selectDisplayMode('normal')}>
                   <ListItemIcon>
                     <FullscreenExitIcon fontSize="small" />
@@ -95,18 +100,18 @@ export const CommonDialogTitle: React.FC<CommonDialogTitleProps> = ({
                   <ListItemText>{DISPLAY_MODE_LABELS['full-screen']}</ListItemText>
                 </MenuItem>
               </Menu>
-              {displayMode !== 'full-screen' && (
+              {showMaximizeToggle && (
                 <IconButton
-                  aria-label={displayMode === 'maximize' ? DISPLAY_MODE_LABELS.normal : DISPLAY_MODE_LABELS.maximize}
-                  onClick={() => selectDisplayMode(displayMode === 'maximize' ? 'normal' : 'maximize')}
+                  aria-label={maximizeToggleLabel}
+                  onClick={toggleMaximize}
                   size="small"
                 >
                   {displayMode === 'maximize' ? <FullscreenExitIcon /> : <OpenInFullIcon />}
                 </IconButton>
               )}
               <IconButton
-                aria-label={displayMode === 'full-screen' ? DISPLAY_MODE_LABELS.normal : DISPLAY_MODE_LABELS['full-screen']}
-                onClick={() => selectDisplayMode(displayMode === 'full-screen' ? 'normal' : 'full-screen')}
+                aria-label={fullscreenToggleLabel}
+                onClick={toggleFullscreen}
                 size="small"
               >
                 {displayMode === 'full-screen' ? <FullscreenExitIcon /> : <FullscreenIcon />}

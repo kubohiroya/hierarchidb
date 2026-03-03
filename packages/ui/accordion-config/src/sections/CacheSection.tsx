@@ -11,7 +11,8 @@ import {
   Typography,
 } from '@mui/material';
 import { Delete as DeleteIcon, Info } from '@mui/icons-material';
-import { useId, useState } from 'react';
+import { useId } from 'react';
+import { useCacheSectionView } from './useCacheSectionView.js';
 
 export interface CacheStats {
   itemCount: number;
@@ -48,39 +49,16 @@ export function CacheSection({
                                severity = 'warning',
                              }: CacheSectionProps) {
   const switchId = useId();
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteResult, setDeleteResult] = useState<{
-    success: boolean;
-    message: string;
-  } | null>(null);
-
-  const handleDeleteCache = async () => {
-    setIsDeleting(true);
-    setDeleteResult(null);
-
-    try {
-      const stats = await config.getStats(nodeId);
-      await config.deleteCache(nodeId);
-
-      const sizeInMB = (stats.totalSize / 1024 / 1024).toFixed(2);
-      const message = stats.details
-        ? `Successfully deleted ${stats.details} (${sizeInMB} MB)`
-        : `Successfully deleted ${stats.itemCount} items (${sizeInMB} MB)`;
-
-      setDeleteResult({
-        success: true,
-        message,
-      });
-    } catch (error) {
-      console.error(`Failed to delete cache:`, error);
-      setDeleteResult({
-        success: false,
-        message: 'Failed to delete cache',
-      });
-    } finally {
-      setIsDeleting(false);
-    }
-  };
+  const {
+    isDeleting,
+    deleteResult,
+    handleDeleteCache,
+    handleDeleteOnCompleteChange,
+  } = useCacheSectionView({
+    nodeId,
+    config,
+    onDeleteOnCompleteChange,
+  });
 
   return (
     <Box sx={sx}>
@@ -101,7 +79,7 @@ export function CacheSection({
             control={
               <Switch
                 checked={deleteOnComplete}
-                onChange={(e) => onDeleteOnCompleteChange(e.target.checked)}
+                onChange={(e) => handleDeleteOnCompleteChange(e.target.checked)}
                 size="small"
                 inputProps={{
                   id: `${switchId}-delete-on-complete`,

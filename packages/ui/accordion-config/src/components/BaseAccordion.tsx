@@ -1,6 +1,7 @@
 import React from 'react';
 import { Accordion, AccordionDetails, AccordionSummary, Box, type SxProps, type Theme, Typography } from '@mui/material';
 import { ExpandMore } from '@mui/icons-material';
+import { useBaseAccordion } from './useBaseAccordion.js';
 
 export interface BaseAccordionProps {
   /** Unique identifier */
@@ -61,16 +62,14 @@ export const BaseAccordion: React.FC<BaseAccordionProps> = ({
                                                               expandIcon = <ExpandMore />,
                                                               expandIconPosition = 'end',
                                                               children,
-                                                              headerActions,
-                                                              showDivider = false,
-                                                              elevation = 1,
+                                                            headerActions,
+                                                            showDivider = false,
+                                                            elevation = 1,
                                                             }) => {
-  const [expanded, setExpanded] = React.useState(defaultExpanded);
-
-  const handleChange = (_event: React.SyntheticEvent, isExpanded: boolean) => {
-    setExpanded(isExpanded);
-    onExpansionChange?.(isExpanded);
-  };
+  const { expanded, handleChange } = useBaseAccordion({
+    defaultExpanded,
+    onExpansionChange,
+  });
 
   const headerContent = (
     <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', gap: 2 }}>

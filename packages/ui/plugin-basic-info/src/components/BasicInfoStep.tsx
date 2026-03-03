@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useRef, useId, useState } from 'react';
-import type { ChangeEvent, FC } from 'react';
+import type { FC } from 'react';
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, TextField, Typography } from '@mui/material';
 import { LocalOffer } from '@mui/icons-material';
 import { TagChipsInput } from './TagChipsInput.js';
 import { useTranslation } from 'react-i18next';
+import { useBasicInfoStepView } from './useBasicInfoStepView.js';
 
 export interface BasicInfoData {
   name: string;
@@ -51,105 +51,34 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
   confirmTagDelete = true,
 }) => {
   const { t } = useTranslation('plugin-basic-info');
-  const nameInputRef = useRef<HTMLInputElement | null>(null);
-  const [pendingTagDelete, setPendingTagDelete] = useState<string | null>(null);
-  const fieldId = useId();
-  const nameInputId = `${fieldId}-name`;
-  const descriptionInputId = `${fieldId}-description`;
-
-  const emitChange = useCallback(
-    (updates: Partial<BasicInfoData>) => {
-      onChange({
-        name,
-        description,
-        tags,
-        ...updates,
-      });
-    },
-    [description, name, onChange, tags],
-  );
-
-  const handleNameChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      emitChange({ name: event.target.value });
-    },
-    [emitChange],
-  );
-
-  const handleDescriptionChange = useCallback(
-    (event: ChangeEvent<HTMLTextAreaElement>) => {
-      emitChange({ description: event.target.value });
-    },
-    [emitChange],
-  );
-
-  const handleTagsChange = useCallback(
-    (nextTags: string[]) => {
-      emitChange({ tags: nextTags });
-    },
-    [emitChange],
-  );
-
-  const handleTagClick = useCallback(
-    (tag: string) => {
-      if (!onTagClick) return;
-      onTagClick(tag);
-    },
-    [onTagClick],
-  );
-
-  const removeTag = useCallback(
-    (tag: string) => {
-      const nextTags = tags.filter((t) => t !== tag);
-      emitChange({ tags: nextTags });
-    },
-    [emitChange, tags],
-  );
-
-  const handleTagDeleteRequest = useCallback(
-    (tag: string) => {
-      if (disabled) return;
-      if (!confirmTagDelete) {
-        removeTag(tag);
-        return;
-      }
-      setPendingTagDelete(tag);
-    },
-    [confirmTagDelete, disabled, removeTag],
-  );
-
-  const handleConfirmDelete = useCallback(() => {
-    if (!pendingTagDelete) return;
-    removeTag(pendingTagDelete);
-    setPendingTagDelete(null);
-  }, [pendingTagDelete, removeTag]);
-
-  const handleCancelDelete = useCallback(() => {
-    setPendingTagDelete(null);
-  }, []);
-
-  const normalizedName = typeof name === 'string' ? name : '';
-  const normalizedDescription = typeof description === 'string' ? description : '';
-  const validationError = validate?.({ name: normalizedName, description: normalizedDescription, tags });
-  const nameError = !normalizedName.trim() ? t('name.required', 'Name is required') : null;
-  const mergedNameError = validationError ?? nameError;
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-    if (mode !== 'create') return undefined;
-
-    const input = nameInputRef.current;
-    if (!input) return undefined;
-
-    const timer = window.setTimeout(() => {
-      input.focus();
-      input.select();
-    }, 0);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [mode]);
+  const {
+    nameInputRef,
+    fieldId,
+    nameInputId,
+    descriptionInputId,
+    pendingTagDelete,
+    normalizedName,
+    normalizedDescription,
+    mergedNameError,
+    handleNameChange,
+    handleDescriptionChange,
+    handleTagsChange,
+    handleTagClick,
+    handleTagDeleteRequest,
+    handleConfirmDelete,
+    handleCancelDelete,
+  } = useBasicInfoStepView({
+    name,
+    description,
+    tags,
+    onChange,
+    mode,
+    validate,
+    disabled,
+    onTagClick,
+    confirmTagDelete,
+    requiredNameMessage: String(t('name.required', 'Name is required')),
+  });
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -165,7 +94,7 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
           id={nameInputId}
           name="name"
           value={normalizedName}
-          onChange={handleNameChange}
+          onChange={(event) => handleNameChange(event.target.value)}
           required
           error={!!mergedNameError}
           helperText={mergedNameError}
@@ -191,7 +120,7 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
           id={descriptionInputId}
           name="description"
           value={normalizedDescription}
-          onChange={handleDescriptionChange}
+          onChange={(event) => handleDescriptionChange(event.target.value)}
           multiline
           rows={4}
           placeholder={String(t('fields.description.placeholder', 'Enter an optional description'))}

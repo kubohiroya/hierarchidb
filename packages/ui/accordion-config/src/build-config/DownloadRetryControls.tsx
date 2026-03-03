@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import {
   FormControl,
   Grid,
@@ -16,6 +15,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import type { SourceConfig } from '@hierarchidb/gis-sdk';
 import { getBuildConfigHoverCardSx } from './buildConfigCardStyles.js';
+import { useDownloadRetryControlsView } from './useDownloadRetryControlsView.js';
 
 type TranslateFn = (key: string, fallback?: string, options?: Record<string, unknown>) => string;
 
@@ -32,8 +32,6 @@ type Props = {
   disableHoverEffect?: boolean;
 };
 
-const RETRY_ATTEMPTS_MAX = 8;
-
 export const DownloadRetryControls: React.FC<Props> = ({
   baseRetryConfig,
   disabled,
@@ -41,15 +39,17 @@ export const DownloadRetryControls: React.FC<Props> = ({
   t,
   disableHoverEffect = false,
 }) => {
-  const retryAttemptsValue = Math.min(baseRetryConfig.retryAttempts, RETRY_ATTEMPTS_MAX);
-
-  useEffect(() => {
-    if (baseRetryConfig.retryLimit === retryAttemptsValue) return;
-    onChange({
-      ...baseRetryConfig,
-      retryLimit: retryAttemptsValue,
-    });
-  }, [baseRetryConfig, onChange, retryAttemptsValue]);
+  const {
+    retryAttemptsMax,
+    retryAttemptsValue,
+    updateTimeoutMs,
+    updateRetryDelay,
+    updateRetryAttempts,
+    updateRetryBackoff,
+  } = useDownloadRetryControlsView({
+    baseRetryConfig,
+    onChange,
+  });
 
   const hoverCardSx = disableHoverEffect ? {} : getBuildConfigHoverCardSx(disabled);
 
@@ -70,13 +70,7 @@ export const DownloadRetryControls: React.FC<Props> = ({
                   label={t('processing.download.timeoutMs', 'Timeout (ms)')}
                   type="number"
                   value={baseRetryConfig.timeoutMs}
-                  onChange={(event) => {
-                    const timeoutMs = Number(event.target.value);
-                    onChange({
-                      ...baseRetryConfig,
-                      timeoutMs: Number.isFinite(timeoutMs) ? timeoutMs : baseRetryConfig.timeoutMs,
-                    });
-                  }}
+                  onChange={(event) => updateTimeoutMs(event.target.value)}
                   fullWidth
                   disabled={disabled}
                   inputProps={{ min: 0 }}
@@ -88,13 +82,7 @@ export const DownloadRetryControls: React.FC<Props> = ({
                   label={t('processing.download.retryDelay', 'Retry Delay (ms)')}
                   type="number"
                   value={baseRetryConfig.retryDelay}
-                  onChange={(event) => {
-                    const retryDelay = Number(event.target.value);
-                    onChange({
-                      ...baseRetryConfig,
-                      retryDelay: Number.isFinite(retryDelay) ? retryDelay : baseRetryConfig.retryDelay,
-                    });
-                  }}
+                  onChange={(event) => updateRetryDelay(event.target.value)}
                   fullWidth
                   disabled={disabled}
                   inputProps={{ min: 0 }}
@@ -108,17 +96,8 @@ export const DownloadRetryControls: React.FC<Props> = ({
                   </Typography>
                   <Rating
                     value={retryAttemptsValue}
-                    onChange={(_, value) => {
-                      const nextValue = value === null ? retryAttemptsValue : value;
-                      const retryAttempts = Math.min(nextValue, RETRY_ATTEMPTS_MAX);
-                      const retryLimit = Math.min(baseRetryConfig.retryLimit, retryAttempts);
-                      onChange({
-                        ...baseRetryConfig,
-                        retryAttempts,
-                        retryLimit,
-                      });
-                    }}
-                    max={RETRY_ATTEMPTS_MAX}
+                    onChange={(_, value) => updateRetryAttempts(value)}
+                    max={retryAttemptsMax}
                     disabled={disabled}
                     icon={<CheckCircleIcon fontSize="inherit" />}
                     emptyIcon={<RadioButtonUncheckedIcon fontSize="inherit" />}
@@ -137,13 +116,7 @@ export const DownloadRetryControls: React.FC<Props> = ({
                     labelId="fetch-retry-backoff-label"
                     value={baseRetryConfig.retryBackoff}
                     label={t('processing.download.retryBackoff', 'Retry Backoff')}
-                    onChange={(event) => {
-                      const retryBackoff = event.target.value as typeof baseRetryConfig.retryBackoff;
-                      onChange({
-                        ...baseRetryConfig,
-                        retryBackoff,
-                      });
-                    }}
+                    onChange={(event) => updateRetryBackoff(event.target.value as typeof baseRetryConfig.retryBackoff)}
                     disabled={disabled}
                   >
                     <MenuItem value="linear">
