@@ -3,12 +3,12 @@
  */
 
 import type React from 'react';
-import { useCallback, useState } from 'react';
 import { Dialog, DialogContent } from '@mui/material';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog.js';
 import { CommonDialogActions } from './CommonDialogActions.js';
 import { CommonDialogTitle } from './CommonDialogTitle.js';
 import type { DialogDisplayMode } from '@hierarchidb/tree-api';
+import { useCommonDialogView } from './useCommonDialogView.js';
 
 export interface CommonPluginDialogProps {
   mode: 'create' | 'edit' | 'preview';
@@ -62,59 +62,27 @@ export const CommonDialog: React.FC<CommonPluginDialogProps> = ({
                                                                   onCancel,
                                                                   additionalActions,
                                                                 }) => {
-  const [displayMode, setDisplayMode] = useState<DialogDisplayMode>(initialDisplayMode);
-  const isFullscreen = displayMode === 'full-screen';
-  const isMaximized = displayMode === 'maximize';
-  const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Handle base-dialog close
-  const handleClose = useCallback(() => {
-    if (hasUnsavedChanges) {
-      setShowUnsavedChangesDialog(true);
-    } else {
-      onCancel();
-    }
-  }, [hasUnsavedChanges, onCancel]);
-
-  // Handle submit
-  const handleSubmit = useCallback(async () => {
-    if (!isValid || isSubmitting) return;
-
-    try {
-      setIsSubmitting(true);
-      await onSubmit();
-    } catch (error) {
-      console.error('Dialog submission failed:', error);
-      // Error handling should be done by parent component
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [isValid, isSubmitting, onSubmit]);
-
-  // Handle save draft
-  const handleSaveDraft = useCallback(async () => {
-    if (!onSaveDraft) return;
-
-    try {
-      await onSaveDraft();
-      setShowUnsavedChangesDialog(false);
-      onCancel();
-    } catch (error) {
-      console.error('Save draft failed:', error);
-    }
-  }, [onSaveDraft, onCancel]);
-
-  // Handle discard changes
-  const handleDiscardChanges = useCallback(() => {
-    setShowUnsavedChangesDialog(false);
-    onCancel();
-  }, [onCancel]);
-
-  const handleDisplayModeChange = useCallback((mode: DialogDisplayMode) => {
-    setDisplayMode(mode);
-    onDisplayModeChange?.(mode);
-  }, [onDisplayModeChange]);
+  const {
+    displayMode,
+    isFullscreen,
+    isMaximized,
+    showUnsavedChangesDialog,
+    isSubmitting,
+    setShowUnsavedChangesDialog,
+    handleClose,
+    handleSubmit,
+    handleSaveDraft,
+    handleDiscardChanges,
+    handleDisplayModeChange,
+  } = useCommonDialogView({
+    initialDisplayMode,
+    hasUnsavedChanges,
+    isValid,
+    onSubmit,
+    onSaveDraft,
+    onCancel,
+    onDisplayModeChange,
+  });
 
   return (
     <>

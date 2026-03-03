@@ -1,6 +1,7 @@
 # 運用ハブ
 
 ## Doing
+- #713 / codex/refactor/ui/hook-cleanup-followup / 2026-03-04 00:01
 - #711 / codex/fix/shape/pause-session-ref-sync / 2026-03-03 23:45
 - #705 / codex/refactor/ui-extract-logic-hooks / 2026-03-03 20:25
 - #708 / codex/chore/ci-build-checks-separation / 2026-03-03 22:10
@@ -9,6 +10,8 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-04: Issue #713 開始 - `useCollapsibleSection`/`useSearchResultTable` の未使用APIと死蔵コードを整理
+- 2026-03-04: Issue #713 進捗 - `showHeader` と `selectedResults` フォールバックを削除し、不要 import/atom 参照を整理（`pnpm -w turbo run typecheck --filter @hierarchidb/ui-accordion-config --filter @hierarchidb/ui-search-result-window` 成功）
 - 2026-03-03: Issue #711 開始 - pause同期判定の stale closure 問題を `sessionRecordRef` で修正
 - 2026-03-03: Issue #711 進捗 - `useShapeBuildPause` に `sessionRecordRef` + `useEffect` を追加し、同期判定を `sessionRecordRef.current?.status === 'paused'` へ変更（`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` 成功）
 - 2026-03-03: Issue #709 開始 - Shape build pause同期判定を `sessionRecord` ベースへ修正
@@ -56,6 +59,8 @@
 - 2026-03-03: Issue #705 進捗 - `ui-dialog` の `AutoHideFullScreenDialog` で可視状態/タイマー制御を `useAutoHideFullScreenDialogView` へ分離し、`ui-search-field` の `SearchField` で入力イベント/属性組み立てを `useSearchFieldView` へ分離（`typecheck/build` 成功）
 - 2026-03-03: Issue #705 進捗 - `ui-layout` の `ResizableSidebar` で幅計算/ドラッグイベント購読/close処理を `useResizableSidebarView` へ分離し、`ui-speeddial-submenu` の `SpeedDialSubmenuActions` で submenu 状態/close タイマー/イベント処理を `useSpeedDialSubmenuActionsView` へ分離（`typecheck/build` 成功）
 - 2026-03-03: Issue #705 進捗 - `ui-monitoring` の `MemoryUsageChart` でメモリ計測・履歴管理を `useMemoryUsageChartData` へ、canvas描画副作用を `useMemoryUsageChartCanvas` へ分離（`typecheck/build` 成功）
+- 2026-03-03: Issue #705 進捗 - `ui-i18n` の `LanguageSelector` で言語切替イベント処理と表示ラベル解決を `useLanguageSelectorView` へ分離（`typecheck/build` 成功）
+- 2026-03-03: Issue #705 進捗 - `ui-dialog` の `CommonDialog` で表示モード/未保存確認/送信状態管理を `useCommonDialogView` へ分離（`typecheck/build` 成功）
 - 2026-03-03: blocked - `gh issue comment 705` 実行時に `error connecting to api.github.com`（ネットワーク復旧待ち）
 - 2026-03-03: Issue #703 完了 - Shape Plugin Pauseボタン状態管理とセッション復元の修正
   - Pauseボタンが「Pausing」状態で固まる問題を修正
