@@ -1,15 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { CSSProperties, MouseEvent } from 'react';
 import { useLocation } from '@tanstack/react-router';
-
-export interface MenuItemLinkItem {
-  name: string;
-  url: string;
-}
+import type { MenuItemLinkType } from './MenuListItemLinkButton.js';
 
 export interface UseMenuListItemLinkButtonViewParams {
   id: string;
-  items: Array<MenuItemLinkItem | null>;
+  items: Array<MenuItemLinkType | null>;
 }
 
 export interface UseMenuListItemLinkButtonViewResult {
