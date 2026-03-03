@@ -1,6 +1,5 @@
-import React, { useEffect, useMemo, useRef } from 'react';
-import { Typography } from '@mui/material';
-import type { GridColumn, GridGroupingState } from '@hierarchidb/ui-grid';
+import { useEffect, useMemo, useRef } from 'react';
+import type { GridGroupingState } from '@hierarchidb/ui-grid';
 import { useFloatingWindow } from '@hierarchidb/ui-floating-window';
 import type {
   MapPreviewStatusLabels,
@@ -9,14 +8,6 @@ import type { ShapePreviewListProps } from './ShapePreviewList.js';
 import { formatAdminLevelLabel } from './layerSetDefinitions.js';
 
 const WINDOW_PERSIST_KEY = 'hierarchidb:ui:floating-window:shape:features';
-
-const formatLogicalCode = (value: unknown) => {
-  const text = String(value ?? '');
-  if (text === 'N/A') {
-    return React.createElement(Typography, { color: 'error.main' }, 'N/A');
-  }
-  return text;
-};
 
 const formatBBox = (bbox?: [number, number, number, number]) => {
   if (!bbox || bbox.length !== 4) return '';
@@ -36,7 +27,6 @@ type UseShapePreviewListViewParams = Pick<
   ShapePreviewListProps,
   | 'title'
   | 'rows'
-  | 'columnLabels'
   | 'search'
   | 'matchedRows'
   | 'countText'
@@ -51,7 +41,6 @@ type UseShapePreviewListViewParams = Pick<
 export const useShapePreviewListView = ({
   title,
   rows,
-  columnLabels,
   search,
   matchedRows,
   countText,
@@ -166,27 +155,6 @@ export const useShapePreviewListView = ({
     return mapped;
   }, [matchedRows, rows]);
 
-  const columns = useMemo<GridColumn<(typeof tableRows)[number]>[]>(() => ([
-    { id: 'featureId', label: columnLabels.featureId, width: 220, sortable: true },
-    { id: 'countryName', label: columnLabels.countryName, width: 180, sortable: true },
-    { id: 'countryCode', label: columnLabels.countryCode, width: 120, sortable: true },
-    { id: 'adminName', label: columnLabels.adminName, width: 180, sortable: true },
-    {
-      id: 'adminLevel',
-      label: columnLabels.adminLevel,
-      width: 120,
-      align: 'right',
-      sortable: true,
-    },
-    { id: 'adminCode', label: columnLabels.adminCode, width: 120, sortable: true },
-    { id: 'dataSource', label: columnLabels.dataSource, width: 140, sortable: true },
-    { id: 'createdAt', label: columnLabels.createdAt, width: 180, sortable: true },
-    { id: 'vertexCount', label: columnLabels.vertexCount, width: 120, align: 'right', sortable: true },
-    { id: 'polygonCount', label: columnLabels.polygonCount, width: 120, align: 'right', sortable: true },
-    { id: 'bbox', label: columnLabels.bbox, width: 220, sortable: true },
-    { id: 'area', label: columnLabels.area, width: 140, align: 'right', sortable: true, format: formatLogicalCode },
-  ]), [columnLabels, tableRows]);
-
   const recyclingSelectionState = useMemo(() => {
     if (!selectedRows || selectedRows.size === 0) return 'none';
     const selected = rows.filter((row) => selectedRows.has(String(row.featureId ?? row.id)));
@@ -224,7 +192,6 @@ export const useShapePreviewListView = ({
     resolvedTitle,
     tableRows,
     windowState,
-    columns,
     searchOnly,
   };
 };

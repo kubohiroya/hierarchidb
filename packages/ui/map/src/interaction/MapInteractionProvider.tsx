@@ -1,15 +1,11 @@
 import type React from 'react';
-import { useEffect, useMemo, useRef } from 'react';
-import { Provider, useStore } from 'jotai';
+import { Provider } from 'jotai';
 import type { Store } from 'jotai/vanilla/store';
+import type { MapInteractionInitialState } from './mapInteractionStore.js';
 import {
-  type MapInteractionInitialState,
-  createMapInteractionStore,
-  mapSearchMatchesAtom,
-  mapSearchTargetsAtom,
-  mapSearchTextAtom,
-  mapSelectedMatchesAtom,
-} from './mapInteractionStore.js';
+  useMapInteractionInitializer,
+  useResolvedMapInteractionStore,
+} from './useMapInteractionProviderView.js';
 
 export type MapInteractionProviderProps = {
   children: React.ReactNode;
@@ -18,30 +14,7 @@ export type MapInteractionProviderProps = {
 };
 
 const MapInteractionInitializer: React.FC<Pick<MapInteractionProviderProps, 'initialState'>> = ({ initialState }) => {
-  const initializedRef = useRef(false);
-  const store = useStore();
-
-  useEffect(() => {
-    if (initializedRef.current) return;
-    if (!initialState) {
-      initializedRef.current = true;
-      return;
-    }
-    if (initialState.searchText !== undefined) {
-      store.set(mapSearchTextAtom, initialState.searchText);
-    }
-    if (initialState.searchTargets) {
-      store.set(mapSearchTargetsAtom, initialState.searchTargets);
-    }
-    if (initialState.searchMatches) {
-      store.set(mapSearchMatchesAtom, initialState.searchMatches);
-    }
-    if (initialState.selectedMatches) {
-      store.set(mapSelectedMatchesAtom, initialState.selectedMatches);
-    }
-    initializedRef.current = true;
-  }, [initialState, store]);
-
+  useMapInteractionInitializer({ initialState });
   return null;
 };
 
@@ -50,7 +23,7 @@ export const MapInteractionProvider: React.FC<MapInteractionProviderProps> = ({
   initialState,
   store,
 }) => {
-  const resolvedStore = useMemo(() => store ?? createMapInteractionStore(), [store]);
+  const resolvedStore = useResolvedMapInteractionStore({ store });
   return (
     <Provider store={resolvedStore}>
       <MapInteractionInitializer initialState={initialState} />

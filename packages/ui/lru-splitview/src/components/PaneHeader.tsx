@@ -48,6 +48,8 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
     vertical,
     onClick,
   });
+  const ToggleIcon = view.toggleIcon;
+  const StatusIcon = view.statusIcon;
 
   return (
     <Box
@@ -76,7 +78,7 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
       {/* Left side: Toggle button, icon, and title */}
       <Stack direction="row" alignItems="center" spacing={1} sx={{ flex: 1, minWidth: 0 }}>
         <IconButton size="small" sx={{ p: 0.5 }}>
-          {view.toggleIcon}
+          <ToggleIcon />
         </IconButton>
 
         {!view.isCompact && pane.icon && <Box sx={{ display: 'flex', alignItems: 'center' }}>{pane.icon}</Box>}
@@ -131,7 +133,7 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
             {/* Status icon */}
             {view.statusIcon && (
               <Box sx={{ display: 'flex', alignItems: 'center', color: view.statusColor }}>
-                {view.statusIcon}
+                {StatusIcon ? <StatusIcon fontSize="small" /> : null}
               </Box>
             )}
           </>

@@ -5,7 +5,7 @@
  * This component is purely UI-focused and knows nothing about HierarchiDB's data structures.
  */
 
-import React, { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactElement, type ReactNode } from 'react';
+import React, { type CSSProperties, type ReactElement, type ReactNode } from 'react';
 import {
   Box,
   Checkbox,
@@ -27,7 +27,7 @@ import {
 } from '@mui/material';
 import { Download, FilterList, KeyboardArrowDown, KeyboardArrowUp, Refresh, Search } from '@mui/icons-material';
 import { alpha, type SxProps, type Theme } from '@mui/material/styles';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { useGenericDataGridView } from './useGenericDataGridView.js';
 
 /**
  * Generic column definition
@@ -320,154 +320,51 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
                                           toolbarComponent,
                                           headerCellSx,
                                         }: GenericDataGridProps<T>): ReactElement {
-  const [showFilters, setShowFilters] = useState(false);
   const controlId = React.useId();
-  const [localSearchValue, setLocalSearchValue] = useState(searchValue);
-  const resolvedSearchValue = onSearchChange ? searchValue : localSearchValue;
-
-  // Virtual scrolling setup
   const parentRef = React.useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!stopWheelPropagation) return;
-    const container = parentRef.current;
-    if (!container) return;
-    const handleWheel = (event: WheelEvent) => {
-      const scrollHeight = container.scrollHeight;
-      const clientHeight = container.clientHeight;
-      const scrollable = scrollHeight > clientHeight + 1;
-      if (!scrollable) return;
-      const scrollTop = container.scrollTop;
-      const atTop = scrollTop <= 0;
-      const atBottom = scrollTop + clientHeight >= scrollHeight - 1;
-      const isEdgeScroll = (event.deltaY < 0 && atTop) || (event.deltaY > 0 && atBottom);
-      if (isEdgeScroll) return;
-      event.stopPropagation();
-    };
-    container.addEventListener('wheel', handleWheel, { passive: false, capture: true });
-    return () => {
-      container.removeEventListener('wheel', handleWheel, { capture: true });
-    };
-  }, [stopWheelPropagation]);
-  // Filter rows based on search and filters
-  const filteredRows = useMemo(() => {
-    let result = [...rows];
-
-    // Apply global search
-    const searchTerm = resolvedSearchValue;
-    if (searchTerm) {
-      result = result.filter((row) => {
-        return columns.some((col) => {
-          if (col.hidden) return false;
-          const value = getCellValue(row, col.id);
-          if (value == null) return false;
-          return String(value).toLowerCase().includes(searchTerm.toLowerCase());
-        });
-      });
-    }
-
-    // Apply column filters
-    Object.entries(filters).forEach(([columnId, filterValue]) => {
-      if (!filterValue) return;
-
-      const column = columns.find((c) => c.id === columnId);
-      if (!column) return;
-
-      result = result.filter((row) => {
-        const value = getCellValue(row, columnId);
-        if (column.filterPredicate) {
-          return column.filterPredicate(value, filterValue);
-        }
-        if (value == null) return false;
-        return String(value).toLowerCase().includes(filterValue.toLowerCase());
-      });
-    });
-
-    return result;
-  }, [rows, resolvedSearchValue, filters, columns]);
-
-  useEffect(() => {
-    if (!onRowSummaryChange) return;
-    onRowSummaryChange({
-      query: String(resolvedSearchValue ?? ''),
-      filtered: filteredRows.length,
-      total: rows.length,
-    });
-  }, [filteredRows.length, onRowSummaryChange, resolvedSearchValue, rows.length]);
-
-  // Handle pagination
-  const displayRows = useMemo(() => {
-    if (enableVirtualization) {
-      return filteredRows;
-    }
-    const start = page * rowsPerPage;
-    return filteredRows.slice(start, start + rowsPerPage);
-  }, [filteredRows, page, rowsPerPage, enableVirtualization]);
-
-  const virtualizer = useVirtualizer({
-    count: enableVirtualization ? displayRows.length : 0,
-    getScrollElement: () => parentRef.current,
-    estimateSize: useCallback(() => rowHeight, [rowHeight]),
-    overscan: 6,
+  const {
+    displayRows,
+    filteredRows,
+    handleChangePage,
+    handleChangeRowsPerPage,
+    handleFilterInputChange,
+    handleSearchInputChange,
+    handleSelectAll,
+    handleSelectRow,
+    handleSort,
+    padColSpan,
+    paddingBottom,
+    paddingTop,
+    searchInputValue,
+    showFilters,
+    toggleFilters,
+    visibleColumns,
+    virtualRows,
+  } = useGenericDataGridView<T>({
+    columns,
+    rows,
+    getRowId,
+    page,
+    rowsPerPage,
+    sortColumn,
+    sortDirection,
+    onSort,
+    filters,
+    onFilterChange,
+    searchValue,
+    onSearchChange,
+    onRowSummaryChange,
+    selectable,
+    selectionMode,
+    selectedRows,
+    onSelectionChange,
+    onPageChange,
+    onRowsPerPageChange,
+    enableVirtualization,
+    rowHeight,
+    stopWheelPropagation,
+    parentRef,
   });
-  const virtualRows = enableVirtualization ? virtualizer.getVirtualItems() : [];
-  const totalVirtualSize = enableVirtualization ? virtualizer.getTotalSize() : 0;
-  const paddingTop = virtualRows.length > 0 ? virtualRows[0]?.start ?? 0 : 0;
-  const paddingBottom = virtualRows.length > 0
-    ? totalVirtualSize - (virtualRows[virtualRows.length - 1]?.end ?? 0)
-    : 0;
-
-  const handleChangePage = (_event: unknown, newPage: number) => {
-    onPageChange?.(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newRowsPerPage = parseInt(event.target.value, 10);
-    onRowsPerPageChange?.(newRowsPerPage);
-    onPageChange?.(0);
-  };
-
-  const handleSort = (columnId: string) => {
-    if (!onSort) return;
-    const newDirection = sortColumn === columnId && sortDirection === 'asc' ? 'desc' : 'asc';
-    onSort(columnId, newDirection);
-  };
-
-  const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!onSelectionChange) return;
-
-    if (event.target.checked) {
-      const startIndex = page * rowsPerPage;
-      const allIds = new Set(
-        displayRows.map((row, index) => getRowId(row, startIndex + index)),
-      );
-      onSelectionChange(allIds);
-    } else {
-      onSelectionChange(new Set());
-    }
-  };
-
-  const handleSelectRow = (row: T, absoluteIndex: number) => {
-    if (!onSelectionChange) return;
-
-    const rowId = getRowId(row, absoluteIndex);
-    const newSelection = new Set(selectedRows);
-
-    if (selectionMode === 'single') {
-      newSelection.clear();
-      newSelection.add(rowId);
-    } else {
-      if (newSelection.has(rowId)) {
-        newSelection.delete(rowId);
-      } else {
-        newSelection.add(rowId);
-      }
-    }
-
-    onSelectionChange(newSelection);
-  };
-
-  const visibleColumns = useMemo(() => columns.filter((col) => !col.hidden), [columns]);
-  const padColSpan = visibleColumns.length + (selectable ? 1 : 0);
 
   // Render error atoms
   if (error) {
@@ -506,14 +403,8 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
               placeholder="Search..."
               id={`${controlId}-search`}
               name="search"
-              value={onSearchChange ? searchValue : localSearchValue}
-              onChange={(e) => {
-                if (onSearchChange) {
-                  onSearchChange(e.target.value);
-                } else {
-                  setLocalSearchValue(e.target.value);
-                }
-              }}
+              value={searchInputValue}
+              onChange={(e) => handleSearchInputChange(e.target.value)}
               InputProps={{
                 inputProps: { 'aria-label': 'Search', id: `${controlId}-search`, name: 'search' },
                 startAdornment: (
@@ -528,7 +419,7 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
 
           {showFilterToggle ? (
             <Tooltip title="Toggle Filters">
-              <IconButton onClick={() => setShowFilters(!showFilters)}>
+              <IconButton onClick={toggleFilters}>
                 <FilterList />
               </IconButton>
             </Tooltip>
@@ -643,10 +534,7 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
                         id={`${controlId}-filter-${String(column.id)}`}
                         name={`filter-${String(column.id)}`}
                         value={filters[String(column.id)] || ''}
-                        onChange={(e) => {
-                          const newFilters = { ...filters, [String(column.id)]: e.target.value };
-                          onFilterChange(newFilters);
-                        }}
+                        onChange={(e) => handleFilterInputChange(String(column.id), e.target.value)}
                       />
                     )}
                   </TableCell>

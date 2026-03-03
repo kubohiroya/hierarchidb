@@ -1,11 +1,8 @@
 import type React from 'react';
-import { useCallback, useEffect, useRef } from 'react';
 import { Box, IconButton, Paper, Tooltip, Typography, useTheme } from '@mui/material';
 import { Pause, PlayArrow, Refresh, ZoomIn, ZoomOut } from '@mui/icons-material';
 import { formatBytes } from '@hierarchidb/util';
-
-import { useMemoryData } from './hooks/useMemoryData.js';
-import { CanvasRenderer } from './services/CanvasRenderer.js';
+import { useMemoryUsageChartView } from './hooks/useMemoryUsageChartView.js';
 
 export interface MemoryUsageChartProps {
   variant?: 'simple' | 'detailed' | 'compact';
@@ -44,89 +41,28 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
                                                                     maxMemory = 4 * 1024 * 1024 * 1024, // 4GB
                                                                   }) => {
   const theme = useTheme();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const rendererRef = useRef<CanvasRenderer | null>(null);
-
-    const {
+  const {
+    canvasRef,
     memoryData,
     isSupported,
     isPaused,
     togglePause,
-    clearData: clearMemoryData,
+    handleClearData,
     error,
-  } = useMemoryData({
+    componentHeight,
+    usageColor,
+  } = useMemoryUsageChartView({
+    variant,
+    height,
     updateInterval,
+    maxDataPoints,
     maxMemory,
-    enabled: true,
-  });
-
-  useEffect(() => {
-    if (!canvasRef.current) return;
-
-    try {
-      //  : Canvas
-      rendererRef.current = new CanvasRenderer(canvasRef.current);
-    } catch (error) {
-      //  : Canvas
-      console.error('Failed to initialize canvas renderer:', error);
-      return;
-    }
-
-        return () => {
-      if (rendererRef.current) {
-        rendererRef.current.dispose();
-        rendererRef.current = null;
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!rendererRef.current || !memoryData || memoryData.used === 0) return;
-
-    try {
-      rendererRef.current.addDataPoint(memoryData, maxDataPoints);
-
-      rendererRef.current.render({
-        width: canvasRef.current?.getBoundingClientRect().width || 800,
-        height: canvasRef.current?.getBoundingClientRect().height || 300,
-        theme,
-        categoryColors,
-        warningThreshold,
-        criticalThreshold,
-        showGrid,
-        showAxes: true,
-      });
-    } catch (error) {
-      //  :
-      console.warn('Chart rendering failed:', error);
-    }
-  }, [
-    memoryData,
-    theme,
     categoryColors,
     warningThreshold,
     criticalThreshold,
     showGrid,
-    maxDataPoints,
-  ]);
-
-  const handleClearData = useCallback(() => {
-    clearMemoryData();
-    if (rendererRef.current) {
-      rendererRef.current.clearData();
-    }
-  }, [clearMemoryData]);
-
-  const getComponentHeight = () => {
-    switch (variant) {
-      case 'compact':
-        return typeof height === 'number' ? height * 0.6 : 180;
-      case 'simple':
-        return typeof height === 'number' ? height * 0.8 : 240;
-      default:
-        return height;
-    }
-  };
+    theme,
+  });
 
   //  : API
   if (!isSupported || error) {
@@ -134,7 +70,7 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
       <Paper
         sx={{
           width,
-          height: getComponentHeight(),
+          height: componentHeight,
           p: 2,
           display: 'flex',
           flexDirection: 'column',
@@ -156,7 +92,7 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
   }
 
   return (
-    <Paper sx={{ width, height: getComponentHeight(), p: 2, position: 'relative' }}>
+    <Paper sx={{ width, height: componentHeight, p: 2, position: 'relative' }}>
       <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1, display: 'flex', gap: 1 }}>
         <Tooltip title={isPaused ? 'Resume monitoring' : 'Pause monitoring'}>
           <IconButton size="small" onClick={togglePause} color={isPaused ? 'warning' : 'default'}>
@@ -195,14 +131,7 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
       <Box sx={{ mb: variant === 'compact' ? 1 : 2 }}>
         <Typography
           variant="body2"
-          sx={{
-            color:
-              memoryData.percentage > criticalThreshold * 100
-                ? 'error.main'
-                : memoryData.percentage > warningThreshold * 100
-                  ? 'warning.main'
-                  : 'text.primary',
-          }}
+          sx={{ color: usageColor }}
         >
           Current Usage: {memoryData.percentage.toFixed(1)}%
         </Typography>

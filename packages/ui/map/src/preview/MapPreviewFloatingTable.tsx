@@ -1,6 +1,6 @@
 import type React from 'react';
 import { FeatureTableToolbar, type FeatureTableSearchConfig } from './FeatureTableToolbar.js';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import {
   Box,
   Button,
@@ -22,14 +22,10 @@ import {
 import {
   TanstackDataGrid,
   type GridColumn,
-  type GridColumnSizingState,
-  type GridColumnVisibilityState,
   type GridGroupingState,
   type GridSortingState,
-  buildGridStateKey,
-  loadGridStateValue,
-  saveGridStateValue,
 } from '@hierarchidb/ui-grid';
+import { useMapPreviewFloatingTableView } from './useMapPreviewFloatingTableView.js';
 
 export type MapPreviewErrorSummary = {
   count: number;
@@ -167,40 +163,15 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
     containerSx,
     rowFilterConfig,
   } = props;
-  const [columnSelectorOpen, setColumnSelectorOpen] = useState(false);
-  const visibilityKey = persistKeyBase ? buildGridStateKey(persistKeyBase, 'visibility') : null;
-  const columnSizingKey = persistKeyBase ? buildGridStateKey(persistKeyBase, 'columnSizing') : null;
-  const sortingKey = persistKeyBase ? buildGridStateKey(persistKeyBase, 'sorting') : null;
-  const groupingKey = persistKeyBase ? buildGridStateKey(persistKeyBase, 'grouping') : null;
-  const isGroupingControlled = grouping !== undefined;
-  const [columnVisibility, setColumnVisibility] = useState<GridColumnVisibilityState>(() => (
-    visibilityKey ? (loadGridStateValue<GridColumnVisibilityState>(visibilityKey) ?? {}) : {}
-  ));
-  const [columnSizing, setColumnSizing] = useState<GridColumnSizingState>(() => (
-    columnSizingKey ? (loadGridStateValue<GridColumnSizingState>(columnSizingKey) ?? {}) : {}
-  ));
-  const [sorting, setSorting] = useState<GridSortingState>(() => {
-    if (sortingKey) {
-      const saved = loadGridStateValue<GridSortingState>(sortingKey);
-      if (saved) return saved;
-    }
-    return defaultSorting;
-  });
-  const [groupingState, setGroupingState] = useState<GridGroupingState>(() => {
-    if (isGroupingControlled) return grouping;
-    if (groupingKey) {
-      const saved = loadGridStateValue<GridGroupingState>(groupingKey);
-      if (saved) return saved;
-    }
-    return defaultGrouping;
-  });
   const resolvedStatusLabels: MapPreviewStatusLabels = statusLabels ?? {
     completed: 'Completed',
     failed: 'Failed',
   };
   const resolvedErrorLabels: MapPreviewErrorColumnLabels | null = errorColumnLabels ?? null;
-  const resolvedFormatMessage = useMemo(()=>formatErrorMessage ?? ((summary:{messages:string[]}) => summary.messages.slice(0, 2).join(' / ')),
-    [formatErrorMessage]);
+  const resolvedFormatMessage = useMemo(
+    () => formatErrorMessage ?? ((summary: { messages: string[] }) => summary.messages.slice(0, 2).join(' / ')),
+    [formatErrorMessage],
+  );
   const resolvedColumns = useMemo(() => {
     if (!resolvedErrorLabels || !errorSummaryById) return columns;
     const statusColumn: GridColumn<Row> = {
@@ -244,63 +215,37 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
       },
     };
     return [statusColumn, ...columns, errorCountColumn, errorMessageColumn];
-  }, [columns, errorSummaryById, resolvedErrorLabels, resolvedFormatMessage, resolvedStatusLabels.completed, resolvedStatusLabels.failed, statusAdornment]);
-  const resolvedColumnIds = useMemo(
-    () => resolvedColumns.map((column) => String(column.id)),
-    [resolvedColumns],
-  );
-  const prevColumnIdsRef = useRef<string[]>([]);
-  useEffect(() => {
-    const prevIds = prevColumnIdsRef.current;
-    const isSame =
-      prevIds.length === resolvedColumnIds.length &&
-      prevIds.every((id, idx) => id === resolvedColumnIds[idx]);
-    if (isSame) return;
-    prevColumnIdsRef.current = resolvedColumnIds;
-    setColumnVisibility((prev: GridColumnVisibilityState) => {
-      const next = { ...prev };
-      let changed = false;
-      const resolvedSet = new Set(resolvedColumnIds);
-      resolvedColumnIds.forEach((id) => {
-        if (!(id in next)) {
-          next[id] = true;
-          changed = true;
-        }
-      });
-      Object.keys(next).forEach((id) => {
-        if (!resolvedSet.has(id)) {
-          delete next[id];
-          changed = true;
-        }
-      });
-      return changed ? next : prev;
-    });
-  }, [resolvedColumnIds]);
+  }, [
+    columns,
+    errorSummaryById,
+    resolvedErrorLabels,
+    resolvedFormatMessage,
+    resolvedStatusLabels.completed,
+    resolvedStatusLabels.failed,
+    statusAdornment,
+  ]);
 
-  useEffect(() => {
-    if (!visibilityKey) return;
-    saveGridStateValue(visibilityKey, columnVisibility);
-  }, [columnVisibility, visibilityKey]);
-
-  useEffect(() => {
-    if (!columnSizingKey) return;
-    saveGridStateValue(columnSizingKey, columnSizing);
-  }, [columnSizing, columnSizingKey]);
-
-  useEffect(() => {
-    if (!sortingKey) return;
-    saveGridStateValue(sortingKey, sorting);
-  }, [sorting, sortingKey]);
-
-  useEffect(() => {
-    if (!groupingKey || isGroupingControlled) return;
-    saveGridStateValue(groupingKey, groupingState);
-  }, [groupingKey, groupingState, isGroupingControlled]);
-
-  useEffect(() => {
-    if (!isGroupingControlled) return;
-    setGroupingState(grouping);
-  }, [grouping, isGroupingControlled]);
+  const {
+    columnSelectorOpen,
+    columnVisibility,
+    setColumnVisibility,
+    columnSizing,
+    setColumnSizing,
+    sorting,
+    setSorting,
+    setGroupingState,
+    isGroupingControlled,
+    resolvedGrouping,
+    handleOpenColumnSelector,
+    handleCloseColumnSelector,
+    handleColumnVisibilityToggle,
+  } = useMapPreviewFloatingTableView({
+    resolvedColumns,
+    persistKeyBase,
+    defaultGrouping,
+    grouping,
+    defaultSorting,
+  });
 
   return (
     <Paper
@@ -326,7 +271,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
         search={search}
         toolbarActions={toolbarActions}
         enableColumnSelector={enableColumnSelector}
-        onOpenColumnSelector={enableColumnSelector ? () => setColumnSelectorOpen(true) : undefined}
+        onOpenColumnSelector={enableColumnSelector ? handleOpenColumnSelector : undefined}
         countText={countText}
       />
       <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
@@ -348,7 +293,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
             onCellClick={onCellClick}
             sorting={sorting}
             onSortingChange={setSorting}
-            grouping={isGroupingControlled ? grouping : groupingState}
+            grouping={resolvedGrouping}
             onGroupingChange={isGroupingControlled ? undefined : setGroupingState}
             columnVisibility={columnVisibility}
             onColumnVisibilityChange={setColumnVisibility}
@@ -360,7 +305,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
       </Box>
       <Dialog
         open={columnSelectorOpen}
-        onClose={() => setColumnSelectorOpen(false)}
+        onClose={handleCloseColumnSelector}
         maxWidth="xs"
         fullWidth
         sx={{ zIndex: (theme) => theme.zIndex.modal + 20 }}
@@ -381,11 +326,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
                     <Checkbox
                       checked={isVisible}
                       onChange={(event) => {
-                        const checked = event.target.checked;
-                        setColumnVisibility((prev: GridColumnVisibilityState) => ({
-                          ...prev,
-                          [id]: checked,
-                        }));
+                        handleColumnVisibilityToggle(id, event.target.checked);
                       }}
                     />
                   )}
@@ -430,7 +371,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
           ) : null}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setColumnSelectorOpen(false)}>Close</Button>
+          <Button onClick={handleCloseColumnSelector}>Close</Button>
         </DialogActions>
       </Dialog>
     </Paper>

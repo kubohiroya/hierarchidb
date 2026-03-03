@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Box, FormControlLabel, List, ListItem, ListItemText, Stack, Switch, Typography } from '@mui/material';
 import { formatAdminLevelLabel } from './layerSetDefinitions.js';
 import type { LayerSetDefinition, LayerSetId, ResolvedLayerSetEntry } from './layerSetDefinitions.js';
+import { useLayerSetVisibilityPanelView } from './useLayerSetVisibilityPanelView.js';
 
 export type LayerSetVisibility = Record<LayerSetId, boolean>;
 
@@ -41,33 +42,17 @@ export const LayerSetVisibilityPanel: React.FC<LayerSetVisibilityPanelProps> = (
   onToggle,
   items,
 }) => {
-  const orderedSets = useMemo(
-    () => [...layerSets].sort((a, b) => b.priority - a.priority),
-    [layerSets],
-  );
-
-  const itemsBySet = useMemo(() => {
-    const grouped = new Map<LayerSetId, LayerSetListItem[]>();
-    items.forEach((item) => {
-      const next = grouped.get(item.layerSetId) ?? [];
-      next.push(item);
-      grouped.set(item.layerSetId, next);
-    });
-    return grouped;
-  }, [items]);
+  const { orderedSets, itemsBySet, itemsBySetAndHierarchy } = useLayerSetVisibilityPanelView<LayerSetListItem>({
+    layerSets,
+    items,
+  });
 
   return (
     <Stack spacing={1.5}>
       {orderedSets.map((set) => {
         const visible = visibility[set.id] ?? false;
         const setItems = itemsBySet.get(set.id) ?? [];
-        const itemsByHierarchy = new Map<string, LayerSetListItem[]>();
-        setItems.forEach((item) => {
-          const key = formatHierarchyLabel(item.hierarchyLabel);
-          const next = itemsByHierarchy.get(key) ?? [];
-          next.push(item);
-          itemsByHierarchy.set(key, next);
-        });
+        const itemsByHierarchy = itemsBySetAndHierarchy.get(set.id) ?? new Map<string, LayerSetListItem[]>();
         return (
           <Box key={set.id}>
             <FormControlLabel

@@ -1,6 +1,7 @@
-import type { ChangeEvent, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import type { SxProps } from '@mui/material/styles';
 import { Box, IconButton, InputAdornment, Paper, TextField } from '@mui/material';
+import { useMapPreviewSearchPanelView } from './useMapPreviewSearchPanelView.js';
 
 export type MapPreviewSearchPanelProps = {
   searchText: string;
@@ -37,9 +38,10 @@ export const MapPreviewSearchPanel = ({
   containerSx,
   panelSx,
 }: MapPreviewSearchPanelProps) => {
-  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onSearchTextChange(event.target.value);
-  };
+  const { handleChange, handleKeyDown } = useMapPreviewSearchPanelView({
+    onSearchTextChange,
+    onSearch,
+  });
 
   return (
     <Box
@@ -60,12 +62,7 @@ export const MapPreviewSearchPanel = ({
           placeholder={placeholder}
           value={searchText}
           onChange={handleChange}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              event.preventDefault();
-              onSearch();
-            }
-          }}
+          onKeyDown={handleKeyDown}
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">

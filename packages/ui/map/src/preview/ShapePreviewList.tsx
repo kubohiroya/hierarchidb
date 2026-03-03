@@ -3,8 +3,10 @@ import { IconButton } from '@mui/material';
 import { Hexagon } from '@mui/icons-material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { Recycling as RecyclingIcon } from '@mui/icons-material';
+import { Typography } from '@mui/material';
 import type { WindowState } from '@hierarchidb/ui-floating-window';
 import { FloatingWindow } from '@hierarchidb/ui-floating-window';
+import type { GridColumn } from '@hierarchidb/ui-grid';
 import {
   MapPreviewFloatingTable,
   type MapPreviewErrorSummaryById,
@@ -120,11 +122,9 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
     resolvedTitle,
     tableRows,
     windowState,
-    columns,
   } = useShapePreviewListView({
     title,
     rows,
-    columnLabels,
     search,
     matchedRows,
     countText,
@@ -135,6 +135,39 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
     rowFilterConfig,
     onWindowStateChange,
   });
+  const columns = React.useMemo<GridColumn<(typeof tableRows)[number]>[]>(() => ([
+    { id: 'featureId', label: columnLabels.featureId, width: 220, sortable: true },
+    { id: 'countryName', label: columnLabels.countryName, width: 180, sortable: true },
+    { id: 'countryCode', label: columnLabels.countryCode, width: 120, sortable: true },
+    { id: 'adminName', label: columnLabels.adminName, width: 180, sortable: true },
+    {
+      id: 'adminLevel',
+      label: columnLabels.adminLevel,
+      width: 120,
+      align: 'right',
+      sortable: true,
+    },
+    { id: 'adminCode', label: columnLabels.adminCode, width: 120, sortable: true },
+    { id: 'dataSource', label: columnLabels.dataSource, width: 140, sortable: true },
+    { id: 'createdAt', label: columnLabels.createdAt, width: 180, sortable: true },
+    { id: 'vertexCount', label: columnLabels.vertexCount, width: 120, align: 'right', sortable: true },
+    { id: 'polygonCount', label: columnLabels.polygonCount, width: 120, align: 'right', sortable: true },
+    { id: 'bbox', label: columnLabels.bbox, width: 220, sortable: true },
+    {
+      id: 'area',
+      label: columnLabels.area,
+      width: 140,
+      align: 'right',
+      sortable: true,
+      format: (value: unknown) => {
+        const text = String(value ?? '');
+        if (text === 'N/A') {
+          return <Typography color="error.main">N/A</Typography>;
+        }
+        return text;
+      },
+    },
+  ]), [columnLabels, tableRows]);
 
   return (
     <FloatingWindow

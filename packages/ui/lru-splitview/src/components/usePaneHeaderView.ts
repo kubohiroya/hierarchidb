@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
 import { useTheme } from '@mui/material';
 import {
   ChevronLeft as ChevronLeftIcon,
@@ -12,9 +12,11 @@ import {
   ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
+import type { SvgIconProps } from '@mui/material/SvgIcon';
 import type { PaneHeaderComponentProps } from './PaneHeader.js';
 
 interface UsePaneHeaderViewArgs extends PaneHeaderComponentProps {}
+type IconComponent = ComponentType<SvgIconProps>;
 
 export const usePaneHeaderView = ({
   pane,
@@ -59,25 +61,25 @@ export const usePaneHeaderView = ({
 
   const toggleIcon = useMemo(() => {
     if (vertical) {
-      return state.isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />;
+      return state.isExpanded ? ExpandLessIcon : ExpandMoreIcon;
     }
-    return state.isExpanded ? <ChevronLeftIcon /> : <ChevronRightIcon />;
+    return state.isExpanded ? ChevronLeftIcon : ChevronRightIcon;
   }, [state.isExpanded, vertical]);
 
   const statusIcon = useMemo(() => {
-    if (!progress) return null;
+    if (!progress) return null as IconComponent | null;
     const summaryTotal = progress.summary?.total ?? 0;
     const isZeroTasks = summaryTotal === 0
       || ((progress.taskCount ?? 0) === 0 && (progress.completedCount ?? 0) === 0);
     const status = progress.status;
-    if (status === 'failed') return <ErrorOutlineIcon fontSize="small" />;
-    if (isZeroTasks) return <PauseCircleOutlineIcon fontSize="small" />;
-    if (status === 'running') return <PlayCircleIcon fontSize="small" />;
-    if (status === 'paused') return <PauseCircleIcon fontSize="small" />;
-    if (status === 'completed' || progress.progress >= 100) return <CheckCircleIcon fontSize="small" />;
-    if (status === 'idle') return <PauseCircleOutlineIcon fontSize="small" />;
-    if (progress.progress > 0) return <AutorenewIcon fontSize="small" />;
-    return <PauseCircleOutlineIcon fontSize="small" />;
+    if (status === 'failed') return ErrorOutlineIcon;
+    if (isZeroTasks) return PauseCircleOutlineIcon;
+    if (status === 'running') return PlayCircleIcon;
+    if (status === 'paused') return PauseCircleIcon;
+    if (status === 'completed' || progress.progress >= 100) return CheckCircleIcon;
+    if (status === 'idle') return PauseCircleOutlineIcon;
+    if (progress.progress > 0) return AutorenewIcon;
+    return PauseCircleOutlineIcon;
   }, [progress]);
 
   const statusColor = useMemo(() => {

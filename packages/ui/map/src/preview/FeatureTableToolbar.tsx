@@ -1,6 +1,7 @@
 import type React from 'react';
 import { Box, IconButton, InputAdornment, TextField, Typography } from '@mui/material';
 import { Close as CloseIcon, MoreVert as MoreVertIcon, Search as SearchIcon } from '@mui/icons-material';
+import { useFeatureTableToolbarView } from './useFeatureTableToolbarView.js';
 
 export type FeatureTableSearchConfig = {
   value: string;
@@ -28,20 +29,19 @@ export const FeatureTableToolbar: React.FC<FeatureTableToolbarProps> = ({
   enableColumnSelector = true,
   onOpenColumnSelector,
   countText,
-}) => (
-  <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
+}) => {
+  const { handleClearSearch, handleSearchChange, handleSearchKeyDown } = useFeatureTableToolbarView(search);
+
+  return (
+    <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
     {showTitle && title ? <Typography variant="subtitle2">{title}</Typography> : null}
     {search ? (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <TextField
           size="small"
           value={search.value}
-          onChange={(event) => search.onChange(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              search.onCommit?.();
-            }
-          }}
+          onChange={(event) => handleSearchChange(event.target.value)}
+          onKeyDown={handleSearchKeyDown}
           placeholder={search.placeholder}
           inputProps={{ 'aria-label': search.ariaLabel }}
           fullWidth
@@ -65,7 +65,7 @@ export const FeatureTableToolbar: React.FC<FeatureTableToolbarProps> = ({
                 <IconButton
                   aria-label="Clear search"
                   size="small"
-                  onClick={() => search.onChange('')}
+                  onClick={handleClearSearch}
                   disabled={!search.value.trim()}
                 >
                   <CloseIcon fontSize="small" />
@@ -97,4 +97,5 @@ export const FeatureTableToolbar: React.FC<FeatureTableToolbarProps> = ({
       </Typography>
     ) : null}
   </Box>
-);
+  );
+};

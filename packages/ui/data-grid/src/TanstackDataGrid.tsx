@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Box,
   Checkbox,
@@ -13,25 +13,16 @@ import {
   Typography,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   flexRender,
-  getCoreRowModel,
-  getExpandedRowModel,
-  getFilteredRowModel,
-  getGroupedRowModel,
-  getSortedRowModel,
-  useReactTable,
-  type Header,
-  type ColumnDef,
   type ColumnSizingState,
+  type ColumnDef,
   type GroupingState,
-  type RowSelectionState,
   type SortingState,
-  type Updater,
   type VisibilityState,
 } from '@tanstack/react-table';
 import type { GridColumn } from './GenericDataGrid.js';
+import { useTanstackDataGridView } from './useTanstackDataGridView.js';
 
 type RowRecord = { id?: string | number } & Record<PropertyKey, unknown>;
 
@@ -125,12 +116,6 @@ const renderDefaultCell = (value: unknown): React.ReactNode => {
   return String(value);
 };
 
-const resolveUpdater = <T,>(updater: Updater<T>, prev: T): T => (
-  typeof updater === 'function' ? (updater as (value: T) => T)(prev) : updater
-);
-
-const MIN_COLUMN_WIDTH = 60;
-
 export function TanstackDataGrid<T extends RowRecord>(props: TanstackDataGridProps<T>): React.ReactElement {
   const theme = useTheme();
   const {
@@ -169,63 +154,7 @@ export function TanstackDataGrid<T extends RowRecord>(props: TanstackDataGridPro
     emptyComponent,
   } = props;
 
-  const [internalSorting, setInternalSorting] = useState<GridSortingState>(sorting ?? []);
-  const [internalGrouping, setInternalGrouping] = useState<GridGroupingState>(grouping ?? []);
-  const [internalColumnVisibility, setInternalColumnVisibility] = useState<GridColumnVisibilityState>(columnVisibility ?? {});
-  const [internalColumnSizing, setInternalColumnSizing] = useState<GridColumnSizingState>(columnSizing ?? {});
-  const [internalSelectedRows, setInternalSelectedRows] = useState<Set<string | number>>(selectedRows ?? new Set());
   const [editingCell, setEditingCell] = useState<{ rowId: string | number; columnId: string; value: string } | null>(null);
-  const headerContainerRef = useRef<HTMLDivElement | null>(null);
-  const bodyContainerRef = useRef<HTMLDivElement | null>(null);
-  const resizeRef = useRef<{
-    startX: number;
-    leftStart: number;
-    rightStart: number;
-    leftId: string;
-    rightId: string;
-  }>({ startX: 0, leftStart: 0, rightStart: 0, leftId: '', rightId: '' });
-
-  const resolvedSorting = sorting ?? internalSorting;
-  const resolvedGrouping = grouping ?? internalGrouping;
-  const resolvedColumnVisibility = columnVisibility ?? internalColumnVisibility;
-  const resolvedColumnSizing = columnSizing ?? internalColumnSizing;
-  const resolvedSelectedRows = selectedRows ?? internalSelectedRows;
-  const normalizedSelectedRows = useMemo(() => (
-    new Set(Array.from(resolvedSelectedRows).map(String))
-  ), [resolvedSelectedRows]);
-  const normalizedMatchedRows = useMemo(() => (
-    matchedRows ? new Set(Array.from(matchedRows).map(String)) : undefined
-  ), [matchedRows]);
-  const normalizedHoveredRows = useMemo(() => (
-    hoveredRows ? new Set(Array.from(hoveredRows).map(String)) : undefined
-  ), [hoveredRows]);
-  const normalizedDraggingRows = useMemo(() => (
-    draggingRows ? new Set(Array.from(draggingRows).map(String)) : undefined
-  ), [draggingRows]);
-  const normalizedDropTargetRows = useMemo(() => (
-    dropTargetRows ? new Set(Array.from(dropTargetRows).map(String)) : undefined
-  ), [dropTargetRows]);
-
-  useEffect(() => {
-    if (sorting !== undefined) setInternalSorting(sorting);
-  }, [sorting]);
-
-  useEffect(() => {
-    if (grouping !== undefined) setInternalGrouping(grouping);
-  }, [grouping]);
-
-  useEffect(() => {
-    if (columnVisibility !== undefined) setInternalColumnVisibility(columnVisibility);
-  }, [columnVisibility]);
-
-  useEffect(() => {
-    if (columnSizing !== undefined) setInternalColumnSizing(columnSizing);
-  }, [columnSizing]);
-
-  useEffect(() => {
-    if (selectedRows !== undefined) setInternalSelectedRows(selectedRows);
-  }, [selectedRows]);
-
   const columnDefs = useMemo<ColumnDef<T>[]>(() => {
     const baseColumns = columns.map((column): ColumnDef<T> => {
       const id = String(column.id);
@@ -327,161 +256,47 @@ export function TanstackDataGrid<T extends RowRecord>(props: TanstackDataGridPro
     return [selectionColumn, ...baseColumns];
   }, [columns, editingCell, onCellEdit, selectable, selectionMode]);
 
-  const rowSelectionState = useMemo<RowSelectionState>(() => {
-    const mapping: RowSelectionState = {};
-    normalizedSelectedRows.forEach((id) => {
-      mapping[id] = true;
-    });
-    return mapping;
-  }, [normalizedSelectedRows]);
-
-  const handleRowSelectionChange = useCallback((updater: Updater<RowSelectionState>) => {
-    const next = resolveUpdater(updater, rowSelectionState);
-    let normalized = next;
-    if (selectionMode === 'single') {
-      const entries = Object.entries(next).filter(([, value]) => value);
-      normalized = entries.length > 0 ? { [entries[entries.length - 1]![0]]: true } : {};
-    }
-    const nextSet = new Set<string | number>();
-    Object.entries(normalized).forEach(([key, value]) => {
-      if (value) nextSet.add(key);
-    });
-    if (selectedRows === undefined) {
-      setInternalSelectedRows(nextSet);
-    }
-    onSelectionChange?.(nextSet);
-  }, [onSelectionChange, rowSelectionState, selectedRows, selectionMode]);
-
-  const handleSortingChange = useCallback((updater: Updater<SortingState>) => {
-    const next = resolveUpdater(updater, resolvedSorting);
-    if (sorting === undefined) setInternalSorting(next);
-    onSortingChange?.(next);
-  }, [onSortingChange, resolvedSorting, sorting]);
-
-  const handleGroupingChange = useCallback((updater: Updater<GroupingState>) => {
-    const next = resolveUpdater(updater, resolvedGrouping);
-    if (grouping === undefined) setInternalGrouping(next);
-    onGroupingChange?.(next);
-  }, [grouping, onGroupingChange, resolvedGrouping]);
-
-  const handleColumnVisibilityChange = useCallback((updater: Updater<VisibilityState>) => {
-    const next = resolveUpdater(updater, resolvedColumnVisibility);
-    if (columnVisibility === undefined) setInternalColumnVisibility(next);
-    onColumnVisibilityChange?.(next);
-  }, [columnVisibility, onColumnVisibilityChange, resolvedColumnVisibility]);
-
-  const handleColumnSizingChange = useCallback((updater: Updater<ColumnSizingState>) => {
-    const next = resolveUpdater(updater, resolvedColumnSizing);
-    if (columnSizing === undefined) setInternalColumnSizing(next);
-    onColumnSizingChange?.(next);
-  }, [columnSizing, onColumnSizingChange, resolvedColumnSizing]);
-
-  const handleResizeStart = useCallback((
-    leftHeader: Header<T, unknown>,
-    rightHeader: Header<T, unknown>,
-    event: React.MouseEvent<HTMLDivElement>,
-  ) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    const handleRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    const startX = handleRect.left + handleRect.width / 2;
-    const leftStart = leftHeader.getSize();
-    const rightStart = rightHeader.getSize();
-
-    resizeRef.current = {
-      startX,
-      leftStart,
-      rightStart,
-      leftId: leftHeader.column.id,
-      rightId: rightHeader.column.id,
-    };
-
-    const handleMouseMove = (nativeEvent: MouseEvent) => {
-      const { startX: originX, leftStart: initialLeft, rightStart: initialRight, leftId, rightId } = resizeRef.current;
-      const deltaX = nativeEvent.clientX - originX;
-      const maxPositive = initialRight - MIN_COLUMN_WIDTH;
-      const maxNegative = initialLeft - MIN_COLUMN_WIDTH;
-      const clamped = Math.max(-maxNegative, Math.min(deltaX, maxPositive));
-      const leftNew = Math.max(MIN_COLUMN_WIDTH, initialLeft + clamped);
-      const rightNew = Math.max(MIN_COLUMN_WIDTH, initialRight - clamped);
-      handleColumnSizingChange((prev) => ({
-        ...prev,
-        [leftId]: leftNew,
-        [rightId]: rightNew,
-      }));
-    };
-
-    const handleMouseUp = () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  }, [handleColumnSizingChange]);
-
-  const table = useReactTable({
-    data: rows,
-    columns: columnDefs,
-    state: {
-      sorting: resolvedSorting,
-      grouping: resolvedGrouping,
-      columnVisibility: resolvedColumnVisibility,
-      columnSizing: resolvedColumnSizing,
-      rowSelection: rowSelectionState,
-      globalFilter,
-    },
-    columnResizeMode: 'onChange',
-    enableColumnResizing: true,
-    enableRowSelection: selectable,
-    enableMultiRowSelection: selectionMode === 'multiple',
-    getRowId: (row, index) => String((getRowId ?? toDefaultRowId)(row, index)),
-    onRowSelectionChange: handleRowSelectionChange,
-    onSortingChange: handleSortingChange,
-    onGroupingChange: handleGroupingChange,
-    onColumnVisibilityChange: handleColumnVisibilityChange,
-    onColumnSizingChange: handleColumnSizingChange,
+  const {
+    bodyContainerRef,
+    handleResizeStart,
+    headerContainerRef,
+    leafColumnCount,
+    measureRowElement,
+    normalizedDraggingRows,
+    normalizedDropTargetRows,
+    normalizedHoveredRows,
+    normalizedMatchedRows,
+    normalizedSelectedRows,
+    rowModel,
+    table,
+    virtualRows,
+    paddingTop,
+    paddingBottom,
+  } = useTanstackDataGridView({
+    columns: columnDefs as ColumnDef<RowRecord>[],
+    rows: rows as RowRecord[],
+    getRowId: (getRowId as ((row: RowRecord, index?: number) => string | number) | undefined) ?? toDefaultRowId,
+    rowHeight,
+    enableVirtualization,
+    selectable,
+    sorting,
+    onSortingChange,
+    grouping,
+    onGroupingChange,
+    columnVisibility,
+    onColumnVisibilityChange,
+    columnSizing,
+    onColumnSizingChange,
+    selectedRows,
+    onSelectionChange,
+    selectionMode,
+    globalFilter,
     onGlobalFilterChange,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getGroupedRowModel: getGroupedRowModel(),
-    getExpandedRowModel: getExpandedRowModel(),
+    matchedRows,
+    hoveredRows,
+    draggingRows,
+    dropTargetRows,
   });
-
-  const rowModel = table.getRowModel().rows;
-  const virtualizer = useVirtualizer({
-    count: enableVirtualization ? rowModel.length : 0,
-    getScrollElement: () => bodyContainerRef.current,
-    estimateSize: () => rowHeight,
-    measureElement: (element) => element?.getBoundingClientRect().height ?? rowHeight,
-    overscan: 6,
-  });
-
-  useEffect(() => {
-    const bodyElement = bodyContainerRef.current;
-    const headerElement = headerContainerRef.current;
-    if (!bodyElement || !headerElement) return undefined;
-
-    const handleScroll = () => {
-      headerElement.scrollLeft = bodyElement.scrollLeft;
-    };
-
-    bodyElement.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      bodyElement.removeEventListener('scroll', handleScroll);
-    };
-  }, []);
-
-  const virtualRows = enableVirtualization
-    ? virtualizer.getVirtualItems()
-    : rowModel.map((_, index) => ({ index, start: index * rowHeight, size: rowHeight, end: 0, key: index }));
-
-  const paddingTop = enableVirtualization && virtualRows.length > 0 ? virtualRows[0]?.start ?? 0 : 0;
-  const paddingBottom = enableVirtualization && virtualRows.length > 0
-    ? virtualizer.getTotalSize() - (virtualRows[virtualRows.length - 1]?.end ?? 0)
-    : 0;
 
   if (loading) {
     return (
@@ -612,7 +427,7 @@ export function TanstackDataGrid<T extends RowRecord>(props: TanstackDataGridPro
           <TableBody>
             {enableVirtualization && paddingTop > 0 ? (
               <TableRow>
-                <TableCell colSpan={table.getAllLeafColumns().length} sx={{ height: paddingTop, padding: 0, border: 0 }} />
+                <TableCell colSpan={leafColumnCount} sx={{ height: paddingTop, padding: 0, border: 0 }} />
               </TableRow>
             ) : null}
             {virtualRows.map((virtualRow) => {
@@ -632,11 +447,11 @@ export function TanstackDataGrid<T extends RowRecord>(props: TanstackDataGridPro
                   key={row.id}
                   hover
                   sx={sx}
-                  ref={enableVirtualization ? virtualizer.measureElement : undefined}
+                  ref={measureRowElement}
                   data-index={enableVirtualization ? virtualRow.index : undefined}
-                  onMouseEnter={() => onRowHover?.(row.original, rowId)}
-                  onMouseLeave={() => onRowLeave?.(row.original, rowId)}
-                  onClick={() => onRowClick?.(row.original, rowId)}
+                  onMouseEnter={() => onRowHover?.(row.original as T, rowId)}
+                  onMouseLeave={() => onRowLeave?.(row.original as T, rowId)}
+                  onClick={() => onRowClick?.(row.original as T, rowId)}
                 >
                   {row.getVisibleCells().map((cell) => {
                     const isSelectionColumn = cell.column.id === '__select';
@@ -665,7 +480,7 @@ export function TanstackDataGrid<T extends RowRecord>(props: TanstackDataGridPro
                         onClick={(event) => {
                           event.stopPropagation();
                           const columnId = String(cell.column.id);
-                          onCellClick?.({ row: row.original, columnId });
+                          onCellClick?.({ row: row.original as T, columnId });
                         }}
                       >
                         {isGrouped ? (
@@ -699,7 +514,7 @@ export function TanstackDataGrid<T extends RowRecord>(props: TanstackDataGridPro
             })}
             {enableVirtualization && paddingBottom > 0 ? (
               <TableRow>
-                <TableCell colSpan={table.getAllLeafColumns().length} sx={{ height: paddingBottom, padding: 0, border: 0 }} />
+                <TableCell colSpan={leafColumnCount} sx={{ height: paddingBottom, padding: 0, border: 0 }} />
               </TableRow>
             ) : null}
           </TableBody>

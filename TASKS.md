@@ -2,6 +2,7 @@
 
 ## Doing
 - #705 / codex/refactor/ui-extract-logic-hooks / 2026-03-03 20:25
+- #707 / refactor/shape-plugin/realtime-session-sync / 2026-03-03 21:15
 
 ## Blocked
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
@@ -28,7 +29,18 @@
 - 2026-03-03: Issue #705 進捗 - `ui-grid` の `CrossViewSnackbar` を `useCrossViewSnackbarView` へ分離し、`typecheck/build/test` を完了
 - 2026-03-03: Issue #705 進捗 - `ui-grid` の `DataGridPreview` を `useDataGridPreviewView` へ分離し、`typecheck/build/test` を完了
 - 2026-03-03: Issue #705 進捗 - `ui-grid` の `AbstractDataGrid` を `useAbstractDataGridView` へ分離し、`typecheck/build/test` を完了
+- 2026-03-03: Issue #705 進捗 - `ui-grid` の `GenericDataGrid` を `useGenericDataGridView` へ分離し、`typecheck/build/test` を完了
 - 2026-03-03: Issue #705 進捗 - `ui-map` の `LocationPreviewList`/`RoutePreviewList`/`ShapePreviewList` を各 `use*PreviewListView` へ分離し、`typecheck/build/test` を完了
+- 2026-03-03: Issue #705 進捗 - `ui-map` の `LayerSetVisibilityPanel` を `useLayerSetVisibilityPanelView` へ分離し、`typecheck/build/test` を完了
+- 2026-03-03: Issue #705 進捗 - `ui-map` の `MapPreviewSearchPanel` を `useMapPreviewSearchPanelView` へ分離し、`typecheck/build/test` を完了
+- 2026-03-03: Issue #705 進捗 - `ui-map` の `FeatureTableToolbar` を `useFeatureTableToolbarView` へ分離し、`typecheck/build/test` を完了
+- 2026-03-03: Issue #705 進捗 - `ui-grid` の `TanstackDataGrid` の制御/同期ロジックを `useTanstackDataGridView` へ分離し、`typecheck/build/test` を完了
+- 2026-03-03: Issue #705 進捗 - `ui-grid` の `TanstackDataGrid` でテーブル生成/仮想化計算/ヘッダ同期スクロールを `useTanstackDataGridView` へ追加分離し、`typecheck/build/test` を完了
+- 2026-03-03: Issue #705 進捗 - `ui-map` の `MapInteractionProvider` で初期化副作用/store解決を `useMapInteractionProviderView` へ分離し、`typecheck/build/test` を完了
+- 2026-03-03: Issue #705 進捗 - `ui-search-input` の `SearchInput` で入力解決/commit処理/イベントハンドラを `useTreeTableSearchInputView` へ分離し、`typecheck/build` を完了（`test` タスク定義なし）
+- 2026-03-03: Issue #705 進捗 - `memory-usage` の `MemoryUsageChart` で描画副作用/制御ハンドラ/表示計算を `useMemoryUsageChartView` へ分離し、`typecheck/build` を完了（`test` タスク定義なし）
+- 2026-03-03: Issue #705 進捗 - `ui-map` の `MapPreviewFloatingTable` で状態管理/永続化/列解決ロジックを `useMapPreviewFloatingTableView` へ分離し、`typecheck/build/test` を完了
+- 2026-03-03: Issue #705 進捗 - `useMapPreviewFloatingTableView` から JSX を除去し、表示生成（Chip/Box）は `MapPreviewFloatingTable` 側へ戻してロジック/表現分離を厳密化（`typecheck/build/test` 再実行済み）
 - 2026-03-03: blocked - `gh issue comment 705` 実行時に `error connecting to api.github.com`（ネットワーク復旧待ち）
 - 2026-03-03: Issue #703 完了 - Shape Plugin Pauseボタン状態管理とセッション復元の修正
   - Pauseボタンが「Pausing」状態で固まる問題を修正

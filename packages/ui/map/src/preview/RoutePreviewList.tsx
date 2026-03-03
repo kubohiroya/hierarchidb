@@ -1,6 +1,9 @@
 import type React from 'react';
+import { useMemo } from 'react';
+import { Box } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { FloatingWindow } from '@hierarchidb/ui-floating-window';
+import type { GridColumn } from '@hierarchidb/ui-grid';
 import {
   MapPreviewFloatingTable,
   type MapPreviewErrorSummaryById,
@@ -160,16 +163,45 @@ export const RoutePreviewList: React.FC<RoutePreviewListProps> = ({
   maxHeight,
 }) => {
   const theme = useTheme();
-  const { tableRows, resolvedMatchedRows, columns, resolvedTitle } = useRoutePreviewListView({
+  const { tableRows, resolvedMatchedRows, resolvedTitle } = useRoutePreviewListView({
     rows,
-    columnLabels,
     search,
     matchedRows,
-    modeMeta,
     countText,
     countLabels,
     title,
   });
+  const columns = useMemo<GridColumn<(typeof tableRows)[number]>[]>(() => ([
+    { id: 'lineId', label: columnLabels.lineId, width: 120, sortable: true },
+    {
+      id: 'routeMode',
+      label: columnLabels.routeMode,
+      width: 150,
+      sortable: true,
+      format: (value: unknown) => {
+        const key = typeof value === 'string' ? value : String(value ?? '');
+        const meta = key ? modeMeta?.[key] : undefined;
+        if (!meta) return key;
+        return (
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
+            <Box sx={{ display: 'inline-flex', color: meta.color }}>{meta.icon}</Box>
+            <span>{meta.label}</span>
+          </Box>
+        );
+      },
+    },
+    { id: 'routeName', label: columnLabels.routeName, width: 180, sortable: true },
+    { id: 'startName', label: columnLabels.startName, width: 160, sortable: true },
+    { id: 'startAdmin0', label: columnLabels.startAdmin0, width: 160, sortable: true },
+    { id: 'startAdmin1', label: columnLabels.startAdmin1, width: 160, sortable: true },
+    { id: 'startAdmin2', label: columnLabels.startAdmin2, width: 160, sortable: true },
+    { id: 'endName', label: columnLabels.endName, width: 160, sortable: true },
+    { id: 'endAdmin0', label: columnLabels.endAdmin0, width: 160, sortable: true },
+    { id: 'endAdmin1', label: columnLabels.endAdmin1, width: 160, sortable: true },
+    { id: 'endAdmin2', label: columnLabels.endAdmin2, width: 160, sortable: true },
+    { id: 'waypointCount', label: columnLabels.waypointCount, width: 140, align: 'right', sortable: true },
+    { id: 'distanceMeters', label: columnLabels.distanceMeters, width: 160, align: 'right', sortable: true },
+  ]), [columnLabels, modeMeta, tableRows]);
 
   return (
     <FloatingWindow
