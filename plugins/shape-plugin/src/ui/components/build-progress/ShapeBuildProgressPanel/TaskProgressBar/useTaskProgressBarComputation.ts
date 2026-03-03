@@ -134,6 +134,11 @@ const shouldIncludeTask = (params: {
 }) => {
   const { statusValue, isSkipped, filter } = params;
   
+  // Queued, Running, and Paused tasks are always visible (no filter UI for these)
+  if (statusValue === 'queued' || statusValue === 'running' || statusValue === 'paused') {
+    return true;
+  }
+  
   // If all filters are off, include all tasks
   if (!filter.skippedMode && !filter.failedMode && !filter.completedMode) {
     return true;
