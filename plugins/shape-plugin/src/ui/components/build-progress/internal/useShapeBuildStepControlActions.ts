@@ -31,6 +31,7 @@ export const useShapeBuildStepControlActions = ({
   updateSessionRecord,
   setIsStopRequested,
   setIsStopAccepted,
+  sessionRecord,
 }: StartOrResumeControlActionsArgs & PauseControlActionsArgs & CancelQueuedControlActionsArgs) => {
   const handleStartOrResume = useShapeBuildStartOrResume({
     activeNodeId,
@@ -80,6 +81,7 @@ export const useShapeBuildStepControlActions = ({
     setRequestedControlAction,
     setIsStopRequested,
     setIsStopAccepted,
+    sessionRecord,
     handleCancelQueued,
   });
 
