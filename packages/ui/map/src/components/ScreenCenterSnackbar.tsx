@@ -4,9 +4,9 @@
  */
 
 import type React from 'react';
-import { useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
+import { useScreenCenterSnackbar } from './useScreenCenterSnackbar.js';
 
 export type ScreenCenterSnackbarProps = {
   open: boolean;
@@ -33,15 +33,16 @@ export const ScreenCenterSnackbar: React.FC<ScreenCenterSnackbarProps> = ({
   containerSx,
   textSx,
 }) => {
-  useEffect(() => {
-    if (!open || autoHideDuration == null || !onClose) return undefined;
-    const timer = globalThis.setTimeout(() => onClose(), autoHideDuration);
-    return () => globalThis.clearTimeout(timer);
-  }, [open, autoHideDuration, onClose, message]);
+  const { shouldRender, durationMs } = useScreenCenterSnackbar({
+    open,
+    autoHideDuration,
+    onClose,
+    enterDuration,
+    exitDuration,
+    message,
+  });
 
-  if (!open && !message) return null;
-
-  const durationMs = open ? enterDuration : exitDuration;
+  if (!shouldRender) return null;
 
   return (
     <Box

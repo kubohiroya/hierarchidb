@@ -3,19 +3,11 @@
  * Wraps the TreeTable node context menu interactions with controller actions.
  */
 
-import { getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
-import type { NodeId } from '@hierarchidb/core-types';
-import { isFolderNodeType, type NodeContextMenuProps, OpenStepOption } from '@hierarchidb/ui-treeconsole-breadcrumb';
-import { useEffect, useState, type ComponentType } from 'react';
-import type { BuildSessionIndicator, TreeNodeInUI, TreeTableController } from '~/types';
-
-const buildActionNodeTypes = new Set(['shape', 'route', 'styler']);
-
-interface TreeTableContextMenuState {
-  anchorEl: HTMLElement | null;
-  anchorPosition: { left: number; top: number } | null;
-  node: TreeNode | null;
-}
+import { getTreeNodeName } from '@hierarchidb/tree-api';
+import { type NodeContextMenuProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import { type ComponentType } from 'react';
+import type { BuildSessionIndicator, TreeTableController } from '~/types';
+import { type TreeTableContextMenuState, useTreeTableContextMenu } from './useTreeTableContextMenu.js';
 
 interface TreeTableContextMenuProps {
   contextMenuState: TreeTableContextMenuState;
@@ -34,97 +26,40 @@ export function TreeTableContextMenu({
   buildSessionIndicator,
   ContextMenuComponent,
 }: TreeTableContextMenuProps) {
-  const node = contextMenuState.node;
-  const isRoot = !!node && node.depth === 0;
-  const isBuildRunning = Boolean(
-    node?.id && buildSessionIndicator?.runningNodeIds.has(node.id as NodeId)
-  );
-  const nodeDraftMetadata = node?.draftMetadata as
-    | { buildMetadata?: { buildRequired?: boolean } }
-    | undefined;
-  const isBuildRequiredForNode = Boolean(
-    node?.metadata?.buildMetadata?.buildRequired ||
-      nodeDraftMetadata?.buildMetadata?.buildRequired
-  );
-  const nodeType = String(node?.nodeType ?? '');
-  const isBuildActionNodeType = buildActionNodeTypes.has(nodeType.trim().toLowerCase());
-  const canArchive = !isRoot && !isBuildRunning;
-  const open = Boolean(contextMenuState.anchorEl) || Boolean(contextMenuState.anchorPosition);
-  const [previewGuardState, setPreviewGuardState] = useState<{ canOpen: boolean } | null>(null);
-  const [previewGuardLoading, setPreviewGuardLoading] = useState(false);
-  const [openSteps, setOpenSteps] = useState<OpenStepOption[]>([]);
-  const [openStepsLoading, setOpenStepsLoading] = useState(false);
-
-  useEffect(() => {
-    if (!open || !node) {
-      setPreviewGuardState(null);
-      setPreviewGuardLoading(false);
-      return;
-    }
-    const resolver = controller?.resolvePreviewGuardState;
-    if (!resolver) {
-      setPreviewGuardState(null);
-      setPreviewGuardLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setPreviewGuardLoading(true);
-    void (async () => {
-      const guard = await resolver(node as TreeNodeInUI);
-      if (cancelled) return;
-      setPreviewGuardState(guard);
-      setPreviewGuardLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [controller, node, open]);
-
-  useEffect(() => {
-    if (!open || !node) {
-      setOpenSteps([]);
-      setOpenStepsLoading(false);
-      return;
-    }
-    const resolver = controller?.resolveOpenSteps;
-    if (!resolver) {
-      setOpenSteps([]);
-      setOpenStepsLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setOpenStepsLoading(true);
-    void (async () => {
-      const steps = await resolver(node as TreeNodeInUI);
-      if (!cancelled) {
-        setOpenSteps(Array.isArray(steps) ? steps : []);
-        setOpenStepsLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [controller, node, open]);
-
-  const handleClose = () => {
-    onClose();
-  };
-
-  const triggerContextAction = (
-    action: string,
-    options?: {
-      navigateToParent?: boolean;
-      expandTarget?: boolean;
-      source?: 'treetable';
-      nextVisible?: boolean;
-      openInNewTab?: boolean;
-    }
-  ) => {
-    if (!node) return;
-    controller?.onContextAction?.(action, node, options);
-  };
-
-  const canPreview = (previewGuardState?.canOpen ?? true) && !previewGuardLoading;
+  const {
+    node,
+    open,
+    isRoot,
+    isBuildRequiredForNode,
+    canArchive,
+    canBuild,
+    canCreate,
+    canImportExport,
+    canPreview,
+    openSteps,
+    openStepsLoading,
+    handleClose,
+    onToggleVisible,
+    onCreate,
+    onEdit,
+    onDuplicate,
+    onArchive,
+    onRemove,
+    onCopy,
+    onCut,
+    onImport,
+    onExport,
+    onOpen,
+    onOpenFolder,
+    onOpenStep,
+    onPreview,
+    onBuild,
+  } = useTreeTableContextMenu({
+    contextMenuState,
+    onClose,
+    controller,
+    buildSessionIndicator,
+  });
 
   return (
     <ContextMenuComponent
@@ -138,131 +73,34 @@ export function TreeTableContextMenu({
       nodeName={node ? getTreeNodeName(node) : ''}
       isVisible={node?.visible ?? true}
       buildRequired={isBuildRequiredForNode}
-      canBuild={
-        isFolderNodeType(node?.nodeType)
-          ? isBuildRequiredForNode
-          : isBuildActionNodeType
-      }
-      canCreate={isFolderNodeType(node?.nodeType)}
+      canBuild={canBuild}
+      canCreate={canCreate}
       canEdit={!isRoot}
       canRemove={canArchive}
       canArchive={canArchive}
       canDuplicate={!isRoot}
       canCopy={!isRoot}
       canCut={!isRoot}
-      canImport={isFolderNodeType(node?.nodeType)}
-      canExport={isFolderNodeType(node?.nodeType)}
+      canImport={canImportExport}
+      canExport={canImportExport}
       canPreview={canPreview}
-      onToggleVisible={(nextVisible) => {
-        if (node) {
-          triggerContextAction('toggle-visibility', { source: 'treetable', nextVisible });
-        }
-      }}
-      onCreate={(type: string, options) => {
-        if (node) {
-          triggerContextAction(`create:${type}`, {
-            expandTarget: true,
-            source: 'treetable',
-            openInNewTab: options?.openInNewTab,
-          });
-        }
-        handleClose();
-      }}
-      onEdit={(options) => {
-        if (!node || isRoot) {
-          handleClose();
-          return;
-        }
-        triggerContextAction('edit', { source: 'treetable', openInNewTab: options?.openInNewTab });
-        handleClose();
-      }}
-      onDuplicate={() => {
-        if (!node || isRoot) {
-          handleClose();
-          return;
-        }
-        triggerContextAction('duplicate', { expandTarget: true, source: 'treetable' });
-        handleClose();
-      }}
-      onArchive={() => {
-        if (!node || isRoot) {
-          handleClose();
-          return;
-        }
-        triggerContextAction('archive', { navigateToParent: false, source: 'treetable' });
-        handleClose();
-      }}
-      onRemove={() => {
-        if (!node || isRoot) {
-          handleClose();
-          return;
-        }
-        triggerContextAction('archive', { navigateToParent: false, source: 'treetable' });
-        handleClose();
-      }}
-      onCopy={() => {
-        if (node) {
-          triggerContextAction('copy', { source: 'treetable' });
-        }
-      }}
-      onCut={() => {
-        if (node) {
-          triggerContextAction('cut', { navigateToParent: true, source: 'treetable' });
-        }
-      }}
-      onImport={() => {
-        if (node) {
-          triggerContextAction('import', { source: 'treetable' });
-        }
-      }}
-      onExport={() => {
-        if (node) {
-          triggerContextAction('export', { source: 'treetable' });
-        }
-      }}
-      onOpen={(options) => {
-        if (node) {
-          if (options?.openInNewTab) {
-            triggerContextAction('navigate', { source: 'treetable', openInNewTab: true });
-          } else {
-            controller?.onNodeClick?.(node.id, node);
-          }
-        }
-        handleClose();
-      }}
-      onOpenFolder={(options) => {
-        if (node) {
-          if (options?.openInNewTab) {
-            triggerContextAction('navigate', { source: 'treetable', openInNewTab: true });
-          } else {
-            controller?.onNodeClick?.(node.id, node);
-          }
-        }
-        handleClose();
-      }}
-      onOpenStep={(step, options) => {
-        if (node) {
-          triggerContextAction(`open-step:${step}`, {
-            source: 'treetable',
-            openInNewTab: options?.openInNewTab,
-          });
-        }
-        handleClose();
-      }}
+      onToggleVisible={onToggleVisible}
+      onCreate={onCreate}
+      onEdit={onEdit}
+      onDuplicate={onDuplicate}
+      onArchive={onArchive}
+      onRemove={onRemove}
+      onCopy={onCopy}
+      onCut={onCut}
+      onImport={onImport}
+      onExport={onExport}
+      onOpen={onOpen}
+      onOpenFolder={onOpenFolder}
+      onOpenStep={onOpenStep}
       openSteps={openSteps}
       openStepsLoading={openStepsLoading}
-      onPreview={() => {
-        if (node) {
-          triggerContextAction('preview', { source: 'treetable' });
-        }
-        handleClose();
-      }}
-      onBuild={() => {
-        if (node) {
-          triggerContextAction('build', { source: 'treetable' });
-        }
-        handleClose();
-      }}
+      onPreview={onPreview}
+      onBuild={onBuild}
     />
   );
 }

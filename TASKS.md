@@ -1,6 +1,7 @@
 # 運用ハブ
 
 ## Doing
+- #705 / codex/refactor/ui-p2-p3-hook-extract-batch / 2026-03-04 01:18
 - #705 / codex/refactor/ui-p1-hook-extract-batch / 2026-03-04 00:52
 - #713 / codex/refactor/ui/hook-cleanup-followup / 2026-03-04 00:01
 - #711 / codex/fix/shape/pause-session-ref-sync / 2026-03-03 23:45
@@ -11,6 +12,9 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-04: Issue #705 進捗 - P2/P3対象27ファイルのhook分離を完了し、対象 `.tsx` の `useState/useEffect/useMemo/useCallback/useRef/useId` 直書き 0 件を確認
+- 2026-03-04: blocked - `pnpm -w turbo run test --only --filter @hierarchidb/ui-accordion-config --filter @hierarchidb/ui-auth --filter @hierarchidb/ui-floating-window --filter @hierarchidb/ui-i18n --filter @hierarchidb/ui-json-treeview --filter @hierarchidb/ui-lru-splitview --filter @hierarchidb/ui-map --filter @hierarchidb/ui-routing --filter @hierarchidb/ui-search-result-window --filter @hierarchidb/ui-tour --filter @hierarchidb/ui-treeconsole-base --filter @hierarchidb/ui-treeconsole-toolbar --filter @hierarchidb/ui-treeconsole-treetable --filter @hierarchidb/ui-worker-provider` で既存失敗（`@hierarchidb/ui-treeconsole-base` の `treeViewController.mutations.test.tsx`、`@hierarchidb/ui-routing`/`@hierarchidb/ui-worker-provider` 実行時の `shape-store` property tests timeout）を確認
+- 2026-03-04: Issue #705 進捗 - P2/P3対象（packages/ui）のhook分離バッチ `codex/refactor/ui-p2-p3-hook-extract-batch` を開始
 - 2026-03-04: Issue #705 進捗 - P1対象19ファイルを一括フック分離（`use*.ts` 化、フック内JSX禁止）し、再判定で `useState/useEffect/useMemo/useCallback/useRef/useId` の直書き 0 件を確認
 - 2026-03-04: blocked - `pnpm -w turbo run test --only --filter @hierarchidb/ui-*` 実行時に `@hierarchidb/ui-treeconsole-base` の既存テスト `src/hooks/treeViewController.mutations.test.tsx` が失敗（`console.error` 呼び出し期待不一致、解除条件: 当該テスト期待値の現行仕様追従 or 回帰原因特定）
 - 2026-03-04: Issue #705 進捗 - P1未完了19件（packages/ui）を対象に一括hook分離バッチ `codex/refactor/ui-p1-hook-extract-batch` で着手

@@ -7,8 +7,7 @@ import {
   SnippetFolder as SnippetFolderIcon,
 } from '@mui/icons-material';
 import { Box, Button, ButtonGroup, Divider, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
-import type { FocusEvent, MouseEvent } from 'react';
-import { useEffect, useState } from 'react';
+import { useImportExportMenu } from './useImportExportMenu.js';
 
 export interface ImportExportMenuProps {
   buttonLabel: string;
@@ -37,41 +36,19 @@ export function ImportExportMenu({
   onImportTemplate,
   portalContainer,
 }: ImportExportMenuProps) {
-  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
-  const [templateAnchor, setTemplateAnchor] = useState<HTMLElement | null>(null);
-
-  const openMenu = (event: MouseEvent<HTMLElement>) => {
-    setMenuAnchor(event.currentTarget);
-  };
-
-  const closeMenu = () => {
-    setMenuAnchor(null);
-    setTemplateAnchor(null);
-  };
-
-  const openTemplateMenuFromMouse = (event: MouseEvent<HTMLElement>) => {
-    if (!allowImport) return;
-    event.preventDefault();
-    event.stopPropagation();
-    setTemplateAnchor(event.currentTarget);
-  };
-
-  const openTemplateMenuFromFocus = (event: FocusEvent<HTMLElement>) => {
-    if (!allowImport) return;
-    event.preventDefault();
-    event.stopPropagation();
-    setTemplateAnchor(event.currentTarget as HTMLElement);
-  };
-
-  const closeTemplateMenu = () => setTemplateAnchor(null);
-
-  const hasTemplates = allowImport && templates.length > 0;
-
-  useEffect(() => {
-    if (!allowImport) {
-      setTemplateAnchor(null);
-    }
-  }, [allowImport]);
+  const {
+    menuAnchor,
+    templateAnchor,
+    hasTemplates,
+    openMenu,
+    closeMenu,
+    openTemplateMenuFromMouse,
+    openTemplateMenuFromFocus,
+    closeTemplateMenu,
+  } = useImportExportMenu({
+    allowImport,
+    templates,
+  });
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
