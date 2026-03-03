@@ -15,7 +15,7 @@ import ArrowRightIcon from '@mui/icons-material/ArrowRight';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import type { SxProps, Theme } from '@mui/material/styles';
 import type { MouseEvent as ReactMouseEvent, ReactNode } from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSpeedDialSubmenuActionsView } from './useSpeedDialSubmenuActionsView.js';
 
 export interface SpeedDialSubmenuItem {
   id: string;
@@ -51,12 +51,6 @@ export interface SpeedDialSubmenuActionsProps {
 
 const DEFAULT_SUBMENU_OFFSET_PX = 4;
 const DEFAULT_SUBMENU_CLOSE_DELAY_MS = 140;
-
-function hasChildren(action: SpeedDialSubmenuAction): action is SpeedDialSubmenuAction & {
-  children: SpeedDialSubmenuItem[];
-} {
-  return Array.isArray(action.children) && action.children.length > 0;
-}
 
 function getPlacementDirection(placement: PopperProps['placement']): 'left' | 'right' | 'top' | 'bottom' {
   if (!placement) return 'left';
@@ -111,81 +105,23 @@ export function SpeedDialSubmenuActions({
   submenuCloseDelayMs = DEFAULT_SUBMENU_CLOSE_DELAY_MS,
   actionFabSx,
 }: SpeedDialSubmenuActionsProps) {
-  const [activeParentId, setActiveParentId] = useState<string | null>(null);
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const clearCloseTimer = useCallback(() => {
-    if (closeTimerRef.current !== null) {
-      clearTimeout(closeTimerRef.current);
-      closeTimerRef.current = null;
-    }
-  }, []);
-
-  const closeSubmenu = useCallback(() => {
-    clearCloseTimer();
-    setActiveParentId(null);
-    setAnchorEl(null);
-  }, [clearCloseTimer]);
-
-  const scheduleCloseSubmenu = useCallback(() => {
-    clearCloseTimer();
-    closeTimerRef.current = setTimeout(() => {
-      setActiveParentId(null);
-      setAnchorEl(null);
-      closeTimerRef.current = null;
-    }, submenuCloseDelayMs);
-  }, [clearCloseTimer, submenuCloseDelayMs]);
-
-  useEffect(() => {
-    return () => clearCloseTimer();
-  }, [clearCloseTimer]);
-
-  useEffect(() => {
-    if (!open) {
-      closeSubmenu();
-    }
-  }, [closeSubmenu, open]);
-
-  const activeParent = useMemo(() => {
-    if (!activeParentId) return null;
-    const candidate = actions.find((action) => action.id === activeParentId);
-    if (!candidate || !hasChildren(candidate)) return null;
-    return candidate;
-  }, [actions, activeParentId]);
-
-  const submenuOpen = Boolean(open && anchorEl && activeParent);
-
-  const handlePrimaryActionEnter = useCallback(
-    (action: SpeedDialSubmenuAction, currentTarget: HTMLElement) => {
-      if (!hasChildren(action)) {
-        closeSubmenu();
-        return;
-      }
-      clearCloseTimer();
-      setActiveParentId(action.id);
-      setAnchorEl(currentTarget);
-    },
-    [clearCloseTimer, closeSubmenu]
-  );
-
-  const handlePrimaryActionClick = useCallback(
-    (action: SpeedDialSubmenuAction, event: ReactMouseEvent<HTMLElement>) => {
-      action.onClick?.(event);
-      closeSubmenu();
-      onRequestClose();
-    },
-    [closeSubmenu, onRequestClose]
-  );
-
-  const handleSubmenuItemClick = useCallback(
-    (item: SpeedDialSubmenuItem, event: ReactMouseEvent<HTMLElement>) => {
-      item.onClick(event);
-      closeSubmenu();
-      onRequestClose();
-    },
-    [closeSubmenu, onRequestClose]
-  );
+  const {
+    activeParentId,
+    activeParent,
+    anchorEl,
+    submenuOpen,
+    clearCloseTimer,
+    scheduleCloseSubmenu,
+    handlePrimaryActionEnter,
+    handlePrimaryActionClick,
+    handleSubmenuItemClick,
+    isActionWithChildren,
+  } = useSpeedDialSubmenuActionsView({
+    actions,
+    open,
+    submenuCloseDelayMs,
+    onRequestClose,
+  });
 
   const submenuDirection = getPlacementDirection(submenuPlacement);
   const submenuDirectionIcon = getSubmenuDirectionIcon(submenuDirection);
@@ -213,7 +149,7 @@ export function SpeedDialSubmenuActions({
                 }}
               >
                 {action.icon}
-                {hasChildren(action) ? (
+                {isActionWithChildren(action) ? (
                   <Fab
                     component="span"
                     size="small"
@@ -257,8 +193,8 @@ export function SpeedDialSubmenuActions({
             FabProps={{
               size: 'medium',
               color: 'default',
-              'aria-haspopup': hasChildren(action) ? 'menu' : undefined,
-              'aria-expanded': hasChildren(action) ? parentOpen : undefined,
+              'aria-haspopup': isActionWithChildren(action) ? 'menu' : undefined,
+              'aria-expanded': isActionWithChildren(action) ? parentOpen : undefined,
               sx: {
                 pointerEvents: 'auto',
                 touchAction: 'manipulation',

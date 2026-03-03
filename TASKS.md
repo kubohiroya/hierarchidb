@@ -54,6 +54,7 @@
 - 2026-03-03: Issue #705 進捗 - `ui-search-result-window` の `SearchResultTable` で選択同期/イベント処理/表示データ整形を `useSearchResultTable` へ分離し、`ui-accordion-config` の `CollapsibleSection` で折りたたみ状態管理を `useCollapsibleSection` へ分離（`typecheck/build` 成功）
 - 2026-03-03: Issue #705 進捗 - `ui-monitoring` の `MemoryUsageBar` でメモリ計測・ポーリング・閾値判定・表示派生値を `useMemoryUsageBarView` へ分離（`typecheck/build` 成功）
 - 2026-03-03: Issue #705 進捗 - `ui-dialog` の `AutoHideFullScreenDialog` で可視状態/タイマー制御を `useAutoHideFullScreenDialogView` へ分離し、`ui-search-field` の `SearchField` で入力イベント/属性組み立てを `useSearchFieldView` へ分離（`typecheck/build` 成功）
+- 2026-03-03: Issue #705 進捗 - `ui-layout` の `ResizableSidebar` で幅計算/ドラッグイベント購読/close処理を `useResizableSidebarView` へ分離し、`ui-speeddial-submenu` の `SpeedDialSubmenuActions` で submenu 状態/close タイマー/イベント処理を `useSpeedDialSubmenuActionsView` へ分離（`typecheck/build` 成功）
 - 2026-03-03: blocked - `gh issue comment 705` 実行時に `error connecting to api.github.com`（ネットワーク復旧待ち）
 - 2026-03-03: Issue #703 完了 - Shape Plugin Pauseボタン状態管理とセッション復元の修正
   - Pauseボタンが「Pausing」状態で固まる問題を修正

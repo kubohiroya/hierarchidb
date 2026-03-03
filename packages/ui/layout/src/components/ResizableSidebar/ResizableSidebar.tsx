@@ -19,7 +19,8 @@
 
 import { DragIndicator } from '@mui/icons-material';
 import { Box, Drawer, Stack, styled } from '@mui/material';
-import React, { type ReactNode, useCallback, useLayoutEffect, useRef, useState } from 'react';
+import React, { type ReactNode } from 'react';
+import { useResizableSidebarView } from './useResizableSidebarView.js';
 
 const DragHandleBox = styled(Box)`
   width: 10px;
@@ -58,43 +59,13 @@ export const ResizableSidebar = ({
   setSidebarOpen: (value: boolean) => void;
   //sidebarInert: boolean;
 }) => {
-  const ref = useRef<HTMLDivElement>(null);
-
-  const [minDrawerWidth, setMinDrawerWidth] = useState<number>(200);
-  const [maxDrawerWidth, setMaxDrawerWidth] = useState<number>(200);
-  const [drawerWidth, setDrawerWidth] = useState<number>(200);
-
-  useLayoutEffect(() => {
-    setDrawerWidth(ref.current?.clientWidth ?? 200);
-    setMinDrawerWidth(ref.current?.clientWidth ?? 200);
-    setMaxDrawerWidth(document.body.clientWidth);
-  }, []);
-
-  const handleMouseDown = () => {
-    document.addEventListener('mouseup', handleMouseUp, true);
-    document.addEventListener('mousemove', handleMouseMove, true);
-  };
-
-  const handleMouseUp = () => {
-    document.removeEventListener('mouseup', handleMouseUp, true);
-    document.removeEventListener('mousemove', handleMouseMove, true);
-  };
-
-  const handleMouseMove = useCallback(
-    (ev: globalThis.MouseEvent) => {
-      const newWidth = ev.clientX - document.body.offsetLeft;
-      if (newWidth > minDrawerWidth && newWidth < maxDrawerWidth) {
-        setDrawerWidth(newWidth);
-      }
-    },
-    [minDrawerWidth, maxDrawerWidth]
-  );
-
-  const onClose = useCallback(() => setSidebarOpen(false), [setSidebarOpen]);
+  const { drawerRef, drawerWidth, handleMouseDown, onClose } = useResizableSidebarView({
+    setSidebarOpen,
+  });
 
   return (
     <Drawer
-      ref={ref}
+      ref={drawerRef}
       variant="temporary"
       anchor="left"
       open={sidebarOpen}
