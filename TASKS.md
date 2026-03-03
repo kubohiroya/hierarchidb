@@ -1,6 +1,7 @@
 # 運用ハブ
 
 ## Doing
+- #709 / codex/fix/shape/pause-session-sync / 2026-03-03 23:36
 - #705 / codex/refactor/ui-extract-logic-hooks / 2026-03-03 20:25
 - #708 / codex/chore/ci-build-checks-separation / 2026-03-03 22:10
 
@@ -8,6 +9,8 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-03: Issue #709 開始 - Shape build pause同期判定を `sessionRecord` ベースへ修正
+- 2026-03-03: Issue #709 進捗 - `PauseWithCancelHookActionsArgs` へ `sessionRecord` を追加し、pause同期判定を `sessionRecord?.status === 'paused'` へ更新（`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` 成功）
 - 2026-03-03: Issue #708 開始 - `pnpm build` から非必須チェックを分離し、CI向け `ci:checks` と `use*.tsx` ガードを追加
 - 2026-03-03: Issue #708 進捗 - `check:ui-hooks-tsx` / `ci:checks` を追加し、`dep-fence-guards.yml` で CI checks → build の順に実行する構成へ変更（`pnpm build` / `pnpm ci:checks` 成功）
 - 2026-03-03: Issue #708 進捗 - `app/scripts/generate-favicon.mjs` に既存 `favicon.png`/`favicon.ico` 検出時のスキップを追加し、`pnpm -C app run generate:favicon` でスキップ動作を確認

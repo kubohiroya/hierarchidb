@@ -371,6 +371,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     updateSessionRecord,
     setIsStopRequested,
     setIsStopAccepted,
+    sessionRecord,
   });
 
   useEffect(() => {

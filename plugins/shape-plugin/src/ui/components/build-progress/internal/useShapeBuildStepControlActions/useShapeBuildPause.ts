@@ -17,6 +17,7 @@ export const useShapeBuildPause = ({
   setRequestedControlAction,
   setIsStopRequested,
   setIsStopAccepted,
+  sessionRecord,
   handleCancelQueued,
 }: PauseWithCancelHookActionsArgs) => {
   const handlePause = useCallback(async (reason: ShapeBuildPauseReason = 'user-pause'): Promise<void> => {
@@ -85,11 +86,7 @@ export const useShapeBuildPause = ({
 
       // セッション状態の同期を待機（オプション）
       const sessionSyncSuccess = await waitForSessionStateSync(
-        () => {
-          // この関数は外部のsessionRecordを参照できないため、
-          // 実際の実装では親コンポーネントから状態チェック関数を渡す必要がある
-          return false; // 暫定的にfalseを返す
-        },
+        () => sessionRecord?.status === 'paused',
         PAUSE_STATE_SYNC_TIMEOUT_MS,
       );
 
@@ -139,6 +136,7 @@ export const useShapeBuildPause = ({
     handleCancelQueued,
     setIsStopRequested,
     setIsStopAccepted,
+    sessionRecord,
   ]);
 
   return handlePause;
