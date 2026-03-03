@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useOptionalBootProgress } from '~/contexts/BootProgressProvider';
 import { useWorker } from '~/contexts/WorkerProvider';
 import { createMaintenanceSessionUrl } from '~/maintenance/maintenanceSession';
-import { treeRouteIds } from '~/router/routes/tree/shared';
+import { treeRouteIds } from '~/router/routes/tree/treeRouteIds';
 import type { LoadPageNodeReturn } from '~/router/loaders/treeLoaders';
 import { MemoizedTreeConsoleIntegration } from './TreeConsoleIntegrationLoader';
 import { useTreeConsoleDocumentTitle } from './hooks/useTreeConsoleDocumentTitle';
