@@ -150,7 +150,7 @@ export interface EphemeralBuildTaskRecord<TInput = unknown, TOutput = unknown> {
   completedAt?: number;
 }
 
-export interface EphemeralFetchCacheRecord {
+export interface EphemeralSourceCacheRecord {
   id: string;
   nodeId: NodeId;
   domainType?: EphemeralDomainType;
@@ -174,9 +174,9 @@ export interface EphemeralFetchCacheRecord {
   timestamp: number;
 }
 
-export type EphemeralFetchCacheMetaRecord = Omit<EphemeralFetchCacheRecord, 'data'>;
+export type EphemeralSourceCacheMetaRecord = Omit<EphemeralSourceCacheRecord, 'data'>;
 
-export interface EphemeralTransformCacheRecord {
+export interface EphemeralGeometryCacheRecord {
   id: string;
   nodeId: NodeId;
   domainType: 'shape' | 'route';
@@ -194,7 +194,7 @@ export interface EphemeralTransformCacheRecord {
   metadata?: Record<string, unknown>;
 }
 
-export interface EphemeralTransformCacheMetaRecord {
+export interface EphemeralGeometryCacheMetaRecord {
   id: string;
   nodeId: NodeId;
   domainType: 'shape' | 'route';

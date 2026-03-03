@@ -117,8 +117,11 @@ describe('runShapeSourceStage message', () => {
   it('re-fetches source data when existing filtered cache is marked rawCacheInvalidated', async () => {
     db = createDb();
     const sourceKey = 'ID:0';
+    const cacheId = `${String(nodeId)}-shape-${sourceKey}`;
+
+    // Phase 1: Write with timestamp: 0
     await ephemeralDB.sourceCache.put({
-      id: `${String(nodeId)}-shape-${sourceKey}`,
+      id: cacheId,
       nodeId,
       domainType: 'shape',
       sourceKey,
@@ -140,8 +143,11 @@ describe('runShapeSourceStage message', () => {
         rawCacheInvalidated: true,
       },
       contentHash: 'seed-cache',
-      timestamp: Date.now(),
+      timestamp: 0,
     });
+
+    // Phase 2: Mark write complete
+    await ephemeralDB.sourceCache.update(cacheId, { timestamp: Date.now() });
 
     await runShapeSourceStage({
       nodeId,

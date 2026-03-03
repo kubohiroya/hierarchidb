@@ -169,7 +169,7 @@ test.describe('Shape build background (real pipeline)', () => {
       cleanupConfig: {
         deleteFetchApiCache: false,
         deleteFetchFilteredCache: false,
-        deleteTransformCache: false,
+        deleteGeometryCache: false,
         deleteVTCache: false,
       },
     };

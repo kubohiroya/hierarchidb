@@ -11,7 +11,7 @@ The refactor applies to both EphemeralDB (volatile, cleared on startup) and Shap
 - **Bug_Condition (C)**: The condition where session records contain redundant, unused, or inefficiently-updated fields
 - **Property (P)**: The desired behavior where session data is normalized into four tables with distinct update frequencies
 - **Preservation**: Existing query patterns and external APIs that must remain unchanged
-- **EphemeralBuildSessionRecord**: The current monolithic session record in `packages/gis-sdk/src/ephemeral/EphemeralBuildState.ts`
+- **EphemeralBuildSessionRecord**: The current monolithic session record in `packages/gis-sdk/src/ephemeral/EphemeralDBRecordTypes.ts`
 - **BuildSessionRecord**: New immutable configuration table (nodeId, domainType, selectedArrayByCountries, selectedArrayVersion, startedAt, sourceStageMaxima)
 - **BuildSessionHeartbeat**: New heartbeat tracking table (nodeId, lastHeartbeatAt) updated every 1 second
 - **BuildSessionStatus**: New session-level status table (nodeId, status, stopReason, completedAt) updated on state transitions
@@ -95,7 +95,7 @@ _For any_ code that queries session data through the existing API, the fixed imp
 The fix involves creating four new tables and migrating existing code to use them.
 
 **Files to Modify**:
-1. `packages/gis-sdk/src/ephemeral/EphemeralBuildState.ts` - Define new interfaces and schema
+1. `packages/gis-sdk/src/ephemeral/EphemeralDBRecordTypes.ts` - Define new interfaces and schema
 2. `packages/gis-sdk/src/ephemeral/EphemeralDB.ts` - Add new tables and migration logic
 3. `packages/shape-store/src/ShapeDB.ts` - Apply parallel changes to ShapeDB
 4. `packages/runtime-worker/src/services/ShapeMutationService.ts` - Update session write logic

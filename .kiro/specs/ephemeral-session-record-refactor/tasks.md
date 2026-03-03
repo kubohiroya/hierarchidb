@@ -45,7 +45,7 @@
 
 - [x] 3. Refactor session record schema into four normalized tables
 
-  - [x] 3.1 Define new interfaces and schema in EphemeralBuildState.ts
+  - [x] 3.1 Define new interfaces and schema in EphemeralDBRecordTypes.ts
     - Create `BuildSessionRecord` interface (immutable config: nodeId, domainType, selectedArrayByCountries, selectedArrayVersion, startedAt, sourceStageMaxima)
     - Create `BuildSessionHeartbeat` interface (nodeId, lastHeartbeatAt)
     - Create `BuildSessionStatus` interface (nodeId, status, stopReason, completedAt)

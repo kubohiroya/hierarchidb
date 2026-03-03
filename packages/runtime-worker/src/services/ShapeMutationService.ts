@@ -10,13 +10,11 @@ import type {
   ShapeGeometryCache,
   ShapeVectorTileRecord,
 } from '@hierarchidb/shape-api';
-import {
-  type BuildStage,
-  type LayerInfo,
-  type ResourceUsage,
-  type ShapeDB,
-  type StageStatus,
-  type VectorTileRecord,
+import type {
+  BuildStage,
+  LayerInfo,
+  ShapeDB,
+  VectorTileRecord,
 } from '@hierarchidb/shape-store';
 import {
   ephemeralDB,
@@ -24,7 +22,6 @@ import {
   type BuildSessionHeartbeat,
   type BuildSessionStatus,
   type BuildStageStatus,
-  type EphemeralBuildSessionRecord,
 } from '@hierarchidb/gis-sdk';
 import { SingletonMixin } from '@hierarchidb/util';
 import { publishBuildSessionUpdate } from './buildSessionBroadcast.js';

@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
   EphemeralDB,
-  EphemeralTransformCacheRecord,
+  EphemeralGeometryCacheRecord,
 } from '@hierarchidb/gis-sdk';
 import { logDebug } from '~/debug/persistentDebugLog';
 import {
@@ -13,11 +13,11 @@ import {
 
 type UpdateTaskStrict = (taskId: string, updates: Record<string, unknown>, operation: string) => Promise<void>;
 
-type TransformCacheRecord = {
+type GeometryCacheRecord = {
   id: string;
   nodeId: NodeId;
   bandIndex: number;
-  domainType: EphemeralTransformCacheRecord['domainType'];
+  domainType: EphemeralGeometryCacheRecord['domainType'];
   sourceKey: string;
   countryCode?: string;
   adminLevel?: number;
@@ -45,7 +45,7 @@ export const finalizeTransformByBandCache = async (params: {
   taskId: string;
   ephemeralDB: EphemeralDB;
   updateTaskStrict: UpdateTaskStrict;
-  cacheRecord: TransformCacheRecord;
+  cacheRecord: GeometryCacheRecord;
   metrics: TransformCompletionMetrics;
   outputData: TransformCompletionOutputData;
   metadata?: Record<string, unknown>;

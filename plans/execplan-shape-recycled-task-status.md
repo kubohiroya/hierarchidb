@@ -64,7 +64,7 @@ Finally, run the shape-plugin test suite, confirm exit 0, and record results in 
 1. Update shared task status unions:
    - Edit `/Users/hiroya/WebstormProjects/hierarchidb/packages/build-api/src/task-queue-types.ts` to include `recycled`.
    - Edit `/Users/hiroya/WebstormProjects/hierarchidb/packages/shape-api/src/shapeBuildTypes.ts` and `/Users/hiroya/WebstormProjects/hierarchidb/packages/shape-store/src/ShapeDB.ts` to include `recycled`.
-   - Edit `/Users/hiroya/WebstormProjects/hierarchidb/packages/vt-orchestrator/src/types/_BuildConfig.ts` and `/Users/hiroya/WebstormProjects/hierarchidb/packages/gis-sdk/src/ephemeral/EphemeralBuildState.ts` where BuildTaskStatus is defined.
+   - Edit `/Users/hiroya/WebstormProjects/hierarchidb/packages/vt-orchestrator/src/types/_BuildConfig.ts` and `/Users/hiroya/WebstormProjects/hierarchidb/packages/gis-sdk/src/ephemeral/EphemeralDBRecordTypes.ts` where BuildTaskStatus is defined.
 
 2. Replace cacheReuse marking with recycled status:
    - Edit `/Users/hiroya/WebstormProjects/hierarchidb/plugins/shape-plugin/src/services/vt/shapePipelineStageHelpers.ts` to rename and rework `markStageTasksCacheReused` into `markStageTasksRecycled`, updating task status to `recycled` with `allowTerminalStatusTransition`.

@@ -1,5 +1,5 @@
 import type { Feature } from 'geojson';
-import { geometryArea, type EphemeralTransformCacheRecord } from '@hierarchidb/gis-sdk';
+import { geometryArea, type EphemeralGeometryCacheRecord } from '@hierarchidb/gis-sdk';
 import type { VTStageContext } from '~/contexts';
 import type { InputFeatureStats } from './vtStageGeometryTypes.js';
 import {
@@ -32,7 +32,7 @@ type FeatureCollectorRecordContext = {
 
 export const collectFeaturesFromRecord = async (
   input: FeatureCollectorRecordContext,
-  record: EphemeralTransformCacheRecord,
+  record: EphemeralGeometryCacheRecord,
 ) => {
   const {
     nodeId,

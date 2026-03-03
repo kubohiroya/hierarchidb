@@ -1,7 +1,7 @@
-import type { EphemeralTransformCacheRecord } from '@hierarchidb/gis-sdk';
+import type { EphemeralGeometryCacheRecord } from '@hierarchidb/gis-sdk';
 import type { VTStageContext } from '~/contexts';
 import { collectDebugTimeoutError } from './vtStageFeatureCollectorDebugSettings.js';
-import { loadTransformCacheRecords } from './vtStageFeatureCollectorLoader.js';
+import { loadGeometryCacheRecords } from './vtStageFeatureCollectorLoader.js';
 import { getCollectTimeoutMs, withCollectTimeout } from './vtStageTaskCollectorTimeout.js';
 import {
   logCollectTransactionRejected,
@@ -18,9 +18,9 @@ type FeatureCollectLoadInput = {
   useGetEach: boolean;
 };
 
-export const loadTransformCacheRecordsForCollection = async (
+export const loadGeometryCacheRecordsForCollection = async (
   input: FeatureCollectLoadInput,
-): Promise<EphemeralTransformCacheRecord[]> => {
+): Promise<EphemeralGeometryCacheRecord[]> => {
   const {
     context,
     nodeId,
@@ -31,7 +31,7 @@ export const loadTransformCacheRecordsForCollection = async (
     useGetEach,
   } = input;
 
-  const txPromise = loadTransformCacheRecords({
+  const txPromise = loadGeometryCacheRecords({
     context,
     nodeId,
     bufferIds,

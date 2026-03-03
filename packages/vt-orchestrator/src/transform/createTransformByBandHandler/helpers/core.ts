@@ -144,12 +144,12 @@ export const validateEncodedFlatGeobuf = async (buffer: ArrayBuffer): Promise<vo
   }
 };
 
-export const decodeFetchCache = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
+export const decodeSourceCache = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
   const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
   return normalizeFeatureCollection(decoded);
 };
 
-export const decodeTopoJsonFetchCache = async (params: {
+export const decodeTopoJsonSourceCache = async (params: {
   buffer: ArrayBuffer;
   compression?: string;
   zTarget: number;

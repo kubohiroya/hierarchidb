@@ -3,7 +3,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { TaskDisplayPayload } from '../../../../build-api';
 import {
   applyFeatureFiltering,
-  type EphemeralTransformCacheMetaRecord,
+  type EphemeralGeometryCacheMetaRecord,
 } from '@hierarchidb/gis-sdk';
 import { DEFAULT_MAX_RATIO_VALUE, type ShapeGeometryErrorRecord } from '@hierarchidb/shape-api';
 import type { TransformByBandStageContext } from '~/contexts';
@@ -31,7 +31,7 @@ import {
   resolveFeatureIdentifier,
 } from './helpers/analysis.js';
 import {
-  decodeFetchCacheByFormat,
+  decodeSourceCacheByFormat,
   countPolygonsFromGeometry,
   countVerticesFromGeometry,
   simplifyOnlyCollection,
@@ -373,7 +373,7 @@ export const createTransformByBandHandler = (
     ): ReturnType<typeof toResultMetadata> => (
       toResultMetadata(status, effectiveTolerance, extractionRatio, retryAttemptForTask)
     );
-    const persistTransformCacheMetadata = async (
+    const persistGeometryCacheMetadata = async (
       status: 'completed' | 'failed' | 'skipped',
       metadata: Record<string, unknown>,
       extractionRatio = Number.NaN,
@@ -385,7 +385,7 @@ export const createTransformByBandHandler = (
     ): Promise<void> => {
       if (!input) return;
       const cacheId = `${task.nodeId}-b${input.bandIndex}-${input.domainType}-${input.sourceKey}`;
-      const record: EphemeralTransformCacheMetaRecord = {
+      const record: EphemeralGeometryCacheMetaRecord = {
         id: cacheId,
         nodeId: task.nodeId,
         domainType: input.domainType,
@@ -427,7 +427,7 @@ export const createTransformByBandHandler = (
       },
     ): Promise<ReturnType<typeof resolveResultMetadata>> => {
       const resultMetadata = resolveResultMetadata(status, finalEffectiveToleranceForTask, extractionRatio);
-      await persistTransformCacheMetadata(status, resultMetadata.metadata, extractionRatio, counts);
+      await persistGeometryCacheMetadata(status, resultMetadata.metadata, extractionRatio, counts);
       return resultMetadata;
     };
     const updateFinalEffectiveTolerance = (candidate: number): void => {
@@ -682,7 +682,7 @@ export const createTransformByBandHandler = (
       let collection: FeatureCollection | null = null;
       try {
         const skipDecodeTopojsonSimplify = sourceCache.format === 'topojson' && simplifyAlgorithm === 'topojson';
-        collection = await runStageWithLabel('decode', () => decodeFetchCacheByFormat({
+        collection = await runStageWithLabel('decode', () => decodeSourceCacheByFormat({
           buffer: sourceCache.data,
           format: sourceCache.format,
           compression: sourceCache.compression,
@@ -1550,7 +1550,7 @@ export const createTransformByBandHandler = (
           finalEffectiveToleranceForTask,
           simplified?.features ? simplified.features.length / inputFeatureCount : Number.NaN,
         ).metadata,
-        persistTransformCacheMetadata: (metadata) => persistTransformCacheMetadata(
+        persistGeometryCacheMetadata: (metadata) => persistGeometryCacheMetadata(
           'completed',
           metadata,
           simplified?.features ? simplified.features.length / inputFeatureCount : Number.NaN,

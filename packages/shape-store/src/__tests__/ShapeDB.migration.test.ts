@@ -7,9 +7,8 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Dexie } from 'dexie';
-import { ShapeDB } from '../ShapeDB';
-import type { BuildSessionRecord } from '../ShapeDB';
 import type { NodeId } from '@hierarchidb/core-types';
+import {BuildSessionRecord, ShapeDB} from "../VectorTileRecord";
 
 describe('ShapeDB Migration from V1 to V2', () => {
   let testDbName: string;

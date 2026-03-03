@@ -2,7 +2,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import {
   encodeFlatGeobufFromFeatureCollection,
   type EphemeralDB,
-  type EphemeralTransformCacheRecord,
+  type EphemeralGeometryCacheRecord,
 } from '@hierarchidb/gis-sdk';
 import type { Feature, FeatureCollection } from 'geojson';
 import type { TaskDisplayPayload } from '../../../../build-api';
@@ -76,7 +76,7 @@ type TransformByBandOutputParams = {
   updateTaskStrict: UpdateTaskStrict;
   ephemeralDB: EphemeralDB;
   resultMetadata: Record<string, unknown>;
-  persistTransformCacheMetadata?: (metadata: Record<string, unknown>) => Promise<void>;
+  persistGeometryCacheMetadata?: (metadata: Record<string, unknown>) => Promise<void>;
 };
 
 const collectArrayBufferSnapshot = (data: unknown): Record<string, unknown> => {
@@ -134,7 +134,7 @@ export const runTransformByBandOutputPhase = async (
     updateTaskStrict,
     ephemeralDB,
     resultMetadata,
-    persistTransformCacheMetadata,
+    persistGeometryCacheMetadata,
   } = params;
 
   const simplifiedFeatureCount = simplified.features.length;
@@ -198,12 +198,12 @@ export const runTransformByBandOutputPhase = async (
   logDebugPhase('output-build:done', { featureCount: outputCollectionValue.features.length });
   if (outputCollectionValue.features.length === 0) {
     await reportPolygonProgress(taskId, inputPolygonCount, inputPolygonCount);
-    if (persistTransformCacheMetadata) {
+    if (persistGeometryCacheMetadata) {
       const skippedMetadata = {
         ...resultMetadata,
         status: 'Skipped',
       };
-      await persistTransformCacheMetadata(skippedMetadata).catch((error) => {
+      await persistGeometryCacheMetadata(skippedMetadata).catch((error) => {
         console.error('[ShapeGeometry] failed to persist skipped geometry cache metadata', {
           taskId,
           nodeId,
@@ -297,9 +297,9 @@ export const runTransformByBandOutputPhase = async (
   assertNotAborted(abortSignal);
   await updateTaskPhase(taskId, 'cache:put:start', taskProgressRange.cachePutStart);
   logDebugPhase('cache-put:start', { cacheId });
-  const cacheRecordDomainType = input.domainType as EphemeralTransformCacheRecord['domainType'];
+  const cacheRecordDomainType = input.domainType as EphemeralGeometryCacheRecord['domainType'];
 
-  const cacheRecord: Omit<EphemeralTransformCacheRecord, 'timestamp'> = {
+  const cacheRecord: Omit<EphemeralGeometryCacheRecord, 'timestamp'> = {
     id: cacheId,
     nodeId,
     bandIndex: input.bandIndex,
@@ -390,8 +390,8 @@ export const runTransformByBandOutputPhase = async (
     }
   }
 
-  if (persistTransformCacheMetadata) {
-    await persistTransformCacheMetadata(resultMetadata).catch((error) => {
+  if (persistGeometryCacheMetadata) {
+    await persistGeometryCacheMetadata(resultMetadata).catch((error) => {
       console.error('[ShapeGeometry] failed to persist completed geometry cache metadata', {
         taskId,
         nodeId,

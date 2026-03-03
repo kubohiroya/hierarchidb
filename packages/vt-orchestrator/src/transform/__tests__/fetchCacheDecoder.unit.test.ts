@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import type { FeatureCollection } from 'geojson';
 import { geojson as geojsonApi } from 'flatgeobuf';
-import { decodeFetchCacheByFormat } from '../../transform/createTransformByBandHandler/helpers/validation';
+import { decodeSourceCacheByFormat } from '../../transform/createTransformByBandHandler/helpers/validation';
 import {
   __getTopojsonRuntimeLoadCount,
   __resetTopojsonRuntimeForTests,
@@ -40,7 +40,7 @@ const buildSimpleTopojsonBuffer = (): ArrayBuffer => {
   return new TextEncoder().encode(JSON.stringify(topology)).buffer;
 };
 
-describe('decodeFetchCacheByFormat', () => {
+describe('decodeSourceCacheByFormat', () => {
   beforeEach(() => {
     __resetTopojsonRuntimeForTests();
   });
@@ -60,7 +60,7 @@ describe('decodeFetchCacheByFormat', () => {
       ],
     };
     const buffer = await buildFlatGeobuf(collection);
-    const decoded = await decodeFetchCacheByFormat({
+    const decoded = await decodeSourceCacheByFormat({
       buffer,
       format: 'flatgeobuf',
       zTarget: 5,
@@ -73,7 +73,7 @@ describe('decodeFetchCacheByFormat', () => {
 
   it('loads topojson runtime when topojson format is decoded', async () => {
     const buffer = buildSimpleTopojsonBuffer();
-    const decoded = await decodeFetchCacheByFormat({
+    const decoded = await decodeSourceCacheByFormat({
       buffer,
       format: 'topojson',
       zTarget: 5,
@@ -87,7 +87,7 @@ describe('decodeFetchCacheByFormat', () => {
 
   it('supports geojson simplify algorithm for topojson fetch cache', async () => {
     const buffer = buildSimpleTopojsonBuffer();
-    const decoded = await decodeFetchCacheByFormat({
+    const decoded = await decodeSourceCacheByFormat({
       buffer,
       format: 'topojson',
       zTarget: 5,

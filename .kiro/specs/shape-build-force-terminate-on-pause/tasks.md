@@ -19,49 +19,49 @@ Key technical changes:
   - Create migration script to add timestamp field with default value 0 for existing entries
   - _Requirements: 3.1, 3.2, 6.3, 6.4_
 
-- [ ] 2. Implement lock-free cache write flow
+- [~] 2. Implement lock-free cache write flow
   - [~] 2.1 Refactor geometry cache write to use two-phase write (data with timestamp:0, then metadata)
     - Update `writeGeometryCache` to write data with `timestamp: 0` first
     - Write `geometryCacheMeta` with `Date.now()` timestamp after data write completes
     - Remove any Dexie transaction blocks coordinating data and metadata writes
     - _Requirements: 3.1, 3.2, 3.5, 6.3_
 
-  - [~] 2.2 Write property test for cache write ordering
+  - [x] 2.2 Write property test for cache write ordering
     - **Property 6: Cache Write Ordering**
     - **Validates: Requirements 3.1, 3.2, 6.3, 6.4**
 
-  - [~] 2.3 Refactor source cache write to use two-phase write (data with timestamp:0, then metadata)
+  - [x] 2.3 Refactor source cache write to use two-phase write (data with timestamp:0, then metadata)
     - Update `writeSourceCache` to write data with `timestamp: 0` first
     - Write `sourceCacheMeta` with `Date.now()` timestamp after data write completes
     - Remove any Dexie transaction blocks coordinating data and metadata writes
     - _Requirements: 3.1, 3.2, 3.5, 6.4_
 
-  - [~] 2.4 Write property test for cache type consistency
+  - [x] 2.4 Write property test for cache type consistency
     - **Property 11: Cache Type Consistency**
     - **Validates: Requirements 6.1, 6.2**
 
 - [ ] 3. Implement cache validation and cleanup logic
-  - [~] 3.1 Create `CacheValidator` service with invalid entry detection
+  - [x] 3.1 Create `CacheValidator` service with invalid entry detection
     - Implement `cleanupInvalidEntries(nodeId)` to query cache entries where `timestamp === 0`
     - Delete invalid geometry cache entries and return count
     - Delete invalid source cache entries and return count
     - Log cleanup results with counts
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-  - [~] 3.2 Write property test for cache entry validation
+  - [x] 3.2 Write property test for cache entry validation
     - **Property 7: Cache Entry Validation**
     - **Validates: Requirements 3.3, 3.4**
 
-  - [~] 3.3 Write property test for invalid cache cleanup
+  - [x] 3.3 Write property test for invalid cache cleanup
     - **Property 8: Invalid Cache Cleanup**
     - **Validates: Requirements 4.1, 4.2, 4.3, 4.4**
 
-  - [~] 3.4 Implement `isValidEntry` method for runtime validation
+  - [x] 3.4 Implement `isValidEntry` method for runtime validation
     - Check if both cache data and cache metadata exist
     - Return true only if metadata exists (data with timestamp:0 is invalid)
     - _Requirements: 3.3, 3.4_
 
-- [~] 4. Checkpoint - Ensure cache validation tests pass
+- [x] 4. Checkpoint - Ensure cache validation tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 5. Add AbortController to session management

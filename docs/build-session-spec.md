@@ -105,7 +105,7 @@ graph LR
 - 生成物の参照グラフ
   - 仕様: 生成物メタデータから元データを辿れる構造を要求。
   - 実装: `sourceKey` や `originKey` により辿れるが、グラフ構造を用いた更新判定は未実装。
-  - 参照: `/Users/hiroya/WebstormProjects/hierarchidb/packages/gis-sdk/src/ephemeral/EphemeralBuildState.ts`
+  - 参照: `/Users/hiroya/WebstormProjects/hierarchidb/packages/gis-sdk/src/ephemeral/EphemeralDBRecordTypes.ts`
   - 参照: `/Users/hiroya/WebstormProjects/hierarchidb/plugins/shape-plugin/src/services/vt/shapeStageMetadata.ts`
 
 ## 実装との差異まとめ

@@ -21,7 +21,7 @@ import type {
   BuildSessionRecord,
   BuildSessionHeartbeat,
   BuildSessionStatus,
-} from '../EphemeralBuildState';
+} from '../EphemeralDBRecordTypes';
 import type { NodeId } from '@hierarchidb/core-types';
 import { getSessionWithDetails } from '../sessionHelpers';
 

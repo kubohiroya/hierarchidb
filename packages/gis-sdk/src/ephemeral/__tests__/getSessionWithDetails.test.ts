@@ -6,7 +6,7 @@ import type {
   BuildSessionStatus,
   BuildStageStatus,
   EphemeralBuildTaskRecord,
-} from '../EphemeralBuildState.js';
+} from '../EphemeralDBRecordTypes.js';
 import type { NodeId } from '@hierarchidb/core-types';
 
 describe('getSessionWithDetails', () => {

@@ -1,5 +1,5 @@
 import type { Feature } from 'geojson';
-import type { EphemeralTransformCacheRecord } from '@hierarchidb/gis-sdk';
+import type { EphemeralGeometryCacheRecord } from '@hierarchidb/gis-sdk';
 import type { VTStageContext } from '~/contexts';
 import type { InputFeatureStats } from './vtStageGeometryTypes.js';
 import { collectFeaturesFromRecord } from './vtStageFeatureCollectorRecordProcessor.js';
@@ -7,7 +7,7 @@ import { collectFeaturesFromRecord } from './vtStageFeatureCollectorRecordProces
 type FeatureCollectorFlowInput = {
   context: VTStageContext;
   nodeId: string;
-  records: EphemeralTransformCacheRecord[];
+  records: EphemeralGeometryCacheRecord[];
   debugCollect: boolean;
   options?: {
     groupByContinent?: boolean;

@@ -23,7 +23,7 @@ import {
 import { ROUTE_MODES } from '@hierarchidb/route-api';
 import { RouteGenerator, SearouteEngine } from '@hierarchidb/route-engine';
 import type { RouteDatabaseHandle } from '@hierarchidb/route-store';
-import { ephemeralDB, type EphemeralFetchCacheRecord, type EphemeralTileIdToBufferRelation } from '@hierarchidb/gis-sdk';
+import { ephemeralDB, type EphemeralSourceCacheRecord, type EphemeralTileIdToBufferRelation } from '@hierarchidb/gis-sdk';
 import { SingletonMixin, buildZoomBandRanges, normalizeZoomBandBoundaries } from '@hierarchidb/util';
 import { buildIdeGsmLocationIndex } from './route/ideGsmCsv.js';
 import { filterIdeGsmRoutesBySelection, parseIdeGsmRouteRecords } from '@hierarchidb/route-api';
@@ -178,7 +178,7 @@ export class RouteMutationService implements RouteMutationAPI {
           sequence: index,
         })
       ));
-      const sourceCacheRecords: EphemeralFetchCacheRecord[] = [];
+      const sourceCacheRecords: EphemeralSourceCacheRecord[] = [];
       linesWithWaypoints.forEach((line, index) => {
         const sourceKey = buildRouteFetchSourceKey(line);
         if (!sourceKey) {
@@ -230,7 +230,7 @@ export class RouteMutationService implements RouteMutationAPI {
         const data = new TextEncoder().encode(JSON.stringify(payload)).buffer;
         const now = Date.now();
         const bbox = computeLineBbox(coordinates);
-        const record: EphemeralFetchCacheRecord = {
+        const record: EphemeralSourceCacheRecord = {
           id: `${String(request.nodeId)}:source:${sourceKey}`,
           nodeId: request.nodeId,
           domainType: 'route',

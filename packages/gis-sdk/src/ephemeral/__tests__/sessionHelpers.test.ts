@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { computeProgressFromTasks, computeStagesFromTasks } from '../sessionHelpers.js';
-import type { EphemeralBuildTaskRecord } from '../EphemeralBuildState.js';
+import type { EphemeralBuildTaskRecord } from '../EphemeralDBRecordTypes.js';
 
 describe('sessionHelpers', () => {
   describe('computeProgressFromTasks', () => {

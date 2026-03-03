@@ -8,7 +8,7 @@ import type {
   EphemeralBuildSessionRecord,
   EphemeralBuildTaskRecord,
   EphemeralStageStatus,
-} from './EphemeralBuildState.js';
+} from './EphemeralDBRecordTypes';
 
 /**
  * ProgressInfo represents the overall progress of a build session

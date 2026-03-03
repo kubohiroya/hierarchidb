@@ -76,16 +76,16 @@ export {
   type EphemeralBuildSessionRecord,
   type EphemeralBuildTaskRecord,
   type EphemeralDomainType,
-  type EphemeralFetchCacheRecord,
-  type EphemeralFetchCacheMetaRecord,
-  type EphemeralTransformCacheRecord,
-  type EphemeralTransformCacheMetaRecord,
+  type EphemeralSourceCacheRecord,
+  type EphemeralSourceCacheMetaRecord,
+  type EphemeralGeometryCacheRecord,
+  type EphemeralGeometryCacheMetaRecord,
   type EphemeralGeometryErrorRecord,
   type EphemeralTileIdToBufferRelation,
   type EphemeralSourceStageMaxima,
   type EphemeralStageStatus,
   type StopReason,
-} from './ephemeral/EphemeralBuildState';
+} from './ephemeral/EphemeralDBRecordTypes';
 export {
   computeProgressFromTasks,
   computeStagesFromTasks,

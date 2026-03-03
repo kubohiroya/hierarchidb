@@ -1,4 +1,4 @@
-import type { EphemeralTransformCacheRecord } from '@hierarchidb/gis-sdk';
+import type { EphemeralGeometryCacheRecord } from '@hierarchidb/gis-sdk';
 
 export const logCollectBuffersStart = (input: {
   nodeId: string;
@@ -85,7 +85,7 @@ export const logCollectSummary = (
 
 export const logCollectRecordSnapshot = (
   nodeId: string,
-  records: EphemeralTransformCacheRecord[],
+  records: EphemeralGeometryCacheRecord[],
 ): void => {
   try {
     const first = records[0];

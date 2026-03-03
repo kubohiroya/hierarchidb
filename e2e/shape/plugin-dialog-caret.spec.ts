@@ -161,7 +161,7 @@ const createShapeNodeWithDraft = async (page: Page): Promise<ShapeNode> => {
         cleanupConfig: {
           deleteFetchApiCache: false,
           deleteFetchFilteredCache: false,
-          deleteTransformCache: false,
+          deleteGeometryCache: false,
           deleteVTCache: false,
         },
       },

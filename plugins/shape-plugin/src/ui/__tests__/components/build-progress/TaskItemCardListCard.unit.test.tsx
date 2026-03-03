@@ -6,7 +6,7 @@ import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAto
 import { TaskItemCardListCard } from '../../../components/build-progress/TaskItemCardListCard/TaskItemCardListCard';
 import type { TaskOutcomeSummaryBuilder } from '../../../components/build-progress/TaskItemCard/taskOutcomeSummaryBuilders';
 import { createElement, useState } from 'react';
-import { NodeId } from "@hierarchidb/core-types";
+import type { NodeId } from "@hierarchidb/core-types";
 
 vi.mock('../../../i18n.js', () => ({
   useTranslation: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
@@ -41,7 +41,7 @@ describe('TaskItemCardListCard', () => {
     ];
     const store = createStore();
 
-    const view = render(
+    render(
       <Provider store={store}>
         <TaskItemCardListCard
           stageId="source"
@@ -117,7 +117,7 @@ describe('TaskItemCardListCard', () => {
     ];
     const store = createStore();
 
-    const view = render(
+    render(
       <Provider store={store}>
         <TaskItemCardListCard
           stageId="geometry"
@@ -161,7 +161,7 @@ describe('TaskItemCardListCard', () => {
     ];
     const store = createStore();
 
-    const view = render(
+    render(
       <Provider store={store}>
         <TaskItemCardListCard
           stageId="source"
@@ -242,7 +242,7 @@ describe('TaskItemCardListCard', () => {
     ];
     const store = createStore();
 
-    const view = render(
+    render(
       <Provider store={store}>
         <TaskItemCardListCard
           stageId="source"

@@ -10,7 +10,7 @@ import {
 } from './vtStageFeatureCollectorDebug.js';
 import { getCollectDebugSettings } from './vtStageFeatureCollectorDebugSettings.js';
 import { executeFeatureCollectLoop } from './vtStageFeatureCollectorFlow.js';
-import { loadTransformCacheRecordsForCollection } from './vtStageFeatureCollectorLoad.js';
+import { loadGeometryCacheRecordsForCollection } from './vtStageFeatureCollectorLoad.js';
 
 type VtFeatureCollectorCoordinationInput = {
   context: VTStageContext;
@@ -53,7 +53,7 @@ export const runFeatureCollectionCoordinator = async (
     logCollectCountDone(nodeId, count, countStartedAt);
   }
 
-  const records = await loadTransformCacheRecordsForCollection({
+  const records = await loadGeometryCacheRecordsForCollection({
     context,
     nodeId,
     bufferIds,

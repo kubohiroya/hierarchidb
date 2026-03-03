@@ -128,8 +128,11 @@ async function main(endpoint?: Endpoint): Promise<void> {
       await ensureEphemeralOpen();
       const now = Date.now();
       const data = new Uint8Array([1, 2, 3]).buffer;
+      const sourceCacheId = `${nodeId}-source-cache`;
+
+      // Phase 1: Write source cache with timestamp: 0
       await ephemeralDB.sourceCache.put({
-        id: `${nodeId}-source-cache`,
+        id: sourceCacheId,
         nodeId,
         domainType: 'shape',
         sourceKey: 'seed-source',
@@ -147,10 +150,17 @@ async function main(endpoint?: Endpoint): Promise<void> {
         polygonCount: 1,
         inputVertexCount: 1,
         inputPolygonCount: 1,
-        timestamp: now,
+        timestamp: 0,
       });
+
+      // Phase 2: Mark source cache write complete
+      await ephemeralDB.sourceCache.update(sourceCacheId, { timestamp: now });
+
+      const geometryCacheId = `${nodeId}-geometry-cache`;
+
+      // Phase 1: Write geometry cache with timestamp: 0
       await ephemeralDB.geometryCache.put({
-        id: `${nodeId}-geometry-cache`,
+        id: geometryCacheId,
         nodeId,
         domainType: 'shape',
         bandIndex: 0,
@@ -163,8 +173,12 @@ async function main(endpoint?: Endpoint): Promise<void> {
         polygonCount: 1,
         extractionRatio: 1,
         tolerance: 0,
-        timestamp: now,
+        timestamp: 0,
       });
+
+      // Phase 2: Mark geometry cache write complete
+      await ephemeralDB.geometryCache.update(geometryCacheId, { timestamp: now });
+
       await ephemeralDB.geometryErrors.put({
         id: `${nodeId}-geometry-error`,
         nodeId,
@@ -431,7 +445,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
   };
 
   const buildApi: ShapeBuildTestAPI = {
-  seedDraftNode: async (payload) => {
+    seedDraftNode: async (payload) => {
       const coreDB = await CoreDB.getSingleton();
       const rootId = await ensureRootNode(coreDB);
       const now = Date.now();
@@ -455,14 +469,14 @@ async function main(endpoint?: Endpoint): Promise<void> {
         version: (existing?.version ?? 0) + 1,
         lastTouchedAt: now,
       });
-  },
-  startBuildSession: async (payload) => shapeBuildAPI.startBuildSession(
-    payload.nodeId,
-    payload.buildConfig,
-    payload.processingConfig,
-    payload.downloadTaskPayloads,
-    payload.buildContinuationPolicy,
-  ),
+    },
+    startBuildSession: async (payload) => shapeBuildAPI.startBuildSession(
+      payload.nodeId,
+      payload.buildConfig,
+      payload.processingConfig,
+      payload.downloadTaskPayloads,
+      payload.buildContinuationPolicy,
+    ),
     subscribeToProgress: (nodeId, callback) => proxy(shapeBuildAPI.subscribeToProgress(nodeId, callback)),
     subscribeToTasks: (nodeId, callback) => proxy(shapeBuildAPI.subscribeToTasks(nodeId, callback)),
     getBuildTasks: async (nodeId) => shapeBuildAPI.getBuildTasks(nodeId),

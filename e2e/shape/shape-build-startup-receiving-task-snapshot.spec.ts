@@ -346,7 +346,7 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
         cleanupConfig: {
           deleteFetchApiCache: false,
           deleteFetchFilteredCache: false,
-          deleteTransformCache: false,
+          deleteGeometryCache: false,
           deleteVTCache: false,
         },
       };
@@ -702,7 +702,7 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
         cleanupConfig: {
           deleteFetchApiCache: false,
           deleteFetchFilteredCache: false,
-          deleteTransformCache: false,
+          deleteGeometryCache: false,
           deleteVTCache: false,
         },
       };

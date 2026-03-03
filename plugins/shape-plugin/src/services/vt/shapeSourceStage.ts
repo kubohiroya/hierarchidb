@@ -455,6 +455,14 @@ const buildSourceCacheMetadata = (params: {
     : undefined,
 });
 
+const markSourceCacheWriteComplete = async (cacheIds: string[]): Promise<void> => {
+  if (cacheIds.length === 0) return;
+  const completedAt = Date.now();
+  await Promise.all(cacheIds.map((id) => (
+    ephemeralDB.sourceCache.update(id, { timestamp: completedAt })
+  )));
+};
+
 const putSourceCache = async (params: {
   nodeId: NodeId;
   sourceKey: string;
@@ -475,6 +483,8 @@ const putSourceCache = async (params: {
 }): Promise<{ id: string; contentHash: string }> => {
   const recordId = buildSourceCacheId(params.nodeId, params.sourceKey);
   const contentHash = hashSourceArtifact(params.data);
+
+  // Phase 1: Write data with timestamp: 0 (invalid state)
   await ephemeralDB.sourceCache.put({
     id: recordId,
     nodeId: params.nodeId,
@@ -496,8 +506,12 @@ const putSourceCache = async (params: {
     inputPolygonCount: params.inputPolygonCount,
     metadata: params.metadata,
     contentHash,
-    timestamp: Date.now(),
+    timestamp: 0,
   });
+
+  // Phase 2: Mark write complete with non-zero timestamp (valid state)
+  await markSourceCacheWriteComplete([recordId]);
+
   return { id: recordId, contentHash };
 };
 
@@ -974,127 +988,127 @@ const createSourceHandler = (params: {
       if (!isRawCacheInvalidated) {
         const createdAt = Date.now();
         let sourceArtifactHash = await resolveSourceArtifactHashFromRecord(ephemeralDB.sourceCache, existing);
-      const existingInputFeatureCount = existing.inputFeatureCount ?? existing.featureCount;
-      const existingOutputFeatureCount = existing.featureCount;
-      const cachedPolygonPerFeatureMax = readNumericProperty(existingMetadata, 'polygonPerFeatureMax')
-        ?? (existingOutputFeatureCount > 0
-          ? (existing.polygonCount ?? 0) / existingOutputFeatureCount
-          : 0);
-      const cachedInputPolygonPerFeatureMax = readNumericProperty(existingMetadata, 'inputPolygonPerFeatureMax')
-        ?? (existingInputFeatureCount > 0
-          ? (existing.inputPolygonCount ?? existing.polygonCount ?? 0) / existingInputFeatureCount
-          : 0);
-      const cachedCollection = await decodeSourceCacheData({
-        data: existing.data,
-        format: existing.format,
-        compression: existing.compression,
-      });
-      const sourceMetadata = buildSourceCacheMetadata({
-        status: 'completed',
-        dataSource: input.dataSource,
-        sourceKey: input.sourceKey,
-        countryCode: input.countryCode,
-        adminLevel: input.adminLevel,
-        featureCount: existing.featureCount,
-        inputFeatureCount: existingInputFeatureCount,
-        vertexCount: existing.vertexCount ?? 0,
-        polygonCount: existing.polygonCount ?? 0,
-        inputVertexCount: existing.inputVertexCount ?? 0,
-        inputPolygonCount: existing.inputPolygonCount ?? 0,
-        polygonPerFeatureMax: cachedPolygonPerFeatureMax,
-        inputPolygonPerFeatureMax: cachedInputPolygonPerFeatureMax,
-      });
-      if (cachedCollection && cachedCollection.features.length > 0) {
-        const hasMissingFeatureIds = cachedCollection.features.some((feature) => {
-          const props = feature?.properties as Record<string, unknown> | undefined;
-          return typeof props?.__hdbFeatureId !== 'string' || props.__hdbFeatureId.length === 0;
+        const existingInputFeatureCount = existing.inputFeatureCount ?? existing.featureCount;
+        const existingOutputFeatureCount = existing.featureCount;
+        const cachedPolygonPerFeatureMax = readNumericProperty(existingMetadata, 'polygonPerFeatureMax')
+          ?? (existingOutputFeatureCount > 0
+            ? (existing.polygonCount ?? 0) / existingOutputFeatureCount
+            : 0);
+        const cachedInputPolygonPerFeatureMax = readNumericProperty(existingMetadata, 'inputPolygonPerFeatureMax')
+          ?? (existingInputFeatureCount > 0
+            ? (existing.inputPolygonCount ?? existing.polygonCount ?? 0) / existingInputFeatureCount
+            : 0);
+        const cachedCollection = await decodeSourceCacheData({
+          data: existing.data,
+          format: existing.format,
+          compression: existing.compression,
         });
-        const countryLookup = await getMetadataLookup();
-        const cachedMetadata = buildSourceFeatureMetadata({
-          nodeId: params.nodeId,
+        const sourceMetadata = buildSourceCacheMetadata({
+          status: 'completed',
           dataSource: input.dataSource,
-          collection: cachedCollection,
-          createdAt,
-          countryLookup,
-          recyclingByFeatureId: params.recyclingByFeatureId,
-          geometryEngine,
+          sourceKey: input.sourceKey,
+          countryCode: input.countryCode,
+          adminLevel: input.adminLevel,
+          featureCount: existing.featureCount,
+          inputFeatureCount: existingInputFeatureCount,
+          vertexCount: existing.vertexCount ?? 0,
+          polygonCount: existing.polygonCount ?? 0,
+          inputVertexCount: existing.inputVertexCount ?? 0,
+          inputPolygonCount: existing.inputPolygonCount ?? 0,
+          polygonPerFeatureMax: cachedPolygonPerFeatureMax,
+          inputPolygonPerFeatureMax: cachedInputPolygonPerFeatureMax,
         });
-        if (cachedMetadata.length > 0) {
-          await shapeMutationAPIImpl.putFeatureMetadata(cachedMetadata);
-        }
-        if (hasMissingFeatureIds) {
-          let data: ArrayBuffer | null = null;
-          if (existing.format === 'topojson') {
-            const topology = topojsonTopology({ collection: cachedCollection });
-            const encoded = encodeTopoJson(topology);
-            data = existing.compression === 'gzip'
-              ? await compressGzip(encoded)
-              : encoded;
-          } else if (existing.format === 'flatgeobuf' || !existing.format) {
-            data = await encodeFlatGeobufFromFeatureCollection(cachedCollection);
+        if (cachedCollection && cachedCollection.features.length > 0) {
+          const hasMissingFeatureIds = cachedCollection.features.some((feature) => {
+            const props = feature?.properties as Record<string, unknown> | undefined;
+            return typeof props?.__hdbFeatureId !== 'string' || props.__hdbFeatureId.length === 0;
+          });
+          const countryLookup = await getMetadataLookup();
+          const cachedMetadata = buildSourceFeatureMetadata({
+            nodeId: params.nodeId,
+            dataSource: input.dataSource,
+            collection: cachedCollection,
+            createdAt,
+            countryLookup,
+            recyclingByFeatureId: params.recyclingByFeatureId,
+            geometryEngine,
+          });
+          if (cachedMetadata.length > 0) {
+            await shapeMutationAPIImpl.putFeatureMetadata(cachedMetadata);
           }
-          if (data) {
-            sourceArtifactHash = hashSourceArtifact(data);
+          if (hasMissingFeatureIds) {
+            let data: ArrayBuffer | null = null;
+            if (existing.format === 'topojson') {
+              const topology = topojsonTopology({ collection: cachedCollection });
+              const encoded = encodeTopoJson(topology);
+              data = existing.compression === 'gzip'
+                ? await compressGzip(encoded)
+                : encoded;
+            } else if (existing.format === 'flatgeobuf' || !existing.format) {
+              data = await encodeFlatGeobufFromFeatureCollection(cachedCollection);
+            }
+            if (data) {
+              sourceArtifactHash = hashSourceArtifact(data);
+              await ephemeralDB.sourceCache.update(existing.id, {
+                data,
+                size: data.byteLength,
+                contentHash: sourceArtifactHash,
+                timestamp: Date.now(),
+                metadata: sourceMetadata,
+              });
+            }
+          } else if (existing.metadata?.status !== 'completed') {
             await ephemeralDB.sourceCache.update(existing.id, {
-              data,
-              size: data.byteLength,
-              contentHash: sourceArtifactHash,
-              timestamp: Date.now(),
               metadata: sourceMetadata,
             });
           }
-        } else if (existing.metadata?.status !== 'completed') {
+        } else if (existing.featureCount === 0) {
+          const emptyMetadata = buildEmptyFeatureMetadata({
+            nodeId: params.nodeId,
+            originKey: buildOriginKey(input.dataSource, input.sourceKey),
+            dataSource: input.dataSource,
+            countryCode: input.countryCode,
+            adminLevel: input.adminLevel,
+            createdAt,
+            recyclingByFeatureId: params.recyclingByFeatureId,
+          });
+          await shapeMutationAPIImpl.putFeatureMetadata([emptyMetadata]);
           await ephemeralDB.sourceCache.update(existing.id, {
-            metadata: sourceMetadata,
+            metadata: {
+              ...sourceMetadata,
+              status: 'completed',
+            },
           });
         }
-      } else if (existing.featureCount === 0) {
-        const emptyMetadata = buildEmptyFeatureMetadata({
-          nodeId: params.nodeId,
-          originKey: buildOriginKey(input.dataSource, input.sourceKey),
-          dataSource: input.dataSource,
-          countryCode: input.countryCode,
-          adminLevel: input.adminLevel,
-          createdAt,
-          recyclingByFeatureId: params.recyclingByFeatureId,
-        });
-        await shapeMutationAPIImpl.putFeatureMetadata([emptyMetadata]);
-        await ephemeralDB.sourceCache.update(existing.id, {
-          metadata: {
-            ...sourceMetadata,
-            status: 'completed',
+        const cachedVertexCount = existing.vertexCount ?? 0;
+        const cachedPolygonCount = existing.polygonCount ?? 0;
+        const cachedSummary = [
+          formatChangeSummary('features', existing.inputFeatureCount ?? existing.featureCount, existing.featureCount),
+          formatChangeSummary('polygons', existing.inputPolygonCount ?? cachedPolygonCount, cachedPolygonCount),
+          formatChangeSummary('vertices', existing.inputVertexCount ?? cachedVertexCount, cachedVertexCount),
+        ].join(', ');
+        return {
+          status: 'completed',
+          message: `reused: source cache exists (${cachedSummary})`,
+          metadata: buildSourceDetailMetadata(input, {
+            inputFeatureCount: existingInputFeatureCount,
+            featureCount: existing.featureCount,
+            inputPolygonCount: existing.inputPolygonCount ?? cachedPolygonCount,
+            polygonCount: cachedPolygonCount,
+            inputPolygonPerFeatureMax: cachedInputPolygonPerFeatureMax,
+            polygonPerFeatureMax: cachedPolygonPerFeatureMax,
+          }, {
+            sourceCacheId: existing.id,
+            sourceCacheFormat: existing.format === 'topojson' ? 'topojson' : 'flatgeobuf',
+            sourceCacheCompression: existing.compression === 'gzip' ? 'gzip' : 'none',
+          }),
+          outputData: {
+            sourceCacheId: existing.id,
+            sourceArtifactHash,
+            featureCount: existing.featureCount,
+            vertexCount: cachedVertexCount,
           },
-        });
-      }
-      const cachedVertexCount = existing.vertexCount ?? 0;
-      const cachedPolygonCount = existing.polygonCount ?? 0;
-      const cachedSummary = [
-        formatChangeSummary('features', existing.inputFeatureCount ?? existing.featureCount, existing.featureCount),
-        formatChangeSummary('polygons', existing.inputPolygonCount ?? cachedPolygonCount, cachedPolygonCount),
-        formatChangeSummary('vertices', existing.inputVertexCount ?? cachedVertexCount, cachedVertexCount),
-      ].join(', ');
-      return {
-        status: 'completed',
-        message: `reused: source cache exists (${cachedSummary})`,
-        metadata: buildSourceDetailMetadata(input, {
-          inputFeatureCount: existingInputFeatureCount,
-          featureCount: existing.featureCount,
-          inputPolygonCount: existing.inputPolygonCount ?? cachedPolygonCount,
-          polygonCount: cachedPolygonCount,
-          inputPolygonPerFeatureMax: cachedInputPolygonPerFeatureMax,
-          polygonPerFeatureMax: cachedPolygonPerFeatureMax,
-        }, {
-          sourceCacheId: existing.id,
-          sourceCacheFormat: existing.format === 'topojson' ? 'topojson' : 'flatgeobuf',
-          sourceCacheCompression: existing.compression === 'gzip' ? 'gzip' : 'none',
-        }),
-        outputData: {
-          sourceCacheId: existing.id,
-          sourceArtifactHash,
-          featureCount: existing.featureCount,
-          vertexCount: cachedVertexCount,
-        },
-      };
+        };
       }
     }
 

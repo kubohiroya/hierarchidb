@@ -16782,7 +16782,7 @@
 - ブランチ名: fix/gis-sdk/buildtasks-index-nodeId-stage
 - 依存: なし
 - 受け入れ基準: buildTasks に [nodeId+stage] index が追加され SchemaError が出ない／DB version が更新される／pnpm --filter @hierarchidb/gis-sdk typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/gis-sdk/src/ephemeral/EphemeralBuildState.ts`, `packages/gis-sdk/src/ephemeral/HidbEphemeralDB.ts`, `packages/vt-orchestrator/src/task/taskQueue.ts`
+- 影響範囲: `packages/gis-sdk/src/ephemeral/EphemeralDBRecordTypes.ts`, `packages/gis-sdk/src/ephemeral/HidbEphemeralDB.ts`, `packages/vt-orchestrator/src/task/taskQueue.ts`
 - ロールバック手順: 追加した index と DB version を元に戻す
 - チェックリスト:
   - buildTasks schema に [nodeId+stage] を追加する
@@ -19031,13 +19031,13 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - start: 2026-02-09 15:56 JST `-t "real pipeline step 1\\+2"` で real pipeline step 1+2 を再実行し、record shape probe ログを確認する作業に着手。
   - blocked: 2026-02-09 15:59 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts -t "real pipeline step 1\\+2"` が 120s でタイムアウト（exit 124）。`record shape probe` で data の constructor が Object/byteLength null を確認後、`collect transaction resolved` 以降で停止。
   - start: 2026-02-09 16:08 JST transformCache の record.data が Object になる書き込み経路と期待型を特定する調査に着手。
-  - update: 2026-02-09 16:08 JST transformCache への主な書き込みは `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts` の finalizeTaskWithCache（encodeFlatGeobufFromFeatureCollection で ArrayBuffer を生成して put）。型定義は `packages/gis-sdk/src/ephemeral/EphemeralBuildState.ts` / `packages/shape-api/src/shapeBuildTypes.ts` ともに data: ArrayBuffer。読み取り側 `packages/vt-orchestrator/src/vt/vtStage.ts` は new Uint8Array(buffer) 前提。
+  - update: 2026-02-09 16:08 JST transformCache への主な書き込みは `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts` の finalizeTaskWithCache（encodeFlatGeobufFromFeatureCollection で ArrayBuffer を生成して put）。型定義は `packages/gis-sdk/src/ephemeral/EphemeralDBRecordTypes.ts` / `packages/shape-api/src/shapeBuildTypes.ts` ともに data: ArrayBuffer。読み取り側 `packages/vt-orchestrator/src/vt/vtStage.ts` は new Uint8Array(buffer) 前提。
   - start: 2026-02-09 16:20 JST transform cache 書き込み時（encode直後/put直後）の data 型を __HDB_VT_DEBUG_COLLECT 時のみログ出力する修正に着手。
   - update: 2026-02-09 16:21 JST 追加ログで参照する cacheId を encode 前に算出するよう修正（cacheId 参照の順序ミスを解消）。
   - start: 2026-02-09 16:27 JST 追加ログ（encode/readback probe）の確認のため real pipeline step 1+2 を再実行。
   - blocked: 2026-02-09 16:29 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts -t "real pipeline step 1\\+2"` が 120s でタイムアウト（exit 124）。encode probe は ArrayBuffer（byteLength 888/616）だが、readback probe では dataConstructorName=Object/byteLength null に変化しており、transformCache 保存時に型が崩れている可能性が高い。
   - start: 2026-02-09 16:43 JST createTransformByBandHandler の ephemeralDB 実体と transformCache の保存経路（Dexieスキーマ含む）を特定する調査に着手。
-  - update: 2026-02-09 16:44 JST transformByBand context の ephemeralDB は `packages/vt-orchestrator/src/contexts.ts` で HidbEphemeralDB（@hierarchidb/gis-sdk）と定義。HidbEphemeralDB は Dexie 実装で、`packages/gis-sdk/src/ephemeral/EphemeralBuildState.ts` の EPHEMERAL_DB_SCHEMA に transformCache を `&id, nodeId, domainType, [nodeId+bandIndex], [nodeId+countryCode+adminLevel]` として登録。
+  - update: 2026-02-09 16:44 JST transformByBand context の ephemeralDB は `packages/vt-orchestrator/src/contexts.ts` で HidbEphemeralDB（@hierarchidb/gis-sdk）と定義。HidbEphemeralDB は Dexie 実装で、`packages/gis-sdk/src/ephemeral/EphemeralDBRecordTypes.ts` の EPHEMERAL_DB_SCHEMA に transformCache を `&id, nodeId, domainType, [nodeId+bandIndex], [nodeId+countryCode+adminLevel]` として登録。
   - start: 2026-02-09 16:45 JST テスト環境の fake-indexeddb/IndexedDB 実装の導入箇所と ArrayBuffer 取り扱いを調査開始。
   - update: 2026-02-09 16:46 JST vitest では `vitest.setup.base.ts` が `fake-indexeddb/auto` を読み込み、`structuredClone` 未定義時に JSON stringify/parse のポリフィルを設定している（ArrayBuffer が Object 化される可能性）。fake-indexeddb は insert 時に structuredClone を使うため、transformCache 保存時に型が崩れる原因候補。
   - start: 2026-02-09 17:10 JST vitest.setup.base の structuredClone を node:util 優先に修正し、fake-indexeddb の ArrayBuffer 破壊を防ぐ対応に着手。

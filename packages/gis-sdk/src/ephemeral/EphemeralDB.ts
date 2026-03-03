@@ -8,18 +8,18 @@ import type {
   BuildStage,
   BuildStageStatus,
   EphemeralBuildTaskRecord,
-  EphemeralFetchCacheMetaRecord,
-  EphemeralFetchCacheRecord,
+  EphemeralSourceCacheMetaRecord,
+  EphemeralSourceCacheRecord,
   EphemeralTileIdToBufferRelation,
-  EphemeralTransformCacheMetaRecord,
-  EphemeralTransformCacheRecord,
+  EphemeralGeometryCacheMetaRecord,
+  EphemeralGeometryCacheRecord,
   EphemeralGeometryErrorRecord,
-} from './EphemeralBuildState.js';
+} from './EphemeralDBRecordTypes';
 import {
   EPHEMERAL_DB_SCHEMA_V1,
   EPHEMERAL_DB_SCHEMA_V2,
   EPHEMERAL_DB_SCHEMA_V3,
-} from './EphemeralBuildState.js';
+} from './EphemeralDBRecordTypes';
 
 const applyTopLevelMods = <T extends object>(
   current: T,
@@ -37,7 +37,7 @@ const applyTopLevelMods = <T extends object>(
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
 
-const isEphemeralFetchCacheRecord = (value: unknown): value is EphemeralFetchCacheRecord => {
+const isEphemeralSourceCacheRecord = (value: unknown): value is EphemeralSourceCacheRecord => {
   if (!isRecord(value)) return false;
   return (
     typeof value.id === 'string' &&
@@ -54,7 +54,7 @@ const isEphemeralFetchCacheRecord = (value: unknown): value is EphemeralFetchCac
   );
 };
 
-const isEphemeralTransformCacheRecord = (value: unknown): value is EphemeralTransformCacheRecord => {
+const isEphemeralGeometryCacheRecord = (value: unknown): value is EphemeralGeometryCacheRecord => {
   if (!isRecord(value)) return false;
   return (
     typeof value.id === 'string' &&
@@ -71,7 +71,7 @@ const isEphemeralTransformCacheRecord = (value: unknown): value is EphemeralTran
   );
 };
 
-const toFetchCacheMeta = (record: EphemeralFetchCacheRecord): EphemeralFetchCacheMetaRecord => {
+const toSourceCacheMeta = (record: EphemeralSourceCacheRecord): EphemeralSourceCacheMetaRecord => {
   return {
     id: record.id,
     nodeId: record.nodeId,
@@ -87,7 +87,7 @@ const toFetchCacheMeta = (record: EphemeralFetchCacheRecord): EphemeralFetchCach
   };
 };
 
-const toTransformCacheMeta = (record: EphemeralTransformCacheRecord): EphemeralTransformCacheMetaRecord => {
+const toGeometryCacheMeta = (record: EphemeralGeometryCacheRecord): EphemeralGeometryCacheMetaRecord => {
   return {
     id: record.id,
     nodeId: record.nodeId,
@@ -155,10 +155,10 @@ export class EphemeralDB extends Dexie {
   
   // Other tables
   buildTasks!: Table<EphemeralBuildTaskRecord, string>;
-  sourceCache!: Table<EphemeralFetchCacheRecord, string>;
-  sourceCacheMeta!: Table<EphemeralFetchCacheMetaRecord, string>;
-  geometryCache!: Table<EphemeralTransformCacheRecord, string>;
-  geometryCacheMeta!: Table<EphemeralTransformCacheMetaRecord, string>;
+  sourceCache!: Table<EphemeralSourceCacheRecord, string>;
+  sourceCacheMeta!: Table<EphemeralSourceCacheMetaRecord, string>;
+  geometryCache!: Table<EphemeralGeometryCacheRecord, string>;
+  geometryCacheMeta!: Table<EphemeralGeometryCacheMetaRecord, string>;
   geometryErrors!: Table<EphemeralGeometryErrorRecord, string>;
   tileEmitBufferRelations!: Table<EphemeralTileIdToBufferRelation, string>;
 
@@ -190,7 +190,7 @@ export class EphemeralDB extends Dexie {
 
     this.sourceCache.hook('creating', (_primaryKey, record, transaction) => {
       const tx = transaction as HookTransaction;
-      const meta = toFetchCacheMeta(record);
+      const meta = toSourceCacheMeta(record);
       if (hasStore(tx, 'sourceCacheMeta')) {
         void tx.table('sourceCacheMeta').put(meta);
         return;
@@ -198,10 +198,10 @@ export class EphemeralDB extends Dexie {
       fireAndForgetMetaOperation(() => this.sourceCacheMeta.put(meta), 'sourceCacheMeta:create');
     });
     this.sourceCache.hook('updating', (mods, _primaryKey, record, transaction) => {
-      if (!isEphemeralFetchCacheRecord(record) || !isRecord(mods)) return;
+      if (!isEphemeralSourceCacheRecord(record) || !isRecord(mods)) return;
       const next = applyTopLevelMods(record, mods);
       const tx = transaction as HookTransaction;
-      const meta = toFetchCacheMeta(next);
+      const meta = toSourceCacheMeta(next);
       if (hasStore(tx, 'sourceCacheMeta')) {
         void tx.table('sourceCacheMeta').put(meta);
       } else {
@@ -225,7 +225,7 @@ export class EphemeralDB extends Dexie {
 
     this.geometryCache.hook('creating', (_primaryKey, record, transaction) => {
       const tx = transaction as HookTransaction;
-      const meta = toTransformCacheMeta(record);
+      const meta = toGeometryCacheMeta(record);
       if (hasStore(tx, 'geometryCacheMeta')) {
         void tx.table('geometryCacheMeta').put(meta);
         return;
@@ -233,10 +233,10 @@ export class EphemeralDB extends Dexie {
       fireAndForgetMetaOperation(() => this.geometryCacheMeta.put(meta), 'geometryCacheMeta:create');
     });
     this.geometryCache.hook('updating', (mods, _primaryKey, record, transaction) => {
-      if (!isEphemeralTransformCacheRecord(record) || !isRecord(mods)) return;
+      if (!isEphemeralGeometryCacheRecord(record) || !isRecord(mods)) return;
       const next = applyTopLevelMods(record, mods);
       const tx = transaction as HookTransaction;
-      const meta = toTransformCacheMeta(next);
+      const meta = toGeometryCacheMeta(next);
       if (hasStore(tx, 'geometryCacheMeta')) {
         void tx.table('geometryCacheMeta').put(meta);
       } else {

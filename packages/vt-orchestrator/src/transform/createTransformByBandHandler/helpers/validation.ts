@@ -2,13 +2,13 @@ import type { Feature, FeatureCollection, Geometry, Polygon, MultiPolygon } from
 import type { GeometryEngine, GeometrySimplifyAlgorithm } from '@hierarchidb/gis-sdk';
 import { geometryUnkinkPolygons } from '@hierarchidb/gis-sdk';
 import {
-  decodeFetchCache,
-  decodeTopoJsonFetchCache,
+  decodeSourceCache,
+  decodeTopoJsonSourceCache,
   type GeometryOps,
   resolveSimplifyAlgorithm,
 } from './core.js';
 
-export const decodeFetchCacheByFormat = async (params: {
+export const decodeSourceCacheByFormat = async (params: {
   buffer: ArrayBuffer;
   format?: string;
   compression?: string;
@@ -19,7 +19,7 @@ export const decodeFetchCacheByFormat = async (params: {
   skipSimplification?: boolean;
 }): Promise<FeatureCollection | null> => {
   if (params.format === 'topojson') {
-    return decodeTopoJsonFetchCache({
+    return decodeTopoJsonSourceCache({
       buffer: params.buffer,
       compression: params.compression,
       zTarget: params.zTarget,
@@ -29,7 +29,7 @@ export const decodeFetchCacheByFormat = async (params: {
       skipSimplification: params.skipSimplification,
     });
   }
-  return decodeFetchCache(params.buffer);
+  return decodeSourceCache(params.buffer);
 };
 
 export const simplifyOnlyCollection = (
