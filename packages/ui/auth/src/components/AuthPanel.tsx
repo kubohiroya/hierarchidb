@@ -3,6 +3,7 @@ import { Button, Snackbar } from '@mui/material';
 
 import Gravatar from 'react-gravatar';
 import { useAuth } from 'react-oidc-context';
+import { useAuthPanelView } from './useAuthPanelView.js';
 
 // import { useAuthLib as useAuthLib } from "@/shared/auth/hooks/useAuthLib.ts";
 const useAuthLib = () => ({
@@ -13,25 +14,15 @@ const useAuthLib = () => ({
 export function AuthPanel() {
   const auth = useAuth();
   const { signIn, signOut } = useAuthLib();
+  const view = useAuthPanelView({ auth });
 
-  switch (auth.activeNavigator) {
-    case 'signinSilent':
-      return <Snackbar message="Signing you in..." />;
-    case 'signoutRedirect':
-      return <Snackbar message="Signing you out..." />;
+  if (view.kind === 'navigator' || view.kind === 'loading' || view.kind === 'error') {
+    return <Snackbar message={view.message} />;
   }
 
-  if (auth.isLoading) {
-    return <Snackbar message="Loading..." />;
-  }
-
-  if (auth.error) {
-    return <Snackbar message={`Oops... ${auth.error.name} caused ${auth.error.message}`} />;
-  }
-
-  if (auth.isAuthenticated) {
+  if (view.kind === 'authenticated') {
     return (
-      <Gravatar email={auth.user?.profile.email} style={{ borderRadius: '50%' }}>
+      <Gravatar email={view.email} style={{ borderRadius: '50%' }}>
         <Button onClick={() => signOut()}>Log out</Button>
       </Gravatar>
     );

@@ -1,12 +1,11 @@
 import { Login } from '@mui/icons-material';
 import { Alert, Box, Button, Chip, Divider, Typography } from '@mui/material';
 import type React from 'react';
-import { useState } from 'react';
-import { devError, devLog } from '~/utils/logger';
 import { DragDropSection } from './DragDropSection.js';
 import { useDragDrop, useFileInput, useUrlDownload } from './hooks/index.js';
 import { LoadingOverlay } from './LoadingOverlay.js';
 import { UrlDownloadSection } from './UrlDownloadSection.js';
+import { useFileInputWithUrlView } from './useFileInputWithUrlView.js';
 
 export interface FileInputWithUrlProps {
   /**
@@ -96,12 +95,6 @@ export const FileInputWithUrl: React.FC<FileInputWithUrlProps> = ({
   layout = 'vertical',
   mode,
 }) => {
-  const [hoveredSection, setHoveredSection] = useState<'drag' | 'url' | undefined>();
-  const resolvedMode =
-    mode ?? (showUrlDownload ? 'both' : 'local');
-  const showLocalUpload = resolvedMode !== 'url';
-  const showUrlDownloadSection = resolvedMode !== 'local';
-
   // Use custom hooks for logic separation
   const { fileInputRef, localError, setLocalError, setDownloadError, handleFileSelect } =
     useFileInput({ onFileSelect });
@@ -139,11 +132,18 @@ export const FileInputWithUrl: React.FC<FileInputWithUrlProps> = ({
     setDownloadError,
   });
 
-  // Combine errors (excluding downloadError which is shown in the URL section)
-  const displayError = error || localError;
+  const view = useFileInputWithUrlView({
+    showUrlDownload,
+    mode,
+    error,
+    localError,
+    isAuthenticated,
+    isLoadingAuth,
+    signIn,
+  });
 
   // Render horizontal layout
-  if (layout === 'horizontal' && showLocalUpload && showUrlDownloadSection) {
+  if (layout === 'horizontal' && view.showLocalUpload && view.showUrlDownloadSection) {
     return (
       <Box
         sx={{
@@ -170,13 +170,13 @@ export const FileInputWithUrl: React.FC<FileInputWithUrlProps> = ({
               buttonLabel={buttonLabel}
               fileInputRef={fileInputRef as React.RefObject<HTMLInputElement>}
               accept={accept}
-              hoveredSection={hoveredSection}
+              hoveredSection={view.hoveredSection}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onFileSelect={handleFileSelect}
-              onMouseEnter={() => setHoveredSection('drag')}
-              onMouseLeave={() => setHoveredSection(undefined)}
+              onMouseEnter={() => view.setHoveredSection('drag')}
+              onMouseLeave={() => view.setHoveredSection(undefined)}
               compact={true}
             />
           </Box>
@@ -194,24 +194,13 @@ export const FileInputWithUrl: React.FC<FileInputWithUrlProps> = ({
               isAuthError={isAuthError}
               isAuthenticated={isAuthenticated}
               isLoadingAuth={isLoadingAuth}
-              hoveredSection={hoveredSection}
+              hoveredSection={view.hoveredSection}
               onUrlChange={setDownloadUrl}
               handleDownload={handleDownload}
               onKeyPress={handleKeyPress}
-              onSignIn={(provider) => {
-                devLog('FileInputWithUrl onSignIn prop:', {
-                  signIn,
-                  typeof: typeof signIn,
-                  provider,
-                });
-                if (typeof signIn === 'function') {
-                  signIn(provider);
-                } else {
-                  devError('signIn is not a function in onSignIn:', signIn);
-                }
-              }}
-              onMouseEnter={() => setHoveredSection('url')}
-              onMouseLeave={() => setHoveredSection(undefined)}
+              onSignIn={view.handleSignIn}
+              onMouseEnter={() => view.setHoveredSection('url')}
+              onMouseLeave={() => view.setHoveredSection(undefined)}
               compact={true}
             />
           </Box>
@@ -221,28 +210,18 @@ export const FileInputWithUrl: React.FC<FileInputWithUrlProps> = ({
         {(loading || isDownloading) && <LoadingOverlay isDownloading={isDownloading} />}
 
         {/* Error display */}
-        {displayError && (
+        {view.displayError && (
           <Alert severity="error" sx={{ mt: 2 }}>
-            <Typography variant="body2">{displayError}</Typography>
+            <Typography variant="body2">{view.displayError}</Typography>
             {/* Show login button for authentication errors */}
-            {displayError.includes('Authentication required') && !isAuthenticated && (
+            {view.shouldShowAuthErrorAction && (
               <Box sx={{ mt: 2 }}>
                 <Button
                   variant="contained"
                   color="warning"
                   size="small"
                   startIcon={<Login />}
-                  onClick={() => {
-                    devLog('FileInputWithUrl signIn click:', {
-                      signIn,
-                      typeof: typeof signIn,
-                    });
-                    if (typeof signIn === 'function') {
-                      signIn();
-                    } else {
-                      devError('signIn is not a function:', signIn);
-                    }
-                  }}
+                  onClick={() => view.handleSignIn()}
                   disabled={isLoadingAuth}
                 >
                   {isLoadingAuth ? 'Signing in...' : 'Sign In'}
@@ -265,7 +244,7 @@ export const FileInputWithUrl: React.FC<FileInputWithUrlProps> = ({
         ...sx,
       }}
     >
-      {showLocalUpload ? (
+      {view.showLocalUpload ? (
         <DragDropSection
           isDragging={isDragging}
           disabled={disabled}
@@ -274,20 +253,20 @@ export const FileInputWithUrl: React.FC<FileInputWithUrlProps> = ({
           buttonLabel={buttonLabel}
           fileInputRef={fileInputRef as React.RefObject<HTMLInputElement>}
           accept={accept}
-          hoveredSection={hoveredSection}
+          hoveredSection={view.hoveredSection}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onFileSelect={handleFileSelect}
-          onMouseEnter={() => setHoveredSection('drag')}
-          onMouseLeave={() => setHoveredSection(undefined)}
+          onMouseEnter={() => view.setHoveredSection('drag')}
+          onMouseLeave={() => view.setHoveredSection(undefined)}
         />
       ) : null}
 
       {/* URL download section */}
-      {showUrlDownloadSection && (
+      {view.showUrlDownloadSection && (
         <>
-          {showLocalUpload ? (
+          {view.showLocalUpload ? (
             <Divider sx={{ my: 3 }}>
               <Chip label="Alternative Method" size="small" color="default" sx={{ px: 2 }} />
             </Divider>
@@ -304,13 +283,13 @@ export const FileInputWithUrl: React.FC<FileInputWithUrlProps> = ({
             isAuthError={isAuthError}
             isAuthenticated={isAuthenticated}
             isLoadingAuth={isLoadingAuth}
-            hoveredSection={hoveredSection}
+            hoveredSection={view.hoveredSection}
             onUrlChange={setDownloadUrl}
             handleDownload={handleDownload}
             onKeyPress={handleKeyPress}
-            onSignIn={() => signIn()}
-            onMouseEnter={() => setHoveredSection('url')}
-            onMouseLeave={() => setHoveredSection(undefined)}
+            onSignIn={() => view.handleSignIn()}
+            onMouseEnter={() => view.setHoveredSection('url')}
+            onMouseLeave={() => view.setHoveredSection(undefined)}
           />
         </>
       )}
@@ -319,18 +298,18 @@ export const FileInputWithUrl: React.FC<FileInputWithUrlProps> = ({
       {(loading || isDownloading) && <LoadingOverlay isDownloading={isDownloading} />}
 
       {/* Error display */}
-      {displayError && (
+      {view.displayError && (
         <Alert severity="error" sx={{ mt: 2 }}>
-          <Typography variant="body2">{displayError}</Typography>
+          <Typography variant="body2">{view.displayError}</Typography>
           {/* Show login button for authentication errors */}
-          {displayError.includes('Authentication required') && !isAuthenticated && (
+          {view.shouldShowAuthErrorAction && (
             <Box sx={{ mt: 2 }}>
               <Button
                 variant="contained"
                 color="warning"
                 size="small"
                 startIcon={<Login />}
-                onClick={() => signIn()}
+                onClick={() => view.handleSignIn()}
                 disabled={isLoadingAuth}
               >
                 {isLoadingAuth ? 'Signing in...' : 'Sign In'}

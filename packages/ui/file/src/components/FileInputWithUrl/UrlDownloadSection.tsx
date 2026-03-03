@@ -10,7 +10,7 @@ import {
   Typography,
 } from '@mui/material';
 import type React from 'react';
-import { useId } from 'react';
+import { useUrlDownloadSectionView } from './useUrlDownloadSectionView.js';
 
 type AuthProviderType = 'google' | 'microsoft' | 'github';
 
@@ -58,12 +58,16 @@ export const UrlDownloadSection: React.FC<UrlDownloadSectionProps> = ({
   onMouseLeave,
   compact = false,
 }) => {
-  const controlId = useId();
-  const urlInputId = `${controlId}-download-url`;
-
-  // Check if URL is populated but download hasn't been executed
-  const hasUrlNotDownloaded =
-    downloadUrl.trim() && !downloadSuccess && !isDownloading && !downloadError;
+  const view = useUrlDownloadSectionView({
+    downloadUrl,
+    downloadSuccess,
+    isDownloading,
+    downloadError,
+    disabled,
+    loading,
+    isAuthError,
+    isAuthenticated,
+  });
 
   return (
     <Paper
@@ -109,7 +113,7 @@ export const UrlDownloadSection: React.FC<UrlDownloadSectionProps> = ({
             <TextField
               fullWidth
               label="File URL"
-              id={urlInputId}
+              id={view.urlInputId}
               name="file-url"
               placeholder="https://example.com/data.csv"
               value={downloadUrl}
@@ -136,7 +140,7 @@ export const UrlDownloadSection: React.FC<UrlDownloadSectionProps> = ({
 
             <Button
               variant="contained"
-              color={hasUrlNotDownloaded ? 'warning' : 'primary'}
+              color={view.hasUrlNotDownloaded ? 'warning' : 'primary'}
               size={compact ? 'medium' : 'large'}
               startIcon={
                 isDownloading ? (
@@ -150,14 +154,7 @@ export const UrlDownloadSection: React.FC<UrlDownloadSectionProps> = ({
                 )
               }
               onClick={handleDownload}
-              disabled={
-                !downloadUrl.trim() ||
-                disabled ||
-                loading ||
-                isDownloading ||
-                (isAuthError && !isAuthenticated) ||
-                (downloadError?.includes('Authentication required') && !isAuthenticated)
-              }
+              disabled={view.isDownloadDisabled}
               sx={{
                 borderRadius: 2,
                 textTransform: 'none',
@@ -203,7 +200,7 @@ export const UrlDownloadSection: React.FC<UrlDownloadSectionProps> = ({
                 {downloadError}
               </Typography>
             </Alert>
-          ) : hasUrlNotDownloaded ? (
+          ) : view.hasUrlNotDownloaded ? (
             <Alert severity="warning" variant="outlined" sx={{ backgroundColor: 'transparent' }}>
               <Typography variant="caption" sx={{ fontSize: compact ? '0.75rem' : '0.875rem' }}>
                 Press the &apos;Download remote file&apos; button, then press the &apos;Next&apos;

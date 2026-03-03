@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import type { TabularFilterOperator } from '../types/index';
 
 interface UseTabularPreviewGridArgs {
@@ -113,7 +113,7 @@ export const useTabularPreviewGrid = ({
   const [gridHeight, setGridHeight] = useState<number>(Math.min(defaultHeight, 48 + rowHeight * maxVisible));
   const resizingRef = useRef<{ startY: number; startHeight: number } | null>(null);
 
-  const handleResizeStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+  const handleResizeStart = useCallback((e: ReactMouseEvent<HTMLDivElement>) => {
     if (!resizable) return;
     e.preventDefault();
     resizingRef.current = { startY: e.clientY, startHeight: gridHeight };
@@ -136,7 +136,7 @@ export const useTabularPreviewGrid = ({
     window.addEventListener('mouseup', handleUp);
   }, [gridHeight, maxRows, minRows, resizable]);
 
-  const openFilterMenu = useCallback((event: MouseEvent, columnId: string, value: unknown) => {
+  const openFilterMenu = useCallback((event: { clientX: number; clientY: number }, columnId: string, value: unknown) => {
     setMenuState({
       open: true,
       anchorPosition: { top: event.clientY, left: event.clientX },
