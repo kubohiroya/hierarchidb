@@ -1,5 +1,4 @@
-import React, { useCallback, useEffect, useId } from 'react';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import React, { useId } from 'react';
 import {
   Box,
   Checkbox,
@@ -15,17 +14,7 @@ import {
 import { styled } from '@mui/material/styles';
 import type { SearchResult } from '~/types/index';
 import type { NodeId } from '@hierarchidb/core-types';
-import {
-  clearSelectionAtom,
-  isAllSelectedAtom,
-  isSomeSelectedAtom,
-  searchResultsAtom,
-  selectAllAtom,
-  selectedNodeIdsAtom,
-  selectNodeAtom,
-  selectRangeAtom,
-  toggleNodeSelectionAtom,
-} from '~/state/index';
+import { useSearchResultTable } from './useSearchResultTable.js';
 
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
   maxHeight: 400,
@@ -87,106 +76,21 @@ export const SearchResultTable: React.FC<SearchResultTableProps> = ({
                                                                       onMapFocus,
                                                                     }) => {
   const controlId = useId();
-  // Jotai atoms
-  const [, setSearchResults] = useAtom(searchResultsAtom);
-  const selectedNodeIds = useAtomValue(selectedNodeIdsAtom);
-  const allSelected = useAtomValue(isAllSelectedAtom);
-  const someSelected = useAtomValue(isSomeSelectedAtom);
-  const selectNode = useSetAtom(selectNodeAtom);
-  const toggleNodeSelection = useSetAtom(toggleNodeSelectionAtom);
-  const selectRange = useSetAtom(selectRangeAtom);
-  const selectAll = useSetAtom(selectAllAtom);
-  const clearSelection = useSetAtom(clearSelectionAtom);
-
-  //  propsatoms
-  const selectedResults = propsSelectedResults || selectedNodeIds;
-
-  //  atom
-  useEffect(() => {
-    setSearchResults(results);
-  }, [results, setSearchResults]);
-  const handleRowClick = useCallback(
-    (result: SearchResult, event: React.MouseEvent) => {
-      const isMultiSelect = event.shiftKey || event.metaKey || event.ctrlKey;
-
-      //  Jotai atoms
-      if (!isMultiSelect) {
-        selectNode(result.nodeId);
-      } else if (event.shiftKey) {
-        selectRange(result.nodeId);
-      } else {
-        toggleNodeSelection(result.nodeId);
-      }
-
-      if (onResultSelect) {
-        onResultSelect(result, isMultiSelect);
-      }
-    },
-    [selectNode, selectRange, toggleNodeSelection, onResultSelect],
-  );
-
-  const handleRowDoubleClick = useCallback(
-    (result: SearchResult) => {
-      onMapFocus(result);
-    },
-    [onMapFocus],
-  );
-
-  const renderRowData = useCallback((result: SearchResult) => {
-    if (!result.rowData || !result.displayColumns) {
-      return <Typography variant="caption">—</Typography>;
-    }
-
-    return (
-      <Box className="row-data">
-        {result.displayColumns.slice(0, 3).map((column) => {
-          const value = result.rowData?.[column];
-          if (value === undefined || value === null || value === '') {
-            return null;
-          }
-
-          const displayValue =
-            typeof value === 'object'
-              ? JSON.stringify(value).slice(0, 20) + '...'
-              : String(value).slice(0, 15);
-
-          return (
-            <Chip
-              key={column}
-              label={`${column}:${displayValue}`}
-              size="small"
-              variant="outlined"
-              sx={{ fontSize: '0.6rem', height: 18 }}
-            />
-          );
-        })}
-      </Box>
-    );
-  }, []);
-
-
-  const handleSelectAll = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      if (event.target.checked) {
-        selectAll();
-      } else {
-        clearSelection();
-      }
-
-      if (onResultSelect) {
-        if (event.target.checked) {
-          results.forEach((result) => onResultSelect(result, true));
-        } else {
-          results.forEach((result) => {
-            if (selectedResults.has(result.nodeId)) {
-              onResultSelect(result, false);
-            }
-          });
-        }
-      }
-    },
-    [results, selectedResults, selectAll, clearSelection, onResultSelect],
-  );
+  const {
+    selectedResults,
+    allSelected,
+    someSelected,
+    handleRowClick,
+    handleRowDoubleClick,
+    handleSelectAll,
+    getRowChips,
+    getConfidenceColor,
+  } = useSearchResultTable({
+    results,
+    selectedResults: propsSelectedResults,
+    onResultSelect,
+    onMapFocus,
+  });
 
   if (results.length === 0) {
     return (
@@ -229,6 +133,7 @@ export const SearchResultTable: React.FC<SearchResultTableProps> = ({
         <TableBody>
           {results.map((result) => {
             const isSelected = selectedResults.has(result.nodeId);
+            const rowChips = getRowChips(result);
 
             return (
               <StyledTableRow
@@ -262,18 +167,28 @@ export const SearchResultTable: React.FC<SearchResultTableProps> = ({
                   </Typography>
                 </TableCell>
 
-                <RowDataCell>{renderRowData(result)}</RowDataCell>
+                <RowDataCell>
+                  {rowChips.length === 0 ? (
+                    <Typography variant="caption">—</Typography>
+                  ) : (
+                    <Box className="row-data">
+                      {rowChips.map((chip) => (
+                        <Chip
+                          key={chip.key}
+                          label={chip.label}
+                          size="small"
+                          variant="outlined"
+                          sx={{ fontSize: '0.6rem', height: 18 }}
+                        />
+                      ))}
+                    </Box>
+                  )}
+                </RowDataCell>
 
                 <TableCell align="center">
                   <Typography
                     variant="caption"
-                    color={
-                      result.confidence > 0.8
-                        ? 'success.main'
-                        : result.confidence > 0.6
-                          ? 'warning.main'
-                          : 'error.main'
-                    }
+                    color={getConfidenceColor(result.confidence)}
                   >
                     {Math.round(result.confidence * 100)}%
                   </Typography>

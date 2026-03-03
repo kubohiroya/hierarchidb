@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Collapse, IconButton, type SxProps, type Theme, Typography } from '@mui/material';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
+import { useCollapsibleSection } from './useCollapsibleSection.js';
 
 export interface CollapsibleSectionProps {
   /** Section title */
@@ -60,14 +61,11 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
                                                                         padding = 'medium',
                                                                         animationDuration = 300,
                                                                       }) => {
-  const [collapsed, setCollapsed] = React.useState(defaultCollapsed);
-
-  const handleToggle = () => {
-    if (!collapsible) return;
-    const newState = !collapsed;
-    setCollapsed(newState);
-    onCollapseChange?.(newState);
-  };
+  const { collapsed, handleToggle } = useCollapsibleSection({
+    defaultCollapsed,
+    collapsible,
+    onCollapseChange,
+  });
 
   const toggleButton = collapsible && (
     <IconButton

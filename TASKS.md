@@ -48,6 +48,7 @@
 - 2026-03-03: Issue #705 進捗 - `ui-map` の `MapPreviewFloatingTable` で状態管理/永続化/列解決ロジックを `useMapPreviewFloatingTableView` へ分離し、`typecheck/build/test` を完了
 - 2026-03-03: Issue #705 進捗 - `useMapPreviewFloatingTableView` から JSX を除去し、表示生成（Chip/Box）は `MapPreviewFloatingTable` 側へ戻してロジック/表現分離を厳密化（`typecheck/build/test` 再実行済み）
 - 2026-03-03: Issue #705 進捗 - `ui-dynamic-speed-dial` の `DynamicSpeedDial` で submenu action 生成を `useDynamicSpeedDialSubmenuActions` へ分離し、`ui-treeconsole-toolbar` の `SettingsMenu` で state/イベント処理を `useSettingsMenu` へ分離（いずれも `typecheck/build` 成功）
+- 2026-03-03: Issue #705 進捗 - `ui-search-result-window` の `SearchResultTable` で選択同期/イベント処理/表示データ整形を `useSearchResultTable` へ分離し、`ui-accordion-config` の `CollapsibleSection` で折りたたみ状態管理を `useCollapsibleSection` へ分離（`typecheck/build` 成功）
 - 2026-03-03: blocked - `gh issue comment 705` 実行時に `error connecting to api.github.com`（ネットワーク復旧待ち）
 - 2026-03-03: Issue #703 完了 - Shape Plugin Pauseボタン状態管理とセッション復元の修正
   - Pauseボタンが「Pausing」状態で固まる問題を修正
