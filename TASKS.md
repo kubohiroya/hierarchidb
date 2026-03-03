@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #700 / `fix/shape-plugin/infinite-loop-build-progress` / start: 2026-03-03 JST
 - #699 / `fix/test-suite-quality-improvement` / start: 2026-03-03 JST
 - #695 / `refactor/shape/unify-max-ratio-default` / start: 2026-03-03 JST
 - #694 / `fix/shape-plugin/task-filter-visibility` / start: 2026-03-02 JST
@@ -1422,3 +1423,4 @@
 - done: 2026-03-03 JST #699 Medium Priority 1/2 完了。resolver-plugin のパフォーマンステスト失敗を解決。原因は 200ms の閾値が厳しすぎて、実行時間 221ms で失敗していたこと。マシン負荷や環境によって変動するため、閾値を 300ms に緩和。修正箇所: `plugins/resolver-plugin/src/ui/components/__tests__/unit/StyleMapIntegration.unit.test.ts`（10000アイテム処理の閾値を 200ms → 300ms）。検証: `pnpm -w turbo run test --filter @hierarchidb/resolver-plugin` exit 0（17 tests passed）。
 - done: 2026-03-03 JST #699 Medium Priority 2/2 完了。スキップされているテストのドキュメント化を完了。作成したファイル: `docs/test-suite-skipped-tests.md`。内容: Backend integration/E2E テスト（39件、外部サービス必要のため意図的にスキップ）、SpreadsheetTabularApiDriver テスト（8件、調査が必要）を文書化。これにより、どのテストがスキップされているか、その理由が明確になり、今後のメンテナンスが容易になる。
 - done: 2026-03-03 JST #699 テストスイート品質改善タスク完了。Critical Blockers 2/2、High Priority 3/3、Medium Priority 2/2 を全て完了。成果: 失敗テスト約220件→0件、削除した脆弱なテストコード2,241行、スキップテスト50件を文書化、ビルドブロッカー1件を解決。修正内容: (1) folder-plugin ビルドエラー修正（パスエイリアス解決）、(2) AuthService/MultiAuthContext テスト削除（約186件）、(3) shape-plugin タイムアウトテスト削除（3件）、(4) LinkButton テスト削除（約15件）、(5) import-export テスト削除（2件）、(6) resolver-plugin パフォーマンステスト閾値緩和（200ms→300ms）、(7) スキップテストのドキュメント化。今後の方針: 実装詳細ではなく動作をテストする統合テスト/E2Eテストを優先、インメモリフィクスチャを使用、現実的なパフォーマンス閾値を設定。
+- start: 2026-03-03 JST #700 を起票（https://github.com/kubohiroya/hierarchidb/issues/700）し、Project `hierarchidb` へ追加。ブランチ `fix/shape-plugin/infinite-loop-build-progress` を main から新規ワーキングツリー `../hierarchidb-fix-700` として作成し、shape-plugin の build progress hooks における「Maximum update depth exceeded」エラー修正に着手。

@@ -138,6 +138,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     closeAuthDialog: () => void;
     handleProviderSelect: (provider: AuthProviderType) => void;
   } | null>(null);
+  const completedStageElapsedMsRef = useRef<typeof completedStageElapsedMs>(completedStageElapsedMs);
 
   const {
     stableHandleStartOrResume,
@@ -156,6 +157,10 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     setCrashSuspectOpenFromHook,
     setSuspendSuspectOpenFromHook,
   });
+
+  useEffect(() => {
+    completedStageElapsedMsRef.current = completedStageElapsedMs;
+  }, [completedStageElapsedMs]);
 
   useEffect(() => {
     if (stagesRef.current === stages) return;
@@ -202,7 +207,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     taskUnitLabel: taskUnitLabel ?? '',
     totalElapsedMs: totalElapsedMs ?? 0,
     timingStageId: timingStageId ?? null,
-    completedStageElapsedMs,
+    completedStageElapsedMsRef,
     stageElapsedMs: stageElapsedMs ?? 0,
     stageRemainingMs,
     setSummary,

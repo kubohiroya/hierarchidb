@@ -1004,7 +1004,7 @@ const TaskDetailContent = ({
                 return normalized.length > 0 && normalized !== summaryNormalized;
               })
               .map((line, index) => (
-              <Typography key={`${line}-${index}`} variant="caption" color="text.secondary">{line}</Typography>
+              <Typography key={`${line}-${String(index)}`} variant="caption" color="text.secondary">{line}</Typography>
             ))}
           </Stack>
         ) : null}

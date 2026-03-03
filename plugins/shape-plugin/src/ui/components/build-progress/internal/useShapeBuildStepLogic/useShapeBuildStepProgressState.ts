@@ -219,7 +219,7 @@ export const useShapeBuildStepProgressState = ({
     const merged = mergeElapsedByStage(completedStageElapsedMs, persistedStageElapsedByStage);
     if (shallowEqualNumberRecord(completedStageElapsedMs, merged)) return;
     setCompletedStageElapsedMs(merged);
-  }, [completedStageElapsedMs, isElapsedResetState, persistedStageElapsedByStage]);
+  }, [isElapsedResetState, persistedStageElapsedByStage]);
 
   useEffect(() => {
     if (!isElapsedResetState) return;
@@ -253,10 +253,14 @@ export const useShapeBuildStepProgressState = ({
     if (!timingStageId) return;
     if (!isTimingStageActive) return;
     const intervalId = window.setInterval(() => {
-      setCompletedStageElapsedMs((current) => ({
-        ...current,
-        [timingStageId]: (current[timingStageId] ?? 0) + 1000,
-      }));
+      setCompletedStageElapsedMs((current) => {
+        const nextValue = (current[timingStageId] ?? 0) + 1000;
+        if (current[timingStageId] === nextValue) return current;
+        return {
+          ...current,
+          [timingStageId]: nextValue,
+        };
+      });
     }, 1000);
     return () => {
       window.clearInterval(intervalId);
