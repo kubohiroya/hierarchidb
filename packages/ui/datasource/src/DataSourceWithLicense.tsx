@@ -3,6 +3,7 @@ import { Box, Typography } from '@mui/material';
 import { DataSourceSelector } from './DataSourceSelector.js';
 import type { DataSourceOption, DataSourceSelectorProps } from './DataSourceSelector.js';
 import { LicenseAgreementStep } from '@hierarchidb/ui-license';
+import { useDataSourceWithLicense } from './useDataSourceWithLicense.js';
 
 export interface DataSourceWithLicenseOption extends DataSourceOption {
   licenseName: string;
@@ -39,36 +40,12 @@ export const DataSourceWithLicense = <TAgreedAt,>({
   createAgreedAt,
   renderLicenseExtra,
 }: DataSourceWithLicenseProps<TAgreedAt>): React.JSX.Element => {
-  const fallbackValue = options[0]?.id ?? '';
-  const value = state.dataSourceId ?? fallbackValue;
-  const selected = options.find((option) => option.id === value);
-
-  const agreedAtIso = state.licenseAgreedAt
-    ? typeof state.licenseAgreedAt === 'number'
-      ? new Date(state.licenseAgreedAt).toISOString()
-      : String(state.licenseAgreedAt)
-    : undefined;
-
-  const handleSelect = (next: string) => {
-    onChange({
-      dataSourceId: next,
-      licenseAgreement: false,
-      licenseAgreedAt: undefined,
-    });
-  };
-
-  const handleAgree = () => {
-    const buildAgreedAt =
-      createAgreedAt ??
-      (() => new Date().toISOString() as TAgreedAt);
-    if (selected?.licenseUrl) {
-      window.open(selected.licenseUrl, '_blank', 'noopener,noreferrer');
-    }
-    onChange({
-      licenseAgreement: true,
-      licenseAgreedAt: buildAgreedAt(),
-    });
-  };
+  const view = useDataSourceWithLicense({
+    options,
+    state,
+    onChange,
+    createAgreedAt,
+  });
 
   return (
     <Box display="flex" flexDirection="column" gap={3}>
@@ -86,25 +63,25 @@ export const DataSourceWithLicense = <TAgreedAt,>({
 
       <DataSourceSelector
         options={options}
-        value={value}
-        onChange={handleSelect}
+        value={view.value}
+        onChange={view.handleSelect}
         disabled={disabled}
         renderOption={renderOption}
       />
 
-      {selected ? (
+      {view.selected ? (
         <LicenseAgreementStep
-          sourceName={selected.name}
+          sourceName={view.selected.name}
           details={{
-            licenseName: selected.licenseName,
-            attribution: selected.attribution,
-            url: selected.licenseUrl,
+            licenseName: view.selected.licenseName,
+            attribution: view.selected.attribution,
+            url: view.selected.licenseUrl,
           }}
           state={{
             agreed: Boolean(state.licenseAgreement),
-            agreedAt: agreedAtIso,
+            agreedAt: view.agreedAtIso,
           }}
-          onAgree={handleAgree}
+          onAgree={view.handleAgree}
           disabled={disabled}
           renderExtra={
             licenseRequired || renderLicenseExtra ? (
@@ -114,7 +91,7 @@ export const DataSourceWithLicense = <TAgreedAt,>({
                     License agreement is required to proceed.
                   </Typography>
                 ) : null}
-                {renderLicenseExtra?.(selected)}
+                {renderLicenseExtra?.(view.selected)}
               </Box>
             ) : undefined
           }

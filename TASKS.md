@@ -8,6 +8,7 @@
 
 ## 今日の運用ログ
 - 2026-03-03: Issue #705 開始 - packages/ui TSX のロジック分離（カスタムフック化）
+- 2026-03-03: Issue #705 進捗 - `ui-tabular` の `TabularDataImport` / `TabularDataFilter` / `TabularColumnSelect` をフック分離し、`typecheck/build/test` を完了
 - 2026-03-03: Issue #703 完了 - Shape Plugin Pauseボタン状態管理とセッション復元の修正
   - Pauseボタンが「Pausing」状態で固まる問題を修正
   - ブラウザリロード後のセッション状態不整合を修正
