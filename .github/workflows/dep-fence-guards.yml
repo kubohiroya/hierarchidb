@@ -30,7 +30,10 @@ jobs:
       - name: Install dependencies (workspace)
         run: pnpm install --no-frozen-lockfile
 
-      - name: Run stage
+      - name: Run CI checks
+        run: pnpm run ci:checks
+
+      - name: Run build stage
         run: pnpm run build
 
       - name: Run guards (pre-commit equivalent)
