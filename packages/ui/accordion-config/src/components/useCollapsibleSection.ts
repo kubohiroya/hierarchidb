@@ -8,7 +8,6 @@ export interface UseCollapsibleSectionParams {
 
 export interface UseCollapsibleSectionResult {
   collapsed: boolean;
-  showHeader: boolean;
   handleToggle: () => void;
 }
 
@@ -30,7 +29,6 @@ export function useCollapsibleSection({
 
   return {
     collapsed,
-    showHeader: collapsible,
     handleToggle,
   };
 }

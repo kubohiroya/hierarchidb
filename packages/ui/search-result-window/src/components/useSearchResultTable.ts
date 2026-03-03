@@ -8,7 +8,6 @@ import {
   isSomeSelectedAtom,
   searchResultsAtom,
   selectAllAtom,
-  selectedNodeIdsAtom,
   selectNodeAtom,
   selectRangeAtom,
   toggleNodeSelectionAtom,
@@ -39,12 +38,11 @@ export interface UseSearchResultTableResult {
 
 export function useSearchResultTable({
   results,
-  selectedResults: propsSelectedResults,
+  selectedResults,
   onResultSelect,
   onMapFocus,
 }: UseSearchResultTableParams): UseSearchResultTableResult {
   const [, setSearchResults] = useAtom(searchResultsAtom);
-  const selectedNodeIds = useAtomValue(selectedNodeIdsAtom);
   const allSelected = useAtomValue(isAllSelectedAtom);
   const someSelected = useAtomValue(isSomeSelectedAtom);
   const selectNode = useSetAtom(selectNodeAtom);
@@ -52,8 +50,6 @@ export function useSearchResultTable({
   const selectRange = useSetAtom(selectRangeAtom);
   const selectAll = useSetAtom(selectAllAtom);
   const clearSelection = useSetAtom(clearSelectionAtom);
-
-  const selectedResults = propsSelectedResults || selectedNodeIds;
 
   useEffect(() => {
     setSearchResults(results);
