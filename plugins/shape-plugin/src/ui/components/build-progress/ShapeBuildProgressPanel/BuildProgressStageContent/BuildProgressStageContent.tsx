@@ -1,7 +1,7 @@
 import { useBuildProgressStageContentState } from './useBuildProgressStageContentState.js';
 import { BuildProgressStageContentView } from './BuildProgressStageContentView.tsx';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
-import type { ShapeBuildConfig } from '~/common/types/build';
+import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 
 type BuildProgressStageContentProps = {
   showHeader?: boolean;

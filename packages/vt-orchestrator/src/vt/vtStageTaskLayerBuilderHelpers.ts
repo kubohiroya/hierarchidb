@@ -4,7 +4,7 @@ export {
   mergeLayerTiles,
 } from './vtStageTaskLayerBuilderLayerHelpers.js';
 
-export { createLayerIndexForTile, type GeojsonVtIndexFactory } from './vtStageTaskLayerBuilderIndexHelpers.js';
+export { createLayerIndexForTile, type GeojsonVtIndexFactory } from './createLayerIndexForTile.js';
 
 export {
   logLayerIndexBuildStart,

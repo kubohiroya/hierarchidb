@@ -1,8 +1,8 @@
 import type { Tile } from 'geojson-vt';
 import type { Feature, Geometry } from 'geojson';
 import { parseShapeSourceLayerName } from '@hierarchidb/gis-sdk';
-import { dedupeTileLines } from './vtStageTileLineUtils.js';
-import { type GeojsonVtIndex } from './vtStageTileIndex.js';
+import { dedupeTileLines } from './dedupeTileLines.js';
+import { type GeojsonVtIndex } from './buildTileLayerIndexFromFeatures.js';
 
 const isBoundaryLayerName = (value: string): boolean => {
   const parsed = parseShapeSourceLayerName(value);

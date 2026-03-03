@@ -1,4 +1,4 @@
-import { runStageTasks } from '~/compareTaskOrder';
+import { runStageTasks } from '~/runStageTasks';
 import type { PipelineRunConfig } from '~/types/types';
 
 export async function runPipeline(

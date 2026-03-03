@@ -15,7 +15,7 @@ import type {
 } from '@hierarchidb/tree-api';
 import type { NodeId, NodeType, PeerEntity, TreeId, ValidationResult } from '@hierarchidb/core-types';
 import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/shape-api';
-import { resolveDefaultNodeName } from '~/utils/default-node-name';
+import { resolveDefaultNodeName } from '~/utils/resolveDefaultNodeName';
 import type { CommandProcessor } from './CommandProcessor.js';
 import type { CoreDB } from './CoreDB.js';
 import {

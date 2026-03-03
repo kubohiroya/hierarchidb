@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { LocationFeatureId } from '@hierarchidb/location-api';
-import type { RouteLineString, RouteMode, RoutePoint } from './routeTypes.js';
-import { ROUTE_MODES } from './routeTypes.js';
+import type { RouteLineString, RouteMode, RoutePoint } from './ROUTE_MODES.js';
+import { ROUTE_MODES } from './ROUTE_MODES.js';
 import type { IdeGsmRouteSelectionEntry } from './ideGsmRouteTypes.js';
 
 export type IdeGsmRouteError = {

@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/core-types';
 import { putTasks, listTasksByStageAndStatus, VtTaskQueueDb } from '../task/taskQueue';
-import { runStageTasks } from '../compareTaskOrder';
+import { runStageTasks } from '../runStageTasks';
 
 const NODE_ID = 'vt-orchestrator-auth-pending-node' as NodeId;
 

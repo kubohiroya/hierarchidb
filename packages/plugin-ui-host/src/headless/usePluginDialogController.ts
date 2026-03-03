@@ -48,8 +48,8 @@ import type {
 import type { PluginDialogConflictDialogProps } from './PluginDialogControllerElements.js';
 import { createPluginDialogContentComponent } from './PluginDialogControllerElements.js';
 import { toRecord } from './controller/step-guards.js';
-import { useAutosave } from './usePluginDialogController/autosave.js';
-import { useBasicInfoState } from './usePluginDialogController/basic-info.js';
+import { useAutosave } from './usePluginDialogController/useAutosave.js';
+import { useBasicInfoState } from './usePluginDialogController/useBasicInfoState.js';
 import {
   buildDraftSignature,
   formatTimestamp,
@@ -59,18 +59,18 @@ import {
   useAutosavePreference,
   WINDOW_STATE_PERSIST_DEBOUNCE_MS,
 } from './usePluginDialogController/dialogSyncUtils.js';
-import { useStepCapabilities } from './usePluginDialogController/capabilities.js';
-import { useConflictGuard } from './usePluginDialogController/conflict-guard.js';
+import { useStepCapabilities } from './usePluginDialogController/useStepCapabilities.js';
+import { useConflictGuard } from './usePluginDialogController/useConflictGuard.js';
 import type {
   TreeNodeUpdaterPatch,
   TreeNodeUpdaterPayload,
 } from './usePluginDialogController/data-types.js';
-import { useDialogUIStateSync } from './usePluginDialogController/dialog-ui-state.js';
-import { useDialogDirtyState } from './usePluginDialogController/dirty-state.js';
+import { useDialogUIStateSync } from './usePluginDialogController/useDialogUIStateSync.js';
+import { useDialogDirtyState } from './usePluginDialogController/useDialogDirtyState.js';
 import { useDialogFrameState } from './usePluginDialogController/frame-state.js';
-import { usePendingAction } from './usePluginDialogController/pending-action.js';
-import { useDialogSteps } from './usePluginDialogController/steps.js';
-import { useStepNavigation } from './usePluginDialogController/step-navigation.js';
+import { usePendingAction } from './usePluginDialogController/usePendingAction.js';
+import { useDialogSteps } from './usePluginDialogController/useDialogSteps.js';
+import { useStepNavigation } from './usePluginDialogController/useStepNavigation.js';
 
 type WorkerApi = WorkerAPI<TreeNodeData>;
 

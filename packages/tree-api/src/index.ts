@@ -11,8 +11,8 @@ export type { TreeSubscriptionAPI } from './TreeSubscriptionAPI.js';
 export type { PluginDialogAPI, PluginDialogAPIProxy, StepCapabilities } from './PluginDialogAPI.js';
 export type { TreeTableExpandedAPI } from './TreeTableExpandedAPI.js';
 export type { SubscriptionId, SubscriptionOptions, SubscriptionPrefetchOptions } from './TreeSubscriptionTypes.js';
-export { findRelatedNodesByPriority, type RelatedNodeSearchOptions } from './treeNodeSearch.js';
-export { NodeAction } from './action-types.js';
+export { findRelatedNodesByPriority, type RelatedNodeSearchOptions } from './findRelatedNodesByPriority.js';
+export { NodeAction } from './NodeAction.js';
 export type {
   CommandGroupId,
   CommandId,
@@ -70,12 +70,12 @@ export type {
   TreeNodeUpdater,
   TreeNodeUpdaterPayload,
   TreeNodeWithChildren,
-} from './tree-node-types.js';
+} from './NODE_TYPES.js';
 export { getTreeNodeDescription, getTreeNodeName } from './tree-node-utils.js';
-export { NODE_TYPES } from './tree-node-types.js';
-export type { TreeRootNodeType } from './tree-root-node-types.js';
-export { TREE_ROOT_NODE_TYPES } from './tree-root-node-types.js';
-export type { TreeRootState } from './tree-root-state-types.js';
-export { SortOrder } from './tree-root-state-types.js';
+export { NODE_TYPES } from './NODE_TYPES.js';
+export type { TreeRootNodeType } from './TREE_ROOT_NODE_TYPES.js';
+export { TREE_ROOT_NODE_TYPES } from './TREE_ROOT_NODE_TYPES.js';
+export type { TreeRootState } from './SortOrder.js';
+export { SortOrder } from './SortOrder.js';
 export type { Tree } from './tree-types.js';
 export type { UndoStateEvent } from './undo-state-events.js';

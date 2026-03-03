@@ -1,4 +1,4 @@
-export * from './BuildControlAPI.js';
+export * from './isBuildControlAPIV2Enabled.js';
 export * from './taskStatus.js';
 export type {
   BuildStage,

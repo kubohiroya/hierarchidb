@@ -21,10 +21,10 @@ import { shapeBuildAPI } from '../../worker/api';
 import { shapeMutationAPIImpl } from '../services/build/ShapeBuildAPIClient';
 import { buildBands, buildContinentLookup, buildCountryLookup, hasHighDetailSelection } from '../services/vt/shapePipelineShared';
 import { runShapeSourceStageSection } from '../services/vt/shapePipelineSourceStage';
-import { runShapeGeometryStageSection } from '../services/vt/shapePipelineTransformStage';
-import { runShapeTileEmitStageSection } from '../services/vt/shapePipelineTileEmitStage';
-import { runShapeMetadataStage } from '../services/vt/shapePipelineMetadataStage';
-import { runShapePipelineCleanup } from '../services/vt/shapePipelineCleanup';
+import { runShapeGeometryStageSection } from '../services/vt/runShapeGeometryStageSection';
+import { runShapeTileEmitStageSection } from '../services/vt/runShapeTileEmitStageSection';
+import { runShapeMetadataStage } from '../services/vt/runShapeMetadataStage';
+import { runShapePipelineCleanup } from '../services/vt/runShapePipelineCleanup';
 import { resolveFailureHandling } from '../services/vt/shapePipelineStageHelpers';
 import { CoreDB, ShapeMutationService, ShapeQueryService } from '@hierarchidb/runtime-worker';
 

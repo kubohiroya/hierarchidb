@@ -25,7 +25,7 @@ describe('EntityLifecycleManager integration (base skeleton)', () => {
       .spyOn(lifecycleManager, 'handleCommand')
       .mockResolvedValue(undefined);
 
-    const { commandRegistry } = await import('../../../services/command/registry');
+    const { commandRegistry } = await import('../../../services/command/commandRegistry');
     commandRegistry.register('commitDraft', {
       execute: async ({ nextSeq }) => ({ success: true, seq: nextSeq() }),
     });

@@ -190,7 +190,7 @@ vi.mock('../../../../../plugins/shape-plugin/src/services/datasources/DataSource
 });
 
 import { MessageChannel, type MessagePort as NodeMessagePort } from 'worker_threads';
-import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint';
+import { createEndpointFromMessagePort } from '../../e2e/test-utils/createEndpointFromMessagePort';
 
 type EphemeralCacheType =
   | 'sourceCache'

@@ -1,5 +1,5 @@
 import type { Feature, Geometry, LineString, MultiLineString, MultiPoint, MultiPolygon, Point, Polygon } from 'geojson';
-import type { TileBBox } from './vtStageGeometryTypes.js';
+import type { TileBBox } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
 
 type NumberIndexable = ArrayBufferView & ArrayLike<number>;
 

@@ -1,4 +1,4 @@
-import type { TileBBox } from './vtStageGeometryTypes.js';
+import type { TileBBox } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
 
 const toDeg = (r: number): number => r * 180 / Math.PI;
 

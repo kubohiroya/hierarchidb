@@ -8,7 +8,7 @@
 
 import { getWorkerContainer } from './di/container.js';
 import type { PluginWorkerModuleLoaderContract } from './di/PluginWorkerModuleLoaderContract.js';
-import { WorkerDiTokens } from './di/tokens.js';
+import { WorkerDiTokens } from './di/WorkerDiTokens.js';
 import { pluginWorkerModuleMap } from './plugin-registry/index.js';
 
 export const RUNTIME_MODULE_IDS = {

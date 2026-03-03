@@ -3,7 +3,7 @@ import type { TreeChangeEvent } from '@hierarchidb/tree-api';
 import { Subject } from 'rxjs';
 import { CommandProcessor } from '../../CommandProcessor';
 import type { CoreDB } from '../../CoreDB';
-import type { CommandEnvelope } from '../../command-types';
+import type { CommandEnvelope } from '../../WorkerErrorCodeValue';
 
 let coreDBStub: CoreDB;
 

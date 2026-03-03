@@ -12,7 +12,7 @@ import { PLUGIN_MANIFEST } from './plugin-manifest.js';
 export type {
   StylemapCategory,
   StylemapCategoryConfig,
-} from './common/types/category-types.js';
+} from './common/types/STYLEMAP_CATEGORY_CONFIGS.js';
 // Types exports
 export type {
   ColorAlgorithm,

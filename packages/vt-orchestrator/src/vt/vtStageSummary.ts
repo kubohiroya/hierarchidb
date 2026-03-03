@@ -4,7 +4,7 @@ import {
   type InputFeatureStats,
   type TileBBox,
   type VtParentInputSummaryMetadata,
-} from './vtStageGeometryTypes.js';
+} from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
 import { parseShapeSourceLayerName } from '@hierarchidb/gis-sdk';
 import { bboxIntersects } from './vtStageGeometryTile.js';
 import {

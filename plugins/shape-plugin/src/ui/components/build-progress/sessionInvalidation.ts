@@ -1,7 +1,7 @@
 import type { ShapeBuildStage } from '@hierarchidb/shape-api';
 import { toNodeId, type NodeId } from '@hierarchidb/core-types';
 import { ephemeralShapeAPIImpl } from '~/services/build/ShapeBuildAPIClient';
-import type { ShapeBuildConfig } from '~/common/types/build';
+import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 
 const STAGE_ORDER: ShapeBuildStage[] = ['source', 'geometry', 'tileEmit'];
 

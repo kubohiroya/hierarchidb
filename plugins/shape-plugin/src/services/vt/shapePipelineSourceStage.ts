@@ -5,7 +5,7 @@ import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { listTasksByStage } from '@hierarchidb/vt-orchestrator';
 import { shapeMutationAPIImpl } from '~/services/build/ShapeBuildAPIClient';
-import { runShapeSourceStage } from './shapeSourceStage.js';
+import { runShapeSourceStage } from './runShapeSourceStage.js';
 import {
   finalizePendingStageTasks,
   markStageTasksRecycled,

@@ -20,7 +20,7 @@ import {
 } from '@hierarchidb/location-api';
 import { SingletonMixin } from '@hierarchidb/util';
 import { parseIdeGsmRecords } from '@hierarchidb/location-api';
-import { loadTabularTableRows } from './utils/tabular.js';
+import { loadTabularTableRows } from './utils/loadTabularTableRows.js';
 
 type LocationPointWriteProgress = {
   total: number;

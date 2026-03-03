@@ -7,7 +7,7 @@ import type {
   Polygon,
 } from 'geojson';
 import { geometryBboxClip } from '@hierarchidb/gis-sdk';
-import type { TileBBox } from './vtStageGeometryTypes.js';
+import type { TileBBox } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
 import type { FeatureWithBBox } from './vtStageGeometryFeature.js';
 import {
   isAnyPointInBBox,

@@ -12,7 +12,7 @@ import type {
   RouteVectorTileBuildRequest,
   RouteVectorTileBuildResult,
 } from './routeBuildTypes.js';
-import type { RouteWaypointInput, RouteWaypointResult } from './routeTypes.js';
+import type { RouteWaypointInput, RouteWaypointResult } from './ROUTE_MODES.js';
 
 export interface RouteMutationAPI {
   deleteRouteLineStrings(nodeId: NodeId): Promise<void>;

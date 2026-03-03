@@ -8,7 +8,7 @@ import {
 } from '~/plugin-registry/index';
 import { PluginWorkerModuleLoader } from './PluginWorkerModuleLoader.js';
 import type { PluginWorkerModuleLoaderContract } from './PluginWorkerModuleLoaderContract.js';
-import { WorkerDiTokens } from './tokens.js';
+import { WorkerDiTokens } from './WorkerDiTokens.js';
 
 let containerInstance: Container | null = null;
 

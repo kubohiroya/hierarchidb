@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
-import { useBuildProgressPanelState } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelStateCore';
+import { useBuildProgressPanelState } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelState';
 import { resolveStageAliasArray } from '~/ui/components/build-progress/stageIdAliases';
 
 export const useShapeBuildProgressPanel = ({

@@ -1,7 +1,7 @@
 import type { DetectionResult, FileLike, ParseOptions, TabularParseResult, TabularSchema } from './types.js';
 import { detectFormat, parseWithBest, registerParser } from './registry.js';
-import { createTabularLikeParser } from './parsers/tabularLike.js';
-import { jsonlParser } from './parsers/jsonl.js';
+import { createTabularLikeParser } from './parsers/createTabularLikeParser.js';
+import { jsonlParser } from './parsers/jsonlParser.js';
 import type { TabularIngestResult, TabularStorePort } from './store.js';
 import type { TabularContext, TabularProcessor } from './processor.js';
 

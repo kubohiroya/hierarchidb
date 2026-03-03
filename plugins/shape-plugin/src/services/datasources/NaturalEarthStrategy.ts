@@ -16,7 +16,7 @@ import {
   getOrFetchWithRetry,
   type RetryConfig,
 } from '~/services/utils/chunkStore';
-import { summarizeGeojsonFeatures } from './geojsonStats.js';
+import { summarizeGeojsonFeatures } from './summarizeGeojsonFeatures.js';
 
 //  Natural Earth
 export interface NaturalEarthRawData {

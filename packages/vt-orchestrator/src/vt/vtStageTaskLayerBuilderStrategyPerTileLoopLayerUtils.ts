@@ -1,7 +1,7 @@
 import type { Feature, Geometry } from 'geojson';
 import type { Tile } from 'geojson-vt';
 import type { VtDebugFocusConfig } from './vtStageDebug.js';
-import type { TileBBox } from './vtStageGeometryTypes.js';
+import type { TileBBox } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
 import {
   clipFeaturesForTile,
 } from './vtStageGeometryClipping.js';

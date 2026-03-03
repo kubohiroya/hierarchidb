@@ -6,7 +6,7 @@ import type { CountryMetadata } from '~/common/types/index';
 import type { DataSourceName } from '~/common/types/index';
 import type { SerializedCountryAvailability } from '~/ui/workers/countryAvailability.types';
 import { buildBootstrapCacheKey, countrySelectionBootstrapCache } from './selectionUtils.js';
-import { getOrCreateAvailabilityWorkerHandle, type AvailabilityWorkerHandle } from './availabilityWorker.js';
+import { getOrCreateAvailabilityWorkerHandle, type AvailabilityWorkerHandle } from './getOrCreateAvailabilityWorkerHandle.js';
 
 type LoaderProps = {
   dataSourceKey: DataSourceName | undefined;

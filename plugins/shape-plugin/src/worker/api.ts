@@ -1,1 +1,1 @@
-export { shapeBuildAPI } from './api/api-public.js';
+export { shapeBuildAPI } from './api/shapeBuildAPI.js';

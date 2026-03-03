@@ -22,7 +22,7 @@ import {
 import type { ShapeBuildConfig } from '~/common/types/index';
 import { useGeometryConfigSection } from '~/ui/hooks/useGeometryConfigSection';
 import type { SourceConfigSectionState } from '~/ui/hooks/useSourceConfigSection';
-import { useTranslation } from '~/ui/i18n';
+import { useTranslation } from '~/ui/useTranslation';
 import {
   BuildConfigAccordionSummary,
   BuildConfigSectionTitle,

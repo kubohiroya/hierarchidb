@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BuildTaskUpdateEvent } from '@hierarchidb/build-api';
 import { useShapeBuildTaskSnapshotProgressState } from '../../../components/build-progress/useShapeBuildTaskSnapshotProgressState/useShapeBuildTaskSnapshotProgressState';
-import { hasReceivingTaskSnapshotSignal } from '../../../components/build-progress/receivingTaskSnapshotSignal';
+import { hasReceivingTaskSnapshotSignal } from '../../../components/build-progress/hasReceivingTaskSnapshotSignal';
 
 const hoistedMocks = vi.hoisted(() => ({
   initializeMock: vi.fn<[], Promise<void>>(),

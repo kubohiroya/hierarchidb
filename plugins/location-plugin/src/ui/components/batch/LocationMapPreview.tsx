@@ -42,7 +42,7 @@ import type {
   PreviewLocationPoint,
 } from './locationMapPreviewTypes.js';
 import { useLocationMapPreview } from './useLocationMapPreview.js';
-import { LocationMapPreviewMarkers } from './LocationMapPreviewElements.js';
+import { LocationMapPreviewMarkers } from './LocationMapPreviewMarkers.js';
 
 //  props
 const SAMPLE_LOCATIONS: PreviewLocationPoint[] = [

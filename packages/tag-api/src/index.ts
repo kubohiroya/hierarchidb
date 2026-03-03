@@ -11,5 +11,5 @@ export type {
   TagId,
   NodeTagAssociation,
   NodeTagAssociationId,
-} from './tag-entity-types.js';
-export { toTagId } from './tag-entity-types.js';
+} from './toTagId.js';
+export { toTagId } from './toTagId.js';

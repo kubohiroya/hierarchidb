@@ -6,8 +6,8 @@ import type {
   CommandEvent,
   CommandResult,
   WorkerErrorCode,
-} from '~/services/command-types';
-import { WorkerErrorCodeValue } from '~/services/command-types';
+} from '~/command-types';
+import { WorkerErrorCodeValue } from '~/command-types';
 import { createNewName } from '~/services/DraftTreeNodeOperations';
 
 type SanitizedLogResult = {

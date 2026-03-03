@@ -17,7 +17,7 @@ let VtTaskQueueDb: typeof import('@hierarchidb/vt-orchestrator').VtTaskQueueDb;
 let listTasksByStageAndStatus: typeof import('@hierarchidb/vt-orchestrator').listTasksByStageAndStatus;
 let ephemeralDB: typeof import('@hierarchidb/gis-sdk').ephemeralDB;
 let shapeDB: typeof import('@hierarchidb/shape-store').shapeDB;
-let runShapePipeline: typeof import('../../services/vt/shapePipeline.js').runShapePipeline;
+let runShapePipeline: typeof import('../../services/vt/runShapePipeline.js').runShapePipeline;
 let metadataLoader: typeof import('../../services/metadata/MetadataLoader.js').metadataLoader;
 let resolveCountryCodeForDataSource: typeof import('../../services/utils/utils.js').resolveCountryCodeForDataSource;
 
@@ -81,7 +81,7 @@ describeNetwork('Shape full-flow pipeline', () => {
       ({ VtTaskQueueDb, listTasksByStageAndStatus } = await import('@hierarchidb/vt-orchestrator'));
       ({ ephemeralDB: ephemeralDB } = await import('@hierarchidb/gis-sdk'));
       ({ shapeDB } = await import('@hierarchidb/shape-store'));
-      ({ runShapePipeline } = await import('../../services/vt/shapePipeline'));
+      ({ runShapePipeline } = await import('../../services/vt/runShapePipeline'));
       ({ metadataLoader } = await import('../../services/metadata/MetadataLoader'));
       ({ resolveCountryCodeForDataSource } = await import('../../services/utils/utils'));
     }

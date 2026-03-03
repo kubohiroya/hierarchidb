@@ -8,7 +8,7 @@ export type {
   StepData,
 } from './registry/PluginStepRegistry.js';
 export { PluginStepRegistry } from './registry/PluginStepRegistry.js';
-export { composeStepConfigs } from './services/StepComposer.js';
+export { composeStepConfigs } from './services/composeStepConfigs.js';
 export * from './types/BaseSearchCriteria.js';
 export * from './types/EntityLifecycleHooks.js';
 // export * from './types/PluginExtensionAPI.js';

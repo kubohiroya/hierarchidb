@@ -14,12 +14,12 @@ import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/sh
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import { SingletonMixin } from '@hierarchidb/util';
 import { EntityLifecycleManager } from '~/entity/EntityLifecycleManager';
-import { resolveDefaultNodeName } from '~/utils/default-node-name';
-import { PERFORMANCE_CONFIG } from '~/utils/performance-config';
+import { resolveDefaultNodeName } from '~/utils/resolveDefaultNodeName';
+import { PERFORMANCE_CONFIG } from '~/utils/PERFORMANCE_CONFIG';
 import type { CommandProcessor } from './CommandProcessor.js';
 import type { CoreDB } from './CoreDB.js';
 import { createNewName } from './DraftTreeNodeOperations.js';
-import { generateNodeId } from './nodeId.js';
+import { generateNodeId } from './generateNodeId.js';
 import { sanitizeMessageText } from './utils/error-adapter.js';
 import { hasRouteReferencesToLocations } from '@hierarchidb/route-store';
 import { hasLocationReferencesToShapes } from '@hierarchidb/location-store';

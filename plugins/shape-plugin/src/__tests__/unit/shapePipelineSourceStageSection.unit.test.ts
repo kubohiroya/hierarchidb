@@ -5,7 +5,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { DataSourceName } from '../../common/types/index';
 import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants';
 import { SourceStageAuthPendingError, runShapeSourceStageSection } from '../../services/vt/shapePipelineSourceStage';
-import * as shapeSourceStageModule from '../../services/vt/shapeSourceStage';
+import * as shapeSourceStageModule from '../../services/vt/runShapeSourceStage';
 import {
   listTasksByStageAndStatus,
   putTasks,

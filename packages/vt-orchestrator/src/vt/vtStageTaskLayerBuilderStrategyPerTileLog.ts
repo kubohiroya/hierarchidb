@@ -6,7 +6,7 @@ import {
 import type { TaskLayerContext } from './vtStageTaskLayerBuilderTypes.js';
 import type { VtDebugFocusConfig } from './vtStageDebug.js';
 import type { GeojsonVtEmptyTileDetail } from './vtStageSummary.js';
-import type { PerTileLayerStats } from './vtStageTaskLayerBuilderStrategyPerTileLoop.js';
+import type { PerTileLayerStats } from './executePerTileLayerBuild.js';
 
 type NoLayerWarningInput = {
   taskContext: TaskLayerContext;

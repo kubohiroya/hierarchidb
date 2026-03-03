@@ -1,7 +1,7 @@
 import { createElement, type ReactNode, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { Stack, Typography } from '@mui/material';
 import type { SourceConfig } from '@hierarchidb/gis-sdk';
-import type { ShapeProcessingConfig } from '~/common/types/build';
+import type { ShapeProcessingConfig } from '~/common/types/BuildTaskResult';
 import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/shape-api';
 import { applyBuildConfigPatch, mergeProcessingConfig } from '~/services/utils/utils';
 import { useShapeBuildProgressPanel } from '~/ui/components/build-progress/useShapeBuildProgressPanel/useShapeBuildProgressPanel';

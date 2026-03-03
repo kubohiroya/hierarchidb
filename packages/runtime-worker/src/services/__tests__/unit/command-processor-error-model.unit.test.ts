@@ -3,8 +3,8 @@ import 'fake-indexeddb/auto';
 import { assertCommandFailure } from '../../../test-utils/assertions';
 import { CommandProcessor } from '../../CommandProcessor';
 import { CoreDB } from '../../CoreDB';
-import { commandRegistry } from '../../command/registry';
-import { WorkerErrorCodeValue } from '../../command-types';
+import { commandRegistry } from '../../command/commandRegistry';
+import { WorkerErrorCodeValue } from '../../WorkerErrorCodeValue';
 
 describe('CommandProcessor error model', () => {
   let core: CoreDB;

@@ -1,6 +1,6 @@
 import type { Tile } from 'geojson-vt';
 import { buildTileProgressMessage, buildTileLayerFeatureCounts } from './vtStageTaskOutputLogging.js';
-import { processTileForVtOutput } from './vtStageTaskOutputTileProcessor.js';
+import { processTileForVtOutput } from './processTileForVtOutput.js';
 import type { VtTileOutputWriterInput } from './vtStageTaskOutputTypes.js';
 
 export type TileVisitInput = {

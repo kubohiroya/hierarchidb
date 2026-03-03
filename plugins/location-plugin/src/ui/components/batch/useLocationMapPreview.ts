@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LocationType, NodeId } from '~/common/types/index';
 import { useTranslation } from '~/common/i18n/index';
 import { LOCATION_TYPE_STYLES } from '~/ui/components/steps/locationTypes';
-import type { LocationMapPreviewMarkerEntry } from './LocationMapPreviewElements.js';
+import type { LocationMapPreviewMarkerEntry } from './LocationMapPreviewMarkers.js';
 import type {
   DisplayMode,
   MapStatistics,

@@ -1,4 +1,4 @@
-import type { CommandEnvelope, CommandMeta } from '~/services/command-types';
+import type { CommandEnvelope, CommandMeta } from '~/command-types';
 
 // Common constraints (kept consistent with previous zod-based checks)
 const ID_MAX = 100;

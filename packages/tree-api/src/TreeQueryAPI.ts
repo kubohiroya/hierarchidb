@@ -6,7 +6,7 @@
  */
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type { Tree } from './tree-types.js';
-import type { TreeNode } from './tree-node-types.js';
+import type { TreeNode } from './NODE_TYPES.js';
 
 /**
  * Read-only data access API for console and node queries

@@ -1,7 +1,7 @@
 import type {
   NodeId,
 } from '@hierarchidb/core-types';
-import type { NodeTagAssociation, TagEntity, TagId, TagAssociationScope } from './tag-entity-types.js';
+import type { NodeTagAssociation, TagEntity, TagId, TagAssociationScope } from './toTagId.js';
 import type { TagSuggestion } from './TagTypes.js';
 
 export interface CreateTagRequest {

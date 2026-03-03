@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useBuildProgress } from '~/ui/components/build-progress/useBuildProgress/useBuildProgress';
-import { useTranslation } from '~/ui/i18n';
+import { useTranslation } from '~/ui/useTranslation';
 import {
   DEFAULT_PROCESSING_CONFIG,
   summarizeCheckboxState,
@@ -37,7 +37,7 @@ import {
   resolveMostAdvancedRunningStageId,
 } from './useShapeBuildStepHelpers/stage.js';
 import { useShapeBuildStepControlActions } from './useShapeBuildStepControlActions.js';
-import { useShapeBuildSessionStartupLifecycle } from './useShapeBuildStepStartupLifecycle.js';
+import { useShapeBuildSessionStartupLifecycle } from './useShapeBuildSessionStartupLifecycle.js';
 import { useShapeBuildStepTransitionController } from './useShapeBuildStepLogic/useShapeBuildStepTransitionController.js';
 import { useShapeBuildStepStageState } from './useShapeBuildStepStageState.js';
 import { useShapeBuildStepProgressState } from './useShapeBuildStepLogic/useShapeBuildStepProgressState.js';

@@ -1,5 +1,5 @@
-export type { SessionBroadcastChannel, SessionBroadcastMessage } from './broadcast.js';
-export { createSessionBroadcastChannel } from './broadcast.js';
+export type { SessionBroadcastChannel, SessionBroadcastMessage } from './createSessionBroadcastChannel.js';
+export { createSessionBroadcastChannel } from './createSessionBroadcastChannel.js';
 
 export type SessionTabState = 'active' | 'hidden' | 'frozen';
 export type SessionChannelType = 'broadcast' | 'poll' | 'ack' | 'tab-state';

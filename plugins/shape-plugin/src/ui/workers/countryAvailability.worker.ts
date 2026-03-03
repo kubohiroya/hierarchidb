@@ -1,6 +1,6 @@
 import { expose } from 'comlink';
 import { setCorsProxyBaseURL } from '@hierarchidb/download';
-import { fetchCountryAvailability } from '~/services/datasources/CountryAvailabilityResolver';
+import { fetchCountryAvailability } from '~/services/datasources/fetchCountryAvailability';
 import type { CountryAvailabilityWorkerAPI, SerializedCountryAvailability, UiStorageBridge } from './countryAvailability.types.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';

@@ -7,7 +7,7 @@ import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import { buildBands, decodeGeometryCache } from '~/services/vt/shapePipelineShared';
 import { unpackTileId } from '@hierarchidb/vt-orchestrator';
 import type { TaskDetailSelection } from '~/ui/components/build-progress/TaskItemCard/TaskItemDetailTypes';
-import type { ShapeBuildConfig } from '~/common/types/build';
+import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 import type { TileBBox } from './TileEmitGeometryPreviewMap';
 
 type TileEmitTaskTileInfo = {

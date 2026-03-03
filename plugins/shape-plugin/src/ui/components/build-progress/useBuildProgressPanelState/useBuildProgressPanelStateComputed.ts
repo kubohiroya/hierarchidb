@@ -10,7 +10,7 @@ import {
   buildStageTaskScan,
   type FailureInfo,
   type StageTaskScan,
-} from './useBuildProgressPanelStateComputedTaskScan.ts';
+} from './buildStageTaskScan.ts';
 import {
   resolveCompletedStatusText,
   resolveFailureMessage,

@@ -27,7 +27,7 @@ import { ephemeralDB, type EphemeralSourceCacheRecord, type EphemeralTileIdToBuf
 import { SingletonMixin, buildZoomBandRanges, normalizeZoomBandBoundaries } from '@hierarchidb/util';
 import { buildIdeGsmLocationIndex } from './route/ideGsmCsv.js';
 import { filterIdeGsmRoutesBySelection, parseIdeGsmRouteRecords } from '@hierarchidb/route-api';
-import { loadTabularTableRows } from './utils/tabular.js';
+import { loadTabularTableRows } from './utils/loadTabularTableRows.js';
 import { getStageProcessingClient } from './StageProcessingService.js';
 import { writeVectorTileInput } from './vectorTileStageRunner.js';
 import { clampZoom, haversineMeters } from './nearest/tileNearest.js';

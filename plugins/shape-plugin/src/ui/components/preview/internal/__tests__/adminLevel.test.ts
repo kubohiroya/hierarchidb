@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { parseAdminLevelValue } from '../adminLevel';
+import { parseAdminLevelValue } from '../parseAdminLevelValue';
 import { collectShapeLayerAdminLevels } from '../useShapePreviewStepUtils';
 import { parseSourceKey } from '../useShapePreviewStepUtils';
 

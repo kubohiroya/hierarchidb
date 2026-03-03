@@ -44,7 +44,7 @@ vi.mock('../../services/build/ShapeBuildAPIClient.ts', () => ({
   },
 }));
 
-import { runShapeSourceStage } from '../../services/vt/shapeSourceStage';
+import { runShapeSourceStage } from '../../services/vt/runShapeSourceStage';
 
 const createDb = (): VtTaskQueueDb => new VtTaskQueueDb();
 

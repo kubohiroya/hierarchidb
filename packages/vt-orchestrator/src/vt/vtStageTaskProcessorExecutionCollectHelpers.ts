@@ -1,5 +1,5 @@
 import { getHeapSnapshot } from './vtStageCore.js';
-import { collectForVtTask } from './vtStageTaskCollectionFlow.js';
+import { collectForVtTask } from './collectForVtTask.js';
 import { logVtCollectDuration, logVtCollectStart } from './vtStageTaskProcessorLogger.js';
 import type { TaskContextForVt, VtTaskRunInput } from './vtStageTaskTypes.js';
 import type { VtTaskInput } from '~/types/types';

@@ -11,7 +11,7 @@ import { Subject } from 'rxjs';
 import type { PromiseExtended } from 'dexie';
 import { describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../../CoreDB';
-import type { CommandEnvelope } from '../../command-types';
+import type { CommandEnvelope } from '../../WorkerErrorCodeValue';
 import { TreeSubscriptionService } from '../../TreeSubscriptionService';
 
 type CoreDBForTreeSubscriptionService = {

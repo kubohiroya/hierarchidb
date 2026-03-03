@@ -1,5 +1,5 @@
 import { Box, Divider, Paper, Stack, Tooltip, Typography, useTheme } from '@mui/material';
-import type { ShapeBuildConfig } from '~/common/types/build';
+import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 import type { TaskDetailSelection } from '~/ui/components/build-progress/TaskItemCard/TaskItemDetailTypes';
 import { FeaturePreviewLauncherButtonGroupCard } from './FeaturePreviewLauncherButtonGroupCard';
 import { TileEmitGeometryPreviewMap } from './TileEmitGeometryPreviewMap';

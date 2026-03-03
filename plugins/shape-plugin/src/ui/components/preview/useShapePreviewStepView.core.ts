@@ -1,1 +1,1 @@
-export { useShapePreviewStepView } from './internal/useShapePreviewStepViewLogic.ts';
+export { useShapePreviewStepView } from './internal/useShapePreviewStepView.ts';

@@ -1,5 +1,5 @@
 import { ZoomBandConfigSection as SharedZoomBandConfigSection } from '@hierarchidb/ui-accordion-config';
-import { useTranslation } from '~/ui/i18n';
+import { useTranslation } from '~/ui/useTranslation';
 import { useGeometryConfigSection } from '~/ui/hooks/useGeometryConfigSection';
 import type { ShapeBuildConfig } from '~/common/types/index';
 import { resampleToleranceByBand } from '~/services/utils/toleranceByBand';

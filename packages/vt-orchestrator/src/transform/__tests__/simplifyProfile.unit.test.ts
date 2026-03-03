@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { GeometryConfig } from '@hierarchidb/gis-sdk';
-import { resolveSimplifyToleranceProfile } from '../createTransformByBandHandler/helpers/simplifyProfile.js';
+import { resolveSimplifyToleranceProfile } from '../createTransformByBandHandler/helpers/resolveSimplifyToleranceProfile.js';
 
 const createBaseTransformConfig = (): GeometryConfig => ({
   zoomBandBoundaries: [1, 4],

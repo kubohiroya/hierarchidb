@@ -30,7 +30,7 @@ import {
 } from '~/services/utils/geoboundariesEndpoints';
 import { decodeFlatGeoJson, encodeFlatGeoJson } from '~/services/build/strategies/flatgeobuf';
 import { bufferToStream, fetchRawDataWithPipeline, streamToBuffer } from '~/services/utils/rawDataPipeline';
-import { summarizeGeojsonFeatures } from './geojsonStats.js';
+import { summarizeGeojsonFeatures } from './summarizeGeojsonFeatures.js';
 
 type GeoBoundariesProperties = Record<string, unknown>;
 type GeoBoundariesGeoJSON = FeatureCollection<Geometry, GeoBoundariesProperties>;

@@ -1,6 +1,6 @@
 import { inject, injectable, optional } from 'inversify';
 import type { PluginWorkerModuleLoaderContract } from './PluginWorkerModuleLoaderContract.js';
-import { WorkerDiTokens } from './tokens.js';
+import { WorkerDiTokens } from './WorkerDiTokens.js';
 
 type PluginWorkerModuleMap = Record<string, string>;
 type PluginWorkerLoaderMap = Record<string, () => Promise<unknown>>;

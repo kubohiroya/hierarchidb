@@ -1,4 +1,4 @@
-import type { TreeNode } from './tree-node-types.js';
+import type { TreeNode } from './NODE_TYPES.js';
 
 function normalizeText(value: unknown): string {
   if (typeof value === 'string') return value;

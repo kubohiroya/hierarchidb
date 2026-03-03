@@ -1,6 +1,6 @@
 import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
-import { parseAdminLevelValue } from './adminLevel';
+import { parseAdminLevelValue } from './parseAdminLevelValue';
 import { toNodeId } from '@hierarchidb/core-types';
 import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import type { ShapeDataSourceMetadata, ShapeFeatureMetadata } from '@hierarchidb/shape-api';

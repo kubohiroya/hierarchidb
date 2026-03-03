@@ -1,4 +1,4 @@
-import { buildBoundaryFeature } from './geometry/boundary.js';
+import { buildBoundaryFeature } from './geometry/buildBoundaryFeature.js';
 import { decodeTransformByBandCache, loadGeojsonVt } from './geometry/io.js';
 import { snapGeometryToGrid, simplifyGeometryInMercator } from './geometry/snap.js';
 import {
@@ -7,7 +7,7 @@ import {
   type SimplifyIssueKind,
   type SimplifyIssueStage,
   type SimplifyOptions,
-} from './geometry/simplify.js';
+} from './geometry/simplifyFeatureCollection.js';
 
 export { buildBoundaryFeature, simplifyGeometryInMercator, simplifyFeatureCollection, snapGeometryToGrid };
 export type { SimplifyIssue, SimplifyIssueKind, SimplifyIssueStage, SimplifyOptions };

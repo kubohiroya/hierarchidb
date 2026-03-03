@@ -4,7 +4,7 @@ import type {
   IdeGsmImportCallback,
   IdeGsmLocationImportRequest,
   IdeGsmLocationImportResult,
-} from './ideGsmTypes.js';
+} from './IDE_GSM_BULK_CHUNK_SIZE.js';
 
 export interface LocationMutationAPI {
   upsertLocationGroups(nodeId: NodeId, items: LocationGroupItem[]): Promise<void>;

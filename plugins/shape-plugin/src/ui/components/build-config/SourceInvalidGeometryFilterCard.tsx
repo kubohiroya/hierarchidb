@@ -15,7 +15,7 @@ import {
   Security as SecurityIcon,
 } from '@mui/icons-material';
 import { BuildConfigSectionTitle, getBuildConfigHoverCardSx } from '@hierarchidb/ui-accordion-config';
-import { useTranslation } from '~/ui/i18n';
+import { useTranslation } from '~/ui/useTranslation';
 import type { ShapeBuildConfig } from '~/common/types/index';
 import {
   useSourceGeometryIntakeGuardCardView,

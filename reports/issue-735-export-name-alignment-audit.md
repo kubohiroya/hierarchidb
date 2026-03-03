@@ -1,0 +1,412 @@
+# Issue #735 Export-Name Alignment Audit
+
+- Generated: 2026-03-03T23:25:28.670Z
+- High-confidence mismatches: 203
+- Multi-export files: 267
+- Type/interface-only files: 139
+- Split candidates (multi-export and >=200 lines): 57
+
+## High-Confidence Mismatches
+- `packages/build-api/src/BuildControlAPI.ts` | `BuildControlAPI` -> `isBuildControlAPIV2Enabled` | single-named | 184 lines
+- `packages/build/src/session/buildSessionReconcile.ts` | `buildSessionReconcile` -> `reconcileByMetadata` | single-named | 70 lines
+- `packages/download/src/helpers/auth.ts` | `auth` -> `createAuthAwareNetworkPort` | single-named | 18 lines
+- `packages/gis-sdk/src/processing/featureFiltering.ts` | `featureFiltering` -> `applyFeatureFiltering` | single-named | 137 lines
+- `packages/gis-sdk/src/processing/geometryExtract.ts` | `geometryExtract` -> `extractGeoJson` | single-named | 224 lines
+- `packages/location-api/src/ideGsmTypes.ts` | `ideGsmTypes` -> `IDE_GSM_BULK_CHUNK_SIZE` | single-named | 47 lines
+- `packages/plugin-base/src/registry/DialogStepLocalizationRegistry.ts` | `DialogStepLocalizationRegistry` -> `dialogStepLocalizationRegistry` | single-named | 73 lines
+- `packages/plugin-base/src/services/StepComposer.ts` | `StepComposer` -> `composeStepConfigs` | single-named | 69 lines
+- `packages/plugin-ui-host/src/headless/cancelDraftPolicy.ts` | `cancelDraftPolicy` -> `evaluateCancelPolicy` | single-named | 32 lines
+- `packages/plugin-ui-host/src/headless/usePluginDialogController/autosave.ts` | `autosave` -> `useAutosave` | single-named | 45 lines
+- `packages/plugin-ui-host/src/headless/usePluginDialogController/basic-info.ts` | `basic-info` -> `useBasicInfoState` | single-named | 216 lines
+- `packages/plugin-ui-host/src/headless/usePluginDialogController/capabilities.ts` | `capabilities` -> `useStepCapabilities` | single-named | 140 lines
+- `packages/plugin-ui-host/src/headless/usePluginDialogController/conflict-guard.ts` | `conflict-guard` -> `useConflictGuard` | single-named | 180 lines
+- `packages/plugin-ui-host/src/headless/usePluginDialogController/dialog-ui-state.ts` | `dialog-ui-state` -> `useDialogUIStateSync` | single-named | 218 lines
+- `packages/plugin-ui-host/src/headless/usePluginDialogController/dirty-state.ts` | `dirty-state` -> `useDialogDirtyState` | single-named | 76 lines
+- `packages/plugin-ui-host/src/headless/usePluginDialogController/pending-action.ts` | `pending-action` -> `usePendingAction` | single-named | 39 lines
+- `packages/plugin-ui-host/src/headless/usePluginDialogController/step-navigation.ts` | `step-navigation` -> `useStepNavigation` | single-named | 210 lines
+- `packages/plugin-ui-host/src/headless/usePluginDialogController/steps.tsx` | `steps` -> `useDialogSteps` | single-named | 503 lines
+- `packages/route-api/src/routeTypes.ts` | `routeTypes` -> `ROUTE_MODES` | single-named | 245 lines
+- `packages/runtime-worker/src/di/tokens.ts` | `tokens` -> `WorkerDiTokens` | single-named | 10 lines
+- `packages/runtime-worker/src/e2e/test-utils/messagePortEndpoint.ts` | `messagePortEndpoint` -> `createEndpointFromMessagePort` | single-named | 70 lines
+- `packages/runtime-worker/src/services/command-types.ts` | `command-types` -> `WorkerErrorCodeValue` | single-named | 59 lines
+- `packages/runtime-worker/src/services/command/envelope.util.ts` | `envelope.util` -> `createEnvelope` | single-named | 37 lines
+- `packages/runtime-worker/src/services/command/registry.ts` | `registry` -> `commandRegistry` | single-named | 55 lines
+- `packages/runtime-worker/src/services/draft/cleanupOperations.ts` | `cleanupOperations` -> `discardTreeNodeDraft` | single-named | 61 lines
+- `packages/runtime-worker/src/services/draft/initOperations.ts` | `initOperations` -> `initTreeNode` | single-named | 113 lines
+- `packages/runtime-worker/src/services/nodeId.ts` | `nodeId` -> `generateNodeId` | single-named | 5 lines
+- `packages/runtime-worker/src/services/pluginRuntimeWorkerAdapters.ts` | `pluginRuntimeWorkerAdapters` -> `registerPluginRuntimeWorkerAdapters` | single-named | 82 lines
+- `packages/runtime-worker/src/services/utils/tabular.ts` | `tabular` -> `loadTabularTableRows` | single-named | 94 lines
+- `packages/runtime-worker/src/utils/default-node-name.ts` | `default-node-name` -> `resolveDefaultNodeName` | single-named | 28 lines
+- `packages/runtime-worker/src/utils/performance-config.ts` | `performance-config` -> `PERFORMANCE_CONFIG` | single-named | 16 lines
+- `packages/session-coordinator/src/broadcast.ts` | `broadcast` -> `createSessionBroadcastChannel` | single-named | 97 lines
+- `packages/tabular-source/src/parsers/jsonl.ts` | `jsonl` -> `jsonlParser` | single-named | 88 lines
+- `packages/tabular-source/src/parsers/tabularLike.ts` | `tabularLike` -> `createTabularLikeParser` | single-named | 124 lines
+- `packages/tabular-source/src/processors/ColumnRenameProcessor.ts` | `ColumnRenameProcessor` -> `createColumnRenameProcessor` | single-named | 27 lines
+- `packages/tabular-source/src/processors/NumberCoerceProcessor.ts` | `NumberCoerceProcessor` -> `createNumberCoerceProcessor` | single-named | 34 lines
+- `packages/tabular-source/src/processors/RequiredColumnsValidator.ts` | `RequiredColumnsValidator` -> `createRequiredColumnsValidator` | single-named | 19 lines
+- `packages/tabular-store/src/Indexer.ts` | `Indexer` -> `TabularIndexer` | single-named | 90 lines
+- `packages/tabular-store/src/TabularQuery.ts` | `TabularQuery` -> `TabularQueryService` | single-named | 91 lines
+- `packages/tag-api/src/tag-entity-types.ts` | `tag-entity-types` -> `toTagId` | single-named | 34 lines
+- `packages/tree-api/src/action-types.ts` | `action-types` -> `NodeAction` | single-named | 12 lines
+- `packages/tree-api/src/tree-node-types.ts` | `tree-node-types` -> `NODE_TYPES` | single-named | 132 lines
+- `packages/tree-api/src/tree-root-node-types.ts` | `tree-root-node-types` -> `TREE_ROOT_NODE_TYPES` | single-named | 15 lines
+- `packages/tree-api/src/tree-root-state-types.ts` | `tree-root-state-types` -> `SortOrder` | single-named | 13 lines
+- `packages/tree-api/src/treeNodeSearch.ts` | `treeNodeSearch` -> `findRelatedNodesByPriority` | single-named | 116 lines
+- `packages/util/src/dualKeyMap.ts` | `dualKeyMap` -> `DualKeyMap` | single-named | 175 lines
+- `packages/vectortile-store/src/tilesDb.ts` | `tilesDb` -> `VectorTileDbBase` | single-named | 26 lines
+- `packages/vt-orchestrator/src/compareTaskOrder.ts` | `compareTaskOrder` -> `runStageTasks` | single-named | 470 lines
+- `packages/vt-orchestrator/src/transform/createTransformByBandHandler/execute.ts` | `execute` -> `createTransformByBandHandler` | single-named | 1628 lines
+- `packages/vt-orchestrator/src/transform/createTransformByBandHandler/helpers/simplifyProfile.ts` | `simplifyProfile` -> `resolveSimplifyToleranceProfile` | single-named | 91 lines
+- `packages/vt-orchestrator/src/transform/createTransformByBandHandler/transformByBandOutput.ts` | `transformByBandOutput` -> `runTransformByBandOutputPhase` | single-named | 423 lines
+- `packages/vt-orchestrator/src/transform/createTransformByBandHandler/transformByBandTaskFinalize.ts` | `transformByBandTaskFinalize` -> `finalizeTransformByBandCache` | single-named | 168 lines
+- `packages/vt-orchestrator/src/transform/geometry/boundary.ts` | `boundary` -> `buildBoundaryFeature` | single-named | 43 lines
+- `packages/vt-orchestrator/src/transform/geometry/simplify.ts` | `simplify` -> `simplifyFeatureCollection` | single-named | 451 lines
+- `packages/vt-orchestrator/src/transform/topojsonGrid.ts` | `topojsonGrid` -> `quantizeTopoJsonToGrid` | single-named | 55 lines
+- `packages/vt-orchestrator/src/types/_BuildConfig.ts` | `_BuildConfig` -> `BuildTaskResult` | single-named | 120 lines
+- `packages/vt-orchestrator/src/vt/vtStageFeatureCollector.ts` | `vtStageFeatureCollector` -> `collectTaskFeatures` | single-named | 33 lines
+- `packages/vt-orchestrator/src/vt/vtStageFeatureCollectorCoordinator.ts` | `vtStageFeatureCollectorCoordinator` -> `runFeatureCollectionCoordinator` | single-named | 103 lines
+- `packages/vt-orchestrator/src/vt/vtStageFeatureCollectorFlow.ts` | `vtStageFeatureCollectorFlow` -> `executeFeatureCollectLoop` | single-named | 67 lines
+- `packages/vt-orchestrator/src/vt/vtStageFeatureCollectorLoad.ts` | `vtStageFeatureCollectorLoad` -> `loadGeometryCacheRecordsForCollection` | single-named | 64 lines
+- `packages/vt-orchestrator/src/vt/vtStageFeatureCollectorLoader.ts` | `vtStageFeatureCollectorLoader` -> `loadGeometryCacheRecords` | single-named | 63 lines
+- `packages/vt-orchestrator/src/vt/vtStageFeatureCollectorRecordProcessor.ts` | `vtStageFeatureCollectorRecordProcessor` -> `collectFeaturesFromRecord` | single-named | 134 lines
+- `packages/vt-orchestrator/src/vt/vtStageGeometryTypes.ts` | `vtStageGeometryTypes` -> `TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY` | single-named | 35 lines
+- `packages/vt-orchestrator/src/vt/vtStageHandler.ts` | `vtStageHandler` -> `createVtHandler` | single-named | 11 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskBuildFlow.ts` | `vtStageTaskBuildFlow` -> `buildAndWriteVtTiles` | single-named | 45 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskBuildFlowInput.ts` | `vtStageTaskBuildFlowInput` -> `buildLayerRunInput` | single-named | 14 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskBuildFlowLogger.ts` | `vtStageTaskBuildFlowLogger` -> `logFeatureCollectionReady` | single-named | 29 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskBuildFlowWriter.ts` | `vtStageTaskBuildFlowWriter` -> `writeVtTaskOutput` | single-named | 32 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskBuildFlowWriterInput.ts` | `vtStageTaskBuildFlowWriterInput` -> `buildTileOutputWriteContext` | single-named | 50 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskCollectionFlow.ts` | `vtStageTaskCollectionFlow` -> `collectForVtTask` | single-named | 52 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskCollectionFlowLogger.ts` | `vtStageTaskCollectionFlowLogger` -> `logCollectDone` | single-named | 18 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskCollectionMetadata.ts` | `vtStageTaskCollectionMetadata` -> `buildTaskCollectionMetadata` | single-named | 33 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskLayerBuilder.ts` | `vtStageTaskLayerBuilder` -> `buildLayersForVtTask` | single-named | 21 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskLayerBuilderFlow.ts` | `vtStageTaskLayerBuilderFlow` -> `executeLayerBuildFlow` | single-named | 16 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskLayerBuilderFlowGuard.ts` | `vtStageTaskLayerBuilderFlowGuard` -> `evaluateLayerBuildSkip` | single-named | 17 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskLayerBuilderFlowModes.ts` | `vtStageTaskLayerBuilderFlowModes` -> `executeLayerBuildByPolicy` | single-named | 26 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskLayerBuilderFlowModesHandlerBuildByContinent.ts` | `vtStageTaskLayerBuilderFlowModesHandlerBuildByContinent` -> `buildByContinentGrouping` | single-named | 49 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskLayerBuilderFlowModesHandlerBuildMultiLayer.ts` | `vtStageTaskLayerBuilderFlowModesHandlerBuildMultiLayer` -> `buildMultiLayer` | single-named | 49 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskLayerBuilderFlowModesHandlerBuildPerTile.ts` | `vtStageTaskLayerBuilderFlowModesHandlerBuildPerTile` -> `buildPerTile` | single-named | 40 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskLayerBuilderFlowModesHandlerBuildSingleLayer.ts` | `vtStageTaskLayerBuilderFlowModesHandlerBuildSingleLayer` -> `buildSingleLayer` | single-named | 38 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskLayerBuilderFlowSkip.ts` | `vtStageTaskLayerBuilderFlowSkip` -> `buildSkipResultIfNeeded` | single-named | 72 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskLayerBuilderIndexHelpers.ts` | `vtStageTaskLayerBuilderIndexHelpers` -> `createLayerIndexForTile` | single-named | 73 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskLayerBuilderPrepare.ts` | `vtStageTaskLayerBuilderPrepare` -> `buildLayerBuildExecutionContext` | single-named | 77 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskLayerBuilderPrepareLogging.ts` | `vtStageTaskLayerBuilderPrepareLogging` -> `logLayerBuildStart` | single-named | 24 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskLayerBuilderStrategyContinent.ts` | `vtStageTaskLayerBuilderStrategyContinent` -> `buildLayersByContinentGrouping` | single-named | 79 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskLayerBuilderStrategyMultiLayer.ts` | `vtStageTaskLayerBuilderStrategyMultiLayer` -> `buildLayersWithMultipleLayers` | single-named | 69 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskLayerBuilderStrategyPerTile.ts` | `vtStageTaskLayerBuilderStrategyPerTile` -> `buildLayersWithPerTileIndex` | single-named | 80 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskLayerBuilderStrategyPerTileLoop.ts` | `vtStageTaskLayerBuilderStrategyPerTileLoop` -> `executePerTileLayerBuild` | single-named | 113 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskLayerBuilderStrategySingleLayer.ts` | `vtStageTaskLayerBuilderStrategySingleLayer` -> `buildLayersWithSingleLayer` | single-named | 65 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskLayerBuilderStrategySingleLayerLog.ts` | `vtStageTaskLayerBuilderStrategySingleLayerLog` -> `logSingleLayerPerFeatureNoResult` | single-named | 27 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskLayerBuildExecutor.ts` | `vtStageTaskLayerBuildExecutor` -> `executeLayerBuild` | single-named | 57 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskMetadata.ts` | `vtStageTaskMetadata` -> `buildVtParentMetadata` | single-named | 61 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskOutput.ts` | `vtStageTaskOutput` -> `runVtTileOutputFlow` | single-named | 49 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskOutputCompletion.ts` | `vtStageTaskOutputCompletion` -> `logVtTaskOutputCompletion` | single-named | 65 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskOutputFinalize.ts` | `vtStageTaskOutputFinalize` -> `finalizeVtTileOutput` | single-named | 74 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskOutputFinalizeResult.ts` | `vtStageTaskOutputFinalizeResult` -> `buildTileOutputResult` | single-named | 25 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskOutputFinalizeSummary.ts` | `vtStageTaskOutputFinalizeSummary` -> `buildFinalTileCompletionSummary` | single-named | 27 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskOutputHash.ts` | `vtStageTaskOutputHash` -> `buildBufferSetHash` | single-named | 10 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskOutputProgress.ts` | `vtStageTaskOutputProgress` -> `createTileProgressReporter` | single-named | 74 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskOutputSession.ts` | `vtStageTaskOutputSession` -> `createVtTileOutputSession` | single-named | 56 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskOutputTileLayers.ts` | `vtStageTaskOutputTileLayers` -> `resolveTileLayersForOutput` | single-named | 24 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskOutputTileProcessor.ts` | `vtStageTaskOutputTileProcessor` -> `processTileForVtOutput` | single-named | 101 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskOutputTraversal.ts` | `vtStageTaskOutputTraversal` -> `visitTilesForOutput` | single-named | 54 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskOutputWriter.ts` | `vtStageTaskOutputWriter` -> `writeVtTileOutputs` | single-named | 37 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskOutputWriterActions.ts` | `vtStageTaskOutputWriterActions` -> `writeVtTileForOutput` | single-named | 30 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskOutputWriterFlow.ts` | `vtStageTaskOutputWriterFlow` -> `runVtTileOutputWriter` | single-named | 75 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskPreparation.ts` | `vtStageTaskPreparation` -> `prepareVtTaskExecution` | single-named | 133 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskProcessor.ts` | `vtStageTaskProcessor` -> `runVtTaskProcessorFlow` | single-named | 65 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskProcessorExecution.ts` | `vtStageTaskProcessorExecution` -> `executeVtTaskProcessing` | single-named | 87 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskProcessorExecutionBuild.ts` | `vtStageTaskProcessorExecutionBuild` -> `writeVtTaskFromExecution` | single-named | 24 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskProcessorExecutionBuildHelpers.ts` | `vtStageTaskProcessorExecutionBuildHelpers` -> `writeVtTaskByRunFlow` | single-named | 30 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskProcessorExecutionCollect.ts` | `vtStageTaskProcessorExecutionCollect` -> `collectVtTaskForExecution` | single-named | 57 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskTilePbfLoader.ts` | `vtStageTaskTilePbfLoader` -> `loadTileEmitPbfWithTiming` | single-named | 16 lines
+- `packages/vt-orchestrator/src/vt/vtStageTileIndex.ts` | `vtStageTileIndex` -> `buildTileLayerIndexFromFeatures` | single-named | 78 lines
+- `packages/vt-orchestrator/src/vt/vtStageTileIndexBuilder.ts` | `vtStageTileIndexBuilder` -> `buildLayerIndexes` | single-named | 58 lines
+- `packages/vt-orchestrator/src/vt/vtStageTileLineUtils.ts` | `vtStageTileLineUtils` -> `dedupeTileLines` | single-named | 63 lines
+- `packages/vt-orchestrator/src/vt/vtStageTileTraversal.ts` | `vtStageTileTraversal` -> `iterateChildTiles` | single-named | 38 lines
+- `plugins/basemap-plugin/src/common/shared/metadata.ts` | `metadata` -> `BaseMapPluginManifest` | single-named | 8 lines
+- `plugins/basemap-plugin/src/common/types/category-types.ts` | `category-types` -> `BASEMAP_CATEGORIES` | single-named | 59 lines
+- `plugins/basemap-plugin/src/ui/components/basemapStepConfigs.tsx` | `basemapStepConfigs` -> `getBasemapStepConfigs` | single-named | 114 lines
+- `plugins/location-plugin/src/common/datasources/attribution.ts` | `attribution` -> `resolveLocationAttribution` | single-named | 58 lines
+- `plugins/location-plugin/src/common/datasources/configs.ts` | `configs` -> `LOCATION_DATA_SOURCES` | default-identifier | 50 lines
+- `plugins/location-plugin/src/common/test-shims/ui-file.ts` | `ui-file` -> `downloadFile` | single-named | 4 lines
+- `plugins/location-plugin/src/common/test-shims/ui-i18n.ts` | `ui-i18n` -> `i18n` | single-named | 7 lines
+- `plugins/location-plugin/src/common/utils/env.ts` | `env` -> `isDevEnvironment` | single-named | 7 lines
+- `plugins/location-plugin/src/services/download/strategies/nominatim.ts` | `nominatim` -> `NominatimStrategy` | single-named | 67 lines
+- `plugins/location-plugin/src/services/download/strategies/overpass.ts` | `overpass` -> `OverpassStrategy` | single-named | 79 lines
+- `plugins/location-plugin/src/ui/components/batch/BatchProgressDialog.tsx` | `BatchProgressDialog` -> `BuildProgressDialog` | single-named | 607 lines
+- `plugins/location-plugin/src/ui/components/batch/LocationMapPreviewElements.tsx` | `LocationMapPreviewElements` -> `LocationMapPreviewMarkers` | single-named | 70 lines
+- `plugins/location-plugin/src/ui/utils/clearDataSourceCache.ts` | `clearDataSourceCache` -> `clearLocationDataSourceCache` | single-named | 9 lines
+- `plugins/location-plugin/src/worker/locationGroupStore.dexie.ts` | `locationGroupStore.dexie` -> `createLocationFeatureStoreDexie` | single-named | 28 lines
+- `plugins/location-plugin/src/worker/tabular/extract.ts` | `extract` -> `extractTabularRows` | single-named | 17 lines
+- `plugins/location-plugin/src/worker/tabular/materialize.ts` | `materialize` -> `materializeLocationPointsFromTabular` | single-named | 89 lines
+- `plugins/location-plugin/src/worker/tabular/task.ts` | `task` -> `runLocationTabularBuild` | single-named | 30 lines
+- `plugins/resolver-plugin/src/services/SimpleMappingCompiler.ts` | `SimpleMappingCompiler` -> `MappingCompiler` | single-named | 91 lines
+- `plugins/route-plugin/src/common/datasource/configs.ts` | `configs` -> `ROUTE_DATA_SOURCES` | default-identifier | 120 lines
+- `plugins/route-plugin/src/services/build/adapters/registerRuntimeWorker.ts` | `registerRuntimeWorker` -> `registerRouteRuntimeWorkerAdapters` | single-named | 24 lines
+- `plugins/route-plugin/src/services/config/flags.ts` | `flags` -> `isFlagEnabled` | single-named | 30 lines
+- `plugins/route-plugin/src/services/ide-gsm/ideGsmWaypoints.ts` | `ideGsmWaypoints` -> `applyIdeGsmWaypoints` | single-named | 55 lines
+- `plugins/route-plugin/src/ui/utils/clearDataSourceCache.ts` | `clearDataSourceCache` -> `clearRouteDataSourceCache` | single-named | 45 lines
+- `plugins/route-plugin/src/worker/routeFeatureStore.dexie.ts` | `routeFeatureStore.dexie` -> `createRouteFeatureStoreDexie` | single-named | 8 lines
+- `plugins/route-plugin/src/worker/routeVectorTileStore.dexie.ts` | `routeVectorTileStore.dexie` -> `createRouteVectorTileStoreDexie` | single-named | 17 lines
+- `plugins/route-plugin/src/worker/tabular/extract.ts` | `extract` -> `extractTabularRows` | single-named | 16 lines
+- `plugins/route-plugin/src/worker/tabular/materialize.ts` | `materialize` -> `materializeRouteSegmentsFromTabular` | single-named | 49 lines
+- `plugins/route-plugin/src/worker/tabular/task.ts` | `task` -> `runRouteTabularBuild` | single-named | 20 lines
+- `plugins/shape-plugin/src/common/types/build.ts` | `build` -> `BuildTaskResult` | single-named | 291 lines
+- `plugins/shape-plugin/src/common/types/metadata.ts` | `metadata` -> `ShapeMetadata` | single-named | 14 lines
+- `plugins/shape-plugin/src/e2e/test-utils/messagePortEndpoint.ts` | `messagePortEndpoint` -> `createEndpointFromMessagePort` | single-named | 61 lines
+- `plugins/shape-plugin/src/services/datasources/CountryAvailabilityResolver.ts` | `CountryAvailabilityResolver` -> `fetchCountryAvailability` | single-named | 136 lines
+- `plugins/shape-plugin/src/services/datasources/geojsonStats.ts` | `geojsonStats` -> `summarizeGeojsonFeatures` | single-named | 48 lines
+- `plugins/shape-plugin/src/services/datasources/strategyIds.ts` | `strategyIds` -> `resolveStrategyIdFromDataSource` | single-named | 18 lines
+- `plugins/shape-plugin/src/services/utils/geoBoundariesAvailability.ts` | `geoBoundariesAvailability` -> `fetchGeoBoundariesAvailability` | single-named | 76 lines
+- `plugins/shape-plugin/src/services/vt/fetchGeometryFilters.ts` | `fetchGeometryFilters` -> `filterFetchCollectionByZoom` | single-named | 437 lines
+- `plugins/shape-plugin/src/services/vt/shapePipeline.ts` | `shapePipeline` -> `runShapePipeline` | single-named | 480 lines
+- `plugins/shape-plugin/src/services/vt/shapePipelineCleanup.ts` | `shapePipelineCleanup` -> `runShapePipelineCleanup` | single-named | 36 lines
+- `plugins/shape-plugin/src/services/vt/shapePipelineMetadataStage.ts` | `shapePipelineMetadataStage` -> `runShapeMetadataStage` | single-named | 139 lines
+- `plugins/shape-plugin/src/services/vt/shapePipelineTileEmitStage.ts` | `shapePipelineTileEmitStage` -> `runShapeTileEmitStageSection` | single-named | 318 lines
+- `plugins/shape-plugin/src/services/vt/shapePipelineTransformStage.ts` | `shapePipelineTransformStage` -> `runShapeGeometryStageSection` | single-named | 524 lines
+- `plugins/shape-plugin/src/services/vt/shapeSourceStage.ts` | `shapeSourceStage` -> `runShapeSourceStage` | single-named | 1527 lines
+- `plugins/shape-plugin/src/services/vt/shapeStageMetadata.ts` | `shapeStageMetadata` -> `updateShapeStageMetadata` | single-named | 296 lines
+- `plugins/shape-plugin/src/services/vt/taskSignatures.ts` | `taskSignatures` -> `buildStableSignature` | single-named | 43 lines
+- `plugins/shape-plugin/src/ui/components/build-progress/internal/useShapeBuildStepControlActions/useShapeBuildStartOrResumeExecution.ts` | `useShapeBuildStartOrResumeExecution` -> `executeStartOrResumeFlow` | single-named | 242 lines
+- `plugins/shape-plugin/src/ui/components/build-progress/internal/useShapeBuildStepStartupLifecycle.ts` | `useShapeBuildStepStartupLifecycle` -> `useShapeBuildSessionStartupLifecycle` | single-named | 144 lines
+- `plugins/shape-plugin/src/ui/components/build-progress/receivingTaskSnapshotSignal.ts` | `receivingTaskSnapshotSignal` -> `hasReceivingTaskSnapshotSignal` | single-named | 18 lines
+- `plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildProgressPanel/useShapeBuildProgressPanelController/base/useShapeBuildProgressPanelControllerBaseState.ts` | `useShapeBuildProgressPanelControllerBaseState` -> `useShapeBuildProgressPanelControllerBase` | single-named | 21 lines
+- `plugins/shape-plugin/src/ui/components/build-progress/shapeBuildProgressSummaryComputation.ts` | `shapeBuildProgressSummaryComputation` -> `useShapeBuildProgressSummaryComputation` | single-named | 282 lines
+- `plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildStep/useShapeBuildStepAtomSync/useShapeBuildStepAtomSyncEffects.ts` | `useShapeBuildStepAtomSyncEffects` -> `useShapeBuildStepAtomSyncAtomEffects` | single-named | 199 lines
+- `plugins/shape-plugin/src/ui/components/build-progress/taskDisplayText.ts` | `taskDisplayText` -> `formatTaskDisplayMessage` | single-named | 91 lines
+- `plugins/shape-plugin/src/ui/components/build-progress/TaskItem/taskItem.constants.ts` | `taskItem.constants` -> `TASK_ITEM_HEIGHT` | single-named | 2 lines
+- `plugins/shape-plugin/src/ui/components/build-progress/taskProgressWeights.ts` | `taskProgressWeights` -> `resolveTaskWeight` | single-named | 25 lines
+- `plugins/shape-plugin/src/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelStateComputedTaskScan.ts` | `useBuildProgressPanelStateComputedTaskScan` -> `buildStageTaskScan` | single-named | 53 lines
+- `plugins/shape-plugin/src/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelStateCore.ts` | `useBuildProgressPanelStateCore` -> `useBuildProgressPanelState` | single-named | 139 lines
+- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.handlers.events.ts` | `useShapeBuildTaskSync.handlers.events` -> `useShapeBuildTaskSyncEventHandlers` | single-named | 209 lines
+- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.handlers.ts` | `useShapeBuildTaskSync.handlers` -> `useShapeBuildTaskSyncHandlers` | single-named | 113 lines
+- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.resolver.ts` | `useShapeBuildTaskSync.resolver` -> `useShapeBuildTaskSyncResolver` | single-named | 121 lines
+- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.state.ts` | `useShapeBuildTaskSync.state` -> `useShapeBuildTaskSyncState` | single-named | 108 lines
+- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.sync.ts` | `useShapeBuildTaskSync.sync` -> `useShapeBuildTaskSyncScheduling` | single-named | 265 lines
+- `plugins/shape-plugin/src/ui/components/country-selection/internal/availabilityWorker.ts` | `availabilityWorker` -> `getOrCreateAvailabilityWorkerHandle` | single-named | 42 lines
+- `plugins/shape-plugin/src/ui/components/country-selection/internal/selectionInvalidate.ts` | `selectionInvalidate` -> `invalidateBuildForSelectionChange` | single-named | 156 lines
+- `plugins/shape-plugin/src/ui/components/country-selection/internal/useShapeCountrySelectionStepLogic.ts` | `useShapeCountrySelectionStepLogic` -> `useShapeCountrySelectionStep` | single-named | 173 lines
+- `plugins/shape-plugin/src/ui/components/preview/internal/adminLevel.ts` | `adminLevel` -> `parseAdminLevelValue` | single-named | 21 lines
+- `plugins/shape-plugin/src/ui/components/preview/internal/useShapePreviewStepFeatureSection.ts` | `useShapePreviewStepFeatureSection` -> `useShapePreviewFeatureSection` | single-named | 292 lines
+- `plugins/shape-plugin/src/ui/components/preview/internal/useShapePreviewStepLogic.ts` | `useShapePreviewStepLogic` -> `useShapePreviewStep` | single-named | 1055 lines
+- `plugins/shape-plugin/src/ui/components/preview/internal/useShapePreviewStepViewLogic.ts` | `useShapePreviewStepViewLogic` -> `useShapePreviewStepView` | single-named | 1045 lines
+- `plugins/shape-plugin/src/ui/components/preview/ShapePreviewStepView.tsx` | `ShapePreviewStepView` -> `ShapePreviewStep` | single-named | 344 lines
+- `plugins/shape-plugin/src/ui/hooks/countrySelectionReload.ts` | `countrySelectionReload` -> `invalidateCountrySelectionCaches` | single-named | 42 lines
+- `plugins/shape-plugin/src/ui/i18n.ts` | `i18n` -> `useTranslation` | single-named | 20 lines
+- `plugins/shape-plugin/src/ui/utils/clearDataSourceCache.ts` | `clearDataSourceCache` -> `clearShapeDataSourceCache` | single-named | 16 lines
+- `plugins/shape-plugin/src/worker/api/api-internal-aggregation.ts` | `api-internal-aggregation` -> `shapeBuildRuntimeAggregation` | single-named | 18 lines
+- `plugins/shape-plugin/src/worker/api/api-internal-execution-core.ts` | `api-internal-execution-core` -> `shapeBuildRuntimeExecutionControl` | single-named | 1050 lines
+- `plugins/shape-plugin/src/worker/api/api-internal-execution-metrics.ts` | `api-internal-execution-metrics` -> `shapeBuildRuntimeExecutionMetrics` | single-named | 1408 lines
+- `plugins/shape-plugin/src/worker/api/api-internal-execution.ts` | `api-internal-execution` -> `shapeBuildRuntime` | single-named | 18 lines
+- `plugins/shape-plugin/src/worker/api/api-internal-public.ts` | `api-internal-public` -> `shapeBuildRuntimePublic` | single-named | 26 lines
+- `plugins/shape-plugin/src/worker/api/api-internal.ts` | `api-internal` -> `shapeBuildRuntime` | single-named | 17 lines
+- `plugins/shape-plugin/src/worker/api/api-public-monitoring.ts` | `api-public-monitoring` -> `shapeBuildMonitoringAPI` | single-named | 94 lines
+- `plugins/shape-plugin/src/worker/api/api-public.ts` | `api-public` -> `shapeBuildAPI` | single-named | 529 lines
+- `plugins/shape-plugin/src/worker/plugin.ts` | `plugin` -> `ShapeWorkerPlugin` | single-named | 110 lines
+- `plugins/shape-plugin/src/worker/shapeGroupStore.dexie.ts` | `shapeGroupStore.dexie` -> `createShapeFeatureStoreDexie` | single-named | 10 lines
+- `plugins/styler-plugin/src/common/extension/handler.ts` | `handler` -> `StylerExtensionHandler` | single-named | 206 lines
+- `plugins/styler-plugin/src/common/types/category-types.ts` | `category-types` -> `STYLEMAP_CATEGORY_CONFIGS` | single-named | 88 lines
+- `plugins/styler-plugin/src/common/types/metadata.ts` | `metadata` -> `StylerMetadata` | single-named | 26 lines
+- `plugins/styler-plugin/src/common/utils/fileProcessingUtils.ts` | `fileProcessingUtils` -> `detectFileType` | single-named | 11 lines
+- `plugins/timeline-plugin/src/ui/utils/frames.ts` | `frames` -> `toFramesFromNodes` | single-named | 11 lines
+
+## Split Candidates
+- `plugins/shape-plugin/src/services/build/ShapeBuildAPIClient.ts` | exports=8 | lines=1046 | names=ShapeQueryAPIImpl, ShapeMutationAPIImpl, EphemeralShapeApiImpl, getShapeDbApiClient, createShapeBuildApiClient, shapeQueryAPIImpl...
+- `plugins/shape-plugin/src/services/vt/shapePipelineShared.ts` | exports=16 | lines=714 | names=filterObsoleteTasks, buildBands, decodeGeometryCache, readNumericProperty, resolveFeatureOriginInfo, describeBuffer...
+- `plugins/styler-plugin/src/common/utils/colorUtils.ts` | exports=13 | lines=646 | names=hsvToRgb, rgbToHsv, rgbToHex, hexToRgb, calculateLinearColor, normalizeColorSchemeId...
+- `packages/gis-sdk/src/vectorTiles.ts` | exports=4 | lines=628 | names=encodeFlatGeobufFromFeatureCollection, generateVectorTilesFromJsonBuffer, generateVectorTilesFromFgbBuffer, generateVectorTilesFromFeatureCollection
+- `packages/runtime-worker/src/services/StageProcessingService.ts` | exports=4 | lines=542 | names=getStageProcessingService, getStageProcessingClient, getStageWorkerProxy, createStageWorkerClient
+- `plugins/route-plugin/src/ui/components/steps/useRouteSelectionStep.ts` | exports=6 | lines=507 | names=ROUTE_MODE_COLUMNS, ROUTE_SELECTION_COLUMNS, ROUTE_STYLE_OPTIONS, LINE_WIDTH_MIN, LINE_WIDTH_MAX, useRouteSelectionStep
+- `packages/plugin-ui-sdk/src/hooks/useTreeNodeUpdater.ts` | exports=2 | lines=507 | names=createTreeNodeUpdaterActions, useTreeNodeUpdater
+- `plugins/styler-plugin/src/ui/components/StylerPreviewStep.tsx` | exports=2 | lines=501 | names=StylerPreviewStep, StylerPreviewDefinition
+- `packages/runtime-worker/src/services/RouteQueryService.ts` | exports=3 | lines=498 | names=DEFAULT_TILE_CACHE_SIZE, LINESTRING_CACHE_TTL_MS, RouteQueryService
+- `plugins/basemap-plugin/src/ui/hooks/useBaseMapEntity.ts` | exports=7 | lines=474 | names=DEFAULT_MAP_STYLE, DEFAULT_VIEWPORT, buildBaseMapEntityFromNode, useBaseMapEntity, useBaseMapConfiguration, useBaseMapValidation...
+- `packages/plugin-ui-host/src/headless/usePluginDialogController/frame-state.ts` | exports=2 | lines=460 | names=clampIndex, useDialogFrameState
+- `plugins/shape-plugin/src/services/metadata/metadataSources.ts` | exports=3 | lines=435 | names=fetchGeoBoundariesMetadata, fetchGadmMetadata, fetchNaturalEarthMetadata
+- `plugins/styler-plugin/src/common/utils/dataAnalysis.ts` | exports=6 | lines=429 | names=calculateStatistics, detectNaturalBreaks, calculateAlgorithmSuitability, recommendAlgorithm, analyzeData, extractNumericValues
+- `packages/gis-sdk/src/ephemeral/EphemeralDB.ts` | exports=2 | lines=421 | names=EphemeralDB, ephemeralDB
+- `packages/vt-orchestrator/src/transform/createTransformByBandHandler/helpers/analysis.ts` | exports=12 | lines=417 | names=buildErrorLineFeatures, resolveFeatureIdentifier, isSameCoord, countDuplicateVertices, computeRingArea, countSelfIntersections...
+- `packages/vt-orchestrator/src/transform/createTransformByBandHandler/helpers/core.ts` | exports=35 | lines=417 | names=TASKDEBUG_BUILD_TAG, isTaskDebugLoggingEnabled, TRANSFORM_DB_WRITE_TIMEOUT_MS, TRANSFORM_TASK_UPDATE_TIMEOUT_MS, withTimeout, normalizeFeatureCollection...
+- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparison.utils.ts` | exports=15 | lines=395 | names=resolveProgressValue, areTaskListsEquivalentForView, areTasksEquivalentForView, isCompletedAtFullProgress, isTerminalTask, resolveTaskProgress...
+- `plugins/shape-plugin/src/ui/components/build-progress/TaskItemCard/taskOutcomeSummaryBuilders.ts` | exports=5 | lines=388 | names=buildSimpleTaskOutcomeSummary, buildSourceTaskOutcomeSummary, buildGeometryTaskOutcomeSummary, buildFetchTaskOutcomeSummary, buildTransformTaskOutcomeSummary
+- `packages/components/src/toast/ToastProvider.tsx` | exports=3 | lines=380 | names=ToastProvider, useToast, useToastNotifications
+- `packages/route-api/src/ideGsmRouteCsv.ts` | exports=4 | lines=369 | names=parseIdeGsmRouteTable, parseIdeGsmRouteRecords, parseIdeGsmRouteCsv, filterIdeGsmRoutesBySelection
+- `plugins/folder-plugin/src/ui/components/steps-provider.tsx` | exports=4 | lines=367 | names=normalizeFolderExportFormat, resolveFolderExportNodes, createFolderExportFilename, canStartFolderExport
+- `plugins/location-plugin/src/services/pointFactories.ts` | exports=9 | lines=362 | names=createLocationPointProperties, buildOsmPointProperties, buildOverpassPointProperties, buildGeoNamesPointProperties, buildWikidataPointProperties, buildCustomPointProperties...
+- `packages/styler-store/src/StylerEntity.ts` | exports=5 | lines=361 | names=StylerMappingDefault, StylerConfigDefault, MAPLIBRE_PROPERTY_METADATA, MAPLIBRE_PROPERTY_GROUPS, STYLE_TYPE_OPTIONS
+- `plugins/shape-plugin/src/ui/components/build-progress/tile-emit/useTileEmitTaskItemDetailPreview.ts` | exports=2 | lines=349 | names=resolveIndexMaxPoints, useTileEmitTaskItemDetailPreview
+- `plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildProgressPanel/useShapeBuildProgressPanelController/useShapeBuildProgressPanelControllerOverlay/ShapeBuildProgressPanelControllerOverlayDialogsView.tsx` | exports=5 | lines=346 | names=ShapeBuildProgressPanelConcurrencyEditorCard, ShapeBuildProgressPanelSourceRetryEditorCard, ShapeBuildProgressPanelCompletionDialogContent, ShapeBuildProgressPanelOverlayFooter, ShapeBuildProgressPanelControlRightContent
+- `packages/plugin-ui-host/src/examples/SamplePluginProvider.tsx` | exports=2 | lines=335 | names=SamplePluginProvider, registerSampleProvider
+- `packages/vt-orchestrator/src/transform/createTransformByBandHandler/transformByBandRetrySimplify.ts` | exports=4 | lines=330 | names=countVertexLimitOverages, selectMaxVertexFeature, findBaseToleranceByBisection, retrySimplifyFeatureWithinVertexLimit
+- `plugins/location-plugin/src/common/datasources/LocationDataSourceDefinitions.ts` | exports=12 | lines=328 | names=OpenStreetMapOverpassDataSource, OpenStreetMapNominatimDataSource, GeoNamesDataSource, NaturalEarthDataSource, OurAirportsDataSource, OpenFlightsDataSource...
+- `plugins/shape-plugin/src/ui/components/preview/internal/useShapePreviewStepUtils.ts` | exports=28 | lines=328 | names=DEFAULT_VIEW, DEFAULT_BOUNDS_MARGIN, MIN_BOUNDS_MARGIN, DEFAULT_VIEW_DB_NAME, normalizeText, normalizeCountryCodeValue...
+- `packages/gis-sdk/src/ephemeral/EphemeralDBRecordTypes.ts` | exports=4 | lines=327 | names=EPHEMERAL_DB_SCHEMA, EPHEMERAL_DB_SCHEMA_V1, EPHEMERAL_DB_SCHEMA_V2, EPHEMERAL_DB_SCHEMA_V3
+- `plugins/shape-plugin/src/ui/components/build-progress/internal/useShapeBuildStepStageState.ts` | exports=2 | lines=323 | names=resolveTaskListViewPhase, useShapeBuildStepStageState
+- `plugins/shape-plugin/src/services/utils/chunkStore.ts` | exports=23 | lines=319 | names=createShapeNetworkPort, createShapeChunkStore, createShapeChunkStoreWithNetworkPort, jsonSerializer, jsonDeserializer, textSerializer...
+- `packages/plugin-base/src/atoms/draftAtoms.ts` | exports=19 | lines=312 | names=draftAtom, stepStateAtom, validationResultsAtom, stepCapabilitiesAtom, workerConnectionAtom, currentStepValidationAtom...
+- `packages/location-api/src/ideGsmLocationCsv.ts` | exports=4 | lines=291 | names=parseIdeGsmTable, parseIdeGsmRecords, parseIdeGsmCsv, filterIdeGsmPointsBySelection
+- `plugins/shape-plugin/src/services/datasources/DataSourceStrategyFactory.ts` | exports=2 | lines=283 | names=DataSourceStrategyFactory, defaultDataSourceFactory
+- `packages/auth/src/AuthNotificationSystem.ts` | exports=6 | lines=282 | names=AuthNotificationRegistry, AuthNotificationFactory, generateRequestId, detectAuthSource, AuthNotificationGuards, AUTH_CONSTANTS
+- `packages/vt-orchestrator/src/transform/geometry/filters.ts` | exports=4 | lines=279 | names=applyOmitDetailsFilter, applyPolygonAreaExclusion, applySelfIntersectionFix, recoverInvalidSelfIntersection
+- `plugins/location-plugin/src/ui/components/steps/useLocationMapPreviewMetadata.ts` | exports=2 | lines=267 | names=buildMetadataColumns, useLocationMapPreviewMetadata
+- `plugins/shape-plugin/src/services/build/shapeSessionMappers.ts` | exports=11 | lines=266 | names=isBuildProcessConfig, toProcessingStage, toProgressInfo, toProgressSummary, toEphemeralBuildSessionRecord, toBuildSessionRecord...
+- `plugins/shape-plugin/src/services/vt/featureMetadataUtils.ts` | exports=4 | lines=259 | names=resolveAdminHierarchyFields, measureFeatureGeoJsonByteSize, buildFeatureId, extractGeometryStats
+- `packages/plugin-ui-host/src/headless/controller/step-guards.ts` | exports=8 | lines=258 | names=emptyGuards, BASIC_INFO_META_KEY, buildStepWorkingData, evaluateValidationState, evaluateStepGuards, mergeDialogData...
+- `packages/shape-store/src/ShapeDB.ts` | exports=3 | lines=258 | names=ShapeDB, shapeDB, clearShapeDatabases
+- `packages/components/src/TreeToggleButtonGroup/TreeToggleButtonGroup.tsx` | exports=3 | lines=250 | names=TreeToggleButtonGroup, createResourcesTreeConfig, createProjectsTreeConfig
+- `plugins/location-plugin/src/worker/normalizers.ts` | exports=3 | lines=248 | names=normalizePeerData, toGroupRow, fromGroupRow
+- `packages/vt-orchestrator/src/task/taskQueue.ts` | exports=13 | lines=244 | names=toTaskQueueRecord, VtTaskQueueDb, emitTaskUpdate, onTaskQueueUpdate, putTasks, updateTask...
+- `plugins/route-plugin/src/ui/components/steps/RoutePreviewStepElements.tsx` | exports=2 | lines=243 | names=RoutePreviewHoverSnackbar, RoutePreviewEmptyContent
+- `plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildProgressPanel/TaskProgressBar/useTaskProgressBarComputation.ts` | exports=2 | lines=242 | names=resolveViewportIndices, buildTaskProgressSegments
+- `packages/components/src/NotificationSystem/NotificationSystem.tsx` | exports=4 | lines=235 | names=showNotification, notify, replaceWindowAlert, NotificationSystem
+- `plugins/location-plugin/src/common/test-shims/external-mocks.ts` | exports=12 | lines=231 | names=BuildService, TabularWriter, SimpleTableMetadataManager, getRowStoreDB, TabularDatabaseManager, createLaneSemaphoreRegistry...
+- `plugins/shape-plugin/src/services/vt/shapeTaskCacheIdentity.ts` | exports=4 | lines=229 | names=buildSourceTaskCacheIdentity, buildGeometryTaskCacheIdentity, buildTileEmitTaskCacheIdentity, resolveTaskCacheIdentity
+- `plugins/shape-plugin/src/services/utils/toleranceByBand.ts` | exports=8 | lines=228 | names=TOLERANCE_MIN, TOLERANCE_MAX, clampTolerance, resolveToleranceByBand, normalizeToleranceByBand, resampleToleranceByBand...
+- `plugins/shape-plugin/src/ui/components/build-progress/taskItemCardList/useTaskItemCardList.ts` | exports=4 | lines=227 | names=sortVectorTileTasks, sortGeometryTasks, sortTransformTasks, useTaskItemCardList
+- `packages/runtime-worker/src/services/nearest/tileNearest.ts` | exports=9 | lines=212 | names=BTree, LRUMap, clampZoom, toTileCoord, tileToBbox, haversineMeters...
+- `plugins/basemap-plugin/src/common/constants/builtInStyles.ts` | exports=6 | lines=211 | names=BUILT_IN_STYLES, PREMIUM_STYLES, getBuiltInStyleUrl, getStyleAttribution, styleRequiresApiKey, CUSTOM_STYLE_EXAMPLES
+- `plugins/location-plugin/src/ui/components/steps/useLocationStyleConfigPanel.ts` | exports=13 | lines=205 | names=MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL, DEFAULT_MAX_ZOOM, LOCATION_TYPES, ICON_OPTIONS, MIN_ICON_SIZE...
+- `packages/vt-orchestrator/src/transform/createTransformByBandHandler/helpers/collection.ts` | exports=12 | lines=201 | names=buildBoundaryDiagnostics, validateOutputForVt, clampTileIndex, toDeg, tileToBBox, isPointInBBox...
+- `plugins/shape-plugin/src/ui/components/build-progress/shapeBuildProgressMapping.ts` | exports=3 | lines=201 | names=toShapeProgress, toShapeStatus, mapPhaseToStatus
+
+## Type/Interface-only (Reference)
+- `packages/auth-api/src/AuthRuntimeBridge.ts` | 6 lines
+- `packages/auth-api/src/notifications.ts` | 59 lines
+- `packages/auth-api/src/ports.ts` | 14 lines
+- `packages/build-api/src/progress-types.ts` | 10 lines
+- `packages/build-api/src/task-queue-types.ts` | 63 lines
+- `packages/build-session-ports/src/ports/ArtifactStorePort.ts` | 16 lines
+- `packages/build-session-ports/src/ports/BuildSessionControlPort.ts` | 35 lines
+- `packages/build-session-ports/src/ports/ProgressInfoBase.ts` | 15 lines
+- `packages/build-session-ports/src/ports/StageControls.ts` | 13 lines
+- `packages/build-session-ports/src/ports/TaskRegistryPort.ts` | 39 lines
+- `packages/build/src/manager/UnifiedBuildManagerBase.ts` | 111 lines
+- `packages/chunk-store/src/ports.ts` | 47 lines
+- `packages/components/src/build-status/BuildStatus.ts` | 2 lines
+- `packages/components/src/BuildStage.tsx` | 8 lines
+- `packages/components/src/DropdownMenu/DropdownMenuItemType.ts` | 10 lines
+- `packages/components/src/DropdownMenu/DropdownMenuItemType.tsx` | 10 lines
+- `packages/core-types/src/datasource.ts` | 98 lines
+- `packages/core-types/src/entity-types.ts` | 41 lines
+- `packages/core-types/src/id-types.ts` | 24 lines
+- `packages/core-types/src/primitive-types.ts` | 2 lines
+- `packages/core-types/src/validation-types.ts` | 14 lines
+- `packages/download/src/ports.ts` | 47 lines
+- `packages/gis-sdk/src/config.ts` | 217 lines
+- `packages/gis-sdk/src/tileStore.ts` | 42 lines
+- `packages/import-export-api/src/import-export-types.ts` | 8 lines
+- `packages/import-export-api/src/ImportExportAPI.ts` | 305 lines
+- `packages/import-export/src/ports.ts` | 25 lines
+- `packages/location-api/src/LocationMutationAPI.ts` | 23 lines
+- `packages/location-api/src/LocationQueryAPI.ts` | 80 lines
+- `packages/location-api/src/locationTypes.ts` | 190 lines
+- `packages/map-adapter/src/ports.ts` | 30 lines
+- `packages/map-source/src/ports.spatial.ts` | 6 lines
+- `packages/map-source/src/ports.ts` | 36 lines
+- `packages/plugin-base/src/types/api-types.ts` | 22 lines
+- `packages/plugin-base/src/types/BaseSearchCriteria.ts` | 11 lines
+- `packages/plugin-base/src/types/EntityLifecycleHooks.ts` | 14 lines
+- `packages/plugin-base/src/types/PackageJson.ts` | 18 lines
+- `packages/plugin-base/src/types/plugin-definition.ts` | 185 lines
+- `packages/plugin-base/src/types/plugin-manifest.ts` | 91 lines
+- `packages/plugin-base/src/types/plugin-metadata.ts` | 12 lines
+- `packages/plugin-base/src/types/PluginDBQueryAPI.ts` | 2 lines
+- `packages/plugin-base/src/types/PluginExtensionAPI.ts` | 30 lines
+- `packages/plugin-base/src/types/PluginLifecycleAPI.ts` | 79 lines
+- `packages/plugin-base/src/types/PluginTreeAPI.ts` | 170 lines
+- `packages/plugin-base/src/types/registry.ts` | 59 lines
+- `packages/plugin-ui-host/src/headless/PluginDialogShell.types.ts` | 6 lines
+- `packages/plugin-ui-host/src/headless/usePluginDialogController/data-types.ts` | 55 lines
+- `packages/route-api/src/ideGsmRouteTypes.ts` | 37 lines
+- `packages/route-api/src/routeBuildTypes.ts` | 44 lines
+- `packages/route-api/src/RouteMutationAPI.ts` | 32 lines
+- `packages/route-api/src/RouteQueryAPI.ts` | 22 lines
+- `packages/route-engine/src/RouteEnginesProvider.ts` | 23 lines
+- `packages/route-engine/src/RouteGenerationResult.ts` | 6 lines
+- `packages/route-engine/src/RoutingEngine.ts` | 11 lines
+- `packages/route-store/src/routeDbTypes.ts` | 39 lines
+- `packages/runtime-worker/src/command-types.ts` | 10 lines
+- `packages/runtime-worker/src/di/PluginWorkerModuleLoaderContract.ts` | 6 lines
+- `packages/runtime-worker/src/entity/EntityHandler.ts` | 26 lines
+- `packages/runtime-worker/src/entity/store.ts` | 63 lines
+- `packages/runtime-worker/src/services/command/registry.types.ts` | 94 lines
+- `packages/runtime-worker/src/services/fulltext-types.ts` | 19 lines
+- `packages/runtime-worker/src/services/lifecycle-types.ts` | 55 lines
+- `packages/runtime-worker/src/types/RuntimePluginDefinition.ts` | 15 lines
+- `packages/shape-api/src/shapeBuildTypes.ts` | 301 lines
+- `packages/shape-api/src/shapeDbTypes.ts` | 93 lines
+- `packages/shape-api/src/ShapeMutationAPI.ts` | 33 lines
+- `packages/shape-api/src/ShapeQueryAPI.ts` | 50 lines
+- `packages/shape-api/src/shapeTypes.ts` | 85 lines
+- `packages/shape-store/src/VectorTileRecord.ts` | 319 lines
+- `packages/spreadsheet-store/src/SpreadsheetEntity.ts` | 37 lines
+- `packages/style-api/src/StyleMutationAPI.ts` | 8 lines
+- `packages/style-api/src/StyleQueryAPI.ts` | 8 lines
+- `packages/style-api/src/styleTypes.ts` | 35 lines
+- `packages/styler-store/src/StylerAPI.ts` | 8 lines
+- `packages/tabular-source/src/ports.ts` | 10 lines
+- `packages/tabular-source/src/store.ts` | 34 lines
+- `packages/tag-api/src/TagAPI.ts` | 106 lines
+- `packages/tag-api/src/TagTypes.ts` | 8 lines
+- `packages/tag/src/ports.ts` | 37 lines
+- `packages/tree-api/src/command-payloads.ts` | 148 lines
+- `packages/tree-api/src/command-types.ts` | 71 lines
+- `packages/tree-api/src/commit-types.ts` | 25 lines
+- `packages/tree-api/src/dialog-state.ts` | 39 lines
+- `packages/tree-api/src/PluginDialogAPI.ts` | 100 lines
+- `packages/tree-api/src/tree-node-event-types.ts` | 24 lines
+- `packages/tree-api/src/tree-types.ts` | 10 lines
+- `packages/tree-api/src/TreeMutationAPI.ts` | 107 lines
+- `packages/tree-api/src/TreeNodeUpdaterAPI.ts` | 75 lines
+- `packages/tree-api/src/TreeQueryAPI.ts` | 276 lines
+- `packages/tree-api/src/TreeSubscriptionAPI.ts` | 192 lines
+- `packages/tree-api/src/TreeSubscriptionTypes.ts` | 17 lines
+- `packages/tree-api/src/TreeTableExpandedAPI.ts` | 10 lines
+- `packages/tree-api/src/undo-state-events.ts` | 12 lines
+- `packages/vectortile-orchestrator/src/ports/sharedTypes.ts` | 27 lines
+- `packages/vectortile-orchestrator/src/ports/StageControls.ts` | 22 lines
+- `packages/vectortile-orchestrator/src/ports/VectorTileStageAdapter.ts` | 23 lines
+- `packages/vectortile-orchestrator/src/vectortile/orchestratorTypes.ts` | 91 lines
+- `packages/vt-orchestrator/src/contexts.ts` | 41 lines
+- `packages/vt-orchestrator/src/transform/geometry.ts` | 16 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskLayerBuilderFlowSkipTypes.ts` | 23 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskLayerBuilderFlowTypes.ts` | 12 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskLayerBuilderTypes.ts` | 70 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskOutputTypes.ts` | 73 lines
+- `packages/vt-orchestrator/src/vt/vtStageTaskTypes.ts` | 77 lines
+- `packages/worker-api/src/WorkerAPI.ts` | 150 lines
+- `plugins/basemap-plugin/src/common/types/BaseMapEntity.ts` | 65 lines
+- `plugins/folder-plugin/src/common/types/FolderEntity.ts` | 38 lines
+- `plugins/linker-plugin/src/common/entities/LinkerEntity.ts` | 14 lines
+- `plugins/location-plugin/src/common/entities/LocationEntity.ts` | 61 lines
+- `plugins/location-plugin/src/common/entities/LocationPoint.ts` | 7 lines
+- `plugins/location-plugin/src/common/types/entities.ts` | 6 lines
+- `plugins/location-plugin/src/common/types/payloads.ts` | 56 lines
+- `plugins/location-plugin/src/services/download/csvUtils.ts` | 6 lines
+- `plugins/location-plugin/src/services/download/rawTypes.ts` | 37 lines
+- `plugins/location-plugin/src/services/ide-gsm/ideGsmCsv.ts` | 3 lines
+- `plugins/location-plugin/src/ui/components/batch/locationMapPreviewTypes.ts` | 36 lines
+- `plugins/location-plugin/src/worker/locationEntitiesDB.ts` | 4 lines
+- `plugins/resolver-plugin/src/common/entities/ResolverEntity.ts` | 119 lines
+- `plugins/route-plugin/src/worker/tabular/progress.ts` | 7 lines
+- `plugins/shape-plugin/src/common/types/api.ts` | 34 lines
+- `plugins/shape-plugin/src/common/types/create-update.ts` | 15 lines
+- `plugins/shape-plugin/src/common/types/Feature.ts` | 17 lines
+- `plugins/shape-plugin/src/common/types/session-events.ts` | 91 lines
+- `plugins/shape-plugin/src/common/types/ShapeEntity.ts` | 45 lines
+- `plugins/shape-plugin/src/common/types/ShapeFeaturePayload.ts` | 7 lines
+- `plugins/shape-plugin/src/common/types/VectorTileEntity.ts` | 17 lines
+- `plugins/shape-plugin/src/services/build/strategies/SourceStageStrategy.ts` | 66 lines
+- `plugins/shape-plugin/src/services/datasources/DataSourceStrategy.ts` | 373 lines
+- `plugins/shape-plugin/src/ui/components/build-progress/shapeBuildProgressSummaryComputationHelpers.ts` | 22 lines
+- `plugins/shape-plugin/src/ui/components/build-progress/TaskItemCard/TaskItemDetailTypes.ts` | 11 lines
+- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.types.ts` | 100 lines
+- `plugins/shape-plugin/src/ui/components/ShapeDialogStepProps.ts` | 8 lines
+- `plugins/shape-plugin/src/ui/workers/countryAvailability.types.ts` | 31 lines
+- `plugins/shape-plugin/src/worker/factory/public-types.ts` | 3 lines
+- `plugins/shape-plugin/src/worker/worker-public-types.ts` | 2 lines
+- `plugins/spreadsheet-plugin/src/common/types/SpreadsheetEntity.ts` | 13 lines
+- `plugins/styler-plugin/src/common/types/StylerEntity.ts` | 3 lines
+- `plugins/styler-plugin/src/ui/components/StylerStepProps.tsx` | 14 lines
+- `plugins/timeline-plugin/src/common/entities/TimelineEntity.ts` | 29 lines

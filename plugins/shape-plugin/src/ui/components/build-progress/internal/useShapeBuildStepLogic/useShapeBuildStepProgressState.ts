@@ -5,7 +5,7 @@ import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { BuildProgress, BuildProgressStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
-import { useShapeBuildProgressSummaryComputation } from '~/ui/components/build-progress/shapeBuildProgressSummaryComputation.js';
+import { useShapeBuildProgressSummaryComputation } from '~/ui/components/build-progress/useShapeBuildProgressSummaryComputation.js';
 import {
   buildElapsedByStageWithActiveStage,
   hasPositiveElapsed,

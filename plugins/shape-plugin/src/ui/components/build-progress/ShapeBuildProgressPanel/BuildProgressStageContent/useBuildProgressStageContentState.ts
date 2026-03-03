@@ -7,7 +7,7 @@ import { sortGeometryTasks, sortVectorTileTasks } from '~/ui/components/build-pr
 import { taskScrollTargetAtom, taskViewportRangeAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { isTaskSkipped } from '~/common/utils/taskMessages';
 import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
-import type { ShapeBuildConfig } from '~/common/types/build';
+import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 import {
   isGeometryLikeStageId,
   isTileEmitLikeStageId,

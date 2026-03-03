@@ -1,4 +1,4 @@
-import type { BuildSessionStatus, ProgressPhase } from './BuildControlAPI.js';
+import type { BuildSessionStatus, ProgressPhase } from './isBuildControlAPIV2Enabled.js';
 
 const phaseValues: Set<ProgressPhase> = new Set([
   'idle',

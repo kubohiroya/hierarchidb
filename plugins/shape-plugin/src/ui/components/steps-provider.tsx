@@ -13,7 +13,7 @@ import {
 import type { NodeId } from '@hierarchidb/core-types';
 import { ShapeDataSourceStep } from './data-source/ShapeDataSourceStep.tsx';
 import { ShapePreviewStep } from './preview/ShapePreviewStep.tsx';
-import { useTranslation as getTranslation } from '~/ui/i18n';
+import { useTranslation as getTranslation } from '~/ui/useTranslation';
 import type { ShapeDialogStepProps } from './ShapeDialogStepProps.js';
 import { ShapeBuildConfigStep } from './build-config/ShapeBuildConfigStep.tsx';
 import { ShapeCountrySelectionStep } from './country-selection/ShapeCountrySelectionStep.tsx';

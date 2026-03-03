@@ -3,7 +3,7 @@
  */
 
 import type { NodeId, ValidationResult } from '@hierarchidb/core-types';
-import type { TreeNodeUpdater } from './tree-node-types.js';
+import type { TreeNodeUpdater } from './NODE_TYPES.js';
 import type { ProxyMarked } from 'comlink';
 
 /**

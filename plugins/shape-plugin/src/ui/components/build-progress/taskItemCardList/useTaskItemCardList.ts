@@ -3,7 +3,7 @@ import { type Virtualizer, useVirtualizer } from '@tanstack/react-virtual';
 import { useSetAtom } from 'jotai';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { taskViewportRangeAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
-import { TASK_ITEM_HEIGHT } from '~/ui/components/build-progress/TaskItem/taskItem.constants';
+import { TASK_ITEM_HEIGHT } from '~/ui/components/build-progress/TaskItem/TASK_ITEM_HEIGHT';
 import { type TaskItemWithMetadata } from './types.js';
 import { isGeometryLikeStageId, isTileEmitLikeStageId } from '~/ui/components/build-progress/stageIdAliases';
 

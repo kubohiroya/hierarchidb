@@ -3,7 +3,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { useEffect, useMemo, useRef } from 'react';
 import type { BuildProgressStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
-import { hasReceivingTaskSnapshotSignal as detectTaskSnapshotSignal } from '~/ui/components/build-progress/receivingTaskSnapshotSignal';
+import { hasReceivingTaskSnapshotSignal as detectTaskSnapshotSignal } from '~/ui/components/build-progress/hasReceivingTaskSnapshotSignal';
 import { persistedTasksAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import type { TaskListViewPhase } from '~/ui/atoms/shapeBuildProgressAtoms';

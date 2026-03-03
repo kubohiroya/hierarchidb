@@ -3,7 +3,7 @@ import { useId } from 'react';
 import { DEFAULT_BUILD_CONFIG, applyBuildConfigPatch } from '~/common/types/index';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildConfig, ShapeBuildConfigPatch } from '~/common/types/index';
-import { useTranslation } from '~/ui/i18n';
+import { useTranslation } from '~/ui/useTranslation';
 import { useShapeBuildCacheActions } from './useShapeBuildCacheActions.ts';
 
 type Args = {

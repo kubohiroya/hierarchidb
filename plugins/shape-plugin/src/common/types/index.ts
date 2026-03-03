@@ -1,5 +1,5 @@
 export * from './data-source.js';
-export * from './build.ts';
+export * from './BuildTaskResult.ts';
 export type {
   ShapeBuildConfig,
   ShapeBuildSourceConfig,
@@ -11,7 +11,7 @@ export type {
   ShapeUrlMatchType,
   ShapeProcessingConfig,
   ShapeRuntimeBuildConfig,
-} from './build.ts';
+} from './BuildTaskResult.ts';
 export * from './validation.js';
 export * from './create-update.js';
 export * from './constants.js';

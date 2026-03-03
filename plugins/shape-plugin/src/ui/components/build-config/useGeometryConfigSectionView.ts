@@ -1,6 +1,6 @@
 import { useCallback, type ChangeEvent } from 'react';
 import type { ShapeBuildConfig } from '~/common/types/index';
-import { useTranslation } from '~/ui/i18n';
+import { useTranslation } from '~/ui/useTranslation';
 
 type Args = {
   simplifyAlgorithm: 'geojson' | 'topojson';
