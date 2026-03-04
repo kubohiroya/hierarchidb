@@ -23,12 +23,12 @@ const buildBaseTask = (overrides: Partial<ShapeBuildTaskSummary>): ShapeBuildTas
 });
 
 describe('buildGeometryTaskOutcomeSummary metadata handoff', () => {
-  it('uses effectiveTolerance and retryAttempt from metadata for completed summary', () => {
+  it('uses effectiveTolerance and retry values from metadata for completed summary', () => {
     const task = buildBaseTask({
       metadata: {
         effectiveTolerance: 0.2,
         retryAttempt: 2,
-        retryCount: 10,
+        retryMax: 10,
       },
     });
 
@@ -40,9 +40,10 @@ describe('buildGeometryTaskOutcomeSummary metadata handoff', () => {
     });
 
     expect(summary.kind).toBe('completed');
-    expect(summary.summaryLine).toContain('Tol 0.2');
-    expect(summary.summaryLine).toContain('Retry 2/10');
-    expect(summary.detailLines.join(' ')).toContain('Effective tolerance: 0.2');
+    expect(summary.summaryLine).toContain('Tol: 0.2');
+    expect(summary.summaryLine).toContain('Attempt');
+    expect(summary.summaryLine).toContain('2/10');
+    expect(summary.detailLines.join(' ')).toContain('Effective Tolerance: 0.2');
   });
 
   it('accepts nested metadata.finalTolerance as effectiveTolerance fallback', () => {
@@ -50,7 +51,7 @@ describe('buildGeometryTaskOutcomeSummary metadata handoff', () => {
       metadata: {
         metadata: {
           finalTolerance: 0.9,
-          retryCount: 10,
+          retryMax: 10,
         },
         retryAttempt: 0,
       },
@@ -64,7 +65,7 @@ describe('buildGeometryTaskOutcomeSummary metadata handoff', () => {
     });
 
     expect(summary.kind).toBe('completed');
-    expect(summary.summaryLine).toContain('Tol 0.9');
+    expect(summary.summaryLine).toContain('Tol: 0.9');
   });
 
   it('keeps failed summary carrying final effectiveTolerance and retryAttempt', () => {
@@ -74,7 +75,7 @@ describe('buildGeometryTaskOutcomeSummary metadata handoff', () => {
       metadata: {
         finalEffectiveTolerance: 0.35,
         retryAttempt: 6,
-        finalRetryCount: 10,
+        retryMax: 10,
       },
     });
 
@@ -86,8 +87,25 @@ describe('buildGeometryTaskOutcomeSummary metadata handoff', () => {
     });
 
     expect(summary.kind).toBe('failed');
-    expect(summary.summaryLine).toContain('Tol 0.35');
-    expect(summary.summaryLine).toContain('Retry 6/10');
-    expect(summary.detailLines.join(' ')).toContain('Failure: geometry failed: simplify');
+    expect(summary.summaryLine).toContain('Tol: 0.35');
+    expect(summary.summaryLine).toContain('6/10');
+    expect(summary.detailLines.join(' ')).toContain('Failure Reason: geometry failed: simplify');
+  });
+
+  it('does not recover retryMax from message text', () => {
+    const task = buildBaseTask({
+      status: 'failed',
+      errorMessage: 'geometry failed: max vertices (searchMaxIterations=10)',
+      metadata: {
+        retryAttempt: 1,
+      },
+    });
+
+    expect(() => buildGeometryTaskOutcomeSummary({
+      task,
+      stageId: 'geometry',
+      taskTitle: 'geometry-task-1',
+      translate: t,
+    })).toThrow('[shape-plugin] geometry retryMax is missing');
   });
 });
