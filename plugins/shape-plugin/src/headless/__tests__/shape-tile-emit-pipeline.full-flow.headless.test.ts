@@ -19,7 +19,7 @@ let ephemeralDB: typeof import('@hierarchidb/gis-sdk').ephemeralDB;
 let shapeDB: typeof import('@hierarchidb/shape-store').shapeDB;
 let runShapePipeline: typeof import('../../services/vt/runShapePipeline.js').runShapePipeline;
 let metadataLoader: typeof import('../../services/metadata/MetadataLoader.js').metadataLoader;
-let resolveCountryCodeForDataSource: typeof import('../../services/utils/utils.js').resolveCountryCodeForDataSource;
+let resolveCountryCodeForDataSource: typeof import('../../services/utils/shapeBuildUtils.js').resolveCountryCodeForDataSource;
 
 const buildConfig = {
   ...DEFAULT_BUILD_CONFIG,
@@ -83,7 +83,7 @@ describeNetwork('Shape full-flow pipeline', () => {
       ({ shapeDB } = await import('@hierarchidb/shape-store'));
       ({ runShapePipeline } = await import('../../services/vt/runShapePipeline'));
       ({ metadataLoader } = await import('../../services/metadata/MetadataLoader'));
-      ({ resolveCountryCodeForDataSource } = await import('../../services/utils/utils'));
+      ({ resolveCountryCodeForDataSource } = await import('../../services/utils/shapeBuildUtils'));
     }
   });
 

@@ -1,6 +1,7 @@
 # 運用ハブ
 
 ## Doing
+- #741 / codex/refactor/plugins-ts-file-naming-guideline / 2026-03-04 09:19
 - #737 / codex/refactor/split-multi-primary-export-files / 2026-03-04 08:36
 - #735 / codex/refactor/primary-export-filename-alignment-full / 2026-03-04 08:24
 - #733 / codex/refactor/packages-plugins-ts-file-naming-guideline-apply / 2026-03-04 07:56
@@ -20,6 +21,8 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-04: Issue #741 進捗 - `plugins` 配下の曖昧命名3件を rename（`basemap/common/shared/utils.ts`→`viewportValidation.ts`, `folder/common/shared/utils.ts`→`folderValidation.ts`, `shape/services/utils/utils.ts`→`shapeBuildUtils.ts`）し、`pnpm lint` と `pnpm typecheck` の成功を確認
+- 2026-03-04: Issue #741 開始 - `plugins/*-plugin/src/**/*.ts` へ命名指針を適用（違反抽出→rename→import更新）に着手
 - 2026-03-04: Issue #737 進捗 - 長大かつ複数主要export候補50件を抽出し、分割適用8件（`useToneCurveEditor`/`useTreeNodeUpdater`/`useTabularFilter`/`useTabularData`/`ToastProvider`/`location i18n`/`useRouteSelectionStep`/`RouteQueryService`）を実施。監査結果を `reports/issue-737-multi-primary-export-split-audit.md` に記録し、`pnpm -w turbo run typecheck --filter='./packages/*' --filter='./plugins/*'` 成功を確認
 - 2026-03-04: Issue #733 進捗 - `packages/*/src` と `plugins/*-plugin/src` を命名ガイドライン観点で再走査し、禁止命名（`shared/common/helper/helpers/misc/tmp/temp`）と実装側 `use*.tsx` が 0 件であることを確認（`pnpm -w turbo run lint --filter='./packages/*' --filter='./plugins/*'` / `pnpm -w turbo run typecheck --filter='./packages/*' --filter='./plugins/*'` 成功）
 - 2026-03-04: Issue #731 進捗 - `app/src/router/routes/tree/shared.ts` を `treeRouteIds.ts` へ、`app/src/hooks/treeconsole/actions/helpers.ts` を `treeConsoleActionUtils.ts` へ改名し、関連 import を更新（`pnpm -w turbo run lint --filter @hierarchidb/app` / `pnpm -w turbo run typecheck --filter @hierarchidb/app` 成功）

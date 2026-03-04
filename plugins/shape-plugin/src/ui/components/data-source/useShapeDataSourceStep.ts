@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo } from 'react';
 import type { DataSourceSelectionOption } from '@hierarchidb/ui-datasource';
 import { useIsoCountries } from '@hierarchidb/ui-country-select';
 import type { DataSourceConfig, DataSourceName, ShapeEntity } from '~/common/types/index';
-import { applyBuildConfigPatch, mergeProcessingConfig } from '~/services/utils/utils';
+import { applyBuildConfigPatch, mergeProcessingConfig } from '~/services/utils/shapeBuildUtils';
 import {
   DEFAULT_BUILD_CONFIG,
   DEFAULT_PROCESSING_CONFIG,

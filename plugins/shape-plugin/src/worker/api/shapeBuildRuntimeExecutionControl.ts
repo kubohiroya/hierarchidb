@@ -28,7 +28,7 @@ import type { BuildProgressEvent } from '@hierarchidb/build-api';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import {
   countSelectedAdminPairs,
-} from '~/services/utils/utils';
+} from '~/services/utils/shapeBuildUtils';
 import {
   deleteRawDataDataSourceBuffersForNodeMetadataIds,
 } from '~/services/utils/chunkStore';

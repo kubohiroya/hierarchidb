@@ -4,4 +4,4 @@
  */
 
 export * from './BaseMapPluginManifest.js';
-export * from './utils.js';
+export * from './viewportValidation.js';

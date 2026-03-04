@@ -6,7 +6,7 @@ import type {
   SourcePayloadBuildContext,
 } from './SourceStageStrategy.ts';
 import type { SourceTask, SourceTaskPayload } from '~/common/types/index';
-import { buildSourceTaskId, generateDownloadTaskPayloadsFromSelection } from '~/services/utils/utils';
+import { buildSourceTaskId, generateDownloadTaskPayloadsFromSelection } from '~/services/utils/shapeBuildUtils';
 import { buildRawDataDataSourceCacheKey } from '~/services/utils/chunkStore';
 
 export class GadmSourceStageStrategy implements SourceStageStrategy {

@@ -28,7 +28,7 @@ import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import { normalizeCountryCodeFormat } from '~/services/utils/iso3166';
 import {
   generateDownloadTaskPayloads,
-} from '~/services/utils/utils';
+} from '~/services/utils/shapeBuildUtils';
 import { resolveSourceStageStrategy } from '~/services/build/strategies/resolveSourceStageStrategy';
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';

@@ -3,7 +3,7 @@ import { Stack, Typography } from '@mui/material';
 import type { SourceConfig } from '@hierarchidb/gis-sdk';
 import type { ShapeProcessingConfig } from '~/common/types/BuildTaskResult';
 import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/shape-api';
-import { applyBuildConfigPatch, mergeProcessingConfig } from '~/services/utils/utils';
+import { applyBuildConfigPatch, mergeProcessingConfig } from '~/services/utils/shapeBuildUtils';
 import { useShapeBuildProgressPanel } from '~/ui/components/build-progress/useShapeBuildProgressPanel/useShapeBuildProgressPanel';
 import { useShapeBuildCacheActions } from '~/ui/hooks/useShapeBuildCacheActions';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
