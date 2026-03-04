@@ -476,10 +476,6 @@ export function useSimpleBFFAuthProvider({ homeUrl }: UseSimpleBFFAuthProviderPa
               consecutiveErrors++;
 
               // COOP error - we can't check popup.closed, so rely on other methods
-              if (consecutiveErrors === 1) {
-                // do somthing
-              }
-
               if (popupCheckCount % 20 === 0) {
                 // Log every 10 seconds
               }

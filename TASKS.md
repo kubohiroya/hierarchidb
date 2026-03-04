@@ -1,6 +1,8 @@
 # 運用ハブ
 
 ## Doing
+- #740 / codex/fix/runtime-worker-test-unblock-740 / 2026-03-04 08:59
+- #739 / codex/fix/ui/review-followups-739 / 2026-03-04 10:30
 - #737 / codex/refactor/split-multi-primary-export-files / 2026-03-04 08:36
 - #735 / codex/refactor/primary-export-filename-alignment-full / 2026-03-04 08:24
 - #733 / codex/refactor/packages-plugins-ts-file-naming-guideline-apply / 2026-03-04 07:56
@@ -20,6 +22,10 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-04: Issue #740 進捗 - `runtime-worker` テスト失敗を修正。WFL 3件の import を `../../e2e/test-utils/createEndpointFromMessagePort` へ更新し、`tree-mutation-archive-build-session-guard.unit.test.ts` は `ephemeralDB.buildSessionStatuses.bulkGet` モックへ追従。`pnpm -w turbo run test --filter @hierarchidb/runtime-worker` 成功（exit 0）
+- 2026-03-04: Issue #740 開始 - `pnpm -w turbo run test --filter @hierarchidb/runtime-worker` 失敗の解消（または限定skipの理由明記）に着手
+- 2026-03-04: Issue #739 進捗 - 指摘対応を実装（dialog error再送出、NavLinkMenu hook契約修正、auth redirect検証、`useTileEmitConfigSection` 依存安定化、命名ガイド更新、toast JSDoc復元、runtime-worker import修正）。`pnpm -w turbo run typecheck --filter @hierarchidb/ui-dialog --filter @hierarchidb/ui-navigation --filter @hierarchidb/ui-auth --filter @hierarchidb/ui-accordion-config --filter @hierarchidb/components --filter @hierarchidb/runtime-worker` 成功、`pnpm -w turbo run test --filter @hierarchidb/ui-navigation --filter @hierarchidb/ui-auth --filter @hierarchidb/ui-accordion-config --filter @hierarchidb/components` 成功、`pnpm -w turbo run test --filter @hierarchidb/runtime-worker -- --run src/services/command/__tests__/unit/registry.types.unit.test.ts` 成功
+- 2026-03-04: Issue #739 開始 - PRレビュー指摘対応（error再送出、NavLinkMenu契約見直し、auth redirect検証、命名ガイド整合、runtime-worker import修正）に着手
 - 2026-03-04: Issue #737 進捗 - 長大かつ複数主要export候補50件を抽出し、分割適用8件（`useToneCurveEditor`/`useTreeNodeUpdater`/`useTabularFilter`/`useTabularData`/`ToastProvider`/`location i18n`/`useRouteSelectionStep`/`RouteQueryService`）を実施。監査結果を `reports/issue-737-multi-primary-export-split-audit.md` に記録し、`pnpm -w turbo run typecheck --filter='./packages/*' --filter='./plugins/*'` 成功を確認
 - 2026-03-04: Issue #733 進捗 - `packages/*/src` と `plugins/*-plugin/src` を命名ガイドライン観点で再走査し、禁止命名（`shared/common/helper/helpers/misc/tmp/temp`）と実装側 `use*.tsx` が 0 件であることを確認（`pnpm -w turbo run lint --filter='./packages/*' --filter='./plugins/*'` / `pnpm -w turbo run typecheck --filter='./packages/*' --filter='./plugins/*'` 成功）
 - 2026-03-04: Issue #731 進捗 - `app/src/router/routes/tree/shared.ts` を `treeRouteIds.ts` へ、`app/src/hooks/treeconsole/actions/helpers.ts` を `treeConsoleActionUtils.ts` へ改名し、関連 import を更新（`pnpm -w turbo run lint --filter @hierarchidb/app` / `pnpm -w turbo run typecheck --filter @hierarchidb/app` 成功）

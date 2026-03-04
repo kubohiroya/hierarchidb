@@ -3,7 +3,7 @@ import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import * as Comlink from 'comlink';
 import { describe, expect, it, vi } from 'vitest';
 import { MessageChannel, type MessagePort as NodeMessagePort } from 'worker_threads';
-import { createEndpointFromMessagePort } from '~/e2e/test-utils/messagePortEndpoint';
+import { createEndpointFromMessagePort } from '../../e2e/test-utils/createEndpointFromMessagePort';
 
 type WorkerTestAPI = {
   getQueryAPI(): Promise<import('@hierarchidb/tree-api').TreeQueryAPI>;

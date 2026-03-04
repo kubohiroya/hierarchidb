@@ -23,6 +23,8 @@ export interface GoogleAuthContextType {
 
 const STORAGE_KEY = 'google-auth-user';
 const REDIRECT_URL_KEY = 'google-auth-redirect';
+const isSafeRedirectPath = (value: string): boolean =>
+  value.startsWith('/') && !value.startsWith('//');
 
 export interface UseGoogleAuthProviderContextParams {
   homeUrl: string;
@@ -88,7 +90,7 @@ export function useGoogleAuthProviderContext({
         const redirectUrl = localStorage.getItem(REDIRECT_URL_KEY);
         if (redirectUrl) {
           localStorage.removeItem(REDIRECT_URL_KEY);
-          window.location.href = redirectUrl;
+          window.location.href = isSafeRedirectPath(redirectUrl) ? redirectUrl : homeUrl;
         }
       } catch (error) {
         console.error('Failed to process login:', error);

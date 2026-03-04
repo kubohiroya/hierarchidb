@@ -5,6 +5,8 @@ import type { AuthUser } from '~/types/AuthUser';
 
 const STORAGE_KEY = 'oidc-auth-user';
 const REDIRECT_URL_KEY = 'oidc-auth-redirect';
+const isSafeRedirectPath = (value: string): boolean =>
+  value.startsWith('/') && !value.startsWith('//');
 
 const notify = {
   error: (msg: string) => console.error(msg),
@@ -106,7 +108,7 @@ export function useOIDCAuthProviderContext({
       const redirectUrl = localStorage.getItem(REDIRECT_URL_KEY);
       if (redirectUrl) {
         localStorage.removeItem(REDIRECT_URL_KEY);
-        window.location.href = redirectUrl;
+        window.location.href = isSafeRedirectPath(redirectUrl) ? redirectUrl : fallbackPath;
       }
     }
   }, [auth.isAuthenticated, user]);

@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 
 export interface NavLinkMenuItemViewModel {
   key: string;
   target: string;
   name: string;
+  icon: ReactNode;
   isEmpty: boolean;
 }
 
@@ -17,7 +18,7 @@ export interface UseNavLinkMenuViewResult {
 }
 
 export function useNavLinkMenuView(
-  items: Array<{ name: string; url: string }>,
+  items: Array<{ name: string; url: string; icon: ReactNode }>,
 ): UseNavLinkMenuViewResult {
   const baseLinkStyle = useMemo<CSSProperties>(() => ({
     display: 'flex',
@@ -41,6 +42,7 @@ export function useNavLinkMenuView(
       key: item.url || item.name,
       target: item.url,
       name: item.name,
+      icon: item.icon,
       isEmpty: !item.url && !item.name,
     }))
   ), [items]);
