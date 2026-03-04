@@ -1336,6 +1336,29 @@ const emitTaskProgress = (
   }
 };
 
+const emitStageSnapshot = (
+  nodeId: NodeId,
+  stageId: string,
+  snapshot: Record<string, unknown>,
+): void => {
+  const key = String(nodeId);
+  const subscription = stageSnapshotCallbacks.get(key);
+  if (!subscription?.callback) return;
+
+  const event: StageSnapshotEvent = {
+    nodeId,
+    timestamp: Date.now(),
+    stageId,
+    snapshot,
+  };
+
+  try {
+    subscription.callback(event);
+  } catch (error) {
+    console.error('[shapeBuildAPI] stage snapshot callback failed', error);
+  }
+};
+
 const emitProgressSnapshot = async (
   nodeId: NodeId,
   message?: string,
@@ -1356,9 +1379,11 @@ const emitProgressSnapshot = async (
     const phase = resolveProgressPhase(nodeId, vtTasks);
     const statusSummary = summarizeTaskQueueStatus(vtTasks);
     const payload = await buildProgressPayloadFromTasks(nodeId, vtTasks, { source: 'snapshot' });
+    const resolvedStageId = statusSummary.stage ?? 'source';
+    emitStageSnapshot(nodeId, resolvedStageId, payload as Record<string, unknown>);
     sub.callback({
       nodeId,
-      stage: statusSummary.stage ?? 'source',
+      stage: resolvedStageId,
       phase,
       timestamp: Date.now(),
       message,
@@ -1408,6 +1433,9 @@ export const shapeBuildRuntimeExecutionMetrics = {
   updateBuildSessionFromTasks,
   resolveTaskActivityTimestamp,
   buildBuildSessionConfig,
+  emitSessionStateChange,
+  emitTaskProgress,
+  emitStageSnapshot,
 } as const;
 
 export type ShapeBuildRuntimeExecutionMetrics = typeof shapeBuildRuntimeExecutionMetrics;
