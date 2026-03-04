@@ -344,6 +344,12 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
       ]),
     },
   };
+  const adminLevelRaw = readMetadataNumber(task.metadata, [
+    'fetchDetail.adminLevel',
+    'adminLevel',
+    'metadata.adminLevel',
+  ]);
+  const adminLevel = adminLevelRaw !== null ? Math.floor(adminLevelRaw) : null;
 
   const maxPolygonVertices = {
     input: readMetadataNumber(task.metadata, [
@@ -423,6 +429,7 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
     return {
       kind,
       visualization: 'transformMetrics',
+      adminLevel,
       summaryLine,
       detailLines,
       effectiveTolerance,
@@ -440,6 +447,7 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
   return {
     kind,
     visualization: 'none',
+    adminLevel,
     summaryLine: info,
     detailLines: [info],
   };

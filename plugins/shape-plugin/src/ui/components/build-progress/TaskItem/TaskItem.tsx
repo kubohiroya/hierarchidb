@@ -11,6 +11,7 @@ type TaskMetric = {
 export type TaskOutcomeSummary = {
   kind: 'completed' | 'failed' | 'skipped' | 'other';
   visualization?: 'none' | 'transformMetrics' | 'fetchMetrics';
+  adminLevel?: number | null;
   summaryLine: string;
   detailLines?: string[];
   effectiveTolerance?: number | null;

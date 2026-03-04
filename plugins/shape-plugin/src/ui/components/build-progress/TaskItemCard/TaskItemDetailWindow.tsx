@@ -1183,7 +1183,7 @@ const TaskDetailContent = ({
             originalBytes={previewOriginalBytes}
             resultBytes={previewResultBytes}
             resultColor={sizeAccentColor}
-            adminLevel={summary.fetchDetails?.adminLevel ?? null}
+            adminLevel={summary.adminLevel ?? summary.fetchDetails?.adminLevel ?? null}
           />
         )}
       </Box>
