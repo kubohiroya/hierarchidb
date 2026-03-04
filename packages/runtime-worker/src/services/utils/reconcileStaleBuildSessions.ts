@@ -38,7 +38,7 @@ interface BuildSessionConsistencyDB {
   };
   buildTasks: {
     where: (index: '[nodeId+status]') => {
-      anyOf: (keys: Array<[NodeId, 'running' | 'queued']>) => {
+      anyOf: (keys: Array<[NodeId, 'running']>) => {
         count: () => Promise<number>;
       };
     };
@@ -112,7 +112,6 @@ export const reconcileRunningBuildSessions = async (params?: {
       runningNodeIds.map((nodeId) =>
         db.buildTasks.where('[nodeId+status]').anyOf([
           [nodeId, 'running'],
-          [nodeId, 'queued'],
         ]).count()
       )
     ),

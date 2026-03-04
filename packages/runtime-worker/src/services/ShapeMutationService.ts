@@ -172,14 +172,16 @@ export class ShapeMutationService implements ShapeMutationAPI {
     const statusFields = ['status', 'stopReason', 'completedAt'] as const;
     const hasStatusUpdate = statusFields.some(field => updates[field] !== undefined);
     if (hasStatusUpdate) {
-      const statusUpdate: Partial<BuildSessionStatus> = { nodeId };
-      if (updates.status !== undefined) statusUpdate.status = updates.status;
-      if (updates.stopReason !== undefined) statusUpdate.stopReason = updates.stopReason;
-      if (updates.completedAt !== undefined) statusUpdate.completedAt = updates.completedAt;
-      
-      updatePromises.push(
-        ephemeralDB.buildSessionStatuses.update(nodeId, statusUpdate)
-      );
+      updatePromises.push((async () => {
+        const currentStatus = await ephemeralDB.buildSessionStatuses.get(nodeId);
+        const nextStatus: BuildSessionStatus = {
+          nodeId,
+          status: updates.status ?? currentStatus?.status ?? 'idle',
+          stopReason: updates.stopReason ?? currentStatus?.stopReason,
+          completedAt: updates.completedAt ?? currentStatus?.completedAt,
+        };
+        await ephemeralDB.buildSessionStatuses.put(nextStatus);
+      })());
     }
     
     // Stage update - update buildStageStatuses table
@@ -205,15 +207,20 @@ export class ShapeMutationService implements ShapeMutationAPI {
       
       if (currentStage) {
         const stageId = `${nodeId}:${currentStage}`;
-        const stageUpdate: Partial<BuildStageStatus> = {};
-        
-        if (updates.stageInactiveMs !== undefined) stageUpdate.inactiveMs = updates.stageInactiveMs;
-        if (updates.stageStartedAt !== undefined) stageUpdate.startedAt = updates.stageStartedAt;
-        if (updates.stageId !== undefined) stageUpdate.stageId = updates.stageId;
-        
-        updatePromises.push(
-          ephemeralDB.buildStageStatuses.update(stageId, stageUpdate)
-        );
+        updatePromises.push((async () => {
+          const currentStageStatus = await ephemeralDB.buildStageStatuses.get(stageId);
+          const nextStageStatus: BuildStageStatus = {
+            id: stageId,
+            nodeId,
+            stage: currentStage,
+            status: currentStageStatus?.status ?? 'running',
+            startedAt: updates.stageStartedAt ?? currentStageStatus?.startedAt ?? Date.now(),
+            inactiveMs: updates.stageInactiveMs ?? currentStageStatus?.inactiveMs,
+            stageId: updates.stageId ?? currentStageStatus?.stageId,
+            completedAt: currentStageStatus?.completedAt,
+          };
+          await ephemeralDB.buildStageStatuses.put(nextStageStatus);
+        })());
       }
     }
     
