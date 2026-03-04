@@ -1,6 +1,8 @@
 # 運用ハブ
 
 ## Doing
+- #750 / codex/fix/shape-plugin/geometry-retrymax-contract / 2026-03-04 11:08
+- #747 / fix/shape-plugin/taskitemcard-status-narrowing / 2026-03-04 10:48
 - #745 / fix/shape/step5-preview-metrics / 2026-03-04 10:58
 - #744 / codex/fix/location-plugin/build-dts-entry-resolution / 2026-03-04 09:45
 - #743 / codex/fix/shape-plugin/build-import-resolution / 2026-03-04 09:37
@@ -26,6 +28,10 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-04: Issue #750 進捗 - `pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/vt-orchestrator` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/taskOutcomeSummaryBuilders.transform-metadata.unit.test.ts` はすべて成功（exit 0）。受け側 message 復元ロジックを撤去し、出し側 metadata (`retryMax`) 契約で統一。
+- 2026-03-04: Issue #750 開始 - shape-plugin geometry terminal task の `retryMax` 欠損クラッシュについて、受け側フォールバックを排除し出し側（vt-orchestrator）の metadata 契約修正に着手
+- 2026-03-04: Issue #747 進捗 - `TaskItemCard.tsx` の status 分岐を確認し、報告されていた到達不能比較（`task.status === 'failed'` in completed branch）は現行コード上で解消済みであることを確認。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` と `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --force` はいずれも成功（exit 0）。
+- 2026-03-04: Issue #747 開始 - `shape-plugin` の `TaskItemCard.tsx` で `task.status` 比較の型矛盾（TS2367）解消に着手
 - 2026-03-04: Issue #745 進捗 - `useShapeBuildStepStageState` の `persistedTasks` 同期 `useEffect` を functional update + `tasks` 依存に変更し、`Maximum update depth exceeded`（無限更新）を解消。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` 成功（exit 0）。
 - 2026-03-04: Issue #745 進捗 - Geometry TaskItemCard の failed Chip 表示を回数なし（`Failed` 固定）へ統一。`retryMax` の 10 固定フォールバックを撤廃し、Geometry terminal task で retry 実値未解決時は例外を投げて停止するよう修正。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は成功（exit 0）、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin` は既存失敗を含み exit 1。
 - 2026-03-04: Issue #745 開始 - shape-plugin Step5 Preview の Source/Geometry 指標整合（棒グラフ定義・比率表示・6553閾値可視化）と、Sourceデータサイズ分母・Geometry Retry Attempt・Failed時 TaskItemCard N/A 表示崩れの修正に着手
