@@ -676,16 +676,14 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
     // Status updates
     if (patch.status !== undefined || patch.stopReason !== undefined || patch.completedAt !== undefined) {
       const currentStatus = await ephemeralDB.buildSessionStatuses.get(nodeId);
-      if (currentStatus) {
-        updatePromises.push(
-          ephemeralDB.buildSessionStatuses.put({
-            nodeId,
-            status: patch.status ?? currentStatus.status,
-            stopReason: patch.stopReason ?? currentStatus.stopReason,
-            completedAt: patch.completedAt ?? currentStatus.completedAt,
-          })
-        );
-      }
+      updatePromises.push(
+        ephemeralDB.buildSessionStatuses.put({
+          nodeId,
+          status: patch.status ?? currentStatus?.status ?? 'idle',
+          stopReason: patch.stopReason ?? currentStatus?.stopReason,
+          completedAt: patch.completedAt ?? currentStatus?.completedAt,
+        })
+      );
     }
 
     // Stage updates

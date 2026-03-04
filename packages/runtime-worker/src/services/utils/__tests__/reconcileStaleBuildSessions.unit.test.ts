@@ -55,7 +55,7 @@ const createDbMock = (params?: {
     })
   ));
   const whereTasks = vi.fn((_index: '[nodeId+status]') => ({
-    anyOf: (keys: Array<[NodeId, 'running' | 'queued']>) => {
+    anyOf: (keys: Array<[NodeId, 'running']>) => {
       const nodeId = keys[0]?.[0];
       return {
         count: vi.fn(async () => activeTaskCountByNode[String(nodeId)] ?? 0),
@@ -131,6 +131,28 @@ describe('reconcileRunningBuildSessions', () => {
       stopReason: 'unknown',
       completedAt: now,
     });
+  });
+
+  it('repairs running session when only queued tasks remain and no running task exists', async () => {
+    const nodeId = asNodeId('shape-1');
+    const now = 1_000_000;
+    const { db, update } = createDbMock({
+      statuses: [{ nodeId, status: 'running' }],
+      heartbeatByNode: { 'shape-1': now - 20_000 },
+      startedAtByNode: { 'shape-1': now - 20_000 },
+      activeTaskCountByNode: { 'shape-1': 0 },
+    });
+
+    const result = await reconcileRunningBuildSessions({
+      db: db as never,
+      nodeIds: [nodeId],
+      now,
+      staleTimeoutMs: 1_000,
+    });
+
+    expect(result.activeNodeIds).toEqual([]);
+    expect(result.repairedNodeIds).toEqual([nodeId]);
+    expect(update).toHaveBeenCalledTimes(1);
   });
 
   it('repairs running session without heartbeat/config and no active tasks', async () => {
