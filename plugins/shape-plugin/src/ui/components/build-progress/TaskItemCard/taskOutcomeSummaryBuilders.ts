@@ -287,22 +287,14 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
 
   const retryAttemptRaw = readMetadataNumber(task.metadata, [
     'retryAttempt',
-    'retries',
-    'attempts',
     'finalRetryAttempts',
     'metadata.retryAttempt',
-    'metadata.retries',
-    'metadata.attempts',
     'metadata.finalRetryAttempts',
   ]) ?? readNumber(task.retryAttempt);
-  const retryAttemptFromMessage = readMessageNumber(failedMessage, [
-    /finalRetryAttempts=(\d+)/i,
-    /retryAttempts=(\d+)/i,
-  ]);
-  const retryAttemptResolved = retryAttemptFromMessage ?? retryAttemptRaw;
-  const retryAttempt = retryAttemptResolved !== null && retryAttemptResolved >= 0 ? Math.floor(retryAttemptResolved) : null;
+  const retryAttempt = retryAttemptRaw !== null && retryAttemptRaw >= 0 ? Math.floor(retryAttemptRaw) : null;
 
   const retryMaxRaw = readMetadataNumber(task.metadata, [
+    'retryMax',
     'finalRetryCount',
     'finalRetryLimit',
     'retryCount',
@@ -310,15 +302,12 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
     'maxRetryAttempts',
     'metadata.finalRetryCount',
     'metadata.finalRetryLimit',
+    'metadata.retryMax',
     'metadata.retryCount',
     'metadata.retryLimit',
     'metadata.maxRetryAttempts',
   ]);
-  const retryMaxFromMessage = readMessageNumber(failedMessage, [
-    /searchMaxIterations=(\d+)/i,
-  ]);
-  const retryMaxResolved = retryMaxFromMessage ?? retryMaxRaw;
-  const retryMax = retryMaxResolved !== null && retryMaxResolved >= 0 ? Math.floor(retryMaxResolved) : null;
+  const retryMax = retryMaxRaw !== null && retryMaxRaw >= 0 ? Math.floor(retryMaxRaw) : null;
 
   const metrics = {
     features: readDisplayMetric(task, 'features'),

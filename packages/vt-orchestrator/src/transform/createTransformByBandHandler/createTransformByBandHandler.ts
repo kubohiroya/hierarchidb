@@ -323,6 +323,7 @@ export const createTransformByBandHandler = (
     let toleranceMinRatioSummary: number | undefined;
     let toleranceMaxRatioSummary: number | undefined;
     let vertexLimitSummary: number | undefined;
+    let retryMaxForTask = MAX_TOLERANCE_SEARCH_ITERATIONS;
     const toResultMetadata = (
       status: 'completed' | 'failed' | 'skipped',
       effectiveTolerance: number,
@@ -361,6 +362,7 @@ export const createTransformByBandHandler = (
       if (Number.isFinite(retryAttempt) && retryAttempt >= 0) {
         metadata.retryAttempt = Math.max(0, Math.floor(retryAttempt));
       }
+      metadata.retryMax = retryMaxForTask;
       if (Number.isFinite(extractionRatio)) {
         metadata.extractionRatio = extractionRatio;
       }
@@ -480,6 +482,7 @@ export const createTransformByBandHandler = (
     }
     const fallbackTolerance = 0.1;
     const toleranceSearchMaxIterations = simplifyProfile.toleranceSearchMaxIterations;
+    retryMaxForTask = Math.max(1, Math.min(MAX_TOLERANCE_SEARCH_ITERATIONS, toleranceSearchMaxIterations));
     const clampRatioValue = (value: number, fallback: number): number => {
       const candidate = Number.isFinite(value) ? value : fallback;
       return Math.max(0, Math.min(DEFAULT_MAX_RATIO_VALUE, candidate));
@@ -1289,7 +1292,7 @@ export const createTransformByBandHandler = (
       }
       if (!shouldDeferSimplifyToVt) {
         await updateTaskPhase(taskId, 'vertex-limit-retry:start', taskProgressRange.simplifyEnd);
-        const maxRetryAttempts = Math.max(1, Math.min(MAX_TOLERANCE_SEARCH_ITERATIONS, toleranceSearchMaxIterations));
+        const maxRetryAttempts = retryMaxForTask;
         const maxToleranceForRetry = Math.max(tolerance + 1e-9, (baseToleranceSummary ?? tolerance) * resolvedMaxRatio);
 
         const runRetrySimplifyAttempt = async (feature: Feature, nextToleranceValue: number): Promise<Feature | null> => {
