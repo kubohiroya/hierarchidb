@@ -26,15 +26,14 @@ import {
 } from '~/common/types/index';
 import { ShapeEntityHandler } from '../handlers/index.js';
 
-import {
-  type BuildProgressEvent,
-  type BuildProgressPayload,
-  type BuildTaskSummary,
-  type BuildTaskUpdateEvent,
+import type {
+  BuildProgressEvent,
+  BuildProgressPayload,
+  BuildTaskSummary,
+  BuildTaskUpdateEvent,
 } from '@hierarchidb/build-api';
 import type {
   SessionStateChangeEvent,
-  StageSnapshotEvent,
   SessionHeartbeatEvent,
   StageSnapshotEvent,
   TaskProgressEvent,
