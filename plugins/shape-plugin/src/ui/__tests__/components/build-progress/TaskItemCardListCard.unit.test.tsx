@@ -112,6 +112,7 @@ describe('TaskItemCardListCard', () => {
         metadata: {
           effectiveTolerance: 0.125,
           retryAttempt: 2,
+          retryMax: 10,
         },
       } as ShapeBuildTaskSummary,
     ];
@@ -131,9 +132,9 @@ describe('TaskItemCardListCard', () => {
       </Provider>
     );
 
-    expect(screen.getByText(/Tol 0\.125/)).toBeTruthy();
-    expect(screen.getByText(/Retry 2\/10/)).toBeTruthy();
-    expect(screen.getByText('Failed: retry 2')).toBeTruthy();
+    expect(screen.getByText(/Tol: 0\.125/)).toBeTruthy();
+    expect(screen.getByText(/Attempt: 2\/10/)).toBeTruthy();
+    expect(screen.getByText(/Failed \(Tol: 0\.125/)).toBeTruthy();
   });
 
   it('keeps source and tileEmit with simple summary without N/A charts', () => {
@@ -271,6 +272,106 @@ describe('TaskItemCardListCard', () => {
     expect(screen.getByText('5,000 / 10,000 (50%)')).toBeTruthy();
     expect(screen.getByText('Polygons')).toBeTruthy();
     expect(screen.getByText('10,000 / 25,000 (40%)')).toBeTruthy();
+  });
+
+  it('shows geometry Features/Polygons as text and hides max-vertices marker when denominator is below limit', () => {
+    const tasks: ShapeBuildTaskSummary[] = [
+      {
+        taskId: 'geometry-task-preview-1',
+        nodeId: 'node-1' as NodeId,
+        stage: 'geometry',
+        taskType: 'geometry',
+        status: 'completed',
+        progress: 100,
+        display: {
+          kind: 'summary',
+          metrics: {
+            features: { input: 1, output: 1 },
+            polygons: { input: 47, output: 47 },
+            vertices: { input: 39550, output: 6552 },
+          },
+        },
+        metadata: {
+          retryAttempt: 2,
+          retryMax: 24,
+          maxPolygonVertices: { input: 3754, output: 3754 },
+        },
+      } as ShapeBuildTaskSummary,
+    ];
+    const store = createStore();
+
+    const view = render(
+      <Provider store={store}>
+        <TaskItemCardListCard
+          stageId="geometry"
+          tasks={tasks}
+          stageValue={0}
+          resolveStatusLabel={() => 'Completed'}
+          resolveStatusColor={() => 'success'}
+          resolveTaskTitle={() => 'Geometry Task 1'}
+          virtualize={false}
+          isDetailFloatingWindowOpen
+        />
+      </Provider>
+    );
+
+    const chips = Array.from(view.container.querySelectorAll('[data-task-id] .MuiChip-root'));
+    expect(chips.length).toBe(1);
+    fireEvent.mouseEnter(chips[0]);
+
+    expect(screen.getByText('Features: 1')).toBeTruthy();
+    expect(screen.getByText('Polygons: 47')).toBeTruthy();
+    expect(screen.getByText('3,754 / 3,754 (100%)')).toBeTruthy();
+    expect(screen.queryByTestId('max-vertices-limit-marker')).toBeNull();
+  });
+
+  it('shows max-vertices marker when denominator exceeds limit', () => {
+    const tasks: ShapeBuildTaskSummary[] = [
+      {
+        taskId: 'geometry-task-preview-2',
+        nodeId: 'node-1' as NodeId,
+        stage: 'geometry',
+        taskType: 'geometry',
+        status: 'completed',
+        progress: 100,
+        display: {
+          kind: 'summary',
+          metrics: {
+            features: { input: 1, output: 1 },
+            polygons: { input: 27, output: 27 },
+            vertices: { input: 39550, output: 6552 },
+          },
+        },
+        metadata: {
+          retryAttempt: 1,
+          retryMax: 24,
+          maxPolygonVertices: { input: 17598, output: 2852 },
+        },
+      } as ShapeBuildTaskSummary,
+    ];
+    const store = createStore();
+
+    const view = render(
+      <Provider store={store}>
+        <TaskItemCardListCard
+          stageId="geometry"
+          tasks={tasks}
+          stageValue={0}
+          resolveStatusLabel={() => 'Completed'}
+          resolveStatusColor={() => 'success'}
+          resolveTaskTitle={() => 'Geometry Task 2'}
+          virtualize={false}
+          isDetailFloatingWindowOpen
+        />
+      </Provider>
+    );
+
+    const chips = Array.from(view.container.querySelectorAll('[data-task-id] .MuiChip-root'));
+    expect(chips.length).toBe(1);
+    fireEvent.mouseEnter(chips[0]);
+
+    expect(screen.getByText('2,852 / 17,598 (16.2%)')).toBeTruthy();
+    expect(screen.getByTestId('max-vertices-limit-marker')).toBeTruthy();
   });
 
   it('toggles selected chip and keeps preview fixed while selected', () => {
