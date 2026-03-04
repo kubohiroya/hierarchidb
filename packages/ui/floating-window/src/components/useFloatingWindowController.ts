@@ -219,7 +219,9 @@ export function useFloatingWindowController(
   const resolveIncomingState = useCallback(
     (prev: WindowState, incoming?: Partial<WindowState>): WindowState | null => {
       if (!incoming) return null;
+      const shouldSyncFrame = !isInteracting && !isDragging.current && !isResizing.current;
       const normalizePosition = (value: WindowState['position'] | undefined) => {
+        if (!shouldSyncFrame) return prev.position;
         if (!value) return prev.position;
         const { x, y } = value;
         if (!Number.isFinite(x) || !Number.isFinite(y)) {
@@ -232,6 +234,7 @@ export function useFloatingWindowController(
         };
       };
       const normalizeSize = (value: WindowState['size'] | undefined) => {
+        if (!shouldSyncFrame) return prev.size;
         if (!value) return prev.size;
         const { width, height } = value;
         if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
@@ -259,7 +262,7 @@ export function useFloatingWindowController(
       if (samePosition && sameSize && sameFlags) return null;
       return next;
     },
-    [clamp, resolveBounds]
+    [clamp, isInteracting, resolveBounds]
   );
 
   useEffect(() => {

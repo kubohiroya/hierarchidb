@@ -184,7 +184,8 @@ export function useDialogFrameState({
     const layoutViewport = getDialogLayoutViewport();
     const windowState = initialDialogUIState.dialogWindow;
     const progressState = initialDialogUIState.dialogProgress;
-    const requestedMode = windowState?.mode ?? 'normal';
+    const hasUrlMode = typeof urlState?.mode === 'string';
+    const requestedMode = (hasUrlMode ? urlState?.mode : windowState?.mode) ?? 'normal';
     const mode =
       !allowFullScreen && requestedMode === 'full-screen' ? 'normal' : requestedMode;
     const size = windowState?.size ?? dialogSizeRef.current;
@@ -227,6 +228,7 @@ export function useDialogFrameState({
     persistPosition,
     persistSize,
     setUrlStepInternal,
+    urlState?.mode,
     urlState?.step,
     _nodeId,
   ]);

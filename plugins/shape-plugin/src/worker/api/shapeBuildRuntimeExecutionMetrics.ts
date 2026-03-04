@@ -34,6 +34,7 @@ import {
 } from '@hierarchidb/build-api';
 import type {
   SessionStateChangeEvent,
+  StageSnapshotEvent,
   SessionHeartbeatEvent,
   StageSnapshotEvent,
   TaskProgressEvent,
