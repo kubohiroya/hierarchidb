@@ -11,7 +11,6 @@ import type {
   UndoPayload,
 } from '@hierarchidb/tree-api';
 import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/shape-api';
-import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import { SingletonMixin } from '@hierarchidb/util';
 import { EntityLifecycleManager } from '~/entity/EntityLifecycleManager';
 import { resolveDefaultNodeName } from '~/utils/resolveDefaultNodeName';
@@ -21,6 +20,7 @@ import type { CoreDB } from './CoreDB.js';
 import { createNewName } from './DraftTreeNodeOperations.js';
 import { generateNodeId } from './generateNodeId.js';
 import { sanitizeMessageText } from './utils/error-adapter.js';
+import { reconcileRunningBuildSessions } from './utils/reconcileStaleBuildSessions.js';
 import { hasRouteReferencesToLocations } from '@hierarchidb/route-store';
 import { hasLocationReferencesToShapes } from '@hierarchidb/location-store';
 
@@ -29,8 +29,6 @@ const getCommandError = (result: CoreCommandResult, fallback = 'Unknown error'):
   const failure = result as Extract<CoreCommandResult, { success: false }>;
   return failure.error;
 };
-
-const RUNNING_BUILD_SESSION_STATUS = 'running';
 
 export class TreeMutationService implements TreeMutationAPI {
   // Note: Implementation now routes all mutating operations via CommandProcessor.
@@ -163,8 +161,6 @@ export class TreeMutationService implements TreeMutationAPI {
   ): Promise<{ blocked: boolean; message?: string }> {
     if (nodeIds.length === 0) return { blocked: false };
 
-    await ephemeralDB.open?.();
-
     const nodes = await Promise.all(nodeIds.map(async (id) => this.coreDB.getNode?.(id)));
     const shapeNodeIds = Array.from(
       new Set(
@@ -177,8 +173,8 @@ export class TreeMutationService implements TreeMutationAPI {
       return { blocked: false };
     }
 
-    const sessions = await ephemeralDB.buildSessionStatuses.bulkGet(shapeNodeIds);
-    if (sessions.some((session) => session?.status === RUNNING_BUILD_SESSION_STATUS)) {
+    const consistency = await reconcileRunningBuildSessions({ nodeIds: shapeNodeIds });
+    if (consistency.activeNodeIds.length > 0) {
       return {
         blocked: true,
         message: 'TRASH_BUILD_SESSION_RUNNING',
