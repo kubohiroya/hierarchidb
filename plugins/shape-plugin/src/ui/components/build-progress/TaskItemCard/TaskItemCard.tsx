@@ -34,11 +34,41 @@ type TaskItemCardProps = {
   onDetailClick?: (value: { title: string; summary: TaskOutcomeSummary; task: ShapeBuildTaskSummary }) => void;
 };
 
-const resolveRetryAttemptFromTask = (task: ShapeBuildTaskSummary): number | null => {
-  const rawValue = task.retryAttempt ?? task.metadata?.retryAttempt ?? task.metadata?.retries ?? task.metadata?.attempts;
-  if (typeof rawValue !== 'number' || !Number.isFinite(rawValue)) {
-    return null;
+const readRetryNumber = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : null;
   }
+  return null;
+};
+
+const readMetadataNumber = (metadata: Record<string, unknown> | undefined, keys: string[]): number | null => {
+  for (const key of keys) {
+    const rawValue = key.split('.').reduce<unknown>((current, segment) => {
+      if (!current || typeof current !== 'object') return undefined;
+      return (current as Record<string, unknown>)[segment];
+    }, metadata);
+    const parsed = readRetryNumber(rawValue);
+    if (parsed !== null) return parsed;
+  }
+  return null;
+};
+
+const resolveRetryAttemptFromTask = (task: ShapeBuildTaskSummary, summaryRetryAttempt?: number | null): number | null => {
+  const rawValue = summaryRetryAttempt
+    ?? readRetryNumber(task.retryAttempt)
+    ?? readMetadataNumber(task.metadata, [
+      'retryAttempt',
+      'retries',
+      'attempts',
+      'finalRetryAttempts',
+      'metadata.retryAttempt',
+      'metadata.retries',
+      'metadata.attempts',
+      'metadata.finalRetryAttempts',
+    ]);
+  if (rawValue === null) return null;
   const rounded = Math.floor(rawValue);
   return rounded >= 0 ? rounded : null;
 };
@@ -136,13 +166,17 @@ export const TaskItemCard = ({
     translate,
   });
 
-  const normalizedRetryAttempt = resolveRetryAttemptFromTask(task);
+  const normalizedRetryAttempt = resolveRetryAttemptFromTask(task, summary.retryAttempt ?? null);
   const statusLabel = isGeometryLikeStageId(stageId)
     && (task.status === 'completed' || task.status === 'failed')
     ? (
-      normalizedRetryAttempt !== null && normalizedRetryAttempt > 0
-        ? `${task.status === 'failed' ? translate('task.status.failed', 'Failed') : translate('task.status.completed', 'Completed')}: ${translate('task.status.attempt', 'Attempt')} ${normalizedRetryAttempt}`
-        : (task.status === 'failed' ? translate('task.status.failed', 'Failed') : translate('task.status.completed', 'Completed'))
+      task.status === 'failed'
+        ? translate('task.status.failed', 'Failed')
+        : (
+          normalizedRetryAttempt !== null && normalizedRetryAttempt > 0
+            ? `${translate('task.status.completed', 'Completed')}: ${translate('task.status.attempt', 'Attempt')} ${normalizedRetryAttempt}`
+            : translate('task.status.completed', 'Completed')
+        )
     )
     : statusLabelValue;
 

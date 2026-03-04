@@ -1,6 +1,9 @@
 # 運用ハブ
 
 ## Doing
+- #745 / fix/shape/step5-preview-metrics / 2026-03-04 10:58
+- #744 / codex/fix/location-plugin/build-dts-entry-resolution / 2026-03-04 09:45
+- #743 / codex/fix/shape-plugin/build-import-resolution / 2026-03-04 09:37
 - #740 / codex/fix/runtime-worker-test-unblock-740 / 2026-03-04 08:59
 - #739 / codex/fix/ui/review-followups-739 / 2026-03-04 10:30
 - #737 / codex/refactor/split-multi-primary-export-files / 2026-03-04 08:36
@@ -19,9 +22,17 @@
 - #708 / codex/chore/ci-build-checks-separation / 2026-03-03 22:10
 
 ## Blocked
+- Issue #745: `pnpm -w turbo run test --filter @hierarchidb/shape-plugin` が既存失敗を含み exit 1（主に `useShapeBuildTaskSnapshotProgressState.unit.test.tsx` / `TaskItemCardListCard.unit.test.tsx` / `TaskItemCard i18n-preservation` 系）。解除条件: 既存失敗の切り分けと期待値更新方針を Issue で合意後に再実行。
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-04: Issue #745 進捗 - `useShapeBuildStepStageState` の `persistedTasks` 同期 `useEffect` を functional update + `tasks` 依存に変更し、`Maximum update depth exceeded`（無限更新）を解消。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` 成功（exit 0）。
+- 2026-03-04: Issue #745 進捗 - Geometry TaskItemCard の failed Chip 表示を回数なし（`Failed` 固定）へ統一。`retryMax` の 10 固定フォールバックを撤廃し、Geometry terminal task で retry 実値未解決時は例外を投げて停止するよう修正。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は成功（exit 0）、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin` は既存失敗を含み exit 1。
+- 2026-03-04: Issue #745 開始 - shape-plugin Step5 Preview の Source/Geometry 指標整合（棒グラフ定義・比率表示・6553閾値可視化）と、Sourceデータサイズ分母・Geometry Retry Attempt・Failed時 TaskItemCard N/A 表示崩れの修正に着手
+- 2026-03-04: Issue #744 進捗 - `location-plugin` の stale dts entry（`locationGroupStore.dexie.ts` / `locationRelationStore.dexie.ts`）を現行実装 `createLocationFeatureStoreDexie.ts` に同期。`pnpm -w turbo run build --filter @hierarchidb/location-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/location-plugin` ともに成功（exit 0）
+- 2026-03-04: Issue #744 開始 - `@hierarchidb/location-plugin` の build:dts 失敗（`src/worker/locationGroupStore.dexie.ts` unresolved entry）解消に着手
+- 2026-03-04: Issue #743 進捗 - `shape-plugin` の unresolved import 2件（`./i18n.js`, `~/common/types/metadata`）を解消し、派生して顕在化した `build:dts` の stale entry（`shapeGroupStore/shapeRelationStore`）を `shapeVectorTileStore` へ同期。`pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` ともに成功（exit 0）
+- 2026-03-04: Issue #743 開始 - `@hierarchidb/shape-plugin` の build 失敗（`./i18n.js` と `~/common/types/metadata` の unresolved import）解消に着手
 - 2026-03-04: Issue #741 進捗 - `plugins` 配下の曖昧命名3件を rename（`basemap/common/shared/utils.ts`→`viewportValidation.ts`, `folder/common/shared/utils.ts`→`folderValidation.ts`, `shape/services/utils/utils.ts`→`shapeBuildUtils.ts`）し、`pnpm lint` と `pnpm typecheck` の成功を確認
 - 2026-03-04: Issue #741 開始 - `plugins/*-plugin/src/**/*.ts` へ命名指針を適用（違反抽出→rename→import更新）に着手
 - 2026-03-04: Issue #740 進捗 - `runtime-worker` テスト失敗を修正。WFL 3件の import を `../../e2e/test-utils/createEndpointFromMessagePort` へ更新し、`tree-mutation-archive-build-session-guard.unit.test.ts` は `ephemeralDB.buildSessionStatuses.bulkGet` モックへ追従。`pnpm -w turbo run test --filter @hierarchidb/runtime-worker` 成功（exit 0）

@@ -144,6 +144,17 @@ const readMetadataString = (metadata: Record<string, unknown> | undefined, keys:
   return null;
 };
 
+const readMessageNumber = (message: string | null, patterns: RegExp[]): number | null => {
+  if (!message) return null;
+  for (const pattern of patterns) {
+    const match = message.match(pattern);
+    if (!match?.[1]) continue;
+    const parsed = Number.parseFloat(match[1]);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
+};
+
 const resolveRatio = (output: number | null, input: number | null): number | null => {
   if (output === null || input === null || input <= 0) return null;
   return Math.max(0, Math.min(1, output / input));
@@ -274,8 +285,22 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
     ? 'N/A'
     : `${Number.parseFloat(effectiveTolerance.toFixed(6))}`;
 
-  const retryAttemptRaw = readNumber(task.retryAttempt ?? task.metadata?.retryAttempt ?? task.metadata?.retries ?? task.metadata?.attempts);
-  const retryAttempt = retryAttemptRaw !== null && retryAttemptRaw >= 0 ? Math.floor(retryAttemptRaw) : null;
+  const retryAttemptRaw = readMetadataNumber(task.metadata, [
+    'retryAttempt',
+    'retries',
+    'attempts',
+    'finalRetryAttempts',
+    'metadata.retryAttempt',
+    'metadata.retries',
+    'metadata.attempts',
+    'metadata.finalRetryAttempts',
+  ]) ?? readNumber(task.retryAttempt);
+  const retryAttemptFromMessage = readMessageNumber(failedMessage, [
+    /finalRetryAttempts=(\d+)/i,
+    /retryAttempts=(\d+)/i,
+  ]);
+  const retryAttemptResolved = retryAttemptFromMessage ?? retryAttemptRaw;
+  const retryAttempt = retryAttemptResolved !== null && retryAttemptResolved >= 0 ? Math.floor(retryAttemptResolved) : null;
 
   const retryMaxRaw = readMetadataNumber(task.metadata, [
     'finalRetryCount',
@@ -289,7 +314,11 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
     'metadata.retryLimit',
     'metadata.maxRetryAttempts',
   ]);
-  const retryMax = retryMaxRaw !== null && retryMaxRaw >= 0 ? Math.floor(retryMaxRaw) : 10;
+  const retryMaxFromMessage = readMessageNumber(failedMessage, [
+    /searchMaxIterations=(\d+)/i,
+  ]);
+  const retryMaxResolved = retryMaxFromMessage ?? retryMaxRaw;
+  const retryMax = retryMaxResolved !== null && retryMaxResolved >= 0 ? Math.floor(retryMaxResolved) : null;
 
   const metrics = {
     features: readDisplayMetric(task, 'features'),
@@ -309,6 +338,42 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
     'extractionRatio',
     'metadata.extractionRatio',
   ]);
+
+  const sourceMetrics = {
+    features: {
+      input: readMetadataNumber(task.metadata, ['fetchDetail.features.input']),
+      output: readMetadataNumber(task.metadata, ['fetchDetail.features.output']),
+    },
+    polygons: {
+      input: readMetadataNumber(task.metadata, [
+        'fetchDetail.polygonsPerFeature.input',
+        'fetchDetail.polygons.input',
+      ]),
+      output: readMetadataNumber(task.metadata, [
+        'fetchDetail.polygonsPerFeature.output',
+        'fetchDetail.polygons.output',
+      ]),
+    },
+  };
+
+  const maxPolygonVertices = {
+    input: readMetadataNumber(task.metadata, [
+      'maxPolygonVertices.input',
+      'maxPolygonVertexCount.input',
+      'largestPolygonVertices.input',
+      'metadata.maxPolygonVertices.input',
+      'metadata.maxPolygonVertexCount.input',
+      'metadata.largestPolygonVertices.input',
+    ]) ?? readMessageNumber(failedMessage, [/maxVertices=(\d+)/i]),
+    output: readMetadataNumber(task.metadata, [
+      'maxPolygonVertices.output',
+      'maxPolygonVertexCount.output',
+      'largestPolygonVertices.output',
+      'metadata.maxPolygonVertices.output',
+      'metadata.maxPolygonVertexCount.output',
+      'metadata.largestPolygonVertices.output',
+    ]) ?? readMessageNumber(failedMessage, [/finalVertexCount=(\d+)/i]),
+  };
 
   const vertexLimit = (() => {
     const metadataLimit = readMetadataNumber(task.metadata, [
@@ -338,13 +403,19 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
   }
 
   if (kind === 'completed' || kind === 'failed') {
+    if (retryAttempt === null) {
+      throw new Error(`[shape-plugin] geometry retryAttempt is missing for terminal task: ${task.taskId}`);
+    }
+    if (retryMax === null) {
+      throw new Error(`[shape-plugin] geometry retryMax is missing for terminal task: ${task.taskId}`);
+    }
     const prefix = kind === 'failed' ? translate('task.status.failed', 'Failed') : translate('task.status.completed', 'Completed');
-    const retryText = retryAttempt !== null ? `${translate('task.status.attempt', 'Attempt')}: ${retryAttempt}/${retryMax ?? 'N/A'}` : `${translate('task.status.attempt', 'Attempt')}: N/A/${retryMax ?? 'N/A'}`;
+    const retryText = `${translate('task.status.attempt', 'Attempt')}: ${retryAttempt}/${retryMax}`;
     const summaryLine = `${prefix} (Tol: ${effectiveToleranceText}, ${retryText}, F/Pol/V: ${formatInt(metrics.features.output)}/${formatInt(metrics.polygons.output)}/${formatInt(metrics.vertices.output)})`;
 
     const detailLines = [
       `${translate('task.details.effectiveTolerance', 'Effective Tolerance')}: ${effectiveToleranceText}`,
-      `${translate('task.details.retryCount', 'Retry Count')}: ${retryAttempt ?? 'N/A'} / ${retryMax ?? 'N/A'}`,
+      `${translate('task.details.retryCount', 'Retry Count')}: ${retryAttempt} / ${retryMax}`,
       `${translate('task.details.finalDataSize', 'Final Data Size (F/Pol/V)')}: ${formatInt(metrics.features.output)} / ${formatInt(metrics.polygons.output)} / ${formatInt(metrics.vertices.output)}`,
       `${translate('task.details.originalDataSize', 'Original Data Size (F/Pol/V)')}: ${formatInt(metrics.features.input)} / ${formatInt(metrics.polygons.input)} / ${formatInt(metrics.vertices.input)}`,
       `${translate('task.details.vertexReductionRate', 'Vertex Reduction Rate')}: ${formatPercent(vertexReductionRate)}`,
@@ -370,6 +441,8 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
       retryMax,
       vertexReductionRate,
       metrics,
+      sourceMetrics,
+      maxPolygonVertices,
       vertexLimit,
     };
   }

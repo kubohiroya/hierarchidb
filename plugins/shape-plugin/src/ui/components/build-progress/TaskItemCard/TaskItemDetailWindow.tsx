@@ -47,9 +47,21 @@ type PreviewData = {
   resultBytes: number;
 };
 
+type CollectionLoadResult = {
+  collection: FeatureCollection | null;
+  rawBytes: number;
+};
+
 type SourceStageMaxima = {
   featureMax: number;
   polygonMax: number;
+};
+
+type CollectionMetrics = {
+  featureCount: number;
+  polygonCount: number;
+  vertexCount: number;
+  maxPolygonVertexCount: number;
 };
 
 type OverlaySpec = {
@@ -269,7 +281,7 @@ const loadSourceCollectionFromCache = async (
   nodeId: NodeId,
   sourceParams: SourcePreviewParams | null,
   preview: Record<string, unknown> | null,
-): Promise<FeatureCollection | null> => {
+): Promise<CollectionLoadResult | null> => {
   const previewCacheKey = readString(preview?.rawSourceCacheKey);
   const fallbackCacheKey = sourceParams
     ? buildRawDataDataSourceCacheKey({
@@ -283,7 +295,10 @@ const loadSourceCollectionFromCache = async (
   if (!cacheKey) return null;
   const rawBuffer = await readRawDataDataSourceBuffer(nodeId, cacheKey);
   if (!rawBuffer) return null;
-  return decodeRawSourceCollectionWithFallback(rawBuffer);
+  return {
+    collection: await decodeRawSourceCollectionWithFallback(rawBuffer),
+    rawBytes: rawBuffer.byteLength,
+  };
 };
 
 const resolveSourcePreviewParams = (nodeId: NodeId, preview: Record<string, unknown> | null): SourcePreviewParams | null => {
@@ -336,10 +351,12 @@ const loadPreviewData = async (detail: TaskDetailPayload): Promise<PreviewData> 
     const sourceCacheId = resolveCacheId(preview, detail.task, 'sourceCacheId');
     const sourceCacheFormat = readString(preview?.sourceCacheFormat) === 'topojson' ? 'topojson' : 'flatgeobuf';
     const sourceCacheCompression = readString(preview?.sourceCacheCompression) === 'gzip' ? 'gzip' : 'none';
-    const [sourceCollection, sourceCache] = await Promise.all([
+    const [sourceCollectionResult, sourceCache] = await Promise.all([
       loadSourceCollectionFromCache(nodeId, sourceParams, preview).catch(() => null),
       sourceCacheId ? shapeQueryAPIImpl.getSourceCache(nodeId, sourceCacheId) : Promise.resolve(null),
     ]);
+    const sourceCollection = sourceCollectionResult?.collection ?? null;
+    const sourceRawBytes = sourceCollectionResult?.rawBytes ?? 0;
     const resultCollection = sourceCache
       ? await decodeSourceCacheCollectionWithFallback(sourceCache, sourceCacheFormat, sourceCacheCompression)
       : null;
@@ -347,7 +364,7 @@ const loadPreviewData = async (detail: TaskDetailPayload): Promise<PreviewData> 
       original: sourceCollection,
       result: resultCollection,
       previousOriginal: null,
-      originalBytes: measureCollectionBytes(sourceCollection),
+      originalBytes: sourceRawBytes > 0 ? sourceRawBytes : measureCollectionBytes(sourceCollection),
       resultBytes: (sourceCache?.size && sourceCache.size > 0)
         ? sourceCache.size
         : measureCollectionBytes(resultCollection),
@@ -360,11 +377,12 @@ const loadPreviewData = async (detail: TaskDetailPayload): Promise<PreviewData> 
     const sourceCacheCompression = readString(preview?.sourceCacheCompression) === 'gzip' ? 'gzip' : 'none';
     const geometryCacheId = resolveCacheId(preview, detail.task, 'geometryCacheId');
 
-    const [sourceCollection, sourceCache, geometryCache] = await Promise.all([
+    const [sourceCollectionResult, sourceCache, geometryCache] = await Promise.all([
       loadSourceCollectionFromCache(nodeId, sourceParams, preview).catch(() => null),
       sourceCacheId ? shapeQueryAPIImpl.getSourceCache(nodeId, sourceCacheId) : Promise.resolve(null),
       geometryCacheId ? shapeQueryAPIImpl.getGeometryCache(geometryCacheId) : Promise.resolve(null),
     ]);
+    const sourceCollection = sourceCollectionResult?.collection ?? null;
 
     const originalCollection = sourceCache
       ? await decodeSourceCacheCollectionWithFallback(sourceCache, sourceCacheFormat, sourceCacheCompression)
@@ -455,74 +473,21 @@ const renderVolumeRow = (
   );
 };
 
-const renderStackedRatioRow = (
+const renderVertexLimitReferencedRow = (
   label: string,
   output: number | null | undefined,
   input: number | null | undefined,
   colorToken: string,
-  maxScale?: number | null,
-  hideBarWhenNoScale = false,
+  limit = VERTEX_LIMIT,
 ): React.ReactNode => {
-  void maxScale;
-  void hideBarWhenNoScale;
-  const ratio = resolveRatio(output, input);
-  const text = `${formatNumber(output)} / ${formatNumber(input)} (${formatPercent(ratio)})`;
-  return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      <Typography variant="caption" sx={{ width: 56, color: 'text.secondary' }}>
-        {label}
-      </Typography>
-      <Box sx={{ position: 'relative', flex: 1, height: 20, bgcolor: 'grey.300', borderRadius: 0.75, overflow: 'hidden' }}>
-        {ratio !== null ? (
-          <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${ratio * 100}%`, bgcolor: colorToken }} />
-        ) : null}
-        <Typography
-          variant="caption"
-          sx={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'common.white',
-            mixBlendMode: 'difference',
-            px: 0.5,
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
-          {text}
-        </Typography>
-      </Box>
-    </Box>
-  );
-};
-
-const renderTransformScaledRow = (
-  label: string,
-  output: number | null | undefined,
-  input: number | null | undefined,
-  sourceStageMax: number | null | undefined,
-  colorToken: string,
-): React.ReactNode => {
+  const safeInput = typeof input === 'number' && Number.isFinite(input) && input >= 0 ? input : null;
   const safeOutput = typeof output === 'number' && Number.isFinite(output) && output >= 0 ? output : null;
-  const safeInput = typeof input === 'number' && Number.isFinite(input) && input > 0 ? input : null;
-  const safeSourceMax = typeof sourceStageMax === 'number' && Number.isFinite(sourceStageMax) && sourceStageMax > 0
-    ? sourceStageMax
-    : null;
-  const firstRatio = (safeOutput !== null && safeInput !== null) ? Math.max(0, Math.min(1, safeOutput / safeInput)) : null;
-  const secondRatio = (safeInput !== null && safeSourceMax !== null) ? Math.max(0, Math.min(1, safeInput / safeSourceMax)) : null;
-  const combinedRatio = (firstRatio !== null && secondRatio !== null)
-    ? Math.max(0, Math.min(1, firstRatio * secondRatio))
-    : null;
-  const inputScale = (safeInput !== null && safeSourceMax !== null) ? Math.max(0, Math.min(1, safeInput / safeSourceMax)) : null;
-  const outputScale = (safeOutput !== null && safeSourceMax !== null) ? Math.max(0, Math.min(1, safeOutput / safeSourceMax)) : null;
-  const text = (
-    safeOutput !== null && safeInput !== null && safeSourceMax !== null
-      ? `${formatNumber(safeOutput)} / ${formatNumber(safeInput)} x ${formatNumber(safeInput)} / ${formatNumber(safeSourceMax)} (${formatPercent(combinedRatio)})`
-      : `${formatNumber(output)} / ${formatNumber(input)} x ${formatNumber(input)} / ${formatNumber(sourceStageMax)} (N/A)`
-  );
+  const scaleMax = Math.max(limit, safeInput ?? 0, safeOutput ?? 0, 1);
+  const inputScale = safeInput !== null ? Math.max(0, Math.min(1, safeInput / scaleMax)) : null;
+  const outputScale = safeOutput !== null ? Math.max(0, Math.min(1, safeOutput / scaleMax)) : null;
+  const limitScale = Math.max(0, Math.min(1, limit / scaleMax));
+  const ratio = resolveRatio(safeOutput, safeInput);
+  const text = `${formatNumber(output)} / ${formatNumber(input)} (${formatPercent(ratio)})`;
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -554,6 +519,60 @@ const renderTransformScaledRow = (
               bgcolor: colorToken,
             }}
           />
+        ) : null}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            left: `calc(${limitScale * 100}% - 2px)`,
+            width: '4px',
+            background: (theme) => `linear-gradient(to right, ${theme.palette.warning.main} 0 2px, ${theme.palette.common.black} 2px 4px)`,
+          }}
+        />
+        <Typography
+          variant="caption"
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'common.white',
+            mixBlendMode: 'difference',
+            px: 0.5,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {text}
+        </Typography>
+      </Box>
+    </Box>
+  );
+};
+
+const renderStackedRatioRow = (
+  label: string,
+  output: number | null | undefined,
+  input: number | null | undefined,
+  colorToken: string,
+  maxScale?: number | null,
+  hideBarWhenNoScale = false,
+): React.ReactNode => {
+  void maxScale;
+  void hideBarWhenNoScale;
+  const ratio = resolveRatio(output, input);
+  const text = `${formatNumber(output)} / ${formatNumber(input)} (${formatPercent(ratio)})`;
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Typography variant="caption" sx={{ width: 56, color: 'text.secondary' }}>
+        {label}
+      </Typography>
+      <Box sx={{ position: 'relative', flex: 1, height: 20, bgcolor: 'grey.300', borderRadius: 0.75, overflow: 'hidden' }}>
+        {ratio !== null ? (
+          <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${ratio * 100}%`, bgcolor: colorToken }} />
         ) : null}
         <Typography
           variant="caption"
@@ -861,6 +880,64 @@ const buildPreviewDownloadCollection = (preview: PreviewData | null): FeatureCol
   };
 };
 
+const countPolygonVertices = (coordinates: unknown): number => {
+  if (!Array.isArray(coordinates)) return 0;
+  return coordinates.reduce((polygonSum, polygon) => {
+    if (!Array.isArray(polygon)) return polygonSum;
+    const ringVertices = polygon.reduce((ringSum, ring) => {
+      if (!Array.isArray(ring)) return ringSum;
+      return ringSum + ring.length;
+    }, 0);
+    return polygonSum + ringVertices;
+  }, 0);
+};
+
+const toCollectionMetrics = (collection: FeatureCollection | null): CollectionMetrics => {
+  if (!collection?.features?.length) {
+    return { featureCount: 0, polygonCount: 0, vertexCount: 0, maxPolygonVertexCount: 0 };
+  }
+  let polygonCount = 0;
+  let vertexCount = 0;
+  let maxPolygonVertexCount = 0;
+
+  const processGeometry = (geometry: Feature['geometry'] | null | undefined): void => {
+    if (!geometry) return;
+    if (geometry.type === 'Polygon') {
+      const currentVertexCount = countPolygonVertices([geometry.coordinates]);
+      polygonCount += 1;
+      vertexCount += currentVertexCount;
+      if (currentVertexCount > maxPolygonVertexCount) {
+        maxPolygonVertexCount = currentVertexCount;
+      }
+      return;
+    }
+    if (geometry.type === 'MultiPolygon') {
+      (geometry.coordinates as unknown[]).forEach((polygonCoords) => {
+        const currentVertexCount = countPolygonVertices([polygonCoords]);
+        polygonCount += 1;
+        vertexCount += currentVertexCount;
+        if (currentVertexCount > maxPolygonVertexCount) {
+          maxPolygonVertexCount = currentVertexCount;
+        }
+      });
+      return;
+    }
+    if (geometry.type === 'GeometryCollection') {
+      (geometry.geometries ?? []).forEach((child) => processGeometry(child));
+    }
+  };
+
+  collection.features.forEach((feature) => {
+    processGeometry(feature.geometry);
+  });
+  return {
+    featureCount: collection.features.length,
+    polygonCount,
+    vertexCount,
+    maxPolygonVertexCount,
+  };
+};
+
 type TaskDetailContentProps = {
   title: string;
   summary: TaskOutcomeSummary;
@@ -892,6 +969,36 @@ const TaskDetailContent = ({
   withDownloadButton,
   onDownload,
 }: TaskDetailContentProps): React.ReactElement => {
+  const sourceOriginalMetrics = toCollectionMetrics(preview?.previousOriginal ?? null);
+  const sourceFilteredMetrics = toCollectionMetrics(preview?.original ?? null);
+  const geometryMetrics = toCollectionMetrics(preview?.result ?? null);
+  const hasPreviewSourceMetrics = sourceOriginalMetrics.featureCount > 0 && sourceFilteredMetrics.featureCount > 0;
+  const hasPreviewGeometryMetrics = sourceFilteredMetrics.featureCount > 0 && geometryMetrics.featureCount > 0;
+  const transformFeatureInput = hasPreviewSourceMetrics
+    ? sourceOriginalMetrics.featureCount
+    : (summary.sourceMetrics?.features.input ?? summary.fetchDetails?.features.input ?? summary.metrics?.features.input ?? null);
+  const transformFeatureOutput = hasPreviewSourceMetrics
+    ? sourceFilteredMetrics.featureCount
+    : (summary.sourceMetrics?.features.output ?? summary.fetchDetails?.features.output ?? summary.metrics?.features.output ?? null);
+  const transformPolygonInput = hasPreviewSourceMetrics
+    ? sourceOriginalMetrics.polygonCount
+    : (summary.sourceMetrics?.polygons.input ?? summary.fetchDetails?.polygons.input ?? summary.metrics?.polygons.input ?? null);
+  const transformPolygonOutput = hasPreviewSourceMetrics
+    ? sourceFilteredMetrics.polygonCount
+    : (summary.sourceMetrics?.polygons.output ?? summary.fetchDetails?.polygons.output ?? summary.metrics?.polygons.output ?? null);
+  const transformVertexInput = hasPreviewGeometryMetrics
+    ? sourceFilteredMetrics.vertexCount
+    : (summary.metrics?.vertices.input ?? null);
+  const transformVertexOutput = hasPreviewGeometryMetrics
+    ? geometryMetrics.vertexCount
+    : (summary.metrics?.vertices.output ?? null);
+  const maxPolygonVertexInput = hasPreviewGeometryMetrics
+    ? sourceFilteredMetrics.maxPolygonVertexCount
+    : (summary.maxPolygonVertices?.input ?? null);
+  const maxPolygonVertexOutput = hasPreviewGeometryMetrics
+    ? geometryMetrics.maxPolygonVertexCount
+    : (summary.maxPolygonVertices?.output ?? null);
+
   return (
     <Box
       sx={{
@@ -947,26 +1054,32 @@ const TaskDetailContent = ({
             <Typography variant="caption" color="text.secondary">
               Retry attempts: {summary.retryAttempt ?? 'N/A'} / {summary.retryMax ?? 'N/A'}
             </Typography>
-            {renderTransformScaledRow(
+            {renderVolumeRow(
               'Features',
-              summary.metrics?.features.output,
-              summary.metrics?.features.input,
-              sourceStageMaxima?.featureMax ?? null,
+              transformFeatureOutput,
+              transformFeatureInput,
               chartColor,
+              false,
             )}
-            {renderTransformScaledRow(
+            {renderVolumeRow(
               'Polygons',
-              summary.metrics?.polygons.output,
-              summary.metrics?.polygons.input,
-              sourceStageMaxima?.polygonMax ?? null,
+              transformPolygonOutput,
+              transformPolygonInput,
               chartColor,
+              false,
             )}
             {renderVolumeRow(
               'Vertices',
-              summary.metrics?.vertices.output,
-              summary.metrics?.vertices.input,
+              transformVertexOutput,
+              transformVertexInput,
               chartColor,
-              true,
+              false,
+            )}
+            {renderVertexLimitReferencedRow(
+              'Max Poly',
+              maxPolygonVertexOutput,
+              maxPolygonVertexInput,
+              chartColor,
             )}
           </Stack>
         ) : null}

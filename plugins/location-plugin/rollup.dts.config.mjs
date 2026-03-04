@@ -40,8 +40,8 @@ export default [
     external,
   },
   {
-    input: 'src/worker/locationGroupStore.dexie.ts',
-    output: { file: 'dist/worker/locationGroupStore.dexie.d.ts', format: 'es' },
+    input: 'src/worker/createLocationFeatureStoreDexie.ts',
+    output: { file: 'dist/worker/createLocationFeatureStoreDexie.d.ts', format: 'es' },
     plugins: [dts()],
     external,
   },

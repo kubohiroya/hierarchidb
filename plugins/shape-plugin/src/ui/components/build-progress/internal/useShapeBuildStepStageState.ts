@@ -154,9 +154,10 @@ export const useShapeBuildStepStageState = ({
 
   useEffect(() => {
     if (tasks.length === 0) return;
-    if (areTaskListsEquivalentForView(persistedTasks, tasks)) return;
-    setPersistedTasks(tasks);
-  }, [persistedTasks, setPersistedTasks, tasks]);
+    setPersistedTasks((previous) => (
+      areTaskListsEquivalentForView(previous, tasks) ? previous : tasks
+    ));
+  }, [setPersistedTasks, tasks]);
 
   const rawDisplayTasks = tasks.length > 0 ? tasks : persistedTasks;
   const displayTasks = useMemo<ShapeBuildTaskSummary[]>(() => (

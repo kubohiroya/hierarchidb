@@ -28,8 +28,8 @@ export default [
     external,
   },
   {
-    input: 'src/worker/shapeGroupStore.dexie.ts',
-    output: { file: 'dist/worker/shapeGroupStore.dexie.d.ts', format: 'es' },
+    input: 'src/worker/shapeVectorTileStore.dexie.ts',
+    output: { file: 'dist/worker/shapeVectorTileStore.dexie.d.ts', format: 'es' },
     plugins: [dts()],
     external,
   },
