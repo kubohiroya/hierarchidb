@@ -40,7 +40,7 @@ import { TreeQueryService } from './services/TreeQueryService.js';
 import { TreeSubscriptionService } from './services/TreeSubscriptionService.js';
 import { TreeTableExpandedService } from './services/TreeTableExpandedService.js';
 import { UIStateDB } from './services/UIStateDB.js';
-import { ephemeralDB } from '@hierarchidb/gis-sdk';
+import { reconcileRunningBuildSessions } from './services/utils/reconcileStaleBuildSessions.js';
 import type { RuntimePluginDefinition } from './types/RuntimePluginDefinition.js';
 
 interface PerformanceMemoryStats {
@@ -190,11 +190,13 @@ export class WorkerService {
 
   private static async recoverBuildSessionRuntimeRecordsOnWarmStart(): Promise<void> {
     try {
-      await ephemeralDB.open?.();
-      const sessions = await ephemeralDB.buildSessions.toArray();
-      if (sessions.length === 0) return;
-      // Keep session records for resume/recovery flow; runtime state can be reconstructed.
-      return;
+      const result = await reconcileRunningBuildSessions();
+      if (result.repairedNodeIds.length > 0) {
+        console.warn('[WorkerService] Repaired stale running build sessions on startup', {
+          repairedNodeIds: result.repairedNodeIds,
+          checkedCount: result.checkedNodeIds.length,
+        });
+      }
     } catch (error) {
       console.error('[WorkerService] Failed to recover persisted build sessions', error);
     }
