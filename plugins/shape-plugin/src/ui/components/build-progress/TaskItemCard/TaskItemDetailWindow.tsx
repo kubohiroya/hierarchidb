@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { isValidElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   IconButton,
@@ -80,6 +80,15 @@ const resolveNodeIdFromTask = (task: ShapeBuildTaskSummary): NodeId | null => {
 
 const VERTEX_LIMIT = 6553;
 const numberFormatter = new Intl.NumberFormat('en-US');
+
+const unwrapIconButtonForTitleIcon = (icon: React.ReactNode): React.ReactNode => {
+  if (!isValidElement<{ children?: React.ReactNode }>(icon)) return icon;
+  const iconType = icon.type as { muiName?: string } | string;
+  if (typeof iconType !== 'string' && iconType?.muiName === 'IconButton') {
+    return icon.props.children ?? null;
+  }
+  return icon;
+};
 
 const toFlagEmoji = (countryCode: string | null): string | null => {
   if (!countryCode) return null;
@@ -1437,7 +1446,7 @@ export const TaskItemDetailWindow = ({
   const stageLabel = effectiveStageId === 'source'
     ? 'Source'
     : (effectiveStageId === 'geometry' ? 'Geometry' : (effectiveStageId === 'tileEmit' ? 'TileEmit' : effectiveStageId));
-  const stageIcon = stageIconMap.get(effectiveStageId) ?? <LayersIcon fontSize="small" />;
+  const stageIcon = unwrapIconButtonForTitleIcon(stageIconMap.get(effectiveStageId)) ?? <LayersIcon fontSize="small" />;
   const buildTileEmitBandLabel = (taskId: string | undefined): string => {
     if (!taskId) return 'band ? z?';
     const parts = taskId.split(':');
@@ -1449,13 +1458,28 @@ export const TaskItemDetailWindow = ({
   };
   const windowTitle = isVtTask
     ? `TileEmit Geometry Preview: ${buildTileEmitBandLabel(activeDetail?.task.taskId)}`
-    : (effectiveStageId === 'tileEmit' ? 'TileEmit Geometry Preview' : `Geometry Preview: ${stageLabel}`);
+    : (effectiveStageId === 'tileEmit' ? 'Task Result: TileEmit Stage' : `Task Result: ${stageLabel} Stage`);
 
   return (
     <FloatingWindow
       title={windowTitle}
       titleIcon={stageIcon ? (
-        <Box sx={{ color: 'inherit', display: 'inline-flex', alignItems: 'center' }}>
+        <Box
+          sx={{
+            color: 'inherit',
+            display: 'inline-flex',
+            alignItems: 'center',
+            '& .MuiSvgIcon-root': {
+              fontSize: '1rem',
+              color: 'inherit !important',
+            },
+            '& .MuiIconButton-root': {
+              color: 'inherit !important',
+              p: 0,
+              m: 0,
+            },
+          }}
+        >
           {stageIcon}
         </Box>
       ) : undefined}
