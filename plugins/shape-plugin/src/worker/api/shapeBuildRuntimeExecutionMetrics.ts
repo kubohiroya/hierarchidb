@@ -586,6 +586,7 @@ const buildPreviewMetadataFromTask = (task: TaskQueueRecord): Record<string, unk
 
   if (isSourceStage(task.stage)) {
     const sourceKey = readString(preview?.sourceKey) ?? readString(input?.sourceKey);
+    const rawSourceCacheKey = readString(preview?.rawSourceCacheKey);
     const sourceCacheId = readString(preview?.sourceCacheId)
       ?? readString(output?.sourceCacheId)
       ?? (sourceKey ? `${String(task.nodeId)}-shape-${sourceKey}` : null);
@@ -604,6 +605,7 @@ const buildPreviewMetadataFromTask = (task: TaskQueueRecord): Record<string, unk
       sourceUrl: sourceUrl ?? null,
       sourceCountryCode: sourceCountryCode ?? null,
       adminLevel: adminLevel ?? null,
+      rawSourceCacheKey: rawSourceCacheKey ?? null,
       sourceCacheId: sourceCacheId ?? null,
       sourceCacheFormat: readString(preview?.sourceCacheFormat) ?? 'flatgeobuf',
       sourceCacheCompression: readString(preview?.sourceCacheCompression) ?? 'none',
@@ -612,6 +614,7 @@ const buildPreviewMetadataFromTask = (task: TaskQueueRecord): Record<string, unk
 
   if (isGeometryStage(task.stage)) {
     const sourceKey = readString(preview?.sourceKey) ?? readString(input?.sourceKey);
+    const rawSourceCacheKey = readString(preview?.rawSourceCacheKey);
     const bandIndex = readNumber(preview?.bandIndex) ?? readNumber(input?.bandIndex);
     const domainType = readString(input?.domainType) ?? 'shape';
     const sourceCacheId = readString(preview?.sourceCacheId) ?? readString(input?.sourceCacheId);
@@ -634,6 +637,7 @@ const buildPreviewMetadataFromTask = (task: TaskQueueRecord): Record<string, unk
       sourceUrl: readString(preview?.sourceUrl) ?? readString(input?.sourceUrl) ?? null,
       sourceCountryCode: sourceCountryCode ?? null,
       adminLevel: adminLevel ?? null,
+      rawSourceCacheKey: rawSourceCacheKey ?? null,
       sourceCacheId: sourceCacheId ?? null,
       sourceCacheFormat: readString(preview?.sourceCacheFormat) ?? readString(input?.sourceCacheFormat) ?? 'flatgeobuf',
       sourceCacheCompression: readString(preview?.sourceCacheCompression) ?? readString(input?.sourceCacheCompression) ?? 'none',
