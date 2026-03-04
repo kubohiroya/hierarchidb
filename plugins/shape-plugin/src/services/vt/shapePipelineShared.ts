@@ -481,6 +481,8 @@ export const buildGeometryByBandTasks = async (
       const stagePriority = typeof adminLevel === 'number' ? adminLevel : 0;
       const countryCode = buffer.countryCode?.trim().toUpperCase();
       const countryMeta = countryCode ? countryLookup.get(countryCode) : undefined;
+      const bufferMetadata = (buffer.metadata ?? {}) as Record<string, unknown>;
+      const sourceBaseTolerance = readNumericProperty(bufferMetadata, 'baseTolerance');
       for (const band of bands) {
         if (band.zMin >= HIGH_DETAIL_ZOOM_MIN) {
           if (!enableHighDetailBands) continue;
@@ -491,6 +493,7 @@ export const buildGeometryByBandTasks = async (
           sourceKey: buffer.sourceKey,
           bandIndex: band.bandIndex,
           sourceArtifactHash: sourceArtifactHash,
+          sourceBaseTolerance,
           bandMinZoom: band.zMin,
           bandMaxZoom: band.zMax,
           configSignature,
@@ -509,6 +512,7 @@ export const buildGeometryByBandTasks = async (
             bandIndex: band.bandIndex,
             bandMinZoom: band.zMin,
             bandMaxZoom: band.zMax,
+            sourceBaseTolerance,
             inputVertexCount: buffer.vertexCount ?? buffer.inputVertexCount,
             inputPolygonCount: buffer.polygonCount ?? buffer.inputPolygonCount,
             domainType: 'shape',

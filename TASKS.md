@@ -1,6 +1,7 @@
 # 運用ハブ
 
 ## Doing
+- #778 / codex/fix/shape/tbase-retry-cap-recheck-778 / 2026-03-04 18:31
 - #765 / codex/feat/shape/preview-admin-subtile-guides-765 / 2026-03-04 15:12
 - #763 / codex/fix/shape/step5-preview-metrics-consistency-763 / 2026-03-04 13:56
 - #761 / codex/fix/app/shape-edit-window-mode / 2026-03-04 13:18
@@ -36,6 +37,7 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-04: Issue #778 開始 - Geometry tolerance が 0.1 始まりへ戻る再発について、t_base 適用経路と retry 上限制御の実処理経路を再検証・修正する対応に着手
 - 2026-03-04: Issue #776 完了 - PR #777 を main へ squash merge、Issue #776 close、Geometry Preview: Geometry の Features/Polygons テキスト化と Max Vertices 閾値線条件修正を反映
 - 2026-03-04: Issue #776 進捗 - Geometry Preview: Geometry の Features/Polygons を棒グラフからテキスト表示へ変更し、Max Vertices の閾値線を「分母>6553 の場合のみ表示」へ修正。`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/TaskItemCardListCard.unit.test.tsx` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は成功（exit 0）。
 - 2026-03-04: Issue #776 開始 - Geometry Preview: Geometry の Features/Polygons をテキスト表示へ変更し、Max Vertices バーを表示値準拠（分母<=6553 で閾値線非表示）へ修正する対応に着手
