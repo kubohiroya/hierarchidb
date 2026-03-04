@@ -1,6 +1,7 @@
 # 運用ハブ
 
 ## Doing
+- #765 / codex/feat/shape/preview-admin-subtile-guides-765 / 2026-03-04 15:12
 - #763 / codex/fix/shape/step5-preview-metrics-consistency-763 / 2026-03-04 13:56
 - #761 / codex/fix/app/shape-edit-window-mode / 2026-03-04 13:18
 - #757 / codex/feat/shape/session-driven-base-tolerance-757 / 2026-03-04 11:52
@@ -35,6 +36,8 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-04: Issue #765 進捗 - preview 地図のタイル描画に Admin level 別サブ分割点線を追加（L1=2x2 灰, L2=4x4 薄灰, L3=8x8 さらに薄灰, L0は追加なし）。`pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/taskOutcomeSummaryBuilders.transform-metadata.unit.test.ts` は成功（exit 0）。
+- 2026-03-04: Issue #765 開始 - shape Step5 preview 地図で Admin level 1/2/3 の親タイル内サブ分割ガイド線（2x2, 4x4, 8x8）を点線表示する要件に着手
 - 2026-03-04: Issue #763 進捗 - Geometry/source preview 指標の母数不整合を修正（`retryAttempt` 優先順位見直し、`polygons` を `polygonsPerFeature` より優先、Geometry summary へ Source `fetchDetail` を入力由来で補完、Source raw未取得時のサイズ比表示を縮減率ヒントで補正）。`pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/taskOutcomeSummaryBuilders.transform-metadata.unit.test.ts` は成功（exit 0）。
 - 2026-03-04: Issue #763 開始 - Step5 Source/Geometry preview の指標表示不整合（Sourceサイズ、Retry attempts、Features/Polygons分母、`Max Poly` ラベル）修正に着手
 - 2026-03-04: Issue #761 進捗 - `usePluginDialogRoute` の route params 解決を `dialogModeStep > dialogMode > dialog` 優先へ修正し、`plugin-dialog-step.unit.test.tsx` に再発テスト追加。`pnpm -w turbo run test --filter @hierarchidb/app -- --run src/router/__tests__/unit/plugin-dialog-step.unit.test.tsx` / `pnpm -w turbo run typecheck --filter @hierarchidb/app` / `pnpm -w turbo run build --filter @hierarchidb/app` はすべて成功（exit 0）。
