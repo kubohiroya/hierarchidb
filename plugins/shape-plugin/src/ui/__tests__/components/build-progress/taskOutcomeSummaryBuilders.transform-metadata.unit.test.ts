@@ -140,6 +140,30 @@ describe('buildGeometryTaskOutcomeSummary metadata handoff', () => {
     expect(summary.sourceMetrics?.polygons.output).toBe(27);
   });
 
+  it('carries adminLevel from metadata to geometry summary', () => {
+    const task = buildBaseTask({
+      metadata: {
+        retryAttempt: 1,
+        retryMax: 24,
+        fetchDetail: {
+          adminLevel: 2,
+          features: { input: 1, output: 1 },
+          polygons: { input: 1952, output: 27 },
+        },
+      },
+    });
+
+    const summary = buildGeometryTaskOutcomeSummary({
+      task,
+      stageId: 'geometry',
+      taskTitle: 'geometry-task-1',
+      translate: t,
+    });
+
+    expect(summary.kind).toBe('completed');
+    expect(summary.adminLevel).toBe(2);
+  });
+
   it('does not recover retryMax from message text', () => {
     const task = buildBaseTask({
       status: 'failed',
