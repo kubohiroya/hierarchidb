@@ -290,6 +290,8 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
     'metadata.finalRetryAttempts',
     'retryAttemptsTotal',
     'metadata.retryAttemptsTotal',
+    'toleranceSearchIterations',
+    'metadata.toleranceSearchIterations',
     'retryAttempt',
     'metadata.retryAttempt',
   ]);

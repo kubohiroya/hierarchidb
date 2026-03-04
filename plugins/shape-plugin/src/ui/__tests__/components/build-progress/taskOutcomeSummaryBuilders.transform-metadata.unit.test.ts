@@ -207,6 +207,27 @@ describe('buildGeometryTaskOutcomeSummary metadata handoff', () => {
     expect(summary.summaryLine).toContain('4/24');
   });
 
+  it('uses toleranceSearchIterations when retryAttempt metadata stays 0', () => {
+    const task = buildBaseTask({
+      metadata: {
+        retryAttempt: 0,
+        retryMax: 24,
+        toleranceSearchIterations: 5,
+      },
+    });
+
+    const summary = buildGeometryTaskOutcomeSummary({
+      task,
+      stageId: 'geometry',
+      taskTitle: 'geometry-task-1',
+      translate: t,
+    });
+
+    expect(summary.kind).toBe('completed');
+    expect(summary.retryAttempt).toBe(5);
+    expect(summary.summaryLine).toContain('5/24');
+  });
+
   it('does not recover retryMax from message text', () => {
     const task = buildBaseTask({
       status: 'failed',

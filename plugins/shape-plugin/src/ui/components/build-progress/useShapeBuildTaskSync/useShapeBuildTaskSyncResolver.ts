@@ -77,9 +77,11 @@ export const useShapeBuildTaskSyncResolver = ({
       resolveNumberFromMetadata(resolvedTask.metadata?.retryAttempt),
       resolveNumberFromMetadata(resolvedTask.metadata?.retryAttemptsTotal),
       resolveNumberFromMetadata(resolvedTask.metadata?.finalRetryAttempts),
+      resolveNumberFromMetadata(resolvedTask.metadata?.toleranceSearchIterations),
       resolveNumberFromMetadata(asRecord(resolvedTask.metadata?.metadata)?.retryAttempt),
       resolveNumberFromMetadata(asRecord(resolvedTask.metadata?.metadata)?.retryAttemptsTotal),
       resolveNumberFromMetadata(asRecord(resolvedTask.metadata?.metadata)?.finalRetryAttempts),
+      resolveNumberFromMetadata(asRecord(resolvedTask.metadata?.metadata)?.toleranceSearchIterations),
     ].filter((value): value is number => value !== null && value >= 0);
     if (retryAttemptCandidates.length > 0) {
       resolvedTask.retryAttempt = Math.floor(Math.max(...retryAttemptCandidates));
