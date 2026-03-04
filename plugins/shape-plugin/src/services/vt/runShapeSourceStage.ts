@@ -1,6 +1,11 @@
-import type { Feature, FeatureCollection, Geometry } from 'geojson';
+import type { Feature, FeatureCollection, Geometry, MultiPolygon, Polygon } from 'geojson';
 import type { ISO2, NodeId } from '@hierarchidb/core-types';
-import { encodeFlatGeobufFromFeatureCollection, geometryBbox, type GeometryEngine } from '@hierarchidb/gis-sdk';
+import {
+  encodeFlatGeobufFromFeatureCollection,
+  geometryBbox,
+  geometrySimplify,
+  type GeometryEngine,
+} from '@hierarchidb/gis-sdk';
 import type { StageHandler, TaskQueueRecord } from '@hierarchidb/build-api';
 import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
 import {
@@ -434,6 +439,10 @@ const buildSourceCacheMetadata = (params: {
   inputPolygonCount?: number;
   polygonPerFeatureMax?: number;
   inputPolygonPerFeatureMax?: number;
+  maxPolygonVertexCount?: number;
+  inputMaxPolygonVertexCount?: number;
+  baseTolerance?: number;
+  baseToleranceVertexLimit?: number;
   retryAttempt?: number;
 }): Record<string, unknown> => ({
   stage: 'source',
@@ -450,6 +459,10 @@ const buildSourceCacheMetadata = (params: {
   inputPolygonCount: params.inputPolygonCount,
   polygonPerFeatureMax: params.polygonPerFeatureMax,
   inputPolygonPerFeatureMax: params.inputPolygonPerFeatureMax,
+  maxPolygonVertexCount: params.maxPolygonVertexCount,
+  inputMaxPolygonVertexCount: params.inputMaxPolygonVertexCount,
+  baseTolerance: params.baseTolerance,
+  baseToleranceVertexLimit: params.baseToleranceVertexLimit,
   retryAttempt: Number.isFinite(params.retryAttempt ?? NaN)
     ? Math.trunc(params.retryAttempt!)
     : undefined,
@@ -711,6 +724,159 @@ const countPolygonsFromGeometry = (geometry: Feature['geometry']): number => {
   return 0;
 };
 
+const SOURCE_BASE_TOLERANCE_VERTEX_LIMIT = 6553;
+const SOURCE_BASE_TOLERANCE_MAX_ITERATIONS = 32;
+const SOURCE_BASE_TOLERANCE_INITIAL_HIGH = 0.1;
+const SOURCE_BASE_TOLERANCE_HIGH_CAP = 12;
+const SOURCE_BASE_TOLERANCE_EPSILON = 1e-7;
+
+const countPolygonVertices = (coordinates: unknown): number => {
+  if (!Array.isArray(coordinates)) return 0;
+  return countVertices(coordinates);
+};
+
+const visitPolygons = (
+  geometry: Geometry | null | undefined,
+  visit: (polygon: {
+    vertexCount: number;
+    geometry: Polygon;
+  }) => void,
+): void => {
+  if (!geometry) return;
+  if (geometry.type === 'Polygon') {
+    const polygonGeometry = geometry as Polygon;
+    visit({
+      vertexCount: countPolygonVertices(polygonGeometry.coordinates),
+      geometry: polygonGeometry,
+    });
+    return;
+  }
+  if (geometry.type === 'MultiPolygon') {
+    const multiPolygonGeometry = geometry as MultiPolygon;
+    for (const polygonCoords of multiPolygonGeometry.coordinates) {
+      visit({
+        vertexCount: countPolygonVertices(polygonCoords),
+        geometry: { type: 'Polygon', coordinates: polygonCoords },
+      });
+    }
+    return;
+  }
+  if (geometry.type === 'GeometryCollection') {
+    for (const child of geometry.geometries ?? []) {
+      visitPolygons(child, visit);
+    }
+  }
+};
+
+const findMaxVertexPolygon = (
+  collection: FeatureCollection,
+): {
+  vertexCount: number;
+  featureIndex: number;
+  polygon: Feature<Polygon>;
+} | null => {
+  let maxVertexCount = 0;
+  let selectedFeatureIndex = -1;
+  let selectedPolygon: Feature<Polygon> | null = null;
+  collection.features.forEach((feature, featureIndex) => {
+    visitPolygons(feature?.geometry, ({ vertexCount, geometry }) => {
+      if (vertexCount <= maxVertexCount) return;
+      maxVertexCount = vertexCount;
+      selectedFeatureIndex = featureIndex;
+      selectedPolygon = {
+        type: 'Feature',
+        properties: { ...(feature?.properties ?? {}) },
+        geometry,
+      };
+    });
+  });
+  if (!selectedPolygon || selectedFeatureIndex < 0) {
+    return null;
+  }
+  return {
+    vertexCount: maxVertexCount,
+    featureIndex: selectedFeatureIndex,
+    polygon: selectedPolygon,
+  };
+};
+
+const findSourceBaseToleranceByBisection = async (params: {
+  feature: Feature<Polygon>;
+  geometryEngine: GeometryEngine;
+  vertexLimit: number;
+  maxIterations: number;
+  initialHigh: number;
+  highCap: number;
+  epsilon: number;
+}): Promise<{
+  tolerance: number;
+  converged: boolean;
+  iterations: number;
+  finalVertexCount: number;
+}> => {
+  const sourceVertexCount = countVerticesFromGeometry(params.feature.geometry);
+  if (sourceVertexCount <= params.vertexLimit) {
+    return {
+      tolerance: 0,
+      converged: true,
+      iterations: 0,
+      finalVertexCount: sourceVertexCount,
+    };
+  }
+
+  const evaluate = (tolerance: number): number => {
+    const simplified = geometrySimplify(params.feature, params.geometryEngine, {
+      tolerance,
+      highQuality: true,
+      mutate: false,
+      preserveTopology: true,
+    });
+    return countVerticesFromGeometry(simplified.geometry);
+  };
+
+  let iterations = 0;
+  let low = 0;
+  let high = Math.max(0, params.initialHigh);
+  let highVertexCount = evaluate(high);
+  iterations += 1;
+  while (highVertexCount > params.vertexLimit && high < params.highCap && iterations < params.maxIterations) {
+    low = high;
+    high = Math.min(params.highCap, high * 2);
+    highVertexCount = evaluate(high);
+    iterations += 1;
+  }
+  if (highVertexCount > params.vertexLimit) {
+    return {
+      tolerance: high,
+      converged: false,
+      iterations,
+      finalVertexCount: highVertexCount,
+    };
+  }
+
+  let bestTolerance = high;
+  let bestVertexCount = highVertexCount;
+  while (iterations < params.maxIterations && (high - low) > params.epsilon) {
+    const mid = (low + high) / 2;
+    const midVertexCount = evaluate(mid);
+    iterations += 1;
+    if (midVertexCount <= params.vertexLimit) {
+      bestTolerance = mid;
+      bestVertexCount = midVertexCount;
+      high = mid;
+    } else {
+      low = mid;
+    }
+  }
+
+  return {
+    tolerance: bestTolerance,
+    converged: true,
+    iterations,
+    finalVertexCount: bestVertexCount,
+  };
+};
+
 const applyOriginPropertiesToCollection = (collection: FeatureCollection, originKey: string): FeatureCollection => {
   const features = collection.features.map((feature) => {
     const properties = { ...(feature.properties ?? {}) } as Record<string, unknown>;
@@ -742,12 +908,14 @@ const summarizeFeatureCollection = async (
   vertexCount: number;
   polygonCount: number;
   maxPolygonPerFeature: number;
+  maxPolygonVertexCount: number;
   bbox: [number, number, number, number];
 }> => {
   const featureCount = collection.features.length;
   let vertexCount = 0;
   let polygonCount = 0;
   let maxPolygonPerFeature = 0;
+  let maxPolygonVertexCount = 0;
   for (let featureIndex = 0; featureIndex < collection.features.length; featureIndex += 1) {
     await options?.onFeatureCountProgress?.(featureIndex + 1, featureCount);
     const feature = collection.features[featureIndex];
@@ -758,6 +926,11 @@ const summarizeFeatureCollection = async (
     if (polygonCountPerFeature > maxPolygonPerFeature) {
       maxPolygonPerFeature = polygonCountPerFeature;
     }
+    visitPolygons(feature.geometry, ({ vertexCount }) => {
+      if (vertexCount > maxPolygonVertexCount) {
+        maxPolygonVertexCount = vertexCount;
+      }
+    });
   }
   let bbox: [number, number, number, number] = [0, 0, 0, 0];
   {
@@ -767,7 +940,7 @@ const summarizeFeatureCollection = async (
       bbox = [minX, minY, maxX, maxY];
     }
   }
-  return { featureCount, vertexCount, polygonCount, maxPolygonPerFeature, bbox };
+  return { featureCount, vertexCount, polygonCount, maxPolygonPerFeature, maxPolygonVertexCount, bbox };
 };
 
 const buildSourceTasks = (
@@ -900,6 +1073,11 @@ const createSourceHandler = (params: {
   const normalizeCount = (value: number | null | undefined): number | null => (
     typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.round(value)) : null
   );
+  const normalizeTolerance = (value: number | null | undefined): number | null => (
+    typeof value === 'number' && Number.isFinite(value) && value >= 0
+      ? Number.parseFloat(value.toFixed(8))
+      : null
+  );
 
   const buildSourceDetailMetadata = (
     input: ShapeSourceTaskInput,
@@ -910,6 +1088,10 @@ const createSourceHandler = (params: {
       polygonCount?: number | null;
       inputPolygonPerFeatureMax?: number | null;
       polygonPerFeatureMax?: number | null;
+      inputMaxPolygonVertexCount?: number | null;
+      maxPolygonVertexCount?: number | null;
+      baseTolerance?: number | null;
+      baseToleranceVertexLimit?: number | null;
     },
     preview?: {
       sourceCacheId?: string | null;
@@ -934,6 +1116,12 @@ const createSourceHandler = (params: {
         input: normalizeCount(counts.inputPolygonPerFeatureMax),
         output: normalizeCount(counts.polygonPerFeatureMax),
       },
+      maxPolygonVertexCount: {
+        input: normalizeCount(counts.inputMaxPolygonVertexCount),
+        output: normalizeCount(counts.maxPolygonVertexCount),
+      },
+      baseTolerance: normalizeTolerance(counts.baseTolerance),
+      baseToleranceVertexLimit: normalizeCount(counts.baseToleranceVertexLimit),
     },
     preview: {
       stage: 'source',
@@ -953,6 +1141,37 @@ const createSourceHandler = (params: {
       sourceCacheCompression: preview?.sourceCacheCompression ?? 'none',
     },
   });
+
+  const analyzeSourceToleranceMetrics = async (
+    collection: FeatureCollection,
+  ): Promise<{
+    maxPolygonVertexCount: number;
+    baseTolerance: number;
+    baseToleranceVertexLimit: number;
+  }> => {
+    const representativePolygon = findMaxVertexPolygon(collection);
+    if (!representativePolygon || representativePolygon.vertexCount <= 0) {
+      return {
+        maxPolygonVertexCount: 0,
+        baseTolerance: 0,
+        baseToleranceVertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
+      };
+    }
+    const baseSearch = await findSourceBaseToleranceByBisection({
+      feature: representativePolygon.polygon,
+      geometryEngine,
+      vertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
+      maxIterations: SOURCE_BASE_TOLERANCE_MAX_ITERATIONS,
+      initialHigh: SOURCE_BASE_TOLERANCE_INITIAL_HIGH,
+      highCap: SOURCE_BASE_TOLERANCE_HIGH_CAP,
+      epsilon: SOURCE_BASE_TOLERANCE_EPSILON,
+    });
+    return {
+      maxPolygonVertexCount: representativePolygon.vertexCount,
+      baseTolerance: baseSearch.tolerance,
+      baseToleranceVertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
+    };
+  };
 
   return async (task) => {
     const input = task.inputData;
@@ -998,27 +1217,44 @@ const createSourceHandler = (params: {
           ?? (existingInputFeatureCount > 0
             ? (existing.inputPolygonCount ?? existing.polygonCount ?? 0) / existingInputFeatureCount
             : 0);
+        const cachedMaxPolygonVertexCount = readNumericProperty(existingMetadata, 'maxPolygonVertexCount')
+          ?? 0;
+        const cachedInputMaxPolygonVertexCount = readNumericProperty(existingMetadata, 'inputMaxPolygonVertexCount')
+          ?? cachedMaxPolygonVertexCount;
+        let cachedBaseTolerance = readNumericProperty(existingMetadata, 'baseTolerance') ?? 0;
+        const cachedBaseToleranceVertexLimit = readNumericProperty(existingMetadata, 'baseToleranceVertexLimit')
+          ?? SOURCE_BASE_TOLERANCE_VERTEX_LIMIT;
         const cachedCollection = await decodeSourceCacheData({
           data: existing.data,
           format: existing.format,
           compression: existing.compression,
         });
-        const sourceMetadata = buildSourceCacheMetadata({
-          status: 'completed',
-          dataSource: input.dataSource,
-          sourceKey: input.sourceKey,
-          countryCode: input.countryCode,
-          adminLevel: input.adminLevel,
-          featureCount: existing.featureCount,
-          inputFeatureCount: existingInputFeatureCount,
-          vertexCount: existing.vertexCount ?? 0,
-          polygonCount: existing.polygonCount ?? 0,
-          inputVertexCount: existing.inputVertexCount ?? 0,
-          inputPolygonCount: existing.inputPolygonCount ?? 0,
-          polygonPerFeatureMax: cachedPolygonPerFeatureMax,
-          inputPolygonPerFeatureMax: cachedInputPolygonPerFeatureMax,
-        });
+        const buildCurrentSourceMetadata = (): Record<string, unknown> => (
+          buildSourceCacheMetadata({
+            status: 'completed',
+            dataSource: input.dataSource,
+            sourceKey: input.sourceKey,
+            countryCode: input.countryCode,
+            adminLevel: input.adminLevel,
+            featureCount: existing.featureCount,
+            inputFeatureCount: existingInputFeatureCount,
+            vertexCount: existing.vertexCount ?? 0,
+            polygonCount: existing.polygonCount ?? 0,
+            inputVertexCount: existing.inputVertexCount ?? 0,
+            inputPolygonCount: existing.inputPolygonCount ?? 0,
+            polygonPerFeatureMax: cachedPolygonPerFeatureMax,
+            inputPolygonPerFeatureMax: cachedInputPolygonPerFeatureMax,
+            maxPolygonVertexCount: cachedMaxPolygonVertexCount,
+            inputMaxPolygonVertexCount: cachedInputMaxPolygonVertexCount,
+            baseTolerance: cachedBaseTolerance,
+            baseToleranceVertexLimit: cachedBaseToleranceVertexLimit,
+          })
+        );
         if (cachedCollection && cachedCollection.features.length > 0) {
+          if (!Number.isFinite(cachedBaseTolerance) || cachedBaseTolerance <= 0) {
+            const metrics = await analyzeSourceToleranceMetrics(cachedCollection);
+            cachedBaseTolerance = metrics.baseTolerance;
+          }
           const hasMissingFeatureIds = cachedCollection.features.some((feature) => {
             const props = feature?.properties as Record<string, unknown> | undefined;
             return typeof props?.__hdbFeatureId !== 'string' || props.__hdbFeatureId.length === 0;
@@ -1054,12 +1290,12 @@ const createSourceHandler = (params: {
                 size: data.byteLength,
                 contentHash: sourceArtifactHash,
                 timestamp: Date.now(),
-                metadata: sourceMetadata,
+                metadata: buildCurrentSourceMetadata(),
               });
             }
           } else if (existing.metadata?.status !== 'completed') {
             await ephemeralDB.sourceCache.update(existing.id, {
-              metadata: sourceMetadata,
+              metadata: buildCurrentSourceMetadata(),
             });
           }
         } else if (existing.featureCount === 0) {
@@ -1075,7 +1311,7 @@ const createSourceHandler = (params: {
           await shapeMutationAPIImpl.putFeatureMetadata([emptyMetadata]);
           await ephemeralDB.sourceCache.update(existing.id, {
             metadata: {
-              ...sourceMetadata,
+              ...buildCurrentSourceMetadata(),
               status: 'completed',
             },
           });
@@ -1097,6 +1333,10 @@ const createSourceHandler = (params: {
             polygonCount: cachedPolygonCount,
             inputPolygonPerFeatureMax: cachedInputPolygonPerFeatureMax,
             polygonPerFeatureMax: cachedPolygonPerFeatureMax,
+            inputMaxPolygonVertexCount: cachedInputMaxPolygonVertexCount,
+            maxPolygonVertexCount: cachedMaxPolygonVertexCount,
+            baseTolerance: cachedBaseTolerance,
+            baseToleranceVertexLimit: cachedBaseToleranceVertexLimit,
           }, {
             sourceCacheId: existing.id,
             sourceCacheFormat: existing.format === 'topojson' ? 'topojson' : 'flatgeobuf',
@@ -1180,6 +1420,10 @@ const createSourceHandler = (params: {
             polygonCount: 0,
             inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
             polygonPerFeatureMax: 0,
+            inputMaxPolygonVertexCount: inputSummary.maxPolygonVertexCount,
+            maxPolygonVertexCount: 0,
+            baseTolerance: 0,
+            baseToleranceVertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
           }),
         };
       }
@@ -1204,6 +1448,7 @@ const createSourceHandler = (params: {
       const outputSummary = await summarizeFeatureCollection(collectionWithOrigin, geometryEngine, {
         onFeatureCountProgress,
       });
+      const outputToleranceMetrics = await analyzeSourceToleranceMetrics(collectionWithOrigin);
       const cachedTopology = topojsonTopology({ collection: collectionWithOrigin });
       const encodedTopology = encodeTopoJson(cachedTopology);
       const compressedTopology = await compressGzip(encodedTopology);
@@ -1238,6 +1483,10 @@ const createSourceHandler = (params: {
           inputPolygonCount: inputSummary.polygonCount,
           polygonPerFeatureMax: outputSummary.maxPolygonPerFeature,
           inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
+          maxPolygonVertexCount: outputSummary.maxPolygonVertexCount,
+          inputMaxPolygonVertexCount: inputSummary.maxPolygonVertexCount,
+          baseTolerance: outputToleranceMetrics.baseTolerance,
+          baseToleranceVertexLimit: outputToleranceMetrics.baseToleranceVertexLimit,
         }),
       });
       const reductionSummary = [
@@ -1256,6 +1505,10 @@ const createSourceHandler = (params: {
           polygonCount: outputSummary.polygonCount,
           inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
           polygonPerFeatureMax: outputSummary.maxPolygonPerFeature,
+          inputMaxPolygonVertexCount: inputSummary.maxPolygonVertexCount,
+          maxPolygonVertexCount: outputSummary.maxPolygonVertexCount,
+          baseTolerance: outputToleranceMetrics.baseTolerance,
+          baseToleranceVertexLimit: outputToleranceMetrics.baseToleranceVertexLimit,
         }, {
           sourceCacheId: sourceCacheRecord.id,
           sourceCacheFormat: 'topojson',
@@ -1335,6 +1588,10 @@ const createSourceHandler = (params: {
           polygonCount: 0,
           inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
           polygonPerFeatureMax: 0,
+          inputMaxPolygonVertexCount: inputSummary.maxPolygonVertexCount,
+          maxPolygonVertexCount: 0,
+          baseTolerance: 0,
+          baseToleranceVertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
         }),
       };
     }
@@ -1355,9 +1612,17 @@ const createSourceHandler = (params: {
     }
 
     assertNotAborted(params.abortSignal);
-    const { featureCount, vertexCount, polygonCount, maxPolygonPerFeature, bbox } = await summarizeFeatureCollection(filteredCollection, geometryEngine, {
+    const {
+      featureCount,
+      vertexCount,
+      polygonCount,
+      maxPolygonPerFeature,
+      maxPolygonVertexCount,
+      bbox,
+    } = await summarizeFeatureCollection(filteredCollection, geometryEngine, {
       onFeatureCountProgress,
     });
+    const outputToleranceMetrics = await analyzeSourceToleranceMetrics(filteredCollection);
     const data = await encodeFlatGeobufFromFeatureCollection(filteredCollection);
     assertNotAborted(params.abortSignal);
     const sourceCacheRecord = await putSourceCache({
@@ -1390,6 +1655,10 @@ const createSourceHandler = (params: {
         inputPolygonCount: inputSummary.polygonCount,
         polygonPerFeatureMax: maxPolygonPerFeature,
         inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
+        maxPolygonVertexCount,
+        inputMaxPolygonVertexCount: inputSummary.maxPolygonVertexCount,
+        baseTolerance: outputToleranceMetrics.baseTolerance,
+        baseToleranceVertexLimit: outputToleranceMetrics.baseToleranceVertexLimit,
       }),
     });
     const reductionSummary = [
@@ -1408,6 +1677,10 @@ const createSourceHandler = (params: {
         polygonCount,
         inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
         polygonPerFeatureMax: maxPolygonPerFeature,
+        inputMaxPolygonVertexCount: inputSummary.maxPolygonVertexCount,
+        maxPolygonVertexCount,
+        baseTolerance: outputToleranceMetrics.baseTolerance,
+        baseToleranceVertexLimit: outputToleranceMetrics.baseToleranceVertexLimit,
       }, {
         sourceCacheId: sourceCacheRecord.id,
         sourceCacheFormat: 'flatgeobuf',

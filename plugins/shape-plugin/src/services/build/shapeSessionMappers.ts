@@ -24,10 +24,22 @@ const isNumber = (value: unknown): value is number =>
 
 const isSourceStageMaxima = (value: unknown): value is SourceStageMaxima => {
   if (!isRecord(value)) return false;
-  return isNumber(value.featureMax)
-    && isNumber(value.polygonMax)
-    && value.featureMax >= 0
-    && value.polygonMax >= 0;
+  if (!isNumber(value.featureMax)
+    || !isNumber(value.polygonMax)
+    || value.featureMax < 0
+    || value.polygonMax < 0) {
+    return false;
+  }
+  if (value.maxPolygonVertexCount !== undefined && (!isNumber(value.maxPolygonVertexCount) || value.maxPolygonVertexCount < 0)) {
+    return false;
+  }
+  if (value.baseTolerance !== undefined && (!isNumber(value.baseTolerance) || value.baseTolerance < 0)) {
+    return false;
+  }
+  if (value.vertexLimit !== undefined && (!isNumber(value.vertexLimit) || value.vertexLimit <= 0)) {
+    return false;
+  }
+  return true;
 };
 
 const isTaskStatus = (value: unknown): value is StageStatus['status'] =>

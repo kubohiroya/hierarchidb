@@ -7,6 +7,9 @@ import type { ShapeBuildProgressSummary, ShapeTileLayerInfo } from './shapeTypes
 export interface ShapeSourceStageMaxima {
   featureMax: number;
   polygonMax: number;
+  maxPolygonVertexCount?: number;
+  baseTolerance?: number;
+  vertexLimit?: number;
 }
 
 export interface ShapeBuildSessionRecord<

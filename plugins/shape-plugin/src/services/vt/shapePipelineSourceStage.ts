@@ -129,6 +129,9 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
   const fetchTasks = await listTasksByStage(params.taskQueue, params.nodeId, 'source');
   let featureMax = 0;
   let polygonMax = 0;
+  let maxPolygonVertexCount = 0;
+  let baseTolerance = 0;
+  let baseToleranceVertexLimit = 6553;
   fetchTasks.forEach((task) => {
     const metadata = task.metadata;
     const fetchDetail = (typeof metadata === 'object' && metadata !== null
@@ -144,6 +147,9 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
         : null);
     const fallbackPolygons = fetchDetail && typeof fetchDetail.polygons === 'object' && fetchDetail.polygons !== null
       ? fetchDetail.polygons as Record<string, unknown>
+      : null;
+    const maxPolygonVertexCountDetail = fetchDetail && typeof fetchDetail.maxPolygonVertexCount === 'object' && fetchDetail.maxPolygonVertexCount !== null
+      ? fetchDetail.maxPolygonVertexCount as Record<string, unknown>
       : null;
     const featureInput = typeof features?.input === 'number'
       ? features.input
@@ -161,17 +167,42 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
       : null;
     const featureValue = featureInput;
     const polygonValue = polygonInput ?? polygonFromAverage;
+    const maxPolygonVertexValue = typeof maxPolygonVertexCountDetail?.output === 'number'
+      ? maxPolygonVertexCountDetail.output
+      : (typeof maxPolygonVertexCountDetail?.input === 'number'
+        ? maxPolygonVertexCountDetail.input
+        : null);
+    const taskBaseTolerance = typeof fetchDetail?.baseTolerance === 'number'
+      ? fetchDetail.baseTolerance
+      : null;
+    const taskBaseToleranceVertexLimit = typeof fetchDetail?.baseToleranceVertexLimit === 'number'
+      ? fetchDetail.baseToleranceVertexLimit
+      : null;
     if (featureValue !== null && Number.isFinite(featureValue) && featureValue > featureMax) {
       featureMax = Math.max(0, Math.round(featureValue));
     }
     if (polygonValue !== null && Number.isFinite(polygonValue) && polygonValue > polygonMax) {
       polygonMax = Math.max(0, Math.round(polygonValue));
     }
+    if (maxPolygonVertexValue !== null && Number.isFinite(maxPolygonVertexValue) && maxPolygonVertexValue > maxPolygonVertexCount) {
+      maxPolygonVertexCount = Math.max(0, Math.round(maxPolygonVertexValue));
+      baseTolerance = taskBaseTolerance !== null && Number.isFinite(taskBaseTolerance) && taskBaseTolerance >= 0
+        ? taskBaseTolerance
+        : baseTolerance;
+      baseToleranceVertexLimit = taskBaseToleranceVertexLimit !== null
+        && Number.isFinite(taskBaseToleranceVertexLimit)
+        && taskBaseToleranceVertexLimit > 0
+        ? Math.round(taskBaseToleranceVertexLimit)
+        : baseToleranceVertexLimit;
+    }
   });
   await shapeMutationAPIImpl.updateBuildSession(params.nodeId, {
     sourceStageMaxima: {
       featureMax,
       polygonMax,
+      maxPolygonVertexCount,
+      baseTolerance,
+      vertexLimit: baseToleranceVertexLimit,
     },
   });
   if (stageCounts.failed > 0 && stageCounts.completed === 0) {

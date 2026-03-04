@@ -42,6 +42,9 @@ export interface EphemeralStageStatus {
 export interface EphemeralSourceStageMaxima {
   featureMax: number;
   polygonMax: number;
+  maxPolygonVertexCount?: number;
+  baseTolerance?: number;
+  vertexLimit?: number;
 }
 
 export interface EphemeralBuildSessionRecord {

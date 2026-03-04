@@ -1,6 +1,7 @@
 # 運用ハブ
 
 ## Doing
+- #757 / codex/feat/shape/session-driven-base-tolerance-757 / 2026-03-04 11:52
 - #755 / codex/fix/session/worker-state-consistency-755 / 2026-03-04 11:34
 - #753 / codex/fix/session/archive-build-session-consistency / 2026-03-04 11:23
 - #750 / codex/fix/shape-plugin/geometry-retrymax-contract / 2026-03-04 11:08
@@ -30,6 +31,7 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-04: Issue #757 開始 - Source終了時の代表ポリゴン `t_base`（<=6553）をセッションへ保持し、Geometryで再利用する仕様ドキュメント化と実装修正に着手
 - 2026-03-04: Issue #755 進捗 - セッション4テーブル整合性の欠損経路を修正（status/stage を `update` から `get+put` upsert へ変更、stale 判定を running task 基準へ是正）。回帰テストを追加/更新し、`pnpm -w turbo run test --filter @hierarchidb/runtime-worker -- --run src/services/__tests__/unit/tree-mutation-archive-build-session-guard.unit.test.ts src/services/utils/__tests__/reconcileStaleBuildSessions.unit.test.ts src/services/__tests__/unit/shape-mutation-session-upsert.unit.test.ts` と `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/unit/shapeBuildApiClient.updateBuildSession.unit.test.ts` は成功（exit 0）。
 - 2026-03-04: Issue #755 開始 - Worker session 4テーブル整合性と通知4系統（全体/snapshot/progress/heartbeat）を対象に、アーカイブ誤判定・リロード復元/リセット不整合・停止即時反映不具合の再現テスト追加と原因修正に着手
 - 2026-03-04: Issue #753 進捗 - `runtime-worker` に stale running build session 整合化を追加（アーカイブガード時の self-heal + Worker 起動時検査）。`pnpm -w turbo run build --filter @hierarchidb/runtime-worker` / `pnpm -w turbo run typecheck --filter @hierarchidb/runtime-worker` / `pnpm -w turbo run test --filter @hierarchidb/runtime-worker` は成功（exit 0）。
@@ -153,3 +155,4 @@
   - Worker側でセッション状態変化時の自動イベント発火を実装
   - UI側で新しい `useShapeBuildSessionState` フックを作成し、ポーリングベースの `useShapeBuildSessionRecord` を置き換え
   - `typecheck && build` が成功し、実装完了
+- 2026-03-04: Issue #757 進捗 - Source→Geometry の session駆動 baseTolerance（t_base）探索・保存・利用を実装し、仕様書更新と build/typecheck/test（対象）を完了

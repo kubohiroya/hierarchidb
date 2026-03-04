@@ -35,6 +35,7 @@ import {
 import type {
   SessionStateChangeEvent,
   SessionHeartbeatEvent,
+  StageSnapshotEvent,
   TaskProgressEvent,
   SessionStateSubscription,
   StageSnapshotSubscription,
