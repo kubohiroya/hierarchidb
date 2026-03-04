@@ -288,10 +288,31 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
   const retryAttemptRaw = readMetadataNumber(task.metadata, [
     'finalRetryAttempts',
     'metadata.finalRetryAttempts',
+    'retryAttemptsTotal',
+    'metadata.retryAttemptsTotal',
     'retryAttempt',
     'metadata.retryAttempt',
-  ]) ?? readNumber(task.retryAttempt);
-  const retryAttempt = retryAttemptRaw !== null && retryAttemptRaw >= 0 ? Math.floor(retryAttemptRaw) : null;
+  ]);
+  const retryAttemptFromMessage = readMessageNumber(
+    failedMessage ?? resolveTaskMetadataMessage(task.metadata),
+    [
+      /finalRetryAttempts=(\d+)/i,
+      /retryAttemptsTotal=(\d+)/i,
+      /retryAttempts=(\d+)/i,
+      /retryAttempt=(\d+)/i,
+    ],
+  );
+  const retryAttemptFromTask = readNumber(task.retryAttempt);
+  const retryAttemptCandidate = [
+    retryAttemptRaw,
+    retryAttemptFromMessage,
+    retryAttemptFromTask,
+  ].reduce<number | null>((currentMax, candidate) => {
+    if (candidate === null || candidate < 0) return currentMax;
+    if (currentMax === null) return candidate;
+    return Math.max(currentMax, candidate);
+  }, null);
+  const retryAttempt = retryAttemptCandidate !== null ? Math.floor(retryAttemptCandidate) : null;
 
   const retryMaxRaw = readMetadataNumber(task.metadata, [
     'retryMax',
@@ -346,6 +367,7 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
   };
   const adminLevelRaw = readMetadataNumber(task.metadata, [
     'fetchDetail.adminLevel',
+    'preview.adminLevel',
     'adminLevel',
     'metadata.adminLevel',
   ]);

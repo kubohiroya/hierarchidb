@@ -963,6 +963,7 @@ const toCollectionMetrics = (collection: FeatureCollection | null): CollectionMe
 type TaskDetailContentProps = {
   title: string;
   summary: TaskOutcomeSummary;
+  previewAdminLevel: number | null;
   detailColor: string;
   chartColor: string;
   countryFlag: string | null;
@@ -980,6 +981,7 @@ type TaskDetailContentProps = {
 const TaskDetailContent = ({
   title,
   summary,
+  previewAdminLevel,
   detailColor,
   chartColor,
   countryFlag,
@@ -1175,7 +1177,7 @@ const TaskDetailContent = ({
             originalBytes={previewOriginalBytes}
             resultBytes={previewResultBytes}
             resultColor={sizeAccentColor}
-            adminLevel={summary.adminLevel ?? summary.fetchDetails?.adminLevel ?? null}
+            adminLevel={previewAdminLevel}
           />
         )}
       </Box>
@@ -1212,6 +1214,20 @@ export const TaskItemDetailWindow = ({
   );
   const summary = activeDetail?.summary;
   const title = activeDetail?.title ?? '';
+  const previewAdminLevel = useMemo(() => {
+    if (!activeDetail) return null;
+    const summaryAdminLevel = summary?.adminLevel ?? summary?.fetchDetails?.adminLevel ?? null;
+    if (summaryAdminLevel !== null && Number.isFinite(summaryAdminLevel)) {
+      return Math.floor(summaryAdminLevel);
+    }
+    const taskMetadata = asRecord(activeDetail.task.metadata);
+    const previewMetadata = asRecord(taskMetadata?.preview);
+    const fromPreview = readNumber(previewMetadata?.adminLevel);
+    if (fromPreview !== null) return Math.floor(fromPreview);
+    const fromTask = readNumber(taskMetadata?.adminLevel);
+    if (fromTask !== null) return Math.floor(fromTask);
+    return null;
+  }, [activeDetail, summary]);
   const countryFlag = toFlagEmoji(summary?.fetchDetails?.countryCode ?? extractCountryCodeFromTitle(title));
   const detailColor = summary?.kind === 'failed' ? 'error.main' : 'text.secondary';
   const chartColor = summary?.kind === 'failed' ? 'error.main' : 'primary.main';
@@ -1392,6 +1408,7 @@ export const TaskItemDetailWindow = ({
   ) : (summary ? TaskDetailContent({
     title,
     summary,
+    previewAdminLevel,
     detailColor,
     chartColor,
     countryFlag,

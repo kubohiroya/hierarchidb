@@ -164,6 +164,49 @@ describe('buildGeometryTaskOutcomeSummary metadata handoff', () => {
     expect(summary.adminLevel).toBe(2);
   });
 
+  it('falls back to preview.adminLevel when fetchDetail is absent', () => {
+    const task = buildBaseTask({
+      metadata: {
+        retryAttempt: 1,
+        retryMax: 24,
+        preview: {
+          adminLevel: 3,
+        },
+      },
+    });
+
+    const summary = buildGeometryTaskOutcomeSummary({
+      task,
+      stageId: 'geometry',
+      taskTitle: 'geometry-task-1',
+      translate: t,
+    });
+
+    expect(summary.kind).toBe('completed');
+    expect(summary.adminLevel).toBe(3);
+  });
+
+  it('uses retryAttemptsTotal from message when retryAttempt metadata stays 0', () => {
+    const task = buildBaseTask({
+      errorMessage: 'geometry completed: retryAttemptsTotal=4, retriedFeatures=1/1',
+      metadata: {
+        retryAttempt: 0,
+        retryMax: 24,
+      },
+    });
+
+    const summary = buildGeometryTaskOutcomeSummary({
+      task,
+      stageId: 'geometry',
+      taskTitle: 'geometry-task-1',
+      translate: t,
+    });
+
+    expect(summary.kind).toBe('completed');
+    expect(summary.retryAttempt).toBe(4);
+    expect(summary.summaryLine).toContain('4/24');
+  });
+
   it('does not recover retryMax from message text', () => {
     const task = buildBaseTask({
       status: 'failed',
