@@ -1,6 +1,7 @@
 # 運用ハブ
 
 ## Doing
+- #761 / codex/fix/app/shape-edit-window-mode / 2026-03-04 13:18
 - #757 / codex/feat/shape/session-driven-base-tolerance-757 / 2026-03-04 11:52
 - #758 / codex/fix/shape/step5-full-mode-preview-stability-758 / 2026-03-04 12:32
 - #755 / codex/fix/session/worker-state-consistency-755 / 2026-03-04 11:34
@@ -33,6 +34,8 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-04: Issue #761 進捗 - `usePluginDialogRoute` の route params 解決を `dialogModeStep > dialogMode > dialog` 優先へ修正し、`plugin-dialog-step.unit.test.tsx` に再発テスト追加。`pnpm -w turbo run test --filter @hierarchidb/app -- --run src/router/__tests__/unit/plugin-dialog-step.unit.test.tsx` / `pnpm -w turbo run typecheck --filter @hierarchidb/app` / `pnpm -w turbo run build --filter @hierarchidb/app` はすべて成功（exit 0）。
+- 2026-03-04: Issue #761 開始 - `/shape/edit/maximize/5` と `/shape/edit/full/5` で URL mode が `normal` へ巻き戻る再発不具合の調査と修正に着手
 - 2026-03-04: Issue #757 開始 - Source終了時の代表ポリゴン `t_base`（<=6553）をセッションへ保持し、Geometryで再利用する仕様ドキュメント化と実装修正に着手
 - 2026-03-04: Issue #758 進捗 - `shapeBuildRuntimeExecutionMetrics.ts` の `StageSnapshotEvent` import 漏れを修正し、`pnpm -w exec turbo run typecheck --only --filter @hierarchidb/shape-plugin` 成功（exit 0）。
 - 2026-03-04: Issue #758 進捗 - URL mode優先復元（`full`維持）・dialog window restore競合の抑制・FloatingWindow stale state再注入抑制・TaskItemDetailWindow（raw source fallback/Geometry分母補正/タイトルアイコン配色）を修正。`pnpm install --frozen-lockfile` と `pnpm -w exec turbo run build --filter @hierarchidb/plugin-ui-host^... --filter @hierarchidb/plugin-ui-host --filter @hierarchidb/shape-plugin^... --filter @hierarchidb/shape-plugin --filter @hierarchidb/ui-floating-window^... --filter @hierarchidb/ui-floating-window` は成功（exit 0）。`pnpm -C packages/plugin-ui-host exec vitest run src/__tests__/dialog-url-step.unit.test.tsx` は成功（exit 0）。`shape-plugin` typecheck/test は既存失敗で Blocked へ記録。

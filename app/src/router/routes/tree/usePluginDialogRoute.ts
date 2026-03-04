@@ -36,18 +36,22 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
   const navigate = useNavigate();
   const location = useLocation();
   const matches = useRouterState({ select: (state) => state.matches });
-  const dialogMatch = useMemo(
-    () =>
-      matches.find(
-        (match) =>
-          match.routeId === treeRouteIds.dialogModeStep
-          || match.routeId === treeRouteIds.dialogMode
-          || match.routeId === treeRouteIds.dialog
-      ),
-    [matches]
-  );
-  const routeParams = (dialogMatch?.params as PluginDialogLoaderData['params'] | undefined)
-    ?? params;
+  const routeParams = useMemo(() => {
+    const priorityRouteIds = [
+      treeRouteIds.dialogModeStep,
+      treeRouteIds.dialogMode,
+      treeRouteIds.dialog,
+    ] as const;
+    for (const routeId of priorityRouteIds) {
+      const matched = [...matches]
+        .reverse()
+        .find((match) => match.routeId === routeId);
+      if (matched?.params) {
+        return matched.params as PluginDialogLoaderData['params'];
+      }
+    }
+    return params;
+  }, [matches, params]);
 
   const searchParams = useMemo(
     () => new URLSearchParams(location.searchStr ?? ''),
