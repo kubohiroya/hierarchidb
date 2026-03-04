@@ -32,6 +32,7 @@ export function useDialogUIStateSync(params: {
   displayMode: DialogDisplayMode;
   allowFullScreen?: boolean;
   forceInitialStep?: boolean;
+  urlMode?: DialogDisplayMode | null;
   urlStep?: number | null;
   restoreKey?: string | number | null;
   restoreDeps: RestoreDeps;
@@ -44,6 +45,7 @@ export function useDialogUIStateSync(params: {
     displayMode,
     allowFullScreen = true,
     forceInitialStep = false,
+    urlMode,
     urlStep,
     restoreKey,
     restoreDeps,
@@ -94,14 +96,16 @@ export function useDialogUIStateSync(params: {
     const state = dialogUIStateRef.current;
     if (!state) return;
     const windowState = state.dialogWindow;
+    const hasUrlMode = typeof urlMode === 'string';
     if (!windowRestoredRef.current && windowState) {
       const rawMode = windowState.mode as DialogDisplayMode | undefined;
+      const requestedMode = hasUrlMode ? urlMode : rawMode;
       const mode =
-        !allowFullScreen && rawMode === 'full-screen' ? 'normal' : rawMode;
+        !allowFullScreen && requestedMode === 'full-screen' ? 'normal' : requestedMode;
       if (mode) {
         void restoreDeps.transitionDisplayMode(mode, { source: 'restore' }).catch(() => void 0);
       }
-      const canApplyFrame = mode !== 'full-screen' && mode !== 'maximize';
+      const canApplyFrame = !hasUrlMode && mode !== 'full-screen' && mode !== 'maximize';
       if (canApplyFrame && windowState.size) {
         restoreDeps.handleSizeChange(windowState.size as DialogSize);
       }
@@ -123,7 +127,7 @@ export function useDialogUIStateSync(params: {
       }
       progressRestoredRef.current = true;
     }
-  }, [dialogUIState, forceInitialStep, restoreDeps, restoreKey, toInternalStepIndex, urlStep]);
+  }, [dialogUIState, forceInitialStep, restoreDeps, restoreKey, toInternalStepIndex, urlMode, urlStep]);
 
   const updateDialogUIState = useCallback((patch: Partial<DialogUIState>) => {
     const prev = dialogUIStateRef.current ?? null;

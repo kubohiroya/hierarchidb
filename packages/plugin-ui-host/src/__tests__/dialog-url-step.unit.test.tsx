@@ -7,6 +7,7 @@ import { useDialogFrameState } from '../headless/usePluginDialogController/frame
 
 type Snapshot = {
   activeStepIndex: number;
+  displayMode: 'normal' | 'maximize' | 'full-screen';
 };
 
 const TestHarness = ({
@@ -38,7 +39,10 @@ const TestHarness = ({
     urlState,
     onUrlStateChange,
   });
-  onSnapshot({ activeStepIndex: state.activeStepIndex });
+  onSnapshot({
+    activeStepIndex: state.activeStepIndex,
+    displayMode: state.displayMode,
+  });
   return null;
 };
 
@@ -77,6 +81,39 @@ describe('useDialogFrameState url step', () => {
 
     for (const call of onUrlStateChange.mock.calls) {
       expect(call[0].step).toBe(5);
+    }
+  });
+
+  it('keeps display mode from urlState even when persisted dialog mode differs', async () => {
+    const onUrlStateChange = vi.fn();
+    let snapshot: Snapshot | null = null;
+
+    render(
+      <TestHarness
+        urlState={{ mode: 'full-screen', step: 5 }}
+        initialDialogUIState={{
+          dialogWindow: {
+            mode: 'normal',
+            position: { x: 16, y: 24 },
+            size: { width: 640, height: 480 },
+            restorePosition: null,
+            restoreSize: null,
+          },
+          dialogProgress: { activeStepIndex: 1 },
+        }}
+        onSnapshot={(value) => {
+          snapshot = value;
+        }}
+        onUrlStateChange={onUrlStateChange}
+      />
+    );
+
+    await waitFor(() => {
+      expect(snapshot?.displayMode).toBe('full-screen');
+    });
+
+    for (const call of onUrlStateChange.mock.calls) {
+      expect(call[0].mode).toBe('full-screen');
     }
   });
 });
