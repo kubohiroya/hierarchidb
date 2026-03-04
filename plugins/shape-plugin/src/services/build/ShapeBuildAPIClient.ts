@@ -137,9 +137,21 @@ const readSourceStageMaxima = (value: unknown): SourceStageMaxima | undefined =>
   if (!isRecord(value)) return undefined;
   if (!isNumber(value.featureMax) || !isNumber(value.polygonMax)) return undefined;
   if (value.featureMax < 0 || value.polygonMax < 0) return undefined;
+  const maxPolygonVertexCount = isNumber(value.maxPolygonVertexCount) && value.maxPolygonVertexCount >= 0
+    ? value.maxPolygonVertexCount
+    : undefined;
+  const baseTolerance = isNumber(value.baseTolerance) && value.baseTolerance >= 0
+    ? value.baseTolerance
+    : undefined;
+  const vertexLimit = isNumber(value.vertexLimit) && value.vertexLimit > 0
+    ? Math.round(value.vertexLimit)
+    : undefined;
   return {
     featureMax: value.featureMax,
     polygonMax: value.polygonMax,
+    maxPolygonVertexCount,
+    baseTolerance,
+    vertexLimit,
   };
 };
 

@@ -91,6 +91,9 @@ export interface LayerInfo {
 export interface SourceStageMaxima {
   featureMax: number;
   polygonMax: number;
+  maxPolygonVertexCount?: number;
+  baseTolerance?: number;
+  vertexLimit?: number;
 }
 
 /**

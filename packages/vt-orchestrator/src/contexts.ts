@@ -6,6 +6,7 @@ export type TransformByBandStageContext = {
   ephemeralDB: EphemeralDB;
   geometryConfig: GeometryConfig;
   bands: BandConfig[];
+  sourceBaseTolerance?: number;
   featureIdAllowlist?: Set<string>;
   abortSignal?: AbortSignal;
 };

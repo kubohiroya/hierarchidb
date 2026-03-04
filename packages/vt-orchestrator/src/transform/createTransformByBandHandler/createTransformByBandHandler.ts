@@ -68,6 +68,7 @@ export const createTransformByBandHandler = (
     ephemeralDB,
     geometryConfig,
     bands,
+    sourceBaseTolerance,
     abortSignal,
     featureIdAllowlist,
   } = context;
@@ -885,38 +886,13 @@ export const createTransformByBandHandler = (
           limit: memory.jsHeapSizeLimit ?? null,
         };
       };
-      const representativeFeature = selectMaxVertexFeature(inputCollection, countVerticesFromGeometry);
-      if (representativeFeature) {
-        const runBaseSimplifyAttempt = async (nextTolerance: number): Promise<Feature | null> => {
-          const retryCollection = await runStageWithLabel('simplify-only:base-search', () => (
-            simplifyOnlyCollection(
-              { type: 'FeatureCollection', features: [representativeFeature.feature] },
-              band.zMax,
-              nextTolerance,
-              geometryOps,
-            )
-          ));
-          const firstFeature = retryCollection.features[0];
-          return firstFeature ?? null;
-        };
-        const baseSearch = await findBaseToleranceByBisection({
-          feature: representativeFeature.feature,
-          retryVertexLimit,
-          maxIterations: toleranceSearchMaxIterations,
-          initialLow: 0,
-          initialHigh: Math.max(0.1, fallbackTolerance),
-          highCap: 12,
-          runSimplifyAttempt: runBaseSimplifyAttempt,
-          countVerticesFromGeometry,
-        });
-        baseToleranceSummary = baseSearch.tolerance;
-        toleranceSearchIterationsSummary = baseSearch.iterations;
-        toleranceSearchConvergedSummary = baseSearch.converged;
-        if (baseSearch.converged && Number.isFinite(baseSearch.tolerance)) {
-          tolerance = resolveAppliedTolerance(baseSearch.tolerance);
-        } else {
-          tolerance = fallbackTolerance;
-        }
+      const hasSessionBaseTolerance = Number.isFinite(sourceBaseTolerance) && (sourceBaseTolerance ?? 0) >= 0;
+      if (hasSessionBaseTolerance) {
+        const sessionBaseTolerance = sourceBaseTolerance ?? fallbackTolerance;
+        baseToleranceSummary = sessionBaseTolerance;
+        toleranceSearchIterationsSummary = 0;
+        toleranceSearchConvergedSummary = true;
+        tolerance = resolveAppliedTolerance(sessionBaseTolerance);
         finalToleranceSummary = tolerance;
         updateFinalEffectiveTolerance(tolerance);
         console.info('[ShapeGeometry][Tolerance]', JSON.stringify({
@@ -932,16 +908,68 @@ export const createTransformByBandHandler = (
           multiplier: resolvedMultiplier,
           minRatio: resolvedMinRatio,
           maxRatio: resolvedMaxRatio,
-          searchIterations: baseSearch.iterations,
-          searchConverged: baseSearch.converged,
-          representativeVertexCount: representativeFeature.vertexCount,
-          representativeFeatureIndex: representativeFeature.featureIndex + 1,
-          representativeFinalVertexCount: baseSearch.finalVertexCount,
+          source: 'session',
         }));
       } else {
-        tolerance = fallbackTolerance;
-        finalToleranceSummary = tolerance;
-        updateFinalEffectiveTolerance(tolerance);
+        const representativeFeature = selectMaxVertexFeature(inputCollection, countVerticesFromGeometry);
+        if (representativeFeature) {
+          const runBaseSimplifyAttempt = async (nextTolerance: number): Promise<Feature | null> => {
+            const retryCollection = await runStageWithLabel('simplify-only:base-search', () => (
+              simplifyOnlyCollection(
+                { type: 'FeatureCollection', features: [representativeFeature.feature] },
+                band.zMax,
+                nextTolerance,
+                geometryOps,
+              )
+            ));
+            const firstFeature = retryCollection.features[0];
+            return firstFeature ?? null;
+          };
+          const baseSearch = await findBaseToleranceByBisection({
+            feature: representativeFeature.feature,
+            retryVertexLimit,
+            maxIterations: toleranceSearchMaxIterations,
+            initialLow: 0,
+            initialHigh: Math.max(0.1, fallbackTolerance),
+            highCap: 12,
+            runSimplifyAttempt: runBaseSimplifyAttempt,
+            countVerticesFromGeometry,
+          });
+          baseToleranceSummary = baseSearch.tolerance;
+          toleranceSearchIterationsSummary = baseSearch.iterations;
+          toleranceSearchConvergedSummary = baseSearch.converged;
+          if (baseSearch.converged && Number.isFinite(baseSearch.tolerance)) {
+            tolerance = resolveAppliedTolerance(baseSearch.tolerance);
+          } else {
+            tolerance = fallbackTolerance;
+          }
+          finalToleranceSummary = tolerance;
+          updateFinalEffectiveTolerance(tolerance);
+          console.info('[ShapeGeometry][Tolerance]', JSON.stringify({
+            nodeId: task.nodeId,
+            taskId,
+            sourceKey: input.sourceKey,
+            adminLevel: input.adminLevel,
+            bandIndex: input.bandIndex,
+            zTarget: band.zMax,
+            baseTolerance: baseToleranceSummary,
+            appliedTolerance: tolerance,
+            fallbackTolerance,
+            multiplier: resolvedMultiplier,
+            minRatio: resolvedMinRatio,
+            maxRatio: resolvedMaxRatio,
+            searchIterations: baseSearch.iterations,
+            searchConverged: baseSearch.converged,
+            representativeVertexCount: representativeFeature.vertexCount,
+            representativeFeatureIndex: representativeFeature.featureIndex + 1,
+            representativeFinalVertexCount: baseSearch.finalVertexCount,
+            source: 'task',
+          }));
+        } else {
+          tolerance = fallbackTolerance;
+          finalToleranceSummary = tolerance;
+          updateFinalEffectiveTolerance(tolerance);
+        }
       }
       const summarizeVertexLimit = (collection: FeatureCollection | null): {
         featureCount: number;

@@ -25,6 +25,7 @@ import { clearStagePlan, setGeometryPlannedTotal } from './shapeProgressPlan.ts'
 import type { EphemeralDB } from '@hierarchidb/gis-sdk';
 import { buildGeometryTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
 import { resolveSourceArtifactHashById } from './shapeSourceArtifactHash.ts';
+import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 
 export type ShapeGeometryStageParams = {
   nodeId: NodeId;
@@ -86,6 +87,13 @@ const readString = (value: unknown): string | null => (
 const readNumber = (value: unknown): number | null => (
   typeof value === 'number' && Number.isFinite(value) ? value : null
 );
+
+const readSourceBaseTolerance = (value: unknown): number | undefined => {
+  if (!isRecord(value)) return undefined;
+  const baseTolerance = readNumber(value.baseTolerance);
+  if (baseTolerance === null || baseTolerance < 0) return undefined;
+  return baseTolerance;
+};
 
 const toMemoryValue = (value: number | undefined): number | null => (
   typeof value === 'number' && Number.isFinite(value) ? value : null
@@ -202,6 +210,10 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
     fetchTasks: fetchTasks.length,
     existingGeometryTasks: existingGeometryByBandTasks.length,
   }));
+  const sessionRecord = await runGeometryStep(params, 'load-build-session', async () => (
+    shapeQueryAPIImpl.getBuildSessionRecord(params.nodeId)
+  ));
+  const sourceBaseTolerance = readSourceBaseTolerance(sessionRecord?.sourceStageMaxima);
   const buffers = await runGeometryStep(params, 'build-geometry-buffer-metadata', async () => {
     const next: GeometryBufferMeta[] = [];
     for (const task of fetchTasks) {
@@ -457,6 +469,7 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
         ephemeralDB: params.ephemeralStore,
         geometryConfig,
         bands: params.bands,
+        sourceBaseTolerance,
         featureIdAllowlist: params.diffBuildEnabled ? params.recyclingAllowlist : undefined,
         abortSignal: geometryByBandAbortController.signal,
       })
