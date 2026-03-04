@@ -1,6 +1,9 @@
 import { useContext, type ReactNode } from 'react';
 import { ToastContext, type ToastConfig, type ToastContextType } from './ToastProvider.js';
 
+/**
+ * Hook to use toast functionality
+ */
 export function useToast(): ToastContextType {
   const context = useContext(ToastContext);
   if (!context) {
@@ -9,6 +12,9 @@ export function useToast(): ToastContextType {
   return context;
 }
 
+/**
+ * Convenience hooks for common toast types
+ */
 export function useToastNotifications() {
   const { showToast } = useToast();
 

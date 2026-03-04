@@ -20,6 +20,8 @@ const notify = {
 const STORAGE_KEY = 'multi-auth-user';
 const REDIRECT_URL_KEY = 'multi-auth-redirect';
 const PROVIDER_KEY = 'multi-auth-provider';
+const isSafeRedirectPath = (value: string): boolean =>
+  value.startsWith('/') && !value.startsWith('//');
 
 const getProviderConfig = (provider: AuthProviderType, homeUrl = '/'): AuthProviderConfig => {
   const secureConfig = getSecureConfig();
@@ -110,7 +112,7 @@ export function useMultiAuthProviderContext({
         const redirectUrl = localStorage.getItem(REDIRECT_URL_KEY);
         if (redirectUrl) {
           localStorage.removeItem(REDIRECT_URL_KEY);
-          window.location.href = redirectUrl;
+          window.location.href = isSafeRedirectPath(redirectUrl) ? redirectUrl : homeUrl;
         }
       } catch (_error) {
         notify.error('Failed to process Google login. Please try again.');

@@ -16,23 +16,12 @@ export type NavLinkItemType = {
 };
 
 export const NavLinkMenu = ({ items }: { items: NavLinkItemType[] }) => {
-  const {
-    hasItems,
-    activeLinkStyle,
-    inactiveLinkStyle,
-    itemViewModels,
-  } = useNavLinkMenuView(items.map((item) => ({
-    name: item.name,
-    url: item.url,
-  })));
+  const { hasItems, activeLinkStyle, inactiveLinkStyle, itemViewModels } = useNavLinkMenuView(items);
   if (!hasItems) return null;
 
   return (
     <MenuList sx={{ marginBottom: '30px', backgroundColor: 'red' }}>
-      {itemViewModels.map((viewModel, index) => {
-        const item = items[index];
-        if (!item) return null;
-        return (
+      {itemViewModels.map((viewModel) => (
         <MenuItem
           key={viewModel.key}
           sx={{ padding: 0, margin: 0 }}
@@ -44,13 +33,13 @@ export const NavLinkMenu = ({ items }: { items: NavLinkItemType[] }) => {
             activeProps={{ style: activeLinkStyle }}
             inactiveProps={{ style: inactiveLinkStyle }}
           >
-            <InlineIcon icon={item.icon} />
+            <InlineIcon icon={viewModel.icon} />
             <Typography sx={{ marginLeft: 1 }} component="span">
-              {item.name}
+              {viewModel.name}
             </Typography>
           </Link>
         </MenuItem>
-      )})}
+      ))}
     </MenuList>
   );
 };

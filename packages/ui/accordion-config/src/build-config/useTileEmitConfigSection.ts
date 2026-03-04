@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type {
   BaseBuildConfig,
   DynamicConcurrencyConfig,
@@ -60,6 +60,13 @@ export function useTileEmitConfigSection<TDataSourceName>({
       createDefaultDynamicConcurrency(resolvedMaxConcurrent),
     [tileEmitConfig.dynamicConcurrency, resolvedMaxConcurrent],
   );
+  const tileEmitConfigRef = useRef(tileEmitConfig);
+  const dynamicConcurrencyRef = useRef(dynamicConcurrency);
+
+  useEffect(() => {
+    tileEmitConfigRef.current = tileEmitConfig;
+    dynamicConcurrencyRef.current = dynamicConcurrency;
+  }, [dynamicConcurrency, tileEmitConfig]);
 
   const dynamicConcurrencyActive =
     showConcurrencyCard && resolvedMaxConcurrent >= 2;
@@ -74,11 +81,13 @@ export function useTileEmitConfigSection<TDataSourceName>({
       return;
     }
 
+    const currentTileEmitConfig = tileEmitConfigRef.current;
+    const currentDynamicConcurrency = dynamicConcurrencyRef.current;
     update({
       tileEmitConfig: {
-        ...tileEmitConfig,
+        ...currentTileEmitConfig,
         dynamicConcurrency: {
-          ...dynamicConcurrency,
+          ...currentDynamicConcurrency,
           enabled: dynamicConcurrencyActive,
         },
       },
@@ -87,21 +96,21 @@ export function useTileEmitConfigSection<TDataSourceName>({
     dynamicConcurrency,
     dynamicConcurrencyActive,
     showConcurrencyCard,
-    tileEmitConfig,
     update,
   ]);
 
   const onExtentChange = useCallback(
     (value: string) => {
       const extent = Number(value);
+      const currentTileEmitConfig = tileEmitConfigRef.current;
       update({
         tileEmitConfig: {
-          ...tileEmitConfig,
+          ...currentTileEmitConfig,
           extent,
         },
       });
     },
-    [tileEmitConfig, update],
+    [update],
   );
 
   const onToleranceChange = useCallback(
@@ -113,57 +122,62 @@ export function useTileEmitConfigSection<TDataSourceName>({
       if (!Number.isFinite(tolerance)) {
         return;
       }
+      const currentTileEmitConfig = tileEmitConfigRef.current;
       update({
         tileEmitConfig: {
-          ...tileEmitConfig,
+          ...currentTileEmitConfig,
           tolerance,
         },
       });
     },
-    [tileEmitConfig, update],
+    [update],
   );
 
   const onBufferChange = useCallback(
     (value: string) => {
       const buffer = Number(value);
+      const currentTileEmitConfig = tileEmitConfigRef.current;
       update({
         tileEmitConfig: {
-          ...tileEmitConfig,
+          ...currentTileEmitConfig,
           buffer,
           bufferSize: buffer,
         },
       });
     },
-    [tileEmitConfig, update],
+    [update],
   );
 
   const onIndexMaxPointsChange = useCallback(
     (value: string) => {
       const indexMaxPoints = Number(value);
+      const currentTileEmitConfig = tileEmitConfigRef.current;
       update({
         tileEmitConfig: {
-          ...tileEmitConfig,
+          ...currentTileEmitConfig,
           indexMaxPoints,
         },
       });
     },
-    [tileEmitConfig, update],
+    [update],
   );
 
   const onMaxConcurrentChange = useCallback(
     (maxConcurrent: number) => {
+      const currentTileEmitConfig = tileEmitConfigRef.current;
+      const currentDynamicConcurrency = dynamicConcurrencyRef.current;
       update({
         tileEmitConfig: {
-          ...tileEmitConfig,
+          ...currentTileEmitConfig,
           maxConcurrent,
           dynamicConcurrency: {
-            ...dynamicConcurrency,
+            ...currentDynamicConcurrency,
             enabled: maxConcurrent >= 2,
           },
         },
       });
     },
-    [dynamicConcurrency, tileEmitConfig, update],
+    [update],
   );
 
   const onWatermarkRangeChange = useCallback(
@@ -181,55 +195,61 @@ export function useTileEmitConfigSection<TDataSourceName>({
 
       const lowWatermark = Math.min(lowValue, highValue);
       const highWatermark = Math.max(lowValue, highValue);
+      const currentTileEmitConfig = tileEmitConfigRef.current;
+      const currentDynamicConcurrency = dynamicConcurrencyRef.current;
 
       update({
         tileEmitConfig: {
-          ...tileEmitConfig,
+          ...currentTileEmitConfig,
           dynamicConcurrency: {
-            ...dynamicConcurrency,
+            ...currentDynamicConcurrency,
             lowWatermark,
             highWatermark,
           },
         },
       });
     },
-    [dynamicConcurrency, tileEmitConfig, update],
+    [update],
   );
 
   const onAdjustStepChange = useCallback(
     (value: string) => {
       const adjustStep = Number(value);
+      const currentTileEmitConfig = tileEmitConfigRef.current;
+      const currentDynamicConcurrency = dynamicConcurrencyRef.current;
       update({
         tileEmitConfig: {
-          ...tileEmitConfig,
+          ...currentTileEmitConfig,
           dynamicConcurrency: {
-            ...dynamicConcurrency,
+            ...currentDynamicConcurrency,
             adjustStep: Number.isFinite(adjustStep)
               ? adjustStep
-              : dynamicConcurrency.adjustStep,
+              : currentDynamicConcurrency.adjustStep,
           },
         },
       });
     },
-    [dynamicConcurrency, tileEmitConfig, update],
+    [update],
   );
 
   const onSampleMsChange = useCallback(
     (value: string) => {
       const sampleMs = Number(value);
+      const currentTileEmitConfig = tileEmitConfigRef.current;
+      const currentDynamicConcurrency = dynamicConcurrencyRef.current;
       update({
         tileEmitConfig: {
-          ...tileEmitConfig,
+          ...currentTileEmitConfig,
           dynamicConcurrency: {
-            ...dynamicConcurrency,
+            ...currentDynamicConcurrency,
             sampleMs: Number.isFinite(sampleMs)
               ? sampleMs
-              : dynamicConcurrency.sampleMs,
+              : currentDynamicConcurrency.sampleMs,
           },
         },
       });
     },
-    [dynamicConcurrency, tileEmitConfig, update],
+    [update],
   );
 
   return {
