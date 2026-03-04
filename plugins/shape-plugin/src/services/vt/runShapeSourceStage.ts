@@ -93,6 +93,10 @@ const textDecoder = new TextDecoder('utf-8');
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
+const asRecord = (value: unknown): Record<string, unknown> | null => (
+  isRecord(value) ? value : null
+);
+
 const GEOBOUNDARIES_MERGE_COUNTRIES = new Set(['CAN', 'GRL', 'CA', 'GL']);
 
 const isGeoBoundariesSource = (source: DataSourceName): boolean => (
@@ -393,6 +397,10 @@ const readNumericProperty = (properties: Record<string, unknown>, key: string): 
   return Number.isFinite(value) ? value : undefined;
 };
 
+const readString = (value: unknown): string | null => (
+  typeof value === 'string' && value.trim().length > 0 ? value.trim() : null
+);
+
 const decodeSourceCacheData = async (params: {
   data: ArrayBuffer;
   format?: string;
@@ -444,6 +452,7 @@ const buildSourceCacheMetadata = (params: {
   baseTolerance?: number;
   baseToleranceVertexLimit?: number;
   retryAttempt?: number;
+  rawSourceCacheKey?: string;
 }): Record<string, unknown> => ({
   stage: 'source',
   status: params.status,
@@ -466,6 +475,7 @@ const buildSourceCacheMetadata = (params: {
   retryAttempt: Number.isFinite(params.retryAttempt ?? NaN)
     ? Math.trunc(params.retryAttempt!)
     : undefined,
+  rawSourceCacheKey: params.rawSourceCacheKey ?? undefined,
 });
 
 const markSourceCacheWriteComplete = async (cacheIds: string[]): Promise<void> => {
@@ -1097,6 +1107,7 @@ const createSourceHandler = (params: {
       sourceCacheId?: string | null;
       sourceCacheFormat?: 'flatgeobuf' | 'topojson';
       sourceCacheCompression?: 'gzip' | 'none';
+      rawSourceCacheKey?: string | null;
     },
   ): Record<string, unknown> => ({
     fetchDetail: {
@@ -1130,7 +1141,7 @@ const createSourceHandler = (params: {
       sourceUrl: input.url,
       sourceCountryCode: input.urlCountryCode || input.countryCode,
       adminLevel: input.adminLevel,
-      rawSourceCacheKey: buildRawDataDataSourceCacheKey({
+      rawSourceCacheKey: preview?.rawSourceCacheKey ?? buildRawDataDataSourceCacheKey({
         dataSource: input.dataSource,
         countryCode: input.urlCountryCode,
         adminLevel: input.adminLevel,
@@ -1141,6 +1152,21 @@ const createSourceHandler = (params: {
       sourceCacheCompression: preview?.sourceCacheCompression ?? 'none',
     },
   });
+
+  const resolveRawSourceCacheKey = (
+    input: ShapeSourceTaskInput,
+    rawData: unknown,
+  ): string | null => {
+    const rawRecord = asRecord(rawData);
+    const rawMetadata = asRecord(rawRecord?.metadata);
+    const apiResponse = asRecord(rawMetadata?.apiResponse);
+    return readString(rawMetadata?.rawSourceCacheKey)
+      ?? readString(rawMetadata?.downloadUrl)
+      ?? readString(rawMetadata?.endpoint)
+      ?? readString(apiResponse?.simplifiedGeometryGeoJSON)
+      ?? readString(input.url)
+      ?? null;
+  };
 
   const analyzeSourceToleranceMetrics = async (
     collection: FeatureCollection,
@@ -1221,6 +1247,7 @@ const createSourceHandler = (params: {
           ?? 0;
         const cachedInputMaxPolygonVertexCount = readNumericProperty(existingMetadata, 'inputMaxPolygonVertexCount')
           ?? cachedMaxPolygonVertexCount;
+        const cachedRawSourceCacheKey = readString(existingMetadata.rawSourceCacheKey);
         let cachedBaseTolerance = readNumericProperty(existingMetadata, 'baseTolerance') ?? 0;
         const cachedBaseToleranceVertexLimit = readNumericProperty(existingMetadata, 'baseToleranceVertexLimit')
           ?? SOURCE_BASE_TOLERANCE_VERTEX_LIMIT;
@@ -1248,6 +1275,7 @@ const createSourceHandler = (params: {
             inputMaxPolygonVertexCount: cachedInputMaxPolygonVertexCount,
             baseTolerance: cachedBaseTolerance,
             baseToleranceVertexLimit: cachedBaseToleranceVertexLimit,
+            rawSourceCacheKey: cachedRawSourceCacheKey ?? undefined,
           })
         );
         if (cachedCollection && cachedCollection.features.length > 0) {
@@ -1341,6 +1369,7 @@ const createSourceHandler = (params: {
             sourceCacheId: existing.id,
             sourceCacheFormat: existing.format === 'topojson' ? 'topojson' : 'flatgeobuf',
             sourceCacheCompression: existing.compression === 'gzip' ? 'gzip' : 'none',
+            rawSourceCacheKey: cachedRawSourceCacheKey,
           }),
           outputData: {
             sourceCacheId: existing.id,
@@ -1370,6 +1399,7 @@ const createSourceHandler = (params: {
         onRetryAttempt,
       });
       const downloadTime = Date.now() - downloadStart;
+      const rawSourceCacheKey = topojsonResult.downloadUrl;
 
       let baseCollection = normalizeTopoJsonCollection(topojsonResult.topology);
       if (shouldMergeGeoBoundaries({
@@ -1424,6 +1454,8 @@ const createSourceHandler = (params: {
             maxPolygonVertexCount: 0,
             baseTolerance: 0,
             baseToleranceVertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
+          }, {
+            rawSourceCacheKey,
           }),
         };
       }
@@ -1487,6 +1519,7 @@ const createSourceHandler = (params: {
           inputMaxPolygonVertexCount: inputSummary.maxPolygonVertexCount,
           baseTolerance: outputToleranceMetrics.baseTolerance,
           baseToleranceVertexLimit: outputToleranceMetrics.baseToleranceVertexLimit,
+          rawSourceCacheKey,
         }),
       });
       const reductionSummary = [
@@ -1513,6 +1546,7 @@ const createSourceHandler = (params: {
           sourceCacheId: sourceCacheRecord.id,
           sourceCacheFormat: 'topojson',
           sourceCacheCompression: 'gzip',
+          rawSourceCacheKey,
         }),
         outputData: {
           sourceCacheId: sourceCacheRecord.id,
@@ -1535,6 +1569,7 @@ const createSourceHandler = (params: {
       timeout: params.buildConfig.sourceConfig.timeoutMs,
       onRetryAttempt,
     });
+    const rawSourceCacheKey = resolveRawSourceCacheKey(input, raw);
     const downloadTime = Date.now() - downloadStart;
 
     assertNotAborted(params.abortSignal);
@@ -1592,6 +1627,8 @@ const createSourceHandler = (params: {
           maxPolygonVertexCount: 0,
           baseTolerance: 0,
           baseToleranceVertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
+        }, {
+          rawSourceCacheKey,
         }),
       };
     }
@@ -1659,6 +1696,7 @@ const createSourceHandler = (params: {
         inputMaxPolygonVertexCount: inputSummary.maxPolygonVertexCount,
         baseTolerance: outputToleranceMetrics.baseTolerance,
         baseToleranceVertexLimit: outputToleranceMetrics.baseToleranceVertexLimit,
+        rawSourceCacheKey: rawSourceCacheKey ?? undefined,
       }),
     });
     const reductionSummary = [
@@ -1685,6 +1723,7 @@ const createSourceHandler = (params: {
         sourceCacheId: sourceCacheRecord.id,
         sourceCacheFormat: 'flatgeobuf',
         sourceCacheCompression: 'none',
+        rawSourceCacheKey,
       }),
       outputData: {
         sourceCacheId: sourceCacheRecord.id,

@@ -497,6 +497,37 @@ const pickRecordMetadataField = (metadata: Record<string, unknown>, key: string)
   return value;
 };
 
+const buildFetchDetailFromGeometryInput = (task: TaskQueueRecord): Record<string, unknown> | null => {
+  if (!isGeometryStage(task.stage)) return null;
+  const input = asRecord(task.inputData);
+  if (!input) return null;
+  const sourceFeatureInput = readNumber(input.sourceFeatureInputCount);
+  const sourceFeatureOutput = readNumber(input.sourceFeatureOutputCount);
+  const sourcePolygonInput = readNumber(input.sourcePolygonInputCount);
+  const sourcePolygonOutput = readNumber(input.sourcePolygonOutputCount);
+  const hasMetrics = (
+    sourceFeatureInput !== null
+    || sourceFeatureOutput !== null
+    || sourcePolygonInput !== null
+    || sourcePolygonOutput !== null
+  );
+  if (!hasMetrics) return null;
+  return {
+    countryCode: readString(input.sourceCountryCode) ?? readString(input.countryCode),
+    countryName: readString(input.countryName),
+    adminLevel: readNumber(input.adminLevel),
+    url: readString(input.sourceUrl),
+    features: {
+      input: sourceFeatureInput,
+      output: sourceFeatureOutput,
+    },
+    polygons: {
+      input: sourcePolygonInput,
+      output: sourcePolygonOutput,
+    },
+  };
+};
+
 const sanitizeTaskMetadataForSummary = (
   task: TaskQueueRecord,
   preview: Record<string, unknown> | null,
@@ -515,7 +546,10 @@ const sanitizeTaskMetadataForSummary = (
   const primitiveKeys = [
     'message',
     'retryAttempt',
+    'finalRetryAttempts',
     'retryMax',
+    'finalRetryCount',
+    'finalRetryLimit',
     'retryCount',
     'retryLimit',
     'maxRetryAttempts',
@@ -541,6 +575,11 @@ const sanitizeTaskMetadataForSummary = (
   const fetchDetail = pickRecordMetadataField(metadata, 'fetchDetail');
   if (fetchDetail) {
     next.fetchDetail = fetchDetail;
+  } else {
+    const fetchDetailFromInput = buildFetchDetailFromGeometryInput(task);
+    if (fetchDetailFromInput) {
+      next.fetchDetail = fetchDetailFromInput;
+    }
   }
 
   const tileEmitParentInputSummary = pickRecordMetadataField(metadata, 'tileEmitParentInputSummary');
@@ -553,6 +592,9 @@ const sanitizeTaskMetadataForSummary = (
     const compactNested: Record<string, unknown> = {};
     for (const key of [
       'retryMax',
+      'finalRetryCount',
+      'finalRetryLimit',
+      'finalRetryAttempts',
       'effectiveTolerance',
       'finalTolerance',
       'extractionRatio',

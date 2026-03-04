@@ -92,6 +92,54 @@ describe('buildGeometryTaskOutcomeSummary metadata handoff', () => {
     expect(summary.detailLines.join(' ')).toContain('Failure Reason: geometry failed: simplify');
   });
 
+  it('prioritizes finalRetryAttempts over interim retryAttempt', () => {
+    const task = buildBaseTask({
+      metadata: {
+        retryAttempt: 0,
+        finalRetryAttempts: 3,
+        retryMax: 24,
+      },
+    });
+
+    const summary = buildGeometryTaskOutcomeSummary({
+      task,
+      stageId: 'geometry',
+      taskTitle: 'geometry-task-1',
+      translate: t,
+    });
+
+    expect(summary.kind).toBe('completed');
+    expect(summary.retryAttempt).toBe(3);
+    expect(summary.summaryLine).toContain('3/24');
+  });
+
+  it('prefers fetchDetail.polygons over polygonsPerFeature for source metrics', () => {
+    const task = buildBaseTask({
+      metadata: {
+        retryAttempt: 1,
+        retryMax: 24,
+        fetchDetail: {
+          features: { input: 1, output: 1 },
+          polygons: { input: 1952, output: 27 },
+          polygonsPerFeature: { input: 27, output: 27 },
+        },
+      },
+    });
+
+    const summary = buildGeometryTaskOutcomeSummary({
+      task,
+      stageId: 'geometry',
+      taskTitle: 'geometry-task-1',
+      translate: t,
+    });
+
+    expect(summary.kind).toBe('completed');
+    expect(summary.sourceMetrics?.features.input).toBe(1);
+    expect(summary.sourceMetrics?.features.output).toBe(1);
+    expect(summary.sourceMetrics?.polygons.input).toBe(1952);
+    expect(summary.sourceMetrics?.polygons.output).toBe(27);
+  });
+
   it('does not recover retryMax from message text', () => {
     const task = buildBaseTask({
       status: 'failed',

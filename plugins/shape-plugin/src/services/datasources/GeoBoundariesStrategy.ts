@@ -59,6 +59,7 @@ export interface GeoBoundariesRawData {
     format: 'geojson';
     apiResponse?: GeoBoundariesApiResponse;
     continent?: string;
+    rawSourceCacheKey?: string;
   };
 }
 
@@ -183,7 +184,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
         },
       });
 
-      const { decoded } = await fetchRawDataWithPipeline({
+      const { decoded, cacheKey } = await fetchRawDataWithPipeline({
         nodeId: resolvedNodeId,
         fetchOptions: options ?? {},
         pipeline,
@@ -191,7 +192,13 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
         onRetryAttempt: options?.onRetryAttempt,
       });
       console.log(`[GeoBoundaries] Download succeeded: ${downloadUrl}`);
-      return decoded;
+      return {
+        ...decoded,
+        metadata: {
+          ...decoded.metadata,
+          rawSourceCacheKey: cacheKey,
+        },
+      };
 
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';

@@ -30,6 +30,7 @@ export interface GADMRawData {
     level: number;
     format: 'json';
     version: string;
+    rawSourceCacheKey?: string;
   };
 }
 
@@ -148,14 +149,20 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
         },
       });
 
-      const { decoded } = await fetchRawDataWithPipeline({
+      const { decoded, cacheKey } = await fetchRawDataWithPipeline({
         nodeId: resolvedNodeId,
         fetchOptions: options ?? {},
         pipeline,
         retryConfig: retries,
         onRetryAttempt: options?.onRetryAttempt,
       });
-      return decoded;
+      return {
+        ...decoded,
+        metadata: {
+          ...decoded.metadata,
+          rawSourceCacheKey: cacheKey,
+        },
+      };
 
     } catch (error) {
       throw new Error(`Failed to download GADM data for ${normalizedCountry}: ${error instanceof Error ? error.message : 'Unknown error'}`);

@@ -186,12 +186,12 @@ export const buildSourceTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task,
     'fetchDetail.features.output',
   ]);
   const polygonsInput = readMetadataNumber(task.metadata, [
-    'fetchDetail.polygonsPerFeature.input',
     'fetchDetail.polygons.input',
+    'fetchDetail.polygonsPerFeature.input',
   ]);
   const polygonsOutput = readMetadataNumber(task.metadata, [
-    'fetchDetail.polygonsPerFeature.output',
     'fetchDetail.polygons.output',
+    'fetchDetail.polygonsPerFeature.output',
   ]);
   const featuresRatio = resolveRatio(featuresOutput, featuresInput);
   const polygonsRatio = resolveRatio(polygonsOutput, polygonsInput);
@@ -286,10 +286,10 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
     : `${Number.parseFloat(effectiveTolerance.toFixed(6))}`;
 
   const retryAttemptRaw = readMetadataNumber(task.metadata, [
-    'retryAttempt',
     'finalRetryAttempts',
-    'metadata.retryAttempt',
     'metadata.finalRetryAttempts',
+    'retryAttempt',
+    'metadata.retryAttempt',
   ]) ?? readNumber(task.retryAttempt);
   const retryAttempt = retryAttemptRaw !== null && retryAttemptRaw >= 0 ? Math.floor(retryAttemptRaw) : null;
 
@@ -335,12 +335,12 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
     },
     polygons: {
       input: readMetadataNumber(task.metadata, [
-        'fetchDetail.polygonsPerFeature.input',
         'fetchDetail.polygons.input',
+        'fetchDetail.polygonsPerFeature.input',
       ]),
       output: readMetadataNumber(task.metadata, [
-        'fetchDetail.polygonsPerFeature.output',
         'fetchDetail.polygons.output',
+        'fetchDetail.polygonsPerFeature.output',
       ]),
     },
   };

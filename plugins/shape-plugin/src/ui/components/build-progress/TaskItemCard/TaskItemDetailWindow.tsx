@@ -241,6 +241,7 @@ const loadSourceCollectionFromCache = async (
 ): Promise<CollectionLoadResult | null> => {
   const rawSourceCacheKeys = Array.from(new Set([
     readString(preview?.rawSourceCacheKey),
+    readString(preview?.sourceUrl),
     (() => {
       const sourceUrl = readString(preview?.sourceUrl);
       if (!sourceUrl) return null;
@@ -940,18 +941,22 @@ const TaskDetailContent = ({
   const sourceFilteredMetrics = toCollectionMetrics(preview?.original ?? null);
   const geometryMetrics = toCollectionMetrics(preview?.result ?? null);
   const hasPreviewGeometryMetrics = sourceFilteredMetrics.featureCount > 0 && geometryMetrics.featureCount > 0;
-  const transformFeatureInput = hasPreviewGeometryMetrics
-    ? sourceFilteredMetrics.featureCount
-    : (summary.sourceMetrics?.features.output ?? summary.fetchDetails?.features.output ?? summary.metrics?.features.input ?? null);
-  const transformFeatureOutput = hasPreviewGeometryMetrics
-    ? geometryMetrics.featureCount
-    : (summary.metrics?.features.output ?? summary.sourceMetrics?.features.output ?? null);
-  const transformPolygonInput = hasPreviewGeometryMetrics
-    ? sourceFilteredMetrics.polygonCount
-    : (summary.sourceMetrics?.polygons.output ?? summary.fetchDetails?.polygons.output ?? summary.metrics?.polygons.input ?? null);
-  const transformPolygonOutput = hasPreviewGeometryMetrics
-    ? geometryMetrics.polygonCount
-    : (summary.metrics?.polygons.output ?? summary.sourceMetrics?.polygons.output ?? null);
+  const transformFeatureInput = summary.sourceMetrics?.features.input
+    ?? summary.fetchDetails?.features.input
+    ?? summary.metrics?.features.input
+    ?? null;
+  const transformFeatureOutput = summary.sourceMetrics?.features.output
+    ?? summary.fetchDetails?.features.output
+    ?? summary.metrics?.features.output
+    ?? null;
+  const transformPolygonInput = summary.sourceMetrics?.polygons.input
+    ?? summary.fetchDetails?.polygons.input
+    ?? summary.metrics?.polygons.input
+    ?? null;
+  const transformPolygonOutput = summary.sourceMetrics?.polygons.output
+    ?? summary.fetchDetails?.polygons.output
+    ?? summary.metrics?.polygons.output
+    ?? null;
   const transformVertexInput = hasPreviewGeometryMetrics
     ? sourceFilteredMetrics.vertexCount
     : (summary.metrics?.vertices.input ?? null);
@@ -964,6 +969,27 @@ const TaskDetailContent = ({
   const maxPolygonVertexOutput = hasPreviewGeometryMetrics
     ? geometryMetrics.maxPolygonVertexCount
     : (summary.maxPolygonVertices?.output ?? null);
+  const sizeMetricInput = summary.visualization === 'fetchMetrics'
+    ? (summary.fetchDetails?.polygons.input ?? summary.fetchDetails?.features.input ?? null)
+    : (summary.sourceMetrics?.polygons.input ?? summary.sourceMetrics?.features.input ?? null);
+  const sizeMetricOutput = summary.visualization === 'fetchMetrics'
+    ? (summary.fetchDetails?.polygons.output ?? summary.fetchDetails?.features.output ?? null)
+    : (summary.sourceMetrics?.polygons.output ?? summary.sourceMetrics?.features.output ?? null);
+  let previewOriginalBytes = preview?.originalBytes ?? 0;
+  const previewResultBytes = preview?.resultBytes ?? 0;
+  const canEstimateOriginalSize = (
+    previewResultBytes > 0
+    && previewOriginalBytes <= previewResultBytes
+    && typeof sizeMetricInput === 'number'
+    && Number.isFinite(sizeMetricInput)
+    && typeof sizeMetricOutput === 'number'
+    && Number.isFinite(sizeMetricOutput)
+    && sizeMetricInput > sizeMetricOutput
+    && sizeMetricOutput > 0
+  );
+  if (canEstimateOriginalSize) {
+    previewOriginalBytes = Math.max(previewOriginalBytes, Math.round(previewResultBytes * (sizeMetricInput / sizeMetricOutput)));
+  }
 
   return (
     <Box
@@ -1042,7 +1068,7 @@ const TaskDetailContent = ({
               false,
             )}
             {renderVertexLimitReferencedRow(
-              'Max Poly',
+              'Max Vertices',
               maxPolygonVertexOutput,
               maxPolygonVertexInput,
               chartColor,
@@ -1111,8 +1137,8 @@ const TaskDetailContent = ({
         ) : (
           <GeometryPreviewMap
             overlays={overlays}
-            originalBytes={preview?.originalBytes ?? 0}
-            resultBytes={preview?.resultBytes ?? 0}
+            originalBytes={previewOriginalBytes}
+            resultBytes={previewResultBytes}
             resultColor={sizeAccentColor}
           />
         )}
