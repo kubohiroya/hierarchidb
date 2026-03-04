@@ -20,6 +20,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeSourceCache } from '@hierarchidb/shape-api';
 import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import {
+  buildRawDataDataSourceCacheKey,
   readRawDataDataSourceBuffer,
 } from '~/services/utils/chunkStore';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
@@ -238,14 +239,29 @@ const loadSourceCollectionFromCache = async (
   nodeId: NodeId,
   preview: Record<string, unknown> | null,
 ): Promise<CollectionLoadResult | null> => {
-  const previewCacheKey = readString(preview?.rawSourceCacheKey);
-  if (!previewCacheKey) {
-    throw new Error('[shape-plugin] rawSourceCacheKey is missing in task preview metadata');
+  const rawSourceCacheKeys = Array.from(new Set([
+    readString(preview?.rawSourceCacheKey),
+    (() => {
+      const sourceUrl = readString(preview?.sourceUrl);
+      if (!sourceUrl) return null;
+      return buildRawDataDataSourceCacheKey({
+        dataSource: readString(preview?.dataSource) ?? undefined,
+        countryCode: readString(preview?.sourceCountryCode) ?? undefined,
+        adminLevel: readNumber(preview?.adminLevel) ?? undefined,
+        url: sourceUrl,
+      });
+    })(),
+  ].filter((value): value is string => Boolean(value))));
+  if (rawSourceCacheKeys.length === 0) {
+    return null;
   }
-  const cacheKey = previewCacheKey;
-  const rawBuffer = await readRawDataDataSourceBuffer(nodeId, cacheKey);
+  let rawBuffer: ArrayBuffer | null = null;
+  for (const cacheKey of rawSourceCacheKeys) {
+    rawBuffer = await readRawDataDataSourceBuffer(nodeId, cacheKey);
+    if (rawBuffer) break;
+  }
   if (!rawBuffer) {
-    throw new Error(`[shape-plugin] raw source buffer was not found for cache key: ${cacheKey}`);
+    return null;
   }
   const collection = await decodeJsonSourceCollection(rawBuffer);
   if (!collection) {
@@ -293,14 +309,14 @@ const loadPreviewData = async (detail: TaskDetailPayload): Promise<PreviewData> 
       loadSourceCollectionFromCache(nodeId, preview),
       sourceCacheId ? shapeQueryAPIImpl.getSourceCache(nodeId, sourceCacheId) : Promise.resolve(null),
     ]);
-    if (!sourceCollectionResult || sourceCollectionResult.rawBytes <= 0) {
-      throw new Error('[shape-plugin] invalid raw source bytes: expected positive value for Source stage preview');
-    }
-    const sourceCollection = sourceCollectionResult?.collection ?? null;
-    const sourceRawBytes = sourceCollectionResult.rawBytes;
     const resultCollection = sourceCache
       ? await decodeSourceCacheCollection(sourceCache, sourceCacheFormat, sourceCacheCompression)
       : null;
+    const sourceCollection = sourceCollectionResult?.collection ?? resultCollection;
+    const sourceRawBytes = sourceCollectionResult?.rawBytes
+      ?? ((sourceCache?.size && sourceCache.size > 0)
+        ? sourceCache.size
+        : measureCollectionBytes(sourceCollection));
     if (sourceCache && !resultCollection) {
       throw new Error('[shape-plugin] source cache decoding failed for Source stage preview');
     }
@@ -344,10 +360,10 @@ const loadPreviewData = async (detail: TaskDetailPayload): Promise<PreviewData> 
     return {
       original: originalCollection,
       result: resultCollection,
-      previousOriginal: sourceCollection,
+      previousOriginal: sourceCollection ?? originalCollection,
       originalBytes: (sourceCache?.size && sourceCache.size > 0)
         ? sourceCache.size
-        : measureCollectionBytes(originalCollection),
+        : (sourceCollectionResult?.rawBytes ?? measureCollectionBytes(originalCollection)),
       resultBytes: (geometryCache?.data.byteLength && geometryCache.data.byteLength > 0)
         ? geometryCache.data.byteLength
         : measureCollectionBytes(resultCollection),
@@ -921,23 +937,21 @@ const TaskDetailContent = ({
   withDownloadButton,
   onDownload,
 }: TaskDetailContentProps): React.ReactElement => {
-  const sourceOriginalMetrics = toCollectionMetrics(preview?.previousOriginal ?? null);
   const sourceFilteredMetrics = toCollectionMetrics(preview?.original ?? null);
   const geometryMetrics = toCollectionMetrics(preview?.result ?? null);
-  const hasPreviewSourceMetrics = sourceOriginalMetrics.featureCount > 0 && sourceFilteredMetrics.featureCount > 0;
   const hasPreviewGeometryMetrics = sourceFilteredMetrics.featureCount > 0 && geometryMetrics.featureCount > 0;
-  const transformFeatureInput = hasPreviewSourceMetrics
-    ? sourceOriginalMetrics.featureCount
-    : (summary.sourceMetrics?.features.input ?? summary.fetchDetails?.features.input ?? summary.metrics?.features.input ?? null);
-  const transformFeatureOutput = hasPreviewSourceMetrics
+  const transformFeatureInput = hasPreviewGeometryMetrics
     ? sourceFilteredMetrics.featureCount
-    : (summary.sourceMetrics?.features.output ?? summary.fetchDetails?.features.output ?? summary.metrics?.features.output ?? null);
-  const transformPolygonInput = hasPreviewSourceMetrics
-    ? sourceOriginalMetrics.polygonCount
-    : (summary.sourceMetrics?.polygons.input ?? summary.fetchDetails?.polygons.input ?? summary.metrics?.polygons.input ?? null);
-  const transformPolygonOutput = hasPreviewSourceMetrics
+    : (summary.sourceMetrics?.features.output ?? summary.fetchDetails?.features.output ?? summary.metrics?.features.input ?? null);
+  const transformFeatureOutput = hasPreviewGeometryMetrics
+    ? geometryMetrics.featureCount
+    : (summary.metrics?.features.output ?? summary.sourceMetrics?.features.output ?? null);
+  const transformPolygonInput = hasPreviewGeometryMetrics
     ? sourceFilteredMetrics.polygonCount
-    : (summary.sourceMetrics?.polygons.output ?? summary.fetchDetails?.polygons.output ?? summary.metrics?.polygons.output ?? null);
+    : (summary.sourceMetrics?.polygons.output ?? summary.fetchDetails?.polygons.output ?? summary.metrics?.polygons.input ?? null);
+  const transformPolygonOutput = hasPreviewGeometryMetrics
+    ? geometryMetrics.polygonCount
+    : (summary.metrics?.polygons.output ?? summary.sourceMetrics?.polygons.output ?? null);
   const transformVertexInput = hasPreviewGeometryMetrics
     ? sourceFilteredMetrics.vertexCount
     : (summary.metrics?.vertices.input ?? null);
@@ -1372,7 +1386,7 @@ export const TaskItemDetailWindow = ({
     <FloatingWindow
       title={windowTitle}
       titleIcon={stageIcon ? (
-        <Box sx={{ color: 'black', display: 'inline-flex', alignItems: 'center' }}>
+        <Box sx={{ color: 'inherit', display: 'inline-flex', alignItems: 'center' }}>
           {stageIcon}
         </Box>
       ) : undefined}

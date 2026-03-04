@@ -2,6 +2,7 @@
 
 ## Doing
 - #757 / codex/feat/shape/session-driven-base-tolerance-757 / 2026-03-04 11:52
+- #758 / codex/fix/shape/step5-full-mode-preview-stability-758 / 2026-03-04 12:32
 - #755 / codex/fix/session/worker-state-consistency-755 / 2026-03-04 11:34
 - #753 / codex/fix/session/archive-build-session-consistency / 2026-03-04 11:23
 - #750 / codex/fix/shape-plugin/geometry-retrymax-contract / 2026-03-04 11:08
@@ -27,11 +28,15 @@
 - #708 / codex/chore/ci-build-checks-separation / 2026-03-03 22:10
 
 ## Blocked
+- Issue #758: `pnpm -C plugins/shape-plugin exec vitest run src/ui/__tests__/components/build-progress/TaskItemCardListCard.unit.test.tsx` が既存失敗（`geometry retryMax is missing`）で exit 1。解除条件: 既存失敗の解消後に再実行。
 - Issue #745: `pnpm -w turbo run test --filter @hierarchidb/shape-plugin` が既存失敗を含み exit 1（主に `useShapeBuildTaskSnapshotProgressState.unit.test.tsx` / `TaskItemCardListCard.unit.test.tsx` / `TaskItemCard i18n-preservation` 系）。解除条件: 既存失敗の切り分けと期待値更新方針を Issue で合意後に再実行。
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
 - 2026-03-04: Issue #757 開始 - Source終了時の代表ポリゴン `t_base`（<=6553）をセッションへ保持し、Geometryで再利用する仕様ドキュメント化と実装修正に着手
+- 2026-03-04: Issue #758 進捗 - `shapeBuildRuntimeExecutionMetrics.ts` の `StageSnapshotEvent` import 漏れを修正し、`pnpm -w exec turbo run typecheck --only --filter @hierarchidb/shape-plugin` 成功（exit 0）。
+- 2026-03-04: Issue #758 進捗 - URL mode優先復元（`full`維持）・dialog window restore競合の抑制・FloatingWindow stale state再注入抑制・TaskItemDetailWindow（raw source fallback/Geometry分母補正/タイトルアイコン配色）を修正。`pnpm install --frozen-lockfile` と `pnpm -w exec turbo run build --filter @hierarchidb/plugin-ui-host^... --filter @hierarchidb/plugin-ui-host --filter @hierarchidb/shape-plugin^... --filter @hierarchidb/shape-plugin --filter @hierarchidb/ui-floating-window^... --filter @hierarchidb/ui-floating-window` は成功（exit 0）。`pnpm -C packages/plugin-ui-host exec vitest run src/__tests__/dialog-url-step.unit.test.tsx` は成功（exit 0）。`shape-plugin` typecheck/test は既存失敗で Blocked へ記録。
+- 2026-03-04: Issue #758 開始 - `/shape/create/full/5` の mode 書換え不具合、Step5 FloatingWindow アイコン不可視/位置サイズ巻き戻り、Geometry 指標分母不整合、raw source buffer 欠落でプレビュー空になる不具合の調査と修正に着手
 - 2026-03-04: Issue #755 進捗 - セッション4テーブル整合性の欠損経路を修正（status/stage を `update` から `get+put` upsert へ変更、stale 判定を running task 基準へ是正）。回帰テストを追加/更新し、`pnpm -w turbo run test --filter @hierarchidb/runtime-worker -- --run src/services/__tests__/unit/tree-mutation-archive-build-session-guard.unit.test.ts src/services/utils/__tests__/reconcileStaleBuildSessions.unit.test.ts src/services/__tests__/unit/shape-mutation-session-upsert.unit.test.ts` と `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/unit/shapeBuildApiClient.updateBuildSession.unit.test.ts` は成功（exit 0）。
 - 2026-03-04: Issue #755 開始 - Worker session 4テーブル整合性と通知4系統（全体/snapshot/progress/heartbeat）を対象に、アーカイブ誤判定・リロード復元/リセット不整合・停止即時反映不具合の再現テスト追加と原因修正に着手
 - 2026-03-04: Issue #753 進捗 - `runtime-worker` に stale running build session 整合化を追加（アーカイブガード時の self-heal + Worker 起動時検査）。`pnpm -w turbo run build --filter @hierarchidb/runtime-worker` / `pnpm -w turbo run typecheck --filter @hierarchidb/runtime-worker` / `pnpm -w turbo run test --filter @hierarchidb/runtime-worker` は成功（exit 0）。

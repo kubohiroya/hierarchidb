@@ -292,6 +292,7 @@ export function usePluginDialogController(
     displayMode,
     allowFullScreen,
     forceInitialStep,
+    urlMode: urlState?.mode ?? null,
     urlStep: urlState?.step ?? null,
     restoreKey: (treeUpdater?.treeNodeId ?? nodeId) as string | number | null,
     restoreDeps: {
