@@ -1,10 +1,6 @@
 # 運用ハブ
 
 ## Doing
-- #774 / codex/fix/shape/geometry-retry-cap-tbase-774 / 2026-03-04 16:20
-- #772 / codex/fix/shape/geometry-retry-attempt-zero-772 / 2026-03-04 16:06
-- #770 / codex/fix/shape/geometry-preview-admin-retry-770 / 2026-03-04 15:43
-- #768 / codex/fix/shape/geometry-preview-geometry-metrics-768 / 2026-03-04 15:34
 - #765 / codex/feat/shape/preview-admin-subtile-guides-765 / 2026-03-04 15:12
 - #763 / codex/fix/shape/step5-preview-metrics-consistency-763 / 2026-03-04 13:56
 - #761 / codex/fix/app/shape-edit-window-mode / 2026-03-04 13:18
@@ -35,21 +31,11 @@
 - #708 / codex/chore/ci-build-checks-separation / 2026-03-03 22:10
 
 ## Blocked
-- Issue #774: `pnpm -w turbo run test --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` および `pnpm -C plugins/shape-plugin test -- --run ...` が既存失敗を含み exit 1（`cache-entry-validation.property` / `cache-write-ordering.property` / `shapeSourceStage.unit` / `useShapeBuildTaskSnapshotProgressState.unit` / `TaskItemCard i18n-*`）。解除条件: 既存失敗の切り分けと期待値更新方針を Issue で合意後に再実行。
-- Issue #770: `pnpm -w turbo run test --filter @hierarchidb/shape-plugin` が既存失敗を含み exit 1（`cache-entry-validation.property` / `cache-write-ordering.property` / `shapeSourceStage.unit` / `useShapeBuildTaskSnapshotProgressState.unit` / `TaskItemCard i18n-*`）。解除条件: 既存失敗の切り分けと期待値更新方針を Issue で合意後に再実行。
 - Issue #758: `pnpm -C plugins/shape-plugin exec vitest run src/ui/__tests__/components/build-progress/TaskItemCardListCard.unit.test.tsx` が既存失敗（`geometry retryMax is missing`）で exit 1。解除条件: 既存失敗の解消後に再実行。
 - Issue #745: `pnpm -w turbo run test --filter @hierarchidb/shape-plugin` が既存失敗を含み exit 1（主に `useShapeBuildTaskSnapshotProgressState.unit.test.tsx` / `TaskItemCardListCard.unit.test.tsx` / `TaskItemCard i18n-preservation` 系）。解除条件: 既存失敗の切り分けと期待値更新方針を Issue で合意後に再実行。
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
-- 2026-03-04: Issue #774 進捗 - Geometry retry 表示を `retryAttemptsTotal/toleranceSearchIterations` 由来から切り離し、`finalRetryAttempts/retryAttempt`（上限 `retryMax` clamp）へ統一。Source `baseTolerance` を Geometry task input に引き渡し、`t_base` 優先で tolerance 初期値を解決。Floating preview 再読込依存を task primitive key で補強し、zoom違いで Vertices/Max Vertices が更新されない問題を修正。`pnpm -w turbo run build --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` は成功（exit 0）。`test` は既存失敗を含み exit 1（Blocked へ記録）。
-- 2026-03-04: Issue #774 開始 - Geometry Retry上限逸脱表示、`t_base` 未反映疑い、zoom違いで Vertices/Max Vertices 固定化の調査と修正に着手
-- 2026-03-04: Issue #772 進捗 - Geometry retry 値の解決に `toleranceSearchIterations`（metadata/nested metadata）を追加し、runtime metrics sanitize・task sync resolver・summary builder を統一。`pnpm -w vitest plugins/shape-plugin/src/ui/__tests__/components/build-progress/taskOutcomeSummaryBuilders.transform-metadata.unit.test.ts plugins/shape-plugin/src/ui/__tests__/hooks/unit/useShapeBuildTaskSync.snapshot-progress.test.tsx` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は成功（exit 0）。
-- 2026-03-04: Issue #772 開始 - Geometry Preview: Geometry で Retry attempts が 0 固定表示になる残存不具合の原因特定と修正に着手
-- 2026-03-04: Issue #770 進捗 - Geometry Preview: Geometry の adminLevel 分割線描画を `summary` 依存から `summary + task.metadata.preview` フォールバックへ拡張し、Retry attempts は `retryAttemptsTotal/finalRetryAttempts` と message 解析を加えて 0 固定を回避。`pnpm -w vitest plugins/shape-plugin/src/ui/__tests__/components/build-progress/taskOutcomeSummaryBuilders.transform-metadata.unit.test.ts plugins/shape-plugin/src/ui/__tests__/hooks/unit/useShapeBuildTaskSync.snapshot-progress.test.tsx` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は成功（exit 0）。`pnpm -w turbo run test --filter @hierarchidb/shape-plugin` は既存失敗を含み exit 1（Blocked へ記録）。
-- 2026-03-04: Issue #770 開始 - Geometry Preview: Geometry で admin-level 分割線が描画されない不具合と Retry attempts が 0 固定表示になる不具合の修正に着手
-- 2026-03-04: Issue #768 進捗 - Geometry Preview: Geometry で Features/Polygons をテキスト表示へ変更し、Max Vertices は表示値比率（分子/分母）基準で描画、分母が 6,553 以下のとき閾値マーカー非表示に修正。`pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/TaskItemCardListCard.unit.test.tsx src/ui/__tests__/components/build-progress/taskOutcomeSummaryBuilders.transform-metadata.unit.test.ts` は成功（exit 0）。
-- 2026-03-04: Issue #768 開始 - Geometry Preview: Geometry の Features/Polygons をテキスト表示へ変更し、Max Vertices の棒グラフ/閾値線を表示比率に一致させる修正に着手
 - 2026-03-04: Issue #765 進捗 - Geometry Preview で adminLevel 分割線が表示されない不具合を修正。`buildGeometryTaskOutcomeSummary` へ `adminLevel` 受け渡しを追加し、Floating Window 側で `summary.adminLevel` を優先参照。`pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/taskOutcomeSummaryBuilders.transform-metadata.unit.test.ts` は成功（exit 0）。
 - 2026-03-04: Issue #765 進捗 - preview 地図のタイル描画に Admin level 別サブ分割点線を追加（L1=2x2 灰, L2=4x4 薄灰, L3=8x8 さらに薄灰, L0は追加なし）。`pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/taskOutcomeSummaryBuilders.transform-metadata.unit.test.ts` は成功（exit 0）。
 - 2026-03-04: Issue #765 開始 - shape Step5 preview 地図で Admin level 1/2/3 の親タイル内サブ分割ガイド線（2x2, 4x4, 8x8）を点線表示する要件に着手

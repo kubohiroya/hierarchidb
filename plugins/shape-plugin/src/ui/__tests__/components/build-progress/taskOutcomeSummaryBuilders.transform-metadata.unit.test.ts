@@ -1,13 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms';
 import { buildGeometryTaskOutcomeSummary } from '../../../components/build-progress/TaskItemCard/taskOutcomeSummaryBuilders';
-import type { NodeId } from '@hierarchidb/core-types';
 
 const t = (_key: string, fallback?: string): string => fallback ?? _key;
 
 const buildBaseTask = (overrides: Partial<ShapeBuildTaskSummary>): ShapeBuildTaskSummary => ({
   taskId: 'geometry-task-1',
-  nodeId: 'node-1' as NodeId,
+  nodeId: 'node-1',
   stage: 'geometry',
   status: 'completed',
   progress: 100,
@@ -163,70 +162,6 @@ describe('buildGeometryTaskOutcomeSummary metadata handoff', () => {
 
     expect(summary.kind).toBe('completed');
     expect(summary.adminLevel).toBe(2);
-  });
-
-  it('falls back to preview.adminLevel when fetchDetail is absent', () => {
-    const task = buildBaseTask({
-      metadata: {
-        retryAttempt: 1,
-        retryMax: 24,
-        preview: {
-          adminLevel: 3,
-        },
-      },
-    });
-
-    const summary = buildGeometryTaskOutcomeSummary({
-      task,
-      stageId: 'geometry',
-      taskTitle: 'geometry-task-1',
-      translate: t,
-    });
-
-    expect(summary.kind).toBe('completed');
-    expect(summary.adminLevel).toBe(3);
-  });
-
-  it('does not use retryAttemptsTotal from message when retryAttempt metadata stays 0', () => {
-    const task = buildBaseTask({
-      errorMessage: 'geometry completed: retryAttemptsTotal=4, retriedFeatures=1/1',
-      metadata: {
-        retryAttempt: 0,
-        retryMax: 24,
-      },
-    });
-
-    const summary = buildGeometryTaskOutcomeSummary({
-      task,
-      stageId: 'geometry',
-      taskTitle: 'geometry-task-1',
-      translate: t,
-    });
-
-    expect(summary.kind).toBe('completed');
-    expect(summary.retryAttempt).toBe(0);
-    expect(summary.summaryLine).toContain('0/24');
-  });
-
-  it('does not use toleranceSearchIterations when retryAttempt metadata stays 0', () => {
-    const task = buildBaseTask({
-      metadata: {
-        retryAttempt: 0,
-        retryMax: 24,
-        toleranceSearchIterations: 5,
-      },
-    });
-
-    const summary = buildGeometryTaskOutcomeSummary({
-      task,
-      stageId: 'geometry',
-      taskTitle: 'geometry-task-1',
-      translate: t,
-    });
-
-    expect(summary.kind).toBe('completed');
-    expect(summary.retryAttempt).toBe(0);
-    expect(summary.summaryLine).toContain('0/24');
   });
 
   it('does not recover retryMax from message text', () => {

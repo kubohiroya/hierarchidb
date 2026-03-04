@@ -449,11 +449,11 @@ const renderVertexLimitReferencedRow = (
 ): React.ReactNode => {
   const safeInput = typeof input === 'number' && Number.isFinite(input) && input >= 0 ? input : null;
   const safeOutput = typeof output === 'number' && Number.isFinite(output) && output >= 0 ? output : null;
+  const scaleMax = Math.max(limit, safeInput ?? 0, safeOutput ?? 0, 1);
+  const inputScale = safeInput !== null ? Math.max(0, Math.min(1, safeInput / scaleMax)) : null;
+  const outputScale = safeOutput !== null ? Math.max(0, Math.min(1, safeOutput / scaleMax)) : null;
+  const limitScale = Math.max(0, Math.min(1, limit / scaleMax));
   const ratio = resolveRatio(safeOutput, safeInput);
-  const inputScale = safeInput !== null ? 1 : null;
-  const outputScale = ratio;
-  const showLimitMarker = safeInput !== null && safeInput > limit;
-  const limitScale = showLimitMarker ? Math.max(0, Math.min(1, limit / safeInput)) : null;
   const text = `${formatNumber(output)} / ${formatNumber(input)} (${formatPercent(ratio)})`;
 
   return (
@@ -487,19 +487,16 @@ const renderVertexLimitReferencedRow = (
             }}
           />
         ) : null}
-        {limitScale !== null ? (
-          <Box
-            data-testid="max-vertices-limit-marker"
-            sx={{
-              position: 'absolute',
-              top: 0,
-              bottom: 0,
-              left: `calc(${limitScale * 100}% - 2px)`,
-              width: '4px',
-              background: (theme) => `linear-gradient(to right, ${theme.palette.warning.main} 0 2px, ${theme.palette.common.black} 2px 4px)`,
-            }}
-          />
-        ) : null}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            left: `calc(${limitScale * 100}% - 2px)`,
+            width: '4px',
+            background: (theme) => `linear-gradient(to right, ${theme.palette.warning.main} 0 2px, ${theme.palette.common.black} 2px 4px)`,
+          }}
+        />
         <Typography
           variant="caption"
           sx={{
@@ -522,15 +519,6 @@ const renderVertexLimitReferencedRow = (
     </Box>
   );
 };
-
-const renderCountTextRow = (
-  label: string,
-  value: number | null | undefined,
-): React.ReactNode => (
-  <Typography variant="caption" color="text.secondary">
-    {`${label}: ${formatNumber(value)}`}
-  </Typography>
-);
 
 const renderStackedRatioRow = (
   label: string,
@@ -963,7 +951,6 @@ const toCollectionMetrics = (collection: FeatureCollection | null): CollectionMe
 type TaskDetailContentProps = {
   title: string;
   summary: TaskOutcomeSummary;
-  previewAdminLevel: number | null;
   detailColor: string;
   chartColor: string;
   countryFlag: string | null;
@@ -981,7 +968,6 @@ type TaskDetailContentProps = {
 const TaskDetailContent = ({
   title,
   summary,
-  previewAdminLevel,
   detailColor,
   chartColor,
   countryFlag,
@@ -998,9 +984,17 @@ const TaskDetailContent = ({
   const sourceFilteredMetrics = toCollectionMetrics(preview?.original ?? null);
   const geometryMetrics = toCollectionMetrics(preview?.result ?? null);
   const hasPreviewGeometryMetrics = sourceFilteredMetrics.featureCount > 0 && geometryMetrics.featureCount > 0;
+  const transformFeatureInput = summary.sourceMetrics?.features.input
+    ?? summary.fetchDetails?.features.input
+    ?? summary.metrics?.features.input
+    ?? null;
   const transformFeatureOutput = summary.sourceMetrics?.features.output
     ?? summary.fetchDetails?.features.output
     ?? summary.metrics?.features.output
+    ?? null;
+  const transformPolygonInput = summary.sourceMetrics?.polygons.input
+    ?? summary.fetchDetails?.polygons.input
+    ?? summary.metrics?.polygons.input
     ?? null;
   const transformPolygonOutput = summary.sourceMetrics?.polygons.output
     ?? summary.fetchDetails?.polygons.output
@@ -1095,8 +1089,20 @@ const TaskDetailContent = ({
             <Typography variant="caption" color="text.secondary">
               Retry attempts: {summary.retryAttempt ?? 'N/A'} / {summary.retryMax ?? 'N/A'}
             </Typography>
-            {renderCountTextRow('Features', transformFeatureOutput)}
-            {renderCountTextRow('Polygons', transformPolygonOutput)}
+            {renderVolumeRow(
+              'Features',
+              transformFeatureOutput,
+              transformFeatureInput,
+              chartColor,
+              false,
+            )}
+            {renderVolumeRow(
+              'Polygons',
+              transformPolygonOutput,
+              transformPolygonInput,
+              chartColor,
+              false,
+            )}
             {renderVolumeRow(
               'Vertices',
               transformVertexOutput,
@@ -1177,7 +1183,7 @@ const TaskDetailContent = ({
             originalBytes={previewOriginalBytes}
             resultBytes={previewResultBytes}
             resultColor={sizeAccentColor}
-            adminLevel={previewAdminLevel}
+            adminLevel={summary.adminLevel ?? summary.fetchDetails?.adminLevel ?? null}
           />
         )}
       </Box>
@@ -1214,20 +1220,6 @@ export const TaskItemDetailWindow = ({
   );
   const summary = activeDetail?.summary;
   const title = activeDetail?.title ?? '';
-  const previewAdminLevel = useMemo(() => {
-    if (!activeDetail) return null;
-    const summaryAdminLevel = summary?.adminLevel ?? summary?.fetchDetails?.adminLevel ?? null;
-    if (summaryAdminLevel !== null && Number.isFinite(summaryAdminLevel)) {
-      return Math.floor(summaryAdminLevel);
-    }
-    const taskMetadata = asRecord(activeDetail.task.metadata);
-    const previewMetadata = asRecord(taskMetadata?.preview);
-    const fromPreview = readNumber(previewMetadata?.adminLevel);
-    if (fromPreview !== null) return Math.floor(fromPreview);
-    const fromTask = readNumber(taskMetadata?.adminLevel);
-    if (fromTask !== null) return Math.floor(fromTask);
-    return null;
-  }, [activeDetail, summary]);
   const countryFlag = toFlagEmoji(summary?.fetchDetails?.countryCode ?? extractCountryCodeFromTitle(title));
   const detailColor = summary?.kind === 'failed' ? 'error.main' : 'text.secondary';
   const chartColor = summary?.kind === 'failed' ? 'error.main' : 'primary.main';
@@ -1250,12 +1242,6 @@ export const TaskItemDetailWindow = ({
   });
   const { windowState, handlers } = floatingWindow;
   const { show, hide, onStateChange, onClose: handleFloatingClose } = handlers;
-
-  const activeTaskId = activeDetail?.task.taskId ?? null;
-  const activeTaskStage = activeDetail?.task.stage ?? null;
-  const activeTaskProgress = activeDetail?.task.progress ?? null;
-  const activeTaskStatus = activeDetail?.task.status ?? null;
-  const activeTaskMetadata = activeDetail?.task.metadata ?? null;
 
   useEffect(() => {
     if (!open || !activeDetail) {
@@ -1294,7 +1280,7 @@ export const TaskItemDetailWindow = ({
     return () => {
       cancelled = true;
     };
-  }, [activeDetail, open, activeTaskId, activeTaskStage, activeTaskProgress, activeTaskStatus, activeTaskMetadata]);
+  }, [activeDetail, open]);
 
   useEffect(() => {
     if (!open || !activeDetail) {
@@ -1319,7 +1305,7 @@ export const TaskItemDetailWindow = ({
     return () => {
       cancelled = true;
     };
-  }, [activeDetail, open, activeTaskId, activeTaskStage, activeTaskProgress, activeTaskStatus]);
+  }, [activeDetail, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -1414,7 +1400,6 @@ export const TaskItemDetailWindow = ({
   ) : (summary ? TaskDetailContent({
     title,
     summary,
-    previewAdminLevel,
     detailColor,
     chartColor,
     countryFlag,
