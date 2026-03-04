@@ -26,7 +26,7 @@ import type {
   SelectedArrayByCountries,
   ShapeFeaturePayload,
 } from '~/common/types/index';
-import { countSelectedAdminPairs, generateDownloadTaskPayloadsFromSelection } from '~/services/utils/utils';
+import { countSelectedAdminPairs, generateDownloadTaskPayloadsFromSelection } from '~/services/utils/shapeBuildUtils';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import { DataSourceStrategyFactory } from '~/services/datasources/DataSourceStrategyFactory';
 import { resolveStrategyIdFromDataSource } from '~/services/datasources/resolveStrategyIdFromDataSource';

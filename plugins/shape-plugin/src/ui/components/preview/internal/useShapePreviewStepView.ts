@@ -22,7 +22,7 @@ import {
   ensureIso3166Data,
   getCountry,
 } from '@hierarchidb/gen-iso3166-2/browser';
-import { getDataSourceConfig } from '~/services/utils/utils';
+import { getDataSourceConfig } from '~/services/utils/shapeBuildUtils';
 import type { ShapeEntity } from '~/common/types/index';
 import { useShapePreviewStep } from '~/ui/components/preview/useShapePreviewStep';
 

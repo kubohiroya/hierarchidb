@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants';
-import { applyBuildConfigPatch } from '../../services/utils/utils';
+import { applyBuildConfigPatch } from '../../services/utils/shapeBuildUtils';
 import type { ShapeBuildConfig } from '../../common/types/index';
 
 describe('applyBuildConfigPatch', () => {
