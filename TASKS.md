@@ -1,6 +1,7 @@
 # 運用ハブ
 
 ## Doing
+- #768 / codex/fix/shape/geometry-preview-geometry-metrics-768 / 2026-03-04 15:34
 - #765 / codex/feat/shape/preview-admin-subtile-guides-765 / 2026-03-04 15:12
 - #763 / codex/fix/shape/step5-preview-metrics-consistency-763 / 2026-03-04 13:56
 - #761 / codex/fix/app/shape-edit-window-mode / 2026-03-04 13:18
@@ -36,6 +37,8 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-04: Issue #768 進捗 - Geometry Preview: Geometry で Features/Polygons をテキスト表示へ変更し、Max Vertices は表示値比率（分子/分母）基準で描画、分母が 6,553 以下のとき閾値マーカー非表示に修正。`pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/TaskItemCardListCard.unit.test.tsx src/ui/__tests__/components/build-progress/taskOutcomeSummaryBuilders.transform-metadata.unit.test.ts` は成功（exit 0）。
+- 2026-03-04: Issue #768 開始 - Geometry Preview: Geometry の Features/Polygons をテキスト表示へ変更し、Max Vertices の棒グラフ/閾値線を表示比率に一致させる修正に着手
 - 2026-03-04: Issue #765 進捗 - Geometry Preview で adminLevel 分割線が表示されない不具合を修正。`buildGeometryTaskOutcomeSummary` へ `adminLevel` 受け渡しを追加し、Floating Window 側で `summary.adminLevel` を優先参照。`pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/taskOutcomeSummaryBuilders.transform-metadata.unit.test.ts` は成功（exit 0）。
 - 2026-03-04: Issue #765 進捗 - preview 地図のタイル描画に Admin level 別サブ分割点線を追加（L1=2x2 灰, L2=4x4 薄灰, L3=8x8 さらに薄灰, L0は追加なし）。`pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/taskOutcomeSummaryBuilders.transform-metadata.unit.test.ts` は成功（exit 0）。
 - 2026-03-04: Issue #765 開始 - shape Step5 preview 地図で Admin level 1/2/3 の親タイル内サブ分割ガイド線（2x2, 4x4, 8x8）を点線表示する要件に着手
