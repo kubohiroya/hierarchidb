@@ -449,10 +449,11 @@ const renderVertexLimitReferencedRow = (
 ): React.ReactNode => {
   const safeInput = typeof input === 'number' && Number.isFinite(input) && input >= 0 ? input : null;
   const safeOutput = typeof output === 'number' && Number.isFinite(output) && output >= 0 ? output : null;
-  const scaleMax = Math.max(limit, safeInput ?? 0, safeOutput ?? 0, 1);
+  const scaleMax = Math.max(safeInput ?? 0, safeOutput ?? 0, 1);
   const inputScale = safeInput !== null ? Math.max(0, Math.min(1, safeInput / scaleMax)) : null;
   const outputScale = safeOutput !== null ? Math.max(0, Math.min(1, safeOutput / scaleMax)) : null;
-  const limitScale = Math.max(0, Math.min(1, limit / scaleMax));
+  const showLimitMarker = safeInput !== null && safeInput > limit;
+  const limitScale = showLimitMarker ? Math.max(0, Math.min(1, limit / scaleMax)) : null;
   const ratio = resolveRatio(safeOutput, safeInput);
   const text = `${formatNumber(output)} / ${formatNumber(input)} (${formatPercent(ratio)})`;
 
@@ -487,16 +488,19 @@ const renderVertexLimitReferencedRow = (
             }}
           />
         ) : null}
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 0,
-            bottom: 0,
-            left: `calc(${limitScale * 100}% - 2px)`,
-            width: '4px',
-            background: (theme) => `linear-gradient(to right, ${theme.palette.warning.main} 0 2px, ${theme.palette.common.black} 2px 4px)`,
-          }}
-        />
+        {limitScale !== null ? (
+          <Box
+            data-testid="max-vertices-limit-marker"
+            sx={{
+              position: 'absolute',
+              top: 0,
+              bottom: 0,
+              left: `calc(${limitScale * 100}% - 2px)`,
+              width: '4px',
+              background: (theme) => `linear-gradient(to right, ${theme.palette.warning.main} 0 2px, ${theme.palette.common.black} 2px 4px)`,
+            }}
+          />
+        ) : null}
         <Typography
           variant="caption"
           sx={{
@@ -563,6 +567,15 @@ const renderStackedRatioRow = (
     </Box>
   );
 };
+
+const renderSimpleMetricText = (
+  label: string,
+  value: number | null | undefined,
+): React.ReactNode => (
+  <Typography variant="caption" color="text.secondary">
+    {label}: {formatNumber(value)}
+  </Typography>
+);
 
 const lonToTileX = (lon: number, zoom: number): number => {
   const scale = 2 ** zoom;
@@ -984,17 +997,9 @@ const TaskDetailContent = ({
   const sourceFilteredMetrics = toCollectionMetrics(preview?.original ?? null);
   const geometryMetrics = toCollectionMetrics(preview?.result ?? null);
   const hasPreviewGeometryMetrics = sourceFilteredMetrics.featureCount > 0 && geometryMetrics.featureCount > 0;
-  const transformFeatureInput = summary.sourceMetrics?.features.input
-    ?? summary.fetchDetails?.features.input
-    ?? summary.metrics?.features.input
-    ?? null;
   const transformFeatureOutput = summary.sourceMetrics?.features.output
     ?? summary.fetchDetails?.features.output
     ?? summary.metrics?.features.output
-    ?? null;
-  const transformPolygonInput = summary.sourceMetrics?.polygons.input
-    ?? summary.fetchDetails?.polygons.input
-    ?? summary.metrics?.polygons.input
     ?? null;
   const transformPolygonOutput = summary.sourceMetrics?.polygons.output
     ?? summary.fetchDetails?.polygons.output
@@ -1089,19 +1094,13 @@ const TaskDetailContent = ({
             <Typography variant="caption" color="text.secondary">
               Retry attempts: {summary.retryAttempt ?? 'N/A'} / {summary.retryMax ?? 'N/A'}
             </Typography>
-            {renderVolumeRow(
+            {renderSimpleMetricText(
               'Features',
               transformFeatureOutput,
-              transformFeatureInput,
-              chartColor,
-              false,
             )}
-            {renderVolumeRow(
+            {renderSimpleMetricText(
               'Polygons',
               transformPolygonOutput,
-              transformPolygonInput,
-              chartColor,
-              false,
             )}
             {renderVolumeRow(
               'Vertices',
