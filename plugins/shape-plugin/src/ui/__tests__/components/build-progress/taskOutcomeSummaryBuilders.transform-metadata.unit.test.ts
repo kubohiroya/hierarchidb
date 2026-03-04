@@ -28,6 +28,7 @@ describe('buildGeometryTaskOutcomeSummary metadata handoff', () => {
       metadata: {
         effectiveTolerance: 0.2,
         retryAttempt: 2,
+        retryCount: 10,
       },
     });
 
@@ -49,7 +50,9 @@ describe('buildGeometryTaskOutcomeSummary metadata handoff', () => {
       metadata: {
         metadata: {
           finalTolerance: 0.9,
+          retryCount: 10,
         },
+        retryAttempt: 0,
       },
     });
 
@@ -71,6 +74,7 @@ describe('buildGeometryTaskOutcomeSummary metadata handoff', () => {
       metadata: {
         finalEffectiveTolerance: 0.35,
         retryAttempt: 6,
+        finalRetryCount: 10,
       },
     });
 

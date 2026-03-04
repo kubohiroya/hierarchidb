@@ -22,6 +22,11 @@ export type TaskOutcomeSummary = {
     polygons: TaskMetric;
     vertices: TaskMetric;
   };
+  sourceMetrics?: {
+    features: TaskMetric;
+    polygons: TaskMetric;
+  };
+  maxPolygonVertices?: TaskMetric;
   vertexLimit?: number | null;
   fetchDetails?: {
     countryName: string | null;
