@@ -1251,6 +1251,12 @@ export const TaskItemDetailWindow = ({
   const { windowState, handlers } = floatingWindow;
   const { show, hide, onStateChange, onClose: handleFloatingClose } = handlers;
 
+  const activeTaskId = activeDetail?.task.taskId ?? null;
+  const activeTaskStage = activeDetail?.task.stage ?? null;
+  const activeTaskProgress = activeDetail?.task.progress ?? null;
+  const activeTaskStatus = activeDetail?.task.status ?? null;
+  const activeTaskMetadata = activeDetail?.task.metadata ?? null;
+
   useEffect(() => {
     if (!open || !activeDetail) {
       setPreview(null);
@@ -1288,7 +1294,7 @@ export const TaskItemDetailWindow = ({
     return () => {
       cancelled = true;
     };
-  }, [activeDetail, open]);
+  }, [activeDetail, open, activeTaskId, activeTaskStage, activeTaskProgress, activeTaskStatus, activeTaskMetadata]);
 
   useEffect(() => {
     if (!open || !activeDetail) {
@@ -1313,7 +1319,7 @@ export const TaskItemDetailWindow = ({
     return () => {
       cancelled = true;
     };
-  }, [activeDetail, open]);
+  }, [activeDetail, open, activeTaskId, activeTaskStage, activeTaskProgress, activeTaskStatus]);
 
   useEffect(() => {
     if (!open) return;

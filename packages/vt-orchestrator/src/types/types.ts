@@ -147,6 +147,7 @@ export type TransformByBandTaskInput = {
   bandIndex: number;
   bandMinZoom?: number;
   bandMaxZoom?: number;
+  sourceBaseTolerance?: number;
   inputVertexCount?: number;
   inputPolygonCount?: number;
   domainType: DomainType;
