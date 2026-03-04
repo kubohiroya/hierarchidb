@@ -19,9 +19,7 @@ import 'leaflet/dist/leaflet.css';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeSourceCache } from '@hierarchidb/shape-api';
 import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
-import type { DataSourceName } from '~/common/types';
 import {
-  buildRawDataDataSourceCacheKey,
   readRawDataDataSourceBuffer,
 } from '~/services/utils/chunkStore';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
@@ -70,14 +68,6 @@ type OverlaySpec = {
   weight: number;
   opacity: number;
   fillOpacity: number;
-};
-
-type SourcePreviewParams = {
-  nodeId: NodeId;
-  dataSource: DataSourceName;
-  sourceUrl: string;
-  sourceCountryCode: string;
-  adminLevel: number;
 };
 
 const resolveNodeIdFromTask = (task: ShapeBuildTaskSummary): NodeId | null => {
@@ -132,14 +122,6 @@ const readString = (value: unknown): string | null => (
 const readNumber = (value: unknown): number | null => (
   typeof value === 'number' && Number.isFinite(value) ? value : null
 );
-
-const readShapeDataSourceName = (value: unknown): DataSourceName | null => {
-  if (typeof value !== 'string') return null;
-  if (value === 'naturalearth' || value === 'geoboundaries' || value === 'geoboundaries-topojson' || value === 'gadm') {
-    return value;
-  }
-  return null;
-};
 
 const formatKb = (bytes: number): string => {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 kB';
@@ -218,26 +200,9 @@ const decodeSourceCacheCollection = async (
   return normalizeFeatureCollection(decoded);
 };
 
-const decodeSourceCacheCollectionWithFallback = async (
-  cache: ShapeSourceCache,
-  format: 'flatgeobuf' | 'topojson',
-  compression: 'none' | 'gzip',
-): Promise<FeatureCollection | null> => {
-  const preferred = await decodeSourceCacheCollection(cache, format, compression).catch(() => null);
-  if (preferred) return preferred;
-  const fallbackFormat = format === 'topojson' ? 'flatgeobuf' : 'topojson';
-  return decodeSourceCacheCollection(cache, fallbackFormat, compression).catch(() => null);
-};
-
 const decodeGeometryCacheCollection = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
   const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
   return normalizeFeatureCollection(decoded);
-};
-
-const decodeGeometryCacheCollectionWithFallback = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
-  const preferred = await decodeGeometryCacheCollection(buffer).catch(() => null);
-  if (preferred) return preferred;
-  return decodeTopoJsonCollection(buffer).catch(() => null);
 };
 
 const measureCollectionBytes = (collection: FeatureCollection | null): number => {
@@ -269,51 +234,26 @@ const decodeJsonSourceCollection = async (buffer: ArrayBuffer): Promise<FeatureC
   return null;
 };
 
-const decodeRawSourceCollectionWithFallback = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
-  const json = await decodeJsonSourceCollection(buffer).catch(() => null);
-  if (json) return json;
-  const fgb = await decodeGeometryCacheCollection(buffer).catch(() => null);
-  if (fgb) return fgb;
-  return null;
-};
-
 const loadSourceCollectionFromCache = async (
   nodeId: NodeId,
-  sourceParams: SourcePreviewParams | null,
   preview: Record<string, unknown> | null,
 ): Promise<CollectionLoadResult | null> => {
   const previewCacheKey = readString(preview?.rawSourceCacheKey);
-  const fallbackCacheKey = sourceParams
-    ? buildRawDataDataSourceCacheKey({
-      dataSource: sourceParams.dataSource,
-      countryCode: sourceParams.sourceCountryCode,
-      adminLevel: sourceParams.adminLevel,
-      url: sourceParams.sourceUrl,
-    })
-    : null;
-  const cacheKey = previewCacheKey ?? fallbackCacheKey;
-  if (!cacheKey) return null;
+  if (!previewCacheKey) {
+    throw new Error('[shape-plugin] rawSourceCacheKey is missing in task preview metadata');
+  }
+  const cacheKey = previewCacheKey;
   const rawBuffer = await readRawDataDataSourceBuffer(nodeId, cacheKey);
-  if (!rawBuffer) return null;
+  if (!rawBuffer) {
+    throw new Error(`[shape-plugin] raw source buffer was not found for cache key: ${cacheKey}`);
+  }
+  const collection = await decodeJsonSourceCollection(rawBuffer);
+  if (!collection) {
+    throw new Error('[shape-plugin] raw source buffer decoding failed: expected JSON/Topology payload');
+  }
   return {
-    collection: await decodeRawSourceCollectionWithFallback(rawBuffer),
+    collection,
     rawBytes: rawBuffer.byteLength,
-  };
-};
-
-const resolveSourcePreviewParams = (nodeId: NodeId, preview: Record<string, unknown> | null): SourcePreviewParams | null => {
-  if (!preview) return null;
-  const dataSource = readShapeDataSourceName(preview.dataSource);
-  const sourceUrl = readString(preview.sourceUrl);
-  const sourceCountryCode = readString(preview.sourceCountryCode);
-  const adminLevel = readNumber(preview.adminLevel);
-  if (!dataSource || !sourceUrl || !sourceCountryCode || adminLevel === null) return null;
-  return {
-    nodeId,
-    dataSource,
-    sourceUrl,
-    sourceCountryCode,
-    adminLevel,
   };
 };
 
@@ -345,26 +285,30 @@ const loadPreviewData = async (detail: TaskDetailPayload): Promise<PreviewData> 
       resultBytes: 0,
     };
   }
-  const sourceParams = resolveSourcePreviewParams(nodeId, preview);
-
   if (taskStage === 'source') {
     const sourceCacheId = resolveCacheId(preview, detail.task, 'sourceCacheId');
     const sourceCacheFormat = readString(preview?.sourceCacheFormat) === 'topojson' ? 'topojson' : 'flatgeobuf';
     const sourceCacheCompression = readString(preview?.sourceCacheCompression) === 'gzip' ? 'gzip' : 'none';
     const [sourceCollectionResult, sourceCache] = await Promise.all([
-      loadSourceCollectionFromCache(nodeId, sourceParams, preview).catch(() => null),
+      loadSourceCollectionFromCache(nodeId, preview),
       sourceCacheId ? shapeQueryAPIImpl.getSourceCache(nodeId, sourceCacheId) : Promise.resolve(null),
     ]);
+    if (!sourceCollectionResult || sourceCollectionResult.rawBytes <= 0) {
+      throw new Error('[shape-plugin] invalid raw source bytes: expected positive value for Source stage preview');
+    }
     const sourceCollection = sourceCollectionResult?.collection ?? null;
-    const sourceRawBytes = sourceCollectionResult?.rawBytes ?? 0;
+    const sourceRawBytes = sourceCollectionResult.rawBytes;
     const resultCollection = sourceCache
-      ? await decodeSourceCacheCollectionWithFallback(sourceCache, sourceCacheFormat, sourceCacheCompression)
+      ? await decodeSourceCacheCollection(sourceCache, sourceCacheFormat, sourceCacheCompression)
       : null;
+    if (sourceCache && !resultCollection) {
+      throw new Error('[shape-plugin] source cache decoding failed for Source stage preview');
+    }
     return {
       original: sourceCollection,
       result: resultCollection,
       previousOriginal: null,
-      originalBytes: sourceRawBytes > 0 ? sourceRawBytes : measureCollectionBytes(sourceCollection),
+      originalBytes: sourceRawBytes,
       resultBytes: (sourceCache?.size && sourceCache.size > 0)
         ? sourceCache.size
         : measureCollectionBytes(resultCollection),
@@ -378,18 +322,24 @@ const loadPreviewData = async (detail: TaskDetailPayload): Promise<PreviewData> 
     const geometryCacheId = resolveCacheId(preview, detail.task, 'geometryCacheId');
 
     const [sourceCollectionResult, sourceCache, geometryCache] = await Promise.all([
-      loadSourceCollectionFromCache(nodeId, sourceParams, preview).catch(() => null),
+      loadSourceCollectionFromCache(nodeId, preview),
       sourceCacheId ? shapeQueryAPIImpl.getSourceCache(nodeId, sourceCacheId) : Promise.resolve(null),
       geometryCacheId ? shapeQueryAPIImpl.getGeometryCache(geometryCacheId) : Promise.resolve(null),
     ]);
     const sourceCollection = sourceCollectionResult?.collection ?? null;
 
     const originalCollection = sourceCache
-      ? await decodeSourceCacheCollectionWithFallback(sourceCache, sourceCacheFormat, sourceCacheCompression)
+      ? await decodeSourceCacheCollection(sourceCache, sourceCacheFormat, sourceCacheCompression)
       : null;
     const resultCollection = geometryCache
-      ? await decodeGeometryCacheCollectionWithFallback(geometryCache.data)
+      ? await decodeGeometryCacheCollection(geometryCache.data)
       : null;
+    if (sourceCache && !originalCollection) {
+      throw new Error('[shape-plugin] source cache decoding failed for Geometry stage preview');
+    }
+    if (geometryCache && !resultCollection) {
+      throw new Error('[shape-plugin] geometry cache decoding failed for Geometry stage preview');
+    }
 
     return {
       original: originalCollection,
@@ -946,6 +896,7 @@ type TaskDetailContentProps = {
   countryFlag: string | null;
   preview: PreviewData | null;
   previewLoading: boolean;
+  previewErrorMessage: string | null;
   overlays: OverlaySpec[];
   sizeAccentColor: string;
   sourceStageMaxima: SourceStageMaxima | null;
@@ -962,6 +913,7 @@ const TaskDetailContent = ({
   countryFlag,
   preview,
   previewLoading,
+  previewErrorMessage,
   overlays,
   sizeAccentColor,
   sourceStageMaxima,
@@ -1139,7 +1091,7 @@ const TaskDetailContent = ({
             }}
           >
             <Typography variant="caption" color="text.secondary">
-              {previewLoading ? 'Loading preview...' : 'Preview unavailable'}
+              {previewLoading ? 'Loading preview...' : (previewErrorMessage ?? 'Preview unavailable')}
             </Typography>
           </Box>
         ) : (
@@ -1190,6 +1142,7 @@ export const TaskItemDetailWindow = ({
 
   const [preview, setPreview] = useState<PreviewData | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewErrorMessage, setPreviewErrorMessage] = useState<string | null>(null);
   const [sourceStageMaxima, setSourceStageMaxima] = useState<SourceStageMaxima | null>(null);
 
   // Create stage-specific persist key for better state management
@@ -1210,25 +1163,30 @@ export const TaskItemDetailWindow = ({
     if (!open || !activeDetail) {
       setPreview(null);
       setPreviewLoading(false);
+      setPreviewErrorMessage(null);
       return;
     }
     const canPreview = !isTileEmitLikeStageId(activeDetail.task.stage);
     if (!canPreview) {
       setPreview(null);
       setPreviewLoading(false);
+      setPreviewErrorMessage(null);
       return;
     }
 
     let cancelled = false;
     setPreviewLoading(true);
+    setPreviewErrorMessage(null);
     void loadPreviewData(activeDetail)
       .then((next) => {
         if (cancelled) return;
         setPreview(next);
       })
-      .catch(() => {
+      .catch((error) => {
         if (cancelled) return;
         setPreview(null);
+        const message = error instanceof Error ? error.message : String(error);
+        setPreviewErrorMessage(message);
       })
       .finally(() => {
         if (cancelled) return;
@@ -1290,6 +1248,7 @@ export const TaskItemDetailWindow = ({
     if (open) return;
     setPreview(null);
     setPreviewLoading(false);
+    setPreviewErrorMessage(null);
     setSourceStageMaxima(null);
   }, [open]);
 
@@ -1362,6 +1321,7 @@ export const TaskItemDetailWindow = ({
     countryFlag,
     preview,
     previewLoading,
+    previewErrorMessage,
     overlays,
     sizeAccentColor: theme.palette.success.main,
     sourceStageMaxima,
