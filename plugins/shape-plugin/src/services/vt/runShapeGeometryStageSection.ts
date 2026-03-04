@@ -56,6 +56,10 @@ type GeometryBufferMeta = {
   dataSource?: string;
   sourceUrl?: string;
   sourceCountryCode?: string;
+  sourceFeatureInputCount?: number;
+  sourceFeatureOutputCount?: number;
+  sourcePolygonInputCount?: number;
+  sourcePolygonOutputCount?: number;
   featureCount: number;
   inputPolygonCount?: number;
   polygonCount?: number;
@@ -93,6 +97,13 @@ const readSourceBaseTolerance = (value: unknown): number | undefined => {
   const baseTolerance = readNumber(value.baseTolerance);
   if (baseTolerance === null || baseTolerance < 0) return undefined;
   return baseTolerance;
+};
+
+const readMetricCount = (value: unknown, key: 'input' | 'output'): number | undefined => {
+  if (!isRecord(value)) return undefined;
+  const parsed = readNumber(value[key]);
+  if (parsed === null || parsed < 0) return undefined;
+  return Math.round(parsed);
 };
 
 const toMemoryValue = (value: number | undefined): number | null => (
@@ -227,8 +238,17 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
       const sourceKey = readString(input?.sourceKey);
       if (!sourceKey) continue;
       const preview = isRecord(task.metadata?.preview) ? task.metadata.preview : null;
+      const fetchDetail = isRecord(task.metadata?.fetchDetail) ? task.metadata.fetchDetail : null;
+      const fetchFeatures = isRecord(fetchDetail?.features) ? fetchDetail.features : null;
+      const fetchPolygons = isRecord(fetchDetail?.polygons) ? fetchDetail.polygons : null;
       const sourceCacheFormat = readString(preview?.sourceCacheFormat);
       const sourceCacheCompression = readString(preview?.sourceCacheCompression);
+      const sourceFeatureInputCount = readMetricCount(fetchFeatures, 'input');
+      const sourceFeatureOutputCount = readMetricCount(fetchFeatures, 'output');
+      const sourcePolygonInputCount = readMetricCount(fetchPolygons, 'input');
+      const sourcePolygonOutputCount = readMetricCount(fetchPolygons, 'output');
+      const fallbackFeatureCount = readNumber(output?.featureCount) ?? 0;
+      const fallbackPolygonCount = readNumber(output?.polygonCount) ?? undefined;
       next.push({
         id: sourceCacheId,
         sourceKey,
@@ -240,9 +260,13 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
         dataSource: readString(input?.dataSource) ?? undefined,
         sourceUrl: readString(input?.url) ?? undefined,
         sourceCountryCode: readString(input?.urlCountryCode) ?? readString(input?.countryCode) ?? undefined,
-        featureCount: readNumber(output?.featureCount) ?? 0,
-        inputPolygonCount: readNumber(output?.polygonCount) ?? undefined,
-        polygonCount: readNumber(output?.polygonCount) ?? undefined,
+        sourceFeatureInputCount,
+        sourceFeatureOutputCount,
+        sourcePolygonInputCount,
+        sourcePolygonOutputCount,
+        featureCount: sourceFeatureOutputCount ?? fallbackFeatureCount,
+        inputPolygonCount: sourcePolygonInputCount ?? fallbackPolygonCount,
+        polygonCount: sourcePolygonOutputCount ?? fallbackPolygonCount,
         inputVertexCount: readNumber(output?.vertexCount) ?? undefined,
         vertexCount: readNumber(output?.vertexCount) ?? undefined,
       });
@@ -350,6 +374,10 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
           dataSource: buffer.dataSource,
           sourceUrl: buffer.sourceUrl,
           sourceCountryCode: buffer.sourceCountryCode,
+          sourceFeatureInputCount: buffer.sourceFeatureInputCount ?? buffer.featureCount,
+          sourceFeatureOutputCount: buffer.sourceFeatureOutputCount ?? buffer.featureCount,
+          sourcePolygonInputCount: buffer.sourcePolygonInputCount ?? buffer.inputPolygonCount ?? buffer.polygonCount,
+          sourcePolygonOutputCount: buffer.sourcePolygonOutputCount ?? buffer.polygonCount ?? buffer.inputPolygonCount,
           configSignature: geometryConfigSignature,
           cacheKey: cacheIdentity.cacheKey,
           inputHash: cacheIdentity.inputHash,

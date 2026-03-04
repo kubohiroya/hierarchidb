@@ -46,6 +46,10 @@ export type ShapeGeometryByBandTaskInput = {
   dataSource?: string;
   sourceUrl?: string;
   sourceCountryCode?: string;
+  sourceFeatureInputCount?: number;
+  sourceFeatureOutputCount?: number;
+  sourcePolygonInputCount?: number;
+  sourcePolygonOutputCount?: number;
   configSignature?: string;
   cacheKey?: string;
   inputHash?: string;

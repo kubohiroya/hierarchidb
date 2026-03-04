@@ -140,10 +140,10 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
     const features = fetchDetail && typeof fetchDetail.features === 'object' && fetchDetail.features !== null
       ? fetchDetail.features as Record<string, unknown>
       : null;
-    const polygons = fetchDetail && typeof fetchDetail.polygonsPerFeature === 'object' && fetchDetail.polygonsPerFeature !== null
-      ? fetchDetail.polygonsPerFeature as Record<string, unknown>
-      : (fetchDetail && typeof fetchDetail.polygons === 'object' && fetchDetail.polygons !== null
-        ? fetchDetail.polygons as Record<string, unknown>
+    const polygons = fetchDetail && typeof fetchDetail.polygons === 'object' && fetchDetail.polygons !== null
+      ? fetchDetail.polygons as Record<string, unknown>
+      : (fetchDetail && typeof fetchDetail.polygonsPerFeature === 'object' && fetchDetail.polygonsPerFeature !== null
+        ? fetchDetail.polygonsPerFeature as Record<string, unknown>
         : null);
     const fallbackPolygons = fetchDetail && typeof fetchDetail.polygons === 'object' && fetchDetail.polygons !== null
       ? fetchDetail.polygons as Record<string, unknown>
