@@ -54,6 +54,74 @@ afterEach(() => {
 });
 
 describe('usePluginDialogRoute step params', () => {
+  it('prefers the most specific matched dialog route params', () => {
+    mockMatches = [
+      {
+        routeId: treeRouteIds.dialog,
+        params: {
+          treeId: 'r',
+          pageNodeId: 'r:root',
+          targetNodeId: 'node-1',
+          nodeType: 'shape',
+          action: 'edit',
+        },
+      },
+      {
+        routeId: treeRouteIds.dialogMode,
+        params: {
+          treeId: 'r',
+          pageNodeId: 'r:root',
+          targetNodeId: 'node-1',
+          nodeType: 'shape',
+          action: 'edit',
+          mode: 'maximize',
+        },
+      },
+      {
+        routeId: treeRouteIds.dialogModeStep,
+        params: {
+          treeId: 'r',
+          pageNodeId: 'r:root',
+          targetNodeId: 'node-1',
+          nodeType: 'shape',
+          action: 'edit',
+          mode: 'maximize',
+          step: '5',
+        },
+      },
+    ];
+
+    const treeId = 'r' as TreeId;
+    const pageNodeId = 'r:root' as NodeId;
+    const targetNodeId = 'node-1' as NodeId;
+    const data = {
+      client: {} as Remote<BuildWorkerAPI>,
+      tree: { id: treeId } as Tree,
+      pageNodeId,
+      pageNode: undefined,
+      targetNodeId,
+      targetNode: undefined,
+      nodeType: 'shape' as NodeType,
+      action: NodeAction.UPDATE,
+      params: {
+        treeId: 'r',
+        pageNodeId: 'r:root',
+        targetNodeId: 'node-1',
+        nodeType: 'shape',
+        action: 'edit',
+        mode: 'normal',
+        step: '1',
+      },
+    } satisfies Parameters<typeof usePluginDialogRoute>[0];
+
+    let result: HookResult | null = null;
+    render(<HookHarness data={data} onResult={(value) => (result = value)} />);
+
+    const snapshot = result as HookResult | null;
+    expect(snapshot?.currentStep).toBe(5);
+    expect(snapshot?.urlDisplayMode).toBe('maximize');
+  });
+
   it('prefers dialog route params for step and mode', () => {
     mockMatches = [
       {
