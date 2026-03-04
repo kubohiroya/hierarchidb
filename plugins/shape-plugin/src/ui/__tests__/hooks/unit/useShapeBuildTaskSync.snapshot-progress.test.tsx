@@ -302,6 +302,43 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
     });
   });
 
+  it('resolves retryAttempt from toleranceSearchIterations metadata', async () => {
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-progress' as NodeId));
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    emitEvent('node-progress', {
+      type: 'snapshot',
+      nodeId: 'node-progress' as NodeId,
+      tasks: [
+        makeTaskSummary('node-progress:geometry:jp:0', {
+          stage: 'geometry',
+          status: 'completed',
+          progress: 100,
+          metadata: {
+            retryAttempt: 0,
+            toleranceSearchIterations: 4,
+          },
+          display: {
+            kind: 'summary',
+            metrics: {
+              features: { input: 1, output: 1 },
+              polygons: { input: 27, output: 27 },
+              vertices: { input: 39550, output: 840 },
+            },
+          },
+          index: 1,
+        }),
+      ],
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks).toHaveLength(1);
+      expect(result.current.tasks[0]?.retryAttempt).toBe(4);
+    });
+  });
+
   it('updates task state from initial snapshot and terminal-progress updates', async () => {
     const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-progress' as NodeId));
     await waitFor(() => {
