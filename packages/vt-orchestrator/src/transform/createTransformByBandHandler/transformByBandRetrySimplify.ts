@@ -262,7 +262,7 @@ export const retrySimplifyFeatureWithinVertexLimit = async (
     featureIndex,
     featureTotal,
     attempt: 1,
-    attemptTotal: boundedAttempts + 1,
+    attemptTotal: boundedAttempts,
     tolerance: high,
   });
   const highFeature = await runRetrySimplifyAttempt(high);
@@ -291,7 +291,7 @@ export const retrySimplifyFeatureWithinVertexLimit = async (
     };
   }
 
-  for (let attempt = 0; attempt < boundedAttempts; attempt += 1) {
+  for (let attempt = 1; attempt < boundedAttempts; attempt += 1) {
     if (Math.abs(high - low) < epsilon) {
       break;
     }
@@ -300,7 +300,7 @@ export const retrySimplifyFeatureWithinVertexLimit = async (
       featureIndex,
       featureTotal,
       attempt: retryAttempts + 1,
-      attemptTotal: boundedAttempts + 1,
+      attemptTotal: boundedAttempts,
       tolerance: nextToleranceValue,
     });
     const retryFeature = await runRetrySimplifyAttempt(nextToleranceValue);

@@ -72,6 +72,31 @@ describe('shapeTaskCacheIdentity', () => {
     expect(first.inputHash).not.toEqual(second.inputHash);
   });
 
+  it('changes geometry inputHash when sourceBaseTolerance changes', () => {
+    const first = buildGeometryTaskCacheIdentity({
+      nodeId: 'node-1' as NodeId,
+      sourceKey: 'JP:0',
+      bandIndex: 2,
+      sourceArtifactHash: 'artifact:a',
+      sourceBaseTolerance: 0.125,
+      bandMinZoom: 6,
+      bandMaxZoom: 8,
+      configSignature: 'sig-1',
+    });
+    const second = buildGeometryTaskCacheIdentity({
+      nodeId: 'node-1' as NodeId,
+      sourceKey: 'JP:0',
+      bandIndex: 2,
+      sourceArtifactHash: 'artifact:a',
+      sourceBaseTolerance: 0.25,
+      bandMinZoom: 6,
+      bandMaxZoom: 8,
+      configSignature: 'sig-1',
+    });
+    expect(first.cacheKey).toEqual(second.cacheKey);
+    expect(first.inputHash).not.toEqual(second.inputHash);
+  });
+
   it('changes source inputHash when upstreamRevision changes', () => {
     const first = buildSourceTaskCacheIdentity({
       nodeId: 'node-1' as NodeId,

@@ -348,6 +348,7 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
         sourceKey: buffer.sourceKey,
         bandIndex: band.bandIndex,
         sourceArtifactHash: buffer.sourceArtifactHash,
+        sourceBaseTolerance: buffer.sourceBaseTolerance ?? sourceBaseTolerance,
         bandMinZoom: band.zMin,
         bandMaxZoom: band.zMax,
         configSignature: geometryConfigSignature,

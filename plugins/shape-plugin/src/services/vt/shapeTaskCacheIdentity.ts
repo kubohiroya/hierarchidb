@@ -45,6 +45,12 @@ const normalizeInteger = (value: unknown, fallback: number): number => (
   typeof value === 'number' && Number.isFinite(value) ? Math.round(value) : fallback
 );
 
+const normalizeTolerance = (value: unknown): number | null => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  if (value < 0) return null;
+  return Number(value.toFixed(12));
+};
+
 const normalizeEndpointId = (urlLike: unknown): string => {
   const value = normalizeString(urlLike);
   if (!value) return 'endpoint';
@@ -122,6 +128,7 @@ export const buildGeometryTaskCacheIdentity = (params: {
   sourceKey: string;
   bandIndex: number;
   sourceArtifactHash: string;
+  sourceBaseTolerance?: number;
   bandMinZoom?: number;
   bandMaxZoom?: number;
   configSignature?: string;
@@ -136,6 +143,7 @@ export const buildGeometryTaskCacheIdentity = (params: {
   const cacheKey = `${namespacePrefix}:shape:geometry:${SHAPE_CACHE_KEY_VERSION}:${sourceKey}:band${bandIndex}`;
   const inputHash = buildStableSignature({
     sourceArtifactHash: normalizeString(params.sourceArtifactHash),
+    sourceBaseTolerance: normalizeTolerance(params.sourceBaseTolerance),
     bandMinZoom: normalizeInteger(params.bandMinZoom, 0),
     bandMaxZoom: normalizeInteger(params.bandMaxZoom, 0),
     geometryConfigSignature: normalizeString(params.configSignature) || null,
@@ -202,6 +210,7 @@ export const resolveTaskCacheIdentity = (
       sourceKey: normalizeString(input.sourceKey) || `${normalizeCountryCode(input.countryCode)}:${normalizeInteger(input.adminLevel, 0)}`,
       bandIndex: normalizeInteger(input.bandIndex, 0),
       sourceArtifactHash: normalizeString(input.sourceArtifactHash),
+      sourceBaseTolerance: typeof input.sourceBaseTolerance === 'number' ? input.sourceBaseTolerance : undefined,
       bandMinZoom: normalizeInteger(input.bandMinZoom, 0),
       bandMaxZoom: normalizeInteger(input.bandMaxZoom, 0),
       configSignature: normalizeString(input.configSignature) || undefined,
