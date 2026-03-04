@@ -1,6 +1,7 @@
 # 運用ハブ
 
 ## Doing
+- #753 / codex/fix/session/archive-build-session-consistency / 2026-03-04 11:23
 - #750 / codex/fix/shape-plugin/geometry-retrymax-contract / 2026-03-04 11:08
 - #747 / fix/shape-plugin/taskitemcard-status-narrowing / 2026-03-04 10:48
 - #745 / fix/shape/step5-preview-metrics / 2026-03-04 10:58
@@ -28,6 +29,8 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-04: Issue #753 進捗 - `runtime-worker` に stale running build session 整合化を追加（アーカイブガード時の self-heal + Worker 起動時検査）。`pnpm -w turbo run build --filter @hierarchidb/runtime-worker` / `pnpm -w turbo run typecheck --filter @hierarchidb/runtime-worker` / `pnpm -w turbo run test --filter @hierarchidb/runtime-worker` は成功（exit 0）。
+- 2026-03-04: Issue #753 開始 - ノードアーカイブ時に「ビルドセッション実行中」誤判定が出る問題について、永続 sessions 不整合の発生経路修正と初期化時自己修復の要否検討に着手
 - 2026-03-04: Issue #750 進捗 - `pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/vt-orchestrator` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/taskOutcomeSummaryBuilders.transform-metadata.unit.test.ts` はすべて成功（exit 0）。受け側 message 復元ロジックを撤去し、出し側 metadata (`retryMax`) 契約で統一。
 - 2026-03-04: Issue #750 開始 - shape-plugin geometry terminal task の `retryMax` 欠損クラッシュについて、受け側フォールバックを排除し出し側（vt-orchestrator）の metadata 契約修正に着手
 - 2026-03-04: Issue #747 進捗 - `TaskItemCard.tsx` の status 分岐を確認し、報告されていた到達不能比較（`task.status === 'failed'` in completed branch）は現行コード上で解消済みであることを確認。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` と `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --force` はいずれも成功（exit 0）。

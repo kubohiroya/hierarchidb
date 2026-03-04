@@ -4,23 +4,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandProcessor } from '../../CommandProcessor';
 import type { CoreDB } from '../../CoreDB';
 
-const buildSessionStatusesBulkGetMock = vi.hoisted(() => vi.fn());
-const sessionsOpenMock = vi.hoisted(() => vi.fn(async () => undefined));
+const reconcileRunningBuildSessionsMock = vi.hoisted(() => vi.fn(async () => ({
+  checkedNodeIds: [],
+  activeNodeIds: [],
+  repairedNodeIds: [],
+})));
 const hasRouteReferencesToLocationsMock = vi.hoisted(() => vi.fn(async () => false));
 const hasLocationReferencesToShapesMock = vi.hoisted(() => vi.fn(async () => false));
 
-vi.mock('@hierarchidb/gis-sdk', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@hierarchidb/gis-sdk')>();
+vi.mock('../../utils/reconcileStaleBuildSessions.js', () => {
   return {
-    ...actual,
-    ephemeralDB: {
-      ...actual.ephemeralDB,
-      open: sessionsOpenMock,
-      buildSessionStatuses: {
-        ...actual.ephemeralDB.buildSessionStatuses,
-        bulkGet: buildSessionStatusesBulkGetMock,
-      },
-    },
+    reconcileRunningBuildSessions: reconcileRunningBuildSessionsMock,
   };
 });
 
@@ -90,8 +84,11 @@ describe('TreeMutationService moveNodesToArchive running session guard', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    sessionsOpenMock.mockResolvedValue(undefined);
-    buildSessionStatusesBulkGetMock.mockResolvedValue([]);
+    reconcileRunningBuildSessionsMock.mockResolvedValue({
+      checkedNodeIds: [],
+      activeNodeIds: [],
+      repairedNodeIds: [],
+    });
     hasRouteReferencesToLocationsMock.mockResolvedValue(false);
     hasLocationReferencesToShapesMock.mockResolvedValue(false);
   });
@@ -103,7 +100,11 @@ describe('TreeMutationService moveNodesToArchive running session guard', () => {
     ]);
     const core = createCoreMock(nodes) as Partial<CoreDB> as CoreDB;
     const processor = createCommandProcessorMock(core);
-    buildSessionStatusesBulkGetMock.mockResolvedValue([{ nodeId: 'shape-1', status: 'running' }]);
+    reconcileRunningBuildSessionsMock.mockResolvedValue({
+      checkedNodeIds: [asNodeId('shape-1')],
+      activeNodeIds: [asNodeId('shape-1')],
+      repairedNodeIds: [],
+    });
 
     const { TreeMutationService } = await import('../../TreeMutationService');
     const service = new TreeMutationService(
@@ -114,7 +115,7 @@ describe('TreeMutationService moveNodesToArchive running session guard', () => {
     const result = await service.moveNodesToArchive([asNodeId('shape-1')]);
 
     expect(result).toEqual({ success: false, error: 'TRASH_BUILD_SESSION_RUNNING' });
-    expect(buildSessionStatusesBulkGetMock).toHaveBeenCalledWith([asNodeId('shape-1')]);
+    expect(reconcileRunningBuildSessionsMock).toHaveBeenCalledWith({ nodeIds: [asNodeId('shape-1')] });
     expect(processor.processCommand).not.toHaveBeenCalled();
   });
 
@@ -125,7 +126,11 @@ describe('TreeMutationService moveNodesToArchive running session guard', () => {
     ]);
     const core = createCoreMock(nodes) as Partial<CoreDB> as CoreDB;
     const processor = createCommandProcessorMock(core);
-    buildSessionStatusesBulkGetMock.mockResolvedValue([{ nodeId: 'shape-1', status: 'completed' }]);
+    reconcileRunningBuildSessionsMock.mockResolvedValue({
+      checkedNodeIds: [asNodeId('shape-1')],
+      activeNodeIds: [],
+      repairedNodeIds: [],
+    });
 
     const { TreeMutationService } = await import('../../TreeMutationService');
     const service = new TreeMutationService(
@@ -136,7 +141,7 @@ describe('TreeMutationService moveNodesToArchive running session guard', () => {
     const result = await service.moveNodesToArchive([asNodeId('shape-1')]);
 
     expect(result).toEqual({ success: true });
-    expect(buildSessionStatusesBulkGetMock).toHaveBeenCalledWith([asNodeId('shape-1')]);
+    expect(reconcileRunningBuildSessionsMock).toHaveBeenCalledWith({ nodeIds: [asNodeId('shape-1')] });
     expect(processor.processCommand).toHaveBeenCalledTimes(1);
   });
 });
