@@ -324,6 +324,7 @@ export const createTransformByBandHandler = (
     let toleranceMinRatioSummary: number | undefined;
     let toleranceMaxRatioSummary: number | undefined;
     let vertexLimitSummary: number | undefined;
+    let retryAttemptsTotalForTask = 0;
     let retryMaxForTask = MAX_TOLERANCE_SEARCH_ITERATIONS;
     const toResultMetadata = (
       status: 'completed' | 'failed' | 'skipped',
@@ -362,7 +363,9 @@ export const createTransformByBandHandler = (
       }
       if (Number.isFinite(retryAttempt) && retryAttempt >= 0) {
         metadata.retryAttempt = Math.max(0, Math.floor(retryAttempt));
+        metadata.finalRetryAttempts = Math.max(0, Math.floor(retryAttempt));
       }
+      metadata.retryAttemptsTotal = Math.max(0, Math.floor(retryAttemptsTotalForTask));
       metadata.retryMax = retryMaxForTask;
       if (Number.isFinite(extractionRatio)) {
         metadata.extractionRatio = extractionRatio;
@@ -886,13 +889,18 @@ export const createTransformByBandHandler = (
           limit: memory.jsHeapSizeLimit ?? null,
         };
       };
-      const hasSessionBaseTolerance = Number.isFinite(sourceBaseTolerance) && (sourceBaseTolerance ?? 0) >= 0;
-      if (hasSessionBaseTolerance) {
-        const sessionBaseTolerance = sourceBaseTolerance ?? fallbackTolerance;
-        baseToleranceSummary = sessionBaseTolerance;
+      const inputBaseTolerance = Number.isFinite(input.sourceBaseTolerance) && (input.sourceBaseTolerance ?? 0) >= 0
+        ? input.sourceBaseTolerance ?? undefined
+        : undefined;
+      const contextBaseTolerance = Number.isFinite(sourceBaseTolerance) && (sourceBaseTolerance ?? 0) >= 0
+        ? sourceBaseTolerance ?? undefined
+        : undefined;
+      const resolvedBaseTolerance = inputBaseTolerance ?? contextBaseTolerance;
+      if (resolvedBaseTolerance !== undefined) {
+        baseToleranceSummary = resolvedBaseTolerance;
         toleranceSearchIterationsSummary = 0;
         toleranceSearchConvergedSummary = true;
-        tolerance = resolveAppliedTolerance(sessionBaseTolerance);
+        tolerance = resolveAppliedTolerance(resolvedBaseTolerance);
         finalToleranceSummary = tolerance;
         updateFinalEffectiveTolerance(tolerance);
         console.info('[ShapeGeometry][Tolerance]', JSON.stringify({
@@ -908,7 +916,7 @@ export const createTransformByBandHandler = (
           multiplier: resolvedMultiplier,
           minRatio: resolvedMinRatio,
           maxRatio: resolvedMaxRatio,
-          source: 'session',
+          source: inputBaseTolerance !== undefined ? 'task-input' : 'session',
         }));
       } else {
         const representativeFeature = selectMaxVertexFeature(inputCollection, countVerticesFromGeometry);
@@ -1390,11 +1398,12 @@ export const createTransformByBandHandler = (
               overLimitFeatureCount += 1;
             }
             retryAttemptsTotal += result.retryAttempts;
+            retryAttemptsTotalForTask = Math.max(retryAttemptsTotalForTask, retryAttemptsTotal);
             if (result.retryAttempts > 0) {
-              await updateTaskRetryAttempt(taskId, retryAttemptsTotal);
-              retryAttemptForTask = Math.max(retryAttemptForTask, Math.max(0, Math.floor(retryAttemptsTotal)));
-            }
-            if (result.retryAttempts > 0) {
+              maxRetryAttemptsPerFeature = Math.max(maxRetryAttemptsPerFeature, result.retryAttempts);
+              const displayedRetryAttempt = Math.max(0, Math.floor(maxRetryAttemptsPerFeature));
+              await updateTaskRetryAttempt(taskId, displayedRetryAttempt);
+              retryAttemptForTask = Math.max(retryAttemptForTask, displayedRetryAttempt);
               retryAttemptedFeatureCount += 1;
             }
             maxRetryAttemptsPerFeature = Math.max(maxRetryAttemptsPerFeature, result.retryAttempts);
@@ -1403,6 +1412,8 @@ export const createTransformByBandHandler = (
               maxFinalTolerance = Math.max(maxFinalTolerance, result.finalTolerance);
             }
           }
+          retryAttemptForTask = Math.max(retryAttemptForTask, Math.max(0, Math.floor(maxRetryAttemptsPerFeature)));
+          retryAttemptsTotalForTask = Math.max(retryAttemptsTotalForTask, retryAttemptsTotal);
           adjustedSimplified = {
             ...adjustedSimplified,
             features: nextFeatures,

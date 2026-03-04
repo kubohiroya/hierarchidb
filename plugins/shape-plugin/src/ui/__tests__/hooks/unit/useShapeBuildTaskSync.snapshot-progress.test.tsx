@@ -264,7 +264,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
     });
   });
 
-  it('resolves retryAttempt from retryAttemptsTotal/finalRetryAttempts metadata', async () => {
+  it('resolves retryAttempt from finalRetryAttempts metadata only', async () => {
     const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-progress' as NodeId));
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -298,11 +298,11 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
 
     await waitFor(() => {
       expect(result.current.tasks).toHaveLength(1);
-      expect(result.current.tasks[0]?.retryAttempt).toBe(3);
+      expect(result.current.tasks[0]?.retryAttempt).toBe(2);
     });
   });
 
-  it('resolves retryAttempt from toleranceSearchIterations metadata', async () => {
+  it('does not resolve retryAttempt from toleranceSearchIterations metadata', async () => {
     const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-progress' as NodeId));
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -335,7 +335,7 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
 
     await waitFor(() => {
       expect(result.current.tasks).toHaveLength(1);
-      expect(result.current.tasks[0]?.retryAttempt).toBe(4);
+      expect(result.current.tasks[0]?.retryAttempt).toBe(0);
     });
   });
 

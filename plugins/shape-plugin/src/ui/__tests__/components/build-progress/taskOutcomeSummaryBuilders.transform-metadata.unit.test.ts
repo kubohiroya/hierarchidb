@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms';
 import { buildGeometryTaskOutcomeSummary } from '../../../components/build-progress/TaskItemCard/taskOutcomeSummaryBuilders';
+import type { NodeId } from '@hierarchidb/core-types';
 
 const t = (_key: string, fallback?: string): string => fallback ?? _key;
 
 const buildBaseTask = (overrides: Partial<ShapeBuildTaskSummary>): ShapeBuildTaskSummary => ({
   taskId: 'geometry-task-1',
-  nodeId: 'node-1',
+  nodeId: 'node-1' as NodeId,
   stage: 'geometry',
   status: 'completed',
   progress: 100,
@@ -186,7 +187,7 @@ describe('buildGeometryTaskOutcomeSummary metadata handoff', () => {
     expect(summary.adminLevel).toBe(3);
   });
 
-  it('uses retryAttemptsTotal from message when retryAttempt metadata stays 0', () => {
+  it('does not use retryAttemptsTotal from message when retryAttempt metadata stays 0', () => {
     const task = buildBaseTask({
       errorMessage: 'geometry completed: retryAttemptsTotal=4, retriedFeatures=1/1',
       metadata: {
@@ -203,11 +204,11 @@ describe('buildGeometryTaskOutcomeSummary metadata handoff', () => {
     });
 
     expect(summary.kind).toBe('completed');
-    expect(summary.retryAttempt).toBe(4);
-    expect(summary.summaryLine).toContain('4/24');
+    expect(summary.retryAttempt).toBe(0);
+    expect(summary.summaryLine).toContain('0/24');
   });
 
-  it('uses toleranceSearchIterations when retryAttempt metadata stays 0', () => {
+  it('does not use toleranceSearchIterations when retryAttempt metadata stays 0', () => {
     const task = buildBaseTask({
       metadata: {
         retryAttempt: 0,
@@ -224,8 +225,8 @@ describe('buildGeometryTaskOutcomeSummary metadata handoff', () => {
     });
 
     expect(summary.kind).toBe('completed');
-    expect(summary.retryAttempt).toBe(5);
-    expect(summary.summaryLine).toContain('5/24');
+    expect(summary.retryAttempt).toBe(0);
+    expect(summary.summaryLine).toContain('0/24');
   });
 
   it('does not recover retryMax from message text', () => {

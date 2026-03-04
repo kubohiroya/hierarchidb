@@ -75,16 +75,18 @@ export const useShapeBuildTaskSyncResolver = ({
     };
     const retryAttemptCandidates = [
       resolveNumberFromMetadata(resolvedTask.metadata?.retryAttempt),
-      resolveNumberFromMetadata(resolvedTask.metadata?.retryAttemptsTotal),
       resolveNumberFromMetadata(resolvedTask.metadata?.finalRetryAttempts),
-      resolveNumberFromMetadata(resolvedTask.metadata?.toleranceSearchIterations),
       resolveNumberFromMetadata(asRecord(resolvedTask.metadata?.metadata)?.retryAttempt),
-      resolveNumberFromMetadata(asRecord(resolvedTask.metadata?.metadata)?.retryAttemptsTotal),
       resolveNumberFromMetadata(asRecord(resolvedTask.metadata?.metadata)?.finalRetryAttempts),
-      resolveNumberFromMetadata(asRecord(resolvedTask.metadata?.metadata)?.toleranceSearchIterations),
     ].filter((value): value is number => value !== null && value >= 0);
+    const retryMaxCandidates = [
+      resolveNumberFromMetadata(resolvedTask.metadata?.retryMax),
+      resolveNumberFromMetadata(asRecord(resolvedTask.metadata?.metadata)?.retryMax),
+    ].filter((value): value is number => value !== null && value >= 0);
+    const retryMax = retryMaxCandidates.length > 0 ? Math.floor(Math.max(...retryMaxCandidates)) : null;
     if (retryAttemptCandidates.length > 0) {
-      resolvedTask.retryAttempt = Math.floor(Math.max(...retryAttemptCandidates));
+      const retryAttempt = Math.floor(Math.max(...retryAttemptCandidates));
+      resolvedTask.retryAttempt = retryMax !== null ? Math.min(retryAttempt, retryMax) : retryAttempt;
     }
 
     const resolvedStageId = resolvedTask.stageId ?? resolvedTask.stage;

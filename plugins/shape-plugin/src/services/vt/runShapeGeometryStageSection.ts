@@ -60,6 +60,7 @@ type GeometryBufferMeta = {
   sourceFeatureOutputCount?: number;
   sourcePolygonInputCount?: number;
   sourcePolygonOutputCount?: number;
+  sourceBaseTolerance?: number;
   featureCount: number;
   inputPolygonCount?: number;
   polygonCount?: number;
@@ -247,6 +248,7 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
       const sourceFeatureOutputCount = readMetricCount(fetchFeatures, 'output');
       const sourcePolygonInputCount = readMetricCount(fetchPolygons, 'input');
       const sourcePolygonOutputCount = readMetricCount(fetchPolygons, 'output');
+      const sourceBaseToleranceValue = readNumber(fetchDetail?.baseTolerance);
       const fallbackFeatureCount = readNumber(output?.featureCount) ?? 0;
       const fallbackPolygonCount = readNumber(output?.polygonCount) ?? undefined;
       next.push({
@@ -264,6 +266,9 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
         sourceFeatureOutputCount,
         sourcePolygonInputCount,
         sourcePolygonOutputCount,
+        sourceBaseTolerance: sourceBaseToleranceValue !== null && sourceBaseToleranceValue >= 0
+          ? sourceBaseToleranceValue
+          : undefined,
         featureCount: sourceFeatureOutputCount ?? fallbackFeatureCount,
         inputPolygonCount: sourcePolygonInputCount ?? fallbackPolygonCount,
         polygonCount: sourcePolygonOutputCount ?? fallbackPolygonCount,
@@ -363,6 +368,7 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
           bandIndex: band.bandIndex,
           bandMinZoom: band.zMin,
           bandMaxZoom: band.zMax,
+          sourceBaseTolerance: buffer.sourceBaseTolerance ?? sourceBaseTolerance,
           inputPolygonCount: buffer.inputPolygonCount ?? buffer.polygonCount,
           inputVertexCount: buffer.inputVertexCount ?? buffer.vertexCount,
           domainType: 'shape',
