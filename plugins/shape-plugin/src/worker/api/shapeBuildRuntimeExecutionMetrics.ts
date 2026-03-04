@@ -545,7 +545,9 @@ const sanitizeTaskMetadataForSummary = (
 
   const primitiveKeys = [
     'message',
+    'adminLevel',
     'retryAttempt',
+    'retryAttemptsTotal',
     'finalRetryAttempts',
     'retryMax',
     'finalRetryCount',
@@ -591,6 +593,9 @@ const sanitizeTaskMetadataForSummary = (
   if (nestedMetadata) {
     const compactNested: Record<string, unknown> = {};
     for (const key of [
+      'adminLevel',
+      'retryAttempt',
+      'retryAttemptsTotal',
       'retryMax',
       'finalRetryCount',
       'finalRetryLimit',

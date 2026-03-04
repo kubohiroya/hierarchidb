@@ -26,6 +26,10 @@ const resolveTaskMetadataText = (task: ReturnType<typeof resolveTaskSummaryFromR
   return '';
 };
 
+const asRecord = (value: unknown): Record<string, unknown> | null => (
+  value && typeof value === 'object' ? value as Record<string, unknown> : null
+);
+
 type ResolverDeps = {
   sessionNodeId: string | null;
   refs: Pick<
@@ -69,9 +73,16 @@ export const useShapeBuildTaskSyncResolver = ({
       status: resolvedStatus,
       progress: resolveTaskProgress(resolvedStatus, normalizedTask.display, metadataMessage, progress),
     };
-    const rawRetryAttempt = resolveNumberFromMetadata(resolvedTask.metadata?.retryAttempt);
-    if (rawRetryAttempt !== null && Number.isFinite(rawRetryAttempt) && rawRetryAttempt >= 0) {
-      resolvedTask.retryAttempt = Math.floor(rawRetryAttempt);
+    const retryAttemptCandidates = [
+      resolveNumberFromMetadata(resolvedTask.metadata?.retryAttempt),
+      resolveNumberFromMetadata(resolvedTask.metadata?.retryAttemptsTotal),
+      resolveNumberFromMetadata(resolvedTask.metadata?.finalRetryAttempts),
+      resolveNumberFromMetadata(asRecord(resolvedTask.metadata?.metadata)?.retryAttempt),
+      resolveNumberFromMetadata(asRecord(resolvedTask.metadata?.metadata)?.retryAttemptsTotal),
+      resolveNumberFromMetadata(asRecord(resolvedTask.metadata?.metadata)?.finalRetryAttempts),
+    ].filter((value): value is number => value !== null && value >= 0);
+    if (retryAttemptCandidates.length > 0) {
+      resolvedTask.retryAttempt = Math.floor(Math.max(...retryAttemptCandidates));
     }
 
     const resolvedStageId = resolvedTask.stageId ?? resolvedTask.stage;
