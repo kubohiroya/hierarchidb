@@ -584,16 +584,35 @@ const tileYToLat = (y: number, zoom: number): number => {
   return (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
 };
 
+const resolveSubTileGuideConfig = (adminLevel: number | null): {
+  divisions: number;
+  color: string;
+  opacity: number;
+} | null => {
+  if (adminLevel === 1) {
+    return { divisions: 2, color: '#8f8f8f', opacity: 0.75 };
+  }
+  if (adminLevel === 2) {
+    return { divisions: 4, color: '#b5b5b5', opacity: 0.7 };
+  }
+  if (adminLevel === 3) {
+    return { divisions: 8, color: '#d3d3d3', opacity: 0.65 };
+  }
+  return null;
+};
+
 const GeometryPreviewMap = ({
   overlays,
   originalBytes,
   resultBytes,
   resultColor,
+  adminLevel,
 }: {
   overlays: OverlaySpec[];
   originalBytes: number;
   resultBytes: number;
   resultColor: string;
+  adminLevel: number | null;
 }): React.ReactElement => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -605,6 +624,7 @@ const GeometryPreviewMap = ({
     const tileLayers = tileLayersRef.current;
     if (!map || !tileLayers) return;
     tileLayers.clearLayers();
+    const subTileGuide = resolveSubTileGuideConfig(adminLevel);
     const zoom = Math.max(0, Math.min(22, Math.floor(map.getZoom())));
     const bounds = map.getBounds();
     const west = bounds.getWest();
@@ -630,6 +650,29 @@ const GeometryPreviewMap = ({
           fillOpacity: 0,
           interactive: false,
         }).addTo(tileLayers);
+        if (subTileGuide) {
+          const { divisions, color, opacity } = subTileGuide;
+          const lonStep = (eastLon - westLon) / divisions;
+          const latStep = (northLat - southLat) / divisions;
+          for (let i = 1; i < divisions; i += 1) {
+            const lon = westLon + (lonStep * i);
+            L.polyline([[southLat, lon], [northLat, lon]], {
+              color,
+              opacity,
+              weight: 1,
+              dashArray: '2,4',
+              interactive: false,
+            }).addTo(tileLayers);
+            const lat = southLat + (latStep * i);
+            L.polyline([[lat, westLon], [lat, eastLon]], {
+              color,
+              opacity,
+              weight: 1,
+              dashArray: '2,4',
+              interactive: false,
+            }).addTo(tileLayers);
+          }
+        }
         L.marker([northLat, westLon], {
           interactive: false,
           icon: L.divIcon({
@@ -641,7 +684,7 @@ const GeometryPreviewMap = ({
         }).addTo(tileLayers);
       }
     }
-  }, []);
+  }, [adminLevel]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -1140,6 +1183,7 @@ const TaskDetailContent = ({
             originalBytes={previewOriginalBytes}
             resultBytes={previewResultBytes}
             resultColor={sizeAccentColor}
+            adminLevel={summary.fetchDetails?.adminLevel ?? null}
           />
         )}
       </Box>
