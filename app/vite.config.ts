@@ -1263,7 +1263,28 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
         'import.meta.env.HDB_LOCAL_PROXY': JSON.stringify(env.HDB_LOCAL_PROXY || process.env.HDB_LOCAL_PROXY || ''),
       } as Record<string, string>;
     })(),
-    plugins: [buildBeaconPlugin, hdbDevProxyPlugin, ...plugins],
+    plugins: [
+      buildBeaconPlugin,
+      hdbDevProxyPlugin,
+      // Inject window.__HDB_APP_BASE__ before any module scripts run so that
+      // the i18n package can compute the correct locale load path even during
+      // module-level initialisation (before initializeBrowserGlobals executes).
+      {
+        name: 'inject-hdb-app-base',
+        transformIndexHtml: {
+          order: 'pre' as const,
+          handler: () => [
+            {
+              tag: 'script',
+              attrs: { type: 'text/javascript' },
+              injectTo: 'head-prepend' as const,
+              children: `window.__HDB_APP_BASE__ = ${JSON.stringify(base)};`,
+            },
+          ],
+        },
+      } as Plugin,
+      ...plugins,
+    ],
     resolve: {
       // Avoid multiple React copies by always resolving to the app's React
       dedupe: [
