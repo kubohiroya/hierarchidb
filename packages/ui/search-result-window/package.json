@@ -28,7 +28,7 @@
     "@hierarchidb/ui-floating-window": "workspace:*",
     "@types/react": "^19.1.1",
     "@types/react-dom": "^19.1.1",
-    "@storybook/react-vite": "7.6.20",
+    "@storybook/react-vite": "7.6.21",
     "storybook": "^10.1.4",
     "typescript": "workspace:^5.9.3",
     "react": "^19.0.0",
