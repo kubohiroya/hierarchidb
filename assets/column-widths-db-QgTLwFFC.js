@@ -1,1 +1,0 @@
-import{i as e,t}from"./properties-db-Dxeve7Pv.js";export{t as getColumnWidths,e as saveColumnWidths};

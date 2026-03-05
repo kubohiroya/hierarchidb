@@ -1,1 +1,0 @@
-import{a as e}from"./rolldown-runtime-GuRs8mfQ.js";import{a as t}from"./vendor-react-DIwP1lUV.js";import{Ca as n}from"./index.js";var r=n((0,e(t()).jsx)(`path`,{d:`M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2m0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2m0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2`}),`MoreVert`);export{r as t};

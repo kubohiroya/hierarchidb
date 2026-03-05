@@ -318,6 +318,14 @@
         "clearIndexedDbSuccess": "このアプリが作成したIndexedDBデータを削除しました。",
         "clearIndexedDbEmpty": "削除対象のIndexedDBは見つかりませんでした。",
         "clearIndexedDbFailure": "IndexedDBの削除に失敗しました。詳細はコンソールを確認してください。"
+      },
+      "resumeQueueDialog": {
+        "ariaLabelHome": "HierarchiDB ホームへ移動",
+        "title": "ビルドセッション一覧: {{count}}件",
+        "deleteQueue": "すべてのセッションを削除",
+        "resumeQueue": "最初のセッションの実行を再開",
+        "skip": "削除や再開をスキップしてダイアログを閉じる",
+        "close": "× 閉じる"
       }
     },
     "contextMenu": {
@@ -444,5 +452,31 @@
       "default": "列"
     },
     "emptyCell": "-"
+  },
+  "buildSessionQueue": {
+    "empty": "実行中または待機中のセッションが見つかりません",
+    "deleteTitle": "キューからセッションを削除",
+    "deleteDescription": "{{nodeName}} をキューから削除しますか？",
+    "openQueueList": "ビルドセッション一覧を開く",
+    "deleteQueue": "すべてのセッションを削除",
+    "resumeQueue": "最初のセッションの実行を再開",
+    "popperTitle": "セッションキュー",
+    "popperCountOne": "{{count}} 件",
+    "popperCountOther": "{{count}} 件",
+    "statusRunning": "実行中",
+    "statusFailed": "失敗",
+    "statusCompleted": "完了",
+    "statusWaiting": "待機中",
+    "statusPaused": "一時停止",
+    "statusFailedCaption": "失敗",
+    "totalElapsed": "(総経過時間 {{elapsed}})",
+    "totalElapsedCompleted": "総経過時間 {{elapsed}} 完了",
+    "dragHandle": "キュー行をドラッグ",
+    "delete": "セッションを削除",
+    "start": "セッション開始",
+    "remaining": "残り",
+    "statusQueued": "待機中",
+    "statusWaitingCaption": "待機中",
+    "statusCompletedCaption": "完了"
   }
 }

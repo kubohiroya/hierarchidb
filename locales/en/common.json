@@ -360,6 +360,14 @@
             "finishStage": "Finish stage then stop",
             "stop": "Stop on first error"
           }
+        },
+        "resumeQueueDialog": {
+          "ariaLabelHome": "Go to HierarchiDB home",
+          "title": "Build sessions: {{count}} sessions",
+          "deleteQueue": "Delete all sessions",
+          "resumeQueue": "Resume execution of the first session",
+          "skip": "Skip delete or resume and close this dialog",
+          "close": "× Close"
         }
       }
     },
@@ -465,5 +473,31 @@
     "hidden": "Hidden",
     "checkReference": "Check reference",
     "preview": "Preview"
+  },
+  "buildSessionQueue": {
+    "empty": "No running or queued build sessions found",
+    "deleteTitle": "Delete session from queue",
+    "deleteDescription": "Delete \"{{nodeName}}\" from queue?",
+    "openQueueList": "Open build session queue",
+    "deleteQueue": "Delete all sessions",
+    "resumeQueue": "Resume execution of the first session",
+    "popperTitle": "Session queue",
+    "popperCountOne": "{{count}} item",
+    "popperCountOther": "{{count}} items",
+    "statusRunning": "Running",
+    "statusFailed": "Failed",
+    "statusCompleted": "Completed",
+    "statusWaiting": "Waiting",
+    "statusPaused": "Paused",
+    "statusFailedCaption": "Failed",
+    "totalElapsed": "(Total elapsed {{elapsed}})",
+    "totalElapsedCompleted": "Completed (total elapsed {{elapsed}})",
+    "dragHandle": "Drag queue row",
+    "delete": "Delete session",
+    "start": "Start session",
+    "remaining": "remaining",
+    "statusQueued": "Queued",
+    "statusWaitingCaption": "Waiting",
+    "statusCompletedCaption": "Completed"
   }
 }
