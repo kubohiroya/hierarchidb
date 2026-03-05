@@ -44,7 +44,7 @@
     "@hierarchidb/ui-json-treeview": "workspace:*",
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
-    "@storybook/react-vite": "7.6.20",
+    "@storybook/react-vite": "7.6.21",
     "@types/geojson": "^7946.0.8",
     "jotai": "^2.16.0",
     "react": "^19.0.0"
