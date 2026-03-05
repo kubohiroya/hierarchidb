@@ -1,1 +1,0 @@
-import"./vendor-react-DIwP1lUV.js";import{Ur as e}from"./index.js";const t=e;var n=t;export{t as LinkerPluginIcon,n as default};
