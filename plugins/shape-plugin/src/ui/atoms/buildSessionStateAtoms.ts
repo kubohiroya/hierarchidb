@@ -559,3 +559,12 @@ export const buildSessionTaskListViewPhaseAtom = atom<TaskListViewPhase>((get) =
   }
   return 'settledEmpty';
 });
+
+export const buildSessionSnapshotHandshakeReceivedAtom = atom<boolean>((get) => {
+  const uiSyncByStage = get(uiSyncPhaseByStageAtom);
+  return (
+    uiSyncByStage.source === 'running'
+    || uiSyncByStage.geometry === 'running'
+    || uiSyncByStage.tileEmit === 'running'
+  );
+});
