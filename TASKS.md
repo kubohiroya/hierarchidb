@@ -1,6 +1,7 @@
 # 運用ハブ
 
 ## Doing
+- #802 / codex/fix/shape/receiving-task-snapshot-unknown-taskid-802 / 2026-03-06 03:04
 - #799 / codex/fix/vt-orchestrator/transform-by-band-type-contracts-799-r2 / 2026-03-06 02:56
 - #796 / codex/fix/shape/geometry-detail-tolerance-retry-stale-796 / 2026-03-06 01:49
 - #791 / codex/fix/app/shape-create-maximize-deeplink-791 / 2026-03-06 01:31
@@ -50,6 +51,8 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-06: Issue #802 進捗 - `useShapeBuildSessionStateAtomBridge` の unknown `taskId` 契約を修正し、snapshot 境界より新しい update は新規 task として受理、境界以下の unknown update は契約違反として停止するよう変更。`pnpm -C plugins/shape-plugin exec vitest run src/ui/__tests__/hooks/unit/useShapeBuildSessionStateAtomBridge.contract.unit.test.ts` と `pnpm -C plugins/shape-plugin typecheck` はともに成功（exit 0）。
+- 2026-03-06: Issue #802 開始 - `receiving-task-snapshot` 中に `task update references unknown taskId` で停止する不具合の修正に着手（snapshot 後の新規 task update 受理と version 契約維持を両立）。
 - 2026-03-06: Issue #799 進捗 - 型修正再適用後、`pnpm --filter @hierarchidb/vt-orchestrator typecheck` は `node_modules` 未配置で依存解決エラー多数により失敗（exit 2）。`pnpm --filter @hierarchidb/vt-orchestrator build:types` は `tsconfig` の `noEmit` 競合で失敗（exit 2）。さらに `pnpm install --frozen-lockfile` が pnpm内部エラー（`Cannot use 'in' operator to search for 'directory' in undefined`）で失敗（exit 1）。
 - 2026-03-06: Issue #799 再開 - `main` 未反映を確認したため、Issueを reopen して `Status=In Progress` へ戻し、`codex/fix/vt-orchestrator/transform-by-band-type-contracts-799-r2` で再適用に着手
 - 2026-03-06: Issue #796 開始 - Step5 Geometry Task Result Detail がクリック時スナップショットを保持し続けるため `Base tolerance` / `Initial tolerance` / `Retry attempts` が stale 表示になる不具合を修正。`useTaskItemCardListCardView` を taskId ベース選択へ変更し、detail 表示時に最新 `tasks` から summary を再解決するよう更新。再現テスト `TaskItemCardListCard.unit.test.tsx` に「detail window open中の metadata 更新追従」ケースを追加。`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/TaskItemCardListCard.unit.test.tsx` は成功（exit 0）。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は依存先 `@hierarchidb/vt-orchestrator` 既存型エラーで exit 2（Blocked 記録）。

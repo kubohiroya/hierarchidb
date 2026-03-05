@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   isTaskUpdateVersionAfterSnapshot,
+  resolveTaskIdentityAction,
   resolveSnapshotTargetStages,
   resolveTaskVersionAction,
 } from '../../../components/build-progress/useShapeBuildSessionStateAtomBridge';
@@ -38,5 +39,17 @@ describe('useShapeBuildSessionStateAtomBridge contract helpers', () => {
     expect(resolveTaskVersionAction(3, 4)).toBe('accept');
     expect(resolveTaskVersionAction(3, 3)).toBe('drop');
     expect(resolveTaskVersionAction(3, 2)).toBe('error');
+  });
+
+  it('accepts unknown taskId only when task version is after snapshot boundary', () => {
+    expect(resolveTaskIdentityAction(false, 10, 11)).toBe('accept-new');
+    expect(resolveTaskIdentityAction(false, 10, 10)).toBe('error-unknown-stale');
+    expect(resolveTaskIdentityAction(false, 10, 9)).toBe('error-unknown-stale');
+  });
+
+  it('drops known stale task updates at or before snapshot boundary', () => {
+    expect(resolveTaskIdentityAction(true, 10, 11)).toBe('accept-known');
+    expect(resolveTaskIdentityAction(true, 10, 10)).toBe('drop-known-stale');
+    expect(resolveTaskIdentityAction(true, 10, 9)).toBe('drop-known-stale');
   });
 });

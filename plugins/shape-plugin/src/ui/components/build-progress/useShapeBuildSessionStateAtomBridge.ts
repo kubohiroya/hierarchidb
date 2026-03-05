@@ -32,6 +32,18 @@ export const resolveTaskVersionAction = (
   return 'error';
 };
 
+export const resolveTaskIdentityAction = (
+  isKnownTaskId: boolean,
+  snapshotVersionMax: number,
+  taskVersion: number,
+): 'accept-known' | 'accept-new' | 'drop-known-stale' | 'error-unknown-stale' => {
+  if (isTaskUpdateVersionAfterSnapshot(snapshotVersionMax, taskVersion)) {
+    return isKnownTaskId ? 'accept-known' : 'accept-new';
+  }
+  if (isKnownTaskId) return 'drop-known-stale';
+  return 'error-unknown-stale';
+};
+
 const resolveShapeStageId = (value: unknown): ShapeStageId | undefined => {
   if (value === 'source' || value === 'geometry' || value === 'tileEmit') {
     return value;
@@ -194,12 +206,6 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             event.task.stage,
             `[shape buildSessionStateAtomBridge] task update stage is unsupported: ${String(event.task.stage)}`,
           );
-          const knownTaskIds = snapshotTaskIdsByStage[stage];
-          if (!knownTaskIds.has(event.task.taskId)) {
-            stopWithContractError(
-              `[shape buildSessionStateAtomBridge] task update references unknown taskId: ${event.task.taskId}`,
-            );
-          }
           const snapshotVersionMax = snapshotVersionMaxByStage[stage];
           if (snapshotVersionMax == null) {
             stopWithContractError(
@@ -207,8 +213,22 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             );
           }
           const snapshotVersionBoundary = snapshotVersionMax as number;
-          if (!isTaskUpdateVersionAfterSnapshot(snapshotVersionBoundary, event.task.version)) {
+          const knownTaskIds = snapshotTaskIdsByStage[stage];
+          const taskIdentityAction = resolveTaskIdentityAction(
+            knownTaskIds.has(event.task.taskId),
+            snapshotVersionBoundary,
+            event.task.version,
+          );
+          if (taskIdentityAction === 'error-unknown-stale') {
+            stopWithContractError(
+              `[shape buildSessionStateAtomBridge] task update references unknown taskId at-or-before snapshot boundary: ${event.task.taskId} (taskVersion=${event.task.version}, snapshotVersionMax=${snapshotVersionBoundary})`,
+            );
+          }
+          if (taskIdentityAction === 'drop-known-stale') {
             continue;
+          }
+          if (taskIdentityAction === 'accept-new') {
+            knownTaskIds.add(event.task.taskId);
           }
           const lastAppliedVersion = lastAppliedVersionByTaskId.get(event.task.taskId);
           const versionAction = resolveTaskVersionAction(lastAppliedVersion, event.task.version);
