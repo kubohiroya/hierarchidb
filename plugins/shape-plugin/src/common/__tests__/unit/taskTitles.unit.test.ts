@@ -18,7 +18,7 @@ describe('taskTitles', () => {
     expect(title).toBe('Japan (JP) Admin0 / band 2 z3-6');
   });
 
-  it('keeps explicit title when task already has title', () => {
+  it('rebuilds geometry title even when explicit title exists', () => {
     const title = buildShapeTaskTitle({
       stage: 'geometry',
       title: 'Custom title',
@@ -32,7 +32,7 @@ describe('taskTitles', () => {
       },
     });
 
-    expect(title).toBe('Custom title');
+    expect(title).toBe('Japan (JP) Admin0 / band 2 z3-6');
   });
 
   it('builds source title from metadata.preview when inputData is missing', () => {
@@ -58,10 +58,12 @@ describe('taskTitles', () => {
         countryCode: 'AND',
         adminLevel: 1,
         bandIndex: 0,
+        bandMinZoom: 1,
+        bandMaxZoom: 2,
       },
     });
 
-    expect(title).toBe('AND Admin1 / band 0');
+    expect(title).toBe('AND Admin1 / band 0 z1-2');
   });
 
   it('resolves localized country name from code when the source name is only a code token', () => {
@@ -72,12 +74,14 @@ describe('taskTitles', () => {
         countryCode: 'AND',
         adminLevel: 1,
         bandIndex: 0,
+        bandMinZoom: 1,
+        bandMaxZoom: 2,
       },
     }, {
       resolveCountryNameByCode: (code) => (code === 'AND' ? 'Andorra' : undefined),
     });
 
-    expect(title).toBe('Andorra (AND) Admin1 / band 0');
+    expect(title).toBe('Andorra (AND) Admin1 / band 0 z1-2');
   });
 
   it('includes zoom range when geometry task uses zMin/zMax fields', () => {
@@ -94,5 +98,17 @@ describe('taskTitles', () => {
     });
 
     expect(title).toBe('Japan (JP) Admin0 / band 1 z2-5');
+  });
+
+  it('throws when geometry task misses zoom range required for title', () => {
+    expect(() => buildShapeTaskTitle({
+      stage: 'geometry',
+      inputData: {
+        countryName: 'Japan',
+        countryCode: 'JP',
+        adminLevel: 0,
+        bandIndex: 1,
+      },
+    })).toThrow('[shape-plugin] geometry task title requires bandMinZoom and bandMaxZoom');
   });
 });
