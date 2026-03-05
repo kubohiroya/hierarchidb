@@ -14,7 +14,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import type { HttpBackendOptions } from 'i18next-http-backend';
 import HttpBackend from 'i18next-http-backend';
 import * as ReactI18NextModule from 'react-i18next';
-import { getEnvString, isDevEnv } from '~/utils/env';
+import { isDevEnv } from '~/utils/env';
 
 interface AppWindow extends Window {
   __HDB_APP_BASE__?: unknown;
@@ -172,7 +172,8 @@ function computeBasePath(): string {
     return withSlash;
   };
 
-  // 1) Prefer explicit global hint set by the app to avoid bundler differences in import.meta.env handling
+  // 1) Prefer explicit global hint set by the app (or injected into HTML by the build).
+  //    This is set early enough for module-level initialisation to read it.
   try {
     if (typeof window !== 'undefined') {
       const hinted = (window as AppWindow).__HDB_APP_BASE__;
@@ -181,9 +182,12 @@ function computeBasePath(): string {
   } catch (error) {
     logI18nWarning('Failed to read __HDB_APP_BASE__ hint', error);
   }
+  // 2) Direct import.meta.env.BASE_URL access – Vite replaces this literal at build
+  //    time with the app's base path (e.g. "/hierarchidb/").  Accessing it through
+  //    an intermediate variable would bypass Vite's replacement, so we read it here.
   try {
-    const envBase = getEnvString('BASE_URL') ?? '';
-    if (envBase) return toAbs(envBase);
+    const envBase = import.meta.env.BASE_URL;
+    if (typeof envBase === 'string' && envBase) return toAbs(envBase);
   } catch (error) {
     logI18nWarning('Failed to read import.meta.env.BASE_URL', error);
   }
