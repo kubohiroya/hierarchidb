@@ -1,6 +1,7 @@
 # 運用ハブ
 
 ## Doing
+- #799 / codex/fix/vt-orchestrator/transform-by-band-type-contracts-799-r2 / 2026-03-06 02:56
 - #796 / codex/fix/shape/geometry-detail-tolerance-retry-stale-796 / 2026-03-06 01:49
 - #791 / codex/fix/app/shape-create-maximize-deeplink-791 / 2026-03-06 01:31
 - #790 / codex/fix/shape/receiving-task-snapshot-handshake-790 / 2026-03-06 09:34
@@ -40,6 +41,7 @@
 - #708 / codex/chore/ci-build-checks-separation / 2026-03-03 22:10
 
 ## Blocked
+- Issue #799: `pnpm install --frozen-lockfile` が pnpm 内部エラー（`Cannot use 'in' operator to search for 'directory' in undefined`）で失敗し、worktree 上で `typecheck/build:types` の依存解決が不能（解除条件: install エラー原因の解消後に `pnpm --filter @hierarchidb/vt-orchestrator typecheck` を再実行）。
 - Issue #796: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は依存先 `@hierarchidb/vt-orchestrator` の既存型エラー（`TransformByBand*` 未解決）で exit 2。解除条件: `@hierarchidb/vt-orchestrator` の既存型エラー解消後に再実行。
 - Issue #791: `pnpm -w turbo run typecheck --filter @hierarchidb/app` は依存先 `@hierarchidb/vt-orchestrator` の既存型エラー（`TransformByBand*` 未解決など）で exit 2。解除条件: `@hierarchidb/vt-orchestrator` の既存型エラー解消後に再実行。
 - Issue #790: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は依存先 `@hierarchidb/vt-orchestrator` の既存型エラー（`TransformByBand*` 未解決）で exit 2。解除条件: `@hierarchidb/vt-orchestrator` の既存型エラー解消後に再実行。
@@ -48,6 +50,8 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-06: Issue #799 進捗 - 型修正再適用後、`pnpm --filter @hierarchidb/vt-orchestrator typecheck` は `node_modules` 未配置で依存解決エラー多数により失敗（exit 2）。`pnpm --filter @hierarchidb/vt-orchestrator build:types` は `tsconfig` の `noEmit` 競合で失敗（exit 2）。さらに `pnpm install --frozen-lockfile` が pnpm内部エラー（`Cannot use 'in' operator to search for 'directory' in undefined`）で失敗（exit 1）。
+- 2026-03-06: Issue #799 再開 - `main` 未反映を確認したため、Issueを reopen して `Status=In Progress` へ戻し、`codex/fix/vt-orchestrator/transform-by-band-type-contracts-799-r2` で再適用に着手
 - 2026-03-06: Issue #796 開始 - Step5 Geometry Task Result Detail がクリック時スナップショットを保持し続けるため `Base tolerance` / `Initial tolerance` / `Retry attempts` が stale 表示になる不具合を修正。`useTaskItemCardListCardView` を taskId ベース選択へ変更し、detail 表示時に最新 `tasks` から summary を再解決するよう更新。再現テスト `TaskItemCardListCard.unit.test.tsx` に「detail window open中の metadata 更新追従」ケースを追加。`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/TaskItemCardListCard.unit.test.tsx` は成功（exit 0）。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は依存先 `@hierarchidb/vt-orchestrator` 既存型エラーで exit 2（Blocked 記録）。
 - 2026-03-06: Issue #791 進捗 - `usePluginDialogRoute` の mode/step fallback を `pathname` だけでなく `hash` からも解決するよう修正し、basepath 混在経路でも `t` セグメント起点で解析するよう更新。`plugin-dialog-step.unit.test.tsx` に `create + maximize + encoded pageNodeId` と `hash fallback` の再発テストを追加。`pnpm -w turbo run test --filter @hierarchidb/app -- --run src/router/__tests__/unit/plugin-dialog-step.unit.test.tsx` は成功（exit 0, 6 tests passed）。`pnpm -w turbo run typecheck --filter @hierarchidb/app` は依存先 `@hierarchidb/vt-orchestrator` 既存エラーで exit 2（Blockedへ記録）。`pnpm -C app typecheck` は成功（exit 0）。
 - 2026-03-06: Issue #790 進捗 - `receiving-task-snapshot` を snapshot ハンドシェイク起点へ厳密化。`buildSessionSnapshotHandshakeReceivedAtom` を追加し、空 snapshot でも受理シグナルを立てるよう修正。`useShapeBuildSessionStateAtomBridge` に task update 契約チェック（unknown `taskId` 例外停止、`progress.version > snapshotVersionMax` のみ受理、同一 `taskId` version 単調増加適用）と rAF バッファ適用（version順）を実装。worker 側 snapshot イベントへ `version`/`stage` を付与。ユニットテスト `useShapeBuildSessionStateAtomBridge.contract.unit.test.ts` を追加。`pnpm -C plugins/shape-plugin typecheck` と `pnpm -C plugins/shape-plugin exec vitest run src/ui/__tests__/hooks/unit/useShapeBuildSessionStateAtomBridge.contract.unit.test.ts src/ui/__tests__/hooks/unit/resolveReceivingTaskSnapshotDecision.unit.test.ts` は成功（exit 0）。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は既存失敗（`@hierarchidb/vt-orchestrator` の型エラー）で exit 2。

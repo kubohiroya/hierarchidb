@@ -160,6 +160,8 @@ export type GeometryStageTaskInput = {
   sourceCountryCode?: string;
 };
 
+export type TransformByBandTaskInput = GeometryStageTaskInput;
+
 export type VtTaskInput = {
   bandIndex: number;
   zBase: number;
