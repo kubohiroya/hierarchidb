@@ -56,9 +56,14 @@ const resolveCountryNameWithCode = (
   };
 };
 
-const resolveStageKey = (task: StageLike): string | undefined => (
-  task.stage
-);
+const resolveStageKey = (task: StageLike): string | undefined => {
+  const stage = readString(task.stage)?.trim().toLowerCase();
+  if (!stage) return undefined;
+  if (stage === 'source' || stage.includes('source')) return 'source';
+  if (stage === 'geometry' || stage.includes('geometry')) return 'geometry';
+  if (stage === 'tileemit' || stage === 'tile-emit' || stage.includes('tile')) return 'tileEmit';
+  return task.stage;
+};
 
 const isRecord = (value: unknown): value is Record<string, unknown> => (
   typeof value === 'object' && value !== null
@@ -134,13 +139,10 @@ const buildGeometryTitle = (
   const bandMaxZoom = readNumber(input.bandMaxZoom)
     ?? readNumber(input.zMax)
     ?? readNumber(input.maxZoom);
-  const zoomBandLabel = bandMinZoom !== null && bandMaxZoom !== null
-    ? `z${Math.floor(bandMinZoom)}-${Math.floor(bandMaxZoom)}`
-    : bandMinZoom !== null
-      ? `z${Math.floor(bandMinZoom)}`
-      : bandMaxZoom !== null
-        ? `z${Math.floor(bandMaxZoom)}`
-    : undefined;
+  if (bandMinZoom === null || bandMaxZoom === null) {
+    throw new Error('[shape-plugin] geometry task title requires bandMinZoom and bandMaxZoom');
+  }
+  const zoomBandLabel = `z${Math.floor(bandMinZoom)}-${Math.floor(bandMaxZoom)}`;
   const left = [countryLabel, adminLabel].filter(Boolean).join(' ');
   const right = [bandLabel, zoomBandLabel].filter(Boolean).join(' ');
   const title = [left || undefined, right || undefined].filter(Boolean).join(' / ');
@@ -177,13 +179,16 @@ export const buildShapeTaskTitle = (
   task: StageLike,
   options?: ResolveTaskTitleOptions,
 ): string | undefined => {
+  const stage = resolveStageKey(task);
   const existing = readString(task.title);
-  if (existing) return existing;
+  if (existing && stage !== 'geometry') return existing;
   const input = isRecord(task.inputData)
     ? task.inputData
     : buildInputFromPreview(task.metadata);
+  if (stage === 'geometry' && !input) {
+    throw new Error('[shape-plugin] geometry task title requires inputData or metadata.preview');
+  }
   if (!input) return undefined;
-  const stage = resolveStageKey(task);
   if (stage === 'source') return buildSourceTitle(input, options);
   if (stage === 'geometry') return buildGeometryTitle(input, options);
   if (stage === 'tileEmit') return buildTileEmitTitle(input);
