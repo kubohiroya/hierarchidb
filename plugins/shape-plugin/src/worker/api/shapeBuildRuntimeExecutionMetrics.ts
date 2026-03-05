@@ -685,6 +685,16 @@ const buildPreviewMetadataFromTask = (task: TaskQueueRecord): Record<string, unk
     const sourceKey = readString(preview?.sourceKey) ?? readString(input?.sourceKey);
     const rawSourceCacheKey = readString(preview?.rawSourceCacheKey);
     const bandIndex = readNumber(preview?.bandIndex) ?? readNumber(input?.bandIndex);
+    const bandMinZoom = readNumber(preview?.bandMinZoom)
+      ?? readNumber(preview?.zMin)
+      ?? readNumber(input?.bandMinZoom)
+      ?? readNumber(input?.zMin)
+      ?? readNumber(input?.zoomMin);
+    const bandMaxZoom = readNumber(preview?.bandMaxZoom)
+      ?? readNumber(preview?.zMax)
+      ?? readNumber(input?.bandMaxZoom)
+      ?? readNumber(input?.zMax)
+      ?? readNumber(input?.zoomMax);
     const domainType = readString(input?.domainType) ?? 'shape';
     const sourceCacheId = readString(preview?.sourceCacheId) ?? readString(input?.sourceCacheId);
     const geometryCacheId = readString(preview?.geometryCacheId)
@@ -706,6 +716,8 @@ const buildPreviewMetadataFromTask = (task: TaskQueueRecord): Record<string, unk
       sourceUrl: readString(preview?.sourceUrl) ?? readString(input?.sourceUrl) ?? null,
       sourceCountryCode: sourceCountryCode ?? null,
       adminLevel: adminLevel ?? null,
+      bandMinZoom: bandMinZoom ?? null,
+      bandMaxZoom: bandMaxZoom ?? null,
       rawSourceCacheKey: rawSourceCacheKey ?? null,
       sourceCacheId: sourceCacheId ?? null,
       sourceCacheFormat: readString(preview?.sourceCacheFormat) ?? readString(input?.sourceCacheFormat) ?? 'flatgeobuf',

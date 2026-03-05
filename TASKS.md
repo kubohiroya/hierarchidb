@@ -1,6 +1,8 @@
 # 運用ハブ
 
 ## Doing
+- #796 / codex/fix/shape/geometry-detail-tolerance-retry-stale-796 / 2026-03-06 01:49
+- #791 / codex/fix/app/shape-create-maximize-deeplink-791 / 2026-03-06 01:31
 - #790 / codex/fix/shape/receiving-task-snapshot-handshake-790 / 2026-03-06 09:34
 - #788 / fix/app/vite-initial-access-reload-loop-788 / 2026-03-05 23:19
 - #787 / codex/fix/ui/jotai-family-migration-787 / 2026-03-05 23:08
@@ -38,12 +40,16 @@
 - #708 / codex/chore/ci-build-checks-separation / 2026-03-03 22:10
 
 ## Blocked
+- Issue #796: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は依存先 `@hierarchidb/vt-orchestrator` の既存型エラー（`TransformByBand*` 未解決）で exit 2。解除条件: `@hierarchidb/vt-orchestrator` の既存型エラー解消後に再実行。
+- Issue #791: `pnpm -w turbo run typecheck --filter @hierarchidb/app` は依存先 `@hierarchidb/vt-orchestrator` の既存型エラー（`TransformByBand*` 未解決など）で exit 2。解除条件: `@hierarchidb/vt-orchestrator` の既存型エラー解消後に再実行。
 - Issue #790: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は依存先 `@hierarchidb/vt-orchestrator` の既存型エラー（`TransformByBand*` 未解決）で exit 2。解除条件: `@hierarchidb/vt-orchestrator` の既存型エラー解消後に再実行。
 - Issue #758: `pnpm -C plugins/shape-plugin exec vitest run src/ui/__tests__/components/build-progress/TaskItemCardListCard.unit.test.tsx` が既存失敗（`geometry retryMax is missing`）で exit 1。解除条件: 既存失敗の解消後に再実行。
 - Issue #745: `pnpm -w turbo run test --filter @hierarchidb/shape-plugin` が既存失敗を含み exit 1（主に `useShapeBuildTaskSnapshotProgressState.unit.test.tsx` / `TaskItemCardListCard.unit.test.tsx` / `TaskItemCard i18n-preservation` 系）。解除条件: 既存失敗の切り分けと期待値更新方針を Issue で合意後に再実行。
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-06: Issue #796 開始 - Step5 Geometry Task Result Detail がクリック時スナップショットを保持し続けるため `Base tolerance` / `Initial tolerance` / `Retry attempts` が stale 表示になる不具合を修正。`useTaskItemCardListCardView` を taskId ベース選択へ変更し、detail 表示時に最新 `tasks` から summary を再解決するよう更新。再現テスト `TaskItemCardListCard.unit.test.tsx` に「detail window open中の metadata 更新追従」ケースを追加。`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/TaskItemCardListCard.unit.test.tsx` は成功（exit 0）。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は依存先 `@hierarchidb/vt-orchestrator` 既存型エラーで exit 2（Blocked 記録）。
+- 2026-03-06: Issue #791 進捗 - `usePluginDialogRoute` の mode/step fallback を `pathname` だけでなく `hash` からも解決するよう修正し、basepath 混在経路でも `t` セグメント起点で解析するよう更新。`plugin-dialog-step.unit.test.tsx` に `create + maximize + encoded pageNodeId` と `hash fallback` の再発テストを追加。`pnpm -w turbo run test --filter @hierarchidb/app -- --run src/router/__tests__/unit/plugin-dialog-step.unit.test.tsx` は成功（exit 0, 6 tests passed）。`pnpm -w turbo run typecheck --filter @hierarchidb/app` は依存先 `@hierarchidb/vt-orchestrator` 既存エラーで exit 2（Blockedへ記録）。`pnpm -C app typecheck` は成功（exit 0）。
 - 2026-03-06: Issue #790 進捗 - `receiving-task-snapshot` を snapshot ハンドシェイク起点へ厳密化。`buildSessionSnapshotHandshakeReceivedAtom` を追加し、空 snapshot でも受理シグナルを立てるよう修正。`useShapeBuildSessionStateAtomBridge` に task update 契約チェック（unknown `taskId` 例外停止、`progress.version > snapshotVersionMax` のみ受理、同一 `taskId` version 単調増加適用）と rAF バッファ適用（version順）を実装。worker 側 snapshot イベントへ `version`/`stage` を付与。ユニットテスト `useShapeBuildSessionStateAtomBridge.contract.unit.test.ts` を追加。`pnpm -C plugins/shape-plugin typecheck` と `pnpm -C plugins/shape-plugin exec vitest run src/ui/__tests__/hooks/unit/useShapeBuildSessionStateAtomBridge.contract.unit.test.ts src/ui/__tests__/hooks/unit/resolveReceivingTaskSnapshotDecision.unit.test.ts` は成功（exit 0）。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は既存失敗（`@hierarchidb/vt-orchestrator` の型エラー）で exit 2。
 - 2026-03-05: Issue #788 進捗 - `pluginRegistryGeneratorPlugin` の dev watcher を調整し、chokidar 初期スキャン中の `add` では再生成を走らせず、更新系トリガは `handleHotUpdate` 中心へ整理。`pnpm -C app typecheck` は成功（exit 0）、`pnpm -w turbo run build --filter @hierarchidb/app` は成功（exit 0）。`pnpm -C app dev` は `Port 4200 is already in use` で起動不能だったが、起動ログ上 `generate-plugin-registry` 実行回数は 1 回を確認。
 - 2026-03-05: Issue #787 進捗 - `@hierarchidb/ui-build-sessions` の `atomFamily` import を `jotai/utils` から `jotai-family` へ移行し、`jotai-family` 依存を追加。`jotai-family` の型推論差分で発生した `unknown` を解消するため、`atomFamily` 生成 Atom の型注釈を追加。`pnpm i` と `pnpm -w turbo run typecheck --filter @hierarchidb/ui-build-sessions` は成功（exit 0）。

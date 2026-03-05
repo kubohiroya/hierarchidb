@@ -23,6 +23,7 @@ type TaskStageSummaryBuilderMap = Partial<Record<
 >>;
 
 type Args = {
+  tasks: ShapeBuildTaskSummary[];
   isDetailFloatingWindowOpen: boolean;
   onOpenDetailFloatingWindow?: () => void;
   onCloseDetailFloatingWindow?: () => void;
@@ -34,6 +35,7 @@ type Args = {
 };
 
 export const useTaskItemCardListCardView = ({
+  tasks,
   isDetailFloatingWindowOpen,
   onOpenDetailFloatingWindow,
   onCloseDetailFloatingWindow,
@@ -43,8 +45,8 @@ export const useTaskItemCardListCardView = ({
   stageValue,
   summaryBuilders,
 }: Args) => {
-  const [hoveredDetail, setHoveredDetail] = useState<TaskDetailSelection | null>(null);
-  const [selectedDetail, setSelectedDetail] = useState<TaskDetailSelection | null>(null);
+  const [hoveredTaskDetailId, setHoveredTaskDetailId] = useState<string | null>(null);
+  const [selectedTaskDetailId, setSelectedTaskDetailId] = useState<string | null>(null);
   const wasDetailFloatingWindowOpenRef = useRef(isDetailFloatingWindowOpen);
   const openRequestRef = useRef<string | null>(null);
   const suppressOpenRef = useRef(false);
@@ -56,12 +58,53 @@ export const useTaskItemCardListCardView = ({
   const resolveStageIcon = useCallback((taskStageId: string): ReactNode | null => (
     stageIconById.get(taskStageId) ?? null
   ), [stageIconById]);
+  const resolveSummaryBuilder = useCallback((taskStageId: string): TaskOutcomeSummaryBuilder => {
+    const injectedBuilder = (isGeometryLikeStageId(taskStageId)
+      ? summaryBuilders?.geometry
+      : (isTileEmitLikeStageId(taskStageId)
+        ? summaryBuilders?.tileEmit
+        : summaryBuilders?.source));
+    return injectedBuilder
+      ?? (
+        isGeometryLikeStageId(taskStageId)
+          ? buildGeometryTaskOutcomeSummary
+          : (isTileEmitLikeStageId(taskStageId) ? buildSimpleTaskOutcomeSummary : buildSourceTaskOutcomeSummary)
+      );
+  }, [summaryBuilders]);
+  const taskByDetailId = useMemo(() => {
+    const map = new Map<string, ShapeBuildTaskSummary>();
+    tasks.forEach((task) => {
+      const taskDetailId = task.taskId ?? resolveTaskTitle(task as TaskItemWithMetadata);
+      map.set(taskDetailId, task);
+    });
+    return map;
+  }, [resolveTaskTitle, tasks]);
+  const resolveDetailSelection = useCallback((detailId: string | null): TaskDetailSelection | null => {
+    if (!detailId) return null;
+    const task = taskByDetailId.get(detailId);
+    if (!task) return null;
+    const taskTitle = resolveTaskTitle(task as TaskItemWithMetadata);
+    const summary = resolveSummaryBuilder(task.stage)({
+      task,
+      stageId: task.stage,
+      taskTitle,
+      translate: t,
+    });
+    return {
+      title: taskTitle,
+      summary,
+      task,
+    };
+  }, [resolveSummaryBuilder, resolveTaskTitle, t, taskByDetailId]);
+  const detail = useMemo(() => (
+    resolveDetailSelection(selectedTaskDetailId) ?? resolveDetailSelection(hoveredTaskDetailId)
+  ), [hoveredTaskDetailId, resolveDetailSelection, selectedTaskDetailId]);
 
   useEffect(() => {
     const wasOpen = wasDetailFloatingWindowOpenRef.current;
     if (wasOpen && !isDetailFloatingWindowOpen) {
-      setSelectedDetail(null);
-      setHoveredDetail(null);
+      setSelectedTaskDetailId(null);
+      setHoveredTaskDetailId(null);
       openRequestRef.current = null;
       suppressOpenRef.current = false;
     }
@@ -69,18 +112,17 @@ export const useTaskItemCardListCardView = ({
   }, [isDetailFloatingWindowOpen]);
 
   useEffect(() => {
-    if (!selectedDetail || isDetailFloatingWindowOpen) return;
+    if (!selectedTaskDetailId || isDetailFloatingWindowOpen) return;
     if (suppressOpenRef.current) return;
-    const selectedId = selectedDetail.task.taskId ?? selectedDetail.title;
-    if (openRequestRef.current === selectedId) return;
-    openRequestRef.current = selectedId;
+    if (openRequestRef.current === selectedTaskDetailId) return;
+    openRequestRef.current = selectedTaskDetailId;
     onOpenDetailFloatingWindow?.();
-  }, [isDetailFloatingWindowOpen, onOpenDetailFloatingWindow, selectedDetail]);
+  }, [isDetailFloatingWindowOpen, onOpenDetailFloatingWindow, selectedTaskDetailId]);
 
   const handleCloseDetail = useCallback(() => {
     suppressOpenRef.current = true;
-    setSelectedDetail(null);
-    setHoveredDetail(null);
+    setSelectedTaskDetailId(null);
+    setHoveredTaskDetailId(null);
     openRequestRef.current = null;
     onCloseDetailFloatingWindow?.();
   }, [onCloseDetailFloatingWindow]);
@@ -88,35 +130,19 @@ export const useTaskItemCardListCardView = ({
   const resolveTaskCardView = useCallback((task: ShapeBuildTaskSummary) => {
     const taskStageId = task.stage;
     const stageIcon = resolveStageIcon(taskStageId);
-    const injectedBuilder = (isGeometryLikeStageId(taskStageId)
-      ? summaryBuilders?.geometry
-      : (isTileEmitLikeStageId(taskStageId)
-        ? summaryBuilders?.tileEmit
-        : summaryBuilders?.source));
-    const summaryBuilder = injectedBuilder
-      ?? (
-        isGeometryLikeStageId(taskStageId)
-          ? buildGeometryTaskOutcomeSummary
-          : (isTileEmitLikeStageId(taskStageId) ? buildSimpleTaskOutcomeSummary : buildSourceTaskOutcomeSummary)
-      );
+    const summaryBuilder = resolveSummaryBuilder(taskStageId);
     const currentTaskDetailId = task.taskId ?? resolveTaskTitle(task as TaskItemWithMetadata);
-    const selectedTaskDetailId = selectedDetail?.task.taskId ?? selectedDetail?.title;
-    const hoveredTaskDetailId = hoveredDetail?.task.taskId ?? hoveredDetail?.title;
     const isDetailSelected = selectedTaskDetailId === currentTaskDetailId;
-    const isDetailHoverPreviewActive = !selectedDetail && hoveredTaskDetailId === currentTaskDetailId;
+    const isDetailHoverPreviewActive = !selectedTaskDetailId && hoveredTaskDetailId === currentTaskDetailId;
 
     const handleDetailHoverChange = (value: TaskDetailSelection | null) => {
-      if (selectedDetail) return;
-      setHoveredDetail(value);
+      if (selectedTaskDetailId) return;
+      setHoveredTaskDetailId(value?.task.taskId ?? value?.title ?? null);
     };
     const handleDetailClick = (value: TaskDetailSelection) => {
-      setHoveredDetail(null);
-      setSelectedDetail((previous) => {
-        const previousId = previous?.task.taskId ?? previous?.title;
-        const clickedId = value.task.taskId ?? value.title;
-        if (previousId === clickedId) return null;
-        return value;
-      });
+      const clickedId = value.task.taskId ?? value.title;
+      setHoveredTaskDetailId(null);
+      setSelectedTaskDetailId((previousId) => (previousId === clickedId ? null : clickedId));
     };
 
     return {
@@ -132,7 +158,7 @@ export const useTaskItemCardListCardView = ({
       handleDetailHoverChange,
       handleDetailClick,
     };
-  }, [hoveredDetail, resolveStageIcon, resolveStatusColor, resolveStatusLabel, resolveTaskTitle, selectedDetail, stageValue, summaryBuilders, t]);
+  }, [hoveredTaskDetailId, resolveStageIcon, resolveStatusColor, resolveStatusLabel, resolveSummaryBuilder, resolveTaskTitle, selectedTaskDetailId, stageValue, t]);
 
   const createTaskCardStyle = useCallback((start: number, size: number): CSSProperties => ({
     position: 'absolute',
@@ -146,7 +172,7 @@ export const useTaskItemCardListCardView = ({
 
   return {
     createTaskCardStyle,
-    detail: selectedDetail ?? hoveredDetail,
+    detail,
     handleCloseDetail,
     resolveTaskCardView,
   };
