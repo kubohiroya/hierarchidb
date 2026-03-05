@@ -155,6 +155,7 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
         pipeline,
         retryConfig: retries,
         onRetryAttempt: options?.onRetryAttempt,
+        onDownloadProgress: options?.onDownloadProgress,
       });
       return {
         ...decoded,

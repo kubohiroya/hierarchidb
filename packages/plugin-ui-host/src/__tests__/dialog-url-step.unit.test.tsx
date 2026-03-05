@@ -116,4 +116,37 @@ describe('useDialogFrameState url step', () => {
       expect(call[0].mode).toBe('full-screen');
     }
   });
+
+  it('does not rewrite maximize url mode to normal during initial render sync', async () => {
+    const onUrlStateChange = vi.fn();
+    let snapshot: Snapshot | null = null;
+
+    render(
+      <TestHarness
+        urlState={{ mode: 'maximize', step: 5 }}
+        initialDialogUIState={{
+          dialogWindow: {
+            mode: 'normal',
+            position: { x: 0, y: 0 },
+            size: { width: 800, height: 600 },
+            restorePosition: null,
+            restoreSize: null,
+          },
+          dialogProgress: { activeStepIndex: 1 },
+        }}
+        onSnapshot={(value) => {
+          snapshot = value;
+        }}
+        onUrlStateChange={onUrlStateChange}
+      />
+    );
+
+    await waitFor(() => {
+      expect(snapshot?.displayMode).toBe('maximize');
+    });
+
+    for (const call of onUrlStateChange.mock.calls) {
+      expect(call[0].mode).not.toBe('normal');
+    }
+  });
 });

@@ -32,7 +32,19 @@ const toPhaseFallback = (display: TaskDisplayPayload): string => {
     .trim()
     .toLowerCase();
   const phaseState = display.phaseState ?? 'progress';
-  return `${phaseCode} ${phaseState}`.trim();
+  const base = `${phaseCode} ${phaseState}`.trim();
+  if (display.phaseCode === 'retry-simplify-feature') {
+    const attemptRaw = (display.params as Record<string, unknown> | undefined)?.attempt;
+    const attempt = typeof attemptRaw === 'number'
+      ? attemptRaw
+      : typeof attemptRaw === 'string'
+        ? Number.parseInt(attemptRaw, 10)
+        : Number.NaN;
+    if (Number.isFinite(attempt) && attempt > 0) {
+      return `${base}: ${attempt}`;
+    }
+  }
+  return base;
 };
 
 const formatRate = (metric: TaskDisplayMetric): string => {

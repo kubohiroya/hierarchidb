@@ -7,7 +7,7 @@ import type {
   TaskSyncDebugChannel,
   TaskSyncDebugConfig,
 } from './useShapeBuildTaskSync.types.js';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 
 const isDev = import.meta.env.DEV;
 const RUNNING_RESIDUE_LOG_PREFIX = '[ShapeRunningResidue]';

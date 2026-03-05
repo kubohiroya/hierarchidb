@@ -19,7 +19,7 @@ import { resolveBuildStatusSource } from '~/ui/components/build-progress/resolve
 import type { BuildProgressStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
 import { useShapeBuildSessionState } from './useShapeBuildSessionState.js';
 
-const POLL_INTERVAL_MS = 1000; // Local constant for backward compatibility
+const POLL_INTERVAL_MS = 1000;
 import {
   getBuildSessionTransitionStatusLabel,
 } from './useShapeBuildStepHelpers/startupTrace.js';
@@ -47,6 +47,8 @@ import { useShapeBuildDraftSaver } from './useShapeBuildStepLogic/useShapeBuildD
 import { useShapeBuildProgressResidueMonitor } from './useShapeBuildStepLogic/useShapeBuildProgressResidueMonitor.js';
 import { useShapeBuildStopState } from './useShapeBuildStepLogic/useShapeBuildStopState.js';
 import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
+import { useAtomValue } from 'jotai';
+import { buildSessionRuntimeAtom } from '~/ui/atoms/buildSessionStateAtoms';
 
 export {
   shouldResetElapsedState,
@@ -76,13 +78,13 @@ const resolveRuntimeBuildStatus = (status?: RuntimeBuildStatus | null): BuildSta
 
 type Args = {
   data?: Partial<ShapeEntity>;
-  onChange: (patch: Partial<ShapeEntity>) => void;
   nodeId?: NodeId;
 };
 
 export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const { t } = useTranslation();
   const activeNodeId = nodeId ?? null;
+  const runtime = useAtomValue(buildSessionRuntimeAtom);
 
   const releaseBuildLock = useCallback(() => { }, []);
 
@@ -108,19 +110,11 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const crashCheckStartedAtRef = useRef<number>(Date.now());
   const clearStartPendingRef = useRef<(() => void) | null>(null);
   const {
-    sessionRecord,
     updateSessionRecord,
   } = useShapeBuildSessionState({
     activeNodeId,
   });
   const lastReceivingTaskSnapshotDecisionTraceKeyRef = useRef<string | null>(null);
-  const {
-    isStopRequestedInFlight,
-    isSessionStopping,
-    setIsStopRequested,
-    setIsStopAccepted,
-  } = useShapeBuildStopState({ sessionRecord });
-  const [requestedControlAction, setRequestedControlAction] = useState<'none' | 'start' | 'pause' | 'cancel'>('none');
   const {
     buildSessionTransition,
     beginBuildSessionTransition,
@@ -141,24 +135,25 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   });
 
 
-  const { progress, status, error } = useBuildProgress(activeNodeId, { autoSubscribe: Boolean(activeNodeId) });
+  const { progress, status, error } = useBuildProgress(activeNodeId);
   const hasNodeId = Boolean(activeNodeId && !error);
   const effectiveProgress = hasNodeId ? progress : null;
   const effectiveStatus = hasNodeId ? status : null;
   const stages = useShapeBuildStages({ t: (key, fallback) => t(key, fallback) });
-  const persistedProcessingStatus = sessionRecord ? toProcessingStatus(sessionRecord.status) : null;
-  const processingStatus = persistedProcessingStatus ?? 'idle';
-  const runtimeStatus: BuildProgressStatus['status'] | 'running' = (() => {
-    const recordStatus = sessionRecord?.status;
-    return status?.status ?? (recordStatus === 'running' ? 'running' : recordStatus ?? 'idle');
-  })();
-  const runtimeStatusForBuildStatus: BuildProgressStatus['status'] = (
-    runtimeStatus === 'running' ? 'processing' : runtimeStatus
-  );
-  const stopReason = sessionRecord?.stopReason;
+  const runtimeStatusForBuildStatus: BuildProgressStatus['status'] = status?.status ?? 'idle';
+  const runtimeStatus: BuildProgressStatus['status'] = runtimeStatusForBuildStatus;
+  const {
+    isStopRequestedInFlight,
+    isSessionStopping,
+    setIsStopRequested,
+    setIsStopAccepted,
+  } = useShapeBuildStopState({ runtimeStatus: runtimeStatusForBuildStatus });
+  const [requestedControlAction, setRequestedControlAction] = useState<'none' | 'start' | 'pause' | 'cancel'>('none');
+  const processingStatus = toProcessingStatus(runtimeStatusForBuildStatus);
+  const stopReason = runtime.stopReason;
   const statusSource = useMemo(() => {
-    return resolveBuildStatusSource(processingStatus, resolveRuntimeBuildStatus(effectiveStatus?.status ?? null));
-  }, [effectiveStatus?.status, processingStatus]);
+    return resolveBuildStatusSource(processingStatus, resolveRuntimeBuildStatus(runtimeStatus));
+  }, [processingStatus, runtimeStatus]);
   const effectiveStatusSource = useMemo(() => {
     if (isSessionStopping) return 'paused';
     return statusSource;
@@ -181,7 +176,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
         progressTaskStage: (effectiveProgress as { progressTaskStage?: string | null }).progressTaskStage ?? null,
       }
       : null,
-    sessionProgressTotal: sessionRecord?.progress?.total,
+    sessionProgressTotal: effectiveProgress?.total,
     hasNodeId,
     reportFailures: reportTaskFailures,
     baseBuildStatus,
@@ -189,7 +184,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
       if (buildSessionTransition.active) {
         return;
       }
-      if (!completed || sessionRecord?.status === 'completed' || sessionRecord?.status === 'failed') {
+      if (!completed || runtimeStatusForBuildStatus === 'completed' || runtimeStatusForBuildStatus === 'failed') {
         return;
       }
       const status = hasFailedTerminalTasks ? 'failed' : 'completed';
@@ -236,11 +231,17 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     effectiveProgress: effectiveProgress ?? null,
     effectiveStatus: effectiveStatus ?? null,
     stageFromState,
-    sessionRecord,
-    activeNodeId,
-    updateSessionRecord: async (patch) => {
-      await updateSessionRecord(patch);
+    sessionStageDurationByStageSnapshot: null,
+    runtimeTiming: {
+      startedAt: runtime.startedAt,
+      completedAt: runtime.completedAt,
+      heartbeatAt: runtime.heartbeatAt,
+      stageId: runtime.stageId,
+      inactiveMs: runtime.inactiveMs,
+      stageStartedAt: runtime.stageStartedAt,
+      stageInactiveMs: runtime.stageInactiveMs,
     },
+    activeNodeId,
   });
 
   const { buildSessionTransitionElapsedMs: startupLifecycleElapsedMs } = useShapeBuildSessionStartupLifecycle({
@@ -254,9 +255,9 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     hasStartedTasks,
     hasProgressTaskSignal,
     isTaskSnapshotProgressConnected,
-    runtimeStatus: runtimeStatus === 'running' ? 'processing' : runtimeStatus,
-    sessionProgressTotal: sessionRecord?.progress?.total,
-    sessionStageId: sessionRecord?.stageId ?? null,
+    runtimeStatus,
+    sessionProgressTotal: effectiveProgress?.total,
+    sessionStageId: runtime.stageId ?? null,
     receivingTaskSnapshotExpectationRef,
     resolvedStage: resolvedStageFromState,
     lastReceivingTaskSnapshotDecisionTraceKeyRef,
@@ -336,8 +337,8 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     crashCheckStartedAtRef,
     buildStatus: buildStatusForProgressMonitor,
     runtimeStatus: runtimeStatusForBuildStatus,
-    sessionRecord,
-    shouldMonitor: sessionRecord?.status === 'running' && !sessionRecord?.completedAt,
+    runtimeHeartbeatAt: runtime.heartbeatAt,
+    shouldMonitor: runtimeStatusForBuildStatus === 'processing' && runtime.completedAt === undefined,
     t: (key: string, fallback: string) => t(key, fallback),
     closeCrashSuspect: () => { },
     closeSuspendSuspect: () => { },
@@ -371,7 +372,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     updateSessionRecord,
     setIsStopRequested,
     setIsStopAccepted,
-    sessionRecord,
   });
 
   useEffect(() => {

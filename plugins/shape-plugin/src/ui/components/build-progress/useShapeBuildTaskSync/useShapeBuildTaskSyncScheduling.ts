@@ -4,7 +4,7 @@ import {
   isCompletedAtFullProgress,
   replaceSnapshotAndPreserveNonIncomingStages,
 } from './useShapeBuildTaskSync.comparison.utils.js';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import { upsertTaskInOrder } from '@hierarchidb/ui-build-sessions';
 import { useShapeBuildTaskSyncState } from './useShapeBuildTaskSyncState.js';
 import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';

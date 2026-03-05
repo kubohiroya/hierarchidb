@@ -1,9 +1,19 @@
+export type DownloadProgress = {
+  loadedBytes: number;
+  totalBytes?: number;
+  percentage?: number;
+};
+
+export type NetworkRequestInit = RequestInit & {
+  onDownloadProgress?: (progress: DownloadProgress) => void | Promise<void>;
+};
+
 export interface NetworkPort {
-  head(url: string, init?: RequestInit): Promise<ResponseLike>;
+  head(url: string, init?: NetworkRequestInit): Promise<ResponseLike>;
 
-  get(url: string, init?: RequestInit): Promise<ResponseLike>;
+  get(url: string, init?: NetworkRequestInit): Promise<ResponseLike>;
 
-  getRange(url: string, start: number, endInclusive: number, init?: RequestInit): Promise<ResponseLike>;
+  getRange(url: string, start: number, endInclusive: number, init?: NetworkRequestInit): Promise<ResponseLike>;
 }
 
 export interface ResponseLike {

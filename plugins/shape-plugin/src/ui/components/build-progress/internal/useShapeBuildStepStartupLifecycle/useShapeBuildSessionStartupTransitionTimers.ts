@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { resolveStartupTransitionWatchdogEvent } from '../../resolveStartupTransitionWatchdogEvent';
 
-const POLL_INTERVAL_MS = 1000; // Local constant for backward compatibility
+const POLL_INTERVAL_MS = 1000;
 import type {
   BuildSessionTransitionNotificationLevel,
   BuildSessionTransitionState,
@@ -38,7 +38,7 @@ type UseShapeBuildSessionStartupTransitionTimersArgs = {
 };
 
 const handleTimeout = (
-  elapsedMs: number,
+  durationMs: number,
   phase: BuildSessionTransitionPhase,
   finishBuildStartupStep: UseShapeBuildSessionStartupTransitionTimersArgs['finishBuildStartupStep'],
   finishBuildSessionTransition: UseShapeBuildSessionStartupTransitionTimersArgs['finishBuildSessionTransition'],
@@ -46,29 +46,29 @@ const handleTimeout = (
 ): void => {
   emitBuildSessionTransitionLog('error', 'build session transition timeout', {
     phase,
-    elapsedMs,
+    durationMs,
   });
   if (phase === 'receiving-task-snapshot') {
     finishBuildStartupStep('receiving-task-snapshot', 'error', {
       reason: 'timeout-before-task-start',
-      elapsedMs,
+      durationMs,
     });
   }
   finishBuildSessionTransition({
     level: 'error',
-    message: `Build did not start task processing (${phase}, ${Math.round(elapsedMs / 1000)}s).`,
+    message: `Build did not start task processing (${phase}, ${Math.round(durationMs / 1000)}s).`,
   });
 };
 
 const handleLongWait = (
-  elapsedMs: number,
+  durationMs: number,
   phase: BuildSessionTransitionPhase,
   emitBuildSessionTransitionLog: UseShapeBuildSessionStartupTransitionTimersArgs['emitBuildSessionTransitionLog'],
   pushBuildSessionTransitionNotification: UseShapeBuildSessionStartupTransitionTimersArgs['pushBuildSessionTransitionNotification'],
 ): void => {
   emitBuildSessionTransitionLog('warn', 'build session transition long wait', {
     phase,
-    elapsedMs,
+    durationMs,
   });
   pushBuildSessionTransitionNotification(
     'warning',
@@ -77,14 +77,14 @@ const handleLongWait = (
 };
 
 const handleWait = (
-  elapsedMs: number,
+  durationMs: number,
   phase: BuildSessionTransitionPhase,
   emitBuildSessionTransitionLog: UseShapeBuildSessionStartupTransitionTimersArgs['emitBuildSessionTransitionLog'],
   pushBuildSessionTransitionNotification: UseShapeBuildSessionStartupTransitionTimersArgs['pushBuildSessionTransitionNotification'],
 ): void => {
   emitBuildSessionTransitionLog('info', 'build session transition wait', {
     phase,
-    elapsedMs,
+    durationMs,
   });
   pushBuildSessionTransitionNotification(
     'info',
@@ -113,17 +113,17 @@ export const useShapeBuildSessionStartupTransitionTimers = ({
       return;
     }
     const intervalId = window.setInterval(() => {
-      const elapsedMs = Date.now() - buildSessionTransition.startedAt;
-      setBuildSessionTransitionElapsedMs(elapsedMs);
+      const durationMs = Date.now() - buildSessionTransition.startedAt;
+      setBuildSessionTransitionElapsedMs(durationMs);
       const watchdogEvent = resolveStartupTransitionWatchdogEvent({
-        elapsedMs,
+        durationMs,
         warnStep: buildSessionTransitionWarnStepRef.current,
       });
       if (watchdogEvent.kind === 'none') return;
       buildSessionTransitionWarnStepRef.current = watchdogEvent.nextWarnStep;
       if (watchdogEvent.kind === 'timeout') {
         handleTimeout(
-          elapsedMs,
+          durationMs,
           phase,
           finishBuildStartupStep,
           finishBuildSessionTransition,
@@ -133,7 +133,7 @@ export const useShapeBuildSessionStartupTransitionTimers = ({
       }
       if (watchdogEvent.kind === 'long-wait') {
         handleLongWait(
-          elapsedMs,
+          durationMs,
           phase,
           emitBuildSessionTransitionLog,
           pushBuildSessionTransitionNotification,
@@ -141,7 +141,7 @@ export const useShapeBuildSessionStartupTransitionTimers = ({
         return;
       }
       handleWait(
-        elapsedMs,
+        durationMs,
         phase,
         emitBuildSessionTransitionLog,
         pushBuildSessionTransitionNotification,
@@ -169,13 +169,13 @@ export const useShapeBuildSessionStartupTransitionTimers = ({
       return;
     }
     const tick = () => {
-      const elapsedMs = Date.now() - buildSessionTransition.startedAt;
-      const nextStep = Math.floor(elapsedMs / POLL_INTERVAL_MS);
+      const durationMs = Date.now() - buildSessionTransition.startedAt;
+      const nextStep = Math.floor(durationMs / POLL_INTERVAL_MS);
       if (nextStep <= buildSessionTransitionWaitLogStepRef.current) return;
       buildSessionTransitionWaitLogStepRef.current = nextStep;
       emitBuildSessionTransitionLog('info', 'build session waiting for lock', {
         phase: buildSessionTransition.phase,
-        elapsedMs,
+        durationMs,
         pollIntervalMs: POLL_INTERVAL_MS,
       });
     };

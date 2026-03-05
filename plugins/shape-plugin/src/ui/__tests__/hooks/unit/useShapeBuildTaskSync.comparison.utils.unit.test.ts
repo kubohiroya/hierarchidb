@@ -10,6 +10,7 @@ import type { RawTaskSummary } from '../../../components/build-progress/useShape
 const makeTask = (overrides: Partial<ShapeBuildTaskSummary>): ShapeBuildTaskSummary => ({
   taskId: 'task-unknown',
   stage: 'source',
+  version: 1,
   status: 'queued',
   progress: 0,
   message: 'queued',
@@ -44,11 +45,11 @@ describe('reconcileSnapshotWithCurrentTasks', () => {
 });
 
 describe('shouldPreferNextTask', () => {
-  it('rejects progress regression', () => {
+  it('accepts same-version update even when progress regresses', () => {
     expect(shouldPreferNextTask(
       makeTask({ status: 'running', progress: 80 }),
       makeTask({ status: 'running', progress: 50 }),
-    )).toBe(false);
+    )).toBe(true);
   });
 
   it('accepts progress advancement', () => {
@@ -63,6 +64,7 @@ describe('resolveTaskSummaryFromRaw', () => {
   const buildRawTask = (overrides: Partial<RawTaskSummary>): RawTaskSummary => ({
     taskId: 'task-unknown',
     stage: 'source',
+    version: 1,
     status: 'queued',
     progress: 0,
     message: 'queued',
@@ -75,7 +77,7 @@ describe('resolveTaskSummaryFromRaw', () => {
   });
 
   it('keeps canonical stage', () => {
-    const task = resolveTaskSummaryFromRaw(buildRawTask({ stage: 'geometry', progress: 100 }));
+    const task = resolveTaskSummaryFromRaw(buildRawTask({ stage: 'geometry', progress: 50 }));
     expect(task.stage).toBe('geometry');
   });
 
@@ -95,5 +97,17 @@ describe('resolveTaskSummaryFromRaw', () => {
       progress: 25,
     }));
     expect(task.stage).toBe('geometry');
+  });
+
+  it('throws when progress is undefined', () => {
+    expect(() => resolveTaskSummaryFromRaw(buildRawTask({ progress: undefined }))).toThrow('invalid progress');
+  });
+
+  it('throws when progress is negative', () => {
+    expect(() => resolveTaskSummaryFromRaw(buildRawTask({ progress: -1 }))).toThrow('invalid progress');
+  });
+
+  it('throws when progress is greater than 100', () => {
+    expect(() => resolveTaskSummaryFromRaw(buildRawTask({ progress: 101 }))).toThrow('invalid progress');
   });
 });

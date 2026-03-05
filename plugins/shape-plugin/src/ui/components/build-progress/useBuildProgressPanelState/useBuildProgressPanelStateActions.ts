@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
-import type { TaskProgressControls } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { TaskProgressControls } from '~/ui/atoms/shapeBuildProgressTypes';
 import { logStartResumeTrace } from './useBuildProgressPanelState.utils.js';
 
 type Params = {
@@ -60,19 +60,19 @@ export const useBuildProgressPanelStateActions = (params: Params): Return => {
     const waitTimer = window.setInterval(() => {
       logStartResumeTrace('runStartOrResume waiting for handler', {
         nodeId,
-        elapsedMs: Math.max(0, Date.now() - requestStartedAt),
+        durationMs: Math.max(0, Date.now() - requestStartedAt),
       });
     }, 3000);
     try {
       await startHandler();
       logStartResumeTrace('runStartOrResume handler resolved', {
         nodeId,
-        elapsedMs: Math.max(0, Date.now() - requestStartedAt),
+        durationMs: Math.max(0, Date.now() - requestStartedAt),
       });
     } catch (error) {
       logStartResumeTrace('runStartOrResume handler rejected', {
         nodeId,
-        elapsedMs: Math.max(0, Date.now() - requestStartedAt),
+        durationMs: Math.max(0, Date.now() - requestStartedAt),
         errorMessage: error instanceof Error ? error.message : String(error),
       });
       throw error;
@@ -81,7 +81,7 @@ export const useBuildProgressPanelStateActions = (params: Params): Return => {
       setLocalStartPending(false);
       logStartResumeTrace('runStartOrResume pending cleared', {
         nodeId,
-        elapsedMs: Math.max(0, Date.now() - requestStartedAt),
+        durationMs: Math.max(0, Date.now() - requestStartedAt),
       });
     }
   }, [

@@ -1,7 +1,7 @@
 import { type ForwardedRef, type MutableRefObject, useCallback, useEffect, useMemo, useRef } from 'react';
 import { type Virtualizer, useVirtualizer } from '@tanstack/react-virtual';
 import { useSetAtom } from 'jotai';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import { taskViewportRangeAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { TASK_ITEM_HEIGHT } from '~/ui/components/build-progress/TaskItem/TASK_ITEM_HEIGHT';
 import { type TaskItemWithMetadata } from './types.js';
@@ -163,10 +163,7 @@ export const useTaskItemCardList = ({
         return;
       }
       lastViewportRef.current = next;
-      setViewportRange({
-        ...next,
-        updatedAt: Date.now(),
-      });
+      setViewportRange(next);
     };
     updateViewport();
     const handleScroll = () => {
@@ -211,10 +208,7 @@ export const useTaskItemCardList = ({
       return;
     }
     lastViewportRef.current = next;
-    setViewportRange({
-      ...next,
-      updatedAt: Date.now(),
-    });
+    setViewportRange(next);
   }, [setViewportRange, shouldVirtualize, stageId, orderedTasks]);
 
   return {

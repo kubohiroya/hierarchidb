@@ -6,18 +6,22 @@ import type { PaneProgress } from '@hierarchidb/ui-lru-splitview';
 import type { ShapeBuildConfig, ShapeProcessingConfig } from '~/common/types/BuildTaskResult';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import type {
-  CrashSuspectControls,
   ShapeBuildTaskSummary,
-  SuspendSuspectControls,
   TaskProgressControls,
   TaskProgressSummary,
-} from '~/ui/atoms/shapeBuildProgressAtoms';
+} from '~/ui/atoms/shapeBuildProgressTypes';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 import type { BuildProgressPanelStateComputed } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelStateComputed';
 import type { StartWarning } from '~/ui/components/build-progress/useBuildProgressPanelState/useShapeBuildProgressWarnings';
 import type { TranslateFn } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelStateComputedHelpers';
 
 type StageMetadataMap<T> = Record<string, T>;
+type CrashSuspectControls = {
+  close: () => void;
+};
+type SuspendSuspectControls = {
+  close: () => void;
+};
 
 type CompletionSnapshot = {
   status: BuildStatus;

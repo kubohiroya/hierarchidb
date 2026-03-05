@@ -17,13 +17,12 @@ export const useShapeBuildPause = ({
   setRequestedControlAction,
   setIsStopRequested,
   setIsStopAccepted,
-  sessionRecord,
   handleCancelQueued,
 }: PauseWithCancelHookActionsArgs) => {
-  const sessionRecordRef = useRef(sessionRecord);
+  const runtimeStatusRef = useRef(runtimeStatus);
   useEffect(() => {
-    sessionRecordRef.current = sessionRecord;
-  }, [sessionRecord]);
+    runtimeStatusRef.current = runtimeStatus;
+  }, [runtimeStatus]);
 
   const handlePause = useCallback(async (reason: ShapeBuildPauseReason = 'user-pause'): Promise<void> => {
     if (!activeNodeId) {
@@ -53,7 +52,7 @@ export const useShapeBuildPause = ({
       if (!shouldLogPauseTrace) return;
       console.log('[ShapeBuildPauseTrace] handlePause', {
         nodeId: String(activeNodeId),
-        elapsedMs: Math.max(0, Date.now() - pauseRequestedAt),
+        durationMs: Math.max(0, Date.now() - pauseRequestedAt),
         event,
         reason,
         buildStatus,
@@ -91,7 +90,7 @@ export const useShapeBuildPause = ({
 
       // セッション状態の同期を待機（オプション）
       const sessionSyncSuccess = await waitForSessionStateSync(
-        () => sessionRecordRef.current?.status === 'paused',
+        () => runtimeStatusRef.current === 'paused',
         PAUSE_STATE_SYNC_TIMEOUT_MS,
       );
 

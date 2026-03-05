@@ -9,6 +9,7 @@ import type {
   ShapeBuildProgressSummary,
   ShapeBuildSessionRecord,
   ShapeBuildStopReason,
+  ShapeBuildTaskRecord,
 } from '@hierarchidb/shape-api';
 import type {
   ShapeRuntimeBuildConfig,
@@ -47,11 +48,12 @@ import {
   VtTaskQueueDb,
   deleteTasksByIds,
   listTasks,
+  listTasksByStage,
   listTasksByStatus,
   onTaskQueueUpdate,
   putTasks,
 } from '@hierarchidb/vt-orchestrator';
-import type { BuildSessionConfig, BuildSessionRecord, BuildTaskRecord, StageStatus } from '@hierarchidb/shape-store';
+import type { BuildSessionConfig, BuildSessionRecord, StageStatus } from '@hierarchidb/shape-store';
 import { ephemeralDB, type EphemeralBuildTaskRecord } from '@hierarchidb/gis-sdk';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import {
@@ -309,7 +311,21 @@ const resolveTaskProgress = (task: TaskQueueRecord): number => {
   return task.progress ?? 0;
 };
 
-type BuildTaskRecordLike = BuildTaskRecord | EphemeralBuildTaskRecord;
+type BuildTaskRecordLike = ShapeBuildTaskRecord | EphemeralBuildTaskRecord;
+
+const readTaskVersionStrict = (task: BuildTaskRecordLike): number => {
+  const version = (task as { version?: unknown }).version;
+  if (typeof version !== 'number' || !Number.isFinite(version) || version < 1) {
+    throw new Error(`[shapeBuildAPI] invalid task version: ${String(version)} (taskId=${task.taskId})`);
+  }
+  return Math.floor(version);
+};
+
+const readTaskDisplay = (task: BuildTaskRecordLike): TaskDisplayPayload | undefined => {
+  const display = (task as { display?: unknown }).display;
+  if (!display || typeof display !== 'object') return undefined;
+  return display as TaskDisplayPayload;
+};
 
 const resolveBuildTaskMetadata = (task: BuildTaskRecordLike): Record<string, unknown> | undefined => {
   if (
@@ -360,12 +376,13 @@ const mapBuildTaskToQueueTask = (task: BuildTaskRecordLike): TaskQueueRecord => 
     : 0;
   return {
     taskId: task.taskId,
+    version: readTaskVersionStrict(task),
     nodeId: task.nodeId,
     stage: task.stage,
     status: nextStatus,
     index: task.index,
     progress: resolvedProgress,
-    display: shouldKeepOutput ? task.display : undefined,
+    display: shouldKeepOutput ? readTaskDisplay(task) : undefined,
     message: keepMessage,
     inputData: task.inputData,
     outputData: shouldKeepOutput ? task.outputData : undefined,
@@ -708,6 +725,7 @@ const mapTaskQueueRecordToTaskSummary = (
   const metadata = sanitizeTaskMetadataForSummary(task, preview);
   return {
     taskId: task.taskId,
+    version: task.version,
     nodeId: task.nodeId,
     stage: task.stage,
     stageId: toCanonicalStageId(task.stage),
@@ -884,11 +902,34 @@ const buildTaskSummarySnapshot = async (
   return tasks.map((task) => mapTaskQueueRecordToTaskSummary(task));
 };
 
+const emitTaskSnapshot = async (
+  nodeId: NodeId,
+  options?: { stage?: TaskQueueRecord['stage'] },
+): Promise<void> => {
+  const key = String(nodeId);
+  const subscription = taskCallbacks.get(key);
+  if (!subscription?.callback) return;
+  const taskQueue = new VtTaskQueueDb();
+  const tasks = options?.stage
+    ? await listTasksByStage(taskQueue, nodeId, options.stage)
+    : await listTasks(taskQueue, nodeId);
+  const snapshot = tasks.map((task) => mapTaskQueueRecordToTaskSummary(task));
+  subscription.callback({
+    type: 'snapshot',
+    nodeId,
+    tasks: snapshot,
+  });
+};
+
+type ShapeProgressPayload = BuildProgressPayload & {
+  percentage: number;
+};
+
 const buildProgressPayloadFromTasks = async (
   nodeId: NodeId,
   tasks: TaskQueueRecord[],
   options?: { eventTask?: TaskQueueRecord; source?: 'event' | 'snapshot' },
-): Promise<BuildProgressPayload> => {
+): Promise<ShapeProgressPayload> => {
   const summary = await summarizeTaskQueueProgress(nodeId, tasks, resolveTaskType(tasks));
   const stageStatusMap = buildStageStatusMap(nodeId, tasks);
   const progressTask = options?.eventTask ?? selectLatestTaskByProgress(tasks) ?? undefined;
@@ -930,6 +971,7 @@ const buildProgressPayloadFromTasks = async (
     completed: summary.completed,
     failed: summary.failed,
     skipped: summary.skipped,
+    percentage: summary.percentage,
     meta: Object.keys(meta).length > 0 ? meta : undefined,
   };
 };
@@ -1293,7 +1335,7 @@ const waitIfPaused = async (nodeId: NodeId): Promise<void> => {
   });
   console.warn('[shapeBuildAPI][PauseTrace] wait-exit', {
     nodeId,
-    elapsedMs: Date.now() - startedAt,
+    durationMs: Date.now() - startedAt,
     waitersRemaining: state.waiters.length,
   });
 };
@@ -1429,8 +1471,9 @@ const emitProgressSnapshot = async (
     const phase = resolveProgressPhase(nodeId, vtTasks);
     const statusSummary = summarizeTaskQueueStatus(vtTasks);
     const payload = await buildProgressPayloadFromTasks(nodeId, vtTasks, { source: 'snapshot' });
+    const snapshotPayload: Record<string, unknown> = { ...payload };
     const resolvedStageId = statusSummary.stage ?? 'source';
-    emitStageSnapshot(nodeId, resolvedStageId, payload as Record<string, unknown>);
+    emitStageSnapshot(nodeId, resolvedStageId, snapshotPayload);
     sub.callback({
       nodeId,
       stage: resolvedStageId,
@@ -1467,6 +1510,7 @@ export const shapeBuildRuntimeExecutionMetrics = {
   getShapeEntityHandler,
   onTaskQueueUpdate,
   buildTaskSummarySnapshot,
+  emitTaskSnapshot,
   waitIfPaused,
   setPaused,
   startSessionTracking,

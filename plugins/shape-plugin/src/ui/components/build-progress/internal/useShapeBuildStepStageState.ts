@@ -1,17 +1,12 @@
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { NodeId } from '@hierarchidb/core-types';
-import { useAtomValue, useSetAtom } from 'jotai';
-import { useEffect, useMemo, useRef } from 'react';
+import { useAtomValue } from 'jotai';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { buildSessionRuntimeAtom, buildSessionTasksByStageAtom } from '~/ui/atoms/buildSessionStateAtoms';
 import type { BuildProgressStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
 import { hasReceivingTaskSnapshotSignal as detectTaskSnapshotSignal } from '~/ui/components/build-progress/hasReceivingTaskSnapshotSignal';
-import { persistedTasksAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
-import type { TaskListViewPhase } from '~/ui/atoms/shapeBuildProgressAtoms';
-import {
-  useShapeBuildTaskSnapshotProgressState,
-  type StageId,
-  type BuildStageStateById,
-} from '~/ui/components/build-progress/useShapeBuildTaskSnapshotProgressState/useShapeBuildTaskSnapshotProgressState';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
+import type { TaskListViewPhase } from '~/ui/atoms/shapeBuildProgressTypes';
 import { areTaskListsEquivalentForView } from '~/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparison.utils';
 import { resolveMostAdvancedInFlightStageId, resolveMostAdvancedRunningStageId } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/stage';
 import { resolveDisplayBuildStatus } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/status';
@@ -31,6 +26,16 @@ type ProgressLike = {
 };
 
 type ProcessingStatus = 'idle' | 'processing' | 'paused' | 'completed' | 'failed';
+type StageId = string;
+type StageCountByStage = Record<StageId, number>;
+type BuildStageState = {
+  stage: StageId;
+  stageTask: ShapeBuildTaskSummary[];
+  stageTaskCompletedById: Map<string, ShapeBuildTaskSummary>;
+  isCompleted: boolean;
+  hasSnapshot: boolean;
+};
+type BuildStageStateById = Map<StageId, BuildStageState>;
 
 type Args = {
   activeNodeId: NodeId | null;
@@ -94,13 +99,23 @@ export const resolveTaskListViewPhase = (input: {
     || input.hasProgressTaskSignal
     || (input.baseBuildStatus === 'paused' && !input.hasAnyTaskSnapshot)
   ) {
-    return 'awaitingSnapshot';
+    return 'ui-initializing';
   }
   if (input.baseBuildStatus === 'idle') {
     return 'idle';
   }
   return 'settledEmpty';
 };
+
+export const shouldClearPersistedTasksOnReset = (input: {
+  runtimePhase: string;
+  lastAcceptedEventVersion: number;
+  taskCount: number;
+}): boolean => (
+  input.taskCount === 0
+  && input.runtimePhase === 'idle'
+  && input.lastAcceptedEventVersion === 0
+);
 
 export const useShapeBuildStepStageState = ({
   activeNodeId,
@@ -112,6 +127,7 @@ export const useShapeBuildStepStageState = ({
   baseBuildStatus,
   onTerminalStageCompletion,
 }: Args): UseShapeBuildStepStageStateReturn => {
+  void reportFailures;
   const configuredStageOrder = useMemo(() => stages.map((stage) => stage.id), [stages]);
   const terminalStageId = useMemo<StageId | null>(() => {
     if (configuredStageOrder.length <= 0) {
@@ -125,39 +141,130 @@ export const useShapeBuildStepStageState = ({
     }
     return configuredStageOrder[0] as StageId;
   }, [configuredStageOrder]);
-  const {
-    tasks,
-    isLoading,
-    isTaskSnapshotProgressConnected,
-    hasAnyTaskSnapshot,
-    hasTaskSnapshotByStage,
-    stageOrder: resolvedStageOrder,
-    stageBuildStateById,
-    snapshotTaskCountByStage,
-    terminalTaskCountByStage,
-  } = useShapeBuildTaskSnapshotProgressState(activeNodeId, {
-    reportFailures,
-    stageOrder: configuredStageOrder,
-  });
+  const runtime = useAtomValue(buildSessionRuntimeAtom);
+  const tasksByStage = useAtomValue(buildSessionTasksByStageAtom);
 
-  const persistedTasks = useAtomValue(persistedTasksAtom);
-  const setPersistedTasks = useSetAtom(persistedTasksAtom);
+  const tasks = useMemo<ShapeBuildTaskSummary[]>(() => {
+    const next: ShapeBuildTaskSummary[] = [];
+    for (const stageId of configuredStageOrder) {
+      const stageTasks = tasksByStage[stageId as keyof typeof tasksByStage] ?? [];
+      for (const task of stageTasks) {
+        const summary: ShapeBuildTaskSummary = {
+          taskId: task.taskId,
+          version: task.version,
+          stage: task.stage,
+          status: task.status,
+          progress: task.progress,
+          sequence: task.sequence,
+          metadata: task.metadata,
+          display: task.display,
+          index: task.sequence,
+          nodeId: activeNodeId ?? undefined,
+        };
+        next.push(summary);
+      }
+    }
+    return next;
+  }, [activeNodeId, configuredStageOrder, tasksByStage]);
+
+  const hasTaskSnapshotByStage = useMemo<Record<StageId, boolean>>(() => {
+    const next: Record<StageId, boolean> = {};
+    for (const stageId of configuredStageOrder) {
+      const stageTasks = tasksByStage[stageId as keyof typeof tasksByStage] ?? [];
+      next[stageId] = stageTasks.length > 0;
+    }
+    return next;
+  }, [configuredStageOrder, tasksByStage]);
+
+  const hasAnyTaskSnapshot = tasks.length > 0;
+  const isTaskSnapshotProgressConnected = Boolean(activeNodeId);
+  const isLoading = useMemo(() => {
+    if (!activeNodeId) return false;
+    if (hasAnyTaskSnapshot) return false;
+    const phase = runtime.phase;
+    return phase === 'starting' || phase === 'running' || phase === 'resuming' || phase === 'pausing';
+  }, [activeNodeId, hasAnyTaskSnapshot, runtime.phase]);
+
+  const resolvedStageOrder = configuredStageOrder;
+
+  const stageBuildStateById = useMemo<BuildStageStateById>(() => {
+    const next = new Map<StageId, BuildStageState>();
+    for (const stageId of resolvedStageOrder) {
+      next.set(stageId, {
+        stage: stageId,
+        stageTask: [],
+        stageTaskCompletedById: new Map<string, ShapeBuildTaskSummary>(),
+        isCompleted: false,
+        hasSnapshot: Boolean(hasTaskSnapshotByStage[stageId]),
+      });
+    }
+    for (const task of tasks) {
+      const stage = task.stage;
+      const current = next.get(stage) ?? {
+        stage,
+        stageTask: [],
+        stageTaskCompletedById: new Map<string, ShapeBuildTaskSummary>(),
+        isCompleted: false,
+        hasSnapshot: Boolean(hasTaskSnapshotByStage[stage]),
+      };
+      if (current.stageTask.length === 0) {
+        current.isCompleted = true;
+      }
+      current.stageTask.push(task);
+      if (task.status === 'completed' || task.status === 'failed' || task.status === 'recycled') {
+        current.stageTaskCompletedById.set(task.taskId, task);
+      } else {
+        current.isCompleted = false;
+      }
+      next.set(stage, current);
+    }
+    return next;
+  }, [hasTaskSnapshotByStage, resolvedStageOrder, tasks]);
+
+  const snapshotTaskCountByStage = useMemo<StageCountByStage>(() => {
+    const next: StageCountByStage = {};
+    stageBuildStateById.forEach((state, stageId) => {
+      if (state.stageTask.length > 0) next[stageId] = state.stageTask.length;
+    });
+    return next;
+  }, [stageBuildStateById]);
+
+  const terminalTaskCountByStage = useMemo<StageCountByStage>(() => {
+    const next: StageCountByStage = {};
+    stageBuildStateById.forEach((state, stageId) => {
+      if (state.stageTaskCompletedById.size > 0) next[stageId] = state.stageTaskCompletedById.size;
+    });
+    return next;
+  }, [stageBuildStateById]);
+
+  const [persistedTasks, setPersistedTasks] = useState<ShapeBuildTaskSummary[]>([]);
   const lastPersistedNodeIdRef = useRef<NodeId | null>(null);
 
   useEffect(() => {
     const currentNodeId = activeNodeId ?? null;
     if (lastPersistedNodeIdRef.current && lastPersistedNodeIdRef.current !== currentNodeId) {
-      setPersistedTasks([]);
+      setPersistedTasks(() => []);
     }
     lastPersistedNodeIdRef.current = currentNodeId;
-  }, [activeNodeId, setPersistedTasks]);
+  }, [activeNodeId]);
 
   useEffect(() => {
     if (tasks.length === 0) return;
     setPersistedTasks((previous) => (
       areTaskListsEquivalentForView(previous, tasks) ? previous : tasks
     ));
-  }, [setPersistedTasks, tasks]);
+  }, [tasks]);
+
+  useEffect(() => {
+    if (!shouldClearPersistedTasksOnReset({
+      runtimePhase: runtime.phase,
+      lastAcceptedEventVersion: runtime.lastAcceptedEventVersion,
+      taskCount: tasks.length,
+    })) {
+      return;
+    }
+    setPersistedTasks([]);
+  }, [runtime.lastAcceptedEventVersion, runtime.phase, tasks.length]);
 
   const rawDisplayTasks = tasks.length > 0 ? tasks : persistedTasks;
   const displayTasks = useMemo<ShapeBuildTaskSummary[]>(() => (

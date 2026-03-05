@@ -15,7 +15,7 @@ import {
   countVerticesFromGeometry,
 } from './vtStageGeometryCounts.js';
 import {
-  decodeTransformByBandCache,
+  decodeGeometryStageCache,
   describeBuffer,
 } from './vtStageFeatureSource.js';
 
@@ -60,7 +60,7 @@ export const collectFeaturesFromRecord = async (
       byteLength: record.data.byteLength,
     }));
   }
-  const collection = await decodeTransformByBandCache(record.data);
+  const collection = await decodeGeometryStageCache(record.data);
   if (debugCollect) {
     console.info('[tileEmit][debug] decode done', JSON.stringify({
       nodeId,

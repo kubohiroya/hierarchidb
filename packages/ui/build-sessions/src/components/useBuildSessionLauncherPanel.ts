@@ -131,7 +131,12 @@ const useBuildStages = (t: (key: string, fallback: string) => string): BuildStag
   );
 };
 
-const resolveRequestedAt = (session: BuildSessionSnapshot): number => session.updatedAt ?? 0;
+const resolveRequestedAt = (session: BuildSessionSnapshot): number => (
+  session.lastHeartbeatAt
+  ?? session.completedAt
+  ?? session.startedAt
+  ?? session.revision
+);
 
 export const useBuildSessionLauncherPanel = ({
   sessions,

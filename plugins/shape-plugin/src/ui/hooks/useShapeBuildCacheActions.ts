@@ -2,9 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { BuildSessionStatus } from '@hierarchidb/build-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
-import { useSetAtom } from 'jotai';
 import { VtTaskQueueDb as TileEmitTaskQueueDb } from '@hierarchidb/vt-orchestrator';
-import { persistedTasksAtom, tasksAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
 import {
   loadCacheCounts,
   clearBuildTasksForStages,
@@ -67,8 +65,6 @@ type ActionDeps = {
   hasRunningBuildSession: () => Promise<boolean>;
   onResetSession?: () => void;
   persistSessionReset: () => Promise<void>;
-  setBuildTasks: ReturnType<typeof useSetAtom<typeof tasksAtom>>;
-  setPersistedTasks: ReturnType<typeof useSetAtom<typeof persistedTasksAtom>>;
   runClearTaskQueueStages: (taskTypes: Parameters<typeof clearBuildTasksForStages>[2]) => Promise<void>;
 };
 
@@ -87,8 +83,6 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
     resetSession: false,
   });
   const [sessionStatus, setSessionStatus] = useState<BuildSessionStatus['status'] | null>(null);
-  const setBuildTasks = useSetAtom(tasksAtom);
-  const setPersistedTasks = useSetAtom(persistedTasksAtom);
 
   const runClearTaskQueueStages = useCallback(
     async (taskTypes: Parameters<typeof clearBuildTasksForStages>[2]) => {
@@ -194,8 +188,6 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
       hasRunningBuildSession,
       onResetSession,
       persistSessionReset,
-      setBuildTasks,
-      setPersistedTasks,
       runClearTaskQueueStages,
     } satisfies ActionDeps),
     [
@@ -207,8 +199,6 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
       runClearTaskQueueStages,
       runDelete,
       sessionStatus,
-      setBuildTasks,
-      setPersistedTasks,
       loadCountsSafely,
     ],
   );

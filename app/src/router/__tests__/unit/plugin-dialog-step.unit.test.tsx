@@ -169,6 +169,56 @@ describe('usePluginDialogRoute step params', () => {
     expect(snapshot?.urlDisplayMode).toBe('normal');
   });
 
+  it('falls back to pathname mode/step when route params are not hydrated yet', () => {
+    mockMatches = [
+      {
+        routeId: treeRouteIds.dialog,
+        params: {
+          treeId: 'r',
+          pageNodeId: 'r:root',
+          targetNodeId: 'node-1',
+          nodeType: 'shape',
+          action: 'edit',
+        },
+      },
+    ];
+    mockLocation = {
+      pathname: '/t/r/r:root/node-1/shape/edit/maximize/5',
+      searchStr: '',
+      hash: '',
+    };
+
+    const treeId = 'r' as TreeId;
+    const pageNodeId = 'r:root' as NodeId;
+    const targetNodeId = 'node-1' as NodeId;
+    const data = {
+      client: {} as Remote<BuildWorkerAPI>,
+      tree: { id: treeId } as Tree,
+      pageNodeId,
+      pageNode: undefined,
+      targetNodeId,
+      targetNode: undefined,
+      nodeType: 'shape' as NodeType,
+      action: NodeAction.UPDATE,
+      params: {
+        treeId: 'r',
+        pageNodeId: 'r:root',
+        targetNodeId: 'node-1',
+        nodeType: 'shape',
+        action: 'edit',
+        mode: 'normal',
+        step: '1',
+      },
+    } satisfies Parameters<typeof usePluginDialogRoute>[0];
+
+    let result: HookResult | null = null;
+    render(<HookHarness data={data} onResult={(value) => (result = value)} />);
+
+    const snapshot = result as HookResult | null;
+    expect(snapshot?.currentStep).toBe(5);
+    expect(snapshot?.urlDisplayMode).toBe('maximize');
+  });
+
   it('writes step to the dialog route', () => {
     mockMatches = [
       {

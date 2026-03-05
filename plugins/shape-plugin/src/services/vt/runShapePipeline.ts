@@ -47,6 +47,11 @@ export type ShapePipelineParams = {
     taskCount: number;
     source: 'created' | 'reused';
   }) => Promise<void> | void;
+  onStageTasksPrepared?: (payload: {
+    nodeId: NodeId;
+    stage: TaskStage;
+    taskCount: number;
+  }) => Promise<void> | void;
 };
 
 type ShapePipelineContext = {
@@ -86,7 +91,7 @@ const collectRecyclingAllowlist = async (nodeId: NodeId) => {
     });
   console.warn('[ShapePipeline][Startup] collect recycling allowlist finish', JSON.stringify({
     nodeId,
-    elapsedMs: Date.now() - startedAt,
+    durationMs: Date.now() - startedAt,
     scannedCount,
     recyclingCount: recyclingAllowlist.size,
   }));
@@ -183,6 +188,7 @@ const runSourceStage = async (context: ShapePipelineContext): Promise<boolean> =
     pipelineRunId: params.pipelineRunId,
     abortSignal: params.abortSignal,
     onTasksEnqueued: params.onTasksEnqueued,
+    onStageTasksPrepared: params.onStageTasksPrepared,
   });
   console.warn('[ShapePipeline][Stage] source done', JSON.stringify({
     nodeId: params.nodeId,
@@ -254,7 +260,7 @@ const runGeometryStage = async (context: ShapePipelineContext): Promise<boolean>
         outcome: 'success',
         startedAt,
         finishedAt,
-        elapsedMs: finishedAt - startedAt,
+        durationMs: finishedAt - startedAt,
         memoryAtStart: memoryAtStart ?? null,
         memoryAtFinish: memoryAtFinish ?? null,
       }));
@@ -280,7 +286,7 @@ const runGeometryStage = async (context: ShapePipelineContext): Promise<boolean>
         errorMessage: error instanceof Error ? error.message : String(error),
         startedAt,
         finishedAt,
-        elapsedMs: finishedAt - startedAt,
+        durationMs: finishedAt - startedAt,
         memoryAtStart: memoryAtStart ?? null,
         memoryAtFinish: memoryAtFinish ?? null,
       }));
@@ -306,6 +312,7 @@ const runGeometryStage = async (context: ShapePipelineContext): Promise<boolean>
     ephemeralStore,
     diffBuildEnabled,
     recyclingAllowlist,
+    onStageTasksPrepared: params.onStageTasksPrepared,
   }));
   console.warn('[ShapePipeline][Stage] geometry done', JSON.stringify({
     nodeId: params.nodeId,
@@ -345,6 +352,7 @@ const runTileEmitStage = async (context: ShapePipelineContext): Promise<void> =>
     abortSignal: params.abortSignal,
     ephemeralStore,
     loadContinentLookup,
+    onStageTasksPrepared: params.onStageTasksPrepared,
   });
   console.warn('[ShapePipeline][Stage] tileEmit done', JSON.stringify({
     nodeId: params.nodeId,
@@ -433,7 +441,7 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
             memory,
           }));
         },
-        onSuccess: ({ startedAt, elapsedMs, memory }) => {
+        onSuccess: ({ startedAt, durationMs, memory }) => {
           const finishedAt = Date.now();
           console.warn('[ShapePipeline][Checkpoint] finish', JSON.stringify({
             nodeId: params.nodeId,
@@ -442,11 +450,11 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
             outcome: 'success',
             startedAt,
             finishedAt,
-            elapsedMs,
+            durationMs,
             memory,
           }));
         },
-        onError: ({ startedAt, elapsedMs, errorMessage, memory }) => {
+        onError: ({ startedAt, durationMs, errorMessage, memory }) => {
           const finishedAt = Date.now();
           console.error('[ShapePipeline][Checkpoint] finish', JSON.stringify({
             nodeId: params.nodeId,
@@ -455,7 +463,7 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
             outcome: 'error',
             startedAt,
             finishedAt,
-            elapsedMs,
+            durationMs,
             errorMessage,
             memory,
           }));

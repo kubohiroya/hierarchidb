@@ -62,6 +62,7 @@ const {
   resolveProgressPhase,
   buildProgressPayloadFromTasks,
   emitProgressSnapshot,
+  emitTaskSnapshot,
   upsertBuildSessionSnapshot,
   updateBuildSessionFromTasks,
   summarizeTaskQueueStatus,
@@ -478,14 +479,14 @@ const startBuildSessionInternal = async (
       emitStartupStepLog('finish', step, {
         ...(extra ?? {}),
         outcome: 'success',
-        elapsedMs: Date.now() - startedAt,
+        durationMs: Date.now() - startedAt,
       });
       return result;
     } catch (error) {
       emitStartupStepLog('finish', step, {
         ...(extra ?? {}),
         outcome: 'error',
-        elapsedMs: Date.now() - startedAt,
+        durationMs: Date.now() - startedAt,
         errorMessage: getStartupErrorMessage(error),
       });
       throw error;
@@ -671,6 +672,22 @@ const startBuildSessionInternal = async (
       if (payload.stage !== 'source') return;
       await emitProgressSnapshot(payload.nodeId, 'Source task plan prepared.');
     };
+    const emitStageTaskSnapshotBarrier = async (payload: {
+      nodeId: NodeId;
+      stage: TaskStage;
+      taskCount: number;
+    }): Promise<void> => {
+      void payload.taskCount;
+      await shapeMutationAPIImpl.updateBuildSession(payload.nodeId, {
+        stageId: `ui-sync:${payload.stage}:ui-initializing`,
+        stageHeartbeatAt: Date.now(),
+      });
+      await emitTaskSnapshot(payload.nodeId, { stage: payload.stage });
+      await shapeMutationAPIImpl.updateBuildSession(payload.nodeId, {
+        stageId: `ui-sync:${payload.stage}:running`,
+        stageHeartbeatAt: Date.now(),
+      });
+    };
     emitStartupStepLog('start', 'pipeline-dispatch', {
       runId: pipelineRunId,
       payloadCount: downloadTaskPayloads.length,
@@ -703,6 +720,7 @@ const startBuildSessionInternal = async (
       pipelineRunId,
       abortSignal: abortController.signal,
       onTasksEnqueued: emitQueuedProgressSnapshot,
+      onStageTasksPrepared: emitStageTaskSnapshotBarrier,
     }).then(async () => {
       const completedAt = Date.now();
       terminalProgressMessage = undefined;
@@ -816,7 +834,7 @@ const sleep = (ms: number): Promise<void> => new Promise((resolve) => {
 const waitForRunningTasksToDrain = async (
   nodeId: NodeId,
   options?: { timeoutMs?: number; pollMs?: number },
-): Promise<{ drained: boolean; elapsedMs: number; running: number; queued: number; total: number }> => {
+): Promise<{ drained: boolean; durationMs: number; running: number; queued: number; total: number }> => {
   const timeoutMs = options?.timeoutMs ?? 15_000;
   const pollMs = options?.pollMs ?? 100;
   const startedAt = Date.now();
@@ -828,7 +846,7 @@ const waitForRunningTasksToDrain = async (
   }
   return {
     drained: latest.running === 0,
-    elapsedMs: Date.now() - startedAt,
+    durationMs: Date.now() - startedAt,
     running: latest.running,
     queued: Math.max(0, latest.total - latest.completed - latest.failed - latest.running),
     total: latest.total,
@@ -888,10 +906,10 @@ const invokeShapeBuildCommand = async (
       if (forceTerminationExecuted) return;
       forceTerminationExecuted = true;
 
-      const elapsedMs = Date.now() - terminationStartTime;
+      const durationMs = Date.now() - terminationStartTime;
       console.warn('[shapeBuildAPI][PauseTrace] force-termination-triggered', {
         nodeId,
-        elapsedMs,
+        durationMs,
         timeoutMs: FORCE_TERMINATION_TIMEOUT_MS,
       });
 
@@ -902,7 +920,7 @@ const invokeShapeBuildCommand = async (
           workerInstance.terminate();
           console.warn('[shapeBuildAPI][PauseTrace] worker-terminated', {
             nodeId,
-            elapsedMs: Date.now() - terminationStartTime,
+            durationMs: Date.now() - terminationStartTime,
           });
         } catch (error) {
           console.error('[shapeBuildAPI][PauseTrace] worker-termination-failed', {
@@ -913,7 +931,7 @@ const invokeShapeBuildCommand = async (
       } else {
         console.warn('[shapeBuildAPI][PauseTrace] worker-instance-not-available', {
           nodeId,
-          elapsedMs: Date.now() - terminationStartTime,
+          durationMs: Date.now() - terminationStartTime,
         });
       }
 
@@ -942,13 +960,13 @@ const invokeShapeBuildCommand = async (
           clearTimeout(forceTerminationTimer);
           console.warn('[shapeBuildAPI][PauseTrace] cooperative-termination-success', {
             nodeId,
-            elapsedMs: terminationElapsed,
+            durationMs: terminationElapsed,
             targetMs: FORCE_TERMINATION_TIMEOUT_MS,
           });
         } else if (terminationElapsed > FORCE_TERMINATION_TIMEOUT_MS) {
           console.warn('[shapeBuildAPI][PauseTrace] termination-timeout-exceeded', {
             nodeId,
-            elapsedMs: terminationElapsed,
+            durationMs: terminationElapsed,
             targetMs: FORCE_TERMINATION_TIMEOUT_MS,
           });
         }

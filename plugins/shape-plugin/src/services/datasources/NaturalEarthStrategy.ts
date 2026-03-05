@@ -153,6 +153,11 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
             ? downloadUrl
             : buildShapeCacheKey(`naturalearth:${selectedEndpoint}`, downloadUrl),
           signal,
+          onDownloadProgress: ({ percentage }) => {
+            if (typeof percentage === 'number' && Number.isFinite(percentage)) {
+              return options?.onDownloadProgress?.(percentage);
+            }
+          },
         },
         retries,
         options?.onRetryAttempt,

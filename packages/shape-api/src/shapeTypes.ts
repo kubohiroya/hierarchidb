@@ -72,6 +72,7 @@ export interface ShapeBuildSessionSummary {
 
 export interface ShapeBuildTaskSummary {
   taskId: string;
+  version: number;
   nodeId: NodeId;
   stage: ShapeBuildStage;
   stageId?: string;

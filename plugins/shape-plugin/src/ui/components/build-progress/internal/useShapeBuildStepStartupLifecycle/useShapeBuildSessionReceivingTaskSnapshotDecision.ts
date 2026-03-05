@@ -5,7 +5,7 @@ import {
   type ReceivingTaskSnapshotSuccessDecision,
 } from '~/ui/components/build-progress/resolveReceivingTaskSnapshotDecision';
 import type { BuildSessionTransitionNotificationLevel } from '@hierarchidb/components/build-session';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import type {
   BuildSessionTransitionPhase,
   BuildStartupStep,

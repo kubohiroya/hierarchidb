@@ -1,10 +1,14 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '~/common/types/index';
 import { resolveShapeTaskTitle } from '~/common/utils/taskTitles';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import {
+  ensureIso3166CountryNamesI18n,
+  getLocalizedCountryName,
+} from '@hierarchidb/gen-iso3166-2/browser';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 import {
   buildStageTaskScan,
@@ -29,6 +33,7 @@ type ComputeArgs = {
     totalElapsedMs: number;
   };
   t: TranslateFn;
+  locale: string;
   stages: BuildStage[];
   stageProgress: Record<string, number>;
   tasksByStage: Record<string, unknown[]>;
@@ -144,10 +149,24 @@ export const useBuildProgressPanelStateComputed = (args: ComputeArgs): BuildProg
     data,
     summary,
     t,
+    locale,
     stages,
     stageProgress,
     tasksByStage,
   } = args;
+  const [countryNamesReadyEpoch, setCountryNamesReadyEpoch] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      await ensureIso3166CountryNamesI18n();
+      if (!active) return;
+      setCountryNamesReadyEpoch((prev) => prev + 1);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [locale]);
 
   const stageTaskScan = useMemo(
     () => buildStageTaskScan(stages, tasksByStage as Record<string, ShapeBuildTaskSummary[]>),
@@ -163,8 +182,14 @@ export const useBuildProgressPanelStateComputed = (args: ComputeArgs): BuildProg
   }, [summary.buildStatus, stages, stageTaskScan]);
 
   const resolveTaskTitle = useCallback((task: TaskItemWithMetadata) => (
-    resolveShapeTaskTitle(task, t('stage.tasks.unknown', '(Title unavailable)'))
-  ), [t]);
+    resolveShapeTaskTitle(
+      task,
+      t('stage.tasks.unknown', '(Title unavailable)'),
+      {
+        resolveCountryNameByCode: (code) => getLocalizedCountryName(code, locale) ?? undefined,
+      },
+    )
+  ), [countryNamesReadyEpoch, locale, t]);
 
   const failedTaskInfo = useMemo(
     () => buildFailedTaskInfo(stages, stageTaskScan, resolveTaskTitle),

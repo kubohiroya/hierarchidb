@@ -5,25 +5,16 @@ import { notify } from '@hierarchidb/components';
 import { deleteTasksByNode, VtTaskQueueDb as TileEmitTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { ephemeralShapeAPIImpl, shapeMutationAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { deleteSourceRawCache } from './useShapeBuildCacheActions.helpers.js';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 
-type BuildTaskFilterDeps = {
+type FilterContext = {
   nodeId?: NodeId;
-  setBuildTasks: (
-    updater: ShapeBuildTaskSummary[] | ((prev: ShapeBuildTaskSummary[]) => ShapeBuildTaskSummary[]),
-  ) => void;
-  setPersistedTasks: (
-    updater: ShapeBuildTaskSummary[] | ((prev: ShapeBuildTaskSummary[]) => ShapeBuildTaskSummary[]),
-  ) => void;
-};
-
-type FilterContext = BuildTaskFilterDeps & {
   runClearTaskQueueStages: (taskTypes: BuildTaskType[]) => Promise<void>;
 };
 
 export type CacheActionKey = 'sourceApi' | 'sourceFiltered' | 'geometry' | 'tileEmit' | 'transposeIndex' | 'metadata' | 'resetSession';
 
-type ActionDeps = BuildTaskFilterDeps & {
+type ActionDeps = {
+  nodeId?: NodeId;
   sessionStatus: BuildSessionStatus['status'] | null;
   runDelete: (key: CacheActionKey, action: () => Promise<void>) => Promise<void>;
   loadCountsSafely: () => Promise<void>;
@@ -34,19 +25,7 @@ type ActionDeps = BuildTaskFilterDeps & {
   runClearTaskQueueStages: (taskTypes: BuildTaskType[]) => Promise<void>;
 };
 
-const filterByStage = (deps: FilterContext, taskTypes: BuildTaskType[]) => {
-  const clearFromMemory = async () => {
-    const keep = (task: ShapeBuildTaskSummary): boolean => {
-      return !taskTypes.includes(task.stage);
-    };
-    await Promise.all([
-      deps.setBuildTasks((prev) => prev.filter(keep)),
-      deps.setPersistedTasks((prev) => prev.filter(keep)),
-    ]);
-  };
-
-  return clearFromMemory();
-};
+const filterByStage = async (_deps: FilterContext, _taskTypes: BuildTaskType[]) => {};
 
 const clearSessionQueueIfNeeded = async (deps: ActionDeps, skipIfRunning = false): Promise<boolean> => {
   if (!deps.sessionStatus || deps.sessionStatus === 'completed') return false;
@@ -188,8 +167,6 @@ export const handleResetSession = async (deps: ActionDeps): Promise<void> => {
       shapeMutationAPIImpl.deleteFeatureMetadataByNode(nodeId),
       shapeMutationAPIImpl.deleteDataSourceMetadataByNode(nodeId),
     ]);
-    deps.setBuildTasks([]);
-    deps.setPersistedTasks([]);
     deps.onResetSession?.();
     await deps.persistSessionReset();
     await deps.loadCountsSafely();

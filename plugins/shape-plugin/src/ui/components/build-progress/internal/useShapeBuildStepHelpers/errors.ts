@@ -1,6 +1,4 @@
-import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import type { ShapeEntity } from '~/common/types/index';
-import { toProcessingStatus } from './status.js';
 
 export const getErrorMessage = (error: unknown): string => (
   error instanceof Error ? error.message : String(error))
@@ -43,9 +41,3 @@ export const summarizeSelectedEntries = (
   });
   return { selectedCountryCount, selectedAdminPairCount };
 };
-
-export const resolveBuildSessionRecordForPersistence = (sessionRecord: ShapeBuildSessionRecord | null) => ({
-  persistedProcessingStatus: sessionRecord ? toProcessingStatus(sessionRecord.status) : null,
-  persistedStageElapsedStageId: typeof sessionRecord?.stageId === 'string' ? sessionRecord.stageId : null,
-  persistedStageElapsedByStage: sessionRecord?.elapsedByStage ?? {},
-});

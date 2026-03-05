@@ -48,6 +48,7 @@ export const fetchRawDataWithPipeline = async <TRawData>(params: {
   pipeline: RawDataPipeline<TRawData>;
   retryConfig?: RetryConfig;
   onRetryAttempt?: (attempt: number, error: unknown) => void | Promise<void>;
+  onDownloadProgress?: (percentage: number) => void | Promise<void>;
 }): Promise<RawDataPipelineResult<TRawData>> => {
   const {
     nodeId,
@@ -80,6 +81,7 @@ export const fetchRawDataWithPipeline = async <TRawData>(params: {
       retryConfig,
       signal,
       onRetryAttempt,
+      onDownloadProgress: params.onDownloadProgress,
     });
     const rawBuffer = await response.arrayBuffer();
     const sourceHash = hashPort.digest(rawBuffer, SOURCE_HASH_ALGORITHM);
@@ -137,6 +139,7 @@ type FetchWithRetryParams = {
   retryConfig?: RetryConfig;
   signal?: AbortSignal;
   onRetryAttempt?: (attempt: number, error: unknown) => void | Promise<void>;
+  onDownloadProgress?: (percentage: number) => void | Promise<void>;
 };
 
 const fetchWithRetry = async (params: FetchWithRetryParams) => {
@@ -146,7 +149,15 @@ const fetchWithRetry = async (params: FetchWithRetryParams) => {
     try {
       const headers = new Headers(request.headers ?? {});
       if (request.accept) headers.set('Accept', request.accept);
-      const response = await network.get(request.url, { headers, signal });
+      const response = await network.get(request.url, {
+        headers,
+        signal,
+        onDownloadProgress: ({ percentage }) => {
+          if (typeof percentage === 'number' && Number.isFinite(percentage)) {
+            return params.onDownloadProgress?.(percentage);
+          }
+        },
+      });
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }

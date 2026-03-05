@@ -1,5 +1,5 @@
 import type { BuildStage } from '@hierarchidb/components/build-stage';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import { resolveStageAliasArray } from '~/ui/components/build-progress/stageIdAliases';
 
 export type StageTaskScan = Record<string, {

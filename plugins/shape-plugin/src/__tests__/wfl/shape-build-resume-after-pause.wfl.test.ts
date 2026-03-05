@@ -16,8 +16,8 @@ vi.mock('@hierarchidb/gis-sdk', async () => (
 vi.mock('@hierarchidb/vt-orchestrator', async () => {
   const actual = await vi.importActual<typeof import('@hierarchidb/vt-orchestrator')>('@hierarchidb/vt-orchestrator');
   const { unpackTileId } = await import('../../../../../packages/vt-orchestrator/src/tiles/tileId.ts');
-  const createTransformByBandHandler: typeof actual.createTransformByBandHandler = () => {
-    type HandlerTask = Parameters<ReturnType<typeof actual.createTransformByBandHandler>>[0];
+  const createGeometryStageHandler: typeof actual.createGeometryStageHandler = () => {
+    type HandlerTask = Parameters<ReturnType<typeof actual.createGeometryStageHandler>>[0];
     return async (_task: HandlerTask) => ({ status: 'completed', progress: 100 });
   };
 
@@ -41,7 +41,7 @@ vi.mock('@hierarchidb/vt-orchestrator', async () => {
       return { status: 'completed', progress: 100 };
     };
   };
-  return { ...actual, createTransformByBandHandler, createVtHandler };
+  return { ...actual, createGeometryStageHandler, createVtHandler };
 });
 
 vi.mock('../../../../../plugins/shape-plugin/src/services/vt/shapePipelineShared.ts', async () => {

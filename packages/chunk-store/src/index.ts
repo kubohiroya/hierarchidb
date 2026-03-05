@@ -2,6 +2,7 @@ import { Dexie, type Table } from 'dexie';
 import type { NodeId } from '@hierarchidb/core-types';
 import {
   FetchNetworkPort,
+  type DownloadProgress,
   type FetchNetworkPortOptions,
   type NetworkPort,
   type StorageCommitMetadata,
@@ -50,6 +51,7 @@ export type ChunkStoreFetchOptions = {
   cacheKey?: string;
   fetchUrl?: string;
   identity?: ChunkStoreIdentity;
+  onDownloadProgress?: (progress: DownloadProgress) => void | Promise<void>;
 };
 
 export type ChunkStoreSetOptions = {
@@ -313,7 +315,11 @@ export class DexieChunkStore<T> implements StoragePort {
           options.headers,
           useConditional && cachedMeta ? { etag: cachedMeta.etag, lastModified: cachedMeta.lastModified } : undefined,
         );
-        const response = await this.network.get(fetchUrl, { headers, signal: options.signal });
+        const response = await this.network.get(fetchUrl, {
+          headers,
+          signal: options.signal,
+          onDownloadProgress: options.onDownloadProgress,
+        });
         if (response.status === 304) {
           if (cachedMetadataId) {
             const cachedBuffer = await this.readAll(cachedMetadataId);

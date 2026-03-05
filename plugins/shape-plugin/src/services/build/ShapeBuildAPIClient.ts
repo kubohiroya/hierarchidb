@@ -99,11 +99,6 @@ const isSelectedArrayByCountries = (value: unknown): value is Record<string, boo
   ));
 };
 
-const isNumberRecord = (value: unknown): value is Record<string, number> => {
-  if (!isRecord(value)) return false;
-  return Object.values(value).every((entry) => isNumber(entry));
-};
-
 const readStageMap = (value: unknown): Record<BuildTaskType, StageStatus> | null => {
   if (!isRecord(value)) return null;
   const sourceStage = value.source;
@@ -198,8 +193,6 @@ const toBuildSessionRecordFromEphemeral = (
     stageStartedAt: session.stageStartedAt,
     stageHeartbeatAt: session.stageHeartbeatAt,
     stageId: session.stageId,
-    elapsedMs: session.elapsedMs,
-    elapsedByStage: isNumberRecord(session.elapsedByStage) ? session.elapsedByStage : undefined,
     sourceStageMaxima: readSourceStageMaxima(session.sourceStageMaxima),
   };
 };
@@ -212,7 +205,7 @@ const isNonNull = <T>(value: T | null): value is T => value !== null;
  */
 const getEphemeralSessionWithDetails = async (nodeId: NodeId): Promise<EphemeralBuildSessionRecord | null> => {
   return getSessionWithDetails(nodeId, {
-    getConfig: async (nodeId) => ephemeralDB.buildSessions.get(nodeId),
+    getConfig: async (nodeId) => ephemeralDB.buildSessionConfigs.get(nodeId),
     getHeartbeat: async (nodeId) => ephemeralDB.buildSessionHeartbeats.get(nodeId),
     getStatus: async (nodeId) => ephemeralDB.buildSessionStatuses.get(nodeId),
     getStageStatuses: async (nodeId) => ephemeralDB.buildStageStatuses.where('nodeId').equals(nodeId).toArray(),
@@ -235,7 +228,7 @@ const readBuildSession = async (nodeId: NodeId): Promise<BuildSessionRecord | un
 
 const readAllBuildSessions = async (): Promise<BuildSessionRecord[]> => {
   // Get all session configs, then query each one using the unified interface
-  const configs = await ephemeralDB.buildSessions.toArray();
+  const configs = await ephemeralDB.buildSessionConfigs.toArray();
   const sessions = await Promise.all(
     configs.map(config => getEphemeralSessionWithDetails(config.nodeId))
   );
@@ -348,6 +341,7 @@ const listGeometryCachesWithoutHeavyIteration = async (nodeId: NodeId): Promise<
 
 const toTaskSummary = (task: ShapeBuildTaskRecord): ShapeBuildTaskSummary => ({
   taskId: task.taskId,
+  version: task.version,
   nodeId: task.nodeId,
   stage: task.stage,
   status: task.status,
@@ -659,7 +653,7 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
 
     // Insert into all four tables
     await Promise.all([
-      ephemeralDB.buildSessions.put(config),
+      ephemeralDB.buildSessionConfigs.put(config),
       heartbeat ? ephemeralDB.buildSessionHeartbeats.put(heartbeat) : Promise.resolve(),
       ephemeralDB.buildSessionStatuses.put(status),
       stageStatus ? ephemeralDB.buildStageStatuses.put(stageStatus) : Promise.resolve(),
@@ -701,7 +695,7 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
     // Stage updates
     if (patch.stage !== undefined || patch.stageStartedAt !== undefined ||
       patch.stageInactiveMs !== undefined || patch.stageId !== undefined) {
-      const currentConfig = await ephemeralDB.buildSessions.get(nodeId);
+      const currentConfig = await ephemeralDB.buildSessionConfigs.get(nodeId);
       if (currentConfig && patch.stage) {
         updatePromises.push(
           ephemeralDB.buildStageStatuses.put({
@@ -720,10 +714,10 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
     // Config updates (immutable fields - should rarely be updated)
     if (patch.selectedArrayByCountries !== undefined || patch.selectedArrayVersion !== undefined ||
       patch.sourceStageMaxima !== undefined) {
-      const currentConfig = await ephemeralDB.buildSessions.get(nodeId);
+      const currentConfig = await ephemeralDB.buildSessionConfigs.get(nodeId);
       if (currentConfig) {
         updatePromises.push(
-          ephemeralDB.buildSessions.put({
+          ephemeralDB.buildSessionConfigs.put({
             ...currentConfig,
             selectedArrayByCountries: patch.selectedArrayByCountries ?? currentConfig.selectedArrayByCountries,
             selectedArrayVersion: patch.selectedArrayVersion ?? currentConfig.selectedArrayVersion,
@@ -739,13 +733,13 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
   async deleteBuildSession(nodeId: NodeId): Promise<void> {
     // Delete from all four tables atomically
     await ephemeralDB.transaction('rw', [
-      ephemeralDB.buildSessions,
+      ephemeralDB.buildSessionConfigs,
       ephemeralDB.buildSessionHeartbeats,
       ephemeralDB.buildSessionStatuses,
       ephemeralDB.buildStageStatuses,
     ], async () => {
       await Promise.all([
-        ephemeralDB.buildSessions.delete(nodeId),
+        ephemeralDB.buildSessionConfigs.delete(nodeId),
         ephemeralDB.buildSessionHeartbeats.delete(nodeId),
         ephemeralDB.buildSessionStatuses.delete(nodeId),
         ephemeralDB.buildStageStatuses.where('nodeId').equals(nodeId).delete(),

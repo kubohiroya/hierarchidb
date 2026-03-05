@@ -3,6 +3,7 @@ export type ISO3 = string;
 
 export type CountryRow = {
   countryEn: string;
+  countryLocal?: string;
   alpha3: ISO3;
   alpha2: ISO2;
   location: string; // "場所" column text (region)
@@ -29,6 +30,7 @@ export interface GenerateOptions {
   outputDir?: string;
   outputFile?: string;
   failureFile?: string;
+  countryNamesI18nOutputFile?: string;
   logger?: (message: string) => void;
 }
 
@@ -39,6 +41,7 @@ export interface Iso3166PluginOptions extends GenerateOptions {
    * (Useful to point to the built asset path)
    */
   csvUrl?: string;
+  countryNamesI18nOutputFile?: string;
 }
 
 export interface EnsureIsoOptions {
@@ -49,6 +52,8 @@ export interface EnsureIsoOptions {
   outputDir?: string;
   outputFile?: string;
   failureFile?: string;
+  countryNamesI18nUrl?: string;
+  countryNamesI18nText?: string;
 }
 
 export type CountryRecord = {

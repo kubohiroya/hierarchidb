@@ -42,7 +42,7 @@ export const onTraceFailure = (
     event: 'request-finished:error',
     payload: {
       errorMessage: getErrorMessage(error),
-      elapsedMs: Math.max(0, Date.now() - requestStartedAt),
+      durationMs: Math.max(0, Date.now() - requestStartedAt),
     },
   });
 };
@@ -105,7 +105,7 @@ export const runStartSessionRequest = async (context: StartSessionRequestContext
     event: 'request-finished:success',
     payload: {
       nextStatus: statusResult.status,
-      elapsedMs: Math.max(0, Date.now() - requestStartedAt),
+      durationMs: Math.max(0, Date.now() - requestStartedAt),
     },
   });
 

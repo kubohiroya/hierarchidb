@@ -2,7 +2,7 @@ import type { EphemeralDB } from '@hierarchidb/gis-sdk';
 import type { GeometryEngine, GeometryConfig, TileEmitConfig } from '@hierarchidb/gis-sdk';
 import type { BandConfig } from './types/types.js';
 
-export type TransformByBandStageContext = {
+export type GeometryStageContext = {
   ephemeralDB: EphemeralDB;
   geometryConfig: GeometryConfig;
   bands: BandConfig[];

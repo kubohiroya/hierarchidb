@@ -1,11 +1,13 @@
-import { useEffect, useRef } from 'react';
-import type { NodeType } from '@hierarchidb/core-types';
-import type { BuildUnifiedProgressInfo } from '@hierarchidb/build-api';
-import { usePluginBuildProgress } from '@hierarchidb/ui-build-sessions';
+import { useEffect, useMemo, useRef } from 'react';
+import type { NodeId } from '@hierarchidb/core-types';
+import { useAtomValue } from 'jotai';
 import {
-  toShapeProgress,
-  toShapeStatus,
-  type ExtendedProgress,
+  buildSessionRuntimeAtom,
+  buildSessionStageCountersAtom,
+  buildSessionStageProgressAtom,
+  buildSessionTasksByStageAtom,
+} from '~/ui/atoms/buildSessionStateAtoms';
+import {
   type BuildProgress,
   type BuildProgressStatus,
 } from '~/ui/components/build-progress/shapeBuildProgressMapping';
@@ -16,10 +18,6 @@ export interface ShapeProgressState {
   progress: BuildProgress | null;
   status: BuildProgressStatus | null;
   error: Error | null;
-}
-
-export interface UseBuildProgressOptions {
-  autoSubscribe?: boolean;
 }
 
 const isDev = import.meta.env.DEV;
@@ -62,48 +60,99 @@ const logProgressMapping = (nodeId: string | null, payload: {
   });
 };
 
-const SHAPE_NODE_TYPE = 'shape' as NodeType;
-
 export function useBuildProgress(
-  nodeId: string | null,
-  options: UseBuildProgressOptions = {},
+  nodeId: NodeId | null,
 ): ShapeProgressState & { subscribe: () => void; unsubscribe: () => void } {
-  const {
-    autoSubscribe = true,
-  } = options;
-  const {
-    progress,
-    status: derivedStatus,
-    unifiedProgress,
-    error,
-    subscribe,
-    unsubscribe,
-  } = usePluginBuildProgress<BuildProgress, BuildProgressStatus>(
-    SHAPE_NODE_TYPE,
-    nodeId,
-    {
-      autoSubscribe,
-      mapUnifiedToProgress: (info: BuildUnifiedProgressInfo | null) => toShapeProgress(info as ExtendedProgress | null),
-      mapUnifiedToStatus: (info: BuildUnifiedProgressInfo | null) => toShapeStatus(info as ExtendedProgress | null),
-    },
-  );
+  const runtime = useAtomValue(buildSessionRuntimeAtom);
+  const counters = useAtomValue(buildSessionStageCountersAtom);
+  const stageProgress = useAtomValue(buildSessionStageProgressAtom);
+  const tasksByStage = useAtomValue(buildSessionTasksByStageAtom);
+
+  const progress = useMemo<BuildProgress | null>(() => {
+    if (!nodeId) return null;
+    const activeStageId = runtime.activeStageId;
+    const aggregate = (['source', 'geometry', 'tileEmit'] as const).reduce(
+      (acc, stageId) => {
+        const stageCounter = counters[stageId];
+        acc.total += stageCounter.total;
+        acc.completed += stageCounter.terminal - stageCounter.failed;
+        acc.failed += stageCounter.failed;
+        return acc;
+      },
+      { total: 0, completed: 0, failed: 0 },
+    );
+    const stageTotals = (['source', 'geometry', 'tileEmit'] as const).reduce<BuildProgress['stageTotals']>((acc, stageId) => {
+      const stageCounter = counters[stageId];
+      acc ??= {};
+      acc[stageId] = {
+        total: stageCounter.total,
+        completed: stageCounter.terminal - stageCounter.failed,
+        failed: stageCounter.failed,
+        skipped: 0,
+      };
+      return acc;
+    }, undefined);
+    const progressTask = (tasksByStage[activeStageId] ?? [])
+      .find((task) => task && (task.status === 'running' || task.status === 'queued'));
+    return {
+      total: aggregate.total,
+      completed: aggregate.completed,
+      failed: aggregate.failed,
+      skipped: 0,
+      percentage: stageProgress[activeStageId],
+      stage: activeStageId,
+      timestamp: runtime.lastAcceptedEventVersion,
+      message: undefined,
+      progressTaskId: progressTask?.taskId,
+      progressTaskStatus: progressTask?.status,
+      progressTaskStage: progressTask?.stage,
+      progressTaskProgress: progressTask?.progress,
+      progressTaskDisplay: progressTask?.display,
+      stageTotals,
+    };
+  }, [counters, nodeId, runtime.activeStageId, runtime.lastAcceptedEventVersion, stageProgress, tasksByStage]);
+
+  const derivedStatus = useMemo<BuildProgressStatus | null>(() => {
+    if (!nodeId) return null;
+    const phase = runtime.phase;
+    const status: BuildProgressStatus['status'] = (() => {
+      if (phase === 'idle') return 'idle';
+      if (phase === 'completed') return 'completed';
+      if (phase === 'failed') return 'failed';
+      if (phase === 'paused') return 'paused';
+      if (phase === 'starting') return 'queued';
+      return 'processing';
+    })();
+    return {
+      status,
+      stage: runtime.activeStageId,
+      progress: progress?.percentage,
+      hasErrors: status === 'failed',
+      error: null,
+      lastUpdated: runtime.lastAcceptedEventVersion,
+    };
+  }, [nodeId, progress?.percentage, runtime.activeStageId, runtime.lastAcceptedEventVersion, runtime.phase]);
+
+  const error: Error | null = null;
+  const subscribe = () => { };
+  const unsubscribe = () => { };
 
   const previousSignature = useRef<string | null>(null);
   useEffect(() => {
     if (!isBuildProgressDebugEnabled()) return;
     const mappedExists = progress !== null;
-    const unifiedExists = unifiedProgress !== null;
+    const unifiedExists = progress !== null;
     const stageTotals = mappedExists
       ? JSON.stringify(progress?.stageTotals)
       : undefined;
     const signature = JSON.stringify({
       progress,
       derivedStatus,
-      error: error?.message ?? null,
+      error: null,
     });
     if (signature === previousSignature.current) return;
     previousSignature.current = signature;
-    logProgressMapping(nodeId, {
+    logProgressMapping(nodeId ? String(nodeId) : null, {
       unifiedExists,
       mappedExists,
       progressTaskId: progress?.progressTaskId ?? null,

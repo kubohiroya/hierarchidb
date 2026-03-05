@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import type { MutableRefObject } from 'react';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import type { RawTaskSummary } from './useShapeBuildTaskSync.types.js';
 import { emitRunningResidueLog, logTaskUpdate100 } from './useShapeBuildTaskSync.debug.js';
 import {
@@ -55,7 +55,14 @@ export const useShapeBuildTaskSyncEventHandlers = ({
   const isDev = import.meta.env.DEV;
 
   const handleSnapshot = useCallback((next: RawTaskSummary[]) => {
-    const snapshotTasks = next.map((task) => resolveTaskSummary(task));
+    let snapshotTasks: ShapeBuildTaskSummary[];
+    try {
+      snapshotTasks = next.map((task) => resolveTaskSummary(task));
+    } catch (error) {
+      const errObj = error instanceof Error ? error : new Error('Failed to resolve task snapshot');
+      setError(errObj);
+      return;
+    }
     for (const task of snapshotTasks) {
       const previous = tasksMapRef.current.get(task.taskId);
       if (!previous) {
@@ -91,7 +98,14 @@ export const useShapeBuildTaskSyncEventHandlers = ({
   ]);
 
   const handleUpdate = useCallback((task: RawTaskSummary) => {
-    const resolved = resolveTaskSummary(task);
+    let resolved: ShapeBuildTaskSummary;
+    try {
+      resolved = resolveTaskSummary(task);
+    } catch (error) {
+      const errObj = error instanceof Error ? error : new Error('Failed to resolve task update');
+      setError(errObj);
+      return;
+    }
     const previous = tasksMapRef.current.get(resolved.taskId);
     if (!previous && tasksMapRef.current.size > 0) {
       const message = `[ShapeBuildTaskSync] unknown taskId: ${resolved.taskId}`;

@@ -18,6 +18,22 @@ const resolveDialogDisplayMode = (value?: string): 'normal' | 'maximize' | 'full
   }
 };
 
+const parseDialogModeStepFromPathname = (
+  pathname?: string,
+): { mode?: string; step?: string } => {
+  const segments = String(pathname ?? '')
+    .split('/')
+    .filter((segment) => segment.length > 0);
+  if (segments.length < 7) return {};
+  if (segments[0] !== 't') return {};
+  const mode = segments[6];
+  const step = segments[7];
+  return {
+    mode: typeof mode === 'string' && mode.length > 0 ? mode : undefined,
+    step: typeof step === 'string' && step.length > 0 ? step : undefined,
+  };
+};
+
 const toUrlModeSegment = (value: 'normal' | 'maximize' | 'full-screen'): string => {
   switch (value) {
     case 'full-screen':
@@ -52,6 +68,12 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
     }
     return params;
   }, [matches, params]);
+  const pathParams = useMemo(
+    () => parseDialogModeStepFromPathname(location.pathname),
+    [location.pathname],
+  );
+  const effectiveModeParam = routeParams?.mode ?? pathParams.mode ?? params.mode;
+  const effectiveStepParam = routeParams?.step ?? pathParams.step ?? params.step;
 
   const searchParams = useMemo(
     () => new URLSearchParams(location.searchStr ?? ''),
@@ -94,7 +116,7 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
     treeId && effectiveTargetNodeId && effectivePageNodeId && effectiveNodeType && effectiveAction
   );
 
-  const stepParam = useMemo(() => routeParams?.step ?? null, [routeParams?.step]);
+  const stepParam = useMemo(() => effectiveStepParam ?? null, [effectiveStepParam]);
 
   const parsedStep = useMemo(() => {
     if (stepParam !== null && stepParam !== undefined) {
@@ -149,7 +171,7 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
   ]);
 
   const currentStep = parsedStep;
-  const urlDisplayMode = resolveDialogDisplayMode(routeParams?.mode);
+  const urlDisplayMode = resolveDialogDisplayMode(effectiveModeParam);
   const requestedAction = routeParams?.action?.toLowerCase() ?? '';
   const forceInitialStep = stepParam !== null || requestedAction === 'preview';
   const lastUrlStateRef = useRef<{ mode: 'normal' | 'maximize' | 'full-screen'; step: number }>({

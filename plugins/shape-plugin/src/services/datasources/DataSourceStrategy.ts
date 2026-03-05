@@ -126,6 +126,7 @@ export interface FetchOptions {
   cacheKeyMode?: 'url' | 'legacy';
   retryConfig?: RetryConfig;
   onRetryAttempt?: (attempt: number, error: unknown) => void | Promise<void>;
+  onDownloadProgress?: (percentage: number) => void | Promise<void>;
 
   [key: string]: unknown;
 }

@@ -11,7 +11,9 @@ export type BuildSessionSnapshot = {
   nodeId: NodeId;
   status: BuildSessionRuntimeRecord['status'];
   progress?: BuildSessionRuntimeRecord['progress'];
-  updatedAt?: number;
+  lastHeartbeatAt?: number;
+  startedAt?: number;
+  completedAt?: number;
   isActive: boolean;
   revision: number;
 };
@@ -31,7 +33,9 @@ const IN_PROGRESS_STATUSES: BuildSessionRuntimeRecord['status'][] = [
 const buildSessionSignature = (sessions: BuildSessionSnapshot[]): string => {
   return sessions
     .map((session) => {
-      const updatedAt = session.updatedAt ?? '';
+      const lastHeartbeatAt = session.lastHeartbeatAt ?? '';
+      const startedAt = session.startedAt ?? '';
+      const completedAt = session.completedAt ?? '';
       const progressKey = (() => {
         if (session.progress === null || session.progress === undefined) return '';
         if (typeof session.progress === 'string' || typeof session.progress === 'number') {
@@ -43,7 +47,7 @@ const buildSessionSignature = (sessions: BuildSessionSnapshot[]): string => {
           return '';
         }
       })();
-      return `${session.nodeId}|${session.status}|${session.isActive ? 1 : 0}|${session.revision}|${updatedAt}|${progressKey}`;
+      return `${session.nodeId}|${session.status}|${session.isActive ? 1 : 0}|${session.revision}|${lastHeartbeatAt}|${startedAt}|${completedAt}|${progressKey}`;
     })
     .join('||');
 };
@@ -123,7 +127,9 @@ class SharedBuildSessionSubscription {
         nodeId: session.nodeId,
         status: session.status,
         progress: session.progress,
-        updatedAt: session.updatedAt,
+        lastHeartbeatAt: session.lastHeartbeatAt,
+        startedAt: session.startedAt,
+        completedAt: session.completedAt,
         isActive: session.isActive,
         revision: session.revision,
       }))

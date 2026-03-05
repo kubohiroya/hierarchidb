@@ -95,7 +95,7 @@ export function computeStagesFromTasks(
 /**
  * Unified query interface for session data
  * 
- * Queries all four normalized tables (buildSessions, buildSessionHeartbeats,
+ * Queries all four normalized tables (buildSessionConfigs, buildSessionHeartbeats,
  * buildSessionStatuses, buildStageStatuses) and buildTasks, then reconstructs
  * the unified EphemeralBuildSessionRecord structure.
  * 

@@ -1,31 +1,32 @@
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { Provider, useAtomValue } from 'jotai';
 import type { NodeId } from '@hierarchidb/core-types';
-
-import {
-  taskStatusAtom,
-} from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { BuildStatus } from '@hierarchidb/components/build-status';
+import { buildSessionRuntimeAtom } from '~/ui/atoms/buildSessionStateAtoms';
 import { HeapPressureDialog } from '@hierarchidb/ui-memory';
 
 import { useBuildProgressStepState } from './useBuildProgressStepState.js';
-import { useShapeBuildStepAtomSync } from './useShapeBuildStepAtomSync/index.js';
 import type { ShapeDialogStepProps } from '~/ui/components/ShapeDialogStepProps';
 import { ShapeBuildProgressPanel } from '~/ui/components/build-progress/ShapeBuildProgressPanel/ShapeBuildProgressPanel';
 
-
-const ShapeBuildAtomSync: React.FC<ShapeDialogStepProps> = (props) => {
-  useShapeBuildStepAtomSync(props);
-  return null;
+const toBuildStatus = (phase: string): BuildStatus => {
+  if (phase === 'running' || phase === 'starting' || phase === 'resuming' || phase === 'pausing' || phase === 'finalizing') {
+    return 'running';
+  }
+  if (phase === 'paused') return 'paused';
+  if (phase === 'completed') return 'completed';
+  if (phase === 'failed') return 'failed';
+  return 'idle';
 };
 
 export const ShapeBuildStep: React.FC<ShapeDialogStepProps> = (props) => {
   const { t } = useTranslation();
-  const buildStatus = useAtomValue(taskStatusAtom);
+  const runtime = useAtomValue(buildSessionRuntimeAtom);
+  const buildStatus = toBuildStatus(runtime.phase);
   const { store, heapDialogOpen, heapEvent, handleHeapDialogClose } = useBuildProgressStepState(buildStatus);
 
   return (
     <Provider store={store}>
-      <ShapeBuildAtomSync {...props} />
       <ShapeBuildProgressPanel
         data={props.data}
         nodeId={props.nodeId as NodeId}

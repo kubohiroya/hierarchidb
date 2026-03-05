@@ -15,27 +15,27 @@ describe('shouldResetElapsedState', () => {
   it('returns false while build is running', () => {
     expect(shouldResetElapsedState({
       buildStatus: 'running',
-      buildElapsedMs: 0,
-      stageElapsedByStage: {},
-      localElapsedByStage: {},
+      buildDurationMs: 0,
+      sessionStageDurationByStage: {},
+      localStageDurationByStage: {},
     })).toBe(false);
   });
 
   it('returns true when both persisted and local elapsed are empty', () => {
     expect(shouldResetElapsedState({
       buildStatus: 'idle',
-      buildElapsedMs: 0,
-      stageElapsedByStage: {},
-      localElapsedByStage: {},
+      buildDurationMs: 0,
+      sessionStageDurationByStage: {},
+      localStageDurationByStage: {},
     })).toBe(true);
   });
 
   it('returns false when local elapsed snapshot exists', () => {
     expect(shouldResetElapsedState({
       buildStatus: 'idle',
-      buildElapsedMs: 0,
-      stageElapsedByStage: {},
-      localElapsedByStage: {
+      buildDurationMs: 0,
+      sessionStageDurationByStage: {},
+      localStageDurationByStage: {
         source: 2_000,
       },
     })).toBe(false);
@@ -44,20 +44,20 @@ describe('shouldResetElapsedState', () => {
   it('returns false when persisted elapsed exists', () => {
     expect(shouldResetElapsedState({
       buildStatus: 'completed',
-      buildElapsedMs: 0,
-      stageElapsedByStage: {
+      buildDurationMs: 0,
+      sessionStageDurationByStage: {
         tileEmit: 1_000,
       },
-      localElapsedByStage: {},
+      localStageDurationByStage: {},
     })).toBe(false);
   });
 
   it('returns false when total elapsed exists', () => {
     expect(shouldResetElapsedState({
       buildStatus: 'failed',
-      buildElapsedMs: 5_000,
-      stageElapsedByStage: {},
-      localElapsedByStage: {},
+      buildDurationMs: 5_000,
+      sessionStageDurationByStage: {},
+      localStageDurationByStage: {},
     })).toBe(false);
   });
 });
@@ -152,7 +152,7 @@ describe('resolveMostAdvancedInFlightStageId', () => {
 describe('buildElapsedByStageWithActiveStage', () => {
   it('applies live elapsed to running stage when larger than current snapshot', () => {
     const result = buildElapsedByStageWithActiveStage({
-      elapsedByStage: {
+      stageDurationByStage: {
         source: 5_000,
         geometry: 2_000,
       },
@@ -170,11 +170,11 @@ describe('resolveTotalElapsedMs', () => {
   it('uses sum of per-stage elapsed while running', () => {
     const total = resolveTotalElapsedMs({
       buildStatus: 'running',
-      elapsedByStage: {
+      stageDurationByStage: {
         source: 10_000,
         geometry: 20_000,
       },
-      sessionElapsedMs: 99_000,
+      sessionDurationMs: 99_000,
     });
     expect(total).toBe(30_000);
   });
@@ -182,11 +182,11 @@ describe('resolveTotalElapsedMs', () => {
   it('keeps larger of stage-sum and session elapsed after running stops', () => {
     const total = resolveTotalElapsedMs({
       buildStatus: 'completed',
-      elapsedByStage: {
+      stageDurationByStage: {
         source: 10_000,
         geometry: 20_000,
       },
-      sessionElapsedMs: 40_000,
+      sessionDurationMs: 40_000,
     });
     expect(total).toBe(40_000);
   });

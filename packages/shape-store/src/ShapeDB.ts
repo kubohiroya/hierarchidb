@@ -23,7 +23,7 @@ export class ShapeDB extends VectorTileDbBase {
   tabularMetadata!: Table<TabularTableMetadataLike, string>;
 
   // New session tables (version 2)
-  buildSessions!: Table<BuildSessionRecord, NodeId>;
+  buildSessionConfigs!: Table<BuildSessionRecord, NodeId>;
   buildSessionHeartbeats!: Table<BuildSessionHeartbeat, NodeId>;
   buildSessionStatuses!: Table<BuildSessionStatus, NodeId>;
   buildStageStatuses!: Table<BuildStageStatus, string>;
@@ -41,7 +41,7 @@ export class ShapeDB extends VectorTileDbBase {
     this.version(2).stores(this.mergeVectorTileStores({
       vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
       tileSummaries: '&nodeId',
-      buildSessions: '&nodeId',
+      buildSessionConfigs: '&nodeId',
       buildSessionHeartbeats: '&nodeId',
       buildSessionStatuses: '&nodeId, status',
       buildStageStatuses: '&id, nodeId, [nodeId+stage], [nodeId+startedAt]',
@@ -85,7 +85,7 @@ export class ShapeDB extends VectorTileDbBase {
             polygonMax: old.sourceStageMaxima.polygonMax,
           } : undefined,
         };
-        await tx.table('buildSessions').add(sessionConfig);
+        await tx.table('buildSessionConfigs').add(sessionConfig);
 
         // Discarded fields (as per design):
         // - progress: Computed from buildTasks
@@ -95,8 +95,6 @@ export class ShapeDB extends VectorTileDbBase {
         // - lastActivity: Redundant with lastHeartbeatAt
         // - expiresAt: Unused/unimplemented
         // - updatedAt: Redundant with status-specific timestamps
-        // - elapsedMs: Computed from startedAt
-        // - elapsedByStage: Computed from BuildStageStatus records
         // - stageHeartbeatAt: Redundant with lastHeartbeatAt
       }
     });
@@ -106,7 +104,7 @@ export class ShapeDB extends VectorTileDbBase {
     this.tabularMetadata = this.table('tabularMetadata');
 
     // Initialize new session tables
-    this.buildSessions = this.table('buildSessions');
+    this.buildSessionConfigs = this.table('buildSessionConfigs');
     this.buildSessionHeartbeats = this.table('buildSessionHeartbeats');
     this.buildSessionStatuses = this.table('buildSessionStatuses');
     this.buildStageStatuses = this.table('buildStageStatuses');

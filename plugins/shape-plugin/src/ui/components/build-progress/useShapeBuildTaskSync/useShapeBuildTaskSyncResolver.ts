@@ -1,4 +1,4 @@
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import {
   buildTileEmitParentInputSummaryMessage,
   mergeTaskMessage,

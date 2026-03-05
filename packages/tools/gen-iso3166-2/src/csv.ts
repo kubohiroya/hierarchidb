@@ -1,6 +1,7 @@
 import type { SubdivisionRow } from "./types.js";
 export const DEFAULT_OUTPUT = "iso3166-2-level1.csv";
 export const DEFAULT_FAILURES = "iso3166-2-level1.failures.csv";
+export const DEFAULT_COUNTRY_NAMES_I18N_OUTPUT = "iso3166-country-names.i18n.json";
 
 const LOCATION_MAP: Record<string, string> = {
   "中央アジア": "Central Asia",

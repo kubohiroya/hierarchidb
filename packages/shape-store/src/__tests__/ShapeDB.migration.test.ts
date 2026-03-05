@@ -2,7 +2,7 @@
  * ShapeDB Migration Test
  * 
  * Tests the migration from version 1 (monolithic sessions table) to version 2
- * (four normalized tables: buildSessions, buildSessionHeartbeats, buildSessionStatuses, buildStageStatuses)
+ * (four normalized tables: buildSessionConfigs, buildSessionHeartbeats, buildSessionStatuses, buildStageStatuses)
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -147,7 +147,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
       vectorTiles!: any;
       tileSummaries!: any;
       tabularMetadata!: any;
-      buildSessions!: any;
+      buildSessionConfigs!: any;
       buildSessionHeartbeats!: any;
       buildSessionStatuses!: any;
       buildStageStatuses!: any;
@@ -172,7 +172,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
           featureMetadata: '&id, nodeId',
           sourceMetadata: '&id, nodeId',
           tabularMetadata: '&id, contentHash, filename, createdAt, *referencingPlugins',
-          buildSessions: '&nodeId',
+          buildSessionConfigs: '&nodeId',
           buildSessionHeartbeats: '&nodeId',
           buildSessionStatuses: '&nodeId, status',
           buildStageStatuses: '&id, nodeId, [nodeId+stage], [nodeId+startedAt]',
@@ -204,7 +204,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
           // Transform each old session into four new table records
           for (const old of oldSessions) {
             // 1. Create BuildSessionRecord (immutable config)
-            await tx.table('buildSessions').add({
+            await tx.table('buildSessionConfigs').add({
               nodeId: old.nodeId,
               domainType: 'shape',
               selectedArrayByCountries: old.selectedArrayByCountries,
@@ -245,7 +245,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
           }
         });
 
-        this.buildSessions = this.table('buildSessions');
+        this.buildSessionConfigs = this.table('buildSessionConfigs');
         this.buildSessionHeartbeats = this.table('buildSessionHeartbeats');
         this.buildSessionStatuses = this.table('buildSessionStatuses');
         this.buildStageStatuses = this.table('buildStageStatuses');
@@ -257,8 +257,8 @@ describe('ShapeDB Migration from V1 to V2', () => {
 
     // Step 4: Verify migration results
 
-    // Check buildSessions table (immutable config)
-    const sessions = await db.buildSessions.toArray();
+    // Check buildSessionConfigs table (immutable config)
+    const sessions = await db.buildSessionConfigs.toArray();
     expect(sessions).toHaveLength(2);
 
     const session1 = sessions.find(s => s.nodeId === 'node-1');
@@ -328,7 +328,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
     // Verify old sessions table no longer exists
     const tableNames = db.tables.map(t => t.name);
     expect(tableNames).not.toContain('sessions');
-    expect(tableNames).toContain('buildSessions');
+    expect(tableNames).toContain('buildSessionConfigs');
     expect(tableNames).toContain('buildSessionHeartbeats');
     expect(tableNames).toContain('buildSessionStatuses');
     expect(tableNames).toContain('buildStageStatuses');
@@ -355,7 +355,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
     await db.open();
 
     // Step 3: Verify new tables are empty
-    const sessions = await db.buildSessions.toArray();
+    const sessions = await db.buildSessionConfigs.toArray();
     expect(sessions).toHaveLength(0);
 
     const heartbeats = await db.buildSessionHeartbeats.toArray();
@@ -425,7 +425,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
 
     // Step 2: Open with V2 schema (triggers migration)
     class TestShapeDB extends Dexie {
-      buildSessions!: any;
+      buildSessionConfigs!: any;
       buildSessionHeartbeats!: any;
       buildSessionStatuses!: any;
       buildStageStatuses!: any;
@@ -450,7 +450,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
           featureMetadata: '&id, nodeId',
           sourceMetadata: '&id, nodeId',
           tabularMetadata: '&id, contentHash, filename, createdAt, *referencingPlugins',
-          buildSessions: '&nodeId',
+          buildSessionConfigs: '&nodeId',
           buildSessionHeartbeats: '&nodeId',
           buildSessionStatuses: '&nodeId, status',
           buildStageStatuses: '&id, nodeId, [nodeId+stage], [nodeId+startedAt]',
@@ -479,7 +479,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
           });
 
           for (const old of oldSessions) {
-            await tx.table('buildSessions').add({
+            await tx.table('buildSessionConfigs').add({
               nodeId: old.nodeId,
               domainType: 'shape',
               selectedArrayByCountries: old.selectedArrayByCountries,
@@ -517,7 +517,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
           }
         });
 
-        this.buildSessions = this.table('buildSessions');
+        this.buildSessionConfigs = this.table('buildSessionConfigs');
         this.buildSessionHeartbeats = this.table('buildSessionHeartbeats');
         this.buildSessionStatuses = this.table('buildSessionStatuses');
         this.buildStageStatuses = this.table('buildStageStatuses');
@@ -528,7 +528,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
     await db.open();
 
     // Step 3: Verify migration
-    const sessions = await db.buildSessions.toArray();
+    const sessions = await db.buildSessionConfigs.toArray();
     expect(sessions).toHaveLength(1);
 
     // No heartbeat record should be created
@@ -610,8 +610,6 @@ describe('ShapeDB Migration from V1 to V2', () => {
       canResume: true,
       lastActivity: 4000200,
       expiresAt: 5000000,
-      elapsedMs: 200,
-      elapsedByStage: { source: 100, geometry: 100 },
       stageHeartbeatAt: 4000200,
     };
 
@@ -620,7 +618,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
 
     // Step 2: Open with V2 schema (triggers migration)
     class TestShapeDB extends Dexie {
-      buildSessions!: any;
+      buildSessionConfigs!: any;
       buildSessionHeartbeats!: any;
       buildSessionStatuses!: any;
       buildStageStatuses!: any;
@@ -645,7 +643,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
           featureMetadata: '&id, nodeId',
           sourceMetadata: '&id, nodeId',
           tabularMetadata: '&id, contentHash, filename, createdAt, *referencingPlugins',
-          buildSessions: '&nodeId',
+          buildSessionConfigs: '&nodeId',
           buildSessionHeartbeats: '&nodeId',
           buildSessionStatuses: '&nodeId, status',
           buildStageStatuses: '&id, nodeId, [nodeId+stage], [nodeId+startedAt]',
@@ -674,7 +672,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
           });
 
           for (const old of oldSessions) {
-            await tx.table('buildSessions').add({
+            await tx.table('buildSessionConfigs').add({
               nodeId: old.nodeId,
               domainType: 'shape',
               selectedArrayByCountries: old.selectedArrayByCountries,
@@ -712,7 +710,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
           }
         });
 
-        this.buildSessions = this.table('buildSessions');
+        this.buildSessionConfigs = this.table('buildSessionConfigs');
         this.buildSessionHeartbeats = this.table('buildSessionHeartbeats');
         this.buildSessionStatuses = this.table('buildSessionStatuses');
         this.buildStageStatuses = this.table('buildStageStatuses');
@@ -723,7 +721,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
     await db.open();
 
     // Step 3: Verify discarded fields are not in new tables
-    const sessions = await db.buildSessions.toArray();
+    const sessions = await db.buildSessionConfigs.toArray();
     expect(sessions).toHaveLength(1);
     const session = sessions[0];
     

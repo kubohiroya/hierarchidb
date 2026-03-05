@@ -1,4 +1,4 @@
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import type { TileEmitParentInputSummary } from './useShapeBuildTaskSync.types.js';
 import { isTaskSkipped } from '~/common/utils/taskMessages';
 
@@ -74,6 +74,9 @@ export const resolveTaskDisplayStatus = (
   display?: ShapeBuildTaskSummary['display'],
   message?: string | null,
 ): ShapeBuildTaskSummary['status'] => {
+  if (!Number.isFinite(progress) || progress < 0 || progress > 100) {
+    throw new Error(`[ShapeBuildTaskSync] invalid progress (status): ${String(progress)}`);
+  }
   const resolvedStatus = status ?? 'queued';
   if (resolvedStatus === 'running' && progress >= 100) {
     return 'completed';
@@ -90,12 +93,16 @@ export const resolveTaskProgress = (
   message?: string | null,
   progress?: number,
 ): ShapeBuildTaskSummary['progress'] => {
-  const safeProgress = typeof progress === 'number' && Number.isFinite(progress) ? progress : 0;
+  if (typeof progress !== 'number' || !Number.isFinite(progress) || progress < 0 || progress > 100) {
+    throw new Error(`[ShapeBuildTaskSync] invalid progress (resolved): ${String(progress)}`);
+  }
   if (status === 'completed' || status === 'failed' || isTaskSkipped(display, message)) {
     return 100;
   }
-  if (safeProgress >= 100) return 99;
-  return Math.max(0, safeProgress);
+  if (status !== 'running' && progress >= 100) {
+    throw new Error(`[ShapeBuildTaskSync] non-running task reached 100 progress: status=${String(status)}`);
+  }
+  return progress;
 };
 
 export const parseScopeFromTaskId = (taskId: string): { iso2: string; adminLevel: string } | null => {

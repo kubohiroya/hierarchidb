@@ -13,7 +13,9 @@ export {
 export {
   runStageTasks,
 } from './runStageTasks.js';
-export { createTransformByBandHandler } from './transform/createTransformByBandHandler/createTransformByBandHandler.js';
+export {
+  createGeometryStageHandler,
+} from './transform/createGeometryStageHandler/createGeometryStageHandler.js';
 export { quantizeTopoJsonToGrid } from './transform/quantizeTopoJsonToGrid.js';
 export { createVtHandler } from './vt/createVtHandler.js';
 export {unpackTileId} from './tiles/tileId.js';

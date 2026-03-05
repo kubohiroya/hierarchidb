@@ -16,7 +16,7 @@ describe('shouldUpdateElapsedSnapshot', () => {
 
   it('returns false when elapsed decreases while running', () => {
     expect(shouldUpdateElapsedSnapshot({
-      snapshot: { elapsedMs: 10_000, capturedAt: 1_000 },
+      snapshot: { durationMs: 10_000, capturedAt: 1_000 },
       totalElapsedMs: 9_000,
       buildStatus: 'running',
     })).toBe(false);
@@ -24,7 +24,7 @@ describe('shouldUpdateElapsedSnapshot', () => {
 
   it('returns true when reset sets elapsed to zero during running', () => {
     expect(shouldUpdateElapsedSnapshot({
-      snapshot: { elapsedMs: 10_000, capturedAt: 1_000 },
+      snapshot: { durationMs: 10_000, capturedAt: 1_000 },
       totalElapsedMs: 0,
       buildStatus: 'running',
     })).toBe(true);
@@ -32,7 +32,7 @@ describe('shouldUpdateElapsedSnapshot', () => {
 
   it('returns true when build is not running', () => {
     expect(shouldUpdateElapsedSnapshot({
-      snapshot: { elapsedMs: 10_000, capturedAt: 1_000 },
+      snapshot: { durationMs: 10_000, capturedAt: 1_000 },
       totalElapsedMs: 8_000,
       buildStatus: 'paused',
     })).toBe(true);

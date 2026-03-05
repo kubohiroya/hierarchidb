@@ -1,6 +1,9 @@
 # 運用ハブ
 
 ## Doing
+- #784 / codex/test/shape/build-session-pubsub-ui-transitions-784 / 2026-03-04 23:52
+- #783 / codex/refactor/gis-sdk/build-session-configs-table-783 / 2026-03-04 23:37
+- #782 / codex/docs/runtime-worker/build-session-orchestrator-4table-782 / 2026-03-04 23:09
 - #778 / codex/fix/shape/tbase-retry-cap-recheck-778 / 2026-03-04 18:31
 - #765 / codex/feat/shape/preview-admin-subtile-guides-765 / 2026-03-04 15:12
 - #763 / codex/fix/shape/step5-preview-metrics-consistency-763 / 2026-03-04 13:56
@@ -37,7 +40,14 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
-- 2026-03-04: Issue #778 開始 - Geometry tolerance が 0.1 始まりへ戻る再発について、t_base 適用経路と retry 上限制御の実処理経路を再検証・修正する対応に着手
+- 2026-03-05: Issue #784 進捗 - `ui-worker-client` に `workerBridge.sessionChannels.unit.test.ts` を追加し、`subscribeSessionState` / `subscribeSessionHeartbeat` / `subscribeTaskProgress` の worker→UI コールバック配線と sanitize（bigint→string）を検証。あわせて `subscribeStageSnapshots` が bridge 非公開である現仕様をテスト固定。shape 側統合テストへ「UIが direct task-progress 購読を使わず `sessionState/heartbeat + buildTasks(snapshot/update)` を利用する」ケースを追加。`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/integration/buildSessionPubSubStateTransitions.integration.test.tsx`、`pnpm -w turbo run test --filter @hierarchidb/ui-worker-client -- --run src/__tests__/workerBridge.sessionChannels.unit.test.ts`、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/runtime-worker --filter @hierarchidb/ui-worker-client` は成功（exit 0）。
+- 2026-03-05: Issue #784 進捗 - `buildSessionPubSubStateTransitions.integration.test.tsx` を追加し、session state / heartbeat と task snapshot / task progress の UI 状態遷移を検証。`useShapeBuildSessionState` の再購読ループ（session state受信直後に初期値へ巻き戻る競合）を修正。`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/integration/buildSessionPubSubStateTransitions.integration.test.tsx` と `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/runtime-worker` は成功（exit 0）。
+- 2026-03-04: Issue #784 開始 - Worker→UI の pub/sub 通知（session state / stage snapshot / task progress / heartbeat）で UI 状態遷移が正しく行われることを `build-session-orchestrator-state-transitions.md` 準拠で検証するテスト追加に着手
+- 2026-03-04: Issue #783 進捗 - 方針変更（既存データ破棄前提）に合わせて Dexie migration（v5コピー/v6削除）を撤去し、`buildSessionConfigs` 固定スキーマへ単純化。`packages`/`plugins` ソース上の `buildSessions` 参照は 0 件を確認。`pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/runtime-worker --filter @hierarchidb/shape-plugin`、`pnpm -w turbo run test --filter @hierarchidb/gis-sdk -- --run src/ephemeral/__tests__/sessionHelpers.test.ts src/ephemeral/__tests__/getSessionWithDetails.test.ts`、`pnpm -w turbo run test --filter @hierarchidb/runtime-worker -- --run src/services/__tests__/unit/shape-mutation-session-upsert.unit.test.ts src/services/utils/__tests__/reconcileStaleBuildSessions.unit.test.ts`、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/unit/shapeBuildApiClient.updateBuildSession.unit.test.ts` はすべて成功（exit 0）。
+- 2026-03-04: Issue #783 進捗 - `buildSessions` 実テーブル名を `buildSessionConfigs` へ改名し、Dexie migration を安全な2段階（v5でコピー、v6で旧テーブル削除）へ実装。`pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/runtime-worker --filter @hierarchidb/shape-plugin`、`pnpm -w turbo run test --filter @hierarchidb/gis-sdk -- --run src/ephemeral/__tests__/sessionHelpers.test.ts src/ephemeral/__tests__/getSessionWithDetails.test.ts`、`pnpm -w turbo run test --filter @hierarchidb/runtime-worker -- --run src/services/__tests__/unit/shape-mutation-session-upsert.unit.test.ts src/services/utils/__tests__/reconcileStaleBuildSessions.unit.test.ts`、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/unit/shapeBuildApiClient.updateBuildSession.unit.test.ts` はすべて成功（exit 0）。
+- 2026-03-04: Issue #783 開始 - `buildSessions` 実テーブル名を `buildSessionConfigs` へ変更し、Dexie migration・参照コード更新・関連ドキュメント整合を行うタスクに着手
+- 2026-03-04: Issue #782 進捗 - `packages/runtime-worker/docs/build-session-orchestrator-state-transitions.md` を4正規化テーブル（`buildSessions` / `buildSessionHeartbeats` / `buildSessionStatuses` / `buildStageStatuses`）前提で全面改稿。通知4系統（session state / stage snapshot / task progress / heartbeat）と UI 側処理経路、Known gaps を現実装準拠で明記。`pnpm -w turbo run lint --filter @hierarchidb/runtime-worker` は成功（exit 0, turbo上でlintタスク未定義のため実行タスク0）。
+- 2026-03-04: Issue #778 開始 - Geometry tolerance が 0.1 始まりへ戻る再発について、baseTolerance 適用経路と retry 上限制御の実処理経路を再検証・修正する対応に着手
 - 2026-03-04: Issue #776 完了 - PR #777 を main へ squash merge、Issue #776 close、Geometry Preview: Geometry の Features/Polygons テキスト化と Max Vertices 閾値線条件修正を反映
 - 2026-03-04: Issue #776 進捗 - Geometry Preview: Geometry の Features/Polygons を棒グラフからテキスト表示へ変更し、Max Vertices の閾値線を「分母>6553 の場合のみ表示」へ修正。`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/TaskItemCardListCard.unit.test.tsx` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は成功（exit 0）。
 - 2026-03-04: Issue #776 開始 - Geometry Preview: Geometry の Features/Polygons をテキスト表示へ変更し、Max Vertices バーを表示値準拠（分母<=6553 で閾値線非表示）へ修正する対応に着手
@@ -48,7 +58,7 @@
 - 2026-03-04: Issue #763 開始 - Step5 Source/Geometry preview の指標表示不整合（Sourceサイズ、Retry attempts、Features/Polygons分母、`Max Poly` ラベル）修正に着手
 - 2026-03-04: Issue #761 進捗 - `usePluginDialogRoute` の route params 解決を `dialogModeStep > dialogMode > dialog` 優先へ修正し、`plugin-dialog-step.unit.test.tsx` に再発テスト追加。`pnpm -w turbo run test --filter @hierarchidb/app -- --run src/router/__tests__/unit/plugin-dialog-step.unit.test.tsx` / `pnpm -w turbo run typecheck --filter @hierarchidb/app` / `pnpm -w turbo run build --filter @hierarchidb/app` はすべて成功（exit 0）。
 - 2026-03-04: Issue #761 開始 - `/shape/edit/maximize/5` と `/shape/edit/full/5` で URL mode が `normal` へ巻き戻る再発不具合の調査と修正に着手
-- 2026-03-04: Issue #757 開始 - Source終了時の代表ポリゴン `t_base`（<=6553）をセッションへ保持し、Geometryで再利用する仕様ドキュメント化と実装修正に着手
+- 2026-03-04: Issue #757 開始 - Source終了時の代表ポリゴン `baseTolerance`（<=6553）をセッションへ保持し、Geometryで再利用する仕様ドキュメント化と実装修正に着手
 - 2026-03-04: Issue #758 進捗 - `shapeBuildRuntimeExecutionMetrics.ts` の `StageSnapshotEvent` import 漏れを修正し、`pnpm -w exec turbo run typecheck --only --filter @hierarchidb/shape-plugin` 成功（exit 0）。
 - 2026-03-04: Issue #758 進捗 - URL mode優先復元（`full`維持）・dialog window restore競合の抑制・FloatingWindow stale state再注入抑制・TaskItemDetailWindow（raw source fallback/Geometry分母補正/タイトルアイコン配色）を修正。`pnpm install --frozen-lockfile` と `pnpm -w exec turbo run build --filter @hierarchidb/plugin-ui-host^... --filter @hierarchidb/plugin-ui-host --filter @hierarchidb/shape-plugin^... --filter @hierarchidb/shape-plugin --filter @hierarchidb/ui-floating-window^... --filter @hierarchidb/ui-floating-window` は成功（exit 0）。`pnpm -C packages/plugin-ui-host exec vitest run src/__tests__/dialog-url-step.unit.test.tsx` は成功（exit 0）。`shape-plugin` typecheck/test は既存失敗で Blocked へ記録。
 - 2026-03-04: Issue #758 開始 - `/shape/create/full/5` の mode 書換え不具合、Step5 FloatingWindow アイコン不可視/位置サイズ巻き戻り、Geometry 指標分母不整合、raw source buffer 欠落でプレビュー空になる不具合の調査と修正に着手
@@ -175,4 +185,4 @@
   - Worker側でセッション状態変化時の自動イベント発火を実装
   - UI側で新しい `useShapeBuildSessionState` フックを作成し、ポーリングベースの `useShapeBuildSessionRecord` を置き換え
   - `typecheck && build` が成功し、実装完了
-- 2026-03-04: Issue #757 進捗 - Source→Geometry の session駆動 baseTolerance（t_base）探索・保存・利用を実装し、仕様書更新と build/typecheck/test（対象）を完了
+- 2026-03-04: Issue #757 進捗 - Source→Geometry の session駆動 baseTolerance 探索・保存・利用を実装し、仕様書更新と build/typecheck/test（対象）を完了

@@ -1,6 +1,6 @@
 import { forwardRef, type CSSProperties } from 'react';
 import { Box } from '@mui/material';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 
 import {
   useTaskItemCardList,

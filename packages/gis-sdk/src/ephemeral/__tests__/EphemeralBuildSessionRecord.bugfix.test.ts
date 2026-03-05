@@ -86,14 +86,14 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
     };
 
     // Insert into all four tables
-    await db.buildSessions.add(config);
+    await db.buildSessionConfigs.add(config);
     await db.buildSessionHeartbeats.add(heartbeat);
     await db.buildSessionStatuses.add(status);
     await db.buildStageStatuses.add(stageStatus);
 
     // TEST 1: Verify schema has separate tables
     const hasNormalizedTables = 
-      db.tables.some(t => t.name === 'buildSessions') &&
+      db.tables.some(t => t.name === 'buildSessionConfigs') &&
       db.tables.some(t => t.name === 'buildSessionHeartbeats') &&
       db.tables.some(t => t.name === 'buildSessionStatuses') &&
       db.tables.some(t => t.name === 'buildStageStatuses');
@@ -105,7 +105,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
     await db.buildSessionHeartbeats.update(nodeId, { lastHeartbeatAt: heartbeatTime });
 
     // Verify config table was not touched
-    const configAfterHeartbeat = await db.buildSessions.get(nodeId);
+    const configAfterHeartbeat = await db.buildSessionConfigs.get(nodeId);
     expect(configAfterHeartbeat).toEqual(config);
 
     // Verify heartbeat was updated
@@ -214,13 +214,13 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
           };
 
           // Insert into all four tables
-          await db.buildSessions.put(config);
+          await db.buildSessionConfigs.put(config);
           await db.buildSessionHeartbeats.put(heartbeat);
           await db.buildSessionStatuses.put(status);
           await db.buildStageStatuses.put(stageStatus);
 
           // Verify session was stored
-          const storedConfig = await db.buildSessions.get(sessionData.nodeId);
+          const storedConfig = await db.buildSessionConfigs.get(sessionData.nodeId);
           expect(storedConfig).toBeDefined();
 
           // Property 1: Heartbeat updates should be efficient
@@ -244,7 +244,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
           expect(afterHeartbeat).not.toHaveProperty('expiresAt');
 
           // Cleanup
-          await db.buildSessions.delete(sessionData.nodeId);
+          await db.buildSessionConfigs.delete(sessionData.nodeId);
           await db.buildSessionHeartbeats.delete(sessionData.nodeId);
           await db.buildSessionStatuses.delete(sessionData.nodeId);
           await db.buildStageStatuses.delete(`${sessionData.nodeId}:${sessionData.stage}`);
@@ -300,7 +300,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
       startedAt: now,
     };
 
-    await db.buildSessions.add(config);
+    await db.buildSessionConfigs.add(config);
     await db.buildSessionHeartbeats.add(heartbeat);
     await db.buildSessionStatuses.add(status);
     await db.buildStageStatuses.add(sourceStage);
@@ -316,7 +316,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
     const afterSize = JSON.stringify(afterHeartbeat).length;
 
     // Verify config table was not touched
-    const configAfterHeartbeat = await db.buildSessions.get(nodeId);
+    const configAfterHeartbeat = await db.buildSessionConfigs.get(nodeId);
     expect(configAfterHeartbeat).toEqual(config);
 
     console.log(`Demonstration 1: Heartbeat update serialization is efficient`);
@@ -471,7 +471,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
     ];
 
     // Insert all data
-    await db.buildSessions.add(config);
+    await db.buildSessionConfigs.add(config);
     await db.buildSessionHeartbeats.add(heartbeat);
     await db.buildSessionStatuses.add(status);
     await db.buildStageStatuses.add(sourceStage);
@@ -482,7 +482,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
 
     // Query using unified interface
     const session = await getSessionWithDetails(nodeId, {
-      getConfig: async (id) => db.buildSessions.get(id),
+      getConfig: async (id) => db.buildSessionConfigs.get(id),
       getHeartbeat: async (id) => db.buildSessionHeartbeats.get(id),
       getStatus: async (id) => db.buildSessionStatuses.get(id),
       getStageStatuses: async (id) => db.buildStageStatuses.where('nodeId').equals(id).toArray(),

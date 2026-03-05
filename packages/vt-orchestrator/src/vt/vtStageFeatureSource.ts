@@ -1,7 +1,7 @@
 import { geojson as geojsonApi } from 'flatgeobuf';
 import type { FeatureCollection } from 'geojson';
 
-export const decodeTransformByBandCache = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
+export const decodeGeometryStageCache = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
   const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
   return normalizeFeatureCollection(decoded);
 };

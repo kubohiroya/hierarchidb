@@ -4,16 +4,16 @@ import type { PipelineRunConfig } from '~/types/types';
 export async function runPipeline(
   buildConfig: PipelineRunConfig
 ): Promise<void> {
-  await runTransformByBand(buildConfig);
+  await runGeometryStage(buildConfig);
   await runVt(buildConfig);
 }
 
-export async function runTransformByBand(
+export async function runGeometryStage(
   buildConfig: PipelineRunConfig
 ): Promise<void> {
-  const handler = buildConfig.transformByBandHandler;
+  const handler = buildConfig.geometryStageHandler;
   if (!handler) {
-    throw new Error('transformByBandHandler is required to run geometry stage.');
+    throw new Error('geometryStageHandler is required to run geometry stage.');
   }
   await runStageTasks({
     nodeId: buildConfig.nodeId,

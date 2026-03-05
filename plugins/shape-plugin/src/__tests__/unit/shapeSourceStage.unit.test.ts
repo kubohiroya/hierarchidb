@@ -13,7 +13,7 @@ const { mockFetchData, mockProcessData, mockPutFeatureMetadata } = vi.hoisted(()
   mockPutFeatureMetadata: vi.fn(),
 }));
 
-vi.mock('../../services/datasources/DataSourceStrategyFactory.js', () => {
+vi.mock('~/services/datasources/DataSourceStrategyFactory', () => {
   class DataSourceStrategyFactory {
     create() {
       return {
@@ -31,14 +31,14 @@ vi.mock('../../services/datasources/DataSourceStrategyFactory.js', () => {
   return { DataSourceStrategyFactory };
 });
 
-vi.mock('../../services/vt/fetchGeometryFilters.ts', () => ({
+vi.mock('~/services/vt/filterFetchCollectionByZoom.ts', () => ({
   filterFetchCollectionByZoom: (collection: { type: 'FeatureCollection'; features: unknown[] }) => ({
     ...collection,
     features: [],
   }),
 }));
 
-vi.mock('../../services/build/ShapeBuildAPIClient.ts', () => ({
+vi.mock('~/services/build/ShapeBuildAPIClient', () => ({
   shapeMutationAPIImpl: {
     putFeatureMetadata: mockPutFeatureMetadata,
   },

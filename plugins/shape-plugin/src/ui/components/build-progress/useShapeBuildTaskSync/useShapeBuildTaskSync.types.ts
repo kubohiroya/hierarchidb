@@ -1,6 +1,6 @@
 import type { BuildTaskSummary, TaskDisplayPayload, TaskStage } from '@hierarchidb/build-api';
 import type { MutableRefObject } from 'react';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 
 export type RawTaskSummary = BuildTaskSummary & {
   stage: TaskStage;
@@ -11,7 +11,6 @@ export type RawTaskSummary = BuildTaskSummary & {
   errorMessage?: string;
   index?: number;
   stagePriority?: number;
-  updatedAt?: number;
 };
 
 export type SyncArgs = {
