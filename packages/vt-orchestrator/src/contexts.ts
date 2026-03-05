@@ -11,6 +11,8 @@ export type GeometryStageContext = {
   abortSignal?: AbortSignal;
 };
 
+export type TransformByBandStageContext = GeometryStageContext;
+
 export type VtTileWriter = (tile: {
   tileId: number;
   z: number;

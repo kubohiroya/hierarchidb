@@ -417,6 +417,5 @@ export const runTransformByBandOutputPhase = async (
       totalPolygons: inputPolygonCount,
     },
     metadata: resultMetadata,
-    taskUpdated: true,
   };
 };
