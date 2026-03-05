@@ -157,6 +157,16 @@ describe('ShapeBuildProgressPanel (state-tree)', () => {
       progress: 100,
       message: 'simplify-only:done',
       errorMessage: 'geometry failed: max vertices per feature exceeded',
+      metadata: {
+        preview: {
+          sourceCountryCode: 'JP',
+          sourceCountryName: 'Japan',
+          adminLevel: 0,
+          bandIndex: 0,
+          bandMinZoom: 1,
+          bandMaxZoom: 2,
+        },
+      },
     } as ShapeBuildTaskSummary;
     setTasksByStage(store, { geometry: [failedTask] });
     setSessionPhase(store, 'failed');
@@ -260,6 +270,16 @@ describe('ShapeBuildProgressPanel (state-tree)', () => {
       status: 'running',
       progress: 40,
       message: 'Running',
+      metadata: {
+        preview: {
+          sourceCountryCode: 'JP',
+          sourceCountryName: 'Japan',
+          adminLevel: 0,
+          bandIndex: 0,
+          bandMinZoom: 1,
+          bandMaxZoom: 2,
+        },
+      },
     } as ShapeBuildTaskSummary;
     const queuedBottom: ShapeBuildTaskSummary = {
       taskId: 'z-queued-next',
@@ -269,6 +289,16 @@ describe('ShapeBuildProgressPanel (state-tree)', () => {
       status: 'queued',
       progress: 0,
       message: 'Queued',
+      metadata: {
+        preview: {
+          sourceCountryCode: 'JP',
+          sourceCountryName: 'Japan',
+          adminLevel: 0,
+          bandIndex: 0,
+          bandMinZoom: 1,
+          bandMaxZoom: 2,
+        },
+      },
     } as ShapeBuildTaskSummary;
     setSessionPhase(store, 'running');
     setTasksByStage(store, { source: [], geometry: [runningTop, queuedBottom], tileEmit: [] });

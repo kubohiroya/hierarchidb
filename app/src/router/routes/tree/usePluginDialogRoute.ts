@@ -18,16 +18,23 @@ const resolveDialogDisplayMode = (value?: string): 'normal' | 'maximize' | 'full
   }
 };
 
-const parseDialogModeStepFromPathname = (
-  pathname?: string,
+const parseDialogModeStepFromPath = (
+  pathLike?: string,
 ): { mode?: string; step?: string } => {
-  const segments = String(pathname ?? '')
+  const normalized = String(pathLike ?? '')
+    .trim()
+    .replace(/^#/, '')
+    .split('?')[0] ?? '';
+  const segments = normalized
     .split('/')
     .filter((segment) => segment.length > 0);
-  if (segments.length < 7) return {};
-  if (segments[0] !== 't') return {};
-  const mode = segments[6];
-  const step = segments[7];
+  const treeRootIndex = segments.indexOf('t');
+  if (treeRootIndex < 0) return {};
+  const modeIndex = treeRootIndex + 6;
+  const stepIndex = treeRootIndex + 7;
+  if (segments.length <= modeIndex) return {};
+  const mode = segments[modeIndex];
+  const step = segments[stepIndex];
   return {
     mode: typeof mode === 'string' && mode.length > 0 ? mode : undefined,
     step: typeof step === 'string' && step.length > 0 ? step : undefined,
@@ -68,10 +75,13 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
     }
     return params;
   }, [matches, params]);
-  const pathParams = useMemo(
-    () => parseDialogModeStepFromPathname(location.pathname),
-    [location.pathname],
-  );
+  const pathParams = useMemo(() => {
+    const fromPathname = parseDialogModeStepFromPath(location.pathname);
+    if (fromPathname.mode || fromPathname.step) {
+      return fromPathname;
+    }
+    return parseDialogModeStepFromPath(location.hash);
+  }, [location.hash, location.pathname]);
   const effectiveModeParam = routeParams?.mode ?? pathParams.mode ?? params.mode;
   const effectiveStepParam = routeParams?.step ?? pathParams.step ?? params.step;
 
