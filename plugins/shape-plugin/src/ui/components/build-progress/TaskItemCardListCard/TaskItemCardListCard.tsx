@@ -66,6 +66,7 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
     resolveTaskCardView,
     createTaskCardStyle,
   } = useTaskItemCardListCardView({
+    tasks,
     isDetailFloatingWindowOpen,
     onOpenDetailFloatingWindow,
     onCloseDetailFloatingWindow,

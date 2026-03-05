@@ -374,6 +374,84 @@ describe('TaskItemCardListCard', () => {
     expect(screen.getByTestId('max-vertices-limit-marker')).toBeTruthy();
   });
 
+  it('keeps geometry detail synced with latest task metadata while detail window is open', () => {
+    const initialTask: ShapeBuildTaskSummary = {
+      taskId: 'geometry-task-sync-1',
+      nodeId: 'node-1' as NodeId,
+      stage: 'geometry',
+      taskType: 'geometry',
+      status: 'completed',
+      progress: 100,
+      display: {
+        kind: 'summary',
+        metrics: {
+          features: { input: 10, output: 10 },
+          polygons: { input: 27, output: 27 },
+          vertices: { input: 39550, output: 840 },
+        },
+      },
+      metadata: {
+        effectiveTolerance: 0.243059,
+        retryAttempt: 0,
+        retryMax: 24,
+      },
+    } as ShapeBuildTaskSummary;
+    const initialTasks: ShapeBuildTaskSummary[] = [initialTask];
+    const updatedTasks: ShapeBuildTaskSummary[] = [
+      {
+        ...initialTask,
+        version: 2,
+        metadata: {
+          baseTolerance: 0.121,
+          initialTolerance: 0.243059,
+          effectiveTolerance: 0.243059,
+          retryAttempt: 3,
+          retryMax: 24,
+        },
+      } as ShapeBuildTaskSummary,
+    ];
+    const store = createStore();
+
+    const view = render(
+      <Provider store={store}>
+        <TaskItemCardListCard
+          stageId="geometry"
+          tasks={initialTasks}
+          stageValue={0}
+          resolveStatusLabel={() => 'Completed'}
+          resolveStatusColor={() => 'success'}
+          resolveTaskTitle={() => 'Geometry Task Sync 1'}
+          virtualize={false}
+          isDetailFloatingWindowOpen
+        />
+      </Provider>
+    );
+
+    const chips = Array.from(view.container.querySelectorAll('[data-task-id] .MuiChip-root'));
+    expect(chips.length).toBe(1);
+    fireEvent.mouseEnter(chips[0]);
+    expect(screen.getByText('Base tolerance: N/A / Initial tolerance: N/A / Effective tolerance: 0.243059')).toBeTruthy();
+    expect(screen.getByText('Retry attempts: 0 / 24')).toBeTruthy();
+
+    view.rerender(
+      <Provider store={store}>
+        <TaskItemCardListCard
+          stageId="geometry"
+          tasks={updatedTasks}
+          stageValue={0}
+          resolveStatusLabel={() => 'Completed'}
+          resolveStatusColor={() => 'success'}
+          resolveTaskTitle={() => 'Geometry Task Sync 1'}
+          virtualize={false}
+          isDetailFloatingWindowOpen
+        />
+      </Provider>
+    );
+
+    expect(screen.getByText('Base tolerance: 0.121 / Initial tolerance: 0.243059 / Effective tolerance: 0.243059')).toBeTruthy();
+    expect(screen.getByText('Retry attempts: 3 / 24')).toBeTruthy();
+  });
+
   it('toggles selected chip and keeps preview fixed while selected', () => {
     const tasks: ShapeBuildTaskSummary[] = [
       {
