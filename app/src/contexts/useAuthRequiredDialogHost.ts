@@ -4,6 +4,7 @@ import {
   AuthNotificationRegistry,
   type AuthRequiredNotification,
   type AuthSuccessNotification,
+  type StorageWarningNotification,
 } from '@hierarchidb/auth';
 import { toNodeId, toNodeType, type NodeType } from '@hierarchidb/core-types';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
@@ -154,6 +155,17 @@ export function useAuthRequiredDialogHost(): AuthRequiredDialogHostState {
           activeRequestIdRef.current = null;
           setNotification(null);
         }
+      },
+      onStorageWarning: async (next: StorageWarningNotification) => {
+        if (isAuthDebugEnabled()) {
+          console.debug('[auth][ui] STORAGE_WARNING received', {
+            message: next.context.message,
+            timestamp: next.context.timestamp,
+          });
+        }
+        // Display storage warning to user
+        console.warn('[Auth Storage Warning]', next.context.message);
+        alert(`認証システム警告: ${next.context.message}\n\nlocalStorage機能が利用できない環境では、このアプリケーションは正常に動作しません。ブラウザの設定を確認してください。`);
       },
     });
 

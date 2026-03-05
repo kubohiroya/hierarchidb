@@ -169,7 +169,16 @@ export class BFFAuthService {
 
     // Store return URL
     const currentUrl = window.location.href;
-    localStorage.setItem('auth_return_url', returnUrl || currentUrl);
+    const finalReturnUrl = returnUrl || currentUrl;
+    localStorage.setItem('auth_return_url', finalReturnUrl);
+
+    // Debug logging for return URL handling
+    console.debug('[BFF] Return URL saved for redirect flow:', {
+      provided: returnUrl,
+      current: currentUrl,
+      final: finalReturnUrl,
+      provider,
+    });
 
     // Build OAuth2 authorization URL
     const authUrl = this.buildAuthorizationUrl(provider, codeChallenge, 'redirect');
@@ -178,7 +187,7 @@ export class BFFAuthService {
     window.location.href = authUrl.toString();
 
     // This will never resolve as the page redirects
-    return new Promise(() => {});
+    return new Promise(() => { });
   }
 
   /**
@@ -354,12 +363,29 @@ export class BFFAuthService {
         credentials: 'include',
       });
 
+      // Enhanced error handling with detailed logging
       if (!response.ok) {
+        console.error('[BFF] Token exchange failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          url: tokenUrl,
+          headers: Object.fromEntries(response.headers.entries()),
+          responseOk: response.ok,
+        });
+
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
-          errorData.error_description || `Token exchange failed: ${response.statusText}`
+          errorData.error_description || `Token exchange failed: ${response.status} ${response.statusText}`
         );
       }
+
+      // Log successful response for debugging
+      console.debug('[BFF] Token exchange success:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: tokenUrl,
+        responseOk: response.ok,
+      });
 
       const data = await response.json();
       maybeEmitBffWarning(data?.warning);
@@ -584,7 +610,7 @@ export class BFFAuthService {
       url,
       'oauth-popup',
       `width=${width},height=${height},left=${left},top=${top},` +
-        'toolbar=no,menubar=no,location=no,status=no'
+      'toolbar=no,menubar=no,location=no,status=no'
     );
 
     return this.popupWindow;

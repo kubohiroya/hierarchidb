@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import type { BuildProgressEvent, BuildTaskUpdateEvent } from '@hierarchidb/build-api';
+import type { BuildProgressEvent, BuildTaskSummary, BuildTaskUpdateEvent } from '@hierarchidb/build-api';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useSetAtom } from 'jotai';
 import { dispatchBuildSessionEventAtom } from '~/ui/atoms/buildSessionStateAtoms';
@@ -144,6 +144,8 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
       geometry: null,
       tileEmit: null,
     };
+    let hasInitialSnapshotApplied = false;
+    const pendingTaskUpdatesBeforeInitialSnapshot: TaskUpdateEvent[] = [];
     const lastAppliedVersionByTaskId = new Map<string, number>();
     const lastAppliedFingerprintByTaskVersion = new Map<string, string>();
     let fatalContractError = false;
@@ -287,6 +289,10 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
         );
         const snapshotVersionMax = snapshotVersionMaxByStage[stageId];
         if (snapshotVersionMax == null) {
+          if (!hasInitialSnapshotApplied) {
+            pendingTaskUpdatesBeforeInitialSnapshot.push(event);
+            return;
+          }
           stopWithContractError(
             `[shape buildSessionStateAtomBridge] task update arrived before snapshot handshake: ${event.task.taskId}`,
           );
@@ -339,6 +345,12 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
         if (snapshotStages.size > 0 && !snapshotStages.has(stageId)) continue;
         dispatchUiSyncPhase(stageId, 'running');
       }
+      if (!hasInitialSnapshotApplied) {
+        hasInitialSnapshotApplied = true;
+        // Keep latest truth from the initial snapshot and discard pre-snapshot updates.
+        // This avoids race-window loss without introducing extra snapshot fetches.
+        pendingTaskUpdatesBeforeInitialSnapshot.length = 0;
+      }
       scheduleProgressFlush();
     };
 
@@ -377,24 +389,20 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
       await bridge.initialize();
       if (cancelled) return;
 
-      const runtime = await bridge.getBuildSessionRuntime(SHAPE_NODE_TYPE, nodeId);
-      if (cancelled) return;
-      if (runtime) {
-        adapter.onRuntimeRecord(runtime);
-      }
-
-      const tasks = await bridge.getBuildTasks(SHAPE_NODE_TYPE, nodeId);
-      if (cancelled) return;
-      const snapshotEvent = {
+      const toSnapshotEvent = (tasks: BuildTaskSummary[]): TaskSnapshotEvent => ({
         type: 'snapshot',
         nodeId,
         tasks,
         version: tasks.length > 0
           ? tasks.reduce((max, task) => Math.max(max, task.version), Number.MIN_SAFE_INTEGER)
           : 0,
-      } as TaskSnapshotEvent;
-      onTaskEvent(snapshotEvent);
-      adapter.onTaskStreamConnectionChanged(true);
+      } as TaskSnapshotEvent);
+
+      const runtime = await bridge.getBuildSessionRuntime(SHAPE_NODE_TYPE, nodeId);
+      if (cancelled) return;
+      if (runtime) {
+        adapter.onRuntimeRecord(runtime);
+      }
 
       const [unsubscribeTasks, unsubscribeProgress, unsubscribeSessionState, unsubscribeHeartbeat] = await Promise.all([
         bridge.subscribeBuildTasks(SHAPE_NODE_TYPE, nodeId, (event) => {
@@ -418,6 +426,16 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
         unsubscribeHeartbeat();
         return;
       }
+      adapter.onTaskStreamConnectionChanged(true);
+      const tasks = await bridge.getBuildTasks(SHAPE_NODE_TYPE, nodeId);
+      if (cancelled) {
+        unsubscribeTasks();
+        unsubscribeProgress();
+        unsubscribeSessionState();
+        unsubscribeHeartbeat();
+        return;
+      }
+      onTaskEvent(toSnapshotEvent(tasks));
 
       unsubscribers.push(unsubscribeTasks, unsubscribeProgress, unsubscribeSessionState, unsubscribeHeartbeat);
     };

@@ -111,7 +111,7 @@ const registerInFlight = (key: string, authKey: string, promise: Promise<Respons
     } else {
       inFlightMap.set(key, next);
     }
-  }).catch(() => {});
+  }).catch(() => { });
 };
 
 /**
@@ -148,6 +148,28 @@ export async function smartFetch(input: string, options: SmartFetchOptions = {})
     throw new Error('[download][smartFetch] auth.scope is required when auth is enabled');
   }
   const pluginType = (scope ?? 'generic') as AuthScope;
+
+  // Debug logging for authentication state evaluation
+  const isAuthDebugEnabled = (): boolean => {
+    try {
+      return typeof localStorage !== 'undefined' && localStorage.getItem('hidb_auth_debug') === '1';
+    } catch {
+      return false;
+    }
+  };
+
+  if (isAuthDebugEnabled()) {
+    console.debug('[download][smartFetch] authentication state evaluation', {
+      input,
+      target,
+      authEnabled,
+      scope,
+      pluginType,
+      sessionId: options.auth?.sessionId,
+      method,
+      isCorsProxy: target !== input,
+    });
+  }
 
   const ctx: AuthContext = {
     scope: pluginType,
@@ -187,6 +209,16 @@ export async function smartFetch(input: string, options: SmartFetchOptions = {})
           }
         }
         const fetchPromise = (async () => {
+          if (isAuthDebugEnabled()) {
+            console.debug('[download][smartFetch] executing fetch', {
+              authEnabled,
+              target,
+              method,
+              attempt,
+              hasAuthHeaders: authEnabled,
+            });
+          }
+
           return authEnabled
             ? await (await AuthService.getSingleton()).fetchWithAuth(target, init, ctx)
             : await fetch(target, init);

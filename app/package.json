@@ -1,6 +1,6 @@
 {
   "name": "@hierarchidb/app",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "private": true,
   "type": "module",
   "main": "src/entry.client.tsx",
@@ -15,7 +15,7 @@
     "preview": "vite preview",
     "format": "biome check --write src",
     "format:check": "biome check src --reporter summary",
-    "deploy": "gh-pages -d dist -r git@github.com:kubohiroya/hierarchidb.git",
+    "deploy": "gh-pages -d dist -r git@github.com:kubohiroya/hierarchidb.git && node scripts/post-deploy-version-info.mjs",
     "test:github-pages": "node scripts/test-github-pages.js",
     "debug:copy": "cp scripts/debug-*.html dist/ && cp scripts/minimal-*.html dist/",
     "debug:serve": "npx serve dist -l 8080",

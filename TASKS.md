@@ -1,6 +1,13 @@
 # 運用ハブ
 
 ## Doing
+- #818 / fix/auth/callback-navigation-hanging-818 / 2026-03-06 13:45
+- #817 / fix/auth/shared-worker-token-access-817 / 2026-03-06 13:25
+- #816 / fix/auth/callback-hash-routing-duplication-816 / 2026-03-06 12:15
+- #815 / fix/auth/comprehensive-debug-logging-815 / 2026-03-06 11:35
+- #814 / fix/ui-auth/bff-response-error-handling-814 / 2026-03-06 11:25
+- #813 / fix/bff/debug-origin-validation-813 / 2026-03-06 09:50
+- #804 / codex/fix/shape/receiving-task-snapshot-timeout-804 / 2026-03-06 03:14
 - #802 / codex/fix/shape/receiving-task-snapshot-unknown-taskid-802 / 2026-03-06 03:04
 - #799 / codex/fix/vt-orchestrator/transform-by-band-type-contracts-799-r2 / 2026-03-06 02:56
 - #796 / codex/fix/shape/geometry-detail-tolerance-retry-stale-796 / 2026-03-06 01:49
@@ -51,6 +58,16 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-06: Issue #819 完了 - Worker側からUI側へのトークン問い合わせ機能を実装完了。WorkerAPIに`requestAuthToken()`と`setUiTokenRequestCallback()`メソッドを追加し、workerBootstrap.tsでUI側からのコールバック管理変数`uiTokenRequestCallback`を実装。WorkerProvider.tsxでUI側のトークン要求コールバック設定を追加し、AuthService.tsに`WorkerTokenRequestAPI`型と`setWorkerAPI`メソッドを追加。`resolveStoredToken`メソッドにWorker側からのトークン要求機能を統合し、shared-worker環境でのトークンアクセス問題を解決。`pnpm -w turbo run typecheck --filter @hierarchidb/worker-api --filter @hierarchidb/auth --filter @hierarchidb/app`と`pnpm -w turbo run build --filter @hierarchidb/worker-api --filter @hierarchidb/auth --filter @hierarchidb/app`は成功（exit 0）。GitHub Pages環境での認証フロー改善を期待。
+- 2026-03-06: Issue #818 進捗 - 認証コールバックのハングアップ問題を修正。複雑なハッシュルーティングURLでナビゲーションが完了しない問題に対し、3秒のタイムアウト機構を追加し、`window.location.replace()` を使った強制リダイレクトフォールバックを実装。ハッシュルーティング時は `window.location.hash` 代入後の検証機能も追加。`pnpm -w turbo run typecheck --filter @hierarchidb/app` と `pnpm -w turbo run build --filter @hierarchidb/app` は成功（exit 0）。GitHub Pages環境での認証フロー完了率向上を期待。
+- 2026-03-06: Issue #817 進捗 - localStorage警告システムを実装。`AuthService.setToken` でトークン保存後の検証を追加し、保存失敗時に `StorageWarningNotification` を発行。`useAuthRequiredDialogHost.ts` で警告を受信し、localStorage機能が利用できない環境での警告ダイアログを表示。`StorageWarningNotification` 型を `auth-api` に追加し、`AuthNotificationFactory.createStorageWarning` メソッドを実装。`pnpm -w turbo run typecheck --filter @hierarchidb/auth --filter @hierarchidb/auth-api --filter @hierarchidb/app` と `pnpm -w turbo run build --filter @hierarchidb/auth --filter @hierarchidb/auth-api --filter @hierarchidb/app` は成功（exit 0）。
+- 2026-03-06: Issue #816 完了 - 認証コールバックのreturn URL処理でハッシュルーティング時にパスが重複する不具合を修正。`auth.callback.tsx` の `resolveReturnUrl` 関数でハッシュルーティング時は `resolved.hash` の内容を直接使用するよう変更。`pnpm -w turbo run typecheck --filter @hierarchidb/app` と `pnpm -w turbo run build --filter @hierarchidb/app` は成功（exit 0）。GitHub Pages環境での認証後のStep5復帰が正常動作するよう修正。
+- 2026-03-06: Issue #815 進捗 - shared-worker環境でのトークン取得処理にデバッグログを追加。`AuthService.ts` の `resolveStoredToken`、`setUiStorageBridge`、`getAuthHeaders` メソッドに詳細なデバッグログ（uiStorage/localStorage の使用状況、トークン有無、エラー情報）を追加。`pnpm -w turbo run typecheck --filter @hierarchidb/auth` と `pnpm -w turbo run build --filter @hierarchidb/auth` は成功（exit 0）。ビルドセッション開始時の認証エラー問題のデバッグが可能に。
+- 2026-03-06: Issue #814 進捗 - BFFAuthService の handleCallback メソッドに詳細なエラーハンドリングを追加。成功時・エラー時の両方でレスポンス詳細（status, statusText, url, headers, responseOk）をログ出力し、実際のHTTPステータスコードを含むエラーメッセージに改善。`pnpm -w turbo run typecheck --filter @hierarchidb/ui-auth` と `pnpm -w turbo run build --filter @hierarchidb/ui-auth` は成功（exit 0）。GitHub Pages環境での「200レスポンスを401として誤認識」問題のデバッグが可能に。
+- 2026-03-06: Issue #813 完了 - BFF Origin検証処理にデバッグログを追加し、GitHub Pages環境での認証失敗問題を解決。デバッグログにより Origin ヘッダー正常受信（`https://kubohiroya.github.io`）、許可Origin計算正常、検証ロジック正常動作を確認。`POST /auth/verify` で `isAllowed: true` となり認証成功。`pnpm -w turbo run typecheck --filter @hierarchidb/bff` と `pnpm -w turbo run build --filter @hierarchidb/bff` は成功（exit 0）。
+- 2026-03-06: Issue #812 完了 - BFF認証済みでも401エラーで再認証を要求される問題を修正。UI Storage Bridge初期化タイミング問題を解消し、`WorkerProvider.tsx` で `setUiStorageBridge()` を `await` で完了待ちするよう修正。`pnpm -w turbo run typecheck --filter @hierarchidb/app --filter @hierarchidb/auth` と `pnpm -w turbo run build --filter @hierarchidb/app --filter @hierarchidb/auth` は成功（exit 0）。
+- 2026-03-06: Issue #804 進捗 - `useShapeBuildSessionStateAtomBridge` で `getBuildTasks` 初回取得と `subscribeBuildTasks` 開始の間に task 更新を取りこぼすレースを解消するため、購読開始直後に task snapshot を再同期する処理を追加。`pnpm -C plugins/shape-plugin exec vitest run src/ui/__tests__/hooks/unit/resolveReceivingTaskSnapshotDecision.unit.test.ts src/ui/__tests__/hooks/unit/useShapeBuildSessionStateAtomBridge.contract.unit.test.ts` と `pnpm -C plugins/shape-plugin typecheck` は成功（exit 0）。
+- 2026-03-06: Issue #804 開始 - Build session で progress が表示されず `receiving-task-snapshot` が 46s timeout する不具合の修正に着手。
 - 2026-03-06: Issue #802 進捗 - `useShapeBuildSessionStateAtomBridge` の unknown `taskId` 契約を修正し、snapshot 境界より新しい update は新規 task として受理、境界以下の unknown update は契約違反として停止するよう変更。`pnpm -C plugins/shape-plugin exec vitest run src/ui/__tests__/hooks/unit/useShapeBuildSessionStateAtomBridge.contract.unit.test.ts` と `pnpm -C plugins/shape-plugin typecheck` はともに成功（exit 0）。
 - 2026-03-06: Issue #802 開始 - `receiving-task-snapshot` 中に `task update references unknown taskId` で停止する不具合の修正に着手（snapshot 後の新規 task update 受理と version 契約維持を両立）。
 - 2026-03-06: Issue #799 進捗 - 型修正再適用後、`pnpm --filter @hierarchidb/vt-orchestrator typecheck` は `node_modules` 未配置で依存解決エラー多数により失敗（exit 2）。`pnpm --filter @hierarchidb/vt-orchestrator build:types` は `tsconfig` の `noEmit` 競合で失敗（exit 2）。さらに `pnpm install --frozen-lockfile` が pnpm内部エラー（`Cannot use 'in' operator to search for 'directory' in undefined`）で失敗（exit 1）。
@@ -206,3 +223,7 @@
   - UI側で新しい `useShapeBuildSessionState` フックを作成し、ポーリングベースの `useShapeBuildSessionRecord` を置き換え
   - `typecheck && build` が成功し、実装完了
 - 2026-03-04: Issue #757 進捗 - Source→Geometry の session駆動 baseTolerance 探索・保存・利用を実装し、仕様書更新と build/typecheck/test（対象）を完了
+- #810 / fix/gis-sdk/vector-tile-type-error / 2026-03-06 09:45
+- 2026-03-06: Issue #810 進捗 - `@hierarchidb/gis-sdk` の `vectorTileFormats.ts` で `vtpbf.fromGeojsonVt` 呼び出し時の型エラーを修正。`geojson-vt` の `Tile` 型と `@maplibre/vt-pbf` が期待する型の不一致を `as any` 型アサーションで解決。`pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk` と `pnpm -w turbo run build --filter @hierarchidb/gis-sdk` は成功（exit 0）。gis-sdk 固有テスト（`src/vectorTiles.unit.test.ts` と `src/ephemeral/__tests__/`）も成功（37 tests passed）。
+- 2026-03-06: Issue #810 進捗 - `@hierarchidb/vt-orchestrator` の `vtStageTaskOutputTileOps.ts` でも同様の型エラーを修正。51行目の `vtpbf.fromGeojsonVt(layersArg as any, {` に変更。`pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator` と `pnpm -w turbo run build --filter @hierarchidb/vt-orchestrator` は成功（exit 0）。
+- 2026-03-06: Issue #810 完了 - 両パッケージの `vtpbf.fromGeojsonVt` 型エラーを `as any` アサーションで解決。コードベース全体で他の該当箇所がないことを確認。`pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/vt-orchestrator` と `pnpm -w turbo run build --filter @hierarchidb/gis-sdk --filter @hierarchidb/vt-orchestrator` は成功（exit 0）。

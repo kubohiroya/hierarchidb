@@ -10,6 +10,7 @@ export type {
   AuthSource,
   AuthSuccessNotification,
   PluginType,
+  StorageWarningNotification,
 } from '@hierarchidb/auth-api';
 
 export {
