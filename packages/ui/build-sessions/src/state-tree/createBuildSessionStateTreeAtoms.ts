@@ -1,5 +1,6 @@
-import { atom } from 'jotai';
-import { atomFamily, selectAtom } from 'jotai/utils';
+import { atom, type Atom } from 'jotai';
+import { selectAtom } from 'jotai/utils';
+import { atomFamily } from 'jotai-family';
 import type { TaskDisplayPayload } from '@hierarchidb/build-api';
 
 export type BuildSessionTaskStatus =
@@ -83,6 +84,13 @@ export type BuildSessionStageCounts = {
   failed: number;
   recycled: number;
   skipped: number;
+};
+
+type BuildSessionStageStateSlice<StageId extends string> = {
+  orderedIds: string[];
+  byId: Record<string, BuildSessionTaskItem<StageId>>;
+  timing: BuildSessionStageTimingState;
+  ui: BuildSessionStageUiState;
 };
 
 type EventWithVersion = { eventVersion: number };
@@ -442,7 +450,7 @@ export const createBuildSessionStateTreeAtoms = <StageId extends string>(
       timing: state.timing.byStage[stageId],
       ui: state.ui.byStage[stageId],
     }))
-  ));
+  ) as Atom<BuildSessionStageStateSlice<StageId>>);
 
   const stageTasksAtomFamily = atomFamily((stageId: StageId) => (
     atom((get) => {
@@ -454,7 +462,7 @@ export const createBuildSessionStateTreeAtoms = <StageId extends string>(
       }
       return tasks;
     })
-  ));
+  ) as Atom<BuildSessionTaskItem<StageId>[]>);
 
   const stageCountsAtomFamily = atomFamily((stageId: StageId) => (
     atom((get): BuildSessionStageCounts => {
@@ -473,7 +481,7 @@ export const createBuildSessionStateTreeAtoms = <StageId extends string>(
       }
       return counts;
     })
-  ));
+  ) as Atom<BuildSessionStageCounts>);
 
   const overallCountsAtom = atom((get): BuildSessionStageCounts => {
     const counts: BuildSessionStageCounts = {
@@ -506,7 +514,7 @@ export const createBuildSessionStateTreeAtoms = <StageId extends string>(
       const endTime = timing.completedAtUtime ?? get(nowUtimeAtom);
       return Math.max(0, endTime - timing.startedAtUtime - pausedTotalMs);
     })
-  ));
+  ) as Atom<number>);
 
   const totalElapsedMsAtom = atom((get): number => {
     let total = 0;

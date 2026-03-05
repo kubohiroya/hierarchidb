@@ -1,6 +1,8 @@
 # 運用ハブ
 
 ## Doing
+- #788 / fix/app/vite-initial-access-reload-loop-788 / 2026-03-05 23:19
+- #787 / codex/fix/ui/jotai-family-migration-787 / 2026-03-05 23:08
 - #784 / codex/test/shape/build-session-pubsub-ui-transitions-784 / 2026-03-04 23:52
 - #783 / codex/refactor/gis-sdk/build-session-configs-table-783 / 2026-03-04 23:37
 - #782 / codex/docs/runtime-worker/build-session-orchestrator-4table-782 / 2026-03-04 23:09
@@ -40,6 +42,8 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-05: Issue #788 進捗 - `pluginRegistryGeneratorPlugin` の dev watcher を調整し、chokidar 初期スキャン中の `add` では再生成を走らせず、更新系トリガは `handleHotUpdate` 中心へ整理。`pnpm -C app typecheck` は成功（exit 0）、`pnpm -w turbo run build --filter @hierarchidb/app` は成功（exit 0）。`pnpm -C app dev` は `Port 4200 is already in use` で起動不能だったが、起動ログ上 `generate-plugin-registry` 実行回数は 1 回を確認。
+- 2026-03-05: Issue #787 進捗 - `@hierarchidb/ui-build-sessions` の `atomFamily` import を `jotai/utils` から `jotai-family` へ移行し、`jotai-family` 依存を追加。`jotai-family` の型推論差分で発生した `unknown` を解消するため、`atomFamily` 生成 Atom の型注釈を追加。`pnpm i` と `pnpm -w turbo run typecheck --filter @hierarchidb/ui-build-sessions` は成功（exit 0）。
 - 2026-03-05: Issue #784 進捗 - `ui-worker-client` に `workerBridge.sessionChannels.unit.test.ts` を追加し、`subscribeSessionState` / `subscribeSessionHeartbeat` / `subscribeTaskProgress` の worker→UI コールバック配線と sanitize（bigint→string）を検証。あわせて `subscribeStageSnapshots` が bridge 非公開である現仕様をテスト固定。shape 側統合テストへ「UIが direct task-progress 購読を使わず `sessionState/heartbeat + buildTasks(snapshot/update)` を利用する」ケースを追加。`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/integration/buildSessionPubSubStateTransitions.integration.test.tsx`、`pnpm -w turbo run test --filter @hierarchidb/ui-worker-client -- --run src/__tests__/workerBridge.sessionChannels.unit.test.ts`、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/runtime-worker --filter @hierarchidb/ui-worker-client` は成功（exit 0）。
 - 2026-03-05: Issue #784 進捗 - `buildSessionPubSubStateTransitions.integration.test.tsx` を追加し、session state / heartbeat と task snapshot / task progress の UI 状態遷移を検証。`useShapeBuildSessionState` の再購読ループ（session state受信直後に初期値へ巻き戻る競合）を修正。`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/integration/buildSessionPubSubStateTransitions.integration.test.tsx` と `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/runtime-worker` は成功（exit 0）。
 - 2026-03-04: Issue #784 開始 - Worker→UI の pub/sub 通知（session state / stage snapshot / task progress / heartbeat）で UI 状態遷移が正しく行われることを `build-session-orchestrator-state-transitions.md` 準拠で検証するテスト追加に着手

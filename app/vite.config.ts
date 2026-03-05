@@ -847,13 +847,18 @@ function pluginRegistryGeneratorPlugin({ rootDir, mode }: { rootDir?: string; mo
       await enqueuePluginRegistryGeneration(mode);
     },
     configureServer(server) {
-      const schedule = (file: string) => {
+      let watcherReady = false;
+      server.watcher.on('ready', () => {
+        watcherReady = true;
+      });
+
+      server.watcher.on('add', (file) => {
+        // Ignore chokidar's initial scan flood to avoid redundant startup regenerations.
+        if (!watcherReady) return;
         if (shouldTrigger(file)) {
           void enqueuePluginRegistryGeneration(mode);
         }
-      };
-      server.watcher.on('add', schedule);
-      server.watcher.on('change', schedule);
+      });
     },
     async handleHotUpdate(ctx) {
       if (shouldTrigger(ctx.file)) {
