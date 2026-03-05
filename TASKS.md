@@ -1,6 +1,7 @@
 # 運用ハブ
 
 ## Doing
+- #804 / codex/fix/shape/receiving-task-snapshot-timeout-804 / 2026-03-06 03:14
 - #802 / codex/fix/shape/receiving-task-snapshot-unknown-taskid-802 / 2026-03-06 03:04
 - #799 / codex/fix/vt-orchestrator/transform-by-band-type-contracts-799-r2 / 2026-03-06 02:56
 - #796 / codex/fix/shape/geometry-detail-tolerance-retry-stale-796 / 2026-03-06 01:49
@@ -51,6 +52,8 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-06: Issue #804 進捗 - `useShapeBuildSessionStateAtomBridge` で `getBuildTasks` 初回取得と `subscribeBuildTasks` 開始の間に task 更新を取りこぼすレースを解消するため、購読開始直後に task snapshot を再同期する処理を追加。`pnpm -C plugins/shape-plugin exec vitest run src/ui/__tests__/hooks/unit/resolveReceivingTaskSnapshotDecision.unit.test.ts src/ui/__tests__/hooks/unit/useShapeBuildSessionStateAtomBridge.contract.unit.test.ts` と `pnpm -C plugins/shape-plugin typecheck` は成功（exit 0）。
+- 2026-03-06: Issue #804 開始 - Build session で progress が表示されず `receiving-task-snapshot` が 46s timeout する不具合の修正に着手。
 - 2026-03-06: Issue #802 進捗 - `useShapeBuildSessionStateAtomBridge` の unknown `taskId` 契約を修正し、snapshot 境界より新しい update は新規 task として受理、境界以下の unknown update は契約違反として停止するよう変更。`pnpm -C plugins/shape-plugin exec vitest run src/ui/__tests__/hooks/unit/useShapeBuildSessionStateAtomBridge.contract.unit.test.ts` と `pnpm -C plugins/shape-plugin typecheck` はともに成功（exit 0）。
 - 2026-03-06: Issue #802 開始 - `receiving-task-snapshot` 中に `task update references unknown taskId` で停止する不具合の修正に着手（snapshot 後の新規 task update 受理と version 契約維持を両立）。
 - 2026-03-06: Issue #799 進捗 - 型修正再適用後、`pnpm --filter @hierarchidb/vt-orchestrator typecheck` は `node_modules` 未配置で依存解決エラー多数により失敗（exit 2）。`pnpm --filter @hierarchidb/vt-orchestrator build:types` は `tsconfig` の `noEmit` 競合で失敗（exit 2）。さらに `pnpm install --frozen-lockfile` が pnpm内部エラー（`Cannot use 'in' operator to search for 'directory' in undefined`）で失敗（exit 1）。
