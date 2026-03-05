@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { BuildStage } from '@hierarchidb/components';
-import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms';
+import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressTypes';
 import { useShapeBuildProgressSummaryComputation as useShapeBuildProgressSummary } from '../../../components/build-progress/useShapeBuildProgressSummaryComputation';
 
 const stages: BuildStage[] = [

@@ -155,11 +155,6 @@ export function useDialogFrameState({
     dialogPositionRef.current = dialogPosition;
   }, [dialogPosition]);
 
-  useEffect(() => {
-    // default to initialStep/url sync values; no external persistence
-    updateUrlState({ mode: displayMode });
-  }, [displayMode, updateUrlState]);
-
   const persistDisplayMode = useCallback((value: DialogDisplayMode) => {
     setDisplayModeState(value);
     updateUrlState({ mode: value });

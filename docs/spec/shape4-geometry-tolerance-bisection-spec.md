@@ -1,8 +1,8 @@
-# Shape4 Geometry Tolerance 新方式仕様（Session 駆動 `t_base`）
+# Shape4 Geometry Tolerance 新方式仕様（Session 駆動 `baseTolerance`）
 
 ## 目的
 
-Shape4 の Geometry ステージで使用する tolerance を、Source ステージで計算した基準値 `t_base` を起点に決定する。巨大国と小国の形状複雑性差を吸収しつつ、頂点上限制約を満たすまでの再試行回数を削減する。
+Shape4 の Geometry ステージで使用する tolerance を、Source ステージで計算した基準値 `baseTolerance` を起点に決定する。巨大国と小国の形状複雑性差を吸収しつつ、頂点上限制約を満たすまでの再試行回数を削減する。
 
 ## 適用範囲
 
@@ -14,8 +14,8 @@ Shape4 の Geometry ステージで使用する tolerance を、Source ステー
 
 - `vertexLimit`: システム上限頂点数（既定 `6553`）
 - `maxPolygonVertexCount`: Source 出力での「1ポリゴンあたり頂点数最大値」
-- `t_base`: `maxPolygonVertexCount` の代表ポリゴンを `vertexLimit` 以下にする最小 tolerance
-- `multiplier/minRatio/maxRatio`: `t_base` をズーム帯ごとに補正する係数
+- `baseTolerance`: `maxPolygonVertexCount` の代表ポリゴンを `vertexLimit` 以下にする最小 tolerance
+- `multiplier/minRatio/maxRatio`: `baseTolerance` をズーム帯ごとに補正する係数
 - `t_final`: Geometry 初回 simplify に使う tolerance
 
 ## データモデル
@@ -45,7 +45,7 @@ Shape4 の Geometry ステージで使用する tolerance を、Source ステー
 
 2. `maxPolygonVertexCount` を持つ代表ポリゴンを 1 つ選ぶ。
 
-3. 代表ポリゴンに対し 2 分法で `t_base` を求める。
+3. 代表ポリゴンに対し 2 分法で `baseTolerance` を求める。
 - 初期: `low=0`, `high=0.1`
 - `high` で未達なら倍々で拡張（上限 `12`）
 - 収束条件: `high-low < 1e-7` または `maxIterations=32`
@@ -63,7 +63,7 @@ Shape4 の Geometry ステージで使用する tolerance を、Source ステー
 
 2. `baseTolerance` がある場合:
 - task 内で代表 feature の再探索をしない
-- `t_final = clamp(t_base * multiplier, t_base * minRatio, t_base * maxRatio)` を初回 tolerance とする
+- `t_final = clamp(baseTolerance * multiplier, baseTolerance * minRatio, baseTolerance * maxRatio)` を初回 tolerance とする
 
 3. `baseTolerance` が無い場合:
 - 既存の task 内代表 feature 探索 + 2 分法をフォールバックとして使用する
@@ -73,7 +73,7 @@ Shape4 の Geometry ステージで使用する tolerance を、Source ステー
 
 ## 設定値方針
 
-`multiplier/minRatio/maxRatio` はすべて `t_base=1.0` 基準の比率として扱い、範囲は `0.0..2.0` とする。
+`multiplier/minRatio/maxRatio` はすべて `baseTolerance=1.0` 基準の比率として扱い、範囲は `0.0..2.0` とする。
 
 - `multiplier`: 中心値
 - `minRatio`: 下限

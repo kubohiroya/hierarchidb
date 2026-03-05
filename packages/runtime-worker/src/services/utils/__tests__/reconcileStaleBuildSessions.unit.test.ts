@@ -14,7 +14,7 @@ type MockDb = {
   buildSessionHeartbeats: {
     bulkGet: ReturnType<typeof vi.fn>;
   };
-  buildSessions: {
+  buildSessionConfigs: {
     bulkGet: ReturnType<typeof vi.fn>;
   };
   buildTasks: {
@@ -73,7 +73,7 @@ const createDbMock = (params?: {
     buildSessionHeartbeats: {
       bulkGet: bulkGetHeartbeats,
     },
-    buildSessions: {
+    buildSessionConfigs: {
       bulkGet: bulkGetConfigs,
     },
     buildTasks: {

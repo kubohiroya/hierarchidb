@@ -8,4 +8,8 @@ export * from './hooks/useBuildSessionSnapshots.js';
 export * from './hooks/useWorkerQueryAPI.js';
 export * from './hooks/useBuildTaskProgress.js';
 export * from './hooks/usePluginBuildProgress.js';
+export * from './hooks/useUnifiedBuildSessionProgress.js';
+export * from './hooks/useBuildSessionStateTreeBridge.js';
 export * from './utils/taskProgressSummary.js';
+export * from './state/index.js';
+export * from './state-tree/index.js';

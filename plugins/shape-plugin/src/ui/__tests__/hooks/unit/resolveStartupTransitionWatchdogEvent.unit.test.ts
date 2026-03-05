@@ -9,7 +9,7 @@ import {
 describe('resolveStartupTransitionWatchdogEvent', () => {
   it('returns wait when warn threshold is reached first time', () => {
     const event = resolveStartupTransitionWatchdogEvent({
-      elapsedMs: START_DIAGNOSTIC_WARN_MS,
+      durationMs: START_DIAGNOSTIC_WARN_MS,
       warnStep: 0,
     });
     expect(event).toEqual({
@@ -20,7 +20,7 @@ describe('resolveStartupTransitionWatchdogEvent', () => {
 
   it('returns long-wait when long threshold is reached after wait', () => {
     const event = resolveStartupTransitionWatchdogEvent({
-      elapsedMs: START_DIAGNOSTIC_LONG_WAIT_MS,
+      durationMs: START_DIAGNOSTIC_LONG_WAIT_MS,
       warnStep: 1,
     });
     expect(event).toEqual({
@@ -31,7 +31,7 @@ describe('resolveStartupTransitionWatchdogEvent', () => {
 
   it('returns timeout when timeout threshold is reached after long-wait', () => {
     const event = resolveStartupTransitionWatchdogEvent({
-      elapsedMs: START_DIAGNOSTIC_TIMEOUT_MS,
+      durationMs: START_DIAGNOSTIC_TIMEOUT_MS,
       warnStep: 2,
     });
     expect(event).toEqual({
@@ -42,7 +42,7 @@ describe('resolveStartupTransitionWatchdogEvent', () => {
 
   it('returns none when timeout already emitted', () => {
     const event = resolveStartupTransitionWatchdogEvent({
-      elapsedMs: START_DIAGNOSTIC_TIMEOUT_MS + 1000,
+      durationMs: START_DIAGNOSTIC_TIMEOUT_MS + 1000,
       warnStep: 3,
     });
     expect(event).toEqual({

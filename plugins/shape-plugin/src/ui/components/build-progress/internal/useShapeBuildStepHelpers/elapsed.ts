@@ -58,51 +58,51 @@ export const sumNumberRecord = (values: Record<string, number>): number => (
 );
 
 export const buildElapsedByStageWithActiveStage = (params: {
-  elapsedByStage: Record<string, number>;
+  stageDurationByStage: Record<string, number>;
   timingStageId: string | null;
   timingStageElapsedMs: number;
 }): Record<string, number> => {
-  const { elapsedByStage, timingStageId, timingStageElapsedMs } = params;
+  const { stageDurationByStage, timingStageId, timingStageElapsedMs } = params;
   if (!timingStageId) {
-    return elapsedByStage;
+    return stageDurationByStage;
   }
-  const currentElapsedMs = elapsedByStage[timingStageId] ?? 0;
+  const currentElapsedMs = stageDurationByStage[timingStageId] ?? 0;
   const nextElapsedMs = Math.max(currentElapsedMs, timingStageElapsedMs);
   if (nextElapsedMs === currentElapsedMs) {
-    return elapsedByStage;
+    return stageDurationByStage;
   }
   return {
-    ...elapsedByStage,
+    ...stageDurationByStage,
     [timingStageId]: nextElapsedMs,
   };
 };
 
 export const resolveTotalElapsedMs = (params: {
   buildStatus: import('@hierarchidb/components/build-status').BuildStatus;
-  elapsedByStage: Record<string, number>;
-  sessionElapsedMs: number;
+  stageDurationByStage: Record<string, number>;
+  sessionDurationMs: number;
 }): number => {
-  const stageTotalElapsedMs = sumNumberRecord(params.elapsedByStage);
+  const stageTotalElapsedMs = sumNumberRecord(params.stageDurationByStage);
   if (params.buildStatus === 'running') {
     return stageTotalElapsedMs;
   }
-  return Math.max(stageTotalElapsedMs, params.sessionElapsedMs);
+  return Math.max(stageTotalElapsedMs, params.sessionDurationMs);
 };
 
-export const hasPositiveElapsed = (values: Record<string, number>): boolean => (
+export const hasPositiveDuration = (values: Record<string, number>): boolean => (
   Object.values(values).some((value) => Number.isFinite(value) && value > 0)
 );
 
 export const mergeElapsedByStage = (
-  current: Record<string, number>,
-  persisted: Record<string, number>,
+  currentStageDurationByStage: Record<string, number>,
+  snapshotStageDurationByStage: Record<string, number>,
 ): Record<string, number> => {
-  const next: Record<string, number> = { ...current };
-  Object.entries(persisted).forEach(([stageId, persistedMs]) => {
-    if (!Number.isFinite(persistedMs) || persistedMs < 0) return;
+  const next: Record<string, number> = { ...currentStageDurationByStage };
+  Object.entries(snapshotStageDurationByStage).forEach(([stageId, snapshotDurationMs]) => {
+    if (!Number.isFinite(snapshotDurationMs) || snapshotDurationMs < 0) return;
     const currentMs = next[stageId] ?? 0;
-    if (persistedMs > currentMs) {
-      next[stageId] = persistedMs;
+    if (snapshotDurationMs > currentMs) {
+      next[stageId] = snapshotDurationMs;
     }
   });
   return next;
@@ -110,13 +110,13 @@ export const mergeElapsedByStage = (
 
 export const shouldResetElapsedState = (params: {
   buildStatus: import('@hierarchidb/components/build-status').BuildStatus;
-  buildElapsedMs: number | undefined;
-  stageElapsedByStage: Record<string, number>;
-  localElapsedByStage: Record<string, number>;
+  buildDurationMs: number | undefined;
+  sessionStageDurationByStage: Record<string, number>;
+  localStageDurationByStage: Record<string, number>;
 }): boolean => {
   if (params.buildStatus === 'running') return false;
-  if (hasPositiveElapsed(params.stageElapsedByStage)) return false;
-  if (typeof params.buildElapsedMs === 'number' && params.buildElapsedMs > 0) return false;
-  if (hasPositiveElapsed(params.localElapsedByStage)) return false;
+  if (hasPositiveDuration(params.sessionStageDurationByStage)) return false;
+  if (typeof params.buildDurationMs === 'number' && params.buildDurationMs > 0) return false;
+  if (hasPositiveDuration(params.localStageDurationByStage)) return false;
   return true;
 };

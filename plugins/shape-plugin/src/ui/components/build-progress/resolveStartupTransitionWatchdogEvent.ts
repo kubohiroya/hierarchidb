@@ -16,26 +16,26 @@ export type StartupTransitionWatchdogEvent = {
 };
 
 export type ResolveStartupTransitionWatchdogEventInput = {
-  elapsedMs: number;
+  durationMs: number;
   warnStep: BuildStartupTransitionWarnStep;
 };
 
 export const resolveStartupTransitionWatchdogEvent = (
   input: ResolveStartupTransitionWatchdogEventInput,
 ): StartupTransitionWatchdogEvent => {
-  if (input.elapsedMs >= START_DIAGNOSTIC_TIMEOUT_MS && input.warnStep < 3) {
+  if (input.durationMs >= START_DIAGNOSTIC_TIMEOUT_MS && input.warnStep < 3) {
     return {
       kind: 'timeout',
       nextWarnStep: 3,
     };
   }
-  if (input.elapsedMs >= START_DIAGNOSTIC_LONG_WAIT_MS && input.warnStep < 2) {
+  if (input.durationMs >= START_DIAGNOSTIC_LONG_WAIT_MS && input.warnStep < 2) {
     return {
       kind: 'long-wait',
       nextWarnStep: 2,
     };
   }
-  if (input.elapsedMs >= START_DIAGNOSTIC_WARN_MS && input.warnStep < 1) {
+  if (input.durationMs >= START_DIAGNOSTIC_WARN_MS && input.warnStep < 1) {
     return {
       kind: 'wait',
       nextWarnStep: 1,

@@ -1,11 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
-import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
+import type { BuildProgressStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
 
 type UseShapeBuildStopStateArgs = {
-  sessionRecord: ShapeBuildSessionRecord | null;
+  runtimeStatus: BuildProgressStatus['status'];
 };
 
-export const useShapeBuildStopState = ({ sessionRecord }: UseShapeBuildStopStateArgs) => {
+export const useShapeBuildStopState = ({ runtimeStatus }: UseShapeBuildStopStateArgs) => {
   const [isStopRequested, setIsStopRequested] = useState(false);
   const [isStopAccepted, setIsStopAccepted] = useState(false);
   const isStopRequestedInFlight = isStopRequested || isStopAccepted;
@@ -19,7 +19,7 @@ export const useShapeBuildStopState = ({ sessionRecord }: UseShapeBuildStopState
   useEffect(() => {
     console.log('[ShapeBuildStopState] useEffect triggered', {
       isStopRequestedInFlight,
-      sessionStatus: sessionRecord?.status,
+      runtimeStatus,
       isStopRequested,
       isStopAccepted,
     });
@@ -28,12 +28,12 @@ export const useShapeBuildStopState = ({ sessionRecord }: UseShapeBuildStopState
 
     // セッション状態が更新されたら状態をリセット
     if (
-      sessionRecord?.status === 'paused'
-      || sessionRecord?.status === 'completed'
-      || sessionRecord?.status === 'failed'
+      runtimeStatus === 'paused'
+      || runtimeStatus === 'completed'
+      || runtimeStatus === 'failed'
     ) {
       console.log('[ShapeBuildStopState] Resetting stop state due to session status change', {
-        sessionStatus: sessionRecord.status,
+        runtimeStatus,
       });
       setIsStopRequested(false);
       setIsStopAccepted(false);
@@ -54,7 +54,7 @@ export const useShapeBuildStopState = ({ sessionRecord }: UseShapeBuildStopState
         forceResetTimerRef.current = null;
       }, 30000); // 30秒
     }
-  }, [isStopRequestedInFlight, sessionRecord?.status, isStopRequested, isStopAccepted]);
+  }, [isStopRequestedInFlight, runtimeStatus, isStopRequested, isStopAccepted]);
 
   // クリーンアップ
   useEffect(() => {

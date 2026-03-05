@@ -1,40 +1,23 @@
 import { useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
-import { useAtomValue } from 'jotai';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useBuildCrashInsight } from '~/ui/components/build-progress/useBuildCrashInsight/useBuildCrashInsight';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
 import type { PaneProgress } from '@hierarchidb/ui-lru-splitview';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
-import {
-  taskListViewPhaseAtom,
-  taskProgressControlsAtom,
-  buildStageProgressAtom,
-  buildStagesAtom,
-  taskPaneProgressAtom,
-  crashSuspectMessageAtom,
-  crashSuspectOpenAtom,
-  crashSuspectControlsAtom,
-  suspendSuspectMessageAtom,
-  suspendSuspectOpenAtom,
-  suspendSuspectControlsAtom,
-  taskWarningMessageAtom,
-  tasksLoadingAtom,
-  taskSummaryLoadingAtom,
-  tasksByStageAtom,
-  taskProgressSummaryAtom,
-} from '~/ui/atoms/shapeBuildProgressAtoms';
 import type {
-  ShapeBuildTaskSummary,
   TaskListViewPhase,
   TaskProgressControls,
   TaskProgressSummary,
-} from '~/ui/atoms/shapeBuildProgressAtoms';
+} from '~/ui/atoms/shapeBuildProgressTypes';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import { useBuildProgressPanelStateComputed } from './useBuildProgressPanelStateComputed.js';
 import type { BuildProgressPanelStateComputed } from './useBuildProgressPanelStateComputed.js';
 import { resolveCompletionFailedStageLabel, resolveActiveRunningStageId } from './useBuildProgressPanelState.utils.js';
 import { useBuildProgressPanelStateSideEffects } from './useBuildProgressPanelStateSideEffects.js';
+import { useShapeBuildStep } from '~/ui/components/build-progress/internal/useShapeBuildStepLogic';
+import { useShapeBuildSessionStateAtomBridge } from '~/ui/components/build-progress/useShapeBuildSessionStateAtomBridge';
 
 type RuntimeStateParams = {
   data?: Partial<ShapeEntity>;
@@ -83,7 +66,7 @@ export type UseBuildProgressPanelStateRuntimeState = {
   completionSnapshotData: BuildProgressPanelStateComputed['completionSnapshotData'];
   completionFailedStageLabel: string;
   completionKeyRef: { current: string | null };
-  totalElapsedSnapshotRef: { current: { elapsedMs: number; capturedAt: number } | null };
+  totalElapsedSnapshotRef: { current: { durationMs: number; capturedAt: number } | null };
   mismatchSignatureRef: { current: Map<string, string> };
   liveTotalElapsedMs: number;
   computed: BuildProgressPanelStateComputed;
@@ -96,24 +79,65 @@ export const useBuildProgressPanelStateRuntimeState = (
 ): UseBuildProgressPanelStateRuntimeState => {
   const resolvedNodeId = params.nodeId;
   const nodeIdForLog = resolvedNodeId ? String(resolvedNodeId) : undefined;
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  useShapeBuildSessionStateAtomBridge(resolvedNodeId);
 
-  const stages = useAtomValue(buildStagesAtom);
-  const stageProgress = useAtomValue(buildStageProgressAtom);
-  const paneProgress = useAtomValue(taskPaneProgressAtom);
-  const isTasksLoading = useAtomValue(tasksLoadingAtom);
-  const isTaskSummaryLoading = useAtomValue(taskSummaryLoadingAtom);
-  const taskListViewPhase = useAtomValue(taskListViewPhaseAtom);
-  const tasksByStage = useAtomValue(tasksByStageAtom);
-  const summary = useAtomValue(taskProgressSummaryAtom);
-  const controls = useAtomValue(taskProgressControlsAtom);
-  const warningMessage = useAtomValue(taskWarningMessageAtom);
-  const crashSuspectMessage = useAtomValue(crashSuspectMessageAtom);
-  const crashSuspectOpen = useAtomValue(crashSuspectOpenAtom);
-  const crashSuspectControls = useAtomValue(crashSuspectControlsAtom);
-  const suspendSuspectMessage = useAtomValue(suspendSuspectMessageAtom);
-  const suspendSuspectOpen = useAtomValue(suspendSuspectOpenAtom);
-  const suspendSuspectControls = useAtomValue(suspendSuspectControlsAtom);
+  const stepState = useShapeBuildStep({
+    data: params.data,
+    nodeId: resolvedNodeId,
+  });
+
+  const stages = stepState.stages;
+  const stageProgress = stepState.stageProgress;
+  const paneProgress = stepState.paneProgress;
+  const isTaskSummaryLoading = stepState.isTaskSummaryLoading;
+  const taskListViewPhase = stepState.taskListViewPhase;
+  const isTasksLoading = stepState.isTasksLoading;
+  const tasksByStage = stepState.tasksByStage;
+  const summary: TaskProgressSummary = {
+    stageLabel: stepState.stageLabel ?? '',
+    taskLabel: stepState.taskLabel ?? '',
+    taskUnitLabel: stepState.taskUnitLabel ?? '',
+    overallProgress: stepState.overallProgress,
+    completed: stepState.completed,
+    total: stepState.total,
+    failed: stepState.failed,
+    skipped: stepState.skipped,
+    buildStatus: stepState.buildStatus,
+    hasProgressData: stepState.hasProgressData,
+    timingStageId: stepState.timingStageId ?? null,
+    completedStageElapsedMs: stepState.completedStageElapsedMs,
+    totalElapsedMs: stepState.totalElapsedMs,
+    stageElapsedMs: stepState.stageElapsedMs,
+    stageRemainingMs: stepState.stageRemainingMs,
+    stageTotals: stepState.stageTotals,
+  };
+  const controls: TaskProgressControls = {
+    canStartOrResume: stepState.canStartOrResume,
+    statusLabel: stepState.statusLabel,
+    showResumeLabel: stepState.showResumeLabel,
+    startPending: stepState.isStartPending,
+    requestedControlAction: stepState.requestedControlAction,
+    handleStartOrResume: stepState.handleStartOrResume,
+    handlePause: stepState.handlePause,
+    handleCancelQueued: stepState.handleCancelQueued,
+    stopRequested: stepState.stopRequested,
+  };
+  const warningMessage = stepState.warningMessage;
+  const crashSuspectMessage = stepState.crashSuspectMessage;
+  const crashSuspectOpen = stepState.crashSuspectOpen;
+  const crashSuspectControls = {
+    close: () => {
+      stepState.setCrashSuspectOpen();
+    },
+  };
+  const suspendSuspectMessage = stepState.suspendSuspectMessage;
+  const suspendSuspectOpen = stepState.suspendSuspectOpen;
+  const suspendSuspectControls = {
+    close: () => {
+      stepState.setSuspendSuspectOpen();
+    },
+  };
 
   const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
   const [completionSnapshot, setCompletionSnapshot] = useState<{
@@ -127,7 +151,7 @@ export const useBuildProgressPanelStateRuntimeState = (
   const localStartPendingRef = useRef(false);
   const [elapsedTickMs, setElapsedTickMs] = useState(() => Date.now());
   const completionKeyRef = useRef<string | null>(null);
-  const totalElapsedSnapshotRef = useRef<{ elapsedMs: number; capturedAt: number } | null>(null);
+  const totalElapsedSnapshotRef = useRef<{ durationMs: number; capturedAt: number } | null>(null);
   const mismatchSignatureRef = useRef<Map<string, string>>(new Map());
   const snapshotNodeIdRef = useRef<string | undefined>(undefined);
 
@@ -141,6 +165,7 @@ export const useBuildProgressPanelStateRuntimeState = (
     data: params.data,
     summary,
     t,
+    locale: i18n.resolvedLanguage ?? i18n.language ?? 'en',
     stages,
     stageProgress,
     tasksByStage,
@@ -209,12 +234,12 @@ export const useBuildProgressPanelStateRuntimeState = (
     }
     if (summary.buildStatus === 'running' || summary.buildStatus === 'paused') {
       const drift = Math.max(0, elapsedTickMs - snapshot.capturedAt);
-      return snapshot.elapsedMs + drift;
+      return snapshot.durationMs + drift;
     }
-    if (summary.totalElapsedMs > snapshot.elapsedMs) {
+    if (summary.totalElapsedMs > snapshot.durationMs) {
       return summary.totalElapsedMs;
     }
-    return snapshot.elapsedMs;
+    return snapshot.durationMs;
   }, [elapsedTickMs, summary.buildStatus, summary.totalElapsedMs]);
 
   return {

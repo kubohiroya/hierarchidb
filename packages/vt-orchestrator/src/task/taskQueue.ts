@@ -7,7 +7,7 @@ import type { TaskQueueEvent, TaskQueueRecord, TaskStage, TaskStatus } from '~/t
 
 
 
-export type StoredTaskRecord = EphemeralBuildTaskRecord;
+export type StoredTaskRecord = EphemeralBuildTaskRecord & { version?: number };
 
 const TASK_STAGES = ['source', 'geometry', 'tileEmit'] as const;
 const TASK_STAGE_TO_STAGE_ID: Record<TaskStage, string> = {
@@ -30,8 +30,11 @@ export const toTaskQueueRecord = (
   if (!isTaskStage(stage)) {
     throw new Error(`Task ${task.taskId} has unsupported stage: ${String(stage)}`);
   }
+  // Legacy tasks persisted before version rollout may not have this field yet.
+  const version = normalizeTaskVersion(task.version) ?? 1;
   return {
     ...task,
+    version,
     stage,
     stageId: TASK_STAGE_TO_STAGE_ID[stage],
   };
@@ -82,6 +85,13 @@ const asRecord = (value: unknown): Record<string, unknown> | undefined => (
     : undefined
 );
 
+const normalizeTaskVersion = (value: unknown): number | null => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  const rounded = Math.floor(value);
+  if (rounded < 1) return null;
+  return rounded;
+};
+
 export function emitTaskUpdate(task: TaskQueueRecord): void {
   emitTaskEvent(task.nodeId, task);
 }
@@ -109,8 +119,10 @@ export async function putTasks(
   if (tasks.length === 0) return;
   const now = Date.now();
   const payload: StoredTaskRecord[] = tasks.map((task) => {
+    const normalizedVersion = normalizeTaskVersion(task.version);
     return {
       ...task,
+      version: normalizedVersion ?? 1,
       progress: Number.isFinite(task.progress) ? task.progress : 0,
       status: task.status ?? 'queued',
       createdAt: task.createdAt ?? now,
@@ -131,6 +143,7 @@ export async function updateTask(
 ): Promise<void> {
   const now = Date.now();
   const current = await db.tasks.get(taskId);
+  const currentVersion = normalizeTaskVersion(current?.version) ?? 0;
   const currentStatus = current?.status;
   const nextStatusCandidate = updates.status;
   const currentMetadata = asRecord(current?.metadata);
@@ -146,11 +159,13 @@ export async function updateTask(
   const payload: Partial<StoredTaskRecord> = blocksStatusRegression
     ? {
       status: currentStatus,
+      version: currentVersion + 1,
       updatedAt: now,
       ...(mergedMetadata !== undefined ? { metadata: mergedMetadata } : {}),
     }
     : {
       ...updates,
+      version: currentVersion + 1,
       status: nextStatusCandidate ?? currentStatus,
       updatedAt: now,
       ...(mergedMetadata !== undefined ? { metadata: mergedMetadata } : {}),

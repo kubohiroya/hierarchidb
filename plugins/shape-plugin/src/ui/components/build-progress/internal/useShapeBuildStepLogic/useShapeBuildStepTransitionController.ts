@@ -157,14 +157,14 @@ export const useShapeBuildStepTransitionController = ({
     buildStartupStepMemoryAtStartRef.current.delete(step);
     const memoryAtFinish = captureStartupStepMemorySnapshot();
     const memoryDelta = calculateMemoryDelta(memoryAtStart, memoryAtFinish);
-    const elapsedMs = typeof startedAt === 'number' ? Math.max(0, now - startedAt) : null;
+    const durationMs = typeof startedAt === 'number' ? Math.max(0, now - startedAt) : null;
     const level = outcome === 'error' ? 'error' : outcome === 'success' ? 'info' : 'warn';
     emitBuildSessionTransitionLog(level, 'build startup step finish', {
       step,
       outcome,
       startedAt: startedAt ?? null,
       finishedAt: now,
-      elapsedMs,
+      durationMs,
       memoryAtStart,
       memoryAtFinish,
       memoryDelta,
@@ -201,4 +201,3 @@ export const useShapeBuildStepTransitionController = ({
     progressTerminalLogKeyRef,
   };
 };
-

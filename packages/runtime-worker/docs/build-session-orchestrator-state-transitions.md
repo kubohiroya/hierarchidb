@@ -1,322 +1,417 @@
-# Build Session Dialog Flow / BuildSessionOrchestrator State Transitions
+# Build Session Orchestrator State Transitions (4-Table Normalized Model)
 
 ## 1. Purpose
 
-This document defines build-session state transitions as a cross-plugin runtime contract.
+This document is the implementation-aligned reference for build-session state transitions,
+persistence, event publication, and UI consumption.
 
-- UI-side copy state per dialog/tab
-- Persisted session state in EphemeralDB (`sessions` table)
-- SharedWorker singleton runtime state (`BuildSessionOrchestrator`)
+This version is based on the normalized EphemeralDB model used in current runtime code:
+
+- `buildSessionConfigs` (immutable config)
+- `buildSessionHeartbeats` (heartbeat)
+- `buildSessionStatuses` (session status)
+- `buildStageStatuses` (stage status/history)
 
 Terminology authority:
 
-- See `build-session-terminology-ssot.md` for canonical vocabulary and naming policy.
-- If this document conflicts with the SSOT glossary, the glossary takes precedence.
+- `build-session-terminology-ssot.md`
 
-This specification is shared by shape/route and future build-session plugins.
+If this file conflicts with SSOT terminology, SSOT vocabulary wins.
 
 ## 2. Scope and Assumptions
 
-- Build execution is **SharedWorker-only**.
-- Users can press `Start` for multiple nodes concurrently.
-- Session is keyed by `nodeId`.
-- SharedWorker remains alive while at least one tab is open.
-- After `all tabs closed` or crash (`SharedWorker/Session process/browser`), runtime does not auto-resume.
+- Build execution is SharedWorker-driven.
+- Session identity is `nodeId`.
+- Session persistence is normalized across 4 tables, not a single `sessions` table.
+- Task list persistence is separate (`buildTasks`) and is used to reconstruct progress/stage summary.
+- This document describes the implementation currently used by runtime-worker + shape plugin + UI bridge.
 
-## 3. Terminology (Unified)
+## 3. Data Model (Normalized Persistence)
 
-- `BuildSessionOrchestrator`:
-  - SharedWorker in-memory singleton that selects active session, advances stage, and controls StageTaskWorkers.
-- `TabSessionCoordinator`:
-  - Tab/session coordination term. Not used as the execution orchestrator name.
-- `persistedStatus`:
-  - Durable status in `sessions.status`.
-- `runtimeStatus`:
-  - In-memory status used for live UI/runtime reflection.
-- `stage`:
-  - Build stage compatibility field (`fetch | transform | vt | idle | undefined`).
-- `stageId`:
-  - Canonical stage identity (`source-stage | geometry-stage | tile-emit-stage`) accepted by boundary adapters.
-  - When both `stageId` and `stage` are present, normalization must prefer `stageId`.
-- `phase`:
-  - Runtime phase (`starting`, `running`, `pausing`, ...).
-- `StartAccepted`:
-  - UI-visible accepted state label. Corresponding persisted value is `startAccepted`.
-- `Build request`:
-  - UI labels may be `Start` or `Resume`, but runtime semantics are identical.
-  - There is no legacy "full vs incremental" mode split.
-- `StartRequested` / `StopRequested`:
-  - UI-local transient states only.
-  - Not persisted to `sessions`.
+### 3.1 Tables and Responsibilities
 
-## 4. Core Policy
+1. `buildSessionConfigs`
+- Role: immutable session configuration.
+- Key fields: `nodeId`, `domainType`, selection snapshot, `startedAt`, `sourceStageMaxima`.
+- Intended write pattern: create once at session upsert; no heartbeat/status churn.
 
-### 4.1 No Auto Resume After Abnormal End
+2. `buildSessionHeartbeats`
+- Role: high-frequency liveness timestamp.
+- Key fields: `nodeId`, `lastHeartbeatAt`.
+- Intended write pattern: periodic overwrite during active session.
 
-On SharedWorker/Session initialization:
+3. `buildSessionStatuses`
+- Role: session-level lifecycle status.
+- Key fields: `nodeId`, `status`, `stopReason`, `completedAt`.
+- Intended write pattern: status transitions.
 
-- If persisted session is `startAccepted` or `running`, treat it as abnormal residue.
-- Normalize to `status=idle` and `stage=undefined`.
-- Do not enqueue/run automatically.
-- User must explicitly request `Start/Resume`.
+4. `buildStageStatuses`
+- Role: per-stage execution status and stage timing.
+- Key fields: `id=${nodeId}:${stage}`, `stage`, `status`, `startedAt`, `completedAt`, `inactiveMs`, `stageId`.
+- Intended write pattern: stage transition/completion updates.
 
-### 4.2 Start/Resume Path Is Always Incremental
+Reference:
+- `packages/gis-sdk/src/ephemeral/EphemeralDBRecordTypes.ts`
 
-`Start` and `Resume` are not separate execution paths.
+### 3.2 Canonical Read Model
 
-- Always run the same incremental path.
-- This applies to all conditions:
-  - Clean initial state
-  - Cache-deleted state
-  - Session-reset state
-- The orchestrator resolves runnable tasks from current persisted task/cache/artifact state and executes required deltas.
+Consumers that need the legacy unified session view reconstruct it from normalized tables + tasks:
 
-### 4.3 Single Entry Semantics (No Resume Mode)
+- Parallel read from `buildSessionConfigs`, `buildSessionHeartbeats`, `buildSessionStatuses`, `buildStageStatuses`, `buildTasks`
+- Stage summary/progress computed from task records
+- Current stage resolved by latest `buildStageStatuses.startedAt`
 
-- Runtime accepts one semantic entry: `startBuildSession(nodeId)`.
-- `Resume` is a UI label only; it maps to the same request path.
-- Regardless of current condition (initial / cache deleted / session reset), execution route is identical:
-  1. Re-evaluate persisted session/task/cache/artifact state
-  2. Derive runnable delta tasks
-  3. Execute stage pipeline on derived deltas
+Reference:
+- `packages/gis-sdk/src/ephemeral/sessionHelpers.ts`
 
-### 4.4 Control Intent Separation
+## 4. Persistence Lifecycle (Write/Read/Delete)
 
-- UI controls must keep `Pause` and `Cancel` as separate actions.
-- `Pause` targets active execution (`pauseBuildSession`).
-- `Cancel` targets queued execution (`cancelQueuedBuildSession`).
-- If `Cancel` arrives after activation, runtime fallback may apply pause semantics.
-- `retry` is not part of this control contract.
+## 4.1 Session Create / Upsert
 
-## 5. State Models
+`upsertBuildSession(session)` splits one logical session into normalized rows and writes in parallel:
 
-### 5.1 UI Copy State
+- `buildSessionConfigs.put(config)`
+- optional `buildSessionHeartbeats.put(heartbeat)`
+- `buildSessionStatuses.put(status)`
+- optional `buildStageStatuses.put(stageStatus)`
 
-- `undefined`
-- `SubscriptionRequested`
-- `idle`
-- `StartRequested`
-- `StartAccepted`
-- `Running(fetch|transform|vt)`
-- `StopRequested`
-- `Stopped`
-- `Completed`
-- `Failed`
+Then it publishes broadcast notification (`build-session-update`).
+
+Reference:
+- `packages/runtime-worker/src/services/ShapeMutationService.ts`
+
+## 4.2 Incremental Session Update
+
+`updateBuildSession(nodeId, updates)` applies partial updates by table responsibility:
+
+- Heartbeat fields -> `buildSessionHeartbeats`
+- Status fields -> read current status then `put` merged `buildSessionStatuses`
+- Stage fields -> read current stage status then `put` merged `buildStageStatuses`
+
+Then it publishes broadcast notification (`build-session-update`).
+
+References:
+- `packages/runtime-worker/src/services/ShapeMutationService.ts`
+- `packages/runtime-worker/src/services/buildSessionBroadcast.ts`
+
+## 4.3 Session Read
+
+Session read APIs query normalized tables and reconstruct unified response for caller compatibility.
+
+References:
+- `packages/runtime-worker/src/services/ShapeQueryService.ts`
+- `packages/gis-sdk/src/ephemeral/sessionHelpers.ts`
+
+## 4.4 Session Delete / Cleanup
+
+`deleteBuildSession(nodeId)` deletes from all 4 tables and publishes a `deleted` broadcast state.
+
+- `buildSessionConfigs.delete(nodeId)`
+- `buildSessionHeartbeats.delete(nodeId)`
+- `buildSessionStatuses.delete(nodeId)`
+- `buildStageStatuses.where('nodeId').equals(nodeId).delete()`
+
+Node-level cleanup also clears these tables via `clearNodeData`.
+
+References:
+- `packages/runtime-worker/src/services/ShapeMutationService.ts`
+- `packages/gis-sdk/src/ephemeral/EphemeralDB.ts`
+
+## 5. Runtime/Event Model
+
+Runtime emits/serves two groups of notifications.
+
+## 5.1 Cross-tab BroadcastChannel (runtime-worker level)
+
+Channel: `hdb:runtime-worker:build-sessions`
+
+Event: `build-session-update`
+
+Payload:
+- `nodeId`
+- `status`
+- `updatedAt` (envelope timestamp)
+
+Used for coarse cross-context awareness when persistence changes.
+
+Reference:
+- `packages/runtime-worker/src/services/buildSessionBroadcast.ts`
+
+## 5.2 Shape Build Session Event Channels (shape worker API)
+
+Shape worker runtime keeps per-node callback registries for 4 channels:
+
+1. Session state
+- API: `subscribeToSessionState(nodeId, cb)`
+- Payload: `SessionStateChangeEvent` including full `sessionRecord`.
+- Typical trigger: `upsertBuildSessionSnapshot` status update path.
+
+2. Stage snapshot
+- API: `subscribeToStageSnapshots(nodeId, cb)`
+- Payload: `StageSnapshotEvent` (`stageId`, `snapshot`).
+- Typical trigger: snapshot emission path while building progress payload from tasks.
+
+3. Heartbeat
+- API: `subscribeToHeartbeat(nodeId, cb)`
+- Payload: `SessionHeartbeatEvent`.
+- Typical trigger: timer (`HEARTBEAT_INTERVAL_MS=1000`) while callback is registered.
+
+4. Task progress
+- API: `subscribeToTaskProgress(nodeId, cb)`
+- Payload: `TaskProgressEvent` per task update.
+- Typical trigger: task/status updates inside runtime metrics/update flow.
+
+References:
+- `plugins/shape-plugin/src/worker/api/shapeBuildAPI.ts`
+- `plugins/shape-plugin/src/worker/api/shapeBuildRuntimeExecutionMetrics.ts`
+- `plugins/shape-plugin/src/common/types/session-events.ts`
+
+## 5.3 Build Progress Stream (snapshot + update)
+
+In addition to the 4 channels above, UI task rendering primarily uses build-task stream via bridge:
+
+- `subscribeBuildTasks(nodeType, nodeId, cb)`
+- event types: `snapshot` and `update`
+
+UI treats this as SSOT for task list/progress rendering.
+
+References:
+- `packages/ui/worker-client/src/workerBridge.ts`
+- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSnapshotProgressState/useShapeBuildTaskSnapshotProgressState.ts`
+
+## 6. UI Consumption Model
+
+## 6.1 Session List / Runtime Snapshot UI
+
+`useBuildSessionSnapshots` subscribes to in-progress runtime records and deduplicates updates by signature.
+
+Reference:
+- `packages/ui/build-sessions/src/hooks/useBuildSessionSnapshots.ts`
+
+## 6.2 Unified Progress UI
+
+`useBuildProgressState` subscribes via `subscribeBuildProgress` and exposes unified progress state.
+
+Reference:
+- `packages/ui/build-sessions/src/hooks/useBuildProgressState.ts`
+
+## 6.3 Shape Step Task UI (primary task SSOT path)
+
+`useShapeBuildTaskSnapshotProgressState`:
+
+- subscribes to `subscribeBuildTasks`
+- applies `snapshot` to initialize task set
+- applies `update` incrementally
+- handles stale/mismatched node events defensively
+
+Reference:
+- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSnapshotProgressState/useShapeBuildTaskSnapshotProgressState.ts`
+
+## 6.4 Stage transition synchronization (`ui-initializing`)
+
+Current Shape UI behavior for multi-stage runs (`source -> geometry -> tileEmit`):
+
+1. Session lifecycle remains worker-driven (`session.phase`), usually `running` during execution.
+2. UI maintains a stage-local sync substate:
+   - `ui-initializing`: waiting for stage task snapshot acceptance.
+   - `running`: snapshot accepted, normal progress rendering.
+3. On stage transition detection (from progress stage or session record stageId):
+   - set target stage to `ui-initializing`
+   - buffer target-stage progress events without applying them
+   - request/accept task snapshot
+   - switch target stage to `running`
+   - flush buffered progress on `requestAnimationFrame`
+
+Rationale:
+
+- Prevents pre-snapshot progress from being rendered against stale task lists.
+- Keeps session lifecycle and UI synchronization concerns separate.
+- Supports repeated transitions:
+  - `running + source(ui-initializing -> running)`
+  - `running + geometry(ui-initializing -> running)`
+  - `running + tileEmit(ui-initializing -> running)`
+
+### 6.3.1 Progress Value Handling Matrix (Transposed)
+
+This matrix documents how UI task-state logic reacts to incoming `progress` values.
+The primary implementation path is:
+
+1. `p_raw` (incoming event payload)
+2. `p_num = resolveProgressValue(p_raw)`
+3. `status_norm = resolveTaskDisplayStatus(status_raw, p_num, ...)`
+4. `progress_norm = resolveTaskProgress(status_norm, ..., p_num)`
+5. update acceptance by `shouldPreferNextTask(current, next)`
+
+Transposed matrix (rows are processing steps, columns are raw progress ranges):
+
+| Processing step | `p_raw` is missing / NaN / non-number | `p_raw < 0` | `0 <= p_raw < 100` | `p_raw = 100` | `p_raw > 100` |
+|ぐ --- | --- | --- | --- | --- | --- |
+| Numeric validation (`resolveProgressValue`) | error (`invalid progress`) | error (`invalid progress`) | accept as-is | accept as-is | error (`invalid progress`) |
+| Status auto-promotion (`resolveTaskDisplayStatus`, only when `status_raw=running`) | not reached (error) | not reached (error) | keeps `running` | becomes `completed` | not reached (error) |
+| Status preservation (`status_raw` is not `running`) | not reached (error) | not reached (error) | keeps original status | keeps original status (but may fail next step) | not reached (error) |
+| Canonical progress (`resolveTaskProgress`) | not reached (error) | not reached (error) | returns input value | returns `100` only if terminal/skipped; otherwise error (`non-running task reached 100`) | not reached (error) |
+| Terminal side-effect (`onTaskTerminalProgressUpdate`) | not triggered | not triggered | triggered only if normalized task is terminal | triggered (running->completed case or already terminal) | not triggered |
+
+Stage-specific flowcharts (`0..100` progression with concrete algorithm bands):
+
+```mermaid
+flowchart TD
+  S0["Source queued/running: p=0"] --> S1["Download + decode + zoom filter + metadata write"]
+  S1 --> S2["(retry発生時) metadata.retryAttempt 更新のみ (p不変)"]
+  S2 --> S3["Feature metadata 生成"]
+  S3 --> S4["Feature metadata 保存 (putFeatureMetadata)"]
+  S4 --> S5["sourceCacheMeta 生成 (buildSourceCacheMetadata)"]
+  S5 --> S6["source cache保存 (putSourceCache: data + sourceCacheMeta)"]
+  S6 --> S7{"handler result"}
+  S7 -- "completed/skip" --> S8["runStageTasks commits p=100"]
+  S7 -- "failed" --> S9["markTaskFailed (terminal)"]
+  S8 --> S10["terminal"]
+  S9 --> S10
+```
+
+```mermaid
+flowchart TD
+  G0["Geometry queued: p=0"] --> G1["geometry:start -> p=0"]
+  G1 --> G2["source-cache:start -> p=1"]
+  G2 --> G3["source-cache:done -> p=10"]
+  G3 --> G4["decode:start/progress -> p=11"]
+  G4 --> G5["decode:done -> p=20"]
+  G5 --> G24["(actual code) filtering:start/done uses p=20"]
+  G24 --> G6["recycling-filter:start/done -> p=21"]
+  G6 --> G7["simplify-attempt:start -> p=31"]
+  G7 --> G8["simplify-only 実行中: polygon counter更新 (pは31維持)"]
+  G8 --> G9{"simplify 成功?"}
+  G9 -- "No" --> GF["failed -> markTaskFailed (terminal)"]
+  G9 -- "Yes" --> G10["simplify-attempt:done -> p=80"]
+  G10 --> G11{"over-limit feature > 0 ?"}
+  G11 -- "No" --> G14["vertex-limit-validate:start -> p=80"]
+  G11 -- "Yes" --> G12["retry simplify per feature (attempt表示更新)"]
+  G12 --> G13["retry metadata/progress通知 (p=80固定)"]
+  G13 --> G14["vertex-limit-validate:start -> p=80"]
+  G14 --> G15["vertex-limit-validate:progress metadata更新 (p=80固定)"]
+  G15 --> G16["vertex-limit-validate:done -> p=80"]
+  G16 --> G17["output:build:start -> p=81"]
+  G17 --> G18["output:build:done -> p=90"]
+  G18 --> G19["encode:start -> p=96"]
+  G19 --> G20["encode:done -> p=99"]
+  G20 --> G21["cache:put:start -> p=99"]
+  G21 --> G22["handler completed -> runStageTasks commits p=100"]
+  G12 --> G23["retry simplify feature progress: <attempt>"]
+```
+
+Geometry `31-80` (implementation-aligned detail):
+
+- `p=31`:
+  - `simplify-attempt:start` を通知して簡略化本体を開始。
+- `p=31` のまま:
+  - `simplifyOnlyCollection` 実行中。`processedPolygons/totalPolygons` は更新されるが、progress は増やしていない。
+- `p=80`:
+  - `simplify-attempt:done` / `simplify-only:done` で 80 に到達。
+- `p=80` のまま:
+  - `vertex-limit-retry:start`
+  - `retry simplify feature progress: <attempt>`（attempt番号は message/display 用）
+  - `vertex-limit-validate:start/progress/done`（進捗は metadata 側で `processedFeatures` を更新）
+- この設計では `31..79` の中間値は現在使っていない（進捗の細分化は未実装）。
+
+```mermaid
+flowchart TD
+  T0["TileEmit queued/running start: p=0"] --> T1["Per-parent-tile processing loop"]
+  T1 --> T2["createTileProgressReporter"]
+  T2 --> T3["p = round(processedTiles / totalTiles * 100) (clamped 0..100)"]
+  T3 --> T4{"more tiles?"}
+  T4 -- "Yes" --> T1
+  T4 -- "No" --> T5["buildTileOutputResult -> p=100"]
+  T5 --> T6["terminal completed"]
+```
 
 Notes:
 
-- UI `idle` means subscribe negotiation is completed for that UI instance.
-- It does not imply other tabs are subscribed.
-- `StartRequested` and `StopRequested` exist only for immediate button UX feedback (`disabled/loading`).
-- While `StartAccepted` is shown, start control remains disabled/loading and pause control switches to "Cancel build".
+- `progress` is strict-contract in UI ingest: only finite `0..100` is accepted.
+- `progress=100` for non-terminal non-running status is treated as contract violation.
+- Skipped display payloads are treated as terminal (`progress=100`) in the same normalization pass.
 
-### 5.2 Persisted Session State (`sessions`)
+Update-acceptance matrix (next task vs current task after normalization):
 
-Minimum fields:
-
-- `status`: `idle | startAccepted | running | completed | failed`
-- `stage`: `undefined | idle | fetch | transform | vt`
-- `updatedAt`
-- `progress`
-
-Notes:
-
-- `stage=undefined` means normalized abnormal residue (not runnable until explicit request).
-- Runnable queue source is sessions accepted for execution and not normalized out.
-- For current rollout scope, persisted/API stage keys remain `fetch|transform|vt`; UI wording may use `Source|Geometry|TileEmit`.
-
-## 6. Build Step Initialization Sequence
-
-```mermaid
-sequenceDiagram
-  participant U as User
-  participant UI as Build Step UI
-  participant BO as BuildSessionOrchestrator (SharedWorker)
-  participant DB as EphemeralDB.sessions
-
-  U->>UI: Open build step
-  UI->>UI: sessionCopy = undefined
-  UI->>BO: subscribeBuildSession(nodeId, callback)
-  UI->>UI: sessionCopy = SubscriptionRequested
-  UI->>UI: Show skeleton
-  BO->>DB: lookup session
-  alt session exists
-    BO->>DB: read current status/stage
-    alt status=startAccepted or running
-      BO->>DB: normalize status=idle, stage=undefined
-    end
-    BO-->>UI: initial snapshot from stored session
-  else no session
-    BO-->>UI: initial snapshot = "no session"
-  end
-  UI->>UI: sessionCopy = idle or existing state
-  UI->>UI: hide skeleton / show explicit state
-```
-
-## 7. Build Request Sequence (Start/Resume UI, Single Runtime Path)
-
-```mermaid
-sequenceDiagram
-  participant U as User
-  participant UI as Build Step UI
-  participant BO as BuildSessionOrchestrator
-  participant DB as sessions/buildTasks/cache
-  participant W as StageTaskWorker
-
-  U->>UI: Press Start/Resume
-  UI->>UI: sessionCopy idle -> StartRequested
-  UI->>UI: disable/loading button
-  UI->>BO: startBuildSession(nodeId)
-  BO->>DB: session.status = startAccepted
-  BO->>DB: resolve runnable delta tasks from persisted state
-  BO-->>UI: StartAccepted
-  UI->>UI: sessionCopy = StartAccepted
-  BO->>BO: FIFO select active session
-  BO->>DB: active session.stage = fetch
-  BO->>W: run stage workers
-  W-->>BO: progress / completion
-  BO-->>UI: progress callbacks
-```
-
-## 8. Queue Cancel Sequence (Queued Session Removal)
-
-```mermaid
-sequenceDiagram
-  participant U as User
-  participant UI as Build Step UI
-  participant BO as BuildSessionOrchestrator
-  participant DB as EphemeralDB.sessions
-
-  U->>UI: Click "Cancel build" (while StartAccepted)
-  UI->>UI: sessionCopy -> StopRequested (local only)
-  UI->>UI: disable/loading button
-  UI->>BO: cancelQueuedBuildSession(nodeId)
-  BO->>DB: remove nodeId from waiting queue
-  BO->>DB: session.status = idle
-  BO-->>UI: idle snapshot
-  UI->>UI: sessionCopy = idle
-```
-
-Notes:
-
-- This API is for queued sessions (`startAccepted`) waiting in FIFO.
-- If the session has already become active (`running`), treat `cancelQueuedBuildSession(nodeId)` as `pauseBuildSession(nodeId)`.
-
-## 9. Multi-Node Concurrent Start
-
-- Users can issue Start on multiple nodes concurrently.
-- Each node has an independent persisted session.
-- BuildSessionOrchestrator keeps a single FIFO queue across all nodes/plugins.
-- Arbitration is first-come-first-served.
-- Request logging is optional (debug/diagnostics), not a required runtime contract.
-- Stage progression per active session: `idle -> fetch -> transform -> vt -> idle/completed`.
-
-## 10. BuildSessionOrchestrator Responsibilities
-
-- Provide SharedWorker-side session control APIs.
-- Keep `sessions` and `buildTasks` consistent.
-- Select active session (FIFO).
-- Start/stop appropriate StageTaskWorkers by stage.
-- Normalize abnormal residue during bootstrap.
-- Advance stage/session via `nextBuildStageRequest`.
-- Publish runtime updates to subscribers.
-- On `startBuildSession`, clear existing `buildTasks` for the node and rebuild initial fetch tasks.
-
-### 10.1 Public API (Logical Names)
-
-- `subscribeBuildSession`
-- `startBuildSession`
-- `pauseBuildSession`
-- `cancelQueuedBuildSession`
-- `nextBuildStageRequest`
-
-Notes:
-
-- `pauseBuildSession` corresponds to UI-local `StopRequested` handling and completion back to `idle`.
-
-## 11. BuildSessionOrchestrator Runtime State
-
-```mermaid
-stateDiagram-v2
-  [*] --> Boot
-  Boot --> Idle: normalize sessions only
-  Idle --> ActiveFetch: startBuildSession + queue not empty
-  ActiveFetch --> ActiveTransform: nextBuildStageRequest(fetch done)
-  ActiveTransform --> ActiveVt: nextBuildStageRequest(transform done)
-  ActiveVt --> Idle: nextBuildStageRequest(vt done and queue empty)
-  ActiveVt --> ActiveFetch: nextBuildStageRequest(vt done and queue not empty)
-
-  ActiveFetch --> Idle: pauseBuildSession and queue empty
-  ActiveTransform --> Idle: pauseBuildSession and queue empty
-  ActiveVt --> Idle: pauseBuildSession and queue empty
-```
-
-## 12. StageTaskWorker Model
-
-- Each StageTaskWorker dequeues one task from the stage queue and processes it.
-- When the final task in the stage queue completes, it calls `nextBuildStageRequest`.
-- BuildSessionOrchestrator decides:
-  - advance same session to next stage,
-  - switch to next queued session,
-  - or become idle.
-
-## 13. Heartbeat and Progress Notification
-
-- Heartbeat is used to represent that build execution is still alive.
-- Heartbeat update triggers:
-  - persisted elapsed-time update
-  - UI elapsed-time refresh
-- Progress is a two-channel sequence:
-  - `snapshot` channel: initial state transfer for SSOT initialization.
-  - `progress` channel: incremental task updates after subscription.
-- Snapshot is sent once at subscribe start and once at session start (`startBuildSession`) when stage tasks are rebuilt.
-- `progress=100%` is treated as terminal update signal; explicit event sequence numbers are not required by this contract.
-- The `subscribeBuildProgress` callback is wrapped once by the bridge callback proxy and registered for both notifications.
-- Progress events are buffered if snapshot has not been fully applied yet.
-- Task aggregation rules:
-  - latest update wins per task key
-  - terminal state (`Completed`/`Skipped`/`Failed`) is never overwritten by earlier non-terminal states
-- Stage completion in UI SSOT is computed from stream:
-  - if `count(progress[status=100%]) == snapshotTaskCount` for current stage, treat stage complete.
-
-## 14. Session Reset Scope and Data Deletion
-
-- Session reset from UI includes:
-  - `buildTasks`
-  - caches
-  - generated artifacts (e.g., vector tiles)
-  - metadata
-- Individual deletion menus for cache/metadata/artifacts remain explicit UI operations.
-- `buildTasks` are cleared on session restart path regardless.
-
-## 15. Tab/Dialog/Step Transition Behavior
-
-| Action | Build Execution | Subscription | Expected Behavior |
+| Comparison key | `next < current` | `next = current` | `next > current` |
 | --- | --- | --- | --- |
-| Close build dialog during build | Continues | This UI can unsubscribe | Re-open build step -> re-subscribe and sync |
-| Move to non-build step during build | Continues | Build step unmount may unsubscribe | Back to build step -> re-subscribe and sync |
-| Close one tab (others remain) | Continues | Only that tab unsubscribes | Other tabs continue receiving updates |
-| Close all tabs during build | Stops (SharedWorker ends) | All unsubscribed | Next launch: normalize `startAccepted/running -> idle + stage=undefined`, no auto-resume |
-| SharedWorker/session/browser crash | Stops | Connection lost | Next launch: same normalization, manual Start/Resume required |
+| Progress monotonic guard (`shouldApplyTaskUpdate`) | reject update | tie-break by status rank / terminal promotion rule | accept update |
 
-## 16. Fatal Error Policy
+Additional acceptance guards:
 
-- If UI detects Worker communication loss, treat as fatal for current runtime.
-- UI fully locks continuation controls and prompts user to reload/restart browser.
-- After reload, no auto-resume. User explicitly selects node and triggers Start/Resume.
+- If current task is terminal (`completed` / `failed` / skipped), non-terminal regressions are rejected.
+- Completed-at-100 tasks are preserved unless next payload provides a strictly better terminal message/display payload.
+- Retry restart (`failed/skipped -> queued/running`) is explicitly allowed.
 
-## 17. Notes for Implementation Mapping
+References for this section:
 
-Logical API names in this spec map to concrete runtime-worker and plugin bridge APIs.
-Keep naming aligned with section 3 terminology when updating code or docs.
+- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparison.utils.ts`
+- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.task-utils.ts`
+- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSyncResolver.ts`
+- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSyncEventHandlers.ts`
 
-## 18. Migration Status (2026-02-17)
+## 6.4 Shape Session State UI
 
-- Completed:
-  - SharedWorker runtime and worker bridge expose canonical `Build*` control APIs.
-  - `Batch*` compatibility aliases were removed from SharedWorker runtime and worker bridge control APIs.
-  - Build-session state/terminology docs moved to `packages/runtime-worker/docs`.
-  - Shape build-step normal control path (start/stop/progress) no longer depends on `session-coordinator` lock/broadcast heuristics.
-- Deployed with known technical debt:
-  - Remaining `Batch*` mentions may still exist in historical docs, comments, or plugin-local compatibility helpers outside runtime-worker.
-  - `Build*` naming is required for all new work.
+`useShapeBuildSessionState`:
+
+- initial load by query API (`getBuildSessionRecord`)
+- subscribes to `subscribeSessionState` and updates `sessionRecord`
+- subscribes to `subscribeSessionHeartbeat` for activity events
+
+Reference:
+- `plugins/shape-plugin/src/ui/components/build-progress/internal/useShapeBuildSessionState.ts`
+
+## 7. Transition Semantics (Implementation-Aligned)
+
+## 7.1 Start / Resume
+
+- UI control intent (`Start`/`Resume`) maps to the same runtime command path.
+- Persistence updates are applied to normalized status/stage/heartbeat tables through session snapshot upsert/update flow.
+- Task stream emits `snapshot` then incremental `update` events.
+
+## 7.2 Pause / Cancel Queued
+
+- Pause and queue cancel are distinct control intents.
+- Persistence reflects resulting status in `buildSessionStatuses` and relevant stage/timing updates.
+- UI state follows worker events + reconstructed session read model.
+
+## 7.3 Completion / Failure
+
+- Terminal status persisted in `buildSessionStatuses`.
+- Stage completion/timing persisted in `buildStageStatuses`.
+- Task stream reaches terminal updates for tasks/stages.
+
+## 7.4 Session Removal
+
+- Explicit session deletion removes all 4 normalized rows.
+- Broadcast emits a `deleted` state for cross-context awareness.
+
+## 8. Known Gaps and Non-Uniform Paths
+
+1. Stage snapshot channel exists in shape runtime, but generic UI worker bridge currently exposes no dedicated `subscribeStageSnapshots` method.
+- UI primary path currently relies on `subscribeBuildTasks` snapshot/update stream.
+
+2. Heartbeat subscription is wired in UI, but shape session hook currently logs heartbeat events without applying rich derived state updates.
+
+3. BroadcastChannel `build-session-update` is coarse-grained and does not replace task/progress/session-detail streams.
+
+4. This document describes the currently implemented shape-oriented session event model; route/location adoption may still differ by implementation surface.
+
+## 9. Verification Pointers
+
+Use these files as source of truth when updating this document:
+
+- `packages/gis-sdk/src/ephemeral/EphemeralDBRecordTypes.ts`
+- `packages/gis-sdk/src/ephemeral/sessionHelpers.ts`
+- `packages/runtime-worker/src/services/ShapeMutationService.ts`
+- `packages/runtime-worker/src/services/buildSessionBroadcast.ts`
+- `plugins/shape-plugin/src/worker/api/shapeBuildRuntimeExecutionMetrics.ts`
+- `plugins/shape-plugin/src/worker/api/shapeBuildAPI.ts`
+- `packages/ui/worker-client/src/workerBridge.ts`
+- `packages/ui/build-sessions/src/hooks/useBuildSessionSnapshots.ts`
+- `packages/ui/build-sessions/src/hooks/useBuildProgressState.ts`
+- `plugins/shape-plugin/src/ui/components/build-progress/internal/useShapeBuildSessionState.ts`
+- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSnapshotProgressState/useShapeBuildTaskSnapshotProgressState.ts`
+- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparison.utils.ts`
+- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.task-utils.ts`
+- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSyncResolver.ts`
+- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSyncEventHandlers.ts`

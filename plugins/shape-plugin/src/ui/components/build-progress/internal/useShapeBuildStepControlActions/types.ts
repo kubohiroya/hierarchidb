@@ -138,9 +138,7 @@ export type PauseControlActionsArgs = Pick<
   | 'setRequestedControlAction'
   | 'setIsStopRequested'
   | 'setIsStopAccepted'
-> & {
-  sessionRecord: ShapeBuildSessionRecord | null;
-};
+>;
 
 export type PauseWithCancelHookActionsArgs = PauseControlActionsArgs & {
   handleCancelQueued: (reason: ShapeBuildPauseReason) => Promise<void>;

@@ -1,6 +1,6 @@
 import { Dexie, type Table } from "dexie";
 import { getDBName } from "@hierarchidb/util";
-import { parseCsv } from "./csv.js";
+import { DEFAULT_COUNTRY_NAMES_I18N_OUTPUT, parseCsv } from "./csv.js";
 import type {
   CountryRecord,
   EnsureIsoOptions,
@@ -23,6 +23,7 @@ class Iso3166Dexie extends Dexie {
 
 const hasIndexedDB = () => typeof indexedDB !== "undefined";
 let dexieDb: Iso3166Dexie | null = null;
+let countryNamesI18nCache: Record<string, Record<string, string>> | null = null;
 const memoryStore = {
   countries: new Map<string, CountryRecord>(),
   subdivisions: new Map<string, SubdivisionRecord>(),
@@ -77,6 +78,14 @@ export const resolveIso3166CsvUrl = (csvFile = "iso3166-2-level1.csv"): string =
   const baseUrl = resolveBaseUrl();
   const normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
   return `${normalizedBase}${csvFile}`;
+};
+
+export const resolveIso3166CountryNamesI18nUrl = (
+  file = DEFAULT_COUNTRY_NAMES_I18N_OUTPUT,
+): string => {
+  const baseUrl = resolveBaseUrl();
+  const normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  return `${normalizedBase}${file}`;
 };
 
 const rowToRecord = (row: SubdivisionRow): SubdivisionRecord | null => {
@@ -165,6 +174,62 @@ export async function ensureIso3166Data(options: EnsureIsoOptions = {}) {
   }
 
   return { source: "none" as const };
+}
+
+export async function ensureIso3166CountryNamesI18n(options: EnsureIsoOptions = {}) {
+  if (countryNamesI18nCache) return { source: "cached" as const };
+  if (options.countryNamesI18nText) {
+    const parsed = JSON.parse(options.countryNamesI18nText) as Record<string, Record<string, string>>;
+    countryNamesI18nCache = parsed;
+    return { source: "inline" as const };
+  }
+  const jsonUrl = options.countryNamesI18nUrl ?? resolveIso3166CountryNamesI18nUrl();
+  if (typeof fetch !== "undefined") {
+    try {
+      const res = await fetch(jsonUrl);
+      if (res.ok) {
+        const text = await res.text();
+        const parsed = JSON.parse(text) as Record<string, Record<string, string>>;
+        countryNamesI18nCache = parsed;
+        return { source: "network" as const, jsonUrl };
+      }
+    } catch {
+      // continue
+    }
+  }
+  return { source: "none" as const };
+}
+
+const normalizeLocaleKey = (locale: string | undefined): string => {
+  const normalized = (locale ?? "en").trim().toLowerCase();
+  const [base] = normalized.split("-");
+  return base && base.length > 0 ? base : "en";
+};
+
+const resolveCountryCodeKey = (code: string): string | null => {
+  const normalized = code.trim().toUpperCase();
+  if (!normalized) return null;
+  return normalized;
+};
+
+export function getLocalizedCountryName(code: string, locale: string): string | null {
+  if (!countryNamesI18nCache) return null;
+  const codeKey = resolveCountryCodeKey(code);
+  if (!codeKey) return null;
+  const localeKey = normalizeLocaleKey(locale);
+  const primary = countryNamesI18nCache[localeKey];
+  if (primary && typeof primary[codeKey] === "string" && primary[codeKey].trim().length > 0) {
+    return primary[codeKey].trim();
+  }
+  const fallbackEn = countryNamesI18nCache.en;
+  if (fallbackEn && typeof fallbackEn[codeKey] === "string" && fallbackEn[codeKey].trim().length > 0) {
+    return fallbackEn[codeKey].trim();
+  }
+  const fallbackJa = countryNamesI18nCache.ja;
+  if (fallbackJa && typeof fallbackJa[codeKey] === "string" && fallbackJa[codeKey].trim().length > 0) {
+    return fallbackJa[codeKey].trim();
+  }
+  return null;
 }
 
 export async function getCountry(alpha: string) {

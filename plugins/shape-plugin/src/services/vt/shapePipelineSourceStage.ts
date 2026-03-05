@@ -1,10 +1,16 @@
 import type { BuildContinuationPolicy } from '@hierarchidb/build-api';
+import type { TaskStage } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { DataSourceName, SourceTaskPayload, SelectedArrayByCountries } from '~/common/types/index';
 import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
+import type { Feature, FeatureCollection, Geometry, MultiPolygon, Polygon } from 'geojson';
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { listTasksByStage } from '@hierarchidb/vt-orchestrator';
-import { shapeMutationAPIImpl } from '~/services/build/ShapeBuildAPIClient';
+import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
+import { geojson as geojsonApi } from 'flatgeobuf';
+import { feature as topojsonFeature } from 'topojson-client';
+import type { Topology } from 'topojson-specification';
+import { geometrySimplify, type GeometryEngine } from '@hierarchidb/gis-sdk';
 import { runShapeSourceStage } from './runShapeSourceStage.js';
 import {
   finalizePendingStageTasks,
@@ -33,6 +39,11 @@ export type ShapeSourceStageParams = {
     taskCount: number;
     source: 'created' | 'reused';
   }) => Promise<void> | void;
+  onStageTasksPrepared?: (payload: {
+    nodeId: NodeId;
+    stage: TaskStage;
+    taskCount: number;
+  }) => Promise<void> | void;
 };
 
 export class SourceStageAuthPendingError extends Error {
@@ -41,6 +52,222 @@ export class SourceStageAuthPendingError extends Error {
     this.name = 'SourceStageAuthPendingError';
   }
 }
+
+const SOURCE_BASE_TOLERANCE_VERTEX_LIMIT = 6553;
+const SOURCE_BASE_TOLERANCE_MAX_ITERATIONS = 32;
+const SOURCE_BASE_TOLERANCE_INITIAL_HIGH = 0.1;
+const SOURCE_BASE_TOLERANCE_HIGH_CAP = 12;
+const SOURCE_BASE_TOLERANCE_EPSILON = 1e-7;
+const textDecoder = new TextDecoder('utf-8');
+
+const countVertices = (coords: unknown): number => {
+  if (!Array.isArray(coords)) return 0;
+  if (coords.length === 0) return 0;
+  if (typeof coords[0] === 'number') return 1;
+  return coords.reduce((sum: number, child: unknown) => sum + countVertices(child), 0);
+};
+
+const countVerticesFromGeometry = (geometry: Feature['geometry']): number => {
+  if (!geometry) return 0;
+  if (geometry.type === 'GeometryCollection') {
+    const geometries = Array.isArray(geometry.geometries) ? geometry.geometries : [];
+    return geometries.reduce((sum: number, child) => sum + countVerticesFromGeometry(child), 0);
+  }
+  return countVertices(geometry.coordinates);
+};
+
+const countPolygonVertices = (coordinates: unknown): number => {
+  if (!Array.isArray(coordinates)) return 0;
+  return countVertices(coordinates);
+};
+
+const visitPolygons = (
+  geometry: Geometry | null | undefined,
+  visit: (polygon: { vertexCount: number; geometry: Polygon }) => void,
+): void => {
+  if (!geometry) return;
+  if (geometry.type === 'Polygon') {
+    const polygonGeometry = geometry as Polygon;
+    visit({ vertexCount: countPolygonVertices(polygonGeometry.coordinates), geometry: polygonGeometry });
+    return;
+  }
+  if (geometry.type === 'MultiPolygon') {
+    const multiPolygonGeometry = geometry as MultiPolygon;
+    for (const polygonCoords of multiPolygonGeometry.coordinates) {
+      visit({
+        vertexCount: countPolygonVertices(polygonCoords),
+        geometry: { type: 'Polygon', coordinates: polygonCoords },
+      });
+    }
+    return;
+  }
+  if (geometry.type === 'GeometryCollection') {
+    for (const child of geometry.geometries ?? []) {
+      visitPolygons(child, visit);
+    }
+  }
+};
+
+const findMaxVertexPolygon = (
+  collection: FeatureCollection,
+): { vertexCount: number; polygon: Feature<Polygon> } | null => {
+  let maxVertexCount = 0;
+  let selectedPolygon: Feature<Polygon> | null = null;
+  collection.features.forEach((feature) => {
+    visitPolygons(feature?.geometry, ({ vertexCount, geometry }) => {
+      if (vertexCount <= maxVertexCount) return;
+      maxVertexCount = vertexCount;
+      selectedPolygon = {
+        type: 'Feature',
+        properties: { ...(feature?.properties ?? {}) },
+        geometry,
+      };
+    });
+  });
+  if (!selectedPolygon) return null;
+  return { vertexCount: maxVertexCount, polygon: selectedPolygon };
+};
+
+const decompressGzip = async (buffer: ArrayBuffer): Promise<ArrayBuffer> => {
+  if (typeof DecompressionStream !== 'function') {
+    throw new Error('DecompressionStream is not available for gzip decompression');
+  }
+  const stream = new DecompressionStream('gzip');
+  const writer = stream.writable.getWriter();
+  await writer.write(new Uint8Array(buffer));
+  await writer.close();
+  return await new Response(stream.readable).arrayBuffer();
+};
+
+const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureCollection | null> => {
+  if (!decoded || typeof decoded !== 'object') return null;
+  const collection = decoded as FeatureCollection;
+  if (collection.type === 'FeatureCollection') {
+    const features = Array.isArray(collection.features) ? collection.features : [];
+    return { ...collection, features };
+  }
+  if (typeof (decoded as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
+    const features: Feature[] = [];
+    for await (const feature of decoded as AsyncIterable<Feature>) {
+      features.push(feature);
+    }
+    return { type: 'FeatureCollection', features };
+  }
+  return null;
+};
+
+const decodeTopoJson = (buffer: ArrayBuffer): Topology => {
+  const text = textDecoder.decode(new Uint8Array(buffer));
+  return JSON.parse(text) as Topology;
+};
+
+const decodeTopoJsonCollection = (topology: Topology): FeatureCollection => {
+  const objectKeys = Object.keys(topology.objects ?? {});
+  if (objectKeys.length === 0) {
+    return { type: 'FeatureCollection', features: [] };
+  }
+  const firstObjectKey = objectKeys[0];
+  if (!firstObjectKey) {
+    return { type: 'FeatureCollection', features: [] };
+  }
+  const topoObject = topology.objects[firstObjectKey];
+  if (!topoObject) {
+    return { type: 'FeatureCollection', features: [] };
+  }
+  const extracted = topojsonFeature(topology, topoObject as never) as Feature | FeatureCollection;
+  if (extracted.type === 'FeatureCollection') {
+    return extracted as FeatureCollection;
+  }
+  return { type: 'FeatureCollection', features: [extracted as Feature] };
+};
+
+const decodeSourceCacheCollection = async (record: {
+  data: ArrayBuffer;
+  format?: 'flatgeobuf' | 'topojson';
+  compression?: 'gzip' | 'none';
+}): Promise<FeatureCollection | null> => {
+  const format = record.format ?? 'flatgeobuf';
+  if (format === 'topojson') {
+    const decodedBuffer = record.compression === 'gzip'
+      ? await decompressGzip(record.data)
+      : record.data;
+    const topology = decodeTopoJson(decodedBuffer);
+    return decodeTopoJsonCollection(topology);
+  }
+  const decodedBuffer = record.compression === 'gzip'
+    ? await decompressGzip(record.data)
+    : record.data;
+  const decoded = geojsonApi.deserialize(new Uint8Array(decodedBuffer));
+  return await normalizeFeatureCollection(decoded);
+};
+
+const asRecord = (value: unknown): Record<string, unknown> | null => (
+  typeof value === 'object' && value !== null ? value as Record<string, unknown> : null
+);
+
+const readStringField = (record: Record<string, unknown> | null, key: string): string | null => {
+  if (!record) return null;
+  const value = record[key];
+  return typeof value === 'string' ? value : null;
+};
+
+const findSourceBaseToleranceByBisection = (params: {
+  feature: Feature<Polygon>;
+  geometryEngine: GeometryEngine;
+  vertexLimit: number;
+  maxIterations: number;
+  initialHigh: number;
+  highCap: number;
+  epsilon: number;
+}): {
+  tolerance: number;
+  converged: boolean;
+  iterations: number;
+  finalVertexCount: number;
+} => {
+  const sourceVertexCount = countVerticesFromGeometry(params.feature.geometry);
+  if (sourceVertexCount <= params.vertexLimit) {
+    return { tolerance: 0, converged: true, iterations: 0, finalVertexCount: sourceVertexCount };
+  }
+  const evaluate = (tolerance: number): number => {
+    const simplified = geometrySimplify(params.feature, params.geometryEngine, {
+      tolerance,
+      highQuality: true,
+      mutate: false,
+      preserveTopology: true,
+    });
+    return countVerticesFromGeometry(simplified.geometry);
+  };
+  let iterations = 0;
+  let low = 0;
+  let high = Math.max(0, params.initialHigh);
+  let highVertexCount = evaluate(high);
+  iterations += 1;
+  while (highVertexCount > params.vertexLimit && high < params.highCap && iterations < params.maxIterations) {
+    low = high;
+    high = Math.min(params.highCap, high * 2);
+    highVertexCount = evaluate(high);
+    iterations += 1;
+  }
+  if (highVertexCount > params.vertexLimit) {
+    return { tolerance: high, converged: false, iterations, finalVertexCount: highVertexCount };
+  }
+  let bestTolerance = high;
+  let bestVertexCount = highVertexCount;
+  while (iterations < params.maxIterations && (high - low) > params.epsilon) {
+    const mid = (low + high) / 2;
+    const midVertexCount = evaluate(mid);
+    iterations += 1;
+    if (midVertexCount <= params.vertexLimit) {
+      bestTolerance = mid;
+      bestVertexCount = midVertexCount;
+      high = mid;
+    } else {
+      low = mid;
+    }
+  }
+  return { tolerance: bestTolerance, converged: true, iterations, finalVertexCount: bestVertexCount };
+};
 
 export const runShapeSourceStageSection = async (params: ShapeSourceStageParams): Promise<boolean> => {
   const sourceAbortController = new AbortController();
@@ -61,6 +288,7 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
       abortController: sourceAbortController,
       failureHandling: params.failureHandling,
       onTasksEnqueued: params.onTasksEnqueued,
+      onStageTasksPrepared: params.onStageTasksPrepared,
     });
   };
   try {
@@ -131,7 +359,7 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
   let polygonMax = 0;
   let maxPolygonVertexCount = 0;
   let baseTolerance = 0;
-  let baseToleranceVertexLimit = 6553;
+  const baseToleranceVertexLimit = SOURCE_BASE_TOLERANCE_VERTEX_LIMIT;
   fetchTasks.forEach((task) => {
     const metadata = task.metadata;
     const fetchDetail = (typeof metadata === 'object' && metadata !== null
@@ -172,12 +400,6 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
       : (typeof maxPolygonVertexCountDetail?.input === 'number'
         ? maxPolygonVertexCountDetail.input
         : null);
-    const taskBaseTolerance = typeof fetchDetail?.baseTolerance === 'number'
-      ? fetchDetail.baseTolerance
-      : null;
-    const taskBaseToleranceVertexLimit = typeof fetchDetail?.baseToleranceVertexLimit === 'number'
-      ? fetchDetail.baseToleranceVertexLimit
-      : null;
     if (featureValue !== null && Number.isFinite(featureValue) && featureValue > featureMax) {
       featureMax = Math.max(0, Math.round(featureValue));
     }
@@ -186,16 +408,60 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
     }
     if (maxPolygonVertexValue !== null && Number.isFinite(maxPolygonVertexValue) && maxPolygonVertexValue > maxPolygonVertexCount) {
       maxPolygonVertexCount = Math.max(0, Math.round(maxPolygonVertexValue));
-      baseTolerance = taskBaseTolerance !== null && Number.isFinite(taskBaseTolerance) && taskBaseTolerance >= 0
-        ? taskBaseTolerance
-        : baseTolerance;
-      baseToleranceVertexLimit = taskBaseToleranceVertexLimit !== null
-        && Number.isFinite(taskBaseToleranceVertexLimit)
-        && taskBaseToleranceVertexLimit > 0
-        ? Math.round(taskBaseToleranceVertexLimit)
-        : baseToleranceVertexLimit;
     }
   });
+
+  const geometryEngine: GeometryEngine = params.buildConfig.geometryConfig.geometryEngine ?? 'turf';
+  let selectedPolygon: Feature<Polygon> | null = null;
+  const sourceCacheIds = new Set<string>();
+  const sourceCacheFormats = new Map<string, { format: 'flatgeobuf' | 'topojson'; compression: 'gzip' | 'none' }>();
+  for (const task of fetchTasks) {
+    const output = typeof task.outputData === 'object' && task.outputData !== null
+      ? task.outputData as Record<string, unknown>
+      : null;
+    const sourceCacheId = typeof output?.sourceCacheId === 'string' ? output.sourceCacheId : null;
+    if (!sourceCacheId) continue;
+    sourceCacheIds.add(sourceCacheId);
+    const taskMetadata = asRecord(task.metadata);
+    const preview = asRecord(taskMetadata?.preview);
+    const sourceCacheFormat = readStringField(preview, 'sourceCacheFormat');
+    const sourceCacheCompression = readStringField(preview, 'sourceCacheCompression');
+    sourceCacheFormats.set(sourceCacheId, {
+      format: sourceCacheFormat === 'topojson' ? 'topojson' : 'flatgeobuf',
+      compression: sourceCacheCompression === 'gzip' ? 'gzip' : 'none',
+    });
+  }
+  for (const sourceCacheId of sourceCacheIds) {
+    const sourceCache = await shapeQueryAPIImpl.getSourceCache(params.nodeId, sourceCacheId);
+    if (!sourceCache) continue;
+    const cacheFormat = sourceCacheFormats.get(sourceCacheId);
+    const format = cacheFormat?.format ?? 'flatgeobuf';
+    const compression = cacheFormat?.compression ?? 'none';
+    const collection = await decodeSourceCacheCollection({
+      data: sourceCache.data,
+      format,
+      compression,
+    });
+    if (!collection || collection.features.length === 0) continue;
+    const maxPolygon = findMaxVertexPolygon(collection);
+    if (!maxPolygon) continue;
+    if (maxPolygon.vertexCount <= maxPolygonVertexCount) continue;
+    maxPolygonVertexCount = maxPolygon.vertexCount;
+    selectedPolygon = maxPolygon.polygon;
+  }
+  if (selectedPolygon && maxPolygonVertexCount > 0) {
+    const baseSearch = findSourceBaseToleranceByBisection({
+      feature: selectedPolygon,
+      geometryEngine,
+      vertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
+      maxIterations: SOURCE_BASE_TOLERANCE_MAX_ITERATIONS,
+      initialHigh: SOURCE_BASE_TOLERANCE_INITIAL_HIGH,
+      highCap: SOURCE_BASE_TOLERANCE_HIGH_CAP,
+      epsilon: SOURCE_BASE_TOLERANCE_EPSILON,
+    });
+    baseTolerance = baseSearch.tolerance;
+  }
+
   await shapeMutationAPIImpl.updateBuildSession(params.nodeId, {
     sourceStageMaxima: {
       featureMax,

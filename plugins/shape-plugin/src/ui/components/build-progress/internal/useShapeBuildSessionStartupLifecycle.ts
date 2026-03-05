@@ -16,8 +16,8 @@ import type {
   BuildStartupStepOutcome,
 } from './useShapeBuildStepHelpers/startupTrace';
 
-const POLL_INTERVAL_MS = 1000; // Local constant for backward compatibility
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+const POLL_INTERVAL_MS = 1000;
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 
 type UseShapeBuildSessionStartupLifecycleArgs = {
   activeNodeId: string | null;

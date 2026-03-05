@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import type { SyncArgs } from './useShapeBuildTaskSync.types.js';
 import { useShapeBuildTaskSyncHandlers } from './useShapeBuildTaskSyncHandlers.js';
 

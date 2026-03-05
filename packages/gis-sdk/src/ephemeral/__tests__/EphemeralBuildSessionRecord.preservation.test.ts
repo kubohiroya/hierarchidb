@@ -43,7 +43,7 @@ describe('Preservation: Query Interface Compatibility', () => {
    */
   async function querySession(nodeId: NodeId): Promise<EphemeralBuildSessionRecord | null> {
     return getSessionWithDetails(nodeId, {
-      getConfig: async (id) => db.buildSessions.get(id),
+      getConfig: async (id) => db.buildSessionConfigs.get(id),
       getHeartbeat: async (id) => db.buildSessionHeartbeats.get(id),
       getStatus: async (id) => db.buildSessionStatuses.get(id),
       getStageStatuses: async (id) => db.buildStageStatuses.where('nodeId').equals(id).toArray(),
@@ -68,7 +68,7 @@ describe('Preservation: Query Interface Compatibility', () => {
       selectedArrayByCountries: { US: [true, false], CA: [true] },
       startedAt,
     };
-    await db.buildSessions.add(config);
+    await db.buildSessionConfigs.add(config);
 
     const heartbeat: BuildSessionHeartbeat = {
       nodeId,
@@ -115,7 +115,7 @@ describe('Preservation: Query Interface Compatibility', () => {
     const nodeId: NodeId = 'test-progress-computation' as NodeId;
     
     // Create session in normalized tables
-    await db.buildSessions.add({
+    await db.buildSessionConfigs.add({
       nodeId,
       domainType: 'shape',
       startedAt: Date.now(),
@@ -168,7 +168,7 @@ describe('Preservation: Query Interface Compatibility', () => {
     const nodeId: NodeId = 'test-session-operations' as NodeId;
     
     // Create running session in normalized tables
-    await db.buildSessions.add({
+    await db.buildSessionConfigs.add({
       nodeId,
       domainType: 'shape',
       startedAt: Date.now(),
@@ -219,7 +219,7 @@ describe('Preservation: Query Interface Compatibility', () => {
     const nodeId: NodeId = 'test-backward-compat' as NodeId;
     
     // Insert into normalized tables
-    await db.buildSessions.add({
+    await db.buildSessionConfigs.add({
       nodeId,
       domainType: 'shape',
       selectedArrayByCountries: { US: [true, false, true], CA: [false, true] },
@@ -250,7 +250,7 @@ describe('Preservation: Query Interface Compatibility', () => {
     expect(byId?.nodeId).toBe(nodeId);
 
     // Pattern 2: Query all sessions (query config table and reconstruct)
-    const allConfigs = await db.buildSessions.toArray();
+    const allConfigs = await db.buildSessionConfigs.toArray();
     expect(allConfigs.length).toBeGreaterThan(0);
     expect(allConfigs.some(s => s.nodeId === nodeId)).toBe(true);
 
@@ -259,11 +259,11 @@ describe('Preservation: Query Interface Compatibility', () => {
     expect(runningStatuses.some(s => s.nodeId === nodeId)).toBe(true);
 
     // Pattern 4: Check existence
-    const exists = await db.buildSessions.get(nodeId);
+    const exists = await db.buildSessionConfigs.get(nodeId);
     expect(exists).not.toBeUndefined();
 
     // Pattern 5: Count sessions
-    const count = await db.buildSessions.count();
+    const count = await db.buildSessionConfigs.count();
     expect(count).toBeGreaterThan(0);
   });
 
@@ -277,7 +277,7 @@ describe('Preservation: Query Interface Compatibility', () => {
     const nodeId: NodeId = 'test-cleanup' as NodeId;
     
     // Create session in all four normalized tables
-    await db.buildSessions.add({
+    await db.buildSessionConfigs.add({
       nodeId,
       domainType: 'shape',
       startedAt: Date.now(),
@@ -310,21 +310,21 @@ describe('Preservation: Query Interface Compatibility', () => {
     }
 
     // Verify records exist
-    expect(await db.buildSessions.get(nodeId)).toBeDefined();
+    expect(await db.buildSessionConfigs.get(nodeId)).toBeDefined();
     expect(await db.buildSessionHeartbeats.get(nodeId)).toBeDefined();
     expect(await db.buildSessionStatuses.get(nodeId)).toBeDefined();
     expect(await db.buildStageStatuses.where('nodeId').equals(nodeId).count()).toBe(1);
     expect(await db.buildTasks.where('nodeId').equals(nodeId).count()).toBe(2);
 
     // Cleanup: Delete session and related records from all tables
-    await db.buildSessions.delete(nodeId);
+    await db.buildSessionConfigs.delete(nodeId);
     await db.buildSessionHeartbeats.delete(nodeId);
     await db.buildSessionStatuses.delete(nodeId);
     await db.buildStageStatuses.where('nodeId').equals(nodeId).delete();
     await db.buildTasks.where('nodeId').equals(nodeId).delete();
 
     // Verify all records are removed
-    expect(await db.buildSessions.get(nodeId)).toBeUndefined();
+    expect(await db.buildSessionConfigs.get(nodeId)).toBeUndefined();
     expect(await db.buildSessionHeartbeats.get(nodeId)).toBeUndefined();
     expect(await db.buildSessionStatuses.get(nodeId)).toBeUndefined();
     expect(await db.buildStageStatuses.where('nodeId').equals(nodeId).count()).toBe(0);
@@ -356,7 +356,7 @@ describe('Preservation: Query Interface Compatibility', () => {
           const { nodeId, initialStatus, transitions } = testData;
 
           // Create initial session in normalized tables
-          await db.buildSessions.add({
+          await db.buildSessionConfigs.add({
             nodeId,
             domainType: 'shape',
             startedAt: Date.now(),
@@ -399,7 +399,7 @@ describe('Preservation: Query Interface Compatibility', () => {
           }
 
           // Cleanup
-          await db.buildSessions.delete(nodeId);
+          await db.buildSessionConfigs.delete(nodeId);
           await db.buildSessionStatuses.delete(nodeId);
           await db.buildSessionHeartbeats.delete(nodeId);
           await db.buildStageStatuses.where('nodeId').equals(nodeId).delete();
@@ -430,7 +430,7 @@ describe('Preservation: Query Interface Compatibility', () => {
           const { nodeId, taskCount, completedRatio, failedRatio } = testData;
 
           // Create session in normalized tables
-          await db.buildSessions.add({
+          await db.buildSessionConfigs.add({
             nodeId,
             domainType: 'shape',
             startedAt: Date.now(),
@@ -507,7 +507,7 @@ describe('Preservation: Query Interface Compatibility', () => {
           expect(percentage).toBeLessThanOrEqual(100);
 
           // Cleanup
-          await db.buildSessions.delete(nodeId);
+          await db.buildSessionConfigs.delete(nodeId);
           await db.buildSessionStatuses.delete(nodeId);
           await db.buildStageStatuses.where('nodeId').equals(nodeId).delete();
           await db.buildTasks.where('nodeId').equals(nodeId).delete();
@@ -549,7 +549,7 @@ describe('Preservation: Query Interface Compatibility', () => {
             config.selectedArrayByCountries = { US: [true, false], CA: [true] };
           }
 
-          await db.buildSessions.add(config);
+          await db.buildSessionConfigs.add(config);
 
           const sessionStatus: BuildSessionStatus = {
             nodeId,
@@ -592,7 +592,7 @@ describe('Preservation: Query Interface Compatibility', () => {
           }
 
           // Cleanup
-          await db.buildSessions.delete(nodeId);
+          await db.buildSessionConfigs.delete(nodeId);
           await db.buildSessionStatuses.delete(nodeId);
           await db.buildStageStatuses.where('nodeId').equals(nodeId).delete();
         }
@@ -612,7 +612,7 @@ describe('Preservation: Query Interface Compatibility', () => {
     const nodeId: NodeId = 'test-no-tasks' as NodeId;
     
     // Create session in normalized tables
-    await db.buildSessions.add({
+    await db.buildSessionConfigs.add({
       nodeId,
       domainType: 'shape',
       startedAt: Date.now(),
@@ -647,7 +647,7 @@ describe('Preservation: Query Interface Compatibility', () => {
     const nodeId: NodeId = 'test-all-completed' as NodeId;
     
     // Create completed session in normalized tables
-    await db.buildSessions.add({
+    await db.buildSessionConfigs.add({
       nodeId,
       domainType: 'shape',
       startedAt: Date.now(),
@@ -689,7 +689,7 @@ describe('Preservation: Query Interface Compatibility', () => {
     const nodeId: NodeId = 'test-mixed-statuses' as NodeId;
     
     // Create session in normalized tables
-    await db.buildSessions.add({
+    await db.buildSessionConfigs.add({
       nodeId,
       domainType: 'shape',
       startedAt: Date.now(),

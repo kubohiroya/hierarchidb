@@ -4,11 +4,11 @@ import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { BuildProgress, BuildProgressStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import { useShapeBuildProgressSummaryComputation } from '~/ui/components/build-progress/useShapeBuildProgressSummaryComputation.js';
 import {
   buildElapsedByStageWithActiveStage,
-  hasPositiveElapsed,
+  hasPositiveDuration,
   mergeElapsedByStage,
   resolveTotalElapsedMs,
   shallowEqualNumberRecord,
@@ -18,20 +18,17 @@ import {
   resolveMostAdvancedInFlightStageId,
   resolveMostAdvancedRunningStageId,
 } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/stage.js';
-import type { StageId } from '~/ui/components/build-progress/useShapeBuildTaskSnapshotProgressState/useShapeBuildTaskSnapshotProgressState';
+type StageId = string;
 
-type SessionRecordLike = {
-  elapsedByStage?: Record<string, number> | null;
-  elapsedMs?: number | null;
-  stageId?: string | null;
-  startedAt?: number | null;
-  completedAt?: number | null;
-  updatedAt?: number | null;
-  inactiveMs?: number | null;
-  lastHeartbeatAt?: number | null;
-  stageStartedAt?: number | null;
-  stageHeartbeatAt?: number | null;
-  stageInactiveMs?: number | null;
+type RuntimeTimingLike = {
+  startedAt?: number;
+  completedAt?: number;
+  heartbeatAt?: number;
+  stageId?: string;
+  durationMs?: number;
+  inactiveMs?: number;
+  stageStartedAt?: number;
+  stageInactiveMs?: number;
 };
 
 type SummaryResult = ReturnType<typeof useShapeBuildProgressSummaryComputation<ShapeBuildTaskSummary>>;
@@ -47,13 +44,9 @@ type Args = {
   effectiveProgress: BuildProgress | null;
   effectiveStatus: BuildProgressStatus | null;
   stageFromState: string | null;
-  sessionRecord: SessionRecordLike | null | undefined;
+  sessionStageDurationByStageSnapshot: Record<string, number> | null | undefined;
+  runtimeTiming: RuntimeTimingLike;
   activeNodeId: string | null;
-  updateSessionRecord: (patch: {
-    elapsedByStage: Record<string, number>;
-    elapsedMs: number;
-    stageId?: string;
-  }) => void | Promise<void>;
 };
 
 export const useShapeBuildStepProgressState = ({
@@ -67,27 +60,25 @@ export const useShapeBuildStepProgressState = ({
   effectiveProgress,
   effectiveStatus,
   stageFromState,
-  sessionRecord,
+  sessionStageDurationByStageSnapshot,
+  runtimeTiming,
   activeNodeId,
-  updateSessionRecord,
 }: Args) => {
-  const persistedStageElapsedByStage = useMemo<Record<string, number>>(
-    () => (sessionRecord?.elapsedByStage ?? {}),
-    [sessionRecord?.elapsedByStage],
+  const sessionStageDurationSnapshot = useMemo<Record<string, number>>(
+    () => (sessionStageDurationByStageSnapshot ?? {}),
+    [sessionStageDurationByStageSnapshot],
   );
-  const persistedStageElapsedStageId = useMemo(() => (
-    typeof sessionRecord?.stageId === 'string' ? sessionRecord.stageId : null
-  ), [sessionRecord?.stageId]);
+  const sessionStageTimingStageIdSnapshot = useMemo(() => (
+    runtimeTiming.stageId ?? null
+  ), [runtimeTiming.stageId]);
 
-  const [completedStageElapsedMs, setCompletedStageElapsedMs] = useState<Record<string, number>>(
-    () => persistedStageElapsedByStage,
+  const [completedStageDurationMsByStage, setCompletedStageDurationMsByStage] = useState<Record<string, number>>(
+    () => sessionStageDurationSnapshot,
   );
-  const [timingStageId, setTimingStageId] = useState<string | null>(persistedStageElapsedStageId);
+  const [timingStageId, setTimingStageId] = useState<string | null>(sessionStageTimingStageIdSnapshot);
   const [displayStageRemainingMs, setDisplayStageRemainingMs] = useState<number | null>(null);
   const stageRemainingTickRef = useRef<number | null>(null);
   const latestStageRemainingMsRef = useRef<number | null>(null);
-  const lastPersistedStageMapRef = useRef<Record<string, number> | null>(null);
-  const lastPersistedStageIdRef = useRef<string | null>(null);
   const isTaskSummaryLoading = false;
 
   const runningStageIdFromTasks = useMemo(() => resolveMostAdvancedRunningStageId({
@@ -102,15 +93,15 @@ export const useShapeBuildStepProgressState = ({
   const isElapsedResetState = useMemo(
     () => shouldResetElapsedState({
       buildStatus,
-      buildElapsedMs: sessionRecord?.elapsedMs ?? undefined,
-      stageElapsedByStage: persistedStageElapsedByStage,
-      localElapsedByStage: completedStageElapsedMs,
+      buildDurationMs: runtimeTiming.durationMs ?? undefined,
+      sessionStageDurationByStage: sessionStageDurationSnapshot,
+      localStageDurationByStage: completedStageDurationMsByStage,
     }),
     [
       buildStatus,
-      completedStageElapsedMs,
-      sessionRecord?.elapsedMs,
-      persistedStageElapsedByStage,
+      completedStageDurationMsByStage,
+      runtimeTiming.durationMs,
+      sessionStageDurationSnapshot,
     ],
   );
 
@@ -127,7 +118,7 @@ export const useShapeBuildStepProgressState = ({
       ?? inFlightStageIdFromTasks
       ?? liveStage
       ?? timingStageId
-      ?? persistedStageElapsedStageId
+      ?? sessionStageTimingStageIdSnapshot
       ?? fallbackStageId
       ?? null;
     if (nextStageId && nextStageId !== timingStageId) {
@@ -138,7 +129,7 @@ export const useShapeBuildStepProgressState = ({
     isElapsedResetState,
     inFlightStageIdFromTasks,
     liveStage,
-    persistedStageElapsedStageId,
+    sessionStageTimingStageIdSnapshot,
     runningStageIdFromTasks,
     timingFallbackStage,
     timingStageId,
@@ -146,91 +137,87 @@ export const useShapeBuildStepProgressState = ({
 
   const resolvedStageFromState = stageFromState ?? resolvedStage ?? stages[0]?.id;
 
-  const stageElapsedMs = timingStageId ? (completedStageElapsedMs[timingStageId] ?? 0) : 0;
+  const stageElapsedMs = timingStageId ? (completedStageDurationMsByStage[timingStageId] ?? 0) : 0;
   const resolvedStageElapsedMs = useMemo(() => {
     if (!timingStageId) {
       return 0;
     }
-    if (timingStageId !== persistedStageElapsedStageId || !sessionRecord?.stageStartedAt) {
+    if (timingStageId !== sessionStageTimingStageIdSnapshot || runtimeTiming.stageStartedAt === undefined) {
       return stageElapsedMs;
     }
     const stageBaseTime = buildStatus === 'running'
       ? Date.now()
-      : sessionRecord.stageHeartbeatAt ?? sessionRecord.lastHeartbeatAt ?? Date.now();
+      : runtimeTiming.heartbeatAt ?? Date.now();
     const activeStageElapsedMs = Math.max(
       0,
-      stageBaseTime - sessionRecord.stageStartedAt - (sessionRecord.stageInactiveMs ?? 0),
+      stageBaseTime - runtimeTiming.stageStartedAt - (runtimeTiming.stageInactiveMs ?? 0),
     );
     return Math.max(stageElapsedMs, activeStageElapsedMs);
   }, [
     buildStatus,
-    persistedStageElapsedStageId,
-    sessionRecord?.lastHeartbeatAt,
-    sessionRecord?.stageHeartbeatAt,
-    sessionRecord?.stageInactiveMs,
-    sessionRecord?.stageStartedAt,
+    sessionStageTimingStageIdSnapshot,
+    runtimeTiming.heartbeatAt,
+    runtimeTiming.stageInactiveMs,
+    runtimeTiming.stageStartedAt,
     stageElapsedMs,
     timingStageId,
   ]);
 
   const stageElapsedByStage = useMemo<Record<string, number>>(() => (
     buildElapsedByStageWithActiveStage({
-      elapsedByStage: completedStageElapsedMs,
+      stageDurationByStage: completedStageDurationMsByStage,
       timingStageId,
       timingStageElapsedMs: resolvedStageElapsedMs,
     })
-  ), [completedStageElapsedMs, resolvedStageElapsedMs, timingStageId]);
+  ), [completedStageDurationMsByStage, resolvedStageElapsedMs, timingStageId]);
 
   const resolvedSessionElapsedMs = useMemo(() => {
-    if (typeof sessionRecord?.elapsedMs === 'number' && sessionRecord.elapsedMs > 0) {
-      return sessionRecord.elapsedMs;
+    if (typeof runtimeTiming.durationMs === 'number' && runtimeTiming.durationMs > 0) {
+      return runtimeTiming.durationMs;
     }
-    const startedAt = sessionRecord?.startedAt;
+    const startedAt = runtimeTiming.startedAt;
     if (typeof startedAt !== 'number' || Number.isNaN(startedAt) || startedAt <= 0) {
       return 0;
     }
-    const inactiveMs = sessionRecord?.inactiveMs ?? 0;
+    const inactiveMs = 0;
     const endAt = buildStatus === 'running'
       ? Date.now()
-      : (sessionRecord?.lastHeartbeatAt ?? sessionRecord?.completedAt ?? sessionRecord?.updatedAt ?? Date.now());
+      : (runtimeTiming.heartbeatAt ?? runtimeTiming.completedAt ?? Date.now());
     return Math.max(0, endAt - startedAt - inactiveMs);
   }, [
     buildStatus,
-    sessionRecord?.completedAt,
-    sessionRecord?.inactiveMs,
-    sessionRecord?.lastHeartbeatAt,
-    sessionRecord?.startedAt,
-    sessionRecord?.updatedAt,
+    runtimeTiming.completedAt,
+    runtimeTiming.durationMs,
+    runtimeTiming.heartbeatAt,
+    runtimeTiming.startedAt,
   ]);
 
   const totalElapsedMs = useMemo(() => resolveTotalElapsedMs({
     buildStatus,
-    elapsedByStage: stageElapsedByStage,
-    sessionElapsedMs: resolvedSessionElapsedMs,
+    stageDurationByStage: stageElapsedByStage,
+    sessionDurationMs: resolvedSessionElapsedMs,
   }), [buildStatus, resolvedSessionElapsedMs, stageElapsedByStage]);
 
   useEffect(() => {
     if (isElapsedResetState) {
-      setCompletedStageElapsedMs((current) => {
+      setCompletedStageDurationMsByStage((current) => {
         if (shallowEqualNumberRecord(current, {})) return current;
         return {};
       });
       return;
     }
-    setCompletedStageElapsedMs((current) => {
-      const merged = mergeElapsedByStage(current, persistedStageElapsedByStage);
+    setCompletedStageDurationMsByStage((current) => {
+      const merged = mergeElapsedByStage(current, sessionStageDurationSnapshot);
       if (shallowEqualNumberRecord(current, merged)) return current;
       return merged;
     });
-  }, [isElapsedResetState, persistedStageElapsedByStage]);
+  }, [isElapsedResetState, sessionStageDurationSnapshot]);
 
   useEffect(() => {
     if (!isElapsedResetState) return;
     setDisplayStageRemainingMs(null);
     stageRemainingTickRef.current = null;
     latestStageRemainingMsRef.current = null;
-    lastPersistedStageMapRef.current = null;
-    lastPersistedStageIdRef.current = null;
     if (timingStageId !== null) {
       setTimingStageId(null);
     }
@@ -245,10 +232,10 @@ export const useShapeBuildStepProgressState = ({
   }, [displayTasks, timingStageId]);
   const isTimingStageSessionActive = useMemo(() => (
     timingStageId !== null
-    && timingStageId === persistedStageElapsedStageId
-    && typeof sessionRecord?.stageStartedAt === 'number'
-    && sessionRecord.stageStartedAt > 0
-  ), [persistedStageElapsedStageId, sessionRecord?.stageStartedAt, timingStageId]);
+    && timingStageId === sessionStageTimingStageIdSnapshot
+    && typeof runtimeTiming.stageStartedAt === 'number'
+    && runtimeTiming.stageStartedAt > 0
+  ), [sessionStageTimingStageIdSnapshot, runtimeTiming.stageStartedAt, timingStageId]);
   const isTimingStageActive = isTimingStageRunning || isTimingStageSessionActive;
 
   useEffect(() => {
@@ -256,7 +243,7 @@ export const useShapeBuildStepProgressState = ({
     if (!timingStageId) return;
     if (!isTimingStageActive) return;
     const intervalId = window.setInterval(() => {
-      setCompletedStageElapsedMs((current) => {
+      setCompletedStageDurationMsByStage((current) => {
         const nextValue = (current[timingStageId] ?? 0) + 1000;
         if (current[timingStageId] === nextValue) return current;
         return {
@@ -272,12 +259,12 @@ export const useShapeBuildStepProgressState = ({
 
   useEffect(() => {
     if (buildStatus !== 'running') return;
-    if (hasPositiveElapsed(persistedStageElapsedByStage)) return;
-    if (typeof sessionRecord?.elapsedMs === 'number' && sessionRecord.elapsedMs > 0) return;
-    setCompletedStageElapsedMs((current) => (
+    if (hasPositiveDuration(sessionStageDurationSnapshot)) return;
+    if (typeof runtimeTiming.durationMs === 'number' && runtimeTiming.durationMs > 0) return;
+    setCompletedStageDurationMsByStage((current) => (
       shallowEqualNumberRecord(current, {}) ? current : {}
     ));
-  }, [buildStatus, persistedStageElapsedByStage, sessionRecord?.elapsedMs]);
+  }, [buildStatus, sessionStageDurationSnapshot, runtimeTiming.durationMs]);
 
   const failedProbeStageId = useMemo<StageId | null>(() => (
     stages[0]?.id ?? null
@@ -339,51 +326,19 @@ export const useShapeBuildStepProgressState = ({
 
   useEffect(() => {
     if (!activeNodeId) return;
-    if (isElapsedResetState) {
-      lastPersistedStageMapRef.current = null;
-      lastPersistedStageIdRef.current = null;
-      return;
-    }
-
-    const merged = mergeElapsedByStage(stageElapsedByStage, persistedStageElapsedByStage);
+    if (isElapsedResetState) return;
+    const merged = mergeElapsedByStage(stageElapsedByStage, sessionStageDurationSnapshot);
     if (!shallowEqualNumberRecord(stageElapsedByStage, merged)) {
-      setCompletedStageElapsedMs(merged);
-      return;
+      setCompletedStageDurationMsByStage(merged);
     }
-
-    const stageId = timingStageId ?? null;
-    const mapUnchanged = shallowEqualNumberRecord(stageElapsedByStage, persistedStageElapsedByStage);
-    const stageUnchanged = lastPersistedStageIdRef.current === stageId;
-    if (mapUnchanged && stageUnchanged) return;
-    if (
-      lastPersistedStageMapRef.current
-      && shallowEqualNumberRecord(lastPersistedStageMapRef.current, stageElapsedByStage)
-      && stageUnchanged
-    ) {
-      return;
-    }
-
-    lastPersistedStageMapRef.current = stageElapsedByStage;
-    lastPersistedStageIdRef.current = stageId;
-
-    void updateSessionRecord({
-      elapsedByStage: stageElapsedByStage,
-      elapsedMs: totalElapsedMs,
-      stageId: stageId ?? undefined,
-    });
   }, [
     activeNodeId,
     isElapsedResetState,
-    persistedStageElapsedByStage,
+    sessionStageDurationSnapshot,
     stageElapsedByStage,
-    timingStageId,
-    totalElapsedMs,
-    updateSessionRecord,
   ]);
 
   return {
-    persistedStageElapsedByStage,
-    persistedStageElapsedStageId,
     completedStageElapsedMs: stageElapsedByStage,
     timingStageId,
     stageElapsedMs: resolvedStageElapsedMs,

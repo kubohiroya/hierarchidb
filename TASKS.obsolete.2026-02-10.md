@@ -3428,7 +3428,7 @@
 - 運用ログ:
   - start: 2026-02-06 01:09 JST ビルドタスクのトランザクション保護と再処理の対応に着手。
   - update: 2026-02-06 01:17 JST DoD 承認のうえ、タスク結果のトランザクション化と再処理条件の調査を再開。
-  - update: 2026-02-06 01:24 JST transform 完了時の transformCache と buildTasks 更新を同一トランザクションに統合し、taskUpdated フラグで二重更新を抑止。
+  - update: 2026-02-06 01:24 JST transform 完了時の transformCache と buildTasks 更新を同一トランザクションに統合し、二重更新を抑止。
   - update: 2026-02-06 01:24 JST TaskStatus に regression を追加し、ephemeral buildTasks の outputData を拡張して進捗情報を許容。
   - update: 2026-02-06 01:24 JST pnpm --filter @hierarchidb/build-api build exit 0（tsdown define 警告あり）。
   - update: 2026-02-06 01:24 JST pnpm --filter @hierarchidb/build-api typecheck exit 0。

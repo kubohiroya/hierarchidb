@@ -1,4 +1,4 @@
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import { isTaskSkipped, resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
 import { formatGeometrySimplifySummary, parseGeometrySimplifyError } from '~/ui/components/build-progress/geometrySimplifyError';
 import { formatTaskDisplayMessage } from '~/ui/components/build-progress/formatTaskDisplayMessage';
@@ -120,7 +120,8 @@ export const buildSimpleTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task,
     };
   }
 
-  const info = displayMessage || resolveTaskMetadataMessage(task.metadata) || taskTitle;
+  const vertexLimitValidationMessage = formatVertexLimitValidationMessage(task.metadata);
+  const info = vertexLimitValidationMessage || resolveTaskMetadataMessage(task.metadata) || displayMessage || taskTitle;
   return {
     kind,
     visualization: 'none',
@@ -158,6 +159,34 @@ const readMessageNumber = (message: string | null, patterns: RegExp[]): number |
 const resolveRatio = (output: number | null, input: number | null): number | null => {
   if (output === null || input === null || input <= 0) return null;
   return Math.max(0, Math.min(1, output / input));
+};
+
+const formatVertexLimitValidationMessage = (metadata: Record<string, unknown> | undefined): string | null => {
+  if (!metadata) return null;
+  const raw = metadata.vertexLimitValidation;
+  if (!raw || typeof raw !== 'object') return null;
+  const record = raw as Record<string, unknown>;
+  const processed = readNumber(record.processedFeatures);
+  const total = readNumber(record.totalFeatures);
+  const overLimit = readNumber(record.overLimitFeatures);
+  const maxVertices = readNumber(record.maxVertexCount);
+  const limit = readNumber(record.retryVertexLimit);
+  const tolerance = readNumber(record.effectiveTolerance);
+  if (
+    processed === null
+    || total === null
+    || overLimit === null
+    || maxVertices === null
+    || limit === null
+    || tolerance === null
+  ) {
+    return null;
+  }
+  return `Vertex limit validate: ${Math.floor(processed)}/${Math.floor(total)} features, `
+    + `over-limit ${Math.floor(overLimit)}, `
+    + `max vertices ${Math.floor(maxVertices)}, `
+    + `limit ${Math.floor(limit)}, `
+    + `tol ${Number.parseFloat(tolerance.toFixed(6))}`;
 };
 
 export const buildSourceTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task, taskTitle, translate }) => {
@@ -247,7 +276,8 @@ export const buildSourceTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task,
     };
   }
 
-  const info = displayMessage || resolveTaskMetadataMessage(task.metadata) || taskTitle;
+  const vertexLimitValidationMessage = formatVertexLimitValidationMessage(task.metadata);
+  const info = vertexLimitValidationMessage || resolveTaskMetadataMessage(task.metadata) || displayMessage || taskTitle;
   return {
     kind,
     visualization: hasSourceDetails ? 'fetchMetrics' : 'none',
@@ -284,6 +314,15 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
   const effectiveToleranceText = effectiveTolerance === null
     ? 'N/A'
     : `${Number.parseFloat(effectiveTolerance.toFixed(6))}`;
+  const baseTolerance = readMetadataNumber(task.metadata, [
+    'baseTolerance',
+    'fetchDetail.baseTolerance',
+    'metadata.baseTolerance',
+  ]);
+  const initialTolerance = readMetadataNumber(task.metadata, [
+    'initialTolerance',
+    'metadata.initialTolerance',
+  ]);
 
   const retryAttemptRaw = readMetadataNumber(task.metadata, [
     'finalRetryAttempts',
@@ -409,6 +448,8 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
     const summaryLine = `${prefix} (Tol: ${effectiveToleranceText}, ${retryText}, F/Pol/V: ${formatInt(metrics.features.output)}/${formatInt(metrics.polygons.output)}/${formatInt(metrics.vertices.output)})`;
 
     const detailLines = [
+      `${translate('task.details.baseTolerance', 'Base Tolerance')}: ${baseTolerance === null ? 'N/A' : Number.parseFloat(baseTolerance.toFixed(6))}`,
+      `${translate('task.details.initialTolerance', 'Initial Tolerance')}: ${initialTolerance === null ? 'N/A' : Number.parseFloat(initialTolerance.toFixed(6))}`,
       `${translate('task.details.effectiveTolerance', 'Effective Tolerance')}: ${effectiveToleranceText}`,
       `${translate('task.details.retryCount', 'Retry Count')}: ${retryAttempt} / ${retryMax}`,
       `${translate('task.details.finalDataSize', 'Final Data Size (F/Pol/V)')}: ${formatInt(metrics.features.output)} / ${formatInt(metrics.polygons.output)} / ${formatInt(metrics.vertices.output)}`,
@@ -432,6 +473,8 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
       adminLevel,
       summaryLine,
       detailLines,
+      baseTolerance,
+      initialTolerance,
       effectiveTolerance,
       retryAttempt,
       retryMax,
@@ -443,7 +486,8 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
     };
   }
 
-  const info = displayMessage || resolveTaskMetadataMessage(task.metadata) || taskTitle;
+  const vertexLimitValidationMessage = formatVertexLimitValidationMessage(task.metadata);
+  const info = vertexLimitValidationMessage || resolveTaskMetadataMessage(task.metadata) || displayMessage || taskTitle;
   return {
     kind,
     visualization: 'none',

@@ -50,7 +50,7 @@ export type BandConfig = {
 export type DomainType = 'shape' | 'route';
 
 /*
-export type TransformByBandStageConfig = {
+export type GeometryStageConfig = {
   toleranceK: number;
 };
 
@@ -140,7 +140,7 @@ export const resolveRunStageIdentity = (options: {
   return { stage, stageId, capability };
 };
 
-export type TransformByBandTaskInput = {
+export type GeometryStageTaskInput = {
   sourceCacheId: string;
   sourceCacheFormat?: 'flatgeobuf' | 'topojson';
   sourceCacheCompression?: 'gzip' | 'none';
@@ -186,13 +186,13 @@ export interface RunStageOptions<TInput = unknown, TOutput = unknown> {
 }
 
 export type PipelineRunConfig<
-  TTransformByBandInput = TransformByBandTaskInput,
+  TGeometryStageInput = GeometryStageTaskInput,
   TVtInput = VtTaskInput
 > = {
   nodeId: NodeId;
   // taskQueue: VtTaskQueueDb;
-  transformByBandHandler?: StageHandler<TTransformByBandInput>;
+  geometryStageHandler?: StageHandler<TGeometryStageInput>;
   vtHandler?: StageHandler<TVtInput>;
-  //transformByBandContext?: TransformByBandStageContext;
+  //geometryStageContext?: GeometryStageContext;
   //vtContext?: VTStageContext;
 };

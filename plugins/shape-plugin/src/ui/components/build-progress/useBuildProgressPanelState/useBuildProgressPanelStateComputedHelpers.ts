@@ -1,5 +1,5 @@
 import type { BuildStatus } from '@hierarchidb/components/build-status';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import {
   isTaskPhaseDisplay,
   isTaskPhaseMessage,

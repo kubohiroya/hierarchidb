@@ -87,7 +87,7 @@ export const useShapeBuildStartOrResume = ({
           if (!isShapeBuildPanelDebugEnabled('startResume')) return;
           console.log('[ShapeBuildStartResumeTrace] handleStartOrResume', {
             nodeId: String(activeNodeId),
-            elapsedMs: Math.max(0, Date.now() - requestStartedAt),
+            durationMs: Math.max(0, Date.now() - requestStartedAt),
             event: trace.event,
             ...(trace.payload ?? {}),
           });
@@ -98,7 +98,7 @@ export const useShapeBuildStartOrResume = ({
           if (isShapeBuildPanelDebugEnabled('startResume')) {
             console.log('[ShapeBuildStartResumeTrace] handleStartOrResume', {
               nodeId: String(activeNodeId),
-              elapsedMs: Math.max(0, Date.now() - requestStartedAt),
+              durationMs: Math.max(0, Date.now() - requestStartedAt),
               event: `${stepName}:start`,
             });
           }
@@ -107,9 +107,9 @@ export const useShapeBuildStartOrResume = ({
             if (isShapeBuildPanelDebugEnabled('startResume')) {
               console.log('[ShapeBuildStartResumeTrace] handleStartOrResume', {
                 nodeId: String(activeNodeId),
-                elapsedMs: Math.max(0, Date.now() - requestStartedAt),
+                durationMs: Math.max(0, Date.now() - requestStartedAt),
                 event: `${stepName}:finish`,
-                stepElapsedMs: Math.max(0, Date.now() - stepStartedAt),
+                stepDurationMs: Math.max(0, Date.now() - stepStartedAt),
               });
             }
             return result;
@@ -117,9 +117,9 @@ export const useShapeBuildStartOrResume = ({
             if (isShapeBuildPanelDebugEnabled('startResume')) {
               console.log('[ShapeBuildStartResumeTrace] handleStartOrResume', {
                 nodeId: String(activeNodeId),
-                elapsedMs: Math.max(0, Date.now() - requestStartedAt),
+                durationMs: Math.max(0, Date.now() - requestStartedAt),
                 event: `${stepName}:error`,
-                stepElapsedMs: Math.max(0, Date.now() - stepStartedAt),
+                stepDurationMs: Math.max(0, Date.now() - stepStartedAt),
                 errorMessage: error instanceof Error ? error.message : String(error),
               });
             }

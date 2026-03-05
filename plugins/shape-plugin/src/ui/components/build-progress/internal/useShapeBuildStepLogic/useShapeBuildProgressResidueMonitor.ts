@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import type { BuildProgressStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
 import { UI_QUIET_THRESHOLD_MS } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/constants.js';
 
-const POLL_INTERVAL_MS = 1000; // Local constant for backward compatibility
+const POLL_INTERVAL_MS = 1000;
 
 type UseShapeBuildProgressResidueMonitorArgs = {
   activeNodeId: NodeId | null;
@@ -12,7 +11,7 @@ type UseShapeBuildProgressResidueMonitorArgs = {
   crashCheckStartedAtRef: { current: number };
   buildStatus: BuildProgressStatus['status'];
   runtimeStatus: BuildProgressStatus['status'];
-  sessionRecord: ShapeBuildSessionRecord | null;
+  runtimeHeartbeatAt?: number;
   shouldMonitor: boolean;
   t: (key: string, fallback: string) => string;
   closeCrashSuspect: () => void;
@@ -25,7 +24,7 @@ export const useShapeBuildProgressResidueMonitor = ({
   crashCheckStartedAtRef,
   buildStatus,
   runtimeStatus,
-  sessionRecord,
+  runtimeHeartbeatAt,
   shouldMonitor,
   t,
   closeCrashSuspect,
@@ -84,9 +83,8 @@ export const useShapeBuildProgressResidueMonitor = ({
     const elapsedSinceStart = now - crashCheckStartedAtRef.current;
     if (elapsedSinceStart < UI_QUIET_THRESHOLD_MS) return;
 
-    const stageHeartbeatAt = sessionRecord?.stageHeartbeatAt ?? sessionRecord?.updatedAt ?? null;
     const suspectWindowMs = UI_QUIET_THRESHOLD_MS + POLL_INTERVAL_MS * 2;
-    if (stageHeartbeatAt && now - stageHeartbeatAt <= suspectWindowMs) {
+    if (typeof runtimeHeartbeatAt === 'number' && now - runtimeHeartbeatAt <= suspectWindowMs) {
       if (crashSuspectOpen) {
         closeCrashSuspectInternal();
       }
@@ -113,8 +111,8 @@ export const useShapeBuildProgressResidueMonitor = ({
     closeCrashSuspectInternal,
     closeSuspendSuspectInternal,
     crashSuspectOpen,
+    runtimeHeartbeatAt,
     runtimeStatus,
-    sessionRecord,
     shouldMonitor,
     suspendSuspectOpen,
     t,
@@ -129,4 +127,3 @@ export const useShapeBuildProgressResidueMonitor = ({
     setSuspendSuspectOpen: closeSuspendSuspectInternal,
   };
 };
-

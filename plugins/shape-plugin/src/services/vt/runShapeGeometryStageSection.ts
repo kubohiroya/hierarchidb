@@ -1,9 +1,9 @@
-import type { BuildContinuationPolicy, StageHandler, TaskQueueRecord } from '@hierarchidb/build-api';
+import type { BuildContinuationPolicy, StageHandler, TaskQueueRecord, TaskStage } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
 import type { CountryMetadata } from '~/common/types/index';
 import {
-  createTransformByBandHandler,
+  createGeometryStageHandler,
   listTasksByStage,
   putTasks,
   runStageTasks,
@@ -43,6 +43,11 @@ export type ShapeGeometryStageParams = {
   ephemeralStore: EphemeralDB;
   diffBuildEnabled: boolean;
   recyclingAllowlist: Set<string>;
+  onStageTasksPrepared?: (payload: {
+    nodeId: NodeId;
+    stage: TaskStage;
+    taskCount: number;
+  }) => Promise<void> | void;
 };
 
 type GeometryBufferMeta = {
@@ -60,7 +65,6 @@ type GeometryBufferMeta = {
   sourceFeatureOutputCount?: number;
   sourcePolygonInputCount?: number;
   sourcePolygonOutputCount?: number;
-  sourceBaseTolerance?: number;
   featureCount: number;
   inputPolygonCount?: number;
   polygonCount?: number;
@@ -169,7 +173,7 @@ const runGeometryStep = async <T>(
       outcome: 'success',
       startedAt,
       finishedAt,
-      elapsedMs: finishedAt - startedAt,
+      durationMs: finishedAt - startedAt,
       memoryAtStart,
       memoryAtFinish,
       memoryDelta: calculateMemoryDelta(memoryAtStart, memoryAtFinish),
@@ -186,7 +190,7 @@ const runGeometryStep = async <T>(
       errorMessage: error instanceof Error ? error.message : String(error),
       startedAt,
       finishedAt,
-      elapsedMs: finishedAt - startedAt,
+      durationMs: finishedAt - startedAt,
       memoryAtStart,
       memoryAtFinish,
       memoryDelta: calculateMemoryDelta(memoryAtStart, memoryAtFinish),
@@ -248,7 +252,6 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
       const sourceFeatureOutputCount = readMetricCount(fetchFeatures, 'output');
       const sourcePolygonInputCount = readMetricCount(fetchPolygons, 'input');
       const sourcePolygonOutputCount = readMetricCount(fetchPolygons, 'output');
-      const sourceBaseToleranceValue = readNumber(fetchDetail?.baseTolerance);
       const fallbackFeatureCount = readNumber(output?.featureCount) ?? 0;
       const fallbackPolygonCount = readNumber(output?.polygonCount) ?? undefined;
       next.push({
@@ -266,9 +269,6 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
         sourceFeatureOutputCount,
         sourcePolygonInputCount,
         sourcePolygonOutputCount,
-        sourceBaseTolerance: sourceBaseToleranceValue !== null && sourceBaseToleranceValue >= 0
-          ? sourceBaseToleranceValue
-          : undefined,
         featureCount: sourceFeatureOutputCount ?? fallbackFeatureCount,
         inputPolygonCount: sourcePolygonInputCount ?? fallbackPolygonCount,
         polygonCount: sourcePolygonOutputCount ?? fallbackPolygonCount,
@@ -348,7 +348,7 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
         sourceKey: buffer.sourceKey,
         bandIndex: band.bandIndex,
         sourceArtifactHash: buffer.sourceArtifactHash,
-        sourceBaseTolerance: buffer.sourceBaseTolerance ?? sourceBaseTolerance,
+        sourceBaseTolerance,
         bandMinZoom: band.zMin,
         bandMaxZoom: band.zMax,
         configSignature: geometryConfigSignature,
@@ -356,6 +356,7 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
       tasks.push({
         taskId: `${String(params.nodeId)}:geometry:${band.bandIndex}:${buffer.sourceKey}`,
         nodeId: params.nodeId,
+        version: 1,
         stage: 'geometry',
         status: 'queued',
         index,
@@ -369,7 +370,7 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
           bandIndex: band.bandIndex,
           bandMinZoom: band.zMin,
           bandMaxZoom: band.zMax,
-          sourceBaseTolerance: buffer.sourceBaseTolerance ?? sourceBaseTolerance,
+          sourceBaseTolerance,
           inputPolygonCount: buffer.inputPolygonCount ?? buffer.polygonCount,
           inputVertexCount: buffer.inputVertexCount ?? buffer.vertexCount,
           domainType: 'shape',
@@ -485,6 +486,15 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
     if (preparation.planned === 0 || (preparation.existing === 0 && preparation.missing === 0)) {
       return false;
     }
+    if (params.onStageTasksPrepared) {
+      await runGeometryStep(params, 'notify-geometry-tasks-prepared', async () => {
+        await params.onStageTasksPrepared?.({
+          nodeId: params.nodeId,
+          stage: 'geometry',
+          taskCount: preparation.planned,
+        });
+      });
+    }
 
     await runGeometryStep(params, 'wait-if-paused-before-geometry', async () => {
       await params.waitIfPaused?.();
@@ -500,7 +510,7 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
 
     const geometryByBandAbortController = new AbortController();
     const geometryByBandHandler = await runGeometryStep(params, 'create-geometry-handler', async () => (
-      createTransformByBandHandler({
+      createGeometryStageHandler({
         ephemeralDB: params.ephemeralStore,
         geometryConfig,
         bands: params.bands,

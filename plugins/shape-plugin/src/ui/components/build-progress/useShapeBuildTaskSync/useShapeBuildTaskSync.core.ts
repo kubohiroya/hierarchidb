@@ -1,4 +1,4 @@
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import { resolveProgressValue } from './useShapeBuildTaskSync.comparison.utils.js';
 import { resetTaskSyncDebugLogCounters } from './useShapeBuildTaskSync.debug.js';
 import { useShapeBuildTaskSyncResolver } from './useShapeBuildTaskSyncResolver.js';

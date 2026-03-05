@@ -124,8 +124,6 @@ export interface BuildSessionRecord {
   stageStartedAt?: number;
   stageHeartbeatAt?: number;
   stageId?: string;
-  elapsedMs?: number;
-  elapsedByStage?: Record<string, number>;
   sourceStageMaxima?: SourceStageMaxima;
   stage?: BuildStage;
 }

@@ -10,7 +10,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { buildSimpleTaskOutcomeSummary, buildSourceTaskOutcomeSummary } from '../taskOutcomeSummaryBuilders';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 
 // Mock translate function to track calls
 const mockTranslate = vi.fn((key: string, fallback?: string) => fallback ?? key);
@@ -89,11 +89,10 @@ describe('Preservation Property Test: Non-Bug Conditions', () => {
                 taskId: 'test-node:tileEmit:0:8:2',
                 nodeId: 'test-node' as any,
                 stage: 'tileEmit',
-                status: 'skipped',
+                status: 'running',
                 progress: 0,
                 display: {
-                    kind: 'message',
-                    message: 'No data available',
+                    kind: 'skip',
                 },
             };
 
@@ -105,8 +104,8 @@ describe('Preservation Property Test: Non-Bug Conditions', () => {
             });
 
             // 期待される結果: 既存の英語テキストが継続される
-            expect(result.summaryLine).toBe('Skipped: Working');
-            expect(result.detailLines).toEqual(['Reason: Working']);
+            expect(result.summaryLine).toBe('Skipped: Skipped');
+            expect(result.detailLines).toEqual(['Reason: Skipped']);
             expect(result.kind).toBe('skipped');
         });
 
@@ -223,12 +222,14 @@ describe('Preservation Property Test: Non-Bug Conditions', () => {
                         taskId: `test-node:${stage}:JP:1`,
                         nodeId: 'test-node' as any,
                         stage: stage as any,
-                        status: status as any,
+                        status: (status === 'skipped' ? 'running' : status) as any,
                         progress: status === 'completed' ? 100 : (status === 'running' ? 50 : 0),
-                        display: {
-                            kind: 'message',
-                            message: `${stage} ${status}`,
-                        },
+                        display: status === 'skipped'
+                          ? { kind: 'skip' }
+                          : {
+                              kind: 'message',
+                              message: `${stage} ${status}`,
+                            },
                     };
 
                     const builder = stage === 'source' ? buildSourceTaskOutcomeSummary : buildSimpleTaskOutcomeSummary;
@@ -245,8 +246,8 @@ describe('Preservation Property Test: Non-Bug Conditions', () => {
 
                     // 英語テキストが使用されている（既存の動作）
                     if (status === 'skipped') {
-                        expect(result.summaryLine).toBe(`Skipped: Working`);
-                        expect(result.detailLines).toEqual([`Reason: Working`]);
+                        expect(result.summaryLine).toBe('Skipped: Skipped');
+                        expect(result.detailLines).toEqual(['Reason: Skipped']);
                     } else if (status === 'failed') {
                         expect(result.summaryLine).toBe(`Failed: Working`);
                         expect(result.detailLines).toEqual([`Failure: Working`]);

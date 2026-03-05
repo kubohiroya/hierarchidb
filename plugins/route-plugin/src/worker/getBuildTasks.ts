@@ -5,6 +5,7 @@ import type { TaskQueueRecord } from '@hierarchidb/build-api';
 
 const mapTaskQueueRecord = (task: TaskQueueRecord): BuildTaskSummary => ({
   taskId: task.taskId,
+  version: task.version,
   stage: task.stage,
   status: task.status as BuildTaskSummary['status'],
   progress: task.progress,

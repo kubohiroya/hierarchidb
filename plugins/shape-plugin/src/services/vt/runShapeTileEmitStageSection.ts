@@ -1,4 +1,4 @@
-import type { StageHandler, TaskQueueRecord } from '@hierarchidb/build-api';
+import type { StageHandler, TaskQueueRecord, TaskStage } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
 import {
@@ -38,6 +38,11 @@ export type ShapeTileEmitStageParams = {
   abortSignal?: AbortSignal;
   ephemeralStore: EphemeralDB;
   loadContinentLookup: () => Promise<Map<string, string>>;
+  onStageTasksPrepared?: (payload: {
+    nodeId: NodeId;
+    stage: TaskStage;
+    taskCount: number;
+  }) => Promise<void> | void;
 };
 
 const loadFeatureGeojsonByteSizeById = async (nodeId: NodeId): Promise<Map<string, number>> => {
@@ -155,6 +160,13 @@ export const runShapeTileEmitStageSection = async (params: ShapeTileEmitStagePar
   }));
   if (existingTileEmitTasks.length === 0 && missingTileEmitTasks.length === 0) {
     return;
+  }
+  if (params.onStageTasksPrepared) {
+    await params.onStageTasksPrepared({
+      nodeId: params.nodeId,
+      stage: 'tileEmit',
+      taskCount: existingTileEmitTasks.length + missingTileEmitTasks.length,
+    });
   }
   await params.waitIfPaused?.();
   console.warn('[ShapeTileEmit][PipelineMetrics] tileEmit queue snapshot', JSON.stringify({

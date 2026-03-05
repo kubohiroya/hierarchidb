@@ -145,6 +145,7 @@ export interface ShapeBuildTaskRecord<
 > {
   taskId: string;
   nodeId: NodeId;
+  version: number;
   stage: ShapeBuildStage;
   taskType?: never;
   status: ShapeBuildTaskStatus;
@@ -226,6 +227,7 @@ export interface ShapeFeatureMetadata {
   polygonCount: number;
   fetchVertexCount?: number;
   fetchPolygonCount?: number;
+  fetchMaxPolygonVertexCount?: number;
   geometryVertexCount?: number;
   geometryPolygonCount?: number;
   geojsonByteSize?: number;

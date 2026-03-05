@@ -59,7 +59,7 @@ export const useBuildProgressPanelStateSideEffects = (args: {
   completionKeyRef: MutableRefObject<string | null>;
   setElapsedTickMs: (value: number) => void;
   elapsedTickMs: number;
-  totalElapsedSnapshotRef: MutableRefObject<{ elapsedMs: number; capturedAt: number } | null>;
+  totalElapsedSnapshotRef: MutableRefObject<{ durationMs: number; capturedAt: number } | null>;
   mismatchSignatureRef: MutableRefObject<Map<string, string>>;
 }) => {
   const {
@@ -209,7 +209,7 @@ export const useBuildProgressPanelStateSideEffects = (args: {
       buildStatus: summary.buildStatus,
     })) {
       totalElapsedSnapshotRef.current = {
-        elapsedMs: summary.totalElapsedMs,
+        durationMs: summary.totalElapsedMs,
         capturedAt: elapsedTickMs,
       };
     }

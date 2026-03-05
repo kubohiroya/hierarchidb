@@ -46,6 +46,11 @@ export type SmartFetchOptions = {
   corsProxy?: SmartFetchCorsProxyOptions;
   timeout?: SmartFetchTimeoutOptions;
   inFlight?: SmartFetchInFlightOptions;
+  onDownloadProgress?: (progress: {
+    loadedBytes: number;
+    totalBytes?: number;
+    percentage?: number;
+  }) => void | Promise<void>;
 };
 
 const backoff = (attempt: number, baseDelayMs: number, maxDelayMs: number): number => {
@@ -190,16 +195,19 @@ export async function smartFetch(input: string, options: SmartFetchOptions = {})
           registerInFlight(inFlightKey, authKey, fetchPromise);
         }
         const res = await fetchPromise;
+        const withProgress = options.onDownloadProgress
+          ? await attachDownloadProgress(res, options.onDownloadProgress)
+          : res;
 
         const needRetry = shouldRetry
-          ? shouldRetry(res)
-          : shouldRetryStatus(res.status, retryOnStatuses);
+          ? shouldRetry(withProgress)
+          : shouldRetryStatus(withProgress.status, retryOnStatuses);
 
         if (retries > 0 && needRetry && attempt < retries) {
           await sleep(backoff(attempt++, baseDelayMs, maxDelayMs));
           continue;
         }
-        return res;
+        return withProgress;
       } catch (e) {
         if (attempt < retries) {
           await sleep(backoff(attempt++, baseDelayMs, maxDelayMs));
@@ -212,3 +220,63 @@ export async function smartFetch(input: string, options: SmartFetchOptions = {})
     if (timeout) clearTimeout(timeout);
   }
 }
+
+const resolveTotalBytes = (headers: Headers): number | undefined => {
+  const header = headers.get('content-length');
+  if (!header) return undefined;
+  const parsed = Number.parseInt(header, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return undefined;
+  return parsed;
+};
+
+const mergeChunks = (chunks: Uint8Array[], totalBytes: number): Uint8Array => {
+  const merged = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    merged.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return merged;
+};
+
+const attachDownloadProgress = async (
+  response: Response,
+  onDownloadProgress: NonNullable<SmartFetchOptions['onDownloadProgress']>,
+): Promise<Response> => {
+  if (!response.ok) {
+    return response;
+  }
+  if (!response.body) {
+    const totalBytes = resolveTotalBytes(response.headers);
+    await onDownloadProgress({
+      loadedBytes: totalBytes ?? 0,
+      totalBytes,
+      percentage: totalBytes ? 100 : undefined,
+    });
+    return response;
+  }
+
+  const totalBytes = resolveTotalBytes(response.headers);
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let loadedBytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (!value || value.byteLength <= 0) continue;
+    chunks.push(value);
+    loadedBytes += value.byteLength;
+    const percentage = totalBytes ? (loadedBytes / totalBytes) * 100 : undefined;
+    await onDownloadProgress({ loadedBytes, totalBytes, percentage });
+  }
+  if (totalBytes) {
+    await onDownloadProgress({ loadedBytes: totalBytes, totalBytes, percentage: 100 });
+  }
+
+  const body = mergeChunks(chunks, loadedBytes);
+  return new Response(body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers,
+  });
+};

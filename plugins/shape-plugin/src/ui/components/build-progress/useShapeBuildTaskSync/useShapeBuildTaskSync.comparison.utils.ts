@@ -1,12 +1,37 @@
 import type { TaskDisplayPayload, TaskStage } from '@hierarchidb/build-api';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import type { RawTaskSummary } from './useShapeBuildTaskSync.types.js';
 import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
 import { isTaskSkipped } from '~/common/utils/taskMessages';
 import { normalizeUiStageId, toLegacyUiStageId } from '~/ui/components/build-progress/stageIdAliases';
 
+const isValidProgressValue = (value: unknown): value is number => (
+  typeof value === 'number'
+  && Number.isFinite(value)
+  && value >= 0
+  && value <= 100
+);
+
+const assertValidProgressValue = (value: unknown, context: string): number => {
+  if (!isValidProgressValue(value)) {
+    throw new Error(`[ShapeBuildTaskSync] invalid progress (${context}): ${String(value)}`);
+  }
+  return value;
+};
+
+const assertValidTaskVersion = (value: unknown, context: string): number => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`[ShapeBuildTaskSync] invalid version (${context}): ${String(value)}`);
+  }
+  const rounded = Math.floor(value);
+  if (rounded < 1) {
+    throw new Error(`[ShapeBuildTaskSync] invalid version (${context}): ${String(value)}`);
+  }
+  return rounded;
+};
+
 export const resolveProgressValue = (value: unknown): number => (
-  typeof value === 'number' && Number.isFinite(value) ? value : 0
+  assertValidProgressValue(value, 'raw')
 );
 
 export const areTaskListsEquivalentForView = (
@@ -73,6 +98,7 @@ export const areTasksEquivalentForView = (
 ): boolean => (
   left.taskId === right.taskId
   && left.stage === right.stage
+  && assertValidTaskVersion(left.version, 'view:left') === assertValidTaskVersion(right.version, 'view:right')
   && left.status === right.status
   && resolveProgressValue(left.progress) === resolveProgressValue(right.progress)
   && left.display?.kind === right.display?.kind
@@ -112,19 +138,14 @@ export const resolveTaskProgress = (
   _message: string,
   progress: number,
 ): number => {
+  const normalizedProgress = assertValidProgressValue(progress, 'resolved');
   if (isTerminalTaskStatus(status) || isTaskSkipped(display, _message)) {
     return 100;
   }
-  if (status === 'running' && progress >= 100) {
-    return 100;
+  if (status !== 'running' && normalizedProgress >= 100) {
+    throw new Error(`[ShapeBuildTaskSync] non-running task reached 100 progress: status=${String(status)}`);
   }
-  if (!Number.isFinite(progress)) {
-    return 0;
-  }
-  if (progress < 0) {
-    return 0;
-  }
-  return progress >= 100 ? 99 : progress;
+  return normalizedProgress;
 };
 
 export const resolveTaskDisplayStatus = (
@@ -133,8 +154,9 @@ export const resolveTaskDisplayStatus = (
   display: ShapeBuildTaskSummary['display'],
   _message: string,
 ): ShapeBuildTaskSummary['status'] => {
+  const normalizedProgress = assertValidProgressValue(progress, 'status');
   const resolvedStatus = status ?? 'queued';
-  if (resolvedStatus === 'running' && progress >= 100) {
+  if (resolvedStatus === 'running' && normalizedProgress >= 100) {
     return 'completed';
   }
   if (resolvedStatus === 'running' && isTaskSkipped(display, _message)) {
@@ -148,28 +170,26 @@ const shouldApplyTaskUpdate = (
   next: ShapeBuildTaskSummary,
 ): boolean => {
   if (!current) return true;
+  const currentVersion = assertValidTaskVersion(current.version, 'current');
+  const nextVersion = assertValidTaskVersion(next.version, 'next');
+  if (nextVersion < currentVersion) return false;
+  if (nextVersion > currentVersion) return true;
   if (isTerminalStatus(current) && !isTerminalStatus(next)) {
     return false;
   }
-  const currentProgress = resolveProgressValue(current.progress);
-  const nextProgress = resolveProgressValue(next.progress);
-  if (nextProgress < currentProgress) return false;
-  if (nextProgress === currentProgress) {
-    if (current.status === next.status) return true;
-    const statusRank: Record<ShapeBuildTaskSummary['status'], number> = {
-      idle: 0,
-      queued: 1,
-      paused: 2,
-      recycled: 3,
-      running: 4,
-      completed: 5,
-      failed: 6,
-    };
-    const currentRank = statusRank[current.status] ?? 0;
-    const nextRank = statusRank[next.status] ?? 0;
-    return nextRank > currentRank;
-  }
-  return true;
+  if (current.status === next.status) return true;
+  const statusRank: Record<ShapeBuildTaskSummary['status'], number> = {
+    idle: 0,
+    queued: 1,
+    paused: 2,
+    recycled: 3,
+    running: 4,
+    completed: 5,
+    failed: 6,
+  };
+  const currentRank = statusRank[current.status] ?? 0;
+  const nextRank = statusRank[next.status] ?? 0;
+  return nextRank >= currentRank;
 };
 
 const areDisplaysEqual = (
@@ -328,6 +348,7 @@ export const replaceSnapshotAndPreserveCurrentTasksByStage = (
 
 export const resolveTaskSummaryFromRaw = (task: RawTaskSummary): ShapeBuildTaskSummary => {
   const stage = resolveTaskStage(task);
+  const version = assertValidTaskVersion(task.version, 'raw');
   const rawMessage = (task as { message?: unknown }).message;
   const normalizedMetadata = normalizeTaskMetadata(task.metadata, rawMessage);
   const progress = resolveProgressValue(task.progress);
@@ -335,6 +356,7 @@ export const resolveTaskSummaryFromRaw = (task: RawTaskSummary): ShapeBuildTaskS
   const resolvedStatus = resolveTaskDisplayStatus(task.status, progress, task.display, metadataMessage);
   return {
     ...task,
+    version,
     stage,
     status: resolvedStatus,
     progress: resolveTaskProgress(resolvedStatus, task.display, metadataMessage, progress),

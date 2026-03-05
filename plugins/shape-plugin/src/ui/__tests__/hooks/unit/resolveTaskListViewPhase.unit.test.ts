@@ -12,7 +12,7 @@ describe('resolveTaskListViewPhase', () => {
     })).toBe('idle');
   });
 
-  it('does not force awaitingSnapshot only from running status', () => {
+  it('does not force ui-initializing only from running status', () => {
     expect(resolveTaskListViewPhase({
       baseBuildStatus: 'running',
       displayTaskCount: 0,
@@ -22,14 +22,14 @@ describe('resolveTaskListViewPhase', () => {
     })).toBe('settledEmpty');
   });
 
-  it('returns awaitingSnapshot when loading is true', () => {
+  it('returns ui-initializing when loading is true', () => {
     expect(resolveTaskListViewPhase({
       baseBuildStatus: 'idle',
       displayTaskCount: 0,
       isLoading: true,
       hasProgressTaskSignal: false,
       hasAnyTaskSnapshot: false,
-    })).toBe('awaitingSnapshot');
+    })).toBe('ui-initializing');
   });
 
   it('returns streaming when task list is present', () => {

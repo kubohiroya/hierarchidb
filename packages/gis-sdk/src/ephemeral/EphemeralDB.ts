@@ -19,6 +19,7 @@ import {
   EPHEMERAL_DB_SCHEMA_V1,
   EPHEMERAL_DB_SCHEMA_V2,
   EPHEMERAL_DB_SCHEMA_V3,
+  EPHEMERAL_DB_SCHEMA_V4,
 } from './EphemeralDBRecordTypes';
 
 const applyTopLevelMods = <T extends object>(
@@ -148,7 +149,7 @@ const fireAndForgetMetaOperation = (operation: () => Promise<unknown>, label: st
 
 export class EphemeralDB extends Dexie {
   // V3 normalized tables
-  buildSessions!: Table<BuildSessionRecord, string>;
+  buildSessionConfigs!: Table<BuildSessionRecord, string>;
   buildSessionHeartbeats!: Table<BuildSessionHeartbeat, string>;
   buildSessionStatuses!: Table<BuildSessionStatus, string>;
   buildStageStatuses!: Table<BuildStageStatus, string>;
@@ -172,9 +173,20 @@ export class EphemeralDB extends Dexie {
       ...EPHEMERAL_DB_SCHEMA_V3,
       sessions: null, // Remove old sessions table
     });
+    // V5: keep schema at buildSessionConfigs without compatibility migration
+    this.version(5)
+      .stores({
+        ...EPHEMERAL_DB_SCHEMA_V4,
+        sessions: null,
+      });
+    // V6: schema-stable no-op bump (keeps current runtime at latest version)
+    this.version(6).stores({
+      ...EPHEMERAL_DB_SCHEMA_V4,
+      sessions: null,
+    });
 
     // V3 normalized tables
-    this.buildSessions = this.table('buildSessions');
+    this.buildSessionConfigs = this.table('buildSessionConfigs');
     this.buildSessionHeartbeats = this.table('buildSessionHeartbeats');
     this.buildSessionStatuses = this.table('buildSessionStatuses');
     this.buildStageStatuses = this.table('buildStageStatuses');
@@ -268,7 +280,7 @@ export class EphemeralDB extends Dexie {
       this.sourceCacheMeta,
       this.geometryCache,
       this.geometryCacheMeta,
-      this.buildSessions,
+      this.buildSessionConfigs,
       this.buildSessionHeartbeats,
       this.buildSessionStatuses,
       this.buildStageStatuses,
@@ -280,7 +292,7 @@ export class EphemeralDB extends Dexie {
       await this.sourceCacheMeta.where('nodeId').equals(nodeId).delete();
       await this.geometryCache.where('nodeId').equals(nodeId).delete();
       await this.geometryCacheMeta.where('nodeId').equals(nodeId).delete();
-      await this.buildSessions.where('nodeId').equals(nodeId).delete();
+      await this.buildSessionConfigs.where('nodeId').equals(nodeId).delete();
       await this.buildSessionHeartbeats.where('nodeId').equals(nodeId).delete();
       await this.buildSessionStatuses.where('nodeId').equals(nodeId).delete();
       await this.buildStageStatuses.where('nodeId').equals(nodeId).delete();
@@ -314,7 +326,7 @@ export class EphemeralDB extends Dexie {
       this.sourceCacheMeta,
       this.geometryCache,
       this.geometryCacheMeta,
-      this.buildSessions,
+      this.buildSessionConfigs,
       this.buildSessionHeartbeats,
       this.buildSessionStatuses,
       this.buildStageStatuses,
@@ -338,7 +350,7 @@ export class EphemeralDB extends Dexie {
         default:
           break;
       }
-      await this.buildSessions.where('nodeId').equals(nodeId).delete();
+      await this.buildSessionConfigs.where('nodeId').equals(nodeId).delete();
       await this.buildSessionHeartbeats.where('nodeId').equals(nodeId).delete();
       await this.buildSessionStatuses.where('nodeId').equals(nodeId).delete();
       await this.buildStageStatuses.where('nodeId').equals(nodeId).delete();
@@ -351,11 +363,11 @@ export class EphemeralDB extends Dexie {
     numSessions: number;
     totalSize: number;
   }> {
-    return this.transaction('r', [this.sourceCacheMeta, this.geometryCacheMeta, this.buildSessions], async () => {
+    return this.transaction('r', [this.sourceCacheMeta, this.geometryCacheMeta, this.buildSessionConfigs], async () => {
       const [numSourceCaches, numGeometryCaches, numSessions] = await Promise.all([
         this.sourceCacheMeta.count(),
         this.geometryCacheMeta.count(),
-        this.buildSessions.count(),
+        this.buildSessionConfigs.count(),
       ]);
       const rawBuffers = await this.sourceCacheMeta.toArray();
       const totalSize = rawBuffers.reduce((sum, buffer) => (
@@ -376,7 +388,7 @@ export class EphemeralDB extends Dexie {
       this.sourceCacheMeta,
       this.geometryCache,
       this.geometryCacheMeta,
-      this.buildSessions,
+      this.buildSessionConfigs,
       this.buildSessionHeartbeats,
       this.buildSessionStatuses,
       this.buildStageStatuses,
@@ -389,7 +401,7 @@ export class EphemeralDB extends Dexie {
         this.sourceCacheMeta.clear(),
         this.geometryCache.clear(),
         this.geometryCacheMeta.clear(),
-        this.buildSessions.clear(),
+        this.buildSessionConfigs.clear(),
         this.buildSessionHeartbeats.clear(),
         this.buildSessionStatuses.clear(),
         this.buildStageStatuses.clear(),

@@ -78,9 +78,9 @@ export const calculateMemoryDelta = (
 export const getBuildSessionTransitionStatusLabel = (
   t: (key: string, fallback?: string) => string,
   phase: BuildSessionTransitionPhase | 'idle',
-  elapsedMs: number,
+  durationMs: number,
 ): string => {
-  const elapsedSeconds = Math.max(0, Math.floor(elapsedMs / 1000));
+  const elapsedSeconds = Math.max(0, Math.floor(durationMs / 1000));
   switch (phase) {
     case 'acquiring-lock':
       return t('stage.status.startingLock', 'Starting build (acquiring lock)...');

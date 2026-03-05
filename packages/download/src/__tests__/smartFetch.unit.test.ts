@@ -34,4 +34,33 @@ describe('smartFetch', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(res.status).toBe(200);
   });
+
+  it('reports download progress percentage while reading response body', async () => {
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array([1, 2]));
+        controller.enqueue(new Uint8Array([3, 4]));
+        controller.close();
+      },
+    });
+    const fetchMock = vi.fn().mockResolvedValueOnce(new Response(body, {
+      status: 200,
+      headers: { 'content-length': '4' },
+    }));
+    vi.stubGlobal('fetch', fetchMock as typeof fetch);
+    const percentages: number[] = [];
+
+    const response = await smartFetch('https://example.com/resource', {
+      auth: { enabled: false },
+      onDownloadProgress: ({ percentage }) => {
+        if (typeof percentage === 'number') {
+          percentages.push(Math.round(percentage));
+        }
+      },
+    });
+
+    expect(response.status).toBe(200);
+    expect(percentages).toContain(50);
+    expect(percentages[percentages.length - 1]).toBe(100);
+  });
 });

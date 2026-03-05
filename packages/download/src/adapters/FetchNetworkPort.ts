@@ -1,4 +1,4 @@
-import type { NetworkPort, ResponseLike } from '~/ports';
+import type { DownloadProgress, NetworkPort, NetworkRequestInit, ResponseLike } from '~/ports';
 import { resolveNetworkUrl } from '~/helpers/resolveNetworkUrl';
 import { smartFetch } from '~/smartFetch';
 import { sleep } from '@hierarchidb/util';
@@ -89,9 +89,9 @@ class TokenBucket {
 
   private refill(): void {
     const now = Date.now();
-    const elapsedMs = now - this.lastRefill;
-    if (elapsedMs <= 0) return;
-    const refillTokens = (elapsedMs / 1000) * this.rps;
+    const durationMs = now - this.lastRefill;
+    if (durationMs <= 0) return;
+    const refillTokens = (durationMs / 1000) * this.rps;
     if (refillTokens >= 1) {
       this.tokens = Math.min(this.rps, this.tokens + refillTokens);
       this.lastRefill = now;
@@ -137,24 +137,27 @@ export class FetchNetworkPort implements NetworkPort {
     if (this.opts.rps > 0) this.tokenBucket = new TokenBucket(this.opts.rps);
   }
 
-  async head(url: string, init?: RequestInit): Promise<ResponseLike> {
+  async head(url: string, init?: NetworkRequestInit): Promise<ResponseLike> {
     return await this.request(url, { ...init, method: 'HEAD' });
   }
 
-  async get(url: string, init?: RequestInit): Promise<ResponseLike> {
+  async get(url: string, init?: NetworkRequestInit): Promise<ResponseLike> {
     return await this.request(url, { ...init, method: 'GET' });
   }
 
-  async getRange(url: string, start: number, endInclusive: number, init?: RequestInit): Promise<ResponseLike> {
+  async getRange(url: string, start: number, endInclusive: number, init?: NetworkRequestInit): Promise<ResponseLike> {
     const headers = new Headers(await this.resolveHeaders());
     headers.set('Range', `bytes=${start}-${endInclusive}`);
     return await this.request(url, { ...init, method: 'GET', headers });
   }
 
-  private async request(url: string, init?: RequestInit): Promise<ResponseLike> {
+  private async request(url: string, init?: NetworkRequestInit): Promise<ResponseLike> {
     if (init?.signal?.aborted) {
       throw createAbortError();
     }
+    const onDownloadProgress = init?.onDownloadProgress;
+    const requestInit: RequestInit = { ...init };
+    delete (requestInit as NetworkRequestInit).onDownloadProgress;
     const host = new URL(url).host;
     const sem = this.getSemaphore(host);
     if (this.tokenBucket) await this.tokenBucket.take();
@@ -164,19 +167,27 @@ export class FetchNetworkPort implements NetworkPort {
     ]);
 
     try {
-      const headers = await this.mergeHeaders(init?.headers);
+      const headers = await this.mergeHeaders(requestInit.headers);
       // Backward compat: if caller injects authFetch, keep using it.
       // (authFetch側にretryが無いケースもあるが、破壊的変更を避けるためここは維持)
       if (this.opts.authFetch) {
         const res = await this.opts.authFetch(
           resolveNetworkUrl(url, { corsProxyBaseURL: this.opts.corsProxyBaseURL }),
-          { ...init, headers },
+          { ...requestInit, headers },
         );
+        if (onDownloadProgress) {
+          const totalBytes = parseContentLength(res.headers);
+          void onDownloadProgress({
+            loadedBytes: totalBytes ?? 0,
+            totalBytes,
+            percentage: totalBytes ? 100 : undefined,
+          } satisfies DownloadProgress);
+        }
         return wrap(res);
       }
 
       const res = await smartFetch(url, {
-        request: { ...init, headers },
+        request: { ...requestInit, headers },
         corsProxy: { baseURL: this.opts.corsProxyBaseURL || undefined },
         auth: {
           enabled: this.opts.auth.enabled,
@@ -191,6 +202,7 @@ export class FetchNetworkPort implements NetworkPort {
           maxDelayMs: this.opts.maxDelayMs,
           shouldRetry: (r: { status: number }) => this.shouldRetry(r.status),
         },
+        onDownloadProgress,
       });
 
       return wrap(res);
@@ -228,3 +240,11 @@ export class FetchNetworkPort implements NetworkPort {
     return status === 408 || status === 429 || (status >= 500 && status <= 599);
   }
 }
+
+const parseContentLength = (headers: Headers): number | undefined => {
+  const value = headers.get('content-length');
+  if (!value) return undefined;
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return undefined;
+  return parsed;
+};

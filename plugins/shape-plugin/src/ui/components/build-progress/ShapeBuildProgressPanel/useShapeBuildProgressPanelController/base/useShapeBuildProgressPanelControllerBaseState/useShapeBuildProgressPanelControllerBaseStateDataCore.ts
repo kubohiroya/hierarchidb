@@ -10,10 +10,12 @@ import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskIt
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildControlMenuItem, BuildStepStageMenu } from '@hierarchidb/components';
+import { useSetAtom } from 'jotai';
 import { useShapeBuildProgressPanelControllerBaseStateDataDisplay } from './useShapeBuildProgressPanelControllerBaseStateDataDisplay.js';
 import type { TranslateFn } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelStateComputedHelpers';
 import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
 import { normalizeUiStageId, resolveStageAliasArray } from '~/ui/components/build-progress/stageIdAliases';
+import { dispatchBuildSessionEventAtom } from '~/ui/atoms/buildSessionStateAtoms';
 
 type StageMetadataMap<T> = Record<string, T>;
 
@@ -64,6 +66,10 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
   nodeId,
   onChange,
 }: ShapeBuildProgressPanelControllerBaseProps) => {
+  const dispatchBuildSessionEvent = useSetAtom(dispatchBuildSessionEventAtom);
+  const handleResetSessionState = useCallback(() => {
+    dispatchBuildSessionEvent({ type: 'reset' });
+  }, [dispatchBuildSessionEvent]);
   const core = useShapeBuildProgressPanel({ data, nodeId });
   const {
     stages,
@@ -124,7 +130,7 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     handleDeleteTransposeIndex: cacheHandleDeleteTransposeIndex,
     handleDeleteMetadata: cacheHandleDeleteMetadata,
     handleResetSession: cacheHandleResetSession,
-  } = useShapeBuildCacheActions({ nodeId });
+  } = useShapeBuildCacheActions({ nodeId, onResetSession: handleResetSessionState });
 
   const [isResetSessionPending, setIsResetSessionPending] = useState(false);
   const [startPendingHold, setStartPendingHold] = useState(false);
@@ -213,7 +219,7 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     || isResetSessionLoading
     || controls.startPending
     || startPendingHold
-    || taskListViewPhase === 'awaitingSnapshot';
+    || taskListViewPhase === 'ui-initializing';
   const isTaskSummaryLoadingForDisplay = isTaskSummaryLoading || isResetSessionLoading;
   const isStartupPendingForDisplay = isBuildStartupPending || startPendingHold;
   const isControlMenuDisabled = isResetSessionLoading || summary.buildStatus === 'idle';

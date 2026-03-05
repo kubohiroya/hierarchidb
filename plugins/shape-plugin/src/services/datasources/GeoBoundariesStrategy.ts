@@ -190,6 +190,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
         pipeline,
         retryConfig: retries,
         onRetryAttempt: options?.onRetryAttempt,
+        onDownloadProgress: options?.onDownloadProgress,
       });
       console.log(`[GeoBoundaries] Download succeeded: ${downloadUrl}`);
       return {

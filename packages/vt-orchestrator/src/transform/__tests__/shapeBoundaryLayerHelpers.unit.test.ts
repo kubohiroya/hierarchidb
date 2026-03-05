@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Tile } from 'geojson-vt';
-import { buildBoundaryDiagnostics } from '../createTransformByBandHandler/helpers/collection';
+import { buildBoundaryDiagnostics } from '../createGeometryStageHandler/helpers/collection';
 import { collectLayerForTile } from '../../vt/vtStageTaskLayerBuilderLayerHelpers';
 
 const squarePolygon = {

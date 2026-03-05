@@ -5,7 +5,7 @@ import { useBuildStageFilter } from '@hierarchidb/components';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
 import { taskViewportRangeAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
-import type { TaskProgressSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { TaskProgressSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import { buildTaskProgressSegments, resolveViewportIndices, type TaskProgressSegment } from './useTaskProgressBarComputation.js';
 import { useTaskProgressBarInteraction } from './useTaskProgressBarInteraction.js';
 

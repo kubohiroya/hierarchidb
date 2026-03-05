@@ -70,8 +70,6 @@ export interface EphemeralBuildSessionRecord {
   stageStartedAt?: number;
   stageHeartbeatAt?: number;
   stageId?: string;
-  elapsedMs?: number;
-  elapsedByStage?: Record<string, number>;
   sourceStageMaxima?: EphemeralSourceStageMaxima;
 }
 
@@ -134,6 +132,7 @@ export interface BuildStageStatus {
 export interface EphemeralBuildTaskRecord<TInput = unknown, TOutput = unknown> {
   taskId: string;
   nodeId: NodeId;
+  version: number;
   domainType?: EphemeralDomainType;
   status: BuildTaskStatus;
   index: number;
@@ -297,7 +296,7 @@ export const EPHEMERAL_DB_SCHEMA_V2: Record<string, string> = {
  * 
  * Changes from V2:
  * - Removed old `sessions` table
- * - Added `buildSessions` table for immutable session configuration
+ * - Added `buildSessionConfigs` table for immutable session configuration
  * - Added `buildSessionHeartbeats` table for high-frequency heartbeat updates
  * - Added `buildSessionStatuses` table for session-level status tracking
  * - Added `buildStageStatuses` table for per-stage status tracking with history
@@ -306,7 +305,36 @@ export const EPHEMERAL_DB_SCHEMA_V2: Record<string, string> = {
  * serialization overhead, and preserves historical stage information.
  */
 export const EPHEMERAL_DB_SCHEMA_V3: Record<string, string> = {
-  buildSessions: '&nodeId',
+  buildSessionConfigs: '&nodeId',
+  buildSessionHeartbeats: '&nodeId',
+  buildSessionStatuses: '&nodeId, status',
+  buildStageStatuses: '&id, nodeId, [nodeId+stage], [nodeId+startedAt]',
+  buildTasks:
+    '&taskId, nodeId, status, index, stagePriority, sequence'
+    + ', [nodeId+status], [nodeId+stage]'
+    + ', [nodeId+index], [nodeId+status+index], [nodeId+stage+index], [nodeId+stage+status+index]',
+  sourceCache:
+    '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+  sourceCacheMeta:
+    '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+  geometryCache:
+    '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
+  geometryCacheMeta:
+    '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
+  geometryErrors:
+    '&id, nodeId',
+  tileEmitBufferRelations:
+    '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
+};
+
+/**
+ * EPHEMERAL_DB_SCHEMA_V4 - No schema delta from V3
+ *
+ * Changes from V3:
+ * - No schema delta
+ */
+export const EPHEMERAL_DB_SCHEMA_V4: Record<string, string> = {
+  buildSessionConfigs: '&nodeId',
   buildSessionHeartbeats: '&nodeId',
   buildSessionStatuses: '&nodeId, status',
   buildStageStatuses: '&id, nodeId, [nodeId+stage], [nodeId+startedAt]',

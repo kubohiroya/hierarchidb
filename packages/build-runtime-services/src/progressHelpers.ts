@@ -20,7 +20,7 @@ export type StageCheckpointContext = {
   stage: TaskStage;
   startedAt: number;
   errorMessage?: string;
-  elapsedMs?: number;
+  durationMs?: number;
   memory?: Record<string, NumericValue>;
 };
 
@@ -30,13 +30,18 @@ export type StageCheckpointLogger = {
   onError?: (ctx: StageCheckpointContext) => void;
 };
 
-const normalizeProgress = (progress: number): number => {
-  if (!Number.isFinite(progress)) return 0;
-  return Math.max(0, Math.min(100, Math.round(progress)));
+const assertProgressInRange = (progress: number): number => {
+  if (!Number.isFinite(progress)) {
+    throw new TypeError(`progress must be a finite number: ${String(progress)}`);
+  }
+  if (progress < 0 || progress > 100) {
+    throw new RangeError(`progress must be within 0..100: ${progress}`);
+  }
+  return Math.round(progress);
 };
 
 export function toBuildProgressEventFromUpdate(update: ProgressBridgeUpdate): BuildProgressEvent {
-  const completed = normalizeProgress(update.progress);
+  const completed = assertProgressInRange(update.progress);
   return {
     nodeId: update.jobId as NodeId,
     stage: update.stage,
@@ -111,7 +116,7 @@ export async function runWithStageCheckpoint<T>(
       stage,
       runId,
       startedAt,
-      elapsedMs: finishedAt - startedAt,
+      durationMs: finishedAt - startedAt,
       memory: createMemorySnapshot(),
     });
     return result;
@@ -123,7 +128,7 @@ export async function runWithStageCheckpoint<T>(
       stage,
       runId,
       startedAt,
-      elapsedMs: finishedAt - startedAt,
+      durationMs: finishedAt - startedAt,
       errorMessage: error instanceof Error ? error.message : String(error),
       memory: createMemorySnapshot(),
     });

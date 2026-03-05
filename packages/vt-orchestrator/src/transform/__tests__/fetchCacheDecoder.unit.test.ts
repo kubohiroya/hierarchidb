@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import type { FeatureCollection } from 'geojson';
 import { geojson as geojsonApi } from 'flatgeobuf';
-import { decodeSourceCacheByFormat } from '../../transform/createTransformByBandHandler/helpers/validation';
+import { decodeSourceCacheByFormat } from '../../transform/createGeometryStageHandler/helpers/validation';
 import {
   __getTopojsonRuntimeLoadCount,
   __resetTopojsonRuntimeForTests,

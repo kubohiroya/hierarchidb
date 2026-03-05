@@ -49,8 +49,8 @@ describe('ThrottledPort', () => {
 
     const t0 = Date.now();
     await Promise.all([port.get('a'), port.get('b'), port.get('c')]);
-    const elapsedMs = Date.now() - t0;
+    const durationMs = Date.now() - t0;
     // 3rd request should wait roughly until the next second window; allow slack
-    expect(elapsedMs).toBeGreaterThanOrEqual(200); // loose bound for CI stability
+    expect(durationMs).toBeGreaterThanOrEqual(200); // loose bound for CI stability
   });
 });

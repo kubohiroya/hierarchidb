@@ -10,7 +10,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { buildGeometryTaskOutcomeSummary } from '../taskOutcomeSummaryBuilders';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 
 // Mock translate function to track calls
 const mockTranslate = vi.fn((key: string, fallback?: string) => fallback ?? key);
@@ -20,16 +20,15 @@ describe('Bug Condition Exploration: i18n Hardcoded Text', () => {
         mockTranslate.mockClear();
     });
 
-    it('should fail: buildGeometryTaskOutcomeSummary displays hardcoded Japanese text for skipped tasks', () => {
+    it('uses translate() labels for skipped tasks', () => {
         const task: ShapeBuildTaskSummary = {
             taskId: 'test-node:geometry:JP:2',
             nodeId: 'test-node' as any,
             stage: 'geometry',
-            status: 'skipped',
+            status: 'running',
             progress: 0,
             display: {
-                kind: 'message',
-                message: 'データなし',
+                kind: 'skip',
             },
             metadata: {
                 reason: 'ソースファイルが見つかりません',
@@ -43,19 +42,16 @@ describe('Bug Condition Exploration: i18n Hardcoded Text', () => {
             translate: mockTranslate,
         });
 
-        // 期待される結果: テストが失敗する（これは正しい - バグが存在することを証明）
-        // バグ条件: buildGeometryTaskOutcomeSummaryでタスクがスキップされた時、ハードコーディングされた日本語テキストが表示される
-        expect(result.summaryLine).toContain('スキップ:');
+        expect(result.summaryLine).toContain('Skipped:');
         expect(result.detailLines).toEqual(expect.arrayContaining([
-            expect.stringContaining('理由:')
+            expect.stringContaining('Reason:')
         ]));
 
-        // translate関数が呼び出されていないことを確認（バグの証明）
-        expect(mockTranslate).not.toHaveBeenCalledWith('task.status.skipped', 'Skipped');
-        expect(mockTranslate).not.toHaveBeenCalledWith('task.status.reason', 'Reason');
+        expect(mockTranslate).toHaveBeenCalledWith('task.status.skipped', 'Skipped');
+        expect(mockTranslate).toHaveBeenCalledWith('task.status.reason', 'Reason');
     });
 
-    it('should fail: buildGeometryTaskOutcomeSummary displays hardcoded Japanese text for completed tasks', () => {
+    it('uses translate() labels for completed tasks', () => {
         const task: ShapeBuildTaskSummary = {
             taskId: 'test-node:geometry:JP:1',
             nodeId: 'test-node' as any,
@@ -84,28 +80,26 @@ describe('Bug Condition Exploration: i18n Hardcoded Text', () => {
             translate: mockTranslate,
         });
 
-        // バグ条件: buildGeometryTaskOutcomeSummaryでタスクが完了した時、ハードコーディングされた日本語テキストが表示される
-        expect(result.summaryLine).toContain('完了');
+        expect(result.summaryLine).toContain('Completed');
         expect(result.detailLines).toEqual(expect.arrayContaining([
-            expect.stringContaining('有効許容値:'),
-            expect.stringContaining('試行回数:'),
-            expect.stringContaining('最終データサイズ (F/Pol/V):'),
-            expect.stringContaining('元データサイズ (F/Pol/V):'),
-            expect.stringContaining('頂点削減率:'),
-            expect.stringContaining('抽出率:'),
+            expect.stringContaining('Effective Tolerance:'),
+            expect.stringContaining('Retry Count:'),
+            expect.stringContaining('Final Data Size (F/Pol/V):'),
+            expect.stringContaining('Original Data Size (F/Pol/V):'),
+            expect.stringContaining('Vertex Reduction Rate:'),
+            expect.stringContaining('Extraction Rate:'),
         ]));
 
-        // translate関数が呼び出されていないことを確認（バグの証明）
-        expect(mockTranslate).not.toHaveBeenCalledWith('task.status.completed', 'Completed');
-        expect(mockTranslate).not.toHaveBeenCalledWith('task.details.effectiveTolerance', 'Effective Tolerance');
-        expect(mockTranslate).not.toHaveBeenCalledWith('task.details.retryCount', 'Retry Count');
-        expect(mockTranslate).not.toHaveBeenCalledWith('task.details.finalDataSize', 'Final Data Size (F/Pol/V)');
-        expect(mockTranslate).not.toHaveBeenCalledWith('task.details.originalDataSize', 'Original Data Size (F/Pol/V)');
-        expect(mockTranslate).not.toHaveBeenCalledWith('task.details.vertexReductionRate', 'Vertex Reduction Rate');
-        expect(mockTranslate).not.toHaveBeenCalledWith('task.details.extractionRate', 'Extraction Rate');
+        expect(mockTranslate).toHaveBeenCalledWith('task.status.completed', 'Completed');
+        expect(mockTranslate).toHaveBeenCalledWith('task.details.effectiveTolerance', 'Effective Tolerance');
+        expect(mockTranslate).toHaveBeenCalledWith('task.details.retryCount', 'Retry Count');
+        expect(mockTranslate).toHaveBeenCalledWith('task.details.finalDataSize', 'Final Data Size (F/Pol/V)');
+        expect(mockTranslate).toHaveBeenCalledWith('task.details.originalDataSize', 'Original Data Size (F/Pol/V)');
+        expect(mockTranslate).toHaveBeenCalledWith('task.details.vertexReductionRate', 'Vertex Reduction Rate');
+        expect(mockTranslate).toHaveBeenCalledWith('task.details.extractionRate', 'Extraction Rate');
     });
 
-    it('should fail: buildGeometryTaskOutcomeSummary displays hardcoded Japanese text for failed tasks', () => {
+    it('uses translate() labels for failed tasks', () => {
         const task: ShapeBuildTaskSummary = {
             taskId: 'test-node:geometry:JP:3',
             nodeId: 'test-node' as any,
@@ -135,14 +129,12 @@ describe('Bug Condition Exploration: i18n Hardcoded Text', () => {
             translate: mockTranslate,
         });
 
-        // バグ条件: buildGeometryTaskOutcomeSummaryでタスクが失敗した時、ハードコーディングされた日本語テキストが表示される
-        expect(result.summaryLine).toContain('失敗');
+        expect(result.summaryLine).toContain('Failed');
         expect(result.detailLines).toEqual(expect.arrayContaining([
-            expect.stringContaining('失敗理由:'),
+            expect.stringContaining('Failure Reason:'),
         ]));
 
-        // translate関数が呼び出されていないことを確認（バグの証明）
-        expect(mockTranslate).not.toHaveBeenCalledWith('task.status.failed', 'Failed');
-        expect(mockTranslate).not.toHaveBeenCalledWith('task.details.failureReason', 'Failure Reason');
+        expect(mockTranslate).toHaveBeenCalledWith('task.status.failed', 'Failed');
+        expect(mockTranslate).toHaveBeenCalledWith('task.details.failureReason', 'Failure Reason');
     });
 });

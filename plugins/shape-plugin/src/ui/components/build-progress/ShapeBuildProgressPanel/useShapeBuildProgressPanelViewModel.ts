@@ -147,8 +147,12 @@ export const useShapeBuildProgressPanelViewModel = ({
     chipPlacement: 'belowProgress',
     suppressStatusFallback: true,
     onResume: controls.canStartOrResume ? handleStartClickWithHold : undefined,
-    onPause: controls.stopRequested ? undefined : controls.handlePause,
-    onCancel: controls.handleCancelQueued,
+    onPause: controls.stopRequested ? undefined : (() => {
+      void controls.handlePause?.();
+    }),
+    onCancel: () => {
+      void controls.handleCancelQueued?.();
+    },
     controlHeaderIcon: ShapeBuildProgressPanelHeaderIcon(),
     startIcon: ShapeBuildProgressPanelStartIcon(),
     controlLabel: t('stage.controls.sessionTitle', 'Build Session'),

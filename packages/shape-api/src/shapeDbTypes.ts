@@ -36,8 +36,6 @@ export interface ShapeBuildSessionRecord<
   stageStartedAt?: number;
   stageHeartbeatAt?: number;
   stageId?: string;
-  elapsedMs?: number;
-  elapsedByStage?: Record<string, number>;
   sourceStageMaxima?: ShapeSourceStageMaxima;
 }
 

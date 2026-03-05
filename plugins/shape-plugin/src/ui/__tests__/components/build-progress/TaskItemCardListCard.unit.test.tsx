@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { Provider } from 'jotai';
 import { createStore } from 'jotai/vanilla';
-import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms';
+import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressTypes';
 import { TaskItemCardListCard } from '../../../components/build-progress/TaskItemCardListCard/TaskItemCardListCard';
 import type { TaskOutcomeSummaryBuilder } from '../../../components/build-progress/TaskItemCard/taskOutcomeSummaryBuilders';
 import { createElement, useState } from 'react';

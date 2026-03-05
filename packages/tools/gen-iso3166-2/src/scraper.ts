@@ -2,7 +2,12 @@ import * as process from "node:process";
 import * as cheerio from "cheerio";
 import type { Cheerio, CheerioAPI } from "cheerio";
 import type { AnyNode } from "domhandler";
-import { DEFAULT_FAILURES, DEFAULT_OUTPUT, toCsv } from "./csv.js";
+import {
+  DEFAULT_COUNTRY_NAMES_I18N_OUTPUT,
+  DEFAULT_FAILURES,
+  DEFAULT_OUTPUT,
+  toCsv,
+} from "./csv.js";
 import {
   type CountryRow,
   type GenerateOptions,
@@ -141,6 +146,9 @@ export async function parseIso3166_1Countries(): Promise<CountryRow[]> {
   const headers = headerCells.map((cell) => normText(selectNode($, cell as CheerioElementInput).text()));
 
   const idxCountryEn = headers.findIndex((h: string) => h.includes("英語名"));
+  const idxCountryLocal = headers.findIndex((h: string) => (
+    h.includes("国名") || h.includes("国・地域名") || h.includes("日本語")
+  ));
   const idxAlpha3 = headers.findIndex((h: string) => h.includes("alpha-3"));
   const idxAlpha2 = headers.findIndex((h: string) => h.includes("alpha-2"));
   const idxLocation = headers.findIndex((h: string) => h.includes("場所"));
@@ -159,6 +167,9 @@ export async function parseIso3166_1Countries(): Promise<CountryRow[]> {
     const countryEn = stripWrappedQuotes(
       normText(selectNode($, tds[idxCountryEn] as CheerioElementInput).text())
     );
+    const countryLocal = idxCountryLocal >= 0
+      ? stripWrappedQuotes(normText(selectNode($, tds[idxCountryLocal] as CheerioElementInput).text()))
+      : "";
     const alpha3 = normText(selectNode($, tds[idxAlpha3] as CheerioElementInput).text()).replace(/`/g, "");
     const alpha2 = normText(selectNode($, tds[idxAlpha2] as CheerioElementInput).text()).replace(/`/g, "");
     const locationRaw = idxLocation >= 0
@@ -175,7 +186,14 @@ export async function parseIso3166_1Countries(): Promise<CountryRow[]> {
       iso3166_2_url = absoluteUrl(JA_WIKI, href);
     }
 
-    rows.push({ countryEn, alpha3, alpha2, location, iso3166_2_url });
+    rows.push({
+      countryEn,
+      countryLocal: countryLocal || countryEn,
+      alpha3,
+      alpha2,
+      location,
+      iso3166_2_url,
+    });
   });
 
   return rows;
@@ -331,10 +349,12 @@ export async function generateIso3166Files(options: GenerateOptions = {}): Promi
   const outputDir = options.outputDir ?? process.cwd();
   const outputFile = options.outputFile ?? DEFAULT_OUTPUT;
   const failureFile = options.failureFile ?? DEFAULT_FAILURES;
+  const countryNamesI18nOutputFile =
+    options.countryNamesI18nOutputFile ?? DEFAULT_COUNTRY_NAMES_I18N_OUTPUT;
   const log = options.logger ?? ((msg: string) => console.log(msg));
   const fs = await import("node:fs/promises");
 
-  const { rows: results, failures } = await generateIso3166Data();
+  const { rows: results, failures, countries } = await generateIso3166Data();
 
   const csv = toCsv(results);
   await fs.mkdir(outputDir, { recursive: true });
@@ -346,6 +366,31 @@ export async function generateIso3166Files(options: GenerateOptions = {}): Promi
       .join("\n") + "\n";
   await fs.writeFile(new URL(failureFile, `file://${outputDir}/`), failCsv, "utf8");
 
+  const countryNamesI18n: Record<string, Record<string, string>> = { en: {}, ja: {} };
+  const countryNamesEn = countryNamesI18n.en as Record<string, string>;
+  const countryNamesJa = countryNamesI18n.ja as Record<string, string>;
+  for (const country of countries) {
+    const alpha2 = country.alpha2.trim().toUpperCase();
+    const alpha3 = country.alpha3.trim().toUpperCase();
+    if (!alpha2 || !alpha3) continue;
+    const enName = country.countryEn.trim();
+    const jaName = (country.countryLocal ?? country.countryEn).trim();
+    if (enName.length > 0) {
+      countryNamesEn[alpha2] = enName;
+      countryNamesEn[alpha3] = enName;
+    }
+    if (jaName.length > 0) {
+      countryNamesJa[alpha2] = jaName;
+      countryNamesJa[alpha3] = jaName;
+    }
+  }
+  await fs.writeFile(
+    new URL(countryNamesI18nOutputFile, `file://${outputDir}/`),
+    JSON.stringify(countryNamesI18n, null, 2),
+    "utf8",
+  );
+
   log(`iso3166-2: wrote ${outputFile} (${results.length} rows)`);
   log(`iso3166-2: wrote ${failureFile} (${failures.length} failures)`);
+  log(`iso3166-2: wrote ${countryNamesI18nOutputFile} (${countries.length} countries)`);
 }

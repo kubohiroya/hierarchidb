@@ -123,6 +123,7 @@ const toSessionSummary = (session: BuildSessionRecord): ShapeBuildSessionSummary
 
 const toTaskSummary = (task: ShapeBuildTaskRecord): ShapeBuildTaskSummary => ({
   taskId: task.taskId,
+  version: task.version,
   nodeId: task.nodeId,
   stage: task.stage,
   stageId: toCanonicalStageIdFromLegacyStage(task.stage),
@@ -240,9 +241,16 @@ const toShapeBuildTaskRecordFromEphemeral = (
   task: EphemeralBuildTaskRecord
 ): ShapeBuildTaskRecord | null => {
   if (!isShapeBuildStage(task.stage)) return null;
+  const rawVersion = (task as unknown as { version?: unknown }).version;
+  const version = typeof rawVersion === 'number'
+    && Number.isFinite(rawVersion)
+    && rawVersion >= 1
+    ? Math.floor(rawVersion)
+    : 1;
   return {
     taskId: task.taskId,
     nodeId: task.nodeId,
+    version,
     stage: task.stage,
     status: task.status,
     index: task.index,
@@ -265,7 +273,7 @@ const isShapeBuildTaskRecord = (
  */
 async function getEphemeralSessionWithDetails(nodeId: NodeId): Promise<EphemeralBuildSessionRecord | null> {
   return getSessionWithDetails(nodeId, {
-    getConfig: async (nodeId) => ephemeralDB.buildSessions.get(nodeId),
+    getConfig: async (nodeId) => ephemeralDB.buildSessionConfigs.get(nodeId),
     getHeartbeat: async (nodeId) => ephemeralDB.buildSessionHeartbeats.get(nodeId),
     getStatus: async (nodeId) => ephemeralDB.buildSessionStatuses.get(nodeId),
     getStageStatuses: async (nodeId) => ephemeralDB.buildStageStatuses.where('nodeId').equals(nodeId).toArray(),
@@ -278,7 +286,7 @@ async function getEphemeralSessionWithDetails(nodeId: NodeId): Promise<Ephemeral
  */
 async function getShapeSessionWithDetails(db: ShapeDB, nodeId: NodeId): Promise<EphemeralBuildSessionRecord | null> {
   return getSessionWithDetails(nodeId, {
-    getConfig: async (nodeId) => db.buildSessions.get(nodeId),
+    getConfig: async (nodeId) => db.buildSessionConfigs.get(nodeId),
     getHeartbeat: async (nodeId) => db.buildSessionHeartbeats.get(nodeId),
     getStatus: async (nodeId) => db.buildSessionStatuses.get(nodeId),
     getStageStatuses: async (nodeId) => db.buildStageStatuses.where('nodeId').equals(nodeId).toArray(),
@@ -306,7 +314,7 @@ export class ShapeQueryService implements ShapeQueryAPI {
     await this.ensureEphemeralOpen();
     
     // Get all session configs for this node
-    const configs = await ephemeralDB.buildSessions.where('nodeId').equals(nodeId).toArray();
+    const configs = await ephemeralDB.buildSessionConfigs.where('nodeId').equals(nodeId).toArray();
     
     // Query each session using unified interface
     const sessions = await Promise.all(
@@ -336,7 +344,7 @@ export class ShapeQueryService implements ShapeQueryAPI {
     await this.ensureEphemeralOpen();
     
     // Get all session configs for this node
-    const configs = await ephemeralDB.buildSessions.where('nodeId').equals(nodeId).toArray();
+    const configs = await ephemeralDB.buildSessionConfigs.where('nodeId').equals(nodeId).toArray();
     
     // Query each session using unified interface
     const sessions = await Promise.all(
@@ -420,7 +428,7 @@ export class ShapeQueryService implements ShapeQueryAPI {
     await this.ensureEphemeralOpen();
     
     // Get all session configs for this node
-    const configs = await ephemeralDB.buildSessions.where('nodeId').equals(nodeId).toArray();
+    const configs = await ephemeralDB.buildSessionConfigs.where('nodeId').equals(nodeId).toArray();
     
     if (configs.length === 0) {
       return {

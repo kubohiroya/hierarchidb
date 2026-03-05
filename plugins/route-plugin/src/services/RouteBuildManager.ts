@@ -206,6 +206,7 @@ function toTaskQueueRecord(task: RouteBuildTask): TaskQueueRecord {
   return {
     taskId: task.taskId,
     nodeId: task.nodeId,
+    version: 1,
     stage: task.stage as TaskStage,
     status: 'queued',
     index: task.index,

@@ -2,6 +2,11 @@ type StageLike = {
   title?: string | null;
   stage?: string;
   inputData?: unknown;
+  metadata?: unknown;
+};
+
+type ResolveTaskTitleOptions = {
+  resolveCountryNameByCode?: (code: string) => string | undefined;
 };
 
 const readString = (value: unknown): string | null => (
@@ -18,6 +23,39 @@ const readCode = (value: unknown): string | null => {
   return text.trim().toUpperCase();
 };
 
+const readCountryName = (value: unknown): string | null => {
+  const text = readString(value);
+  if (!text) return null;
+  return text.trim();
+};
+
+const equalsCodeToken = (name: string | null, code: string | null): boolean => (
+  typeof name === 'string'
+  && typeof code === 'string'
+  && name.trim().toUpperCase() === code.trim().toUpperCase()
+);
+
+const resolveCountryNameWithCode = (
+  input: Record<string, unknown>,
+  options?: ResolveTaskTitleOptions,
+): { countryName: string | null; countryCode: string | null } => {
+  const countryCode = readCode(input.admin0Code)
+    ?? readCode(input.countryCode)
+    ?? readCode(input.urlCountryCode);
+  const rawName = readCountryName(input.admin0Name)
+    ?? readCountryName(input.countryName)
+    ?? readCountryName(input.sourceCountryName);
+  const shouldResolveFromCode = !rawName || equalsCodeToken(rawName, countryCode);
+  if (!shouldResolveFromCode || !countryCode || !options?.resolveCountryNameByCode) {
+    return { countryName: rawName, countryCode };
+  }
+  const resolvedName = readCountryName(options.resolveCountryNameByCode(countryCode));
+  return {
+    countryName: resolvedName ?? rawName ?? countryCode,
+    countryCode,
+  };
+};
+
 const resolveStageKey = (task: StageLike): string | undefined => (
   task.stage
 );
@@ -26,44 +64,86 @@ const isRecord = (value: unknown): value is Record<string, unknown> => (
   typeof value === 'object' && value !== null
 );
 
-const buildSourceTitle = (input: Record<string, unknown>): string | undefined => {
-  const admin0Name = readString(input.admin0Name)
-    ?? readString(input.countryName)
-    ?? readString(input.countryCode)
-    ?? readString(input.urlCountryCode);
-  const admin0Code = readCode(input.admin0Code)
-    ?? readCode(input.countryCode)
-    ?? readCode(input.urlCountryCode);
-  const adminLevel = readNumber(input.adminLevel);
-  if (admin0Name && admin0Code && adminLevel !== null) {
-    return `${admin0Name} (${admin0Code}) ${adminLevel}`;
+const buildInputFromPreview = (metadata: unknown): Record<string, unknown> | undefined => {
+  if (!isRecord(metadata)) return undefined;
+  const preview = isRecord(metadata.preview) ? metadata.preview : undefined;
+  if (!preview) return undefined;
+  const candidate: Record<string, unknown> = {};
+  if (typeof preview.sourceCountryName === 'string') {
+    candidate.countryName = preview.sourceCountryName;
+    candidate.admin0Name = preview.sourceCountryName;
   }
-  const adminLevelLabel = adminLevel !== null ? String(adminLevel) : undefined;
+  if (typeof preview.sourceCountryCode === 'string') {
+    candidate.countryCode = preview.sourceCountryCode;
+    candidate.urlCountryCode = preview.sourceCountryCode;
+    candidate.admin0Code = preview.sourceCountryCode;
+  }
+  if (typeof preview.adminLevel === 'number' && Number.isFinite(preview.adminLevel)) {
+    candidate.adminLevel = preview.adminLevel;
+  }
+  if (typeof preview.bandIndex === 'number' && Number.isFinite(preview.bandIndex)) {
+    candidate.bandIndex = preview.bandIndex;
+  }
+  if (typeof preview.bandMinZoom === 'number' && Number.isFinite(preview.bandMinZoom)) {
+    candidate.bandMinZoom = preview.bandMinZoom;
+  }
+  if (typeof preview.bandMaxZoom === 'number' && Number.isFinite(preview.bandMaxZoom)) {
+    candidate.bandMaxZoom = preview.bandMaxZoom;
+  }
+  if (typeof preview.zMin === 'number' && Number.isFinite(preview.zMin)) {
+    candidate.zMin = preview.zMin;
+  }
+  if (typeof preview.zMax === 'number' && Number.isFinite(preview.zMax)) {
+    candidate.zMax = preview.zMax;
+  }
+  return Object.keys(candidate).length > 0 ? candidate : undefined;
+};
+
+const buildSourceTitle = (
+  input: Record<string, unknown>,
+  options?: ResolveTaskTitleOptions,
+): string | undefined => {
+  const { countryName: admin0Name, countryCode: admin0Code } = resolveCountryNameWithCode(input, options);
+  const adminLevel = readNumber(input.adminLevel);
+  if (admin0Name && admin0Code && adminLevel !== null && !equalsCodeToken(admin0Name, admin0Code)) {
+    return `${admin0Name} (${admin0Code}) Admin${Math.floor(adminLevel)}`;
+  }
+  if (admin0Name && adminLevel !== null) {
+    return `${admin0Name} Admin${Math.floor(adminLevel)}`;
+  }
+  const adminLevelLabel = adminLevel !== null ? `Admin${Math.floor(adminLevel)}` : undefined;
   const title = [admin0Name, admin0Code ? `(${admin0Code})` : undefined, adminLevelLabel].filter(Boolean).join(' ');
   return title.length > 0 ? title : undefined;
 };
 
-const buildGeometryTitle = (input: Record<string, unknown>): string | undefined => {
-  const admin0Name = readString(input.admin0Name)
-    ?? readString(input.countryName)
-    ?? readString(input.countryCode)
-    ?? readString(input.urlCountryCode);
-  const admin0Code = readCode(input.admin0Code)
-    ?? readCode(input.countryCode)
-    ?? readCode(input.urlCountryCode);
-  const countryLabel = admin0Name && admin0Code
+const buildGeometryTitle = (
+  input: Record<string, unknown>,
+  options?: ResolveTaskTitleOptions,
+): string | undefined => {
+  const { countryName: admin0Name, countryCode: admin0Code } = resolveCountryNameWithCode(input, options);
+  const countryLabel = admin0Name && admin0Code && !equalsCodeToken(admin0Name, admin0Code)
     ? `${admin0Name} (${admin0Code})`
     : admin0Name ?? (admin0Code ? `(${admin0Code})` : undefined);
   const adminLevel = readNumber(input.adminLevel);
-  const adminLabel = adminLevel !== null ? String(adminLevel) : undefined;
+  const adminLabel = adminLevel !== null ? `Admin${Math.floor(adminLevel)}` : undefined;
   const bandIndex = readNumber(input.bandIndex);
-  const bandLabel = bandIndex !== null ? `band${bandIndex}` : undefined;
-  const bandMinZoom = readNumber(input.bandMinZoom);
-  const bandMaxZoom = readNumber(input.bandMaxZoom);
+  const bandLabel = bandIndex !== null ? `band ${Math.floor(bandIndex)}` : undefined;
+  const bandMinZoom = readNumber(input.bandMinZoom)
+    ?? readNumber(input.zMin)
+    ?? readNumber(input.minZoom);
+  const bandMaxZoom = readNumber(input.bandMaxZoom)
+    ?? readNumber(input.zMax)
+    ?? readNumber(input.maxZoom);
   const zoomBandLabel = bandMinZoom !== null && bandMaxZoom !== null
-    ? `z${bandMinZoom}-${bandMaxZoom}`
+    ? `z${Math.floor(bandMinZoom)}-${Math.floor(bandMaxZoom)}`
+    : bandMinZoom !== null
+      ? `z${Math.floor(bandMinZoom)}`
+      : bandMaxZoom !== null
+        ? `z${Math.floor(bandMaxZoom)}`
     : undefined;
-  const title = [countryLabel, adminLabel, bandLabel, zoomBandLabel].filter(Boolean).join(' ');
+  const left = [countryLabel, adminLabel].filter(Boolean).join(' ');
+  const right = [bandLabel, zoomBandLabel].filter(Boolean).join(' ');
+  const title = [left || undefined, right || undefined].filter(Boolean).join(' / ');
   return title.length > 0 ? title : undefined;
 };
 
@@ -93,20 +173,29 @@ const buildTileEmitTitle = (input: Record<string, unknown>): string | undefined 
   return title.length > 0 ? title : undefined;
 };
 
-export const buildShapeTaskTitle = (task: StageLike): string | undefined => {
+export const buildShapeTaskTitle = (
+  task: StageLike,
+  options?: ResolveTaskTitleOptions,
+): string | undefined => {
   const existing = readString(task.title);
   if (existing) return existing;
-  const input = isRecord(task.inputData) ? task.inputData : undefined;
+  const input = isRecord(task.inputData)
+    ? task.inputData
+    : buildInputFromPreview(task.metadata);
   if (!input) return undefined;
   const stage = resolveStageKey(task);
-  if (stage === 'source') return buildSourceTitle(input);
-  if (stage === 'geometry') return buildGeometryTitle(input);
+  if (stage === 'source') return buildSourceTitle(input, options);
+  if (stage === 'geometry') return buildGeometryTitle(input, options);
   if (stage === 'tileEmit') return buildTileEmitTitle(input);
   return undefined;
 };
 
-export const resolveShapeTaskTitle = (task: StageLike, fallback = ''): string => {
-  const title = buildShapeTaskTitle(task);
+export const resolveShapeTaskTitle = (
+  task: StageLike,
+  fallback = '',
+  options?: ResolveTaskTitleOptions,
+): string => {
+  const title = buildShapeTaskTitle(task, options);
   if (title) return title;
   return fallback;
 };

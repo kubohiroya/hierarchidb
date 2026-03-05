@@ -22,6 +22,7 @@ export type TaskDisplayPayload = {
 export type TaskQueueRecord<TInput = unknown, TOutput = unknown> = {
   taskId: string;
   nodeId: NodeId;
+  version: number;
   stage: TaskStage;
   stageId?: string;
   status: TaskStatus;
@@ -54,7 +55,6 @@ export type StageHandlerResult<TOutput = unknown> = {
   metadata?: Record<string, unknown>;
   outputData?: TOutput;
   errorMessage?: string;
-  taskUpdated?: boolean;
 };
 
 export type StageHandler<TInput = unknown, TOutput = unknown> = (

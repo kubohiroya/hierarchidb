@@ -33,7 +33,7 @@ interface BuildSessionConsistencyDB {
   buildSessionHeartbeats: {
     bulkGet: (keys: NodeId[]) => Promise<Array<BuildSessionHeartbeatRow | undefined>>;
   };
-  buildSessions: {
+  buildSessionConfigs: {
     bulkGet: (keys: NodeId[]) => Promise<Array<BuildSessionConfigRow | undefined>>;
   };
   buildTasks: {
@@ -107,7 +107,7 @@ export const reconcileRunningBuildSessions = async (params?: {
 
   const [heartbeats, configs, activeTaskCounts] = await Promise.all([
     db.buildSessionHeartbeats.bulkGet(runningNodeIds),
-    db.buildSessions.bulkGet(runningNodeIds),
+    db.buildSessionConfigs.bulkGet(runningNodeIds),
     Promise.all(
       runningNodeIds.map((nodeId) =>
         db.buildTasks.where('[nodeId+status]').anyOf([

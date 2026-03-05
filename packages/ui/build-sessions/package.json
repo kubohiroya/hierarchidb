@@ -36,7 +36,8 @@
     "@hierarchidb/worker-api": "workspace:*",
     "@mui/icons-material": ">=5.0.0",
     "@mui/material": ">=5.0.0",
-    "comlink": ">=4.0.0"
+    "comlink": ">=4.0.0",
+    "jotai": ">=2.0.0"
   },
   "devDependencies": {
     "react": "^19.0.0",
@@ -53,6 +54,7 @@
     "@mui/icons-material": ">=5.0.0",
     "@mui/material": ">=5.0.0",
     "comlink": ">=4.0.0",
+    "jotai": "^2.13.1",
     "typescript": "workspace:^5.9.3"
   },
   "sideEffects": false,

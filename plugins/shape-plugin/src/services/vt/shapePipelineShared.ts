@@ -501,6 +501,7 @@ export const buildGeometryByBandTasks = async (
         tasks.push({
           taskId: `${String(nodeId)}:geometry:${band.bandIndex}:${buffer.sourceKey}`,
           nodeId,
+          version: 1,
           stage: 'geometry',
           status: 'queued',
           index,
@@ -651,6 +652,7 @@ export const buildTileEmitTasks = async (
       tasks.push({
         taskId: `${String(nodeId)}:tileEmit:${band.bandIndex}:${band.zBase}:${tileId}`,
         nodeId,
+        version: 1,
         stage: 'tileEmit',
         status: 'queued',
         index,

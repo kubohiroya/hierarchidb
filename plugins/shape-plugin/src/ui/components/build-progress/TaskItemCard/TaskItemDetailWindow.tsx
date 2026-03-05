@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { cloneElement, isValidElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   IconButton,
@@ -9,7 +9,6 @@ import {
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import LayersIcon from '@mui/icons-material/Layers';
-import { useAtomValue } from 'jotai';
 import type { Feature, FeatureCollection } from 'geojson';
 import { feature as topojsonFeature } from 'topojson-client';
 import type { Topology } from 'topojson-specification';
@@ -23,13 +22,14 @@ import {
   buildRawDataDataSourceCacheKey,
   readRawDataDataSourceBuffer,
 } from '~/services/utils/chunkStore';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
-import { buildStagesAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import type { TaskOutcomeSummary } from '~/ui/components/build-progress/TaskItem/TaskItem';
 import type { TaskDetailPayload, TaskDetailSelection } from './TaskItemDetailTypes';
 import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 import { TileEmitTaskItemDetailWindow } from '~/ui/components/build-progress/tile-emit/TileEmitTaskItemDetailWindow';
 import { FloatingWindow, useFloatingWindow } from '@hierarchidb/ui-floating-window';
+import { useTranslation } from '@hierarchidb/ui-i18n';
+import { useShapeBuildStages } from '~/ui/components/build-progress/useShapeBuildStages/useShapeBuildStages';
 import {
   isGeometryLikeStageId,
   isTileEmitLikeStageId,
@@ -71,6 +71,11 @@ type OverlaySpec = {
   fillOpacity: number;
 };
 
+type TitleBarIconProps = {
+  color?: 'inherit' | 'primary' | 'secondary' | 'action' | 'error' | 'disabled' | 'info' | 'success' | 'warning';
+  fontSize?: 'inherit' | 'small' | 'medium' | 'large';
+};
+
 const resolveNodeIdFromTask = (task: ShapeBuildTaskSummary): NodeId | null => {
   if (task.nodeId) return task.nodeId;
   if (typeof task.taskId !== 'string' || !task.taskId.includes(':')) return null;
@@ -105,6 +110,11 @@ const formatNumber = (value: number | null | undefined): string => {
 const formatPercent = (ratio: number | null): string => {
   if (ratio === null || !Number.isFinite(ratio)) return 'N/A';
   return `${Math.round(ratio * 1000) / 10}%`;
+};
+
+const formatTolerance = (value: number | null | undefined): string => {
+  if (value === null || value === undefined || !Number.isFinite(value)) return 'N/A';
+  return `${Number.parseFloat(value.toFixed(6))}`;
 };
 
 const resolveRatio = (output: number | null | undefined, input: number | null | undefined): number | null => {
@@ -212,27 +222,36 @@ const measureCollectionBytes = (collection: FeatureCollection | null): number =>
 };
 
 const decodeJsonSourceCollection = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
-  const text = new TextDecoder('utf-8').decode(buffer);
-  const parsed = JSON.parse(text) as unknown;
-  const record = asRecord(parsed);
-  if (!record) return null;
-  if (record.type === 'Topology') {
-    return decodeTopoJsonCollection(buffer);
+  try {
+    const text = new TextDecoder('utf-8').decode(buffer);
+    const parsed = JSON.parse(text) as unknown;
+    const record = asRecord(parsed);
+    if (!record) return null;
+    if (record.type === 'Topology') {
+      return decodeTopoJsonCollection(buffer);
+    }
+    if (record.type === 'FeatureCollection') {
+      const collection = parsed as FeatureCollection;
+      return {
+        ...collection,
+        features: Array.isArray(collection.features) ? collection.features : [],
+      };
+    }
+    if (record.type === 'Feature') {
+      return {
+        type: 'FeatureCollection',
+        features: [parsed as Feature],
+      };
+    }
+  } catch {
+    // raw source payload can also be FlatGeobuf (binary)
   }
-  if (record.type === 'FeatureCollection') {
-    const collection = parsed as FeatureCollection;
-    return {
-      ...collection,
-      features: Array.isArray(collection.features) ? collection.features : [],
-    };
+  try {
+    const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
+    return normalizeFeatureCollection(decoded);
+  } catch {
+    return null;
   }
-  if (record.type === 'Feature') {
-    return {
-      type: 'FeatureCollection',
-      features: [parsed as Feature],
-    };
-  }
-  return null;
 };
 
 const loadSourceCollectionFromCache = async (
@@ -266,7 +285,7 @@ const loadSourceCollectionFromCache = async (
   }
   const collection = await decodeJsonSourceCollection(rawBuffer);
   if (!collection) {
-    throw new Error('[shape-plugin] raw source buffer decoding failed: expected JSON/Topology payload');
+    throw new Error('[shape-plugin] raw source buffer decoding failed: expected JSON/Topology/FlatGeobuf payload');
   }
   return {
     collection,
@@ -1089,7 +1108,11 @@ const TaskDetailContent = ({
         {summary.visualization === 'transformMetrics' ? (
           <Stack spacing={0.5}>
             <Typography variant="caption" color="text.secondary">
-              Effective tolerance: {summary.effectiveTolerance ?? 'N/A'}
+              Base tolerance: {formatTolerance(summary.baseTolerance)}
+              {' / '}
+              Initial tolerance: {formatTolerance(summary.initialTolerance)}
+              {' / '}
+              Effective tolerance: {formatTolerance(summary.effectiveTolerance)}
             </Typography>
             <Typography variant="caption" color="text.secondary">
               Retry attempts: {summary.retryAttempt ?? 'N/A'} / {summary.retryMax ?? 'N/A'}
@@ -1145,6 +1168,10 @@ const TaskDetailContent = ({
             <Typography variant="caption" color="text.secondary">{summary.summaryLine ?? '-'}</Typography>
             {(summary.detailLines ?? [])
               .filter((line) => {
+                const trimmedLine = line.trim();
+                const trimmedSummary = (summary.summaryLine ?? '').trim();
+                if (trimmedLine.length === 0) return false;
+                if (trimmedLine === trimmedSummary) return false;
                 if (summary.kind !== 'failed') return true;
                 const normalized = line.trim().replace(/^Failure:\s*/i, '');
                 const summaryNormalized = (summary.summaryLine ?? '').trim().replace(/^Failed:\s*/i, '');
@@ -1210,7 +1237,8 @@ export const TaskItemDetailWindow = ({
   onRequestBringToFront,
 }: TaskItemDetailWindowProps) => {
   const theme = useTheme();
-  const stages = useAtomValue(buildStagesAtom);
+  const { t } = useTranslation();
+  const stages = useShapeBuildStages({ t: (key, fallback) => t(key, fallback ?? key) });
   const activeDetail = detail;
   const effectiveStageId = normalizeUiStageId(activeDetail?.task.stage ?? stageId) ?? 'unknown';
   const stageIconMap = useMemo(
@@ -1437,7 +1465,13 @@ export const TaskItemDetailWindow = ({
   const stageLabel = effectiveStageId === 'source'
     ? 'Source'
     : (effectiveStageId === 'geometry' ? 'Geometry' : (effectiveStageId === 'tileEmit' ? 'TileEmit' : effectiveStageId));
-  const stageIcon = stageIconMap.get(effectiveStageId) ?? <LayersIcon fontSize="small" />;
+  const rawStageIcon = stageIconMap.get(effectiveStageId) ?? <LayersIcon fontSize="small" />;
+  const stageIcon = isValidElement<TitleBarIconProps>(rawStageIcon)
+    ? cloneElement(rawStageIcon, {
+      color: 'inherit',
+      fontSize: 'small',
+    })
+    : rawStageIcon;
   const buildTileEmitBandLabel = (taskId: string | undefined): string => {
     if (!taskId) return 'band ? z?';
     const parts = taskId.split(':');
@@ -1448,8 +1482,8 @@ export const TaskItemDetailWindow = ({
     return `band ${bandIndex} z${zBase}/z${zBase + 1}/z${zBase + 2}`;
   };
   const windowTitle = isVtTask
-    ? `TileEmit Geometry Preview: ${buildTileEmitBandLabel(activeDetail?.task.taskId)}`
-    : (effectiveStageId === 'tileEmit' ? 'TileEmit Geometry Preview' : `Geometry Preview: ${stageLabel}`);
+    ? `Task Result: TileEmit Stage (${buildTileEmitBandLabel(activeDetail?.task.taskId)})`
+    : `Task Result: ${stageLabel} Stage`;
 
   return (
     <FloatingWindow

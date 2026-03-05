@@ -140,7 +140,7 @@ export class ShapeMutationService implements ShapeMutationAPI {
     
     // Insert into all four tables
     await Promise.all([
-      ephemeralDB.buildSessions.put(records.config),
+      ephemeralDB.buildSessionConfigs.put(records.config),
       records.heartbeat ? ephemeralDB.buildSessionHeartbeats.put(records.heartbeat) : Promise.resolve(),
       ephemeralDB.buildSessionStatuses.put(records.status),
       records.stageStatus ? ephemeralDB.buildStageStatuses.put(records.stageStatus) : Promise.resolve(),
@@ -236,7 +236,7 @@ export class ShapeMutationService implements ShapeMutationAPI {
     
     // Delete from all four tables atomically
     await Promise.all([
-      ephemeralDB.buildSessions.delete(nodeId),
+      ephemeralDB.buildSessionConfigs.delete(nodeId),
       ephemeralDB.buildSessionHeartbeats.delete(nodeId),
       ephemeralDB.buildSessionStatuses.delete(nodeId),
       ephemeralDB.buildStageStatuses.where('nodeId').equals(nodeId).delete(),
