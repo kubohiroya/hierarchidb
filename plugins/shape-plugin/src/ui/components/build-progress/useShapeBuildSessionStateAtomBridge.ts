@@ -11,6 +11,26 @@ const SHAPE_NODE_TYPE = 'shape' as NodeType;
 const SHAPE_STAGE_IDS = ['source', 'geometry', 'tileEmit'] as const satisfies readonly ShapeStageId[];
 
 type UiSyncPhase = 'ui-initializing' | 'running';
+type TaskUpdateEvent = Extract<BuildTaskUpdateEvent, { type: 'update' }>;
+type TaskSnapshotEvent = Extract<BuildTaskUpdateEvent, { type: 'snapshot' }> & {
+  version?: unknown;
+  stage?: unknown;
+};
+
+export const isTaskUpdateVersionAfterSnapshot = (
+  snapshotVersionMax: number,
+  taskVersion: number,
+): boolean => taskVersion > snapshotVersionMax;
+
+export const resolveTaskVersionAction = (
+  lastAppliedVersion: number | undefined,
+  nextVersion: number,
+): 'accept' | 'drop' | 'error' => {
+  if (typeof lastAppliedVersion !== 'number') return 'accept';
+  if (nextVersion > lastAppliedVersion) return 'accept';
+  if (nextVersion === lastAppliedVersion) return 'drop';
+  return 'error';
+};
 
 const resolveShapeStageId = (value: unknown): ShapeStageId | undefined => {
   if (value === 'source' || value === 'geometry' || value === 'tileEmit') {
@@ -39,14 +59,36 @@ const resolveUiSyncSignalFromSessionStageId = (
   return undefined;
 };
 
-const resolveSnapshotVersion = (event: BuildTaskUpdateEvent): number => {
+const resolveSnapshotVersion = (event: TaskSnapshotEvent): number => {
   if (event.type !== 'snapshot') {
     throw new Error('[shape buildSessionStateAtomBridge] resolveSnapshotVersion requires snapshot event');
   }
   if (event.tasks.length > 0) {
     return event.tasks.reduce((max, task) => Math.max(max, task.version), Number.MIN_SAFE_INTEGER);
   }
-  return Date.now();
+  const explicitVersion = event.version;
+  if (typeof explicitVersion !== 'number' || !Number.isFinite(explicitVersion) || explicitVersion < 0) {
+    throw new Error('[shape buildSessionStateAtomBridge] empty snapshot requires finite snapshot version');
+  }
+  return Math.floor(explicitVersion);
+};
+
+export const resolveSnapshotTargetStages = (event: TaskSnapshotEvent): ShapeStageId[] => {
+  const snapshotStages = new Set<ShapeStageId>();
+  for (const task of event.tasks) {
+    const stageId = resolveShapeStageId(task.stage);
+    if (stageId) snapshotStages.add(stageId);
+  }
+  const stageFromEvent = resolveShapeStageId(event.stage);
+  if (snapshotStages.size === 0 && stageFromEvent) {
+    snapshotStages.add(stageFromEvent);
+  }
+  if (snapshotStages.size === 0) {
+    for (const stageId of SHAPE_STAGE_IDS) {
+      snapshotStages.add(stageId);
+    }
+  }
+  return Array.from(snapshotStages);
 };
 
 export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined): void => {
@@ -75,8 +117,57 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
       geometry: [],
       tileEmit: [],
     };
+    const taskUpdateBufferByStage: Record<ShapeStageId, TaskUpdateEvent[]> = {
+      source: [],
+      geometry: [],
+      tileEmit: [],
+    };
+    const snapshotTaskIdsByStage: Record<ShapeStageId, Set<string>> = {
+      source: new Set<string>(),
+      geometry: new Set<string>(),
+      tileEmit: new Set<string>(),
+    };
+    const snapshotVersionMaxByStage: Record<ShapeStageId, number | null> = {
+      source: null,
+      geometry: null,
+      tileEmit: null,
+    };
+    const lastAppliedVersionByTaskId = new Map<string, number>();
+    const lastAppliedFingerprintByTaskVersion = new Map<string, string>();
+    let fatalContractError = false;
     let activeStageId: ShapeStageId = 'source';
     let flushTimerId: number | null = null;
+
+    const buildTaskFingerprint = (event: TaskUpdateEvent): string => JSON.stringify({
+      taskId: event.task.taskId,
+      version: event.task.version,
+      stage: event.task.stage,
+      status: event.task.status,
+      progress: event.task.progress,
+      sequence: event.task.sequence,
+      display: event.task.display,
+      metadata: event.task.metadata,
+    });
+
+    const stopWithContractError = (message: string): never => {
+      fatalContractError = true;
+      for (const unsubscribe of unsubscribers) {
+        try {
+          unsubscribe();
+        } catch {
+          // no-op
+        }
+      }
+      throw new Error(message);
+    };
+
+    const resolveStageOrStop = (value: unknown, message: string): ShapeStageId => {
+      const stageId = resolveShapeStageId(value);
+      if (!stageId) {
+        stopWithContractError(message);
+      }
+      return stageId as ShapeStageId;
+    };
 
     const dispatchUiSyncPhase = (stageId: ShapeStageId, phase: UiSyncPhase): void => {
       if (uiSyncByStage[stageId] === phase) return;
@@ -94,6 +185,60 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
       flushTimerId = null;
       for (const stageId of SHAPE_STAGE_IDS) {
         if (uiSyncByStage[stageId] !== 'running') continue;
+        const bufferedUpdates = taskUpdateBufferByStage[stageId];
+        if (bufferedUpdates.length <= 0) continue;
+        taskUpdateBufferByStage[stageId] = [];
+        bufferedUpdates.sort((left, right) => left.task.version - right.task.version);
+        for (const event of bufferedUpdates) {
+          const stage = resolveStageOrStop(
+            event.task.stage,
+            `[shape buildSessionStateAtomBridge] task update stage is unsupported: ${String(event.task.stage)}`,
+          );
+          const knownTaskIds = snapshotTaskIdsByStage[stage];
+          if (!knownTaskIds.has(event.task.taskId)) {
+            stopWithContractError(
+              `[shape buildSessionStateAtomBridge] task update references unknown taskId: ${event.task.taskId}`,
+            );
+          }
+          const snapshotVersionMax = snapshotVersionMaxByStage[stage];
+          if (snapshotVersionMax == null) {
+            stopWithContractError(
+              `[shape buildSessionStateAtomBridge] task update arrived before snapshot handshake: ${event.task.taskId}`,
+            );
+          }
+          const snapshotVersionBoundary = snapshotVersionMax as number;
+          if (!isTaskUpdateVersionAfterSnapshot(snapshotVersionBoundary, event.task.version)) {
+            continue;
+          }
+          const lastAppliedVersion = lastAppliedVersionByTaskId.get(event.task.taskId);
+          const versionAction = resolveTaskVersionAction(lastAppliedVersion, event.task.version);
+          if (versionAction === 'error') {
+            stopWithContractError(
+              `[shape buildSessionStateAtomBridge] task version regressed: taskId=${event.task.taskId} next=${event.task.version} current=${lastAppliedVersion}`,
+            );
+          }
+          if (versionAction === 'drop') {
+            const key = `${event.task.taskId}:${event.task.version}`;
+            const nextFingerprint = buildTaskFingerprint(event);
+            const previousFingerprint = lastAppliedFingerprintByTaskVersion.get(key);
+            if (typeof previousFingerprint === 'string' && previousFingerprint !== nextFingerprint) {
+              stopWithContractError(
+                `[shape buildSessionStateAtomBridge] conflicting payload for identical taskId/version: ${key}`,
+              );
+            }
+            continue;
+          }
+          adapter.onTaskEvent(event);
+          lastAppliedVersionByTaskId.set(event.task.taskId, event.task.version);
+          lastAppliedFingerprintByTaskVersion.set(
+            `${event.task.taskId}:${event.task.version}`,
+            buildTaskFingerprint(event),
+          );
+        }
+      }
+
+      for (const stageId of SHAPE_STAGE_IDS) {
+        if (uiSyncByStage[stageId] !== 'running') continue;
         const queue = progressBufferByStage[stageId];
         if (queue.length <= 0) continue;
         progressBufferByStage[stageId] = [];
@@ -104,6 +249,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
     };
 
     const scheduleProgressFlush = (): void => {
+      if (fatalContractError) return;
       if (flushTimerId !== null) return;
       if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
         flushTimerId = window.requestAnimationFrame(flushProgressBuffer);
@@ -113,13 +259,62 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
     };
 
     const onTaskEvent = (event: BuildTaskUpdateEvent): void => {
-      adapter.onTaskEvent(event);
-      if (event.type !== 'snapshot') return;
-      const snapshotStages = new Set<ShapeStageId>();
-      for (const task of event.tasks) {
-        const stageId = resolveShapeStageId(task.stage);
-        if (stageId) snapshotStages.add(stageId);
+      if (fatalContractError) return;
+      if (event.type === 'update') {
+        const stageId = resolveStageOrStop(
+          event.task.stage,
+          `[shape buildSessionStateAtomBridge] task update stage is unsupported: ${String(event.task.stage)}`,
+        );
+        const snapshotVersionMax = snapshotVersionMaxByStage[stageId];
+        if (snapshotVersionMax == null) {
+          stopWithContractError(
+            `[shape buildSessionStateAtomBridge] task update arrived before snapshot handshake: ${event.task.taskId}`,
+          );
+        }
+        const snapshotVersionBoundary = snapshotVersionMax as number;
+        if (!isTaskUpdateVersionAfterSnapshot(snapshotVersionBoundary, event.task.version)) {
+          return;
+        }
+        taskUpdateBufferByStage[stageId].push(event);
+        scheduleProgressFlush();
+        return;
       }
+      if (event.type !== 'snapshot') {
+        adapter.onTaskEvent(event);
+        return;
+      }
+      const snapshotEvent = event as TaskSnapshotEvent;
+      const snapshotVersion = resolveSnapshotVersion(snapshotEvent);
+      const snapshotStages = new Set<ShapeStageId>(resolveSnapshotTargetStages(snapshotEvent));
+      for (const stageId of snapshotStages) {
+        snapshotVersionMaxByStage[stageId] = snapshotVersion;
+        snapshotTaskIdsByStage[stageId].clear();
+      }
+      for (const task of snapshotEvent.tasks) {
+        const stageId = resolveStageOrStop(
+          task.stage,
+          `[shape buildSessionStateAtomBridge] task snapshot stage is unsupported: ${String(task.stage)}`,
+        );
+        snapshotTaskIdsByStage[stageId].add(task.taskId);
+        lastAppliedVersionByTaskId.set(task.taskId, task.version);
+        lastAppliedFingerprintByTaskVersion.set(
+          `${task.taskId}:${task.version}`,
+          JSON.stringify({
+            taskId: task.taskId,
+            version: task.version,
+            stage: task.stage,
+            status: task.status,
+            progress: task.progress,
+            sequence: task.sequence,
+            display: task.display,
+            metadata: task.metadata,
+          }),
+        );
+      }
+      adapter.onTaskEvent({
+        ...snapshotEvent,
+        version: snapshotVersion,
+      } as BuildTaskUpdateEvent);
       for (const stageId of SHAPE_STAGE_IDS) {
         if (snapshotStages.size > 0 && !snapshotStages.has(stageId)) continue;
         dispatchUiSyncPhase(stageId, 'running');
@@ -174,8 +369,10 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
         type: 'snapshot',
         nodeId,
         tasks,
-        version: resolveSnapshotVersion({ type: 'snapshot', nodeId, tasks }),
-      } as BuildTaskUpdateEvent;
+        version: tasks.length > 0
+          ? tasks.reduce((max, task) => Math.max(max, task.version), Number.MIN_SAFE_INTEGER)
+          : 0,
+      } as TaskSnapshotEvent;
       onTaskEvent(snapshotEvent);
       adapter.onTaskStreamConnectionChanged(true);
 

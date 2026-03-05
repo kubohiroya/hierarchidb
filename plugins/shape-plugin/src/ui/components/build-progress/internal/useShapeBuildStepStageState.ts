@@ -2,7 +2,11 @@ import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useAtomValue } from 'jotai';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { buildSessionRuntimeAtom, buildSessionTasksByStageAtom } from '~/ui/atoms/buildSessionStateAtoms';
+import {
+  buildSessionRuntimeAtom,
+  buildSessionSnapshotHandshakeReceivedAtom,
+  buildSessionTasksByStageAtom,
+} from '~/ui/atoms/buildSessionStateAtoms';
 import type { BuildProgressStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
 import { hasReceivingTaskSnapshotSignal as detectTaskSnapshotSignal } from '~/ui/components/build-progress/hasReceivingTaskSnapshotSignal';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
@@ -142,6 +146,7 @@ export const useShapeBuildStepStageState = ({
     return configuredStageOrder[0] as StageId;
   }, [configuredStageOrder]);
   const runtime = useAtomValue(buildSessionRuntimeAtom);
+  const hasSnapshotHandshakeReceived = useAtomValue(buildSessionSnapshotHandshakeReceivedAtom);
   const tasksByStage = useAtomValue(buildSessionTasksByStageAtom);
 
   const tasks = useMemo<ShapeBuildTaskSummary[]>(() => {
@@ -299,7 +304,8 @@ export const useShapeBuildStepStageState = ({
     progressTaskId: effectiveProgress?.progressTaskId ?? null,
     progressTotal: taskProgressTotal,
   });
-  const hasReceivingTaskSnapshotSignal = isTaskSnapshotProgressConnected && hasAnyTaskSnapshot;
+  const hasReceivingTaskSnapshotSignal = isTaskSnapshotProgressConnected
+    && (hasAnyTaskSnapshot || hasSnapshotHandshakeReceived);
   const taskListViewPhase = useMemo<TaskListViewPhase>(() => (
     resolveTaskListViewPhase({
       baseBuildStatus,

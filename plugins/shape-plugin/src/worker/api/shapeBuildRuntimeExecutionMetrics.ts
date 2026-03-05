@@ -914,10 +914,18 @@ const emitTaskSnapshot = async (
     ? await listTasksByStage(taskQueue, nodeId, options.stage)
     : await listTasks(taskQueue, nodeId);
   const snapshot = tasks.map((task) => mapTaskQueueRecordToTaskSummary(task));
+  const snapshotVersion = snapshot.length > 0
+    ? snapshot.reduce((max, task) => Math.max(max, task.version), Number.MIN_SAFE_INTEGER)
+    : 0;
   subscription.callback({
     type: 'snapshot',
     nodeId,
     tasks: snapshot,
+    version: snapshotVersion,
+    stage: options?.stage,
+  } as BuildTaskUpdateEvent & {
+    version: number;
+    stage?: TaskQueueRecord['stage'];
   });
 };
 
