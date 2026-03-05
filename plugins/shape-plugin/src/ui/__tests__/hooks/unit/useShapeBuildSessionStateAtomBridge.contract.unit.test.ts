@@ -40,4 +40,3 @@ describe('useShapeBuildSessionStateAtomBridge contract helpers', () => {
     expect(resolveTaskVersionAction(3, 2)).toBe('error');
   });
 });
-

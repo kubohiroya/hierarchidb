@@ -213,9 +213,9 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
           const lastAppliedVersion = lastAppliedVersionByTaskId.get(event.task.taskId);
           const versionAction = resolveTaskVersionAction(lastAppliedVersion, event.task.version);
           if (versionAction === 'error') {
-              stopWithContractError(
-                `[shape buildSessionStateAtomBridge] task version regressed: taskId=${event.task.taskId} next=${event.task.version} current=${lastAppliedVersion}`,
-              );
+            stopWithContractError(
+              `[shape buildSessionStateAtomBridge] task version regressed: taskId=${event.task.taskId} next=${event.task.version} current=${lastAppliedVersion}`,
+            );
           }
           if (versionAction === 'drop') {
             const key = `${event.task.taskId}:${event.task.version}`;
