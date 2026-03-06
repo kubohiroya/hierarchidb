@@ -1,0 +1,322 @@
+<!doctype html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>geojson-vt x geoBoundaries x IndexedDB prototype restore</title>
+
+<body>
+<h1>geojson-vt × geoBoundaries × IndexedDB prototype restore test</h1>
+<p>Open DevTools Console. This page logs everything there.</p>
+
+<script type="module">
+  /**
+   * ====== CONFIG ======
+   * 1) Set GEOJSON_URL to your geoBoundaries GeoJSON URL (raw GeoJSON).
+   *    Examples vary by gb version, ISO3, ADM level, etc.
+   * 2) If CORS blocks fetch, set CORS_PROXY to something like:
+   *    - your own proxy endpoint (recommended)
+   *    - or a dev-only proxy you already use
+   *
+   * NOTE: I intentionally do NOT hardcode a public proxy here.
+   */
+
+    // TODO: replace with your actual geoBoundaries GeoJSON URL
+  const GEOJSON_URL =
+      "http://localhost:4200/test.geojson";
+
+  // Optional: If geoBoundaries fetch is blocked by CORS, set this.
+  // Should be a prefix that accepts target URL appended/encoded.
+  // Examples:
+  //  - "https://your-proxy.example.com/?url="
+  //  - "http://localhost:8787/proxy?url="
+  const CORS_PROXY = ""; // e.g. "http://localhost:8787/proxy?url="
+
+
+  // Tile zooms to probe. Include a “drill-down” zoom where tiles aren't pre-generated.
+  const PREGEN_Z = 0;          // we will pre-generate z=0 only
+  const DRILLDOWN_Z = 8;       // change as you like
+  const DRILLDOWN_NEIGHBORHOOD = 1; // try ±1 tiles around computed x/y
+
+  // geojson-vt options
+  const VT_OPTIONS = {
+    maxZoom: DRILLDOWN_Z,   // allow queries up to this zoom
+    indexMaxZoom: PREGEN_Z, // only build index up to PREGEN_Z (so drill-down is real)
+    tolerance: 3,
+    extent: 4096,
+    buffer: 64,
+    lineMetrics: true,      // explicitly enable
+    // NOTE: For polygons, lineMetrics isn’t usually “needed”, but we keep it ON as you requested.
+  };
+
+  /**
+   * ====== Imports ======
+   * You can swap CDN if you prefer (jsdelivr/unpkg/etc).
+   */
+  import geojsonvt from "https://cdn.skypack.dev/geojson-vt";
+
+  /**
+   * ====== Small helpers ======
+   */
+  function proxiedUrl(url) {
+    if (!CORS_PROXY) return url;
+    // If your proxy expects raw append, keep as-is.
+    // If it expects encoded target URL, change to encodeURIComponent(url).
+    return CORS_PROXY + encodeURIComponent(url);
+  }
+
+  async function fetchGeoJSON(url) {
+    const res = await fetch(proxiedUrl(url), {
+      // Some proxies require credentials off; keep default.
+      cache: "no-store",
+    });
+    if (!res.ok) throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
+    const text = await res.text();
+    // geoBoundaries GeoJSON can be big; parse carefully
+    return JSON.parse(text);
+  }
+
+  function lon2tile(lon, z) {
+    return Math.floor(((lon + 180) / 360) * (1 << z));
+  }
+  function lat2tile(lat, z) {
+    const rad = (lat * Math.PI) / 180;
+    const n = Math.tan(rad) + 1 / Math.cos(rad);
+    return Math.floor(((1 - Math.log(n) / Math.PI) / 2) * (1 << z));
+  }
+
+  function countFeatures(gj) {
+    if (!gj) return 0;
+    if (gj.type === "FeatureCollection") return gj.features?.length ?? 0;
+    if (gj.type === "Feature") return 1;
+    return 0;
+  }
+
+  function summarizeGeometryTypes(gj, limit = 50) {
+    const counts = new Map();
+    const feats =
+      gj.type === "FeatureCollection" ? gj.features :
+        gj.type === "Feature" ? [gj] :
+          [];
+    for (let i = 0; i < Math.min(feats.length, limit); i++) {
+      const t = feats[i]?.geometry?.type ?? "Unknown";
+      counts.set(t, (counts.get(t) ?? 0) + 1);
+    }
+    return Object.fromEntries(counts.entries());
+  }
+
+  /**
+   * Detect “array with extra properties” inside a tile.
+   * geojson-vt uses arrays heavily; sometimes it attaches fields like size/start/end.
+   * We scan for any Array that has own enumerable properties beyond numeric indices/length.
+   */
+  function scanArrayExtraPropsInTile(tile, maxFinds = 20) {
+    const finds = [];
+    const seen = new Set();
+
+    function isPlainArray(x) {
+      return Array.isArray(x);
+    }
+
+    function arrayExtraKeys(arr) {
+      // own enumerable keys only
+      const keys = Object.keys(arr);
+      // keys are strings; numeric indices look like "0","1",...
+      const extra = keys.filter((k) => {
+        if (k === "length") return false;
+        // numeric index?
+        if (/^(0|[1-9]\d*)$/.test(k)) return false;
+        return true;
+      });
+      return extra;
+    }
+
+    function walk(x, path) {
+      if (finds.length >= maxFinds) return;
+      if (x && typeof x === "object") {
+        if (seen.has(x)) return;
+        seen.add(x);
+      }
+
+      if (isPlainArray(x)) {
+        const extra = arrayExtraKeys(x);
+        if (extra.length) {
+          // capture a small snapshot
+          const snap = {};
+          for (const k of extra.slice(0, 10)) snap[k] = x[k];
+          finds.push({ path, extraKeys: extra, snapshot: snap });
+          if (finds.length >= maxFinds) return;
+        }
+        for (let i = 0; i < x.length; i++) {
+          walk(x[i], `${path}[${i}]`);
+          if (finds.length >= maxFinds) return;
+        }
+        return;
+      }
+
+      if (x && typeof x === "object") {
+        for (const [k, v] of Object.entries(x)) {
+          walk(v, `${path}.${k}`);
+          if (finds.length >= maxFinds) return;
+        }
+      }
+    }
+
+    walk(tile, "tile");
+    return finds;
+  }
+
+  /**
+   * ====== IndexedDB minimal KV ======
+   */
+  const DB_NAME = "geojson-vt-geoboundaries-test-db";
+  const STORE = "kv";
+  const KEY = "index";
+
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE);
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  function idbPut(db, key, value) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, "readwrite");
+      tx.objectStore(STORE).put(value, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  function idbGet(db, key) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, "readonly");
+      const req = tx.objectStore(STORE).get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  /**
+   * ====== Main test ======
+   */
+  console.log("Fetching GeoJSON…", GEOJSON_URL);
+  const gj = await fetchGeoJSON(GEOJSON_URL);
+
+  // Pick a test point that is definitely inside your chosen country/area.
+  // (If your dataset is e.g. Japan ADM1, keep Tokyo here. If it's another country, change it.)
+  function computeBBoxOfGeoJSON(gj) {
+    let minLon = Infinity, minLat = Infinity, maxLon = -Infinity, maxLat = -Infinity;
+
+    function scanCoords(coords) {
+      if (!coords) return;
+      if (typeof coords[0] === "number") {
+        const [lon, lat] = coords;
+        if (lon < minLon) minLon = lon;
+        if (lat < minLat) minLat = lat;
+        if (lon > maxLon) maxLon = lon;
+        if (lat > maxLat) maxLat = lat;
+        return;
+      }
+      for (const c of coords) scanCoords(c);
+    }
+
+    const feats = gj.type === "FeatureCollection" ? gj.features : [gj];
+    for (const f of feats) scanCoords(f.geometry?.coordinates);
+
+    return { minLon, minLat, maxLon, maxLat };
+  }
+
+  const bbox = computeBBoxOfGeoJSON(gj);
+  const AUTO_POINT = { lon: (bbox.minLon + bbox.maxLon) / 2, lat: (bbox.minLat + bbox.maxLat) / 2 };
+  console.log("AUTO bbox:", bbox, "AUTO_POINT:", AUTO_POINT);
+
+  // ここで TEST_POINT を置き換える（あなたのコードの computed tile 計算に使う）
+  const TEST_POINT2 = AUTO_POINT;
+
+  console.log("GeoJSON loaded:", {
+    type: gj.type,
+    features: countFeatures(gj),
+    sampleGeometryTypes: summarizeGeometryTypes(gj),
+    url: GEOJSON_URL,
+    usedProxy: !!CORS_PROXY,
+  });
+
+  console.time("geojsonvt_build_index");
+  const original = geojsonvt(gj, VT_OPTIONS);
+  console.timeEnd("geojsonvt_build_index");
+
+  const proto = Object.getPrototypeOf(original);
+
+  // Pre-generate ONLY z=0 to ensure drill-down at higher zoom.
+  const t0 = original.getTile(PREGEN_Z, 0, 0);
+  console.log(`original.getTile(${PREGEN_Z},0,0) =>`, !!t0, t0 ? { numFeatures: t0.numFeatures } : null);
+
+  // Compute tile for test point
+  const z = DRILLDOWN_Z;
+  const x = lon2tile(TEST_POINT2.lon, z);
+  const y = lat2tile(TEST_POINT2.lat, z);
+  console.log("computed tile", { z, x, y, point: TEST_POINT2 });
+
+  // Verify original (ground truth) for that tile
+  const origDrill = original.getTile(z, x, y);
+  console.log("original drilldown tile exists?", !!origDrill, origDrill ? { numFeatures: origDrill.numFeatures } : null);
+
+  // Save to IDB
+  const db = await openDB();
+  await idbPut(db, KEY, original);
+  const restoredRaw = await idbGet(db, KEY);
+
+  console.log("restoredRaw has getTile?", typeof restoredRaw?.getTile); // expect undefined
+  Object.setPrototypeOf(restoredRaw, proto);
+  console.log("after setPrototypeOf, has getTile?", typeof restoredRaw?.getTile); // expect function
+
+  // Basic: cached tile (z=0)
+  const restoredT0 = restoredRaw.getTile(PREGEN_Z, 0, 0);
+  console.log("restored cached tile z=0 exists?", !!restoredT0);
+
+  // Drill-down: computed tile and neighborhood
+  let restoredFound = null;
+  for (let dx = -DRILLDOWN_NEIGHBORHOOD; dx <= DRILLDOWN_NEIGHBORHOOD; dx++) {
+    for (let dy = -DRILLDOWN_NEIGHBORHOOD; dy <= DRILLDOWN_NEIGHBORHOOD; dy++) {
+      const t = restoredRaw.getTile(z, x + dx, y + dy);
+      if (t) {
+        restoredFound = { dx, dy, tile: t };
+        break;
+      }
+    }
+    if (restoredFound) break;
+  }
+  console.log("restored drill-down found?", !!restoredFound, restoredFound ? { at: { z, x: x + restoredFound.dx, y: y + restoredFound.dy }, numFeatures: restoredFound.tile.numFeatures } : null);
+
+  // Compare: if original had tile but restored doesn't, that’s suspicious
+  if (origDrill && !restoredFound) {
+    console.warn("⚠️ original has tile at computed coords but restored did NOT find it (even in neighborhood). Potential restore/drill-down issue.");
+  } else if (!origDrill && restoredFound) {
+    console.warn("Note: original computed tile was empty but restored found something in neighborhood (boundary crossing likely).");
+  }
+
+  // Scan for array extra props inside tiles (original vs restored).
+  // We scan the drill-down tile if found; else scan t0.
+  const tileToScanOriginal = origDrill || t0;
+  const tileToScanRestored = (restoredFound?.tile) || restoredT0;
+
+  console.log("Scanning for arrays with extra props…");
+  const extraOrig = scanArrayExtraPropsInTile(tileToScanOriginal);
+  const extraRest = scanArrayExtraPropsInTile(tileToScanRestored);
+
+  console.log("array-extra-props finds (original):", extraOrig.length, extraOrig.slice(0, 5));
+  console.log("array-extra-props finds (restored):", extraRest.length, extraRest.slice(0, 5));
+
+  // Minimal sanity: try to serialize via JSON and show that it loses methods
+  const json = JSON.stringify(original);
+  const revived = JSON.parse(json);
+  console.log("JSON revived has getTile?", typeof revived?.getTile); // undefined
+
+  console.log("DONE");
+</script>
+</body>

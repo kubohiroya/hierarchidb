@@ -1,0 +1,61 @@
+{
+  "steps": {
+    "mapStyle": {
+      "label": "Map Style"
+    },
+    "viewport": {
+      "label": "Preview"
+    }
+  },
+  "mapStyle": {
+    "description": "Choose one of the bundled MapLibre styles or switch to “Custom” to reference your own style JSON.",
+    "presets": {
+      "streets": {
+        "label": "Streets",
+        "description": "Balanced street-focused basemap."
+      },
+      "satellite": {
+        "label": "Satellite",
+        "description": "Aerial imagery with minimal overlays."
+      },
+      "terrain": {
+        "label": "Terrain",
+        "description": "Terrain-focused styling with hillshade."
+      },
+      "dark": {
+        "label": "Dark",
+        "description": "Dark theme suited for overlays."
+      },
+      "light": {
+        "label": "Light",
+        "description": "Light theme suited for overlays."
+      }
+    },
+    "custom": {
+      "title": "Custom Style",
+      "description": "Reference your own MapLibre style JSON (hosted URL or inline config). Ideal when you need branded colors or licensed tile providers.",
+      "urlLabel": "Custom Style URL",
+      "urlPlaceholder": "https://example.com/style.json"
+    }
+  },
+  "viewport": {
+    "description": "Fine-tune the initial viewport. Enter values directly or use the map preview below.",
+    "fields": {
+      "longitude": {
+        "label": "Longitude"
+      },
+      "latitude": {
+        "label": "Latitude"
+      },
+      "zoom": {
+        "label": "Zoom"
+      },
+      "bearing": {
+        "label": "Bearing"
+      }
+    },
+    "loading": "Loading map…",
+    "preparing": "Preparing map…",
+    "summary": "Center: {{lng}}, {{lat}} / Zoom: {{zoom}} / Bearing: {{bearing}}"
+  }
+}

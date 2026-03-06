@@ -1,0 +1,24 @@
+{
+  "description": {
+    "create": "新規ノードの基本情報を入力してください。",
+    "edit": "このノードの基本情報を更新してください。"
+  },
+  "name": {
+    "required": "名称は必須です"
+  },
+  "fields": {
+    "name": {
+      "label": "名称",
+      "placeholder": "わかりやすい名称を入力してください"
+    },
+    "description": {
+      "label": "説明",
+      "placeholder": "任意の説明を入力してください",
+      "counter": "{{count}}/1000 文字"
+    },
+    "tags": {
+      "label": "タグ",
+      "placeholder": "タグを入力して Enter を押してください"
+    }
+  }
+}
