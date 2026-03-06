@@ -1,6 +1,7 @@
 # 運用ハブ
 
 ## Doing
+- #825 / fix/shape/github-pages-payload-generation-825 / 2026-03-06 20:15
 - #823 / codex/debug/worker-token-request-detailed-logging-823 / 2026-03-06 17:55
 - #822 / codex/debug/worker-ui-token-request-debug-822 / 2026-03-06 15:30
 - #821 / codex/fix/auth/worker-token-access-debug-821 / 2026-03-06 15:07
@@ -56,6 +57,8 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-06: Issue #825 開始 - GitHub Pages環境でshape build失敗問題の調査に着手。エラー「No source task payloads generated for 200 selected entries. Metadata may be stale or incompatible with the current selection」の根本原因特定と修正を実施予定。Issue #823のデバッグログ強化により詳細エラー情報が可視化された。
+- 2026-03-06: gh-pagesブランチ完全再作成完了 - 既存の`gh-pages`ブランチを削除し、`--orphan`で新規作成。`app/dist`の内容のみを含む244ファイルをコミット（コミット `e16e9ff4d`）。不要なファイル（`.pnpm-store`、`node_modules`、ビルドログなど）を除外し、GitHub Pages用の適切な構成でリモートにプッシュ完了。Issue #823のデバッグログ強化がGitHub Pages環境で表示されることを期待。
 - 2026-03-06: Issue #819 完了 - Worker側からUI側へのトークン問い合わせ機能の実装が完了し、mainブランチに反映済み。コミット `881b08fc7` でマージ完了。Issue #822のデバッグ強化もコミット `55c99269f` でマージ完了。実装内容: WorkerAPIに`requestAuthToken()`と`setUiTokenRequestCallback()`メソッド追加、workerBootstrapでUI側コールバック管理、WorkerProviderでトークン要求コールバック設定、AuthServiceにWorkerTokenRequestAPI統合。認証エラーは継続中だが、実装は完了済み。
 - 2026-03-06: Issue #822 進捗 - Worker側からUI側へのトークン問い合わせ機能のデバッグログを強化。AuthServiceでWorker環境でのデバッグログを常時有効化、resolveStoredTokenメソッドでタイムスタンプ付き詳細ログ追加、WorkerProviderとworkerBootstrapでIssue #822識別子付きデバッグログ追加。一時ファイル（test-worker-*、vitest.config.ts.timestamp-*、tsup.config.bundled*）を削除し、.gitignoreに一時ファイルパターンを追加。`pnpm -w turbo run typecheck --filter @hierarchidb/auth --filter @hierarchidb/app`と`pnpm -w turbo run build --filter @hierarchidb/auth --filter @hierarchidb/app`は成功（exit 0）。GitHub Pages環境でのデバッグログ可視化を改善。
 - 2026-03-06: Issue #804 進捗 - `useShapeBuildSessionStateAtomBridge` で `getBuildTasks` 初回取得と `subscribeBuildTasks` 開始の間に task 更新を取りこぼすレースを解消するため、購読開始直後に task snapshot を再同期する処理を追加。`pnpm -C plugins/shape-plugin exec vitest run src/ui/__tests__/hooks/unit/resolveReceivingTaskSnapshotDecision.unit.test.ts src/ui/__tests__/hooks/unit/useShapeBuildSessionStateAtomBridge.contract.unit.test.ts` と `pnpm -C plugins/shape-plugin typecheck` は成功（exit 0）。

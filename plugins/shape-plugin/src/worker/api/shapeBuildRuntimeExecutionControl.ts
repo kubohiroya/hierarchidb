@@ -150,12 +150,52 @@ const resolveSourceTaskPayloadsForPlan = async (input: {
   }
   const strategy = resolveSourceStageStrategy(input.dataSource);
   const selectedAdminPairCount = countSelectedAdminPairs(input.selectedArrayByCountries);
-  const buildPayloads = (countryMetadata: CountryMetadata[]): SourceTaskPayload[] => strategy.buildSourceTaskPayloads({
-    selectedArrayByCountries: input.selectedArrayByCountries,
-    countryMetadata,
-  });
+  const buildPayloads = (countryMetadata: CountryMetadata[]): SourceTaskPayload[] => {
+    console.log('[shapeBuildAPI] Issue #825 debug: buildPayloads input', {
+      nodeId: input.nodeId,
+      dataSource: input.dataSource,
+      selectedArrayByCountries: input.selectedArrayByCountries,
+      countryMetadataLength: countryMetadata.length,
+      selectedAdminPairCount,
+    });
+
+    const result = strategy.buildSourceTaskPayloads({
+      selectedArrayByCountries: input.selectedArrayByCountries,
+      countryMetadata,
+    });
+
+    console.log('[shapeBuildAPI] Issue #825 debug: buildPayloads result', {
+      nodeId: input.nodeId,
+      resultLength: result.length,
+      resultSample: result.slice(0, 3).map(p => ({
+        countryCode: p.countryCode,
+        adminLevel: p.adminLevel,
+        taskId: p.taskId
+      })),
+    });
+
+    return result;
+  };
   const countryMetadata = await metadataLoader.loadMetadata(input.dataSource, input.nodeId);
+  console.log('[shapeBuildAPI] Issue #825 debug: loaded metadata', {
+    nodeId: input.nodeId,
+    dataSource: input.dataSource,
+    selectedAdminPairCount,
+    metadataLength: countryMetadata.length,
+    metadataSample: countryMetadata.slice(0, 3).map(m => ({ code: m.code, adminLevel: m.adminLevel })),
+  });
+
   const payloadsFromCache = buildPayloads(countryMetadata);
+  console.log('[shapeBuildAPI] Issue #825 debug: payloads from cache', {
+    nodeId: input.nodeId,
+    payloadsLength: payloadsFromCache.length,
+    payloadsSample: payloadsFromCache.slice(0, 3).map(p => ({
+      countryCode: p.countryCode,
+      adminLevel: p.adminLevel,
+      taskId: p.taskId
+    })),
+  });
+
   if (payloadsFromCache.length > 0 || selectedAdminPairCount === 0) {
     return payloadsFromCache;
   }
@@ -166,7 +206,23 @@ const resolveSourceTaskPayloadsForPlan = async (input: {
   });
   metadataLoader.clearCache(input.dataSource);
   const refreshedMetadata = await metadataLoader.loadMetadata(input.dataSource, input.nodeId, { force: true });
+  console.log('[shapeBuildAPI] Issue #825 debug: refreshed metadata', {
+    nodeId: input.nodeId,
+    refreshedMetadataLength: refreshedMetadata.length,
+    refreshedMetadataSample: refreshedMetadata.slice(0, 3).map(m => ({ code: m.code, adminLevel: m.adminLevel })),
+  });
+
   const payloadsFromRefreshedMetadata = buildPayloads(refreshedMetadata);
+  console.log('[shapeBuildAPI] Issue #825 debug: payloads from refreshed metadata', {
+    nodeId: input.nodeId,
+    payloadsLength: payloadsFromRefreshedMetadata.length,
+    payloadsSample: payloadsFromRefreshedMetadata.slice(0, 3).map(p => ({
+      countryCode: p.countryCode,
+      adminLevel: p.adminLevel,
+      taskId: p.taskId
+    })),
+  });
+
   if (payloadsFromRefreshedMetadata.length > 0) {
     return payloadsFromRefreshedMetadata;
   }
