@@ -1144,78 +1144,111 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             setCorsProxyBaseURL(url);
           },
           requestAuthToken: async (): Promise<string | null> => {
+            // Issue #823: Enhanced debug logging for worker token request processing
+            const requestStart = performance.now();
+            console.debug('[worker bootstrap] requestAuthToken called - Issue #823 debug:', {
+              timestamp: new Date().toISOString(),
+              hasUiTokenRequestCallback: typeof uiTokenRequestCallback === 'function',
+              callbackType: typeof uiTokenRequestCallback,
+              requestStartTime: requestStart,
+            });
+
             // Request token from UI side via callback
             if (typeof uiTokenRequestCallback === 'function') {
               try {
-                console.debug('[worker bootstrap] Requesting token from UI via callback - Issue #822 debug:', {
+                console.debug('[worker bootstrap] Requesting token from UI via callback - Issue #823 debug:', {
                   timestamp: new Date().toISOString(),
                   callbackType: typeof uiTokenRequestCallback,
+                  requestStartTime: requestStart,
                 });
+
+                const callbackStart = performance.now();
                 const token = await uiTokenRequestCallback();
-                console.debug('[worker bootstrap] UI token request result - Issue #822 debug:', {
+                const callbackEnd = performance.now();
+
+                console.debug('[worker bootstrap] UI token request result - Issue #823 debug:', {
                   hasToken: Boolean(token),
                   tokenLength: token?.length || 0,
                   tokenPreview: token ? `${token.substring(0, 10)}...` : null,
+                  callbackTimeMs: Math.round(callbackEnd - callbackStart),
+                  totalTimeMs: Math.round(callbackEnd - requestStart),
                   timestamp: new Date().toISOString(),
                 });
                 return token;
               } catch (error) {
-                console.warn('[worker bootstrap] UI token request failed - Issue #822 debug:', {
+                const callbackEnd = performance.now();
+                console.warn('[worker bootstrap] UI token request failed - Issue #823 debug:', {
                   error: error instanceof Error ? error.message : String(error),
                   errorStack: error instanceof Error ? error.stack : undefined,
+                  errorName: error instanceof Error ? error.name : 'unknown',
+                  callbackTimeMs: Math.round(callbackEnd - requestStart),
                   timestamp: new Date().toISOString(),
                 });
                 return null;
               }
             } else {
-              console.debug('[worker bootstrap] No UI token request callback available - Issue #822 debug:', {
+              console.debug('[worker bootstrap] No UI token request callback available - Issue #823 debug:', {
                 callbackType: typeof uiTokenRequestCallback,
+                callbackValue: uiTokenRequestCallback,
                 timestamp: new Date().toISOString(),
               });
             }
 
             // Fallback to AuthService if no UI callback available
             try {
-              console.debug('[worker bootstrap] Falling back to AuthService for token - Issue #822 debug:', {
+              console.debug('[worker bootstrap] Falling back to AuthService for token - Issue #823 debug:', {
                 timestamp: new Date().toISOString(),
+                fallbackStartTime: performance.now(),
               });
+
+              const authServiceStart = performance.now();
               const auth = await AuthService.getSingleton();
-              return await auth.getAuthHeaders().then(headers => {
-                const authHeader = headers.Authorization;
-                if (authHeader && authHeader.startsWith('Bearer ')) {
-                  const token = authHeader.slice(7); // Remove 'Bearer ' prefix
-                  console.debug('[worker bootstrap] AuthService token result - Issue #822 debug:', {
-                    hasToken: Boolean(token),
-                    tokenLength: token?.length || 0,
-                    tokenPreview: token ? `${token.substring(0, 10)}...` : null,
-                    timestamp: new Date().toISOString(),
-                  });
-                  return token;
-                }
-                console.debug('[worker bootstrap] No valid Authorization header from AuthService - Issue #822 debug:', {
-                  hasAuthHeader: Boolean(authHeader),
-                  authHeaderPreview: authHeader ? `${authHeader.substring(0, 20)}...` : null,
+              const authHeaders = await auth.getAuthHeaders();
+              const authServiceEnd = performance.now();
+
+              const authHeader = authHeaders.Authorization;
+              if (authHeader && authHeader.startsWith('Bearer ')) {
+                const token = authHeader.slice(7); // Remove 'Bearer ' prefix
+                console.debug('[worker bootstrap] AuthService token result - Issue #823 debug:', {
+                  hasToken: Boolean(token),
+                  tokenLength: token?.length || 0,
+                  tokenPreview: token ? `${token.substring(0, 10)}...` : null,
+                  authServiceTimeMs: Math.round(authServiceEnd - authServiceStart),
+                  totalTimeMs: Math.round(authServiceEnd - requestStart),
                   timestamp: new Date().toISOString(),
                 });
-                return null;
+                return token;
+              }
+              console.debug('[worker bootstrap] No valid Authorization header from AuthService - Issue #823 debug:', {
+                hasAuthHeader: Boolean(authHeader),
+                authHeaderPreview: authHeader ? `${authHeader.substring(0, 20)}...` : null,
+                authServiceTimeMs: Math.round(authServiceEnd - authServiceStart),
+                totalTimeMs: Math.round(authServiceEnd - requestStart),
+                timestamp: new Date().toISOString(),
               });
+              return null;
             } catch (error) {
-              console.warn('[worker bootstrap] AuthService token request failed - Issue #822 debug:', {
+              const fallbackEnd = performance.now();
+              console.warn('[worker bootstrap] AuthService token request failed - Issue #823 debug:', {
                 error: error instanceof Error ? error.message : String(error),
                 errorStack: error instanceof Error ? error.stack : undefined,
+                errorName: error instanceof Error ? error.name : 'unknown',
+                fallbackTimeMs: Math.round(fallbackEnd - requestStart),
                 timestamp: new Date().toISOString(),
               });
               return null;
             }
           },
           setUiTokenRequestCallback: async (callback: (() => Promise<string | null>) | null): Promise<void> => {
-            console.debug('[worker bootstrap] setUiTokenRequestCallback called - Issue #822 debug:', {
+            console.debug('[worker bootstrap] setUiTokenRequestCallback called - Issue #823 debug:', {
               hasCallback: typeof callback === 'function',
               callbackType: typeof callback,
+              previousCallbackType: typeof uiTokenRequestCallback,
               timestamp: new Date().toISOString(),
             });
             uiTokenRequestCallback = callback;
-            console.debug('[worker bootstrap] uiTokenRequestCallback set successfully - Issue #822 debug:', {
+            console.debug('[worker bootstrap] uiTokenRequestCallback set successfully - Issue #823 debug:', {
+              newCallbackType: typeof uiTokenRequestCallback,
               timestamp: new Date().toISOString(),
             });
           },
@@ -1223,16 +1256,17 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
 
         // Setup AuthService with WorkerAPI for token requests
         try {
-          console.debug('[worker bootstrap] Setting up AuthService with WorkerAPI - Issue #822 debug:', {
+          console.debug('[worker bootstrap] Setting up AuthService with WorkerAPI - Issue #823 debug:', {
             timestamp: new Date().toISOString(),
+            hasRequestAuthTokenMethod: typeof api.requestAuthToken === 'function',
           });
           const auth = await AuthService.getSingleton();
           auth.setWorkerAPI(api);
-          console.debug('[worker bootstrap] AuthService setup completed - Issue #822 debug:', {
+          console.debug('[worker bootstrap] AuthService setup completed - Issue #823 debug:', {
             timestamp: new Date().toISOString(),
           });
         } catch (error) {
-          console.warn('[worker bootstrap] Failed to setup AuthService with WorkerAPI - Issue #822 debug:', {
+          console.warn('[worker bootstrap] Failed to setup AuthService with WorkerAPI - Issue #823 debug:', {
             error: error instanceof Error ? error.message : String(error),
             errorStack: error instanceof Error ? error.stack : undefined,
             timestamp: new Date().toISOString(),

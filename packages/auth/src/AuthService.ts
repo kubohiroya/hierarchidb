@@ -218,35 +218,79 @@ export class AuthService implements AuthHeadersProvider {
     const scope: AuthScope = ctx.scope ?? 'shape';
     let attempt = 0;
     let lastErr: unknown;
+
+    // Issue #823: Enhanced debug logging for worker token request flow
+    const isWorkerEnvironment = (() => {
+      try {
+        return typeof (globalThis as any).importScripts !== 'undefined';
+      } catch {
+        return false;
+      }
+    })();
+
+    if (this.isAuthDebugEnabled()) {
+      console.debug('[auth][service] fetchWithAuth starting - Issue #823 debug:', {
+        scope,
+        url,
+        method: init.method || 'GET',
+        maxRetries,
+        isWorkerEnvironment,
+        hasUiStorage: Boolean(this.uiStorage),
+        hasWorkerAPI: Boolean(this.workerAPI),
+        timestamp: new Date().toISOString(),
+      });
+    }
+
     for (; attempt <= maxRetries; attempt++) {
       try {
         const headers = new Headers(init.headers);
+
+        // Issue #823: Detailed token resolution logging
+        const tokenResolutionStart = performance.now();
         const auth = await this.getAuthHeaders();
+        const tokenResolutionEnd = performance.now();
+
         Object.entries(auth).map(([k, v]) => headers.set(k, v));
 
         if (this.isAuthDebugEnabled()) {
           let hasStoredToken = false;
+          let tokenSource = 'none';
           try {
             const storedToken = await this.resolveStoredToken();
             hasStoredToken = Boolean(storedToken);
+            if (storedToken) {
+              if (this.uiStorage) {
+                tokenSource = 'uiStorage';
+              } else if (this.workerAPI && isWorkerEnvironment) {
+                tokenSource = 'workerAPI';
+              } else if (typeof localStorage !== 'undefined') {
+                tokenSource = 'localStorage';
+              }
+            }
           } catch {
             // ignore
           }
-          console.debug('[auth][service] fetchWithAuth attempt', {
+          console.debug('[auth][service] fetchWithAuth attempt - Issue #823 debug:', {
             scope,
             attempt,
             url,
             hasAuthorization: headers.has('Authorization'),
             hasStoredToken,
+            tokenSource,
+            tokenResolutionTimeMs: Math.round(tokenResolutionEnd - tokenResolutionStart),
             method: init.method || 'GET',
             isRetry: attempt > 0,
+            isWorkerEnvironment,
+            timestamp: new Date().toISOString(),
           });
         }
 
+        const fetchStart = performance.now();
         const fetchRes = await fetch(url, { ...init, headers });
+        const fetchEnd = performance.now();
 
         if (this.isAuthDebugEnabled()) {
-          console.debug('[auth][service] fetch response received', {
+          console.debug('[auth][service] fetch response received - Issue #823 debug:', {
             scope,
             attempt,
             url,
@@ -254,6 +298,9 @@ export class AuthService implements AuthHeadersProvider {
             statusText: fetchRes.statusText,
             ok: fetchRes.ok,
             method: init.method || 'GET',
+            fetchTimeMs: Math.round(fetchEnd - fetchStart),
+            isWorkerEnvironment,
+            timestamp: new Date().toISOString(),
           });
         }
 
@@ -261,7 +308,13 @@ export class AuthService implements AuthHeadersProvider {
         await this.clearStoredToken();
 
         if (this.isAuthDebugEnabled()) {
-          console.debug('[auth][service] 401 received -> awaiting auth', { scope, url });
+          console.debug('[auth][service] 401 received -> awaiting auth - Issue #823 debug:', {
+            scope,
+            url,
+            attempt,
+            isWorkerEnvironment,
+            timestamp: new Date().toISOString(),
+          });
         }
         const requestId = `auth-req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const authRes = await this.awaitAuth(requestId, url, init, { sessionId: ctx.sessionId, scope, maxRetries }, {
@@ -272,12 +325,37 @@ export class AuthService implements AuthHeadersProvider {
         if (authRes.status !== 401) return authRes;
         lastErr = new Error(`HTTP ${authRes.status}`);
       } catch (error) {
+        if (this.isAuthDebugEnabled()) {
+          console.debug('[auth][service] fetchWithAuth error - Issue #823 debug:', {
+            scope,
+            attempt,
+            url,
+            error: error instanceof Error ? error.message : String(error),
+            errorName: error instanceof Error ? error.name : 'unknown',
+            isAuthRequiredError: error instanceof AuthRequiredError,
+            isWorkerEnvironment,
+            timestamp: new Date().toISOString(),
+          });
+        }
         if (error instanceof AuthRequiredError) {
           throw error;
         }
         lastErr = error;
       }
     }
+
+    if (this.isAuthDebugEnabled()) {
+      console.debug('[auth][service] fetchWithAuth exhausted retries - Issue #823 debug:', {
+        scope,
+        url,
+        maxRetries,
+        finalAttempt: attempt,
+        lastError: lastErr instanceof Error ? lastErr.message : String(lastErr),
+        isWorkerEnvironment,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
     if (lastErr instanceof Error) throw lastErr;
     throw new Error(lastErr === undefined ? 'Authentication failed' : String(lastErr));
   }
@@ -406,8 +484,9 @@ export class AuthService implements AuthHeadersProvider {
       }
     })();
 
-    // Always log the token resolution attempt for debugging Issue #822
-    console.debug('[auth][service] resolveStoredToken called:', {
+    // Issue #823: Enhanced debug logging for token resolution flow
+    const resolutionStart = performance.now();
+    console.debug('[auth][service] resolveStoredToken called - Issue #823 debug:', {
       hasUiStorage: Boolean(this.uiStorage),
       hasLocalStorage: typeof localStorage !== 'undefined',
       hasWorkerAPI: Boolean(this.workerAPI),
@@ -415,90 +494,114 @@ export class AuthService implements AuthHeadersProvider {
       isMainThread: typeof window !== 'undefined',
       debugEnabled: this.isAuthDebugEnabled(),
       timestamp: new Date().toISOString(),
+      resolutionStartTime: resolutionStart,
     });
 
     // First try uiStorage if available
     if (this.uiStorage) {
       try {
-        console.debug('[auth][service] Attempting uiStorage.getItem("access_token")');
+        console.debug('[auth][service] Attempting uiStorage.getItem("access_token") - Issue #823 debug');
+        const uiStorageStart = performance.now();
         const token = await this.uiStorage.getItem('access_token');
-        console.debug('[auth][service] resolveStoredToken from uiStorage:', {
+        const uiStorageEnd = performance.now();
+        console.debug('[auth][service] resolveStoredToken from uiStorage - Issue #823 debug:', {
           hasToken: Boolean(token),
           tokenLength: token?.length || 0,
           tokenPreview: token ? `${token.substring(0, 10)}...` : null,
+          uiStorageTimeMs: Math.round(uiStorageEnd - uiStorageStart),
+          totalTimeMs: Math.round(uiStorageEnd - resolutionStart),
           timestamp: new Date().toISOString(),
         });
         return token;
       } catch (error) {
-        console.debug('[auth][service] uiStorage getItem failed, falling back to next method:', {
+        const uiStorageEnd = performance.now();
+        console.debug('[auth][service] uiStorage getItem failed, falling back to next method - Issue #823 debug:', {
           error: error instanceof Error ? error.message : String(error),
           errorStack: error instanceof Error ? error.stack : undefined,
+          errorName: error instanceof Error ? error.name : 'unknown',
+          uiStorageTimeMs: Math.round(uiStorageEnd - resolutionStart),
           timestamp: new Date().toISOString(),
         });
         // Fall through to next method
       }
     } else {
-      console.debug('[auth][service] uiStorage not available, skipping to next method');
+      console.debug('[auth][service] uiStorage not available, skipping to next method - Issue #823 debug');
     }
 
     // Try worker API token request if available (shared-worker environment)
     if (this.workerAPI && isWorkerEnvironment) {
       try {
-        console.debug('[auth][service] Attempting workerAPI.requestAuthToken() - Issue #822 debug');
+        console.debug('[auth][service] Attempting workerAPI.requestAuthToken() - Issue #823 debug');
+        const workerAPIStart = performance.now();
         const token = await this.workerAPI.requestAuthToken();
-        console.debug('[auth][service] resolveStoredToken from workerAPI:', {
+        const workerAPIEnd = performance.now();
+        console.debug('[auth][service] resolveStoredToken from workerAPI - Issue #823 debug:', {
           hasToken: Boolean(token),
           tokenLength: token?.length || 0,
           tokenPreview: token ? `${token.substring(0, 10)}...` : null,
+          workerAPITimeMs: Math.round(workerAPIEnd - workerAPIStart),
+          totalTimeMs: Math.round(workerAPIEnd - resolutionStart),
           timestamp: new Date().toISOString(),
         });
         return token;
       } catch (error) {
-        console.warn('[auth][service] workerAPI requestAuthToken failed - Issue #822 debug:', {
+        const workerAPIEnd = performance.now();
+        console.warn('[auth][service] workerAPI requestAuthToken failed - Issue #823 debug:', {
           error: error instanceof Error ? error.message : String(error),
           errorStack: error instanceof Error ? error.stack : undefined,
+          errorName: error instanceof Error ? error.name : 'unknown',
+          workerAPITimeMs: Math.round(workerAPIEnd - resolutionStart),
           timestamp: new Date().toISOString(),
         });
         // Fall through to localStorage
       }
     } else {
       if (isWorkerEnvironment && !this.uiStorage && !this.workerAPI) {
-        console.warn('[auth][service] Worker environment detected but no uiStorage or workerAPI available - this will cause authentication failures - Issue #822');
+        console.warn('[auth][service] Worker environment detected but no uiStorage or workerAPI available - this will cause authentication failures - Issue #823');
       } else if (!isWorkerEnvironment) {
-        console.debug('[auth][service] Not in worker environment, skipping workerAPI');
+        console.debug('[auth][service] Not in worker environment, skipping workerAPI - Issue #823 debug');
       } else if (!this.workerAPI) {
-        console.debug('[auth][service] workerAPI not available, skipping to localStorage');
+        console.debug('[auth][service] workerAPI not available, skipping to localStorage - Issue #823 debug');
       }
     }
 
     // Fallback to localStorage if available (main thread only)
     if (typeof localStorage !== 'undefined') {
       try {
-        console.debug('[auth][service] Attempting localStorage.getItem("access_token")');
+        console.debug('[auth][service] Attempting localStorage.getItem("access_token") - Issue #823 debug');
+        const localStorageStart = performance.now();
         const token = localStorage.getItem('access_token');
-        console.debug('[auth][service] resolveStoredToken from localStorage:', {
+        const localStorageEnd = performance.now();
+        console.debug('[auth][service] resolveStoredToken from localStorage - Issue #823 debug:', {
           hasToken: Boolean(token),
           tokenLength: token?.length || 0,
           tokenPreview: token ? `${token.substring(0, 10)}...` : null,
+          localStorageTimeMs: Math.round(localStorageEnd - localStorageStart),
+          totalTimeMs: Math.round(localStorageEnd - resolutionStart),
           timestamp: new Date().toISOString(),
         });
         return token;
       } catch (error) {
-        console.debug('[auth][service] localStorage getItem failed:', {
+        const localStorageEnd = performance.now();
+        console.debug('[auth][service] localStorage getItem failed - Issue #823 debug:', {
           error: error instanceof Error ? error.message : String(error),
+          errorName: error instanceof Error ? error.name : 'unknown',
+          localStorageTimeMs: Math.round(localStorageEnd - resolutionStart),
           timestamp: new Date().toISOString(),
         });
         // ignore storage failures
       }
     } else {
-      console.debug('[auth][service] localStorage not available');
+      console.debug('[auth][service] localStorage not available - Issue #823 debug');
     }
 
-    console.debug('[auth][service] resolveStoredToken: no storage available or no token found - Issue #822 debug:', {
+    const resolutionEnd = performance.now();
+    console.debug('[auth][service] resolveStoredToken: no storage available or no token found - Issue #823 debug:', {
       hasUiStorage: Boolean(this.uiStorage),
       hasWorkerAPI: Boolean(this.workerAPI),
       hasLocalStorage: typeof localStorage !== 'undefined',
       isWorkerEnvironment,
+      totalTimeMs: Math.round(resolutionEnd - resolutionStart),
       timestamp: new Date().toISOString(),
     });
     return null;

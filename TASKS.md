@@ -1,6 +1,7 @@
 # 運用ハブ
 
 ## Doing
+- #823 / codex/debug/worker-token-request-detailed-logging-823 / 2026-03-06 17:55
 - #822 / codex/debug/worker-ui-token-request-debug-822 / 2026-03-06 15:30
 - #821 / codex/fix/auth/worker-token-access-debug-821 / 2026-03-06 15:07
 - #820 / codex/debug/worker-ui-token-request-820 / 2026-03-06 15:07
