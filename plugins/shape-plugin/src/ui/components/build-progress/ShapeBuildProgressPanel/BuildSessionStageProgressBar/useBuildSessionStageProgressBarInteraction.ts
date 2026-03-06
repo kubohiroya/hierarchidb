@@ -1,15 +1,15 @@
 import { type PointerEvent, useCallback, useRef } from 'react';
 import { useSetAtom } from 'jotai';
 import { taskScrollTargetAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
-import type { TaskProgressSegment } from './useTaskProgressBarComputation.js';
+import type { BuildSessionStageProgressBarSegment } from './useBuildSessionStageProgressBarComputation.js';
 
 type InteractionInput = {
-  segments: TaskProgressSegment[];
+  segments: BuildSessionStageProgressBarSegment[];
   viewWidth: number;
   dragDebounceMs?: number;
 };
 
-const resolveTargetFromPosition = (segments: TaskProgressSegment[], position: number) => {
+const resolveTargetFromPosition = (segments: BuildSessionStageProgressBarSegment[], position: number) => {
   let offset = 0;
   let index = 0;
   for (const segment of segments) {
@@ -25,7 +25,7 @@ const resolveTargetFromPosition = (segments: TaskProgressSegment[], position: nu
   return { segment: lastSegment, index: segments.length - 1 };
 };
 
-const resolveNearestInteractiveSegment = (segments: TaskProgressSegment[], index: number) => {
+const resolveNearestInteractiveSegment = (segments: BuildSessionStageProgressBarSegment[], index: number) => {
   for (let offset = 0; offset < segments.length; offset += 1) {
     const left = index - offset;
     if (left >= 0) {
@@ -41,7 +41,7 @@ const resolveNearestInteractiveSegment = (segments: TaskProgressSegment[], index
   return null;
 };
 
-export const useTaskProgressBarInteraction = ({
+export const useBuildSessionStageProgressBarInteraction = ({
   segments,
   viewWidth,
 }: InteractionInput) => {
@@ -99,7 +99,7 @@ export const useTaskProgressBarInteraction = ({
     event.currentTarget.releasePointerCapture?.(event.pointerId);
   }, [updateScrollTargetFromClientX]);
 
-  const onActivateTaskSegment = useCallback((segment: TaskProgressSegment) => {
+  const onActivateTaskSegment = useCallback((segment: BuildSessionStageProgressBarSegment) => {
     if (!segment.taskId) return;
     setScrollTarget({
       stageId: segment.stageId,

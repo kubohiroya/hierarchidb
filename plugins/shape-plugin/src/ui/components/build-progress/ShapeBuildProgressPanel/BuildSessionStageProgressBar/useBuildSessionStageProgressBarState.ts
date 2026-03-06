@@ -6,14 +6,14 @@ import type { BuildStage } from '@hierarchidb/components/build-stage';
 import { taskViewportRangeAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 import type { TaskProgressSummary } from '~/ui/atoms/shapeBuildProgressTypes';
-import { buildTaskProgressSegments, resolveViewportIndices, type TaskProgressSegment } from './useTaskProgressBarComputation.js';
-import { useTaskProgressBarInteraction } from './useTaskProgressBarInteraction.js';
+import { buildTaskProgressSegments, resolveViewportIndices, type BuildSessionStageProgressBarSegment } from './useBuildSessionStageProgressBarComputation.js';
+import { useBuildSessionStageProgressBarInteraction } from './useBuildSessionStageProgressBarInteraction.js';
 
-export type { TaskProgressSegment } from './useTaskProgressBarComputation.js';
+export type { BuildSessionStageProgressBarSegment } from './useBuildSessionStageProgressBarComputation.js';
 
-export type TaskProgressData = {
+export type BuildSessionStageProgressBarData = {
   viewWidth: number;
-  segments: TaskProgressSegment[];
+  segments: BuildSessionStageProgressBarSegment[];
   stageOffsets: Map<string, number>;
   stageCounts: Map<string, number>;
   waitingColor: string;
@@ -24,15 +24,15 @@ export type TaskProgressData = {
   showFlowBand: boolean;
   viewportStartGlobal: number | null;
   viewportEndGlobal: number | null;
-  onActivateTaskSegment: (segment: TaskProgressSegment) => void;
+  onActivateTaskSegment: (segment: BuildSessionStageProgressBarSegment) => void;
   onPointerDown: (event: PointerEvent<SVGSVGElement>) => void;
   onPointerMove: (event: PointerEvent<SVGSVGElement>) => void;
   onPointerUp: (event: PointerEvent<SVGSVGElement>) => void;
 };
 
-export type TaskProgressBarProps = TaskProgressBarStateOptions;
+export type BuildSessionStageProgressBarProps = BuildSessionStageProgressBarStateOptions;
 
-export type TaskProgressBarStateOptions = {
+export type BuildSessionStageProgressBarStateOptions = {
   stages: BuildStage[];
   tasksByStage: Record<string, TaskItemWithMetadata[]>;
   stageTotals?: TaskProgressSummary['stageTotals'];
@@ -41,14 +41,14 @@ export type TaskProgressBarStateOptions = {
   resolveTaskTitle: (task: TaskItemWithMetadata) => string;
 };
 
-export const useTaskProgressBarState = ({
+export const useBuildSessionStageProgressBarState = ({
   stages,
   tasksByStage,
   stageTotals,
   buildStatus,
   activeStageId,
   resolveTaskTitle,
-}: TaskProgressBarStateOptions): TaskProgressData => {
+}: BuildSessionStageProgressBarStateOptions): BuildSessionStageProgressBarData => {
   const theme = useTheme();
   const filter = useBuildStageFilter();
   const flowBandClipId = useId().replace(/:/g, '');
@@ -129,7 +129,7 @@ export const useTaskProgressBarState = ({
     return { x: stageOffset, width: stageCount };
   }, [activeStageId, showFlowBand, stageCounts, stageOffsets]);
 
-  const interaction = useTaskProgressBarInteraction({
+  const interaction = useBuildSessionStageProgressBarInteraction({
     segments,
     viewWidth,
   });

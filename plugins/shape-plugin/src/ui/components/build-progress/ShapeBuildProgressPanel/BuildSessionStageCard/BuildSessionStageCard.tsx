@@ -1,9 +1,9 @@
-import { useBuildProgressStageContentState } from './useBuildProgressStageContentState.js';
-import { BuildProgressStageContentView } from './BuildProgressStageContentView.tsx';
+import { useBuildSessionStageCardState } from './useBuildSessionStageCardState.js';
+import { BuildSessionStageCardView } from './BuildSessionStageCardView.tsx';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 
-type BuildProgressStageContentProps = {
+type BuildSessionStageCardProps = {
   showHeader?: boolean;
   stage: {
     id: string;
@@ -37,7 +37,7 @@ type BuildProgressStageContentProps = {
   onRequestBringFloatingWindowToFront: () => void;
 };
 
-export const BuildProgressStageContent = ({
+export const BuildSessionStageCard = ({
   showHeader,
   stage,
   stageValue,
@@ -59,8 +59,8 @@ export const BuildProgressStageContent = ({
   onCloseDetailFloatingWindow,
   floatingWindowZIndex,
   onRequestBringFloatingWindowToFront,
-}: BuildProgressStageContentProps) => {
-  const state = useBuildProgressStageContentState({
+}: BuildSessionStageCardProps) => {
+  const state = useBuildSessionStageCardState({
     stage,
     stageValue,
     tasksByStage,
@@ -84,7 +84,7 @@ export const BuildProgressStageContent = ({
   });
 
   return (
-    <BuildProgressStageContentView
+    <BuildSessionStageCardView
       {...state}
       showHeader={showHeader}
     />

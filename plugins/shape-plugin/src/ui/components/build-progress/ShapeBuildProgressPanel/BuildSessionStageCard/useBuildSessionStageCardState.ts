@@ -15,7 +15,7 @@ import {
   resolveStageAliasArray,
 } from '~/ui/components/build-progress/stageIdAliases';
 
-type BuildProgressStageContentStateArgs = {
+type BuildSessionStageCardStateArgs = {
   stage: {
     id: string;
     title: string;
@@ -51,16 +51,16 @@ type BuildProgressStageContentStateArgs = {
   onRequestBringFloatingWindowToFront: () => void;
 };
 
-export type BuildProgressStageContentState = {
+export type BuildSessionStageCardState = {
   showHeader?: boolean;
-  stage: BuildProgressStageContentStateArgs['stage'];
+  stage: BuildSessionStageCardStateArgs['stage'];
   stageValue: number;
   isTasksLoading: boolean;
   isTaskSummaryLoading: boolean;
-  resolveStatusLabel: BuildProgressStageContentStateArgs['resolveStatusLabel'];
-  resolveStatusColor: BuildProgressStageContentStateArgs['resolveStatusColor'];
-  resolveTaskTitle: BuildProgressStageContentStateArgs['resolveTaskTitle'];
-  t: BuildProgressStageContentStateArgs['t'];
+  resolveStatusLabel: BuildSessionStageCardStateArgs['resolveStatusLabel'];
+  resolveStatusColor: BuildSessionStageCardStateArgs['resolveStatusColor'];
+  resolveTaskTitle: BuildSessionStageCardStateArgs['resolveTaskTitle'];
+  t: BuildSessionStageCardStateArgs['t'];
   displayTasks: TaskItemWithMetadata[];
   hasTasks: boolean;
   showSummarySkeleton: boolean;
@@ -86,7 +86,7 @@ export type BuildProgressStageContentState = {
   onRequestBringFloatingWindowToFront: () => void;
 };
 
-export const useBuildProgressStageContentState = ({
+export const useBuildSessionStageCardState = ({
   stage,
   stageValue,
   tasksByStage,
@@ -107,7 +107,7 @@ export const useBuildProgressStageContentState = ({
   onCloseDetailFloatingWindow,
   floatingWindowZIndex,
   onRequestBringFloatingWindowToFront,
-}: BuildProgressStageContentStateArgs): BuildProgressStageContentState => {
+}: BuildSessionStageCardStateArgs): BuildSessionStageCardState => {
   const filter = useBuildStageFilter();
   const stageTasks = resolveStageAliasArray(tasksByStage, stage.id);
   const isBuildInProgressState = buildStatus === 'running' || buildStatus === 'paused';

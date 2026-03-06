@@ -1,13 +1,13 @@
 import { ArrowCircleDown as ArrowCircleDownIcon, ArrowCircleUp as ArrowCircleUpIcon } from '@mui/icons-material';
 import { Box, Skeleton, Stack, Typography, IconButton } from '@mui/material';
-import type { BuildProgressStageContentState } from './useBuildProgressStageContentState.js';
+import type { BuildSessionStageCardState } from './useBuildSessionStageCardState.js';
 import { TaskItemCardListCard } from '~/ui/components/build-progress/TaskItemCardListCard/TaskItemCardListCard';
 
-type BuildProgressStageContentViewProps = BuildProgressStageContentState & {
+type BuildSessionStageCardViewProps = BuildSessionStageCardState & {
   showHeader?: boolean;
 };
 
-export const BuildProgressStageContentView = ({
+export const BuildSessionStageCardView = ({
   showHeader,
   stage,
   stageValue,
@@ -35,7 +35,7 @@ export const BuildProgressStageContentView = ({
   onCloseDetailFloatingWindow,
   floatingWindowZIndex,
   onRequestBringFloatingWindowToFront,
-}: BuildProgressStageContentViewProps) => (
+}: BuildSessionStageCardViewProps) => (
   <Stack spacing={1} sx={{ p: 2, height: '100%', minHeight: 0 }}>
     {showSummarySkeleton ? (
       <>

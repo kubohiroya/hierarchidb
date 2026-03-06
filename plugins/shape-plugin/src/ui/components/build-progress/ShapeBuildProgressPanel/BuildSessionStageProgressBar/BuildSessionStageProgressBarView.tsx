@@ -3,10 +3,10 @@ import type {
   KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
 } from 'react';
-import type { TaskProgressData } from './useTaskProgressBarState';
-import type { TaskProgressSegment } from './useTaskProgressBarComputation.js';
+import type { BuildSessionStageProgressBarData } from './useBuildSessionStageProgressBarState.js';
+import type { BuildSessionStageProgressBarSegment } from './useBuildSessionStageProgressBarComputation.js';
 
-type TaskProgressBarViewProps = TaskProgressData;
+type BuildSessionStageProgressBarViewProps = BuildSessionStageProgressBarData;
 
 const SEGMENT_OUT_RANGE_Y = 0.2;
 const SEGMENT_OUT_RANGE_HEIGHT = 0.6;
@@ -34,9 +34,9 @@ const renderSegment = ({
 }: {
   segmentStartX: number;
   keySuffix: string;
-  segment: TaskProgressSegment;
+  segment: BuildSessionStageProgressBarSegment;
   isInViewport: boolean;
-  onActivateTaskSegment: (segment: TaskProgressSegment) => void;
+  onActivateTaskSegment: (segment: BuildSessionStageProgressBarSegment) => void;
 }) => {
   const width = segment.width;
   const title = segment.title || 'Task segment';
@@ -86,7 +86,7 @@ const renderSegment = ({
   );
 };
 
-export const TaskProgressBarView = ({
+export const BuildSessionStageProgressBarView = ({
   viewWidth,
   segments,
   emptyColor,
@@ -100,7 +100,7 @@ export const TaskProgressBarView = ({
   onPointerMove,
   onPointerUp,
   onActivateTaskSegment,
-}: TaskProgressBarViewProps) => {
+}: BuildSessionStageProgressBarViewProps) => {
   const maybeFlowBand = (() => {
     if (!showFlowBand || !flowBandRange) return null;
     return (
@@ -160,7 +160,7 @@ export const TaskProgressBarView = ({
         ) : null}
         {segments.length > 0 ? (() => {
           let offset = 0;
-          return segments.map((segment: TaskProgressSegment, index: number) => {
+          return segments.map((segment: BuildSessionStageProgressBarSegment, index: number) => {
             const segmentStart = offset;
             const segmentEnd = segmentStart + segment.width - 1;
             const inViewport = isSegmentInViewport(
