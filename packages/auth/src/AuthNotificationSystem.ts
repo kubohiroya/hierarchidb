@@ -13,6 +13,7 @@ import type {
   AuthRequiredNotification,
   AuthSource,
   AuthSuccessNotification,
+  StorageWarningNotification,
 } from '@hierarchidb/auth-api';
 
 /**
@@ -87,9 +88,9 @@ export class AuthNotificationRegistry {
         type: notification.type,
         requestId: (
           notification as
-            | AuthRequiredNotification
-            | AuthSuccessNotification
-            | AuthCancelledNotification
+          | AuthRequiredNotification
+          | AuthSuccessNotification
+          | AuthCancelledNotification
         ).context.requestId,
         broadcast,
         handlerCount: handlerIds.length,
@@ -103,7 +104,7 @@ export class AuthNotificationRegistry {
     // Track pending requests
     if (notification.type === 'AUTH_REQUIRED') {
       this.pendingRequests.set(notification.context.requestId, notification);
-    } else {
+    } else if (notification.type === 'AUTH_SUCCESS' || notification.type === 'AUTH_CANCELLED') {
       this.pendingRequests.delete(notification.context.requestId);
     }
 
@@ -125,6 +126,8 @@ export class AuthNotificationRegistry {
           return handler.onAuthSuccess(notification);
         case 'AUTH_CANCELLED':
           return handler.onAuthCancelled(notification);
+        case 'STORAGE_WARNING':
+          return handler.onStorageWarning?.(notification) ?? Promise.resolve();
         default:
           return Promise.resolve();
       }
@@ -213,6 +216,23 @@ export const AuthNotificationFactory = {
         requestId: params.requestId,
         sessionId: params.sessionId,
         reason: params.reason,
+      },
+      timestamp: Date.now(),
+    };
+  },
+
+  /**
+   * Create a storage warning notification
+   */
+  createStorageWarning(params: {
+    message: string;
+    timestamp: number;
+  }): StorageWarningNotification {
+    return {
+      type: 'STORAGE_WARNING',
+      context: {
+        message: params.message,
+        timestamp: params.timestamp,
       },
       timestamp: Date.now(),
     };

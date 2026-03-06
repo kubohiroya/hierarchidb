@@ -145,5 +145,9 @@ export interface WorkerAPI<T> {
   setUiStorageBridge(bridge: UiStorageBridge): Promise<void>;
   setAuthToken(token: string, type?: 'Bearer' | 'Basic', expiresAt?: number): Promise<void>;
   setCorsProxyBaseURL(url: string): Promise<void>;
+  /** Request current auth token from UI side. Returns null if no token available. */
+  requestAuthToken(): Promise<string | null>;
+  /** Set UI token request callback for worker-to-UI token queries. */
+  setUiTokenRequestCallback(callback: (() => Promise<string | null>) | null): Promise<void>;
 }
 export type BuildWorkerAPI<T> = WorkerAPI<T>;

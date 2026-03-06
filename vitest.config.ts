@@ -2,32 +2,38 @@ import { defineConfig, defineProject } from 'vitest/config';
 import * as path from 'path';
 import { collectAliasEntries } from './app/vite-plugins/vite-plugin-hierarchidb-plugin-alias/src/alias';
 
-const nodeTypeAliasEntries = collectAliasEntries(__dirname, ['root', 'ui', 'worker', 'database', 'common']);
+const nodeTypeAliasEntries = collectAliasEntries(__dirname, [
+  'root',
+  'ui',
+  'worker',
+  'database',
+  'common',
+]);
 
 const nodeTypeAliases = Object.fromEntries(
-  nodeTypeAliasEntries.map(({ find, replacement }) => [find, replacement]),
+  nodeTypeAliasEntries.map(({ find, replacement }) => [find, replacement])
 );
 
 const nodeTypeSrcAliases = Object.fromEntries(
   nodeTypeAliasEntries
     .filter(({ kind }) => kind === 'root')
-    .map(({ find, replacement }) => [`${find}/src`, path.dirname(replacement)]),
+    .map(({ find, replacement }) => [`${find}/src`, path.dirname(replacement)])
 );
 
 const packagesProject = defineProject({
-  name: 'packages',
+  // name: 'packages',
   test: {
     root: path.resolve(__dirname, 'packages'),
     environment: 'jsdom',
     globals: true,
     setupFiles: [path.resolve(__dirname, './vitest.setup.ts')],
     exclude: ['**/node_modules/**', 'vt-orchestrator/**', '**/@hierarchidb/vt-orchestrator/**'],
-    passWithNoTests: true,
+    //passWithNoTests: true,
   },
 });
 
 const vtOrchestratorProject = defineProject({
-  name: 'vt-orchestrator',
+  // name: 'vt-orchestrator',
   test: {
     root: path.resolve(__dirname, 'packages/vt-orchestrator'),
     environment: 'node',
@@ -38,7 +44,7 @@ const vtOrchestratorProject = defineProject({
       'src/**/*.unit.test.ts',
       'src/**/__tests__/**/*.ts',
     ],
-    passWithNoTests: true,
+    //passWithNoTests: true,
   },
   resolve: {
     alias: {
@@ -51,7 +57,6 @@ const vtOrchestratorProject = defineProject({
     },
   },
 });
-
 
 // Root Vitest config orchestrates per-package projects so each package's
 // own aliases (e.g. "~") are honored. We also exclude Playwright e2e.
@@ -100,10 +105,7 @@ export default defineConfig({
       reportsDirectory: 'coverage',
       reporter: ['text', 'html', 'lcov'],
       all: true,
-      include: [
-        'app/**/*.{ts,tsx}',
-        'packages/**/*.{ts,tsx}',
-      ],
+      include: ['app/**/*.{ts,tsx}', 'packages/**/*.{ts,tsx}'],
       exclude: [
         '**/*.test.{ts,tsx}',
         '**/__tests__/**',
@@ -123,8 +125,14 @@ export default defineConfig({
     alias: {
       // Map frequently referenced workspace packages to source to avoid prebuilding
       '@hierarchidb/ui-dialog': path.resolve(__dirname, './packages/ui/dialog/src/index.ts'),
-      '@hierarchidb/runtime-ui-plugin-dialog': path.resolve(__dirname, './packages/runtime-worker-ui/plugin-dialog/src/index.ts'),
-      '@hierarchidb/ui-worker-client': path.resolve(__dirname, './packages/runtime-worker/client/src/index.ts'),
+      '@hierarchidb/runtime-ui-plugin-dialog': path.resolve(
+        __dirname,
+        './packages/runtime-worker-ui/plugin-dialog/src/index.ts'
+      ),
+      '@hierarchidb/ui-worker-client': path.resolve(
+        __dirname,
+        './packages/runtime-worker/client/src/index.ts'
+      ),
       '@hierarchidb/build-api': path.resolve(__dirname, './packages//src/index.ts'),
       '@hierarchidb/ui-core': path.resolve(__dirname, './packages/ui/core/src/index.ts'),
       '@hierarchidb/util': path.resolve(__dirname, './packages/util/src/index.ts'),

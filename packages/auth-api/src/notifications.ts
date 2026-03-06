@@ -1,6 +1,6 @@
 export type AuthSource = 'worker' | 'cors-proxy' | 'bff' | 'external-api';
 export type PluginType = 'shape' | 'location' | 'route' | 'spreadsheet' | 'styler';
-export type AuthNotificationType = 'AUTH_REQUIRED' | 'AUTH_SUCCESS' | 'AUTH_CANCELLED';
+export type AuthNotificationType = 'AUTH_REQUIRED' | 'AUTH_SUCCESS' | 'AUTH_CANCELLED' | 'STORAGE_WARNING';
 
 export interface AuthRequiredNotification {
   type: 'AUTH_REQUIRED';
@@ -46,13 +46,24 @@ export interface AuthCancelledNotification {
   timestamp: number;
 }
 
+export interface StorageWarningNotification {
+  type: 'STORAGE_WARNING';
+  context: {
+    message: string;
+    timestamp: number;
+  };
+  timestamp: number;
+}
+
 export type AuthNotification =
   | AuthRequiredNotification
   | AuthSuccessNotification
-  | AuthCancelledNotification;
+  | AuthCancelledNotification
+  | StorageWarningNotification;
 
 export interface AuthNotificationHandler {
   onAuthRequired(notification: AuthRequiredNotification): Promise<void>;
   onAuthSuccess(notification: AuthSuccessNotification): Promise<void>;
   onAuthCancelled(notification: AuthCancelledNotification): Promise<void>;
+  onStorageWarning?(notification: StorageWarningNotification): Promise<void>;
 }

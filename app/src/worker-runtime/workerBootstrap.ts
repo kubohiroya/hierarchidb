@@ -108,6 +108,9 @@ heapMonitor.subscribe((event) => {
 });
 heapMonitor.start();
 
+// UI token request callback for worker-to-UI token queries
+let uiTokenRequestCallback: (() => Promise<string | null>) | null = null;
+
 const setHeapContext = (context: HeapPressureContext | null) => {
   heapMonitor.setContext(context);
 };
@@ -658,7 +661,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             const fallbackNode = await services.getTreeNodeUpdaterAPI().getTreeNode(nodeId);
             const draftData = coerceRecord(
               (draft as { draftData?: unknown } | undefined)?.draftData ??
-                (fallbackNode as { draftData?: unknown } | undefined)?.draftData
+              (fallbackNode as { draftData?: unknown } | undefined)?.draftData
             );
             const buildConfig = (draftData as { buildConfig?: unknown }).buildConfig ?? {};
             const processingConfig = (draftData as { processingConfig?: unknown }).processingConfig ?? {};
@@ -893,7 +896,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
         ): Promise<() => void> => {
           const buildApi = resolveShapeBuildApiOrThrow(nodeType);
           if (!buildApi.subscribeToProgress) {
-            return () => {};
+            return () => { };
           }
           const wrappedCallback = (event: BuildProgressEvent): void => {
             callback(sanitizeForComlink(event));
@@ -909,7 +912,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
         ): Promise<() => void> => {
           const buildApi = resolveShapeBuildApiOrThrow(nodeType);
           if (!buildApi.subscribeToTasks) {
-            return () => {};
+            return () => { };
           }
           const wrappedCallback = (event: BuildTaskUpdateEvent): void => {
             callback(sanitizeForComlink(event));
@@ -988,7 +991,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
               selectedArrayByCountries
             );
             return payloads as ShapeDownloadTaskPayloads;
-          }, 
+          },
           getBuildSessionStatus,
           pauseBuildSession,
           cancelQueuedBuildSession,
@@ -1035,7 +1038,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             callback: (sessions: BuildSessionRuntimeRecord[]) => void
           ): Promise<() => void> => {
             if (nodeType !== SHAPE_NODE_TYPE) {
-              return () => {};
+              return () => { };
             }
             const queryAPI = services.getShapeQueryAPI();
             const statuses = ['idle', 'running', 'paused', 'completed', 'failed'] as Array<
@@ -1093,7 +1096,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             callback: (sessions: ShapeBuildSessionRecord[]) => void
           ): Promise<() => void> => {
             if (nodeType !== SHAPE_NODE_TYPE) {
-              return () => {};
+              return () => { };
             }
             const queryAPI = services.getShapeQueryAPI();
             const normalized = normalizeSessionStatuses(statuses);
@@ -1140,7 +1143,44 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           setCorsProxyBaseURL: async (url: string): Promise<void> => {
             setCorsProxyBaseURL(url);
           },
+          requestAuthToken: async (): Promise<string | null> => {
+            // Request token from UI side via callback
+            if (typeof uiTokenRequestCallback === 'function') {
+              try {
+                return await uiTokenRequestCallback();
+              } catch (error) {
+                console.warn('[worker bootstrap] UI token request failed:', error);
+                return null;
+              }
+            }
+
+            // Fallback to AuthService if no UI callback available
+            try {
+              const auth = await AuthService.getSingleton();
+              return await auth.getAuthHeaders().then(headers => {
+                const authHeader = headers.Authorization;
+                if (authHeader && authHeader.startsWith('Bearer ')) {
+                  return authHeader.slice(7); // Remove 'Bearer ' prefix
+                }
+                return null;
+              });
+            } catch (error) {
+              console.warn('[worker bootstrap] AuthService token request failed:', error);
+              return null;
+            }
+          },
+          setUiTokenRequestCallback: async (callback: (() => Promise<string | null>) | null): Promise<void> => {
+            uiTokenRequestCallback = callback;
+          },
         };
+
+        // Setup AuthService with WorkerAPI for token requests
+        try {
+          const auth = await AuthService.getSingleton();
+          auth.setWorkerAPI(api);
+        } catch (error) {
+          console.warn('[worker bootstrap] Failed to setup AuthService with WorkerAPI:', error);
+        }
 
         reporter.reportStepProgress('Create API facade', 100);
         await recoverBuildSessionFromPersistedState();

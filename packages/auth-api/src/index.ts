@@ -9,4 +9,5 @@ export type {
   AuthSource,
   AuthSuccessNotification,
   PluginType,
+  StorageWarningNotification,
 } from './notifications.js';

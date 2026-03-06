@@ -39,14 +39,38 @@ export default function AuthCallbackRoute() {
     try {
       const resolved = new URL(rawUrl, window.location.origin);
       if (resolved.origin !== window.location.origin) {
+        console.debug('[Auth Callback] External return URL detected:', {
+          raw: rawUrl,
+          resolved: resolved.toString(),
+        });
         return { isExternal: true, url: resolved.toString() };
       }
       const usesHashRouting = window.location.hash.startsWith('#/');
       const normalizedPath = usesHashRouting
         ? normalizeHashReturnPath(resolved.pathname)
         : resolved.pathname;
-      return { isExternal: false, url: `${normalizedPath}${resolved.search}${resolved.hash}` };
-    } catch {
+
+      // For hash routing, use the hash content directly instead of appending it
+      const finalUrl = usesHashRouting && resolved.hash
+        ? resolved.hash // Use hash content directly (includes the # prefix)
+        : `${normalizedPath}${resolved.search}${resolved.hash}`;
+
+      console.debug('[Auth Callback] Internal return URL resolved:', {
+        raw: rawUrl,
+        resolved: resolved.toString(),
+        usesHashRouting,
+        normalizedPath,
+        resolvedHash: resolved.hash,
+        final: finalUrl,
+      });
+
+      return { isExternal: false, url: finalUrl };
+    } catch (error) {
+      console.warn('[Auth Callback] Return URL resolution failed, using fallback:', {
+        raw: rawUrl,
+        error: error instanceof Error ? error.message : String(error),
+        fallback: '/',
+      });
       return { isExternal: false, url: '/' };
     }
   }, [normalizeHashReturnPath]);
@@ -56,6 +80,17 @@ export default function AuthCallbackRoute() {
     if (returnUrlRef.current) return returnUrlRef.current;
     const returnUrl = localStorage.getItem('auth_return_url') || '/';
     returnUrlRef.current = returnUrl;
+
+    // Debug logging for return URL retrieval
+    console.debug('[Auth Callback] Return URL retrieved:', {
+      stored: localStorage.getItem('auth_return_url'),
+      fallback: '/',
+      final: returnUrl,
+      currentLocation: window.location.href,
+      currentPathname: window.location.pathname,
+      currentHash: window.location.hash,
+    });
+
     return returnUrl;
   }, []);
   const clearReturnUrl = useCallback(() => {
@@ -77,7 +112,22 @@ export default function AuthCallbackRoute() {
             window.location.assign(resolved.url);
             return;
           }
-          navigate({ to: resolved.url, replace: true });
+          try {
+            if (resolved.url.startsWith('#/')) {
+              const fullUrl = `${window.location.origin}${window.location.pathname}${resolved.url}`;
+              window.location.replace(fullUrl);
+            } else {
+              await navigate({ to: resolved.url, replace: true });
+            }
+          } catch (navError) {
+            console.error('[Auth Callback] Navigation failed (no code/error):', navError);
+            if (resolved.url.startsWith('#/')) {
+              const fullUrl = `${window.location.origin}${window.location.pathname}${resolved.url}`;
+              window.location.replace(fullUrl);
+            } else {
+              window.location.replace(resolved.url);
+            }
+          }
           return;
         }
 
@@ -94,7 +144,22 @@ export default function AuthCallbackRoute() {
             window.location.assign(resolved.url);
             return;
           }
-          navigate({ to: resolved.url, replace: true });
+          try {
+            if (resolved.url.startsWith('#/')) {
+              const fullUrl = `${window.location.origin}${window.location.pathname}${resolved.url}`;
+              window.location.replace(fullUrl);
+            } else {
+              await navigate({ to: resolved.url, replace: true });
+            }
+          } catch (navError) {
+            console.error('[Auth Callback] Navigation failed (no code):', navError);
+            if (resolved.url.startsWith('#/')) {
+              const fullUrl = `${window.location.origin}${window.location.pathname}${resolved.url}`;
+              window.location.replace(fullUrl);
+            } else {
+              window.location.replace(resolved.url);
+            }
+          }
           return;
         }
 
@@ -104,11 +169,78 @@ export default function AuthCallbackRoute() {
         const returnUrl = takeReturnUrl();
         const resolved = resolveReturnUrl(returnUrl);
         clearReturnUrl();
+
+        console.debug('[Auth Callback] Navigation after successful authentication:', {
+          returnUrl,
+          resolved,
+          isExternal: resolved.isExternal,
+        });
+
         if (resolved.isExternal) {
           window.location.assign(resolved.url);
           return;
         }
-        navigate({ to: resolved.url, replace: true });
+
+        // Add debug logging for navigation attempt
+        console.debug('[Auth Callback] Attempting navigation:', {
+          url: resolved.url,
+          urlLength: resolved.url.length,
+          replace: true,
+        });
+
+        // Set up navigation timeout to prevent hanging
+        const navigationTimeout = setTimeout(() => {
+          console.warn('[Auth Callback] Navigation timeout, forcing redirect');
+          if (resolved.url.startsWith('#/')) {
+            // For hash routing, use window.location.replace with full URL
+            const fullUrl = `${window.location.origin}${window.location.pathname}${resolved.url}`;
+            window.location.replace(fullUrl);
+          } else {
+            window.location.replace(resolved.url);
+          }
+        }, 3000); // 3 second timeout
+
+        try {
+          // For hash routing, try direct hash assignment first
+          if (resolved.url.startsWith('#/')) {
+            console.debug('[Auth Callback] Using hash routing navigation');
+            window.location.hash = resolved.url;
+
+            // Wait a moment to see if navigation completes
+            setTimeout(() => {
+              if (window.location.hash === resolved.url) {
+                console.debug('[Auth Callback] Hash navigation completed successfully');
+                clearTimeout(navigationTimeout);
+              } else {
+                console.warn('[Auth Callback] Hash navigation may have failed, current hash:', window.location.hash);
+                // Let timeout handler take over
+              }
+            }, 500);
+            return;
+          }
+
+          await navigate({ to: resolved.url, replace: true });
+          console.debug('[Auth Callback] Navigation completed successfully');
+          clearTimeout(navigationTimeout);
+        } catch (navError) {
+          console.error('[Auth Callback] Navigation failed:', {
+            error: navError instanceof Error ? navError.message : String(navError),
+            url: resolved.url,
+          });
+
+          // Clear timeout since we're handling the error immediately
+          clearTimeout(navigationTimeout);
+
+          // Fallback: use window.location for complex URLs
+          console.debug('[Auth Callback] Falling back to window.location');
+          if (resolved.url.startsWith('#/')) {
+            // For hash routing, use full URL replacement to ensure navigation
+            const fullUrl = `${window.location.origin}${window.location.pathname}${resolved.url}`;
+            window.location.replace(fullUrl);
+          } else {
+            window.location.replace(resolved.url);
+          }
+        }
       } catch (err) {
         console.error('Auth callback error:', err);
         setError(err instanceof Error ? err.message : 'Authentication failed');

@@ -48,7 +48,7 @@ export const encodeTileForVt = ({
   const encodeStartedAt = Date.now();
   try {
     const layersArg = Object.values(layers);
-    const bytes = vtpbf.fromGeojsonVt(layersArg, {
+    const bytes = vtpbf.fromGeojsonVt(layersArg as any, {
       version: 2,
       extent: tileEmitConfig.extent,
     }) as Uint8Array;

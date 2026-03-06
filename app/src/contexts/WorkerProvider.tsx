@@ -433,18 +433,41 @@ export const WorkerProvider = ({
     if (typeof window === 'undefined') return;
     if (storageBridgeClientRef.current === safeClient) return;
     storageBridgeClientRef.current = safeClient;
-    const bridge = Comlink.proxy({
-      getItem: async (key: string) => localStorage.getItem(key),
-      setItem: async (key: string, value: string) => {
-        localStorage.setItem(key, value);
-      },
-      removeItem: async (key: string) => {
-        localStorage.removeItem(key);
-      },
-    });
-    safeClient.setUiStorageBridge(bridge).catch((error: unknown) => {
-      logWorkerProviderWarning('Failed to register UI storage bridge', error);
-    });
+
+    const setupStorageBridge = async () => {
+      const bridge = Comlink.proxy({
+        getItem: async (key: string) => localStorage.getItem(key),
+        setItem: async (key: string, value: string) => {
+          localStorage.setItem(key, value);
+        },
+        removeItem: async (key: string) => {
+          localStorage.removeItem(key);
+        },
+      });
+
+      // Setup token request callback for worker-to-UI token queries
+      const tokenRequestCallback = Comlink.proxy(async (): Promise<string | null> => {
+        try {
+          const token = localStorage.getItem('access_token');
+          return token;
+        } catch (error) {
+          console.warn('[WorkerProvider] Token request callback failed:', error);
+          return null;
+        }
+      });
+
+      try {
+        // Wait for UI storage bridge setup to complete before proceeding
+        await safeClient.setUiStorageBridge(bridge);
+        // Setup token request callback
+        await safeClient.setUiTokenRequestCallback(tokenRequestCallback);
+      } catch (error: unknown) {
+        logWorkerProviderWarning('Failed to register UI storage bridge or token callback', error);
+      }
+    };
+
+    // Ensure storage bridge setup completes before continuing
+    void setupStorageBridge();
   }, [safeClient, status.isInitialized]);
 
   const finalizeInitialized = useCallback(async () => {

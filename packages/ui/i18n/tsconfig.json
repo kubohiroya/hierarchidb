@@ -2,20 +2,13 @@
   "extends": "../../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "lib": [
-      "ES2022",
-      "DOM"
-    ],
-    "types": [
-      "node"
-    ],
+    "lib": ["ES2022", "DOM"],
+    "types": ["node"],
     "jsx": "react-jsx"
   },
   "checkDeps": {
     "allowSkipLibCheck": true,
     "reason": "Temporary: upstream/transitive types; scheduled to remove."
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*", "vite-env.d.ts"]
 }
