@@ -643,9 +643,7 @@ const startBuildSessionInternal = async (
     async () => summarizeSelectedArrayByCountries(draftEntity.selectedArrayByCountries),
   );
   const selectedAdminPairCount = selectionSummary.selectedAdminPairCount;
-  if (!downloadTaskPayloads.length && selectedAdminPairCount === 0) {
-    throw new Error('Shape build session requires download task payloads or selection');
-  }
+  // Allow empty builds (zero selection) - they should succeed with empty output
 
   const nodeForSession = draftId;
   startupNodeId = nodeForSession;
@@ -686,7 +684,9 @@ const startBuildSessionInternal = async (
       selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
     },
   );
-  if ((downloadTaskPayloads.length > 0 || selectedAdminPairCount > 0) && sourcePlan.plannedSourceTotal === 0) {
+  // Only fail if there are selections but no payloads generated (metadata issue)
+  // Empty builds (no selections) should succeed with empty output
+  if (selectedAdminPairCount > 0 && sourcePlan.plannedSourceTotal === 0) {
     throw new Error(
       '[shapeBuildAPI] Build has selected inputs but generated 0 source tasks.'
       + ' Please reload country metadata and retry.',
@@ -805,6 +805,66 @@ const startBuildSessionInternal = async (
       stageHeartbeatAt: Date.now(),
     }).catch(() => { });
     let terminalProgressMessage: string | undefined;
+
+    // Handle empty builds (no selections and no download payloads)
+    if (selectedAdminPairCount === 0 && downloadTaskPayloads.length === 0) {
+      console.warn(`[shapeBuildAPI] ${startupScope} empty build - completing immediately`, {
+        nodeId: nodeForSession,
+        runId: pipelineRunId,
+      });
+      const completedAt = Date.now();
+      terminalProgressMessage = 'Empty build completed successfully (no selections).';
+      void shapeMutationAPIImpl.updateBuildSession(nodeForSession, {
+        stageId: 'startup:pipeline-dispatch:success',
+        stageHeartbeatAt: completedAt,
+      }).catch(() => { });
+      await updateBuildSessionFromTasks(nodeForSession, {
+        status: 'completed',
+        stopReason: 'completed',
+        completedAt,
+        canResume: false,
+      });
+      emitStartupStepLog('finish', 'pipeline-dispatch', {
+        runId: pipelineRunId,
+        payloadCount: downloadTaskPayloads.length,
+        resumeExistingTasks,
+        outcome: 'success',
+        emptyBuild: true,
+      });
+      clearActivePipelineRuntimeState(nodeForSession);
+      void emitProgressSnapshot(nodeForSession, terminalProgressMessage);
+      return nodeForSession;
+    }
+
+    // Handle empty builds (no selections and no download payloads)
+    if (selectedAdminPairCount === 0 && downloadTaskPayloads.length === 0) {
+      console.warn(`[shapeBuildAPI] ${startupScope} empty build - completing immediately`, {
+        nodeId: nodeForSession,
+        runId: pipelineRunId,
+      });
+      const completedAt = Date.now();
+      terminalProgressMessage = 'Empty build completed successfully (no selections).';
+      void shapeMutationAPIImpl.updateBuildSession(nodeForSession, {
+        stageId: 'startup:pipeline-dispatch:success',
+        stageHeartbeatAt: completedAt,
+      }).catch(() => { });
+      await updateBuildSessionFromTasks(nodeForSession, {
+        status: 'completed',
+        stopReason: 'completed',
+        completedAt,
+        canResume: false,
+      });
+      emitStartupStepLog('finish', 'pipeline-dispatch', {
+        runId: pipelineRunId,
+        payloadCount: downloadTaskPayloads.length,
+        resumeExistingTasks,
+        outcome: 'success',
+        emptyBuild: true,
+      });
+      clearActivePipelineRuntimeState(nodeForSession);
+      void emitProgressSnapshot(nodeForSession, terminalProgressMessage);
+      return nodeForSession;
+    }
     void runShapePipeline({
       nodeId: nodeForSession,
       dataSource: resolvedDataSource,
