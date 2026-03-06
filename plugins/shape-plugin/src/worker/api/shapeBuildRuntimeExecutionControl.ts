@@ -33,6 +33,14 @@ import {
   deleteRawDataDataSourceBuffersForNodeMetadataIds,
 } from '~/services/utils/chunkStore';
 import { resolveSourceStageStrategy } from '~/services/build/strategies/resolveSourceStageStrategy';
+// Custom error types for better error classification
+class SourceTaskPayloadGenerationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SourceTaskPayloadGenerationError';
+  }
+}
+
 import {
   VtTaskQueueDb,
   deleteTasksByNode,
@@ -259,7 +267,7 @@ const resolveSourceTaskPayloadsForPlan = async (input: {
     selectedArrayByCountriesSample: input.selectedArrayByCountries ?
       Object.fromEntries(Object.entries(input.selectedArrayByCountries).slice(0, 5)) : null,
   });
-  throw new Error(
+  throw new SourceTaskPayloadGenerationError(
     `[shapeBuildAPI] No source task payloads generated for ${selectedAdminPairCount}`
     + ' selected entries. Metadata may be stale or incompatible with the current selection.',
   );
@@ -844,6 +852,31 @@ const startBuildSessionInternal = async (
         });
         return;
       }
+      if (isSourceTaskPayloadGenerationError(error)) {
+        console.error('[shapeBuildAPI] source task payload generation failed', error);
+        console.error('[shapeBuildAPI] startup', JSON.stringify({
+          scope: startupScope,
+          phase: 'finish',
+          step: 'payload-generation',
+          nodeId: nodeForSession,
+          runId: pipelineRunId,
+          outcome: 'error',
+          failedAt,
+          ...diagnostics,
+        }));
+        terminalProgressMessage = `Metadata error: ${diagnostics.errorMessage}`;
+        void shapeMutationAPIImpl.updateBuildSession(nodeForSession, {
+          stageId: 'startup:payload-generation:error',
+          stageHeartbeatAt: failedAt,
+        }).catch(() => { });
+        await updateBuildSessionFromTasks(nodeForSession, {
+          status: 'failed',
+          stopReason: 'failed',
+          completedAt: failedAt,
+          canResume: false,
+        });
+        return;
+      }
       console.error('[shapeBuildAPI] tileEmit pipeline failed', error);
       console.error('[shapeBuildAPI] startup', JSON.stringify({
         scope: startupScope,
@@ -1146,6 +1179,11 @@ const toErrorDiagnostics = (error: unknown): {
 const isAuthPendingPipelineError = (error: unknown): boolean => {
   if (!(error instanceof Error)) return false;
   return error.name === 'SourceStageAuthPendingError';
+};
+
+const isSourceTaskPayloadGenerationError = (error: unknown): boolean => {
+  if (!(error instanceof Error)) return false;
+  return error.name === 'SourceTaskPayloadGenerationError';
 };
 
 export const shapeBuildRuntimeExecutionControl = {

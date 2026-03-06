@@ -1,7 +1,7 @@
 # 運用ハブ
 
 ## Doing
-- #829 / fix/shape-plugin/typescript-errors / 2026-03-06 19:30
+- #832 / fix/shape/metadata-error-classification-832 / 2026-03-06 19:00
 - #827 / fix/auth/token-expiration-validation-827 / 2026-03-06 18:30
 - #823 / codex/debug/worker-token-request-detailed-logging-823 / 2026-03-06 17:55
 - #822 / codex/debug/worker-ui-token-request-debug-822 / 2026-03-06 15:30
@@ -58,6 +58,7 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-06: Issue #829 完了 - shape-plugin の TypeScript エラーを修正し、mainブランチに反映済み。修正内容: `CountryMetadata.adminLevels` → `CountryMetadata.availableAdminLevels`、`SourceTaskPayload.geometry` → `SourceTaskPayload.url`。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` が成功（exit 0）。PR #830 でマージ完了。
 - 2026-03-06: Issue #826 進捗 - GitHub Pages環境でのshape build失敗問題の調査を継続。`resolveSourceTaskPayloadsForPlan`関数に包括的なデバッグログを追加し、メタデータロード・ペイロード生成・リフレッシュ試行の各段階を詳細ログ化。サンプルデータをログに含めて互換性問題を特定可能に。アプリケーションビルド完了（`pnpm -w turbo run build --filter @hierarchidb/app` 成功）、GitHub Pages更新済み（https://kubohiroya.github.io/hierarchidb）。次ステップ: ブラウザでデバッグログ確認とペイロード生成失敗の根本原因特定。
 - 2026-03-06: Issue #819 完了 - Worker側からUI側へのトークン問い合わせ機能の実装が完了し、mainブランチに反映済み。コミット `881b08fc7` でマージ完了。Issue #822のデバッグ強化もコミット `55c99269f` でマージ完了。実装内容: WorkerAPIに`requestAuthToken()`と`setUiTokenRequestCallback()`メソッド追加、workerBootstrapでUI側コールバック管理、WorkerProviderでトークン要求コールバック設定、AuthServiceにWorkerTokenRequestAPI統合。認証エラーは継続中だが、実装は完了済み。
 - 2026-03-06: Issue #822 進捗 - Worker側からUI側へのトークン問い合わせ機能のデバッグログを強化。AuthServiceでWorker環境でのデバッグログを常時有効化、resolveStoredTokenメソッドでタイムスタンプ付き詳細ログ追加、WorkerProviderとworkerBootstrapでIssue #822識別子付きデバッグログ追加。一時ファイル（test-worker-*、vitest.config.ts.timestamp-*、tsup.config.bundled*）を削除し、.gitignoreに一時ファイルパターンを追加。`pnpm -w turbo run typecheck --filter @hierarchidb/auth --filter @hierarchidb/app`と`pnpm -w turbo run build --filter @hierarchidb/auth --filter @hierarchidb/app`は成功（exit 0）。GitHub Pages環境でのデバッグログ可視化を改善。
