@@ -1,0 +1,24 @@
+{
+  "description": {
+    "create": "Enter basic information for the new node.",
+    "edit": "Update the basic information for this node."
+  },
+  "name": {
+    "required": "Name is required"
+  },
+  "fields": {
+    "name": {
+      "label": "Name",
+      "placeholder": "Enter a descriptive name"
+    },
+    "description": {
+      "label": "Description",
+      "placeholder": "Enter an optional description",
+      "counter": "{{count}}/1000 characters"
+    },
+    "tags": {
+      "label": "Tags",
+      "placeholder": "Enter tag and press Enter"
+    }
+  }
+}

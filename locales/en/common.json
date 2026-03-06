@@ -1,0 +1,503 @@
+{
+  "navigation": {
+    "selectLanguage": "Select Language",
+    "language": "Language"
+  },
+  "auth": {
+    "kvFallback": {
+      "title": "Authentication warning",
+      "summary": "Server-side session storage is temporarily unavailable. Some authentication operations are limited.",
+      "detail": {
+        "login": "Login succeeded, but the server cannot track sessions right now.",
+        "refresh": "Token refresh is disabled. Please sign in again after the token expires.",
+        "revoke": "Logout/revocation is local only; the server cannot invalidate the token.",
+        "logout": "Logout/revocation is local only; the server cannot invalidate the token."
+      },
+      "resetNotice": "This limitation resets daily (around 09:00 JST).",
+      "action": "Close"
+    }
+  },
+  "servicesReady": {
+    "default": "Services are ready.{{time}}",
+    "worker": "Worker service is ready.{{time}}",
+    "prefetch": "Service preconnection is complete.{{time}}",
+    "prefetchList": "Service preconnection complete: {{list}}"
+  },
+  "workerInit": {
+    "heading": "Setting up worker…",
+    "progressFallback": "Worker initializing",
+    "progressLabel": "{{value}}% Complete",
+    "messages": {
+      "start": "Starting worker initialization…",
+      "complete": "Worker initialization complete"
+    },
+    "error": {
+      "title": "Worker initialization error",
+      "unknown": "Unknown error",
+      "actions": {
+        "retry": "Retry",
+        "reload": "Reload"
+      }
+    },
+    "status": {
+      "ready": "Worker ready"
+    }
+  },
+  "userMenu": {
+    "loading": "Loading authentication...",
+    "login": "Login",
+    "logout": "Logout",
+    "aria": {
+      "userMenu": "User menu"
+    },
+    "theme": {
+      "label": "Theme",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "language": {
+      "label": "Language",
+      "system": "System default"
+    },
+    "clear": {
+      "label": "Clear All Data",
+      "title": "Clear all data?",
+      "description": "This will clear all data including:",
+      "items": {
+        "cache": "Cache API data",
+        "indexedDb": "All IndexedDB databases (projects, maps, shapes, etc.)",
+        "localStorage": "localStorage data"
+      },
+      "warning": "This action cannot be undone and will delete all your local data. The page will reload after clearing the cache.",
+      "confirm": "Clear All Data",
+      "cancel": "Cancel",
+      "error": "Failed to clear some cache data. Please try again."
+    },
+    "maintenance": {
+      "label": "IndexedDB Maintenance"
+    }
+  },
+  "dialogs": {
+    "archive": {
+      "modeMenu": {
+        "ariaLabel": "Display mode",
+        "normal": "Normal (windowed)",
+        "maximize": "Maximize (browser window)",
+        "fullScreen": "Full-screen (system)"
+      },
+      "actions": {
+        "close": "Close dialog",
+        "exitFullscreen": "Exit full screen"
+      },
+      "title": {
+        "empty": "Delete Items",
+        "restore": "Restore from Archive"
+      },
+      "confirm": {
+        "title": "Delete Items?",
+        "description": "Delete {{count}} {{unit}} permanently?",
+        "empty": "This will permanently delete all items in the archive.",
+        "draftWarning": "Drafts are present. Deleting items from the archive will force-delete in-progress edits."
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "confirmDelete": "Delete items",
+        "restore": "Restore",
+        "restoreWithCount": "Restore ({{count}})",
+        "empty": "Empty",
+        "emptyWithCount": "Empty ({{count}})"
+      },
+      "searchPlaceholder": "Search in archive…",
+      "panelTitle": "Archive",
+      "stepLabel": "Archive",
+      "draftWarning": "Drafts are included in this view. Deleting will force-remove in-progress edits.",
+      "aria": {
+        "restore": "Restore selection",
+        "restoreWithCount": "Restore {{count}} {{unit}}",
+        "empty": "Delete items",
+        "emptyWithCount": "Empty {{count}} {{unit}}"
+      },
+      "units": {
+        "item_one": "item",
+        "item_other": "items"
+      }
+    },
+    "pluginDraft": {
+      "resume": {
+        "title": "Resume editing?",
+        "description": "A previous edit exists as a draft. Resume it or start a fresh edit?",
+        "buttons": {
+          "cancel": "Cancel",
+          "startFresh": "Start a fresh edit",
+          "resumePrevious": "Resume previous edit"
+        }
+      },
+      "conflict": {
+        "title": "Edit conflict detected",
+        "description": "Another tab saved this node at {{timestamp}}. You can cancel and keep their changes, or continue while keeping your own edits.",
+        "buttons": {
+          "discardSelf": "Discard my changes",
+          "keepSelf": "Keep my changes"
+        }
+      },
+      "pluginDialog": {
+        "buttons": {
+          "save": "Save",
+          "saveDraft": "Save draft",
+          "next": "Next",
+          "back": "Back",
+          "cancel": "Cancel",
+          "close": "Close",
+          "maximize": "Maximize",
+          "restoreSize": "Restore",
+          "fullscreen": "Full screen",
+          "exitFullscreen": "Exit full screen"
+        },
+        "tooltips": {
+          "saveDraftDisabled": "No changes to save",
+          "close": "Close dialog",
+          "maximize": "Maximize",
+          "restoreSize": "Restore",
+          "fullscreen": "Full screen",
+          "exitFullscreen": "Exit full screen"
+        }
+      }
+    },
+    "pluginDialog": {
+      "titles": {
+        "create": "Create {{plugin}}",
+        "edit": "Edit {{plugin}}"
+      }
+    }
+  },
+  "archive": {
+    "columns": {
+      "name": "Name",
+      "type": "Type",
+      "description": "Description",
+      "createdAt": "Created",
+      "updatedAt": "Modified",
+      "removedAt": "Removed"
+    },
+    "timestamps": {
+      "today": "Today {{time}}",
+      "yesterday": "Yesterday {{time}}",
+      "twoDaysAgo": "Two days ago {{time}}",
+      "dateTime": "{{date}} {{time}}"
+    }
+  },
+  "plugins": {
+    "noDependencies": "No dependencies",
+    "details": "Plugin Details",
+    "fields": {
+      "package": "Package",
+      "description": "Description",
+      "dependencies": "Dependencies",
+      "menuGroup": "Menu Group"
+    },
+    "actions": {
+      "reset": "Reset Plugin",
+      "delete": "Delete Plugin",
+      "deleteDisabled": "Delete (Disabled for Core Plugin)"
+    },
+    "corePlugin": "Core Plugin",
+    "corePluginMessage": "This plugin cannot be deleted as it provides the foundation for all other plugins.",
+    "folder": {
+      "name": "Folder",
+      "description": "Define hierarchical container nodes that semantically organize various types of nodes and consolidate their functions."
+    },
+    "basemap": {
+      "name": "Basemap",
+      "description": "Specify the shared map style and viewport that ancestor nodes in the tree will use as their basemap."
+    },
+    "shape": {
+      "name": "Shape",
+      "description": "Import country and administrative-area shape files from online data sources, analyze them, and present the results in coordinated map views."
+    },
+    "location": {
+      "name": "Location",
+      "description": "Import locations of geo-resources from online data sources, analyze them, and present the results in coordinated map views."
+    },
+    "route": {
+      "name": "Route",
+      "description": "Import transportation routes from online data sources, analyze them, and present the results in coordinated map views."
+    },
+    "spreadsheet": {
+      "name": "Spreadsheet",
+      "description": "Import spreadsheet data, apply filtering, and expose the curated tabular items to other workflows."
+    },
+    "styler": {
+      "name": "Styler",
+      "description": "Import spreadsheet data, filter them, and produce styling rules that drive themed visualizations on maps."
+    },
+    "resolver": {
+      "name": "Resolver",
+      "description": "Map heterogeneous schemas and properties into a unified structure so downstream plugins read consistent attributes."
+    },
+    "linker": {
+      "name": "Linker",
+      "description": "Link related nodes into reusable sequences so workers and timelines can traverse shared workflows."
+    },
+    "timeline": {
+      "name": "Timeline",
+      "description": "Arrange descendant nodes as timeline frames and play them back as map animations inside a special folder node."
+    }
+  },
+  "tags": {
+    "detail": {
+      "connectingWorker": "Connecting to worker...",
+      "usageAndCreated": "Usage: {{count}}",
+      "loading": "Loading...",
+      "notFound": "Tag not found.",
+      "empty": "No nodes are tagged with this tag label.",
+      "noAssignedAt": "-"
+    }
+  },
+  "treeTable": {
+    "selectAll": {
+      "select": "Select all",
+      "clear": "Clear all"
+    },
+    "columns": {
+      "name": "Name",
+      "description": "Description",
+      "created": "Created",
+      "updated": "Updated",
+      "removed": "Removed"
+    },
+    "timestamps": {
+      "today": "Today {{time}}",
+      "yesterday": "Yesterday {{time}}",
+      "twoDaysAgo": "Two days ago {{time}}",
+      "dateTime": "{{date}} {{time}}"
+    },
+    "validation": {
+      "invalidName": "Invalid name",
+      "invalidDescription": "Invalid description"
+    },
+    "placeholders": {
+      "nameConfirm": "Press Enter to confirm / Esc to cancel",
+      "descriptionConfirm": "Press Ctrl+Enter to confirm / Esc to cancel"
+    },
+    "header": {
+      "default": "Column"
+    },
+    "emptyCell": "-"
+  },
+  "treeConsole": {
+    "toolbar": {
+      "search": {
+        "placeholder": "Search tree…",
+        "ariaLabel": "Tree search"
+      },
+      "aria": {
+        "toolbarLabel": "Tree console toolbar",
+        "archiveMenuButton": "Open archive actions",
+        "importExportButton": "Import and export options",
+        "settingsButton": "Open toolbar settings"
+      },
+      "tooltips": {
+        "undo": "Undo ({{shortcut}})",
+        "redo": "Redo ({{shortcut}})",
+        "cut": "Cut ({{shortcut}})",
+        "copy": "Copy ({{shortcut}})",
+        "paste": "Paste ({{shortcut}})",
+        "duplicate": "Duplicate ({{shortcut}})",
+        "moveToArchive": "Move to Archive ({{shortcut}})"
+      },
+      "archiveMenu": {
+        "restore": "Restore from Archive",
+        "empty": "Delete Items"
+      },
+      "importExportMenu": {
+        "import": "Import from JSON file",
+        "export": "Export to JSON file",
+        "importTemplate": "Import template",
+        "importTemplateFallback": "Import template"
+      },
+      "rowClick": {
+        "title": "Row click action",
+        "options": {
+          "selectNavigate": "Select / Navigate",
+          "edit": "Edit"
+        }
+      },
+      "settings": {
+        "theme": {
+          "title": "Theme",
+          "modes": {
+            "system": "System",
+            "light": "Light",
+            "dark": "Dark"
+          }
+        },
+        "language": {
+          "title": "Language",
+          "modes": {
+            "system": "System default",
+            "en": "English",
+            "ja": "Japanese"
+          }
+        },
+        "autosave": {
+          "title": "Autosave"
+        },
+        "zoomBands": {
+          "title": "Zoom bands",
+          "helper": "Default zoom band settings for new Shape/Route builds.",
+          "summary": "Used as the default Transform zoom bands when creating new Shape/Route nodes.",
+          "rangeCount": "Number of ranges",
+          "rangeCountHelp": "Set how many zoom ranges to use for transforms.",
+          "boundaries": "Range boundaries",
+          "boundariesHelp": "Adjust the zoom levels that split each range."
+        },
+        "buildPolicy": {
+          "title": "Build continuation policy",
+          "helper": "Controls how builds behave after errors.",
+          "options": {
+            "finishAll": "Finish all stages",
+            "finishStage": "Finish stage then stop",
+            "stop": "Stop on first error"
+          }
+        },
+        "resumeQueueDialog": {
+          "ariaLabelHome": "Go to HierarchiDB home",
+          "title": "Build sessions: {{count}} sessions",
+          "deleteQueue": "Delete all sessions",
+          "resumeQueue": "Resume execution of the first session",
+          "skip": "Skip delete or resume and close this dialog",
+          "close": "× Close"
+        }
+      }
+    },
+    "contextMenu": {
+      "create": "Create",
+      "createUnavailable": "Create menu unavailable",
+      "createTooltip": "{{label}}: {{description}}",
+      "openFolder": "Open folder",
+      "open": "Open",
+      "edit": "Edit",
+      "duplicate": "Duplicate",
+      "import": "Import",
+      "export": "Export",
+      "moveToArchive": "Move to Archive",
+      "visible": "Visible",
+      "hidden": "Hidden",
+      "checkReference": "Check reference",
+      "preview": "Preview",
+      "build": "Build"
+    },
+    "shapePresets": {
+      "default": {
+        "name": "Default",
+        "description": "Create a shape with no countries selected."
+      },
+      "japanLevel01": {
+        "name": "Japan level0+1 (prefectures)",
+        "description": "Select Japan only. Include admin level 0 and level 1 boundaries.",
+        "nodeNameTemplate": "Japan L0+1 {{date}}",
+        "nodeDescriptionTemplate": "Preset: {{preset}}. Includes tuned simplify settings."
+      },
+      "worldLevel0": {
+        "name": "World countries level0",
+        "description": "Select all countries at admin level 0 for compact global coverage.",
+        "nodeNameTemplate": "World L0 {{date}}",
+        "nodeDescriptionTemplate": "Preset: {{preset}}. Prioritizes compact simplification."
+      },
+      "worldLevel1CnInLevel12": {
+        "name": "World level1, China/India level1+2",
+        "description": "Select level 1 globally; extend China and India to level 2.",
+        "nodeNameTemplate": "World L1 + CN/IN L1+2 {{date}}",
+        "nodeDescriptionTemplate": "Preset: {{preset}}. Uses balanced simplify settings."
+      }
+    },
+    "nodeTemplates": {
+      "folder": {
+        "default": {
+          "name": "Default",
+          "description": "Create an empty folder with no child nodes."
+        },
+        "populationByCountries": {
+          "name": "Population by Countries",
+          "description": "Create a folder template with country-level population summary nodes."
+        }
+      }
+    },
+    "errors": {
+      "archiveFailed": "Move to archive failed.",
+      "archiveReferencedByRoutes": "Cannot move to archive because routes reference this location.",
+      "archiveReferencedByLocations": "Cannot move to archive because locations reference this shape.",
+      "archiveBuildSessionRunning": "Cannot move to archive while the build session is running."
+    },
+    "infoPanel": {
+      "noTimestamp": "—",
+      "emptyDescription": "No description provided.",
+      "openContextMenu": "Node actions",
+      "nodeTypeLabel": "{{type}}",
+      "draftLabel": "Draft",
+      "editLabel": "Edit",
+      "editButton": "Edit node",
+      "buildLabel": "Build",
+      "buildButton": "Start build",
+      "previewLabel": "Preview",
+      "previewButton": "Preview node",
+      "unnamedNode": "Untitled node",
+      "closeButton": "Close and navigate to parent",
+      "noNode": "Node information is not available for this page.",
+      "createdLabel": "Created",
+      "updatedLabel": "Updated",
+      "confirmArchiveTitle": "Move to Archive",
+      "confirmArchiveDescription": "Move this item and all its children to archive?",
+      "confirmArchiveCancel": "Cancel",
+      "confirmArchiveConfirm": "Move to Archive"
+    },
+    "developerMenu": {
+      "clearIndexedDb": "Delete all IndexedDB created by this app",
+      "clearIndexedDbConfirm": "Delete all IndexedDB databases created by this app? This action cannot be undone.",
+      "clearIndexedDbSuccess": "Deleted IndexedDB data created by this app.",
+      "clearIndexedDbEmpty": "No IndexedDB databases were found for this app.",
+      "clearIndexedDbFailure": "Failed to delete IndexedDB data. See console for details."
+    }
+  },
+  "contextMenu": {
+    "create": "Create",
+    "openFolder": "Open folder",
+    "open": "Open",
+    "edit": "Edit",
+    "copy": "Copy",
+    "cut": "Cut",
+    "duplicate": "Duplicate",
+    "moveToArchive": "Move to Archive",
+    "visible": "Visible",
+    "hidden": "Hidden",
+    "checkReference": "Check reference",
+    "preview": "Preview"
+  },
+  "buildSessionQueue": {
+    "empty": "No running or queued build sessions found",
+    "deleteTitle": "Delete session from queue",
+    "deleteDescription": "Delete \"{{nodeName}}\" from queue?",
+    "openQueueList": "Open build session queue",
+    "deleteQueue": "Delete all sessions",
+    "resumeQueue": "Resume execution of the first session",
+    "popperTitle": "Session queue",
+    "popperCountOne": "{{count}} item",
+    "popperCountOther": "{{count}} items",
+    "statusRunning": "Running",
+    "statusFailed": "Failed",
+    "statusCompleted": "Completed",
+    "statusWaiting": "Waiting",
+    "statusPaused": "Paused",
+    "statusFailedCaption": "Failed",
+    "totalElapsed": "(Total elapsed {{elapsed}})",
+    "totalElapsedCompleted": "Completed (total elapsed {{elapsed}})",
+    "dragHandle": "Drag queue row",
+    "delete": "Delete session",
+    "start": "Start session",
+    "remaining": "remaining",
+    "statusQueued": "Queued",
+    "statusWaitingCaption": "Waiting",
+    "statusCompletedCaption": "Completed"
+  }
+}

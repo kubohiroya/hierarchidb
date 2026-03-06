@@ -1,0 +1,1 @@
+import"./vendor-react-DIwP1lUV.js";import{ai as e}from"./index.js";const t=e;var n=t;export{t as ShapePluginIcon,n as default};

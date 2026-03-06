@@ -1,0 +1,294 @@
+{
+  "styleSettings": {
+    "title": "スタイル設定",
+    "description": "スタイル種別・値の列・対象プロパティを選択してからアルゴリズムを設定してください。",
+    "processing": "表データをビルドしています…",
+    "accordion": {
+      "styleType": "スタイルタイプ",
+      "targetProperty": "ターゲットプロパティ",
+      "algorithm": "アルゴリズム"
+    },
+    "keyValuePair": {
+      "description": "スタイルに使うキーと値の列を選び、値の基本統計を確認します。",
+      "stats": {
+        "title": "値の統計",
+        "empty": "数値を含む Value 列を選択すると統計が表示されます。",
+        "count": "件数",
+        "min": "最小値",
+        "max": "最大値",
+        "mean": "平均値",
+        "median": "中央値",
+        "stdDev": "標準偏差"
+      },
+      "histogram": {
+        "title": "ヒストグラム",
+        "binCount": "階級数",
+        "note": "ヒストグラムは数値のみを使用します。点線は最小/平均/最大、縦軸ラベルは最頻度です。"
+      },
+      "validation": {
+        "required": "キー列と値列の両方を選択してください。"
+      }
+    },
+    "styleType": {
+      "label": "スタイル種別",
+      "help": "このスタイルが対象とするジオメトリを選択します。",
+      "options": {
+        "choropleth": "面の塗り分け",
+        "points": "点の描画",
+        "lines": "線の描画"
+      },
+      "descriptions": {
+        "choropleth": "国・地域の領域の色を指定します",
+        "points": "都市・交通経路の結節点の表示色を指定します",
+        "lines": "交通経路の線幅や表示色を指定します"
+      }
+    },
+    "valueColumn": {
+      "label": "値の列",
+      "help": "スタイリングに利用する列を選択してください。",
+      "none": "列を選択"
+    },
+    "targetProperty": {
+      "label": "対象プロパティ",
+      "help": "マッピング先の MapLibre ペイントプロパティを選択します。",
+      "groups": {
+        "fill": "塗り",
+        "line": "線",
+        "circle": "円",
+        "text": "テキスト"
+      },
+      "options": {
+        "fillColor": "塗りの色",
+        "fillOpacity": "塗りの透明度",
+        "lineColor": "線の色",
+        "lineWidth": "線の太さ",
+        "lineOpacity": "線の透明度",
+        "circleColor": "円の色",
+        "circleRadius": "円の半径",
+        "circleOpacity": "円の透明度",
+        "textColor": "文字の色",
+        "textHaloColor": "文字の縁取り色",
+        "textHaloWidth": "文字の縁取り幅"
+      },
+      "descriptions": {
+        "fillColor": "エリアの塗り色をデータ値に応じて変化させます。",
+        "fillOpacity": "エリアの透明度を数値で調整します。",
+        "lineColor": "線やルートの色をデータ値で変化させます。",
+        "lineWidth": "線の太さを数値で調整します。",
+        "lineOpacity": "線の透明度を数値で調整します。",
+        "circleColor": "ポイントの色をデータ値で変化させます。",
+        "circleRadius": "ポイントの半径を数値で調整します。",
+        "circleOpacity": "ポイントの透明度を数値で調整します。",
+        "textColor": "ラベルの文字色をデータ値で変化させます。",
+        "textHaloColor": "文字の縁取り色を変更して視認性を高めます。",
+        "textHaloWidth": "文字の縁取りの太さを数値で調整します。"
+      }
+    },
+    "validation": {
+      "required": "スタイル種別・値の列・対象プロパティを選択してください。"
+    }
+  },
+  "step4": {
+    "numericRange": {
+      "label": "数値レンジ",
+      "min": "最小値",
+      "max": "最大値",
+      "help": "数値ターゲットの出力範囲を設定します。既定は 0.0〜10.0（中央値 5.0）です。"
+    }
+  },
+  "steps": {
+    "dataSource": "データソース",
+    "filtering": "フィルタリング",
+    "styleSettings": "スタイル設定",
+    "target": "適用対象",
+    "styleAlgorithm": "アルゴリズム",
+    "preview": "プレビュー"
+  },
+  "step5": {
+    "target": {
+      "sections": {
+        "area": "国・自治体の描画",
+        "point": "地点の描画",
+        "route": "経路の描画"
+      },
+      "options": {
+        "fillColor": "塗りの色 🎨",
+        "fillOpacity": "塗りの透明度 🪄",
+        "lineColor": "線の色 🎨",
+        "lineOpacity": "線の透明度 🪄",
+        "lineWidth": "線の幅 📐",
+        "circleColor": "地点の色 🎨",
+        "circleRadius": "地点のサイズ 📐",
+        "routeLineColor": "線の色 🎨",
+        "routeLineOpacity": "線の透明度 🪄",
+        "routeLineWidth": "線の太さ 📐"
+      },
+      "numericRange": {
+        "label": "数値の範囲",
+        "min": "最小値",
+        "max": "最大値"
+      },
+      "help": "対象を1つ選択してください。数値の場合は範囲を指定します。",
+      "validation": {
+        "required": "対象を選択してください。"
+      }
+    }
+  },
+  "step6": {
+    "opacity": {
+      "range": "透明度の範囲",
+      "help": "数値が小さいほど透明になります。"
+    },
+    "width": {
+      "range": "線幅の範囲",
+      "help": "数値が大きいほど線が太くなります。"
+    },
+    "numericRange": {
+      "min": "最小値",
+      "max": "最大値"
+    }
+  },
+  "filtering": {
+    "processing": "表データをビルドしています…"
+  },
+  "styleAlgorithm": {
+    "title": "スタイルマッピング設定",
+    "errors": {
+      "range": "最大値は最小値より大きくする必要があります",
+      "configure": "スタイルターゲットを設定してから次へ進んでください。"
+    },
+    "algorithms": {
+      "linear": "線形補間",
+      "log": "対数",
+      "quantile": "分位点",
+      "jenks": "ジェンクス自然分類",
+      "equal": "等間隔",
+      "linearDescription": "最小値と最大値の間を滑らかに補間します。連続値に適しています。",
+      "logDescription": "対数スケールで小さい値の差異を強調し、大きな値を圧縮します。大きくスキューした分布に適します。",
+      "quantileDescription": "要素数が均等になるようクラスを分割します。外れ値に強く、偏った分布でもバランス良く表示します。",
+      "jenksDescription": "クラス内分散を最小化しクラス間分散を最大化して自然な区切りを見つけます。意味のあるグルーピングを提供します。",
+      "equalDescription": "値域を等しい幅で分割します。連続的でほぼ線形な分布（温度や標高など）に適しています。"
+    },
+    "recommendation": {
+      "summary": "推奨アルゴリズム: {algorithm}",
+      "confidence": "確信度: {confidence}%",
+      "fallback": "データ分布に合わせるため、このアルゴリズムを試してください。",
+      "apply": "適用",
+      "suitability": "適合度: {{score}} / 100"
+    },
+    "mappingRange": {
+      "title": "マッピング範囲",
+      "min": "最小値",
+      "max": "最大値",
+      "help": "色にマッピングする数値の範囲を定義します。"
+    },
+    "algorithm": {
+      "title": "カラーアルゴリズム"
+    },
+    "advanced": {
+      "title": "詳細なカラー設定",
+      "hide": "隠す",
+      "show": "表示",
+      "description": "色補間やパレットの調整オプションです。簡易設定の場合は非表示のままにしてください。"
+    },
+    "colorSpace": {
+      "title": "色空間",
+      "hsv": "HSV",
+      "rgb": "RGB",
+      "lab": "LAB",
+      "help": "値域全体でどのように色を補間するかを選択します。"
+    },
+    "colorRange": {
+      "title": "カラー範囲と反転",
+      "start": "開始色 (hex)",
+      "end": "終了色 (hex)",
+      "normal": "通常",
+      "invert": "反転"
+    },
+    "hsv": {
+      "title": "HSV コントロール",
+      "hueStart": "Hue 開始",
+      "hueEnd": "Hue 終了",
+      "saturation": "彩度",
+      "brightness": "明度"
+    },
+    "gradient": {
+      "title": "カラーグラデーションプレビュー",
+      "description": "現在のマッピングとアルゴリズムに基づくグラデーションのプレビューです。"
+    },
+    "distribution": {
+      "title": "値の分布（サンプル）",
+      "analyzing": "値の分布を分析しています…",
+      "mean": "平均: {{value}}",
+      "median": "中央値: {{value}}",
+      "stdDev": "標準偏差: {{value}}",
+      "min": "最小: {{value}}",
+      "max": "最大: {{value}}"
+    }
+  },
+  "stylePreview": {
+    "title": "スタイル適用プレビュー",
+    "processing": "プレビュー用データを準備しています…",
+    "required": {
+    "title": "設定が必要です",
+    "body": "プレビューの前にスタイル設定を完了してください。",
+    "keyColumn": "マッピングに使用するキーの列を選択してください",
+    "property": "MapLibre のスタイルプロパティを選択してください",
+    "targetProperty": "適用するプロパティを選択してください",
+    "valueColumn": "マッピングに使用する値の列を選択してください",
+    "styleType": "スタイルの種類を選択してください"
+  },
+    "noData": {
+      "title": "データがありません",
+      "body": "プレビュー用の表データがありません。前のステップでデータが読み込まれているか確認してください。"
+    },
+    "truncate": "先頭1,000行のみプレビュー表示しています。全データ件数:",
+    "rows": "行"
+  },
+  "algorithm": {
+    "valueColumn": "値の列",
+    "valueColumnUnset": "未選択",
+    "nullHandling": "Null / NaN の扱い",
+    "null": {
+      "exclude": "行を除外する",
+      "zero": "0 として扱う"
+    },
+    "rule": "マッピングルール",
+    "colorScale": "カラー スケール",
+    "customTitle": "カスタム HSB",
+    "numericRange": "数値範囲",
+    "min": "最小",
+    "max": "最大",
+    "scale": {
+      "grayscale": "グレースケール",
+      "blueRed": "青 → 赤",
+      "viridis": "Viridis",
+      "magma": "Magma",
+      "custom": "カスタム (HSB)"
+    }
+  },
+  "extension": {
+    "description": "このフォルダ用の Styler 可視化設定を行います。",
+    "styleType": {
+      "label": "スタイル種別",
+      "choropleth": "面の塗り分け",
+      "points": "点の描画",
+      "lines": "線の描画"
+    },
+    "dataSource": {
+      "label": "データソース",
+      "placeholder": "例: CSV のパスまたは URL"
+    },
+    "colorScheme": {
+      "label": "カラースキーム",
+      "blues": "ブルー",
+      "reds": "レッド",
+      "greens": "グリーン",
+      "viridis": "Viridis",
+      "plasma": "Plasma"
+    },
+    "opacity": {
+      "label": "不透明度"
+    }
+  }
+}
