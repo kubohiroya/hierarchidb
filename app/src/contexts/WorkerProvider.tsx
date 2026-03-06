@@ -448,21 +448,44 @@ export const WorkerProvider = ({
       // Setup token request callback for worker-to-UI token queries
       const tokenRequestCallback = Comlink.proxy(async (): Promise<string | null> => {
         try {
+          console.debug('[WorkerProvider] Token request callback invoked - Issue #822 debug:', {
+            timestamp: new Date().toISOString(),
+            hasLocalStorage: typeof localStorage !== 'undefined',
+          });
           const token = localStorage.getItem('access_token');
+          console.debug('[WorkerProvider] Token request result - Issue #822 debug:', {
+            hasToken: Boolean(token),
+            tokenLength: token?.length || 0,
+            tokenPreview: token ? `${token.substring(0, 10)}...` : null,
+            timestamp: new Date().toISOString(),
+          });
           return token;
         } catch (error) {
-          console.warn('[WorkerProvider] Token request callback failed:', error);
+          console.warn('[WorkerProvider] Token request callback failed - Issue #822 debug:', {
+            error: error instanceof Error ? error.message : String(error),
+            errorStack: error instanceof Error ? error.stack : undefined,
+            timestamp: new Date().toISOString(),
+          });
           return null;
         }
       });
 
       try {
         // Wait for UI storage bridge setup to complete before proceeding
+        console.debug('[WorkerProvider] Setting up UI storage bridge and token callback - Issue #822 debug:', {
+          timestamp: new Date().toISOString(),
+          hasClient: Boolean(safeClient),
+        });
         await safeClient.setUiStorageBridge(bridge);
+        console.debug('[WorkerProvider] UI storage bridge setup completed - Issue #822 debug');
+
         // Setup token request callback
         await safeClient.setUiTokenRequestCallback(tokenRequestCallback);
+        console.debug('[WorkerProvider] UI storage bridge and token callback setup completed - Issue #822 debug:', {
+          timestamp: new Date().toISOString(),
+        });
       } catch (error: unknown) {
-        logWorkerProviderWarning('Failed to register UI storage bridge or token callback', error);
+        logWorkerProviderWarning('Failed to register UI storage bridge or token callback - Issue #822 debug', error);
       }
     };
 
