@@ -1,0 +1,10 @@
+<testsuites id="" name="" tests="1" failures="0" skipped="0" errors="0" time="12.634501">
+<testsuite name="folder/folder-crud-operations.spec.ts" timestamp="2026-02-25T12:10:35.887Z" hostname="chromium" tests="1" failures="0" skipped="0" time="7.283" errors="0">
+<testcase name="Folder CRUD Operations › フォルダ作成ダイアログをキャンセルして作成が確定しない" classname="folder/folder-crud-operations.spec.ts" time="7.283">
+<system-err>
+<![CDATA[Page error: 
+]]>
+</system-err>
+</testcase>
+</testsuite>
+</testsuites>

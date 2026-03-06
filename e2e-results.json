@@ -1,0 +1,158 @@
+{
+  "config": {
+    "configFile": "/Users/hiroya/WebstormProjects/hierarchidb/playwright.config.ts",
+    "rootDir": "/Users/hiroya/WebstormProjects/hierarchidb/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": "/Users/hiroya/WebstormProjects/hierarchidb/e2e/global-setup.ts",
+    "globalTeardown": "/Users/hiroya/WebstormProjects/hierarchidb/e2e/global-teardown.ts",
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/hiroya/WebstormProjects/hierarchidb/e2e-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/hiroya/WebstormProjects/hierarchidb/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/Users/hiroya/WebstormProjects/hierarchidb/e2e-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "/Users/hiroya/WebstormProjects/hierarchidb/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "e2e-results.json"
+        }
+      ],
+      [
+        "junit",
+        {
+          "outputFile": "e2e-results.xml"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "runAgents": "none",
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.58.2",
+    "workers": 5,
+    "webServer": {
+      "command": "pnpm --filter @hierarchidb/app stage && pnpm --filter @hierarchidb/app preview -- --host 127.0.0.1 --port 4200",
+      "url": "http://localhost:4200/",
+      "reuseExistingServer": true,
+      "timeout": 480000
+    }
+  },
+  "suites": [
+    {
+      "title": "folder/folder-crud-operations.spec.ts",
+      "file": "folder/folder-crud-operations.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Folder CRUD Operations",
+          "file": "folder/folder-crud-operations.spec.ts",
+          "line": 24,
+          "column": 6,
+          "specs": [
+            {
+              "title": "フォルダ作成ダイアログをキャンセルして作成が確定しない",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7283,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [
+                        {
+                          "text": "Page error: \n"
+                        }
+                      ],
+                      "retry": 0,
+                      "startTime": "2026-02-25T12:10:36.460Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "df8ac20a5c4884ae13b9-9aa5f277b71d0fb1c37d",
+              "file": "folder/folder-crud-operations.spec.ts",
+              "line": 57,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-02-25T12:10:32.744Z",
+    "duration": 12634.501,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
