@@ -140,6 +140,13 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+vitest.config.ts.timestamp-*
+
+# Temporary files and directories
+.tmp/
+*.tmp
+test-worker-*
+tsup.config.bundled*
 
 # IDE
 .idea/
@@ -170,3 +177,7 @@ wrangler.toml
 
 .react-router/
 .serena/
+
+generated/
+.codex/
+e2e-results.*
