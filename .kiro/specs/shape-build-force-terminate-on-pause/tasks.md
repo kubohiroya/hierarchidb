@@ -106,116 +106,116 @@ Key technical changes:
   - [x] セッション状態の適切なクリーンアップを実装
 
 - [ ] 6. Update task state management for pause/resume
-  - [~] 6.1 Implement task state preservation on termination
+  - [ ] 6.1 Implement task state preservation on termination
     - Ensure all task state (status, input, output, timestamps) is preserved when abort occurs
     - Verify no task state is lost during force termination
     - _Requirements: 1.4_
 
-  - [~] 6.2 Write property test for task state preservation
+  - [ ] 6.2 Write property test for task state preservation
     - **Property 3: Task State Preservation on Termination**
     - **Validates: Requirements 1.4**
 
-  - [~] 6.3 Implement terminal state cache preservation
+  - [ ] 6.3 Implement terminal state cache preservation
     - Verify that tasks with status `Completed`, `Skipped`, or `Failed` retain their cache entries
     - Ensure cache data and metadata are not deleted during force termination
     - _Requirements: 2.1, 2.2, 2.3_
 
-  - [~] 6.4 Write property test for terminal state cache preservation
+  - [ ] 6.4 Write property test for terminal state cache preservation
     - **Property 4: Terminal State Cache Preservation**
     - **Validates: Requirements 2.1, 2.2, 2.3**
 
-  - [~] 6.5 Write property test for terminal task idempotence
+  - [ ] 6.5 Write property test for terminal task idempotence
     - **Property 5: Terminal Task Idempotence**
     - **Validates: Requirements 2.4**
 
-  - [~] 6.6 Implement running task identification on pause
+  - [ ] 6.6 Implement running task identification on pause
     - Query all tasks with status `Running` or `Queued` when pause occurs
     - Mark these tasks as eligible for reprocessing
     - Store list of tasks to reprocess in session state
     - _Requirements: 5.1, 5.2, 5.3_
 
-  - [~] 6.7 Write property test for non-terminal task identification
+  - [ ] 6.7 Write property test for non-terminal task identification
     - **Property 9: Non-Terminal Task Identification**
     - **Validates: Requirements 5.1, 5.2, 5.3**
 
-  - [~] 6.8 Implement task reprocessing on resume
+  - [ ] 6.8 Implement task reprocessing on resume
     - Query tasks marked for reprocessing when resume is called
     - Add these tasks back to the processing queue
     - Reset task status from `Running` to `Queued` for reprocessing
     - _Requirements: 5.4_
 
-  - [~] 6.9 Write property test for non-terminal task reprocessing
+  - [ ] 6.9 Write property test for non-terminal task reprocessing
     - **Property 10: Non-Terminal Task Reprocessing**
     - **Validates: Requirements 5.4**
 
-- [~] 7. Checkpoint - Ensure task state management tests pass
+- [ ] 7. Checkpoint - Ensure task state management tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 8. Implement no intermediate data persistence verification
-  - [~] 8.1 Add runtime checks to prevent intermediate persistence
+  - [ ] 8.1 Add runtime checks to prevent intermediate persistence
     - Add assertion that cache writes only occur when task status is terminal
     - Verify no cache data exists for tasks in `Running` status
     - _Requirements: 7.1, 7.2, 7.3_
 
-  - [~] 8.2 Write property test for no intermediate persistence
+  - [ ] 8.2 Write property test for no intermediate persistence
     - **Property 12: No Intermediate Persistence**
     - **Validates: Requirements 7.1, 7.2**
 
-  - [~] 8.3 Write property test for running task cache invariant
+  - [ ] 8.3 Write property test for running task cache invariant
     - **Property 13: Running Task Cache Invariant**
     - **Validates: Requirements 7.3, 7.4**
 
 - [ ] 9. Integrate cleanup into session start flow
-  - [~] 9.1 Add cleanup call at session start
+  - [ ] 9.1 Add cleanup call at session start
     - Call `cleanupInvalidEntries(nodeId)` before processing any tasks
     - Wait for cleanup to complete before starting task processing
     - Handle cleanup failures by failing session start
     - _Requirements: 4.1, 4.2, 4.3_
 
-  - [~] 9.2 Update session start error handling
+  - [ ] 9.2 Update session start error handling
     - Catch cleanup errors and throw session start failure
     - Log cleanup errors with context
     - _Requirements: 4.3_
 
 - [ ] 10. Implement resume behavior verification
-  - [~] 10.1 Write property test for resume continuation
+  - [ ] 10.1 Write property test for resume continuation
     - **Property 14: Resume Continuation**
     - **Validates: Requirements 8.1**
 
-  - [~] 10.2 Write property test for pause/resume equivalence
+  - [ ] 10.2 Write property test for pause/resume equivalence
     - **Property 15: Pause/Resume Equivalence**
     - **Validates: Requirements 8.2**
 
-  - [~] 10.3 Write property test for multi-cycle state consistency
+  - [ ] 10.3 Write property test for multi-cycle state consistency
     - **Property 16: Multi-Cycle State Consistency**
     - **Validates: Requirements 8.3**
 
-  - [~] 10.4 Write property test for progress reporting accuracy
+  - [ ] 10.4 Write property test for progress reporting accuracy
     - **Property 17: Progress Reporting Accuracy**
     - **Validates: Requirements 8.4**
 
 - [ ] 11. Add integration tests for pause/resume flow
-  - [~] 11.1 Write integration test for end-to-end pause/resume
+  - [ ] 11.1 Write integration test for end-to-end pause/resume
     - Start a build session with multiple tasks
     - Pause during processing and verify termination within 500ms
     - Resume and verify completion with correct final output
     - _Requirements: 1.3, 8.1, 8.2_
 
-  - [~] 11.2 Write integration test for multiple pause/resume cycles
+  - [ ] 11.2 Write integration test for multiple pause/resume cycles
     - Start a build session
     - Pause and resume 3 times during processing
     - Verify final output matches uninterrupted build
     - Verify task state consistency across all cycles
     - _Requirements: 8.2, 8.3_
 
-  - [~] 11.3 Write integration test for cache cleanup on start
+  - [ ] 11.3 Write integration test for cache cleanup on start
     - Create invalid cache entries (data with timestamp:0, no metadata)
     - Start a new session
     - Verify invalid entries are deleted before task processing
     - Verify cleanup count is logged
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-  - [~] 11.4 Write integration test for long-running task termination
+  - [ ] 11.4 Write integration test for long-running task termination
     - Start a task that takes 10+ seconds (e.g., complex geometry simplification)
     - Pause immediately after task starts
     - Verify termination completes within 500ms
@@ -223,23 +223,23 @@ Key technical changes:
     - _Requirements: 1.2, 1.3, 5.3_
 
 - [ ] 12. Update error handling and logging
-  - [~] 12.1 Add abort signal error handling in task processors
+  - [ ] 12.1 Add abort signal error handling in task processors
     - Catch abort errors in task processing functions
     - Log abort events with task context
     - Ensure abort errors don't propagate as failures
     - _Requirements: 1.1, 1.2_
 
-  - [~] 12.2 Add cache write failure handling
+  - [ ] 12.2 Add cache write failure handling
     - Ensure metadata write failure leaves entry invalid (timestamp:0)
     - Log cache write failures with context
     - _Requirements: 3.1, 3.2_
 
-  - [~] 12.3 Add termination timeout warning
+  - [ ] 12.3 Add termination timeout warning
     - Log warning if termination takes longer than 500ms
     - Include elapsed time and task context in warning
     - _Requirements: 1.3_
 
-- [~] 13. Final checkpoint - Ensure all tests pass
+- [ ] 13. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

@@ -15,7 +15,7 @@ export type ViewportRange = {
   endTaskId?: string;
 };
 
-export type TaskProgressSegment = {
+export type BuildSessionStageProgressBarSegment = {
   fill: string;
   fillOpacity: number;
   stageId: string;
@@ -133,22 +133,22 @@ const shouldIncludeTask = (params: {
   };
 }) => {
   const { statusValue, isSkipped, filter } = params;
-  
+
   // Queued, Running, and Paused tasks are always visible (no filter UI for these)
   if (statusValue === 'queued' || statusValue === 'running' || statusValue === 'paused') {
     return true;
   }
-  
+
   // If all filters are off, include all tasks
   if (!filter.skippedMode && !filter.failedMode && !filter.completedMode) {
     return true;
   }
-  
+
   // OR logic: include if any active filter matches
   if (filter.skippedMode && isSkipped) return true;
   if (filter.failedMode && statusValue === 'failed') return true;
   if (filter.completedMode && (statusValue === 'completed' || statusValue === 'recycled')) return true;
-  
+
   return false;
 };
 
@@ -167,7 +167,7 @@ export const buildTaskProgressSegments = (params: TaskProgressComputeInput) => {
     resolveTaskTitle,
   } = params;
 
-  const nextSegments: TaskProgressSegment[] = [];
+  const nextSegments: BuildSessionStageProgressBarSegment[] = [];
   const nextStageOffsets = new Map<string, number>();
   const nextStageCounts = new Map<string, number>();
   let totalCount = 0;
@@ -188,12 +188,12 @@ export const buildTaskProgressSegments = (params: TaskProgressComputeInput) => {
     orderedTasks.forEach((task) => {
       const statusValue = (task.status ?? '').toString().toLowerCase();
       const isSkipped = isTaskSkipped(task.display, resolveTaskMetadataMessage(task.metadata));
-      
+
       // Check if task should be included based on filter
       if (!shouldIncludeTask({ statusValue, isSkipped, filter })) {
         return;
       }
-      
+
       const fill = resolveStatusColor({
         taskStatus: statusValue,
         isSkipped,

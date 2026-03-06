@@ -1,6 +1,7 @@
 # 運用ハブ
 
 ## Doing
+- #833 / refactor/shape/build-progress-component-naming-833 / 2026-03-06 19:30
 - #832 / fix/shape/metadata-error-classification-832 / 2026-03-06 19:00
 - #827 / fix/auth/token-expiration-validation-827 / 2026-03-06 18:30
 - #823 / codex/debug/worker-token-request-detailed-logging-823 / 2026-03-06 17:55
@@ -58,6 +59,7 @@
 - Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
+- 2026-03-06: Issue #826 進捗 - GitHub Pages環境でのshape build失敗問題の修正完了。選択数がゼロの場合は「成功」として扱い空のタイル出力で完了、選択があるのにペイロード生成が0の場合は「失敗」として扱うよう修正済み。空ビルドの場合はパイプライン実行をスキップし即座に完了する処理を実装。`pnpm -w turbo run build --filter @hierarchidb/app`が成功（exit 0）。コミット`6a86f7bc4`でプッシュ完了、GitHub Pages更新済み。次ステップ: GitHub Pages環境で空ビルドと選択ありビルドの動作確認。
 - 2026-03-06: Issue #832 完了 - メタデータエラーの認証エラー誤分類問題を修正。`SourceTaskPayloadGenerationError`クラスを追加し、`resolveSourceTaskPayloadsForPlan`で適切なエラータイプを投げるよう変更。エラー分類ロジックでメタデータエラーを認証エラーと区別し、適切なエラーメッセージを表示するよう修正。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin`と`pnpm -w turbo run build --filter @hierarchidb/shape-plugin`、`pnpm -w turbo run build --filter @hierarchidb/app`が成功（exit 0）。コミット`f63bd7347`でプッシュ完了。GitHub Pages環境でのテストが可能になった。
 - 2026-03-06: Issue #829 完了 - shape-plugin の TypeScript エラーを修正し、mainブランチに反映済み。修正内容: `CountryMetadata.adminLevels` → `CountryMetadata.availableAdminLevels`、`SourceTaskPayload.geometry` → `SourceTaskPayload.url`。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` が成功（exit 0）。PR #830 でマージ完了。
 - 2026-03-06: Issue #826 進捗 - GitHub Pages環境でのshape build失敗問題の調査を継続。`resolveSourceTaskPayloadsForPlan`関数に包括的なデバッグログを追加し、メタデータロード・ペイロード生成・リフレッシュ試行の各段階を詳細ログ化。サンプルデータをログに含めて互換性問題を特定可能に。アプリケーションビルド完了（`pnpm -w turbo run build --filter @hierarchidb/app` 成功）、GitHub Pages更新済み（https://kubohiroya.github.io/hierarchidb）、コミット`11481a482`でプッシュ完了。次ステップ: ブラウザでデバッグログ確認（`localStorage.setItem('hidb_auth_debug', '1')`で有効化）とペイロード生成失敗の根本原因特定。
