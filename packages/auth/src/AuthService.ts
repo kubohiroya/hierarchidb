@@ -497,6 +497,71 @@ export class AuthService implements AuthHeadersProvider {
       resolutionStartTime: resolutionStart,
     });
 
+    // Helper function to validate token expiration
+    const validateTokenExpiration = async (token: string, source: string): Promise<string | null> => {
+      if (!token) return null;
+
+      // Try to get stored expiration timestamp
+      let storedExpiresAt: string | null = null;
+      try {
+        if (this.uiStorage) {
+          storedExpiresAt = await this.uiStorage.getItem('token_expires_at');
+        } else if (typeof localStorage !== 'undefined') {
+          storedExpiresAt = localStorage.getItem('token_expires_at');
+        }
+      } catch (error) {
+        console.debug('[auth][service] Failed to get stored expiration:', {
+          error: error instanceof Error ? error.message : String(error),
+          source,
+        });
+      }
+
+      // Check if token is expired
+      const expired = isTokenExpired(token, storedExpiresAt || undefined);
+      const now = Math.floor(Date.now() / 1000);
+
+      console.debug('[auth][service] Token expiration check - Issue #827:', {
+        source,
+        hasToken: Boolean(token),
+        tokenLength: token.length,
+        tokenPreview: `${token.substring(0, 10)}...`,
+        storedExpiresAt,
+        expired,
+        currentTimestamp: now,
+        timestamp: new Date().toISOString(),
+      });
+
+      if (expired === true) {
+        console.debug('[auth][service] Token expired, clearing storage and returning null - Issue #827:', {
+          source,
+          storedExpiresAt,
+          currentTimestamp: now,
+        });
+
+        // Clear expired token from storage
+        try {
+          await this.clearStoredToken();
+        } catch (error) {
+          console.debug('[auth][service] Failed to clear expired token:', {
+            error: error instanceof Error ? error.message : String(error),
+            source,
+          });
+        }
+
+        return null;
+      }
+
+      if (expired === null) {
+        console.debug('[auth][service] Cannot determine token expiration, proceeding with token - Issue #827:', {
+          source,
+          hasStoredExpiration: Boolean(storedExpiresAt),
+          isJwtFormat: token.split('.').length === 3,
+        });
+      }
+
+      return token;
+    };
+
     // First try uiStorage if available
     if (this.uiStorage) {
       try {
@@ -512,7 +577,10 @@ export class AuthService implements AuthHeadersProvider {
           totalTimeMs: Math.round(uiStorageEnd - resolutionStart),
           timestamp: new Date().toISOString(),
         });
-        return token;
+
+        // Validate expiration before returning
+        const validatedToken = await validateTokenExpiration(token || '', 'uiStorage');
+        return validatedToken;
       } catch (error) {
         const uiStorageEnd = performance.now();
         console.debug('[auth][service] uiStorage getItem failed, falling back to next method - Issue #823 debug:', {
@@ -543,7 +611,10 @@ export class AuthService implements AuthHeadersProvider {
           totalTimeMs: Math.round(workerAPIEnd - resolutionStart),
           timestamp: new Date().toISOString(),
         });
-        return token;
+
+        // Validate expiration before returning
+        const validatedToken = await validateTokenExpiration(token || '', 'workerAPI');
+        return validatedToken;
       } catch (error) {
         const workerAPIEnd = performance.now();
         console.warn('[auth][service] workerAPI requestAuthToken failed - Issue #823 debug:', {
@@ -580,7 +651,10 @@ export class AuthService implements AuthHeadersProvider {
           totalTimeMs: Math.round(localStorageEnd - resolutionStart),
           timestamp: new Date().toISOString(),
         });
-        return token;
+
+        // Validate expiration before returning
+        const validatedToken = await validateTokenExpiration(token || '', 'localStorage');
+        return validatedToken;
       } catch (error) {
         const localStorageEnd = performance.now();
         console.debug('[auth][service] localStorage getItem failed - Issue #823 debug:', {
@@ -618,4 +692,56 @@ function isLikelyCorsProxyUrl(url: string): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Decode JWT token payload without verification (for expiration check only)
+ * Returns null if token is not a valid JWT format
+ */
+function decodeJwtPayload(token: string): { exp?: number } | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      return null; // Not a JWT format
+    }
+
+    // Decode base64url payload
+    const payload = parts[1];
+    if (!payload) {
+      return null; // Empty payload
+    }
+
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
+    const decoded = atob(padded);
+
+    return JSON.parse(decoded);
+  } catch {
+    return null; // Invalid JWT format or JSON
+  }
+}
+
+/**
+ * Check if a token is expired based on stored expiration or JWT exp field
+ * Returns true if expired, false if valid, null if expiration cannot be determined
+ */
+function isTokenExpired(token: string, storedExpiresAt?: string): boolean | null {
+  const now = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
+
+  // First check stored expiration timestamp
+  if (storedExpiresAt) {
+    const expiresAt = parseInt(storedExpiresAt, 10);
+    if (!isNaN(expiresAt)) {
+      return now >= expiresAt;
+    }
+  }
+
+  // Fallback to JWT exp field if token looks like JWT
+  const jwtPayload = decodeJwtPayload(token);
+  if (jwtPayload && typeof jwtPayload.exp === 'number') {
+    return now >= jwtPayload.exp;
+  }
+
+  // Cannot determine expiration
+  return null;
 }
