@@ -142,34 +142,123 @@ const resolveSourceTaskPayloadsForPlan = async (input: {
   selectedArrayByCountries?: SelectedArrayByCountries;
   downloadTaskPayloads?: SourceTaskPayload[];
 }): Promise<SourceTaskPayload[]> => {
+  console.warn('[shapeBuildAPI] resolveSourceTaskPayloadsForPlan start', {
+    nodeId: input.nodeId,
+    dataSource: input.dataSource,
+    hasDownloadTaskPayloads: Boolean(input.downloadTaskPayloads?.length),
+    downloadTaskPayloadsCount: input.downloadTaskPayloads?.length ?? 0,
+    hasSelectedArrayByCountries: Boolean(input.selectedArrayByCountries),
+    selectedArrayByCountriesKeys: input.selectedArrayByCountries ? Object.keys(input.selectedArrayByCountries) : [],
+  });
+
   if (input.downloadTaskPayloads && input.downloadTaskPayloads.length > 0) {
+    console.warn('[shapeBuildAPI] using provided downloadTaskPayloads', {
+      nodeId: input.nodeId,
+      payloadCount: input.downloadTaskPayloads.length,
+    });
     return input.downloadTaskPayloads;
   }
   if (!input.selectedArrayByCountries) {
+    console.warn('[shapeBuildAPI] no selectedArrayByCountries, returning empty payloads', {
+      nodeId: input.nodeId,
+    });
     return [];
   }
   const strategy = resolveSourceStageStrategy(input.dataSource);
   const selectedAdminPairCount = countSelectedAdminPairs(input.selectedArrayByCountries);
-  const buildPayloads = (countryMetadata: CountryMetadata[]): SourceTaskPayload[] => strategy.buildSourceTaskPayloads({
-    selectedArrayByCountries: input.selectedArrayByCountries,
-    countryMetadata,
+  console.warn('[shapeBuildAPI] selectedAdminPairCount calculated', {
+    nodeId: input.nodeId,
+    selectedAdminPairCount,
+    selectedArrayByCountriesSample: Object.fromEntries(
+      Object.entries(input.selectedArrayByCountries).slice(0, 3).map(([key, value]) => [
+        key,
+        Array.isArray(value) ? `Array(${value.length})` : typeof value
+      ])
+    ),
+  });
+
+  const buildPayloads = (countryMetadata: CountryMetadata[]): SourceTaskPayload[] => {
+    console.warn('[shapeBuildAPI] building payloads from metadata', {
+      nodeId: input.nodeId,
+      metadataCount: countryMetadata.length,
+      metadataSample: countryMetadata.slice(0, 2).map(meta => ({
+        countryCode: meta.countryCode,
+        adminLevels: meta.adminLevels?.length ?? 0,
+      })),
+    });
+    const payloads = strategy.buildSourceTaskPayloads({
+      selectedArrayByCountries: input.selectedArrayByCountries,
+      countryMetadata,
+    });
+    console.warn('[shapeBuildAPI] payloads built from metadata', {
+      nodeId: input.nodeId,
+      payloadCount: payloads.length,
+      payloadSample: payloads.slice(0, 2).map(payload => ({
+        countryCode: payload.countryCode,
+        adminLevel: payload.adminLevel,
+        hasGeometry: Boolean(payload.geometry),
+      })),
+    });
+    return payloads;
+  };
+
+  console.warn('[shapeBuildAPI] loading metadata from cache', {
+    nodeId: input.nodeId,
+    dataSource: input.dataSource,
   });
   const countryMetadata = await metadataLoader.loadMetadata(input.dataSource, input.nodeId);
+  console.warn('[shapeBuildAPI] metadata loaded from cache', {
+    nodeId: input.nodeId,
+    metadataCount: countryMetadata.length,
+    metadataCountryCodes: countryMetadata.map(m => m.countryCode).slice(0, 10),
+  });
+
   const payloadsFromCache = buildPayloads(countryMetadata);
   if (payloadsFromCache.length > 0 || selectedAdminPairCount === 0) {
+    console.warn('[shapeBuildAPI] returning payloads from cache', {
+      nodeId: input.nodeId,
+      payloadCount: payloadsFromCache.length,
+      selectedAdminPairCount,
+    });
     return payloadsFromCache;
   }
   console.warn('[shapeBuildAPI] no source payloads from cached metadata; retrying with force refresh', {
     nodeId: input.nodeId,
     dataSource: input.dataSource,
     selectedAdminPairCount,
+    cachedMetadataCount: countryMetadata.length,
   });
   metadataLoader.clearCache(input.dataSource);
+  console.warn('[shapeBuildAPI] metadata cache cleared, loading with force refresh', {
+    nodeId: input.nodeId,
+    dataSource: input.dataSource,
+  });
   const refreshedMetadata = await metadataLoader.loadMetadata(input.dataSource, input.nodeId, { force: true });
+  console.warn('[shapeBuildAPI] refreshed metadata loaded', {
+    nodeId: input.nodeId,
+    refreshedMetadataCount: refreshedMetadata.length,
+    refreshedMetadataCountryCodes: refreshedMetadata.map(m => m.countryCode).slice(0, 10),
+    metadataChanged: refreshedMetadata.length !== countryMetadata.length,
+  });
+
   const payloadsFromRefreshedMetadata = buildPayloads(refreshedMetadata);
   if (payloadsFromRefreshedMetadata.length > 0) {
+    console.warn('[shapeBuildAPI] returning payloads from refreshed metadata', {
+      nodeId: input.nodeId,
+      payloadCount: payloadsFromRefreshedMetadata.length,
+    });
     return payloadsFromRefreshedMetadata;
   }
+  console.error('[shapeBuildAPI] failed to generate payloads even after refresh', {
+    nodeId: input.nodeId,
+    dataSource: input.dataSource,
+    selectedAdminPairCount,
+    cachedMetadataCount: countryMetadata.length,
+    refreshedMetadataCount: refreshedMetadata.length,
+    selectedArrayByCountriesKeys: Object.keys(input.selectedArrayByCountries || {}),
+    selectedArrayByCountriesSample: input.selectedArrayByCountries ?
+      Object.fromEntries(Object.entries(input.selectedArrayByCountries).slice(0, 5)) : null,
+  });
   throw new Error(
     `[shapeBuildAPI] No source task payloads generated for ${selectedAdminPairCount}`
     + ' selected entries. Metadata may be stale or incompatible with the current selection.',
