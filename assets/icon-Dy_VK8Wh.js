@@ -1,0 +1,1 @@
+import"./vendor-react-DIwP1lUV.js";import{ui as e}from"./index.js";const t=e;var n=t;export{t as ResolverPluginIcon,n as default};

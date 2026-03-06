@@ -1,0 +1,1 @@
+import{a as e,c as t}from"./src-BNeEhuGv.js";var n=e=>({taskId:e.taskId,version:e.version,stage:e.stage,status:e.status,progress:e.progress,metadata:e.metadata});async function r(r){return(await t(new e,r)).map(n)}const i=async()=>{};var a=i;export{a as n,r,i as t};
