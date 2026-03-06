@@ -183,7 +183,7 @@ const resolveSourceTaskPayloadsForPlan = async (input: {
       metadataCount: countryMetadata.length,
       metadataSample: countryMetadata.slice(0, 2).map(meta => ({
         countryCode: meta.countryCode,
-        adminLevels: meta.adminLevels?.length ?? 0,
+        adminLevels: meta.availableAdminLevels?.length ?? 0,
       })),
     });
     const payloads = strategy.buildSourceTaskPayloads({
@@ -196,7 +196,7 @@ const resolveSourceTaskPayloadsForPlan = async (input: {
       payloadSample: payloads.slice(0, 2).map(payload => ({
         countryCode: payload.countryCode,
         adminLevel: payload.adminLevel,
-        hasGeometry: Boolean(payload.geometry),
+        hasGeometry: Boolean(payload.url),
       })),
     });
     return payloads;

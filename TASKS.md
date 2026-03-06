@@ -1,6 +1,7 @@
 # 運用ハブ
 
 ## Doing
+- #829 / fix/shape-plugin/typescript-errors / 2026-03-06 19:30
 - #827 / fix/auth/token-expiration-validation-827 / 2026-03-06 18:30
 - #823 / codex/debug/worker-token-request-detailed-logging-823 / 2026-03-06 17:55
 - #822 / codex/debug/worker-ui-token-request-debug-822 / 2026-03-06 15:30
