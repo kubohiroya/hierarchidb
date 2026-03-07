@@ -1023,6 +1023,14 @@ const startBuildSessionInternal = async (
       void emitProgressSnapshot(nodeForSession, terminalProgressMessage);
       return nodeForSession;
     }
+    console.warn('[shapeBuildAPI] Starting runShapePipeline execution', {
+      nodeId: nodeForSession,
+      runId: pipelineRunId,
+      dataSource: resolvedDataSource,
+      selectedAdminPairCount,
+      downloadTaskPayloadsCount: downloadTaskPayloads.length,
+    });
+    
     void runShapePipeline({
       nodeId: nodeForSession,
       dataSource: resolvedDataSource,
@@ -1037,6 +1045,10 @@ const startBuildSessionInternal = async (
       onTasksEnqueued: emitQueuedProgressSnapshot,
       onStageTasksPrepared: emitStageTaskSnapshotBarrier,
     }).then(async () => {
+      console.warn('[shapeBuildAPI] runShapePipeline completed successfully', {
+        nodeId: nodeForSession,
+        runId: pipelineRunId,
+      });
       const completedAt = Date.now();
       terminalProgressMessage = undefined;
       const taskQueue = new VtTaskQueueDb();
@@ -1059,6 +1071,27 @@ const startBuildSessionInternal = async (
         terminalProgressMessage = 'Pipeline finished with failed tasks.';
       }
     }).catch(async (error) => {
+      console.error('[shapeBuildAPI] runShapePipeline failed with error', {
+        nodeId: nodeForSession,
+        runId: pipelineRunId,
+        error: error instanceof Error ? error.message : String(error),
+        errorName: error instanceof Error ? error.name : 'Unknown',
+        errorStack: error instanceof Error ? error.stack : undefined,
+      });
+      
+      // Emit task snapshot even when pipeline fails
+      try {
+        await emitTaskSnapshot(nodeForSession);
+        console.warn('[shapeBuildAPI] Task snapshot emitted after pipeline failure', {
+          nodeId: nodeForSession,
+        });
+      } catch (emitError) {
+        console.error('[shapeBuildAPI] Failed to emit task snapshot after pipeline failure', {
+          nodeId: nodeForSession,
+          emitError: emitError instanceof Error ? emitError.message : String(emitError),
+        });
+      }
+      
       const failedAt = Date.now();
       const diagnostics = toErrorDiagnostics(error);
       if (isAuthPendingPipelineError(error)) {
