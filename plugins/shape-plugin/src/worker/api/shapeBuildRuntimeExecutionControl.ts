@@ -745,44 +745,80 @@ const startBuildSessionInternal = async (
     await emitProgressSnapshot(nodeForSession, `${startupScope} ignored: pipeline already active`);
     return nodeForSession;
   }
-  const sourcePlan = await executeStartupStep(
-    'plan-source-total',
-    async () => {
-      try {
-        return await estimatePlannedSourceTotal({
-          nodeId: nodeForSession,
-          buildConfig: mergedRuntimeConfig,
-          selectedArrayByCountries: draftEntity.selectedArrayByCountries,
-          downloadTaskPayloads,
-        });
-      } catch (error) {
-        // Emit empty task snapshot to notify UI of the error state
-        console.error('[shapeBuildAPI] Failed to plan source total, emitting empty task snapshot', {
-          nodeId: nodeForSession,
-          error: error instanceof Error ? error.message : String(error),
-          selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
-          downloadTaskPayloadsCount: downloadTaskPayloads.length,
-        });
-        
-        // Send empty task snapshot to UI so it doesn't wait indefinitely
-        await upsertBuildSessionSnapshot({
-          nodeId: nodeForSession,
-          selectedArrayByCountries: draftEntity.selectedArrayByCountries,
-          tasks: [], // Empty tasks array
-          status: 'failed',
-          canResume: false,
-        });
-        await emitTaskSnapshot(nodeForSession);
-        
-        throw error;
-      }
-    },
-    {
-      payloadCount: downloadTaskPayloads.length,
-      selectedCountryCount: selectionSummary.selectedCountryCount,
+  let sourcePlan;
+  try {
+    console.warn('[shapeBuildAPI] Starting plan-source-total step', {
+      nodeId: nodeForSession,
       selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
-    },
-  );
+      downloadTaskPayloadsCount: downloadTaskPayloads.length,
+    });
+    
+    sourcePlan = await executeStartupStep(
+      'plan-source-total',
+      async () => estimatePlannedSourceTotal({
+        nodeId: nodeForSession,
+        buildConfig: mergedRuntimeConfig,
+        selectedArrayByCountries: draftEntity.selectedArrayByCountries,
+        downloadTaskPayloads,
+      }),
+      {
+        payloadCount: downloadTaskPayloads.length,
+        selectedCountryCount: selectionSummary.selectedCountryCount,
+        selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
+      },
+    );
+    
+    console.warn('[shapeBuildAPI] plan-source-total step completed successfully', {
+      nodeId: nodeForSession,
+      plannedSourceTotal: sourcePlan.plannedSourceTotal,
+      payloadCount: sourcePlan.payloadCount,
+    });
+  } catch (error) {
+    // Emit empty task snapshot to notify UI of the error state
+    console.error('[shapeBuildAPI] Failed to plan source total, emitting empty task snapshot', {
+      nodeId: nodeForSession,
+      error: error instanceof Error ? error.message : String(error),
+      errorName: error instanceof Error ? error.name : 'Unknown',
+      errorStack: error instanceof Error ? error.stack : undefined,
+      selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
+      downloadTaskPayloadsCount: downloadTaskPayloads.length,
+    });
+    
+    try {
+      // Send empty task snapshot to UI so it doesn't wait indefinitely
+      await upsertBuildSessionSnapshot({
+        nodeId: nodeForSession,
+        selectedArrayByCountries: draftEntity.selectedArrayByCountries,
+        tasks: [], // Empty tasks array
+        status: 'failed',
+        canResume: false,
+      });
+      
+      console.warn('[shapeBuildAPI] Empty build session snapshot upserted', {
+        nodeId: nodeForSession,
+      });
+      
+      await emitTaskSnapshot(nodeForSession);
+      
+      console.warn('[shapeBuildAPI] Empty task snapshot emitted to UI', {
+        nodeId: nodeForSession,
+      });
+      
+      // Emit progress snapshot to ensure UI receives notification
+      await emitProgressSnapshot(nodeForSession, 'Build failed during source planning.');
+      
+      console.warn('[shapeBuildAPI] Progress snapshot emitted for failed build', {
+        nodeId: nodeForSession,
+      });
+    } catch (emitError) {
+      console.error('[shapeBuildAPI] Failed to emit empty task snapshot', {
+        nodeId: nodeForSession,
+        emitError: emitError instanceof Error ? emitError.message : String(emitError),
+      });
+    }
+    
+    throw error;
+  }
   // Only fail if there are selections but no payloads generated (metadata issue)
   // Empty builds (no selections) should succeed with empty output
   if (selectedAdminPairCount > 0 && sourcePlan.plannedSourceTotal === 0) {
