@@ -217,13 +217,10 @@ export const executeStartOrResumeFlow = async (args: StartOrResumeExecutionArgs)
         message: 'Build completed immediately after start.',
       });
     } else {
-      advanceBuildSessionTransitionPhase('receiving-task-snapshot', {
+      // Direct transition to running phase - receiving-task-snapshot phase eliminated
+      finishBuildSessionTransition({
         level: 'info',
-        message: 'Build requested. Waiting for worker task updates...',
-      });
-      beginBuildStartupStep('receiving-task-snapshot', {
-        source: startupSource,
-        mode: shouldResumeSession ? 'resume' : 'start',
+        message: 'Build session started successfully.',
       });
     }
 

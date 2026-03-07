@@ -2,13 +2,16 @@
 
 ## Doing
 
-- #838 / fix/event-buffering/buffer-limits-and-exception-isolation / 2025-03-07 11:45
+- #864 / fix/worker-ui-snapshot/remove-harmful-local-state / 2025-03-07 21:08
 
 ## Blocked
 
 ## 今日の運用ログ
 
-- 2025-03-07: #838起票、ブランチ作成完了、バッファサイズ制限・サブスクライバー例外分離実装開始
+- 2025-03-07: #838 Level 1 Critical improvements実装確認完了・PR #863マージ完了
+  - UIバッファサイズ制限・サブスクライバー例外分離が既に実装済みであることを確認
+  - 36テスト全成功（バッファオーバーフロー・例外分離テスト含む）
+  - 要求機能は既に満たされており追加実装不要
 - 2025-03-07: #844起票、ブランチ作成完了
 - 2025-03-07: #844 国選択ステップでのISO-3166-2国名i18n化実装完了
   - useCountryI18nフック作成

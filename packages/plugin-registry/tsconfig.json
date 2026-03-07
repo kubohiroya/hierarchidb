@@ -6,6 +6,7 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "noEmit": true,
+    "allowImportingTsExtensions": true,
     "typeRoots": [
       "./types",
       "../../node_modules/@types"
