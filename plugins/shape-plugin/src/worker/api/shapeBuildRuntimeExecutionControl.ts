@@ -1073,19 +1073,23 @@ const startBuildSessionInternal = async (
         terminalProgressMessage = 'Pipeline finished with failed tasks.';
       }
     }).catch(async (error) => {
-      console.error('[shapeBuildAPI] runShapePipeline failed with error', {
+      const errorDetails = {
         nodeId: nodeForSession,
         runId: pipelineRunId,
         error: error instanceof Error ? error.message : String(error),
         errorName: error instanceof Error ? error.name : 'Unknown',
         errorStack: error instanceof Error ? error.stack : undefined,
-      });
+        timestamp: new Date().toISOString(),
+      };
       
-      emitWorkerLog(nodeForSession, 'error', '[shapeBuildAPI] runShapePipeline failed with error', {
-        runId: pipelineRunId,
-        error: error instanceof Error ? error.message : String(error),
-        errorName: error instanceof Error ? error.name : 'Unknown',
-        errorStack: error instanceof Error ? error.stack : undefined,
+      console.error('[shapeBuildAPI] runShapePipeline failed with error', errorDetails);
+      
+      // Emit detailed error to UI immediately - contract violation prevention
+      emitWorkerLog(nodeForSession, 'error', '[CRITICAL] Build pipeline failed - contract violation detected', {
+        ...errorDetails,
+        severity: 'critical',
+        contractViolation: true,
+        userVisible: true,
       });
       
       // Emit task snapshot even when pipeline fails

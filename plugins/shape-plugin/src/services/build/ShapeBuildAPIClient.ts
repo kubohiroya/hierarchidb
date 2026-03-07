@@ -606,6 +606,13 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
     }
     return merged;
   }
+
+  subscribeToWorkerLog(_nodeId: NodeId, _callback: (event: { level: 'log' | 'warn' | 'error'; message: string; data?: any; timestamp: number }) => void): () => void {
+    // This method is implemented on the UI side and should not directly call worker API
+    // The actual subscription is handled by the WorkerBridge
+    console.warn('[ShapeQueryAPIImpl] subscribeToWorkerLog called on UI side - this should be handled by WorkerBridge');
+    return () => {}; // Return empty unsubscribe function
+  }
 }
 
 export class ShapeMutationAPIImpl implements ShapeMutationAPI {
