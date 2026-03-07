@@ -2,12 +2,13 @@
 
 ## Doing
 
-- #857 / fix/pr-feedback-cache-validation-seqnum / start
+- #861 / fix/snapshot-communication/ssot-state-integration / 2025-03-07 11:30
 
 ## Blocked
 
 ## 今日の運用ログ
 
+- 2025-03-07: #861起票、ブランチ作成完了、hasInitialSnapshotAppliedローカル変数をSSOT状態木参照に統一開始
 - 2025-03-07: #844起票、ブランチ作成完了
 - 2025-03-07: #844 国選択ステップでのISO-3166-2国名i18n化実装完了
   - useCountryI18nフック作成
@@ -52,3 +53,16 @@
   - AbortController即座Worker終了・ロックフリーキャッシュ書き込み実装
   - 23プロパティテスト・統合テスト全実装、370テスト通過確認
   - Requirements 1.1-9.18 全対応、pause/resume機能信頼性大幅向上
+- 2025-03-07: #857 PRフィードバック修正完了・PR #858マージ完了
+  - cache-write-ordering.property.test.ts: timestamp ベース検証一貫性修正
+  - distributedSeqNumGeneration.property.test.ts: 全シーケンス番号包括的検証・変数名エラー修正
+  - 両テストファイル 7/7 テスト成功、requirements.md との完全一致確認
+- 2025-03-07: #859 TaskStateProtectionService改善調査完了・Issue クローズ
+  - PRレビューフィードバック指摘事項（Number.isFinite()検証・Map.entries()性能改善）は既に適用済み確認
+  - 追加修正不要、Property 3テスト・型チェック正常動作確認
+- 2025-03-07: #860起票、channelEstablishedRef撤去・SSOT状態木参照統一対応開始
+- 2025-03-07: #860 channelEstablishedRef撤去・SSOT状態木参照統一完了
+  - V1・V2ブリッジファイル削除、V3ブリッジに一本化
+  - channelEstablishedRefとchannelReadiness重複状態を完全撤去
+  - 全イベント配信をSSOT状態木経由に統一、契約違反隠蔽を排除
+  - 型チェック・ビルド成功、関連テスト全通過確認
