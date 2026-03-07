@@ -2,8 +2,6 @@
 
 ## Doing
 
-- #850 / fix/country-i18n/callback-deps / 2025-03-07 useCountryI18nフックの依存配列修正
-
 ## Blocked
 
 ## 今日の運用ログ
@@ -29,3 +27,19 @@
   - 8ファイル変更、1514行追加
   - Requirements 8.1, 8.2, 8.3, 9.16, 9.17, 9.18 検証完了
 - 2025-03-07: #850起票、useCallbackの不要な依存配列修正対応開始
+- 2025-03-07: #850 useCountryI18nフック依存配列修正完了・PR #851マージ完了
+- 2025-03-07: #852 翻訳キーパス修正完了・PR #853マージ完了
+  - PluginDialogFooterのcopyLinkUrl翻訳キーパスを正しいパスに修正
+  - dialogs.pluginDialog.contextMenu.copyLinkUrl → dialogs.pluginDraft.pluginDialog.contextMenu.copyLinkUrl
+  - 型チェック・ビルド成功確認
+- 2025-03-07: PRレビュー指摘事項修正完了
+  - TaskStateProtectionService検証ロジック改善（Number.isFinite()使用でNaN/Infinity検出）
+  - clearSnapshots性能改善（Map.entries()使用で効率的削除処理）
+  - mainブランチに直接コミット・プッシュ完了
+- 2025-03-07: #855 Task 6.6.5 Property 22: Distributed Sequence Number Generation実装完了
+  - seqNum単調性検証（各通知タイプ・ノード単位）
+  - 並列ワーカー衝突防止検証
+  - セッション再開時リセット検証
+  - UnconditionalEventStreamer統合検証
+  - 7つのテストケース全成功、型チェック成功確認
+  - Requirements 9.5, 9.16 検証完了

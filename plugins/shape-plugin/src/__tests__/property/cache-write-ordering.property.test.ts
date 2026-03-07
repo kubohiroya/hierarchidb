@@ -516,6 +516,7 @@ describe('Property 11: Cache Type Consistency', () => {
                     const data = new ArrayBuffer(100);
 
                     // Create invalid geometry cache entries (data only, no metadata)
+                    // EphemeralDB auto-creates metadata, so we need to delete it after creation
                     const invalidGeomIds: string[] = [];
                     for (let i = 0; i < invalidCount; i++) {
                         const id = `geom-invalid-${runId}-${nodeId}-${i}`;
@@ -533,10 +534,13 @@ describe('Property 11: Cache Type Consistency', () => {
                             tolerance: 0,
                             timestamp: 0,
                         });
+                        // Delete the auto-created metadata to make it invalid
+                        await db.geometryCacheMeta.delete(id);
                         invalidGeomIds.push(id);
                     }
 
                     // Create invalid source cache entries (data only, no metadata)
+                    // EphemeralDB auto-creates metadata, so we need to delete it after creation
                     const invalidSourceIds: string[] = [];
                     for (let i = 0; i < invalidCount; i++) {
                         const id = `source-invalid-${runId}-${nodeId}-${i}`;
@@ -551,6 +555,8 @@ describe('Property 11: Cache Type Consistency', () => {
                             size: 100,
                             timestamp: 0,
                         });
+                        // Delete the auto-created metadata to make it invalid
+                        await db.sourceCacheMeta.delete(id);
                         invalidSourceIds.push(id);
                     }
 
@@ -637,22 +643,22 @@ describe('Property 11: Cache Type Consistency', () => {
                         }
                     }
 
-                    // Mirror hooks auto-create metadata, so "data-only invalid entries" are not produced.
-                    expect(foundInvalidGeomIds).toHaveLength(0);
-                    expect(foundInvalidSourceIds).toHaveLength(0);
+                    // Verify we found the expected number of invalid entries
+                    expect(foundInvalidGeomIds).toHaveLength(invalidCount);
+                    expect(foundInvalidSourceIds).toHaveLength(invalidCount);
 
-                    // Cleanup identified entries (if any)
+                    // Cleanup identified entries
                     await db.geometryCache.bulkDelete(foundInvalidGeomIds);
                     await db.sourceCache.bulkDelete(foundInvalidSourceIds);
 
-                    // No entries should have been deleted by invalid scan.
+                    // Verify invalid entries were deleted
                     for (const id of invalidGeomIds) {
                         const entry = await db.geometryCache.get(id);
-                        expect(entry).toBeDefined();
+                        expect(entry).toBeUndefined();
                     }
                     for (const id of invalidSourceIds) {
                         const entry = await db.sourceCache.get(id);
-                        expect(entry).toBeDefined();
+                        expect(entry).toBeUndefined();
                     }
 
                     // Verify valid entries are preserved
