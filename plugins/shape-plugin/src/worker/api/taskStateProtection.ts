@@ -149,7 +149,7 @@ export class TaskStateProtectionService {
     if (!task.stage) missingFields.push('stage');
 
     // Check progress consistency
-    if (typeof task.progress !== 'number' || task.progress < 0 || task.progress > 100) {
+    if (!Number.isFinite(task.progress) || task.progress < 0 || task.progress > 100) {
       inconsistencies.push(`invalid progress value: ${task.progress}`);
     }
 
@@ -243,12 +243,14 @@ export class TaskStateProtectionService {
    * Clean up snapshots for completed session
    */
   clearSnapshots(nodeId: NodeId): void {
-    const taskIds = Array.from(this.snapshots.keys()).filter(taskId => 
-      this.snapshots.get(taskId)?.nodeId === nodeId
-    );
-
-    taskIds.forEach(taskId => this.snapshots.delete(taskId));
-    console.debug('[TaskStateProtection] Snapshots cleared for session:', { nodeId, count: taskIds.length });
+    let count = 0;
+    for (const [taskId, snapshot] of this.snapshots.entries()) {
+      if (snapshot.nodeId === nodeId) {
+        this.snapshots.delete(taskId);
+        count++;
+      }
+    }
+    console.debug('[TaskStateProtection] Snapshots cleared for session:', { nodeId, count });
   }
 }
 
