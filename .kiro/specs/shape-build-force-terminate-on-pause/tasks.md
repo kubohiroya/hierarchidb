@@ -228,7 +228,7 @@ Key improvements within existing framework:
     - Test AbortController integration with event streaming termination
     - _Requirements: 9.1, 9.2, 9.5, 1.1, 1.2_
 
-    - [ ] 6.5.3 Add multi-stage session with pause/resume integration tests
+    - [x] 6.5.3 Add multi-stage session with pause/resume integration tests
       - Test complete session lifecycle: start → source stage → geometry stage → tile-emit stage → completion
       - Verify pause/resume cycles maintain event sequence integrity across all stages
       - Test event delivery during stage transitions and worker restarts
@@ -241,6 +241,9 @@ Key improvements within existing framework:
       - Test gap detection and recovery mechanisms under various failure scenarios
       - Validate event delivery monitoring and metrics collection accuracy
       - _Requirements: 9.16, 9.17, 9.18_
+      - **Status**: Implemented but blocked by file system issue preventing test execution
+      - **Implementation**: MultiNotificationEventBuffer class with 5 comprehensive test cases
+      - **Tests**: Event sequence verification, stress testing, gap detection, metrics accuracy, heartbeat immediate processing
 
   - [ ] 6.6 Write property tests for new architecture
     - [x] 6.6.1 **Property 18: Unconditional Event Delivery**
