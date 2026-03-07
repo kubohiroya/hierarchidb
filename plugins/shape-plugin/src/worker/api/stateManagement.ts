@@ -20,6 +20,7 @@ import {
     selectLatestTaskByProgress,
 } from '../taskOrdering.js';
 import { summarizeTaskQueueStatus } from './progressAnalysis.js';
+import { taskStateProtection } from './taskStateProtection.js';
 
 // Core runtime state management
 export interface ProgressSubscription {
@@ -88,18 +89,43 @@ const waitIfPaused = async (nodeId: NodeId): Promise<void> => {
     });
 };
 
-const setPaused = (nodeId: NodeId, paused: boolean): void => {
+const setPaused = async (nodeId: NodeId, paused: boolean): Promise<void> => {
     const state = getPauseState(nodeId);
+    
+    // If pausing, verify and protect task states before setting pause
+    if (paused && !state.paused) {
+        try {
+            // Verify all task states are consistent before pause
+            const validationResults = await taskStateProtection.verifySessionTaskStates(nodeId);
+            if (validationResults.length > 0) {
+                console.error('[shapeBuildRuntime][TaskStateProtection] Inconsistent task states detected before pause:', {
+                    nodeId,
+                    issues: validationResults,
+                });
+                // Continue with pause but log the issues
+            }
+        } catch (error) {
+            console.error('[shapeBuildRuntime][TaskStateProtection] Failed to verify task states before pause:', {
+                nodeId,
+                error,
+            });
+        }
+    }
+    
     state.paused = paused;
     console.warn('[shapeBuildRuntime][PauseTrace] state-update', {
         nodeId,
         paused,
         waiters: state.waiters.length,
     });
+    
     if (!paused && state.waiters.length > 0) {
         const pending = [...state.waiters];
         state.waiters.length = 0;
         pending.forEach((resolve) => { resolve() });
+        
+        // Clear snapshots when resuming
+        taskStateProtection.clearSnapshots(nodeId);
     }
 };
 
@@ -125,4 +151,5 @@ export {
     waitIfPaused,
     setPaused,
     resolveProgressPhase,
+    taskStateProtection,
 };
