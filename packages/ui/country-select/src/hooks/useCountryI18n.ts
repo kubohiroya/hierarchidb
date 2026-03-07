@@ -82,7 +82,7 @@ export const useCountryI18n = (): UseCountryI18nResult => {
 
     // Fallback to existing name fields
     return country.nativeName || country.name || country.code;
-  }, [isReady, locale, getLocalizedName]);
+  }, [isReady, locale]);
 
   return {
     getLocalizedName,
