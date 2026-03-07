@@ -2,6 +2,8 @@
 
 ## Doing
 
+- #857 / fix/pr-feedback-cache-validation-seqnum / start
+
 ## Blocked
 
 ## 今日の運用ログ
@@ -43,3 +45,10 @@
   - UnconditionalEventStreamer統合検証
   - 7つのテストケース全成功、型チェック成功確認
   - Requirements 9.5, 9.16 検証完了
+- 2025-03-07: PR #856 ビルドセッション状態同期アーキテクチャ再設計完了・mainマージ完了
+  - 無条件Worker-UIイベントストリーミング実装
+  - 通知タイプ別イベントバッファリング・共有シーケンス番号実装
+  - タイムアウトベース状態遷移排除・receiving-task-snapshotフェーズ削除
+  - AbortController即座Worker終了・ロックフリーキャッシュ書き込み実装
+  - 23プロパティテスト・統合テスト全実装、370テスト通過確認
+  - Requirements 1.1-9.18 全対応、pause/resume機能信頼性大幅向上

@@ -310,10 +310,11 @@ describe('Property 22: Distributed Sequence Number Generation', () => {
                             // After reset: should start from workerIndex again
                             expect(afterReset[0]).toBe(validWorkerIndex);
                             
-                            // After reset: should follow the same pattern as initial sequence
-                            if (eventsAfterReset > 1) {
-                                expect(afterReset[1]).toBe(validWorkerIndex + totalWorkers);
-                            }
+                            // After reset: should follow the distributed pattern for all generated numbers
+                            afterReset.forEach((seqNum, index) => {
+                                const expectedSeqNum = validWorkerIndex + (index * totalWorkers);
+                                expect(seqNum).toBe(expectedSeqNum);
+                            });
                         });
                     }
                 ),
@@ -382,10 +383,10 @@ describe('Property 22: Distributed Sequence Number Generation', () => {
                         });
                         
                         // Verify reset event type starts from workerIndex and follows pattern
-                        expect(resetEventSeqNums[0]).toBe(validWorkerIndex);
-                        if (eventsAfterReset > 1) {
-                            expect(resetEventSeqNums[1]).toBe(validWorkerIndex + totalWorkers);
-                        }
+                        resetEventSeqNums.forEach((seqNum, index) => {
+                            const expectedSeqNum = validWorkerIndex + (index * totalWorkers);
+                            expect(seqNum).toBe(expectedSeqNum);
+                        });
                         
                         // Verify other event types continue from where they left off
                         filteredOtherTypes.forEach(eventType => {
