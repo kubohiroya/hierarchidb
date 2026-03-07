@@ -2,12 +2,11 @@
 
 ## Doing
 
-- #861 / fix/snapshot-communication/ssot-state-integration / 2025-03-07 11:30
-
 ## Blocked
 
 ## 今日の運用ログ
 
+- 2025-03-07: #861 hasInitialSnapshotAppliedローカル変数をSSOT状態木参照に統一完了・PR #862作成
 - 2025-03-07: #861起票、ブランチ作成完了、hasInitialSnapshotAppliedローカル変数をSSOT状態木参照に統一開始
 - 2025-03-07: #844起票、ブランチ作成完了
 - 2025-03-07: #844 国選択ステップでのISO-3166-2国名i18n化実装完了
