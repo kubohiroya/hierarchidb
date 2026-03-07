@@ -2,12 +2,13 @@
 
 ## Doing
 
-- #857 / fix/pr-feedback-cache-validation-seqnum / start
+- #838 / fix/event-buffering/buffer-limits-and-exception-isolation / 2025-03-07 11:45
 
 ## Blocked
 
 ## 今日の運用ログ
 
+- 2025-03-07: #838起票、ブランチ作成完了、バッファサイズ制限・サブスクライバー例外分離実装開始
 - 2025-03-07: #844起票、ブランチ作成完了
 - 2025-03-07: #844 国選択ステップでのISO-3166-2国名i18n化実装完了
   - useCountryI18nフック作成
