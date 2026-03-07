@@ -552,10 +552,7 @@ export const useShapeBuildSessionStateAtomBridgeV3 = (nodeId: NodeId | undefined
         if (channelReadiness.state === 'error') {
             console.error('[shape buildSessionStateAtomBridge] channel establishment failed', channelReadiness.error);
         } else if (channelReadiness.state === 'ready') {
-            console.log('[shape buildSessionStateAtomBridge] channels established successfully', {
-                establishedAt: channelReadiness.establishedAt,
-                nodeId: String(nodeId),
-            });
+            // Channel establishment successful - no logging needed in production
         }
     }, [channelReadiness, nodeId]);
 };

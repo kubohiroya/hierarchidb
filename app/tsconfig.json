@@ -10,7 +10,7 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "composite": true,
+    "composite": false,
     "incremental": false,
     "declaration": false,
     "declarationMap": false,
@@ -23,7 +23,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "allowImportingTsExtensions": true,
-    "noEmit": false,
+    "noEmit": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "paths": {
