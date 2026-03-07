@@ -299,12 +299,16 @@ export class ShapeMutationService implements ShapeMutationAPI {
     );
   }
 
-  async putGeometryCaches(buffers: ShapeGeometryCache[]): Promise<void> {
+  async putGeometryCaches(buffers: ShapeGeometryCache[], taskId?: string, taskQueue?: any): Promise<void> {
     if (buffers.length === 0) return;
     const emptyBuffer = buffers.find((buffer) => buffer.data.byteLength === 0);
     if (emptyBuffer) {
       throw new Error(`[shape-mutation] empty geometry cache buffer: ${emptyBuffer.id}`);
     }
+
+    // Note: Cache write validation is handled at the application layer
+    // This function focuses on the actual cache write operation
+
     const pending = buffers.map((buffer) => ({ ...buffer, timestamp: 0 }));
     await ephemeralDB.transaction('rw', [ephemeralDB.geometryCache, ephemeralDB.geometryCacheMeta], async () => {
       await ephemeralDB.geometryCache.bulkPut(pending);

@@ -5,10 +5,12 @@
 import { shapeBuildRuntimeAggregation } from './shapeBuildRuntimeAggregation.js';
 import { shapeBuildRuntimePublic } from './shapeBuildRuntimePublic.js';
 import { shapeBuildRuntime as shapeBuildRuntimeExecution } from './api-internal-execution.js';
+import * as shapeBuildRuntimeCore from './shapeBuildRuntimeCore.js';
 
 export const shapeBuildRuntime = {
   ...shapeBuildRuntimePublic,
   ...shapeBuildRuntimeAggregation,
+  ...shapeBuildRuntimeCore,
   startBuildSessionInternal: shapeBuildRuntimeExecution.startBuildSessionInternal,
   invokeShapeBuildCommand: shapeBuildRuntimeExecution.invokeShapeBuildCommand,
 };

@@ -34,6 +34,8 @@ import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { shapeBuildMonitoringAPI } from './shapeBuildMonitoringAPI.js';
 import { shapeBuildRuntime } from './shapeBuildRuntime.js';
+import * as shapeBuildRuntimeCore from './shapeBuildRuntimeCore.js';
+import { unconditionalEventStreamer } from './eventBuffering.js';
 
 export const shapeBuildAPI = {
 
@@ -152,21 +154,21 @@ export const shapeBuildAPI = {
   },
 
   getBuildSession: async (nodeId: NodeId): Promise<BuildSession | undefined> => (
-    shapeBuildRuntime.getBuildSessionInternal(nodeId)
+    shapeBuildRuntimeCore.getBuildSessionInternal(nodeId)
   ),
 
   getBuildTasks: async (nodeId: NodeId): Promise<BuildTaskSummary[]> => {
     const taskQueue = new VtTaskQueueDb();
-    await shapeBuildRuntime.ensureTaskQueueSeeded(nodeId, taskQueue);
-    const vtTasks = await shapeBuildRuntime.listTasks(taskQueue, nodeId);
+    await shapeBuildRuntimeCore.ensureTaskQueueSeeded(nodeId, taskQueue);
+    const vtTasks = await shapeBuildRuntimeCore.listTasks(taskQueue, nodeId);
     if (vtTasks.length > 0) {
-      return vtTasks.map((task) => shapeBuildRuntime.mapTaskQueueRecordToTaskSummary(task));
+      return vtTasks.map((task) => shapeBuildRuntimeCore.mapTaskQueueRecordToTaskSummary(task));
     }
     return [];
   },
 
   getBuildProgress: async (draftId: NodeId): Promise<ProgressInfo> => {
-    const handler = shapeBuildRuntime.getShapeEntityHandler();
+    const handler = shapeBuildRuntimeCore.getShapeEntityHandler();
     const entity = await handler.getEntity(draftId);
     const nodeId = draftId;
     if (!entity || !nodeId) {
@@ -179,10 +181,10 @@ export const shapeBuildAPI = {
       };
     }
     const taskQueue = new VtTaskQueueDb();
-    await shapeBuildRuntime.ensureTaskQueueSeeded(nodeId, taskQueue);
-    const vtTasks = await shapeBuildRuntime.listTasks(taskQueue, nodeId);
+    await shapeBuildRuntimeCore.ensureTaskQueueSeeded(nodeId, taskQueue);
+    const vtTasks = await shapeBuildRuntimeCore.listTasks(taskQueue, nodeId);
     if (vtTasks.length > 0) {
-      const summary = await shapeBuildRuntime.buildTaskQueueSummary(nodeId, vtTasks);
+      const summary = await shapeBuildRuntimeCore.buildTaskQueueSummary(nodeId, vtTasks);
       return summary.progress;
     }
     return {
@@ -204,11 +206,11 @@ export const shapeBuildAPI = {
     totalTasks?: number;
   }> => {
     const taskQueue = new VtTaskQueueDb();
-    await shapeBuildRuntime.ensureTaskQueueSeeded(nodeId, taskQueue);
-    const vtTasks = await shapeBuildRuntime.listTasks(taskQueue, nodeId);
+    await shapeBuildRuntimeCore.ensureTaskQueueSeeded(nodeId, taskQueue);
+    const vtTasks = await shapeBuildRuntimeCore.listTasks(taskQueue, nodeId);
     if (vtTasks.length > 0) {
-      const summary = await shapeBuildRuntime.buildTaskQueueSummary(nodeId, vtTasks);
-      const paused = shapeBuildRuntime.getPauseState(nodeId).paused;
+      const summary = await shapeBuildRuntimeCore.buildTaskQueueSummary(nodeId, vtTasks);
+      const paused = shapeBuildRuntimeCore.getPauseState(nodeId).paused;
       return {
         nodeId,
         status: paused ? 'paused' : summary.status,
@@ -254,7 +256,7 @@ export const shapeBuildAPI = {
     }
 
     const taskQueue = new VtTaskQueueDb();
-    const counts = await shapeBuildRuntime.countTaskQueueStatuses(taskQueue, nodeId);
+    const counts = await shapeBuildRuntimeCore.countTaskQueueStatuses(taskQueue, nodeId);
     if (counts.total > 0) {
       const now = Date.now();
       const firstTask = await taskQueue.tasks
@@ -264,9 +266,9 @@ export const shapeBuildAPI = {
       const lastActivity = typeof firstTask?.updatedAt === 'number' ? firstTask.updatedAt : now;
       return {
         exists: true,
-        canResume: shapeBuildRuntime.getPauseState(nodeId).paused,
+        canResume: shapeBuildRuntimeCore.getPauseState(nodeId).paused,
         lastActivity,
-        expiresAt: shapeBuildRuntime.resolveSessionExpiresAt(lastActivity),
+        expiresAt: shapeBuildRuntimeCore.resolveSessionExpiresAt(lastActivity),
       };
     }
     return {
@@ -320,23 +322,23 @@ export const shapeBuildAPI = {
   // ===================================
 
   subscribeToProgress: (nodeId: NodeId, callback: (event: BuildProgressEvent) => void): (() => void) => {
-    const existing = shapeBuildRuntime.progressCallbacks.get(String(nodeId));
+    const existing = shapeBuildRuntimeCore.progressCallbacks.get(String(nodeId));
     existing?.unsubscribe?.();
     const taskQueue = new VtTaskQueueDb();
-    const unsubscribeTaskQueue = shapeBuildRuntime.onTaskQueueUpdate(nodeId, (event) => {
+    const unsubscribeTaskQueue = shapeBuildRuntimeCore.onTaskQueueUpdate(nodeId, (event) => {
       if (event.type === 'delete') {
         return;
       }
       void (async () => {
         try {
-          const vtTasks = await shapeBuildRuntime.listTasks(taskQueue, event.nodeId);
+          const vtTasks = await shapeBuildRuntimeCore.listTasks(taskQueue, event.nodeId);
           callback({
             nodeId: event.nodeId,
             stage: event.task.stage,
-            phase: shapeBuildRuntime.resolveProgressPhase(event.nodeId, vtTasks),
+            phase: shapeBuildRuntimeCore.resolveProgressPhase(event.nodeId, vtTasks),
             timestamp: Date.now(),
             message: event.task.errorMessage,
-            payload: await shapeBuildRuntime.buildProgressPayloadFromTasks(nodeId, vtTasks, {
+            payload: await shapeBuildRuntimeCore.buildProgressPayloadFromTasks(nodeId, vtTasks, {
               eventTask: event.task,
               source: 'event',
             }),
@@ -349,18 +351,18 @@ export const shapeBuildAPI = {
     const unsubscribe = () => {
       unsubscribeTaskQueue();
     };
-    shapeBuildRuntime.progressCallbacks.set(String(nodeId), { unsubscribe, callback });
+    shapeBuildRuntimeCore.progressCallbacks.set(String(nodeId), { unsubscribe, callback });
 
     return () => {
-      const active = shapeBuildRuntime.progressCallbacks.get(String(nodeId));
+      const active = shapeBuildRuntimeCore.progressCallbacks.get(String(nodeId));
       active?.unsubscribe?.();
-      shapeBuildRuntime.progressCallbacks.delete(String(nodeId));
+      shapeBuildRuntimeCore.progressCallbacks.delete(String(nodeId));
     };
   },
 
   subscribeToTasks: (nodeId: NodeId, callback: (event: BuildTaskUpdateEvent) => void): (() => void) => {
     const key = String(nodeId);
-    const existing = shapeBuildRuntime.taskCallbacks.get(key);
+    const existing = shapeBuildRuntimeCore.taskCallbacks.get(key);
     console.log('[shapeBuildAPI] subscribeToTasks start', JSON.stringify({
       nodeId,
       hadExisting: Boolean(existing),
@@ -373,8 +375,8 @@ export const shapeBuildAPI = {
       if (snapshotInFlight) return;
       snapshotInFlight = true;
       try {
-        await shapeBuildRuntime.ensureTaskQueueSeeded(nodeId, taskQueue);
-        const tasks = await shapeBuildRuntime.buildTaskSummarySnapshot(nodeId, taskQueue);
+        await shapeBuildRuntimeCore.ensureTaskQueueSeeded(nodeId, taskQueue);
+        const tasks = await shapeBuildRuntimeCore.buildTaskSummarySnapshot(nodeId, taskQueue);
         console.log('[shapeBuildAPI] task snapshot published', JSON.stringify({
           nodeId,
           taskCount: tasks.length,
@@ -388,13 +390,13 @@ export const shapeBuildAPI = {
       }
     };
     void sendSnapshot();
-    const unsubscribeTaskQueue = shapeBuildRuntime.onTaskQueueUpdate(nodeId, (event) => {
+    const unsubscribeTaskQueue = shapeBuildRuntimeCore.onTaskQueueUpdate(nodeId, (event) => {
       if (event.type !== 'update') {
         return;
       }
       void (async () => {
         try {
-          const summary = shapeBuildRuntime.mapTaskQueueRecordToTaskSummary(event.task);
+          const summary = shapeBuildRuntimeCore.mapTaskQueueRecordToTaskSummary(event.task);
           callback({ type: 'update', nodeId: event.nodeId, task: summary });
         } catch (error) {
           console.error('[shapeBuildAPI] task update failed', error);
@@ -405,12 +407,12 @@ export const shapeBuildAPI = {
       unsubscribeTaskQueue();
       console.log('[shapeBuildAPI] task queue unsubscribe triggered', JSON.stringify({ nodeId }));
     };
-    shapeBuildRuntime.taskCallbacks.set(key, { unsubscribe, callback });
+    shapeBuildRuntimeCore.taskCallbacks.set(key, { unsubscribe, callback });
 
     return () => {
-      const active = shapeBuildRuntime.taskCallbacks.get(key);
+      const active = shapeBuildRuntimeCore.taskCallbacks.get(key);
       if (active?.unsubscribe === unsubscribe) {
-        shapeBuildRuntime.taskCallbacks.delete(key);
+        shapeBuildRuntimeCore.taskCallbacks.delete(key);
         console.log('[shapeBuildAPI] unsubscribeToTasks removed active subscription', JSON.stringify({ nodeId }));
       }
       unsubscribe();
@@ -423,19 +425,25 @@ export const shapeBuildAPI = {
 
   subscribeToSessionState: (nodeId: NodeId, callback: (event: SessionStateChangeEvent) => void): (() => void) => {
     const key = String(nodeId);
-    const existing = shapeBuildRuntime.sessionStateCallbacks.get(key);
+    const existing = shapeBuildRuntimeCore.sessionStateCallbacks.get(key);
     existing?.unsubscribe?.();
 
+    // Subscribe to unconditional event stream
+    const unsubscribeStream = unconditionalEventStreamer.subscribe(nodeId, 'session-state', (event) => {
+      callback(event as SessionStateChangeEvent);
+    });
+
     const unsubscribe = () => {
-      shapeBuildRuntime.sessionStateCallbacks.delete(key);
+      unsubscribeStream();
+      shapeBuildRuntimeCore.sessionStateCallbacks.delete(key);
     };
 
-    shapeBuildRuntime.sessionStateCallbacks.set(key, { unsubscribe, callback });
+    shapeBuildRuntimeCore.sessionStateCallbacks.set(key, { unsubscribe, callback });
 
     return () => {
-      const active = shapeBuildRuntime.sessionStateCallbacks.get(key);
+      const active = shapeBuildRuntimeCore.sessionStateCallbacks.get(key);
       if (active?.unsubscribe === unsubscribe) {
-        shapeBuildRuntime.sessionStateCallbacks.delete(key);
+        shapeBuildRuntimeCore.sessionStateCallbacks.delete(key);
       }
       unsubscribe();
     };
@@ -443,19 +451,25 @@ export const shapeBuildAPI = {
 
   subscribeToStageSnapshots: (nodeId: NodeId, callback: (event: StageSnapshotEvent) => void): (() => void) => {
     const key = String(nodeId);
-    const existing = shapeBuildRuntime.stageSnapshotCallbacks.get(key);
+    const existing = shapeBuildRuntimeCore.stageSnapshotCallbacks.get(key);
     existing?.unsubscribe?.();
 
+    // Subscribe to unconditional event stream
+    const unsubscribeStream = unconditionalEventStreamer.subscribe(nodeId, 'stage-snapshot', (event) => {
+      callback(event as StageSnapshotEvent);
+    });
+
     const unsubscribe = () => {
-      shapeBuildRuntime.stageSnapshotCallbacks.delete(key);
+      unsubscribeStream();
+      shapeBuildRuntimeCore.stageSnapshotCallbacks.delete(key);
     };
 
-    shapeBuildRuntime.stageSnapshotCallbacks.set(key, { unsubscribe, callback });
+    shapeBuildRuntimeCore.stageSnapshotCallbacks.set(key, { unsubscribe, callback });
 
     return () => {
-      const active = shapeBuildRuntime.stageSnapshotCallbacks.get(key);
+      const active = shapeBuildRuntimeCore.stageSnapshotCallbacks.get(key);
       if (active?.unsubscribe === unsubscribe) {
-        shapeBuildRuntime.stageSnapshotCallbacks.delete(key);
+        shapeBuildRuntimeCore.stageSnapshotCallbacks.delete(key);
       }
       unsubscribe();
     };
@@ -463,19 +477,25 @@ export const shapeBuildAPI = {
 
   subscribeToHeartbeat: (nodeId: NodeId, callback: (event: SessionHeartbeatEvent) => void): (() => void) => {
     const key = String(nodeId);
-    const existing = shapeBuildRuntime.heartbeatCallbacks.get(key);
+    const existing = shapeBuildRuntimeCore.heartbeatCallbacks.get(key);
     existing?.unsubscribe?.();
 
+    // Subscribe to unconditional event stream
+    const unsubscribeStream = unconditionalEventStreamer.subscribe(nodeId, 'heartbeat', (event) => {
+      callback(event as SessionHeartbeatEvent);
+    });
+
     const unsubscribe = () => {
-      shapeBuildRuntime.heartbeatCallbacks.delete(key);
+      unsubscribeStream();
+      shapeBuildRuntimeCore.heartbeatCallbacks.delete(key);
     };
 
-    shapeBuildRuntime.heartbeatCallbacks.set(key, { unsubscribe, callback });
+    shapeBuildRuntimeCore.heartbeatCallbacks.set(key, { unsubscribe, callback });
 
     return () => {
-      const active = shapeBuildRuntime.heartbeatCallbacks.get(key);
+      const active = shapeBuildRuntimeCore.heartbeatCallbacks.get(key);
       if (active?.unsubscribe === unsubscribe) {
-        shapeBuildRuntime.heartbeatCallbacks.delete(key);
+        shapeBuildRuntimeCore.heartbeatCallbacks.delete(key);
       }
       unsubscribe();
     };
@@ -483,19 +503,25 @@ export const shapeBuildAPI = {
 
   subscribeToTaskProgress: (nodeId: NodeId, callback: (event: TaskProgressEvent) => void): (() => void) => {
     const key = String(nodeId);
-    const existing = shapeBuildRuntime.taskProgressCallbacks.get(key);
+    const existing = shapeBuildRuntimeCore.taskProgressCallbacks.get(key);
     existing?.unsubscribe?.();
 
+    // Subscribe to unconditional event stream
+    const unsubscribeStream = unconditionalEventStreamer.subscribe(nodeId, 'task-progress', (event) => {
+      callback(event as TaskProgressEvent);
+    });
+
     const unsubscribe = () => {
-      shapeBuildRuntime.taskProgressCallbacks.delete(key);
+      unsubscribeStream();
+      shapeBuildRuntimeCore.taskProgressCallbacks.delete(key);
     };
 
-    shapeBuildRuntime.taskProgressCallbacks.set(key, { unsubscribe, callback });
+    shapeBuildRuntimeCore.taskProgressCallbacks.set(key, { unsubscribe, callback });
 
     return () => {
-      const active = shapeBuildRuntime.taskProgressCallbacks.get(key);
+      const active = shapeBuildRuntimeCore.taskProgressCallbacks.get(key);
       if (active?.unsubscribe === unsubscribe) {
-        shapeBuildRuntime.taskProgressCallbacks.delete(key);
+        shapeBuildRuntimeCore.taskProgressCallbacks.delete(key);
       }
       unsubscribe();
     };

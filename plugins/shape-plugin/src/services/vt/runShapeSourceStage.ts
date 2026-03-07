@@ -510,9 +510,17 @@ const putSourceCache = async (params: {
   inputVertexCount?: number;
   inputPolygonCount?: number;
   metadata?: Record<string, unknown>;
+  taskId?: string;
+  taskQueue?: VtTaskQueueDb;
 }): Promise<{ id: string; contentHash: string }> => {
   const recordId = buildSourceCacheId(params.nodeId, params.sourceKey);
   const contentHash = hashSourceArtifact(params.data);
+
+  // Validate cache write is allowed if taskId and taskQueue are provided
+  if (params.taskId && params.taskQueue) {
+    const { validateCacheWriteAllowed } = await import('../../worker/api/cacheWriteValidation');
+    await validateCacheWriteAllowed(params.taskQueue, params.taskId, 'source');
+  }
 
   // Phase 1: Write data with timestamp: 0 (invalid state)
   await ephemeralDB.sourceCache.put({
@@ -911,6 +919,7 @@ const createSourceHandler = (params: {
   dataSource: DataSourceName;
   recyclingByFeatureId?: Map<string, boolean>;
   abortSignal?: AbortSignal;
+  taskQueue: VtTaskQueueDb;
 }): StageHandler<ShapeSourceTaskInput, ShapeSourceTaskOutput> => {
   const factory = new DataSourceStrategyFactory();
   const geometryEngine: GeometryEngine = params.buildConfig.geometryConfig.geometryEngine ?? 'turf';
@@ -1419,6 +1428,8 @@ const createSourceHandler = (params: {
           baseToleranceVertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
           rawSourceCacheKey,
         }),
+        taskId: task.taskId,
+        taskQueue: params.taskQueue,
       });
       const reductionSummary = [
         formatChangeSummary('features', inputSummary.featureCount, outputSummary.featureCount),
@@ -1598,6 +1609,8 @@ const createSourceHandler = (params: {
         baseToleranceVertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
         rawSourceCacheKey: rawSourceCacheKey ?? undefined,
       }),
+      taskId: task.taskId,
+      taskQueue: params.taskQueue,
     });
     const reductionSummary = [
       formatChangeSummary('features', inputSummary.featureCount, featureCount),
@@ -1729,6 +1742,7 @@ export const runShapeSourceStage = async (params: ShapeSourceStageParams): Promi
       dataSource: params.dataSource,
       recyclingByFeatureId: params.recyclingByFeatureId,
       abortSignal,
+      taskQueue: params.taskQueue,
     }),
     waitIfPaused: params.waitIfPaused,
     maxConcurrent: params.buildConfig.sourceConfig.maxConcurrent,

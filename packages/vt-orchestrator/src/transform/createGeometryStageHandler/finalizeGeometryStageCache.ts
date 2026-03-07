@@ -31,8 +31,13 @@ export const finalizeGeometryStageCache = async (params: {
   taskId: string;
   ephemeralDB: EphemeralDB;
   cacheRecord: GeometryCacheRecord;
+  taskQueue?: any;
 }): Promise<void> => {
   const completedAt = Date.now();
+
+  // Note: Cache write validation is handled at the application layer
+  // This function focuses on the actual cache write operation
+
   if ((globalThis as { __HDB_VT_DEBUG_COLLECT?: boolean }).__HDB_VT_DEBUG_COLLECT === true) {
     const cloneFn = globalThis.structuredClone;
     const cloneText = typeof cloneFn === 'function' ? String(cloneFn) : '';

@@ -289,11 +289,44 @@ export const runShapeTileEmitStageSection = async (params: ShapeTileEmitStagePar
       abortController: tileEmitAbortController,
     });
   } catch (error) {
+    // Handle abort errors specifically
+    if (tileEmitAbortController.signal.aborted || (error instanceof Error && error.name === 'AbortError')) {
+      console.log('[ShapeTileEmit][AbortHandling] Tile emit stage aborted via signal', {
+        nodeId: params.nodeId,
+        runId: params.pipelineRunId ?? null,
+        errorName: error instanceof Error ? error.name : 'unknown',
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+      
+      // Finalize pending tasks as aborted
+      await finalizePendingStageTasks(
+        params.taskQueue,
+        params.nodeId,
+        'tileEmit',
+        'aborted: tile-emit stage terminated by abort signal',
+        '[ShapeTileEmit][AbortHandling] tile-emit stage aborted by signal',
+        params.pipelineRunId,
+      );
+      
+      // Don't propagate abort errors as failures
+      return; // Exit gracefully due to abort
+    }
+
+    // Handle other errors
     const baseMessage = error instanceof Error ? error.message : String(error);
     const failedTaskId = error && typeof error === 'object'
       ? (error as { taskId?: string }).taskId
       : undefined;
     const reason = failedTaskId ? `${baseMessage} (failedTaskId=${failedTaskId})` : baseMessage;
+    
+    console.error('[ShapeTileEmit][ErrorHandling] Tile emit stage failed with error', {
+      nodeId: params.nodeId,
+      runId: params.pipelineRunId ?? null,
+      errorName: error instanceof Error ? error.name : 'unknown',
+      errorMessage: baseMessage,
+      failedTaskId,
+    });
+    
     await finalizePendingStageTasks(
       params.taskQueue,
       params.nodeId,

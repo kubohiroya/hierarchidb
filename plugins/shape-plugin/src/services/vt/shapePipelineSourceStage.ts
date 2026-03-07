@@ -294,11 +294,44 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
   try {
     await runSourcePass(params.resumeExistingTasks);
   } catch (error) {
+    // Handle abort errors specifically
+    if (sourceAbortController.signal.aborted || (error instanceof Error && error.name === 'AbortError')) {
+      console.log('[ShapeSource][AbortHandling] Source stage aborted via signal', {
+        nodeId: params.nodeId,
+        runId: params.pipelineRunId ?? null,
+        errorName: error instanceof Error ? error.name : 'unknown',
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+      
+      // Finalize pending tasks as aborted
+      await finalizePendingStageTasks(
+        params.taskQueue,
+        params.nodeId,
+        'source',
+        'aborted: source stage terminated by abort signal',
+        '[ShapeSource][AbortHandling] source stage aborted by signal',
+        params.pipelineRunId,
+      );
+      
+      // Don't propagate abort errors as failures
+      return true; // Stop after stage due to abort
+    }
+
+    // Handle other errors
     const baseMessage = error instanceof Error ? error.message : String(error);
     const failedTaskId = error && typeof error === 'object'
       ? (error as { taskId?: string }).taskId
       : undefined;
     const reason = failedTaskId ? `${baseMessage} (failedTaskId=${failedTaskId})` : baseMessage;
+    
+    console.error('[ShapeSource][ErrorHandling] Source stage failed with error', {
+      nodeId: params.nodeId,
+      runId: params.pipelineRunId ?? null,
+      errorName: error instanceof Error ? error.name : 'unknown',
+      errorMessage: baseMessage,
+      failedTaskId,
+    });
+    
     await finalizePendingStageTasks(
       params.taskQueue,
       params.nodeId,
