@@ -12,6 +12,7 @@ import type {
     StageSnapshotEvent,
     TaskProgressEvent,
     SessionHeartbeatEvent,
+    WorkerLogEvent,
 } from '~/common/types/session-events';
 
 // Distributed sequence number generator
@@ -378,7 +379,7 @@ class UnconditionalEventStreamer {
      */
     configureDistributedSeqNum(nodeId: NodeId, workerIndex: number, totalWorkers: number): void {
         // Initialize generators for all buffered event types
-        const eventTypes = ['session-state', 'stage-snapshot', 'task-progress'];
+        const eventTypes = ['session-state', 'stage-snapshot', 'task-progress', 'worker-log'];
         eventTypes.forEach(eventType => {
             this.seqNumGenerator.initializeGenerator(nodeId, eventType, workerIndex, totalWorkers);
         });
@@ -390,8 +391,8 @@ class UnconditionalEventStreamer {
      */
     emitEvent(
         nodeId: NodeId,
-        eventType: 'session-state' | 'stage-snapshot' | 'task-progress',
-        event: SessionStateChangeEvent | StageSnapshotEvent | TaskProgressEvent
+        eventType: 'session-state' | 'stage-snapshot' | 'task-progress' | 'worker-log',
+        event: SessionStateChangeEvent | StageSnapshotEvent | TaskProgressEvent | WorkerLogEvent
     ): void {
         const seqNum = this.seqNumGenerator.nextSeqNum(nodeId, eventType);
         const sequencedEvent: SequencedEvent = {

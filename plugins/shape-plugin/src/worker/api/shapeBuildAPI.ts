@@ -6,6 +6,7 @@ import type {
   StageSnapshotEvent,
   SessionHeartbeatEvent,
   TaskProgressEvent,
+  WorkerLogEvent,
 } from '~/common/types/session-events';
 import {
   type BuildSession,
@@ -517,6 +518,41 @@ export const shapeBuildAPI = {
     };
 
     shapeBuildRuntimeCore.taskProgressCallbacks.set(key, { unsubscribe, callback });
+
+    return () => {
+      const active = shapeBuildRuntimeCore.taskProgressCallbacks.get(key);
+      if (active?.unsubscribe === unsubscribe) {
+        shapeBuildRuntimeCore.taskProgressCallbacks.delete(key);
+      }
+      unsubscribe();
+    };
+  },
+
+  subscribeToWorkerLog: (nodeId: NodeId, callback: (event: WorkerLogEvent) => void): (() => void) => {
+    const key = String(nodeId);
+    const existing = shapeBuildRuntimeCore.workerLogCallbacks.get(key);
+    existing?.unsubscribe?.();
+
+    // Subscribe to unconditional event stream
+    const unsubscribeStream = unconditionalEventStreamer.subscribe(nodeId, 'worker-log', (event) => {
+      callback(event as WorkerLogEvent);
+    });
+
+    const unsubscribe = () => {
+      unsubscribeStream();
+      shapeBuildRuntimeCore.workerLogCallbacks.delete(key);
+    };
+
+    shapeBuildRuntimeCore.workerLogCallbacks.set(key, { unsubscribe, callback });
+
+    return () => {
+      const active = shapeBuildRuntimeCore.workerLogCallbacks.get(key);
+      if (active?.unsubscribe === unsubscribe) {
+        shapeBuildRuntimeCore.workerLogCallbacks.delete(key);
+      }
+      unsubscribe();
+    };
+  },
 
     return () => {
       const active = shapeBuildRuntimeCore.taskProgressCallbacks.get(key);
