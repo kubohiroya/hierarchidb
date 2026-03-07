@@ -17,7 +17,6 @@ const createNodeId = (id: string): NodeId => id as NodeId;
 // Property test configurations
 const PROPERTY_TEST_RUNS = 50;
 const MAX_WORKERS = 5;
-const MAX_EVENTS_PER_WORKER = 100;
 
 describe('Property 22: Distributed Sequence Number Generation', () => {
     let generator: DistributedSeqNumGenerator;
@@ -370,8 +369,11 @@ describe('Property 22: Distributed Sequence Number Generation', () => {
                         // Re-initialize the reset event type
                         generator.initializeGenerator(node, eventTypeToReset, validWorkerIndex, totalWorkers);
                         
-                        // Generate seqNums after reset
-                        const firstSeqNumAfterReset = generator.nextSeqNum(node, eventTypeToReset);
+                        // Generate seqNums after reset for the reset event type
+                        const resetEventSeqNums: number[] = [];
+                        for (let i = 0; i < eventsAfterReset; i++) {
+                            resetEventSeqNums.push(generator.nextSeqNum(node, eventTypeToReset));
+                        }
                         
                         // Generate seqNums for other event types to verify they weren't affected
                         const firstSeqNumsAfterReset: Record<string, number> = {};
@@ -379,8 +381,11 @@ describe('Property 22: Distributed Sequence Number Generation', () => {
                             firstSeqNumsAfterReset[eventType] = generator.nextSeqNum(node, eventType);
                         });
                         
-                        // Verify reset event type starts from workerIndex
-                        expect(firstSeqNumAfterReset).toBe(validWorkerIndex);
+                        // Verify reset event type starts from workerIndex and follows pattern
+                        expect(resetEventSeqNums[0]).toBe(validWorkerIndex);
+                        if (eventsAfterReset > 1) {
+                            expect(resetEventSeqNums[1]).toBe(validWorkerIndex + totalWorkers);
+                        }
                         
                         // Verify other event types continue from where they left off
                         filteredOtherTypes.forEach(eventType => {
@@ -399,7 +404,7 @@ describe('Property 22: Distributed Sequence Number Generation', () => {
             fc.assert(
                 fc.property(
                     fc.record({
-                        nodeId: fc.string({ minLength: 1, max: 10 }),
+                        nodeId: fc.string({ minLength: 1, maxLength: 10 }),
                         eventType: fc.constantFrom('session-state', 'stage-snapshot', 'task-progress'),
                         eventCount: fc.integer({ min: 1, max: 10 }),
                         workerIndex: fc.integer({ min: 0, max: MAX_WORKERS - 1 }),

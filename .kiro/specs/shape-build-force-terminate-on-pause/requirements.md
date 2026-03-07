@@ -48,11 +48,11 @@ This feature addresses UX issues in the shape build session where pause operatio
 
 #### Acceptance Criteria
 
-1. WHEN storing cache data, THE Build_Session SHALL write Cache_Data with `timestamp: 0` before writing Cache_Metadata
-2. WHEN Cache_Data write completes, THE Build_Session SHALL write the corresponding Cache_Metadata with a non-zero timestamp
-3. THE Build_Session SHALL treat a cache entry as Valid_Cache_Entry only when both Cache_Data and Cache_Metadata exist
-4. THE Build_Session SHALL treat a cache entry as Invalid_Cache_Entry when Cache_Data exists but Cache_Metadata is missing
-5. THE Build_Session SHALL NOT use Dexie transaction blocks to coordinate Cache_Data and Cache_Metadata writes
+1. WHEN storing cache data, THE Build_Session SHALL write Cache_Data with `timestamp: 0` initially
+2. WHEN Cache_Data write completes, THE Build_Session SHALL update the same record with a non-zero timestamp
+3. THE Build_Session SHALL treat a cache entry as Valid_Cache_Entry only when `timestamp > 0`
+4. THE Build_Session SHALL treat a cache entry as Invalid_Cache_Entry when `timestamp === 0`
+5. THE Build_Session SHALL NOT use Dexie transaction blocks to coordinate cache writes
 
 ### Requirement 4: Invalid Cache Cleanup on Session Start
 
