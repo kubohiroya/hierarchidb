@@ -11,10 +11,44 @@ import type {
     SessionStateChangeEvent,
     StageSnapshotEvent,
     TaskProgressEvent,
+    WorkerLogEvent,
 } from '~/common/types/session-events';
 import { VtTaskQueueDb, listTasks, listTasksByStage } from '@hierarchidb/vt-orchestrator';
 import { unconditionalEventStreamer } from './eventBuffering.js';
 import { mapTaskQueueRecordToTaskSummary } from './taskSummaryMapping.js';
+
+// Worker log event type
+export const emitWorkerLog = (
+    nodeId: NodeId,
+    level: 'log' | 'warn' | 'error',
+    message: string,
+    data?: Record<string, unknown>,
+): void => {
+    const event: WorkerLogEvent = {
+        nodeId,
+        timestamp: Date.now(),
+        level,
+        message,
+        data,
+    };
+
+    // Emit log event to UI
+    unconditionalEventStreamer.emitEvent(nodeId, 'worker-log', event);
+    
+    // Also log to worker console
+    const logData = data ? [message, data] : [message];
+    switch (level) {
+        case 'log':
+            console.log('[Worker]', ...logData);
+            break;
+        case 'warn':
+            console.warn('[Worker]', ...logData);
+            break;
+        case 'error':
+            console.error('[Worker]', ...logData);
+            break;
+    }
+};
 
 export const emitSessionStateChange = (
     nodeId: NodeId,

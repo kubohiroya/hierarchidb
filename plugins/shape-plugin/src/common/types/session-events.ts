@@ -46,13 +46,25 @@ export interface TaskProgressEvent {
 }
 
 /**
+ * Worker log event (for debugging and monitoring)
+ */
+export interface WorkerLogEvent {
+    nodeId: NodeId;
+    timestamp: number;
+    level: 'log' | 'warn' | 'error';
+    message: string;
+    data?: Record<string, unknown>;
+}
+
+/**
  * Unified session event types
  */
 export type SessionEvent =
     | SessionStateChangeEvent
     | StageSnapshotEvent
     | SessionHeartbeatEvent
-    | TaskProgressEvent;
+    | TaskProgressEvent
+    | WorkerLogEvent;
 
 /**
  * Session event subscription callback
@@ -80,6 +92,11 @@ export interface HeartbeatSubscription {
 export interface TaskProgressSubscription {
     unsubscribe?: () => void;
     callback?: (event: TaskProgressEvent) => void;
+}
+
+export interface WorkerLogSubscription {
+    unsubscribe?: () => void;
+    callback?: (event: WorkerLogEvent) => void;
 }
 
 /**
