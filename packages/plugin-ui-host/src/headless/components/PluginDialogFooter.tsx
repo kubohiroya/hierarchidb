@@ -88,7 +88,7 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
   // console.count('PluginDialogFooter render');
   const { t } = useTranslation('common');
   const location = useLocation();
-  const commitLabel = t('dialogs.pluginDialog.buttons.save', 'Save');
+  const commitLabel = t('dialogs.pluginDraft.pluginDialog.buttons.save', 'Save');
   const {
     ctx,
     isResourcesTree,
@@ -185,11 +185,11 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
   const leftPrimaryLabel =
     primaryButtonOptions?.leftLabelOverride ??
     (isFirstStep
-      ? t('dialogs.pluginDialog.buttons.cancel', 'Cancel')
-      : t('dialogs.pluginDialog.buttons.back', 'Back'));
+      ? t('dialogs.pluginDraft.pluginDialog.buttons.cancel', 'Cancel')
+      : t('dialogs.pluginDraft.pluginDialog.buttons.back', 'Back'));
   const rightPrimaryLabel =
     primaryButtonOptions?.rightLabelOverride ??
-    (isLastStep ? commitLabel : t('dialogs.pluginDialog.buttons.next', 'Next'));
+    (isLastStep ? commitLabel : t('dialogs.pluginDraft.pluginDialog.buttons.next', 'Next'));
   const leftPrimaryIcon = isFirstStep ? (
     <CloseIcon fontSize="small" />
   ) : (
@@ -374,7 +374,7 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
               <Tooltip
                 title={
                   disableDraftButton
-                    ? t('dialogs.pluginDialog.tooltips.saveDraftDisabled', 'No changes to save')
+                    ? t('dialogs.pluginDraft.pluginDialog.tooltips.saveDraftDisabled', 'No changes to save')
                     : ''
                 }
                 disableHoverListener={!disableDraftButton}
@@ -389,7 +389,7 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
                     loading={pendingAction?.type === 'save-draft'}
                     endIcon={<CheckIcon fontSize="small" />}
                   >
-                    {saveDraftLabel ?? t('dialogs.pluginDialog.buttons.saveDraft', 'Save Draft')}
+                    {saveDraftLabel ?? t('dialogs.pluginDraft.pluginDialog.buttons.saveDraft', 'Save Draft')}
                   </LoadingButton>
                 </span>
               </Tooltip>
@@ -418,8 +418,8 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
                 endIcon={<ConstructionIcon fontSize="small" />}
               >
                 {isStartingBuild 
-                  ? t('dialogs.pluginDialog.buttons.building', 'Building…') 
-                  : t('dialogs.pluginDialog.buttons.build', 'Build')}
+                  ? t('dialogs.pluginDraft.pluginDialog.buttons.building', 'Building…') 
+                  : t('dialogs.pluginDraft.pluginDialog.buttons.build', 'Build')}
               </LoadingButton>
             )}
           </Box>
@@ -494,19 +494,19 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
           <ListItemIcon>
             <OpenInNewIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>{t('dialogs.pluginDialog.contextMenu.openInNewTab', 'Open In New Tab')}</ListItemText>
+          <ListItemText>{t('dialogs.pluginDraft.pluginDialog.contextMenu.openInNewTab', 'Open In New Tab')}</ListItemText>
         </MenuItem>
         <MenuItem onClick={openInNewWindow}>
           <ListItemIcon>
             <OpenInNewOffIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>{t('dialogs.pluginDialog.contextMenu.openInNewWindow', 'Open In New Window')}</ListItemText>
+          <ListItemText>{t('dialogs.pluginDraft.pluginDialog.contextMenu.openInNewWindow', 'Open In New Window')}</ListItemText>
         </MenuItem>
         <MenuItem onClick={copyLinkUrl}>
           <ListItemIcon>
             <ContentCopyIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>{t('dialogs.pluginDialog.contextMenu.copyLinkUrl', 'Copy Link URL')}</ListItemText>
+          <ListItemText>{t('dialogs.pluginDraft.pluginDialog.contextMenu.copyLinkUrl', 'Copy Link URL')}</ListItemText>
         </MenuItem>
       </DialogSafeMenu>
     </>
