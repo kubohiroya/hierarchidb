@@ -2,8 +2,8 @@ import { useEffect } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { BuildProgressEvent, BuildTaskSummary, BuildTaskUpdateEvent } from '@hierarchidb/build-api';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
-import { useSetAtom } from 'jotai';
-import { dispatchBuildSessionEventAtom } from '~/ui/atoms/buildSessionStateAtoms';
+import { useSetAtom, useAtomValue } from 'jotai';
+import { dispatchBuildSessionEventAtom, buildSessionSnapshotHandshakeReceivedAtom } from '~/ui/atoms/buildSessionStateAtoms';
 import { createBuildSessionWorkerEventAdapter } from '~/ui/atoms/buildSessionWorkerEventAdapter';
 import type { ShapeStageId } from '~/ui/atoms/buildSessionStateAtoms';
 import {
@@ -126,6 +126,7 @@ export const resolveSnapshotTargetStages = (event: TaskSnapshotEvent): ShapeStag
  */
 export const useShapeBuildSessionStateAtomBridgeV2 = (nodeId: NodeId | undefined): void => {
     const dispatch = useSetAtom(dispatchBuildSessionEventAtom);
+    const buildSessionSnapshotHandshakeReceived = useAtomValue(buildSessionSnapshotHandshakeReceivedAtom);
 
     useEffect(() => {
         if (!nodeId) {
@@ -162,8 +163,6 @@ export const useShapeBuildSessionStateAtomBridgeV2 = (nodeId: NodeId | undefined
             geometry: null,
             tileEmit: null,
         };
-        let hasInitialSnapshotApplied = false;
-        const pendingTaskUpdatesBeforeInitialSnapshot: TaskUpdateEvent[] = [];
         const lastAppliedVersionByTaskId = new Map<string, number>();
         const lastAppliedFingerprintByTaskVersion = new Map<string, string>();
         let fatalContractError = false;
@@ -285,11 +284,6 @@ export const useShapeBuildSessionStateAtomBridgeV2 = (nodeId: NodeId | undefined
                 if (snapshotStages.size > 0 && !snapshotStages.has(stageId)) continue;
                 dispatchUiSyncPhase(stageId, 'running');
             }
-
-            if (!hasInitialSnapshotApplied) {
-                hasInitialSnapshotApplied = true;
-                pendingTaskUpdatesBeforeInitialSnapshot.length = 0;
-            }
         };
 
         const processProgressEvent = (event: SequencedBuildProgressEvent): void => {
@@ -374,8 +368,8 @@ export const useShapeBuildSessionStateAtomBridgeV2 = (nodeId: NodeId | undefined
                 );
                 const snapshotVersionMax = snapshotVersionMaxByStage[stageId];
                 if (snapshotVersionMax == null) {
-                    if (!hasInitialSnapshotApplied) {
-                        pendingTaskUpdatesBeforeInitialSnapshot.push(updateEvent);
+                    if (!buildSessionSnapshotHandshakeReceived) {
+                        // Drop task updates before initial snapshot handshake
                         return;
                     }
                     stopWithContractError(
@@ -505,5 +499,5 @@ export const useShapeBuildSessionStateAtomBridgeV2 = (nodeId: NodeId | undefined
                 unsubscribe();
             }
         };
-    }, [dispatch, nodeId]);
+    }, [dispatch, nodeId, buildSessionSnapshotHandshakeReceived]);
 };

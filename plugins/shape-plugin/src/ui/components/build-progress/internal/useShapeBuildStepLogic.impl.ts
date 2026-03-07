@@ -114,20 +114,14 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   } = useShapeBuildSessionState({
     activeNodeId,
   });
-  const lastReceivingTaskSnapshotDecisionTraceKeyRef = useRef<string | null>(null);
   const {
     buildSessionTransition,
     beginBuildSessionTransition,
     advanceBuildSessionTransitionPhase,
     finishBuildSessionTransition,
     emitBuildSessionTransitionLog,
-    pushBuildSessionTransitionNotification,
     beginBuildStartupStep,
     finishBuildStartupStep,
-    buildSessionTransitionWarnStepRef,
-    buildSessionTransitionTaskStartNotifiedRef,
-    buildSessionTransitionWaitLogStepRef,
-    receivingTaskSnapshotExpectationRef,
     progressTerminalLogKeyRef,
   } = useShapeBuildStepTransitionController({
     activeNodeId,
@@ -200,14 +194,10 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const {
     tasks: displayTasks,
     isLoading: isTasksLoading,
-    isTaskSnapshotProgressConnected,
     stageFromState,
     liveStageFromState,
     resolvedStageFromState,
-    hasStartedTasks,
     buildStatus,
-    hasProgressTaskSignal,
-    hasReceivingTaskSnapshotSignal,
     taskListViewPhase,
   } = stageState;
 
@@ -250,25 +240,8 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     buildStatus: effectiveStatusSource,
     resolveStage: effectiveProgress?.progressTaskStage ?? null,
     effectiveProgress,
-    displayTasks,
-    hasReceivingTaskSnapshotSignal,
-    hasStartedTasks,
-    hasProgressTaskSignal,
-    isTaskSnapshotProgressConnected,
-    runtimeStatus,
-    sessionProgressTotal: effectiveProgress?.total,
-    sessionStageId: runtime.stageId ?? null,
-    receivingTaskSnapshotExpectationRef,
-    resolvedStage: resolvedStageFromState,
-    lastReceivingTaskSnapshotDecisionTraceKeyRef,
-    buildSessionTransitionTaskStartNotifiedRef,
     progressTerminalLogKeyRef,
-    buildSessionTransitionWarnStepRef,
-    buildSessionTransitionWaitLogStepRef,
     emitBuildSessionTransitionLog,
-    pushBuildSessionTransitionNotification,
-    finishBuildStartupStep,
-    finishBuildSessionTransition,
   });
 
   const selectedArrayByCountries = data?.selectedArrayByCountries;

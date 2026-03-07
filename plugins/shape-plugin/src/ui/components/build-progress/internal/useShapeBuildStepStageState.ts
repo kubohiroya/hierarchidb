@@ -4,11 +4,9 @@ import { useAtomValue } from 'jotai';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   buildSessionRuntimeAtom,
-  buildSessionSnapshotHandshakeReceivedAtom,
   buildSessionTasksByStageAtom,
 } from '~/ui/atoms/buildSessionStateAtoms';
 import type { BuildProgressStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
-import { hasReceivingTaskSnapshotSignal as detectTaskSnapshotSignal } from '~/ui/components/build-progress/hasReceivingTaskSnapshotSignal';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import type { TaskListViewPhase } from '~/ui/atoms/shapeBuildProgressTypes';
 import { areTaskListsEquivalentForView } from '~/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparison.utils';
@@ -66,11 +64,7 @@ export type UseShapeBuildStepStageStateReturn = {
   liveStageFromState: string | undefined;
   resolvedStageFromState: string | undefined;
   buildStatus: BuildStatus;
-  hasReceivingTaskSnapshotSignal: boolean;
-  hasProgressTaskSignal: boolean;
   hasInFlightTasks: boolean;
-  hasStartedTasks: boolean;
-  hasQueuedTasks: boolean;
   stageOrder: StageId[];
   runningStageIdFromTasks: string | null;
   inFlightStageIdFromTasks: string | null;
@@ -146,7 +140,6 @@ export const useShapeBuildStepStageState = ({
     return configuredStageOrder[0] as StageId;
   }, [configuredStageOrder]);
   const runtime = useAtomValue(buildSessionRuntimeAtom);
-  const hasSnapshotHandshakeReceived = useAtomValue(buildSessionSnapshotHandshakeReceivedAtom);
   const tasksByStage = useAtomValue(buildSessionTasksByStageAtom);
 
   const tasks = useMemo<ShapeBuildTaskSummary[]>(() => {
@@ -285,40 +278,20 @@ export const useShapeBuildStepStageState = ({
   const hasInFlightTasks = useMemo(() => (
     displayTasks.some((task) => task.status === 'running' || task.status === 'queued')
   ), [displayTasks]);
-  const hasStartedTasks = useMemo(() => (
-    displayTasks.some((task) => (
-      task.status === 'running'
-      || task.status === 'completed'
-      || task.status === 'recycled'
-      || task.status === 'failed'
-    ))
-  ), [displayTasks]);
-  const hasQueuedTasks = useMemo(() => (
-    displayTasks.some((task) => task.status === 'queued')
-  ), [displayTasks]);
 
   const taskProgressTotal = effectiveProgress?.status?.progress ?? sessionProgressTotal;
-  const hasProgressTaskSignal = detectTaskSnapshotSignal({
-    hasStartedTasks,
-    hasQueuedTasks,
-    progressTaskId: effectiveProgress?.progressTaskId ?? null,
-    progressTotal: taskProgressTotal,
-  });
-  const hasReceivingTaskSnapshotSignal = isTaskSnapshotProgressConnected
-    && (hasAnyTaskSnapshot || hasSnapshotHandshakeReceived);
   const taskListViewPhase = useMemo<TaskListViewPhase>(() => (
     resolveTaskListViewPhase({
       baseBuildStatus,
       displayTaskCount: displayTasks.length,
       isLoading,
-      hasProgressTaskSignal,
+      hasProgressTaskSignal: false, // Simplified - no longer needed with SSOT
       hasAnyTaskSnapshot,
     })
   ), [
     baseBuildStatus,
     displayTasks.length,
     hasAnyTaskSnapshot,
-    hasProgressTaskSignal,
     isLoading,
   ]);
 
@@ -412,11 +385,7 @@ export const useShapeBuildStepStageState = ({
     liveStageFromState,
     resolvedStageFromState,
     buildStatus,
-    hasReceivingTaskSnapshotSignal,
-    hasProgressTaskSignal,
     hasInFlightTasks,
-    hasStartedTasks,
-    hasQueuedTasks,
     stageOrder: resolvedStageOrder,
     runningStageIdFromTasks,
     inFlightStageIdFromTasks,
