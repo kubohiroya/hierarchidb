@@ -42,6 +42,7 @@ export {
   stageSnapshotCallbacks,
   heartbeatCallbacks,
   taskProgressCallbacks,
+  workerLogCallbacks,
   getPauseState,
   resolveSessionStatus,
   resolveSessionLastActivity,

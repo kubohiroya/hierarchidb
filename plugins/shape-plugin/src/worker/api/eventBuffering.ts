@@ -61,7 +61,7 @@ export interface EventDeliveryMetrics {
     memoryUsage: MemoryUsageStats;
 }
 
-type NotificationType = 'session-state' | 'stage-snapshot' | 'task-progress';
+type NotificationType = 'session-state' | 'stage-snapshot' | 'task-progress' | 'worker-log';
 
 interface SequencedEvent {
     seqNum: number;
@@ -89,6 +89,7 @@ export class EventDeliveryMonitor {
         'session-state': 0,
         'stage-snapshot': 0,
         'task-progress': 0,
+        'worker-log': 0,
     };
     private lastEmissionTime = 0;
     private lastFlushTime = 0;
@@ -282,6 +283,7 @@ export class EventDeliveryMonitor {
             'session-state': 0,
             'stage-snapshot': 0,
             'task-progress': 0,
+            'worker-log': 0,
         };
         this.lastEmissionTime = 0;
         this.lastFlushTime = 0;

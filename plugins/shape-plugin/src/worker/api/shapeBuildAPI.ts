@@ -554,15 +554,6 @@ export const shapeBuildAPI = {
     };
   },
 
-    return () => {
-      const active = shapeBuildRuntimeCore.taskProgressCallbacks.get(key);
-      if (active?.unsubscribe === unsubscribe) {
-        shapeBuildRuntimeCore.taskProgressCallbacks.delete(key);
-      }
-      unsubscribe();
-    };
-  },
-
   // ===================================
   // On-demand Session State Query
   // ===================================
