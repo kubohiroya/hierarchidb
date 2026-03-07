@@ -119,3 +119,22 @@ export const emitTaskSnapshot = async (
         }
     }
 };
+
+export const emitProgressSnapshot = async (
+    nodeId: NodeId,
+    message?: string,
+): Promise<void> => {
+    // Create a progress snapshot event for unconditional streaming
+    const progressSnapshotEvent: StageSnapshotEvent = {
+        nodeId,
+        timestamp: Date.now(),
+        stageId: 'progress-snapshot',
+        snapshot: {
+            message: message ?? 'Progress update',
+            timestamp: Date.now(),
+        },
+    };
+
+    // Emit unconditionally regardless of UI state
+    unconditionalEventStreamer.emitEvent(nodeId, 'stage-snapshot', progressSnapshotEvent);
+};
