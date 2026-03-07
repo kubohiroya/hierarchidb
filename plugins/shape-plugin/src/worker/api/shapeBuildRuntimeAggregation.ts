@@ -2,16 +2,16 @@
  * Aggregation-oriented worker runtime API responsibilities.
  * Keeps metrics, status, progress, and snapshot calculation entrypoints.
  */
-import { shapeBuildRuntimeExecutionMetrics } from './shapeBuildRuntimeExecutionMetrics.js';
+import * as shapeBuildRuntimeCore from './shapeBuildRuntimeCore.js';
+import { selectLatestTaskByProgress, resolveTaskProcessingTimestamp } from '../taskOrdering.js';
 
 export const shapeBuildRuntimeAggregation = {
-  countTaskQueueStatuses: shapeBuildRuntimeExecutionMetrics.countTaskQueueStatuses,
-  resolveSessionExpiresAt: shapeBuildRuntimeExecutionMetrics.resolveSessionExpiresAt,
-  resolveProgressPhase: shapeBuildRuntimeExecutionMetrics.resolveProgressPhase,
-  buildProgressPayloadFromTasks: shapeBuildRuntimeExecutionMetrics.buildProgressPayloadFromTasks,
-  selectLatestTaskByProgress: shapeBuildRuntimeExecutionMetrics.selectLatestTaskByProgress,
-  resolveTaskProcessingTimestamp: shapeBuildRuntimeExecutionMetrics.resolveTaskProcessingTimestamp,
-  emitProgressSnapshot: shapeBuildRuntimeExecutionMetrics.emitProgressSnapshot,
+  countTaskQueueStatuses: shapeBuildRuntimeCore.countTaskQueueStatuses,
+  resolveSessionExpiresAt: shapeBuildRuntimeCore.resolveSessionExpiresAt,
+  resolveProgressPhase: shapeBuildRuntimeCore.resolveProgressPhase,
+  buildProgressPayloadFromTasks: shapeBuildRuntimeCore.buildProgressPayloadFromTasks,
+  selectLatestTaskByProgress,
+  resolveTaskProcessingTimestamp,
 } as const;
 
 export type ShapeBuildRuntimeAggregation = typeof shapeBuildRuntimeAggregation;

@@ -26,6 +26,7 @@ import type {
   ShapeVectorTileRecord,
   ShapeTileEmitMetadata,
 } from '@hierarchidb/shape-api';
+import type { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import {
   storeRawDataDataSourceBufferForNode,
 } from '~/services/utils/chunkStore';
@@ -792,9 +793,16 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
       })
     )));
   }
-  async putGeometryCaches(buffers: ShapeGeometryCache[]): Promise<void> {
+  async putGeometryCaches(buffers: ShapeGeometryCache[], taskId?: string, taskQueue?: VtTaskQueueDb): Promise<void> {
     if (buffers.length === 0) return;
     assertNonEmptyGeometryCacheBuffers(buffers);
+
+    // Validate cache write is allowed if taskId and taskQueue are provided
+    if (taskId && taskQueue) {
+      const { validateCacheWriteAllowed } = await import('../../worker/api/cacheWriteValidation');
+      await validateCacheWriteAllowed(taskQueue, taskId, 'geometry');
+    }
+
     const pending = buffers.map((buffer) => ({ ...buffer, timestamp: 0 }));
     await ephemeralDB.transaction('rw', [ephemeralDB.geometryCache, ephemeralDB.geometryCacheMeta], async () => {
       await ephemeralDB.geometryCache.bulkPut(pending);

@@ -42,9 +42,11 @@ export {
 
 // Hooks
 export { useCountrySelection } from './hooks/index.js';
+export { useCountryI18n } from './hooks/useCountryI18n.js';
 export type {
   UseCountrySelectionOptions,
   UseCountrySelectionResult,
+  UseCountryI18nResult,
 } from './hooks/index.js';
 
 // Utilities

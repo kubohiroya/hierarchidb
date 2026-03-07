@@ -417,7 +417,9 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
                 loading={isStartingBuild}
                 endIcon={<ConstructionIcon fontSize="small" />}
               >
-                {isStartingBuild ? 'Building…' : 'Build'}
+                {isStartingBuild 
+                  ? t('dialogs.pluginDialog.buttons.building', 'Building…') 
+                  : t('dialogs.pluginDialog.buttons.build', 'Build')}
               </LoadingButton>
             )}
           </Box>
@@ -492,19 +494,19 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
           <ListItemIcon>
             <OpenInNewIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Open In New Tab</ListItemText>
+          <ListItemText>{t('dialogs.pluginDialog.contextMenu.openInNewTab', 'Open In New Tab')}</ListItemText>
         </MenuItem>
         <MenuItem onClick={openInNewWindow}>
           <ListItemIcon>
             <OpenInNewOffIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Open In New Window</ListItemText>
+          <ListItemText>{t('dialogs.pluginDialog.contextMenu.openInNewWindow', 'Open In New Window')}</ListItemText>
         </MenuItem>
         <MenuItem onClick={copyLinkUrl}>
           <ListItemIcon>
             <ContentCopyIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Copy Link URL</ListItemText>
+          <ListItemText>{t('dialogs.pluginDialog.contextMenu.copyLinkUrl', 'Copy Link URL')}</ListItemText>
         </MenuItem>
       </DialogSafeMenu>
     </>

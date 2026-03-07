@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useShapeBuildSessionStartupTrace } from './useShapeBuildStepStartupLifecycle/useShapeBuildSessionStartupTrace';
 import { useShapeBuildSessionStartupProgressTerminalLog } from './useShapeBuildStepStartupLifecycle/useShapeBuildSessionStartupProgressTerminalLog';
-import { useShapeBuildSessionStartupTransitionTimers } from './useShapeBuildStepStartupLifecycle/useShapeBuildSessionStartupTransitionTimers';
 import { useShapeBuildSessionReceivingTaskSnapshotDecision } from './useShapeBuildStepStartupLifecycle/useShapeBuildSessionReceivingTaskSnapshotDecision';
 import type {
   BuildSessionTransitionNotificationLevel,
@@ -79,14 +78,12 @@ export const useShapeBuildSessionStartupLifecycle = ({
   lastReceivingTaskSnapshotDecisionTraceKeyRef,
   buildSessionTransitionTaskStartNotifiedRef,
   progressTerminalLogKeyRef,
-  buildSessionTransitionWarnStepRef,
-  buildSessionTransitionWaitLogStepRef,
   emitBuildSessionTransitionLog,
   pushBuildSessionTransitionNotification,
   finishBuildStartupStep,
   finishBuildSessionTransition,
 }: UseShapeBuildSessionStartupLifecycleArgs) => {
-  const [buildSessionTransitionElapsedMs, setBuildSessionTransitionElapsedMs] = useState(0);
+  const [buildSessionTransitionElapsedMs] = useState(0);
 
   useShapeBuildSessionStartupTrace({
     activeNodeId,
@@ -103,17 +100,6 @@ export const useShapeBuildSessionStartupLifecycle = ({
     progressTerminalLogKeyRef,
     emitBuildSessionTransitionLog,
     buildSessionTransition,
-  });
-
-  useShapeBuildSessionStartupTransitionTimers({
-    buildSessionTransition,
-    setBuildSessionTransitionElapsedMs,
-    buildSessionTransitionWarnStepRef,
-    buildSessionTransitionWaitLogStepRef,
-    emitBuildSessionTransitionLog,
-    pushBuildSessionTransitionNotification,
-    finishBuildStartupStep,
-    finishBuildSessionTransition,
   });
 
   useShapeBuildSessionReceivingTaskSnapshotDecision({

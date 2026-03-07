@@ -21,7 +21,7 @@ export interface ShapeMutationAPI {
   upsertBuildTasks(tasks: ReadonlyArray<ShapeBuildTaskRecordInput>): Promise<void>;
   updateBuildTask(taskId: string, updates: ShapeBuildTaskRecordUpdate): Promise<void>;
   putSourceCaches(buffers: ShapeSourceCache[]): Promise<void>;
-  putGeometryCaches(buffers: ShapeGeometryCache[]): Promise<void>;
+  putGeometryCaches(buffers: ShapeGeometryCache[], taskId?: string, taskQueue?: any): Promise<void>;
   putDataSourceMetadata(rows: ShapeDataSourceMetadata[]): Promise<void>;
   deleteDataSourceMetadataByIds(ids: string[]): Promise<void>;
   deleteDataSourceMetadataByNode(nodeId: string): Promise<void>;
