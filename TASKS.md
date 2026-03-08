@@ -2,7 +2,7 @@
 
 ## Doing
 
-- #915 Shape Step5 ビルド関連UI表記のi18n化 / feature/i18n/shape-step5-build-ui-labels / start
+- #915 Shape Step5 ビルド関連UI表記のi18n化 / feature/i18n/shape-step5-build-ui-labels / done
 
 - #914 Shape Step5 Reset/Deleteメニューのi18n化 / feature/i18n/shape-step5-reset-delete-menu / start
 
@@ -12,6 +12,12 @@
 
 ## 今日の運用ログ
 
+- 2025-03-09: #915 Shape Step5 ビルド関連UI表記のi18n化完了
+  - `packages/ui/i18n/public/locales/en/common.json`と`ja/common.json`にbuildControl関連の翻訳を追加
+  - `BuildControlCard.tsx`でハードコードされた文字列をt()関数でi18n化
+  - shape-pluginの型エラー修正（未使用変数削除・cache関連プロパティ名修正）
+  - 型チェック・ビルド成功確認（exit code 0）
+  - 変更内容をコミット・プッシュ完了
 - 2025-03-09: #894 Shape Step5 UI改良タスク最終確認完了
   - shape-pluginビルド成功確認（exit code 0）
   - E2Eテスト実行・全体ビルド成功確認
