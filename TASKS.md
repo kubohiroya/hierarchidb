@@ -2,6 +2,8 @@
 
 ## Doing
 
+- #896 / fix/ui/delete-api-cache-icon / start
+
 - #864 / fix/worker-ui-snapshot/remove-harmful-local-state / 2025-03-07 21:08
 
 ## Blocked
