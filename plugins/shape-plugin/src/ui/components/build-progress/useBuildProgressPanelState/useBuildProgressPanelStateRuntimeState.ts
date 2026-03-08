@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
-import { useTranslation } from '@hierarchidb/ui-i18n';
+import { useTranslation } from '~/ui/useTranslation';
 import { useBuildCrashInsight } from '~/ui/components/build-progress/useBuildCrashInsight/useBuildCrashInsight';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
