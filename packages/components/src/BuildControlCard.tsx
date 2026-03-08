@@ -1,4 +1,4 @@
-import { Box, Button, ButtonGroup, CircularProgress, Stack, Typography, Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
+import { Box, Button, ButtonGroup, CircularProgress, Stack, Typography, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
 import { type ReactNode, useState, useCallback, useEffect } from 'react';
 import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
 import { LoadingButton } from './LoadingButton.js';
@@ -201,7 +201,7 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
             >
               Reset ▼
             </Button>
-            <Menu
+            <DialogSafeMenu
               anchorEl={resetDeleteMenuAnchorEl}
               open={resetDeleteMenuOpen}
               onClose={handleResetDeleteMenuClose}
@@ -229,7 +229,7 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
                   </MenuItem>
                 )
               )}
-            </Menu>
+            </DialogSafeMenu>
           </>
         )}
       </Stack>
