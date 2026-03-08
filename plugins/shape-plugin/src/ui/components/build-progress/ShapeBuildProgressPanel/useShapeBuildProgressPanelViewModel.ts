@@ -198,7 +198,7 @@ export const useShapeBuildProgressPanelViewModel = ({
     resetDeleteMenuItems: [
       { 
         id: 'reset-session', 
-        label: 'Reset build session', 
+        label: t('stage.controls.resetSession', 'Reset build session'), 
         onClick: cacheHandleResetSession, 
         disabled: false, // Reset is always available
         icon: createElement(RestartAltIcon, { fontSize: 'small' }) 
@@ -206,7 +206,7 @@ export const useShapeBuildProgressPanelViewModel = ({
       { id: 'divider-1', label: '---', onClick: () => {}, disabled: true },
       { 
         id: 'delete-metadata', 
-        label: 'Delete feature metadata', 
+        label: t('stage.controls.deleteMetadata', 'Delete feature metadata'), 
         onClick: cacheHandleDeleteMetadata, 
         disabled: !cacheCanDeleteMetadata,
         icon: createElement(PlaylistRemoveIcon, { fontSize: 'small' }) 
@@ -214,14 +214,14 @@ export const useShapeBuildProgressPanelViewModel = ({
       { id: 'divider-2', label: '---', onClick: () => {}, disabled: true },
       { 
         id: 'delete-api-cache', 
-        label: 'Delete API cache', 
+        label: t('stage.controls.deleteApiCache', 'Delete API cache'), 
         onClick: cacheHandleDeleteSourceApiCache, 
         disabled: !cacheCanDeleteSourceApiCache,
         icon: createElement(CloudOffIcon, { fontSize: 'small' }) 
       },
       { 
         id: 'delete-filtered-cache', 
-        label: 'Delete filtered cache', 
+        label: t('stage.controls.deleteFilteredCache', 'Delete filtered cache'), 
         onClick: cacheHandleDeleteSourceFilteredCache, 
         disabled: !cacheCanDeleteSourceFilteredCache,
         icon: createElement(FilterAltOffIcon, { fontSize: 'small' }) 
@@ -229,7 +229,7 @@ export const useShapeBuildProgressPanelViewModel = ({
       { id: 'divider-3', label: '---', onClick: () => {}, disabled: true },
       { 
         id: 'delete-simplified-cache', 
-        label: 'Delete simplified cache', 
+        label: t('stage.controls.deleteSimplifiedCache', 'Delete simplified cache'), 
         onClick: cacheHandleDeleteGeometryCache, 
         disabled: !cacheCanDeleteGeometryCache,
         icon: createElement(FilterListOffIcon, { fontSize: 'small' }) 
@@ -237,7 +237,7 @@ export const useShapeBuildProgressPanelViewModel = ({
       { id: 'divider-4', label: '---', onClick: () => {}, disabled: true },
       { 
         id: 'delete-transpose-index', 
-        label: 'Delete transpose index', 
+        label: t('stage.controls.deleteTransposeIndex', 'Delete transpose index'), 
         onClick: cacheHandleDeleteTransposeIndex, 
         disabled: !cacheCanDeleteTransposeIndex,
         icon: createElement(PhonelinkEraseIcon, { fontSize: 'small' }) 

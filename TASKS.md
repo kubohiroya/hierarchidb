@@ -2,6 +2,8 @@
 
 ## Doing
 
+- #914 Shape Step5 Reset/Deleteメニューのi18n化 / feature/i18n/shape-step5-reset-delete-menu / start
+
 - #913 Shape Step5 UI改良 - Build Sessionヘッダー撤去とボタンサイズ変更 / feature/ui/build-session-header-removal / start
 
 ## Blocked
