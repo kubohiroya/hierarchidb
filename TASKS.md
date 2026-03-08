@@ -2,11 +2,7 @@
 
 ## Doing
 
-- #915 Shape Step5 ビルド関連UI表記のi18n化 / feature/i18n/shape-step5-build-ui-labels / done
-
-- #914 Shape Step5 Reset/Deleteメニューのi18n化 / feature/i18n/shape-step5-reset-delete-menu / start
-
-- #913 Shape Step5 UI改良 - Build Sessionヘッダー撤去とボタンサイズ変更 / feature/ui/build-session-header-removal / start
+- #922 ダイアログUI表記のi18n化 / feat/i18n/dialog-ui-labels / start
 
 ## Blocked
 

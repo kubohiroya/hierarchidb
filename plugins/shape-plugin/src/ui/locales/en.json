@@ -537,6 +537,7 @@
       "counts": "{{percentage}}% ・ {{completed}}/{{total}} completed ・ failed {{failed}} ・ skipped {{skipped}}"
     },
     "tasks": {
+      "search": "Search tasks",
       "empty": "No tasks yet.",
       "summaryOnly": "Tasks are summarized. Detailed list is unavailable."
     },
