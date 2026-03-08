@@ -1,4 +1,5 @@
 import { type MouseEvent as ReactMouseEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
 import { Box, IconButton, MenuItem, Stack, Typography } from '@mui/material';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
@@ -127,6 +128,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   resetDeleteMenuDisabled,
 }) => {
   void onComplete;
+  const { t } = useTranslation('common');
 
   const [stageFilters, setStageFilters] = useState<Record<string, BuildStageFilter>>({});
   const [controlMenuAnchorEl, setControlMenuAnchorEl] = useState<HTMLElement | null>(null);
@@ -274,15 +276,15 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   const computedStatusLabel = (() => {
     switch (status) {
       case 'running':
-        return 'Build in progress';
+        return t('buildControl.status.running') as string;
       case 'paused':
-        return 'Build paused';
+        return t('buildControl.status.paused') as string;
       case 'completed':
-        return 'Build completed';
+        return t('buildControl.status.completed') as string;
       case 'failed':
-        return 'Build failed';
+        return t('buildControl.status.failed') as string;
       default:
-        return 'Ready to start build';
+        return t('buildControl.status.ready') as string;
     }
   })();
   

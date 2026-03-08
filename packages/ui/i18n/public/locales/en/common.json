@@ -106,6 +106,13 @@
       "cancel": "Cancel",
       "resetDelete": "Reset/Delete",
       "resetDeleteMenu": "Reset/Delete menu"
+    },
+    "status": {
+      "running": "Build in progress",
+      "paused": "Build paused",
+      "completed": "Build completed",
+      "failed": "Build failed",
+      "ready": "Ready to start build"
     }
   },
   "api": {

@@ -27,6 +27,7 @@
 - 2025-03-09: #917 Shape Step5 残りUI表記のi18n化完了
   - `stage.tasks.search`翻訳キーを追加し、タスク検索機能のi18n化を完了
   - 重複していた`build.tasks`セクションを削除し、翻訳ファイルを整理
+  - Stepperの"1. Info"を"1. 情報"に変更（processing.labelを「Config」→「情報」）
   - 型チェック・ビルド成功確認（exit code 0）
   - 変更内容をコミット・プッシュ完了
 
