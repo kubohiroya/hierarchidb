@@ -2,6 +2,8 @@
 
 ## Doing
 
+- #924 Stepper Step1 "Info" i18nキーパス修正 / fix/i18n/stepper-info-label-key-path / start
+
 ## Blocked
 
 ## 今日の運用ログ
