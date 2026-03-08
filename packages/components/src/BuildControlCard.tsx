@@ -1,11 +1,11 @@
-import { Box, Button, ButtonGroup, CircularProgress, Divider, Menu, MenuItem, Stack, Typography } from '@mui/material';
+import { Box, Button, ButtonGroup, CircularProgress, Stack, Typography, Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
 import { type ReactNode, useState, useEffect } from 'react';
 import { LoadingButton } from './LoadingButton.js';
 import ClearIcon from '@mui/icons-material/Clear';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import TimelapseIcon from '@mui/icons-material/Timelapse';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import type { BuildControlDetail } from './BuildStepPanel.tsx';
 import type { BuildStatus } from './build-status/BuildStatus.ts';
@@ -26,7 +26,13 @@ type BuildControlCardProps = {
   resumeIcon?: ReactNode;
   details?: BuildControlDetail[];
   startLoading?: boolean;
-  resetDeleteMenuItems?: Array<{ id: string; label: string; onClick: () => void; disabled?: boolean; icon?: ReactNode }>;
+  resetDeleteMenuItems?: Array<{ 
+    id: string; 
+    label: string; 
+    onClick: () => void; 
+    disabled?: boolean; 
+    icon?: ReactNode 
+  }>;
   resetDeleteMenuAriaLabel?: string;
   resetDeleteMenuDisabled?: boolean;
 };
@@ -52,6 +58,7 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
   resetDeleteMenuDisabled,
 }) => {
   const [resetDeleteMenuAnchorEl, setResetDeleteMenuAnchorEl] = useState<HTMLElement | null>(null);
+
   const pauseSpinner = (
     <CircularProgress
       size={16}
@@ -128,9 +135,11 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
       }}
     >
       <Stack direction="row" spacing={1} alignItems="center" sx={{ whiteSpace: 'nowrap' }}>
-        <ButtonGroup variant="contained" size="small">
+        <ButtonGroup variant="contained" size="small" aria-label="Build control buttons">
           <LoadingButton
             color="secondary"
+            variant="contained"
+            size="small"
             endIcon={computedIcon}
             disabled={disableStart}
             onClick={onResume}
@@ -144,6 +153,8 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
           </LoadingButton>
           <Button
             color="secondary"
+            variant="contained"
+            size="small"
             endIcon={computedPauseIcon}
             disabled={disablePause}
             onClick={onPause}
@@ -156,7 +167,7 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
           </Button>
         </ButtonGroup>
         
-        {showCancelButton ? (
+        {showCancelButton && (
           <Button
             variant="outlined"
             size="small"
@@ -170,21 +181,23 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
           >
             {cancelLabel ?? 'Cancel'}
           </Button>
-        ) : showResetDeleteMenu ? (
+        )}
+
+        {showResetDeleteMenu && (
           <>
             <Button
               variant="outlined"
               size="small"
               startIcon={<RestartAltIcon fontSize="small" />}
-              endIcon={<ArrowDropDownIcon fontSize="small" />}
+              endIcon={<ExpandMoreIcon fontSize="small" />}
               disabled={resetDeleteMenuDisabledState}
               onClick={handleResetDeleteMenuOpen}
               data-testid="build-control-reset-delete-button"
               aria-label={resetDeleteMenuAriaLabel ?? 'Reset/Delete menu'}
-              id="build-control-reset-delete-button"
-              role="button"
+              aria-expanded={resetDeleteMenuOpen}
+              aria-haspopup="true"
             >
-              Reset/Delete
+              Reset ▼
             </Button>
             <Menu
               anchorEl={resetDeleteMenuAnchorEl}
@@ -192,6 +205,9 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
               onClose={handleResetDeleteMenuClose}
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              MenuListProps={{
+                'aria-labelledby': 'build-control-reset-delete-button',
+              }}
             >
               {resetDeleteMenuItems?.map((item) => 
                 item.label === '---' ? (
@@ -203,17 +219,17 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
                     disabled={item.disabled}
                   >
                     {item.icon && (
-                      <Box sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
+                      <ListItemIcon>
                         {item.icon}
-                      </Box>
+                      </ListItemIcon>
                     )}
-                    {item.label}
+                    <ListItemText>{item.label}</ListItemText>
                   </MenuItem>
                 )
               )}
             </Menu>
           </>
-        ) : null}
+        )}
       </Stack>
       {details && details.length > 0 ? (
         <Stack direction="row" spacing={2} alignItems="center" sx={{ whiteSpace: 'nowrap' }}>
