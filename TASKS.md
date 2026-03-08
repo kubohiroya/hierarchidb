@@ -10,7 +10,7 @@
   - emitWorkerLogとemitCriticalError関数削除
   - 過度なログ出力削減（172行のコード削減）
   - Worker-UI通信負荷軽減・パフォーマンス向上
-  - 型チェック成功確認・PR #904マージ完了
+  - 型チェック成功確認・PR #905マージ完了
 
 - 2025-03-08: fix/worker-ui-snapshot/investigate-pipeline-errors ブランチマージ試行
   - マージコンフリクト発生（shapeBuildRuntimeExecutionControl.ts, runShapePipeline.ts）
