@@ -374,7 +374,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const effectiveStatusLabel = buildSessionTransition.active
     ? getBuildSessionTransitionStatusLabel(t, buildSessionTransition.phase, startupLifecycleElapsedMs)
     : isStartPending && buildStatus === 'idle'
-      ? t('stage.status.starting', 'Starting stage...')
+      ? t('build.status.starting', 'Starting stage...')
       : statusLabel;
   return {
     t,

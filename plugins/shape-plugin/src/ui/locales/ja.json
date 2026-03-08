@@ -556,7 +556,14 @@
       "running": "ビルド処理中",
       "paused": "ビルド一時停止中",
       "completed": "ビルド完了",
-      "failed": "ビルド失敗"
+      "failed": "ビルド失敗",
+      "starting": "ステージを開始中...",
+      "startingLock": "ビルド開始中（ロック取得中）...",
+      "startingQueueElapsed": "ビルド開始中（ロック待機中、{{elapsedSeconds}}秒）...",
+      "startingSave": "ビルド開始中（下書き保存中）...",
+      "startingWorker": "ビルド開始中（ワーカー初期化中）...",
+      "startingPayload": "ビルド開始中（タスク準備中）...",
+      "startingSession": "ビルド開始中（セッション起動中）..."
     },
     "stages": {
       "source": {

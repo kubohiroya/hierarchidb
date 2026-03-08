@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import { Button } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 
 interface CloseActionButtonProps {
   to: string;

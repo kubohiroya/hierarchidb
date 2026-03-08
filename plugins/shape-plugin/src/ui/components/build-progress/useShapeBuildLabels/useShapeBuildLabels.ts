@@ -33,15 +33,15 @@ export const useShapeBuildLabels = ({
   const statusLabel = useMemo(() => {
     switch (buildStatus) {
       case 'running':
-        return t('stage.status.running', 'Build in progress');
+        return t('build.status.running', 'Build in progress');
       case 'paused':
-        return t('stage.status.paused', 'Build paused');
+        return t('build.status.paused', 'Build paused');
       case 'completed':
-        return t('stage.status.completed', 'Build completed');
+        return t('build.status.completed', 'Build completed');
       case 'failed':
-        return t('stage.status.failed', 'Build failed');
+        return t('build.status.failed', 'Build failed');
       default:
-        return t('stage.status.ready', 'Ready to start stage');
+        return t('build.status.ready', 'Ready to start stage');
     }
   }, [buildStatus, t]);
 
