@@ -23,7 +23,6 @@ import { runShapeGeometryStageSection } from './runShapeGeometryStageSection.ts'
 import { runShapeTileEmitStageSection } from './runShapeTileEmitStageSection.ts';
 import { runShapeMetadataStage } from './runShapeMetadataStage.ts';
 import { runShapePipelineCleanup } from './runShapePipelineCleanup.ts';
-import { emitWorkerLog } from '../../worker/api/eventEmission.js';
 import {
   createDefaultShapeStageProfile,
   flattenShapeStageProfile,
@@ -100,11 +99,6 @@ const collectRecyclingAllowlist = async (nodeId: NodeId) => {
 };
 
 const createShapePipelineContext = async (params: ShapePipelineParams): Promise<ShapePipelineContext> => {
-  emitWorkerLog(params.nodeId, 'log', '[ShapePipeline] Creating pipeline context', {
-    runId: params.pipelineRunId ?? null,
-    dataSource: params.dataSource,
-  });
-  
   try {
     const taskQueue = new VtTaskQueueDb();
     const ephemeralStore = ephemeralDB;
@@ -112,16 +106,9 @@ const createShapePipelineContext = async (params: ShapePipelineParams): Promise<
     const buildContinuationPolicy = params.buildContinuationPolicy ?? 'finish_all_stages';
     const failureHandling = resolveFailureHandling(buildContinuationPolicy);
 
-    emitWorkerLog(params.nodeId, 'log', '[ShapePipeline] Collecting recycling allowlist', {
-      runId: params.pipelineRunId ?? null,
-    });
     const { recyclingAllowlist, recyclingByFeatureId } = await collectRecyclingAllowlist(params.nodeId);
     const diffBuildEnabled = recyclingAllowlist.size > 0;
 
-    emitWorkerLog(params.nodeId, 'log', '[ShapePipeline] Building bands configuration', {
-      runId: params.pipelineRunId ?? null,
-      zoomBandBoundaries: params.buildConfig.geometryConfig.zoomBandBoundaries,
-    });
     const enableHighDetailBands = hasHighDetailSelection(
       params.selectedArrayByCountries,
       params.downloadTaskPayloads,
@@ -133,14 +120,7 @@ const createShapePipelineContext = async (params: ShapePipelineParams): Promise<
     let continentLookup: Map<string, string> | null = null;
     const loadMetadata = async (): Promise<CountryMetadata[]> => {
       if (metadataCache) return metadataCache;
-      emitWorkerLog(params.nodeId, 'log', '[ShapePipeline] Loading metadata', {
-        dataSource: params.dataSource,
-      });
       metadataCache = await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
-      emitWorkerLog(params.nodeId, 'log', '[ShapePipeline] Metadata loaded', {
-        dataSource: params.dataSource,
-        metadataCount: metadataCache.length,
-      });
       return metadataCache;
     };
     const loadCountryLookup = async (): Promise<Map<string, CountryMetadata>> => {
@@ -153,13 +133,6 @@ const createShapePipelineContext = async (params: ShapePipelineParams): Promise<
       continentLookup = buildContinentLookup(await loadMetadata());
       return continentLookup;
     };
-
-    emitWorkerLog(params.nodeId, 'log', '[ShapePipeline] Pipeline context created successfully', {
-      runId: params.pipelineRunId ?? null,
-      diffBuildEnabled,
-      enableHighDetailBands,
-      recyclingAllowlistSize: recyclingAllowlist.size,
-    });
 
     return {
       params,
@@ -177,7 +150,6 @@ const createShapePipelineContext = async (params: ShapePipelineParams): Promise<
       loadContinentLookup,
     };
   } catch (error) {
-    emitWorkerLog(params.nodeId, 'error', '[ShapePipeline] Failed to create pipeline context', {
       runId: params.pipelineRunId ?? null,
       error: error instanceof Error ? error.message : String(error),
       errorName: error instanceof Error ? error.name : 'Unknown',
@@ -439,7 +411,6 @@ const runCleanupStage = async (context: ShapePipelineContext): Promise<void> => 
 };
 
 export const runShapePipeline = async (params: ShapePipelineParams): Promise<void> => {
-  emitWorkerLog(params.nodeId, 'log', '[ShapePipeline] Starting pipeline execution', {
     runId: params.pipelineRunId ?? null,
     dataSource: params.dataSource,
     downloadTaskPayloadsCount: params.downloadTaskPayloads?.length ?? 0,
@@ -477,7 +448,6 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
         },
         logger: {
           onStart: ({ startedAt, memory }) => {
-            emitWorkerLog(params.nodeId, 'log', '[ShapePipeline][Checkpoint] start', {
               runId: params.pipelineRunId ?? null,
               stage,
               startedAt,
@@ -486,7 +456,6 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
           },
           onSuccess: ({ startedAt, durationMs, memory }) => {
             const finishedAt = Date.now();
-            emitWorkerLog(params.nodeId, 'log', '[ShapePipeline][Checkpoint] finish', {
               runId: params.pipelineRunId ?? null,
               stage,
               outcome: 'success',
@@ -498,7 +467,6 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
           },
           onError: ({ startedAt, durationMs, errorMessage, memory }) => {
             const finishedAt = Date.now();
-            emitWorkerLog(params.nodeId, 'error', '[ShapePipeline][Checkpoint] finish', {
               runId: params.pipelineRunId ?? null,
               stage,
               outcome: 'error',
@@ -513,12 +481,10 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
       });
     };
 
-    emitWorkerLog(params.nodeId, 'log', '[ShapePipeline] Starting prepare-pipeline-run checkpoint', {
       runId: params.pipelineRunId ?? null,
     });
     await checkpoint('prepare-pipeline-run', async () => preparePipelineRun(context));
 
-    emitWorkerLog(params.nodeId, 'log', '[ShapePipeline] Starting execution stages', {
       runId: params.pipelineRunId ?? null,
       stageCount: executionStages.length,
       stages: executionStages.map(stage => stage.checkpointStage),
@@ -527,13 +493,11 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
     let stopAfterStage = false;
     for (const stage of executionStages) {
       if (stopAfterStage) {
-        emitWorkerLog(params.nodeId, 'log', '[ShapePipeline] Stopping after stage', {
           runId: params.pipelineRunId ?? null,
           stage: stage.checkpointStage,
         });
         break;
       }
-      emitWorkerLog(params.nodeId, 'log', '[ShapePipeline] Executing stage', {
         runId: params.pipelineRunId ?? null,
         stage: stage.checkpointStage,
       });
@@ -543,21 +507,17 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
       );
     }
     
-    emitWorkerLog(params.nodeId, 'log', '[ShapePipeline] Starting metadata-stage checkpoint', {
       runId: params.pipelineRunId ?? null,
     });
     await checkpoint('metadata-stage', async () => runMetadataStage(context));
     
-    emitWorkerLog(params.nodeId, 'log', '[ShapePipeline] Starting cleanup-stage checkpoint', {
       runId: params.pipelineRunId ?? null,
     });
     await checkpoint('cleanup-stage', async () => runCleanupStage(context));
     
-    emitWorkerLog(params.nodeId, 'log', '[ShapePipeline] Pipeline execution completed successfully', {
       runId: params.pipelineRunId ?? null,
     });
   } catch (error) {
-    emitWorkerLog(params.nodeId, 'error', '[ShapePipeline] Pipeline execution failed', {
       runId: params.pipelineRunId ?? null,
       error: error instanceof Error ? error.message : String(error),
       errorName: error instanceof Error ? error.name : 'Unknown',
