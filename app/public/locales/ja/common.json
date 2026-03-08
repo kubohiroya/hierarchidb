@@ -79,6 +79,11 @@
     }
   },
   "dialogs": {
+    "common": {
+      "actions": {
+        "close": "ダイアログを閉じる"
+      }
+    },
     "archive": {
       "modeMenu": {
         "ariaLabel": "表示モード",

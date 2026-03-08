@@ -537,18 +537,19 @@
       "counts": "{{percentage}}% ・ {{completed}}/{{total}} 完了 ・ 失敗 {{failed}} ・ スキップ {{skipped}}"
     },
     "tasks": {
+      "search": "タスクを検索",
       "empty": "タスクがまだありません。",
       "summaryOnly": "タスクは集計のみ表示されています。詳細一覧は取得できません。"
     },
     "taskStatus": {
       "waiting": "待機中",
-      "queued": "待機中",
+      "queued": "実行待ち",
       "running": "実行中",
       "paused": "一時停止",
-      "completed": "完了",
+      "completed": "実行完了",
       "recycled": "再利用",
-      "skipped": "スキップ",
-      "failed": "失敗"
+      "skipped": "実行省略",
+      "failed": "実行失敗"
     },
     "status": {
       "ready": "ビルドを開始する準備ができています",
