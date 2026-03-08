@@ -2,6 +2,8 @@
 
 ## Doing
 
+- #926 i18n翻訳キーパス不一致修正・useTranslation統合 / fix/i18n/translation-key-path-unification / start
+
 ## Blocked
 
 ## 今日の運用ログ

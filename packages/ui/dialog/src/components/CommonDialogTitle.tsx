@@ -10,7 +10,7 @@ import {
   FullscreenExit as FullscreenExitIcon,
 } from '@mui/icons-material';
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   DISPLAY_MODE_LABELS,
   useCommonDialogTitleView,
