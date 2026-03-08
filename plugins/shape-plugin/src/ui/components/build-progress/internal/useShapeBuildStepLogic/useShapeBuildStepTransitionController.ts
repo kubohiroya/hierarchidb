@@ -3,7 +3,6 @@ import { notify } from '@hierarchidb/components/notify';
 import type { BuildSessionTransitionNotificationLevel } from '@hierarchidb/components/build-session';
 import { useBuildSessionTransition } from '@hierarchidb/components/build-session';
 import type { BuildSessionTransitionPhase, BuildStartupStep, BuildStartupStepOutcome, StartupStepMemorySnapshot } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/startupTrace.js';
-import type { BuildStartupTransitionWarnStep } from '~/ui/components/build-progress/resolveStartupTransitionWatchdogEvent';
 import { captureStartupStepMemorySnapshot, calculateMemoryDelta } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/startupTrace.js';
 
 type NotificationLevel = BuildSessionTransitionNotificationLevel;
@@ -40,10 +39,6 @@ type UseShapeBuildStepTransitionControllerResult = {
     outcome: BuildStartupStepOutcome,
     extra?: Record<string, unknown>,
   ) => void;
-  buildSessionTransitionWarnStepRef: { current: BuildStartupTransitionWarnStep };
-  buildSessionTransitionTaskStartNotifiedRef: { current: boolean };
-  buildSessionTransitionWaitLogStepRef: { current: number };
-  receivingTaskSnapshotExpectationRef: { current: boolean };
   progressTerminalLogKeyRef: { current: string | null };
 };
 
@@ -53,10 +48,6 @@ export const useShapeBuildStepTransitionController = ({
   activeNodeId,
   clearStartPendingRef,
 }: UseShapeBuildStepTransitionControllerArgs): UseShapeBuildStepTransitionControllerResult => {
-  const buildSessionTransitionWarnStepRef = useRef<BuildStartupTransitionWarnStep>(0);
-  const buildSessionTransitionTaskStartNotifiedRef = useRef(false);
-  const buildSessionTransitionWaitLogStepRef = useRef(-1);
-  const receivingTaskSnapshotExpectationRef = useRef(false);
   const progressTerminalLogKeyRef = useRef<string | null>(null);
   const previousTransitionActiveRef = useRef(false);
   const buildStartupStepStartedAtRef = useRef<Map<BuildStartupStep, number>>(new Map());
@@ -84,10 +75,6 @@ export const useShapeBuildStepTransitionController = ({
 
   const handleBuildSessionTransitionFinish = useCallback(() => {
     clearStartPendingRef.current?.();
-    buildSessionTransitionWarnStepRef.current = 0;
-    buildSessionTransitionTaskStartNotifiedRef.current = false;
-    buildSessionTransitionWaitLogStepRef.current = -1;
-    receivingTaskSnapshotExpectationRef.current = false;
     progressTerminalLogKeyRef.current = null;
   }, [clearStartPendingRef]);
 
@@ -107,9 +94,6 @@ export const useShapeBuildStepTransitionController = ({
 
   const beginBuildSessionTransition = useCallback((phase: BuildSessionTransitionPhase, message?: string) => {
     const now = Date.now();
-    buildSessionTransitionWarnStepRef.current = 0;
-    buildSessionTransitionTaskStartNotifiedRef.current = false;
-    buildSessionTransitionWaitLogStepRef.current = -1;
     progressTerminalLogKeyRef.current = null;
     beginBuildSessionTransitionInternal(phase, {
       message,
@@ -194,10 +178,6 @@ export const useShapeBuildStepTransitionController = ({
     pushBuildSessionTransitionNotification,
     beginBuildStartupStep,
     finishBuildStartupStep,
-    buildSessionTransitionWarnStepRef,
-    buildSessionTransitionTaskStartNotifiedRef,
-    buildSessionTransitionWaitLogStepRef,
-    receivingTaskSnapshotExpectationRef,
     progressTerminalLogKeyRef,
   };
 };

@@ -152,7 +152,9 @@
           "maximize": "最大化",
           "restoreSize": "元に戻す",
           "fullscreen": "全画面",
-          "exitFullscreen": "全画面を終了"
+          "exitFullscreen": "全画面を終了",
+          "build": "ビルド",
+          "building": "ビルド中…"
         },
         "tooltips": {
           "saveDraftDisabled": "変更がないため保存できません",
@@ -161,6 +163,11 @@
           "restoreSize": "元に戻す",
           "fullscreen": "全画面",
           "exitFullscreen": "全画面を終了"
+        },
+        "contextMenu": {
+          "openInNewTab": "新しいタブで開く",
+          "openInNewWindow": "新しいウィンドウで開く",
+          "copyLinkUrl": "リンクURLをコピー"
         }
       }
     },

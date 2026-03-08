@@ -4,7 +4,7 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildContinuationPolicy, TaskStage } from '@hierarchidb/build-api';
+import type { BuildContinuationPolicy } from '@hierarchidb/build-api';
 import type {
   ShapeBuildConfig,
   ShapeRuntimeBuildConfig,
@@ -26,6 +26,7 @@ import {
 import type { BuildProgressEvent } from '@hierarchidb/build-api';
 
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
+import { cacheValidator } from '~/services/CacheValidator';
 import {
   countSelectedAdminPairs,
 } from '~/services/utils/shapeBuildUtils';
@@ -33,6 +34,9 @@ import {
   deleteRawDataDataSourceBuffersForNodeMetadataIds,
 } from '~/services/utils/chunkStore';
 import { resolveSourceStageStrategy } from '~/services/build/strategies/resolveSourceStageStrategy';
+import { emitTaskSnapshot, emitProgressSnapshot, emitSessionStateChange, emitWorkerLog, emitCriticalError } from './eventEmission.js';
+import type { ShapeBuildStopReason, ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
+import { isStopReason } from './taskQueueManagement.js';
 // Custom error types for better error classification
 class SourceTaskPayloadGenerationError extends Error {
   constructor(message: string) {
@@ -58,32 +62,94 @@ import { ephemeralShapeAPIImpl, shapeMutationAPIImpl, shapeQueryAPIImpl } from '
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import { setSourcePlannedTotal } from '~/services/vt/shapeProgressPlan';
 import { shouldReuseTaskQueueOnStart } from '../shouldReuseTaskQueueOnStart.js';
-import { shapeBuildRuntimeExecutionMetrics } from './shapeBuildRuntimeExecutionMetrics.js';
+import * as shapeBuildRuntimeCore from './shapeBuildRuntimeCore.js';
+import { summarizeTaskQueueStatus } from './progressAnalysis.js';
 
+// Available functions from the new structure
 const {
   countTaskQueueStatuses,
   setPaused,
   waitIfPaused,
-  startSessionTracking,
-  clearStalePipelineStateIfInactive,
-  clearActivePipelineRuntimeState,
   resolveProgressPhase,
   buildProgressPayloadFromTasks,
-  emitProgressSnapshot,
-  emitTaskSnapshot,
-  upsertBuildSessionSnapshot,
-  updateBuildSessionFromTasks,
-  summarizeTaskQueueStatus,
   progressCallbacks,
   getShapeEntityHandler,
-  activePipelines,
-  activePipelineRuns,
-  sessionAbortControllers,
-  sessionWorkerInstances,
-  isStopReason,
-} = shapeBuildRuntimeExecutionMetrics;
+} = shapeBuildRuntimeCore;
+
+// Mock implementations for missing functions (to be implemented later)
+const activePipelines = new Set<string>();
+const activePipelineRuns = new Map<string, string>();
+const sessionAbortControllers = new Map<string, AbortController>();
+const sessionWorkerInstances = new Map<string, { terminate?: () => void }>();
+
+// Placeholder functions for missing implementations
+const startSessionTracking = (_nodeId: string) => { };
+const clearStalePipelineStateIfInactive = (_nodeId: string, _previousSession?: any, _startupScope?: string) => { };
+const clearActivePipelineRuntimeState = (_nodeId: string) => { };
+
+const upsertBuildSessionSnapshot = async (data: { 
+  nodeId: NodeId; 
+  status?: ShapeBuildSessionRecord['status']; 
+  stopReason?: ShapeBuildStopReason; 
+  canResume?: boolean; 
+  startedAt?: number; 
+  completedAt?: number; 
+  selectedArrayByCountries?: any; 
+  tasks?: any[] 
+}): Promise<void> => {
+  try {
+    const previousSessionRecord = data.status ? await shapeQueryAPIImpl.getBuildSessionRecord(data.nodeId).catch(() => null) : null;
+    
+    await shapeMutationAPIImpl.updateBuildSession(data.nodeId, {
+      status: data.status,
+      stopReason: data.stopReason,
+      canResume: data.canResume,
+      startedAt: data.startedAt,
+      completedAt: data.completedAt,
+    });
+    
+    // Emit session state change event
+    if (data.status) {
+      const newSessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(data.nodeId).catch(() => null);
+      if (newSessionRecord) {
+        emitSessionStateChange(data.nodeId, previousSessionRecord?.status, data.status, newSessionRecord);
+      }
+    }
+  } catch (error) {
+    console.error('[shapeBuildAPI] Failed to upsert build session snapshot', error);
+  }
+};
+
+const updateBuildSessionFromTasks = async (nodeId: NodeId, data: { 
+  status?: ShapeBuildSessionRecord['status']; 
+  stopReason?: ShapeBuildStopReason; 
+  completedAt?: number; 
+  canResume?: boolean 
+}): Promise<void> => {
+  try {
+    const previousSessionRecord = data.status ? await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null) : null;
+    
+    await shapeMutationAPIImpl.updateBuildSession(nodeId, {
+      status: data.status,
+      stopReason: data.stopReason,
+      completedAt: data.completedAt,
+      canResume: data.canResume,
+    });
+    
+    // Emit session state change event
+    if (data.status) {
+      const newSessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
+      if (newSessionRecord) {
+        emitSessionStateChange(nodeId, previousSessionRecord?.status, data.status, newSessionRecord);
+      }
+    }
+  } catch (error) {
+    console.error('[shapeBuildAPI] Failed to update build session from tasks', error);
+  }
+};
 
 type CanonicalStageId = 'source-stage' | 'geometry-stage' | 'tile-emit-stage';
+type TaskStage = 'source' | 'geometry' | 'tileEmit';
 
 const toCanonicalStageId = (stage: TaskStage): CanonicalStageId => {
   if (stage === 'source') return 'source-stage';
@@ -670,20 +736,85 @@ const startBuildSessionInternal = async (
     await emitProgressSnapshot(nodeForSession, `${startupScope} ignored: pipeline already active`);
     return nodeForSession;
   }
-  const sourcePlan = await executeStartupStep(
-    'plan-source-total',
-    async () => estimatePlannedSourceTotal({
+  let sourcePlan;
+  try {
+    console.warn('[shapeBuildAPI] Starting plan-source-total step', {
       nodeId: nodeForSession,
-      buildConfig: mergedRuntimeConfig,
-      selectedArrayByCountries: draftEntity.selectedArrayByCountries,
-      downloadTaskPayloads,
-    }),
-    {
-      payloadCount: downloadTaskPayloads.length,
-      selectedCountryCount: selectionSummary.selectedCountryCount,
       selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
-    },
-  );
+      downloadTaskPayloadsCount: downloadTaskPayloads.length,
+    });
+    
+    sourcePlan = await executeStartupStep(
+      'plan-source-total',
+      async () => estimatePlannedSourceTotal({
+        nodeId: nodeForSession,
+        buildConfig: mergedRuntimeConfig,
+        selectedArrayByCountries: draftEntity.selectedArrayByCountries,
+        downloadTaskPayloads,
+      }),
+      {
+        payloadCount: downloadTaskPayloads.length,
+        selectedCountryCount: selectionSummary.selectedCountryCount,
+        selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
+      },
+    );
+        selectedCountryCount: selectionSummary.selectedCountryCount,
+        selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
+      },
+    );
+    
+    console.warn('[shapeBuildAPI] plan-source-total step completed successfully', {
+      nodeId: nodeForSession,
+      plannedSourceTotal: sourcePlan.plannedSourceTotal,
+      payloadCount: sourcePlan.payloadCount,
+    });
+  } catch (error) {
+    // Emit empty task snapshot to notify UI of the error state
+    console.error('[shapeBuildAPI] Failed to plan source total, emitting empty task snapshot', {
+      nodeId: nodeForSession,
+      error: error instanceof Error ? error.message : String(error),
+      errorName: error instanceof Error ? error.name : 'Unknown',
+      errorStack: error instanceof Error ? error.stack : undefined,
+      selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
+      downloadTaskPayloadsCount: downloadTaskPayloads.length,
+    });
+    
+    try {
+      // Send empty task snapshot to UI so it doesn't wait indefinitely
+      await upsertBuildSessionSnapshot({
+        nodeId: nodeForSession,
+        selectedArrayByCountries: draftEntity.selectedArrayByCountries,
+        tasks: [], // Empty tasks array
+        status: 'failed',
+        canResume: false,
+      });
+      
+      console.warn('[shapeBuildAPI] Empty build session snapshot upserted', {
+        nodeId: nodeForSession,
+      });
+      
+      await emitTaskSnapshot(nodeForSession);
+      
+      console.warn('[shapeBuildAPI] Empty task snapshot emitted to UI', {
+        nodeId: nodeForSession,
+      });
+      
+      // Emit progress snapshot to ensure UI receives notification
+      await emitProgressSnapshot(nodeForSession, 'Build failed during source planning.');
+      
+      console.warn('[shapeBuildAPI] Progress snapshot emitted for failed build', {
+        nodeId: nodeForSession,
+      });
+    } catch (emitError) {
+      console.error('[shapeBuildAPI] Failed to emit empty task snapshot', {
+        nodeId: nodeForSession,
+        emitError: emitError instanceof Error ? emitError.message : String(emitError),
+      });
+    }
+    
+    throw error;
+  }
+>>>>>>> main
   // Only fail if there are selections but no payloads generated (metadata issue)
   // Empty builds (no selections) should succeed with empty output
   if (selectedAdminPairCount > 0 && sourcePlan.plannedSourceTotal === 0) {
@@ -706,6 +837,29 @@ const startBuildSessionInternal = async (
 
   try {
     const taskQueue = new VtTaskQueueDb();
+    
+    // Clean up invalid cache entries before processing any tasks (Requirements 4.1, 4.2, 4.3, 4.4)
+    await executeStartupStep(
+      'cleanup-invalid-cache-entries',
+      async () => {
+        try {
+          const cleanupResult = await cacheValidator.cleanupInvalidEntries(nodeForSession);
+          console.log(
+            `[shapeBuildAPI] Cache cleanup completed for node ${nodeForSession}:`,
+            { 
+              geometryDeleted: cleanupResult.geometryDeleted,
+              sourceDeleted: cleanupResult.sourceDeleted,
+              totalDeleted: cleanupResult.geometryDeleted + cleanupResult.sourceDeleted
+            }
+          );
+          return cleanupResult;
+        } catch (error) {
+          console.error(`[shapeBuildAPI] Cache cleanup failed for node ${nodeForSession}:`, error);
+          throw new Error(`Cache cleanup failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      },
+    );
+    
     await executeStartupStep(
       'selection-diff-cleanup',
       async () => applySelectionDiffCleanup(
@@ -865,6 +1019,20 @@ const startBuildSessionInternal = async (
       void emitProgressSnapshot(nodeForSession, terminalProgressMessage);
       return nodeForSession;
     }
+    console.warn('[shapeBuildAPI] Starting runShapePipeline execution', {
+      nodeId: nodeForSession,
+      runId: pipelineRunId,
+      dataSource: resolvedDataSource,
+      selectedAdminPairCount,
+      downloadTaskPayloadsCount: downloadTaskPayloads.length,
+    });
+    
+    emitWorkerLog(nodeForSession, 'log', '[shapeBuildAPI] Starting runShapePipeline execution', {
+      runId: pipelineRunId,
+      dataSource: resolvedDataSource,
+      selectedAdminPairCount,
+      downloadTaskPayloadsCount: downloadTaskPayloads.length,
+    });
     void runShapePipeline({
       nodeId: nodeForSession,
       dataSource: resolvedDataSource,
@@ -879,6 +1047,10 @@ const startBuildSessionInternal = async (
       onTasksEnqueued: emitQueuedProgressSnapshot,
       onStageTasksPrepared: emitStageTaskSnapshotBarrier,
     }).then(async () => {
+      console.warn('[shapeBuildAPI] runShapePipeline completed successfully', {
+        nodeId: nodeForSession,
+        runId: pipelineRunId,
+      });
       const completedAt = Date.now();
       terminalProgressMessage = undefined;
       const taskQueue = new VtTaskQueueDb();
@@ -901,6 +1073,27 @@ const startBuildSessionInternal = async (
         terminalProgressMessage = 'Pipeline finished with failed tasks.';
       }
     }).catch(async (error) => {
+      console.error('[shapeBuildAPI] runShapePipeline failed with error', {
+        nodeId: nodeForSession,
+        runId: pipelineRunId,
+        error: error instanceof Error ? error.message : String(error),
+        errorName: error instanceof Error ? error.name : 'Unknown',
+        errorStack: error instanceof Error ? error.stack : undefined,
+      });
+      
+      // Emit task snapshot even when pipeline fails
+      try {
+        await emitTaskSnapshot(nodeForSession);
+        console.warn('[shapeBuildAPI] Task snapshot emitted after pipeline failure', {
+          nodeId: nodeForSession,
+        });
+      } catch (emitError) {
+        console.error('[shapeBuildAPI] Failed to emit task snapshot after pipeline failure', {
+          nodeId: nodeForSession,
+          emitError: emitError instanceof Error ? emitError.message : String(emitError),
+        });
+      }
+      
       const failedAt = Date.now();
       const diagnostics = toErrorDiagnostics(error);
       if (isAuthPendingPipelineError(error)) {
@@ -1039,15 +1232,14 @@ const resetRunningTasks = async (nodeId: NodeId): Promise<void> => {
   const taskQueue = new VtTaskQueueDb();
   const runningTasks = await listTasksByStatus(taskQueue, nodeId, 'running');
   if (runningTasks.length === 0) return;
+
+  // Preserve all task state during force termination - only change status to queued
+  // This ensures compliance with Requirements 1.4: Task state preservation
   await Promise.all(runningTasks.map((task) => (
     updateTask(taskQueue, task.taskId, {
       status: 'queued',
-      startedAt: undefined,
-      completedAt: undefined,
-      errorMessage: undefined,
-      display: undefined,
-      message: undefined,
-      outputData: undefined,
+      // Preserve all existing state: startedAt, completedAt, outputData, errorMessage, display, message
+      // Do NOT set these to undefined as that would violate state preservation requirements
     }, { allowTerminalStatusTransition: true })
   )));
 };

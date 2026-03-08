@@ -6,6 +6,8 @@ const useForkPool = process.env.SHAPE_VITEST_POOL === 'forks';
 const includeDeepTests = process.env.ENABLE_SHAPE_DEEP_TESTS === '1';
 const explicitlyRequestedWflTest = process.argv.some((arg) => arg.includes('__tests__/wfl/'));
 const includeWflTests = includeDeepTests || explicitlyRequestedWflTest;
+const explicitlyRequestedIntegrationTest = process.argv.some((arg) => arg.includes('__tests__/integration/'));
+const includeIntegrationTests = includeDeepTests || explicitlyRequestedIntegrationTest;
 
 export default defineConfig({
   test: {
@@ -16,17 +18,17 @@ export default defineConfig({
     pool: useForkPool ? 'forks' : 'threads',
     poolOptions: useForkPool
       ? {
-          forks: {
-            singleFork: true,
-            execArgv: ['--max-old-space-size=8192'],
-          },
-        }
-      : {
-          threads: {
-            minThreads: 1,
-            maxThreads: 1,
-          },
+        forks: {
+          singleFork: true,
+          execArgv: ['--max-old-space-size=8192'],
         },
+      }
+      : {
+        threads: {
+          minThreads: 1,
+          maxThreads: 1,
+        },
+      },
     include: [
       'src/**/*.test.ts',
       'src/**/*.test.tsx',
@@ -35,7 +37,7 @@ export default defineConfig({
     exclude: [
       'src/**/migration/**',
       ...(includeWflTests ? [] : ['src/**/__tests__/wfl/**']),
-      'src/**/__tests__/integration/**',
+      ...(includeIntegrationTests ? [] : ['src/**/__tests__/integration/**']),
       'src/services/workers/__tests__/**',
       'src/services/**/__tests__/**',
       'src/worker/**/__tests__/**',

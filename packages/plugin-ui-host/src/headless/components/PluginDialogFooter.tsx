@@ -88,7 +88,8 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
   // console.count('PluginDialogFooter render');
   const { t } = useTranslation('common');
   const location = useLocation();
-  const commitLabel = t('dialogs.pluginDialog.buttons.save', 'Save');
+  const i18nBasePath = 'dialogs.pluginDraft.pluginDialog';
+  const commitLabel = t(`${i18nBasePath}.buttons.save`, 'Save');
   const {
     ctx,
     isResourcesTree,
@@ -185,11 +186,11 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
   const leftPrimaryLabel =
     primaryButtonOptions?.leftLabelOverride ??
     (isFirstStep
-      ? t('dialogs.pluginDialog.buttons.cancel', 'Cancel')
-      : t('dialogs.pluginDialog.buttons.back', 'Back'));
+      ? t(`${i18nBasePath}.buttons.cancel`, 'Cancel')
+      : t(`${i18nBasePath}.buttons.back`, 'Back'));
   const rightPrimaryLabel =
     primaryButtonOptions?.rightLabelOverride ??
-    (isLastStep ? commitLabel : t('dialogs.pluginDialog.buttons.next', 'Next'));
+    (isLastStep ? commitLabel : t(`${i18nBasePath}.buttons.next`, 'Next'));
   const leftPrimaryIcon = isFirstStep ? (
     <CloseIcon fontSize="small" />
   ) : (
@@ -366,6 +367,9 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
                 disabled={disableLeftPrimary}
                 loading={pendingAction?.type === leftActionType}
                 startIcon={leftPrimaryIcon}
+                id="dialog-footer-back-cancel-button"
+                role="button"
+                aria-label={leftPrimaryLabel || undefined}
               >
                 {leftPrimaryLabel}
               </LoadingButton>
@@ -374,7 +378,7 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
               <Tooltip
                 title={
                   disableDraftButton
-                    ? t('dialogs.pluginDialog.tooltips.saveDraftDisabled', 'No changes to save')
+                    ? t(`${i18nBasePath}.tooltips.saveDraftDisabled`, 'No changes to save')
                     : ''
                 }
                 disableHoverListener={!disableDraftButton}
@@ -388,8 +392,11 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
                     disabled={disableDraftButton}
                     loading={pendingAction?.type === 'save-draft'}
                     endIcon={<CheckIcon fontSize="small" />}
+                    id="dialog-footer-save-draft-button"
+                    role="button"
+                    aria-label={(saveDraftLabel ?? t(`${i18nBasePath}.buttons.saveDraft`, 'Save Draft')) || undefined}
                   >
-                    {saveDraftLabel ?? t('dialogs.pluginDialog.buttons.saveDraft', 'Save Draft')}
+                    {saveDraftLabel ?? t(`${i18nBasePath}.buttons.saveDraft`, 'Save Draft')}
                   </LoadingButton>
                 </span>
               </Tooltip>
@@ -416,8 +423,15 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
                 disabled={!canStartBuild || isStartingBuild || hasPendingAction}
                 loading={isStartingBuild}
                 endIcon={<ConstructionIcon fontSize="small" />}
+                id="dialog-footer-start-build-button"
+                role="button"
+                aria-label={(isStartingBuild 
+                  ? t(`${i18nBasePath}.buttons.building`, 'Building…') 
+                  : t(`${i18nBasePath}.buttons.build`, 'Build')) || undefined}
               >
-                {isStartingBuild ? 'Building…' : 'Build'}
+                {isStartingBuild 
+                  ? t(`${i18nBasePath}.buttons.building`, 'Building…') 
+                  : t(`${i18nBasePath}.buttons.build`, 'Build')}
               </LoadingButton>
             )}
           </Box>
@@ -457,6 +471,9 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
                 disabled={disableRightPrimary}
                 loading={pendingAction?.type === rightActionType}
                 endIcon={<ChevronRightIcon fontSize="small" />}
+                id="dialog-footer-next-button"
+                role="button"
+                aria-label={rightPrimaryLabel || undefined}
               >
                 {rightPrimaryLabel}
               </LoadingButton>
@@ -492,19 +509,19 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
           <ListItemIcon>
             <OpenInNewIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Open In New Tab</ListItemText>
+          <ListItemText>{t(`${i18nBasePath}.contextMenu.openInNewTab`, 'Open In New Tab')}</ListItemText>
         </MenuItem>
         <MenuItem onClick={openInNewWindow}>
           <ListItemIcon>
             <OpenInNewOffIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Open In New Window</ListItemText>
+          <ListItemText>{t(`${i18nBasePath}.contextMenu.openInNewWindow`, 'Open In New Window')}</ListItemText>
         </MenuItem>
         <MenuItem onClick={copyLinkUrl}>
           <ListItemIcon>
             <ContentCopyIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Copy Link URL</ListItemText>
+          <ListItemText>{t(`${i18nBasePath}.contextMenu.copyLinkUrl`, 'Copy Link URL')}</ListItemText>
         </MenuItem>
       </DialogSafeMenu>
     </>

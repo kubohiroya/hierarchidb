@@ -29,51 +29,54 @@ export type BuildControlMenuItem = {
   disabled?: boolean;
 };
 
-export interface BuildStepPanelProps {
-  status: BuildStatus;
-  overallProgress: number;
-  stages: BuildStage[];
-  stageProgress?: Record<string, number>;
-  paneProgress?: PaneProgress[];
-  tasksByStageForDisplay?: Record<string, unknown[]>;
-  stageConcurrencyIndicators?: Record<string, { maxConcurrent: number; isRunning: boolean }>;
-  onStageConcurrencyIndicatorClick?: (stageId: string, event: ReactMouseEvent<HTMLElement>) => void;
-  stageConcurrencyIndicatorAriaLabels?: Record<string, string>;
-  stageLeadingControls?: Record<string, ReactNode>;
-  stageMenus?: Record<string, BuildStepStageMenu>;
-  stageHeaderMeta?: Record<string, ReactNode>;
-  splitViewBreakpoints?: number[];
-  splitViewInitialSizesByBreakpoint?: number[][];
-  splitViewAutoCloseCountsByBreakpoint?: number[];
-  stageContents?: Record<string, ReactNode>;
-  stageProgressContent?: Record<string, ReactNode>;
-  stageLoadingState?: Record<string, boolean>;
-  chipPlacement?: 'header' | 'belowProgress';
-  onPause?: () => void;
-  onResume?: () => void;
-  onCancel?: () => void;
-  onComplete?: () => void;
-  controlHeaderIcon?: ReactNode;
-  controlLabel?: string;
-  pauseLabel?: string;
-  cancelLabel?: string;
-  stopRequested?: boolean;
-  startPending?: boolean;
-  startLabel?: string;
-  resumeLabel?: string;
-  showResumeLabel?: boolean;
-  startIcon?: ReactNode;
-  resumeIcon?: ReactNode;
-  statusLabel?: string;
-  statusContent?: ReactNode;
-  suppressStatusFallback?: boolean;
-  controlDetails?: BuildControlDetail[];
-  controlRightContent?: ReactNode;
-  controlMenuItems?: BuildControlMenuItem[];
-  controlMenuAriaLabel?: string;
-  controlMenuDisabled?: boolean;
-  startLoading?: boolean;
-}
+export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
+  status,
+  overallProgress,
+  stages,
+  stageProgress = {},
+  paneProgress,
+  stageConcurrencyIndicators,
+  onStageConcurrencyIndicatorClick,
+  stageConcurrencyIndicatorAriaLabels,
+  stageLeadingControls,
+  stageMenus,
+  stageHeaderMeta,
+  splitViewBreakpoints,
+  splitViewInitialSizesByBreakpoint,
+  splitViewAutoCloseCountsByBreakpoint,
+  stageContents,
+  stageProgressContent,
+  stageLoadingState,
+  tasksByStageForDisplay = {},
+  chipPlacement,
+  onPause,
+  onResume,
+  onCancel,
+  onComplete,
+  controlHeaderIcon,
+  controlLabel,
+  pauseLabel,
+  cancelLabel,
+  stopRequested,
+  startPending,
+  startLabel,
+  resumeLabel,
+  showResumeLabel,
+  startIcon,
+  resumeIcon,
+  statusLabel,
+  statusContent,
+  suppressStatusFallback,
+  controlDetails,
+  controlRightContent,
+  controlMenuItems,
+  controlMenuAriaLabel,
+  controlMenuDisabled,
+  startLoading,
+  resetDeleteMenuItems,
+  resetDeleteMenuAriaLabel,
+  resetDeleteMenuDisabled,
+}) => {
 
 export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   status,
@@ -365,6 +368,9 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
           resumeIcon={resumeIcon}
           details={controlDetails}
           startLoading={startLoading}
+          resetDeleteMenuItems={resetDeleteMenuItems}
+          resetDeleteMenuAriaLabel={resetDeleteMenuAriaLabel}
+          resetDeleteMenuDisabled={resetDeleteMenuDisabled}
         />
         {controlRightContent ? (
           <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
@@ -401,3 +407,5 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
     </Box>
   );
 };
+
+}

@@ -1,17 +1,15 @@
 /**
- * Worker API execution runtime assembly for Shape plugin.
+ * Internal execution API assembly for shape build runtime.
  *
  * - shapeBuildRuntimeExecutionControl: control commands and execution orchestration.
- * - shapeBuildRuntimeExecutionMetrics: session state, progress, and events aggregation.
+ * - shapeBuildRuntimeCore: session state, progress, and events aggregation.
  * This module merges both responsibilities into the runtime API surface used by API assembly.
  */
 
 import { shapeBuildRuntimeExecutionControl } from './shapeBuildRuntimeExecutionControl.js';
-import { shapeBuildRuntimeExecutionMetrics } from './shapeBuildRuntimeExecutionMetrics.js';
+import * as shapeBuildRuntimeCore from './shapeBuildRuntimeCore.js';
 
 export const shapeBuildRuntime = {
-  ...shapeBuildRuntimeExecutionMetrics,
+  ...shapeBuildRuntimeCore,
   ...shapeBuildRuntimeExecutionControl,
 } as const;
-
-export type ShapeBuildRuntime = typeof shapeBuildRuntime;

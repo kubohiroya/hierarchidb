@@ -48,6 +48,14 @@
 - `src` 配下への `*.js` / `*.js.map` 生成（出力先は `dist` のみ）。
 - non-null assertion（`!`）の使用。
 - 互換目的の型混在・フォールバック分岐。
+- Git操作でのエディタ待機（Kiro環境では別画面で見えないため）。
+
+## Git操作ルール（Kiro環境対応）
+
+- 必須: `git merge --no-edit` または `git merge -m "message"` を使用。
+- 必須: `git commit -m "message"` を使用（メッセージ未指定禁止）。
+- 禁止: エディタ起動を伴うGit操作（`git merge`, `git commit`, `git rebase -i` 等のメッセージ未指定）。
+- 理由: Kiro環境ではエディタが別画面で開かれ、ユーザーに見えずUI混乱を招く。
 
 ## 実装ルール（要点）
 

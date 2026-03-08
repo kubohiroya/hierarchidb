@@ -26,6 +26,7 @@ import type {
   ShapeVectorTileRecord,
   ShapeTileEmitMetadata,
 } from '@hierarchidb/shape-api';
+import type { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import {
   storeRawDataDataSourceBufferForNode,
 } from '~/services/utils/chunkStore';
@@ -605,6 +606,13 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
     }
     return merged;
   }
+
+  subscribeToWorkerLog(_nodeId: NodeId, _callback: (event: { level: 'log' | 'warn' | 'error'; message: string; data?: any; timestamp: number }) => void): () => void {
+    // This method is implemented on the UI side and should not directly call worker API
+    // The actual subscription is handled by the WorkerBridge
+    console.warn('[ShapeQueryAPIImpl] subscribeToWorkerLog called on UI side - this should be handled by WorkerBridge');
+    return () => {}; // Return empty unsubscribe function
+  }
 }
 
 export class ShapeMutationAPIImpl implements ShapeMutationAPI {
@@ -792,9 +800,16 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
       })
     )));
   }
-  async putGeometryCaches(buffers: ShapeGeometryCache[]): Promise<void> {
+  async putGeometryCaches(buffers: ShapeGeometryCache[], taskId?: string, taskQueue?: VtTaskQueueDb): Promise<void> {
     if (buffers.length === 0) return;
     assertNonEmptyGeometryCacheBuffers(buffers);
+
+    // Validate cache write is allowed if taskId and taskQueue are provided
+    if (taskId && taskQueue) {
+      const { validateCacheWriteAllowed } = await import('../../worker/api/cacheWriteValidation');
+      await validateCacheWriteAllowed(taskQueue, taskId, 'geometry');
+    }
+
     const pending = buffers.map((buffer) => ({ ...buffer, timestamp: 0 }));
     await ephemeralDB.transaction('rw', [ephemeralDB.geometryCache, ephemeralDB.geometryCacheMeta], async () => {
       await ephemeralDB.geometryCache.bulkPut(pending);
