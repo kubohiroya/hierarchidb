@@ -2,9 +2,17 @@
 
 ## Doing
 
+- #894 / feature/ui/shape-step5-button-group-menu / start
+
 ## Blocked
 
 ## 今日の運用ログ
+
+- 2025-03-08: #907 shape-pluginビルドエラー修正完了・PR #908マージ完了
+  - マージコンフリクトマーカー除去（useShapeBuildSessionStateAtomBridge.ts）
+  - 構文エラー修正（runShapePipeline.ts: console.warn関数呼び出し追加）
+  - 68個のビルドエラーを全て解決
+  - 型チェック成功確認（exit code 0）
 
 - 2025-03-08: #903 Worker-UIログ出力簡素化によるパフォーマンス改善完了
   - emitWorkerLogとemitCriticalError関数削除

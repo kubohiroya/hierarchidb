@@ -214,7 +214,8 @@
       "rollup": "4.59.0"
     },
     "ignoredBuiltDependencies": [
-      "core-js",
+      "@vaadin/vaadin-usage-statistics",
+      "better-sqlite3",
       "esbuild",
       "sharp",
       "workerd"

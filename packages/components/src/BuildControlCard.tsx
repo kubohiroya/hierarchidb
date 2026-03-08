@@ -1,10 +1,12 @@
-import { Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
-import { type ReactNode } from 'react';
+import { Box, Button, ButtonGroup, CircularProgress, Divider, Menu, MenuItem, Stack, Typography } from '@mui/material';
+import { type ReactNode, useState, useEffect } from 'react';
 import { LoadingButton } from './LoadingButton.js';
 import ClearIcon from '@mui/icons-material/Clear';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import TimelapseIcon from '@mui/icons-material/Timelapse';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import type { BuildControlDetail } from './BuildStepPanel.tsx';
 import type { BuildStatus } from './build-status/BuildStatus.ts';
 
@@ -24,6 +26,9 @@ type BuildControlCardProps = {
   resumeIcon?: ReactNode;
   details?: BuildControlDetail[];
   startLoading?: boolean;
+  resetDeleteMenuItems?: Array<{ id: string; label: string; onClick: () => void; disabled?: boolean; icon?: ReactNode }>;
+  resetDeleteMenuAriaLabel?: string;
+  resetDeleteMenuDisabled?: boolean;
 };
 
 export const BuildControlCard: React.FC<BuildControlCardProps> = ({
@@ -42,7 +47,11 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
   resumeIcon,
   details,
   startLoading,
+  resetDeleteMenuItems,
+  resetDeleteMenuAriaLabel,
+  resetDeleteMenuDisabled,
 }) => {
+  const [resetDeleteMenuAnchorEl, setResetDeleteMenuAnchorEl] = useState<HTMLElement | null>(null);
   const pauseSpinner = (
     <CircularProgress
       size={16}
@@ -67,6 +76,37 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
   const disableCancel = !onCancel || !isQueued || stopRequested;
   const isLoading = hasLoading && !stopRequested;
 
+  // Reset/Delete menu handlers
+  const hasResetDeleteMenuItems = (resetDeleteMenuItems?.length ?? 0) > 0;
+  const resetDeleteMenuOpen = Boolean(resetDeleteMenuAnchorEl);
+  const resetDeleteMenuDisabledState = Boolean(resetDeleteMenuDisabled)
+    || Boolean(startPending)
+    || Boolean(startLoading)
+    || !hasResetDeleteMenuItems;
+
+  const handleResetDeleteMenuOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setResetDeleteMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleResetDeleteMenuClose = () => {
+    setResetDeleteMenuAnchorEl(null);
+  };
+
+  useEffect(() => {
+    if (resetDeleteMenuDisabledState && resetDeleteMenuAnchorEl) {
+      setResetDeleteMenuAnchorEl(null);
+    }
+  }, [resetDeleteMenuAnchorEl, resetDeleteMenuDisabledState]);
+
+  const handleResetDeleteMenuItemClick = (item: { id: string; label: string; onClick: () => void; disabled?: boolean; icon?: ReactNode }) => {
+    item.onClick();
+    handleResetDeleteMenuClose();
+  };
+
+  // Show Cancel button when session is running, Reset/Delete menu when stopped
+  const showCancelButton = isRunning || isQueued;
+  const showResetDeleteMenu = !showCancelButton && hasResetDeleteMenuItems;
+
   return (
     <Box
       sx={{
@@ -88,47 +128,92 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
       }}
     >
       <Stack direction="row" spacing={1} alignItems="center" sx={{ whiteSpace: 'nowrap' }}>
-        <LoadingButton
-          color="secondary"
-          variant="contained"
-          size="small"
-          endIcon={computedIcon}
-          disabled={disableStart}
-          onClick={onResume}
-          loading={isLoading}
-          data-testid="build-control-start-resume-button"
-          aria-label={computedLabel}
-          id="build-control-start-button"
-          role="button"
-        >
-          {computedLabel}
-        </LoadingButton>
-        <Button
-          variant="outlined"
-          size="small"
-          endIcon={computedPauseIcon}
-          disabled={disablePause}
-          onClick={onPause}
-          data-testid="build-control-pause-button"
-          aria-label={pauseLabel ?? 'Pause'}
-          id="build-control-pause-button"
-          role="button"
-        >
-          {pauseLabel ?? 'Pause'}
-        </Button>
-        <Button
-          variant="outlined"
-          size="small"
-          endIcon={computedCancelIcon}
-          disabled={disableCancel}
-          onClick={onCancel}
-          data-testid="build-control-cancel-button"
-          aria-label={cancelLabel ?? 'Cancel'}
-          id="build-control-cancel-button"
-          role="button"
-        >
-          {cancelLabel ?? 'Cancel'}
-        </Button>
+        <ButtonGroup variant="contained" size="small">
+          <LoadingButton
+            color="secondary"
+            endIcon={computedIcon}
+            disabled={disableStart}
+            onClick={onResume}
+            loading={isLoading}
+            data-testid="build-control-start-resume-button"
+            aria-label={computedLabel}
+            id="build-control-start-button"
+            role="button"
+          >
+            {computedLabel}
+          </LoadingButton>
+          <Button
+            color="secondary"
+            endIcon={computedPauseIcon}
+            disabled={disablePause}
+            onClick={onPause}
+            data-testid="build-control-pause-button"
+            aria-label={pauseLabel ?? 'Pause'}
+            id="build-control-pause-button"
+            role="button"
+          >
+            {pauseLabel ?? 'Pause'}
+          </Button>
+        </ButtonGroup>
+        
+        {showCancelButton ? (
+          <Button
+            variant="outlined"
+            size="small"
+            endIcon={computedCancelIcon}
+            disabled={disableCancel}
+            onClick={onCancel}
+            data-testid="build-control-cancel-button"
+            aria-label={cancelLabel ?? 'Cancel'}
+            id="build-control-cancel-button"
+            role="button"
+          >
+            {cancelLabel ?? 'Cancel'}
+          </Button>
+        ) : showResetDeleteMenu ? (
+          <>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<RestartAltIcon fontSize="small" />}
+              endIcon={<ArrowDropDownIcon fontSize="small" />}
+              disabled={resetDeleteMenuDisabledState}
+              onClick={handleResetDeleteMenuOpen}
+              data-testid="build-control-reset-delete-button"
+              aria-label={resetDeleteMenuAriaLabel ?? 'Reset/Delete menu'}
+              id="build-control-reset-delete-button"
+              role="button"
+            >
+              Reset/Delete
+            </Button>
+            <Menu
+              anchorEl={resetDeleteMenuAnchorEl}
+              open={resetDeleteMenuOpen}
+              onClose={handleResetDeleteMenuClose}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+              {resetDeleteMenuItems?.map((item) => 
+                item.label === '---' ? (
+                  <Divider key={item.id} />
+                ) : (
+                  <MenuItem
+                    key={item.id}
+                    onClick={() => handleResetDeleteMenuItemClick(item)}
+                    disabled={item.disabled}
+                  >
+                    {item.icon && (
+                      <Box sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
+                        {item.icon}
+                      </Box>
+                    )}
+                    {item.label}
+                  </MenuItem>
+                )
+              )}
+            </Menu>
+          </>
+        ) : null}
       </Stack>
       {details && details.length > 0 ? (
         <Stack direction="row" spacing={2} alignItems="center" sx={{ whiteSpace: 'nowrap' }}>
