@@ -152,7 +152,9 @@
           "maximize": "Maximize",
           "restoreSize": "Restore",
           "fullscreen": "Full screen",
-          "exitFullscreen": "Exit full screen"
+          "exitFullscreen": "Exit full screen",
+          "build": "Build",
+          "building": "Building…"
         },
         "tooltips": {
           "saveDraftDisabled": "No changes to save",
@@ -161,6 +163,11 @@
           "restoreSize": "Restore",
           "fullscreen": "Full screen",
           "exitFullscreen": "Exit full screen"
+        },
+        "contextMenu": {
+          "openInNewTab": "Open In New Tab",
+          "openInNewWindow": "Open In New Window",
+          "copyLinkUrl": "Copy Link URL"
         }
       }
     },

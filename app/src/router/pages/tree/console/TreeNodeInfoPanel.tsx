@@ -308,6 +308,8 @@ export function TreeNodeInfoPanel({
             onClick={() => handleContextMenuTrigger('edit')}
             disabled={!canMutate}
             aria-label={labels.editAria}
+            id="tree-node-edit-button"
+            role="button"
           >
             {labels.editLabel}
           </Button>
@@ -318,6 +320,8 @@ export function TreeNodeInfoPanel({
               onClick={handleBuild}
               aria-label={labels.buildAria}
               disabled={buildTargetLoading || isBuildRequired === false}
+              id="tree-node-build-button"
+              role="button"
             >
               {labels.buildLabel}
             </Button>
@@ -328,6 +332,8 @@ export function TreeNodeInfoPanel({
             onClick={() => handleContextMenuTrigger('preview')}
             aria-label={labels.previewAria}
             disabled={!isVisible || !canPreview || previewGuardLoading}
+            id="tree-node-preview-button"
+            role="button"
           >
             {labels.previewLabel}
           </Button>

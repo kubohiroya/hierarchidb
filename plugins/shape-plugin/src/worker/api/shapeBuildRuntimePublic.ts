@@ -1,25 +1,23 @@
 /**
- * Public-facing worker API runtime facade responsibilities.
+ * Public API surface for shape build runtime.
  * Keeps only the methods that are consumed by API surface callers.
  */
-import { shapeBuildRuntimeExecutionMetrics } from './shapeBuildRuntimeExecutionMetrics.js';
+import * as shapeBuildRuntimeCore from './shapeBuildRuntimeCore.js';
 
 export const shapeBuildRuntimePublic = {
-  getBuildSessionInternal: shapeBuildRuntimeExecutionMetrics.getBuildSessionInternal,
-  ensureTaskQueueSeeded: shapeBuildRuntimeExecutionMetrics.ensureTaskQueueSeeded,
-  mapTaskQueueRecordToTaskSummary: shapeBuildRuntimeExecutionMetrics.mapTaskQueueRecordToTaskSummary,
-  buildTaskQueueSummary: shapeBuildRuntimeExecutionMetrics.buildTaskQueueSummary,
-  getPauseState: shapeBuildRuntimeExecutionMetrics.getPauseState,
-  listTasks: shapeBuildRuntimeExecutionMetrics.listTasks,
-  getShapeEntityHandler: shapeBuildRuntimeExecutionMetrics.getShapeEntityHandler,
-  onTaskQueueUpdate: shapeBuildRuntimeExecutionMetrics.onTaskQueueUpdate,
-  buildTaskSummarySnapshot: shapeBuildRuntimeExecutionMetrics.buildTaskSummarySnapshot,
-  progressCallbacks: shapeBuildRuntimeExecutionMetrics.progressCallbacks,
-  taskCallbacks: shapeBuildRuntimeExecutionMetrics.taskCallbacks,
-  sessionStateCallbacks: shapeBuildRuntimeExecutionMetrics.sessionStateCallbacks,
-  stageSnapshotCallbacks: shapeBuildRuntimeExecutionMetrics.stageSnapshotCallbacks,
-  heartbeatCallbacks: shapeBuildRuntimeExecutionMetrics.heartbeatCallbacks,
-  taskProgressCallbacks: shapeBuildRuntimeExecutionMetrics.taskProgressCallbacks,
+  getBuildSessionInternal: shapeBuildRuntimeCore.getBuildSessionInternal,
+  ensureTaskQueueSeeded: shapeBuildRuntimeCore.ensureTaskQueueSeeded,
+  mapTaskQueueRecordToTaskSummary: shapeBuildRuntimeCore.mapTaskQueueRecordToTaskSummary,
+  buildTaskQueueSummary: shapeBuildRuntimeCore.buildTaskQueueSummary,
+  getPauseState: shapeBuildRuntimeCore.getPauseState,
+  listTasks: shapeBuildRuntimeCore.listTasks,
+  getShapeEntityHandler: shapeBuildRuntimeCore.getShapeEntityHandler,
+  onTaskQueueUpdate: shapeBuildRuntimeCore.onTaskQueueUpdate,
+  buildTaskSummarySnapshot: shapeBuildRuntimeCore.buildTaskSummarySnapshot,
+  progressCallbacks: shapeBuildRuntimeCore.progressCallbacks,
+  taskCallbacks: shapeBuildRuntimeCore.taskCallbacks,
+  sessionStateCallbacks: shapeBuildRuntimeCore.sessionStateCallbacks,
+  stageSnapshotCallbacks: shapeBuildRuntimeCore.stageSnapshotCallbacks,
+  heartbeatCallbacks: shapeBuildRuntimeCore.heartbeatCallbacks,
+  taskProgressCallbacks: shapeBuildRuntimeCore.taskProgressCallbacks,
 } as const;
-
-export type ShapeBuildRuntimePublic = typeof shapeBuildRuntimePublic;

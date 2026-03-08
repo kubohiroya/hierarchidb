@@ -1,10 +1,6 @@
 {
   "extends": "./tsconfig.base.json",
-  "references": [
-    {
-      "path": "./app"
-    }
-  ],
+  "references": [],
   "compilerOptions": {
     "downlevelIteration": false,
     "target": "es2022",

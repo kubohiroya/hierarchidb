@@ -1,217 +1,103 @@
-# 運用ハブ
+# TASKS.md
 
 ## Doing
-- #823 / codex/debug/worker-token-request-detailed-logging-823 / 2026-03-06 17:55
-- #822 / codex/debug/worker-ui-token-request-debug-822 / 2026-03-06 15:30
-- #821 / codex/fix/auth/worker-token-access-debug-821 / 2026-03-06 15:07
-- #820 / codex/debug/worker-ui-token-request-820 / 2026-03-06 15:07
-- #804 / codex/fix/shape/receiving-task-snapshot-timeout-804 / 2026-03-06 03:14
-- #802 / codex/fix/shape/receiving-task-snapshot-unknown-taskid-802 / 2026-03-06 03:04
-- #799 / codex/fix/vt-orchestrator/transform-by-band-type-contracts-799-r2 / 2026-03-06 02:56
-- #796 / codex/fix/shape/geometry-detail-tolerance-retry-stale-796 / 2026-03-06 01:49
-- #791 / codex/fix/app/shape-create-maximize-deeplink-791 / 2026-03-06 01:31
-- #790 / codex/fix/shape/receiving-task-snapshot-handshake-790 / 2026-03-06 09:34
-- #788 / fix/app/vite-initial-access-reload-loop-788 / 2026-03-05 23:19
-- #787 / codex/fix/ui/jotai-family-migration-787 / 2026-03-05 23:08
-- #784 / codex/test/shape/build-session-pubsub-ui-transitions-784 / 2026-03-04 23:52
-- #783 / codex/refactor/gis-sdk/build-session-configs-table-783 / 2026-03-04 23:37
-- #782 / codex/docs/runtime-worker/build-session-orchestrator-4table-782 / 2026-03-04 23:09
-- #778 / codex/fix/shape/tbase-retry-cap-recheck-778 / 2026-03-04 18:31
-- #765 / codex/feat/shape/preview-admin-subtile-guides-765 / 2026-03-04 15:12
-- #763 / codex/fix/shape/step5-preview-metrics-consistency-763 / 2026-03-04 13:56
-- #761 / codex/fix/app/shape-edit-window-mode / 2026-03-04 13:18
-- #757 / codex/feat/shape/session-driven-base-tolerance-757 / 2026-03-04 11:52
-- #758 / codex/fix/shape/step5-full-mode-preview-stability-758 / 2026-03-04 12:32
-- #755 / codex/fix/session/worker-state-consistency-755 / 2026-03-04 11:34
-- #753 / codex/fix/session/archive-build-session-consistency / 2026-03-04 11:23
-- #750 / codex/fix/shape-plugin/geometry-retrymax-contract / 2026-03-04 11:08
-- #747 / fix/shape-plugin/taskitemcard-status-narrowing / 2026-03-04 10:48
-- #745 / fix/shape/step5-preview-metrics / 2026-03-04 10:58
-- #744 / codex/fix/location-plugin/build-dts-entry-resolution / 2026-03-04 09:45
-- #743 / codex/fix/shape-plugin/build-import-resolution / 2026-03-04 09:37
-- #740 / codex/fix/runtime-worker-test-unblock-740 / 2026-03-04 08:59
-- #739 / codex/fix/ui/review-followups-739 / 2026-03-04 10:30
-- #737 / codex/refactor/split-multi-primary-export-files / 2026-03-04 08:36
-- #735 / codex/refactor/primary-export-filename-alignment-full / 2026-03-04 08:24
-- #733 / codex/refactor/packages-plugins-ts-file-naming-guideline-apply / 2026-03-04 07:56
-- #731 / codex/refactor/app-ts-file-naming-guideline-apply / 2026-03-04 07:50
-- #728 / codex/refactor/packages-ts-file-naming-guideline / 2026-03-04 07:44
-- #726 / codex/docs/app-ts-naming-guideline-note / 2026-03-04 07:39
-- #724 / codex/docs/ts-file-naming-guideline / 2026-03-04 07:19
-- #722 / codex/refactor/shape-plugin-tsx-hook-separation / 2026-03-04 02:24
-- #705 / codex/refactor/ui-p2-p3-hook-extract-batch / 2026-03-04 01:18
-- #705 / codex/refactor/ui-p1-hook-extract-batch / 2026-03-04 00:52
-- #713 / codex/refactor/ui/hook-cleanup-followup / 2026-03-04 00:01
-- #711 / codex/fix/shape/pause-session-ref-sync / 2026-03-03 23:45
-- #705 / codex/refactor/ui-extract-logic-hooks / 2026-03-03 20:25
-- #708 / codex/chore/ci-build-checks-separation / 2026-03-03 22:10
 
 ## Blocked
-- Issue #799: `pnpm install --frozen-lockfile` が pnpm 内部エラー（`Cannot use 'in' operator to search for 'directory' in undefined`）で失敗し、worktree 上で `typecheck/build:types` の依存解決が不能（解除条件: install エラー原因の解消後に `pnpm --filter @hierarchidb/vt-orchestrator typecheck` を再実行）。
-- Issue #796: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は依存先 `@hierarchidb/vt-orchestrator` の既存型エラー（`TransformByBand*` 未解決）で exit 2。解除条件: `@hierarchidb/vt-orchestrator` の既存型エラー解消後に再実行。
-- Issue #791: `pnpm -w turbo run typecheck --filter @hierarchidb/app` は依存先 `@hierarchidb/vt-orchestrator` の既存型エラー（`TransformByBand*` 未解決など）で exit 2。解除条件: `@hierarchidb/vt-orchestrator` の既存型エラー解消後に再実行。
-- Issue #790: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は依存先 `@hierarchidb/vt-orchestrator` の既存型エラー（`TransformByBand*` 未解決）で exit 2。解除条件: `@hierarchidb/vt-orchestrator` の既存型エラー解消後に再実行。
-- Issue #758: `pnpm -C plugins/shape-plugin exec vitest run src/ui/__tests__/components/build-progress/TaskItemCardListCard.unit.test.tsx` が既存失敗（`geometry retryMax is missing`）で exit 1。解除条件: 既存失敗の解消後に再実行。
-- Issue #745: `pnpm -w turbo run test --filter @hierarchidb/shape-plugin` が既存失敗を含み exit 1（主に `useShapeBuildTaskSnapshotProgressState.unit.test.tsx` / `TaskItemCardListCard.unit.test.tsx` / `TaskItemCard i18n-preservation` 系）。解除条件: 既存失敗の切り分けと期待値更新方針を Issue で合意後に再実行。
-- Issue #705 進捗コメント投稿（`gh issue comment 705`）: `api.github.com` 接続不可のため保留（解除条件: ネットワーク復旧後に再実行）
 
 ## 今日の運用ログ
-- 2026-03-06: Issue #819 完了 - Worker側からUI側へのトークン問い合わせ機能の実装が完了し、mainブランチに反映済み。コミット `881b08fc7` でマージ完了。Issue #822のデバッグ強化もコミット `55c99269f` でマージ完了。実装内容: WorkerAPIに`requestAuthToken()`と`setUiTokenRequestCallback()`メソッド追加、workerBootstrapでUI側コールバック管理、WorkerProviderでトークン要求コールバック設定、AuthServiceにWorkerTokenRequestAPI統合。認証エラーは継続中だが、実装は完了済み。
-- 2026-03-06: Issue #822 進捗 - Worker側からUI側へのトークン問い合わせ機能のデバッグログを強化。AuthServiceでWorker環境でのデバッグログを常時有効化、resolveStoredTokenメソッドでタイムスタンプ付き詳細ログ追加、WorkerProviderとworkerBootstrapでIssue #822識別子付きデバッグログ追加。一時ファイル（test-worker-*、vitest.config.ts.timestamp-*、tsup.config.bundled*）を削除し、.gitignoreに一時ファイルパターンを追加。`pnpm -w turbo run typecheck --filter @hierarchidb/auth --filter @hierarchidb/app`と`pnpm -w turbo run build --filter @hierarchidb/auth --filter @hierarchidb/app`は成功（exit 0）。GitHub Pages環境でのデバッグログ可視化を改善。
-- 2026-03-06: Issue #804 進捗 - `useShapeBuildSessionStateAtomBridge` で `getBuildTasks` 初回取得と `subscribeBuildTasks` 開始の間に task 更新を取りこぼすレースを解消するため、購読開始直後に task snapshot を再同期する処理を追加。`pnpm -C plugins/shape-plugin exec vitest run src/ui/__tests__/hooks/unit/resolveReceivingTaskSnapshotDecision.unit.test.ts src/ui/__tests__/hooks/unit/useShapeBuildSessionStateAtomBridge.contract.unit.test.ts` と `pnpm -C plugins/shape-plugin typecheck` は成功（exit 0）。
-- 2026-03-06: Issue #804 開始 - Build session で progress が表示されず `receiving-task-snapshot` が 46s timeout する不具合の修正に着手。
-- 2026-03-06: Issue #802 進捗 - `useShapeBuildSessionStateAtomBridge` の unknown `taskId` 契約を修正し、snapshot 境界より新しい update は新規 task として受理、境界以下の unknown update は契約違反として停止するよう変更。`pnpm -C plugins/shape-plugin exec vitest run src/ui/__tests__/hooks/unit/useShapeBuildSessionStateAtomBridge.contract.unit.test.ts` と `pnpm -C plugins/shape-plugin typecheck` はともに成功（exit 0）。
-- 2026-03-06: Issue #802 開始 - `receiving-task-snapshot` 中に `task update references unknown taskId` で停止する不具合の修正に着手（snapshot 後の新規 task update 受理と version 契約維持を両立）。
-- 2026-03-06: Issue #799 進捗 - 型修正再適用後、`pnpm --filter @hierarchidb/vt-orchestrator typecheck` は `node_modules` 未配置で依存解決エラー多数により失敗（exit 2）。`pnpm --filter @hierarchidb/vt-orchestrator build:types` は `tsconfig` の `noEmit` 競合で失敗（exit 2）。さらに `pnpm install --frozen-lockfile` が pnpm内部エラー（`Cannot use 'in' operator to search for 'directory' in undefined`）で失敗（exit 1）。
-- 2026-03-06: Issue #799 再開 - `main` 未反映を確認したため、Issueを reopen して `Status=In Progress` へ戻し、`codex/fix/vt-orchestrator/transform-by-band-type-contracts-799-r2` で再適用に着手
-- 2026-03-06: Issue #796 開始 - Step5 Geometry Task Result Detail がクリック時スナップショットを保持し続けるため `Base tolerance` / `Initial tolerance` / `Retry attempts` が stale 表示になる不具合を修正。`useTaskItemCardListCardView` を taskId ベース選択へ変更し、detail 表示時に最新 `tasks` から summary を再解決するよう更新。再現テスト `TaskItemCardListCard.unit.test.tsx` に「detail window open中の metadata 更新追従」ケースを追加。`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/TaskItemCardListCard.unit.test.tsx` は成功（exit 0）。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は依存先 `@hierarchidb/vt-orchestrator` 既存型エラーで exit 2（Blocked 記録）。
-- 2026-03-06: Issue #791 進捗 - `usePluginDialogRoute` の mode/step fallback を `pathname` だけでなく `hash` からも解決するよう修正し、basepath 混在経路でも `t` セグメント起点で解析するよう更新。`plugin-dialog-step.unit.test.tsx` に `create + maximize + encoded pageNodeId` と `hash fallback` の再発テストを追加。`pnpm -w turbo run test --filter @hierarchidb/app -- --run src/router/__tests__/unit/plugin-dialog-step.unit.test.tsx` は成功（exit 0, 6 tests passed）。`pnpm -w turbo run typecheck --filter @hierarchidb/app` は依存先 `@hierarchidb/vt-orchestrator` 既存エラーで exit 2（Blockedへ記録）。`pnpm -C app typecheck` は成功（exit 0）。
-- 2026-03-06: Issue #790 進捗 - `receiving-task-snapshot` を snapshot ハンドシェイク起点へ厳密化。`buildSessionSnapshotHandshakeReceivedAtom` を追加し、空 snapshot でも受理シグナルを立てるよう修正。`useShapeBuildSessionStateAtomBridge` に task update 契約チェック（unknown `taskId` 例外停止、`progress.version > snapshotVersionMax` のみ受理、同一 `taskId` version 単調増加適用）と rAF バッファ適用（version順）を実装。worker 側 snapshot イベントへ `version`/`stage` を付与。ユニットテスト `useShapeBuildSessionStateAtomBridge.contract.unit.test.ts` を追加。`pnpm -C plugins/shape-plugin typecheck` と `pnpm -C plugins/shape-plugin exec vitest run src/ui/__tests__/hooks/unit/useShapeBuildSessionStateAtomBridge.contract.unit.test.ts src/ui/__tests__/hooks/unit/resolveReceivingTaskSnapshotDecision.unit.test.ts` は成功（exit 0）。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は既存失敗（`@hierarchidb/vt-orchestrator` の型エラー）で exit 2。
-- 2026-03-05: Issue #788 進捗 - `pluginRegistryGeneratorPlugin` の dev watcher を調整し、chokidar 初期スキャン中の `add` では再生成を走らせず、更新系トリガは `handleHotUpdate` 中心へ整理。`pnpm -C app typecheck` は成功（exit 0）、`pnpm -w turbo run build --filter @hierarchidb/app` は成功（exit 0）。`pnpm -C app dev` は `Port 4200 is already in use` で起動不能だったが、起動ログ上 `generate-plugin-registry` 実行回数は 1 回を確認。
-- 2026-03-05: Issue #787 進捗 - `@hierarchidb/ui-build-sessions` の `atomFamily` import を `jotai/utils` から `jotai-family` へ移行し、`jotai-family` 依存を追加。`jotai-family` の型推論差分で発生した `unknown` を解消するため、`atomFamily` 生成 Atom の型注釈を追加。`pnpm i` と `pnpm -w turbo run typecheck --filter @hierarchidb/ui-build-sessions` は成功（exit 0）。
-- 2026-03-05: Issue #784 進捗 - `ui-worker-client` に `workerBridge.sessionChannels.unit.test.ts` を追加し、`subscribeSessionState` / `subscribeSessionHeartbeat` / `subscribeTaskProgress` の worker→UI コールバック配線と sanitize（bigint→string）を検証。あわせて `subscribeStageSnapshots` が bridge 非公開である現仕様をテスト固定。shape 側統合テストへ「UIが direct task-progress 購読を使わず `sessionState/heartbeat + buildTasks(snapshot/update)` を利用する」ケースを追加。`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/integration/buildSessionPubSubStateTransitions.integration.test.tsx`、`pnpm -w turbo run test --filter @hierarchidb/ui-worker-client -- --run src/__tests__/workerBridge.sessionChannels.unit.test.ts`、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/runtime-worker --filter @hierarchidb/ui-worker-client` は成功（exit 0）。
-- 2026-03-05: Issue #784 進捗 - `buildSessionPubSubStateTransitions.integration.test.tsx` を追加し、session state / heartbeat と task snapshot / task progress の UI 状態遷移を検証。`useShapeBuildSessionState` の再購読ループ（session state受信直後に初期値へ巻き戻る競合）を修正。`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/integration/buildSessionPubSubStateTransitions.integration.test.tsx` と `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/runtime-worker` は成功（exit 0）。
-- 2026-03-04: Issue #784 開始 - Worker→UI の pub/sub 通知（session state / stage snapshot / task progress / heartbeat）で UI 状態遷移が正しく行われることを `build-session-orchestrator-state-transitions.md` 準拠で検証するテスト追加に着手
-- 2026-03-04: Issue #783 進捗 - 方針変更（既存データ破棄前提）に合わせて Dexie migration（v5コピー/v6削除）を撤去し、`buildSessionConfigs` 固定スキーマへ単純化。`packages`/`plugins` ソース上の `buildSessions` 参照は 0 件を確認。`pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/runtime-worker --filter @hierarchidb/shape-plugin`、`pnpm -w turbo run test --filter @hierarchidb/gis-sdk -- --run src/ephemeral/__tests__/sessionHelpers.test.ts src/ephemeral/__tests__/getSessionWithDetails.test.ts`、`pnpm -w turbo run test --filter @hierarchidb/runtime-worker -- --run src/services/__tests__/unit/shape-mutation-session-upsert.unit.test.ts src/services/utils/__tests__/reconcileStaleBuildSessions.unit.test.ts`、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/unit/shapeBuildApiClient.updateBuildSession.unit.test.ts` はすべて成功（exit 0）。
-- 2026-03-04: Issue #783 進捗 - `buildSessions` 実テーブル名を `buildSessionConfigs` へ改名し、Dexie migration を安全な2段階（v5でコピー、v6で旧テーブル削除）へ実装。`pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/runtime-worker --filter @hierarchidb/shape-plugin`、`pnpm -w turbo run test --filter @hierarchidb/gis-sdk -- --run src/ephemeral/__tests__/sessionHelpers.test.ts src/ephemeral/__tests__/getSessionWithDetails.test.ts`、`pnpm -w turbo run test --filter @hierarchidb/runtime-worker -- --run src/services/__tests__/unit/shape-mutation-session-upsert.unit.test.ts src/services/utils/__tests__/reconcileStaleBuildSessions.unit.test.ts`、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/unit/shapeBuildApiClient.updateBuildSession.unit.test.ts` はすべて成功（exit 0）。
-- 2026-03-04: Issue #783 開始 - `buildSessions` 実テーブル名を `buildSessionConfigs` へ変更し、Dexie migration・参照コード更新・関連ドキュメント整合を行うタスクに着手
-- 2026-03-04: Issue #782 進捗 - `packages/runtime-worker/docs/build-session-orchestrator-state-transitions.md` を4正規化テーブル（`buildSessions` / `buildSessionHeartbeats` / `buildSessionStatuses` / `buildStageStatuses`）前提で全面改稿。通知4系統（session state / stage snapshot / task progress / heartbeat）と UI 側処理経路、Known gaps を現実装準拠で明記。`pnpm -w turbo run lint --filter @hierarchidb/runtime-worker` は成功（exit 0, turbo上でlintタスク未定義のため実行タスク0）。
-- 2026-03-04: Issue #778 開始 - Geometry tolerance が 0.1 始まりへ戻る再発について、baseTolerance 適用経路と retry 上限制御の実処理経路を再検証・修正する対応に着手
-- 2026-03-04: Issue #776 完了 - PR #777 を main へ squash merge、Issue #776 close、Geometry Preview: Geometry の Features/Polygons テキスト化と Max Vertices 閾値線条件修正を反映
-- 2026-03-04: Issue #776 進捗 - Geometry Preview: Geometry の Features/Polygons を棒グラフからテキスト表示へ変更し、Max Vertices の閾値線を「分母>6553 の場合のみ表示」へ修正。`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/TaskItemCardListCard.unit.test.tsx` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は成功（exit 0）。
-- 2026-03-04: Issue #776 開始 - Geometry Preview: Geometry の Features/Polygons をテキスト表示へ変更し、Max Vertices バーを表示値準拠（分母<=6553 で閾値線非表示）へ修正する対応に着手
-- 2026-03-04: Issue #765 進捗 - Geometry Preview で adminLevel 分割線が表示されない不具合を修正。`buildGeometryTaskOutcomeSummary` へ `adminLevel` 受け渡しを追加し、Floating Window 側で `summary.adminLevel` を優先参照。`pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/taskOutcomeSummaryBuilders.transform-metadata.unit.test.ts` は成功（exit 0）。
-- 2026-03-04: Issue #765 進捗 - preview 地図のタイル描画に Admin level 別サブ分割点線を追加（L1=2x2 灰, L2=4x4 薄灰, L3=8x8 さらに薄灰, L0は追加なし）。`pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/taskOutcomeSummaryBuilders.transform-metadata.unit.test.ts` は成功（exit 0）。
-- 2026-03-04: Issue #765 開始 - shape Step5 preview 地図で Admin level 1/2/3 の親タイル内サブ分割ガイド線（2x2, 4x4, 8x8）を点線表示する要件に着手
-- 2026-03-04: Issue #763 進捗 - Geometry/source preview 指標の母数不整合を修正（`retryAttempt` 優先順位見直し、`polygons` を `polygonsPerFeature` より優先、Geometry summary へ Source `fetchDetail` を入力由来で補完、Source raw未取得時のサイズ比表示を縮減率ヒントで補正）。`pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/taskOutcomeSummaryBuilders.transform-metadata.unit.test.ts` は成功（exit 0）。
-- 2026-03-04: Issue #763 開始 - Step5 Source/Geometry preview の指標表示不整合（Sourceサイズ、Retry attempts、Features/Polygons分母、`Max Poly` ラベル）修正に着手
-- 2026-03-04: Issue #761 進捗 - `usePluginDialogRoute` の route params 解決を `dialogModeStep > dialogMode > dialog` 優先へ修正し、`plugin-dialog-step.unit.test.tsx` に再発テスト追加。`pnpm -w turbo run test --filter @hierarchidb/app -- --run src/router/__tests__/unit/plugin-dialog-step.unit.test.tsx` / `pnpm -w turbo run typecheck --filter @hierarchidb/app` / `pnpm -w turbo run build --filter @hierarchidb/app` はすべて成功（exit 0）。
-- 2026-03-04: Issue #761 開始 - `/shape/edit/maximize/5` と `/shape/edit/full/5` で URL mode が `normal` へ巻き戻る再発不具合の調査と修正に着手
-- 2026-03-04: Issue #757 開始 - Source終了時の代表ポリゴン `baseTolerance`（<=6553）をセッションへ保持し、Geometryで再利用する仕様ドキュメント化と実装修正に着手
-- 2026-03-04: Issue #758 進捗 - `shapeBuildRuntimeExecutionMetrics.ts` の `StageSnapshotEvent` import 漏れを修正し、`pnpm -w exec turbo run typecheck --only --filter @hierarchidb/shape-plugin` 成功（exit 0）。
-- 2026-03-04: Issue #758 進捗 - URL mode優先復元（`full`維持）・dialog window restore競合の抑制・FloatingWindow stale state再注入抑制・TaskItemDetailWindow（raw source fallback/Geometry分母補正/タイトルアイコン配色）を修正。`pnpm install --frozen-lockfile` と `pnpm -w exec turbo run build --filter @hierarchidb/plugin-ui-host^... --filter @hierarchidb/plugin-ui-host --filter @hierarchidb/shape-plugin^... --filter @hierarchidb/shape-plugin --filter @hierarchidb/ui-floating-window^... --filter @hierarchidb/ui-floating-window` は成功（exit 0）。`pnpm -C packages/plugin-ui-host exec vitest run src/__tests__/dialog-url-step.unit.test.tsx` は成功（exit 0）。`shape-plugin` typecheck/test は既存失敗で Blocked へ記録。
-- 2026-03-04: Issue #758 開始 - `/shape/create/full/5` の mode 書換え不具合、Step5 FloatingWindow アイコン不可視/位置サイズ巻き戻り、Geometry 指標分母不整合、raw source buffer 欠落でプレビュー空になる不具合の調査と修正に着手
-- 2026-03-04: Issue #755 進捗 - セッション4テーブル整合性の欠損経路を修正（status/stage を `update` から `get+put` upsert へ変更、stale 判定を running task 基準へ是正）。回帰テストを追加/更新し、`pnpm -w turbo run test --filter @hierarchidb/runtime-worker -- --run src/services/__tests__/unit/tree-mutation-archive-build-session-guard.unit.test.ts src/services/utils/__tests__/reconcileStaleBuildSessions.unit.test.ts src/services/__tests__/unit/shape-mutation-session-upsert.unit.test.ts` と `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/unit/shapeBuildApiClient.updateBuildSession.unit.test.ts` は成功（exit 0）。
-- 2026-03-04: Issue #755 開始 - Worker session 4テーブル整合性と通知4系統（全体/snapshot/progress/heartbeat）を対象に、アーカイブ誤判定・リロード復元/リセット不整合・停止即時反映不具合の再現テスト追加と原因修正に着手
-- 2026-03-04: Issue #753 進捗 - `runtime-worker` に stale running build session 整合化を追加（アーカイブガード時の self-heal + Worker 起動時検査）。`pnpm -w turbo run build --filter @hierarchidb/runtime-worker` / `pnpm -w turbo run typecheck --filter @hierarchidb/runtime-worker` / `pnpm -w turbo run test --filter @hierarchidb/runtime-worker` は成功（exit 0）。
-- 2026-03-04: Issue #753 開始 - ノードアーカイブ時に「ビルドセッション実行中」誤判定が出る問題について、永続 sessions 不整合の発生経路修正と初期化時自己修復の要否検討に着手
-- 2026-03-04: Issue #750 進捗 - `pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/vt-orchestrator` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/taskOutcomeSummaryBuilders.transform-metadata.unit.test.ts` はすべて成功（exit 0）。受け側 message 復元ロジックを撤去し、出し側 metadata (`retryMax`) 契約で統一。
-- 2026-03-04: Issue #750 開始 - shape-plugin geometry terminal task の `retryMax` 欠損クラッシュについて、受け側フォールバックを排除し出し側（vt-orchestrator）の metadata 契約修正に着手
-- 2026-03-04: Issue #747 進捗 - `TaskItemCard.tsx` の status 分岐を確認し、報告されていた到達不能比較（`task.status === 'failed'` in completed branch）は現行コード上で解消済みであることを確認。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` と `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --force` はいずれも成功（exit 0）。
-- 2026-03-04: Issue #747 開始 - `shape-plugin` の `TaskItemCard.tsx` で `task.status` 比較の型矛盾（TS2367）解消に着手
-- 2026-03-04: Issue #745 進捗 - `useShapeBuildStepStageState` の `persistedTasks` 同期 `useEffect` を functional update + `tasks` 依存に変更し、`Maximum update depth exceeded`（無限更新）を解消。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` 成功（exit 0）。
-- 2026-03-04: Issue #745 進捗 - Geometry TaskItemCard の failed Chip 表示を回数なし（`Failed` 固定）へ統一。`retryMax` の 10 固定フォールバックを撤廃し、Geometry terminal task で retry 実値未解決時は例外を投げて停止するよう修正。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は成功（exit 0）、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin` は既存失敗を含み exit 1。
-- 2026-03-04: Issue #745 開始 - shape-plugin Step5 Preview の Source/Geometry 指標整合（棒グラフ定義・比率表示・6553閾値可視化）と、Sourceデータサイズ分母・Geometry Retry Attempt・Failed時 TaskItemCard N/A 表示崩れの修正に着手
-- 2026-03-04: Issue #744 進捗 - `location-plugin` の stale dts entry（`locationGroupStore.dexie.ts` / `locationRelationStore.dexie.ts`）を現行実装 `createLocationFeatureStoreDexie.ts` に同期。`pnpm -w turbo run build --filter @hierarchidb/location-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/location-plugin` ともに成功（exit 0）
-- 2026-03-04: Issue #744 開始 - `@hierarchidb/location-plugin` の build:dts 失敗（`src/worker/locationGroupStore.dexie.ts` unresolved entry）解消に着手
-- 2026-03-04: Issue #743 進捗 - `shape-plugin` の unresolved import 2件（`./i18n.js`, `~/common/types/metadata`）を解消し、派生して顕在化した `build:dts` の stale entry（`shapeGroupStore/shapeRelationStore`）を `shapeVectorTileStore` へ同期。`pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` ともに成功（exit 0）
-- 2026-03-04: Issue #743 開始 - `@hierarchidb/shape-plugin` の build 失敗（`./i18n.js` と `~/common/types/metadata` の unresolved import）解消に着手
-- 2026-03-04: Issue #741 進捗 - `plugins` 配下の曖昧命名3件を rename（`basemap/common/shared/utils.ts`→`viewportValidation.ts`, `folder/common/shared/utils.ts`→`folderValidation.ts`, `shape/services/utils/utils.ts`→`shapeBuildUtils.ts`）し、`pnpm lint` と `pnpm typecheck` の成功を確認
-- 2026-03-04: Issue #741 開始 - `plugins/*-plugin/src/**/*.ts` へ命名指針を適用（違反抽出→rename→import更新）に着手
-- 2026-03-04: Issue #740 進捗 - `runtime-worker` テスト失敗を修正。WFL 3件の import を `../../e2e/test-utils/createEndpointFromMessagePort` へ更新し、`tree-mutation-archive-build-session-guard.unit.test.ts` は `ephemeralDB.buildSessionStatuses.bulkGet` モックへ追従。`pnpm -w turbo run test --filter @hierarchidb/runtime-worker` 成功（exit 0）
-- 2026-03-04: Issue #740 開始 - `pnpm -w turbo run test --filter @hierarchidb/runtime-worker` 失敗の解消（または限定skipの理由明記）に着手
-- 2026-03-04: Issue #739 進捗 - 指摘対応を実装（dialog error再送出、NavLinkMenu hook契約修正、auth redirect検証、`useTileEmitConfigSection` 依存安定化、命名ガイド更新、toast JSDoc復元、runtime-worker import修正）。`pnpm -w turbo run typecheck --filter @hierarchidb/ui-dialog --filter @hierarchidb/ui-navigation --filter @hierarchidb/ui-auth --filter @hierarchidb/ui-accordion-config --filter @hierarchidb/components --filter @hierarchidb/runtime-worker` 成功、`pnpm -w turbo run test --filter @hierarchidb/ui-navigation --filter @hierarchidb/ui-auth --filter @hierarchidb/ui-accordion-config --filter @hierarchidb/components` 成功、`pnpm -w turbo run test --filter @hierarchidb/runtime-worker -- --run src/services/command/__tests__/unit/registry.types.unit.test.ts` 成功
-- 2026-03-04: Issue #739 開始 - PRレビュー指摘対応（error再送出、NavLinkMenu契約見直し、auth redirect検証、命名ガイド整合、runtime-worker import修正）に着手
-- 2026-03-04: Issue #737 進捗 - 長大かつ複数主要export候補50件を抽出し、分割適用8件（`useToneCurveEditor`/`useTreeNodeUpdater`/`useTabularFilter`/`useTabularData`/`ToastProvider`/`location i18n`/`useRouteSelectionStep`/`RouteQueryService`）を実施。監査結果を `reports/issue-737-multi-primary-export-split-audit.md` に記録し、`pnpm -w turbo run typecheck --filter='./packages/*' --filter='./plugins/*'` 成功を確認
-- 2026-03-04: Issue #733 進捗 - `packages/*/src` と `plugins/*-plugin/src` を命名ガイドライン観点で再走査し、禁止命名（`shared/common/helper/helpers/misc/tmp/temp`）と実装側 `use*.tsx` が 0 件であることを確認（`pnpm -w turbo run lint --filter='./packages/*' --filter='./plugins/*'` / `pnpm -w turbo run typecheck --filter='./packages/*' --filter='./plugins/*'` 成功）
-- 2026-03-04: Issue #731 進捗 - `app/src/router/routes/tree/shared.ts` を `treeRouteIds.ts` へ、`app/src/hooks/treeconsole/actions/helpers.ts` を `treeConsoleActionUtils.ts` へ改名し、関連 import を更新（`pnpm -w turbo run lint --filter @hierarchidb/app` / `pnpm -w turbo run typecheck --filter @hierarchidb/app` 成功）
-- 2026-03-04: Issue #728 進捗 - `packages/*/src` の命名違反4件を rename（`helpers.ts`/`utils.ts`/`misc.ts` 系）し、`pnpm lint` と `pnpm typecheck` の成功を確認
-- 2026-03-04: blocked - `pnpm typecheck` で `@hierarchidb/ui-treeconsole-base` の `~/adapters/utils` 解決失敗（TS2307）を確認。`commandEnvelopeFactories` への import 更新で解消
-- 2026-03-04: Issue #728 開始 - `packages/*/src/**/*.ts` へ命名指針を適用（違反抽出→rename→import更新）に着手
-- 2026-03-04: Issue #726 進捗 - `app/src` 向け注記（router規約優先・共通適用領域の表）を命名指針へ追加し、`pnpm lint` 成功を確認
-- 2026-03-04: Issue #726 開始 - `docs/ts-file-naming-guideline.md` に app/src 固有例外（router命名優先）と適用範囲注記を追記
-- 2026-03-04: Issue #724 進捗 - `docs/ts-file-naming-guideline.md` を新規作成し、`pnpm lint` と `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` の成功を確認
-- 2026-03-04: Issue #724 開始 - `src` 配下全体を対象に `*.ts` 命名指針ドキュメント（適用範囲・必須/禁止規約・例示・改名移行手順）を作成
-- 2026-03-04: Issue #722 進捗 - shape-plugin で 12 ファイルをフック分離し、`use*.tsx` 命名違反（実装コード側）を解消。残りは `SimplifyToleranceByAdminLevelCard.tsx` と `TaskItemDetailWindow.tsx`
-- 2026-03-04: blocked - `pnpm -w turbo run test --filter @hierarchidb/shape-plugin` で既存失敗を確認（`useShapeBuildTaskSnapshotProgressState.unit.test.tsx` の stage count 期待差分、`TaskItemCardListCard.unit.test.tsx` の summary text 期待差分、`taskOutcomeSummaryBuilders.transform-metadata.unit.test.ts` および `TaskItemCard/__tests__/i18n-*` 系）
-- 2026-03-04: Issue #722 開始 - shape-plugin 配下 TSX のロジック分離（カスタムフック化、use*.tsx→use*.ts を含む）に着手
-- 2026-03-04: Issue #705 進捗 - P2/P3対象27ファイルのhook分離を完了し、対象 `.tsx` の `useState/useEffect/useMemo/useCallback/useRef/useId` 直書き 0 件を確認
-- 2026-03-04: blocked - `pnpm -w turbo run test --only --filter @hierarchidb/ui-accordion-config --filter @hierarchidb/ui-auth --filter @hierarchidb/ui-floating-window --filter @hierarchidb/ui-i18n --filter @hierarchidb/ui-json-treeview --filter @hierarchidb/ui-lru-splitview --filter @hierarchidb/ui-map --filter @hierarchidb/ui-routing --filter @hierarchidb/ui-search-result-window --filter @hierarchidb/ui-tour --filter @hierarchidb/ui-treeconsole-base --filter @hierarchidb/ui-treeconsole-toolbar --filter @hierarchidb/ui-treeconsole-treetable --filter @hierarchidb/ui-worker-provider` で既存失敗（`@hierarchidb/ui-treeconsole-base` の `treeViewController.mutations.test.tsx`、`@hierarchidb/ui-routing`/`@hierarchidb/ui-worker-provider` 実行時の `shape-store` property tests timeout）を確認
-- 2026-03-04: Issue #705 進捗 - P2/P3対象（packages/ui）のhook分離バッチ `codex/refactor/ui-p2-p3-hook-extract-batch` を開始
-- 2026-03-04: Issue #705 進捗 - P1対象19ファイルを一括フック分離（`use*.ts` 化、フック内JSX禁止）し、再判定で `useState/useEffect/useMemo/useCallback/useRef/useId` の直書き 0 件を確認
-- 2026-03-04: blocked - `pnpm -w turbo run test --only --filter @hierarchidb/ui-*` 実行時に `@hierarchidb/ui-treeconsole-base` の既存テスト `src/hooks/treeViewController.mutations.test.tsx` が失敗（`console.error` 呼び出し期待不一致、解除条件: 当該テスト期待値の現行仕様追従 or 回帰原因特定）
-- 2026-03-04: Issue #705 進捗 - P1未完了19件（packages/ui）を対象に一括hook分離バッチ `codex/refactor/ui-p1-hook-extract-batch` で着手
-- 2026-03-04: Issue #718 開始 - hook抽出フォローアップ指摘（error再送出・未使用API削除・型重複/死蔵コード整理）に着手
-- 2026-03-04: Issue #718 進捗 - `useCommonDialogView` の submit/saveDraft で error 再送出を追加し、`useMenuListItemLinkButtonView` は `MenuItemLinkType` へ型統合（`pnpm -w turbo run typecheck --filter @hierarchidb/ui-dialog --filter @hierarchidb/ui-navigation --filter @hierarchidb/ui-accordion-config --filter @hierarchidb/ui-search-result-window` / `pnpm -w turbo run test --filter @hierarchidb/ui-dialog --filter @hierarchidb/ui-navigation --filter @hierarchidb/ui-accordion-config --filter @hierarchidb/ui-search-result-window` 成功）
-- 2026-03-04: Issue #718 完了 - PR #719 を main へ squash merge、Issue #718 close、作業ブランチ追跡を prune
-- 2026-03-04: Issue #713 開始 - `useCollapsibleSection`/`useSearchResultTable` の未使用APIと死蔵コードを整理
-- 2026-03-04: Issue #713 進捗 - `showHeader` と `selectedResults` フォールバックを削除し、不要 import/atom 参照を整理（`pnpm -w turbo run typecheck --filter @hierarchidb/ui-accordion-config --filter @hierarchidb/ui-search-result-window` 成功）
-- 2026-03-03: Issue #711 開始 - pause同期判定の stale closure 問題を `sessionRecordRef` で修正
-- 2026-03-03: Issue #711 進捗 - `useShapeBuildPause` に `sessionRecordRef` + `useEffect` を追加し、同期判定を `sessionRecordRef.current?.status === 'paused'` へ変更（`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` 成功）
-- 2026-03-03: Issue #709 開始 - Shape build pause同期判定を `sessionRecord` ベースへ修正
-- 2026-03-03: Issue #709 進捗 - `PauseWithCancelHookActionsArgs` へ `sessionRecord` を追加し、pause同期判定を `sessionRecord?.status === 'paused'` へ更新（`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` 成功）
-- 2026-03-03: Issue #709 完了 - PR #710 を main へ squash merge、Issue #709 close、作業ブランチ追跡を prune
-- 2026-03-03: Issue #708 開始 - `pnpm build` から非必須チェックを分離し、CI向け `ci:checks` と `use*.tsx` ガードを追加
-- 2026-03-03: Issue #708 進捗 - `check:ui-hooks-tsx` / `ci:checks` を追加し、`dep-fence-guards.yml` で CI checks → build の順に実行する構成へ変更（`pnpm build` / `pnpm ci:checks` 成功）
-- 2026-03-03: Issue #708 進捗 - `app/scripts/generate-favicon.mjs` に既存 `favicon.png`/`favicon.ico` 検出時のスキップを追加し、`pnpm -C app run generate:favicon` でスキップ動作を確認
-- 2026-03-03: Issue #705 開始 - packages/ui TSX のロジック分離（カスタムフック化）
-- 2026-03-03: Issue #705 進捗 - `ui-tabular` の `TabularDataImport` / `TabularDataFilter` / `TabularColumnSelect` をフック分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-tabular` の `TabularPreviewGrid` を `useTabularPreviewGrid` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-datasource` の `IdeGsmImportPanel` を `useIdeGsmImportPanel` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-file` の `FileInputWithUrl` を `useFileInputWithUrlView` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-file` の `UrlDownloadSection` を `useUrlDownloadSectionView` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-auth` の `AuthPanel`/`OAuthCallback` を `useAuthPanelView`/`useOAuthCallbackView` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-auth` の `UserAvatarMenu` を `useUserAvatarMenuView` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-auth` の `UserAvatar` を `useUserAvatarView` へ分離し、型不一致修正後に `typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-auth` の `BffKvWarningDialog` を `useBffKvWarningDialogView` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-auth` の `LoginForm` を `useLoginFormView` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-auth` の `AuthReadyGate` を `useAuthReadyGateView` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-auth` の `AuthProviderDialog` を `useAuthProviderDialogView` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-auth` の `AuthRequiredDialog` を `useAuthRequiredDialogView` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-auth` の `AuthProviderPrompt` を `useAuthProviderPromptView` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-auth` の `AuthMethodSettings` を `useAuthMethodSettingsView` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-auth` の `AuthErrorListener` を `useAuthErrorListenerView` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-auth` の `OidcProvider` を `useOidcProviderView` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-grid` の `CrossViewSnackbar` を `useCrossViewSnackbarView` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-grid` の `DataGridPreview` を `useDataGridPreviewView` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-grid` の `AbstractDataGrid` を `useAbstractDataGridView` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-grid` の `GenericDataGrid` を `useGenericDataGridView` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-map` の `LocationPreviewList`/`RoutePreviewList`/`ShapePreviewList` を各 `use*PreviewListView` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-map` の `LayerSetVisibilityPanel` を `useLayerSetVisibilityPanelView` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-map` の `MapPreviewSearchPanel` を `useMapPreviewSearchPanelView` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-map` の `FeatureTableToolbar` を `useFeatureTableToolbarView` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-grid` の `TanstackDataGrid` の制御/同期ロジックを `useTanstackDataGridView` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-grid` の `TanstackDataGrid` でテーブル生成/仮想化計算/ヘッダ同期スクロールを `useTanstackDataGridView` へ追加分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-map` の `MapInteractionProvider` で初期化副作用/store解決を `useMapInteractionProviderView` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `ui-search-input` の `SearchInput` で入力解決/commit処理/イベントハンドラを `useTreeTableSearchInputView` へ分離し、`typecheck/build` を完了（`test` タスク定義なし）
-- 2026-03-03: Issue #705 進捗 - `memory-usage` の `MemoryUsageChart` で描画副作用/制御ハンドラ/表示計算を `useMemoryUsageChartView` へ分離し、`typecheck/build` を完了（`test` タスク定義なし）
-- 2026-03-03: Issue #705 進捗 - `ui-map` の `MapPreviewFloatingTable` で状態管理/永続化/列解決ロジックを `useMapPreviewFloatingTableView` へ分離し、`typecheck/build/test` を完了
-- 2026-03-03: Issue #705 進捗 - `useMapPreviewFloatingTableView` から JSX を除去し、表示生成（Chip/Box）は `MapPreviewFloatingTable` 側へ戻してロジック/表現分離を厳密化（`typecheck/build/test` 再実行済み）
-- 2026-03-03: Issue #705 進捗 - `ui-dynamic-speed-dial` の `DynamicSpeedDial` で submenu action 生成を `useDynamicSpeedDialSubmenuActions` へ分離し、`ui-treeconsole-toolbar` の `SettingsMenu` で state/イベント処理を `useSettingsMenu` へ分離（いずれも `typecheck/build` 成功）
-- 2026-03-03: Issue #705 進捗 - `ui-search-result-window` の `SearchResultTable` で選択同期/イベント処理/表示データ整形を `useSearchResultTable` へ分離し、`ui-accordion-config` の `CollapsibleSection` で折りたたみ状態管理を `useCollapsibleSection` へ分離（`typecheck/build` 成功）
-- 2026-03-03: Issue #705 進捗 - `ui-monitoring` の `MemoryUsageBar` でメモリ計測・ポーリング・閾値判定・表示派生値を `useMemoryUsageBarView` へ分離（`typecheck/build` 成功）
-- 2026-03-03: Issue #705 進捗 - `ui-dialog` の `AutoHideFullScreenDialog` で可視状態/タイマー制御を `useAutoHideFullScreenDialogView` へ分離し、`ui-search-field` の `SearchField` で入力イベント/属性組み立てを `useSearchFieldView` へ分離（`typecheck/build` 成功）
-- 2026-03-03: Issue #705 進捗 - `ui-layout` の `ResizableSidebar` で幅計算/ドラッグイベント購読/close処理を `useResizableSidebarView` へ分離し、`ui-speeddial-submenu` の `SpeedDialSubmenuActions` で submenu 状態/close タイマー/イベント処理を `useSpeedDialSubmenuActionsView` へ分離（`typecheck/build` 成功）
-- 2026-03-03: Issue #705 進捗 - `ui-monitoring` の `MemoryUsageChart` でメモリ計測・履歴管理を `useMemoryUsageChartData` へ、canvas描画副作用を `useMemoryUsageChartCanvas` へ分離（`typecheck/build` 成功）
-- 2026-03-03: Issue #705 進捗 - `ui-i18n` の `LanguageSelector` で言語切替イベント処理と表示ラベル解決を `useLanguageSelectorView` へ分離（`typecheck/build` 成功）
-- 2026-03-03: Issue #705 進捗 - `ui-dialog` の `CommonDialog` で表示モード/未保存確認/送信状態管理を `useCommonDialogView` へ分離（`typecheck/build` 成功）
-- 2026-03-04: Issue #705 進捗 - `ui-dialog` の `UnsavedChangesDialog` で container/slotProps 解決を `useUnsavedChangesDialogView` へ分離し、`CommonDialogActions` で表示条件/submitラベル/disabled判定を `useCommonDialogActionsView` へ分離（`typecheck/build` 成功）
-- 2026-03-04: Issue #705 進捗 - `ui-accordion-config` の `CacheSection` で削除実行フロー/進行状態/結果通知/トグル変更処理を `useCacheSectionView` へ分離（`typecheck/build` 成功）
-- 2026-03-04: Issue #705 進捗 - `ui-accordion-config` の `ConcurrencySection`/`DownloadRetryControls`/`BaseAccordion` を `useConcurrencySectionView`/`useDownloadRetryControlsView`/`useBaseAccordion` へ分離し、`ui-plugin-basic-info` の `TagChipsInput` を `useTagChipsInput` へ分離（`typecheck/build` と `pnpm check:ui-hooks-tsx` 成功）
-- 2026-03-04: Issue #705 進捗 - `ui-plugin-basic-info` の `BasicInfoFields` で ID生成/文言解決/入力ハンドラを `useBasicInfoFieldsView` へ分離（`typecheck/build` と `pnpm check:ui-hooks-tsx` 成功）
-- 2026-03-04: Issue #705 進捗 - `ui-plugin-basic-info` の `BasicInfoStep` で入力更新/タグ削除確認/初期フォーカス/validation 合成を `useBasicInfoStepView` へ分離（`typecheck/build` と `pnpm check:ui-hooks-tsx` 成功）
-- 2026-03-04: Issue #705 進捗 - `ui-accordion-config` の `SettingsAccordion`/`WorkflowAccordion` でアクション状態・イベント処理・ステップ表示解決ロジックを `useSettingsAccordionView`/`useWorkflowAccordionView` へ分離（`typecheck/build` と `pnpm check:ui-hooks-tsx` 成功）
-- 2026-03-04: Issue #705 進捗 - `ui-theme` の `ThemeProvider` で mode保持/保存・system theme 監視・context値構築を `useThemeProviderView` へ分離（`typecheck/build` と `pnpm check:ui-hooks-tsx` 成功）
-- 2026-03-04: Issue #705 進捗 - `ui-tour` の `GuidedTourDemo` で run state と start/finish 操作を `useGuidedTourDemoView` へ分離し、`ui-navigation` の `MenuListItemLinkButton` でメニュー開閉・path/style・key解決を `useMenuListItemLinkButtonView` へ分離（`typecheck/build` と `pnpm check:ui-hooks-tsx` 成功）
-- 2026-03-04: Issue #705 進捗 - `ui-country-select` の `CountryMatrixStep` で matrix config 正規化/統計算出/column set info 解決を `useCountryMatrixStepView` へ分離し、`ui-navigation` の `NavLinkMenu` でリンクスタイル/表示モデル解決を `useNavLinkMenuView` へ分離（`typecheck/build` と `pnpm check:ui-hooks-tsx` 成功）
-- 2026-03-04: Issue #705 進捗 - `ui-session-coordinator` の `SessionCoordinatorProvider` で coordinator 初期化を `useTabSessionCoordinatorProviderView` へ分離し、`ui-worker-provider` の `WorkerSingletonProvider` で Worker 初期化/retry/ready 判定を `useWorkerSingletonProviderView` へ分離（`typecheck/build` と `pnpm check:ui-hooks-tsx` 成功）
-- 2026-03-03: blocked - `gh issue comment 705` 実行時に `error connecting to api.github.com`（ネットワーク復旧待ち）
-- 2026-03-03: Issue #703 完了 - Shape Plugin Pauseボタン状態管理とセッション復元の修正
-  - Pauseボタンが「Pausing」状態で固まる問題を修正
-  - ブラウザリロード後のセッション状態不整合を修正
-  - デバッグ機能（Force Reset Stop State）を追加
-  - タイムアウト処理とエラーハンドリングを改善
-- 2026-03-03: Issue #704 完了 - Shape Plugin Pauseボタン loading 状態問題の追加修正
-  - 開発環境でのデバッグボタン「Reset Stop」を追加（ビルド画面右上）
-  - コントロールメニューに「Force Reset Stop State」項目を追加
-  - forceResetStopState 関数を UI コンポーネントに適切に統合
-  - 既存のタイムアウト機構とリセット機能が正常に動作することを確認
-  - デバッグテストスイートが全て成功することを確認
-- 2026-03-03: Issue #707 完了 - Shape Plugin real-time subscription機能の実装
-  - ポーリングベースの状態同期を完全撤去し、real-time subscriptionに置き換え
-  - 4通りのイベント配信経路を実装: セッション状態変化、ステージスナップショット、ハートビート（1秒間隔）、タスクプログレス
-  - オンデマンド状態問い合わせAPI (`getSessionStateOnDemand`) を追加
-  - Worker側でセッション状態変化時の自動イベント発火を実装
-  - UI側で新しい `useShapeBuildSessionState` フックを作成し、ポーリングベースの `useShapeBuildSessionRecord` を置き換え
-  - `typecheck && build` が成功し、実装完了
-- 2026-03-04: Issue #757 進捗 - Source→Geometry の session駆動 baseTolerance 探索・保存・利用を実装し、仕様書更新と build/typecheck/test（対象）を完了
+
+- 2025-03-08: #903 Worker-UIログ出力簡素化によるパフォーマンス改善完了
+  - emitWorkerLogとemitCriticalError関数削除
+  - 過度なログ出力削減（172行のコード削減）
+  - Worker-UI通信負荷軽減・パフォーマンス向上
+  - 型チェック成功確認・PR #905マージ完了
+
+- 2025-03-08: fix/worker-ui-snapshot/investigate-pipeline-errors ブランチマージ試行
+  - マージコンフリクト発生（shapeBuildRuntimeExecutionControl.ts, runShapePipeline.ts）
+  - 複雑なコンフリクトのため、マージ中止・mainブランチにリセット
+  - Worker-UIスナップショット通信安定化修正は新規ブランチでの再実装を検討
+- 2025-03-08: UIに関連するブランチ全てmainマージ完了
+  - PR #898 (E2Eテスト実装) mainマージ完了
+  - PR #869 (Worker failed status修正) マージコンフリクト解決・mainマージ完了
+  - マージコンフリクト解決: shapeBuildRuntimeExecutionControl.tsでemitWorkerLog・emitCriticalError追加
+  - 全UIブランチがmainに統合され、最新状態に更新完了
+- 2025-03-08: #893 E2EテストShape管理機能実装完了
+  - data-testid属性使用削除・実際のユーザー可視テキストベースセレクター変更
+  - テスト用Shape作成・削除・クリーンアップヘルパー関数実装（e2e/helpers/shape-cleanup.ts）
+  - グローバルティアダウンでテスト用Shape自動削除処理実装
+  - 各テストでbeforeEach/afterEachクリーンアップ処理追加
+  - Shape削除機能テスト追加・永続化対応完了
+  - 型チェック成功確認（exit code 0）
+- 2025-03-07: #861 hasInitialSnapshotAppliedローカル変数をSSOT状態木参照に統一完了・PR #862作成
+- 2025-03-07: #861起票、ブランチ作成完了、hasInitialSnapshotAppliedローカル変数をSSOT状態木参照に統一開始
+  - グローバルティアダウンでテスト用Shape自動削除処理実装
+  - 各テストでbeforeEach/afterEachクリーンアップ処理追加
+  - Shape削除機能テスト追加・永続化対応完了
+  - 型チェック成功確認（exit code 0）
+- 2025-03-08: #896 Delete API cacheアイコン設定完了
+  - CloudOffアイコンをインポート・Delete API cacheメニューアイテムに設定
+  - resetDeleteMenuItems追加（Reset/Delete/Transpose各メニューアイテム）
+  - 型チェック成功確認（exit code 0）
+  - PR #897作成・mainマージ完了
+- 2025-03-07: #838 Level 1 Critical improvements実装確認完了・PR #863マージ完了
+  - UIバッファサイズ制限・サブスクライバー例外分離が既に実装済みであることを確認
+  - 36テスト全成功（バッファオーバーフロー・例外分離テスト含む）
+  - 要求機能は既に満たされており追加実装不要
+>>>>>>> origin/main
+- 2025-03-07: #844起票、ブランチ作成完了
+- 2025-03-07: #844 国選択ステップでのISO-3166-2国名i18n化実装完了
+  - useCountryI18nフック作成
+  - CountryMatrixSelectorでの国名i18n化適用
+  - 型チェック・ビルド成功確認
+  - shape/location/route-pluginでの自動適用確認
+- 2025-03-07: #847 Task 6.1 タスク状態保護機能実装完了
+  - TaskStateProtectionService実装（スナップショット作成・復元・検証）
+  - ProtectedTaskMutation実装（状態保護付きタスク更新API）
+  - Property 3プロパティテスト実装（5テストケース全成功）
+  - 型チェック成功確認
+- 2025-03-07: #848 Task 6.5.4 イベント順序・完全性検証統合テスト実装完了
+  - MultiNotificationEventBuffer実装（イベントバッファリング・シーケンス管理）
+  - EventDeliveryMetrics実装（メトリクス収集・監視）
+  - 5つの統合テストケース実装（複数通知タイプ同時検証、ストレステスト、障害回復、メトリクス精度、ハートビート即座処理）
+  - ファイルシステム問題でテスト実行不可（vitest「No test suite found」エラー）
+- 2025-03-07: PR #849 作成・マージ完了（mainに反映）
+  - タスク状態保護機能・マルチステージセッションライフサイクルテスト実装
+  - 8ファイル変更、1514行追加
+  - Requirements 8.1, 8.2, 8.3, 9.16, 9.17, 9.18 検証完了
+- 2025-03-07: #850起票、useCallbackの不要な依存配列修正対応開始
+- 2025-03-07: #850 useCountryI18nフック依存配列修正完了・PR #851マージ完了
+- 2025-03-07: #852 翻訳キーパス修正完了・PR #853マージ完了
+  - PluginDialogFooterのcopyLinkUrl翻訳キーパスを正しいパスに修正
+  - dialogs.pluginDialog.contextMenu.copyLinkUrl → dialogs.pluginDraft.pluginDialog.contextMenu.copyLinkUrl
+  - 型チェック・ビルド成功確認
+- 2025-03-07: PRレビュー指摘事項修正完了
+  - TaskStateProtectionService検証ロジック改善（Number.isFinite()使用でNaN/Infinity検出）
+  - clearSnapshots性能改善（Map.entries()使用で効率的削除処理）
+  - mainブランチに直接コミット・プッシュ完了
+- 2025-03-07: #855 Task 6.6.5 Property 22: Distributed Sequence Number Generation実装完了
+  - seqNum単調性検証（各通知タイプ・ノード単位）
+  - 並列ワーカー衝突防止検証
+  - セッション再開時リセット検証
+  - UnconditionalEventStreamer統合検証
+  - 7つのテストケース全成功、型チェック成功確認
+  - Requirements 9.5, 9.16 検証完了
+- 2025-03-07: PR #856 ビルドセッション状態同期アーキテクチャ再設計完了・mainマージ完了
+  - 無条件Worker-UIイベントストリーミング実装
+  - 通知タイプ別イベントバッファリング・共有シーケンス番号実装
+  - タイムアウトベース状態遷移排除・receiving-task-snapshotフェーズ削除
+  - AbortController即座Worker終了・ロックフリーキャッシュ書き込み実装
+  - 23プロパティテスト・統合テスト全実装、370テスト通過確認
+  - Requirements 1.1-9.18 全対応、pause/resume機能信頼性大幅向上
+- 2025-03-07: #857 PRフィードバック修正完了・PR #858マージ完了
+  - cache-write-ordering.property.test.ts: timestamp ベース検証一貫性修正
+  - distributedSeqNumGeneration.property.test.ts: 全シーケンス番号包括的検証・変数名エラー修正
+  - 両テストファイル 7/7 テスト成功、requirements.md との完全一致確認
+- 2025-03-07: #859 TaskStateProtectionService改善調査完了・Issue クローズ
+  - PRレビューフィードバック指摘事項（Number.isFinite()検証・Map.entries()性能改善）は既に適用済み確認
+  - 追加修正不要、Property 3テスト・型チェック正常動作確認
+- 2025-03-07: #860起票、channelEstablishedRef撤去・SSOT状態木参照統一対応開始
+- 2025-03-07: #860 channelEstablishedRef撤去・SSOT状態木参照統一完了
+  - V1・V2ブリッジファイル削除、V3ブリッジに一本化
+  - channelEstablishedRefとchannelReadiness重複状態を完全撤去
+  - 全イベント配信をSSOT状態木経由に統一、契約違反隠蔽を排除
+  - 型チェック・ビルド成功、関連テスト全通過確認
