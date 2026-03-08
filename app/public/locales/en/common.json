@@ -474,6 +474,29 @@
     "checkReference": "Check reference",
     "preview": "Preview"
   },
+  "stage": {
+    "timing": {
+      "inlineDuration": "{{hours}}h {{minutes}}m {{seconds}}s",
+      "elapsedRemaining": "Elapsed {{elapsed}} ・ Est. remaining {{remaining}}"
+    }
+  },
+  "buildControl": {
+    "buttons": {
+      "startBuild": "Start Build",
+      "resumeBuild": "Resume Build",
+      "pause": "Pause",
+      "cancel": "Cancel",
+      "resetDelete": "Reset/Delete",
+      "resetDeleteMenu": "Reset/Delete menu"
+    },
+    "status": {
+      "running": "Build in progress",
+      "paused": "Build paused",
+      "completed": "Build completed",
+      "failed": "Build failed",
+      "ready": "Ready to start build"
+    }
+  },
   "buildSessionQueue": {
     "empty": "No running or queued build sessions found",
     "deleteTitle": "Delete session from queue",
