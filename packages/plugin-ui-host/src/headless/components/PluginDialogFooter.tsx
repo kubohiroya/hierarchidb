@@ -369,7 +369,7 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
                 startIcon={leftPrimaryIcon}
                 id="dialog-footer-back-cancel-button"
                 role="button"
-                aria-label={leftPrimaryLabel}
+                aria-label={leftPrimaryLabel || undefined}
               >
                 {leftPrimaryLabel}
               </LoadingButton>
@@ -394,7 +394,7 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
                     endIcon={<CheckIcon fontSize="small" />}
                     id="dialog-footer-save-draft-button"
                     role="button"
-                    aria-label={saveDraftLabel ?? t(`${i18nBasePath}.buttons.saveDraft`, 'Save Draft')}
+                    aria-label={(saveDraftLabel ?? t(`${i18nBasePath}.buttons.saveDraft`, 'Save Draft')) || undefined}
                   >
                     {saveDraftLabel ?? t(`${i18nBasePath}.buttons.saveDraft`, 'Save Draft')}
                   </LoadingButton>
@@ -425,9 +425,9 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
                 endIcon={<ConstructionIcon fontSize="small" />}
                 id="dialog-footer-start-build-button"
                 role="button"
-                aria-label={isStartingBuild 
+                aria-label={(isStartingBuild 
                   ? t(`${i18nBasePath}.buttons.building`, 'Building…') 
-                  : t(`${i18nBasePath}.buttons.build`, 'Build')}
+                  : t(`${i18nBasePath}.buttons.build`, 'Build')) || undefined}
               >
                 {isStartingBuild 
                   ? t(`${i18nBasePath}.buttons.building`, 'Building…') 
@@ -473,7 +473,7 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
                 endIcon={<ChevronRightIcon fontSize="small" />}
                 id="dialog-footer-next-button"
                 role="button"
-                aria-label={rightPrimaryLabel}
+                aria-label={rightPrimaryLabel || undefined}
               >
                 {rightPrimaryLabel}
               </LoadingButton>
