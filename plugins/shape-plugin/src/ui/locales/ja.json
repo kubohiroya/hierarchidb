@@ -479,12 +479,35 @@
       "task": "ポリゴン",
       "taskUnitTasks": "タスク",
       "counts": "{{percentage}}% ・ {{completed}}/{{total}} ポリゴン完了 ・ 失敗 {{failed}} ・ スキップ {{skipped}}",
-      "countsWithUnit": "{{percentage}}% ・ {{completed}}/{{total}} {{unit}}完了 ・ 失敗 {{failed}} ・ スキップ {{skipped}}"
+      "countsWithUnit": "{{percentage}}% ・ {{completed}}/{{total}} {{unit}}完了 ・ 失敗 {{failed}} ・ スキップ {{skipped}}",
+      "unknownStage": "処理中",
+      "pausedStage": "一時停止",
+      "completedStage": "完了",
+      "idleStage": "待機中",
+      "done": "完了",
+      "failed": "失敗",
+      "paused": "一時停止",
+      "working": "進行中...",
+      "ready": "準備完了"
     },
     "tasks": {
       "empty": "タスクがまだありません。",
       "summaryOnly": "タスクは集計のみ表示されています。詳細一覧は取得できません。",
       "search": "タスクを検索"
+    },
+    "status": {
+      "ready": "ビルドを開始する準備ができています",
+      "running": "ビルド処理中",
+      "paused": "ビルド一時停止中",
+      "completed": "ビルド完了",
+      "failed": "ビルド失敗",
+      "starting": "ステージを開始中...",
+      "startingLock": "ビルド開始中（ロック取得中）...",
+      "startingQueueElapsed": "ビルド開始中（ロック待機中、{{elapsedSeconds}}秒）...",
+      "startingSave": "ビルド開始中（ドラフト保存中）...",
+      "startingWorker": "ビルド開始中（ワーカー初期化中）...",
+      "startingPayload": "ビルド開始中（タスク準備中）...",
+      "startingSession": "ビルド開始中（セッション起動中）..."
     },
     "taskPhase": {
       "sourceCacheStart": "キャッシュ取得を開始",

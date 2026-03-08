@@ -74,7 +74,7 @@ export const calculateMemoryDelta = (
 });
 
 export const getBuildSessionTransitionStatusLabel = (
-  t: (key: string, fallback?: string) => string,
+  t: (key: string, fallback?: string, options?: Record<string, unknown>) => string,
   phase: BuildSessionTransitionPhase | 'idle',
   durationMs: number,
 ): string => {
@@ -83,7 +83,7 @@ export const getBuildSessionTransitionStatusLabel = (
     case 'acquiring-lock':
       return t('build.status.startingLock', 'Starting build (acquiring lock)...');
     case 'waiting-lock':
-      return t('build.status.startingQueueElapsed', `Starting build (waiting for lock, ${elapsedSeconds}s)...`);
+      return t('build.status.startingQueueElapsed', 'Starting build (waiting for lock, {{elapsedSeconds}}s)...', { elapsedSeconds });
     case 'saving-draft':
       return t('build.status.startingSave', 'Starting build (saving draft)...');
     case 'initializing-worker':
