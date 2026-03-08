@@ -57,6 +57,19 @@ export interface WorkerLogEvent {
 }
 
 /**
+ * Critical error event (for contract violation and critical failures)
+ */
+export interface CriticalErrorEvent {
+    nodeId: NodeId;
+    timestamp: number;
+    message: string;
+    error: string;
+    errorName: string;
+    severity: 'critical';
+    contractViolation: boolean;
+}
+
+/**
  * Unified session event types
  */
 export type SessionEvent =
@@ -64,7 +77,8 @@ export type SessionEvent =
     | StageSnapshotEvent
     | SessionHeartbeatEvent
     | TaskProgressEvent
-    | WorkerLogEvent;
+    | WorkerLogEvent
+    | CriticalErrorEvent;
 
 /**
  * Session event subscription callback
@@ -97,6 +111,11 @@ export interface TaskProgressSubscription {
 export interface WorkerLogSubscription {
     unsubscribe?: () => void;
     callback?: (event: WorkerLogEvent) => void;
+}
+
+export interface CriticalErrorSubscription {
+    unsubscribe?: () => void;
+    callback?: (event: CriticalErrorEvent) => void;
 }
 
 /**

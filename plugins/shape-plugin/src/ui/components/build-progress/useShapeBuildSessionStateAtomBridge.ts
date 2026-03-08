@@ -7,7 +7,8 @@ import { dispatchBuildSessionEventAtom, buildSessionSnapshotHandshakeReceivedAto
 import { createBuildSessionWorkerEventAdapter } from '~/ui/atoms/buildSessionWorkerEventAdapter';
 import type { ShapeStageId } from '~/ui/atoms/buildSessionStateAtoms';
 import { shapeBuildAPI } from '~/worker/api/shapeBuildAPI';
-import type { WorkerLogEvent } from '~/common/types/session-events';
+import { unconditionalEventStreamer } from '~/worker/api/eventBuffering';
+import type { WorkerLogEvent, CriticalErrorEvent } from '~/common/types/session-events';
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 const SHAPE_STAGE_IDS = ['source', 'geometry', 'tileEmit'] as const satisfies readonly ShapeStageId[];
@@ -490,12 +491,40 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
         }
       });
 
+      // Subscribe to Critical Error events directly via unconditionalEventStreamer
+      const unsubscribeCriticalError = unconditionalEventStreamer.subscribe(nodeId, 'critical-error', (event) => {
+        const criticalEvent = event as { payload: CriticalErrorEvent };
+        console.error('🚨 CRITICAL ERROR EVENT RECEIVED 🚨');
+        console.error('Critical Error Details:', {
+          message: criticalEvent.payload.message,
+          error: criticalEvent.payload.error,
+          errorName: criticalEvent.payload.errorName,
+          timestamp: criticalEvent.payload.timestamp,
+          nodeId: criticalEvent.payload.nodeId,
+          contractViolation: criticalEvent.payload.contractViolation,
+        });
+        
+        // Emit to build session event system for UI visibility
+        dispatch({
+          type: 'criticalError',
+          payload: {
+            message: criticalEvent.payload.message,
+            error: criticalEvent.payload.error,
+            errorName: criticalEvent.payload.errorName,
+            timestamp: criticalEvent.payload.timestamp,
+            severity: criticalEvent.payload.severity,
+            contractViolation: criticalEvent.payload.contractViolation,
+          },
+        });
+      });
+
       if (cancelled) {
         unsubscribeTasks();
         unsubscribeProgress();
         unsubscribeSessionState();
         unsubscribeHeartbeat();
         unsubscribeWorkerLog();
+        unsubscribeCriticalError();
         return;
       }
       adapter.onTaskStreamConnectionChanged(true);
@@ -506,11 +535,12 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
         unsubscribeSessionState();
         unsubscribeHeartbeat();
         unsubscribeWorkerLog();
+        unsubscribeCriticalError();
         return;
       }
       onTaskEvent(toSnapshotEvent(tasks));
 
-      unsubscribers.push(unsubscribeTasks, unsubscribeProgress, unsubscribeSessionState, unsubscribeHeartbeat, unsubscribeWorkerLog);
+      unsubscribers.push(unsubscribeTasks, unsubscribeProgress, unsubscribeSessionState, unsubscribeHeartbeat, unsubscribeWorkerLog, unsubscribeCriticalError);
     };
 
     void run().catch((error) => {

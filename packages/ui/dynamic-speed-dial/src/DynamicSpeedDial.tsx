@@ -93,6 +93,8 @@ export function DynamicSpeedDial<TNode = unknown>(props: DynamicSpeedDialProps<T
       >
         <SpeedDial
           ariaLabel={createLabel}
+          id="dynamic-speed-dial-main"
+          role="button"
           sx={{
             position: 'static',
             '& .MuiSpeedDial-fab': {
@@ -137,6 +139,7 @@ export function DynamicSpeedDial<TNode = unknown>(props: DynamicSpeedDialProps<T
             sx: { pointerEvents: 'auto' },
             title: createLabel,
             'aria-label': createLabel,
+            id: 'speed-dial-create-button',
           }}
         >
           {useVM ? (
