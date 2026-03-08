@@ -12,6 +12,12 @@
 
 ## 今日の運用ログ
 
+- 2025-03-09: #917 Shape Step5 残りUI表記のi18n化完了
+  - `stage.tasks.search`翻訳キーを追加し、タスク検索機能のi18n化を完了
+  - 重複していた`build.tasks`セクションを削除し、翻訳ファイルを整理
+  - 型チェック・ビルド成功確認（exit code 0）
+  - 変更内容をコミット・プッシュ完了
+
 - 2025-03-09: #915 Shape Step5 ビルド関連UI表記のi18n化完了
   - `packages/ui/i18n/public/locales/en/common.json`と`ja/common.json`にbuildControl関連の翻訳を追加
   - `BuildControlCard.tsx`でハードコードされた文字列をt()関数でi18n化
