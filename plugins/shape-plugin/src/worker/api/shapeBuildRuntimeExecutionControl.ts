@@ -98,8 +98,11 @@ const upsertBuildSessionSnapshot = async (data: {
   tasks?: any[] 
 }): Promise<void> => {
   try {
+<<<<<<< HEAD
+=======
     const previousSessionRecord = data.status ? await shapeQueryAPIImpl.getBuildSessionRecord(data.nodeId).catch(() => null) : null;
     
+>>>>>>> origin/main
     await shapeMutationAPIImpl.updateBuildSession(data.nodeId, {
       status: data.status,
       stopReason: data.stopReason,
@@ -110,9 +113,22 @@ const upsertBuildSessionSnapshot = async (data: {
     
     // Emit session state change event
     if (data.status) {
+<<<<<<< HEAD
+      const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(data.nodeId).catch(() => null);
+      if (sessionRecord) {
+        emitSessionStateChange(data.nodeId, sessionRecord.status, data.status, {
+          ...sessionRecord,
+          status: data.status,
+          stopReason: data.stopReason,
+          canResume: data.canResume,
+          startedAt: data.startedAt ?? sessionRecord.startedAt,
+          completedAt: data.completedAt,
+        });
+=======
       const newSessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(data.nodeId).catch(() => null);
       if (newSessionRecord) {
         emitSessionStateChange(data.nodeId, previousSessionRecord?.status, data.status, newSessionRecord);
+>>>>>>> origin/main
       }
     }
   } catch (error) {
@@ -127,8 +143,11 @@ const updateBuildSessionFromTasks = async (nodeId: NodeId, data: {
   canResume?: boolean 
 }): Promise<void> => {
   try {
+<<<<<<< HEAD
+=======
     const previousSessionRecord = data.status ? await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null) : null;
     
+>>>>>>> origin/main
     await shapeMutationAPIImpl.updateBuildSession(nodeId, {
       status: data.status,
       stopReason: data.stopReason,
@@ -138,9 +157,21 @@ const updateBuildSessionFromTasks = async (nodeId: NodeId, data: {
     
     // Emit session state change event
     if (data.status) {
+<<<<<<< HEAD
+      const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
+      if (sessionRecord) {
+        emitSessionStateChange(nodeId, sessionRecord.status, data.status, {
+          ...sessionRecord,
+          status: data.status,
+          stopReason: data.stopReason,
+          completedAt: data.completedAt,
+          canResume: data.canResume,
+        });
+=======
       const newSessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
       if (newSessionRecord) {
         emitSessionStateChange(nodeId, previousSessionRecord?.status, data.status, newSessionRecord);
+>>>>>>> origin/main
       }
     }
   } catch (error) {

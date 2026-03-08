@@ -17,7 +17,7 @@ import type { BuildProgressPanelStateComputed } from './useBuildProgressPanelSta
 import { resolveCompletionFailedStageLabel, resolveActiveRunningStageId } from './useBuildProgressPanelState.utils.js';
 import { useBuildProgressPanelStateSideEffects } from './useBuildProgressPanelStateSideEffects.js';
 import { useShapeBuildStep } from '~/ui/components/build-progress/internal/useShapeBuildStepLogic';
-import { useShapeBuildSessionStateAtomBridge } from '~/ui/components/build-progress/useShapeBuildSessionStateAtomBridge';
+import { useShapeBuildSessionStateAtomBridge } from '~/ui/components/build-progress/useShapeBuildSessionStateAtomBridge.js';
 
 type RuntimeStateParams = {
   data?: Partial<ShapeEntity>;

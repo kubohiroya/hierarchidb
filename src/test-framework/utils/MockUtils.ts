@@ -132,6 +132,96 @@ export class MockUtils {
   }
 
   /**
+   * Create a mock event for error handling tests
+   */
+  static createMockEvent(
+    eventType: NotificationType,
+    nodeId: string,
+    payload: any,
+    timestamp?: number
+  ): CapturedEvent {
+    return {
+      eventType,
+      nodeId,
+      timestamp: timestamp || Date.now(),
+      sequenceNumber: Math.floor(Math.random() * 1000) + 1,
+      payload,
+      deliveryLatency: Math.random() * 50
+    };
+  }
+
+  /**
+   * Create a mock worker crash event
+   */
+  static createMockWorkerCrashEvent(nodeId: string): CapturedEvent {
+    return this.createMockEvent('error', nodeId, {
+      type: 'worker-crash',
+      message: 'Worker process terminated unexpectedly',
+      code: 'WORKER_TERMINATED',
+      timestamp: Date.now()
+    });
+  }
+
+  /**
+   * Create a mock communication timeout event sequence
+   */
+  static createMockTimeoutEventSequence(nodeId: string, gapMs: number = 35000): CapturedEvent[] {
+    const baseTime = Date.now();
+    return [
+      this.createMockEvent('task-progress', nodeId, { progress: 50 }, baseTime),
+      this.createMockEvent('heartbeat', nodeId, {}, baseTime + gapMs)
+    ];
+  }
+
+  /**
+   * Create a mock invalid metadata event
+   */
+  static createMockInvalidMetadataEvent(nodeId: string, invalidField: string): CapturedEvent {
+    const metadata: any = {
+      nodeId: nodeId,
+      buildType: 'new',
+      stages: ['initialization']
+    };
+
+    // Introduce specific invalid field
+    switch (invalidField) {
+      case 'nodeId':
+        metadata.nodeId = '';
+        break;
+      case 'buildType':
+        metadata.buildType = 'invalid-type';
+        break;
+      case 'stages':
+        metadata.stages = [];
+        break;
+    }
+
+    return this.createMockEvent('session-state', nodeId, { metadata });
+  }
+
+  /**
+   * Create a mock session timeout event
+   */
+  static createMockSessionTimeoutEvent(nodeId: string): CapturedEvent {
+    return this.createMockEvent('session-state', nodeId, {
+      status: 'timeout',
+      error: 'Session exceeded maximum duration of 3600 seconds'
+    });
+  }
+
+  /**
+   * Create a mock subscriber callback failure event
+   */
+  static createMockCallbackFailureEvent(nodeId: string): CapturedEvent {
+    return this.createMockEvent('error', nodeId, {
+      type: 'subscriber-error',
+      message: 'Subscriber callback failed with exception: TypeError',
+      subscriberId: 'ui-component-123',
+      stack: 'TypeError: Cannot read property of undefined\n    at callback...'
+    });
+  }
+
+  /**
    * Create a mock UnconditionalEventStreamer interface
    */
   static createMockEventStreamer() {
