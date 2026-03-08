@@ -1,5 +1,6 @@
 import { Box, Button, ButtonGroup, CircularProgress, Stack, Typography, Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
-import { type ReactNode, useState, useEffect } from 'react';
+import { type ReactNode, useState, useCallback, useEffect } from 'react';
+import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
 import { LoadingButton } from './LoadingButton.js';
 import ClearIcon from '@mui/icons-material/Clear';
 import PauseIcon from '@mui/icons-material/Pause';
@@ -91,13 +92,20 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
     || Boolean(startLoading)
     || !hasResetDeleteMenuItems;
 
-  const handleResetDeleteMenuOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleResetDeleteMenuOpen = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
     setResetDeleteMenuAnchorEl(event.currentTarget);
-  };
+  }, []);
 
-  const handleResetDeleteMenuClose = () => {
+  const handleResetDeleteMenuClose = useCallback(() => {
     setResetDeleteMenuAnchorEl(null);
-  };
+  }, []);
+
+  const handleResetDeleteMenuItemClick = useCallback((item: { id: string; label: string; onClick: () => void; disabled?: boolean; icon?: ReactNode }) => {
+    if (!item.disabled && item.id !== 'divider-1' && item.id !== 'divider-2' && item.id !== 'divider-3' && item.id !== 'divider-4') {
+      item.onClick();
+    }
+    handleResetDeleteMenuClose();
+  }, [handleResetDeleteMenuClose]);
 
   useEffect(() => {
     if (resetDeleteMenuDisabledState && resetDeleteMenuAnchorEl) {
@@ -105,15 +113,9 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
     }
   }, [resetDeleteMenuAnchorEl, resetDeleteMenuDisabledState]);
 
-  const handleResetDeleteMenuItemClick = (item: { id: string; label: string; onClick: () => void; disabled?: boolean; icon?: ReactNode }) => {
-    item.onClick();
-    handleResetDeleteMenuClose();
-  };
-
   // Show Cancel button when session is running, Reset/Delete menu when stopped
   const showCancelButton = isRunning || isQueued;
   const showResetDeleteMenu = !showCancelButton && hasResetDeleteMenuItems;
-
   return (
     <Box
       sx={{

@@ -6,29 +6,6 @@
 
 ## 今日の運用ログ
 
-- 2025-03-08: #894 Shape Step5 UI改良完了・PR #909作成
-  - Start BuildとPauseボタンをMUI ButtonGroupでグループ化
-  - セッション状態に応じてCancelボタンまたはReset/Deleteメニューを表示切り替え
-  - Reset/Deleteメニューにアイコン付きメニュー項目実装（RestartAlt/PlaylistRemove/CloudOff/FilterAltOff/FilterListOff/PhonelinkEraseアイコン）
-  - BuildControlCard.tsxにresetDeleteMenuItemsプロパティサポート追加
-  - 型チェック成功確認（components・shape-plugin共にexit code 0）
-
-- 2025-03-08: #907 shape-pluginビルドエラー修正完了・PR #908マージ完了
-  - マージコンフリクトマーカー除去（useShapeBuildSessionStateAtomBridge.ts）
-  - 構文エラー修正（runShapePipeline.ts: console.warn関数呼び出し追加）
-  - 68個のビルドエラーを全て解決
-  - 型チェック成功確認（exit code 0）
-
-- 2025-03-08: #903 Worker-UIログ出力簡素化によるパフォーマンス改善完了
-  - emitWorkerLogとemitCriticalError関数削除
-  - 過度なログ出力削減（172行のコード削減）
-  - Worker-UI通信負荷軽減・パフォーマンス向上
-  - 型チェック成功確認・PR #905マージ完了
-
-- 2025-03-08: fix/worker-ui-snapshot/investigate-pipeline-errors ブランチマージ試行
-  - マージコンフリクト発生（shapeBuildRuntimeExecutionControl.ts, runShapePipeline.ts）
-  - 複雑なコンフリクトのため、マージ中止・mainブランチにリセット
-  - Worker-UIスナップショット通信安定化修正は新規ブランチでの再実装を検討
 - 2025-03-08: UIに関連するブランチ全てmainマージ完了
   - PR #898 (E2Eテスト実装) mainマージ完了
   - PR #869 (Worker failed status修正) マージコンフリクト解決・mainマージ完了
@@ -41,6 +18,26 @@
   - 各テストでbeforeEach/afterEachクリーンアップ処理追加
   - Shape削除機能テスト追加・永続化対応完了
   - 型チェック成功確認（exit code 0）
+- 2025-03-08: #827 認証トークン有効期限事前検証機能実装完了・PR #899マージ完了
+  - トークン有効期限の事前チェック機能追加
+  - タイムアウト回避のための検証ロジック実装
+  - 詳細なデバッグログ追加
+  - マージコンフリクト解決後mainに統合完了
+- 2025-03-08: #832 メタデータエラー分類修正完了・PR #910マージ完了
+  - SourceTaskPayloadGenerationErrorクラス追加
+  - エラー分類ロジック修正でメタデータエラーと認証エラーを区別
+  - 適切なエラーメッセージ表示機能実装
+  - マージコンフリクト解決後mainに統合完了
+- 2025-03-08: #826 GitHub Pagesデバッグログ追加完了・PR #911マージ完了
+  - resolveSourceTaskPayloadsForPlan関数に包括的なデバッグログ追加
+  - メタデータロード・ペイロード生成・リフレッシュ試行の各段階を詳細ログ化
+  - サンプルデータをログに含めて互換性問題を特定可能に
+  - GitHub Pages環境でのデバッグログ可視化改善
+- 2025-03-08: #894 Shape Step5 ButtonGroupメニュー統合進行中
+  - BuildControlCardコンポーネントのButtonGroup統合
+  - Reset/Deleteメニュー項目の実装
+  - UI改善とユーザビリティ向上
+  - マージコンフリクト解決中
 - 2025-03-07: #861 hasInitialSnapshotAppliedローカル変数をSSOT状態木参照に統一完了・PR #862作成
 - 2025-03-07: #861起票、ブランチ作成完了、hasInitialSnapshotAppliedローカル変数をSSOT状態木参照に統一開始
   - グローバルティアダウンでテスト用Shape自動削除処理実装
@@ -56,7 +53,6 @@
   - UIバッファサイズ制限・サブスクライバー例外分離が既に実装済みであることを確認
   - 36テスト全成功（バッファオーバーフロー・例外分離テスト含む）
   - 要求機能は既に満たされており追加実装不要
->>>>>>> origin/main
 - 2025-03-07: #844起票、ブランチ作成完了
 - 2025-03-07: #844 国選択ステップでのISO-3166-2国名i18n化実装完了
   - useCountryI18nフック作成
