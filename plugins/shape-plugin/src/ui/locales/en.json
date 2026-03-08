@@ -456,7 +456,14 @@
       "title": "Build controls",
       "pause": "Pause",
       "start": "Start Build",
-      "resume": "Resume Build"
+      "resume": "Resume Build",
+      "resetDeleteMenu": "Reset/Delete menu",
+      "resetSession": "Reset build session",
+      "deleteMetadata": "Delete feature metadata",
+      "deleteApiCache": "Delete API cache",
+      "deleteFilteredCache": "Delete filtered cache",
+      "deleteSimplifiedCache": "Delete simplified cache",
+      "deleteTransposeIndex": "Delete transpose index"
     },
     "timing": {
       "totalElapsed": "Total elapsed:",

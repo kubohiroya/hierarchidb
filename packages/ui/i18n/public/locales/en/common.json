@@ -98,6 +98,16 @@
       "elapsedRemaining": "Elapsed {{elapsed}} ・ Est. remaining {{remaining}}"
     }
   },
+  "buildControl": {
+    "buttons": {
+      "startBuild": "Start Build",
+      "resumeBuild": "Resume Build",
+      "pause": "Pause",
+      "cancel": "Cancel",
+      "resetDelete": "Reset/Delete",
+      "resetDeleteMenu": "Reset/Delete menu"
+    }
+  },
   "api": {
     "request": "API Request",
     "response": "API Response",

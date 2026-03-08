@@ -98,6 +98,16 @@
       "elapsedRemaining": "経過時間 {{elapsed}} ・ 推計残り {{remaining}}"
     }
   },
+  "buildControl": {
+    "buttons": {
+      "startBuild": "ビルド開始",
+      "resumeBuild": "ビルド再開",
+      "pause": "一時停止",
+      "cancel": "キャンセル",
+      "resetDelete": "リセット/削除",
+      "resetDeleteMenu": "リセット/削除メニュー"
+    }
+  },
   "api": {
     "request": "APIリクエスト",
     "response": "APIレスポンス",

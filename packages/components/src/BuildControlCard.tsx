@@ -1,5 +1,6 @@
 import { Box, Button, ButtonGroup, CircularProgress, Stack, Typography, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
 import { type ReactNode, useState, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
 import { LoadingButton } from './LoadingButton.js';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -58,6 +59,7 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
   resetDeleteMenuAriaLabel,
   resetDeleteMenuDisabled,
 }) => {
+  const { t } = useTranslation('common');
   const [resetDeleteMenuAnchorEl, setResetDeleteMenuAnchorEl] = useState<HTMLElement | null>(null);
 
   const pauseSpinner = (
@@ -71,8 +73,8 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
   const computedCancelIcon = <ClearIcon fontSize="small" />;
   const shouldShowResume = Boolean(showResumeLabel) || status === 'paused';
   const computedLabel = shouldShowResume
-    ? (resumeLabel ?? 'Resume Build')
-    : (startLabel ?? 'Start Build');
+    ? (resumeLabel ?? t('buildControl.buttons.resumeBuild') as string)
+    : (startLabel ?? t('buildControl.buttons.startBuild') as string);
   const computedIcon = shouldShowResume
     ? (resumeIcon ?? <PlayArrowIcon fontSize="small" />)
     : (startIcon ?? <PlayArrowIcon fontSize="small" />);
@@ -137,11 +139,11 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
       }}
     >
       <Stack direction="row" spacing={1} alignItems="center" sx={{ whiteSpace: 'nowrap' }}>
-        <ButtonGroup variant="contained" size="small" aria-label="Build control buttons">
+        <ButtonGroup variant="contained" size="large" aria-label="Build control buttons">
           <LoadingButton
             color="secondary"
             variant="contained"
-            size="small"
+            size="large"
             endIcon={computedIcon}
             disabled={disableStart}
             onClick={onResume}
@@ -156,16 +158,16 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
           <Button
             color="secondary"
             variant="contained"
-            size="small"
+            size="large"
             endIcon={computedPauseIcon}
             disabled={disablePause}
             onClick={onPause}
             data-testid="build-control-pause-button"
-            aria-label={pauseLabel ?? 'Pause'}
+            aria-label={pauseLabel ?? t('buildControl.buttons.pause') as string}
             id="build-control-pause-button"
             role="button"
           >
-            {pauseLabel ?? 'Pause'}
+            {pauseLabel ?? t('buildControl.buttons.pause') as string}
           </Button>
         </ButtonGroup>
         
@@ -177,11 +179,11 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
             disabled={disableCancel}
             onClick={onCancel}
             data-testid="build-control-cancel-button"
-            aria-label={cancelLabel ?? 'Cancel'}
+            aria-label={cancelLabel ?? t('buildControl.buttons.cancel') as string}
             id="build-control-cancel-button"
             role="button"
           >
-            {cancelLabel ?? 'Cancel'}
+            {cancelLabel ?? t('buildControl.buttons.cancel') as string}
           </Button>
         )}
 
@@ -195,11 +197,11 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
               disabled={resetDeleteMenuDisabledState}
               onClick={handleResetDeleteMenuOpen}
               data-testid="build-control-reset-delete-button"
-              aria-label={resetDeleteMenuAriaLabel ?? 'Reset/Delete menu'}
+              aria-label={resetDeleteMenuAriaLabel ?? t('buildControl.buttons.resetDeleteMenu') as string}
               aria-expanded={resetDeleteMenuOpen}
               aria-haspopup="true"
             >
-              Reset ▼
+              {t('buildControl.buttons.resetDelete') as string}
             </Button>
             <DialogSafeMenu
               anchorEl={resetDeleteMenuAnchorEl}

@@ -456,7 +456,14 @@
       "title": "ビルド操作",
       "pause": "一時停止",
       "start": "ビルド開始",
-      "resume": "ビルド再開"
+      "resume": "ビルド再開",
+      "resetDeleteMenu": "リセット/削除メニュー",
+      "resetSession": "ビルドセッションをリセット",
+      "deleteMetadata": "フィーチャーメタデータを削除",
+      "deleteApiCache": "APIキャッシュを削除",
+      "deleteFilteredCache": "フィルター処理キャッシュを削除",
+      "deleteSimplifiedCache": "簡略化キャッシュを削除",
+      "deleteTransposeIndex": "転置インデックスを削除"
     },
     "timing": {
       "totalElapsed": "総経過時間:",
