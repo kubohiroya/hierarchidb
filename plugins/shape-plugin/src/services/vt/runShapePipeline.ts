@@ -150,11 +150,12 @@ const createShapePipelineContext = async (params: ShapePipelineParams): Promise<
       loadContinentLookup,
     };
   } catch (error) {
+    console.warn('[ShapePipeline][Context] failed to create context', JSON.stringify({
       runId: params.pipelineRunId ?? null,
       error: error instanceof Error ? error.message : String(error),
       errorName: error instanceof Error ? error.name : 'Unknown',
       errorStack: error instanceof Error ? error.stack : undefined,
-    });
+    }));
     throw error;
   }
 };
@@ -411,10 +412,11 @@ const runCleanupStage = async (context: ShapePipelineContext): Promise<void> => 
 };
 
 export const runShapePipeline = async (params: ShapePipelineParams): Promise<void> => {
+  console.warn('[ShapePipeline] pipeline start', JSON.stringify({
     runId: params.pipelineRunId ?? null,
     dataSource: params.dataSource,
     downloadTaskPayloadsCount: params.downloadTaskPayloads?.length ?? 0,
-  });
+  }));
   
   try {
     const context = await createShapePipelineContext(params);
@@ -448,14 +450,16 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
         },
         logger: {
           onStart: ({ startedAt, memory }) => {
+            console.warn('[ShapePipeline][Checkpoint] stage start', JSON.stringify({
               runId: params.pipelineRunId ?? null,
               stage,
               startedAt,
               memory,
-            });
+            }));
           },
           onSuccess: ({ startedAt, durationMs, memory }) => {
             const finishedAt = Date.now();
+            console.warn('[ShapePipeline][Checkpoint] stage success', JSON.stringify({
               runId: params.pipelineRunId ?? null,
               stage,
               outcome: 'success',
@@ -463,10 +467,11 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
               finishedAt,
               durationMs,
               memory,
-            });
+            }));
           },
           onError: ({ startedAt, durationMs, errorMessage, memory }) => {
             const finishedAt = Date.now();
+            console.warn('[ShapePipeline][Checkpoint] stage error', JSON.stringify({
               runId: params.pipelineRunId ?? null,
               stage,
               outcome: 'error',
@@ -475,54 +480,61 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
               durationMs,
               errorMessage,
               memory,
-            });
+            }));
           },
         },
       });
     };
 
+    console.warn('[ShapePipeline] prepare start', JSON.stringify({
       runId: params.pipelineRunId ?? null,
-    });
+    }));
     await checkpoint('prepare-pipeline-run', async () => preparePipelineRun(context));
 
+    console.warn('[ShapePipeline] execution stages start', JSON.stringify({
       runId: params.pipelineRunId ?? null,
       stageCount: executionStages.length,
-      stages: executionStages.map(stage => stage.checkpointStage),
-    });
+    }));
     
     let stopAfterStage = false;
     for (const stage of executionStages) {
       if (stopAfterStage) {
+        console.warn('[ShapePipeline] stage skipped', JSON.stringify({
           runId: params.pipelineRunId ?? null,
           stage: stage.checkpointStage,
-        });
+        }));
         break;
       }
+      console.warn('[ShapePipeline] stage start', JSON.stringify({
         runId: params.pipelineRunId ?? null,
         stage: stage.checkpointStage,
-      });
+      }));
       stopAfterStage = await checkpoint(
         stage.checkpointStage,
         async () => runProfileStage(stage, context),
       );
     }
     
+    console.warn('[ShapePipeline] metadata stage start', JSON.stringify({
       runId: params.pipelineRunId ?? null,
-    });
+    }));
     await checkpoint('metadata-stage', async () => runMetadataStage(context));
     
+    console.warn('[ShapePipeline] cleanup stage start', JSON.stringify({
       runId: params.pipelineRunId ?? null,
-    });
+    }));
     await checkpoint('cleanup-stage', async () => runCleanupStage(context));
     
+    console.warn('[ShapePipeline] pipeline complete', JSON.stringify({
       runId: params.pipelineRunId ?? null,
-    });
+    }));
   } catch (error) {
+    console.warn('[ShapePipeline] pipeline error', JSON.stringify({
       runId: params.pipelineRunId ?? null,
       error: error instanceof Error ? error.message : String(error),
       errorName: error instanceof Error ? error.name : 'Unknown',
       errorStack: error instanceof Error ? error.stack : undefined,
-    });
+    }));
     throw error;
   }
 };
