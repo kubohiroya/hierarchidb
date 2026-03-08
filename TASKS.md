@@ -2,6 +2,8 @@
 
 ## Doing
 
+- #920 components パッケージの react-i18next 直接 import を @hierarchidb/ui-i18n に修正 / fix/components/use-ui-i18n-import / start
+
 - #915 Shape Step5 ビルド関連UI表記のi18n化 / feature/i18n/shape-step5-build-ui-labels / done
 
 - #914 Shape Step5 Reset/Deleteメニューのi18n化 / feature/i18n/shape-step5-reset-delete-menu / start
