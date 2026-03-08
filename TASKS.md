@@ -2,12 +2,24 @@
 
 ## Doing
 
-- #864 / fix/worker-ui-snapshot/remove-harmful-local-state / 2025-03-07 21:08
+- #893 / e2e/shape-step5/playwright-testing / start
 
 ## Blocked
 
 ## 今日の運用ログ
 
+- 2025-03-08: #893 E2EテストShape管理機能実装完了
+  - data-testid属性使用削除・実際のユーザー可視テキストベースセレクター変更
+  - テスト用Shape作成・削除・クリーンアップヘルパー関数実装（e2e/helpers/shape-cleanup.ts）
+  - グローバルティアダウンでテスト用Shape自動削除処理実装
+  - 各テストでbeforeEach/afterEachクリーンアップ処理追加
+  - Shape削除機能テスト追加・永続化対応完了
+  - 型チェック成功確認（exit code 0）
+- 2025-03-08: #896 Delete API cacheアイコン設定完了
+  - CloudOffアイコンをインポート・Delete API cacheメニューアイテムに設定
+  - resetDeleteMenuItems追加（Reset/Delete/Transpose各メニューアイテム）
+  - 型チェック成功確認（exit code 0）
+  - PR #897作成・mainマージ完了
 - 2025-03-07: #838 Level 1 Critical improvements実装確認完了・PR #863マージ完了
   - UIバッファサイズ制限・サブスクライバー例外分離が既に実装済みであることを確認
   - 36テスト全成功（バッファオーバーフロー・例外分離テスト含む）

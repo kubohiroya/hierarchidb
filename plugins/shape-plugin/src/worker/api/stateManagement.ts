@@ -14,6 +14,7 @@ import type {
     StageSnapshotSubscription,
     HeartbeatSubscription,
     TaskProgressSubscription,
+    WorkerLogSubscription,
 } from '~/common/types/session-events';
 import {
     resolveTaskActivityTimestamp,
@@ -45,6 +46,7 @@ export const sessionStateCallbacks = new Map<string, SessionStateSubscription>()
 export const stageSnapshotCallbacks = new Map<string, StageSnapshotSubscription>();
 export const heartbeatCallbacks = new Map<string, HeartbeatSubscription>();
 export const taskProgressCallbacks = new Map<string, TaskProgressSubscription>();
+export const workerLogCallbacks = new Map<string, WorkerLogSubscription>();
 const pauseStates = new Map<string, PauseState>();
 
 // Session status and pause state management

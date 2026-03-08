@@ -34,7 +34,7 @@ import {
   deleteRawDataDataSourceBuffersForNodeMetadataIds,
 } from '~/services/utils/chunkStore';
 import { resolveSourceStageStrategy } from '~/services/build/strategies/resolveSourceStageStrategy';
-import { emitTaskSnapshot, emitProgressSnapshot, emitSessionStateChange } from './eventEmission.js';
+import { emitTaskSnapshot, emitProgressSnapshot, emitSessionStateChange, emitWorkerLog, emitCriticalError } from './eventEmission.js';
 import type { ShapeBuildStopReason, ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import { isStopReason } from './taskQueueManagement.js';
 // Custom error types for better error classification
@@ -98,6 +98,11 @@ const upsertBuildSessionSnapshot = async (data: {
   tasks?: any[] 
 }): Promise<void> => {
   try {
+<<<<<<< HEAD
+=======
+    const previousSessionRecord = data.status ? await shapeQueryAPIImpl.getBuildSessionRecord(data.nodeId).catch(() => null) : null;
+    
+>>>>>>> origin/main
     await shapeMutationAPIImpl.updateBuildSession(data.nodeId, {
       status: data.status,
       stopReason: data.stopReason,
@@ -108,6 +113,7 @@ const upsertBuildSessionSnapshot = async (data: {
     
     // Emit session state change event
     if (data.status) {
+<<<<<<< HEAD
       const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(data.nodeId).catch(() => null);
       if (sessionRecord) {
         emitSessionStateChange(data.nodeId, sessionRecord.status, data.status, {
@@ -118,6 +124,11 @@ const upsertBuildSessionSnapshot = async (data: {
           startedAt: data.startedAt ?? sessionRecord.startedAt,
           completedAt: data.completedAt,
         });
+=======
+      const newSessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(data.nodeId).catch(() => null);
+      if (newSessionRecord) {
+        emitSessionStateChange(data.nodeId, previousSessionRecord?.status, data.status, newSessionRecord);
+>>>>>>> origin/main
       }
     }
   } catch (error) {
@@ -132,6 +143,11 @@ const updateBuildSessionFromTasks = async (nodeId: NodeId, data: {
   canResume?: boolean 
 }): Promise<void> => {
   try {
+<<<<<<< HEAD
+=======
+    const previousSessionRecord = data.status ? await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null) : null;
+    
+>>>>>>> origin/main
     await shapeMutationAPIImpl.updateBuildSession(nodeId, {
       status: data.status,
       stopReason: data.stopReason,
@@ -141,6 +157,7 @@ const updateBuildSessionFromTasks = async (nodeId: NodeId, data: {
     
     // Emit session state change event
     if (data.status) {
+<<<<<<< HEAD
       const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
       if (sessionRecord) {
         emitSessionStateChange(nodeId, sessionRecord.status, data.status, {
@@ -150,6 +167,11 @@ const updateBuildSessionFromTasks = async (nodeId: NodeId, data: {
           completedAt: data.completedAt,
           canResume: data.canResume,
         });
+=======
+      const newSessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
+      if (newSessionRecord) {
+        emitSessionStateChange(nodeId, previousSessionRecord?.status, data.status, newSessionRecord);
+>>>>>>> origin/main
       }
     }
   } catch (error) {
@@ -1023,6 +1045,21 @@ const startBuildSessionInternal = async (
       void emitProgressSnapshot(nodeForSession, terminalProgressMessage);
       return nodeForSession;
     }
+    console.warn('[shapeBuildAPI] Starting runShapePipeline execution', {
+      nodeId: nodeForSession,
+      runId: pipelineRunId,
+      dataSource: resolvedDataSource,
+      selectedAdminPairCount,
+      downloadTaskPayloadsCount: downloadTaskPayloads.length,
+    });
+    
+    emitWorkerLog(nodeForSession, 'log', '[shapeBuildAPI] Starting runShapePipeline execution', {
+      runId: pipelineRunId,
+      dataSource: resolvedDataSource,
+      selectedAdminPairCount,
+      downloadTaskPayloadsCount: downloadTaskPayloads.length,
+    });
+    
     void runShapePipeline({
       nodeId: nodeForSession,
       dataSource: resolvedDataSource,
@@ -1037,6 +1074,14 @@ const startBuildSessionInternal = async (
       onTasksEnqueued: emitQueuedProgressSnapshot,
       onStageTasksPrepared: emitStageTaskSnapshotBarrier,
     }).then(async () => {
+      console.warn('[shapeBuildAPI] runShapePipeline completed successfully', {
+        nodeId: nodeForSession,
+        runId: pipelineRunId,
+      });
+      
+      emitWorkerLog(nodeForSession, 'log', '[shapeBuildAPI] runShapePipeline completed successfully', {
+        runId: pipelineRunId,
+      });
       const completedAt = Date.now();
       terminalProgressMessage = undefined;
       const taskQueue = new VtTaskQueueDb();
@@ -1059,6 +1104,50 @@ const startBuildSessionInternal = async (
         terminalProgressMessage = 'Pipeline finished with failed tasks.';
       }
     }).catch(async (error) => {
+      const errorDetails = {
+        nodeId: nodeForSession,
+        runId: pipelineRunId,
+        error: error instanceof Error ? error.message : String(error),
+        errorName: error instanceof Error ? error.name : 'Unknown',
+        errorStack: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString(),
+      };
+      
+      console.error('[shapeBuildAPI] runShapePipeline failed with error', errorDetails);
+      
+      // Emit critical error event to UI immediately - contract violation prevention
+      emitCriticalError(
+        nodeForSession,
+        'Build pipeline failed - contract violation detected',
+        error,
+        true // contractViolation = true
+      );
+      
+      // Also emit detailed error to worker log for backward compatibility
+      emitWorkerLog(nodeForSession, 'error', '[CRITICAL] Build pipeline failed - contract violation detected', {
+        ...errorDetails,
+        severity: 'critical',
+        contractViolation: true,
+        userVisible: true,
+      });
+      
+      // Emit task snapshot even when pipeline fails
+      try {
+        await emitTaskSnapshot(nodeForSession);
+        console.warn('[shapeBuildAPI] Task snapshot emitted after pipeline failure', {
+          nodeId: nodeForSession,
+        });
+        emitWorkerLog(nodeForSession, 'log', '[shapeBuildAPI] Task snapshot emitted after pipeline failure');
+      } catch (emitError) {
+        console.error('[shapeBuildAPI] Failed to emit task snapshot after pipeline failure', {
+          nodeId: nodeForSession,
+          emitError: emitError instanceof Error ? emitError.message : String(emitError),
+        });
+        emitWorkerLog(nodeForSession, 'error', '[shapeBuildAPI] Failed to emit task snapshot after pipeline failure', {
+          emitError: emitError instanceof Error ? emitError.message : String(emitError),
+        });
+      }
+      
       const failedAt = Date.now();
       const diagnostics = toErrorDiagnostics(error);
       if (isAuthPendingPipelineError(error)) {

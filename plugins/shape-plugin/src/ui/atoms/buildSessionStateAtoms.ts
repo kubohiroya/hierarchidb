@@ -94,6 +94,12 @@ type LifecycleExtras = {
   inactiveMs?: number;
   stageStartedAt?: number;
   stageInactiveMs?: number;
+  criticalError?: {
+    message: string;
+    error: string;
+    errorName: string;
+    contractViolation: boolean;
+  };
 };
 
 type StageProgress = {
@@ -236,6 +242,18 @@ type ShapeUiSyncPhaseChangedEvent = {
   };
 };
 
+type ShapeCriticalErrorEvent = {
+  type: 'criticalError';
+  payload: {
+    message: string;
+    error: string;
+    errorName: string;
+    timestamp: number;
+    severity: 'critical';
+    contractViolation: boolean;
+  };
+};
+
 type ShapeResetEvent = {
   type: 'reset';
 };
@@ -250,6 +268,7 @@ export type ShapeBuildSessionStateEvent =
   | ShapeTaskStreamConnectionEvent
   | ShapeViewSelectionChangedEvent
   | ShapeUiSyncPhaseChangedEvent
+  | ShapeCriticalErrorEvent
   | ShapeResetEvent;
 
 const dispatchTreeEventAtom = shapeStateTree.dispatchBuildSessionStateTreeEventAtom;
@@ -271,6 +290,7 @@ export const buildSessionRuntimeAtom = atom((get) => {
     inactiveMs: lifecycleExtras.inactiveMs,
     stageStartedAt: lifecycleExtras.stageStartedAt,
     stageInactiveMs: lifecycleExtras.stageInactiveMs,
+    criticalError: lifecycleExtras.criticalError,
   };
 });
 
@@ -436,6 +456,40 @@ const applyBuildSessionEventAtom = atom(
             },
           });
         }
+        return;
+      }
+      case 'criticalError': {
+        // Log critical error for immediate visibility
+        console.error('🚨 CRITICAL BUILD SESSION ERROR 🚨', {
+          message: event.payload.message,
+          error: event.payload.error,
+          errorName: event.payload.errorName,
+          timestamp: new Date(event.payload.timestamp).toISOString(),
+          contractViolation: event.payload.contractViolation,
+        });
+        
+        // Force session to failed state to prevent contract violation hiding
+        dispatchTreeEvent({
+          type: 'sessionPatched',
+          eventVersion: Date.now(), // Use timestamp as version for immediate processing
+          payload: {
+            phase: 'failed',
+            isActive: false,
+          },
+        });
+        
+        // Store error details in lifecycle extras for UI access
+        set(lifecycleExtrasAtom, (current) => ({
+          ...current,
+          stopReason: 'failed',
+          completedAt: event.payload.timestamp,
+          criticalError: {
+            message: event.payload.message,
+            error: event.payload.error,
+            errorName: event.payload.errorName,
+            contractViolation: event.payload.contractViolation,
+          },
+        }));
         return;
       }
       default:

@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "ユーザープロンプト音声通知",
+  "description": "エージェントが停止してユーザーの入力を待つ際に音声で通知する",
+  "version": "1",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "afplay /System/Library/Sounds/Glass.aiff"
+  }
+}
