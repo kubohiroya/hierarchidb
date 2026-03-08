@@ -6,6 +6,7 @@
 
 ## 今日の運用ログ
 
+- 2026-03-09: #920 PR #921マージ完了（shape-pluginのuseTranslation import修正）
 - 2026-03-09: #922 ダイアログUI表記のi18n化完了・PR #923マージ済み
 - 2025-03-09: #915 Shape Step5 ビルド関連UI表記のi18n化完了
   - `packages/ui/i18n/public/locales/en/common.json`と`ja/common.json`にbuildControl関連の翻訳を追加

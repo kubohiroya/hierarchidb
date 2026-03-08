@@ -712,6 +712,9 @@ importers:
       '@hierarchidb/core-types':
         specifier: workspace:*
         version: link:../core-types
+      '@hierarchidb/ui-i18n':
+        specifier: workspace:*
+        version: link:../ui/i18n
       '@hierarchidb/ui-lru-splitview':
         specifier: workspace:*
         version: link:../ui/lru-splitview
@@ -19013,7 +19016,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(esbuild@0.18.20)(happy-dom@20.8.3)(jiti@2.6.1)(jsdom@25.0.1)(tsx@4.21.0)(yaml@2.8.2)
+      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(esbuild@0.18.20)(happy-dom@20.8.3)(jiti@2.6.1)(jsdom@26.1.0)(tsx@4.21.0)(yaml@2.8.2)
 
   '@vitest/utils@3.2.4':
     dependencies:
