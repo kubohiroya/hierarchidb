@@ -6,6 +6,12 @@ import {
 } from '@hierarchidb/ui-build-progress';
 import type { ReactNode } from 'react';
 import { createElement } from 'react';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import PlaylistRemoveIcon from '@mui/icons-material/PlaylistRemove';
+import FilterAltOffIcon from '@mui/icons-material/FilterAltOff';
+import FilterListOffIcon from '@mui/icons-material/FilterListOff';
+import PhonelinkEraseIcon from '@mui/icons-material/PhonelinkErase';
+import CloudOffIcon from '@mui/icons-material/CloudOff';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import type { useShapeBuildProgressPanelController } from './useShapeBuildProgressPanelController.js';
 import {
@@ -57,6 +63,9 @@ type ShapeBuildProgressPanelViewModel = {
   controlMenuAriaLabel?: string;
   controlMenuDisabled?: boolean;
   startLoading?: boolean;
+  resetDeleteMenuItems?: Array<{ id: string; label: string; onClick: () => void; disabled?: boolean; icon?: ReactNode }>;
+  resetDeleteMenuAriaLabel?: string;
+  resetDeleteMenuDisabled?: boolean;
   completionDialog: ShapeBuildProgressPanelControllerResult['completionDialog'];
   suspendDialog: ShapeBuildProgressPanelControllerResult['suspendDialog'];
   crashDialog: ShapeBuildProgressPanelControllerResult['crashDialog'];
@@ -173,6 +182,20 @@ export const useShapeBuildProgressPanelViewModel = ({
       nodeId,
       controlRightContent,
     }),
+    resetDeleteMenuItems: [
+      { id: 'reset-session', label: 'Reset build session', onClick: () => console.log('Reset session'), icon: createElement(RestartAltIcon, { fontSize: 'small' }) },
+      { id: 'divider-1', label: '---', onClick: () => {}, disabled: true },
+      { id: 'delete-metadata', label: 'Delete feature metadata', onClick: () => console.log('Delete metadata'), icon: createElement(PlaylistRemoveIcon, { fontSize: 'small' }) },
+      { id: 'divider-2', label: '---', onClick: () => {}, disabled: true },
+      { id: 'delete-api-cache', label: 'Delete API cache', onClick: () => console.log('Delete API cache'), icon: createElement(CloudOffIcon, { fontSize: 'small' }) },
+      { id: 'delete-filtered-cache', label: 'Delete filtered cache', onClick: () => console.log('Delete filtered cache'), icon: createElement(FilterAltOffIcon, { fontSize: 'small' }) },
+      { id: 'divider-3', label: '---', onClick: () => {}, disabled: true },
+      { id: 'delete-simplified-cache', label: 'Delete simplified cache', onClick: () => console.log('Delete simplified cache'), icon: createElement(FilterListOffIcon, { fontSize: 'small' }) },
+      { id: 'divider-4', label: '---', onClick: () => {}, disabled: true },
+      { id: 'delete-transpose-index', label: 'Delete transpose index', onClick: () => console.log('Delete transpose index'), icon: createElement(PhonelinkEraseIcon, { fontSize: 'small' }) },
+    ],
+    resetDeleteMenuAriaLabel: t('stage.controls.resetDeleteMenu', 'Reset/Delete menu'),
+    resetDeleteMenuDisabled: false,
     completionDialog,
     suspendDialog,
     crashDialog,

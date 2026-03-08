@@ -98,6 +98,8 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
           loading={isLoading}
           data-testid="build-control-start-resume-button"
           aria-label={computedLabel}
+          id="build-control-start-button"
+          role="button"
         >
           {computedLabel}
         </LoadingButton>
@@ -109,6 +111,8 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
           onClick={onPause}
           data-testid="build-control-pause-button"
           aria-label={pauseLabel ?? 'Pause'}
+          id="build-control-pause-button"
+          role="button"
         >
           {pauseLabel ?? 'Pause'}
         </Button>
@@ -120,6 +124,8 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
           onClick={onCancel}
           data-testid="build-control-cancel-button"
           aria-label={cancelLabel ?? 'Cancel'}
+          id="build-control-cancel-button"
+          role="button"
         >
           {cancelLabel ?? 'Cancel'}
         </Button>

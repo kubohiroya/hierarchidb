@@ -6,8 +6,34 @@
 
 ## 今日の運用ログ
 
+- 2025-03-08: UIに関連するブランチ全てmainマージ完了
+  - PR #898 (E2Eテスト実装) mainマージ完了
+  - PR #869 (Worker failed status修正) マージコンフリクト解決・mainマージ完了
+  - マージコンフリクト解決: shapeBuildRuntimeExecutionControl.tsでemitWorkerLog・emitCriticalError追加
+  - 全UIブランチがmainに統合され、最新状態に更新完了
+- 2025-03-08: #893 E2EテストShape管理機能実装完了
+  - data-testid属性使用削除・実際のユーザー可視テキストベースセレクター変更
+  - テスト用Shape作成・削除・クリーンアップヘルパー関数実装（e2e/helpers/shape-cleanup.ts）
+  - グローバルティアダウンでテスト用Shape自動削除処理実装
+  - 各テストでbeforeEach/afterEachクリーンアップ処理追加
+  - Shape削除機能テスト追加・永続化対応完了
+  - 型チェック成功確認（exit code 0）
 - 2025-03-07: #861 hasInitialSnapshotAppliedローカル変数をSSOT状態木参照に統一完了・PR #862作成
 - 2025-03-07: #861起票、ブランチ作成完了、hasInitialSnapshotAppliedローカル変数をSSOT状態木参照に統一開始
+  - グローバルティアダウンでテスト用Shape自動削除処理実装
+  - 各テストでbeforeEach/afterEachクリーンアップ処理追加
+  - Shape削除機能テスト追加・永続化対応完了
+  - 型チェック成功確認（exit code 0）
+- 2025-03-08: #896 Delete API cacheアイコン設定完了
+  - CloudOffアイコンをインポート・Delete API cacheメニューアイテムに設定
+  - resetDeleteMenuItems追加（Reset/Delete/Transpose各メニューアイテム）
+  - 型チェック成功確認（exit code 0）
+  - PR #897作成・mainマージ完了
+- 2025-03-07: #838 Level 1 Critical improvements実装確認完了・PR #863マージ完了
+  - UIバッファサイズ制限・サブスクライバー例外分離が既に実装済みであることを確認
+  - 36テスト全成功（バッファオーバーフロー・例外分離テスト含む）
+  - 要求機能は既に満たされており追加実装不要
+>>>>>>> origin/main
 - 2025-03-07: #844起票、ブランチ作成完了
 - 2025-03-07: #844 国選択ステップでのISO-3166-2国名i18n化実装完了
   - useCountryI18nフック作成

@@ -61,6 +61,7 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
     let receivedEvents: SequencedEvent[];
 
     beforeEach(() => {
+        vi.useFakeTimers();
         mockWorker = new MockWorkerEnvironment();
         bufferManager = new UIEventBufferManager();
         receivedEvents = [];
@@ -69,6 +70,7 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
     });
 
     afterEach(() => {
+        vi.useRealTimers();
         mockWorker.terminate();
         bufferManager.reset();
         receivedEvents.length = 0;
@@ -126,7 +128,7 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
             });
 
             // Wait for async message processing
-            await new Promise(resolve => setTimeout(resolve, 10));
+            vi.advanceTimersByTime(10);
 
             // Verify events were delivered across process boundary
             expect(receivedMessages).toHaveLength(3);
@@ -191,7 +193,7 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
             }
 
             // Wait for message processing
-            await new Promise(resolve => setTimeout(resolve, 20));
+            vi.advanceTimersByTime(20);
 
             // Verify delivery attempts were made
             expect(deliveryResults).toHaveLength(eventCount);
@@ -408,7 +410,7 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
             }, 10); // Emit every 10ms
 
             // Let events flow for a short time
-            await new Promise(resolve => setTimeout(resolve, 50));
+            vi.advanceTimersByTime(50);
             const eventsBeforeAbort = eventCount;
             
             // Trigger abort and measure termination time
@@ -426,7 +428,7 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
             expect(terminationTime).toBeLessThan(500);
             
             // Wait a bit more and verify no new events
-            await new Promise(resolve => setTimeout(resolve, 100));
+            vi.advanceTimersByTime(100);
             expect(eventCount).toBe(eventsBeforeAbort);
             
             // Verify abort signal is set
@@ -558,7 +560,7 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
                 for (let i = 0; i < eventCount; i++) {
                     // Simulate variable processing time
                     if (i % 5 === 0) {
-                        await new Promise(resolve => setTimeout(resolve, 1));
+                        vi.advanceTimersByTime(1);
                     }
                     
                     unconditionalEventStreamer.emitEvent(
@@ -634,7 +636,7 @@ describe('Worker-to-UI Event Streaming Integration Tests', () => {
             });
 
             // Wait for retries to complete
-            await new Promise(resolve => setTimeout(resolve, 50));
+            vi.advanceTimersByTime(50);
 
             // Verify all events were eventually delivered
             const bufferedEvents = bufferManager.flushBuffer('session-state');
