@@ -2,11 +2,11 @@
 
 ## Doing
 
-- #924 Stepper Step1 "Info" i18nキーパス修正 / fix/i18n/stepper-info-label-key-path / start
-
 ## Blocked
 
 ## 今日の運用ログ
+
+- 2026-03-09: #924 Stepper Step1 "Info"ラベルi18nキーパス修正完了・PR #925マージ済み
 
 - 2026-03-09: #920 PR #921マージ完了（shape-pluginのuseTranslation import修正）
 - 2026-03-09: #922 ダイアログUI表記のi18n化完了・PR #923マージ済み
