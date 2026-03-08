@@ -493,27 +493,20 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
 
       // Subscribe to Critical Error events directly via unconditionalEventStreamer
       const unsubscribeCriticalError = unconditionalEventStreamer.subscribe(nodeId, 'critical-error', (event) => {
-        const criticalEvent = event as { payload: CriticalErrorEvent };
+        const { payload } = event as { payload: CriticalErrorEvent };
         console.error('🚨 CRITICAL ERROR EVENT RECEIVED 🚨');
-        console.error('Critical Error Details:', {
-          message: criticalEvent.payload.message,
-          error: criticalEvent.payload.error,
-          errorName: criticalEvent.payload.errorName,
-          timestamp: criticalEvent.payload.timestamp,
-          nodeId: criticalEvent.payload.nodeId,
-          contractViolation: criticalEvent.payload.contractViolation,
-        });
+        console.error('Critical Error Details:', payload);
         
         // Emit to build session event system for UI visibility
         dispatch({
           type: 'criticalError',
           payload: {
-            message: criticalEvent.payload.message,
-            error: criticalEvent.payload.error,
-            errorName: criticalEvent.payload.errorName,
-            timestamp: criticalEvent.payload.timestamp,
-            severity: criticalEvent.payload.severity,
-            contractViolation: criticalEvent.payload.contractViolation,
+            message: payload.message,
+            error: payload.error,
+            errorName: payload.errorName,
+            timestamp: payload.timestamp,
+            severity: payload.severity,
+            contractViolation: payload.contractViolation,
           },
         });
       });

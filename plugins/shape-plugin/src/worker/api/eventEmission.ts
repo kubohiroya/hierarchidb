@@ -77,9 +77,8 @@ export const emitCriticalError = (
     // Log to worker console with contract violation indicator
     const contractIndicator = contractViolation ? '🚨 CONTRACT VIOLATION' : '';
     const logMessage = `${contractIndicator} Critical Error: ${message}`;
-    const logData = { error: errorString, errorName, contractViolation };
     
-    console.error('[Worker]', logMessage, logData);
+    console.error('[Worker]', logMessage, event);
 };
 
 export const emitSessionStateChange = (
