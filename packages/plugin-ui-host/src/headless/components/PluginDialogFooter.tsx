@@ -367,6 +367,9 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
                 disabled={disableLeftPrimary}
                 loading={pendingAction?.type === leftActionType}
                 startIcon={leftPrimaryIcon}
+                id="dialog-footer-back-cancel-button"
+                role="button"
+                aria-label={leftPrimaryLabel}
               >
                 {leftPrimaryLabel}
               </LoadingButton>
@@ -389,6 +392,9 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
                     disabled={disableDraftButton}
                     loading={pendingAction?.type === 'save-draft'}
                     endIcon={<CheckIcon fontSize="small" />}
+                    id="dialog-footer-save-draft-button"
+                    role="button"
+                    aria-label={saveDraftLabel ?? t(`${i18nBasePath}.buttons.saveDraft`, 'Save Draft')}
                   >
                     {saveDraftLabel ?? t(`${i18nBasePath}.buttons.saveDraft`, 'Save Draft')}
                   </LoadingButton>
@@ -417,6 +423,11 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
                 disabled={!canStartBuild || isStartingBuild || hasPendingAction}
                 loading={isStartingBuild}
                 endIcon={<ConstructionIcon fontSize="small" />}
+                id="dialog-footer-start-build-button"
+                role="button"
+                aria-label={isStartingBuild 
+                  ? t(`${i18nBasePath}.buttons.building`, 'Building…') 
+                  : t(`${i18nBasePath}.buttons.build`, 'Build')}
               >
                 {isStartingBuild 
                   ? t(`${i18nBasePath}.buttons.building`, 'Building…') 
@@ -460,6 +471,9 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
                 disabled={disableRightPrimary}
                 loading={pendingAction?.type === rightActionType}
                 endIcon={<ChevronRightIcon fontSize="small" />}
+                id="dialog-footer-next-button"
+                role="button"
+                aria-label={rightPrimaryLabel}
               >
                 {rightPrimaryLabel}
               </LoadingButton>

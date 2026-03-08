@@ -34,7 +34,7 @@ import {
   deleteRawDataDataSourceBuffersForNodeMetadataIds,
 } from '~/services/utils/chunkStore';
 import { resolveSourceStageStrategy } from '~/services/build/strategies/resolveSourceStageStrategy';
-import { emitTaskSnapshot, emitProgressSnapshot, emitSessionStateChange, emitWorkerLog } from './eventEmission.js';
+import { emitTaskSnapshot, emitProgressSnapshot, emitSessionStateChange, emitWorkerLog, emitCriticalError } from './eventEmission.js';
 import type { ShapeBuildStopReason, ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import { isStopReason } from './taskQueueManagement.js';
 // Custom error types for better error classification
@@ -1084,7 +1084,15 @@ const startBuildSessionInternal = async (
       
       console.error('[shapeBuildAPI] runShapePipeline failed with error', errorDetails);
       
-      // Emit detailed error to UI immediately - contract violation prevention
+      // Emit critical error event to UI immediately - contract violation prevention
+      emitCriticalError(
+        nodeForSession,
+        'Build pipeline failed - contract violation detected',
+        error,
+        true // contractViolation = true
+      );
+      
+      // Also emit detailed error to worker log for backward compatibility
       emitWorkerLog(nodeForSession, 'error', '[CRITICAL] Build pipeline failed - contract violation detected', {
         ...errorDetails,
         severity: 'critical',

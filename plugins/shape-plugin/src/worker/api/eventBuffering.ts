@@ -13,6 +13,7 @@ import type {
     TaskProgressEvent,
     SessionHeartbeatEvent,
     WorkerLogEvent,
+    CriticalErrorEvent,
 } from '~/common/types/session-events';
 
 // Distributed sequence number generator
@@ -61,7 +62,7 @@ export interface EventDeliveryMetrics {
     memoryUsage: MemoryUsageStats;
 }
 
-type NotificationType = 'session-state' | 'stage-snapshot' | 'task-progress' | 'worker-log';
+type NotificationType = 'session-state' | 'stage-snapshot' | 'task-progress' | 'worker-log' | 'critical-error';
 
 interface SequencedEvent {
     seqNum: number;
@@ -90,6 +91,7 @@ export class EventDeliveryMonitor {
         'stage-snapshot': 0,
         'task-progress': 0,
         'worker-log': 0,
+        'critical-error': 0,
     };
     private lastEmissionTime = 0;
     private lastFlushTime = 0;
@@ -284,6 +286,7 @@ export class EventDeliveryMonitor {
             'stage-snapshot': 0,
             'task-progress': 0,
             'worker-log': 0,
+            'critical-error': 0,
         };
         this.lastEmissionTime = 0;
         this.lastFlushTime = 0;
@@ -381,7 +384,7 @@ class UnconditionalEventStreamer {
      */
     configureDistributedSeqNum(nodeId: NodeId, workerIndex: number, totalWorkers: number): void {
         // Initialize generators for all buffered event types
-        const eventTypes = ['session-state', 'stage-snapshot', 'task-progress', 'worker-log'];
+        const eventTypes = ['session-state', 'stage-snapshot', 'task-progress', 'worker-log', 'critical-error'];
         eventTypes.forEach(eventType => {
             this.seqNumGenerator.initializeGenerator(nodeId, eventType, workerIndex, totalWorkers);
         });
@@ -393,8 +396,8 @@ class UnconditionalEventStreamer {
      */
     emitEvent(
         nodeId: NodeId,
-        eventType: 'session-state' | 'stage-snapshot' | 'task-progress' | 'worker-log',
-        event: SessionStateChangeEvent | StageSnapshotEvent | TaskProgressEvent | WorkerLogEvent
+        eventType: 'session-state' | 'stage-snapshot' | 'task-progress' | 'worker-log' | 'critical-error',
+        event: SessionStateChangeEvent | StageSnapshotEvent | TaskProgressEvent | WorkerLogEvent | CriticalErrorEvent
     ): void {
         const seqNum = this.seqNumGenerator.nextSeqNum(nodeId, eventType);
         const sequencedEvent: SequencedEvent = {

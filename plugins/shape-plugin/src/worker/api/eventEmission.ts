@@ -12,6 +12,7 @@ import type {
     StageSnapshotEvent,
     TaskProgressEvent,
     WorkerLogEvent,
+    CriticalErrorEvent,
 } from '~/common/types/session-events';
 import { VtTaskQueueDb, listTasks, listTasksByStage } from '@hierarchidb/vt-orchestrator';
 import { unconditionalEventStreamer } from './eventBuffering.js';
@@ -48,6 +49,37 @@ export const emitWorkerLog = (
             console.error('[Worker]', ...logData);
             break;
     }
+};
+
+// Critical error event type (for contract violations and critical failures)
+export const emitCriticalError = (
+    nodeId: NodeId,
+    message: string,
+    error: unknown,
+    contractViolation: boolean = false,
+): void => {
+    const errorString = error instanceof Error ? error.message : String(error);
+    const errorName = error instanceof Error ? error.name : 'UnknownError';
+    
+    const event: CriticalErrorEvent = {
+        nodeId,
+        timestamp: Date.now(),
+        message,
+        error: errorString,
+        errorName,
+        severity: 'critical',
+        contractViolation,
+    };
+
+    // Emit critical error event to UI
+    unconditionalEventStreamer.emitEvent(nodeId, 'critical-error', event);
+    
+    // Log to worker console with contract violation indicator
+    const contractIndicator = contractViolation ? '🚨 CONTRACT VIOLATION' : '';
+    const logMessage = `${contractIndicator} Critical Error: ${message}`;
+    const logData = { error: errorString, errorName, contractViolation };
+    
+    console.error('[Worker]', logMessage, logData);
 };
 
 export const emitSessionStateChange = (
