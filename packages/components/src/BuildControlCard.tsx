@@ -1,30 +1,35 @@
-import { Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
-import { type ReactNode } from 'react';
+import { Box, Button, CircularProgress, Stack, Typography, IconButton, MenuItem } from '@mui/material';
+import { type ReactNode, useState, useCallback, useEffect } from 'react';
+import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
 import { LoadingButton } from './LoadingButton.js';
 import ClearIcon from '@mui/icons-material/Clear';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import TimelapseIcon from '@mui/icons-material/Timelapse';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import type { BuildControlDetail } from './BuildStepPanel.tsx';
 import type { BuildStatus } from './build-status/BuildStatus.ts';
 
-type BuildControlCardProps = {
-  status: BuildStatus;
-  onPause?: () => void;
-  onResume?: () => void;
-  onCancel?: () => void;
-  pauseLabel?: string;
-  cancelLabel?: string;
-  stopRequested?: boolean;
-  startPending?: boolean;
-  startLabel?: string;
-  resumeLabel?: string;
-  showResumeLabel?: boolean;
-  startIcon?: ReactNode;
-  resumeIcon?: ReactNode;
-  details?: BuildControlDetail[];
-  startLoading?: boolean;
-};
+export const BuildControlCard: React.FC<BuildControlCardProps> = ({
+  status,
+  onPause,
+  onResume,
+  onCancel,
+  pauseLabel,
+  cancelLabel,
+  stopRequested,
+  startPending,
+  startLabel,
+  resumeLabel,
+  showResumeLabel,
+  startIcon,
+  resumeIcon,
+  details,
+  startLoading,
+  resetDeleteMenuItems,
+  resetDeleteMenuAriaLabel,
+  resetDeleteMenuDisabled,
+}) => {
 
 export const BuildControlCard: React.FC<BuildControlCardProps> = ({
   status,
@@ -43,6 +48,8 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
   details,
   startLoading,
 }) => {
+  const [resetDeleteMenuAnchorEl, setResetDeleteMenuAnchorEl] = useState<HTMLElement | null>(null);
+
   const pauseSpinner = (
     <CircularProgress
       size={16}
@@ -66,6 +73,32 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
   const disablePause = !onPause || !isRunning || stopRequested;
   const disableCancel = !onCancel || !isQueued || stopRequested;
   const isLoading = hasLoading && !stopRequested;
+
+  // Reset/Delete menu state management
+  const hasResetDeleteMenuItems = (resetDeleteMenuItems?.length ?? 0) > 0;
+  const resetDeleteMenuOpen = Boolean(resetDeleteMenuAnchorEl);
+  const resetDeleteMenuDisabledState = Boolean(resetDeleteMenuDisabled) || Boolean(startPending) || Boolean(startLoading) || !hasResetDeleteMenuItems;
+
+  const handleResetDeleteMenuOpen = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+    setResetDeleteMenuAnchorEl(event.currentTarget);
+  }, []);
+
+  const handleResetDeleteMenuClose = useCallback(() => {
+    setResetDeleteMenuAnchorEl(null);
+  }, []);
+
+  const handleResetDeleteMenuItemClick = useCallback((item: { id: string; label: string; onClick: () => void; disabled?: boolean; icon?: ReactNode }) => {
+    if (!item.disabled && item.id !== 'divider-1' && item.id !== 'divider-2' && item.id !== 'divider-3' && item.id !== 'divider-4') {
+      item.onClick();
+    }
+    handleResetDeleteMenuClose();
+  }, [handleResetDeleteMenuClose]);
+
+  useEffect(() => {
+    if (resetDeleteMenuDisabledState && resetDeleteMenuAnchorEl) {
+      setResetDeleteMenuAnchorEl(null);
+    }
+  }, [resetDeleteMenuAnchorEl, resetDeleteMenuDisabledState]);
 
   return (
     <Box
@@ -116,19 +149,61 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
         >
           {pauseLabel ?? 'Pause'}
         </Button>
-        <Button
-          variant="outlined"
-          size="small"
-          endIcon={computedCancelIcon}
-          disabled={disableCancel}
-          onClick={onCancel}
-          data-testid="build-control-cancel-button"
-          aria-label={cancelLabel ?? 'Cancel'}
-          id="build-control-cancel-button"
-          role="button"
-        >
-          {cancelLabel ?? 'Cancel'}
-        </Button>
+        {isRunning ? (
+          <Button
+            variant="outlined"
+            size="small"
+            endIcon={computedCancelIcon}
+            disabled={disableCancel}
+            onClick={onCancel}
+            data-testid="build-control-cancel-button"
+            aria-label={cancelLabel ?? 'Cancel'}
+            id="build-control-cancel-button"
+            role="button"
+          >
+            {cancelLabel ?? 'Cancel'}
+          </Button>
+        ) : hasResetDeleteMenuItems ? (
+          <>
+            <Button
+              variant="outlined"
+              size="small"
+              endIcon={<ArrowDropDownIcon fontSize="small" />}
+              disabled={resetDeleteMenuDisabledState}
+              onClick={handleResetDeleteMenuOpen}
+              data-testid="build-control-reset-delete-button"
+              aria-label={resetDeleteMenuAriaLabel ?? 'Reset/Delete menu'}
+              id="build-control-reset-delete-button"
+              role="button"
+            >
+              Reset/Delete
+            </Button>
+            <DialogSafeMenu
+              anchorEl={resetDeleteMenuAnchorEl}
+              open={resetDeleteMenuOpen}
+              onClose={handleResetDeleteMenuClose}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+              {resetDeleteMenuItems?.map((item) => {
+                if (item.label === '---') {
+                  return <MenuItem key={item.id} disabled sx={{ height: 1, minHeight: 1, p: 0 }} />;
+                }
+                return (
+                  <MenuItem
+                    key={item.id}
+                    onClick={() => handleResetDeleteMenuItemClick(item)}
+                    disabled={item.disabled}
+                    sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                  >
+                    {item.icon}
+                    {item.label}
+                  </MenuItem>
+                );
+              })}
+            </DialogSafeMenu>
+          </>
+        ) : null}
       </Stack>
       {details && details.length > 0 ? (
         <Stack direction="row" spacing={2} alignItems="center" sx={{ whiteSpace: 'nowrap' }}>
@@ -155,3 +230,5 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
     </Box>
   );
 };
+
+}

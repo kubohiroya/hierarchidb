@@ -34,7 +34,7 @@ import {
   deleteRawDataDataSourceBuffersForNodeMetadataIds,
 } from '~/services/utils/chunkStore';
 import { resolveSourceStageStrategy } from '~/services/build/strategies/resolveSourceStageStrategy';
-import { emitTaskSnapshot, emitProgressSnapshot, emitSessionStateChange } from './eventEmission.js';
+import { emitTaskSnapshot, emitProgressSnapshot, emitSessionStateChange, emitWorkerLog, emitCriticalError } from './eventEmission.js';
 import type { ShapeBuildStopReason, ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import { isStopReason } from './taskQueueManagement.js';
 // Custom error types for better error classification
@@ -758,6 +758,10 @@ const startBuildSessionInternal = async (
         selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
       },
     );
+        selectedCountryCount: selectionSummary.selectedCountryCount,
+        selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
+      },
+    );
     
     console.warn('[shapeBuildAPI] plan-source-total step completed successfully', {
       nodeId: nodeForSession,
@@ -810,6 +814,7 @@ const startBuildSessionInternal = async (
     
     throw error;
   }
+>>>>>>> main
   // Only fail if there are selections but no payloads generated (metadata issue)
   // Empty builds (no selections) should succeed with empty output
   if (selectedAdminPairCount > 0 && sourcePlan.plannedSourceTotal === 0) {
@@ -1022,6 +1027,12 @@ const startBuildSessionInternal = async (
       downloadTaskPayloadsCount: downloadTaskPayloads.length,
     });
     
+    emitWorkerLog(nodeForSession, 'log', '[shapeBuildAPI] Starting runShapePipeline execution', {
+      runId: pipelineRunId,
+      dataSource: resolvedDataSource,
+      selectedAdminPairCount,
+      downloadTaskPayloadsCount: downloadTaskPayloads.length,
+    });
     void runShapePipeline({
       nodeId: nodeForSession,
       dataSource: resolvedDataSource,
