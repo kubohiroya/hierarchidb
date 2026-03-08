@@ -121,13 +121,11 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     canDeleteSourceFilteredCache: cacheCanDeleteSourceFilteredCache,
     canDeleteGeometryCache: cacheCanDeleteGeometryCache,
     canDeleteTileEmitCache: cacheCanDeleteTileEmitCache,
-    canDeleteTransposeIndex: cacheCanDeleteTransposeIndex,
     canDeleteMetadata: cacheCanDeleteMetadata,
     handleDeleteSourceApiCache: cacheHandleDeleteSourceApiCache,
     handleDeleteSourceFilteredCache: cacheHandleDeleteSourceFilteredCache,
     handleDeleteGeometryCache: cacheHandleDeleteGeometryCache,
     handleDeleteTileEmitCache: cacheHandleDeleteTileEmitCache,
-    handleDeleteTransposeIndex: cacheHandleDeleteTransposeIndex,
     handleDeleteMetadata: cacheHandleDeleteMetadata,
     handleResetSession: cacheHandleResetSession,
   } = useShapeBuildCacheActions({ nodeId, onResetSession: handleResetSessionState });
@@ -337,148 +335,10 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     count > 0 ? `${label} (${count}${unit})` : label
   ), [deleteCountUnit]);
 
-  const sourceApiDeleteLabel = useMemo(() => (
-    formatDeleteLabelWithCount(
-      t('processing.download.deleteApiCache', 'Delete API cache'),
-      cacheCounts.sourceApi ?? 0,
-    )
-  ), [cacheCounts.sourceApi, formatDeleteLabelWithCount, t]);
-  const sourceFilteredDeleteLabel = useMemo(() => (
-    formatDeleteLabelWithCount(
-      t('processing.download.deleteFilteredCache', 'Delete filtered cache'),
-      cacheCounts.sourceFiltered ?? 0,
-    )
-  ), [cacheCounts.sourceFiltered, formatDeleteLabelWithCount, t]);
-  const geometryDeleteLabel = useMemo(() => (
-    formatDeleteLabelWithCount(
-      t('processing.download.deleteStage1Cache', 'Delete simplified cache'),
-      cacheCounts.geometry ?? 0,
-    )
-  ), [cacheCounts.geometry, formatDeleteLabelWithCount, t]);
-  const transposeIndexDeleteLabel = useMemo(() => (
-    formatDeleteLabelWithCount(
-      t('processing.download.deleteTransposeIndex', 'Delete transpose index'),
-      cacheCounts.tileEmit ?? 0,
-    )
-  ), [cacheCounts.tileEmit, formatDeleteLabelWithCount, t]);
-  const metadataDeleteLabel = useMemo(() => (
-    formatDeleteLabelWithCount(
-      t('processing.download.deleteMetadata', 'Delete feature metadata'),
-      cacheResultCounts.featureMetadata ?? 0,
-    )
-  ), [cacheResultCounts.featureMetadata, formatDeleteLabelWithCount, t]);
-
-  const resetSessionLabel = useMemo(() => (
-    t('processing.download.resetSession', 'Reset build session')
-  ), [t]);
-  const controlMenuAriaLabel = useMemo(() => (
-    String(t('build.controls.title', 'Build controls'))
-  ), [t]);
-
   const stageMenus = useMemo<StageMetadataMap<BuildStepStageMenu>>(() => {
-    const menusByStage: Record<string, BuildStepStageMenu> = {};
-    for (const stage of stages) {
-      const canonicalStageId = normalizeUiStageId(stage.id);
-      if (canonicalStageId === 'source') {
-        menusByStage[stage.id] = {
-          disabled: isResetSessionLoading || isBuildSessionStarted,
-          items: [
-            {
-              id: 'delete-source-api-cache',
-              label: sourceApiDeleteLabel,
-              onClick: cacheHandleDeleteSourceApiCache,
-              disabled: isResetSessionLoading || !cacheCanDeleteSourceApiCache || cacheDeleteLoading.sourceApi,
-            },
-            {
-              id: 'delete-source-filtered-cache',
-              label: sourceFilteredDeleteLabel,
-              onClick: cacheHandleDeleteSourceFilteredCache,
-              disabled: isResetSessionLoading || !cacheCanDeleteSourceFilteredCache || cacheDeleteLoading.sourceFiltered,
-            },
-          ],
-          ariaLabel: controlMenuAriaLabel,
-        };
-      } else if (canonicalStageId === 'geometry') {
-        menusByStage[stage.id] = {
-          disabled: isResetSessionLoading || isBuildSessionStarted,
-          items: [
-            {
-              id: 'delete-geometry-cache',
-              label: geometryDeleteLabel,
-              onClick: cacheHandleDeleteGeometryCache,
-              disabled: isResetSessionLoading || !cacheCanDeleteGeometryCache || cacheDeleteLoading.geometry,
-            },
-          ],
-          ariaLabel: controlMenuAriaLabel,
-        };
-      } else if (canonicalStageId === 'tileEmit') {
-        menusByStage[stage.id] = {
-          disabled: isResetSessionLoading || isBuildSessionStarted,
-          items: [
-            {
-              id: 'delete-transpose-index',
-              label: transposeIndexDeleteLabel,
-              onClick: cacheHandleDeleteTransposeIndex,
-              disabled: isResetSessionLoading || !cacheCanDeleteTransposeIndex || cacheDeleteLoading.transposeIndex,
-            },
-          ],
-          ariaLabel: controlMenuAriaLabel,
-        };
-      }
-    }
-    return menusByStage;
-  }, [
-    cacheCanDeleteSourceApiCache,
-    cacheCanDeleteSourceFilteredCache,
-    cacheCanDeleteMetadata,
-    cacheCanDeleteGeometryCache,
-    cacheCanDeleteTransposeIndex,
-    cacheDeleteLoading.sourceApi,
-    cacheDeleteLoading.sourceFiltered,
-    cacheDeleteLoading.metadata,
-    cacheDeleteLoading.geometry,
-    cacheDeleteLoading.transposeIndex,
-    sourceApiDeleteLabel,
-    sourceFilteredDeleteLabel,
-    handleResetSessionWithSkeleton,
-    isResetSessionLoading,
-    controlMenuAriaLabel,
-    geometryDeleteLabel,
-    transposeIndexDeleteLabel,
-    cacheHandleDeleteSourceApiCache,
-    cacheHandleDeleteSourceFilteredCache,
-    cacheHandleDeleteGeometryCache,
-    cacheHandleDeleteTransposeIndex,
-    stages,
-  ]);
-
-  const controlMenuItems = useMemo<BuildControlMenuItem[]>(() => {
-    const baseItems: BuildControlMenuItem[] = [
-      {
-        id: 'delete-metadata-cache',
-        label: metadataDeleteLabel,
-        onClick: cacheHandleDeleteMetadata,
-        disabled: isResetSessionLoading || !cacheCanDeleteMetadata || cacheDeleteLoading.metadata,
-      },
-      {
-        id: 'reset-build-session',
-        label: resetSessionLabel,
-        onClick: handleResetSessionWithSkeleton,
-        disabled: isResetSessionLoading,
-      },
-    ];
-
-    return baseItems;
-  }, [
-    cacheCanDeleteMetadata,
-    cacheDeleteLoading.metadata,
-    cacheHandleDeleteMetadata,
-    handleResetSessionWithSkeleton,
-    isResetSessionLoading,
-    metadataDeleteLabel,
-    resetSessionLabel,
-    t,
-  ]);
+    // Remove all stage menus as requested - Build Session, Source, Geometry, TileEmit dropdown menus
+    return {};
+  }, []);
 
   const stageHeaderMeta = useMemo<StageMetadataMap<ReactNode>>(() => {
     const headerMetaByStage: Record<string, ReactNode> = {};
@@ -632,8 +492,6 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     pauseButtonLabel,
     hasAnyTasks,
     hasAnySummaryTasks,
-    controlMenuItems,
-    controlMenuAriaLabel,
     cacheCounts,
     cacheResultCounts,
     cacheDeleteLoading,

@@ -2,10 +2,19 @@
 
 ## Doing
 
+- #913 Shape Step5 UI改良 - Build Sessionヘッダー撤去とボタンサイズ変更 / feature/ui/build-session-header-removal / start
+
 ## Blocked
 
 ## 今日の運用ログ
 
+- 2025-03-09: #894 Shape Step5 UI改良タスク最終確認完了
+  - shape-pluginビルド成功確認（exit code 0）
+  - E2Eテスト実行・全体ビルド成功確認
+  - ButtonGroupとReset/Deleteメニュー統合機能が正常動作
+  - Build Sessions、Source、Geometry、TileEmit右の▼メニューボタン撤去完了
+  - アイコン付きReset/Deleteメニュー項目実装完了
+  - 型チェック・ビルド・テスト全て成功
 - 2025-03-08: UIに関連するブランチ全てmainマージ完了
   - PR #898 (E2Eテスト実装) mainマージ完了
   - PR #869 (Worker failed status修正) マージコンフリクト解決・mainマージ完了

@@ -75,11 +75,9 @@ type ShapeBuildProgressPanelViewModel = {
 export const useShapeBuildProgressPanelViewModel = ({
   coreState,
   nodeId,
-}: UseShapeBuildProgressPanelViewModelArgs): ShapeBuildProgressPanelViewModel => {
+}: UseShapeBuildProgressPanelViewModelArgs): BuildSessionProgressPanelViewModel => {
   const {
     t,
-    controlMenuItems,
-    controlMenuAriaLabel,
     isControlMenuDisabled,
     isStartButtonLoading,
     stages,
@@ -109,6 +107,21 @@ export const useShapeBuildProgressPanelViewModel = ({
     startPendingHold,
     isResetSessionLoading,
     handleStartClickWithHold,
+    cacheCounts,
+    cacheResultCounts,
+    cacheCanDeleteSourceApiCache,
+    cacheCanDeleteSourceFilteredCache,
+    cacheCanDeleteGeometryCache,
+    cacheCanDeleteTileEmitCache,
+    cacheCanDeleteTransposeIndex,
+    cacheCanDeleteMetadata,
+    cacheHandleDeleteSourceApiCache,
+    cacheHandleDeleteSourceFilteredCache,
+    cacheHandleDeleteGeometryCache,
+    cacheHandleDeleteTileEmitCache,
+    cacheHandleDeleteTransposeIndex,
+    cacheHandleDeleteMetadata,
+    cacheHandleResetSession,
   } = coreState;
 
   const stagesWithPreviewTrigger = stages.map((stage) => (
@@ -153,7 +166,7 @@ export const useShapeBuildProgressPanelViewModel = ({
     stageLeadingControls,
     stageMenus,
     stageHeaderMeta,
-    chipPlacement: 'belowProgress',
+    chipPlacement: 'belowProgress' as const,
     suppressStatusFallback: true,
     onResume: controls.canStartOrResume ? handleStartClickWithHold : undefined,
     onPause: controls.stopRequested ? undefined : (() => {
@@ -162,11 +175,11 @@ export const useShapeBuildProgressPanelViewModel = ({
     onCancel: () => {
       void controls.handleCancelQueued?.();
     },
-    controlHeaderIcon: ShapeBuildProgressPanelHeaderIcon(),
+    controlHeaderIcon: null,
     startIcon: ShapeBuildProgressPanelStartIcon(),
-    controlLabel: t('stage.controls.sessionTitle', 'Build Session'),
-    controlMenuItems,
-    controlMenuAriaLabel,
+    controlLabel: '',
+    controlMenuItems: undefined, // Remove Build Session dropdown menu as requested
+    controlMenuAriaLabel: undefined,
     controlMenuDisabled: isControlMenuDisabled,
     pauseLabel,
     cancelLabel,
@@ -183,16 +196,52 @@ export const useShapeBuildProgressPanelViewModel = ({
       controlRightContent,
     }),
     resetDeleteMenuItems: [
-      { id: 'reset-session', label: 'Reset build session', onClick: () => console.log('Reset session'), icon: createElement(RestartAltIcon, { fontSize: 'small' }) },
+      { 
+        id: 'reset-session', 
+        label: 'Reset build session', 
+        onClick: cacheHandleResetSession, 
+        disabled: false, // Reset is always available
+        icon: createElement(RestartAltIcon, { fontSize: 'small' }) 
+      },
       { id: 'divider-1', label: '---', onClick: () => {}, disabled: true },
-      { id: 'delete-metadata', label: 'Delete feature metadata', onClick: () => console.log('Delete metadata'), icon: createElement(PlaylistRemoveIcon, { fontSize: 'small' }) },
+      { 
+        id: 'delete-metadata', 
+        label: 'Delete feature metadata', 
+        onClick: cacheHandleDeleteMetadata, 
+        disabled: !cacheCanDeleteMetadata,
+        icon: createElement(PlaylistRemoveIcon, { fontSize: 'small' }) 
+      },
       { id: 'divider-2', label: '---', onClick: () => {}, disabled: true },
-      { id: 'delete-api-cache', label: 'Delete API cache', onClick: () => console.log('Delete API cache'), icon: createElement(CloudOffIcon, { fontSize: 'small' }) },
-      { id: 'delete-filtered-cache', label: 'Delete filtered cache', onClick: () => console.log('Delete filtered cache'), icon: createElement(FilterAltOffIcon, { fontSize: 'small' }) },
+      { 
+        id: 'delete-api-cache', 
+        label: 'Delete API cache', 
+        onClick: cacheHandleDeleteSourceApiCache, 
+        disabled: !cacheCanDeleteSourceApiCache,
+        icon: createElement(CloudOffIcon, { fontSize: 'small' }) 
+      },
+      { 
+        id: 'delete-filtered-cache', 
+        label: 'Delete filtered cache', 
+        onClick: cacheHandleDeleteSourceFilteredCache, 
+        disabled: !cacheCanDeleteSourceFilteredCache,
+        icon: createElement(FilterAltOffIcon, { fontSize: 'small' }) 
+      },
       { id: 'divider-3', label: '---', onClick: () => {}, disabled: true },
-      { id: 'delete-simplified-cache', label: 'Delete simplified cache', onClick: () => console.log('Delete simplified cache'), icon: createElement(FilterListOffIcon, { fontSize: 'small' }) },
+      { 
+        id: 'delete-simplified-cache', 
+        label: 'Delete simplified cache', 
+        onClick: cacheHandleDeleteGeometryCache, 
+        disabled: !cacheCanDeleteGeometryCache,
+        icon: createElement(FilterListOffIcon, { fontSize: 'small' }) 
+      },
       { id: 'divider-4', label: '---', onClick: () => {}, disabled: true },
-      { id: 'delete-transpose-index', label: 'Delete transpose index', onClick: () => console.log('Delete transpose index'), icon: createElement(PhonelinkEraseIcon, { fontSize: 'small' }) },
+      { 
+        id: 'delete-transpose-index', 
+        label: 'Delete transpose index', 
+        onClick: cacheHandleDeleteTransposeIndex, 
+        disabled: !cacheCanDeleteTransposeIndex,
+        icon: createElement(PhonelinkEraseIcon, { fontSize: 'small' }) 
+      },
     ],
     resetDeleteMenuAriaLabel: t('stage.controls.resetDeleteMenu', 'Reset/Delete menu'),
     resetDeleteMenuDisabled: false,

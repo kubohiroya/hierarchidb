@@ -137,11 +137,11 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
       }}
     >
       <Stack direction="row" spacing={1} alignItems="center" sx={{ whiteSpace: 'nowrap' }}>
-        <ButtonGroup variant="contained" size="small" aria-label="Build control buttons">
+        <ButtonGroup variant="contained" size="large" aria-label="Build control buttons">
           <LoadingButton
             color="secondary"
             variant="contained"
-            size="small"
+            size="large"
             endIcon={computedIcon}
             disabled={disableStart}
             onClick={onResume}
@@ -156,7 +156,7 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
           <Button
             color="secondary"
             variant="contained"
-            size="small"
+            size="large"
             endIcon={computedPauseIcon}
             disabled={disablePause}
             onClick={onPause}
@@ -199,7 +199,7 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
               aria-expanded={resetDeleteMenuOpen}
               aria-haspopup="true"
             >
-              Reset ▼
+              Reset/Delete
             </Button>
             <DialogSafeMenu
               anchorEl={resetDeleteMenuAnchorEl}
