@@ -481,6 +481,11 @@
       "counts": "{{percentage}}% ・ {{completed}}/{{total}} polygons completed ・ failed {{failed}} ・ skipped {{skipped}}",
       "countsWithUnit": "{{percentage}}% ・ {{completed}}/{{total}} {{unit}} completed ・ failed {{failed}} ・ skipped {{skipped}}"
     },
+    "tasks": {
+      "empty": "No tasks yet.",
+      "summaryOnly": "Tasks are summarized. Detailed list is unavailable.",
+      "search": "Search tasks"
+    },
     "taskPhase": {
       "sourceCacheStart": "Source cache start",
       "sourceCacheDone": "Source cache done",
@@ -535,10 +540,6 @@
       "working": "Working...",
       "unknownStage": "build",
       "counts": "{{percentage}}% ・ {{completed}}/{{total}} completed ・ failed {{failed}} ・ skipped {{skipped}}"
-    },
-    "tasks": {
-      "empty": "No tasks yet.",
-      "summaryOnly": "Tasks are summarized. Detailed list is unavailable."
     },
     "taskStatus": {
       "waiting": "Waiting",

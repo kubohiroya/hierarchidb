@@ -2,7 +2,7 @@
 
 ## Doing
 
-- #915 Shape Step5 ビルド関連UI表記のi18n化 / feature/i18n/shape-step5-build-ui-labels / done
+- #917 Shape Step5 残りUI表記のi18n化完了 / feature/i18n/shape-step5-remaining-ui-labels / start
 
 - #914 Shape Step5 Reset/Deleteメニューのi18n化 / feature/i18n/shape-step5-reset-delete-menu / start
 
