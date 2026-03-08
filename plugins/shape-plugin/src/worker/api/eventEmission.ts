@@ -11,75 +11,10 @@ import type {
     SessionStateChangeEvent,
     StageSnapshotEvent,
     TaskProgressEvent,
-    WorkerLogEvent,
-    CriticalErrorEvent,
 } from '~/common/types/session-events';
 import { VtTaskQueueDb, listTasks, listTasksByStage } from '@hierarchidb/vt-orchestrator';
 import { unconditionalEventStreamer } from './eventBuffering.js';
 import { mapTaskQueueRecordToTaskSummary } from './taskSummaryMapping.js';
-
-// Worker log event type
-export const emitWorkerLog = (
-    nodeId: NodeId,
-    level: 'log' | 'warn' | 'error',
-    message: string,
-    data?: Record<string, unknown>,
-): void => {
-    const event: WorkerLogEvent = {
-        nodeId,
-        timestamp: Date.now(),
-        level,
-        message,
-        data,
-    };
-
-    // Emit log event to UI
-    unconditionalEventStreamer.emitEvent(nodeId, 'worker-log', event);
-    
-    // Also log to worker console
-    const logData = data ? [message, data] : [message];
-    switch (level) {
-        case 'log':
-            console.log('[Worker]', ...logData);
-            break;
-        case 'warn':
-            console.warn('[Worker]', ...logData);
-            break;
-        case 'error':
-            console.error('[Worker]', ...logData);
-            break;
-    }
-};
-
-// Critical error event type (for contract violations and critical failures)
-export const emitCriticalError = (
-    nodeId: NodeId,
-    message: string,
-    error: unknown,
-    contractViolation: boolean = false,
-): void => {
-    const errorString = error instanceof Error ? error.message : String(error);
-    const errorName = error instanceof Error ? error.name : 'UnknownError';
-    
-    const event: CriticalErrorEvent = {
-        nodeId,
-        timestamp: Date.now(),
-        message,
-        error: errorString,
-        errorName,
-        severity: 'critical',
-        contractViolation,
-    };
-
-    // Emit critical error event to UI
-    unconditionalEventStreamer.emitEvent(nodeId, 'critical-error', event);
-    
-    // Log to worker console with contract violation indicator
-    const contractIndicator = contractViolation ? '🚨 CONTRACT VIOLATION' : '';
-    const logMessage = `${contractIndicator} Critical Error: ${message}`;
-    
-    console.error('[Worker]', logMessage, event);
-};
 
 export const emitSessionStateChange = (
     nodeId: NodeId,

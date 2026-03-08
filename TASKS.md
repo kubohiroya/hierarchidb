@@ -2,10 +2,16 @@
 
 ## Doing
 
+- #903 / fix/worker-logging/simplify-log-output / start
+
 ## Blocked
 
 ## 今日の運用ログ
 
+- 2025-03-08: fix/worker-ui-snapshot/investigate-pipeline-errors ブランチマージ試行
+  - マージコンフリクト発生（shapeBuildRuntimeExecutionControl.ts, runShapePipeline.ts）
+  - 複雑なコンフリクトのため、マージ中止・mainブランチにリセット
+  - Worker-UIスナップショット通信安定化修正は新規ブランチでの再実装を検討
 - 2025-03-08: UIに関連するブランチ全てmainマージ完了
   - PR #898 (E2Eテスト実装) mainマージ完了
   - PR #869 (Worker failed status修正) マージコンフリクト解決・mainマージ完了
