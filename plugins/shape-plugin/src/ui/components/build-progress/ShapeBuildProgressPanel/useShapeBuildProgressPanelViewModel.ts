@@ -16,7 +16,6 @@ import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import type { useShapeBuildProgressPanelController } from './useShapeBuildProgressPanelController.js';
 import {
   ShapeBuildProgressPanelControlRightContent,
-  ShapeBuildProgressPanelHeaderIcon,
   ShapeBuildProgressPanelStartIcon,
 } from './ShapeBuildProgressPanelViewModel.js';
 
@@ -107,21 +106,17 @@ export const useShapeBuildProgressPanelViewModel = ({
     startPendingHold,
     isResetSessionLoading,
     handleStartClickWithHold,
-    cacheCounts,
-    cacheResultCounts,
-    cacheCanDeleteSourceApiCache,
-    cacheCanDeleteSourceFilteredCache,
-    cacheCanDeleteGeometryCache,
-    cacheCanDeleteTileEmitCache,
-    cacheCanDeleteTransposeIndex,
-    cacheCanDeleteMetadata,
-    cacheHandleDeleteSourceApiCache,
-    cacheHandleDeleteSourceFilteredCache,
-    cacheHandleDeleteGeometryCache,
-    cacheHandleDeleteTileEmitCache,
-    cacheHandleDeleteTransposeIndex,
-    cacheHandleDeleteMetadata,
-    cacheHandleResetSession,
+    canDeleteSourceApiCache,
+    canDeleteSourceFilteredCache,
+    canDeleteGeometryCache,
+    canDeleteTileEmitCache,
+    canDeleteMetadata,
+    handleDeleteSourceApiCache,
+    handleDeleteSourceFilteredCache,
+    handleDeleteGeometryCache,
+    handleDeleteTileEmitCache,
+    handleDeleteMetadata,
+    handleResetSessionWithSkeleton,
   } = coreState;
 
   const stagesWithPreviewTrigger = stages.map((stage) => (
@@ -166,7 +161,7 @@ export const useShapeBuildProgressPanelViewModel = ({
     stageLeadingControls,
     stageMenus,
     stageHeaderMeta,
-    chipPlacement: 'belowProgress' as const,
+    chipPlacement: 'bottom' as const,
     suppressStatusFallback: true,
     onResume: controls.canStartOrResume ? handleStartClickWithHold : undefined,
     onPause: controls.stopRequested ? undefined : (() => {
@@ -199,7 +194,7 @@ export const useShapeBuildProgressPanelViewModel = ({
       { 
         id: 'reset-session', 
         label: t('stage.controls.resetSession', 'Reset build session'), 
-        onClick: cacheHandleResetSession, 
+        onClick: handleResetSessionWithSkeleton, 
         disabled: false, // Reset is always available
         icon: createElement(RestartAltIcon, { fontSize: 'small' }) 
       },
@@ -207,39 +202,39 @@ export const useShapeBuildProgressPanelViewModel = ({
       { 
         id: 'delete-metadata', 
         label: t('stage.controls.deleteMetadata', 'Delete feature metadata'), 
-        onClick: cacheHandleDeleteMetadata, 
-        disabled: !cacheCanDeleteMetadata,
+        onClick: handleDeleteMetadata, 
+        disabled: !canDeleteMetadata,
         icon: createElement(PlaylistRemoveIcon, { fontSize: 'small' }) 
       },
       { id: 'divider-2', label: '---', onClick: () => {}, disabled: true },
       { 
         id: 'delete-api-cache', 
         label: t('stage.controls.deleteApiCache', 'Delete API cache'), 
-        onClick: cacheHandleDeleteSourceApiCache, 
-        disabled: !cacheCanDeleteSourceApiCache,
+        onClick: handleDeleteSourceApiCache, 
+        disabled: !canDeleteSourceApiCache,
         icon: createElement(CloudOffIcon, { fontSize: 'small' }) 
       },
       { 
         id: 'delete-filtered-cache', 
         label: t('stage.controls.deleteFilteredCache', 'Delete filtered cache'), 
-        onClick: cacheHandleDeleteSourceFilteredCache, 
-        disabled: !cacheCanDeleteSourceFilteredCache,
+        onClick: handleDeleteSourceFilteredCache, 
+        disabled: !canDeleteSourceFilteredCache,
         icon: createElement(FilterAltOffIcon, { fontSize: 'small' }) 
       },
       { id: 'divider-3', label: '---', onClick: () => {}, disabled: true },
       { 
         id: 'delete-simplified-cache', 
         label: t('stage.controls.deleteSimplifiedCache', 'Delete simplified cache'), 
-        onClick: cacheHandleDeleteGeometryCache, 
-        disabled: !cacheCanDeleteGeometryCache,
+        onClick: handleDeleteGeometryCache, 
+        disabled: !canDeleteGeometryCache,
         icon: createElement(FilterListOffIcon, { fontSize: 'small' }) 
       },
       { id: 'divider-4', label: '---', onClick: () => {}, disabled: true },
       { 
-        id: 'delete-transpose-index', 
-        label: t('stage.controls.deleteTransposeIndex', 'Delete transpose index'), 
-        onClick: cacheHandleDeleteTransposeIndex, 
-        disabled: !cacheCanDeleteTransposeIndex,
+        id: 'delete-tile-emit-cache', 
+        label: t('stage.controls.deleteTileEmitCache', 'Delete tile emit cache'), 
+        onClick: handleDeleteTileEmitCache, 
+        disabled: !canDeleteTileEmitCache,
         icon: createElement(PhonelinkEraseIcon, { fontSize: 'small' }) 
       },
     ],

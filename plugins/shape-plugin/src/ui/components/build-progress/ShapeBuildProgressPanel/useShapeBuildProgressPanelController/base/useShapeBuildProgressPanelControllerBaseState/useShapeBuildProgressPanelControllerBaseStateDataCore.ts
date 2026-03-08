@@ -9,7 +9,7 @@ import { useShapeBuildCacheActions } from '~/ui/hooks/useShapeBuildCacheActions'
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildControlMenuItem, BuildStepStageMenu } from '@hierarchidb/components';
+import type { BuildStepStageMenu } from '@hierarchidb/components';
 import { useSetAtom } from 'jotai';
 import { useShapeBuildProgressPanelControllerBaseStateDataDisplay } from './useShapeBuildProgressPanelControllerBaseStateDataDisplay.js';
 import type { TranslateFn } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelStateComputedHelpers';
@@ -330,10 +330,6 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     });
   }, []);
 
-  const deleteCountUnit = t('processing.download.countUnit', ' items');
-  const formatDeleteLabelWithCount = useCallback((label: string, count: number, unit = deleteCountUnit) => (
-    count > 0 ? `${label} (${count}${unit})` : label
-  ), [deleteCountUnit]);
 
   const stageMenus = useMemo<StageMetadataMap<BuildStepStageMenu>>(() => {
     // Remove all stage menus as requested - Build Session, Source, Geometry, TileEmit dropdown menus
@@ -492,6 +488,8 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     pauseButtonLabel,
     hasAnyTasks,
     hasAnySummaryTasks,
+    controlMenuItems: [], // Empty array since Build Session dropdown menu is removed
+    controlMenuAriaLabel: '', // Empty string since Build Session dropdown menu is removed
     cacheCounts,
     cacheResultCounts,
     cacheDeleteLoading,
