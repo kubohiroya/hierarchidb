@@ -33,11 +33,13 @@
   - メタデータロード・ペイロード生成・リフレッシュ試行の各段階を詳細ログ化
   - サンプルデータをログに含めて互換性問題を特定可能に
   - GitHub Pages環境でのデバッグログ可視化改善
-- 2025-03-08: #894 Shape Step5 ButtonGroupメニュー統合進行中
+- 2025-03-08: #894 Shape Step5 ButtonGroupメニュー統合完了・mainマージ完了
   - BuildControlCardコンポーネントのButtonGroup統合
   - Reset/Deleteメニュー項目の実装
   - UI改善とユーザビリティ向上
-  - マージコンフリクト解決中
+  - マージコンフリクト解決・型エラー修正完了
+  - DialogSafeMenu使用でダイアログ安全なフォーカス動作実装
+  - 型チェック成功確認（exit code 0）
 - 2025-03-07: #861 hasInitialSnapshotAppliedローカル変数をSSOT状態木参照に統一完了・PR #862作成
 - 2025-03-07: #861起票、ブランチ作成完了、hasInitialSnapshotAppliedローカル変数をSSOT状態木参照に統一開始
   - グローバルティアダウンでテスト用Shape自動削除処理実装
