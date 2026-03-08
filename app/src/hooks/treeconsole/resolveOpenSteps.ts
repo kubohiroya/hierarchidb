@@ -48,7 +48,7 @@ const resolveDraftPayload = (node?: TreeNode | null): Record<string, unknown> =>
 
 const resolveBasicInfoLabel = (): string => {
   try {
-    const label = i18n.t('basicInfo.title', {
+    const label = i18n.t('common.basicInfo.title', {
       ns: 'common',
       defaultValue: 'Info',
     });
