@@ -16,6 +16,7 @@ import {
   useCountryMatrixSelectorLogic,
 } from './useCountryMatrixSelectorLogic';
 import { useCountryMatrixTableModel } from './useCountryMatrixTableModel';
+import { useCountryI18n } from '~/hooks/useCountryI18n';
 
 export interface CountryMatrixSelectorProps {
   /** Available countries to select from */
@@ -254,6 +255,8 @@ const CountryMatrixTable: React.FC<CountryMatrixTableProps> = ({
     isCellEnabledWrapper,
   });
 
+  const { getCountryDisplayName } = useCountryI18n();
+
   return (
     <SelectionMatrix
       rows={rowsWithTooltip}
@@ -283,17 +286,7 @@ const CountryMatrixTable: React.FC<CountryMatrixTableProps> = ({
                 color={selectedCountryCodes.has(row.data.country.code) ? 'primary' : 'text.primary'}
               >
                 {row.data.country.flag || flagFromCode(row.data.country.code) || '⬜️'}{' '}
-                {row.data.country.name} ({row.data.country.code})
-                {row.data.country.nativeName && row.data.country.nativeName !== row.data.country.name && (
-                  <Typography
-                    component="span"
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ ml: 0.75 }}
-                  >
-                    {row.data.country.nativeName}
-                  </Typography>
-                )}
+                {getCountryDisplayName(row.data.country)} ({row.data.country.code})
               </Typography>
             </Box>
           ),

@@ -2,10 +2,13 @@ import { useEffect } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { BuildProgressEvent, BuildTaskSummary, BuildTaskUpdateEvent } from '@hierarchidb/build-api';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
-import { useSetAtom } from 'jotai';
-import { dispatchBuildSessionEventAtom } from '~/ui/atoms/buildSessionStateAtoms';
+import { useSetAtom, useAtomValue } from 'jotai';
+import { dispatchBuildSessionEventAtom, buildSessionSnapshotHandshakeReceivedAtom } from '~/ui/atoms/buildSessionStateAtoms';
 import { createBuildSessionWorkerEventAdapter } from '~/ui/atoms/buildSessionWorkerEventAdapter';
 import type { ShapeStageId } from '~/ui/atoms/buildSessionStateAtoms';
+import { shapeBuildAPI } from '~/worker/api/shapeBuildAPI';
+import { unconditionalEventStreamer } from '~/worker/api/eventBuffering';
+import type { WorkerLogEvent, CriticalErrorEvent } from '~/common/types/session-events';
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 const SHAPE_STAGE_IDS = ['source', 'geometry', 'tileEmit'] as const satisfies readonly ShapeStageId[];
@@ -105,6 +108,7 @@ export const resolveSnapshotTargetStages = (event: TaskSnapshotEvent): ShapeStag
 
 export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined): void => {
   const dispatch = useSetAtom(dispatchBuildSessionEventAtom);
+  const buildSessionSnapshotHandshakeReceived = useAtomValue(buildSessionSnapshotHandshakeReceivedAtom);
 
   useEffect(() => {
     if (!nodeId) {
@@ -144,8 +148,6 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
       geometry: null,
       tileEmit: null,
     };
-    let hasInitialSnapshotApplied = false;
-    const pendingTaskUpdatesBeforeInitialSnapshot: TaskUpdateEvent[] = [];
     const lastAppliedVersionByTaskId = new Map<string, number>();
     const lastAppliedFingerprintByTaskVersion = new Map<string, string>();
     let fatalContractError = false;
@@ -197,13 +199,27 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
 
     const flushProgressBuffer = (): void => {
       flushTimerId = null;
+      const startTime = performance.now();
+      let processedEvents = 0;
+      const MAX_PROCESSING_TIME = 8; // 8ms limit to prevent blocking
+      
       for (const stageId of SHAPE_STAGE_IDS) {
+        if (performance.now() - startTime > MAX_PROCESSING_TIME) {
+          // Reschedule if taking too long
+          scheduleProgressFlush();
+          return;
+        }
+        
         if (uiSyncByStage[stageId] !== 'running') continue;
         const bufferedUpdates = taskUpdateBufferByStage[stageId];
         if (bufferedUpdates.length <= 0) continue;
-        taskUpdateBufferByStage[stageId] = [];
-        bufferedUpdates.sort((left, right) => left.task.version - right.task.version);
-        for (const event of bufferedUpdates) {
+        
+        // Process in smaller batches to prevent blocking
+        const batchSize = Math.min(50, bufferedUpdates.length);
+        const batch = bufferedUpdates.splice(0, batchSize);
+        
+        batch.sort((left, right) => left.task.version - right.task.version);
+        for (const event of batch) {
           const stage = resolveStageOrStop(
             event.task.stage,
             `[shape buildSessionStateAtomBridge] task update stage is unsupported: ${String(event.task.stage)}`,
@@ -256,6 +272,12 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             `${event.task.taskId}:${event.task.version}`,
             buildTaskFingerprint(event),
           );
+          processedEvents++;
+        }
+        
+        // If there are still buffered updates, reschedule
+        if (taskUpdateBufferByStage[stageId].length > 0) {
+          scheduleProgressFlush();
         }
       }
 
@@ -263,16 +285,38 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
         if (uiSyncByStage[stageId] !== 'running') continue;
         const queue = progressBufferByStage[stageId];
         if (queue.length <= 0) continue;
-        progressBufferByStage[stageId] = [];
-        for (const progressEvent of queue) {
+        
+        // Process progress events in batches too
+        const batchSize = Math.min(20, queue.length);
+        const batch = queue.splice(0, batchSize);
+        
+        for (const progressEvent of batch) {
           adapter.onProgressEvent(progressEvent);
+          processedEvents++;
         }
+        
+        // If there are still progress events, reschedule
+        if (progressBufferByStage[stageId].length > 0) {
+          scheduleProgressFlush();
+        }
+      }
+      
+      const processingTime = performance.now() - startTime;
+      if (processingTime > 5) {
+        console.debug(`[BuildSessionBridge] Processed ${processedEvents} events in ${processingTime.toFixed(1)}ms`);
       }
     };
 
     const scheduleProgressFlush = (): void => {
       if (fatalContractError) return;
       if (flushTimerId !== null) return;
+      
+      // Use requestIdleCallback for better performance if available
+      if (typeof window !== 'undefined' && typeof (window as any).requestIdleCallback === 'function') {
+        flushTimerId = (window as any).requestIdleCallback(flushProgressBuffer, { timeout: 16 });
+        return;
+      }
+      
       if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
         flushTimerId = window.requestAnimationFrame(flushProgressBuffer);
         return;
@@ -289,8 +333,8 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
         );
         const snapshotVersionMax = snapshotVersionMaxByStage[stageId];
         if (snapshotVersionMax == null) {
-          if (!hasInitialSnapshotApplied) {
-            pendingTaskUpdatesBeforeInitialSnapshot.push(event);
+          if (!buildSessionSnapshotHandshakeReceived) {
+            // Drop task updates before initial snapshot handshake
             return;
           }
           stopWithContractError(
@@ -344,12 +388,6 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
       for (const stageId of SHAPE_STAGE_IDS) {
         if (snapshotStages.size > 0 && !snapshotStages.has(stageId)) continue;
         dispatchUiSyncPhase(stageId, 'running');
-      }
-      if (!hasInitialSnapshotApplied) {
-        hasInitialSnapshotApplied = true;
-        // Keep latest truth from the initial snapshot and discard pre-snapshot updates.
-        // This avoids race-window loss without introducing extra snapshot fetches.
-        pendingTaskUpdatesBeforeInitialSnapshot.length = 0;
       }
       scheduleProgressFlush();
     };
@@ -419,11 +457,67 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
         }),
       ]);
 
+      // Subscribe to Worker logs via ShapeBuildAPI directly
+      const unsubscribeWorkerLog = shapeBuildAPI.subscribeToWorkerLog(nodeId, (event: WorkerLogEvent) => {
+        const logLevel = event.level.toUpperCase();
+        const logMessage = `[WorkerLog][${logLevel}] ${event.message}`;
+        const logData = event.data || '';
+        
+        // Always log to console
+        console.log(logMessage, logData);
+        
+        // For critical errors with contract violations, ensure visibility
+        if (event.level === 'error' && event.data?.contractViolation) {
+          console.error('🚨 CRITICAL CONTRACT VIOLATION DETECTED 🚨');
+          console.error('Error Details:', {
+            message: event.message,
+            data: event.data,
+            timestamp: event.timestamp,
+            nodeId: event.nodeId,
+          });
+          
+          // Emit to build session event system for UI visibility
+          dispatch({
+            type: 'criticalError',
+            payload: {
+              message: event.message,
+              error: typeof event.data?.error === 'string' ? event.data.error : 'Unknown error',
+              errorName: typeof event.data?.errorName === 'string' ? event.data.errorName : 'Unknown',
+              timestamp: event.timestamp,
+              severity: 'critical',
+              contractViolation: true,
+            },
+          });
+        }
+      });
+
+      // Subscribe to Critical Error events directly via unconditionalEventStreamer
+      const unsubscribeCriticalError = unconditionalEventStreamer.subscribe(nodeId, 'critical-error', (event) => {
+        const { payload } = event as { payload: CriticalErrorEvent };
+        console.error('🚨 CRITICAL ERROR EVENT RECEIVED 🚨');
+        console.error('Critical Error Details:', payload);
+        
+        // Emit to build session event system for UI visibility
+        dispatch({
+          type: 'criticalError',
+          payload: {
+            message: payload.message,
+            error: payload.error,
+            errorName: payload.errorName,
+            timestamp: payload.timestamp,
+            severity: payload.severity,
+            contractViolation: payload.contractViolation,
+          },
+        });
+      });
+
       if (cancelled) {
         unsubscribeTasks();
         unsubscribeProgress();
         unsubscribeSessionState();
         unsubscribeHeartbeat();
+        unsubscribeWorkerLog();
+        unsubscribeCriticalError();
         return;
       }
       adapter.onTaskStreamConnectionChanged(true);
@@ -433,11 +527,13 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
         unsubscribeProgress();
         unsubscribeSessionState();
         unsubscribeHeartbeat();
+        unsubscribeWorkerLog();
+        unsubscribeCriticalError();
         return;
       }
       onTaskEvent(toSnapshotEvent(tasks));
 
-      unsubscribers.push(unsubscribeTasks, unsubscribeProgress, unsubscribeSessionState, unsubscribeHeartbeat);
+      unsubscribers.push(unsubscribeTasks, unsubscribeProgress, unsubscribeSessionState, unsubscribeHeartbeat, unsubscribeWorkerLog, unsubscribeCriticalError);
     };
 
     void run().catch((error) => {
@@ -460,5 +556,5 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
         unsubscribe();
       }
     };
-  }, [dispatch, nodeId]);
+  }, [dispatch, nodeId, buildSessionSnapshotHandshakeReceived]);
 };

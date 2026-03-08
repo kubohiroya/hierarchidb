@@ -6,6 +6,7 @@
       "@hierarchidb/gen-iso3166-2"
     ],
     "jsx": "react-jsx",
+    "noEmit": true,
     "allowImportingTsExtensions": true,
     "allowArbitraryExtensions": true
   },
