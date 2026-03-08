@@ -2,11 +2,16 @@
 
 ## Doing
 
-- #894 / feature/ui/shape-step5-button-group-menu / start
-
 ## Blocked
 
 ## 今日の運用ログ
+
+- 2025-03-08: #894 Shape Step5 UI改良完了・PR #909作成
+  - Start BuildとPauseボタンをMUI ButtonGroupでグループ化
+  - セッション状態に応じてCancelボタンまたはReset/Deleteメニューを表示切り替え
+  - Reset/Deleteメニューにアイコン付きメニュー項目実装（RestartAlt/PlaylistRemove/CloudOff/FilterAltOff/FilterListOff/PhonelinkEraseアイコン）
+  - BuildControlCard.tsxにresetDeleteMenuItemsプロパティサポート追加
+  - 型チェック成功確認（components・shape-plugin共にexit code 0）
 
 - 2025-03-08: #907 shape-pluginビルドエラー修正完了・PR #908マージ完了
   - マージコンフリクトマーカー除去（useShapeBuildSessionStateAtomBridge.ts）
