@@ -13,7 +13,7 @@
       "label": "ライセンス同意"
     },
     "processing": {
-      "label": "Config"
+      "label": "情報"
     },
     "countrySelection": {
       "label": "国選択"
@@ -480,6 +480,11 @@
       "taskUnitTasks": "タスク",
       "counts": "{{percentage}}% ・ {{completed}}/{{total}} ポリゴン完了 ・ 失敗 {{failed}} ・ スキップ {{skipped}}",
       "countsWithUnit": "{{percentage}}% ・ {{completed}}/{{total}} {{unit}}完了 ・ 失敗 {{failed}} ・ スキップ {{skipped}}"
+    },
+    "tasks": {
+      "empty": "タスクがまだありません。",
+      "summaryOnly": "タスクは集計のみ表示されています。詳細一覧は取得できません。",
+      "search": "タスクを検索"
     },
     "taskPhase": {
       "sourceCacheStart": "キャッシュ取得を開始",
