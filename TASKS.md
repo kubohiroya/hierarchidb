@@ -2,12 +2,11 @@
 
 ## Doing
 
-- #928 react-i18next直接import禁止・@hierarchidb/ui-i18n統一 / fix/i18n/ban-direct-react-i18next-imports / start
-
 ## Blocked
 
 ## 今日の運用ログ
 
+- 2026-03-09: #928 react-i18next直接import禁止・@hierarchidb/ui-i18n統一完了・PR #929マージ済み
 - 2026-03-09: #926 i18n翻訳キーパス不一致修正・useTranslation import統一完了・PR #927マージ済み
 - 2026-03-09: #924 Stepper Step1 "Info"ラベルi18nキーパス修正完了・PR #925マージ済み
 
