@@ -3,7 +3,7 @@ import {
   type DataSourceSelectionOption,
   type IdeGsmImportPayload,
 } from '@hierarchidb/ui-datasource';
-import { useTranslation } from '~/common/i18n/index';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { RouteEntity } from '@hierarchidb/route-api';
 import { ROUTE_DATA_SOURCES } from '~/common/datasource/ROUTE_DATA_SOURCES';
 import { createRouteTabularApi } from '~/common/tabular/createRouteTabularApi';
@@ -46,7 +46,7 @@ export const useRouteDataSourceStep = ({
   onUpdate,
   onValidationChange,
 }: RouteDataSourceStepHookParams) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('route-plugin');
   const tabularApi = useMemo(() => createRouteTabularApi(), []);
   const [importInProgress, setImportInProgress] = useState(false);
   const draft = draftProp;

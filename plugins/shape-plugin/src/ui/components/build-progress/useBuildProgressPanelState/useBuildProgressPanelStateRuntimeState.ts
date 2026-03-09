@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
-import { useTranslation } from '~/ui/useTranslation';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useBuildCrashInsight } from '~/ui/components/build-progress/useBuildCrashInsight/useBuildCrashInsight';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
@@ -79,7 +79,7 @@ export const useBuildProgressPanelStateRuntimeState = (
 ): UseBuildProgressPanelStateRuntimeState => {
   const resolvedNodeId = params.nodeId;
   const nodeIdForLog = resolvedNodeId ? String(resolvedNodeId) : undefined;
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation('shape-plugin');
   useShapeBuildSessionStateAtomBridge(resolvedNodeId);
 
   const stepState = useShapeBuildStep({

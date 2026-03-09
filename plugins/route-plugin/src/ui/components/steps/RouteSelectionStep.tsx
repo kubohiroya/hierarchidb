@@ -16,7 +16,7 @@ import {
   DialogTitle,
   Typography,
 } from '@mui/material';
-import { useTranslation } from '~/common/i18n/index';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { CountryMatrixSelector } from '@hierarchidb/ui-country-select';
 import { AuthReadyGate } from '@hierarchidb/ui-auth';
 import { GenericDataGrid } from '@hierarchidb/ui-grid';
@@ -28,7 +28,6 @@ import {
 const RouteSelectionContent: React.FC<RouteSelectionStepProps> = (props) => {
   const {
     t,
-    translations,
     iso,
     draft,
     dataSourceName,
@@ -147,7 +146,7 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = (props) => {
           {t('routeConfig.defaultSelectionNote', 'Default selections are applied based on the data source.')}
         </Typography>
       )}
-      {translations && dataSourceName && !policy.defaultChecked && (
+      {dataSourceName && !policy.defaultChecked && (
         <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
           {t('routeConfig.customSelectionNote', 'Choose the Route Selection to include for each country.')}
         </Typography>
@@ -157,7 +156,7 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = (props) => {
 };
 
 export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = (props) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('route-plugin');
   return (
     <Suspense
       fallback={

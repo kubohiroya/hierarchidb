@@ -7,7 +7,7 @@ import type {
 } from '~/common/types/index';
 import { isShapePreviewMetadataEnabled } from '~/common/config/previewFlags';
 import { toNodeId, type NodeId } from '@hierarchidb/core-types';
-import { useTranslation } from '~/ui/useTranslation';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { ShapeFeatureMetadata, ShapeDataSourceMetadata, ShapeGeometryErrorRecord } from '@hierarchidb/shape-api';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { parseAdminLevelValue } from './parseAdminLevelValue';
@@ -70,7 +70,7 @@ export const useShapePreviewStep = (
   data: Partial<ShapeEntity>,
   nodeId?: string,
 ) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
   const theme = useTheme();
   const metadataEnabled = isShapePreviewMetadataEnabled();
   const [searchKeyword, setSearchKeyword] = useAtom(shapePreviewSearchAtom);

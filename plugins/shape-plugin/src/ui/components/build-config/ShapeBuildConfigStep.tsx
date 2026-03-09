@@ -13,7 +13,7 @@ import {
   TileEmitInvalidGeometryFilterCard,
 } from './SourceInvalidGeometryFilterCard.tsx';
 import { useShapeBuildConfigStep } from './useShapeBuildConfigStep.js';
-import { useTranslation } from '~/ui/useTranslation';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { ShapeDialogStepProps } from '~/ui/components/ShapeDialogStepProps';
 import { useDialogContext } from '@hierarchidb/ui-dialog';
 import {
@@ -32,7 +32,7 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
   disabled,
 }) => {
   const { registerStepDraftCommitter } = useDialogContext<Partial<ShapeEntity>>();
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
   const { config } = useShapeBuildConfigStep({ data, onChange });
   const {
     workingConfig,
@@ -133,7 +133,7 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
 };
 
 const ShapeBuildConfigRunningNotice: React.FC = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
   const { buildStepIndex, handleOpenBuildStep } = useShapeBuildConfigStepSession({ nodeId: undefined });
 
   return (

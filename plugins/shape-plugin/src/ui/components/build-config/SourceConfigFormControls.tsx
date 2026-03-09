@@ -5,7 +5,7 @@ import {
   FilterAlt as FilterAltIcon,
   Layers as LayersIcon,
 } from '@mui/icons-material';
-import { useTranslation } from '~/ui/useTranslation';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { LoadingButton } from '@hierarchidb/components';
 
 type Props = {
@@ -59,7 +59,7 @@ export const SourceConfigFormControls: React.FC<Props> = ({
   onDeleteMetadata,
   onResetDefaults,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
   const apiDisabled = countsLoading || deleteSourceApiLoading || !canDeleteSourceApiCache;
   const filteredDisabled = countsLoading || deleteSourceFilteredLoading || !canDeleteSourceFilteredCache;
   const geometryDisabled = deleteGeometryLoading || !canDeleteGeometryCache;

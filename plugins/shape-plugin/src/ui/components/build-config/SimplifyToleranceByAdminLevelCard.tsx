@@ -17,7 +17,7 @@ import { Tune as TuneIcon } from '@mui/icons-material';
 import { ToneCurveEditor } from '@hierarchidb/ui-tone-curve-editor';
 import { BuildConfigSectionTitle, getBuildConfigHoverCardSx } from '@hierarchidb/ui-accordion-config';
 import { DEFAULT_MAX_RATIO_VALUE } from '@hierarchidb/shape-api';
-import { useTranslation } from '~/ui/useTranslation';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { ShapeBuildConfig } from '~/common/types/index';
 import { buildToneCurveAnchorsFromToleranceByBand, buildToleranceByBandFromToneCurveAnchors } from '~/services/utils/toleranceByBand';
 
@@ -184,7 +184,7 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
   disableHoverLift = false,
   onChange,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
   const [activeTab, setActiveTab] = useState<AdminLevelTabKey>('admin0');
   const curveWidthRef = useRef<HTMLDivElement | null>(null);
   const [simplifyCurveWidth, setSimplifyCurveWidth] = useState(500);

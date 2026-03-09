@@ -1237,7 +1237,7 @@ export const TaskItemDetailWindow = ({
   onRequestBringToFront,
 }: TaskItemDetailWindowProps) => {
   const theme = useTheme();
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
   const stages = useShapeBuildStages({ t: (key, fallback) => t(key, fallback ?? key) });
   const activeDetail = detail;
   const effectiveStageId = normalizeUiStageId(activeDetail?.task.stage ?? stageId) ?? 'unknown';

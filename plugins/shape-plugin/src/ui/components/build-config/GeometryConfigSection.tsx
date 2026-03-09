@@ -21,7 +21,7 @@ import {
   BuildConfigSectionTitle,
   getBuildConfigHoverCardSx,
 } from '@hierarchidb/ui-accordion-config';
-import { useTranslation } from '~/ui/useTranslation';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { type ShapeBuildConfig } from '~/common/types/index';
 import { useGeometryConfigSection } from '~/ui/hooks/useGeometryConfigSection';
 import { SimplifyToleranceByAdminLevelCard } from './SimplifyToleranceByAdminLevelCard.tsx';
@@ -40,7 +40,7 @@ export const GeometryConfigSection: React.FC<Props> = ({
   disabled,
   disableHoverLift = false,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
   const { baseGeometryConfig, update } = useGeometryConfigSection({ config, onChange });
   const hoverCardSx = getBuildConfigHoverCardSx(disabled, disableHoverLift);
 

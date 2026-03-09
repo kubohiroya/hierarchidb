@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { useTranslation } from '~/ui/useTranslation';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useShapeBuildStages } from '~/ui/components/build-progress/useShapeBuildStages/useShapeBuildStages';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import type { TaskDetailSelection } from '~/ui/components/build-progress/TaskItemCard/TaskItemDetailTypes';
@@ -50,7 +50,7 @@ export const useTaskItemCardListCardView = ({
   const wasDetailFloatingWindowOpenRef = useRef(isDetailFloatingWindowOpen);
   const openRequestRef = useRef<string | null>(null);
   const suppressOpenRef = useRef(false);
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
   const stages = useShapeBuildStages({ t: (key, fallback): string => String(t(key, fallback ?? key)) });
   const stageIconById = useMemo(() => (
     new Map(stages.map((stage) => [stage.id, stage.icon]))

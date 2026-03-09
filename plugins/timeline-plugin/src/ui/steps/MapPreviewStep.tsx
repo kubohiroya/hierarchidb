@@ -1,7 +1,7 @@
 import { useMemo, useState, useId } from 'react';
 import { Box, Slider, Stack, Switch, TextField, Typography, FormControlLabel, Paper, Chip } from '@mui/material';
 import { Map as MapIcon } from '@mui/icons-material';
-import { useTranslation } from '~/common/i18n/index';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { TimelineFrame } from '~/common/types/index';
 
 export interface MapPreviewStepProps {
@@ -11,7 +11,7 @@ export interface MapPreviewStepProps {
 }
 
 export function MapPreviewStep({ frames, initialIndex = 0, onIndexChange }: MapPreviewStepProps) {
-  const { t } = useTranslation();
+  const { t } = useTranslation('timeline-plugin');
   const controlId = useId();
   const [index, setIndex] = useState(Math.min(initialIndex, Math.max(0, frames.length - 1)));
   const [fps, setFps] = useState(12);

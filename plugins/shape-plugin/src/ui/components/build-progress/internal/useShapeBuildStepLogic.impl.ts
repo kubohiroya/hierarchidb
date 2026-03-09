@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useBuildProgress } from '~/ui/components/build-progress/useBuildProgress/useBuildProgress';
-import { useTranslation } from '~/ui/useTranslation';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   DEFAULT_PROCESSING_CONFIG,
   summarizeCheckboxState,
@@ -82,7 +82,7 @@ type Args = {
 };
 
 export const useShapeBuildStep = ({ data, nodeId }: Args) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
   const activeNodeId = nodeId ?? null;
   const runtime = useAtomValue(buildSessionRuntimeAtom);
 

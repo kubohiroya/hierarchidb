@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LocationEntity } from '~/common/types/index';
-import { useTranslation } from '~/common/i18n/index';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { parseIdeGsmRecords } from '@hierarchidb/location-api';
 import { notify } from '@hierarchidb/components';
 import { buildAvailabilityMapFromIdeGsmPoints, buildSelectionMapFromAvailability } from '~/ui/utils/ideGsmSelection';
@@ -28,17 +28,16 @@ interface LocationSelectionStepProps {
 }
 
 export const useLocationSelectionStep = ({ draft, onUpdate, buildSelectionRecord }: LocationSelectionStepProps) => {
-  const { translations, t } = useTranslation();
+  const { t } = useTranslation('location-plugin');
   const iso = useIsoCountries();
   const tabularApi = useMemo(() => createLocationTabularApi(), []);
   const allowedTypes = resolveTypesForSource(draft.dataSource ?? '');
   const allowedTypeSet = useMemo(() => new Set(allowedTypes), [allowedTypes]);
-  const typeDescriptions = translations.selection?.typeDescriptions ?? {};
 
   const matrixConfig: MatrixConfig = {
     columns: BASE_LOCATION_TYPES.map((type) => {
-      const name = translations.locationTypes?.[type.id] ?? type.id;
-      const description = typeDescriptions[type.id as keyof typeof typeDescriptions] ?? name;
+      const name = t(`locationTypes.${type.id}`, type.id);
+      const description = t(`selection.typeDescriptions.${type.id}`, name);
       return {
         id: type.id,
         label: name,

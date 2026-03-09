@@ -22,7 +22,7 @@ import {
 import type { ShapeBuildConfig } from '~/common/types/index';
 import { useGeometryConfigSection } from '~/ui/hooks/useGeometryConfigSection';
 import type { SourceConfigSectionState } from '~/ui/hooks/useSourceConfigSection';
-import { useTranslation } from '~/ui/useTranslation';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   BuildConfigAccordionSummary,
   BuildConfigSectionTitle,
@@ -45,7 +45,7 @@ export const CacheManagementSection: React.FC<Props> = ({
   disabled,
   disableHoverLift = false,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
   const {
     switchId,
     handleResetDefaults,

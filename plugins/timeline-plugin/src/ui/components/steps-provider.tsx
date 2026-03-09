@@ -3,7 +3,7 @@ import type { TimelineDraft, TimelineFrame } from '~/common/types/index';
 import { FramesPreviewStep } from '~/ui/steps/FramesPreviewStep';
 import { MapPreviewStep } from '~/ui/steps/MapPreviewStep';
 import { AnimationViewerStep } from '~/ui/steps/AnimationViewerStep';
-import { useTranslation as getTranslation } from '~/common/i18n/index';
+import { i18n } from '@hierarchidb/ui-i18n';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -15,7 +15,8 @@ type TimelineData = StepData &
 registry.registerConfigProvider<TimelineData>({
   nodeType: 'timeline',
   getCreateStepConfigs() {
-    const { t } = getTranslation();
+    const t = (key: string, fallback: string) =>
+      String(i18n.t(key, { ns: 'timeline-plugin', defaultValue: fallback }));
     return [
       {
         id: 'frames',

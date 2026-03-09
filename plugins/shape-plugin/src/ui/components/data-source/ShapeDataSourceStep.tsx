@@ -2,7 +2,7 @@ import type React from 'react';
 import { Box, Button } from '@mui/material';
 import { DataSourceSelectionStep } from '@hierarchidb/ui-datasource';
 import { useShapeDataSourceStep } from './useShapeDataSourceStep.js';
-import { useTranslation } from '~/ui/useTranslation';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { ShapeDialogStepProps } from '~/ui/components/ShapeDialogStepProps';
 import { useShapeDataSourceStepView } from './useShapeDataSourceStepView.js';
 
@@ -12,7 +12,7 @@ import { useShapeDataSourceStepView } from './useShapeDataSourceStepView.js';
 export const ShapeDataSourceStep: React.FC<ShapeDialogStepProps> = ({ data, onChange, nodeId, disabled }) => {
   const draftData = data ?? {};
   const { options, dataSourceId, handleChange } = useShapeDataSourceStep({ data: draftData, onChange });
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
   const { isClearing, handleClearCache } = useShapeDataSourceStepView({ dataSourceId, nodeId, t });
 
   return (

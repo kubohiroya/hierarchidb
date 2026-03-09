@@ -7,7 +7,7 @@ import { Box, Typography } from '@mui/material';
 import { LicenseAgreementStep } from '@hierarchidb/ui-license';
 import type { Timestamp } from '@hierarchidb/core-types';
 import type { LocationEntity } from '~/common/types/index';
-import { useTranslation } from '~/common/i18n/index';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { getLocationDataSource } from '~/common/datasources/LocationDataSourceDefinitions';
 
 interface LocationLicenseStepProps {
@@ -16,7 +16,7 @@ interface LocationLicenseStepProps {
 }
 
 export const LocationLicenseStep: React.FC<LocationLicenseStepProps> = ({ draft, onUpdate }) => {
-  const { translations } = useTranslation();
+  const { t } = useTranslation('location-plugin');
 
   const dataSourceId = draft.dataSource ?? 'openstreetmap';
   const dataSource = getLocationDataSource(dataSourceId);
@@ -25,7 +25,7 @@ export const LocationLicenseStep: React.FC<LocationLicenseStepProps> = ({ draft,
     return (
       <Box>
         <Typography variant="body2" color="text.secondary">
-          {translations.dialog.selectDataSourceFirst ?? 'Please select a data source first.'}
+          {t('dialog.selectDataSourceFirst', 'Please select a data source first.')}
         </Typography>
       </Box>
     );

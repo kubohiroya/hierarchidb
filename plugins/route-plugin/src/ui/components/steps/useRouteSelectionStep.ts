@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { RouteEntity } from '@hierarchidb/route-api';
 import { ROUTE_MODES, type IdeGsmRouteCoverageResult, type RouteMode } from '@hierarchidb/route-api';
-import { useTranslation } from '~/common/i18n/index';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useIsoCountries, type MatrixConfig, type MatrixSelection } from '@hierarchidb/ui-country-select';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
 import { type GridColumn } from '@hierarchidb/ui-grid';
@@ -87,7 +87,7 @@ export const useRouteSelectionStep = ({
   onValidationChange,
   nodeId: _nodeId,
 }: RouteSelectionStepProps) => {
-  const { t, translations } = useTranslation();
+  const { t } = useTranslation('route-plugin');
   const { api, initialize } = useWorkerAPI();
   const iso = useIsoCountries();
   const draft = draftProp;
@@ -428,7 +428,6 @@ export const useRouteSelectionStep = ({
 
   return {
     t,
-    translations,
     iso,
     draft,
     dataSourceName,

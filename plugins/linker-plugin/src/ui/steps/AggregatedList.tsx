@@ -7,7 +7,7 @@ import type { WorkerAPI } from '@hierarchidb/worker-api';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { TreeQueryAPI } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
-import { useTranslation } from '~/common/i18n/index';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 
 export interface AggregatedListProps {
   selfNodeId?: NodeId; // Linker node (edit時)
@@ -31,7 +31,7 @@ function resolveWorkerClient(): Remote<WorkerApi> | null {
 }
 
 export const AggregatedList: React.FC<AggregatedListProps> = ({ selfNodeId, selected }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('linker-plugin');
   const [items, setItems] = useState<ResourceSummary[]>([]);
   const client = resolveWorkerClient();
 

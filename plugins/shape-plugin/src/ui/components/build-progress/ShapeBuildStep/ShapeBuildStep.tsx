@@ -20,7 +20,7 @@ const toBuildStatus = (phase: string): BuildStatus => {
 };
 
 export const ShapeBuildStep: React.FC<ShapeDialogStepProps> = (props) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
   const runtime = useAtomValue(buildSessionRuntimeAtom);
   const buildStatus = toBuildStatus(runtime.phase);
   const { store, heapDialogOpen, heapEvent, handleHeapDialogClose } = useBuildProgressStepState(buildStatus);

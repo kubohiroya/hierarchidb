@@ -3,7 +3,7 @@ import { useId } from 'react';
 import { DEFAULT_BUILD_CONFIG, applyBuildConfigPatch } from '~/common/types/index';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildConfig, ShapeBuildConfigPatch } from '~/common/types/index';
-import { useTranslation } from '~/ui/useTranslation';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useShapeBuildCacheActions } from './useShapeBuildCacheActions.ts';
 
 type Args = {
@@ -15,7 +15,7 @@ type Args = {
 };
 
 export const useSourceConfigSection = ({ config, nodeId, disabled, onChange, onResetSession }: Args) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
   const switchId = useId();
   const baseSourceConfig = config.sourceConfig;
 
