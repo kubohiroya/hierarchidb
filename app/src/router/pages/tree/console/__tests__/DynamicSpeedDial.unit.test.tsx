@@ -25,17 +25,6 @@ vi.mock('@hierarchidb/ui-plugin-shell/ui-i18n', () => ({
     language: 'en',
   }),
 }));
-
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (_key: string, options?: { defaultValue?: string }) => options?.defaultValue ?? _key,
-  }),
-  initReactI18next: {
-    type: '3rdParty',
-    init: vi.fn(),
-  },
-}));
-
 const menuItemsModule = vi.hoisted(() => ({
   usePluginMenuItems: vi.fn<() => PluginMenuItem[]>(),
 }));

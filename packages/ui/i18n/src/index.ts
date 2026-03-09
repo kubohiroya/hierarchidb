@@ -5,6 +5,7 @@
 
 // Re-export commonly used i18next hooks so downstream packages share the configured instance
 export { I18nextProvider, Trans, Translation, useTranslation } from 'react-i18next';
+export type { i18n as I18nInstance, TFunction, TOptions } from 'i18next';
 export * from './hooks/useGlobalI18nTranslator.js';
 import { i18n as i18nInstance } from './i18n/index.js';
 
