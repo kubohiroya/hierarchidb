@@ -19,7 +19,7 @@ import {
 import { Box, FormHelperText, Paper, Stack, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import type { ElementType } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   STYLE_TYPE_OPTIONS,
   type StylerDialogData,

@@ -7,7 +7,7 @@ import { useMemo } from 'react';
 import { Chip, Grid, IconButton, List, ListItem, ListItemText, Paper, Tooltip, Typography } from '@mui/material';
 import { Edit, LocationOn, Refresh } from '@mui/icons-material';
 import type { LocationEntity, NodeId } from '~/common/types/index';
-import { useTranslation } from '~/common/i18n/index';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 
 export interface LocationPanelProps {
   nodeId: NodeId;
@@ -15,7 +15,7 @@ export interface LocationPanelProps {
 }
 
 export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) => {
-  const { translations } = useTranslation();
+  const { t } = useTranslation('location-plugin');
 
   const entity = useMemo<LocationEntity>(() => ({
     id: nodeId,
@@ -39,7 +39,7 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
                 <LocationOn color="primary" />
               </Grid>
               <Grid size="auto">
-                <Typography variant="h6" noWrap>{translations.panel.sampleName}</Typography>
+                <Typography variant="h6" noWrap>{t('panel.sampleName', 'Sample Location Dataset')}</Typography>
               </Grid>
               <Grid size="auto">
                 <Chip label="dataset" size="small" />
@@ -49,7 +49,7 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
           <Grid size="auto">
             <Grid container columns={{ xs: 12 }} wrap="nowrap" columnSpacing={1} alignItems="center" justifyContent="flex-end">
               <Grid size="auto">
-                <Tooltip title={translations.panel.refresh}>
+                <Tooltip title={t('panel.refresh', 'Refresh')}>
                   <IconButton size="small">
                     <Refresh />
                   </IconButton>
@@ -57,7 +57,7 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
               </Grid>
               {onEdit && (
                 <Grid size="auto">
-                  <Tooltip title={translations.panel.edit}>
+                  <Tooltip title={t('panel.edit', 'Edit')}>
                     <IconButton size="small" onClick={onEdit}>
                       <Edit />
                     </IconButton>
@@ -74,32 +74,32 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
           <Grid size={{ xs: 12 }}>
             <Paper elevation={1} sx={{ p: 2 }}>
               <Typography variant="subtitle1" gutterBottom>
-                {translations.panel.basicInfo}
+                {t('panel.basicInfo', 'Basic Information')}
               </Typography>
               <List dense>
                 <ListItem>
                   <ListItemText
-                    primary={translations.panel.dataSource}
+                    primary={t('panel.dataSource', 'Data source')}
                     secondary={entity.dataSource}
                   />
                 </ListItem>
                 <ListItem>
                   <ListItemText
-                    primary={translations.panel.licenseAgreement}
+                    primary={t('panel.licenseAgreement', 'License agreement')}
                     secondary={entity.licenseAgreement
-                      ? translations.panel.licenseAgreed
-                      : translations.panel.licensePending}
+                      ? t('panel.licenseAgreed', 'Agreed')
+                      : t('panel.licensePending', 'Pending')}
                   />
                 </ListItem>
                 <ListItem>
                   <ListItemText
-                    primary={translations.panel.createdAt}
+                    primary={t('panel.createdAt', 'Created at')}
                     secondary="-"
                   />
                 </ListItem>
                 <ListItem>
                   <ListItemText
-                    primary={translations.panel.updatedAt}
+                    primary={t('panel.updatedAt', 'Updated at')}
                     secondary="-"
                   />
                 </ListItem>
@@ -110,12 +110,12 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
           <Grid size={{ xs: 12 }}>
             <Paper elevation={1} sx={{ p: 2 }}>
               <Typography variant="subtitle1" gutterBottom>
-                {translations.panel.processingSettings}
+                {t('panel.processingSettings', 'Settings')}
               </Typography>
               <List dense>
                 <ListItem>
                   <ListItemText
-                    primary={translations.panel.concurrentDownloads}
+                    primary={t('panel.concurrentDownloads', 'Concurrent downloads')}
                     secondary={entity.concurrentDownloads}
                   />
                 </ListItem>

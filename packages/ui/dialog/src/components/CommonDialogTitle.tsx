@@ -10,6 +10,7 @@ import {
   FullscreenExit as FullscreenExitIcon,
 } from '@mui/icons-material';
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   DISPLAY_MODE_LABELS,
   useCommonDialogTitleView,
@@ -44,6 +45,7 @@ export const CommonDialogTitle: React.FC<CommonDialogTitleProps> = ({
   onChangeDisplayMode,
   showDisplayModeControls = true,
 }) => {
+  const { t } = useTranslation('common');
   const {
     modeMenuAnchor,
     isModeMenuOpen,
@@ -118,7 +120,7 @@ export const CommonDialogTitle: React.FC<CommonDialogTitleProps> = ({
               </IconButton>
             </>
           )}
-          <IconButton onClick={onClose} color="inherit" aria-label="Close dialog">
+          <IconButton onClick={onClose} color="inherit" aria-label={String(t('dialogs.common.actions.close', 'Close dialog'))}>
             <CloseIcon />
           </IconButton>
         </Stack>

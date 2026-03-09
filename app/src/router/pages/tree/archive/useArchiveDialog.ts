@@ -15,7 +15,7 @@ import type { HierarchicalTreeNode, TreeTableColumn } from '@hierarchidb/ui-tree
 import { DualKeyMap } from '@hierarchidb/util';
 import { useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { WorkerAPIClient } from '~/worker-runtime/WorkerAPIClient';
 import { buildArchiveBreadcrumbs } from './buildArchiveBreadcrumbs.js';
 import { buildArchiveTreeData } from './buildArchiveTreeData.js';

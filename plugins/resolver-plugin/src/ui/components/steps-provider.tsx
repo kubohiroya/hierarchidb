@@ -7,7 +7,7 @@ import { PreviewTestStep } from './steps/PreviewTestStep.js';
 import type { ResolverUpdaterPayload, SchemaInfo, MappingValidationResult } from '~/common/types/index';
 import type { NodeId } from '@hierarchidb/core-types';
 import { ResolverBuildStep } from './steps/ResolverBuildStep.js';
-import { i18n } from '~/ui/i18n';
+import { i18n } from '@hierarchidb/ui-i18n';
 
 const registry = PluginStepRegistry.getInstance();
 

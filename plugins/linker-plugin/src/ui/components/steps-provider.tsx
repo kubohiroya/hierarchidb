@@ -4,9 +4,8 @@ import type { LinkerDraft } from '~/common/types/index';
 import { ResourcePicker } from '~/ui/steps/ResourcePicker';
 import { AggregatedList } from '~/ui/steps/AggregatedList';
 import { MapPreview } from '~/ui/steps/MapPreview';
-import { useTranslation as getTranslation } from '~/common/i18n/index';
+import { i18n, useTranslation } from '@hierarchidb/ui-i18n';
 import { useLinkerSteps } from './hooks/useLinkerSteps.js';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 
 type LinkerStepData = StepData & LinkerDraft;
 
@@ -47,7 +46,7 @@ const createDraftUpdater = (initial: LinkerStepData, onChange: LinkerStepProps['
 const ResourcesStepWrapper = (props: LinkerStepProps) => {
   const { ensureDraft, toSelectionSet } = useLinkerSteps();
   const draft = ensureDraft(props.data);
-  const {t} = useTranslation();
+  const {t} = useTranslation('linker-plugin');
   const selection = toSelectionSet(props.data?.draftData?.linkedNodeIds);
   const handleUpdate = createDraftUpdater(draft, props.onChange);
   return (
@@ -80,7 +79,8 @@ const PreviewStepWrapper = (props: LinkerStepProps) => {
 };
 
 const createLinkerStepConfigs = (): PluginStepConfig<LinkerStepData>[] => {
-  const { t } = getTranslation();
+  const t = (key: string, fallback: string) =>
+    String(i18n.t(key, { ns: 'linker-plugin', defaultValue: fallback }));
 
   return [
     {

@@ -81,18 +81,18 @@ export const getBuildSessionTransitionStatusLabel = (
   const elapsedSeconds = Math.max(0, Math.floor(durationMs / 1000));
   switch (phase) {
     case 'acquiring-lock':
-      return t('stage.status.startingLock', 'Starting build (acquiring lock)...');
+      return t('build.status.startingLock', 'Starting build (acquiring lock)...');
     case 'waiting-lock':
-      return t('stage.status.startingQueueElapsed', `Starting build (waiting for lock, ${elapsedSeconds}s)...`);
+      return t('build.status.startingQueueElapsed', `Starting build (waiting for lock, ${elapsedSeconds}s)...`);
     case 'saving-draft':
-      return t('stage.status.startingSave', 'Starting build (saving draft)...');
+      return t('build.status.startingSave', 'Starting build (saving draft)...');
     case 'initializing-worker':
-      return t('stage.status.startingWorker', 'Starting build (initializing worker)...');
+      return t('build.status.startingWorker', 'Starting build (initializing worker)...');
     case 'building-payloads':
-      return t('stage.status.startingPayload', 'Starting build (preparing tasks)...');
+      return t('build.status.startingPayload', 'Starting build (preparing tasks)...');
     case 'starting-session':
-      return t('stage.status.startingSession', 'Starting build (launching session)...');
+      return t('build.status.startingSession', 'Starting build (launching session)...');
     default:
-      return t('stage.status.starting', 'Starting stage...');
+      return t('build.status.starting', 'Starting stage...');
   }
 };

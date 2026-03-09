@@ -1,5 +1,5 @@
 import { ZoomBandConfigSection as SharedZoomBandConfigSection } from '@hierarchidb/ui-accordion-config';
-import { useTranslation } from '~/ui/useTranslation';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useGeometryConfigSection } from '~/ui/hooks/useGeometryConfigSection';
 import type { ShapeBuildConfig } from '~/common/types/index';
 import { resampleToleranceByBand } from '~/services/utils/toleranceByBand';
@@ -17,7 +17,7 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
   onChange,
   disableHoverLift = false,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
   const { baseGeometryConfig, update } = useGeometryConfigSection({ config, onChange });
   const toleranceFallback = 0.1;
   const multiplierFallback = 1;

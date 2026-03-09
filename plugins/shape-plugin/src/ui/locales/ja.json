@@ -541,22 +541,34 @@
       "unknownStage": "ビルド中",
       "counts": "{{percentage}}% ・ {{completed}}/{{total}} 完了 ・ 失敗 {{failed}} ・ スキップ {{skipped}}"
     },
+    "tasks": {
+      "search": "タスクを検索",
+      "empty": "タスクがまだありません。",
+      "summaryOnly": "タスクは集計のみ表示されています。詳細一覧は取得できません。"
+    },
     "taskStatus": {
       "waiting": "待機中",
-      "queued": "待機中",
+      "queued": "実行待ち",
       "running": "実行中",
       "paused": "一時停止",
-      "completed": "完了",
+      "completed": "実行完了",
       "recycled": "再利用",
-      "skipped": "スキップ",
-      "failed": "失敗"
+      "skipped": "実行省略",
+      "failed": "実行失敗"
     },
     "status": {
       "ready": "ビルドを開始する準備ができています",
       "running": "ビルド処理中",
       "paused": "ビルド一時停止中",
       "completed": "ビルド完了",
-      "failed": "ビルド失敗"
+      "failed": "ビルド失敗",
+      "starting": "ステージを開始中...",
+      "startingLock": "ビルド開始中（ロック取得中）...",
+      "startingQueueElapsed": "ビルド開始中（ロック待機中、{{elapsedSeconds}}秒）...",
+      "startingSave": "ビルド開始中（下書き保存中）...",
+      "startingWorker": "ビルド開始中（ワーカー初期化中）...",
+      "startingPayload": "ビルド開始中（タスク準備中）...",
+      "startingSession": "ビルド開始中（セッション起動中）..."
     },
     "stages": {
       "source": {

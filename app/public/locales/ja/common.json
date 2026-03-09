@@ -79,6 +79,11 @@
     }
   },
   "dialogs": {
+    "common": {
+      "actions": {
+        "close": "ダイアログを閉じる"
+      }
+    },
     "archive": {
       "modeMenu": {
         "ariaLabel": "表示モード",
@@ -452,6 +457,29 @@
       "default": "列"
     },
     "emptyCell": "-"
+  },
+  "stage": {
+    "timing": {
+      "inlineDuration": "{{hours}}時間{{minutes}}分{{seconds}}秒",
+      "elapsedRemaining": "経過時間 {{elapsed}} ・ 推計残り {{remaining}}"
+    }
+  },
+  "buildControl": {
+    "buttons": {
+      "startBuild": "ビルド開始",
+      "resumeBuild": "ビルド再開",
+      "pause": "一時停止",
+      "cancel": "キャンセル",
+      "resetDelete": "リセット/削除",
+      "resetDeleteMenu": "リセット/削除メニュー"
+    },
+    "status": {
+      "running": "ビルド処理中",
+      "paused": "ビルド一時停止中",
+      "completed": "ビルド完了",
+      "failed": "ビルド失敗",
+      "ready": "ビルドを開始する準備ができています"
+    }
   },
   "buildSessionQueue": {
     "empty": "実行中または待機中のセッションが見つかりません",

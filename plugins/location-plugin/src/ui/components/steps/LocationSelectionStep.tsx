@@ -6,7 +6,7 @@ import type React from 'react';
 import { Suspense } from 'react';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import type { LocationEntity, LocationType } from '~/common/types/index';
-import { useTranslation } from '~/common/i18n/index';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { CountryMatrixSelector, type MatrixSelection } from '@hierarchidb/ui-country-select';
 import { AuthReadyGate } from '@hierarchidb/ui-auth';
 import { useLocationSelectionStep } from './useLocationSelectionStep.ts';
@@ -98,7 +98,7 @@ const LocationSelectionContent: React.FC<LocationSelectionStepProps> = ({ draft,
 };
 
 export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = (props) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('location-plugin');
   return (
     <Suspense
       fallback={

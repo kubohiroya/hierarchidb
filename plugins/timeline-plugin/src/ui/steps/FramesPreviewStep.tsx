@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Box, List, ListItem, ListItemText, Typography } from '@mui/material';
-import { useTranslation } from '~/common/i18n/index';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { TimelineFrame } from '~/common/types/index';
 
 export function FramesPreviewStep({
@@ -10,7 +10,7 @@ export function FramesPreviewStep({
   frames: TimelineFrame[];
   title?: string;
 }) {
-  const { t } = useTranslation();
+  const { t } = useTranslation('timeline-plugin');
   const sorted = useMemo(
     () => [...frames].sort((a, b) => a.name.localeCompare(b.name)),
     [frames],

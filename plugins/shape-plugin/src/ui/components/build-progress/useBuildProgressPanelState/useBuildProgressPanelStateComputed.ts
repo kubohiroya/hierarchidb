@@ -64,22 +64,22 @@ export type BuildProgressPanelStateComputed = {
 };
 
 const resolveStatusLabel = (t: TranslateFn) => (statusValue?: string, skipped?: boolean): string => {
-  if (skipped) return t('stage.taskStatus.skipped', 'Skipped');
+  if (skipped) return t('build.taskStatus.skipped', 'Skipped');
   switch (statusValue) {
     case 'running':
-      return t('stage.taskStatus.running', 'Running');
+      return t('build.taskStatus.running', 'Running');
     case 'completed':
-      return t('stage.taskStatus.completed', 'Completed');
+      return t('build.taskStatus.completed', 'Completed');
     case 'recycled':
-      return t('stage.taskStatus.recycled', 'Recycled');
+      return t('build.taskStatus.recycled', 'Recycled');
     case 'failed':
-      return t('stage.taskStatus.failed', 'Failed');
+      return t('build.taskStatus.failed', 'Failed');
     case 'paused':
-      return t('stage.taskStatus.paused', 'Paused');
+      return t('build.taskStatus.paused', 'Paused');
     case 'queued':
-      return t('stage.taskStatus.queued', 'Queued');
+      return t('build.taskStatus.queued', 'Queued');
     default:
-      return t('stage.taskStatus.waiting', 'Waiting');
+      return t('build.taskStatus.waiting', 'Waiting');
   }
 };
 

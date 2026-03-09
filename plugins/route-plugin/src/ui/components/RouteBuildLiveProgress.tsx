@@ -5,7 +5,7 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { toNodeId } from '@hierarchidb/core-types';
 import { useRouteBuildProgress } from '~/ui/hooks/useRouteBuildProgress';
-import { useTranslation } from '~/common/i18n/index';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 
 export function RouteBuildLiveProgress({ jobId }: { jobId: string }) {
   const {
@@ -17,7 +17,7 @@ export function RouteBuildLiveProgress({ jobId }: { jobId: string }) {
     pause,
     resume,
   } = useRouteBuildProgress(toNodeId(jobId));
-  const { translations } = useTranslation();
+  const { t } = useTranslation('route-plugin');
 
   const pct = useMemo(() => {
     const value = progress?.percentage ?? 0;
@@ -27,18 +27,16 @@ export function RouteBuildLiveProgress({ jobId }: { jobId: string }) {
 
   const phaseKey = progress?.phase ?? status?.status ?? (isPaused ? 'paused' : 'running');
   const stageKey = progress?.stage ?? '';
-  const stages = translations.batch?.stages as Record<string, string> | undefined;
-  const phases = translations.batch?.phases as Record<string, string> | undefined;
-  const phaseLabel = phaseKey ? phases?.[phaseKey] ?? phaseKey : 'running';
-  const stageLabel = stageKey && stages?.[stageKey]
-    ? stages[stageKey]
-    : stageKey || phaseLabel || 'running';
+  const phaseLabel = phaseKey ? t(`batch.phases.${phaseKey}`, phaseKey) : 'running';
+  const stageLabel = stageKey
+    ? t(`batch.stages.${stageKey}`, stageKey)
+    : phaseLabel || 'running';
   const buttonLabel = isPaused
-    ? translations.batch?.resume ?? 'Resume'
-    : translations.batch?.pause ?? 'Pause';
+    ? t('batch.resume', 'Resume')
+    : t('batch.pause', 'Pause');
   const tooltipLabel = isPaused
-    ? translations.batch?.resumeTooltip ?? buttonLabel
-    : translations.batch?.pauseTooltip ?? buttonLabel;
+    ? t('batch.resumeTooltip', buttonLabel)
+    : t('batch.pauseTooltip', buttonLabel);
   const Icon = isPaused ? PlayArrowIcon : PauseIcon;
   const handleClick = isPaused ? resume : pause;
   const barColor = isPaused ? '#757575' : '#1976d2';

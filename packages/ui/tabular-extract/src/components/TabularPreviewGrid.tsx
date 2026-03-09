@@ -2,7 +2,7 @@ import React, { type ReactElement } from 'react';
 import { Box, Menu, MenuItem, Typography } from '@mui/material';
 import { GenericDataGrid } from '@hierarchidb/ui-grid';
 import type { TabularFilterOperator } from '../types/index';
-import { TreeTableSearchInput as SearchField } from '@hierarchidb/ui-search-input';
+import { TreeTableSearchInput as SearchField } from '@hierarchidb/components';
 import { useTabularPreviewGrid } from './useTabularPreviewGrid.js';
 
 export interface TabularPreviewGridProps {

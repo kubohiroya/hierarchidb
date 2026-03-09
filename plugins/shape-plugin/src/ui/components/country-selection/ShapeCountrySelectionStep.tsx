@@ -3,14 +3,14 @@ import { Alert, Box, CircularProgress, IconButton, Tooltip, Typography } from '@
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { CountryMatrixSelector } from '@hierarchidb/ui-country-select';
 import { useShapeCountrySelectionStep } from './useShapeCountrySelectionStep.js';
-import { useTranslation } from '~/ui/useTranslation';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { NodeId } from '@hierarchidb/core-types';
 import { AuthReadyGate } from '@hierarchidb/ui-auth';
 import type { ShapeDialogStepProps } from '~/ui/components/ShapeDialogStepProps';
 import { useShapeCountrySelectionContentView } from './useShapeCountrySelectionContentView.js';
 
 const ShapeCountrySelectionContent: React.FC<ShapeDialogStepProps> = ({ data, onChange, nodeId }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
   const {
     loading,
     error,
@@ -98,7 +98,7 @@ const ShapeCountrySelectionContent: React.FC<ShapeDialogStepProps> = ({ data, on
 };
 
 export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = (props) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
   return (
     <React.Suspense
       fallback={

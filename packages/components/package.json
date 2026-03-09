@@ -53,6 +53,7 @@
     "@emotion/styled": "11.14.0",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/ui-lru-splitview": "workspace:*"
   },
   "keywords": [],
@@ -69,6 +70,7 @@
     "@emotion/styled": "11.14.0",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/ui-lru-splitview": "workspace:*"
   }
 }

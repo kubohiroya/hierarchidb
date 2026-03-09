@@ -79,7 +79,7 @@ export const useBuildProgressPanelStateRuntimeState = (
 ): UseBuildProgressPanelStateRuntimeState => {
   const resolvedNodeId = params.nodeId;
   const nodeIdForLog = resolvedNodeId ? String(resolvedNodeId) : undefined;
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation('shape-plugin');
   useShapeBuildSessionStateAtomBridge(resolvedNodeId);
 
   const stepState = useShapeBuildStep({

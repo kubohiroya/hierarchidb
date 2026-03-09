@@ -11,7 +11,7 @@ import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar';
 import { DualKeyMap } from '@hierarchidb/util';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useImportExport } from '~/hooks/useImportExport';
 import { getMenuSpec } from '~/plugin-loaders/menu-spec';
 import { useTreeConsoleSSOT } from '~/state/treeconsole.atoms';

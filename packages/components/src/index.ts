@@ -34,3 +34,10 @@ export type { BuildStatus } from './build-status/BuildStatus.ts';
 
 export { BuildStepPanel } from './BuildStepPanel.tsx';
 export { BuildProgressPanel } from './BuildProgressPanel.tsx';
+
+export { PillButton } from './PillButton.tsx';
+export { PillButtonGroup } from './PillButtonGroup.tsx';
+export { PillTextField } from './PillTextField.tsx';
+export { SpacedSlider } from './SpacedSlider.tsx';
+
+export * from './SearchInput/index.ts';

@@ -7,7 +7,7 @@ import {
   NodeTypeIcon,
 } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { TreeConsolePanelProps } from '@hierarchidb/ui-treeconsole-base';
-import { SEARCH_FIELD_MIN_WIDTH_PX, SEARCH_FIELD_WIDTH_PX } from '@hierarchidb/ui-search-input';
+import { SEARCH_FIELD_MIN_WIDTH_PX, SEARCH_FIELD_WIDTH_PX } from '@hierarchidb/components';
 import {
   ArrowBack as ArrowBackIcon,
   Construction as ConstructionIcon,

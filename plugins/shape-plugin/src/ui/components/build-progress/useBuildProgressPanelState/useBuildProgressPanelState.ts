@@ -12,7 +12,7 @@ export const useBuildProgressPanelState = (params: {
   nodeId?: NodeId;
 }) => {
   const runtimeState = useBuildProgressPanelStateRuntimeState(params);
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
 
   const {
     nodeIdForLog,

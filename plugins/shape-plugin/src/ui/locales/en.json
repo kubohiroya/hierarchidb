@@ -541,6 +541,11 @@
       "unknownStage": "build",
       "counts": "{{percentage}}% ・ {{completed}}/{{total}} completed ・ failed {{failed}} ・ skipped {{skipped}}"
     },
+    "tasks": {
+      "search": "Search tasks",
+      "empty": "No tasks yet.",
+      "summaryOnly": "Tasks are summarized. Detailed list is unavailable."
+    },
     "taskStatus": {
       "waiting": "Waiting",
       "queued": "Queued",
@@ -556,7 +561,14 @@
       "running": "Build in progress",
       "paused": "Build paused",
       "completed": "Build completed",
-      "failed": "Build failed"
+      "failed": "Build failed",
+      "starting": "Starting stage...",
+      "startingLock": "Starting build (acquiring lock)...",
+      "startingQueueElapsed": "Starting build (waiting for lock, {{elapsedSeconds}}s)...",
+      "startingSave": "Starting build (saving draft)...",
+      "startingWorker": "Starting build (initializing worker)...",
+      "startingPayload": "Starting build (preparing tasks)...",
+      "startingSession": "Starting build (launching session)..."
     },
     "stages": {
       "source": {

@@ -1,4 +1,4 @@
-import type { TFunction } from 'i18next';
+import type { TFunction } from '@hierarchidb/ui-i18n';
 import { useMemo, useState } from 'react';
 import type React from 'react';
 import type { OpenMaintenanceContext } from './UserLoginButton.js';

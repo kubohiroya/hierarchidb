@@ -49,6 +49,7 @@
 - non-null assertion（`!`）の使用。
 - 互換目的の型混在・フォールバック分岐。
 - Git操作でのエディタ待機（Kiro環境では別画面で見えないため）。
+- `react-i18next` の直接 import（`@hierarchidb/ui-i18n` 経由を必須とする。例外: `packages/ui/i18n` 内部の re-export 元のみ）。
 
 ## Git操作ルール（Kiro環境対応）
 
@@ -83,6 +84,18 @@
 - `tsdown` の `clean:true` 上書きは禁止（必要時は `pnpm clean && turbo run clean`）。
 - 個別検証は原則 Turbo 経由:
   - `pnpm -w turbo run <task> --filter @hierarchidb/<pkg>`
+
+## Vite optimizeDeps（再発防止・必須）
+
+- 背景: workspace パッケージは dev モードで `optimizeDeps.exclude` に入るため、Vite はそれらの推移的依存を事前クロールできない。`optimizeDeps.include` に登録しても、`app/package.json` に依存がなければ pnpm の隔離により resolve 失敗する。結果、初回アクセス時に依存が逐次発見されブラウザが繰り返しリロードされる。
+- 新しいサードパーティパッケージを `import` に追加した場合、以下を同時に行うこと:
+  1. `app/package.json` の `dependencies` にそのパッケージを追加（pnpm workspace では app から直接 resolve できないと `optimizeDeps.include` が機能しない）。
+  2. `app/vite.config.ts` の `optimizeDeps.include` にパッケージ名（deep import パス含む）を追加。
+  3. `pnpm install` を実行して resolve 可能であることを確認。
+- 対象: `app/src/`・`plugins/`・`packages/` 配下の `*.ts/*.tsx` から import される、`node_modules` 由来の全パッケージ（deep import パス `@mui/icons-material/Xxx` 等を含む）。
+- 禁止: 上記を忘れたまま PR をマージすること（開発サーバ初回アクセス時のリロードループの原因になる）。
+- MUI アイコンは個別パス（`@mui/icons-material/<IconName>`）を1つずつ登録する（バレル `@mui/icons-material` だけでは不十分）。
+- `@emotion/react/jsx-dev-runtime` のような内部 deep path も検出されたら追加する。
 
 ## 検証と完了報告
 

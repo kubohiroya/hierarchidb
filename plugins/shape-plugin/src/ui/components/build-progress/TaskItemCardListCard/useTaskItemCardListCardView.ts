@@ -50,7 +50,7 @@ export const useTaskItemCardListCardView = ({
   const wasDetailFloatingWindowOpenRef = useRef(isDetailFloatingWindowOpen);
   const openRequestRef = useRef<string | null>(null);
   const suppressOpenRef = useRef(false);
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
   const stages = useShapeBuildStages({ t: (key, fallback): string => String(t(key, fallback ?? key)) });
   const stageIconById = useMemo(() => (
     new Map(stages.map((stage) => [stage.id, stage.icon]))

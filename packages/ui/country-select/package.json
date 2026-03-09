@@ -24,13 +24,13 @@
   "dependencies": {
     "react-virtuoso": "^4.14.0",
     "@hierarchidb/gen-iso3166-2": "workspace:*",
-    "@hierarchidb/components": "workspace:*",
-    "@hierarchidb/ui-search-input": "workspace:*"
+    "@hierarchidb/components": "workspace:*"
   },
   "peerDependencies": {
     "react": "^19.0.0",
     "@mui/material": "^7.3.6",
-    "@mui/icons-material": "^7.3.6"
+    "@mui/icons-material": "^7.3.6",
+    "@hierarchidb/ui-i18n": "workspace:*"
   },
   "keywords": [
     "hierarchidb",
@@ -46,6 +46,7 @@
   "devDependencies": {
     "react": "^19.0.0",
     "@mui/material": "^7.3.6",
-    "@mui/icons-material": "^7.3.6"
+    "@mui/icons-material": "^7.3.6",
+    "@hierarchidb/ui-i18n": "workspace:*"
   }
 }

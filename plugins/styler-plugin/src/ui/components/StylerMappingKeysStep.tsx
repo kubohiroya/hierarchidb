@@ -4,7 +4,7 @@ import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { Box, FormControl, FormHelperText, TextField, Typography } from '@mui/material';
 import type React from 'react';
 import { useEffect, useMemo, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { StylerStepData } from '~/common/types/StylerEntity';
 
 const coerceColumns = (

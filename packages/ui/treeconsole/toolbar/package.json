@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "comlink": "^4.4.2",
-    "@hierarchidb/ui-search-input": "workspace:*",
+    "@hierarchidb/components": "workspace:*",
     "@hierarchidb/ui-treeconsole-base": "workspace:*",
     "@hierarchidb/util": "workspace:*"
   },

@@ -6,7 +6,7 @@
 import type React from 'react';
 import { Box, Chip, Stack, Typography, Alert } from '@mui/material';
 import { SelectionMatrix, type SelectionMatrixColumn, type SelectionMatrixRow } from '@hierarchidb/components';
-import { TreeTableSearchInput as SearchField } from '@hierarchidb/ui-search-input';
+import { TreeTableSearchInput as SearchField } from '@hierarchidb/components';
 import type { PrimitiveAtom } from 'jotai';
 import { Provider } from 'jotai';
 import type { Country } from '~/types/Country';

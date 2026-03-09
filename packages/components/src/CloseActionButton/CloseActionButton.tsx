@@ -1,12 +1,15 @@
 import type { ReactElement } from 'react';
 import { Button } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 
 interface CloseActionButtonProps {
   to: string;
 }
 
 export function CloseActionButton({ to }: CloseActionButtonProps): ReactElement {
+  const { t } = useTranslation('common');
+  const closeLabel = t('dialogs.common.actions.close', 'Close dialog');
   return (
     <Button
       onClick={() => (window.location.href = to)}
@@ -20,8 +23,8 @@ export function CloseActionButton({ to }: CloseActionButtonProps): ReactElement 
         borderRadius: '50%',
         p: 1,
       }}
-      aria-label="Close Dialog"
-      title="Close Dialog"
+      aria-label={closeLabel}
+      title={closeLabel}
     >
       <CloseIcon />
     </Button>
