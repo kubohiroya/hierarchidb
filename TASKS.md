@@ -7,8 +7,10 @@
 
 ## Blocked
 
+- 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 ## 今日の運用ログ
 
+- 2026-03-09: shape×styler同一フォルダ紐付けタスクは起票ゲートで停止（原因: gh未導入 / 発生範囲: 起票〜着手前 / 修正方法: gh CLI導入 / 適用範囲: 本環境の全新規実装タスク）。
 - 2026-03-09: #928 react-i18next直接import禁止・@hierarchidb/ui-i18n統一完了・PR #929マージ済み
 - 2026-03-09: #926 i18n翻訳キーパス不一致修正・useTranslation import統一完了・PR #927マージ済み
 - 2026-03-09: #924 Stepper Step1 "Info"ラベルi18nキーパス修正完了・PR #925マージ済み

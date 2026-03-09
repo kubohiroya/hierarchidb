@@ -131,6 +131,22 @@ export type UseFolderLayersParams = {
   stylerToggles?: Record<string, boolean>;
 };
 
+type ParsedStylerNode = {
+  nodeId: string;
+  parentId: string;
+  absolutePath: string;
+  description?: string;
+  styleType?: 'choropleth' | 'points' | 'lines';
+  featureIdProperty?: string;
+  targetProperty?: string;
+  valueType: 'number' | 'color';
+  paintOverrides: LayerStyleOverrides;
+  featureStateEntries: FeatureStateEntry[];
+  enabled: boolean;
+  colorStops: Array<{ key: string; color: string }>;
+  scalarStops: Array<{ key: string; scalarValue: number }>;
+};
+
 export const useFolderLayers = ({
   nodeId,
   searchZxy,
@@ -213,10 +229,9 @@ export const useFolderLayers = ({
         const geoJsonEntries: ResourceGeoJsonLayer[] = [];
         const locationEntries: LocationLayerEntry[] = [];
         const styleOverrides: LayerStyleOverrides = {};
-        const featureStateByStyleType: Partial<
-          Record<'choropleth' | 'points' | 'lines', FeatureStateBundle>
-        > = {};
+        const featureStateByStyleType: Partial<Record<'points' | 'lines', FeatureStateBundle>> = {};
         const stylerSummaries: MapStylerSummary[] = [];
+        const parsedStylers: ParsedStylerNode[] = [];
 
         const stylerNodes = nodesForLayers.filter((node) => node.nodeType === 'styler');
         const sortedStylers = sortByPath(
@@ -278,24 +293,57 @@ export const useFolderLayers = ({
             });
           }
 
-          stylerSummaries.push({
+          const parentId = node.parentId ? String(node.parentId) : '';
+          if (!parentId) {
+            throw new Error(`Styler node must have parentId: ${stylerNodeId}`);
+          }
+
+          const parsedStyler: ParsedStylerNode = {
             nodeId: stylerNodeId,
+            parentId,
             absolutePath,
             description: node.metadata?.description ? String(node.metadata.description) : undefined,
             styleType,
             featureIdProperty,
             targetProperty: targetProperty ? String(targetProperty) : undefined,
             valueType,
+            paintOverrides,
+            featureStateEntries: entries,
+            enabled,
             colorStops: data?.styleKeyValues?.colors ?? [],
             scalarStops: data?.styleKeyValues?.scalars ?? [],
+          };
+          parsedStylers.push(parsedStyler);
+
+          stylerSummaries.push({
+            nodeId: stylerNodeId,
+            absolutePath,
+            description: parsedStyler.description,
+            styleType,
+            featureIdProperty,
+            targetProperty: parsedStyler.targetProperty,
+            valueType,
+            colorStops: parsedStyler.colorStops,
+            scalarStops: parsedStyler.scalarStops,
             paintOverrides,
             enabled,
           });
 
           if (!enabled || !styleType || !featureIdProperty) return;
-          if (entries.length > 0) {
+          if (styleType !== 'choropleth' && entries.length > 0) {
             featureStateByStyleType[styleType] = { featureIdProperty, entries };
           }
+        });
+
+        const choroplethStylersByParentId = new Map<string, ParsedStylerNode[]>();
+        parsedStylers.forEach((styler) => {
+          if (!styler.enabled || styler.styleType !== 'choropleth') return;
+          if (!styler.featureIdProperty) {
+            throw new Error(`Enabled choropleth styler missing featureIdProperty: ${styler.nodeId}`);
+          }
+          const current = choroplethStylersByParentId.get(styler.parentId) ?? [];
+          current.push(styler);
+          choroplethStylersByParentId.set(styler.parentId, current);
         });
 
         const resolvedShapeLayerById = new Map<string, string | undefined>();
@@ -398,7 +446,17 @@ export const useFolderLayers = ({
           if (node.nodeType === 'shape') {
             const data = node.data as { buildConfig?: { dataSourceName?: string } } | null;
             const dataSourceName = data?.buildConfig?.dataSourceName;
-            const featureState = featureStateByStyleType.choropleth;
+            const shapeParentId = node.parentId ? String(node.parentId) : '';
+            if (!shapeParentId) {
+              throw new Error(`Shape node must have parentId: ${String(node.id)}`);
+            }
+            const siblingStylers = choroplethStylersByParentId.get(shapeParentId) ?? [];
+            if (siblingStylers.length > 1) {
+              throw new Error(
+                `Multiple choropleth stylers found under same folder for shape ${String(node.id)}: ${siblingStylers.map((styler) => styler.nodeId).join(', ')}`
+              );
+            }
+            const relatedStyler = siblingStylers[0];
             const layerId = `resource-layer-${node.id}`;
             const sourceId = `resource-source-${node.id}`;
             const resolvedSourceLayer = await resolveShapeSourceLayer(String(node.id));
@@ -422,6 +480,8 @@ export const useFolderLayers = ({
               resolvedSourceLayerInfo.adminLevel,
               sourceLayerIsBoundary ? 'boundary' : 'fill',
             );
+            const layerType = sourceLayerIsBoundary ? 'line' : 'fill';
+            const relatedPaintOverrides = relatedStyler?.paintOverrides?.[layerType];
             shapeEntries.push({
               nodeId: String(node.id),
               nodeType: 'shape',
@@ -439,13 +499,14 @@ export const useFolderLayers = ({
                 return tile.buffer.slice(tile.byteOffset, tile.byteOffset + tile.byteLength);
               },
               layerConfig: {
-                layerType: sourceLayerIsBoundary ? 'line' : 'fill',
+                layerType,
                 sourceLayer: canonicalSourceLayer,
                 layerId,
                 sourceId,
+                ...(relatedPaintOverrides ? { paint: relatedPaintOverrides } : {}),
               },
-              promoteId: featureState?.featureIdProperty,
-              featureState: featureState?.entries,
+              promoteId: relatedStyler?.featureIdProperty,
+              featureState: relatedStyler?.featureStateEntries,
             });
             continue;
           }
