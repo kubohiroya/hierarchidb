@@ -1446,55 +1446,209 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
         'index.html',
         'src/**/*.{ts,tsx}',
       ],
+      // ---------------------------------------------------------------
+      // IMPORTANT: Keep this list in sync with actual imports.
+      // When adding a new third-party import to the codebase, also add
+      // it here to prevent Vite dev-server reload loops.
+      // See AGENTS.md "Vite optimizeDeps" rule.
+      // ---------------------------------------------------------------
       include: [
+        // --- React core ---
         'react',
+        'react/jsx-runtime',
         'react-dom',
-        'dexie',
+        'react-dom/client',
+
+        // --- State management ---
+        'jotai',
+        'jotai/vanilla',
+        'jotai/vanilla/store',
+        'jotai/utils',
+        'jotai-family',
+
+        // --- Routing ---
+        '@tanstack/react-router',
+
+        // --- Tables / virtualisation ---
+        '@tanstack/react-table',
+        '@tanstack/react-virtual',
+        'react-virtuoso',
+        'react-window',
+
+        // --- UI libraries ---
         'react-resizable',
         'react-draggable',
         'react-joyride',
-        '@tanstack/react-table',
-        '@tanstack/react-virtual',
-        '@vis.gl/react-maplibre',
-        'jotai/vanilla',
-        'maplibre-gl',
-        'shpjs',
-        'topojson-client',
-        'topojson-server',
-        'topojson-simplify',
+        'react-gravatar',
+        'react-hook-geolocation',
+        'notistack',
+        'allotment',
+
+        // --- Auth ---
+        'react-oidc-context',
+        'oidc-client-ts',
+        '@react-oauth/google',
+
+        // --- MUI core ---
         '@mui/material',
+        '@mui/material/Chip',
+        '@mui/material/CssBaseline',
+        '@mui/material/Grid',
         '@mui/material/Menu',
         '@mui/material/Popover',
+        '@mui/material/Select',
+        '@mui/material/SpeedDialIcon',
+        '@mui/material/StepIcon',
+        '@mui/material/SvgIcon',
+        '@mui/material/Tooltip',
+        '@mui/material/styles',
+        '@mui/material/OverridableComponent',
+
+        // --- MUI icons (keep alphabetical) ---
         '@mui/icons-material',
         '@mui/icons-material/AccessTime',
         '@mui/icons-material/AccountTree',
         '@mui/icons-material/Approval',
+        '@mui/icons-material/ArrowDownward',
+        '@mui/icons-material/ArrowDropDown',
+        '@mui/icons-material/ArrowLeft',
+        '@mui/icons-material/ArrowRight',
+        '@mui/icons-material/ArrowUpward',
         '@mui/icons-material/Assessment',
+        '@mui/icons-material/Attachment',
+        '@mui/icons-material/AutoFixHigh',
+        '@mui/icons-material/Autorenew',
+        '@mui/icons-material/BarChart',
         '@mui/icons-material/Bookmarks',
         '@mui/icons-material/Check',
+        '@mui/icons-material/CheckCircle',
+        '@mui/icons-material/CheckCircleOutline',
         '@mui/icons-material/ChevronLeft',
         '@mui/icons-material/ChevronRight',
+        '@mui/icons-material/Clear',
         '@mui/icons-material/Close',
+        '@mui/icons-material/CloudDownload',
+        '@mui/icons-material/CloudOff',
+        '@mui/icons-material/Construction',
         '@mui/icons-material/ContentCopy',
+        '@mui/icons-material/Contrast',
+        '@mui/icons-material/Delete',
+        '@mui/icons-material/Download',
+        '@mui/icons-material/DragIndicator',
+        '@mui/icons-material/Engineering',
+        '@mui/icons-material/ErrorOutline',
+        '@mui/icons-material/ExpandMore',
         '@mui/icons-material/Extension',
         '@mui/icons-material/FilterAlt',
+        '@mui/icons-material/FilterAltOff',
+        '@mui/icons-material/FilterListOff',
+        '@mui/icons-material/FitScreenSharp',
         '@mui/icons-material/Folder',
         '@mui/icons-material/FolderOpen',
         '@mui/icons-material/Hexagon',
         '@mui/icons-material/Info',
+        '@mui/icons-material/InsertDriveFile',
+        '@mui/icons-material/Key',
+        '@mui/icons-material/KeyboardArrowDown',
+        '@mui/icons-material/KeyboardArrowUp',
+        '@mui/icons-material/Layers',
         '@mui/icons-material/LocationOn',
         '@mui/icons-material/Login',
+        '@mui/icons-material/Map',
+        '@mui/icons-material/MoreVert',
+        '@mui/icons-material/OpenInFull',
         '@mui/icons-material/OpenInNew',
         '@mui/icons-material/OpenInNewOff',
         '@mui/icons-material/Palette',
+        '@mui/icons-material/Pause',
+        '@mui/icons-material/PauseCircle',
+        '@mui/icons-material/PhonelinkErase',
+        '@mui/icons-material/PlayArrow',
+        '@mui/icons-material/PlaylistRemove',
+        '@mui/icons-material/Preview',
         '@mui/icons-material/Public',
+        '@mui/icons-material/RadioButtonUnchecked',
+        '@mui/icons-material/Refresh',
+        '@mui/icons-material/Replay',
+        '@mui/icons-material/RestartAlt',
         '@mui/icons-material/Route',
+        '@mui/icons-material/Search',
         '@mui/icons-material/Settings',
+        '@mui/icons-material/SkipNext',
+        '@mui/icons-material/TableChart',
+        '@mui/icons-material/TaskAlt',
+        '@mui/icons-material/Timelapse',
+        '@mui/icons-material/Tune',
         '@mui/icons-material/Visibility',
+
+        // --- MUI date pickers ---
         '@mui/x-date-pickers',
         '@mui/x-date-pickers/AdapterDateFns',
+
+        // --- Emotion ---
         '@emotion/react',
         '@emotion/styled',
+
+        // --- Map / GIS ---
+        '@vis.gl/react-maplibre',
+        'maplibre-gl',
+        'deck.gl',
+        '@deck.gl/core',
+        '@deck.gl/geo-layers',
+        '@deck.gl/layers',
+        '@deck.gl/mapbox',
+        'leaflet',
+        '@watergis/maplibre-gl-export',
+        'flatgeobuf',
+        'geojson-vt',
+        'pbf',
+        '@mapbox/vector-tile',
+
+        // --- Turf (GIS helpers) ---
+        '@turf/area',
+        '@turf/bbox',
+        '@turf/bbox-clip',
+        '@turf/bbox-polygon',
+        '@turf/boolean-contains',
+        '@turf/boolean-intersects',
+        '@turf/boolean-point-in-polygon',
+        '@turf/boolean-valid',
+        '@turf/clean-coords',
+        '@turf/helpers',
+        '@turf/simplify',
+        '@turf/unkink-polygon',
+
+        // --- Topology / shape ---
+        'topojson-client',
+        'topojson-server',
+        'topojson-simplify',
+        'shpjs',
+
+        // --- Data / IO ---
+        'dexie',
+        'xlsx',
+        'xlsx/xlsx.mjs',
+        'jszip',
+        'uuid',
+        'typescript-lru-cache',
+        'date-fns/locale',
+
+        // --- DI ---
+        'inversify',
+
+        // --- Auth / crypto ---
+        'jose',
+
+        // --- i18n ---
+        'i18next',
+        'i18next-browser-languagedetector',
+        'i18next-http-backend',
+
+        // --- Reactive ---
+        'rxjs',
+
+        // --- Workers ---
+        'comlink',
       ],
       // Exclude specific packages from pre-bundle so Vite watches sources directly
       exclude: runtimeAliasConfig.optimizeDepsExclude,

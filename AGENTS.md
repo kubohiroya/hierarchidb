@@ -85,6 +85,13 @@
 - 個別検証は原則 Turbo 経由:
   - `pnpm -w turbo run <task> --filter @hierarchidb/<pkg>`
 
+## Vite optimizeDeps（再発防止・必須）
+
+- 新しいサードパーティパッケージを `import` に追加した場合、`app/vite.config.ts` の `optimizeDeps.include` にも同時に追加すること。
+- 対象: `app/src/`・`plugins/`・`packages/` 配下の `*.ts/*.tsx` から import される、`node_modules` 由来の全パッケージ（deep import パス `@mui/icons-material/Xxx` 等を含む）。
+- 禁止: `optimizeDeps.include` への追加を忘れたまま PR をマージすること（開発サーバ初回アクセス時のリロードループの原因になる）。
+- MUI アイコンは個別パス（`@mui/icons-material/<IconName>`）を1つずつ登録する（バレル `@mui/icons-material` だけでは不十分）。
+
 ## 検証と完了報告
 
 - 変更後は必要な `pnpm install / build / typecheck / test` を実行し、exit code を確認する。
