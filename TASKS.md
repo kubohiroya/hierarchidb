@@ -10,8 +10,10 @@
 
 ## Blocked
 
+- 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 ## 今日の運用ログ
 
+- 2026-03-09: shape×styler同一フォルダ紐付けタスクは起票ゲートで停止（原因: gh未導入 / 発生範囲: 起票〜着手前 / 修正方法: gh CLI導入 / 適用範囲: 本環境の全新規実装タスク）。
 - 2025-03-09: #917 Shape Step5 残りUI表記のi18n化完了
   - `stage.tasks.search`翻訳キーを追加し、タスク検索機能のi18n化を完了
   - 重複していた`build.tasks`セクションを削除し、翻訳ファイルを整理
