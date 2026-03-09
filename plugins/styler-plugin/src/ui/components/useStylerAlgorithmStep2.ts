@@ -1,7 +1,7 @@
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import { useTheme } from '@mui/material/styles';
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   type ColorAlgorithm,
   MAPLIBRE_PROPERTY_METADATA,

@@ -2,7 +2,7 @@ import type { FC } from 'react';
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, TextField, Typography } from '@mui/material';
 import { LocalOffer } from '@mui/icons-material';
 import { TagChipsInput } from './TagChipsInput.js';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useBasicInfoStepView } from './useBasicInfoStepView.js';
 
 export interface BasicInfoData {

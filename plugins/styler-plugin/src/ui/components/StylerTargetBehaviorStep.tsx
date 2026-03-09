@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import type React from 'react';
 import { useEffect, useMemo, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   MAPLIBRE_PROPERTY_METADATA,
   STYLE_TYPE_OPTIONS,

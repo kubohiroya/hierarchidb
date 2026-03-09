@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useTagsPage } from './useTagsPage.js';
 
 type TaggedNodeRow = {

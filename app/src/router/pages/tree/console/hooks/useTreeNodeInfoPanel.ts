@@ -11,7 +11,7 @@ import { useLocation, useNavigate } from '@tanstack/react-router';
 import { proxy as comlinkProxy } from 'comlink';
 import type { MouseEvent } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useWorker } from '~/contexts/WorkerProvider';
 import { Subscriptions } from '~/hooks/SubscriptionServices';
 import { useTreeConsoleSSOT } from '~/state/treeconsole.atoms';

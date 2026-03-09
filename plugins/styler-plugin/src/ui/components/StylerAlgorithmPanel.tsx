@@ -30,7 +30,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useId } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 
 import type { StylerConfig, StylerTableRow } from '~/common/types/StylerEntity';
 import { StylerConfigDefault } from '~/common/types/StylerEntity';

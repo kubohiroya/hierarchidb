@@ -1,6 +1,6 @@
 import type { ThemeMode } from '@hierarchidb/ui-theme';
 import type React from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 
 interface UseUserMenuViewArgs {
   themeMode: ThemeMode;

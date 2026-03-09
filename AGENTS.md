@@ -49,6 +49,7 @@
 - non-null assertion（`!`）の使用。
 - 互換目的の型混在・フォールバック分岐。
 - Git操作でのエディタ待機（Kiro環境では別画面で見えないため）。
+- `react-i18next` の直接 import（`@hierarchidb/ui-i18n` 経由を必須とする。例外: `packages/ui/i18n` 内部の re-export 元のみ）。
 
 ## Git操作ルール（Kiro環境対応）
 
