@@ -169,12 +169,12 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     setPendingUserAction(mapping[next] ?? 'none');
   }, [setPendingUserAction]);
 
-  const requestedControlAction = (() => {
+  const requestedControlAction = useMemo(() => {
     if (pendingUserAction === 'starting') return 'start' as const;
     if (pendingUserAction === 'pausing') return 'pause' as const;
     if (pendingUserAction === 'cancelling') return 'cancel' as const;
     return 'none' as const;
-  })();
+  }, [pendingUserAction]);
   const processingStatus = toProcessingStatus(runtimeStatusForBuildStatus);
   const stopReason = runtime.stopReason;
   const statusSource = useMemo(() => {
@@ -379,8 +379,9 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     setIsStopAccepted,
   });
 
+  // Clean up stale pause/cancel actions after stop request completes
   useEffect(() => {
-    if (!isStopRequestedInFlight) return;
+    if (isStopRequestedInFlight) return;
     if (requestedControlAction === 'pause' || requestedControlAction === 'cancel') {
       setRequestedControlAction('none');
     }

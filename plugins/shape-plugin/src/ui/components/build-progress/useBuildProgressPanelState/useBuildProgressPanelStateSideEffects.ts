@@ -59,7 +59,8 @@ export const useBuildProgressPanelStateSideEffects = (args: {
   completionKeyRef: MutableRefObject<string | null>;
   setElapsedTickMs: (value: number) => void;
   elapsedTickMs: number;
-  totalElapsedSnapshotRef: MutableRefObject<{ durationMs: number; capturedAt: number } | null>;
+  totalElapsedSnapshot: { durationMs: number; capturedAt: number } | null;
+  setTotalElapsedSnapshot: (value: { durationMs: number; capturedAt: number } | null) => void;
   mismatchSignatureRef: MutableRefObject<Map<string, string>>;
 }) => {
   const {
@@ -76,7 +77,8 @@ export const useBuildProgressPanelStateSideEffects = (args: {
     completionKeyRef,
     setElapsedTickMs,
     elapsedTickMs,
-    totalElapsedSnapshotRef,
+    totalElapsedSnapshot,
+    setTotalElapsedSnapshot,
     mismatchSignatureRef,
   } = args;
 
@@ -204,16 +206,16 @@ export const useBuildProgressPanelStateSideEffects = (args: {
 
   useEffect(() => {
     if (shouldUpdateElapsedSnapshot({
-      snapshot: totalElapsedSnapshotRef.current,
+      snapshot: totalElapsedSnapshot,
       totalElapsedMs: summary.totalElapsedMs,
       buildStatus: summary.buildStatus,
     })) {
-      totalElapsedSnapshotRef.current = {
+      setTotalElapsedSnapshot({
         durationMs: summary.totalElapsedMs,
         capturedAt: elapsedTickMs,
-      };
+      });
     }
-  }, [elapsedTickMs, summary.buildStatus, summary.totalElapsedMs, totalElapsedSnapshotRef]);
+  }, [elapsedTickMs, summary.buildStatus, summary.totalElapsedMs, totalElapsedSnapshot, setTotalElapsedSnapshot]);
 
   useEffect(() => {
     if (!isShapeBuildPanelDebugEnabled('runningResiduePanel')) return;

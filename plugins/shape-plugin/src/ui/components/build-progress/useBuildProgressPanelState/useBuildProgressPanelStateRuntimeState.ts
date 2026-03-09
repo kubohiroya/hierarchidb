@@ -61,7 +61,8 @@ export type UseBuildProgressPanelStateRuntimeState = {
   completionSnapshotData: BuildProgressPanelStateComputed['completionSnapshotData'];
   completionFailedStageLabel: string;
   completionKeyRef: { current: string | null };
-  totalElapsedSnapshotRef: { current: { durationMs: number; capturedAt: number } | null };
+  totalElapsedSnapshot: { durationMs: number; capturedAt: number } | null;
+  setTotalElapsedSnapshot: (value: { durationMs: number; capturedAt: number } | null) => void;
   mismatchSignatureRef: { current: Map<string, string> };
   liveTotalElapsedMs: number;
   computed: BuildProgressPanelStateComputed;
@@ -141,8 +142,8 @@ export const useBuildProgressPanelStateRuntimeState = (
   const localStartPending = useAtomValue(pendingUserActionAtom) === 'starting';
   const elapsedTickMs = useAtomValue(elapsedTickMsAtom);
   const setElapsedTickMs = useSetAtom(elapsedTickMsAtom);
-  const totalElapsedSnapshotAtomValue = useAtomValue(totalElapsedSnapshotAtom);
-  const totalElapsedSnapshotRef = useRef(totalElapsedSnapshotAtomValue);
+  const totalElapsedSnapshot = useAtomValue(totalElapsedSnapshotAtom);
+  const setTotalElapsedSnapshot = useSetAtom(totalElapsedSnapshotAtom);
   const completionKeyRef = useRef<string | null>(null);
   const mismatchSignatureRef = useRef<Map<string, string>>(new Map());
   const snapshotNodeIdRef = useRef<string | undefined>(undefined);
@@ -210,29 +211,29 @@ export const useBuildProgressPanelStateRuntimeState = (
     completionKeyRef,
     setElapsedTickMs,
     elapsedTickMs,
-    totalElapsedSnapshotRef,
+    totalElapsedSnapshot,
+    setTotalElapsedSnapshot,
     mismatchSignatureRef,
   });
 
   if (nodeIdForLog !== snapshotNodeIdRef.current) {
     snapshotNodeIdRef.current = nodeIdForLog;
-    totalElapsedSnapshotRef.current = null;
+    setTotalElapsedSnapshot(null);
   }
 
   const liveTotalElapsedMs = useMemo(() => {
-    const snapshot = totalElapsedSnapshotRef.current;
-    if (!snapshot) {
+    if (!totalElapsedSnapshot) {
       return summary.totalElapsedMs;
     }
     if (summary.buildStatus === 'running' || summary.buildStatus === 'paused') {
-      const drift = Math.max(0, elapsedTickMs - snapshot.capturedAt);
-      return snapshot.durationMs + drift;
+      const drift = Math.max(0, elapsedTickMs - totalElapsedSnapshot.capturedAt);
+      return totalElapsedSnapshot.durationMs + drift;
     }
-    if (summary.totalElapsedMs > snapshot.durationMs) {
+    if (summary.totalElapsedMs > totalElapsedSnapshot.durationMs) {
       return summary.totalElapsedMs;
     }
-    return snapshot.durationMs;
-  }, [elapsedTickMs, summary.buildStatus, summary.totalElapsedMs]);
+    return totalElapsedSnapshot.durationMs;
+  }, [elapsedTickMs, summary.buildStatus, summary.totalElapsedMs, totalElapsedSnapshot]);
 
   const setPendingUserAction = useSetAtom(pendingUserActionAtom);
 
@@ -268,7 +269,8 @@ export const useBuildProgressPanelStateRuntimeState = (
     completionSnapshotData,
     completionFailedStageLabel,
     completionKeyRef,
-    totalElapsedSnapshotRef,
+    totalElapsedSnapshot,
+    setTotalElapsedSnapshot,
     mismatchSignatureRef,
     liveTotalElapsedMs,
     computed,
