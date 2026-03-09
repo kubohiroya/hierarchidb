@@ -7,7 +7,7 @@ import {
 } from '@mui/material';
 import { Link as LinkIcon } from '@mui/icons-material';
 import { BuildConfigSectionTitle } from '@hierarchidb/ui-accordion-config';
-import { useTranslation } from '~/ui/useTranslation';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type {
   ShapeBuildConfig,
 } from '~/common/types/index';
@@ -20,7 +20,7 @@ type Props = {
 };
 
 export const UrlBuildConfigRulesSection: React.FC<Props> = ({ config, onChange, disabled }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
   const { text, error, handleBlur, handleChange } = useUrlBuildConfigRulesSection({ config, onChange });
 
   return (

@@ -2,7 +2,7 @@ import { DialogSafePopover } from '@hierarchidb/ui-dialog';
 import { type ReactNode } from 'react';
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Snackbar, Alert, Typography } from '@mui/material';
 import { DownloadRetryControls, WorkerNumberConfigCard } from '@hierarchidb/ui-accordion-config';
-import { TreeTableSearchInput } from '@hierarchidb/ui-search-input';
+import { TreeTableSearchInput } from '@hierarchidb/components';
 import type { ShapeBuildProgressPanelControllerBaseResult } from '~/ui/components/build-progress/ShapeBuildProgressPanel/useShapeBuildProgressPanelController/base/useShapeBuildProgressPanelControllerBase';
 
 type ToLabel = (text: string | null | undefined) => string;

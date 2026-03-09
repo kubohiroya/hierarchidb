@@ -20,7 +20,7 @@ import {
   type TreeConsolePanelProps,
   type TreeTableColumn,
 } from '@hierarchidb/ui-treeconsole-base';
-import { TreeTableSearchInput } from '@hierarchidb/ui-search-input';
+import { TreeTableSearchInput } from '@hierarchidb/components';
 import type { DualKeyMap } from '@hierarchidb/util';
 import {
   ArrowBack as ArrowBackIcon,

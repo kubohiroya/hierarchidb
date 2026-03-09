@@ -1,3 +1,7 @@
+/**
+ * Register shape-plugin locale resources with the shared i18n instance.
+ * This file is imported for its side-effects only (resource registration).
+ */
 import { i18n } from '@hierarchidb/ui-i18n';
 
 const localeModules = import.meta.glob('./locales/*.json', { eager: true });
@@ -9,11 +13,4 @@ Object.entries(localeModules).forEach(([path, mod]) => {
   const resources = (mod as { default?: object }).default ?? mod;
   if (!resources) return;
   i18n.addResourceBundle(lng, 'shape-plugin', resources, true, true);
-});
-
-export { i18n };
-export const useTranslation = (ns: string = 'shape-plugin') => ({
-  t: (key: string, fallback?: string, options?: Record<string, unknown>) =>
-    String(i18n.t(key, { ns, defaultValue: fallback ?? key, ...options })),
-  i18n,
 });

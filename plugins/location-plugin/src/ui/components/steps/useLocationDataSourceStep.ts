@@ -7,7 +7,7 @@ import {
 } from '@hierarchidb/ui-datasource';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
 import type { LocationDataSource, LocationEntity, LocationType } from '~/common/types/index';
-import { useTranslation } from '~/common/i18n/index';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { NodeId } from '@hierarchidb/core-types';
 import { createLocationTabularApi } from '~/common/tabular/createLocationTabularApi';
 
@@ -169,7 +169,7 @@ export const useLocationDataSourceStep = ({
   disabled?: boolean;
   nodeId?: NodeId;
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('location-plugin');
   const { api, initialize } = useWorkerAPI();
   const tabularApi = useMemo(() => createLocationTabularApi(), []);
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
@@ -266,7 +266,7 @@ export const useLocationDataSourceStep = ({
       setImportInProgress(true);
       try {
         await ensureTabularXlsx();
-        const fallbackName = draft.ideGsmFileName ?? t('dataSource.ideGsm.fileFallback', 'Imported file');
+        const fallbackName = draft.ideGsmFileName ?? String(t('dataSource.ideGsm.fileFallback', 'Imported file'));
         const dataUrlFile = decodeDataUrlToFile(draft.ideGsmSourceUrl ?? '', fallbackName);
         const metadata = dataUrlFile
           ? await tabularApi.uploadTabularFile(dataUrlFile, {})

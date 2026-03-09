@@ -9,7 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import type { ReactNode } from 'react';
-import { useTranslation } from '~/ui/useTranslation';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 
 type ValueTransform = {
   toSlider: (value: number) => number;
@@ -60,7 +60,7 @@ export const ExtractionPanel: React.FC<Props> = ({
   startIcon,
   endIcon,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
 
   const sliderValue = valueTransform ? valueTransform.toSlider(tolerance) : tolerance;
   const formatLabel = valueTransform?.formatLabel

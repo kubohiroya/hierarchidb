@@ -2,8 +2,11 @@
 
 ## Doing
 
-- #930 / fix/i18n/unify-plugin-useTranslation / 2026-03-09 start
-- #932 / fix/vite/optimize-deps-include-completeness / 2026-03-09 start
+- #917 Shape Step5 残りUI表記のi18n化完了 / feature/i18n/shape-step5-remaining-ui-labels / start
+
+- #914 Shape Step5 Reset/Deleteメニューのi18n化 / feature/i18n/shape-step5-reset-delete-menu / start
+
+- #913 Shape Step5 UI改良 - Build Sessionヘッダー撤去とボタンサイズ変更 / feature/ui/build-session-header-removal / start
 
 ## Blocked
 
@@ -11,6 +14,15 @@
 ## 今日の運用ログ
 
 - 2026-03-09: shape×styler同一フォルダ紐付けタスクは起票ゲートで停止（原因: gh未導入 / 発生範囲: 起票〜着手前 / 修正方法: gh CLI導入 / 適用範囲: 本環境の全新規実装タスク）。
+- 2025-03-09: #917 Shape Step5 残りUI表記のi18n化完了
+  - `stage.tasks.search`翻訳キーを追加し、タスク検索機能のi18n化を完了
+  - 重複していた`build.tasks`セクションを削除し、翻訳ファイルを整理
+  - 型チェック・ビルド成功確認（exit code 0）
+  - 変更内容をコミット・プッシュ完了
+
+- 2026-03-09: #930 全プラグインのカスタムuseTranslation廃止・@hierarchidb/ui-i18n経由統一完了・PR #934マージ済み
+- 2026-03-09: #932 optimizeDeps.include網羅追加・推移的依存をapp/package.jsonに追加・AGENTS.mdに背景付き再発防止ルール追記・PR #933,#936マージ済み
+
 - 2026-03-09: #928 react-i18next直接import禁止・@hierarchidb/ui-i18n統一完了・PR #929マージ済み
 - 2026-03-09: #926 i18n翻訳キーパス不一致修正・useTranslation import統一完了・PR #927マージ済み
 - 2026-03-09: #924 Stepper Step1 "Info"ラベルi18nキーパス修正完了・PR #925マージ済み

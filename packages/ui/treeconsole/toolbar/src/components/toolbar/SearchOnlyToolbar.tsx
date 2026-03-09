@@ -1,5 +1,5 @@
 import type { TreeConsoleToolbarController } from '~/types';
-import { TreeTableSearchInput } from '@hierarchidb/ui-search-input';
+import { TreeTableSearchInput } from '@hierarchidb/components';
 
 export interface SearchStrings {
   placeholder: string;

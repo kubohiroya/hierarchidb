@@ -25,7 +25,7 @@ import {
   ViewComfy as ViewComfyIcon,
   ViewList as ViewListIcon,
 } from '@mui/icons-material';
-import { TreeTableSearchInput } from '@hierarchidb/ui-search-input';
+import { TreeTableSearchInput } from '@hierarchidb/components';
 
 export interface TreeTableToolbarProps {
   readonly title?: string;

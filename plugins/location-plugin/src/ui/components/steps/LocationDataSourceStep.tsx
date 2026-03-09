@@ -106,7 +106,7 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
   return (
     <Box>
       <DataSourceSelectionStep<Timestamp>
-        title={t('dataSource.title', 'Data Source')}
+        title={String(t('dataSource.title', 'Data Source'))}
         options={resolvedOptions}
         state={{
           dataSourceId: value,
@@ -115,16 +115,16 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
         }}
         onChange={handleSelectionChange}
         licenseRequired={licenseRequired}
-        licenseRequiredText={t(
+        licenseRequiredText={String(t(
           'dataSource.licenseRequired',
           'License agreement is required to proceed.',
-        )}
+        ))}
         disabled={disabled}
         description={description}
         renderOption={renderOption}
         createAgreedAt={() => Date.now() as Timestamp}
-        selectionTitle={t('dataSource.selectionTitle', 'Data Source')}
-        detailsTitle={t('dataSource.detailsTitle', 'Data Source Details')}
+        selectionTitle={String(t('dataSource.selectionTitle', 'Data Source'))}
+        detailsTitle={String(t('dataSource.detailsTitle', 'Data Source Details'))}
         showDetailsCard={false}
       />
       <Dialog

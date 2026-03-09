@@ -4,7 +4,7 @@ import { Place } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LocationType, NodeId } from '~/common/types/index';
-import { useTranslation } from '~/common/i18n/index';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { LOCATION_TYPE_STYLES } from '~/ui/components/steps/locationTypes';
 import type { LocationMapPreviewMarkerEntry } from './LocationMapPreviewMarkers.js';
 import type {
@@ -81,8 +81,7 @@ type UseLocationMapPreviewArgs = {
 };
 
 type UseLocationMapPreviewResult = {
-  translations: ReturnType<typeof useTranslation>['translations'];
-  mapPreviewTranslations: ReturnType<typeof useTranslation>['translations']['mapPreview'];
+  t: (key: string, defaultValue?: string) => string;
   formatTemplate: (template: string, values: Record<string, string | number>) => string;
   typeSettings: Record<LocationType, TypeStyle & { name: string }>;
   mapRef: React.RefObject<HTMLDivElement | null>;
@@ -124,8 +123,7 @@ export const useLocationMapPreview = (
   args: UseLocationMapPreviewArgs
 ): UseLocationMapPreviewResult => {
   const { nodeId, locations } = args;
-  const { translations } = useTranslation();
-  const mapPreviewTranslations = translations.mapPreview;
+  const { t } = useTranslation('location-plugin');
   const formatTemplate = useCallback(
     (template: string, values: Record<string, string | number>) =>
       Object.entries(values).reduce(
@@ -143,9 +141,9 @@ export const useLocationMapPreview = (
           >
         )
           .filter(([, value]) => Boolean(value))
-          .map(([key, value]) => [key, { ...value, name: translations.locationTypes?.[key] ?? key }])
+          .map(([key, value]) => [key, { ...value, name: t(`locationTypes.${key}`, key) }])
       ) as Record<LocationType, TypeStyle & { name: string }>,
-    [translations.locationTypes]
+    [t]
   );
   const mapRef = useRef<HTMLDivElement | null>(null);
   const [mapSize, setMapSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
@@ -496,8 +494,7 @@ export const useLocationMapPreview = (
   }, [filteredLocations]);
 
   return {
-    translations,
-    mapPreviewTranslations,
+    t,
     formatTemplate,
     typeSettings,
     mapRef,

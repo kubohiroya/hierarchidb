@@ -15,7 +15,7 @@ import type {
   LocationRepresentationByZoomLevelConfig,
   LocationType,
 } from '~/common/types/index';
-import { useTranslation } from '~/common/i18n/index';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
 
 export const MIN_ZOOM_LEVEL = 0;
@@ -137,7 +137,7 @@ export const useLocationStyleConfigPanel = (
   draftProp: Partial<LocationEntity>,
   onUpdate?: (updates: Partial<LocationEntity>) => void,
 ) => {
-  const { translations } = useTranslation();
+  const { t } = useTranslation('location-plugin');
   const draft = draftProp ?? {};
   const tilesMaxZoom = clamp(draft.tilesMaxZoom ?? DEFAULT_MAX_ZOOM, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
 
@@ -194,7 +194,7 @@ export const useLocationStyleConfigPanel = (
   }, [draft.labelConfig, labelConfig, onUpdate]);
 
   return {
-    translations,
+    t,
     draft,
     tilesMaxZoom,
     representationConfig,

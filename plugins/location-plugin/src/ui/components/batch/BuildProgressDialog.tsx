@@ -50,7 +50,8 @@ import {
 } from '@mui/icons-material';
 import type { NodeId } from '~/common/types/index';
 import { useLocationProgress } from '~/common/hooks/useLocationProgress';
-import { useTranslation, formatBytes as formatBytesIntl, formatNumber } from '~/common/i18n/index';
+import { useTranslation, i18n as i18nInstance } from '@hierarchidb/ui-i18n';
+import { formatBytes as formatBytesIntl, formatNumber } from '~/common/i18n/index';
 import { CrossViewSnackbar, DataGridPreview } from '@hierarchidb/ui-grid';
 
 interface ProgressInfo {
@@ -148,21 +149,17 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
   const [tabValue, setTabValue] = useState(0);
   const tableId = nodeId ? String(nodeId) : null;
   const datasetId = React.useMemo(() => (tableId ? `location:${tableId}` : null), [tableId]);
-  const { translations, locale } = useTranslation();
+  const { t } = useTranslation('location-plugin');
+  const locale = (i18nInstance.language ?? 'en') as 'en' | 'ja';
   const {
     progress: locationProgress,
     unifiedProgress,
   } = useLocationProgress(nodeId, { autoSubscribe: true });
   const showAuthRequired = locationProgress?.stage === 'auth-required';
   const phaseLabel = useCallback((phase: string) => {
-    const phases = translations.batch?.phases;
-    if (isRecord(phases)) {
-      const record = phases as Record<string, unknown>;
-      const label = record[phase];
-      if (typeof label === 'string') return label;
-    }
-    return phase;
-  }, [translations.batch?.phases]);
+    const label = t(`batch.phases.${phase}`, '');
+    return label || phase;
+  }, [t]);
 
   const derivedProgress: ProgressInfo = useMemo(() => {
     const payload = unifiedProgress?.payload;
@@ -194,11 +191,11 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
   }, [unifiedProgress, locationProgress, phaseLabel]);
 
   const stageDefinitions = useMemo(() => ([
-    { id: 'download', label: translations.batch?.stages?.download ?? 'Download' },
-    { id: 'extract1', label: translations.batch?.stages?.filtering ?? 'Filtering' },
-    { id: 'extract2', label: translations.batch?.stages?.clustering ?? 'Clustering' },
-    { id: 'vectortile', label: translations.batch?.stages?.indexing ?? 'Indexing' },
-  ]), [translations.batch?.stages]);
+    { id: 'download', label: t('batch.stages.download', 'Download') },
+    { id: 'extract1', label: t('batch.stages.filtering', 'Filtering') },
+    { id: 'extract2', label: t('batch.stages.clustering', 'Clustering') },
+    { id: 'vectortile', label: t('batch.stages.indexing', 'Indexing') },
+  ]), [t]);
 
   const stages: StageInfo[] = useMemo(() => {
     const normalizedStage = (unifiedProgress?.stage ?? locationProgress?.stage ?? '').toLowerCase();
@@ -243,9 +240,9 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
       timestamp: new Date(locationProgress?.timestamp ?? Date.now()),
       level: 'info',
       source: 'BuildWorker',
-      message: locationProgress?.message ?? translations.batch?.logsDefault ?? 'Running',
+      message: locationProgress?.message ?? t('batch.logsDefault', 'Running'),
     }];
-  }, [locationProgress?.message, locationProgress?.timestamp, translations.batch?.logsDefault]);
+  }, [locationProgress?.message, locationProgress?.timestamp, t]);
 
   const [isPaused, setIsPaused] = useState(false);
 
@@ -296,10 +293,10 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
     >
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Typography variant="h6">{translations.batch?.dialogTitle ?? 'Build Progress'}</Typography>
+          <Typography variant="h6">{t('batch.dialogTitle', 'Build Progress')}</Typography>
           <Box display="flex" alignItems="center" gap={1}>
             <Chip label={derivedProgress.phaseLabel} color="primary" size="small" />
-            <IconButton size="small" onClick={onClose} aria-label={translations.common?.close ?? 'Close'}>
+            <IconButton size="small" onClick={onClose} aria-label={String(t('common.close', 'Close'))}>
               <Close />
             </IconButton>
           </Box>
@@ -317,10 +314,10 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
           />
           <Box display="flex" justifyContent="space-between" mt={1}>
             <Typography variant="caption" color="text.secondary">
-              {translations.batch?.elapsed ?? 'Elapsed'}: {derivedProgress.timeElapsed}
+              {t('batch.elapsed', 'Elapsed')}: {derivedProgress.timeElapsed}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {translations.batch?.remaining ?? 'Remaining'}: {derivedProgress.timeRemaining}
+              {t('batch.remaining', 'Remaining')}: {derivedProgress.timeRemaining}
             </Typography>
           </Box>
         </Box>
@@ -328,10 +325,10 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs value={tabValue} onChange={handleTabChange}>
-          <Tab icon={<Timeline />} label={translations.batch?.progressTitle ?? 'Progress'} />
-          <Tab icon={<Assessment />} label={translations.batch?.logsTitle ?? 'Logs'} />
-          <Tab icon={<MapIcon />} label={translations.batch?.mapPreviewTitle ?? 'Map Preview'} />
-          <Tab icon={<TableView />} label={translations.batch?.dataTableTitle ?? 'Data Table'} />
+          <Tab icon={<Timeline />} label={t('batch.progressTitle', 'Progress')} />
+          <Tab icon={<Assessment />} label={t('batch.logsTitle', 'Logs')} />
+          <Tab icon={<MapIcon />} label={t('batch.mapPreviewTitle', 'Map Preview')} />
+          <Tab icon={<TableView />} label={t('batch.dataTableTitle', 'Data Table')} />
         </Tabs>
       </Box>
 
@@ -339,8 +336,8 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
         {datasetId && <CrossViewSnackbar datasetId={datasetId} />}
         {showAuthRequired ? (
           <Alert severity="warning" sx={{ m: 2 }}>
-            {`🔐 ${formatTemplate(translations.batch?.authRequired ?? 'Authentication required — {message}', {
-              message: locationProgress?.message ?? translations.batch?.authFallback ?? 'Authentication required to continue',
+            {`🔐 ${formatTemplate(String(t('batch.authRequired', 'Authentication required — {message}')), {
+              message: locationProgress?.message ?? String(t('batch.authFallback', 'Authentication required to continue')),
             })}`}
           </Alert>
         ) : null}
@@ -356,13 +353,13 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
                 <Card>
                   <CardContent>
                     <Typography color="textSecondary" gutterBottom>
-                      {translations.batch?.processedLabel ?? 'Processed'}
+                      {t('batch.processedLabel', 'Processed')}
                     </Typography>
                     <Typography variant="h4" color="primary">
                       {formatNumber(derivedProgress.completed, locale)}
                     </Typography>
                     <Typography color="textSecondary">
-                      {formatTemplate(translations.batch?.processedTotal ?? '/ {total} items', {
+                      {formatTemplate(t('batch.processedTotal', '/ {total} items'), {
                         total: formatNumber(derivedProgress.total, locale),
                       })}
                     </Typography>
@@ -374,13 +371,13 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
                 <Card>
                   <CardContent>
                     <Typography color="textSecondary" gutterBottom>
-                      {translations.batch?.throughputLabel ?? 'Throughput'}
+                      {t('batch.throughputLabel', 'Throughput')}
                     </Typography>
                     <Typography variant="h4" color="success.main">
                       {derivedProgress.itemsPerSecond.toFixed(1)}
                     </Typography>
                     <Typography color="textSecondary">
-                      {formatTemplate(translations.batch?.throughputUnit ?? 'points/s ({rate}/s)', {
+                      {formatTemplate(t('batch.throughputUnit', 'points/s ({rate}/s)'), {
                         rate: formatBytesIntl(derivedProgress.bytesPerSecond, locale),
                       })}
                     </Typography>
@@ -392,13 +389,13 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
                 <Card>
                   <CardContent>
                     <Typography color="textSecondary" gutterBottom>
-                      {translations.batch?.errorsLabel ?? 'Errors'}
+                      {t('batch.errorsLabel', 'Errors')}
                     </Typography>
                     <Typography variant="h4" color="error.main">
                       {formatNumber(derivedProgress.failed, locale)}
                     </Typography>
                     <Typography color="textSecondary">
-                      {translations.batch?.errorsUnit ?? 'items'}
+                      {t('batch.errorsUnit', 'items')}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -408,7 +405,7 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
 */}
               <Grid size={{ xs: 12, md: 6 }}>
                 <Typography variant="h6" gutterBottom>
-                  {translations.batch?.stageListTitle ?? 'Processing Stages'}
+                  {t('batch.stageListTitle', 'Processing Stages')}
                 </Typography>
                 <Stepper orientation="vertical">
                   {stages.map((stage) => (
@@ -427,7 +424,7 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
                       <StepContent>
                         <Box>
                           <Typography variant="body2" color="text.secondary">
-                            {formatTemplate(translations.batch?.stageProgress ?? '{completed} / {total} completed', {
+                            {formatTemplate(t('batch.stageProgress', '{completed} / {total} completed'), {
                               completed: formatNumber(stage.itemsProcessed, locale),
                               total: formatNumber(stage.totalItems, locale),
                             })}
@@ -441,7 +438,7 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
                           )}
                           {stage.errors > 0 && (
                             <Typography variant="body2" color="error">
-                              {formatTemplate(translations.batch?.stageErrors ?? 'Errors: {count}', {
+                              {formatTemplate(t('batch.stageErrors', 'Errors: {count}'), {
                                 count: formatNumber(stage.errors, locale),
                               })}
                             </Typography>
@@ -457,14 +454,14 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
 */}
               <Grid size={{ xs: 12, md: 6 }}>
                 <Typography variant="h6" gutterBottom>
-                  {translations.batch?.tasksTitle ?? 'Active Tasks'}
+                  {t('batch.tasksTitle', 'Active Tasks')}
                 </Typography>
                 <List>
                   {activeTasks.length === 0 ? (
                     <ListItem>
                       <ListItemText
-                        primary={translations.batch?.tasksEmpty ?? 'No active tasks at the moment'}
-                        secondary={translations.batch?.tasksEmptyHint ?? 'Tasks will appear here while the build is running'}
+                        primary={t('batch.tasksEmpty', 'No active tasks at the moment')}
+                        secondary={t('batch.tasksEmptyHint', 'Tasks will appear here while the build is running')}
                       />
                     </ListItem>
                   ) : activeTasks.map(task => (
@@ -524,7 +521,7 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
               {logs.length === 0 ? (
                 <ListItem>
                   <ListItemText
-                    primary={translations.batch?.logsEmpty ?? 'No log entries yet'}
+                    primary={t('batch.logsEmpty', 'No log entries yet')}
                   />
                 </ListItem>
               ) : logs.map((log, index) => (
@@ -554,7 +551,7 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
         <TabPanel value={tabValue} index={2}>
           <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Alert severity="info">
-              {translations.batch?.mapPlaceholder ?? 'Map preview will be added in a future implementation'}
+              {t('batch.mapPlaceholder', 'Map preview will be added in a future implementation')}
             </Alert>
           </Box>
         </TabPanel>
@@ -571,14 +568,14 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
 
       <DialogActions>
         <Button onClick={onClose}>
-          {translations.batch?.close ?? 'Close'}
+          {t('batch.close', 'Close')}
         </Button>
       </DialogActions>
 
       {/*
 */}
       <SpeedDial
-        ariaLabel={translations.batch?.ariaLabel ?? 'Build actions'}
+        ariaLabel={String(t('batch.ariaLabel', 'Build actions'))}
         sx={{ position: 'absolute', bottom: 16, right: 16 }}
         icon={<SpeedDialIcon />}
         direction="up"
@@ -586,18 +583,18 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
         <SpeedDialAction
           icon={isPaused ? <PlayArrow /> : <Pause />}
           tooltipTitle={isPaused
-            ? translations.batch?.resumeTooltip ?? 'Resume'
-            : translations.batch?.pauseTooltip ?? 'Pause'}
+            ? t('batch.resumeTooltip', 'Resume')
+            : t('batch.pauseTooltip', 'Pause')}
           onClick={isPaused ? handleResume : handlePause}
         />
         <SpeedDialAction
           icon={<Stop />}
-          tooltipTitle={translations.batch?.cancelTooltip ?? 'Cancel'}
+          tooltipTitle={t('batch.cancelTooltip', 'Cancel')}
           onClick={handleCancel}
         />
         <SpeedDialAction
           icon={<Download />}
-          tooltipTitle={translations.batch?.exportTooltip ?? 'Export logs'}
+          tooltipTitle={t('batch.exportTooltip', 'Export logs')}
           onClick={() => console.log('Export logs')}
         />
       </SpeedDial>

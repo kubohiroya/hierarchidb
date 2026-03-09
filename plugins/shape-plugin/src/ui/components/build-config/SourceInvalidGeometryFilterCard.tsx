@@ -15,7 +15,7 @@ import {
   Security as SecurityIcon,
 } from '@mui/icons-material';
 import { BuildConfigSectionTitle, getBuildConfigHoverCardSx } from '@hierarchidb/ui-accordion-config';
-import { useTranslation } from '~/ui/useTranslation';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { ShapeBuildConfig } from '~/common/types/index';
 import {
   useSourceGeometryIntakeGuardCardView,
@@ -34,7 +34,7 @@ export const SourceGeometryIntakeGuardCard: React.FC<Props> = ({
   onChange,
   disableHoverLift = false,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
   const guardCardDisabled = true;
   const hoverCardSx = getBuildConfigHoverCardSx(guardCardDisabled, disableHoverLift);
   const {
@@ -137,7 +137,7 @@ export const TileEmitInvalidGeometryFilterCard: React.FC<Props> = ({
   disabled,
   disableHoverLift = false,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
   const hoverCardSx = getBuildConfigHoverCardSx(disabled, disableHoverLift);
   const { switchGroups } = useTileEmitInvalidGeometryFilterCardView(
     config,

@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Box, Chip, IconButton, Paper, Slider, Stack, Switch, TextField, Tooltip, Typography } from '@mui/material';
 import { Map as MapIcon, PlayArrow, Pause, SkipNext, SkipPrevious } from '@mui/icons-material';
 import { useFramePlayer } from '~/ui/utils/useFramePlayer';
-import { useTranslation } from '~/common/i18n/index';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { TimelineFrame } from '~/common/types/index';
 
 export interface AnimationViewerStepProps {
@@ -14,7 +14,7 @@ export interface AnimationViewerStepProps {
 
 export function AnimationViewerStep({ frames, initialIndex = 0, initialFps = 12, loop = true }: AnimationViewerStepProps) {
   const player = useFramePlayer({ length: frames.length, initialIndex, initialFps, loop });
-  const { t } = useTranslation();
+  const { t } = useTranslation('timeline-plugin');
   const current = frames[player.index] || null;
   const viewState = useMemo(() => {
     if (current?.viewState) {

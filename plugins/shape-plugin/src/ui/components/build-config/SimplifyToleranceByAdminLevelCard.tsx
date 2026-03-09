@@ -4,7 +4,6 @@ import {
   Button,
   Grid,
   Paper,
-  Slider,
   Stack,
   Switch,
   Tab,
@@ -15,9 +14,10 @@ import {
 } from '@mui/material';
 import { Tune as TuneIcon } from '@mui/icons-material';
 import { ToneCurveEditor } from '@hierarchidb/ui-tone-curve-editor';
+import { SpacedSlider } from '@hierarchidb/components';
 import { BuildConfigSectionTitle, getBuildConfigHoverCardSx } from '@hierarchidb/ui-accordion-config';
 import { DEFAULT_MAX_RATIO_VALUE } from '@hierarchidb/shape-api';
-import { useTranslation } from '~/ui/useTranslation';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { ShapeBuildConfig } from '~/common/types/index';
 import { buildToneCurveAnchorsFromToleranceByBand, buildToleranceByBandFromToneCurveAnchors } from '~/services/utils/toleranceByBand';
 
@@ -184,7 +184,7 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
   disableHoverLift = false,
   onChange,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
   const [activeTab, setActiveTab] = useState<AdminLevelTabKey>('admin0');
   const curveWidthRef = useRef<HTMLDivElement | null>(null);
   const [simplifyCurveWidth, setSimplifyCurveWidth] = useState(500);
@@ -601,9 +601,10 @@ export const SimplifyToleranceByAdminLevelCard: React.FC<Props> = ({
                 <Typography variant="body2" color="text.secondary">
                   {t('processing.geometry.retryToleranceStep.label', 'Max search iterations')}
                 </Typography>
-                <Stack direction="row" spacing={2} alignItems="center" sx={{ paddingTop: '20px' }}>
-                  <Slider
-                    sx={{ flex: 1, minWidth: 220, mt: '16px' }}
+                <Stack direction="row" spacing={2} alignItems="center" sx={{ paddingTop: '32px' }}>
+                  <SpacedSlider
+                    topSpacing={16}
+                    sx={{ flex: 1, minWidth: 220 }}
                     value={activeValues.toleranceSearchMaxIterations}
                     min={1}
                     max={64}

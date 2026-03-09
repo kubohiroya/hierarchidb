@@ -24,7 +24,7 @@
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "dependencies": {
-    "@hierarchidb/ui-search-input": "workspace:*",
+    "@hierarchidb/components": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/util": "workspace:*"
   },

@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { ReactElement } from 'react';
 import { toNodeId } from '@hierarchidb/core-types';
 import { useRouteBuildProgress } from '~/ui/hooks/useRouteBuildProgress';
-import { useTranslation } from '~/common/i18n/index';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 
 export interface RouteBuildSummaryProps {
   nodeId: string;
@@ -10,7 +10,7 @@ export interface RouteBuildSummaryProps {
 
 export function RouteBuildSummary({ nodeId }: RouteBuildSummaryProps): ReactElement {
   const { progress, lastError } = useRouteBuildProgress(toNodeId(nodeId));
-  const { translations } = useTranslation();
+  const { t } = useTranslation('route-plugin');
 
   const completed = useMemo(() => {
     const value = progress?.completed ?? 0;
@@ -33,13 +33,12 @@ export function RouteBuildSummary({ nodeId }: RouteBuildSummaryProps): ReactElem
   }, [progress?.completed]);
 
   const pct = total > 0 ? Math.min(100, Math.max(0, Math.round((completed / total) * 100))) : 0;
-  const summary = translations.batch?.summary;
-  const failedLabel = summary?.failedLabel ?? 'Failed';
-  const completedLabel = summary?.completedLabel ?? 'Completed';
-  const totalLabel = summary?.totalLabel ?? 'Total';
-  const resultsLabel = summary?.resultsLabel ?? 'Results';
-  const lastErrorLabel = summary?.lastErrorLabel ?? 'Last error';
-  const noneLabel = summary?.noneLabel ?? 'None';
+  const failedLabel = t('batch.summary.failedLabel', 'Failed');
+  const completedLabel = t('batch.summary.completedLabel', 'Completed');
+  const totalLabel = t('batch.summary.totalLabel', 'Total');
+  const resultsLabel = t('batch.summary.resultsLabel', 'Results');
+  const lastErrorLabel = t('batch.summary.lastErrorLabel', 'Last error');
+  const noneLabel = t('batch.summary.noneLabel', 'None');
   const displayError = lastError ?? null;
 
   return (

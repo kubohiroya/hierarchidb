@@ -1,7 +1,0 @@
-{
-  "extends": "../../../tsconfig.package.local-alias.base.json",
-  "compilerOptions": {},
-  "include": [
-    "src/**/*"
-  ]
-}
