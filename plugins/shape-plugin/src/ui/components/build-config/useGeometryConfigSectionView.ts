@@ -1,6 +1,6 @@
 import { useCallback, type ChangeEvent } from 'react';
 import type { ShapeBuildConfig } from '~/common/types/index';
-import { useTranslation } from '~/ui/useTranslation';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 
 type Args = {
   simplifyAlgorithm: 'geojson' | 'topojson';
@@ -13,7 +13,7 @@ export const useGeometryConfigSectionView = ({
   preserveTopology,
   update,
 }: Args) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
 
   const summaryHelp = simplifyAlgorithm === 'topojson'
     ? t(

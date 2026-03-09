@@ -3,7 +3,7 @@ import { Suspense, lazy, useMemo } from 'react';
 import { Box, Typography } from '@mui/material';
 import { loadMapLibreMap } from '@hierarchidb/ui-map';
 import type { ResourceSummary } from './ResourcePicker.js';
-import { useTranslation } from '~/common/i18n/index';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 
 export interface MapPreviewProps {
   items: ResourceSummary[];
@@ -15,7 +15,7 @@ const LazyMapLibreMap = lazy(async () => {
 });
 
 export const MapPreview: React.FC<MapPreviewProps> = ({ items: _items }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('linker-plugin');
   // Compute a simple initial view (fallback to world)
   const initialView = useMemo(() => ({ longitude: 0, latitude: 0, zoom: 1 }), []);
 

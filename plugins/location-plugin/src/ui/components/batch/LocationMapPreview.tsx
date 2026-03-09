@@ -89,8 +89,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
   locations = SAMPLE_LOCATIONS,
 }) => {
   const {
-    translations,
-    mapPreviewTranslations,
+    t,
     formatTemplate,
     typeSettings,
     mapRef,
@@ -175,7 +174,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
           <TextField
             size="small"
             fullWidth
-            placeholder={mapPreviewTranslations.searchPlaceholder ?? 'Search locations...'}
+            placeholder={String(t('mapPreview.searchPlaceholder', 'Search locations...'))}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             InputProps={{
@@ -190,7 +189,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
             <Box display="flex" gap={1} flexWrap="wrap">
               <Chip
                 label={formatTemplate(
-                  mapPreviewTranslations.visiblePointsLabel ?? 'Visible: {visible} / {total}',
+                  t('mapPreview.visiblePointsLabel', 'Visible: {visible} / {total}'),
                   {
                     visible: statistics.visiblePoints.toLocaleString(),
                     total: statistics.totalPoints.toLocaleString(),
@@ -202,7 +201,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
               {displayMode === 'clusters' && statistics.clusters > 0 && (
                 <Chip
                   label={formatTemplate(
-                    mapPreviewTranslations.clustersLabel ?? 'Clusters: {count}',
+                    t('mapPreview.clustersLabel', 'Clusters: {count}'),
                     {
                       count: statistics.clusters,
                     },
@@ -269,18 +268,18 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
 */}
           <Box textAlign="center">
             <Typography variant="h6" gutterBottom>
-              {translations.mapPreview.title}
+              {t('mapPreview.title', 'Map Preview')}
             </Typography>
             <Typography variant="body2" gutterBottom>
-              {formatTemplate(translations.mapPreview.displayModeLabel, { mode: displayMode })}
+              {formatTemplate(t('mapPreview.displayModeLabel', 'Display: {mode}'), { mode: displayMode })}
             </Typography>
             <Typography variant="body2" gutterBottom>
-              {formatTemplate(translations.mapPreview.visibleCountLabel, {
+              {formatTemplate(t('mapPreview.visibleCountLabel', 'Visible: {visible}/{total}'), {
                 count: statistics.visiblePoints.toLocaleString(),
               })}
             </Typography>
             <Typography variant="body2">
-              {formatTemplate(translations.mapPreview.centerLabel, {
+              {formatTemplate(t('mapPreview.centerLabel', 'Center: {lat}, {lng}'), {
                 lat: center[1].toFixed(3),
                 lng: center[0].toFixed(3),
               })}
@@ -304,7 +303,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
 */}
         <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
           <Box display="flex" flexDirection="column" gap={1}>
-            <Tooltip title={translations.mapPreview.tooltips?.zoomIn}>
+            <Tooltip title={t('mapPreview.tooltips.zoomIn', 'Zoom in')}>
               <Fab
                 size="small"
                 onClick={() => handleZoomChange(zoom + 1)}
@@ -314,7 +313,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
               </Fab>
             </Tooltip>
 
-            <Tooltip title={translations.mapPreview.tooltips?.zoomOut}>
+            <Tooltip title={t('mapPreview.tooltips.zoomOut', 'Zoom out')}>
               <Fab
                 size="small"
                 onClick={() => handleZoomChange(zoom - 1)}
@@ -324,19 +323,19 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
               </Fab>
             </Tooltip>
 
-            <Tooltip title={translations.mapPreview.tooltips?.fitToData}>
+            <Tooltip title={t('mapPreview.tooltips.fitToData', 'Fit to data')}>
               <Fab size="small" onClick={handleFitToData}>
                 <CenterFocusStrong />
               </Fab>
             </Tooltip>
 
-            <Tooltip title={translations.mapPreview.tooltips?.currentLocation}>
+            <Tooltip title={t('mapPreview.tooltips.currentLocation', 'Current location')}>
               <Fab size="small" onClick={handleMoveToCurrentLocation}>
                 <MyLocation />
               </Fab>
             </Tooltip>
 
-            <Tooltip title={translations.mapPreview.tooltips?.settings}>
+            <Tooltip title={t('mapPreview.tooltips.settings', 'Settings')}>
               <Fab
                 size="small"
                 onClick={(e) => setSettingsAnchor(e.currentTarget)}
@@ -376,11 +375,11 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
         <MenuList>
           <MenuItem onClick={() => setShowSettings(true)}>
             <Layers sx={{ mr: 1 }} />
-            {translations.mapPreview.menuSettings}
+            {t('mapPreview.menuSettings', 'Settings')}
           </MenuItem>
           <MenuItem onClick={() => console.log('Export view')}>
             <Info sx={{ mr: 1 }} />
-            {translations.mapPreview.menuAnalytics}
+            {t('mapPreview.menuAnalytics', 'Analytics')}
           </MenuItem>
         </MenuList>
       </DialogSafeMenu>
@@ -393,7 +392,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>{translations.mapPreview.dialogTitle}</DialogTitle>
+        <DialogTitle>{t('mapPreview.dialogTitle', 'Map Preview Settings')}</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2 }}>
             {/*
@@ -401,11 +400,11 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
             {displayMode === 'heatmap' && (
               <Box mb={3}>
                 <Typography variant="subtitle2" gutterBottom>
-                  {translations.mapPreview.heatmapSettings}
+                  {t('mapPreview.heatmapSettings', 'Heatmap Settings')}
                 </Typography>
                 <Box mb={2}>
                   <Typography gutterBottom>
-                    {formatTemplate(translations.mapPreview.heatmapIntensityLabel, { value: heatmapIntensity })}
+                    {formatTemplate(t('mapPreview.heatmapIntensityLabel', 'Intensity: {value}'), { value: heatmapIntensity })}
                   </Typography>
                   <Slider
                     value={heatmapIntensity}
@@ -422,7 +421,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
                 </Box>
                 <Box mb={2}>
                   <Typography gutterBottom>
-                    {formatTemplate(translations.mapPreview.heatmapRadiusLabel, { value: heatmapRadius })}
+                    {formatTemplate(t('mapPreview.heatmapRadiusLabel', 'Radius: {value}'), { value: heatmapRadius })}
                   </Typography>
                   <Slider
                     value={heatmapRadius}
@@ -445,11 +444,11 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
             {displayMode === 'clusters' && (
               <Box mb={3}>
                 <Typography variant="subtitle2" gutterBottom>
-                  {translations.mapPreview.clusterSettings}
+                  {t('mapPreview.clusterSettings', 'Cluster Settings')}
                 </Typography>
                 <Box mb={2}>
                   <Typography gutterBottom>
-                    {formatTemplate(translations.mapPreview.clusterRadiusLabel, { value: clusterRadius })}
+                    {formatTemplate(t('mapPreview.clusterRadiusLabel', 'Cluster radius: {value}'), { value: clusterRadius })}
                   </Typography>
                   <Slider
                     value={clusterRadius}
@@ -466,7 +465,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
                 </Box>
                 <Box mb={2}>
                   <Typography gutterBottom>
-                    {formatTemplate(translations.mapPreview.maxZoomLabel, { value: maxZoom })}
+                    {formatTemplate(t('mapPreview.maxZoomLabel', 'Max zoom: {value}'), { value: maxZoom })}
                   </Typography>
                   <Slider
                     value={maxZoom}
@@ -487,7 +486,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
         </DialogContent>
         <DialogContent>
           <Button onClick={() => setShowSettings(false)}>
-            {translations.mapPreview.close}
+            {t('mapPreview.close', 'Close')}
           </Button>
         </DialogContent>
       </Dialog>
@@ -509,7 +508,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
             <Grid container spacing={2}>
               <Grid size={{ xs: 6 }}>
                 <Typography variant="body2" color="text.secondary">
-                  {translations.mapPreview.details.englishName}
+                  {t('mapPreview.details.englishName', 'English name')}
                 </Typography>
                 <Typography variant="body1">
                   {selectedLocation.nameEn || 'N/A'}
@@ -517,7 +516,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
               </Grid>
               <Grid size={{ xs: 6 }}>
                 <Typography variant="body2" color="text.secondary">
-                  {translations.mapPreview.details.countryCode}
+                  {t('mapPreview.details.countryCode', 'Country code')}
                 </Typography>
                 <Typography variant="body1">
                   {selectedLocation.countryCode}
@@ -525,7 +524,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
               </Grid>
               <Grid size={{ xs: 6 }}>
                 <Typography variant="body2" color="text.secondary">
-                  {translations.mapPreview.details.latitude}
+                  {t('mapPreview.details.latitude', 'Latitude')}
                 </Typography>
                 <Typography variant="body1">
                   {selectedLocation.coordinates[1].toFixed(6)}
@@ -533,7 +532,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
               </Grid>
               <Grid size={{ xs: 6 }}>
                 <Typography variant="body2" color="text.secondary">
-                  {translations.mapPreview.details.longitude}
+                  {t('mapPreview.details.longitude', 'Longitude')}
                 </Typography>
                 <Typography variant="body1">
                   {selectedLocation.coordinates[0].toFixed(6)}
@@ -553,7 +552,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
           </DialogContent>
         <DialogContent>
           <Button onClick={() => setSelectedLocation(null)}>
-            {translations.mapPreview.close}
+            {t('mapPreview.close', 'Close')}
           </Button>
         </DialogContent>
       </Dialog>

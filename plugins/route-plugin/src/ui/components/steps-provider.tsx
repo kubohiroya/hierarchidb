@@ -6,7 +6,7 @@ import {
 } from '@hierarchidb/plugin-base';
 import { toNodeId, type NodeId } from '@hierarchidb/core-types';
 import type { RouteEntity } from '@hierarchidb/route-api';
-import { useTranslation as getTranslation } from '~/common/i18n/index';
+import { i18n } from '@hierarchidb/ui-i18n';
 import { RouteSelectionStep } from './steps/RouteSelectionStep.js';
 import { RouteProcessingStep } from './steps/RouteProcessingStep.js';
 import { RouteDataSourceStep } from './steps/RouteDataSourceStep.js';
@@ -95,7 +95,8 @@ const isRouteBuildPersisted = (data?: RouteStepData): boolean =>
   data?.processingStatus === 'completed';
 
 const startRouteBuild = async (data: RouteStepData, _context: StartBuildContext) => {
-  const { t } = getTranslation();
+  const t = (key: string, fallback: string) =>
+    String(i18n.t(key, { ns: 'route-plugin', defaultValue: fallback }));
   const hasEssentials = Boolean(
     hasRouteDataSourceReady(data) && hasAnyRouteSelection(data?.selectedArrayByCountries),
   );
@@ -111,7 +112,8 @@ const startRouteBuild = async (data: RouteStepData, _context: StartBuildContext)
 registry.registerConfigProvider<RouteStepData>({
   nodeType: 'route',
   getCreateStepConfigs(): PluginStepConfig<RouteStepData>[] {
-    const { t } = getTranslation();
+    const t = (key: string, fallback: string) =>
+      String(i18n.t(key, { ns: 'route-plugin', defaultValue: fallback }));
     return [
       {
         id: 'data-source',

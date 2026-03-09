@@ -33,8 +33,8 @@ import {
   formatDistance,
   getTransportModeName,
   type SupportedLocale,
-  useTranslation,
 } from '~/common/i18n/index';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   LINE_WIDTH_MAX,
   LINE_WIDTH_MIN,
@@ -219,8 +219,8 @@ export const useRoutePreviewStep = ({
   nodeId?: NodeId;
   onUpdate: (updates: Partial<RouteEntity>) => void;
 }) => {
-  const { t, locale: localeFromTranslation } = useTranslation();
-  const locale = localeFromTranslation as SupportedLocale;
+  const { t, i18n: i18nInstance } = useTranslation('route-plugin');
+  const locale = (i18nInstance.language?.startsWith('ja') ? 'ja' : 'en') as SupportedLocale;
   const previewNodeId = nodeId;
   const workerBridgeRef = useRef(getBuildWorkerBridge());
   const [lineStrings, setLineStrings] = useState<RouteLineString[]>([]);

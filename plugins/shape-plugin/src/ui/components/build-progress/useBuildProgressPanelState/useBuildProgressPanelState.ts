@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
-import { useTranslation } from '~/ui/useTranslation';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import { useBuildProgressPanelStateActions } from './useBuildProgressPanelStateActions.js';
 import { useBuildProgressPanelStateRuntimeState } from './useBuildProgressPanelStateRuntimeState.js';
@@ -12,7 +12,7 @@ export const useBuildProgressPanelState = (params: {
   nodeId?: NodeId;
 }) => {
   const runtimeState = useBuildProgressPanelStateRuntimeState(params);
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
 
   const {
     nodeIdForLog,

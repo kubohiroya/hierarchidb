@@ -13,7 +13,7 @@ import type {
   LocationDraft,
   LocationEntity,
 } from '~/common/types/index';
-import { useTranslation } from '~/common/i18n/index';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { LocationSelectionStep } from '~/ui/components/steps/LocationSelectionStep';
 import { LocationBuildParametersStep } from '~/ui/components/steps/LocationBuildParametersStep';
 import { LocationMapPreviewStep } from '~/ui/components/steps/LocationMapPreviewStep';
@@ -140,7 +140,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
   onSuccess,
   onError,
 }) => {
-  const { translations } = useTranslation();
+  const { t } = useTranslation('location-plugin');
   const { size: initialSize, position: initialPositionValue } = useMemo(buildDefaultFrame, []);
   const { dialogViewState, updateDialogViewState } = useDialogViewState({
     initialSize,
@@ -252,15 +252,15 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
   const stepComponents = useMemo<ReadonlyArray<StepComponentDescriptor<LocationDraft>>>(() => ([
     {
       id: 'basic-info',
-      label: translations.basicInfo.title,
+      label: t('basicInfo.title', 'Basic Information'),
       component: ({ data, onChange }: { data: LocationDraft; onChange: (patch: Partial<LocationDraft>) => void }) => (
         <SharedBasicInfoStep
           name={data.draft?.name ?? ''}
           description={data.draft?.description ?? ''}
           tags={data.tags ?? []}
           mode={mode}
-          tagSuggestions={translations.basicInfo.tagSuggestions ?? []}
-          validate={({ name }) => (name.trim().length ? null : translations.errors.nameRequired)}
+          tagSuggestions={[]}
+          validate={({ name }) => (name.trim().length ? null : t('errors.nameRequired', 'Name is required.'))}
           onChange={(value: BasicInfoData) => {
             onChange({
               draft: {
@@ -276,14 +276,14 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     },
     {
       id: 'data-source',
-      label: translations.dialog.dataSourceLabel,
+      label: t('dialog.dataSourceLabel', 'Data Source'),
       component: ({ onChange }: { data: LocationDraft; onChange: (patch: Partial<LocationDraft>) => void }) => (
         <TabularProvider tabularApi={createLocationTabularApi()}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Box>
-              <Typography variant="subtitle1">{translations.dialog.dataSourceLabel}</Typography>
+              <Typography variant="subtitle1">{t('dialog.dataSourceLabel', 'Data Source')}</Typography>
               <Typography variant="caption" color="text.secondary">
-                {translations.dialog.dataSourceDescription ?? 'Choose openstreetmap for OSRM/Overpass or custom for tabular import'}
+                {t('dialog.dataSourceDescription', 'Choose openstreetmap for OSRM/Overpass or custom for tabular import')}
               </Typography>
             </Box>
             <TabularDataImport
@@ -299,21 +299,21 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     },
     {
       id: 'selection',
-      label: translations.selection.title,
+      label: t('selection.title', 'Location Selection'),
       component: ({ data, onChange }: { data: LocationDraft; onChange: (patch: Partial<LocationDraft>) => void }) => (
         <LocationSelectionStep draft={data} onUpdate={onChange} />
       ),
     },
     {
       id: 'build-parameters',
-      label: translations.panel.processingSettings,
+      label: t('panel.processingSettings', 'Settings'),
       component: ({ data, onChange }: { data: LocationDraft; onChange: (patch: Partial<LocationDraft>) => void }) => (
         <LocationBuildParametersStep draft={data} onUpdate={onChange} />
       ),
     },
     {
       id: 'extract',
-      label: translations.selection?.filterTitle ?? translations.selection.title ?? 'Filter & Preview',
+      label: t('selection.filterTitle', 'Filter & Preview'),
       component: ({ data, onChange }: { data: LocationDraft; onChange: (patch: Partial<LocationDraft>) => void }) => (
         <TabularProvider tabularApi={createLocationTabularApi()}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -385,7 +385,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
                 }
               }}
             >
-              {translations.selection?.buildLabel ?? 'Build'}
+              {t('selection.buildLabel', 'Build')}
             </Button>
             {buildStatus ? (
               <Typography variant="caption" color="text.secondary">{buildStatus}</Typography>
@@ -396,7 +396,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     },
     {
       id: 'map-preview',
-      label: translations.mapPreview?.title ?? 'Map Preview',
+      label: t('mapPreview.title', 'Map Preview'),
       component: ({ data }: { data: LocationDraft }) => (
         <LocationMapPreviewStep
           draft={data}
@@ -405,7 +405,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
         />
       ),
     },
-  ]), [translations.basicInfo.title, translations.basicInfo.tagSuggestions, translations.dialog.dataSourceLabel, translations.dialog.dataSourceDescription, translations.selection.title, translations.selection?.filterTitle, translations.selection?.buildLabel, translations.panel.processingSettings, translations.mapPreview?.title, translations.errors.nameRequired, mode, emptyTableMetadata, buildStatus, nodeId, handleDraftPatch]);
+  ]), [t, mode, emptyTableMetadata, buildStatus, nodeId, handleDraftPatch]);
 
   const enabledStepIndices = useMemo(() => stepComponents.map((_, index) => index), [stepComponents]);
   const committableStepIndices = useMemo(() => [stepComponents.length - 1], [stepComponents.length]);
@@ -512,10 +512,10 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
         <LocationOn color="primary" />
         <Box>
           <Typography variant="h6" component="div">
-            {mode === 'create' ? translations.dialog.createTitle : translations.dialog.editTitle}
+            {mode === 'create' ? t('dialog.createTitle', 'Create Location') : t('dialog.editTitle', 'Edit Location')}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            {translations.dialog.datasetDescription}
+            {t('dialog.datasetDescription', 'Define the location dataset.')}
           </Typography>
         </Box>
       </Box>
@@ -523,7 +523,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
         Back
       </Button>
     </Box>
-  ), [mode, translations.dialog.createTitle, translations.dialog.datasetDescription, translations.dialog.editTitle]);
+  ), [mode, t]);
 
   const renderFooter: HeadlessDialogProps<LocationDraft>['renderFooter'] = useCallback((propsFooter: HeadlessFooterRenderProps<LocationDraft>) => {
     const canCommit = propsFooter.committableStepIndices.includes(propsFooter.activeStepIndex);
@@ -533,18 +533,18 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
       <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, borderTop: '1px solid #dde1eb' }}>
         <Box display="flex" gap={1}>
           <Button size="small" onClick={() => transitionDisplayMode('normal')} disabled={displayMode === 'normal'}>
-            {translations.dialog.displayNormal}
+            {t('dialog.displayNormal', 'Normal')}
           </Button>
           <Button size="small" onClick={() => transitionDisplayMode('maximize')} disabled={displayMode === 'maximize'}>
-            {translations.dialog.displayMaximize}
+            {t('dialog.displayMaximize', 'Maximize')}
           </Button>
           <Button size="small" onClick={() => transitionDisplayMode('full-screen')} disabled={displayMode === 'full-screen'}>
-            {translations.dialog.displayFullscreen}
+            {t('dialog.displayFullscreen', 'Fullscreen')}
           </Button>
         </Box>
         <Box display="flex" gap={1}>
           <Button variant="outlined" onClick={() => propsFooter.onRequestClose('close')}>
-            {translations.dialog.cancel}
+            {t('dialog.cancel', 'Cancel')}
           </Button>
           <Button
             variant="outlined"
@@ -561,7 +561,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
             onClick={() => propsFooter.onRequestCommit?.()}
             disabled={!canCommit}
           >
-            {translations.dialog.save}
+            {t('dialog.save', 'Save')}
           </Button>
         </Box>
       </Box>
@@ -572,11 +572,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     handleStartBuild,
     isStartingBuild,
     transitionDisplayMode,
-    translations.dialog.cancel,
-    translations.dialog.displayFullscreen,
-    translations.dialog.displayMaximize,
-    translations.dialog.displayNormal,
-    translations.dialog.save,
+    t,
   ]);
 
   const dialogProps: HeadlessDialogProps<LocationDraft> = {

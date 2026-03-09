@@ -4,7 +4,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { MapAttributionItem, MapToggleSelection, MapViewState } from '@hierarchidb/ui-map';
 import { DEFAULT_MAP_CONFIG } from '@hierarchidb/ui-map';
 import type { LocationEntity, LocationType } from '~/common/types/index';
-import { useTranslation } from '~/common/i18n/index';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useFloatingWindow } from '@hierarchidb/ui-floating-window';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
 import { resolveLocationAttribution } from '~/common/datasources/resolveLocationAttribution';
@@ -53,7 +53,7 @@ export const useLocationMapPreviewStep = ({
   nodeId?: NodeId;
   onUpdate?: (updates: Partial<LocationEntity>) => void;
 }) => {
-  const { translations, t } = useTranslation();
+  const { t } = useTranslation('location-plugin');
   const theme = useTheme();
   const [ideGsmProgress, setIdeGsmProgress] = useState<IdeGsmImportProgress | null>(null);
   const [metadataWindowOpen, setMetadataWindowOpen] = useState(true);
@@ -170,13 +170,13 @@ export const useLocationMapPreviewStep = ({
       const labelColor = labelConfig[type]?.color ?? DEFAULT_TYPE_COLORS[type];
       return {
         id: option.id as LocationType,
-        label: translations.locationTypes?.[type] ?? option.label,
+        label: t(`locationTypes.${type}`, option.label),
         Icon,
         iconColor,
         labelColor,
       };
     })
-  ), [iconConfig, labelConfig, translations.locationTypes]);
+  ), [iconConfig, labelConfig, t]);
 
   const terrainWindow = useFloatingWindow({
     persistKey: 'hierarchidb:ui:floating-window:location:terrain',
@@ -227,7 +227,6 @@ export const useLocationMapPreviewStep = ({
 
   return {
     t,
-    translations,
     initialViewState,
     locationGeoJsonLayers,
     attributionItems,

@@ -10,7 +10,7 @@ import { BuildConfigShell, SourceConfigSection, TileEmitConfigSection, ZoomBandC
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BaseBuildConfig } from '@hierarchidb/gis-sdk';
 import type { RouteEntity } from '@hierarchidb/route-api';
-import { useTranslation } from '~/common/i18n/index';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useRouteBuildConfigStep } from './useRouteBuildConfigStep.js';
 import { mergeRouteBuildConfig } from '~/common/config/buildConfig';
 import {
@@ -33,7 +33,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
   onUpdate,
   disabled,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('route-plugin');
   const { config, handleChange } = useRouteBuildConfigStep({
     data: draft,
     onChange: onUpdate,

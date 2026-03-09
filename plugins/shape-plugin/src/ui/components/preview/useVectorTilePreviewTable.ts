@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import type { GridColumn } from '@hierarchidb/ui-grid';
-import { useTranslation } from '~/ui/useTranslation';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { ShapeDataSourceMetadata } from '@hierarchidb/shape-api';
 import { formatAdminLevelLabel } from '@hierarchidb/ui-map';
 import { Typography } from '@mui/material';
@@ -29,7 +29,7 @@ export const useVectorTilePreviewTable = (
   matchedIdSet: Set<string>,
   searchKeyword: string,
 ) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('shape-plugin');
   const [sortColumn, setSortColumn] = useState<string>('originLabel');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 

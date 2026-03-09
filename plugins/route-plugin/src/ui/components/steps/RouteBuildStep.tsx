@@ -29,7 +29,7 @@ import type {
   RouteTransportSelection,
   RouteEntity,
 } from '@hierarchidb/route-api';
-import { useTranslation } from '~/common/i18n/index';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useRouteBuildCrashInsight } from '~/ui/hooks/useRouteBuildCrashInsight';
 import { DEFAULT_ROUTE_BUILD_CONFIG } from '~/common/config/buildConfig';
 import {
@@ -124,7 +124,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
   onUpdate,
   nodeId,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('route-plugin');
   const { api, initialize } = useWorkerAPI();
   const routeData = draft;
   const routeNodeId = nodeId as NodeId | undefined;

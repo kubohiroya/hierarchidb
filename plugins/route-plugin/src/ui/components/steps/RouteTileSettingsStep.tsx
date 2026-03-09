@@ -4,7 +4,7 @@ import { Box, Grid, Slider, TextField, Typography } from '@mui/material';
 import type { RouteUpdaterPayload } from '@hierarchidb/route-store';
 import type { RouteBuildConfig } from '@hierarchidb/route-api';
 import { DEFAULT_ROUTE_BUILD_CONFIG, mergeRouteBuildConfig } from '~/common/config/buildConfig';
-import { useTranslation } from '~/common/i18n/index';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 
 interface RouteTileSettingsStepProps {
   draft: RouteUpdaterPayload;
@@ -27,7 +27,7 @@ const clamp = (value: number, min: number, max: number): number => {
 
 export const RouteTileSettingsStep: React.FC<RouteTileSettingsStepProps> = ({ draft, onUpdate, disabled }) => {
   const fieldId = useId();
-  const { t } = useTranslation();
+  const { t } = useTranslation('route-plugin');
   const rawConfig = draft.draftData?.buildConfig as Partial<RouteBuildConfig> | undefined;
   const buildConfig = mergeRouteBuildConfig(DEFAULT_ROUTE_BUILD_CONFIG, rawConfig);
   const zoomBandBoundaries = buildConfig.geometryConfig.zoomBandBoundaries;

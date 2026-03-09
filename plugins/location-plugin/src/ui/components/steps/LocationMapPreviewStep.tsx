@@ -23,7 +23,6 @@ interface LocationMapPreviewStepProps {
 export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ draft, nodeId, onUpdate }) => {
   const {
     t,
-    translations,
     initialViewState,
     locationGeoJsonLayers,
     attributionItems,
@@ -147,7 +146,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
                   variant="contained"
                   color="primary"
                   size="large"
-                  aria-label={translations.mapPreview?.tabs?.metadata ?? 'Show locations'}
+                  aria-label={String(t('mapPreview.tabs.metadata', 'Show locations'))}
                   onClick={() => setMetadataWindowOpen(true)}
                 >
                   <LocationOn />
