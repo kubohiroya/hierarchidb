@@ -2,7 +2,7 @@ import { AuthProviderDialog, UserAvatar } from '@hierarchidb/ui-auth';
 import LoginIcon from '@mui/icons-material/Login';
 import { IconButton } from '@mui/material';
 import type React from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { ClearDatabaseDialog } from './ClearDatabaseDialog.js';
 import { LanguageMenu } from './LanguageMenu.js';
 import { ThemeMenu } from './ThemeMenu.js';

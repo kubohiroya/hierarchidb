@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import type React from 'react';
 import { useEffect, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type {
   MapLibreStyleProperty,
   StylerStepData,

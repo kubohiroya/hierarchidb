@@ -2,6 +2,8 @@
 
 ## Doing
 
+- #928 react-i18next直接import禁止・@hierarchidb/ui-i18n統一 / fix/i18n/ban-direct-react-i18next-imports / start
+
 ## Blocked
 
 ## 今日の運用ログ

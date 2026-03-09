@@ -1,5 +1,5 @@
 import { ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { LanguageSelection } from './useUserMenu.js';
 
 export interface LanguageOption {

@@ -3,7 +3,7 @@ import { i18n } from '@hierarchidb/ui-i18n';
 import type { TabularFilterRule } from '@hierarchidb/ui-tabular';
 import { useAtomValue } from 'jotai';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   MAPLIBRE_PROPERTY_METADATA,
   type StylerConfig,

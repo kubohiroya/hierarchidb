@@ -45,7 +45,7 @@ import {
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useCallback, useId, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { LoadTreeReturn } from '~/loader';
 import { loadTree } from '~/loader';
 import { getArchiveDisplayName } from './getArchiveDisplayName.js';

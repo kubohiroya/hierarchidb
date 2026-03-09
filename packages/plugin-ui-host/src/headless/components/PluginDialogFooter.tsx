@@ -20,7 +20,7 @@ import { Box, Button, CircularProgress, ListItemIcon, ListItemText, MenuItem, St
 import type { Theme } from '@mui/material/styles';
 import { useLocation } from '@tanstack/react-router';
 import React, { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { DialogActionInFlight } from '~/headless/types';
 import { usePluginDialogFooterLogic } from './hooks/usePluginDialogFooterLogic.js';
 

@@ -56,7 +56,7 @@ import {
 import { useNavigate } from '@tanstack/react-router';
 import type React from 'react';
 import { useId, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { usePluginsPageState } from './usePluginsPageState.js';
 import type { DisplayPlugin } from './pluginsTypes.js';
 

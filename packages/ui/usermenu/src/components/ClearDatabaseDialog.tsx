@@ -9,7 +9,7 @@ import {
   ListItem,
   ListItemText,
 } from '@mui/material';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 
 interface ClearDatabaseDialogProps {
   open: boolean;

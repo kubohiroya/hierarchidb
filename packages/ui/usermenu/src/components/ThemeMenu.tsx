@@ -5,7 +5,7 @@ import {
   SettingsBrightness as SystemThemeIcon,
 } from '@mui/icons-material';
 import { ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 
 interface ThemeMenuProps {
   anchorEl: HTMLElement | null;

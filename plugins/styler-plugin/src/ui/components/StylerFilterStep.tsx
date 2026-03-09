@@ -3,7 +3,7 @@ import { TabularDataFilterStep } from '@hierarchidb/spreadsheet-plugin';
 import { AuthReadyGate } from '@hierarchidb/ui-auth';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { Suspense } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { StylerStepData } from '~/common/types/StylerEntity';
 
 export const StylerFilterStep: React.FC<PluginStepProps<StylerStepData>> = (props) => {
