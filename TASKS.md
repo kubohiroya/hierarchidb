@@ -7,7 +7,7 @@
 ## 今日の運用ログ
 
 - 2026-03-09: #930 全プラグインのカスタムuseTranslation廃止・@hierarchidb/ui-i18n経由統一完了・PR #934マージ済み
-- 2026-03-09: #932 optimizeDeps.include網羅追加・AGENTS.mdに再発防止ルール追記・PR #933マージ済み
+- 2026-03-09: #932 optimizeDeps.include網羅追加・推移的依存をapp/package.jsonに追加・AGENTS.mdに背景付き再発防止ルール追記・PR #933,#936マージ済み
 
 - 2026-03-09: #928 react-i18next直接import禁止・@hierarchidb/ui-i18n統一完了・PR #929マージ済み
 - 2026-03-09: #926 i18n翻訳キーパス不一致修正・useTranslation import統一完了・PR #927マージ済み

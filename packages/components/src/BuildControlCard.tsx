@@ -1,9 +1,10 @@
-import { Box, Button, ButtonGroup, CircularProgress, Stack, Typography, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
+import { Box, Button, CircularProgress, Stack, Typography, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
 import { type ReactNode, useState, useCallback, useEffect } from 'react';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
 import { LoadingButton } from './LoadingButton.js';
-import ClearIcon from '@mui/icons-material/Clear';
+import { PillButton } from './PillButton.js';
+import { PillButtonGroup } from './PillButtonGroup.js';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import TimelapseIcon from '@mui/icons-material/Timelapse';
@@ -43,9 +44,9 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
   status,
   onPause,
   onResume,
-  onCancel,
+  onCancel: _onCancel,
   pauseLabel,
-  cancelLabel,
+  cancelLabel: _cancelLabel,
   stopRequested,
   startPending,
   startLabel,
@@ -70,7 +71,6 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
     />
   );
   const computedPauseIcon = stopRequested ? pauseSpinner : <PauseIcon fontSize="small" />;
-  const computedCancelIcon = <ClearIcon fontSize="small" />;
   const shouldShowResume = Boolean(showResumeLabel) || status === 'paused';
   const computedLabel = shouldShowResume
     ? (resumeLabel ?? t('buildControl.buttons.resumeBuild') as string)
@@ -83,7 +83,6 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
   const hasLoading = startLoading ?? (isRunning || isQueued);
   const disableStart = !onResume || hasLoading || stopRequested;
   const disablePause = !onPause || !isRunning || stopRequested;
-  const disableCancel = !onCancel || !isQueued || stopRequested;
   const isLoading = hasLoading && !stopRequested;
 
   // Reset/Delete menu handlers
@@ -92,6 +91,7 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
   const resetDeleteMenuDisabledState = Boolean(resetDeleteMenuDisabled)
     || Boolean(startPending)
     || Boolean(startLoading)
+    || isRunning
     || !hasResetDeleteMenuItems;
 
   const handleResetDeleteMenuOpen = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
@@ -115,9 +115,7 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
     }
   }, [resetDeleteMenuAnchorEl, resetDeleteMenuDisabledState]);
 
-  // Show Cancel button when session is running, Reset/Delete menu when stopped
-  const showCancelButton = isRunning || isQueued;
-  const showResetDeleteMenu = !showCancelButton && hasResetDeleteMenuItems;
+  // Always show Reset/Delete menu when items are available
   return (
     <Box
       sx={{
@@ -125,21 +123,27 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
         maxWidth: '100%',
         width: 'auto',
         p: 1,
-        borderRadius: 2,
+        borderRadius: '9999px',
         border: '1px solid',
         borderColor: 'divider',
-        outline: '1px solid',
-        outlineColor: 'divider',
-        backgroundColor: 'background.paper',
+        outline: 'none',
+        backgroundColor: 'transparent',
         display: 'flex',
         flexDirection: 'row',
         alignItems: 'center',
         gap: 2,
         flexWrap: 'nowrap',
+        pl: '8px',
+        pr: '8px',
       }}
     >
       <Stack direction="row" spacing={1} alignItems="center" sx={{ whiteSpace: 'nowrap' }}>
-        <ButtonGroup variant="contained" size="large" aria-label="Build control buttons">
+        <PillButtonGroup
+          variant="contained"
+          size="large"
+          disableElevation
+          aria-label="Build control buttons"
+        >
           <LoadingButton
             color="secondary"
             variant="contained"
@@ -169,27 +173,11 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
           >
             {pauseLabel ?? t('buildControl.buttons.pause') as string}
           </Button>
-        </ButtonGroup>
+        </PillButtonGroup>
         
-        {showCancelButton && (
-          <Button
-            variant="outlined"
-            size="small"
-            endIcon={computedCancelIcon}
-            disabled={disableCancel}
-            onClick={onCancel}
-            data-testid="build-control-cancel-button"
-            aria-label={cancelLabel ?? t('buildControl.buttons.cancel') as string}
-            id="build-control-cancel-button"
-            role="button"
-          >
-            {cancelLabel ?? t('buildControl.buttons.cancel') as string}
-          </Button>
-        )}
-
-        {showResetDeleteMenu && (
+        {hasResetDeleteMenuItems && (
           <>
-            <Button
+            <PillButton
               variant="outlined"
               size="small"
               startIcon={<RestartAltIcon fontSize="small" />}
@@ -202,7 +190,7 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
               aria-haspopup="true"
             >
               {t('buildControl.buttons.resetDelete') as string}
-            </Button>
+            </PillButton>
             <DialogSafeMenu
               anchorEl={resetDeleteMenuAnchorEl}
               open={resetDeleteMenuOpen}
@@ -250,7 +238,7 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
                   {detail.label}
                 </Typography>
               </Box>
-              <Typography variant="caption">
+              <Typography variant="caption" sx={{ minWidth: '10ch', display: 'inline-block' }}>
                 {detail.value}
               </Typography>
             </Box>

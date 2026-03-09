@@ -1,7 +1,7 @@
 import { memo, type InputHTMLAttributes } from 'react';
 import { TextField, InputAdornment, IconButton, type SxProps, type Theme } from '@mui/material';
 import { Search as SearchIcon, Close as CloseIcon } from '@mui/icons-material';
-import { useTreeTableSearchInputView } from './useTreeTableSearchInputView.js';
+import { useTreeTableSearchInputView } from './useTreeTableSearchInputView.ts';
 
 const BASE_SEARCH_FIELD_WIDTH_PX = 300;
 export const SEARCH_FIELD_WIDTH_PX = Math.round(BASE_SEARCH_FIELD_WIDTH_PX * 1.4);
@@ -152,13 +152,14 @@ export const TreeTableSearchInput = memo(function TreeTableSearchInput({
             <SearchIcon fontSize="small" />
           </InputAdornment>
         ),
-        endAdornment: shouldShowClearButton ? (
-          <InputAdornment position="end">
+        endAdornment: resolvedClearHandler !== undefined ? (
+          <InputAdornment position="end" sx={{ visibility: shouldShowClearButton ? 'visible' : 'hidden' }}>
             <IconButton
               size="large"
               color="default"
-              onClick={() => resolvedClearHandler?.()}
+              onClick={() => resolvedClearHandler()}
               aria-label="Clear search"
+              tabIndex={shouldShowClearButton ? 0 : -1}
               sx={{
                 p: 1,
                 minWidth: 36,
