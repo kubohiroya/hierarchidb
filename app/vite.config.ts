@@ -1459,6 +1459,11 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
         'react-dom',
         'react-dom/client',
 
+        // --- Emotion ---
+        '@emotion/react',
+        '@emotion/react/jsx-dev-runtime',
+        '@emotion/styled',
+
         // --- State management ---
         'jotai',
         'jotai/vanilla',
@@ -1585,13 +1590,10 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
         '@mui/x-date-pickers',
         '@mui/x-date-pickers/AdapterDateFns',
 
-        // --- Emotion ---
-        '@emotion/react',
-        '@emotion/styled',
-
         // --- Map / GIS ---
         '@vis.gl/react-maplibre',
         'maplibre-gl',
+        '@maplibre/vt-pbf',
         'deck.gl',
         '@deck.gl/core',
         '@deck.gl/geo-layers',
