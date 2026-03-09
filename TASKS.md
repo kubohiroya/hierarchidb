@@ -2,12 +2,11 @@
 
 ## Doing
 
-- #930 / fix/i18n/unify-plugin-useTranslation / 2026-03-09 start
-
 ## Blocked
 
 ## 今日の運用ログ
 
+- 2026-03-09: #930 全プラグインのカスタムuseTranslation廃止・@hierarchidb/ui-i18n経由統一完了・PR #934マージ済み
 - 2026-03-09: #932 optimizeDeps.include網羅追加・AGENTS.mdに再発防止ルール追記・PR #933マージ済み
 
 - 2026-03-09: #928 react-i18next直接import禁止・@hierarchidb/ui-i18n統一完了・PR #929マージ済み
