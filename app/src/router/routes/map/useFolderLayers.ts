@@ -316,17 +316,17 @@ export const useFolderLayers = ({
           parsedStylers.push(parsedStyler);
 
           stylerSummaries.push({
-            nodeId: stylerNodeId,
-            absolutePath,
+            nodeId: parsedStyler.nodeId,
+            absolutePath: parsedStyler.absolutePath,
             description: parsedStyler.description,
-            styleType,
-            featureIdProperty,
+            styleType: parsedStyler.styleType,
+            featureIdProperty: parsedStyler.featureIdProperty,
             targetProperty: parsedStyler.targetProperty,
-            valueType,
+            valueType: parsedStyler.valueType,
             colorStops: parsedStyler.colorStops,
             scalarStops: parsedStyler.scalarStops,
-            paintOverrides,
-            enabled,
+            paintOverrides: parsedStyler.paintOverrides,
+            enabled: parsedStyler.enabled,
           });
 
           if (!enabled || !styleType || !featureIdProperty) return;
