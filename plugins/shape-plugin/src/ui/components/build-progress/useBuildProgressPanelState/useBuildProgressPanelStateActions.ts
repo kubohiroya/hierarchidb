@@ -3,6 +3,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { TaskProgressControls } from '~/ui/atoms/shapeBuildProgressTypes';
 import { logStartResumeTrace } from './useBuildProgressPanelState.utils.js';
+import type { PendingUserAction } from '~/ui/atoms/buildSessionStateAtoms';
 
 type Params = {
   resolvedNodeId?: NodeId;
@@ -12,8 +13,7 @@ type Params = {
   controls: TaskProgressControls;
   localStartPending: boolean;
   setWarningDialogOpen: (open: boolean) => void;
-  setLocalStartPending: (next: boolean) => void;
-  localStartPendingRef: { current: boolean };
+  setPendingUserAction: (next: PendingUserAction) => void;
 };
 
 type Return = {
@@ -31,8 +31,7 @@ export const useBuildProgressPanelStateActions = (params: Params): Return => {
     controls,
     localStartPending,
     setWarningDialogOpen,
-    setLocalStartPending,
-    localStartPendingRef,
+    setPendingUserAction,
   } = params;
 
   const nodeId = resolvedNodeId ? String(resolvedNodeId) : null;
@@ -42,12 +41,12 @@ export const useBuildProgressPanelStateActions = (params: Params): Return => {
     const startHandler = controls.handleStartOrResume;
     logStartResumeTrace('runStartOrResume invoked', {
       nodeId,
-      localStartPending: localStartPendingRef.current,
+      localStartPending,
       controlStartPending: Boolean(controls.startPending),
       hasStartHandler: Boolean(startHandler),
       buildStatus,
     });
-    if (localStartPendingRef.current) {
+    if (localStartPending) {
       logStartResumeTrace('runStartOrResume skipped (already pending)', { nodeId });
       return;
     }
@@ -55,7 +54,7 @@ export const useBuildProgressPanelStateActions = (params: Params): Return => {
       logStartResumeTrace('runStartOrResume skipped (missing handler)', { nodeId });
       return;
     }
-    setLocalStartPending(true);
+    setPendingUserAction('starting');
     logStartResumeTrace('runStartOrResume pending enabled', { nodeId });
     const waitTimer = window.setInterval(() => {
       logStartResumeTrace('runStartOrResume waiting for handler', {
@@ -78,7 +77,7 @@ export const useBuildProgressPanelStateActions = (params: Params): Return => {
       throw error;
     } finally {
       window.clearInterval(waitTimer);
-      setLocalStartPending(false);
+      setPendingUserAction('none');
       logStartResumeTrace('runStartOrResume pending cleared', {
         nodeId,
         durationMs: Math.max(0, Date.now() - requestStartedAt),
@@ -88,9 +87,9 @@ export const useBuildProgressPanelStateActions = (params: Params): Return => {
     buildStatus,
     controls.handleStartOrResume,
     controls.startPending,
-    localStartPendingRef,
+    localStartPending,
     nodeId,
-    setLocalStartPending,
+    setPendingUserAction,
   ]);
 
   const mergedControls = useMemo(() => ({

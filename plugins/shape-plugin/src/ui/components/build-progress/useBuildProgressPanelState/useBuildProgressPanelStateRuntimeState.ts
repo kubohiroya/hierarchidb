@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useBuildCrashInsight } from '~/ui/components/build-progress/useBuildCrashInsight/useBuildCrashInsight';
@@ -18,6 +18,15 @@ import { resolveCompletionFailedStageLabel, resolveActiveRunningStageId } from '
 import { useBuildProgressPanelStateSideEffects } from './useBuildProgressPanelStateSideEffects.js';
 import { useShapeBuildStep } from '~/ui/components/build-progress/internal/useShapeBuildStepLogic';
 import { useShapeBuildSessionStateAtomBridge } from '~/ui/components/build-progress/useShapeBuildSessionStateAtomBridge.js';
+import { useAtomValue, useSetAtom } from 'jotai';
+import {
+  pendingUserActionAtom,
+  elapsedTickMsAtom,
+  totalElapsedSnapshotAtom,
+  completionSnapshotAtom,
+  completionDialogOpenAtom,
+} from '~/ui/atoms/buildSessionStateAtoms';
+import type { PendingUserAction, CompletionSnapshotData } from '~/ui/atoms/buildSessionStateAtoms';
 
 type RuntimeStateParams = {
   data?: Partial<ShapeEntity>;
@@ -43,25 +52,12 @@ export type UseBuildProgressPanelStateRuntimeState = {
   suspendSuspectControls: { close: () => void };
   completionDialogOpen: boolean;
   setCompletionDialogOpen: (next: boolean) => void;
-  completionSnapshot: {
-    status: BuildStatus;
-    stageLabel: string;
-    taskTitle?: string;
-    taskMessage?: string;
-    reason?: string;
-  } | null;
-  setCompletionSnapshot: (snapshot: {
-    status: BuildStatus;
-    stageLabel: string;
-    taskTitle?: string;
-    taskMessage?: string;
-    reason?: string;
-  } | null) => void;
+  completionSnapshot: CompletionSnapshotData;
+  setCompletionSnapshot: (snapshot: CompletionSnapshotData) => void;
   elapsedTickMs: number;
   setElapsedTickMs: (next: number) => void;
   localStartPending: boolean;
-  localStartPendingRef: { current: boolean };
-  setLocalStartPending: (next: boolean) => void;
+  setPendingUserAction: (next: PendingUserAction) => void;
   nodeIdForLog: string | undefined;
   completionSnapshotData: BuildProgressPanelStateComputed['completionSnapshotData'];
   completionFailedStageLabel: string;
@@ -70,6 +66,9 @@ export type UseBuildProgressPanelStateRuntimeState = {
   mismatchSignatureRef: { current: Map<string, string> };
   liveTotalElapsedMs: number;
   computed: BuildProgressPanelStateComputed;
+  resolvedActiveStageId: string | null;
+  completion: ReturnType<typeof useBuildCrashInsight>;
+};
   resolvedActiveStageId: string | null;
   completion: ReturnType<typeof useBuildCrashInsight>;
 };
@@ -139,19 +138,18 @@ export const useBuildProgressPanelStateRuntimeState = (
     },
   };
 
-  const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
-  const [completionSnapshot, setCompletionSnapshot] = useState<{
-    status: BuildStatus;
-    stageLabel: string;
-    taskTitle?: string;
-    taskMessage?: string;
-    reason?: string;
-  } | null>(null);
-  const [localStartPending, setLocalStartPending] = useState(false);
+  const completionDialogOpen = useAtomValue(completionDialogOpenAtom);
+  const setCompletionDialogOpen = useSetAtom(completionDialogOpenAtom);
+  const completionSnapshot = useAtomValue(completionSnapshotAtom);
+  const setCompletionSnapshot = useSetAtom(completionSnapshotAtom);
+  const localStartPending = useAtomValue(pendingUserActionAtom) === 'starting';
+  const setLocalStartPending = useSetAtom(pendingUserActionAtom);
   const localStartPendingRef = useRef(false);
-  const [elapsedTickMs, setElapsedTickMs] = useState(() => Date.now());
+  const elapsedTickMs = useAtomValue(elapsedTickMsAtom);
+  const setElapsedTickMs = useSetAtom(elapsedTickMsAtom);
+  const totalElapsedSnapshotAtomValue = useAtomValue(totalElapsedSnapshotAtom);
+  const totalElapsedSnapshotRef = useRef(totalElapsedSnapshotAtomValue);
   const completionKeyRef = useRef<string | null>(null);
-  const totalElapsedSnapshotRef = useRef<{ durationMs: number; capturedAt: number } | null>(null);
   const mismatchSignatureRef = useRef<Map<string, string>>(new Map());
   const snapshotNodeIdRef = useRef<string | undefined>(undefined);
 
@@ -242,6 +240,8 @@ export const useBuildProgressPanelStateRuntimeState = (
     return snapshot.durationMs;
   }, [elapsedTickMs, summary.buildStatus, summary.totalElapsedMs]);
 
+  const setPendingUserAction = useSetAtom(pendingUserActionAtom);
+
   return {
     summary: {
       ...summary,
@@ -269,8 +269,18 @@ export const useBuildProgressPanelStateRuntimeState = (
     elapsedTickMs,
     setElapsedTickMs,
     localStartPending,
-    localStartPendingRef,
-    setLocalStartPending,
+    setPendingUserAction,
+    nodeIdForLog,
+    completionSnapshotData,
+    completionFailedStageLabel,
+    completionKeyRef,
+    totalElapsedSnapshotRef,
+    mismatchSignatureRef,
+    liveTotalElapsedMs,
+    computed,
+    resolvedActiveStageId,
+    completion,
+  };
     nodeIdForLog,
     completionSnapshotData,
     completionFailedStageLabel,

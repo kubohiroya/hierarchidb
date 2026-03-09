@@ -2,6 +2,8 @@
 
 ## Doing
 
+- #937 / refactor/build-session/consolidate-local-state-to-ssot / 2026-03-10 開始
+
 ## Blocked
 
 ## 今日の運用ログ

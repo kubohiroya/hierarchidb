@@ -23,8 +23,7 @@ export const useBuildProgressPanelState = (params: {
     computed,
     resolvedActiveStageId,
     localStartPending,
-    setLocalStartPending,
-    localStartPendingRef,
+    setPendingUserAction,
     completionSnapshot,
     setCompletionSnapshot,
     completionDialogOpen,
@@ -59,8 +58,7 @@ export const useBuildProgressPanelState = (params: {
     controls,
     localStartPending,
     setWarningDialogOpen,
-    setLocalStartPending,
-    localStartPendingRef,
+    setPendingUserAction,
   });
 
   useMemo(() => {

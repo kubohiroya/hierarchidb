@@ -45,10 +45,14 @@ import type { BuildStatusSource } from '~/ui/components/build-progress/resolveBu
 import { notify } from '@hierarchidb/components/notify';
 import { useShapeBuildDraftSaver } from './useShapeBuildStepLogic/useShapeBuildDraftSaver.js';
 import { useShapeBuildProgressResidueMonitor } from './useShapeBuildStepLogic/useShapeBuildProgressResidueMonitor.js';
-import { useShapeBuildStopState } from './useShapeBuildStepLogic/useShapeBuildStopState.js';
 import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
-import { useAtomValue } from 'jotai';
-import { buildSessionRuntimeAtom } from '~/ui/atoms/buildSessionStateAtoms';
+import { useAtomValue, useSetAtom } from 'jotai';
+import {
+  buildSessionRuntimeAtom,
+  pendingUserActionAtom,
+  isStopRequestedInFlightAtom,
+} from '~/ui/atoms/buildSessionStateAtoms';
+import type { PendingUserAction } from '~/ui/atoms/buildSessionStateAtoms';
 
 export {
   shouldResetElapsedState,
@@ -136,13 +140,42 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const stages = useShapeBuildStages({ t: (key, fallback) => t(key, fallback) });
   const runtimeStatusForBuildStatus: BuildProgressStatus['status'] = status?.status ?? 'idle';
   const runtimeStatus: BuildProgressStatus['status'] = runtimeStatusForBuildStatus;
-  const {
-    isStopRequestedInFlight,
-    isSessionStopping,
-    setIsStopRequested,
-    setIsStopAccepted,
-  } = useShapeBuildStopState({ runtimeStatus: runtimeStatusForBuildStatus });
-  const [requestedControlAction, setRequestedControlAction] = useState<'none' | 'start' | 'pause' | 'cancel'>('none');
+  const pendingUserAction = useAtomValue(pendingUserActionAtom);
+  const setPendingUserAction = useSetAtom(pendingUserActionAtom);
+  const isStopRequestedInFlight = useAtomValue(isStopRequestedInFlightAtom);
+  const isSessionStopping = isStopRequestedInFlight;
+
+  const setIsStopRequested = useCallback((next: boolean) => {
+    if (next) {
+      setPendingUserAction('stopping');
+    } else {
+      setPendingUserAction((current: PendingUserAction) => {
+        if (current === 'stopping') return 'none';
+        return current;
+      } as unknown as PendingUserAction);
+    }
+  }, [setPendingUserAction]);
+
+  const setIsStopAccepted = useCallback((_next: boolean) => {
+    // Stop acceptance is now tracked via pendingUserAction transitions
+  }, []);
+
+  const setRequestedControlAction = useCallback((next: 'none' | 'start' | 'pause' | 'cancel') => {
+    const mapping: Record<string, PendingUserAction> = {
+      none: 'none',
+      start: 'starting',
+      pause: 'pausing',
+      cancel: 'cancelling',
+    };
+    setPendingUserAction(mapping[next] ?? 'none');
+  }, [setPendingUserAction]);
+
+  const requestedControlAction = (() => {
+    if (pendingUserAction === 'starting') return 'start' as const;
+    if (pendingUserAction === 'pausing') return 'pause' as const;
+    if (pendingUserAction === 'cancelling') return 'cancel' as const;
+    return 'none' as const;
+  })();
   const processingStatus = toProcessingStatus(runtimeStatusForBuildStatus);
   const stopReason = runtime.stopReason;
   const statusSource = useMemo(() => {
@@ -348,11 +381,23 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   });
 
   useEffect(() => {
-    if (isStopRequestedInFlight) return;
+    if (!isStopRequestedInFlight) return;
     if (requestedControlAction === 'pause' || requestedControlAction === 'cancel') {
       setRequestedControlAction('none');
     }
-  }, [isStopRequestedInFlight, requestedControlAction]);
+  }, [isStopRequestedInFlight, requestedControlAction, setRequestedControlAction]);
+
+  // Auto-reset pendingUserAction when session reaches terminal/paused state
+  useEffect(() => {
+    if (!isStopRequestedInFlight) return;
+    if (
+      runtimeStatusForBuildStatus === 'paused'
+      || runtimeStatusForBuildStatus === 'completed'
+      || runtimeStatusForBuildStatus === 'failed'
+    ) {
+      setPendingUserAction('none');
+    }
+  }, [isStopRequestedInFlight, runtimeStatusForBuildStatus, setPendingUserAction]);
 
   const { canStartOrResume, isStartPending, startOrResume, clearStartPending } = useShapeBuildAutoResume({
     activeNodeId,

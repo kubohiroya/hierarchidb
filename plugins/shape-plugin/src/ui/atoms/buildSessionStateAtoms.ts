@@ -2,6 +2,7 @@ import { atom } from 'jotai';
 import type { BuildTaskSummary } from '@hierarchidb/build-api';
 import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import type { TaskListViewPhase } from './shapeBuildProgressTypes';
+import type { BuildStatus } from '@hierarchidb/components/build-status';
 import {
   createBuildSessionStateTreeAtoms,
   type BuildSessionStateTreeEvent,
@@ -304,6 +305,11 @@ const resetBuildSessionStateAtom = atom(
     set(stageProgressAtom, initialStageProgress());
     set(taskStreamConnectedAtom, false);
     set(uiSyncPhaseByStageAtom, initialUiSyncPhaseByStage());
+    set(pendingUserActionBaseAtom, 'none');
+    set(elapsedTickMsBaseAtom, Date.now());
+    set(totalElapsedSnapshotBaseAtom, null);
+    set(completionSnapshotBaseAtom, null);
+    set(completionDialogOpenBaseAtom, false);
   },
 );
 
@@ -622,3 +628,72 @@ export const buildSessionSnapshotHandshakeReceivedAtom = atom<boolean>((get) => 
     || uiSyncByStage.tileEmit === 'running'
   );
 });
+
+// --- (A)(B)(C) Pending user action: consolidates localStartPending, isStopRequested/isStopAccepted, requestedControlAction ---
+
+export type PendingUserAction = 'none' | 'starting' | 'stopping' | 'pausing' | 'cancelling';
+
+const pendingUserActionBaseAtom = atom<PendingUserAction>('none');
+
+export const pendingUserActionAtom = atom(
+  (get) => get(pendingUserActionBaseAtom),
+  (get, set, next: PendingUserAction) => {
+    const current = get(pendingUserActionBaseAtom);
+    if (current === next) return;
+    set(pendingUserActionBaseAtom, next);
+  },
+);
+
+export const isStopRequestedInFlightAtom = atom((get) => {
+  const action = get(pendingUserActionAtom);
+  return action === 'stopping' || action === 'pausing' || action === 'cancelling';
+});
+
+// --- (D) Elapsed tick: replaces elapsedTickMs useState + totalElapsedSnapshotRef ---
+
+const elapsedTickMsBaseAtom = atom<number>(Date.now());
+
+export const elapsedTickMsAtom = atom(
+  (get) => get(elapsedTickMsBaseAtom),
+  (_get, set, next: number) => {
+    set(elapsedTickMsBaseAtom, next);
+  },
+);
+
+type TotalElapsedSnapshot = { durationMs: number; capturedAt: number } | null;
+const totalElapsedSnapshotBaseAtom = atom<TotalElapsedSnapshot>(null);
+
+export const totalElapsedSnapshotAtom = atom(
+  (get) => get(totalElapsedSnapshotBaseAtom),
+  (_get, set, next: TotalElapsedSnapshot) => {
+    set(totalElapsedSnapshotBaseAtom, next);
+  },
+);
+
+// --- (E) Completion snapshot: replaces completionSnapshot/completionDialogOpen useState ---
+
+export type CompletionSnapshotData = {
+  status: BuildStatus;
+  stageLabel: string;
+  taskTitle?: string;
+  taskMessage?: string;
+  reason?: string;
+} | null;
+
+const completionSnapshotBaseAtom = atom<CompletionSnapshotData>(null);
+
+export const completionSnapshotAtom = atom(
+  (get) => get(completionSnapshotBaseAtom),
+  (_get, set, next: CompletionSnapshotData) => {
+    set(completionSnapshotBaseAtom, next);
+  },
+);
+
+const completionDialogOpenBaseAtom = atom(false);
+
+export const completionDialogOpenAtom = atom(
+  (get) => get(completionDialogOpenBaseAtom),
+  (_get, set, next: boolean) => {
+    set(completionDialogOpenBaseAtom, next);
+  },
+);
