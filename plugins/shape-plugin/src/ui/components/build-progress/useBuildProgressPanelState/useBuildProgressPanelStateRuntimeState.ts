@@ -2,7 +2,6 @@ import { useMemo, useRef } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useBuildCrashInsight } from '~/ui/components/build-progress/useBuildCrashInsight/useBuildCrashInsight';
-import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
 import type { PaneProgress } from '@hierarchidb/ui-lru-splitview';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
@@ -66,9 +65,6 @@ export type UseBuildProgressPanelStateRuntimeState = {
   mismatchSignatureRef: { current: Map<string, string> };
   liveTotalElapsedMs: number;
   computed: BuildProgressPanelStateComputed;
-  resolvedActiveStageId: string | null;
-  completion: ReturnType<typeof useBuildCrashInsight>;
-};
   resolvedActiveStageId: string | null;
   completion: ReturnType<typeof useBuildCrashInsight>;
 };
@@ -143,8 +139,6 @@ export const useBuildProgressPanelStateRuntimeState = (
   const completionSnapshot = useAtomValue(completionSnapshotAtom);
   const setCompletionSnapshot = useSetAtom(completionSnapshotAtom);
   const localStartPending = useAtomValue(pendingUserActionAtom) === 'starting';
-  const setLocalStartPending = useSetAtom(pendingUserActionAtom);
-  const localStartPendingRef = useRef(false);
   const elapsedTickMs = useAtomValue(elapsedTickMsAtom);
   const setElapsedTickMs = useSetAtom(elapsedTickMsAtom);
   const totalElapsedSnapshotAtomValue = useAtomValue(totalElapsedSnapshotAtom);
@@ -270,17 +264,6 @@ export const useBuildProgressPanelStateRuntimeState = (
     setElapsedTickMs,
     localStartPending,
     setPendingUserAction,
-    nodeIdForLog,
-    completionSnapshotData,
-    completionFailedStageLabel,
-    completionKeyRef,
-    totalElapsedSnapshotRef,
-    mismatchSignatureRef,
-    liveTotalElapsedMs,
-    computed,
-    resolvedActiveStageId,
-    completion,
-  };
     nodeIdForLog,
     completionSnapshotData,
     completionFailedStageLabel,

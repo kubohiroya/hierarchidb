@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useBuildProgress } from '~/ui/components/build-progress/useBuildProgress/useBuildProgress';
 import { useTranslation } from '@hierarchidb/ui-i18n';
@@ -149,12 +149,11 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     if (next) {
       setPendingUserAction('stopping');
     } else {
-      setPendingUserAction((current: PendingUserAction) => {
-        if (current === 'stopping') return 'none';
-        return current;
-      } as unknown as PendingUserAction);
+      if (pendingUserAction === 'stopping') {
+        setPendingUserAction('none');
+      }
     }
-  }, [setPendingUserAction]);
+  }, [setPendingUserAction, pendingUserAction]);
 
   const setIsStopAccepted = useCallback((_next: boolean) => {
     // Stop acceptance is now tracked via pendingUserAction transitions
