@@ -19,6 +19,10 @@
   - sessionStartedAtをAUTH_REQUIRED通知に追加、UI側でキャンセル済みビルド試行を記録し重複抑制
   - AuthService.setBuildSessionContext/clearBuildSessionContextでセッション識別子伝播
   - typecheck: auth-api, auth, download, runtime-worker, shape-plugin, app 全通過
+- 2026-03-10: #988 route-plugin t() String()ラップ + I18nInstance import整理・PR #990作成
+  - t()戻り値をString()でラップ（route-plugin 6ファイル）、I18nInstance import簡素化（app 2ファイル）
+  - tsconfig.typecheck.json に allowImportingTsExtensions追加
+  - typecheck: 127/127 exit 0
 
 - 2026-03-10: #986 shape-plugin DefaultTFuncReturn型エラー修正・PR #987マージ済み
   - t()戻り値をString()でラップ（5ファイル11箇所）
