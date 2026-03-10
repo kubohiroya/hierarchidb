@@ -237,17 +237,12 @@ export const useShapeBuildStepStageState = ({
 
   const [persistedTasks, setPersistedTasks] = useState<ShapeBuildTaskSummary[]>([]);
   const lastPersistedNodeIdRef = useRef<NodeId | null>(null);
-  const tasksRef = useRef(tasks);
 
   // Stable key derived from task identity + state to avoid re-firing on reference changes
   const tasksKey = useMemo(
     () => tasks.map((t) => `${t.taskId}:${t.version}:${t.status}:${t.progress}`).join('|'),
     [tasks],
   );
-
-  useEffect(() => {
-    tasksRef.current = tasks;
-  }, [tasks]);
 
   useEffect(() => {
     const currentNodeId = activeNodeId ?? null;
@@ -258,11 +253,11 @@ export const useShapeBuildStepStageState = ({
   }, [activeNodeId]);
 
   useEffect(() => {
-    const currentTasks = tasksRef.current;
-    if (currentTasks.length === 0) return;
+    if (tasks.length === 0) return;
     setPersistedTasks((previous) => (
-      areTaskListsEquivalentForView(previous, currentTasks) ? previous : currentTasks
+      areTaskListsEquivalentForView(previous, tasks) ? previous : tasks
     ));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tasksKey]);
 
   useEffect(() => {
