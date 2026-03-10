@@ -27,7 +27,7 @@ import type { TaskOutcomeSummary } from '~/ui/components/build-progress/TaskItem
 import type { TaskDetailPayload, TaskDetailSelection } from './TaskItemDetailTypes';
 import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 import { TileEmitTaskItemDetailWindow } from '~/ui/components/build-progress/tile-emit/TileEmitTaskItemDetailWindow';
-import { FloatingWindow, useFloatingWindow } from '@hierarchidb/ui-floating-window';
+import { FloatingWindow, useFloatingWindow } from '@hierarchidb/components';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useShapeBuildStages } from '~/ui/components/build-progress/useShapeBuildStages/useShapeBuildStages';
 import {

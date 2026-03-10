@@ -28,7 +28,7 @@ import type {
   HeadlessDialogProps,
   StepComponentDescriptor,
 } from '@hierarchidb/ui-dialog';
-import { useIconRegistry } from '@hierarchidb/ui-icon';
+import { useIconRegistry } from '@hierarchidb/components';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { Theme } from '@mui/material/styles';
 import { useNavigate } from '@tanstack/react-router';

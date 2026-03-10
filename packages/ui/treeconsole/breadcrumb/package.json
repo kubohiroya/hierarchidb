@@ -19,11 +19,11 @@
   },
   "dependencies": {
     "@hierarchidb/core-types": "workspace:*",
-    "@hierarchidb/ui-i18n": "workspace:*"
+    "@hierarchidb/ui-i18n": "workspace:*",
+    "@hierarchidb/components": "workspace:*"
   },
   "devDependencies": {
     "comlink": "^4.4.2",
-    "@hierarchidb/ui-icon": "workspace:*",
     "@hierarchidb/ui-theme": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
@@ -39,7 +39,6 @@
   },
   "peerDependencies": {
     "comlink": "^4.4.2",
-    "@hierarchidb/ui-icon": "workspace:*",
     "@hierarchidb/ui-theme": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",

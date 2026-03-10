@@ -74,7 +74,7 @@ function createRuntimeAliasConfig({
     { spec: '@hierarchidb/plugin-ui-host', src: '../packages/plugin-ui-host/src/index.ts', dist: '../packages/plugin-ui-host/dist/index.js' },
     { spec: '@hierarchidb/ui-auth', src: '../packages/ui/auth/src/index.ts', dist: '../packages/ui/auth/dist/index.js' },
     { spec: '@hierarchidb/ui-dialog', src: '../packages/ui/dialog/src/index.ts', dist: '../packages/ui/dialog/dist/index.js' },
-    { spec: '@hierarchidb/ui-icon', src: '../packages/ui/icon/src/index.ts', dist: '../packages/ui/icon/dist/index.js' },
+    { spec: '@hierarchidb/ui-icon', src: '../packages/components/src/index.ts', dist: '../packages/components/dist/index.js' },
     { spec: '@hierarchidb/ui-i18n', src: '../packages/ui/i18n/src/index.ts', dist: '../packages/ui/i18n/dist/index.js' },
     { spec: '@hierarchidb/ui-layout', src: '../packages/ui/layout/src/index.ts', dist: '../packages/ui/layout/dist/index.js' },
     { spec: '@hierarchidb/ui-map', src: '../packages/ui/map/src/index.ts', dist: '../packages/ui/map/dist/index.js' },

@@ -10,7 +10,7 @@ import { createPortal } from 'react-dom';
 import type { ResourceGeoJsonLayer, ResourceLayerMapProps, ResourceVectorLayer } from './resource-layer-map/ResourceLayerMap.types.js';
 import { VectorTileLayer } from './VectorTileLayer.js';
 import { MapLibreMap } from './MapLibreMap.js';
-import { FloatingWindow } from '@hierarchidb/ui-floating-window';
+import { FloatingWindow } from '@hierarchidb/components';
 import { MapPreviewSearchPanel } from '~/preview/MapPreviewSearchPanel';
 import { MapPreviewSearchSettingsDialog } from '~/preview/MapPreviewSearchSettingsDialog';
 import { MapStatsPanel } from './resource-layer-map/MapStatsPanel.js';

@@ -7,7 +7,7 @@ import {
   type MouseEvent,
   type ReactNode,
 } from 'react';
-import { useIconRegistry } from '@hierarchidb/ui-icon';
+import { useIconRegistry } from '@hierarchidb/components';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
 import type { CreateMenuBuilder, CreateMenuEntry, GlobalMenuBuilders } from '~/types/menu-types';
 import type { RowContextMenuProps } from './RowContextMenu.js';

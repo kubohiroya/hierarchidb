@@ -5,7 +5,7 @@ import type { MapAttributionItem, MapToggleSelection, MapViewState } from '@hier
 import { DEFAULT_MAP_CONFIG } from '@hierarchidb/ui-map';
 import type { LocationEntity, LocationType } from '~/common/types/index';
 import { useTranslation } from '@hierarchidb/ui-i18n';
-import { useFloatingWindow } from '@hierarchidb/ui-floating-window';
+import { useFloatingWindow } from '@hierarchidb/components';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
 import { resolveLocationAttribution } from '~/common/datasources/resolveLocationAttribution';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';

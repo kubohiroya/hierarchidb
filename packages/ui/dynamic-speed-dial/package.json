@@ -22,7 +22,7 @@
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "dependencies": {
-    "@hierarchidb/ui-speeddial-submenu": "workspace:*"
+    "@hierarchidb/components": "workspace:*"
   },
   "peerDependencies": {
     "react": "^19.0.0",

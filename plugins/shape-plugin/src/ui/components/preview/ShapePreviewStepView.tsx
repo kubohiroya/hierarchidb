@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Alert, Button, CircularProgress, FormControlLabel, LinearProgress, Stack, Switch } from '@mui/material';
 import { Hexagon as HexagonIcon, Layers as LayersIcon } from '@mui/icons-material';
 import { MapPreviewShell, ScreenCenterSnackbar, ShapePreviewList } from '@hierarchidb/ui-map';
-import { FloatingWindow } from '@hierarchidb/ui-floating-window';
+import { FloatingWindow } from '@hierarchidb/components';
 import { useShapePreviewStepView } from './useShapePreviewStepView.js';
 import type { ShapeEntity } from '~/common/types/index';
 import { isShapeLayerParentToggle, useShapePreviewStepSceneView } from './useShapePreviewStepSceneView.js';

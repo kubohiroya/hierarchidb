@@ -17,7 +17,7 @@ const iconModule = vi.hoisted(() => {
   };
 });
 
-vi.mock('@hierarchidb/ui-icon', () => iconModule);
+vi.mock('@hierarchidb/components', () => iconModule);
 
 vi.mock('@hierarchidb/ui-plugin-shell/ui-i18n', () => ({
   useGlobalI18nTranslator: () => ({

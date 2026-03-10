@@ -1,5 +1,4 @@
-import type { TreeConfig } from '@hierarchidb/ui-plugin-shell/components';
-import { TreeToggleButtonGroup } from '@hierarchidb/ui-plugin-shell/components';
+import { type TreeConfig, TreeToggleButtonGroup } from '@hierarchidb/ui-plugin-shell/ui-navigation';
 import {
   type OpenMaintenanceContext,
   UserLoginButton,

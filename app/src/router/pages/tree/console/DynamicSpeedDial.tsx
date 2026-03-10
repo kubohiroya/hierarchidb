@@ -1,8 +1,8 @@
 import type { TreeId } from '@hierarchidb/core-types';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-plugin-shell/ui-i18n';
-import type { IconDescriptorInput } from '@hierarchidb/ui-icon';
-import { useIconRegistry } from '@hierarchidb/ui-icon';
+import type { IconDescriptorInput } from '@hierarchidb/components';
+import { useIconRegistry } from '@hierarchidb/components';
 import { useMemo } from 'react';
 import {
   DynamicSpeedDial as BaseDynamicSpeedDial,

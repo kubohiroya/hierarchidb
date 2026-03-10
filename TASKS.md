@@ -2,14 +2,8 @@
 
 ## Doing
 
-- #942 / fix/auth/bff-auth-build-session-state-transitions / 2026-03-10 開始
-- #937 / refactor/build-session/consolidate-local-state-to-ssot / 2026-03-10 開始
-
-- #917 Shape Step5 残りUI表記のi18n化完了 / feature/i18n/shape-step5-remaining-ui-labels / start
-
-- #914 Shape Step5 Reset/Deleteメニューのi18n化 / feature/i18n/shape-step5-reset-delete-menu / start
-
-- #913 Shape Step5 UI改良 - Build Sessionヘッダー撤去とボタンサイズ変更 / feature/ui/build-session-header-removal / start
+- #944 / `refactor/components/consolidate-generic-ui-packages` / 2026-03-10 開始
+- #917 / feature/i18n/shape-step5-remaining-ui-labels / PR #945 作成済み
 
 ## Blocked
 
@@ -23,6 +17,8 @@
   - PRレビュー対応: onAuthSuccessでsetToken追加・状態遷移ドキュメントのシーケンス更新
   - typecheck・build・test全通過確認
 - 2026-03-10: #940 ナビゲーションコンポーネント抽出完了・PR #941マージ済み
+- 2026-03-10: クリーンアップ: #937 worktree+ブランチ削除(Issue CLOSED済)、#913 ブランチ削除(Issue CLOSED済)、#914 main含有確認→Issue close+ブランチ削除
+- 2026-03-10: #917 mainリベース(コンフリクト2件解決)・push・PR #945作成
 
 - 2026-03-09: shape×styler同一フォルダ紐付けタスクは起票ゲートで停止（原因: gh未導入 / 発生範囲: 起票〜着手前 / 修正方法: gh CLI導入 / 適用範囲: 本環境の全新規実装タスク）。
 - 2025-03-09: #917 Shape Step5 残りUI表記のi18n化完了

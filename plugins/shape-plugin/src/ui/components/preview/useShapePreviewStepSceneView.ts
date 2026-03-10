@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { MapViewState } from '@hierarchidb/ui-map';
 import type { ShapePreviewMapView } from '~/common/types/index';
-import { useFloatingWindow } from '@hierarchidb/ui-floating-window';
+import { useFloatingWindow } from '@hierarchidb/components';
 
 type ShapePreviewDebugFlags = {
   hideLayerSetsFloatingWindow: boolean;

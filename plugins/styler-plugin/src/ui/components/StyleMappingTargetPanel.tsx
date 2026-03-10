@@ -4,7 +4,7 @@ import {
   type MapLibreStyleProperty,
   type PropertyGroup,
 } from '@hierarchidb/styler-plugin';
-import { useIconRegistry } from '@hierarchidb/ui-icon';
+import { useIconRegistry } from '@hierarchidb/components';
 import {
   BorderColor as BorderColorIcon,
   FormatColorFill as FormatColorFillIcon,

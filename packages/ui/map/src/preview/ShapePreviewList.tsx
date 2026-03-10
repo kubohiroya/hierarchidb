@@ -4,8 +4,8 @@ import { Hexagon } from '@mui/icons-material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { Recycling as RecyclingIcon } from '@mui/icons-material';
 import { Typography } from '@mui/material';
-import type { WindowState } from '@hierarchidb/ui-floating-window';
-import { FloatingWindow } from '@hierarchidb/ui-floating-window';
+import type { WindowState } from '@hierarchidb/components';
+import { FloatingWindow } from '@hierarchidb/components';
 import type { GridColumn } from '@hierarchidb/ui-grid';
 import {
   MapPreviewFloatingTable,

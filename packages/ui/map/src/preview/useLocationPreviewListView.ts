@@ -1,7 +1,7 @@
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { GridColumn } from '@hierarchidb/ui-grid';
-import { useFloatingWindow } from '@hierarchidb/ui-floating-window';
+import { useFloatingWindow } from '@hierarchidb/components';
 
 const WINDOW_PERSIST_KEY = 'hierarchidb:ui:floating-window:location:metadata';
 

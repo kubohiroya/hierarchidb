@@ -441,10 +441,10 @@
         "./packages/ui/file/dist/*"
       ],
       "@hierarchidb/ui-floating-window": [
-        "./packages/ui/floating-window/dist/index.d.ts"
+        "./packages/components/dist/index.d.ts"
       ],
       "@hierarchidb/ui-floating-window/*": [
-        "./packages/ui/floating-window/dist/*"
+        "./packages/components/dist/*"
       ],
       "@hierarchidb/ui-i18n": [
         "./packages/ui/i18n/dist/index.d.ts"
@@ -459,10 +459,10 @@
         "./packages/ui/json-treeview/dist/*"
       ],
       "@hierarchidb/ui-icon": [
-        "./packages/ui/icon/dist/index.d.ts"
+        "./packages/components/dist/index.d.ts"
       ],
       "@hierarchidb/ui-icon/*": [
-        "./packages/ui/icon/dist/*"
+        "./packages/components/dist/*"
       ],
       "@hierarchidb/ui-layout": [
         "./packages/ui/layout/dist/index.d.ts"
@@ -621,10 +621,10 @@
         "./packages/ui/treeconsole/toolbar/dist/*"
       ],
       "@hierarchidb/ui-speeddial-submenu": [
-        "./packages/ui/speeddial-submenu/dist/index.d.ts"
+        "./packages/components/dist/index.d.ts"
       ],
       "@hierarchidb/ui-speeddial-submenu/*": [
-        "./packages/ui/speeddial-submenu/dist/*"
+        "./packages/components/dist/*"
       ],
       "@hierarchidb/ui-treeconsole-treetable": [
         "./packages/ui/treeconsole/treetable/dist/index.d.ts"

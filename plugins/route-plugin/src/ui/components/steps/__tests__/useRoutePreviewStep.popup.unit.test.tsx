@@ -72,7 +72,7 @@ vi.mock('@hierarchidb/ui-map', () => ({
   useVectorTilePreviewSearch: vi.fn(),
 }));
 
-vi.mock('@hierarchidb/ui-floating-window', () => ({
+vi.mock('@hierarchidb/components', () => ({
   useFloatingWindow: () => ({
     windowState: {
       position: { x: 0, y: 0 },

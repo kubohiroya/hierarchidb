@@ -1,5 +1,5 @@
 import { type MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useIconRegistry } from '@hierarchidb/ui-icon';
+import { useIconRegistry } from '@hierarchidb/components';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
 import { isFolderNodeType } from '~/utils/nodeTypeIconColor';
 import type { NodeContextMenuProps } from './NodeContextMenu';

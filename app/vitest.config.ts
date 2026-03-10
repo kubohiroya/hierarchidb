@@ -32,7 +32,7 @@ function createAliasMap(): Record<string, string> {
       rootDir,
       '../packages/vt-orchestrator/src/index.ts'
     ),
-    '@hierarchidb/ui-icon': path.resolve(rootDir, '../packages/ui/icon/src/index.ts'),
+    '@hierarchidb/ui-icon': path.resolve(rootDir, '../packages/components/src/index.ts'),
     '@hierarchidb/components': path.resolve(rootDir, '../packages/components/src/index.ts'),
     '@hierarchidb/ui-dialog': path.resolve(rootDir, '../packages/ui/dialog/src/index.ts'),
     '@hierarchidb/ui-treeconsole-toolbar': path.resolve(

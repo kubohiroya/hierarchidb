@@ -58,7 +58,6 @@
     "@hierarchidb/ui-modal-select": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-auth": "workspace:*",
-    "@hierarchidb/ui-icon": "workspace:*",
     "@hierarchidb/ui-worker-provider": "workspace:*",
     "@hierarchidb/ui-grid": "workspace:*"
   },
@@ -77,7 +76,6 @@
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-grid": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
-    "@hierarchidb/ui-icon": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/ui-tabular": "workspace:*",

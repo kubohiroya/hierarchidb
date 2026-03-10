@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import type { GridGroupingState } from '@hierarchidb/ui-grid';
-import { useFloatingWindow } from '@hierarchidb/ui-floating-window';
+import { useFloatingWindow } from '@hierarchidb/components';
 import type {
   MapPreviewStatusLabels,
 } from './MapPreviewFloatingTable.js';

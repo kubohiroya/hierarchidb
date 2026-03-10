@@ -21,7 +21,7 @@ import ConstructionIcon from '@mui/icons-material/Construction';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ReplayIcon from '@mui/icons-material/Replay';
 import type { BuildSessionRuntimeRecord } from '@hierarchidb/build-api';
-import { useIconRegistry } from '@hierarchidb/ui-icon';
+import { useIconRegistry } from '@hierarchidb/components';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
 import type { NodeType } from '@hierarchidb/core-types';
 import { toNodeType } from '@hierarchidb/core-types';

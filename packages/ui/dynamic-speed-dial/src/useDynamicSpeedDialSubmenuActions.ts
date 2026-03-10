@@ -8,7 +8,7 @@ import type {
 import type {
   SpeedDialSubmenuAction,
   SpeedDialSubmenuItem,
-} from '@hierarchidb/ui-speeddial-submenu';
+} from '@hierarchidb/components';
 
 export interface UseDynamicSpeedDialSubmenuActionsParams {
   useVM: boolean;
