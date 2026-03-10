@@ -829,9 +829,6 @@ importers:
       '@emotion/styled':
         specifier: 11.14.0
         version: 11.14.0(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
-      '@hierarchidb/core-types':
-        specifier: workspace:*
-        version: link:../core-types
       '@hierarchidb/ui-i18n':
         specifier: workspace:*
         version: link:../ui/i18n
@@ -844,9 +841,6 @@ importers:
       '@mui/material':
         specifier: ^7.3.6
         version: 7.3.9(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@tanstack/react-router':
-        specifier: ^1.132.33
-        version: 1.166.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       react:
         specifier: ^19.0.0
         version: 19.2.4

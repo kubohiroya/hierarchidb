@@ -5,7 +5,6 @@
 
 import type { ReactElement } from 'react';
 import { Button, ButtonGroup, type ButtonProps, Tooltip } from '@mui/material';
-// import { SvgIconComponent } from '@mui/icon-material';
 
 const useNavigate = (): ((path: string, options?: any) => void) => {
   return () => {
