@@ -161,7 +161,9 @@
           "maximize": "Maximize",
           "restoreSize": "Restore",
           "fullscreen": "Full screen",
-          "exitFullscreen": "Exit full screen"
+          "exitFullscreen": "Exit full screen",
+          "minimize": "Minimize",
+          "restoreMinimized": "Restore"
         },
         "tooltips": {
           "saveDraftDisabled": "No changes to save",
@@ -169,7 +171,9 @@
           "maximize": "Maximize",
           "restoreSize": "Restore",
           "fullscreen": "Full screen",
-          "exitFullscreen": "Exit full screen"
+          "exitFullscreen": "Exit full screen",
+          "minimize": "Minimize",
+          "restoreMinimized": "Restore"
         },
         "contextMenu": {
           "openInNewTab": "Open In New Tab",
@@ -182,6 +186,19 @@
       "titles": {
         "create": "Create {{plugin}}",
         "edit": "Edit {{plugin}}"
+      },
+      "buttons": {
+        "minimize": "Minimize",
+        "restoreMinimized": "Restore"
+      },
+      "tooltips": {
+        "maximize": "Maximize",
+        "restoreSize": "Restore",
+        "fullscreen": "Full screen",
+        "exitFullscreen": "Exit full screen",
+        "minimize": "Minimize",
+        "restoreMinimized": "Restore",
+        "close": "Close dialog"
       }
     }
   },
