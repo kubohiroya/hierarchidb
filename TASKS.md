@@ -2,6 +2,8 @@
 
 ## Doing
 
+- #991 / `fix/auth/suppress-repeated-auth-dialog-991` / 2026-03-10 開始
+- #988 / `fix/i18n/route-plugin-type-safety-and-import-cleanup` / 2026-03-10 開始
 - #983 / `fix/shape-plugin/rename-steps-processing-to-config` / 2026-03-10 開始
 - #970 / `fix/i18n/stepper-basic-info-label-key` / 2026-03-10 開始
 - #969 / `refactor/review/gemini-review-batch-fixes` / 2026-03-10 開始

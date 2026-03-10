@@ -152,6 +152,7 @@ export const AuthNotificationFactory = {
     errorCode: number;
     errorMessage: string;
     sessionId?: string;
+    sessionStartedAt?: number;
     pluginType: AuthRequiredNotification['context']['pluginType'];
     retryCount?: number;
   }): AuthRequiredNotification {
@@ -165,6 +166,7 @@ export const AuthNotificationFactory = {
         errorCode: params.errorCode,
         errorMessage: params.errorMessage,
         sessionId: params.sessionId,
+        sessionStartedAt: params.sessionStartedAt,
         pluginType: params.pluginType,
         retryCount: params.retryCount || 0,
       },

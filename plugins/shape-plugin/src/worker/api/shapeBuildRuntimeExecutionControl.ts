@@ -27,7 +27,7 @@ import type { BuildProgressEvent } from '@hierarchidb/build-api';
 
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import { cacheValidator } from '~/services/CacheValidator';
-import { AuthRequiredError } from '@hierarchidb/auth';
+import { AuthRequiredError, AuthService } from '@hierarchidb/auth';
 import {
   countSelectedAdminPairs,
 } from '~/services/utils/shapeBuildUtils';
@@ -86,7 +86,10 @@ const sessionWorkerInstances = new Map<string, { terminate?: () => void }>();
 // Placeholder functions for missing implementations
 const startSessionTracking = (_nodeId: string) => { };
 const clearStalePipelineStateIfInactive = (_nodeId: string, _previousSession?: any, _startupScope?: string) => { };
-const clearActivePipelineRuntimeState = (_nodeId: string) => { };
+const clearActivePipelineRuntimeState = (_nodeId: string) => {
+  // Clear auth session context so stale session identity is not reused (#991).
+  AuthService.getSingleton().then((auth) => auth.clearBuildSessionContext()).catch(() => {});
+};
 
 const upsertBuildSessionSnapshot = async (data: { 
   nodeId: NodeId; 
@@ -843,6 +846,11 @@ const startBuildSessionInternal = async (
   setSourcePlannedTotal(nodeForSession, sourcePlan.plannedSourceTotal);
   const buildStartedAt = Date.now();
   const pipelineRunId = `${nodeForSession}:${buildStartedAt}`;
+
+  // Propagate session identity to AuthService so AUTH_REQUIRED notifications
+  // carry sessionId + sessionStartedAt for UI-side deduplication (#991).
+  const authService = await AuthService.getSingleton();
+  authService.setBuildSessionContext(String(nodeForSession), buildStartedAt);
 
   setPaused(nodeForSession, false);
   activePipelines.add(pipelineKey);

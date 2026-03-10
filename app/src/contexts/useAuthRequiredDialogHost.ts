@@ -33,6 +33,9 @@ export function useAuthRequiredDialogHost(): AuthRequiredDialogHostState {
   const activeRequestIdRef = useRef<string | null>(null);
   const pendingRequestsRef = useRef(new Map<string, string>());
   const pendingCountBySessionRef = useRef(new Map<string, number>());
+  // Tracks cancelled build attempts as `${sessionId}:${sessionStartedAt}` keys.
+  // AUTH_REQUIRED notifications matching a cancelled attempt are suppressed (#991).
+  const cancelledSessionEpochsRef = useRef(new Set<string>());
 
   const resolveSessionTarget = (next: AuthRequiredNotification): { nodeType: NodeType; nodeId: ReturnType<typeof toNodeId> } | null => {
     const rawSessionId = next.context.sessionId;
@@ -59,6 +62,14 @@ export function useAuthRequiredDialogHost(): AuthRequiredDialogHostState {
       return;
     }
 
+    // Record the cancelled build attempt so subsequent AUTH_REQUIRED
+    // notifications from the same build attempt are suppressed (#991).
+    const sid = notification.context.sessionId;
+    const epoch = notification.context.sessionStartedAt;
+    if (typeof sid === 'string' && sid.length > 0 && typeof epoch === 'number') {
+      cancelledSessionEpochsRef.current.add(`${sid}:${epoch}`);
+    }
+
     const cancelled = AuthNotificationFactory.createAuthCancelled({
       requestId: notification.context.requestId,
       sessionId: notification.context.sessionId,
@@ -72,6 +83,33 @@ export function useAuthRequiredDialogHost(): AuthRequiredDialogHostState {
   useEffect(() => {
     registry.register(HANDLER_ID, {
       onAuthRequired: async (next: AuthRequiredNotification) => {
+        // Suppress notifications from a build attempt that was already cancelled (#991).
+        const sid = next.context.sessionId;
+        const epoch = next.context.sessionStartedAt;
+        if (typeof sid === 'string' && sid.length > 0 && typeof epoch === 'number') {
+          if (cancelledSessionEpochsRef.current.has(`${sid}:${epoch}`)) {
+            if (isAuthDebugEnabled()) {
+              console.debug('[auth][ui] AUTH_REQUIRED suppressed (cancelled session epoch)', {
+                requestId: next.context.requestId,
+                sessionId: sid,
+                sessionStartedAt: epoch,
+              });
+            }
+            return;
+          }
+        }
+
+        // Suppress if a dialog is already showing for this session (#991).
+        if (activeRequestIdRef.current !== null) {
+          if (isAuthDebugEnabled()) {
+            console.debug('[auth][ui] AUTH_REQUIRED suppressed (dialog already active)', {
+              requestId: next.context.requestId,
+              activeRequestId: activeRequestIdRef.current,
+            });
+          }
+          return;
+        }
+
         const target = resolveSessionTarget(next);
         if (target) {
           const sessionKey = `${target.nodeType}:${target.nodeId}`;

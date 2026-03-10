@@ -11,6 +11,10 @@ export interface SharedDownloadOptions {
    * 例: 'shape' | 'location' | 'route'
    */
   scope?: AuthScope;
+  /** Build session identity (nodeId). Propagated to AUTH_REQUIRED notifications. */
+  sessionId?: string;
+  /** Epoch ms when the build session started. Used to distinguish build attempts for auth dedup. */
+  sessionStartedAt?: number;
 }
 
 export interface SharedFetchService {
@@ -28,7 +32,7 @@ export async function createSharedDownloadService(
   const net = new FetchNetworkPort({
     headers: () => auth.getAuthHeaders(),
     perHostConcurrency: opts?.perHostConcurrency ?? 4,
-    authFetch: (url, init) => auth.fetchWithAuth(url, init, { scope }),
+    authFetch: (url, init) => auth.fetchWithAuth(url, init, { scope, sessionId: opts?.sessionId, sessionStartedAt: opts?.sessionStartedAt }),
   });
   const storage = new DexieChunkStore<ArrayBuffer>({
     dbName: `${opts?.dbPrefix || 'hidb'}-chunks`,

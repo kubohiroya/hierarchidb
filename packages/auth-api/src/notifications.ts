@@ -12,6 +12,8 @@ export interface AuthRequiredNotification {
     errorCode: number;
     errorMessage: string;
     sessionId?: string;
+    /** Epoch ms when the build session started. Used to distinguish build attempts for auth dedup. */
+    sessionStartedAt?: number;
     pluginType: PluginType;
     retryCount?: number;
   };

@@ -2,6 +2,8 @@ export type AuthScope = 'shape' | 'location' | 'route' | 'spreadsheet' | 'styler
 
 export interface AuthContext {
   sessionId?: string;
+  /** Epoch ms when the build session started. Used to distinguish build attempts for auth dedup. */
+  sessionStartedAt?: number;
   scope?: AuthScope;
   maxRetries?: number;
 }
