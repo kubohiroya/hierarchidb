@@ -5,7 +5,7 @@ import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import { useBuildProgressPanelStateActions } from './useBuildProgressPanelStateActions.js';
 import { useBuildProgressPanelStateRuntimeState } from './useBuildProgressPanelStateRuntimeState.js';
 import { useShapeBuildProgressWarnings } from './useShapeBuildProgressWarnings.js';
-import { isDev, logStartResumeTrace } from './useBuildProgressPanelState.utils.js';
+import { isDev, logStartTrace } from './useBuildProgressPanelState.utils.js';
 
 export const useBuildProgressPanelState = (params: {
   data?: Partial<ShapeEntity>;
@@ -63,7 +63,7 @@ export const useBuildProgressPanelState = (params: {
 
   useMemo(() => {
     if (nodeIdForLog) {
-      logStartResumeTrace('useBuildProgressPanelState render', {
+      logStartTrace('useBuildProgressPanelState render', {
         nodeId: nodeIdForLog ?? null,
         buildStatus: summary.buildStatus,
         activeStageId: resolvedActiveStageId,
@@ -133,5 +133,5 @@ export {
   resolveCompletionFailedStageLabel,
   resolveActiveRunningStageId,
   isDev,
-  logStartResumeTrace,
+  logStartTrace,
 } from './useBuildProgressPanelState.utils.js';

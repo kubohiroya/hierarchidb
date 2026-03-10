@@ -4,7 +4,7 @@ import { resolveMostAdvancedStageId } from '~/ui/components/build-progress/stage
 
 export const isDev = import.meta.env.DEV;
 
-export const START_RESUME_TRACE_PREFIX = '[ShapeBuildStartResumeTrace]';
+export const START_TRACE_PREFIX = '[ShapeBuildStartTrace]';
 export const RUNNING_RESIDUE_LOG_PREFIX = '[ShapeRunningResidue]';
 
 type ShapeBuildPanelDebugChannel =
@@ -32,9 +32,9 @@ export const isShapeBuildPanelDebugEnabled = (channel: ShapeBuildPanelDebugChann
   return Boolean(config.all) || Boolean(config[channel]);
 };
 
-export const logStartResumeTrace = (event: string, payload?: Record<string, unknown>): void => {
+export const logStartTrace = (event: string, payload?: Record<string, unknown>): void => {
   if (!isShapeBuildPanelDebugEnabled('startResume')) return;
-  console.log(`${START_RESUME_TRACE_PREFIX} ${event}`, payload ?? {});
+  console.log(`${START_TRACE_PREFIX} ${event}`, payload ?? {});
 };
 
 export const formatRunningResidueValue = (value: unknown): string => {

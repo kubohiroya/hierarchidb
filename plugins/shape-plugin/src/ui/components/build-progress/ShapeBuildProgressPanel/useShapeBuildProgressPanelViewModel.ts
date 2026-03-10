@@ -163,7 +163,7 @@ export const useShapeBuildProgressPanelViewModel = ({
     stageHeaderMeta,
     chipPlacement: 'bottom' as const,
     suppressStatusFallback: true,
-    onResume: controls.canStartOrResume ? handleStartClickWithHold : undefined,
+    onResume: controls.canStart ? handleStartClickWithHold : undefined,
     onPause: controls.stopRequested ? undefined : (() => {
       void controls.handlePause?.();
     }),

@@ -1,8 +1,8 @@
 import { useShapeBuildCancelQueued } from './useShapeBuildStepControlActions/useShapeBuildCancelQueued.js';
 import { useShapeBuildPause } from './useShapeBuildStepControlActions/useShapeBuildPause.js';
-import { useShapeBuildStartOrResume } from './useShapeBuildStepControlActions/useShapeBuildStart.js';
+import { useShapeBuildStart } from './useShapeBuildStepControlActions/useShapeBuildStart.js';
 import type {
-  StartOrResumeControlActionsArgs,
+  StartControlActionsArgs,
   PauseControlActionsArgs,
   CancelQueuedControlActionsArgs,
 } from './useShapeBuildStepControlActions/types.js';
@@ -31,8 +31,8 @@ export const useShapeBuildStepControlActions = ({
   updateSessionRecord,
   setIsStopRequested,
   setIsStopAccepted,
-}: StartOrResumeControlActionsArgs & PauseControlActionsArgs & CancelQueuedControlActionsArgs) => {
-  const handleStartOrResume = useShapeBuildStartOrResume({
+}: StartControlActionsArgs & PauseControlActionsArgs & CancelQueuedControlActionsArgs) => {
+  const handleStart = useShapeBuildStart({
     activeNodeId,
     data,
     buildStatus,
@@ -84,7 +84,7 @@ export const useShapeBuildStepControlActions = ({
   });
 
   return {
-    handleStartOrResume,
+    handleStart,
     handleCancelQueued,
     handlePause,
   };

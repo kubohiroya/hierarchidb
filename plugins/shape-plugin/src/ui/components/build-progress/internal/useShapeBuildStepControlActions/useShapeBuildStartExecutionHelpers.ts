@@ -1,10 +1,10 @@
 import type { BuildSessionStatus } from '@hierarchidb/build-api';
-import type { StartOrResumeExecutionArgs } from './types.js';
+import type { StartExecutionArgs } from './types.js';
 import { getErrorMessage, summarizeSelectedEntries } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/errors';
 import { SHAPE_NODE_TYPE } from '~/ui/components/build-progress/shapeBuildTaskSyncDebug';
 
 type BaseRequestContext = Pick<
-  StartOrResumeExecutionArgs,
+  StartExecutionArgs,
   | 'bridgeRef'
   | 'activeNodeId'
   | 'advanceBuildSessionTransitionPhase'
@@ -19,7 +19,7 @@ type BaseRequestContext = Pick<
 >;
 
 type StartSessionRequestContext = BaseRequestContext & {
-  data?: StartOrResumeExecutionArgs['data'];
+  data?: StartExecutionArgs['data'];
 };
 
 type StartSessionResponse = {
@@ -34,7 +34,7 @@ type StartSessionResult = {
 };
 
 export const onTraceFailure = (
-  onTrace: StartOrResumeExecutionArgs['onTrace'],
+  onTrace: StartExecutionArgs['onTrace'],
   requestStartedAt: number,
   error: unknown,
 ): void => {
