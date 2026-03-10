@@ -60,7 +60,7 @@ const ShapeCountrySelectionContent: React.FC<ShapeDialogStepProps> = ({ data, on
               size="small"
               onClick={() => void reloadAll()}
               disabled={loading}
-              aria-label={t('countrySelection.reload', 'Reload')}
+              aria-label={String(t('countrySelection.reload', 'Reload'))}
             >
               <RefreshIcon fontSize="small" />
             </IconButton>

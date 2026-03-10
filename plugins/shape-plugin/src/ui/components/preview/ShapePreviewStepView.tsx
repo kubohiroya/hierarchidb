@@ -150,7 +150,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
                     variant="contained"
                     color="primary"
                     size="large"
-                    aria-label={t('preview.metadata.reopenList', 'Show list')}
+                    aria-label={String(t('preview.metadata.reopenList', 'Show list'))}
                     onClick={() => {
                       setFeatureWindowOpen(true);
                     }}
@@ -175,7 +175,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
                     variant="contained"
                     color="primary"
                     size="large"
-                    aria-label={t('preview.layerSets.reopen', 'Show layer sets')}
+                    aria-label={String(t('preview.layerSets.reopen', 'Show layer sets'))}
                     onClick={layerSetsWindow.handlers.show}
                   >
                     <LayersIcon />
@@ -270,8 +270,8 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
         search={{
           value: featureSearchKeyword,
           onChange: setFeatureSearchKeyword,
-          placeholder: t('preview.metadata.searchPlaceholder', 'Search metadata'),
-          ariaLabel: t('preview.metadata.searchAriaLabel', 'Search metadata'),
+          placeholder: String(t('preview.metadata.searchPlaceholder', 'Search metadata')),
+          ariaLabel: String(t('preview.metadata.searchAriaLabel', 'Search metadata')),
         }}
         countLabels={{
           matched: t('preview.metadata.matches', 'Matched'),

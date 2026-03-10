@@ -18,7 +18,7 @@ export const ShapeDataSourceStep: React.FC<ShapeDialogStepProps> = ({ data, onCh
   return (
     <Box sx={{ p: 3 }}>
       <DataSourceSelectionStep<string>
-        title={t('dataSource.title', 'Data Source')}
+        title={String(t('dataSource.title', 'Data Source'))}
         options={options}
         state={{
           dataSourceId,
@@ -32,8 +32,8 @@ export const ShapeDataSourceStep: React.FC<ShapeDialogStepProps> = ({ data, onCh
           'Choose a geographic data provider. Each source has different coverage, accuracy, and licensing requirements.',
         )}
         createAgreedAt={() => new Date().toISOString()}
-        selectionTitle={t('dataSource.selectionTitle', 'Data Source')}
-        detailsTitle={t('dataSource.detailsTitle', 'Data Source Details')}
+        selectionTitle={String(t('dataSource.selectionTitle', 'Data Source'))}
+        detailsTitle={String(t('dataSource.detailsTitle', 'Data Source Details'))}
       />
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
         <Button

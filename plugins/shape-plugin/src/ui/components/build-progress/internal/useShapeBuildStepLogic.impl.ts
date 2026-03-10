@@ -136,7 +136,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const hasNodeId = Boolean(activeNodeId && !error);
   const effectiveProgress = hasNodeId ? progress : null;
   const effectiveStatus = hasNodeId ? status : null;
-  const stages = useShapeBuildStages({ t: (key, fallback) => t(key, fallback) });
+  const stages = useShapeBuildStages({ t: (key: string, fallback?: string): string => String(t(key, fallback ?? key)) });
   const runtimeStatusForBuildStatus: BuildProgressStatus['status'] = status?.status ?? 'idle';
   const runtimeStatus: BuildProgressStatus['status'] = runtimeStatusForBuildStatus;
   const pendingUserAction = useAtomValue(pendingUserActionAtom);

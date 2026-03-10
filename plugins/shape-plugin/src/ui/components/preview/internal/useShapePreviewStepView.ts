@@ -274,7 +274,7 @@ export const useShapePreviewStepView = (
     const lastZoom = lastZoomRef.current;
     if (lastZoom !== null && Math.abs(lastZoom - zoom) < 0.01) return;
     lastZoomRef.current = zoom;
-    setZoomSnackbarMessage(preview.t('preview.zoom', 'Zoom: {{zoom}}', { zoom: zoom.toFixed(2) }));
+    setZoomSnackbarMessage(String(preview.t('preview.zoom', 'Zoom: {{zoom}}', { zoom: zoom.toFixed(2) })));
     setZoomSnackbarOpen(true);
   }, [preview.t]);
 
