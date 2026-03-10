@@ -3,6 +3,7 @@
  */
 
 import { AuthService } from '@hierarchidb/auth';
+import type { AuthScope } from '@hierarchidb/auth-api';
 import type {
   BuildProgressEvent,
   BuildProgress,
@@ -654,6 +655,13 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           nodeId: NodeId,
           downloadTaskPayloads?: ShapeDownloadTaskPayloads,
         ): Promise<BuildSessionStatus> => {
+          // Clear auth cooldown so a fresh AUTH_REQUIRED prompt can be shown (#979)
+          const auth = await AuthService.getSingleton();
+          const scopeFromNodeType = nodeType as string;
+          const knownScopes = new Set<AuthScope>(['shape', 'location', 'route', 'spreadsheet', 'styler', 'generic']);
+          if (knownScopes.has(scopeFromNodeType as AuthScope)) {
+            auth.clearCancelledCooldown(scopeFromNodeType as AuthScope);
+          }
           const buildApi = resolveShapeBuildApiOrThrow(nodeType);
           setRuntimeTransientStatus(nodeType, nodeId, 'starting', true);
           try {

@@ -413,12 +413,13 @@ stateDiagram-v2
 | --- | --- | --- |
 | Worker (task execution) | `runStageTasks` | Catches `AuthRequiredError`, requeues task to `queued` with `metadata.authState='required'` |
 | Worker (fetch) | `AuthService.fetchWithAuth` | Detects 401, calls `awaitAuth` which dispatches `AUTH_REQUIRED` and throws `AuthRequiredError` |
-| Worker (fetch) | `AuthService.awaitAuth` | Checks `cancelledUntilByScope` cooldown before dispatching; throws immediately if cooldown active |
+| Worker (fetch) | `AuthService.awaitAuth` | Checks `cancelledUntilByScope` cooldown before dispatching; throws `AuthRequiredError` if cooldown active (so `runStageTasks` requeues the task instead of failing it) |
 | Worker (fetch) | `AuthService.onAuthSuccess` | Persists new token to storage via `setToken`, then clears `cancelledUntilByScope` cooldown for the scope |
 | UI (root) | `useAuthRequiredDialogHost` | Receives `AUTH_REQUIRED` → calls `pauseBuildSession` → shows `AuthRequiredDialog` |
 | UI (root) | `useAuthRequiredDialogHost` | On `AUTH_SUCCESS` → calls `startBuildSession` to resume |
 | UI (root) | `useAuthRequiredDialogHost` | On `AUTH_CANCELLED` → session stays `paused`, no auto-resume |
 | UI (auth) | `AuthService.onAuthCancelled` | Sets `cancelledUntilByScope` cooldown to suppress re-prompt loops |
+| Worker (session) | `runStartBuildSession` | Calls `AuthService.clearCancelledCooldown(scope)` before executing tasks, so a user-initiated restart always allows a fresh auth prompt |
 
 ### 7.5.3 Invariants
 
@@ -443,7 +444,7 @@ stateDiagram-v2
 7b. User clicks Cancel → `AUTH_CANCELLED` dispatched
 8b. `AuthService.onAuthCancelled` sets `cancelledUntilByScope` for scope (e.g. 30s cooldown)
 9b. `useAuthRequiredDialogHost.onAuthCancelled` closes dialog, session remains `paused`
-10b. User clicks "Start Build" again → `handleStartOrResume` clears cooldown → resume flow → task retries `fetchWithAuth` → 401 → `AUTH_REQUIRED` → dialog shown again
+10b. User clicks "Start Build" again → `runStartBuildSession` calls `clearCancelledCooldown` → resume flow → task retries `fetchWithAuth` → 401 → `AUTH_REQUIRED` → dialog shown again
 
 References:
 

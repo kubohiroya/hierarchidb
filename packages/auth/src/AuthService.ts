@@ -399,7 +399,7 @@ export class AuthService implements AuthHeadersProvider {
   ): Promise<Response> {
     const scope = (ctx.scope ?? 'shape') as AuthScope;
     if (this.isCancelledCooldownActive(scope)) {
-      throw new Error(`Authentication was cancelled for scope "${scope}"`);
+      throw new AuthRequiredError(`Authentication was cancelled for scope "${scope}"`);
     }
     const pluginTypeNarrow: PluginType = ((): PluginType => {
       const p = ctx.scope ?? 'shape';
