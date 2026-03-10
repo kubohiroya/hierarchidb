@@ -2,7 +2,7 @@
 
 ## Doing
 
-- #952 / refactor/i18n/consolidate-close-dialog-keys / 2026-03-10 start
+- #954 / fix/ui-lru-splitview/infinite-render-loop / 2026-03-10 start
 
 ## Blocked
 

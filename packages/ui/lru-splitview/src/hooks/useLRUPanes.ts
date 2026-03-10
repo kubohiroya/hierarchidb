@@ -78,6 +78,7 @@ export function useLRUPanes({
 
   const [paneStates, setPaneStates] = useState<PaneState[]>(initialPaneStates);
   const paneStatesRef = useRef<PaneState[]>(initialPaneStates);
+  const panesRef = useRef(panes);
 
   const paneKey = useMemo(
     () => panes.map((pane) => `${pane.id}:${pane.defaultExpanded ? 1 : 0}:${pane.collapsedSize ?? ''}`).join('|'),
@@ -255,9 +256,14 @@ export function useLRUPanes({
   }, [paneStates]);
 
   useEffect(() => {
+    panesRef.current = panes;
+  }, [panes]);
+
+  useEffect(() => {
     const prevStates = paneStatesRef.current;
+    const currentPanes = panesRef.current;
     const byId = new Map(prevStates.map((pane) => [pane.id, pane]));
-    const nextStates = panes.map((pane, index) => {
+    const nextStates = currentPanes.map((pane, index) => {
       const existing = byId.get(pane.id);
       const isExpanded = existing ? existing.isExpanded : (pane.defaultExpanded ?? false);
       const lastAccessTime = existing ? existing.lastAccessTime : (isExpanded ? Date.now() : 0);
@@ -274,7 +280,7 @@ export function useLRUPanes({
     });
     const applied = applyMaxExpanded(nextStates, maxExpandedPanes);
     setPaneStates(applied);
-  }, [paneKey, applyMaxExpanded, defaultCollapsedSize, generateDefaultColor, maxExpandedPanes, panes]);
+  }, [paneKey, applyMaxExpanded, defaultCollapsedSize, generateDefaultColor, maxExpandedPanes]);
 
   useEffect(() => {
     setPaneStates((prev) => applyMaxExpanded(prev, maxExpandedPanes));
@@ -311,9 +317,10 @@ export function useLRUPanes({
         const prevProgressValue = prevProgressRef.current[progressInfo.paneId] || 0;
         if (prevProgressValue < 100 && progressInfo.progress === 100) {
           // Find next pane to expand (simple sequential logic)
-          const currentIndex = panes.findIndex(p => p.id === progressInfo.paneId);
-          if (currentIndex >= 0 && currentIndex < panes.length - 1) {
-            const nextPane = panes[currentIndex + 1];
+          const currentPanes = panesRef.current;
+          const currentIndex = currentPanes.findIndex(p => p.id === progressInfo.paneId);
+          if (currentIndex >= 0 && currentIndex < currentPanes.length - 1) {
+            const nextPane = currentPanes[currentIndex + 1];
             if (nextPane) {
               autoExpandPane(nextPane.id);
             }
@@ -345,7 +352,7 @@ export function useLRUPanes({
       return acc;
     }, {} as Record<string, number>);
     prevProgressRef.current = newPrevProgress;
-  }, [progress, autoExpand, panes, expandPaneLRU]);
+  }, [progress, autoExpand, expandPaneLRU]);
 
   return {
     paneStates,
