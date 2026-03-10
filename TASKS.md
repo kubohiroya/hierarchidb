@@ -2,7 +2,7 @@
 
 ## Doing
 
-- #944 / `refactor/components/consolidate-generic-ui-packages` / 2026-03-10 開始
+- #947 / `fix/components/dts-splitting-missing-exports` / 2026-03-10 開始
 - #917 / feature/i18n/shape-step5-remaining-ui-labels / PR #945 作成済み
 
 ## Blocked
@@ -18,6 +18,7 @@
   - typecheck・build・test全通過確認
 - 2026-03-10: #940 ナビゲーションコンポーネント抽出完了・PR #941マージ済み
 - 2026-03-10: クリーンアップ: #937 worktree+ブランチ削除(Issue CLOSED済)、#913 ブランチ削除(Issue CLOSED済)、#914 main含有確認→Issue close+ブランチ削除
+- 2026-03-10: #944 PR #946マージ完了・ローカル/リモートブランチ削除・stash整理(3件drop)
 - 2026-03-10: #917 mainリベース(コンフリクト2件解決)・push・PR #945作成
 
 - 2026-03-09: shape×styler同一フォルダ紐付けタスクは起票ゲートで停止（原因: gh未導入 / 発生範囲: 起票〜着手前 / 修正方法: gh CLI導入 / 適用範囲: 本環境の全新規実装タスク）。

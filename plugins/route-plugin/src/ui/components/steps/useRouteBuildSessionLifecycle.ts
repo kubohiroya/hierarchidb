@@ -10,12 +10,14 @@ import {
   type RouteMode,
 } from '@hierarchidb/route-api';
 import {
-  executePauseBuildFlow,
   notify,
   type BuildStatus,
+} from '@hierarchidb/components';
+import {
+  executePauseBuildFlow,
   type PauseBuildReason,
   useBuildSessionTransition,
-} from '@hierarchidb/components';
+} from '@hierarchidb/components/build-session';
 import { PLUGIN_NODE_TYPE } from '~/plugin-manifest';
 import { ROUTE_MODE_COLUMNS } from './routeSelectionConstants.js';
 
