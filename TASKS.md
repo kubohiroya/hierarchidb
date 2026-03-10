@@ -20,6 +20,7 @@
   - AuthService cancelledUntilByScopeクールダウン実装
   - 状態遷移ドキュメントにSection 7.5追加
   - 死んだコード削除（authDialogOpen/closeAuthDialog/handleProviderSelect/TaskProgressAuthState）
+  - PRレビュー対応: onAuthSuccessでsetToken追加・状態遷移ドキュメントのシーケンス更新
   - typecheck・build・test全通過確認
 - 2026-03-10: #940 ナビゲーションコンポーネント抽出完了・PR #941マージ済み
 
