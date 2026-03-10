@@ -16,12 +16,8 @@ function StableIconSlot({ icon, loading }: { icon: ReactNode; loading: boolean }
     const el = iconRef.current;
     if (el) {
       const measured = el.getBoundingClientRect().width;
-      if (measured > minWidth) {
-        setMinWidth(measured);
-      }
+      setMinWidth((prev) => Math.max(prev, measured));
     }
-    // minWidth is intentionally excluded to prevent re-measure loops.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [icon, loading]);
 
   const spinner = (

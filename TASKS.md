@@ -2,6 +2,8 @@
 
 ## Doing
 
+- #973 / `fix/i18n/bind-store-and-missing-basic-info-keys` / 2026-03-10 開始
+- #972 / `fix/plugin-dialog/url-maximize-preset-size` / 2026-03-10 開始
 - #966 / `refactor/build-progress/consolidate-build-modules-v2` / 2026-03-10 開始
 
 ## Blocked
