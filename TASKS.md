@@ -14,6 +14,10 @@
 
 ## 今日の運用ログ
 
+- 2026-03-10: #986 shape-plugin DefaultTFuncReturn型エラー修正・PR #987作成
+  - t()戻り値をString()でラップ（5ファイル11箇所）
+  - typecheck: DefaultTFuncReturnエラー全解消（残存はTS2307 #984由来のみ）
+
 - 2026-03-10: #979 クールダウン中の再ビルド開始で認証ダイアログ非表示修正・PR #980作成
   - awaitAuthでAuthRequiredError throw、runStartBuildSessionでclearCancelledCooldown呼出追加
 - 2026-03-10: #977 PluginDialogツールチップi18nキー不足修正・PR #978マージ済み
