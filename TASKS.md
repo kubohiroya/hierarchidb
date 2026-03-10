@@ -2,13 +2,14 @@
 
 ## Doing
 
-- #949 / fix/components/stable-icon-slot-infinite-loop / 2026-03-10 開始
 - #917 / feature/i18n/shape-step5-remaining-ui-labels / PR #945 作成済み
 
 ## Blocked
 
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 ## 今日の運用ログ
+
+- 2026-03-10: #949 StableIconSlot無限レンダリングループ修正完了・PR #950マージ済み（height固定化・setMinWidth条件厳密化）
 
 - 2026-03-10: #942 BFF認証切れ時のビルドセッション状態遷移修正完了・PR #943作成
   - AuthService cancelledUntilByScopeクールダウン実装
