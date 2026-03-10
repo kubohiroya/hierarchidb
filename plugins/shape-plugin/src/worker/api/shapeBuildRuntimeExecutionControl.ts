@@ -27,6 +27,7 @@ import type { BuildProgressEvent } from '@hierarchidb/build-api';
 
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import { cacheValidator } from '~/services/CacheValidator';
+import { AuthRequiredError } from '@hierarchidb/auth';
 import {
   countSelectedAdminPairs,
 } from '~/services/utils/shapeBuildUtils';
@@ -765,6 +766,26 @@ const startBuildSessionInternal = async (
       payloadCount: sourcePlan.payloadCount,
     });
   } catch (error) {
+    // If auth is required, set session to paused (not failed) so the auth dialog
+    // can be shown and the user can retry after authenticating (#979)
+    if (error instanceof AuthRequiredError) {
+      try {
+        await upsertBuildSessionSnapshot({
+          nodeId: nodeForSession,
+          selectedArrayByCountries: draftEntity.selectedArrayByCountries,
+          tasks: [],
+          status: 'paused',
+          canResume: true,
+        });
+        await emitProgressSnapshot(nodeForSession, 'Authentication required. Build paused. Resume after sign-in.');
+      } catch (emitError) {
+        console.error('[shapeBuildAPI] Failed to emit paused snapshot for auth', {
+          nodeId: nodeForSession,
+          emitError: emitError instanceof Error ? emitError.message : String(emitError),
+        });
+      }
+      throw error;
+    }
     // Emit empty task snapshot to notify UI of the error state
     console.error('[shapeBuildAPI] Failed to plan source total, emitting empty task snapshot', {
       nodeId: nodeForSession,
