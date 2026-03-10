@@ -2,7 +2,6 @@
 
 ## Doing
 
-- #986 / `fix/shape-plugin/default-tfunc-return-type-errors` / 2026-03-10 開始
 - #983 / `fix/shape-plugin/rename-steps-processing-to-config` / 2026-03-10 開始
 - #970 / `fix/i18n/stepper-basic-info-label-key` / 2026-03-10 開始
 - #969 / `refactor/review/gemini-review-batch-fixes` / 2026-03-10 開始
@@ -14,9 +13,13 @@
 
 ## 今日の運用ログ
 
-- 2026-03-10: #986 shape-plugin DefaultTFuncReturn型エラー修正・PR #987作成
+- 2026-03-10: #986 shape-plugin DefaultTFuncReturn型エラー修正・PR #987マージ済み
   - t()戻り値をString()でラップ（5ファイル11箇所）
-  - typecheck: DefaultTFuncReturnエラー全解消（残存はTS2307 #984由来のみ）
+  - typecheck: shape-plugin exit 0（100/100 tasks successful）
+
+- 2026-03-10: #984 OrResumeキーワード全廃・Startに統一・PR #985マージ済み
+  - ファイル名・シンボル名・ログプレフィックスからOrResume除去（~19ファイル）
+  - build: 67/67 exit 0
 
 - 2026-03-10: #979 クールダウン中の再ビルド開始で認証ダイアログ非表示修正・PR #980作成
   - awaitAuthでAuthRequiredError throw、runStartBuildSessionでclearCancelledCooldown呼出追加
