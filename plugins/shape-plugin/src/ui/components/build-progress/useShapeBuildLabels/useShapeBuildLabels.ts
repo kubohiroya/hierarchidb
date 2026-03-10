@@ -41,7 +41,7 @@ export const useShapeBuildLabels = ({
       case 'failed':
         return t('build.status.failed', 'Build failed');
       default:
-        return t('build.status.ready', 'Ready to start stage');
+        return t('stage.status.ready', 'Ready to start build');
     }
   }, [buildStatus, t]);
 

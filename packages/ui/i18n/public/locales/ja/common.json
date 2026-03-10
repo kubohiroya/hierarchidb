@@ -106,6 +106,13 @@
       "cancel": "キャンセル",
       "resetDelete": "リセット/削除",
       "resetDeleteMenu": "リセット/削除メニュー"
+    },
+    "status": {
+      "running": "ビルド処理中",
+      "paused": "ビルド一時停止中",
+      "completed": "ビルド完了",
+      "failed": "ビルド失敗",
+      "ready": "ビルドを開始する準備ができています"
     }
   },
   "api": {
