@@ -12,7 +12,6 @@ import type { BuildStatus } from '@hierarchidb/components/build-status';
 import { useShapeBuildAutoResume } from '~/ui/components/build-progress/useShapeBuildAutoResume/useShapeBuildAutoResume';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
-import type { AuthProviderType } from '@hierarchidb/ui-auth';
 import { useShapeBuildStages } from '~/ui/components/build-progress/useShapeBuildStages/useShapeBuildStages';
 import { useShapeBuildLabels } from '~/ui/components/build-progress/useShapeBuildLabels/useShapeBuildLabels';
 import { resolveBuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
@@ -324,9 +323,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     data,
     workerClient,
   });
-  const authDialogOpen = false;
-  const closeAuthDialog = useCallback(() => { }, []);
-  const handleProviderSelect = useCallback((_provider: AuthProviderType) => { }, []);
   const displayTotalElapsedMs = totalElapsedMs;
 
   const {
@@ -454,9 +450,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     isStartPending,
     requestedControlAction,
     stopRequested: isStopRequestedInFlight,
-    authDialogOpen,
-    closeAuthDialog,
-    handleProviderSelect,
     totalElapsedMs: displayTotalElapsedMs,
     stageElapsedMs,
     stageRemainingMs: displayStageRemainingMs,

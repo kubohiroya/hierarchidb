@@ -2,6 +2,7 @@
 
 ## Doing
 
+- #942 / fix/auth/bff-auth-build-session-state-transitions / 2026-03-10 開始
 - #937 / refactor/build-session/consolidate-local-state-to-ssot / 2026-03-10 開始
 
 - #917 Shape Step5 残りUI表記のi18n化完了 / feature/i18n/shape-step5-remaining-ui-labels / start

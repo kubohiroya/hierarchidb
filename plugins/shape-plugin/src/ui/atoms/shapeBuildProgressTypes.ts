@@ -67,12 +67,6 @@ export type TaskViewportRange = {
   total: number;
 };
 
-export type TaskProgressAuthState = {
-  authDialogOpen: boolean;
-  closeAuthDialog: () => void;
-  handleProviderSelect: (provider: import('@hierarchidb/ui-auth').AuthProviderType) => void;
-};
-
 export type TaskListViewPhase =
   | 'idle'
   | 'ui-initializing'
