@@ -2,7 +2,6 @@
 
 ## Doing
 
-- #973 / `fix/i18n/bind-store-and-missing-basic-info-keys` / 2026-03-10 開始
 - #972 / `fix/plugin-dialog/url-maximize-preset-size` / 2026-03-10 開始
 - #966 / `refactor/build-progress/consolidate-build-modules-v2` / 2026-03-10 開始
 
@@ -12,6 +11,11 @@
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 
 ## 今日の運用ログ
+
+- 2026-03-10: #973 i18n bindI18nStore再レンダリング修正+common.basicInfoキー追加・PR #975マージ済み
+  - bindI18nStore: '' → 'added removed' で非同期ロード完了時の再レンダリングを有効化
+  - app/public/locales・locales の en/ja に common.basicInfo キーを追加
+  - typecheck: exit 0
 
 - 2026-03-10: #969 Gemini Code Assistレビュー指摘一括対応・PR #974マージ済み
   - AGENTS.md禁止パターン2文言修正、ResourceProjectPreviewGroup useNavigate実装
