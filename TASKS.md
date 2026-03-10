@@ -10,6 +10,11 @@
 
 ## 今日の運用ログ
 
+- 2026-03-10: #966 Build*モジュールをcomponents→ui-build-progressに統合移動・PR #968作成
+  - Build*コンポーネント/フック/型を移動、BuildSessionProgressPanelShell廃止
+  - サブパスエクスポート移設、全プラグインのインポートパス更新
+  - build: 114/114 ✅、typecheck: 144/147 ✅（route-plugin既知エラーのみ）
+
 - 2026-03-10: #964 maximize状態でリサイズ/移動時にdisplayModeをnormalに自動遷移・PR #965マージ済み
   - レビュー指摘対応: nextDisplayMode変数導入でenforceTopLeftMargin条件を明確化・PR #967マージ済み
 
