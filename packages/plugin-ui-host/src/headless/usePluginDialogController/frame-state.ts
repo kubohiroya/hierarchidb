@@ -406,12 +406,13 @@ export function useDialogFrameState({
       if (!next) return;
       defaultFrameRef.current = null;
       // When the user manually resizes from maximize, transition to normal
+      const nextDisplayMode = displayMode === 'maximize' ? 'normal' : displayMode;
       if (displayMode === 'maximize') {
         persistDisplayMode('normal');
       }
       const viewport = getViewportSize();
       const normalized = normalizeDialogState(next, dialogPositionRef.current, viewport, {
-        enforceTopLeftMargin: displayMode === 'normal' || displayMode === 'maximize',
+        enforceTopLeftMargin: nextDisplayMode === 'normal',
         minPosition: 0,
         clampSizeToViewport: true,
       });
@@ -430,12 +431,13 @@ export function useDialogFrameState({
       if (!next) return;
       defaultFrameRef.current = null;
       // When the user manually moves from maximize, transition to normal
+      const nextDisplayMode = displayMode === 'maximize' ? 'normal' : displayMode;
       if (displayMode === 'maximize') {
         persistDisplayMode('normal');
       }
       const viewport = getViewportSize();
       const normalized = normalizeDialogState(dialogSizeRef.current, next, viewport, {
-        enforceTopLeftMargin: displayMode === 'normal' || displayMode === 'maximize',
+        enforceTopLeftMargin: nextDisplayMode === 'normal',
         minPosition: 0,
         clampSizeToViewport: true,
       });
