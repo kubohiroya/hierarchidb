@@ -45,13 +45,11 @@
   "peerDependencies": {
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
-    "@tanstack/react-router": "^1.132.33",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-virtuoso": "^4.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "11.14.0",
-    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/ui-lru-splitview": "workspace:*"
@@ -62,13 +60,11 @@
   "devDependencies": {
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
-    "@tanstack/react-router": "^1.132.33",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-virtuoso": "^4.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "11.14.0",
-    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/ui-lru-splitview": "workspace:*"

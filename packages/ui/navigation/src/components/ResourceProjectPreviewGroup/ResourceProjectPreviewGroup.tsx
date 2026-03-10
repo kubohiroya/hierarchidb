@@ -5,11 +5,10 @@
 
 import type { ReactElement } from 'react';
 import { Button, ButtonGroup, type ButtonProps, Tooltip } from '@mui/material';
-// Placeholder until moved to proper package
-// import { AttachmentIcon, MapIcon } from '~/icon';
 import AttachmentIcon from '@mui/icons-material/Attachment';
 import MapIcon from '@mui/icons-material/Map';
-import { ButtonGroupOrientation, ButtonGroupSize } from '~/TreeToggleButtonGroup/TreeToggleButtonGroup';
+import type { ButtonGroupOrientation, ButtonGroupSize } from '../TreeToggleButtonGroup/TreeToggleButtonGroup.js';
+
 const useNavigate = (): ((path: string, options?: any) => void) => {
   return () => {
     /* no-op placeholder */

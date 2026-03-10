@@ -3,6 +3,7 @@
 ## Doing
 
 - #937 / refactor/build-session/consolidate-local-state-to-ssot / 2026-03-10 開始
+- #940 / `refactor/navigation/extract-router-components` / 2026-03-10 開始
 - #917 Shape Step5 残りUI表記のi18n化完了 / feature/i18n/shape-step5-remaining-ui-labels / start
 
 - #914 Shape Step5 Reset/Deleteメニューのi18n化 / feature/i18n/shape-step5-reset-delete-menu / start
