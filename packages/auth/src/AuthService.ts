@@ -39,6 +39,13 @@ export class AuthService implements AuthHeadersProvider {
   private uiStorage?: UiStorageBridge;
   private workerAPI?: WorkerTokenRequestAPI;
 
+  /**
+   * Active build-session context set by the build pipeline before tasks start.
+   * Used to populate AUTH_REQUIRED notifications with session identity so the
+   * UI can deduplicate / suppress repeated auth dialogs per build attempt.
+   */
+  private buildSessionContext: { sessionId: string; sessionStartedAt: number } | null = null;
+
 
 
 
@@ -65,6 +72,23 @@ export class AuthService implements AuthHeadersProvider {
         // (activeRequestIdRef + pendingCountBySessionRef).
       },
     });
+  }
+
+  /**
+   * Set the active build-session context. Called by the build pipeline at
+   * session start so that all subsequent AUTH_REQUIRED notifications carry
+   * the session identity (nodeId + startedAt epoch).
+   */
+  setBuildSessionContext(sessionId: string, sessionStartedAt: number): void {
+    this.buildSessionContext = { sessionId, sessionStartedAt };
+  }
+
+  /**
+   * Clear the active build-session context. Called when the build session
+   * completes or is cancelled.
+   */
+  clearBuildSessionContext(): void {
+    this.buildSessionContext = null;
   }
 
   setToken(token: string, _type: 'Bearer' | 'Basic' = 'Bearer', expiresAt?: number): void {
@@ -223,6 +247,9 @@ export class AuthService implements AuthHeadersProvider {
   }
 
   async fetchWithAuth(url: string, init: RequestInit = {}, ctx: AuthContext = {}): Promise<Response> {
+    // Resolve session identity: explicit ctx wins, then buildSessionContext.
+    const sessionId = ctx.sessionId ?? this.buildSessionContext?.sessionId;
+    const sessionStartedAt = ctx.sessionStartedAt ?? this.buildSessionContext?.sessionStartedAt;
     const maxRetries = ctx.maxRetries ?? 3;
     const scope: AuthScope = ctx.scope ?? 'shape';
     let attempt = 0;
@@ -326,7 +353,7 @@ export class AuthService implements AuthHeadersProvider {
           });
         }
         const requestId = `auth-req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-        const authRes = await this.awaitAuth(requestId, url, init, { sessionId: ctx.sessionId, scope, maxRetries }, {
+        const authRes = await this.awaitAuth(requestId, url, init, { sessionId, sessionStartedAt, scope, maxRetries }, {
           errorCode: 401,
           errorMessage: 'Unauthorized',
           source: isLikelyCorsProxyUrl(url) ? 'cors-proxy' : 'external-api',
@@ -415,6 +442,7 @@ export class AuthService implements AuthHeadersProvider {
       errorCode: params?.errorCode ?? 401,
       errorMessage: params?.errorMessage ?? 'Unauthorized',
       sessionId: ctx.sessionId,
+      sessionStartedAt: ctx.sessionStartedAt,
       pluginType: pluginTypeNarrow,
       retryCount: params?.retryCount ?? 0,
     });

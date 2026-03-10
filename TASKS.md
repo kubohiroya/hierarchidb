@@ -2,6 +2,7 @@
 
 ## Doing
 
+- #991 / `fix/auth/suppress-repeated-auth-dialog-991` / 2026-03-10 開始
 - #988 / `fix/i18n/route-plugin-type-safety-and-import-cleanup` / 2026-03-10 開始
 - #983 / `fix/shape-plugin/rename-steps-processing-to-config` / 2026-03-10 開始
 - #970 / `fix/i18n/stepper-basic-info-label-key` / 2026-03-10 開始
@@ -14,6 +15,10 @@
 
 ## 今日の運用ログ
 
+- 2026-03-10: #991 並列Worker 401時の認証ダイアログ重複表示抑制・PR #992作成
+  - sessionStartedAtをAUTH_REQUIRED通知に追加、UI側でキャンセル済みビルド試行を記録し重複抑制
+  - AuthService.setBuildSessionContext/clearBuildSessionContextでセッション識別子伝播
+  - typecheck: auth-api, auth, download, runtime-worker, shape-plugin, app 全通過
 - 2026-03-10: #988 route-plugin t() String()ラップ + I18nInstance import整理・PR #990作成
   - t()戻り値をString()でラップ（route-plugin 6ファイル）、I18nInstance import簡素化（app 2ファイル）
   - tsconfig.typecheck.json に allowImportingTsExtensions追加

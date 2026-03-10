@@ -8,6 +8,8 @@ export type SmartFetchAuthOptions = {
   /** 推奨: 認証/通知のルーティングに使うスコープ（例: 'shape' | 'location' | 'route'）。 */
   scope?: string;
   sessionId?: string;
+  /** Epoch ms when the build session started. Used to distinguish build attempts for auth dedup. */
+  sessionStartedAt?: number;
   maxRetries?: number;
 };
 
@@ -174,6 +176,7 @@ export async function smartFetch(input: string, options: SmartFetchOptions = {})
   const ctx: AuthContext = {
     scope: pluginType,
     sessionId: options.auth?.sessionId,
+    sessionStartedAt: options.auth?.sessionStartedAt,
     maxRetries: options.auth?.maxRetries,
   };
 

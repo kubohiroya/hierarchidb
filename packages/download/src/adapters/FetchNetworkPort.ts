@@ -18,6 +18,8 @@ export interface FetchNetworkPortOptions {
     /** 推奨: 認証/通知のルーティングに使うスコープ（例: 'shape' | 'location' | 'route'）。 */
     scope?: string;
     sessionId?: string;
+    /** Epoch ms when the build session started. Used to distinguish build attempts for auth dedup. */
+    sessionStartedAt?: number;
     maxRetries?: number;
   };
 }
@@ -103,7 +105,7 @@ export class FetchNetworkPort implements NetworkPort {
   private opts: Required<Omit<FetchNetworkPortOptions, 'corsProxyBaseURL' | 'authFetch'>> & {
     corsProxyBaseURL: string;
     authFetch?: (url: string, init?: RequestInit) => Promise<Response>;
-    auth: { enabled: boolean; scope: string; sessionId?: string; maxRetries?: number };
+    auth: { enabled: boolean; scope: string; sessionId?: string; sessionStartedAt?: number; maxRetries?: number };
   };
   private semaphores = new Map<HostKey, Semaphore>();
   private globalSemaphore?: Semaphore;
@@ -130,6 +132,7 @@ export class FetchNetworkPort implements NetworkPort {
         enabled: opts.auth?.enabled ?? true,
         scope: (opts.auth?.scope ?? ''),
         sessionId: opts.auth?.sessionId,
+        sessionStartedAt: opts.auth?.sessionStartedAt,
         maxRetries: opts.auth?.maxRetries,
       },
     };
@@ -193,6 +196,7 @@ export class FetchNetworkPort implements NetworkPort {
           enabled: this.opts.auth.enabled,
           scope: this.opts.auth.scope,
           sessionId: this.opts.auth.sessionId,
+          sessionStartedAt: this.opts.auth.sessionStartedAt,
           maxRetries: this.opts.auth.maxRetries,
         },
         retry: {
