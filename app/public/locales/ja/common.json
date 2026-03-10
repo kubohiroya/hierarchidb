@@ -82,6 +82,14 @@
     "common": {
       "actions": {
         "close": "ダイアログを閉じる"
+      },
+      "displayMode": {
+        "ariaLabel": "表示モード",
+        "normal": "通常（ウィンドウ）",
+        "maximize": "最大化",
+        "restore": "元に戻す",
+        "fullScreen": "全画面",
+        "exitFullScreen": "全画面を終了"
       }
     },
     "archive": {

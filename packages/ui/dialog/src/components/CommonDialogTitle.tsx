@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { Box, Chip, DialogTitle, IconButton, Stack, Typography, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
+import { Box, Chip, DialogTitle, IconButton, Stack, Tooltip, Typography, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
 import {
   Close as CloseIcon,
   Fullscreen as FullscreenIcon,
@@ -12,7 +12,6 @@ import {
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
-  DISPLAY_MODE_LABELS,
   useCommonDialogTitleView,
 } from './useCommonDialogTitleView.js';
 
@@ -52,6 +51,8 @@ export const CommonDialogTitle: React.FC<CommonDialogTitleProps> = ({
     showMaximizeToggle,
     maximizeToggleLabel,
     fullscreenToggleLabel,
+    displayModeLabels,
+    displayModeAriaLabel,
     openModeMenu,
     closeModeMenu,
     selectDisplayMode,
@@ -61,6 +62,8 @@ export const CommonDialogTitle: React.FC<CommonDialogTitleProps> = ({
     displayMode,
     onChangeDisplayMode,
   });
+
+  const closeLabel = String(t('dialogs.common.actions.close', 'Close dialog'));
 
   return (
     <DialogTitle>
@@ -79,50 +82,58 @@ export const CommonDialogTitle: React.FC<CommonDialogTitleProps> = ({
         <Stack direction="row" spacing={1}>
           {showDisplayModeControls && onChangeDisplayMode && (
             <>
-              <IconButton aria-label="Display mode" onClick={openModeMenu} size="small">
-                <OpenInFullIcon />
-              </IconButton>
+              <Tooltip title={displayModeAriaLabel}>
+                <IconButton aria-label={displayModeAriaLabel} onClick={openModeMenu} size="small">
+                  <OpenInFullIcon />
+                </IconButton>
+              </Tooltip>
               <Menu anchorEl={modeMenuAnchor} open={isModeMenuOpen} onClose={closeModeMenu} keepMounted>
                 <MenuItem selected={displayMode === 'normal'} onClick={() => selectDisplayMode('normal')}>
                   <ListItemIcon>
                     <FullscreenExitIcon fontSize="small" />
                   </ListItemIcon>
-                  <ListItemText>{DISPLAY_MODE_LABELS.normal}</ListItemText>
+                  <ListItemText>{displayModeLabels.normal}</ListItemText>
                 </MenuItem>
                 <MenuItem selected={displayMode === 'maximize'} onClick={() => selectDisplayMode('maximize')}>
                   <ListItemIcon>
                     <OpenInFullIcon fontSize="small" />
                   </ListItemIcon>
-                  <ListItemText>{DISPLAY_MODE_LABELS.maximize}</ListItemText>
+                  <ListItemText>{displayModeLabels.maximize}</ListItemText>
                 </MenuItem>
                 <MenuItem selected={displayMode === 'full-screen'} onClick={() => selectDisplayMode('full-screen')}>
                   <ListItemIcon>
                     <FullscreenIcon fontSize="small" />
                   </ListItemIcon>
-                  <ListItemText>{DISPLAY_MODE_LABELS['full-screen']}</ListItemText>
+                  <ListItemText>{displayModeLabels['full-screen']}</ListItemText>
                 </MenuItem>
               </Menu>
               {showMaximizeToggle && (
+                <Tooltip title={maximizeToggleLabel}>
+                  <IconButton
+                    aria-label={maximizeToggleLabel}
+                    onClick={toggleMaximize}
+                    size="small"
+                  >
+                    {displayMode === 'maximize' ? <FullscreenExitIcon /> : <OpenInFullIcon />}
+                  </IconButton>
+                </Tooltip>
+              )}
+              <Tooltip title={fullscreenToggleLabel}>
                 <IconButton
-                  aria-label={maximizeToggleLabel}
-                  onClick={toggleMaximize}
+                  aria-label={fullscreenToggleLabel}
+                  onClick={toggleFullscreen}
                   size="small"
                 >
-                  {displayMode === 'maximize' ? <FullscreenExitIcon /> : <OpenInFullIcon />}
+                  {displayMode === 'full-screen' ? <FullscreenExitIcon /> : <FullscreenIcon />}
                 </IconButton>
-              )}
-              <IconButton
-                aria-label={fullscreenToggleLabel}
-                onClick={toggleFullscreen}
-                size="small"
-              >
-                {displayMode === 'full-screen' ? <FullscreenExitIcon /> : <FullscreenIcon />}
-              </IconButton>
+              </Tooltip>
             </>
           )}
-          <IconButton onClick={onClose} color="inherit" aria-label={String(t('dialogs.common.actions.close', 'Close dialog'))}>
-            <CloseIcon />
-          </IconButton>
+          <Tooltip title={closeLabel}>
+            <IconButton onClick={onClose} color="inherit" aria-label={closeLabel}>
+              <CloseIcon />
+            </IconButton>
+          </Tooltip>
         </Stack>
       </Box>
       {subtitle && (

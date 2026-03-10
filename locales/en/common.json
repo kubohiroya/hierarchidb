@@ -82,6 +82,14 @@
     "common": {
       "actions": {
         "close": "Close dialog"
+      },
+      "displayMode": {
+        "ariaLabel": "Display mode",
+        "normal": "Normal (windowed)",
+        "maximize": "Maximize",
+        "restore": "Restore",
+        "fullScreen": "Full screen",
+        "exitFullScreen": "Exit full screen"
       }
     },
     "archive": {

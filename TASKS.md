@@ -2,13 +2,15 @@
 
 ## Doing
 
-- #961 / docs/agents/react-hooks-deps-rule / 2026-03-10
+（なし）
 
 ## Blocked
 
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 
 ## 今日の運用ログ
+
+- 2026-03-10: #961 AGENTS.mdにReact Hooks依存配列ルール追加・PR #962マージ済み
 
 - 2026-03-10: #958 useBuildProgressPanelStateSideEffects無限レンダリングループ修正・PR #959作成
   - totalElapsedSnapshotRef追加、elapsed snapshot useEffectからtotalElapsedSnapshot依存除去
