@@ -16,10 +16,15 @@ const countTaskQueueStatusesMock = vi.hoisted(() => vi.fn(async () => ({
 const listTasksByStatusMock = vi.hoisted(() => vi.fn(async () => []));
 const updateTaskMock = vi.hoisted(() => vi.fn(async () => undefined));
 
-const activePipelines = vi.hoisted(() => new Set<string>());
-const activePipelineRuns = vi.hoisted(() => new Map<string, string>());
-const sessionAbortControllers = vi.hoisted(() => new Map<string, AbortController>());
-const sessionWorkerInstances = vi.hoisted(() => new Map<string, { terminate?: () => void }>());
+// In-memory store for AbortControllers (replaces the old sessionAbortControllers Map)
+const abortControllerStore = vi.hoisted(() => new Map<string, AbortController | null>());
+const setSessionAbortControllerMock = vi.hoisted(() => vi.fn((nodeId: string, ac: AbortController | null) => {
+  abortControllerStore.set(nodeId, ac);
+}));
+const clearSessionAbortControllerMock = vi.hoisted(() => vi.fn((nodeId: string) => {
+  abortControllerStore.delete(nodeId);
+}));
+const getSessionAbortControllerMock = vi.hoisted(() => vi.fn((nodeId: string) => abortControllerStore.get(nodeId) ?? null));
 
 vi.mock('@hierarchidb/vt-orchestrator', () => ({
   VtTaskQueueDb: class {
@@ -41,31 +46,34 @@ vi.mock('@hierarchidb/vt-orchestrator', () => ({
   updateTask: (...args: Parameters<typeof updateTaskMock>) => updateTaskMock(...args),
 }));
 
-vi.mock('../../worker/api/shapeBuildRuntimeExecutionMetrics.js', () => ({
-  shapeBuildRuntimeExecutionMetrics: {
-    countTaskQueueStatuses: (...args: Parameters<typeof countTaskQueueStatusesMock>) => countTaskQueueStatusesMock(...args),
-    setPaused: (...args: Parameters<typeof setPausedMock>) => setPausedMock(...args),
-    waitIfPaused: async () => undefined,
-    startSessionTracking: () => undefined,
-    clearStalePipelineStateIfInactive: async () => false,
-    clearActivePipelineRuntimeState: (...args: Parameters<typeof clearActivePipelineRuntimeStateMock>) =>
-      clearActivePipelineRuntimeStateMock(...args),
-    resolveProgressPhase: () => 'running',
-    buildProgressPayloadFromTasks: async () => ({}),
-    emitProgressSnapshot: (...args: Parameters<typeof emitProgressSnapshotMock>) => emitProgressSnapshotMock(...args),
-    upsertBuildSessionSnapshot: (...args: Parameters<typeof upsertBuildSessionSnapshotMock>) =>
-      upsertBuildSessionSnapshotMock(...args),
-    updateBuildSessionFromTasks: (...args: Parameters<typeof updateBuildSessionFromTasksMock>) =>
-      updateBuildSessionFromTasksMock(...args),
-    summarizeTaskQueueStatus: () => ({ status: 'running', stage: 'source' }),
-    progressCallbacks: new Map(),
-    getShapeEntityHandler: () => ({ getEntity: async () => null }),
-    activePipelines,
-    activePipelineRuns,
-    sessionAbortControllers,
-    sessionWorkerInstances,
-    isStopReason: (value: string) => ['route-leave', 'user-pause', 'failed', 'completed', 'unknown'].includes(value),
-  },
+// Mock shapeBuildRuntimeCore which is the module that shapeBuildRuntimeExecutionControl
+// destructures setPaused, waitIfPaused, etc. from.
+vi.mock('../../worker/api/shapeBuildRuntimeCore.js', () => ({
+  countTaskQueueStatuses: (...args: Parameters<typeof countTaskQueueStatusesMock>) => countTaskQueueStatusesMock(...args),
+  setPaused: (...args: Parameters<typeof setPausedMock>) => setPausedMock(...args),
+  waitIfPaused: async () => undefined,
+  resolveProgressPhase: () => 'running',
+  buildProgressPayloadFromTasks: async () => ({}),
+  progressCallbacks: new Map(),
+  getShapeEntityHandler: () => ({ getEntity: async () => null }),
+  listTasks: async () => [],
+  onTaskQueueUpdate: () => () => {},
+  ensureTaskQueueSeeded: async () => undefined,
+  mapTaskQueueRecordToTaskSummary: (t: unknown) => t,
+  buildTaskSummarySnapshot: async () => [],
+  buildTaskQueueSummary: async () => ({}),
+  getPauseState: () => ({ paused: false, waiters: [] }),
+  resolveSessionStatus: () => 'running',
+  resolveSessionLastActivity: () => Date.now(),
+  taskCallbacks: new Map(),
+  sessionStateCallbacks: new Map(),
+  stageSnapshotCallbacks: new Map(),
+  heartbeatCallbacks: new Map(),
+  taskProgressCallbacks: new Map(),
+  workerLogCallbacks: new Map(),
+  setSessionAbortController: (...args: Parameters<typeof setSessionAbortControllerMock>) => setSessionAbortControllerMock(...args),
+  clearSessionAbortController: (...args: Parameters<typeof clearSessionAbortControllerMock>) => clearSessionAbortControllerMock(...args),
+  getSessionAbortController: (...args: Parameters<typeof getSessionAbortControllerMock>) => getSessionAbortControllerMock(...args),
 }));
 
 import { shapeBuildRuntimeExecutionControl } from '../../worker/api/shapeBuildRuntimeExecutionControl';
@@ -76,10 +84,7 @@ describe('shape build pause command immediate stop', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
-    activePipelines.clear();
-    activePipelineRuns.clear();
-    sessionAbortControllers.clear();
-    sessionWorkerInstances.clear();
+    abortControllerStore.clear();
   });
 
   afterEach(() => {
@@ -92,7 +97,7 @@ describe('shape build pause command immediate stop', () => {
     const abortController = new AbortController();
     const abortSpy = vi.spyOn(abortController, 'abort');
 
-    sessionAbortControllers.set(String(nodeId), abortController);
+    abortControllerStore.set(String(nodeId), abortController);
 
     await shapeBuildRuntimeExecutionControl.invokeShapeBuildCommand('session/pause', {
       nodeId,

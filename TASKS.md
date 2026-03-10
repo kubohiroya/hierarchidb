@@ -2,6 +2,7 @@
 
 ## Doing
 
+- #993 / `fix/shape-plugin/vitest-alias-build-progress-plugin-registry` / 2026-03-10 開始
 - #991 / `fix/auth/suppress-repeated-auth-dialog-991` / 2026-03-10 開始
 - #988 / `fix/i18n/route-plugin-type-safety-and-import-cleanup` / 2026-03-10 開始
 - #983 / `fix/shape-plugin/rename-steps-processing-to-config` / 2026-03-10 開始
@@ -15,7 +16,11 @@
 
 ## 今日の運用ログ
 
-- 2026-03-10: #991 並列Worker 401時の認証ダイアログ重複表示抑制・PR #992作成
+- 2026-03-11: #994 shape-plugin 冗長パイプライン状態変数削除・AbortControllerをPauseStateに統合・PR #995作成
+  - activePipelines/activePipelineRuns/sessionAbortControllers/sessionWorkerInstances を削除
+  - clearActivePipelineRuntimeState のクリア漏れバグ修正
+  - AGENTS.md にSSOT原則追記
+  - typecheck: 100/100 exit 0、test: 12/12 pass
   - sessionStartedAtをAUTH_REQUIRED通知に追加、UI側でキャンセル済みビルド試行を記録し重複抑制
   - AuthService.setBuildSessionContext/clearBuildSessionContextでセッション識別子伝播
   - typecheck: auth-api, auth, download, runtime-worker, shape-plugin, app 全通過

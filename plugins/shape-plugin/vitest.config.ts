@@ -98,7 +98,6 @@ export default defineConfig({
       { find: /^~\/types\/LRUSplitView$/, replacement: path.resolve(__dirname, '../../packages/ui/lru-splitview/src/types/LRUSplitView.ts') },
       { find: /^~\/(.*)$/, replacement: path.resolve(__dirname, 'src/$1') },
       { find: '~', replacement: path.resolve(__dirname, 'src') },
-      // Map legacy core imports to public dist builds for tests
       {
         find: '@hierarchidb/core',
         replacement: path.resolve(__dirname, '../../packages/core-types/src/index.ts'),
@@ -119,17 +118,31 @@ export default defineConfig({
         find: '@hierarchidb/ui-build-sessions',
         replacement: path.resolve(__dirname, '../../packages/ui/build-sessions/dist/index.js'),
       },
+      // Deep import subpaths must be listed before the bare package alias
+      {
+        find: '@hierarchidb/ui-build-progress/build-session',
+        replacement: path.resolve(__dirname, '../../packages/ui/build-progress/src/build-session/index.ts'),
+      },
+      {
+        find: '@hierarchidb/ui-build-progress/build-status',
+        replacement: path.resolve(__dirname, '../../packages/ui/build-progress/src/build-status/index.ts'),
+      },
+      {
+        find: '@hierarchidb/ui-build-progress/build-stage',
+        replacement: path.resolve(__dirname, '../../packages/ui/build-progress/src/build-stage/index.ts'),
+      },
       {
         find: '@hierarchidb/ui-build-progress',
-        replacement: path.resolve(__dirname, '../../packages/ui/build-sessions/dist/index.js'),
+        replacement: path.resolve(__dirname, '../../packages/ui/build-progress/src/index.ts'),
       },
       {
         find: '@hierarchidb/ui-worker-provider',
         replacement: path.resolve(__dirname, '../../packages/ui/worker-provider/dist/index.js'),
       },
       {
+        // Point to dist so runtime-worker's internal ~/... aliases don't bleed into shape-plugin's resolver.
         find: '@hierarchidb/runtime-worker',
-        replacement: path.resolve(__dirname, '../../packages/runtime-worker/src/index.ts'),
+        replacement: path.resolve(__dirname, '../../packages/runtime-worker/dist/index.js'),
       },
       {
         find: '@hierarchidb/plugin-ui-host',
