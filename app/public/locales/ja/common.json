@@ -91,10 +91,6 @@
         "maximize": "Maximize（最大）",
         "fullScreen": "Full-screen（全画面）"
       },
-      "actions": {
-        "close": "ダイアログを閉じる",
-        "exitFullscreen": "全画面を終了"
-      },
       "title": {
         "empty": "アーカイブから削除する",
         "restore": "アーカイブから戻す"
@@ -166,6 +162,11 @@
           "restoreSize": "元に戻す",
           "fullscreen": "全画面",
           "exitFullscreen": "全画面を終了"
+        },
+        "contextMenu": {
+          "openInNewTab": "新しいタブで開く",
+          "openInNewWindow": "新しいウィンドウで開く",
+          "copyLinkUrl": "リンクURLをコピー"
         }
       }
     },

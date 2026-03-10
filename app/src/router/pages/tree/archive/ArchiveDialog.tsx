@@ -143,7 +143,7 @@ function ArchiveDialogHeader({
 }: ArchiveDialogHeaderProps) {
   const ctx = useDialogContext<ArchiveStepData>();
   const { t } = useTranslation();
-  const closeLabel = t('dialogs.pluginDialog.tooltips.close', 'Close dialog');
+  const closeLabel = t('dialogs.common.actions.close', 'Close dialog');
 
   const handleDragPointerDown = useCallback(
     (event: React.PointerEvent<HTMLElement>) => {
