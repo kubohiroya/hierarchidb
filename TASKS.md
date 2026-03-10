@@ -2,6 +2,7 @@
 
 ## Doing
 
+- #977 / `fix/i18n/plugin-dialog-tooltip-keys` / 2026-03-10 開始
 - #966 / `refactor/build-progress/consolidate-build-modules-v2` / 2026-03-10 開始
 
 
