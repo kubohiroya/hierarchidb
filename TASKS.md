@@ -2,7 +2,7 @@
 
 ## Doing
 
-- #984 / refactor/shape-plugin/remove-or-resume-keyword / 2026-03-10 開始
+- #986 / `fix/shape-plugin/default-tfunc-return-type-errors` / 2026-03-10 開始
 - #983 / `fix/shape-plugin/rename-steps-processing-to-config` / 2026-03-10 開始
 - #970 / `fix/i18n/stepper-basic-info-label-key` / 2026-03-10 開始
 - #969 / `refactor/review/gemini-review-batch-fixes` / 2026-03-10 開始
@@ -13,6 +13,10 @@
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 
 ## 今日の運用ログ
+
+- 2026-03-10: #986 shape-plugin DefaultTFuncReturn型エラー修正・PR #987作成
+  - t()戻り値をString()でラップ（5ファイル11箇所）
+  - typecheck: DefaultTFuncReturnエラー全解消（残存はTS2307 #984由来のみ）
 
 - 2026-03-10: #979 クールダウン中の再ビルド開始で認証ダイアログ非表示修正・PR #980作成
   - awaitAuthでAuthRequiredError throw、runStartBuildSessionでclearCancelledCooldown呼出追加
