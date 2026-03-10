@@ -12,7 +12,7 @@
     "licenseAgreement": {
       "label": "License Agreement"
     },
-    "processing": {
+    "config": {
       "label": "Config"
     },
     "countrySelection": {

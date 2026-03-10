@@ -12,8 +12,8 @@
     "licenseAgreement": {
       "label": "ライセンス同意"
     },
-    "processing": {
-      "label": "情報"
+    "config": {
+      "label": "設定"
     },
     "countrySelection": {
       "label": "国選択"
@@ -166,10 +166,6 @@
       "title": "ビルド実行中",
       "body": "現在ビルドセッションが実行中です。進捗を確認するにはビルド画面を開いてください。",
       "action": "ビルド画面を開く"
-    },
-    "cache": {
-      "title": "その他",
-      "descriptionTooltip": "ステージごとの生成物の保持・削除動作を設定します。"
     },
     "tileEmit": {
       "title": "TileEmit"

@@ -2,6 +2,7 @@
 
 ## Doing
 
+- #983 / `fix/shape-plugin/rename-steps-processing-to-config` / 2026-03-10 開始
 - #970 / `fix/i18n/stepper-basic-info-label-key` / 2026-03-10 開始
 - #969 / `refactor/review/gemini-review-batch-fixes` / 2026-03-10 開始
 
