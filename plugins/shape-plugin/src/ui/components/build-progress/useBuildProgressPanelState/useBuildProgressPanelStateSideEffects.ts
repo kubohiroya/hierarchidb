@@ -87,7 +87,9 @@ export const useBuildProgressPanelStateSideEffects = (args: {
   const lastNodeIdRef = useRef<string | undefined>(undefined);
   const hasProgressRef = useRef(false);
   const totalElapsedSnapshotRef = useRef(totalElapsedSnapshot);
-  totalElapsedSnapshotRef.current = totalElapsedSnapshot;
+  useEffect(() => {
+    totalElapsedSnapshotRef.current = totalElapsedSnapshot;
+  }, [totalElapsedSnapshot]);
   const isTerminalStatus = (status: Summary['buildStatus'] | null) => status === 'completed' || status === 'failed';
 
   useEffect(() => {

@@ -3,7 +3,7 @@
  * @description Logic hook for FloatingWindow interactions and state.
  */
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FloatingWindowProps, WindowState } from '../types/WindowState.js';
 import {
   DEFAULT_FLOATING_WINDOW_Z_INDEX,
@@ -69,7 +69,7 @@ export function useFloatingWindowController(
   const [isInteracting, setIsInteracting] = useState(false);
 
   const portalContext = React.useContext(FloatingWindowPortalContext);
-  const portalRoot = portalContext.isProvider ? portalContext.root : ensureFloatingWindowRoot();
+  const portalRoot = useMemo(() => (portalContext.isProvider ? portalContext.root : ensureFloatingWindowRoot()), [portalContext.isProvider, portalContext.root]);
   const portalHostRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (!portalRoot) return undefined;

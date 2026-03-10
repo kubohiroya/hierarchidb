@@ -276,15 +276,15 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   const computedStatusLabel = (() => {
     switch (status) {
       case 'running':
-        return t('buildControl.status.running') as string;
+        return t('buildControl.status.running', 'Build in progress');
       case 'paused':
-        return t('buildControl.status.paused') as string;
+        return t('buildControl.status.paused', 'Build paused');
       case 'completed':
-        return t('buildControl.status.completed') as string;
+        return t('buildControl.status.completed', 'Build completed');
       case 'failed':
-        return t('buildControl.status.failed') as string;
+        return t('buildControl.status.failed', 'Build failed');
       default:
-        return t('buildControl.status.ready') as string;
+        return t('buildControl.status.ready', 'Ready to start build');
     }
   })();
   

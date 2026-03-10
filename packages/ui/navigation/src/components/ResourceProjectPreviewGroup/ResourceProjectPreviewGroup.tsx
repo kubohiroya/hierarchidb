@@ -7,13 +7,8 @@ import type { ReactElement } from 'react';
 import { Button, ButtonGroup, type ButtonProps, Tooltip } from '@mui/material';
 import AttachmentIcon from '@mui/icons-material/Attachment';
 import MapIcon from '@mui/icons-material/Map';
+import { useNavigate } from '@tanstack/react-router';
 import type { ButtonGroupOrientation, ButtonGroupSize } from '../TreeToggleButtonGroup/TreeToggleButtonGroup.js';
-
-const useNavigate = (): ((path: string, options?: any) => void) => {
-  return () => {
-    /* no-op placeholder */
-  };
-};
 
 export type ResourceProjectType = 'resources' | 'projects';
 
