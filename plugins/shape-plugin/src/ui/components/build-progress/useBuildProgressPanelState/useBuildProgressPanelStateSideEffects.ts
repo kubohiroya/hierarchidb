@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { MutableRefObject } from 'react';
-import type { BuildStatus } from '@hierarchidb/components/build-status';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import {
   isShapeBuildPanelDebugEnabled,
   logRunningResiduePanel,

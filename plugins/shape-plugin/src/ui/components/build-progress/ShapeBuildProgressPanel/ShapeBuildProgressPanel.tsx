@@ -1,7 +1,7 @@
 import { type NodeId } from '@hierarchidb/core-types';
 import { useShapeBuildProgressPanelController } from './useShapeBuildProgressPanelController.js';
 import { useShapeBuildProgressPanelViewModel } from './useShapeBuildProgressPanelViewModel.js';
-import { BuildSessionProgressPanelShell } from '@hierarchidb/ui-build-progress';
+import { BuildSessionProgressPanel } from '@hierarchidb/ui-build-progress';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 
 type ShapeBuildProgressPanelProps = {
@@ -21,5 +21,5 @@ export const ShapeBuildProgressPanel = ({
     nodeId,
   });
 
-  return <BuildSessionProgressPanelShell {...viewModel} />;
+  return <BuildSessionProgressPanel {...viewModel} />;
 };

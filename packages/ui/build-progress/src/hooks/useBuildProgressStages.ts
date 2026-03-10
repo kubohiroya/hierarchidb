@@ -1,7 +1,7 @@
 import { createElement, useMemo, type ReactNode } from 'react';
 import { CloudDownload, Layers, Tune } from '@mui/icons-material';
-import type { BuildStage } from '@hierarchidb/components/build-stage';
-import type { BuildSessionProgressPanelProps } from '@hierarchidb/components';
+import type { BuildStage } from '../components/BuildStage.js';
+import type { BuildSessionProgressPanelProps } from '../components/BuildSessionProgressPanel.js';
 
 type BuildStageId = 'source' | 'geometry' | 'tileEmit';
 

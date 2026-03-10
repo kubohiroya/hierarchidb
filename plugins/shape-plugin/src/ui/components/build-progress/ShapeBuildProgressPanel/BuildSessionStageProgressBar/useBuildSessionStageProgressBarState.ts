@@ -1,8 +1,8 @@
 import { type PointerEvent, useId, useMemo } from 'react';
 import { useTheme } from '@mui/material/styles';
 import { useAtomValue } from 'jotai';
-import { useBuildStageFilter } from '@hierarchidb/components';
-import type { BuildStage } from '@hierarchidb/components/build-stage';
+import { useBuildStageFilter } from '@hierarchidb/ui-build-progress';
+import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import { taskViewportRangeAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 import type { TaskProgressSummary } from '~/ui/atoms/shapeBuildProgressTypes';

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { BuildStatus } from '@hierarchidb/components/build-status';
-import type { BuildStage } from '@hierarchidb/components/build-stage';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
+import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '~/common/types/index';
 import { resolveShapeTaskTitle } from '~/common/utils/taskTitles';

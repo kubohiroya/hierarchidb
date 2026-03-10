@@ -1,4 +1,4 @@
-import type { BuildControlMenuItem } from '@hierarchidb/components';
+import type { BuildControlMenuItem } from '@hierarchidb/ui-build-progress';
 import { IconButton } from '@mui/material';
 import {
   type BuildSessionProgressPanelViewModel,

@@ -1,6 +1,6 @@
 import { useBuildSessionStageCardState } from './useBuildSessionStageCardState.js';
 import { BuildSessionStageCardView } from './BuildSessionStageCardView.tsx';
-import type { BuildStatus } from '@hierarchidb/components/build-status';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 
 type BuildSessionStageCardProps = {

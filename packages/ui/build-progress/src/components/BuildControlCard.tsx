@@ -2,16 +2,14 @@ import { Box, Button, CircularProgress, Stack, Typography, MenuItem, ListItemIco
 import { type ReactNode, useState, useCallback, useEffect } from 'react';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
-import { LoadingButton } from './LoadingButton.js';
-import { PillButton } from './PillButton.js';
-import { PillButtonGroup } from './PillButtonGroup.js';
+import { LoadingButton, PillButton, PillButtonGroup } from '@hierarchidb/components';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import TimelapseIcon from '@mui/icons-material/Timelapse';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
-import type { BuildControlDetail } from './BuildStepPanel.tsx';
-import type { BuildStatus } from './build-status/BuildStatus.ts';
+import type { BuildControlDetail } from './BuildStepPanel.js';
+import type { BuildStatus } from '../types/BuildStatus.js';
 
 type BuildControlCardProps = {
   status: BuildStatus;

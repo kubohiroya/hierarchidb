@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { isTaskSkipped } from '~/common/utils/taskMessages';
 import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
-import type { BuildStatus } from '@hierarchidb/components/build-status';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import type { BuildProgress, BuildProgressStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
-import type { BuildStage } from '@hierarchidb/components/build-stage';
+import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import { useShapeBuildProgressSummaryComputation } from '~/ui/components/build-progress/useShapeBuildProgressSummaryComputation.js';
 import {

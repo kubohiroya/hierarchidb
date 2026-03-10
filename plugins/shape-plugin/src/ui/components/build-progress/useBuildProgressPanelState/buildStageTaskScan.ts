@@ -1,4 +1,4 @@
-import type { BuildStage } from '@hierarchidb/components/build-stage';
+import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import { resolveStageAliasArray } from '~/ui/components/build-progress/stageIdAliases';
 

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import type { BuildStage, BuildStatus } from '@hierarchidb/components';
+import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import type { BuildTaskSummary } from '../../../../build-api';
 import { buildTaskCountSummary } from '~/utils/taskProgressSummary';
 

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildStatus } from '@hierarchidb/components/build-status';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import type { TaskStage } from '@hierarchidb/build-api';
 import {

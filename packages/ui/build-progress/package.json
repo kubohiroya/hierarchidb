@@ -7,26 +7,55 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./build-session": {
+      "types": "./dist/build-session/index.d.ts",
+      "import": "./dist/build-session/index.js",
+      "default": "./dist/build-session/index.js"
+    },
+    "./build-status": {
+      "types": "./dist/build-status/index.d.ts",
+      "import": "./dist/build-status/index.js",
+      "default": "./dist/build-status/index.js"
+    },
+    "./build-stage": {
+      "types": "./dist/build-stage/index.d.ts",
+      "import": "./dist/build-stage/index.js",
+      "default": "./dist/build-stage/index.js"
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
+    "build": "tsdown src/index.ts src/build-session/index.ts src/build-status/index.ts src/build-stage/index.ts --config ../../../tsdown.config.ts --outDir dist",
     "format": "biome check --write src",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "clean": "rm -rf dist",
-    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
-  "dependencies": {},
-  "peerDependencies": {
+  "dependencies": {
     "@hierarchidb/components": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*"
+  },
+  "peerDependencies": {
     "@mui/icons-material": "^7.3.6",
-    "react": "^19.0.0"
+    "@mui/material": "^7.3.6",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "11.14.0",
+    "@hierarchidb/ui-i18n": "workspace:*",
+    "@hierarchidb/ui-lru-splitview": "workspace:*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@hierarchidb/components": "workspace:*",
     "@mui/icons-material": "^7.3.6",
+    "@mui/material": "^7.3.6",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "11.14.0",
+    "@hierarchidb/components": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/ui-i18n": "workspace:*",
+    "@hierarchidb/ui-lru-splitview": "workspace:*",
     "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "@types/react": "^19.1.1",
     "typescript": "workspace:^5.9.3"
   },

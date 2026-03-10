@@ -8,7 +8,7 @@ import {
   validateBuildConfig,
   type ShapeEntity,
 } from '~/common/types/index';
-import type { BuildStatus } from '@hierarchidb/components/build-status';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import { useShapeBuildAutoResume } from '~/ui/components/build-progress/useShapeBuildAutoResume/useShapeBuildAutoResume';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';

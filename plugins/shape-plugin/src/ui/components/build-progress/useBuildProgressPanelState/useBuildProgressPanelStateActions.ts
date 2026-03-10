@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildStatus } from '@hierarchidb/components/build-status';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import type { TaskProgressControls } from '~/ui/atoms/shapeBuildProgressTypes';
 import { logStartResumeTrace } from './useBuildProgressPanelState.utils.js';
 import type { PendingUserAction } from '~/ui/atoms/buildSessionStateAtoms';

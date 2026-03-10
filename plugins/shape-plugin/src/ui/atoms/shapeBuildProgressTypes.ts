@@ -1,4 +1,4 @@
-import type { BuildStage, BuildStatus } from '@hierarchidb/components';
+import type { BuildStage, BuildStatus } from '@hierarchidb/ui-build-progress';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { PaneProgress } from '@hierarchidb/ui-lru-splitview';
 import type { BuildTaskSummary } from '@hierarchidb/build-api';

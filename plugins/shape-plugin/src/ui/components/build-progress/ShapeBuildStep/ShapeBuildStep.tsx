@@ -1,7 +1,7 @@
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { Provider, useAtomValue } from 'jotai';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildStatus } from '@hierarchidb/components/build-status';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import { buildSessionRuntimeAtom } from '~/ui/atoms/buildSessionStateAtoms';
 import { HeapPressureDialog } from '@hierarchidb/ui-memory';
 

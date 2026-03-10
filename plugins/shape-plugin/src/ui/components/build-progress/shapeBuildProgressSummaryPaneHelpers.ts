@@ -1,6 +1,6 @@
-import type { BuildStatus } from '@hierarchidb/components/build-status';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import type { BuildProgressStatus } from './shapeBuildProgressMapping.js';
-import type { BuildStage } from '@hierarchidb/components/build-stage';
+import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import type { BuildTaskSummary, TaskStage } from '@hierarchidb/build-api';
 import { resolveMostAdvancedStageId } from './stagePriority.js';
 import type { StageCountInfo } from './shapeBuildProgressSummaryCountHelpers.js';

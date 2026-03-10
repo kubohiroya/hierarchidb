@@ -7,10 +7,10 @@ import {
   type TaskCountSummary,
   type TaskLike,
 } from '@hierarchidb/ui-build-sessions';
-import type { BuildStatus } from '@hierarchidb/components/build-status';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import type { BuildTaskSummary } from '@hierarchidb/build-api';
 import type { TaskStage } from '@hierarchidb/build-api';
-import type { BuildStage } from '@hierarchidb/components/build-stage';
+import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import {
   buildStageCountPlan,
   chooseInFlightStage,

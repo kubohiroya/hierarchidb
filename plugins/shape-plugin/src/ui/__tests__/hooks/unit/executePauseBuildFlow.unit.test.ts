@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { executePauseBuildFlow } from '@hierarchidb/components/build-session';
+import { executePauseBuildFlow } from '@hierarchidb/ui-build-progress/build-session';
 
 describe('executePauseBuildFlow', () => {
   it('keeps pending true until pause and persist both complete', async () => {

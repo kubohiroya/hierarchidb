@@ -1,5 +1,5 @@
 import { createElement, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
-import type { BuildStage } from '@hierarchidb/components';
+import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import type { BuildSessionSnapshot } from '~/hooks/useBuildSessionSnapshots';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';

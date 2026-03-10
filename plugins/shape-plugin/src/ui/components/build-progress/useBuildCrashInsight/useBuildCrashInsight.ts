@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { ShapeEntity } from '~/common/types/index';
-import type { BuildStatus } from '@hierarchidb/components/build-status';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import {
   type BuildMonitorConfig,
   getBuildMonitorKey,

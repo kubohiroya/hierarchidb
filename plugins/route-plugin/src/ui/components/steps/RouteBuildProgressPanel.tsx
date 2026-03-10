@@ -1,9 +1,9 @@
 import type { ComponentProps } from 'react';
-import { BuildSessionProgressPanelShell } from '@hierarchidb/ui-build-progress';
+import { BuildSessionProgressPanel } from '@hierarchidb/ui-build-progress';
 
-export type RouteBuildProgressPanelProps = ComponentProps<typeof BuildSessionProgressPanelShell>;
+export type RouteBuildProgressPanelProps = ComponentProps<typeof BuildSessionProgressPanel>;
 
 export const RouteBuildProgressPanel = (props: RouteBuildProgressPanelProps) => {
-  return <BuildSessionProgressPanelShell {...props} />;
+  return <BuildSessionProgressPanel {...props} />;
 };
 
