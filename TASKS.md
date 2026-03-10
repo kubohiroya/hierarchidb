@@ -2,7 +2,7 @@
 
 ## Doing
 
-- #956 / fix/shape-plugin/stage-state-infinite-loop / 2026-03-10 start → PR #957作成
+- #958 / fix/shape-plugin/elapsed-snapshot-infinite-loop / 2026-03-10 start
 
 ## Blocked
 

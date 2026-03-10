@@ -86,6 +86,8 @@ export const useBuildProgressPanelStateSideEffects = (args: {
   const previousBuildStatusRef = useRef<Summary['buildStatus'] | null>(null);
   const lastNodeIdRef = useRef<string | undefined>(undefined);
   const hasProgressRef = useRef(false);
+  const totalElapsedSnapshotRef = useRef(totalElapsedSnapshot);
+  totalElapsedSnapshotRef.current = totalElapsedSnapshot;
   const isTerminalStatus = (status: Summary['buildStatus'] | null) => status === 'completed' || status === 'failed';
 
   useEffect(() => {
@@ -206,7 +208,7 @@ export const useBuildProgressPanelStateSideEffects = (args: {
 
   useEffect(() => {
     if (shouldUpdateElapsedSnapshot({
-      snapshot: totalElapsedSnapshot,
+      snapshot: totalElapsedSnapshotRef.current,
       totalElapsedMs: summary.totalElapsedMs,
       buildStatus: summary.buildStatus,
     })) {
@@ -215,7 +217,7 @@ export const useBuildProgressPanelStateSideEffects = (args: {
         capturedAt: elapsedTickMs,
       });
     }
-  }, [elapsedTickMs, summary.buildStatus, summary.totalElapsedMs, totalElapsedSnapshot, setTotalElapsedSnapshot]);
+  }, [elapsedTickMs, summary.buildStatus, summary.totalElapsedMs, setTotalElapsedSnapshot]);
 
   useEffect(() => {
     if (!isShapeBuildPanelDebugEnabled('runningResiduePanel')) return;
