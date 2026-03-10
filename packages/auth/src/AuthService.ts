@@ -41,6 +41,10 @@ export class AuthService implements AuthHeadersProvider {
 
   // Prevent immediate re-prompt loops after user cancels.
   private cancelledUntilByScope = new Map<AuthScope, number>();
+  private static readonly AUTH_CANCELLED_COOLDOWN_MS = 30_000;
+
+  // Track requestId → scope so onAuthCancelled can set the correct cooldown.
+  private pendingAuthRequestScopes = new Map<string, AuthScope>();
 
 
   static async getSingleton(): Promise<AuthService> {
@@ -53,8 +57,29 @@ export class AuthService implements AuthHeadersProvider {
       onAuthRequired: async (_notification: AuthRequiredNotification) => {
         // No-op: the fetcher initiates auth flows directly via awaitAuth.
       },
-      onAuthSuccess: async (_notification: AuthSuccessNotification) => { },
-      onAuthCancelled: async (_notification: AuthCancelledNotification) => { },
+      onAuthSuccess: async (notification: AuthSuccessNotification) => {
+        // Persist the new token so all subsequent fetches use fresh credentials.
+        this.setToken(
+          notification.context.newToken,
+          notification.context.tokenType ?? 'Bearer',
+          notification.context.expiresAt,
+        );
+
+        // Clear cooldown when authentication succeeds so subsequent fetches proceed normally.
+        const scope = this.pendingAuthRequestScopes.get(notification.context.requestId);
+        if (scope) {
+          this.cancelledUntilByScope.delete(scope);
+          this.pendingAuthRequestScopes.delete(notification.context.requestId);
+        }
+      },
+      onAuthCancelled: async (notification: AuthCancelledNotification) => {
+        // Set cooldown to prevent immediate re-prompt loops from parallel tasks.
+        const scope = this.pendingAuthRequestScopes.get(notification.context.requestId);
+        if (scope) {
+          this.cancelledUntilByScope.set(scope, Date.now() + AuthService.AUTH_CANCELLED_COOLDOWN_MS);
+          this.pendingAuthRequestScopes.delete(notification.context.requestId);
+        }
+      },
     });
   }
 
@@ -418,6 +443,7 @@ export class AuthService implements AuthHeadersProvider {
     void url;
     void init;
     void ctx;
+    this.pendingAuthRequestScopes.set(requestId, scope);
     this.registry.dispatch(notification).catch(() => { });
     throw new AuthRequiredError('Authentication required');
   }
@@ -426,6 +452,15 @@ export class AuthService implements AuthHeadersProvider {
     const until = this.cancelledUntilByScope.get(scope);
     if (!until) return false;
     return Date.now() < until;
+  }
+
+  /**
+   * Clear the cancelled-cooldown for a scope.
+   * Call this when the user explicitly retries (e.g. clicks "Start Build" again)
+   * so that a fresh AUTH_REQUIRED prompt can be shown.
+   */
+  clearCancelledCooldown(scope: AuthScope): void {
+    this.cancelledUntilByScope.delete(scope);
   }
 
   private async syncTokenFromStorage(): Promise<void> {

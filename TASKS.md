@@ -2,6 +2,7 @@
 
 ## Doing
 
+- #942 / fix/auth/bff-auth-build-session-state-transitions / 2026-03-10 開始
 - #937 / refactor/build-session/consolidate-local-state-to-ssot / 2026-03-10 開始
 
 - #917 Shape Step5 残りUI表記のi18n化完了 / feature/i18n/shape-step5-remaining-ui-labels / start
@@ -15,6 +16,12 @@
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 ## 今日の運用ログ
 
+- 2026-03-10: #942 BFF認証切れ時のビルドセッション状態遷移修正完了・PR #943作成
+  - AuthService cancelledUntilByScopeクールダウン実装
+  - 状態遷移ドキュメントにSection 7.5追加
+  - 死んだコード削除（authDialogOpen/closeAuthDialog/handleProviderSelect/TaskProgressAuthState）
+  - PRレビュー対応: onAuthSuccessでsetToken追加・状態遷移ドキュメントのシーケンス更新
+  - typecheck・build・test全通過確認
 - 2026-03-10: #940 ナビゲーションコンポーネント抽出完了・PR #941マージ済み
 
 - 2026-03-09: shape×styler同一フォルダ紐付けタスクは起票ゲートで停止（原因: gh未導入 / 発生範囲: 起票〜着手前 / 修正方法: gh CLI導入 / 適用範囲: 本環境の全新規実装タスク）。
