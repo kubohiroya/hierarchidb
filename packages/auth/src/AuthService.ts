@@ -58,6 +58,13 @@ export class AuthService implements AuthHeadersProvider {
         // No-op: the fetcher initiates auth flows directly via awaitAuth.
       },
       onAuthSuccess: async (notification: AuthSuccessNotification) => {
+        // Persist the new token so all subsequent fetches use fresh credentials.
+        this.setToken(
+          notification.context.newToken,
+          notification.context.tokenType ?? 'Bearer',
+          notification.context.expiresAt,
+        );
+
         // Clear cooldown when authentication succeeds so subsequent fetches proceed normally.
         const scope = this.pendingAuthRequestScopes.get(notification.context.requestId);
         if (scope) {
