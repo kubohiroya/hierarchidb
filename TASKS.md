@@ -2,14 +2,19 @@
 
 ## Doing
 
-- #954 / fix/ui-lru-splitview/infinite-render-loop / 2026-03-10 start → PR #955作成
+- #956 / fix/shape-plugin/stage-state-infinite-loop / 2026-03-10 start → PR #957作成
 
 ## Blocked
 
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
+
 ## 今日の運用ログ
 
-- 2026-03-10: #954 useLRUPanes無限レンダリングループ修正・PR #955作成
+- 2026-03-10: #956 useShapeBuildStepStageState無限レンダリングループ修正・PR #957作成
+  - tasksRef+tasksKey追加、persisted tasks同期useEffectから[tasks]依存除去→[tasksKey]に変更
+  - typecheck: 新規エラー0件（既知DefaultTFuncReturn 15件のみ）
+
+- 2026-03-10: #954 useLRUPanes無限レンダリングループ修正・PR #955マージ済み
   - panesRef追加、pane-sync/auto-expand useEffectからpanes依存除去
   - typecheck通過（exit 0）
 
@@ -34,143 +39,3 @@
 - 2026-03-10: #917 PR #945 mainリベース→CI全通過→マージ完了・ブランチ削除
 - 2026-03-10: #944 PR #946マージ完了・ローカル/リモートブランチ削除・stash整理(3件drop)
 - 2026-03-10: #917 mainリベース(コンフリクト2件解決)・push・PR #945作成
-
-- 2026-03-09: shape×styler同一フォルダ紐付けタスクは起票ゲートで停止（原因: gh未導入 / 発生範囲: 起票〜着手前 / 修正方法: gh CLI導入 / 適用範囲: 本環境の全新規実装タスク）。
-- 2025-03-09: #917 Shape Step5 残りUI表記のi18n化完了
-  - BuildStepPanelのハードコードされた英語文字列を翻訳関数に置き換え完了
-  - useTranslation('common')を追加し、computedStatusLabelでt()関数を使用
-  - common.jsonにbuildControl.status翻訳キーを追加（running, paused, completed, failed, ready）
-  - 'Build in progress'→'ビルド処理中'等の日本語化を実装
-  - 型チェック・ビルド成功確認（exit code 0）
-  - 変更内容をコミット・プッシュ完了
-  - 開発サーバーを現在のブランチで再起動完了（http://localhost:4200/）
-  - **手動確認推奨**: Shape作成→ビルド画面でステータス表示の日本語化を確認
-
-- 2026-03-09: #930 全プラグインのカスタムuseTranslation廃止・@hierarchidb/ui-i18n経由統一完了・PR #934マージ済み
-- 2026-03-09: #932 optimizeDeps.include網羅追加・推移的依存をapp/package.jsonに追加・AGENTS.mdに背景付き再発防止ルール追記・PR #933,#936マージ済み
-
-- 2026-03-09: #928 react-i18next直接import禁止・@hierarchidb/ui-i18n統一完了・PR #929マージ済み
-- 2026-03-09: #926 i18n翻訳キーパス不一致修正・useTranslation import統一完了・PR #927マージ済み
-- 2026-03-09: #924 Stepper Step1 "Info"ラベルi18nキーパス修正完了・PR #925マージ済み
-
-- 2026-03-09: #920 PR #921マージ完了（shape-pluginのuseTranslation import修正）
-- 2026-03-09: #922 ダイアログUI表記のi18n化完了・PR #923マージ済み
-- 2025-03-09: #915 Shape Step5 ビルド関連UI表記のi18n化完了
-  - `packages/ui/i18n/public/locales/en/common.json`と`ja/common.json`にbuildControl関連の翻訳を追加
-  - `BuildControlCard.tsx`でハードコードされた文字列をt()関数でi18n化
-  - shape-pluginの型エラー修正（未使用変数削除・cache関連プロパティ名修正）
-  - 型チェック・ビルド成功確認（exit code 0）
-  - 変更内容をコミット・プッシュ完了
-- 2025-03-09: #894 Shape Step5 UI改良タスク最終確認完了
-  - shape-pluginビルド成功確認（exit code 0）
-  - E2Eテスト実行・全体ビルド成功確認
-  - ButtonGroupとReset/Deleteメニュー統合機能が正常動作
-  - Build Sessions、Source、Geometry、TileEmit右の▼メニューボタン撤去完了
-  - アイコン付きReset/Deleteメニュー項目実装完了
-  - 型チェック・ビルド・テスト全て成功
-- 2025-03-08: UIに関連するブランチ全てmainマージ完了
-  - PR #898 (E2Eテスト実装) mainマージ完了
-  - PR #869 (Worker failed status修正) マージコンフリクト解決・mainマージ完了
-  - マージコンフリクト解決: shapeBuildRuntimeExecutionControl.tsでemitWorkerLog・emitCriticalError追加
-  - 全UIブランチがmainに統合され、最新状態に更新完了
-- 2025-03-08: #893 E2EテストShape管理機能実装完了
-  - data-testid属性使用削除・実際のユーザー可視テキストベースセレクター変更
-  - テスト用Shape作成・削除・クリーンアップヘルパー関数実装（e2e/helpers/shape-cleanup.ts）
-  - グローバルティアダウンでテスト用Shape自動削除処理実装
-  - 各テストでbeforeEach/afterEachクリーンアップ処理追加
-  - Shape削除機能テスト追加・永続化対応完了
-  - 型チェック成功確認（exit code 0）
-- 2025-03-08: #827 認証トークン有効期限事前検証機能実装完了・PR #899マージ完了
-  - トークン有効期限の事前チェック機能追加
-  - タイムアウト回避のための検証ロジック実装
-  - 詳細なデバッグログ追加
-  - マージコンフリクト解決後mainに統合完了
-- 2025-03-08: #832 メタデータエラー分類修正完了・PR #910マージ完了
-  - SourceTaskPayloadGenerationErrorクラス追加
-  - エラー分類ロジック修正でメタデータエラーと認証エラーを区別
-  - 適切なエラーメッセージ表示機能実装
-  - マージコンフリクト解決後mainに統合完了
-- 2025-03-08: #826 GitHub Pagesデバッグログ追加完了・PR #911マージ完了
-  - resolveSourceTaskPayloadsForPlan関数に包括的なデバッグログ追加
-  - メタデータロード・ペイロード生成・リフレッシュ試行の各段階を詳細ログ化
-  - サンプルデータをログに含めて互換性問題を特定可能に
-  - GitHub Pages環境でのデバッグログ可視化改善
-- 2025-03-08: #894 Shape Step5 ButtonGroupメニュー統合完了・mainマージ完了
-  - BuildControlCardコンポーネントのButtonGroup統合
-  - Reset/Deleteメニュー項目の実装
-  - UI改善とユーザビリティ向上
-  - マージコンフリクト解決・型エラー修正完了
-  - DialogSafeMenu使用でダイアログ安全なフォーカス動作実装
-  - 型チェック成功確認（exit code 0）
-- 2025-03-07: #861 hasInitialSnapshotAppliedローカル変数をSSOT状態木参照に統一完了・PR #862作成
-- 2025-03-07: #861起票、ブランチ作成完了、hasInitialSnapshotAppliedローカル変数をSSOT状態木参照に統一開始
-  - グローバルティアダウンでテスト用Shape自動削除処理実装
-  - 各テストでbeforeEach/afterEachクリーンアップ処理追加
-  - Shape削除機能テスト追加・永続化対応完了
-  - 型チェック成功確認（exit code 0）
-- 2025-03-08: #896 Delete API cacheアイコン設定完了
-  - CloudOffアイコンをインポート・Delete API cacheメニューアイテムに設定
-  - resetDeleteMenuItems追加（Reset/Delete/Transpose各メニューアイテム）
-  - 型チェック成功確認（exit code 0）
-  - PR #897作成・mainマージ完了
-- 2025-03-07: #838 Level 1 Critical improvements実装確認完了・PR #863マージ完了
-  - UIバッファサイズ制限・サブスクライバー例外分離が既に実装済みであることを確認
-  - 36テスト全成功（バッファオーバーフロー・例外分離テスト含む）
-  - 要求機能は既に満たされており追加実装不要
-- 2025-03-07: #844起票、ブランチ作成完了
-- 2025-03-07: #844 国選択ステップでのISO-3166-2国名i18n化実装完了
-  - useCountryI18nフック作成
-  - CountryMatrixSelectorでの国名i18n化適用
-  - 型チェック・ビルド成功確認
-  - shape/location/route-pluginでの自動適用確認
-- 2025-03-07: #847 Task 6.1 タスク状態保護機能実装完了
-  - TaskStateProtectionService実装（スナップショット作成・復元・検証）
-  - ProtectedTaskMutation実装（状態保護付きタスク更新API）
-  - Property 3プロパティテスト実装（5テストケース全成功）
-  - 型チェック成功確認
-- 2025-03-07: #848 Task 6.5.4 イベント順序・完全性検証統合テスト実装完了
-  - MultiNotificationEventBuffer実装（イベントバッファリング・シーケンス管理）
-  - EventDeliveryMetrics実装（メトリクス収集・監視）
-  - 5つの統合テストケース実装（複数通知タイプ同時検証、ストレステスト、障害回復、メトリクス精度、ハートビート即座処理）
-  - ファイルシステム問題でテスト実行不可（vitest「No test suite found」エラー）
-- 2025-03-07: PR #849 作成・マージ完了（mainに反映）
-  - タスク状態保護機能・マルチステージセッションライフサイクルテスト実装
-  - 8ファイル変更、1514行追加
-  - Requirements 8.1, 8.2, 8.3, 9.16, 9.17, 9.18 検証完了
-- 2025-03-07: #850起票、useCallbackの不要な依存配列修正対応開始
-- 2025-03-07: #850 useCountryI18nフック依存配列修正完了・PR #851マージ完了
-- 2025-03-07: #852 翻訳キーパス修正完了・PR #853マージ完了
-  - PluginDialogFooterのcopyLinkUrl翻訳キーパスを正しいパスに修正
-  - dialogs.pluginDialog.contextMenu.copyLinkUrl → dialogs.pluginDraft.pluginDialog.contextMenu.copyLinkUrl
-  - 型チェック・ビルド成功確認
-- 2025-03-07: PRレビュー指摘事項修正完了
-  - TaskStateProtectionService検証ロジック改善（Number.isFinite()使用でNaN/Infinity検出）
-  - clearSnapshots性能改善（Map.entries()使用で効率的削除処理）
-  - mainブランチに直接コミット・プッシュ完了
-- 2025-03-07: #855 Task 6.6.5 Property 22: Distributed Sequence Number Generation実装完了
-  - seqNum単調性検証（各通知タイプ・ノード単位）
-  - 並列ワーカー衝突防止検証
-  - セッション再開時リセット検証
-  - UnconditionalEventStreamer統合検証
-  - 7つのテストケース全成功、型チェック成功確認
-  - Requirements 9.5, 9.16 検証完了
-- 2025-03-07: PR #856 ビルドセッション状態同期アーキテクチャ再設計完了・mainマージ完了
-  - 無条件Worker-UIイベントストリーミング実装
-  - 通知タイプ別イベントバッファリング・共有シーケンス番号実装
-  - タイムアウトベース状態遷移排除・receiving-task-snapshotフェーズ削除
-  - AbortController即座Worker終了・ロックフリーキャッシュ書き込み実装
-  - 23プロパティテスト・統合テスト全実装、370テスト通過確認
-  - Requirements 1.1-9.18 全対応、pause/resume機能信頼性大幅向上
-- 2025-03-07: #857 PRフィードバック修正完了・PR #858マージ完了
-  - cache-write-ordering.property.test.ts: timestamp ベース検証一貫性修正
-  - distributedSeqNumGeneration.property.test.ts: 全シーケンス番号包括的検証・変数名エラー修正
-  - 両テストファイル 7/7 テスト成功、requirements.md との完全一致確認
-- 2025-03-07: #859 TaskStateProtectionService改善調査完了・Issue クローズ
-  - PRレビューフィードバック指摘事項（Number.isFinite()検証・Map.entries()性能改善）は既に適用済み確認
-  - 追加修正不要、Property 3テスト・型チェック正常動作確認
-- 2025-03-07: #860起票、channelEstablishedRef撤去・SSOT状態木参照統一対応開始
-- 2025-03-07: #860 channelEstablishedRef撤去・SSOT状態木参照統一完了
-  - V1・V2ブリッジファイル削除、V3ブリッジに一本化
-  - channelEstablishedRefとchannelReadiness重複状態を完全撤去
-  - 全イベント配信をSSOT状態木経由に統一、契約違反隠蔽を排除
-  - 型チェック・ビルド成功、関連テスト全通過確認
