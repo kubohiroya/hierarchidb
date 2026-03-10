@@ -1,6 +1,6 @@
 import { useShapeBuildCancelQueued } from './useShapeBuildStepControlActions/useShapeBuildCancelQueued.js';
 import { useShapeBuildPause } from './useShapeBuildStepControlActions/useShapeBuildPause.js';
-import { useShapeBuildStartOrResume } from './useShapeBuildStepControlActions/useShapeBuildStartOrResume.js';
+import { useShapeBuildStartOrResume } from './useShapeBuildStepControlActions/useShapeBuildStart.js';
 import type {
   StartOrResumeControlActionsArgs,
   PauseControlActionsArgs,
