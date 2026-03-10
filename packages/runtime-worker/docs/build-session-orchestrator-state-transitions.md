@@ -401,8 +401,8 @@ stateDiagram-v2
 
   running --> paused_auth : task gets 401 → AuthRequiredError\n→ AUTH_REQUIRED dispatched\n→ useAuthRequiredDialogHost calls pauseBuildSession
   paused_auth --> running : user authenticates successfully\n→ AUTH_SUCCESS dispatched\n→ useAuthRequiredDialogHost calls startBuildSession\n→ tasks resume from queued
-  paused_auth --> paused_cancelled : user cancels auth dialog\n→ AUTH_CANCELLED dispatched\n→ session stays paused\n→ cancelledUntilByScope cooldown set
-  paused_cancelled --> paused_auth : user clicks "Start/Resume"\n→ cooldown cleared\n→ tasks retry fetchWithAuth\n→ 401 → AUTH_REQUIRED again
+  paused_auth --> paused_cancelled : user cancels auth dialog\n→ AUTH_CANCELLED dispatched\n→ session stays paused
+  paused_cancelled --> paused_auth : user clicks "Start/Resume"\n→ tasks retry fetchWithAuth\n→ 401 → AUTH_REQUIRED again
   paused_cancelled --> running : user authenticates outside dialog\n(e.g. via user menu)\nthen clicks "Start/Resume"
   running --> failed : auth retries exhausted\n(maxRetries exceeded without recovery)
 ```
@@ -413,20 +413,18 @@ stateDiagram-v2
 | --- | --- | --- |
 | Worker (task execution) | `runStageTasks` | Catches `AuthRequiredError`, requeues task to `queued` with `metadata.authState='required'` |
 | Worker (fetch) | `AuthService.fetchWithAuth` | Detects 401, calls `awaitAuth` which dispatches `AUTH_REQUIRED` and throws `AuthRequiredError` |
-| Worker (fetch) | `AuthService.awaitAuth` | Checks `cancelledUntilByScope` cooldown before dispatching; throws immediately if cooldown active |
-| Worker (fetch) | `AuthService.onAuthSuccess` | Persists new token to storage via `setToken`, then clears `cancelledUntilByScope` cooldown for the scope |
-| UI (root) | `useAuthRequiredDialogHost` | Receives `AUTH_REQUIRED` → calls `pauseBuildSession` → shows `AuthRequiredDialog` |
-| UI (root) | `useAuthRequiredDialogHost` | On `AUTH_SUCCESS` → calls `startBuildSession` to resume |
+| Worker (fetch) | `AuthService.awaitAuth` | Dispatches `AUTH_REQUIRED` notification and throws `AuthRequiredError` |
+| Worker (fetch) | `AuthService.onAuthSuccess` | Persists new token to storage via `setToken` |
+| UI (root) | `useAuthRequiredDialogHost` | Receives `AUTH_REQUIRED` → calls `pauseBuildSession` → shows `AuthRequiredDialog`. Uses `activeRequestIdRef` to ensure only one dialog at a time. Uses `pendingCountBySessionRef` to track parallel requests per session. |
+| UI (root) | `useAuthRequiredDialogHost` | On `AUTH_SUCCESS` → calls `startBuildSession` to resume (only when all pending requests for the session are resolved) |
 | UI (root) | `useAuthRequiredDialogHost` | On `AUTH_CANCELLED` → session stays `paused`, no auto-resume |
-| UI (auth) | `AuthService.onAuthCancelled` | Sets `cancelledUntilByScope` cooldown to suppress re-prompt loops |
 
 ### 7.5.3 Invariants
 
 1. Only one `AuthRequiredDialog` is shown at a time (controlled by `activeRequestIdRef` in `useAuthRequiredDialogHost`).
-2. After user cancels, `cancelledUntilByScope` prevents immediate re-prompt from parallel tasks for the same scope.
-3. The cooldown is cleared when the user explicitly clicks "Start/Resume" again, allowing a fresh auth prompt.
-4. Session status transitions are persisted in `buildSessionStatuses` (SSOT); no React-local state drives session lifecycle.
-5. The `authDialogOpen` / `closeAuthDialog` / `handleProviderSelect` in shape plugin step logic are not used; auth dialog is hosted at root route level only.
+2. Parallel tasks dispatching `AUTH_REQUIRED` for the same session are deduplicated by `pendingCountBySessionRef`; `pauseBuildSession` is called only on the first request.
+3. Session status transitions are persisted in `buildSessionStatuses` (SSOT); no React-local state drives session lifecycle.
+4. The `authDialogOpen` / `closeAuthDialog` / `handleProviderSelect` in shape plugin step logic are not used; auth dialog is hosted at root route level only.
 
 ### 7.5.4 Sequence (BFF auth expired → cancel → retry)
 
@@ -438,12 +436,10 @@ stateDiagram-v2
 6. `AuthRequiredDialog` opens
 7a. User authenticates successfully → `AUTH_SUCCESS` dispatched
 8a. `AuthService.onAuthSuccess` persists new token via `setToken(newToken, tokenType, expiresAt)` to shared storage (uiStorage or localStorage)
-9a. `AuthService.onAuthSuccess` clears `cancelledUntilByScope` cooldown for the scope
-10a. `useAuthRequiredDialogHost.onAuthSuccess` calls `startBuildSession` → tasks resume from queued
+9a. `useAuthRequiredDialogHost.onAuthSuccess` calls `startBuildSession` → tasks resume from queued
 7b. User clicks Cancel → `AUTH_CANCELLED` dispatched
-8b. `AuthService.onAuthCancelled` sets `cancelledUntilByScope` for scope (e.g. 30s cooldown)
-9b. `useAuthRequiredDialogHost.onAuthCancelled` closes dialog, session remains `paused`
-10b. User clicks "Start Build" again → `handleStartOrResume` clears cooldown → resume flow → task retries `fetchWithAuth` → 401 → `AUTH_REQUIRED` → dialog shown again
+8b. `useAuthRequiredDialogHost.onAuthCancelled` closes dialog, session remains `paused`
+9b. User clicks "Start Build" again → tasks retry `fetchWithAuth` → 401 → `AUTH_REQUIRED` → dialog shown again
 
 References:
 
