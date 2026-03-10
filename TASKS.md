@@ -6,11 +6,19 @@
 - #972 / `fix/plugin-dialog/url-maximize-preset-size` / 2026-03-10 開始
 - #966 / `refactor/build-progress/consolidate-build-modules-v2` / 2026-03-10 開始
 
+
 ## Blocked
 
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 
 ## 今日の運用ログ
+
+- 2026-03-10: #969 Gemini Code Assistレビュー指摘一括対応・PR #974マージ済み
+  - AGENTS.md禁止パターン2文言修正、ResourceProjectPreviewGroup useNavigate実装
+  - BuildStepPanel as string除去、useShapeBuildLabelsキー修正
+  - useFloatingWindowController useMemoメモ化、LoadingButton functional setState化
+  - useBuildProgressPanelStateSideEffects ref更新をuseEffectに移動
+  - typecheck: 全対象パッケージ通過
 
 - 2026-03-10: #966 Build*モジュールをcomponents→ui-build-progressに統合移動・PR #968作成
   - Build*コンポーネント/フック/型を移動、BuildSessionProgressPanelShell廃止
