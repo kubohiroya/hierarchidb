@@ -2,13 +2,17 @@
 
 ## Doing
 
-（なし）
+- #964 / fix/plugin-dialog/maximize-to-normal-on-resize / 2026-03-10 開始
 
 ## Blocked
 
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 
 ## 今日の運用ログ
+
+- 2026-03-10: #960 CommonDialogTitle表示モードtooltip/label i18n化・PR #962→#963マージ済み
+  - DISPLAY_MODE_LABELSハードコード→t()化、IconButtonにTooltip追加、localeコピー同期
+  - typecheck: exit 0、test: 5/5 passed
 
 - 2026-03-10: #961 AGENTS.mdにReact Hooks依存配列ルール追加・PR #962マージ済み
 
