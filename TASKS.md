@@ -12,8 +12,15 @@
 
 ## 今日の運用ログ
 
+- 2026-03-10: #981 AuthRequiredError未エクスポート修正・PR #982作成
+  - AuthService.tsにexport追加、index.tsにre-export追加
+  - typecheck: @hierarchidb/auth exit 0
 - 2026-03-10: #979 クールダウン中の再ビルド開始で認証ダイアログ非表示修正・PR #980作成
   - awaitAuthでAuthRequiredError throw、runStartBuildSessionでclearCancelledCooldown呼出追加
+  - クールダウン機構完全撤去（cancelledUntilByScope/pendingAuthRequestScopes/isCancelledCooldownActive/clearCancelledCooldown削除）
+  - plan-source-totalでAuthRequiredError時にpaused設定（failed回避）
+  - 状態遷移ドキュメントSection 7.5をactiveRequestIdRef制御に更新
+  - typecheck: @hierarchidb/auth exit 0
 - 2026-03-10: #977 PluginDialogツールチップi18nキー不足修正・PR #978マージ済み
   - dialogs.pluginDialog.tooltips（7キー）+ buttons（minimize/restoreMinimized）を4ロケールファイルに追加
   - dialogs.pluginDraft.pluginDialog にも minimize/restoreMinimized を追加

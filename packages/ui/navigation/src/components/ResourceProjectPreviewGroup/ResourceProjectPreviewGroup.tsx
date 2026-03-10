@@ -64,7 +64,7 @@ export function ResourceProjectPreviewGroup({
     const basePath = targetType === 'resources' ? 'r' : 'p';
     const targetPath = savedPageNodeId ? `/t/${basePath}/${savedPageNodeId}` : `/t/${basePath}`;
 
-    navigate(targetPath, { replace: true });
+    navigate({ to: targetPath, replace: true });
   };
 
   return (
