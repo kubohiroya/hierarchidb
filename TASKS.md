@@ -2,6 +2,7 @@
 
 ## Doing
 
+- #988 / `fix/i18n/route-plugin-type-safety-and-import-cleanup` / 2026-03-10 開始
 - #983 / `fix/shape-plugin/rename-steps-processing-to-config` / 2026-03-10 開始
 - #970 / `fix/i18n/stepper-basic-info-label-key` / 2026-03-10 開始
 - #969 / `refactor/review/gemini-review-batch-fixes` / 2026-03-10 開始
@@ -12,6 +13,11 @@
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 
 ## 今日の運用ログ
+
+- 2026-03-10: #988 route-plugin t() String()ラップ + I18nInstance import整理・PR #990作成
+  - t()戻り値をString()でラップ（route-plugin 6ファイル）、I18nInstance import簡素化（app 2ファイル）
+  - tsconfig.typecheck.json に allowImportingTsExtensions追加
+  - typecheck: 127/127 exit 0
 
 - 2026-03-10: #986 shape-plugin DefaultTFuncReturn型エラー修正・PR #987マージ済み
   - t()戻り値をString()でラップ（5ファイル11箇所）
