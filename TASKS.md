@@ -2,7 +2,7 @@
 
 ## Doing
 
-（なし）
+- #966 / `refactor/build-progress/consolidate-build-modules-v2` / 2026-03-10 開始
 
 ## Blocked
 
@@ -11,6 +11,7 @@
 ## 今日の運用ログ
 
 - 2026-03-10: #964 maximize状態でリサイズ/移動時にdisplayModeをnormalに自動遷移・PR #965マージ済み
+  - レビュー指摘対応: nextDisplayMode変数導入でenforceTopLeftMargin条件を明確化・PR #967マージ済み
 
 - 2026-03-10: #960 CommonDialogTitle表示モードtooltip/label i18n化・PR #962→#963マージ済み
   - DISPLAY_MODE_LABELSハードコード→t()化、IconButtonにTooltip追加、localeコピー同期
