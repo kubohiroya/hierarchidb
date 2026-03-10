@@ -21,7 +21,7 @@ type WorkerTokenRequestAPI = {
   requestAuthToken(): Promise<string | null>;
 };
 
-class AuthRequiredError extends Error {
+export class AuthRequiredError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'AuthRequiredError';

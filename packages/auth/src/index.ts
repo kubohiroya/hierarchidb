@@ -1,4 +1,4 @@
-export { AuthService } from './AuthService.js';
+export { AuthService, AuthRequiredError } from './AuthService.js';
 export { AuthRecoveryService } from './AuthRecoveryService.js';
 
 export type {
