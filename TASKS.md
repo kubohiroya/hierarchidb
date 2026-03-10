@@ -2,13 +2,17 @@
 
 ## Doing
 
-- #958 / fix/shape-plugin/elapsed-snapshot-infinite-loop / 2026-03-10 start
+- #961 / docs/agents/react-hooks-deps-rule / 2026-03-10
 
 ## Blocked
 
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 
 ## 今日の運用ログ
+
+- 2026-03-10: #958 useBuildProgressPanelStateSideEffects無限レンダリングループ修正・PR #959作成
+  - totalElapsedSnapshotRef追加、elapsed snapshot useEffectからtotalElapsedSnapshot依存除去
+  - typecheck: 新規エラー0件（既知DefaultTFuncReturn 15件のみ）
 
 - 2026-03-10: #956 useShapeBuildStepStageState無限レンダリングループ修正・PR #957作成
   - tasksRef+tasksKey追加、persisted tasks同期useEffectから[tasks]依存除去→[tasksKey]に変更
