@@ -25,7 +25,7 @@ const createArgs = (overrides: Partial<Parameters<typeof useShapeBuildAutoResume
   buildStatus: 'paused' as BuildStatus,
   stopReason: 'route-leave' as const,
   runtimeStatus: 'paused',
-  handleStartOrResume: vi.fn(async () => true),
+  handleStart: vi.fn(async () => true),
   handlePause: vi.fn(),
   hasFailedSourceTasks: false,
   hasDataSource: true,
@@ -58,9 +58,9 @@ describe('useShapeBuildAutoResume', () => {
     renderHook(() => useShapeBuildAutoResume(args));
 
     await waitFor(() => {
-      expect(args.handleStartOrResume).toHaveBeenCalledTimes(1);
+      expect(args.handleStart).toHaveBeenCalledTimes(1);
     });
-    expect(args.handleStartOrResume).toHaveBeenCalledWith({
+    expect(args.handleStart).toHaveBeenCalledWith({
       forceRestart: false,
       autoResume: true,
     });
@@ -74,13 +74,13 @@ describe('useShapeBuildAutoResume', () => {
     renderHook(() => useShapeBuildAutoResume(args));
 
     await new Promise((resolve) => setTimeout(resolve, 50));
-    expect(args.handleStartOrResume).not.toHaveBeenCalled();
+    expect(args.handleStart).not.toHaveBeenCalled();
     expect(window.localStorage.getItem('autoResumeBuild')).toBeNull();
   });
 
   it('keeps start pending while waiting for runtime transition', async () => {
-    const handleStartOrResume = vi.fn(async () => true);
-    const baseArgs = createArgs({ handleStartOrResume });
+    const handleStart = vi.fn(async () => true);
+    const baseArgs = createArgs({ handleStart });
     const { result, rerender } = renderHook(({ buildStatus }: { buildStatus: BuildStatus }) => (
       useShapeBuildAutoResume({
         ...baseArgs,
@@ -91,10 +91,10 @@ describe('useShapeBuildAutoResume', () => {
     });
 
     await act(async () => {
-      await result.current.startOrResume();
+      await result.current.start();
     });
 
-    expect(handleStartOrResume).toHaveBeenCalledTimes(1);
+    expect(handleStart).toHaveBeenCalledTimes(1);
     expect(result.current.isStartPending).toBe(true);
 
     rerender({ buildStatus: 'running' as BuildStatus });

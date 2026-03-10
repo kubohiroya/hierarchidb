@@ -1,11 +1,11 @@
 import { useCallback } from 'react';
 import { notify } from '@hierarchidb/components/notify';
-import type { StartOrResumeControlActionsArgs, StartOrResumeOptions } from './types.js';
+import type { StartControlActionsArgs, StartOptions } from './types.js';
 import { shouldResumeBuildSession } from '~/ui/components/build-progress/shouldResumeBuildSession';
-import { executeStartOrResumeFlow } from './executeStartOrResumeFlow.js';
+import { executeStartFlow } from './executeStartFlow.js';
 import { isShapeBuildPanelDebugEnabled } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelState.utils.js';
 
-export const useShapeBuildStartOrResume = ({
+export const useShapeBuildStart = ({
   activeNodeId,
   data,
   buildStatus,
@@ -26,8 +26,8 @@ export const useShapeBuildStartOrResume = ({
   updateSessionRecord,
   setIsStopRequested,
   setIsStopAccepted,
-}: StartOrResumeControlActionsArgs) => {
-  const handleStartOrResume = useCallback(async (options?: StartOrResumeOptions): Promise<boolean> => {
+}: StartControlActionsArgs) => {
+  const handleStart = useCallback(async (options?: StartOptions): Promise<boolean> => {
     const requestStartedAt = Date.now();
     setRequestedControlAction('start');
     setIsStopRequested(false);
@@ -60,7 +60,7 @@ export const useShapeBuildStartOrResume = ({
     }
 
     try {
-      return executeStartOrResumeFlow({
+      return executeStartFlow({
         activeNodeId,
         data,
         buildStatus,
@@ -85,7 +85,7 @@ export const useShapeBuildStartOrResume = ({
         shouldResumeSession,
         onTrace: (trace) => {
           if (!isShapeBuildPanelDebugEnabled('startResume')) return;
-          console.log('[ShapeBuildStartResumeTrace] handleStartOrResume', {
+          console.log('[ShapeBuildStartTrace] handleStart', {
             nodeId: String(activeNodeId),
             durationMs: Math.max(0, Date.now() - requestStartedAt),
             event: trace.event,
@@ -96,7 +96,7 @@ export const useShapeBuildStartOrResume = ({
         runTimedStep: async <T, >(stepName: string, runner: () => Promise<T>): Promise<T> => {
           const stepStartedAt = Date.now();
           if (isShapeBuildPanelDebugEnabled('startResume')) {
-            console.log('[ShapeBuildStartResumeTrace] handleStartOrResume', {
+            console.log('[ShapeBuildStartTrace] handleStart', {
               nodeId: String(activeNodeId),
               durationMs: Math.max(0, Date.now() - requestStartedAt),
               event: `${stepName}:start`,
@@ -105,7 +105,7 @@ export const useShapeBuildStartOrResume = ({
           try {
             const result = await runner();
             if (isShapeBuildPanelDebugEnabled('startResume')) {
-              console.log('[ShapeBuildStartResumeTrace] handleStartOrResume', {
+              console.log('[ShapeBuildStartTrace] handleStart', {
                 nodeId: String(activeNodeId),
                 durationMs: Math.max(0, Date.now() - requestStartedAt),
                 event: `${stepName}:finish`,
@@ -115,7 +115,7 @@ export const useShapeBuildStartOrResume = ({
             return result;
           } catch (error) {
             if (isShapeBuildPanelDebugEnabled('startResume')) {
-              console.log('[ShapeBuildStartResumeTrace] handleStartOrResume', {
+              console.log('[ShapeBuildStartTrace] handleStart', {
                 nodeId: String(activeNodeId),
                 durationMs: Math.max(0, Date.now() - requestStartedAt),
                 event: `${stepName}:error`,
@@ -154,5 +154,5 @@ export const useShapeBuildStartOrResume = ({
     setIsStopAccepted,
   ]);
 
-  return handleStartOrResume;
+  return handleStart;
 };

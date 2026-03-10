@@ -109,12 +109,12 @@ export const useBuildProgressPanelStateRuntimeState = (
     stageTotals: stepState.stageTotals,
   };
   const controls: TaskProgressControls = {
-    canStartOrResume: stepState.canStartOrResume,
+    canStart: stepState.canStart,
     statusLabel: stepState.statusLabel,
     showResumeLabel: stepState.showResumeLabel,
     startPending: stepState.isStartPending,
     requestedControlAction: stepState.requestedControlAction,
-    handleStartOrResume: stepState.handleStartOrResume,
+    handleStart: stepState.handleStart,
     handlePause: stepState.handlePause,
     handleCancelQueued: stepState.handleCancelQueued,
     stopRequested: stepState.stopRequested,

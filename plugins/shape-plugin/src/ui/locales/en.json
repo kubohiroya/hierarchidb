@@ -167,10 +167,6 @@
       "body": "A build session is currently running. Open the Build step to view progress.",
       "action": "Open Build Step"
     },
-    "cache": {
-      "title": "Miscellaneous",
-      "descriptionTooltip": "Control how build outputs are retained or removed for each stage."
-    },
     "tileEmit": {
       "title": "TileEmit"
     },

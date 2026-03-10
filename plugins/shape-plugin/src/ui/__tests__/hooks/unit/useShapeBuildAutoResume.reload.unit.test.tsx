@@ -6,14 +6,14 @@ import { useShapeBuildAutoResume } from '../../../components/build-progress/useS
 describe('useShapeBuildAutoResume reload behavior', () => {
   const activeNodeId = 'node-1' as NodeId;
   const makeHook = (args: Partial<Parameters<typeof useShapeBuildAutoResume>[0]> = {}) => {
-    const handleStartOrResume = vi.fn().mockResolvedValue(true);
+    const handleStart = vi.fn().mockResolvedValue(true);
     const handlePause = vi.fn();
     const result = renderHook(() => useShapeBuildAutoResume({
       activeNodeId,
       buildStatus: 'idle' as BuildStatus,
       stopReason: undefined,
       runtimeStatus: 'processing',
-      handleStartOrResume,
+      handleStart,
       handlePause,
       hasFailedSourceTasks: false,
       hasDataSource: true,
@@ -22,7 +22,7 @@ describe('useShapeBuildAutoResume reload behavior', () => {
       isLockSupported: true,
       ...args,
     }));
-    return { result, handleStartOrResume, handlePause };
+    return { result, handleStart, handlePause };
   };
 
   beforeEach(() => {
@@ -32,29 +32,29 @@ describe('useShapeBuildAutoResume reload behavior', () => {
 
   it('auto-resumes when runtimeStatus is processing on reload', async () => {
     window.localStorage.setItem('autoResumeBuild', String(activeNodeId));
-    const { handleStartOrResume } = makeHook();
+    const { handleStart } = makeHook();
     await vi.waitFor(() => {
-      expect(handleStartOrResume).toHaveBeenCalledWith({ forceRestart: false, autoResume: true });
+      expect(handleStart).toHaveBeenCalledWith({ forceRestart: false, autoResume: true });
     });
   });
 
   it('does not auto-resume when build is completed', async () => {
     window.localStorage.setItem('autoResumeBuild', String(activeNodeId));
-    const { handleStartOrResume } = makeHook({ buildStatus: 'completed' as BuildStatus });
+    const { handleStart } = makeHook({ buildStatus: 'completed' as BuildStatus });
     await vi.waitFor(() => {
-      expect(handleStartOrResume).not.toHaveBeenCalled();
+      expect(handleStart).not.toHaveBeenCalled();
     });
   });
 
   it('does not auto-resume when stopReason is user-pause', async () => {
     window.localStorage.setItem('autoResumeBuild', String(activeNodeId));
-    const { handleStartOrResume } = makeHook({
+    const { handleStart } = makeHook({
       buildStatus: 'paused' as BuildStatus,
       stopReason: 'user-pause',
       runtimeStatus: 'paused',
     });
     await vi.waitFor(() => {
-      expect(handleStartOrResume).not.toHaveBeenCalled();
+      expect(handleStart).not.toHaveBeenCalled();
     });
   });
 });

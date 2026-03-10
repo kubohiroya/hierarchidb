@@ -8,7 +8,7 @@ type Args = {
   buildStatus: BuildStatus;
   stopReason?: ShapeBuildStopReason;
   runtimeStatus: string | null;
-  handleStartOrResume: (options: { forceRestart: boolean; autoResume?: boolean }) => Promise<boolean>;
+  handleStart: (options: { forceRestart: boolean; autoResume?: boolean }) => Promise<boolean>;
   handlePause: (reason?: 'route-leave' | 'user-pause') => void;
   hasFailedSourceTasks: boolean;
   hasDataSource: boolean;
@@ -22,7 +22,7 @@ export const useShapeBuildAutoResume = ({
   buildStatus,
   stopReason,
   runtimeStatus,
-  handleStartOrResume,
+  handleStart,
   handlePause,
   hasFailedSourceTasks,
   hasDataSource,
@@ -36,7 +36,7 @@ export const useShapeBuildAutoResume = ({
     isStartPendingRef.current = next;
     setIsStartPending(next);
   }, []);
-  const canStartOrResume = useMemo(() => (
+  const canStart = useMemo(() => (
     !isStartPending
     && buildStatus !== 'running'
     && hasDataSource
@@ -100,24 +100,24 @@ export const useShapeBuildAutoResume = ({
     };
   }, []);
 
-  const startOrResume = useCallback(async (options?: { autoResume?: boolean }) => {
+  const start = useCallback(async (options?: { autoResume?: boolean }) => {
     if (isStartPendingRef.current) return;
     if (!isLockSupported) return;
     setStartPending(true);
-    const ok = await handleStartOrResume({
+    const ok = await handleStart({
       forceRestart: hasFailedSourceTasks,
       autoResume: options?.autoResume,
     });
     if (!ok) {
       setStartPending(false);
     }
-  }, [handleStartOrResume, hasFailedSourceTasks, isLockSupported, setStartPending]);
+  }, [handleStart, hasFailedSourceTasks, isLockSupported, setStartPending]);
   const clearStartPending = useCallback(() => {
     setStartPending(false);
   }, [setStartPending]);
 
   useEffect(() => {
-    if (!activeNodeId || !canStartOrResume || isStartPending) return;
+    if (!activeNodeId || !canStart || isStartPending) return;
     if (!isLockSupported) return;
     if (typeof window === 'undefined') return;
     const storage = window.localStorage;
@@ -147,7 +147,7 @@ export const useShapeBuildAutoResume = ({
       });
 
       storage.removeItem('autoResumeBuild');
-      void startOrResume({ autoResume: true });
+      void start({ autoResume: true });
     } catch (error) {
       console.warn('[ShapeBuildStep] auto-resume build failed', error);
       // エラー時はautoResumeBuildフラグを削除
@@ -157,12 +157,12 @@ export const useShapeBuildAutoResume = ({
         console.warn('[ShapeBuildStep] failed to cleanup autoResumeBuild flag', cleanupError);
       }
     }
-  }, [activeNodeId, canAutoResume, canStartOrResume, isStartPending, startOrResume, buildStatus, runtimeStatus, stopReason]);
+  }, [activeNodeId, canAutoResume, canStart, isStartPending, start, buildStatus, runtimeStatus, stopReason]);
 
   return {
-    canStartOrResume,
+    canStart,
     isStartPending,
-    startOrResume,
+    start,
     clearStartPending,
   };
 };

@@ -346,7 +346,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   });
 
   const {
-    handleStartOrResume,
+    handleStart,
     handlePause,
     handleCancelQueued,
   } = useShapeBuildStepControlActions({
@@ -395,12 +395,12 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     }
   }, [isStopRequestedInFlight, runtimeStatusForBuildStatus, setPendingUserAction]);
 
-  const { canStartOrResume, isStartPending, startOrResume, clearStartPending } = useShapeBuildAutoResume({
+  const { canStart, isStartPending, start, clearStartPending } = useShapeBuildAutoResume({
     activeNodeId,
     buildStatus,
     stopReason,
     runtimeStatus,
-    handleStartOrResume,
+    handleStart,
     handlePause,
     hasFailedSourceTasks,
     hasDataSource,
@@ -443,8 +443,8 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     completedStageElapsedMs,
     warningMessage,
     showResumeLabel,
-    canStartOrResume,
-    handleStartOrResume: startOrResume,
+    canStart,
+    handleStart: start,
     handlePause,
     handleCancelQueued,
     isStartPending,

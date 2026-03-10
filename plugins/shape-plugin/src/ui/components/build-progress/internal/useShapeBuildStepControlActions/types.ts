@@ -28,12 +28,12 @@ export type BuildStartupStep =
 
 export type BuildStartupStepOutcome = 'success' | 'error' | 'cancelled' | 'aborted';
 
-export type StartOrResumeOptions = {
+export type StartOptions = {
   forceRestart?: boolean;
   autoResume?: boolean;
 };
 
-export type StartOrResumeTrace = {
+export type StartTrace = {
   event: string;
   payload?: Record<string, unknown>;
 };
@@ -89,7 +89,7 @@ export type ControlActionsArgs = {
   setIsStopAccepted: (next: boolean) => void;
 };
 
-export type StartOrResumeControlActionsArgs = Pick<
+export type StartControlActionsArgs = Pick<
   ControlActionsArgs,
   | 'activeNodeId'
   | 'data'
@@ -113,11 +113,11 @@ export type StartOrResumeControlActionsArgs = Pick<
   | 'setIsStopAccepted'
 >;
 
-export type StartOrResumeExecutionArgs = StartOrResumeControlActionsArgs & {
-  options?: StartOrResumeOptions;
+export type StartExecutionArgs = StartControlActionsArgs & {
+  options?: StartOptions;
   startupSource: 'manual' | 'auto';
   shouldResumeSession: boolean;
-  onTrace: (trace: StartOrResumeTrace) => void;
+  onTrace: (trace: StartTrace) => void;
   requestStartedAt: number;
   runTimedStep: <T>(stepName: string, runner: () => Promise<T>) => Promise<T>;
 };

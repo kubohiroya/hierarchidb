@@ -41,12 +41,12 @@ export type TaskProgressSummary = {
 };
 
 export type TaskProgressControls = {
-  canStartOrResume: boolean;
+  canStart: boolean;
   statusLabel: string;
   showResumeLabel?: boolean;
   startPending?: boolean;
   requestedControlAction?: 'none' | 'start' | 'pause' | 'cancel';
-  handleStartOrResume?: () => Promise<void>;
+  handleStart?: () => Promise<void>;
   handlePause?: () => void;
   handleCancelQueued?: () => Promise<void> | void;
   stopRequested?: boolean;
