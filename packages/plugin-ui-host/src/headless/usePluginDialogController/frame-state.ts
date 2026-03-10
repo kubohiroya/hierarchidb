@@ -192,6 +192,17 @@ export function useDialogFrameState({
         height: Math.max(layoutViewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
       });
       persistPosition({ x: 0, y: 0 });
+    } else if (mode === 'maximize') {
+      // URL maximize mode: use preset size instead of persisted dialogUIState
+      const maximizeSize = getPresetSize('maximize', layoutViewport);
+      const maximizePosition = initialPosition(maximizeSize, layoutViewport);
+      const normalized = normalizeDialogState(maximizeSize, maximizePosition, layoutViewport, {
+        enforceTopLeftMargin: false,
+        minPosition: 0,
+        clampSizeToViewport: true,
+      });
+      persistSize(normalized.size);
+      persistPosition(normalized.position);
     } else {
       const normalized = normalizeDialogState(size, position, viewport, {
         enforceTopLeftMargin: mode === 'normal',
