@@ -43,7 +43,7 @@ export const RouteDataSourceStep: React.FC<RouteDataSourceStepProps> = ({
 
   return (
     <DataSourceSelectionStep<number>
-      title={t('dataSource.title', 'Data Source')}
+      title={String(t('dataSource.title', 'Data Source'))}
       options={options}
       state={{
         dataSourceId: resolvedSource,
@@ -57,8 +57,8 @@ export const RouteDataSourceStep: React.FC<RouteDataSourceStepProps> = ({
         'Choose the primary dataset or service that provides route geometry.',
       )}
       createAgreedAt={() => Date.now()}
-      selectionTitle={t('dataSource.selectionTitle', 'Data Source')}
-      detailsTitle={t('dataSource.detailsTitle', 'Data Source Details')}
+      selectionTitle={String(t('dataSource.selectionTitle', 'Data Source'))}
+      detailsTitle={String(t('dataSource.detailsTitle', 'Data Source Details'))}
       licenseRequiredText={t(
         'dataSource.licenseRequired',
         'License agreement is required to proceed.',

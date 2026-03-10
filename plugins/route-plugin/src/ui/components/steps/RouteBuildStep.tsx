@@ -145,16 +145,16 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     includeDescriptions: true,
     overrides: {
       source: {
-        title: t('processing.source.title', 'Source'),
-        description: t('stage.route.source.description', 'Download, parse, and save source route features.'),
+        title: String(t('processing.source.title', 'Source')),
+        description: String(t('stage.route.source.description', 'Download, parse, and save source route features.')),
       },
       geometry: {
-        title: t('processing.geometry.title', 'Geometry'),
-        description: t('stage.route.geometry.description', 'Build tile index for route lookup.'),
+        title: String(t('processing.geometry.title', 'Geometry')),
+        description: String(t('stage.route.geometry.description', 'Build tile index for route lookup.')),
       },
       tileEmit: {
-        title: t('processing.tileEmit.title', 'TileEmit'),
-        description: t('stage.route.tileEmit.description', 'Generate tile artifacts for rendering.'),
+        title: String(t('processing.tileEmit.title', 'TileEmit')),
+        description: String(t('stage.route.tileEmit.description', 'Generate tile artifacts for rendering.')),
         icon: <CheckCircle />,
       },
     },
@@ -479,9 +479,9 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
             setHeapDialogOpen(false);
             dismissHeapEvent();
           }}
-          title={t('stage.heap.pauseTitle', 'Build paused due to memory pressure')}
-          confirmLabel={t('stage.heap.pauseConfirm', 'OK')}
-          description={t('stage.heap.pauseHint', 'Reduce concurrency and resume when ready.')}
+          title={String(t('stage.heap.pauseTitle', 'Build paused due to memory pressure'))}
+          confirmLabel={String(t('stage.heap.pauseConfirm', 'OK'))}
+          description={String(t('stage.heap.pauseHint', 'Reduce concurrency and resume when ready.'))}
         />
         <Dialog
           open={errorDialogOpen}

@@ -267,7 +267,7 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                               size="small"
                               value={routeStyleConfig.modeColors[mode.id]}
                               onChange={(event) => handleModeColorChange(mode.id, event.target.value)}
-                              inputProps={{ 'aria-label': t('routeConfig.style.modeColorLabel', 'Color') }}
+                              inputProps={{ 'aria-label': String(t('routeConfig.style.modeColorLabel', 'Color')) }}
                             />
                           </Box>
                         </Grid>
@@ -314,7 +314,7 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                         variant="contained"
                         color="primary"
                         size="large"
-                        aria-label={t('preview.modeFilters.reopen', 'Show route mode filters')}
+                        aria-label={String(t('preview.modeFilters.reopen', 'Show route mode filters'))}
                         onClick={modeWindow.handlers.show}
                       >
                         <FilterAlt />
@@ -325,7 +325,7 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                         variant="contained"
                         color="primary"
                         size="large"
-                        aria-label={t('preview.listWindow.reopen', 'Show route metadata')}
+                        aria-label={String(t('preview.listWindow.reopen', 'Show route metadata'))}
                         onClick={listWindow.handlers.show}
                       >
                         <TableChart />
@@ -336,7 +336,7 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                         variant="contained"
                         color="primary"
                         size="large"
-                        aria-label={t('routeConfig.style.reopen', 'Show route style')}
+                        aria-label={String(t('routeConfig.style.reopen', 'Show route style'))}
                         onClick={styleWindow.handlers.show}
                       >
                         <Palette />
@@ -349,7 +349,7 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                   <RoutePreviewHoverSnackbar
                     {...hoverSnackbarProps}
                     isDarkMode={isDarkMode}
-                    popupHint={t('preview.hoverShortcutHelp', 'Click one of the nearby routes to add/remove selection.')}
+                    popupHint={String(t('preview.hoverShortcutHelp', 'Click one of the nearby routes to add/remove selection.'))}
                   />
                 ) : null}
               </Box>

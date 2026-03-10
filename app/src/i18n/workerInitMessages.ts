@@ -1,4 +1,4 @@
-import type { i18n as I18nInstance } from '@hierarchidb/ui-i18n';
+import type { I18nInstance } from '@hierarchidb/ui-i18n';
 
 const DEFAULT_MESSAGES = {
   start: 'Starting worker initialization…',

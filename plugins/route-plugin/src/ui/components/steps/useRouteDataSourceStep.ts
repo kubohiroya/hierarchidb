@@ -164,7 +164,7 @@ export const useRouteDataSourceStep = ({
       setImportInProgress(true);
       try {
         await ensureTabularXlsx();
-        const fallbackName = draft.ideGsmFileName ?? t('dataSource.ideGsm.fileFallback', 'Imported file');
+        const fallbackName = draft.ideGsmFileName ?? String(t('dataSource.ideGsm.fileFallback', 'Imported file'));
         const dataUrlFile = decodeDataUrlToFile(draft.ideGsmSourceUrl ?? '', fallbackName);
         const metadata = dataUrlFile
           ? await tabularApi.uploadTabularFile(dataUrlFile, {})

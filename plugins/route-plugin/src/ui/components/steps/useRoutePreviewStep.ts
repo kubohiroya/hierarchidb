@@ -593,7 +593,7 @@ export const useRoutePreviewStep = ({
           },
           filter: routeFilter,
         },
-        layerLabel: t('preview.vectorLayerLabel', 'Routes'),
+        layerLabel: String(t('preview.vectorLayerLabel', 'Routes')),
       },
     ];
   }, [hasGeometry, previewNodeId, routeFilter, routeStyleConfig, t]);
