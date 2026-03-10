@@ -469,6 +469,23 @@
     },
     "emptyCell": "-"
   },
+  "common": {
+    "basicInfo": {
+      "title": "基本情報",
+      "subtitle": "名前と説明（任意）を入力してください。",
+      "name": {
+        "label": "名前",
+        "helper": "わかりやすい名前を入力してください",
+        "required": "名前は必須です",
+        "placeholder": "名前を入力"
+      },
+      "description": {
+        "label": "説明",
+        "helper": "目的や内容を説明してください（任意）",
+        "placeholder": "説明を入力（任意）"
+      }
+    }
+  },
   "buildSessionQueue": {
     "empty": "実行中または待機中のセッションが見つかりません",
     "deleteTitle": "キューからセッションを削除",
