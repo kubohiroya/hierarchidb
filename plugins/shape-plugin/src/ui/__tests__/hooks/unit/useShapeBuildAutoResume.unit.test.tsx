@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
-import type { BuildStatus } from '@hierarchidb/components';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useShapeBuildAutoResume } from '../../../components/build-progress/useShapeBuildAutoResume/useShapeBuildAutoResume';
 

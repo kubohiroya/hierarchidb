@@ -1,4 +1,4 @@
-import type { BuildStage } from '@hierarchidb/components/build-stage';
+import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import { isTaskSkipped } from '~/common/utils/taskMessages';
 import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
 import { sortGeometryTasks, sortVectorTileTasks } from '~/ui/components/build-progress/taskItemCardList/useTaskItemCardList';

@@ -1,15 +1,15 @@
 import { type MouseEvent as ReactMouseEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
 import { Box, IconButton, MenuItem, Stack, Typography } from '@mui/material';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { LRUSplitView2, type LRUSplitView2Pane, type LRUSplitView2RenderContext, type PaneProgress } from '@hierarchidb/ui-lru-splitview';
-import { BuildStepStagePanel } from './BuildStepStagePanel.tsx';
-import { BuildStageFilterProvider, type BuildStageFilter } from './BuildStepStageFilterContext.tsx';
-import type { BuildStepStageMenuItem, BuildStepStageTaskCount } from './BuildStepStagePanel.tsx';
-import { BuildControlCard } from './BuildControlCard.tsx';
-import type { BuildStage } from './BuildStage.tsx';
-import type { BuildStatus } from './build-status/BuildStatus.ts';
+import { BuildStepStagePanel } from './BuildStepStagePanel.js';
+import { BuildStageFilterProvider, type BuildStageFilter } from './BuildStepStageFilterContext.js';
+import type { BuildStepStageMenuItem, BuildStepStageTaskCount } from './BuildStepStagePanel.js';
+import { BuildControlCard } from './BuildControlCard.js';
+import type { BuildStage } from './BuildStage.js';
+import type { BuildStatus } from '../types/BuildStatus.js';
 
 export type BuildStepStageMenu = {
   items: BuildStepStageMenuItem[];

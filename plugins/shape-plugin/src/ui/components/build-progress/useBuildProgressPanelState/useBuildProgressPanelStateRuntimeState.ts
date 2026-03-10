@@ -2,7 +2,7 @@ import { useMemo, useRef } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useBuildCrashInsight } from '~/ui/components/build-progress/useBuildCrashInsight/useBuildCrashInsight';
-import type { BuildStage } from '@hierarchidb/components/build-stage';
+import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import type { PaneProgress } from '@hierarchidb/ui-lru-splitview';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import type {

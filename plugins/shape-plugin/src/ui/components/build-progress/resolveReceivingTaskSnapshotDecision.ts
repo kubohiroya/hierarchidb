@@ -1,5 +1,5 @@
 import type { BuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
-import type { BuildSessionTransitionNotificationLevel } from '@hierarchidb/components/build-session';
+import type { BuildSessionTransitionNotificationLevel } from '@hierarchidb/ui-build-progress/build-session';
 
 type Notification = {
   level: BuildSessionTransitionNotificationLevel;

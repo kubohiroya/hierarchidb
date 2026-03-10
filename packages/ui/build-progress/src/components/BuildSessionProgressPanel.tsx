@@ -1,6 +1,6 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
-import { BuildProgressPanel, type BuildProgressPanelProps } from './BuildProgressPanel.tsx';
+import { BuildProgressPanel, type BuildProgressPanelProps } from './BuildProgressPanel.js';
 
 type BuildSessionStateDialogProps = {
   open: boolean;

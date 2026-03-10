@@ -3,7 +3,7 @@ import { useShapeBuildSessionStartupTrace } from './useShapeBuildStepStartupLife
 import { useShapeBuildSessionStartupProgressTerminalLog } from './useShapeBuildStepStartupLifecycle/useShapeBuildSessionStartupProgressTerminalLog';
 import type {
   BuildSessionTransitionState,
-} from '@hierarchidb/components/build-session';
+} from '@hierarchidb/ui-build-progress/build-session';
 import type { BuildProgress } from '~/ui/components/build-progress/shapeBuildProgressMapping';
 import type { BuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
 import type {

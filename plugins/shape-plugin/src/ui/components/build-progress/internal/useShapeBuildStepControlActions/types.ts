@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildStatus } from '@hierarchidb/components/build-status';
-import type { BuildSessionTransitionNotificationLevel } from '@hierarchidb/components/build-session';
-import type { BuildSessionTransitionLogLevel } from '@hierarchidb/components/build-session';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
+import type { BuildSessionTransitionNotificationLevel } from '@hierarchidb/ui-build-progress/build-session';
+import type { BuildSessionTransitionLogLevel } from '@hierarchidb/ui-build-progress/build-session';
 import type { BuildSessionStatus } from '@hierarchidb/build-api';
 import type { ShapeBuildSessionRecord, ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import type { ShapeEntity } from '~/common/types/index';

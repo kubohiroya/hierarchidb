@@ -9,7 +9,7 @@ import { useShapeBuildCacheActions } from '~/ui/hooks/useShapeBuildCacheActions'
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildStepStageMenu } from '@hierarchidb/components';
+import type { BuildStepStageMenu } from '@hierarchidb/ui-build-progress';
 import { useSetAtom } from 'jotai';
 import { useShapeBuildProgressPanelControllerBaseStateDataDisplay } from './useShapeBuildProgressPanelControllerBaseStateDataDisplay.js';
 import type { TranslateFn } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelStateComputedHelpers';

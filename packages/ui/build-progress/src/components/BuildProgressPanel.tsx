@@ -1,6 +1,6 @@
 import type React from 'react';
 import { Box } from '@mui/material';
-import { BuildStepPanel, type BuildStepPanelProps } from './BuildStepPanel.tsx';
+import { BuildStepPanel, type BuildStepPanelProps } from './BuildStepPanel.js';
 
 export type BuildProgressPanelProps = BuildStepPanelProps & {
   footer?: React.ReactNode;

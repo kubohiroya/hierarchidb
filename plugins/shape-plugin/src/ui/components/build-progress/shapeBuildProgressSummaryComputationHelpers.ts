@@ -1,5 +1,5 @@
 export type { TaskCountSummary } from '@hierarchidb/ui-build-sessions';
-export type { BuildStatus } from '@hierarchidb/components/build-status';
+export type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 export type { StageCountInfo } from './shapeBuildProgressSummaryCountHelpers.js';
 export {
   createStageTaskCounts,

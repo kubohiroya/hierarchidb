@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { Provider } from 'jotai';
 import { createStore, type Store } from 'jotai/vanilla';
-import { BuildSessionProgressPanel } from '@hierarchidb/components';
+import { BuildSessionProgressPanel } from '@hierarchidb/ui-build-progress';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressTypes';
 import { taskScrollTargetAtom, taskViewportRangeAtom } from '../../../atoms/shapeBuildProgressAtoms';
@@ -55,7 +55,7 @@ vi.mock('@hierarchidb/ui-build-progress', async (importOriginal) => {
 
   return {
     ...actual,
-    BuildSessionProgressPanelShell: (props: object) => (
+    BuildSessionProgressPanel: (props: object) => (
       <BuildSessionProgressPanel {...props} />
     ),
     useBuildProgressStages: () => mockStages,

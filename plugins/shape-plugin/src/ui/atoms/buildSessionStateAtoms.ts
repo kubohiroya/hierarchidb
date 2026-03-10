@@ -2,7 +2,7 @@ import { atom } from 'jotai';
 import type { BuildTaskSummary } from '@hierarchidb/build-api';
 import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import type { TaskListViewPhase } from './shapeBuildProgressTypes';
-import type { BuildStatus } from '@hierarchidb/components/build-status';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import {
   createBuildSessionStateTreeAtoms,
   type BuildSessionStateTreeEvent,

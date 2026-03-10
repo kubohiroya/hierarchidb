@@ -1,7 +1,7 @@
 import type { TaskCountSummary } from '@hierarchidb/ui-build-sessions';
 import type { BuildProgress } from './shapeBuildProgressMapping.js';
-import type { BuildStatus } from '@hierarchidb/components/build-status';
-import type { BuildStage } from '@hierarchidb/components/build-stage';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
+import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import type { BuildTaskSummary, TaskStage } from '@hierarchidb/build-api';
 import { resolveStageAliasArray, resolveStageAliasValue } from './stageIdAliases';
 

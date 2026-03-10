@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { notify } from '@hierarchidb/components/notify';
-import type { BuildSessionTransitionNotificationLevel } from '@hierarchidb/components/build-session';
-import { useBuildSessionTransition } from '@hierarchidb/components/build-session';
+import type { BuildSessionTransitionNotificationLevel } from '@hierarchidb/ui-build-progress/build-session';
+import { useBuildSessionTransition } from '@hierarchidb/ui-build-progress/build-session';
 import type { BuildSessionTransitionPhase, BuildStartupStep, BuildStartupStepOutcome, StartupStepMemorySnapshot } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/startupTrace.js';
 import { captureStartupStepMemorySnapshot, calculateMemoryDelta } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/startupTrace.js';
 

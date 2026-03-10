@@ -78,7 +78,7 @@ export const buildElapsedByStageWithActiveStage = (params: {
 };
 
 export const resolveTotalElapsedMs = (params: {
-  buildStatus: import('@hierarchidb/components/build-status').BuildStatus;
+  buildStatus: import('@hierarchidb/ui-build-progress/build-status').BuildStatus;
   stageDurationByStage: Record<string, number>;
   sessionDurationMs: number;
 }): number => {
@@ -109,7 +109,7 @@ export const mergeElapsedByStage = (
 };
 
 export const shouldResetElapsedState = (params: {
-  buildStatus: import('@hierarchidb/components/build-status').BuildStatus;
+  buildStatus: import('@hierarchidb/ui-build-progress/build-status').BuildStatus;
   buildDurationMs: number | undefined;
   sessionStageDurationByStage: Record<string, number>;
   localStageDurationByStage: Record<string, number>;

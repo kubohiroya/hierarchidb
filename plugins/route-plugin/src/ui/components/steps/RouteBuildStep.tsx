@@ -13,9 +13,7 @@ import {
 import {
   CheckCircle,
 } from '@mui/icons-material';
-import {
-  type BuildStatus,
-} from '@hierarchidb/components';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import {
   resolveBuildStages,
 } from '@hierarchidb/ui-build-progress';

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { isTaskPhaseDisplay } from '~/common/utils/taskMessages';
 import type { BuildProgress } from '~/ui/components/build-progress/shapeBuildProgressMapping';
-import type { BuildSessionTransitionState } from '@hierarchidb/components/build-session';
+import type { BuildSessionTransitionState } from '@hierarchidb/ui-build-progress/build-session';
 import type { BuildSessionTransitionPhase } from '../useShapeBuildStepHelpers/startupTrace';
 import type { BuildProgressStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
 

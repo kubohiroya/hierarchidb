@@ -829,9 +829,6 @@ importers:
       '@hierarchidb/ui-i18n':
         specifier: workspace:*
         version: link:../ui/i18n
-      '@hierarchidb/ui-lru-splitview':
-        specifier: workspace:*
-        version: link:../ui/lru-splitview
       '@mui/icons-material':
         specifier: ^7.3.6
         version: 7.3.9(@mui/material@7.3.9(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
@@ -1918,24 +1915,50 @@ importers:
         version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(esbuild@0.18.20)(happy-dom@20.8.3)(jiti@2.6.1)(jsdom@26.1.0)(tsx@4.21.0)(yaml@2.8.2)
 
   packages/ui/build-progress:
-    devDependencies:
+    dependencies:
       '@hierarchidb/components':
         specifier: workspace:*
         version: link:../../components
+      '@hierarchidb/ui-dialog':
+        specifier: workspace:*
+        version: link:../dialog
+    devDependencies:
+      '@emotion/react':
+        specifier: 11.14.0
+        version: 11.14.0(@types/react@19.2.14)(react@19.2.4)
+      '@emotion/styled':
+        specifier: 11.14.0
+        version: 11.14.0(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
+      '@hierarchidb/ui-i18n':
+        specifier: workspace:*
+        version: link:../i18n
+      '@hierarchidb/ui-lru-splitview':
+        specifier: workspace:*
+        version: link:../lru-splitview
       '@mui/icons-material':
         specifier: ^7.3.6
         version: 7.3.9(@mui/material@7.3.9(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
+      '@mui/material':
+        specifier: ^7.3.6
+        version: 7.3.9(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@types/react':
         specifier: ^19.1.1
         version: 19.2.14
       react:
         specifier: ^19.0.0
         version: 19.2.4
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.4(react@19.2.4)
       typescript:
         specifier: 5.8.2
         version: 5.8.2
 
   packages/ui/build-sessions:
+    dependencies:
+      '@hierarchidb/ui-build-progress':
+        specifier: workspace:*
+        version: link:../build-progress
     devDependencies:
       '@hierarchidb/build-api':
         specifier: workspace:*

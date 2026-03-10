@@ -32,6 +32,7 @@
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/components": "workspace:*",
+    "@hierarchidb/ui-build-progress": "workspace:*",
     "@hierarchidb/worker-api": "workspace:*",
     "@mui/icons-material": ">=5.0.0",
     "@mui/material": ">=5.0.0",

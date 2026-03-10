@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { useBuildStageFilter } from '@hierarchidb/components';
+import { useBuildStageFilter } from '@hierarchidb/ui-build-progress';
 import { useAtomValue, useSetAtom } from 'jotai';
-import type { BuildStatus } from '@hierarchidb/components/build-status';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import { type TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 import { sortGeometryTasks, sortVectorTileTasks } from '~/ui/components/build-progress/taskItemCardList/useTaskItemCardList';
 import { taskScrollTargetAtom, taskViewportRangeAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
