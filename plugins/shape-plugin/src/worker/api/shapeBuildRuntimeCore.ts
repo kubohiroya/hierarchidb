@@ -49,6 +49,9 @@ export {
   waitIfPaused,
   setPaused,
   resolveProgressPhase,
+  setSessionAbortController,
+  clearSessionAbortController,
+  getSessionAbortController,
 } from './stateManagement.js';
 
 // Task summary snapshot building
