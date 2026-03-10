@@ -20,7 +20,8 @@ describe('CommonDialogTitle', () => {
       />,
     );
 
-    fireEvent.click(screen.getByLabelText('Maximize (最大)'));
+    // normal → maximize: label is "Maximize" (fallback)
+    fireEvent.click(screen.getByLabelText('Maximize'));
     expect(onChange).toHaveBeenNthCalledWith(1, 'maximize');
 
     rerender(
@@ -30,7 +31,8 @@ describe('CommonDialogTitle', () => {
         onChangeDisplayMode={onChange}
       />,
     );
-    fireEvent.click(screen.getByLabelText('Normal (通常)'));
+    // maximize → normal: label is "Restore" (fallback)
+    fireEvent.click(screen.getByLabelText('Restore'));
     expect(onChange).toHaveBeenNthCalledWith(2, 'normal');
 
     rerender(
@@ -40,7 +42,8 @@ describe('CommonDialogTitle', () => {
         onChangeDisplayMode={onChange}
       />,
     );
-    fireEvent.click(screen.getByLabelText('Full-screen (全画面)'));
+    // normal → full-screen: label is "Full screen" (fallback)
+    fireEvent.click(screen.getByLabelText('Full screen'));
     expect(onChange).toHaveBeenNthCalledWith(3, 'full-screen');
 
     rerender(
@@ -50,7 +53,8 @@ describe('CommonDialogTitle', () => {
         onChangeDisplayMode={onChange}
       />,
     );
-    fireEvent.click(screen.getByLabelText('Normal (通常)'));
+    // full-screen → normal: label is "Exit full screen" (fallback)
+    fireEvent.click(screen.getByLabelText('Exit full screen'));
     expect(onChange).toHaveBeenNthCalledWith(4, 'normal');
   });
 
@@ -66,13 +70,12 @@ describe('CommonDialogTitle', () => {
 
     fireEvent.click(screen.getByLabelText('Display mode'));
     const menu = await screen.findByRole('menu');
-    fireEvent.click(within(menu).getByText('Maximize (最大)'));
+    fireEvent.click(within(menu).getByText('Maximize'));
     expect(onChange).toHaveBeenNthCalledWith(1, 'maximize');
 
     fireEvent.click(screen.getByLabelText('Display mode'));
     const menu2 = await screen.findByRole('menu');
-    fireEvent.click(within(menu2).getByText('Full-screen (全画面)'));
+    fireEvent.click(within(menu2).getByText('Full screen'));
     expect(onChange).toHaveBeenNthCalledWith(2, 'full-screen');
   });
 });
-

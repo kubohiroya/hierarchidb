@@ -1,12 +1,7 @@
 import { useCallback, useState } from 'react';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 
 export type DialogDisplayMode = 'normal' | 'maximize' | 'full-screen';
-
-export const DISPLAY_MODE_LABELS: Record<DialogDisplayMode, string> = {
-  normal: 'Normal (通常)',
-  maximize: 'Maximize (最大)',
-  'full-screen': 'Full-screen (全画面)',
-};
 
 export interface UseCommonDialogTitleViewParams {
   displayMode: DialogDisplayMode;
@@ -19,6 +14,8 @@ export interface UseCommonDialogTitleViewResult {
   showMaximizeToggle: boolean;
   maximizeToggleLabel: string;
   fullscreenToggleLabel: string;
+  displayModeLabels: Record<DialogDisplayMode, string>;
+  displayModeAriaLabel: string;
   openModeMenu: (event: React.MouseEvent<HTMLElement>) => void;
   closeModeMenu: () => void;
   selectDisplayMode: (next: DialogDisplayMode) => void;
@@ -30,7 +27,18 @@ export function useCommonDialogTitleView({
   displayMode,
   onChangeDisplayMode,
 }: UseCommonDialogTitleViewParams): UseCommonDialogTitleViewResult {
+  const { t } = useTranslation('common');
   const [modeMenuAnchor, setModeMenuAnchor] = useState<HTMLElement | null>(null);
+
+  const displayModeLabels: Record<DialogDisplayMode, string> = {
+    normal: String(t('dialogs.common.displayMode.normal', 'Normal (windowed)')),
+    maximize: String(t('dialogs.common.displayMode.maximize', 'Maximize')),
+    'full-screen': String(t('dialogs.common.displayMode.fullScreen', 'Full screen')),
+  };
+
+  const restoreLabel = String(t('dialogs.common.displayMode.restore', 'Restore'));
+  const exitFullScreenLabel = String(t('dialogs.common.displayMode.exitFullScreen', 'Exit full screen'));
+  const displayModeAriaLabel = String(t('dialogs.common.displayMode.ariaLabel', 'Display mode'));
 
   const closeModeMenu = useCallback(() => {
     setModeMenuAnchor(null);
@@ -60,9 +68,10 @@ export function useCommonDialogTitleView({
     modeMenuAnchor,
     isModeMenuOpen: Boolean(modeMenuAnchor),
     showMaximizeToggle: displayMode !== 'full-screen',
-    maximizeToggleLabel: displayMode === 'maximize' ? DISPLAY_MODE_LABELS.normal : DISPLAY_MODE_LABELS.maximize,
-    fullscreenToggleLabel:
-      displayMode === 'full-screen' ? DISPLAY_MODE_LABELS.normal : DISPLAY_MODE_LABELS['full-screen'],
+    maximizeToggleLabel: displayMode === 'maximize' ? restoreLabel : displayModeLabels.maximize,
+    fullscreenToggleLabel: displayMode === 'full-screen' ? exitFullScreenLabel : displayModeLabels['full-screen'],
+    displayModeLabels,
+    displayModeAriaLabel,
     openModeMenu,
     closeModeMenu,
     selectDisplayMode,
