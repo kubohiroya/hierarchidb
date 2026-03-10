@@ -15,6 +15,11 @@
 
 ## 今日の運用ログ
 
+- 2026-03-10: #991 並列Worker 401時の認証ダイアログ重複表示抑制・PR #992作成
+  - sessionStartedAtをAUTH_REQUIRED通知に追加、UI側でキャンセル済みビルド試行を記録し重複抑制
+  - AuthService.setBuildSessionContext/clearBuildSessionContextでセッション識別子伝播
+  - typecheck: auth-api, auth, download, runtime-worker, shape-plugin, app 全通過
+
 - 2026-03-10: #986 shape-plugin DefaultTFuncReturn型エラー修正・PR #987マージ済み
   - t()戻り値をString()でラップ（5ファイル11箇所）
   - typecheck: shape-plugin exit 0（100/100 tasks successful）
