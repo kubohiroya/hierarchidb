@@ -75,18 +75,22 @@ const {
   buildProgressPayloadFromTasks,
   progressCallbacks,
   getShapeEntityHandler,
+  getSessionAbortController,
+  setSessionAbortController,
+  clearSessionAbortController,
 } = shapeBuildRuntimeCore;
 
-// Mock implementations for missing functions (to be implemented later)
+// Module-scope pipeline tracking (runtime handles only, not session state)
 const activePipelines = new Set<string>();
 const activePipelineRuns = new Map<string, string>();
-const sessionAbortControllers = new Map<string, AbortController>();
 const sessionWorkerInstances = new Map<string, { terminate?: () => void }>();
 
 // Placeholder functions for missing implementations
 const startSessionTracking = (_nodeId: string) => { };
 const clearStalePipelineStateIfInactive = (_nodeId: string, _previousSession?: any, _startupScope?: string) => { };
-const clearActivePipelineRuntimeState = (_nodeId: string) => {
+const clearActivePipelineRuntimeState = (nodeId: string) => {
+  // Clear the AbortController stored in PauseState so it doesn't linger after pipeline ends.
+  clearSessionAbortController(nodeId as NodeId);
   // Clear auth session context so stale session identity is not reused (#991).
   AuthService.getSingleton().then((auth) => auth.clearBuildSessionContext()).catch(() => {});
 };
@@ -858,7 +862,7 @@ const startBuildSessionInternal = async (
 
   // Create AbortController for immediate termination on pause
   const abortController = new AbortController();
-  sessionAbortControllers.set(pipelineKey, abortController);
+  setSessionAbortController(nodeForSession, abortController);
 
   try {
     const taskQueue = new VtTaskQueueDb();
@@ -1291,8 +1295,7 @@ const invokeShapeBuildCommand = async (
     setPaused(nodeId, true);
 
     // Immediately abort all running tasks
-    const pipelineKey = String(nodeId);
-    const abortController = sessionAbortControllers.get(pipelineKey);
+    const abortController = getSessionAbortController(nodeId);
     if (abortController) {
       abortController.abort();
     }
@@ -1314,7 +1317,7 @@ const invokeShapeBuildCommand = async (
       });
 
       // Attempt to terminate worker if available
-      const workerInstance = sessionWorkerInstances.get(pipelineKey);
+      const workerInstance = sessionWorkerInstances.get(String(nodeId));
       if (workerInstance?.terminate) {
         try {
           workerInstance.terminate();

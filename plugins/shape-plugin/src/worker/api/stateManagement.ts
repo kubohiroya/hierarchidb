@@ -37,6 +37,9 @@ export interface TaskSubscription {
 type PauseState = {
     paused: boolean;
     waiters: Array<() => void>;
+    // AbortController for the currently running pipeline, if any.
+    // Stored here so pause can abort it immediately without a separate map.
+    abortController: AbortController | null;
 };
 
 // Global state maps
@@ -68,7 +71,7 @@ export const getPauseState = (nodeId: NodeId): PauseState => {
     const key = String(nodeId);
     const existing = pauseStates.get(key);
     if (existing) return existing;
-    const state: PauseState = { paused: false, waiters: [] };
+    const state: PauseState = { paused: false, waiters: [], abortController: null };
     pauseStates.set(key, state);
     return state;
 };
@@ -155,3 +158,15 @@ export {
     resolveProgressPhase,
     taskStateProtection,
 };
+
+export const setSessionAbortController = (nodeId: NodeId, controller: AbortController): void => {
+    getPauseState(nodeId).abortController = controller;
+};
+
+export const clearSessionAbortController = (nodeId: NodeId): void => {
+    getPauseState(nodeId).abortController = null;
+};
+
+export const getSessionAbortController = (nodeId: NodeId): AbortController | null => (
+    getPauseState(nodeId).abortController
+);
