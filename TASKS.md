@@ -3,7 +3,7 @@
 ## Doing
 
 - #937 / refactor/build-session/consolidate-local-state-to-ssot / 2026-03-10 開始
-- #940 / `refactor/navigation/extract-router-components` / 2026-03-10 開始
+
 - #917 Shape Step5 残りUI表記のi18n化完了 / feature/i18n/shape-step5-remaining-ui-labels / start
 
 - #914 Shape Step5 Reset/Deleteメニューのi18n化 / feature/i18n/shape-step5-reset-delete-menu / start
@@ -14,6 +14,8 @@
 
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 ## 今日の運用ログ
+
+- 2026-03-10: #940 ナビゲーションコンポーネント抽出完了・PR #941マージ済み
 
 - 2026-03-09: shape×styler同一フォルダ紐付けタスクは起票ゲートで停止（原因: gh未導入 / 発生範囲: 起票〜着手前 / 修正方法: gh CLI導入 / 適用範囲: 本環境の全新規実装タスク）。
 - 2025-03-09: #917 Shape Step5 残りUI表記のi18n化完了
