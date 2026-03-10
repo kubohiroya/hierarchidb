@@ -2,12 +2,20 @@
 
 ## Doing
 
-- #956 / fix/shape-plugin/stage-state-infinite-loop / 2026-03-10 start
+- #956 / fix/shape-plugin/stage-state-infinite-loop / 2026-03-10 start → PR #957作成
 
 ## Blocked
 
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 ## 今日の運用ログ
+
+- 2026-03-10: #956 useShapeBuildStepStageState無限レンダリングループ修正・PR #957作成
+  - tasksRef+tasksKey追加、persisted tasks同期useEffectから[tasks]依存除去→[tasksKey]に変更
+  - typecheck: 新規エラー0件（既知DefaultTFuncReturn 15件のみ）
+
+- 2026-03-10: #954 useLRUPanes無限レンダリングループ修正・PR #955作成
+  - panesRef追加、pane-sync/auto-expand useEffectからpanes依存除去
+  - typecheck通過（exit 0）
 
 - 2026-03-10: #952 "Close dialog"翻訳キー統合・ハードコード文字列i18n化完了・PR #953作成
   - dialogs.pluginDialog.tooltips.close → dialogs.common.actions.close に統一（PluginDialogControls/ArchiveDialog）
