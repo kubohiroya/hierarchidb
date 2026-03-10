@@ -25,7 +25,6 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@hierarchidb/core-types": "workspace:*",
-    "@hierarchidb/ui-floating-window": "workspace:*",
     "@hierarchidb/ui-grid": "workspace:*",
     "@hierarchidb/ui-json-treeview": "workspace:*",
     "@mui/icons-material": "^7.3.6",
@@ -39,7 +38,6 @@
     "@hierarchidb/gis-sdk": "workspace:*",
     "@deck.gl/core": "^9.2.10",
     "@hierarchidb/core-types": "workspace:*",
-    "@hierarchidb/ui-floating-window": "workspace:*",
     "@hierarchidb/ui-grid": "workspace:*",
     "@hierarchidb/ui-json-treeview": "workspace:*",
     "@mui/icons-material": "^7.3.6",
@@ -47,7 +45,8 @@
     "@storybook/react-vite": "7.6.21",
     "@types/geojson": "^7946.0.8",
     "jotai": "^2.16.0",
-    "react": "^19.0.0"
+    "react": "^19.0.0",
+    "@hierarchidb/components": "workspace:*"
   },
   "license": "MIT",
   "module": "dist/index.js",

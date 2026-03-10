@@ -18,7 +18,7 @@ import {
   Typography,
 } from '@mui/material';
 import { FilterAlt, Palette, TableChart } from '@mui/icons-material';
-import { FloatingWindow } from '@hierarchidb/ui-floating-window';
+import { FloatingWindow } from '@hierarchidb/components';
 import { RoutePreviewEmptyContent, RoutePreviewHoverSnackbar } from './RoutePreviewStepElements.js';
 import { DEFAULT_MAP_CONFIG, MapToggleCard, ResourceLayerMap, RoutePreviewList } from '@hierarchidb/ui-map';
 import type { NodeId } from '@hierarchidb/core-types';

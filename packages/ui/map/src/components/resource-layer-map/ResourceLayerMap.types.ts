@@ -109,7 +109,7 @@ export type ResourceLayerMapProps = BaseMapProps & {
     floatingWindow?: {
       title?: string;
       titleIcon?: React.ReactNode;
-      initialState?: import('@hierarchidb/ui-floating-window').WindowState;
+      initialState?: import('@hierarchidb/components').WindowState;
       resizable?: boolean;
       draggable?: boolean;
       minWidth?: number;

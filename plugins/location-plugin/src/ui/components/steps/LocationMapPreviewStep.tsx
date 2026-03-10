@@ -8,7 +8,7 @@ import { LocationOn, Palette, LocationCity } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/core-types';
 import { DEFAULT_MAP_CONFIG, MapToggleCard, LocationPreviewList, MapPreviewShell } from '@hierarchidb/ui-map';
 import type { LocationEntity } from '~/common/types/index';
-import { FloatingWindow } from '@hierarchidb/ui-floating-window';
+import { FloatingWindow } from '@hierarchidb/components';
 import { LocationStyleConfigPanel } from './LocationStyleConfigPanel.js';
 import { useLocationMapPreviewStep } from './useLocationMapPreviewStep.js';
 import { LocationAdmin0Formatter, LocationTypeFormatter } from './LocationMapPreviewStepElements.js';

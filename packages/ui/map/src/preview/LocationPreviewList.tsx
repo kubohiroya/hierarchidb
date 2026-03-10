@@ -1,7 +1,7 @@
 import type React from 'react';
 import { Box, CircularProgress, Dialog, DialogContent, DialogTitle, IconButton, Stack, Typography } from '@mui/material';
 import { Place as PlaceIcon, Recycling as RecyclingIcon } from '@mui/icons-material';
-import { FloatingWindow } from '@hierarchidb/ui-floating-window';
+import { FloatingWindow } from '@hierarchidb/components';
 import { JsonTreeView } from '@hierarchidb/ui-json-treeview';
 import { MapPreviewFloatingTable } from './MapPreviewFloatingTable.js';
 import { useLocationPreviewList } from './useLocationPreviewList.js';

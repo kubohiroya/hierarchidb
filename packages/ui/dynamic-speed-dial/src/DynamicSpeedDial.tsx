@@ -6,7 +6,7 @@ import type {
 } from './types.js';
 import {
   SpeedDialSubmenuActions,
-} from '@hierarchidb/ui-speeddial-submenu';
+} from '@hierarchidb/components';
 import { useDynamicSpeedDial } from './useDynamicSpeedDial.js';
 import { useDynamicSpeedDialSubmenuActions } from './useDynamicSpeedDialSubmenuActions.js';
 

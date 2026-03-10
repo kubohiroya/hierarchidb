@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import * as UIIcon from '@hierarchidb/ui-icon';
+import * as UIIcon from '@hierarchidb/components';
 import type {
   PluginPresentationDefinition,
   PluginPresentation,

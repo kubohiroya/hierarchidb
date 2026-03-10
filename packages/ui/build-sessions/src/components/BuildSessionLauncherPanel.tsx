@@ -3,7 +3,7 @@ import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import type { BuildSessionSnapshot } from '~/hooks/useBuildSessionSnapshots';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
-import { useIconRegistry } from '@hierarchidb/ui-icon';
+import { useIconRegistry } from '@hierarchidb/components';
 import { Box } from '@mui/material';
 import { useOptionalBuildSessionRuntimeContext } from '~/contexts/TreeBuildSessionContexts';
 import { useBuildSessionSnapshots } from '~/hooks/useBuildSessionSnapshots';

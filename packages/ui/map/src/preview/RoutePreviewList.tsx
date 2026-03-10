@@ -2,7 +2,7 @@ import type React from 'react';
 import { useMemo } from 'react';
 import { Box } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { FloatingWindow } from '@hierarchidb/ui-floating-window';
+import { FloatingWindow } from '@hierarchidb/components';
 import type { GridColumn } from '@hierarchidb/ui-grid';
 import {
   MapPreviewFloatingTable,

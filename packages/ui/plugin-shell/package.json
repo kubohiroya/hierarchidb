@@ -139,7 +139,6 @@
     "@hierarchidb/plugin-ui-host": "workspace:*",
     "@hierarchidb/ui-auth": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
-    "@hierarchidb/ui-icon": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/ui-layout": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",

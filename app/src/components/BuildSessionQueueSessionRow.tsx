@@ -28,7 +28,7 @@ import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { DragEvent, MouseEvent } from 'react';
 import type { BuildSessionQueueEntry } from './hooks/useBuildSessionListQueue';
-import type { IconRegistryValue } from '@hierarchidb/ui-icon';
+import type { IconRegistryValue } from '@hierarchidb/components';
 
 type BuildSessionQueueSessionRowProps = {
   row: BuildSessionQueueEntry;

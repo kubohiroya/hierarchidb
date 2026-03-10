@@ -17,7 +17,7 @@ import { useMapLayerRuntime } from './resource-layer-map/useMapLayerRuntime.js';
 import { useResourceLayerMapInteractions } from './resource-layer-map/useResourceLayerMapInteractions.js';
 import { DEFAULT_STATS_WINDOW_STATE } from './resource-layer-map/MapStatsPanel.js';
 import { useResourceLayerMapStats } from './useResourceLayerMapStats.js';
-import type { WindowState } from '@hierarchidb/ui-floating-window';
+import type { WindowState } from '@hierarchidb/components';
 
 export function useResourceLayerMap(props: ResourceLayerMapProps) {
   const theme = useTheme();

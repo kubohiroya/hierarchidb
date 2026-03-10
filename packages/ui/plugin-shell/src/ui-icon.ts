@@ -1,1 +1,1 @@
-export * from '@hierarchidb/ui-icon';
+export * from '@hierarchidb/components';

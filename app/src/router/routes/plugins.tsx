@@ -1,7 +1,7 @@
 // import { WorkerAPIClient } from '../WorkerAPIClient.ts';
 // import type { Remote } from 'comlink';
 // import type { WorkerAPI } from '@hierarchidb/_obsolate_common-api';
-import { useIconRegistry } from '@hierarchidb/ui-icon';
+import { useIconRegistry } from '@hierarchidb/components';
 // UIPluginRegistry is legacy; this page now reads vite-generated metadata
 // import { getUIPluginRegistry } from '@hierarchidb/ui-plugin-shell/ui-core';
 import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-plugin-shell/ui-dialog';

@@ -22,11 +22,11 @@
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "peerDependencies": {
-    "@hierarchidb/ui-icon": "workspace:*"
+    "@hierarchidb/components": "workspace:*"
   },
   "devDependencies": {
-    "@hierarchidb/ui-icon": "workspace:*",
     "typescript": "workspace:^5.9.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "@hierarchidb/components": "workspace:*"
   }
 }

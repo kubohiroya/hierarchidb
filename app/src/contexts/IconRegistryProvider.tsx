@@ -3,7 +3,7 @@ import {
   type IconDescriptorInput,
   IconRegistryProvider,
   type IconRegistryValue,
-} from '@hierarchidb/ui-icon';
+} from '@hierarchidb/components';
 import type { SvgIconProps } from '@mui/material/SvgIcon';
 import type { ComponentType, ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';

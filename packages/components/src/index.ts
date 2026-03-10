@@ -25,3 +25,11 @@ export { PillTextField } from './PillTextField.tsx';
 export { SpacedSlider } from './SpacedSlider.tsx';
 
 export * from './SearchInput/index.ts';
+
+export * from './build-session/index.ts';
+export * from './BuildSessionProgressPanel.tsx';
+export * from './BuildStepStageFilterContext.tsx';
+export * from './Icon/index.ts';
+export * from './FloatingWindow/index.ts';
+export * from './SpeedDialSubmenu/index.ts';
+export * from './FlagOverlay/index.ts';

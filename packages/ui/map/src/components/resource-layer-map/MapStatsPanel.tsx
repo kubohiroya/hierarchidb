@@ -1,7 +1,7 @@
 import { Box as MuiBox, Typography } from '@mui/material';
 import type { BoxProps } from '@mui/material';
 import type React from 'react';
-import type { WindowState } from '@hierarchidb/ui-floating-window';
+import type { WindowState } from '@hierarchidb/components';
 import { normalizeChildren, formatBytes } from './resourceLayerMapHelpers.js';
 import type { MapStatsStore } from '../useResourceLayerMapStats.js';
 import { useMapStatsPanel } from './useMapStatsPanel.js';

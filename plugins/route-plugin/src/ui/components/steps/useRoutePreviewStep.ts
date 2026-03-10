@@ -21,7 +21,7 @@ import {
 import type { SvgIconComponent } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/core-types';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
-import { useFloatingWindow } from '@hierarchidb/ui-floating-window';
+import { useFloatingWindow } from '@hierarchidb/components';
 import type {
   RouteBuildError,
   RouteEntity,

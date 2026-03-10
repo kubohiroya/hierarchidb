@@ -4,8 +4,8 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import { FloatingWindow } from '@hierarchidb/ui-floating-window';
-import type { WindowState } from '@hierarchidb/ui-floating-window';
+import { FloatingWindow } from '@hierarchidb/components';
+import type { WindowState } from '@hierarchidb/components';
 import type {
   LayerSetDefinition,
   LayerSetId,

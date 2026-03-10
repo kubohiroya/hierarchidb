@@ -51,7 +51,6 @@
     "jotai": "^2.13.1",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@hierarchidb/ui-icon": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/ui-theme": "workspace:*"
   },
@@ -78,7 +77,6 @@
     "jotai": "^2.13.1",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@hierarchidb/ui-icon": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/ui-theme": "workspace:*",
     "vitest": "^3.2.4",

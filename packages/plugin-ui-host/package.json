@@ -24,7 +24,9 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@hierarchidb/components": "workspace:*"
+  },
   "devDependencies": {
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
@@ -35,7 +37,6 @@
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
-    "@hierarchidb/ui-icon": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/ui-worker-provider": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
@@ -62,7 +63,6 @@
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
-    "@hierarchidb/ui-icon": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/ui-worker-provider": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",

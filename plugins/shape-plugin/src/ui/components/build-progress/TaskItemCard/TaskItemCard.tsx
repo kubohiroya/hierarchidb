@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 import { Box } from '@mui/material';
-import { FlagOverlay } from '@hierarchidb/ui-flag-overlay';
+import { FlagOverlay } from '@hierarchidb/components';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import { isTaskSkipped } from '~/common/utils/taskMessages';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';

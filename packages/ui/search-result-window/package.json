@@ -25,7 +25,6 @@
   },
   "devDependencies": {
     "@hierarchidb/core-types": "workspace:*",
-    "@hierarchidb/ui-floating-window": "workspace:*",
     "@types/react": "^19.1.1",
     "@types/react-dom": "^19.1.1",
     "@storybook/react-vite": "7.6.21",
@@ -37,11 +36,11 @@
     "@mui/icons-material": "^7.3.6"
   },
   "dependencies": {
-    "@hierarchidb/core-types": "workspace:*"
+    "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/components": "workspace:*"
   },
   "peerDependencies": {
     "@hierarchidb/core-types": "workspace:*",
-    "@hierarchidb/ui-floating-window": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "@mui/material": "^7.3.6",

@@ -289,6 +289,9 @@ importers:
       '@hierarchidb/build-api':
         specifier: workspace:*
         version: link:../packages/build-api
+      '@hierarchidb/components':
+        specifier: workspace:*
+        version: link:../packages/components
       '@hierarchidb/core-types':
         specifier: workspace:*
         version: link:../packages/core-types
@@ -373,9 +376,6 @@ importers:
       '@hierarchidb/ui-dynamic-speed-dial':
         specifier: workspace:*
         version: link:../packages/ui/dynamic-speed-dial
-      '@hierarchidb/ui-floating-window':
-        specifier: workspace:*
-        version: link:../packages/ui/floating-window
       '@hierarchidb/ui-grid':
         specifier: workspace:*
         version: link:../packages/ui/data-grid
@@ -388,9 +388,6 @@ importers:
       '@hierarchidb/ui-plugin-shell':
         specifier: workspace:*
         version: link:../packages/ui/plugin-shell
-      '@hierarchidb/ui-speeddial-submenu':
-        specifier: workspace:*
-        version: link:../packages/ui/speeddial-submenu
       '@hierarchidb/ui-treeconsole-base':
         specifier: workspace:*
         version: link:../packages/ui/treeconsole/base
@@ -1104,9 +1101,9 @@ importers:
 
   packages/plugin-presentation:
     devDependencies:
-      '@hierarchidb/ui-icon':
+      '@hierarchidb/components':
         specifier: workspace:*
-        version: link:../ui/icon
+        version: link:../components
       typescript:
         specifier: 5.8.2
         version: 5.8.2
@@ -1176,6 +1173,10 @@ importers:
         version: 5.8.2
 
   packages/plugin-ui-host:
+    dependencies:
+      '@hierarchidb/components':
+        specifier: workspace:*
+        version: link:../components
     devDependencies:
       '@hierarchidb/core-types':
         specifier: workspace:*
@@ -1204,9 +1205,6 @@ importers:
       '@hierarchidb/ui-i18n':
         specifier: workspace:*
         version: link:../ui/i18n
-      '@hierarchidb/ui-icon':
-        specifier: workspace:*
-        version: link:../ui/icon
       '@hierarchidb/ui-plugin-basic-info':
         specifier: workspace:*
         version: link:../ui/plugin-basic-info
@@ -1957,9 +1955,6 @@ importers:
       '@hierarchidb/ui-i18n':
         specifier: workspace:*
         version: link:../i18n
-      '@hierarchidb/ui-icon':
-        specifier: workspace:*
-        version: link:../icon
       '@hierarchidb/ui-worker-client':
         specifier: workspace:*
         version: link:../worker-client
@@ -2097,9 +2092,9 @@ importers:
 
   packages/ui/dynamic-speed-dial:
     dependencies:
-      '@hierarchidb/ui-speeddial-submenu':
+      '@hierarchidb/components':
         specifier: workspace:*
-        version: link:../speeddial-submenu
+        version: link:../../components
     devDependencies:
       '@mui/material':
         specifier: ^7.3.6
@@ -2312,15 +2307,15 @@ importers:
       '@deck.gl/core':
         specifier: ^9.2.10
         version: 9.2.11
+      '@hierarchidb/components':
+        specifier: workspace:*
+        version: link:../../components
       '@hierarchidb/core-types':
         specifier: workspace:*
         version: link:../../core-types
       '@hierarchidb/gis-sdk':
         specifier: workspace:*
         version: link:../../gis-sdk
-      '@hierarchidb/ui-floating-window':
-        specifier: workspace:*
-        version: link:../floating-window
       '@hierarchidb/ui-grid':
         specifier: workspace:*
         version: link:../data-grid
@@ -2487,9 +2482,6 @@ importers:
       '@hierarchidb/ui-i18n':
         specifier: workspace:*
         version: link:../i18n
-      '@hierarchidb/ui-icon':
-        specifier: workspace:*
-        version: link:../icon
       '@hierarchidb/ui-layout':
         specifier: workspace:*
         version: link:../layout
@@ -2587,6 +2579,9 @@ importers:
       '@emotion/styled':
         specifier: 11.14.0
         version: 11.14.0(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
+      '@hierarchidb/components':
+        specifier: workspace:*
+        version: link:../../components
       '@hierarchidb/core-types':
         specifier: workspace:*
         version: link:../../core-types
@@ -2594,9 +2589,6 @@ importers:
         specifier: ^2.13.1
         version: 2.18.0(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@19.2.14)(react@19.2.4)
     devDependencies:
-      '@hierarchidb/ui-floating-window':
-        specifier: workspace:*
-        version: link:../floating-window
       '@mui/icons-material':
         specifier: ^7.3.6
         version: 7.3.9(@mui/material@7.3.9(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
@@ -2803,9 +2795,6 @@ importers:
       '@hierarchidb/ui-i18n':
         specifier: workspace:*
         version: link:../../i18n
-      '@hierarchidb/ui-icon':
-        specifier: workspace:*
-        version: link:../../icon
       '@hierarchidb/ui-theme':
         specifier: workspace:*
         version: link:../../theme
@@ -2875,6 +2864,9 @@ importers:
 
   packages/ui/treeconsole/breadcrumb:
     dependencies:
+      '@hierarchidb/components':
+        specifier: workspace:*
+        version: link:../../../components
       '@hierarchidb/core-types':
         specifier: workspace:*
         version: link:../../../core-types
@@ -2888,9 +2880,6 @@ importers:
       '@emotion/styled':
         specifier: 11.14.0
         version: 11.14.0(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
-      '@hierarchidb/ui-icon':
-        specifier: workspace:*
-        version: link:../../icon
       '@hierarchidb/ui-theme':
         specifier: workspace:*
         version: link:../../theme
@@ -3741,9 +3730,6 @@ importers:
       '@hierarchidb/ui-build-sessions':
         specifier: workspace:*
         version: link:../../packages/ui/build-sessions
-      '@hierarchidb/ui-floating-window':
-        specifier: workspace:*
-        version: link:../../packages/ui/floating-window
       '@hierarchidb/ui-grid':
         specifier: workspace:*
         version: link:../../packages/ui/data-grid
@@ -3983,9 +3969,6 @@ importers:
       '@hierarchidb/ui-datasource':
         specifier: workspace:*
         version: link:../../packages/ui/datasource
-      '@hierarchidb/ui-floating-window':
-        specifier: workspace:*
-        version: link:../../packages/ui/floating-window
       '@hierarchidb/ui-map':
         specifier: workspace:*
         version: link:../../packages/ui/map
@@ -4143,12 +4126,6 @@ importers:
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog
-      '@hierarchidb/ui-flag-overlay':
-        specifier: workspace:*
-        version: link:../../packages/ui/flag-overlay
-      '@hierarchidb/ui-floating-window':
-        specifier: workspace:*
-        version: link:../../packages/ui/floating-window
       '@hierarchidb/ui-grid':
         specifier: workspace:*
         version: link:../../packages/ui/data-grid
@@ -4375,9 +4352,6 @@ importers:
       '@hierarchidb/ui-grid':
         specifier: workspace:*
         version: link:../../packages/ui/data-grid
-      '@hierarchidb/ui-icon':
-        specifier: workspace:*
-        version: link:../../packages/ui/icon
       '@hierarchidb/ui-modal-select':
         specifier: workspace:*
         version: link:../../packages/ui/modal-select
