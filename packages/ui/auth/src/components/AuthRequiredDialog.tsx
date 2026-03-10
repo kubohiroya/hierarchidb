@@ -26,6 +26,7 @@ import {
 } from '@mui/material';
 import { useAuthRequiredDialog } from '../hooks/useAuthRequiredDialog';
 import { useAuthRequiredDialogView } from './useAuthRequiredDialogView.js';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 
 // Local minimal type to avoid workspace linking issues during typecheck.
 // Aligns with @hierarchidb/_obsolate_common-auth AuthRequiredNotification shape used here.
@@ -129,6 +130,9 @@ export function AuthRequiredDialog({
     isMicrosoftProviderDisabled,
   });
 
+  const { t } = useTranslation('common');
+  const closeDialogLabel = t('dialogs.common.actions.close', 'Close dialog');
+
   return (
     <Dialog
       open={open}
@@ -155,7 +159,7 @@ export function AuthRequiredDialog({
             onClick={handleCancel}
             disabled={isAuthenticating}
             size="small"
-            aria-label="Close dialog"
+            aria-label={closeDialogLabel}
           >
             <CloseIcon />
           </IconButton>

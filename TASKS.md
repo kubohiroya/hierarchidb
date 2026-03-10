@@ -2,7 +2,7 @@
 
 ## Doing
 
-- #917 / feature/i18n/shape-step5-remaining-ui-labels / PR #945 作成済み
+- #952 / refactor/i18n/consolidate-close-dialog-keys / 2026-03-10 start
 
 ## Blocked
 
@@ -20,6 +20,7 @@
 - 2026-03-10: #940 ナビゲーションコンポーネント抽出完了・PR #941マージ済み
 - 2026-03-10: クリーンアップ: #937 worktree+ブランチ削除(Issue CLOSED済)、#913 ブランチ削除(Issue CLOSED済)、#914 main含有確認→Issue close+ブランチ削除
 - 2026-03-10: #947 tsdown .d.ts分割問題修正完了・PR #948マージ済み（build-session再エクスポート削除・BuildStage/BuildStatus型追加・route-pluginインポートパス修正）
+- 2026-03-10: #917 PR #945 mainリベース→CI全通過→マージ完了・ブランチ削除
 - 2026-03-10: #944 PR #946マージ完了・ローカル/リモートブランチ削除・stash整理(3件drop)
 - 2026-03-10: #917 mainリベース(コンフリクト2件解決)・push・PR #945作成
 

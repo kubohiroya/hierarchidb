@@ -17,6 +17,7 @@ import type { Theme } from '@mui/material/styles';
 import { useLocation } from '@tanstack/react-router';
 import type React from 'react';
 import { useCallback, useState } from 'react';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { StepStatusIcon } from './StepStatusIcon.js';
 
 type WorkerStepState = {
@@ -59,6 +60,7 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
   theme,
 }) => {
   const location = useLocation();
+  const { t } = useTranslation('common');
   const [contextMenuState, setContextMenuState] = useState<{
     mouseX: number;
     mouseY: number;
@@ -242,19 +244,19 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
           <ListItemIcon>
             <OpenInNewIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Open In New Tab</ListItemText>
+          <ListItemText>{t('dialogs.pluginDialog.contextMenu.openInNewTab', 'Open In New Tab')}</ListItemText>
         </MenuItem>
         <MenuItem onClick={openInNewWindow}>
           <ListItemIcon>
             <OpenInNewOffIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Open In New Window</ListItemText>
+          <ListItemText>{t('dialogs.pluginDialog.contextMenu.openInNewWindow', 'Open In New Window')}</ListItemText>
         </MenuItem>
         <MenuItem onClick={copyLinkUrl}>
           <ListItemIcon>
             <ContentCopyIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Copy Link URL</ListItemText>
+          <ListItemText>{t('dialogs.pluginDialog.contextMenu.copyLinkUrl', 'Copy Link URL')}</ListItemText>
         </MenuItem>
       </DialogSafeMenu>
     </>

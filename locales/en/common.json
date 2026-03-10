@@ -91,10 +91,6 @@
         "maximize": "Maximize (browser window)",
         "fullScreen": "Full-screen (system)"
       },
-      "actions": {
-        "close": "Close dialog",
-        "exitFullscreen": "Exit full screen"
-      },
       "title": {
         "empty": "Delete Items",
         "restore": "Restore from Archive"

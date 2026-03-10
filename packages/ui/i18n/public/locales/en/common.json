@@ -147,10 +147,6 @@
         "maximize": "Maximize (browser window)",
         "fullScreen": "Full-screen (system)"
       },
-      "actions": {
-        "close": "Close dialog",
-        "exitFullscreen": "Exit full screen"
-      },
       "title": {
         "empty": "Delete Items",
         "restore": "Restore from Archive"
@@ -221,6 +217,11 @@
         "exitFullscreen": "Exit full screen",
         "minimize": "Minimize",
         "restoreMinimized": "Restore"
+      },
+      "contextMenu": {
+        "openInNewTab": "Open In New Tab",
+        "openInNewWindow": "Open In New Window",
+        "copyLinkUrl": "Copy Link URL"
       },
       "tooltips": {
         "saveDraftDisabled": "No changes to save",

@@ -25,7 +25,7 @@ const useDialogTooltips = () => {
     exitFullscreen: t('dialogs.pluginDialog.tooltips.exitFullscreen', 'Exit full screen'),
     minimize: t('dialogs.pluginDialog.tooltips.minimize', 'Minimize'),
     restoreMinimized: t('dialogs.pluginDialog.tooltips.restoreMinimized', 'Restore'),
-    close: t('dialogs.pluginDialog.tooltips.close', 'Close dialog'),
+    close: t('dialogs.common.actions.close', 'Close dialog'),
   };
 };
 
