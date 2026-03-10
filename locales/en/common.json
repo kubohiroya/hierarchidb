@@ -490,6 +490,23 @@
     "checkReference": "Check reference",
     "preview": "Preview"
   },
+  "common": {
+    "basicInfo": {
+      "title": "Info",
+      "subtitle": "Enter a name and optional description.",
+      "name": {
+        "label": "Name",
+        "helper": "Enter a descriptive name",
+        "required": "Name is required",
+        "placeholder": "Enter name"
+      },
+      "description": {
+        "label": "Description",
+        "helper": "Describe the purpose or contents (optional)",
+        "placeholder": "Enter description (optional)"
+      }
+    }
+  },
   "buildSessionQueue": {
     "empty": "No running or queued build sessions found",
     "deleteTitle": "Delete session from queue",

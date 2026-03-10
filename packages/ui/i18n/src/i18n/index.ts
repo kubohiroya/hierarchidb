@@ -75,7 +75,7 @@ interface ReactI18nOptions {
 const reactOptions: ReactI18nOptions = {
   useSuspense: false,
   bindI18n: 'languageChanged',
-  bindI18nStore: '',
+  bindI18nStore: 'added removed',
   transSupportBasicHtmlNodes: true,
   transKeepBasicHtmlNodesFor: ['br', 'strong', 'i', 'em'],
   unescape: (str) => {
