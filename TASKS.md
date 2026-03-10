@@ -2,7 +2,7 @@
 
 ## Doing
 
-- #952 / refactor/i18n/consolidate-close-dialog-keys / 2026-03-10 start
+- #956 / fix/shape-plugin/stage-state-infinite-loop / 2026-03-10 start
 
 ## Blocked
 
