@@ -155,7 +155,7 @@ export const useRouteSelectionStep = ({
     void (async () => {
       try {
         if (!api) {
-          throw new Error(t('routeConfig.ideGsmMissingWorker', 'Worker API is unavailable.'));
+          throw new Error(String(t('routeConfig.ideGsmMissingWorker', 'Worker API is unavailable.')));
         }
         await initialize();
         const routeMutation = await api.getRouteMutationAPI();
@@ -165,7 +165,7 @@ export const useRouteSelectionStep = ({
         });
         if (cancelled) return;
         if (!result || Object.keys(result.coverageByCountryOr ?? result.coverageByCountry ?? {}).length === 0) {
-          throw new Error(t('routeConfig.ideGsmEmptyCoverage', 'No routes found in IDE-GSM data.'));
+          throw new Error(String(t('routeConfig.ideGsmEmptyCoverage', 'No routes found in IDE-GSM data.')));
         }
         setCoverage(result);
         if (result.errors.length > 0) {
