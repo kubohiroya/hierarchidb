@@ -2,6 +2,7 @@
 
 ## Doing
 
+- #949 / fix/components/stable-icon-slot-infinite-loop / 2026-03-10 開始
 - #917 / feature/i18n/shape-step5-remaining-ui-labels / PR #945 作成済み
 
 ## Blocked
