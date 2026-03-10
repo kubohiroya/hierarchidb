@@ -537,7 +537,7 @@ export function usePluginDialogController(
     handleBasicInfoBridge,
     onDraftMetadataChange: handleDraftMetadataChange,
     dialogRef,
-    basicInfoLabel: t('common.basicInfo.title', 'Info'),
+    basicInfoLabel: t('basicInfo.title', 'Info'),
     onTagClick: handleTagNavigate,
   });
 
