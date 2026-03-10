@@ -405,9 +405,13 @@ export function useDialogFrameState({
     (next?: DialogSize) => {
       if (!next) return;
       defaultFrameRef.current = null;
+      // When the user manually resizes from maximize, transition to normal
+      if (displayMode === 'maximize') {
+        persistDisplayMode('normal');
+      }
       const viewport = getViewportSize();
       const normalized = normalizeDialogState(next, dialogPositionRef.current, viewport, {
-        enforceTopLeftMargin: displayMode === 'normal',
+        enforceTopLeftMargin: displayMode === 'normal' || displayMode === 'maximize',
         minPosition: 0,
         clampSizeToViewport: true,
       });
@@ -418,16 +422,20 @@ export function useDialogFrameState({
         persistPosition(normalized.position);
       }
     },
-    [displayMode, persistPosition, persistSize]
+    [displayMode, persistDisplayMode, persistPosition, persistSize]
   );
 
   const handlePositionChange = useCallback(
     (next?: DialogPosition) => {
       if (!next) return;
       defaultFrameRef.current = null;
+      // When the user manually moves from maximize, transition to normal
+      if (displayMode === 'maximize') {
+        persistDisplayMode('normal');
+      }
       const viewport = getViewportSize();
       const normalized = normalizeDialogState(dialogSizeRef.current, next, viewport, {
-        enforceTopLeftMargin: displayMode === 'normal',
+        enforceTopLeftMargin: displayMode === 'normal' || displayMode === 'maximize',
         minPosition: 0,
         clampSizeToViewport: true,
       });
@@ -438,7 +446,7 @@ export function useDialogFrameState({
         persistPosition(normalized.position);
       }
     },
-    [displayMode, persistPosition, persistSize]
+    [displayMode, persistDisplayMode, persistPosition, persistSize]
   );
 
   return {
