@@ -22,12 +22,6 @@
 
 ## 今日の運用ログ
 
-- 2026-03-12: #1012 二重snapshot発行バグ修正・PR #1013作成
-  - Worker側: sendSnapshot が空 snapshot に version なしで送る → resolveSnapshotVersion throw を修正（version:0 明示付与）
-  - UI側: pendingTaskUpdatesBeforeInitialSnapshot を消去するだけで dispatch していなかったバグ修正
-  - establishChannels から getBuildTasks() 二重呼び出し削除
-  - typecheck: 100/100 exit 0、test: 423/426 pass
-
 - 2026-03-12: #1010 Worker側・UI側SSOT状態木の状態遷移を網羅的にテスト・PR #1011作成
   - 新規: buildSessionStateAtomBridgePureFunctions.unit.test.ts（Bridge純粋関数 全分岐）
   - 新規: stateManagement.unit.test.ts（Worker PauseState/AbortController/resolveProgressPhase）
