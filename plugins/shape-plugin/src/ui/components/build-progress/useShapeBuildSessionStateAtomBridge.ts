@@ -9,6 +9,7 @@ import type { ShapeStageId } from '~/ui/atoms/buildSessionStateAtoms';
 import {
     UIEventBufferManager,
     ImmediateHeartbeatProcessor,
+    logUIEventReception,
     type SequencedEvent,
     type NotificationType
 } from './eventBufferingUI';
@@ -231,25 +232,34 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
 
             for (const notificationType of notificationTypes) {
                 const readyEvents = eventBufferManager.flushBuffer(notificationType);
+                if (readyEvents.length === 0) continue;
 
-                for (const sequencedEvent of readyEvents) {
-                    switch (notificationType) {
-                        case 'session-state': {
-                            const sessionEvent = sequencedEvent.payload as SequencedSessionStateEvent;
-                            processSessionStateEvent(sessionEvent);
-                            break;
-                        }
-                        case 'stage-snapshot': {
-                            const snapshotEvent = sequencedEvent.payload as TaskSnapshotEvent;
-                            processTaskSnapshotEvent(snapshotEvent);
-                            break;
-                        }
-                        case 'task-progress': {
-                            const progressEvent = sequencedEvent.payload as SequencedBuildProgressEvent;
-                            processProgressEvent(progressEvent);
-                            break;
+                let processingError: unknown;
+                try {
+                    for (const sequencedEvent of readyEvents) {
+                        switch (notificationType) {
+                            case 'session-state': {
+                                const sessionEvent = sequencedEvent.payload as SequencedSessionStateEvent;
+                                processSessionStateEvent(sessionEvent);
+                                break;
+                            }
+                            case 'stage-snapshot': {
+                                const snapshotEvent = sequencedEvent.payload as TaskSnapshotEvent;
+                                processTaskSnapshotEvent(snapshotEvent);
+                                break;
+                            }
+                            case 'task-progress': {
+                                const progressEvent = sequencedEvent.payload as SequencedBuildProgressEvent;
+                                processProgressEvent(progressEvent);
+                                break;
+                            }
                         }
                     }
+                    logUIEventReception(readyEvents, 'success');
+                } catch (error) {
+                    processingError = error;
+                    logUIEventReception(readyEvents, 'error', processingError);
+                    throw error;
                 }
             }
         };
@@ -523,19 +533,19 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                     unsubscribeHeartbeat();
                     return;
                 }
-                
+
                 console.log('[shape buildSessionStateAtomBridge] fetched initial tasks', {
                     nodeId: nodeIdText,
                     taskCount: tasks.length,
                     tasks: tasks.slice(0, 3) // Log first 3 tasks for debugging
                 });
-                
+
                 const snapshotEvent = toSnapshotEvent(tasks);
                 console.log('[shape buildSessionStateAtomBridge] created snapshot event', {
                     nodeId: nodeIdText,
                     snapshotEvent
                 });
-                
+
                 onTaskEvent(snapshotEvent);
 
                 unsubscribers.push(unsubscribeTasks, unsubscribeProgress, unsubscribeSessionState, unsubscribeHeartbeat);

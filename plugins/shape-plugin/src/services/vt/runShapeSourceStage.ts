@@ -548,7 +548,19 @@ const putSourceCache = async (params: {
   });
 
   // Phase 2: Mark write complete with non-zero timestamp (valid state)
-  await markSourceCacheWriteComplete([recordId]);
+  try {
+    await markSourceCacheWriteComplete([recordId]);
+  } catch (error) {
+    const { handleCacheWriteFailure } = await import('../../worker/api/cacheWriteValidation');
+    handleCacheWriteFailure(error, {
+      nodeId: params.nodeId,
+      taskId: params.taskId ?? recordId,
+      cacheType: 'source',
+      cacheId: recordId,
+      phase: 'metadata',
+    });
+    throw error;
+  }
 
   return { id: recordId, contentHash };
 };

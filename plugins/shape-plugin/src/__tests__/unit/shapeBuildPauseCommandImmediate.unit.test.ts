@@ -42,7 +42,7 @@ vi.mock('@hierarchidb/vt-orchestrator', () => ({
   listTasks: async () => [],
   listTasksByStage: async () => [],
   listTasksByStatus: (...args: Parameters<typeof listTasksByStatusMock>) => listTasksByStatusMock(...args),
-  onTaskQueueUpdate: () => () => {},
+  onTaskQueueUpdate: () => () => { },
   updateTask: (...args: Parameters<typeof updateTaskMock>) => updateTaskMock(...args),
 }));
 
@@ -57,7 +57,7 @@ vi.mock('../../worker/api/shapeBuildRuntimeCore.js', () => ({
   progressCallbacks: new Map(),
   getShapeEntityHandler: () => ({ getEntity: async () => null }),
   listTasks: async () => [],
-  onTaskQueueUpdate: () => () => {},
+  onTaskQueueUpdate: () => () => { },
   ensureTaskQueueSeeded: async () => undefined,
   mapTaskQueueRecordToTaskSummary: (t: unknown) => t,
   buildTaskSummarySnapshot: async () => [],
@@ -71,6 +71,9 @@ vi.mock('../../worker/api/shapeBuildRuntimeCore.js', () => ({
   heartbeatCallbacks: new Map(),
   taskProgressCallbacks: new Map(),
   workerLogCallbacks: new Map(),
+  setSessionAbortController: (...args: Parameters<typeof setSessionAbortControllerMock>) => setSessionAbortControllerMock(...args),
+  clearSessionAbortController: (...args: Parameters<typeof clearSessionAbortControllerMock>) => clearSessionAbortControllerMock(...args),
+  getSessionAbortController: (...args: Parameters<typeof getSessionAbortControllerMock>) => getSessionAbortControllerMock(...args),
 }));
 
 import { shapeBuildRuntimeExecutionControl } from '../../worker/api/shapeBuildRuntimeExecutionControl';
