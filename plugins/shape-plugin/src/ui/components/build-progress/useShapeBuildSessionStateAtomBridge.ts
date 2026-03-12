@@ -1,4 +1,4 @@
-import { useLayoutEffect } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { BuildProgressEvent, BuildTaskSummary, BuildTaskUpdateEvent } from '@hierarchidb/build-api';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
@@ -132,6 +132,12 @@ export const resolveSnapshotTargetStages = (event: TaskSnapshotEvent): ShapeStag
 export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined): void => {
     const dispatch = useSetAtom(dispatchBuildSessionEventAtom);
     const buildSessionSnapshotHandshakeReceived = useAtomValue(buildSessionSnapshotHandshakeReceivedAtom);
+    // Keep a ref so the effect closure always reads the latest value without
+    // re-running the entire channel setup when the handshake flag flips.
+    const buildSessionSnapshotHandshakeReceivedRef = useRef(buildSessionSnapshotHandshakeReceived);
+    useLayoutEffect(() => {
+        buildSessionSnapshotHandshakeReceivedRef.current = buildSessionSnapshotHandshakeReceived;
+    });
 
     // Use useLayoutEffect for synchronous channel establishment
     useLayoutEffect(() => {
@@ -278,7 +284,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             console.log('[shape buildSessionStateAtomBridge] processTaskSnapshotEvent', {
                 nodeId: nodeIdText,
                 taskCount: snapshotEvent.tasks.length,
-                buildSessionSnapshotHandshakeReceived,
+                buildSessionSnapshotHandshakeReceived: buildSessionSnapshotHandshakeReceivedRef.current,
                 snapshotEvent
             });
 
@@ -319,7 +325,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                 dispatchUiSyncPhase(stageId, 'running');
             }
 
-            if (!buildSessionSnapshotHandshakeReceived) {
+            if (!buildSessionSnapshotHandshakeReceivedRef.current) {
                 pendingTaskUpdatesBeforeInitialSnapshot.length = 0;
                 console.log('[shape buildSessionStateAtomBridge] initial snapshot applied', {
                     nodeId: nodeIdText,
@@ -370,7 +376,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                 nodeId: nodeIdText,
                 eventType: event.type,
                 hasSeqNum: typeof (event as any).seqNum === 'number',
-                buildSessionSnapshotHandshakeReceived
+                buildSessionSnapshotHandshakeReceived: buildSessionSnapshotHandshakeReceivedRef.current
             });
 
             if (event.type === 'snapshot') {
@@ -425,7 +431,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                 );
                 const snapshotVersionMax = snapshotVersionMaxByStage[stageId];
                 if (snapshotVersionMax == null) {
-                    if (!buildSessionSnapshotHandshakeReceived) {
+                    if (!buildSessionSnapshotHandshakeReceivedRef.current) {
                         pendingTaskUpdatesBeforeInitialSnapshot.push(updateEvent);
                         return;
                     }
@@ -581,5 +587,5 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                 unsubscribe();
             }
         };
-    }, [dispatch, nodeId, buildSessionSnapshotHandshakeReceived]);
+    }, [dispatch, nodeId]);
 };
