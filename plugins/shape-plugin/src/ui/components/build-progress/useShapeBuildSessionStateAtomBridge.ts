@@ -501,7 +501,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                 }
 
                 // Establish all channels synchronously
-                const [unsubscribeTasks, unsubscribeProgress, unsubscribeSessionState, unsubscribeHeartbeat] = await Promise.all([
+                const [unsubscribeTasks, unsubscribeProgress, unsubscribeSessionState, unsubscribeHeartbeat, unsubscribeWorkerLog] = await Promise.all([
                     bridge.subscribeBuildTasks(SHAPE_NODE_TYPE, nodeId, (event) => {
                         onTaskEvent(event);
                     }),
@@ -515,6 +515,17 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                         // Heartbeat events processed immediately without buffering
                         heartbeatProcessor.processHeartbeat(event as { nodeId: string; heartbeatAt?: number });
                     }),
+                    bridge.subscribeWorkerLog(SHAPE_NODE_TYPE, nodeId, (event: { level?: string; message?: string; data?: unknown }) => {
+                        // Forward worker-thread logs to the main console for debugging
+                        const level = event.level;
+                        if (level === 'error') {
+                            console.error('[Worker]', event.message, event.data ?? '');
+                        } else if (level === 'warn') {
+                            console.warn('[Worker]', event.message, event.data ?? '');
+                        } else {
+                            console.log('[Worker]', event.message, event.data ?? '');
+                        }
+                    }),
                 ]);
 
                 if (cancelled) {
@@ -522,12 +533,13 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                     unsubscribeProgress();
                     unsubscribeSessionState();
                     unsubscribeHeartbeat();
+                    unsubscribeWorkerLog();
                     return;
                 }
 
                 adapter.onTaskStreamConnectionChanged(true);
 
-                unsubscribers.push(unsubscribeTasks, unsubscribeProgress, unsubscribeSessionState, unsubscribeHeartbeat);
+                unsubscribers.push(unsubscribeTasks, unsubscribeProgress, unsubscribeSessionState, unsubscribeHeartbeat, unsubscribeWorkerLog);
             } catch (error) {
                 if (cancelled) return;
                 console.warn('[shape buildSessionStateAtomBridge] failed to establish channels', error);
