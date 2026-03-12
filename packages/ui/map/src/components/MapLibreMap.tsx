@@ -7,11 +7,10 @@ import type React from 'react';
 import { Map as ReactMapLibreMap, MapProvider } from '@vis.gl/react-maplibre';
 import { useMapLibreMap, type MapLibreMapProps } from './useMapLibreMap.js';
 
-// Load MapLibre CSS only in browser contexts to avoid worker/SSR errors
-if (typeof document !== 'undefined') {
-  // dynamic import prevents Vite HMR client from injecting styles in workers
-  void import('maplibre-gl/dist/maplibre-gl.css');
-}
+// Load MapLibre CSS as a static import for bundler (rolldown-vite) compatibility.
+// Dynamic CSS imports are not supported by rolldown; a static import is used instead.
+// This file is only used in browser/React DOM contexts, so importing CSS at module level is safe.
+import 'maplibre-gl/dist/maplibre-gl.css';
 
 // Re-export types for backward compatibility
 export type { MapViewState, MapInteractionOptions } from '~/types/unified-map-props';
