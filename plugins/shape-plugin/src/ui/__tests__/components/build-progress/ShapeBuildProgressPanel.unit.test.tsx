@@ -1,8 +1,8 @@
+import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { Provider } from 'jotai';
 import { createStore, type Store } from 'jotai/vanilla';
-import { BuildSessionProgressPanel } from '@hierarchidb/ui-build-progress';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressTypes';
 import { taskScrollTargetAtom, taskViewportRangeAtom } from '../../../atoms/shapeBuildProgressAtoms';
@@ -45,24 +45,23 @@ vi.mock('../../../components/build-progress/internal/useShapeBuildSessionState.j
   }),
 }));
 
+const mockStages = [
+  { id: 'source', title: 'Source', description: '', icon: null },
+  { id: 'geometry', title: 'Geometry', description: '', icon: null },
+  { id: 'tileEmit', title: 'TileEmit', description: '', icon: null },
+];
+
+// Only stub the hooks/functions that would cause side-effects or heavy loading.
+// The actual BuildSessionProgressPanel and BuildProgressPanel are used as-is
+// so that Skeleton, task list, and scroll buttons render correctly.
 vi.mock('@hierarchidb/ui-build-progress', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@hierarchidb/ui-build-progress')>();
-  const mockStages = [
-    { id: 'source', title: 'Source', description: '', icon: null },
-    { id: 'geometry', title: 'Geometry', description: '', icon: null },
-    { id: 'tileEmit', title: 'TileEmit', description: '', icon: null },
-  ];
-
   return {
     ...actual,
-    BuildSessionProgressPanel: (props: object) => (
-      <BuildSessionProgressPanel {...props} />
-    ),
     useBuildProgressStages: () => mockStages,
     resolveBuildStages: () => mockStages,
-    BuildSessionLauncherPanel: ({ children }: { children?: unknown }) => <>{children}</>,
+    BuildSessionLauncherPanel: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
     resolveBuildSessionProgressPanelSplitViewProps: () => ({}),
-    __esModule: true,
   };
 });
 
@@ -173,9 +172,9 @@ describe('ShapeBuildProgressPanel (state-tree)', () => {
 
     const view = renderPanel(store);
 
-    await within(view.container).findByText('Build Session');
+    await within(view.container).findByRole('group', { name: 'Build control buttons' });
     await waitFor(() => {
-      expect(document.body.textContent).toContain('Build Session');
+      expect(document.body.textContent).toContain('Start Build');
     });
   });
 
@@ -187,7 +186,7 @@ describe('ShapeBuildProgressPanel (state-tree)', () => {
     renderPanel(store);
 
     await waitFor(() => {
-      expect(screen.getByText('Build Session')).toBeTruthy();
+      expect(screen.getByRole('group', { name: 'Build control buttons' })).toBeTruthy();
     });
 
     const skeletons = document.querySelectorAll('.MuiSkeleton-root');
@@ -203,7 +202,7 @@ describe('ShapeBuildProgressPanel (state-tree)', () => {
     renderPanel(store);
 
     await waitFor(() => {
-      expect(screen.getByText('Build Session')).toBeTruthy();
+      expect(screen.getByRole('group', { name: 'Build control buttons' })).toBeTruthy();
     });
 
     const skeletons = document.querySelectorAll('.MuiSkeleton-root');
@@ -246,7 +245,7 @@ describe('ShapeBuildProgressPanel (state-tree)', () => {
     const view = renderPanel(store);
 
     const local = within(view.container);
-    await local.findByText('Build Session');
+    await local.findByRole('group', { name: 'Build control buttons' });
     const scrollButton = await local.findByRole('button', {
       name: 'Scroll down to running or queued task',
     });
@@ -320,7 +319,7 @@ describe('ShapeBuildProgressPanel (state-tree)', () => {
     const view = renderPanel(store);
 
     const local = within(view.container);
-    await local.findByText('Build Session');
+    await local.findByRole('group', { name: 'Build control buttons' });
 
     await waitFor(() => {
       expect(local.queryByRole('button', { name: 'Scroll up to running or queued task' })).toBeNull();

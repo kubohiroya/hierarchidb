@@ -16,10 +16,15 @@ const countTaskQueueStatusesMock = vi.hoisted(() => vi.fn(async () => ({
 const listTasksByStatusMock = vi.hoisted(() => vi.fn(async () => []));
 const updateTaskMock = vi.hoisted(() => vi.fn(async () => undefined));
 
-const activePipelines = vi.hoisted(() => new Set<string>());
-const activePipelineRuns = vi.hoisted(() => new Map<string, string>());
-const sessionAbortControllers = vi.hoisted(() => new Map<string, AbortController>());
-const sessionWorkerInstances = vi.hoisted(() => new Map<string, { terminate?: () => void }>());
+// In-memory store for AbortControllers (replaces the old sessionAbortControllers Map)
+const abortControllerStore = vi.hoisted(() => new Map<string, AbortController | null>());
+const setSessionAbortControllerMock = vi.hoisted(() => vi.fn((nodeId: string, ac: AbortController | null) => {
+  abortControllerStore.set(nodeId, ac);
+}));
+const clearSessionAbortControllerMock = vi.hoisted(() => vi.fn((nodeId: string) => {
+  abortControllerStore.delete(nodeId);
+}));
+const getSessionAbortControllerMock = vi.hoisted(() => vi.fn((nodeId: string) => abortControllerStore.get(nodeId) ?? null));
 
 vi.mock('@hierarchidb/vt-orchestrator', () => ({
   VtTaskQueueDb: class {
@@ -76,10 +81,7 @@ describe('shape build pause command immediate stop', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
-    activePipelines.clear();
-    activePipelineRuns.clear();
-    sessionAbortControllers.clear();
-    sessionWorkerInstances.clear();
+    abortControllerStore.clear();
   });
 
   afterEach(() => {
@@ -92,7 +94,7 @@ describe('shape build pause command immediate stop', () => {
     const abortController = new AbortController();
     const abortSpy = vi.spyOn(abortController, 'abort');
 
-    sessionAbortControllers.set(String(nodeId), abortController);
+    abortControllerStore.set(String(nodeId), abortController);
 
     await shapeBuildRuntimeExecutionControl.invokeShapeBuildCommand('session/pause', {
       nodeId,
