@@ -2,6 +2,7 @@
 
 ## Doing
 
+- #1006 / `refactor/shape-plugin/ssot-usestore-handshake-atom-1006` / 2026-03-12 開始
 - #999 / `feat/shape-plugin/integration-tests-error-handling-999` / 2026-03-12 開始
 
 - #999 / `feat/shape-plugin/integration-tests-error-handling-999` / 2026-03-12 開始
@@ -19,6 +20,11 @@
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 
 ## 今日の運用ログ
+
+- 2026-03-12: #1006 useAtomValue+useRef同期をuseStore().get()に置換・PR #1008作成
+  - buildSessionSnapshotHandshakeReceivedAtom の二重管理（useAtomValue+useRef）を削除
+  - useStore() でSSOT状態木から直接読む形に変更
+  - typecheck: 100/100 exit 0、test: 372/372 pass
 
 - 2026-03-12: #1000 useLayoutEffect依存配列ループ修正・PR #1001作成
   - buildSessionSnapshotHandshakeReceived を useRef 化、依存配列から除去
