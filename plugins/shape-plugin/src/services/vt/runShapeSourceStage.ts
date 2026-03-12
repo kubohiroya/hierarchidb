@@ -516,12 +516,6 @@ const putSourceCache = async (params: {
   const recordId = buildSourceCacheId(params.nodeId, params.sourceKey);
   const contentHash = hashSourceArtifact(params.data);
 
-  // Validate cache write is allowed if taskId and taskQueue are provided
-  if (params.taskId && params.taskQueue) {
-    const { validateCacheWriteAllowed } = await import('../../worker/api/cacheWriteValidation');
-    await validateCacheWriteAllowed(params.taskQueue, params.taskId, 'source');
-  }
-
   // Phase 1: Write data with timestamp: 0 (invalid state)
   await ephemeralDB.sourceCache.put({
     id: recordId,

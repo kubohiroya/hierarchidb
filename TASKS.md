@@ -2,7 +2,7 @@
 
 ## Doing
 
-- #1012 / `fix/shape-plugin/remove-duplicate-snapshot-in-establish-channels-1012` / 2026-03-12 開始
+- #1012 / `fix/shape-plugin/remove-invalid-cache-write-validation-1012` / 2026-03-13 開始（PR #1014）
 - #1006 / `refactor/shape-plugin/ssot-usestore-handshake-atom-1006` / 2026-03-12 開始
 - #999 / `feat/shape-plugin/integration-tests-error-handling-999` / 2026-03-12 開始
 
@@ -22,6 +22,22 @@
 
 ## 今日の運用ログ
 
+- 2026-03-13: #1012 validateCacheWriteAllowed をputSourceCacheハンドラパスから削除
+  - runStageTasks アーキテクチャでは handler 実行中タスクは running 状態が正常
+  - validateCacheWriteAllowed の「terminal status のみ書き込み許可」前提がアーキテクチャと矛盾していた
+  - typecheck: 100/100 exit 0、test: 423/426 pass
+
+- 2026-03-13: #1012 ArrayBuffer sanitize修正・sendSnapshot callback await追加・PR #1013更新
+  - sanitizeForComlink: ArrayBuffer/TypedArray を pass-through（Comlink transferable）に修正
+  - sendSnapshot: callback() を await Promise.resolve() でラップし Comlink proxy rejection を捕捉
+  - sendSnapshot: console.error エントリログ追加（SharedWorker DevTools 可視化）
+  - typecheck: 127/127 exit 0、test: 423/426 pass
+
+- 2026-03-12: #1012 SequencedEventラッパーunwrap修正・PR #1013更新（subscribeSessionState/Heartbeat/WorkerLogコールバックでpayload直接参照）
+- 2026-03-12: #1012 subscribeSessionState/Heartbeat/WorkerLog をトップレベルWorkerAPIに昇格・PR #1013更新
+  - typecheck: 100/100 exit 0、test: 423/426 pass
+
+>>>>>>> 5c794a68a (chore: update TASKS.md - validateCacheWriteAllowed removal (#1012))
 - 2026-03-12: #1010 Worker側・UI側SSOT状態木の状態遷移を網羅的にテスト・PR #1011作成
   - 新規: buildSessionStateAtomBridgePureFunctions.unit.test.ts（Bridge純粋関数 全分岐）
   - 新規: stateManagement.unit.test.ts（Worker PauseState/AbortController/resolveProgressPhase）
