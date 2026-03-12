@@ -508,15 +508,28 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                     bridge.subscribeBuildProgress(SHAPE_NODE_TYPE, nodeId, (event) => {
                         onProgressEvent(event as SequencedBuildProgressEvent);
                     }),
-                    bridge.subscribeSessionState(SHAPE_NODE_TYPE, nodeId, (event) => {
-                        onSessionState(event as SequencedSessionStateEvent);
+                    bridge.subscribeSessionState(SHAPE_NODE_TYPE, nodeId, (raw: unknown) => {
+                        // unconditionalEventStreamer delivers SequencedEvent wrapper: { seqNum, notificationType, payload, timestamp }
+                        const sequenced = raw as { seqNum?: number; payload?: unknown };
+                        const inner = (typeof sequenced.seqNum === 'number' && sequenced.payload !== undefined)
+                            ? sequenced.payload
+                            : raw;
+                        onSessionState(inner as SequencedSessionStateEvent);
                     }),
-                    bridge.subscribeSessionHeartbeat(SHAPE_NODE_TYPE, nodeId, (event) => {
-                        // Heartbeat events processed immediately without buffering
-                        heartbeatProcessor.processHeartbeat(event as { nodeId: string; heartbeatAt?: number });
+                    bridge.subscribeSessionHeartbeat(SHAPE_NODE_TYPE, nodeId, (raw: unknown) => {
+                        // unconditionalEventStreamer delivers SequencedEvent wrapper for heartbeat
+                        const sequenced = raw as { seqNum?: number; payload?: unknown };
+                        const inner = (typeof sequenced.seqNum === 'number' && sequenced.payload !== undefined)
+                            ? sequenced.payload
+                            : raw;
+                        heartbeatProcessor.processHeartbeat(inner as { nodeId: string; heartbeatAt?: number });
                     }),
-                    bridge.subscribeWorkerLog(SHAPE_NODE_TYPE, nodeId, (event: { level?: string; message?: string; data?: unknown }) => {
-                        // Forward worker-thread logs to the main console for debugging
+                    bridge.subscribeWorkerLog(SHAPE_NODE_TYPE, nodeId, (raw: unknown) => {
+                        // unconditionalEventStreamer delivers SequencedEvent wrapper: { seqNum, notificationType, payload, timestamp }
+                        const sequenced = raw as { seqNum?: number; payload?: unknown };
+                        const event = (typeof sequenced.seqNum === 'number' && sequenced.payload !== undefined)
+                            ? sequenced.payload as { level?: string; message?: string; data?: unknown }
+                            : raw as { level?: string; message?: string; data?: unknown };
                         const level = event.level;
                         if (level === 'error') {
                             console.error('[Worker]', event.message, event.data ?? '');
