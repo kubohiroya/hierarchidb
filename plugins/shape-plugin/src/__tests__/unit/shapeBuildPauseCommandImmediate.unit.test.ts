@@ -71,9 +71,6 @@ vi.mock('../../worker/api/shapeBuildRuntimeCore.js', () => ({
   heartbeatCallbacks: new Map(),
   taskProgressCallbacks: new Map(),
   workerLogCallbacks: new Map(),
-  setSessionAbortController: (...args: Parameters<typeof setSessionAbortControllerMock>) => setSessionAbortControllerMock(...args),
-  clearSessionAbortController: (...args: Parameters<typeof clearSessionAbortControllerMock>) => clearSessionAbortControllerMock(...args),
-  getSessionAbortController: (...args: Parameters<typeof getSessionAbortControllerMock>) => getSessionAbortControllerMock(...args),
 }));
 
 import { shapeBuildRuntimeExecutionControl } from '../../worker/api/shapeBuildRuntimeExecutionControl';

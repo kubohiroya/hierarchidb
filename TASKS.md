@@ -2,6 +2,7 @@
 
 ## Doing
 
+- #994 / `refactor/shape-plugin/remove-redundant-pipeline-state-vars` / 2026-03-11 開始
 - #993 / `fix/shape-plugin/vitest-alias-build-progress-plugin-registry` / 2026-03-10 開始
 - #991 / `fix/auth/suppress-repeated-auth-dialog-991` / 2026-03-10 開始
 - #988 / `fix/i18n/route-plugin-type-safety-and-import-cleanup` / 2026-03-10 開始

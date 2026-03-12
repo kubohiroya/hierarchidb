@@ -121,19 +121,19 @@ export default defineConfig({
       // Deep import subpaths must be listed before the bare package alias
       {
         find: '@hierarchidb/ui-build-progress/build-session',
-        replacement: path.resolve(__dirname, '../../packages/ui/build-progress/src/build-session/index.ts'),
+        replacement: path.resolve(__dirname, '../../packages/ui/build-progress/dist/build-session/index.js'),
       },
       {
         find: '@hierarchidb/ui-build-progress/build-status',
-        replacement: path.resolve(__dirname, '../../packages/ui/build-progress/src/build-status/index.ts'),
+        replacement: path.resolve(__dirname, '../../packages/ui/build-progress/dist/build-status/index.js'),
       },
       {
         find: '@hierarchidb/ui-build-progress/build-stage',
-        replacement: path.resolve(__dirname, '../../packages/ui/build-progress/src/build-stage/index.ts'),
+        replacement: path.resolve(__dirname, '../../packages/ui/build-progress/dist/build-stage/index.js'),
       },
       {
         find: '@hierarchidb/ui-build-progress',
-        replacement: path.resolve(__dirname, '../../packages/ui/build-progress/src/index.ts'),
+        replacement: path.resolve(__dirname, '../../packages/ui/build-progress/dist/index.js'),
       },
       {
         find: '@hierarchidb/ui-worker-provider',
