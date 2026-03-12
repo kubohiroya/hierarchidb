@@ -179,9 +179,7 @@ describe('11.2 Loss-free event buffering', () => {
         const nodeId = toNodeId('node-11-2-b');
         unconditionalEventStreamer.configureDistributedSeqNum(nodeId, 0, 1);
 
-        // Emit events before UI subscribes (no subscriber yet)
-        // These are discarded by the streamer (no buffering on worker side)
-        // Then UI subscribes and receives subsequent events
+// UIが購読した後に発行されたイベントが、バッファを経て正しく適用されることを確認します。
         const received: SequencedEvent[] = [];
         const unsub = unconditionalEventStreamer.subscribe(nodeId, 'stage-snapshot', (e) => {
             bufferManager.bufferEvent(e);
