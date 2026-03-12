@@ -308,15 +308,30 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                 );
             }
 
-            adapter.onTaskEvent({
-                ...snapshotEvent,
-                version: snapshotVersion,
-            } as BuildTaskUpdateEvent);
+            try {
+                adapter.onTaskEvent({
+                    ...snapshotEvent,
+                    version: snapshotVersion,
+                } as BuildTaskUpdateEvent);
+            } catch (adapterError) {
+                console.error('[shape buildSessionStateAtomBridge] adapter.onTaskEvent(snapshot) threw', {
+                    nodeId: nodeIdText,
+                    error: adapterError instanceof Error ? adapterError.message : String(adapterError),
+                    snapshotVersion,
+                    taskStages: snapshotEvent.tasks.map((t) => t.stage),
+                });
+                throw adapterError;
+            }
 
             for (const stageId of SHAPE_STAGE_IDS) {
                 if (snapshotStages.size > 0 && !snapshotStages.has(stageId)) continue;
                 dispatchUiSyncPhase(stageId, 'running');
             }
+
+            console.log('[shape buildSessionStateAtomBridge] after dispatchUiSyncPhase', {
+                nodeId: nodeIdText,
+                handshakeReceived: store.get(buildSessionSnapshotHandshakeReceivedAtom),
+            });
 
             if (!store.get(buildSessionSnapshotHandshakeReceivedAtom)) {
                 // Flush pending updates that arrived before the initial snapshot.
