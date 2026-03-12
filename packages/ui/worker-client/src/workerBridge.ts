@@ -77,6 +77,11 @@ export interface BuildWorkerBridge {
     nodeId: NodeId,
     cb: (event: any) => void
   ): Promise<() => void>;
+  subscribeWorkerLog(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    cb: (event: any) => void
+  ): Promise<() => void>;
 }
 
 type WorkerClientRefLike = {
@@ -351,24 +356,16 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
     cb: (event: any) => void
   ): Promise<() => void> {
     const api = await ensureWorkerAPI();
-    // Get the appropriate API based on nodeType
-    if (nodeType === SHAPE_NODE_TYPE) {
-      const shapeAPI = await api.getShapeQueryAPI();
-      if ('subscribeToSessionState' in shapeAPI) {
-        const unsubscribe = await (shapeAPI as any).subscribeToSessionState(nodeId, proxy((event: any) => {
-          cb(sanitizeForComlink(event));
-        }));
-        return () => {
-          try {
-            unsubscribe();
-          } catch (error) {
-            console.warn('[BuildWorkerBridge] subscribeSessionState unsubscribe failed', error);
-          }
-        };
+    const unsubscribe = await api.subscribeSessionState(nodeType, nodeId, proxy((event: any) => {
+      cb(sanitizeForComlink(event));
+    }));
+    return () => {
+      try {
+        unsubscribe();
+      } catch (error) {
+        console.warn('[BuildWorkerBridge] subscribeSessionState unsubscribe failed', error);
       }
-    }
-    // Fallback: return no-op unsubscribe
-    return () => { };
+    };
   }
 
   async subscribeSessionHeartbeat(
@@ -377,24 +374,16 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
     cb: (event: any) => void
   ): Promise<() => void> {
     const api = await ensureWorkerAPI();
-    // Get the appropriate API based on nodeType
-    if (nodeType === SHAPE_NODE_TYPE) {
-      const shapeAPI = await api.getShapeQueryAPI();
-      if ('subscribeToHeartbeat' in shapeAPI) {
-        const unsubscribe = await (shapeAPI as any).subscribeToHeartbeat(nodeId, proxy((event: any) => {
-          cb(sanitizeForComlink(event));
-        }));
-        return () => {
-          try {
-            unsubscribe();
-          } catch (error) {
-            console.warn('[BuildWorkerBridge] subscribeSessionHeartbeat unsubscribe failed', error);
-          }
-        };
+    const unsubscribe = await api.subscribeSessionHeartbeat(nodeType, nodeId, proxy((event: any) => {
+      cb(sanitizeForComlink(event));
+    }));
+    return () => {
+      try {
+        unsubscribe();
+      } catch (error) {
+        console.warn('[BuildWorkerBridge] subscribeSessionHeartbeat unsubscribe failed', error);
       }
-    }
-    // Fallback: return no-op unsubscribe
-    return () => { };
+    };
   }
 
   async subscribeTaskProgress(
@@ -421,6 +410,24 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
     }
     // Fallback: return no-op unsubscribe
     return () => { };
+  }
+
+  async subscribeWorkerLog(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    cb: (event: any) => void
+  ): Promise<() => void> {
+    const api = await ensureWorkerAPI();
+    const unsubscribe = await api.subscribeWorkerLog(nodeType, nodeId, proxy((event: any) => {
+      cb(sanitizeForComlink(event));
+    }));
+    return () => {
+      try {
+        unsubscribe();
+      } catch (error) {
+        console.warn('[BuildWorkerBridge] subscribeWorkerLog unsubscribe failed', error);
+      }
+    };
   }
 }
 

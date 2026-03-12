@@ -142,6 +142,24 @@ export interface WorkerAPI<T> {
     callback: (event: BuildProgressEvent) => void
   ): Promise<() => void>;
   subscribeHeapPressure(callback: (event: HeapPressureEvent) => void): Promise<() => void>;
+  /** Subscribe to session state change events for a specific node. Shape-plugin only. */
+  subscribeSessionState(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    callback: (event: unknown) => void
+  ): Promise<() => void>;
+  /** Subscribe to session heartbeat events for a specific node. Shape-plugin only. */
+  subscribeSessionHeartbeat(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    callback: (event: unknown) => void
+  ): Promise<() => void>;
+  /** Subscribe to worker log events for a specific node. Shape-plugin only. */
+  subscribeWorkerLog(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    callback: (event: unknown) => void
+  ): Promise<() => void>;
   setUiStorageBridge(bridge: UiStorageBridge): Promise<void>;
   setAuthToken(token: string, type?: 'Bearer' | 'Basic', expiresAt?: number): Promise<void>;
   setCorsProxyBaseURL(url: string): Promise<void>;
