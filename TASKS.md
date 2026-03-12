@@ -2,7 +2,6 @@
 
 ## Doing
 
-- #1010 / `test/shape-plugin/comprehensive-state-transition-tests-1010` / 2026-03-12 開始
 - #1006 / `refactor/shape-plugin/ssot-usestore-handshake-atom-1006` / 2026-03-12 開始
 - #999 / `feat/shape-plugin/integration-tests-error-handling-999` / 2026-03-12 開始
 
@@ -21,6 +20,12 @@
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 
 ## 今日の運用ログ
+
+- 2026-03-12: #1010 Worker側・UI側SSOT状態木の状態遷移を網羅的にテスト・PR #1011作成
+  - 新規: buildSessionStateAtomBridgePureFunctions.unit.test.ts（Bridge純粋関数 全分岐）
+  - 新規: stateManagement.unit.test.ts（Worker PauseState/AbortController/resolveProgressPhase）
+  - 追加: buildSessionStateAtoms.unit.test.ts（ライフサイクル全遷移・criticalError・reset・taskDeleted・viewSelectionChanged・taskListViewPhase全分岐・pendingUserAction・completionSnapshot）
+  - test: 423/426 pass（旧 372）、typecheck: 100/100 exit 0
 
 - 2026-03-12: #1006 useAtomValue+useRef同期をuseStore().get()に置換・PR #1008作成
   - buildSessionSnapshotHandshakeReceivedAtom の二重管理（useAtomValue+useRef）を削除
