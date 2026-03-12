@@ -1,4 +1,4 @@
-import { useLayoutEffect } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { BuildProgressEvent, BuildTaskSummary, BuildTaskUpdateEvent } from '@hierarchidb/build-api';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
@@ -9,6 +9,7 @@ import type { ShapeStageId } from '~/ui/atoms/buildSessionStateAtoms';
 import {
     UIEventBufferManager,
     ImmediateHeartbeatProcessor,
+    logUIEventReception,
     type SequencedEvent,
     type NotificationType
 } from './eventBufferingUI';
@@ -131,6 +132,12 @@ export const resolveSnapshotTargetStages = (event: TaskSnapshotEvent): ShapeStag
 export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined): void => {
     const dispatch = useSetAtom(dispatchBuildSessionEventAtom);
     const buildSessionSnapshotHandshakeReceived = useAtomValue(buildSessionSnapshotHandshakeReceivedAtom);
+    // Keep a ref so the effect closure always reads the latest value without
+    // re-running the entire channel setup when the handshake flag flips.
+    const buildSessionSnapshotHandshakeReceivedRef = useRef(buildSessionSnapshotHandshakeReceived);
+    useLayoutEffect(() => {
+        buildSessionSnapshotHandshakeReceivedRef.current = buildSessionSnapshotHandshakeReceived;
+    });
 
     // Use useLayoutEffect for synchronous channel establishment
     useLayoutEffect(() => {
@@ -231,25 +238,34 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
 
             for (const notificationType of notificationTypes) {
                 const readyEvents = eventBufferManager.flushBuffer(notificationType);
+                if (readyEvents.length === 0) continue;
 
-                for (const sequencedEvent of readyEvents) {
-                    switch (notificationType) {
-                        case 'session-state': {
-                            const sessionEvent = sequencedEvent.payload as SequencedSessionStateEvent;
-                            processSessionStateEvent(sessionEvent);
-                            break;
-                        }
-                        case 'stage-snapshot': {
-                            const snapshotEvent = sequencedEvent.payload as TaskSnapshotEvent;
-                            processTaskSnapshotEvent(snapshotEvent);
-                            break;
-                        }
-                        case 'task-progress': {
-                            const progressEvent = sequencedEvent.payload as SequencedBuildProgressEvent;
-                            processProgressEvent(progressEvent);
-                            break;
+                let processingError: unknown;
+                try {
+                    for (const sequencedEvent of readyEvents) {
+                        switch (notificationType) {
+                            case 'session-state': {
+                                const sessionEvent = sequencedEvent.payload as SequencedSessionStateEvent;
+                                processSessionStateEvent(sessionEvent);
+                                break;
+                            }
+                            case 'stage-snapshot': {
+                                const snapshotEvent = sequencedEvent.payload as TaskSnapshotEvent;
+                                processTaskSnapshotEvent(snapshotEvent);
+                                break;
+                            }
+                            case 'task-progress': {
+                                const progressEvent = sequencedEvent.payload as SequencedBuildProgressEvent;
+                                processProgressEvent(progressEvent);
+                                break;
+                            }
                         }
                     }
+                    logUIEventReception(readyEvents, 'success');
+                } catch (error) {
+                    processingError = error;
+                    logUIEventReception(readyEvents, 'error', processingError);
+                    throw error;
                 }
             }
         };
@@ -268,7 +284,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             console.log('[shape buildSessionStateAtomBridge] processTaskSnapshotEvent', {
                 nodeId: nodeIdText,
                 taskCount: snapshotEvent.tasks.length,
-                buildSessionSnapshotHandshakeReceived,
+                buildSessionSnapshotHandshakeReceived: buildSessionSnapshotHandshakeReceivedRef.current,
                 snapshotEvent
             });
 
@@ -309,7 +325,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                 dispatchUiSyncPhase(stageId, 'running');
             }
 
-            if (!buildSessionSnapshotHandshakeReceived) {
+            if (!buildSessionSnapshotHandshakeReceivedRef.current) {
                 pendingTaskUpdatesBeforeInitialSnapshot.length = 0;
                 console.log('[shape buildSessionStateAtomBridge] initial snapshot applied', {
                     nodeId: nodeIdText,
@@ -360,7 +376,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                 nodeId: nodeIdText,
                 eventType: event.type,
                 hasSeqNum: typeof (event as any).seqNum === 'number',
-                buildSessionSnapshotHandshakeReceived
+                buildSessionSnapshotHandshakeReceived: buildSessionSnapshotHandshakeReceivedRef.current
             });
 
             if (event.type === 'snapshot') {
@@ -415,7 +431,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                 );
                 const snapshotVersionMax = snapshotVersionMaxByStage[stageId];
                 if (snapshotVersionMax == null) {
-                    if (!buildSessionSnapshotHandshakeReceived) {
+                    if (!buildSessionSnapshotHandshakeReceivedRef.current) {
                         pendingTaskUpdatesBeforeInitialSnapshot.push(updateEvent);
                         return;
                     }
@@ -523,19 +539,19 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                     unsubscribeHeartbeat();
                     return;
                 }
-                
+
                 console.log('[shape buildSessionStateAtomBridge] fetched initial tasks', {
                     nodeId: nodeIdText,
                     taskCount: tasks.length,
                     tasks: tasks.slice(0, 3) // Log first 3 tasks for debugging
                 });
-                
+
                 const snapshotEvent = toSnapshotEvent(tasks);
                 console.log('[shape buildSessionStateAtomBridge] created snapshot event', {
                     nodeId: nodeIdText,
                     snapshotEvent
                 });
-                
+
                 onTaskEvent(snapshotEvent);
 
                 unsubscribers.push(unsubscribeTasks, unsubscribeProgress, unsubscribeSessionState, unsubscribeHeartbeat);
@@ -571,5 +587,5 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                 unsubscribe();
             }
         };
-    }, [dispatch, nodeId, buildSessionSnapshotHandshakeReceived]);
+    }, [dispatch, nodeId]);
 };

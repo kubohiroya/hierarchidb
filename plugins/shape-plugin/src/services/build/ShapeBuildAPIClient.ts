@@ -611,7 +611,7 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
     // This method is implemented on the UI side and should not directly call worker API
     // The actual subscription is handled by the WorkerBridge
     console.warn('[ShapeQueryAPIImpl] subscribeToWorkerLog called on UI side - this should be handled by WorkerBridge');
-    return () => {}; // Return empty unsubscribe function
+    return () => { }; // Return empty unsubscribe function
   }
 }
 
@@ -964,7 +964,19 @@ export class EphemeralShapeApiImpl {
     // Phase 1: Write data with timestamp: 0 (invalid state)
     await ephemeralDB.geometryCache.put(pending);
     // Phase 2: Mark write complete with non-zero timestamp (valid state)
-    await markGeometryCacheWriteComplete([pending]);
+    try {
+      await markGeometryCacheWriteComplete([pending]);
+    } catch (error) {
+      const { handleCacheWriteFailure } = await import('../../worker/api/cacheWriteValidation');
+      handleCacheWriteFailure(error, {
+        nodeId: buffer.nodeId,
+        taskId: buffer.id,
+        cacheType: 'geometry',
+        cacheId: buffer.id,
+        phase: 'metadata',
+      });
+      throw error;
+    }
   }
 
   async putGeometryCaches(buffers: ShapeGeometryCache[]): Promise<void> {
@@ -974,7 +986,23 @@ export class EphemeralShapeApiImpl {
     // Phase 1: Write data with timestamp: 0 (invalid state)
     await ephemeralDB.geometryCache.bulkPut(pending);
     // Phase 2: Mark write complete with non-zero timestamp (valid state)
-    await markGeometryCacheWriteComplete(pending);
+    try {
+      await markGeometryCacheWriteComplete(pending);
+    } catch (error) {
+      const { handleCacheWriteFailure } = await import('../../worker/api/cacheWriteValidation');
+      // Log failure for the first buffer as representative context
+      const first = buffers[0];
+      if (first !== undefined) {
+        handleCacheWriteFailure(error, {
+          nodeId: first.nodeId,
+          taskId: first.id,
+          cacheType: 'geometry',
+          cacheId: `batch(${buffers.length})`,
+          phase: 'metadata',
+        });
+      }
+      throw error;
+    }
   }
 
   async listTileIdRelations(nodeId: NodeId): Promise<ShapeTileIdToBufferRelation[]> {

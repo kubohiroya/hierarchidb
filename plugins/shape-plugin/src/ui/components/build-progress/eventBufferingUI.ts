@@ -181,6 +181,37 @@ export class UIEventBufferManager implements EventBufferManager {
 }
 
 /**
+ * Log event reception and processing on UI side for monitoring and debugging.
+ * Tracks delivery latency from Worker emission to UI processing.
+ */
+export const logUIEventReception = (
+    events: SequencedEvent[],
+    processingStatus: 'success' | 'error',
+    error?: unknown,
+): void => {
+    if (events.length === 0) return;
+    const now = Date.now();
+    const latencies = events.map((e) => now - e.timestamp);
+    const avgLatency = latencies.reduce((sum, l) => sum + l, 0) / latencies.length;
+
+    if (processingStatus === 'error') {
+        console.error('[UIEventReception] Events processed with error', {
+            eventCount: events.length,
+            processingStatus,
+            avgLatencyMs: avgLatency,
+            error: error instanceof Error ? { name: error.name, message: error.message } : error,
+        });
+    } else {
+        console.log('[UIEventReception] Events processed on UI side', {
+            eventCount: events.length,
+            processingStatus,
+            avgLatencyMs: avgLatency,
+            seqNums: events.map((e) => e.seqNum),
+        });
+    }
+};
+
+/**
  * Heartbeat events are processed immediately without buffering
  */
 export interface HeartbeatProcessor {
