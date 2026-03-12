@@ -1,6 +1,6 @@
 import { useLayoutEffect } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import type { BuildProgressEvent, BuildTaskSummary, BuildTaskUpdateEvent } from '@hierarchidb/build-api';
+import type { BuildProgressEvent, BuildTaskUpdateEvent } from '@hierarchidb/build-api';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useSetAtom, useStore } from 'jotai';
 import { dispatchBuildSessionEventAtom, buildSessionSnapshotHandshakeReceivedAtom } from '~/ui/atoms/buildSessionStateAtoms';
@@ -319,6 +319,17 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             }
 
             if (!store.get(buildSessionSnapshotHandshakeReceivedAtom)) {
+                // Flush pending updates that arrived before the initial snapshot.
+                // snapshotVersionMaxByStage is now set, so version checks apply.
+                for (const pendingUpdate of pendingTaskUpdatesBeforeInitialSnapshot) {
+                    const pendingStageId = resolveShapeStageId(pendingUpdate.task.stage);
+                    if (!pendingStageId) continue;
+                    const versionMax = snapshotVersionMaxByStage[pendingStageId];
+                    if (versionMax == null) continue;
+                    if (isTaskUpdateVersionAfterSnapshot(versionMax, pendingUpdate.task.version)) {
+                        adapter.onTaskEvent(pendingUpdate);
+                    }
+                }
                 pendingTaskUpdatesBeforeInitialSnapshot.length = 0;
                 console.log('[shape buildSessionStateAtomBridge] initial snapshot applied', {
                     nodeId: nodeIdText,
@@ -483,15 +494,6 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                 await bridge.initialize();
                 if (cancelled) return;
 
-                const toSnapshotEvent = (tasks: BuildTaskSummary[]): TaskSnapshotEvent => ({
-                    type: 'snapshot',
-                    nodeId,
-                    tasks,
-                    version: tasks.length > 0
-                        ? tasks.reduce((max, task) => Math.max(max, task.version), Number.MIN_SAFE_INTEGER)
-                        : 0,
-                } as TaskSnapshotEvent);
-
                 const runtime = await bridge.getBuildSessionRuntime(SHAPE_NODE_TYPE, nodeId);
                 if (cancelled) return;
                 if (runtime) {
@@ -524,28 +526,6 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                 }
 
                 adapter.onTaskStreamConnectionChanged(true);
-                const tasks = await bridge.getBuildTasks(SHAPE_NODE_TYPE, nodeId);
-                if (cancelled) {
-                    unsubscribeTasks();
-                    unsubscribeProgress();
-                    unsubscribeSessionState();
-                    unsubscribeHeartbeat();
-                    return;
-                }
-
-                console.log('[shape buildSessionStateAtomBridge] fetched initial tasks', {
-                    nodeId: nodeIdText,
-                    taskCount: tasks.length,
-                    tasks: tasks.slice(0, 3) // Log first 3 tasks for debugging
-                });
-
-                const snapshotEvent = toSnapshotEvent(tasks);
-                console.log('[shape buildSessionStateAtomBridge] created snapshot event', {
-                    nodeId: nodeIdText,
-                    snapshotEvent
-                });
-
-                onTaskEvent(snapshotEvent);
 
                 unsubscribers.push(unsubscribeTasks, unsubscribeProgress, unsubscribeSessionState, unsubscribeHeartbeat);
             } catch (error) {

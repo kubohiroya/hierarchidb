@@ -378,12 +378,17 @@ export const shapeBuildAPI = {
       try {
         await shapeBuildRuntimeCore.ensureTaskQueueSeeded(nodeId, taskQueue);
         const tasks = await shapeBuildRuntimeCore.buildTaskSummarySnapshot(nodeId, taskQueue);
+        // Compute version from tasks; empty snapshot must carry explicit version=0
+        // so the UI-side resolveSnapshotVersion contract is satisfied.
+        const snapshotVersion = tasks.length > 0
+          ? tasks.reduce((max, task) => Math.max(max, task.version), Number.MIN_SAFE_INTEGER)
+          : 0;
         console.log('[shapeBuildAPI] task snapshot published', JSON.stringify({
           nodeId,
           taskCount: tasks.length,
-          snapshotInFlight,
+          snapshotVersion,
         }));
-        callback({ type: 'snapshot', nodeId, tasks });
+        callback({ type: 'snapshot', nodeId, tasks, version: snapshotVersion } as BuildTaskUpdateEvent);
       } catch (error) {
         console.error('[shapeBuildAPI] task snapshot failed', error);
       } finally {

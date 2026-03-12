@@ -2,6 +2,7 @@
 
 ## Doing
 
+- #1012 / `fix/shape-plugin/remove-duplicate-snapshot-in-establish-channels-1012` / 2026-03-12 開始
 - #1006 / `refactor/shape-plugin/ssot-usestore-handshake-atom-1006` / 2026-03-12 開始
 - #999 / `feat/shape-plugin/integration-tests-error-handling-999` / 2026-03-12 開始
 
