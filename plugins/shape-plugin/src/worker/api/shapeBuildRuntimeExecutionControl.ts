@@ -75,18 +75,17 @@ const {
   buildProgressPayloadFromTasks,
   progressCallbacks,
   getShapeEntityHandler,
+  setSessionAbortController,
+  clearSessionAbortController,
+  getSessionAbortController,
 } = shapeBuildRuntimeCore;
-
-// Mock implementations for missing functions (to be implemented later)
-const activePipelines = new Set<string>();
-const activePipelineRuns = new Map<string, string>();
-const sessionAbortControllers = new Map<string, AbortController>();
-const sessionWorkerInstances = new Map<string, { terminate?: () => void }>();
 
 // Placeholder functions for missing implementations
 const startSessionTracking = (_nodeId: string) => { };
 const clearStalePipelineStateIfInactive = (_nodeId: string, _previousSession?: any, _startupScope?: string) => { };
 const clearActivePipelineRuntimeState = (_nodeId: string) => {
+  // Clear the AbortController stored in PauseState so it cannot be re-triggered.
+  clearSessionAbortController(_nodeId as NodeId);
   // Clear auth session context so stale session identity is not reused (#991).
   AuthService.getSingleton().then((auth) => auth.clearBuildSessionContext()).catch(() => {});
 };
@@ -717,19 +716,18 @@ const startBuildSessionInternal = async (
 
   const nodeForSession = draftId;
   startupNodeId = nodeForSession;
-  const pipelineKey = String(nodeForSession);
   const previousSession = await executeStartupStep(
     'load-session-record',
     async () => shapeQueryAPIImpl.getBuildSessionRecord(nodeForSession).catch(() => null),
   );
-  if (activePipelines.has(pipelineKey)) {
+  if (previousSession?.status === 'running') {
     await clearStalePipelineStateIfInactive(
       nodeForSession,
       previousSession,
       startupScope,
     );
   }
-  if (activePipelines.has(pipelineKey)) {
+  if (previousSession?.status === 'running') {
     setPaused(nodeForSession, false);
     await upsertBuildSessionSnapshot({
       nodeId: nodeForSession,
@@ -853,12 +851,9 @@ const startBuildSessionInternal = async (
   authService.setBuildSessionContext(String(nodeForSession), buildStartedAt);
 
   setPaused(nodeForSession, false);
-  activePipelines.add(pipelineKey);
-  activePipelineRuns.set(pipelineKey, pipelineRunId);
-
-  // Create AbortController for immediate termination on pause
+  // Register the AbortController in PauseState so session/pause can abort immediately.
   const abortController = new AbortController();
-  sessionAbortControllers.set(pipelineKey, abortController);
+  setSessionAbortController(nodeForSession, abortController);
 
   try {
     const taskQueue = new VtTaskQueueDb();
@@ -1189,9 +1184,7 @@ const startBuildSessionInternal = async (
       outcome: 'success',
     });
   } catch (error) {
-    if (activePipelineRuns.get(pipelineKey) === pipelineRunId) {
-      clearActivePipelineRuntimeState(nodeForSession);
-    }
+    clearActivePipelineRuntimeState(nodeForSession);
     throw error;
   }
 
@@ -1291,8 +1284,7 @@ const invokeShapeBuildCommand = async (
     setPaused(nodeId, true);
 
     // Immediately abort all running tasks
-    const pipelineKey = String(nodeId);
-    const abortController = sessionAbortControllers.get(pipelineKey);
+    const abortController = getSessionAbortController(nodeId);
     if (abortController) {
       abortController.abort();
     }
@@ -1312,28 +1304,6 @@ const invokeShapeBuildCommand = async (
         durationMs,
         timeoutMs: FORCE_TERMINATION_TIMEOUT_MS,
       });
-
-      // Attempt to terminate worker if available
-      const workerInstance = sessionWorkerInstances.get(pipelineKey);
-      if (workerInstance?.terminate) {
-        try {
-          workerInstance.terminate();
-          console.warn('[shapeBuildAPI][PauseTrace] worker-terminated', {
-            nodeId,
-            durationMs: Date.now() - terminationStartTime,
-          });
-        } catch (error) {
-          console.error('[shapeBuildAPI][PauseTrace] worker-termination-failed', {
-            nodeId,
-            error: error instanceof Error ? error.message : String(error),
-          });
-        }
-      } else {
-        console.warn('[shapeBuildAPI][PauseTrace] worker-instance-not-available', {
-          nodeId,
-          durationMs: Date.now() - terminationStartTime,
-        });
-      }
 
       // Force reset running tasks regardless of worker termination
       await resetRunningTasks(nodeId);
@@ -1415,8 +1385,9 @@ const invokeShapeBuildCommand = async (
     if (!nodeId) throw new Error('[shapeBuildAPI] session/cancel-queued requires nodeId');
     const rawStopReason = typeof payload.stopReason === 'string' ? payload.stopReason : undefined;
     const stopReason = rawStopReason && isStopReason(rawStopReason) ? rawStopReason : 'user-pause';
-    const pipelineKey = String(nodeId);
-    if (activePipelines.has(pipelineKey)) {
+    // If the session is currently running, delegate to pause instead of wiping the queue.
+    const currentSession = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
+    if (currentSession?.status === 'running') {
       await invokeShapeBuildCommand('session/pause', { nodeId, stopReason });
       return;
     }

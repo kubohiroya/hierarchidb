@@ -41,31 +41,31 @@ vi.mock('@hierarchidb/vt-orchestrator', () => ({
   updateTask: (...args: Parameters<typeof updateTaskMock>) => updateTaskMock(...args),
 }));
 
-vi.mock('../../worker/api/shapeBuildRuntimeExecutionMetrics.js', () => ({
-  shapeBuildRuntimeExecutionMetrics: {
-    countTaskQueueStatuses: (...args: Parameters<typeof countTaskQueueStatusesMock>) => countTaskQueueStatusesMock(...args),
-    setPaused: (...args: Parameters<typeof setPausedMock>) => setPausedMock(...args),
-    waitIfPaused: async () => undefined,
-    startSessionTracking: () => undefined,
-    clearStalePipelineStateIfInactive: async () => false,
-    clearActivePipelineRuntimeState: (...args: Parameters<typeof clearActivePipelineRuntimeStateMock>) =>
-      clearActivePipelineRuntimeStateMock(...args),
-    resolveProgressPhase: () => 'running',
-    buildProgressPayloadFromTasks: async () => ({}),
-    emitProgressSnapshot: (...args: Parameters<typeof emitProgressSnapshotMock>) => emitProgressSnapshotMock(...args),
-    upsertBuildSessionSnapshot: (...args: Parameters<typeof upsertBuildSessionSnapshotMock>) =>
-      upsertBuildSessionSnapshotMock(...args),
-    updateBuildSessionFromTasks: (...args: Parameters<typeof updateBuildSessionFromTasksMock>) =>
-      updateBuildSessionFromTasksMock(...args),
-    summarizeTaskQueueStatus: () => ({ status: 'running', stage: 'source' }),
-    progressCallbacks: new Map(),
-    getShapeEntityHandler: () => ({ getEntity: async () => null }),
-    activePipelines,
-    activePipelineRuns,
-    sessionAbortControllers,
-    sessionWorkerInstances,
-    isStopReason: (value: string) => ['route-leave', 'user-pause', 'failed', 'completed', 'unknown'].includes(value),
-  },
+// Mock shapeBuildRuntimeCore which is the module that shapeBuildRuntimeExecutionControl
+// destructures setPaused, waitIfPaused, etc. from.
+vi.mock('../../worker/api/shapeBuildRuntimeCore.js', () => ({
+  countTaskQueueStatuses: (...args: Parameters<typeof countTaskQueueStatusesMock>) => countTaskQueueStatusesMock(...args),
+  setPaused: (...args: Parameters<typeof setPausedMock>) => setPausedMock(...args),
+  waitIfPaused: async () => undefined,
+  resolveProgressPhase: () => 'running',
+  buildProgressPayloadFromTasks: async () => ({}),
+  progressCallbacks: new Map(),
+  getShapeEntityHandler: () => ({ getEntity: async () => null }),
+  listTasks: async () => [],
+  onTaskQueueUpdate: () => () => {},
+  ensureTaskQueueSeeded: async () => undefined,
+  mapTaskQueueRecordToTaskSummary: (t: unknown) => t,
+  buildTaskSummarySnapshot: async () => [],
+  buildTaskQueueSummary: async () => ({}),
+  getPauseState: () => ({ paused: false, waiters: [] }),
+  resolveSessionStatus: () => 'running',
+  resolveSessionLastActivity: () => Date.now(),
+  taskCallbacks: new Map(),
+  sessionStateCallbacks: new Map(),
+  stageSnapshotCallbacks: new Map(),
+  heartbeatCallbacks: new Map(),
+  taskProgressCallbacks: new Map(),
+  workerLogCallbacks: new Map(),
 }));
 
 import { shapeBuildRuntimeExecutionControl } from '../../worker/api/shapeBuildRuntimeExecutionControl';
