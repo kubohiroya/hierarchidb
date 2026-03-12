@@ -1,8 +1,8 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { BuildProgressEvent, BuildTaskSummary, BuildTaskUpdateEvent } from '@hierarchidb/build-api';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
-import { useSetAtom, useAtomValue } from 'jotai';
+import { useSetAtom, useStore } from 'jotai';
 import { dispatchBuildSessionEventAtom, buildSessionSnapshotHandshakeReceivedAtom } from '~/ui/atoms/buildSessionStateAtoms';
 import { createBuildSessionWorkerEventAdapter } from '~/ui/atoms/buildSessionWorkerEventAdapter';
 import type { ShapeStageId } from '~/ui/atoms/buildSessionStateAtoms';
@@ -131,13 +131,7 @@ export const resolveSnapshotTargetStages = (event: TaskSnapshotEvent): ShapeStag
  */
 export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined): void => {
     const dispatch = useSetAtom(dispatchBuildSessionEventAtom);
-    const buildSessionSnapshotHandshakeReceived = useAtomValue(buildSessionSnapshotHandshakeReceivedAtom);
-    // Keep a ref so the effect closure always reads the latest value without
-    // re-running the entire channel setup when the handshake flag flips.
-    const buildSessionSnapshotHandshakeReceivedRef = useRef(buildSessionSnapshotHandshakeReceived);
-    useLayoutEffect(() => {
-        buildSessionSnapshotHandshakeReceivedRef.current = buildSessionSnapshotHandshakeReceived;
-    });
+    const store = useStore();
 
     // Use useLayoutEffect for synchronous channel establishment
     useLayoutEffect(() => {
@@ -284,8 +278,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             console.log('[shape buildSessionStateAtomBridge] processTaskSnapshotEvent', {
                 nodeId: nodeIdText,
                 taskCount: snapshotEvent.tasks.length,
-                buildSessionSnapshotHandshakeReceived: buildSessionSnapshotHandshakeReceivedRef.current,
-                snapshotEvent
+                buildSessionSnapshotHandshakeReceived: store.get(buildSessionSnapshotHandshakeReceivedAtom), snapshotEvent
             });
 
             const snapshotVersion = resolveSnapshotVersion(snapshotEvent);
@@ -325,7 +318,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                 dispatchUiSyncPhase(stageId, 'running');
             }
 
-            if (!buildSessionSnapshotHandshakeReceivedRef.current) {
+            if (!store.get(buildSessionSnapshotHandshakeReceivedAtom)) {
                 pendingTaskUpdatesBeforeInitialSnapshot.length = 0;
                 console.log('[shape buildSessionStateAtomBridge] initial snapshot applied', {
                     nodeId: nodeIdText,
@@ -376,7 +369,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                 nodeId: nodeIdText,
                 eventType: event.type,
                 hasSeqNum: typeof (event as any).seqNum === 'number',
-                buildSessionSnapshotHandshakeReceived: buildSessionSnapshotHandshakeReceivedRef.current
+                buildSessionSnapshotHandshakeReceived: store.get(buildSessionSnapshotHandshakeReceivedAtom)
             });
 
             if (event.type === 'snapshot') {
@@ -431,7 +424,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                 );
                 const snapshotVersionMax = snapshotVersionMaxByStage[stageId];
                 if (snapshotVersionMax == null) {
-                    if (!buildSessionSnapshotHandshakeReceivedRef.current) {
+                    if (!store.get(buildSessionSnapshotHandshakeReceivedAtom)) {
                         pendingTaskUpdatesBeforeInitialSnapshot.push(updateEvent);
                         return;
                     }
