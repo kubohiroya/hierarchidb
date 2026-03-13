@@ -101,7 +101,7 @@ export function useBuildProgress(
       skipped: 0,
       percentage: stageProgress[activeStageId],
       stage: activeStageId,
-      timestamp: runtime.lastAcceptedEventVersion,
+      timestamp: Date.now(),
       message: undefined,
       progressTaskId: progressTask?.taskId,
       progressTaskStatus: progressTask?.status,
@@ -110,7 +110,7 @@ export function useBuildProgress(
       progressTaskDisplay: progressTask?.display,
       stageTotals,
     };
-  }, [counters, nodeId, runtime.activeStageId, runtime.lastAcceptedEventVersion, stageProgress, tasksByStage]);
+  }, [counters, nodeId, runtime.activeStageId, stageProgress, tasksByStage]);
 
   const derivedStatus = useMemo<BuildProgressStatus | null>(() => {
     if (!nodeId) return null;
@@ -129,9 +129,9 @@ export function useBuildProgress(
       progress: progress?.percentage,
       hasErrors: status === 'failed',
       error: null,
-      lastUpdated: runtime.lastAcceptedEventVersion,
+      lastUpdated: Date.now(),
     };
-  }, [nodeId, progress?.percentage, runtime.activeStageId, runtime.lastAcceptedEventVersion, runtime.phase]);
+  }, [nodeId, progress?.percentage, runtime.activeStageId, runtime.phase]);
 
   const error: Error | null = null;
   const subscribe = () => { };

@@ -50,6 +50,8 @@ import {
   buildSessionRuntimeAtom,
   pendingUserActionAtom,
   isStopRequestedInFlightAtom,
+  stageDurationMsByStageAtom,
+  stageTimingByStageAtom,
 } from '~/ui/atoms/buildSessionStateAtoms';
 import type { PendingUserAction } from '~/ui/atoms/buildSessionStateAtoms';
 
@@ -88,6 +90,8 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const { t } = useTranslation('shape-plugin');
   const activeNodeId = nodeId ?? null;
   const runtime = useAtomValue(buildSessionRuntimeAtom);
+  const stageDurationMsByStage = useAtomValue(stageDurationMsByStageAtom);
+  const stageTimingByStage = useAtomValue(stageTimingByStageAtom);
 
   const releaseBuildLock = useCallback(() => { }, []);
 
@@ -252,15 +256,14 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     effectiveProgress: effectiveProgress ?? null,
     effectiveStatus: effectiveStatus ?? null,
     stageFromState,
-    sessionStageDurationByStageSnapshot: null,
+    sessionStageDurationByStageSnapshot: stageDurationMsByStage,
     runtimeTiming: {
       startedAt: runtime.startedAt,
       completedAt: runtime.completedAt,
       heartbeatAt: runtime.heartbeatAt,
-      stageId: runtime.stageId,
-      inactiveMs: runtime.inactiveMs,
-      stageStartedAt: runtime.stageStartedAt,
-      stageInactiveMs: runtime.stageInactiveMs,
+      stageId: runtime.activeStageId,
+      stageStartedAt: stageTimingByStage[runtime.activeStageId]?.stageStartedAt,
+      stageInactiveMs: stageTimingByStage[runtime.activeStageId]?.stageInactiveMs,
     },
     activeNodeId,
   });

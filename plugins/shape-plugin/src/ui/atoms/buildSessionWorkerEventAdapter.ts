@@ -1,4 +1,4 @@
-import type { BuildProgressEvent, BuildTaskSummary, BuildTaskUpdateEvent } from '@hierarchidb/build-api';
+import type { BuildProgressEvent, BuildTaskSummary } from '@hierarchidb/build-api';
 import {
   createBuildSessionWorkerEventAdapter as createCommonBuildSessionWorkerEventAdapter,
   type BuildSessionStateEvent,
@@ -32,7 +32,7 @@ const isShapeBuildStopReason = (value: unknown): value is ShapeBuildStopReason =
 const toShapeEvent = (
   event: BuildSessionStateEvent<ShapeStageId, ShapeSessionPhase, BuildTaskSummary>,
 ): ShapeBuildSessionStateEvent => {
-  if (event.type !== 'sessionRecordReceived') {
+  if (event.type !== 'sessionStatusUpdated') {
     return event;
   }
   const stopReason = event.payload.stopReason;
@@ -61,65 +61,28 @@ const mapRuntimeStatusToPhase = (status: string): ShapeSessionPhase => {
   throw new Error(`[shape buildSessionWorkerEventAdapter] unsupported runtime status: ${status}`);
 };
 
-const mapProgressPhaseToSessionPhase = (phase: BuildProgressEvent['phase']): ShapeSessionPhase => {
-  if (phase === 'idle') return 'idle';
-  if (phase === 'running') return 'running';
-  if (phase === 'paused') return 'paused';
-  if (phase === 'completed') return 'completed';
-  if (phase === 'failed') return 'failed';
-  if (phase === 'queued') return 'starting';
-  throw new Error(`[shape buildSessionWorkerEventAdapter] unsupported progress phase: ${phase}`);
-};
+const isActivePhase = (phase: ShapeSessionPhase): boolean => (
+  phase === 'starting'
+  || phase === 'running'
+  || phase === 'pausing'
+  || phase === 'resuming'
+  || phase === 'finalizing'
+);
 
 export const createBuildSessionWorkerEventAdapter = (
   nodeId: string,
   dispatch: (event: ShapeBuildSessionStateEvent) => void,
 ): BuildSessionWorkerEventAdapter => {
-  return createCommonBuildSessionWorkerEventAdapter<ShapeStageId, ShapeSessionPhase, BuildTaskSummary>(
+  return createCommonBuildSessionWorkerEventAdapter<ShapeStageId, ShapeSessionPhase>(
     nodeId,
     (event) => dispatch(toShapeEvent(event)),
     {
-      deleteEventTargetStages: ['source', 'geometry', 'tileEmit'] as const,
+      stages: ['source', 'geometry', 'tileEmit'] as const,
       resolveStageId: resolveShapeStageId,
       mapRuntimeStatusToPhase: (status) => mapRuntimeStatusToPhase(String(status)),
-      mapProgressPhaseToSessionPhase,
       mapSessionRecordStatusToPhase: (status) => mapRuntimeStatusToPhase(String(status)),
-      resolveRuntimeEventVersion: (record) => asFiniteNumber(record.revision, 'runtime revision'),
-      resolveSessionRecordEventVersion: (sessionRecord) => {
-        const stageHeartbeatAt = (sessionRecord as { stageHeartbeatAt?: unknown }).stageHeartbeatAt;
-        if (typeof stageHeartbeatAt === 'number' && Number.isFinite(stageHeartbeatAt)) {
-          return stageHeartbeatAt;
-        }
-        const completedAt = (sessionRecord as { completedAt?: unknown }).completedAt;
-        if (typeof completedAt === 'number' && Number.isFinite(completedAt)) {
-          return completedAt;
-        }
-        const startedAt = (sessionRecord as { startedAt?: unknown }).startedAt;
-        if (typeof startedAt === 'number' && Number.isFinite(startedAt)) {
-          return startedAt;
-        }
-        throw new Error('[shape buildSessionWorkerEventAdapter] sessionRecord event version must come from heartbeat/completedAt/startedAt');
-      },
-      resolveTaskSnapshotEventVersion: (event: BuildTaskUpdateEvent) => {
-        if (event.type !== 'snapshot') {
-          throw new Error('[shape buildSessionWorkerEventAdapter] snapshot resolver requires snapshot event');
-        }
-        const explicitVersion = (event as { version?: unknown }).version;
-        if (typeof explicitVersion === 'number' && Number.isFinite(explicitVersion)) {
-          return explicitVersion;
-        }
-        if (event.tasks.length > 0) {
-          return event.tasks.reduce((max, task) => Math.max(max, task.version), Number.MIN_SAFE_INTEGER);
-        }
-        return asFiniteNumber((event as { version?: unknown }).version, 'task snapshot event.version');
-      },
-      resolveTaskUpdateEventVersion: (task) => asFiniteNumber(task.version, 'task.version'),
-      resolveTaskDeleteEventVersion: (event: BuildTaskUpdateEvent) => (
-        asFiniteNumber((event as { version?: unknown }).version, 'task delete event.version')
-      ),
-      resolveProgressEventVersion: (event) => asFiniteNumber(event.timestamp, 'progress timestamp'),
-      resolveHeartbeatEventVersion: (event) => asFiniteNumber(event.heartbeatAt, 'heartbeatAt'),
-      resolveProgressValue: (event) => {
+      isActivePhase,
+      resolveProgressValue: (event: BuildProgressEvent) => {
         const payload = event.payload as Record<string, unknown> | undefined;
         return asFiniteNumber(payload?.percentage, 'progress payload.percentage');
       },

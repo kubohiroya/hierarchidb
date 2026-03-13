@@ -86,14 +86,13 @@ export const useLocationSelectionStep = ({ draft, onUpdate, buildSelectionRecord
   }, [draft.ideGsmFileName, draft.ideGsmSources, draft.tabularSourceId]);
   const [availabilityByCountry, setAvailabilityByCountry] = useState<Record<string, boolean[]>>({});
   const parseInFlightRef = useRef(false);
+  // Tracks whether the initial auto-selection from availability has already been applied.
+  // Once set, user interactions (including deselect-all) must not be overwritten by re-parsing.
+  const initializedRef = useRef(false);
   const typeIndex = useMemo(
     () => new Map(BASE_LOCATION_TYPES.map((type, index) => [type.id, index])),
     [],
   );
-
-  const hasSelection = useMemo(() => (
-    Object.values(selectionByCountries).some((row) => Array.isArray(row) && row.some(Boolean))
-  ), [selectionByCountries]);
 
   const hasAvailability = useMemo(
     () => Object.keys(availabilityByCountry).length > 0,
@@ -105,7 +104,8 @@ export const useLocationSelectionStep = ({ draft, onUpdate, buildSelectionRecord
     const sources = ideGsmSources.filter((source) => source.tabularSourceId);
     if (sources.length === 0) return;
     if (parseInFlightRef.current) return;
-    if (hasSelection && hasAvailability) return;
+    // Skip if availability is already parsed; re-parsing must not overwrite user interactions.
+    if (hasAvailability) return;
     parseInFlightRef.current = true;
     const run = async () => {
       try {
@@ -120,7 +120,9 @@ export const useLocationSelectionStep = ({ draft, onUpdate, buildSelectionRecord
         const points = parsedList.flatMap((parsed) => parsed.points);
         const availabilityMap = buildAvailabilityMapFromIdeGsmPoints(points, BASE_LOCATION_TYPES);
         setAvailabilityByCountry(availabilityMap);
-        if (!hasSelection) {
+        // Apply initial auto-selection only once; subsequent user changes must not be overwritten.
+        if (!initializedRef.current) {
+          initializedRef.current = true;
           const selectionMap = buildSelectionMapFromAvailability(availabilityMap);
           onUpdate({ selectedArrayByCountries: selectionMap });
         }
@@ -139,10 +141,8 @@ export const useLocationSelectionStep = ({ draft, onUpdate, buildSelectionRecord
   }, [
     draft.dataSource,
     hasAvailability,
-    hasSelection,
     ideGsmSources,
     onUpdate,
-    selectionByCountries,
     t,
     tabularApi,
   ]);
