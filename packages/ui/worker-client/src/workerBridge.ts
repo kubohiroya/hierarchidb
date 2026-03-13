@@ -67,15 +67,17 @@ export interface BuildWorkerBridge {
     nodeId: NodeId,
     cb: (event: any) => void
   ): Promise<() => void>;
-  subscribeSessionHeartbeat(
+  /** Subscribe to all build session channels for a node in a single call. Returns a single unsubscribe function. */
+  subscribeAll(
     nodeType: NodeType,
     nodeId: NodeId,
-    cb: (event: any) => void
-  ): Promise<() => void>;
-  subscribeTaskProgress(
-    nodeType: NodeType,
-    nodeId: NodeId,
-    cb: (event: any) => void
+    handlers: {
+      onTaskEvent: (event: BuildTaskUpdateEvent) => void;
+      onProgressEvent: (event: BuildProgressEvent) => void;
+      onSessionState: (event: { nodeId: string; sessionRecord?: Record<string, unknown> | null }) => void;
+      onHeartbeat: (event: { nodeId: string; heartbeatAt?: number }) => void;
+      onWorkerLog: (event: { level?: string; message?: string; data?: unknown }) => void;
+    }
   ): Promise<() => void>;
 }
 
@@ -351,7 +353,6 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
     cb: (event: any) => void
   ): Promise<() => void> {
     const api = await ensureWorkerAPI();
-    // Get the appropriate API based on nodeType
     if (nodeType === SHAPE_NODE_TYPE) {
       const shapeAPI = await api.getShapeQueryAPI();
       if ('subscribeToSessionState' in shapeAPI) {
@@ -367,60 +368,62 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
         };
       }
     }
-    // Fallback: return no-op unsubscribe
     return () => { };
   }
 
-  async subscribeSessionHeartbeat(
+  async subscribeAll(
     nodeType: NodeType,
     nodeId: NodeId,
-    cb: (event: any) => void
+    handlers: {
+      onTaskEvent: (event: BuildTaskUpdateEvent) => void;
+      onProgressEvent: (event: BuildProgressEvent) => void;
+      onSessionState: (event: { nodeId: string; sessionRecord?: Record<string, unknown> | null }) => void;
+      onHeartbeat: (event: { nodeId: string; heartbeatAt?: number }) => void;
+      onWorkerLog: (event: { level?: string; message?: string; data?: unknown }) => void;
+    }
   ): Promise<() => void> {
     const api = await ensureWorkerAPI();
-    // Get the appropriate API based on nodeType
+
+    const unsubscribeTasks = await api.subscribeBuildTasks(nodeType, nodeId, proxy((event) => {
+      handlers.onTaskEvent(sanitizeForComlink(event));
+    }));
+
+    const unsubscribeProgress = await api.subscribeBuildProgress(nodeType, nodeId, proxy((event) => {
+      handlers.onProgressEvent(sanitizeForComlink(event));
+    }));
+
+    let unsubscribeSessionState: () => void = () => { };
+    let unsubscribeHeartbeat: () => void = () => { };
+    let unsubscribeWorkerLog: () => void = () => { };
+
     if (nodeType === SHAPE_NODE_TYPE) {
       const shapeAPI = await api.getShapeQueryAPI();
+      if ('subscribeToSessionState' in shapeAPI) {
+        unsubscribeSessionState = await (shapeAPI as any).subscribeToSessionState(nodeId, proxy((event: any) => {
+          handlers.onSessionState(sanitizeForComlink(event));
+        }));
+      }
       if ('subscribeToHeartbeat' in shapeAPI) {
-        const unsubscribe = await (shapeAPI as any).subscribeToHeartbeat(nodeId, proxy((event: any) => {
-          cb(sanitizeForComlink(event));
+        unsubscribeHeartbeat = await (shapeAPI as any).subscribeToHeartbeat(nodeId, proxy((event: any) => {
+          handlers.onHeartbeat(sanitizeForComlink(event));
         }));
-        return () => {
-          try {
-            unsubscribe();
-          } catch (error) {
-            console.warn('[BuildWorkerBridge] subscribeSessionHeartbeat unsubscribe failed', error);
-          }
-        };
+      }
+      if ('subscribeToWorkerLog' in shapeAPI) {
+        unsubscribeWorkerLog = await (shapeAPI as any).subscribeToWorkerLog(nodeId, proxy((event: any) => {
+          handlers.onWorkerLog(sanitizeForComlink(event));
+        }));
       }
     }
-    // Fallback: return no-op unsubscribe
-    return () => { };
-  }
 
-  async subscribeTaskProgress(
-    nodeType: NodeType,
-    nodeId: NodeId,
-    cb: (event: any) => void
-  ): Promise<() => void> {
-    const api = await ensureWorkerAPI();
-    // Get the appropriate API based on nodeType
-    if (nodeType === SHAPE_NODE_TYPE) {
-      const shapeAPI = await api.getShapeQueryAPI();
-      if ('subscribeToTaskProgress' in shapeAPI) {
-        const unsubscribe = await (shapeAPI as any).subscribeToTaskProgress(nodeId, proxy((event: any) => {
-          cb(sanitizeForComlink(event));
-        }));
-        return () => {
-          try {
-            unsubscribe();
-          } catch (error) {
-            console.warn('[BuildWorkerBridge] subscribeTaskProgress unsubscribe failed', error);
-          }
-        };
+    return () => {
+      for (const unsub of [unsubscribeTasks, unsubscribeProgress, unsubscribeSessionState, unsubscribeHeartbeat, unsubscribeWorkerLog]) {
+        try {
+          unsub();
+        } catch (error) {
+          console.warn('[BuildWorkerBridge] subscribeAll unsubscribe failed', error);
+        }
       }
-    }
-    // Fallback: return no-op unsubscribe
-    return () => { };
+    };
   }
 }
 
