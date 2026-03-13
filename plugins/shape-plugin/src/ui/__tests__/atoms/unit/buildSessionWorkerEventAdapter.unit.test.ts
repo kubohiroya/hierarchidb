@@ -20,7 +20,7 @@ describe('buildSessionWorkerEventAdapter', () => {
     store.set(dispatchBuildSessionEventAtom, { type: 'reset' });
   });
 
-  it('maps runtime pub/sub event to runtimeSnapshotReceived', () => {
+  it('maps runtime pub/sub event to sessionStatusUpdated', () => {
     const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
     const runtimeRecord: BuildSessionRuntimeRecord = {
       nodeId: 'node-1',
@@ -37,10 +37,10 @@ describe('buildSessionWorkerEventAdapter', () => {
     const runtime = store.get(buildSessionRuntimeAtom);
     expect(runtime.phase).toBe('running');
     expect(runtime.isActive).toBe(true);
-    expect(runtime.heartbeatAt).toBe(30);
+    expect(runtime.heartbeatAt).toBeUndefined(); // heartbeat comes from onHeartbeat, not onRuntimeRecord
   });
 
-  it('maps task pub/sub snapshot/update to task events and counters', () => {
+  it('maps task pub/sub snapshot to stageSnapshotUpdated and counters', () => {
     const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
 
     const snapshotEvent: BuildTaskUpdateEvent = {
@@ -62,6 +62,30 @@ describe('buildSessionWorkerEventAdapter', () => {
     expect(counters.total).toBe(1);
     expect(counters.queued).toBe(1);
 
+    // New snapshot replaces previous (full replacement semantics)
+    const updatedSnapshotEvent: BuildTaskUpdateEvent = {
+      type: 'snapshot',
+      nodeId: 'node-1',
+      tasks: [
+        {
+          taskId: 's-1',
+          version: 4,
+          stage: 'source',
+          status: 'completed',
+          progress: 100,
+        },
+      ],
+    };
+    adapter.onTaskEvent(updatedSnapshotEvent);
+
+    counters = store.get(buildSessionStageCountersAtom).source;
+    expect(counters.total).toBe(1);
+    expect(counters.queued).toBe(0);
+    expect(counters.terminal).toBe(1);
+  });
+
+  it('throws when task event type is update (not supported)', () => {
+    const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
     const updateEvent: BuildTaskUpdateEvent = {
       type: 'update',
       nodeId: 'node-1',
@@ -73,15 +97,12 @@ describe('buildSessionWorkerEventAdapter', () => {
         progress: 100,
       },
     };
-    adapter.onTaskEvent(updateEvent);
-
-    counters = store.get(buildSessionStageCountersAtom).source;
-    expect(counters.total).toBe(1);
-    expect(counters.queued).toBe(0);
-    expect(counters.terminal).toBe(1);
+    expect(() => {
+      adapter.onTaskEvent(updateEvent);
+    }).toThrowError('unexpected task event type: update');
   });
 
-  it('maps progress pub/sub event to progressReceived and updates stage progress', () => {
+  it('maps progress pub/sub event to taskProgressUpdated and updates stage progress', () => {
     const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
     const progressEvent: BuildProgressEvent = {
       nodeId: 'node-1',
@@ -121,7 +142,7 @@ describe('buildSessionWorkerEventAdapter', () => {
     }).toThrowError('[shape buildSessionWorkerEventAdapter] progress payload.percentage must be a finite number, received undefined');
   });
 
-  it('maps session record pub/sub event to runtime timing fields', () => {
+  it('maps session state pub/sub event to sessionStatusUpdated with stopReason', () => {
     const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
     adapter.onSessionState({
       nodeId: 'node-1',
@@ -140,12 +161,7 @@ describe('buildSessionWorkerEventAdapter', () => {
 
     const runtime = store.get(buildSessionRuntimeAtom);
     expect(runtime.phase).toBe('running');
-    expect(runtime.heartbeatAt).toBe(90);
-    expect(runtime.stageId).toBe('geometry');
     expect(runtime.stopReason).toBe('route-leave');
-    expect(runtime.inactiveMs).toBe(44);
-    expect(runtime.stageStartedAt).toBe(50);
-    expect(runtime.stageInactiveMs).toBe(6);
   });
 
   it('throws when sessionRecord stopReason is outside ShapeBuildStopReason', () => {
@@ -172,6 +188,5 @@ describe('buildSessionWorkerEventAdapter', () => {
     const runtime = store.get(buildSessionRuntimeAtom);
     expect(store.get(buildSessionTaskStreamConnectedAtom)).toBe(true);
     expect(runtime.heartbeatAt).toBe(55);
-    expect(runtime.phase).toBe('running');
   });
 });

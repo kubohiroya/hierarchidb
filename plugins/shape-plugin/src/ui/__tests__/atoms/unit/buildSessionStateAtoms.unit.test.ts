@@ -27,10 +27,9 @@ describe('buildSessionStateAtoms write atom', () => {
     store.set(dispatchBuildSessionEventAtom, { type: 'reset' });
   });
 
-  it('applies runtime snapshot and toggles start button loading from selector', () => {
+  it('applies session status and toggles start button loading from selector', () => {
     store.set(dispatchBuildSessionEventAtom, {
-      type: 'runtimeSnapshotReceived',
-      eventVersion: 1,
+      type: 'sessionStatusUpdated',
       payload: {
         nodeId: 'node-1',
         phase: 'running',
@@ -51,36 +50,9 @@ describe('buildSessionStateAtoms write atom', () => {
     expect(store.get(buildSessionStartButtonLoadingAtom)).toBe(false);
   });
 
-  it('drops stale events by eventVersion monotonicity', () => {
+  it('builds stage counters from stage snapshot and update', () => {
     store.set(dispatchBuildSessionEventAtom, {
-      type: 'runtimeSnapshotReceived',
-      eventVersion: 10,
-      payload: {
-        nodeId: 'node-1',
-        phase: 'running',
-        isActive: true,
-      },
-    });
-
-    store.set(dispatchBuildSessionEventAtom, {
-      type: 'runtimeSnapshotReceived',
-      eventVersion: 9,
-      payload: {
-        nodeId: 'node-1',
-        phase: 'failed',
-        isActive: false,
-      },
-    });
-
-    const runtime = store.get(buildSessionRuntimeAtom);
-    expect(runtime.lastAcceptedEventVersion).toBe(10);
-    expect(runtime.phase).toBe('running');
-  });
-
-  it('builds stage counters from task snapshot and update', () => {
-    store.set(dispatchBuildSessionEventAtom, {
-      type: 'taskSnapshotReceived',
-      eventVersion: 1,
+      type: 'stageSnapshotUpdated',
       payload: {
         stageId: 'source',
         tasks: [
@@ -88,6 +60,8 @@ describe('buildSessionStateAtoms write atom', () => {
           createTask({ taskId: 't-r', status: 'running', progress: 10 }),
           createTask({ taskId: 't-c', status: 'completed', progress: 100 }),
         ],
+        stageStartedAt: 1000,
+        stageInactiveMs: 0,
       },
     });
 
@@ -98,12 +72,18 @@ describe('buildSessionStateAtoms write atom', () => {
     expect(counters.terminal).toBe(1);
     expect(counters.failed).toBe(0);
 
+    // Update via new snapshot (full replacement)
     store.set(dispatchBuildSessionEventAtom, {
-      type: 'taskUpdated',
-      eventVersion: 2,
+      type: 'stageSnapshotUpdated',
       payload: {
         stageId: 'source',
-        task: createTask({ taskId: 't-r', status: 'failed', progress: 100 }),
+        tasks: [
+          createTask({ taskId: 't-q', status: 'queued', progress: 0 }),
+          createTask({ taskId: 't-r', status: 'failed', progress: 100 }),
+          createTask({ taskId: 't-c', status: 'completed', progress: 100 }),
+        ],
+        stageStartedAt: 1000,
+        stageInactiveMs: 0,
       },
     });
 
@@ -118,12 +98,10 @@ describe('buildSessionStateAtoms write atom', () => {
   it('rejects out-of-range progress instead of normalizing it', () => {
     expect(() => {
       store.set(dispatchBuildSessionEventAtom, {
-        type: 'progressReceived',
-        eventVersion: 1,
+        type: 'taskProgressUpdated',
         payload: {
           stageId: 'geometry',
           value: 120,
-          phase: 'running',
         },
       });
     }).toThrowError('progress must be within 0..100');
@@ -138,11 +116,12 @@ describe('buildSessionStateAtoms write atom', () => {
     taskWithTitle.title = 'Japan (JP) 0';
 
     store.set(dispatchBuildSessionEventAtom, {
-      type: 'taskSnapshotReceived',
-      eventVersion: 1,
+      type: 'stageSnapshotUpdated',
       payload: {
         stageId: 'source',
         tasks: [taskWithTitle],
+        stageStartedAt: 1000,
+        stageInactiveMs: 0,
       },
     });
 
@@ -151,10 +130,9 @@ describe('buildSessionStateAtoms write atom', () => {
     expect(sourceTasks[0]?.title).toBe('Japan (JP) 0');
   });
 
-  it('keeps ui-initializing before snapshot and switches to running after snapshot', () => {
+  it('keeps ui-initializing before snapshot and switches to streaming after snapshot', () => {
     store.set(dispatchBuildSessionEventAtom, {
-      type: 'runtimeSnapshotReceived',
-      eventVersion: 1,
+      type: 'sessionStatusUpdated',
       payload: {
         nodeId: 'node-1',
         phase: 'running',
@@ -171,22 +149,21 @@ describe('buildSessionStateAtoms write atom', () => {
     expect(store.get(buildSessionTaskListViewPhaseAtom)).toBe('ui-initializing');
 
     store.set(dispatchBuildSessionEventAtom, {
-      type: 'progressReceived',
-      eventVersion: 2,
+      type: 'taskProgressUpdated',
       payload: {
         stageId: 'geometry',
         value: 33,
-        phase: 'running',
       },
     });
     expect(store.get(buildSessionStageProgressAtom).geometry).toBe(33);
 
     store.set(dispatchBuildSessionEventAtom, {
-      type: 'taskSnapshotReceived',
-      eventVersion: 3,
+      type: 'stageSnapshotUpdated',
       payload: {
         stageId: 'geometry',
         tasks: [],
+        stageStartedAt: 1000,
+        stageInactiveMs: 0,
       },
     });
     store.set(dispatchBuildSessionEventAtom, {

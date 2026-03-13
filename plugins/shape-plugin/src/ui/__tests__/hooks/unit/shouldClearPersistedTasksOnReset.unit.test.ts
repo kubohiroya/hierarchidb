@@ -5,7 +5,6 @@ describe('shouldClearPersistedTasksOnReset', () => {
   it('returns true when runtime is reset state and tasks are empty', () => {
     expect(shouldClearPersistedTasksOnReset({
       runtimePhase: 'idle',
-      lastAcceptedEventVersion: 0,
       taskCount: 0,
     })).toBe(true);
   });
@@ -13,17 +12,14 @@ describe('shouldClearPersistedTasksOnReset', () => {
   it('returns false when tasks remain', () => {
     expect(shouldClearPersistedTasksOnReset({
       runtimePhase: 'idle',
-      lastAcceptedEventVersion: 0,
       taskCount: 1,
     })).toBe(false);
   });
 
-  it('returns false when event version is not reset', () => {
+  it('returns false when phase is not idle', () => {
     expect(shouldClearPersistedTasksOnReset({
-      runtimePhase: 'idle',
-      lastAcceptedEventVersion: 10,
+      runtimePhase: 'running',
       taskCount: 0,
     })).toBe(false);
   });
 });
-
