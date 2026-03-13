@@ -2,7 +2,11 @@
 
 ## Doing
 
-- #1012 / `fix/shape-plugin/remove-invalid-cache-write-validation-1012` / 2026-03-13 開始（PR #1014）
+- #1021 / `fix/treeconsole/treetable-core-viewport-height` / 2026-03-14 開始
+- #1020 / `refactor/shape-plugin/build-session-event-redesign-1020` / 2026-03-14 開始
+- #1019 / `fix/shape-plugin/task-snapshot-race-on-build-start-1019` / 2026-03-14 開始
+- #1018 / `fix/shape-plugin/runtime-refresh-after-start-1018` / 2026-03-14 開始
+- #1016 / `refactor/worker-client/subscribe-all-1016` / 2026-03-13 開始
 - #1006 / `refactor/shape-plugin/ssot-usestore-handshake-atom-1006` / 2026-03-12 開始
 - #999 / `feat/shape-plugin/integration-tests-error-handling-999` / 2026-03-12 開始
 
@@ -22,27 +26,27 @@
 
 ## 今日の運用ログ
 
-- 2026-03-13: #1012 validateCacheWriteAllowed をputSourceCacheハンドラパスから削除
-  - runStageTasks アーキテクチャでは handler 実行中タスクは running 状態が正常
-  - validateCacheWriteAllowed の「terminal status のみ書き込み許可」前提がアーキテクチャと矛盾していた
-  - typecheck: 100/100 exit 0、test: 423/426 pass
+- 2026-03-14: #1021 TreeTableCore viewHeight ハードコード削除・PR #1022作成
+  - TreeTableCoreProps.viewHeight をオプショナル化
+  - TreeConsolePanel viewHeight={600} 削除（2箇所）、親Box に height:'100%' 追加
+  - TreeConsoleContent viewHeight||400 フォールバック削除
+  - typecheck: 42/42 exit 0
+- 2026-03-14: #1020 テスト修正（4イベント新設計対応）・コミット 707f259 / typecheck: 100/100 exit 0 / test: 366/369 pass
+- 2026-03-14: #1019 ビルド開始時タスクスナップショット競合修正・コミット bf1c2d1
+  - emitTaskSnapshot に taskCallbacks を渡し、putTasks 完了後の完全スナップショットを subscribeBuildTasks コールバックに直接配信
+  - 修正箇所: emitStageTaskSnapshotBarrier（ステージ開始時）、空ビルド失敗パス、パイプライン失敗パス（3箇所）
+  - typecheck: 100/100 exit 0
+  - executeStartFlow に onRuntimeRecord コールバックを追加（BridgeApi に getBuildSessionRuntime を追加）
+  - useShapeBuildStart で useSetAtom + createBuildSessionWorkerEventAdapter を使って構築し渡す
+  - prop drilling なし（変更ファイル: executeStartFlow.ts / types.ts / useShapeBuildStart.ts）
+  - typecheck: 100/100 exit 0
 
-- 2026-03-13: #1012 ArrayBuffer sanitize修正・sendSnapshot callback await追加・PR #1013更新
-  - sanitizeForComlink: ArrayBuffer/TypedArray を pass-through（Comlink transferable）に修正
-  - sendSnapshot: callback() を await Promise.resolve() でラップし Comlink proxy rejection を捕捉
-  - sendSnapshot: console.error エントリログ追加（SharedWorker DevTools 可視化）
-  - typecheck: 127/127 exit 0、test: 423/426 pass
+- 2026-03-13: #1016 subscribeAll統合・PR #1017作成
+  - BuildWorkerBridgeにsubscribeAll追加、subscribeSessionHeartbeat/subscribeTaskProgress削除
+  - useShapeBuildSessionStateAtomBridgeを608行→約230行に簡素化（subscribeAll 1回呼び出し）
+  - eventBufferingUI.ts non-null assertion修正
+  - typecheck: 100/100 exit 0、test: 366/369 pass
 
-- 2026-03-12: #1012 SequencedEventラッパーunwrap修正・PR #1013更新（subscribeSessionState/Heartbeat/WorkerLogコールバックでpayload直接参照）
-- 2026-03-12: #1012 subscribeSessionState/Heartbeat/WorkerLog をトップレベルWorkerAPIに昇格・PR #1013更新
-  - typecheck: 100/100 exit 0、test: 423/426 pass
-
->>>>>>> 5c794a68a (chore: update TASKS.md - validateCacheWriteAllowed removal (#1012))
-- 2026-03-12: #1010 Worker側・UI側SSOT状態木の状態遷移を網羅的にテスト・PR #1011作成
-  - 新規: buildSessionStateAtomBridgePureFunctions.unit.test.ts（Bridge純粋関数 全分岐）
-  - 新規: stateManagement.unit.test.ts（Worker PauseState/AbortController/resolveProgressPhase）
-  - 追加: buildSessionStateAtoms.unit.test.ts（ライフサイクル全遷移・criticalError・reset・taskDeleted・viewSelectionChanged・taskListViewPhase全分岐・pendingUserAction・completionSnapshot）
-  - test: 423/426 pass（旧 372）、typecheck: 100/100 exit 0
 
 - 2026-03-12: #1006 useAtomValue+useRef同期をuseStore().get()に置換・PR #1008作成
   - buildSessionSnapshotHandshakeReceivedAtom の二重管理（useAtomValue+useRef）を削除

@@ -77,7 +77,7 @@ export interface TreeTableCoreProps {
   /**
    * View dimensions
    */
-  viewHeight: number;
+  viewHeight?: number;
   viewWidth: number;
   /**
    * Page context: unique identifier for the current view root.

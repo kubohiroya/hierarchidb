@@ -215,12 +215,12 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
               paddingLeft: '8px',
               paddingRight: '8px',
               minWidth: 0,
+              height: '100%',
             }}
             data-tour-id="tree-table"
           >
             <TreeTableCore
               controller={controller}
-              viewHeight={600}
               viewWidth={1200}
               treeId={props.treeId}
               pageNodeId={props.pageNodeId}
@@ -246,12 +246,12 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
             paddingLeft: '8px',
             paddingRight: '8px',
             minWidth: 0,
+            height: '100%',
           }}
           data-tour-id="tree-table"
         >
           <TreeTableCore
             controller={controller}
-            viewHeight={600}
             viewWidth={1200}
             treeId={props.treeId}
             pageNodeId={props.pageNodeId}
