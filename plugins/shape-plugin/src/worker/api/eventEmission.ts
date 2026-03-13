@@ -75,7 +75,7 @@ export const emitStageSnapshot = (
 export const emitTaskSnapshot = async (
     nodeId: NodeId,
     options?: { stage?: TaskQueueRecord['stage'] },
-    taskCallbacks?: Map<string, any>, // For backward compatibility
+    taskCallbacks?: Map<string, { callback?: (event: BuildTaskUpdateEvent) => void }>,
 ): Promise<void> => {
     const taskQueue = new VtTaskQueueDb();
     const tasks = options?.stage
@@ -86,7 +86,7 @@ export const emitTaskSnapshot = async (
         ? snapshot.reduce((max, task) => Math.max(max, task.version), Number.MIN_SAFE_INTEGER)
         : 0;
 
-    // Create stage snapshot event for unconditional streaming
+    // Emit via unconditional event streamer (seqNum-based delivery to UI)
     const stageSnapshotEvent: StageSnapshotEvent = {
         nodeId,
         timestamp: Date.now(),
@@ -97,11 +97,11 @@ export const emitTaskSnapshot = async (
             stage: options?.stage,
         },
     };
-
-    // Emit unconditionally regardless of UI state
     unconditionalEventStreamer.emitEvent(nodeId, 'stage-snapshot', stageSnapshotEvent);
 
-    // Also maintain backward compatibility with direct task callbacks for now
+    // Also deliver directly to taskCallbacks so subscribeBuildTasks subscribers
+    // receive the authoritative full snapshot after all tasks have been written.
+    // This fixes the race where sendSnapshot() fires before putTasks() completes.
     if (taskCallbacks) {
         const key = String(nodeId);
         const subscription = taskCallbacks.get(key);

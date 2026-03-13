@@ -2,6 +2,8 @@
 
 ## Doing
 
+- #1019 / `fix/shape-plugin/task-snapshot-race-on-build-start-1019` / 2026-03-14 開始
+- #1018 / `fix/shape-plugin/runtime-refresh-after-start-1018` / 2026-03-14 開始
 - #1016 / `refactor/worker-client/subscribe-all-1016` / 2026-03-13 開始
 - #1006 / `refactor/shape-plugin/ssot-usestore-handshake-atom-1006` / 2026-03-12 開始
 - #999 / `feat/shape-plugin/integration-tests-error-handling-999` / 2026-03-12 開始
@@ -21,6 +23,12 @@
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 
 ## 今日の運用ログ
+
+- 2026-03-14: #1018 2回目以降ビルド開始時のrunning状態未反映修正・コミット d1baafd
+  - executeStartFlow に onRuntimeRecord コールバックを追加（BridgeApi に getBuildSessionRuntime を追加）
+  - useShapeBuildStart で useSetAtom + createBuildSessionWorkerEventAdapter を使って構築し渡す
+  - prop drilling なし（変更ファイル: executeStartFlow.ts / types.ts / useShapeBuildStart.ts）
+  - typecheck: 100/100 exit 0
 
 - 2026-03-13: #1016 subscribeAll統合・PR #1017作成
   - BuildWorkerBridgeにsubscribeAll追加、subscribeSessionHeartbeat/subscribeTaskProgress削除
