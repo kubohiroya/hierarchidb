@@ -2,6 +2,8 @@
 
 ## Doing
 
+- #1021 / `fix/treeconsole/treetable-core-viewport-height` / 2026-03-14 開始
+- #1020 / `refactor/shape-plugin/build-session-event-redesign-1020` / 2026-03-14 開始
 - #1019 / `fix/shape-plugin/task-snapshot-race-on-build-start-1019` / 2026-03-14 開始
 - #1018 / `fix/shape-plugin/runtime-refresh-after-start-1018` / 2026-03-14 開始
 - #1016 / `refactor/worker-client/subscribe-all-1016` / 2026-03-13 開始
@@ -24,7 +26,11 @@
 
 ## 今日の運用ログ
 
-- 2026-03-14: #1018 2回目以降ビルド開始時のrunning状態未反映修正・コミット d1baafd
+- 2026-03-14: #1020 テスト修正（4イベント新設計対応）・コミット 707f259 / typecheck: 100/100 exit 0 / test: 366/369 pass
+- 2026-03-14: #1019 ビルド開始時タスクスナップショット競合修正・コミット bf1c2d1
+  - emitTaskSnapshot に taskCallbacks を渡し、putTasks 完了後の完全スナップショットを subscribeBuildTasks コールバックに直接配信
+  - 修正箇所: emitStageTaskSnapshotBarrier（ステージ開始時）、空ビルド失敗パス、パイプライン失敗パス（3箇所）
+  - typecheck: 100/100 exit 0
   - executeStartFlow に onRuntimeRecord コールバックを追加（BridgeApi に getBuildSessionRuntime を追加）
   - useShapeBuildStart で useSetAtom + createBuildSessionWorkerEventAdapter を使って構築し渡す
   - prop drilling なし（変更ファイル: executeStartFlow.ts / types.ts / useShapeBuildStart.ts）
