@@ -2,6 +2,7 @@
 
 ## Doing
 
+- #1016 / `refactor/worker-client/subscribe-all-1016` / 2026-03-13 開始
 - #1006 / `refactor/shape-plugin/ssot-usestore-handshake-atom-1006` / 2026-03-12 開始
 - #999 / `feat/shape-plugin/integration-tests-error-handling-999` / 2026-03-12 開始
 
@@ -20,6 +21,13 @@
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 
 ## 今日の運用ログ
+
+- 2026-03-13: #1016 subscribeAll統合・PR #1017作成
+  - BuildWorkerBridgeにsubscribeAll追加、subscribeSessionHeartbeat/subscribeTaskProgress削除
+  - useShapeBuildSessionStateAtomBridgeを608行→約230行に簡素化（subscribeAll 1回呼び出し）
+  - eventBufferingUI.ts non-null assertion修正
+  - typecheck: 100/100 exit 0、test: 366/369 pass
+
 
 - 2026-03-12: #1006 useAtomValue+useRef同期をuseStore().get()に置換・PR #1008作成
   - buildSessionSnapshotHandshakeReceivedAtom の二重管理（useAtomValue+useRef）を削除
