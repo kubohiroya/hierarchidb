@@ -51,7 +51,7 @@ export type ShapeBuildSessionPatch = Partial<ShapeBuildSessionRecord> & {
 
 export type BridgeApi = Pick<
   BuildWorkerBridge,
-  'initialize' | 'startBuildSession' | 'pauseBuildSession' | 'cancelQueuedBuildSession'
+  'initialize' | 'startBuildSession' | 'pauseBuildSession' | 'cancelQueuedBuildSession' | 'getBuildSessionRuntime'
 >;
 
 export type ControlActionsArgs = {
@@ -120,6 +120,8 @@ export type StartExecutionArgs = StartControlActionsArgs & {
   onTrace: (trace: StartTrace) => void;
   requestStartedAt: number;
   runTimedStep: <T>(stepName: string, runner: () => Promise<T>) => Promise<T>;
+  // Called after startBuildSession succeeds with processing status to sync runtime state into atom
+  onRuntimeRecord: (nodeId: NodeId) => Promise<void>;
 };
 
 export type { BuildSessionStatus };

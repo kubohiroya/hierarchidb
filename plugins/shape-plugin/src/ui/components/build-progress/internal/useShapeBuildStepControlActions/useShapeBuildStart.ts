@@ -1,9 +1,15 @@
 import { useCallback } from 'react';
+import { useSetAtom } from 'jotai';
+import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { notify } from '@hierarchidb/components/notify';
 import type { StartControlActionsArgs, StartOptions } from './types.js';
 import { shouldResumeBuildSession } from '~/ui/components/build-progress/shouldResumeBuildSession';
 import { executeStartFlow } from './executeStartFlow.js';
 import { isShapeBuildPanelDebugEnabled } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelState.utils.js';
+import { dispatchBuildSessionEventAtom } from '~/ui/atoms/buildSessionStateAtoms';
+import { createBuildSessionWorkerEventAdapter } from '~/ui/atoms/buildSessionWorkerEventAdapter';
+
+const SHAPE_NODE_TYPE = 'shape' as NodeType;
 
 export const useShapeBuildStart = ({
   activeNodeId,
@@ -27,6 +33,24 @@ export const useShapeBuildStart = ({
   setIsStopRequested,
   setIsStopAccepted,
 }: StartControlActionsArgs) => {
+  const dispatch = useSetAtom(dispatchBuildSessionEventAtom);
+
+  // Fetches the latest runtime record from the worker and pushes it into the atom.
+  // Used after startBuildSession succeeds so the UI reflects the running phase immediately
+  // without waiting for the next subscription event.
+  const onRuntimeRecord = useCallback(async (nodeId: NodeId): Promise<void> => {
+    const bridge = bridgeRef.current;
+    if (!bridge) return;
+    const nodeIdText = String(nodeId);
+    const adapter = createBuildSessionWorkerEventAdapter(nodeIdText, (event) => {
+      dispatch(event);
+    });
+    const runtime = await bridge.getBuildSessionRuntime(SHAPE_NODE_TYPE, nodeId);
+    if (runtime) {
+      adapter.onRuntimeRecord(runtime);
+    }
+  }, [bridgeRef, dispatch]);
+
   const handleStart = useCallback(async (options?: StartOptions): Promise<boolean> => {
     const requestStartedAt = Date.now();
     setRequestedControlAction('start');
@@ -83,6 +107,7 @@ export const useShapeBuildStart = ({
         options,
         startupSource,
         shouldResumeSession,
+        onRuntimeRecord,
         onTrace: (trace) => {
           if (!isShapeBuildPanelDebugEnabled('startResume')) return;
           console.log('[ShapeBuildStartTrace] handleStart', {
@@ -93,7 +118,7 @@ export const useShapeBuildStart = ({
           });
         },
         requestStartedAt,
-        runTimedStep: async <T, >(stepName: string, runner: () => Promise<T>): Promise<T> => {
+        runTimedStep: async <T,>(stepName: string, runner: () => Promise<T>): Promise<T> => {
           const stepStartedAt = Date.now();
           if (isShapeBuildPanelDebugEnabled('startResume')) {
             console.log('[ShapeBuildStartTrace] handleStart', {
@@ -152,6 +177,7 @@ export const useShapeBuildStart = ({
     updateSessionRecord,
     setIsStopRequested,
     setIsStopAccepted,
+    onRuntimeRecord,
   ]);
 
   return handleStart;

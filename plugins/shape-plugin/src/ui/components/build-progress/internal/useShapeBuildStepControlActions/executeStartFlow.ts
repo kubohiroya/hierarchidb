@@ -24,6 +24,7 @@ export const executeStartFlow = async (args: StartExecutionArgs): Promise<boolea
     runTimedStep,
     bridgeRef,
     updateSessionRecord,
+    onRuntimeRecord,
   } = args;
 
   const selectionSummary = summarizeSelectedEntries(data?.selectedArrayByCountries);
@@ -218,6 +219,9 @@ export const executeStartFlow = async (args: StartExecutionArgs): Promise<boolea
       });
     } else {
       // Direct transition to running phase - receiving-task-snapshot phase eliminated
+      // Fetch latest runtime from worker and push it into the atom so the UI reflects
+      // the running phase immediately without waiting for the next subscription event.
+      await onRuntimeRecord(activeNodeId);
       finishBuildSessionTransition({
         level: 'info',
         message: 'Build session started successfully.',
