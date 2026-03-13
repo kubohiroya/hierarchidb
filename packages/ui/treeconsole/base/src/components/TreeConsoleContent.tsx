@@ -52,20 +52,20 @@ const StableContentContainer = styled(Box)`
   */
 export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
   ({
-     controller,
-     isProjectsPage,
-     isResourcesPage,
-     viewHeight,
-     viewWidth,
-     useArchiveColumns,
-     depthOffset: _depthOffset,
-     rootNodeId: _treeRootNodeId,
-     currentNodeInfo: _currentNodeInfo,
-     onDragStateChange: _onDragStateChange,
-     canPreviewNode: _canPreviewNode = false,
-     mode: _mode,
-     hideDragHandler = false,
-   }) => {
+    controller,
+    isProjectsPage,
+    isResourcesPage,
+    viewHeight,
+    viewWidth,
+    useArchiveColumns,
+    depthOffset: _depthOffset,
+    rootNodeId: _treeRootNodeId,
+    currentNodeInfo: _currentNodeInfo,
+    onDragStateChange: _onDragStateChange,
+    canPreviewNode: _canPreviewNode = false,
+    mode: _mode,
+    hideDragHandler = false,
+  }) => {
     const {
       contentState,
       emptyMessage,
@@ -116,7 +116,7 @@ export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
             <TableContainer>
               <TreeTableCore
                 controller={treeTableController}
-                viewHeight={viewHeight || 400}
+                viewHeight={viewHeight}
                 viewWidth={viewWidth || 800}
                 useArchiveColumns={useArchiveColumns}
                 depthOffset={_depthOffset}
