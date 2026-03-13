@@ -107,12 +107,10 @@ export const resolveTaskListViewPhase = (input: {
 
 export const shouldClearPersistedTasksOnReset = (input: {
   runtimePhase: string;
-  lastAcceptedEventVersion: number;
   taskCount: number;
 }): boolean => (
   input.taskCount === 0
   && input.runtimePhase === 'idle'
-  && input.lastAcceptedEventVersion === 0
 );
 
 export const useShapeBuildStepStageState = ({
@@ -263,13 +261,12 @@ export const useShapeBuildStepStageState = ({
   useEffect(() => {
     if (!shouldClearPersistedTasksOnReset({
       runtimePhase: runtime.phase,
-      lastAcceptedEventVersion: runtime.lastAcceptedEventVersion,
       taskCount: tasks.length,
     })) {
       return;
     }
     setPersistedTasks([]);
-  }, [runtime.lastAcceptedEventVersion, runtime.phase, tasks.length]);
+  }, [runtime.phase, tasks.length]);
 
   const rawDisplayTasks = tasks.length > 0 ? tasks : persistedTasks;
   const displayTasks = useMemo<ShapeBuildTaskSummary[]>(() => (

@@ -19,9 +19,14 @@ type BaseTaskSummary = {
   progress: number;
 };
 
-type StageProgressState<SessionPhase extends string> = {
+type StageTiming = {
+  stageStartedAt: number;
+  stageInactiveMs: number;
+  stageCompletedAt?: number;
+};
+
+type StageProgressState = {
   value: number;
-  phase: SessionPhase;
   message?: string;
   metadata?: Record<string, unknown>;
 };
@@ -34,27 +39,28 @@ type StageCounters = {
   failed: number;
 };
 
-type StageExecutionState<StageId extends string, SessionPhase extends string, TaskSummary extends BaseTaskSummary> = {
+type StageExecutionState<StageId extends string, TaskSummary extends BaseTaskSummary> = {
   stageId: StageId;
   tasksById: Record<string, TaskSummary>;
   taskOrder: string[];
   counters: StageCounters;
-  progress: StageProgressState<SessionPhase>;
+  progress: StageProgressState;
+  timing: StageTiming | null;
 };
 
 type BuildSessionLifecycleState<SessionPhase extends string> = {
   nodeId: string | null;
-  sessionId: string | null;
   phase: SessionPhase;
   isActive: boolean;
   startedAt?: number;
   heartbeatAt?: number;
   completedAt?: number;
+  stopReason?: string;
 };
 
-type BuildSessionExecutionState<StageId extends string, SessionPhase extends string, TaskSummary extends BaseTaskSummary> = {
+type BuildSessionExecutionState<StageId extends string, TaskSummary extends BaseTaskSummary> = {
   taskStreamConnected: boolean;
-  stages: Record<StageId, StageExecutionState<StageId, SessionPhase, TaskSummary>>;
+  stages: Record<StageId, StageExecutionState<StageId, TaskSummary>>;
 };
 
 type BuildSessionViewState<StageId extends string> = {
@@ -67,83 +73,55 @@ export type BuildSessionState<
   SessionPhase extends string,
   TaskSummary extends BaseTaskSummary,
 > = {
-  meta: {
-    lastAcceptedEventVersion: number;
-  };
   lifecycle: BuildSessionLifecycleState<SessionPhase>;
-  execution: BuildSessionExecutionState<StageId, SessionPhase, TaskSummary>;
+  execution: BuildSessionExecutionState<StageId, TaskSummary>;
   view: BuildSessionViewState<StageId>;
 };
 
-type RuntimeSnapshotEvent<SessionPhase extends string> = {
-  type: 'runtimeSnapshotReceived';
-  eventVersion: number;
+// --- Canonical 4-event types (Worker → UI) ---
+
+type SessionStatusUpdatedEvent<SessionPhase extends string> = {
+  type: 'sessionStatusUpdated';
   payload: {
     nodeId: string;
-    sessionId?: string;
     phase: SessionPhase;
     isActive: boolean;
     startedAt?: number;
-    heartbeatAt?: number;
     completedAt?: number;
+    stopReason?: string;
   };
 };
 
-type SessionRecordEvent<StageId extends string, SessionPhase extends string> = {
-  type: 'sessionRecordReceived';
-  eventVersion: number;
+type HeartbeatEvent = {
+  type: 'heartbeat';
   payload: {
     nodeId: string;
-    phase: SessionPhase;
-    completedAt?: number;
-    heartbeatAt?: number;
-    startedAt?: number;
-    stageId?: StageId;
-    stopReason?: string;
-    inactiveMs?: number;
-    stageStartedAt?: number;
-    stageInactiveMs?: number;
+    heartbeatAt: number;
   };
 };
 
-type TaskSnapshotEvent<StageId extends string, TaskSummary extends BaseTaskSummary> = {
-  type: 'taskSnapshotReceived';
-  eventVersion: number;
+type StageSnapshotUpdatedEvent<StageId extends string, TaskSummary extends BaseTaskSummary> = {
+  type: 'stageSnapshotUpdated';
   payload: {
     stageId: StageId;
     tasks: TaskSummary[];
+    stageStartedAt: number;
+    stageInactiveMs: number;
+    stageCompletedAt?: number;
   };
 };
 
-type TaskUpdatedEvent<StageId extends string, TaskSummary extends BaseTaskSummary> = {
-  type: 'taskUpdated';
-  eventVersion: number;
-  payload: {
-    stageId: StageId;
-    task: TaskSummary;
-  };
-};
-
-type TaskDeletedEvent<StageId extends string> = {
-  type: 'taskDeleted';
-  eventVersion: number;
-  payload: {
-    stageId: StageId;
-    taskId: string;
-  };
-};
-
-type ProgressEvent<StageId extends string, SessionPhase extends string> = {
-  type: 'progressReceived';
-  eventVersion: number;
+type TaskProgressUpdatedEvent<StageId extends string> = {
+  type: 'taskProgressUpdated';
   payload: {
     stageId: StageId;
     value: number;
-    phase: SessionPhase;
     message?: string;
     metadata?: Record<string, unknown>;
   };
 };
+
+// --- UI-internal events (not from Worker) ---
 
 type TaskStreamConnectionEvent = {
   type: 'taskStreamConnectionChanged';
@@ -169,21 +147,13 @@ export type BuildSessionStateEvent<
   SessionPhase extends string,
   TaskSummary extends BaseTaskSummary,
 > =
-  | RuntimeSnapshotEvent<SessionPhase>
-  | SessionRecordEvent<StageId, SessionPhase>
-  | TaskSnapshotEvent<StageId, TaskSummary>
-  | TaskUpdatedEvent<StageId, TaskSummary>
-  | TaskDeletedEvent<StageId>
-  | ProgressEvent<StageId, SessionPhase>
+  | SessionStatusUpdatedEvent<SessionPhase>
+  | HeartbeatEvent
+  | StageSnapshotUpdatedEvent<StageId, TaskSummary>
+  | TaskProgressUpdatedEvent<StageId>
   | TaskStreamConnectionEvent
   | ViewSelectionChangedEvent<StageId>
   | ResetEvent;
-
-type VersionedEvent<
-  StageId extends string,
-  SessionPhase extends string,
-  TaskSummary extends BaseTaskSummary,
-> = Extract<BuildSessionStateEvent<StageId, SessionPhase, TaskSummary>, { eventVersion: number }>;
 
 type Config<
   StageId extends string,
@@ -193,12 +163,10 @@ type Config<
   stages: readonly StageId[];
   defaultStageId: StageId;
   idlePhase: SessionPhase;
-  activePhases: readonly SessionPhase[];
   resolveTaskStageId: (task: TaskSummary) => StageId;
   isTerminalTaskStatus: (status: TaskSummary['status']) => boolean;
   isRunningTaskStatus: (status: TaskSummary['status']) => boolean;
   isQueuedTaskStatus: (status: TaskSummary['status']) => boolean;
-  isLifecycleActiveFromSessionRecordPhase: (phase: SessionPhase) => boolean;
 };
 
 const assertProgressRange = (value: number): void => {
@@ -207,12 +175,18 @@ const assertProgressRange = (value: number): void => {
   }
 };
 
+const assertFiniteNumber = (value: number, label: string): void => {
+  if (!Number.isFinite(value)) {
+    throw new Error(`[buildSessionStateAtoms] ${label} must be a finite number, received ${value}`);
+  }
+};
+
 export const createBuildSessionStateAtoms = <
   StageId extends string,
   SessionPhase extends string = BuildSessionLifecyclePhase,
   TaskSummary extends BaseTaskSummary = BaseTaskSummary,
 >(config: Config<StageId, SessionPhase, TaskSummary>) => {
-  const createEmptyStage = (stageId: StageId): StageExecutionState<StageId, SessionPhase, TaskSummary> => ({
+  const createEmptyStage = (stageId: StageId): StageExecutionState<StageId, TaskSummary> => ({
     stageId,
     tasksById: {},
     taskOrder: [],
@@ -225,8 +199,8 @@ export const createBuildSessionStateAtoms = <
     },
     progress: {
       value: 0,
-      phase: config.idlePhase,
     },
+    timing: null,
   });
 
   const buildCounters = (tasksById: Record<string, TaskSummary>, taskOrder: string[]): StageCounters => {
@@ -252,18 +226,14 @@ export const createBuildSessionStateAtoms = <
   };
 
   const initialState = (): BuildSessionState<StageId, SessionPhase, TaskSummary> => {
-    const stages = config.stages.reduce<Record<StageId, StageExecutionState<StageId, SessionPhase, TaskSummary>>>((acc, stageId) => {
+    const stages = config.stages.reduce<Record<StageId, StageExecutionState<StageId, TaskSummary>>>((acc, stageId) => {
       acc[stageId] = createEmptyStage(stageId);
       return acc;
-    }, {} as Record<StageId, StageExecutionState<StageId, SessionPhase, TaskSummary>>);
+    }, {} as Record<StageId, StageExecutionState<StageId, TaskSummary>>);
 
     return {
-      meta: {
-        lastAcceptedEventVersion: 0,
-      },
       lifecycle: {
         nodeId: null,
-        sessionId: null,
         phase: config.idlePhase,
         isActive: false,
       },
@@ -282,6 +252,7 @@ export const createBuildSessionStateAtoms = <
     state: BuildSessionState<StageId, SessionPhase, TaskSummary>,
     stageId: StageId,
     tasks: TaskSummary[],
+    timing: StageTiming,
   ): BuildSessionState<StageId, SessionPhase, TaskSummary> => {
     const nextTasksById: Record<string, TaskSummary> = {};
     const nextOrder: string[] = [];
@@ -296,11 +267,12 @@ export const createBuildSessionStateAtoms = <
       nextOrder.push(task.taskId);
     }
     const currentStage = state.execution.stages[stageId];
-    const nextStage: StageExecutionState<StageId, SessionPhase, TaskSummary> = {
+    const nextStage: StageExecutionState<StageId, TaskSummary> = {
       ...currentStage,
       tasksById: nextTasksById,
       taskOrder: nextOrder,
       counters: buildCounters(nextTasksById, nextOrder),
+      timing,
     };
     return {
       ...state,
@@ -313,150 +285,66 @@ export const createBuildSessionStateAtoms = <
       },
     };
   };
-
-  const applyTaskUpsert = (
-    state: BuildSessionState<StageId, SessionPhase, TaskSummary>,
-    stageId: StageId,
-    task: TaskSummary,
-  ): BuildSessionState<StageId, SessionPhase, TaskSummary> => {
-    if (config.resolveTaskStageId(task) !== stageId) {
-      throw new Error(
-        `[buildSessionStateAtoms] task.stage (${String(task.stage)}) does not match target stage (${String(stageId)})`,
-      );
-    }
-    assertProgressRange(task.progress);
-    const currentStage = state.execution.stages[stageId];
-    const hadTask = currentStage.tasksById[task.taskId] !== undefined;
-    const nextTasksById: Record<string, TaskSummary> = {
-      ...currentStage.tasksById,
-      [task.taskId]: task,
-    };
-    const nextOrder = hadTask ? currentStage.taskOrder : [...currentStage.taskOrder, task.taskId];
-    const nextStage: StageExecutionState<StageId, SessionPhase, TaskSummary> = {
-      ...currentStage,
-      tasksById: nextTasksById,
-      taskOrder: nextOrder,
-      counters: buildCounters(nextTasksById, nextOrder),
-    };
-    return {
-      ...state,
-      execution: {
-        ...state.execution,
-        stages: {
-          ...state.execution.stages,
-          [stageId]: nextStage,
-        },
-      },
-    };
-  };
-
-  const applyTaskDelete = (
-    state: BuildSessionState<StageId, SessionPhase, TaskSummary>,
-    stageId: StageId,
-    taskId: string,
-  ): BuildSessionState<StageId, SessionPhase, TaskSummary> => {
-    const currentStage = state.execution.stages[stageId];
-    if (!currentStage.tasksById[taskId]) return state;
-    const nextTasksById = { ...currentStage.tasksById };
-    delete nextTasksById[taskId];
-    const nextOrder = currentStage.taskOrder.filter((id) => id !== taskId);
-    const nextStage: StageExecutionState<StageId, SessionPhase, TaskSummary> = {
-      ...currentStage,
-      tasksById: nextTasksById,
-      taskOrder: nextOrder,
-      counters: buildCounters(nextTasksById, nextOrder),
-    };
-    return {
-      ...state,
-      execution: {
-        ...state.execution,
-        stages: {
-          ...state.execution.stages,
-          [stageId]: nextStage,
-        },
-      },
-    };
-  };
-
-  const acceptEvent = (
-    state: BuildSessionState<StageId, SessionPhase, TaskSummary>,
-    eventVersion: number,
-  ): BuildSessionState<StageId, SessionPhase, TaskSummary> | null => {
-    if (eventVersion <= state.meta.lastAcceptedEventVersion) {
-      return null;
-    }
-    return {
-      ...state,
-      meta: {
-        ...state.meta,
-        lastAcceptedEventVersion: eventVersion,
-      },
-    };
-  };
-
-  const hasEventVersion = (
-    event: BuildSessionStateEvent<StageId, SessionPhase, TaskSummary>,
-  ): event is VersionedEvent<StageId, SessionPhase, TaskSummary> => (
-    'eventVersion' in event
-  );
 
   const reduceBuildSessionState = (
     state: BuildSessionState<StageId, SessionPhase, TaskSummary>,
     event: BuildSessionStateEvent<StageId, SessionPhase, TaskSummary>,
   ): BuildSessionState<StageId, SessionPhase, TaskSummary> => {
-    const accepted = hasEventVersion(event)
-      ? acceptEvent(state, event.eventVersion)
-      : state;
-    if (!accepted) return state;
     switch (event.type) {
       case 'reset':
         return initialState();
-      case 'runtimeSnapshotReceived':
+
+      case 'sessionStatusUpdated':
         return {
-          ...accepted,
+          ...state,
           lifecycle: {
-            ...accepted.lifecycle,
+            ...state.lifecycle,
             nodeId: event.payload.nodeId,
-            sessionId: event.payload.sessionId ?? accepted.lifecycle.sessionId,
             phase: event.payload.phase,
             isActive: event.payload.isActive,
-            startedAt: event.payload.startedAt ?? accepted.lifecycle.startedAt,
-            heartbeatAt: event.payload.heartbeatAt ?? accepted.lifecycle.heartbeatAt,
-            completedAt: event.payload.completedAt ?? accepted.lifecycle.completedAt,
+            startedAt: event.payload.startedAt ?? state.lifecycle.startedAt,
+            completedAt: event.payload.completedAt ?? state.lifecycle.completedAt,
+            stopReason: event.payload.stopReason ?? state.lifecycle.stopReason,
           },
         };
-      case 'sessionRecordReceived':
+
+      case 'heartbeat': {
+        assertFiniteNumber(event.payload.heartbeatAt, 'heartbeatAt');
         return {
-          ...accepted,
+          ...state,
           lifecycle: {
-            ...accepted.lifecycle,
-            nodeId: event.payload.nodeId,
-            phase: event.payload.phase,
-            isActive: config.isLifecycleActiveFromSessionRecordPhase(event.payload.phase),
-            startedAt: event.payload.startedAt ?? accepted.lifecycle.startedAt,
-            heartbeatAt: event.payload.heartbeatAt ?? accepted.lifecycle.heartbeatAt,
-            completedAt: event.payload.completedAt ?? accepted.lifecycle.completedAt,
+            ...state.lifecycle,
+            heartbeatAt: event.payload.heartbeatAt,
           },
         };
-      case 'taskSnapshotReceived':
-        return applyStageSnapshot(accepted, event.payload.stageId, event.payload.tasks);
-      case 'taskUpdated':
-        return applyTaskUpsert(accepted, event.payload.stageId, event.payload.task);
-      case 'taskDeleted':
-        return applyTaskDelete(accepted, event.payload.stageId, event.payload.taskId);
-      case 'progressReceived':
+      }
+
+      case 'stageSnapshotUpdated': {
+        assertFiniteNumber(event.payload.stageStartedAt, 'stageStartedAt');
+        assertFiniteNumber(event.payload.stageInactiveMs, 'stageInactiveMs');
+        if (event.payload.stageCompletedAt !== undefined) {
+          assertFiniteNumber(event.payload.stageCompletedAt, 'stageCompletedAt');
+        }
+        const timing: StageTiming = {
+          stageStartedAt: event.payload.stageStartedAt,
+          stageInactiveMs: event.payload.stageInactiveMs,
+          stageCompletedAt: event.payload.stageCompletedAt,
+        };
+        return applyStageSnapshot(state, event.payload.stageId, event.payload.tasks, timing);
+      }
+
+      case 'taskProgressUpdated':
         assertProgressRange(event.payload.value);
         return {
-          ...accepted,
+          ...state,
           execution: {
-            ...accepted.execution,
+            ...state.execution,
             stages: {
-              ...accepted.execution.stages,
+              ...state.execution.stages,
               [event.payload.stageId]: {
-                ...accepted.execution.stages[event.payload.stageId],
+                ...state.execution.stages[event.payload.stageId],
                 progress: {
                   value: event.payload.value,
-                  phase: event.payload.phase,
                   message: event.payload.message,
                   metadata: event.payload.metadata,
                 },
@@ -464,24 +352,27 @@ export const createBuildSessionStateAtoms = <
             },
           },
         };
+
       case 'taskStreamConnectionChanged':
         return {
-          ...accepted,
+          ...state,
           execution: {
-            ...accepted.execution,
+            ...state.execution,
             taskStreamConnected: event.payload.connected,
           },
         };
+
       case 'viewSelectionChanged':
         return {
-          ...accepted,
+          ...state,
           view: {
-            activeStageId: event.payload.activeStageId ?? accepted.view.activeStageId,
-            selectedTaskId: event.payload.selectedTaskId ?? accepted.view.selectedTaskId,
+            activeStageId: event.payload.activeStageId ?? state.view.activeStageId,
+            selectedTaskId: event.payload.selectedTaskId ?? state.view.selectedTaskId,
           },
         };
+
       default:
-        return accepted;
+        return state;
     }
   };
 
@@ -504,8 +395,7 @@ export const createBuildSessionStateAtoms = <
 
   const buildSessionStartButtonLoadingAtom = atom((get) => {
     const state = get(buildSessionStateAtom);
-    const lifecycleActive = config.activePhases.includes(state.lifecycle.phase);
-    if (!lifecycleActive) return false;
+    if (!state.lifecycle.isActive) return false;
     return !state.execution.taskStreamConnected;
   });
 

@@ -73,7 +73,7 @@ export const useShapeBuildSessionState = ({
     useEffect(() => {
         if (!import.meta.env.DEV) return;
         const activeNodeIdText = activeNodeId ? String(activeNodeId) : null;
-        const stageId = runtime.stageId ?? null;
+        const stageId = runtime.activeStageId ?? null;
         const status = runtime.phase;
         const stageHeartbeatAt = runtime.heartbeatAt ?? null;
         const key = `${activeNodeIdText ?? '-'}:${status ?? '-'}:${stageId ?? '-'}:${stageHeartbeatAt ?? '-'}`;
@@ -91,7 +91,7 @@ export const useShapeBuildSessionState = ({
         activeNodeId,
         runtime.heartbeatAt,
         runtime.phase,
-        runtime.stageId,
+        runtime.activeStageId,
         isRuntimeReady,
     ]);
 

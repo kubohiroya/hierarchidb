@@ -2,6 +2,8 @@
 
 ## Doing
 
+- #1026 / `fix/location-plugin/select-all-deselect-reverts-1026` / 2026-03-14 開始
+
 - #1021 / `fix/treeconsole/treetable-core-viewport-height` / 2026-03-14 開始
 - #1020 / `refactor/shape-plugin/build-session-event-redesign-1020` / 2026-03-14 開始
 - #1019 / `fix/shape-plugin/task-snapshot-race-on-build-start-1019` / 2026-03-14 開始
@@ -31,6 +33,7 @@
   - TreeConsolePanel viewHeight={600} 削除（2箇所）、親Box に height:'100%' 追加
   - TreeConsoleContent viewHeight||400 フォールバック削除
   - typecheck: 42/42 exit 0
+
 - 2026-03-14: #1020 テスト修正（4イベント新設計対応）・コミット 707f259 / typecheck: 100/100 exit 0 / test: 366/369 pass
 - 2026-03-14: #1019 ビルド開始時タスクスナップショット競合修正・コミット bf1c2d1
   - emitTaskSnapshot に taskCallbacks を渡し、putTasks 完了後の完全スナップショットを subscribeBuildTasks コールバックに直接配信
