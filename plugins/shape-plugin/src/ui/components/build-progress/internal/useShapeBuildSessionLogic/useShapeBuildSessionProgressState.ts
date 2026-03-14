@@ -8,10 +8,7 @@ import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import { useShapeBuildProgressSummaryComputation } from '~/ui/components/build-progress/useShapeBuildProgressSummaryComputation.js';
 import {
   buildElapsedByStageWithActiveStage,
-  hasPositiveDuration,
-  mergeElapsedByStage,
   resolveTotalElapsedMs,
-  shallowEqualNumberRecord,
   shouldResetElapsedState,
 } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/elapsed.js';
 import {
@@ -46,7 +43,6 @@ type Args = {
   stageFromState: string | null;
   sessionStageDurationByStageSnapshot: Record<string, number> | null | undefined;
   runtimeTiming: RuntimeTimingLike;
-  activeNodeId: string | null;
 };
 
 export const useShapeBuildSessionProgressState = ({
@@ -62,8 +58,9 @@ export const useShapeBuildSessionProgressState = ({
   stageFromState,
   sessionStageDurationByStageSnapshot,
   runtimeTiming,
-  activeNodeId,
 }: Args) => {
+  // sessionStageDurationByStageSnapshot is already computed by stageDurationMsByStageAtom
+  // (derived directly from stageTimingByStageAtom — no React state duplication needed)
   const sessionStageDurationSnapshot = useMemo<Record<string, number>>(
     () => (sessionStageDurationByStageSnapshot ?? {}),
     [sessionStageDurationByStageSnapshot],
@@ -72,9 +69,6 @@ export const useShapeBuildSessionProgressState = ({
     runtimeTiming.stageId ?? null
   ), [runtimeTiming.stageId]);
 
-  const [completedStageDurationMsByStage, setCompletedStageDurationMsByStage] = useState<Record<string, number>>(
-    () => sessionStageDurationSnapshot,
-  );
   const [timingStageId, setTimingStageId] = useState<string | null>(sessionStageTimingStageIdSnapshot);
   const [displayStageRemainingMs, setDisplayStageRemainingMs] = useState<number | null>(null);
   const stageRemainingTickRef = useRef<number | null>(null);
@@ -95,11 +89,11 @@ export const useShapeBuildSessionProgressState = ({
       buildStatus,
       buildDurationMs: runtimeTiming.durationMs ?? undefined,
       sessionStageDurationByStage: sessionStageDurationSnapshot,
-      localStageDurationByStage: completedStageDurationMsByStage,
+      // No local state to check — atom value is the single source of truth
+      localStageDurationByStage: sessionStageDurationSnapshot,
     }),
     [
       buildStatus,
-      completedStageDurationMsByStage,
       runtimeTiming.durationMs,
       sessionStageDurationSnapshot,
     ],
@@ -137,7 +131,8 @@ export const useShapeBuildSessionProgressState = ({
 
   const resolvedStageFromState = stageFromState ?? resolvedStage ?? stages[0]?.id;
 
-  const stageElapsedMs = timingStageId ? (completedStageDurationMsByStage[timingStageId] ?? 0) : 0;
+  // Compute active stage elapsed directly from atom-derived snapshot
+  const stageElapsedMs = timingStageId ? (sessionStageDurationSnapshot[timingStageId] ?? 0) : 0;
   const resolvedStageElapsedMs = useMemo(() => {
     if (!timingStageId) {
       return 0;
@@ -165,11 +160,11 @@ export const useShapeBuildSessionProgressState = ({
 
   const stageElapsedByStage = useMemo<Record<string, number>>(() => (
     buildElapsedByStageWithActiveStage({
-      stageDurationByStage: completedStageDurationMsByStage,
+      stageDurationByStage: sessionStageDurationSnapshot,
       timingStageId,
       timingStageElapsedMs: resolvedStageElapsedMs,
     })
-  ), [completedStageDurationMsByStage, resolvedStageElapsedMs, timingStageId]);
+  ), [sessionStageDurationSnapshot, resolvedStageElapsedMs, timingStageId]);
 
   const resolvedSessionElapsedMs = useMemo(() => {
     if (typeof runtimeTiming.durationMs === 'number' && runtimeTiming.durationMs > 0) {
@@ -199,21 +194,6 @@ export const useShapeBuildSessionProgressState = ({
   }), [buildStatus, resolvedSessionElapsedMs, stageElapsedByStage]);
 
   useEffect(() => {
-    if (isElapsedResetState) {
-      setCompletedStageDurationMsByStage((current) => {
-        if (shallowEqualNumberRecord(current, {})) return current;
-        return {};
-      });
-      return;
-    }
-    setCompletedStageDurationMsByStage((current) => {
-      const merged = mergeElapsedByStage(current, sessionStageDurationSnapshot);
-      if (shallowEqualNumberRecord(current, merged)) return current;
-      return merged;
-    });
-  }, [isElapsedResetState, sessionStageDurationSnapshot]);
-
-  useEffect(() => {
     if (!isElapsedResetState) return;
     setDisplayStageRemainingMs(null);
     stageRemainingTickRef.current = null;
@@ -222,49 +202,6 @@ export const useShapeBuildSessionProgressState = ({
       setTimingStageId(null);
     }
   }, [isElapsedResetState, timingStageId]);
-
-  const isTimingStageRunning = useMemo(() => {
-    if (!timingStageId) return false;
-    return displayTasks.some((task) => (
-      task.stage === timingStageId
-      && task.status === 'running'
-    ));
-  }, [displayTasks, timingStageId]);
-  const isTimingStageSessionActive = useMemo(() => (
-    timingStageId !== null
-    && timingStageId === sessionStageTimingStageIdSnapshot
-    && typeof runtimeTiming.stageStartedAt === 'number'
-    && runtimeTiming.stageStartedAt > 0
-  ), [sessionStageTimingStageIdSnapshot, runtimeTiming.stageStartedAt, timingStageId]);
-  const isTimingStageActive = isTimingStageRunning || isTimingStageSessionActive;
-
-  useEffect(() => {
-    if (buildStatus !== 'running') return;
-    if (!timingStageId) return;
-    if (!isTimingStageActive) return;
-    const intervalId = window.setInterval(() => {
-      setCompletedStageDurationMsByStage((current) => {
-        const nextValue = (current[timingStageId] ?? 0) + 1000;
-        if (current[timingStageId] === nextValue) return current;
-        return {
-          ...current,
-          [timingStageId]: nextValue,
-        };
-      });
-    }, 1000);
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, [buildStatus, isTimingStageActive, timingStageId]);
-
-  useEffect(() => {
-    if (buildStatus !== 'running') return;
-    if (hasPositiveDuration(sessionStageDurationSnapshot)) return;
-    if (typeof runtimeTiming.durationMs === 'number' && runtimeTiming.durationMs > 0) return;
-    setCompletedStageDurationMsByStage((current) => (
-      shallowEqualNumberRecord(current, {}) ? current : {}
-    ));
-  }, [buildStatus, sessionStageDurationSnapshot, runtimeTiming.durationMs]);
 
   const failedProbeStageId = useMemo<StageId | null>(() => (
     stages[0]?.id ?? null
@@ -323,20 +260,6 @@ export const useShapeBuildSessionProgressState = ({
       }
     };
   }, [buildStatus]);
-
-  useEffect(() => {
-    if (!activeNodeId) return;
-    if (isElapsedResetState) return;
-    const merged = mergeElapsedByStage(stageElapsedByStage, sessionStageDurationSnapshot);
-    if (!shallowEqualNumberRecord(stageElapsedByStage, merged)) {
-      setCompletedStageDurationMsByStage(merged);
-    }
-  }, [
-    activeNodeId,
-    isElapsedResetState,
-    sessionStageDurationSnapshot,
-    stageElapsedByStage,
-  ]);
 
   return {
     completedStageElapsedMs: stageElapsedByStage,

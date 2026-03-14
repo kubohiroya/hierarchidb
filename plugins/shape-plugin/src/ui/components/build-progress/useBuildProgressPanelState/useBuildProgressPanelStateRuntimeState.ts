@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useBuildCrashInsight } from '~/ui/components/build-progress/useBuildCrashInsight/useBuildCrashInsight';
@@ -20,8 +20,6 @@ import { useShapeBuildSessionStateAtomBridge } from '~/ui/components/build-progr
 import { useAtomValue, useSetAtom } from 'jotai';
 import {
   pendingUserActionAtom,
-  elapsedTickMsAtom,
-  totalElapsedSnapshotAtom,
   completionSnapshotAtom,
   completionDialogOpenAtom,
 } from '~/ui/atoms/buildSessionStateAtoms';
@@ -53,18 +51,13 @@ export type UseBuildProgressPanelStateRuntimeState = {
   setCompletionDialogOpen: (next: boolean) => void;
   completionSnapshot: CompletionSnapshotData;
   setCompletionSnapshot: (snapshot: CompletionSnapshotData) => void;
-  elapsedTickMs: number;
-  setElapsedTickMs: (next: number) => void;
   localStartPending: boolean;
   setPendingUserAction: (next: PendingUserAction) => void;
   nodeIdForLog: string | undefined;
   completionSnapshotData: BuildProgressPanelStateComputed['completionSnapshotData'];
   completionFailedStageLabel: string;
   completionKeyRef: { current: string | null };
-  totalElapsedSnapshot: { durationMs: number; capturedAt: number } | null;
-  setTotalElapsedSnapshot: (value: { durationMs: number; capturedAt: number } | null) => void;
   mismatchSignatureRef: { current: Map<string, string> };
-  liveTotalElapsedMs: number;
   computed: BuildProgressPanelStateComputed;
   resolvedActiveStageId: string | null;
   completion: ReturnType<typeof useBuildCrashInsight>;
@@ -140,13 +133,9 @@ export const useBuildProgressPanelStateRuntimeState = (
   const completionSnapshot = useAtomValue(completionSnapshotAtom);
   const setCompletionSnapshot = useSetAtom(completionSnapshotAtom);
   const localStartPending = useAtomValue(pendingUserActionAtom) === 'starting';
-  const elapsedTickMs = useAtomValue(elapsedTickMsAtom);
-  const setElapsedTickMs = useSetAtom(elapsedTickMsAtom);
-  const totalElapsedSnapshot = useAtomValue(totalElapsedSnapshotAtom);
-  const setTotalElapsedSnapshot = useSetAtom(totalElapsedSnapshotAtom);
   const completionKeyRef = useRef<string | null>(null);
   const mismatchSignatureRef = useRef<Map<string, string>>(new Map());
-  const snapshotNodeIdRef = useRef<string | undefined>(undefined);
+  const prevNodeIdRef = useRef<string | undefined>(undefined);
 
   const completion = useBuildCrashInsight({
     draft: params.data,
@@ -209,19 +198,23 @@ export const useBuildProgressPanelStateRuntimeState = (
     setCompletionDialogOpen,
     setCompletionSnapshot,
     completionKeyRef,
-    setElapsedTickMs,
-    elapsedTickMs,
-    totalElapsedSnapshot,
-    setTotalElapsedSnapshot,
     mismatchSignatureRef,
   });
 
-  if (nodeIdForLog !== snapshotNodeIdRef.current) {
-    snapshotNodeIdRef.current = nodeIdForLog;
-    setTotalElapsedSnapshot(null);
-  }
+  // Reset totalElapsedSnapshot when nodeId changes.
+  // Must be in useEffect to avoid setState during render (which causes infinite loops).
+  useEffect(() => {
+    if (nodeIdForLog !== prevNodeIdRef.current) {
+      prevNodeIdRef.current = nodeIdForLog;
+      setTotalElapsedSnapshot(null);
+    }
+  }, [nodeIdForLog, setTotalElapsedSnapshot]);
 
   const liveTotalElapsedMs = useMemo(() => {
+    // When idle, ignore any stale snapshot and return the raw value (0 after reset).
+    if (summary.buildStatus === 'idle') {
+      return summary.totalElapsedMs;
+    }
     if (!totalElapsedSnapshot) {
       return summary.totalElapsedMs;
     }
@@ -238,10 +231,7 @@ export const useBuildProgressPanelStateRuntimeState = (
   const setPendingUserAction = useSetAtom(pendingUserActionAtom);
 
   return {
-    summary: {
-      ...summary,
-      totalElapsedMs: liveTotalElapsedMs,
-    },
+    summary,
     stages,
     stageProgress,
     paneProgress,
@@ -261,18 +251,13 @@ export const useBuildProgressPanelStateRuntimeState = (
     setCompletionDialogOpen,
     completionSnapshot,
     setCompletionSnapshot,
-    elapsedTickMs,
-    setElapsedTickMs,
     localStartPending,
     setPendingUserAction,
     nodeIdForLog,
     completionSnapshotData,
     completionFailedStageLabel,
     completionKeyRef,
-    totalElapsedSnapshot,
-    setTotalElapsedSnapshot,
     mismatchSignatureRef,
-    liveTotalElapsedMs,
     computed,
     resolvedActiveStageId,
     completion,

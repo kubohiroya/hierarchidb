@@ -205,4 +205,20 @@ describe('buildSessionWorkerEventAdapter', () => {
     // heartbeat does not change phase; phase remains idle
     expect(runtime.phase).toBe('idle');
   });
+
+  it('maps onSessionState with status queued to phase queued (isActive=true)', () => {
+    const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
+    adapter.onSessionState({
+      nodeId: 'node-1',
+      sessionRecord: {
+        status: 'queued',
+        startedAt: 100,
+      },
+    });
+
+    const runtime = store.get(buildSessionLifecycleAtom);
+    expect(runtime.phase).toBe('queued');
+    expect(runtime.isActive).toBe(true);
+    expect(runtime.startedAt).toBe(100);
+  });
 });
