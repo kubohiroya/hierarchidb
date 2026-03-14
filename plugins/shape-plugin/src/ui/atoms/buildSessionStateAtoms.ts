@@ -234,7 +234,10 @@ export const stageTimingByStageAtom = atom((get) => {
   };
 });
 
-const computeStageDuration = (
+// Returns the completed duration for a stage. Returns 0 for stages that have not yet completed,
+// keeping this function pure (no Date.now()). Live durations for running stages must be
+// computed in UI components using elapsedTickMsAtom.
+const computeCompletedStageDuration = (
   timing: { stageStartedAt: number | undefined; stageInactiveMs: number; stageCompletedAt?: number } | null,
 ): number => {
   if (!timing) return 0;
