@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { notify } from '@hierarchidb/components/notify';
 import type { PauseWithCancelHookActionsArgs, ShapeBuildPauseReason } from './types.js';
-import { runWithTimeout, waitForSessionStateSync } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/elapsed';
+import { runWithTimeout, waitForSessionStateSync } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/elapsed';
 import { SHAPE_NODE_TYPE } from '~/ui/components/build-progress/shapeBuildTaskSyncDebug';
-import { PAUSE_COMMAND_TIMEOUT_MS, PAUSE_STATE_SYNC_TIMEOUT_MS } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/constants';
+import { PAUSE_COMMAND_TIMEOUT_MS, PAUSE_STATE_SYNC_TIMEOUT_MS } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/constants';
 import { isShapeBuildPanelDebugEnabled } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelState.utils.js';
 
 export const useShapeBuildPause = ({
@@ -39,7 +39,7 @@ export const useShapeBuildPause = ({
 
     const shouldCancelQueued = buildSessionTransitionActive
       && buildStatus !== 'running'
-      && runtimeStatus !== 'processing';
+      && runtimeStatus !== 'running';
 
     if (shouldCancelQueued) {
       await handleCancelQueued(reason);

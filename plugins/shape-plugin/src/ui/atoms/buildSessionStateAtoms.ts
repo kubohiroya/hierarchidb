@@ -174,7 +174,7 @@ type ShapeBuildSessionNonResetEvent = Exclude<ShapeBuildSessionStateEvent, Shape
 
 // --- Derived read atoms ---
 
-export const buildSessionRuntimeAtom = atom((get) => {
+export const buildSessionLifecycleAtom = atom((get) => {
   const state = get(shapeSessionAtoms.buildSessionStateAtom);
   const extras = get(lifecycleExtrasAtom);
   return {
@@ -264,7 +264,7 @@ export const buildSessionSnapshotHandshakeReceivedAtom = atom<boolean>((get) => 
 });
 
 export const buildSessionTaskListViewPhaseAtom = atom<TaskListViewPhase>((get) => {
-  const runtime = get(buildSessionRuntimeAtom);
+  const lifecycle = get(buildSessionLifecycleAtom);
   const state = get(shapeSessionAtoms.buildSessionStateAtom);
   const uiSyncByStage = get(uiSyncPhaseByStageAtom);
   const activeStageUiSyncPhase = uiSyncByStage[state.view.activeStageId];
@@ -275,8 +275,8 @@ export const buildSessionTaskListViewPhaseAtom = atom<TaskListViewPhase>((get) =
     + tasksByStage.tileEmit.length
   );
   if (totalTasks > 0) return 'streaming';
-  if (runtime.phase === 'idle') return 'idle';
-  if (isActivePhase(runtime.phase)) {
+  if (lifecycle.phase === 'idle') return 'idle';
+  if (isActivePhase(lifecycle.phase)) {
     if (activeStageUiSyncPhase === 'ui-initializing') {
       return 'ui-initializing';
     }
@@ -424,6 +424,7 @@ const applyBuildSessionEventAtom = atom(
             nodeId: '',
             phase: 'failed',
             isActive: false,
+            completedAt: event.payload.timestamp,
           },
         };
         set(shapeSessionAtoms.dispatchBuildSessionEventAtom, stateEvent);

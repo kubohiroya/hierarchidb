@@ -2,7 +2,7 @@ import { useTranslation } from '@hierarchidb/ui-i18n';
 import { Provider, useAtomValue } from 'jotai';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
-import { buildSessionRuntimeAtom } from '~/ui/atoms/buildSessionStateAtoms';
+import { buildSessionLifecycleAtom } from '~/ui/atoms/buildSessionStateAtoms';
 import { HeapPressureDialog } from '@hierarchidb/ui-memory';
 
 import { useBuildProgressStepState } from './useBuildProgressStepState.js';
@@ -21,7 +21,7 @@ const toBuildStatus = (phase: string): BuildStatus => {
 
 export const ShapeBuildStep: React.FC<ShapeDialogStepProps> = (props) => {
   const { t } = useTranslation('shape-plugin');
-  const runtime = useAtomValue(buildSessionRuntimeAtom);
+  const runtime = useAtomValue(buildSessionLifecycleAtom);
   const buildStatus = toBuildStatus(runtime.phase);
   const { store, heapDialogOpen, heapEvent, handleHeapDialogClose } = useBuildProgressStepState(buildStatus);
 

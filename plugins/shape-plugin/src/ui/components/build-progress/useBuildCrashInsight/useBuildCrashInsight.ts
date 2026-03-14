@@ -36,7 +36,7 @@ export const useBuildCrashInsight = (
     return loadBuildMonitor<ShapeBuildStage, ShapeBuildConfigSnapshot>(buildMonitorConfig, key);
   }, [key]);
   const normalizedStatus = useMemo(() => {
-    if (status === 'running') return 'processing';
+    if (status === 'running') return 'running';
     if (status === 'idle' || status === 'paused' || status === 'completed' || status === 'failed') {
       return status;
     }

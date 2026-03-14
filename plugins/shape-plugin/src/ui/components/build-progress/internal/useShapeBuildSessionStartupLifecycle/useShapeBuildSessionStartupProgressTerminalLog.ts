@@ -2,13 +2,13 @@ import { useEffect } from 'react';
 import { isTaskPhaseDisplay } from '~/common/utils/taskMessages';
 import type { BuildProgress } from '~/ui/components/build-progress/shapeBuildProgressMapping';
 import type { BuildSessionTransitionState } from '@hierarchidb/ui-build-progress/build-session';
-import type { BuildSessionTransitionPhase } from '../useShapeBuildStepHelpers/startupTrace';
-import type { BuildProgressStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
+import type { BuildSessionTransitionPhase } from '../useShapeBuildSessionHelpers/startupTrace';
+import type { BuildSessionDisplayStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
 
 type UseShapeBuildSessionStartupProgressTerminalLogArgs = {
-  buildStatus: BuildProgressStatus['status'];
+  buildStatus: BuildSessionDisplayStatus['status'];
   effectiveProgress: BuildProgress | null;
-  runtimeStatus: BuildProgressStatus['status'];
+  runtimeStatus: BuildSessionDisplayStatus['status'];
   resolvedStage: string | undefined;
   progressTerminalLogKeyRef: { current: string | null };
   emitBuildSessionTransitionLog: (
@@ -36,8 +36,8 @@ export const useShapeBuildSessionStartupProgressTerminalLog = ({
     if (!progressDisplay && !progressMessage) return;
     if (
       !buildSessionTransition.active
-      && buildStatus !== 'processing'
-      && runtimeStatus !== 'processing'
+      && buildStatus !== 'running'
+      && runtimeStatus !== 'running'
     ) return;
 
     const progressTaskId = effectiveProgress?.progressTaskId;

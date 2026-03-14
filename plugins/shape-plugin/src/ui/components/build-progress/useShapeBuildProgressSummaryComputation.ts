@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import type { BuildProgress, BuildProgressStatus } from './shapeBuildProgressMapping.js';
+import type { BuildProgress, BuildSessionDisplayStatus } from './shapeBuildProgressMapping.js';
 import {
   buildStageTaskSummary,
   buildTaskCountSummary,
@@ -33,7 +33,7 @@ type ShapeBuildProgressSummaryArgs<T extends ShapeTaskStageCarrier> = {
   overallProgress: number;
   buildStatus: BuildStatus;
   effectiveProgress: BuildProgress | null;
-  effectiveStatus: BuildProgressStatus | null;
+  effectiveStatus: BuildSessionDisplayStatus | null;
   stage?: string;
   tasks: T[];
   isSkippedTask: (task: T) => boolean;
@@ -51,7 +51,7 @@ type ShapeBuildProgressSummaryResult<T extends ShapeTaskStageCarrier> = {
     progress: number;
     taskCount: number;
     completedCount: number;
-    status: BuildProgressStatus['status'];
+    status: BuildSessionDisplayStatus['status'];
     summary: { total: number; success: number; error: number; skip: number };
   }>;
   displayStageId?: string;

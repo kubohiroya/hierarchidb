@@ -15,7 +15,7 @@ import { useBuildProgressPanelStateComputed } from './useBuildProgressPanelState
 import type { BuildProgressPanelStateComputed } from './useBuildProgressPanelStateComputed.js';
 import { resolveCompletionFailedStageLabel, resolveActiveRunningStageId } from './useBuildProgressPanelState.utils.js';
 import { useBuildProgressPanelStateSideEffects } from './useBuildProgressPanelStateSideEffects.js';
-import { useShapeBuildStep } from '~/ui/components/build-progress/internal/useShapeBuildStepLogic';
+import { useShapeBuildSession } from '~/ui/components/build-progress/internal/useShapeBuildSessionLogic.js';
 import { useShapeBuildSessionStateAtomBridge } from '~/ui/components/build-progress/useShapeBuildSessionStateAtomBridge.js';
 import { useAtomValue, useSetAtom } from 'jotai';
 import {
@@ -78,7 +78,7 @@ export const useBuildProgressPanelStateRuntimeState = (
   const { t, i18n } = useTranslation('shape-plugin');
   useShapeBuildSessionStateAtomBridge(resolvedNodeId);
 
-  const stepState = useShapeBuildStep({
+  const stepState = useShapeBuildSession({
     data: params.data,
     nodeId: resolvedNodeId,
   });

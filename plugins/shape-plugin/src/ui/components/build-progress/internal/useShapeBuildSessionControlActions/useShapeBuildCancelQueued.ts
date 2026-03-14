@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
 
 import type { CancelQueuedControlActionsArgs, ShapeBuildPauseReason } from './types.js';
-import { runWithTimeout } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/elapsed';
-import { PAUSE_COMMAND_TIMEOUT_MS, SHAPE_NODE_TYPE } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/constants';
+import { runWithTimeout } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/elapsed';
+import { PAUSE_COMMAND_TIMEOUT_MS, SHAPE_NODE_TYPE } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/constants';
 
 export const useShapeBuildCancelQueued = ({
   activeNodeId,

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { isTaskSkipped } from '~/common/utils/taskMessages';
 import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
-import type { BuildProgress, BuildProgressStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
+import type { BuildProgress, BuildSessionDisplayStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
 import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import { useShapeBuildProgressSummaryComputation } from '~/ui/components/build-progress/useShapeBuildProgressSummaryComputation.js';
@@ -13,11 +13,11 @@ import {
   resolveTotalElapsedMs,
   shallowEqualNumberRecord,
   shouldResetElapsedState,
-} from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/elapsed.js';
+} from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/elapsed.js';
 import {
   resolveMostAdvancedInFlightStageId,
   resolveMostAdvancedRunningStageId,
-} from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/stage.js';
+} from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/stage.js';
 type StageId = string;
 
 type RuntimeTimingLike = {
@@ -42,14 +42,14 @@ type Args = {
   displayTasks: ShapeBuildTaskSummary[];
   overallProgress: number;
   effectiveProgress: BuildProgress | null;
-  effectiveStatus: BuildProgressStatus | null;
+  effectiveStatus: BuildSessionDisplayStatus | null;
   stageFromState: string | null;
   sessionStageDurationByStageSnapshot: Record<string, number> | null | undefined;
   runtimeTiming: RuntimeTimingLike;
   activeNodeId: string | null;
 };
 
-export const useShapeBuildStepProgressState = ({
+export const useShapeBuildSessionProgressState = ({
   buildStatus,
   stages,
   resolvedStage,

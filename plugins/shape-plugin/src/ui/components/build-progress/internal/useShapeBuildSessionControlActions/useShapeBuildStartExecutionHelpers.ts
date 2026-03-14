@@ -1,6 +1,6 @@
 import type { BuildSessionStatus } from '@hierarchidb/build-api';
 import type { StartExecutionArgs } from './types.js';
-import { getErrorMessage, summarizeSelectedEntries } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/errors';
+import { getErrorMessage, summarizeSelectedEntries } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/errors';
 import { SHAPE_NODE_TYPE } from '~/ui/components/build-progress/shapeBuildTaskSyncDebug';
 
 type BaseRequestContext = Pick<

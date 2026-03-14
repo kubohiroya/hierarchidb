@@ -2,6 +2,9 @@
 
 ## Doing
 
+- #1031 / `refactor/shape-plugin/terminology-unification-1031` / 2026-03-14 開始
+
+- #1030 / `fix/shape-plugin/task-failure-error-message` / 2026-03-14 開始
 - #1026 / `fix/location-plugin/select-all-deselect-reverts-1026` / 2026-03-14 開始
 
 - #1021 / `fix/treeconsole/treetable-core-viewport-height` / 2026-03-14 開始

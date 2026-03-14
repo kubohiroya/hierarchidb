@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildProgressStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
-import { UI_QUIET_THRESHOLD_MS } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/constants.js';
+import type { BuildSessionDisplayStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
+import { UI_QUIET_THRESHOLD_MS } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/constants.js';
 
 const POLL_INTERVAL_MS = 1000;
 
@@ -9,8 +9,8 @@ type UseShapeBuildProgressResidueMonitorArgs = {
   activeNodeId: NodeId | null;
   buildSessionTransitionActive: boolean;
   crashCheckStartedAtRef: { current: number };
-  buildStatus: BuildProgressStatus['status'];
-  runtimeStatus: BuildProgressStatus['status'];
+  buildStatus: BuildSessionDisplayStatus['status'];
+  runtimeStatus: BuildSessionDisplayStatus['status'];
   runtimeHeartbeatAt?: number;
   shouldMonitor: boolean;
   t: (key: string, fallback: string) => string;
@@ -69,7 +69,7 @@ export const useShapeBuildProgressResidueMonitor = ({
       }
       return;
     }
-    if (buildStatus === 'processing' || runtimeStatus === 'processing') {
+    if (buildStatus === 'running' || runtimeStatus === 'running') {
       if (crashSuspectOpen) {
         closeCrashSuspectInternal();
       }

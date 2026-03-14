@@ -33,7 +33,7 @@ export const shouldRefreshTasksSnapshot = (params: {
   hasProgressTaskSignal: boolean;
   buildStatus: BuildStatus;
   runtimeStatus: string | null;
-  processingStatus: 'idle' | 'processing' | 'paused' | 'completed' | 'failed';
+  processingStatus: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
   buildSessionTransitionActive: boolean;
   isTaskSnapshotProgressConnected?: boolean;
 }): boolean => {
@@ -42,8 +42,8 @@ export const shouldRefreshTasksSnapshot = (params: {
   }
   const hasProcessingSignal = (
     params.buildStatus === 'running'
-    || params.runtimeStatus === 'processing'
-    || params.processingStatus === 'processing'
+    || params.runtimeStatus === 'running'
+    || params.processingStatus === 'running'
     || params.buildSessionTransitionActive
   );
   if (params.displayTaskCount === 0) {
@@ -67,7 +67,7 @@ export const summarizeSelectionStateFromConfig = (data?: Partial<ShapeEntity>): 
 
 export const toBuildStatus = (status?: string | null): BuildStatus => {
   switch (status) {
-    case 'processing':
+    case 'running':
       return 'running';
     case 'paused':
       return 'paused';
@@ -80,11 +80,10 @@ export const toBuildStatus = (status?: string | null): BuildStatus => {
   }
 };
 
-export const toProcessingStatus = (status?: string | null): 'idle' | 'processing' | 'paused' | 'completed' | 'failed' => {
+export const toProcessingStatus = (status?: string | null): 'idle' | 'running' | 'paused' | 'completed' | 'failed' => {
   switch (status) {
     case 'running':
-    case 'processing':
-      return 'processing';
+      return 'running';
     case 'paused':
       return 'paused';
     case 'completed':

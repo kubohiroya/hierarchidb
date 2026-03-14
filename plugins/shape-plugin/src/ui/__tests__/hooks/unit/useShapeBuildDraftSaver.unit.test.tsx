@@ -17,7 +17,7 @@ vi.mock('@hierarchidb/components/notify', () => ({
   },
 }));
 
-import { useShapeBuildDraftSaver } from '../../../components/build-progress/internal/useShapeBuildStepLogic/useShapeBuildDraftSaver';
+import { useShapeBuildDraftSaver } from '../../../components/build-progress/internal/useShapeBuildSessionLogic/useShapeBuildDraftSaver';
 
 describe('useShapeBuildDraftSaver', () => {
   beforeEach(() => {

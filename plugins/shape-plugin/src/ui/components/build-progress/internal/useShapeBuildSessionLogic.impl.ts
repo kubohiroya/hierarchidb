@@ -15,39 +15,39 @@ import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worke
 import { useShapeBuildStages } from '~/ui/components/build-progress/useShapeBuildStages/useShapeBuildStages';
 import { useShapeBuildLabels } from '~/ui/components/build-progress/useShapeBuildLabels/useShapeBuildLabels';
 import { resolveBuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
-import type { BuildProgressStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
+import type { BuildSessionDisplayStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
 import { useShapeBuildSessionState } from './useShapeBuildSessionState.js';
 
 const POLL_INTERVAL_MS = 1000;
 import {
   getBuildSessionTransitionStatusLabel,
-} from './useShapeBuildStepHelpers/startupTrace.js';
+} from './useShapeBuildSessionHelpers/startupTrace.js';
 import {
   shouldResetElapsedState,
-} from './useShapeBuildStepHelpers/elapsed.js';
+} from './useShapeBuildSessionHelpers/elapsed.js';
 import {
   resolveDisplayBuildStatus,
   toBuildStatus,
   toProcessingStatus,
   shouldRefreshTasksSnapshot,
-} from './useShapeBuildStepHelpers/status.js';
+} from './useShapeBuildSessionHelpers/status.js';
 import {
   resolveMostAdvancedInFlightStageId,
   resolveMostAdvancedRunningStageId,
-} from './useShapeBuildStepHelpers/stage.js';
-import { useShapeBuildStepControlActions } from './useShapeBuildStepControlActions.js';
+} from './useShapeBuildSessionHelpers/stage.js';
+import { useShapeBuildSessionControlActions } from './useShapeBuildSessionControlActions.js';
 import { useShapeBuildSessionStartupLifecycle } from './useShapeBuildSessionStartupLifecycle.js';
-import { useShapeBuildStepTransitionController } from './useShapeBuildStepLogic/useShapeBuildStepTransitionController.js';
-import { useShapeBuildStepStageState } from './useShapeBuildStepStageState.js';
-import { useShapeBuildStepProgressState } from './useShapeBuildStepLogic/useShapeBuildStepProgressState.js';
+import { useShapeBuildSessionTransitionController } from './useShapeBuildSessionLogic/useShapeBuildSessionTransitionController.js';
+import { useShapeBuildSessionStageState } from './useShapeBuildSessionStageState.js';
+import { useShapeBuildSessionProgressState } from './useShapeBuildSessionLogic/useShapeBuildSessionProgressState.js';
 import type { BuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
 import { notify } from '@hierarchidb/components/notify';
-import { useShapeBuildDraftSaver } from './useShapeBuildStepLogic/useShapeBuildDraftSaver.js';
-import { useShapeBuildProgressResidueMonitor } from './useShapeBuildStepLogic/useShapeBuildProgressResidueMonitor.js';
+import { useShapeBuildDraftSaver } from './useShapeBuildSessionLogic/useShapeBuildDraftSaver.js';
+import { useShapeBuildProgressResidueMonitor } from './useShapeBuildSessionLogic/useShapeBuildProgressResidueMonitor.js';
 import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import { useAtomValue, useSetAtom } from 'jotai';
 import {
-  buildSessionRuntimeAtom,
+  buildSessionLifecycleAtom,
   pendingUserActionAtom,
   isStopRequestedInFlightAtom,
   stageDurationMsByStageAtom,
@@ -63,15 +63,14 @@ export {
   shouldRefreshTasksSnapshot,
 };
 
-type RuntimeBuildStatus = BuildProgressStatus['status'] | 'running';
+type RuntimeBuildStatus = BuildSessionDisplayStatus['status'];
 
 const resolveRuntimeBuildStatus = (status?: RuntimeBuildStatus | null): BuildStatusSource | null => {
   if (status == null) return null;
-  if (status === 'running') return 'processing';
   if (
     status === 'idle'
+    || status === 'running'
     || status === 'queued'
-    || status === 'processing'
     || status === 'completed'
     || status === 'paused'
     || status === 'failed'
@@ -86,10 +85,10 @@ type Args = {
   nodeId?: NodeId;
 };
 
-export const useShapeBuildStep = ({ data, nodeId }: Args) => {
+export const useShapeBuildSession = ({ data, nodeId }: Args) => {
   const { t } = useTranslation('shape-plugin');
   const activeNodeId = nodeId ?? null;
-  const runtime = useAtomValue(buildSessionRuntimeAtom);
+  const runtime = useAtomValue(buildSessionLifecycleAtom);
   const stageDurationMsByStage = useAtomValue(stageDurationMsByStageAtom);
   const stageTimingByStage = useAtomValue(stageTimingByStageAtom);
 
@@ -130,7 +129,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     beginBuildStartupStep,
     finishBuildStartupStep,
     progressTerminalLogKeyRef,
-  } = useShapeBuildStepTransitionController({
+  } = useShapeBuildSessionTransitionController({
     activeNodeId,
     clearStartPendingRef,
   });
@@ -141,8 +140,8 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const effectiveProgress = hasNodeId ? progress : null;
   const effectiveStatus = hasNodeId ? status : null;
   const stages = useShapeBuildStages({ t: (key: string, fallback?: string): string => String(t(key, fallback ?? key)) });
-  const runtimeStatusForBuildStatus: BuildProgressStatus['status'] = status?.status ?? 'idle';
-  const runtimeStatus: BuildProgressStatus['status'] = runtimeStatusForBuildStatus;
+  const runtimeStatusForBuildStatus: BuildSessionDisplayStatus['status'] = status?.status ?? 'idle';
+  const runtimeStatus: BuildSessionDisplayStatus['status'] = runtimeStatusForBuildStatus;
   const pendingUserAction = useAtomValue(pendingUserActionAtom);
   const setPendingUserAction = useSetAtom(pendingUserActionAtom);
   const isStopRequestedInFlight = useAtomValue(isStopRequestedInFlightAtom);
@@ -187,11 +186,11 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     if (isSessionStopping) return 'paused';
     return statusSource;
   }, [isSessionStopping, statusSource]);
-  const reportTaskFailures = effectiveStatusSource === 'processing';
+  const reportTaskFailures = effectiveStatusSource === 'running';
   const baseBuildStatus = useMemo<BuildStatus>(() => (
     toBuildStatus(effectiveStatusSource)
   ), [effectiveStatusSource]);
-  const stageState = useShapeBuildStepStageState({
+  const stageState = useShapeBuildSessionStageState({
     activeNodeId,
     isSessionStopping,
     stages,
@@ -245,7 +244,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     progressSummary,
     hasFailedSourceTasks,
     isTaskSummaryLoading,
-  } = useShapeBuildStepProgressState({
+  } = useShapeBuildSessionProgressState({
     buildStatus,
     stages,
     resolvedStage: resolvedStageFromState,
@@ -309,8 +308,8 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   ), [buildStatus, displayTasks.length, buildSessionTransition.active]);
   const hasSelection = summarizeCheckboxState(selectedArrayByCountries).hasSelection;
   const hasDataSource = Boolean(data?.buildConfig?.dataSourceName);
-  const buildStatusForProgressMonitor: BuildProgressStatus['status'] = (
-    buildStatus === 'running' ? 'processing' : buildStatus
+  const buildStatusForProgressMonitor: BuildSessionDisplayStatus['status'] = (
+    buildStatus === 'running' ? 'running' : buildStatus
   );
   const bridgeRef = useRef(getBuildWorkerBridge());
   const workerClientHook = useMemo(() => {
@@ -342,7 +341,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     buildStatus: buildStatusForProgressMonitor,
     runtimeStatus: runtimeStatusForBuildStatus,
     runtimeHeartbeatAt: runtime.heartbeatAt,
-    shouldMonitor: runtimeStatusForBuildStatus === 'processing' && runtime.completedAt === undefined,
+    shouldMonitor: runtimeStatusForBuildStatus === 'running' && runtime.completedAt === undefined,
     t: (key: string, fallback: string) => t(key, fallback),
     closeCrashSuspect: () => { },
     closeSuspendSuspect: () => { },
@@ -352,7 +351,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     handleStart,
     handlePause,
     handleCancelQueued,
-  } = useShapeBuildStepControlActions({
+  } = useShapeBuildSessionControlActions({
     activeNodeId,
     data,
     buildStatus,
