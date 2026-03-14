@@ -29,6 +29,11 @@
 
 ## 今日の運用ログ
 
+- 2026-03-15: #1064 subscribers ネストMap最適化・PR #1065作成
+  - EventSubscriber インターフェース削除、Map<NodeId, Map<eventType, Set<callback>>> に変更
+  - notifySubscribers: 全件スキャン → O(1) ネストマップルックアップ
+  - typecheck: 100/100 exit 0、test: 418 passed exit 0
+
 - 2026-03-14: #1042 seqNum gap-check を FIFO+version-gate に置換・PR #1043作成
   - eventBufferingUI.ts: UIEventBufferManager を FIFO キュー（session-state/stage-snapshot）+ version gate（task-progress）に完全書き換え
   - useShapeBuildSessionStateAtomBridge.ts: seqNum 分岐削除、scheduleFlush に統一
