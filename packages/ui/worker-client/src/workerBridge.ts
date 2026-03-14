@@ -11,9 +11,6 @@ import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { HeapPressureEvent } from '@hierarchidb/memory';
 import type { TreeNodeData } from '@hierarchidb/tree-api';
 import { proxy, type Remote } from 'comlink';
-import { toNodeType } from '@hierarchidb/core-types';
-
-const SHAPE_NODE_TYPE = toNodeType('shape');
 
 type WorkerApi = WorkerAPI<TreeNodeData>;
 
@@ -382,34 +379,23 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
     }
   ): Promise<() => void> {
     const api = await ensureWorkerAPI();
-    const unsubscribe = await api.subscribeSessionHeartbeat(nodeType, nodeId, proxy((event: any) => {
-      cb(sanitizeForComlink(event));
-    }));
-    return () => {
-      try {
-        unsubscribe();
-      } catch (error) {
-        console.warn('[BuildWorkerBridge] subscribeSessionHeartbeat unsubscribe failed', error);
-      }
-    };
-  }
-
-  async subscribeTaskProgress(
-    nodeType: NodeType,
-    nodeId: NodeId,
-    cb: (event: any) => void
-  ): Promise<() => void> {
-    const api = await ensureWorkerAPI();
-    // Get the appropriate API based on nodeType
-    if (nodeType === SHAPE_NODE_TYPE) {
-      const shapeAPI = await api.getShapeQueryAPI();
-      if ('subscribeToTaskProgress' in shapeAPI) {
-        const unsubscribe = await (shapeAPI as any).subscribeToTaskProgress(nodeId, proxy((event: any) => {
-          cb(sanitizeForComlink(event));
-        }));
-      }
-    }
-
+    const [unsubscribeTasks, unsubscribeProgress, unsubscribeSessionState, unsubscribeHeartbeat, unsubscribeWorkerLog] = await Promise.all([
+      api.subscribeBuildTasks(nodeType, nodeId, proxy((event: BuildTaskUpdateEvent) => {
+        handlers.onTaskEvent(sanitizeForComlink(event));
+      })),
+      api.subscribeBuildProgress(nodeType, nodeId, proxy((event: BuildProgressEvent) => {
+        handlers.onProgressEvent(sanitizeForComlink(event));
+      })),
+      api.subscribeSessionState(nodeType, nodeId, proxy((event: any) => {
+        handlers.onSessionState(sanitizeForComlink(event));
+      })),
+      api.subscribeSessionHeartbeat(nodeType, nodeId, proxy((event: any) => {
+        handlers.onHeartbeat(sanitizeForComlink(event));
+      })),
+      api.subscribeWorkerLog(nodeType, nodeId, proxy((event: any) => {
+        handlers.onWorkerLog(sanitizeForComlink(event));
+      })),
+    ]);
     return () => {
       for (const unsub of [unsubscribeTasks, unsubscribeProgress, unsubscribeSessionState, unsubscribeHeartbeat, unsubscribeWorkerLog]) {
         try {
