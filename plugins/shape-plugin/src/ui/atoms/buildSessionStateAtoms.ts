@@ -30,6 +30,7 @@ const assertProgressRange = (value: number): number => {
 
 const isActivePhase = (phase: ShapeSessionPhase): boolean => (
   phase === 'starting'
+  || phase === 'queued'
   || phase === 'running'
   || phase === 'pausing'
   || phase === 'resuming'
@@ -233,24 +234,25 @@ export const stageTimingByStageAtom = atom((get) => {
   };
 });
 
-const computeStageDuration = (
+// Returns the completed duration for a stage. Returns 0 for stages that have not yet completed,
+// keeping this function pure (no Date.now()). Live durations for running stages must be
+// computed in UI components using elapsedTickMsAtom.
+const computeCompletedStageDuration = (
   timing: { stageStartedAt: number | undefined; stageInactiveMs: number; stageCompletedAt?: number } | null,
-  now: number,
 ): number => {
   if (!timing) return 0;
   if (timing.stageStartedAt === undefined) return 0;
-  const end = timing.stageCompletedAt ?? now;
+  const end = timing.stageCompletedAt ?? Date.now();
   return Math.max(0, end - timing.stageStartedAt - timing.stageInactiveMs);
 };
 
-// Derived atom: computed from stageTimingByStageAtom + elapsedTickMsAtom
+// Derived atom: computed directly from stageTimingByStageAtom (no ticker needed)
 export const stageDurationMsByStageAtom = atom<Record<ShapeStageId, number>>((get) => {
   const timing = get(stageTimingByStageAtom);
-  const now = get(elapsedTickMsAtom);
   return {
-    source: computeStageDuration(timing.source, now),
-    geometry: computeStageDuration(timing.geometry, now),
-    tileEmit: computeStageDuration(timing.tileEmit, now),
+    source: computeStageDuration(timing.source),
+    geometry: computeStageDuration(timing.geometry),
+    tileEmit: computeStageDuration(timing.tileEmit),
   };
 });
 
@@ -296,8 +298,6 @@ const resetBuildSessionStateAtom = atom(
     set(lifecycleExtrasAtom, initialLifecycleExtras());
     set(uiSyncPhaseByStageAtom, initialUiSyncPhaseByStage());
     set(pendingUserActionBaseAtom, 'none');
-    set(elapsedTickMsBaseAtom, Date.now());
-    set(totalElapsedSnapshotBaseAtom, null);
     set(completionSnapshotBaseAtom, null);
     set(completionDialogOpenBaseAtom, false);
   },
@@ -460,7 +460,7 @@ export const dispatchBuildSessionEventAtom = atom(
   },
 );
 
-// --- (A)(B)(C) Pending user action ---
+// --- (D) Pending user action ---
 
 export type PendingUserAction = 'none' | 'starting' | 'stopping' | 'pausing' | 'cancelling';
 
@@ -479,27 +479,6 @@ export const isStopRequestedInFlightAtom = atom((get) => {
   const action = get(pendingUserActionAtom);
   return action === 'stopping' || action === 'pausing' || action === 'cancelling';
 });
-
-// --- (D) Elapsed tick ---
-
-const elapsedTickMsBaseAtom = atom<number>(Date.now());
-
-export const elapsedTickMsAtom = atom(
-  (get) => get(elapsedTickMsBaseAtom),
-  (_get, set, next: number) => {
-    set(elapsedTickMsBaseAtom, next);
-  },
-);
-
-type TotalElapsedSnapshot = { durationMs: number; capturedAt: number } | null;
-const totalElapsedSnapshotBaseAtom = atom<TotalElapsedSnapshot>(null);
-
-export const totalElapsedSnapshotAtom = atom(
-  (get) => get(totalElapsedSnapshotBaseAtom),
-  (_get, set, next: TotalElapsedSnapshot) => {
-    set(totalElapsedSnapshotBaseAtom, next);
-  },
-);
 
 // --- (E) Completion snapshot ---
 

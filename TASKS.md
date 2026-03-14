@@ -1,7 +1,7 @@
 # TASKS.md
 
 ## Doing
-
+- #1047 / `fix/shape-plugin/remove-sequenced-event-wrapper` / 2026-03-14 開始
 - #1030 / `fix/shape-plugin/task-failure-error-message` / 2026-03-14 開始
 - #1026 / `fix/location-plugin/select-all-deselect-reverts-1026` / 2026-03-14 開始
 
@@ -28,6 +28,17 @@
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 
 ## 今日の運用ログ
+
+- 2026-03-15: #1064 subscribers ネストMap最適化・PR #1065作成
+  - EventSubscriber インターフェース削除、Map<NodeId, Map<eventType, Set<callback>>> に変更
+  - notifySubscribers: 全件スキャン → O(1) ネストマップルックアップ
+  - typecheck: 100/100 exit 0、test: 418 passed exit 0
+
+- 2026-03-14: #1042 seqNum gap-check を FIFO+version-gate に置換・PR #1043作成
+  - eventBufferingUI.ts: UIEventBufferManager を FIFO キュー（session-state/stage-snapshot）+ version gate（task-progress）に完全書き換え
+  - useShapeBuildSessionStateAtomBridge.ts: seqNum 分岐削除、scheduleFlush に統一
+  - property テスト 2ファイル（eventDeliveryMonitoringAccuracy / eventDeliveryExtendedScenarios）を新 API に対応
+  - test: 423 passed exit 0
 
 - 2026-03-14: #1040 純粋関数エクスポート復元・criticalError テスト nodeId 追加・PR #1041作成
   - isTaskUpdateVersionAfterSnapshot/resolveTaskVersionAction/resolveTaskIdentityAction/resolveSnapshotTargetStages を useShapeBuildSessionStateAtomBridge に export 復元（#1016で消失）

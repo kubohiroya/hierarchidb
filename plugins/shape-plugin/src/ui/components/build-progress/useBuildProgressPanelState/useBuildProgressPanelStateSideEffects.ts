@@ -4,7 +4,6 @@ import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import {
   isShapeBuildPanelDebugEnabled,
   logRunningResiduePanel,
-  shouldUpdateElapsedSnapshot,
 } from './useBuildProgressPanelState.utils.js';
 import { resolveStageAliasArray } from '~/ui/components/build-progress/stageIdAliases';
 
@@ -57,10 +56,6 @@ export const useBuildProgressPanelStateSideEffects = (args: {
     reason?: string;
   } | null) => void;
   completionKeyRef: MutableRefObject<string | null>;
-  setElapsedTickMs: (value: number) => void;
-  elapsedTickMs: number;
-  totalElapsedSnapshot: { durationMs: number; capturedAt: number } | null;
-  setTotalElapsedSnapshot: (value: { durationMs: number; capturedAt: number } | null) => void;
   mismatchSignatureRef: MutableRefObject<Map<string, string>>;
 }) => {
   const {
@@ -75,21 +70,12 @@ export const useBuildProgressPanelStateSideEffects = (args: {
     setCompletionDialogOpen,
     setCompletionSnapshot,
     completionKeyRef,
-    setElapsedTickMs,
-    elapsedTickMs,
-    totalElapsedSnapshot,
-    setTotalElapsedSnapshot,
     mismatchSignatureRef,
   } = args;
 
-  const shouldRunElapsedTicker = summary.buildStatus === 'running';
   const previousBuildStatusRef = useRef<Summary['buildStatus'] | null>(null);
   const lastNodeIdRef = useRef<string | undefined>(undefined);
   const hasProgressRef = useRef(false);
-  const totalElapsedSnapshotRef = useRef(totalElapsedSnapshot);
-  useEffect(() => {
-    totalElapsedSnapshotRef.current = totalElapsedSnapshot;
-  }, [totalElapsedSnapshot]);
   const isTerminalStatus = (status: Summary['buildStatus'] | null) => status === 'completed' || status === 'failed';
 
   useEffect(() => {
@@ -118,6 +104,12 @@ export const useBuildProgressPanelStateSideEffects = (args: {
     if (summary.buildStatus === 'running' || summary.buildStatus === 'paused') {
       hasProgressRef.current = true;
       completionKeyRef.current = null;
+      // Clear stale snapshot when transitioning from idle/terminal to running/paused.
+      // Without this, the drift calculation in liveTotalElapsedMs uses a capturedAt
+      // from a previous build run, producing absurdly large elapsed values.
+      if (previousBuildStatus === 'idle' || isTerminalStatus(previousBuildStatus)) {
+        setTotalElapsedSnapshot(null);
+      }
       previousBuildStatusRef.current = summary.buildStatus;
       return;
     }
@@ -192,6 +184,7 @@ export const useBuildProgressPanelStateSideEffects = (args: {
     summary.buildStatus,
     setCompletionDialogOpen,
     setCompletionSnapshot,
+    setTotalElapsedSnapshot,
     completionKeyRef,
   ]);
 
@@ -214,9 +207,12 @@ export const useBuildProgressPanelStateSideEffects = (args: {
       totalElapsedMs: summary.totalElapsedMs,
       buildStatus: summary.buildStatus,
     })) {
+      // Use Date.now() directly instead of elapsedTickMs to avoid stale closure:
+      // elapsedTickMs is updated by a separate effect in the same render cycle,
+      // so it may still hold the previous tick value when this effect runs.
       setTotalElapsedSnapshot({
         durationMs: summary.totalElapsedMs,
-        capturedAt: elapsedTickMs,
+        capturedAt: Date.now(),
       });
     }
   }, [elapsedTickMs, summary.buildStatus, summary.totalElapsedMs, setTotalElapsedSnapshot]);
