@@ -41,15 +41,8 @@ interface EventSubscriber {
 class UnconditionalEventStreamer {
     private readonly subscribers = new Map<NodeId, Set<EventSubscriber>>();
 
-    /**
-     * Emit an event to all current subscribers for the given node and event type.
-     * If no subscriber is registered the event is silently discarded (no buffering).
-     */
-    emitEvent(
-        nodeId: NodeId,
-        eventType: Exclude<NotificationType, 'heartbeat'>,
-        event: Exclude<EventPayload, SessionHeartbeatEvent>,
-    ): void {
+    /** Deliver an event to all subscribers registered for the given node and event type. */
+    private deliver(nodeId: NodeId, eventType: NotificationType, event: EventPayload): void {
         const nodeSubscribers = this.subscribers.get(nodeId);
         if (!nodeSubscribers) return;
 
@@ -70,25 +63,22 @@ class UnconditionalEventStreamer {
     }
 
     /**
+     * Emit an event to all current subscribers for the given node and event type.
+     * If no subscriber is registered the event is silently discarded (no buffering).
+     */
+    emitEvent(
+        nodeId: NodeId,
+        eventType: Exclude<NotificationType, 'heartbeat'>,
+        event: Exclude<EventPayload, SessionHeartbeatEvent>,
+    ): void {
+        this.deliver(nodeId, eventType, event);
+    }
+
+    /**
      * Emit a heartbeat event to all current subscribers for the given node.
      */
     emitHeartbeat(nodeId: NodeId, event: SessionHeartbeatEvent): void {
-        const nodeSubscribers = this.subscribers.get(nodeId);
-        if (!nodeSubscribers) return;
-
-        for (const subscriber of nodeSubscribers) {
-            if (subscriber.eventType !== 'heartbeat') continue;
-            try {
-                subscriber.callback(event);
-            } catch (error) {
-                console.error('[UnconditionalEventStreamer] heartbeat subscriber callback failed', {
-                    nodeId,
-                    error: error instanceof Error
-                        ? { name: error.name, message: error.message, stack: error.stack }
-                        : error,
-                });
-            }
-        }
+        this.deliver(nodeId, 'heartbeat', event);
     }
 
     /**
