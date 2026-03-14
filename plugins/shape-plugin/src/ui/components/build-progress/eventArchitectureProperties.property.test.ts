@@ -78,7 +78,7 @@ describe('Event Architecture Properties', () => {
                             unconditionalEventStreamer.emitEvent(
                                 nodeId,
                                 event.eventType as 'session-state' | 'stage-snapshot' | 'task-progress',
-                                event.payload as never
+                                event.payload as unknown as import('../../../worker/api/eventBuffering').EventPayload
                             );
                             emittedCount++;
                         });
@@ -98,7 +98,7 @@ describe('Event Architecture Properties', () => {
                             unconditionalEventStreamer.emitEvent(
                                 nodeId,
                                 'session-state',
-                                event.payload as never
+                                event.payload as unknown as import('../../../worker/api/eventBuffering').EventPayload
                             );
                         });
 
@@ -139,7 +139,7 @@ describe('Event Architecture Properties', () => {
                             unconditionalEventStreamer.emitEvent(
                                 node,
                                 'task-progress',
-                                { eventIndex: i } as never
+                                { eventIndex: i } as unknown as import('../../../worker/api/eventBuffering').EventPayload
                             );
                         }
 
@@ -300,12 +300,12 @@ describe('Event Architecture Properties', () => {
                                     unconditionalEventStreamer.emitHeartbeat(nodeId, {
                                         nodeId: nodeIdStr,
                                         heartbeatAt: Date.now(),
-                                    } as never);
+                                    } as unknown as import('../../../common/types/session-events').SessionHeartbeatEvent);
                                 } else {
                                     unconditionalEventStreamer.emitEvent(
                                         nodeId,
                                         eventType as 'session-state' | 'stage-snapshot' | 'task-progress',
-                                        { test: true } as never
+                                        { test: true } as unknown as import('../../../worker/api/eventBuffering').EventPayload
                                     );
                                 }
                             });

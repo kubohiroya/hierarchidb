@@ -4,6 +4,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { unconditionalEventStreamer } from '../../worker/api/eventBuffering';
+import type { SessionStateChangeEvent, SessionHeartbeatEvent, TaskProgressEvent } from '../../common/types/session-events';
 import type { NodeId } from '@hierarchidb/core-types';
 
 describe('UnconditionalEventStreamer', () => {
@@ -30,13 +31,14 @@ describe('UnconditionalEventStreamer', () => {
             unconditionalEventStreamer.subscribe(testNodeId, 'session-state', anotherSuccessfulCallback);
 
             // Emit event
-            const testEvent = {
+            const testEvent: SessionStateChangeEvent = {
                 nodeId: testNodeId,
-                sessionState: 'running',
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                currentStatus: 'running',
+                sessionRecord: { status: 'running' } as SessionStateChangeEvent['sessionRecord'],
             };
 
-            unconditionalEventStreamer.emitEvent(testNodeId, 'session-state', testEvent as never);
+            unconditionalEventStreamer.emitEvent(testNodeId, 'session-state', testEvent);
 
             // All callbacks should have been called
             expect(successfulCallback).toHaveBeenCalledTimes(1);
@@ -73,12 +75,14 @@ describe('UnconditionalEventStreamer', () => {
             unconditionalEventStreamer.subscribe(testNodeId, 'heartbeat', failingCallback);
 
             // Emit heartbeat event
-            const heartbeatEvent = {
+            const heartbeatEvent: SessionHeartbeatEvent = {
                 nodeId: testNodeId,
-                heartbeatAt: Date.now()
+                timestamp: Date.now(),
+                isActive: true,
+                lastActivity: Date.now(),
             };
 
-            unconditionalEventStreamer.emitHeartbeat(testNodeId, heartbeatEvent as never);
+            unconditionalEventStreamer.emitHeartbeat(testNodeId, heartbeatEvent);
 
             // Both callbacks should have been called
             expect(successfulCallback).toHaveBeenCalledTimes(1);
@@ -109,13 +113,14 @@ describe('UnconditionalEventStreamer', () => {
 
             unconditionalEventStreamer.subscribe(testNodeId, 'session-state', failingCallback);
 
-            const testEvent = {
+            const testEvent: SessionStateChangeEvent = {
                 nodeId: testNodeId,
-                sessionState: 'running',
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                currentStatus: 'running',
+                sessionRecord: { status: 'running' } as SessionStateChangeEvent['sessionRecord'],
             };
 
-            unconditionalEventStreamer.emitEvent(testNodeId, 'session-state', testEvent as never);
+            unconditionalEventStreamer.emitEvent(testNodeId, 'session-state', testEvent);
 
             // Should handle non-Error exceptions gracefully
             expect(consoleSpy).toHaveBeenCalledWith(
@@ -146,12 +151,13 @@ describe('UnconditionalEventStreamer', () => {
 
             // Emit multiple events
             for (let i = 0; i < 3; i++) {
-                const testEvent = {
+                const testEvent: SessionStateChangeEvent = {
                     nodeId: testNodeId,
-                    sessionState: `state-${i}`,
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
+                    currentStatus: 'running',
+                    sessionRecord: { status: 'running' } as SessionStateChangeEvent['sessionRecord'],
                 };
-                unconditionalEventStreamer.emitEvent(testNodeId, 'session-state', testEvent as never);
+                unconditionalEventStreamer.emitEvent(testNodeId, 'session-state', testEvent);
             }
 
             // All callbacks should continue to be called despite failures
@@ -176,21 +182,24 @@ describe('UnconditionalEventStreamer', () => {
             unconditionalEventStreamer.subscribe(testNodeId, 'session-state', callback2);
             unconditionalEventStreamer.subscribe(testNodeId, 'task-progress', callback3);
 
-            const sessionEvent = {
+            const sessionEvent: SessionStateChangeEvent = {
                 nodeId: testNodeId,
-                sessionState: 'running',
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                currentStatus: 'running',
+                sessionRecord: { status: 'running' } as SessionStateChangeEvent['sessionRecord'],
             };
 
-            const progressEvent = {
+            const progressEvent: TaskProgressEvent = {
                 nodeId: testNodeId,
+                timestamp: Date.now(),
                 taskId: 'task-1',
-                progress: { completed: 5, total: 10 },
-                timestamp: Date.now()
+                stage: 'source',
+                progress: 50,
+                status: 'running',
             };
 
-            unconditionalEventStreamer.emitEvent(testNodeId, 'session-state', sessionEvent as never);
-            unconditionalEventStreamer.emitEvent(testNodeId, 'task-progress', progressEvent as never);
+            unconditionalEventStreamer.emitEvent(testNodeId, 'session-state', sessionEvent);
+            unconditionalEventStreamer.emitEvent(testNodeId, 'task-progress', progressEvent);
 
             // session-state subscribers receive session event
             expect(callback1).toHaveBeenCalledTimes(1);

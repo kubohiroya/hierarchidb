@@ -240,10 +240,8 @@ export const stageTimingByStageAtom = atom((get) => {
 const computeCompletedStageDuration = (
   timing: { stageStartedAt: number | undefined; stageInactiveMs: number; stageCompletedAt?: number } | null,
 ): number => {
-  if (!timing) return 0;
-  if (timing.stageStartedAt === undefined) return 0;
-  const end = timing.stageCompletedAt ?? Date.now();
-  return Math.max(0, end - timing.stageStartedAt - timing.stageInactiveMs);
+  if (!timing || timing.stageStartedAt === undefined || timing.stageCompletedAt === undefined) return 0;
+  return Math.max(0, timing.stageCompletedAt - timing.stageStartedAt - timing.stageInactiveMs);
 };
 
 // Derived atom: computed directly from stageTimingByStageAtom (no ticker needed)
