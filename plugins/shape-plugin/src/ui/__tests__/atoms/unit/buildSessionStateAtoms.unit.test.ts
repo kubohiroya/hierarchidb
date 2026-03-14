@@ -317,6 +317,7 @@ describe('criticalError event', () => {
     store.set(dispatchBuildSessionEventAtom, {
       type: 'criticalError',
       payload: {
+        nodeId: 'node-1',
         message: 'abort error',
         error: 'AbortError',
         errorName: 'AbortError',
