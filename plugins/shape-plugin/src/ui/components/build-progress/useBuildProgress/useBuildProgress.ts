@@ -12,7 +12,7 @@ import {
   type BuildSessionDisplayStatus,
 } from '~/ui/components/build-progress/shapeBuildProgressMapping';
 
-export type { BuildProgress, BuildSessionDisplayStatus as BuildSessionStatus };
+export type { BuildProgress, BuildSessionDisplayStatus };
 
 
 export interface ShapeProgressState {
