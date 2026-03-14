@@ -102,7 +102,7 @@ type ShapeStageSnapshotUpdatedEvent = {
   payload: {
     stageId: ShapeStageId;
     tasks: ShapeTaskSummary[];
-    stageStartedAt: number;
+    stageStartedAt: number | undefined;
     stageInactiveMs: number;
     stageCompletedAt?: number;
   };
@@ -146,6 +146,7 @@ type ShapeUiSyncPhaseChangedEvent = {
 type ShapeCriticalErrorEvent = {
   type: 'criticalError';
   payload: {
+    nodeId: string;
     message: string;
     error: string;
     errorName: string;
@@ -233,10 +234,11 @@ export const stageTimingByStageAtom = atom((get) => {
 });
 
 const computeStageDuration = (
-  timing: { stageStartedAt: number; stageInactiveMs: number; stageCompletedAt?: number } | null,
+  timing: { stageStartedAt: number | undefined; stageInactiveMs: number; stageCompletedAt?: number } | null,
   now: number,
 ): number => {
   if (!timing) return 0;
+  if (timing.stageStartedAt === undefined) return 0;
   const end = timing.stageCompletedAt ?? now;
   return Math.max(0, end - timing.stageStartedAt - timing.stageInactiveMs);
 };
@@ -421,7 +423,7 @@ const applyBuildSessionEventAtom = atom(
         const stateEvent: ShapeStateEvent = {
           type: 'sessionStatusUpdated',
           payload: {
-            nodeId: '',
+            nodeId: event.payload.nodeId,
             phase: 'failed',
             isActive: false,
             completedAt: event.payload.timestamp,

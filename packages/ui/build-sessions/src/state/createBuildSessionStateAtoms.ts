@@ -20,7 +20,7 @@ type BaseTaskSummary = {
 };
 
 type StageTiming = {
-  stageStartedAt: number;
+  stageStartedAt: number | undefined;
   stageInactiveMs: number;
   stageCompletedAt?: number;
 };
@@ -105,7 +105,7 @@ type StageSnapshotUpdatedEvent<StageId extends string, TaskSummary extends BaseT
   payload: {
     stageId: StageId;
     tasks: TaskSummary[];
-    stageStartedAt: number;
+    stageStartedAt: number | undefined;
     stageInactiveMs: number;
     stageCompletedAt?: number;
   };
@@ -320,7 +320,10 @@ export const createBuildSessionStateAtoms = <
       }
 
       case 'stageSnapshotUpdated': {
-        assertFiniteNumber(event.payload.stageStartedAt, 'stageStartedAt');
+        // stageStartedAt may be undefined when the stage has not yet started
+        if (event.payload.stageStartedAt !== undefined) {
+          assertFiniteNumber(event.payload.stageStartedAt, 'stageStartedAt');
+        }
         assertFiniteNumber(event.payload.stageInactiveMs, 'stageInactiveMs');
         if (event.payload.stageCompletedAt !== undefined) {
           assertFiniteNumber(event.payload.stageCompletedAt, 'stageCompletedAt');

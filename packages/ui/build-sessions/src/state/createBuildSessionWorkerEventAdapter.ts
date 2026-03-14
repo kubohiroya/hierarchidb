@@ -116,13 +116,12 @@ export const createBuildSessionWorkerEventAdapter = <
         // Emit snapshot for all known stages (empty array = zero tasks for that stage)
         for (const stageId of config.stages) {
           const tasks = grouped.get(stageId) ?? [];
-          // Use max task version as stageStartedAt proxy when not available from event
+          // stageStartedAt is undefined when the stage has not yet started;
+          // no fallback is applied (Date.now() or similar defaults are contract violations).
           const explicitVersion = (event as { version?: unknown }).version;
           const stageStartedAt = typeof explicitVersion === 'number' && Number.isFinite(explicitVersion)
             ? explicitVersion
-            : tasks.length > 0
-              ? tasks.reduce((max, t) => Math.max(max, t.version), Number.MIN_SAFE_INTEGER)
-              : Date.now();
+            : undefined;
           dispatch({
             type: 'stageSnapshotUpdated',
             payload: {
