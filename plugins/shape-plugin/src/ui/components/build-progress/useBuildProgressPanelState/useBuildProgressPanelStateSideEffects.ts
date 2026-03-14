@@ -4,7 +4,6 @@ import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import {
   isShapeBuildPanelDebugEnabled,
   logRunningResiduePanel,
-  shouldUpdateElapsedSnapshot,
 } from './useBuildProgressPanelState.utils.js';
 import { resolveStageAliasArray } from '~/ui/components/build-progress/stageIdAliases';
 
@@ -57,10 +56,6 @@ export const useBuildProgressPanelStateSideEffects = (args: {
     reason?: string;
   } | null) => void;
   completionKeyRef: MutableRefObject<string | null>;
-  setElapsedTickMs: (value: number) => void;
-  elapsedTickMs: number;
-  totalElapsedSnapshot: { durationMs: number; capturedAt: number } | null;
-  setTotalElapsedSnapshot: (value: { durationMs: number; capturedAt: number } | null) => void;
   mismatchSignatureRef: MutableRefObject<Map<string, string>>;
 }) => {
   const {
@@ -75,21 +70,12 @@ export const useBuildProgressPanelStateSideEffects = (args: {
     setCompletionDialogOpen,
     setCompletionSnapshot,
     completionKeyRef,
-    setElapsedTickMs,
-    elapsedTickMs,
-    totalElapsedSnapshot,
-    setTotalElapsedSnapshot,
     mismatchSignatureRef,
   } = args;
 
-  const shouldRunElapsedTicker = summary.buildStatus === 'running';
   const previousBuildStatusRef = useRef<Summary['buildStatus'] | null>(null);
   const lastNodeIdRef = useRef<string | undefined>(undefined);
   const hasProgressRef = useRef(false);
-  const totalElapsedSnapshotRef = useRef(totalElapsedSnapshot);
-  useEffect(() => {
-    totalElapsedSnapshotRef.current = totalElapsedSnapshot;
-  }, [totalElapsedSnapshot]);
   const isTerminalStatus = (status: Summary['buildStatus'] | null) => status === 'completed' || status === 'failed';
 
   useEffect(() => {
@@ -194,32 +180,6 @@ export const useBuildProgressPanelStateSideEffects = (args: {
     setCompletionSnapshot,
     completionKeyRef,
   ]);
-
-  useEffect(() => {
-    setElapsedTickMs(Date.now());
-    if (!shouldRunElapsedTicker) {
-      return;
-    }
-    const timerId = window.setInterval(() => {
-      setElapsedTickMs(Date.now());
-    }, 1000);
-    return () => {
-      window.clearInterval(timerId);
-    };
-  }, [setElapsedTickMs, shouldRunElapsedTicker]);
-
-  useEffect(() => {
-    if (shouldUpdateElapsedSnapshot({
-      snapshot: totalElapsedSnapshotRef.current,
-      totalElapsedMs: summary.totalElapsedMs,
-      buildStatus: summary.buildStatus,
-    })) {
-      setTotalElapsedSnapshot({
-        durationMs: summary.totalElapsedMs,
-        capturedAt: elapsedTickMs,
-      });
-    }
-  }, [elapsedTickMs, summary.buildStatus, summary.totalElapsedMs, setTotalElapsedSnapshot]);
 
   useEffect(() => {
     if (!isShapeBuildPanelDebugEnabled('runningResiduePanel')) return;

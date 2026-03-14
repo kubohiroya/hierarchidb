@@ -77,18 +77,6 @@ export const logRunningResiduePanel = (
   console.log(line, payload);
 };
 
-export const shouldUpdateElapsedSnapshot = (params: {
-  snapshot: { durationMs: number; capturedAt: number } | null;
-  totalElapsedMs: number;
-  buildStatus: BuildStatus;
-}): boolean => {
-  const { snapshot, totalElapsedMs, buildStatus } = params;
-  if (!snapshot) return true;
-  if (buildStatus !== 'running') return true;
-  if (totalElapsedMs === 0) return true;
-  return totalElapsedMs > snapshot.durationMs;
-};
-
 export const resolveCompletionFailedStageLabel = (params: {
   stages: BuildStage[];
   failedStageId?: string;
