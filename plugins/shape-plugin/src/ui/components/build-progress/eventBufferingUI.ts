@@ -1,219 +1,167 @@
 /**
- * UI-side event buffering with seqNum-based ordering
- * Implements per-notification-type buffering with sequence number ordering
+ * UI-side event buffering for Worker→UI event delivery.
+ *
+ * Design:
+ * - session-state / stage-snapshot: simple FIFO queue, no ordering constraint
+ *   (Worker:UI = 1:1, so events arrive in emission order)
+ * - task-progress: version-based ordering only — drop stale (lower version) and
+ *   drop any update after value=100 (completed/skipped/failed final state)
+ * - heartbeat: immediate pass-through, no buffering
+ *
+ * seqNum (distributed sequence number from Worker) is NOT used for ordering here.
+ * It is attached to task-progress events solely so the caller can perform
+ * version-based deduplication across parallel stage Workers.
  */
 
 export type NotificationType = 'session-state' | 'stage-snapshot' | 'task-progress';
 
-export interface SequencedEvent {
-    seqNum: number;
+/** A buffered event carrying an optional version for task-progress ordering. */
+export interface BufferedEvent {
+    /** version is only meaningful for task-progress events */
+    version: number | undefined;
     notificationType: NotificationType;
     payload: unknown;
     timestamp: number;
 }
 
-export interface EventBuffer {
-    events: SequencedEvent[];
-    lastAppliedSeqNum: number | null;
-    gapDetected: boolean;
+export interface FifoEventQueue {
+    events: BufferedEvent[];
+}
+
+export interface TaskProgressState {
+    lastAppliedVersion: number | undefined;
+    /** true once a value=100 event has been applied (final state reached) */
+    finalReached: boolean;
 }
 
 export interface EventBufferManager {
-    bufferEvent(event: SequencedEvent): void;
-    flushBuffer(notificationType: NotificationType): SequencedEvent[];
-    detectGaps(notificationType: NotificationType): number[];
-    getBufferStatus(notificationType: NotificationType): {
-        bufferedCount: number;
-        lastAppliedSeqNum: number | null;
-        hasGaps: boolean;
-    };
+    enqueue(event: BufferedEvent): void;
+    /** Flush all queued events for session-state or stage-snapshot (FIFO, no filtering). */
+    flushFifo(notificationType: 'session-state' | 'stage-snapshot'): BufferedEvent[];
+    /**
+     * Apply version-based ordering for task-progress.
+     * Returns the event if it should be applied, undefined if it should be dropped.
+     */
+    applyTaskProgress(event: BufferedEvent): BufferedEvent | undefined;
     reset(): void;
 }
 
 /**
- * Manages per-notification-type event buffers with seqNum ordering
+ * Manages UI-side event queues.
+ *
+ * session-state / stage-snapshot: FIFO — all events are returned in order.
+ * task-progress: version gate — stale and post-final events are dropped.
  */
 export class UIEventBufferManager implements EventBufferManager {
-    private static readonly MAX_BUFFER_SIZE = 1000;
-    private static readonly BUFFER_CLEANUP_THRESHOLD = 800;
-
-    private buffers: Record<NotificationType, EventBuffer> = {
-        'session-state': { events: [], lastAppliedSeqNum: null, gapDetected: false },
-        'stage-snapshot': { events: [], lastAppliedSeqNum: null, gapDetected: false },
-        'task-progress': { events: [], lastAppliedSeqNum: null, gapDetected: false },
+    private fifoQueues: Record<'session-state' | 'stage-snapshot', FifoEventQueue> = {
+        'session-state': { events: [] },
+        'stage-snapshot': { events: [] },
     };
 
-    bufferEvent(event: SequencedEvent): void {
-        if (!Number.isFinite(event.seqNum) || event.seqNum < 0) {
-            throw new Error(`Invalid seqNum: ${event.seqNum}`);
+    private taskProgressState: TaskProgressState = {
+        lastAppliedVersion: undefined,
+        finalReached: false,
+    };
+
+    enqueue(event: BufferedEvent): void {
+        if (event.notificationType === 'task-progress') {
+            throw new Error(
+                '[UIEventBufferManager] task-progress must be applied via applyTaskProgress, not enqueue',
+            );
         }
-
-        const buffer = this.buffers[event.notificationType];
-        if (!buffer) {
-            throw new Error(`Unknown notification type: ${event.notificationType}`);
+        const queue = this.fifoQueues[event.notificationType];
+        if (!queue) {
+            throw new Error(`[UIEventBufferManager] Unknown notification type: ${event.notificationType}`);
         }
-
-        // Insert event in seqNum order
-        const insertIndex = this.findInsertIndex(buffer.events, event.seqNum);
-        buffer.events.splice(insertIndex, 0, event);
-
-        // Buffer size limit check (after insertion)
-        if (buffer.events.length > UIEventBufferManager.MAX_BUFFER_SIZE) {
-            // Remove old events (FIFO)
-            const removeCount = buffer.events.length - UIEventBufferManager.BUFFER_CLEANUP_THRESHOLD;
-            buffer.events.splice(0, removeCount);
-            console.warn(`[UIEventBufferManager] Buffer overflow for ${event.notificationType}, removed ${removeCount} old events`);
-        }
-
-        // Detect gaps
-        this.updateGapDetection(event.notificationType);
+        queue.events.push(event);
     }
 
-    flushBuffer(notificationType: NotificationType): SequencedEvent[] {
-        const buffer = this.buffers[notificationType];
-        if (!buffer) {
-            throw new Error(`Unknown notification type: ${notificationType}`);
+    flushFifo(notificationType: 'session-state' | 'stage-snapshot'): BufferedEvent[] {
+        const queue = this.fifoQueues[notificationType];
+        if (!queue) {
+            throw new Error(`[UIEventBufferManager] Unknown notification type: ${notificationType}`);
         }
-
-        const readyEvents: SequencedEvent[] = [];
-        const expectedSeqNum = (buffer.lastAppliedSeqNum ?? -1) + 1;
-
-        // Find consecutive events starting from expected seqNum
-        let currentSeqNum = expectedSeqNum;
-        while (buffer.events.length > 0 && buffer.events[0]?.seqNum === currentSeqNum) {
-            const event = buffer.events.shift();
-            if (!event) break;
-            readyEvents.push(event);
-            buffer.lastAppliedSeqNum = currentSeqNum;
-            currentSeqNum++;
-        }
-
-        // Update gap detection after flush
-        this.updateGapDetection(notificationType);
-
-        return readyEvents;
+        const drained = queue.events;
+        this.fifoQueues[notificationType] = { events: [] };
+        return drained;
     }
 
-    detectGaps(notificationType: NotificationType): number[] {
-        const buffer = this.buffers[notificationType];
-        if (!buffer || buffer.events.length === 0) {
-            return [];
+    /**
+     * Version-based gate for task-progress events.
+     *
+     * Rules:
+     * 1. If finalReached (value=100 already applied), drop all subsequent events.
+     * 2. If version is undefined, always accept (no ordering info available).
+     * 3. If version <= lastAppliedVersion, drop (stale / duplicate).
+     * 4. Otherwise accept and update lastAppliedVersion.
+     * 5. After accepting, if the event's progress value is 100, set finalReached=true.
+     */
+    applyTaskProgress(event: BufferedEvent): BufferedEvent | undefined {
+        if (event.notificationType !== 'task-progress') {
+            throw new Error(
+                `[UIEventBufferManager] applyTaskProgress called with wrong type: ${event.notificationType}`,
+            );
         }
 
-        const gaps: number[] = [];
-        const expectedSeqNum = (buffer.lastAppliedSeqNum ?? -1) + 1;
-
-        // Check for gap at the beginning
-        const firstEvent = buffer.events[0];
-        if (buffer.events.length > 0 && firstEvent && firstEvent.seqNum > expectedSeqNum) {
-            for (let seq = expectedSeqNum; seq < firstEvent.seqNum; seq++) {
-                gaps.push(seq);
-            }
+        // Rule 1: final state already reached — drop everything after
+        if (this.taskProgressState.finalReached) {
+            return undefined;
         }
 
-        // Check for gaps between buffered events
-        for (let i = 0; i < buffer.events.length - 1; i++) {
-            const currentEvent = buffer.events[i];
-            const nextEvent = buffer.events[i + 1];
-            if (!currentEvent || !nextEvent) continue;
+        const { version } = event;
 
-            const currentSeq = currentEvent.seqNum;
-            const nextSeq = nextEvent.seqNum;
-
-            for (let seq = currentSeq + 1; seq < nextSeq; seq++) {
-                gaps.push(seq);
-            }
+        // Rule 2: no version info — accept unconditionally
+        if (version === undefined) {
+            this.maybeMarkFinal(event);
+            return event;
         }
 
-        return gaps;
+        if (!Number.isFinite(version) || version < 0) {
+            throw new Error(`[UIEventBufferManager] Invalid task-progress version: ${version}`);
+        }
+
+        const last = this.taskProgressState.lastAppliedVersion;
+
+        // Rule 3: stale or duplicate
+        if (last !== undefined && version <= last) {
+            return undefined;
+        }
+
+        // Rule 4: accept
+        this.taskProgressState.lastAppliedVersion = version;
+
+        // Rule 5: mark final if value=100
+        this.maybeMarkFinal(event);
+
+        return event;
     }
 
-    getBufferStatus(notificationType: NotificationType): {
-        bufferedCount: number;
-        lastAppliedSeqNum: number | null;
-        hasGaps: boolean;
-    } {
-        const buffer = this.buffers[notificationType];
-        if (!buffer) {
-            throw new Error(`Unknown notification type: ${notificationType}`);
+    private maybeMarkFinal(event: BufferedEvent): void {
+        const payload = event.payload as { value?: unknown } | null | undefined;
+        if (payload !== null && payload !== undefined && payload.value === 100) {
+            this.taskProgressState.finalReached = true;
         }
-
-        return {
-            bufferedCount: buffer.events.length,
-            lastAppliedSeqNum: buffer.lastAppliedSeqNum,
-            hasGaps: buffer.gapDetected,
-        };
     }
 
     reset(): void {
-        for (const notificationType of Object.keys(this.buffers) as NotificationType[]) {
-            this.buffers[notificationType] = {
-                events: [],
-                lastAppliedSeqNum: null,
-                gapDetected: false,
-            };
-        }
+        this.fifoQueues = {
+            'session-state': { events: [] },
+            'stage-snapshot': { events: [] },
+        };
+        this.taskProgressState = {
+            lastAppliedVersion: undefined,
+            finalReached: false,
+        };
     }
 
-    private findInsertIndex(events: SequencedEvent[], seqNum: number): number {
-        let left = 0;
-        let right = events.length;
-
-        while (left < right) {
-            const mid = Math.floor((left + right) / 2);
-            const midEvent = events[mid];
-            if (!midEvent) break;
-
-            if (midEvent.seqNum < seqNum) {
-                left = mid + 1;
-            } else {
-                right = mid;
-            }
-        }
-
-        return left;
-    }
-
-    private updateGapDetection(notificationType: NotificationType): void {
-        const buffer = this.buffers[notificationType];
-        const gaps = this.detectGaps(notificationType);
-        buffer.gapDetected = gaps.length > 0;
+    /** Exposed for testing only. */
+    getTaskProgressState(): Readonly<TaskProgressState> {
+        return { ...this.taskProgressState };
     }
 }
 
 /**
- * Log event reception and processing on UI side for monitoring and debugging.
- * Tracks delivery latency from Worker emission to UI processing.
- */
-export const logUIEventReception = (
-    events: SequencedEvent[],
-    processingStatus: 'success' | 'error',
-    error?: unknown,
-): void => {
-    if (events.length === 0) return;
-    const now = Date.now();
-    const latencies = events.map((e) => now - e.timestamp);
-    const avgLatency = latencies.reduce((sum, l) => sum + l, 0) / latencies.length;
-
-    if (processingStatus === 'error') {
-        console.error('[UIEventReception] Events processed with error', {
-            eventCount: events.length,
-            processingStatus,
-            avgLatencyMs: avgLatency,
-            error: error instanceof Error ? { name: error.name, message: error.message } : error,
-        });
-    } else {
-        console.log('[UIEventReception] Events processed on UI side', {
-            eventCount: events.length,
-            processingStatus,
-            avgLatencyMs: avgLatency,
-            seqNums: events.map((e) => e.seqNum),
-        });
-    }
-};
-
-/**
- * Heartbeat events are processed immediately without buffering
+ * Heartbeat events are processed immediately without buffering.
  */
 export interface HeartbeatProcessor {
     processHeartbeat(event: { nodeId: string; heartbeatAt?: number }): void;
@@ -223,7 +171,6 @@ export class ImmediateHeartbeatProcessor implements HeartbeatProcessor {
     constructor(private callback: (event: { nodeId: string; heartbeatAt?: number }) => void) { }
 
     processHeartbeat(event: { nodeId: string; heartbeatAt?: number }): void {
-        // Process immediately without buffering (latest value only)
         this.callback(event);
     }
 }

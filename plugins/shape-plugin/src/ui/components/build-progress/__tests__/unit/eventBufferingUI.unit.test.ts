@@ -1,383 +1,210 @@
 /**
- * Unit tests for UI-side event buffering with seqNum ordering
+ * Unit tests for UI-side event buffering.
+ *
+ * session-state / stage-snapshot: FIFO — all events returned in arrival order.
+ * task-progress: version-based gate — stale and post-final events are dropped.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
     UIEventBufferManager,
     ImmediateHeartbeatProcessor,
-    type SequencedEvent,
-    type NotificationType
+    type BufferedEvent,
 } from '../../eventBufferingUI';
 
-describe('UIEventBufferManager', () => {
-    let bufferManager: UIEventBufferManager;
+const makeEvent = (
+    notificationType: BufferedEvent['notificationType'],
+    payload: unknown,
+    version?: number,
+): BufferedEvent => ({
+    version,
+    notificationType,
+    payload,
+    timestamp: Date.now(),
+});
+
+describe('UIEventBufferManager — FIFO queues (session-state / stage-snapshot)', () => {
+    let mgr: UIEventBufferManager;
 
     beforeEach(() => {
-        bufferManager = new UIEventBufferManager();
+        mgr = new UIEventBufferManager();
     });
 
-    describe('bufferEvent', () => {
-        it('should buffer events in seqNum order', () => {
-            const events: SequencedEvent[] = [
-                { seqNum: 3, notificationType: 'session-state', payload: 'event3', timestamp: Date.now() },
-                { seqNum: 1, notificationType: 'session-state', payload: 'event1', timestamp: Date.now() },
-                { seqNum: 2, notificationType: 'session-state', payload: 'event2', timestamp: Date.now() },
-            ];
+    it('returns events in arrival order regardless of version', () => {
+        mgr.enqueue(makeEvent('session-state', 'a'));
+        mgr.enqueue(makeEvent('session-state', 'b'));
+        mgr.enqueue(makeEvent('session-state', 'c'));
 
-            for (const event of events) {
-                bufferManager.bufferEvent(event);
-            }
+        const flushed = mgr.flushFifo('session-state');
+        expect(flushed.map((e) => e.payload)).toEqual(['a', 'b', 'c']);
+    });
 
-            const status = bufferManager.getBufferStatus('session-state');
-            expect(status.bufferedCount).toBe(3);
-        });
+    it('flushFifo drains the queue completely', () => {
+        mgr.enqueue(makeEvent('stage-snapshot', 'snap1'));
+        mgr.enqueue(makeEvent('stage-snapshot', 'snap2'));
 
-        it('should reject invalid seqNum', () => {
-            const invalidEvents = [
-                { seqNum: -1, notificationType: 'session-state' as NotificationType, payload: 'invalid', timestamp: Date.now() },
-                { seqNum: NaN, notificationType: 'session-state' as NotificationType, payload: 'invalid', timestamp: Date.now() },
-                { seqNum: Infinity, notificationType: 'session-state' as NotificationType, payload: 'invalid', timestamp: Date.now() },
-            ];
+        const first = mgr.flushFifo('stage-snapshot');
+        expect(first).toHaveLength(2);
 
-            for (const event of invalidEvents) {
-                expect(() => bufferManager.bufferEvent(event)).toThrow('Invalid seqNum');
-            }
-        });
+        const second = mgr.flushFifo('stage-snapshot');
+        expect(second).toHaveLength(0);
+    });
 
-        it('should reject unknown notification types', () => {
-            const invalidEvent = {
-                seqNum: 1,
-                notificationType: 'unknown-type' as NotificationType,
-                payload: 'invalid',
+    it('session-state and stage-snapshot queues are independent', () => {
+        mgr.enqueue(makeEvent('session-state', 'ss1'));
+        mgr.enqueue(makeEvent('stage-snapshot', 'sn1'));
+        mgr.enqueue(makeEvent('session-state', 'ss2'));
+
+        expect(mgr.flushFifo('session-state').map((e) => e.payload)).toEqual(['ss1', 'ss2']);
+        expect(mgr.flushFifo('stage-snapshot').map((e) => e.payload)).toEqual(['sn1']);
+    });
+
+    it('enqueue rejects task-progress (must use applyTaskProgress)', () => {
+        expect(() => mgr.enqueue(makeEvent('task-progress', {}))).toThrow(
+            'task-progress must be applied via applyTaskProgress',
+        );
+    });
+
+    it('enqueue rejects unknown notification type', () => {
+        expect(() =>
+            mgr.enqueue({
+                version: undefined,
+                notificationType: 'unknown' as BufferedEvent['notificationType'],
+                payload: {},
                 timestamp: Date.now(),
-            };
-
-            expect(() => bufferManager.bufferEvent(invalidEvent)).toThrow('Unknown notification type');
-        });
+            }),
+        ).toThrow('Unknown notification type');
     });
 
-    describe('flushBuffer', () => {
-        it('should flush consecutive events starting from expected seqNum', () => {
-            const events: SequencedEvent[] = [
-                { seqNum: 0, notificationType: 'session-state', payload: 'event0', timestamp: Date.now() },
-                { seqNum: 1, notificationType: 'session-state', payload: 'event1', timestamp: Date.now() },
-                { seqNum: 4, notificationType: 'session-state', payload: 'event4', timestamp: Date.now() },
-                { seqNum: 2, notificationType: 'session-state', payload: 'event2', timestamp: Date.now() },
-            ];
+    it('reset clears all queues', () => {
+        mgr.enqueue(makeEvent('session-state', 'x'));
+        mgr.enqueue(makeEvent('stage-snapshot', 'y'));
+        mgr.reset();
 
-            for (const event of events) {
-                bufferManager.bufferEvent(event);
-            }
+        expect(mgr.flushFifo('session-state')).toHaveLength(0);
+        expect(mgr.flushFifo('stage-snapshot')).toHaveLength(0);
+    });
+});
 
-            // First flush should return events 0, 1, 2 (consecutive from start, gap at 3)
-            const flushed1 = bufferManager.flushBuffer('session-state');
-            expect(flushed1).toHaveLength(3);
-            expect(flushed1.map(e => e.seqNum)).toEqual([0, 1, 2]);
-            expect(flushed1.map(e => e.payload)).toEqual(['event0', 'event1', 'event2']);
+describe('UIEventBufferManager — task-progress version gating', () => {
+    let mgr: UIEventBufferManager;
 
-            // Buffer should still contain event 4 (gap at seqNum 3)
-            const status = bufferManager.getBufferStatus('session-state');
-            expect(status.bufferedCount).toBe(1);
-            expect(status.lastAppliedSeqNum).toBe(2);
-
-            // Add event 5 to extend the gap
-            bufferManager.bufferEvent({ seqNum: 5, notificationType: 'session-state', payload: 'event5', timestamp: Date.now() });
-
-            // Second flush should return nothing (gap at seqNum 3)
-            const flushed2 = bufferManager.flushBuffer('session-state');
-            expect(flushed2).toHaveLength(0);
-
-            // Add missing event 3
-            bufferManager.bufferEvent({ seqNum: 3, notificationType: 'session-state', payload: 'event3', timestamp: Date.now() });
-
-            // Third flush should return events 3, 4, 5 (consecutive after gap filled)
-            const flushed3 = bufferManager.flushBuffer('session-state');
-            expect(flushed3).toHaveLength(3);
-            expect(flushed3.map(e => e.seqNum)).toEqual([3, 4, 5]);
-            expect(flushed3.map(e => e.payload)).toEqual(['event3', 'event4', 'event5']);
-
-            // Buffer should now be empty
-            const finalStatus = bufferManager.getBufferStatus('session-state');
-            expect(finalStatus.bufferedCount).toBe(0);
-            expect(finalStatus.lastAppliedSeqNum).toBe(5);
-        });
-
-        it('should handle empty buffer', () => {
-            const flushed = bufferManager.flushBuffer('session-state');
-            expect(flushed).toHaveLength(0);
-        });
-
-        it('should handle buffer with gap at beginning', () => {
-            bufferManager.bufferEvent({ seqNum: 2, notificationType: 'session-state', payload: 'event2', timestamp: Date.now() });
-
-            const flushed = bufferManager.flushBuffer('session-state');
-            expect(flushed).toHaveLength(0); // Gap at seqNum 0, 1
-
-            const status = bufferManager.getBufferStatus('session-state');
-            expect(status.bufferedCount).toBe(1);
-            expect(status.lastAppliedSeqNum).toBe(null);
-        });
+    beforeEach(() => {
+        mgr = new UIEventBufferManager();
     });
 
-    describe('detectGaps', () => {
-        it('should detect gaps at beginning', () => {
-            bufferManager.bufferEvent({ seqNum: 2, notificationType: 'session-state', payload: 'event2', timestamp: Date.now() });
-
-            const gaps = bufferManager.detectGaps('session-state');
-            expect(gaps).toEqual([0, 1]);
-        });
-
-        it('should detect gaps between events', () => {
-            const events: SequencedEvent[] = [
-                { seqNum: 0, notificationType: 'session-state', payload: 'event0', timestamp: Date.now() },
-                { seqNum: 3, notificationType: 'session-state', payload: 'event3', timestamp: Date.now() },
-                { seqNum: 6, notificationType: 'session-state', payload: 'event6', timestamp: Date.now() },
-            ];
-
-            for (const event of events) {
-                bufferManager.bufferEvent(event);
-            }
-
-            // Flush first event
-            bufferManager.flushBuffer('session-state');
-
-            const gaps = bufferManager.detectGaps('session-state');
-            expect(gaps).toEqual([1, 2, 4, 5]); // Missing 1,2 between 0,3 and 4,5 between 3,6
-        });
-
-        it('should return empty array for consecutive events', () => {
-            const events: SequencedEvent[] = [
-                { seqNum: 0, notificationType: 'session-state', payload: 'event0', timestamp: Date.now() },
-                { seqNum: 1, notificationType: 'session-state', payload: 'event1', timestamp: Date.now() },
-                { seqNum: 2, notificationType: 'session-state', payload: 'event2', timestamp: Date.now() },
-            ];
-
-            for (const event of events) {
-                bufferManager.bufferEvent(event);
-            }
-
-            const gaps = bufferManager.detectGaps('session-state');
-            expect(gaps).toEqual([]);
-        });
-
-        it('should return empty array for empty buffer', () => {
-            const gaps = bufferManager.detectGaps('session-state');
-            expect(gaps).toEqual([]);
-        });
+    it('accepts event when no version info (undefined)', () => {
+        const ev = makeEvent('task-progress', { value: 50 });
+        expect(mgr.applyTaskProgress(ev)).toBe(ev);
     });
 
-    describe('getBufferStatus', () => {
-        it('should return correct status for empty buffer', () => {
-            const status = bufferManager.getBufferStatus('session-state');
-            expect(status).toEqual({
-                bufferedCount: 0,
-                lastAppliedSeqNum: null,
-                hasGaps: false,
-            });
-        });
-
-        it('should return correct status after buffering and flushing', () => {
-            const events: SequencedEvent[] = [
-                { seqNum: 0, notificationType: 'session-state', payload: 'event0', timestamp: Date.now() },
-                { seqNum: 2, notificationType: 'session-state', payload: 'event2', timestamp: Date.now() },
-            ];
-
-            for (const event of events) {
-                bufferManager.bufferEvent(event);
-            }
-
-            // Before flush
-            let status = bufferManager.getBufferStatus('session-state');
-            expect(status.bufferedCount).toBe(2);
-            expect(status.hasGaps).toBe(true); // Gap at seqNum 1
-
-            // After flush
-            bufferManager.flushBuffer('session-state');
-            status = bufferManager.getBufferStatus('session-state');
-            expect(status.bufferedCount).toBe(1); // Only event 2 remains
-            expect(status.lastAppliedSeqNum).toBe(0); // Only event 0 was flushed
-            expect(status.hasGaps).toBe(true); // Still gap at seqNum 1
-        });
+    it('accepts first versioned event', () => {
+        const ev = makeEvent('task-progress', { value: 30 }, 5);
+        expect(mgr.applyTaskProgress(ev)).toBe(ev);
+        expect(mgr.getTaskProgressState().lastAppliedVersion).toBe(5);
     });
 
-    describe('reset', () => {
-        it('should reset all buffers', () => {
-            const events: SequencedEvent[] = [
-                { seqNum: 0, notificationType: 'session-state', payload: 'event0', timestamp: Date.now() },
-                { seqNum: 1, notificationType: 'stage-snapshot', payload: 'event1', timestamp: Date.now() },
-                { seqNum: 2, notificationType: 'task-progress', payload: 'event2', timestamp: Date.now() },
-            ];
-
-            for (const event of events) {
-                bufferManager.bufferEvent(event);
-            }
-
-            bufferManager.reset();
-
-            const notificationTypes: NotificationType[] = ['session-state', 'stage-snapshot', 'task-progress'];
-            for (const type of notificationTypes) {
-                const status = bufferManager.getBufferStatus(type);
-                expect(status).toEqual({
-                    bufferedCount: 0,
-                    lastAppliedSeqNum: null,
-                    hasGaps: false,
-                });
-            }
-        });
+    it('accepts higher version', () => {
+        mgr.applyTaskProgress(makeEvent('task-progress', { value: 10 }, 3));
+        const ev = makeEvent('task-progress', { value: 20 }, 6);
+        expect(mgr.applyTaskProgress(ev)).toBe(ev);
+        expect(mgr.getTaskProgressState().lastAppliedVersion).toBe(6);
     });
 
-    describe('per-notification-type isolation', () => {
-        it('should maintain separate buffers for each notification type', () => {
-            const events: SequencedEvent[] = [
-                { seqNum: 0, notificationType: 'session-state', payload: 'session0', timestamp: Date.now() },
-                { seqNum: 0, notificationType: 'stage-snapshot', payload: 'snapshot0', timestamp: Date.now() },
-                { seqNum: 0, notificationType: 'task-progress', payload: 'progress0', timestamp: Date.now() },
-                { seqNum: 1, notificationType: 'session-state', payload: 'session1', timestamp: Date.now() },
-            ];
+    it('drops equal version (duplicate)', () => {
+        mgr.applyTaskProgress(makeEvent('task-progress', { value: 10 }, 3));
+        expect(mgr.applyTaskProgress(makeEvent('task-progress', { value: 10 }, 3))).toBeUndefined();
+    });
 
-            for (const event of events) {
-                bufferManager.bufferEvent(event);
-            }
+    it('drops lower version (stale / out-of-order)', () => {
+        mgr.applyTaskProgress(makeEvent('task-progress', { value: 50 }, 9));
+        expect(mgr.applyTaskProgress(makeEvent('task-progress', { value: 40 }, 6))).toBeUndefined();
+    });
 
-            // Each type should have independent seqNum sequences
-            const sessionFlushed = bufferManager.flushBuffer('session-state');
-            expect(sessionFlushed).toHaveLength(2);
-            expect(sessionFlushed.map(e => e.payload)).toEqual(['session0', 'session1']);
+    it('marks finalReached when value=100 is applied', () => {
+        mgr.applyTaskProgress(makeEvent('task-progress', { value: 100 }, 10));
+        expect(mgr.getTaskProgressState().finalReached).toBe(true);
+    });
 
-            const snapshotFlushed = bufferManager.flushBuffer('stage-snapshot');
-            expect(snapshotFlushed).toHaveLength(1);
-            expect(snapshotFlushed[0].payload).toBe('snapshot0');
+    it('drops all events after value=100 (final state protection)', () => {
+        mgr.applyTaskProgress(makeEvent('task-progress', { value: 100 }, 10));
+        // Higher version but after final — must be dropped
+        expect(mgr.applyTaskProgress(makeEvent('task-progress', { value: 80 }, 13))).toBeUndefined();
+        expect(mgr.applyTaskProgress(makeEvent('task-progress', { value: 100 }, 16))).toBeUndefined();
+    });
 
-            const progressFlushed = bufferManager.flushBuffer('task-progress');
-            expect(progressFlushed).toHaveLength(1);
-            expect(progressFlushed[0].payload).toBe('progress0');
-        });
+    it('marks finalReached for undefined-version event with value=100', () => {
+        mgr.applyTaskProgress(makeEvent('task-progress', { value: 100 }));
+        expect(mgr.getTaskProgressState().finalReached).toBe(true);
+        expect(mgr.applyTaskProgress(makeEvent('task-progress', { value: 50 }))).toBeUndefined();
+    });
+
+    it('throws on invalid version (negative)', () => {
+        expect(() => mgr.applyTaskProgress(makeEvent('task-progress', { value: 10 }, -1))).toThrow(
+            'Invalid task-progress version',
+        );
+    });
+
+    it('throws on invalid version (NaN)', () => {
+        expect(() => mgr.applyTaskProgress(makeEvent('task-progress', { value: 10 }, NaN))).toThrow(
+            'Invalid task-progress version',
+        );
+    });
+
+    it('throws when called with wrong notification type', () => {
+        expect(() =>
+            mgr.applyTaskProgress(makeEvent('session-state', {})),
+        ).toThrow('applyTaskProgress called with wrong type');
+    });
+
+    it('reset clears version state', () => {
+        mgr.applyTaskProgress(makeEvent('task-progress', { value: 100 }, 5));
+        mgr.reset();
+        const state = mgr.getTaskProgressState();
+        expect(state.lastAppliedVersion).toBeUndefined();
+        expect(state.finalReached).toBe(false);
+        // Should accept again after reset
+        expect(mgr.applyTaskProgress(makeEvent('task-progress', { value: 50 }, 3))).toBeDefined();
+    });
+
+    it('parallel worker interleaving: Worker0=0,3,6 Worker1=1,4,7 Worker2=2,5,8', () => {
+        // Simulate 3 parallel workers emitting interleaved versions
+        const versions = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+        const accepted: number[] = [];
+        for (const v of versions) {
+            const result = mgr.applyTaskProgress(makeEvent('task-progress', { value: v * 10 }, v));
+            if (result) accepted.push(v);
+        }
+        expect(accepted).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8]);
+    });
+
+    it('out-of-order delivery: later version arrives first, earlier is dropped', () => {
+        mgr.applyTaskProgress(makeEvent('task-progress', { value: 60 }, 6));
+        // version 3 arrives late — stale
+        expect(mgr.applyTaskProgress(makeEvent('task-progress', { value: 30 }, 3))).toBeUndefined();
+        // version 9 is fine
+        expect(mgr.applyTaskProgress(makeEvent('task-progress', { value: 90 }, 9))).toBeDefined();
     });
 });
 
 describe('ImmediateHeartbeatProcessor', () => {
-    it('should process heartbeat events immediately', () => {
-        const processedEvents: Array<{ nodeId: string; heartbeatAt?: number }> = [];
-        const processor = new ImmediateHeartbeatProcessor((event) => {
-            processedEvents.push(event);
-        });
+    it('passes heartbeat events through immediately', () => {
+        const received: Array<{ nodeId: string; heartbeatAt?: number }> = [];
+        const proc = new ImmediateHeartbeatProcessor((e) => received.push(e));
 
-        const heartbeatEvents = [
-            { nodeId: 'node1', heartbeatAt: 1000 },
-            { nodeId: 'node1', heartbeatAt: 2000 },
-            { nodeId: 'node1', heartbeatAt: 3000 },
-        ];
+        proc.processHeartbeat({ nodeId: 'n1', heartbeatAt: 1000 });
+        proc.processHeartbeat({ nodeId: 'n1', heartbeatAt: 2000 });
 
-        for (const event of heartbeatEvents) {
-            processor.processHeartbeat(event);
-        }
-
-        expect(processedEvents).toEqual(heartbeatEvents);
+        expect(received).toEqual([
+            { nodeId: 'n1', heartbeatAt: 1000 },
+            { nodeId: 'n1', heartbeatAt: 2000 },
+        ]);
     });
 
-    it('should handle heartbeat events without heartbeatAt', () => {
-        const processedEvents: Array<{ nodeId: string; heartbeatAt?: number }> = [];
-        const processor = new ImmediateHeartbeatProcessor((event) => {
-            processedEvents.push(event);
-        });
-
-        const event = { nodeId: 'node1' };
-        processor.processHeartbeat(event);
-
-        expect(processedEvents).toEqual([event]);
+    it('handles heartbeat without heartbeatAt', () => {
+        const received: Array<{ nodeId: string; heartbeatAt?: number }> = [];
+        const proc = new ImmediateHeartbeatProcessor((e) => received.push(e));
+        proc.processHeartbeat({ nodeId: 'n1' });
+        expect(received).toEqual([{ nodeId: 'n1' }]);
     });
 });
-    describe('buffer size limits', () => {
-        let bufferManager: UIEventBufferManager;
-
-        beforeEach(() => {
-            bufferManager = new UIEventBufferManager();
-        });
-
-        it('should enforce buffer size limits and cleanup old events', () => {
-            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-            
-            // Fill buffer beyond MAX_BUFFER_SIZE (1000)
-            for (let i = 0; i < 1100; i++) {
-                bufferManager.bufferEvent({
-                    seqNum: i,
-                    notificationType: 'session-state',
-                    payload: `event${i}`,
-                    timestamp: Date.now()
-                });
-            }
-
-            // Buffer should be cleaned up when it exceeds MAX_BUFFER_SIZE
-            // The cleanup happens after insertion, so final size may vary slightly
-            const status = bufferManager.getBufferStatus('session-state');
-            expect(status.bufferedCount).toBeLessThanOrEqual(1000);
-            expect(status.bufferedCount).toBeGreaterThan(800);
-            
-            // Should have logged warning about buffer overflow
-            expect(consoleSpy).toHaveBeenCalledWith(
-                expect.stringContaining('[UIEventBufferManager] Buffer overflow for session-state, removed')
-            );
-            
-            consoleSpy.mockRestore();
-        });
-
-        it('should maintain seqNum ordering after buffer cleanup', () => {
-            // Fill buffer with events in reverse order
-            for (let i = 1100; i >= 0; i--) {
-                bufferManager.bufferEvent({
-                    seqNum: i,
-                    notificationType: 'session-state',
-                    payload: `event${i}`,
-                    timestamp: Date.now()
-                });
-            }
-
-            // Buffer should be cleaned up but maintain ordering
-            const status = bufferManager.getBufferStatus('session-state');
-            expect(status.bufferedCount).toBeLessThanOrEqual(1000);
-            expect(status.bufferedCount).toBeGreaterThan(800);
-            
-            // Flush should still work correctly with remaining events
-            const flushed = bufferManager.flushBuffer('session-state');
-            expect(flushed.length).toBeGreaterThan(0);
-            
-            // Verify ordering is maintained
-            for (let i = 1; i < flushed.length; i++) {
-                expect(flushed[i].seqNum).toBeGreaterThan(flushed[i - 1].seqNum);
-            }
-        });
-
-        it('should handle buffer cleanup for different notification types independently', () => {
-            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-            
-            // Fill session-state buffer beyond limit
-            for (let i = 0; i < 1100; i++) {
-                bufferManager.bufferEvent({
-                    seqNum: i,
-                    notificationType: 'session-state',
-                    payload: `session${i}`,
-                    timestamp: Date.now()
-                });
-            }
-
-            // Add some events to other buffers (should not be affected)
-            for (let i = 0; i < 10; i++) {
-                bufferManager.bufferEvent({
-                    seqNum: i,
-                    notificationType: 'stage-snapshot',
-                    payload: `snapshot${i}`,
-                    timestamp: Date.now()
-                });
-            }
-
-            const sessionStatus = bufferManager.getBufferStatus('session-state');
-            const snapshotStatus = bufferManager.getBufferStatus('stage-snapshot');
-            
-            expect(sessionStatus.bufferedCount).toBeLessThanOrEqual(1000); // Cleaned up
-            expect(sessionStatus.bufferedCount).toBeGreaterThan(800);
-            expect(snapshotStatus.bufferedCount).toBe(10); // Unaffected
-            
-            consoleSpy.mockRestore();
-        });
-    });

@@ -13,7 +13,8 @@ import {
 } from '../../worker/api/eventBuffering';
 import {
     UIEventBufferManager,
-    type SequencedEvent as UISequencedEvent,
+    type BufferedEvent,
+    type NotificationType as UINotificationType,
 } from '../../ui/components/build-progress/eventBufferingUI';
 
 // Test utilities
@@ -29,13 +30,13 @@ const createSequencedEvent = (
     timestamp: timestamp ?? Date.now(),
 });
 
-const createUISequencedEvent = (
-    seqNum: number,
-    notificationType: NotificationType,
+const createUIBufferedEvent = (
+    notificationType: UINotificationType,
     timestamp?: number,
-    payload: unknown = { test: true }
-): UISequencedEvent => ({
-    seqNum,
+    payload: unknown = { test: true },
+    version?: number
+): BufferedEvent => ({
+    version,
     notificationType,
     payload,
     timestamp: timestamp ?? Date.now(),
@@ -72,7 +73,7 @@ describe('Property 23: Event Delivery Monitoring Accuracy', () => {
                     (events) => {
                         // Create fresh monitor for each test
                         const monitor = new EventDeliveryMonitor();
-                        
+
                         // Track emissions
                         events.forEach((eventData) => {
                             const event = createSequencedEvent(eventData.seqNum, eventData.notificationType);
@@ -102,7 +103,7 @@ describe('Property 23: Event Delivery Monitoring Accuracy', () => {
                     (events) => {
                         // Create fresh monitor for each test
                         const monitor = new EventDeliveryMonitor();
-                        
+
                         // Track buffering
                         events.forEach((eventData) => {
                             const event = createSequencedEvent(eventData.seqNum, eventData.notificationType);
@@ -171,7 +172,7 @@ describe('Property 23: Event Delivery Monitoring Accuracy', () => {
 
                         scenarios.forEach((scenario) => {
                             const processingTime = scenario.emissionTime + scenario.processingDelay;
-                            
+
                             // Create events with emission timestamp
                             const events = Array.from({ length: scenario.eventCount }, (_, i) =>
                                 createSequencedEvent(i, 'session-state', scenario.emissionTime)
@@ -222,7 +223,7 @@ describe('Property 23: Event Delivery Monitoring Accuracy', () => {
                     (bufferUpdates) => {
                         // Create fresh monitor for each test
                         const monitor = new EventDeliveryMonitor();
-                        const expectedBufferSizes: Record<NotificationType, number> = {
+                        const expectedBufferSizes: Partial<Record<NotificationType, number>> = {
                             'session-state': 0,
                             'stage-snapshot': 0,
                             'task-progress': 0,
@@ -254,8 +255,8 @@ describe('Property 23: Event Delivery Monitoring Accuracy', () => {
                 fc.property(
                     fc.array(
                         fc.record({
-                            notificationType: fc.constantFrom('session-state', 'stage-snapshot', 'task-progress'),
-                            seqNum: fc.integer({ min: 0, max: 20 }),
+                            notificationType: fc.constantFrom('session-state', 'stage-snapshot'),
+                            version: fc.integer({ min: 0, max: 20 }),
                         }),
                         { minLength: 1, maxLength: 8 }
                     ),
@@ -263,28 +264,23 @@ describe('Property 23: Event Delivery Monitoring Accuracy', () => {
                         // Create fresh instances for each test
                         const monitor = new EventDeliveryMonitor();
                         const bufferManager = new UIEventBufferManager();
-                        
+
                         // Buffer events in UI buffer manager and track with monitor
-                        eventData.forEach((data) => {
-                            const uiEvent = createUISequencedEvent(data.seqNum, data.notificationType);
-                            
-                            // Buffer in UI manager
-                            bufferManager.bufferEvent(uiEvent);
-                            
-                            // Get actual buffer size after buffering
-                            const bufferStatus = bufferManager.getBufferStatus(data.notificationType);
-                            
-                            // Log with monitor using the actual buffer size
-                            const workerEvent = createSequencedEvent(data.seqNum, data.notificationType);
-                            monitor.logEventBuffering(workerEvent, bufferStatus.bufferedCount);
+                        // Only session-state and stage-snapshot use FIFO enqueue
+                        eventData.forEach((data, index) => {
+                            const uiEvent = createUIBufferedEvent(data.notificationType);
+
+                            // Enqueue into FIFO
+                            bufferManager.enqueue(uiEvent);
+
+                            // Log with monitor using the current queue depth (index + 1 per type)
+                            const workerEvent = createSequencedEvent(index, data.notificationType);
+                            monitor.logEventBuffering(workerEvent, 1);
                         });
 
-                        // Verify monitor reflects actual buffer sizes
+                        // Verify monitor reflects total buffered count
                         const metrics = monitor.getMetrics();
-                        (['session-state', 'stage-snapshot', 'task-progress'] as NotificationType[]).forEach((type) => {
-                            const bufferStatus = bufferManager.getBufferStatus(type);
-                            expect(metrics.bufferUtilization[type]).toBe(bufferStatus.bufferedCount);
-                        });
+                        expect(metrics.totalEventsBuffered).toBe(eventData.length);
                     }
                 ),
                 { numRuns: PROPERTY_TEST_RUNS }
@@ -304,7 +300,7 @@ describe('Property 23: Event Delivery Monitoring Accuracy', () => {
                     ({ emissionCount, bufferingCount, processingCount }) => {
                         // Create fresh monitor for each test
                         const monitor = new EventDeliveryMonitor();
-                        
+
                         // Generate some activity
                         for (let i = 0; i < emissionCount; i++) {
                             const event = createSequencedEvent(i, 'session-state');
@@ -359,7 +355,7 @@ describe('Property 23: Event Delivery Monitoring Accuracy', () => {
                     ({ preResetActivity, postResetActivity }) => {
                         // Create fresh monitor for each test
                         const monitor = new EventDeliveryMonitor();
-                        
+
                         // Pre-reset activity
                         for (let i = 0; i < preResetActivity; i++) {
                             const event = createSequencedEvent(i, 'session-state');

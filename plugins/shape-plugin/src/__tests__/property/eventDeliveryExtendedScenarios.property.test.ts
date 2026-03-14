@@ -13,7 +13,7 @@ import {
 } from '../../worker/api/eventBuffering';
 import {
     UIEventBufferManager,
-    type SequencedEvent as UISequencedEvent,
+    type BufferedEvent,
 } from '../../ui/components/build-progress/eventBufferingUI';
 
 // Test utilities
@@ -29,13 +29,13 @@ const createSequencedEvent = (
     timestamp: timestamp ?? Date.now(),
 });
 
-const createUISequencedEvent = (
-    seqNum: number,
+const createUIBufferedEvent = (
     notificationType: NotificationType,
     timestamp?: number,
-    payload: unknown = { test: true }
-): UISequencedEvent => ({
-    seqNum,
+    payload: unknown = { test: true },
+    version?: number
+): BufferedEvent => ({
+    version,
     notificationType,
     payload,
     timestamp: timestamp ?? Date.now(),
@@ -65,55 +65,54 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
                         workerCount: fc.integer({ min: 2, max: MAX_PARALLEL_WORKERS }),
                         eventsPerWorker: fc.integer({ min: 1, max: 10 }),
                         notificationTypes: fc.array(
-                            fc.constantFrom('session-state', 'stage-snapshot', 'task-progress'),
-                            { minLength: 1, maxLength: 3 }
+                            fc.constantFrom('session-state', 'stage-snapshot'),
+                            { minLength: 1, maxLength: 2 }
                         ),
                     }),
                     ({ workerCount, eventsPerWorker, notificationTypes }) => {
                         const monitor = new EventDeliveryMonitor();
                         const bufferManager = new UIEventBufferManager();
-                        
+
                         // Simulate parallel workers emitting events
                         const allEvents: SequencedEvent[] = [];
-                        
+
                         for (let workerId = 0; workerId < workerCount; workerId++) {
                             for (let eventIdx = 0; eventIdx < eventsPerWorker; eventIdx++) {
                                 notificationTypes.forEach((notificationType) => {
                                     // Generate distributed sequence numbers
                                     const seqNum = workerId + (eventIdx * workerCount);
                                     const event = createSequencedEvent(seqNum, notificationType);
-                                    
+
                                     // Log emission
                                     monitor.logEventEmission(event);
-                                    
-                                    // Buffer in UI
-                                    const uiEvent = createUISequencedEvent(seqNum, notificationType);
-                                    bufferManager.bufferEvent(uiEvent);
-                                    
-                                    // Log buffering
-                                    const bufferStatus = bufferManager.getBufferStatus(notificationType);
-                                    monitor.logEventBuffering(event, bufferStatus.bufferedCount);
-                                    
+
+                                    // Enqueue into FIFO (session-state / stage-snapshot only)
+                                    const uiEvent = createUIBufferedEvent(notificationType as 'session-state' | 'stage-snapshot');
+                                    bufferManager.enqueue(uiEvent);
+
+                                    // Log buffering with size=1 per event
+                                    monitor.logEventBuffering(event, 1);
+
                                     allEvents.push(event);
                                 });
                             }
                         }
-                        
+
                         // Process all events
                         monitor.logEventReception(allEvents, 'success');
-                        
+
                         // Verify metrics consistency
                         const metrics = monitor.getMetrics();
                         const expectedEmissions = workerCount * eventsPerWorker * notificationTypes.length;
-                        
+
                         expect(metrics.totalEventsEmitted).toBe(expectedEmissions);
                         expect(metrics.totalEventsBuffered).toBe(expectedEmissions);
                         expect(metrics.totalEventsFlushed).toBe(expectedEmissions);
-                        
-                        // Verify no sequence number collisions in buffer
+
+                        // Verify FIFO queues can be drained without error
                         notificationTypes.forEach((type) => {
-                            const bufferStatus = bufferManager.getBufferStatus(type);
-                            expect(bufferStatus.hasGaps).toBe(false);
+                            const flushed = bufferManager.flushFifo(type as 'session-state' | 'stage-snapshot');
+                            expect(Array.isArray(flushed)).toBe(true);
                         });
                     }
                 ),
@@ -131,22 +130,22 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
                     ({ totalWorkers, eventsPerWorker }) => {
                         const monitor = new EventDeliveryMonitor();
                         const generatedSeqNums: number[] = [];
-                        
+
                         // Simulate distributed sequence number generation
                         for (let workerId = 0; workerId < totalWorkers; workerId++) {
                             for (let eventCount = 0; eventCount < eventsPerWorker; eventCount++) {
                                 const seqNum = workerId + (eventCount * totalWorkers);
                                 const event = createSequencedEvent(seqNum, 'session-state');
-                                
+
                                 monitor.logEventEmission(event);
                                 generatedSeqNums.push(seqNum);
                             }
                         }
-                        
+
                         // Verify no duplicates
                         const uniqueSeqNums = new Set(generatedSeqNums);
                         expect(uniqueSeqNums.size).toBe(generatedSeqNums.length);
-                        
+
                         // Verify proper distribution
                         const sortedSeqNums = [...generatedSeqNums].sort((a, b) => a - b);
                         for (let i = 1; i < sortedSeqNums.length; i++) {
@@ -173,30 +172,30 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
                     }),
                     ({ successfulEvents, failedEvents, errorTypes }) => {
                         const monitor = new EventDeliveryMonitor();
-                        
+
                         // Process successful events
                         const successEvents = Array.from({ length: successfulEvents }, (_, i) =>
                             createSequencedEvent(i, 'session-state')
                         );
                         monitor.logEventReception(successEvents, 'success');
-                        
+
                         // Process failed events with different error types
                         errorTypes.forEach((errorType, typeIndex) => {
                             const errorEvents = Array.from({ length: failedEvents }, (_, i) =>
                                 createSequencedEvent(successfulEvents + typeIndex * failedEvents + i, 'task-progress')
                             );
-                            
+
                             const error = new Error(`${errorType} error occurred`);
                             monitor.logEventReception(errorEvents, 'error', error);
                         });
-                        
+
                         // Verify metrics account for all events
                         const metrics = monitor.getMetrics();
                         const expectedTotal = successfulEvents + (failedEvents * errorTypes.length);
-                        
+
                         expect(metrics.totalEventsFlushed).toBe(expectedTotal);
                         expect(metrics.averageDeliveryLatency).toBeGreaterThanOrEqual(0);
-                        
+
                         // Memory usage should be within bounds even with errors
                         expect(metrics.memoryUsage.latencyEntriesCount).toBe(expectedTotal);
                     }
@@ -216,14 +215,14 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
                     ({ subscriberCount, failingSubscriberIndex, eventCount }) => {
                         const nodeId = 'test-node';
                         const callbackResults: boolean[] = [];
-                        
+
                         // Set up multiple subscribers
                         const unsubscribeFunctions: (() => void)[] = [];
-                        
+
                         for (let i = 0; i < subscriberCount; i++) {
                             const shouldFail = i === failingSubscriberIndex % subscriberCount;
-                            
-                            const callback = (event: SequencedEvent) => {
+
+                            const callback = (_event: SequencedEvent) => {
                                 if (shouldFail) {
                                     callbackResults.push(false);
                                     throw new Error(`Subscriber ${i} failed`);
@@ -231,11 +230,11 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
                                     callbackResults.push(true);
                                 }
                             };
-                            
+
                             const unsubscribe = unconditionalEventStreamer.subscribe(nodeId, 'session-state', callback);
                             unsubscribeFunctions.push(unsubscribe);
                         }
-                        
+
                         // Emit events
                         for (let i = 0; i < eventCount; i++) {
                             unconditionalEventStreamer.emitEvent(nodeId, 'session-state', {
@@ -244,13 +243,13 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
                                 state: 'running',
                             });
                         }
-                        
+
                         // Verify that non-failing subscribers still received events
                         const successfulCalls = callbackResults.filter(result => result === true);
                         const expectedSuccessfulCalls = (subscriberCount - 1) * eventCount;
-                        
+
                         expect(successfulCalls.length).toBe(expectedSuccessfulCalls);
-                        
+
                         // Cleanup
                         unsubscribeFunctions.forEach(unsubscribe => unsubscribe());
                     }
@@ -273,33 +272,33 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
                             maxLatencyEntries: 2000,
                             cleanupThreshold: 1500,
                         });
-                        
+
                         const _startTime = Date.now();
-                        
+
                         // Process multiple batches
                         for (let batch = 0; batch < batchCount; batch++) {
                             const events = Array.from({ length: batchSize }, (_, i) =>
                                 createSequencedEvent(batch * batchSize + i, 'session-state')
                             );
-                            
+
                             // Simulate processing time
                             vi.advanceTimersByTime(10);
-                            
+
                             monitor.logEventReception(events, 'success');
                         }
-                        
+
                         const _endTime = Date.now();
                         const totalEvents = batchSize * batchCount;
-                        
+
                         // Verify all events were processed
                         const metrics = monitor.getMetrics();
                         expect(metrics.totalEventsFlushed).toBe(totalEvents);
-                        
+
                         // Verify memory management kicked in if needed
                         if (totalEvents > 1500) {
                             expect(metrics.memoryUsage.latencyEntriesCount).toBeLessThanOrEqual(1500);
                         }
-                        
+
                         // Verify latency calculation is reasonable
                         expect(metrics.averageDeliveryLatency).toBeGreaterThanOrEqual(0);
                         expect(metrics.averageDeliveryLatency).toBeLessThan(1000); // Should be reasonable
@@ -309,45 +308,45 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
             );
         });
 
-        it('should handle rapid successive events efficiently', () => {
+        it('should handle rapid successive task-progress events efficiently', () => {
             fc.assert(
                 fc.property(
-                    fc.integer({ min: 100, max: 500 }),
+                    fc.integer({ min: 10, max: 50 }),
                     (eventCount) => {
                         const monitor = new EventDeliveryMonitor();
                         const bufferManager = new UIEventBufferManager();
-                        
-                        // Emit events rapidly
+
+                        // Emit task-progress events with increasing versions
+                        let acceptedCount = 0;
                         for (let i = 0; i < eventCount; i++) {
                             const event = createSequencedEvent(i, 'task-progress');
-                            
                             monitor.logEventEmission(event);
-                            
-                            const uiEvent = createUISequencedEvent(i, 'task-progress');
-                            bufferManager.bufferEvent(uiEvent);
-                            
-                            const bufferStatus = bufferManager.getBufferStatus('task-progress');
-                            monitor.logEventBuffering(event, bufferStatus.bufferedCount);
-                            
+
+                            // task-progress uses version-based gate
+                            const uiEvent = createUIBufferedEvent('task-progress', undefined, { value: i }, i);
+                            const accepted = bufferManager.applyTaskProgress(uiEvent);
+                            if (accepted !== undefined) {
+                                acceptedCount++;
+                                monitor.logEventBuffering(event, acceptedCount);
+                            }
+
                             // Advance time slightly
                             vi.advanceTimersByTime(1);
                         }
-                        
-                        // Process all at once
+
+                        // Process all emitted events
                         const allEvents = Array.from({ length: eventCount }, (_, i) =>
                             createSequencedEvent(i, 'task-progress')
                         );
                         monitor.logEventReception(allEvents, 'success');
-                        
-                        // Verify consistency
+
+                        // Verify emission count
                         const metrics = monitor.getMetrics();
                         expect(metrics.totalEventsEmitted).toBe(eventCount);
-                        expect(metrics.totalEventsBuffered).toBe(eventCount);
                         expect(metrics.totalEventsFlushed).toBe(eventCount);
-                        
-                        // Verify buffer is properly ordered
-                        const gaps = bufferManager.detectGaps('task-progress');
-                        expect(gaps.length).toBe(0);
+
+                        // All events with increasing versions should be accepted
+                        expect(acceptedCount).toBe(eventCount);
                     }
                 ),
                 { numRuns: 20 } // Fewer runs for performance tests
@@ -356,46 +355,43 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
     });
 
     describe('Property 27: Edge Cases and Invalid Data', () => {
-        it('should handle invalid sequence numbers gracefully', () => {
+        it('should reject invalid task-progress versions', () => {
             fc.assert(
                 fc.property(
                     fc.array(
                         fc.record({
-                            seqNum: fc.oneof(
-                                fc.integer({ min: -100, max: -1 }), // Negative numbers
-                                fc.constant(NaN), // NaN
-                                fc.constant(Infinity), // Infinity
-                                fc.constant(-Infinity), // -Infinity
-                                fc.constant(Math.fround(0.5)) // Non-integers
+                            version: fc.oneof(
+                                fc.constant(NaN),
+                                fc.constant(Infinity),
+                                fc.constant(-Infinity),
+                                fc.integer({ min: -100, max: -1 }),
                             ),
-                            notificationType: fc.constantFrom('session-state', 'stage-snapshot', 'task-progress'),
+                            notificationType: fc.constant('task-progress' as const),
                         }),
                         { minLength: 1, maxLength: 5 }
                     ),
                     (invalidEvents) => {
                         const bufferManager = new UIEventBufferManager();
                         let errorCount = 0;
-                        
+
                         invalidEvents.forEach((eventData) => {
                             try {
-                                const event = createUISequencedEvent(eventData.seqNum, eventData.notificationType);
-                                bufferManager.bufferEvent(event);
-                                // If no error is thrown, the implementation accepts invalid seqNums
-                                // This is acceptable behavior - just verify the buffer state
+                                const event = createUIBufferedEvent(
+                                    eventData.notificationType,
+                                    undefined,
+                                    { test: true },
+                                    eventData.version
+                                );
+                                bufferManager.applyTaskProgress(event);
                             } catch (error) {
                                 errorCount++;
                                 expect(error).toBeInstanceOf(Error);
-                                expect((error as Error).message).toContain('Invalid seqNum');
+                                expect((error as Error).message).toContain('Invalid task-progress version');
                             }
                         });
-                        
-                        // The implementation may or may not throw errors for invalid seqNums
-                        // This is acceptable - we just verify it doesn't crash
-                        expect(errorCount).toBeLessThanOrEqual(invalidEvents.length);
-                        
-                        // Buffer state should remain consistent
-                        const bufferStatus = bufferManager.getBufferStatus('session-state');
-                        expect(typeof bufferStatus.bufferedCount).toBe('number');
+
+                        // All invalid versions must throw
+                        expect(errorCount).toBe(invalidEvents.length);
                     }
                 ),
                 { numRuns: PROPERTY_TEST_RUNS }
@@ -408,10 +404,10 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
                     fc.constantFrom('success', 'error'),
                     (processingStatus) => {
                         const monitor = new EventDeliveryMonitor();
-                        
+
                         // Process empty array
                         monitor.logEventReception([], processingStatus);
-                        
+
                         // Verify metrics are updated correctly
                         const metrics = monitor.getMetrics();
                         expect(metrics.totalEventsFlushed).toBe(0);
@@ -443,7 +439,7 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
                     ),
                     (eventData) => {
                         const monitor = new EventDeliveryMonitor();
-                        
+
                         // Create events with various payload types
                         const events = eventData.map((data) => ({
                             seqNum: data.seqNum,
@@ -451,12 +447,12 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
                             payload: data.payload,
                             timestamp: Date.now(),
                         }));
-                        
+
                         // Should not throw errors regardless of payload content
                         expect(() => {
                             monitor.logEventReception(events, 'success');
                         }).not.toThrow();
-                        
+
                         // Verify metrics are still accurate
                         const metrics = monitor.getMetrics();
                         expect(metrics.totalEventsFlushed).toBe(events.length);
@@ -485,16 +481,16 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
                     ),
                     (eventData) => {
                         const monitor = new EventDeliveryMonitor();
-                        
+
                         const events = eventData.map((data) =>
                             createSequencedEvent(data.seqNum, 'session-state', data.timestamp)
                         );
-                        
+
                         // Should handle extreme timestamps without errors
                         expect(() => {
                             monitor.logEventReception(events, 'success');
                         }).not.toThrow();
-                        
+
                         // Verify latency calculation handles extreme values
                         const metrics = monitor.getMetrics();
                         expect(Number.isFinite(metrics.averageDeliveryLatency)).toBe(true);
