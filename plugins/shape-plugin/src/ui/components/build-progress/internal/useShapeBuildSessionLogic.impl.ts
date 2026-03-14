@@ -264,7 +264,6 @@ export const useShapeBuildSession = ({ data, nodeId }: Args) => {
       stageStartedAt: stageTimingByStage[runtime.activeStageId]?.stageStartedAt,
       stageInactiveMs: stageTimingByStage[runtime.activeStageId]?.stageInactiveMs,
     },
-    activeNodeId,
   });
 
   const { buildSessionTransitionElapsedMs: startupLifecycleElapsedMs } = useShapeBuildSessionStartupLifecycle({

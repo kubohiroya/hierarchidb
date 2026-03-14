@@ -121,15 +121,12 @@ export const useBuildProgressPanelState = (params: {
     handleConfirmStart,
     setCompletionSnapshot,
     completionKeyRef: runtimeState.completionKeyRef,
-    totalElapsedSnapshot: runtimeState.totalElapsedSnapshot,
-    setTotalElapsedSnapshot: runtimeState.setTotalElapsedSnapshot,
     mismatchSignatureRef: runtimeState.mismatchSignatureRef,
     completion,
   };
 };
 
 export {
-  shouldUpdateElapsedSnapshot,
   resolveCompletionFailedStageLabel,
   resolveActiveRunningStageId,
   isDev,
