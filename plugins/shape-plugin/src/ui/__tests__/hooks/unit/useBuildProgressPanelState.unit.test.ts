@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   resolveCompletionFailedStageLabel,
   resolveActiveRunningStageId,
+  shouldUpdateElapsedSnapshot,
 } from '../../../components/build-progress/useBuildProgressPanelState/useBuildProgressPanelState.utils';
 
 describe('shouldUpdateElapsedSnapshot', () => {

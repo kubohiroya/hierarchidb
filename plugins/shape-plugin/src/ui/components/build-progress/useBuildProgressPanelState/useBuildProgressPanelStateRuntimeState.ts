@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useBuildCrashInsight } from '~/ui/components/build-progress/useBuildCrashInsight/useBuildCrashInsight';
@@ -135,7 +135,6 @@ export const useBuildProgressPanelStateRuntimeState = (
   const localStartPending = useAtomValue(pendingUserActionAtom) === 'starting';
   const completionKeyRef = useRef<string | null>(null);
   const mismatchSignatureRef = useRef<Map<string, string>>(new Map());
-  const prevNodeIdRef = useRef<string | undefined>(undefined);
 
   const completion = useBuildCrashInsight({
     draft: params.data,
@@ -200,33 +199,6 @@ export const useBuildProgressPanelStateRuntimeState = (
     completionKeyRef,
     mismatchSignatureRef,
   });
-
-  // Reset totalElapsedSnapshot when nodeId changes.
-  // Must be in useEffect to avoid setState during render (which causes infinite loops).
-  useEffect(() => {
-    if (nodeIdForLog !== prevNodeIdRef.current) {
-      prevNodeIdRef.current = nodeIdForLog;
-      setTotalElapsedSnapshot(null);
-    }
-  }, [nodeIdForLog, setTotalElapsedSnapshot]);
-
-  const liveTotalElapsedMs = useMemo(() => {
-    // When idle, ignore any stale snapshot and return the raw value (0 after reset).
-    if (summary.buildStatus === 'idle') {
-      return summary.totalElapsedMs;
-    }
-    if (!totalElapsedSnapshot) {
-      return summary.totalElapsedMs;
-    }
-    if (summary.buildStatus === 'running' || summary.buildStatus === 'paused') {
-      const drift = Math.max(0, elapsedTickMs - totalElapsedSnapshot.capturedAt);
-      return totalElapsedSnapshot.durationMs + drift;
-    }
-    if (summary.totalElapsedMs > totalElapsedSnapshot.durationMs) {
-      return summary.totalElapsedMs;
-    }
-    return totalElapsedSnapshot.durationMs;
-  }, [elapsedTickMs, summary.buildStatus, summary.totalElapsedMs, totalElapsedSnapshot]);
 
   const setPendingUserAction = useSetAtom(pendingUserActionAtom);
 

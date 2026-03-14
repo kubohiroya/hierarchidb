@@ -1,269 +1,265 @@
 /**
- * Unit tests for EventDeliveryMonitor memory management functionality
- * Tests memory cleanup, configuration, and monitoring features
+ * Unit tests for UIEventBufferManager state management.
+ * Replaces the old EventDeliveryMonitor memory management tests (removed in the
+ * FIFO+version-gate redesign).  The current UI-side API is:
+ *   UIEventBufferManager.enqueue / flushFifo / applyTaskProgress / reset / getTaskProgressState
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { EventDeliveryMonitor, type SequencedEvent, type NotificationType } from '../../worker/api/eventBuffering';
+import { describe, it, expect, beforeEach } from 'vitest';
+import {
+    UIEventBufferManager,
+    type BufferedEvent,
+} from '../../ui/components/build-progress/eventBufferingUI';
 
-// Test utilities
-const createSequencedEvent = (
-    seqNum: number,
-    notificationType: NotificationType,
-    timestamp?: number,
-    payload: unknown = { test: true }
-): SequencedEvent => ({
-    seqNum,
-    notificationType,
-    payload,
-    timestamp: timestamp ?? Date.now(),
+const makeSessionEvent = (index = 0): BufferedEvent => ({
+    notificationType: 'session-state',
+    version: undefined,
+    payload: { index },
+    timestamp: Date.now(),
 });
 
-describe('EventDeliveryMonitor Memory Management', () => {
-    let monitor: EventDeliveryMonitor;
-    let consoleSpy: ReturnType<typeof vi.spyOn>;
+const makeStageEvent = (index = 0): BufferedEvent => ({
+    notificationType: 'stage-snapshot',
+    version: undefined,
+    payload: { index },
+    timestamp: Date.now(),
+});
+
+const makeTaskEvent = (version: number, value = 50): BufferedEvent => ({
+    notificationType: 'task-progress',
+    version,
+    payload: { value },
+    timestamp: Date.now(),
+});
+
+describe('UIEventBufferManager state management', () => {
+    let manager: UIEventBufferManager;
 
     beforeEach(() => {
-        monitor = new EventDeliveryMonitor();
-        consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-        vi.spyOn(console, 'error').mockImplementation(() => {});
-        vi.spyOn(console, 'log').mockImplementation(() => {});
-        vi.useFakeTimers();
-        vi.setSystemTime(1000);
+        manager = new UIEventBufferManager();
     });
 
-    afterEach(() => {
-        vi.restoreAllMocks();
-        vi.useRealTimers();
-    });
+    // -----------------------------------------------------------------------
+    // Initial state
+    // -----------------------------------------------------------------------
 
-    describe('Memory Configuration', () => {
-        it('should use default configuration when none provided', () => {
-            const metrics = monitor.getMetrics();
-            expect(metrics.memoryUsage.latencyEntriesCount).toBe(0);
-            expect(metrics.memoryUsage.isWarningLevel).toBe(false);
-            expect(metrics.memoryUsage.isAlertLevel).toBe(false);
+    describe('Initial state', () => {
+        it('starts with empty FIFO queues', () => {
+            expect(manager.flushFifo('session-state')).toEqual([]);
+            expect(manager.flushFifo('stage-snapshot')).toEqual([]);
         });
 
-        it('should accept custom configuration', () => {
-            const customMonitor = new EventDeliveryMonitor({
-                maxLatencyEntries: 50,
-                cleanupThreshold: 40,
-                memoryWarningThreshold: 30,
-                memoryAlertThreshold: 45,
-            });
-
-            // Fill with events to test custom thresholds
-            for (let i = 0; i < 35; i++) {
-                const events = [createSequencedEvent(i, 'session-state')];
-                customMonitor.logEventReception(events, 'success');
-            }
-
-            const metrics = customMonitor.getMetrics();
-            expect(metrics.memoryUsage.isWarningLevel).toBe(true);
-            expect(metrics.memoryUsage.isAlertLevel).toBe(false);
-        });
-
-        it('should update configuration dynamically', () => {
-            // Fill with events
-            for (let i = 0; i < 600; i++) {
-                const events = [createSequencedEvent(i, 'session-state')];
-                monitor.logEventReception(events, 'success');
-            }
-
-            // Update config to lower limits
-            monitor.updateConfig({
-                maxLatencyEntries: 100,
-                cleanupThreshold: 80,
-            });
-
-            const metrics = monitor.getMetrics();
-            expect(metrics.memoryUsage.latencyEntriesCount).toBeLessThanOrEqual(100);
+        it('starts with clean task-progress state', () => {
+            const state = manager.getTaskProgressState();
+            expect(state.finalReached).toBe(false);
+            expect(state.lastAppliedVersion).toBeUndefined();
         });
     });
 
-    describe('Automatic Memory Cleanup', () => {
-        it('should automatically cleanup when max entries exceeded', () => {
-            const customMonitor = new EventDeliveryMonitor({
-                maxLatencyEntries: 10,
-                cleanupThreshold: 8,
+    // -----------------------------------------------------------------------
+    // FIFO queue behaviour
+    // -----------------------------------------------------------------------
+
+    describe('FIFO queue behaviour', () => {
+        it('preserves insertion order for session-state', () => {
+            const events = Array.from({ length: 5 }, (_, i) => makeSessionEvent(i));
+            events.forEach((ev) => manager.enqueue(ev));
+
+            const flushed = manager.flushFifo('session-state');
+            expect(flushed.length).toBe(5);
+            flushed.forEach((ev, i) => {
+                expect((ev.payload as { index: number }).index).toBe(i);
             });
-
-            // Add events one by one to trigger cleanup
-            for (let i = 0; i < 15; i++) {
-                const events = [createSequencedEvent(i, 'session-state')];
-                customMonitor.logEventReception(events, 'success');
-                const currentMetrics = customMonitor.getMetrics();
-                console.log(`After event ${i}: ${currentMetrics.memoryUsage.latencyEntriesCount} entries`);
-            }
-
-            const metrics = customMonitor.getMetrics();
-            // The cleanup happens when we exceed maxLatencyEntries (10)
-            // So after 15 events, we should have cleanupThreshold (8) entries
-            // But the cleanup happens after adding each event, so the final count might be different
-            expect(metrics.memoryUsage.latencyEntriesCount).toBeLessThanOrEqual(10);
-            expect(consoleSpy).toHaveBeenCalledWith(
-                expect.stringContaining('[EventDeliveryMonitor] Memory cleanup performed'),
-                expect.any(Object)
-            );
         });
 
-        it('should keep most recent entries during cleanup', () => {
-            const customMonitor = new EventDeliveryMonitor({
-                maxLatencyEntries: 5,
-                cleanupThreshold: 3,
-            });
+        it('preserves insertion order for stage-snapshot', () => {
+            const events = Array.from({ length: 3 }, (_, i) => makeStageEvent(i));
+            events.forEach((ev) => manager.enqueue(ev));
 
-            // Add events with different timestamps
-            const timestamps = [1000, 1100, 1200, 1300, 1400, 1500, 1600];
-            timestamps.forEach((timestamp, i) => {
-                vi.setSystemTime(timestamp + 100); // Processing time
-                const events = [createSequencedEvent(i, 'session-state', timestamp)];
-                customMonitor.logEventReception(events, 'success');
-                const currentMetrics = customMonitor.getMetrics();
-                console.log(`After event ${i}: ${currentMetrics.memoryUsage.latencyEntriesCount} entries`);
+            const flushed = manager.flushFifo('stage-snapshot');
+            expect(flushed.length).toBe(3);
+            flushed.forEach((ev, i) => {
+                expect((ev.payload as { index: number }).index).toBe(i);
             });
+        });
 
-            const metrics = customMonitor.getMetrics();
-            // After cleanup, should have at most cleanupThreshold entries
-            expect(metrics.memoryUsage.latencyEntriesCount).toBeLessThanOrEqual(5);
-            
-            // The average should reflect the most recent latencies (100ms each)
-            expect(metrics.averageDeliveryLatency).toBe(100);
+        it('flushFifo drains the queue completely', () => {
+            manager.enqueue(makeSessionEvent());
+            manager.enqueue(makeSessionEvent());
+
+            const first = manager.flushFifo('session-state');
+            const second = manager.flushFifo('session-state');
+
+            expect(first.length).toBe(2);
+            expect(second.length).toBe(0);
+        });
+
+        it('session-state and stage-snapshot queues are independent', () => {
+            manager.enqueue(makeSessionEvent(0));
+            manager.enqueue(makeSessionEvent(1));
+            manager.enqueue(makeStageEvent(0));
+
+            expect(manager.flushFifo('session-state').length).toBe(2);
+            expect(manager.flushFifo('stage-snapshot').length).toBe(1);
+        });
+
+        it('enqueue throws for task-progress events', () => {
+            expect(() => {
+                manager.enqueue(makeTaskEvent(1));
+            }).toThrow('[UIEventBufferManager] task-progress must be applied via applyTaskProgress');
+        });
+
+        it('enqueue throws for unknown notification type', () => {
+            expect(() => {
+                manager.enqueue({
+                    notificationType: 'unknown' as 'session-state',
+                    version: undefined,
+                    payload: {},
+                    timestamp: Date.now(),
+                });
+            }).toThrow('[UIEventBufferManager] Unknown notification type');
+        });
+
+        it('flushFifo throws for unknown notification type', () => {
+            expect(() => {
+                manager.flushFifo('unknown' as 'session-state');
+            }).toThrow('[UIEventBufferManager] Unknown notification type');
         });
     });
 
-    describe('Memory Usage Monitoring', () => {
-        it('should track memory usage statistics', () => {
-            // Add some events
-            for (let i = 0; i < 50; i++) {
-                const events = [createSequencedEvent(i, 'session-state')];
-                monitor.logEventReception(events, 'success');
-            }
+    // -----------------------------------------------------------------------
+    // task-progress version gate
+    // -----------------------------------------------------------------------
 
-            const metrics = monitor.getMetrics();
-            expect(metrics.memoryUsage.latencyEntriesCount).toBe(50);
-            expect(metrics.memoryUsage.estimatedMemoryUsage).toBeGreaterThan(0);
-            expect(typeof metrics.memoryUsage.isWarningLevel).toBe('boolean');
-            expect(typeof metrics.memoryUsage.isAlertLevel).toBe('boolean');
+    describe('task-progress version gate', () => {
+        it('accepts the first event regardless of version', () => {
+            const result = manager.applyTaskProgress(makeTaskEvent(5));
+            expect(result).not.toBeUndefined();
+            expect(manager.getTaskProgressState().lastAppliedVersion).toBe(5);
         });
 
-        it('should trigger warning at warning threshold', () => {
-            const customMonitor = new EventDeliveryMonitor({
-                memoryWarningThreshold: 5,
-                memoryAlertThreshold: 10,
-            });
-
-            // Add events to reach warning threshold
-            for (let i = 0; i < 6; i++) {
-                const events = [createSequencedEvent(i, 'session-state')];
-                customMonitor.logEventReception(events, 'success');
-            }
-
-            const metrics = customMonitor.getMetrics();
-            expect(metrics.memoryUsage.isWarningLevel).toBe(true);
-            expect(metrics.memoryUsage.isAlertLevel).toBe(false);
+        it('accepts strictly increasing versions', () => {
+            expect(manager.applyTaskProgress(makeTaskEvent(1))).not.toBeUndefined();
+            expect(manager.applyTaskProgress(makeTaskEvent(2))).not.toBeUndefined();
+            expect(manager.applyTaskProgress(makeTaskEvent(10))).not.toBeUndefined();
+            expect(manager.getTaskProgressState().lastAppliedVersion).toBe(10);
         });
 
-        it('should trigger alert at alert threshold', () => {
-            const customMonitor = new EventDeliveryMonitor({
-                memoryWarningThreshold: 5,
-                memoryAlertThreshold: 10,
-            });
-
-            const errorSpy = vi.spyOn(console, 'error');
-
-            // Add events to reach alert threshold
-            for (let i = 0; i < 11; i++) {
-                const events = [createSequencedEvent(i, 'session-state')];
-                customMonitor.logEventReception(events, 'success');
-            }
-
-            const metrics = customMonitor.getMetrics();
-            expect(metrics.memoryUsage.isWarningLevel).toBe(true);
-            expect(metrics.memoryUsage.isAlertLevel).toBe(true);
-            expect(errorSpy).toHaveBeenCalledWith(
-                expect.stringContaining('[EventDeliveryMonitor] Memory usage alert'),
-                expect.any(Object)
-            );
-        });
-    });
-
-    describe('Force Cleanup', () => {
-        it('should perform forced cleanup', () => {
-            // Add many events
-            for (let i = 0; i < 200; i++) {
-                const events = [createSequencedEvent(i, 'session-state')];
-                monitor.logEventReception(events, 'success');
-            }
-
-            const beforeCleanup = monitor.getMetrics();
-            expect(beforeCleanup.memoryUsage.latencyEntriesCount).toBe(200);
-
-            monitor.forceCleanup();
-
-            const afterCleanup = monitor.getMetrics();
-            // Default cleanup threshold is 800, but we only have 200 entries
-            // forceCleanup should reduce to cleanup threshold (800) or keep current size if smaller
-            expect(afterCleanup.memoryUsage.latencyEntriesCount).toBe(200);
+        it('drops equal version (duplicate)', () => {
+            manager.applyTaskProgress(makeTaskEvent(5));
+            const result = manager.applyTaskProgress(makeTaskEvent(5));
+            expect(result).toBeUndefined();
         });
 
-        it('should log forced cleanup', () => {
-            const logSpy = vi.spyOn(console, 'log');
+        it('drops lower version (stale)', () => {
+            manager.applyTaskProgress(makeTaskEvent(10));
+            const result = manager.applyTaskProgress(makeTaskEvent(3));
+            expect(result).toBeUndefined();
+        });
 
-            // Add events
-            for (let i = 0; i < 100; i++) {
-                const events = [createSequencedEvent(i, 'session-state')];
-                monitor.logEventReception(events, 'success');
-            }
+        it('sets finalReached when value=100 is accepted', () => {
+            manager.applyTaskProgress(makeTaskEvent(1, 100));
+            expect(manager.getTaskProgressState().finalReached).toBe(true);
+        });
 
-            monitor.forceCleanup();
+        it('drops all events after finalReached', () => {
+            manager.applyTaskProgress(makeTaskEvent(1, 100));
+            expect(manager.applyTaskProgress(makeTaskEvent(2, 50))).toBeUndefined();
+            expect(manager.applyTaskProgress(makeTaskEvent(3, 0))).toBeUndefined();
+        });
 
-            expect(logSpy).toHaveBeenCalledWith(
-                expect.stringContaining('[EventDeliveryMonitor] Forced memory cleanup completed'),
-                expect.any(Object)
-            );
+        it('accepts undefined version unconditionally', () => {
+            expect(manager.applyTaskProgress(makeTaskEvent(undefined as unknown as number))).not.toBeUndefined();
+            expect(manager.applyTaskProgress(makeTaskEvent(undefined as unknown as number))).not.toBeUndefined();
+        });
+
+        it('throws for NaN version', () => {
+            expect(() => manager.applyTaskProgress(makeTaskEvent(NaN))).toThrow('Invalid task-progress version');
+        });
+
+        it('throws for Infinity version', () => {
+            expect(() => manager.applyTaskProgress(makeTaskEvent(Infinity))).toThrow('Invalid task-progress version');
+        });
+
+        it('throws for negative version', () => {
+            expect(() => manager.applyTaskProgress(makeTaskEvent(-1))).toThrow('Invalid task-progress version');
+        });
+
+        it('throws when called with wrong notification type', () => {
+            expect(() => {
+                manager.applyTaskProgress(makeSessionEvent() as BufferedEvent);
+            }).toThrow('[UIEventBufferManager] applyTaskProgress called with wrong type');
         });
     });
 
-    describe('Memory Reset', () => {
-        it('should reset all memory-related state', () => {
-            // Add events and trigger memory management
-            for (let i = 0; i < 100; i++) {
-                const events = [createSequencedEvent(i, 'session-state')];
-                monitor.logEventReception(events, 'success');
-            }
+    // -----------------------------------------------------------------------
+    // reset
+    // -----------------------------------------------------------------------
 
-            const beforeReset = monitor.getMetrics();
-            expect(beforeReset.memoryUsage.latencyEntriesCount).toBeGreaterThan(0);
+    describe('reset', () => {
+        it('clears session-state FIFO queue', () => {
+            manager.enqueue(makeSessionEvent());
+            manager.enqueue(makeSessionEvent());
+            manager.reset();
+            expect(manager.flushFifo('session-state').length).toBe(0);
+        });
 
-            monitor.reset();
+        it('clears stage-snapshot FIFO queue', () => {
+            manager.enqueue(makeStageEvent());
+            manager.reset();
+            expect(manager.flushFifo('stage-snapshot').length).toBe(0);
+        });
 
-            const afterReset = monitor.getMetrics();
-            expect(afterReset.memoryUsage.latencyEntriesCount).toBe(0);
-            expect(afterReset.memoryUsage.estimatedMemoryUsage).toBe(64); // base overhead
-            expect(afterReset.memoryUsage.isWarningLevel).toBe(false);
-            expect(afterReset.memoryUsage.isAlertLevel).toBe(false);
+        it('resets task-progress state', () => {
+            manager.applyTaskProgress(makeTaskEvent(5, 100));
+            manager.reset();
+
+            const state = manager.getTaskProgressState();
+            expect(state.finalReached).toBe(false);
+            expect(state.lastAppliedVersion).toBeUndefined();
+        });
+
+        it('allows new events after reset', () => {
+            manager.enqueue(makeSessionEvent());
+            manager.applyTaskProgress(makeTaskEvent(5, 100));
+            manager.reset();
+
+            manager.enqueue(makeSessionEvent(99));
+            const flushed = manager.flushFifo('session-state');
+            expect(flushed.length).toBe(1);
+            expect((flushed[0].payload as { index: number }).index).toBe(99);
+
+            const taskResult = manager.applyTaskProgress(makeTaskEvent(1, 50));
+            expect(taskResult).not.toBeUndefined();
+        });
+
+        it('multiple resets are idempotent', () => {
+            manager.enqueue(makeSessionEvent());
+            manager.reset();
+            manager.reset();
+            manager.reset();
+
+            expect(manager.flushFifo('session-state').length).toBe(0);
+            const state = manager.getTaskProgressState();
+            expect(state.finalReached).toBe(false);
         });
     });
 
-    describe('Memory Estimation', () => {
-        it('should estimate memory usage accurately', () => {
-            const entryCount = 100;
-            
-            for (let i = 0; i < entryCount; i++) {
-                const events = [createSequencedEvent(i, 'session-state')];
-                monitor.logEventReception(events, 'success');
-            }
+    // -----------------------------------------------------------------------
+    // getTaskProgressState immutability
+    // -----------------------------------------------------------------------
 
-            const metrics = monitor.getMetrics();
-            const expectedMemory = entryCount * 8 + 64; // 8 bytes per number + overhead
-            expect(metrics.memoryUsage.estimatedMemoryUsage).toBe(expectedMemory);
-        });
+    describe('getTaskProgressState returns a snapshot', () => {
+        it('returned object does not reflect subsequent mutations', () => {
+            manager.applyTaskProgress(makeTaskEvent(3));
+            const snapshot = manager.getTaskProgressState();
 
-        it('should handle empty latency array', () => {
-            const metrics = monitor.getMetrics();
-            expect(metrics.memoryUsage.estimatedMemoryUsage).toBe(64); // base overhead only
+            // Apply more events
+            manager.applyTaskProgress(makeTaskEvent(10, 100));
+
+            // Snapshot must not have changed
+            expect(snapshot.lastAppliedVersion).toBe(3);
+            expect(snapshot.finalReached).toBe(false);
         });
     });
 });

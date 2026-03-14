@@ -29,9 +29,6 @@ describe('UnconditionalEventStreamer', () => {
             unconditionalEventStreamer.subscribe(testNodeId, 'session-state', failingCallback);
             unconditionalEventStreamer.subscribe(testNodeId, 'session-state', anotherSuccessfulCallback);
 
-            // Configure sequence numbering
-            unconditionalEventStreamer.configureDistributedSeqNum(testNodeId, 0, 1);
-
             // Emit event
             const testEvent = {
                 nodeId: testNodeId,
@@ -39,7 +36,7 @@ describe('UnconditionalEventStreamer', () => {
                 timestamp: Date.now()
             };
 
-            unconditionalEventStreamer.emitEvent(testNodeId, 'session-state', testEvent);
+            unconditionalEventStreamer.emitEvent(testNodeId, 'session-state', testEvent as never);
 
             // All callbacks should have been called
             expect(successfulCallback).toHaveBeenCalledTimes(1);
@@ -81,7 +78,7 @@ describe('UnconditionalEventStreamer', () => {
                 heartbeatAt: Date.now()
             };
 
-            unconditionalEventStreamer.emitHeartbeat(testNodeId, heartbeatEvent);
+            unconditionalEventStreamer.emitHeartbeat(testNodeId, heartbeatEvent as never);
 
             // Both callbacks should have been called
             expect(successfulCallback).toHaveBeenCalledTimes(1);
@@ -111,7 +108,6 @@ describe('UnconditionalEventStreamer', () => {
             });
 
             unconditionalEventStreamer.subscribe(testNodeId, 'session-state', failingCallback);
-            unconditionalEventStreamer.configureDistributedSeqNum(testNodeId, 0, 1);
 
             const testEvent = {
                 nodeId: testNodeId,
@@ -119,7 +115,7 @@ describe('UnconditionalEventStreamer', () => {
                 timestamp: Date.now()
             };
 
-            unconditionalEventStreamer.emitEvent(testNodeId, 'session-state', testEvent);
+            unconditionalEventStreamer.emitEvent(testNodeId, 'session-state', testEvent as never);
 
             // Should handle non-Error exceptions gracefully
             expect(consoleSpy).toHaveBeenCalledWith(
@@ -148,8 +144,6 @@ describe('UnconditionalEventStreamer', () => {
             unconditionalEventStreamer.subscribe(testNodeId, 'session-state', failingCallback);
             unconditionalEventStreamer.subscribe(testNodeId, 'session-state', callback2);
 
-            unconditionalEventStreamer.configureDistributedSeqNum(testNodeId, 0, 1);
-
             // Emit multiple events
             for (let i = 0; i < 3; i++) {
                 const testEvent = {
@@ -157,7 +151,7 @@ describe('UnconditionalEventStreamer', () => {
                     sessionState: `state-${i}`,
                     timestamp: Date.now()
                 };
-                unconditionalEventStreamer.emitEvent(testNodeId, 'session-state', testEvent);
+                unconditionalEventStreamer.emitEvent(testNodeId, 'session-state', testEvent as never);
             }
 
             // All callbacks should continue to be called despite failures
@@ -182,8 +176,6 @@ describe('UnconditionalEventStreamer', () => {
             unconditionalEventStreamer.subscribe(testNodeId, 'session-state', callback2);
             unconditionalEventStreamer.subscribe(testNodeId, 'task-progress', callback3);
 
-            unconditionalEventStreamer.configureDistributedSeqNum(testNodeId, 0, 1);
-
             const sessionEvent = {
                 nodeId: testNodeId,
                 sessionState: 'running',
@@ -197,25 +189,17 @@ describe('UnconditionalEventStreamer', () => {
                 timestamp: Date.now()
             };
 
-            unconditionalEventStreamer.emitEvent(testNodeId, 'session-state', sessionEvent);
-            unconditionalEventStreamer.emitEvent(testNodeId, 'task-progress', progressEvent);
+            unconditionalEventStreamer.emitEvent(testNodeId, 'session-state', sessionEvent as never);
+            unconditionalEventStreamer.emitEvent(testNodeId, 'task-progress', progressEvent as never);
 
-            // Session-state subscribers should receive session event
+            // session-state subscribers receive session event
             expect(callback1).toHaveBeenCalledTimes(1);
             expect(callback2).toHaveBeenCalledTimes(1);
-            expect(callback1).toHaveBeenCalledWith(expect.objectContaining({
-                notificationType: 'session-state',
-                payload: sessionEvent,
-                seqNum: expect.any(Number)
-            }));
+            expect(callback1).toHaveBeenCalledWith(sessionEvent);
 
-            // Task-progress subscriber should receive progress event
+            // task-progress subscriber receives progress event
             expect(callback3).toHaveBeenCalledTimes(1);
-            expect(callback3).toHaveBeenCalledWith(expect.objectContaining({
-                notificationType: 'task-progress',
-                payload: progressEvent,
-                seqNum: expect.any(Number)
-            }));
+            expect(callback3).toHaveBeenCalledWith(progressEvent);
         });
     });
 });

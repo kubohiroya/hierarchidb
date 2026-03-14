@@ -1,503 +1,406 @@
 /**
- * Extended property tests for event delivery system
- * Tests Property 24-27 for parallel processing, error conditions, performance, and edge cases
+ * Extended property tests for event delivery system.
+ * Replaces the old EventDeliveryMonitor / SequencedEvent tests (removed in the
+ * FIFO+version-gate redesign).  Tests cover:
+ *   Property 24: parallel subscriber isolation
+ *   Property 25: error condition handling (subscriber exceptions)
+ *   Property 26: performance under load (UIEventBufferManager)
+ *   Property 27: edge cases and invalid data
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import fc from 'fast-check';
-import {
-    EventDeliveryMonitor,
-    unconditionalEventStreamer,
-    type SequencedEvent,
-    type NotificationType,
-} from '../../worker/api/eventBuffering';
+import { unconditionalEventStreamer } from '../../worker/api/eventBuffering';
+import type { NotificationType, EventPayload } from '../../worker/api/eventBuffering';
 import {
     UIEventBufferManager,
     type BufferedEvent,
 } from '../../ui/components/build-progress/eventBufferingUI';
+import type { NodeId } from '@hierarchidb/core-types';
 
-// Test utilities
-const createSequencedEvent = (
-    seqNum: number,
-    notificationType: NotificationType,
-    timestamp?: number,
-    payload: unknown = { test: true }
-): SequencedEvent => ({
-    seqNum,
-    notificationType,
-    payload,
-    timestamp: timestamp ?? Date.now(),
-});
+const toNodeId = (s: string): NodeId => s as NodeId;
 
-const createUIBufferedEvent = (
-    notificationType: NotificationType,
-    timestamp?: number,
-    payload: unknown = { test: true },
-    version?: number
-): BufferedEvent => ({
-    version,
-    notificationType,
-    payload,
-    timestamp: timestamp ?? Date.now(),
-});
-
-// Property test configurations
 const PROPERTY_TEST_RUNS = 50;
-const MAX_PARALLEL_WORKERS = 5;
-const PERFORMANCE_EVENT_COUNT = 100;
+
+const makeSessionEvent = (): EventPayload =>
+    ({ nodeId: 'n' as NodeId, sessionId: 's', state: 'running' } as EventPayload);
+
+const makeBufferedEvent = (
+    notificationType: 'session-state' | 'stage-snapshot',
+    version?: number,
+): BufferedEvent => ({
+    notificationType,
+    version,
+    payload: { test: true },
+    timestamp: Date.now(),
+});
+
+const makeTaskEvent = (version: number, value: number): BufferedEvent => ({
+    notificationType: 'task-progress',
+    version,
+    payload: { value },
+    timestamp: Date.now(),
+});
 
 describe('Property 24-27: Extended Event Delivery Scenarios', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-        vi.useFakeTimers();
-        vi.setSystemTime(1000);
-    });
-
     afterEach(() => {
-        vi.useRealTimers();
+        // individual tests call cleanup per nodeId
     });
 
-    describe('Property 24: Parallel Processing Scenarios', () => {
-        it('should handle concurrent event streams correctly', () => {
+    // -----------------------------------------------------------------------
+    // Property 24: Parallel subscriber isolation
+    // -----------------------------------------------------------------------
+
+    describe('Property 24: Parallel subscriber isolation', () => {
+        it('multiple subscribers on the same node all receive every event', () => {
             fc.assert(
                 fc.property(
                     fc.record({
-                        workerCount: fc.integer({ min: 2, max: MAX_PARALLEL_WORKERS }),
-                        eventsPerWorker: fc.integer({ min: 1, max: 10 }),
-                        notificationTypes: fc.array(
-                            fc.constantFrom('session-state', 'stage-snapshot'),
-                            { minLength: 1, maxLength: 2 }
-                        ),
-                    }),
-                    ({ workerCount, eventsPerWorker, notificationTypes }) => {
-                        const monitor = new EventDeliveryMonitor();
-                        const bufferManager = new UIEventBufferManager();
-
-                        // Simulate parallel workers emitting events
-                        const allEvents: SequencedEvent[] = [];
-
-                        for (let workerId = 0; workerId < workerCount; workerId++) {
-                            for (let eventIdx = 0; eventIdx < eventsPerWorker; eventIdx++) {
-                                notificationTypes.forEach((notificationType) => {
-                                    // Generate distributed sequence numbers
-                                    const seqNum = workerId + (eventIdx * workerCount);
-                                    const event = createSequencedEvent(seqNum, notificationType);
-
-                                    // Log emission
-                                    monitor.logEventEmission(event);
-
-                                    // Enqueue into FIFO (session-state / stage-snapshot only)
-                                    const uiEvent = createUIBufferedEvent(notificationType as 'session-state' | 'stage-snapshot');
-                                    bufferManager.enqueue(uiEvent);
-
-                                    // Log buffering with size=1 per event
-                                    monitor.logEventBuffering(event, 1);
-
-                                    allEvents.push(event);
-                                });
-                            }
-                        }
-
-                        // Process all events
-                        monitor.logEventReception(allEvents, 'success');
-
-                        // Verify metrics consistency
-                        const metrics = monitor.getMetrics();
-                        const expectedEmissions = workerCount * eventsPerWorker * notificationTypes.length;
-
-                        expect(metrics.totalEventsEmitted).toBe(expectedEmissions);
-                        expect(metrics.totalEventsBuffered).toBe(expectedEmissions);
-                        expect(metrics.totalEventsFlushed).toBe(expectedEmissions);
-
-                        // Verify FIFO queues can be drained without error
-                        notificationTypes.forEach((type) => {
-                            const flushed = bufferManager.flushFifo(type as 'session-state' | 'stage-snapshot');
-                            expect(Array.isArray(flushed)).toBe(true);
-                        });
-                    }
-                ),
-                { numRuns: PROPERTY_TEST_RUNS }
-            );
-        });
-
-        it('should maintain sequence number monotonicity across workers', () => {
-            fc.assert(
-                fc.property(
-                    fc.record({
-                        totalWorkers: fc.integer({ min: 2, max: MAX_PARALLEL_WORKERS }),
-                        eventsPerWorker: fc.integer({ min: 3, max: 8 }),
-                    }),
-                    ({ totalWorkers, eventsPerWorker }) => {
-                        const monitor = new EventDeliveryMonitor();
-                        const generatedSeqNums: number[] = [];
-
-                        // Simulate distributed sequence number generation
-                        for (let workerId = 0; workerId < totalWorkers; workerId++) {
-                            for (let eventCount = 0; eventCount < eventsPerWorker; eventCount++) {
-                                const seqNum = workerId + (eventCount * totalWorkers);
-                                const event = createSequencedEvent(seqNum, 'session-state');
-
-                                monitor.logEventEmission(event);
-                                generatedSeqNums.push(seqNum);
-                            }
-                        }
-
-                        // Verify no duplicates
-                        const uniqueSeqNums = new Set(generatedSeqNums);
-                        expect(uniqueSeqNums.size).toBe(generatedSeqNums.length);
-
-                        // Verify proper distribution
-                        const sortedSeqNums = [...generatedSeqNums].sort((a, b) => a - b);
-                        for (let i = 1; i < sortedSeqNums.length; i++) {
-                            expect(sortedSeqNums[i]).toBeGreaterThan(sortedSeqNums[i - 1]);
-                        }
-                    }
-                ),
-                { numRuns: PROPERTY_TEST_RUNS }
-            );
-        });
-    });
-
-    describe('Property 25: Error Condition Handling', () => {
-        it('should handle processing errors gracefully', () => {
-            fc.assert(
-                fc.property(
-                    fc.record({
-                        successfulEvents: fc.integer({ min: 1, max: 10 }),
-                        failedEvents: fc.integer({ min: 1, max: 5 }),
-                        errorTypes: fc.array(
-                            fc.constantFrom('network', 'parsing', 'validation', 'timeout'),
-                            { minLength: 1, maxLength: 2 }
-                        ),
-                    }),
-                    ({ successfulEvents, failedEvents, errorTypes }) => {
-                        const monitor = new EventDeliveryMonitor();
-
-                        // Process successful events
-                        const successEvents = Array.from({ length: successfulEvents }, (_, i) =>
-                            createSequencedEvent(i, 'session-state')
-                        );
-                        monitor.logEventReception(successEvents, 'success');
-
-                        // Process failed events with different error types
-                        errorTypes.forEach((errorType, typeIndex) => {
-                            const errorEvents = Array.from({ length: failedEvents }, (_, i) =>
-                                createSequencedEvent(successfulEvents + typeIndex * failedEvents + i, 'task-progress')
-                            );
-
-                            const error = new Error(`${errorType} error occurred`);
-                            monitor.logEventReception(errorEvents, 'error', error);
-                        });
-
-                        // Verify metrics account for all events
-                        const metrics = monitor.getMetrics();
-                        const expectedTotal = successfulEvents + (failedEvents * errorTypes.length);
-
-                        expect(metrics.totalEventsFlushed).toBe(expectedTotal);
-                        expect(metrics.averageDeliveryLatency).toBeGreaterThanOrEqual(0);
-
-                        // Memory usage should be within bounds even with errors
-                        expect(metrics.memoryUsage.latencyEntriesCount).toBe(expectedTotal);
-                    }
-                ),
-                { numRuns: PROPERTY_TEST_RUNS }
-            );
-        });
-
-        it('should isolate subscriber exceptions', () => {
-            fc.assert(
-                fc.property(
-                    fc.record({
+                        nodeId: fc.string({ minLength: 1, maxLength: 10 }),
                         subscriberCount: fc.integer({ min: 2, max: 5 }),
-                        failingSubscriberIndex: fc.integer({ min: 0, max: 4 }),
-                        eventCount: fc.integer({ min: 1, max: 5 }),
+                        eventCount: fc.integer({ min: 1, max: 10 }),
                     }),
-                    ({ subscriberCount, failingSubscriberIndex, eventCount }) => {
-                        const nodeId = 'test-node';
-                        const callbackResults: boolean[] = [];
+                    ({ nodeId, subscriberCount, eventCount }) => {
+                        const node = toNodeId(nodeId);
+                        const received: number[] = Array(subscriberCount).fill(0);
 
-                        // Set up multiple subscribers
-                        const unsubscribeFunctions: (() => void)[] = [];
+                        const unsubs = Array.from({ length: subscriberCount }, (_, i) =>
+                            unconditionalEventStreamer.subscribe(node, 'session-state', () => {
+                                received[i]++;
+                            }),
+                        );
+
+                        const payload = makeSessionEvent();
+                        for (let k = 0; k < eventCount; k++) {
+                            unconditionalEventStreamer.emitEvent(
+                                node,
+                                'session-state',
+                                payload as Exclude<EventPayload, import('~/common/types/session-events').SessionHeartbeatEvent>,
+                            );
+                        }
 
                         for (let i = 0; i < subscriberCount; i++) {
-                            const shouldFail = i === failingSubscriberIndex % subscriberCount;
-
-                            const callback = (_event: SequencedEvent) => {
-                                if (shouldFail) {
-                                    callbackResults.push(false);
-                                    throw new Error(`Subscriber ${i} failed`);
-                                } else {
-                                    callbackResults.push(true);
-                                }
-                            };
-
-                            const unsubscribe = unconditionalEventStreamer.subscribe(nodeId, 'session-state', callback);
-                            unsubscribeFunctions.push(unsubscribe);
+                            expect(received[i]).toBe(eventCount);
                         }
 
-                        // Emit events
-                        for (let i = 0; i < eventCount; i++) {
-                            unconditionalEventStreamer.emitEvent(nodeId, 'session-state', {
-                                nodeId,
-                                sessionId: 'test-session',
-                                state: 'running',
-                            });
-                        }
-
-                        // Verify that non-failing subscribers still received events
-                        const successfulCalls = callbackResults.filter(result => result === true);
-                        const expectedSuccessfulCalls = (subscriberCount - 1) * eventCount;
-
-                        expect(successfulCalls.length).toBe(expectedSuccessfulCalls);
-
-                        // Cleanup
-                        unsubscribeFunctions.forEach(unsubscribe => unsubscribe());
-                    }
+                        unsubs.forEach((u) => u());
+                        unconditionalEventStreamer.cleanup(node);
+                    },
                 ),
-                { numRuns: PROPERTY_TEST_RUNS }
+                { numRuns: PROPERTY_TEST_RUNS },
+            );
+        });
+
+        it('subscribers on different nodes do not interfere', () => {
+            fc.assert(
+                fc.property(
+                    fc.record({
+                        nodeIdA: fc.string({ minLength: 1, maxLength: 8 }),
+                        nodeIdB: fc.string({ minLength: 1, maxLength: 8 }),
+                        eventCount: fc.integer({ min: 1, max: 10 }),
+                    }).filter(({ nodeIdA, nodeIdB }) => nodeIdA !== nodeIdB),
+                    ({ nodeIdA, nodeIdB, eventCount }) => {
+                        const nodeA = toNodeId(nodeIdA);
+                        const nodeB = toNodeId(nodeIdB);
+                        let countA = 0;
+                        let countB = 0;
+
+                        const unsubA = unconditionalEventStreamer.subscribe(nodeA, 'session-state', () => { countA++; });
+                        const unsubB = unconditionalEventStreamer.subscribe(nodeB, 'session-state', () => { countB++; });
+
+                        const payload = makeSessionEvent();
+                        for (let k = 0; k < eventCount; k++) {
+                            unconditionalEventStreamer.emitEvent(
+                                nodeA,
+                                'session-state',
+                                payload as Exclude<EventPayload, import('~/common/types/session-events').SessionHeartbeatEvent>,
+                            );
+                        }
+
+                        expect(countA).toBe(eventCount);
+                        expect(countB).toBe(0);
+
+                        unsubA();
+                        unsubB();
+                        unconditionalEventStreamer.cleanup(nodeA);
+                        unconditionalEventStreamer.cleanup(nodeB);
+                    },
+                ),
+                { numRuns: PROPERTY_TEST_RUNS },
+            );
+        });
+
+        it('FIFO queues for different notification types are independent under concurrent enqueue', () => {
+            fc.assert(
+                fc.property(
+                    fc.record({
+                        sessionCount: fc.integer({ min: 1, max: 15 }),
+                        stageCount: fc.integer({ min: 1, max: 15 }),
+                    }),
+                    ({ sessionCount, stageCount }) => {
+                        const mgr = new UIEventBufferManager();
+
+                        // Interleave enqueues
+                        const total = Math.max(sessionCount, stageCount);
+                        for (let i = 0; i < total; i++) {
+                            if (i < sessionCount) mgr.enqueue(makeBufferedEvent('session-state'));
+                            if (i < stageCount) mgr.enqueue(makeBufferedEvent('stage-snapshot'));
+                        }
+
+                        expect(mgr.flushFifo('session-state').length).toBe(sessionCount);
+                        expect(mgr.flushFifo('stage-snapshot').length).toBe(stageCount);
+                    },
+                ),
+                { numRuns: PROPERTY_TEST_RUNS },
             );
         });
     });
 
-    describe('Property 26: Performance Under Load', () => {
-        it('should maintain performance with large event volumes', () => {
+    // -----------------------------------------------------------------------
+    // Property 25: Error condition handling
+    // -----------------------------------------------------------------------
+
+    describe('Property 25: Error condition handling', () => {
+        it('subscriber exceptions do not prevent other subscribers from receiving events', () => {
             fc.assert(
                 fc.property(
                     fc.record({
-                        batchSize: fc.integer({ min: 50, max: PERFORMANCE_EVENT_COUNT }),
+                        nodeId: fc.string({ minLength: 1, maxLength: 10 }),
+                        subscriberCount: fc.integer({ min: 2, max: 5 }),
+                        failingIndex: fc.integer({ min: 0, max: 4 }),
+                        eventCount: fc.integer({ min: 1, max: 5 }),
+                    }),
+                    ({ nodeId, subscriberCount, failingIndex, eventCount }) => {
+                        const node = toNodeId(nodeId);
+                        const successCounts: number[] = Array(subscriberCount).fill(0);
+                        const actualFailingIndex = failingIndex % subscriberCount;
+
+                        const unsubs = Array.from({ length: subscriberCount }, (_, i) =>
+                            unconditionalEventStreamer.subscribe(node, 'session-state', () => {
+                                if (i === actualFailingIndex) {
+                                    throw new Error(`subscriber ${i} failed`);
+                                }
+                                successCounts[i]++;
+                            }),
+                        );
+
+                        const payload = makeSessionEvent();
+                        for (let k = 0; k < eventCount; k++) {
+                            unconditionalEventStreamer.emitEvent(
+                                node,
+                                'session-state',
+                                payload as Exclude<EventPayload, import('~/common/types/session-events').SessionHeartbeatEvent>,
+                            );
+                        }
+
+                        // Non-failing subscribers must still receive all events
+                        for (let i = 0; i < subscriberCount; i++) {
+                            if (i !== actualFailingIndex) {
+                                expect(successCounts[i]).toBe(eventCount);
+                            }
+                        }
+
+                        unsubs.forEach((u) => u());
+                        unconditionalEventStreamer.cleanup(node);
+                    },
+                ),
+                { numRuns: PROPERTY_TEST_RUNS },
+            );
+        });
+
+        it('applyTaskProgress with wrong type throws immediately', () => {
+            fc.assert(
+                fc.property(
+                    fc.constantFrom<'session-state' | 'stage-snapshot'>('session-state', 'stage-snapshot'),
+                    (wrongType) => {
+                        const mgr = new UIEventBufferManager();
+                        let threw = false;
+                        try {
+                            mgr.applyTaskProgress({
+                                notificationType: wrongType,
+                                version: 1,
+                                payload: {},
+                                timestamp: Date.now(),
+                            });
+                        } catch {
+                            threw = true;
+                        }
+                        expect(threw).toBe(true);
+                    },
+                ),
+                { numRuns: PROPERTY_TEST_RUNS },
+            );
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // Property 26: Performance under load
+    // -----------------------------------------------------------------------
+
+    describe('Property 26: Performance under load', () => {
+        it('UIEventBufferManager handles large FIFO batches correctly', () => {
+            fc.assert(
+                fc.property(
+                    fc.record({
+                        batchSize: fc.integer({ min: 50, max: 200 }),
                         batchCount: fc.integer({ min: 2, max: 5 }),
                     }),
                     ({ batchSize, batchCount }) => {
-                        const monitor = new EventDeliveryMonitor({
-                            maxLatencyEntries: 2000,
-                            cleanupThreshold: 1500,
-                        });
+                        const mgr = new UIEventBufferManager();
+                        let totalEnqueued = 0;
 
-                        const _startTime = Date.now();
-
-                        // Process multiple batches
-                        for (let batch = 0; batch < batchCount; batch++) {
-                            const events = Array.from({ length: batchSize }, (_, i) =>
-                                createSequencedEvent(batch * batchSize + i, 'session-state')
-                            );
-
-                            // Simulate processing time
-                            vi.advanceTimersByTime(10);
-
-                            monitor.logEventReception(events, 'success');
+                        for (let b = 0; b < batchCount; b++) {
+                            for (let i = 0; i < batchSize; i++) {
+                                mgr.enqueue(makeBufferedEvent('session-state'));
+                                totalEnqueued++;
+                            }
                         }
 
-                        const _endTime = Date.now();
-                        const totalEvents = batchSize * batchCount;
-
-                        // Verify all events were processed
-                        const metrics = monitor.getMetrics();
-                        expect(metrics.totalEventsFlushed).toBe(totalEvents);
-
-                        // Verify memory management kicked in if needed
-                        if (totalEvents > 1500) {
-                            expect(metrics.memoryUsage.latencyEntriesCount).toBeLessThanOrEqual(1500);
-                        }
-
-                        // Verify latency calculation is reasonable
-                        expect(metrics.averageDeliveryLatency).toBeGreaterThanOrEqual(0);
-                        expect(metrics.averageDeliveryLatency).toBeLessThan(1000); // Should be reasonable
-                    }
+                        const flushed = mgr.flushFifo('session-state');
+                        expect(flushed.length).toBe(totalEnqueued);
+                    },
                 ),
-                { numRuns: 20 } // Fewer runs for performance tests
+                { numRuns: 20 },
             );
         });
 
-        it('should handle rapid successive task-progress events efficiently', () => {
+        it('task-progress version gate handles rapid successive events efficiently', () => {
             fc.assert(
                 fc.property(
-                    fc.integer({ min: 10, max: 50 }),
+                    fc.integer({ min: 10, max: 100 }),
                     (eventCount) => {
-                        const monitor = new EventDeliveryMonitor();
-                        const bufferManager = new UIEventBufferManager();
+                        const mgr = new UIEventBufferManager();
+                        let accepted = 0;
 
-                        // Emit task-progress events with increasing versions
-                        let acceptedCount = 0;
                         for (let i = 0; i < eventCount; i++) {
-                            const event = createSequencedEvent(i, 'task-progress');
-                            monitor.logEventEmission(event);
-
-                            // task-progress uses version-based gate
-                            const uiEvent = createUIBufferedEvent('task-progress', undefined, { value: i }, i);
-                            const accepted = bufferManager.applyTaskProgress(uiEvent);
-                            if (accepted !== undefined) {
-                                acceptedCount++;
-                                monitor.logEventBuffering(event, acceptedCount);
-                            }
-
-                            // Advance time slightly
-                            vi.advanceTimersByTime(1);
+                            const result = mgr.applyTaskProgress(makeTaskEvent(i, 50));
+                            if (result !== undefined) accepted++;
                         }
 
-                        // Process all emitted events
-                        const allEvents = Array.from({ length: eventCount }, (_, i) =>
-                            createSequencedEvent(i, 'task-progress')
-                        );
-                        monitor.logEventReception(allEvents, 'success');
-
-                        // Verify emission count
-                        const metrics = monitor.getMetrics();
-                        expect(metrics.totalEventsEmitted).toBe(eventCount);
-                        expect(metrics.totalEventsFlushed).toBe(eventCount);
-
-                        // All events with increasing versions should be accepted
-                        expect(acceptedCount).toBe(eventCount);
-                    }
+                        // All events with strictly increasing versions must be accepted
+                        expect(accepted).toBe(eventCount);
+                    },
                 ),
-                { numRuns: 20 } // Fewer runs for performance tests
+                { numRuns: 20 },
             );
         });
     });
 
-    describe('Property 27: Edge Cases and Invalid Data', () => {
-        it('should reject invalid task-progress versions', () => {
+    // -----------------------------------------------------------------------
+    // Property 27: Edge cases and invalid data
+    // -----------------------------------------------------------------------
+
+    describe('Property 27: Edge cases and invalid data', () => {
+        it('flushFifo on empty queue returns empty array', () => {
             fc.assert(
                 fc.property(
-                    fc.array(
-                        fc.record({
-                            version: fc.oneof(
-                                fc.constant(NaN),
-                                fc.constant(Infinity),
-                                fc.constant(-Infinity),
-                                fc.integer({ min: -100, max: -1 }),
-                            ),
-                            notificationType: fc.constant('task-progress' as const),
-                        }),
-                        { minLength: 1, maxLength: 5 }
-                    ),
-                    (invalidEvents) => {
-                        const bufferManager = new UIEventBufferManager();
-                        let errorCount = 0;
+                    fc.constantFrom<'session-state' | 'stage-snapshot'>('session-state', 'stage-snapshot'),
+                    (type) => {
+                        const mgr = new UIEventBufferManager();
+                        expect(mgr.flushFifo(type)).toEqual([]);
+                    },
+                ),
+                { numRuns: PROPERTY_TEST_RUNS },
+            );
+        });
 
-                        invalidEvents.forEach((eventData) => {
-                            try {
-                                const event = createUIBufferedEvent(
-                                    eventData.notificationType,
-                                    undefined,
-                                    { test: true },
-                                    eventData.version
+        it('emitting to a node with no subscribers does not throw', () => {
+            fc.assert(
+                fc.property(
+                    fc.record({
+                        nodeId: fc.string({ minLength: 1, maxLength: 10 }),
+                        eventCount: fc.integer({ min: 1, max: 5 }),
+                    }),
+                    ({ nodeId, eventCount }) => {
+                        const node = toNodeId(nodeId);
+                        const payload = makeSessionEvent();
+                        expect(() => {
+                            for (let k = 0; k < eventCount; k++) {
+                                unconditionalEventStreamer.emitEvent(
+                                    node,
+                                    'session-state',
+                                    payload as Exclude<EventPayload, import('~/common/types/session-events').SessionHeartbeatEvent>,
                                 );
-                                bufferManager.applyTaskProgress(event);
-                            } catch (error) {
-                                errorCount++;
-                                expect(error).toBeInstanceOf(Error);
-                                expect((error as Error).message).toContain('Invalid task-progress version');
                             }
-                        });
-
-                        // All invalid versions must throw
-                        expect(errorCount).toBe(invalidEvents.length);
-                    }
-                ),
-                { numRuns: PROPERTY_TEST_RUNS }
-            );
-        });
-
-        it('should handle empty event arrays', () => {
-            fc.assert(
-                fc.property(
-                    fc.constantFrom('success', 'error'),
-                    (processingStatus) => {
-                        const monitor = new EventDeliveryMonitor();
-
-                        // Process empty array
-                        monitor.logEventReception([], processingStatus);
-
-                        // Verify metrics are updated correctly
-                        const metrics = monitor.getMetrics();
-                        expect(metrics.totalEventsFlushed).toBe(0);
-                        expect(metrics.averageDeliveryLatency).toBe(0);
-                        expect(metrics.memoryUsage.latencyEntriesCount).toBe(0);
-                    }
-                ),
-                { numRuns: PROPERTY_TEST_RUNS }
-            );
-        });
-
-        it('should handle malformed event payloads', () => {
-            fc.assert(
-                fc.property(
-                    fc.array(
-                        fc.record({
-                            seqNum: fc.integer({ min: 0, max: 100 }),
-                            notificationType: fc.constantFrom('session-state', 'stage-snapshot', 'task-progress'),
-                            payload: fc.oneof(
-                                fc.constant(null),
-                                fc.constant(undefined),
-                                fc.string(),
-                                fc.integer(),
-                                fc.object(),
-                                fc.array(fc.anything())
-                            ),
-                        }),
-                        { minLength: 1, maxLength: 10 }
-                    ),
-                    (eventData) => {
-                        const monitor = new EventDeliveryMonitor();
-
-                        // Create events with various payload types
-                        const events = eventData.map((data) => ({
-                            seqNum: data.seqNum,
-                            notificationType: data.notificationType,
-                            payload: data.payload,
-                            timestamp: Date.now(),
-                        }));
-
-                        // Should not throw errors regardless of payload content
-                        expect(() => {
-                            monitor.logEventReception(events, 'success');
                         }).not.toThrow();
-
-                        // Verify metrics are still accurate
-                        const metrics = monitor.getMetrics();
-                        expect(metrics.totalEventsFlushed).toBe(events.length);
-                        expect(metrics.memoryUsage.latencyEntriesCount).toBe(events.length);
-                    }
+                    },
                 ),
-                { numRuns: PROPERTY_TEST_RUNS }
+                { numRuns: PROPERTY_TEST_RUNS },
             );
         });
 
-        it('should handle extreme timestamp values', () => {
+        it('cleanup on a node with no subscribers does not throw', () => {
             fc.assert(
                 fc.property(
-                    fc.array(
-                        fc.record({
-                            seqNum: fc.integer({ min: 0, max: 50 }),
-                            timestamp: fc.oneof(
-                                fc.constant(0), // Unix epoch
-                                fc.constant(Date.now() + 86400000), // Future timestamp
-                                fc.constant(Date.now() - 86400000), // Past timestamp
-                                fc.integer({ min: 1, max: 1000 }), // Very old timestamp
-                                fc.integer({ min: Date.now(), max: Date.now() + 31536000000 }) // Far future
-                            ),
-                        }),
-                        { minLength: 1, maxLength: 5 }
-                    ),
-                    (eventData) => {
-                        const monitor = new EventDeliveryMonitor();
-
-                        const events = eventData.map((data) =>
-                            createSequencedEvent(data.seqNum, 'session-state', data.timestamp)
-                        );
-
-                        // Should handle extreme timestamps without errors
+                    fc.string({ minLength: 1, maxLength: 10 }),
+                    (nodeId) => {
                         expect(() => {
-                            monitor.logEventReception(events, 'success');
+                            unconditionalEventStreamer.cleanup(toNodeId(nodeId));
                         }).not.toThrow();
-
-                        // Verify latency calculation handles extreme values
-                        const metrics = monitor.getMetrics();
-                        expect(Number.isFinite(metrics.averageDeliveryLatency)).toBe(true);
-                        expect(metrics.totalEventsFlushed).toBe(events.length);
-                    }
+                    },
                 ),
-                { numRuns: PROPERTY_TEST_RUNS }
+                { numRuns: PROPERTY_TEST_RUNS },
+            );
+        });
+
+        it('calling unsubscribe twice does not throw', () => {
+            fc.assert(
+                fc.property(
+                    fc.string({ minLength: 1, maxLength: 10 }),
+                    (nodeId) => {
+                        const node = toNodeId(nodeId);
+                        const unsub = unconditionalEventStreamer.subscribe(node, 'session-state', () => { });
+                        expect(() => {
+                            unsub();
+                            unsub();
+                        }).not.toThrow();
+                        unconditionalEventStreamer.cleanup(node);
+                    },
+                ),
+                { numRuns: PROPERTY_TEST_RUNS },
+            );
+        });
+
+        it('task-progress applyTaskProgress with undefined version never throws', () => {
+            fc.assert(
+                fc.property(
+                    fc.integer({ min: 1, max: 20 }),
+                    (count) => {
+                        const mgr = new UIEventBufferManager();
+                        expect(() => {
+                            for (let i = 0; i < count; i++) {
+                                mgr.applyTaskProgress(makeTaskEvent(undefined as unknown as number, 50));
+                            }
+                        }).not.toThrow();
+                    },
+                ),
+                { numRuns: PROPERTY_TEST_RUNS },
+            );
+        });
+
+        it('reset followed by immediate use works correctly', () => {
+            fc.assert(
+                fc.property(
+                    fc.record({
+                        resetCount: fc.integer({ min: 1, max: 5 }),
+                        eventsAfterLastReset: fc.integer({ min: 1, max: 10 }),
+                    }),
+                    ({ resetCount, eventsAfterLastReset }) => {
+                        const mgr = new UIEventBufferManager();
+
+                        for (let r = 0; r < resetCount; r++) {
+                            mgr.enqueue(makeBufferedEvent('session-state'));
+                            mgr.reset();
+                        }
+
+                        for (let i = 0; i < eventsAfterLastReset; i++) {
+                            mgr.enqueue(makeBufferedEvent('session-state'));
+                        }
+
+                        expect(mgr.flushFifo('session-state').length).toBe(eventsAfterLastReset);
+                    },
+                ),
+                { numRuns: PROPERTY_TEST_RUNS },
             );
         });
     });
