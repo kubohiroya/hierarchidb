@@ -81,7 +81,8 @@ export class UIEventBufferManager implements EventBufferManager {
         // Find consecutive events starting from expected seqNum
         let currentSeqNum = expectedSeqNum;
         while (buffer.events.length > 0 && buffer.events[0]?.seqNum === currentSeqNum) {
-            const event = buffer.events.shift()!;
+            const event = buffer.events.shift();
+            if (!event) break;
             readyEvents.push(event);
             buffer.lastAppliedSeqNum = currentSeqNum;
             currentSeqNum++;

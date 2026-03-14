@@ -67,15 +67,17 @@ export interface BuildWorkerBridge {
     nodeId: NodeId,
     cb: (event: any) => void
   ): Promise<() => void>;
-  subscribeSessionHeartbeat(
+  /** Subscribe to all build session channels for a node in a single call. Returns a single unsubscribe function. */
+  subscribeAll(
     nodeType: NodeType,
     nodeId: NodeId,
-    cb: (event: any) => void
-  ): Promise<() => void>;
-  subscribeTaskProgress(
-    nodeType: NodeType,
-    nodeId: NodeId,
-    cb: (event: any) => void
+    handlers: {
+      onTaskEvent: (event: BuildTaskUpdateEvent) => void;
+      onProgressEvent: (event: BuildProgressEvent) => void;
+      onSessionState: (event: { nodeId: string; sessionRecord?: Record<string, unknown> | null }) => void;
+      onHeartbeat: (event: { nodeId: string; heartbeatAt?: number }) => void;
+      onWorkerLog: (event: { level?: string; message?: string; data?: unknown }) => void;
+    }
   ): Promise<() => void>;
   subscribeWorkerLog(
     nodeType: NodeType,
@@ -368,10 +370,16 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
     };
   }
 
-  async subscribeSessionHeartbeat(
+  async subscribeAll(
     nodeType: NodeType,
     nodeId: NodeId,
-    cb: (event: any) => void
+    handlers: {
+      onTaskEvent: (event: BuildTaskUpdateEvent) => void;
+      onProgressEvent: (event: BuildProgressEvent) => void;
+      onSessionState: (event: { nodeId: string; sessionRecord?: Record<string, unknown> | null }) => void;
+      onHeartbeat: (event: { nodeId: string; heartbeatAt?: number }) => void;
+      onWorkerLog: (event: { level?: string; message?: string; data?: unknown }) => void;
+    }
   ): Promise<() => void> {
     const api = await ensureWorkerAPI();
     const unsubscribe = await api.subscribeSessionHeartbeat(nodeType, nodeId, proxy((event: any) => {
@@ -399,17 +407,18 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
         const unsubscribe = await (shapeAPI as any).subscribeToTaskProgress(nodeId, proxy((event: any) => {
           cb(sanitizeForComlink(event));
         }));
-        return () => {
-          try {
-            unsubscribe();
-          } catch (error) {
-            console.warn('[BuildWorkerBridge] subscribeTaskProgress unsubscribe failed', error);
-          }
-        };
       }
     }
-    // Fallback: return no-op unsubscribe
-    return () => { };
+
+    return () => {
+      for (const unsub of [unsubscribeTasks, unsubscribeProgress, unsubscribeSessionState, unsubscribeHeartbeat, unsubscribeWorkerLog]) {
+        try {
+          unsub();
+        } catch (error) {
+          console.warn('[BuildWorkerBridge] subscribeAll unsubscribe failed', error);
+        }
+      }
+    };
   }
 
   async subscribeWorkerLog(
