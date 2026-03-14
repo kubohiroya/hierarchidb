@@ -143,6 +143,16 @@ export const sanitizeTaskMetadataForSummary = (
         }
     }
 
+    // Promote metadata.error.message to errorMessage so UI summary builders
+    // can surface the actual failure reason instead of falling back to taskTitle.
+    const errorRecord = pickRecordMetadataField(metadata, 'error');
+    if (errorRecord) {
+        const errorMsg = readString(errorRecord.message);
+        if (errorMsg) {
+            next.errorMessage = errorMsg;
+        }
+    }
+
     const tileEmitParentInputSummary = pickRecordMetadataField(metadata, 'tileEmitParentInputSummary');
     if (tileEmitParentInputSummary) {
         next.tileEmitParentInputSummary = tileEmitParentInputSummary;

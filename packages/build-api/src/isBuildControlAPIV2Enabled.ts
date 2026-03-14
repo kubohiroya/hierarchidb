@@ -95,6 +95,7 @@ export interface BuildTaskSummary {
   sequence?: number;
   display?: TaskDisplayPayload;
   metadata?: Record<string, unknown>;
+  errorMessage?: string;
 }
 
 export type BuildTaskUpdateEvent<T extends BuildTaskSummary = BuildTaskSummary> =

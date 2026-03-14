@@ -459,6 +459,21 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                     );
                 }
 
+                // Log failed task error to console for visibility
+                if (updateEvent.task.status === 'failed') {
+                    const errorMsg = typeof updateEvent.task.errorMessage === 'string'
+                        ? updateEvent.task.errorMessage
+                        : null;
+                    if (errorMsg) {
+                        console.error('[ShapeBuild] task failed', {
+                            nodeId: nodeIdText,
+                            taskId: updateEvent.task.taskId,
+                            stage: updateEvent.task.stage,
+                            errorMessage: errorMsg,
+                        });
+                    }
+                }
+
                 adapter.onTaskEvent(updateEvent);
                 return;
             }
