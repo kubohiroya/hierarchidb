@@ -288,6 +288,7 @@ describe('criticalError event', () => {
     store.set(dispatchBuildSessionEventAtom, {
       type: 'criticalError',
       payload: {
+        nodeId: 'node-1',
         message: 'contract violation',
         error: 'Error: bad value',
         errorName: 'Error',
