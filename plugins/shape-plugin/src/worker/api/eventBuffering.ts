@@ -107,7 +107,7 @@ export class EventDeliveryMonitor {
     logEventEmission(event: SequencedEvent): void {
         this.emissionCount++;
         this.lastEmissionTime = Date.now();
-        
+
         console.log('[EventDeliveryMonitor] Event emitted from Worker', {
             seqNum: event.seqNum,
             notificationType: event.notificationType,
@@ -123,7 +123,7 @@ export class EventDeliveryMonitor {
     logEventBuffering(event: SequencedEvent, bufferSize: number): void {
         this.bufferedCount++;
         this.bufferSizes[event.notificationType] = bufferSize;
-        
+
         console.log('[EventDeliveryMonitor] Event buffered on UI side', {
             seqNum: event.seqNum,
             notificationType: event.notificationType,
@@ -139,11 +139,11 @@ export class EventDeliveryMonitor {
     logEventReception(events: SequencedEvent[], processingStatus: 'success' | 'error', error?: unknown): void {
         this.flushedCount += events.length;
         this.lastFlushTime = Date.now();
-        
+
         // Calculate delivery latencies
         const latencies = events.map(event => this.lastFlushTime - event.timestamp);
         this.deliveryLatencies.push(...latencies);
-        
+
         // Perform memory management
         this.performMemoryManagement();
 
@@ -178,7 +178,7 @@ export class EventDeliveryMonitor {
             const beforeCleanup = this.deliveryLatencies.length;
             this.cleanupOldLatencies();
             const afterCleanup = this.deliveryLatencies.length;
-            
+
             console.warn('[EventDeliveryMonitor] Memory cleanup performed', {
                 entriesRemoved: beforeCleanup - afterCleanup,
                 remainingEntries: afterCleanup,
@@ -220,7 +220,7 @@ export class EventDeliveryMonitor {
         const latencyEntriesCount = this.deliveryLatencies.length;
         // Estimate memory usage: each number is ~8 bytes + array overhead
         const estimatedMemoryUsage = latencyEntriesCount * 8 + 64; // bytes
-        
+
         return {
             latencyEntriesCount,
             estimatedMemoryUsage,
@@ -254,7 +254,7 @@ export class EventDeliveryMonitor {
      */
     forceCleanup(): void {
         this.cleanupOldLatencies();
-        
+
         console.log('[EventDeliveryMonitor] Forced memory cleanup completed', {
             remainingEntries: this.deliveryLatencies.length,
             memoryUsage: this.getMemoryUsageStats(),
@@ -266,7 +266,7 @@ export class EventDeliveryMonitor {
      */
     updateConfig(newConfig: Partial<MemoryManagementConfig>): void {
         this.config = { ...this.config, ...newConfig };
-        
+
         // Perform immediate cleanup if new limits are exceeded
         if (this.deliveryLatencies.length > this.config.maxLatencyEntries) {
             this.performMemoryManagement();
@@ -391,8 +391,32 @@ class UnconditionalEventStreamer {
     }
 
     /**
-     * Emit event unconditionally (regardless of UI state)
-     * Events are delivered to current subscribers only - no buffering
+     * Deliver payload to all subscribers of the given eventType for the given node.
+     * Exceptions in individual callbacks are isolated and logged without re-throwing.
+     */
+    private notifySubscribers(nodeId: NodeId, eventType: string, payload: unknown): void {
+        const nodeSubscribers = this.subscribers.get(nodeId);
+        if (!nodeSubscribers) return;
+
+        for (const subscriber of nodeSubscribers) {
+            if (subscriber.eventType !== eventType) continue;
+            try {
+                subscriber.callback(payload);
+            } catch (error) {
+                console.error('[UnconditionalEventStreamer] subscriber callback failed', {
+                    nodeId,
+                    eventType,
+                    error: error instanceof Error
+                        ? { name: error.name, message: error.message, stack: error.stack }
+                        : error,
+                });
+            }
+        }
+    }
+
+    /**
+     * Emit event unconditionally (regardless of UI state).
+     * Events are delivered to current subscribers only - no buffering.
      */
     emitEvent(
         nodeId: NodeId,
@@ -410,64 +434,14 @@ class UnconditionalEventStreamer {
         // Log event emission for monitoring
         eventDeliveryMonitor.logEventEmission(sequencedEvent);
 
-        const nodeSubscribers = this.subscribers.get(nodeId);
-        if (!nodeSubscribers) {
-            // No subscribers - event is discarded (no buffering)
-            return;
-        }
-
-        // Notify current subscribers for this event type
-        nodeSubscribers.forEach(subscriber => {
-            if (subscriber.eventType === eventType) {
-                try {
-                    subscriber.callback(sequencedEvent);
-                } catch (error) {
-                    // Exception isolation - don't affect other subscribers
-                    console.error('[UnconditionalEventStreamer] Subscriber callback failed', {
-                        nodeId,
-                        eventType,
-                        subscriberError: error instanceof Error ? {
-                            name: error.name,
-                            message: error.message,
-                            stack: error.stack
-                        } : error
-                    });
-                    // Do not re-throw (isolation)
-                }
-            }
-        });
+        this.notifySubscribers(nodeId, eventType, sequencedEvent);
     }
 
     /**
-     * Process heartbeat events immediately (no buffering, no seqNum)
+     * Emit a heartbeat event to all current subscribers for the given node.
      */
     emitHeartbeat(nodeId: NodeId, event: SessionHeartbeatEvent): void {
-        const nodeSubscribers = this.subscribers.get(nodeId);
-        if (!nodeSubscribers) {
-            // No subscribers - event is discarded
-            return;
-        }
-
-        // Notify current heartbeat subscribers
-        nodeSubscribers.forEach(subscriber => {
-            if (subscriber.eventType === 'heartbeat') {
-                try {
-                    subscriber.callback(event);
-                } catch (error) {
-                    // Exception isolation - don't affect other subscribers
-                    console.error('[UnconditionalEventStreamer] Heartbeat subscriber callback failed', {
-                        nodeId,
-                        eventType: 'heartbeat',
-                        subscriberError: error instanceof Error ? {
-                            name: error.name,
-                            message: error.message,
-                            stack: error.stack
-                        } : error
-                    });
-                    // Do not re-throw (isolation)
-                }
-            }
-        });
+        this.notifySubscribers(nodeId, 'heartbeat', event);
     }
 
     /**
