@@ -174,50 +174,15 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                 const stageId = resolveShapeStageId(task.stage);
                 if (stageId) snapshotStages.add(stageId);
             }
-
-            try {
-                adapter.onTaskEvent({
-                    ...snapshotEvent,
-                    version: snapshotVersion,
-                } as BuildTaskUpdateEvent);
-            } catch (adapterError) {
-                console.error('[shape buildSessionStateAtomBridge] adapter.onTaskEvent(snapshot) threw', {
-                    nodeId: nodeIdText,
-                    error: adapterError instanceof Error ? adapterError.message : String(adapterError),
-                    snapshotVersion,
-                    taskStages: snapshotEvent.tasks.map((t) => t.stage),
-                });
-                throw adapterError;
-            }
-
+            adapter.onTaskEvent({
+                ...snapshotEvent,
+                version: resolveSnapshotVersion(snapshotEvent),
+            } as BuildTaskUpdateEvent);
             for (const stageId of SHAPE_STAGE_IDS) {
                 if (snapshotStages.size > 0 && !snapshotStages.has(stageId)) continue;
                 dispatchUiSyncPhase(stageId, 'running');
             }
-
-            console.log('[shape buildSessionStateAtomBridge] after dispatchUiSyncPhase', {
-                nodeId: nodeIdText,
-                handshakeReceived: store.get(buildSessionSnapshotHandshakeReceivedAtom),
-            });
-
-            if (!store.get(buildSessionSnapshotHandshakeReceivedAtom)) {
-                // Flush pending updates that arrived before the initial snapshot.
-                // snapshotVersionMaxByStage is now set, so version checks apply.
-                for (const pendingUpdate of pendingTaskUpdatesBeforeInitialSnapshot) {
-                    const pendingStageId = resolveShapeStageId(pendingUpdate.task.stage);
-                    if (!pendingStageId) continue;
-                    const versionMax = snapshotVersionMaxByStage[pendingStageId];
-                    if (versionMax == null) continue;
-                    if (isTaskUpdateVersionAfterSnapshot(versionMax, pendingUpdate.task.version)) {
-                        adapter.onTaskEvent(pendingUpdate);
-                    }
-                }
-                pendingTaskUpdatesBeforeInitialSnapshot.length = 0;
-                console.log('[shape buildSessionStateAtomBridge] initial snapshot applied', {
-                    nodeId: nodeIdText,
-                    taskCount: snapshotEvent.tasks.length
-                });
-            }
+            scheduleProgressFlush();
         };
 
         const processProgressEvent = (event: SequencedBuildProgressEvent): void => {
@@ -299,79 +264,42 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             processSessionStateEvent(event);
         };
 
-        // Synchronous channel establishment
-        const establishChannels = async () => {
-            try {
-                await bridge.initialize();
-                if (cancelled) return;
+        const run = async () => {
+            await bridge.initialize();
+            if (cancelled) return;
 
-                const runtime = await bridge.getBuildSessionRuntime(SHAPE_NODE_TYPE, nodeId);
-                if (cancelled) return;
-                if (runtime) {
-                    adapter.onRuntimeRecord(runtime);
-                }
+            const runtime = await bridge.getBuildSessionRuntime(SHAPE_NODE_TYPE, nodeId);
+            if (cancelled) return;
+            if (runtime) {
+                adapter.onRuntimeRecord(runtime);
+            }
 
-                // Establish all channels synchronously
-                const [unsubscribeTasks, unsubscribeProgress, unsubscribeSessionState, unsubscribeHeartbeat, unsubscribeWorkerLog] = await Promise.all([
-                    bridge.subscribeBuildTasks(SHAPE_NODE_TYPE, nodeId, (event) => {
-                        onTaskEvent(event);
-                    }),
-                    bridge.subscribeBuildProgress(SHAPE_NODE_TYPE, nodeId, (event) => {
-                        onProgressEvent(event as SequencedBuildProgressEvent);
-                    }),
-                    bridge.subscribeSessionState(SHAPE_NODE_TYPE, nodeId, (raw: unknown) => {
-                        // unconditionalEventStreamer delivers SequencedEvent wrapper: { seqNum, notificationType, payload, timestamp }
-                        const sequenced = raw as { seqNum?: number; payload?: unknown };
-                        const inner = (typeof sequenced.seqNum === 'number' && sequenced.payload !== undefined)
-                            ? sequenced.payload
-                            : raw;
-                        onSessionState(inner as SequencedSessionStateEvent);
-                    }),
-                    bridge.subscribeSessionHeartbeat(SHAPE_NODE_TYPE, nodeId, (raw: unknown) => {
-                        // unconditionalEventStreamer delivers SequencedEvent wrapper for heartbeat
-                        const sequenced = raw as { seqNum?: number; payload?: unknown };
-                        const inner = (typeof sequenced.seqNum === 'number' && sequenced.payload !== undefined)
-                            ? sequenced.payload
-                            : raw;
-                        heartbeatProcessor.processHeartbeat(inner as { nodeId: string; heartbeatAt?: number });
-                    }),
-                    bridge.subscribeWorkerLog(SHAPE_NODE_TYPE, nodeId, (raw: unknown) => {
-                        // unconditionalEventStreamer delivers SequencedEvent wrapper: { seqNum, notificationType, payload, timestamp }
-                        const sequenced = raw as { seqNum?: number; payload?: unknown };
-                        const event = (typeof sequenced.seqNum === 'number' && sequenced.payload !== undefined)
-                            ? sequenced.payload as { level?: string; message?: string; data?: unknown }
-                            : raw as { level?: string; message?: string; data?: unknown };
-                        const level = event.level;
-                        if (level === 'error') {
-                            console.error('[Worker]', event.message, event.data ?? '');
-                        } else if (level === 'warn') {
-                            console.warn('[Worker]', event.message, event.data ?? '');
-                        } else {
-                            console.log('[Worker]', event.message, event.data ?? '');
-                        }
-                    }),
-                ]);
-
-                if (cancelled) {
-                    unsubscribeTasks();
-                    unsubscribeProgress();
-                    unsubscribeSessionState();
-                    unsubscribeHeartbeat();
-                    unsubscribeWorkerLog();
-                    return;
-                }
-
-                adapter.onTaskStreamConnectionChanged(true);
-
-                unsubscribers.push(unsubscribeTasks, unsubscribeProgress, unsubscribeSessionState, unsubscribeHeartbeat, unsubscribeWorkerLog);
-            } catch (error) {
-                if (cancelled) return;
-                console.warn('[shape buildSessionStateAtomBridge] failed to establish channels', error);
-                // Dispatch error to SSOT state tree instead of local state
-                dispatch({
-                    type: 'channelError',
-                    payload: {
-                        error: error instanceof Error ? error : new Error(String(error))
+            unsubscribeAll = await bridge.subscribeAll(SHAPE_NODE_TYPE, nodeId, {
+                onTaskEvent: (event) => {
+                    if (cancelled) return;
+                    onTaskEvent(event);
+                },
+                onProgressEvent: (event) => {
+                    if (cancelled) return;
+                    onProgressEvent(event as SequencedBuildProgressEvent);
+                },
+                onSessionState: (event) => {
+                    if (cancelled) return;
+                    onSessionState(event as SequencedSessionStateEvent);
+                },
+                onHeartbeat: (event) => {
+                    if (cancelled) return;
+                    adapter.onHeartbeat(event);
+                },
+                onWorkerLog: (event) => {
+                    if (cancelled) return;
+                    const level = event.level;
+                    if (level === 'error') {
+                        console.error('[Worker]', event.message, event.data);
+                    } else if (level === 'warn') {
+                        console.warn('[Worker]', event.message, event.data);
+                    } else {
+                        console.log('[Worker]', event.message, event.data);
                     }
                 },
             });
