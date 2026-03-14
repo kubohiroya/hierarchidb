@@ -2,8 +2,6 @@
 
 ## Doing
 
-- #1038 / `fix/worker-client/restore-subscribe-all-and-atom-bridge-1038` / 2026-03-14 開始
-
 - #1030 / `fix/shape-plugin/task-failure-error-message` / 2026-03-14 開始
 - #1026 / `fix/location-plugin/select-all-deselect-reverts-1026` / 2026-03-14 開始
 
@@ -30,6 +28,11 @@
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 
 ## 今日の運用ログ
+
+- 2026-03-14: #1040 純粋関数エクスポート復元・criticalError テスト nodeId 追加・PR #1041作成
+  - isTaskUpdateVersionAfterSnapshot/resolveTaskVersionAction/resolveTaskIdentityAction/resolveSnapshotTargetStages を useShapeBuildSessionStateAtomBridge に export 復元（#1016で消失）
+  - buildSessionStateAtoms.unit.test.ts の criticalError payload 2件に nodeId: 'node-1' 追加
+  - typecheck: 100/100 exit 0、test: 418/418 pass
 
 - 2026-03-14: #1038 workerBridge.subscribeAll修正・useShapeBuildSessionStateAtomBridge復元・PR #1039作成
   - subscribeAll を Promise.all 5チャンネル同時購読に修正、不正 subscribeTaskProgress 削除
