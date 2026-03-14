@@ -3,6 +3,7 @@ import { atom } from 'jotai';
 export type BuildSessionLifecyclePhase =
   | 'idle'
   | 'starting'
+  | 'queued'
   | 'running'
   | 'pausing'
   | 'paused'

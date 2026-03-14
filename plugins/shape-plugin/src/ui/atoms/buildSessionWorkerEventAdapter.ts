@@ -51,6 +51,7 @@ const toShapeEvent = (
 const mapRuntimeStatusToPhase = (status: string): ShapeSessionPhase => {
   if (status === 'idle') return 'idle';
   if (status === 'starting') return 'starting';
+  if (status === 'queued') return 'queued';
   if (status === 'running') return 'running';
   if (status === 'pausing') return 'pausing';
   if (status === 'paused') return 'paused';
@@ -63,6 +64,7 @@ const mapRuntimeStatusToPhase = (status: string): ShapeSessionPhase => {
 
 const isActivePhase = (phase: ShapeSessionPhase): boolean => (
   phase === 'starting'
+  || phase === 'queued'
   || phase === 'running'
   || phase === 'pausing'
   || phase === 'resuming'

@@ -1,7 +1,9 @@
 # TASKS.md
 
 ## Doing
-
+- #1055 / `fix/shape-plugin/queued-phase-missing` / 2026-03-14 開始
+- #1049 / `fix/shape-plugin/render-phase-setstate-infinite-loop` / 2026-03-14 開始
+- #1047 / `fix/shape-plugin/remove-sequenced-event-wrapper` / 2026-03-14 開始
 - #1030 / `fix/shape-plugin/task-failure-error-message` / 2026-03-14 開始
 - #1026 / `fix/location-plugin/select-all-deselect-reverts-1026` / 2026-03-14 開始
 
@@ -28,6 +30,25 @@
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 
 ## 今日の運用ログ
+
+- 2026-03-14: #1053 elapsed 直接計算化・PR #1054作成
+  - completedStageDurationMsByStage React state と1秒インターバル全廃
+  - sessionStageDurationSnapshot（stageDurationMsByStageAtom 値）を直接 stageDurationByStage として使用
+  - shouldUpdateElapsedSnapshot 関数・テスト・re-export 削除
+  - activeNodeId を Args から削除（merge effect 廃止に伴い不要）
+  - typecheck: 100/100 exit 0
+
+- 2026-03-14: #1051 elapsed 異常値（数千時間）修正・PR #1052作成
+  - shouldUpdateElapsedSnapshot: idle 時 false を返す
+  - liveTotalElapsedMs: idle 時 summary.totalElapsedMs（= 0）を返す
+  - SideEffects: idle/terminal → running/paused 遷移時に totalElapsedSnapshot をクリア
+  - typecheck: 100/100 exit 0
+
+- 2026-03-14: #1042 seqNum gap-check を FIFO+version-gate に置換・PR #1043作成
+  - eventBufferingUI.ts: UIEventBufferManager を FIFO キュー（session-state/stage-snapshot）+ version gate（task-progress）に完全書き換え
+  - useShapeBuildSessionStateAtomBridge.ts: seqNum 分岐削除、scheduleFlush に統一
+  - property テスト 2ファイル（eventDeliveryMonitoringAccuracy / eventDeliveryExtendedScenarios）を新 API に対応
+  - test: 423 passed exit 0
 
 - 2026-03-14: #1040 純粋関数エクスポート復元・criticalError テスト nodeId 追加・PR #1041作成
   - isTaskUpdateVersionAfterSnapshot/resolveTaskVersionAction/resolveTaskIdentityAction/resolveSnapshotTargetStages を useShapeBuildSessionStateAtomBridge に export 復元（#1016で消失）
