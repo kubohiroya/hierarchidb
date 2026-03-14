@@ -100,11 +100,8 @@ class UnconditionalEventStreamer {
         nodeSubscribers.add(subscriber);
 
         return () => {
-            callbacks.delete(callback);
-            if (callbacks.size === 0) {
-                nodeMap.delete(eventType);
-            }
-            if (nodeMap.size === 0) {
+            nodeSubscribers.delete(subscriber);
+            if (nodeSubscribers.size === 0) {
                 this.subscribers.delete(nodeId);
             }
         };
