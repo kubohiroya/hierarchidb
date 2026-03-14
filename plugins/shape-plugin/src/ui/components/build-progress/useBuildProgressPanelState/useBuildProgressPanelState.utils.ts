@@ -83,6 +83,9 @@ export const shouldUpdateElapsedSnapshot = (params: {
   buildStatus: BuildStatus;
 }): boolean => {
   const { snapshot, totalElapsedMs, buildStatus } = params;
+  // Do not overwrite snapshot while idle — the snapshot will be cleared by the
+  // nodeId-change effect, and we must not re-populate it with a stale value.
+  if (buildStatus === 'idle') return false;
   if (!snapshot) return true;
   if (buildStatus !== 'running') return true;
   if (totalElapsedMs === 0) return true;

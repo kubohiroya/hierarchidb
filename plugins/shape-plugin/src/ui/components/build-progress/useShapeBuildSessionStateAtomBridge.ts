@@ -6,11 +6,7 @@ import { useSetAtom } from 'jotai';
 import { dispatchBuildSessionEventAtom } from '~/ui/atoms/buildSessionStateAtoms';
 import { createBuildSessionWorkerEventAdapter } from '~/ui/atoms/buildSessionWorkerEventAdapter';
 import type { ShapeStageId } from '~/ui/atoms/buildSessionStateAtoms';
-import {
-    UIEventBufferManager,
-    type SequencedEvent,
-    type NotificationType,
-} from './eventBufferingUI';
+import { UIEventBufferManager, type BufferedEvent } from './eventBufferingUI';
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 const SHAPE_STAGE_IDS = ['source', 'geometry', 'tileEmit'] as const satisfies readonly ShapeStageId[];
@@ -20,17 +16,16 @@ type UiSyncPhase = 'ui-initializing' | 'running';
 type TaskSnapshotEvent = Extract<BuildTaskUpdateEvent, { type: 'snapshot' }> & {
     version?: unknown;
     stage?: unknown;
-    seqNum?: number;
 };
 
-interface SequencedBuildProgressEvent extends BuildProgressEvent {
-    seqNum?: number;
+interface VersionedBuildProgressEvent extends BuildProgressEvent {
+    /** Distributed version number from Worker (task-progress ordering only) */
+    version?: number;
 }
 
-interface SequencedSessionStateEvent {
+interface SessionStateEvent {
     nodeId: string;
     sessionRecord?: Record<string, unknown> | null;
-    seqNum?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -89,7 +84,6 @@ export const resolveSnapshotTargetStages = (event: TaskSnapshotEvent): ShapeStag
     return Array.from(snapshotStages);
 };
 
-
 const resolveUiSyncSignalFromSessionStageId = (
     value: unknown,
 ): { stageId: ShapeStageId; phase: UiSyncPhase } | undefined => {
@@ -141,6 +135,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
 
         let cancelled = false;
         let unsubscribeAll: (() => void) | null = null;
+
         const uiSyncByStage: Record<ShapeStageId, UiSyncPhase> = {
             source: 'ui-initializing',
             geometry: 'ui-initializing',
@@ -154,7 +149,8 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
         let activeStageId: ShapeStageId = 'source';
         let flushTimerId: number | null = null;
 
-        // seqNum-based buffer for events that carry sequence numbers
+        // Per-stage buffer manager for task-progress version gating.
+        // session-state and stage-snapshot use FIFO queues inside the manager.
         const eventBufferManager = new UIEventBufferManager();
 
         const dispatchUiSyncPhase = (stageId: ShapeStageId, phase: UiSyncPhase): void => {
@@ -179,43 +175,13 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             }
         };
 
-        const flushSeqNumBufferedEvents = (): void => {
-            flushTimerId = null;
-            const notificationTypes: NotificationType[] = ['session-state', 'stage-snapshot', 'task-progress'];
-            for (const notificationType of notificationTypes) {
-                const readyEvents = eventBufferManager.flushBuffer(notificationType);
-                for (const sequencedEvent of readyEvents) {
-                    switch (notificationType) {
-                        case 'session-state':
-                            processSessionStateEvent(sequencedEvent.payload as SequencedSessionStateEvent);
-                            break;
-                        case 'stage-snapshot':
-                            processTaskSnapshotEvent(sequencedEvent.payload as TaskSnapshotEvent);
-                            break;
-                        case 'task-progress':
-                            processProgressEvent(sequencedEvent.payload as SequencedBuildProgressEvent);
-                            break;
-                    }
-                }
-            }
-        };
-
-        const scheduleProgressFlush = (): void => {
+        const scheduleFlush = (): void => {
             if (flushTimerId !== null) return;
             if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
                 flushTimerId = window.requestAnimationFrame(flushProgressBuffer);
                 return;
             }
             flushTimerId = window.setTimeout(flushProgressBuffer, 0);
-        };
-
-        const scheduleSeqNumFlush = (): void => {
-            if (flushTimerId !== null) return;
-            if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
-                flushTimerId = window.requestAnimationFrame(flushSeqNumBufferedEvents);
-                return;
-            }
-            flushTimerId = window.setTimeout(flushSeqNumBufferedEvents, 0);
         };
 
         const processTaskSnapshotEvent = (snapshotEvent: TaskSnapshotEvent): void => {
@@ -232,10 +198,10 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                 if (snapshotStages.size > 0 && !snapshotStages.has(stageId)) continue;
                 dispatchUiSyncPhase(stageId, 'running');
             }
-            scheduleProgressFlush();
+            scheduleFlush();
         };
 
-        const processProgressEvent = (event: SequencedBuildProgressEvent): void => {
+        const processProgressEvent = (event: VersionedBuildProgressEvent): void => {
             const stageId = resolveShapeStageId(event.stage);
             if (!stageId) {
                 adapter.onProgressEvent(event);
@@ -247,10 +213,10 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             }
             progressBufferByStage[stageId].push(event);
             if (uiSyncByStage[stageId] !== 'running') return;
-            scheduleProgressFlush();
+            scheduleFlush();
         };
 
-        const processSessionStateEvent = (event: SequencedSessionStateEvent): void => {
+        const processSessionStateEvent = (event: SessionStateEvent): void => {
             adapter.onSessionState(event);
             const signal = resolveUiSyncSignalFromSessionStageId(event.sessionRecord?.stageId);
             if (!signal) return;
@@ -260,58 +226,66 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             }
             dispatchUiSyncPhase(stageId, signal.phase);
             if (signal.phase === 'running') {
-                scheduleProgressFlush();
+                scheduleFlush();
             }
         };
 
+        // ---------------------------------------------------------------------------
+        // Incoming event handlers — all events are enqueued immediately on arrival.
+        // No seqNum-based gap detection; session-state and stage-snapshot are FIFO.
+        // task-progress goes through version gating only.
+        // ---------------------------------------------------------------------------
+
         const onTaskEvent = (event: BuildTaskUpdateEvent): void => {
             if (event.type === 'snapshot') {
-                const snapshotEvent = event as TaskSnapshotEvent;
-                if (typeof snapshotEvent.seqNum === 'number') {
-                    const sequencedEvent: SequencedEvent = {
-                        seqNum: snapshotEvent.seqNum,
-                        notificationType: 'stage-snapshot',
-                        payload: snapshotEvent,
-                        timestamp: Date.now(),
-                    };
-                    eventBufferManager.bufferEvent(sequencedEvent);
-                    scheduleSeqNumFlush();
-                    return;
-                }
-                processTaskSnapshotEvent(snapshotEvent);
+                // Enqueue into FIFO queue, then flush immediately via rAF
+                const buffered: BufferedEvent = {
+                    version: undefined,
+                    notificationType: 'stage-snapshot',
+                    payload: event as TaskSnapshotEvent,
+                    timestamp: Date.now(),
+                };
+                eventBufferManager.enqueue(buffered);
+                flushFifoQueues();
                 return;
             }
             adapter.onTaskEvent(event);
         };
 
-        const onProgressEvent = (event: SequencedBuildProgressEvent): void => {
-            if (typeof event.seqNum === 'number') {
-                const sequencedEvent: SequencedEvent = {
-                    seqNum: event.seqNum,
-                    notificationType: 'task-progress',
-                    payload: event,
-                    timestamp: Date.now(),
-                };
-                eventBufferManager.bufferEvent(sequencedEvent);
-                scheduleSeqNumFlush();
-                return;
+        const onProgressEvent = (event: VersionedBuildProgressEvent): void => {
+            const buffered: BufferedEvent = {
+                version: event.version,
+                notificationType: 'task-progress',
+                payload: event,
+                timestamp: Date.now(),
+            };
+            const accepted = eventBufferManager.applyTaskProgress(buffered);
+            if (accepted) {
+                processProgressEvent(event);
             }
-            processProgressEvent(event);
         };
 
-        const onSessionState = (event: SequencedSessionStateEvent): void => {
-            if (typeof event.seqNum === 'number') {
-                const sequencedEvent: SequencedEvent = {
-                    seqNum: event.seqNum,
-                    notificationType: 'session-state',
-                    payload: event,
-                    timestamp: Date.now(),
-                };
-                eventBufferManager.bufferEvent(sequencedEvent);
-                scheduleSeqNumFlush();
-                return;
+        const onSessionState = (event: SessionStateEvent): void => {
+            // Enqueue into FIFO queue, then flush immediately via rAF
+            const buffered: BufferedEvent = {
+                version: undefined,
+                notificationType: 'session-state',
+                payload: event,
+                timestamp: Date.now(),
+            };
+            eventBufferManager.enqueue(buffered);
+            flushFifoQueues();
+        };
+
+        const flushFifoQueues = (): void => {
+            // Drain session-state FIFO
+            for (const ev of eventBufferManager.flushFifo('session-state')) {
+                processSessionStateEvent(ev.payload as SessionStateEvent);
             }
-            processSessionStateEvent(event);
+            // Drain stage-snapshot FIFO
+            for (const ev of eventBufferManager.flushFifo('stage-snapshot')) {
+                processTaskSnapshotEvent(ev.payload as TaskSnapshotEvent);
+            }
         };
 
         const run = async () => {
@@ -331,11 +305,11 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                 },
                 onProgressEvent: (event) => {
                     if (cancelled) return;
-                    onProgressEvent(event as SequencedBuildProgressEvent);
+                    onProgressEvent(event as VersionedBuildProgressEvent);
                 },
                 onSessionState: (event) => {
                     if (cancelled) return;
-                    onSessionState(event as SequencedSessionStateEvent);
+                    onSessionState(event as SessionStateEvent);
                 },
                 onHeartbeat: (event) => {
                     if (cancelled) return;
