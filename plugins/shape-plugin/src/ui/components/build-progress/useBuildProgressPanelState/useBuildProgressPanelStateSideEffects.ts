@@ -118,6 +118,12 @@ export const useBuildProgressPanelStateSideEffects = (args: {
     if (summary.buildStatus === 'running' || summary.buildStatus === 'paused') {
       hasProgressRef.current = true;
       completionKeyRef.current = null;
+      // Clear stale snapshot when transitioning from idle/terminal to running/paused.
+      // Without this, the drift calculation in liveTotalElapsedMs uses a capturedAt
+      // from a previous build run, producing absurdly large elapsed values.
+      if (previousBuildStatus === 'idle' || isTerminalStatus(previousBuildStatus)) {
+        setTotalElapsedSnapshot(null);
+      }
       previousBuildStatusRef.current = summary.buildStatus;
       return;
     }
@@ -192,6 +198,7 @@ export const useBuildProgressPanelStateSideEffects = (args: {
     summary.buildStatus,
     setCompletionDialogOpen,
     setCompletionSnapshot,
+    setTotalElapsedSnapshot,
     completionKeyRef,
   ]);
 

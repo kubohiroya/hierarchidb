@@ -6,11 +6,19 @@ import {
 } from '../../../components/build-progress/useBuildProgressPanelState/useBuildProgressPanelState.utils';
 
 describe('shouldUpdateElapsedSnapshot', () => {
-  it('returns true when there is no snapshot yet', () => {
+  it('returns false when idle even if there is no snapshot yet', () => {
     expect(shouldUpdateElapsedSnapshot({
       snapshot: null,
       totalElapsedMs: 0,
       buildStatus: 'idle',
+    })).toBe(false);
+  });
+
+  it('returns true when there is no snapshot yet and build is running', () => {
+    expect(shouldUpdateElapsedSnapshot({
+      snapshot: null,
+      totalElapsedMs: 0,
+      buildStatus: 'running',
     })).toBe(true);
   });
 

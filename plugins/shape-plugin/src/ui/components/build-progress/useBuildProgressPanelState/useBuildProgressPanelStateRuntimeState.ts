@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useBuildCrashInsight } from '~/ui/components/build-progress/useBuildCrashInsight/useBuildCrashInsight';
@@ -146,7 +146,7 @@ export const useBuildProgressPanelStateRuntimeState = (
   const setTotalElapsedSnapshot = useSetAtom(totalElapsedSnapshotAtom);
   const completionKeyRef = useRef<string | null>(null);
   const mismatchSignatureRef = useRef<Map<string, string>>(new Map());
-  const snapshotNodeIdRef = useRef<string | undefined>(undefined);
+  const prevNodeIdRef = useRef<string | undefined>(undefined);
 
   const completion = useBuildCrashInsight({
     draft: params.data,
@@ -216,12 +216,20 @@ export const useBuildProgressPanelStateRuntimeState = (
     mismatchSignatureRef,
   });
 
-  if (nodeIdForLog !== snapshotNodeIdRef.current) {
-    snapshotNodeIdRef.current = nodeIdForLog;
-    setTotalElapsedSnapshot(null);
-  }
+  // Reset totalElapsedSnapshot when nodeId changes.
+  // Must be in useEffect to avoid setState during render (which causes infinite loops).
+  useEffect(() => {
+    if (nodeIdForLog !== prevNodeIdRef.current) {
+      prevNodeIdRef.current = nodeIdForLog;
+      setTotalElapsedSnapshot(null);
+    }
+  }, [nodeIdForLog, setTotalElapsedSnapshot]);
 
   const liveTotalElapsedMs = useMemo(() => {
+    // When idle, ignore any stale snapshot and return the raw value (0 after reset).
+    if (summary.buildStatus === 'idle') {
+      return summary.totalElapsedMs;
+    }
     if (!totalElapsedSnapshot) {
       return summary.totalElapsedMs;
     }
