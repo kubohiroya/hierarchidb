@@ -104,6 +104,12 @@ export const useBuildProgressPanelStateSideEffects = (args: {
     if (summary.buildStatus === 'running' || summary.buildStatus === 'paused') {
       hasProgressRef.current = true;
       completionKeyRef.current = null;
+      // Clear stale snapshot when transitioning from idle/terminal to running/paused.
+      // Without this, the drift calculation in liveTotalElapsedMs uses a capturedAt
+      // from a previous build run, producing absurdly large elapsed values.
+      if (previousBuildStatus === 'idle' || isTerminalStatus(previousBuildStatus)) {
+        setTotalElapsedSnapshot(null);
+      }
       previousBuildStatusRef.current = summary.buildStatus;
       return;
     }
@@ -178,8 +184,38 @@ export const useBuildProgressPanelStateSideEffects = (args: {
     summary.buildStatus,
     setCompletionDialogOpen,
     setCompletionSnapshot,
+    setTotalElapsedSnapshot,
     completionKeyRef,
   ]);
+
+  useEffect(() => {
+    setElapsedTickMs(Date.now());
+    if (!shouldRunElapsedTicker) {
+      return;
+    }
+    const timerId = window.setInterval(() => {
+      setElapsedTickMs(Date.now());
+    }, 1000);
+    return () => {
+      window.clearInterval(timerId);
+    };
+  }, [setElapsedTickMs, shouldRunElapsedTicker]);
+
+  useEffect(() => {
+    if (shouldUpdateElapsedSnapshot({
+      snapshot: totalElapsedSnapshotRef.current,
+      totalElapsedMs: summary.totalElapsedMs,
+      buildStatus: summary.buildStatus,
+    })) {
+      // Use Date.now() directly instead of elapsedTickMs to avoid stale closure:
+      // elapsedTickMs is updated by a separate effect in the same render cycle,
+      // so it may still hold the previous tick value when this effect runs.
+      setTotalElapsedSnapshot({
+        durationMs: summary.totalElapsedMs,
+        capturedAt: Date.now(),
+      });
+    }
+  }, [elapsedTickMs, summary.buildStatus, summary.totalElapsedMs, setTotalElapsedSnapshot]);
 
   useEffect(() => {
     if (!isShapeBuildPanelDebugEnabled('runningResiduePanel')) return;

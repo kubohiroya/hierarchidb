@@ -4,6 +4,48 @@ import {
   resolveActiveRunningStageId,
 } from '../../../components/build-progress/useBuildProgressPanelState/useBuildProgressPanelState.utils';
 
+describe('shouldUpdateElapsedSnapshot', () => {
+  it('returns false when idle even if there is no snapshot yet', () => {
+    expect(shouldUpdateElapsedSnapshot({
+      snapshot: null,
+      totalElapsedMs: 0,
+      buildStatus: 'idle',
+    })).toBe(false);
+  });
+
+  it('returns true when there is no snapshot yet and build is running', () => {
+    expect(shouldUpdateElapsedSnapshot({
+      snapshot: null,
+      totalElapsedMs: 0,
+      buildStatus: 'running',
+    })).toBe(true);
+  });
+
+  it('returns false when elapsed decreases while running', () => {
+    expect(shouldUpdateElapsedSnapshot({
+      snapshot: { durationMs: 10_000, capturedAt: 1_000 },
+      totalElapsedMs: 9_000,
+      buildStatus: 'running',
+    })).toBe(false);
+  });
+
+  it('returns true when reset sets elapsed to zero during running', () => {
+    expect(shouldUpdateElapsedSnapshot({
+      snapshot: { durationMs: 10_000, capturedAt: 1_000 },
+      totalElapsedMs: 0,
+      buildStatus: 'running',
+    })).toBe(true);
+  });
+
+  it('returns true when build is not running', () => {
+    expect(shouldUpdateElapsedSnapshot({
+      snapshot: { durationMs: 10_000, capturedAt: 1_000 },
+      totalElapsedMs: 8_000,
+      buildStatus: 'paused',
+    })).toBe(true);
+  });
+});
+
 describe('resolveCompletionFailedStageLabel', () => {
   it('uses failed stage title when available', () => {
     expect(resolveCompletionFailedStageLabel({
