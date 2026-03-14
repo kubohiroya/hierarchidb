@@ -298,9 +298,11 @@ describe('Event Architecture Properties', () => {
                             eventTypes.forEach((eventType) => {
                                 if (eventType === 'heartbeat') {
                                     unconditionalEventStreamer.emitHeartbeat(nodeId, {
-                                        nodeId: nodeIdStr,
-                                        heartbeatAt: Date.now(),
-                                    } as unknown as import('../../../common/types/session-events').SessionHeartbeatEvent);
+                                        nodeId,
+                                        timestamp: Date.now(),
+                                        isActive: true,
+                                        lastActivity: Date.now(),
+                                    });
                                 } else {
                                     unconditionalEventStreamer.emitEvent(
                                         nodeId,
