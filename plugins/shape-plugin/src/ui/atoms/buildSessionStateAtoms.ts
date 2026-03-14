@@ -239,7 +239,7 @@ export const stageTimingByStageAtom = atom((get) => {
 const computeCompletedStageDuration = (
   timing: { stageStartedAt: number | undefined; stageInactiveMs: number; stageCompletedAt?: number } | null,
 ): number => {
-  if (!timing?.stageCompletedAt || timing.stageStartedAt === undefined) {
+  if (!timing || timing.stageStartedAt === undefined || timing.stageCompletedAt === undefined) {
     return 0;
   }
   return Math.max(0, timing.stageCompletedAt - timing.stageStartedAt - timing.stageInactiveMs);
