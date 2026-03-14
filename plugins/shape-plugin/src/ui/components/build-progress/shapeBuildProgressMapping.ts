@@ -26,8 +26,8 @@ export interface BuildProgress {
   }>>;
 }
 
-export interface BuildProgressStatus {
-  status: 'idle' | 'processing' | 'completed' | 'failed' | 'paused' | 'queued';
+export interface BuildSessionDisplayStatus {
+  status: 'idle' | 'running' | 'completed' | 'failed' | 'paused' | 'queued';
   stage?: string;
   progress?: number;
   hasErrors?: boolean;
@@ -157,7 +157,7 @@ export function toShapeProgress(info: ExtendedProgress | null): BuildProgress | 
 export function toShapeStatus(
   info: ExtendedProgress | null,
   fallback?: BuildSessionStatus | null,
-): BuildProgressStatus | null {
+): BuildSessionDisplayStatus | null {
   const nodeId = info?.nodeId ?? fallback?.nodeId;
   if (!nodeId) return null;
   const mergedStatus = toBuildSessionStatusFromUnifiedProgress({
@@ -182,7 +182,7 @@ export function toShapeStatus(
   };
 }
 
-export function mapPhaseToStatus(phase: string): BuildProgressStatus['status'] {
+export function mapPhaseToStatus(phase: string): BuildSessionDisplayStatus['status'] {
   switch (phase) {
     case 'idle':
       return 'idle';
@@ -195,6 +195,6 @@ export function mapPhaseToStatus(phase: string): BuildProgressStatus['status'] {
     case 'queued':
       return 'queued';
     default:
-      return 'processing';
+      return 'running';
   }
 }

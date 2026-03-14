@@ -2,21 +2,22 @@ import { useEffect, useMemo, useRef } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useAtomValue } from 'jotai';
 import {
-  buildSessionRuntimeAtom,
+  buildSessionLifecycleAtom,
   buildSessionStageCountersAtom,
   buildSessionStageProgressAtom,
   buildSessionTasksByStageAtom,
 } from '~/ui/atoms/buildSessionStateAtoms';
 import {
   type BuildProgress,
-  type BuildProgressStatus,
+  type BuildSessionDisplayStatus,
 } from '~/ui/components/build-progress/shapeBuildProgressMapping';
 
-export type { BuildProgress, BuildProgressStatus };
+export type { BuildProgress, BuildSessionDisplayStatus };
+
 
 export interface ShapeProgressState {
   progress: BuildProgress | null;
-  status: BuildProgressStatus | null;
+  status: BuildSessionDisplayStatus | null;
   error: Error | null;
 }
 
@@ -63,7 +64,7 @@ const logProgressMapping = (nodeId: string | null, payload: {
 export function useBuildProgress(
   nodeId: NodeId | null,
 ): ShapeProgressState & { subscribe: () => void; unsubscribe: () => void } {
-  const runtime = useAtomValue(buildSessionRuntimeAtom);
+  const runtime = useAtomValue(buildSessionLifecycleAtom);
   const counters = useAtomValue(buildSessionStageCountersAtom);
   const stageProgress = useAtomValue(buildSessionStageProgressAtom);
   const tasksByStage = useAtomValue(buildSessionTasksByStageAtom);
@@ -112,16 +113,16 @@ export function useBuildProgress(
     };
   }, [counters, nodeId, runtime.activeStageId, stageProgress, tasksByStage]);
 
-  const derivedStatus = useMemo<BuildProgressStatus | null>(() => {
+  const derivedStatus = useMemo<BuildSessionDisplayStatus | null>(() => {
     if (!nodeId) return null;
     const phase = runtime.phase;
-    const status: BuildProgressStatus['status'] = (() => {
+    const status: BuildSessionDisplayStatus['status'] = (() => {
       if (phase === 'idle') return 'idle';
       if (phase === 'completed') return 'completed';
       if (phase === 'failed') return 'failed';
       if (phase === 'paused') return 'paused';
       if (phase === 'starting') return 'queued';
-      return 'processing';
+      return 'running';
     })();
     return {
       status,

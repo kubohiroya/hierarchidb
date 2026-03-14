@@ -1,4 +1,4 @@
-export type BuildStatusSource = 'idle' | 'processing' | 'completed' | 'failed' | 'paused' | 'queued';
+export type BuildStatusSource = 'idle' | 'running' | 'completed' | 'failed' | 'paused' | 'queued';
 
 export const resolveBuildStatusSource = (
   persistedStatus: BuildStatusSource,
@@ -11,7 +11,7 @@ export const resolveBuildStatusSource = (
     || persistedStatus === 'failed'
     || persistedStatus === 'paused'
   );
-  if (hasPersistedTerminalOrPaused && (runtimeStatus === 'processing' || runtimeStatus === 'queued')) {
+  if (hasPersistedTerminalOrPaused && (runtimeStatus === 'running' || runtimeStatus === 'queued')) {
     return persistedStatus;
   }
   return runtimeStatus;

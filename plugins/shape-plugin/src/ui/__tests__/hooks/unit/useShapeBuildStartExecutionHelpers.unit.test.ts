@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   runStartSessionRequest,
-} from '../../../components/build-progress/internal/useShapeBuildStepControlActions/useShapeBuildStartExecutionHelpers';
+} from '../../../components/build-progress/internal/useShapeBuildSessionControlActions/useShapeBuildStartExecutionHelpers';
 
 describe('useShapeBuildStartExecutionHelpers', () => {
   let onTrace: ReturnType<typeof vi.fn>;

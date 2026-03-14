@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useShapeBuildSessionStartupTrace } from './useShapeBuildStepStartupLifecycle/useShapeBuildSessionStartupTrace';
-import { useShapeBuildSessionStartupProgressTerminalLog } from './useShapeBuildStepStartupLifecycle/useShapeBuildSessionStartupProgressTerminalLog';
+import { useShapeBuildSessionStartupTrace } from './useShapeBuildSessionStartupLifecycle/useShapeBuildSessionStartupTrace';
+import { useShapeBuildSessionStartupProgressTerminalLog } from './useShapeBuildSessionStartupLifecycle/useShapeBuildSessionStartupProgressTerminalLog';
 import type {
   BuildSessionTransitionState,
 } from '@hierarchidb/ui-build-progress/build-session';
@@ -8,7 +8,7 @@ import type { BuildProgress } from '~/ui/components/build-progress/shapeBuildPro
 import type { BuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
 import type {
   BuildSessionTransitionPhase,
-} from './useShapeBuildStepHelpers/startupTrace';
+} from './useShapeBuildSessionHelpers/startupTrace';
 
 const POLL_INTERVAL_MS = 1000;
 

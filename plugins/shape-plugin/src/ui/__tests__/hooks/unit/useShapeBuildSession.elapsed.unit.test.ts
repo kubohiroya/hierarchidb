@@ -5,11 +5,11 @@ import {
   resolveDisplayBuildStatus,
   shouldRefreshTasksSnapshot,
   shouldResetElapsedState,
-} from '../../../components/build-progress/internal/useShapeBuildStepLogic';
+} from '../../../components/build-progress/internal/useShapeBuildSessionLogic';
 import {
   buildElapsedByStageWithActiveStage,
   resolveTotalElapsedMs,
-} from '../../../components/build-progress/internal/useShapeBuildStepHelpers/elapsed';
+} from '../../../components/build-progress/internal/useShapeBuildSessionHelpers/elapsed';
 
 describe('shouldResetElapsedState', () => {
   it('returns false while build is running', () => {
@@ -88,7 +88,7 @@ describe('shouldRefreshTasksSnapshot', () => {
       hasProgressTaskSignal: false,
       buildStatus: 'running',
       runtimeStatus: 'running',
-      processingStatus: 'processing',
+      processingStatus: 'running',
       buildSessionTransitionActive: false,
     })).toBe(true);
   });
@@ -100,7 +100,7 @@ describe('shouldRefreshTasksSnapshot', () => {
       hasProgressTaskSignal: true,
       buildStatus: 'running',
       runtimeStatus: 'running',
-      processingStatus: 'processing',
+      processingStatus: 'running',
       buildSessionTransitionActive: false,
     })).toBe(false);
   });

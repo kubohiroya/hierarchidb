@@ -2,17 +2,17 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { notify } from '@hierarchidb/components/notify';
 import type { BuildSessionTransitionNotificationLevel } from '@hierarchidb/ui-build-progress/build-session';
 import { useBuildSessionTransition } from '@hierarchidb/ui-build-progress/build-session';
-import type { BuildSessionTransitionPhase, BuildStartupStep, BuildStartupStepOutcome, StartupStepMemorySnapshot } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/startupTrace.js';
-import { captureStartupStepMemorySnapshot, calculateMemoryDelta } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/startupTrace.js';
+import type { BuildSessionTransitionPhase, BuildStartupStep, BuildStartupStepOutcome, StartupStepMemorySnapshot } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/startupTrace.js';
+import { captureStartupStepMemorySnapshot, calculateMemoryDelta } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/startupTrace.js';
 
 type NotificationLevel = BuildSessionTransitionNotificationLevel;
 
-type UseShapeBuildStepTransitionControllerArgs = {
+type UseShapeBuildSessionTransitionControllerArgs = {
   activeNodeId: string | null;
   clearStartPendingRef: React.RefObject<(() => void) | null>;
 };
 
-type UseShapeBuildStepTransitionControllerResult = {
+type UseShapeBuildSessionTransitionControllerResult = {
   buildSessionTransition: {
     active: boolean;
     phase: BuildSessionTransitionPhase | 'idle';
@@ -42,12 +42,12 @@ type UseShapeBuildStepTransitionControllerResult = {
   progressTerminalLogKeyRef: { current: string | null };
 };
 
-export type { UseShapeBuildStepTransitionControllerArgs, UseShapeBuildStepTransitionControllerResult, NotificationLevel };
+export type { UseShapeBuildSessionTransitionControllerArgs, UseShapeBuildSessionTransitionControllerResult, NotificationLevel };
 
-export const useShapeBuildStepTransitionController = ({
+export const useShapeBuildSessionTransitionController = ({
   activeNodeId,
   clearStartPendingRef,
-}: UseShapeBuildStepTransitionControllerArgs): UseShapeBuildStepTransitionControllerResult => {
+}: UseShapeBuildSessionTransitionControllerArgs): UseShapeBuildSessionTransitionControllerResult => {
   const progressTerminalLogKeyRef = useRef<string | null>(null);
   const previousTransitionActiveRef = useRef(false);
   const buildStartupStepStartedAtRef = useRef<Map<BuildStartupStep, number>>(new Map());

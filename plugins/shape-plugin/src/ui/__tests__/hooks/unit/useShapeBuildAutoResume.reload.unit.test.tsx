@@ -12,7 +12,7 @@ describe('useShapeBuildAutoResume reload behavior', () => {
       activeNodeId,
       buildStatus: 'idle' as BuildStatus,
       stopReason: undefined,
-      runtimeStatus: 'processing',
+      runtimeStatus: 'running',
       handleStart,
       handlePause,
       hasFailedSourceTasks: false,

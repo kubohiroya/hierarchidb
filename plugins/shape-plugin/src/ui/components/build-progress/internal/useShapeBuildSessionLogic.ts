@@ -4,5 +4,5 @@ export {
   resolveMostAdvancedRunningStageId,
   resolveMostAdvancedInFlightStageId,
   shouldRefreshTasksSnapshot,
-  useShapeBuildStep,
-} from './useShapeBuildStepLogic.impl.js';
+  useShapeBuildSession,
+} from './useShapeBuildSessionLogic.impl.js';

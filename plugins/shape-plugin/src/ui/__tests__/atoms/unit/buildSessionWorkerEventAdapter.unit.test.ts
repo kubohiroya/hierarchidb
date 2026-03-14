@@ -2,10 +2,11 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { createStore } from 'jotai/vanilla';
 import type { BuildProgressEvent, BuildSessionRuntimeRecord, BuildTaskUpdateEvent } from '@hierarchidb/build-api';
 import {
-  buildSessionRuntimeAtom,
+  buildSessionLifecycleAtom,
   buildSessionStageCountersAtom,
   buildSessionStageProgressAtom,
   buildSessionTaskStreamConnectedAtom,
+  stageTimingByStageAtom,
   dispatchBuildSessionEventAtom,
 } from '../../../atoms/buildSessionStateAtoms';
 import { createBuildSessionWorkerEventAdapter } from '../../../atoms/buildSessionWorkerEventAdapter';
@@ -20,7 +21,7 @@ describe('buildSessionWorkerEventAdapter', () => {
     store.set(dispatchBuildSessionEventAtom, { type: 'reset' });
   });
 
-  it('maps runtime pub/sub event to runtimeSnapshotReceived', () => {
+  it('maps runtime pub/sub event to sessionStatusUpdated', () => {
     const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
     const runtimeRecord: BuildSessionRuntimeRecord = {
       nodeId: 'node-1',
@@ -34,13 +35,14 @@ describe('buildSessionWorkerEventAdapter', () => {
 
     adapter.onRuntimeRecord(runtimeRecord);
 
-    const runtime = store.get(buildSessionRuntimeAtom);
+    const runtime = store.get(buildSessionLifecycleAtom);
     expect(runtime.phase).toBe('running');
     expect(runtime.isActive).toBe(true);
-    expect(runtime.heartbeatAt).toBe(30);
+    expect(runtime.heartbeatAt).toBeUndefined(); // heartbeatAt comes from onHeartbeat, not onRuntimeRecord
+    expect(runtime.startedAt).toBe(10);
   });
 
-  it('maps task pub/sub snapshot/update to task events and counters', () => {
+  it('maps task pub/sub snapshot to stage counters', () => {
     const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
 
     const snapshotEvent: BuildTaskUpdateEvent = {
@@ -58,30 +60,52 @@ describe('buildSessionWorkerEventAdapter', () => {
     };
     adapter.onTaskEvent(snapshotEvent);
 
-    let counters = store.get(buildSessionStageCountersAtom).source;
+    const counters = store.get(buildSessionStageCountersAtom).source;
     expect(counters.total).toBe(1);
     expect(counters.queued).toBe(1);
+  });
 
+  it('replaces tasks on second snapshot (full snapshot semantics)', () => {
+    const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
+
+    adapter.onTaskEvent({
+      type: 'snapshot',
+      nodeId: 'node-1',
+      tasks: [
+        { taskId: 's-1', version: 1, stage: 'source', status: 'queued', progress: 0 },
+        { taskId: 's-2', version: 1, stage: 'source', status: 'running', progress: 10 },
+      ],
+    });
+    expect(store.get(buildSessionStageCountersAtom).source.total).toBe(2);
+
+    // Second snapshot replaces entirely
+    adapter.onTaskEvent({
+      type: 'snapshot',
+      nodeId: 'node-1',
+      tasks: [
+        { taskId: 's-1', version: 2, stage: 'source', status: 'completed', progress: 100 },
+      ],
+    });
+
+    const counters = store.get(buildSessionStageCountersAtom).source;
+    expect(counters.total).toBe(1);
+    expect(counters.terminal).toBe(1);
+    expect(counters.running).toBe(0);
+  });
+
+  it('throws on task update event (only snapshot is supported)', () => {
+    const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
     const updateEvent: BuildTaskUpdateEvent = {
       type: 'update',
       nodeId: 'node-1',
-      task: {
-        taskId: 's-1',
-        version: 4,
-        stage: 'source',
-        status: 'completed',
-        progress: 100,
-      },
+      task: { taskId: 's-1', version: 4, stage: 'source', status: 'completed', progress: 100 },
     };
-    adapter.onTaskEvent(updateEvent);
-
-    counters = store.get(buildSessionStageCountersAtom).source;
-    expect(counters.total).toBe(1);
-    expect(counters.queued).toBe(0);
-    expect(counters.terminal).toBe(1);
+    expect(() => adapter.onTaskEvent(updateEvent)).toThrowError(
+      "unexpected task event type: update. Only 'snapshot' is supported.",
+    );
   });
 
-  it('maps progress pub/sub event to progressReceived and updates stage progress', () => {
+  it('maps progress pub/sub event to taskProgressUpdated and updates stage progress', () => {
     const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
     const progressEvent: BuildProgressEvent = {
       nodeId: 'node-1',
@@ -121,7 +145,7 @@ describe('buildSessionWorkerEventAdapter', () => {
     }).toThrowError('[shape buildSessionWorkerEventAdapter] progress payload.percentage must be a finite number, received undefined');
   });
 
-  it('maps session record pub/sub event to runtime timing fields', () => {
+  it('maps onSessionState to sessionStatusUpdated with stopReason', () => {
     const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
     adapter.onSessionState({
       nodeId: 'node-1',
@@ -129,23 +153,29 @@ describe('buildSessionWorkerEventAdapter', () => {
         status: 'running',
         startedAt: 10,
         stageHeartbeatAt: 90,
-        completedAt: undefined,
-        stageId: 'geometry',
         stopReason: 'route-leave',
-        inactiveMs: 44,
-        stageStartedAt: 50,
-        stageInactiveMs: 6,
       },
     });
 
-    const runtime = store.get(buildSessionRuntimeAtom);
+    const runtime = store.get(buildSessionLifecycleAtom);
     expect(runtime.phase).toBe('running');
-    expect(runtime.heartbeatAt).toBe(90);
-    expect(runtime.stageId).toBe('geometry');
+    expect(runtime.startedAt).toBe(10);
     expect(runtime.stopReason).toBe('route-leave');
-    expect(runtime.inactiveMs).toBe(44);
-    expect(runtime.stageStartedAt).toBe(50);
-    expect(runtime.stageInactiveMs).toBe(6);
+  });
+
+  it('stores stage timing from stageSnapshotUpdated via onTaskEvent', () => {
+    const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
+    // onTaskEvent snapshot sets stageStartedAt via stageSnapshotUpdated
+    adapter.onTaskEvent({
+      type: 'snapshot',
+      nodeId: 'node-1',
+      tasks: [{ taskId: 's-1', version: 50, stage: 'geometry', status: 'running', progress: 10 }],
+    });
+
+    const timing = store.get(stageTimingByStageAtom);
+    // stageStartedAt is derived from task version when no explicit version on event
+    expect(timing.geometry).not.toBeNull();
+    expect(timing.geometry?.stageInactiveMs).toBe(0);
   });
 
   it('throws when sessionRecord stopReason is outside ShapeBuildStopReason', () => {
@@ -164,14 +194,15 @@ describe('buildSessionWorkerEventAdapter', () => {
     }).toThrowError('[shape buildSessionWorkerEventAdapter] unsupported stopReason: invalid-stop-reason');
   });
 
-  it('maps connection/heartbeat pub/sub events', () => {
+  it('maps connection and heartbeat events', () => {
     const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
     adapter.onTaskStreamConnectionChanged(true);
     adapter.onHeartbeat({ nodeId: 'node-1', heartbeatAt: 55 });
 
-    const runtime = store.get(buildSessionRuntimeAtom);
     expect(store.get(buildSessionTaskStreamConnectedAtom)).toBe(true);
+    const runtime = store.get(buildSessionLifecycleAtom);
     expect(runtime.heartbeatAt).toBe(55);
-    expect(runtime.phase).toBe('running');
+    // heartbeat does not change phase; phase remains idle
+    expect(runtime.phase).toBe('idle');
   });
 });

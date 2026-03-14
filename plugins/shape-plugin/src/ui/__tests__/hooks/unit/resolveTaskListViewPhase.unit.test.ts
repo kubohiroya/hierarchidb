@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveTaskListViewPhase } from '../../../components/build-progress/internal/useShapeBuildStepStageState';
+import { resolveTaskListViewPhase } from '../../../components/build-progress/internal/useShapeBuildSessionStageState';
 
 describe('resolveTaskListViewPhase', () => {
   it('returns idle when no tasks and no loading/progress signals', () => {

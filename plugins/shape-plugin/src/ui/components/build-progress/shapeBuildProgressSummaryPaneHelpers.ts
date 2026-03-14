@@ -1,5 +1,5 @@
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
-import type { BuildProgressStatus } from './shapeBuildProgressMapping.js';
+import type { BuildSessionDisplayStatus } from './shapeBuildProgressMapping.js';
 import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import type { BuildTaskSummary, TaskStage } from '@hierarchidb/build-api';
 import { resolveMostAdvancedStageId } from './stagePriority.js';
@@ -8,9 +8,9 @@ import { resolveStageAliasArray } from './stageIdAliases';
 
 type TaskStageCarrier = BuildTaskSummary & { stage: TaskStage };
 
-const normalizePaneStatus = (status: BuildStatus | BuildProgressStatus['status']): BuildProgressStatus['status'] => {
+const normalizePaneStatus = (status: BuildStatus | BuildSessionDisplayStatus['status']): BuildSessionDisplayStatus['status'] => {
   if (status === 'running') {
-    return 'processing';
+    return 'running';
   }
   if (status === 'queued') {
     return 'queued';
@@ -43,7 +43,7 @@ export const makePaneProgress = ({
   progress: number;
   taskCount: number;
   completedCount: number;
-  status: BuildProgressStatus['status'];
+  status: BuildSessionDisplayStatus['status'];
   summary: { total: number; success: number; error: number; skip: number };
 }> => stages.map((stage) => {
   const base = paneProgress.find((entry) => entry.paneId === stage.id);
@@ -90,8 +90,8 @@ export const makePaneProgress = ({
         : buildStatus === 'paused'
           ? 'paused'
           : total > 0
-        ? 'processing'
-        : baseStatus ?? normalizedBuildStatus,
+            ? 'running'
+            : baseStatus ?? normalizedBuildStatus,
     summary: { total, success, error, skip },
   };
 });

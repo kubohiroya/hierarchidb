@@ -3,7 +3,7 @@ import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useAtomValue } from 'jotai';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
-import { buildSessionRuntimeAtom } from '~/ui/atoms/buildSessionStateAtoms';
+import { buildSessionLifecycleAtom } from '~/ui/atoms/buildSessionStateAtoms';
 
 type UseShapeBuildSessionStateArgs = {
     activeNodeId: NodeId | null;
@@ -18,7 +18,7 @@ export const useShapeBuildSessionState = ({
 }: UseShapeBuildSessionStateArgs): UseShapeBuildSessionStateResult => {
     const [isRuntimeReady, setIsRuntimeReady] = useState(false);
     const lastWorkerStageTraceKeyRef = useRef<string | null>(null);
-    const runtime = useAtomValue(buildSessionRuntimeAtom);
+    const runtime = useAtomValue(buildSessionLifecycleAtom);
 
     const updateSessionRecord = useCallback(async (patch: Partial<ShapeBuildSessionRecord>): Promise<boolean> => {
         if (!activeNodeId) return false;

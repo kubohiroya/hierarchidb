@@ -61,7 +61,7 @@ export const useShapeBuildAutoResume = ({
   const activeNodeIdRef = useRef<NodeId | null>(null);
   const suspendIfRunningRef = useRef<(() => void) | null>(null);
   useEffect(() => {
-    const hasActiveProcessing = runtimeStatus === 'processing';
+    const hasActiveProcessing = runtimeStatus === 'running';
     const isRunning = buildStatus === 'running';
     const isFinished = runtimeStatus === 'completed' || runtimeStatus === 'failed';
     shouldSuspendRef.current = !isFinished && (hasActiveProcessing || isRunning);
@@ -70,7 +70,7 @@ export const useShapeBuildAutoResume = ({
     if (buildStatus === 'completed' || buildStatus === 'failed') return false;
     if (buildStatus === 'paused') return stopReason === 'route-leave';
     if (stopReason && stopReason !== 'route-leave') return false;
-    return runtimeStatus === 'processing' || buildStatus === 'idle';
+    return runtimeStatus === 'running' || buildStatus === 'idle';
   }, [buildStatus, runtimeStatus, stopReason]);
 
   const suspendIfRunning = useCallback(() => {

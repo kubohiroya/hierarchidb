@@ -1,0 +1,213 @@
+# Build Session Worker→UI Event Design
+
+## Purpose
+
+This document defines the canonical set of events that flow from the Worker to the UI
+for a build session. It is the single source of truth for event naming, payload shape,
+and the UI-side atom structure that consumes them.
+
+The previous implementation had six overlapping event types
+(`runtimeSnapshotReceived`, `sessionRecordReceived`, `taskSnapshotReceived`,
+`taskUpdated`, `taskDeleted`, `progressReceived`) with unclear boundaries and a
+`lastAcceptedEventVersion` field that mixed unrelated version spaces. This design
+replaces them with four well-defined events.
+
+---
+
+## Event Taxonomy
+
+### 1. `stageSnapshotUpdated`
+
+**Concept**: Full replacement of the task list for one stage, plus timing metadata for
+that stage. Sent whenever the Worker has a new authoritative view of a stage's tasks
+(initial load, resume, or any structural change). An empty `tasks` array means all
+tasks for that stage have been removed.
+
+**Replaces**: `taskSnapshotReceived` + `taskUpdated` + `taskDeleted`
+
+**Payload**:
+
+| Field | Type | Description |
+|---|---|---|
+| `stageId` | `StageId` | Target stage |
+| `tasks` | `TaskSummary[]` | Full task list for the stage (empty = all removed) |
+| `stageStartedAt` | `number` | Unix ms — first time this stage was started in the current session |
+| `stageInactiveMs` | `number` | Cumulative paused/inactive duration for this stage (ms) |
+| `stageCompletedAt` | `number \| undefined` | Unix ms of most recent completion; `undefined` while the stage is active |
+
+**UI effect**: Replace `tasksById` / `taskOrder` for the stage atomically. Update
+`stageTimingByStageAtom` for the stage.
+
+**Ordering**: Each event carries an `eventVersion` (monotonically increasing integer).
+Events with `eventVersion ≤ lastAccepted` are silently dropped.
+
+---
+
+### 2. `taskProgressUpdated`
+
+**Concept**: Progress value for a single task, emitted by a parallel worker. Sent
+frequently; must not carry any information beyond the progress value itself.
+
+**Replaces**: `progressReceived`
+
+**Payload**:
+
+| Field | Type | Description |
+|---|---|---|
+| `stageId` | `StageId` | Stage the task belongs to |
+| `value` | `number` | Progress 0–100 (finite; outside range is a contract violation) |
+| `phase` | `SessionPhase` | Current session phase at time of emission |
+| `message` | `string \| undefined` | Optional human-readable label |
+| `metadata` | `Record<string, unknown> \| undefined` | Optional opaque metadata |
+
+**UI effect**: Update the `progress` field of the corresponding stage atom entry.
+
+---
+
+### 3. `sessionStatusUpdated`
+
+**Concept**: A change in the session's lifecycle state (phase, stop reason, timing).
+Sent on every state transition. Subsumes both the runtime record snapshot and the
+session record notification, which carried identical responsibilities and were
+redundantly separated.
+
+**Replaces**: `runtimeSnapshotReceived` + `sessionRecordReceived`
+
+**Payload**:
+
+| Field | Type | Description |
+|---|---|---|
+| `nodeId` | `string` | Node this session belongs to |
+| `phase` | `SessionPhase` | New lifecycle phase |
+| `isActive` | `boolean` | Whether the session is currently executing |
+| `startedAt` | `number \| undefined` | Unix ms — session start time |
+| `completedAt` | `number \| undefined` | Unix ms — session end time (terminal states only) |
+| `stopReason` | `StopReason \| undefined` | Why the session stopped (terminal/paused states) |
+| `stageId` | `StageId \| undefined` | Current stage at time of event |
+| `inactiveMs` | `number \| undefined` | Cumulative session-level inactive duration (ms) |
+| `stageStartedAt` | `number \| undefined` | Unix ms — current stage start time |
+| `stageInactiveMs` | `number \| undefined` | Cumulative inactive duration for current stage (ms) |
+
+**UI effect**: Update `lifecycleAtom` (phase, isActive, startedAt, completedAt,
+stopReason) and `lifecycleExtrasAtom` (stageId, inactiveMs, stageStartedAt,
+stageInactiveMs).
+
+**Note**: `heartbeatAt` is intentionally absent. Heartbeat timing is carried only by
+the `heartbeat` event to avoid polluting this event with high-frequency data.
+
+---
+
+### 4. `heartbeat`
+
+**Concept**: Periodic liveness signal from the Worker. Sent frequently (≈1 s). Must
+carry only the minimum information needed to confirm the Worker is alive and update
+the last-seen timestamp.
+
+**Replaces**: `onHeartbeat` callback (previously tunnelled through
+`runtimeSnapshotReceived`, which was wasteful)
+
+**Payload**:
+
+| Field | Type | Description |
+|---|---|---|
+| `heartbeatAt` | `number` | Unix ms — timestamp of this heartbeat |
+
+**UI effect**: Update `heartbeatAt` in `lifecycleExtrasAtom` only. Must not trigger
+any phase or task recalculation.
+
+---
+
+## Removed Concepts
+
+| Removed | Reason |
+|---|---|
+| `taskUpdated` | Merged into `stageSnapshotUpdated` (single-task array) |
+| `taskDeleted` | Merged into `stageSnapshotUpdated` (empty array) |
+| `lastAcceptedEventVersion` in `meta` | Mixed unrelated version spaces; removed from state shape |
+| `Received` suffix on event names | Receiver-perspective naming; replaced with past-tense verb phrases |
+
+---
+
+## UI-Side Atom Changes (shape-plugin)
+
+### New base atom: `stageTimingByStageAtom`
+
+```
+stageTimingByStageAtom: Record<ShapeStageId, StageTiming | null>
+```
+
+Updated by `stageSnapshotUpdated`. Holds the raw timing fields from the event payload.
+
+```typescript
+type StageTiming = {
+  stageStartedAt: number;
+  stageInactiveMs: number;
+  stageCompletedAt: number | undefined;
+};
+```
+
+### New derived atom: `stageDurationMsByStageAtom`
+
+Derived from `stageTimingByStageAtom` × `elapsedTickMsAtom`. No React state or ref.
+
+Calculation per stage:
+
+- Stage active (`stageCompletedAt === undefined`):
+  `now - stageStartedAt - stageInactiveMs`
+- Stage completed:
+  `stageCompletedAt - stageStartedAt - stageInactiveMs`
+
+Where `now` comes from `elapsedTickMsAtom` (ticked by the existing 1 s interval).
+
+### Updated call site: `useShapeBuildStepLogic.impl.ts`
+
+```typescript
+// Before
+sessionStageDurationByStageSnapshot: null,
+
+// After
+sessionStageDurationByStageSnapshot: useAtomValue(stageDurationMsByStageAtom),
+```
+
+---
+
+## Task Classification
+
+These definitions are used when computing progress counters and remaining-time
+estimates.
+
+| Term | Definition |
+|---|---|
+| `recycled` | `sourceCacheMeta` has a stale record AND `sourceCache` has a valid record → processing was skipped, result reused. Excluded from active task counts via `isExcludedTask`. |
+| `skipped` | `sourceCacheMeta` has a fresh record AND `sourceCache` has no valid record → processing ran but produced no output. Counted as `done` (not an error). |
+| `done` | `completed` + `skipped` tasks. Used as the numerator in progress and remaining-time calculations. |
+
+### Remaining-time estimate
+
+```
+averageMs = elapsedMs / (done - recycled)
+remainingMs = averageMs × (total - done - recycled)
+```
+
+`recycled` tasks are excluded from both the elapsed-time denominator and the
+remaining-count numerator because no processing time was spent on them.
+
+---
+
+## Event Version Ordering
+
+- `stageSnapshotUpdated`, `taskProgressUpdated`, `sessionStatusUpdated` each carry
+  `eventVersion: number`.
+- Events are accepted only if `eventVersion > lastAccepted` per event stream.
+- `heartbeat` does not carry `eventVersion`; it is always applied unconditionally.
+- `lastAcceptedEventVersion` is removed from the top-level `meta` object. Version
+  tracking is internal to the reducer and not exposed in the public state shape.
+
+---
+
+## Non-Goals
+
+- This document does not define the Worker-side emission logic or transport layer.
+- This document does not define the `BuildSessionStateTreeAtoms` internal structure.
+- Backward compatibility shims are explicitly out of scope; the old event names are
+  deleted, not aliased.

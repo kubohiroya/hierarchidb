@@ -3,15 +3,15 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { useAtomValue } from 'jotai';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  buildSessionRuntimeAtom,
+  buildSessionLifecycleAtom,
   buildSessionTasksByStageAtom,
 } from '~/ui/atoms/buildSessionStateAtoms';
-import type { BuildProgressStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
+import type { BuildSessionDisplayStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import type { TaskListViewPhase } from '~/ui/atoms/shapeBuildProgressTypes';
 import { areTaskListsEquivalentForView } from '~/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparison.utils';
-import { resolveMostAdvancedInFlightStageId, resolveMostAdvancedRunningStageId } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/stage';
-import { resolveDisplayBuildStatus } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/status';
+import { resolveMostAdvancedInFlightStageId, resolveMostAdvancedRunningStageId } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/stage';
+import { resolveDisplayBuildStatus } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/status';
 
 type StageLike = {
   id: string;
@@ -27,7 +27,7 @@ type ProgressLike = {
   };
 };
 
-type ProcessingStatus = 'idle' | 'processing' | 'paused' | 'completed' | 'failed';
+type ProcessingStatus = 'idle' | 'running' | 'paused' | 'completed' | 'failed';
 type StageId = string;
 type StageCountByStage = Record<StageId, number>;
 type BuildStageState = {
@@ -44,7 +44,7 @@ type Args = {
   isSessionStopping: boolean;
   stages: StageLike[];
   processingStatus: ProcessingStatus;
-  runtimeStatus: BuildProgressStatus['status'];
+  runtimeStatus: BuildSessionDisplayStatus['status'];
   effectiveProgress: ProgressLike | null;
   sessionProgressTotal?: number;
   reportFailures: boolean;
@@ -56,7 +56,7 @@ type Args = {
   }) => void;
 };
 
-export type UseShapeBuildStepStageStateReturn = {
+export type UseShapeBuildSessionStageStateReturn = {
   tasks: ShapeBuildTaskSummary[];
   isLoading: boolean;
   isTaskSnapshotProgressConnected: boolean;
@@ -113,7 +113,7 @@ export const shouldClearPersistedTasksOnReset = (input: {
   && input.runtimePhase === 'idle'
 );
 
-export const useShapeBuildStepStageState = ({
+export const useShapeBuildSessionStageState = ({
   activeNodeId,
   isSessionStopping,
   stages,
@@ -122,7 +122,7 @@ export const useShapeBuildStepStageState = ({
   reportFailures,
   baseBuildStatus,
   onTerminalStageCompletion,
-}: Args): UseShapeBuildStepStageStateReturn => {
+}: Args): UseShapeBuildSessionStageStateReturn => {
   void reportFailures;
   const configuredStageOrder = useMemo(() => stages.map((stage) => stage.id), [stages]);
   const terminalStageId = useMemo<StageId | null>(() => {
@@ -137,7 +137,7 @@ export const useShapeBuildStepStageState = ({
     }
     return configuredStageOrder[0] as StageId;
   }, [configuredStageOrder]);
-  const runtime = useAtomValue(buildSessionRuntimeAtom);
+  const runtime = useAtomValue(buildSessionLifecycleAtom);
   const tasksByStage = useAtomValue(buildSessionTasksByStageAtom);
 
   const tasks = useMemo<ShapeBuildTaskSummary[]>(() => {

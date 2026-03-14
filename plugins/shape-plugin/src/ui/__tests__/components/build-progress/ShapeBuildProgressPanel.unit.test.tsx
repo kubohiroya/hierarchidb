@@ -10,9 +10,9 @@ import { dispatchBuildSessionEventAtom } from '../../../atoms/buildSessionStateA
 import { ShapeBuildProgressPanel } from '../../../components/build-progress/ShapeBuildProgressPanel/ShapeBuildProgressPanel';
 
 class ResizeObserverMock {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  observe() { }
+  unobserve() { }
+  disconnect() { }
 }
 
 // @ts-expect-error test shim
@@ -65,10 +65,10 @@ vi.mock('@hierarchidb/ui-build-progress', async (importOriginal) => {
   };
 });
 
-let eventVersionCounter = 1;
-const nextEventVersion = () => {
-  eventVersionCounter += 1;
-  return eventVersionCounter;
+let taskVersionCounter = 1;
+const nextTaskVersion = () => {
+  taskVersionCounter += 1;
+  return taskVersionCounter;
 };
 
 const setStageProgress = (
@@ -78,12 +78,10 @@ const setStageProgress = (
   const stages: Array<'source' | 'geometry' | 'tileEmit'> = ['source', 'geometry', 'tileEmit'];
   for (const stageId of stages) {
     store.set(dispatchBuildSessionEventAtom, {
-      type: 'progressReceived',
-      eventVersion: nextEventVersion(),
+      type: 'taskProgressUpdated',
       payload: {
         stageId,
         value: progressByStage[stageId] ?? 0,
-        phase: 'running',
       },
     });
   }
@@ -95,18 +93,19 @@ const setTasksByStage = (
 ) => {
   const stages: Array<'source' | 'geometry' | 'tileEmit'> = ['source', 'geometry', 'tileEmit'];
   for (const stageId of stages) {
-    const eventVersion = nextEventVersion();
+    const version = nextTaskVersion();
     store.set(dispatchBuildSessionEventAtom, {
-      type: 'taskSnapshotReceived',
-      eventVersion,
+      type: 'stageSnapshotUpdated',
       payload: {
         stageId,
         tasks: (tasksByStage[stageId] ?? []).map((task, index) => ({
           ...task,
           stage: stageId,
-          version: task.version ?? eventVersion + index,
+          version: task.version ?? version + index,
           sequence: task.sequence ?? index,
         })),
+        stageStartedAt: version,
+        stageInactiveMs: 0,
       },
     });
   }
@@ -116,12 +115,19 @@ const setSessionPhase = (
   store: Store,
   phase: 'idle' | 'starting' | 'running' | 'pausing' | 'paused' | 'resuming' | 'finalizing' | 'completed' | 'failed',
 ) => {
+  const isActive = (
+    phase === 'starting'
+    || phase === 'running'
+    || phase === 'pausing'
+    || phase === 'resuming'
+    || phase === 'finalizing'
+  );
   store.set(dispatchBuildSessionEventAtom, {
-    type: 'sessionRecordReceived',
-    eventVersion: nextEventVersion(),
+    type: 'sessionStatusUpdated',
     payload: {
       nodeId: 'test-node',
       phase,
+      isActive,
     },
   });
 };
