@@ -226,6 +226,10 @@ export const useBuildProgressPanelStateRuntimeState = (
   }, [nodeIdForLog, setTotalElapsedSnapshot]);
 
   const liveTotalElapsedMs = useMemo(() => {
+    // When idle, ignore any stale snapshot and return the raw value (0 after reset).
+    if (summary.buildStatus === 'idle') {
+      return summary.totalElapsedMs;
+    }
     if (!totalElapsedSnapshot) {
       return summary.totalElapsedMs;
     }
