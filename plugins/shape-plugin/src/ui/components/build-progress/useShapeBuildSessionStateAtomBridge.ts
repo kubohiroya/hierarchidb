@@ -295,11 +295,11 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                     if (cancelled) return;
                     const level = event.level;
                     if (level === 'error') {
-                        console.error('[Worker]', event.message, event.data ?? '');
+                        console.error('[Worker]', event.message, event.data);
                     } else if (level === 'warn') {
-                        console.warn('[Worker]', event.message, event.data ?? '');
+                        console.warn('[Worker]', event.message, event.data);
                     } else {
-                        console.log('[Worker]', event.message, event.data ?? '');
+                        console.log('[Worker]', event.message, event.data);
                     }
                 },
             });
