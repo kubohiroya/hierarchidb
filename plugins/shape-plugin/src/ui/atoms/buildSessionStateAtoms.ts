@@ -30,6 +30,7 @@ const assertProgressRange = (value: number): number => {
 
 const isActivePhase = (phase: ShapeSessionPhase): boolean => (
   phase === 'starting'
+  || phase === 'queued'
   || phase === 'running'
   || phase === 'pausing'
   || phase === 'resuming'
