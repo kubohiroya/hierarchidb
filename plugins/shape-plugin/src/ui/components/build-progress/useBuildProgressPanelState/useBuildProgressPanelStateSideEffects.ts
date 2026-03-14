@@ -221,9 +221,12 @@ export const useBuildProgressPanelStateSideEffects = (args: {
       totalElapsedMs: summary.totalElapsedMs,
       buildStatus: summary.buildStatus,
     })) {
+      // Use Date.now() directly instead of elapsedTickMs to avoid stale closure:
+      // elapsedTickMs is updated by a separate effect in the same render cycle,
+      // so it may still hold the previous tick value when this effect runs.
       setTotalElapsedSnapshot({
         durationMs: summary.totalElapsedMs,
-        capturedAt: elapsedTickMs,
+        capturedAt: Date.now(),
       });
     }
   }, [elapsedTickMs, summary.buildStatus, summary.totalElapsedMs, setTotalElapsedSnapshot]);
