@@ -35,7 +35,7 @@ const makeBufferedEvent = (
     timestamp: Date.now(),
 });
 
-const makeTaskEvent = (version: number, value: number): BufferedEvent => ({
+const makeTaskEvent = (version: number | undefined, value: number): BufferedEvent => ({
     notificationType: 'task-progress',
     version,
     payload: { value },
@@ -369,7 +369,7 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
                         const mgr = new UIEventBufferManager();
                         expect(() => {
                             for (let i = 0; i < count; i++) {
-                                mgr.applyTaskProgress(makeTaskEvent(undefined as unknown as number, 50));
+                                mgr.applyTaskProgress(makeTaskEvent(undefined, 50));
                             }
                         }).not.toThrow();
                     },
