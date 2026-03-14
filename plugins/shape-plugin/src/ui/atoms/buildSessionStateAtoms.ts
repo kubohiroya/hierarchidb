@@ -233,24 +233,26 @@ export const stageTimingByStageAtom = atom((get) => {
   };
 });
 
-const computeStageDuration = (
+// Returns the completed duration for a stage. Returns 0 for stages that have not yet completed,
+// keeping this function pure (no Date.now()). Live durations for running stages must be
+// computed in UI components using elapsedTickMsAtom.
+const computeCompletedStageDuration = (
   timing: { stageStartedAt: number | undefined; stageInactiveMs: number; stageCompletedAt?: number } | null,
-  now: number,
 ): number => {
-  if (!timing) return 0;
-  if (timing.stageStartedAt === undefined) return 0;
-  const end = timing.stageCompletedAt ?? now;
-  return Math.max(0, end - timing.stageStartedAt - timing.stageInactiveMs);
+  if (!timing?.stageCompletedAt || timing.stageStartedAt === undefined) {
+    return 0;
+  }
+  return Math.max(0, timing.stageCompletedAt - timing.stageStartedAt - timing.stageInactiveMs);
 };
 
-// Derived atom: computed from stageTimingByStageAtom + elapsedTickMsAtom
+// Derived atom: completed stage durations only (pure - no Date.now()).
+// For live elapsed time of running stages, use elapsedTickMsAtom in UI components.
 export const stageDurationMsByStageAtom = atom<Record<ShapeStageId, number>>((get) => {
   const timing = get(stageTimingByStageAtom);
-  const now = get(elapsedTickMsAtom);
   return {
-    source: computeStageDuration(timing.source, now),
-    geometry: computeStageDuration(timing.geometry, now),
-    tileEmit: computeStageDuration(timing.tileEmit, now),
+    source: computeCompletedStageDuration(timing.source),
+    geometry: computeCompletedStageDuration(timing.geometry),
+    tileEmit: computeCompletedStageDuration(timing.tileEmit),
   };
 });
 
