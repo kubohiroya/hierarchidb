@@ -1,7 +1,6 @@
 # TASKS.md
 
 ## Doing
-- #1049 / `fix/shape-plugin/render-phase-setstate-infinite-loop` / 2026-03-14 開始
 - #1047 / `fix/shape-plugin/remove-sequenced-event-wrapper` / 2026-03-14 開始
 - #1030 / `fix/shape-plugin/task-failure-error-message` / 2026-03-14 開始
 - #1026 / `fix/location-plugin/select-all-deselect-reverts-1026` / 2026-03-14 開始
