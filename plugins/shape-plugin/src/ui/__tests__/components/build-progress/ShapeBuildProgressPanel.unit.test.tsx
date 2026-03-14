@@ -120,7 +120,7 @@ const setSessionPhase = (
     payload: {
       nodeId: 'test-node',
       phase,
-      isActive: phase === 'starting' || phase === 'running' || phase === 'pausing' || phase === 'resuming' || phase === 'finalizing',
+      isActive: ['starting', 'running', 'pausing', 'resuming', 'finalizing'].includes(phase),
     },
   });
 };
