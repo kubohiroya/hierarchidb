@@ -1,6 +1,7 @@
 # TASKS.md
 
 ## Doing
+- #1066 / `fix/shape-plugin/compute-stage-duration-rename-1066` / 2026-03-15 開始
 - #1047 / `fix/shape-plugin/remove-sequenced-event-wrapper` / 2026-03-14 開始
 - #1030 / `fix/shape-plugin/task-failure-error-message` / 2026-03-14 開始
 - #1026 / `fix/location-plugin/select-all-deselect-reverts-1026` / 2026-03-14 開始
@@ -28,6 +29,9 @@
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 
 ## 今日の運用ログ
+
+- 2026-03-15: #1066 computeStageDuration 呼び出し箇所修正・PR #1067作成
+  - stageDurationMsByStageAtom の3箇所を computeCompletedStageDuration に修正（#1058 リネーム漏れ）
 
 - 2026-03-15: #1064 subscribers ネストMap最適化・PR #1065作成
   - EventSubscriber インターフェース削除、Map<NodeId, Map<eventType, Set<callback>>> に変更

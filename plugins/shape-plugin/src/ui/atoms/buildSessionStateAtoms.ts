@@ -250,9 +250,9 @@ const computeCompletedStageDuration = (
 export const stageDurationMsByStageAtom = atom<Record<ShapeStageId, number>>((get) => {
   const timing = get(stageTimingByStageAtom);
   return {
-    source: computeStageDuration(timing.source),
-    geometry: computeStageDuration(timing.geometry),
-    tileEmit: computeStageDuration(timing.tileEmit),
+    source: computeCompletedStageDuration(timing.source),
+    geometry: computeCompletedStageDuration(timing.geometry),
+    tileEmit: computeCompletedStageDuration(timing.tileEmit),
   };
 });
 
