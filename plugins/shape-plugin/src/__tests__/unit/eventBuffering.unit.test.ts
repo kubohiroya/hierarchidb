@@ -16,8 +16,8 @@ describe('UnconditionalEventStreamer', () => {
 
     describe('subscriber exception isolation', () => {
         it('should isolate exceptions from individual subscribers', () => {
-            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-            
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+
             const successfulCallback = vi.fn();
             const failingCallback = vi.fn(() => {
                 throw new Error('Subscriber callback failed');
@@ -48,11 +48,11 @@ describe('UnconditionalEventStreamer', () => {
 
             // Error should have been logged with detailed information
             expect(consoleSpy).toHaveBeenCalledWith(
-                '[UnconditionalEventStreamer] Subscriber callback failed',
+                '[UnconditionalEventStreamer] subscriber callback failed',
                 expect.objectContaining({
                     nodeId: testNodeId,
                     eventType: 'session-state',
-                    subscriberError: expect.objectContaining({
+                    error: expect.objectContaining({
                         name: 'Error',
                         message: 'Subscriber callback failed',
                         stack: expect.any(String)
@@ -64,8 +64,8 @@ describe('UnconditionalEventStreamer', () => {
         });
 
         it('should isolate exceptions in heartbeat subscribers', () => {
-            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-            
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+
             const successfulCallback = vi.fn();
             const failingCallback = vi.fn(() => {
                 throw new Error('Heartbeat callback failed');
@@ -89,11 +89,11 @@ describe('UnconditionalEventStreamer', () => {
 
             // Error should have been logged with heartbeat-specific information
             expect(consoleSpy).toHaveBeenCalledWith(
-                '[UnconditionalEventStreamer] Heartbeat subscriber callback failed',
+                '[UnconditionalEventStreamer] subscriber callback failed',
                 expect.objectContaining({
                     nodeId: testNodeId,
                     eventType: 'heartbeat',
-                    subscriberError: expect.objectContaining({
+                    error: expect.objectContaining({
                         name: 'Error',
                         message: 'Heartbeat callback failed'
                     })
@@ -104,8 +104,8 @@ describe('UnconditionalEventStreamer', () => {
         });
 
         it('should handle non-Error exceptions', () => {
-            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-            
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+
             const failingCallback = vi.fn(() => {
                 throw 'String error';
             });
@@ -123,11 +123,11 @@ describe('UnconditionalEventStreamer', () => {
 
             // Should handle non-Error exceptions gracefully
             expect(consoleSpy).toHaveBeenCalledWith(
-                '[UnconditionalEventStreamer] Subscriber callback failed',
+                '[UnconditionalEventStreamer] subscriber callback failed',
                 expect.objectContaining({
                     nodeId: testNodeId,
                     eventType: 'session-state',
-                    subscriberError: 'String error'
+                    error: 'String error'
                 })
             );
 
@@ -135,8 +135,8 @@ describe('UnconditionalEventStreamer', () => {
         });
 
         it('should continue processing after subscriber exceptions', () => {
-            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-            
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+
             const callback1 = vi.fn();
             const failingCallback = vi.fn(() => {
                 throw new Error('First failure');
