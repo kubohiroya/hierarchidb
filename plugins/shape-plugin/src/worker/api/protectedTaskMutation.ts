@@ -26,7 +26,7 @@ export async function updateBuildTaskProtected(
       console.info('[ProtectedTaskMutation] Task update aborted:', { taskId, updates });
       return;
     }
-    
+
     console.error('[ProtectedTaskMutation] Task update failed:', { taskId, updates, error });
     throw error;
   }
@@ -40,14 +40,14 @@ export async function updateBuildTasksBatch(
   abortSignal?: AbortSignal
 ): Promise<void> {
   const results: Array<{ taskId: string; success: boolean; error?: Error }> = [];
-  
+
   for (const { taskId, updates: taskUpdates } of updates) {
     try {
       if (abortSignal?.aborted) {
         console.info('[ProtectedTaskMutation] Batch update aborted at task:', taskId);
         break;
       }
-      
+
       await updateBuildTaskProtected(taskId, taskUpdates, abortSignal);
       results.push({ taskId, success: true });
     } catch (error) {
@@ -55,7 +55,7 @@ export async function updateBuildTasksBatch(
       console.error('[ProtectedTaskMutation] Batch update failed for task:', { taskId, error });
     }
   }
-  
+
   const failed = results.filter(r => !r.success);
   if (failed.length > 0) {
     console.warn('[ProtectedTaskMutation] Batch update completed with failures:', {
@@ -72,24 +72,24 @@ export async function updateBuildTasksBatch(
 export async function ensureSessionTaskConsistency(nodeId: NodeId): Promise<void> {
   try {
     const validationResults = await taskStateProtection.verifySessionTaskStates(nodeId);
-    
+
     if (validationResults.length > 0) {
       console.error('[ProtectedTaskMutation] Session has inconsistent task states:', {
         nodeId,
         issues: validationResults,
       });
-      
+
       // Attempt to restore from snapshots
       const tasks = await ephemeralDB.buildTasks.where('nodeId').equals(nodeId).toArray();
       let restoredCount = 0;
-      
+
       for (const task of tasks) {
         const restored = await taskStateProtection.restoreTaskFromSnapshot(task.taskId);
         if (restored) {
           restoredCount++;
         }
       }
-      
+
       if (restoredCount > 0) {
         console.info('[ProtectedTaskMutation] Restored tasks from snapshots:', {
           nodeId,
@@ -115,7 +115,7 @@ export async function markTaskStarted(
     status: 'running',
     startedAt: Date.now(),
   };
-  
+
   await updateBuildTaskProtected(taskId, updates, abortSignal);
 }
 
@@ -133,12 +133,14 @@ export async function markTaskCompleted(
     progress: 100,
     ...(output && { output }),
   };
-  
+
   await updateBuildTaskProtected(taskId, updates, abortSignal);
 }
 
 /**
- * Mark task as failed with state protection
+ * Mark task as failed with state protection.
+ * Writes error.message to the top-level errorMessage field so that
+ * taskMetadataProcessing and the UI summary builders can surface it directly.
  */
 export async function markTaskFailed(
   taskId: string,
@@ -148,15 +150,17 @@ export async function markTaskFailed(
   const updates: ShapeBuildTaskRecordUpdate = {
     status: 'failed',
     completedAt: Date.now(),
+    errorMessage: error.message,
     metadata: {
       error: {
         message: error.message,
+        name: error.name,
         stack: error.stack,
         timestamp: Date.now(),
       },
     },
   };
-  
+
   await updateBuildTaskProtected(taskId, updates, abortSignal);
 }
 
@@ -172,10 +176,10 @@ export async function updateTaskProgress(
   if (!Number.isFinite(progress) || progress < 0 || progress > 100) {
     throw new Error(`Invalid progress value: ${progress}. Must be finite number between 0 and 100.`);
   }
-  
+
   const updates: ShapeBuildTaskRecordUpdate = {
     progress,
   };
-  
+
   await updateBuildTaskProtected(taskId, updates, abortSignal);
 }

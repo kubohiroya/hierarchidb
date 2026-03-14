@@ -141,3 +141,50 @@
 - `docs/ts-file-naming-guideline.md`
 - `docs/draft-dialog-hosting.md`
 - `PLANS.md`（大規模変更時の ExecPlan）
+
+## Git ワークツリー運用（並列作業・標準手順）
+
+### 原則
+- Issue 1件 = ブランチ 1本 = ワークツリー 1つ。
+- PR の main へのマージは必ず GitHub 側（Web UI または gh pr merge）で行う。
+- ローカルのワークツリー・ブランチ削除は PR push 完了後に即実施してよい（マージ待ち不要）。
+
+### 着手時（Issue 起票後）
+
+```bash
+# ワークツリーとブランチを同時作成
+git worktree add ../hierarchidb-wt/<slug> -b <type>/<scope>/<slug>
+
+# 例
+git worktree add ../hierarchidb-wt/fix-1030 -b fix/shape-plugin/task-failure-error-message
+```
+
+- 配置先: リポジトリ親ディレクトリ直下 `../hierarchidb-wt/<slug>/`
+- `pnpm install` はワークツリーディレクトリ内で別途実行する。
+
+### 完了時（PR push 後）
+
+```bash
+# 1. リモートに push
+git -C ../hierarchidb-wt/<slug> push -u origin <branch-name>
+
+# 2. PR 作成
+gh pr create --head <branch-name> --title "..." --body "..."
+
+# 3. ローカルのワークツリーを削除（マージ前でも可）
+git worktree remove ../hierarchidb-wt/<slug>
+
+# 4. ローカルブランチを削除（マージ前でも可）
+git branch -d <branch-name>
+```
+
+### 不要参照のクリーンアップ
+
+```bash
+git worktree prune   # 削除済みワークツリーの参照を一括除去
+```
+
+### 注意
+- 同一ブランチを複数ワークツリーで同時チェックアウト不可。
+- Turbo キャッシュ（`.turbo/cache/`）はリポジトリ共通で共有される。
+- Kiro IDE でワークツリーを開く場合は別ウィンドウで対象ディレクトリを開く。
