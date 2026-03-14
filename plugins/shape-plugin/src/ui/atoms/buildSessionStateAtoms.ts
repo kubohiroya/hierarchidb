@@ -4,28 +4,15 @@ import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import type { TaskListViewPhase } from './shapeBuildProgressTypes';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import {
-  createBuildSessionStateTreeAtoms,
-  type BuildSessionStateTreeEvent,
-  type BuildSessionTaskItem,
-  type BuildSessionTaskStatus,
-  type BuildSessionStateTreeLifecyclePhase,
+  createBuildSessionStateAtoms,
+  type BuildSessionLifecyclePhase,
+  type BuildSessionStateEvent,
 } from '@hierarchidb/ui-build-sessions';
-import type { BuildSessionLifecyclePhase } from '@hierarchidb/ui-build-sessions';
 
 export type ShapeStageId = 'source' | 'geometry' | 'tileEmit';
 export type ShapeSessionPhase = BuildSessionLifecyclePhase;
 type ShapeTaskSummary = BuildTaskSummary;
-type ShapeStateTreeEvent = BuildSessionStateTreeEvent<ShapeStageId>;
-
-const shapeStateTree = createBuildSessionStateTreeAtoms<ShapeStageId>({
-  nodeId: '',
-  stageIds: ['source', 'geometry', 'tileEmit'] as const,
-  defaultActiveStageId: 'source',
-  initialSession: {
-    phase: 'idle',
-    isActive: false,
-  },
-});
+type ShapeStateEvent = BuildSessionStateEvent<ShapeStageId, ShapeSessionPhase, ShapeTaskSummary>;
 
 const resolveShapeStageId = (value: unknown): ShapeStageId => {
   if (value === 'source' || value === 'geometry' || value === 'tileEmit') {
@@ -41,43 +28,6 @@ const assertProgressRange = (value: number): number => {
   return value;
 };
 
-const mapSessionPhaseToTreePhase = (
-  phase: ShapeSessionPhase,
-): BuildSessionStateTreeLifecyclePhase => {
-  if (phase === 'idle') return 'idle';
-  if (phase === 'starting') return 'starting';
-  if (phase === 'running') return 'running';
-  if (phase === 'pausing') return 'pausing';
-  if (phase === 'paused') return 'paused';
-  if (phase === 'resuming') return 'resuming';
-  if (phase === 'finalizing') return 'finalizing';
-  if (phase === 'completed') return 'completed';
-  if (phase === 'failed') return 'failed';
-  throw new Error(`[shape buildSessionStateAtoms] unsupported lifecycle phase: ${String(phase)}`);
-};
-
-const mapBuildStatusToTreeTaskStatus = (
-  status: BuildTaskSummary['status'],
-): BuildSessionTaskStatus => {
-  if (status === 'queued') return 'queued';
-  if (status === 'running') return 'running';
-  if (status === 'completed') return 'completed';
-  if (status === 'failed') return 'failed';
-  if (status === 'recycled') return 'recycled';
-  throw new Error(`[shape buildSessionStateAtoms] unsupported task status for state-tree: ${String(status)}`);
-};
-
-const mapTreeTaskStatusToBuildStatus = (
-  status: BuildSessionTaskStatus,
-): BuildTaskSummary['status'] => {
-  if (status === 'queued') return 'queued';
-  if (status === 'running') return 'running';
-  if (status === 'completed') return 'completed';
-  if (status === 'failed') return 'failed';
-  if (status === 'recycled') return 'recycled';
-  throw new Error(`[shape buildSessionStateAtoms] unsupported task status for legacy state: ${String(status)}`);
-};
-
 const isActivePhase = (phase: ShapeSessionPhase): boolean => (
   phase === 'starting'
   || phase === 'running'
@@ -86,15 +36,24 @@ const isActivePhase = (phase: ShapeSessionPhase): boolean => (
   || phase === 'finalizing'
 );
 
+// --- createBuildSessionStateAtoms instance ---
+
+const shapeSessionAtoms = createBuildSessionStateAtoms<ShapeStageId, ShapeSessionPhase, ShapeTaskSummary>({
+  stages: ['source', 'geometry', 'tileEmit'] as const,
+  defaultStageId: 'source',
+  idlePhase: 'idle',
+  resolveTaskStageId: (task) => resolveShapeStageId(task.stage),
+  isTerminalTaskStatus: (status) => (
+    status === 'completed' || status === 'failed' || status === 'recycled'
+  ),
+  isRunningTaskStatus: (status) => status === 'running',
+  isQueuedTaskStatus: (status) => status === 'queued',
+});
+
+// --- Lifecycle extras (stopReason, criticalError) ---
+
 type LifecycleExtras = {
-  startedAt?: number;
-  heartbeatAt?: number;
-  completedAt?: number;
-  stageId?: ShapeStageId;
   stopReason?: ShapeBuildStopReason;
-  inactiveMs?: number;
-  stageStartedAt?: number;
-  stageInactiveMs?: number;
   criticalError?: {
     message: string;
     error: string;
@@ -103,26 +62,9 @@ type LifecycleExtras = {
   };
 };
 
-type StageProgress = {
-  value: number;
-  phase: ShapeSessionPhase;
-  message?: string;
-  metadata?: Record<string, unknown>;
-};
-
 type StageUiSyncPhase = 'ui-initializing' | 'running';
 
-const initialLifecycleExtras = (): LifecycleExtras => ({
-  startedAt: undefined,
-  heartbeatAt: undefined,
-  completedAt: undefined,
-});
-
-const initialStageProgress = (): Record<ShapeStageId, StageProgress> => ({
-  source: { value: 0, phase: 'idle' },
-  geometry: { value: 0, phase: 'idle' },
-  tileEmit: { value: 0, phase: 'idle' },
-});
+const initialLifecycleExtras = (): LifecycleExtras => ({});
 
 const initialUiSyncPhaseByStage = (): Record<ShapeStageId, StageUiSyncPhase> => ({
   source: 'ui-initializing',
@@ -131,94 +73,52 @@ const initialUiSyncPhaseByStage = (): Record<ShapeStageId, StageUiSyncPhase> => 
 });
 
 const lifecycleExtrasAtom = atom<LifecycleExtras>(initialLifecycleExtras());
-const stageProgressAtom = atom<Record<ShapeStageId, StageProgress>>(initialStageProgress());
-const taskStreamConnectedAtom = atom(false);
 const uiSyncPhaseByStageAtom = atom<Record<ShapeStageId, StageUiSyncPhase>>(initialUiSyncPhaseByStage());
 
-const toTaskItem = (task: BuildTaskSummary): BuildSessionTaskItem<ShapeStageId> => ({
-  taskId: task.taskId,
-  version: task.version,
-  stage: resolveShapeStageId(task.stage),
-  status: mapBuildStatusToTreeTaskStatus(task.status),
-  progress: assertProgressRange(task.progress),
-  index: typeof task.sequence === 'number' ? task.sequence : Number.MAX_SAFE_INTEGER,
-  message: (() => {
-    const value = (task as unknown as { title?: unknown }).title;
-    return typeof value === 'string' && value.trim().length > 0 ? value : undefined;
-  })(),
-  display: task.display,
-  metadata: task.metadata,
-});
+// --- Canonical 4-event types (Worker → UI) ---
 
-type ShapeRuntimeSnapshotEvent = {
-  type: 'runtimeSnapshotReceived';
-  eventVersion: number;
+type ShapeSessionStatusUpdatedEvent = {
+  type: 'sessionStatusUpdated';
   payload: {
     nodeId: string;
-    sessionId?: string;
     phase: ShapeSessionPhase;
     isActive: boolean;
     startedAt?: number;
-    heartbeatAt?: number;
     completedAt?: number;
+    stopReason?: ShapeBuildStopReason;
   };
 };
 
-type ShapeSessionRecordEvent = {
-  type: 'sessionRecordReceived';
-  eventVersion: number;
+type ShapeHeartbeatEvent = {
+  type: 'heartbeat';
   payload: {
     nodeId: string;
-    phase: ShapeSessionPhase;
-    completedAt?: number;
-    heartbeatAt?: number;
-    startedAt?: number;
-    stageId?: ShapeStageId;
-    stopReason?: ShapeBuildStopReason;
-    inactiveMs?: number;
-    stageStartedAt?: number;
-    stageInactiveMs?: number;
+    heartbeatAt: number;
   };
 };
 
-type ShapeTaskSnapshotEvent = {
-  type: 'taskSnapshotReceived';
-  eventVersion: number;
+type ShapeStageSnapshotUpdatedEvent = {
+  type: 'stageSnapshotUpdated';
   payload: {
     stageId: ShapeStageId;
     tasks: ShapeTaskSummary[];
+    stageStartedAt: number;
+    stageInactiveMs: number;
+    stageCompletedAt?: number;
   };
 };
 
-type ShapeTaskUpdatedEvent = {
-  type: 'taskUpdated';
-  eventVersion: number;
-  payload: {
-    stageId: ShapeStageId;
-    task: ShapeTaskSummary;
-  };
-};
-
-type ShapeTaskDeletedEvent = {
-  type: 'taskDeleted';
-  eventVersion: number;
-  payload: {
-    stageId: ShapeStageId;
-    taskId: string;
-  };
-};
-
-type ShapeProgressEvent = {
-  type: 'progressReceived';
-  eventVersion: number;
+type ShapeTaskProgressUpdatedEvent = {
+  type: 'taskProgressUpdated';
   payload: {
     stageId: ShapeStageId;
     value: number;
-    phase: ShapeSessionPhase;
     message?: string;
     metadata?: Record<string, unknown>;
   };
 };
+
+// --- UI-internal events ---
 
 type ShapeTaskStreamConnectionEvent = {
   type: 'taskStreamConnectionChanged';
@@ -260,50 +160,138 @@ type ShapeResetEvent = {
 };
 
 export type ShapeBuildSessionStateEvent =
-  | ShapeRuntimeSnapshotEvent
-  | ShapeSessionRecordEvent
-  | ShapeTaskSnapshotEvent
-  | ShapeTaskUpdatedEvent
-  | ShapeTaskDeletedEvent
-  | ShapeProgressEvent
+  | ShapeSessionStatusUpdatedEvent
+  | ShapeHeartbeatEvent
+  | ShapeStageSnapshotUpdatedEvent
+  | ShapeTaskProgressUpdatedEvent
   | ShapeTaskStreamConnectionEvent
   | ShapeViewSelectionChangedEvent
   | ShapeUiSyncPhaseChangedEvent
   | ShapeCriticalErrorEvent
   | ShapeResetEvent;
 
-const dispatchTreeEventAtom = shapeStateTree.dispatchBuildSessionStateTreeEventAtom;
 type ShapeBuildSessionNonResetEvent = Exclude<ShapeBuildSessionStateEvent, ShapeResetEvent>;
 
+// --- Derived read atoms ---
+
 export const buildSessionRuntimeAtom = atom((get) => {
-  const tree = get(shapeStateTree.buildSessionStateTreeAtom);
-  const lifecycleExtras = get(lifecycleExtrasAtom);
+  const state = get(shapeSessionAtoms.buildSessionStateAtom);
+  const extras = get(lifecycleExtrasAtom);
   return {
-    phase: tree.session.phase as ShapeSessionPhase,
-    isActive: tree.session.isActive,
-    activeStageId: tree.ui.activeStageId,
-    lastAcceptedEventVersion: tree.meta.lastAcceptedEventVersion,
-    startedAt: lifecycleExtras.startedAt,
-    heartbeatAt: lifecycleExtras.heartbeatAt,
-    completedAt: lifecycleExtras.completedAt,
-    stageId: lifecycleExtras.stageId,
-    stopReason: lifecycleExtras.stopReason,
-    inactiveMs: lifecycleExtras.inactiveMs,
-    stageStartedAt: lifecycleExtras.stageStartedAt,
-    stageInactiveMs: lifecycleExtras.stageInactiveMs,
-    criticalError: lifecycleExtras.criticalError,
+    phase: state.lifecycle.phase,
+    isActive: state.lifecycle.isActive,
+    activeStageId: state.view.activeStageId,
+    startedAt: state.lifecycle.startedAt,
+    heartbeatAt: state.lifecycle.heartbeatAt,
+    completedAt: state.lifecycle.completedAt,
+    criticalError: extras.criticalError,
+    stopReason: extras.stopReason,
   };
 });
 
-export const buildSessionTaskStreamConnectedAtom = atom((get) => get(taskStreamConnectedAtom));
+export const buildSessionTaskStreamConnectedAtom = atom((get) => (
+  get(shapeSessionAtoms.buildSessionStateAtom).execution.taskStreamConnected
+));
+
+export const buildSessionStartButtonLoadingAtom = shapeSessionAtoms.buildSessionStartButtonLoadingAtom;
+
+export const buildSessionStageCountersAtom = shapeSessionAtoms.buildSessionStageCountersAtom;
+
+export const buildSessionTasksByStageAtom = atom<Record<ShapeStageId, BuildTaskSummary[]>>((get) => {
+  const state = get(shapeSessionAtoms.buildSessionStateAtom);
+  const toSummary = (stageId: ShapeStageId): BuildTaskSummary[] => {
+    const stage = state.execution.stages[stageId];
+    return stage.taskOrder
+      .map((taskId) => stage.tasksById[taskId])
+      .filter((task): task is ShapeTaskSummary => task !== undefined);
+  };
+  return {
+    source: toSummary('source'),
+    geometry: toSummary('geometry'),
+    tileEmit: toSummary('tileEmit'),
+  };
+});
+
+export const buildSessionStageProgressAtom = atom<Record<ShapeStageId, number>>((get) => {
+  const state = get(shapeSessionAtoms.buildSessionStateAtom);
+  return {
+    source: state.execution.stages.source.progress.value,
+    geometry: state.execution.stages.geometry.progress.value,
+    tileEmit: state.execution.stages.tileEmit.progress.value,
+  };
+});
+
+// --- Stage timing (derived from stageSnapshotUpdated, stored in execution.stages[x].timing) ---
+
+export const stageTimingByStageAtom = atom((get) => {
+  const state = get(shapeSessionAtoms.buildSessionStateAtom);
+  return {
+    source: state.execution.stages.source.timing,
+    geometry: state.execution.stages.geometry.timing,
+    tileEmit: state.execution.stages.tileEmit.timing,
+  };
+});
+
+const computeStageDuration = (
+  timing: { stageStartedAt: number; stageInactiveMs: number; stageCompletedAt?: number } | null,
+  now: number,
+): number => {
+  if (!timing) return 0;
+  const end = timing.stageCompletedAt ?? now;
+  return Math.max(0, end - timing.stageStartedAt - timing.stageInactiveMs);
+};
+
+// Derived atom: computed from stageTimingByStageAtom + elapsedTickMsAtom
+export const stageDurationMsByStageAtom = atom<Record<ShapeStageId, number>>((get) => {
+  const timing = get(stageTimingByStageAtom);
+  const now = get(elapsedTickMsAtom);
+  return {
+    source: computeStageDuration(timing.source, now),
+    geometry: computeStageDuration(timing.geometry, now),
+    tileEmit: computeStageDuration(timing.tileEmit, now),
+  };
+});
+
+// --- UiSyncPhase ---
+
+export const buildSessionSnapshotHandshakeReceivedAtom = atom<boolean>((get) => {
+  const uiSyncByStage = get(uiSyncPhaseByStageAtom);
+  return (
+    uiSyncByStage.source === 'running'
+    || uiSyncByStage.geometry === 'running'
+    || uiSyncByStage.tileEmit === 'running'
+  );
+});
+
+export const buildSessionTaskListViewPhaseAtom = atom<TaskListViewPhase>((get) => {
+  const runtime = get(buildSessionRuntimeAtom);
+  const state = get(shapeSessionAtoms.buildSessionStateAtom);
+  const uiSyncByStage = get(uiSyncPhaseByStageAtom);
+  const activeStageUiSyncPhase = uiSyncByStage[state.view.activeStageId];
+  const tasksByStage = get(buildSessionTasksByStageAtom);
+  const totalTasks = (
+    tasksByStage.source.length
+    + tasksByStage.geometry.length
+    + tasksByStage.tileEmit.length
+  );
+  if (totalTasks > 0) return 'streaming';
+  if (runtime.phase === 'idle') return 'idle';
+  if (isActivePhase(runtime.phase)) {
+    if (activeStageUiSyncPhase === 'ui-initializing') {
+      return 'ui-initializing';
+    }
+    return 'streaming';
+  }
+  return 'settledEmpty';
+});
+
+// --- Reset ---
 
 const resetBuildSessionStateAtom = atom(
   null,
   (_get, set) => {
-    set(dispatchTreeEventAtom, { type: 'reset' });
+    set(shapeSessionAtoms.dispatchBuildSessionEventAtom, { type: 'reset' });
     set(lifecycleExtrasAtom, initialLifecycleExtras());
-    set(stageProgressAtom, initialStageProgress());
-    set(taskStreamConnectedAtom, false);
     set(uiSyncPhaseByStageAtom, initialUiSyncPhaseByStage());
     set(pendingUserActionBaseAtom, 'none');
     set(elapsedTickMsBaseAtom, Date.now());
@@ -313,159 +301,116 @@ const resetBuildSessionStateAtom = atom(
   },
 );
 
+// --- Event dispatch ---
+
 const applyBuildSessionEventAtom = atom(
   null,
-  (get, set, event: ShapeBuildSessionNonResetEvent) => {
-
-    const beforeVersion = get(shapeStateTree.buildSessionStateTreeAtom).meta.lastAcceptedEventVersion;
-    const dispatchTreeEvent = (treeEvent: ShapeStateTreeEvent): boolean => {
-      set(dispatchTreeEventAtom, treeEvent);
-      const afterVersion = get(shapeStateTree.buildSessionStateTreeAtom).meta.lastAcceptedEventVersion;
-      return afterVersion > beforeVersion;
-    };
-
+  (_get, set, event: ShapeBuildSessionNonResetEvent) => {
     switch (event.type) {
-      case 'runtimeSnapshotReceived': {
-        const accepted = dispatchTreeEvent({
-          type: 'sessionPatched',
-          eventVersion: event.eventVersion,
+      case 'sessionStatusUpdated': {
+        const stateEvent: ShapeStateEvent = {
+          type: 'sessionStatusUpdated',
           payload: {
-            phase: mapSessionPhaseToTreePhase(event.payload.phase),
-            isActive: event.payload.isActive,
-          },
-        });
-        if (!accepted) return;
-        set(lifecycleExtrasAtom, (current) => ({
-          ...current,
-          startedAt: event.payload.startedAt ?? current.startedAt,
-          heartbeatAt: event.payload.heartbeatAt ?? current.heartbeatAt,
-          completedAt: event.payload.completedAt ?? current.completedAt,
-        }));
-        return;
-      }
-      case 'sessionRecordReceived': {
-        const accepted = dispatchTreeEvent({
-          type: 'sessionPatched',
-          eventVersion: event.eventVersion,
-          payload: {
-            phase: mapSessionPhaseToTreePhase(event.payload.phase),
-            isActive: isActivePhase(event.payload.phase),
-          },
-        });
-        if (!accepted) return;
-        set(lifecycleExtrasAtom, (current) => ({
-          ...current,
-          startedAt: event.payload.startedAt ?? current.startedAt,
-          heartbeatAt: event.payload.heartbeatAt ?? current.heartbeatAt,
-          completedAt: event.payload.completedAt ?? current.completedAt,
-          stageId: event.payload.stageId ?? current.stageId,
-          stopReason: event.payload.stopReason ?? current.stopReason,
-          inactiveMs: event.payload.inactiveMs ?? current.inactiveMs,
-          stageStartedAt: event.payload.stageStartedAt ?? current.stageStartedAt,
-          stageInactiveMs: event.payload.stageInactiveMs ?? current.stageInactiveMs,
-        }));
-        return;
-      }
-      case 'taskSnapshotReceived': {
-        dispatchTreeEvent({
-          type: 'tasksReplaced',
-          eventVersion: event.eventVersion,
-          payload: {
-            stageId: event.payload.stageId,
-            tasks: event.payload.tasks.map(toTaskItem),
-          },
-        });
-        return;
-      }
-      case 'taskUpdated': {
-        dispatchTreeEvent({
-          type: 'taskUpserted',
-          eventVersion: event.eventVersion,
-          payload: {
-            task: toTaskItem(event.payload.task),
-          },
-        });
-        return;
-      }
-      case 'taskDeleted': {
-        dispatchTreeEvent({
-          type: 'taskDeleted',
-          eventVersion: event.eventVersion,
-          payload: {
-            stageId: event.payload.stageId,
-            taskId: event.payload.taskId,
-          },
-        });
-        return;
-      }
-      case 'progressReceived': {
-        const value = assertProgressRange(event.payload.value);
-        const activeAccepted = dispatchTreeEvent({
-          type: 'activeStageChanged',
-          payload: {
-            stageId: event.payload.stageId,
-          },
-        });
-        const lifecycleAccepted = dispatchTreeEvent({
-          type: 'sessionPatched',
-          eventVersion: event.eventVersion,
-          payload: {
-            phase: mapSessionPhaseToTreePhase(event.payload.phase),
-            isActive: isActivePhase(event.payload.phase),
-          },
-        });
-        if (!activeAccepted && !lifecycleAccepted) return;
-        set(stageProgressAtom, (current) => ({
-          ...current,
-          [event.payload.stageId]: {
-            value,
+            nodeId: event.payload.nodeId,
             phase: event.payload.phase,
+            isActive: event.payload.isActive,
+            startedAt: event.payload.startedAt,
+            completedAt: event.payload.completedAt,
+            stopReason: event.payload.stopReason,
+          },
+        };
+        set(shapeSessionAtoms.dispatchBuildSessionEventAtom, stateEvent);
+        if (event.payload.stopReason !== undefined) {
+          set(lifecycleExtrasAtom, (current) => ({
+            ...current,
+            stopReason: event.payload.stopReason,
+          }));
+        }
+        return;
+      }
+
+      case 'heartbeat': {
+        const stateEvent: ShapeStateEvent = {
+          type: 'heartbeat',
+          payload: {
+            nodeId: event.payload.nodeId,
+            heartbeatAt: event.payload.heartbeatAt,
+          },
+        };
+        set(shapeSessionAtoms.dispatchBuildSessionEventAtom, stateEvent);
+        return;
+      }
+
+      case 'stageSnapshotUpdated': {
+        const stateEvent: ShapeStateEvent = {
+          type: 'stageSnapshotUpdated',
+          payload: {
+            stageId: event.payload.stageId,
+            tasks: event.payload.tasks.map((task) => {
+              assertProgressRange(task.progress);
+              return task;
+            }),
+            stageStartedAt: event.payload.stageStartedAt,
+            stageInactiveMs: event.payload.stageInactiveMs,
+            stageCompletedAt: event.payload.stageCompletedAt,
+          },
+        };
+        set(shapeSessionAtoms.dispatchBuildSessionEventAtom, stateEvent);
+        return;
+      }
+
+      case 'taskProgressUpdated': {
+        assertProgressRange(event.payload.value);
+        const stateEvent: ShapeStateEvent = {
+          type: 'taskProgressUpdated',
+          payload: {
+            stageId: event.payload.stageId,
+            value: event.payload.value,
             message: event.payload.message,
             metadata: event.payload.metadata,
           },
-        }));
+        };
+        set(shapeSessionAtoms.dispatchBuildSessionEventAtom, stateEvent);
         return;
       }
+
       case 'uiSyncPhaseChanged': {
-        set(dispatchTreeEventAtom, {
-          type: 'activeStageChanged',
+        const stateEvent: ShapeStateEvent = {
+          type: 'viewSelectionChanged',
           payload: {
-            stageId: event.payload.stageId,
+            activeStageId: event.payload.stageId,
           },
-        });
+        };
+        set(shapeSessionAtoms.dispatchBuildSessionEventAtom, stateEvent);
         set(uiSyncPhaseByStageAtom, (current) => ({
           ...current,
           [event.payload.stageId]: event.payload.phase,
         }));
         return;
       }
-      case 'taskStreamConnectionChanged':
-        set(taskStreamConnectedAtom, event.payload.connected);
-        return;
-      case 'viewSelectionChanged': {
-        if (event.payload.activeStageId) {
-          set(dispatchTreeEventAtom, {
-            type: 'activeStageChanged',
-            payload: { stageId: event.payload.activeStageId },
-          });
-        }
-        if (event.payload.selectedTaskId !== undefined) {
-          const state = get(shapeStateTree.buildSessionStateTreeAtom);
-          const targetStageId = event.payload.activeStageId ?? state.ui.activeStageId;
-          set(dispatchTreeEventAtom, {
-            type: 'stageUiPatched',
-            payload: {
-              stageId: targetStageId,
-              patch: {
-                selectedTaskId: event.payload.selectedTaskId ?? undefined,
-              },
-            },
-          });
-        }
+
+      case 'taskStreamConnectionChanged': {
+        const stateEvent: ShapeStateEvent = {
+          type: 'taskStreamConnectionChanged',
+          payload: { connected: event.payload.connected },
+        };
+        set(shapeSessionAtoms.dispatchBuildSessionEventAtom, stateEvent);
         return;
       }
+
+      case 'viewSelectionChanged': {
+        const stateEvent: ShapeStateEvent = {
+          type: 'viewSelectionChanged',
+          payload: {
+            activeStageId: event.payload.activeStageId,
+            selectedTaskId: event.payload.selectedTaskId,
+          },
+        };
+        set(shapeSessionAtoms.dispatchBuildSessionEventAtom, stateEvent);
+        return;
+      }
+
       case 'criticalError': {
-        // Log critical error for immediate visibility
         console.error('🚨 CRITICAL BUILD SESSION ERROR 🚨', {
           message: event.payload.message,
           error: event.payload.error,
@@ -473,22 +418,18 @@ const applyBuildSessionEventAtom = atom(
           timestamp: new Date(event.payload.timestamp).toISOString(),
           contractViolation: event.payload.contractViolation,
         });
-        
-        // Force session to failed state to prevent contract violation hiding
-        dispatchTreeEvent({
-          type: 'sessionPatched',
-          eventVersion: Date.now(), // Use timestamp as version for immediate processing
+        const stateEvent: ShapeStateEvent = {
+          type: 'sessionStatusUpdated',
           payload: {
+            nodeId: '',
             phase: 'failed',
             isActive: false,
           },
-        });
-        
-        // Store error details in lifecycle extras for UI access
+        };
+        set(shapeSessionAtoms.dispatchBuildSessionEventAtom, stateEvent);
         set(lifecycleExtrasAtom, (current) => ({
           ...current,
           stopReason: 'failed',
-          completedAt: event.payload.timestamp,
           criticalError: {
             message: event.payload.message,
             error: event.payload.error,
@@ -498,6 +439,7 @@ const applyBuildSessionEventAtom = atom(
         }));
         return;
       }
+
       default:
         return;
     }
@@ -515,121 +457,7 @@ export const dispatchBuildSessionEventAtom = atom(
   },
 );
 
-export const buildSessionStartButtonLoadingAtom = atom((get) => {
-  const runtime = get(buildSessionRuntimeAtom);
-  const lifecycleActive = isActivePhase(runtime.phase);
-  if (!lifecycleActive) return false;
-  return !get(buildSessionTaskStreamConnectedAtom);
-});
-
-export const buildSessionStageCountersAtom = atom((get) => {
-  const tree = get(shapeStateTree.buildSessionStateTreeAtom);
-  const countByStatus = (stageId: ShapeStageId) => {
-    let total = 0;
-    let queued = 0;
-    let running = 0;
-    let failed = 0;
-    let terminal = 0;
-    for (const taskId of tree.tasks.orderedIdsByStage[stageId]) {
-      const task = tree.tasks.byId[taskId];
-      if (!task) continue;
-      total += 1;
-      if (task.status === 'queued') queued += 1;
-      if (task.status === 'running') running += 1;
-      if (task.status === 'failed') failed += 1;
-      if (task.status === 'completed' || task.status === 'failed' || task.status === 'recycled' || task.status === 'skipped') {
-        terminal += 1;
-      }
-    }
-    return { total, running, queued, terminal, failed };
-  };
-  return {
-    source: countByStatus('source'),
-    geometry: countByStatus('geometry'),
-    tileEmit: countByStatus('tileEmit'),
-  };
-});
-
-export const buildSessionTasksByStageAtom = atom<Record<ShapeStageId, BuildTaskSummary[]>>((get) => {
-  const tree = get(shapeStateTree.buildSessionStateTreeAtom);
-  const toSummary = (taskId: string): BuildTaskSummary | undefined => {
-    const task = tree.tasks.byId[taskId];
-    if (!task) return undefined;
-    const summary = {
-      taskId: task.taskId,
-      version: task.version,
-      stage: task.stage,
-      status: mapTreeTaskStatusToBuildStatus(task.status),
-      progress: task.progress,
-      sequence: task.index,
-      metadata: task.metadata,
-      display: task.display,
-    } as BuildTaskSummary & { title?: string };
-    if (typeof task.message === 'string' && task.message.trim().length > 0) {
-      summary.title = task.message;
-    }
-    return summary;
-  };
-  return {
-    source: tree.tasks.orderedIdsByStage.source
-      .map((id) => toSummary(id))
-      .filter((task): task is BuildTaskSummary => task !== undefined),
-    geometry: tree.tasks.orderedIdsByStage.geometry
-      .map((id) => toSummary(id))
-      .filter((task): task is BuildTaskSummary => task !== undefined),
-    tileEmit: tree.tasks.orderedIdsByStage.tileEmit
-      .map((id) => toSummary(id))
-      .filter((task): task is BuildTaskSummary => task !== undefined),
-  };
-});
-
-export const buildSessionStageProgressAtom = atom<Record<ShapeStageId, number>>((get) => {
-  const progress = get(stageProgressAtom);
-  return {
-    source: progress.source.value,
-    geometry: progress.geometry.value,
-    tileEmit: progress.tileEmit.value,
-  };
-});
-
-export const buildSessionTaskListViewPhaseAtom = atom<TaskListViewPhase>((get) => {
-  const runtime = get(buildSessionRuntimeAtom);
-  const tree = get(shapeStateTree.buildSessionStateTreeAtom);
-  const uiSyncByStage = get(uiSyncPhaseByStageAtom);
-  const activeStageUiSyncPhase = uiSyncByStage[tree.ui.activeStageId];
-  const tasksByStage = get(buildSessionTasksByStageAtom);
-  const totalTasks = (
-    tasksByStage.source.length
-    + tasksByStage.geometry.length
-    + tasksByStage.tileEmit.length
-  );
-  if (totalTasks > 0) return 'streaming';
-  if (runtime.phase === 'idle') return 'idle';
-  if (
-    runtime.phase === 'starting'
-    || runtime.phase === 'running'
-    || runtime.phase === 'pausing'
-    || runtime.phase === 'resuming'
-    || runtime.phase === 'finalizing'
-  ) {
-    if (activeStageUiSyncPhase === 'ui-initializing') {
-      return 'ui-initializing';
-    }
-    return 'streaming';
-  }
-  return 'settledEmpty';
-});
-
-export const buildSessionSnapshotHandshakeReceivedAtom = atom<boolean>((get) => {
-  const uiSyncByStage = get(uiSyncPhaseByStageAtom);
-  return (
-    uiSyncByStage.source === 'running'
-    || uiSyncByStage.geometry === 'running'
-    || uiSyncByStage.tileEmit === 'running'
-  );
-});
-
-// --- (A)(B)(C) Pending user action: consolidates localStartPending, isStopRequested/isStopAccepted, requestedControlAction ---
+// --- (A)(B)(C) Pending user action ---
 
 export type PendingUserAction = 'none' | 'starting' | 'stopping' | 'pausing' | 'cancelling';
 
@@ -649,7 +477,7 @@ export const isStopRequestedInFlightAtom = atom((get) => {
   return action === 'stopping' || action === 'pausing' || action === 'cancelling';
 });
 
-// --- (D) Elapsed tick: replaces elapsedTickMs useState + totalElapsedSnapshotRef ---
+// --- (D) Elapsed tick ---
 
 const elapsedTickMsBaseAtom = atom<number>(Date.now());
 
@@ -670,7 +498,7 @@ export const totalElapsedSnapshotAtom = atom(
   },
 );
 
-// --- (E) Completion snapshot: replaces completionSnapshot/completionDialogOpen useState ---
+// --- (E) Completion snapshot ---
 
 export type CompletionSnapshotData = {
   status: BuildStatus;

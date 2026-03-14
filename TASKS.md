@@ -2,6 +2,12 @@
 
 ## Doing
 
+- #1026 / `fix/location-plugin/select-all-deselect-reverts-1026` / 2026-03-14 開始
+
+- #1021 / `fix/treeconsole/treetable-core-viewport-height` / 2026-03-14 開始
+- #1020 / `refactor/shape-plugin/build-session-event-redesign-1020` / 2026-03-14 開始
+- #1019 / `fix/shape-plugin/task-snapshot-race-on-build-start-1019` / 2026-03-14 開始
+- #1018 / `fix/shape-plugin/runtime-refresh-after-start-1018` / 2026-03-14 開始
 - #1016 / `refactor/worker-client/subscribe-all-1016` / 2026-03-13 開始
 - #1006 / `refactor/shape-plugin/ssot-usestore-handshake-atom-1006` / 2026-03-12 開始
 - #999 / `feat/shape-plugin/integration-tests-error-handling-999` / 2026-03-12 開始
@@ -21,6 +27,22 @@
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 
 ## 今日の運用ログ
+
+- 2026-03-14: #1021 TreeTableCore viewHeight ハードコード削除・PR #1022作成
+  - TreeTableCoreProps.viewHeight をオプショナル化
+  - TreeConsolePanel viewHeight={600} 削除（2箇所）、親Box に height:'100%' 追加
+  - TreeConsoleContent viewHeight||400 フォールバック削除
+  - typecheck: 42/42 exit 0
+
+- 2026-03-14: #1020 テスト修正（4イベント新設計対応）・コミット 707f259 / typecheck: 100/100 exit 0 / test: 366/369 pass
+- 2026-03-14: #1019 ビルド開始時タスクスナップショット競合修正・コミット bf1c2d1
+  - emitTaskSnapshot に taskCallbacks を渡し、putTasks 完了後の完全スナップショットを subscribeBuildTasks コールバックに直接配信
+  - 修正箇所: emitStageTaskSnapshotBarrier（ステージ開始時）、空ビルド失敗パス、パイプライン失敗パス（3箇所）
+  - typecheck: 100/100 exit 0
+  - executeStartFlow に onRuntimeRecord コールバックを追加（BridgeApi に getBuildSessionRuntime を追加）
+  - useShapeBuildStart で useSetAtom + createBuildSessionWorkerEventAdapter を使って構築し渡す
+  - prop drilling なし（変更ファイル: executeStartFlow.ts / types.ts / useShapeBuildStart.ts）
+  - typecheck: 100/100 exit 0
 
 - 2026-03-13: #1016 subscribeAll統合・PR #1017作成
   - BuildWorkerBridgeにsubscribeAll追加、subscribeSessionHeartbeat/subscribeTaskProgress削除

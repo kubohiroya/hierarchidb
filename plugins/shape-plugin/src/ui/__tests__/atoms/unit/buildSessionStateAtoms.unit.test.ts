@@ -8,6 +8,11 @@ import {
   buildSessionTaskListViewPhaseAtom,
   buildSessionStageProgressAtom,
   buildSessionTasksByStageAtom,
+  buildSessionSnapshotHandshakeReceivedAtom,
+  pendingUserActionAtom,
+  isStopRequestedInFlightAtom,
+  completionSnapshotAtom,
+  completionDialogOpenAtom,
   dispatchBuildSessionEventAtom,
 } from '../../../atoms/buildSessionStateAtoms';
 
@@ -197,5 +202,484 @@ describe('buildSessionStateAtoms write atom', () => {
       },
     });
     expect(store.get(buildSessionTaskListViewPhaseAtom)).toBe('streaming');
+  });
+});
+
+// =============================================================================
+// Full lifecycle phase transitions
+// =============================================================================
+
+describe('full lifecycle phase transitions', () => {
+  const store = createStore();
+
+  beforeEach(() => {
+    store.set(dispatchBuildSessionEventAtom, { type: 'reset' });
+  });
+
+  const dispatchPhase = (phase: string, version: number) => {
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'runtimeSnapshotReceived',
+      eventVersion: version,
+      payload: { nodeId: 'node-1', phase: phase as any, isActive: true },
+    });
+  };
+
+  it('transitions idle → starting → running', () => {
+    expect(store.get(buildSessionRuntimeAtom).phase).toBe('idle');
+    dispatchPhase('starting', 1);
+    expect(store.get(buildSessionRuntimeAtom).phase).toBe('starting');
+    dispatchPhase('running', 2);
+    expect(store.get(buildSessionRuntimeAtom).phase).toBe('running');
+  });
+
+  it('transitions running → pausing → paused → resuming → running', () => {
+    dispatchPhase('running', 1);
+    dispatchPhase('pausing', 2);
+    expect(store.get(buildSessionRuntimeAtom).phase).toBe('pausing');
+    dispatchPhase('paused', 3);
+    expect(store.get(buildSessionRuntimeAtom).phase).toBe('paused');
+    dispatchPhase('resuming', 4);
+    expect(store.get(buildSessionRuntimeAtom).phase).toBe('resuming');
+    dispatchPhase('running', 5);
+    expect(store.get(buildSessionRuntimeAtom).phase).toBe('running');
+  });
+
+  it('transitions running → finalizing → completed', () => {
+    dispatchPhase('running', 1);
+    dispatchPhase('finalizing', 2);
+    expect(store.get(buildSessionRuntimeAtom).phase).toBe('finalizing');
+    dispatchPhase('completed', 3);
+    expect(store.get(buildSessionRuntimeAtom).phase).toBe('completed');
+  });
+
+  it('transitions running → failed', () => {
+    dispatchPhase('running', 1);
+    dispatchPhase('failed', 2);
+    expect(store.get(buildSessionRuntimeAtom).phase).toBe('failed');
+    // runtimeSnapshotReceived passes isActive from payload directly;
+    // sessionRecordReceived would compute isActive via isActivePhase() → false for 'failed'
+  });
+
+  it('sessionRecordReceived sets isActive=false for failed phase', () => {
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'sessionRecordReceived',
+      eventVersion: 1,
+      payload: { nodeId: 'node-1', phase: 'failed', stopReason: 'failed' },
+    });
+    expect(store.get(buildSessionRuntimeAtom).phase).toBe('failed');
+    expect(store.get(buildSessionRuntimeAtom).isActive).toBe(false);
+  });
+});
+
+// =============================================================================
+// sessionRecordReceived lifecycle extras
+// =============================================================================
+
+describe('sessionRecordReceived lifecycle extras', () => {
+  const store = createStore();
+
+  beforeEach(() => {
+    store.set(dispatchBuildSessionEventAtom, { type: 'reset' });
+  });
+
+  it('stores startedAt, heartbeatAt, stageId, stopReason, inactiveMs', () => {
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'sessionRecordReceived',
+      eventVersion: 1,
+      payload: {
+        nodeId: 'node-1',
+        phase: 'paused',
+        startedAt: 100,
+        heartbeatAt: 200,
+        stageId: 'geometry',
+        stopReason: 'user-pause',
+        inactiveMs: 500,
+        stageStartedAt: 150,
+        stageInactiveMs: 50,
+      },
+    });
+    const runtime = store.get(buildSessionRuntimeAtom);
+    expect(runtime.phase).toBe('paused');
+    expect(runtime.startedAt).toBe(100);
+    expect(runtime.heartbeatAt).toBe(200);
+    expect(runtime.stageId).toBe('geometry');
+    expect(runtime.stopReason).toBe('user-pause');
+    expect(runtime.inactiveMs).toBe(500);
+    expect(runtime.stageStartedAt).toBe(150);
+    expect(runtime.stageInactiveMs).toBe(50);
+  });
+
+  it('stores completedAt on completed phase', () => {
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'sessionRecordReceived',
+      eventVersion: 1,
+      payload: {
+        nodeId: 'node-1',
+        phase: 'completed',
+        completedAt: 9999,
+        stopReason: 'completed',
+      },
+    });
+    const runtime = store.get(buildSessionRuntimeAtom);
+    expect(runtime.phase).toBe('completed');
+    expect(runtime.completedAt).toBe(9999);
+    expect(runtime.stopReason).toBe('completed');
+  });
+});
+
+// =============================================================================
+// criticalError → forced failed transition
+// =============================================================================
+
+describe('criticalError event', () => {
+  const store = createStore();
+
+  beforeEach(() => {
+    store.set(dispatchBuildSessionEventAtom, { type: 'reset' });
+  });
+
+  it('forces phase to failed and stores error details', () => {
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'runtimeSnapshotReceived',
+      eventVersion: 1,
+      payload: { nodeId: 'node-1', phase: 'running', isActive: true },
+    });
+
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'criticalError',
+      payload: {
+        message: 'contract violation',
+        error: 'Error: bad value',
+        errorName: 'Error',
+        timestamp: 12345,
+        severity: 'critical',
+        contractViolation: true,
+      },
+    });
+
+    const runtime = store.get(buildSessionRuntimeAtom);
+    expect(runtime.phase).toBe('failed');
+    expect(runtime.isActive).toBe(false);
+    expect(runtime.criticalError).toBeDefined();
+    expect(runtime.criticalError?.contractViolation).toBe(true);
+    expect(runtime.criticalError?.message).toBe('contract violation');
+    expect(runtime.stopReason).toBe('failed');
+    expect(runtime.completedAt).toBe(12345);
+  });
+
+  it('forces failed even from paused phase', () => {
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'runtimeSnapshotReceived',
+      eventVersion: 1,
+      payload: { nodeId: 'node-1', phase: 'paused', isActive: false },
+    });
+
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'criticalError',
+      payload: {
+        message: 'abort error',
+        error: 'AbortError',
+        errorName: 'AbortError',
+        timestamp: 99999,
+        severity: 'critical',
+        contractViolation: false,
+      },
+    });
+
+    expect(store.get(buildSessionRuntimeAtom).phase).toBe('failed');
+  });
+});
+
+// =============================================================================
+// reset event
+// =============================================================================
+
+describe('reset event', () => {
+  const store = createStore();
+
+  it('resets all atoms to initial state', () => {
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'runtimeSnapshotReceived',
+      eventVersion: 1,
+      payload: { nodeId: 'node-1', phase: 'running', isActive: true },
+    });
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'taskStreamConnectionChanged',
+      payload: { connected: true },
+    });
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'taskSnapshotReceived',
+      eventVersion: 2,
+      payload: {
+        stageId: 'source',
+        tasks: [{ taskId: 't1', version: 1, stage: 'source', status: 'running', progress: 50 }],
+      },
+    });
+
+    store.set(dispatchBuildSessionEventAtom, { type: 'reset' });
+
+    const runtime = store.get(buildSessionRuntimeAtom);
+    expect(runtime.phase).toBe('idle');
+    expect(runtime.isActive).toBe(false);
+    expect(runtime.startedAt).toBeUndefined();
+    expect(runtime.criticalError).toBeUndefined();
+    expect(store.get(buildSessionStageCountersAtom).source.total).toBe(0);
+    expect(store.get(buildSessionSnapshotHandshakeReceivedAtom)).toBe(false);
+  });
+});
+
+// =============================================================================
+// taskDeleted event
+// =============================================================================
+
+describe('taskDeleted event', () => {
+  const store = createStore();
+
+  beforeEach(() => {
+    store.set(dispatchBuildSessionEventAtom, { type: 'reset' });
+  });
+
+  it('removes a task from the stage task list', () => {
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'taskSnapshotReceived',
+      eventVersion: 1,
+      payload: {
+        stageId: 'source',
+        tasks: [
+          { taskId: 'del-1', version: 1, stage: 'source', status: 'queued', progress: 0 },
+          { taskId: 'del-2', version: 1, stage: 'source', status: 'queued', progress: 0 },
+        ],
+      },
+    });
+
+    expect(store.get(buildSessionStageCountersAtom).source.total).toBe(2);
+
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'taskDeleted',
+      eventVersion: 2,
+      payload: { stageId: 'source', taskId: 'del-1' },
+    });
+
+    expect(store.get(buildSessionStageCountersAtom).source.total).toBe(1);
+    const tasks = store.get(buildSessionTasksByStageAtom).source;
+    expect(tasks.every((t) => t.taskId !== 'del-1')).toBe(true);
+  });
+});
+
+// =============================================================================
+// viewSelectionChanged event
+// =============================================================================
+
+describe('viewSelectionChanged event', () => {
+  const store = createStore();
+
+  beforeEach(() => {
+    store.set(dispatchBuildSessionEventAtom, { type: 'reset' });
+  });
+
+  it('updates activeStageId', () => {
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'viewSelectionChanged',
+      payload: { activeStageId: 'geometry' },
+    });
+    expect(store.get(buildSessionRuntimeAtom).activeStageId).toBe('geometry');
+  });
+
+  it('updates activeStageId to tileEmit', () => {
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'viewSelectionChanged',
+      payload: { activeStageId: 'tileEmit' },
+    });
+    expect(store.get(buildSessionRuntimeAtom).activeStageId).toBe('tileEmit');
+  });
+});
+
+// =============================================================================
+// buildSessionTaskListViewPhaseAtom – all branches
+// =============================================================================
+
+describe('buildSessionTaskListViewPhaseAtom branches', () => {
+  const store = createStore();
+
+  beforeEach(() => {
+    store.set(dispatchBuildSessionEventAtom, { type: 'reset' });
+  });
+
+  it('returns "idle" when phase is idle and no tasks', () => {
+    expect(store.get(buildSessionTaskListViewPhaseAtom)).toBe('idle');
+  });
+
+  it('returns "ui-initializing" when active phase but uiSync is ui-initializing and no tasks', () => {
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'runtimeSnapshotReceived',
+      eventVersion: 1,
+      payload: { nodeId: 'node-1', phase: 'running', isActive: true },
+    });
+    // uiSyncPhase defaults to ui-initializing after reset
+    expect(store.get(buildSessionTaskListViewPhaseAtom)).toBe('ui-initializing');
+  });
+
+  it('returns "streaming" when tasks exist regardless of uiSync phase', () => {
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'runtimeSnapshotReceived',
+      eventVersion: 1,
+      payload: { nodeId: 'node-1', phase: 'running', isActive: true },
+    });
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'taskSnapshotReceived',
+      eventVersion: 2,
+      payload: {
+        stageId: 'source',
+        tasks: [{ taskId: 't1', version: 1, stage: 'source', status: 'running', progress: 10 }],
+      },
+    });
+    expect(store.get(buildSessionTaskListViewPhaseAtom)).toBe('streaming');
+  });
+
+  it('returns "settledEmpty" when phase is completed and no tasks', () => {
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'runtimeSnapshotReceived',
+      eventVersion: 1,
+      payload: { nodeId: 'node-1', phase: 'completed', isActive: false },
+    });
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'uiSyncPhaseChanged',
+      payload: { stageId: 'source', phase: 'running' },
+    });
+    expect(store.get(buildSessionTaskListViewPhaseAtom)).toBe('settledEmpty');
+  });
+
+  it('returns "settledEmpty" when phase is failed and no tasks', () => {
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'runtimeSnapshotReceived',
+      eventVersion: 1,
+      payload: { nodeId: 'node-1', phase: 'failed', isActive: false },
+    });
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'uiSyncPhaseChanged',
+      payload: { stageId: 'source', phase: 'running' },
+    });
+    expect(store.get(buildSessionTaskListViewPhaseAtom)).toBe('settledEmpty');
+  });
+});
+
+// =============================================================================
+// pendingUserActionAtom / isStopRequestedInFlightAtom
+// =============================================================================
+
+describe('pendingUserActionAtom', () => {
+  const store = createStore();
+
+  beforeEach(() => {
+    store.set(dispatchBuildSessionEventAtom, { type: 'reset' });
+  });
+
+  it('defaults to "none"', () => {
+    expect(store.get(pendingUserActionAtom)).toBe('none');
+  });
+
+  it('transitions to "starting"', () => {
+    store.set(pendingUserActionAtom, 'starting');
+    expect(store.get(pendingUserActionAtom)).toBe('starting');
+    expect(store.get(isStopRequestedInFlightAtom)).toBe(false);
+  });
+
+  it('transitions to "stopping" and isStopRequestedInFlight becomes true', () => {
+    store.set(pendingUserActionAtom, 'stopping');
+    expect(store.get(isStopRequestedInFlightAtom)).toBe(true);
+  });
+
+  it('transitions to "pausing" and isStopRequestedInFlight becomes true', () => {
+    store.set(pendingUserActionAtom, 'pausing');
+    expect(store.get(isStopRequestedInFlightAtom)).toBe(true);
+  });
+
+  it('transitions to "cancelling" and isStopRequestedInFlight becomes true', () => {
+    store.set(pendingUserActionAtom, 'cancelling');
+    expect(store.get(isStopRequestedInFlightAtom)).toBe(true);
+  });
+
+  it('no-ops when setting same value', () => {
+    store.set(pendingUserActionAtom, 'stopping');
+    store.set(pendingUserActionAtom, 'stopping');
+    expect(store.get(pendingUserActionAtom)).toBe('stopping');
+  });
+});
+
+// =============================================================================
+// completionSnapshotAtom / completionDialogOpenAtom
+// =============================================================================
+
+describe('completionSnapshotAtom and completionDialogOpenAtom', () => {
+  const store = createStore();
+
+  beforeEach(() => {
+    store.set(dispatchBuildSessionEventAtom, { type: 'reset' });
+  });
+
+  it('completionSnapshotAtom defaults to null', () => {
+    expect(store.get(completionSnapshotAtom)).toBeNull();
+  });
+
+  it('stores completion snapshot data', () => {
+    store.set(completionSnapshotAtom, {
+      status: 'completed',
+      stageLabel: 'Source',
+      taskTitle: 'Japan (JP)',
+    });
+    const snap = store.get(completionSnapshotAtom);
+    expect(snap?.status).toBe('completed');
+    expect(snap?.stageLabel).toBe('Source');
+    expect(snap?.taskTitle).toBe('Japan (JP)');
+  });
+
+  it('completionDialogOpenAtom defaults to false', () => {
+    expect(store.get(completionDialogOpenAtom)).toBe(false);
+  });
+
+  it('completionDialogOpenAtom can be set to true', () => {
+    store.set(completionDialogOpenAtom, true);
+    expect(store.get(completionDialogOpenAtom)).toBe(true);
+  });
+
+  it('reset clears completionSnapshot and dialog', () => {
+    store.set(completionSnapshotAtom, { status: 'failed', stageLabel: 'Geometry' });
+    store.set(completionDialogOpenAtom, true);
+    store.set(dispatchBuildSessionEventAtom, { type: 'reset' });
+    expect(store.get(completionSnapshotAtom)).toBeNull();
+    expect(store.get(completionDialogOpenAtom)).toBe(false);
+  });
+});
+
+// =============================================================================
+// buildSessionSnapshotHandshakeReceivedAtom
+// =============================================================================
+
+describe('buildSessionSnapshotHandshakeReceivedAtom', () => {
+  const store = createStore();
+
+  beforeEach(() => {
+    store.set(dispatchBuildSessionEventAtom, { type: 'reset' });
+  });
+
+  it('is false initially', () => {
+    expect(store.get(buildSessionSnapshotHandshakeReceivedAtom)).toBe(false);
+  });
+
+  it('becomes true when any stage uiSyncPhase transitions to running', () => {
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'uiSyncPhaseChanged',
+      payload: { stageId: 'tileEmit', phase: 'running' },
+    });
+    expect(store.get(buildSessionSnapshotHandshakeReceivedAtom)).toBe(true);
+  });
+
+  it('resets to false after reset event', () => {
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'uiSyncPhaseChanged',
+      payload: { stageId: 'source', phase: 'running' },
+    });
+    store.set(dispatchBuildSessionEventAtom, { type: 'reset' });
+    expect(store.get(buildSessionSnapshotHandshakeReceivedAtom)).toBe(false);
   });
 });

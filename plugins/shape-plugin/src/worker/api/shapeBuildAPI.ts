@@ -364,27 +364,50 @@ export const shapeBuildAPI = {
   subscribeToTasks: (nodeId: NodeId, callback: (event: BuildTaskUpdateEvent) => void): (() => void) => {
     const key = String(nodeId);
     const existing = shapeBuildRuntimeCore.taskCallbacks.get(key);
-    console.log('[shapeBuildAPI] subscribeToTasks start', JSON.stringify({
+    unconditionalEventStreamer.emitEvent(nodeId, 'worker-log', {
       nodeId,
-      hadExisting: Boolean(existing),
-      hasExistingUnsub: typeof existing?.unsubscribe === 'function',
-    }));
+      timestamp: Date.now(),
+      level: 'log',
+      message: '[subscribeToTasks] start',
+      data: { nodeId: String(nodeId), hadExisting: Boolean(existing) },
+    });
     existing?.unsubscribe?.();
     const taskQueue = new VtTaskQueueDb();
     let snapshotInFlight = false;
     const sendSnapshot = async () => {
       if (snapshotInFlight) return;
       snapshotInFlight = true;
+      unconditionalEventStreamer.emitEvent(nodeId, 'worker-log', {
+        nodeId,
+        timestamp: Date.now(),
+        level: 'log',
+        message: '[sendSnapshot] start',
+        data: { nodeId: String(nodeId) },
+      });
       try {
         await shapeBuildRuntimeCore.ensureTaskQueueSeeded(nodeId, taskQueue);
         const tasks = await shapeBuildRuntimeCore.buildTaskSummarySnapshot(nodeId, taskQueue);
-        console.log('[shapeBuildAPI] task snapshot published', JSON.stringify({
+        // Compute version from tasks; empty snapshot must carry explicit version=0
+        // so the UI-side resolveSnapshotVersion contract is satisfied.
+        const snapshotVersion = tasks.length > 0
+          ? tasks.reduce((max, task) => Math.max(max, task.version), Number.MIN_SAFE_INTEGER)
+          : 0;
+        unconditionalEventStreamer.emitEvent(nodeId, 'worker-log', {
           nodeId,
-          taskCount: tasks.length,
-          snapshotInFlight,
-        }));
-        callback({ type: 'snapshot', nodeId, tasks });
+          timestamp: Date.now(),
+          level: 'log',
+          message: '[sendSnapshot] published',
+          data: { nodeId: String(nodeId), taskCount: tasks.length, snapshotVersion },
+        });
+        callback({ type: 'snapshot', nodeId, tasks, version: snapshotVersion } as BuildTaskUpdateEvent);
       } catch (error) {
+        unconditionalEventStreamer.emitEvent(nodeId, 'worker-log', {
+          nodeId,
+          timestamp: Date.now(),
+          level: 'error',
+          message: '[sendSnapshot] failed',
+          data: { nodeId: String(nodeId), error: String(error) },
+        });
         console.error('[shapeBuildAPI] task snapshot failed', error);
       } finally {
         snapshotInFlight = false;
