@@ -390,7 +390,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "react-dom",
         "react-virtuoso"
       ],
-    exports: ["","worker","icon","ui"],
+    exports: ["common","worker","icon","ui"],
     manifest: {
         "id": "@hierarchidb/location-plugin",
         "name": "Location Plugin",
@@ -704,7 +704,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/ui-tabular",
         "@hierarchidb/ui-accordion-config"
       ],
-    exports: ["","worker","icon","ui"],
+    exports: ["common","worker","icon","ui"],
     manifest: {
         "id": "@hierarchidb/route-plugin",
         "name": "Route Plugin",
@@ -928,7 +928,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "topojson-server",
         "topojson-simplify"
       ],
-    exports: ["","worker","icon","ui"],
+    exports: ["common","worker","icon","ui"],
     manifest: {
         "id": "@hierarchidb/shape-plugin",
         "name": "Shape Plugin",
