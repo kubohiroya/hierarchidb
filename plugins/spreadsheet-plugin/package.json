@@ -93,7 +93,7 @@
     "@mui/material": "^7.3.6",
     "fake-indexeddb": "^4.0.2",
     "jotai": "^2.13.1",
-    "vitest": "^3.2.4",
+    "vitest": "^4.1.0",
     "flatgeobuf": "^4.4.0",
     "shpjs": "^6.2.0",
     "@hierarchidb/auth-api": "workspace:*",

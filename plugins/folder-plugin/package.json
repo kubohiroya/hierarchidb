@@ -87,7 +87,7 @@
     "fake-indexeddb": "^6.2.2",
     "jsdom": "^26.1.0",
     "react": "^19.0.0",
-    "vitest": "^3.2.4",
+    "vitest": "^4.1.0",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/tag-api": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",

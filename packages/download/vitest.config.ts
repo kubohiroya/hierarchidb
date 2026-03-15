@@ -13,6 +13,7 @@ export default defineConfig({
   resolve: {
     alias: [
       // Resolve ~/... imports inside download/src (e.g. ~/helpers/resolveNetworkUrl)
+      { find: /^~\/(.*)$/, replacement: path.resolve(__dirname, 'src/$1') },
       { find: '~', replacement: path.resolve(__dirname, 'src') },
       { find: '@hierarchidb/auth', replacement: path.resolve(__dirname, '../auth/src/index.ts') },
     ],

@@ -91,7 +91,7 @@
     "jotai": "^2.13.1",
     "jsdom": "^22.1.0",
     "react": "^19.0.0",
-    "vitest": "^3.2.4"
+    "vitest": "^4.1.0"
   },
   "keywords": [
     "hierarchidb",
