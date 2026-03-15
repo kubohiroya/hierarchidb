@@ -8,12 +8,11 @@ const FOLDER_NODE_TYPE = 'folder' as NodeType;
 const NODE_ID = 'node-1' as NodeId;
 
 describe('WorkerBridge subscribeAll', () => {
-  let subscribeToSessionStateMock: ReturnType<typeof vi.fn>;
-  let subscribeToHeartbeatMock: ReturnType<typeof vi.fn>;
-  let subscribeToWorkerLogMock: ReturnType<typeof vi.fn>;
+  let subscribeSessionStateMock: ReturnType<typeof vi.fn>;
+  let subscribeSessionHeartbeatMock: ReturnType<typeof vi.fn>;
+  let subscribeWorkerLogMock: ReturnType<typeof vi.fn>;
   let subscribeBuildTasksMock: ReturnType<typeof vi.fn>;
   let subscribeBuildProgressMock: ReturnType<typeof vi.fn>;
-  let getShapeQueryAPIMock: ReturnType<typeof vi.fn>;
 
   let taskEventProxyCallback: ((event: unknown) => void) | null;
   let progressEventProxyCallback: ((event: unknown) => void) | null;
@@ -50,39 +49,38 @@ describe('WorkerBridge subscribeAll', () => {
       return progressUnsubscribeMock;
     });
 
-    subscribeToSessionStateMock = vi.fn(async (_nodeId: NodeId, callback: (event: unknown) => void) => {
+    // WorkerApi direct methods: subscribeSessionState(nodeType, nodeId, cb)
+    subscribeSessionStateMock = vi.fn(async (_nodeType: NodeType, _nodeId: NodeId, callback: (event: unknown) => void) => {
       sessionStateProxyCallback = callback;
       return sessionStateUnsubscribeMock;
     });
 
-    subscribeToHeartbeatMock = vi.fn(async (_nodeId: NodeId, callback: (event: unknown) => void) => {
+    subscribeSessionHeartbeatMock = vi.fn(async (_nodeType: NodeType, _nodeId: NodeId, callback: (event: unknown) => void) => {
       heartbeatProxyCallback = callback;
       return heartbeatUnsubscribeMock;
     });
 
-    subscribeToWorkerLogMock = vi.fn(async (_nodeId: NodeId, callback: (event: unknown) => void) => {
+    subscribeWorkerLogMock = vi.fn(async (_nodeType: NodeType, _nodeId: NodeId, callback: (event: unknown) => void) => {
       workerLogProxyCallback = callback;
       return workerLogUnsubscribeMock;
     });
-
-    getShapeQueryAPIMock = vi.fn(async () => ({
-      subscribeToSessionState: subscribeToSessionStateMock,
-      subscribeToHeartbeat: subscribeToHeartbeatMock,
-      subscribeToWorkerLog: subscribeToWorkerLogMock,
-    }));
 
     __setWorkerBridgeClientRef({
       client: {
         subscribeBuildTasks: subscribeBuildTasksMock,
         subscribeBuildProgress: subscribeBuildProgressMock,
-        getShapeQueryAPI: getShapeQueryAPIMock,
+        subscribeSessionState: subscribeSessionStateMock,
+        subscribeSessionHeartbeat: subscribeSessionHeartbeatMock,
+        subscribeWorkerLog: subscribeWorkerLogMock,
       } as never,
       isInitialized: true,
       initialize: async () => { },
       getAPI: () => ({
         subscribeBuildTasks: subscribeBuildTasksMock,
         subscribeBuildProgress: subscribeBuildProgressMock,
-        getShapeQueryAPI: getShapeQueryAPIMock,
+        subscribeSessionState: subscribeSessionStateMock,
+        subscribeSessionHeartbeat: subscribeSessionHeartbeatMock,
+        subscribeWorkerLog: subscribeWorkerLogMock,
       } as never),
     });
   });
@@ -109,9 +107,9 @@ describe('WorkerBridge subscribeAll', () => {
 
     expect(subscribeBuildTasksMock).toHaveBeenCalledTimes(1);
     expect(subscribeBuildProgressMock).toHaveBeenCalledTimes(1);
-    expect(subscribeToSessionStateMock).toHaveBeenCalledTimes(1);
-    expect(subscribeToHeartbeatMock).toHaveBeenCalledTimes(1);
-    expect(subscribeToWorkerLogMock).toHaveBeenCalledTimes(1);
+    expect(subscribeSessionStateMock).toHaveBeenCalledTimes(1);
+    expect(subscribeSessionHeartbeatMock).toHaveBeenCalledTimes(1);
+    expect(subscribeWorkerLogMock).toHaveBeenCalledTimes(1);
 
     const taskEvent = { type: 'snapshot', nodeId: NODE_ID, tasks: [] } as unknown as BuildTaskUpdateEvent;
     taskEventProxyCallback?.(taskEvent);
@@ -154,13 +152,19 @@ describe('WorkerBridge subscribeAll', () => {
       onWorkerLog,
     });
 
+    // subscribeAll subscribes all 5 channels regardless of nodeType
     expect(subscribeBuildTasksMock).toHaveBeenCalledTimes(1);
     expect(subscribeBuildProgressMock).toHaveBeenCalledTimes(1);
-    expect(getShapeQueryAPIMock).not.toHaveBeenCalled();
+    expect(subscribeSessionStateMock).toHaveBeenCalledTimes(1);
+    expect(subscribeSessionHeartbeatMock).toHaveBeenCalledTimes(1);
+    expect(subscribeWorkerLogMock).toHaveBeenCalledTimes(1);
 
     expect(() => unsubscribe()).not.toThrow();
     expect(tasksUnsubscribeMock).toHaveBeenCalledTimes(1);
     expect(progressUnsubscribeMock).toHaveBeenCalledTimes(1);
+    expect(sessionStateUnsubscribeMock).toHaveBeenCalledTimes(1);
+    expect(heartbeatUnsubscribeMock).toHaveBeenCalledTimes(1);
+    expect(workerLogUnsubscribeMock).toHaveBeenCalledTimes(1);
   });
 
   it('does not expose individual subscribeSessionHeartbeat or subscribeTaskProgress on bridge', () => {
