@@ -121,17 +121,16 @@ function createRuntimeAliasConfig({
     { spec: '@hierarchidb/basemap-plugin/icon', src: '../plugins/basemap-plugin/src/icon/index.ts', dist: '../plugins/basemap-plugin/dist/icon/index.js' },
     { spec: '@hierarchidb/basemap-plugin/database', src: '../plugins/basemap-plugin/src/services/database/index.ts', dist: '../plugins/basemap-plugin/dist/services/database/index.js' },
     { spec: '@hierarchidb/folder-plugin', src: '../plugins/folder-plugin/src/index.ts', dist: '../plugins/folder-plugin/dist/index.js' },
-    { spec: '@hierarchidb/location-plugin', src: '../plugins/location-plugin/src/index.ts', dist: '../plugins/location-plugin/dist/index.js' },
+    { spec: '@hierarchidb/location-plugin/common', src: '../plugins/location-plugin/src/common/index.ts', dist: '../plugins/location-plugin/dist/common/index.js' },
     { spec: '@hierarchidb/linker-plugin', src: '../plugins/linker-plugin/src/index.ts', dist: '../plugins/linker-plugin/dist/index.js' },
     { spec: '@hierarchidb/resolver-plugin', src: '../plugins/resolver-plugin/src/index.ts', dist: '../plugins/resolver-plugin/dist/index.js' },
-    { spec: '@hierarchidb/route-plugin', src: '../plugins/route-plugin/src/index.ts', dist: '../plugins/route-plugin/dist/index.js' },
+    { spec: '@hierarchidb/route-plugin/common', src: '../plugins/route-plugin/src/common/index.ts', dist: '../plugins/route-plugin/dist/common/index.js' },
     { spec: '@hierarchidb/route-plugin/common/entities/RouteLineString.ts', src: '../plugins/route-plugin/src/common/entities/RouteLineString.ts', dist: '../plugins/route-plugin/dist/common/entities/RouteLineString.js' },
     { spec: '@hierarchidb/route-plugin/services/RouteGenerator.js', src: '../plugins/route-plugin/src/services/RouteGenerator.ts', dist: '../plugins/route-plugin/dist/services/RouteGenerator.js' },
     { spec: '@hierarchidb/route-plugin/services/engines/SearouteEngine.js', src: '../plugins/route-plugin/src/services/engines/SearouteEngine.ts', dist: '../plugins/route-plugin/dist/services/engines/SearouteEngine.js' },
-    { spec: '@hierarchidb/shape-plugin', src: '../plugins/shape-plugin/src/index.ts', dist: '../plugins/shape-plugin/dist/index.js' },
+    { spec: '@hierarchidb/shape-plugin/common', src: '../plugins/shape-plugin/src/common/index.ts', dist: '../plugins/shape-plugin/dist/common/index.js' },
     { spec: '@hierarchidb/spreadsheet-plugin', src: '../plugins/spreadsheet-plugin/src/index.ts', dist: '../plugins/spreadsheet-plugin/dist/index.js' },
     { spec: '@hierarchidb/styler-plugin', src: '../plugins/styler-plugin/src/index.ts', dist: '../plugins/styler-plugin/dist/index.js' },
-    { spec: '@hierarchidb/location-plugin', src: '../plugins/location-plugin/src/index.ts', dist: '../plugins/location-plugin/dist/index.js' },
     { spec: '@hierarchidb/tabular-source-xlsx', src: '../packages/tabular-source-xlsx/src/index.ts', dist: '../packages/tabular-source-xlsx/dist/index.js' },
     { spec: '@hierarchidb/timeline-plugin', src: '../plugins/timeline-plugin/src/index.ts', dist: '../plugins/timeline-plugin/dist/index.js' },
   ] as const;
@@ -394,7 +393,7 @@ function pluginTildeRootAliasPlugin(): Plugin {
   return {
     name: 'hierarchidb:plugin-tilde-root-alias',
     enforce: 'pre',
-      resolveId(source, importer) {
+    resolveId(source, importer) {
       if (typeof source !== 'string' || !source.startsWith('~/')) return null;
       if (typeof importer !== 'string' || importer.length === 0) return null;
       const importerUrl: string = importer;
@@ -483,24 +482,24 @@ function pluginTildeRootAliasPlugin(): Plugin {
       const candidateCandidates: string[] = [];
       for (const baseRoot of searchRoots) {
         const candidatePath = path.resolve(baseRoot, normalizedWithoutPrefix);
-      const explicitExt = path.extname(candidatePath);
-      const explicitExtSupported = extensions.includes(explicitExt);
-      const withoutExtPath =
-        explicitExt && explicitExtSupported
-          ? candidatePath.slice(0, -explicitExt.length)
-          : candidatePath;
+        const explicitExt = path.extname(candidatePath);
+        const explicitExtSupported = extensions.includes(explicitExt);
+        const withoutExtPath =
+          explicitExt && explicitExtSupported
+            ? candidatePath.slice(0, -explicitExt.length)
+            : candidatePath;
 
-      if (explicitExtSupported) {
+        if (explicitExtSupported) {
           candidateCandidates.push(candidatePath);
           for (const fallbackExt of ['.ts', '.tsx', '.jsx', '.mjs', '.cjs', '.mts', '.cts']) {
             if (fallbackExt === explicitExt) continue;
             candidateCandidates.push(`${withoutExtPath}${fallbackExt}`);
           }
-      } else {
-        for (const ext of extensions) {
-          candidateCandidates.push(`${candidatePath}${ext}`);
+        } else {
+          for (const ext of extensions) {
+            candidateCandidates.push(`${candidatePath}${ext}`);
+          }
         }
-      }
 
         candidateCandidates.push(`${withoutExtPath}/index.ts`);
         candidateCandidates.push(`${withoutExtPath}/index.tsx`);
@@ -914,73 +913,73 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
 
   const rollupTracePlugin: Plugin | null = enableBuildTrace
     ? {
-        name: 'hierarchidb:rollup-trace',
-        buildStart() {
-          try {
-            fs.writeFileSync(rollupTraceLog, '');
-          } catch (error) {
-            console.warn('[rollup-trace] failed to initialize log', error);
+      name: 'hierarchidb:rollup-trace',
+      buildStart() {
+        try {
+          fs.writeFileSync(rollupTraceLog, '');
+        } catch (error) {
+          console.warn('[rollup-trace] failed to initialize log', error);
+        }
+      },
+      load(id) {
+        try {
+          fs.appendFileSync(rollupTraceLog, `${new Date().toISOString()} load ${id}\n`);
+        } catch (error) {
+          console.warn('[rollup-trace] append failed (load)', error);
+        }
+        return null;
+      },
+      transform(_code, id) {
+        try {
+          fs.appendFileSync(rollupTraceLog, `${new Date().toISOString()} transform ${id}\n`);
+          if (typeof _code === 'string' && _code.trim() === 'this') {
+            fs.appendFileSync(rollupTraceLog, `${new Date().toISOString()} transform-content ${id} => 'this'\n`);
           }
-        },
-        load(id) {
-          try {
-            fs.appendFileSync(rollupTraceLog, `${new Date().toISOString()} load ${id}\n`);
-          } catch (error) {
-            console.warn('[rollup-trace] append failed (load)', error);
-          }
-          return null;
-        },
-        transform(_code, id) {
-          try {
-            fs.appendFileSync(rollupTraceLog, `${new Date().toISOString()} transform ${id}\n`);
-            if (typeof _code === 'string' && _code.trim() === 'this') {
-              fs.appendFileSync(rollupTraceLog, `${new Date().toISOString()} transform-content ${id} => 'this'\n`);
-            }
-          } catch (error) {
-            console.warn('[rollup-trace] append failed (transform)', error);
-          }
-          return null;
-        },
-      }
+        } catch (error) {
+          console.warn('[rollup-trace] append failed (transform)', error);
+        }
+        return null;
+      },
+    }
     : null;
 
   const thisTracePlugin: Plugin | null = enableThisTrace
     ? {
-        name: 'hierarchidb:this-trace',
-        apply: 'build',
-        buildStart() {
-          console.log('[this-trace] enabled; logging to', thisTraceLog);
-          try {
-            fs.writeFileSync(thisTraceLog, '');
-          } catch (error) {
-            console.warn('[this-trace] failed to initialize log', error);
-          }
-        },
-        load(id) {
-          try {
-            fs.appendFileSync(thisTraceLog, `${new Date().toISOString()} load ${id}\n`);
-          } catch (error) {
-            console.warn('[this-trace] load log failed', error);
-          }
-          return null;
-        },
-        transform(code, id) {
-          //const text = typeof code === 'string' ? code : Buffer.isBuffer(code) ? code.toString('utf8') : null;
-          const text = code;
-          if (text !== null) {
-            const trimmed = text.trim();
-            if (trimmed === 'this') {
-              try {
-                fs.appendFileSync(thisTraceLog, `${new Date().toISOString()} HIT transform id=${id}\n`);
-              } catch (error) {
-                console.warn('[this-trace] transform log failed', error);
-              }
+      name: 'hierarchidb:this-trace',
+      apply: 'build',
+      buildStart() {
+        console.log('[this-trace] enabled; logging to', thisTraceLog);
+        try {
+          fs.writeFileSync(thisTraceLog, '');
+        } catch (error) {
+          console.warn('[this-trace] failed to initialize log', error);
+        }
+      },
+      load(id) {
+        try {
+          fs.appendFileSync(thisTraceLog, `${new Date().toISOString()} load ${id}\n`);
+        } catch (error) {
+          console.warn('[this-trace] load log failed', error);
+        }
+        return null;
+      },
+      transform(code, id) {
+        //const text = typeof code === 'string' ? code : Buffer.isBuffer(code) ? code.toString('utf8') : null;
+        const text = code;
+        if (text !== null) {
+          const trimmed = text.trim();
+          if (trimmed === 'this') {
+            try {
+              fs.appendFileSync(thisTraceLog, `${new Date().toISOString()} HIT transform id=${id}\n`);
+            } catch (error) {
+              console.warn('[this-trace] transform log failed', error);
             }
-            return { code: text, map: null };
           }
-          return null;
-        },
-      }
+          return { code: text, map: null };
+        }
+        return null;
+      },
+    }
     : null;
 
   // Note: Guidance logs are printed by hdb-dev-banner plugin after server starts.
@@ -990,11 +989,11 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
     specialPrefixRewritePlugin(base),
     ...(command === 'serve'
       ? [
-          pluginRegistryGeneratorPlugin({
-            rootDir: repoRoot,
-            mode: pluginRegistryMode,
-          }),
-        ]
+        pluginRegistryGeneratorPlugin({
+          rootDir: repoRoot,
+          mode: pluginRegistryMode,
+        }),
+      ]
       : []),
     createIso3166Plugin({
       outputDir: 'public',
@@ -1026,26 +1025,26 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
     // Generate d.ts only when explicitly enabled (apps usually don't need it)
     ...(env.VITE_APP_DTS === 'true'
       ? [
-          dts({
-            outDir: isSsrBuild ? 'stage/server-types' : 'stage/client-types',
-            rollupTypes: false,
-            insertTypesEntry: false,
-            copyDtsFiles: true,
-          }),
-        ]
+        dts({
+          outDir: isSsrBuild ? 'stage/server-types' : 'stage/client-types',
+          rollupTypes: false,
+          insertTypesEntry: false,
+          copyDtsFiles: true,
+        }),
+      ]
       : []),
     faviconPlugin(), // Add favicon plugin to serve favicon at root
     missingSourceMapFallbackPlugin(),
     comlink(), // Add Comlink plugin for Worker support
     ...(env.HDB_TRACE_INDEX_HTML === '1' || process.env.HDB_TRACE_INDEX_HTML === '1'
       ? [
-          buildIndexHtmlHookTracePlugin(),
-          buildConfigTracePlugin(),
-          buildIndexBundleTracePlugin(),
-          buildIndexHtmlTracePlugin('pre'),
-          buildIndexHtmlTracePlugin('post'),
-          buildIndexResolveTracePlugin(),
-        ]
+        buildIndexHtmlHookTracePlugin(),
+        buildConfigTracePlugin(),
+        buildIndexBundleTracePlugin(),
+        buildIndexHtmlTracePlugin('pre'),
+        buildIndexHtmlTracePlugin('post'),
+        buildIndexResolveTracePlugin(),
+      ]
       : []),
     // tsconfigPaths is appended after runtime-worker alias configuration.
     // It is re-injected below after dev alias filtering.
