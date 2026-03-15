@@ -11,8 +11,10 @@ export default defineConfig({
     exclude: ['**/node_modules/**', '**/dist/**'],
   },
   resolve: {
-    alias: {
-      '@hierarchidb/auth': path.resolve(__dirname, '../auth/src/index.ts'),
-    },
+    alias: [
+      // Resolve ~/... imports inside download/src (e.g. ~/helpers/resolveNetworkUrl)
+      { find: '~', replacement: path.resolve(__dirname, 'src') },
+      { find: '@hierarchidb/auth', replacement: path.resolve(__dirname, '../auth/src/index.ts') },
+    ],
   },
 });

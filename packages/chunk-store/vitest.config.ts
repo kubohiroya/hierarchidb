@@ -11,10 +11,12 @@ export default defineConfig({
     exclude: ['**/node_modules/**', '**/dist/**'],
   },
   resolve: {
-    alias: {
-      '@hierarchidb/download': path.resolve(__dirname, '../download/src/index.ts'),
-      '@hierarchidb/util': path.resolve(__dirname, '../util/src/index.ts'),
-      '@hierarchidb/core-types': path.resolve(__dirname, '../core-types/src/index.ts'),
-    },
+    alias: [
+      // Resolve ~/... imports inside download/src when traversed via @hierarchidb/download src alias
+      { find: '~', replacement: path.resolve(__dirname, '../download/src') },
+      { find: '@hierarchidb/download', replacement: path.resolve(__dirname, '../download/src/index.ts') },
+      { find: '@hierarchidb/util', replacement: path.resolve(__dirname, '../util/src/index.ts') },
+      { find: '@hierarchidb/core-types', replacement: path.resolve(__dirname, '../core-types/src/index.ts') },
+    ],
   },
 });
