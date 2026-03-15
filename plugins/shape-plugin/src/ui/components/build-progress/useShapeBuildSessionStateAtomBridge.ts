@@ -1,22 +1,32 @@
 import { useEffect } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
+import type { BuildProgressEvent, BuildTaskUpdateEvent } from '@hierarchidb/build-api';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useSetAtom } from 'jotai';
 import { dispatchBuildSessionEventAtom } from '~/ui/atoms/buildSessionStateAtoms';
 import { createBuildSessionWorkerEventAdapter } from '~/ui/atoms/buildSessionWorkerEventAdapter';
 import type { ShapeStageId } from '~/ui/atoms/buildSessionStateAtoms';
-import type {
-    SessionStatusUpdatedEvent,
-    StageSnapshotUpdatedEvent,
-    TaskProgressUpdatedEvent,
-    HeartbeatEvent,
-} from '~/common/types/session-events';
 import { UIEventBufferManager, type BufferedEvent } from './eventBufferingUI';
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 const SHAPE_STAGE_IDS = ['source', 'geometry', 'tileEmit'] as const satisfies readonly ShapeStageId[];
 
 type UiSyncPhase = 'ui-initializing' | 'running';
+
+type TaskSnapshotEvent = Extract<BuildTaskUpdateEvent, { type: 'snapshot' }> & {
+    version?: unknown;
+    stage?: unknown;
+};
+
+interface VersionedBuildProgressEvent extends BuildProgressEvent {
+    /** Distributed version number from Worker (task-progress ordering only) */
+    version?: number;
+}
+
+interface SessionStateEvent {
+    nodeId: string;
+    sessionRecord?: Record<string, unknown> | null;
+}
 
 // ---------------------------------------------------------------------------
 // Exported pure functions (used by tests and internal logic)
@@ -56,13 +66,13 @@ const resolveShapeStageId = (value: unknown): ShapeStageId | undefined => {
     return undefined;
 };
 
-export const resolveSnapshotTargetStages = (event: StageSnapshotUpdatedEvent): ShapeStageId[] => {
+export const resolveSnapshotTargetStages = (event: TaskSnapshotEvent): ShapeStageId[] => {
     const snapshotStages = new Set<ShapeStageId>();
-    for (const task of event.payload.tasks) {
+    for (const task of event.tasks) {
         const stageId = resolveShapeStageId(task.stage);
         if (stageId) snapshotStages.add(stageId);
     }
-    const stageFromEvent = resolveShapeStageId(event.payload.stageId);
+    const stageFromEvent = resolveShapeStageId(event.stage);
     if (snapshotStages.size === 0 && stageFromEvent) {
         snapshotStages.add(stageFromEvent);
     }
@@ -72,6 +82,40 @@ export const resolveSnapshotTargetStages = (event: StageSnapshotUpdatedEvent): S
         }
     }
     return Array.from(snapshotStages);
+};
+
+const resolveUiSyncSignalFromSessionStageId = (
+    value: unknown,
+): { stageId: ShapeStageId; phase: UiSyncPhase } | undefined => {
+    if (value === 'source' || value === 'geometry' || value === 'tileEmit') {
+        return { stageId: value, phase: 'running' };
+    }
+    if (value === 'source-stage') return { stageId: 'source', phase: 'running' };
+    if (value === 'geometry-stage') return { stageId: 'geometry', phase: 'running' };
+    if (value === 'tile-emit-stage') return { stageId: 'tileEmit', phase: 'running' };
+    if (typeof value !== 'string') return undefined;
+    if (!value.startsWith('ui-sync:')) return undefined;
+    const [, rawStage, rawPhase] = value.split(':');
+    const stageId = resolveShapeStageId(rawStage);
+    if (!stageId) return undefined;
+    if (rawPhase === 'ui-initializing' || rawPhase === 'running') {
+        return { stageId, phase: rawPhase };
+    }
+    return undefined;
+};
+
+const resolveSnapshotVersion = (event: TaskSnapshotEvent): number => {
+    if (event.type !== 'snapshot') {
+        throw new Error('[shape buildSessionStateAtomBridge] resolveSnapshotVersion requires snapshot event');
+    }
+    if (event.tasks.length > 0) {
+        return event.tasks.reduce((max, task) => Math.max(max, task.version), Number.MIN_SAFE_INTEGER);
+    }
+    const explicitVersion = event.version;
+    if (typeof explicitVersion !== 'number' || !Number.isFinite(explicitVersion) || explicitVersion < 0) {
+        throw new Error('[shape buildSessionStateAtomBridge] empty snapshot requires finite snapshot version');
+    }
+    return Math.floor(explicitVersion);
 };
 
 export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined): void => {
@@ -97,7 +141,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             geometry: 'ui-initializing',
             tileEmit: 'ui-initializing',
         };
-        const progressBufferByStage: Record<ShapeStageId, TaskProgressUpdatedEvent[]> = {
+        const progressBufferByStage: Record<ShapeStageId, BuildProgressEvent[]> = {
             source: [],
             geometry: [],
             tileEmit: [],
@@ -140,13 +184,16 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             flushTimerId = window.setTimeout(flushProgressBuffer, 0);
         };
 
-        const processStageSnapshotEvent = (event: StageSnapshotUpdatedEvent): void => {
+        const processTaskSnapshotEvent = (snapshotEvent: TaskSnapshotEvent): void => {
             const snapshotStages = new Set<ShapeStageId>();
-            for (const task of event.payload.tasks) {
+            for (const task of snapshotEvent.tasks) {
                 const stageId = resolveShapeStageId(task.stage);
                 if (stageId) snapshotStages.add(stageId);
             }
-            adapter.onTaskEvent(event);
+            adapter.onTaskEvent({
+                ...snapshotEvent,
+                version: resolveSnapshotVersion(snapshotEvent),
+            } as BuildTaskUpdateEvent);
             for (const stageId of SHAPE_STAGE_IDS) {
                 if (snapshotStages.size > 0 && !snapshotStages.has(stageId)) continue;
                 dispatchUiSyncPhase(stageId, 'running');
@@ -154,8 +201,8 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             scheduleFlush();
         };
 
-        const processProgressEvent = (event: TaskProgressUpdatedEvent): void => {
-            const stageId = resolveShapeStageId(event.payload.stageId);
+        const processProgressEvent = (event: VersionedBuildProgressEvent): void => {
+            const stageId = resolveShapeStageId(event.stage);
             if (!stageId) {
                 adapter.onProgressEvent(event);
                 return;
@@ -169,19 +216,16 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             scheduleFlush();
         };
 
-        const processSessionStatusEvent = (event: SessionStatusUpdatedEvent): void => {
+        const processSessionStateEvent = (event: SessionStateEvent): void => {
             adapter.onSessionState(event);
-            // Derive UI sync signal from the canonical phase and stageId fields.
-            // 'startup:*' and 'ui-sync:*' stageId values are not part of the spec
-            // and must not be interpreted here.
-            const stageId = resolveShapeStageId(event.payload.stageId);
-            if (!stageId) return;
+            const signal = resolveUiSyncSignalFromSessionStageId(event.sessionRecord?.stageId);
+            if (!signal) return;
+            const stageId = signal.stageId;
             if (activeStageId !== stageId) {
                 activeStageId = stageId;
             }
-            const phase = event.payload.phase;
-            if (phase === 'running') {
-                dispatchUiSyncPhase(stageId, 'running');
+            dispatchUiSyncPhase(stageId, signal.phase);
+            if (signal.phase === 'running') {
                 scheduleFlush();
             }
         };
@@ -192,19 +236,23 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
         // task-progress goes through version gating only.
         // ---------------------------------------------------------------------------
 
-        const onTaskEvent = (event: StageSnapshotUpdatedEvent): void => {
-            // Enqueue into FIFO queue, then flush immediately via rAF
-            const buffered: BufferedEvent = {
-                version: undefined,
-                notificationType: 'stage-snapshot',
-                payload: event,
-                timestamp: Date.now(),
-            };
-            eventBufferManager.enqueue(buffered);
-            flushFifoQueues();
+        const onTaskEvent = (event: BuildTaskUpdateEvent): void => {
+            if (event.type === 'snapshot') {
+                // Enqueue into FIFO queue, then flush immediately via rAF
+                const buffered: BufferedEvent = {
+                    version: undefined,
+                    notificationType: 'stage-snapshot',
+                    payload: event as TaskSnapshotEvent,
+                    timestamp: Date.now(),
+                };
+                eventBufferManager.enqueue(buffered);
+                flushFifoQueues();
+                return;
+            }
+            adapter.onTaskEvent(event);
         };
 
-        const onProgressEvent = (event: TaskProgressUpdatedEvent & { version?: number }): void => {
+        const onProgressEvent = (event: VersionedBuildProgressEvent): void => {
             const buffered: BufferedEvent = {
                 version: event.version,
                 notificationType: 'task-progress',
@@ -217,7 +265,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             }
         };
 
-        const onSessionState = (event: SessionStatusUpdatedEvent): void => {
+        const onSessionState = (event: SessionStateEvent): void => {
             // Enqueue into FIFO queue, then flush immediately via rAF
             const buffered: BufferedEvent = {
                 version: undefined,
@@ -232,11 +280,11 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
         const flushFifoQueues = (): void => {
             // Drain session-state FIFO
             for (const ev of eventBufferManager.flushFifo('session-state')) {
-                processSessionStatusEvent(ev.payload as SessionStatusUpdatedEvent);
+                processSessionStateEvent(ev.payload as SessionStateEvent);
             }
             // Drain stage-snapshot FIFO
             for (const ev of eventBufferManager.flushFifo('stage-snapshot')) {
-                processStageSnapshotEvent(ev.payload as StageSnapshotUpdatedEvent);
+                processTaskSnapshotEvent(ev.payload as TaskSnapshotEvent);
             }
         };
 
@@ -253,29 +301,29 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             unsubscribeAll = await bridge.subscribeAll(SHAPE_NODE_TYPE, nodeId, {
                 onTaskEvent: (event) => {
                     if (cancelled) return;
-                    onTaskEvent(event as StageSnapshotUpdatedEvent);
+                    onTaskEvent(event);
                 },
                 onProgressEvent: (event) => {
                     if (cancelled) return;
-                    onProgressEvent(event as TaskProgressUpdatedEvent & { version?: number });
+                    onProgressEvent(event as VersionedBuildProgressEvent);
                 },
                 onSessionState: (event) => {
                     if (cancelled) return;
-                    onSessionState(event as SessionStatusUpdatedEvent);
+                    onSessionState(event as SessionStateEvent);
                 },
                 onHeartbeat: (event) => {
                     if (cancelled) return;
-                    adapter.onHeartbeat(event as HeartbeatEvent);
+                    adapter.onHeartbeat(event);
                 },
                 onWorkerLog: (event) => {
                     if (cancelled) return;
-                    const level = (event as { level?: string }).level;
+                    const level = event.level;
                     if (level === 'error') {
-                        console.error('[Worker]', (event as { message?: string }).message, (event as { data?: unknown }).data);
+                        console.error('[Worker]', event.message, event.data);
                     } else if (level === 'warn') {
-                        console.warn('[Worker]', (event as { message?: string }).message, (event as { data?: unknown }).data);
+                        console.warn('[Worker]', event.message, event.data);
                     } else {
-                        console.log('[Worker]', (event as { message?: string }).message, (event as { data?: unknown }).data);
+                        console.log('[Worker]', event.message, event.data);
                     }
                 },
             });

@@ -1,4 +1,4 @@
-import type { BuildTaskSummary } from '@hierarchidb/build-api';
+import type { BuildProgressEvent, BuildTaskSummary } from '@hierarchidb/build-api';
 import {
   createBuildSessionWorkerEventAdapter as createCommonBuildSessionWorkerEventAdapter,
   type BuildSessionStateEvent,
@@ -6,6 +6,13 @@ import {
 } from '@hierarchidb/ui-build-sessions';
 import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import type { ShapeBuildSessionStateEvent, ShapeSessionPhase, ShapeStageId } from './buildSessionStateAtoms';
+
+const asFiniteNumber = (value: unknown, label: string): number => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`[shape buildSessionWorkerEventAdapter] ${label} must be a finite number, received ${String(value)}`);
+  }
+  return value;
+};
 
 const resolveShapeStageId = (value: unknown): ShapeStageId => {
   if (value === 'source' || value === 'geometry' || value === 'tileEmit') {
@@ -76,6 +83,11 @@ export const createBuildSessionWorkerEventAdapter = (
       resolveStageId: resolveShapeStageId,
       mapRuntimeStatusToPhase: (status) => mapRuntimeStatusToPhase(String(status)),
       mapSessionRecordStatusToPhase: (status) => mapRuntimeStatusToPhase(String(status)),
+      isActivePhase,
+      resolveProgressValue: (event: BuildProgressEvent) => {
+        const payload = event.payload as Record<string, unknown> | undefined;
+        return asFiniteNumber(payload?.percentage, 'progress payload.percentage');
+      },
     },
   );
 };

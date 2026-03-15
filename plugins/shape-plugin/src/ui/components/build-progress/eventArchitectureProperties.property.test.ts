@@ -298,11 +298,10 @@ describe('Event Architecture Properties', () => {
                             eventTypes.forEach((eventType) => {
                                 if (eventType === 'heartbeat') {
                                     unconditionalEventStreamer.emitHeartbeat(nodeId, {
-                                        type: 'heartbeat',
-                                        payload: {
-                                            nodeId: String(nodeId),
-                                            heartbeatAt: Date.now(),
-                                        },
+                                        nodeId,
+                                        timestamp: Date.now(),
+                                        isActive: true,
+                                        lastActivity: Date.now(),
                                     });
                                 } else {
                                     unconditionalEventStreamer.emitEvent(

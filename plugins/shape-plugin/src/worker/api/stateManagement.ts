@@ -10,38 +10,12 @@ import type {
     ShapeBuildSessionRecord,
 } from '@hierarchidb/shape-api';
 import type {
-    SessionStatusUpdatedEvent,
-    StageSnapshotUpdatedEvent,
-    HeartbeatEvent,
-    TaskProgressUpdatedEvent,
-    WorkerLogEvent,
+    SessionStateSubscription,
+    StageSnapshotSubscription,
+    HeartbeatSubscription,
+    TaskProgressSubscription,
+    WorkerLogSubscription,
 } from '~/common/types/session-events';
-
-// Subscription interfaces using the canonical 4-event types
-export interface SessionStateSubscription {
-    unsubscribe?: () => void;
-    callback?: (event: SessionStatusUpdatedEvent) => void;
-}
-
-export interface StageSnapshotSubscription {
-    unsubscribe?: () => void;
-    callback?: (event: StageSnapshotUpdatedEvent) => void;
-}
-
-export interface HeartbeatSubscription {
-    unsubscribe?: () => void;
-    callback?: (event: HeartbeatEvent) => void;
-}
-
-export interface TaskProgressSubscription {
-    unsubscribe?: () => void;
-    callback?: (event: TaskProgressUpdatedEvent) => void;
-}
-
-export interface WorkerLogSubscription {
-    unsubscribe?: () => void;
-    callback?: (event: WorkerLogEvent) => void;
-}
 import {
     resolveTaskActivityTimestamp,
     selectLatestTaskByProgress,
@@ -122,7 +96,7 @@ const waitIfPaused = async (nodeId: NodeId): Promise<void> => {
 
 const setPaused = async (nodeId: NodeId, paused: boolean): Promise<void> => {
     const state = getPauseState(nodeId);
-
+    
     // If pausing, verify and protect task states before setting pause
     if (paused && !state.paused) {
         try {
@@ -142,19 +116,19 @@ const setPaused = async (nodeId: NodeId, paused: boolean): Promise<void> => {
             });
         }
     }
-
+    
     state.paused = paused;
     console.warn('[shapeBuildRuntime][PauseTrace] state-update', {
         nodeId,
         paused,
         waiters: state.waiters.length,
     });
-
+    
     if (!paused && state.waiters.length > 0) {
         const pending = [...state.waiters];
         state.waiters.length = 0;
         pending.forEach((resolve) => { resolve() });
-
+        
         // Clear snapshots when resuming
         taskStateProtection.clearSnapshots(nodeId);
     }

@@ -1,72 +1,34 @@
 import type {
+  BuildProgressEvent,
   BuildSessionRuntimeRecord,
   BuildTaskSummary,
+  BuildTaskUpdateEvent,
 } from '@hierarchidb/build-api';
 import type { BuildSessionStateEvent } from './createBuildSessionStateAtoms.js';
 
 type RuntimeLike = BuildSessionRuntimeRecord;
+type ProgressLike = BuildProgressEvent;
 
 type AdapterConfig<StageId extends string, SessionPhase extends string> = {
   stages: readonly StageId[];
   resolveStageId: (value: unknown) => StageId;
   mapRuntimeStatusToPhase: (status: RuntimeLike['status']) => SessionPhase;
   mapSessionRecordStatusToPhase: (status: unknown) => SessionPhase;
+  isActivePhase: (phase: SessionPhase) => boolean;
+  resolveProgressValue: (event: ProgressLike) => number;
 };
 
 type Dispatch<StageId extends string, SessionPhase extends string> = (
   event: BuildSessionStateEvent<StageId, SessionPhase, BuildTaskSummary>,
 ) => void;
 
-// Canonical Worker→UI event types accepted by the adapter.
-// These match the 4-event spec in docs/build-session-worker-ui-event-spec.md.
-export type AdapterSessionStatusUpdatedEvent = {
-  type: 'sessionStatusUpdated';
-  payload: {
-    nodeId: string;
-    phase: string;
-    isActive: boolean;
-    startedAt?: number;
-    completedAt?: number;
-    stopReason?: string;
-  };
-};
-
-export type AdapterStageSnapshotUpdatedEvent = {
-  type: 'stageSnapshotUpdated';
-  payload: {
-    stageId: string;
-    tasks: BuildTaskSummary[];
-    stageStartedAt: number;
-    stageInactiveMs: number;
-    stageCompletedAt?: number;
-  };
-};
-
-export type AdapterTaskProgressUpdatedEvent = {
-  type: 'taskProgressUpdated';
-  payload: {
-    stageId: string;
-    value: number;
-    message?: string;
-    metadata?: Record<string, unknown>;
-  };
-};
-
-export type AdapterHeartbeatEvent = {
-  type: 'heartbeat';
-  payload: {
-    nodeId: string;
-    heartbeatAt: number;
-  };
-};
-
 export type BuildSessionWorkerEventAdapter = {
   onRuntimeRecord: (record: BuildSessionRuntimeRecord) => void;
-  onSessionState: (event: AdapterSessionStatusUpdatedEvent) => void;
-  onTaskEvent: (event: AdapterStageSnapshotUpdatedEvent) => void;
-  onProgressEvent: (event: AdapterTaskProgressUpdatedEvent) => void;
+  onSessionState: (event: { nodeId: string; sessionRecord?: Record<string, unknown> | null }) => void;
+  onTaskEvent: (event: BuildTaskUpdateEvent) => void;
+  onProgressEvent: (event: BuildProgressEvent) => void;
   onTaskStreamConnectionChanged: (connected: boolean) => void;
-  onHeartbeat: (event: AdapterHeartbeatEvent) => void;
+  onHeartbeat: (event: { nodeId: string; heartbeatAt?: number }) => void;
 };
 
 const asTaskSummary = (task: BuildTaskSummary): BuildTaskSummary => {
@@ -80,6 +42,13 @@ const asTaskSummary = (task: BuildTaskSummary): BuildTaskSummary => {
     throw new Error(`[buildSessionWorkerEventAdapter] invalid task.progress: ${String(task.progress)}`);
   }
   return task;
+};
+
+const asOptionalFiniteNumber = (value: unknown): number | undefined => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return undefined;
+  }
+  return value;
 };
 
 const requireFiniteNumber = (value: unknown, label: string): number => {
@@ -114,45 +83,75 @@ export const createBuildSessionWorkerEventAdapter = <
     },
 
     onSessionState: (event) => {
-      if (String(event.payload.nodeId) !== String(nodeId)) return;
-      const phase = config.mapSessionRecordStatusToPhase(event.payload.phase);
+      if (String(event.nodeId) !== String(nodeId)) return;
+      const sessionRecord = event.sessionRecord;
+      if (!sessionRecord || typeof sessionRecord !== 'object') return;
+      const phase = config.mapSessionRecordStatusToPhase((sessionRecord as { status?: unknown }).status);
+      const stopReason = (sessionRecord as { stopReason?: unknown }).stopReason;
       dispatch({
         type: 'sessionStatusUpdated',
         payload: {
-          nodeId: String(event.payload.nodeId),
+          nodeId: String(event.nodeId),
           phase,
-          isActive: event.payload.isActive,
-          startedAt: event.payload.startedAt,
-          completedAt: event.payload.completedAt,
-          stopReason: event.payload.stopReason,
+          isActive: config.isActivePhase(phase),
+          startedAt: asOptionalFiniteNumber((sessionRecord as { startedAt?: unknown }).startedAt),
+          completedAt: asOptionalFiniteNumber((sessionRecord as { completedAt?: unknown }).completedAt),
+          stopReason: typeof stopReason === 'string' ? stopReason : undefined,
         },
       });
     },
 
     onTaskEvent: (event) => {
-      const stageId = config.resolveStageId(event.payload.stageId);
-      const tasks = event.payload.tasks.map((rawTask) => asTaskSummary(rawTask));
-      dispatch({
-        type: 'stageSnapshotUpdated',
-        payload: {
-          stageId,
-          tasks,
-          stageStartedAt: event.payload.stageStartedAt,
-          stageInactiveMs: event.payload.stageInactiveMs,
-          stageCompletedAt: event.payload.stageCompletedAt,
-        },
-      });
+      if (String(event.nodeId) !== String(nodeId)) return;
+      if (event.type === 'snapshot') {
+        // Group tasks by stage and emit one stageSnapshotUpdated per stage
+        const grouped = new Map<StageId, BuildTaskSummary[]>();
+        for (const rawTask of event.tasks) {
+          const task = asTaskSummary(rawTask);
+          const stageId = config.resolveStageId(task.stage);
+          const current = grouped.get(stageId) ?? [];
+          current.push(task);
+          grouped.set(stageId, current);
+        }
+        // Emit snapshot for all known stages (empty array = zero tasks for that stage)
+        for (const stageId of config.stages) {
+          const tasks = grouped.get(stageId) ?? [];
+          // stageStartedAt is undefined when the stage has not yet started;
+          // no fallback is applied (Date.now() or similar defaults are contract violations).
+          const explicitVersion = (event as { version?: unknown }).version;
+          const stageStartedAt = typeof explicitVersion === 'number' && Number.isFinite(explicitVersion)
+            ? explicitVersion
+            : undefined;
+          dispatch({
+            type: 'stageSnapshotUpdated',
+            payload: {
+              stageId,
+              tasks,
+              stageStartedAt,
+              stageInactiveMs: 0,
+              stageCompletedAt: undefined,
+            },
+          });
+        }
+        return;
+      }
+      // 'update' and 'delete' events are not supported in the new design.
+      // The Worker always sends full snapshots; incremental updates are not used.
+      throw new Error(
+        `[buildSessionWorkerEventAdapter] unexpected task event type: ${String((event as { type: unknown }).type)}. Only 'snapshot' is supported.`,
+      );
     },
 
     onProgressEvent: (event) => {
-      const stageId = config.resolveStageId(event.payload.stageId);
+      if (String(event.nodeId) !== String(nodeId)) return;
+      const payload = event.payload as Record<string, unknown> | undefined;
       dispatch({
         type: 'taskProgressUpdated',
         payload: {
-          stageId,
-          value: event.payload.value,
-          message: event.payload.message,
-          metadata: event.payload.metadata,
+          stageId: config.resolveStageId(event.stage),
+          value: config.resolveProgressValue(event),
+          message: event.message,
+          metadata: payload?.meta as Record<string, unknown> | undefined,
         },
       });
     },
@@ -165,8 +164,8 @@ export const createBuildSessionWorkerEventAdapter = <
     },
 
     onHeartbeat: (event) => {
-      if (String(event.payload.nodeId) !== String(nodeId)) return;
-      const heartbeatAt = requireFiniteNumber(event.payload.heartbeatAt, 'heartbeatAt');
+      if (String(event.nodeId) !== String(nodeId)) return;
+      const heartbeatAt = requireFiniteNumber(event.heartbeatAt, 'heartbeatAt');
       dispatch({
         type: 'heartbeat',
         payload: {

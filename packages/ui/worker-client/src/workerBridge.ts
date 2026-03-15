@@ -69,11 +69,11 @@ export interface BuildWorkerBridge {
     nodeType: NodeType,
     nodeId: NodeId,
     handlers: {
-      onTaskEvent: (event: unknown) => void;
-      onProgressEvent: (event: unknown) => void;
-      onSessionState: (event: unknown) => void;
-      onHeartbeat: (event: unknown) => void;
-      onWorkerLog: (event: unknown) => void;
+      onTaskEvent: (event: BuildTaskUpdateEvent) => void;
+      onProgressEvent: (event: BuildProgressEvent) => void;
+      onSessionState: (event: { nodeId: string; sessionRecord?: Record<string, unknown> | null }) => void;
+      onHeartbeat: (event: { nodeId: string; heartbeatAt?: number }) => void;
+      onWorkerLog: (event: { level?: string; message?: string; data?: unknown }) => void;
     }
   ): Promise<() => void>;
   subscribeWorkerLog(
@@ -371,11 +371,11 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
     nodeType: NodeType,
     nodeId: NodeId,
     handlers: {
-      onTaskEvent: (event: unknown) => void;
-      onProgressEvent: (event: unknown) => void;
-      onSessionState: (event: unknown) => void;
-      onHeartbeat: (event: unknown) => void;
-      onWorkerLog: (event: unknown) => void;
+      onTaskEvent: (event: BuildTaskUpdateEvent) => void;
+      onProgressEvent: (event: BuildProgressEvent) => void;
+      onSessionState: (event: { nodeId: string; sessionRecord?: Record<string, unknown> | null }) => void;
+      onHeartbeat: (event: { nodeId: string; heartbeatAt?: number }) => void;
+      onWorkerLog: (event: { level?: string; message?: string; data?: unknown }) => void;
     }
   ): Promise<() => void> {
     const api = await ensureWorkerAPI();

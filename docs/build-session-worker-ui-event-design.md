@@ -56,10 +56,11 @@ frequently; must not carry any information beyond the progress value itself.
 |---|---|---|
 | `stageId` | `StageId` | Stage the task belongs to |
 | `value` | `number` | Progress 0–100 (finite; outside range is a contract violation) |
+| `phase` | `SessionPhase` | Current session phase at time of emission |
 | `message` | `string \| undefined` | Optional human-readable label |
 | `metadata` | `Record<string, unknown> \| undefined` | Optional opaque metadata |
 
-**Note**: `phase` is intentionally absent. It was erroneously included in the original design. Session phase is managed exclusively by `sessionStatusUpdated`.
+**UI effect**: Update the `progress` field of the corresponding stage atom entry.
 
 ---
 
@@ -191,17 +192,16 @@ remainingMs = averageMs × (total - done - recycled)
 `recycled` tasks are excluded from both the elapsed-time denominator and the
 remaining-count numerator because no processing time was spent on them.
 
-`done` = `completed` + `failed` + `skipped`. Failed tasks are counted as done because processing time was spent on them and they will not be retried in the current session.
-
 ---
 
 ## Event Version Ordering
 
-`eventVersion` fields are **not used**. All events are applied unconditionally in FIFO order per channel. The adapter does not perform deduplication or version gating.
-
-`heartbeat` is always applied unconditionally.
-
-`lastAcceptedEventVersion` is removed from the top-level `meta` object. Version tracking is not part of the design.
+- `stageSnapshotUpdated`, `taskProgressUpdated`, `sessionStatusUpdated` each carry
+  `eventVersion: number`.
+- Events are accepted only if `eventVersion > lastAccepted` per event stream.
+- `heartbeat` does not carry `eventVersion`; it is always applied unconditionally.
+- `lastAcceptedEventVersion` is removed from the top-level `meta` object. Version
+  tracking is internal to the reducer and not exposed in the public state shape.
 
 ---
 

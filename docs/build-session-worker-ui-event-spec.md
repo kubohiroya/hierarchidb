@@ -33,15 +33,11 @@ type SessionStatusUpdatedEvent = {
     startedAt?: number;            // session start timestamp (ms)
     completedAt?: number;          // session end timestamp (ms, terminal states only)
     stopReason?: string;           // e.g. 'user-pause' | 'failed' | 'completed' | 'route-leave'
-    stageId?: StageId;             // current stage at time of event (undefined if no stage is active)
-    inactiveMs?: number;           // cumulative session-level inactive duration (ms)
-    stageStartedAt?: number;       // current stage start timestamp (ms)
-    stageInactiveMs?: number;      // cumulative inactive duration for current stage (ms)
   };
 };
 ```
 
-**UI-side effect**: Update `lifecycle.phase`, `lifecycle.isActive`, `lifecycle.startedAt`, `lifecycle.completedAt`, `lifecycleExtras.stopReason`, `lifecycleExtras.stageId`, `lifecycleExtras.inactiveMs`, `lifecycleExtras.stageStartedAt`, `lifecycleExtras.stageInactiveMs`.
+**UI-side effect**: Update `lifecycle.phase`, `lifecycle.isActive`, `lifecycle.startedAt`, `lifecycle.completedAt`, `lifecycleExtras.stopReason`.
 
 **Deduplication**: None. Every emission is applied unconditionally. The caller (adapter) is responsible for not emitting duplicate events.
 
@@ -75,12 +71,10 @@ type HeartbeatEvent = {
 
 Replaces: `taskSnapshotReceived`, `taskUpdated`, `taskDeleted`
 
-**When emitted**: Whenever the Worker has a new authoritative task list for a stage that has already started. This includes:
-- Initial snapshot on subscription start (only for stages that have started)
+**When emitted**: Whenever the Worker has a new authoritative task list for a stage. This includes:
+- Initial snapshot on subscription start
 - After any task status change (the Worker sends the full updated list)
 - When all tasks for a stage are removed (empty array)
-
-**Not emitted**: For stages that have not yet started. A stage that has not started has no `stageStartedAt` and no tasks; emitting a snapshot for it would require a sentinel value, which is a contract violation.
 
 **Payload**:
 
@@ -90,7 +84,7 @@ type StageSnapshotUpdatedEvent = {
   payload: {
     stageId: StageId;
     tasks: TaskSummary[];          // full replacement — empty array means zero tasks
-    stageStartedAt: number;        // timestamp when this stage first started (ms); required — only emitted after stage has started
+    stageStartedAt: number;        // timestamp when this stage first started (ms)
     stageInactiveMs: number;       // cumulative inactive (paused) duration for this stage (ms)
     stageCompletedAt?: number;     // timestamp when this stage last completed (ms); undefined if currently active
   };
@@ -140,7 +134,7 @@ type TaskProgressUpdatedEvent = {
 
 **UI-side effect**: Update `stageProgressAtom[stageId].value` and `.message` / `.metadata`.
 
-**Removed from payload**: `phase` (was previously included in `progressReceived` and erroneously retained in the design doc). Session phase is managed exclusively by `sessionStatusUpdated`. Mixing phase into progress events is the source of redundant phase updates.
+**Removed from payload**: `phase` (was previously included in `progressReceived`). Session phase is managed exclusively by `sessionStatusUpdated`. Mixing phase into progress events was the source of redundant phase updates.
 
 ---
 
@@ -258,4 +252,4 @@ The `BuildSessionWorkerEventAdapter` translates raw Worker wire events into the 
 3. Mapping Worker-side status strings to `SessionPhase` — unknown values throw.
 4. Splitting a multi-stage task snapshot into per-stage `stageSnapshotUpdated` events.
 
-The adapter does **not** perform deduplication or version gating. That responsibility is removed. `eventVersion` fields are not used; each event stream is applied unconditionally in FIFO order.
+The adapter does **not** perform deduplication or version gating. That responsibility is removed.
