@@ -85,13 +85,13 @@ describe('useTreeViewController', () => {
 
     it('should handle move failure gracefully', async () => {
       mockStateManager.moveNode = vi.fn().mockResolvedValue({
-        success: false,
+        result: false,
         error: 'Cannot move node',
       });
 
       const { result } = renderHook(() => useTreeViewController(mockProps));
 
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
 
       await act(async () => {
         await result.current.moveNode('$1' as NodeId, '$2' as NodeId, 0);
