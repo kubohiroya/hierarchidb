@@ -11,6 +11,8 @@ import type {
     TaskProgressUpdatedEvent,
     HeartbeatEvent,
 } from '~/common/types/session-events';
+import type { BuildTaskSummary, TaskStage, ProgressPhase } from '@hierarchidb/build-api';
+import type { AdapterStageSnapshotUpdatedEvent } from '@hierarchidb/ui-build-sessions';
 import { UIEventBufferManager, type BufferedEvent } from './eventBufferingUI';
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
@@ -140,13 +142,50 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             flushTimerId = window.setTimeout(flushProgressBuffer, 0);
         };
 
+        const resolveProgressPhase = (value: string): ProgressPhase => {
+            if (
+                value === 'idle' || value === 'queued' || value === 'running' ||
+                value === 'paused' || value === 'completed' || value === 'failed' || value === 'recycled'
+            ) {
+                return value;
+            }
+            throw new Error(`[useShapeBuildSessionStateAtomBridge] unknown task status: ${value}`);
+        };
+
+        const toAdapterStageSnapshotEvent = (event: StageSnapshotUpdatedEvent): AdapterStageSnapshotUpdatedEvent => {
+            const tasks: BuildTaskSummary[] = event.payload.tasks.map((task) => {
+                const stage = resolveShapeStageId(task.stage);
+                if (stage === undefined) {
+                    throw new Error(`[useShapeBuildSessionStateAtomBridge] unknown stage in snapshot: ${String(task.stage)}`);
+                }
+                return {
+                    taskId: task.taskId,
+                    version: task.version,
+                    stage: stage as TaskStage,
+                    status: resolveProgressPhase(task.status),
+                    progress: task.progress,
+                    errorMessage: task.errorMessage,
+                };
+            });
+            return {
+                type: 'stageSnapshotUpdated',
+                payload: {
+                    stageId: event.payload.stageId,
+                    tasks,
+                    stageStartedAt: event.payload.stageStartedAt,
+                    stageInactiveMs: event.payload.stageInactiveMs,
+                    stageCompletedAt: event.payload.stageCompletedAt,
+                },
+            };
+        };
+
         const processStageSnapshotEvent = (event: StageSnapshotUpdatedEvent): void => {
             const snapshotStages = new Set<ShapeStageId>();
             for (const task of event.payload.tasks) {
                 const stageId = resolveShapeStageId(task.stage);
                 if (stageId) snapshotStages.add(stageId);
             }
-            adapter.onTaskEvent(event);
+            adapter.onTaskEvent(toAdapterStageSnapshotEvent(event));
             for (const stageId of SHAPE_STAGE_IDS) {
                 if (snapshotStages.size > 0 && !snapshotStages.has(stageId)) continue;
                 dispatchUiSyncPhase(stageId, 'running');

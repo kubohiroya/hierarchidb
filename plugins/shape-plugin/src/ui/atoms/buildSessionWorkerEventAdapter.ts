@@ -1,7 +1,5 @@
-import type { BuildTaskSummary } from '@hierarchidb/build-api';
 import {
   createBuildSessionWorkerEventAdapter as createCommonBuildSessionWorkerEventAdapter,
-  type BuildSessionStateEvent,
   type BuildSessionWorkerEventAdapter,
 } from '@hierarchidb/ui-build-sessions';
 import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
@@ -22,25 +20,6 @@ const isShapeBuildStopReason = (value: unknown): value is ShapeBuildStopReason =
   || value === 'unknown'
 );
 
-const toShapeEvent = (
-  event: BuildSessionStateEvent<ShapeStageId, ShapeSessionPhase, BuildTaskSummary>,
-): ShapeBuildSessionStateEvent => {
-  if (event.type !== 'sessionStatusUpdated') {
-    return event;
-  }
-  const stopReason = event.payload.stopReason;
-  if (stopReason !== undefined && !isShapeBuildStopReason(stopReason)) {
-    throw new Error(`[shape buildSessionWorkerEventAdapter] unsupported stopReason: ${String(stopReason)}`);
-  }
-  return {
-    ...event,
-    payload: {
-      ...event.payload,
-      stopReason,
-    },
-  };
-};
-
 const mapRuntimeStatusToPhase = (status: string): ShapeSessionPhase => {
   if (status === 'idle') return 'idle';
   if (status === 'starting') return 'starting';
@@ -55,22 +34,29 @@ const mapRuntimeStatusToPhase = (status: string): ShapeSessionPhase => {
   throw new Error(`[shape buildSessionWorkerEventAdapter] unsupported runtime status: ${status}`);
 };
 
-const isActivePhase = (phase: ShapeSessionPhase): boolean => (
-  phase === 'starting'
-  || phase === 'queued'
-  || phase === 'running'
-  || phase === 'pausing'
-  || phase === 'resuming'
-  || phase === 'finalizing'
-);
-
 export const createBuildSessionWorkerEventAdapter = (
   nodeId: string,
   dispatch: (event: ShapeBuildSessionStateEvent) => void,
 ): BuildSessionWorkerEventAdapter => {
   return createCommonBuildSessionWorkerEventAdapter<ShapeStageId, ShapeSessionPhase>(
     nodeId,
-    (event) => dispatch(toShapeEvent(event)),
+    (event) => {
+      if (event.type !== 'sessionStatusUpdated') {
+        dispatch(event);
+        return;
+      }
+      const stopReason = event.payload.stopReason;
+      if (stopReason !== undefined && !isShapeBuildStopReason(stopReason)) {
+        throw new Error(`[shape buildSessionWorkerEventAdapter] unsupported stopReason: ${String(stopReason)}`);
+      }
+      dispatch({
+        ...event,
+        payload: {
+          ...event.payload,
+          stopReason,
+        },
+      });
+    },
     {
       stages: ['source', 'geometry', 'tileEmit'] as const,
       resolveStageId: resolveShapeStageId,

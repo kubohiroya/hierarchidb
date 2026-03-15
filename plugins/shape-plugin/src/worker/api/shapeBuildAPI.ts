@@ -4,7 +4,7 @@ import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import type {
   SessionStatusUpdatedEvent,
   StageSnapshotUpdatedEvent,
-  SessionHeartbeatEvent,
+  HeartbeatEvent,
   TaskProgressUpdatedEvent,
   WorkerLogEvent,
 } from '~/common/types/session-events';
@@ -499,14 +499,14 @@ export const shapeBuildAPI = {
     };
   },
 
-  subscribeToHeartbeat: (nodeId: NodeId, callback: (event: SessionHeartbeatEvent) => void): (() => void) => {
+  subscribeToHeartbeat: (nodeId: NodeId, callback: (event: HeartbeatEvent) => void): (() => void) => {
     const key = String(nodeId);
     const existing = shapeBuildRuntimeCore.heartbeatCallbacks.get(key);
     existing?.unsubscribe?.();
 
     // Subscribe to unconditional event stream
     const unsubscribeStream = unconditionalEventStreamer.subscribe(nodeId, 'heartbeat', (event) => {
-      callback(event as SessionHeartbeatEvent);
+      callback(event as HeartbeatEvent);
     });
 
     const unsubscribe = () => {

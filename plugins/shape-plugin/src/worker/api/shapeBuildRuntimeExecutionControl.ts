@@ -969,8 +969,6 @@ const startBuildSessionInternal = async (
     void shapeMutationAPIImpl.updateBuildSession(nodeForSession, {
       stageHeartbeatAt: Date.now(),
     }).catch(() => { });
-    let terminalProgressMessage: string | undefined;
-
     // Handle empty builds (no selections and no download payloads)
     if (selectedAdminPairCount === 0 && downloadTaskPayloads.length === 0) {
       console.warn(`[shapeBuildAPI] ${startupScope} empty build - completing immediately`, {
@@ -978,7 +976,6 @@ const startBuildSessionInternal = async (
         runId: pipelineRunId,
       });
       const completedAt = Date.now();
-      terminalProgressMessage = 'Empty build completed successfully (no selections).';
       await updateBuildSessionFromTasks(nodeForSession, {
         status: 'completed',
         stopReason: 'completed',
@@ -1003,7 +1000,6 @@ const startBuildSessionInternal = async (
         runId: pipelineRunId,
       });
       const completedAt = Date.now();
-      terminalProgressMessage = 'Empty build completed successfully (no selections).';
       await updateBuildSessionFromTasks(nodeForSession, {
         status: 'completed',
         stopReason: 'completed',
@@ -1046,7 +1042,6 @@ const startBuildSessionInternal = async (
         runId: pipelineRunId,
       });
       const completedAt = Date.now();
-      terminalProgressMessage = undefined;
       const taskQueue = new VtTaskQueueDb();
       const tasks = await listTasks(taskQueue, nodeForSession);
       const terminalTaskStatus = summarizeTaskQueueStatus(tasks).status;
@@ -1058,7 +1053,6 @@ const startBuildSessionInternal = async (
         canResume: false,
       });
       if (pipelineFinishedWithFailure) {
-        terminalProgressMessage = 'Pipeline finished with failed tasks.';
       }
     }).catch(async (error) => {
       console.error('[shapeBuildAPI] runShapePipeline failed with error', {
@@ -1075,7 +1069,6 @@ const startBuildSessionInternal = async (
       const failedAt = Date.now();
       const diagnostics = toErrorDiagnostics(error);
       if (isAuthPendingPipelineError(error)) {
-        terminalProgressMessage = 'Authentication required. Build paused. Resume after sign-in.';
         await updateBuildSessionFromTasks(nodeForSession, {
           status: 'paused',
           stopReason: 'user-pause',
@@ -1095,7 +1088,6 @@ const startBuildSessionInternal = async (
           failedAt,
           ...diagnostics,
         }));
-        terminalProgressMessage = `Metadata error: ${diagnostics.errorMessage}`;
         await updateBuildSessionFromTasks(nodeForSession, {
           status: 'failed',
           stopReason: 'failed',
@@ -1115,7 +1107,6 @@ const startBuildSessionInternal = async (
         failedAt,
         ...diagnostics,
       }));
-      terminalProgressMessage = `Pipeline failed (${diagnostics.errorName ?? 'Error'}): ${diagnostics.errorMessage}`;
       await updateBuildSessionFromTasks(nodeForSession, {
         status: 'failed',
         stopReason: 'failed',

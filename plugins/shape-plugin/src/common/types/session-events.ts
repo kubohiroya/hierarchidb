@@ -87,7 +87,6 @@ export interface TaskSummary {
     progress: number;
     version: number;
     errorMessage?: string;
-    [key: string]: unknown;
 }
 
 /**

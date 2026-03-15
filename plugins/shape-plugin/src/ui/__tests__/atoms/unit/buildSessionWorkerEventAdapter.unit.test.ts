@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createStore } from 'jotai/vanilla';
-import type { BuildProgressEvent, BuildSessionRuntimeRecord, BuildTaskUpdateEvent } from '@hierarchidb/build-api';
+import type { BuildSessionRuntimeRecord } from '@hierarchidb/build-api';
+import type {
+  AdapterSessionStatusUpdatedEvent,
+  AdapterStageSnapshotUpdatedEvent,
+  AdapterTaskProgressUpdatedEvent,
+  AdapterHeartbeatEvent,
+} from '@hierarchidb/ui-build-sessions';
 import {
   buildSessionLifecycleAtom,
   buildSessionStageCountersAtom,
@@ -45,18 +51,22 @@ describe('buildSessionWorkerEventAdapter', () => {
   it('maps task pub/sub snapshot to stage counters', () => {
     const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
 
-    const snapshotEvent: BuildTaskUpdateEvent = {
-      type: 'snapshot',
-      nodeId: 'node-1',
-      tasks: [
-        {
-          taskId: 's-1',
-          version: 1,
-          stage: 'source',
-          status: 'queued',
-          progress: 0,
-        },
-      ],
+    const snapshotEvent: AdapterStageSnapshotUpdatedEvent = {
+      type: 'stageSnapshotUpdated',
+      payload: {
+        stageId: 'source',
+        tasks: [
+          {
+            taskId: 's-1',
+            version: 1,
+            stage: 'source',
+            status: 'queued',
+            progress: 0,
+          },
+        ],
+        stageStartedAt: 1,
+        stageInactiveMs: 0,
+      },
     };
     adapter.onTaskEvent(snapshotEvent);
 
@@ -69,22 +79,30 @@ describe('buildSessionWorkerEventAdapter', () => {
     const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
 
     adapter.onTaskEvent({
-      type: 'snapshot',
-      nodeId: 'node-1',
-      tasks: [
-        { taskId: 's-1', version: 1, stage: 'source', status: 'queued', progress: 0 },
-        { taskId: 's-2', version: 1, stage: 'source', status: 'running', progress: 10 },
-      ],
+      type: 'stageSnapshotUpdated',
+      payload: {
+        stageId: 'source',
+        tasks: [
+          { taskId: 's-1', version: 1, stage: 'source', status: 'queued', progress: 0 },
+          { taskId: 's-2', version: 1, stage: 'source', status: 'running', progress: 10 },
+        ],
+        stageStartedAt: 1,
+        stageInactiveMs: 0,
+      },
     });
     expect(store.get(buildSessionStageCountersAtom).source.total).toBe(2);
 
     // Second snapshot replaces entirely
     adapter.onTaskEvent({
-      type: 'snapshot',
-      nodeId: 'node-1',
-      tasks: [
-        { taskId: 's-1', version: 2, stage: 'source', status: 'completed', progress: 100 },
-      ],
+      type: 'stageSnapshotUpdated',
+      payload: {
+        stageId: 'source',
+        tasks: [
+          { taskId: 's-1', version: 2, stage: 'source', status: 'completed', progress: 100 },
+        ],
+        stageStartedAt: 1,
+        stageInactiveMs: 0,
+      },
     });
 
     const counters = store.get(buildSessionStageCountersAtom).source;
@@ -93,31 +111,15 @@ describe('buildSessionWorkerEventAdapter', () => {
     expect(counters.running).toBe(0);
   });
 
-  it('throws on task update event (only snapshot is supported)', () => {
-    const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
-    const updateEvent: BuildTaskUpdateEvent = {
-      type: 'update',
-      nodeId: 'node-1',
-      task: { taskId: 's-1', version: 4, stage: 'source', status: 'completed', progress: 100 },
-    };
-    expect(() => adapter.onTaskEvent(updateEvent)).toThrowError(
-      "unexpected task event type: update. Only 'snapshot' is supported.",
-    );
-  });
-
   it('maps progress pub/sub event to taskProgressUpdated and updates stage progress', () => {
     const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
-    const progressEvent: BuildProgressEvent = {
-      nodeId: 'node-1',
-      stage: 'geometry',
-      phase: 'running',
-      timestamp: Date.now(),
+    const progressEvent: AdapterTaskProgressUpdatedEvent = {
+      type: 'taskProgressUpdated',
       payload: {
-        percentage: 42,
-        total: 10,
-        completed: 4,
+        stageId: 'geometry',
+        value: 42,
+        message: 'geometry running',
       },
-      message: 'geometry running',
     };
 
     adapter.onProgressEvent(progressEvent);
@@ -126,36 +128,19 @@ describe('buildSessionWorkerEventAdapter', () => {
     expect(progress.geometry).toBe(42);
   });
 
-  it('throws when progress payload.percentage is missing', () => {
-    const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
-    const progressEvent: BuildProgressEvent = {
-      nodeId: 'node-1',
-      stage: 'geometry',
-      phase: 'running',
-      timestamp: Date.now(),
-      payload: {
-        total: 10,
-        completed: 4,
-      },
-      message: 'geometry running',
-    };
-
-    expect(() => {
-      adapter.onProgressEvent(progressEvent);
-    }).toThrowError('[shape buildSessionWorkerEventAdapter] progress payload.percentage must be a finite number, received undefined');
-  });
-
   it('maps onSessionState to sessionStatusUpdated with stopReason', () => {
     const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
-    adapter.onSessionState({
-      nodeId: 'node-1',
-      sessionRecord: {
-        status: 'running',
+    const sessionEvent: AdapterSessionStatusUpdatedEvent = {
+      type: 'sessionStatusUpdated',
+      payload: {
+        nodeId: 'node-1',
+        phase: 'running',
+        isActive: true,
         startedAt: 10,
-        stageHeartbeatAt: 90,
         stopReason: 'route-leave',
       },
-    });
+    };
+    adapter.onSessionState(sessionEvent);
 
     const runtime = store.get(buildSessionLifecycleAtom);
     expect(runtime.phase).toBe('running');
@@ -165,15 +150,17 @@ describe('buildSessionWorkerEventAdapter', () => {
 
   it('stores stage timing from stageSnapshotUpdated via onTaskEvent', () => {
     const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
-    // onTaskEvent snapshot sets stageStartedAt via stageSnapshotUpdated
     adapter.onTaskEvent({
-      type: 'snapshot',
-      nodeId: 'node-1',
-      tasks: [{ taskId: 's-1', version: 50, stage: 'geometry', status: 'running', progress: 10 }],
+      type: 'stageSnapshotUpdated',
+      payload: {
+        stageId: 'geometry',
+        tasks: [{ taskId: 's-1', version: 50, stage: 'geometry', status: 'running', progress: 10 }],
+        stageStartedAt: 50,
+        stageInactiveMs: 0,
+      },
     });
 
     const timing = store.get(stageTimingByStageAtom);
-    // stageStartedAt is derived from task version when no explicit version on event
     expect(timing.geometry).not.toBeNull();
     expect(timing.geometry?.stageInactiveMs).toBe(0);
   });
@@ -182,12 +169,12 @@ describe('buildSessionWorkerEventAdapter', () => {
     const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
     expect(() => {
       adapter.onSessionState({
-        nodeId: 'node-1',
-        sessionRecord: {
-          status: 'running',
+        type: 'sessionStatusUpdated',
+        payload: {
+          nodeId: 'node-1',
+          phase: 'running',
+          isActive: true,
           startedAt: 10,
-          stageHeartbeatAt: 20,
-          stageId: 'geometry',
           stopReason: 'invalid-stop-reason',
         },
       });
@@ -197,7 +184,11 @@ describe('buildSessionWorkerEventAdapter', () => {
   it('maps connection and heartbeat events', () => {
     const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
     adapter.onTaskStreamConnectionChanged(true);
-    adapter.onHeartbeat({ nodeId: 'node-1', heartbeatAt: 55 });
+    const heartbeatEvent: AdapterHeartbeatEvent = {
+      type: 'heartbeat',
+      payload: { nodeId: 'node-1', heartbeatAt: 55 },
+    };
+    adapter.onHeartbeat(heartbeatEvent);
 
     expect(store.get(buildSessionTaskStreamConnectedAtom)).toBe(true);
     const runtime = store.get(buildSessionLifecycleAtom);
@@ -209,9 +200,11 @@ describe('buildSessionWorkerEventAdapter', () => {
   it('maps onSessionState with status queued to phase queued (isActive=true)', () => {
     const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
     adapter.onSessionState({
-      nodeId: 'node-1',
-      sessionRecord: {
-        status: 'queued',
+      type: 'sessionStatusUpdated',
+      payload: {
+        nodeId: 'node-1',
+        phase: 'queued',
+        isActive: true,
         startedAt: 100,
       },
     });

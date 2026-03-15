@@ -133,5 +133,5 @@ export const emitHeartbeat = (nodeId: NodeId, heartbeatAt: number): void => {
         type: 'heartbeat',
         payload: { nodeId: String(nodeId), heartbeatAt },
     };
-    unconditionalEventStreamer.emitEvent(nodeId, 'heartbeat', event);
+    unconditionalEventStreamer.emitHeartbeat(nodeId, event);
 };
