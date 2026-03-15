@@ -2,10 +2,10 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildContinuationPolicy, BuildTaskSummary, BuildTaskUpdateEvent, BuildProgressEvent } from '@hierarchidb/build-api';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import type {
-  SessionStatusUpdatedEvent,
-  StageSnapshotUpdatedEvent,
+  SessionStateChangeEvent,
+  StageSnapshotEvent,
   SessionHeartbeatEvent,
-  TaskProgressUpdatedEvent,
+  TaskProgressEvent,
   WorkerLogEvent,
 } from '~/common/types/session-events';
 import {
@@ -447,14 +447,14 @@ export const shapeBuildAPI = {
   // Real-time Session State Subscription (4 channels)
   // ===================================
 
-  subscribeToSessionState: (nodeId: NodeId, callback: (event: SessionStatusUpdatedEvent) => void): (() => void) => {
+  subscribeToSessionState: (nodeId: NodeId, callback: (event: SessionStateChangeEvent) => void): (() => void) => {
     const key = String(nodeId);
     const existing = shapeBuildRuntimeCore.sessionStateCallbacks.get(key);
     existing?.unsubscribe?.();
 
     // Subscribe to unconditional event stream
     const unsubscribeStream = unconditionalEventStreamer.subscribe(nodeId, 'session-state', (event) => {
-      callback(event as SessionStatusUpdatedEvent);
+      callback(event as SessionStateChangeEvent);
     });
 
     const unsubscribe = () => {
@@ -473,14 +473,14 @@ export const shapeBuildAPI = {
     };
   },
 
-  subscribeToStageSnapshots: (nodeId: NodeId, callback: (event: StageSnapshotUpdatedEvent) => void): (() => void) => {
+  subscribeToStageSnapshots: (nodeId: NodeId, callback: (event: StageSnapshotEvent) => void): (() => void) => {
     const key = String(nodeId);
     const existing = shapeBuildRuntimeCore.stageSnapshotCallbacks.get(key);
     existing?.unsubscribe?.();
 
     // Subscribe to unconditional event stream
     const unsubscribeStream = unconditionalEventStreamer.subscribe(nodeId, 'stage-snapshot', (event) => {
-      callback(event as StageSnapshotUpdatedEvent);
+      callback(event as StageSnapshotEvent);
     });
 
     const unsubscribe = () => {
@@ -525,14 +525,14 @@ export const shapeBuildAPI = {
     };
   },
 
-  subscribeToTaskProgress: (nodeId: NodeId, callback: (event: TaskProgressUpdatedEvent) => void): (() => void) => {
+  subscribeToTaskProgress: (nodeId: NodeId, callback: (event: TaskProgressEvent) => void): (() => void) => {
     const key = String(nodeId);
     const existing = shapeBuildRuntimeCore.taskProgressCallbacks.get(key);
     existing?.unsubscribe?.();
 
     // Subscribe to unconditional event stream
     const unsubscribeStream = unconditionalEventStreamer.subscribe(nodeId, 'task-progress', (event) => {
-      callback(event as TaskProgressUpdatedEvent);
+      callback(event as TaskProgressEvent);
     });
 
     const unsubscribe = () => {
