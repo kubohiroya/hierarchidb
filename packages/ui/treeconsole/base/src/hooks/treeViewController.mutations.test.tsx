@@ -56,7 +56,7 @@ describe('useTreeViewController', () => {
 
   describe('moveNode', () => {
     it('should move node and update atoms on success', async () => {
-      mockStateManager.moveNode = vi.fn().mockResolvedValue({ success: true });
+      mockStateManager.moveNode = vi.fn().mockResolvedValue({ result: true });
 
       const { result } = renderHook(() => useTreeViewController(mockProps));
 
@@ -68,7 +68,7 @@ describe('useTreeViewController', () => {
     });
 
     it('should update expanded nodes if parent is collapsed', async () => {
-      mockStateManager.moveNode = vi.fn().mockResolvedValue({ success: true });
+      mockStateManager.moveNode = vi.fn().mockResolvedValue({ result: true });
 
       const { result } = renderHook(() => useTreeViewController(mockProps));
 
@@ -85,7 +85,7 @@ describe('useTreeViewController', () => {
 
     it('should handle move failure gracefully', async () => {
       mockStateManager.moveNode = vi.fn().mockResolvedValue({
-        success: false,
+        result: false,
         error: 'Cannot move node',
       });
 
@@ -102,7 +102,7 @@ describe('useTreeViewController', () => {
     });
 
     it('should update node order in atoms after successful move', async () => {
-      mockStateManager.moveNode = vi.fn().mockResolvedValue({ success: true });
+      mockStateManager.moveNode = vi.fn().mockResolvedValue({ result: true });
       mockStateManager.getChildren = vi
         .fn()
         .mockResolvedValue([{ id: 'node-2' }, { id: 'node-1' }, { id: 'node-3' }]);
@@ -119,7 +119,7 @@ describe('useTreeViewController', () => {
 
   describe('deleteNode', () => {
     it('should delete node and update atoms on success', async () => {
-      mockStateManager.deleteNode = vi.fn().mockResolvedValue({ success: true });
+      mockStateManager.deleteNode = vi.fn().mockResolvedValue({ result: true });
 
       const { result } = renderHook(() => useTreeViewController(mockProps));
 
@@ -136,7 +136,7 @@ describe('useTreeViewController', () => {
     });
 
     it('should remove deleted node from selection', async () => {
-      mockStateManager.deleteNode = vi.fn().mockResolvedValue({ success: true });
+      mockStateManager.deleteNode = vi.fn().mockResolvedValue({ result: true });
 
       const { result } = renderHook(() => useTreeViewController(mockProps));
 
@@ -157,7 +157,7 @@ describe('useTreeViewController', () => {
     });
 
     it.skip('should remove deleted node from expanded nodes', async () => {
-      mockStateManager.deleteNode = vi.fn().mockResolvedValue({ success: true });
+      mockStateManager.deleteNode = vi.fn().mockResolvedValue({ result: true });
 
       const { result } = renderHook(() => useTreeViewController(mockProps));
 
@@ -185,7 +185,7 @@ describe('useTreeViewController', () => {
       };
 
       mockStateManager.getNode = vi.fn().mockResolvedValue(mockNode);
-      mockStateManager.deleteNode = vi.fn().mockResolvedValue({ success: true });
+      mockStateManager.deleteNode = vi.fn().mockResolvedValue({ result: true });
 
       const { result } = renderHook(() => useTreeViewController(mockProps));
 
