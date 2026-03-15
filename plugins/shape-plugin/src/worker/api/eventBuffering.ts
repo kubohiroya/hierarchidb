@@ -9,10 +9,10 @@
 
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
-    SessionStateChangeEvent,
-    StageSnapshotEvent,
-    TaskProgressEvent,
-    SessionHeartbeatEvent,
+    SessionStatusUpdatedEvent,
+    StageSnapshotUpdatedEvent,
+    TaskProgressUpdatedEvent,
+    HeartbeatEvent,
     WorkerLogEvent,
     CriticalErrorEvent,
 } from '~/common/types/session-events';
@@ -26,10 +26,10 @@ type NotificationType =
     | 'heartbeat';
 
 type EventPayload =
-    | SessionStateChangeEvent
-    | StageSnapshotEvent
-    | TaskProgressEvent
-    | SessionHeartbeatEvent
+    | SessionStatusUpdatedEvent
+    | StageSnapshotUpdatedEvent
+    | TaskProgressUpdatedEvent
+    | HeartbeatEvent
     | WorkerLogEvent
     | CriticalErrorEvent;
 
@@ -69,7 +69,7 @@ class UnconditionalEventStreamer {
     emitEvent(
         nodeId: NodeId,
         eventType: Exclude<NotificationType, 'heartbeat'>,
-        event: Exclude<EventPayload, SessionHeartbeatEvent>,
+        event: Exclude<EventPayload, HeartbeatEvent>,
     ): void {
         this.deliver(nodeId, eventType, event);
     }
@@ -77,7 +77,7 @@ class UnconditionalEventStreamer {
     /**
      * Emit a heartbeat event to all current subscribers for the given node.
      */
-    emitHeartbeat(nodeId: NodeId, event: SessionHeartbeatEvent): void {
+    emitHeartbeat(nodeId: NodeId, event: HeartbeatEvent): void {
         this.deliver(nodeId, 'heartbeat', event);
     }
 
