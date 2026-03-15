@@ -21,3 +21,8 @@ export {
   createPluginTabularApi,
 } from './services/spreadsheetTabularApiFactory.js';
 export type { PluginTabularApiOptions } from './services/spreadsheetTabularApiFactory.js';
+// ui (expanded from ui/index.js to avoid export * causing shared DTS chunks)
+export { KeyValueSourcePanel } from './ui/components/KeyValueSourcePanel.js';
+export { TabularDataSourceStep } from './ui/components/steps/TabularDataSourceStep.js';
+export { TabularDataFilterStep } from './ui/components/steps/TabularDataFilterStep.js';
+export { tabularRowsAtom } from './ui/state/tabularKeyValueAtoms.js';
