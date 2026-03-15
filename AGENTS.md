@@ -10,6 +10,12 @@
 - 常に圧縮・明確化を優先し、重複記述を残さない。
 - 不具合報告では必ず「原因 / 発生範囲 / 修正方法 / 適用範囲」を示す。
 
+## 仕様書の更新ルール（必須）
+
+- 実装上の判断（設計変更・仕様の解釈確定・矛盾解消）が会話またはコードで確定したら、対応する `docs/` 配下の仕様書を**同じタイミングで**更新する。
+- 仕様書の更新を後回しにすることを禁止する。「あとで直す」は仕様書と実装の乖離を生む。
+- 仕様書に矛盾を発見した場合は、実装に着手する前にユーザーに報告し、仕様書を修正してから実装する。
+
 ## 高優先ルール（非交渉）
 
 - 契約違反の隠蔽を禁止する（高優先）。
@@ -27,12 +33,13 @@
 
 ## 実装着手ゲート（順番固定）
 
-1. DoD を提示し、ユーザー承認を得る。
-2. `gh issue create` で Issue を起票。
-3. Issue を Project に追加し `Status=Doing` を設定。
-4. ブランチ作成（`<type>/<scope>/<slug>`）。
-5. `TASKS.md` の `Doing` に `#<issue> / branch / start` を1行記録。
-6. ここまで完了後に、コード編集・検証コマンドを開始する。
+1. **仕様書・設計書の確認（必須）**: 対象コンポーネント・機能に関連する `docs/` 配下の仕様書・設計書を必ず読む。仕様書が存在するにもかかわらず参照せずに実装・修正を行うことを禁止する。仕様書と実装の乖離を発見した場合は、修正前にユーザーに報告する。
+2. DoD を提示し、ユーザー承認を得る。
+3. `gh issue create` で Issue を起票。
+4. Issue を Project に追加し `Status=Doing` を設定。
+5. ブランチ作成（`<type>/<scope>/<slug>`）。
+6. `TASKS.md` の `Doing` に `#<issue> / branch / start` を1行記録。
+7. ここまで完了後に、コード編集・検証コマンドを開始する。
 
 ## 起票失敗時の扱い
 
@@ -42,6 +49,8 @@
 
 ## 禁止事項
 
+- 仕様書・設計書を参照せずに実装・修正を行うこと（`docs/` 配下に関連文書が存在する場合）。
+- 仕様書と実装の乖離をユーザーに報告せずに放置・隠蔽すること。
 - Issue 未起票の実装・修正・コミット。
 - Issue番号なし PR 作成。
 - `TASKS.md` の台帳化（Done 詳細・検証本文の持ち込み）。
@@ -141,6 +150,16 @@
 - `docs/ts-file-naming-guideline.md`
 - `docs/draft-dialog-hosting.md`
 - `PLANS.md`（大規模変更時の ExecPlan）
+
+## 仕様書・設計書の所在（shape plugin）
+
+実装・修正・調査の際は以下を最初に参照すること。
+
+- `docs/build-session-spec.md` — ビルドセッションライフサイクル・タスクステータス・ステージ進行規則
+- `docs/build-session-worker-ui-event-spec.md` — Worker→UI イベントの正規仕様（イベント型・ペイロード契約・UI atom 更新規則）
+- `docs/build-session-worker-ui-event-design.md` — 同仕様の設計詳細
+- `docs/shape-build-session-ssot-execplan.md` — SSOT リファクタの ExecPlan
+- `docs/vt-shape-pipeline-design.md` — shape パイプライン設計
 
 ## Git ワークツリー運用（並列作業・標準手順）
 

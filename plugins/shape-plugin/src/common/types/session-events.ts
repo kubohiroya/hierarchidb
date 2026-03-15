@@ -1,52 +1,97 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 
 /**
- * Session state change event for real-time subscription
+ * Session lifecycle phase — canonical set per build-session-worker-ui-event-spec.md
  */
-export interface SessionStateChangeEvent {
-    nodeId: NodeId;
-    timestamp: number;
-    previousStatus?: ShapeBuildSessionRecord['status'];
-    currentStatus: ShapeBuildSessionRecord['status'];
-    sessionRecord: ShapeBuildSessionRecord;
+export type SessionPhase =
+    | 'idle'
+    | 'starting'
+    | 'running'
+    | 'pausing'
+    | 'paused'
+    | 'resuming'
+    | 'finalizing'
+    | 'completed'
+    | 'failed';
+
+/**
+ * sessionStatusUpdated — replaces runtimeSnapshotReceived + sessionRecordReceived.
+ * Emitted on every lifecycle phase change and on initial subscription.
+ */
+export interface SessionStatusUpdatedEvent {
+    type: 'sessionStatusUpdated';
+    payload: {
+        nodeId: string;
+        phase: SessionPhase;
+        isActive: boolean;
+        startedAt?: number;
+        completedAt?: number;
+        stopReason?: string;
+        stageId?: string;
+        inactiveMs?: number;
+        stageStartedAt?: number;
+        stageInactiveMs?: number;
+    };
 }
 
 /**
- * Stage snapshot replacement event
+ * stageSnapshotUpdated — replaces taskSnapshotReceived + taskUpdated + taskDeleted.
+ * Full replacement of the task list for one stage that has already started.
+ * Must NOT be emitted for stages that have not yet started (stageStartedAt required).
  */
-export interface StageSnapshotEvent {
-    nodeId: NodeId;
-    timestamp: number;
-    stageId: string;
-    snapshot: Record<string, unknown>;
+export interface StageSnapshotUpdatedEvent {
+    type: 'stageSnapshotUpdated';
+    payload: {
+        stageId: string;
+        tasks: TaskSummary[];
+        stageStartedAt: number;   // required — only emitted after stage has started
+        stageInactiveMs: number;
+        stageCompletedAt?: number;
+    };
 }
 
 /**
- * Heartbeat event (1 second interval)
+ * taskProgressUpdated — replaces progressReceived.
+ * Progress value for a single task from a parallel worker.
+ * phase field is intentionally absent (managed by sessionStatusUpdated only).
  */
-export interface SessionHeartbeatEvent {
-    nodeId: NodeId;
-    timestamp: number;
-    isActive: boolean;
-    lastActivity: number;
+export interface TaskProgressUpdatedEvent {
+    type: 'taskProgressUpdated';
+    payload: {
+        stageId: string;
+        value: number;            // finite, 0..100 — violation throws
+        message?: string;
+        metadata?: Record<string, unknown>;
+    };
 }
 
 /**
- * Task progress event (individual task updates)
+ * heartbeat — periodic liveness signal (~1 s interval).
+ * Must not carry phase or task data.
  */
-export interface TaskProgressEvent {
-    nodeId: NodeId;
-    timestamp: number;
+export interface HeartbeatEvent {
+    type: 'heartbeat';
+    payload: {
+        nodeId: string;
+        heartbeatAt: number;      // finite timestamp (ms) — violation throws
+    };
+}
+
+/**
+ * Minimal task summary carried inside StageSnapshotUpdatedEvent.
+ */
+export interface TaskSummary {
     taskId: string;
     stage: string;
-    progress: number;
     status: string;
-    metadata?: Record<string, unknown>;
+    progress: number;
+    version: number;
+    errorMessage?: string;
+    [key: string]: unknown;
 }
 
 /**
- * Worker log event (for debugging and monitoring)
+ * Worker log event (debugging / monitoring — not part of the 4-event canonical set).
  */
 export interface WorkerLogEvent {
     nodeId: NodeId;
@@ -57,7 +102,7 @@ export interface WorkerLogEvent {
 }
 
 /**
- * Critical error event (for contract violation and critical failures)
+ * Critical error event (contract violation detected in UI layer).
  */
 export interface CriticalErrorEvent {
     nodeId: NodeId;
@@ -70,58 +115,10 @@ export interface CriticalErrorEvent {
 }
 
 /**
- * Unified session event types
+ * Union of all canonical Worker→UI events.
  */
-export type SessionEvent =
-    | SessionStateChangeEvent
-    | StageSnapshotEvent
-    | SessionHeartbeatEvent
-    | TaskProgressEvent
-    | WorkerLogEvent
-    | CriticalErrorEvent;
-
-/**
- * Session event subscription callback
- */
-export type SessionEventCallback = (event: SessionEvent) => void;
-
-/**
- * Session subscription interfaces (specific callbacks for each event type)
- */
-export interface SessionStateSubscription {
-    unsubscribe?: () => void;
-    callback?: (event: SessionStateChangeEvent) => void;
-}
-
-export interface StageSnapshotSubscription {
-    unsubscribe?: () => void;
-    callback?: (event: StageSnapshotEvent) => void;
-}
-
-export interface HeartbeatSubscription {
-    unsubscribe?: () => void;
-    callback?: (event: SessionHeartbeatEvent) => void;
-}
-
-export interface TaskProgressSubscription {
-    unsubscribe?: () => void;
-    callback?: (event: TaskProgressEvent) => void;
-}
-
-export interface WorkerLogSubscription {
-    unsubscribe?: () => void;
-    callback?: (event: WorkerLogEvent) => void;
-}
-
-export interface CriticalErrorSubscription {
-    unsubscribe?: () => void;
-    callback?: (event: CriticalErrorEvent) => void;
-}
-
-/**
- * Session subscription interface (generic)
- */
-export interface SessionSubscription {
-    unsubscribe?: () => void;
-    callback?: SessionEventCallback;
-}
+export type CanonicalSessionEvent =
+    | SessionStatusUpdatedEvent
+    | StageSnapshotUpdatedEvent
+    | TaskProgressUpdatedEvent
+    | HeartbeatEvent;

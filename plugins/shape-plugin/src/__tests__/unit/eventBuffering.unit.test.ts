@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { unconditionalEventStreamer } from '../../worker/api/eventBuffering';
-import type { SessionStateChangeEvent, SessionHeartbeatEvent, TaskProgressEvent } from '../../common/types/session-events';
+import type { SessionStatusUpdatedEvent, HeartbeatEvent, TaskProgressUpdatedEvent } from '../../common/types/session-events';
 import type { NodeId } from '@hierarchidb/core-types';
 
 describe('UnconditionalEventStreamer', () => {
@@ -31,11 +31,13 @@ describe('UnconditionalEventStreamer', () => {
             unconditionalEventStreamer.subscribe(testNodeId, 'session-state', anotherSuccessfulCallback);
 
             // Emit event
-            const testEvent: SessionStateChangeEvent = {
-                nodeId: testNodeId,
-                timestamp: Date.now(),
-                currentStatus: 'running',
-                sessionRecord: { status: 'running' } as SessionStateChangeEvent['sessionRecord'],
+            const testEvent: SessionStatusUpdatedEvent = {
+                type: 'sessionStatusUpdated',
+                payload: {
+                    nodeId: String(testNodeId),
+                    phase: 'running',
+                    isActive: true,
+                },
             };
 
             unconditionalEventStreamer.emitEvent(testNodeId, 'session-state', testEvent);
@@ -75,11 +77,12 @@ describe('UnconditionalEventStreamer', () => {
             unconditionalEventStreamer.subscribe(testNodeId, 'heartbeat', failingCallback);
 
             // Emit heartbeat event
-            const heartbeatEvent: SessionHeartbeatEvent = {
-                nodeId: testNodeId,
-                timestamp: Date.now(),
-                isActive: true,
-                lastActivity: Date.now(),
+            const heartbeatEvent: HeartbeatEvent = {
+                type: 'heartbeat',
+                payload: {
+                    nodeId: String(testNodeId),
+                    heartbeatAt: Date.now(),
+                },
             };
 
             unconditionalEventStreamer.emitHeartbeat(testNodeId, heartbeatEvent);
@@ -113,11 +116,13 @@ describe('UnconditionalEventStreamer', () => {
 
             unconditionalEventStreamer.subscribe(testNodeId, 'session-state', failingCallback);
 
-            const testEvent: SessionStateChangeEvent = {
-                nodeId: testNodeId,
-                timestamp: Date.now(),
-                currentStatus: 'running',
-                sessionRecord: { status: 'running' } as SessionStateChangeEvent['sessionRecord'],
+            const testEvent: SessionStatusUpdatedEvent = {
+                type: 'sessionStatusUpdated',
+                payload: {
+                    nodeId: String(testNodeId),
+                    phase: 'running',
+                    isActive: true,
+                },
             };
 
             unconditionalEventStreamer.emitEvent(testNodeId, 'session-state', testEvent);
@@ -151,11 +156,13 @@ describe('UnconditionalEventStreamer', () => {
 
             // Emit multiple events
             for (let i = 0; i < 3; i++) {
-                const testEvent: SessionStateChangeEvent = {
-                    nodeId: testNodeId,
-                    timestamp: Date.now(),
-                    currentStatus: 'running',
-                    sessionRecord: { status: 'running' } as SessionStateChangeEvent['sessionRecord'],
+                const testEvent: SessionStatusUpdatedEvent = {
+                    type: 'sessionStatusUpdated',
+                    payload: {
+                        nodeId: String(testNodeId),
+                        phase: 'running',
+                        isActive: true,
+                    },
                 };
                 unconditionalEventStreamer.emitEvent(testNodeId, 'session-state', testEvent);
             }
@@ -182,20 +189,21 @@ describe('UnconditionalEventStreamer', () => {
             unconditionalEventStreamer.subscribe(testNodeId, 'session-state', callback2);
             unconditionalEventStreamer.subscribe(testNodeId, 'task-progress', callback3);
 
-            const sessionEvent: SessionStateChangeEvent = {
-                nodeId: testNodeId,
-                timestamp: Date.now(),
-                currentStatus: 'running',
-                sessionRecord: { status: 'running' } as SessionStateChangeEvent['sessionRecord'],
+            const sessionEvent: SessionStatusUpdatedEvent = {
+                type: 'sessionStatusUpdated',
+                payload: {
+                    nodeId: String(testNodeId),
+                    phase: 'running',
+                    isActive: true,
+                },
             };
 
-            const progressEvent: TaskProgressEvent = {
-                nodeId: testNodeId,
-                timestamp: Date.now(),
-                taskId: 'task-1',
-                stage: 'source',
-                progress: 50,
-                status: 'running',
+            const progressEvent: TaskProgressUpdatedEvent = {
+                type: 'taskProgressUpdated',
+                payload: {
+                    stageId: 'source',
+                    value: 50,
+                },
             };
 
             unconditionalEventStreamer.emitEvent(testNodeId, 'session-state', sessionEvent);
