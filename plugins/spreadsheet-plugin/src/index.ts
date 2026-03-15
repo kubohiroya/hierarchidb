@@ -5,12 +5,19 @@ export type {
   SpreadsheetEntity,
   UploadedFileSummary,
 } from './common/types/SpreadsheetEntity.js';
-export * from './common/constants.js';
-export * from './services/index.js';
-export { createPluginTabularApi } from './services/spreadsheetTabularApiFactory.js';
+// constants (expanded from common/constants.js to avoid export * causing shared DTS chunks)
 export {
-  KeyValueSourcePanel,
-  TabularDataSourceStep,
-  TabularDataFilterStep,
-  tabularRowsAtom,
-} from './ui/index.js';
+  SPREADSHEET_PLUGIN_ID,
+  SPREADSHEET_PLUGIN_VERSION,
+  SPREADSHEET_NODE_TYPE,
+} from './plugin-manifest.js';
+export { DATA_SOURCE_TYPES, STEP_LABELS } from './common/constants.js';
+// services (expanded from services/index.js to avoid export * causing shared DTS chunks)
+export { SpreadsheetTabularApiDriver } from './services/SpreadsheetTabularApiDriver.js';
+export { SpreadsheetMetadataManager } from './services/SpreadsheetMetadataManager.js';
+export { SpreadsheetStorePort } from './services/SpreadsheetStorePort.js';
+export {
+  createSpreadsheetTabularApi,
+  createPluginTabularApi,
+} from './services/spreadsheetTabularApiFactory.js';
+export type { PluginTabularApiOptions } from './services/spreadsheetTabularApiFactory.js';

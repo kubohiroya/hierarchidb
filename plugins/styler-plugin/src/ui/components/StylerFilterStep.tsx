@@ -1,5 +1,5 @@
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
-import { TabularDataFilterStep } from '@hierarchidb/spreadsheet-plugin';
+import { TabularDataFilterStep } from '@hierarchidb/spreadsheet-plugin/ui';
 import { AuthReadyGate } from '@hierarchidb/ui-auth';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { Suspense } from 'react';

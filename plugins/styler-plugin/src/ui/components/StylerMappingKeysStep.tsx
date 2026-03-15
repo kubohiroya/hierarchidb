@@ -1,5 +1,5 @@
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
-import { KeyValueSourcePanel } from '@hierarchidb/spreadsheet-plugin';
+import { KeyValueSourcePanel } from '@hierarchidb/spreadsheet-plugin/ui';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { Box, FormControl, FormHelperText, TextField, Typography } from '@mui/material';
 import type React from 'react';

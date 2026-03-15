@@ -1,4 +1,4 @@
-import { tabularRowsAtom } from '@hierarchidb/spreadsheet-plugin';
+import { tabularRowsAtom } from '@hierarchidb/spreadsheet-plugin/ui';
 import { i18n } from '@hierarchidb/ui-i18n';
 import type { TabularFilterRule } from '@hierarchidb/ui-tabular';
 import { useAtomValue } from 'jotai';

@@ -3,7 +3,7 @@ import {
   type PluginStepProps,
   PluginStepRegistry,
 } from '@hierarchidb/plugin-base';
-import { TabularDataSourceStep } from '@hierarchidb/spreadsheet-plugin';
+import { TabularDataSourceStep } from '@hierarchidb/spreadsheet-plugin/ui';
 import { i18n } from '@hierarchidb/ui-i18n';
 import React from 'react';
 import type {
