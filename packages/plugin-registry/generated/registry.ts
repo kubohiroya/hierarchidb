@@ -330,6 +330,10 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         specifier: "@hierarchidb/linker-plugin/worker",
         source: "plugins/linker-plugin/src/worker/index.ts",
       },
+    common: {
+        specifier: "@hierarchidb/linker-plugin/common",
+        source: "plugins/linker-plugin/src/common/index.ts",
+      },
     icon: {
         specifier: "@hierarchidb/linker-plugin/icon",
         source: "plugins/linker-plugin/src/icon/index.ts",
@@ -390,7 +394,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "react-dom",
         "react-virtuoso"
       ],
-    exports: ["","worker","icon","ui"],
+    exports: ["common","worker","icon","ui"],
     manifest: {
         "id": "@hierarchidb/location-plugin",
         "name": "Location Plugin",
@@ -519,6 +523,10 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     worker: {
         specifier: "@hierarchidb/location-plugin/worker",
         source: "plugins/location-plugin/src/worker/index.ts",
+      },
+    common: {
+        specifier: "@hierarchidb/location-plugin/common",
+        source: "plugins/location-plugin/src/common/index.ts",
       },
     icon: {
         specifier: "@hierarchidb/location-plugin/icon",
@@ -704,7 +712,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/ui-tabular",
         "@hierarchidb/ui-accordion-config"
       ],
-    exports: ["","worker","icon","ui"],
+    exports: ["common","worker","icon","ui"],
     manifest: {
         "id": "@hierarchidb/route-plugin",
         "name": "Route Plugin",
@@ -848,6 +856,10 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         specifier: "@hierarchidb/route-plugin/worker",
         source: "plugins/route-plugin/src/worker/index.ts",
       },
+    common: {
+        specifier: "@hierarchidb/route-plugin/common",
+        source: "plugins/route-plugin/src/common/index.ts",
+      },
     icon: {
         specifier: "@hierarchidb/route-plugin/icon",
         source: "plugins/route-plugin/src/icon/index.ts",
@@ -928,7 +940,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "topojson-server",
         "topojson-simplify"
       ],
-    exports: ["","worker","icon","ui"],
+    exports: ["common","worker","icon","ui"],
     manifest: {
         "id": "@hierarchidb/shape-plugin",
         "name": "Shape Plugin",
@@ -1093,6 +1105,10 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     worker: {
         specifier: "@hierarchidb/shape-plugin/worker",
         source: "plugins/shape-plugin/src/worker/index.ts",
+      },
+    common: {
+        specifier: "@hierarchidb/shape-plugin/common",
+        source: "plugins/shape-plugin/src/common/index.ts",
       },
     icon: {
         specifier: "@hierarchidb/shape-plugin/icon",
@@ -1481,6 +1497,10 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     ui: {
         specifier: "@hierarchidb/timeline-plugin/ui",
         source: "plugins/timeline-plugin/src/ui/index.ts",
+      },
+    common: {
+        specifier: "@hierarchidb/timeline-plugin/common",
+        source: "plugins/timeline-plugin/src/common/index.ts",
       },
     icon: {
         specifier: "@hierarchidb/timeline-plugin/icon",

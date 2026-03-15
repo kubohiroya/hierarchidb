@@ -57,6 +57,17 @@ export const DATABASE_ENTRY_BASENAMES = [
   'src/database.cjs',
 ];
 export const COMMON_ENTRY_BASENAMES = [
+  'src/common/index.ts',
+  'src/common/index.tsx',
+  'src/common/index.mts',
+  'src/common/index.mjs',
+  'src/common/index.js',
+  'src/common/index.cjs',
+  'src/common.ts',
+  'src/common.mts',
+  'src/common.mjs',
+  'src/common.js',
+  'src/common.cjs',
   'src/_obsolate_common/index.ts',
   'src/_obsolate_common/index.tsx',
   'src/_obsolate_common/index.mts',
@@ -130,6 +141,9 @@ export const DATABASE_DIST_ENTRY_BASENAMES = [
   'dist/database.cjs',
 ];
 export const COMMON_DIST_ENTRY_BASENAMES = [
+  'dist/common/index.js',
+  'dist/common/index.mjs',
+  'dist/common/index.cjs',
   'dist/_obsolate_common/index.js',
   'dist/_obsolate_common/index.mjs',
   'dist/_obsolate_common/index.cjs',

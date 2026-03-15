@@ -222,6 +222,10 @@ export async function collectManifests(mode: PluginSpecifierMode): Promise<Manif
       hasDatabaseEntry &&
       (hasExportPath(Array.from(exportPathSet), 'database') ||
         hasExportPath(Array.from(exportPathSet), 'worker/database'));
+    const hasExportedCommon =
+      (mode === 'dist-url'
+        ? Boolean(commonSourceEntry || commonDistEntry)
+        : Boolean(commonSourceEntry)) && hasExportPath(Array.from(exportPathSet), 'common');
 
     const filteredExportPaths = Array.from(exportPathSet).filter((value) => {
       const cleaned = value.replace(/^\.?\//, '');
@@ -236,6 +240,7 @@ export async function collectManifests(mode: PluginSpecifierMode): Promise<Manif
       ) {
         return hasExportedDatabase;
       }
+      if (cleaned === 'common' || cleaned.startsWith('common/')) return hasExportedCommon;
       if (cleaned === 'icon' || cleaned.startsWith('icon/')) return Boolean(iconComponent);
       return true;
     });

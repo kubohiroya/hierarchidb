@@ -10,10 +10,12 @@ export function validateEntryPaths(summaries: ManifestSummary[], mode: PluginSpe
     const workerExported = hasExportPath(exportPaths, 'worker');
     const databaseExported =
       hasExportPath(exportPaths, 'database') || hasExportPath(exportPaths, 'worker/database');
+    const commonExported = hasExportPath(exportPaths, 'common');
 
     const hasUiEntry = Boolean(summary.uiSourceEntry || summary.uiDistEntry);
     const hasWorkerEntry = Boolean(summary.workerSourceEntry || summary.workerDistEntry);
     const hasDatabaseEntry = Boolean(summary.databaseSourceEntry || summary.databaseDistEntry);
+    const hasCommonEntry = Boolean(summary.commonSourceEntry || summary.commonDistEntry);
 
     if (uiExported && !hasUiEntry) {
       issues.push(`${summary.nodeType}: export "ui" declared but entry file not found.`);
@@ -23,6 +25,9 @@ export function validateEntryPaths(summaries: ManifestSummary[], mode: PluginSpe
     }
     if (databaseExported && !hasDatabaseEntry) {
       issues.push(`${summary.nodeType}: export "database" declared but entry file not found.`);
+    }
+    if (commonExported && !hasCommonEntry) {
+      issues.push(`${summary.nodeType}: export "common" declared but entry file not found.`);
     }
 
     if (mode === 'package') {
@@ -34,6 +39,9 @@ export function validateEntryPaths(summaries: ManifestSummary[], mode: PluginSpe
       }
       if (hasDatabaseEntry && !databaseExported) {
         issues.push(`${summary.nodeType}: database entry exists but package export "database" is missing.`);
+      }
+      if (hasCommonEntry && !commonExported) {
+        issues.push(`${summary.nodeType}: common entry exists but package export "common" is missing.`);
       }
 
       const iconSpecifier = summary.iconComponent?.specifier ?? '';
