@@ -32,19 +32,9 @@
 
 ## 今日の運用ログ
 
+- 2026-03-15: #1081 4-event spec再適用・テスト新API対応・PR #1088作成
+- 2026-03-15: #1082 PR #1085 mainマージ済み / #1083 PR #1084 mainマージ済み
 - 2026-03-15: #1072 computeCompletedStageDuration 純粋関数化・as never キャスト除去・PR #1073作成
-  - buildSessionStateAtoms.ts: stageCompletedAt undefined 時に Date.now() ではなく 0 を返すよう修正
-  - eventBuffering.unit.test.ts: as never → SessionStateChangeEvent/SessionHeartbeatEvent/TaskProgressEvent 正型に置換
-  - eventDeliveryExtendedScenarios.property.test.ts: makeTaskEvent version を number | undefined に変更
-  - eventArchitectureProperties.property.test.ts: as never → as unknown as EventPayload/SessionHeartbeatEvent に変更
-  - レビュー対応: emitHeartbeat を heartbeatAt → timestamp/isActive/lastActivity 正型に修正、nodeIdStr → nodeId に修正
-  - test: 442 passed | 3 skipped exit 0
-
-
-  - useBuildProgressPanelStateSideEffects/RuntimeState から setTotalElapsedSnapshot 関連削除
-  - eventBuffering.ts アンサブスクライブ関数修正
-  - 旧API テスト6ファイルを現行 API（UIEventBufferManager/unconditionalEventStreamer）に書き直し
-  - test: 442 passed | 3 skipped exit 0、typecheck: 100/100 exit 0
 
 - 2026-03-15: #1066 computeStageDuration 呼び出し箇所修正・PR #1067作成
   - stageDurationMsByStageAtom の3箇所を computeCompletedStageDuration に修正（#1058 リネーム漏れ）
