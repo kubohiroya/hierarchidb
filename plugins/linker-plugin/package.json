@@ -40,16 +40,14 @@
     }
   },
   "scripts": {
-    "build": "pnpm build:js && pnpm build:dts",
+    "build": "tsdown src/index.ts src/services/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/icon/index.ts --config ../../tsdown.config.ts --outDir dist",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "lint": "eslint src",
     "test": "vitest",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
-    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
-    "build:js": "tsdown src/index.ts src/services/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/icon/index.ts --config ../../tsdown.config.ts --outDir dist",
-    "build:dts": "rollup -c rollup.dts.config.mjs"
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "dependencies": {
     "@hierarchidb/plugin-base": "workspace:*"
@@ -150,8 +148,5 @@
         "draft"
       ]
     }
-  },
-  "tsdown": {
-    "dts": false
   }
 }

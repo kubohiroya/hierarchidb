@@ -15,7 +15,6 @@
   },
   "scripts": {
     "build": "tsdown src/index.ts src/format.ts src/validation.ts src/SingletonMixin.ts src/generateId.ts src/db-name.ts src/env.ts src/webCrypto.ts src/dualKeyMap.ts src/treeConsoleSettings.ts src/zoomBandSettings.ts src/sleep.ts --config ../../tsdown.config.ts --outDir dist",
-    "build:types": "tsc --emitDeclarationOnly --declaration --declarationMap --project tsconfig.json --outDir dist",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
