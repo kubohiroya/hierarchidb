@@ -41,7 +41,7 @@ describe('LocationSelectionStep (component)', () => {
     render(<LocationSelectionStep draft={baseDraft} onUpdate={onUpdate} />);
 
     // t() returns the key in test environment (i18next not initialized); verify the key is rendered
-    expect(screen.getByText('area_centroid', { exact: false })).not.toBeNull();
+    expect(screen.getByText('area_centroid', { exact: false })).toBeInTheDocument();
   });
 
   it('notifies parent via onUpdate when a matrix cell is toggled', () => {
