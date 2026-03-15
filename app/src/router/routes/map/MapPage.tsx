@@ -1,10 +1,10 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import { resolveLocationAttribution } from '@hierarchidb/location-plugin';
+import { resolveLocationAttribution } from '@hierarchidb/location-plugin/common';
 import type { LocationType } from '@hierarchidb/location-store';
-import { ROUTE_DATA_SOURCES } from '@hierarchidb/route-plugin';
-import type { RouteDataSourceConfig } from '@hierarchidb/route-plugin';
-import { SHAPE_DATA_SOURCES } from '@hierarchidb/shape-plugin';
-import type { DataSourceConfig as ShapeDataSourceConfig } from '@hierarchidb/shape-plugin';
+import { ROUTE_DATA_SOURCES } from '@hierarchidb/route-plugin/common';
+import type { RouteDataSourceConfig } from '@hierarchidb/route-plugin/common';
+import { SHAPE_DATA_SOURCES } from '@hierarchidb/shape-plugin/common';
+import type { DataSourceConfig as ShapeDataSourceConfig } from '@hierarchidb/shape-plugin/common';
 import type {
   LayerSetId,
   LayerSetVisibility,

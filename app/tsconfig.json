@@ -27,10 +27,27 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "paths": {
-      "~/*": ["app/src/*"],
-      "~": ["app/src"],
-      "~~/*": ["app/src/*"],
-      "~~": ["app/src"],
+      "~/*": [
+        "app/src/*"
+      ],
+      "~": [
+        "app/src"
+      ],
+      "~~/*": [
+        "app/src/*"
+      ],
+      "~~": [
+        "app/src"
+      ],
+      "@hierarchidb/location-plugin/common": [
+        "plugins/location-plugin/dist/common/index.d.ts"
+      ],
+      "@hierarchidb/route-plugin/common": [
+        "plugins/route-plugin/dist/common/index.d.ts"
+      ],
+      "@hierarchidb/shape-plugin/common": [
+        "plugins/shape-plugin/dist/common/index.d.ts"
+      ],
       "@hierarchidb/*": [
         "packages/*/dist/index.d.ts",
         "plugins/*/dist/index.d.ts",
