@@ -11,19 +11,25 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import fc from 'fast-check';
 import { unconditionalEventStreamer } from '../../worker/api/eventBuffering';
-import type { NotificationType, EventPayload } from '../../worker/api/eventBuffering';
 import {
     UIEventBufferManager,
     type BufferedEvent,
 } from '../../ui/components/build-progress/eventBufferingUI';
 import type { NodeId } from '@hierarchidb/core-types';
+import type { SessionStatusUpdatedEvent } from '../../common/types/session-events';
 
 const toNodeId = (s: string): NodeId => s as NodeId;
 
 const PROPERTY_TEST_RUNS = 50;
 
-const makeSessionEvent = (): EventPayload =>
-    ({ nodeId: 'n' as NodeId, sessionId: 's', state: 'running' } as EventPayload);
+const makeSessionEvent = (): SessionStatusUpdatedEvent => ({
+    type: 'sessionStatusUpdated',
+    payload: {
+        nodeId: 'n',
+        phase: 'running',
+        isActive: true,
+    },
+});
 
 const makeBufferedEvent = (
     notificationType: 'session-state' | 'stage-snapshot',
@@ -72,11 +78,7 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
 
                         const payload = makeSessionEvent();
                         for (let k = 0; k < eventCount; k++) {
-                            unconditionalEventStreamer.emitEvent(
-                                node,
-                                'session-state',
-                                payload as Exclude<EventPayload, import('~/common/types/session-events').SessionHeartbeatEvent>,
-                            );
+                            unconditionalEventStreamer.emitEvent(node, 'session-state', payload);
                         }
 
                         for (let i = 0; i < subscriberCount; i++) {
@@ -110,11 +112,7 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
 
                         const payload = makeSessionEvent();
                         for (let k = 0; k < eventCount; k++) {
-                            unconditionalEventStreamer.emitEvent(
-                                nodeA,
-                                'session-state',
-                                payload as Exclude<EventPayload, import('~/common/types/session-events').SessionHeartbeatEvent>,
-                            );
+                            unconditionalEventStreamer.emitEvent(nodeA, 'session-state', payload);
                         }
 
                         expect(countA).toBe(eventCount);
@@ -186,11 +184,7 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
 
                         const payload = makeSessionEvent();
                         for (let k = 0; k < eventCount; k++) {
-                            unconditionalEventStreamer.emitEvent(
-                                node,
-                                'session-state',
-                                payload as Exclude<EventPayload, import('~/common/types/session-events').SessionHeartbeatEvent>,
-                            );
+                            unconditionalEventStreamer.emitEvent(node, 'session-state', payload);
                         }
 
                         // Non-failing subscribers must still receive all events
@@ -316,11 +310,7 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
                         const payload = makeSessionEvent();
                         expect(() => {
                             for (let k = 0; k < eventCount; k++) {
-                                unconditionalEventStreamer.emitEvent(
-                                    node,
-                                    'session-state',
-                                    payload as Exclude<EventPayload, import('~/common/types/session-events').SessionHeartbeatEvent>,
-                                );
+                                unconditionalEventStreamer.emitEvent(node, 'session-state', payload);
                             }
                         }).not.toThrow();
                     },
