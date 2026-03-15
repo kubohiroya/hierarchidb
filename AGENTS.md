@@ -125,6 +125,14 @@
 - 個別検証は原則 Turbo 経由:
   - `pnpm -w turbo run <task> --filter @hierarchidb/<pkg>`
 
+## vitest 実行ルール（必須）
+
+- `vitest run` は一回実行して終了するコマンドのため、`executeBash` で直接実行する。
+- 禁止: `controlBashProcess` 経由での vitest 起動（ウォッチモードで動き続け、終了を検知できない）。
+- 正しい実行例:
+  - パッケージ全体: `pnpm -w turbo run test --filter @hierarchidb/<pkg>`（turbo 経由・推奨）
+  - 直接実行: `executeBash` で `pnpm vitest run` を `cwd` 指定で実行、`timeout` を適切に設定する。
+
 ## Vite optimizeDeps（再発防止・必須）
 
 - 背景: workspace パッケージは dev モードで `optimizeDeps.exclude` に入るため、Vite はそれらの推移的依存を事前クロールできない。`optimizeDeps.include` に登録しても、`app/package.json` に依存がなければ pnpm の隔離により resolve 失敗する。結果、初回アクセス時に依存が逐次発見されブラウザが繰り返しリロードされる。

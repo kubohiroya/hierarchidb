@@ -32,7 +32,7 @@
     "@hierarchidb/ui-dialog": "workspace:*"
   },
   "devDependencies": {
-    "vitest": "^3.2.4",
+    "vitest": "^4.1.0",
     "typescript": "workspace:^5.9.3",
     "@types/react": "^19.1.1",
     "@testing-library/react": "^16.1.0",
