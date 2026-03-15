@@ -1,140 +1,137 @@
 /**
  * Event Emission
- * 
- * Handles unconditional event streaming for session state, task progress, and stage snapshots
+ *
+ * Emits the 4 canonical Worker→UI events defined in
+ * docs/build-session-worker-ui-event-spec.md:
+ *   sessionStatusUpdated, stageSnapshotUpdated, taskProgressUpdated, heartbeat
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildTaskUpdateEvent, TaskQueueRecord } from '@hierarchidb/build-api';
+import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import type {
-    SessionStateChangeEvent,
-    StageSnapshotEvent,
-    TaskProgressEvent,
+    SessionPhase,
+    SessionStatusUpdatedEvent,
+    StageSnapshotUpdatedEvent,
+    TaskProgressUpdatedEvent,
+    HeartbeatEvent,
 } from '~/common/types/session-events';
-import { VtTaskQueueDb, listTasks, listTasksByStage } from '@hierarchidb/vt-orchestrator';
+import { VtTaskQueueDb, listTasksByStage } from '@hierarchidb/vt-orchestrator';
 import { unconditionalEventStreamer } from './eventBuffering.js';
 import { mapTaskQueueRecordToTaskSummary } from './taskSummaryMapping.js';
 
-export const emitSessionStateChange = (
-    nodeId: NodeId,
-    previousStatus: ShapeBuildSessionRecord['status'] | undefined,
-    currentStatus: ShapeBuildSessionRecord['status'],
-    sessionRecord: ShapeBuildSessionRecord,
-): void => {
-    const event: SessionStateChangeEvent = {
-        nodeId,
-        timestamp: Date.now(),
-        previousStatus,
-        currentStatus,
-        sessionRecord,
-    };
-
-    // Emit unconditionally regardless of UI state
-    unconditionalEventStreamer.emitEvent(nodeId, 'session-state', event);
-};
-
-export const emitTaskProgress = (
-    nodeId: NodeId,
-    taskId: string,
-    stage: string,
-    progress: number,
-    status: string,
-    metadata?: Record<string, unknown>,
-): void => {
-    const event: TaskProgressEvent = {
-        nodeId,
-        timestamp: Date.now(),
-        taskId,
-        stage,
-        progress,
-        status,
-        metadata,
-    };
-
-    // Emit unconditionally regardless of UI state
-    unconditionalEventStreamer.emitEvent(nodeId, 'task-progress', event);
-};
-
-export const emitStageSnapshot = (
-    nodeId: NodeId,
-    stageId: string,
-    snapshot: Record<string, unknown>,
-): void => {
-    const event: StageSnapshotEvent = {
-        nodeId,
-        timestamp: Date.now(),
-        stageId,
-        snapshot,
-    };
-
-    // Emit unconditionally regardless of UI state
-    unconditionalEventStreamer.emitEvent(nodeId, 'stage-snapshot', event);
-};
-
-export const emitTaskSnapshot = async (
-    nodeId: NodeId,
-    options?: { stage?: TaskQueueRecord['stage'] },
-    taskCallbacks?: Map<string, any>, // For backward compatibility
-): Promise<void> => {
-    const taskQueue = new VtTaskQueueDb();
-    const tasks = options?.stage
-        ? await listTasksByStage(taskQueue, nodeId, options.stage)
-        : await listTasks(taskQueue, nodeId);
-    const snapshot = tasks.map((task) => mapTaskQueueRecordToTaskSummary(task));
-    const snapshotVersion = snapshot.length > 0
-        ? snapshot.reduce((max, task) => Math.max(max, task.version), Number.MIN_SAFE_INTEGER)
-        : 0;
-
-    // Create stage snapshot event for unconditional streaming
-    const stageSnapshotEvent: StageSnapshotEvent = {
-        nodeId,
-        timestamp: Date.now(),
-        stageId: options?.stage ?? 'all-stages',
-        snapshot: {
-            tasks: snapshot,
-            version: snapshotVersion,
-            stage: options?.stage,
-        },
-    };
-
-    // Emit unconditionally regardless of UI state
-    unconditionalEventStreamer.emitEvent(nodeId, 'stage-snapshot', stageSnapshotEvent);
-
-    // Also maintain backward compatibility with direct task callbacks for now
-    if (taskCallbacks) {
-        const key = String(nodeId);
-        const subscription = taskCallbacks.get(key);
-        if (subscription?.callback) {
-            subscription.callback({
-                type: 'snapshot',
-                nodeId,
-                tasks: snapshot,
-                version: snapshotVersion,
-                stage: options?.stage,
-            } as BuildTaskUpdateEvent & {
-                version: number;
-                stage?: TaskQueueRecord['stage'];
-            });
+/**
+ * Maps ShapeBuildSessionRecord status to the canonical SessionPhase.
+ * Unknown values throw immediately — no fallback.
+ */
+export const mapStatusToSessionPhase = (
+    status: ShapeBuildSessionRecord['status'],
+): SessionPhase => {
+    switch (status) {
+        case 'idle': return 'idle';
+        case 'running': return 'running';
+        case 'paused': return 'paused';
+        case 'completed': return 'completed';
+        case 'failed': return 'failed';
+        default: {
+            const _exhaustive: never = status;
+            throw new Error(`[eventEmission] unknown session status: ${String(_exhaustive)}`);
         }
     }
 };
 
-export const emitProgressSnapshot = async (
+/**
+ * Emits sessionStatusUpdated.
+ * Called whenever the session lifecycle phase changes.
+ */
+export const emitSessionStatusUpdated = (
     nodeId: NodeId,
-    message?: string,
-): Promise<void> => {
-    // Create a progress snapshot event for unconditional streaming
-    const progressSnapshotEvent: StageSnapshotEvent = {
-        nodeId,
-        timestamp: Date.now(),
-        stageId: 'progress-snapshot',
-        snapshot: {
-            message: message ?? 'Progress update',
-            timestamp: Date.now(),
+    sessionRecord: ShapeBuildSessionRecord,
+): void => {
+    const phase = mapStatusToSessionPhase(sessionRecord.status);
+    const event: SessionStatusUpdatedEvent = {
+        type: 'sessionStatusUpdated',
+        payload: {
+            nodeId: String(nodeId),
+            phase,
+            isActive: sessionRecord.status === 'running',
+            startedAt: sessionRecord.startedAt,
+            completedAt: sessionRecord.completedAt,
+            stopReason: sessionRecord.stopReason,
+            stageId: sessionRecord.stageId,
+            inactiveMs: sessionRecord.inactiveMs,
+            stageStartedAt: sessionRecord.stageStartedAt,
+            stageInactiveMs: sessionRecord.stageInactiveMs,
         },
     };
+    unconditionalEventStreamer.emitEvent(nodeId, 'session-state', event);
+};
 
-    // Emit unconditionally regardless of UI state
-    unconditionalEventStreamer.emitEvent(nodeId, 'stage-snapshot', progressSnapshotEvent);
+/**
+ * Emits stageSnapshotUpdated for a stage that has already started.
+ * Must NOT be called for stages that have not yet started (stageStartedAt required).
+ */
+export const emitStageSnapshotUpdated = async (
+    nodeId: NodeId,
+    stage: TaskQueueRecord['stage'],
+    stageStartedAt: number,
+    stageInactiveMs: number,
+    stageCompletedAt?: number,
+): Promise<void> => {
+    if (!Number.isFinite(stageStartedAt)) {
+        throw new Error(`[eventEmission] stageStartedAt must be finite, received ${String(stageStartedAt)}`);
+    }
+    if (!Number.isFinite(stageInactiveMs)) {
+        throw new Error(`[eventEmission] stageInactiveMs must be finite, received ${String(stageInactiveMs)}`);
+    }
+    const taskQueue = new VtTaskQueueDb();
+    const rawTasks = await listTasksByStage(taskQueue, nodeId, stage);
+    const tasks = rawTasks.map((task) => mapTaskQueueRecordToTaskSummary(task));
+
+    const event: StageSnapshotUpdatedEvent = {
+        type: 'stageSnapshotUpdated',
+        payload: {
+            stageId: stage,
+            tasks,
+            stageStartedAt,
+            stageInactiveMs,
+            stageCompletedAt,
+        },
+    };
+    unconditionalEventStreamer.emitEvent(nodeId, 'stage-snapshot', event);
+};
+
+/**
+ * Emits taskProgressUpdated for a single task's progress value.
+ * value must be finite and in [0, 100] — violation throws.
+ */
+export const emitTaskProgressUpdated = (
+    nodeId: NodeId,
+    stageId: string,
+    value: number,
+    message?: string,
+    metadata?: Record<string, unknown>,
+): void => {
+    if (!Number.isFinite(value) || value < 0 || value > 100) {
+        throw new Error(`[eventEmission] taskProgressUpdated value must be finite 0..100, received ${String(value)}`);
+    }
+    const event: TaskProgressUpdatedEvent = {
+        type: 'taskProgressUpdated',
+        payload: { stageId, value, message, metadata },
+    };
+    unconditionalEventStreamer.emitEvent(nodeId, 'task-progress', event);
+};
+
+/**
+ * Emits heartbeat. heartbeatAt must be finite — violation throws.
+ */
+export const emitHeartbeat = (nodeId: NodeId, heartbeatAt: number): void => {
+    if (!Number.isFinite(heartbeatAt)) {
+        throw new Error(`[eventEmission] heartbeatAt must be finite, received ${String(heartbeatAt)}`);
+    }
+    const event: HeartbeatEvent = {
+        type: 'heartbeat',
+        payload: { nodeId: String(nodeId), heartbeatAt },
+    };
+    unconditionalEventStreamer.emitHeartbeat(nodeId, event);
 };

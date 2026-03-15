@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import type { BuildTaskSummary } from '@hierarchidb/build-api';
+import type { StageSnapshotUpdatedEvent } from '../../../../common/types/session-events';
 import {
     isTaskUpdateVersionAfterSnapshot,
     resolveTaskVersionAction,
@@ -93,55 +93,51 @@ describe('resolveTaskIdentityAction', () => {
 // resolveSnapshotTargetStages
 // ---------------------------------------------------------------------------
 
-type SnapshotEvent = {
-    type: 'snapshot';
-    nodeId: string;
-    tasks: BuildTaskSummary[];
-    version?: unknown;
-    stage?: unknown;
-};
-
-const makeSnapshot = (overrides: Partial<SnapshotEvent> = {}): SnapshotEvent => ({
-    type: 'snapshot',
-    nodeId: 'node-1',
-    tasks: [],
-    ...overrides,
+const makeSnapshot = (
+    stageId: string,
+    tasks: StageSnapshotUpdatedEvent['payload']['tasks'] = [],
+    overrides: Partial<StageSnapshotUpdatedEvent['payload']> = {},
+): StageSnapshotUpdatedEvent => ({
+    type: 'stageSnapshotUpdated',
+    payload: {
+        stageId,
+        tasks,
+        stageStartedAt: 1,
+        stageInactiveMs: 0,
+        ...overrides,
+    },
 });
 
 describe('resolveSnapshotTargetStages', () => {
     it('extracts stages from tasks when tasks are present', () => {
-        const event = makeSnapshot({
-            tasks: [
-                { taskId: 't1', version: 1, stage: 'source', status: 'queued', progress: 0 },
-                { taskId: 't2', version: 1, stage: 'geometry', status: 'queued', progress: 0 },
-            ],
-        });
-        const stages = resolveSnapshotTargetStages(event as any);
+        const event = makeSnapshot('source', [
+            { taskId: 't1', version: 1, stage: 'source', status: 'queued', progress: 0 },
+            { taskId: 't2', version: 1, stage: 'geometry', status: 'queued', progress: 0 },
+        ]);
+        const stages = resolveSnapshotTargetStages(event);
         expect(stages).toContain('source');
         expect(stages).toContain('geometry');
         expect(stages).not.toContain('tileEmit');
     });
 
     it('deduplicates stages from multiple tasks in same stage', () => {
-        const event = makeSnapshot({
-            tasks: [
-                { taskId: 't1', version: 1, stage: 'source', status: 'queued', progress: 0 },
-                { taskId: 't2', version: 2, stage: 'source', status: 'running', progress: 50 },
-            ],
-        });
-        const stages = resolveSnapshotTargetStages(event as any);
+        const event = makeSnapshot('source', [
+            { taskId: 't1', version: 1, stage: 'source', status: 'queued', progress: 0 },
+            { taskId: 't2', version: 2, stage: 'source', status: 'running', progress: 50 },
+        ]);
+        const stages = resolveSnapshotTargetStages(event);
         expect(stages).toEqual(['source']);
     });
 
-    it('falls back to event.stage when tasks are empty and stage is set', () => {
-        const event = makeSnapshot({ tasks: [], stage: 'geometry' });
-        const stages = resolveSnapshotTargetStages(event as any);
+    it('falls back to event.payload.stageId when tasks are empty and stageId is valid', () => {
+        const event = makeSnapshot('geometry', []);
+        const stages = resolveSnapshotTargetStages(event);
         expect(stages).toEqual(['geometry']);
     });
 
-    it('falls back to all three stages when tasks are empty and no stage field', () => {
-        const event = makeSnapshot({ tasks: [] });
-        const stages = resolveSnapshotTargetStages(event as any);
+    it('falls back to all three stages when tasks are empty and stageId is unknown', () => {
+        const event = makeSnapshot('unknown-stage', []);
+        const stages = resolveSnapshotTargetStages(event);
         expect(stages).toContain('source');
         expect(stages).toContain('geometry');
         expect(stages).toContain('tileEmit');
@@ -149,23 +145,19 @@ describe('resolveSnapshotTargetStages', () => {
     });
 
     it('ignores unknown stage values in tasks and falls back to all stages', () => {
-        const event = makeSnapshot({
-            tasks: [
-                { taskId: 't1', version: 1, stage: 'unknown-stage' as any, status: 'queued', progress: 0 },
-            ],
-        });
-        // unknown stage is filtered out → snapshotStages empty → no event.stage → all 3
-        const stages = resolveSnapshotTargetStages(event as any);
+        const event = makeSnapshot('unknown-stage', [
+            { taskId: 't1', version: 1, stage: 'unknown-stage', status: 'queued', progress: 0 },
+        ]);
+        // unknown stage is filtered out → snapshotStages empty → stageId also unknown → all 3
+        const stages = resolveSnapshotTargetStages(event);
         expect(stages).toHaveLength(3);
     });
 
     it('includes tileEmit stage from tasks', () => {
-        const event = makeSnapshot({
-            tasks: [
-                { taskId: 't1', version: 1, stage: 'tileEmit', status: 'running', progress: 10 },
-            ],
-        });
-        const stages = resolveSnapshotTargetStages(event as any);
+        const event = makeSnapshot('tileEmit', [
+            { taskId: 't1', version: 1, stage: 'tileEmit', status: 'running', progress: 10 },
+        ]);
+        const stages = resolveSnapshotTargetStages(event);
         expect(stages).toEqual(['tileEmit']);
     });
 });
