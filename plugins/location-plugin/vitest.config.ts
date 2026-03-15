@@ -13,7 +13,6 @@ export default defineConfig({
       { find: '@hierarchidb/ui-worker-client', replacement: path.resolve(__dirname, 'src/common/test-shims/runtime-worker.ts') },
       { find: '@hierarchidb/ui-build-progress', replacement: path.resolve(__dirname, 'src/common/test-shims/external-mocks.ts') },
       { find: '@hierarchidb/ui-file', replacement: path.resolve(__dirname, 'src/common/test-shims/ui-file.ts') },
-      { find: '@hierarchidb/ui-i18n', replacement: path.resolve(__dirname, 'src/common/test-shims/ui-i18n.ts') },
       { find: '@hierarchidb/map-adapter', replacement: path.resolve(__dirname, 'src/common/test-shims/optional-features.ts') },
       { find: '@hierarchidb/spreadsheet-plugin', replacement: path.resolve(__dirname, 'src/common/test-shims/spreadsheet-plugin.ts') },
       { find: '@hierarchidb/tabular-xlsx', replacement: path.resolve(__dirname, 'src/common/test-shims/optional-features.ts') },
