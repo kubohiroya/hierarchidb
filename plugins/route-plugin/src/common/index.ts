@@ -8,7 +8,7 @@ export * from './types/index.js';
 export type { RouteDataSourceConfig } from './datasource/ROUTE_DATA_SOURCES.js';
 export { ROUTE_DATA_SOURCES } from './datasource/ROUTE_DATA_SOURCES.js';
 
-export class AuthRuntimeBridge {
+export class RouteRuntimeBridge {
     static async registerRuntimeWorkerAdapters(): Promise<void> {
         try {
             const mod = await import('../services/build/adapters/registerRouteRuntimeWorkerAdapters.js');
