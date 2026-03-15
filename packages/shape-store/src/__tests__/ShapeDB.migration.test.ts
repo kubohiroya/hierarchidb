@@ -8,7 +8,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Dexie } from 'dexie';
 import type { NodeId } from '@hierarchidb/core-types';
-import {BuildSessionRecord, ShapeDB} from "../VectorTileRecord";
+import type { BuildSessionRecord } from "../VectorTileRecord";
+import { ShapeDB } from "../ShapeDB";
 
 describe('ShapeDB Migration from V1 to V2', () => {
   let testDbName: string;
@@ -187,7 +188,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
           const oldSessionsTable = tx.idbtrans.objectStore('sessions');
           const oldSessions: BuildSessionRecord[] = [];
           const cursorRequest = oldSessionsTable.openCursor();
-          
+
           await new Promise<void>((resolve, reject) => {
             cursorRequest.onsuccess = (event) => {
               const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
@@ -464,7 +465,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
           const oldSessionsTable = tx.idbtrans.objectStore('sessions');
           const oldSessions: BuildSessionRecord[] = [];
           const cursorRequest = oldSessionsTable.openCursor();
-          
+
           await new Promise<void>((resolve, reject) => {
             cursorRequest.onsuccess = (event) => {
               const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
@@ -657,7 +658,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
           const oldSessionsTable = tx.idbtrans.objectStore('sessions');
           const oldSessions: BuildSessionRecord[] = [];
           const cursorRequest = oldSessionsTable.openCursor();
-          
+
           await new Promise<void>((resolve, reject) => {
             cursorRequest.onsuccess = (event) => {
               const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
@@ -724,7 +725,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
     const sessions = await db.buildSessionConfigs.toArray();
     expect(sessions).toHaveLength(1);
     const session = sessions[0];
-    
+
     // Verify only immutable config fields are present
     expect(session).toHaveProperty('nodeId');
     expect(session).toHaveProperty('domainType');
@@ -742,7 +743,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
     const heartbeats = await db.buildSessionHeartbeats.toArray();
     expect(heartbeats).toHaveLength(1);
     const heartbeat = heartbeats[0];
-    
+
     // Verify only heartbeat fields are present
     expect(heartbeat).toHaveProperty('nodeId');
     expect(heartbeat).toHaveProperty('lastHeartbeatAt');
@@ -751,7 +752,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
     const statuses = await db.buildSessionStatuses.toArray();
     expect(statuses).toHaveLength(1);
     const status = statuses[0];
-    
+
     // Verify only status fields are present
     expect(status).toHaveProperty('nodeId');
     expect(status).toHaveProperty('status');
@@ -760,7 +761,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
     const stageStatuses = await db.buildStageStatuses.toArray();
     expect(stageStatuses).toHaveLength(1);
     const stageStatus = stageStatuses[0];
-    
+
     // Verify only stage status fields are present
     expect(stageStatus).toHaveProperty('id');
     expect(stageStatus).toHaveProperty('nodeId');
