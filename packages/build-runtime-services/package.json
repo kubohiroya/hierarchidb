@@ -19,12 +19,10 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist",
-    "build:types": "tsc --emitDeclarationOnly --declaration --declarationMap --project tsconfig.json --outDir dist",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "peerDependencies": {
     "@hierarchidb/build": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",

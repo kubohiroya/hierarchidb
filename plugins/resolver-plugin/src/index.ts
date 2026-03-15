@@ -1,4 +1,3 @@
-
 export type {
   ResolverEntity,
   ResolverUpdaterPayload,
@@ -13,11 +12,6 @@ export type {
   StylerIntegration,
 } from './common/types/index.js';
 
-export {
-  ResolverPanel,
-} from './ui/components/index.js';
-
-
 export async function loadResolverPanelModule() {
   return import(/* @vite-ignore */ './ui/components/ResolverPanel.js');
 }
@@ -28,8 +22,5 @@ export async function getDialogComponent() {
   }
   return () => null;
 }
-
-// Register host-composed steps on import (idempotent)
-import './ui/components/steps-provider.js';
 
 export { PLUGIN_MANIFEST as ResolverPluginManifest } from './plugin-manifest.js';

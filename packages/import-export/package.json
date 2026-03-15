@@ -17,7 +17,6 @@
   },
   "scripts": {
     "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
-    "build:types": "tsc --emitDeclarationOnly --declaration --declarationMap --project tsconfig.build.json --outDir dist",
     "clean": "rm -rf dist",
     "test": "vitest run -c vitest.config.ts src/__tests__/vector-tile-export.test.ts",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"

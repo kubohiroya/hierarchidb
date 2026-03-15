@@ -18,7 +18,6 @@
   },
   "scripts": {
     "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
-    "build:types": "tsc --emitDeclarationOnly --project tsconfig.json --outDir dist",
     "test": "vitest",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
@@ -54,7 +53,6 @@
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/build-api": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
-    "@hierarchidb/auth-api": "workspace:*",
     "@hierarchidb/worker-api": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*"
   },
