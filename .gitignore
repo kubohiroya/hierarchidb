@@ -205,3 +205,13 @@ e2e-results.*
 /stageWorker.entry.js
 /tabularFilter.worker.js
 /index.html
+
+# Temporary scripts and analysis files (root-level)
+/tmp*.mjs
+/tmp_check_menu.*
+/AGENTS.md-
+/remove_onWheel.patch
+/plugin-test-inventory.json
+/plugin-test-results.json
+/test-failure-analysis.md
+/worker-showconfig.json
