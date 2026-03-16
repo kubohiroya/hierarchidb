@@ -14,7 +14,6 @@ import type {
 import type { BuildTaskSummary, TaskStage, ProgressPhase } from '@hierarchidb/build-api';
 import type { AdapterStageSnapshotUpdatedEvent } from '@hierarchidb/ui-build-sessions';
 import { UIEventBufferManager, type BufferedEvent } from './eventBufferingUI';
-
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 const SHAPE_STAGE_IDS = ['source', 'geometry', 'tileEmit'] as const satisfies readonly ShapeStageId[];
 
@@ -135,11 +134,9 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
 
         const scheduleFlush = (): void => {
             if (flushTimerId !== null) return;
-            if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
-                flushTimerId = window.requestAnimationFrame(flushProgressBuffer);
-                return;
-            }
-            flushTimerId = window.setTimeout(flushProgressBuffer, 0);
+            // Always use requestAnimationFrame — this code runs exclusively in browser context
+            // (inside useEffect). The setTimeout fallback was dead code that caused test/prod divergence.
+            flushTimerId = window.requestAnimationFrame(flushProgressBuffer);
         };
 
         const resolveProgressPhase = (value: string): ProgressPhase => {
@@ -197,8 +194,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
         const processProgressEvent = (event: TaskProgressUpdatedEvent): void => {
             const stageId = resolveShapeStageId(event.payload.stageId);
             if (!stageId) {
-                adapter.onProgressEvent(event);
-                return;
+                throw new Error(`[useShapeBuildSessionStateAtomBridge] unknown stageId in taskProgressUpdated: ${String(event.payload.stageId)}`);
             }
             if (activeStageId !== stageId) {
                 activeStageId = stageId;
@@ -235,7 +231,6 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
         const onTaskEvent = (event: StageSnapshotUpdatedEvent): void => {
             // Enqueue into FIFO queue, then flush immediately via rAF
             const buffered: BufferedEvent = {
-                version: undefined,
                 notificationType: 'stage-snapshot',
                 payload: event,
                 timestamp: Date.now(),
@@ -244,23 +239,19 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             flushFifoQueues();
         };
 
-        const onProgressEvent = (event: TaskProgressUpdatedEvent & { version?: number }): void => {
-            const buffered: BufferedEvent = {
-                version: event.version,
-                notificationType: 'task-progress',
-                payload: event,
-                timestamp: Date.now(),
-            };
-            const accepted = eventBufferManager.applyTaskProgress(buffered);
-            if (accepted) {
-                processProgressEvent(event);
-            }
+        const onProgressEvent = (event: TaskProgressUpdatedEvent): void => {
+            const accepted = eventBufferManager.applyTaskProgress(
+                event.payload.taskId,
+                event.payload.version,
+                event,
+            );
+            if (accepted === undefined) return; // stale or duplicate — drop
+            processProgressEvent(event);
         };
 
         const onSessionState = (event: SessionStatusUpdatedEvent): void => {
             // Enqueue into FIFO queue, then flush immediately via rAF
             const buffered: BufferedEvent = {
-                version: undefined,
                 notificationType: 'session-state',
                 payload: event,
                 timestamp: Date.now(),
@@ -280,6 +271,23 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             }
         };
 
+        const requireEventShape = <T extends { type: string }>(
+        const requireEventShape = <T extends { type: string }>(
+            event: unknown,
+            expectedType: T['type'],
+            context: string,
+        ): T => {
+            if (!event || typeof event !== 'object') {
+                throw new Error(`[${context}] event must be an object, received type: ${typeof event}`);
+            }
+            const rec = event as Record<string, unknown>;
+            if (rec.type !== expectedType) {
+                const receivedType = typeof rec.type === 'string' ? `"${rec.type}"` : String(rec.type);
+                throw new Error(`[${context}] unexpected event type: expected "${expectedType}", received ${receivedType}`);
+            }
+            return event as T;
+        };
+
         const run = async () => {
             await bridge.initialize();
             if (cancelled) return;
@@ -293,19 +301,19 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             unsubscribeAll = await bridge.subscribeAll(SHAPE_NODE_TYPE, nodeId, {
                 onTaskEvent: (event) => {
                     if (cancelled) return;
-                    onTaskEvent(event as StageSnapshotUpdatedEvent);
+                    onTaskEvent(requireEventShape<StageSnapshotUpdatedEvent>(event, 'stageSnapshotUpdated', 'onTaskEvent'));
                 },
                 onProgressEvent: (event) => {
                     if (cancelled) return;
-                    onProgressEvent(event as TaskProgressUpdatedEvent & { version?: number });
+                    onProgressEvent(requireEventShape<TaskProgressUpdatedEvent>(event, 'taskProgressUpdated', 'onProgressEvent'));
                 },
                 onSessionState: (event) => {
                     if (cancelled) return;
-                    onSessionState(event as SessionStatusUpdatedEvent);
+                    onSessionState(requireEventShape<SessionStatusUpdatedEvent>(event, 'sessionStatusUpdated', 'onSessionState'));
                 },
                 onHeartbeat: (event) => {
                     if (cancelled) return;
-                    adapter.onHeartbeat(event as HeartbeatEvent);
+                    adapter.onHeartbeat(requireEventShape<HeartbeatEvent>(event, 'heartbeat', 'onHeartbeat'));
                 },
                 onWorkerLog: (event) => {
                     if (cancelled) return;
@@ -337,11 +345,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
         return () => {
             cancelled = true;
             if (flushTimerId !== null) {
-                if (typeof window !== 'undefined' && typeof window.cancelAnimationFrame === 'function') {
-                    window.cancelAnimationFrame(flushTimerId);
-                } else {
-                    window.clearTimeout(flushTimerId);
-                }
+                window.cancelAnimationFrame(flushTimerId);
                 flushTimerId = null;
             }
             adapter.onTaskStreamConnectionChanged(false);
