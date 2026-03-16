@@ -33,8 +33,8 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
   });
 
   afterEach(async () => {
-    await db.delete();
     await db.close();
+    await db.delete();
   });
 
   /**
@@ -171,8 +171,8 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
    * - Computed fields are not stored in config table
    * - Unused fields are absent
    */
-  it('should pass after fix: property-based test for session normalization', () => {
-    fc.assert(
+  it('should pass after fix: property-based test for session normalization', async () => {
+    await fc.assert(
       fc.asyncProperty(
         // Generate random session data
         fc.record({
