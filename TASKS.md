@@ -1,7 +1,6 @@
 # TASKS.md
 
 ## Doing
-- #1089 / `refactor/plugins/remove-root-index-add-common-entry` / 2026-03-15 開始
 - #1074 / `refactor/shape-plugin/worker-ui-event-spec-alignment` / 2026-03-15 開始
 - #1068 / `fix/shape-plugin/remove-stale-elapsed-code-1068` / 2026-03-15 開始
 - #1066 / `fix/shape-plugin/compute-stage-duration-rename-1066` / 2026-03-15 開始
@@ -32,6 +31,38 @@
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 
 ## 今日の運用ログ
+
+- 2026-03-16: #1101 jszip→fflate移行・node:test切り替え・PR #1110作成
+  - ImportExportService.ts: jszip → fflate (zipSync/strToU8)
+  - テスト: vitest → node:test + node:assert/strict、.mjs 純粋ESMに変換
+  - dist/index.js から import して tsx OOM を回避
+  - test: 6/6 pass, typecheck: exit 0
+
+- 2026-03-15: #1099 ui-treeconsole-base moveNode失敗テストモック修正・PR #1100作成
+  - { success: false } → { result: false } に修正（CRUDResult型と一致）
+  - test: 73/73 passed, exit 0
+
+- 2026-03-15: #1097 ui-worker-client sessionChannels テストモック修正・PR #1098作成
+  - workerBridge.sessionChannels.unit.test.ts: 旧 getShapeQueryAPI 経由モック → WorkerApi 直接呼び出し（subscribeSessionState/subscribeSessionHeartbeat/subscribeWorkerLog）に修正
+  - test: 46/46 passed, exit 0
+
+- 2026-03-15: #1095 download/chunk-store vitest ~/alias 追加・PR #1096作成
+  - download/vitest.config.ts: ~/... → src/ alias 追加
+  - chunk-store/vitest.config.ts: ~/... → download/src/ alias 追加
+  - download: 6/6 passed, chunk-store: 5/5 passed, exit 0
+  - ShapeDB を VectorTileRecord から誤 import → ShapeDB.ts から正しく import に修正
+  - test: 4/4 passed, exit 0
+
+- 2026-03-15: #1091 location-plugin vitest alias 修正・テスト期待値修正・PR #1092作成
+  - vitest.config.ts から存在しない ui-i18n.ts shim alias を削除（dist 経由で正常 resolve）
+  - LocationSelectionStep.view test: 翻訳済み文字列 → i18n キー期待値に修正
+  - test: 7 files / 14 tests passed, exit 0
+
+- 2026-03-15: #1089 ./common エントリ新設・src/index.ts 削除・PR #1090作成
+  - location/route/shape-plugin に src/common/index.ts 追加、src/index.ts 削除
+  - package.json exports/typesVersions/build を ./common エントリに更新
+  - app/vite.config.ts alias・app/tsconfig.json paths を /common サブエントリに対応
+  - build: exit 0、typecheck (plugins + app): exit 0
 
 - 2026-03-15: #1081 4-event spec再適用・テスト新API対応・PR #1088作成
 - 2026-03-15: #1082 PR #1085 mainマージ済み / #1083 PR #1084 mainマージ済み
