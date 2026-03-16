@@ -6,8 +6,8 @@
  */
 
 import 'fake-indexeddb/auto';
+import '@testing-library/jest-dom/vitest';
 import { beforeEach, vi } from 'vitest';
-// Testing Library matchers (toBeInTheDocument, toHaveClass, etc.)
 
 const logVitestSetupWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -32,7 +32,7 @@ const comlinkMock = {
   proxy: <T>(obj: T): T => obj,
   windowEndpoint: (globalWindow: Window) => globalWindow,
   createEndpoint: () => ({}),
-  releaseProxy: () => {},
+  releaseProxy: () => { },
 };
 
 vi.mock('comlink', () => comlinkMock);
@@ -50,9 +50,9 @@ if (typeof globalThis.self === 'undefined') {
 // Mock Web Worker class
 class WorkerMock {
   private listeners: Map<string, Function[]> = new Map();
-  
-  constructor(public url: string | URL, public options?: WorkerOptions) {}
-  
+
+  constructor(public url: string | URL, public options?: WorkerOptions) { }
+
   postMessage(message: any, _transfer?: Transferable[]): void {
     // Simulate async message handling
     setTimeout(() => {
@@ -60,14 +60,14 @@ class WorkerMock {
       handlers.forEach(handler => handler({ data: message }));
     }, 0);
   }
-  
+
   addEventListener(type: string, listener: Function): void {
     if (!this.listeners.has(type)) {
       this.listeners.set(type, []);
     }
     this.listeners.get(type)!.push(listener);
   }
-  
+
   removeEventListener(type: string, listener: Function): void {
     const handlers = this.listeners.get(type) || [];
     const index = handlers.indexOf(listener);
@@ -75,7 +75,7 @@ class WorkerMock {
       handlers.splice(index, 1);
     }
   }
-  
+
   terminate(): void {
     this.listeners.clear();
   }
@@ -172,7 +172,7 @@ void (async () => {
 // CompressionStream mock for compression tests
 if (!globalThis.CompressionStream) {
   globalThis.CompressionStream = class CompressionStream {
-    constructor(public format: string) {}
+    constructor(public format: string) { }
     writable = { getWriter: () => ({ write: vi.fn(), close: vi.fn() }) };
     readable = { getReader: () => ({ read: vi.fn() }) };
   } as typeof globalThis.CompressionStream;
@@ -180,7 +180,7 @@ if (!globalThis.CompressionStream) {
 
 if (!globalThis.DecompressionStream) {
   globalThis.DecompressionStream = class DecompressionStream {
-    constructor(public format: string) {}
+    constructor(public format: string) { }
     writable = { getWriter: () => ({ write: vi.fn(), close: vi.fn() }) };
     readable = { getReader: () => ({ read: vi.fn() }) };
   } as typeof globalThis.DecompressionStream;

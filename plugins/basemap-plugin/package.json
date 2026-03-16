@@ -36,7 +36,7 @@
   },
   "scripts": {
     "build": "tsdown src/index.ts src/ui/index.ts src/icon/index.ts --config ../../tsdown.config.ts --outDir dist",
-    "test": "vitest",
+    "test": "vitest run",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
     "clean": "rm -rf dist",

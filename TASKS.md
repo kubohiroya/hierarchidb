@@ -1,6 +1,7 @@
 # TASKS.md
 
 ## Doing
+- #1114 / `fix/test/vitest-run-unify-config-api-1114` / 2026-03-16 開始
 - #1074 / `refactor/shape-plugin/worker-ui-event-spec-alignment` / 2026-03-15 開始
 - #1068 / `fix/shape-plugin/remove-stale-elapsed-code-1068` / 2026-03-15 開始
 - #1066 / `fix/shape-plugin/compute-stage-duration-rename-1066` / 2026-03-15 開始
@@ -31,6 +32,11 @@
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 
 ## 今日の運用ログ
+
+- 2026-03-16: #1111 gh-pages混入ビルド成果物除去・PR #1112作成 / ルート一時ファイル11件除去・PR #1113作成
+  - assets/, auth/, templates/, locales/ 等 246 ファイルを git rm --cached
+  - AGENTS.md-, e2e-results.*, plugin-test-*.json, test-failure-analysis.md, worker-showconfig.json, tmp*.mjs, tmp_check_menu.*, remove_onWheel.patch を git rm
+  - .gitignore に再発防止エントリ追加（両 PR）
 
 - 2026-03-16: #1101 jszip→fflate移行・node:test切り替え・PR #1110作成
   - ImportExportService.ts: jszip → fflate (zipSync/strToU8)

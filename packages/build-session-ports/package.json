@@ -14,7 +14,7 @@
   "scripts": {
     "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
-    "test": "vitest"
+    "test": "vitest run"
   },
   "dependencies": {
     "@hierarchidb/core-types": "workspace:*"

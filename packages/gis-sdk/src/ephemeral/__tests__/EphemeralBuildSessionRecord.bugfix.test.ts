@@ -58,7 +58,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
     const nodeId: NodeId = 'test-node-1' as NodeId;
     const selectedArrayByCountries = { US: [true, false, true], CA: [false, true] };
     const now = Date.now();
-    
+
     // Create session using normalized tables
     const config: BuildSessionRecord = {
       nodeId,
@@ -92,7 +92,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
     await db.buildStageStatuses.add(stageStatus);
 
     // TEST 1: Verify schema has separate tables
-    const hasNormalizedTables = 
+    const hasNormalizedTables =
       db.tables.some(t => t.name === 'buildSessionConfigs') &&
       db.tables.some(t => t.name === 'buildSessionHeartbeats') &&
       db.tables.some(t => t.name === 'buildSessionStatuses') &&
