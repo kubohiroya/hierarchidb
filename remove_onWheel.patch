@@ -1,6 +1,0 @@
-*** Begin Patch
-*** Update File: packages/ui/map/src/components/MapLibreMap.tsx
-@@
--    <div style={containerStyle}>
-+    <div style={containerStyle}>
-*** End Patch
