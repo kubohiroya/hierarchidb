@@ -32,6 +32,10 @@
 
 ## 今日の運用ログ
 
+- 2026-03-16: #1111 gh-pages混入ビルド成果物除去・PR #1112作成
+  - assets/, auth/, templates/, locales/ 等 246 ファイルを git rm --cached
+  - .gitignore に再発防止エントリ追加
+
 - 2026-03-16: #1101 jszip→fflate移行・node:test切り替え・PR #1110作成
   - ImportExportService.ts: jszip → fflate (zipSync/strToU8)
   - テスト: vitest → node:test + node:assert/strict、.mjs 純粋ESMに変換
