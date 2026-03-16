@@ -2,27 +2,9 @@
 
 ## Doing
 - #1118 / `fix/shape-plugin/build-progress-task-event-type` / 2026-03-16 開始
-- #1114 / `fix/test/vitest-run-unify-config-api-1114` / 2026-03-16 開始
-- #1074 / `refactor/shape-plugin/worker-ui-event-spec-alignment` / 2026-03-15 開始
-- #1068 / `fix/shape-plugin/remove-stale-elapsed-code-1068` / 2026-03-15 開始
-- #1066 / `fix/shape-plugin/compute-stage-duration-rename-1066` / 2026-03-15 開始
-- #1047 / `fix/shape-plugin/remove-sequenced-event-wrapper` / 2026-03-14 開始
-- #1030 / `fix/shape-plugin/task-failure-error-message` / 2026-03-14 開始
-- #1026 / `fix/location-plugin/select-all-deselect-reverts-1026` / 2026-03-14 開始
-
-- #1021 / `fix/treeconsole/treetable-core-viewport-height` / 2026-03-14 開始
 - #1020 / `refactor/shape-plugin/build-session-event-redesign-1020` / 2026-03-14 開始
 - #1019 / `fix/shape-plugin/task-snapshot-race-on-build-start-1019` / 2026-03-14 開始
 - #1018 / `fix/shape-plugin/runtime-refresh-after-start-1018` / 2026-03-14 開始
-- #1016 / `refactor/worker-client/subscribe-all-1016` / 2026-03-13 開始
-- #1006 / `refactor/shape-plugin/ssot-usestore-handshake-atom-1006` / 2026-03-12 開始
-- #999 / `feat/shape-plugin/integration-tests-error-handling-999` / 2026-03-12 開始
-
-- #999 / `feat/shape-plugin/integration-tests-error-handling-999` / 2026-03-12 開始
-- #994 / `refactor/shape-plugin/remove-redundant-pipeline-state-vars` / 2026-03-11 開始
-- #993 / `fix/shape-plugin/vitest-alias-build-progress-plugin-registry` / 2026-03-10 開始
-- #991 / `fix/auth/suppress-repeated-auth-dialog-991` / 2026-03-10 開始
-- #988 / `fix/i18n/route-plugin-type-safety-and-import-cleanup` / 2026-03-10 開始
 - #983 / `fix/shape-plugin/rename-steps-processing-to-config` / 2026-03-10 開始
 - #970 / `fix/i18n/stepper-basic-info-label-key` / 2026-03-10 開始
 - #969 / `refactor/review/gemini-review-batch-fixes` / 2026-03-10 開始
