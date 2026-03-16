@@ -1,7 +1,6 @@
 # TASKS.md
 
 ## Doing
-- #1119 / `refactor/shape-plugin/rename-subscribe-to-methods` / 2026-03-16 開始
 - #1118 / `fix/shape-plugin/build-progress-task-event-type` / 2026-03-16 開始
 - #1114 / `fix/test/vitest-run-unify-config-api-1114` / 2026-03-16 開始
 - #1074 / `refactor/shape-plugin/worker-ui-event-spec-alignment` / 2026-03-15 開始
@@ -34,6 +33,15 @@
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 
 ## 今日の運用ログ
+
+- 2026-03-17: #1121 TaskSummary に metadata 追加・PR #1122作成
+  - session-events.ts: TaskSummary に metadata フィールド追加
+  - useShapeBuildSessionStateAtomBridge.ts: toAdapterStageSnapshotEvent で task.metadata を BuildTaskSummary に渡す
+  - typecheck: exit 0 (shape-plugin)
+
+- 2026-03-16: #1119 subscribeToXxx → subscribeXxx リネーム・PR #1120作成
+  - shapeBuildAPI 7メソッド、workerBootstrap 型+実装、progressAdapters/external-mocks パラメータ名、テスト3ファイル更新
+  - typecheck: exit 0、test: 440/440 passed
 
 - 2026-03-16: #1114 vitest run統一・設定追加・テスト修正・PR #1115作成
   - 14パッケージの test スクリプトを vitest → vitest run に統一
