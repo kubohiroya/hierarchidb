@@ -22,7 +22,7 @@ vi.mock('../../worker/api/shapeBuildRuntime.js', () => ({
     getShapeEntityHandler: () => ({ getEntity: async () => null }),
     getPauseState: () => ({ paused: false, waiters: [] }),
     buildTaskQueueSummary: async () => ({ progress: { percentage: 0, total: 0, completed: 0, failed: 0, skipped: 0 }, status: 'idle' }),
-    onTaskQueueUpdate: () => () => {},
+    onTaskQueueUpdate: () => () => { },
   },
 }));
 
@@ -52,10 +52,10 @@ describe('shapeBuildAPI 4-channel subscriptions', () => {
     const heartbeatCallback = vi.fn();
     const taskProgressCallback = vi.fn();
 
-    const offSession = shapeBuildAPI.subscribeToSessionState(nodeId, sessionCallback as never);
-    const offSnapshot = shapeBuildAPI.subscribeToStageSnapshots(nodeId, snapshotCallback as never);
-    const offHeartbeat = shapeBuildAPI.subscribeToHeartbeat(nodeId, heartbeatCallback as never);
-    const offTaskProgress = shapeBuildAPI.subscribeToTaskProgress(nodeId, taskProgressCallback as never);
+    const offSession = shapeBuildAPI.subscribeSessionState(nodeId, sessionCallback as never);
+    const offSnapshot = shapeBuildAPI.subscribeStageSnapshots(nodeId, snapshotCallback as never);
+    const offHeartbeat = shapeBuildAPI.subscribeHeartbeat(nodeId, heartbeatCallback as never);
+    const offTaskProgress = shapeBuildAPI.subscribeTaskProgress(nodeId, taskProgressCallback as never);
 
     // Invoke the stored callbacks directly to simulate event delivery
     sessionStateCallbacks.get(String(nodeId))?.callback?.({ kind: 'session' });

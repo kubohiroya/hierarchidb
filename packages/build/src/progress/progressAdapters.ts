@@ -22,14 +22,14 @@ export function progressEventToUnified(event: BuildProgressEvent): BuildUnifiedP
 }
 
 export function createAdapterFromProgressSubscribe(
-  subscribeToProgress: (cb: (event: BuildProgressEvent) => void) => (() => void) | Promise<() => void>,
+  subscribeProgress: (cb: (event: BuildProgressEvent) => void) => (() => void) | Promise<() => void>,
 ): BuildProgressAdapter {
   return {
     subscribe: (consumer: (info: BuildUnifiedProgressInfo) => void) => {
       const wrapped = (event: BuildProgressEvent) => {
         consumer(progressEventToUnified(event));
       };
-      return subscribeToProgress(wrapped);
+      return subscribeProgress(wrapped);
     },
   };
 }

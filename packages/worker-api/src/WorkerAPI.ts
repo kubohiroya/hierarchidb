@@ -107,6 +107,12 @@ export interface WorkerAPI<T> {
     nodeId: NodeId,
     callback: (event: BuildTaskUpdateEvent) => void
   ): Promise<() => void>;
+  /** Subscribe to stage snapshot events (stageSnapshotUpdated) for a specific node. Shape-plugin only. */
+  subscribeStageSnapshots(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    callback: (event: unknown) => void
+  ): Promise<() => void>;
   listBuildSessionRecordsByStatus(
     nodeType: NodeType,
     statuses: Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>

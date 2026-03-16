@@ -93,11 +93,12 @@ type ShapeBuildAPI = {
   getBuildSession?: (nodeId: NodeId) => Promise<unknown>;
   pauseBuildSession?: (draftId: NodeId) => Promise<void>;
   invokeBuildCommand?: (command: string, payload: Record<string, unknown>) => Promise<void>;
-  subscribeToProgress?: BuildProgressSubscriber;
-  subscribeToTasks?: BuildTaskSubscriber;
-  subscribeToSessionState?: BuildEventSubscriber;
-  subscribeToHeartbeat?: BuildEventSubscriber;
-  subscribeToWorkerLog?: BuildEventSubscriber;
+  subscribeProgress?: BuildProgressSubscriber;
+  subscribeTasks?: BuildTaskSubscriber;
+  subscribeStageSnapshots?: BuildEventSubscriber;
+  subscribeSessionState?: BuildEventSubscriber;
+  subscribeHeartbeat?: BuildEventSubscriber;
+  subscribeWorkerLog?: BuildEventSubscriber;
 };
 
 type RuntimeWorkerBootstrap = {
@@ -903,13 +904,13 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           callback: (event: BuildProgressEvent) => void
         ): Promise<() => void> => {
           const buildApi = resolveShapeBuildApiOrThrow(nodeType);
-          if (!buildApi.subscribeToProgress) {
+          if (!buildApi.subscribeProgress) {
             return () => { };
           }
           const wrappedCallback = (event: BuildProgressEvent): void => {
             callback(sanitizeForComlink(event));
           };
-          const unsubscribe = buildApi.subscribeToProgress(nodeId, wrappedCallback);
+          const unsubscribe = buildApi.subscribeProgress(nodeId, wrappedCallback);
           return toComlinkProxy(Comlink, unsubscribe);
         };
 
@@ -919,13 +920,29 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           callback: (event: BuildTaskUpdateEvent) => void
         ): Promise<() => void> => {
           const buildApi = resolveShapeBuildApiOrThrow(nodeType);
-          if (!buildApi.subscribeToTasks) {
+          if (!buildApi.subscribeTasks) {
             return () => { };
           }
           const wrappedCallback = (event: BuildTaskUpdateEvent): void => {
             callback(sanitizeForComlink(event));
           };
-          const unsubscribe = buildApi.subscribeToTasks(nodeId, wrappedCallback);
+          const unsubscribe = buildApi.subscribeTasks(nodeId, wrappedCallback);
+          return toComlinkProxy(Comlink, unsubscribe);
+        };
+
+        const subscribeStageSnapshots = async (
+          nodeType: NodeType,
+          nodeId: NodeId,
+          callback: (event: unknown) => void
+        ): Promise<() => void> => {
+          const buildApi = resolveShapeBuildApiOrThrow(nodeType);
+          if (!buildApi.subscribeStageSnapshots) {
+            return () => { };
+          }
+          const wrappedCallback = (event: unknown): void => {
+            callback(sanitizeForComlink(event));
+          };
+          const unsubscribe = buildApi.subscribeStageSnapshots(nodeId, wrappedCallback as Parameters<typeof buildApi.subscribeStageSnapshots>[1]);
           return toComlinkProxy(Comlink, unsubscribe);
         };
 
@@ -935,13 +952,13 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           callback: (event: unknown) => void
         ): Promise<() => void> => {
           const buildApi = resolveShapeBuildApiOrThrow(nodeType);
-          if (!buildApi.subscribeToSessionState) {
+          if (!buildApi.subscribeSessionState) {
             return () => { };
           }
           const wrappedCallback = (event: unknown): void => {
             callback(sanitizeForComlink(event));
           };
-          const unsubscribe = buildApi.subscribeToSessionState(nodeId, wrappedCallback);
+          const unsubscribe = buildApi.subscribeSessionState(nodeId, wrappedCallback);
           return toComlinkProxy(Comlink, unsubscribe);
         };
 
@@ -951,13 +968,13 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           callback: (event: unknown) => void
         ): Promise<() => void> => {
           const buildApi = resolveShapeBuildApiOrThrow(nodeType);
-          if (!buildApi.subscribeToHeartbeat) {
+          if (!buildApi.subscribeHeartbeat) {
             return () => { };
           }
           const wrappedCallback = (event: unknown): void => {
             callback(sanitizeForComlink(event));
           };
-          const unsubscribe = buildApi.subscribeToHeartbeat(nodeId, wrappedCallback);
+          const unsubscribe = buildApi.subscribeHeartbeat(nodeId, wrappedCallback);
           return toComlinkProxy(Comlink, unsubscribe);
         };
 
@@ -967,13 +984,13 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           callback: (event: unknown) => void
         ): Promise<() => void> => {
           const buildApi = resolveShapeBuildApiOrThrow(nodeType);
-          if (!buildApi.subscribeToWorkerLog) {
+          if (!buildApi.subscribeWorkerLog) {
             return () => { };
           }
           const wrappedCallback = (event: unknown): void => {
             callback(sanitizeForComlink(event));
           };
-          const unsubscribe = buildApi.subscribeToWorkerLog(nodeId, wrappedCallback);
+          const unsubscribe = buildApi.subscribeWorkerLog(nodeId, wrappedCallback);
           return toComlinkProxy(Comlink, unsubscribe);
         };
 
@@ -1053,6 +1070,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           cancelQueuedBuildSession,
           subscribeBuildProgress,
           subscribeBuildTasks,
+          subscribeStageSnapshots,
           subscribeSessionState,
           subscribeSessionHeartbeat,
           subscribeWorkerLog,

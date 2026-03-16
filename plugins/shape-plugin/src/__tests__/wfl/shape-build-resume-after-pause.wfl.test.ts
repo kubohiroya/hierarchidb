@@ -246,7 +246,7 @@ type ShapeBuildTestAPI = {
     downloadTaskPayloads: SourceTaskPayload[];
     buildContinuationPolicy?: BuildContinuationPolicy;
   }): Promise<NodeId>;
-  subscribeToProgress(
+  subscribeProgress(
     nodeId: NodeId,
     callback: (event: BuildProgressEvent<BuildProgressPayload>) => void
   ): Promise<() => void> | (() => void);
@@ -295,7 +295,7 @@ const setupAdditionalClient = async (): Promise<WorkerSetup> => {
     client,
     port1,
     port2,
-    terminateAll: () => {},
+    terminateAll: () => { },
   };
 };
 
@@ -476,7 +476,7 @@ describe('Comlink + fake-indexeddb integration: shape build pause/resume (pipeli
       });
 
       const progressEvents: Array<BuildProgressEvent<BuildProgressPayload>> = [];
-      const unsubscribe = await batch.subscribeToProgress(
+      const unsubscribe = await batch.subscribeProgress(
         nodeId,
         Comlink.proxy((event: BuildProgressEvent<BuildProgressPayload>) => {
           progressEvents.push(event);
