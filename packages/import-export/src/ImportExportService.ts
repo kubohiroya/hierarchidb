@@ -1,3 +1,4 @@
+import { zipSync, strToU8 } from 'fflate';
 import type { NodeId, NodeType, PeerEntity } from '@hierarchidb/core-types';
 import type { TreeNode, TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type {
@@ -27,11 +28,6 @@ type VectorTileZipMetadata = {
   totalBytes: number;
   nodeIds: NodeId[];
 };
-type JSZipInstance = {
-  file: (name: string, data: BlobPart) => void;
-  generateAsync: (options: { type: 'nodebuffer'; compression?: 'DEFLATE'; compressionOptions?: { level: number } }) => Promise<ArrayBuffer | Uint8Array>;
-};
-type JSZipConstructor = new () => JSZipInstance;
 
 export class ImportExportService<T> implements ImportExportAPI<T> {
   private operations = new Map<string, OperationStatus>();
@@ -300,7 +296,7 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
           const tiles = await this.collectVectorTileRecords(shapeNodeIds);
 
           const summary = this.buildVectorTileSummary(shapeNodeIds, tiles, params.format, params.includeMetadata);
-          exportedData = await this.buildVectorTileZipExport(params.format, tiles, summary, params.includeMetadata);
+          exportedData = this.buildVectorTileZipExport(params.format, tiles, summary, params.includeMetadata);
           mimeType = params.format === 'mvf' ? 'application/octet-stream' : 'application/zip';
           exportedCount = tiles.length;
           break;
@@ -491,44 +487,37 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
     };
   }
 
-  private async buildVectorTileZipExport(
+  private buildVectorTileZipExport(
     format: ExportFormat,
     tiles: VectorTileRecord[],
     summary: VectorTileZipMetadata,
     includeMetadata?: boolean
-  ): Promise<Blob> {
-    const jsZipMod = await import('jszip');
-    const Ctor = jsZipMod.default ?? jsZipMod;
-    if (typeof Ctor !== 'function') {
-      throw new Error('Failed to initialize zip utility');
-    }
-    const JSZip = Ctor as JSZipConstructor;
-    const zip = new JSZip();
+  ): Blob {
+    const files: Record<string, Uint8Array> = {};
     const sortedTiles = [...tiles].sort(
       (a, b) =>
         a.nodeId.localeCompare(b.nodeId) || a.z - b.z || a.x - b.x || a.y - b.y,
     );
     for (const tile of sortedTiles) {
-      const bytes = tile.data_Uint8Array instanceof Uint8Array ? tile.data_Uint8Array : new Uint8Array(tile.data_Uint8Array);
-      const path = `${tile.nodeId}/${tile.z}/${tile.x}/${tile.y}.pbf`;
-      zip.file(path, bytes);
+      const bytes =
+        tile.data_Uint8Array instanceof Uint8Array
+          ? tile.data_Uint8Array
+          : new Uint8Array(tile.data_Uint8Array);
+      files[`${tile.nodeId}/${tile.z}/${tile.x}/${tile.y}.pbf`] = bytes;
     }
 
     if (includeMetadata) {
-      zip.file('metadata.json', JSON.stringify({
-        format: 'vector-tile-export',
-        summary,
-      }, null, 2));
+      files['metadata.json'] = strToU8(
+        JSON.stringify({ format: 'vector-tile-export', summary }, null, 2),
+      );
     }
-    zip.file('summary.json', JSON.stringify(summary, null, 2));
+    files['summary.json'] = strToU8(JSON.stringify(summary, null, 2));
 
-    const nodeBuffer = await zip.generateAsync({
-      type: 'nodebuffer',
-      compression: 'DEFLATE',
-      compressionOptions: { level: 6 },
-    });
-    const blobType = format === 'mvf' ? 'application/octet-stream' : 'application/zip';
-    return new Blob([nodeBuffer as BlobPart], { type: blobType });
+    // zipSync with DEFLATE compression (level 6)
+    const zipped = zipSync(files, { level: 6 });
+    const blobType =
+      format === 'mvf' ? 'application/octet-stream' : 'application/zip';
+    return new Blob([zipped], { type: blobType });
   }
 
   private getExportFilename(format: ExportFormat): string {

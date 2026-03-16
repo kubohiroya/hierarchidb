@@ -13,25 +13,25 @@
     }
   },
   "dependencies": {
-    "jszip": "^3.10.1"
+    "fflate": "^0.8.2"
   },
   "scripts": {
     "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
     "clean": "rm -rf dist",
-    "test": "vitest run -c vitest.config.ts src/__tests__/vector-tile-export.test.ts",
+    "test": "node --max-old-space-size=512 src/__tests__/vector-tile-export.test.mjs",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "peerDependencies": {
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/import-export-api": "workspace:*",
-    "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/tree-api": "workspace:*"
+    "@hierarchidb/tree-api": "workspace:*",
+    "@hierarchidb/util": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "workspace:^5.9.3",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/import-export-api": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/tree-api": "workspace:*"
+    "typescript": "workspace:^5.9.3"
   }
 }
