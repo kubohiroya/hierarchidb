@@ -898,7 +898,17 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             return () => { };
           }
           const wrappedCallback = (event: unknown): void => {
-            callback(sanitizeForComlink(event) as BuildProgressEvent);
+            const sanitized = sanitizeForComlink(event);
+            if (
+              !sanitized ||
+              typeof sanitized !== 'object' ||
+              (sanitized as { type?: unknown }).type !== 'taskProgressUpdated'
+            ) {
+              throw new Error(
+                `[subscribeBuildProgress] unexpected event type: ${JSON.stringify((sanitized as { type?: unknown } | null)?.type ?? sanitized)}`
+              );
+            }
+            callback(sanitized as unknown as BuildProgressEvent);
           };
           const unsubscribe = buildApi.subscribeTaskProgress(nodeId, wrappedCallback);
           return toComlinkProxy(Comlink, unsubscribe);
