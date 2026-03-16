@@ -32,9 +32,10 @@
 
 ## 今日の運用ログ
 
-- 2026-03-16: #1111 gh-pages混入ビルド成果物除去・PR #1112作成
+- 2026-03-16: #1111 gh-pages混入ビルド成果物除去・PR #1112作成 / ルート一時ファイル11件除去・PR #1113作成
   - assets/, auth/, templates/, locales/ 等 246 ファイルを git rm --cached
-  - .gitignore に再発防止エントリ追加
+  - AGENTS.md-, e2e-results.*, plugin-test-*.json, test-failure-analysis.md, worker-showconfig.json, tmp*.mjs, tmp_check_menu.*, remove_onWheel.patch を git rm
+  - .gitignore に再発防止エントリ追加（両 PR）
 
 - 2026-03-16: #1101 jszip→fflate移行・node:test切り替え・PR #1110作成
   - ImportExportService.ts: jszip → fflate (zipSync/strToU8)
