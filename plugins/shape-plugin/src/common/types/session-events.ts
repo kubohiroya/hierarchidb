@@ -79,6 +79,8 @@ export interface HeartbeatEvent {
 
 /**
  * Minimal task summary carried inside StageSnapshotUpdatedEvent.
+ * metadata is included so UI-side title resolution (resolveShapeTaskTitle)
+ * can access metadata.preview without requiring title/inputData fields.
  */
 export interface TaskSummary {
     taskId: string;
@@ -87,6 +89,7 @@ export interface TaskSummary {
     progress: number;
     version: number;
     errorMessage?: string;
+    metadata?: Record<string, unknown>;
 }
 
 /**
