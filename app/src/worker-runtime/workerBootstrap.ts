@@ -62,15 +62,6 @@ type WorkerMessageTarget = {
 };
 
 type BuildTaskProvider = (nodeId: NodeId) => Promise<BuildTaskSummary[]>;
-type BuildProgressSubscriber = (
-  nodeId: NodeId,
-  callback: (event: BuildProgressEvent) => void
-) => () => void;
-
-type BuildTaskSubscriber = (
-  nodeId: NodeId,
-  callback: (event: BuildTaskUpdateEvent) => void
-) => () => void;
 
 type BuildEventSubscriber = (
   nodeId: NodeId,
@@ -93,11 +84,10 @@ type ShapeBuildAPI = {
   getBuildSession?: (nodeId: NodeId) => Promise<unknown>;
   pauseBuildSession?: (draftId: NodeId) => Promise<void>;
   invokeBuildCommand?: (command: string, payload: Record<string, unknown>) => Promise<void>;
-  subscribeProgress?: BuildProgressSubscriber;
-  subscribeTasks?: BuildTaskSubscriber;
   subscribeStageSnapshots?: BuildEventSubscriber;
   subscribeSessionState?: BuildEventSubscriber;
   subscribeHeartbeat?: BuildEventSubscriber;
+  subscribeTaskProgress?: BuildEventSubscriber;
   subscribeWorkerLog?: BuildEventSubscriber;
 };
 
@@ -904,13 +894,13 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           callback: (event: BuildProgressEvent) => void
         ): Promise<() => void> => {
           const buildApi = resolveShapeBuildApiOrThrow(nodeType);
-          if (!buildApi.subscribeProgress) {
+          if (!buildApi.subscribeTaskProgress) {
             return () => { };
           }
-          const wrappedCallback = (event: BuildProgressEvent): void => {
-            callback(sanitizeForComlink(event));
+          const wrappedCallback = (event: unknown): void => {
+            callback(sanitizeForComlink(event) as BuildProgressEvent);
           };
-          const unsubscribe = buildApi.subscribeProgress(nodeId, wrappedCallback);
+          const unsubscribe = buildApi.subscribeTaskProgress(nodeId, wrappedCallback);
           return toComlinkProxy(Comlink, unsubscribe);
         };
 
@@ -919,15 +909,10 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           nodeId: NodeId,
           callback: (event: BuildTaskUpdateEvent) => void
         ): Promise<() => void> => {
-          const buildApi = resolveShapeBuildApiOrThrow(nodeType);
-          if (!buildApi.subscribeTasks) {
-            return () => { };
-          }
-          const wrappedCallback = (event: BuildTaskUpdateEvent): void => {
-            callback(sanitizeForComlink(event));
-          };
-          const unsubscribe = buildApi.subscribeTasks(nodeId, wrappedCallback);
-          return toComlinkProxy(Comlink, unsubscribe);
+          // subscribeTasks was removed from ShapeBuildAPI in favour of subscribeTaskProgress.
+          // This method is kept for API compatibility but always returns a no-op unsubscribe.
+          void nodeType; void nodeId; void callback;
+          return () => { };
         };
 
         const subscribeStageSnapshots = async (
