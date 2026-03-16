@@ -12,6 +12,10 @@ export default defineConfig({
     resolve: {
         alias: {
             '~': path.resolve(__dirname, 'src'),
+            '@hierarchidb/core-types': path.resolve(__dirname, '../core-types/src/index.ts'),
+            '@hierarchidb/util': path.resolve(__dirname, '../util/src/index.ts'),
+            '@hierarchidb/shape-api': path.resolve(__dirname, '../shape-api/src/index.ts'),
+            '@hierarchidb/vectortile-store': path.resolve(__dirname, '../vectortile-store/src/index.ts'),
         },
     },
 });

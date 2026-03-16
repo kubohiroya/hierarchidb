@@ -33,6 +33,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
   });
 
   afterEach(async () => {
+    await db.close();
     await db.delete();
   });
 

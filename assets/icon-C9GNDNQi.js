@@ -1,1 +1,0 @@
-import"./vendor-react-DIwP1lUV.js";import{xi as e}from"./index.js";const t=e;var n=t;export{t as SpreadsheetPluginIcon,n as default};

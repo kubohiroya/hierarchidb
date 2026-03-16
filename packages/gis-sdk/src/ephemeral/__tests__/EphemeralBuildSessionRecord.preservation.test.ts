@@ -34,6 +34,7 @@ describe('Preservation: Query Interface Compatibility', () => {
   });
 
   afterEach(async () => {
+    await db.close();
     await db.delete();
   });
 
@@ -354,7 +355,10 @@ describe('Preservation: Query Interface Compatibility', () => {
         async (testData) => {
           const { nodeId, initialStatus, transitions } = testData;
 
-          // Clear any leftover data from previous runs with the same nodeId
+          // Clean up any leftover data from previous iterations
+          await db.buildSessionConfigs.delete(nodeId);
+          await db.buildSessionStatuses.delete(nodeId);
+          await db.buildSessionHeartbeats.delete(nodeId);
           await db.buildStageStatuses.where('nodeId').equals(nodeId).delete();
 
           // Create initial session in normalized tables
@@ -374,13 +378,18 @@ describe('Preservation: Query Interface Compatibility', () => {
               status: transition.status,
             });
 
-            // If stage is specified, update or create stage status
+            // If stage is specified, upsert stage status with updated startedAt
             if (transition.stage !== undefined) {
               const existingStages = await db.buildStageStatuses.where('nodeId').equals(nodeId).toArray();
-              const stageExists = existingStages.some(s => s.stage === transition.stage);
+              const existingStage = existingStages.find(s => s.stage === transition.stage);
 
-              if (!stageExists) {
-                await db.buildStageStatuses.put({
+              if (existingStage) {
+                await db.buildStageStatuses.update(existingStage.id, {
+                  startedAt: Date.now(),
+                  status: 'running',
+                });
+              } else {
+                await db.buildStageStatuses.add({
                   id: `${nodeId}-${transition.stage}-${Date.now()}`,
                   nodeId,
                   stage: transition.stage,
@@ -427,16 +436,21 @@ describe('Preservation: Query Interface Compatibility', () => {
       fc.asyncProperty(
         fc.record({
           nodeId: fc.string({ minLength: 5, maxLength: 20 }).map((s: string) => s as NodeId),
-          taskCount: fc.integer({ min: 1, max: 50 }),
+          // Max 20 tasks to prevent test timeouts (each task requires an async put() call)
+          taskCount: fc.integer({ min: 1, max: 20 }),
+          // noNaN/noDefaultInfinity required: NaN would cause Math.floor() to return NaN,
+          // making task count computations produce 0 tasks and causing false failures
           completedRatio: fc.double({ min: 0, max: 1, noNaN: true, noDefaultInfinity: true }),
           failedRatio: fc.double({ min: 0, max: 0.2, noNaN: true, noDefaultInfinity: true }),
         }),
         async (testData) => {
           const { nodeId, taskCount, completedRatio, failedRatio } = testData;
 
-          // Clear any leftover data from previous runs with the same nodeId
-          await db.buildTasks.where('nodeId').equals(nodeId).delete();
+          // Clean up any leftover data from previous iterations
+          await db.buildSessionConfigs.delete(nodeId);
+          await db.buildSessionStatuses.delete(nodeId);
           await db.buildStageStatuses.where('nodeId').equals(nodeId).delete();
+          await db.buildTasks.where('nodeId').equals(nodeId).delete();
 
           // Create session in normalized tables
           await db.buildSessionConfigs.put({
@@ -467,7 +481,7 @@ describe('Preservation: Query Interface Compatibility', () => {
             tasks.push({
               taskId: `${nodeId}-t${i}`,
               nodeId,
-              version: 0,
+              version: 0, // required field in EphemeralBuildTaskRecord
               status: 'completed',
               index: i,
               stage: 'source',
@@ -479,7 +493,7 @@ describe('Preservation: Query Interface Compatibility', () => {
             tasks.push({
               taskId: `${nodeId}-t${completedCount + i}`,
               nodeId,
-              version: 0,
+              version: 0, // required field in EphemeralBuildTaskRecord
               status: 'failed',
               index: completedCount + i,
               stage: 'source',
@@ -491,7 +505,7 @@ describe('Preservation: Query Interface Compatibility', () => {
             tasks.push({
               taskId: `${nodeId}-t${completedCount + failedCount + i}`,
               nodeId,
-              version: 0,
+              version: 0, // required field in EphemeralBuildTaskRecord
               status: 'queued',
               index: completedCount + failedCount + i,
               stage: 'source',
@@ -550,6 +564,11 @@ describe('Preservation: Query Interface Compatibility', () => {
         async (testData) => {
           const { nodeId, status, stage, hasSelectedArrayByCountries, hasStageId } = testData;
 
+          // Clean up any leftover data from previous iterations
+          await db.buildSessionConfigs.delete(nodeId);
+          await db.buildSessionStatuses.delete(nodeId);
+          await db.buildStageStatuses.where('nodeId').equals(nodeId).delete();
+
           // Create session with various configurations in normalized tables
           const config: BuildSessionRecord = {
             nodeId,
@@ -561,7 +580,7 @@ describe('Preservation: Query Interface Compatibility', () => {
             config.selectedArrayByCountries = { US: [true, false], CA: [true] };
           }
 
-          await db.buildSessionConfigs.add(config);
+          await db.buildSessionConfigs.put(config);
 
           const sessionStatus: BuildSessionStatus = {
             nodeId,
@@ -573,11 +592,11 @@ describe('Preservation: Query Interface Compatibility', () => {
             sessionStatus.stopReason = status === 'failed' ? 'failed' : 'completed';
           }
 
-          await db.buildSessionStatuses.add(sessionStatus);
+          await db.buildSessionStatuses.put(sessionStatus);
 
           if (stage) {
             const stageId = hasStageId ? `stage-${stage}-1` : undefined;
-            await db.buildStageStatuses.add({
+            await db.buildStageStatuses.put({
               id: stageId || `${nodeId}-${stage}-1`,
               nodeId,
               stage,

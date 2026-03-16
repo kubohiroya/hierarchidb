@@ -1,1 +1,0 @@
-import{Bt as e,Ht as t,Vt as n}from"./index.js";export{e as ShapeDB,n as clearDatabases,n as clearShapeDatabases,t as shapeDB};
