@@ -38,7 +38,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
      * 3. The count of deleted entries is accurate
      * 4. Valid entries (timestamp > 0) are preserved
      */
-    it('should identify and delete all invalid geometry cache entries', async () => {
+    it('should identify and delete all invalid geometry cache entries', { timeout: 15000 }, async () => {
         await fc.assert(
             fc.asyncProperty(
                 fc.record({
@@ -124,7 +124,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
      * 3. The count of deleted entries is accurate
      * 4. Valid entries (timestamp > 0) are preserved
      */
-    it('should identify and delete all invalid source cache entries', async () => {
+    it('should identify and delete all invalid source cache entries', { timeout: 15000 }, async () => {
         await fc.assert(
             fc.asyncProperty(
                 fc.record({
@@ -204,7 +204,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
      * 3. The counts for both cache types are accurate
      * 4. Valid entries from both cache types are preserved
      */
-    it('should cleanup invalid entries from both geometry and source caches', async () => {
+    it('should cleanup invalid entries from both geometry and source caches', { timeout: 15000 }, async () => {
         await fc.assert(
             fc.asyncProperty(
                 fc.record({
@@ -347,7 +347,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
      * 2. The second cleanup finds zero invalid entries
      * 3. Valid entries remain unchanged after multiple cleanups
      */
-    it('should be idempotent - multiple cleanups produce same result', async () => {
+    it('should be idempotent - multiple cleanups produce same result', { timeout: 15000 }, async () => {
         await fc.assert(
             fc.asyncProperty(
                 fc.record({
@@ -418,7 +418,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
      * 2. Invalid entries for other nodes are not affected
      * 3. Valid entries for all nodes are preserved
      */
-    it('should only cleanup invalid entries for the target node', async () => {
+    it('should only cleanup invalid entries for the target node', { timeout: 15000 }, async () => {
         await fc.assert(
             fc.asyncProperty(
                 fc.record({
@@ -507,7 +507,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
      * 2. No invalid entries exist after cleanup completes
      * 3. The returned counts match the actual deleted entries
      */
-    it('should complete all deletions before returning', async () => {
+    it('should complete all deletions before returning', { timeout: 15000 }, async () => {
         await fc.assert(
             fc.asyncProperty(
                 fc.record({

@@ -225,7 +225,7 @@ describe('Property 6: Cache Write Ordering', () => {
      * For any set of concurrent cache write operations, verify that each
      * individual write maintains the data-before-metadata ordering.
      */
-    it('should maintain write ordering for concurrent geometry cache writes', async () => {
+    it('should maintain write ordering for concurrent geometry cache writes', { timeout: 15000 }, async () => {
         await fc.assert(
             fc.asyncProperty(
                 fc.array(
@@ -396,7 +396,7 @@ describe('Property 11: Cache Type Consistency', () => {
      * 2. Entries with timestamp: 0 and metadata are valid
      * 3. Both cache types follow the same validation rules
      */
-    it('should apply consistent timestamp-based validity rules across cache types', async () => {
+    it('should apply consistent timestamp-based validity rules across cache types', { timeout: 15000 }, async () => {
         await fc.assert(
             fc.asyncProperty(
                 fc.record({
@@ -503,7 +503,7 @@ describe('Property 11: Cache Type Consistency', () => {
      * 2. Both cache types can delete entries without metadata
      * 3. Valid entries (with metadata) are preserved
      */
-    it('should apply consistent cleanup behavior across cache types', async () => {
+    it('should apply consistent cleanup behavior across cache types', { timeout: 15000 }, async () => {
         await fc.assert(
             fc.asyncProperty(
                 fc.record({

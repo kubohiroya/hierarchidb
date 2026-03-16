@@ -1,6 +1,7 @@
 # TASKS.md
 
 ## Doing
+- #1114 / `fix/test/vitest-run-unify-config-api-1114` / 2026-03-16 開始
 - #1074 / `refactor/shape-plugin/worker-ui-event-spec-alignment` / 2026-03-15 開始
 - #1068 / `fix/shape-plugin/remove-stale-elapsed-code-1068` / 2026-03-15 開始
 - #1066 / `fix/shape-plugin/compute-stage-duration-rename-1066` / 2026-03-15 開始

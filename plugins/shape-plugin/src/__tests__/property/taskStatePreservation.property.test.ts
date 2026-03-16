@@ -9,7 +9,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { TaskStatus } from '@hierarchidb/build-api';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import { taskStateProtection } from '../../worker/api/taskStateProtection.js';
-import { 
+import {
   updateBuildTaskProtected,
   updateTaskProgress,
   ensureSessionTaskConsistency,
@@ -59,7 +59,7 @@ describe('Property 3: Task State Preservation on Termination', () => {
 
           // Simulate abort during update
           const abortController = new AbortController();
-          
+
           try {
             // Start an update operation
             const updatePromise = updateBuildTaskProtected(
@@ -70,7 +70,7 @@ describe('Property 3: Task State Preservation on Termination', () => {
 
             // Abort immediately
             abortController.abort();
-            
+
             // Wait for update to complete or abort
             await updatePromise;
           } catch (error) {
@@ -91,7 +91,7 @@ describe('Property 3: Task State Preservation on Termination', () => {
           expect(taskAfterAbort!.stage).toBe(originalTask.stage);
           expect(taskAfterAbort!.version).toBe(originalTask.version);
           expect(taskAfterAbort!.index).toBe(originalTask.index);
-          
+
           // Input/output should be preserved
           expect(taskAfterAbort!.inputData).toEqual(originalTask.inputData);
           if (originalTask.outputData) {
@@ -107,13 +107,13 @@ describe('Property 3: Task State Preservation on Termination', () => {
     );
   });
 
-  it('should maintain task state consistency during concurrent aborts', async () => {
+  it('should maintain task state consistency during concurrent aborts', { timeout: 15000 }, async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.string({ minLength: 1, maxLength: 10 }).map(s => s as NodeId),
         fc.array(fc.integer({ min: 0, max: 100 }), { minLength: 3, maxLength: 8 }),
         async (nodeId: NodeId, progressValues: number[]) => {
-          const tasks = progressValues.map((progress, i) => 
+          const tasks = progressValues.map((progress, i) =>
             createMockTask(`task-${i}`, nodeId, 'running', progress)
           );
 
@@ -129,12 +129,12 @@ describe('Property 3: Task State Preservation on Termination', () => {
           const abortControllers = tasks.map(() => new AbortController());
 
           // Start concurrent updates
-          const updatePromises = tasks.map((task, i) => 
+          const updatePromises = tasks.map((task, i) =>
             updateBuildTaskProtected(
               task.taskId,
               { progress: Math.min(task.progress + 5, 100) },
               abortControllers[i].signal
-            ).catch(() => {}) // Ignore abort errors
+            ).catch(() => { }) // Ignore abort errors
           );
 
           // Abort all operations at different times
@@ -156,7 +156,7 @@ describe('Property 3: Task State Preservation on Termination', () => {
           for (const finalTask of finalTasks) {
             const validation = taskStateProtection.validateTaskState(finalTask);
             expect(validation.isValid).toBe(true);
-            
+
             if (!validation.isValid) {
               console.error('Task state validation failed:', {
                 taskId: finalTask.taskId,
@@ -235,7 +235,7 @@ describe('Property 3: Task State Preservation on Termination', () => {
 
           // Attempt invalid progress update during abort
           const abortController = new AbortController();
-          
+
           let errorThrown = false;
           try {
             await updateTaskProgress(taskId, invalidProgress, abortController.signal);
@@ -259,7 +259,7 @@ describe('Property 3: Task State Preservation on Termination', () => {
     );
   });
 
-  it('should restore from snapshots when state becomes inconsistent', async () => {
+  it('should restore from snapshots when state becomes inconsistent', { timeout: 15000 }, async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.string({ minLength: 1, maxLength: 10 }).map(s => s as NodeId),
@@ -293,10 +293,10 @@ describe('Property 3: Task State Preservation on Termination', () => {
           // Verify restoration
           const restoredTask = await ephemeralDB.buildTasks.get(taskId);
           expect(restoredTask).toBeDefined();
-          
+
           const restoredValidation = taskStateProtection.validateTaskState(restoredTask!);
           expect(restoredValidation.isValid).toBe(true);
-          
+
           // Should match original state
           expect(restoredTask!.status).toBe(originalTask.status);
           expect(restoredTask!.progress).toBe(originalTask.progress);

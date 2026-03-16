@@ -34,7 +34,6 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
 
   afterEach(async () => {
     await db.delete();
-    await db.close();
   });
 
   /**
@@ -58,7 +57,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
     const nodeId: NodeId = 'test-node-1' as NodeId;
     const selectedArrayByCountries = { US: [true, false, true], CA: [false, true] };
     const now = Date.now();
-    
+
     // Create session using normalized tables
     const config: BuildSessionRecord = {
       nodeId,
@@ -92,7 +91,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
     await db.buildStageStatuses.add(stageStatus);
 
     // TEST 1: Verify schema has separate tables
-    const hasNormalizedTables = 
+    const hasNormalizedTables =
       db.tables.some(t => t.name === 'buildSessionConfigs') &&
       db.tables.some(t => t.name === 'buildSessionHeartbeats') &&
       db.tables.some(t => t.name === 'buildSessionStatuses') &&
@@ -171,8 +170,8 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
    * - Computed fields are not stored in config table
    * - Unused fields are absent
    */
-  it('should pass after fix: property-based test for session normalization', () => {
-    fc.assert(
+  it('should pass after fix: property-based test for session normalization', async () => {
+    await fc.assert(
       fc.asyncProperty(
         // Generate random session data
         fc.record({

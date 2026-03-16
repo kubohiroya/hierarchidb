@@ -95,7 +95,7 @@ describeNetwork('Shape full-flow pipeline', () => {
     await clearNodeArtifacts();
   });
 
-  it('runs source/geometry/tileEmit with real data and persists outputs', async () => {
+  it('runs source/geometry/tileEmit with real data and persists outputs', { timeout: 300000 }, async () => {
     const downloadTaskPayloads = [await selectGeoBoundariesPayload()];
     await runShapePipeline({
       nodeId,
@@ -137,5 +137,5 @@ describeNetwork('Shape full-flow pipeline', () => {
     expect(dataSourceMetaCount).toBeGreaterThan(0);
     expect(tileSample?.layers?.length ?? 0).toBeGreaterThan(0);
     expect(tileSample?.data_Uint8Array?.length ?? 0).toBeGreaterThan(0);
-  }, { timeout: 300000 });
+  });
 });
