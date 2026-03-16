@@ -165,6 +165,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                     status: resolveProgressPhase(task.status),
                     progress: task.progress,
                     errorMessage: task.errorMessage,
+                    metadata: task.metadata,
                 };
             });
             return {
