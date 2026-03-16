@@ -942,7 +942,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           const wrappedCallback = (event: unknown): void => {
             callback(sanitizeForComlink(event));
           };
-          const unsubscribe = buildApi.subscribeStageSnapshots(nodeId, wrappedCallback as Parameters<typeof buildApi.subscribeStageSnapshots>[1]);
+          const unsubscribe = buildApi.subscribeStageSnapshots(nodeId, wrappedCallback as (event: any) => void);
           return toComlinkProxy(Comlink, unsubscribe);
         };
 
