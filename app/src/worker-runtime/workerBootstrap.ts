@@ -898,6 +898,18 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           reason?: string
         ): Promise<void> => runCancelQueuedBuildSession(nodeType, nodeId, reason);
 
+
+        const safeStringify = (value: unknown): string => {
+          const seen = new WeakSet<object>();
+          return JSON.stringify(value, (_key, val) => {
+            if (typeof val === 'object' && val !== null) {
+              if (seen.has(val)) return '[Circular]';
+              seen.add(val);
+            }
+            return val as unknown;
+          });
+        };
+
         const subscribeBuildProgress = async (
           nodeType: NodeType,
           nodeId: NodeId,
@@ -915,7 +927,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
               (sanitized as { type?: unknown }).type !== 'taskProgressUpdated'
             ) {
               throw new Error(
-                `[subscribeBuildProgress] unexpected event type: ${JSON.stringify((sanitized as { type?: unknown } | null)?.type ?? sanitized)}`
+                `[subscribeBuildProgress] unexpected event type: ${safeStringify((sanitized as { type?: unknown } | null)?.type ?? sanitized)}`
               );
             }
             callback(sanitized as unknown as BuildProgressEvent);
@@ -933,17 +945,6 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           // This method is kept for API compatibility but always returns a no-op unsubscribe.
           void nodeType; void nodeId; void callback;
           return () => { };
-        };
-
-        const safeStringify = (value: unknown): string => {
-          const seen = new WeakSet<object>();
-          return JSON.stringify(value, (_key, val) => {
-            if (typeof val === 'object' && val !== null) {
-              if (seen.has(val)) return '[Circular]';
-              seen.add(val);
-            }
-            return val as unknown;
-          });
         };
 
         const requireEventType = (event: unknown, expectedType: string, context: string): Record<string, unknown> => {
