@@ -87,11 +87,11 @@ type ShapeBuildTestAPI = {
     downloadTaskPayloads: SourceTaskPayload[];
     buildContinuationPolicy?: BuildContinuationPolicy;
   }): Promise<NodeId>;
-  subscribeToProgress(
+  subscribeProgress(
     nodeId: NodeId,
     callback: (event: BuildProgressEvent<BuildProgressPayload>) => void
   ): () => void;
-  subscribeToTasks(
+  subscribeTasks(
     nodeId: NodeId,
     callback: (event: BuildTaskUpdateEvent<BuildTaskSummary>) => void
   ): () => void;
@@ -477,8 +477,8 @@ async function main(endpoint?: Endpoint): Promise<void> {
       payload.downloadTaskPayloads,
       payload.buildContinuationPolicy,
     ),
-    subscribeToProgress: (nodeId, callback) => proxy(shapeBuildAPI.subscribeToProgress(nodeId, callback)),
-    subscribeToTasks: (nodeId, callback) => proxy(shapeBuildAPI.subscribeToTasks(nodeId, callback)),
+    subscribeProgress: (nodeId, callback) => proxy(shapeBuildAPI.subscribeProgress(nodeId, callback)),
+    subscribeTasks: (nodeId, callback) => proxy(shapeBuildAPI.subscribeTasks(nodeId, callback)),
     getBuildTasks: async (nodeId) => shapeBuildAPI.getBuildTasks(nodeId),
   };
 

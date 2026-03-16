@@ -64,6 +64,11 @@ export interface BuildWorkerBridge {
     nodeId: NodeId,
     cb: (event: any) => void
   ): Promise<() => void>;
+  subscribeStageSnapshots(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    cb: (event: any) => void
+  ): Promise<() => void>;
   /** Subscribe to all build session channels for a node in a single call. Returns a single unsubscribe function. */
   subscribeAll(
     nodeType: NodeType,
@@ -367,6 +372,24 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
     };
   }
 
+  async subscribeStageSnapshots(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    cb: (event: any) => void
+  ): Promise<() => void> {
+    const api = await ensureWorkerAPI();
+    const unsubscribe = await api.subscribeStageSnapshots(nodeType, nodeId, proxy((event: unknown) => {
+      cb(sanitizeForComlink(event));
+    }));
+    return () => {
+      try {
+        unsubscribe();
+      } catch (error) {
+        console.warn('[BuildWorkerBridge] subscribeStageSnapshots unsubscribe failed', error);
+      }
+    };
+  }
+
   async subscribeAll(
     nodeType: NodeType,
     nodeId: NodeId,
@@ -380,7 +403,7 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
   ): Promise<() => void> {
     const api = await ensureWorkerAPI();
     const [unsubscribeTasks, unsubscribeProgress, unsubscribeSessionState, unsubscribeHeartbeat, unsubscribeWorkerLog] = await Promise.all([
-      api.subscribeBuildTasks(nodeType, nodeId, proxy((event: BuildTaskUpdateEvent) => {
+      api.subscribeStageSnapshots(nodeType, nodeId, proxy((event: unknown) => {
         handlers.onTaskEvent(sanitizeForComlink(event));
       })),
       api.subscribeBuildProgress(nodeType, nodeId, proxy((event: BuildProgressEvent) => {

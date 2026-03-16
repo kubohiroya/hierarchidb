@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import type { BuildProgressEvent, BuildTaskUpdateEvent } from '@hierarchidb/build-api';
+import type { BuildProgressEvent } from '@hierarchidb/build-api';
 import { __setWorkerBridgeClientRef, getBuildWorkerBridge } from '../workerBridge';
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
@@ -11,7 +11,7 @@ describe('WorkerBridge subscribeAll', () => {
   let subscribeSessionStateMock: ReturnType<typeof vi.fn>;
   let subscribeSessionHeartbeatMock: ReturnType<typeof vi.fn>;
   let subscribeWorkerLogMock: ReturnType<typeof vi.fn>;
-  let subscribeBuildTasksMock: ReturnType<typeof vi.fn>;
+  let subscribeStageSnapshotsMock: ReturnType<typeof vi.fn>;
   let subscribeBuildProgressMock: ReturnType<typeof vi.fn>;
 
   let taskEventProxyCallback: ((event: unknown) => void) | null;
@@ -39,7 +39,8 @@ describe('WorkerBridge subscribeAll', () => {
     heartbeatUnsubscribeMock = vi.fn();
     workerLogUnsubscribeMock = vi.fn();
 
-    subscribeBuildTasksMock = vi.fn(async (_nodeType: NodeType, _nodeId: NodeId, callback: (event: unknown) => void) => {
+    // subscribeAll now uses subscribeStageSnapshots instead of subscribeBuildTasks for task events
+    subscribeStageSnapshotsMock = vi.fn(async (_nodeType: NodeType, _nodeId: NodeId, callback: (event: unknown) => void) => {
       taskEventProxyCallback = callback;
       return tasksUnsubscribeMock;
     });
@@ -67,7 +68,7 @@ describe('WorkerBridge subscribeAll', () => {
 
     __setWorkerBridgeClientRef({
       client: {
-        subscribeBuildTasks: subscribeBuildTasksMock,
+        subscribeStageSnapshots: subscribeStageSnapshotsMock,
         subscribeBuildProgress: subscribeBuildProgressMock,
         subscribeSessionState: subscribeSessionStateMock,
         subscribeSessionHeartbeat: subscribeSessionHeartbeatMock,
@@ -76,7 +77,7 @@ describe('WorkerBridge subscribeAll', () => {
       isInitialized: true,
       initialize: async () => { },
       getAPI: () => ({
-        subscribeBuildTasks: subscribeBuildTasksMock,
+        subscribeStageSnapshots: subscribeStageSnapshotsMock,
         subscribeBuildProgress: subscribeBuildProgressMock,
         subscribeSessionState: subscribeSessionStateMock,
         subscribeSessionHeartbeat: subscribeSessionHeartbeatMock,
@@ -105,15 +106,15 @@ describe('WorkerBridge subscribeAll', () => {
       onWorkerLog,
     });
 
-    expect(subscribeBuildTasksMock).toHaveBeenCalledTimes(1);
+    expect(subscribeStageSnapshotsMock).toHaveBeenCalledTimes(1);
     expect(subscribeBuildProgressMock).toHaveBeenCalledTimes(1);
     expect(subscribeSessionStateMock).toHaveBeenCalledTimes(1);
     expect(subscribeSessionHeartbeatMock).toHaveBeenCalledTimes(1);
     expect(subscribeWorkerLogMock).toHaveBeenCalledTimes(1);
 
-    const taskEvent = { type: 'snapshot', nodeId: NODE_ID, tasks: [] } as unknown as BuildTaskUpdateEvent;
+    const taskEvent = { type: 'stageSnapshotUpdated', payload: { stageId: 'source', tasks: [] } };
     taskEventProxyCallback?.(taskEvent);
-    expect(onTaskEvent).toHaveBeenCalledWith(expect.objectContaining({ type: 'snapshot' }));
+    expect(onTaskEvent).toHaveBeenCalledWith(expect.objectContaining({ type: 'stageSnapshotUpdated' }));
 
     const progressEvent = { stage: 'source', progress: 50 } as unknown as BuildProgressEvent;
     progressEventProxyCallback?.(progressEvent);
@@ -153,7 +154,7 @@ describe('WorkerBridge subscribeAll', () => {
     });
 
     // subscribeAll subscribes all 5 channels regardless of nodeType
-    expect(subscribeBuildTasksMock).toHaveBeenCalledTimes(1);
+    expect(subscribeStageSnapshotsMock).toHaveBeenCalledTimes(1);
     expect(subscribeBuildProgressMock).toHaveBeenCalledTimes(1);
     expect(subscribeSessionStateMock).toHaveBeenCalledTimes(1);
     expect(subscribeSessionHeartbeatMock).toHaveBeenCalledTimes(1);

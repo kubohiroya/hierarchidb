@@ -322,7 +322,7 @@ export const shapeBuildAPI = {
   // Real-time Progress Subscription
   // ===================================
 
-  subscribeToProgress: (nodeId: NodeId, callback: (event: BuildProgressEvent) => void): (() => void) => {
+  subscribeProgress: (nodeId: NodeId, callback: (event: BuildProgressEvent) => void): (() => void) => {
     const existing = shapeBuildRuntimeCore.progressCallbacks.get(String(nodeId));
     existing?.unsubscribe?.();
     const taskQueue = new VtTaskQueueDb();
@@ -361,14 +361,14 @@ export const shapeBuildAPI = {
     };
   },
 
-  subscribeToTasks: (nodeId: NodeId, callback: (event: BuildTaskUpdateEvent) => void): (() => void) => {
+  subscribeTasks: (nodeId: NodeId, callback: (event: BuildTaskUpdateEvent) => void): (() => void) => {
     const key = String(nodeId);
     const existing = shapeBuildRuntimeCore.taskCallbacks.get(key);
     unconditionalEventStreamer.emitEvent(nodeId, 'worker-log', {
       nodeId,
       timestamp: Date.now(),
       level: 'log',
-      message: '[subscribeToTasks] start',
+      message: '[subscribeTasks] start',
       data: { nodeId: String(nodeId), hadExisting: Boolean(existing) },
     });
     existing?.unsubscribe?.();
@@ -437,7 +437,7 @@ export const shapeBuildAPI = {
       const active = shapeBuildRuntimeCore.taskCallbacks.get(key);
       if (active?.unsubscribe === unsubscribe) {
         shapeBuildRuntimeCore.taskCallbacks.delete(key);
-        console.log('[shapeBuildAPI] unsubscribeToTasks removed active subscription', JSON.stringify({ nodeId }));
+        console.log('[shapeBuildAPI] unsubscribeTasks removed active subscription', JSON.stringify({ nodeId }));
       }
       unsubscribe();
     };
@@ -447,7 +447,7 @@ export const shapeBuildAPI = {
   // Real-time Session State Subscription (4 channels)
   // ===================================
 
-  subscribeToSessionState: (nodeId: NodeId, callback: (event: SessionStatusUpdatedEvent) => void): (() => void) => {
+  subscribeSessionState: (nodeId: NodeId, callback: (event: SessionStatusUpdatedEvent) => void): (() => void) => {
     const key = String(nodeId);
     const existing = shapeBuildRuntimeCore.sessionStateCallbacks.get(key);
     existing?.unsubscribe?.();
@@ -473,7 +473,7 @@ export const shapeBuildAPI = {
     };
   },
 
-  subscribeToStageSnapshots: (nodeId: NodeId, callback: (event: StageSnapshotUpdatedEvent) => void): (() => void) => {
+  subscribeStageSnapshots: (nodeId: NodeId, callback: (event: StageSnapshotUpdatedEvent) => void): (() => void) => {
     const key = String(nodeId);
     const existing = shapeBuildRuntimeCore.stageSnapshotCallbacks.get(key);
     existing?.unsubscribe?.();
@@ -499,7 +499,7 @@ export const shapeBuildAPI = {
     };
   },
 
-  subscribeToHeartbeat: (nodeId: NodeId, callback: (event: HeartbeatEvent) => void): (() => void) => {
+  subscribeHeartbeat: (nodeId: NodeId, callback: (event: HeartbeatEvent) => void): (() => void) => {
     const key = String(nodeId);
     const existing = shapeBuildRuntimeCore.heartbeatCallbacks.get(key);
     existing?.unsubscribe?.();
@@ -525,7 +525,7 @@ export const shapeBuildAPI = {
     };
   },
 
-  subscribeToTaskProgress: (nodeId: NodeId, callback: (event: TaskProgressUpdatedEvent) => void): (() => void) => {
+  subscribeTaskProgress: (nodeId: NodeId, callback: (event: TaskProgressUpdatedEvent) => void): (() => void) => {
     const key = String(nodeId);
     const existing = shapeBuildRuntimeCore.taskProgressCallbacks.get(key);
     existing?.unsubscribe?.();
@@ -551,7 +551,7 @@ export const shapeBuildAPI = {
     };
   },
 
-  subscribeToWorkerLog: (nodeId: NodeId, callback: (event: WorkerLogEvent) => void): (() => void) => {
+  subscribeWorkerLog: (nodeId: NodeId, callback: (event: WorkerLogEvent) => void): (() => void) => {
     const key = String(nodeId);
     const existing = shapeBuildRuntimeCore.workerLogCallbacks.get(key);
     existing?.unsubscribe?.();

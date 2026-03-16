@@ -31,7 +31,7 @@ export class TabularWriter {
 }
 
 export class SimpleTableMetadataManager {
-  constructor(_dbName: string) {}
+  constructor(_dbName: string) { }
 
   async forceDelete(_tableId: string): Promise<void> {
     // no-op
@@ -52,7 +52,7 @@ export const getRowStoreDB = () => ({
 export abstract class AbstractBuildSession<TConfig> {
   protected progress: Record<string, unknown> = {};
 
-  constructor(public readonly nodeId: string, protected readonly config: TConfig) {}
+  constructor(public readonly nodeId: string, protected readonly config: TConfig) { }
 
   protected updateProgress(update: Record<string, unknown>): void {
     this.progress = { ...this.progress, ...update };
@@ -61,7 +61,7 @@ export abstract class AbstractBuildSession<TConfig> {
 export abstract class UnifiedBuildManagerBase<TConfig, TData> {
   private readonly pending = new Map<string, { config: TConfig; data: TData }>();
 
-  protected constructor(protected readonly persistence?: unknown) {}
+  protected constructor(protected readonly persistence?: unknown) { }
 
   async prepareSession(nodeId: string, config: TConfig, data: TData): Promise<void> {
     this.pending.set(nodeId, { config, data });
@@ -91,9 +91,9 @@ export abstract class UnifiedBuildManagerBase<TConfig, TData> {
 }
 
 export class TabularDatabaseManager {
-  constructor(_dbName: string) {}
+  constructor(_dbName: string) { }
 
-  async forceDelete(_tableId: string): Promise<void> {}
+  async forceDelete(_tableId: string): Promise<void> { }
 }
 
 export function createLaneSemaphoreRegistry(options: { defaults: Record<string, number>; fallback?: number }) {
@@ -148,14 +148,14 @@ export function progressEventToUnified(event: BuildProgressEvent): BuildUnifiedP
 }
 
 export function createAdapterFromProgressSubscribe(
-  subscribeToProgress: (cb: (event: BuildProgressEvent) => void) => (() => void) | Promise<() => void>,
+  subscribeProgress: (cb: (event: BuildProgressEvent) => void) => (() => void) | Promise<() => void>,
 ): BuildProgressAdapter {
   return {
     subscribe: (consumer: (info: BuildUnifiedProgressInfo) => void) => {
       const wrapped = (event: BuildProgressEvent) => {
         consumer(progressEventToUnified(event));
       };
-      return subscribeToProgress(wrapped);
+      return subscribeProgress(wrapped);
     },
   } satisfies BuildProgressAdapter;
 }
