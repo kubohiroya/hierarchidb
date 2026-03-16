@@ -925,6 +925,17 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           return () => { };
         };
 
+        const requireEventType = (event: unknown, expectedType: string, context: string): Record<string, unknown> => {
+          if (!event || typeof event !== 'object') {
+            throw new Error(`[${context}] event must be an object, received ${JSON.stringify(event)}`);
+          }
+          const rec = event as Record<string, unknown>;
+          if (rec.type !== expectedType) {
+            throw new Error(`[${context}] unexpected event type: expected "${expectedType}", received ${JSON.stringify(rec.type)}`);
+          }
+          return rec;
+        };
+
         const subscribeStageSnapshots = async (
           nodeType: NodeType,
           nodeId: NodeId,
@@ -932,10 +943,12 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
         ): Promise<() => void> => {
           const buildApi = resolveShapeBuildApiOrThrow(nodeType);
           if (!buildApi.subscribeStageSnapshots) {
-            return () => { };
+            throw new Error(`[subscribeStageSnapshots] subscribeStageSnapshots not available for nodeType: ${nodeType}`);
           }
           const wrappedCallback = (event: unknown): void => {
-            callback(sanitizeForComlink(event));
+            const sanitized = sanitizeForComlink(event);
+            requireEventType(sanitized, 'stageSnapshotUpdated', 'subscribeStageSnapshots');
+            callback(sanitized);
           };
           const unsubscribe = buildApi.subscribeStageSnapshots(nodeId, wrappedCallback as (event: any) => void);
           return toComlinkProxy(Comlink, unsubscribe);
@@ -948,10 +961,12 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
         ): Promise<() => void> => {
           const buildApi = resolveShapeBuildApiOrThrow(nodeType);
           if (!buildApi.subscribeSessionState) {
-            return () => { };
+            throw new Error(`[subscribeSessionState] subscribeSessionState not available for nodeType: ${nodeType}`);
           }
           const wrappedCallback = (event: unknown): void => {
-            callback(sanitizeForComlink(event));
+            const sanitized = sanitizeForComlink(event);
+            requireEventType(sanitized, 'sessionStatusUpdated', 'subscribeSessionState');
+            callback(sanitized);
           };
           const unsubscribe = buildApi.subscribeSessionState(nodeId, wrappedCallback);
           return toComlinkProxy(Comlink, unsubscribe);
@@ -964,10 +979,12 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
         ): Promise<() => void> => {
           const buildApi = resolveShapeBuildApiOrThrow(nodeType);
           if (!buildApi.subscribeHeartbeat) {
-            return () => { };
+            throw new Error(`[subscribeSessionHeartbeat] subscribeHeartbeat not available for nodeType: ${nodeType}`);
           }
           const wrappedCallback = (event: unknown): void => {
-            callback(sanitizeForComlink(event));
+            const sanitized = sanitizeForComlink(event);
+            requireEventType(sanitized, 'heartbeat', 'subscribeSessionHeartbeat');
+            callback(sanitized);
           };
           const unsubscribe = buildApi.subscribeHeartbeat(nodeId, wrappedCallback);
           return toComlinkProxy(Comlink, unsubscribe);
@@ -980,10 +997,16 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
         ): Promise<() => void> => {
           const buildApi = resolveShapeBuildApiOrThrow(nodeType);
           if (!buildApi.subscribeWorkerLog) {
-            return () => { };
+            throw new Error(`[subscribeWorkerLog] subscribeWorkerLog not available for nodeType: ${nodeType}`);
           }
           const wrappedCallback = (event: unknown): void => {
-            callback(sanitizeForComlink(event));
+            const sanitized = sanitizeForComlink(event);
+            // WorkerLogEvent does not have a canonical 'type' field in the 4-event spec;
+            // validate that it is at least a non-null object.
+            if (!sanitized || typeof sanitized !== 'object') {
+              throw new Error(`[subscribeWorkerLog] event must be an object, received ${JSON.stringify(sanitized)}`);
+            }
+            callback(sanitized);
           };
           const unsubscribe = buildApi.subscribeWorkerLog(nodeId, wrappedCallback);
           return toComlinkProxy(Comlink, unsubscribe);

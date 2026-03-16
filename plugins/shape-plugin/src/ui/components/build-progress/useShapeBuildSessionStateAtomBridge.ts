@@ -135,11 +135,9 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
 
         const scheduleFlush = (): void => {
             if (flushTimerId !== null) return;
-            if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
-                flushTimerId = window.requestAnimationFrame(flushProgressBuffer);
-                return;
-            }
-            flushTimerId = window.setTimeout(flushProgressBuffer, 0);
+            // Always use requestAnimationFrame — this code runs exclusively in browser context
+            // (inside useEffect). The setTimeout fallback was dead code that caused test/prod divergence.
+            flushTimerId = window.requestAnimationFrame(flushProgressBuffer);
         };
 
         const resolveProgressPhase = (value: string): ProgressPhase => {
@@ -197,8 +195,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
         const processProgressEvent = (event: TaskProgressUpdatedEvent): void => {
             const stageId = resolveShapeStageId(event.payload.stageId);
             if (!stageId) {
-                adapter.onProgressEvent(event);
-                return;
+                throw new Error(`[useShapeBuildSessionStateAtomBridge] unknown stageId in taskProgressUpdated: ${String(event.payload.stageId)}`);
             }
             if (activeStageId !== stageId) {
                 activeStageId = stageId;
@@ -280,6 +277,21 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             }
         };
 
+        const requireEventShape = <T extends { type: string }>(
+            event: unknown,
+            expectedType: string,
+            context: string,
+        ): T => {
+            if (!event || typeof event !== 'object') {
+                throw new Error(`[${context}] event must be an object, received ${JSON.stringify(event)}`);
+            }
+            const rec = event as Record<string, unknown>;
+            if (rec.type !== expectedType) {
+                throw new Error(`[${context}] unexpected event type: expected "${expectedType}", received ${JSON.stringify(rec.type)}`);
+            }
+            return event as T;
+        };
+
         const run = async () => {
             await bridge.initialize();
             if (cancelled) return;
@@ -293,19 +305,19 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             unsubscribeAll = await bridge.subscribeAll(SHAPE_NODE_TYPE, nodeId, {
                 onTaskEvent: (event) => {
                     if (cancelled) return;
-                    onTaskEvent(event as StageSnapshotUpdatedEvent);
+                    onTaskEvent(requireEventShape<StageSnapshotUpdatedEvent>(event, 'stageSnapshotUpdated', 'onTaskEvent'));
                 },
                 onProgressEvent: (event) => {
                     if (cancelled) return;
-                    onProgressEvent(event as TaskProgressUpdatedEvent & { version?: number });
+                    onProgressEvent(requireEventShape<TaskProgressUpdatedEvent & { version?: number }>(event, 'taskProgressUpdated', 'onProgressEvent'));
                 },
                 onSessionState: (event) => {
                     if (cancelled) return;
-                    onSessionState(event as SessionStatusUpdatedEvent);
+                    onSessionState(requireEventShape<SessionStatusUpdatedEvent>(event, 'sessionStatusUpdated', 'onSessionState'));
                 },
                 onHeartbeat: (event) => {
                     if (cancelled) return;
-                    adapter.onHeartbeat(event as HeartbeatEvent);
+                    adapter.onHeartbeat(requireEventShape<HeartbeatEvent>(event, 'heartbeat', 'onHeartbeat'));
                 },
                 onWorkerLog: (event) => {
                     if (cancelled) return;
@@ -337,11 +349,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
         return () => {
             cancelled = true;
             if (flushTimerId !== null) {
-                if (typeof window !== 'undefined' && typeof window.cancelAnimationFrame === 'function') {
-                    window.cancelAnimationFrame(flushTimerId);
-                } else {
-                    window.clearTimeout(flushTimerId);
-                }
+                window.cancelAnimationFrame(flushTimerId);
                 flushTimerId = null;
             }
             adapter.onTaskStreamConnectionChanged(false);
