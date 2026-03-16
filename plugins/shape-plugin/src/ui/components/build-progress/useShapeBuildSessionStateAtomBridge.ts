@@ -272,6 +272,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
         };
 
         const requireEventShape = <T extends { type: string }>(
+        const requireEventShape = <T extends { type: string }>(
             event: unknown,
             expectedType: T['type'],
             context: string,
