@@ -100,7 +100,7 @@ const createNodeSet = () => [
     id: /** @type {NodeId} */ ('folder-node'),
     parentId: /** @type {NodeId} */ ('folder-node'),
     nodeType: toNodeType('folder'),
-    depth: 1, createdAt: Date.now(), updatedAt: Date.now(), version: 1,
+    depth: 1, createdAt: 1672531200000, updatedAt: 1672531200000, version: 1,
     metadata: { name: 'Folder', description: 'Root folder for export', tags: [] },
     draftMetadata: null, data: null, visible: true,
   },
