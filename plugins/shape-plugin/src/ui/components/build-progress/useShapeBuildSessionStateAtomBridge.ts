@@ -14,7 +14,6 @@ import type {
 import type { BuildTaskSummary, TaskStage, ProgressPhase } from '@hierarchidb/build-api';
 import type { AdapterStageSnapshotUpdatedEvent } from '@hierarchidb/ui-build-sessions';
 import { UIEventBufferManager, type BufferedEvent } from './eventBufferingUI';
-
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 const SHAPE_STAGE_IDS = ['source', 'geometry', 'tileEmit'] as const satisfies readonly ShapeStageId[];
 
@@ -232,7 +231,6 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
         const onTaskEvent = (event: StageSnapshotUpdatedEvent): void => {
             // Enqueue into FIFO queue, then flush immediately via rAF
             const buffered: BufferedEvent = {
-                version: undefined,
                 notificationType: 'stage-snapshot',
                 payload: event,
                 timestamp: Date.now(),
@@ -241,23 +239,19 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             flushFifoQueues();
         };
 
-        const onProgressEvent = (event: TaskProgressUpdatedEvent & { version?: number }): void => {
-            const buffered: BufferedEvent = {
-                version: event.version,
-                notificationType: 'task-progress',
-                payload: event,
-                timestamp: Date.now(),
-            };
-            const accepted = eventBufferManager.applyTaskProgress(buffered);
-            if (accepted) {
-                processProgressEvent(event);
-            }
+        const onProgressEvent = (event: TaskProgressUpdatedEvent): void => {
+            const accepted = eventBufferManager.applyTaskProgress(
+                event.payload.taskId,
+                event.payload.version,
+                event,
+            );
+            if (accepted === undefined) return; // stale or duplicate — drop
+            processProgressEvent(event);
         };
 
         const onSessionState = (event: SessionStatusUpdatedEvent): void => {
             // Enqueue into FIFO queue, then flush immediately via rAF
             const buffered: BufferedEvent = {
-                version: undefined,
                 notificationType: 'session-state',
                 payload: event,
                 timestamp: Date.now(),
@@ -309,7 +303,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                 },
                 onProgressEvent: (event) => {
                     if (cancelled) return;
-                    onProgressEvent(requireEventShape<TaskProgressUpdatedEvent & { version?: number }>(event, 'taskProgressUpdated', 'onProgressEvent'));
+                    onProgressEvent(requireEventShape<TaskProgressUpdatedEvent>(event, 'taskProgressUpdated', 'onProgressEvent'));
                 },
                 onSessionState: (event) => {
                     if (cancelled) return;

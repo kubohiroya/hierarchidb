@@ -54,10 +54,15 @@ export interface StageSnapshotUpdatedEvent {
  * taskProgressUpdated — replaces progressReceived.
  * Progress value for a single task from a parallel worker.
  * phase field is intentionally absent (managed by sessionStatusUpdated only).
+ *
+ * taskId + version enable per-task deduplication on the UI side:
+ * events with version <= lastAppliedVersion[taskId] are dropped.
  */
 export interface TaskProgressUpdatedEvent {
     type: 'taskProgressUpdated';
     payload: {
+        taskId: string;           // identifies the specific task reporting progress
+        version: number;          // monotonically increasing per taskId — violation throws if not finite positive integer
         stageId: string;
         value: number;            // finite, 0..100 — violation throws
         message?: string;
