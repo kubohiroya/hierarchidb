@@ -33,6 +33,15 @@
 
 ## 今日の運用ログ
 
+- 2026-03-16: #1114 vitest run統一・設定追加・テスト修正・PR #1115作成
+  - 14パッケージの test スクリプトを vitest → vitest run に統一
+  - 7パッケージに vitest.config.ts 新規追加（build-session-ports/core-types/gis-sdk/plugin-base/ui-routing/ui-worker-provider/vectortile-orchestrator）
+  - gis-sdk: preservation.test.ts 修正（version:0追加・put()化・noNaN・事前クリア・stage検証変更）
+  - gis-sdk: bugfix.test.ts 修正（db.close()削除・fc.assert await化）
+  - vectortile-orchestrator: include パターンを *.test.ts に限定（fakes.ts 誤検知解消）
+  - shape-plugin: property テスト3ファイルの API 呼び出し修正
+  - gis-sdk: 37/37 passed ✅、vectortile-orchestrator: 7/7 passed ✅
+
 - 2026-03-16: #1111 gh-pages混入ビルド成果物除去・PR #1112作成 / ルート一時ファイル11件除去・PR #1113作成
   - assets/, auth/, templates/, locales/ 等 246 ファイルを git rm --cached
   - AGENTS.md-, e2e-results.*, plugin-test-*.json, test-failure-analysis.md, worker-showconfig.json, tmp*.mjs, tmp_check_menu.*, remove_onWheel.patch を git rm
