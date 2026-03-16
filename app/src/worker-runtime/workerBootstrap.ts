@@ -227,14 +227,24 @@ const toBuildProgress = (progress: BuildProgressLike | undefined): BuildProgress
   estimatedTimeRemaining: (progress?.estimatedTimeRemaining as number | undefined),
 });
 
+const VALID_BUILD_SESSION_STATUSES = new Set<BuildSessionStatus['status']>([
+  'idle', 'queued', 'running', 'paused', 'completed', 'failed',
+]);
+
 const toBuildSessionStatus = (
   session: Record<string, unknown> | undefined,
   fallbackNodeId: NodeId
 ): BuildSessionStatus => {
+  const rawStatus = session?.status;
+  if (!VALID_BUILD_SESSION_STATUSES.has(rawStatus as BuildSessionStatus['status'])) {
+    throw new Error(
+      `[toBuildSessionStatus] invalid or missing session status: ${JSON.stringify(rawStatus)}`
+    );
+  }
   const progress = session?.progress as (BuildProgressLike | ShapeBuildProgressSummary | undefined);
   return {
     nodeId: (session?.nodeId as NodeId | undefined) ?? fallbackNodeId,
-    status: (session?.status as BuildSessionStatus['status'] | undefined) ?? 'idle',
+    status: rawStatus as BuildSessionStatus['status'],
     progress: toBuildProgress(progress),
     startedAt: session?.startedAt as number | undefined,
     completedAt: session?.completedAt as number | undefined,
@@ -925,13 +935,24 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           return () => { };
         };
 
+        const safeStringify = (value: unknown): string => {
+          const seen = new WeakSet<object>();
+          return JSON.stringify(value, (_key, val) => {
+            if (typeof val === 'object' && val !== null) {
+              if (seen.has(val)) return '[Circular]';
+              seen.add(val);
+            }
+            return val as unknown;
+          });
+        };
+
         const requireEventType = (event: unknown, expectedType: string, context: string): Record<string, unknown> => {
           if (!event || typeof event !== 'object') {
-            throw new Error(`[${context}] event must be an object, received ${JSON.stringify(event)}`);
+            throw new Error(`[${context}] event must be an object, received ${safeStringify(event)}`);
           }
           const rec = event as Record<string, unknown>;
           if (rec.type !== expectedType) {
-            throw new Error(`[${context}] unexpected event type: expected "${expectedType}", received ${JSON.stringify(rec.type)}`);
+            throw new Error(`[${context}] unexpected event type: expected "${expectedType}", received ${safeStringify(rec.type)}`);
           }
           return rec;
         };
@@ -1004,7 +1025,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             // WorkerLogEvent does not have a canonical 'type' field in the 4-event spec;
             // validate that it is at least a non-null object.
             if (!sanitized || typeof sanitized !== 'object') {
-              throw new Error(`[subscribeWorkerLog] event must be an object, received ${JSON.stringify(sanitized)}`);
+              throw new Error(`[subscribeWorkerLog] event must be an object, received ${safeStringify(sanitized)}`);
             }
             callback(sanitized);
           };
