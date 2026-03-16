@@ -8,8 +8,8 @@ import { ImportExportService } from '../../dist/index.js';
 
 /** @typedef {import('@hierarchidb/core-types').NodeId} NodeId */
 /** @typedef {import('@hierarchidb/tree-api').TreeNode} TreeNode */
-/** @typedef {import('../../dist/index.js').ImportExportDBPort} ImportExportDBPort */
-/** @typedef {import('../../dist/index.js').VectorTileRecord} VectorTileRecord */
+/** @typedef {import('../ports.js').ImportExportDBPort} ImportExportDBPort */
+/** @typedef {import('../ports.js').VectorTileRecord} VectorTileRecord */
 /** @typedef {Record<string, Uint8Array>} ZipEntries */
 
 class InMemoryExportPort {
