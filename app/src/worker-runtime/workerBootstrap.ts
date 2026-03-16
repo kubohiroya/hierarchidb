@@ -910,7 +910,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           });
         };
 
-        const subscribeTaskProgress = async (
+        const subscribeBuildProgress = async (
           nodeType: NodeType,
           nodeId: NodeId,
           callback: (event: TaskProgressUpdatedEvent) => void
@@ -927,7 +927,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
               (sanitized as { type?: unknown }).type !== 'taskProgressUpdated'
             ) {
               throw new Error(
-                `[subscribeTaskProgress] unexpected event type: ${safeStringify((sanitized as { type?: unknown } | null)?.type ?? sanitized)}`
+                `[subscribeBuildProgress] unexpected event type: ${safeStringify((sanitized as { type?: unknown } | null)?.type ?? sanitized)}`
               );
             }
             callback(sanitized as TaskProgressUpdatedEvent);
@@ -945,17 +945,6 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           // This method is kept for API compatibility but always returns a no-op unsubscribe.
           void nodeType; void nodeId; void callback;
           return () => { };
-        };
-
-        const safeStringify = (value: unknown): string => {
-          const seen = new WeakSet<object>();
-          return JSON.stringify(value, (_key, val) => {
-            if (typeof val === 'object' && val !== null) {
-              if (seen.has(val)) return '[Circular]';
-              seen.add(val);
-            }
-            return val as unknown;
-          });
         };
 
         const requireEventType = (event: unknown, expectedType: string, context: string): Record<string, unknown> => {
