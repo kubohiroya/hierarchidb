@@ -273,15 +273,16 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
 
         const requireEventShape = <T extends { type: string }>(
             event: unknown,
-            expectedType: string,
+            expectedType: T['type'],
             context: string,
         ): T => {
             if (!event || typeof event !== 'object') {
-                throw new Error(`[${context}] event must be an object, received ${JSON.stringify(event)}`);
+                throw new Error(`[${context}] event must be an object, received type: ${typeof event}`);
             }
             const rec = event as Record<string, unknown>;
             if (rec.type !== expectedType) {
-                throw new Error(`[${context}] unexpected event type: expected "${expectedType}", received ${JSON.stringify(rec.type)}`);
+                const receivedType = typeof rec.type === 'string' ? `"${rec.type}"` : String(rec.type);
+                throw new Error(`[${context}] unexpected event type: expected "${expectedType}", received ${receivedType}`);
             }
             return event as T;
         };
