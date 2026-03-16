@@ -181,3 +181,27 @@ wrangler.toml
 generated/
 .codex/
 e2e-results.*
+
+# gh-pages build artifacts (must not be committed to main branch)
+/assets/
+/auth/
+/templates/
+/locales/
+/favicon.ico
+/favicon.png
+/favicon.svg
+/idb-geojson-vt-test.html
+/idb-geojson-vt-test2.html
+/iso3166-2-level1.csv
+/iso3166-2-level1.failures.csv
+/iso3166-country-names.i18n.json
+/licenses.json
+/oauth-redirect.html
+/silent-renew.html
+/test.geojson
+/countryAvailability.worker.js
+/geosWorker.entry.js
+/shared-worker.js
+/stageWorker.entry.js
+/tabularFilter.worker.js
+/index.html
