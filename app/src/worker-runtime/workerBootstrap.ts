@@ -947,6 +947,17 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           return () => { };
         };
 
+        const safeStringify = (value: unknown): string => {
+          const seen = new WeakSet<object>();
+          return JSON.stringify(value, (_key, val) => {
+            if (typeof val === 'object' && val !== null) {
+              if (seen.has(val)) return '[Circular]';
+              seen.add(val);
+            }
+            return val as unknown;
+          });
+        };
+
         const requireEventType = (event: unknown, expectedType: string, context: string): Record<string, unknown> => {
           if (!event || typeof event !== 'object') {
             throw new Error(`[${context}] event must be an object, received ${safeStringify(event)}`);
