@@ -1,8 +1,10 @@
 /**
  * Property tests for UI-side event buffer accuracy.
- * Replaces the old EventDeliveryMonitor tests (removed in the
- * FIFO+version-gate redesign).  The current UI-side API is:
- *   UIEventBufferManager.enqueue / flushFifo / applyTaskProgress / reset
+ * session-state and stage-snapshot use FIFO queues — unconditional, arrival order.
+ * task-progress uses per-taskId version deduplication via applyTaskProgress().
+ * Per build-session-worker-ui-event-spec.md:
+ *   "Per-task deduplication: version > lastAppliedVersion[taskId] → accept,
+ *    version <= lastAppliedVersion[taskId] → drop."
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
@@ -10,20 +12,17 @@ import fc from "fast-check";
 import {
     UIEventBufferManager,
     type BufferedEvent,
-    type NotificationType,
 } from "../../ui/components/build-progress/eventBufferingUI";
 
 const PROPERTY_TEST_RUNS = 50;
 const MAX_EVENTS_PER_TEST = 20;
 
-const makeEvent = (
-    notificationType: NotificationType,
-    version?: number,
-    value?: number,
+const makeFifoEvent = (
+    notificationType: 'session-state' | 'stage-snapshot',
+    index?: number,
 ): BufferedEvent => ({
     notificationType,
-    version,
-    payload: value !== undefined ? { value } : { test: true },
+    payload: index !== undefined ? { index } : { test: true },
     timestamp: Date.now(),
 });
 
@@ -34,12 +33,12 @@ describe("Property: UIEventBufferManager accuracy", () => {
         manager = new UIEventBufferManager();
     });
 
-    describe("FIFO queue ordering and count", () => {
+    describe("FIFO queue ordering and count — session-state and stage-snapshot", () => {
         it("flushFifo returns all enqueued events in insertion order", () => {
             fc.assert(
                 fc.property(
                     fc.record({
-                        notificationType: fc.constantFrom<"session-state" | "stage-snapshot">(
+                        notificationType: fc.constantFrom<'session-state' | 'stage-snapshot'>(
                             "session-state", "stage-snapshot",
                         ),
                         count: fc.integer({ min: 1, max: MAX_EVENTS_PER_TEST }),
@@ -48,7 +47,6 @@ describe("Property: UIEventBufferManager accuracy", () => {
                         const mgr = new UIEventBufferManager();
                         const events: BufferedEvent[] = Array.from({ length: count }, (_, i) => ({
                             notificationType,
-                            version: undefined,
                             payload: { index: i },
                             timestamp: 1000 + i,
                         }));
@@ -68,14 +66,14 @@ describe("Property: UIEventBufferManager accuracy", () => {
             fc.assert(
                 fc.property(
                     fc.record({
-                        notificationType: fc.constantFrom<"session-state" | "stage-snapshot">(
+                        notificationType: fc.constantFrom<'session-state' | 'stage-snapshot'>(
                             "session-state", "stage-snapshot",
                         ),
                         count: fc.integer({ min: 1, max: MAX_EVENTS_PER_TEST }),
                     }),
                     ({ notificationType, count }) => {
                         const mgr = new UIEventBufferManager();
-                        for (let i = 0; i < count; i++) mgr.enqueue(makeEvent(notificationType));
+                        for (let i = 0; i < count; i++) mgr.enqueue(makeFifoEvent(notificationType));
                         mgr.flushFifo(notificationType);
                         const second = mgr.flushFifo(notificationType);
                         expect(second.length).toBe(0);
@@ -94,8 +92,8 @@ describe("Property: UIEventBufferManager accuracy", () => {
                     }),
                     ({ sessionCount, stageCount }) => {
                         const mgr = new UIEventBufferManager();
-                        for (let i = 0; i < sessionCount; i++) mgr.enqueue(makeEvent("session-state"));
-                        for (let i = 0; i < stageCount; i++) mgr.enqueue(makeEvent("stage-snapshot"));
+                        for (let i = 0; i < sessionCount; i++) mgr.enqueue(makeFifoEvent("session-state"));
+                        for (let i = 0; i < stageCount; i++) mgr.enqueue(makeFifoEvent("stage-snapshot"));
                         expect(mgr.flushFifo("session-state").length).toBe(sessionCount);
                         expect(mgr.flushFifo("stage-snapshot").length).toBe(stageCount);
                     },
@@ -103,122 +101,42 @@ describe("Property: UIEventBufferManager accuracy", () => {
                 { numRuns: PROPERTY_TEST_RUNS },
             );
         });
-
-        it("enqueue rejects task-progress events", () => {
-            fc.assert(
-                fc.property(
-                    fc.integer({ min: 1, max: 5 }),
-                    (count) => {
-                        const mgr = new UIEventBufferManager();
-                        let errorCount = 0;
-                        for (let i = 0; i < count; i++) {
-                            try { mgr.enqueue(makeEvent("task-progress")); } catch { errorCount++; }
-                        }
-                        expect(errorCount).toBe(count);
-                    },
-                ),
-                { numRuns: PROPERTY_TEST_RUNS },
-            );
-        });
     });
 
-    describe("task-progress version gate", () => {
-        it("strictly increasing versions are all accepted", () => {
+    describe("task-progress: per-taskId version deduplication", () => {
+        it("accepts events with strictly increasing versions per taskId", () => {
             fc.assert(
                 fc.property(
-                    fc.array(fc.integer({ min: 0, max: 100 }), { minLength: 2, maxLength: MAX_EVENTS_PER_TEST })
-                        .map((arr) => [...new Set(arr)].sort((a, b) => a - b)),
-                    (versions) => {
-                        if (versions.length < 2) return;
+                    fc.integer({ min: 1, max: MAX_EVENTS_PER_TEST }),
+                    (count) => {
                         const mgr = new UIEventBufferManager();
                         let accepted = 0;
-                        for (const v of versions) {
-                            if (mgr.applyTaskProgress(makeEvent("task-progress", v, 50)) !== undefined) accepted++;
+                        for (let i = 1; i <= count; i++) {
+                            const result = mgr.applyTaskProgress('task-1', i, { value: i });
+                            if (result !== undefined) accepted++;
                         }
-                        expect(accepted).toBe(versions.length);
+                        expect(accepted).toBe(count);
                     },
                 ),
                 { numRuns: PROPERTY_TEST_RUNS },
             );
         });
 
-        it("stale (lower or equal) versions are dropped", () => {
+        it("drops stale versions (version <= last accepted)", () => {
             fc.assert(
                 fc.property(
-                    fc.record({
-                        firstVersion: fc.integer({ min: 10, max: 50 }),
-                        staleCount: fc.integer({ min: 1, max: 9 }),
-                    }),
-                    ({ firstVersion, staleCount }) => {
+                    fc.integer({ min: 2, max: 20 }),
+                    (highVersion) => {
                         const mgr = new UIEventBufferManager();
-                        expect(mgr.applyTaskProgress(makeEvent("task-progress", firstVersion, 50))).not.toBeUndefined();
+                        // Accept high version first
+                        mgr.applyTaskProgress('task-1', highVersion, { value: highVersion });
+                        // All lower versions must be dropped
                         let dropped = 0;
-                        for (let i = 0; i < staleCount; i++) {
-                            if (mgr.applyTaskProgress(makeEvent("task-progress", firstVersion - i, 50)) === undefined) dropped++;
+                        for (let v = 1; v < highVersion; v++) {
+                            const result = mgr.applyTaskProgress('task-1', v, { value: v });
+                            if (result === undefined) dropped++;
                         }
-                        expect(dropped).toBe(staleCount);
-                    },
-                ),
-                { numRuns: PROPERTY_TEST_RUNS },
-            );
-        });
-
-        it("events after value=100 (finalReached) are all dropped", () => {
-            fc.assert(
-                fc.property(
-                    fc.record({
-                        finalVersion: fc.integer({ min: 1, max: 50 }),
-                        afterCount: fc.integer({ min: 1, max: 10 }),
-                    }),
-                    ({ finalVersion, afterCount }) => {
-                        const mgr = new UIEventBufferManager();
-                        expect(mgr.applyTaskProgress(makeEvent("task-progress", finalVersion, 100))).not.toBeUndefined();
-                        expect(mgr.getTaskProgressState().finalReached).toBe(true);
-                        let dropped = 0;
-                        for (let i = 1; i <= afterCount; i++) {
-                            if (mgr.applyTaskProgress(makeEvent("task-progress", finalVersion + i, 50)) === undefined) dropped++;
-                        }
-                        expect(dropped).toBe(afterCount);
-                    },
-                ),
-                { numRuns: PROPERTY_TEST_RUNS },
-            );
-        });
-
-        it("undefined version is always accepted", () => {
-            fc.assert(
-                fc.property(fc.integer({ min: 1, max: 20 }), (count) => {
-                    const mgr = new UIEventBufferManager();
-                    let accepted = 0;
-                    for (let i = 0; i < count; i++) {
-                        if (mgr.applyTaskProgress(makeEvent("task-progress", undefined, 50)) !== undefined) accepted++;
-                    }
-                    expect(accepted).toBe(count);
-                }),
-                { numRuns: PROPERTY_TEST_RUNS },
-            );
-        });
-
-        it("invalid versions (NaN, Infinity, negative) throw errors", () => {
-            fc.assert(
-                fc.property(
-                    fc.array(
-                        fc.oneof(fc.constant(NaN), fc.constant(Infinity), fc.constant(-Infinity), fc.integer({ min: -100, max: -1 })),
-                        { minLength: 1, maxLength: 5 },
-                    ),
-                    (invalidVersions) => {
-                        let errorCount = 0;
-                        for (const v of invalidVersions) {
-                            const mgr = new UIEventBufferManager();
-                            try {
-                                mgr.applyTaskProgress(makeEvent("task-progress", v, 50));
-                            } catch (err) {
-                                errorCount++;
-                                expect(err).toBeInstanceOf(Error);
-                                expect((err as Error).message).toContain("Invalid task-progress version");
-                            }
-                        }
-                        expect(errorCount).toBe(invalidVersions.length);
+                        expect(dropped).toBe(highVersion - 1);
                     },
                 ),
                 { numRuns: PROPERTY_TEST_RUNS },
@@ -227,26 +145,37 @@ describe("Property: UIEventBufferManager accuracy", () => {
     });
 
     describe("reset clears all state", () => {
-        it("reset empties FIFO queues and resets task-progress state", () => {
+        it("reset empties all FIFO queues", () => {
             fc.assert(
                 fc.property(
                     fc.record({
                         sessionCount: fc.integer({ min: 1, max: 10 }),
                         stageCount: fc.integer({ min: 1, max: 10 }),
-                        taskVersion: fc.integer({ min: 1, max: 50 }),
                     }),
-                    ({ sessionCount, stageCount, taskVersion }) => {
+                    ({ sessionCount, stageCount }) => {
                         const mgr = new UIEventBufferManager();
-                        for (let i = 0; i < sessionCount; i++) mgr.enqueue(makeEvent("session-state"));
-                        for (let i = 0; i < stageCount; i++) mgr.enqueue(makeEvent("stage-snapshot"));
-                        mgr.applyTaskProgress(makeEvent("task-progress", taskVersion, 100));
+                        for (let i = 0; i < sessionCount; i++) mgr.enqueue(makeFifoEvent("session-state"));
+                        for (let i = 0; i < stageCount; i++) mgr.enqueue(makeFifoEvent("stage-snapshot"));
                         mgr.reset();
                         expect(mgr.flushFifo("session-state").length).toBe(0);
                         expect(mgr.flushFifo("stage-snapshot").length).toBe(0);
-                        const state = mgr.getTaskProgressState();
-                        expect(state.finalReached).toBe(false);
-                        expect(state.lastAppliedVersion).toBeUndefined();
-                        expect(mgr.applyTaskProgress(makeEvent("task-progress", 1, 50))).not.toBeUndefined();
+                    },
+                ),
+                { numRuns: PROPERTY_TEST_RUNS },
+            );
+        });
+
+        it("reset clears per-taskId version state", () => {
+            fc.assert(
+                fc.property(
+                    fc.integer({ min: 5, max: 20 }),
+                    (highVersion) => {
+                        const mgr = new UIEventBufferManager();
+                        mgr.applyTaskProgress('task-1', highVersion, { value: highVersion });
+                        mgr.reset();
+                        // After reset, version 1 must be accepted again
+                        const result = mgr.applyTaskProgress('task-1', 1, { value: 1 });
+                        expect(result).toBeDefined();
                     },
                 ),
                 { numRuns: PROPERTY_TEST_RUNS },
@@ -262,9 +191,9 @@ describe("Property: UIEventBufferManager accuracy", () => {
                     }),
                     ({ preCount, postCount }) => {
                         const mgr = new UIEventBufferManager();
-                        for (let i = 0; i < preCount; i++) mgr.enqueue(makeEvent("session-state"));
+                        for (let i = 0; i < preCount; i++) mgr.enqueue(makeFifoEvent("session-state"));
                         mgr.reset();
-                        for (let i = 0; i < postCount; i++) mgr.enqueue(makeEvent("session-state"));
+                        for (let i = 0; i < postCount; i++) mgr.enqueue(makeFifoEvent("session-state"));
                         expect(mgr.flushFifo("session-state").length).toBe(postCount);
                     },
                 ),

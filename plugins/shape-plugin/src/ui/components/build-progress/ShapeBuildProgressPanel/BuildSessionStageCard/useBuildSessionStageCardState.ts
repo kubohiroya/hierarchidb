@@ -236,18 +236,25 @@ export const useBuildSessionStageCardState = ({
 
   const viewportStartIndex = viewportIndices?.startIndex;
   const viewportEndIndex = viewportIndices?.endIndex;
+  // Show the up arrow only when viewport info is available AND the nearest up-target
+  // is above the visible range. When viewportStartIndex is null (viewport not yet
+  // measured), hide the button to avoid false positives.
+  // currentIndex !== null and upTargetIndex < currentIndex are implied when
+  // viewportStartIndex != null, since upTargetIndex < viewportStartIndex <= currentIndex.
   const showUpArrow = !isScrollTargetReached
     && hasActiveTargetTask
     && upTargetIndex !== null
-    && currentIndex !== null
-    && upTargetIndex < currentIndex
-    && (viewportStartIndex == null || upTargetIndex < viewportStartIndex);
+    && viewportStartIndex != null
+    && upTargetIndex < viewportStartIndex;
+  // Show the down arrow only when viewport info is available AND the nearest
+  // down-target is below the visible range.
+  // currentIndex !== null and currentIndex < downTargetIndex are implied when
+  // viewportEndIndex != null, since currentIndex <= viewportEndIndex < downTargetIndex.
   const showDownArrow = !isScrollTargetReached
     && hasActiveTargetTask
     && downTargetIndex !== null
-    && currentIndex !== null
-    && currentIndex < downTargetIndex
-    && (viewportEndIndex == null || downTargetIndex > viewportEndIndex);
+    && viewportEndIndex != null
+    && downTargetIndex > viewportEndIndex;
 
   const setAriaScrollToTaskId = useCallback((targetTaskId: string) => {
     setScrollTarget({
