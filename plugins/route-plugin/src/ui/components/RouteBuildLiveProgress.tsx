@@ -4,19 +4,9 @@ import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { toNodeId } from '@hierarchidb/core-types';
-import type { BuildProgressPayload, BuildUnifiedProgressInfo } from '@hierarchidb/build-api';
+import { resolveProgressPercentage } from '@hierarchidb/build-api';
 import { useRouteBuildProgress } from '~/ui/hooks/useRouteBuildProgress';
 import { useTranslation } from '@hierarchidb/ui-i18n';
-
-const resolveProgressPercentage = (progress: BuildUnifiedProgressInfo | null): number => {
-  if (!progress) return 0;
-  const payload = progress.payload as BuildProgressPayload | undefined;
-  if (!payload) return 0;
-  const { total, completed } = payload;
-  if (typeof total !== 'number' || !Number.isFinite(total) || total <= 0) return 0;
-  if (typeof completed !== 'number' || !Number.isFinite(completed)) return 0;
-  return Math.round((completed / total) * 100);
-};
 
 export function RouteBuildLiveProgress({ jobId }: { jobId: string }) {
   const {
@@ -31,6 +21,7 @@ export function RouteBuildLiveProgress({ jobId }: { jobId: string }) {
   const { t } = useTranslation('route-plugin');
 
   const pct = useMemo(() => {
+    if (!progress) return 0;
     const value = resolveProgressPercentage(progress);
     if (!Number.isFinite(value)) return 0;
     return Math.max(0, Math.min(100, value));

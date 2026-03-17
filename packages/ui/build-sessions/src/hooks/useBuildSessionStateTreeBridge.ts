@@ -13,6 +13,7 @@ import {
   type BuildSessionStateTreeLifecyclePhase,
   type BuildSessionTaskStatus,
 } from '../state-tree/createBuildSessionStateTreeAtoms.js';
+import { computePercentage } from '../utils/taskProgressSummary.js';
 import { usePluginBuildProgress } from './usePluginBuildProgress.js';
 
 type Config<StageId extends string> = {
@@ -115,6 +116,7 @@ export const useBuildSessionStateTreeBridge = <StageId extends string>(
           throw new Error(`[useBuildSessionStateTreeBridge] info.payload is required but was absent (nodeId=${String(info.nodeId)}, stage=${String(info.stage)})`);
         }
         const status = info.phase;
+        const skipped = payload.skipped ?? 0;
         return {
           nodeId: config.nodeId,
           status,
@@ -123,11 +125,12 @@ export const useBuildSessionStateTreeBridge = <StageId extends string>(
             completed: payload.completed,
             failed: payload.failed,
             skipped: payload.skipped,
-            percentage: (() => {
-              const t = payload.total;
-              const c = payload.completed;
-              return t > 0 ? Math.round((c / t) * 100) : 0;
-            })(),
+            percentage: computePercentage({
+              total: payload.total,
+              completed: payload.completed,
+              failed: payload.failed,
+              skipped,
+            }),
             stage: info.stage,
             estimatedTimeRemaining: payload.estimatedTimeRemaining,
           },

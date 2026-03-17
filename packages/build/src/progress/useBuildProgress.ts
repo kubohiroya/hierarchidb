@@ -137,6 +137,7 @@ export function useBuildProgress(
   const flushFrameRef = useRef<number | null>(null);
   const adapterRef = useRef<Adapter>(adapter);
   const lastProgressRef = useRef<BuildUnifiedProgressInfo | null>(null);
+  const lastNormalizedPercentageRef = useRef<number>(0);
   const lastSignaturesRef = useRef<{ progressTask: string | undefined; stageTotals: string | undefined }>({
     progressTask: undefined,
     stageTotals: undefined,
@@ -174,11 +175,9 @@ export function useBuildProgress(
         }
       }
       const nextPercentage = resolvePercentage(next);
-      const prevPercentage = prev ? resolvePercentage(prev) : 0;
-      const normalized = prev && nextPercentage < prevPercentage
-        ? { ...next, _normalizedPercentage: prevPercentage }
-        : next;
-      const normalizedPercentage = prev && nextPercentage < prevPercentage ? prevPercentage : nextPercentage;
+      const prevPercentage = lastNormalizedPercentageRef.current;
+      const normalizedPercentage = nextPercentage < prevPercentage ? prevPercentage : nextPercentage;
+      const normalized = next;
       const progressTaskSignature = buildProgressTaskSignature(normalized);
       const stageTotalsSignature = buildStageTotalsSignature(normalized);
       const nextTotal = resolvePayloadNumber(next, 'total');
@@ -229,6 +228,7 @@ export function useBuildProgress(
         });
       }
       lastProgressRef.current = normalized;
+      lastNormalizedPercentageRef.current = normalizedPercentage;
       lastSignaturesRef.current = {
         progressTask: progressTaskSignature,
         stageTotals: stageTotalsSignature,
