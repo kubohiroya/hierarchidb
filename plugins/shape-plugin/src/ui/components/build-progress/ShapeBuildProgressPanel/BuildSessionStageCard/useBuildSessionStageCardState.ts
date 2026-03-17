@@ -4,7 +4,7 @@ import { useAtomValue, useSetAtom } from 'jotai';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import { type TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 import { sortGeometryTasks, sortVectorTileTasks } from '~/ui/components/build-progress/taskItemCardList/useTaskItemCardList';
-import { taskScrollTargetAtom, taskViewportRangeAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
+import { taskScrollTargetAtom, taskViewportRangeByStageAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { isTaskSkipped } from '~/common/utils/taskMessages';
 import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
 import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
@@ -139,7 +139,8 @@ export const useBuildSessionStageCardState = ({
   }, [isBuildInProgressState, stage.id, stageTasks]);
   const scrollTarget = useAtomValue(taskScrollTargetAtom);
   const setScrollTarget = useSetAtom(taskScrollTargetAtom);
-  const viewportRange = useAtomValue(taskViewportRangeAtom);
+  const viewportRangeByStage = useAtomValue(taskViewportRangeByStageAtom);
+  const viewportRange = viewportRangeByStage[normalizeUiStageId(stage.id) ?? stage.id] ?? null;
   const listScrollRef = useRef<HTMLDivElement | null>(null);
   const listWrapperRef = useRef<HTMLDivElement | null>(null);
   const scrollToTaskId = normalizeUiStageId(scrollTarget?.stageId) === normalizeUiStageId(stage.id)
@@ -180,12 +181,12 @@ export const useBuildSessionStageCardState = ({
 
   const viewportIndices = useMemo(() => {
     if (orderedTasks.length === 0) return null;
-    if (viewportRange == null || normalizeUiStageId(viewportRange.stageId) !== normalizeUiStageId(stage.id)) return null;
+    if (viewportRange == null) return null;
     const maxIndex = orderedTasks.length - 1;
     const clampedStart = Math.min(Math.max(viewportRange.startIndex, 0), maxIndex);
     const clampedEnd = Math.min(Math.max(viewportRange.endIndex, clampedStart), maxIndex);
     return { startIndex: clampedStart, endIndex: clampedEnd };
-  }, [orderedTasks.length, stage.id, viewportRange]);
+  }, [orderedTasks.length, viewportRange]);
 
   const currentIndex = useMemo(() => {
     if (orderedTasks.length === 0) return null;

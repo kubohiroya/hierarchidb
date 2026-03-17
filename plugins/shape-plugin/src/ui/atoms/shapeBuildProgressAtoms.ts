@@ -9,4 +9,5 @@ export type {
   TaskViewportRange,
 } from '~/ui/atoms/shapeBuildProgressTypes';
 export const taskScrollTargetAtom = atom<TaskScrollTarget | null>(null);
-export const taskViewportRangeAtom = atom<TaskViewportRange | null>(null);
+// Keyed by normalized stageId so each stage maintains its own viewport range independently.
+export const taskViewportRangeByStageAtom = atom<Record<string, TaskViewportRange>>({});
