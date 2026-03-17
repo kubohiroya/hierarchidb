@@ -2,6 +2,7 @@
 
 ## Doing
 
+- #1143 / `refactor/build-runtime-services/lift-event-emission-1143` / 2026-03-18 開始
 - #1149 / `fix/location-plugin/rename-subscribe-build-progress-1149` / 2026-03-18 開始
 - #1123 / `fix/app/subscribe-task-progress-1123` / 2026-03-17 開始
 - #1127 / `fix/shape-plugin/task-progress-version-gate-and-idle-fallback` / 2026-03-17 開始
@@ -18,6 +19,20 @@
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 
 ## 今日の運用ログ
+
+- 2026-03-18: #1143 eventEmission/eventBuffering を build-runtime-services に昇格・PR #1151 作成（マージ待ち）
+  - build-api: session-event-types.ts 新規作成（SessionStatusUpdatedEvent / StageSnapshotUpdatedEvent / HeartbeatEvent / WorkerLogEvent / CriticalErrorEvent / CanonicalSessionEvent / SessionPhase / TaskSummary）
+  - build-api: progress-types.ts に taskId / version を追加（#1128 以来の欠落修正）
+  - build-runtime-services: eventStreamer.ts 新規作成（UnconditionalEventStreamer / unconditionalEventStreamer）
+  - build-runtime-services: eventEmission.ts 新規作成（emitTaskProgressUpdated / emitHeartbeat）
+  - shape-plugin: eventBuffering.ts / eventEmission.ts / session-events.ts を build-runtime-services / build-api からの re-export に変更
+  - docs/build-session-worker-ui-event-spec.md: Package Location セクション追加
+  - typecheck: build-api / build-runtime-services / shape-plugin / route-plugin / location-plugin 全 exit 0
+
+- 2026-03-18: #1149 subscribeBuildProgress → subscribeTaskProgress リネーム・PR #1150 作成
+  - location-plugin test-shims/runtime-worker.ts: subscribeBuildProgress → subscribeTaskProgress
+  - shape-plugin README.md: 同メソッド名を修正
+  - typecheck: exit 0 (119/119)、test: 7 files / 14 tests passed
 
 - 2026-03-18: #1147 レビュー対応コミット push（PR #1148 追加コミット）
   - useBuildProgress: `_normalizedPercentage` スプレッドを `lastNormalizedPercentageRef` に置換（型違反解消）
