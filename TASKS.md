@@ -18,6 +18,10 @@
 
 ## 今日の運用ログ
 
+- 2026-03-17: #1137 subscribeSessionState/subscribeStageSnapshots 登録時に現在状態を即時配信・PR #1138作成
+  - shapeBuildAPI.ts: subscribeSessionState に getBuildSessionRecord → emitSessionStatusUpdated 即時配信を追加
+  - shapeBuildAPI.ts: subscribeStageSnapshots に stageId/stageStartedAt 検証 → emitStageSnapshotUpdated 即時配信を追加
+  - typecheck: exit 0 (133/133)、test: 440/440 passed
 - 2026-03-17: #1128 taskProgressUpdated に taskId/version 追加・per-task version deduplication 実装・PR #1129作成
   - session-events.ts: TaskProgressUpdatedEvent に taskId: string / version: number 追加
   - eventEmission.ts: emitTaskProgressUpdated に taskId/version パラメータ追加、finite positive integer 検証

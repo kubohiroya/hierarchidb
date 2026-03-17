@@ -2,7 +2,7 @@ import { type ForwardedRef, type MutableRefObject, useCallback, useEffect, useMe
 import { type Virtualizer, useVirtualizer } from '@tanstack/react-virtual';
 import { useSetAtom } from 'jotai';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
-import { taskViewportRangeAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
+import { taskViewportRangeByStageAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { TASK_ITEM_HEIGHT } from '~/ui/components/build-progress/TaskItem/TASK_ITEM_HEIGHT';
 import { type TaskItemWithMetadata } from './types.js';
 import { isGeometryLikeStageId, isTileEmitLikeStageId } from '~/ui/components/build-progress/stageIdAliases';
@@ -88,7 +88,7 @@ export const useTaskItemCardList = ({
     }
     (ref as MutableRefObject<HTMLDivElement | null>).current = node;
   }, [ref]);
-  const setViewportRange = useSetAtom(taskViewportRangeAtom);
+  const setViewportRangeByStage = useSetAtom(taskViewportRangeByStageAtom);
   const lastScrollRequestRef = useRef<number | null>(null);
   const lastViewportRef = useRef<{
     stageId: string;
@@ -126,7 +126,12 @@ export const useTaskItemCardList = ({
     if (!scrollEl) return;
     const updateViewport = () => {
       if (orderedTasks.length === 0) {
-        setViewportRange((prev) => (prev && prev.stageId === stageId ? null : prev));
+        setViewportRangeByStage((prev) => {
+          if (!(stageId in prev)) return prev;
+          const next = { ...prev };
+          delete next[stageId];
+          return next;
+        });
         lastViewportRef.current = null;
         return;
       }
@@ -163,7 +168,7 @@ export const useTaskItemCardList = ({
         return;
       }
       lastViewportRef.current = next;
-      setViewportRange(next);
+      setViewportRangeByStage((prevMap) => ({ ...prevMap, [stageId]: next }));
     };
     updateViewport();
     const handleScroll = () => {
@@ -173,12 +178,17 @@ export const useTaskItemCardList = ({
     return () => {
       scrollEl.removeEventListener('scroll', handleScroll);
     };
-  }, [setViewportRange, shouldVirtualize, stageId, orderedTasks]);
+  }, [setViewportRangeByStage, shouldVirtualize, stageId, orderedTasks]);
 
   useEffect(() => {
     if (shouldVirtualize) return;
     if (orderedTasks.length === 0) {
-      setViewportRange((prev) => (prev && prev.stageId === stageId ? null : prev));
+      setViewportRangeByStage((prev) => {
+        if (!(stageId in prev)) return prev;
+        const next = { ...prev };
+        delete next[stageId];
+        return next;
+      });
       lastViewportRef.current = null;
       return;
     }
@@ -208,8 +218,8 @@ export const useTaskItemCardList = ({
       return;
     }
     lastViewportRef.current = next;
-    setViewportRange(next);
-  }, [setViewportRange, shouldVirtualize, stageId, orderedTasks]);
+    setViewportRangeByStage((prevMap) => ({ ...prevMap, [stageId]: next }));
+  }, [setViewportRangeByStage, shouldVirtualize, stageId, orderedTasks]);
 
   return {
     orderedTasks,

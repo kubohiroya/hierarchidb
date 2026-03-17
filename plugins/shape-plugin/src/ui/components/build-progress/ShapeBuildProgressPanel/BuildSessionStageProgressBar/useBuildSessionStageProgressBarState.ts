@@ -3,7 +3,7 @@ import { useTheme } from '@mui/material/styles';
 import { useAtomValue } from 'jotai';
 import { useBuildStageFilter } from '@hierarchidb/ui-build-progress';
 import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
-import { taskViewportRangeAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
+import { taskViewportRangeByStageAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 import type { TaskProgressSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import { buildTaskProgressSegments, resolveViewportIndices, type BuildSessionStageProgressBarSegment } from './useBuildSessionStageProgressBarComputation.js';
@@ -52,7 +52,10 @@ export const useBuildSessionStageProgressBarState = ({
   const theme = useTheme();
   const filter = useBuildStageFilter();
   const flowBandClipId = useId().replace(/:/g, '');
-  const viewportRange = useAtomValue(taskViewportRangeAtom);
+  const viewportRangeByStage = useAtomValue(taskViewportRangeByStageAtom);
+  // Use the active stage's viewport range for the progress bar indicator.
+  // activeStageId may be null when no stage is active; fall back to null in that case.
+  const viewportRange = (activeStageId != null ? viewportRangeByStage[activeStageId] : undefined) ?? null;
 
   const waitingColor = theme.palette.grey[300];
   const emptyColor = buildStatus === 'failed' ? theme.palette.error.main : theme.palette.grey[500];
