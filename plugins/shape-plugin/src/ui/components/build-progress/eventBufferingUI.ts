@@ -35,9 +35,9 @@ export interface EventBufferManager {
     flushFifo(notificationType: 'session-state' | 'stage-snapshot'): BufferedEvent[];
     /**
      * Apply a task-progress event with per-taskId version deduplication.
-     * Returns the event if accepted, undefined if dropped.
+     * Returns true if accepted, false if dropped (stale or duplicate).
      */
-    applyTaskProgress(taskId: string, version: number, payload: unknown): BufferedEvent | undefined;
+    applyTaskProgress(taskId: string, version: number): boolean;
     reset(): void;
 }
 
@@ -79,18 +79,14 @@ export class UIEventBufferManager implements EventBufferManager {
         return drained;
     }
 
-    applyTaskProgress(taskId: string, version: number, payload: unknown): BufferedEvent | undefined {
+    applyTaskProgress(taskId: string, version: number): boolean {
         const last = this.lastVersionByTaskId.get(taskId);
         if (last !== undefined && version <= last) {
             // stale or duplicate — drop
-            return undefined;
+            return false;
         }
         this.lastVersionByTaskId.set(taskId, version);
-        return {
-            notificationType: 'task-progress',
-            payload,
-            timestamp: Date.now(),
-        };
+        return true;
     }
 
     reset(): void {
