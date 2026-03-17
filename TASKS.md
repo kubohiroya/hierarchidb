@@ -2,6 +2,7 @@
 
 ## Doing
 
+- #1149 / `fix/location-plugin/rename-subscribe-build-progress-1149` / 2026-03-18 開始
 - #1123 / `fix/app/subscribe-task-progress-1123` / 2026-03-17 開始
 - #1127 / `fix/shape-plugin/task-progress-version-gate-and-idle-fallback` / 2026-03-17 開始
 - #1020 / `refactor/shape-plugin/build-session-event-redesign-1020` / 2026-03-14 開始
