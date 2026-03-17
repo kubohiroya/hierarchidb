@@ -23,3 +23,17 @@ export type {
   StageCheckpointLogger,
   StageHeartbeatWriter,
 } from './progressHelpers.js';
+
+export {
+  UnconditionalEventStreamer,
+  unconditionalEventStreamer,
+} from './eventStreamer.js';
+export type {
+  NotificationType,
+  EventPayload,
+} from './eventStreamer.js';
+
+export {
+  emitTaskProgressUpdated,
+  emitHeartbeat,
+} from './eventEmission.js';
