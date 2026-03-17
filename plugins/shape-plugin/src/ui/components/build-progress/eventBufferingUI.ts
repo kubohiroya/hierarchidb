@@ -1,24 +1,25 @@
 /**
  * UI-side event buffering for Worker→UI event delivery.
  *
- * Design:
- * - session-state / stage-snapshot: simple FIFO queue, no ordering constraint
- *   (Worker:UI = 1:1, so events arrive in emission order)
- * - task-progress: version-based ordering only — drop stale (lower version) and
- *   drop any update after value=100 (completed/skipped/failed final state)
- * - heartbeat: immediate pass-through, no buffering
+ * Design (per build-session-worker-ui-event-spec.md):
+ * - session-state and stage-snapshot use simple FIFO queues. Events are applied
+ *   unconditionally in arrival order.
+ * - task-progress uses per-taskId version deduplication:
+ *   - version > lastAppliedVersion[taskId] → accept
+ *   - version === lastAppliedVersion[taskId] → drop (duplicate)
+ *   - version < lastAppliedVersion[taskId] → drop (stale / out-of-order)
+ * - heartbeat: immediate pass-through, no buffering.
  *
- * seqNum (distributed sequence number from Worker) is NOT used for ordering here.
- * It is attached to task-progress events solely so the caller can perform
- * version-based deduplication across parallel stage Workers.
+ * Rationale: Worker emits progress at high frequency. Without deduplication,
+ * the UI would apply every intermediate value even when a newer one has already
+ * arrived for the same task. Per-taskId versioning ensures only the latest
+ * progress per task is applied within each animation frame.
  */
 
 export type NotificationType = 'session-state' | 'stage-snapshot' | 'task-progress';
 
-/** A buffered event carrying an optional version for task-progress ordering. */
+/** A buffered event in the FIFO queue (session-state / stage-snapshot only). */
 export interface BufferedEvent {
-    /** version is only meaningful for task-progress events */
-    version: number | undefined;
     notificationType: NotificationType;
     payload: unknown;
     timestamp: number;
@@ -28,29 +29,23 @@ export interface FifoEventQueue {
     events: BufferedEvent[];
 }
 
-export interface TaskProgressState {
-    lastAppliedVersion: number | undefined;
-    /** true once a value=100 event has been applied (final state reached) */
-    finalReached: boolean;
-}
-
 export interface EventBufferManager {
     enqueue(event: BufferedEvent): void;
-    /** Flush all queued events for session-state or stage-snapshot (FIFO, no filtering). */
+    /** Flush all queued events for the given FIFO notification type. */
     flushFifo(notificationType: 'session-state' | 'stage-snapshot'): BufferedEvent[];
     /**
-     * Apply version-based ordering for task-progress.
-     * Returns the event if it should be applied, undefined if it should be dropped.
+     * Apply a task-progress event with per-taskId version deduplication.
+     * Returns true if accepted, false if dropped (stale or duplicate).
      */
-    applyTaskProgress(event: BufferedEvent): BufferedEvent | undefined;
+    applyTaskProgress(taskId: string, version: number): boolean;
     reset(): void;
 }
 
 /**
  * Manages UI-side event queues.
  *
- * session-state / stage-snapshot: FIFO — all events are returned in order.
- * task-progress: version gate — stale and post-final events are dropped.
+ * session-state and stage-snapshot use FIFO queues.
+ * task-progress uses per-taskId version tracking to drop stale events.
  */
 export class UIEventBufferManager implements EventBufferManager {
     private fifoQueues: Record<'session-state' | 'stage-snapshot', FifoEventQueue> = {
@@ -58,15 +53,13 @@ export class UIEventBufferManager implements EventBufferManager {
         'stage-snapshot': { events: [] },
     };
 
-    private taskProgressState: TaskProgressState = {
-        lastAppliedVersion: undefined,
-        finalReached: false,
-    };
+    /** Last accepted version per taskId. */
+    private lastVersionByTaskId: Map<string, number> = new Map();
 
     enqueue(event: BufferedEvent): void {
         if (event.notificationType === 'task-progress') {
             throw new Error(
-                '[UIEventBufferManager] task-progress must be applied via applyTaskProgress, not enqueue',
+                '[UIEventBufferManager] task-progress events must use applyTaskProgress(), not enqueue()',
             );
         }
         const queue = this.fifoQueues[event.notificationType];
@@ -86,61 +79,14 @@ export class UIEventBufferManager implements EventBufferManager {
         return drained;
     }
 
-    /**
-     * Version-based gate for task-progress events.
-     *
-     * Rules:
-     * 1. If finalReached (value=100 already applied), drop all subsequent events.
-     * 2. If version is undefined, always accept (no ordering info available).
-     * 3. If version <= lastAppliedVersion, drop (stale / duplicate).
-     * 4. Otherwise accept and update lastAppliedVersion.
-     * 5. After accepting, if the event's progress value is 100, set finalReached=true.
-     */
-    applyTaskProgress(event: BufferedEvent): BufferedEvent | undefined {
-        if (event.notificationType !== 'task-progress') {
-            throw new Error(
-                `[UIEventBufferManager] applyTaskProgress called with wrong type: ${event.notificationType}`,
-            );
-        }
-
-        // Rule 1: final state already reached — drop everything after
-        if (this.taskProgressState.finalReached) {
-            return undefined;
-        }
-
-        const { version } = event;
-
-        // Rule 2: no version info — accept unconditionally
-        if (version === undefined) {
-            this.maybeMarkFinal(event);
-            return event;
-        }
-
-        if (!Number.isFinite(version) || version < 0) {
-            throw new Error(`[UIEventBufferManager] Invalid task-progress version: ${version}`);
-        }
-
-        const last = this.taskProgressState.lastAppliedVersion;
-
-        // Rule 3: stale or duplicate
+    applyTaskProgress(taskId: string, version: number): boolean {
+        const last = this.lastVersionByTaskId.get(taskId);
         if (last !== undefined && version <= last) {
-            return undefined;
+            // stale or duplicate — drop
+            return false;
         }
-
-        // Rule 4: accept
-        this.taskProgressState.lastAppliedVersion = version;
-
-        // Rule 5: mark final if value=100
-        this.maybeMarkFinal(event);
-
-        return event;
-    }
-
-    private maybeMarkFinal(event: BufferedEvent): void {
-        const payload = event.payload as { value?: unknown } | null | undefined;
-        if (payload !== null && payload !== undefined && payload.value === 100) {
-            this.taskProgressState.finalReached = true;
-        }
+        this.lastVersionByTaskId.set(taskId, version);
+        return true;
     }
 
     reset(): void {
@@ -148,15 +94,7 @@ export class UIEventBufferManager implements EventBufferManager {
             'session-state': { events: [] },
             'stage-snapshot': { events: [] },
         };
-        this.taskProgressState = {
-            lastAppliedVersion: undefined,
-            finalReached: false,
-        };
-    }
-
-    /** Exposed for testing only. */
-    getTaskProgressState(): Readonly<TaskProgressState> {
-        return { ...this.taskProgressState };
+        this.lastVersionByTaskId = new Map();
     }
 }
 
