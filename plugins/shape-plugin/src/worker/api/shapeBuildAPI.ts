@@ -36,6 +36,7 @@ import { shapeBuildMonitoringAPI } from './shapeBuildMonitoringAPI.js';
 import { shapeBuildRuntime } from './shapeBuildRuntime.js';
 import * as shapeBuildRuntimeCore from './shapeBuildRuntimeCore.js';
 import { unconditionalEventStreamer } from './eventBuffering.js';
+import { emitSessionStatusUpdated, emitStageSnapshotUpdated } from './eventEmission.js';
 
 export const shapeBuildAPI = {
 
@@ -463,6 +464,18 @@ export const shapeBuildAPI = {
 
     shapeBuildRuntimeCore.sessionStateCallbacks.set(key, { unsubscribe, callback });
 
+    // Deliver the current session state immediately on subscription start.
+    // This prevents event loss when startBuildSession emits sessionStatusUpdated
+    // before subscribeAll completes (race condition on session start).
+    // Per spec: "when the initial runtime snapshot is loaded on subscription start"
+    void shapeQueryAPIImpl.getBuildSessionRecord(nodeId).then((record) => {
+      if (record) {
+        emitSessionStatusUpdated(nodeId, record);
+      }
+    }).catch(() => {
+      // No record yet — normal for a brand-new session; silently skip.
+    });
+
     return () => {
       const active = shapeBuildRuntimeCore.sessionStateCallbacks.get(key);
       if (active?.unsubscribe === unsubscribe) {
@@ -488,6 +501,24 @@ export const shapeBuildAPI = {
     };
 
     shapeBuildRuntimeCore.stageSnapshotCallbacks.set(key, { unsubscribe, callback });
+
+    // Deliver the current stage snapshot immediately on subscription start.
+    // Per spec: "Initial snapshot on subscription start (only for stages that have started)"
+    void shapeQueryAPIImpl.getBuildSessionRecord(nodeId).then(async (record) => {
+      if (!record) return;
+      const rawStageId = record.stageId;
+      const stageStartedAt = record.stageStartedAt;
+      if (!rawStageId || typeof stageStartedAt !== 'number' || !Number.isFinite(stageStartedAt)) return;
+      if (rawStageId !== 'source' && rawStageId !== 'geometry' && rawStageId !== 'tileEmit') return;
+      await emitStageSnapshotUpdated(
+        nodeId,
+        rawStageId,
+        stageStartedAt,
+        record.stageInactiveMs ?? 0,
+      );
+    }).catch(() => {
+      // No record yet — normal for a brand-new session; silently skip.
+    });
 
     return () => {
       const active = shapeBuildRuntimeCore.stageSnapshotCallbacks.get(key);

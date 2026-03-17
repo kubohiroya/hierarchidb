@@ -130,6 +130,8 @@ Replaces: `progressReceived`
 type TaskProgressUpdatedEvent = {
   type: 'taskProgressUpdated';
   payload: {
+    taskId: string;                // identifies the specific task reporting progress
+    version: number;               // monotonically increasing per taskId — used for per-task deduplication
     stageId: StageId;
     value: number;                 // finite, 0..100 — violation throws
     message?: string;
@@ -138,9 +140,16 @@ type TaskProgressUpdatedEvent = {
 };
 ```
 
-**UI-side effect**: Update `stageProgressAtom[stageId].value` and `.message` / `.metadata`.
+**UI-side effect**: Update `stageProgressAtom[stageId]` for the given `taskId`. Per-task deduplication: if a `taskProgressUpdated` event arrives with a `version` ≤ the last applied `version` for that `taskId`, it is dropped. Only the latest version per `taskId` is applied.
+
+**Deduplication rule (per taskId)**:
+- `version > lastAppliedVersion[taskId]` → accept and apply
+- `version === lastAppliedVersion[taskId]` → drop (duplicate)
+- `version < lastAppliedVersion[taskId]` → drop (stale, out-of-order delivery)
 
 **Removed from payload**: `phase` (was previously included in `progressReceived` and erroneously retained in the design doc). Session phase is managed exclusively by `sessionStatusUpdated`. Mixing phase into progress events is the source of redundant phase updates.
+
+**Design rationale**: The previous `lastAcceptedEventVersion` was a single monotonic counter shared across all event types, which incorrectly compared heartbeat timestamps against task versions. The correct fix is per-taskId version tracking, not removal of versioning entirely.
 
 ---
 

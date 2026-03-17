@@ -1,8 +1,13 @@
 # TASKS.md
 
 ## Doing
+<<<<<<< fix/shape-plugin/wire-emit-task-progress-subscribe-task-progress-1141
 - #1141 / `fix/shape-plugin/wire-emit-task-progress-subscribe-task-progress-1141` / 2026-03-17 開始
+=======
+- #1133 / `fix/shape-plugin/scroll-arrow-visibility-fix` / 2026-03-17 開始
+>>>>>>> main
 - #1123 / `fix/app/subscribe-task-progress-1123` / 2026-03-17 開始
+- #1127 / `fix/shape-plugin/task-progress-version-gate-and-idle-fallback` / 2026-03-17 開始
 - #1020 / `refactor/shape-plugin/build-session-event-redesign-1020` / 2026-03-14 開始
 - #1019 / `fix/shape-plugin/task-snapshot-race-on-build-start-1019` / 2026-03-14 開始
 - #1018 / `fix/shape-plugin/runtime-refresh-after-start-1018` / 2026-03-14 開始
@@ -17,6 +22,7 @@
 
 ## 今日の運用ログ
 
+<<<<<<< fix/shape-plugin/wire-emit-task-progress-subscribe-task-progress-1141
 - 2026-03-17: #1139 taskViewportRangeAtom をステージ別 Record 型に変更・PR #1140 作成
   - shapeBuildProgressAtoms.ts: taskViewportRangeAtom → taskViewportRangeByStageAtom (Record<string, TaskViewportRange>)
   - useTaskItemCardList.ts: stageId キーで書き込み、空タスク時はキー削除
@@ -24,10 +30,38 @@
   - useBuildSessionStageProgressBarState.ts: viewportRangeByStage[activeStageId] から取得
   - typecheck: exit 0 (133/133)
 
+=======
+>>>>>>> main
 - 2026-03-17: #1137 subscribeSessionState/subscribeStageSnapshots 登録時に現在状態を即時配信・PR #1138作成
   - shapeBuildAPI.ts: subscribeSessionState に getBuildSessionRecord → emitSessionStatusUpdated 即時配信を追加
   - shapeBuildAPI.ts: subscribeStageSnapshots に stageId/stageStartedAt 検証 → emitStageSnapshotUpdated 即時配信を追加
   - typecheck: exit 0 (133/133)、test: 440/440 passed
+<<<<<<< fix/shape-plugin/wire-emit-task-progress-subscribe-task-progress-1141
+=======
+- 2026-03-17: #1128 taskProgressUpdated に taskId/version 追加・per-task version deduplication 実装・PR #1129作成
+  - session-events.ts: TaskProgressUpdatedEvent に taskId: string / version: number 追加
+  - eventEmission.ts: emitTaskProgressUpdated に taskId/version パラメータ追加、finite positive integer 検証
+  - eventBufferingUI.ts: task-progress の enqueue() 禁止、applyTaskProgress(taskId, version, payload) で per-taskId version deduplication 実装
+  - useShapeBuildSessionStateAtomBridge.ts: requireEventShape に safeStringify（循環参照対応）・T['type'] 型改善を適用
+  - docs/build-session-worker-ui-event-spec.md: per-taskId deduplication ルール追記
+  - typecheck: exit 0
+
+- 2026-03-17: #1126 PR に safeStringify 追加コミット push（コードレビュー対応）
+  - workerBootstrap.ts: requireEventType / subscribeWorkerLog の JSON.stringify → safeStringify（循環参照対応）
+  - useShapeBuildSessionStateAtomBridge.ts: requireEventShape の expectedType: string → T['type'] に型改善
+  - typecheck: exit 0
+
+- 2026-03-17: #1125 Worker→UI イベント型ガード追加・setTimeout撤去・PR #1126作成
+  - workerBootstrap.ts: subscribeStageSnapshots/subscribeSessionState/subscribeSessionHeartbeat/subscribeWorkerLog に type フィールド検証追加、不一致は即 throw、API 未実装も throw
+  - useShapeBuildSessionStateAtomBridge.ts: run() 内 as キャスト4箇所を requireEventShape に置換、processProgressEvent の stageId undefined フォールバックを throw に変更、scheduleFlush を window.requestAnimationFrame のみに統一
+  - typecheck: exit 0 (185/185)、test: 486/486 passed
+
+- 2026-03-17: #1123 subscribeProgress → subscribeTaskProgress 修正・PR #1124作成
+  - workerBootstrap.ts: ShapeBuildAPI 型から非存在の subscribeProgress/subscribeTasks を削除、subscribeTaskProgress を追加
+  - subscribeBuildProgress: buildApi.subscribeProgress → buildApi.subscribeTaskProgress に修正
+  - subscribeBuildTasks: no-op stub に変更（API 契約から削除済み）
+  - typecheck: exit 0
+>>>>>>> main
 
 - 2026-03-17: #1121 TaskSummary に metadata 追加・PR #1122作成
   - session-events.ts: TaskSummary に metadata フィールド追加
