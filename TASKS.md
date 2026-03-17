@@ -1,8 +1,7 @@
 # TASKS.md
 
 ## Doing
-- #1141 / `fix/shape-plugin/wire-emit-task-progress-subscribe-task-progress-1141` / 2026-03-17 開始
-- #1133 / `fix/shape-plugin/scroll-arrow-visibility-fix` / 2026-03-17 開始
+- #1146 / `refactor/route-location/align-common-build-infra-1146` / 2026-03-17 開始
 - #1123 / `fix/app/subscribe-task-progress-1123` / 2026-03-17 開始
 - #1127 / `fix/shape-plugin/task-progress-version-gate-and-idle-fallback` / 2026-03-17 開始
 - #1020 / `refactor/shape-plugin/build-session-event-redesign-1020` / 2026-03-14 開始
