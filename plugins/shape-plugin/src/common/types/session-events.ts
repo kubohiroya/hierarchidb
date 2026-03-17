@@ -1,4 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
+import type { TaskProgressUpdatedEvent } from '@hierarchidb/build-api';
 
 /**
  * Session lifecycle phase — canonical set per build-session-worker-ui-event-spec.md
@@ -47,21 +48,6 @@ export interface StageSnapshotUpdatedEvent {
         stageStartedAt: number;   // required — only emitted after stage has started
         stageInactiveMs: number;
         stageCompletedAt?: number;
-    };
-}
-
-/**
- * taskProgressUpdated — replaces progressReceived.
- * Progress value for a single task from a parallel worker.
- * phase field is intentionally absent (managed by sessionStatusUpdated only).
- */
-export interface TaskProgressUpdatedEvent {
-    type: 'taskProgressUpdated';
-    payload: {
-        stageId: string;
-        value: number;            // finite, 0..100 — violation throws
-        message?: string;
-        metadata?: Record<string, unknown>;
     };
 }
 

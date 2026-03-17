@@ -1,6 +1,7 @@
 # TASKS.md
 
 ## Doing
+- #1141 / `fix/shape-plugin/wire-emit-task-progress-subscribe-task-progress-1141` / 2026-03-17 開始
 - #1123 / `fix/app/subscribe-task-progress-1123` / 2026-03-17 開始
 - #1020 / `refactor/shape-plugin/build-session-event-redesign-1020` / 2026-03-14 開始
 - #1019 / `fix/shape-plugin/task-snapshot-race-on-build-start-1019` / 2026-03-14 開始

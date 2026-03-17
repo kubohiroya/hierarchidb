@@ -1,11 +1,10 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildContinuationPolicy, BuildTaskSummary, BuildTaskUpdateEvent, BuildProgressEvent } from '@hierarchidb/build-api';
+import type { BuildContinuationPolicy, BuildTaskSummary, BuildTaskUpdateEvent, BuildProgressEvent, TaskProgressUpdatedEvent } from '@hierarchidb/build-api';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import type {
   SessionStatusUpdatedEvent,
   StageSnapshotUpdatedEvent,
   HeartbeatEvent,
-  TaskProgressUpdatedEvent,
   WorkerLogEvent,
 } from '~/common/types/session-events';
 import {

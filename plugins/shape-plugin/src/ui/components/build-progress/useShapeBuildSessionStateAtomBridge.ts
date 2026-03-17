@@ -5,13 +5,12 @@ import { useSetAtom } from 'jotai';
 import { dispatchBuildSessionEventAtom } from '~/ui/atoms/buildSessionStateAtoms';
 import { createBuildSessionWorkerEventAdapter } from '~/ui/atoms/buildSessionWorkerEventAdapter';
 import type { ShapeStageId } from '~/ui/atoms/buildSessionStateAtoms';
+import type { BuildTaskSummary, TaskStage, ProgressPhase, TaskProgressUpdatedEvent } from '@hierarchidb/build-api';
 import type {
     SessionStatusUpdatedEvent,
     StageSnapshotUpdatedEvent,
-    TaskProgressUpdatedEvent,
     HeartbeatEvent,
 } from '~/common/types/session-events';
-import type { BuildTaskSummary, TaskStage, ProgressPhase } from '@hierarchidb/build-api';
 import type { AdapterStageSnapshotUpdatedEvent } from '@hierarchidb/ui-build-sessions';
 import { UIEventBufferManager, type BufferedEvent } from './eventBufferingUI';
 

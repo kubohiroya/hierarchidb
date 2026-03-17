@@ -11,12 +11,12 @@ import type {
 } from '@hierarchidb/shape-api';
 import type { StyleMutationAPI, StyleQueryAPI } from '@hierarchidb/style-api';
 import type {
-  BuildProgressEvent,
   BuildSessionRuntimeFilter,
   BuildSessionRuntimeRecord,
   BuildSessionStatus,
   BuildTaskSummary,
   BuildTaskUpdateEvent,
+  TaskProgressUpdatedEvent,
 } from '@hierarchidb/build-api';
 import type { ImportExportAPI } from '@hierarchidb/import-export-api';
 import type { TagAPI } from '@hierarchidb/tag-api';
@@ -142,10 +142,10 @@ export interface WorkerAPI<T> {
     selectedArrayByCountries: Record<string, boolean[]>
   ): Promise<ShapeDownloadTaskPayload[]>;
   /** Canonical build API. */
-  subscribeBuildProgress(
+  subscribeTaskProgress(
     nodeType: NodeType,
     nodeId: NodeId,
-    callback: (event: BuildProgressEvent) => void
+    callback: (event: TaskProgressUpdatedEvent) => void
   ): Promise<() => void>;
   subscribeHeapPressure(callback: (event: HeapPressureEvent) => void): Promise<() => void>;
   /** Subscribe to session state change events for a specific node. Shape-plugin only. */
