@@ -898,9 +898,6 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           reason?: string
         ): Promise<void> => runCancelQueuedBuildSession(nodeType, nodeId, reason);
 
-<<<<<<< fix/shape-plugin/wire-emit-task-progress-subscribe-task-progress-1141
-        const subscribeTaskProgress = async (
-=======
 
         const safeStringify = (value: unknown): string => {
           const seen = new WeakSet<object>();
@@ -913,8 +910,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           });
         };
 
-        const subscribeBuildProgress = async (
->>>>>>> main
+        const subscribeTaskProgress = async (
           nodeType: NodeType,
           nodeId: NodeId,
           callback: (event: TaskProgressUpdatedEvent) => void
@@ -931,11 +927,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
               (sanitized as { type?: unknown }).type !== 'taskProgressUpdated'
             ) {
               throw new Error(
-<<<<<<< fix/shape-plugin/wire-emit-task-progress-subscribe-task-progress-1141
-                `[subscribeTaskProgress] unexpected event type: ${JSON.stringify((sanitized as { type?: unknown } | null)?.type ?? sanitized)}`
-=======
-                `[subscribeBuildProgress] unexpected event type: ${safeStringify((sanitized as { type?: unknown } | null)?.type ?? sanitized)}`
->>>>>>> main
+                `[subscribeTaskProgress] unexpected event type: ${safeStringify((sanitized as { type?: unknown } | null)?.type ?? sanitized)}`
               );
             }
             callback(sanitized as TaskProgressUpdatedEvent);
@@ -957,19 +949,11 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
 
         const requireEventType = (event: unknown, expectedType: string, context: string): Record<string, unknown> => {
           if (!event || typeof event !== 'object') {
-<<<<<<< fix/shape-plugin/wire-emit-task-progress-subscribe-task-progress-1141
-            throw new Error(`[${context}] event must be an object, received ${JSON.stringify(event)}`);
-          }
-          const rec = event as Record<string, unknown>;
-          if (rec.type !== expectedType) {
-            throw new Error(`[${context}] unexpected event type: expected "${expectedType}", received ${JSON.stringify(rec.type)}`);
-=======
             throw new Error(`[${context}] event must be an object, received ${safeStringify(event)}`);
           }
           const rec = event as Record<string, unknown>;
           if (rec.type !== expectedType) {
             throw new Error(`[${context}] unexpected event type: expected "${expectedType}", received ${safeStringify(rec.type)}`);
->>>>>>> main
           }
           return rec;
         };
@@ -1042,11 +1026,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             // WorkerLogEvent does not have a canonical 'type' field in the 4-event spec;
             // validate that it is at least a non-null object.
             if (!sanitized || typeof sanitized !== 'object') {
-<<<<<<< fix/shape-plugin/wire-emit-task-progress-subscribe-task-progress-1141
-              throw new Error(`[subscribeWorkerLog] event must be an object, received ${JSON.stringify(sanitized)}`);
-=======
               throw new Error(`[subscribeWorkerLog] event must be an object, received ${safeStringify(sanitized)}`);
->>>>>>> main
             }
             callback(sanitized);
           };

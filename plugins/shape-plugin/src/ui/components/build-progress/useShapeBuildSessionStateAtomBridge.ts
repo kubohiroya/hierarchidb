@@ -269,19 +269,6 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             }
         };
 
-<<<<<<< fix/shape-plugin/wire-emit-task-progress-subscribe-task-progress-1141
-        const requireEventShape = <T extends { type: string }>(
-            event: unknown,
-            expectedType: string,
-            context: string,
-        ): T => {
-            if (!event || typeof event !== 'object') {
-                throw new Error(`[${context}] event must be an object, received ${JSON.stringify(event)}`);
-            }
-            const rec = event as Record<string, unknown>;
-            if (rec.type !== expectedType) {
-                throw new Error(`[${context}] unexpected event type: expected "${expectedType}", received ${JSON.stringify(rec.type)}`);
-=======
         const safeStringify = (value: unknown): string => {
             const seen = new WeakSet<object>();
             return JSON.stringify(value, (_key, val) => {
@@ -304,7 +291,6 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             const rec = event as Record<string, unknown>;
             if (rec.type !== expectedType) {
                 throw new Error(`[${context}] unexpected event type: expected "${expectedType}", received ${safeStringify(rec.type)}`);
->>>>>>> main
             }
             return event as T;
         };
@@ -326,11 +312,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                 },
                 onProgressEvent: (event) => {
                     if (cancelled) return;
-<<<<<<< fix/shape-plugin/wire-emit-task-progress-subscribe-task-progress-1141
-                    onProgressEvent(requireEventShape<TaskProgressUpdatedEvent & { version?: number }>(event, 'taskProgressUpdated', 'onProgressEvent'));
-=======
                     onProgressEvent(requireEventShape<TaskProgressUpdatedEvent>(event, 'taskProgressUpdated', 'onProgressEvent'));
->>>>>>> main
                 },
                 onSessionState: (event) => {
                     if (cancelled) return;
