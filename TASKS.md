@@ -1,7 +1,7 @@
 # TASKS.md
 
 ## Doing
-- #1147 / `refactor/build-api/deprecate-unified-progress-info-1147` / 2026-03-18 開始
+
 - #1123 / `fix/app/subscribe-task-progress-1123` / 2026-03-17 開始
 - #1127 / `fix/shape-plugin/task-progress-version-gate-and-idle-fallback` / 2026-03-17 開始
 - #1020 / `refactor/shape-plugin/build-session-event-redesign-1020` / 2026-03-14 開始
@@ -17,6 +17,15 @@
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 
 ## 今日の運用ログ
+
+- 2026-03-18: #1147 BuildUnifiedProgressInfo → BuildProgressEvent alias 化・payload 必須化・throw 化・PR #1148 作成
+  - BuildProgressPayload.total/completed/failed を必須フィールドに昇格
+  - BuildUnifiedProgressInfo を BuildProgressEvent の type alias に変更（旧 interface 削除）
+  - progressEventToUnified: デフォルト補完・clamp 全削除、payload 不在・非 finite は throw
+  - useBuildProgress / buildSessionStatusMapper / useBuildSessionStateTreeBridge: payload 経由に変更
+  - location-plugin / route-plugin / shape-plugin: payload 経由に変更、不在は throw
+  - typecheck: shape-plugin 以外の全パッケージ exit 0（shape-plugin の既存エラーは変更前から存在）
+  - test: build / ui-build-sessions / location-plugin 全通過
 
 - 2026-03-17: #1146 location/route plugin を共通ビルド基盤に追いつかせる・main push 完了
   - LocationBuildSession.ts 新設（AbstractBuildSession 継承、全検索ロジック移植）
