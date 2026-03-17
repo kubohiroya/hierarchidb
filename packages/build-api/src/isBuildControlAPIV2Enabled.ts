@@ -28,9 +28,9 @@ export interface BaseBuildConfig {
 }
 
 export interface BuildProgressPayload {
-  total?: number;
-  completed?: number;
-  failed?: number;
+  total: number;
+  completed: number;
+  failed: number;
   skipped?: number;
   estimatedTimeRemaining?: number;
   meta?: Record<string, unknown>;
@@ -116,21 +116,14 @@ export interface BuildProgress {
   estimatedTimeRemaining?: number;
 }
 
-export interface BuildUnifiedProgressInfo<P = BuildProgressPayload> {
-  nodeId: NodeId;
-  stage: StageKey;
-  total: number;
-  completed: number;
-  failed: number;
-  percentage: number;
-  phase: ProgressPhase;
-  timestamp: number;
-  payload?: P;
-  message?: string;
-}
+/**
+ * Alias for BuildProgressEvent. Use BuildProgressEvent in new code.
+ * @deprecated Use BuildProgressEvent directly.
+ */
+export type BuildUnifiedProgressInfo<P = BuildProgressPayload> = BuildProgressEvent<P>;
 
 export interface BuildProgressAdapter {
-  subscribe: (consumer: (info: BuildUnifiedProgressInfo) => void) => (() => void) | Promise<() => void>;
+  subscribe: (consumer: (info: BuildProgressEvent) => void) => (() => void) | Promise<() => void>;
 }
 
 export interface UseBuildProgressOptions {

@@ -1,7 +1,8 @@
 import type { BuildUnifiedProgressInfo } from '@hierarchidb/build-api';
+import { resolveProgressPercentage } from '@hierarchidb/build-api';
 
 export function RouteBuildProgressBar({ snapshot }: { snapshot?: BuildUnifiedProgressInfo | null }) {
-  const percentage = Math.round(snapshot?.percentage ?? 0);
+  const percentage = snapshot ? resolveProgressPercentage(snapshot) : 0;
   const phase = snapshot?.phase ?? 'idle';
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>

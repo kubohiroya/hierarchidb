@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { ReactElement } from 'react';
 import { toNodeId } from '@hierarchidb/core-types';
+import { resolveProgressPayloadCounts, resolveProgressPercentage } from '@hierarchidb/build-api';
 import { useRouteBuildProgress } from '~/ui/hooks/useRouteBuildProgress';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 
@@ -12,27 +13,20 @@ export function RouteBuildSummary({ nodeId }: RouteBuildSummaryProps): ReactElem
   const { progress, lastError } = useRouteBuildProgress(toNodeId(nodeId));
   const { t } = useTranslation('route-plugin');
 
-  const completed = useMemo(() => {
-    const value = progress?.completed ?? 0;
-    return Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
-  }, [progress?.completed]);
+  const counts = useMemo(() => {
+    if (!progress) return null;
+    return resolveProgressPayloadCounts(progress);
+  }, [progress]);
 
-  const total = useMemo(() => {
-    const value = progress?.total ?? 0;
-    return Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
-  }, [progress?.total]);
+  const completed = counts?.completed ?? 0;
+  const total = counts?.total ?? 0;
+  const failed = counts?.failed ?? 0;
+  const resultsCount = counts ? counts.completed : null;
 
-  const failed = useMemo(() => {
-    const value = progress?.failed ?? 0;
-    return Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
-  }, [progress?.failed]);
-
-  const resultsCount = useMemo(() => {
-    const value = progress?.completed;
-    return Number.isFinite(value) ? Math.max(0, Math.round(value ?? 0)) : null;
-  }, [progress?.completed]);
-
-  const pct = total > 0 ? Math.min(100, Math.max(0, Math.round((completed / total) * 100))) : 0;
+  const pct = useMemo(() => {
+    if (!progress) return 0;
+    return resolveProgressPercentage(progress);
+  }, [progress]);
   const failedLabel = t('batch.summary.failedLabel', 'Failed');
   const completedLabel = t('batch.summary.completedLabel', 'Completed');
   const totalLabel = t('batch.summary.totalLabel', 'Total');

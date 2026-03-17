@@ -44,8 +44,10 @@ const readString = (value: unknown): string | undefined => (
 
 /**
  * Converts a sessionStatusUpdated event (unknown shape from worker bridge) to
- * BuildUnifiedProgressInfo. Only phase, stage, and timestamp are populated —
+ * BuildProgressEvent (= BuildUnifiedProgressInfo alias).
+ * Only phase, stage, and timestamp are populated —
  * task counts (total/completed/failed) come from subscribeBuildTasks separately.
+ * payload.total/completed/failed are set to 0 as required by BuildProgressPayload contract.
  */
 const sessionStatusEventToUnifiedProgress = (
   event: unknown,
@@ -71,12 +73,9 @@ const sessionStatusEventToUnifiedProgress = (
   return {
     nodeId: toNodeId(nodeIdStr),
     stage,
-    total: 0,
-    completed: 0,
-    failed: 0,
-    percentage: 0,
     phase,
     timestamp,
+    payload: { total: 0, completed: 0, failed: 0 },
     message: readString(p.stopReason),
   };
 };
@@ -125,7 +124,7 @@ export const useBuildProgressState = (
               ? err
               : new Error('Failed to subscribe to session state');
             setError(errObj);
-            return () => {};
+            return () => { };
           }),
     };
   }, [nodeType, nodeId]);

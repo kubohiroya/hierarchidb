@@ -142,10 +142,10 @@ const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
 };
 
 export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
-                                                                          open,
-                                                                          onClose,
-                                                                          nodeId,
-                                                                        }) => {
+  open,
+  onClose,
+  nodeId,
+}) => {
   const [tabValue, setTabValue] = useState(0);
   const tableId = nodeId ? String(nodeId) : null;
   const datasetId = React.useMemo(() => (tableId ? `location:${tableId}` : null), [tableId]);
@@ -166,7 +166,7 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
     const total = typeof payload?.total === 'number' ? payload.total : locationProgress?.total ?? 0;
     const completed = typeof payload?.completed === 'number' ? payload.completed : locationProgress?.completed ?? 0;
     const failed = typeof payload?.failed === 'number' ? payload.failed : locationProgress?.failed ?? 0;
-    const percentageRaw = unifiedProgress?.percentage ?? locationProgress?.percentage ?? 0;
+    const percentageRaw = (total > 0 ? Math.round((completed / total) * 100) : 0) || locationProgress?.percentage || 0;
     const phase = (unifiedProgress?.phase ?? locationProgress?.stage ?? 'running').toLowerCase();
     const phaseText = phaseLabel(phase);
     const taskLabel = unifiedProgress?.message

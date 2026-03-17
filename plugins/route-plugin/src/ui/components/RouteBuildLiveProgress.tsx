@@ -4,6 +4,7 @@ import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { toNodeId } from '@hierarchidb/core-types';
+import { resolveProgressPercentage } from '@hierarchidb/build-api';
 import { useRouteBuildProgress } from '~/ui/hooks/useRouteBuildProgress';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 
@@ -20,10 +21,11 @@ export function RouteBuildLiveProgress({ jobId }: { jobId: string }) {
   const { t } = useTranslation('route-plugin');
 
   const pct = useMemo(() => {
-    const value = progress?.percentage ?? 0;
+    if (!progress) return 0;
+    const value = resolveProgressPercentage(progress);
     if (!Number.isFinite(value)) return 0;
-    return Math.max(0, Math.min(100, Math.round(value)));
-  }, [progress?.percentage]);
+    return Math.max(0, Math.min(100, value));
+  }, [progress]);
 
   const phaseKey = progress?.phase ?? status?.status ?? (isPaused ? 'paused' : 'running');
   const stageKey = progress?.stage ?? '';

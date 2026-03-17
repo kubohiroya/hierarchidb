@@ -43,6 +43,24 @@ const resolveSkippedCount = (info: BuildUnifiedProgressInfo): number => {
   return typeof skipped === 'number' && Number.isFinite(skipped) ? skipped : 0;
 };
 
+const resolvePayloadNumber = (info: BuildUnifiedProgressInfo, key: 'total' | 'completed' | 'failed'): number => {
+  const payload = info.payload as Record<string, unknown> | undefined;
+  const value = payload?.[key];
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`[useBuildProgress] payload.${key} must be a finite number, received ${String(value)} (nodeId=${String(info.nodeId)}, stage=${String(info.stage)})`);
+  }
+  return value;
+};
+
+const resolvePercentage = (info: BuildUnifiedProgressInfo): number => {
+  const payload = info.payload as Record<string, unknown> | undefined;
+  const pct = payload?.percentage;
+  if (typeof pct === 'number' && Number.isFinite(pct)) return pct;
+  const total = resolvePayloadNumber(info, 'total');
+  const completed = resolvePayloadNumber(info, 'completed');
+  return total > 0 ? Math.round((completed / total) * 100) : 0;
+};
+
 const asRecord = (value: unknown): Record<string, unknown> | null => (
   value && typeof value === 'object' && !Array.isArray(value)
     ? value as Record<string, unknown>
@@ -119,6 +137,7 @@ export function useBuildProgress(
   const flushFrameRef = useRef<number | null>(null);
   const adapterRef = useRef<Adapter>(adapter);
   const lastProgressRef = useRef<BuildUnifiedProgressInfo | null>(null);
+  const lastNormalizedPercentageRef = useRef<number>(0);
   const lastSignaturesRef = useRef<{ progressTask: string | undefined; stageTotals: string | undefined }>({
     progressTask: undefined,
     stageTotals: undefined,
@@ -137,34 +156,44 @@ export function useBuildProgress(
       const prev = lastProgressRef.current;
       if (next.phase === 'completed') {
         const skipped = resolveSkippedCount(next);
-        const done = next.completed + next.failed + skipped;
-        if (next.total > 0 && done < next.total) {
+        const total = resolvePayloadNumber(next, 'total');
+        const completed = resolvePayloadNumber(next, 'completed');
+        const failed = resolvePayloadNumber(next, 'failed');
+        const done = completed + failed + skipped;
+        if (total > 0 && done < total) {
           logProgressEvent('drop-complete-incomplete', {
             nodeId: next.nodeId,
             stage: next.stage,
             phase: next.phase,
-            total: next.total,
-            completed: next.completed,
-            failed: next.failed,
+            total,
+            completed,
+            failed,
             skipped,
             hasMeta,
           });
           return;
         }
       }
-      const normalized = prev && next.percentage < prev.percentage
-        ? { ...next, percentage: prev.percentage }
-        : next;
+      const nextPercentage = resolvePercentage(next);
+      const prevPercentage = lastNormalizedPercentageRef.current;
+      const normalizedPercentage = nextPercentage < prevPercentage ? prevPercentage : nextPercentage;
+      const normalized = next;
       const progressTaskSignature = buildProgressTaskSignature(normalized);
       const stageTotalsSignature = buildStageTotalsSignature(normalized);
+      const nextTotal = resolvePayloadNumber(next, 'total');
+      const nextCompleted = resolvePayloadNumber(next, 'completed');
+      const nextFailed = resolvePayloadNumber(next, 'failed');
+      const prevTotal = prev ? resolvePayloadNumber(prev, 'total') : 0;
+      const prevCompleted = prev ? resolvePayloadNumber(prev, 'completed') : 0;
+      const prevFailed = prev ? resolvePayloadNumber(prev, 'failed') : 0;
       const isSame = Boolean(
         prev
         && prev.stage === normalized.stage
         && prev.phase === normalized.phase
-        && prev.percentage === normalized.percentage
-        && prev.completed === normalized.completed
-        && prev.failed === normalized.failed
-        && prev.total === normalized.total
+        && normalizedPercentage === prevPercentage
+        && nextCompleted === prevCompleted
+        && nextFailed === prevFailed
+        && nextTotal === prevTotal
         && prev.message === normalized.message
         && lastSignaturesRef.current.progressTask === progressTaskSignature
         && lastSignaturesRef.current.stageTotals === stageTotalsSignature
@@ -175,7 +204,7 @@ export function useBuildProgress(
             nodeId: next.nodeId,
             stage: next.stage,
             phase: next.phase,
-            percentage: normalized.percentage,
+            percentage: normalizedPercentage,
             progressTaskSignature,
             stageTotalsSignature,
             hasMeta,
@@ -188,10 +217,10 @@ export function useBuildProgress(
           nodeId: next.nodeId,
           stage: next.stage,
           phase: next.phase,
-          percentage: normalized.percentage,
-          total: normalized.total,
-          completed: normalized.completed,
-          failed: normalized.failed,
+          percentage: normalizedPercentage,
+          total: nextTotal,
+          completed: nextCompleted,
+          failed: nextFailed,
           skipped: resolveSkippedCount(normalized),
           progressTaskSignature,
           stageTotalsSignature,
@@ -199,6 +228,7 @@ export function useBuildProgress(
         });
       }
       lastProgressRef.current = normalized;
+      lastNormalizedPercentageRef.current = normalizedPercentage;
       lastSignaturesRef.current = {
         progressTask: progressTaskSignature,
         stageTotals: stageTotalsSignature,
@@ -215,14 +245,17 @@ export function useBuildProgress(
     const result: SubscribeResult = currentAdapter.subscribe((info: BuildUnifiedProgressInfo) => {
       if (isProgressDebugEnabled('event')) {
         const payloadMeta = readPayloadMeta(info);
+        const total = resolvePayloadNumber(info, 'total');
+        const completed = resolvePayloadNumber(info, 'completed');
+        const failed = resolvePayloadNumber(info, 'failed');
         logProgressEvent('received', {
           nodeId: info.nodeId,
           stage: info.stage,
           phase: info.phase,
-          percentage: info.percentage,
-          total: info.total,
-          completed: info.completed,
-          failed: info.failed,
+          percentage: resolvePercentage(info),
+          total,
+          completed,
+          failed,
           skipped: resolveSkippedCount(info),
           hasPayloadMeta: Boolean(payloadMeta),
           hasProgressTaskMeta: Boolean(payloadMeta && asRecord(payloadMeta.progressTask)),

@@ -1,9 +1,9 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildProgress, BuildSessionStatus, BuildUnifiedProgressInfo } from '../../../../build-api';
+import type { BuildProgress, BuildProgressPayload, BuildSessionStatus, BuildUnifiedProgressInfo } from '../../../../build-api';
 import { computePercentage } from '../utils/taskProgressSummary.js';
 
 type UnifiedProgressInfoLike = BuildUnifiedProgressInfo & {
-  payload?: {
+  payload?: BuildProgressPayload & {
     skipped?: number;
     estimatedTimeRemaining?: number;
   };
@@ -19,6 +19,13 @@ const readNumber = (value: unknown): number | undefined => (
   typeof value === 'number' && Number.isFinite(value) ? value : undefined
 );
 
+const assertFiniteNumber = (value: unknown, label: string): number => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`[buildSessionStatusMapper] ${label} must be a finite number, received ${String(value)}`);
+  }
+  return value;
+};
+
 const normalizeToProgressNumber = (value: number | undefined, fallback: number): number => {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return value;
@@ -30,6 +37,28 @@ const readOptionalNumber = (value: unknown): number | undefined => {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 };
 
+const resolvePayloadCounts = (
+  info: BuildUnifiedProgressInfo | null,
+  fallback: BuildSessionStatus | null | undefined,
+): { total: number; completed: number; failed: number } => {
+  if (!info) {
+    return {
+      total: normalizeToProgressNumber(readNumber(fallback?.progress?.total), 0),
+      completed: normalizeToProgressNumber(readNumber(fallback?.progress?.completed), 0),
+      failed: normalizeToProgressNumber(readNumber(fallback?.progress?.failed), 0),
+    };
+  }
+  const payload = info.payload as BuildProgressPayload | undefined;
+  if (!payload) {
+    throw new Error(`[buildSessionStatusMapper] info.payload is required but was absent (nodeId=${String(info.nodeId)}, stage=${String(info.stage)})`);
+  }
+  return {
+    total: assertFiniteNumber(payload.total, 'payload.total'),
+    completed: assertFiniteNumber(payload.completed, 'payload.completed'),
+    failed: assertFiniteNumber(payload.failed, 'payload.failed'),
+  };
+};
+
 export const toBuildSessionStatusFromUnifiedProgress = ({
   nodeId,
   info,
@@ -38,30 +67,18 @@ export const toBuildSessionStatusFromUnifiedProgress = ({
   const phase = info?.phase ?? fallback?.status;
   if (!phase) return null;
 
-  const total = normalizeToProgressNumber(
-    readNumber(info?.total),
-    normalizeToProgressNumber(readNumber(fallback?.progress?.total), 0),
-  );
-  const completed = normalizeToProgressNumber(
-    readNumber(info?.completed),
-    normalizeToProgressNumber(readNumber(fallback?.progress?.completed), 0),
-  );
-  const failed = normalizeToProgressNumber(
-    readNumber(info?.failed),
-    normalizeToProgressNumber(readNumber(fallback?.progress?.failed), 0),
-  );
+  const { total, completed, failed } = resolvePayloadCounts(info, fallback);
+
   const skipped = normalizeToProgressNumber(
     readNumber((info as UnifiedProgressInfoLike | null)?.payload?.skipped),
     normalizeToProgressNumber(readNumber(fallback?.progress?.skipped), 0),
   );
-  const percentage = typeof info?.percentage === 'number' && Number.isFinite(info.percentage)
-    ? info.percentage
-    : computePercentage({
-      total,
-      completed,
-      failed,
-      skipped,
-    });
+  const percentage = computePercentage({
+    total,
+    completed,
+    failed,
+    skipped,
+  });
 
   const progress: BuildProgress = {
     total,
