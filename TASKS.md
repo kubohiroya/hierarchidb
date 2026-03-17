@@ -18,6 +18,14 @@
 
 ## 今日の運用ログ
 
+- 2026-03-18: #1147 レビュー対応コミット push（PR #1148 追加コミット）
+  - useBuildProgress: `_normalizedPercentage` スプレッドを `lastNormalizedPercentageRef` に置換（型違反解消）
+  - useBuildSessionStateTreeBridge: percentage 計算を `computePercentage`（completed+failed+skipped）に統一
+  - build-api: `resolveProgressPayloadCounts` / `resolveProgressPercentage` 共有ユーティリティ新設
+  - RouteBuildLiveProgress / RouteBuildProgressBar / RouteBuildSummary: ローカル重複ロジック削除、build-api から import に統一
+  - typecheck: build-api / build / ui-build-sessions / route-plugin 全 exit 0
+  - test: build / ui-build-sessions 全通過
+
 - 2026-03-18: #1147 BuildUnifiedProgressInfo → BuildProgressEvent alias 化・payload 必須化・throw 化・PR #1148 作成
   - BuildProgressPayload.total/completed/failed を必須フィールドに昇格
   - BuildUnifiedProgressInfo を BuildProgressEvent の type alias に変更（旧 interface 削除）
