@@ -38,10 +38,7 @@ export interface BuildSessionDisplayStatus {
 export type ExtendedPayload = BuildProgressPayload & { stage?: string };
 
 export type ExtendedProgress = BuildUnifiedProgressInfo & {
-  phase?: string;
-  timestamp?: number;
-  message?: string | null;
-  payload?: ExtendedPayload;
+  payload?: ExtendedPayload & { skipped?: number };
 };
 
 type ProgressTaskMeta = {
@@ -125,14 +122,25 @@ const readStageTotalsMeta = (info: ExtendedProgress): StageTotalsMeta | undefine
 
 export function toShapeProgress(info: ExtendedProgress | null): BuildProgress | null {
   if (!info) return null;
-  const total = info.total ?? info.payload?.total ?? 0;
-  const completed = info.completed ?? info.payload?.completed ?? 0;
-  const failed = info.failed ?? info.payload?.failed ?? 0;
-  const skipped = info.payload?.skipped ?? 0;
+  const payload = info.payload as (ExtendedPayload & { skipped?: number }) | undefined;
+  if (!payload) {
+    throw new Error(`[toShapeProgress] info.payload is required but was absent (nodeId=${String(info.nodeId)}, stage=${String(info.stage)})`);
+  }
+  if (typeof payload.total !== 'number' || !Number.isFinite(payload.total)) {
+    throw new Error(`[toShapeProgress] payload.total must be a finite number, received ${String(payload.total)}`);
+  }
+  if (typeof payload.completed !== 'number' || !Number.isFinite(payload.completed)) {
+    throw new Error(`[toShapeProgress] payload.completed must be a finite number, received ${String(payload.completed)}`);
+  }
+  if (typeof payload.failed !== 'number' || !Number.isFinite(payload.failed)) {
+    throw new Error(`[toShapeProgress] payload.failed must be a finite number, received ${String(payload.failed)}`);
+  }
+  const total = payload.total;
+  const completed = payload.completed;
+  const failed = payload.failed;
+  const skipped = payload.skipped ?? 0;
   const stage = info.stage;
-  const percentage = typeof info.percentage === 'number' && Number.isFinite(info.percentage)
-    ? info.percentage
-    : Math.max(0, Math.min(100, computePercentage({ total, completed, failed, skipped })));
+  const percentage = computePercentage({ total, completed, failed, skipped });
   const progressTaskMeta = readProgressTaskMeta(info);
   const stageTotals = readStageTotalsMeta(info);
   return {

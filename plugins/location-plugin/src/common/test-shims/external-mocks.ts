@@ -126,25 +126,21 @@ export function createLaneSemaphoreRegistry(options: { defaults: Record<string, 
 }
 
 export function progressEventToUnified(event: BuildProgressEvent): BuildUnifiedProgressInfo {
-  const payload = event.payload ?? {};
-  const total = typeof payload.total === 'number' && payload.total > 0 ? payload.total : 0;
-  const completed = typeof payload.completed === 'number' ? payload.completed : 0;
-  const failed = typeof payload.failed === 'number' ? payload.failed : 0;
-  const basePercentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-  const percentage = event.phase === 'completed' ? 100 : Math.min(100, Math.max(0, basePercentage));
-
-  return {
-    stage: event.stage,
-    total,
-    completed,
-    failed,
-    percentage,
-    phase: event.phase,
-    timestamp: event.timestamp,
-    payload,
-    message: event.message,
-    nodeId: event.nodeId,
-  } as BuildUnifiedProgressInfo;
+  const payload = event.payload as BuildUnifiedProgressInfo['payload'] | undefined;
+  if (!payload) {
+    throw new Error(`[progressEventToUnified] event.payload is required but was absent (nodeId=${String(event.nodeId)}, stage=${String(event.stage)})`);
+  }
+  if (typeof payload.total !== 'number' || !Number.isFinite(payload.total)) {
+    throw new Error(`[progressEventToUnified] payload.total must be a finite number, received ${String(payload.total)}`);
+  }
+  if (typeof payload.completed !== 'number' || !Number.isFinite(payload.completed)) {
+    throw new Error(`[progressEventToUnified] payload.completed must be a finite number, received ${String(payload.completed)}`);
+  }
+  if (typeof payload.failed !== 'number' || !Number.isFinite(payload.failed)) {
+    throw new Error(`[progressEventToUnified] payload.failed must be a finite number, received ${String(payload.failed)}`);
+  }
+  // BuildUnifiedProgressInfo is an alias for BuildProgressEvent — return as-is.
+  return event;
 }
 
 export function createAdapterFromProgressSubscribe(

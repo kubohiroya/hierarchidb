@@ -110,18 +110,26 @@ export const useBuildSessionStateTreeBridge = <StageId extends string>(
       mapUnifiedToProgress: (info) => info ?? null,
       mapUnifiedToStatus: (info) => {
         if (!config.nodeId || !info) return null;
+        const payload = info.payload as { total: number; completed: number; failed: number; skipped?: number; estimatedTimeRemaining?: number } | undefined;
+        if (!payload) {
+          throw new Error(`[useBuildSessionStateTreeBridge] info.payload is required but was absent (nodeId=${String(info.nodeId)}, stage=${String(info.stage)})`);
+        }
         const status = info.phase;
         return {
           nodeId: config.nodeId,
           status,
           progress: {
-            total: info.total,
-            completed: info.completed,
-            failed: info.failed,
-            skipped: info.payload?.skipped,
-            percentage: info.percentage,
+            total: payload.total,
+            completed: payload.completed,
+            failed: payload.failed,
+            skipped: payload.skipped,
+            percentage: (() => {
+              const t = payload.total;
+              const c = payload.completed;
+              return t > 0 ? Math.round((c / t) * 100) : 0;
+            })(),
             stage: info.stage,
-            estimatedTimeRemaining: info.payload?.estimatedTimeRemaining,
+            estimatedTimeRemaining: payload.estimatedTimeRemaining,
           },
           lastActivity: info.timestamp,
           error: info.message,

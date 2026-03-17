@@ -1,24 +1,22 @@
-import type { BuildProgressAdapter, BuildProgressEvent, BuildUnifiedProgressInfo } from '@hierarchidb/build-api';
+import type { BuildProgressAdapter, BuildProgressEvent, BuildProgressPayload, BuildUnifiedProgressInfo } from '@hierarchidb/build-api';
+
+const assertFiniteNumber = (value: unknown, label: string): number => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`[progressEventToUnified] ${label} must be a finite number, received ${String(value)}`);
+  }
+  return value;
+};
 
 export function progressEventToUnified(event: BuildProgressEvent): BuildUnifiedProgressInfo {
-  const payload = event.payload ?? {};
-  const total = typeof payload.total === 'number' && payload.total > 0 ? payload.total : 0;
-  const completed = typeof payload.completed === 'number' ? payload.completed : 0;
-  const failed = typeof payload.failed === 'number' ? payload.failed : 0;
-  const basePercentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-  const percentage = event.phase === 'completed' ? 100 : Math.min(100, Math.max(0, basePercentage));
-  return {
-    stage: event.stage,
-    total,
-    completed,
-    failed,
-    percentage,
-    phase: event.phase,
-    timestamp: event.timestamp,
-    payload,
-    message: event.message,
-    nodeId: event.nodeId,
-  };
+  const payload = event.payload as BuildProgressPayload | undefined;
+  if (!payload) {
+    throw new Error(`[progressEventToUnified] event.payload is required but was absent (nodeId=${String(event.nodeId)}, stage=${String(event.stage)})`);
+  }
+  assertFiniteNumber(payload.total, 'payload.total');
+  assertFiniteNumber(payload.completed, 'payload.completed');
+  assertFiniteNumber(payload.failed, 'payload.failed');
+  // Return the event as-is — BuildUnifiedProgressInfo is an alias for BuildProgressEvent.
+  return event;
 }
 
 export function createAdapterFromProgressSubscribe(

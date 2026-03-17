@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { ReactElement } from 'react';
 import { toNodeId } from '@hierarchidb/core-types';
+import type { BuildProgressPayload, BuildUnifiedProgressInfo } from '@hierarchidb/build-api';
 import { useRouteBuildProgress } from '~/ui/hooks/useRouteBuildProgress';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 
@@ -8,29 +9,32 @@ export interface RouteBuildSummaryProps {
   nodeId: string;
 }
 
+const resolvePayloadNumber = (
+  progress: BuildUnifiedProgressInfo | null,
+  key: 'total' | 'completed' | 'failed',
+): number => {
+  if (!progress) return 0;
+  const payload = progress.payload as BuildProgressPayload | undefined;
+  if (!payload) return 0;
+  const value = payload[key];
+  return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
+};
+
 export function RouteBuildSummary({ nodeId }: RouteBuildSummaryProps): ReactElement {
   const { progress, lastError } = useRouteBuildProgress(toNodeId(nodeId));
   const { t } = useTranslation('route-plugin');
 
-  const completed = useMemo(() => {
-    const value = progress?.completed ?? 0;
-    return Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
-  }, [progress?.completed]);
-
-  const total = useMemo(() => {
-    const value = progress?.total ?? 0;
-    return Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
-  }, [progress?.total]);
-
-  const failed = useMemo(() => {
-    const value = progress?.failed ?? 0;
-    return Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
-  }, [progress?.failed]);
+  const completed = useMemo(() => resolvePayloadNumber(progress, 'completed'), [progress]);
+  const total = useMemo(() => resolvePayloadNumber(progress, 'total'), [progress]);
+  const failed = useMemo(() => resolvePayloadNumber(progress, 'failed'), [progress]);
 
   const resultsCount = useMemo(() => {
-    const value = progress?.completed;
-    return Number.isFinite(value) ? Math.max(0, Math.round(value ?? 0)) : null;
-  }, [progress?.completed]);
+    if (!progress) return null;
+    const payload = progress.payload as BuildProgressPayload | undefined;
+    if (!payload) return null;
+    const value = payload.completed;
+    return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.round(value)) : null;
+  }, [progress]);
 
   const pct = total > 0 ? Math.min(100, Math.max(0, Math.round((completed / total) * 100))) : 0;
   const failedLabel = t('batch.summary.failedLabel', 'Failed');
