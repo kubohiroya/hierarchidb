@@ -1,7 +1,6 @@
 # TASKS.md
 
 ## Doing
-- #1139 / `fix/shape-plugin/viewport-range-per-stage-1139` / 2026-03-17 開始
 - #1123 / `fix/app/subscribe-task-progress-1123` / 2026-03-17 開始
 - #1020 / `refactor/shape-plugin/build-session-event-redesign-1020` / 2026-03-14 開始
 - #1019 / `fix/shape-plugin/task-snapshot-race-on-build-start-1019` / 2026-03-14 開始
@@ -16,6 +15,13 @@
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 
 ## 今日の運用ログ
+
+- 2026-03-17: #1139 taskViewportRangeAtom をステージ別 Record 型に変更・PR #1140 作成
+  - shapeBuildProgressAtoms.ts: taskViewportRangeAtom → taskViewportRangeByStageAtom (Record<string, TaskViewportRange>)
+  - useTaskItemCardList.ts: stageId キーで書き込み、空タスク時はキー削除
+  - useBuildSessionStageCardState.ts: viewportRangeByStage[stage.id] から取得、stageId クロスチェック削除
+  - useBuildSessionStageProgressBarState.ts: viewportRangeByStage[activeStageId] から取得
+  - typecheck: exit 0 (133/133)
 
 - 2026-03-17: #1137 subscribeSessionState/subscribeStageSnapshots 登録時に現在状態を即時配信・PR #1138作成
   - shapeBuildAPI.ts: subscribeSessionState に getBuildSessionRecord → emitSessionStatusUpdated 即時配信を追加
