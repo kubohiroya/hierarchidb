@@ -1,10 +1,10 @@
 import type {
-  BuildProgressEvent,
   BuildSessionRuntimeFilter,
   BuildSessionRuntimeRecord,
   BuildSessionStatus,
   BuildTaskSummary,
   BuildTaskUpdateEvent,
+  TaskProgressUpdatedEvent,
 } from '@hierarchidb/build-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
@@ -53,10 +53,10 @@ export interface BuildWorkerBridge {
   getRouteQueryAPI(): ReturnType<WorkerApi['getRouteQueryAPI']>;
   getRouteMutationAPI(): ReturnType<WorkerApi['getRouteMutationAPI']>;
   getTreeNodeUpdaterAPI(): ReturnType<WorkerApi['getTreeNodeUpdaterAPI']>;
-  subscribeBuildProgress(
+  subscribeTaskProgress(
     nodeType: NodeType,
     nodeId: NodeId,
-    cb: (event: BuildProgressEvent) => void
+    cb: (event: TaskProgressUpdatedEvent) => void
   ): Promise<() => void>;
   subscribeHeapPressure(cb: (event: HeapPressureEvent) => void): Promise<() => void>;
   subscribeSessionState(
@@ -322,13 +322,13 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
     return api.getTreeNodeUpdaterAPI();
   }
 
-  async subscribeBuildProgress(
+  async subscribeTaskProgress(
     nodeType: NodeType,
     nodeId: NodeId,
-    cb: (event: BuildProgressEvent) => void
+    cb: (event: TaskProgressUpdatedEvent) => void
   ): Promise<() => void> {
     const api = await ensureWorkerAPI();
-    const unsubscribe = await api.subscribeBuildProgress(nodeType, nodeId, proxy((event) => {
+    const unsubscribe = await api.subscribeTaskProgress(nodeType, nodeId, proxy((event: TaskProgressUpdatedEvent) => {
       cb(sanitizeForComlink(event));
     }));
     return () => {
@@ -406,7 +406,7 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
       api.subscribeStageSnapshots(nodeType, nodeId, proxy((event: unknown) => {
         handlers.onTaskEvent(sanitizeForComlink(event));
       })),
-      api.subscribeBuildProgress(nodeType, nodeId, proxy((event: BuildProgressEvent) => {
+      api.subscribeTaskProgress(nodeType, nodeId, proxy((event: TaskProgressUpdatedEvent) => {
         handlers.onProgressEvent(sanitizeForComlink(event));
       })),
       api.subscribeSessionState(nodeType, nodeId, proxy((event: any) => {

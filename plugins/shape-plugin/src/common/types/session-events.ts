@@ -1,4 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
+import type { TaskProgressUpdatedEvent } from '@hierarchidb/build-api';
 
 /**
  * Session lifecycle phase — canonical set per build-session-worker-ui-event-spec.md

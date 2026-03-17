@@ -1,9 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { toNodeId, type NodeType } from '@hierarchidb/core-types';
-import type { BuildUnifiedProgressInfo } from '../../../../build-api';
+import type {
+  BuildProgressAdapter,
+  BuildUnifiedProgressInfo,
+  ProgressPhase,
+  StageKey,
+} from '@hierarchidb/build-api';
 
-import { createAdapterFromProgressSubscribe, useBuildProgress } from '@hierarchidb/build-runtime-services';
+import { useBuildProgress } from '@hierarchidb/build-runtime-services';
 import { getBuildWorkerBridge, type BuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 
 export type UseBuildProgressStateOptions = {
@@ -16,6 +21,65 @@ export interface BuildProgressState {
   subscribe: () => void;
   unsubscribe: () => void;
 }
+
+/** Known ProgressPhase values per build-api. */
+const KNOWN_PHASES = new Set<string>([
+  'idle', 'queued', 'running', 'paused', 'completed', 'failed', 'recycled',
+]);
+
+const resolvePhase = (value: unknown): ProgressPhase => {
+  if (typeof value === 'string' && KNOWN_PHASES.has(value)) {
+    return value as ProgressPhase;
+  }
+  return 'idle';
+};
+
+const readFiniteNumber = (value: unknown): number | undefined => (
+  typeof value === 'number' && Number.isFinite(value) ? value : undefined
+);
+
+const readString = (value: unknown): string | undefined => (
+  typeof value === 'string' ? value : undefined
+);
+
+/**
+ * Converts a sessionStatusUpdated event (unknown shape from worker bridge) to
+ * BuildUnifiedProgressInfo. Only phase, stage, and timestamp are populated —
+ * task counts (total/completed/failed) come from subscribeBuildTasks separately.
+ */
+const sessionStatusEventToUnifiedProgress = (
+  event: unknown,
+  nodeIdStr: string,
+): BuildUnifiedProgressInfo | null => {
+  if (!event || typeof event !== 'object') return null;
+  const ev = event as Record<string, unknown>;
+
+  if (readString(ev.type) !== 'sessionStatusUpdated') return null;
+
+  const payload = ev.payload;
+  if (!payload || typeof payload !== 'object') return null;
+  const p = payload as Record<string, unknown>;
+
+  const phase = resolvePhase(p.phase);
+  const stage = (readString(p.stageId) ?? 'source') as StageKey;
+  const timestamp =
+    readFiniteNumber(p.stageHeartbeatAt) ??
+    readFiniteNumber(p.completedAt) ??
+    readFiniteNumber(p.startedAt) ??
+    Date.now();
+
+  return {
+    nodeId: toNodeId(nodeIdStr),
+    stage,
+    total: 0,
+    completed: 0,
+    failed: 0,
+    percentage: 0,
+    phase,
+    timestamp,
+    message: readString(p.stopReason),
+  };
+};
 
 export const useBuildProgressState = (
   nodeType: NodeType,
@@ -34,26 +98,36 @@ export const useBuildProgressState = (
     });
   }, [autoSubscribe, nodeId]);
 
+  // Reset error when nodeId changes
   useEffect(() => {
     setError(null);
-  }, []);
+  }, [nodeId]);
 
-  const adapter = useMemo(() => {
+  const adapter = useMemo((): BuildProgressAdapter | null => {
     if (!nodeId) return null;
     const resolvedNodeId = toNodeId(nodeId);
-    return createAdapterFromProgressSubscribe((eventCallback) =>
-      bridgeRef.current
-        .subscribeBuildProgress(nodeType, resolvedNodeId, eventCallback)
-        .then((unsubscribe: () => void) => {
-          setError(null);
-          return unsubscribe;
-        })
-        .catch((err: unknown) => {
-          const errObj = err instanceof Error ? err : new Error('Failed to subscribe to build progress');
-          setError(errObj);
-          return () => {};
-        }),
-    );
+    const nodeIdStr = nodeId;
+    return {
+      subscribe: (consumer: (info: BuildUnifiedProgressInfo) => void) =>
+        bridgeRef.current
+          .subscribeSessionState(nodeType, resolvedNodeId, (event: unknown) => {
+            const info = sessionStatusEventToUnifiedProgress(event, nodeIdStr);
+            if (info !== null) {
+              consumer(info);
+            }
+          })
+          .then((unsubscribe: () => void) => {
+            setError(null);
+            return unsubscribe;
+          })
+          .catch((err: unknown) => {
+            const errObj = err instanceof Error
+              ? err
+              : new Error('Failed to subscribe to session state');
+            setError(errObj);
+            return () => {};
+          }),
+    };
   }, [nodeType, nodeId]);
 
   const {

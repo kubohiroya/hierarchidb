@@ -8,10 +8,10 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
+import type { TaskProgressUpdatedEvent } from '@hierarchidb/build-api';
 import type {
     SessionStatusUpdatedEvent,
     StageSnapshotUpdatedEvent,
-    TaskProgressUpdatedEvent,
     HeartbeatEvent,
     WorkerLogEvent,
     CriticalErrorEvent,

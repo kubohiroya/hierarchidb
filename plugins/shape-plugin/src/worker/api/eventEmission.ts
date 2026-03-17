@@ -9,11 +9,11 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
+import type { TaskProgressUpdatedEvent } from '@hierarchidb/build-api';
 import type {
     SessionPhase,
     SessionStatusUpdatedEvent,
     StageSnapshotUpdatedEvent,
-    TaskProgressUpdatedEvent,
     HeartbeatEvent,
 } from '~/common/types/session-events';
 import { VtTaskQueueDb, listTasksByStage } from '@hierarchidb/vt-orchestrator';

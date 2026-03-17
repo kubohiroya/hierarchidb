@@ -4,7 +4,6 @@
 
 import { AuthService } from '@hierarchidb/auth';
 import type {
-  BuildProgressEvent,
   BuildProgress,
   StageKey,
   BuildSessionRuntimeFilter,
@@ -13,6 +12,7 @@ import type {
   BuildSessionStatus,
   BuildTaskSummary,
   BuildTaskUpdateEvent,
+  TaskProgressUpdatedEvent,
 } from '@hierarchidb/build-api';
 import type { UiStorageBridge } from '@hierarchidb/worker-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
@@ -910,10 +910,10 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           });
         };
 
-        const subscribeBuildProgress = async (
+        const subscribeTaskProgress = async (
           nodeType: NodeType,
           nodeId: NodeId,
-          callback: (event: BuildProgressEvent) => void
+          callback: (event: TaskProgressUpdatedEvent) => void
         ): Promise<() => void> => {
           const buildApi = resolveShapeBuildApiOrThrow(nodeType);
           if (!buildApi.subscribeTaskProgress) {
@@ -927,10 +927,10 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
               (sanitized as { type?: unknown }).type !== 'taskProgressUpdated'
             ) {
               throw new Error(
-                `[subscribeBuildProgress] unexpected event type: ${safeStringify((sanitized as { type?: unknown } | null)?.type ?? sanitized)}`
+                `[subscribeTaskProgress] unexpected event type: ${safeStringify((sanitized as { type?: unknown } | null)?.type ?? sanitized)}`
               );
             }
-            callback(sanitized as unknown as BuildProgressEvent);
+            callback(sanitized as TaskProgressUpdatedEvent);
           };
           const unsubscribe = buildApi.subscribeTaskProgress(nodeId, wrappedCallback);
           return toComlinkProxy(Comlink, unsubscribe);
@@ -1108,7 +1108,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           getBuildSessionStatus,
           pauseBuildSession,
           cancelQueuedBuildSession,
-          subscribeBuildProgress,
+          subscribeTaskProgress,
           subscribeBuildTasks,
           subscribeStageSnapshots,
           subscribeSessionState,

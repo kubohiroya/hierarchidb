@@ -258,6 +258,28 @@ sessionStageDurationByStageSnapshot: useAtomValue(stageDurationMsByStageAtom),
 
 ---
 
+## Worker API Subscription Interface
+
+The canonical method name for subscribing to task progress events is **`subscribeTaskProgress`**. The legacy name `subscribeBuildProgress` is removed; it was misleading because:
+
+- `BuildProgressEvent` is a legacy type that predates the 4-event canonical set.
+- The actual payload delivered is `TaskProgressUpdatedEvent` (`type: 'taskProgressUpdated'`), not `BuildProgressEvent`.
+- Using `subscribeBuildProgress` as the method name implied a broader "build progress" concept inconsistent with the single-task-progress semantics of this channel.
+
+`WorkerAPI` must expose `subscribeTaskProgress` with the following signature:
+
+```typescript
+subscribeTaskProgress(
+  nodeType: NodeType,
+  nodeId: NodeId,
+  callback: (event: TaskProgressUpdatedEvent) => void
+): Promise<() => void>;
+```
+
+`subscribeBuildProgress` must be removed from `WorkerAPI`. Any call site that previously used `subscribeBuildProgress` must be updated to `subscribeTaskProgress`.
+
+---
+
 ## Adapter Responsibilities
 
 The `BuildSessionWorkerEventAdapter` translates raw Worker wire events into the 4 canonical UI events above. It is responsible for:

@@ -3,6 +3,7 @@ export * from './taskStatus.js';
 export type {
   BuildStage,
   BuildContinuationPolicy,
+  TaskProgressUpdatedEvent,
 } from './progress-types.js';
 export type {
   StageHandler,
