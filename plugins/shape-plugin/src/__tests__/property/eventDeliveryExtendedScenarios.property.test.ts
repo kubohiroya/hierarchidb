@@ -1,11 +1,15 @@
 /**
  * Extended property tests for event delivery system.
- * Replaces the old EventDeliveryMonitor / SequencedEvent tests (removed in the
- * FIFO+version-gate redesign).  Tests cover:
+ * Tests cover:
  *   Property 24: parallel subscriber isolation
  *   Property 25: error condition handling (subscriber exceptions)
  *   Property 26: performance under load (UIEventBufferManager)
  *   Property 27: edge cases and invalid data
+ *
+ * Design note: UIEventBufferManager uses FIFO queues for all event types.
+ * There is no version gating -- per build-session-worker-ui-event-spec.md:
+ * "eventVersion fields are not used. All events are applied unconditionally
+ * in FIFO order per channel."
  */
 
 import { describe, it, expect, afterEach } from 'vitest';
@@ -33,17 +37,14 @@ const makeSessionEvent = (): SessionStatusUpdatedEvent => ({
 
 const makeBufferedEvent = (
     notificationType: 'session-state' | 'stage-snapshot',
-    version?: number,
 ): BufferedEvent => ({
     notificationType,
-    version,
     payload: { test: true },
     timestamp: Date.now(),
 });
 
-const makeTaskEvent = (version: number | undefined, value: number): BufferedEvent => ({
+const makeTaskProgressEvent = (value: number): BufferedEvent => ({
     notificationType: 'task-progress',
-    version,
     payload: { value },
     timestamp: Date.now(),
 });
@@ -202,20 +203,16 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
             );
         });
 
-        it('applyTaskProgress with wrong type throws immediately', () => {
+        it('enqueue with unknown notification type throws immediately', () => {
             fc.assert(
                 fc.property(
-                    fc.constantFrom<'session-state' | 'stage-snapshot'>('session-state', 'stage-snapshot'),
+                    fc.constantFrom('unknown-type', 'invalid', 'bad'),
                     (wrongType) => {
                         const mgr = new UIEventBufferManager();
                         let threw = false;
                         try {
-                            mgr.applyTaskProgress({
-                                notificationType: wrongType,
-                                version: 1,
-                                payload: {},
-                                timestamp: Date.now(),
-                            });
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            mgr.enqueue({ notificationType: wrongType as any, payload: {}, timestamp: Date.now() });
                         } catch {
                             threw = true;
                         }
@@ -258,7 +255,7 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
             );
         });
 
-        it('task-progress version gate handles rapid successive events efficiently', () => {
+        it('task-progress per-taskId deduplication handles rapid successive events', () => {
             fc.assert(
                 fc.property(
                     fc.integer({ min: 10, max: 100 }),
@@ -266,12 +263,12 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
                         const mgr = new UIEventBufferManager();
                         let accepted = 0;
 
-                        for (let i = 0; i < eventCount; i++) {
-                            const result = mgr.applyTaskProgress(makeTaskEvent(i, 50));
+                        // Monotonically increasing versions — all must be accepted
+                        for (let i = 1; i <= eventCount; i++) {
+                            const result = mgr.applyTaskProgress('task-1', i, { value: 50 });
                             if (result !== undefined) accepted++;
                         }
 
-                        // All events with strictly increasing versions must be accepted
                         expect(accepted).toBe(eventCount);
                     },
                 ),
@@ -288,7 +285,9 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
         it('flushFifo on empty queue returns empty array', () => {
             fc.assert(
                 fc.property(
-                    fc.constantFrom<'session-state' | 'stage-snapshot'>('session-state', 'stage-snapshot'),
+                    fc.constantFrom<'session-state' | 'stage-snapshot'>(
+                        'session-state', 'stage-snapshot',
+                    ),
                     (type) => {
                         const mgr = new UIEventBufferManager();
                         expect(mgr.flushFifo(type)).toEqual([]);
@@ -351,15 +350,15 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
             );
         });
 
-        it('task-progress applyTaskProgress with undefined version never throws', () => {
+        it('task-progress applyTaskProgress with any payload does not throw', () => {
             fc.assert(
                 fc.property(
                     fc.integer({ min: 1, max: 20 }),
                     (count) => {
                         const mgr = new UIEventBufferManager();
                         expect(() => {
-                            for (let i = 0; i < count; i++) {
-                                mgr.applyTaskProgress(makeTaskEvent(undefined, 50));
+                            for (let i = 1; i <= count; i++) {
+                                mgr.applyTaskProgress(`task-${i}`, 1, { value: 50 });
                             }
                         }).not.toThrow();
                     },

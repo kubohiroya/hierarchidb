@@ -271,18 +271,28 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             }
         };
 
+        const safeStringify = (value: unknown): string => {
+            const seen = new WeakSet<object>();
+            return JSON.stringify(value, (_key, val) => {
+                if (typeof val === 'object' && val !== null) {
+                    if (seen.has(val)) return '[Circular]';
+                    seen.add(val);
+                }
+                return val as unknown;
+            });
+        };
+
         const requireEventShape = <T extends { type: string }>(
             event: unknown,
             expectedType: T['type'],
             context: string,
         ): T => {
             if (!event || typeof event !== 'object') {
-                throw new Error(`[${context}] event must be an object, received type: ${typeof event}`);
+                throw new Error(`[${context}] event must be an object, received ${safeStringify(event)}`);
             }
             const rec = event as Record<string, unknown>;
             if (rec.type !== expectedType) {
-                const receivedType = typeof rec.type === 'string' ? `"${rec.type}"` : String(rec.type);
-                throw new Error(`[${context}] unexpected event type: expected "${expectedType}", received ${receivedType}`);
+                throw new Error(`[${context}] unexpected event type: expected "${expectedType}", received ${safeStringify(rec.type)}`);
             }
             return event as T;
         };
