@@ -1,7 +1,6 @@
 # TASKS.md
 
 ## Doing
-- #1146 / `refactor/route-location/align-common-build-infra-1146` / 2026-03-17 開始
 - #1123 / `fix/app/subscribe-task-progress-1123` / 2026-03-17 開始
 - #1127 / `fix/shape-plugin/task-progress-version-gate-and-idle-fallback` / 2026-03-17 開始
 - #1020 / `refactor/shape-plugin/build-session-event-redesign-1020` / 2026-03-14 開始
@@ -17,6 +16,15 @@
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 
 ## 今日の運用ログ
+
+- 2026-03-17: #1146 location/route plugin を共通ビルド基盤に追いつかせる・main push 完了
+  - LocationBuildSession.ts 新設（AbstractBuildSession 継承、全検索ロジック移植）
+  - LocationBuildManager.ts 全面置き換え（BaseBuildSessionManager ベース）
+  - location-plugin/package.json: build-api / build-runtime-services を dependencies に追加（TS2307 修正）
+  - build-runtime-services: toBuildProgressEventFromUpdate / ProgressBridgeUpdate / assertProgressInRange 削除
+  - route-plugin RouteBuildManager: ProgressEmitter/ProgressStore/emitProgressEvent 等削除
+  - route-plugin RouteBuildSessionOrchestrator: emitter 設計削除、registerSession のみに統一
+  - typecheck: exit 0 (119/119)、test: 7 files / 14 tests passed
 
 
 - 2026-03-17: #1139 taskViewportRangeAtom をステージ別 Record 型に変更・PR #1140 作成
