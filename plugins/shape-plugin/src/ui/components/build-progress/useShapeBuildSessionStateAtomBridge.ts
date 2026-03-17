@@ -243,9 +243,8 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             const accepted = eventBufferManager.applyTaskProgress(
                 event.payload.taskId,
                 event.payload.version,
-                event,
             );
-            if (accepted === undefined) return; // stale or duplicate — drop
+            if (!accepted) return; // stale or duplicate — drop
             processProgressEvent(event);
         };
 

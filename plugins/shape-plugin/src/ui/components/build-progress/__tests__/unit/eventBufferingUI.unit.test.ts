@@ -98,54 +98,52 @@ describe('UIEventBufferManager -- task-progress per-taskId version deduplication
     });
 
     it('accepts first event for a taskId regardless of version', () => {
-        const result = mgr.applyTaskProgress('task-1', 1, { value: 10 });
-        expect(result).toBeDefined();
-        expect((result?.payload as { value: number }).value).toBe(10);
+        const result = mgr.applyTaskProgress('task-1', 1);
+        expect(result).toBe(true);
     });
 
     it('accepts event with higher version', () => {
-        mgr.applyTaskProgress('task-1', 5, { value: 50 });
-        const result = mgr.applyTaskProgress('task-1', 7, { value: 70 });
-        expect(result).toBeDefined();
-        expect((result?.payload as { value: number }).value).toBe(70);
+        mgr.applyTaskProgress('task-1', 5);
+        const result = mgr.applyTaskProgress('task-1', 7);
+        expect(result).toBe(true);
     });
 
     it('drops event with equal version (duplicate)', () => {
-        mgr.applyTaskProgress('task-1', 5, { value: 50 });
-        const result = mgr.applyTaskProgress('task-1', 5, { value: 50 });
-        expect(result).toBeUndefined();
+        mgr.applyTaskProgress('task-1', 5);
+        const result = mgr.applyTaskProgress('task-1', 5);
+        expect(result).toBe(false);
     });
 
     it('drops event with lower version (stale)', () => {
-        mgr.applyTaskProgress('task-1', 10, { value: 100 });
-        const result = mgr.applyTaskProgress('task-1', 3, { value: 30 });
-        expect(result).toBeUndefined();
+        mgr.applyTaskProgress('task-1', 10);
+        const result = mgr.applyTaskProgress('task-1', 3);
+        expect(result).toBe(false);
     });
 
     it('tracks versions independently per taskId', () => {
         // task-A at version 10
-        mgr.applyTaskProgress('task-A', 10, { value: 100 });
+        mgr.applyTaskProgress('task-A', 10);
         // task-B at version 1 — independent from task-A, must be accepted
-        const acceptedB = mgr.applyTaskProgress('task-B', 1, { value: 10 });
+        const acceptedB = mgr.applyTaskProgress('task-B', 1);
         // task-A at version 9 — stale for task-A
-        const staleA = mgr.applyTaskProgress('task-A', 9, { value: 90 });
+        const staleA = mgr.applyTaskProgress('task-A', 9);
 
-        expect(acceptedB).toBeDefined();
-        expect(staleA).toBeUndefined();
+        expect(acceptedB).toBe(true);
+        expect(staleA).toBe(false);
     });
 
     it('accepts monotonically increasing versions for same taskId', () => {
         const versions = [1, 2, 3, 4, 5];
-        const results = versions.map((v) => mgr.applyTaskProgress('task-1', v, { value: v * 10 }));
-        expect(results.every((r) => r !== undefined)).toBe(true);
+        const results = versions.map((v) => mgr.applyTaskProgress('task-1', v));
+        expect(results.every((r) => r === true)).toBe(true);
     });
 
     it('reset clears per-taskId version state', () => {
-        mgr.applyTaskProgress('task-1', 10, { value: 100 });
+        mgr.applyTaskProgress('task-1', 10);
         mgr.reset();
         // After reset, version 1 must be accepted again (state cleared)
-        const result = mgr.applyTaskProgress('task-1', 1, { value: 10 });
-        expect(result).toBeDefined();
+        const result = mgr.applyTaskProgress('task-1', 1);
+        expect(result).toBe(true);
     });
 
     it('multiple tasks interleaved: each tracked independently', () => {
@@ -154,8 +152,8 @@ describe('UIEventBufferManager -- task-progress per-taskId version deduplication
         const dropped: number[] = [];
 
         const emit = (taskId: string, version: number, value: number) => {
-            const r = mgr.applyTaskProgress(taskId, version, { value });
-            if (r !== undefined) accepted.push(value);
+            const r = mgr.applyTaskProgress(taskId, version);
+            if (r) accepted.push(value);
             else dropped.push(value);
         };
 
