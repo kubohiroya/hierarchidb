@@ -92,7 +92,7 @@ Shape ビルド機能の新アーキテクチャ概要と利用メモ。
 
 ## Build execution design (2025-12 WIP)
 - Entry (UI Build Progress): call worker API `startBuildSession(nodeId, config)`; UI keeps `sessionId` and subscribes to progress.
-- Worker API: expose `startBuildSession`, `pauseBuildSession`, `cancelQueuedBuildSession`, `subscribeBuildProgress`; bridge ProgressInfo to UI.
+- Worker API: expose `startBuildSession`, `pauseBuildSession`, `cancelQueuedBuildSession`, `subscribeTaskProgress`; bridge ProgressInfo to UI.
 - Build manager: `UnifiedShapeBuildManager` coordinates stages (download → extract1 → extract2 → vectorTiles) and emits stage-scoped progress.
 - Ephemeral DB (Dexie, `getDBName('shape-ephemeral')`):
   - `sessions` (state/config), `rawBuffers` (downloaded), `extractedBuffers` (stage1/2), `vectorTiles` (tiles), `cache` (optional).
