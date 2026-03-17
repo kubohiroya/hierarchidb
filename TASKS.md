@@ -16,6 +16,15 @@
 
 ## 今日の運用ログ
 
+- 2026-03-17: #1141 emitTaskProgressUpdated 未呼び出し修正 + subscribeBuildProgress → subscribeTaskProgress 置き換え・PR #1144作成
+  - build-api: TaskProgressUpdatedEvent を progress-types.ts に追加・index.ts から export
+  - session-events.ts: ローカル定義削除 → @hierarchidb/build-api から import
+  - eventEmission/eventBuffering/stateManagement/shapeBuildAPI/useShapeBuildSessionStateAtomBridge: import 元を build-api に変更
+  - WorkerAPI/workerBridge/workerBootstrap: subscribeBuildProgress → subscribeTaskProgress リネーム・型更新
+  - useBuildProgressState: subscribeBuildProgress → subscribeSessionState ベース BuildProgressAdapter に置き換え
+  - docs/build-session-worker-ui-event-spec.md: subscribeTaskProgress を正規メソッド名として明記
+  - typecheck: exit 0 (133/133)、test: 440/440 passed
+
 - 2026-03-17: #1139 taskViewportRangeAtom をステージ別 Record 型に変更・PR #1140 作成
   - shapeBuildProgressAtoms.ts: taskViewportRangeAtom → taskViewportRangeByStageAtom (Record<string, TaskViewportRange>)
   - useTaskItemCardList.ts: stageId キーで書き込み、空タスク時はキー削除
