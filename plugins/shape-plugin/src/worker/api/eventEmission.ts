@@ -9,11 +9,11 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
+import type { TaskProgressUpdatedEvent } from '@hierarchidb/build-api';
 import type {
     SessionPhase,
     SessionStatusUpdatedEvent,
     StageSnapshotUpdatedEvent,
-    TaskProgressUpdatedEvent,
     HeartbeatEvent,
 } from '~/common/types/session-events';
 import { VtTaskQueueDb, listTasksByStage } from '@hierarchidb/vt-orchestrator';
@@ -104,9 +104,12 @@ export const emitStageSnapshotUpdated = async (
 /**
  * Emits taskProgressUpdated for a single task's progress value.
  * value must be finite and in [0, 100] — violation throws.
+ * version must be a finite positive integer — violation throws.
  */
 export const emitTaskProgressUpdated = (
     nodeId: NodeId,
+    taskId: string,
+    version: number,
     stageId: string,
     value: number,
     message?: string,
@@ -115,9 +118,12 @@ export const emitTaskProgressUpdated = (
     if (!Number.isFinite(value) || value < 0 || value > 100) {
         throw new Error(`[eventEmission] taskProgressUpdated value must be finite 0..100, received ${String(value)}`);
     }
+    if (!Number.isFinite(version) || version < 1 || !Number.isInteger(version)) {
+        throw new Error(`[eventEmission] taskProgressUpdated version must be a finite positive integer, received ${String(version)}`);
+    }
     const event: TaskProgressUpdatedEvent = {
         type: 'taskProgressUpdated',
-        payload: { stageId, value, message, metadata },
+        payload: { taskId, version, stageId, value, message, metadata },
     };
     unconditionalEventStreamer.emitEvent(nodeId, 'task-progress', event);
 };

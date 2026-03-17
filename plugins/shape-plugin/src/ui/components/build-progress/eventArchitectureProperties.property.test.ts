@@ -21,15 +21,7 @@ const createFifoEvent = (
     notificationType: 'session-state' | 'stage-snapshot',
     payload: unknown = { test: true }
 ): BufferedEvent => ({
-    version: undefined,
     notificationType,
-    payload,
-    timestamp: Date.now(),
-});
-
-const createTaskProgressEvent = (version: number, payload: unknown = { value: 1 }): BufferedEvent => ({
-    version,
-    notificationType: 'task-progress',
     payload,
     timestamp: Date.now(),
 });
@@ -70,7 +62,7 @@ describe('Event Architecture Properties', () => {
                         { minLength: 1, maxLength: MAX_EVENTS_PER_TEST }
                     ),
                     (events) => {
-                        const nodeId = createNodeId(events[0]!.nodeId);
+                        const nodeId = createNodeId(events[0].nodeId);
                         let emittedCount = 0;
 
                         // Emit events without any subscribers — should not throw
@@ -157,16 +149,14 @@ describe('Event Architecture Properties', () => {
     });
 
     describe('Property 19: Loss-Free Event Buffering', () => {
-        it('should buffer all events without loss', () => {
+        it('should buffer all FIFO events without loss', () => {
             const testBuffer = new UIEventBufferManager();
 
             const sessionEvent = createFifoEvent('session-state');
             const stageEvent = createFifoEvent('stage-snapshot');
-            const taskEvent = createTaskProgressEvent(1);
 
             testBuffer.enqueue(sessionEvent);
             testBuffer.enqueue(stageEvent);
-            testBuffer.applyTaskProgress(taskEvent);
 
             const sessionFlushed = testBuffer.flushFifo('session-state');
             const stageFlushed = testBuffer.flushFifo('stage-snapshot');
@@ -203,17 +193,37 @@ describe('Event Architecture Properties', () => {
             );
         });
 
-        it('should detect gaps in sequence numbers', () => {
-            // task-progress version gate: stale versions are dropped
+        it('should drop stale task-progress versions per taskId', () => {
             const testBuffer = new UIEventBufferManager();
+            const taskId = 'task-1';
 
-            const accepted1 = testBuffer.applyTaskProgress(createTaskProgressEvent(5));
-            const dropped = testBuffer.applyTaskProgress(createTaskProgressEvent(3)); // stale
-            const accepted2 = testBuffer.applyTaskProgress(createTaskProgressEvent(7));
+            // version 5 — accepted (first for this taskId)
+            const accepted1 = testBuffer.applyTaskProgress(taskId, 5, { value: 50 });
+            // version 3 — stale (< 5) — dropped
+            const dropped = testBuffer.applyTaskProgress(taskId, 3, { value: 30 });
+            // version 5 — duplicate (=== 5) — dropped
+            const duplicate = testBuffer.applyTaskProgress(taskId, 5, { value: 50 });
+            // version 7 — accepted (> 5)
+            const accepted2 = testBuffer.applyTaskProgress(taskId, 7, { value: 70 });
 
             expect(accepted1).toBeDefined();
             expect(dropped).toBeUndefined();
+            expect(duplicate).toBeUndefined();
             expect(accepted2).toBeDefined();
+        });
+
+        it('should track versions independently per taskId', () => {
+            const testBuffer = new UIEventBufferManager();
+
+            // task-A at version 10
+            testBuffer.applyTaskProgress('task-A', 10, { value: 100 });
+            // task-B at version 1 — independent from task-A
+            const accepted = testBuffer.applyTaskProgress('task-B', 1, { value: 10 });
+            // task-A at version 9 — stale for task-A
+            const stale = testBuffer.applyTaskProgress('task-A', 9, { value: 90 });
+
+            expect(accepted).toBeDefined();
+            expect(stale).toBeUndefined();
         });
     });
 
@@ -286,7 +296,7 @@ describe('Event Architecture Properties', () => {
                                 const unsubscribe = unconditionalEventStreamer.subscribe(
                                     nodeId,
                                     eventType as NotificationType | 'heartbeat',
-                                    (event) => receivedEvents[key]!.push(event)
+                                    (event) => receivedEvents[key].push(event)
                                 );
                                 subscriptions.push(unsubscribe);
                             });
@@ -317,7 +327,7 @@ describe('Event Architecture Properties', () => {
                         nodeIds.forEach((nodeIdStr) => {
                             eventTypes.forEach((eventType) => {
                                 const key = `${nodeIdStr}:${eventType}`;
-                                expect(receivedEvents[key]!.length).toBe(1);
+                                expect(receivedEvents[key].length).toBe(1);
                             });
                         });
 
@@ -354,7 +364,7 @@ describe('Event Architecture Properties', () => {
                         expect(heartbeatCallbacks.length).toBe(heartbeats.length);
 
                         heartbeatCallbacks.forEach((callback, index) => {
-                            const original = heartbeats[index]!;
+                            const original = heartbeats[index];
                             expect(callback.nodeId).toBe(original.nodeId);
                             expect(callback.heartbeatAt).toBe(original.heartbeatAt);
                         });

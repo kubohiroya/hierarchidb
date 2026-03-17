@@ -9,11 +9,11 @@ import type { TaskQueueRecord, BuildTaskUpdateEvent } from '@hierarchidb/build-a
 import type {
     ShapeBuildSessionRecord,
 } from '@hierarchidb/shape-api';
+import type { TaskProgressUpdatedEvent } from '@hierarchidb/build-api';
 import type {
     SessionStatusUpdatedEvent,
     StageSnapshotUpdatedEvent,
     HeartbeatEvent,
-    TaskProgressUpdatedEvent,
     WorkerLogEvent,
 } from '~/common/types/session-events';
 

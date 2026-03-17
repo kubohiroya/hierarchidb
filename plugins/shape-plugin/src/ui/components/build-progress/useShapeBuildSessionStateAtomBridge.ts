@@ -5,16 +5,14 @@ import { useSetAtom } from 'jotai';
 import { dispatchBuildSessionEventAtom } from '~/ui/atoms/buildSessionStateAtoms';
 import { createBuildSessionWorkerEventAdapter } from '~/ui/atoms/buildSessionWorkerEventAdapter';
 import type { ShapeStageId } from '~/ui/atoms/buildSessionStateAtoms';
+import type { BuildTaskSummary, TaskStage, ProgressPhase, TaskProgressUpdatedEvent } from '@hierarchidb/build-api';
 import type {
     SessionStatusUpdatedEvent,
     StageSnapshotUpdatedEvent,
-    TaskProgressUpdatedEvent,
     HeartbeatEvent,
 } from '~/common/types/session-events';
-import type { BuildTaskSummary, TaskStage, ProgressPhase } from '@hierarchidb/build-api';
 import type { AdapterStageSnapshotUpdatedEvent } from '@hierarchidb/ui-build-sessions';
 import { UIEventBufferManager, type BufferedEvent } from './eventBufferingUI';
-
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 const SHAPE_STAGE_IDS = ['source', 'geometry', 'tileEmit'] as const satisfies readonly ShapeStageId[];
 
@@ -232,7 +230,6 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
         const onTaskEvent = (event: StageSnapshotUpdatedEvent): void => {
             // Enqueue into FIFO queue, then flush immediately via rAF
             const buffered: BufferedEvent = {
-                version: undefined,
                 notificationType: 'stage-snapshot',
                 payload: event,
                 timestamp: Date.now(),
@@ -241,23 +238,18 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             flushFifoQueues();
         };
 
-        const onProgressEvent = (event: TaskProgressUpdatedEvent & { version?: number }): void => {
-            const buffered: BufferedEvent = {
-                version: event.version,
-                notificationType: 'task-progress',
-                payload: event,
-                timestamp: Date.now(),
-            };
-            const accepted = eventBufferManager.applyTaskProgress(buffered);
-            if (accepted) {
-                processProgressEvent(event);
-            }
+        const onProgressEvent = (event: TaskProgressUpdatedEvent): void => {
+            const accepted = eventBufferManager.applyTaskProgress(
+                event.payload.taskId,
+                event.payload.version,
+            );
+            if (!accepted) return; // stale or duplicate — drop
+            processProgressEvent(event);
         };
 
         const onSessionState = (event: SessionStatusUpdatedEvent): void => {
             // Enqueue into FIFO queue, then flush immediately via rAF
             const buffered: BufferedEvent = {
-                version: undefined,
                 notificationType: 'session-state',
                 payload: event,
                 timestamp: Date.now(),
@@ -277,17 +269,28 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             }
         };
 
+        const safeStringify = (value: unknown): string => {
+            const seen = new WeakSet<object>();
+            return JSON.stringify(value, (_key, val) => {
+                if (typeof val === 'object' && val !== null) {
+                    if (seen.has(val)) return '[Circular]';
+                    seen.add(val);
+                }
+                return val as unknown;
+            });
+        };
+
         const requireEventShape = <T extends { type: string }>(
             event: unknown,
-            expectedType: string,
+            expectedType: T['type'],
             context: string,
         ): T => {
             if (!event || typeof event !== 'object') {
-                throw new Error(`[${context}] event must be an object, received ${JSON.stringify(event)}`);
+                throw new Error(`[${context}] event must be an object, received ${safeStringify(event)}`);
             }
             const rec = event as Record<string, unknown>;
             if (rec.type !== expectedType) {
-                throw new Error(`[${context}] unexpected event type: expected "${expectedType}", received ${JSON.stringify(rec.type)}`);
+                throw new Error(`[${context}] unexpected event type: expected "${expectedType}", received ${safeStringify(rec.type)}`);
             }
             return event as T;
         };
@@ -309,7 +312,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
                 },
                 onProgressEvent: (event) => {
                     if (cancelled) return;
-                    onProgressEvent(requireEventShape<TaskProgressUpdatedEvent & { version?: number }>(event, 'taskProgressUpdated', 'onProgressEvent'));
+                    onProgressEvent(requireEventShape<TaskProgressUpdatedEvent>(event, 'taskProgressUpdated', 'onProgressEvent'));
                 },
                 onSessionState: (event) => {
                     if (cancelled) return;

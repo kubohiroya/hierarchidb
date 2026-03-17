@@ -4,7 +4,8 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { unconditionalEventStreamer } from '../../worker/api/eventBuffering';
-import type { SessionStatusUpdatedEvent, HeartbeatEvent, TaskProgressUpdatedEvent } from '../../common/types/session-events';
+import type { TaskProgressUpdatedEvent } from '@hierarchidb/build-api';
+import type { SessionStatusUpdatedEvent, HeartbeatEvent } from '../../common/types/session-events';
 import type { NodeId } from '@hierarchidb/core-types';
 
 describe('UnconditionalEventStreamer', () => {
