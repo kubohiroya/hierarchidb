@@ -4,10 +4,8 @@ import type { RouteBuildSession } from './RouteBuildSession.js';
 import { DEFAULT_ROUTE_BUILD_CONFIG } from '~/common/config/buildConfig';
 import type { RouteBuildConfig } from '@hierarchidb/route-api';
 import type { BuildProgressCallback, BuildSessionStatus } from '@hierarchidb/build-api';
-import type { ProgressUpdate } from './RouteBuildManager.js';
 import {
   BaseBuildSessionManager,
-  toBuildProgressEventFromUpdate,
 } from '@hierarchidb/build-runtime-services';
 
 export interface RouteBuildSessionConfig {
@@ -27,13 +25,7 @@ export class RouteBuildSessionOrchestrator extends BaseBuildSessionManager {
 
   constructor(deps?: RouteBuildManagerDeps) {
     super();
-    const emitter = {
-      emit: (update: ProgressUpdate) => {
-        const event = toBuildProgressEventFromUpdate(update);
-        this.emitProgress(update.jobId as NodeId, event);
-      },
-    };
-    this.manager = new RouteBuildManager({ ...deps, emitter });
+    this.manager = new RouteBuildManager(deps);
   }
 
   async prepareSession(nodeId: NodeId, config: RouteBuildSessionConfig | RouteBuildConfig | undefined, data: RouteBuildInput): Promise<void> {
@@ -58,9 +50,10 @@ export class RouteBuildSessionOrchestrator extends BaseBuildSessionManager {
 
     const sessionNodeId = await this.manager.startRouteBuildSession(nodeId, config, routes);
     const session = this.manager.getSession(sessionNodeId);
-    if (session) {
-      this.registerSession(session);
+    if (!session) {
+      throw new Error(`Route build session not found after start: ${sessionNodeId}`);
     }
+    this.registerSession(session);
     return this.getBuildSessionStatus(sessionNodeId);
   }
 

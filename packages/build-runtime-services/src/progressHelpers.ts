@@ -1,14 +1,7 @@
-import type { BuildProgressEvent, TaskStage } from '@hierarchidb/build-api';
+import type { TaskStage } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 
 type NumericValue = string | number | boolean;
-
-export type ProgressBridgeUpdate = {
-  jobId: string;
-  progress: number;
-  stage: TaskStage;
-  ts?: number;
-};
 
 export type StageCheckpointPhase = 'start' | 'success' | 'error';
 
@@ -28,31 +21,6 @@ export type StageCheckpointLogger = {
   onStart?: (ctx: StageCheckpointContext) => void;
   onSuccess?: (ctx: StageCheckpointContext) => void;
   onError?: (ctx: StageCheckpointContext) => void;
-};
-
-const assertProgressInRange = (progress: number): number => {
-  if (!Number.isFinite(progress)) {
-    throw new TypeError(`progress must be a finite number: ${String(progress)}`);
-  }
-  if (progress < 0 || progress > 100) {
-    throw new RangeError(`progress must be within 0..100: ${progress}`);
-  }
-  return Math.round(progress);
-};
-
-export function toBuildProgressEventFromUpdate(update: ProgressBridgeUpdate): BuildProgressEvent {
-  const completed = assertProgressInRange(update.progress);
-  return {
-    nodeId: update.jobId as NodeId,
-    stage: update.stage,
-    phase: completed >= 100 ? 'completed' : 'running',
-    timestamp: update.ts ?? Date.now(),
-    payload: {
-      total: 100,
-      completed,
-      failed: 0,
-    },
-  };
 };
 
 export function createMemorySnapshot(): Record<string, NumericValue> | undefined {

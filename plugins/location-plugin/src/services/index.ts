@@ -5,10 +5,10 @@
 
 export {
   LocationBuildManager,
-  type LocationBuildProgressEvent,
-  type LocationBuildSession,
-  type LocationBuildTask,
 } from './LocationBuildManager.js';
+export {
+  LocationBuildSession,
+} from './LocationBuildSession.js';
 export {
   appendLocationPoints,
   replaceLocationPoints,

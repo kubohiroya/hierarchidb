@@ -14,12 +14,10 @@ export {
 } from '@hierarchidb/build';
 
 export {
-  toBuildProgressEventFromUpdate,
   runWithStageCheckpoint,
   createMemorySnapshot,
 } from './progressHelpers.js';
 export type {
-  ProgressBridgeUpdate,
   StageCheckpointPhase,
   StageCheckpointContext,
   StageCheckpointLogger,

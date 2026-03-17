@@ -50,6 +50,8 @@
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
+    "@hierarchidb/build-api": "workspace:*",
+    "@hierarchidb/build-runtime-services": "workspace:*",
     "@hierarchidb/gen-iso3166-2": "workspace:*",
     "@hierarchidb/location-api": "workspace:*",
     "@hierarchidb/location-store": "workspace:*",
