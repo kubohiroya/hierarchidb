@@ -16,6 +16,11 @@
 
 ## 今日の運用ログ
 
+- 2026-03-17: #1137 subscribeSessionState/subscribeStageSnapshots 登録時に現在状態を即時配信・PR #1138作成
+  - shapeBuildAPI.ts: subscribeSessionState に getBuildSessionRecord → emitSessionStatusUpdated 即時配信を追加
+  - shapeBuildAPI.ts: subscribeStageSnapshots に stageId/stageStartedAt 検証 → emitStageSnapshotUpdated 即時配信を追加
+  - typecheck: exit 0 (133/133)、test: 440/440 passed
+
 - 2026-03-17: #1121 TaskSummary に metadata 追加・PR #1122作成
   - session-events.ts: TaskSummary に metadata フィールド追加
   - useShapeBuildSessionStateAtomBridge.ts: toAdapterStageSnapshotEvent で task.metadata を BuildTaskSummary に渡す
