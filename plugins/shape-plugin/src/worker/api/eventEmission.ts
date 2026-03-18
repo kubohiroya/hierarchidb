@@ -60,7 +60,7 @@ export const emitSessionStatusUpdated = (
     const event: SessionStatusUpdatedEvent = {
         type: 'sessionStatusUpdated',
         payload: {
-            nodeId: String(nodeId),
+            nodeId,
             phase,
             isActive: sessionRecord.status === 'running',
             startedAt: sessionRecord.startedAt,
