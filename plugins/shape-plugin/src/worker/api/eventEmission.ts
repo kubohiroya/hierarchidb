@@ -4,21 +4,29 @@
  * Emits the 4 canonical Worker→UI events defined in
  * docs/build-session-worker-ui-event-spec.md:
  *   sessionStatusUpdated, stageSnapshotUpdated, taskProgressUpdated, heartbeat
+ *
+ * taskProgressUpdated and heartbeat are plugin-agnostic and are re-exported
+ * from @hierarchidb/build-runtime-services.
+ * sessionStatusUpdated and stageSnapshotUpdated depend on shape-plugin-specific
+ * types (ShapeBuildSessionRecord, VtTaskQueueDb) and remain here.
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
-import type { TaskProgressUpdatedEvent } from '@hierarchidb/build-api';
 import type {
     SessionPhase,
     SessionStatusUpdatedEvent,
     StageSnapshotUpdatedEvent,
-    HeartbeatEvent,
 } from '~/common/types/session-events';
 import { VtTaskQueueDb, listTasksByStage } from '@hierarchidb/vt-orchestrator';
 import { unconditionalEventStreamer } from './eventBuffering.js';
 import { mapTaskQueueRecordToTaskSummary } from './taskSummaryMapping.js';
+
+export {
+    emitTaskProgressUpdated,
+    emitHeartbeat,
+} from '@hierarchidb/build-runtime-services';
 
 /**
  * Maps ShapeBuildSessionRecord status to the canonical SessionPhase.
@@ -99,45 +107,4 @@ export const emitStageSnapshotUpdated = async (
         },
     };
     unconditionalEventStreamer.emitEvent(nodeId, 'stage-snapshot', event);
-};
-
-/**
- * Emits taskProgressUpdated for a single task's progress value.
- * value must be finite and in [0, 100] — violation throws.
- * version must be a finite positive integer — violation throws.
- */
-export const emitTaskProgressUpdated = (
-    nodeId: NodeId,
-    taskId: string,
-    version: number,
-    stageId: string,
-    value: number,
-    message?: string,
-    metadata?: Record<string, unknown>,
-): void => {
-    if (!Number.isFinite(value) || value < 0 || value > 100) {
-        throw new Error(`[eventEmission] taskProgressUpdated value must be finite 0..100, received ${String(value)}`);
-    }
-    if (!Number.isFinite(version) || version < 1 || !Number.isInteger(version)) {
-        throw new Error(`[eventEmission] taskProgressUpdated version must be a finite positive integer, received ${String(version)}`);
-    }
-    const event: TaskProgressUpdatedEvent = {
-        type: 'taskProgressUpdated',
-        payload: { taskId, version, stageId, value, message, metadata },
-    };
-    unconditionalEventStreamer.emitEvent(nodeId, 'task-progress', event);
-};
-
-/**
- * Emits heartbeat. heartbeatAt must be finite — violation throws.
- */
-export const emitHeartbeat = (nodeId: NodeId, heartbeatAt: number): void => {
-    if (!Number.isFinite(heartbeatAt)) {
-        throw new Error(`[eventEmission] heartbeatAt must be finite, received ${String(heartbeatAt)}`);
-    }
-    const event: HeartbeatEvent = {
-        type: 'heartbeat',
-        payload: { nodeId: String(nodeId), heartbeatAt },
-    };
-    unconditionalEventStreamer.emitHeartbeat(nodeId, event);
 };
