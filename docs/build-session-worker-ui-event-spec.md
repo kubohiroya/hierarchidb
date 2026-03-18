@@ -290,3 +290,31 @@ The `BuildSessionWorkerEventAdapter` translates raw Worker wire events into the 
 4. Splitting a multi-stage task snapshot into per-stage `stageSnapshotUpdated` events.
 
 The adapter does **not** perform deduplication or version gating. That responsibility is removed. `eventVersion` fields are not used; each event stream is applied unconditionally in FIFO order.
+
+---
+
+## Package Location of Event Types and Emitters
+
+As of Issue #1143, the canonical event types and plugin-agnostic emitters have been lifted to shared packages:
+
+### `@hierarchidb/build-api`
+
+- `session-event-types.ts` — canonical type definitions:
+  - `SessionPhase`, `SessionStatusUpdatedEvent`, `TaskSummary`, `StageSnapshotUpdatedEvent`, `HeartbeatEvent`, `WorkerLogEvent`, `CriticalErrorEvent`, `CanonicalSessionEvent`
+- `progress-types.ts` — `TaskProgressUpdatedEvent` (includes `taskId` and `version` fields)
+
+### `@hierarchidb/build-runtime-services`
+
+- `eventStreamer.ts` — `UnconditionalEventStreamer` class and `unconditionalEventStreamer` singleton
+- `eventEmission.ts` — plugin-agnostic emitters:
+  - `emitTaskProgressUpdated(nodeId, taskId, version, stageId, value, message?, metadata?)`
+  - `emitHeartbeat(nodeId, heartbeatAt)`
+
+### `plugins/shape-plugin`
+
+- `src/worker/api/eventBuffering.ts` — re-exports from `@hierarchidb/build-runtime-services`
+- `src/worker/api/eventEmission.ts` — shape-plugin-specific emitters (depend on `ShapeBuildSessionRecord` / `VtTaskQueueDb`):
+  - `emitSessionStatusUpdated(nodeId, sessionRecord)`
+  - `emitStageSnapshotUpdated(nodeId, stage, stageStartedAt, stageInactiveMs, stageCompletedAt?)`
+  - re-exports `emitTaskProgressUpdated` and `emitHeartbeat` from `@hierarchidb/build-runtime-services`
+- `src/common/types/session-events.ts` — re-exports all canonical types from `@hierarchidb/build-api`

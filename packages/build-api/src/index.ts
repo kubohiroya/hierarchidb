@@ -7,6 +7,16 @@ export type {
   TaskProgressUpdatedEvent,
 } from './progress-types.js';
 export type {
+  SessionPhase,
+  SessionStatusUpdatedEvent,
+  TaskSummary,
+  StageSnapshotUpdatedEvent,
+  HeartbeatEvent,
+  WorkerLogEvent,
+  CriticalErrorEvent,
+  CanonicalSessionEvent,
+} from './session-event-types.js';
+export type {
   StageHandler,
   StageHandlerResult,
   TaskDisplayKind,
