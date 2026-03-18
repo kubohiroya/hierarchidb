@@ -2,6 +2,7 @@
 
 ## Doing
 
+- #1152 / `fix/build-api/nodeid-type-consistency-1152` / 2026-03-18 開始
 - #1143 / `refactor/build-runtime-services/lift-event-emission-1143` / 2026-03-18 開始
 - #1149 / `fix/location-plugin/rename-subscribe-build-progress-1149` / 2026-03-18 開始
 - #1123 / `fix/app/subscribe-task-progress-1123` / 2026-03-17 開始
@@ -19,6 +20,13 @@
 - 2026-03-09: mapでshape-styler同一フォルダ紐付け実装着手 blocked（`gh issue create` 実行時 `gh: command not found`、`apt-get install gh` はプロキシ 403 で失敗）。解除条件: `gh` CLI を利用可能にする（プリインストールまたは実行可能パス提供）。
 
 ## 今日の運用ログ
+
+- 2026-03-18: #1152 nodeId 型統一（string → NodeId）・PR #1153 作成（マージ待ち）
+  - build-api: SessionStatusUpdatedEvent.payload.nodeId / HeartbeatEvent.payload.nodeId を string → NodeId に変更
+  - build-runtime-services: emitHeartbeat の String(nodeId) キャスト削除
+  - shape-plugin: emitSessionStatusUpdated の String(nodeId) キャスト削除
+  - typecheck: build-api / build-runtime-services / shape-plugin 133/133 exit 0
+  - PR #1153 は PR #1151（#1143）マージ後に自動的にベースが main になる
 
 - 2026-03-18: #1143 eventEmission/eventBuffering を build-runtime-services に昇格・PR #1151 作成（マージ待ち）
   - build-api: session-event-types.ts 新規作成（SessionStatusUpdatedEvent / StageSnapshotUpdatedEvent / HeartbeatEvent / WorkerLogEvent / CriticalErrorEvent / CanonicalSessionEvent / SessionPhase / TaskSummary）
