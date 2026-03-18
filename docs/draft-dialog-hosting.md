@@ -5,7 +5,7 @@
   - App/host: renders the dialog shell (HeadlessPluginDialog) and drives `useTreeNodeUpdater` so Basic Info is written to `draftMetadata` and plugin-specific data to `draftData`.
   - Plugin: exposes UI entry (via plugin registry) and provides step components/validators. Legacy NodeDialogExtension (step-state only) is deprecated; new hosts use `useTreeNodeUpdater` directly.
 - Current state:
-  - Basemap/Route/Location/Resolver: host lives in app; legacy NodeDialogExtension is不要。
+  - Basemap/Route/Location/Resolver: host lives in app; legacy NodeDialogExtension is no longer needed.
   - Spreadsheet/Styler: plugin-side dialog hosts (`SpreadsheetDialog`, `StylerDialog`) are exported via `./ui`; registry-driven resolution loads them.
 - Next steps to align:
   - Ensure plugin UI entries export the dialog host component used at runtime.

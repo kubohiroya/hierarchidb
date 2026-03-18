@@ -27,7 +27,7 @@ Replaces: `runtimeSnapshotReceived`, `sessionRecordReceived`
 type SessionStatusUpdatedEvent = {
   type: 'sessionStatusUpdated';
   payload: {
-    nodeId: string;
+    nodeId: NodeId;
     phase: SessionPhase;           // e.g. 'idle' | 'starting' | 'running' | 'pausing' | 'paused' | 'resuming' | 'finalizing' | 'completed' | 'failed'
     isActive: boolean;
     startedAt?: number;            // session start timestamp (ms)
@@ -59,7 +59,7 @@ Replaces: `onHeartbeat` (previously tunneled through `runtimeSnapshotReceived`)
 type HeartbeatEvent = {
   type: 'heartbeat';
   payload: {
-    nodeId: string;
+    nodeId: NodeId;
     heartbeatAt: number;           // timestamp (ms), must be finite
   };
 };

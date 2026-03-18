@@ -38,9 +38,6 @@ tasks for that stage have been removed.
 **UI effect**: Replace `tasksById` / `taskOrder` for the stage atomically. Update
 `stageTimingByStageAtom` for the stage.
 
-**Ordering**: Each event carries an `eventVersion` (monotonically increasing integer).
-Events with `eventVersion ≤ lastAccepted` are silently dropped.
-
 ---
 
 ### 2. `taskProgressUpdated`
