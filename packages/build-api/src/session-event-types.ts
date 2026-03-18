@@ -29,7 +29,7 @@ export type SessionPhase =
 export interface SessionStatusUpdatedEvent {
     type: 'sessionStatusUpdated';
     payload: {
-        nodeId: string;
+        nodeId: NodeId;
         phase: SessionPhase;
         isActive: boolean;
         startedAt?: number;
@@ -78,7 +78,7 @@ export interface StageSnapshotUpdatedEvent {
 export interface HeartbeatEvent {
     type: 'heartbeat';
     payload: {
-        nodeId: string;
+        nodeId: NodeId;
         heartbeatAt: number;      // finite timestamp (ms) — violation throws
     };
 }
