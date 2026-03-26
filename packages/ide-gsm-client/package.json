@@ -1,0 +1,35 @@
+{
+    "name": "@hierarchidb/ide-gsm-client",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "main": "dist/index.js",
+    "module": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "scripts": {
+        "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist",
+        "clean": "rm -rf dist",
+        "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
+        "test": "vitest run --passWithNoTests",
+        "test:run": "vitest run"
+    },
+    "dependencies": {
+        "graphql-request": "^7.1.2",
+        "graphql-ws": "^5.16.0"
+    },
+    "peerDependencies": {
+        "graphql": "^16.0.0"
+    },
+    "devDependencies": {
+        "fast-check": "^4.5.3",
+        "graphql": "^16.0.0",
+        "typescript": "workspace:^5.9.3",
+        "vitest": "^4.1.0"
+    }
+}
