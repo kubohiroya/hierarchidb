@@ -1,7 +1,7 @@
 import { GraphQLClient, gql } from 'graphql-request';
 import { createClient } from 'graphql-ws';
 import type { Client as WsClient } from 'graphql-ws';
-import type { ConnectionType, ExportFilter, RsyncFilter, TaskResult, TaskStatus } from './ideGsmTypes.js';
+import type { ExportFilter, TaskResult, TaskStatus } from './ideGsmTypes.js';
 
 /** Factory type for creating a graphql-ws client. Injected for testability. */
 export type WsClientFactory = (url: string, connectionParams: Record<string, string>) => WsClient;
@@ -24,8 +24,9 @@ export function deriveWsUrl(endpointUrl: string): string {
     if (withoutTrailingSlash.startsWith('http://')) {
         return `ws://${withoutTrailingSlash.slice('http://'.length)}/graphql`;
     }
-    // Fallback: append /graphql as-is (caller is responsible for correct scheme)
-    return `${withoutTrailingSlash}/graphql`;
+    throw new Error(
+        `Unsupported endpoint URL scheme: ${endpointUrl}. Only http:// and https:// are supported.`
+    );
 }
 
 /** Build the Authorization header object for a given auth token. */
@@ -61,18 +62,6 @@ const EXPORT_PROJECT = gql`
   }
 `;
 
-const RSYNC_PUSH = gql`
-  mutation RsyncPush($input: RsyncInput!) {
-    rsyncPush(input: $input)
-  }
-`;
-
-const RSYNC_PULL = gql`
-  mutation RsyncPull($input: RsyncInput!) {
-    rsyncPull(input: $input)
-  }
-`;
-
 const SUBSCRIBE_TASK = gql`
   subscription SubscribeTask($taskId: String!) {
     subscribeTaskOnFrontend(taskId: $taskId) {
@@ -103,14 +92,6 @@ interface ExportProjectResponse {
     exportProject: string;
 }
 
-interface RsyncPushResponse {
-    rsyncPush: string;
-}
-
-interface RsyncPullResponse {
-    rsyncPull: string;
-}
-
 interface SubscribeTaskEvent {
     subscribeTaskOnFrontend: TaskResult;
 }
@@ -123,8 +104,8 @@ interface SubscribeTaskEvent {
  * Client for the IDE-GSM GraphQL API.
  *
  * Provides typed, Promise-based methods for triggering long-running tasks
- * (importProject, calibrate, simulate, exportProject, rsyncPush, rsyncPull)
- * via HTTP mutations and awaiting their completion via WebSocket subscriptions (awaitTask).
+ * (importProject, calibrate, simulate, exportProject) via HTTP mutations and
+ * awaiting their completion via WebSocket subscriptions (awaitTask).
  */
 export class IdeGsmClient {
     private readonly endpointUrl: string;
@@ -225,50 +206,6 @@ export class IdeGsmClient {
             variables,
         );
         return data.exportProject;
-    }
-
-    /**
-     * Push local files to the remote server via rsync.
-     * Only includes filter fields in variables when explicitly provided.
-     * @returns The taskId of the started async task.
-     */
-    async rsyncPush(
-        projectRelativePath: string,
-        connectionType: ConnectionType,
-        filter?: RsyncFilter,
-    ): Promise<string> {
-        const client = this.createHttpClient();
-        const input: Record<string, unknown> = { projectRelativePath, connectionType };
-        if (filter?.include !== undefined) {
-            input['include'] = filter.include;
-        }
-        if (filter?.exclude !== undefined) {
-            input['exclude'] = filter.exclude;
-        }
-        const data = await client.request<RsyncPushResponse>(RSYNC_PUSH, { input });
-        return data.rsyncPush;
-    }
-
-    /**
-     * Pull remote files to local via rsync.
-     * Only includes filter fields in variables when explicitly provided.
-     * @returns The taskId of the started async task.
-     */
-    async rsyncPull(
-        projectRelativePath: string,
-        connectionType: ConnectionType,
-        filter?: RsyncFilter,
-    ): Promise<string> {
-        const client = this.createHttpClient();
-        const input: Record<string, unknown> = { projectRelativePath, connectionType };
-        if (filter?.include !== undefined) {
-            input['include'] = filter.include;
-        }
-        if (filter?.exclude !== undefined) {
-            input['exclude'] = filter.exclude;
-        }
-        const data = await client.request<RsyncPullResponse>(RSYNC_PULL, { input });
-        return data.rsyncPull;
     }
 
     // -------------------------------------------------------------------------

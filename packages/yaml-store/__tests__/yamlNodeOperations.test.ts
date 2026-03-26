@@ -21,15 +21,17 @@ describe('Property 3: CRUD lifecycle consistency', () => {
                     content: fc.string(),
                 }),
                 fc.string({ minLength: 1 }),
-                async (data, rawId) => {
+                fc.string({ minLength: 1 }),
+                async (data, rawId, rawParentId) => {
                     const nodeId = toNodeId(rawId);
+                    const parentId = toNodeId(rawParentId);
                     const db = getYamlDB();
 
                     // Ensure clean state for this iteration
                     await db.nodes.delete(nodeId);
 
                     // 1. create succeeds
-                    const createResult = await createYamlNode(nodeId, data);
+                    const createResult = await createYamlNode(nodeId, parentId, data);
                     expect(createResult.ok).toBe(true);
 
                     // 2. verify exists with original values
@@ -38,6 +40,7 @@ describe('Property 3: CRUD lifecycle consistency', () => {
                     expect(afterCreate?.name).toBe(data.name);
                     expect(afterCreate?.schemaId).toBe(data.schemaId);
                     expect(afterCreate?.content).toBe(data.content);
+                    expect(afterCreate?.parentId).toBe(parentId);
 
                     // 3. update succeeds
                     const updatedName = `${data.name}-updated`;
@@ -73,19 +76,21 @@ describe('Property 4: Duplicate nodeId rejects create', () => {
                     schemaId: fc.string({ minLength: 1 }),
                     content: fc.string(),
                 }),
-                async (rawId, data) => {
+                fc.string({ minLength: 1 }),
+                async (rawId, data, rawParentId) => {
                     const nodeId = toNodeId(rawId);
+                    const parentId = toNodeId(rawParentId);
                     const db = getYamlDB();
 
                     // Ensure clean state for this iteration
                     await db.nodes.delete(nodeId);
 
                     // First create succeeds
-                    const first = await createYamlNode(nodeId, data);
+                    const first = await createYamlNode(nodeId, parentId, data);
                     expect(first.ok).toBe(true);
 
                     // Second create with same nodeId returns error
-                    const second = await createYamlNode(nodeId, data);
+                    const second = await createYamlNode(nodeId, parentId, data);
                     expect(second.ok).toBe(false);
                     if (!second.ok) {
                         expect(typeof second.error).toBe('string');
