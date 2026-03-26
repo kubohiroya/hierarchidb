@@ -16,3 +16,15 @@ export interface ExportFilter {
     include?: string[];
     exclude?: string[];
 }
+
+/** Connection type for rsync operations. */
+export type ConnectionType = 'remote' | 'ssh' | 'ec2';
+
+/**
+ * Optional file-glob filter for rsyncPush / rsyncPull.
+ * When omitted, IDE-GSM applies its own default filter.
+ */
+export interface RsyncFilter {
+    include?: string[];
+    exclude?: string[];
+}
