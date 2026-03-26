@@ -75,7 +75,10 @@
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
-    "@hierarchidb/plugin-base": "workspace:*"
+    "@hierarchidb/plugin-base": "workspace:*",
+    "jszip": "^3.10.1",
+    "@hierarchidb/yaml-api": "workspace:*",
+    "@hierarchidb/yaml-store": "workspace:*"
   },
   "devDependencies": {
     "@mui/icons-material": "^7.3.6",
@@ -100,7 +103,11 @@
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
-    "@hierarchidb/plugin-base": "workspace:*"
+    "@hierarchidb/plugin-base": "workspace:*",
+    "jszip": "^3.10.1",
+    "@hierarchidb/yaml-api": "workspace:*",
+    "@hierarchidb/yaml-store": "workspace:*",
+    "fast-check": "^4.5.3"
   },
   "keywords": [
     "hierarchidb",
