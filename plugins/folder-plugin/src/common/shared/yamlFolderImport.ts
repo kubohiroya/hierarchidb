@@ -25,6 +25,7 @@ export type YamlImportResult =
 export async function importYamlNodesFromSnapshot(
     snapshot: string,
     parentId: NodeId
+): Promise<YamlImportResult> {
     // Validate Base64 — atob throws on invalid input
     let zipData: string;
     try {
@@ -68,7 +69,7 @@ export async function importYamlNodesFromSnapshot(
     const nodeIds: NodeId[] = [];
     for (const { name, content } of decoded) {
         const nodeId = toNodeId(generateId());
-        const result = await createYamlNode(nodeId, {
+        const result = await createYamlNode(nodeId, parentId, {
             name,
             schemaId: '',
             content,
