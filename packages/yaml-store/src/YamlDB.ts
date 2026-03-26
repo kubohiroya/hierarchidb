@@ -3,14 +3,14 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { Dexie, type Table } from 'dexie';
 import type { YamlFileNodeData } from '@hierarchidb/yaml-api';
 
-export type YamlNodeRecord = YamlFileNodeData & { nodeId: NodeId };
+export type YamlNodeRecord = YamlFileNodeData & { nodeId: NodeId; parentId: NodeId };
 
 export class YamlDB extends Dexie {
     nodes!: Table<YamlNodeRecord, NodeId>;
 
     constructor() {
         super(getDBName('yaml'));
-        this.version(1).stores({ nodes: '&nodeId' });
+        this.version(1).stores({ nodes: '&nodeId, parentId' });
         this.nodes = this.table('nodes');
     }
 }
