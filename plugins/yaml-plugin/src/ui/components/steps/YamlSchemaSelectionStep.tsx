@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import { useMemo, type FC } from 'react';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import { List, ListItemButton, ListItemText } from '@mui/material';
 import { YAML_TEMPLATES } from '@hierarchidb/yaml-api';
@@ -11,9 +11,9 @@ export const YamlSchemaSelectionStep: FC<PluginStepProps<YamlDraft>> = ({
 }) => {
     return (
         <List>
-            {YAML_TEMPLATES.map((template) => (
+            {useMemo(() => [...new Map(YAML_TEMPLATES.map((t) => [t.schemaId, t])).values()], []).map((template) => (
                 <ListItemButton
-                    key={template.templateId}
+                    key={template.schemaId}
                     selected={data.schemaId === template.schemaId}
                     onClick={() => onChange({ ...data, schemaId: template.schemaId })}
                     disabled={disabled}
@@ -27,3 +27,4 @@ export const YamlSchemaSelectionStep: FC<PluginStepProps<YamlDraft>> = ({
         </List>
     );
 };
+
