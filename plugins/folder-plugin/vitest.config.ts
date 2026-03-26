@@ -27,6 +27,9 @@ export default defineConfig({
       '@hierarchidb/runtime-worker': path.resolve(__dirname, './src/_obsolate_common/__tests__/store-registry-mocks.ts'),
       '@hierarchidb/util': path.resolve(workspaceRoot, 'packages/util/src/index.ts'),
       '@hierarchidb/plugin-ui-sdk': basePluginEntry,
+      '@hierarchidb/yaml-api': path.resolve(workspaceRoot, 'packages/yaml-api/src/index.ts'),
+      '@hierarchidb/yaml-store': path.resolve(workspaceRoot, 'packages/yaml-store/src/index.ts'),
+      '@hierarchidb/core-types': path.resolve(workspaceRoot, 'packages/core-types/src/index.ts'),
     },
   },
 });

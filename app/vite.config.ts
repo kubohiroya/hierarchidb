@@ -1650,6 +1650,18 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
 
         // --- Workers ---
         'comlink',
+
+        // --- JSON Schema Form (rjsf) ---
+        '@rjsf/core',
+        '@rjsf/mui',
+        '@rjsf/utils',
+        '@rjsf/validator-ajv8',
+
+        // --- YAML ---
+        'yaml',
+
+        // --- MUI icon for yaml-plugin ---
+        '@mui/icons-material/Description',
       ],
       // Exclude specific packages from pre-bundle so Vite watches sources directly
       exclude: runtimeAliasConfig.optimizeDepsExclude,

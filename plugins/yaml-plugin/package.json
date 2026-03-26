@@ -1,0 +1,123 @@
+{
+    "name": "@hierarchidb/yaml-plugin",
+    "version": "0.1.0",
+    "description": "YAML file node plugin for IDE-GSM integration",
+    "type": "module",
+    "main": "dist/index.js",
+    "module": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        },
+        "./icon": {
+            "types": "./dist/icon/index.d.ts",
+            "import": "./dist/icon/index.js",
+            "default": "./dist/icon/index.js"
+        },
+        "./worker": {
+            "types": "./dist/worker/index.d.ts",
+            "import": "./dist/worker/index.js",
+            "default": "./dist/worker/index.js"
+        },
+        "./ui": {
+            "types": "./dist/ui/index.d.ts",
+            "import": "./dist/ui/index.js",
+            "default": "./dist/ui/index.js"
+        }
+    },
+    "typesVersions": {
+        "*": {
+            "worker": [
+                "dist/worker/index.d.ts"
+            ],
+            "ui": [
+                "dist/ui/index.d.ts"
+            ],
+            "icon": [
+                "dist/icon/index.d.ts"
+            ],
+            "*": [
+                "dist/index.d.ts"
+            ]
+        }
+    },
+    "scripts": {
+        "build": "tsdown src/index.ts src/ui/index.ts src/worker/index.ts src/icon/index.ts --config ../../tsdown.config.ts --outDir dist",
+        "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
+        "test": "vitest run --passWithNoTests",
+        "test:run": "vitest run",
+        "clean": "rm -rf dist"
+    },
+    "peerDependencies": {
+        "@emotion/react": "^11.14.0",
+        "@emotion/styled": "^11.14.0",
+        "@hierarchidb/core-types": "workspace:*",
+        "@hierarchidb/plugin-base": "workspace:*",
+        "@hierarchidb/yaml-api": "workspace:*",
+        "@hierarchidb/yaml-store": "workspace:*",
+        "@mui/icons-material": "^7.3.6",
+        "@mui/material": "^7.3.6",
+        "@rjsf/core": "^5.0.0",
+        "@rjsf/mui": "^5.0.0",
+        "@rjsf/utils": "^5.0.0",
+        "@rjsf/validator-ajv8": "^5.0.0",
+        "react": "^19.0.0",
+        "yaml": "^2.0.0"
+    },
+    "devDependencies": {
+        "@hierarchidb/core-types": "workspace:*",
+        "@hierarchidb/plugin-base": "workspace:*",
+        "@hierarchidb/yaml-api": "workspace:*",
+        "@hierarchidb/yaml-store": "workspace:*",
+        "@mui/icons-material": "^7.3.6",
+        "@mui/material": "^7.3.6",
+        "@rjsf/core": "^5.0.0",
+        "@rjsf/mui": "^5.0.0",
+        "@rjsf/utils": "^5.0.0",
+        "@rjsf/validator-ajv8": "^5.0.0",
+        "fast-check": "^4.5.3",
+        "fake-indexeddb": "^4.0.2",
+        "react": "^19.0.0",
+        "vitest": "^4.1.0",
+        "yaml": "^2.0.0"
+    },
+    "dependencies": {},
+    "hierarchidb": {
+        "plugin": {
+            "nodeType": "yaml-file",
+            "name": "YAML File Plugin",
+            "description": "YAML configuration file node for IDE-GSM integration",
+            "i18nNamespace": "yaml-plugin",
+            "stepTitleKeys": {
+                "1": "basicInfo",
+                "2": "schemaSelection",
+                "3": "schemaEditor"
+            },
+            "icon": {
+                "mui": "Description",
+                "emoji": "📄",
+                "color": "#4caf50",
+                "component": {
+                    "specifier": "@hierarchidb/yaml-plugin/icon",
+                    "exportName": "YamlPluginIcon"
+                }
+            },
+            "priority": 500,
+            "category": "yaml",
+            "dependencies": [
+                "folder"
+            ],
+            "capabilities": {
+                "canHaveChildren": false,
+                "canBeRoot": false,
+                "canBeDeleted": true,
+                "canBeRenamed": true,
+                "canBeMoved": true,
+                "canBeCopied": true
+            }
+        }
+    }
+}

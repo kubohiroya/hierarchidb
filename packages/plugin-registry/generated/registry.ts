@@ -346,6 +346,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     packageName: "@hierarchidb/location-plugin",
     version: "0.1.0",
     dependencies: [
+        "@hierarchidb/build-api",
+        "@hierarchidb/build-runtime-services",
         "@hierarchidb/gen-iso3166-2",
         "@hierarchidb/location-api",
         "@hierarchidb/location-store",
@@ -406,6 +408,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "extends": "folder",
         "priority": 40,
         "dependencies": [
+          "@hierarchidb/build-api",
+          "@hierarchidb/build-runtime-services",
           "@hierarchidb/gen-iso3166-2",
           "@hierarchidb/location-api",
           "@hierarchidb/location-store",
