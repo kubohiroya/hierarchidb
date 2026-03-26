@@ -24,8 +24,7 @@ export type YamlImportResult =
  */
 export async function importYamlNodesFromSnapshot(
     snapshot: string,
-    _parentId: NodeId
-): Promise<YamlImportResult> {
+    parentId: NodeId
     // Validate Base64 — atob throws on invalid input
     let zipData: string;
     try {
