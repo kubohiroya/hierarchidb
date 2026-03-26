@@ -6,7 +6,7 @@ import type { YamlFileNodeData } from '@hierarchidb/yaml-api';
 export type YamlNodeRecord = YamlFileNodeData & { nodeId: NodeId };
 
 export class YamlDB extends Dexie {
-    nodes!: Table<YamlNodeRecord, NodeId>;
+    nodes: Table<YamlNodeRecord, NodeId>;
 
     constructor() {
         super(getDBName('yaml'));
