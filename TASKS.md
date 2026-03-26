@@ -2,7 +2,6 @@
 
 ## Doing
 
-- #1160 / `feat/simulation-workflow/implement-package` / 2026-03-27 開始
 - #1127 / `fix/shape-plugin/task-progress-version-gate-and-idle-fallback` / 2026-03-17 開始
 - #1020 / `refactor/shape-plugin/build-session-event-redesign-1020` / 2026-03-14 開始
 - #1019 / `fix/shape-plugin/task-snapshot-race-on-build-start-1019` / 2026-03-14 開始
@@ -14,6 +13,7 @@
 
 ## 今日の運用ログ
 
+- 2026-03-27: #1160 simulation-workflow 全タスク実装・PR #1161 作成
 - 2026-03-27: #1155 IdeGsmClient 実装・PR #1159 作成
 - 2026-03-26: #1157 yaml-file-node 全タスク実装・PR #1158 作成
 - 2026-03-18: #1152 nodeId 型統一（string → NodeId）・PR #1153 マージ済み
