@@ -78,6 +78,15 @@ describe('deriveWsUrl edge cases', () => {
   it('handles https with port', () => {
     expect(deriveWsUrl('https://example.com:443')).toBe('wss://example.com:443/graphql');
   });
+
+  it('throws for unsupported schemes', () => {
+    expect(() => deriveWsUrl('ftp://example.com')).toThrow(
+      'Unsupported endpoint URL scheme: ftp://example.com. Only http:// and https:// are supported.',
+    );
+    expect(() => deriveWsUrl('ws://example.com')).toThrow(
+      'Unsupported endpoint URL scheme: ws://example.com. Only http:// and https:// are supported.',
+    );
+  });
 });
 
 // Feature: ide-gsm-client, Property 5: ExportFilter fields included/omitted correctly

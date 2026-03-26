@@ -8,6 +8,7 @@ export type YamlNodeResult<T> =
 
 export async function createYamlNode(
     nodeId: NodeId,
+    parentId: NodeId,
     data: YamlFileNodeData
 ): Promise<YamlNodeResult<NodeId>> {
     const db = getYamlDB();
@@ -15,7 +16,7 @@ export async function createYamlNode(
     if (existing !== undefined) {
         return { ok: false, error: `Node already exists: ${nodeId}` };
     }
-    await db.nodes.add({ ...data, nodeId });
+    await db.nodes.add({ ...data, nodeId, parentId });
     return { ok: true, value: nodeId };
 }
 

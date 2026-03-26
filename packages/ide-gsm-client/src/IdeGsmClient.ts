@@ -24,8 +24,9 @@ export function deriveWsUrl(endpointUrl: string): string {
     if (withoutTrailingSlash.startsWith('http://')) {
         return `ws://${withoutTrailingSlash.slice('http://'.length)}/graphql`;
     }
-    // Fallback: append /graphql as-is (caller is responsible for correct scheme)
-    return `${withoutTrailingSlash}/graphql`;
+    throw new Error(
+        `Unsupported endpoint URL scheme: ${endpointUrl}. Only http:// and https:// are supported.`
+    );
 }
 
 /** Build the Authorization header object for a given auth token. */
