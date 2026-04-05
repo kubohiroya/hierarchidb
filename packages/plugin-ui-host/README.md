@@ -1,27 +1,52 @@
 # @hierarchidb/plugin-ui-host
 
-Headless dialog host for plugin UIs. Provides the shell (header/footer/stepper), controller, and headless components to drive MultiStep dialogs; leaves field/draft logic to `@hierarchidb/plugin-ui-sdk` and plugins.
+Last updated: 2026-04-05
 
-## Directory layout
+Host-side UI components for HierarchiDB plugin dialogs. `PluginDialogHost` provides an integrated host for plugin multi-step dialogs, while `PluginDialogShell`, `PluginDialogHeader`, and `PluginDialogFooter` provide the dialog structure.
+
+## Key Features
+
+- `PluginDialogHost` — Integrated host component for plugin dialogs
+- `PluginDialogShell` — Dialog shell (header + content + footer)
+- `PluginDialogHeader` — Dialog header (title, step indicator)
+- `PluginDialogFooter` — Dialog footer (navigation, save button)
+
+## Public API
+
+```typescript
+import {
+  PluginDialogHost,
+  PluginDialogShell,
+  PluginDialogHeader,
+  PluginDialogFooter,
+} from '@hierarchidb/plugin-ui-host';
 ```
-headless/   Shell components and controller (`PluginDialogShell`, Header/Footer, Stepper, usePluginDialogController)
-examples/   Example host wiring
-tests/      Unit tests for headless components
-PluginDialogHost.tsx  Convenience host wrapper
-index.ts    Public exports
-```
 
-## Key exports
-- Components: `PluginDialogShell`, `PluginDialogHeader`, `PluginDialogFooter`, `PluginDialogStepper`, `StepStatusIcon` (headless MUI-based shell).
-- Controller: `usePluginDialogController` — orchestrates step navigation, validation, capabilities (committable, cancellable), peer dialog handling; integrates with `PluginStepRegistry`.
-- Helpers: `cancelDraftPolicy`, headless `PluginDialogHost` wrapper.
+| Component | Description |
+| --- | --- |
+| `PluginDialogHost` | Retrieves steps from `PluginStepRegistry` by plugin nodeType and renders a multi-step dialog |
+| `PluginDialogShell` | Dialog outer frame (header, content, footer layout) |
+| `PluginDialogHeader` | Step title and step indicator display |
+| `PluginDialogFooter` | Previous/Next/Save buttons with validation-aware enable/disable |
 
-## Boundaries
-- Shell/navigation only; draft/data normalization lives in `@hierarchidb/plugin-ui-sdk`.
-- Presentation data (labels/icons) comes from `@hierarchidb/plugin-presentation` or app-level registries.
-- Plugin-specific form components should remain in each plugin package.
+## Dependencies
 
-## Consumers / usage
-- `app/src` dialog routes and TreeConsole hosts embed `PluginDialogHost` / headless components.
-- Feature plugins supply step components and use this host to render MultiStep dialogs (basemap, shape, route, spreadsheet, location, timeline, resolver, styler, etc.).
-- Works with `@hierarchidb/plugin-base` step registry and URL/view-state hooks.
+| Package | Purpose |
+| --- | --- |
+| `@hierarchidb/plugin-base` | PluginStepRegistry, PluginManifest |
+| `@hierarchidb/plugin-ui-sdk` | Plugin UI SDK |
+| `@hierarchidb/plugin-presentation` | Presentation layer |
+| `@hierarchidb/ui-dialog` | Dialog base |
+| `@hierarchidb/ui-plugin-basic-info` | Basic info step |
+| `@hierarchidb/components` | Shared UI components |
+| `jotai` | State management |
+
+## Related Packages
+
+- [`@hierarchidb/plugin-base`](../plugin-base/) — PluginStepRegistry
+- [`@hierarchidb/plugin-ui-sdk`](../plugin-ui-sdk/) — Plugin UI SDK
+- [`@hierarchidb/ui-dialog`](../ui/dialog/) — Dialog base
+
+## License
+
+MIT

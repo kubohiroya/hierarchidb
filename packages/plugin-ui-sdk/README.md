@@ -1,31 +1,65 @@
 # @hierarchidb/plugin-ui-sdk
 
-Dialog-internal utilities shared by plugin UIs: draft wiring, TreeNodeUpdater helpers, and headless dialog scaffolding used inside steps.
+Last updated: 2026-04-05
 
-## Directory layout
+SDK package for HierarchiDB plugin UI development. Provides hooks and utilities needed for building plugin dialog step components.
+
+## Key Features
+
+- `useTreeNodeUpdater` — Hook for reading/writing TreeNode payload/draft (dirty detection, validation integration)
+- `useSingleSourceDialogAtom` — Hook for managing dialog data with a jotai atom as single source
+- `useDialogViewState` — Hook for managing dialog view state (loading, error, etc.)
+- `createTreeNodeUpdaterActions` — Utility for generating TreeNode update actions
+- `wrapDialogStepComponent` — Wrapper for dialog step components
+
+## Public API
+
+```typescript
+import {
+  useTreeNodeUpdater,
+  useSingleSourceDialogAtom,
+  useDialogViewState,
+  createTreeNodeUpdaterActions,
+  wrapDialogStepComponent,
+} from '@hierarchidb/plugin-ui-sdk';
 ```
-hooks/    Dialog hooks (`useTreeNodeUpdater`, `useSingleSourceDialogAtom`, `useTreeNodeDialog`)
-dialog/   Step helpers (`wrapDialogStepComponent`, Basic Info step props)
-types/    Shared dialog types
-index.ts  Public exports
+
+### useTreeNodeUpdater
+
+```typescript
+const { data, isDirty, updateField, save, reset } = useTreeNodeUpdater<MyDraft>({
+  nodeId,
+  nodeType: 'my-plugin',
+});
 ```
 
-## Key exports
-- `useTreeNodeUpdater` / `createTreeNodeUpdaterActions` — bridge to worker draft APIs (commit/discard, metadata/draftData updates, capability flags).
-- `useSingleSourceDialogAtom` — jotai-based single-source draft/metadata atoms with shallow equality guards to prevent update loops; returns `store`, `draftAtom`, `metadataAtom`, `commit`, `discard`.
-- `useTreeNodeDialog` — helper to wire dialog steps with the updater and host-provided step configs.
-- `wrapDialogStepComponent` — HOC to adapt step components to the dialog host contract.
-- Types: `PluginDialogData`, `UseTreeNodeUpdaterResult`, `DialogStepConfig`, `DialogStepFactoryArgs`, `BasicInfoStepProps`.
+### useSingleSourceDialogAtom
 
-## When to use
-- Implementing plugin dialogs/steps that need TreeNodeUpdater integration, draft/metadata synchronization, or reusable form helpers.
-- Converging tabular/location/timeline/basemap dialogs on a single draft source with jotai guardrails (`useSingleSourceDialogAtom`).
+```typescript
+const { value, setValue, isDirty } = useSingleSourceDialogAtom<MyDraft>({
+  atom: myDraftAtom,
+  initialValue: defaultDraft,
+});
+```
 
-## Boundaries
-- Shell / navigation / header/footer live in `@hierarchidb/plugin-ui-host` (do not add shell logic here).
-- Presentation (icons/labels) belongs to `@hierarchidb/plugin-presentation` or app layer.
-- Plugin-specific one-off components should live in the plugin package, not here.
+## Dependencies
 
-## Consumers / usage
-- Feature plugins (basemap, shape, route, spreadsheet, location, timeline, resolver, styler, etc.) use these hooks inside dialog steps.
-- `@hierarchidb/plugin-ui-host` pairs with this package: host provides shell/navigation, sdk provides draft wiring and step helpers.
+| Package | Purpose |
+| --- | --- |
+| `@hierarchidb/core-types` | NodeId, NodeType |
+| `@hierarchidb/tree-api` | TreeNode types |
+| `@hierarchidb/worker-api` | Worker API |
+| `@hierarchidb/ui-worker-provider` | Worker client |
+| `@hierarchidb/ui-dialog` | Dialog base |
+| `@hierarchidb/plugin-service-api` | Plugin service API |
+| `jotai` | State management |
+
+## Related Packages
+
+- [`@hierarchidb/plugin-base`](../plugin-base/) — PluginStepRegistry (step registration target)
+- [`@hierarchidb/plugin-ui-host`](../plugin-ui-host/) — Dialog host
+- [`@hierarchidb/ui-dialog`](../ui/dialog/) — Dialog base
+
+## License
+
+MIT

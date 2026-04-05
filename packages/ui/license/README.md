@@ -1,6 +1,9 @@
 # @hierarchidb/ui-license
 
-License display/acknowledgement components shared across plugins (shape/location/route).
+Last updated: 2026-04-05
 
-## Status
-Lightweight components and hooks for license text/ack dialogs; extend as requirements grow.
+Shared license agreement components for HierarchiDB (WIP).
+
+## License
+
+MIT

@@ -1,226 +1,273 @@
-# @hierarchidb/plugin-folder
+# @hierarchidb/folder-plugin
 
-実装サマリ（2025-09-11）
-- nodeType: `folder`
-- Data source: CoreDB TreeNode payload/draft（Dexie ベースの `hdb-folder-entities-db` は存在しない）
-- 機能: ツリー移動・兄弟/子孫/祖先取得・パス/深さ計算・名前/説明バリデーション
-- UI: Create/Edit ダイアログ、アイコン、ウィザード（基本情報ステップほか）
+Last updated: 2026-04-05
 
-Basic folder plugin for HierarchiDB UI layer that provides container functionality for organizing files and other items in a hierarchical structure.
+A plugin that provides the fundamental container node for HierarchiDB's tree structure. Folder nodes act as containers that semantically organize and consolidate various types of nodes in a hierarchy.
 
-> 重要（設計方針のアップデート）
->
-> かつてフォルダ専用の Dexie DB（FolderDatabase）を持っていた期間がありましたが、現在は TreeNode payload/draft だけが唯一の永続情報源です。Dexie ベースの peer/group/relations テーブルは再利用されません。
-> 新規コードは CoreDB.nodes を前提にしてください。
+## Node Type and Inheritance
 
-## Overview
+| Field | Value |
+| --- | --- |
+| nodeType | `folder` |
+| extends | None (base plugin) |
+| category | `core` |
+| priority | `1000` |
 
-This plugin implements the folder node type in the unified UI plugin system.
-Folders are container nodes backed directly by CoreDB TreeNodes (payload/draft) and hierarchical utilities from `@hierarchidb/base-plugin`—no dedicated Dexie database is created.
+folder-plugin is the base plugin of the HierarchiDB plugin system. Other plugins (spreadsheet-plugin, styler-plugin, etc.) inherit from this node type. folder-plugin itself has no plugin dependencies.
 
-## Features
+## UI Layer
 
-- **Folder Creation**: Create new folders with validation
-- **Folder Editing**: Rename folders and update descriptions
-- **Hierarchical Organization**: Folders can contain other folders and items (move, siblings, descendants, ancestors)
-- **Validation**: Comprehensive input validation for names and descriptions
-- **Context Menus**: Rich context menu support
-- **Bulk Operations**: Support for batch operations on multiple folders
+### Dialogs
 
-## Components
+The folder-plugin UI uses the `PluginStepRegistry`-based step registration pattern. `FolderDialogHost` is deprecated and currently returns null.
 
-### FolderIcon
-Icon component that can display open/closed states for folders.
+Step registration is handled in `src/ui/components/steps-provider.tsx`, providing steps for two nodeTypes:
 
-```tsx
-import { FolderIcon } from '@hierarchidb/plugin-folder-plugin';
+- **`folder`**: Empty step array (basic info is provided by `@hierarchidb/ui-plugin-basic-info`)
+- **`folder-export`**: 5-step export wizard (see below)
 
-<FolderIcon open={isExpanded} color="primary" />
-```
+### Components
 
-### FolderCreateDialog
-Dialog component for creating new folders.
+| Component | Description |
+| --- | --- |
+| `FolderIcon` | Switches between `Folder` / `FolderOpen` icons based on open/closed state |
+| `TagInput` | Tag input UI component |
+| `CategorySelector` | Category selection UI component |
 
-```tsx
-import { FolderCreateDialog } from '@hierarchidb/plugin-folder-plugin';
+### Folder Export Wizard
 
-<FolderCreateDialog
-  parentNodeId="parent-123"
-  onSubmit={handleCreate}
-  onCancel={handleCancel}
-/>
-```
+A 5-step export flow accessible from the folder context menu:
 
-### FolderEditDialog
-Dialog component for editing existing folders.
+1. **Purpose** — Select export purpose (`continuity` / `distribution`)
+2. **Target Nodes** — Select target scope (`all` / `shapeOnly`)
+3. **Output Format** — Choose format (continuity: `json` fixed, distribution: `pbf.zip` / `mvf`)
+4. **Options** — Distribution mode options (`minZoom`, `maxZoom`, `maxTileBytes`)
+5. **Review** — Confirm settings and trigger export
 
-```tsx
-import { FolderEditDialog } from '@hierarchidb/plugin-folder-plugin';
+### Icon
 
-<FolderEditDialog
-  nodeId="folder-123"
-  currentData={folderData}
-  onSubmit={handleUpdate}
-  onCancel={handleCancel}
-/>
-```
-
-## Plugin Configuration
-
-The folder plugin is configured as follows:
-
-- **Node Type**: `folder`
-- **Data Source**: TreeNode payload/draft managed by CoreDB
-- **Capabilities**: Full CRUD, hierarchical, bulk operations
-- **Menu Group**: `basic`
-- **Create Order**: 1 (appears first in create menus)
-
-## Data Types
-
-### FolderCreateData
 ```typescript
-interface FolderCreateData {
-  name: string;
-  description?: string;
+// Entry point: @hierarchidb/folder-plugin/icon
+import { FolderPluginIcon } from '@hierarchidb/folder-plugin/icon';
+```
+
+| Field | Value |
+| --- | --- |
+| MUI icon | `Folder` |
+| Emoji | 📁 |
+| Color | `#c0eeff` |
+
+## Worker Layer
+
+folder-plugin adopts a **Worker-less design**. Folder node data is stored directly in CoreDB `TreeNode` payload/draft, with no dedicated Worker database or EntityHandler.
+
+The Worker `preload` configuration registers `registerFolderWorkerStores`, which only registers the payload peer store.
+
+```typescript
+// plugin-manifest.ts
+worker: {
+  preload: ['registerFolderWorkerStores'],
 }
 ```
 
-### FolderEditData
+### Lifecycle
+
+Folder CRUD operations are performed through the CoreDB TreeNode API:
+
+- **Create**: Create a TreeNode + store name/description in payload/draft
+- **Update**: Update TreeNode metadata
+- **Delete**: Delete TreeNode (with child existence check)
+- **Move/Copy**: TreeNode tree operations
+
+## Database Schema
+
+folder-plugin **does not have a dedicated Dexie database**.
+
+> A `FolderDatabase` (`hdb-folder-entities-db`) existed in the past but has been removed. Folder data is now stored exclusively in CoreDB `TreeNode` payload/draft as the single source of truth.
+
+### Data Structure
+
+Folder nodes are defined as an alias for `TreeNode`:
+
 ```typescript
-interface FolderEditData {
-  name?: string;
-  description?: string;
+// FolderEntity is an alias for Core TreeNode
+type FolderEntity = TreeNode;
+
+// Peer data stored in TreeNode payload
+interface FolderPeerData {
+  schemaVersion: 1;
+  domain: Record<string, unknown>;
 }
 ```
 
-### FolderDisplayData
+## Plugin Dependencies
+
 ```typescript
-interface FolderDisplayData {
-  id: TreeNodeId;
-  name: string;
-  description?: string;
-  hasChildren: boolean;
-  childCount: number;
-  createdAt: number;
-  updatedAt: number;
+// PluginManifest.dependencies
+dependencies: []
+```
+
+folder-plugin has no plugin dependencies. Conversely, many plugins inherit from folder-plugin as their base.
+
+## Configuration
+
+### Capabilities
+
+```typescript
+capabilities: {
+  canHaveChildren: true,   // child nodes allowed
+  canBeRoot: true,         // can be a root node
+  canBeDeleted: true,
+  canBeRenamed: true,
+  canBeMoved: true,
+  canBeCopied: true,
 }
 ```
 
-## Validation Rules
+### Schema
 
-### Folder Names
-- Required (cannot be empty)
-- Maximum 255 characters
-- Cannot contain: `< > : " / \ | ? *`
-- Whitespace is trimmed
-- Must be unique within parent folder
-
-### Descriptions
-- Optional
-- Maximum 1000 characters
-- Whitespace is trimmed
-
-## Context Menu Actions
-
-The folder plugin provides these context menu items:
-
-- **New Folder**: Create a subfolder
-- **Rename**: Edit the folder name
-- **Properties**: View folder properties
-- **Copy Path**: Copy the folder path to clipboard
-
-## Hooks and Events
-
-The plugin implements comprehensive UI action hooks:
-
-- **beforeShowCreateDialog**: Permission checking
-- **onValidateCreateForm**: Input validation
-- **afterCreate**: Success handling and navigation
-- **beforeStartEdit**: Edit permission checking
-- **afterUpdate**: Update success handling
-- **beforeDelete**: Deletion confirmation with children warning
-- **afterDelete**: Cleanup and refresh
-- **onContextMenu**: Dynamic context menu generation
-
-## Testing
-
-The plugin includes comprehensive tests:
-
-```bash
-# Run tests
-pnpm test
-
-# Run tests in watch mode
-pnpm test:watch
-
-# Build the plugin
-pnpm stage
-
-# Type checking
-pnpm typecheck
-```
-
-## Usage in Applications
-
-### Registration
 ```typescript
-import { UIPluginRegistry } from '@hierarchidb/ui-core';
-import { FolderUIPlugin } from '@hierarchidb/plugin-folder-plugin';
-
-// Register the plugin
-UIPluginRegistry.getInstance().register(FolderUIPlugin);
+schema: {
+  fields: [
+    { name: 'name', type: 'string', required: true },
+    { name: 'description', type: 'string', required: false },
+  ],
+}
 ```
 
-### Integration
-Once registered, folders will automatically appear in:
-- Create menus (as the first option)
-- TreeTypes views with appropriate icons
-- Context menus with folder-specific actions
-- Bulk operation interfaces
+### Validation Constants
 
-## Architecture
+| Constant | Value | Description |
+| --- | --- | --- |
+| `NAME_MIN_LENGTH` | 1 | Minimum name length |
+| `NAME_MAX_LENGTH` | 255 | Maximum name length |
+| `DESCRIPTION_MAX_LENGTH` | 1000 | Maximum description length |
+| `MAX_TAGS` | 10 | Maximum number of tags |
+| `MAX_TAG_LENGTH` | 50 | Maximum tag length |
+| `MAX_DEPTH` | 20 | Maximum hierarchy depth |
+| `MAX_CHILDREN_DEFAULT` | 1000 | Default maximum child node count |
 
-This plugin is part of HierarchiDB's unified UI plugin system:
+### i18n
 
-- **Worker Layer**: No dedicated worker database. Folder nodes are stored exclusively via CoreDB TreeNode payload/draft; runtime-worker only registers the payload peer store.
-- **UI Layer**: Unified plugin interface for consistent UX
-- **Data Adapter**: Bridges Worker API with UI plugin system
-- **Component Library**: Reusable UI components with Material-UI
+| Field | Value |
+| --- | --- |
+| namespace | `folder-plugin` |
+| Locales | `en`, `ja` |
 
-## Dependencies
+## Usage Examples
 
-- `@hierarchidb/core`: Core types and interfaces
-- `@hierarchidb/ui-core`: UI plugin system and utilities
-- `@mui/material`: Material-UI components
-- `@mui/icons-material`: Material-UI icons
-- `react`: React framework
+### Referencing the PluginManifest
 
-## Future Ideas
+```typescript
+import { FolderPluginManifest } from '@hierarchidb/folder-plugin';
 
-### Hashtag Support with Relational EntityTypes
+console.log(FolderPluginManifest.nodeType); // 'folder'
+console.log(FolderPluginManifest.capabilities.canHaveChildren); // true
+```
 
-As a future enhancement, we could implement hashtag functionality for folders where:
+### Using FolderIcon
 
-- **Hashtags as Relational EntityTypes**: Each tag could be treated as a RelationalEntity in the Worker layer
-- **Folder Characterization**: Tags would help express and identify folder characteristics
-- **Tag-based Discovery**: Users could list and browse folders that share common tags
-- **Cross-folder Relationships**: Tags would create implicit relationships between folders
+```tsx
+import { FolderIcon } from '@hierarchidb/folder-plugin/ui';
 
-This would require:
-1. Worker-side entity handling for tag management
-2. RelationalEntity implementation for tag-folder associations
-3. UI components for tag input and display
+// Closed folder
+<FolderIcon />
 
-## 依存管理とインポート規約（重要）
-共通方針は packages/plugins/CONTRIBUTING.md を参照してください。要点:
-- peerDependencies: react, react-dom, @mui/material, @mui/icons-material, @emotion/react, @emotion/styled, dexie, （必要時）react-i18next, i18next
-- dependencies: @hierarchidb/util などプラグイン実行に必要なもの
-- devDependencies: typescript/tsup/vitest/@testing-library/*/@types/*
-- import は公開APIのみ、型は `import type`。重い機能は dynamic import。
-- tsup external は共通設定で外部化済み。
-4. Search and filter capabilities based on tags
+// Open folder
+<FolderIcon open={true} />
+```
 
-Currently, the folder plugin operates as a Worker-less plugin (TreeNode only). When implementing these features in the future, proper null checks should be maintained for backward compatibility with systems that don't have the Worker-side tag services available.
+### Exporting YAML Snapshots
+
+```typescript
+import { exportYamlNodesToSnapshot } from '@hierarchidb/folder-plugin';
+import type { ExportableNode } from '@hierarchidb/folder-plugin';
+
+const nodes: ExportableNode[] = [
+  {
+    nodeId: toNodeId('node-1'),
+    nodeType: 'yaml',
+    data: { name: 'config.yml', schemaId: '', content: 'key: value' },
+  },
+];
+
+const result = await exportYamlNodesToSnapshot(nodes);
+if (result.ok) {
+  // result.snapshot contains Base64-encoded ZIP
+}
+```
+
+### Importing YAML Snapshots
+
+```typescript
+import { importYamlNodesFromSnapshot } from '@hierarchidb/folder-plugin';
+
+const result = await importYamlNodesFromSnapshot(base64Snapshot, parentId);
+if (result.ok) {
+  console.log('Imported node IDs:', result.nodeIds);
+}
+```
+
+## Directory Structure
+
+```text
+src/
+├── index.ts                  # Root entry point (types + manifest + YAML utilities)
+├── plugin-manifest.ts        # PluginManifest definition
+├── common/
+│   ├── locales/              # i18n resources (en, ja)
+│   ├── shared/
+│   │   ├── folderValidation.ts   # Name/data validation
+│   │   ├── yamlFolderExport.ts   # YAML snapshot export
+│   │   └── yamlFolderImport.ts   # YAML snapshot import
+│   └── types/
+│       ├── constants.ts      # Validation/display constants
+│       ├── FolderEntity.ts   # FolderEntity type (TreeNode alias)
+│       ├── metadata.ts       # Plugin metadata
+│       └── types.ts          # CreateFolderData, UpdateFolderData, FolderPeerData
+├── icon/
+│   └── index.ts              # FolderPluginIcon (re-export of MUI Folder)
+└── ui/
+    ├── FolderDialogHost.tsx   # Deprecated dialog host (returns null)
+    ├── index.ts               # UI entry point
+    └── components/
+        ├── CategorySelector.tsx
+        ├── FolderIcon.tsx     # Open/closed folder icon
+        ├── TagInput.tsx
+        ├── steps-provider.tsx # PluginStepRegistry registration
+        └── folder-export/    # 5-step export wizard components
+```
+
+## Export Entry Points
+
+| Path | Contents |
+| --- | --- |
+| `@hierarchidb/folder-plugin` | Type definitions, PluginManifest, YAML utilities |
+| `@hierarchidb/folder-plugin/ui` | UI components (FolderDialogHost, step registration) |
+| `@hierarchidb/folder-plugin/icon` | FolderPluginIcon |
+
+## Related Plugins and Packages
+
+### Dependencies
+
+- [`@hierarchidb/plugin-base`](../packages/plugin-base/) — Plugin base (PluginManifest, PluginStepRegistry)
+- [`@hierarchidb/core-types`](../packages/core-types/) — Shared type definitions (NodeId, NodeType, etc.)
+- [`@hierarchidb/tree-api`](../packages/tree-api/) — TreeNode type definitions
+- [`@hierarchidb/tag-api`](../packages/tag-api/) — TagId, TagSuggestion types
+- [`@hierarchidb/yaml-api`](../packages/yaml-api/) — YAML node type definitions
+- [`@hierarchidb/yaml-store`](../packages/yaml-store/) — YAML node creation API
+- [`@hierarchidb/util`](../packages/util/) — Utilities (generateId, etc.)
+- [`@hierarchidb/plugin-ui-sdk`](../packages/plugin-ui-sdk/) — Plugin UI SDK
+- [`@hierarchidb/plugin-service-api`](../packages/plugin-service-api/) — Plugin service API
+- [`@hierarchidb/components`](../packages/components/) — Shared UI components (notify, etc.)
+- [`@hierarchidb/ui-dialog`](../packages/ui/dialog/) — Dialog base
+- [`@hierarchidb/ui-plugin-basic-info`](../packages/ui/plugin-basic-info/) — Plugin basic info step
+
+### Plugins Inheriting from folder-plugin
+
+- [`spreadsheet-plugin`](../plugins/spreadsheet-plugin/) — CSV/TSV/Excel source management
+- [`styler-plugin`](../plugins/styler-plugin/) — Style definitions and map style application
+- [`linker-plugin`](../plugins/linker-plugin/) — Project domain management
 
 ## License
 

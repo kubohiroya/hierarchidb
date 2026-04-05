@@ -1,26 +1,9 @@
 # @hierarchidb/ui-dialog
 
-Shared dialog components for HierarchiDB plugin/runtime UIs: headless multi-step shell plus common dialogs/actions/titles.
+Last updated: 2026-04-05
 
-## Directory layout
-```
-components/   CommonDialog, Actions/Title, AutoHideFullScreenDialog, UnsavedChangesDialog
-headless/     PluginDialog shell (Header/Footer/Content/Frame), types and helpers
-hooks/        useDialogContext, useDialogInteractionGuards
-types/        PluginDialog types, stepper dialog types
-utils/        dialogSurfaceColor, frame helpers
-index.ts      Public exports
-```
+Dialog foundation UI package for HierarchiDB. Provides multi-step dialogs, confirmation dialogs, DialogSafeMenu, etc.
 
-## Key exports
-- Headless shell: `PluginDialog`, `PluginDialogHeader/Footer/Content`, `PluginDialogFrame`, `frameHelpers`.
-- Common components: `CommonDialog`, `CommonDialogActions`, `CommonDialogTitle`, `AutoHideFullScreenDialog`, `UnsavedChangesDialog`.
-- Hooks: `useDialogContext`, `useDialogInteractionGuards`.
-- Types: `PluginDialogProps`, `StepperDialogStep`, stepper dialog types.
+## License
 
-## Consumers / usage
-- `@hierarchidb/plugin-ui-host` uses the headless shell to wrap plugin steps.
-- Feature plugins reuse `CommonDialog*` pieces for simple dialogs; app-level dialogs can layer styling on top.
-
-## Notes
-- Headless components are MUI-based but keep layout minimal; appearance is provided by host/app themes.
+MIT
