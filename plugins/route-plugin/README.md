@@ -1,499 +1,731 @@
-# @hierarchidb/route-plugin
+# Route Plugin
 
-Last updated: 2026-04-05
+実装サマリ（2025-09-09）
+- nodeType: `route`
+- DB: Dexie(`route`) / `RouteDB` — ルートエンティティ（`features`）とベクタータイル（`vectorTiles`）
+- ビルド: 統一ビルド API 準拠（生成・検証・ベクトル化）
+- UI: 設定ウィザード、データテーブル、マッププレビュー
+- 機能: 多様なルートソース、距離/接続性分析、スタイル連携
+- ランタイムワーカー: `registerRouteRuntimeWorkerAdapters()`（フラグ `ROUTE_RUNTIME_WORKER=1` で有効）
 
-A transportation route management plugin for HierarchiDB. Batch-downloads route data for airways, waterways, roads, railways, and high-speed railways from open data sources such as OpenStreetMap, OpenFlights, searoute-js, Transitland, and Natural Earth, persists them in IndexedDB, and visualizes/analyzes them on a map. Supports 3-stage batch processing (source → geometry → tileEmit) via `RouteBuildSession` (extends `AbstractBuildSession`), lane-policy-based parallel control, and MapLibre-based map preview with transport-mode coloring and line-width adjustment.
+## 依存管理とインポート規約（重要）
+共通方針は packages/plugins/CONTRIBUTING.md を参照。要点:
+- peerDependencies: react, react-dom, @mui/material, @mui/icons-material, @emotion/react, @emotion/styled, dexie
+- dependencies: @hierarchidb/util ほか必要に応じて @hierarchidb/features/*
+- devDependencies: typescript/tsup/vitest/@testing-library/*/@types/*
+- import は公開API、型は `import type`、重い処理は dynamic import。
+- tsup external は共通設定で外部化済み。
+交通路・輸送ルート情報の収集、管理、可視化を行うHierarchiDBプラグインです。
+OpenStreetMapやNatural Earth等のオープンデータソースから、航路、海路、道路、鉄道等のルートデータをビルドダウンロードし、地図上で可視化・分析できます。
 
-## Node Type and Inheritance
+## 2026-02-14 確定仕様（優先）
 
-| Field | Value |
-| --- | --- |
-| nodeType | `route` |
-| extends | `shape` |
-| category | `geographic` (menuGroup: `geo`, createOrder: `60`) |
-| dependencies | `['shape']` |
+この節は、route の「ビルド前〜ビルド」仕様の現行定義です。既存の Step 説明と衝突する場合は本節を優先してください。
+詳細は `docs/route-build-flow-spec.md` を参照してください。
 
-route-plugin extends shape-plugin and depends on location-plugin's origin/destination coordinates for route generation. It shares shape-plugin's build infrastructure (`runStageTasks`, `VtTaskQueueDb`) and vector tile generation pipeline.
+- route の成果物は location の始点・終点座標に依存するため、location/shape のレイトバインディングとは異なる。
+- Step3 は国×交通モードの OR/AND マトリクス（1国あたり 10 チェック）で `selectedArrayByCountries` を更新する。
+  - OR を選択したモードは同一行の AND が自動 `checked/disabled` になる。
+  - チェックボックスは Step2 で読み込んだデータ上で実在する国×モードのみ生成し、初期状態は `checked`。
+- Step4 は shape の build 設定 UI（TileEmit 設定カードを含む）を共用する。
+- Step5 は shape と同じ UI/実行構成を最大限共用するが、route は transform で filtering と simplification を一括実行する。
+  - fetch の `featureCache` はズーム帯別コピーではなく、オリジナルの LineString GeoJSON 1 本のみ保存する。
+  - metadata には location 由来の座標、admin0〜2 の name/code、距離、中継点数を保存する。
+- Step6 は shape/location と同等のプレビュー UI を共用する。
+  - FloatingWindow で Metadata: routes / 交通モードトグル / スタイル設定を重ね表示可能。
+  - 交通モードは 5 アイコンの複数 on/off トグル。保存先は shape と同様の FloatingWindow 永続化設定。
+- location 変更時は route への波及を前提とし、削除/変更のたびに location UI 側で警告ダイアログを表示する。
+  - 削除: 参照中 route もカスケード削除するかキャンセル。
+  - 変更: カスケード変更するかキャンセル。座標/admin code 変更時は fetch キャッシュ削除 + `rebuild required` 表示 + sessions に「再ビルド予約」を route ノード単位で作成する。
+  - それ以外の項目変更時は route metadata を即時更新する。
 
-## UI Layer
+## 主要機能
 
-### Dialog Steps
+- 🛤️ **多様なルートタイプ**: 航路、海路、道路、鉄道、高速鉄道
+- 🌐 **国際ルート対応**: 国境を越えるルートの適切な処理
+- 📈 **ルート分析**: 距離計算、接続性分析、ネットワーク構造
+- 🎨 **高度な可視化**: 速度・容量による色分け、方向表示
+- 🔄 **ビルド処理**: 大規模ルートデータの効率的処理
+- 💾 **ベクタータイル生成**: 高速地図表示のためのタイル生成
 
-route-plugin provides a 5-step wizard via `PluginStepRegistry` (step 1 is provided by the common plugin):
+### Tabular Preview（データテーブル）
+- RoutePanel には「データテーブル」カードが表示され、生成済みルートの表ビューを閲覧できます。
+- 機能: 複数条件フィルタ（AND）、表示列の切替、`eq` 条件の索引（初回遅延作成）。
+- 注意: 表は検索/検証用の補助機能です。ルートノードを含む複数ノードの一括保存/復元には Import/Export を使用してください。
 
-| Step | ID | Component | Description |
-| --- | --- | --- | --- |
-| 1 | `basicInfo` | *(ui-plugin-basic-info)* | Basic info (name / description) — provided by `@hierarchidb/ui-plugin-basic-info` |
-| 2 | `data-source` | `RouteDataSourceStep` | Data source selection (OSM / OpenFlights / searoute / IDE-GSM, etc.) |
-| 3 | `route-config` | `RouteSelectionStep` | Country × transport mode selection matrix |
-| 4 | `processing` | `RouteProcessingStep` | Build configuration (includes TileEmit settings card) |
-| 5 | `build` | `RouteBuildStep` | Build execution and progress monitoring |
-| 6 | `preview` | `RoutePreviewStep` | Map preview (optional) |
+## 利用可能なオープンデータソース
 
-### Components
+### オープンデータ提供元まとめ（概要）
 
-| Component | Description |
-| --- | --- |
-| `RouteDataSourceStep` | Data source selection UI (includes license confirmation) |
-| `RouteSelectionStep` | Country × transport mode checkbox matrix (OR/AND toggle) |
-| `RouteProcessingStep` | Build parameter settings (geometry / tileEmit config) |
-| `RouteBuildStep` | Build execution and progress monitoring |
-| `RoutePreviewStep` | MapLibre-based route preview |
-| `RouteBuildLaunchForm` | Build launch form |
-| `RouteBuildLiveProgress` | Real-time build progress display |
-| `RouteBuildProgressBar` | Build progress bar |
-| `RouteBuildSummary` | Build result summary |
+| データソース名 | 提供データ内容 | データ量（件数・サイズ：概算） | 利用ライセンス |
+| - | - | - | - |
+| OpenStreetMap（Overpass 等） | ルート抽出元のOSMデータ（道路/鉄道/フェリー 等） | クエリ依存（数千〜数十万件） | ODbL 1.0 |
+| Natural Earth | 主要道路・鉄道（中縮尺ベクター） | レイヤ毎ZIP 5–30MB | Public Domain |
+| OpenFlights | 航空路ネットワーク（airline/src/dst/stops 等） | routes.dat 約60–70k経路、~5–8MB | ODbL 1.0 |
+| OpenSeaMap | シーマーク等（航路補助、OSM派生） | 地域依存（数千〜数十万フィーチャ） | ODbL 1.0 |
+| GTFS Static（各事業者） | 公共交通（路線/停留所/時刻/shape） | 事業者ごとに数MB〜200MB超 | 事業者規約（多くはCC系/独自） |
+| OpenRailwayMap | 鉄道ネットワーク（OSM派生の鉄道属性） | 国単位で数万〜数十万線分 | ODbL 1.0 |
 
-### Icon
+### 主要データソース一覧
 
+| データソース | URL | ライセンス | ルートタイプ | データ項目 | 更新頻度 |
+|------------|-----|----------|------------|-----------|---------|
+| **OpenStreetMap** | https://overpass-api.de/ | ODbL 1.0 | 全タイプ | name, ref, start_point, end_point, coordinates, maxspeed, lanes, gauge | リアルタイム |
+| **Natural Earth** | https://www.naturalearthdata.com/ | Public Domain | 主要道路、鉄道 | name, type, sov_a3, coordinates, featurecla, min_zoom | 不定期 |
+| **OpenFlights** | https://openflights.org/data.html | ODbL 1.0 | 航路 | airline, src_airport, dst_airport, codeshare, stops, equipment | 不定期 |
+| **OpenSeaMap** | https://www.openseamap.org/ | ODbL 1.0 | 海路 | name, seamark:type, coordinates, status | 月次 |
+| **GTFS Static** | https://gtfs.org/schedule/reference/ | 各事業者 | 公共交通 | route_short_name, route_long_name, route_type, shape_points | 事業者次第 |
+| **OpenRailwayMap** | https://www.openrailwaymap.org/ | ODbL 1.0 | 鉄道 | name, ref, railway, electrified, gauge, maxspeed, usage | リアルタイム |
+
+### OpenStreetMap ルートタグマッピング
+
+| ルートタイプ | OSMタグ | 取得データ | 座標データ |
+|------------|--------|----------|-----------|
+| **航路** | `route=flight`, `aeroway=runway` | ref, airline, from, to, via | LineString (起点・終点空港座標) |
+| **海路** | `route=ferry`, `route=shipping` | name, operator, duration, from, to | LineString (港湾間ルート) |
+| **道路** | `highway=motorway/trunk/primary` | ref, name, maxspeed, lanes, surface | LineString (道路中心線) |
+| **鉄道** | `railway=rail`, `route=train` | ref, name, operator, gauge, electrified, maxspeed | LineString (線路座標) |
+| **高速鉄道** | `railway=rail` + `highspeed=yes` | ref, name, maxspeed (>200km/h), operator | LineString (専用軌道) |
+
+### ルート識別情報
+
+| ルートタイプ | 起点・終点識別 | 座標形式 | 精度 |
+|------------|--------------|---------|------|
+| **航路** | IATA/ICAOコード、空港名 | [起点緯度経度, 経由点..., 終点緯度経度] | 空港位置は正確、経路は概算 |
+| **海路** | UN/LOCODE、港湾名 | [港湾A座標, 海峡通過点..., 港湾B座標] | 港湾位置は正確、航路は概算 |
+| **道路** | ジャンクション名、都市名 | [開始点, 中間点(密)..., 終了点] | 1-10m精度 |
+| **鉄道** | 駅名、駅コード | [起点駅, 中間駅..., 終点駅] | 線路に沿った正確な座標 |
+
+### 国際ルートの扱い
+
+| カテゴリ | 例 | データ管理 | 選択方法 |
+|---------|---|----------|---------|
+| **国際航路** | NRT→LAX、ICN→FRA | 「その他(International)」として一元管理 | 専用行から選択、重複ダウンロード防止 |
+| **国際海路** | 太平洋横断、スエズ運河経由 | 「その他(International)」 | 国際海域として別管理 |
+| **越境道路** | パンアメリカンハイウェイ | 各国セグメントに分割 | 通過国それぞれで選択 |
+| **国際鉄道** | シベリア鉄道、ユーロスター | 運行国ごとに分割管理 | 各国で該当区間を選択 |
+
+## ステップバイステップ設定UI
+
+### Step 1: 基本情報設定
 ```typescript
-// Entry point: @hierarchidb/route-plugin/icon
-import { RoutePluginIcon } from '@hierarchidb/route-plugin/icon';
-```
-
-| Field | Value |
-| --- | --- |
-| MUI icon | `Route` |
-| Emoji | 〰️ |
-| Color | `#a3b030` |
-
-## Worker Layer
-
-### Worker preload
-
-```typescript
-// plugin-manifest.ts
-worker: {
-  preload: ['registerRouteWorkerStores'],
+interface BasicInfoForm {
+  // 名前と説明
+  name: string;              // 例: "東アジア高速鉄道網"
+  description: string;       // 例: "日本、中国、韓国の新幹線・高速鉄道路線"
+  
+  // カテゴリとタグ
+  category: 'transportation' | 'logistics' | 'infrastructure';
+  tags: string[];           // 例: ["railway", "highspeed", "asia"]
 }
 ```
 
-`registerRouteWorkerStores` registers stores in the Worker environment.
+**UIコンポーネント**:
+- TextField: 名前入力（必須、最大100文字）
+- TextField: 説明入力（複数行、最大500文字）
+- Select: カテゴリ選択
+- Autocomplete: タグ入力（サジェスト機能付き）
 
-### FeatureStore / VectorTileStore
-
-- `createRouteFeatureStoreDexie` — Creates a `FeatureStore<RouteFeature>` from `RouteDB` (`createDexieFeatureStore` wrapper)
-- `createRouteVectorTileStoreDexie` — Creates a `VectorTileStore` from `RouteDB` (tile ID format: `${nodeId}-${z}-${x}-${y}`)
-
-### Build Task Retrieval
-
-`getBuildTasks(nodeId)` retrieves build tasks for a given node from `VtTaskQueueDb` and returns them as `BuildTaskSummary[]`.
-
-### Tabular Build
-
-`runRouteTabularBuild` generates route segments from tabular data:
-
-1. `extractTabularRows` — Extracts row data from TabularDataApi
-2. `materializeRouteSegmentsFromTabular` — Converts extracted rows into route segments and persists them
-
-### Lifecycle
-
-Route data CRUD operations are performed through the CoreDB TreeNode API and RouteDB:
-
-- **Create**: Create a TreeNode + store settings in payload/draft
-- **Build**: 3-stage parallel processing via `RouteBuildSession` (source → geometry → tileEmit)
-- **Update**: Update TreeNode metadata + update route data in RouteDB
-- **Delete**: Delete TreeNode + clean up route data in RouteDB
-
-## Database Schema
-
-route-plugin uses the Dexie-based `RouteDB` provided by `@hierarchidb/route-store`.
-
-### Main Table (features)
-
+### Step 2: データソース選択
 ```typescript
-// plugin-manifest.ts — database definition
-database: {
-  dbName: 'route',
-  tableName: 'features',
-  version: 3,
-  schema: {
-    fields: [
-      { name: 'id', indexed: true },
-      { name: 'nodeId', indexed: true },
-      { name: 'startLocationId', indexed: true },
-      { name: 'endLocationId', indexed: true },
-      { name: 'transportMode', indexed: true },
-      { name: 'processingStatus', indexed: true },
-      { name: 'createdAt', indexed: true },
-      { name: 'updatedAt', indexed: true },
-    ],
-  },
+interface DataSourceSelection {
+  primarySource: 'osm' | 'naturalearth' | 'openflights' | 'custom';
+  fallbackSources: string[];
+  
+  // OSM固有設定
+  osmConfig?: {
+    overpassEndpoint: string;
+    boundingBox?: [number, number, number, number]; // [minLon, minLat, maxLon, maxLat]
+    includeRelations: boolean;  // リレーション（路線情報）を含む
+  };
+  
+  // カスタムソース設定
+  customSourceConfig?: {
+    url: string;
+    format: 'geojson' | 'kml' | 'gpx' | 'shapefile';
+    authentication?: {
+      type: 'none' | 'apikey' | 'oauth';
+      credentials?: string;
+    };
+  };
 }
 ```
 
-### Vector Tile Table
+**UIコンポーネント**:
+- RadioGroup: プライマリソース選択
+- CheckboxList: 代替ソース選択
+- BoundingBoxMap: 地図上で範囲選択
+- AdvancedSettings: 詳細設定パネル
 
-`RouteVectorTileRecord` is stored in the `vectorTiles` table. Tile IDs follow the `${nodeId}-${z}-${x}-${y}` format and hold MVT binary data.
-
-## Plugin Dependencies
-
+### Step 3: ライセンス確認
 ```typescript
-// PluginManifest
-dependencies: ['shape'],
-```
-
-| Plugin | Relationship |
-| --- | --- |
-| `shape` | Required dependency — inherits build infrastructure (`runStageTasks`, `VtTaskQueueDb`) and vector tile pipeline |
-
-Coordinates with location-plugin via origin/destination coordinates. When a location changes, cascading effects to routes are expected (cascade delete/update).
-
-## Configuration
-
-### Capabilities
-
-```typescript
-capabilities: {
-  draft: true,           // draft mode support
-  batch: true,           // batch processing support
-  visualization: true,   // map visualization support
+interface LicenseAgreement {
+  acceptedLicenses: {
+    odbl: boolean;           // OpenStreetMap ODbL
+    ccby: boolean;           // Creative Commons BY
+    publicDomain: boolean;   // パブリックドメイン
+    custom: string[];        // カスタムライセンス
+  };
+  attributionText: string;   // 帰属表示テキスト
+  shareAlike: boolean;       // 継承ライセンス適用
 }
 ```
 
-### Data Sources
+**UIコンポーネント**:
+- LicenseCard: 各ライセンスの要約カード
+- Checkbox: ライセンス同意チェックボックス
+- AttributionEditor: 帰属表示テキスト編集
+- WarningAlert: ライセンス互換性の警告
 
-route-plugin supports 8 data sources:
-
-| Data Source | Display Name | License | Description |
-| --- | --- | --- | --- |
-| `openstreetmap` | OpenStreetMap | ODbL 1.0 | Routing baselines and reference data |
-| `searoute` | searoute | MIT | Calculated maritime routes between ports |
-| `openflights` | OpenFlights | ODbL 1.0 | Worldwide flight route data |
-| `transitland` | Transitland | Varies by operator | GTFS feeds for public transit data |
-| `searoute-js` | searoute-js | MIT | Calculated maritime routes between ports (JS) |
-| `naturalearth-rivers` | Natural Earth Rivers | Public Domain | Major river systems |
-| `ide-gsm` | IDE-GSM | IDE-GSM License | IDE-GSM schema files |
-| `custom` | Custom | User provided | User-provided route data |
-
-### Transport Modes (RouteMode)
-
-| Mode | Constant | Default Color |
-| --- | --- | --- |
-| Airway | `ROUTE_MODES.AIRWAY` | `#1f77b4` |
-| Waterway | `ROUTE_MODES.WATERWAY` | `#17becf` |
-| High-speed railway | `ROUTE_MODES.H_RAILWAY` | `#d62728` |
-| Railway | `ROUTE_MODES.RAILWAY` | `#ff7f0e` |
-| Road | `ROUTE_MODES.ROAD` | `#2ca02c` |
-| Highway | `ROUTE_MODES.HIGHWAY` | `#9467bd` |
-
-### Build Configuration (RouteBuildConfig)
-
-Default settings are defined in `DEFAULT_ROUTE_BUILD_CONFIG`:
-
-| Category | Key Parameter | Default Value |
-| --- | --- | --- |
-| routeGeneration | method | `'direct'` |
-| routeGeneration | parallel | `true` |
-| routeGeneration | maxConcurrent | `4` |
-| sourceConfig | maxConcurrent | `2` |
-| sourceConfig | timeoutMs | `300000` |
-| geometryConfig | enableFeatureFiltering | `true` |
-| tileEmitConfig | format | `'mvt'` |
-| tileEmitConfig | compression | `'gzip'` |
-| tileEmitConfig | tileSize | `256` |
-
-### i18n
-
-| Field | Value |
-| --- | --- |
-| namespace | `route-plugin` |
-| Locales | `en`, `ja` |
-
-## Batch Processing
-
-route-plugin declares `batch: true` and executes 3-stage batch processing via `RouteBuildSession` (extends `AbstractBuildSession`).
-
-### Build Flow
-
-```text
-RouteBuildManager.startRouteBuildSession()
-  → Generate RouteBuildTask[] (source / geometry / tileEmit)
-  → Persist to VtTaskQueueDb
-  → RouteBuildSession.processBatch()
-    → runStageTasks('source')   — Route generation (RouteGenerator)
-    → runStageTasks('geometry') — Geometry processing
-    → runStageTasks('tileEmit') — Vector tile generation
+### Step 4: 処理設定
+```typescript
+interface RouteProcessingConfig {
+  // ダウンロード設定
+  downloadConfig: {
+    concurrentDownloads: number;     // 1-10
+    chunkSize: number;               // セグメント分割サイズ
+    maxSegmentLength: number;        // 最大セグメント長（km）
+    requestTimeout: number;          // タイムアウト（秒）
+  };
+  
+  // 簡略化設定
+  extractionConfig: {
+    enableExtraction: boolean;
+    algorithm: 'douglas-peucker' | 'visvalingam' | 'radial-distance';
+    tolerance: number;               // 簡略化許容誤差（メートル）
+    preserveTopology: boolean;      // トポロジー保持
+    minSegmentLength: number;       // 最小セグメント長
+  };
+  
+  // ネットワーク分析設定
+  networkConfig: {
+    enableNetworkAnalysis: boolean;
+    detectIntersections: boolean;    // 交差点検出
+    calculateConnectivity: boolean;  // 接続性計算
+    findShortestPaths: boolean;     // 最短経路探索
+  };
+  
+  // ベクタータイル設定
+  vectorTileConfig: {
+    generateTiles: boolean;
+    zoomLevels: number[];           // 例: [0, 5, 10, 14]
+    tileSize: 256 | 512;
+    format: 'mvt' | 'geojson';
+    compression: 'none' | 'gzip' | 'brotli';
+  };
+}
 ```
 
-### 3-Stage Pipeline
+**UIコンポーネント**:
+- Slider: 数値パラメータ調整
+- ToggleButtonGroup: アルゴリズム選択
+- Switch: 機能有効/無効
+- ZoomLevelSelector: タイルズームレベル選択
+- Accordion: セクション別設定
 
-| Stage | Processing | Parallel Control |
-| --- | --- | --- |
-| `source` | Generate routes from origin/destination coordinates (`RouteGenerator`) | Lane policy with per-method concurrency |
-| `geometry` | Geometry processing (simplification, filtering) | `geometryConfig.maxConcurrent` |
-| `tileEmit` | MVT vector tile generation | `tileEmitConfig.maxConcurrent` |
+### Step 5: ルートタイプと地域選択
+```typescript
+interface RouteSelection {
+  // 選択マトリックス (国/地域 × ルートタイプ)
+  selectionMatrix: boolean[][];
+  
+  regions: Array<{
+    code: string;           // 国コードまたは "INTL"（国際）
+    name: string;
+    scope: 'national' | 'international';
+  }>;
+  
+  routeTypes: Array<{
+    id: RouteType;
+    filters?: {
+      minLength?: number;    // 最小ルート長（km）
+      maxSpeed?: number;     // 最大速度フィルタ
+      operator?: string[];   // 運行事業者フィルタ
+    };
+  }>;
+  
+  // 推定データ
+  estimatedStats: {
+    totalLength: number;     // 総延長（km）
+    segmentCount: number;    // セグメント数
+    dataSize: number;        // データサイズ（MB）
+  };
+}
+```
 
-### Lane Policy
+**UIコンポーネント**:
+- **SelectionMatrix**: 国×ルートタイプ選択マトリックス
+  - 特別行:「その他(International)」for 国際ルート
+  - 行: 国リスト + 国際ルート行
+  - 列: ルートタイプ（航路、海路、道路、鉄道、高速鉄道）
+  - セルカラー: 選択時はタイプ別色表示
+- **統計パネル**:
+  - Chip: 選択ルート数
+  - Chip: 総延長距離
+  - ProgressBar: 推定データ量
+- **フィルタツール**:
+  - RangeSlider: ルート長フィルタ
+  - Autocomplete: 事業者フィルタ
 
-The source stage uses `lanePolicy` to control per-method concurrency for route generation:
+### Step 6: レビューと確認
+```typescript
+interface ReviewSummary {
+  selections: {
+    total: number;
+    byType: Record<RouteType, number>;
+    byCountry: Record<string, number>;
+  };
+  
+  estimates: {
+    downloadTime: string;    // "約 10-15 分"
+    processingTime: string;  // "約 5-10 分"
+    storageRequired: string; // "約 50 MB"
+  };
+  
+  preview: {
+    sampleRoutes: RoutePreview[];  // サンプルルート
+    coverageMap: MapBounds;        // カバー範囲
+  };
+}
+```
 
-| Method | Default Concurrency |
-| --- | --- |
-| `osm_route` | 1 |
-| `searoute` | 3 |
-| `direct` | 64 |
-| `great_circle` | 64 |
-| `custom` | 8 |
+**UIコンポーネント**:
+- SummaryCards: 統計サマリーカード
+- RoutePreviewList: サンプルルートリスト
+- CoverageMap: カバー範囲地図
+- TimelineChart: 処理フロー図
+- ConfirmDialog: 最終確認ダイアログ
 
-### RouteBuildOrchestrationService
+## ビルド処理進捗確認ダイアログ
 
-`RouteBuildOrchestrationService` provides high-level build orchestration:
+### タブ構成
 
-| Method | Description |
-| --- | --- |
-| `startFromSources` | Fetch OD pairs from data sources and start build |
-| `startMatrix` | Matrix build from origins × destinations |
-| `startEnrich` | Enrichment build for existing routes |
+#### Tab 1: 進捗状況（Progress）
+```typescript
+interface ProgressView {
+  // ステージ進捗
+  stages: {
+    download: StageProgress;
+    extract1: StageProgress;
+    extract2: StageProgress;
+    vectorTile: StageProgress;
+  };
+  
+  // 現在のタスク
+  currentTasks: Array<{
+    id: string;
+    stage: string;
+    routeType: RouteType;
+    country: string;
+    progress: number;
+    status: 'running' | 'completed' | 'failed';
+  }>;
+  
+  // パフォーマンス
+  performance: {
+    downloadSpeed: string;    // "2.5 MB/s"
+    processingRate: string;  // "150 segments/s"
+    memoryUsage: number;     // MB
+    cpuUsage: number;        // percentage
+  };
+}
+```
 
-### RouteSourceOrchestrator
+**UIコンポーネント**:
+- **ステージプログレス**:
+  - Stepper: 4段階の処理ステップ表示
+  - CircularProgress: 各ステージの進捗率
+  - TimeRemaining: 残り時間表示
+- **タスクモニター**:
+  - DataGrid: アクティブタスクテーブル
+  - StatusChip: 成功/失敗/処理中の状態表示
+  - RetryButton: 失敗タスクの再試行
+- **パフォーマンスメーター**:
+  - SpeedGauge: ダウンロード速度計
+  - MemoryBar: メモリ使用量バー
+  - CPUGraph: CPU使用率グラフ
 
-`RouteSourceOrchestrator` handles data source strategy selection and execution:
+#### Tab 2: ログ（Logs）
+```typescript
+interface LogView {
+  entries: Array<{
+    timestamp: Date;
+    level: 'debug' | 'info' | 'warning' | 'error';
+    stage: string;
+    message: string;
+    metadata?: {
+      routeId?: string;
+      errorCode?: string;
+      stackTrace?: string;
+    };
+  }>;
+  
+  filters: {
+    levels: string[];
+    stages: string[];
+    timeRange: [Date, Date];
+  };
+}
+```
 
-- `TabularStrategy` — Tabular data sources (IDE-GSM, etc.)
-- `GeoJsonStrategy` — GeoJSON data sources
-- `FetchNetworkPort` for per-host connection management (4 connections), CORS proxy support
+**UIコンポーネント**:
+- VirtualizedLogList: 仮想スクロールログリスト
+- LogLevelFilter: レベル別フィルタチップ
+- TimeRangeFilter: 時間範囲フィルタ
+- LogSearch: キーワード検索
+- ExportButton: ログエクスポート
 
-### Location Coordination
+#### Tab 3: 地図プレビュー（Map Preview）
+```typescript
+interface RouteMapPreview {
+  // 表示設定
+  visualization: {
+    colorMode: 'type' | 'speed' | 'capacity';
+    lineWidth: number;        // 1-10
+    showDirections: boolean;
+    showLabels: boolean;
+    opacity: number;          // 0-1
+  };
+  
+  // フィルタ
+  visibleTypes: RouteType[];
+  visibleCountries: string[];
+  
+  // インタラクション
+  selectedRoutes: Set<string>;
+  hoveredRoute: string | null;
+  
+  // 統計表示
+  stats: {
+    totalRoutes: number;
+    totalLength: number;
+    byType: Record<RouteType, number>;
+  };
+}
+```
 
-Route artifacts depend on location-plugin's origin/destination coordinates. Cascading effects on location changes:
+**UIコンポーネント**:
+- **MapLibre GL地図**:
+  - LineLayerで経路表示
+  - 色分けモード切り替え
+  - ホバー/クリックインタラクション
+- **色分けモード（ToggleButtonGroup）**:
+  - 📊 Type: ルートタイプ別固定色
+  - 🚀 Speed: 速度グラデーション（緑→赤）
+  - 📈 Capacity: 容量グラデーション（薄青→濃青）
+- **線幅調整（Slider）**:
+  - 0.5〜3.0の範囲で調整可能
+  - リアルタイム反映
+- **タイプフィルター（Chips）**:
+  - ✈️ Airways: 15 routes（3,500 km）
+  - 🚢 Seaways: 8 routes（1,200 km）
+  - 🚗 Roads: 45 routes（2,800 km）
+  - 🚂 Railways: 23 routes（1,500 km）
+  - 🚄 HSR: 5 routes（800 km）
+- **ルート情報ポップアップ**:
+  ```
+  路線名: 東海道新幹線
+  Name: Tokaido Shinkansen
+  Type: High Speed Rail
+  区間: 東京 → 新大阪
+  From: Tokyo → To: Shin-Osaka
+  Distance: 515.4 km
+  Max Speed: 285 km/h
+  Operator: JR Central
+  ```
 
-- **Delete**: Cascade-delete referenced routes or cancel
-- **Coordinate/admin code change**: Delete fetch cache + show `rebuild required` + schedule rebuild
-- **Other field changes**: Immediately update route metadata
+#### Tab 4: データテーブル（Data Table）
+```typescript
+interface RouteDataTable {
+  columns: [
+    'Route Name',
+    'Type',
+    'Country',
+    'Start',
+    'End',
+    'Length (km)',
+    'Points',
+    'Status'
+  ];
+  
+  rows: RouteSegment[];
+  
+  features: {
+    sort: boolean;
+    filter: boolean;
+    export: boolean;
+    selection: boolean;
+  };
+}
+```
 
-## Map Preview
+**UIコンポーネント**:
+- **AbstractDataGrid**: 
+  - 仮想スクロール対応
+  - カラムソート/フィルタ
+  - 複数選択対応
+- **カラム詳細**:
+  - Route Name: 検索可能
+  - Type: アイコン付きチップ表示
+  - Length: 数値フォーマット、ソート可能
+  - Points: 座標点数表示
+  - Status: 処理状態インジケータ
+- **ツールバー**:
+  - SearchField: 全文検索
+  - FilterMenu: 詳細フィルタ
+  - ExportMenu: CSV/GeoJSON出力
+  - StatisticsPanel: 選択データの統計
 
-route-plugin uses MapLibre GL JS to provide map preview for route data.
-
-### Preview Features
-
-- Display route data as LineString layers on the map after build completion
-- Transport-mode coloring (6 modes: airway, waterway, high-speed railway, railway, road, highway)
-- Line width adjustment (`lineWidth` parameter)
-- Line style switching (solid / dashed / dotted)
-- Per-transport-mode filtering toggles
-- FloatingWindow overlay for metadata, transport mode toggles, and style settings
-
-### Style Configuration
+### エラー処理とリカバリ
 
 ```typescript
-import { buildDefaultRouteStyleConfig, mergeRouteStyleConfig } from '@hierarchidb/route-plugin/common';
+interface ErrorHandling {
+  // エラー分類
+  errors: {
+    network: NetworkError[];      // ネットワークエラー
+    parsing: ParseError[];        // データ解析エラー
+    validation: ValidationError[]; // バリデーションエラー
+    processing: ProcessError[];   // 処理エラー
+  };
+  
+  // リカバリオプション
+  recovery: {
+    autoRetry: boolean;
+    retryInterval: number;
+    maxRetries: number;
+    fallbackStrategy: 'skip' | 'use-cache' | 'use-alternative';
+  };
+}
+```
 
-// Default style configuration
-const defaultStyle = buildDefaultRouteStyleConfig();
-// { modeColors: { airway: '#1f77b4', ... }, lineWidth: 2, lineStyle: 'solid' }
+**UIコンポーネント**:
+- ErrorSummaryCard: エラー概要表示
+- ErrorDetailDialog: 詳細エラー情報
+- RetryQueue: リトライキュー管理
+- RecoveryOptions: リカバリ戦略選択
 
-// Merge with custom overrides
-const customStyle = mergeRouteStyleConfig({
-  lineWidth: 3,
-  lineStyle: 'dashed',
+## データベーススキーマ
+
+### RouteEntity（メインエンティティ）
+```typescript
+interface RouteEntity {
+  id: EntityId;
+  nodeId: NodeId;
+  
+  // 基本情報
+  name: string;
+  description: string;
+  category: string;
+  tags: string[];
+  
+  // データソース
+  dataSourceName: string;
+  dataSourceConfig: DataSourceConfig;
+  
+  // 処理設定
+  processingConfig: RouteProcessingConfig;
+  
+  // 選択情報
+  selectionMatrix: boolean[][];
+  selectedRegions: string[];
+  routeTypes: RouteType[];
+  
+  // ビルド処理
+  buildSessionId?: string;
+  processingStatus?: 'idle' | 'processing' | 'completed' | 'failed';
+  
+  // メタデータ
+  createdAt: number;
+  updatedAt: number;
+  version: number;
+}
+```
+
+### RouteSegment（PersistentRelationalEntity）
+```typescript
+interface RouteSegment {
+  id: EntityId;
+  routeEntityId: EntityId;
+  
+  // セグメント情報（必須）
+  segmentIndex: number;             // セグメント順序
+  coordinates: [number, number][];  // LineString座標配列
+  routeType: RouteType;             // ルートタイプ
+  countryCode: string;              // 国コード（INTLは国際）
+  
+  // ルート識別情報
+  routeName?: string;               // 路線名
+  routeRef?: string;                // 路線番号・記号
+  
+  // 起終点情報
+  startPoint?: {
+    name?: string;                  // 起点名
+    code?: string;                  // 起点コード（IATA等）
+    coordinates: [number, number];  // 起点座標
+  };
+  
+  endPoint?: {
+    name?: string;                  // 終点名
+    code?: string;                  // 終点コード
+    coordinates: [number, number];  // 終点座標
+  };
+  
+  // 中間点情報
+  waypoints?: Array<{
+    name?: string;
+    coordinates: [number, number];
+    type?: 'station' | 'junction' | 'waypoint';
+  }>;
+  
+  // 物理特性
+  length: number;                   // セグメント長（メートル）
+  elevation?: {
+    min: number;                    // 最低標高
+    max: number;                    // 最高標高
+    gain: number;                   // 累積標高
+  };
+  
+  // 属性情報
+  properties: {
+    // 共通属性
+    operator?: string;              // 運営事業者
+    status?: 'active' | 'planned' | 'closed';
+    openingDate?: string;
+    closingDate?: string;
+    
+    // 交通属性
+    maxSpeed?: number;              // 最高速度（km/h）
+    avgSpeed?: number;              // 平均速度
+    lanes?: number;                 // 車線数（道路）
+    gauge?: number;                 // 軌間（鉄道、mm）
+    electrified?: boolean;          // 電化（鉄道）
+    frequency?: number;             // 運行頻度（本/日）
+    
+    // 容量属性
+    capacity?: number;              // 輸送容量
+    passengerVolume?: number;       // 旅客数/日
+    freightVolume?: number;         // 貨物量/日
+    
+    // ネットワーク属性
+    importance?: number;            // 重要度スコア
+    connectivity?: number;          // 接続性スコア
+    alternatives?: string[];        // 代替ルートID
+    
+    [key: string]: any;
+  };
+  
+  // 簡略化情報
+  extractionLevel?: number;     // 簡略化レベル
+  originalPointCount?: number;      // 元の座標点数
+  
+  // 空間インデックス
+  boundingBox: [number, number, number, number]; // [minLon, minLat, maxLon, maxLat]
+  tileCoverage?: string[];          // カバーするタイルID
+  
+  // ソース情報
+  sourceUrl: string;
+  sourceLicense: string;
+  downloadedAt: number;
+  
+  // タイムスタンプ
+  createdAt: number;
+  updatedAt: number;
+  version: number;
+}
+```
+
+### RouteVectorTile（ベクタータイル）
+```typescript
+interface RouteVectorTile {
+  id: string;                      // z/x/y形式
+  routeEntityId: EntityId;
+  
+  zoom: number;
+  x: number;
+  y: number;
+  
+  tileData: ArrayBuffer;           // MVT形式
+  features: number;                // フィーチャー数
+  size: number;                    // バイト数
+  
+  generatedAt: number;
+  expiresAt?: number;
+}
+```
+
+## 使用例
+
+### 東アジア高速鉄道網の構築
+```typescript
+// Step 1: 基本設定
+const config = {
+  name: "East Asia High-Speed Rail Network",
+  description: "Shinkansen, KTX, and CRH networks",
+  category: "transportation"
+};
+
+// Step 2: 地域とタイプ選択
+const selection = {
+  regions: ["JPN", "KOR", "CHN"],
+  routeTypes: ["high_speed_rail"],
+  selectionMatrix: [
+    [false, false, false, false, true], // Japan: HSR only
+    [false, false, false, false, true], // Korea: HSR only
+    [false, false, false, false, true]  // China: HSR only
+  ]
+};
+
+// Step 3: 処理実行
+const session = await routePlugin.createBuildSession(
+  nodeId,
+  config,
+  selection,
+  {
+    extractionTolerance: 10,  // 10m tolerance
+    generateVectorTiles: true,
+    zoomLevels: [5, 8, 11, 14]
+  }
+);
+
+// Step 4: 結果の可視化
+const mapView = await routePlugin.createMapView(session.id, {
+  colorMode: 'speed',
+  showLabels: true,
+  lineWidth: 2
 });
 ```
 
-### MapLibre Layer Expressions
-
-`buildRouteColorExpression` generates a MapLibre `match` expression based on the `routeMode` property for transport-mode coloring. `resolveLineDashArray` returns a dash array for the given line style.
-
-### Tabular Preview
-
-After build execution, route data can be viewed in a table format via the data table tab. Supports multi-condition filtering (AND), column visibility toggling, and lazy-created `eq` condition indexes. `RouteTabularMetadataManager` handles tabular metadata management.
-
-## Usage Examples
-
-### Referencing the PluginManifest
-
+### 国際航路ネットワーク
 ```typescript
-import { RoutePluginManifest } from '@hierarchidb/route-plugin/common';
+// 国際ルート専用の選択
+const internationalRoutes = {
+  regions: ["INTL"],  // 国際ルート専用行
+  routeTypes: ["airway", "seaway"],
+  selectionMatrix: [
+    [true, true, false, false, false]  // International: airways & seaways
+  ]
+};
 
-console.log(RoutePluginManifest.nodeType); // 'route'
-console.log(RoutePluginManifest.extends);  // 'shape'
-console.log(RoutePluginManifest.dependencies); // ['shape']
+// 重複なく国際ルートを一括取得
+const session = await routePlugin.createBuildSession(
+  nodeId,
+  { name: "International Routes" },
+  internationalRoutes
+);
 ```
 
-### Using RoutePluginIcon
+## パフォーマンス最適化
 
-```tsx
-import { RoutePluginIcon } from '@hierarchidb/route-plugin/icon';
+- **セグメント分割**: 長大ルートを適切なサイズに分割
+- **空間インデックス**: R-treeによる高速空間検索
+- **タイル事前生成**: よく使うズームレベルのタイル事前生成
+- **差分更新**: 変更部分のみの更新処理
+- **並列処理**: Web Workerによる並列簡略化処理
 
-<RoutePluginIcon sx={{ color: '#a3b030' }} />
-```
+## 制限事項
 
-### Referencing Data Source Definitions
-
-```typescript
-import { ROUTE_DATA_SOURCES } from '@hierarchidb/route-plugin/common';
-
-// List all available data sources
-ROUTE_DATA_SOURCES.forEach((ds) => {
-  console.log(`${ds.displayName}: ${ds.license}`);
-});
-
-// Find a specific data source
-const searoute = ROUTE_DATA_SOURCES.find((ds) => ds.name === 'searoute');
-console.log(searoute?.displayName); // 'searoute'
-```
-
-### Route Style Configuration
-
-```typescript
-import {
-  buildDefaultRouteStyleConfig,
-  buildRouteColorExpression,
-  resolveLineDashArray,
-} from '@hierarchidb/route-plugin/common';
-
-// Build a MapLibre color expression for route mode coloring
-const style = buildDefaultRouteStyleConfig();
-const colorExpr = buildRouteColorExpression(style);
-// ['match', ['get', 'routeMode'], 'airway', '#1f77b4', ...]
-
-// Resolve dash array for line style
-const dashArray = resolveLineDashArray('dashed'); // [2, 2]
-```
-
-### Using RuntimeBridge
-
-```typescript
-import { RouteRuntimeBridge } from '@hierarchidb/route-plugin/common';
-
-// Register runtime worker adapters (flag ROUTE_RUNTIME_WORKER=1 required)
-await RouteRuntimeBridge.registerRuntimeWorkerAdapters();
-```
-
-## Directory Structure
-
-```text
-src/
-├── plugin-manifest.ts                # PluginManifest definition
-├── common/
-│   ├── index.ts                      # Common public API entry point
-│   ├── config/
-│   │   └── buildConfig.ts            # DEFAULT_ROUTE_BUILD_CONFIG, mergeRouteBuildConfig
-│   ├── datasource/
-│   │   └── ROUTE_DATA_SOURCES.ts     # Data source config array (8 sources)
-│   ├── entities/                     # Entity definitions
-│   ├── i18n/
-│   │   ├── en.ts                     # English translations
-│   │   ├── ja.ts                     # Japanese translations
-│   │   └── types.ts                  # i18n type definitions
-│   ├── orchestrator/
-│   │   ├── RouteBuildOrchestrationService.ts  # High-level build orchestration
-│   │   ├── RouteSourceOrchestrator.ts         # Data source strategy orchestration
-│   │   ├── TaskMapper.ts                      # OD pair → task mapping
-│   │   ├── types.ts                           # Orchestrator types
-│   │   └── strategies/                        # TabularStrategy, GeoJsonStrategy
-│   ├── styles/
-│   │   └── routeStyle.ts             # Route style config, color expressions
-│   ├── tabular/
-│   │   ├── createRouteTabularApi.ts           # Tabular API factory
-│   │   └── RouteTabularMetadataManager.ts     # Tabular metadata manager
-│   ├── types/
-│   │   └── index.ts                  # RouteUpdaterPayload, TagId
-│   └── utils/
-│       └── draft.ts                  # Draft utilities
-├── icon/
-│   └── index.ts                      # RoutePluginIcon (re-export of MUI Route)
-├── services/
-│   ├── LocationResolver.ts           # Location coordinate resolution
-│   ├── RouteBuildManager.ts          # Build session manager (task creation, session lifecycle)
-│   ├── RouteBuildSession.ts          # Build session (3-stage pipeline with lane policy)
-│   ├── RouteBuildSessionOrchestrator.ts  # Session orchestrator (extends BaseBuildSessionManager)
-│   ├── build/
-│   │   └── adapters/                 # Runtime worker adapter registration
-│   ├── config/
-│   │   ├── isFlagEnabled.ts          # Feature flag check
-│   │   └── osrm-defaults.ts          # OSRM engine defaults
-│   ├── engines/
-│   │   ├── OsrmEngine.ts             # OSRM routing engine
-│   │   └── types.ts                  # Engine types
-│   ├── ide-gsm/
-│   │   ├── applyIdeGsmWaypoints.ts   # IDE-GSM waypoint application
-│   │   └── ideGsmCsv.ts             # IDE-GSM CSV import
-│   └── net/
-│       ├── getNetPort.ts             # Network port factory
-│       └── ThrottledPort.ts          # Throttled network port
-├── ui/
-│   ├── index.ts                      # UI entry point (deprecated getDialogComponent)
-│   ├── i18n.ts                       # i18n setup
-│   ├── components/
-│   │   ├── steps-provider.tsx        # PluginStepRegistry registration (5 steps)
-│   │   ├── RouteBuildLaunchForm.tsx   # Build launch form
-│   │   ├── RouteBuildLiveProgress.tsx # Live progress display
-│   │   ├── RouteBuildProgressBar.tsx  # Progress bar
-│   │   ├── RouteBuildSummary.tsx      # Build summary
-│   │   ├── useRouteBuildLaunchForm.ts # Build launch form hook
-│   │   └── steps/
-│   │       ├── RouteBuildStep.tsx     # Build execution step
-│   │       ├── RouteDataSourceStep.tsx # Data source selection
-│   │       ├── RoutePreviewStep.tsx   # Map preview step
-│   │       ├── RouteProcessingStep.tsx # Processing config step
-│   │       └── RouteSelectionStep.tsx  # Country × mode selection
-│   ├── hooks/
-│   │   ├── useRouteBuildCrashInsight.ts  # Build crash insight hook
-│   │   └── useRouteBuildProgress.ts      # Build progress hook
-│   ├── locales/
-│   │   ├── en.json                   # English translations
-│   │   └── ja.json                   # Japanese translations
-│   └── utils/
-│       └── clearRouteDataSourceCache.ts  # Cache clearing
-└── worker/
-    ├── index.ts                      # Worker entry point (getBuildTasks, registerRouteWorkerStores)
-    ├── createRouteFeatureStoreDexie.ts    # Dexie FeatureStore factory
-    ├── createRouteVectorTileStoreDexie.ts # Dexie VectorTileStore factory
-    ├── getBuildTasks.ts              # Build task retrieval from VtTaskQueueDb
-    ├── factory/
-    │   └── index.ts                  # Factory entry (re-export)
-    └── tabular/
-        ├── extractTabularRows.ts              # Tabular row extraction
-        ├── materializeRouteSegmentsFromTabular.ts  # Tabular → RouteSegment conversion
-        ├── progress.ts                        # Progress reporter type
-        └── runRouteTabularBuild.ts            # Tabular build runner
-```
-
-## Export Entry Points
-
-| Path | Contents |
-| --- | --- |
-| `@hierarchidb/route-plugin/common` | Type definitions, PluginManifest, data source definitions, style config, RuntimeBridge |
-| `@hierarchidb/route-plugin/ui` | UI components (step registration, deprecated getDialogComponent) |
-| `@hierarchidb/route-plugin/icon` | RoutePluginIcon |
-| `@hierarchidb/route-plugin/worker` | Worker store registration, getBuildTasks |
-
-## Related Plugins and Packages
-
-### Dependencies
-
-- [`@hierarchidb/plugin-base`](../packages/plugin-base/) — Plugin base (PluginManifest, PluginStepRegistry)
-- [`@hierarchidb/core-types`](../packages/core-types/) — Shared type definitions (NodeId, NodeType, etc.)
-- [`@hierarchidb/route-api`](../packages/route-api/) — Route API type definitions (RouteEntity, RouteBuildConfig, RouteMode)
-- [`@hierarchidb/route-store`](../packages/route-store/) — Route data store (Dexie)
-- [`@hierarchidb/route-engine`](../packages/route-engine/) — Route generation engine (RouteGenerator)
-- [`@hierarchidb/location-api`](../packages/location-api/) — Location API type definitions
-- [`@hierarchidb/location-store`](../packages/location-store/) — Location data store
-- [`@hierarchidb/build-api`](../packages/build-api/) — Build API type definitions and session events
-- [`@hierarchidb/build-runtime-services`](../packages/build-runtime-services/) — Build runtime services (BaseBuildSessionManager, AbstractBuildSession)
-- [`@hierarchidb/runtime-worker`](../packages/runtime-worker/) — Worker runtime (FeatureStore, VectorTileStore)
-- [`@hierarchidb/vt-orchestrator`](../packages/vt-orchestrator/) — Vector tile orchestrator (runStageTasks, VtTaskQueueDb)
-- [`@hierarchidb/tabular-store`](../packages/tabular-store/) — Tabular data store
-- [`@hierarchidb/tabular-source-xlsx`](../packages/tabular-source-xlsx/) — XLSX data source
-- [`@hierarchidb/spreadsheet-plugin`](../plugins/spreadsheet-plugin/) — Tabular Preview coordination
-- [`@hierarchidb/download`](../packages/download/) — Download service (FetchNetworkPort, CORS proxy)
-- [`@hierarchidb/gis-sdk`](../packages/gis-sdk/) — GIS SDK
-- [`@hierarchidb/tree-api`](../packages/tree-api/) — TreeNode type definitions
-- [`@hierarchidb/ui-map`](../packages/ui/map/) — Map UI components
-- [`@hierarchidb/ui-build-progress`](../packages/ui/build-progress/) — Build progress UI
-- [`@hierarchidb/ui-build-sessions`](../packages/ui/build-sessions/) — Build session management UI
-- [`@hierarchidb/ui-country-select`](../packages/ui/country-select/) — Country selection UI
-- [`@hierarchidb/plugin-ui-sdk`](../packages/plugin-ui-sdk/) — Plugin UI SDK
-
-### Related Plugins
-
-- [`shape-plugin`](../plugins/shape-plugin/) — Parent plugin (shared build infrastructure and vector tile pipeline)
-- [`location-plugin`](../plugins/location-plugin/) — Provides origin/destination coordinates
-- [`basemap-plugin`](../plugins/basemap-plugin/) — Base map for map preview
-- [`styler-plugin`](../plugins/styler-plugin/) — Style coordination
-
-## License
-
-MIT
+- 最大座標点数: 1ルートあたり100,000点
+- 最大セグメント長: 1,000km（それ以上は自動分割）
+- ベクタータイルサイズ: 最大500KB/タイル
+- 同時処理ルート数: 1,000ルート
+- ブラウザメモリ制限: 使用可能メモリの80%まで
