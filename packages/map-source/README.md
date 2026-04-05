@@ -1,29 +1,18 @@
-@hierarchidb/map-source
-=======================
+# @hierarchidb/map-source
 
-Shared map data source facade for GeoJSON retrieval from Dexie/IndexedDB. Provides BBox/tile queries behind a port so shape/location/route plugins can share one API.
+Last updated: 2026-04-05
 
-## Directory layout
-```
-MapSourceService.ts  Facade
-ports.ts             MapSourcePort contract
-adapters/            FeatureCollectionGridIndex and other helpers
-index.ts             Public exports
-```
+Map source management package for HierarchiDB. Provides abstraction and management of MapLibre GL JS source definitions (vector tiles, raster, GeoJSON, etc.).
 
-## Key exports
-- `MapSourceService`
-  - `getFeaturesInBBox(bbox, zoom?, filters?)`
-  - `getFeaturesInTile({ z, x, y }, filters?)`
-- `getMetadata()`
-- Port: `MapSourcePort` (pluggable backends).
-- Adapter: `FeatureCollectionGridIndex` (in-memory spatial index helper).
+## Dependencies
 
-## Consumers / usage
-- Used by `@hierarchidb/map-adapter` / `@hierarchidb/ui-map` to render GeoJSON.
-- Plugins (shape, route, basemap) expose their data via a `MapSourcePort` implementation.
+`@hierarchidb/util`
 
-## Notes / roadmap
-- For large datasets, prefer indexed/LOD-aware ports.
-- Coordinates assume GeoJSON EPSG:4326; tile BBox uses simple WebMercator math.
-- DexieShapePort has been removed; implement a MapSourcePort backed by current shape stores.
+## Related Packages
+
+- [`@hierarchidb/map-adapter`](../map-adapter/) — Map adapter (source registration target)
+- [`@hierarchidb/ui-map`](../ui/map/) — Map UI components
+
+## License
+
+MIT

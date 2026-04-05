@@ -1,777 +1,473 @@
-# Location Plugin
+# @hierarchidb/location-plugin
 
-実装サマリ（2025-09-09）
-- nodeType: `location`
-- 定義: `LocationPluginDefinition`（Shape 連携メタ含む）
-- DB: Dexie — `locations`, `locationWorkingCopies`, `locationBuildSessions`, `locationBuildTasks`
-- UI: `LocationDialog` / `LocationPanel` / `SelectionMatrix` / ビルド進捗/プレビュー
-- ビルド: `UnifiedLocationBuildManager` / `LocationBuildSessionManager`
-- 機能: 検索・高度フィルタ・近接検索・ジオコーディング・クラスタ/ヒートマップ表示
-- ランタイムワーカー: `registerLocationRuntimeWorkerAdapters()`（フラグ `LOCATION_RUNTIME_WORKER=1` で有効）
+Last updated: 2026-04-05
 
-## 依存管理とインポート規約（重要）
-共通方針は packages/plugins/CONTRIBUTING.md を参照。要点:
-- peerDependencies: react, react-dom, @mui/material, @mui/icons-material, @emotion/react, @emotion/styled, dexie
-- dependencies: @hierarchidb/util ほか必要に応じて @hierarchidb/features/*
-- devDependencies: typescript/tsup/vitest/@testing-library/*/@types/*
-- import は公開API、型は `import type`、重い処理は dynamic import。
-- tsup external は共通設定で外部化済み。
-地点情報（POI: Points of Interest）の収集、管理、可視化を行うHierarchiDBプラグインです。
-OpenStreetMapやGeoNames等のオープンデータソースから、空港、駅、港、行政センター等の地点データをビルドダウンロードし、地図上で可視化・分析できます。
+A geographic location data management plugin for HierarchiDB. Batch-downloads point-of-interest (POI) data — airports, railway stations, ports, administrative centers, and more — from open data sources such as OpenStreetMap, GeoNames, OurAirports, OpenFlights, and World Port Index, persists them in IndexedDB, and visualizes them on a map. Supports BuildSession-based batch processing, multi-source parallel downloads, and MapLibre-based map preview with clustering and heatmap modes.
 
-## 主要機能
+## Node Type and Inheritance
 
-- 🌍 **マルチソース対応**: 複数のオープンデータソースから地点情報を収集
-- 📍 **多様な地点タイプ**: 空港、鉄道駅、港湾、行政センター、高速道路IC等
-- 🗺️ **インタラクティブ地図表示**: クラスタリング、ヒートマップ、フィルタリング機能
-- 📊 **ビルド処理**: 大量データの並列ダウンロード・処理
-- 🔄 **リアルタイム進捗確認**: ダウンロード状況の可視化
-- 💾 **効率的なデータ管理**: IndexedDBによる永続化とキャッシング
+| Field | Value |
+| --- | --- |
+| nodeType | `location` |
+| extends | `folder` |
+| category | `geographic` (menuGroup: `geo`, createOrder: `40`) |
+| priority | `40` |
 
-### Tabular Preview（データテーブル）
-- ビルド実行後に BuildProgressDialog の「データテーブル」タブで表データを閲覧できます。
-- 機能: 複数条件フィルタ（AND）、表示列の切替、`eq` 条件の索引（初回は遅延作成）。
-- 目的: 取り込みデータの確認・軽量検索。ノード群の一括保存/復元は従来の Import/Export を使用してください。
+location-plugin inherits from folder-plugin and provides POI collection, management, and visualization. Through Shape integration, location points can be linked to shape-plugin features via centroid coordinates.
 
-## 利用可能なオープンデータソース
+## UI Layer
 
-### オープンデータ提供元まとめ（概要）
+### Dialog Steps
 
-| データソース名 | 提供データ内容 | データ量（件数・サイズ：概算） | 利用ライセンス |
-| - | - | - | - |
-| OpenStreetMap (Overpass API) | OSM要素（行政界/道路/鉄道/自然地物 等） | クエリ依存（数千〜数十万件、数MB〜） | ODbL 1.0 |
-| OpenStreetMap (Nominatim) | ジオコーディング結果（名称/緯度経度/境界） | 1リクエスト最大50件（既定） | ODbL 1.0 |
-| GeoNames | 地名辞書（名称/座標/国コード/分類 等） | 全体で約1,100万件（配布1–2GB目安）／APIは最大100件/Req（既定） | CC BY 4.0 |
-| Natural Earth | 行政界/都市/海岸線/河川/湖（ベクター） | レイヤ毎ZIP 5–50MB、都市点約7k件 | Public Domain |
-| OurAirports | 空港一覧（ICAO/IATA/位置/標高 等） | 約70k行、CSV 6–10MB | Public Domain |
-| OpenFlights | 空港データ（名称/都市/国/コード/位置 等） | 約7k空港、~0.6–1MB | ODbL 1.0 |
-| World Port Index | 港湾一覧（名称/国/位置/港規模 等） | 約3.5–4.5k港、5–15MB | Public Domain |
+location-plugin provides a `PluginStepRegistry`-based 3-step wizard (step 1 is provided by the common plugin):
 
-### 主要データソース一覧
+| Step | ID | Component | Description |
+| --- | --- | --- | --- |
+| 1 | `basicInfo` | *(ui-plugin-basic-info)* | Basic info (name / description) — provided by `@hierarchidb/ui-plugin-basic-info` |
+| 2 | `data-source` | `LocationDataSourceStep` | Data source selection (OSM / GeoNames / OurAirports, etc.), IDE-GSM CSV import |
+| 3 | `selection` | `LocationSelectionStep` | Country × location type selection matrix |
+| 4 | `map-preview` | `LocationMapPreviewStep` | Location data map preview (optional) |
 
-| データソース | URL | ライセンス | 地点タイプ | データ項目 | 更新頻度 |
-|------------|-----|----------|----------|-----------|---------|
-| **OpenStreetMap (Overpass API)** | https://overpass-api.de/ | ODbL 1.0 | 全タイプ | name, name:en, name:ja, lat/lon, amenity, aeroway, railway, highway, place | リアルタイム |
-| **GeoNames** | https://www.geonames.org/ | CC BY 4.0 | 全タイプ | name, asciiname, alternatenames, latitude, longitude, feature_class, feature_code, country_code, admin1_code, population, elevation | 日次 |
-| **Natural Earth** | https://www.naturalearthdata.com/ | Public Domain | 行政センター、空港、港 | name, nameascii, latitude, longitude, scalerank, featurecla, adm0name, adm1name | 不定期 |
-| **OurAirports** | https://ourairports.com/data/ | Public Domain | 空港のみ | ident (ICAO/IATA), name, latitude_deg, longitude_deg, elevation_ft, type, municipality, iso_country, iso_region | 週次 |
-| **OpenFlights** | https://openflights.org/data.html | ODbL 1.0 | 空港、駅 | name, city, country, IATA, ICAO, latitude, longitude, altitude, timezone, DST | 不定期 |
-| **World Port Index** | https://msi.nga.mil/Publications/WPI | Public Domain | 港湾のみ | port_name, country, latitude, longitude, harbor_size, harbor_type, shelter, tide_range | 年次 |
+### Components
 
-### OpenStreetMap タグマッピング
+| Component | Description |
+| --- | --- |
+| `LocationDataSourceStep` | Data source selection UI (includes license confirmation) |
+| `LocationSelectionStep` | Country × location type checkbox matrix |
+| `LocationMapPreviewStep` | MapLibre-based location preview (markers, clusters, heatmap) |
+| `LocationBuildParametersStep` | Build parameter configuration |
+| `LocationLicenseStep` | License agreement step |
+| `LocationStyleConfigPanel` | Location display style configuration panel |
+| `BuildProgressDialog` | Build progress dialog |
+| `LocationMapPreview` | Map preview component |
+| `LocationPanel` | Node detail panel |
 
-| 地点タイプ | OSMタグ | 取得データ | 座標精度 |
-|----------|--------|----------|---------|
-| **行政センター** | `place=city`, `place=town`, `capital=yes` | name, name:en, name:ja, population, admin_level | 建物中心点 |
-| **空港** | `aeroway=aerodrome`, `aeroway=terminal` | name, name:en, iata, icao, ele (標高) | 滑走路中心/ターミナル位置 |
-| **鉄道駅** | `railway=station`, `railway=halt` | name, name:en, name:ja, railway:ref, network | プラットフォーム中心 |
-| **港湾** | `harbor=yes`, `seamark:type=harbour` | name, name:en, cargo, passenger, maxdraft | 港湾エリア中心 |
-| **高速道路IC** | `highway=motorway_junction` | name, ref, exit_to, junction:ref | ジャンクション中心点 |
+### Icon
 
-### GeoNames フィーチャーコード
-
-| コード | 説明 | 地点タイプ | 座標データ |
-|-------|------|----------|-----------|
-| **AIRP** | Airport | 空港 | latitude, longitude (小数点6桁精度) |
-| **RSTN** | Railroad Station | 鉄道駅 | latitude, longitude |
-| **PRT** | Port | 港湾 | latitude, longitude |
-| **PPLA** | Seat of first-order admin division | 州都/県庁所在地 | latitude, longitude |
-| **PPLC** | Capital of a political entity | 首都 | latitude, longitude |
-
-## ステップバイステップ設定UI
-
-### Step 1: 基本情報設定
 ```typescript
-interface BasicInfoForm {
-  // 名前と説明
-  name: string;              // 例: "東アジア主要空港"
-  description: string;       // 例: "日本、韓国、中国の国際空港データ"
-  
-  // カテゴリとタグ
-  category: 'transportation' | 'administrative' | 'infrastructure';
-  tags: string[];           // 例: ["airport", "asia", "international"]
+// Entry point: @hierarchidb/location-plugin/icon
+import { LocationPluginIcon } from '@hierarchidb/location-plugin/icon';
+```
+
+| Field | Value |
+| --- | --- |
+| MUI icon | `LocationOn` |
+| Emoji | 📍 |
+| Color | `#a3b030` |
+
+## Worker Layer
+
+### Worker preload
+
+```typescript
+// plugin-manifest.ts
+worker: {
+  preload: ['registerLocationWorkerStores', 'loadLocationEntitiesDbModule'],
 }
 ```
 
-**UIコンポーネント**:
-- TextField: 名前入力（必須、最大100文字）
-- TextField: 説明入力（複数行、最大500文字）
-- Select: カテゴリ選択ドロップダウン
-- Autocomplete: タグ入力（複数選択可、カスタムタグ追加可）
+`registerLocationWorkerStores` registers stores in the Worker environment, and `loadLocationEntitiesDbModule` lazily loads the LocationDB module.
 
-### Step 2: データソース選択
+### FeatureStore
+
+`createLocationFeatureStoreDexie` creates a `FeatureStore<LocationGroupItemData>` backed by `LocationDB`. It provides `list` / `bulkUpsert` / `bulkDelete` operations and assigns Morton key spatial indices.
+
+### Data Normalization
+
+`normalizers.ts` handles Worker-layer data normalization:
+
+- `normalizePeerData` — Normalizes `LocationPeerData` (schemaVersion: 1)
+- `normalizeGroupData` — Normalizes `LocationGroupItemData` (including schemaVersion 1→2 migration)
+- `toGroupRow` / `fromGroupRow` — Converts between `FeatureItemBase` and `LocationFeature`
+
+### Lifecycle
+
+Location data CRUD operations are performed through the CoreDB TreeNode API and LocationDB:
+
+- **Create**: Create TreeNode + store configuration in payload/draft
+- **Build**: Parallel download, filter, and persist via `LocationBuildSession`
+- **Update**: Update TreeNode metadata + update point data in LocationDB
+- **Delete**: Delete TreeNode + clean up point data in LocationDB
+
+## Database Schema
+
+location-plugin uses the Dexie-based `LocationDB` provided by `@hierarchidb/location-store`.
+
+### Main Table (features)
+
 ```typescript
-interface DataSourceSelection {
-  primarySource: 'osm' | 'geonames' | 'naturalearth' | 'ourairports';
-  fallbackSources: string[];  // 代替ソース
-  
-  // ソース固有設定
-  osmConfig?: {
-    overpassEndpoint: string;  // デフォルト: https://overpass-api.de/api/interpreter
-    timeout: number;           // クエリタイムアウト（秒）
-    maxRetries: number;
-  };
-  
-  geonamesConfig?: {
-    username: string;          // GeoNames APIユーザー名
-    maxRows: number;          // 最大取得件数
-  };
+// plugin-manifest.ts — database definition
+database: {
+  dbName: 'location',
+  tableName: 'features',
+  version: 12,
+  schema: {
+    fields: [
+      { name: 'nodeId', indexed: true },
+      { name: 'id', indexed: true },
+      { name: 'type', indexed: true },
+      { name: 'mortonKey', indexed: true },
+      { name: 'updatedAt', indexed: true },
+    ],
+  },
 }
 ```
 
-**UIコンポーネント**:
-- RadioGroup: プライマリソース選択
-- CheckboxList: フォールバックソース選択
-- Accordion: ソース別詳細設定パネル
-- TextField: APIエンドポイント、認証情報
-
-### Step 3: ライセンス確認
-```typescript
-interface LicenseAgreement {
-  acceptedLicenses: {
-    odbl: boolean;           // OpenStreetMap ODbL
-    ccby: boolean;           // Creative Commons BY
-    publicDomain: boolean;   // パブリックドメイン
-  };
-  attributionText: string;   // カスタム帰属表示
-  commercialUse: boolean;    // 商用利用の有無
-}
-```
-
-**UIコンポーネント**:
-- Checkbox: 各ライセンスへの同意
-- Alert: ライセンス条項の要約表示
-- TextField: 帰属表示テキスト
-- Link: 各ライセンスの詳細へのリンク
-
-### Step 4: 処理設定
-```typescript
-interface LocationProcessingOptions {
-  concurrentDownloads: number; // 並列ダウンロード数 (1-8)
-}
-```
-
-**UIコンポーネント**:
-- NumberField: 並列ダウンロード数を入力
-- Switch: ライセンス同意トグルのみ
-
-### Step 5: 地点タイプと地域選択
-
-#### UI操作フロー詳細
-
-**5.1 SelectionMatrixコンポーネントの操作**
-1. **初期表示**: 
-   - 縦軸: 国リスト（アルファベット順、「その他」が最上位）
-   - 横軸: LocationTypeタブ（空港、駅、港、行政、IC）
-   - 全セル未選択状態でロード
-
-2. **ヘッダー操作**:
-   - 国名行クリック → その国の全タイプ選択/解除
-   - タイプ列クリック → 全国のそのタイプ選択/解除
-   - 左上角クリック → 全選択/全解除
-
-3. **セル個別操作**:
-   - チェックボックスクリック → 個別選択/解除
-   - セルホバー → 推定データ数のツールチップ表示
-   - 選択時 → リアルタイムでURL生成と統計更新
-
-4. **検索とフィルタリング**:
-   - 国名検索フィールド → インクリメンタル検索
-   - 大陸別フィルタボタン → 表示する国の絞り込み
-   - 選択済みフィルタ → 選択済み行のみ表示
-
-5. **統計表示**:
-   - 選択数カウンター: "25/280 選択中"
-   - 推定データ量: "約 4,500 地点 (2.3 MB)"
-   - 処理時間予測: "約 3-5 分"
-
-**5.2 LocationTypeタブの詳細機能**
-各タブに専用設定パネル:
+### LocationFeature Record
 
 ```typescript
-interface LocationTypeConfig {
-  airport: {
-    includeHeliports: boolean;     // ヘリポート含む
-    minRunwayLength: number;       // 最小滑走路長(m)
-    activeOnly: boolean;           // 運航中のみ
-    commercialOnly: boolean;       // 商業便のみ
-  };
-  railway_station: {
-    includeMetro: boolean;         // 地下鉄駅含む
-    includeAbandoned: boolean;     // 廃駅含む
-    minPlatforms: number;          // 最小ホーム数
-    intercityOnly: boolean;        // 都市間のみ
-  };
-  port: {
-    includeMarinas: boolean;       // マリーナ含む
-    cargoOnly: boolean;            // 貨物港のみ
-    minDepth: number;              // 最小水深(m)
-    activeOnly: boolean;           // 稼働中のみ
-  };
-  admin_centre: {
-    adminLevels: number[];         // 行政レベル [2,4,6,8]
-    populationMin: number;         // 最小人口
-    capitalOnly: boolean;          // 首都のみ
-    includeHistorical: boolean;    // 過去の首都含む
-  };
-  highway_junction: {
-    interchangeOnly: boolean;      // インターチェンジのみ
-    namedOnly: boolean;            // 名称付きのみ
-    excludeServiceAreas: boolean;  // SA/PA除外
-  };
-}
-```
-
-**UIコンポーネント**:
-- **TabPanel**: タイプ別設定パネル
-- **ConfigSliders**: 数値範囲設定
-- **ToggleSwitches**: ブール設定
-- **MultiSelect**: 複数選択（行政レベルなど）
-```typescript
-interface LocationSelection {
-  // 選択マトリックス (国 × 地点タイプ)
-  selectedArrayByCountries: Record<ISO2, boolean[]>;
-  
-  countries: Array<{
-    code: string;      // ISO 3166-1 alpha-2
-    name: string;      // 英語名
-    localName?: string; // 現地語名
-    continent: string;
-  }>;
-  
-  locationTypes: Array<{
-    id: LocationType;
-    enabled: boolean;
-    filters?: {
-      minSize?: number;        // 最小規模
-      requiredTags?: string[]; // 必須タグ
-    };
-  }>;
-  
-  // 推定データ量
-  estimatedCounts: {
-    [key: string]: number;  // "JPN_airport" => 98
-  };
-}
-```
-
-**UIコンポーネント**:
-- **SelectionMatrix**: カスタムチェックボックスマトリックス
-  - 行: 国リスト（「その他（国際/公海）」を含む）
-  - 列: 地点タイプ（空港、駅、港、行政センター、IC）
-  - ヘッダー: 全選択/全解除ボタン
-  - セル: 個別チェックボックス
-- Chip: 選択統計表示（選択数、推定データ量）
-- SearchField: 国名フィルタ
-- ToggleButtons: 大陸別フィルタ
-
-### Step 6: レビューと確認
-```typescript
-interface ReviewSummary {
-  totalSelections: number;
-  estimatedDataSize: string;    // "約 2.3 MB"
-  estimatedDuration: string;     // "約 5-10 分"
-  
-  breakdown: {
-    byType: Record<LocationType, number>;
-    byCountry: Record<string, number>;
-    bySource: Record<string, number>;
-  };
-  
-  warnings: string[];  // 潜在的な問題の警告
-}
-```
-
-**UIコンポーネント**:
-- SummaryCard: 設定サマリーカード
-- PieChart: タイプ別/国別の内訳円グラフ
-- Timeline: 処理フローの可視化
-- WarningList: 注意事項リスト
-- ActionButtons: 実行/キャンセル/設定保存
-
-## ビルド処理進捗確認ダイアログ
-
-### タブ構成
-
-#### Tab 1: 進捗状況（Progress）
-
-**1.1 リアルタイム進捗表示**
-
-**全体進捗インジケーター**:
-```typescript
-interface OverallProgress {
-  // メイン進捗バー
-  percentage: number;              // 0-100
-  phase: 'download' | 'filter' | 'cluster' | 'index';
-  currentTask: string;             // "日本の空港データをダウンロード中..."
-  
-  // 時間情報
-  startTime: number;
-  timeElapsed: string;             // "00:02:34"
-  timeRemaining: string;           // "約 3 分"
-  estimatedCompletion: string;     // "15:45 完了予定"
-  
-  // スループット
-  itemsPerSecond: number;
-  bytesPerSecond: number;
-  peakThroughput: number;
-}
-```
-
-**ステージ進行ビジュアル**:
-- **Stepper**: ✅ ダウンロード → 🔄 フィルタリング → ⏳ クラスタリング → ⏳ インデックス
-- **各ステージのサブプログレス**: アニメーション付き円形プログレス
-- **並列処理可視化**: 複数の進行バーで同時実行タスクを表示
-
-**アクティブタスクモニター**:
-```typescript
-interface ActiveTaskMonitor {
-  tasks: Array<{
-    id: string;
-    worker: number;              // Worker番号 (1-10)
-    type: 'download' | 'process';
-    target: string;              // "JPN_airport"
-    status: 'running' | 'retrying' | 'failed';
-    progress: number;            // タスク内進捗
-    speed: string;               // "1.2 MB/s" or "45 items/s"
-    eta: string;                 // "30s"
-  }>;
-  
-  // コントロール
-  canPause: boolean;
-  canCancel: boolean;
-  autoRetryEnabled: boolean;
-}
-```
-
-**操作インタラクション**:
-1. **一時停止ボタン**: 
-   - クリック → 現在のタスク完了後に停止
-   - 長押し → 即座に停止
-   - 状態表示: "停止中... (現在のタスクを完了しています)"
-
-2. **再開ボタン**: 
-   - 停止位置から再開
-   - 失敗タスクの自動リトライ設定
-
-3. **キャンセルボタン**:
-   - 確認ダイアログ表示
-   - "処理を中止して結果を破棄しますか？"
-   - 部分的な結果の保存オプション
-
-**4. エラーハンドリング表示**:
-```typescript
-interface ErrorDisplay {
-  retryQueue: Array<{
-    taskId: string;
-    errorType: 'network' | 'timeout' | 'rate_limit' | 'data_format';
-    message: string;
-    retryAttempt: number;
-    maxRetries: number;
-    nextRetryIn: string;         // "30秒後にリトライ"
-  }>;
-  
-  actions: {
-    retryNow: (taskId: string) => void;
-    skipTask: (taskId: string) => void;
-    retryAll: () => void;
-    changeSettings: () => void;  // レート制限の調整など
-  };
-}
-```
-
-#### Tab 1: 進捗状況（Progress）
-```typescript
-interface ProgressView {
-  // 全体進捗
-  overallProgress: {
-    percentage: number;
-    phase: 'download' | 'filter' | 'cluster' | 'index';
-    currentTask: string;
-    timeElapsed: string;
-    timeRemaining: string;
-  };
-  
-  // ステージ別進捗
-  stages: Array<{
-    name: string;
-    status: 'waiting' | 'running' | 'completed' | 'failed';
-    progress: number;
-    itemsProcessed: number;
-    totalItems: number;
-  }>;
-  
-  // アクティブタスク
-  activeTasks: Array<{
-    id: string;
-    type: string;
-    country: string;
-    locationType: string;
-    status: string;
-    progress: number;
-  }>;
-}
-```
-
-**UIコンポーネント**:
-- LinearProgress: 全体進捗バー（パーセンテージ表示）
-- Stepper: ステージ進行状況
-- DataGrid: アクティブタスクテーブル
-- SpeedDial: 一時停止/再開/キャンセルボタン
-- StatCards: 処理済み/残り/失敗数のカード表示
-
-#### Tab 2: ログ（Logs）
-```typescript
-interface LogView {
-  logs: Array<{
-    timestamp: Date;
-    level: 'info' | 'warning' | 'error';
-    source: string;
-    message: string;
-    details?: any;
-  }>;
-  
-  filters: {
-    level: string[];
-    source: string[];
-    search: string;
-  };
-}
-```
-
-**UIコンポーネント**:
-- VirtualizedList: 大量ログの仮想スクロール
-- FilterToolbar: レベル/ソース別フィルタ
-- SearchBar: ログ検索
-- ExportButton: ログエクスポート（CSV/JSON）
-- ClearButton: ログクリア
-
-#### Tab 3: 地図プレビュー（Map Preview）
-
-**3.1 マップ操作とインタラクション**
-
-**表示モード切り替え**:
-```typescript
-interface MapDisplayModes {
-  points: {
-    markerSize: 'small' | 'medium' | 'large';
-    colorBy: 'type' | 'country' | 'source' | 'status';
-    showLabels: boolean;
-    labelThreshold: number;        // ズームレベル閾値
-  };
-  clusters: {
-    algorithm: 'grid' | 'kmeans' | 'supercluster';
-    radius: number;               // ピクセル単位
-    maxZoom: number;              // 最大ズームレベル
-    showClusterLabels: boolean;
-  };
-  heatmap: {
-    intensity: number;            // 0.1 - 2.0
-    radius: number;               // ピクセル単位
-    gradient: string[];           // カラーグラデーション
-    weightBy: 'count' | 'population' | 'capacity';
-  };
-}
-```
-
-**インタラクティブ操作**:
-1. **マーカークリック** → ポップアップで詳細表示
-2. **クラスタークリック** → ズームイン or 構成要素リスト表示
-3. **右クリック** → コンテキストメニュー（座標コピー、Google Maps連携など）
-4. **ドラッグ選択** → 矩形範囲選択（Shift+ドラッグ）
-5. **マウスホバー** → 簡易情報表示
-
-**地図コントロール**:
-- **ズーム**: スライダー + ±ボタン + マウスホイール
-- **視点操作**: 3Dチルト、回転（Alt+ドラッグ）
-- **測定ツール**: 距離/面積測定モード
-- **位置検索**: 地名/座標での移動
-- **ベースマップ切り替え**: OSM/衛星画像/地形図
-
-**統計オーバーレイ**:
-```typescript
-interface MapStatistics {
-  viewport: {
-    visiblePoints: number;
-    totalPoints: number;
-    coverage: string;             // "現在の表示範囲: 日本列島"
-  };
-  density: {
-    pointsPerKm2: number;
-    hotspots: Array<{
-      center: [number, number];
-      density: number;
-      radius: number;
-    }>;
-  };
-  distribution: {
-    byType: Record<LocationType, number>;
-    byCountry: Record<string, number>;
-  };
-}
-```
-
-#### Tab 3: 地図プレビュー（Map Preview）
-```typescript
-interface MapPreviewView {
-  displayMode: 'points' | 'clusters' | 'heatmap';
-  
-  visibleTypes: LocationType[];
-  
-  mapControls: {
-    zoom: number;
-    center: [number, number];
-    bearing: number;
-    pitch: number;
-  };
-  
-  interactionMode: 'pan' | 'select' | 'measure';
-  
-  statistics: {
-    totalPoints: number;
-    visiblePoints: number;
-    clusters: number;
-    density: number;
-  };
-}
-```
-
-**UIコンポーネント**:
-- **MapLibre GL Map**: インタラクティブ地図
-- **表示モード切り替え（ToggleButtonGroup）**:
-  - 📍 Points: 個別マーカー表示
-  - 🔵 Clusters: 自動クラスタリング
-  - 🔥 Heatmap: 密度ヒートマップ
-- **タイプフィルター（Chips）**:
-  - ✈️ Airport: 125（クリックで表示/非表示）
-  - 🚂 Railway: 234（色分け表示）
-  - 🚢 Port: 45（アイコン付き）
-  - 🏛️ Admin: 67
-  - 🛣️ Highway: 89
-- **マップコントロール**:
-  - ZoomSlider: ズームレベル調整
-  - CompassControl: 方位リセット
-  - ScaleBar: 縮尺表示
-  - FullscreenButton: 全画面表示
-- **ポップアップ情報**: クリックで詳細表示
-  ```
-  名称: 成田国際空港
-  Name: Narita International Airport
-  Type: Airport
-  Country: Japan
-  Coordinates: 35.7653, 140.3862
-  IATA: NRT / ICAO: RJAA
-  ```
-
-#### Tab 4: データテーブル（Data Table）
-```typescript
-interface DataTableView {
-  columns: Array<{
-    field: string;
-    header: string;
-    sortable: boolean;
-    filterable: boolean;
-    width?: number;
-  }>;
-  
-  rows: LocationRow[];
-  
-  pagination: {
-    page: number;
-    rowsPerPage: number;
-    total: number;
-  };
-  
-  selection: Set<string>;
-}
-```
-
-**UIコンポーネント**:
-- **AbstractDataGrid**: 仮想スクロール対応テーブル
-- **カラム表示**:
-  - Name（検索可能）
-  - Type（フィルタ可能）
-  - Country（ソート可能）
-  - Coordinates（コピー可能）
-  - Source（データソース）
-  - Downloaded（タイムスタンプ）
-- **ツールバー**:
-  - SearchField: 全文検索
-  - ColumnSelector: 表示カラム選択
-  - ExportMenu: CSV/JSON/Excel出力
-  - DeleteButton: 選択行削除
-- **ページネーション**: 25/50/100/500件表示切り替え
-
-### エラーハンドリングUI
-
-```typescript
-interface ErrorHandling {
-  retryableErrors: Array<{
-    taskId: string;
-    error: string;
-    retryCount: number;
-    maxRetries: number;
-    action: 'retry' | 'skip' | 'abort';
-  }>;
-  
-  criticalErrors: Array<{
-    source: string;
-    message: string;
-    stackTrace?: string;
-    timestamp: Date;
-  }>;
-}
-```
-
-**UIコンポーネント**:
-- ErrorDialog: エラー詳細モーダル
-- RetryQueue: リトライ待機リスト
-- ErrorSummary: エラー統計カード
-- ActionButtons: 一括リトライ/スキップ
-
-## データベーススキーマ
-
-### LocationEntity（メインエンティティ）
-```typescript
-interface LocationEntity {
-  id: EntityId;
+interface LocationFeature {
   nodeId: NodeId;
-  dataSource: string;
-  licenseAgreement: boolean;
-  selectedArrayByCountries: Record<ISO2, boolean[]>;
-  concurrentDownloads: number;
-  buildSessionId?: string;
-  lastProcessedAt?: number;
-  createdAt: number;
+  id: string;
+  type: string;                    // location type (airport, port, etc.)
+  mortonKey?: number;              // spatial index via Morton curve
+  data?: LocationGroupItemData;    // point properties
+  centroidForShapeId?: number;     // linked Shape feature ID
+  centroidForShapeContainerNodeId?: NodeId;  // linked Shape node
   updatedAt: number;
-  version: number;
 }
 ```
 
-### LocationRow（PersistentRelationalEntity）
+### LocationGroupItemData (schemaVersion: 2)
+
 ```typescript
-interface LocationRow {
-  id: EntityId;
-  locationEntityId: EntityId;
-  
-  // 地点情報（必須）
-  name: string;                    // 英語名または最も一般的な名称
-  latitude: number;                 // 緯度（-90 to 90）
-  longitude: number;                // 経度（-180 to 180）
-  locationType: LocationType;      // 地点タイプ
-  countryCode: string;             // ISO 3166-1 alpha-3
-  
-  // 追加名称情報
-  localName?: string;              // 現地語名
-  alternateNames?: string[];       // 別名リスト
-  
-  // 識別子
-  externalIds?: {
-    osmId?: string;                // OpenStreetMap ID
-    geonameId?: number;            // GeoNames ID
-    iataCode?: string;             // IATA空港コード
-    icaoCode?: string;             // ICAO空港コード
-    unLocode?: string;             // UN/LOCODE（港湾）
-    stationCode?: string;          // 駅コード
-  };
-  
-  // 詳細属性
-  properties: {
-    population?: number;           // 人口（行政センター）
-    elevation?: number;            // 標高（メートル）
-    timezone?: string;             // タイムゾーン
-    adminLevel?: number;           // 行政レベル
-    capacity?: number;             // 収容能力
-    openingYear?: number;          // 開業年
-    closedYear?: number;           // 閉鎖年（該当する場合）
-    website?: string;              // 公式ウェブサイト
-    [key: string]: any;            // その他のカスタム属性
-  };
-  
-  // 空間インデックス
-  geohash?: string;                // Geohashによる空間インデックス
-  h3Index?: string;                // H3による六角形インデックス
-  clusterGroup?: string;           // クラスタリンググループID
-  
-  // データ品質
-  accuracy?: 'exact' | 'approximate' | 'estimated';
-  verificationStatus?: 'verified' | 'unverified' | 'disputed';
-  lastVerifiedAt?: number;
-  
-  // ソース情報
-  sourceUrl: string;               // データ取得元URL
-  sourceLicense: string;           // ライセンス
-  downloadedAt: number;            // ダウンロード日時
-  
-  // タイムスタンプ
-  createdAt: number;
-  updatedAt: number;
-  version: number;
+interface LocationGroupItemData {
+  schemaVersion: 2;
+  pointId: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  type: string;
+  admin0Code: string;              // ISO 3166-1 alpha-2
+  admin0?: string;                 // country name
+  admin1?: string;                 // first-level admin division
+  admin2?: string;                 // second-level admin division
+  centroidForShapeId?: number;
+  centroidForShapeContainerNodeId?: NodeId;
+  metadata?: Record<string, string | number | null>;
 }
 ```
 
-## 使用例
+## Plugin Dependencies
 
-### 東アジアの交通拠点データ収集
 ```typescript
-// Step 1: 基本情報
-const basicInfo = {
-  name: "East Asia Transport Hubs",
-  description: "Major airports and railway stations in East Asia",
-  category: "transportation",
-  tags: ["asia", "airport", "railway", "infrastructure"]
-};
-
-// Step 2: データソース
-const dataSource = {
-  primarySource: "osm",
-  fallbackSources: ["geonames"],
-  osmConfig: {
-    overpassEndpoint: "https://overpass-api.de/api/interpreter",
-    timeout: 300,
-    maxRetries: 3
-  }
-};
-
-// Step 3: 地域と種別選択
-const selection = {
-  countries: ["JP", "KR", "CN", "TW"],
-  locationTypes: ["airport", "railway_station"],
-  selectedArrayByCountries: {
-    JP: [true, true],  // Japan: airports & stations
-    KR: [true, false], // Korea: airports only
-    CN: [true, true],  // China: both
-    TW: [false, true]  // Taiwan: stations only
-  }
-};
-
-// Step 4: 処理実行
-const session = await locationPlugin.createBuildSession(
-  nodeId,
-  basicInfo,
-  dataSource,
-  selection,
-  { concurrentDownloads: 2 }
-);
-
-// Step 5: 進捗モニタリング
-locationPlugin.onProgress(session.id, (progress) => {
-  console.log(`Progress: ${progress.percentage}%`);
-  console.log(`Current: ${progress.currentTask}`);
-});
+// PluginManifest
+dependencies: ['folder'],
 ```
 
-## パフォーマンス最適化
+| Plugin | Relationship |
+| --- | --- |
+| `folder` | Required — inherits base node type |
 
-- **並列ダウンロード**: 最大10並列接続
-- **チャンク処理**: 1000件単位でのビルド処理
-- **インクリメンタル更新**: 差分のみダウンロード
-- **空間インデックス**: Geohash/H3による高速空間検索
-- **キャッシング**: IndexedDBによるローカルキャッシュ
+`spreadsheet-plugin` is declared as a peerDependency for Tabular Preview integration. `shape-plugin` is linked via the `centroidForShapeId` / `centroidForShapeContainerNodeId` fields.
 
-## 制限事項
+## Configuration
 
-- 一度のビルドで処理可能な最大地点数: 100,000
-- 地図表示時の最大同時表示数: 10,000（それ以上はクラスタリング必須）
-- APIレート制限: 各データソースの制限に準拠
-- ストレージ容量: ブラウザのIndexedDB制限に依存
+### Capabilities
+
+```typescript
+capabilities: {
+  draft: true,           // draft mode support
+  batch: true,           // batch processing support
+  visualization: true,   // map visualization support
+}
+```
+
+### Data Sources
+
+location-plugin supports 8 data sources:
+
+| Data Source | Display Name | License | Supported Types | Update Frequency |
+| --- | --- | --- | --- | --- |
+| `openstreetmap-overpass` | OpenStreetMap (Overpass API) | ODbL 1.0 | All types | Realtime |
+| `openstreetmap-nominatim` | OpenStreetMap (Nominatim) | ODbL 1.0 | All types | Realtime |
+| `geonames` | GeoNames | CC BY 4.0 | All types | Daily |
+| `natural-earth` | Natural Earth | Public Domain | Admin, airport, port | Irregular |
+| `ourairports` | OurAirports | Public Domain | Airport | Weekly |
+| `openflights` | OpenFlights | ODbL 1.0 | Airport, station | Irregular |
+| `world-port-index` | World Port Index | Public Domain | Port | Yearly |
+| `ide-gsm` | IDE-GSM | IDE-GSM License | All types | Irregular |
+
+### Location Types (LocationType)
+
+| Type | Description | OSM Tag |
+| --- | --- | --- |
+| `airport` | Airport | `aeroway=aerodrome` |
+| `railway_station` | Railway station | `railway=station` |
+| `port` | Port / harbor | `harbour=yes` |
+| `interchange` | Highway interchange | `highway=motorway_junction` |
+| `area_centroid` | Area centroid (fallback) | — |
+
+### i18n
+
+| Field | Value |
+| --- | --- |
+| namespace | `location-plugin` |
+| Locales | `en`, `ja` |
+
+## Batch Processing
+
+location-plugin declares `batch: true` and executes batch processing via `LocationBuildSession` (extends `AbstractBuildSession`).
+
+### Build Flow
+
+```text
+searchConfigs → [parallel batches] → searchLocations → validateAndFilter → persistLocationPoints
+```
+
+1. `LocationBuildManager.startLocationBuildSession(nodeId, config)` starts a session
+2. `LocationBuildSession.processBatch()` splits `searchConfigs` into parallel batches
+3. Each batch executes `searchLocations()` → `validateAndFilterLocations()` → `persistLocationPoints()`
+4. Progress is reported to the UI via `updateProgress()`
+
+### Parallel Downloads
+
+`LocationBuildConfig.processingOptions.concurrent` controls parallelism (default: 1). `FetchNetworkPort` manages per-host concurrency (4) and supports CORS proxy requests.
+
+### Per-Source Search Methods
+
+`LocationBuildSession` preferentially uses strategies registered in `strategyRegistry`, falling back to built-in search methods:
+
+| Method | Data Source | Processing |
+| --- | --- | --- |
+| `searchOSM` | Nominatim | Geocoding search |
+| `searchOverpass` | Overpass API | OSM tag-based spatial search |
+| `searchGeoNames` | GeoNames API | Gazetteer search |
+| `searchOurAirports` | OurAirports CSV | Airport CSV parsing |
+| `searchOpenFlights` | OpenFlights CSV | Airport CSV parsing |
+| `searchWorldPortIndex` | WPI CSV | Port CSV parsing |
+| `searchCustom` | Custom endpoint | User-specified API |
+
+### Country Code Normalization
+
+`normalizeCountryCodes()` uses `@hierarchidb/gen-iso3166-2` ISO 3166 data to normalize alpha-3 / country names → alpha-2.
+
+### Filtering
+
+`validateAndFilterLocations()` filters by:
+
+- `allowedTypes` — Permitted location types
+- `countryCodes` / `countryNames` — Country code / name filter
+- `excludeIds` — Excluded point IDs
+
+### Point Persistence
+
+`pointRepository.ts` provides CRUD operations against LocationDB:
+
+| Function | Description |
+| --- | --- |
+| `appendLocationPoints` | Append to existing data |
+| `replaceLocationPoints` | Replace all data |
+| `replaceLocationPointsChunked` | Replace in chunks (with progress callback) |
+| `listLocationPoints` | Retrieve all points for a node |
+| `deleteLocationPoints` | Delete points by ID |
+| `clearLocationPoints` | Clear all points for a node |
+
+## Map Preview
+
+location-plugin provides a MapLibre GL JS-based map preview for location data.
+
+### Preview Features
+
+- Display location data as markers on the map after build completion
+- Display mode switching: points / clustering / heatmap
+- Filtering by location type (airport, railway station, port, admin center, interchange)
+- Popup with detailed information on marker click
+- Overlay with basemap layers
+
+### Preview Component Structure
+
+```text
+LocationMapPreviewStep
+├── LocationMapPreview           # Main map component
+├── LocationMapPreviewMarkers    # Marker rendering
+├── useLocationMapPreview        # Map state management
+├── useLocationMapPreviewMap     # MapLibre instance management
+├── useLocationMapPreviewMetadata # Metadata loading
+└── useLocationPreviewConfig     # Preview configuration
+```
+
+### Tabular Preview
+
+After a build, location data can be browsed in the "Data Table" tab of the BuildProgressDialog. Supports multi-condition filtering (AND), column visibility toggling, and lazy index creation for `eq` conditions. `LocationTabularMetadataManager` handles tabular metadata management.
+
+## Shape Integration
+
+location-plugin integrates with shape-plugin through the following fields:
+
+- `centroidForShapeId` — Shape feature ID (centroid linkage target)
+- `centroidForShapeContainerNodeId` — Shape container node's NodeId
+
+This integration enables linking location point centroids to Shape administrative region features for geographic analysis.
+
+## Usage Examples
+
+### Referencing the PluginManifest
+
+```typescript
+import { LocationPluginManifest } from '@hierarchidb/location-plugin/common';
+
+console.log(LocationPluginManifest.nodeType); // 'location'
+console.log(LocationPluginManifest.capabilities.batch); // true
+```
+
+### Using LocationPluginIcon
+
+```tsx
+import { LocationPluginIcon } from '@hierarchidb/location-plugin/icon';
+
+<LocationPluginIcon sx={{ color: '#a3b030' }} />
+```
+
+### Referencing Data Source Definitions
+
+```typescript
+import { getLocationDataSource, getLocationDataSourcesByType } from '@hierarchidb/location-plugin/common';
+
+// Look up a specific data source
+const ourAirports = getLocationDataSource('ourairports');
+console.log(ourAirports?.name); // 'OurAirports'
+
+// Find data sources supporting airport type
+const airportSources = getLocationDataSourcesByType('airport');
+console.log(airportSources.length); // multiple sources
+```
+
+## Directory Structure
+
+```text
+src/
+├── plugin-manifest.ts                # PluginManifest definition
+├── locationEntitiesDB.ts             # Re-export of LocationDB from location-store
+├── common/
+│   ├── index.ts                      # Common public API entry point
+│   ├── components/
+│   │   ├── LocationDialog.tsx        # Location dialog component
+│   │   └── LocationPanel.tsx         # Location panel component
+│   ├── datasources/
+│   │   ├── LOCATION_DATA_SOURCES.ts  # Data source config array
+│   │   ├── LocationDataSourceDefinitions.ts  # Data source definitions (8 sources)
+│   │   └── resolveLocationAttribution.ts     # Attribution resolution
+│   ├── entities/
+│   │   ├── LocationEntity.ts         # LocationEntity, LocationBuildConfig types
+│   │   └── LocationPoint.ts          # LocationPointProperties type
+│   ├── hooks/
+│   │   └── useLocationProgress.ts    # Location progress hook
+│   ├── i18n/
+│   │   ├── formatters.ts            # i18n formatters
+│   │   └── index.ts                 # i18n entry
+│   ├── tabular/
+│   │   ├── createLocationTabularApi.ts          # Tabular API factory
+│   │   └── LocationTabularMetadataManager.ts    # Tabular metadata manager
+│   ├── types/
+│   │   ├── entities.ts              # Re-exports from location-api
+│   │   ├── index.ts                 # Type definitions (LocationDraft, UpdateLocationData, etc.)
+│   │   └── payloads.ts             # Payload types
+│   └── utils/
+│       └── isDevEnvironment.ts      # Dev environment detection
+├── icon/
+│   └── index.ts                     # LocationPluginIcon (re-export of MUI LocationOn)
+├── services/
+│   ├── index.ts                     # Service exports (BuildManager, BuildSession, pointRepository)
+│   ├── LocationBuildManager.ts      # Build session manager (extends BaseBuildSessionManager)
+│   ├── LocationBuildSession.ts      # Build session (extends AbstractBuildSession)
+│   ├── pointFactories.ts           # OSM/Overpass point property builders
+│   ├── pointRepository.ts          # Point CRUD operations (append, replace, list, delete, clear)
+│   ├── download/
+│   │   ├── csvSources.ts           # CSV parsers (OurAirports, OpenFlights, WorldPortIndex)
+│   │   ├── csvUtils.ts             # CSV utility functions
+│   │   ├── mappers.ts              # Type/number mappers
+│   │   ├── rawTypes.ts             # Raw API response types
+│   │   ├── strategyRegistry.ts     # Data source strategy registry
+│   │   └── types.ts                # Download types
+│   └── ide-gsm/
+│       └── ideGsmCsv.ts            # IDE-GSM CSV import
+├── ui/
+│   ├── index.ts                     # UI entry point (step registration)
+│   ├── i18n.ts                      # i18n setup
+│   ├── components/
+│   │   ├── steps-provider.tsx       # PluginStepRegistry registration (3 steps)
+│   │   ├── batch/
+│   │   │   ├── BuildProgressDialog.tsx         # Build progress dialog
+│   │   │   ├── LocationMapPreview.tsx          # Map preview component
+│   │   │   ├── LocationMapPreviewMarkers.tsx   # Marker rendering
+│   │   │   ├── locationMapPreviewTypes.ts      # Preview type definitions
+│   │   │   └── useLocationMapPreview.ts        # Map preview hook
+│   │   └── steps/
+│   │       ├── LocationBuildParametersStep.tsx  # Build parameters
+│   │       ├── LocationDataSourceStep.tsx       # Data source selection
+│   │       ├── LocationLicenseStep.tsx          # License agreement
+│   │       ├── LocationMapPreviewStep.tsx       # Map preview step
+│   │       ├── LocationSelectionStep.tsx        # Country × type selection
+│   │       ├── LocationStyleConfigPanel.tsx     # Style configuration
+│   │       └── ... (hooks and utilities)
+│   ├── hooks/
+│   │   └── useIdeGsmImportOnEntry.ts  # IDE-GSM auto-import hook
+│   ├── locales/
+│   │   ├── en.json                  # English translations
+│   │   └── ja.json                  # Japanese translations
+│   ├── state/
+│   │   └── ideGsmProgress.ts        # IDE-GSM progress state
+│   └── utils/
+│       ├── clearLocationDataSourceCache.ts  # Cache clearing
+│       └── ideGsmSelection.ts       # IDE-GSM selection utilities
+└── worker/
+    ├── index.ts                     # Worker entry point
+    ├── locationEntitiesDB.ts        # LocationDB re-export
+    ├── createLocationFeatureStoreDexie.ts  # Dexie FeatureStore factory
+    ├── normalizers.ts               # Data normalization (PeerData, GroupData, Morton key)
+    ├── factory/
+    │   ├── index.ts                 # Factory entry
+    │   └── registerLocationWorkerStores.ts  # Worker store registration
+    └── tabular/
+        ├── extractTabularRows.ts              # Tabular row extraction
+        ├── materializeLocationPointsFromTabular.ts  # Tabular → LocationPoint conversion
+        └── runLocationTabularBuild.ts         # Tabular build runner
+```
+
+## Export Entry Points
+
+| Path | Contents |
+| --- | --- |
+| `@hierarchidb/location-plugin/common` | Type definitions, PluginManifest, data source definitions, attribution |
+| `@hierarchidb/location-plugin/ui` | UI components (step registration, panel) |
+| `@hierarchidb/location-plugin/icon` | LocationPluginIcon |
+| `@hierarchidb/location-plugin/worker` | Worker store registration, LocationDB module loader |
+
+## Related Plugins and Packages
+
+### Dependencies
+
+- [`@hierarchidb/plugin-base`](../packages/plugin-base/) — Plugin base (PluginManifest, PluginStepRegistry)
+- [`@hierarchidb/core-types`](../packages/core-types/) — Shared type definitions (NodeId, NodeType, ISO2, etc.)
+- [`@hierarchidb/folder-plugin`](../plugins/folder-plugin/) — Base node type (inherited)
+- [`@hierarchidb/location-store`](../packages/location-store/) — Location data store (Dexie)
+- [`@hierarchidb/location-api`](../packages/location-api/) — Location API type definitions
+- [`@hierarchidb/build-api`](../packages/build-api/) — Build API type definitions and session events
+- [`@hierarchidb/build-runtime-services`](../packages/build-runtime-services/) — Build runtime services (BaseBuildSessionManager, AbstractBuildSession)
+- [`@hierarchidb/runtime-worker`](../packages/runtime-worker/) — Worker runtime (FeatureStore)
+- [`@hierarchidb/worker-api`](../packages/worker-api/) — Worker API
+- [`@hierarchidb/tabular-store`](../packages/tabular-store/) — Tabular data store
+- [`@hierarchidb/tabular-source`](../packages/tabular-source/) — Tabular data source
+- [`@hierarchidb/tabular-source-xlsx`](../packages/tabular-source-xlsx/) — XLSX data source
+- [`@hierarchidb/gen-iso3166-2`](../packages/tools/gen-iso3166-2/) — ISO 3166-2 code generation and country code normalization
+- [`@hierarchidb/download`](../packages/download/) — Download service (FetchNetworkPort, CORS proxy)
+- [`@hierarchidb/gis-sdk`](../packages/gis-sdk/) — GIS SDK
+- [`@hierarchidb/tree-api`](../packages/tree-api/) — TreeNode type definitions
+- [`@hierarchidb/ui-map`](../packages/ui/map/) — Map UI components
+- [`@hierarchidb/ui-build-progress`](../packages/ui/build-progress/) — Build progress UI
+- [`@hierarchidb/ui-build-sessions`](../packages/ui/build-sessions/) — Build session management UI
+- [`@hierarchidb/ui-country-select`](../packages/ui/country-select/) — Country selection UI
+- [`@hierarchidb/ui-tabular`](../packages/ui/tabular-extract/) — Tabular data extraction UI
+- [`@hierarchidb/plugin-ui-sdk`](../packages/plugin-ui-sdk/) — Plugin UI SDK
+
+### Related Plugins
+
+- [`shape-plugin`](../plugins/shape-plugin/) — Shape data integration (centroidForShapeId linkage)
+- [`basemap-plugin`](../plugins/basemap-plugin/) — Basemap for map preview
+- [`spreadsheet-plugin`](../plugins/spreadsheet-plugin/) — Tabular Preview integration
+- [`route-plugin`](../plugins/route-plugin/) — Route generation (location data integration)
+
+## License
+
+MIT

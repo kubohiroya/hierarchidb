@@ -1,6 +1,9 @@
 # @hierarchidb/ui-datasource
 
-Shared data source selection components (planned) for Shape/Location/Route dialogs.
+Last updated: 2026-04-05
 
-## Status
-- WIP placeholder; will provide reusable selectors and type-safe configs for data sources.
+Shared data source selection components for HierarchiDB (WIP).
+
+## License
+
+MIT

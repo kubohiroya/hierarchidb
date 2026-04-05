@@ -1,37 +1,28 @@
 # @hierarchidb/build-session-ports
 
-Layer-0 contract package for cross-plugin batch/session orchestration.
+Last updated: 2026-04-05
 
-This package contains only types and interfaces. It does not contain runtime implementations
-such as Dexie access, Comlink transport, worker startup logic, or UI behavior.
+Port (interface) definitions for HierarchiDB build sessions. Provides abstract ports for build session control, artifact storage, task registry, and stage controls. Corresponds to the port layer in Hexagonal Architecture.
 
-## Why this package exists
+## Key Ports
 
-Shape/Route/Location build flows share the same orchestration concepts:
+| Port | Description |
+| --- | --- |
+| `BuildSessionControlPort` | Session start, pause, resume, and subscription |
+| `ArtifactStorePort` | Inter-stage artifact (buffer) persistence and retrieval |
+| `TaskRegistryPort` | Task registration, per-stage resolution, and input loading |
+| `StageControls` | Stage execution control interface |
+| `ProgressInfoBase` | Base type for progress information |
 
-- stage controls (`start`, `pause`, `resume`, `cancel` queued)
-- task registry abstraction
-- artifact storage abstraction
-- minimal progress shape
-- build-session control contract (subscribe/build/next stage controls)
+## Dependencies
 
-Keeping these contracts in one package prevents each plugin from redefining similar types.
+`@hierarchidb/core-types` only.
 
-## Exported contracts
+## Related Packages
 
-- `StageControls`
-- `TaskRegistryPort`
-- `ArtifactStorePort`
-- `ProgressInfoBase`
-- `BuildSessionControlPort` and related session-state types
+- [`@hierarchidb/build`](../build/) — Build foundation that uses these ports
+- [`@hierarchidb/build-api`](../build-api/) — Event type definitions
 
-## Boundaries
+## License
 
-- Allowed dependencies: foundational types only (for example `@hierarchidb/core-types`)
-- Forbidden in this package:
-  - database implementations
-  - worker lifecycle orchestration implementations
-  - plugin-specific business rules
-
-For runtime behavior and state-transition specification, refer to:
-`packages/runtime-worker/docs/build-session-orchestrator-state-transitions.md`
+MIT

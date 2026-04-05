@@ -1,25 +1,18 @@
-@hierarchidb/tag
-=================
+# @hierarchidb/tag
 
-Reusable tagging capability. Centralizes tag CRUD and node–tag associations behind a facade + DB port so any node type can opt in.
+Last updated: 2026-04-05
 
-## Directory layout
-```
-TagService.ts   Facade implementing TagAPI
-ports.ts        TagDBPort contract
-capability.ts   register/isTaggable helpers
-index.ts        Public exports
-```
+Tag management package for HierarchiDB. Provides tag CRUD operations, tag suggestion, and tagged node search.
 
-## Key exports
-- `TagService` — `create/get/update/delete` tags; `addTagToNode/removeTagFromNode/getTagsForNode/getNodesForTag`.
-- Port: `TagDBPort` for persistence.
-- Capability: `registerTaggable`, `isTaggable`.
+## Dependencies
 
-## Consumers / usage
-- Worker runtime wires `TagService` to CoreDB/Dexie; UI uses TagAPI from `@hierarchidb/tag-api`.
-- Plugins toggle tag UI via `registerTaggable(nodeType)` instead of hardcoding.
+`@hierarchidb/core-types`, `@hierarchidb/tag-api`, `@hierarchidb/util`
 
-## Notes / roadmap
-- API frozen to TagAPI v0.1; no server sync yet.
-- Future: auto-tag processors, batch helpers, optional remote store port.
+## Related Packages
+
+- [`@hierarchidb/tag-api`](../tag-api/) — Tag API type definitions
+- [`@hierarchidb/core-types`](../core-types/) — Shared type definitions
+
+## License
+
+MIT

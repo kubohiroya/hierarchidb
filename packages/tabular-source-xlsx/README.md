@@ -1,20 +1,23 @@
-@hierarchidb/tabular-source-xlsx
-===============================
+# @hierarchidb/tabular-source-xlsx
 
-Optional XLSX parser for `@hierarchidb/tabular-source`. Keeps Excel support out of the core bundle unless installed.
+Last updated: 2026-04-05
 
-## How it works
-- Depends on `xlsx`.
-- `installTabularXlsx()` registers an XLSX parser in the tabular registry.
-- Runtime-worker attempts dynamic import; if present, Excel parsing is enabled.
+XLSX (Excel) data source extension for HierarchiDB. Adds an XLSX parser to the `tabular-source` parser registry. Call `installTabularXlsx()` to enable XLSX file ingestion.
 
-## Usage
-```ts
-import { installTabularXlsx } from '@hierarchidb/tabular-source-xlsx';
-installTabularXlsx(); // once at startup
-```
+## Key Features
 
-## Notes / roadmap
-- Reads the first worksheet, yields row-oriented chunks.
-- For very large XLSX, consider converting to CSV for performance.
-- Future: sheet selection, better date/number inference.
+- `installTabularXlsx()` — Register the XLSX parser (run once)
+- `isTabularXlsxInstalled()` — Check if already registered
+
+## Dependencies
+
+`@hierarchidb/tabular-source`, `@hierarchidb/tabular-store`
+
+## Related Packages
+
+- [`@hierarchidb/tabular-source`](../tabular-source/) — Parser registry (registration target)
+- [`@hierarchidb/tabular-store`](../tabular-store/) — Tabular data store
+
+## License
+
+MIT
