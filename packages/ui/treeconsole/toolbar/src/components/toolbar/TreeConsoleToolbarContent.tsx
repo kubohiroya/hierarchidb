@@ -7,6 +7,10 @@ import { TreeTableSearchInput } from '@hierarchidb/components';
 import type { SearchStrings } from './SearchOnlyToolbar.js';
 import { SettingsMenu } from './SettingsMenu.js';
 import { ArchiveMenu } from './ArchiveMenu.js';
+import { SortModeSelector } from './SortModeSelector.js';
+import type { SortMode } from './SortModeSelector.js';
+import { ViewModeSelector } from './ViewModeSelector.js';
+import type { ViewMode } from './ViewModeSelector.js';
 import { useTreeConsoleToolbarContent } from './useTreeConsoleToolbarContent.js';
 
 const TreeConsoleToolbarContainer = styled(Box)(() => ({
@@ -39,6 +43,10 @@ interface TreeConsoleToolbarContentProps {
   canRemove?: boolean;
   developerModeEnabled: boolean;
   searchStrings: SearchStrings;
+  viewMode?: ViewMode;
+  onViewModeChange?: (mode: ViewMode) => void;
+  sortMode?: SortMode;
+  onSortModeChange?: (mode: SortMode) => void;
 }
 
 export function TreeConsoleToolbarContent({
@@ -62,6 +70,10 @@ export function TreeConsoleToolbarContent({
   canArchive,
   canRemove,
   searchStrings,
+  viewMode = 'list',
+  onViewModeChange,
+  sortMode = 'none',
+  onSortModeChange,
 }: TreeConsoleToolbarContentProps) {
   const {
     portalContainer,
@@ -118,11 +130,17 @@ export function TreeConsoleToolbarContent({
         onClose={() => setArchiveAnchorEl(null)}
         onRestore={archiveMenuHandlers.onRestore}
         onEmpty={archiveMenuHandlers.onEmpty}
-            restoreLabel={labels.restoreLabel}
-            emptyLabel={labels.emptyLabel}
+        restoreLabel={labels.restoreLabel}
+        emptyLabel={labels.emptyLabel}
       />
 
       <Box sx={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
+        {onSortModeChange && (
+          <SortModeSelector value={sortMode} onChange={onSortModeChange} />
+        )}
+        {onViewModeChange && (
+          <ViewModeSelector value={viewMode} onChange={onViewModeChange} />
+        )}
         <SettingsMenu
           rowClickAction={rowClickAction}
           onRowClickActionChange={onRowClickActionChange}

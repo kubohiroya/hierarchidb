@@ -59,4 +59,9 @@ export interface TreeConsoleFooterProps {
    * Position variant
    */
   position?: 'relative' | 'absolute' | 'fixed';
+
+  /**
+   * Optional slot rendered on the right side of the footer (e.g. zoom slider).
+   */
+  rightSlot?: React.ReactNode;
 }

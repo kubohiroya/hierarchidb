@@ -35,10 +35,10 @@ vi.mock('@hierarchidb/ui-treeconsole-treetable', () => ({
   TreeTableCore: () => React.createElement('div', { 'data-testid': 'console-table-core' }),
 }));
 
-const noop = () => {};
-const stringNoop = (_value: string) => {};
-const viewModeNoop = (_mode: 'list' | 'grid') => {};
-const contextMenuNoop = (_action: string, _node: HierarchicalTreeNode) => {};
+const noop = () => { };
+const stringNoop = (_value: string) => { };
+const viewModeNoop = (_mode: 'icon' | 'list' | 'column') => { };
+const contextMenuNoop = (_action: string, _node: HierarchicalTreeNode) => { };
 
 const baseColumns: TreeTableColumn[] = [
   { id: 'name', label: 'Name', width: 120 },

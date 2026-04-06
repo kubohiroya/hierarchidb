@@ -1,5 +1,6 @@
 import type { DialogUIState } from './dialog-state.js';
 import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
+import type { ViewProperties } from './view-properties-types.js';
 
 /**
  * Regular node type constants for _obsolate_common node types
@@ -101,11 +102,16 @@ export type TreeNode<TData extends NodePayload | null = NodePayload | null> = No
   map?: {
     zxy: string;
   };
+  /**
+   * Optional view-related settings (viewMode, sortMode, zoomLevel, iconPosition).
+   * Persisted per-node; absent means the UI layer applies defaults.
+   */
+  viewProperties?: ViewProperties;
 };
 
 export interface TreeNodeWithChildren<TData extends NodePayload | null = NodePayload | null>
   extends TreeNode<TData>,
-    DescendantProperties {
+  DescendantProperties {
   children?: NodeId[];
 }
 

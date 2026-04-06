@@ -6,9 +6,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     pool: 'threads',
-    poolOptions: {
-      threads: { singleThread: true },
-    },
+    maxWorkers: 1,
     setupFiles: ['./vitest.setup.ts'],
     coverage: {
       provider: 'v8',

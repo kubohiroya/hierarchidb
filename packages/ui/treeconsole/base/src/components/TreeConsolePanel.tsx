@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { Box, Typography } from '@mui/material';
 import type { TreeTableColumn } from './TreeTable/index.js';
 // RowContextMenu removed: right-click is disabled app-wide
@@ -14,6 +14,11 @@ import type { DualKeyMap } from '@hierarchidb/util';
 import type { PanelBreadcrumbNode } from '~/hooks/useTreeConsolePanel';
 import { useTreeConsolePanel } from '~/hooks/useTreeConsolePanel';
 import { TagsLinkButton } from './TagsLinkButton.js';
+import type { ViewMode, SortMode } from '~/types/view-mode-types';
+import { IconView } from './IconView.js';
+import { ColumnView } from './ColumnView.js';
+import { useColumnView } from '~/hooks/useColumnView.js';
+import { createSortComparator } from '~/utils/sort-comparator.js';
 
 export type TreeConsoleBreadcrumbRendererProps = BreadcrumbRendererProps;
 
@@ -50,8 +55,13 @@ export interface TreeConsolePanelProps {
   readonly sortDirection?: 'asc' | 'desc';
   readonly filterBy?: string;
   readonly availableFilters: readonly string[];
-  readonly viewMode: 'list' | 'grid';
-  readonly canCreate: boolean;
+  readonly viewMode: ViewMode;
+  readonly sortMode?: SortMode;
+  readonly zoomLevel?: number;
+  readonly onViewModeChange: (mode: ViewMode) => void;
+  readonly onSortModeChange?: (mode: SortMode) => void;
+  readonly onZoomLevelChange?: (zoom: number) => void;
+  readonly onIconPositionChange?: (nodeId: NodeId, position: { x: number; y: number }) => void; readonly canCreate: boolean;
   readonly canEdit: boolean;
   readonly canArchive: boolean;
   readonly showNavigationButtons?: boolean;
@@ -70,7 +80,6 @@ export interface TreeConsolePanelProps {
   readonly onCollapseAll: () => void;
   readonly onSort: (columnId: string) => void;
   readonly onFilterChange: (filter: string) => void;
-  readonly onViewModeChange: (mode: 'list' | 'grid') => void;
   readonly onBreadcrumbNavigate: (nodeId: string, node?: PanelBreadcrumbNode) => void;
   readonly onNavigateBack?: () => void;
   readonly onNavigateForward?: () => void;
@@ -250,22 +259,37 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
           }}
           data-tour-id="tree-table"
         >
-          <TreeTableCore
-            controller={controller}
-            viewWidth={1200}
-            treeId={props.treeId}
-            pageNodeId={props.pageNodeId}
-            selectAllPersistence={props.selectAllPersistence}
-            selectionIdPrefix={props.selectAllIdPrefix}
-            buildSessionIndicator={props.buildSessionIndicator}
-            useArchiveColumns={props.useArchiveColumns ?? false}
-            archiveAction={props.archiveAction}
-            depthOffset={controller.depthOffset ?? 0}
-            disableDragAndDrop={false}
-            hideDragHandler={props.hideDragHandler ?? false}
-            rowClickAction={props.rowClickAction ?? 'Select/Navigate'}
-            selectionMode="multiple"
-          />
+          {props.viewMode === 'icon' ? (
+            <IconView
+              nodes={controller.data ?? []}
+              zoomLevel={props.zoomLevel ?? 50}
+              sortMode={props.sortMode ?? 'none'}
+              onIconPositionChange={props.onIconPositionChange ?? (() => { })}
+              onNodeClick={controller.onNodeClick ? (nodeId) => controller.onNodeClick?.(nodeId) : undefined}
+            />
+          ) : props.viewMode === 'column' ? (
+            <ColumnViewWrapper
+              controller={controller}
+              onNodeClick={controller.onNodeClick}
+            />
+          ) : (
+            <TreeTableCore
+              controller={controller}
+              viewWidth={1200}
+              treeId={props.treeId}
+              pageNodeId={props.pageNodeId}
+              selectAllPersistence={props.selectAllPersistence}
+              selectionIdPrefix={props.selectAllIdPrefix}
+              buildSessionIndicator={props.buildSessionIndicator}
+              useArchiveColumns={props.useArchiveColumns ?? false}
+              archiveAction={props.archiveAction}
+              depthOffset={controller.depthOffset ?? 0}
+              disableDragAndDrop={false}
+              hideDragHandler={props.hideDragHandler ?? false}
+              rowClickAction={props.rowClickAction ?? 'Select/Navigate'}
+              selectionMode="multiple"
+            />
+          )}
         </Box>
       )}
 
@@ -292,3 +316,55 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     </Box>
   );
 });
+
+// -- ColumnView wrapper that manages useColumnView hook --
+
+import type { TreeTableController, TreeNodeInUI } from '@hierarchidb/ui-treeconsole-treetable';
+import { useCallback } from 'react';
+
+interface ColumnViewWrapperProps {
+  controller: TreeTableController;
+  onNodeClick?: (nodeId: string, node?: TreeNodeInUI) => void;
+}
+
+function ColumnViewWrapper({ controller, onNodeClick }: ColumnViewWrapperProps) {
+  const rootNodes = controller.data ?? [];
+
+  const getChildren = useCallback(
+    (nodeId: NodeId): TreeNodeInUI[] => {
+      const allNodes = controller.data ?? [];
+      return allNodes.filter((n) => n.parentId === nodeId);
+    },
+    [controller.data],
+  );
+
+  const hasChildren = useCallback(
+    (nodeId: NodeId): boolean => {
+      const allNodes = controller.data ?? [];
+      return allNodes.some((n) => n.parentId === nodeId);
+    },
+    [controller.data],
+  );
+
+  const columnApi = useColumnView({ getChildren, hasChildren });
+
+  const handleSelectNode = useCallback(
+    (nodeId: NodeId) => {
+      columnApi.selectNode(nodeId);
+      const node = (controller.data ?? []).find((n) => n.id === nodeId);
+      if (onNodeClick && node) {
+        onNodeClick(nodeId, node);
+      }
+    },
+    [columnApi, controller.data, onNodeClick],
+  );
+
+  return (
+    <ColumnView
+      rootNodes={rootNodes}
+      columnState={{ expandedPath: columnApi.columnPath, selectedNodeId: columnApi.selectedNodeId }}
+      onSelectNode={handleSelectNode}
+      getChildren={getChildren}
+    />
+  );
+}

@@ -3,6 +3,7 @@ import type { OnNameConflict } from './command-types.js';
 import type { CommitResult } from './commit-types.js';
 import type { DialogUIState } from './dialog-state.js';
 import type { TreeNode, TreeNodeMetadata } from './NODE_TYPES.js';
+import type { ViewProperties } from './view-properties-types.js';
 
 /**
  * Tree node updater API (formerly DraftAPI).
@@ -45,6 +46,12 @@ export interface TreeNodeUpdaterAPI<T> {
   validateDraft(nodeId: NodeId): Promise<ValidationResult>;
 
   hasUnsavedChanges(nodeId: NodeId): Promise<boolean>;
+
+  /**
+   * Persist view-related properties (viewMode, sortMode, zoomLevel, iconPosition)
+   * directly on the committed node without going through the draft workflow.
+   */
+  updateViewProperties(nodeId: NodeId, viewProperties: ViewProperties): Promise<void>;
 }
 
 export type CommitDraftMode = 'save-draft' | 'save';

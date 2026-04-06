@@ -1,6 +1,6 @@
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { OnNameConflict, TreeNodeEvent } from '@hierarchidb/tree-api';
+import type { OnNameConflict, TreeNodeEvent, ViewProperties } from '@hierarchidb/tree-api';
 import { TreeMutationCommandsAdapter } from './commands/TreeMutationCommands.js';
 import { DraftCommandsAdapter, type DraftEditSession } from './commands/DraftCommands.js';
 import { SubscriptionManager } from './subscriptions/SubscriptionManager.js';
@@ -166,6 +166,15 @@ export class WorkerAPIAdapter<T> {
   ): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.draftAdapter.discardDraft(editSession, options);
+  }
+
+  // =====================
+  // View Properties
+  // =====================
+
+  async updateViewProperties(nodeId: NodeId, viewProperties: ViewProperties): Promise<void> {
+    const updaterAPI = await this.workerAPI.getTreeNodeUpdaterAPI();
+    await updaterAPI.updateViewProperties(nodeId, viewProperties);
   }
 
   // =====================

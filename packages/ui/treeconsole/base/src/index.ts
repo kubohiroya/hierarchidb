@@ -12,7 +12,7 @@ export type {
   TreeTableToolbarProps,
   TreeTableFooterProps,
   RowContextMenuProps,
-  
+
 } from './components/TreeTable/index.js';
 
 // Types
@@ -28,3 +28,14 @@ export type {
   LoadingState,
   ErrorState,
 } from './types/index.js';
+
+// View mode types
+export type { ViewMode, SortMode, IconPosition, ViewProperties } from './types/view-mode-types.js';
+export { VIEW_MODE_DEFAULTS } from './types/view-mode-types.js';
+
+// View mode state
+export { viewModeAtomFamily, sortModeAtomFamily, zoomLevelAtomFamily } from './state/view-mode-atoms.js';
+
+// View mode sync hook
+export { useViewModeSync } from './hooks/useViewModeSync.js';
+export type { UseViewModeSyncArgs } from './hooks/useViewModeSync.js';

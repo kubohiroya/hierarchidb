@@ -34,11 +34,11 @@ vi.mock('@hierarchidb/ui-treeconsole-treetable', () => {
   };
 });
 
-const noop = () => {};
-const stringNoop = (_value: string) => {};
-const viewModeNoop = (_mode: 'list' | 'grid') => {};
-const contextMenuNoop = (_action: string, _node: HierarchicalTreeNode) => {};
-const moveNodesNoop = async (_nodeIds: string[], _targetParentId: string) => {};
+const noop = () => { };
+const stringNoop = (_value: string) => { };
+const viewModeNoop = (_mode: 'icon' | 'list' | 'column') => { };
+const contextMenuNoop = (_action: string, _node: HierarchicalTreeNode) => { };
+const moveNodesNoop = async (_nodeIds: string[], _targetParentId: string) => { };
 
 const baseColumns: TreeTableColumn[] = [
   { id: 'name', label: 'Name', width: 120 },

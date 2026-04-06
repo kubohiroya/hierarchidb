@@ -9,12 +9,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
     pool: 'threads',
-    poolOptions: {
-      threads: {
-        minThreads: 1,
-        maxThreads: 1,
-      },
-    },
+    maxWorkers: 1,
+    minWorkers: 1,
   },
   resolve: {
     alias: {

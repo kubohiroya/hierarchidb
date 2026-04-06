@@ -165,6 +165,18 @@ export interface TreeTableCoreProps {
   onRowClick?: (node: TreeNodeInUI, event: MouseEvent) => void;
   onRowDoubleClick?: (node: TreeNodeInUI, event: MouseEvent) => void;
   onRowContextMenu?: (node: TreeNodeInUI, event: MouseEvent) => void;
+
+  /**
+   * External sort mode from the toolbar SortModeSelector.
+   * When set, overrides the internal TanStack Table sorting state.
+   * Only 'name', 'created', 'modified' map to table columns; others are no-ops.
+   */
+  sortMode?: import('@hierarchidb/tree-api').SortMode;
+  /**
+   * Called when the user clicks a column header to sort, so the external
+   * sortMode atom can be updated (SSOT integration).
+   */
+  onSortModeChange?: (mode: import('@hierarchidb/tree-api').SortMode) => void;
 }
 
 export type BuildSessionIndicator = {
