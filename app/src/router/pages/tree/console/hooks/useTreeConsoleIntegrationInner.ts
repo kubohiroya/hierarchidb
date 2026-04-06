@@ -312,9 +312,29 @@ export function useTreeConsoleIntegrationInner({
     searchTerm,
     selectedCount: selectedIds.length,
     viewMode,
-    onViewModeChange: actions.handleViewModeChange,
+    onViewModeChange: (mode: import('@hierarchidb/ui-treeconsole-base').ViewMode) => {
+      console.debug('[TreeConsole] viewMode changed via toolbar:', mode);
+      actions.handleViewModeChange(mode);
+      void navigate({
+        search: (prev: Record<string, unknown>) => ({
+          ...prev,
+          view: mode === 'list' ? undefined : mode,
+        }),
+        replace: true,
+      });
+    },
     sortMode,
-    onSortModeChange: actions.handleSortModeChange,
+    onSortModeChange: (mode: import('@hierarchidb/ui-treeconsole-base').SortMode) => {
+      console.debug('[TreeConsole] sortMode changed via toolbar:', mode);
+      actions.handleSortModeChange(mode);
+      void navigate({
+        search: (prev: Record<string, unknown>) => ({
+          ...prev,
+          sort: mode === 'none' ? undefined : mode,
+        }),
+        replace: true,
+      });
+    },
   });
 
   const shouldRenderTreeTable =

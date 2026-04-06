@@ -228,22 +228,39 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
             }}
             data-tour-id="tree-table"
           >
-            <TreeTableCore
-              controller={controller}
-              viewWidth={1200}
-              treeId={props.treeId}
-              pageNodeId={props.pageNodeId}
-              selectAllPersistence={props.selectAllPersistence}
-              selectionIdPrefix={props.selectAllIdPrefix}
-              buildSessionIndicator={props.buildSessionIndicator}
-              useArchiveColumns={props.useArchiveColumns ?? false}
-              archiveAction={props.archiveAction}
-              depthOffset={controller.depthOffset ?? 0}
-              disableDragAndDrop={false}
-              hideDragHandler={props.hideDragHandler ?? false}
-              rowClickAction={props.rowClickAction ?? 'Select/Navigate'}
-              selectionMode="multiple"
-            />
+            {props.viewMode === 'icon' ? (
+              <IconView
+                nodes={controller.data ?? []}
+                zoomLevel={props.zoomLevel ?? 50}
+                sortMode={props.sortMode ?? 'none'}
+                onIconPositionChange={props.onIconPositionChange ?? (() => { })}
+                onNodeClick={controller.onNodeClick ? (nodeId) => controller.onNodeClick?.(nodeId) : undefined}
+              />
+            ) : props.viewMode === 'column' ? (
+              <ColumnViewWrapper
+                controller={controller}
+                onNodeClick={controller.onNodeClick}
+              />
+            ) : (
+              <TreeTableCore
+                controller={controller}
+                viewWidth={1200}
+                treeId={props.treeId}
+                pageNodeId={props.pageNodeId}
+                selectAllPersistence={props.selectAllPersistence}
+                selectionIdPrefix={props.selectAllIdPrefix}
+                buildSessionIndicator={props.buildSessionIndicator}
+                useArchiveColumns={props.useArchiveColumns ?? false}
+                archiveAction={props.archiveAction}
+                depthOffset={controller.depthOffset ?? 0}
+                disableDragAndDrop={false}
+                hideDragHandler={props.hideDragHandler ?? false}
+                rowClickAction={props.rowClickAction ?? 'Select/Navigate'}
+                selectionMode="multiple"
+                sortMode={props.sortMode}
+                onSortModeChange={props.onSortModeChange}
+              />
+            )}
           </Box>
         </Box>
       ) : (
@@ -288,6 +305,8 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
               hideDragHandler={props.hideDragHandler ?? false}
               rowClickAction={props.rowClickAction ?? 'Select/Navigate'}
               selectionMode="multiple"
+              sortMode={props.sortMode}
+              onSortModeChange={props.onSortModeChange}
             />
           )}
         </Box>
