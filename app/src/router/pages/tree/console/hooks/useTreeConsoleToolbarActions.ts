@@ -80,6 +80,10 @@ export function useTreeConsoleToolbarActions({
   requestEdit,
   searchTerm,
   selectedCount,
+  viewMode,
+  onViewModeChange,
+  sortMode,
+  onSortModeChange,
 }: {
   treeId?: string;
   pageNodeId?: NodeId;
@@ -94,6 +98,10 @@ export function useTreeConsoleToolbarActions({
   requestEdit: (targetNodeId?: NodeId, nodeHint?: HierarchicalTreeNode | TreeNode) => Promise<void>;
   searchTerm: string;
   selectedCount: number;
+  viewMode?: import('@hierarchidb/ui-treeconsole-base').ViewMode;
+  onViewModeChange?: (mode: import('@hierarchidb/ui-treeconsole-base').ViewMode) => void;
+  sortMode?: import('@hierarchidb/ui-treeconsole-base').SortMode;
+  onSortModeChange?: (mode: import('@hierarchidb/ui-treeconsole-base').SortMode) => void;
 }): ToolbarControllerResult {
   const [rowClickAction, setRowClickAction] = useState<'Select/Navigate' | 'Edit'>(() => {
     const stored = loadTreeConsoleSettings().rowClickAction;
@@ -287,8 +295,8 @@ export function useTreeConsoleToolbarActions({
     isResourcesPage: pageTreeNode?.metadata?.name?.toLowerCase().includes('resource'),
     controller: {
       searchText: searchTerm,
-      handleSearchTextChange: actions.handleSearchChange ?? (() => {}),
-      handleSearchCommit: actions.handleSearchCommit ?? (() => {}),
+      handleSearchTextChange: actions.handleSearchChange ?? (() => { }),
+      handleSearchCommit: actions.handleSearchCommit ?? (() => { }),
     },
     hasArchiveItems,
     onAction: handleToolbarAction,
@@ -304,6 +312,10 @@ export function useTreeConsoleToolbarActions({
     developerModeEnabled,
     autosaveEnabled,
     dialogBackdropDismissEnabled,
+    viewMode,
+    onViewModeChange,
+    sortMode,
+    onSortModeChange,
     onAutosaveEnabledChange: (enabled: boolean) => {
       setAutosaveEnabled(enabled);
       persistSettings({ autosaveEnabled: enabled });

@@ -28,6 +28,10 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
     canDuplicate = false,
     canArchive,
     developerModeEnabled = false,
+    viewMode,
+    onViewModeChange,
+    sortMode,
+    onSortModeChange,
   } = props;
 
   const theme = useTheme();
@@ -75,6 +79,10 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
         canArchive={canArchive}
         developerModeEnabled={developerModeEnabled}
         searchStrings={searchStrings}
+        viewMode={viewMode}
+        onViewModeChange={onViewModeChange}
+        sortMode={sortMode}
+        onSortModeChange={onSortModeChange}
       />
     </Box>
   );

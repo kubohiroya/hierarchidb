@@ -59,6 +59,8 @@ export function useTreeConsoleIntegration({
   const searchTerm = ssot.searchTerm || '';
   const searchMode = (ssot.searchMode as TreeConsoleSearchMode) || 'local';
   const viewMode = (ssot.viewMode as ViewMode) || 'list';
+  const sortMode = ssot.sortMode || 'none';
+  const zoomLevel = ssot.zoomLevel ?? 50;
   const defaultFilters = useMemo(() => getMenuSpec('resources').order, []);
   const { t, i18n } = useTranslation();
   const locale = i18n.resolvedLanguage ?? i18n.language ?? 'en';
@@ -146,10 +148,10 @@ export function useTreeConsoleIntegration({
 
   const expandedApiRef = useRef<TreeTableExpandedAPI | null>(null);
   const prevExpandedIdsRef = useRef<NodeId[]>([]);
-  const incRefRef = useRef<() => void>(() => {});
-  const decRefRef = useRef<() => void>(() => {});
-  const setupSubscriptionRef = useRef<(id: NodeId) => Promise<void> | void>(() => {});
-  const teardownSubscriptionRef = useRef<(id: NodeId) => Promise<void> | void>(() => {});
+  const incRefRef = useRef<() => void>(() => { });
+  const decRefRef = useRef<() => void>(() => { });
+  const setupSubscriptionRef = useRef<(id: NodeId) => Promise<void> | void>(() => { });
+  const teardownSubscriptionRef = useRef<(id: NodeId) => Promise<void> | void>(() => { });
   const clientRef = useRef(client);
 
   const clientReady = Boolean(client);
@@ -389,6 +391,8 @@ export function useTreeConsoleIntegration({
     searchTerm,
     searchMode,
     viewMode,
+    sortMode,
+    zoomLevel,
     locale,
     canCreate,
     canEdit,

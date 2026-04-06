@@ -73,6 +73,8 @@ export function useTreeConsoleIntegrationInner({
     expandedIds,
     searchTerm,
     viewMode,
+    sortMode,
+    zoomLevel,
     canCreate,
     canEdit,
     canArchive,
@@ -240,11 +242,11 @@ export function useTreeConsoleIntegrationInner({
         },
         draftMetadata: breadcrumbNode.draftMetadata
           ? {
-              name: breadcrumbNode.draftMetadata.name,
-              description: breadcrumbNode.draftMetadata.description,
-              tags: breadcrumbNode.draftMetadata.tags ?? [],
-              buildMetadata: breadcrumbNode.draftMetadata.buildMetadata,
-            }
+            name: breadcrumbNode.draftMetadata.name,
+            description: breadcrumbNode.draftMetadata.description,
+            tags: breadcrumbNode.draftMetadata.tags ?? [],
+            buildMetadata: breadcrumbNode.draftMetadata.buildMetadata,
+          }
           : null,
         visible: breadcrumbNode.visible,
         data: null,
@@ -309,6 +311,10 @@ export function useTreeConsoleIntegrationInner({
     requestEdit,
     searchTerm,
     selectedCount: selectedIds.length,
+    viewMode,
+    onViewModeChange: actions.handleViewModeChange,
+    sortMode,
+    onSortModeChange: actions.handleSortModeChange,
   });
 
   const shouldRenderTreeTable =
@@ -342,6 +348,8 @@ export function useTreeConsoleIntegrationInner({
     filterBy: state.filterBy,
     availableFilters: state.availableFilters,
     viewMode,
+    sortMode,
+    zoomLevel,
     rowClickAction,
     canCreate,
     canEdit,
@@ -361,7 +369,36 @@ export function useTreeConsoleIntegrationInner({
     onCollapseAll: actions.handleCollapseAll,
     onSort: actions.handleSort,
     onFilterChange: actions.handleFilterChange,
-    onViewModeChange: actions.handleViewModeChange,
+    onViewModeChange: (mode: import('@hierarchidb/ui-treeconsole-base').ViewMode) => {
+      actions.handleViewModeChange(mode);
+      void navigate({
+        search: (prev: Record<string, unknown>) => ({
+          ...prev,
+          view: mode === 'list' ? undefined : mode,
+        }),
+        replace: true,
+      });
+    },
+    onSortModeChange: (mode: import('@hierarchidb/ui-treeconsole-base').SortMode) => {
+      actions.handleSortModeChange(mode);
+      void navigate({
+        search: (prev: Record<string, unknown>) => ({
+          ...prev,
+          sort: mode === 'none' ? undefined : mode,
+        }),
+        replace: true,
+      });
+    },
+    onZoomLevelChange: (zoom: number) => {
+      actions.handleZoomLevelChange(zoom);
+      void navigate({
+        search: (prev: Record<string, unknown>) => ({
+          ...prev,
+          zoom: zoom === 50 ? undefined : zoom,
+        }),
+        replace: true,
+      });
+    },
     onBreadcrumbNavigate: actions.handleBreadcrumbNavigate,
     onNavigateBack: actions.handleNavigateBack,
     onNavigateForward: actions.handleNavigateForward,
@@ -383,10 +420,10 @@ export function useTreeConsoleIntegrationInner({
   const tagsLeftSlot =
     treeId && pageNodeId
       ? createElement(TagsLinkButton, {
-          treeId: String(treeId),
-          pageNodeId: String(pageNodeId),
-          onNavigate: handleTagsNavigate,
-        })
+        treeId: String(treeId),
+        pageNodeId: String(pageNodeId),
+        onNavigate: handleTagsNavigate,
+      })
       : undefined;
 
   const breadcrumbProps: TreeConsoleBreadcrumbProps = {

@@ -4,7 +4,7 @@ import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar'
 import { DualKeyMap } from '@hierarchidb/util';
 import { useEffect, useMemo, useState } from 'react';
 
-export type ViewMode = 'list' | 'grid';
+import type { ViewMode, SortMode } from '@hierarchidb/ui-treeconsole-base';
 
 export interface TreeConsoleSSOTEntry {
   pageNodeId: string;
@@ -13,6 +13,8 @@ export interface TreeConsoleSSOTEntry {
   expandedIds: NodeId[];
   searchTerm: string;
   viewMode: ViewMode;
+  sortMode: SortMode;
+  zoomLevel: number;
   searchMode: TreeConsoleSearchMode;
   sortBy?: string;
   sortDirection?: 'asc' | 'desc';
@@ -35,6 +37,8 @@ function defaults(pageNodeId: string): TreeConsoleSSOTEntry {
     expandedIds: [],
     searchTerm: '',
     viewMode: 'list',
+    sortMode: 'none',
+    zoomLevel: 50,
     searchMode: 'local',
     sortBy: 'name',
     sortDirection: 'asc',
@@ -82,8 +86,8 @@ export function useTreeConsoleSSOT(pageNodeId: string | undefined) {
 
   const api = useMemo(() => {
     if (!key) {
-      const noop = () => {};
-      const noopReplace = (_next: TreeConsoleSSOTEntry) => {};
+      const noop = () => { };
+      const noopReplace = (_next: TreeConsoleSSOTEntry) => { };
       return {
         set: noop,
         replace: noopReplace,
