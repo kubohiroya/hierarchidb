@@ -330,20 +330,34 @@ interface ColumnViewWrapperProps {
 function ColumnViewWrapper({ controller, onNodeClick }: ColumnViewWrapperProps) {
   const rootNodes = controller.data ?? [];
 
+  // Pre-process data into O(1) lookup structures
+  const { childrenMap, nodesWithChildren, nodeById } = useMemo(() => {
+    const childrenMap = new Map<NodeId, TreeNodeInUI[]>();
+    const nodesWithChildren = new Set<NodeId>();
+    const nodeById = new Map<NodeId, TreeNodeInUI>();
+    for (const node of controller.data ?? []) {
+      nodeById.set(node.id, node);
+      if (node.parentId) {
+        const existing = childrenMap.get(node.parentId);
+        if (existing) {
+          existing.push(node);
+        } else {
+          childrenMap.set(node.parentId, [node]);
+        }
+        nodesWithChildren.add(node.parentId);
+      }
+    }
+    return { childrenMap, nodesWithChildren, nodeById };
+  }, [controller.data]);
+
   const getChildren = useCallback(
-    (nodeId: NodeId): TreeNodeInUI[] => {
-      const allNodes = controller.data ?? [];
-      return allNodes.filter((n) => n.parentId === nodeId);
-    },
-    [controller.data],
+    (nodeId: NodeId): TreeNodeInUI[] => childrenMap.get(nodeId) ?? [],
+    [childrenMap],
   );
 
   const hasChildren = useCallback(
-    (nodeId: NodeId): boolean => {
-      const allNodes = controller.data ?? [];
-      return allNodes.some((n) => n.parentId === nodeId);
-    },
-    [controller.data],
+    (nodeId: NodeId): boolean => nodesWithChildren.has(nodeId),
+    [nodesWithChildren],
   );
 
   const columnApi = useColumnView({ getChildren, hasChildren });
@@ -351,12 +365,12 @@ function ColumnViewWrapper({ controller, onNodeClick }: ColumnViewWrapperProps) 
   const handleSelectNode = useCallback(
     (nodeId: NodeId) => {
       columnApi.selectNode(nodeId);
-      const node = (controller.data ?? []).find((n) => n.id === nodeId);
+      const node = nodeById.get(nodeId);
       if (onNodeClick && node) {
         onNodeClick(nodeId, node);
       }
     },
-    [columnApi, controller.data, onNodeClick],
+    [columnApi, nodeById, onNodeClick],
   );
 
   return (
