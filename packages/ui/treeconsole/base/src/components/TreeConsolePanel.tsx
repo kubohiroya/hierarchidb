@@ -1,13 +1,13 @@
 import type { ReactElement } from 'react';
-import { memo, useMemo } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { Box, Slider, Typography } from '@mui/material';
 import type { TreeTableColumn } from './TreeTable/index.js';
-// RowContextMenu removed: right-click is disabled app-wide
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { type BuildSessionIndicator, TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
+import type { TreeNodeInUI } from '@hierarchidb/ui-treeconsole-treetable';
 import type { OpenStepOption, TreeConsoleBreadcrumbRendererProps as BreadcrumbRendererProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
-import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import { NodeContextMenu, TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeConsoleFooter } from './TreeConsoleFooter.js';
 import type { HierarchicalTreeNode } from '~/types/index';
 import type { DualKeyMap } from '@hierarchidb/util';
@@ -201,6 +201,20 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     return set;
   }, [controller.rowSelection]);
 
+  const [iconContextMenu, setIconContextMenu] = useState<{
+    node: TreeNodeInUI;
+    position: { left: number; top: number };
+  } | null>(null);
+
+  const handleIconContextMenu = useCallback((node: TreeNodeInUI, position: { left: number; top: number }) => {
+    controller.onNodeSelect?.([node.id], true);
+    setIconContextMenu({ node, position });
+  }, [controller]);
+
+  const handleIconContextMenuClose = useCallback(() => {
+    setIconContextMenu(null);
+  }, []);
+
   return (
     <Box
       sx={{
@@ -248,7 +262,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
                 onNodeClick={controller.onNodeClick ? (nodeId) => controller.onNodeClick?.(nodeId) : undefined}
                 onNodeDoubleClick={controller.onEdit ? (nodeId, node) => controller.onEdit?.(nodeId, node) : undefined}
                 onNodeSelect={controller.onNodeSelect}
-                onContextAction={controller.onContextAction}
+                onContextMenu={handleIconContextMenu}
               />
             ) : props.viewMode === 'column' ? (
               <ColumnViewWrapper
@@ -300,7 +314,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
               onNodeClick={controller.onNodeClick ? (nodeId) => controller.onNodeClick?.(nodeId) : undefined}
               onNodeDoubleClick={controller.onEdit ? (nodeId, node) => controller.onEdit?.(nodeId, node) : undefined}
               onNodeSelect={controller.onNodeSelect}
-              onContextAction={controller.onContextAction}
+              onContextMenu={handleIconContextMenu}
             />
           ) : props.viewMode === 'column' ? (
             <ColumnViewWrapper
@@ -363,13 +377,28 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
           }
         />
       )}
+
+      {/* IconView context menu */}
+      {iconContextMenu && (
+        <NodeContextMenu
+          node={iconContextMenu.node as TreeNode}
+          anchorPosition={iconContextMenu.position}
+          open={true}
+          onClose={handleIconContextMenuClose}
+          onAction={(action) => {
+            controller.onContextAction?.(action, iconContextMenu.node);
+            handleIconContextMenuClose();
+          }}
+          treeId={props.treeId}
+        />
+      )}
     </Box>
   );
 });
 
 // -- ColumnView wrapper that manages useColumnView hook --
 
-import type { TreeTableController, TreeNodeInUI } from '@hierarchidb/ui-treeconsole-treetable';
+import type { TreeTableController } from '@hierarchidb/ui-treeconsole-treetable';
 import { useCallback } from 'react';
 
 interface ColumnViewWrapperProps {

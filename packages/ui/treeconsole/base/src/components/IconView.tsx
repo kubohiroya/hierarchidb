@@ -38,7 +38,7 @@ export interface IconViewProps {
     onNodeClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
     onNodeDoubleClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
     onNodeSelect?: (nodeIds: string[], selected: boolean) => void;
-    onContextAction?: (action: string, node: TreeNodeInUI) => void;
+    onContextMenu?: (node: TreeNodeInUI, position: { left: number; top: number }) => void;
 }
 
 // -- Grid coordinate utilities --
@@ -125,7 +125,7 @@ export function IconView({
     onNodeClick,
     onNodeDoubleClick,
     onNodeSelect,
-    onContextAction,
+    onContextMenu,
 }: IconViewProps) {
     const { iconSize, cellSize } = computeZoomLayout(zoomLevel);
 
@@ -147,7 +147,7 @@ export function IconView({
                 onNodeClick={onNodeClick}
                 onNodeDoubleClick={onNodeDoubleClick}
                 onNodeSelect={onNodeSelect}
-                onContextAction={onContextAction}
+                onContextMenu={onContextMenu}
             />
         );
     }
@@ -162,7 +162,7 @@ export function IconView({
             onNodeClick={onNodeClick}
             onNodeDoubleClick={onNodeDoubleClick}
             onNodeSelect={onNodeSelect}
-            onContextAction={onContextAction}
+            onContextMenu={onContextMenu}
         />
     );
 }
@@ -177,14 +177,12 @@ interface GridLayoutProps {
     onNodeClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
     onNodeDoubleClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
     onNodeSelect?: (nodeIds: string[], selected: boolean) => void;
-    onContextAction?: (action: string, node: TreeNodeInUI) => void;
+    onContextMenu?: (node: TreeNodeInUI, position: { left: number; top: number }) => void;
 }
 
-function GridLayout({ nodes, iconSize, cellSize, selectedIds, onNodeClick, onNodeDoubleClick, onNodeSelect, onContextAction }: GridLayoutProps) {
-    const handleBackgroundClick = useCallback((e: React.MouseEvent) => {
-        if (e.target === e.currentTarget) {
-            onNodeSelect?.([], false);
-        }
+function GridLayout({ nodes, iconSize, cellSize, selectedIds, onNodeClick, onNodeDoubleClick, onNodeSelect, onContextMenu }: GridLayoutProps) {
+    const handleBackgroundClick = useCallback(() => {
+        onNodeSelect?.([], false);
     }, [onNodeSelect]);
 
     return (
@@ -210,7 +208,7 @@ function GridLayout({ nodes, iconSize, cellSize, selectedIds, onNodeClick, onNod
                     onClick={onNodeClick}
                     onDoubleClick={onNodeDoubleClick}
                     onSelect={onNodeSelect}
-                    onContextAction={onContextAction}
+                    onContextMenu={onContextMenu}
                 />
             ))}
         </Box>
@@ -228,7 +226,7 @@ interface FreeLayoutProps {
     onNodeClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
     onNodeDoubleClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
     onNodeSelect?: (nodeIds: string[], selected: boolean) => void;
-    onContextAction?: (action: string, node: TreeNodeInUI) => void;
+    onContextMenu?: (node: TreeNodeInUI, position: { left: number; top: number }) => void;
 }
 
 function FreeLayout({
@@ -240,7 +238,7 @@ function FreeLayout({
     onNodeClick,
     onNodeDoubleClick,
     onNodeSelect,
-    onContextAction,
+    onContextMenu,
 }: FreeLayoutProps) {
     const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -277,10 +275,8 @@ function FreeLayout({
         }
     }, [nodes, gridPositions, onIconPositionChange]);
 
-    const handleBackgroundClick = useCallback((e: React.MouseEvent) => {
-        if (e.target === e.currentTarget) {
-            onNodeSelect?.([], false);
-        }
+    const handleBackgroundClick = useCallback(() => {
+        onNodeSelect?.([], false);
     }, [onNodeSelect]);
 
     return (
@@ -308,7 +304,7 @@ function FreeLayout({
                         onClick={onNodeClick}
                         onDoubleClick={onNodeDoubleClick}
                         onSelect={onNodeSelect}
-                        onContextAction={onContextAction}
+                        onContextMenu={onContextMenu}
                     />
                 );
             })}
@@ -326,10 +322,10 @@ interface IconCellProps {
     onClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
     onDoubleClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
     onSelect?: (nodeIds: string[], selected: boolean) => void;
-    onContextAction?: (action: string, node: TreeNodeInUI) => void;
+    onContextMenu?: (node: TreeNodeInUI, position: { left: number; top: number }) => void;
 }
 
-function IconCell({ node, iconSize, cellWidth, isSelected, onClick, onDoubleClick, onSelect, onContextAction }: IconCellProps) {
+function IconCell({ node, iconSize, cellWidth, isSelected, onClick, onDoubleClick, onSelect, onContextMenu }: IconCellProps) {
     const handleClick = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
         onSelect?.([node.id], true);
@@ -344,8 +340,8 @@ function IconCell({ node, iconSize, cellWidth, isSelected, onClick, onDoubleClic
         e.preventDefault();
         e.stopPropagation();
         onSelect?.([node.id], true);
-        onContextAction?.('open', node);
-    }, [onSelect, onContextAction, node]);
+        onContextMenu?.(node, { left: e.clientX, top: e.clientY });
+    }, [onSelect, onContextMenu, node]);
 
     return (
         <Box
@@ -416,7 +412,7 @@ interface DraggableIconCellProps {
     onClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
     onDoubleClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
     onSelect?: (nodeIds: string[], selected: boolean) => void;
-    onContextAction?: (action: string, node: TreeNodeInUI) => void;
+    onContextMenu?: (node: TreeNodeInUI, position: { left: number; top: number }) => void;
 }
 
 function DraggableIconCell({
@@ -433,7 +429,7 @@ function DraggableIconCell({
     onClick,
     onDoubleClick,
     onSelect,
-    onContextAction,
+    onContextMenu,
 }: DraggableIconCellProps) {
     const dragRef = useRef<{ startX: number; startY: number; origPx: number; origPy: number } | null>(null);
     const elementRef = useRef<HTMLDivElement | null>(null);
@@ -518,8 +514,8 @@ function DraggableIconCell({
         e.preventDefault();
         e.stopPropagation();
         onSelect?.([node.id], true);
-        onContextAction?.('open', node);
-    }, [onSelect, onContextAction, node]);
+        onContextMenu?.(node, { left: e.clientX, top: e.clientY });
+    }, [onSelect, onContextMenu, node]);
 
     return (
         <Box
