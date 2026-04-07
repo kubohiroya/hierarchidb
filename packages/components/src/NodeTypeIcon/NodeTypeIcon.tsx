@@ -134,7 +134,7 @@ export function NodeTypeIcon({
 
   const buildRequiredBadgeProps = buildRequired
     ? {
-      color: 'warning' as const,
+      color: 'default' as const,
       variant: 'dot' as const,
       overlap: 'circular' as const,
       anchorOrigin: { vertical: 'top' as const, horizontal: 'right' as const },
@@ -149,8 +149,8 @@ export function NodeTypeIcon({
             : 'scale(1) translate(18%, -18%) translateX(3px)',
           borderRadius: '50%',
           border: '2px solid',
-          backgroundColor: 'transparent',
           borderColor: 'warning.main',
+          backgroundColor: 'transparent !important',
           boxSizing: 'border-box',
         },
       },

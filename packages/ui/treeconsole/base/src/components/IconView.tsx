@@ -296,11 +296,26 @@ function FreeLayout({
         onNodeSelect?.([], false);
     }, [onNodeSelect]);
 
+    // Calculate container min height from node positions
+    const containerMinHeight = useMemo(() => {
+        let maxRow = 0;
+        for (const [, pos] of localPositions) {
+            if (pos.row > maxRow) maxRow = pos.row;
+        }
+        return gridToPixel(0, maxRow + 1, cellSize.width, cellSize.height).py + cellSize.height;
+    }, [localPositions, cellSize]);
+
     return (
         <Box
             ref={containerRef}
             onClick={handleBackgroundClick}
-            sx={{ position: 'relative', width: '100%', height: '100%', overflow: 'auto' }}
+            sx={{
+                position: 'relative',
+                width: '100%',
+                height: '100%',
+                minHeight: containerMinHeight,
+                overflow: 'auto',
+            }}
         >
             {nodes.map((node) => {
                 const gridPos = localPositions.get(node.id) ?? { col: 0, row: 0 };
