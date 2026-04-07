@@ -156,6 +156,7 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
                         {...infoPanelProps}
                         node={targetNode as import('@hierarchidb/tree-api').TreeNode}
                         pageNodeId={columnTargetNodeId as import('@hierarchidb/core-types').NodeId}
+                        verticalAlign="top"
                       />
                     );
                   })()

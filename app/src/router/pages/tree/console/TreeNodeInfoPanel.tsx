@@ -42,6 +42,8 @@ export interface TreeNodeInfoPanelProps {
   readonly pageNodeId?: NodeId;
   readonly node?: TreeNode;
   readonly onContextMenuAction: ContextMenuHandler;
+  /** Vertical alignment: 'center' (default) or 'top'. */
+  readonly verticalAlign?: 'center' | 'top';
 }
 
 export function TreeNodeInfoPanel({
@@ -49,6 +51,7 @@ export function TreeNodeInfoPanel({
   pageNodeId,
   node,
   onContextMenuAction,
+  verticalAlign = 'center',
 }: TreeNodeInfoPanelProps) {
   const navigate = useNavigate();
   const {
@@ -87,7 +90,7 @@ export function TreeNodeInfoPanel({
       : labels.unnamedNodeLabel;
   const originalDescription =
     typeof currentNode?.metadata?.description === 'string' &&
-    currentNode.metadata.description.trim().length > 0
+      currentNode.metadata.description.trim().length > 0
       ? currentNode.metadata.description
       : labels.emptyDescriptionLabel;
   const resolvedPageNodeId = pageNodeId
@@ -153,7 +156,7 @@ export function TreeNodeInfoPanel({
       sx={{
         height: '100%',
         display: 'flex',
-        alignItems: 'center',
+        alignItems: verticalAlign === 'top' ? 'flex-start' : 'center',
         justifyContent: 'center',
         p: 1,
       }}
