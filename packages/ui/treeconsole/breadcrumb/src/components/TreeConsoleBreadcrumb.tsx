@@ -50,7 +50,7 @@ const readDraggedNodeId = (event: DragEvent<HTMLElement>): string | null => {
 /**
  * BreadcrumbContainer -
  */
-const BreadcrumbContainer = styled(Box)<{ theme?: Theme }>`
+const BreadcrumbContainer = styled(Box) <{ theme?: Theme }>`
   width: 100%;
   opacity: 1;
   height: 48px;
@@ -248,7 +248,7 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
               const nodeType = nodeWithAbsolute.nodeType || nodeWithAbsolute.type || 'folder-plugin';
               const isBuildRequiredForNode = Boolean(
                 nodeWithAbsolute.draftMetadata?.buildMetadata?.buildRequired ||
-                  nodeWithAbsolute.metadata?.buildMetadata?.buildRequired
+                nodeWithAbsolute.metadata?.buildMetadata?.buildRequired
               );
               const manifestIconColor = getPluginIconColor(nodeType);
               const iconColor = isFolderNodeType(nodeType)
@@ -265,6 +265,8 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
                 useArchiveColumns: useArchiveColumnsFlag,
                 archiveAction: archiveActionValue,
                 isRootLike,
+                viewMode: props.viewMode,
+                sortMode: props.sortMode,
               };
 
               const toHref = buildTreeConsoleLinkHref(linkOptions);
@@ -279,21 +281,21 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
 
               const linkContent = (
                 <>
-              <IconComponent
-                nodeType={nodeType}
-                  size="small"
-                  color="inherit"
-                  htmlColor={iconColor}
-                  clickable={iconInteractive}
-                  isDraft={node.holderType === 'draft'}
-                  buildRequired={isBuildRequiredForNode}
-                  onClick={
-                    iconInteractive
-                      ? (event: MouseEvent<HTMLElement>) => {
-                        event.preventDefault();
-                            event.stopPropagation();
-                            openContextMenu(node, event.currentTarget as HTMLElement);
-                          }
+                  <IconComponent
+                    nodeType={nodeType}
+                    size="small"
+                    color="inherit"
+                    htmlColor={iconColor}
+                    clickable={iconInteractive}
+                    isDraft={node.holderType === 'draft'}
+                    buildRequired={isBuildRequiredForNode}
+                    onClick={
+                      iconInteractive
+                        ? (event: MouseEvent<HTMLElement>) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          openContextMenu(node, event.currentTarget as HTMLElement);
+                        }
                         : undefined
                     }
                   />

@@ -155,6 +155,11 @@ export interface TreeConsoleBreadcrumbProps {
    * Optional node-id set where move-to-archive should be disabled.
    */
   archiveDisabledNodeIds?: ReadonlySet<string>;
+
+  /** Current view mode to preserve in breadcrumb navigation links. */
+  viewMode?: string;
+  /** Current sort mode to preserve in breadcrumb navigation links. */
+  sortMode?: string;
 }
 
 export type TreeConsoleBreadcrumbRendererProps = {

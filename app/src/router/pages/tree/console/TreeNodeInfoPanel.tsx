@@ -46,6 +46,10 @@ export interface TreeNodeInfoPanelProps {
   readonly verticalAlign?: 'center' | 'top';
   /** Hide the back arrow button (e.g. when shown inside column view). */
   readonly hideBackButton?: boolean;
+  /** Current view mode to preserve in navigation. */
+  readonly viewMode?: string;
+  /** Current sort mode to preserve in navigation. */
+  readonly sortMode?: string;
 }
 
 export function TreeNodeInfoPanel({
@@ -55,6 +59,8 @@ export function TreeNodeInfoPanel({
   onContextMenuAction,
   verticalAlign = 'center',
   hideBackButton = false,
+  viewMode,
+  sortMode,
 }: TreeNodeInfoPanelProps) {
   const navigate = useNavigate();
   const {
@@ -134,8 +140,11 @@ export function TreeNodeInfoPanel({
   const isFolderNode = isFolderNodeType(menuNode?.nodeType);
   const handleNavigateToParent = useCallback(() => {
     if (!treeId || !parentNodeId || isRootNode) return;
-    navigate({ to: `/f/${treeId}/${parentNodeId}/-/folder/list` });
-  }, [isRootNode, navigate, parentNodeId, treeId]);
+    const vm = viewMode || 'list';
+    const sm = sortMode || 'name';
+    const viewSuffix = sm !== 'name' ? `${vm}/${sm}` : vm;
+    navigate({ to: `/f/${treeId}/${parentNodeId}/-/folder/${viewSuffix}` });
+  }, [isRootNode, navigate, parentNodeId, treeId, viewMode, sortMode]);
   const handleBackdropClick = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
       if (event.currentTarget !== event.target) return;
