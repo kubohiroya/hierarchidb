@@ -16,8 +16,8 @@ export interface ZoomLayout {
 /** Gap between cells in pixels (fixed). */
 export const CELL_GAP_PX = 8;
 
-/** Minimum width for the name label area (20em at base font size). */
-export const NAME_MIN_WIDTH_PX = 20 * 16; // 20em * 16px base font = 320px
+/** Minimum width for the name label area. */
+export const NAME_MIN_WIDTH_PX = 8 * 16; // 8em * 16px base font = 128px
 
 /** Minimum height for the name label area (2 lines). */
 export const NAME_MIN_HEIGHT_PX = 2 * 16; // 2em * 16px base font = 32px
@@ -45,7 +45,7 @@ export function computeZoomLayout(zoomLevel: number): ZoomLayout {
     return {
         iconSize,
         cellSize: {
-            width: Math.max(iconSize, NAME_MIN_WIDTH_PX) + CELL_GAP_PX,
+            width: Math.max(iconSize + CELL_GAP_PX * 4, NAME_MIN_WIDTH_PX) + CELL_GAP_PX,
             height: iconSize + NAME_MIN_HEIGHT_PX + CELL_GAP_PX,
         },
     };

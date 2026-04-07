@@ -12,11 +12,22 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Box, Typography } from '@mui/material';
 import { NodeTypeIcon } from '@hierarchidb/components';
+import { getPluginIconColor, isFolderNodeType } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import { rainbowColors } from '@hierarchidb/ui-theme';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNodeInUI } from '@hierarchidb/ui-treeconsole-treetable';
 import type { SortMode } from '~/types/view-mode-types';
 import { computeZoomLayout, CELL_GAP_PX } from '~/utils/zoom-layout';
 import { createSortComparator } from '~/utils/sort-comparator';
+
+/** Resolve icon color matching the list view logic. */
+function resolveIconColor(node: TreeNodeInUI): string {
+    const nodeType = String(node.nodeType ?? 'folder');
+    const depth = node.depth ?? 0;
+    const baseColor = rainbowColors[Math.max(0, depth) % rainbowColors.length];
+    if (isFolderNodeType(nodeType)) return baseColor;
+    return getPluginIconColor(nodeType) ?? baseColor;
+}
 
 export interface IconViewProps {
     nodes: TreeNodeInUI[];
@@ -303,6 +314,7 @@ function IconCell({ node, iconSize, cellWidth, onClick, onDoubleClick }: IconCel
                 <NodeTypeIcon
                     nodeType={node.nodeType}
                     size={`${iconSize}px`}
+                    htmlColor={resolveIconColor(node)}
                     isDraft={(node as { version?: number }).version === 0}
                     buildRequired={node.metadata?.buildMetadata?.buildRequired ?? false}
                 />
@@ -466,6 +478,7 @@ function DraggableIconCell({
                 <NodeTypeIcon
                     nodeType={node.nodeType}
                     size={`${iconSize}px`}
+                    htmlColor={resolveIconColor(node)}
                     isDraft={(node as { version?: number }).version === 0}
                     buildRequired={node.metadata?.buildMetadata?.buildRequired ?? false}
                 />

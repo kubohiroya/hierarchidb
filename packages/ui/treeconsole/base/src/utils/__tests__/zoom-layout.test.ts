@@ -36,12 +36,11 @@ describe('computeZoomLayout', () => {
         }
     });
 
-    it('cellSize.width uses iconSize when iconSize exceeds NAME_MIN_WIDTH_PX', () => {
-        // At zoom 100, iconSize = 256 < NAME_MIN_WIDTH_PX (320), so width = 320 + 8
-        // We need a zoom where iconSize > 320. Since max is 256, width always uses NAME_MIN_WIDTH_PX.
-        // Verify the formula: width = max(iconSize, 320) + 8
+    it('cellSize.width grows with iconSize', () => {
         const layout = computeZoomLayout(100);
-        expect(layout.cellSize.width).toBe(Math.max(layout.iconSize, NAME_MIN_WIDTH_PX) + CELL_GAP_PX);
+        expect(layout.cellSize.width).toBe(
+            Math.max(layout.iconSize + CELL_GAP_PX * 4, NAME_MIN_WIDTH_PX) + CELL_GAP_PX,
+        );
     });
 
     describe('contract violations', () => {
