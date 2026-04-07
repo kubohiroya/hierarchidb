@@ -181,13 +181,15 @@ interface GridLayoutProps {
 }
 
 function GridLayout({ nodes, iconSize, cellSize, selectedIds, onNodeClick, onNodeDoubleClick, onNodeSelect, onContextMenu }: GridLayoutProps) {
-    const handleBackgroundClick = useCallback(() => {
-        onNodeSelect?.([], false);
+    const handleBackgroundMouseDown = useCallback((e: React.MouseEvent) => {
+        if (e.target === e.currentTarget) {
+            onNodeSelect?.([], false);
+        }
     }, [onNodeSelect]);
 
     return (
         <Box
-            onClick={handleBackgroundClick}
+            onMouseDown={handleBackgroundMouseDown}
             sx={{
                 display: 'grid',
                 gridTemplateColumns: `repeat(auto-fill, ${cellSize.width}px)`,
@@ -310,8 +312,10 @@ function FreeLayout({
         }
     }, [nodes, localPositions, onIconPositionChange]);
 
-    const handleBackgroundClick = useCallback(() => {
-        onNodeSelect?.([], false);
+    const handleBackgroundMouseDown = useCallback((e: React.MouseEvent) => {
+        if (e.target === e.currentTarget) {
+            onNodeSelect?.([], false);
+        }
     }, [onNodeSelect]);
 
     // Calculate container min height from node positions
@@ -326,7 +330,7 @@ function FreeLayout({
     return (
         <Box
             ref={containerRef}
-            onClick={handleBackgroundClick}
+            onMouseDown={handleBackgroundMouseDown}
             sx={{
                 position: 'relative',
                 width: '100%',
