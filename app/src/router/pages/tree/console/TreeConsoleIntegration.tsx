@@ -143,7 +143,18 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
               renderBuiltInSpeedDial={false}
               columnDetailSlot={
                 columnTargetNodeId && columnTargetNodeId !== '-'
-                  ? <TreeNodeInfoPanel {...infoPanelProps} />
+                  ? (() => {
+                    const targetNode = treeConsolePanelProps.data.find(
+                      (n) => String(n.id) === columnTargetNodeId
+                    );
+                    return targetNode ? (
+                      <TreeNodeInfoPanel
+                        {...infoPanelProps}
+                        node={targetNode as import('@hierarchidb/tree-api').TreeNode}
+                        pageNodeId={columnTargetNodeId as import('@hierarchidb/core-types').NodeId}
+                      />
+                    ) : <TreeNodeInfoPanel {...infoPanelProps} />;
+                  })()
                   : undefined
               }
             />
