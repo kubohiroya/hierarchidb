@@ -272,6 +272,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
                 onNodeClick={controller.onNodeClick}
                 columnTargetNodeId={props.columnTargetNodeId}
                 onColumnNavigate={props.onColumnNavigate}
+                onIconContextMenu={handleIconContextMenu}
               />
             ) : (
               <TreeTableCore
@@ -326,6 +327,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
               onNodeClick={controller.onNodeClick}
               columnTargetNodeId={props.columnTargetNodeId}
               onColumnNavigate={props.onColumnNavigate}
+                onIconContextMenu={handleIconContextMenu}
             />
           ) : (
             <TreeTableCore
@@ -435,9 +437,10 @@ interface ColumnViewWrapperProps {
   onNodeClick?: (nodeId: string, node?: TreeNodeInUI) => void;
   columnTargetNodeId?: string;
   onColumnNavigate?: (targetNodeId: string) => void;
+  onIconContextMenu?: (node: TreeNodeInUI, position: { left: number; top: number }) => void;
 }
 
-function ColumnViewWrapper({ controller, onNodeClick: _onNodeClick, columnTargetNodeId, onColumnNavigate }: ColumnViewWrapperProps) {
+function ColumnViewWrapper({ controller, onNodeClick: _onNodeClick, columnTargetNodeId, onColumnNavigate, onIconContextMenu }: ColumnViewWrapperProps) {
   const { rootNodes, childrenMap, nodesWithChildren, nodeById } = useMemo(() => {
     const allNodes = controller.data ?? [];
     const childrenMap = new Map<NodeId, TreeNodeInUI[]>();
@@ -550,6 +553,7 @@ function ColumnViewWrapper({ controller, onNodeClick: _onNodeClick, columnTarget
       columnState={{ expandedPath: columnApi.columnPath, selectedNodeId: columnApi.selectedNodeId }}
       onSelectNode={handleSelectNode}
       getChildren={getChildren}
+      onIconContextMenu={onIconContextMenu}
     />
   );
 }

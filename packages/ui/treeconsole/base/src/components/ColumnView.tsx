@@ -1,13 +1,9 @@
 /**
  * ColumnView — hierarchical column navigation (Finder / Smalltalk class browser style).
- *
- * Each column displays children of the corresponding node in expandedPath.
- * Selecting a node with children reveals its children in the next column to the right.
- * Uses allotment for resizable pane splitting.
  */
 
 import { useCallback } from 'react';
-import { Box, List, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
+import { Box, IconButton, List, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
 import { ChevronRight } from '@mui/icons-material';
 import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
@@ -23,6 +19,7 @@ export interface ColumnViewProps {
     columnState: ColumnViewState;
     onSelectNode: (nodeId: NodeId) => void;
     getChildren: (nodeId: NodeId) => TreeNodeInUI[];
+    onIconContextMenu?: (node: TreeNodeInUI, position: { left: number; top: number }) => void;
 }
 
 function resolveIconColor(node: TreeNodeInUI): string {
@@ -38,6 +35,7 @@ export function ColumnView({
     columnState,
     onSelectNode,
     getChildren,
+    onIconContextMenu,
 }: ColumnViewProps) {
     const columns: TreeNodeInUI[][] = [rootNodes];
     for (const pathNodeId of columnState.expandedPath) {
@@ -51,12 +49,13 @@ export function ColumnView({
         <Box sx={{ height: '100%', width: '100%', display: 'flex' }}>
             <Allotment>
                 {columns.map((nodes, colIndex) => (
-                    <Allotment.Pane key={colIndex} minSize={180} preferredSize={220}>
+                    <Allotment.Pane key={colIndex} minSize={240} preferredSize={480}>
                         <Column
                             nodes={nodes}
                             selectedNodeId={columnState.selectedNodeId}
                             expandedPath={columnState.expandedPath}
                             onSelectNode={onSelectNode}
+                            onIconContextMenu={onIconContextMenu}
                         />
                     </Allotment.Pane>
                 ))}
@@ -70,9 +69,10 @@ interface ColumnProps {
     selectedNodeId: NodeId | null;
     expandedPath: NodeId[];
     onSelectNode: (nodeId: NodeId) => void;
+    onIconContextMenu?: (node: TreeNodeInUI, position: { left: number; top: number }) => void;
 }
 
-function Column({ nodes, selectedNodeId, expandedPath, onSelectNode }: ColumnProps) {
+function Column({ nodes, selectedNodeId, expandedPath, onSelectNode, onIconContextMenu }: ColumnProps) {
     return (
         <Box
             sx={{
@@ -91,6 +91,7 @@ function Column({ nodes, selectedNodeId, expandedPath, onSelectNode }: ColumnPro
                         isSelected={node.id === selectedNodeId}
                         isExpanded={expandedPath.includes(node.id)}
                         onSelect={onSelectNode}
+                        onIconContextMenu={onIconContextMenu}
                     />
                 ))}
             </List>
@@ -103,11 +104,19 @@ interface ColumnItemProps {
     isSelected: boolean;
     isExpanded: boolean;
     onSelect: (nodeId: NodeId) => void;
+    onIconContextMenu?: (node: TreeNodeInUI, position: { left: number; top: number }) => void;
 }
 
-function ColumnItem({ node, isSelected, isExpanded, onSelect }: ColumnItemProps) {
+function ColumnItem({ node, isSelected, isExpanded, onSelect, onIconContextMenu }: ColumnItemProps) {
     const handleClick = useCallback(() => onSelect(node.id), [onSelect, node.id]);
     const showChevron = node.hasChildren;
+    const isDraft = (node as { version?: number }).version === 0;
+    const buildRequired = node.metadata?.buildMetadata?.buildRequired ?? false;
+
+    const handleIconClick = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+        onIconContextMenu?.(node, { left: e.clientX, top: e.clientY });
+    }, [onIconContextMenu, node]);
 
     return (
         <ListItemButton
@@ -126,11 +135,16 @@ function ColumnItem({ node, isSelected, isExpanded, onSelect }: ColumnItemProps)
                 },
             }}
         >
-            <ListItemIcon sx={{ minWidth: 24, mr: 0.5 }}>
+            <ListItemIcon
+                sx={{ minWidth: 24, mr: 0.5, cursor: 'context-menu' }}
+                onClick={handleIconClick}
+            >
                 <NodeTypeIcon
                     nodeType={node.nodeType}
                     size="small"
                     htmlColor={isSelected || isExpanded ? undefined : resolveIconColor(node)}
+                    isDraft={isDraft}
+                    buildRequired={buildRequired}
                 />
             </ListItemIcon>
             <ListItemText
