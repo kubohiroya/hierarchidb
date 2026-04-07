@@ -66,6 +66,11 @@ export const folderPageIndexRoute = createRoute({
 export const folderViewSortRoute = createRoute({
     getParentRoute: () => folderPageRoute,
     path: '$targetNodeId/folder/$viewMode/$sortMode',
+    loader: async ({ params }) => {
+        const { treeId, pageNodeId } = params;
+        if (!treeId) throw new Error('Missing treeId');
+        return await loadPageNode({ treeId, pageNodeId: pageNodeId ?? `${treeId}:root` });
+    },
     component: FolderViewPage,
 });
 
@@ -73,5 +78,10 @@ export const folderViewSortRoute = createRoute({
 export const folderViewRoute = createRoute({
     getParentRoute: () => folderPageRoute,
     path: '$targetNodeId/folder/$viewMode',
+    loader: async ({ params }) => {
+        const { treeId, pageNodeId } = params;
+        if (!treeId) throw new Error('Missing treeId');
+        return await loadPageNode({ treeId, pageNodeId: pageNodeId ?? `${treeId}:root` });
+    },
     component: FolderViewPage,
 });
