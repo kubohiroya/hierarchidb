@@ -1,18 +1,21 @@
 /**
  * ColumnView — hierarchical column navigation (Finder / Smalltalk class browser style).
+ *
+ * Uses flex layout with fixed-width columns that shrink-to-fit.
+ * When total column width exceeds container, horizontal scroll is enabled.
  */
 
 import { useCallback } from 'react';
-import { Box, IconButton, List, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
+import { Box, List, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
 import { ChevronRight } from '@mui/icons-material';
-import { Allotment } from 'allotment';
-import 'allotment/dist/style.css';
 import { NodeTypeIcon } from '@hierarchidb/components';
 import { getPluginIconColor, isFolderNodeType } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { rainbowColors } from '@hierarchidb/ui-theme';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNodeInUI } from '@hierarchidb/ui-treeconsole-treetable';
 import type { ColumnViewState } from '~/hooks/useColumnView';
+
+const COLUMN_WIDTH = 480;
 
 export interface ColumnViewProps {
     rootNodes: TreeNodeInUI[];
@@ -46,20 +49,19 @@ export function ColumnView({
     }
 
     return (
-        <Box sx={{ height: '100%', width: '100%', display: 'flex' }}>
-            <Allotment>
+        <Box sx={{ height: '100%', width: '100%', overflowX: 'auto', overflowY: 'hidden' }}>
+            <Box sx={{ display: 'flex', height: '100%', width: 'fit-content', minWidth: '100%' }}>
                 {columns.map((nodes, colIndex) => (
-                    <Allotment.Pane key={colIndex} minSize={240} preferredSize={480}>
-                        <Column
-                            nodes={nodes}
-                            selectedNodeId={columnState.selectedNodeId}
-                            expandedPath={columnState.expandedPath}
-                            onSelectNode={onSelectNode}
-                            onIconContextMenu={onIconContextMenu}
-                        />
-                    </Allotment.Pane>
+                    <Column
+                        key={colIndex}
+                        nodes={nodes}
+                        selectedNodeId={columnState.selectedNodeId}
+                        expandedPath={columnState.expandedPath}
+                        onSelectNode={onSelectNode}
+                        onIconContextMenu={onIconContextMenu}
+                    />
                 ))}
-            </Allotment>
+            </Box>
         </Box>
     );
 }
@@ -76,11 +78,15 @@ function Column({ nodes, selectedNodeId, expandedPath, onSelectNode, onIconConte
     return (
         <Box
             sx={{
+                width: COLUMN_WIDTH,
+                minWidth: COLUMN_WIDTH,
                 height: '100%',
-                overflow: 'auto',
+                overflowY: 'auto',
+                overflowX: 'hidden',
                 borderRight: 1,
                 borderColor: 'divider',
                 backgroundColor: 'background.paper',
+                flexShrink: 0,
             }}
         >
             <List dense disablePadding sx={{ py: 0 }}>
