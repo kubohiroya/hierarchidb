@@ -117,11 +117,33 @@ export const createContextMenuAction = (
 
         if (normalizedAction === 'navigate') {
           if (options?.openInNewTab && treeId) {
-            const qs = searchTerm ? `?q=${encodeURIComponent(searchTerm)}` : '';
             openInNewTab(`/f/${treeId}/${targetNodeId}/-/folder/list`);
             return;
           }
           navigation.navigateTo(targetNodeId);
+          return;
+        }
+
+        if (normalizedAction === 'open' || normalizedAction === 'openFolder') {
+          // For folder nodes, navigate to column view with this folder as target
+          const isFolderLike = (node.nodeType ?? '').toLowerCase() === 'folder'
+            || Boolean(node.hasChildren);
+          if (isFolderLike && treeId) {
+            const vm = ssot.viewMode || 'list';
+            const sm = ssot.sortMode || 'name';
+            const targetPath = vm === 'column'
+              ? `/f/${treeId}/${targetNodeId}/${targetNodeId}/folder/column${sm !== 'name' ? `/${sm}` : ''}`
+              : `/f/${treeId}/${targetNodeId}/-/folder/${vm}${sm !== 'name' ? `/${sm}` : ''}`;
+            if (options?.openInNewTab) {
+              openInNewTab(targetPath);
+            } else if (pushPath) {
+              pushPath(targetPath);
+            }
+            return;
+          }
+          // Non-folder: open edit dialog
+          setSSOT({ selectedIds: [targetNodeId] });
+          await openEditDialog(targetNodeId, node, { openInNewTab: options?.openInNewTab });
           return;
         }
 
@@ -171,9 +193,9 @@ export const createContextMenuAction = (
               }) ?? {};
             const mergedBuildMetadata = patch.buildMetadata
               ? {
-                  ...(currentMeta.buildMetadata ?? {}),
-                  ...patch.buildMetadata,
-                }
+                ...(currentMeta.buildMetadata ?? {}),
+                ...patch.buildMetadata,
+              }
               : currentMeta.buildMetadata;
             await updaterAPI.updateTreeNodeDraftMetadata(createdNodeId, {
               ...currentMeta,

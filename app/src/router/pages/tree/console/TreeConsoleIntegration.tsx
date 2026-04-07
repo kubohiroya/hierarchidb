@@ -26,6 +26,7 @@ export interface TreeConsoleIntegrationProps {
   readonly initialViewMode?: import('@hierarchidb/ui-treeconsole-base').ViewMode;
   readonly initialSortMode?: import('@hierarchidb/ui-treeconsole-base').SortMode;
   readonly initialZoomLevel?: number;
+  readonly columnTargetNodeId?: string;
 }
 
 export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
@@ -35,6 +36,7 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
   initialViewMode,
   initialSortMode,
   initialZoomLevel,
+  columnTargetNodeId,
 }) => {
   const { client, isConnected, reset, initialize } = useWorker();
   const {
@@ -58,6 +60,7 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
     initialViewMode,
     initialSortMode,
     initialZoomLevel,
+    columnTargetNodeId,
   });
 
   const speedDial = useTreeConsoleSpeedDial({
@@ -138,6 +141,28 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
               onContextMenuAction={speedDial.onContextMenuAction}
               treeIdForPersistence={treeConsolePanelProps.treeId}
               renderBuiltInSpeedDial={false}
+              columnDetailSlot={
+                columnTargetNodeId && columnTargetNodeId !== '-'
+                  ? (() => {
+                    const targetNode = treeConsolePanelProps.data.find(
+                      (n) => String(n.id) === columnTargetNodeId
+                    );
+                    if (!targetNode) return undefined;
+                    // Only show detail panel for non-folder nodes
+                    const nodeType = (targetNode.nodeType ?? '').toLowerCase();
+                    if (nodeType === 'folder' || nodeType === 'folder-plugin') return undefined;
+                    return (
+                      <TreeNodeInfoPanel
+                        {...infoPanelProps}
+                        node={targetNode as import('@hierarchidb/tree-api').TreeNode}
+                        pageNodeId={columnTargetNodeId as import('@hierarchidb/core-types').NodeId}
+                        verticalAlign="top"
+                        hideBackButton
+                      />
+                    );
+                  })()
+                  : undefined
+              }
             />
             <DynamicSpeedDial
               treeId={treeConsolePanelProps.treeId as TreeId | undefined}

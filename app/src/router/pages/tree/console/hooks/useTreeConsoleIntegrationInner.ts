@@ -37,6 +37,7 @@ export type UseTreeConsoleIntegrationInnerArgs = {
   initialViewMode?: import('@hierarchidb/ui-treeconsole-base').ViewMode;
   initialSortMode?: import('@hierarchidb/ui-treeconsole-base').SortMode;
   initialZoomLevel?: number;
+  columnTargetNodeId?: string;
 };
 
 export type UseTreeConsoleIntegrationInnerResult = {
@@ -64,6 +65,7 @@ export function useTreeConsoleIntegrationInner({
   initialViewMode,
   initialSortMode,
   initialZoomLevel,
+  columnTargetNodeId,
 }: UseTreeConsoleIntegrationInnerArgs): UseTreeConsoleIntegrationInnerResult {
   const location = useLocation();
   const navigate = useNavigate();
@@ -455,6 +457,16 @@ export function useTreeConsoleIntegrationInner({
     buildSessionIndicator,
     onNavigateTags: handleTagsNavigate,
     useArchiveColumns: isArchivePage,
+    columnTargetNodeId,
+    onColumnNavigate: (targetNodeId: string) => {
+      const vm = viewMode || 'column';
+      const sm = sortMode === 'none' ? 'name' : sortMode;
+      const target = targetNodeId === '-' ? '-' : targetNodeId;
+      void navigate({
+        to: `/f/${treeId}/${pageNodeId ?? `${treeId}:root`}/${target}/folder/${vm}${sm !== 'name' ? `/${sm}` : ''}`,
+        replace: true,
+      });
+    },
     speedDialSuppressed,
     setSpeedDialSuppressed,
     isDialogRoute,

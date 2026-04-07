@@ -26,11 +26,14 @@ export function FolderViewPage() {
         ? params.sortMode
         : 'name';
 
+    const targetNodeId = params.targetNodeId === '-' ? undefined : params.targetNodeId;
+
     return (
         <TreeConsoleRoutePage
             data={data}
             viewMode={viewMode}
             sortMode={sortMode}
+            columnTargetNodeId={targetNodeId}
         />
     );
 }
