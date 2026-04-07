@@ -147,13 +147,17 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
                     const targetNode = treeConsolePanelProps.data.find(
                       (n) => String(n.id) === columnTargetNodeId
                     );
-                    return targetNode ? (
+                    if (!targetNode) return undefined;
+                    // Only show detail panel for non-folder nodes
+                    const nodeType = (targetNode.nodeType ?? '').toLowerCase();
+                    if (nodeType === 'folder' || nodeType === 'folder-plugin') return undefined;
+                    return (
                       <TreeNodeInfoPanel
                         {...infoPanelProps}
                         node={targetNode as import('@hierarchidb/tree-api').TreeNode}
                         pageNodeId={columnTargetNodeId as import('@hierarchidb/core-types').NodeId}
                       />
-                    ) : <TreeNodeInfoPanel {...infoPanelProps} />;
+                    );
                   })()
                   : undefined
               }

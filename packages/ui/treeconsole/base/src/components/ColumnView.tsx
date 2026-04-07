@@ -86,7 +86,14 @@ export function ColumnView({
                     </ColumnWithHandle>
                 ))}
                 {detailSlot && (
-                    <Box sx={{ flexShrink: 0, height: '100%', minWidth: DEFAULT_COLUMN_WIDTH, overflow: 'auto' }}>
+                    <Box sx={{
+                        flexShrink: 0,
+                        height: '100%',
+                        minWidth: DEFAULT_COLUMN_WIDTH,
+                        overflow: 'auto',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                    }}>
                         {detailSlot}
                     </Box>
                 )}
