@@ -1,11 +1,11 @@
 /**
  * ColumnView — hierarchical column navigation (Finder / Smalltalk class browser style).
  *
- * Uses flex layout with fixed-width columns that shrink-to-fit.
- * When total column width exceeds container, horizontal scroll is enabled.
+ * Flex layout with fixed-width columns, shrink-to-fit, horizontal scroll,
+ * and draggable resize handles between columns.
  */
 
-import { useCallback } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Box, List, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
 import { ChevronRight } from '@mui/icons-material';
 import { NodeTypeIcon } from '@hierarchidb/components';
@@ -15,7 +15,9 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNodeInUI } from '@hierarchidb/ui-treeconsole-treetable';
 import type { ColumnViewState } from '~/hooks/useColumnView';
 
-const COLUMN_WIDTH = 480;
+const DEFAULT_COLUMN_WIDTH = 480;
+const MIN_COLUMN_WIDTH = 120;
+const HANDLE_WIDTH = 4;
 
 export interface ColumnViewProps {
     rootNodes: TreeNodeInUI[];
@@ -48,23 +50,97 @@ export function ColumnView({
         }
     }
 
+    // Per-column widths (indexed by column position)
+    const [columnWidths, setColumnWidths] = useState<number[]>([]);
+
+    const getWidth = (index: number) => columnWidths[index] ?? DEFAULT_COLUMN_WIDTH;
+
     return (
         <Box sx={{ height: '100%', width: '100%', overflowX: 'auto', overflowY: 'hidden' }}>
             <Box sx={{ display: 'flex', height: '100%', width: 'fit-content', minWidth: '100%' }}>
                 {columns.map((nodes, colIndex) => (
-                    <Column
+                    <ColumnWithHandle
                         key={colIndex}
-                        nodes={nodes}
-                        selectedNodeId={columnState.selectedNodeId}
-                        expandedPath={columnState.expandedPath}
-                        onSelectNode={onSelectNode}
-                        onIconContextMenu={onIconContextMenu}
-                    />
+                        colIndex={colIndex}
+                        width={getWidth(colIndex)}
+                        isLast={colIndex === columns.length - 1}
+                        onResize={(newWidth) => {
+                            setColumnWidths((prev) => {
+                                const next = [...prev];
+                                while (next.length <= colIndex) next.push(DEFAULT_COLUMN_WIDTH);
+                                next[colIndex] = Math.max(MIN_COLUMN_WIDTH, newWidth);
+                                return next;
+                            });
+                        }}
+                    >
+                        <Column
+                            nodes={nodes}
+                            selectedNodeId={columnState.selectedNodeId}
+                            expandedPath={columnState.expandedPath}
+                            onSelectNode={onSelectNode}
+                            onIconContextMenu={onIconContextMenu}
+                        />
+                    </ColumnWithHandle>
                 ))}
             </Box>
         </Box>
     );
 }
+
+// -- Column with resize handle --
+
+interface ColumnWithHandleProps {
+    colIndex: number;
+    width: number;
+    isLast: boolean;
+    onResize: (newWidth: number) => void;
+    children: React.ReactNode;
+}
+
+function ColumnWithHandle({ width, isLast, onResize, children }: ColumnWithHandleProps) {
+    const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
+
+    const handlePointerDown = useCallback((e: React.PointerEvent) => {
+        e.currentTarget.setPointerCapture(e.pointerId);
+        dragRef.current = { startX: e.clientX, startWidth: width };
+    }, [width]);
+
+    const handlePointerMove = useCallback((e: React.PointerEvent) => {
+        const drag = dragRef.current;
+        if (!drag) return;
+        const dx = e.clientX - drag.startX;
+        onResize(drag.startWidth + dx);
+    }, [onResize]);
+
+    const handlePointerUp = useCallback(() => {
+        dragRef.current = null;
+    }, []);
+
+    return (
+        <Box sx={{ display: 'flex', flexShrink: 0, height: '100%' }}>
+            <Box sx={{ width, minWidth: MIN_COLUMN_WIDTH, height: '100%', overflow: 'hidden' }}>
+                {children}
+            </Box>
+            {!isLast && (
+                <Box
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    sx={{
+                        width: HANDLE_WIDTH,
+                        cursor: 'col-resize',
+                        backgroundColor: 'divider',
+                        flexShrink: 0,
+                        '&:hover': { backgroundColor: 'action.hover' },
+                        touchAction: 'none',
+                    }}
+                />
+            )}
+        </Box>
+    );
+}
+
+// -- Column content --
 
 interface ColumnProps {
     nodes: TreeNodeInUI[];
@@ -78,15 +154,10 @@ function Column({ nodes, selectedNodeId, expandedPath, onSelectNode, onIconConte
     return (
         <Box
             sx={{
-                width: COLUMN_WIDTH,
-                minWidth: COLUMN_WIDTH,
                 height: '100%',
                 overflowY: 'auto',
                 overflowX: 'hidden',
-                borderRight: 1,
-                borderColor: 'divider',
                 backgroundColor: 'background.paper',
-                flexShrink: 0,
             }}
         >
             <List dense disablePadding sx={{ py: 0 }}>
@@ -104,6 +175,8 @@ function Column({ nodes, selectedNodeId, expandedPath, onSelectNode, onIconConte
         </Box>
     );
 }
+
+// -- Column item --
 
 interface ColumnItemProps {
     node: TreeNodeInUI;
