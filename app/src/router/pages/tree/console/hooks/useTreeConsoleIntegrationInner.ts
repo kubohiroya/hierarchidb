@@ -8,7 +8,7 @@ import type {
 import { TagsLinkButton } from '@hierarchidb/ui-treeconsole-base';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import type { Remote } from 'comlink';
-import { createElement, useCallback, useMemo, useState } from 'react';
+import { createElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { resolvePreviewGuardState } from '~/hooks/treeconsole/actions/dialog';
 import { resolveOpenStepsForNode } from '~/hooks/treeconsole/resolveOpenSteps';
 import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration';
@@ -34,6 +34,9 @@ export type UseTreeConsoleIntegrationInnerArgs = {
   pageTreeNode?: TreeNode;
   resetWorker: () => void;
   initializeWorker: () => Promise<void>;
+  initialViewMode?: import('@hierarchidb/ui-treeconsole-base').ViewMode;
+  initialSortMode?: import('@hierarchidb/ui-treeconsole-base').SortMode;
+  initialZoomLevel?: number;
 };
 
 export type UseTreeConsoleIntegrationInnerResult = {
@@ -58,6 +61,9 @@ export function useTreeConsoleIntegrationInner({
   pageTreeNode,
   resetWorker,
   initializeWorker,
+  initialViewMode,
+  initialSortMode,
+  initialZoomLevel,
 }: UseTreeConsoleIntegrationInnerArgs): UseTreeConsoleIntegrationInnerResult {
   const location = useLocation();
   const navigate = useNavigate();
@@ -72,9 +78,9 @@ export function useTreeConsoleIntegrationInner({
     selectedIds,
     expandedIds,
     searchTerm,
-    viewMode,
-    sortMode,
-    zoomLevel,
+    viewMode: ssotViewMode,
+    sortMode: ssotSortMode,
+    zoomLevel: ssotZoomLevel,
     canCreate,
     canEdit,
     canArchive,
@@ -122,7 +128,26 @@ export function useTreeConsoleIntegrationInner({
     [location.searchStr]
   );
 
-  const runtimeContext = useOptionalBuildSessionRuntimeContext();
+  // URL search params override SSOT values (priority: URL > SSOT > defaults)
+  const viewMode = initialViewMode ?? ssotViewMode;
+  const sortMode = initialSortMode ?? ssotSortMode;
+  const zoomLevel = initialZoomLevel ?? ssotZoomLevel;
+
+  // Apply URL params to SSOT on initial load so they persist
+  const initialAppliedRef = useRef(false);
+  useEffect(() => {
+    if (initialAppliedRef.current) return;
+    initialAppliedRef.current = true;
+    const patch: Record<string, unknown> = {};
+    if (initialViewMode && initialViewMode !== ssotViewMode) patch.viewMode = initialViewMode;
+    if (initialSortMode && initialSortMode !== ssotSortMode) patch.sortMode = initialSortMode;
+    if (initialZoomLevel !== undefined && initialZoomLevel !== ssotZoomLevel) patch.zoomLevel = initialZoomLevel;
+    if (Object.keys(patch).length > 0) {
+      actions.handleViewModeChange?.(viewMode);
+      if (sortMode !== 'none') actions.handleSortModeChange?.(sortMode);
+      if (zoomLevel !== 50) actions.handleZoomLevelChange?.(zoomLevel);
+    }
+  }, []); const runtimeContext = useOptionalBuildSessionRuntimeContext();
   const buildSessionIndicator = useMemo(
     () => ({
       runningNodeIds: runtimeContext?.runningNodeIds

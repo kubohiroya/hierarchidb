@@ -11,5 +11,8 @@ export const MemoizedTreeConsoleIntegration = memo<TreeConsoleIntegrationProps>(
   (prev, next) =>
     prev.treeId === next.treeId &&
     prev.pageNodeId === next.pageNodeId &&
-    (prev.pageTreeNode?.id ?? null) === (next.pageTreeNode?.id ?? null)
+    (prev.pageTreeNode?.id ?? null) === (next.pageTreeNode?.id ?? null) &&
+    prev.initialViewMode === next.initialViewMode &&
+    prev.initialSortMode === next.initialSortMode &&
+    prev.initialZoomLevel === next.initialZoomLevel
 );
