@@ -1,7 +1,7 @@
 /**
  * console Layout Route for TanStack Router
  *
- * This route handles the `/t/:treeId` path and loads the console data.
+ * This route handles the `/d/:treeId` path and loads the console data.
  * It corresponds to the React Router route `t.($treeId)._layout.tsx`
  */
 

@@ -217,7 +217,7 @@ export function useTreeConsoleToolbarActions({
               ? params.archiveNodeId
               : (archiveRootIdRef.current ?? (treeId ? `${treeId}:archive` : 'archive'));
           navigate({
-            to: `/t/${treeId}/${currentPageNodeId}/${resolvedArchiveNodeId}/archive/restore`,
+            to: `/d/${treeId}/${currentPageNodeId}/${resolvedArchiveNodeId}/archive/restore`,
           });
           break;
         }
@@ -228,7 +228,7 @@ export function useTreeConsoleToolbarActions({
               ? params.archiveNodeId
               : (archiveRootIdRef.current ?? (treeId ? `${treeId}:archive` : 'archive'));
           navigate({
-            to: `/t/${treeId}/${currentPageNodeId}/${resolvedArchiveNodeId}/archive/empty`,
+            to: `/d/${treeId}/${currentPageNodeId}/${resolvedArchiveNodeId}/archive/empty`,
           });
           break;
         }

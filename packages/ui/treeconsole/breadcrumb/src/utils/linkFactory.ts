@@ -31,27 +31,28 @@ export function buildTreeConsoleLinkHref({
   const normalizedTreeId = treeSegment;
 
   if (isRootLike && normalizedTreeId) {
-    return `/t/${normalizedTreeId}`;
+    return `/f/${normalizedTreeId}`;
   }
 
   if (!normalizedTreeId) {
-    return `/t/${normalizedNodeId}`;
+    return `/f/${normalizedNodeId}/-/folder/list`;
   }
 
   if (!normalizedNodeId) {
-    return `/t/${normalizedTreeId}`;
+    return `/f/${normalizedTreeId}`;
   }
 
   const isArchiveContext = Boolean(useArchiveColumns);
   if (!isArchiveContext) {
-    return `/t/${[normalizedTreeId, normalizedNodeId].join('/')}`;
+    return `/f/${normalizedTreeId}/${normalizedNodeId}/-/folder/list`;
   }
 
+  // Archive links stay under /d/
   const rootNodeId = `${treeSegment}:root`;
   const fallbackPageNodeId = pageNodeId == null ? rootNodeId : String(pageNodeId);
   const pageSegment = holderMetaParentId == null ? fallbackPageNodeId : String(holderMetaParentId);
   const targetSegment = normalizedNodeId;
   const actionValue = archiveAction === 'empty' ? 'empty' : 'restore';
 
-  return `/t/${[normalizedTreeId, pageSegment, targetSegment, 'archive', actionValue].join('/')}`;
+  return `/d/${[normalizedTreeId, pageSegment, targetSegment, 'archive', actionValue].join('/')}`;
 }

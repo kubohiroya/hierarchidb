@@ -198,7 +198,7 @@ test.describe('Worker Initialization System', () => {
     });
 
     // Navigate to trigger some Worker API calls
-    const treeLink = page.locator('a[href*="/t/"]').first();
+    const treeLink = page.locator('a[href*="/d/"]').first();
     if (await treeLink.isVisible()) {
       await treeLink.click();
       await page.waitForLoadState('networkidle');
@@ -302,7 +302,7 @@ test.describe('Worker API Facade Usage', () => {
     });
 
     // Navigate to a console page to trigger API calls
-    const treeLink = page.locator('a[href*="/t/"]').first();
+    const treeLink = page.locator('a[href*="/d/"]').first();
     if (await treeLink.isVisible()) {
       await treeLink.click();
       await page.waitForLoadState('networkidle');

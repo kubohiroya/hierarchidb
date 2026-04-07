@@ -395,7 +395,7 @@ export function useArchiveDialog(data: ArchiveDialogData, params: ArchiveDialogR
       const normalizedPageId =
         treeId && pageNodeId && rootNodeId && pageNodeId !== rootNodeId ? pageNodeId : null;
       if (treeId) {
-        const destination = normalizedPageId ? `/t/${treeId}/${normalizedPageId}` : `/t/${treeId}`;
+        const destination = normalizedPageId ? `/d/${treeId}/${normalizedPageId}` : `/d/${treeId}`;
         navigate({ to: destination, replace: true });
         if (shouldReload) {
           window.setTimeout(() => window.location.reload(), 0);

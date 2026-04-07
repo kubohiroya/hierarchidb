@@ -1,7 +1,7 @@
 /**
  * console NodeType Route for TanStack Router
  *
- * This route handles the `/t/:treeId/:pageNodeId/:targetNodeId/:nodeType` path
+ * This route handles the `/d/:treeId/:pageNodeId/:targetNodeId/:nodeType` path
  * and loads the node type data with NotFound handling.
  * Corresponds to React Router routes:
  * - `t.($treeId).($pageNodeId).($targetNodeId).($nodeType).tsx`
@@ -53,7 +53,7 @@ function TreeNodeTypeLayout() {
   }, [notFound]);
 
   const goToPageNode = () => {
-    navigate({ to: `/t/${fallbackTreeId}/${pageNodeId}` });
+    navigate({ to: `/f/${fallbackTreeId}/${pageNodeId}/-/folder/list` });
   };
 
   return (

@@ -212,7 +212,7 @@ export function useTreeConsoleIntegrationInner({
   const handleTagsNavigate = useCallback(() => {
     if (!treeId || !pageNodeId) return;
     navigate({
-      to: '/t/$treeId/$pageNodeId/tags',
+      to: '/d/$treeId/$pageNodeId/tags',
       params: {
         treeId: String(treeId),
         pageNodeId: String(pageNodeId),
@@ -340,11 +340,9 @@ export function useTreeConsoleIntegrationInner({
     onViewModeChange: (mode: import('@hierarchidb/ui-treeconsole-base').ViewMode) => {
       console.debug('[TreeConsole] viewMode changed via toolbar:', mode);
       actions.handleViewModeChange(mode);
+      const sm = sortMode === 'none' ? 'name' : sortMode;
       void navigate({
-        search: (prev: Record<string, unknown>) => ({
-          ...prev,
-          view: mode === 'list' ? undefined : mode,
-        }),
+        to: `/f/${treeId}/${pageNodeId ?? `${treeId}:root`}/-/folder/${mode}${sm !== 'name' ? `/${sm}` : ''}`,
         replace: true,
       });
     },
@@ -352,11 +350,9 @@ export function useTreeConsoleIntegrationInner({
     onSortModeChange: (mode: import('@hierarchidb/ui-treeconsole-base').SortMode) => {
       console.debug('[TreeConsole] sortMode changed via toolbar:', mode);
       actions.handleSortModeChange(mode);
+      const vm = viewMode || 'list';
       void navigate({
-        search: (prev: Record<string, unknown>) => ({
-          ...prev,
-          sort: mode === 'none' ? undefined : mode,
-        }),
+        to: `/f/${treeId}/${pageNodeId ?? `${treeId}:root`}/-/folder/${vm}${mode !== 'name' ? `/${mode}` : ''}`,
         replace: true,
       });
     },
@@ -436,13 +432,6 @@ export function useTreeConsoleIntegrationInner({
     },
     onZoomLevelChange: (zoom: number) => {
       actions.handleZoomLevelChange(zoom);
-      void navigate({
-        search: (prev: Record<string, unknown>) => ({
-          ...prev,
-          zoom: zoom === 50 ? undefined : zoom,
-        }),
-        replace: true,
-      });
     },
     onBreadcrumbNavigate: actions.handleBreadcrumbNavigate,
     onNavigateBack: actions.handleNavigateBack,

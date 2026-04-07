@@ -1,7 +1,7 @@
 /**
  * console Tags Route for TanStack Router
  *
- * This route handles the `/t/:treeId/:pageNodeId/tags` path
+ * This route handles the `/d/:treeId/:pageNodeId/tags` path
  * and renders tags content inside a modal dialog.
  */
 
@@ -39,10 +39,10 @@ function TreeTagsDialog() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const resolvedPageNodeId = pageNodeId ?? `${treeId}:root`;
-  const basePath = `/t/${treeId}/${resolvedPageNodeId}/tags`;
+  const basePath = `/d/${treeId}/${resolvedPageNodeId}/tags`;
   const handleClose = () => {
     if (!treeId) return;
-    navigate({ to: `/t/${treeId}/${resolvedPageNodeId}` });
+    navigate({ to: `/f/${treeId}/${resolvedPageNodeId}/-/folder/list` });
   };
 
   const tags = useMemo(() => {

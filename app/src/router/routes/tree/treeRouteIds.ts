@@ -1,9 +1,15 @@
 export const treeRouteIds = {
-  page: '/t/$treeId/$pageNodeId',
-  tags: '/t/$treeId/$pageNodeId/tags',
-  tagName: '/t/$treeId/$pageNodeId/tags/$tag',
-  target: '/t/$treeId/$pageNodeId/$targetNodeId',
-  dialog: '/t/$treeId/$pageNodeId/$targetNodeId/$nodeType/$action',
-  dialogMode: '/t/$treeId/$pageNodeId/$targetNodeId/$nodeType/$action/$mode',
-  dialogModeStep: '/t/$treeId/$pageNodeId/$targetNodeId/$nodeType/$action/$mode/$step',
+  page: '/d/$treeId/$pageNodeId',
+  tags: '/d/$treeId/$pageNodeId/tags',
+  tagName: '/d/$treeId/$pageNodeId/tags/$tag',
+  target: '/d/$treeId/$pageNodeId/$targetNodeId',
+  dialog: '/d/$treeId/$pageNodeId/$targetNodeId/$nodeType/$action',
+  dialogMode: '/d/$treeId/$pageNodeId/$targetNodeId/$nodeType/$action/$mode',
+  dialogModeStep: '/d/$treeId/$pageNodeId/$targetNodeId/$nodeType/$action/$mode/$step',
+} as const;
+
+/** Folder view route IDs */
+export const folderRouteIds = {
+  view: '/f/$treeId/$pageNodeId/$targetNodeId/folder/$viewMode',
+  viewSort: '/f/$treeId/$pageNodeId/$targetNodeId/folder/$viewMode/$sortMode',
 } as const;

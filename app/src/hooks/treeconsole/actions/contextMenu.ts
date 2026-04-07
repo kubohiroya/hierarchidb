@@ -118,7 +118,7 @@ export const createContextMenuAction = (
         if (normalizedAction === 'navigate') {
           if (options?.openInNewTab && treeId) {
             const qs = searchTerm ? `?q=${encodeURIComponent(searchTerm)}` : '';
-            openInNewTab(`/t/${treeId}/${targetNodeId}${qs}`);
+            openInNewTab(`/f/${treeId}/${targetNodeId}/-/folder/list`);
             return;
           }
           navigation.navigateTo(targetNodeId);
@@ -237,7 +237,7 @@ export const createContextMenuAction = (
 
             const navigateToCreateDialog = () => {
               const nodeTypePath = String(newType);
-              const nextUrl = `/t/${treeId}/${targetNodeId}/${wcNodeId}/${nodeTypePath}/create`;
+              const nextUrl = `/d/${treeId}/${targetNodeId}/${wcNodeId}/${nodeTypePath}/create`;
               if (options?.openInNewTab) {
                 openInNewTab(nextUrl);
                 return;
@@ -326,7 +326,7 @@ export const createContextMenuAction = (
             const parentForRoute = (node.parentId as NodeId | undefined) ?? pageNodeId;
             const targetId = targetNodeId;
             pushPath(
-              `/t/${treeId}/${parentForRoute}/${targetId}/folder-export/export/normal/1`
+              `/d/${treeId}/${parentForRoute}/${targetId}/folder-export/export/normal/1`
             );
             return;
           }

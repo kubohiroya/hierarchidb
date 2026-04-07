@@ -9,7 +9,7 @@ import { PluginDialogFooter } from '../../headless/components/PluginDialogFooter
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => () => Promise.resolve(),
-  useLocation: () => ({ pathname: '/t/demo/root', searchStr: '', hash: '' }),
+  useLocation: () => ({ pathname: '/d/demo/root', searchStr: '', hash: '' }),
 }));
 
 afterEach(() => {

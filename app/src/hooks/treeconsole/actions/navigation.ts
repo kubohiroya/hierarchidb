@@ -12,42 +12,45 @@ export type NavigationHelpers = {
   navigateTo: (targetId: NodeId | null | undefined) => void;
 };
 
-export const createNavigationHelpers = (deps: TreeConsoleActionDeps): NavigationHelpers => {
-  const { pushPath, searchTerm, treeId, ssot } = deps;
+/**
+ * Build a folder view URL path.
+ * Pattern: /f/:treeId/:pageNodeId/:targetNodeId/folder/:viewMode/:sortMode
+ */
+export function buildFolderPath(
+  treeId: string,
+  pageNodeId: string | undefined,
+  viewMode: string,
+  sortMode: string,
+  targetNodeId?: string,
+): string {
+  const target = targetNodeId ?? '-';
+  const page = pageNodeId ?? `${treeId}:root`;
+  const segments = [`/f/${encodeURIComponent(treeId)}/${encodeURIComponent(page)}/${encodeURIComponent(target)}/folder/${encodeURIComponent(viewMode)}`];
+  if (sortMode && sortMode !== 'name') {
+    segments.push(sortMode);
+  }
+  return segments.join('/');
+}
 
-  /** Build query string preserving view/sort params from SSOT. */
-  const buildQueryString = (extraParams?: Record<string, string>): string => {
-    const params = new URLSearchParams();
-    if (searchTerm) params.set('q', searchTerm);
-    const vm = ssot.viewMode;
-    if (vm && vm !== 'list') params.set('view', vm);
-    const sm = ssot.sortMode;
-    if (sm && sm !== 'none') params.set('sort', sm);
-    const zl = ssot.zoomLevel;
-    if (typeof zl === 'number' && zl !== 50) params.set('zoom', String(zl));
-    if (extraParams) {
-      for (const [k, v] of Object.entries(extraParams)) params.set(k, v);
-    }
-    const qs = params.toString();
-    return qs ? `?${qs}` : '';
-  };
+export const createNavigationHelpers = (deps: TreeConsoleActionDeps): NavigationHelpers => {
+  const { pushPath, treeId, ssot } = deps;
+
+  const resolveViewMode = () => ssot.viewMode || 'list';
+  const resolveSortMode = () => ssot.sortMode || 'name';
 
   const pushToNode = (targetNodeId?: NodeId | null) => {
     if (!pushPath || !treeId) return;
-    const qs = buildQueryString();
-    const basePath = `/t/${treeId}`;
-    const nextPath = targetNodeId ? `${basePath}/${targetNodeId}${qs}` : `${basePath}${qs}`;
-    pushPath(nextPath);
+    const vm = resolveViewMode();
+    const sm = resolveSortMode();
+    const pageId = targetNodeId ? String(targetNodeId) : undefined;
+    pushPath(buildFolderPath(treeId, pageId, vm, sm));
   };
 
   const navigateTo = (targetId: NodeId | null | undefined) => {
     if (!pushPath || !treeId) return;
-    const qs = buildQueryString();
-    if (!targetId) {
-      pushPath(`/t/${treeId}${qs}`);
-    } else {
-      pushPath(`/t/${treeId}/${targetId}${qs}`);
-    }
+    const vm = resolveViewMode();
+    const sm = resolveSortMode();
+    pushPath(buildFolderPath(treeId, targetId ? String(targetId) : undefined, vm, sm));
   };
 
   return { pushToNode, navigateTo };
@@ -57,22 +60,11 @@ export const createNavigationActions = (
   deps: TreeConsoleActionDeps,
   helpers?: NavigationHelpers
 ) => {
-  const { pushPath, treeId, searchTerm, pageTreeNode, ssot } = deps;
+  const { pushPath, treeId, pageTreeNode, ssot } = deps;
   const { pushToNode, navigateTo } = helpers ?? createNavigationHelpers(deps);
 
-  /** Build query string preserving view/sort params from SSOT. */
-  const buildQueryString = (): string => {
-    const params = new URLSearchParams();
-    if (searchTerm) params.set('q', searchTerm);
-    const vm = ssot.viewMode;
-    if (vm && vm !== 'list') params.set('view', vm);
-    const sm = ssot.sortMode;
-    if (sm && sm !== 'none') params.set('sort', sm);
-    const zl = ssot.zoomLevel;
-    if (typeof zl === 'number' && zl !== 50) params.set('zoom', String(zl));
-    const qs = params.toString();
-    return qs ? `?${qs}` : '';
-  };
+  const resolveViewMode = () => ssot.viewMode || 'list';
+  const resolveSortMode = () => ssot.sortMode || 'name';
 
   return {
     pushToNode,
@@ -80,20 +72,18 @@ export const createNavigationActions = (
     handleNodeClick: (node: HierarchicalTreeNode) => {
       const targetId = node.id as NodeId;
       if (pushPath && treeId) {
-        const isRootLike = pageTreeNode && pageTreeNode.id === targetId;
-        const qs = buildQueryString();
-        pushPath(isRootLike ? `/t/${treeId}${qs}` : `/t/${treeId}/${targetId}${qs}`);
+        const vm = resolveViewMode();
+        const sm = resolveSortMode();
+        pushPath(buildFolderPath(treeId, String(targetId), vm, sm));
       }
     },
 
     handleBreadcrumbNavigate: (nodeId: string, node?: BreadcrumbNode) => {
       if (!nodeId || (node && node.isClickable === false)) return;
-      const target = nodeId as NodeId;
-      if (!target) return;
       if (pushPath && treeId) {
-        const isRootLike = pageTreeNode && pageTreeNode.id === target;
-        const qs = buildQueryString();
-        pushPath(isRootLike ? `/t/${treeId}${qs}` : `/t/${treeId}/${target}${qs}`);
+        const vm = resolveViewMode();
+        const sm = resolveSortMode();
+        pushPath(buildFolderPath(treeId, nodeId, vm, sm));
       }
     },
 

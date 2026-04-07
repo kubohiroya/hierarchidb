@@ -1,7 +1,7 @@
 /**
  * console Dialog Route for TanStack Router
  *
- * This route handles the `/t/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action/:mode?/:step?` path
+ * This route handles the `/d/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action/:mode?/:step?` path
  * and displays the appropriate dialog component.
  * Corresponds to React Router route `t.($treeId).($pageNodeId).($targetNodeId).$nodeType.$action.tsx`
  */

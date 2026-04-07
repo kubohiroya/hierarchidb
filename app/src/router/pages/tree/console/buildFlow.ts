@@ -107,7 +107,7 @@ export const buildDialogUrl = (params: {
   buildQueueKey?: string | null;
   buildQueued?: boolean;
 }): string => {
-  const basePath = `/t/${params.treeId}/${params.pageNodeId}/${params.targetNodeId}/${params.nodeType}/edit/normal/${params.stepNumber}`;
+  const basePath = `/d/${params.treeId}/${params.pageNodeId}/${params.targetNodeId}/${params.nodeType}/edit/normal/${params.stepNumber}`;
   const search = new URLSearchParams();
   if (params.buildQueued) {
     search.set('build', '1');

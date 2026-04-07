@@ -160,7 +160,7 @@ export const createDialogHelpers = (deps: TreeConsoleActionDeps) => {
         targetNodeId;
 
       const action = dialogOptions?.action ?? 'edit';
-      const basePath = `/t/${treeId}/${parentForRoute}/${canonicalId}/${nodeType}/${action}`;
+      const basePath = `/d/${treeId}/${parentForRoute}/${canonicalId}/${nodeType}/${action}`;
       const mode = dialogOptions?.displayMode ?? 'normal';
       const step = dialogOptions?.initialStep ?? 1;
       const nextUrl = `${basePath}/${mode}/${step}`;

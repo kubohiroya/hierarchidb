@@ -132,7 +132,7 @@ export const createMutationActions = (
       const wcNodeId = res.nodeId as NodeId;
       fireCmdEvent();
       if (deps.pushPath) {
-        deps.pushPath(`/t/${treeId}/${pageNodeId}/${wcNodeId}/${String(nodeType)}/create`);
+        deps.pushPath(`/d/${treeId}/${pageNodeId}/${wcNodeId}/${String(nodeType)}/create`);
       }
     } catch (error) {
       console.error('Create failed:', error);

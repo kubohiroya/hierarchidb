@@ -114,7 +114,7 @@ export function TreeNodeInfoPanel({
     (tagName: string) => {
       if (!resolvedTreeId || !resolvedPageNodeId) return;
       navigate({
-        to: `/t/${resolvedTreeId}/${resolvedPageNodeId}/tags/${encodeURIComponent(tagName)}`,
+        to: `/d/${resolvedTreeId}/${resolvedPageNodeId}/tags/${encodeURIComponent(tagName)}`,
       });
     },
     [navigate, resolvedPageNodeId, resolvedTreeId]
@@ -128,7 +128,7 @@ export function TreeNodeInfoPanel({
   const isFolderNode = isFolderNodeType(menuNode?.nodeType);
   const handleNavigateToParent = useCallback(() => {
     if (!treeId || !parentNodeId || isRootNode) return;
-    navigate({ to: `/t/${treeId}/${parentNodeId}` });
+    navigate({ to: `/f/${treeId}/${parentNodeId}/-/folder/list` });
   }, [isRootNode, navigate, parentNodeId, treeId]);
   const handleBackdropClick = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {

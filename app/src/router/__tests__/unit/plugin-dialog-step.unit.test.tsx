@@ -10,7 +10,7 @@ import { treeRouteIds } from '../../routes/tree/treeRouteIds.ts';
 import { usePluginDialogRoute } from '../../routes/tree/usePluginDialogRoute.ts';
 
 const mockNavigate = vi.fn();
-let mockLocation = { pathname: '/t/r/root', searchStr: '', hash: '' };
+let mockLocation = { pathname: '/d/r/root', searchStr: '', hash: '' };
 let mockMatches: Array<{ routeId: string; params: Record<string, string> }> = [];
 
 vi.mock('@tanstack/react-router', () => ({
@@ -50,7 +50,7 @@ const HookHarness = ({
 
 afterEach(() => {
   mockNavigate.mockReset();
-  mockLocation = { pathname: '/t/r/root', searchStr: '', hash: '' };
+  mockLocation = { pathname: '/d/r/root', searchStr: '', hash: '' };
   mockMatches = [];
 });
 
@@ -184,7 +184,7 @@ describe('usePluginDialogRoute step params', () => {
       },
     ];
     mockLocation = {
-      pathname: '/t/r/r:root/node-1/shape/edit/maximize/5',
+      pathname: '/d/r/r:root/node-1/shape/edit/maximize/5',
       searchStr: '',
       hash: '',
     };
@@ -234,7 +234,7 @@ describe('usePluginDialogRoute step params', () => {
       },
     ];
     mockLocation = {
-      pathname: '/t/r/r%3Aroot/node-1/shape/create/maximize/5',
+      pathname: '/d/r/r%3Aroot/node-1/shape/create/maximize/5',
       searchStr: '',
       hash: '',
     };
@@ -338,7 +338,7 @@ describe('usePluginDialogRoute step params', () => {
       },
     ];
     mockLocation = {
-      pathname: '/t/r/r:root/node-1/shape/edit/normal/2',
+      pathname: '/d/r/r:root/node-1/shape/edit/normal/2',
       searchStr: '',
       hash: '#/t/r/r:root/node-1/shape/edit/normal/2',
     };
@@ -373,7 +373,7 @@ describe('usePluginDialogRoute step params', () => {
     snapshot?.handleUrlStateChange({ mode: 'normal', step: 5 });
 
     expect(mockNavigate).toHaveBeenCalledWith({
-      to: '/t/$treeId/$pageNodeId/$targetNodeId/$nodeType/$action/$mode/$step',
+      to: '/d/$treeId/$pageNodeId/$targetNodeId/$nodeType/$action/$mode/$step',
       params: {
         treeId: 'r',
         pageNodeId: 'r:root',

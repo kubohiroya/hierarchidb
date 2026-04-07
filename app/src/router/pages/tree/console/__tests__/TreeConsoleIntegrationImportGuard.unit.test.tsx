@@ -117,7 +117,7 @@ vi.mock('../../../../../hooks/SubscriptionServices.ts', () => ({
 }));
 
 vi.mock('@tanstack/react-router', () => ({
-  useLocation: () => ({ pathname: '/t/r/root', searchStr: '' }),
+  useLocation: () => ({ pathname: '/d/r/root', searchStr: '' }),
   useNavigate: () => vi.fn(),
 }));
 

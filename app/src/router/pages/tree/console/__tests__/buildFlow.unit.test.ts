@@ -98,7 +98,7 @@ describe('collectBuildUrlsForFolder', () => {
       treeId: 'tree-1' as TreeId,
       pageNodeId: folderNode.id as NodeId,
       folderNode,
-      returnTo: '/t/tree-1/r:root-folder',
+      returnTo: '/d/tree-1/r:root-folder',
       workerClient,
     });
 
@@ -163,7 +163,7 @@ describe('collectBuildUrlsForFolder', () => {
     expect(navigate).toHaveBeenCalledTimes(1);
     const [urlValue] = navigate.mock.calls[0]!;
     const builtUrl = new URL(urlValue, 'http://localhost');
-    expect(builtUrl.pathname).toBe('/t/tree-1/r:shape-no-autobuild/shape/edit/normal/2');
+    expect(builtUrl.pathname).toBe('/d/tree-1/r:shape-no-autobuild/shape/edit/normal/2');
     expect(builtUrl.searchParams.get('build')).toBeNull();
     expect(builtUrl.searchParams.get('returnTo')).toBe('/treeconsole');
   });
@@ -272,9 +272,9 @@ describe('collectBuildUrlsForFolder', () => {
     expect(queueState.urls).toHaveLength(3);
     expect(queueState.urls.map((item) => new URL(item, 'http://localhost').pathname)).toEqual(
       expect.arrayContaining([
-        '/t/tree-1/r:root-folder/r:shape-build/shape/edit/normal/2',
-        '/t/tree-1/r:root-folder/r:route-build/route/edit/normal/2',
-        '/t/tree-1/r:root-folder/r:styler-build/styler/edit/normal/2',
+        '/d/tree-1/r:root-folder/r:shape-build/shape/edit/normal/2',
+        '/d/tree-1/r:root-folder/r:route-build/route/edit/normal/2',
+        '/d/tree-1/r:root-folder/r:styler-build/styler/edit/normal/2',
       ])
     );
   });
@@ -319,7 +319,7 @@ describe('collectBuildUrlsForFolder', () => {
       treeId: 'tree-1' as TreeId,
       pageNodeId: folderNode.id as NodeId,
       folderNode,
-      returnTo: '/t/tree-1/r:parent-folder',
+      returnTo: '/d/tree-1/r:parent-folder',
       workerClient,
     });
 
@@ -364,7 +364,7 @@ describe('collectBuildUrlsForFolder', () => {
       treeId: 'tree-1' as TreeId,
       pageNodeId: folderNode.id as NodeId,
       folderNode,
-      returnTo: '/t/tree-1/r:parent-folder-empty',
+      returnTo: '/d/tree-1/r:parent-folder-empty',
       workerClient,
     });
 

@@ -62,7 +62,7 @@ export function ResourceProjectPreviewGroup({
 
     // Navigate to target page (don't include appPrefix since it's already in basename)
     const basePath = targetType === 'resources' ? 'r' : 'p';
-    const targetPath = savedPageNodeId ? `/t/${basePath}/${savedPageNodeId}` : `/t/${basePath}`;
+    const targetPath = savedPageNodeId ? `/f/${basePath}/${savedPageNodeId}/-/folder/list` : `/f/${basePath}`;
 
     navigate({to: targetPath, replace: true });
   };
