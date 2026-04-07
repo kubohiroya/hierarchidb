@@ -62,7 +62,9 @@ export async function createHierarchiRouter(config: RouterConfig) {
   const { folderBaseRoute } = await import('./routes/folder/baseRoute.js');
   const {
     folderTreeRoute,
+    folderTreeIndexRoute,
     folderPageRoute,
+    folderPageIndexRoute,
     folderViewRoute,
     folderViewSortRoute,
   } = await import('./routes/folder/folderRoutes.js');
@@ -88,7 +90,9 @@ export async function createHierarchiRouter(config: RouterConfig) {
   // Build folder view route hierarchy (/f/)
   const folderRouteWithChildren = folderBaseRoute.addChildren([
     folderTreeRoute.addChildren([
+      folderTreeIndexRoute,
       folderPageRoute.addChildren([
+        folderPageIndexRoute,
         folderViewSortRoute,
         folderViewRoute,
       ]),

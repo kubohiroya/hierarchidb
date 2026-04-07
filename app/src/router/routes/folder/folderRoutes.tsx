@@ -2,14 +2,13 @@
  * Folder View Routes for TanStack Router
  *
  * URL patterns:
- *   /f/:treeId/:pageNodeId/-/folder/icon/:sortMode?    → IconView
- *   /f/:treeId/:pageNodeId/-/folder/list/:sortMode?    → ListView
- *   /f/:treeId/:pageNodeId/:targetNodeId/folder/column/:sortMode?  → ColumnView
- *
- * sortMode defaults to 'name' when omitted.
+ *   /f/:treeId                                              → redirect to root folder list
+ *   /f/:treeId/:pageNodeId                                  → redirect to folder list
+ *   /f/:treeId/:pageNodeId/:targetNodeId/folder/:viewMode   → folder view
+ *   /f/:treeId/:pageNodeId/:targetNodeId/folder/:viewMode/:sortMode → folder view with sort
  */
 
-import { createRoute, Outlet } from '@tanstack/react-router';
+import { createRoute, Outlet, redirect } from '@tanstack/react-router';
 import { loadTree, loadPageNode } from '~/router/loaders/treeLoaders';
 import { folderBaseRoute } from './baseRoute.js';
 import { FolderViewPage } from './FolderViewPage.js';
@@ -28,6 +27,16 @@ export const folderTreeRoute = createRoute({
     component: () => <Outlet />,
 });
 
+// /f/:treeId/ (index) → redirect to default folder view
+export const folderTreeIndexRoute = createRoute({
+    getParentRoute: () => folderTreeRoute,
+    path: '/',
+    beforeLoad: ({ params }) => {
+        const { treeId } = params;
+        throw redirect({ to: `/f/${treeId}/${treeId}:root/-/folder/list` });
+    },
+});
+
 // /f/:treeId/:pageNodeId
 export const folderPageRoute = createRoute({
     getParentRoute: () => folderTreeRoute,
@@ -43,16 +52,26 @@ export const folderPageRoute = createRoute({
     component: () => <Outlet />,
 });
 
-// /f/:treeId/:pageNodeId/:targetNodeId/folder/:viewMode
-export const folderViewRoute = createRoute({
+// /f/:treeId/:pageNodeId/ (index) → redirect to default folder view
+export const folderPageIndexRoute = createRoute({
     getParentRoute: () => folderPageRoute,
-    path: '$targetNodeId/folder/$viewMode',
-    component: FolderViewPage,
+    path: '/',
+    beforeLoad: ({ params }) => {
+        const { treeId, pageNodeId } = params;
+        throw redirect({ to: `/f/${treeId}/${pageNodeId}/-/folder/list` });
+    },
 });
 
 // /f/:treeId/:pageNodeId/:targetNodeId/folder/:viewMode/:sortMode
 export const folderViewSortRoute = createRoute({
     getParentRoute: () => folderPageRoute,
     path: '$targetNodeId/folder/$viewMode/$sortMode',
+    component: FolderViewPage,
+});
+
+// /f/:treeId/:pageNodeId/:targetNodeId/folder/:viewMode
+export const folderViewRoute = createRoute({
+    getParentRoute: () => folderPageRoute,
+    path: '$targetNodeId/folder/$viewMode',
     component: FolderViewPage,
 });
