@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import { memo, useMemo } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Slider, Typography } from '@mui/material';
 import type { TreeTableColumn } from './TreeTable/index.js';
 // RowContextMenu removed: right-click is disabled app-wide
 import type { NodeId } from '@hierarchidb/core-types';
@@ -330,6 +330,19 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
               <Typography variant="caption" display="block">- Number of selected nodes</Typography>
             </Box>
           )}
+          rightSlot={
+            props.viewMode === 'icon' && props.onZoomLevelChange ? (
+              <Slider
+                value={props.zoomLevel ?? 50}
+                min={0}
+                max={100}
+                size="small"
+                onChange={(_, value) => props.onZoomLevelChange?.(value as number)}
+                aria-label="Zoom level"
+                sx={{ width: 120 }}
+              />
+            ) : undefined
+          }
         />
       )}
     </Box>

@@ -3,7 +3,7 @@ import type { ComponentProps, ComponentType, Dispatch, KeyboardEvent, MouseEvent
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
 import type { BreadcrumbNode, TreeConsoleBreadcrumbProps } from '~/types';
 import { NodeContextMenu, type OpenStepOption } from '~/components/NodeContextMenu';
-import { NodeTypeIcon } from '~/components/NodeTypeIcon';
+import { NodeTypeIcon } from '@hierarchidb/components';
 
 interface UseTreeConsoleBreadcrumbResult {
   pathToUse: BreadcrumbNode[];
