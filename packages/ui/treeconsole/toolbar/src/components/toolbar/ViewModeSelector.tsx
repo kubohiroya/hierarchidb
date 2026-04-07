@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { IconButton, ToggleButton, ToggleButtonGroup, useMediaQuery } from '@mui/material';
+import { Button, ToggleButton, ToggleButtonGroup, useMediaQuery } from '@mui/material';
 import {
     Apps as IconViewIcon,
     FormatListBulleted as ListViewIcon,
@@ -11,9 +11,15 @@ import type { SelectedMenuItem } from './SelectedMenu.js';
 export type ViewMode = 'icon' | 'list' | 'column';
 
 const VIEW_MODE_ICONS: Record<ViewMode, React.ReactElement> = {
-    icon: <IconViewIcon fontSize="small" />,
-    list: <ListViewIcon fontSize="small" />,
-    column: <ColumnViewIcon fontSize="small" />,
+    icon: <IconViewIcon />,
+    list: <ListViewIcon />,
+    column: <ColumnViewIcon />,
+};
+
+const VIEW_MODE_LABELS: Record<ViewMode, string> = {
+    icon: 'Icon',
+    list: 'List',
+    column: 'Column',
 };
 
 const VIEW_MENU_ITEMS: readonly SelectedMenuItem<ViewMode>[] = [
@@ -61,12 +67,6 @@ export function ViewModeSelector({ value, onChange, breakpoint = 600, forceWide 
                 onChange={handleToggle}
                 size="small"
                 aria-label="View mode"
-                sx={{
-                    '& .MuiToggleButton-root': {
-                        border: '1px solid',
-                        borderColor: 'divider',
-                    },
-                }}
             >
                 <ToggleButton value="icon" aria-label="Icon view">
                     <IconViewIcon fontSize="small" />
@@ -83,14 +83,15 @@ export function ViewModeSelector({ value, onChange, breakpoint = 600, forceWide 
 
     return (
         <>
-            <IconButton
+            <Button
                 onClick={handleOpen}
                 aria-label="View mode"
                 size="small"
-                sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
+                variant="outlined"
+                startIcon={VIEW_MODE_ICONS[value]}
             >
-                {VIEW_MODE_ICONS[value]}
-            </IconButton>
+                {VIEW_MODE_LABELS[value]}
+            </Button>
             <SelectedMenu
                 anchorEl={anchorEl}
                 open={open}

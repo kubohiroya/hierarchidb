@@ -9,7 +9,7 @@
  * Positions are stored as grid coordinates (col, row), not pixel coordinates.
  */
 
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Box, Typography } from '@mui/material';
 import { NodeTypeIcon } from '@hierarchidb/components';
 import type { NodeId } from '@hierarchidb/core-types';
@@ -359,6 +359,14 @@ function DraggableIconCell({
     const elementRef = useRef<HTMLDivElement | null>(null);
     const movedRef = useRef(false);
     const isDraggingRef = useRef(false);
+
+    // Sync DOM position when zoom changes (initialPx/initialPy update)
+    useEffect(() => {
+        if (!isDraggingRef.current && elementRef.current) {
+            elementRef.current.style.left = `${initialPx}px`;
+            elementRef.current.style.top = `${initialPy}px`;
+        }
+    }, [initialPx, initialPy]);
 
     const handlePointerDown = useCallback((e: React.PointerEvent) => {
         e.currentTarget.setPointerCapture(e.pointerId);

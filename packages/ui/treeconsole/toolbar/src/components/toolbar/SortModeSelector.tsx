@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { IconButton } from '@mui/material';
+import { Button } from '@mui/material';
 import { Sort as SortIcon } from '@mui/icons-material';
 import { SelectedMenu } from './SelectedMenu.js';
 import type { SelectedMenuItem } from './SelectedMenu.js';
@@ -45,14 +45,15 @@ export function SortModeSelector({ value, onChange }: SortModeSelectorProps) {
 
     return (
         <>
-            <IconButton
+            <Button
                 onClick={handleOpen}
                 aria-label="Sort mode"
                 size="small"
-                sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
+                variant="outlined"
+                startIcon={<SortIcon />}
             >
-                <SortIcon fontSize="small" />
-            </IconButton>
+                Sort
+            </Button>
             <SelectedMenu
                 anchorEl={anchorEl}
                 open={open}

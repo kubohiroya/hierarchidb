@@ -88,69 +88,71 @@ function getIconByType(nodeType: string) {
   * NodeTypeIcon
   */
 export function NodeTypeIcon({
-                               nodeType,
-                               size = 'small',
-                               clickable = false,
-                               onClick,
-                               disabled = false,
-                               color = 'inherit',
-                               htmlColor,
-                               isDraft = false,
-                               buildRequired = false,
-                             }: NodeTypeIconProps): ReactElement {
-  // Handle both standard sizes and string size
+  nodeType,
+  size = 'small',
+  clickable = false,
+  onClick,
+  disabled = false,
+  color = 'inherit',
+  htmlColor,
+  isDraft = false,
+  buildRequired = false,
+}: NodeTypeIconProps): ReactElement {
+  // Handle both standard sizes and custom pixel string
   const standardSizes = ['small', 'medium', 'large'];
-  const iconSize = standardSizes.includes(size) ? (size as 'small' | 'medium' | 'large') : 'small';
+  const isCustomSize = !standardSizes.includes(size);
+  const iconSize = isCustomSize ? 'small' : (size as 'small' | 'medium' | 'large');
+  const customSizeSx = isCustomSize ? { fontSize: size } : undefined;
 
   // Fallback to default icon
   const Icon = getIconByType(nodeType);
   const fontSize = iconSize === 'small' ? 'small' : iconSize === 'large' ? 'large' : 'medium';
 
-  const icon = (
-    <Icon fontSize={fontSize} color={color} htmlColor={htmlColor} />
-  );
+  const icon = isCustomSize
+    ? <Icon sx={{ fontSize: size }} color={color} htmlColor={htmlColor} />
+    : <Icon fontSize={fontSize} color={color} htmlColor={htmlColor} />;
 
   const draftBadgeProps = isDraft
     ? {
-        color: 'error' as const,
-        variant: 'dot' as const,
-        overlap: 'circular' as const,
-        anchorOrigin: { vertical: 'top' as const, horizontal: 'right' as const },
-        invisible: false,
-        sx: {
-          '& .MuiBadge-badge': {
-            width: 8,
-            height: 8,
-            minWidth: 8,
-            transform: 'scale(1) translate(22%, -22%) translateX(2px)',
-            borderRadius: '50%',
-            border: '1px solid currentColor',
-          },
+      color: 'error' as const,
+      variant: 'dot' as const,
+      overlap: 'circular' as const,
+      anchorOrigin: { vertical: 'top' as const, horizontal: 'right' as const },
+      invisible: false,
+      sx: {
+        '& .MuiBadge-badge': {
+          width: 8,
+          height: 8,
+          minWidth: 8,
+          transform: 'scale(1) translate(22%, -22%) translateX(2px)',
+          borderRadius: '50%',
+          border: '1px solid currentColor',
         },
-      }
+      },
+    }
     : { invisible: true as const };
 
   const buildRequiredBadgeProps = buildRequired
     ? {
-        color: 'warning' as const,
-        variant: 'dot' as const,
-        overlap: 'circular' as const,
-        anchorOrigin: { vertical: 'top' as const, horizontal: 'right' as const },
-        invisible: false,
-        sx: {
-          '& .MuiBadge-badge': {
-            width: 12,
-            height: 12,
-            minWidth: 12,
-            transform: 'scale(1) translate(18%, -18%) translateX(3px)',
-            borderRadius: '50%',
-            border: '2px solid',
-            backgroundColor: 'background.paper',
-            color: 'warning.main',
-            boxSizing: 'border-box',
-          },
+      color: 'warning' as const,
+      variant: 'dot' as const,
+      overlap: 'circular' as const,
+      anchorOrigin: { vertical: 'top' as const, horizontal: 'right' as const },
+      invisible: false,
+      sx: {
+        '& .MuiBadge-badge': {
+          width: 12,
+          height: 12,
+          minWidth: 12,
+          transform: 'scale(1) translate(18%, -18%) translateX(3px)',
+          borderRadius: '50%',
+          border: '2px solid',
+          backgroundColor: 'background.paper',
+          color: 'warning.main',
+          boxSizing: 'border-box',
         },
-      }
+      },
+    }
     : { invisible: true as const };
 
   const withBadges = (children: ReactElement): ReactElement => {
@@ -187,13 +189,18 @@ export function NodeTypeIcon({
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
-        width: iconSize === 'small' ? 20 : iconSize === 'large' ? 28 : 24,
-        height: iconSize === 'small' ? 20 : iconSize === 'large' ? 28 : 24,
+        ...(isCustomSize
+          ? { width: size, height: size }
+          : {
+            width: iconSize === 'small' ? 20 : iconSize === 'large' ? 28 : 24,
+            height: iconSize === 'small' ? 20 : iconSize === 'large' ? 28 : 24,
+          }),
       }}
     >
-      {/* Keep color as 'inherit' so htmlColor takes effect when provided */}
       {withBadges(
-        <Icon fontSize={fontSize} color={color} htmlColor={htmlColor} />
+        isCustomSize
+          ? <Icon sx={{ fontSize: size }} color={color} htmlColor={htmlColor} />
+          : <Icon fontSize={fontSize} color={color} htmlColor={htmlColor} />
       )}
     </Box>
   );
