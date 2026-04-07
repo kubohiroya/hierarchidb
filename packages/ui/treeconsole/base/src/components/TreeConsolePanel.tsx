@@ -191,6 +191,16 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     return <Box>Invalid page context</Box>;
   }
 
+  const selectedIdSet = useMemo(() => {
+    const set = new Set<string>();
+    if (controller.rowSelection) {
+      for (const [id, selected] of Object.entries(controller.rowSelection)) {
+        if (selected) set.add(id);
+      }
+    }
+    return set;
+  }, [controller.rowSelection]);
+
   return (
     <Box
       sx={{
@@ -233,8 +243,12 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
                 nodes={controller.data ?? []}
                 zoomLevel={props.zoomLevel ?? 50}
                 sortMode={props.sortMode ?? 'none'}
+                selectedIds={selectedIdSet}
                 onIconPositionChange={props.onIconPositionChange ?? (() => { })}
                 onNodeClick={controller.onNodeClick ? (nodeId) => controller.onNodeClick?.(nodeId) : undefined}
+                onNodeDoubleClick={controller.onEdit ? (nodeId, node) => controller.onEdit?.(nodeId, node) : undefined}
+                onNodeSelect={controller.onNodeSelect}
+                onContextAction={controller.onContextAction}
               />
             ) : props.viewMode === 'column' ? (
               <ColumnViewWrapper
@@ -281,8 +295,12 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
               nodes={controller.data ?? []}
               zoomLevel={props.zoomLevel ?? 50}
               sortMode={props.sortMode ?? 'none'}
+              selectedIds={selectedIdSet}
               onIconPositionChange={props.onIconPositionChange ?? (() => { })}
               onNodeClick={controller.onNodeClick ? (nodeId) => controller.onNodeClick?.(nodeId) : undefined}
+              onNodeDoubleClick={controller.onEdit ? (nodeId, node) => controller.onEdit?.(nodeId, node) : undefined}
+              onNodeSelect={controller.onNodeSelect}
+              onContextAction={controller.onContextAction}
             />
           ) : props.viewMode === 'column' ? (
             <ColumnViewWrapper

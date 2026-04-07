@@ -33,9 +33,12 @@ export interface IconViewProps {
     nodes: TreeNodeInUI[];
     zoomLevel: number;
     sortMode: SortMode;
+    selectedIds?: Set<string>;
     onIconPositionChange: (nodeId: NodeId, position: { x: number; y: number }) => void;
     onNodeClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
     onNodeDoubleClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
+    onNodeSelect?: (nodeIds: string[], selected: boolean) => void;
+    onContextAction?: (action: string, node: TreeNodeInUI) => void;
 }
 
 // -- Grid coordinate utilities --
@@ -117,9 +120,12 @@ export function IconView({
     nodes,
     zoomLevel,
     sortMode,
+    selectedIds,
     onIconPositionChange,
     onNodeClick,
     onNodeDoubleClick,
+    onNodeSelect,
+    onContextAction,
 }: IconViewProps) {
     const { iconSize, cellSize } = computeZoomLayout(zoomLevel);
 
@@ -137,8 +143,11 @@ export function IconView({
                 nodes={sortedNodes}
                 iconSize={iconSize}
                 cellSize={cellSize}
+                selectedIds={selectedIds}
                 onNodeClick={onNodeClick}
                 onNodeDoubleClick={onNodeDoubleClick}
+                onNodeSelect={onNodeSelect}
+                onContextAction={onContextAction}
             />
         );
     }
@@ -148,9 +157,12 @@ export function IconView({
             nodes={nodes}
             iconSize={iconSize}
             cellSize={cellSize}
+            selectedIds={selectedIds}
             onIconPositionChange={onIconPositionChange}
             onNodeClick={onNodeClick}
             onNodeDoubleClick={onNodeDoubleClick}
+            onNodeSelect={onNodeSelect}
+            onContextAction={onContextAction}
         />
     );
 }
@@ -161,13 +173,23 @@ interface GridLayoutProps {
     nodes: TreeNodeInUI[];
     iconSize: number;
     cellSize: { width: number; height: number };
+    selectedIds?: Set<string>;
     onNodeClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
     onNodeDoubleClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
+    onNodeSelect?: (nodeIds: string[], selected: boolean) => void;
+    onContextAction?: (action: string, node: TreeNodeInUI) => void;
 }
 
-function GridLayout({ nodes, iconSize, cellSize, onNodeClick, onNodeDoubleClick }: GridLayoutProps) {
+function GridLayout({ nodes, iconSize, cellSize, selectedIds, onNodeClick, onNodeDoubleClick, onNodeSelect, onContextAction }: GridLayoutProps) {
+    const handleBackgroundClick = useCallback((e: React.MouseEvent) => {
+        if (e.target === e.currentTarget) {
+            onNodeSelect?.([], false);
+        }
+    }, [onNodeSelect]);
+
     return (
         <Box
+            onClick={handleBackgroundClick}
             sx={{
                 display: 'grid',
                 gridTemplateColumns: `repeat(auto-fill, ${cellSize.width}px)`,
@@ -184,8 +206,11 @@ function GridLayout({ nodes, iconSize, cellSize, onNodeClick, onNodeDoubleClick 
                     node={node}
                     iconSize={iconSize}
                     cellWidth={cellSize.width}
+                    isSelected={selectedIds?.has(node.id) ?? false}
                     onClick={onNodeClick}
                     onDoubleClick={onNodeDoubleClick}
+                    onSelect={onNodeSelect}
+                    onContextAction={onContextAction}
                 />
             ))}
         </Box>
@@ -198,18 +223,24 @@ interface FreeLayoutProps {
     nodes: TreeNodeInUI[];
     iconSize: number;
     cellSize: { width: number; height: number };
+    selectedIds?: Set<string>;
     onIconPositionChange: (nodeId: NodeId, position: { x: number; y: number }) => void;
     onNodeClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
     onNodeDoubleClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
+    onNodeSelect?: (nodeIds: string[], selected: boolean) => void;
+    onContextAction?: (action: string, node: TreeNodeInUI) => void;
 }
 
 function FreeLayout({
     nodes,
     iconSize,
     cellSize,
+    selectedIds,
     onIconPositionChange,
     onNodeClick,
     onNodeDoubleClick,
+    onNodeSelect,
+    onContextAction,
 }: FreeLayoutProps) {
     const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -246,9 +277,16 @@ function FreeLayout({
         }
     }, [nodes, gridPositions, onIconPositionChange]);
 
+    const handleBackgroundClick = useCallback((e: React.MouseEvent) => {
+        if (e.target === e.currentTarget) {
+            onNodeSelect?.([], false);
+        }
+    }, [onNodeSelect]);
+
     return (
         <Box
             ref={containerRef}
+            onClick={handleBackgroundClick}
             sx={{ position: 'relative', width: '100%', height: '100%', overflow: 'auto' }}
         >
             {nodes.map((node) => {
@@ -264,10 +302,13 @@ function FreeLayout({
                         initialPy={py}
                         gridCol={gridPos.col}
                         gridRow={gridPos.row}
+                        isSelected={selectedIds?.has(node.id) ?? false}
                         occupiedSet={occupiedSet}
                         onDragEnd={onIconPositionChange}
                         onClick={onNodeClick}
                         onDoubleClick={onNodeDoubleClick}
+                        onSelect={onNodeSelect}
+                        onContextAction={onContextAction}
                     />
                 );
             })}
@@ -281,18 +322,36 @@ interface IconCellProps {
     node: TreeNodeInUI;
     iconSize: number;
     cellWidth: number;
+    isSelected: boolean;
     onClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
     onDoubleClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
+    onSelect?: (nodeIds: string[], selected: boolean) => void;
+    onContextAction?: (action: string, node: TreeNodeInUI) => void;
 }
 
-function IconCell({ node, iconSize, cellWidth, onClick, onDoubleClick }: IconCellProps) {
-    const handleClick = useCallback(() => onClick?.(node.id, node), [onClick, node]);
-    const handleDoubleClick = useCallback(() => onDoubleClick?.(node.id, node), [onDoubleClick, node]);
+function IconCell({ node, iconSize, cellWidth, isSelected, onClick, onDoubleClick, onSelect, onContextAction }: IconCellProps) {
+    const handleClick = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+        onSelect?.([node.id], true);
+        onClick?.(node.id, node);
+    }, [onClick, onSelect, node]);
+
+    const handleDoubleClick = useCallback(() => {
+        onDoubleClick?.(node.id, node);
+    }, [onDoubleClick, node]);
+
+    const handleContextMenu = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onSelect?.([node.id], true);
+        onContextAction?.('open', node);
+    }, [onSelect, onContextAction, node]);
 
     return (
         <Box
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
+            onContextMenu={handleContextMenu}
             sx={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -300,6 +359,9 @@ function IconCell({ node, iconSize, cellWidth, onClick, onDoubleClick }: IconCel
                 width: cellWidth,
                 cursor: 'pointer',
                 userSelect: 'none',
+                borderRadius: 1,
+                backgroundColor: isSelected ? 'action.selected' : 'transparent',
+                '&:hover': { backgroundColor: isSelected ? 'action.selected' : 'action.hover' },
             }}
         >
             <Box
@@ -348,10 +410,13 @@ interface DraggableIconCellProps {
     initialPy: number;
     gridCol: number;
     gridRow: number;
+    isSelected: boolean;
     occupiedSet: Set<string>;
     onDragEnd: (nodeId: NodeId, position: { x: number; y: number }) => void;
     onClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
     onDoubleClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
+    onSelect?: (nodeIds: string[], selected: boolean) => void;
+    onContextAction?: (action: string, node: TreeNodeInUI) => void;
 }
 
 function DraggableIconCell({
@@ -362,10 +427,13 @@ function DraggableIconCell({
     initialPy,
     gridCol,
     gridRow,
+    isSelected,
     occupiedSet,
     onDragEnd,
     onClick,
     onDoubleClick,
+    onSelect,
+    onContextAction,
 }: DraggableIconCellProps) {
     const dragRef = useRef<{ startX: number; startY: number; origPx: number; origPy: number } | null>(null);
     const elementRef = useRef<HTMLDivElement | null>(null);
@@ -434,15 +502,24 @@ function DraggableIconCell({
         dragRef.current = null;
     }, [node.id, onDragEnd, cellSize, occupiedSet, gridCol, gridRow]);
 
-    const handleClick = useCallback(() => {
+    const handleClick = useCallback((e: React.MouseEvent) => {
         if (!movedRef.current) {
+            e.stopPropagation();
+            onSelect?.([node.id], true);
             onClick?.(node.id, node);
         }
-    }, [onClick, node]);
+    }, [onClick, onSelect, node]);
 
     const handleDoubleClick = useCallback(() => {
         onDoubleClick?.(node.id, node);
     }, [onDoubleClick, node]);
+
+    const handleContextMenu = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onSelect?.([node.id], true);
+        onContextAction?.('open', node);
+    }, [onSelect, onContextAction, node]);
 
     return (
         <Box
@@ -452,6 +529,7 @@ function DraggableIconCell({
             onPointerUp={handlePointerUp}
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
+            onContextMenu={handleContextMenu}
             sx={{
                 position: 'absolute',
                 left: initialPx,
@@ -463,6 +541,9 @@ function DraggableIconCell({
                 cursor: 'grab',
                 userSelect: 'none',
                 touchAction: 'none',
+                borderRadius: 1,
+                backgroundColor: isSelected ? 'action.selected' : 'transparent',
+                '&:hover': { backgroundColor: isSelected ? 'action.selected' : 'action.hover' },
             }}
         >
             <Box
