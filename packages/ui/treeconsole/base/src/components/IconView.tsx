@@ -326,7 +326,14 @@ interface IconCellProps {
 }
 
 function IconCell({ node, iconSize, cellWidth, isSelected, onClick, onDoubleClick, onSelect, onContextMenu }: IconCellProps) {
+    const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    const longPressTriggeredRef = useRef(false);
+
     const handleClick = useCallback((e: React.MouseEvent) => {
+        if (longPressTriggeredRef.current) {
+            longPressTriggeredRef.current = false;
+            return;
+        }
         e.stopPropagation();
         onSelect?.([node.id], true);
         onClick?.(node.id, node);
@@ -343,11 +350,30 @@ function IconCell({ node, iconSize, cellWidth, isSelected, onClick, onDoubleClic
         onContextMenu?.(node, { left: e.clientX, top: e.clientY });
     }, [onSelect, onContextMenu, node]);
 
+    const handlePointerDown = useCallback((e: React.PointerEvent) => {
+        longPressTriggeredRef.current = false;
+        longPressTimerRef.current = setTimeout(() => {
+            longPressTriggeredRef.current = true;
+            onSelect?.([node.id], true);
+            onContextMenu?.(node, { left: e.clientX, top: e.clientY });
+        }, 500);
+    }, [onSelect, onContextMenu, node]);
+
+    const handlePointerUp = useCallback(() => {
+        if (longPressTimerRef.current !== undefined) {
+            clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = undefined;
+        }
+    }, []);
+
     return (
         <Box
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
             onContextMenu={handleContextMenu}
+            onPointerDown={handlePointerDown}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
             sx={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -444,6 +470,9 @@ function DraggableIconCell({
         }
     }, [initialPx, initialPy]);
 
+    const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    const longPressTriggeredRef = useRef(false);
+
     const handlePointerDown = useCallback((e: React.PointerEvent) => {
         e.currentTarget.setPointerCapture(e.pointerId);
         isDraggingRef.current = true;
@@ -454,11 +483,23 @@ function DraggableIconCell({
             origPy: initialPy,
         };
         movedRef.current = false;
-    }, [initialPx, initialPy]);
+        longPressTriggeredRef.current = false;
+        longPressTimerRef.current = setTimeout(() => {
+            longPressTriggeredRef.current = true;
+            isDraggingRef.current = false;
+            dragRef.current = null;
+            onSelect?.([node.id], true);
+            onContextMenu?.(node, { left: e.clientX, top: e.clientY });
+        }, 500);
+    }, [initialPx, initialPy, onSelect, onContextMenu, node]);
 
     const handlePointerMove = useCallback((e: React.PointerEvent) => {
         const drag = dragRef.current;
         if (!drag) return;
+        if (longPressTimerRef.current !== undefined) {
+            clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = undefined;
+        }
         const dx = e.clientX - drag.startX;
         const dy = e.clientY - drag.startY;
         if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
@@ -473,6 +514,15 @@ function DraggableIconCell({
     }, []);
 
     const handlePointerUp = useCallback((e: React.PointerEvent) => {
+        if (longPressTimerRef.current !== undefined) {
+            clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = undefined;
+        }
+        if (longPressTriggeredRef.current) {
+            isDraggingRef.current = false;
+            dragRef.current = null;
+            return;
+        }
         if (dragRef.current && movedRef.current) {
             const drag = dragRef.current;
             const dx = e.clientX - drag.startX;
@@ -499,11 +549,12 @@ function DraggableIconCell({
     }, [node.id, onDragEnd, cellSize, occupiedSet, gridCol, gridRow]);
 
     const handleClick = useCallback((e: React.MouseEvent) => {
-        if (!movedRef.current) {
+        if (!movedRef.current && !longPressTriggeredRef.current) {
             e.stopPropagation();
             onSelect?.([node.id], true);
             onClick?.(node.id, node);
         }
+        longPressTriggeredRef.current = false;
     }, [onClick, onSelect, node]);
 
     const handleDoubleClick = useCallback(() => {

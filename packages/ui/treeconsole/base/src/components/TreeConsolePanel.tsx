@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { Box, Slider, Typography } from '@mui/material';
 import type { TreeTableColumn } from './TreeTable/index.js';
 import type { NodeId } from '@hierarchidb/core-types';
@@ -18,7 +18,6 @@ import type { ViewMode, SortMode } from '~/types/view-mode-types';
 import { IconView } from './IconView.js';
 import { ColumnView } from './ColumnView.js';
 import { useColumnView } from '~/hooks/useColumnView.js';
-import { createSortComparator } from '~/utils/sort-comparator.js';
 
 export type TreeConsoleBreadcrumbRendererProps = BreadcrumbRendererProps;
 
@@ -187,10 +186,6 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     leftSlot: tagsLeftSlot,
   });
 
-  if (!isPageContextValid) {
-    return <Box>Invalid page context</Box>;
-  }
-
   const selectedIdSet = useMemo(() => {
     const set = new Set<string>();
     if (controller.rowSelection) {
@@ -214,6 +209,10 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
   const handleIconContextMenuClose = useCallback(() => {
     setIconContextMenu(null);
   }, []);
+
+  if (!isPageContextValid) {
+    return <Box>Invalid page context</Box>;
+  }
 
   return (
     <Box
@@ -260,7 +259,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
                 selectedIds={selectedIdSet}
                 onIconPositionChange={props.onIconPositionChange ?? (() => { })}
                 onNodeClick={controller.onNodeClick ? (nodeId) => controller.onNodeClick?.(nodeId) : undefined}
-                onNodeDoubleClick={controller.onEdit ? (nodeId, node) => controller.onEdit?.(nodeId, node) : undefined}
+                onNodeDoubleClick={controller.onNodeClick ? (nodeId, node) => controller.onNodeClick?.(nodeId, node) : undefined}
                 onNodeSelect={controller.onNodeSelect}
                 onContextMenu={handleIconContextMenu}
               />
@@ -312,7 +311,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
               selectedIds={selectedIdSet}
               onIconPositionChange={props.onIconPositionChange ?? (() => { })}
               onNodeClick={controller.onNodeClick ? (nodeId) => controller.onNodeClick?.(nodeId) : undefined}
-              onNodeDoubleClick={controller.onEdit ? (nodeId, node) => controller.onEdit?.(nodeId, node) : undefined}
+              onNodeDoubleClick={controller.onNodeClick ? (nodeId, node) => controller.onNodeClick?.(nodeId, node) : undefined}
               onNodeSelect={controller.onNodeSelect}
               onContextMenu={handleIconContextMenu}
             />
@@ -381,15 +380,39 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       {/* IconView context menu */}
       {iconContextMenu && (
         <NodeContextMenu
-          node={iconContextMenu.node as TreeNode}
+          anchorEl={null}
           anchorPosition={iconContextMenu.position}
           open={true}
           onClose={handleIconContextMenuClose}
-          onAction={(action) => {
-            controller.onContextAction?.(action, iconContextMenu.node);
+          nodeId={iconContextMenu.node.id}
+          nodeType={iconContextMenu.node.nodeType}
+          nodeName={iconContextMenu.node.metadata?.name}
+          treeId={props.treeId}
+          canOpen={true}
+          canEdit={true}
+          canDuplicate={true}
+          canArchive={true}
+          canCopy={true}
+          onOpen={() => {
+            controller.onContextAction?.('open', iconContextMenu.node);
             handleIconContextMenuClose();
           }}
-          treeId={props.treeId}
+          onEdit={() => {
+            controller.onContextAction?.('edit', iconContextMenu.node);
+            handleIconContextMenuClose();
+          }}
+          onDuplicate={() => {
+            controller.onContextAction?.('duplicate', iconContextMenu.node);
+            handleIconContextMenuClose();
+          }}
+          onArchive={() => {
+            controller.onContextAction?.('archive', iconContextMenu.node);
+            handleIconContextMenuClose();
+          }}
+          onCopy={() => {
+            controller.onContextAction?.('copy', iconContextMenu.node);
+            handleIconContextMenuClose();
+          }}
         />
       )}
     </Box>
