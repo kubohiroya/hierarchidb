@@ -9,7 +9,7 @@
  * Positions are stored as grid coordinates (col, row), not pixel coordinates.
  */
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { NodeTypeIcon } from '@hierarchidb/components';
 import { getPluginIconColor, isFolderNodeType } from '@hierarchidb/ui-treeconsole-breadcrumb';
@@ -241,39 +241,56 @@ function FreeLayout({
     onContextMenu,
 }: FreeLayoutProps) {
     const containerRef = useRef<HTMLDivElement | null>(null);
-
-    // Estimate columns from container width (fallback 6)
     const containerCols = 6;
 
-    // Assign grid positions (including initial positions for new nodes)
-    const gridPositions = useMemo(
+    // Compute initial positions from node data
+    const basePositions = useMemo(
         () => assignInitialPositions(nodes, containerCols),
         [nodes, containerCols],
     );
 
-    // Build occupied set for collision detection during drag
+    // Local mutable position state that updates immediately on drag end
+    const [localPositions, setLocalPositions] = useState<Map<string, { col: number; row: number }>>(
+        () => new Map(basePositions),
+    );
+
+    // Sync from props when nodes change (e.g. new node added, external update)
+    useEffect(() => {
+        setLocalPositions(new Map(basePositions));
+    }, [basePositions]);
+
+    // Build occupied set from local positions
     const occupiedSet = useMemo(() => {
         const set = new Set<string>();
-        for (const [, pos] of gridPositions) {
+        for (const [, pos] of localPositions) {
             set.add(`${pos.col},${pos.row}`);
         }
         return set;
-    }, [gridPositions]);
+    }, [localPositions]);
+
+    // Handle drag end: update local state immediately, then persist
+    const handleDragEnd = useCallback((nodeId: NodeId, position: { x: number; y: number }) => {
+        setLocalPositions((prev) => {
+            const next = new Map(prev);
+            next.set(nodeId, { col: position.x, row: position.y });
+            return next;
+        });
+        onIconPositionChange(nodeId, position);
+    }, [onIconPositionChange]);
 
     // Persist initial positions for nodes that didn't have one
     const persistedRef = useRef(new Set<string>());
-    useMemo(() => {
+    useEffect(() => {
         for (const node of nodes) {
             if (!node.viewProperties?.iconPosition && !persistedRef.current.has(node.id)) {
-                const pos = gridPositions.get(node.id);
+                const pos = localPositions.get(node.id);
                 if (pos) {
                     persistedRef.current.add(node.id);
-                    // Fire position change for newly assigned positions
                     onIconPositionChange(node.id, { x: pos.col, y: pos.row });
                 }
             }
         }
-    }, [nodes, gridPositions, onIconPositionChange]);
+    }, [nodes, localPositions, onIconPositionChange]);
 
     const handleBackgroundClick = useCallback(() => {
         onNodeSelect?.([], false);
@@ -286,7 +303,7 @@ function FreeLayout({
             sx={{ position: 'relative', width: '100%', height: '100%', overflow: 'auto' }}
         >
             {nodes.map((node) => {
-                const gridPos = gridPositions.get(node.id) ?? { col: 0, row: 0 };
+                const gridPos = localPositions.get(node.id) ?? { col: 0, row: 0 };
                 const { px, py } = gridToPixel(gridPos.col, gridPos.row, cellSize.width, cellSize.height);
                 return (
                     <DraggableIconCell
@@ -300,7 +317,7 @@ function FreeLayout({
                         gridRow={gridPos.row}
                         isSelected={selectedIds?.has(node.id) ?? false}
                         occupiedSet={occupiedSet}
-                        onDragEnd={onIconPositionChange}
+                        onDragEnd={handleDragEnd}
                         onClick={onNodeClick}
                         onDoubleClick={onNodeDoubleClick}
                         onSelect={onNodeSelect}
