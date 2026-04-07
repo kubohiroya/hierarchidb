@@ -254,9 +254,27 @@ function FreeLayout({
         () => new Map(basePositions),
     );
 
-    // Sync from props when nodes change (e.g. new node added, external update)
+    // Merge new nodes from basePositions without overwriting existing local positions
     useEffect(() => {
-        setLocalPositions(new Map(basePositions));
+        setLocalPositions((prev) => {
+            let changed = false;
+            const next = new Map(prev);
+            // Add positions for new nodes
+            for (const [id, pos] of basePositions) {
+                if (!next.has(id)) {
+                    next.set(id, pos);
+                    changed = true;
+                }
+            }
+            // Remove positions for deleted nodes
+            for (const id of prev.keys()) {
+                if (!basePositions.has(id)) {
+                    next.delete(id);
+                    changed = true;
+                }
+            }
+            return changed ? next : prev;
+        });
     }, [basePositions]);
 
     // Build occupied set from local positions
