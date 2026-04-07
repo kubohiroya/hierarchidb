@@ -1,28 +1,36 @@
 /**
- * ColumnView — hierarchical column navigation (Smalltalk class browser style).
+ * ColumnView — hierarchical column navigation (Finder / Smalltalk class browser style).
  *
  * Each column displays children of the corresponding node in expandedPath.
- * Selecting a node with children adds a new column to the right.
+ * Selecting a node with children reveals its children in the next column to the right.
  * Uses allotment for resizable pane splitting.
  */
 
 import { useCallback } from 'react';
-import { Box, List, ListItemButton, ListItemText } from '@mui/material';
+import { Box, List, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
+import { ChevronRight } from '@mui/icons-material';
 import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
+import { NodeTypeIcon } from '@hierarchidb/components';
+import { getPluginIconColor, isFolderNodeType } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import { rainbowColors } from '@hierarchidb/ui-theme';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNodeInUI } from '@hierarchidb/ui-treeconsole-treetable';
 import type { ColumnViewState } from '~/hooks/useColumnView';
 
 export interface ColumnViewProps {
-    /** Root-level nodes (column 0). */
     rootNodes: TreeNodeInUI[];
-    /** Current column state from useColumnView. */
     columnState: ColumnViewState;
-    /** Called when user selects a node. */
     onSelectNode: (nodeId: NodeId) => void;
-    /** Resolve children for a given node ID. */
     getChildren: (nodeId: NodeId) => TreeNodeInUI[];
+}
+
+function resolveIconColor(node: TreeNodeInUI): string {
+    const nodeType = String(node.nodeType ?? 'folder');
+    const depth = node.depth ?? 0;
+    const baseColor = rainbowColors[Math.max(0, depth) % rainbowColors.length];
+    if (isFolderNodeType(nodeType)) return baseColor;
+    return getPluginIconColor(nodeType) ?? baseColor;
 }
 
 export function ColumnView({
@@ -31,7 +39,6 @@ export function ColumnView({
     onSelectNode,
     getChildren,
 }: ColumnViewProps) {
-    // Build columns: column 0 = rootNodes, column i = children of expandedPath[i-1]
     const columns: TreeNodeInUI[][] = [rootNodes];
     for (const pathNodeId of columnState.expandedPath) {
         const children = getChildren(pathNodeId);
@@ -41,10 +48,10 @@ export function ColumnView({
     }
 
     return (
-        <Box sx={{ height: '100%', width: '100%' }}>
+        <Box sx={{ height: '100%', width: '100%', display: 'flex' }}>
             <Allotment>
                 {columns.map((nodes, colIndex) => (
-                    <Allotment.Pane key={colIndex} minSize={150} preferredSize={250}>
+                    <Allotment.Pane key={colIndex} minSize={180} preferredSize={220}>
                         <Column
                             nodes={nodes}
                             selectedNodeId={columnState.selectedNodeId}
@@ -57,8 +64,6 @@ export function ColumnView({
         </Box>
     );
 }
-
-// -- Single Column --
 
 interface ColumnProps {
     nodes: TreeNodeInUI[];
@@ -75,9 +80,10 @@ function Column({ nodes, selectedNodeId, expandedPath, onSelectNode }: ColumnPro
                 overflow: 'auto',
                 borderRight: 1,
                 borderColor: 'divider',
+                backgroundColor: 'background.paper',
             }}
         >
-            <List dense disablePadding>
+            <List dense disablePadding sx={{ py: 0 }}>
                 {nodes.map((node) => (
                     <ColumnItem
                         key={node.id}
@@ -92,8 +98,6 @@ function Column({ nodes, selectedNodeId, expandedPath, onSelectNode }: ColumnPro
     );
 }
 
-// -- Column Item --
-
 interface ColumnItemProps {
     node: TreeNodeInUI;
     isSelected: boolean;
@@ -103,19 +107,49 @@ interface ColumnItemProps {
 
 function ColumnItem({ node, isSelected, isExpanded, onSelect }: ColumnItemProps) {
     const handleClick = useCallback(() => onSelect(node.id), [onSelect, node.id]);
+    const showChevron = node.hasChildren;
 
     return (
         <ListItemButton
             selected={isSelected || isExpanded}
             onClick={handleClick}
-            sx={{ py: 0.5 }}
+            sx={{
+                py: 0.25,
+                px: 1,
+                minHeight: 28,
+                '&.Mui-selected': {
+                    backgroundColor: 'primary.main',
+                    color: 'primary.contrastText',
+                    '&:hover': { backgroundColor: 'primary.dark' },
+                    '& .MuiListItemIcon-root': { color: 'primary.contrastText' },
+                    '& .MuiSvgIcon-root': { color: 'primary.contrastText' },
+                },
+            }}
         >
+            <ListItemIcon sx={{ minWidth: 24, mr: 0.5 }}>
+                <NodeTypeIcon
+                    nodeType={node.nodeType}
+                    size="small"
+                    htmlColor={isSelected || isExpanded ? undefined : resolveIconColor(node)}
+                />
+            </ListItemIcon>
             <ListItemText
                 primary={node.metadata.name}
-                primaryTypographyProps={{ variant: 'body2', noWrap: true }}
+                primaryTypographyProps={{
+                    variant: 'body2',
+                    noWrap: true,
+                    fontSize: '0.8125rem',
+                }}
             />
-            {node.hasChildren && (
-                <Box component="span" sx={{ color: 'text.secondary', ml: 1 }}>›</Box>
+            {showChevron && (
+                <ChevronRight
+                    sx={{
+                        fontSize: 16,
+                        ml: 0.5,
+                        opacity: 0.6,
+                        flexShrink: 0,
+                    }}
+                />
             )}
         </ListItemButton>
     );

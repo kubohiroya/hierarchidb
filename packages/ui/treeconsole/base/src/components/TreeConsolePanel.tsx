@@ -430,14 +430,14 @@ interface ColumnViewWrapperProps {
 }
 
 function ColumnViewWrapper({ controller, onNodeClick }: ColumnViewWrapperProps) {
-  const rootNodes = controller.data ?? [];
-
-  // Pre-process data into O(1) lookup structures
-  const { childrenMap, nodesWithChildren, nodeById } = useMemo(() => {
+  // Root nodes = top-level children (depth === minimum depth in data)
+  const { rootNodes, childrenMap, nodesWithChildren, nodeById } = useMemo(() => {
+    const allNodes = controller.data ?? [];
     const childrenMap = new Map<NodeId, TreeNodeInUI[]>();
     const nodesWithChildren = new Set<NodeId>();
     const nodeById = new Map<NodeId, TreeNodeInUI>();
-    for (const node of controller.data ?? []) {
+
+    for (const node of allNodes) {
       nodeById.set(node.id, node);
       if (node.parentId) {
         const existing = childrenMap.get(node.parentId);
@@ -449,8 +449,22 @@ function ColumnViewWrapper({ controller, onNodeClick }: ColumnViewWrapperProps) 
         nodesWithChildren.add(node.parentId);
       }
     }
-    return { childrenMap, nodesWithChildren, nodeById };
-  }, [controller.data]);
+
+    // Root nodes: nodes whose parentId is the controller's rootNodeId,
+    // or nodes at the minimum depth if rootNodeId is not set
+    const rootId = controller.rootNodeId;
+    let roots: TreeNodeInUI[];
+    if (rootId) {
+      roots = childrenMap.get(rootId) ?? [];
+    } else {
+      const minDepth = allNodes.length > 0
+        ? Math.min(...allNodes.map((n) => n.depth))
+        : 0;
+      roots = allNodes.filter((n) => n.depth === minDepth);
+    }
+
+    return { rootNodes: roots, childrenMap, nodesWithChildren, nodeById };
+  }, [controller.data, controller.rootNodeId]);
 
   const getChildren = useCallback(
     (nodeId: NodeId): TreeNodeInUI[] => childrenMap.get(nodeId) ?? [],
@@ -458,21 +472,33 @@ function ColumnViewWrapper({ controller, onNodeClick }: ColumnViewWrapperProps) 
   );
 
   const hasChildren = useCallback(
-    (nodeId: NodeId): boolean => nodesWithChildren.has(nodeId),
-    [nodesWithChildren],
+    (nodeId: NodeId): boolean => {
+      // Check childrenMap first, then fall back to node.hasChildren flag
+      if (nodesWithChildren.has(nodeId)) return true;
+      const node = nodeById.get(nodeId);
+      return node?.hasChildren ?? false;
+    },
+    [nodesWithChildren, nodeById],
   );
 
   const columnApi = useColumnView({ getChildren, hasChildren });
 
   const handleSelectNode = useCallback(
     (nodeId: NodeId) => {
-      columnApi.selectNode(nodeId);
       const node = nodeById.get(nodeId);
+
+      // Expand the node to load its children if it has children
+      if (node?.hasChildren || nodesWithChildren.has(nodeId)) {
+        controller.onNodeExpand?.(nodeId, true);
+      }
+
+      columnApi.selectNode(nodeId);
+
       if (onNodeClick && node) {
         onNodeClick(nodeId, node);
       }
     },
-    [columnApi, nodeById, onNodeClick],
+    [columnApi, nodeById, nodesWithChildren, onNodeClick, controller],
   );
 
   return (
