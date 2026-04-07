@@ -40,7 +40,7 @@ export function computeZoomLayout(zoomLevel: number): ZoomLayout {
         throw new Error(`zoomLevel must be a finite number in [0, 100], got: ${zoomLevel}`);
     }
 
-    const iconSize = Math.round(32 + zoomLevel * 2.24);
+    const iconSize = Math.round(32 + zoomLevel * 1.12);
 
     return {
         iconSize,

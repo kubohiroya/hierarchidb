@@ -141,14 +141,16 @@ export function NodeTypeIcon({
       invisible: false,
       sx: {
         '& .MuiBadge-badge': {
-          width: 12,
-          height: 12,
-          minWidth: 12,
-          transform: 'scale(1) translate(18%, -18%) translateX(3px)',
+          width: isCustomSize ? 16 : 12,
+          height: isCustomSize ? 16 : 12,
+          minWidth: isCustomSize ? 16 : 12,
+          transform: isCustomSize
+            ? 'scale(1) translate(30%, -30%)'
+            : 'scale(1) translate(18%, -18%) translateX(3px)',
           borderRadius: '50%',
           border: '2px solid',
-          backgroundColor: 'background.paper',
-          color: 'warning.main',
+          backgroundColor: 'transparent',
+          borderColor: 'warning.main',
           boxSizing: 'border-box',
         },
       },

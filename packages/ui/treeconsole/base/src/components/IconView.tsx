@@ -474,7 +474,6 @@ function DraggableIconCell({
     const longPressTriggeredRef = useRef(false);
 
     const handlePointerDown = useCallback((e: React.PointerEvent) => {
-        e.currentTarget.setPointerCapture(e.pointerId);
         isDraggingRef.current = true;
         dragRef.current = {
             startX: e.clientX,
@@ -484,12 +483,14 @@ function DraggableIconCell({
         };
         movedRef.current = false;
         longPressTriggeredRef.current = false;
+        const clientX = e.clientX;
+        const clientY = e.clientY;
         longPressTimerRef.current = setTimeout(() => {
             longPressTriggeredRef.current = true;
             isDraggingRef.current = false;
             dragRef.current = null;
             onSelect?.([node.id], true);
-            onContextMenu?.(node, { left: e.clientX, top: e.clientY });
+            onContextMenu?.(node, { left: clientX, top: clientY });
         }, 500);
     }, [initialPx, initialPy, onSelect, onContextMenu, node]);
 

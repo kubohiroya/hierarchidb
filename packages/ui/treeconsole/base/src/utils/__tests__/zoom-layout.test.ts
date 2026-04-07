@@ -14,12 +14,12 @@ describe('computeZoomLayout', () => {
 
     it('returns iconSize 144 at zoomLevel 50', () => {
         const layout = computeZoomLayout(50);
-        expect(layout.iconSize).toBe(144);
+        expect(layout.iconSize).toBe(88);
     });
 
     it('returns iconSize 256 at zoomLevel 100', () => {
         const layout = computeZoomLayout(100);
-        expect(layout.iconSize).toBe(256);
+        expect(layout.iconSize).toBe(144);
     });
 
     it('cellSize.width is at least NAME_MIN_WIDTH_PX + CELL_GAP_PX', () => {
