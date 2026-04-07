@@ -1,7 +1,7 @@
 /**
  * console Target Route for TanStack Router
  *
- * This route handles the `/t/:treeId/:pageNodeId/:targetNodeId` path and loads the target node data.
+ * This route handles the `/d/:treeId/:pageNodeId/:targetNodeId` path and loads the target node data.
  * Corresponds to React Router route `t.($treeId).($pageNodeId).($targetNodeId).tsx`
  */
 

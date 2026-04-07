@@ -93,7 +93,7 @@ export default function TagDetailPage({ tagName }: { tagName?: string }) {
                   variant="minimal"
                   onNodeClick={(nodeId) => {
                     if (!row.treeId) return;
-                    navigate({ to: `/t/${row.treeId}/${nodeId}` });
+                    navigate({ to: `/d/${row.treeId}/${nodeId}` });
                   }}
                 />
               </ListItem>

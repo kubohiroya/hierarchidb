@@ -11,7 +11,7 @@ import { PluginDialogFooter } from '../components/PluginDialogFooter';
 type ContextOverrides = Partial<Parameters<typeof PluginDialogProvider>[0]['value']>;
 
 const footerLocationRef = {
-  pathname: '/t/r/page-node/target-node/shape/edit/normal/1',
+  pathname: '/d/r/page-node/target-node/shape/edit/normal/1',
   searchStr: '',
   hash: '',
 };
@@ -27,7 +27,7 @@ afterEach(() => {
 
 beforeEach(() => {
   vi.restoreAllMocks();
-  footerLocationRef.pathname = '/t/r/page-node/target-node/shape/edit/normal/1';
+  footerLocationRef.pathname = '/d/r/page-node/target-node/shape/edit/normal/1';
   footerLocationRef.searchStr = '';
   footerLocationRef.hash = '';
 });
@@ -128,7 +128,7 @@ describe('PluginDialogFooter step link context menu', () => {
     fireEvent.click(openInNewTab);
 
     expect(openSpy).toHaveBeenCalledTimes(1);
-    expect(openSpy.mock.calls[0]?.[0]).toMatch('/t/r/page-node/target-node/shape/edit/normal/2');
+    expect(openSpy.mock.calls[0]?.[0]).toMatch('/d/r/page-node/target-node/shape/edit/normal/2');
   });
 
   it('opens URL in new window from context menu', () => {
@@ -146,7 +146,7 @@ describe('PluginDialogFooter step link context menu', () => {
     fireEvent.click(openInNewWindow);
 
     expect(openSpy).toHaveBeenCalledTimes(1);
-    expect(openSpy.mock.calls[0]?.[0]).toMatch('/t/r/page-node/target-node/shape/edit/normal/2');
+    expect(openSpy.mock.calls[0]?.[0]).toMatch('/d/r/page-node/target-node/shape/edit/normal/2');
     expect(openSpy.mock.calls[0]?.[2]).toContain('popup=yes');
   });
 
@@ -174,6 +174,6 @@ describe('PluginDialogFooter step link context menu', () => {
     fireEvent.click(copyLinkUrl);
 
     expect(writeText).toHaveBeenCalledTimes(1);
-    expect(writeText.mock.calls[0]?.[0]).toMatch('/t/r/page-node/target-node/shape/edit/normal/1');
+    expect(writeText.mock.calls[0]?.[0]).toMatch('/d/r/page-node/target-node/shape/edit/normal/1');
   });
 });

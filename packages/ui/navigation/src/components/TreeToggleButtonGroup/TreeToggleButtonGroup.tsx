@@ -125,8 +125,8 @@ export function TreeToggleButtonGroup({
 
     // Navigate to target page (don't include appPrefix since it's already in basename)
     const targetPath = savedPageNodeId
-      ? `/t/${targetTree.routePath}/${savedPageNodeId}`
-      : `/t/${targetTree.routePath}`;
+      ? `/d/${targetTree.routePath}/${savedPageNodeId}`
+      : `/d/${targetTree.routePath}`;
 
     navigate(targetPath, { replace: true });
 

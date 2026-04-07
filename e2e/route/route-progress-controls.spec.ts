@@ -219,7 +219,7 @@ test.describe('Route build controls', () => {
     const routeNodeLink = page.locator(`a[href$="/${routeNode.id}"]`).first();
     await expect(routeNodeLink).toBeVisible({ timeout: 20000 });
     await routeNodeLink.click();
-    await expect(page).toHaveURL(new RegExp(`/t/${routeNode.treeId}/${routeNode.id}$`), { timeout: 20000 });
+    await expect(page).toHaveURL(new RegExp(`/d/${routeNode.treeId}/${routeNode.id}$`), { timeout: 20000 });
 
     const openEditButton = page.getByRole('button', { name: /編集/ }).first();
     await expect(openEditButton).toBeVisible({ timeout: 10000 });

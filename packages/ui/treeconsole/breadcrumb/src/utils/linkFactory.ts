@@ -31,20 +31,20 @@ export function buildTreeConsoleLinkHref({
   const normalizedTreeId = treeSegment;
 
   if (isRootLike && normalizedTreeId) {
-    return `/t/${normalizedTreeId}`;
+    return `/d/${normalizedTreeId}`;
   }
 
   if (!normalizedTreeId) {
-    return `/t/${normalizedNodeId}`;
+    return `/d/${normalizedNodeId}`;
   }
 
   if (!normalizedNodeId) {
-    return `/t/${normalizedTreeId}`;
+    return `/d/${normalizedTreeId}`;
   }
 
   const isArchiveContext = Boolean(useArchiveColumns);
   if (!isArchiveContext) {
-    return `/t/${[normalizedTreeId, normalizedNodeId].join('/')}`;
+    return `/d/${[normalizedTreeId, normalizedNodeId].join('/')}`;
   }
 
   const rootNodeId = `${treeSegment}:root`;
@@ -53,5 +53,5 @@ export function buildTreeConsoleLinkHref({
   const targetSegment = normalizedNodeId;
   const actionValue = archiveAction === 'empty' ? 'empty' : 'restore';
 
-  return `/t/${[normalizedTreeId, pageSegment, targetSegment, 'archive', actionValue].join('/')}`;
+  return `/d/${[normalizedTreeId, pageSegment, targetSegment, 'archive', actionValue].join('/')}`;
 }

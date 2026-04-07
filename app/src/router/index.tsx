@@ -58,7 +58,16 @@ export async function createHierarchiRouter(config: RouterConfig) {
     './routes/tree/dialogRoute.js'
   );
 
-  // Build the console route hierarchy
+  // Import folder view routes
+  const { folderBaseRoute } = await import('./routes/folder/baseRoute.js');
+  const {
+    folderTreeRoute,
+    folderPageRoute,
+    folderViewRoute,
+    folderViewSortRoute,
+  } = await import('./routes/folder/folderRoutes.js');
+
+  // Build the console route hierarchy (now under /d/)
   // The hierarchy is: base -> layout -> page -> target -> nodeType -> dialog
   const treeRouteWithChildren = treeBaseRoute.addChildren([
     treeLayoutRoute.addChildren([
@@ -76,6 +85,16 @@ export async function createHierarchiRouter(config: RouterConfig) {
     ]),
   ]);
 
+  // Build folder view route hierarchy (/f/)
+  const folderRouteWithChildren = folderBaseRoute.addChildren([
+    folderTreeRoute.addChildren([
+      folderPageRoute.addChildren([
+        folderViewSortRoute,
+        folderViewRoute,
+      ]),
+    ]),
+  ]);
+
   // Create route console with all top-level routes
   const routeTree = rootRoute.addChildren([
     indexRoute,
@@ -87,6 +106,7 @@ export async function createHierarchiRouter(config: RouterConfig) {
     authSilentRenewRoute,
     pluginsRoute,
     treeRouteWithChildren,
+    folderRouteWithChildren,
   ]);
 
   // Create appropriate history based on mode

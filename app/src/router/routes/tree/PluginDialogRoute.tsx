@@ -85,7 +85,7 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
 
 const PluginDialogRouteFromRouter: React.FC = () => {
   const candidate = useLoaderData({
-    from: '/t/$treeId/$pageNodeId/$targetNodeId/$nodeType/$action',
+    from: '/d/$treeId/$pageNodeId/$targetNodeId/$nodeType/$action',
   }) as
     | PluginDialogLoaderData
     | { kind: 'archive'; data: unknown }

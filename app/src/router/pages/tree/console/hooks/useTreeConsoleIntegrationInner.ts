@@ -212,7 +212,7 @@ export function useTreeConsoleIntegrationInner({
   const handleTagsNavigate = useCallback(() => {
     if (!treeId || !pageNodeId) return;
     navigate({
-      to: '/t/$treeId/$pageNodeId/tags',
+      to: '/d/$treeId/$pageNodeId/tags',
       params: {
         treeId: String(treeId),
         pageNodeId: String(pageNodeId),

@@ -43,7 +43,7 @@ export function useHomePage() {
   const handleTreeSelect = useCallback(
     (treeId: string) => {
       const savedPageNodeId = getSavedPageNodeId(treeId) || '';
-      const path = savedPageNodeId ? `/t/${treeId}/${savedPageNodeId}` : `/t/${treeId}`;
+      const path = savedPageNodeId ? `/d/${treeId}/${savedPageNodeId}` : `/d/${treeId}`;
       navigate({ to: path });
     },
     [getSavedPageNodeId, navigate]

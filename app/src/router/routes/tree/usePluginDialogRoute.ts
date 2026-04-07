@@ -170,7 +170,7 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
       void navigate({ to: returnToParam });
       return;
     }
-    void navigate({ to: `/t/${resolvedTreeId}/${resolvedPageNodeId}` });
+    void navigate({ to: `/d/${resolvedTreeId}/${resolvedPageNodeId}` });
   }, [
     autoBuildEnabled,
     buildQueueKey,
@@ -202,8 +202,8 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
   const handleClose = useCallback(() => {
     setIsOpen(false);
     const destination = resolvedPageNodeId
-      ? `/t/${resolvedTreeId}/${resolvedPageNodeId}`
-      : `/t/${resolvedTreeId}`;
+      ? `/d/${resolvedTreeId}/${resolvedPageNodeId}`
+      : `/d/${resolvedTreeId}`;
     void navigate({ to: destination });
   }, [navigate, resolvedPageNodeId, resolvedTreeId]);
 
@@ -211,7 +211,7 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
 
   const handleSuccess = useCallback(
     (savedNodeId: NodeId) => {
-      void navigate({ to: `/t/${resolvedTreeId}/${resolvedPageNodeId}/${savedNodeId}` });
+      void navigate({ to: `/d/${resolvedTreeId}/${resolvedPageNodeId}/${savedNodeId}` });
     },
     [navigate, resolvedPageNodeId, resolvedTreeId]
   );
@@ -230,7 +230,7 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
       const actionParam = params.action ?? String(effectiveAction ?? 'edit');
       const modeSegment = toUrlModeSegment(next.mode);
       void navigate({
-        to: '/t/$treeId/$pageNodeId/$targetNodeId/$nodeType/$action/$mode/$step',
+        to: '/d/$treeId/$pageNodeId/$targetNodeId/$nodeType/$action/$mode/$step',
         params: {
           treeId: String(resolvedTreeId),
           pageNodeId: String(resolvedPageNodeId),

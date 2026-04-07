@@ -515,7 +515,7 @@ export function usePluginDialogController(
       const trimmed = tag.trim();
       if (!trimmed) return;
       void navigate({
-        to: `/t/${treeId}/${pageNodeId}/tags/${encodeURIComponent(trimmed)}` as const,
+        to: `/d/${treeId}/${pageNodeId}/tags/${encodeURIComponent(trimmed)}` as const,
       });
     },
     [navigate, pageNodeId, treeId]
@@ -781,7 +781,7 @@ export function usePluginDialogController(
 
   const navigateToNode = useCallback(
     (targetId: NodeId) => {
-      void navigate({ to: `/t/${treeId}/${pageNodeId}/${targetId}` as const });
+      void navigate({ to: `/d/${treeId}/${pageNodeId}/${targetId}` as const });
     },
     [navigate, treeId, pageNodeId]
   );

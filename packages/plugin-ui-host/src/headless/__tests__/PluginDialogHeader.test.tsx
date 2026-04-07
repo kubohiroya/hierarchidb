@@ -302,7 +302,7 @@ describe('PluginDialogHeader', () => {
 
   it('opens step context menu and opens selected step URL in new tab', () => {
     const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
-    headerLocationRef.pathname = '/t/r/page-node/target-node/shape/edit/normal/1';
+    headerLocationRef.pathname = '/d/r/page-node/target-node/shape/edit/normal/1';
 
     const contextValue = {
       open: true,
@@ -339,11 +339,11 @@ describe('PluginDialogHeader', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: 'Open In New Tab' }));
 
     expect(openSpy).toHaveBeenCalledTimes(1);
-    expect(openSpy.mock.calls[0]?.[0]).toMatch('/t/r/page-node/target-node/shape/edit/normal/2');
+    expect(openSpy.mock.calls[0]?.[0]).toMatch('/d/r/page-node/target-node/shape/edit/normal/2');
   });
 
   it('does not open step context menu for disabled steps', () => {
-    headerLocationRef.pathname = '/t/r/page-node/target-node/shape/edit/normal/1';
+    headerLocationRef.pathname = '/d/r/page-node/target-node/shape/edit/normal/1';
 
     const contextValue = {
       open: true,

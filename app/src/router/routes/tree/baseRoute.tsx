@@ -23,7 +23,7 @@ function getBootWindow(): BootWindow | null {
 
 export const treeBaseRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: 't',
+  path: 'd',
   shouldReload: false,
   staleTime: Infinity,
   loader: async () => {
@@ -54,7 +54,7 @@ export const treeBaseRoute = createRoute({
                 finish();
               }
             })
-            .catch(() => {});
+            .catch(() => { });
         }, 100);
         // Soft cap; child loaders also set their own timeout
         bootWindow.setTimeout(() => {

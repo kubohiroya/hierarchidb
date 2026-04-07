@@ -14,11 +14,16 @@ import { TreeConsoleRoutePageProviders } from './TreeConsoleRoutePageProviders';
 
 type TreeConsoleRoutePageProps = {
   data: LoadPageNodeReturn;
+  viewMode?: string;
+  sortMode?: string;
 };
 
-export function TreeConsoleRoutePage({ data }: TreeConsoleRoutePageProps) {
+export function TreeConsoleRoutePage({ data, viewMode: propViewMode, sortMode: propSortMode }: TreeConsoleRoutePageProps) {
   const navigate = useNavigate();
   const searchParams = useSearch({ strict: false }) as { view?: string; sort?: string; zoom?: number };
+  // Path params take priority over query params
+  const resolvedViewMode = propViewMode ?? searchParams.view;
+  const resolvedSortMode = propSortMode ?? searchParams.sort;
   const { client: workerClient } = useWorker();
   const bootProgress = useOptionalBootProgress();
   const matches = useRouterState({ select: (state) => state.matches });
@@ -68,7 +73,7 @@ export function TreeConsoleRoutePage({ data }: TreeConsoleRoutePageProps) {
 
   const targetContext = useTreeTargetContextState(dialogMatch?.loaderData, targetMatch?.loaderData);
   const dialogStableKeyRef = useRef(`${data.tree?.id ?? ''}:${data.pageNodeId ?? ''}`);
-  const treeRootPath = `/t/${data.tree?.id ?? 'r'}`;
+  const treeRootPath = `/d/${data.tree?.id ?? 'r'}`;
 
   return (
     <TreeConsoleRoutePageProviders data={data} targetContext={targetContext}>
@@ -93,8 +98,8 @@ export function TreeConsoleRoutePage({ data }: TreeConsoleRoutePageProps) {
           treeId={data.tree?.id}
           pageNodeId={data.pageNodeId}
           pageTreeNode={data.pageNode}
-          initialViewMode={searchParams.view as import('@hierarchidb/ui-treeconsole-base').ViewMode | undefined}
-          initialSortMode={searchParams.sort as import('@hierarchidb/ui-treeconsole-base').SortMode | undefined}
+          initialViewMode={resolvedViewMode as import('@hierarchidb/ui-treeconsole-base').ViewMode | undefined}
+          initialSortMode={resolvedSortMode as import('@hierarchidb/ui-treeconsole-base').SortMode | undefined}
           initialZoomLevel={searchParams.zoom}
         />
       </TreeConsoleRoutePageLayout>

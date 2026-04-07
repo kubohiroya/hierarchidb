@@ -19,6 +19,6 @@ describe('ArchiveDialog link wiring', () => {
       archiveAction: 'restore',
     });
 
-    expect(href).toBe(`/t/${treeId}/${pageNodeId}/${grandchildId}/archive/restore`);
+    expect(href).toBe(`/d/${treeId}/${pageNodeId}/${grandchildId}/archive/restore`);
   });
 });

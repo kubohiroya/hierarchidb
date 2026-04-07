@@ -46,7 +46,7 @@ export function BuildSessionSpinnerButton({
       targetNodeId: targetNodeContext?.targetNodeId ?? null,
       targetNodeType: targetNodeContext?.nodeType ?? null,
     });
-    navigate({ to: `/t/${treeId}/${pageNodeId}/${nodeId}/${nodeType}` });
+    navigate({ to: `/d/${treeId}/${pageNodeId}/${nodeId}/${nodeType}` });
   };
 
   const isNavigable = Boolean(treeId && pageNodeId);

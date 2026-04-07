@@ -7,7 +7,7 @@ type TreeLayoutBodyProps = {
 };
 
 export default function TLayout() {
-  const data = useLoaderData({ from: '/t/$treeId/$pageNodeId' }) as LoadPageNodeReturn;
+  const data = useLoaderData({ from: '/d/$treeId/$pageNodeId' }) as LoadPageNodeReturn;
   return <TreeConsoleRoutePage data={data} />;
 }
 
