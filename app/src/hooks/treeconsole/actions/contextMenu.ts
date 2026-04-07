@@ -118,7 +118,7 @@ export const createContextMenuAction = (
         if (normalizedAction === 'navigate') {
           if (options?.openInNewTab && treeId) {
             const qs = searchTerm ? `?q=${encodeURIComponent(searchTerm)}` : '';
-            openInNewTab(`/d/${treeId}/${targetNodeId}${qs}`);
+            openInNewTab(`/f/${treeId}/${targetNodeId}/-/folder/list`);
             return;
           }
           navigation.navigateTo(targetNodeId);

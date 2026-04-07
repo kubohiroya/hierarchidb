@@ -31,22 +31,23 @@ export function buildTreeConsoleLinkHref({
   const normalizedTreeId = treeSegment;
 
   if (isRootLike && normalizedTreeId) {
-    return `/d/${normalizedTreeId}`;
+    return `/f/${normalizedTreeId}`;
   }
 
   if (!normalizedTreeId) {
-    return `/d/${normalizedNodeId}`;
+    return `/f/${normalizedNodeId}/-/folder/list`;
   }
 
   if (!normalizedNodeId) {
-    return `/d/${normalizedTreeId}`;
+    return `/f/${normalizedTreeId}`;
   }
 
   const isArchiveContext = Boolean(useArchiveColumns);
   if (!isArchiveContext) {
-    return `/d/${[normalizedTreeId, normalizedNodeId].join('/')}`;
+    return `/f/${normalizedTreeId}/${normalizedNodeId}/-/folder/list`;
   }
 
+  // Archive links stay under /d/
   const rootNodeId = `${treeSegment}:root`;
   const fallbackPageNodeId = pageNodeId == null ? rootNodeId : String(pageNodeId);
   const pageSegment = holderMetaParentId == null ? fallbackPageNodeId : String(holderMetaParentId);

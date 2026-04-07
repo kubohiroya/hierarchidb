@@ -128,7 +128,7 @@ export function TreeNodeInfoPanel({
   const isFolderNode = isFolderNodeType(menuNode?.nodeType);
   const handleNavigateToParent = useCallback(() => {
     if (!treeId || !parentNodeId || isRootNode) return;
-    navigate({ to: `/d/${treeId}/${parentNodeId}` });
+    navigate({ to: `/f/${treeId}/${parentNodeId}/-/folder/list` });
   }, [isRootNode, navigate, parentNodeId, treeId]);
   const handleBackdropClick = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {

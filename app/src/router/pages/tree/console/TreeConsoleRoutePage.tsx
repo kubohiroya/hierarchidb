@@ -73,7 +73,7 @@ export function TreeConsoleRoutePage({ data, viewMode: propViewMode, sortMode: p
 
   const targetContext = useTreeTargetContextState(dialogMatch?.loaderData, targetMatch?.loaderData);
   const dialogStableKeyRef = useRef(`${data.tree?.id ?? ''}:${data.pageNodeId ?? ''}`);
-  const treeRootPath = `/d/${data.tree?.id ?? 'r'}`;
+  const treeRootPath = `/f/${data.tree?.id ?? 'r'}`;
 
   return (
     <TreeConsoleRoutePageProviders data={data} targetContext={targetContext}>

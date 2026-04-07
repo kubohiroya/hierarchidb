@@ -781,7 +781,7 @@ export function usePluginDialogController(
 
   const navigateToNode = useCallback(
     (targetId: NodeId) => {
-      void navigate({ to: `/d/${treeId}/${pageNodeId}/${targetId}` as const });
+      void navigate({ to: `/f/${treeId}/${pageNodeId}/-/folder/list` as const });
     },
     [navigate, treeId, pageNodeId]
   );

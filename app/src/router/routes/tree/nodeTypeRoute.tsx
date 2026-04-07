@@ -53,7 +53,7 @@ function TreeNodeTypeLayout() {
   }, [notFound]);
 
   const goToPageNode = () => {
-    navigate({ to: `/d/${fallbackTreeId}/${pageNodeId}` });
+    navigate({ to: `/f/${fallbackTreeId}/${pageNodeId}/-/folder/list` });
   };
 
   return (

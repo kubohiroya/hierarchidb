@@ -42,7 +42,7 @@ function TreeTagsDialog() {
   const basePath = `/d/${treeId}/${resolvedPageNodeId}/tags`;
   const handleClose = () => {
     if (!treeId) return;
-    navigate({ to: `/d/${treeId}/${resolvedPageNodeId}` });
+    navigate({ to: `/f/${treeId}/${resolvedPageNodeId}/-/folder/list` });
   };
 
   const tags = useMemo(() => {

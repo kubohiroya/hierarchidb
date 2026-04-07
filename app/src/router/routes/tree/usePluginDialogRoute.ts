@@ -170,7 +170,7 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
       void navigate({ to: returnToParam });
       return;
     }
-    void navigate({ to: `/d/${resolvedTreeId}/${resolvedPageNodeId}` });
+    void navigate({ to: `/f/${resolvedTreeId}/${resolvedPageNodeId}/-/folder/list` });
   }, [
     autoBuildEnabled,
     buildQueueKey,
@@ -202,8 +202,8 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
   const handleClose = useCallback(() => {
     setIsOpen(false);
     const destination = resolvedPageNodeId
-      ? `/d/${resolvedTreeId}/${resolvedPageNodeId}`
-      : `/d/${resolvedTreeId}`;
+      ? `/f/${resolvedTreeId}/${resolvedPageNodeId}/-/folder/list`
+      : `/f/${resolvedTreeId}`;
     void navigate({ to: destination });
   }, [navigate, resolvedPageNodeId, resolvedTreeId]);
 
@@ -211,7 +211,7 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
 
   const handleSuccess = useCallback(
     (savedNodeId: NodeId) => {
-      void navigate({ to: `/d/${resolvedTreeId}/${resolvedPageNodeId}/${savedNodeId}` });
+      void navigate({ to: `/f/${resolvedTreeId}/${resolvedPageNodeId}/-/folder/list` });
     },
     [navigate, resolvedPageNodeId, resolvedTreeId]
   );
