@@ -429,6 +429,15 @@ export function useTreeConsoleIntegrationInner({
     resolveOpenSteps,
     onBreadcrumbContextAction: handleBreadcrumbContextAction,
     onMoveNodes: actions.handleMoveNodes,
+    onIconPositionChange: async (nodeId: import('@hierarchidb/core-types').NodeId, position: { x: number; y: number }) => {
+      if (!client) return;
+      try {
+        const updaterAPI = await client.getTreeNodeUpdaterAPI();
+        await updaterAPI.updateViewProperties(nodeId, { iconPosition: position });
+      } catch (error) {
+        console.error('[TreeConsole] Failed to persist iconPosition', error);
+      }
+    },
     buildSessionIndicator,
     onNavigateTags: handleTagsNavigate,
     useArchiveColumns: isArchivePage,
