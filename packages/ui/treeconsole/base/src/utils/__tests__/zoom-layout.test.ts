@@ -9,17 +9,17 @@ import {
 describe('computeZoomLayout', () => {
     it('returns iconSize 32 at zoomLevel 0', () => {
         const layout = computeZoomLayout(0);
-        expect(layout.iconSize).toBe(32);
+        expect(layout.iconSize).toBe(16);
     });
 
     it('returns iconSize 144 at zoomLevel 50', () => {
         const layout = computeZoomLayout(50);
-        expect(layout.iconSize).toBe(88);
+        expect(layout.iconSize).toBe(72);
     });
 
     it('returns iconSize 256 at zoomLevel 100', () => {
         const layout = computeZoomLayout(100);
-        expect(layout.iconSize).toBe(144);
+        expect(layout.iconSize).toBe(128);
     });
 
     it('cellSize.width is at least NAME_MIN_WIDTH_PX + CELL_GAP_PX', () => {

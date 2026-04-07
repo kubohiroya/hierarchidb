@@ -474,6 +474,7 @@ function DraggableIconCell({
     const longPressTriggeredRef = useRef(false);
 
     const handlePointerDown = useCallback((e: React.PointerEvent) => {
+        e.currentTarget.setPointerCapture(e.pointerId);
         isDraggingRef.current = true;
         dragRef.current = {
             startX: e.clientX,
@@ -489,6 +490,9 @@ function DraggableIconCell({
             longPressTriggeredRef.current = true;
             isDraggingRef.current = false;
             dragRef.current = null;
+            if (elementRef.current) {
+                try { elementRef.current.releasePointerCapture(e.pointerId); } catch { /* already released */ }
+            }
             onSelect?.([node.id], true);
             onContextMenu?.(node, { left: clientX, top: clientY });
         }, 500);
@@ -549,6 +553,18 @@ function DraggableIconCell({
         dragRef.current = null;
     }, [node.id, onDragEnd, cellSize, occupiedSet, gridCol, gridRow]);
 
+    const handleLostPointerCapture = useCallback(() => {
+        if (longPressTimerRef.current !== undefined) {
+            clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = undefined;
+        }
+        if (isDraggingRef.current && dragRef.current && !movedRef.current) {
+            // Pointer capture lost without completing drag — reset
+            isDraggingRef.current = false;
+            dragRef.current = null;
+        }
+    }, []);
+
     const handleClick = useCallback((e: React.MouseEvent) => {
         if (!movedRef.current && !longPressTriggeredRef.current) {
             e.stopPropagation();
@@ -575,6 +591,7 @@ function DraggableIconCell({
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
+            onLostPointerCapture={handleLostPointerCapture}
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
             onContextMenu={handleContextMenu}
