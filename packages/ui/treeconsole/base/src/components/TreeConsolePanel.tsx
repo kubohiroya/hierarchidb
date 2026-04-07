@@ -327,7 +327,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
               onNodeClick={controller.onNodeClick}
               columnTargetNodeId={props.columnTargetNodeId}
               onColumnNavigate={props.onColumnNavigate}
-                onIconContextMenu={handleIconContextMenu}
+              onIconContextMenu={handleIconContextMenu}
             />
           ) : (
             <TreeTableCore
@@ -404,6 +404,10 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
           canCopy={true}
           onOpen={() => {
             controller.onContextAction?.('open', iconContextMenu.node);
+            handleIconContextMenuClose();
+          }}
+          onOpenFolder={() => {
+            controller.onContextAction?.('openFolder', iconContextMenu.node);
             handleIconContextMenuClose();
           }}
           onEdit={() => {
