@@ -25,7 +25,7 @@ export function buildFolderPath(
 ): string {
   const target = targetNodeId ?? '-';
   const page = pageNodeId ?? `${treeId}:root`;
-  const segments = [`/f/${treeId}/${page}/${target}/folder/${viewMode}`];
+  const segments = [`/f/${encodeURIComponent(treeId)}/${encodeURIComponent(page)}/${encodeURIComponent(target)}/folder/${encodeURIComponent(viewMode)}`];
   if (sortMode && sortMode !== 'name') {
     segments.push(sortMode);
   }
