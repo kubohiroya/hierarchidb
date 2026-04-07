@@ -62,6 +62,7 @@ export interface TreeConsolePanelProps {
   readonly onZoomLevelChange?: (zoom: number) => void;
   readonly onIconPositionChange?: (nodeId: NodeId, position: { x: number; y: number }) => void;
   readonly columnTargetNodeId?: string;
+  readonly onColumnNavigate?: (targetNodeId: string) => void;
   readonly canCreate: boolean;
   readonly canEdit: boolean;
   readonly canArchive: boolean;
@@ -270,6 +271,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
                 controller={controller}
                 onNodeClick={controller.onNodeClick}
                 columnTargetNodeId={props.columnTargetNodeId}
+                onColumnNavigate={props.onColumnNavigate}
               />
             ) : (
               <TreeTableCore
@@ -323,6 +325,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
               controller={controller}
               onNodeClick={controller.onNodeClick}
               columnTargetNodeId={props.columnTargetNodeId}
+              onColumnNavigate={props.onColumnNavigate}
             />
           ) : (
             <TreeTableCore
@@ -431,9 +434,10 @@ interface ColumnViewWrapperProps {
   controller: TreeTableController;
   onNodeClick?: (nodeId: string, node?: TreeNodeInUI) => void;
   columnTargetNodeId?: string;
+  onColumnNavigate?: (targetNodeId: string) => void;
 }
 
-function ColumnViewWrapper({ controller, onNodeClick, columnTargetNodeId }: ColumnViewWrapperProps) {
+function ColumnViewWrapper({ controller, onNodeClick: _onNodeClick, columnTargetNodeId, onColumnNavigate }: ColumnViewWrapperProps) {
   const { rootNodes, childrenMap, nodesWithChildren, nodeById } = useMemo(() => {
     const allNodes = controller.data ?? [];
     const childrenMap = new Map<NodeId, TreeNodeInUI[]>();
@@ -532,11 +536,12 @@ function ColumnViewWrapper({ controller, onNodeClick, columnTargetNodeId }: Colu
 
       columnApi.selectNode(nodeId);
 
-      if (onNodeClick && node) {
-        onNodeClick(nodeId, node);
+      // Update URL targetNodeId for column navigation
+      if (onColumnNavigate) {
+        onColumnNavigate(nodeId);
       }
     },
-    [columnApi, nodeById, nodesWithChildren, onNodeClick, controller],
+    [columnApi, nodeById, nodesWithChildren, onColumnNavigate, controller],
   );
 
   return (

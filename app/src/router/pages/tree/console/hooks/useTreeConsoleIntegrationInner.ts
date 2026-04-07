@@ -458,6 +458,15 @@ export function useTreeConsoleIntegrationInner({
     onNavigateTags: handleTagsNavigate,
     useArchiveColumns: isArchivePage,
     columnTargetNodeId,
+    onColumnNavigate: (targetNodeId: string) => {
+      const vm = viewMode || 'column';
+      const sm = sortMode === 'none' ? 'name' : sortMode;
+      const target = targetNodeId === '-' ? '-' : targetNodeId;
+      void navigate({
+        to: `/f/${treeId}/${pageNodeId ?? `${treeId}:root`}/${target}/folder/${vm}${sm !== 'name' ? `/${sm}` : ''}`,
+        replace: true,
+      });
+    },
     speedDialSuppressed,
     setSpeedDialSuppressed,
     isDialogRoute,
