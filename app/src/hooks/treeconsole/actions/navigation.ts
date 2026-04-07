@@ -16,7 +16,7 @@ export type NavigationHelpers = {
  * Build a folder view URL path.
  * Pattern: /f/:treeId/:pageNodeId/:targetNodeId/folder/:viewMode/:sortMode
  */
-function buildFolderPath(
+export function buildFolderPath(
   treeId: string,
   pageNodeId: string | undefined,
   viewMode: string,
