@@ -17,17 +17,15 @@ const VIEW_MODE_ICONS: Record<ViewMode, React.ReactElement> = {
 };
 
 const VIEW_MENU_ITEMS: readonly SelectedMenuItem<ViewMode>[] = [
-    { value: 'icon', label: 'Icon' },
-    { value: 'list', label: 'List' },
-    { value: 'column', label: 'Column' },
+    { value: 'icon', label: 'Icon', icon: <IconViewIcon fontSize="small" /> },
+    { value: 'list', label: 'List', icon: <ListViewIcon fontSize="small" /> },
+    { value: 'column', label: 'Column', icon: <ColumnViewIcon fontSize="small" /> },
 ];
 
 export interface ViewModeSelectorProps {
     value: ViewMode;
     onChange: (mode: ViewMode) => void;
-    /** Breakpoint width in px below which the compact menu is shown. Default: 600 */
     breakpoint?: number;
-    /** Override for testing: force wide (true) or narrow (false) mode. */
     forceWide?: boolean;
 }
 
@@ -63,6 +61,12 @@ export function ViewModeSelector({ value, onChange, breakpoint = 600, forceWide 
                 onChange={handleToggle}
                 size="small"
                 aria-label="View mode"
+                sx={{
+                    '& .MuiToggleButton-root': {
+                        border: '1px solid',
+                        borderColor: 'divider',
+                    },
+                }}
             >
                 <ToggleButton value="icon" aria-label="Icon view">
                     <IconViewIcon fontSize="small" />
@@ -79,7 +83,12 @@ export function ViewModeSelector({ value, onChange, breakpoint = 600, forceWide 
 
     return (
         <>
-            <IconButton onClick={handleOpen} aria-label="View mode" size="small">
+            <IconButton
+                onClick={handleOpen}
+                aria-label="View mode"
+                size="small"
+                sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
+            >
                 {VIEW_MODE_ICONS[value]}
             </IconButton>
             <SelectedMenu

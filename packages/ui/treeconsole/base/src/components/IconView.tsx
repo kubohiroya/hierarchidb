@@ -355,21 +355,22 @@ function DraggableIconCell({
     onClick,
     onDoubleClick,
 }: DraggableIconCellProps) {
-    const posRef = useRef({ px: initialPx, py: initialPy });
     const dragRef = useRef<{ startX: number; startY: number; origPx: number; origPy: number } | null>(null);
     const elementRef = useRef<HTMLDivElement | null>(null);
     const movedRef = useRef(false);
+    const isDraggingRef = useRef(false);
 
     const handlePointerDown = useCallback((e: React.PointerEvent) => {
         e.currentTarget.setPointerCapture(e.pointerId);
+        isDraggingRef.current = true;
         dragRef.current = {
             startX: e.clientX,
             startY: e.clientY,
-            origPx: posRef.current.px,
-            origPy: posRef.current.py,
+            origPx: initialPx,
+            origPy: initialPy,
         };
         movedRef.current = false;
-    }, []);
+    }, [initialPx, initialPy]);
 
     const handlePointerMove = useCallback((e: React.PointerEvent) => {
         const drag = dragRef.current;
@@ -381,29 +382,27 @@ function DraggableIconCell({
         }
         const newPx = drag.origPx + dx;
         const newPy = drag.origPy + dy;
-        posRef.current = { px: newPx, py: newPy };
         if (elementRef.current) {
             elementRef.current.style.left = `${newPx}px`;
             elementRef.current.style.top = `${newPy}px`;
         }
     }, []);
 
-    const handlePointerUp = useCallback(() => {
+    const handlePointerUp = useCallback((e: React.PointerEvent) => {
         if (dragRef.current && movedRef.current) {
+            const drag = dragRef.current;
+            const dx = e.clientX - drag.startX;
+            const dy = e.clientY - drag.startY;
+            const finalPx = drag.origPx + dx;
+            const finalPy = drag.origPy + dy;
             // Snap to grid
-            const { col, row } = pixelToGrid(
-                posRef.current.px,
-                posRef.current.py,
-                cellSize.width,
-                cellSize.height,
-            );
+            const { col, row } = pixelToGrid(finalPx, finalPy, cellSize.width, cellSize.height);
             // Collision avoidance: exclude self from occupied set
             const othersOccupied = new Set(occupiedSet);
             othersOccupied.delete(`${gridCol},${gridRow}`);
             const free = findNearestFreeCell(col, row, othersOccupied);
             // Snap to the resolved grid position
             const snapped = gridToPixel(free.col, free.row, cellSize.width, cellSize.height);
-            posRef.current = { px: snapped.px, py: snapped.py };
             if (elementRef.current) {
                 elementRef.current.style.left = `${snapped.px}px`;
                 elementRef.current.style.top = `${snapped.py}px`;
@@ -411,6 +410,7 @@ function DraggableIconCell({
             // Persist grid coordinates (not pixels)
             onDragEnd(node.id, { x: free.col, y: free.row });
         }
+        isDraggingRef.current = false;
         dragRef.current = null;
     }, [node.id, onDragEnd, cellSize, occupiedSet, gridCol, gridRow]);
 

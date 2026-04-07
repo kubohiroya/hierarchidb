@@ -45,7 +45,12 @@ export function SortModeSelector({ value, onChange }: SortModeSelectorProps) {
 
     return (
         <>
-            <IconButton onClick={handleOpen} aria-label="Sort mode" size="small">
+            <IconButton
+                onClick={handleOpen}
+                aria-label="Sort mode"
+                size="small"
+                sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
+            >
                 <SortIcon fontSize="small" />
             </IconButton>
             <SelectedMenu

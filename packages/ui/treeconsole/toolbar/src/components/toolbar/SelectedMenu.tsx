@@ -1,7 +1,10 @@
+import type { ReactElement } from 'react';
 import { Check as CheckIcon } from '@mui/icons-material';
-import { Divider, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
+import { Box, Divider, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 
-export type SelectedMenuItem<T extends string> = { value: T; label: string } | 'divider';
+export type SelectedMenuItem<T extends string> =
+    | { value: T; label: string; icon?: ReactElement }
+    | 'divider';
 
 export interface SelectedMenuProps<T extends string> {
     anchorEl: HTMLElement | null;
@@ -40,6 +43,11 @@ export function SelectedMenu<T extends string>({
                         <ListItemIcon sx={{ visibility: isSelected ? 'visible' : 'hidden' }}>
                             <CheckIcon fontSize="small" />
                         </ListItemIcon>
+                        {item.icon && (
+                            <Box component="span" sx={{ display: 'inline-flex', mr: 1 }}>
+                                {item.icon}
+                            </Box>
+                        )}
                         <ListItemText primary={item.label} />
                     </MenuItem>
                 );

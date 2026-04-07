@@ -339,7 +339,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
                 size="small"
                 onChange={(_, value) => props.onZoomLevelChange?.(value as number)}
                 aria-label="Zoom level"
-                sx={{ width: 120 }}
+                sx={{ width: 120, mr: '96px' }}
               />
             ) : undefined
           }
