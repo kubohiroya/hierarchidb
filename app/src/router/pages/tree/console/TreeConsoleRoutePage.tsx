@@ -16,9 +16,10 @@ type TreeConsoleRoutePageProps = {
   data: LoadPageNodeReturn;
   viewMode?: string;
   sortMode?: string;
+  columnTargetNodeId?: string;
 };
 
-export function TreeConsoleRoutePage({ data, viewMode: propViewMode, sortMode: propSortMode }: TreeConsoleRoutePageProps) {
+export function TreeConsoleRoutePage({ data, viewMode: propViewMode, sortMode: propSortMode, columnTargetNodeId }: TreeConsoleRoutePageProps) {
   const navigate = useNavigate();
   const searchParams = useSearch({ strict: false }) as { view?: string; sort?: string; zoom?: number };
   // Path params take priority over query params
@@ -101,6 +102,7 @@ export function TreeConsoleRoutePage({ data, viewMode: propViewMode, sortMode: p
           initialViewMode={resolvedViewMode as import('@hierarchidb/ui-treeconsole-base').ViewMode | undefined}
           initialSortMode={resolvedSortMode as import('@hierarchidb/ui-treeconsole-base').SortMode | undefined}
           initialZoomLevel={searchParams.zoom}
+          columnTargetNodeId={columnTargetNodeId}
         />
       </TreeConsoleRoutePageLayout>
     </TreeConsoleRoutePageProviders>

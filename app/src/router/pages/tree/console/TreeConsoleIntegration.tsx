@@ -26,6 +26,7 @@ export interface TreeConsoleIntegrationProps {
   readonly initialViewMode?: import('@hierarchidb/ui-treeconsole-base').ViewMode;
   readonly initialSortMode?: import('@hierarchidb/ui-treeconsole-base').SortMode;
   readonly initialZoomLevel?: number;
+  readonly columnTargetNodeId?: string;
 }
 
 export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
@@ -35,6 +36,7 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
   initialViewMode,
   initialSortMode,
   initialZoomLevel,
+  columnTargetNodeId,
 }) => {
   const { client, isConnected, reset, initialize } = useWorker();
   const {
@@ -58,6 +60,7 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
     initialViewMode,
     initialSortMode,
     initialZoomLevel,
+    columnTargetNodeId,
   });
 
   const speedDial = useTreeConsoleSpeedDial({

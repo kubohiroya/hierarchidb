@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { memo, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Slider, Typography } from '@mui/material';
 import type { TreeTableColumn } from './TreeTable/index.js';
 import type { NodeId } from '@hierarchidb/core-types';
@@ -60,7 +60,9 @@ export interface TreeConsolePanelProps {
   readonly onViewModeChange: (mode: ViewMode) => void;
   readonly onSortModeChange?: (mode: SortMode) => void;
   readonly onZoomLevelChange?: (zoom: number) => void;
-  readonly onIconPositionChange?: (nodeId: NodeId, position: { x: number; y: number }) => void; readonly canCreate: boolean;
+  readonly onIconPositionChange?: (nodeId: NodeId, position: { x: number; y: number }) => void;
+  readonly columnTargetNodeId?: string;
+  readonly canCreate: boolean;
   readonly canEdit: boolean;
   readonly canArchive: boolean;
   readonly showNavigationButtons?: boolean;
@@ -267,6 +269,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
               <ColumnViewWrapper
                 controller={controller}
                 onNodeClick={controller.onNodeClick}
+                columnTargetNodeId={props.columnTargetNodeId}
               />
             ) : (
               <TreeTableCore
@@ -319,6 +322,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
             <ColumnViewWrapper
               controller={controller}
               onNodeClick={controller.onNodeClick}
+              columnTargetNodeId={props.columnTargetNodeId}
             />
           ) : (
             <TreeTableCore
@@ -422,15 +426,14 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
 // -- ColumnView wrapper that manages useColumnView hook --
 
 import type { TreeTableController } from '@hierarchidb/ui-treeconsole-treetable';
-import { useCallback } from 'react';
 
 interface ColumnViewWrapperProps {
   controller: TreeTableController;
   onNodeClick?: (nodeId: string, node?: TreeNodeInUI) => void;
+  columnTargetNodeId?: string;
 }
 
-function ColumnViewWrapper({ controller, onNodeClick }: ColumnViewWrapperProps) {
-  // Root nodes = top-level children (depth === minimum depth in data)
+function ColumnViewWrapper({ controller, onNodeClick, columnTargetNodeId }: ColumnViewWrapperProps) {
   const { rootNodes, childrenMap, nodesWithChildren, nodeById } = useMemo(() => {
     const allNodes = controller.data ?? [];
     const childrenMap = new Map<NodeId, TreeNodeInUI[]>();
@@ -450,8 +453,6 @@ function ColumnViewWrapper({ controller, onNodeClick }: ColumnViewWrapperProps) 
       }
     }
 
-    // Root nodes: nodes whose parentId is the controller's rootNodeId,
-    // or nodes at the minimum depth if rootNodeId is not set
     const rootId = controller.rootNodeId;
     let roots: TreeNodeInUI[];
     if (rootId) {
@@ -466,6 +467,26 @@ function ColumnViewWrapper({ controller, onNodeClick }: ColumnViewWrapperProps) 
     return { rootNodes: roots, childrenMap, nodesWithChildren, nodeById };
   }, [controller.data, controller.rootNodeId]);
 
+  // Build ancestor path from columnTargetNodeId back to root
+  const initialExpandedPath = useMemo(() => {
+    if (!columnTargetNodeId) return [];
+    const path: NodeId[] = [];
+    let currentId: NodeId | undefined = columnTargetNodeId as NodeId;
+    const rootId = controller.rootNodeId;
+    const visited = new Set<string>();
+
+    while (currentId && !visited.has(currentId)) {
+      visited.add(currentId);
+      const node = nodeById.get(currentId);
+      if (!node) break;
+      if (rootId && currentId === rootId) break;
+      path.unshift(currentId);
+      currentId = node.parentId;
+    }
+
+    return path;
+  }, [columnTargetNodeId, nodeById, controller.rootNodeId]);
+
   const getChildren = useCallback(
     (nodeId: NodeId): TreeNodeInUI[] => childrenMap.get(nodeId) ?? [],
     [childrenMap],
@@ -473,7 +494,6 @@ function ColumnViewWrapper({ controller, onNodeClick }: ColumnViewWrapperProps) 
 
   const hasChildren = useCallback(
     (nodeId: NodeId): boolean => {
-      // Check childrenMap first, then fall back to node.hasChildren flag
       if (nodesWithChildren.has(nodeId)) return true;
       const node = nodeById.get(nodeId);
       return node?.hasChildren ?? false;
@@ -481,13 +501,31 @@ function ColumnViewWrapper({ controller, onNodeClick }: ColumnViewWrapperProps) 
     [nodesWithChildren, nodeById],
   );
 
-  const columnApi = useColumnView({ getChildren, hasChildren });
+  const columnApi = useColumnView({
+    getChildren,
+    hasChildren,
+    initialState: initialExpandedPath.length > 0
+      ? {
+        expandedPath: initialExpandedPath,
+        selectedNodeId: initialExpandedPath[initialExpandedPath.length - 1] ?? null,
+      }
+      : undefined,
+  });
+
+  // Expand ancestor nodes to load their children on initial mount
+  const expandedRef = useRef(false);
+  useEffect(() => {
+    if (expandedRef.current || initialExpandedPath.length === 0) return;
+    expandedRef.current = true;
+    for (const nodeId of initialExpandedPath) {
+      controller.onNodeExpand?.(nodeId, true);
+    }
+  }, [initialExpandedPath, controller]);
 
   const handleSelectNode = useCallback(
     (nodeId: NodeId) => {
       const node = nodeById.get(nodeId);
 
-      // Expand the node to load its children if it has children
       if (node?.hasChildren || nodesWithChildren.has(nodeId)) {
         controller.onNodeExpand?.(nodeId, true);
       }
