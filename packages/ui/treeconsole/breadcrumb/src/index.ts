@@ -8,7 +8,7 @@
 export { TreeConsoleBreadcrumb } from './components/TreeConsoleBreadcrumb.js';
 
 // Sub containers (can be customized via props)
-export { NodeTypeIcon } from './components/NodeTypeIcon.js';
+export { NodeTypeIcon } from '@hierarchidb/components';
 export { NodeContextMenu } from './components/NodeContextMenu.js';
 
 // Types

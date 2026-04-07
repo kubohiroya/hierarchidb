@@ -1,5 +1,5 @@
 import type { OpenMaintenanceContext } from '@hierarchidb/ui-plugin-shell/ui-usermenu';
-import { useNavigate, useRouterState } from '@tanstack/react-router';
+import { useNavigate, useRouterState, useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useOptionalBootProgress } from '~/contexts/BootProgressProvider';
 import { useWorker } from '~/contexts/WorkerProvider';
@@ -18,6 +18,7 @@ type TreeConsoleRoutePageProps = {
 
 export function TreeConsoleRoutePage({ data }: TreeConsoleRoutePageProps) {
   const navigate = useNavigate();
+  const searchParams = useSearch({ strict: false }) as { view?: string; sort?: string; zoom?: number };
   const { client: workerClient } = useWorker();
   const bootProgress = useOptionalBootProgress();
   const matches = useRouterState({ select: (state) => state.matches });
@@ -92,6 +93,9 @@ export function TreeConsoleRoutePage({ data }: TreeConsoleRoutePageProps) {
           treeId={data.tree?.id}
           pageNodeId={data.pageNodeId}
           pageTreeNode={data.pageNode}
+          initialViewMode={searchParams.view as import('@hierarchidb/ui-treeconsole-base').ViewMode | undefined}
+          initialSortMode={searchParams.sort as import('@hierarchidb/ui-treeconsole-base').SortMode | undefined}
+          initialZoomLevel={searchParams.zoom}
         />
       </TreeConsoleRoutePageLayout>
     </TreeConsoleRoutePageProviders>

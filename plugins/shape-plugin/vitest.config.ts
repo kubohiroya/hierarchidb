@@ -16,19 +16,14 @@ export default defineConfig({
     setupFiles: ['./vitest.setup.ts'],
     // Keep thread pool by default for CI stability; allow opt-in fork pool for local diagnostics.
     pool: useForkPool ? 'forks' : 'threads',
-    poolOptions: useForkPool
+    maxWorkers: 1,
+    minWorkers: 1,
+    ...(useForkPool
       ? {
-        forks: {
-          singleFork: true,
-          execArgv: ['--max-old-space-size=8192'],
-        },
+        isolate: false,
+        execArgv: ['--max-old-space-size=8192'],
       }
-      : {
-        threads: {
-          minThreads: 1,
-          maxThreads: 1,
-        },
-      },
+      : {}),
     include: [
       'src/**/*.test.ts',
       'src/**/*.test.tsx',

@@ -19,6 +19,7 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
     showTour = true,
     customText,
     position = 'absolute',
+    rightSlot,
   } = props;
 
   if (customText) {
@@ -44,24 +45,24 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
       >
         {
           showTour && onStartTour ? (
-          <IconButton
-            size="small"
-            onClick={onStartTour}
-            aria-label="Start guided tour"
-            sx={{
-              mr: 1,
-              color: 'text.secondary',
-              '&:hover': {
-                color: 'primary.main',
-              },
-            }}
-          >
-            <HelpOutline fontSize="small" />
-          </IconButton>
+            <IconButton
+              size="small"
+              onClick={onStartTour}
+              aria-label="Start guided tour"
+              sx={{
+                mr: 1,
+                color: 'text.secondary',
+                '&:hover': {
+                  color: 'primary.main',
+                },
+              }}
+            >
+              <HelpOutline fontSize="small" />
+            </IconButton>
 
-        ) : (
-          <Box sx={{ width: 16, color: 'text.secondary' }} />
-        )}
+          ) : (
+            <Box sx={{ width: 16, color: 'text.secondary' }} />
+          )}
         <Typography
           variant="body2"
           sx={{ color: 'text.secondary' }}
@@ -190,6 +191,11 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
       >
         {getFooterText()}
       </Typography>
+      {rightSlot && (
+        <Box sx={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', pr: 1 }}>
+          {rightSlot}
+        </Box>
+      )}
     </Box>
   );
 }

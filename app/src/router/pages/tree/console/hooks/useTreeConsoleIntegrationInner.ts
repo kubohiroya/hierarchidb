@@ -8,7 +8,7 @@ import type {
 import { TagsLinkButton } from '@hierarchidb/ui-treeconsole-base';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import type { Remote } from 'comlink';
-import { createElement, useCallback, useMemo, useState } from 'react';
+import { createElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { resolvePreviewGuardState } from '~/hooks/treeconsole/actions/dialog';
 import { resolveOpenStepsForNode } from '~/hooks/treeconsole/resolveOpenSteps';
 import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration';
@@ -34,6 +34,9 @@ export type UseTreeConsoleIntegrationInnerArgs = {
   pageTreeNode?: TreeNode;
   resetWorker: () => void;
   initializeWorker: () => Promise<void>;
+  initialViewMode?: import('@hierarchidb/ui-treeconsole-base').ViewMode;
+  initialSortMode?: import('@hierarchidb/ui-treeconsole-base').SortMode;
+  initialZoomLevel?: number;
 };
 
 export type UseTreeConsoleIntegrationInnerResult = {
@@ -58,6 +61,9 @@ export function useTreeConsoleIntegrationInner({
   pageTreeNode,
   resetWorker,
   initializeWorker,
+  initialViewMode,
+  initialSortMode,
+  initialZoomLevel,
 }: UseTreeConsoleIntegrationInnerArgs): UseTreeConsoleIntegrationInnerResult {
   const location = useLocation();
   const navigate = useNavigate();
@@ -72,7 +78,9 @@ export function useTreeConsoleIntegrationInner({
     selectedIds,
     expandedIds,
     searchTerm,
-    viewMode,
+    viewMode: ssotViewMode,
+    sortMode: ssotSortMode,
+    zoomLevel: ssotZoomLevel,
     canCreate,
     canEdit,
     canArchive,
@@ -120,7 +128,26 @@ export function useTreeConsoleIntegrationInner({
     [location.searchStr]
   );
 
-  const runtimeContext = useOptionalBuildSessionRuntimeContext();
+  // URL search params override SSOT values (priority: URL > SSOT > defaults)
+  const viewMode = initialViewMode ?? ssotViewMode;
+  const sortMode = initialSortMode ?? ssotSortMode;
+  const zoomLevel = initialZoomLevel ?? ssotZoomLevel;
+
+  // Apply URL params to SSOT on initial load so they persist
+  const initialAppliedRef = useRef(false);
+  useEffect(() => {
+    if (initialAppliedRef.current) return;
+    initialAppliedRef.current = true;
+    const patch: Record<string, unknown> = {};
+    if (initialViewMode && initialViewMode !== ssotViewMode) patch.viewMode = initialViewMode;
+    if (initialSortMode && initialSortMode !== ssotSortMode) patch.sortMode = initialSortMode;
+    if (initialZoomLevel !== undefined && initialZoomLevel !== ssotZoomLevel) patch.zoomLevel = initialZoomLevel;
+    if (Object.keys(patch).length > 0) {
+      actions.handleViewModeChange?.(viewMode);
+      if (sortMode !== 'none') actions.handleSortModeChange?.(sortMode);
+      if (zoomLevel !== 50) actions.handleZoomLevelChange?.(zoomLevel);
+    }
+  }, []); const runtimeContext = useOptionalBuildSessionRuntimeContext();
   const buildSessionIndicator = useMemo(
     () => ({
       runningNodeIds: runtimeContext?.runningNodeIds
@@ -240,11 +267,11 @@ export function useTreeConsoleIntegrationInner({
         },
         draftMetadata: breadcrumbNode.draftMetadata
           ? {
-              name: breadcrumbNode.draftMetadata.name,
-              description: breadcrumbNode.draftMetadata.description,
-              tags: breadcrumbNode.draftMetadata.tags ?? [],
-              buildMetadata: breadcrumbNode.draftMetadata.buildMetadata,
-            }
+            name: breadcrumbNode.draftMetadata.name,
+            description: breadcrumbNode.draftMetadata.description,
+            tags: breadcrumbNode.draftMetadata.tags ?? [],
+            buildMetadata: breadcrumbNode.draftMetadata.buildMetadata,
+          }
           : null,
         visible: breadcrumbNode.visible,
         data: null,
@@ -309,6 +336,30 @@ export function useTreeConsoleIntegrationInner({
     requestEdit,
     searchTerm,
     selectedCount: selectedIds.length,
+    viewMode,
+    onViewModeChange: (mode: import('@hierarchidb/ui-treeconsole-base').ViewMode) => {
+      console.debug('[TreeConsole] viewMode changed via toolbar:', mode);
+      actions.handleViewModeChange(mode);
+      void navigate({
+        search: (prev: Record<string, unknown>) => ({
+          ...prev,
+          view: mode === 'list' ? undefined : mode,
+        }),
+        replace: true,
+      });
+    },
+    sortMode,
+    onSortModeChange: (mode: import('@hierarchidb/ui-treeconsole-base').SortMode) => {
+      console.debug('[TreeConsole] sortMode changed via toolbar:', mode);
+      actions.handleSortModeChange(mode);
+      void navigate({
+        search: (prev: Record<string, unknown>) => ({
+          ...prev,
+          sort: mode === 'none' ? undefined : mode,
+        }),
+        replace: true,
+      });
+    },
   });
 
   const shouldRenderTreeTable =
@@ -342,6 +393,8 @@ export function useTreeConsoleIntegrationInner({
     filterBy: state.filterBy,
     availableFilters: state.availableFilters,
     viewMode,
+    sortMode,
+    zoomLevel,
     rowClickAction,
     canCreate,
     canEdit,
@@ -361,7 +414,36 @@ export function useTreeConsoleIntegrationInner({
     onCollapseAll: actions.handleCollapseAll,
     onSort: actions.handleSort,
     onFilterChange: actions.handleFilterChange,
-    onViewModeChange: actions.handleViewModeChange,
+    onViewModeChange: (mode: import('@hierarchidb/ui-treeconsole-base').ViewMode) => {
+      actions.handleViewModeChange(mode);
+      void navigate({
+        search: (prev: Record<string, unknown>) => ({
+          ...prev,
+          view: mode === 'list' ? undefined : mode,
+        }),
+        replace: true,
+      });
+    },
+    onSortModeChange: (mode: import('@hierarchidb/ui-treeconsole-base').SortMode) => {
+      actions.handleSortModeChange(mode);
+      void navigate({
+        search: (prev: Record<string, unknown>) => ({
+          ...prev,
+          sort: mode === 'none' ? undefined : mode,
+        }),
+        replace: true,
+      });
+    },
+    onZoomLevelChange: (zoom: number) => {
+      actions.handleZoomLevelChange(zoom);
+      void navigate({
+        search: (prev: Record<string, unknown>) => ({
+          ...prev,
+          zoom: zoom === 50 ? undefined : zoom,
+        }),
+        replace: true,
+      });
+    },
     onBreadcrumbNavigate: actions.handleBreadcrumbNavigate,
     onNavigateBack: actions.handleNavigateBack,
     onNavigateForward: actions.handleNavigateForward,
@@ -372,6 +454,15 @@ export function useTreeConsoleIntegrationInner({
     resolveOpenSteps,
     onBreadcrumbContextAction: handleBreadcrumbContextAction,
     onMoveNodes: actions.handleMoveNodes,
+    onIconPositionChange: async (nodeId: import('@hierarchidb/core-types').NodeId, position: { x: number; y: number }) => {
+      if (!client) return;
+      try {
+        const updaterAPI = await client.getTreeNodeUpdaterAPI();
+        await updaterAPI.updateViewProperties(nodeId, { iconPosition: position });
+      } catch (error) {
+        console.error('[TreeConsole] Failed to persist iconPosition', error);
+      }
+    },
     buildSessionIndicator,
     onNavigateTags: handleTagsNavigate,
     useArchiveColumns: isArchivePage,
@@ -383,10 +474,10 @@ export function useTreeConsoleIntegrationInner({
   const tagsLeftSlot =
     treeId && pageNodeId
       ? createElement(TagsLinkButton, {
-          treeId: String(treeId),
-          pageNodeId: String(pageNodeId),
-          onNavigate: handleTagsNavigate,
-        })
+        treeId: String(treeId),
+        pageNodeId: String(pageNodeId),
+        onNavigate: handleTagsNavigate,
+      })
       : undefined;
 
   const breadcrumbProps: TreeConsoleBreadcrumbProps = {

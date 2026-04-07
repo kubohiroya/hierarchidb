@@ -3,6 +3,7 @@ import type {
   CommitDraftRequest,
   DiscardDraftOptions,
   TreeNodeUpdaterAPI,
+  ViewProperties,
 } from '@hierarchidb/tree-api';
 import type { TagAPI } from '@hierarchidb/tag-api';
 import type {
@@ -36,7 +37,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
     private coreDB: CoreDB,
     _commandProcessor?: CommandProcessor,
     private tagService?: TagAPI
-  ) {}
+  ) { }
 
   private readonly defaultDialogUIState: DialogUIState = {
     dialogWindow: null,
@@ -465,13 +466,13 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
           nodeId: draftId,
           persistedNode: node
             ? {
-                id: node.id,
-                metadata: node.metadata,
-                data: node.data,
-                draftMetadata: draftMeta,
-                draftData,
-                dialogUIState,
-              }
+              id: node.id,
+              metadata: node.metadata,
+              data: node.data,
+              draftMetadata: draftMeta,
+              draftData,
+              dialogUIState,
+            }
             : null,
         });
       }
@@ -506,12 +507,12 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
         wcVersion: result.status === 'COMMIT_CONFLICT' ? result.wcVersion : undefined,
         persistedNode: node
           ? {
-              id: node.id,
-              metadata: node.metadata,
-              data: node.data,
-              draftMetadata: draftMeta,
-              draftData,
-            }
+            id: node.id,
+            metadata: node.metadata,
+            data: node.data,
+            draftMetadata: draftMeta,
+            draftData,
+          }
           : null,
       });
     }
@@ -520,7 +521,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
       const normalizedNode =
         (await this.ensureDraftMetadata(
           (result.node as TreeNode | undefined) ??
-            ((await getTreeNode(this.coreDB, result.nodeId as NodeId)) as TreeNode | undefined),
+          ((await getTreeNode(this.coreDB, result.nodeId as NodeId)) as TreeNode | undefined),
           requestedName,
           true
         )) ?? (result.node as TreeNode | undefined);
@@ -613,5 +614,22 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
       await this.clearTagScope(wc.id as NodeId, 'draft');
     }
     return toDelete.length;
+  }
+
+  async updateViewProperties(nodeId: NodeId, viewProperties: ViewProperties): Promise<void> {
+    const previousNode = await this.coreDB.getNode(nodeId);
+    await this.coreDB.nodes.update(nodeId, { viewProperties });
+    const nextNode = await this.coreDB.getNode(nodeId);
+    if (nextNode) {
+      this.coreDB.changeSubject.next({
+        type: 'node-updated',
+        nodeId,
+        node: nextNode,
+        previousNode: previousNode ?? undefined,
+        parentId: nextNode.parentId,
+        previousParentId: previousNode?.parentId,
+        timestamp: Date.now(),
+      });
+    }
   }
 }

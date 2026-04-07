@@ -79,3 +79,4 @@ export type { TreeRootState } from './SortOrder.js';
 export { SortOrder } from './SortOrder.js';
 export type { Tree } from './tree-types.js';
 export type { UndoStateEvent } from './undo-state-events.js';
+export type { ViewMode, SortMode, IconPosition, ViewProperties } from './view-properties-types.js';

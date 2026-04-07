@@ -35,7 +35,7 @@ const FooterText = styled(Typography)`
  * TreeConsoleFooter
   */
 export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Element {
-  const { controller, onStartTour, height = 32, loadingText, loadingTooltip } = props;
+  const { controller, onStartTour, height = 32, loadingText, loadingTooltip, rightSlot } = props;
 
   const theme = useTheme();
 
@@ -80,6 +80,11 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
             {loadingText ?? 'Loading...'}
           </FooterText>
         </Tooltip>
+        {rightSlot && (
+          <Box sx={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', pr: 1 }}>
+            {rightSlot}
+          </Box>
+        )}
       </FooterContainer>
     );
   }
@@ -149,6 +154,11 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
       >
         {getFooterText()}
       </FooterText>
+      {rightSlot && (
+        <Box sx={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', pr: 1 }}>
+          {rightSlot}
+        </Box>
+      )}
     </FooterContainer>
   );
 }

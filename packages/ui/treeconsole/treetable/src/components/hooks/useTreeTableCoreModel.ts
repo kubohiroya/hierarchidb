@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useEffect,
   useMemo,
   useState,
   type ComponentType,
@@ -43,6 +44,13 @@ type NodeTypeIconLikeProps = {
   buildRequired?: boolean;
 };
 
+/** Reverse mapping: TanStack Table column ID → SortMode value. */
+const COLUMN_ID_TO_SORT_MODE: Record<string, import('@hierarchidb/tree-api').SortMode> = {
+  name: 'name',
+  createdAt: 'created',
+  updatedAt: 'modified',
+};
+
 export interface UseTreeTableCoreModelParams {
   controller: TreeTableController | null;
   pageNodeId?: string;
@@ -60,6 +68,8 @@ export interface UseTreeTableCoreModelParams {
   onRowClick?: (node: TreeNodeInUI, event: ReactMouseEvent) => void;
   onRowDoubleClick?: (node: TreeNodeInUI, event: ReactMouseEvent) => void;
   buildSessionIndicator?: BuildSessionIndicator;
+  sortMode?: import('@hierarchidb/tree-api').SortMode;
+  onSortModeChange?: (mode: import('@hierarchidb/tree-api').SortMode) => void;
 }
 
 export interface UseTreeTableCoreModelResult {
@@ -102,8 +112,35 @@ export function useTreeTableCoreModel({
   onRowClick,
   onRowDoubleClick,
   buildSessionIndicator,
+  sortMode,
+  onSortModeChange,
 }: UseTreeTableCoreModelParams): UseTreeTableCoreModelResult {
   const [sorting, setSorting] = useState<SortingState>([]);
+
+  // -- SortMode ↔ TanStack Table sorting integration --
+  // Map SortMode values to TanStack Table column IDs and vice versa.
+  const SORT_MODE_TO_COLUMN: Record<string, { id: string; desc: boolean } | null> = {
+    none: null,
+    name: { id: 'name', desc: false },
+    created: { id: 'createdAt', desc: true },
+    modified: { id: 'updatedAt', desc: true },
+    // These SortMode values have no corresponding table column:
+    type: null,
+    lastOpened: null,
+    size: null,
+    tag: null,
+  };
+
+  // Sync external sortMode → internal sorting state
+  useEffect(() => {
+    if (sortMode === undefined) return;
+    const mapped = SORT_MODE_TO_COLUMN[sortMode];
+    if (mapped === null || mapped === undefined) {
+      setSorting([]);
+    } else {
+      setSorting([mapped]);
+    }
+  }, [sortMode]);
   const [contextMenuState, setContextMenuState] = useState<TreeTableContextMenuState>({
     anchorEl: null,
     anchorPosition: null,
@@ -376,7 +413,22 @@ export function useTreeTableCoreModel({
       sorting,
       expanded: expandedState,
     },
-    onSortingChange: setSorting,
+    onSortingChange: (updater) => {
+      const next = typeof updater === 'function' ? updater(sorting) : updater;
+      setSorting(next);
+      // Sync back to external sortMode atom (SSOT)
+      if (onSortModeChange) {
+        if (next.length === 0) {
+          onSortModeChange('none');
+        } else {
+          const columnId = next[0].id;
+          const mapped = COLUMN_ID_TO_SORT_MODE[columnId];
+          if (mapped) {
+            onSortModeChange(mapped);
+          }
+        }
+      }
+    },
     onRowSelectionChange: (updater) => {
       if (selectAll) return;
       if (typeof updater === 'function') {

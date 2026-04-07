@@ -167,6 +167,8 @@ export interface TreeConsoleFooterProps {
   loadingText?: string;
   /** Optional: tooltip content for the loadingText (e.g., explain counters) */
   loadingTooltip?: React.ReactNode;
+  /** Optional slot rendered on the right side of the footer (e.g. zoom slider). */
+  rightSlot?: React.ReactNode;
 }
 
 export interface TreeConsoleActionsProps {

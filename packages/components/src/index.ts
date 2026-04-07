@@ -29,3 +29,4 @@ export * from './Icon/index.ts';
 export * from './FloatingWindow/index.ts';
 export * from './SpeedDialSubmenu/index.ts';
 export * from './FlagOverlay/index.ts';
+export * from './NodeTypeIcon/index.ts';

@@ -190,4 +190,24 @@ export interface TreeConsoleToolbarProps {
    * Displays developer-only tools (e.g., IndexedDB reset) when true.
    */
   developerModeEnabled?: boolean;
+
+  /**
+   * Current view mode for the TreeConsole content area.
+   */
+  viewMode?: import('@hierarchidb/ui-treeconsole-base').ViewMode;
+
+  /**
+   * Callback when view mode changes.
+   */
+  onViewModeChange?: (mode: import('@hierarchidb/ui-treeconsole-base').ViewMode) => void;
+
+  /**
+   * Current sort mode.
+   */
+  sortMode?: import('@hierarchidb/ui-treeconsole-base').SortMode;
+
+  /**
+   * Callback when sort mode changes.
+   */
+  onSortModeChange?: (mode: import('@hierarchidb/ui-treeconsole-base').SortMode) => void;
 }

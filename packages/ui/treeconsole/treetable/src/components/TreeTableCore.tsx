@@ -34,6 +34,8 @@ export function TreeTableCore({
   selectAllPersistence = 'page',
   selectionIdPrefix = 'row-selection',
   buildSessionIndicator,
+  sortMode,
+  onSortModeChange,
 }: TreeTableCoreProps): ReactElement {
   const IconComponent = CustomNodeTypeIcon || NodeTypeIcon;
   const ContextMenuComponent = CustomNodeContextMenu || NodeContextMenu;
@@ -76,6 +78,8 @@ export function TreeTableCore({
     onRowClick,
     onRowDoubleClick,
     buildSessionIndicator,
+    sortMode,
+    onSortModeChange,
   });
 
   const renderSkeletonHeader = () => (

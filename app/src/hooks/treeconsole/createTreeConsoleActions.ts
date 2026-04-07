@@ -83,6 +83,14 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
     handleViewModeChange: (mode) => {
       setSSOT({ viewMode: mode });
     },
+
+    handleSortModeChange: (mode) => {
+      setSSOT({ sortMode: mode });
+    },
+
+    handleZoomLevelChange: (zoom) => {
+      setSSOT({ zoomLevel: zoom });
+    },
     handleBreadcrumbNavigate: navigationActions.handleBreadcrumbNavigate,
     handleNavigateBack: navigationActions.handleNavigateBack,
     handleNavigateForward: navigationActions.handleNavigateForward,

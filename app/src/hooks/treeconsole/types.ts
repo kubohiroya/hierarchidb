@@ -15,7 +15,7 @@ import type { Remote } from 'comlink';
 import type { Dispatch, SetStateAction } from 'react';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms';
 
-export type ViewMode = 'list' | 'grid';
+export type { ViewMode, SortMode } from '@hierarchidb/ui-treeconsole-base';
 
 export type ContextAction =
   | 'open'
@@ -79,7 +79,9 @@ export interface TreeConsoleActions {
   handleCollapseAll: () => void;
   handleSort: (columnId: string) => void;
   handleFilterChange: (filter: string) => void;
-  handleViewModeChange: (mode: ViewMode) => void;
+  handleViewModeChange: (mode: import('@hierarchidb/ui-treeconsole-base').ViewMode) => void;
+  handleSortModeChange: (mode: import('@hierarchidb/ui-treeconsole-base').SortMode) => void;
+  handleZoomLevelChange: (zoom: number) => void;
   handleBreadcrumbNavigate: (nodeId: string, node?: BreadcrumbNode) => void;
   handleNavigateBack: () => void;
   handleNavigateForward: () => void;

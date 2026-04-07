@@ -1,19 +1,23 @@
 import type { ReactElement } from 'react';
-import { memo } from 'react';
-import { Box, Typography } from '@mui/material';
+import { memo, useMemo, useState } from 'react';
+import { Box, Slider, Typography } from '@mui/material';
 import type { TreeTableColumn } from './TreeTable/index.js';
-// RowContextMenu removed: right-click is disabled app-wide
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { type BuildSessionIndicator, TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
+import type { TreeNodeInUI } from '@hierarchidb/ui-treeconsole-treetable';
 import type { OpenStepOption, TreeConsoleBreadcrumbRendererProps as BreadcrumbRendererProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
-import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import { NodeContextMenu, TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeConsoleFooter } from './TreeConsoleFooter.js';
 import type { HierarchicalTreeNode } from '~/types/index';
 import type { DualKeyMap } from '@hierarchidb/util';
 import type { PanelBreadcrumbNode } from '~/hooks/useTreeConsolePanel';
 import { useTreeConsolePanel } from '~/hooks/useTreeConsolePanel';
 import { TagsLinkButton } from './TagsLinkButton.js';
+import type { ViewMode, SortMode } from '~/types/view-mode-types';
+import { IconView } from './IconView.js';
+import { ColumnView } from './ColumnView.js';
+import { useColumnView } from '~/hooks/useColumnView.js';
 
 export type TreeConsoleBreadcrumbRendererProps = BreadcrumbRendererProps;
 
@@ -50,8 +54,13 @@ export interface TreeConsolePanelProps {
   readonly sortDirection?: 'asc' | 'desc';
   readonly filterBy?: string;
   readonly availableFilters: readonly string[];
-  readonly viewMode: 'list' | 'grid';
-  readonly canCreate: boolean;
+  readonly viewMode: ViewMode;
+  readonly sortMode?: SortMode;
+  readonly zoomLevel?: number;
+  readonly onViewModeChange: (mode: ViewMode) => void;
+  readonly onSortModeChange?: (mode: SortMode) => void;
+  readonly onZoomLevelChange?: (zoom: number) => void;
+  readonly onIconPositionChange?: (nodeId: NodeId, position: { x: number; y: number }) => void; readonly canCreate: boolean;
   readonly canEdit: boolean;
   readonly canArchive: boolean;
   readonly showNavigationButtons?: boolean;
@@ -70,7 +79,6 @@ export interface TreeConsolePanelProps {
   readonly onCollapseAll: () => void;
   readonly onSort: (columnId: string) => void;
   readonly onFilterChange: (filter: string) => void;
-  readonly onViewModeChange: (mode: 'list' | 'grid') => void;
   readonly onBreadcrumbNavigate: (nodeId: string, node?: PanelBreadcrumbNode) => void;
   readonly onNavigateBack?: () => void;
   readonly onNavigateForward?: () => void;
@@ -178,6 +186,30 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     leftSlot: tagsLeftSlot,
   });
 
+  const selectedIdSet = useMemo(() => {
+    const set = new Set<string>();
+    if (controller.rowSelection) {
+      for (const [id, selected] of Object.entries(controller.rowSelection)) {
+        if (selected) set.add(id);
+      }
+    }
+    return set;
+  }, [controller.rowSelection]);
+
+  const [iconContextMenu, setIconContextMenu] = useState<{
+    node: TreeNodeInUI;
+    position: { left: number; top: number };
+  } | null>(null);
+
+  const handleIconContextMenu = useCallback((node: TreeNodeInUI, position: { left: number; top: number }) => {
+    controller.onNodeSelect?.([node.id], true);
+    setIconContextMenu({ node, position });
+  }, [controller]);
+
+  const handleIconContextMenuClose = useCallback(() => {
+    setIconContextMenu(null);
+  }, []);
+
   if (!isPageContextValid) {
     return <Box>Invalid page context</Box>;
   }
@@ -219,22 +251,43 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
             }}
             data-tour-id="tree-table"
           >
-            <TreeTableCore
-              controller={controller}
-              viewWidth={1200}
-              treeId={props.treeId}
-              pageNodeId={props.pageNodeId}
-              selectAllPersistence={props.selectAllPersistence}
-              selectionIdPrefix={props.selectAllIdPrefix}
-              buildSessionIndicator={props.buildSessionIndicator}
-              useArchiveColumns={props.useArchiveColumns ?? false}
-              archiveAction={props.archiveAction}
-              depthOffset={controller.depthOffset ?? 0}
-              disableDragAndDrop={false}
-              hideDragHandler={props.hideDragHandler ?? false}
-              rowClickAction={props.rowClickAction ?? 'Select/Navigate'}
-              selectionMode="multiple"
-            />
+            {props.viewMode === 'icon' ? (
+              <IconView
+                nodes={controller.data ?? []}
+                zoomLevel={props.zoomLevel ?? 50}
+                sortMode={props.sortMode ?? 'none'}
+                selectedIds={selectedIdSet}
+                onIconPositionChange={props.onIconPositionChange ?? (() => { })}
+                onNodeClick={controller.onNodeClick ? (nodeId) => controller.onNodeClick?.(nodeId) : undefined}
+                onNodeDoubleClick={controller.onNodeClick ? (nodeId, node) => controller.onNodeClick?.(nodeId, node) : undefined}
+                onNodeSelect={controller.onNodeSelect}
+                onContextMenu={handleIconContextMenu}
+              />
+            ) : props.viewMode === 'column' ? (
+              <ColumnViewWrapper
+                controller={controller}
+                onNodeClick={controller.onNodeClick}
+              />
+            ) : (
+              <TreeTableCore
+                controller={controller}
+                viewWidth={1200}
+                treeId={props.treeId}
+                pageNodeId={props.pageNodeId}
+                selectAllPersistence={props.selectAllPersistence}
+                selectionIdPrefix={props.selectAllIdPrefix}
+                buildSessionIndicator={props.buildSessionIndicator}
+                useArchiveColumns={props.useArchiveColumns ?? false}
+                archiveAction={props.archiveAction}
+                depthOffset={controller.depthOffset ?? 0}
+                disableDragAndDrop={false}
+                hideDragHandler={props.hideDragHandler ?? false}
+                rowClickAction={props.rowClickAction ?? 'Select/Navigate'}
+                selectionMode="multiple"
+                sortMode={props.sortMode}
+                onSortModeChange={props.onSortModeChange}
+              />
+            )}
           </Box>
         </Box>
       ) : (
@@ -250,22 +303,43 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
           }}
           data-tour-id="tree-table"
         >
-          <TreeTableCore
-            controller={controller}
-            viewWidth={1200}
-            treeId={props.treeId}
-            pageNodeId={props.pageNodeId}
-            selectAllPersistence={props.selectAllPersistence}
-            selectionIdPrefix={props.selectAllIdPrefix}
-            buildSessionIndicator={props.buildSessionIndicator}
-            useArchiveColumns={props.useArchiveColumns ?? false}
-            archiveAction={props.archiveAction}
-            depthOffset={controller.depthOffset ?? 0}
-            disableDragAndDrop={false}
-            hideDragHandler={props.hideDragHandler ?? false}
-            rowClickAction={props.rowClickAction ?? 'Select/Navigate'}
-            selectionMode="multiple"
-          />
+          {props.viewMode === 'icon' ? (
+            <IconView
+              nodes={controller.data ?? []}
+              zoomLevel={props.zoomLevel ?? 50}
+              sortMode={props.sortMode ?? 'none'}
+              selectedIds={selectedIdSet}
+              onIconPositionChange={props.onIconPositionChange ?? (() => { })}
+              onNodeClick={controller.onNodeClick ? (nodeId) => controller.onNodeClick?.(nodeId) : undefined}
+              onNodeDoubleClick={controller.onNodeClick ? (nodeId, node) => controller.onNodeClick?.(nodeId, node) : undefined}
+              onNodeSelect={controller.onNodeSelect}
+              onContextMenu={handleIconContextMenu}
+            />
+          ) : props.viewMode === 'column' ? (
+            <ColumnViewWrapper
+              controller={controller}
+              onNodeClick={controller.onNodeClick}
+            />
+          ) : (
+            <TreeTableCore
+              controller={controller}
+              viewWidth={1200}
+              treeId={props.treeId}
+              pageNodeId={props.pageNodeId}
+              selectAllPersistence={props.selectAllPersistence}
+              selectionIdPrefix={props.selectAllIdPrefix}
+              buildSessionIndicator={props.buildSessionIndicator}
+              useArchiveColumns={props.useArchiveColumns ?? false}
+              archiveAction={props.archiveAction}
+              depthOffset={controller.depthOffset ?? 0}
+              disableDragAndDrop={false}
+              hideDragHandler={props.hideDragHandler ?? false}
+              rowClickAction={props.rowClickAction ?? 'Select/Navigate'}
+              selectionMode="multiple"
+              sortMode={props.sortMode}
+              onSortModeChange={props.onSortModeChange}
+            />
+          )}
         </Box>
       )}
 
@@ -287,8 +361,152 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
               <Typography variant="caption" display="block">- Number of selected nodes</Typography>
             </Box>
           )}
+          rightSlot={
+            props.viewMode === 'icon' && props.onZoomLevelChange ? (
+              <Slider
+                value={props.zoomLevel ?? 50}
+                min={0}
+                max={100}
+                size="small"
+                onChange={(_, value) => props.onZoomLevelChange?.(value as number)}
+                aria-label="Zoom level"
+                sx={{ width: 120, mr: '96px' }}
+              />
+            ) : undefined
+          }
+        />
+      )}
+
+      {/* IconView context menu */}
+      {iconContextMenu && (
+        <NodeContextMenu
+          anchorEl={null}
+          anchorPosition={iconContextMenu.position}
+          open={true}
+          onClose={handleIconContextMenuClose}
+          nodeId={iconContextMenu.node.id}
+          nodeType={iconContextMenu.node.nodeType}
+          nodeName={iconContextMenu.node.metadata?.name}
+          treeId={props.treeId}
+          canOpen={true}
+          canEdit={true}
+          canDuplicate={true}
+          canArchive={true}
+          canCopy={true}
+          onOpen={() => {
+            controller.onContextAction?.('open', iconContextMenu.node);
+            handleIconContextMenuClose();
+          }}
+          onEdit={() => {
+            controller.onContextAction?.('edit', iconContextMenu.node);
+            handleIconContextMenuClose();
+          }}
+          onDuplicate={() => {
+            controller.onContextAction?.('duplicate', iconContextMenu.node);
+            handleIconContextMenuClose();
+          }}
+          onArchive={() => {
+            controller.onContextAction?.('archive', iconContextMenu.node);
+            handleIconContextMenuClose();
+          }}
+          onCopy={() => {
+            controller.onContextAction?.('copy', iconContextMenu.node);
+            handleIconContextMenuClose();
+          }}
         />
       )}
     </Box>
   );
 });
+
+// -- ColumnView wrapper that manages useColumnView hook --
+
+import type { TreeTableController } from '@hierarchidb/ui-treeconsole-treetable';
+import { useCallback } from 'react';
+
+interface ColumnViewWrapperProps {
+  controller: TreeTableController;
+  onNodeClick?: (nodeId: string, node?: TreeNodeInUI) => void;
+}
+
+function ColumnViewWrapper({ controller, onNodeClick }: ColumnViewWrapperProps) {
+  // Root nodes = top-level children (depth === minimum depth in data)
+  const { rootNodes, childrenMap, nodesWithChildren, nodeById } = useMemo(() => {
+    const allNodes = controller.data ?? [];
+    const childrenMap = new Map<NodeId, TreeNodeInUI[]>();
+    const nodesWithChildren = new Set<NodeId>();
+    const nodeById = new Map<NodeId, TreeNodeInUI>();
+
+    for (const node of allNodes) {
+      nodeById.set(node.id, node);
+      if (node.parentId) {
+        const existing = childrenMap.get(node.parentId);
+        if (existing) {
+          existing.push(node);
+        } else {
+          childrenMap.set(node.parentId, [node]);
+        }
+        nodesWithChildren.add(node.parentId);
+      }
+    }
+
+    // Root nodes: nodes whose parentId is the controller's rootNodeId,
+    // or nodes at the minimum depth if rootNodeId is not set
+    const rootId = controller.rootNodeId;
+    let roots: TreeNodeInUI[];
+    if (rootId) {
+      roots = childrenMap.get(rootId) ?? [];
+    } else {
+      const minDepth = allNodes.length > 0
+        ? Math.min(...allNodes.map((n) => n.depth))
+        : 0;
+      roots = allNodes.filter((n) => n.depth === minDepth);
+    }
+
+    return { rootNodes: roots, childrenMap, nodesWithChildren, nodeById };
+  }, [controller.data, controller.rootNodeId]);
+
+  const getChildren = useCallback(
+    (nodeId: NodeId): TreeNodeInUI[] => childrenMap.get(nodeId) ?? [],
+    [childrenMap],
+  );
+
+  const hasChildren = useCallback(
+    (nodeId: NodeId): boolean => {
+      // Check childrenMap first, then fall back to node.hasChildren flag
+      if (nodesWithChildren.has(nodeId)) return true;
+      const node = nodeById.get(nodeId);
+      return node?.hasChildren ?? false;
+    },
+    [nodesWithChildren, nodeById],
+  );
+
+  const columnApi = useColumnView({ getChildren, hasChildren });
+
+  const handleSelectNode = useCallback(
+    (nodeId: NodeId) => {
+      const node = nodeById.get(nodeId);
+
+      // Expand the node to load its children if it has children
+      if (node?.hasChildren || nodesWithChildren.has(nodeId)) {
+        controller.onNodeExpand?.(nodeId, true);
+      }
+
+      columnApi.selectNode(nodeId);
+
+      if (onNodeClick && node) {
+        onNodeClick(nodeId, node);
+      }
+    },
+    [columnApi, nodeById, nodesWithChildren, onNodeClick, controller],
+  );
+
+  return (
+    <ColumnView
+      rootNodes={rootNodes}
+      columnState={{ expandedPath: columnApi.columnPath, selectedNodeId: columnApi.selectedNodeId }}
+      onSelectNode={handleSelectNode}
+      getChildren={getChildren}
+    />
+  );
+}

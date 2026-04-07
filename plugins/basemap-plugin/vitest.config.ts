@@ -10,12 +10,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
     pool: 'threads',
-    poolOptions: {
-      threads: {
-        maxThreads: 1,
-        minThreads: 1,
-      },
-    },
+    maxWorkers: 1,
+    minWorkers: 1,
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
