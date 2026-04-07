@@ -141,6 +141,11 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
               onContextMenuAction={speedDial.onContextMenuAction}
               treeIdForPersistence={treeConsolePanelProps.treeId}
               renderBuiltInSpeedDial={false}
+              columnDetailSlot={
+                columnTargetNodeId && columnTargetNodeId !== '-'
+                  ? <TreeNodeInfoPanel {...infoPanelProps} />
+                  : undefined
+              }
             />
             <DynamicSpeedDial
               treeId={treeConsolePanelProps.treeId as TreeId | undefined}

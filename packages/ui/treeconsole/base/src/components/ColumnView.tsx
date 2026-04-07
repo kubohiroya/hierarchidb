@@ -25,6 +25,8 @@ export interface ColumnViewProps {
     onSelectNode: (nodeId: NodeId) => void;
     getChildren: (nodeId: NodeId) => TreeNodeInUI[];
     onIconContextMenu?: (node: TreeNodeInUI, position: { left: number; top: number }) => void;
+    /** Optional detail panel rendered as the last column (e.g. for non-folder target nodes). */
+    detailSlot?: React.ReactNode;
 }
 
 function resolveIconColor(node: TreeNodeInUI): string {
@@ -41,6 +43,7 @@ export function ColumnView({
     onSelectNode,
     getChildren,
     onIconContextMenu,
+    detailSlot,
 }: ColumnViewProps) {
     const columns: TreeNodeInUI[][] = [rootNodes];
     for (const pathNodeId of columnState.expandedPath) {
@@ -82,6 +85,11 @@ export function ColumnView({
                         />
                     </ColumnWithHandle>
                 ))}
+                {detailSlot && (
+                    <Box sx={{ flexShrink: 0, height: '100%', minWidth: DEFAULT_COLUMN_WIDTH, overflow: 'auto' }}>
+                        {detailSlot}
+                    </Box>
+                )}
             </Box>
         </Box>
     );

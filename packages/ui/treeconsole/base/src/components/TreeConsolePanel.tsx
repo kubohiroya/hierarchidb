@@ -63,6 +63,8 @@ export interface TreeConsolePanelProps {
   readonly onIconPositionChange?: (nodeId: NodeId, position: { x: number; y: number }) => void;
   readonly columnTargetNodeId?: string;
   readonly onColumnNavigate?: (targetNodeId: string) => void;
+  /** Detail panel for non-folder target node in column view (e.g. TreeNodeInfoPanel). */
+  readonly columnDetailSlot?: React.ReactNode;
   readonly canCreate: boolean;
   readonly canEdit: boolean;
   readonly canArchive: boolean;
@@ -273,6 +275,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
                 columnTargetNodeId={props.columnTargetNodeId}
                 onColumnNavigate={props.onColumnNavigate}
                 onIconContextMenu={handleIconContextMenu}
+                columnDetailSlot={props.columnDetailSlot}
               />
             ) : (
               <TreeTableCore
@@ -328,6 +331,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
               columnTargetNodeId={props.columnTargetNodeId}
               onColumnNavigate={props.onColumnNavigate}
               onIconContextMenu={handleIconContextMenu}
+              columnDetailSlot={props.columnDetailSlot}
             />
           ) : (
             <TreeTableCore
@@ -442,9 +446,10 @@ interface ColumnViewWrapperProps {
   columnTargetNodeId?: string;
   onColumnNavigate?: (targetNodeId: string) => void;
   onIconContextMenu?: (node: TreeNodeInUI, position: { left: number; top: number }) => void;
+  columnDetailSlot?: React.ReactNode;
 }
 
-function ColumnViewWrapper({ controller, onNodeClick: _onNodeClick, columnTargetNodeId, onColumnNavigate, onIconContextMenu }: ColumnViewWrapperProps) {
+function ColumnViewWrapper({ controller, onNodeClick: _onNodeClick, columnTargetNodeId, onColumnNavigate, onIconContextMenu, columnDetailSlot }: ColumnViewWrapperProps) {
   const { rootNodes, childrenMap, nodesWithChildren, nodeById } = useMemo(() => {
     const allNodes = controller.data ?? [];
     const childrenMap = new Map<NodeId, TreeNodeInUI[]>();
@@ -558,6 +563,7 @@ function ColumnViewWrapper({ controller, onNodeClick: _onNodeClick, columnTarget
       onSelectNode={handleSelectNode}
       getChildren={getChildren}
       onIconContextMenu={onIconContextMenu}
+      detailSlot={columnDetailSlot}
     />
   );
 }
