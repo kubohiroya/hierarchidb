@@ -117,7 +117,10 @@ export const createContextMenuAction = (
 
         if (normalizedAction === 'navigate') {
           if (options?.openInNewTab && treeId) {
-            openInNewTab(`/f/${treeId}/${targetNodeId}/-/folder/list`);
+            const vm = ssot.viewMode || 'list';
+            const sm = ssot.sortMode || 'name';
+            const vs = sm !== 'name' ? `${vm}/${sm}` : vm;
+            openInNewTab(`/f/${treeId}/${targetNodeId}/-/folder/${vs}`);
             return;
           }
           navigation.navigateTo(targetNodeId);

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Button, ButtonGroup, useMediaQuery } from '@mui/material';
+import { Button, ButtonGroup, IconButton, useMediaQuery } from '@mui/material';
 import {
     Apps as IconViewIcon,
     FormatListBulleted as ListViewIcon,
@@ -27,9 +27,11 @@ export interface ViewModeSelectorProps {
     onChange: (mode: ViewMode) => void;
     breakpoint?: number;
     forceWide?: boolean;
+    /** When true, show only the icon without label text in compact mode. */
+    iconOnly?: boolean;
 }
 
-export function ViewModeSelector({ value, onChange, breakpoint = 600, forceWide }: ViewModeSelectorProps) {
+export function ViewModeSelector({ value, onChange, breakpoint = 900, forceWide, iconOnly = false }: ViewModeSelectorProps) {
     const mediaWide = useMediaQuery(`(min-width:${breakpoint}px)`);
     const isWide = forceWide ?? mediaWide;
 
@@ -65,15 +67,25 @@ export function ViewModeSelector({ value, onChange, breakpoint = 600, forceWide 
     const current = VIEW_MODES.find((m) => m.value === value);
     return (
         <>
-            <Button
-                onClick={handleOpen}
-                aria-label="View mode"
-                size="small"
-                variant="outlined"
-                startIcon={current?.icon}
-            >
-                {current?.label}
-            </Button>
+            {iconOnly ? (
+                <IconButton
+                    onClick={handleOpen}
+                    aria-label="View mode"
+                    size="small"
+                >
+                    {current?.icon}
+                </IconButton>
+            ) : (
+                <Button
+                    onClick={handleOpen}
+                    aria-label="View mode"
+                    size="small"
+                    variant="outlined"
+                    startIcon={current?.icon}
+                >
+                    {current?.label}
+                </Button>
+            )}
             <SelectedMenu
                 anchorEl={anchorEl}
                 open={open}

@@ -19,6 +19,7 @@ import type { TreeNodeInUI } from '@hierarchidb/ui-treeconsole-treetable';
 import type { SortMode } from '~/types/view-mode-types';
 import { computeZoomLayout, CELL_GAP_PX } from '~/utils/zoom-layout';
 import { createSortComparator } from '~/utils/sort-comparator';
+import { useIconViewBackground, type RubberBandRect } from './useIconViewBackground.js';
 
 /** Resolve icon color matching the list view logic. */
 function resolveIconColor(node: TreeNodeInUI): string {
@@ -39,6 +40,7 @@ export interface IconViewProps {
     onNodeDoubleClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
     onNodeSelect?: (nodeIds: string[], selected: boolean) => void;
     onContextMenu?: (node: TreeNodeInUI, position: { left: number; top: number }) => void;
+    onBackgroundContextMenu?: (position: { left: number; top: number }) => void;
 }
 
 // -- Grid coordinate utilities --
@@ -126,8 +128,10 @@ export function IconView({
     onNodeDoubleClick,
     onNodeSelect,
     onContextMenu,
+    onBackgroundContextMenu,
 }: IconViewProps) {
     const { iconSize, cellSize } = computeZoomLayout(zoomLevel);
+    const outerRef = useRef<HTMLDivElement | null>(null);
 
     const sortedNodes = useMemo(() => {
         if (sortMode === 'none') return nodes;
@@ -137,22 +141,45 @@ export function IconView({
 
     const isGrid = sortMode !== 'none';
 
-    if (isGrid) {
-        return (
-            <GridLayout
-                nodes={sortedNodes}
-                iconSize={iconSize}
-                cellSize={cellSize}
-                selectedIds={selectedIds}
-                onNodeClick={onNodeClick}
-                onNodeDoubleClick={onNodeDoubleClick}
-                onNodeSelect={onNodeSelect}
-                onContextMenu={onContextMenu}
-            />
-        );
-    }
+    // Rubber-band selection: resolve node IDs from rect overlap
+    const handleRubberBandSelect = useCallback((rect: RubberBandRect) => {
+        if (!outerRef.current) return;
+        // Find all icon cell elements by data attribute
+        const cells = outerRef.current.querySelectorAll('[data-node-id]');
+        const containerRect = outerRef.current.getBoundingClientRect();
+        const ids: string[] = [];
+        cells.forEach((cell) => {
+            const cr = cell.getBoundingClientRect();
+            const cx = cr.left - containerRect.left + outerRef.current!.scrollLeft;
+            const cy = cr.top - containerRect.top + outerRef.current!.scrollTop;
+            if (cx + cr.width > rect.x && cx < rect.x + rect.width &&
+                cy + cr.height > rect.y && cy < rect.y + rect.height) {
+                const nodeId = (cell as HTMLElement).dataset.nodeId;
+                if (nodeId) ids.push(nodeId);
+            }
+        });
+        onNodeSelect?.(ids, true);
+    }, [onNodeSelect]);
 
-    return (
+    const { rubberBand, bgHandlers } = useIconViewBackground({
+        onNodeSelect,
+        onBackgroundContextMenu,
+        onRubberBandSelect: handleRubberBandSelect,
+    });
+
+    const content = isGrid ? (
+        <GridLayout
+            nodes={sortedNodes}
+            iconSize={iconSize}
+            cellSize={cellSize}
+            sortMode={sortMode}
+            selectedIds={selectedIds}
+            onNodeClick={onNodeClick}
+            onNodeDoubleClick={onNodeDoubleClick}
+            onNodeSelect={onNodeSelect}
+            onContextMenu={onContextMenu}
+        />
+    ) : (
         <FreeLayout
             nodes={nodes}
             iconSize={iconSize}
@@ -165,6 +192,38 @@ export function IconView({
             onContextMenu={onContextMenu}
         />
     );
+
+    return (
+        <Box
+            ref={outerRef}
+            {...bgHandlers}
+            sx={{
+                height: '100%',
+                width: '100%',
+                overflow: 'auto',
+                position: 'relative',
+                userSelect: 'none',
+            }}
+        >
+            {content}
+            {rubberBand && (
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        left: rubberBand.x,
+                        top: rubberBand.y,
+                        width: rubberBand.width,
+                        height: rubberBand.height,
+                        border: '1px dashed',
+                        borderColor: 'primary.main',
+                        backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                        pointerEvents: 'none',
+                        zIndex: 10,
+                    }}
+                />
+            )}
+        </Box>
+    );
 }
 
 // -- Grid Layout (sorted mode) --
@@ -173,6 +232,7 @@ interface GridLayoutProps {
     nodes: TreeNodeInUI[];
     iconSize: number;
     cellSize: { width: number; height: number };
+    sortMode: SortMode;
     selectedIds?: Set<string>;
     onNodeClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
     onNodeDoubleClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
@@ -180,39 +240,47 @@ interface GridLayoutProps {
     onContextMenu?: (node: TreeNodeInUI, position: { left: number; top: number }) => void;
 }
 
-function GridLayout({ nodes, iconSize, cellSize, selectedIds, onNodeClick, onNodeDoubleClick, onNodeSelect, onContextMenu }: GridLayoutProps) {
-    const handleBackgroundMouseDown = useCallback((e: React.MouseEvent) => {
-        if (e.target === e.currentTarget) {
-            onNodeSelect?.([], false);
-        }
-    }, [onNodeSelect]);
+const SORT_MODE_LABELS: Record<string, string> = {
+    name: 'Name',
+    type: 'Type',
+    lastOpened: 'Last Opened',
+    created: 'Created',
+    modified: 'Modified',
+    size: 'Size',
+    tag: 'Tag',
+};
 
+function GridLayout({ nodes, iconSize, cellSize, sortMode, selectedIds, onNodeClick, onNodeDoubleClick, onNodeSelect, onContextMenu }: GridLayoutProps) {
     return (
-        <Box
-            onMouseDown={handleBackgroundMouseDown}
-            sx={{
-                display: 'grid',
-                gridTemplateColumns: `repeat(auto-fill, ${cellSize.width}px)`,
-                gap: `${CELL_GAP_PX}px`,
-                padding: `${CELL_GAP_PX}px`,
-                width: '100%',
-                overflow: 'auto',
-                height: '100%',
-            }}
-        >
-            {nodes.map((node) => (
-                <IconCell
-                    key={node.id}
-                    node={node}
-                    iconSize={iconSize}
-                    cellWidth={cellSize.width}
-                    isSelected={selectedIds?.has(node.id) ?? false}
-                    onClick={onNodeClick}
-                    onDoubleClick={onNodeDoubleClick}
-                    onSelect={onNodeSelect}
-                    onContextMenu={onContextMenu}
-                />
-            ))}
+        <Box>
+            <Box sx={{ px: `${CELL_GAP_PX}px`, pt: `${CELL_GAP_PX}px`, pb: 0.5 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    Sorted by: {SORT_MODE_LABELS[sortMode] ?? sortMode}
+                </Typography>
+            </Box>
+            <Box
+                sx={{
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(auto-fill, ${cellSize.width}px)`,
+                    gap: `${CELL_GAP_PX}px`,
+                    padding: `${CELL_GAP_PX}px`,
+                    width: '100%',
+                }}
+            >
+                {nodes.map((node) => (
+                    <IconCell
+                        key={node.id}
+                        node={node}
+                        iconSize={iconSize}
+                        cellWidth={cellSize.width}
+                        isSelected={selectedIds?.has(node.id) ?? false}
+                        onClick={onNodeClick}
+                        onDoubleClick={onNodeDoubleClick}
+                        onSelect={onNodeSelect}
+                        onContextMenu={onContextMenu}
+                    />
+                ))}
+            </Box>
         </Box>
     );
 }
@@ -230,6 +298,9 @@ interface FreeLayoutProps {
     onNodeSelect?: (nodeIds: string[], selected: boolean) => void;
     onContextMenu?: (node: TreeNodeInUI, position: { left: number; top: number }) => void;
 }
+
+// Note: FreeLayout no longer manages its own background handlers or rubber-band selection.
+// These are handled at the top-level IconView wrapper.
 
 function FreeLayout({
     nodes,
@@ -312,12 +383,6 @@ function FreeLayout({
         }
     }, [nodes, localPositions, onIconPositionChange]);
 
-    const handleBackgroundMouseDown = useCallback((e: React.MouseEvent) => {
-        if (e.target === e.currentTarget) {
-            onNodeSelect?.([], false);
-        }
-    }, [onNodeSelect]);
-
     // Calculate container min height from node positions
     const containerMinHeight = useMemo(() => {
         let maxRow = 0;
@@ -330,13 +395,11 @@ function FreeLayout({
     return (
         <Box
             ref={containerRef}
-            onMouseDown={handleBackgroundMouseDown}
             sx={{
                 position: 'relative',
                 width: '100%',
-                height: '100%',
                 minHeight: containerMinHeight,
-                overflow: 'auto',
+                userSelect: 'none',
             }}
         >
             {nodes.map((node) => {
@@ -405,6 +468,7 @@ function IconCell({ node, iconSize, cellWidth, isSelected, onClick, onDoubleClic
     }, [onSelect, onContextMenu, node]);
 
     const handlePointerDown = useCallback((e: React.PointerEvent) => {
+        e.stopPropagation();
         longPressTriggeredRef.current = false;
         longPressTimerRef.current = setTimeout(() => {
             longPressTriggeredRef.current = true;
@@ -413,7 +477,8 @@ function IconCell({ node, iconSize, cellWidth, isSelected, onClick, onDoubleClic
         }, 500);
     }, [onSelect, onContextMenu, node]);
 
-    const handlePointerUp = useCallback(() => {
+    const handlePointerUp = useCallback((e: React.PointerEvent) => {
+        e.stopPropagation();
         if (longPressTimerRef.current !== undefined) {
             clearTimeout(longPressTimerRef.current);
             longPressTimerRef.current = undefined;
@@ -422,6 +487,7 @@ function IconCell({ node, iconSize, cellWidth, isSelected, onClick, onDoubleClic
 
     return (
         <Box
+            data-node-id={node.id}
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
             onContextMenu={handleContextMenu}
@@ -528,6 +594,7 @@ function DraggableIconCell({
     const longPressTriggeredRef = useRef(false);
 
     const handlePointerDown = useCallback((e: React.PointerEvent) => {
+        e.stopPropagation();
         e.currentTarget.setPointerCapture(e.pointerId);
         isDraggingRef.current = true;
         dragRef.current = {
@@ -642,6 +709,7 @@ function DraggableIconCell({
     return (
         <Box
             ref={elementRef}
+            data-node-id={node.id}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}

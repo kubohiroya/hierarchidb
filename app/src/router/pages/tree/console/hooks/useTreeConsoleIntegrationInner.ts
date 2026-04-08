@@ -491,6 +491,8 @@ export function useTreeConsoleIntegrationInner({
     onContextAction: handleBreadcrumbContextAction,
     resolveOpenSteps,
     leftSlot: tagsLeftSlot,
+    viewMode,
+    sortMode,
   } as TreeConsoleBreadcrumbProps;
 
   const infoPanelProps: TreeNodeInfoPanelProps = {
@@ -498,6 +500,8 @@ export function useTreeConsoleIntegrationInner({
     pageNodeId: pageNodeId as NodeId | undefined,
     node: pageTreeNode,
     onContextMenuAction: handleContextMenuAction,
+    viewMode,
+    sortMode,
   } as TreeNodeInfoPanelProps;
 
   return {

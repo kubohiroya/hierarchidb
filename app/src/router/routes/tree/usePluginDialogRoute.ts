@@ -4,6 +4,7 @@ import { loadTreeConsoleSettings, TREE_CONSOLE_SETTINGS_STORAGE_KEY } from '@hie
 import { useLocation, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { shiftBuildQueue } from '~/router/pages/tree/console/buildQueue';
+import { useTreeConsoleSSOT } from '~/state/treeconsole.atoms';
 import { treeRouteIds } from './treeRouteIds.ts';
 import type { PluginDialogLoaderData } from './PluginDialogRoute.tsx';
 
@@ -58,6 +59,16 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const { state: ssot } = useTreeConsoleSSOT(pageNodeId ? String(pageNodeId) : undefined);
+
+  /** Build /f/ folder URL preserving current viewMode/sortMode. */
+  const buildFolderUrl = useCallback((treeId: string, pageId: string) => {
+    const vm = ssot.viewMode || 'list';
+    const sm = ssot.sortMode || 'name';
+    const viewSuffix = sm !== 'name' ? `${vm}/${sm}` : vm;
+    return `/f/${treeId}/${pageId}/-/folder/${viewSuffix}`;
+  }, [ssot.viewMode, ssot.sortMode]);
+
   const matches = useRouterState({ select: (state) => state.matches });
   const routeParams = useMemo(() => {
     const priorityRouteIds = [
@@ -170,7 +181,7 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
       void navigate({ to: returnToParam });
       return;
     }
-    void navigate({ to: `/f/${resolvedTreeId}/${resolvedPageNodeId}/-/folder/list` });
+    void navigate({ to: buildFolderUrl(resolvedTreeId, resolvedPageNodeId) });
   }, [
     autoBuildEnabled,
     buildQueueKey,
@@ -202,7 +213,7 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
   const handleClose = useCallback(() => {
     setIsOpen(false);
     const destination = resolvedPageNodeId
-      ? `/f/${resolvedTreeId}/${resolvedPageNodeId}/-/folder/list`
+      ? buildFolderUrl(resolvedTreeId, resolvedPageNodeId)
       : `/f/${resolvedTreeId}`;
     void navigate({ to: destination });
   }, [navigate, resolvedPageNodeId, resolvedTreeId]);
@@ -211,7 +222,7 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
 
   const handleSuccess = useCallback(
     (savedNodeId: NodeId) => {
-      void navigate({ to: `/f/${resolvedTreeId}/${resolvedPageNodeId}/-/folder/list` });
+      void navigate({ to: buildFolderUrl(resolvedTreeId, resolvedPageNodeId) });
     },
     [navigate, resolvedPageNodeId, resolvedTreeId]
   );
