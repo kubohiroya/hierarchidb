@@ -3,7 +3,7 @@ name: Policy Checks (warn-only)
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
     types: [opened, synchronize, reopened]
 
@@ -28,10 +28,10 @@ jobs:
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
-      
+
         with:
-          node-version: 20
-          cache: 'pnpm'
+          node-version: 24
+          cache: "pnpm"
 
       - name: Install dependencies (non-strict)
         run: pnpm install --no-frozen-lockfile
@@ -48,5 +48,5 @@ jobs:
       - name: publint (package publish sanity)
         run: pnpm -w pkg:publint || true
 
-      - name: '@arethetypeswrong/cli (types sanity)'
+      - name: "@arethetypeswrong/cli (types sanity)"
         run: pnpm -w pkg:attw || true
