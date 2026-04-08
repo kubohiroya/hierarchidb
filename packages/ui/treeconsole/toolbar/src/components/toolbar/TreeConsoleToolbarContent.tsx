@@ -15,11 +15,21 @@ import { ViewModeSelector } from './ViewModeSelector.js';
 import type { ViewMode } from './ViewModeSelector.js';
 import { useTreeConsoleToolbarContent } from './useTreeConsoleToolbarContent.js';
 
-/** Breakpoints for responsive toolbar layout tiers. */
-const BP_WIDE = 900;
-const BP_MEDIUM = 600;
+/**
+ * Responsive toolbar layout tiers (aligned with MUI breakpoints):
+ *
+ * | Width       | Tier            | Search       | Actions              | ViewMode          | SortMode      |
+ * |-------------|-----------------|--------------|----------------------|-------------------|---------------|
+ * | ≥1200 (xl)  | full            | normal       | all 8 buttons        | 3-btn ButtonGroup | button+label  |
+ * | 960–1199    | compact-actions | normal       | ✂️+More actions menu | 3-btn ButtonGroup | button+label  |
+ * | 600–959(md) | compact-search  | 180px width  | ✂️+More actions menu | 1-btn+menu        | icon-only     |
+ * | <600 (sm)   | minimal         | 🔍 icon+Popper | ✂️ icon-only menu  | icon-only+menu    | icon-only     |
+ */
+const BP_XL = 1200;
+const BP_LG = 960;
+const BP_MD = 600;
 
-type ToolbarTier = 'wide' | 'medium' | 'narrow';
+type ToolbarTier = 'full' | 'compact-actions' | 'compact-search' | 'minimal';
 
 const TreeConsoleToolbarContainer = styled(Box)(() => ({
   display: 'flex',
@@ -84,9 +94,10 @@ export function TreeConsoleToolbarContent({
   sortMode = 'none',
   onSortModeChange,
 }: TreeConsoleToolbarContentProps) {
-  const isWide = useMediaQuery(`(min-width:${BP_WIDE}px)`);
-  const isMedium = useMediaQuery(`(min-width:${BP_MEDIUM}px)`);
-  const tier: ToolbarTier = isWide ? 'wide' : isMedium ? 'medium' : 'narrow';
+  const isXl = useMediaQuery(`(min-width:${BP_XL}px)`);
+  const isLg = useMediaQuery(`(min-width:${BP_LG}px)`);
+  const isMd = useMediaQuery(`(min-width:${BP_MD}px)`);
+  const tier: ToolbarTier = isXl ? 'full' : isLg ? 'compact-actions' : isMd ? 'compact-search' : 'minimal';
 
   const {
     portalContainer,
@@ -114,7 +125,7 @@ export function TreeConsoleToolbarContent({
 
   return (
     <TreeConsoleToolbarContainer>
-      {/* Search: wide = normal, medium = compact width, narrow = icon + popper */}
+      {/* Search: full/compact-actions = normal, compact-search = compact width, minimal = icon + popper */}
       <SearchArea
         tier={tier}
         searchText={searchText}
@@ -136,7 +147,7 @@ export function TreeConsoleToolbarContent({
         onAction={handleAction}
         onArchiveClick={(event) => setArchiveAnchorEl(event.currentTarget)}
         tooltips={tooltips}
-        layout={tier}
+        layout={tier === 'full' ? 'wide' : tier === 'minimal' ? 'narrow' : 'medium'}
       />
 
       <ArchiveMenu
@@ -154,15 +165,15 @@ export function TreeConsoleToolbarContent({
           <ViewModeSelector
             value={viewMode}
             onChange={onViewModeChange}
-            breakpoint={BP_WIDE}
-            iconOnly={tier === 'narrow'}
+            breakpoint={BP_LG}
+            iconOnly={tier === 'minimal'}
           />
         )}
         {onSortModeChange && (
           <SortModeSelector
             value={sortMode}
             onChange={onSortModeChange}
-            iconOnly={tier !== 'wide'}
+            iconOnly={tier === 'compact-search' || tier === 'minimal'}
           />
         )}
         <SettingsMenu
@@ -227,7 +238,7 @@ function SearchArea({
     setPopperOpen(false);
   }, []);
 
-  if (tier === 'narrow') {
+  if (tier === 'minimal') {
     return (
       <>
         <IconButton
@@ -269,9 +280,10 @@ function SearchArea({
     );
   }
 
-  // wide: normal width, medium: compact width via sx override
+  // full / compact-actions: normal width, compact-search: compact width via sx override
+  const isCompact = tier === 'compact-search';
   return (
-    <Box sx={{ flexShrink: tier === 'medium' ? 1 : 0, minWidth: tier === 'medium' ? 120 : undefined }}>
+    <Box sx={{ flexShrink: isCompact ? 1 : 0, minWidth: isCompact ? 120 : undefined }}>
       <TreeTableSearchInput
         searchText={searchText}
         handleSearchTextChange={handleSearch}
@@ -279,7 +291,7 @@ function SearchArea({
         placeholder={searchStrings.placeholder}
         ariaLabel={searchStrings.ariaLabel}
         searchMode={currentSearchMode}
-        sx={tier === 'medium' ? {
+        sx={isCompact ? {
           '& .MuiInputBase-root': { width: '180px !important' },
         } : undefined}
       />
