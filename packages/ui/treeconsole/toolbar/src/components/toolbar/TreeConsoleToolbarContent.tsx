@@ -18,12 +18,15 @@ import { useTreeConsoleToolbarContent } from './useTreeConsoleToolbarContent.js'
 /**
  * Responsive toolbar layout tiers (aligned with MUI breakpoints):
  *
- * | Width       | Tier            | Search       | Actions              | ViewMode          | SortMode      |
- * |-------------|-----------------|--------------|----------------------|-------------------|---------------|
- * | ≥1200 (xl)  | full            | normal       | all 8 buttons        | 3-btn ButtonGroup | button+label  |
- * | 960–1199    | compact-actions | normal       | ✂️+More actions menu | 3-btn ButtonGroup | button+label  |
- * | 600–959(md) | compact-search  | 180px width  | ✂️+More actions menu | 1-btn+menu        | icon-only     |
- * | <600 (sm)   | minimal         | 🔍 icon+Popper | ✂️ icon-only menu  | icon-only+menu    | icon-only     |
+ * Simplification order (progressive degradation):
+ *   xl → Actions simplified → lg → Search width reduced → md → ViewMode simplified → sm → Search collapsed to icon
+ *
+ * | Width       | Tier            | Search         | Actions              | ViewMode          | SortMode      |
+ * |-------------|-----------------|----------------|----------------------|-------------------|---------------|
+ * | ≥1200 (xl)  | full            | normal         | all 8 buttons        | 3-btn ButtonGroup | button+label  |
+ * | 960–1199    | compact-actions | normal         | ✂️+More actions menu | 3-btn ButtonGroup | button+label  |
+ * | 600–959(md) | compact-search  | 180px width    | ✂️+More actions menu | 3-btn ButtonGroup | icon-only     |
+ * | <600 (sm)   | minimal         | 🔍 icon+Popper | ✂️ icon-only menu   | 1-btn+menu        | icon-only     |
  */
 const BP_XL = 1200;
 const BP_LG = 960;
@@ -165,8 +168,8 @@ export function TreeConsoleToolbarContent({
           <ViewModeSelector
             value={viewMode}
             onChange={onViewModeChange}
-            breakpoint={BP_LG}
-            iconOnly={tier === 'minimal'}
+            breakpoint={BP_MD}
+            iconOnly={false}
           />
         )}
         {onSortModeChange && (
