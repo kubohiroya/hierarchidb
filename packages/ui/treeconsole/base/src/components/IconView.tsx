@@ -196,8 +196,6 @@ function GridLayout({ nodes, iconSize, cellSize, selectedIds, onNodeClick, onNod
                 gap: `${CELL_GAP_PX}px`,
                 padding: `${CELL_GAP_PX}px`,
                 width: '100%',
-                overflow: 'auto',
-                height: '100%',
             }}
         >
             {nodes.map((node) => (
@@ -334,9 +332,7 @@ function FreeLayout({
             sx={{
                 position: 'relative',
                 width: '100%',
-                height: '100%',
                 minHeight: containerMinHeight,
-                overflow: 'auto',
             }}
         >
             {nodes.map((node) => {
