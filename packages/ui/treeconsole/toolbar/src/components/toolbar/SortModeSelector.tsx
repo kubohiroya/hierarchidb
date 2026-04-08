@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Button } from '@mui/material';
+import { Button, IconButton } from '@mui/material';
 import { Sort as SortIcon } from '@mui/icons-material';
 import { SelectedMenu } from './SelectedMenu.js';
 import type { SelectedMenuItem } from './SelectedMenu.js';
@@ -29,9 +29,11 @@ const SORT_MENU_ITEMS: readonly SelectedMenuItem<SortMode>[] = [
 export interface SortModeSelectorProps {
     value: SortMode;
     onChange: (mode: SortMode) => void;
+    /** When true, show only the icon without label text. */
+    iconOnly?: boolean;
 }
 
-export function SortModeSelector({ value, onChange }: SortModeSelectorProps) {
+export function SortModeSelector({ value, onChange, iconOnly = false }: SortModeSelectorProps) {
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const open = Boolean(anchorEl);
 
@@ -45,15 +47,25 @@ export function SortModeSelector({ value, onChange }: SortModeSelectorProps) {
 
     return (
         <>
-            <Button
-                onClick={handleOpen}
-                aria-label="Sort mode"
-                size="small"
-                variant="outlined"
-                startIcon={<SortIcon />}
-            >
-                Sort
-            </Button>
+            {iconOnly ? (
+                <IconButton
+                    onClick={handleOpen}
+                    aria-label="Sort mode"
+                    size="small"
+                >
+                    <SortIcon fontSize="small" />
+                </IconButton>
+            ) : (
+                <Button
+                    onClick={handleOpen}
+                    aria-label="Sort mode"
+                    size="small"
+                    variant="outlined"
+                    startIcon={<SortIcon />}
+                >
+                    Sort
+                </Button>
+            )}
             <SelectedMenu
                 anchorEl={anchorEl}
                 open={open}
