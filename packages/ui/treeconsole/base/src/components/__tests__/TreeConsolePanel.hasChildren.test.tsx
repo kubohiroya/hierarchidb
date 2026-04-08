@@ -20,6 +20,7 @@ vi.mock('@hierarchidb/ui-treeconsole-breadcrumb', () => ({
   TreeConsoleBreadcrumb: () => null,
   getPluginIconColor: () => undefined,
   isFolderNodeType: (nodeType: string) => nodeType === 'folder',
+  buildCreateMenuItems: () => [],
 }));
 
 const capturedControllers = vi.hoisted(() => [] as TreeTableController[]);

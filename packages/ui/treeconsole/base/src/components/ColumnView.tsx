@@ -25,6 +25,10 @@ export interface ColumnViewProps {
     onSelectNode: (nodeId: NodeId) => void;
     getChildren: (nodeId: NodeId) => TreeNodeInUI[];
     onIconContextMenu?: (node: TreeNodeInUI, position: { left: number; top: number }) => void;
+    /** Callback when user right-clicks the background of a column. Receives the folder ID the column represents. */
+    onBackgroundContextMenu?: (folderId: NodeId, position: { left: number; top: number }) => void;
+    /** The root folder ID for the first column. */
+    rootFolderId?: NodeId;
     /** Optional detail panel rendered as the last column (e.g. for non-folder target nodes). */
     detailSlot?: React.ReactNode;
 }
@@ -43,6 +47,8 @@ export function ColumnView({
     onSelectNode,
     getChildren,
     onIconContextMenu,
+    onBackgroundContextMenu,
+    rootFolderId,
     detailSlot,
 }: ColumnViewProps) {
     const columns: TreeNodeInUI[][] = [rootNodes];
@@ -57,6 +63,12 @@ export function ColumnView({
     const [columnWidths, setColumnWidths] = useState<number[]>([]);
 
     const getWidth = (index: number) => columnWidths[index] ?? DEFAULT_COLUMN_WIDTH;
+
+    // Resolve the folder ID each column represents
+    const getColumnFolderId = (colIndex: number): NodeId | undefined => {
+        if (colIndex === 0) return rootFolderId;
+        return columnState.expandedPath[colIndex - 1];
+    };
 
     return (
         <Box sx={{ height: '100%', width: '100%', overflowX: 'auto', overflowY: 'hidden' }}>
@@ -78,10 +90,12 @@ export function ColumnView({
                     >
                         <Column
                             nodes={nodes}
+                            folderId={getColumnFolderId(colIndex)}
                             selectedNodeId={columnState.selectedNodeId}
                             expandedPath={columnState.expandedPath}
                             onSelectNode={onSelectNode}
                             onIconContextMenu={onIconContextMenu}
+                            onBackgroundContextMenu={onBackgroundContextMenu}
                         />
                     </ColumnWithHandle>
                 ))}
@@ -159,15 +173,29 @@ function ColumnWithHandle({ width, isLast, onResize, children }: ColumnWithHandl
 
 interface ColumnProps {
     nodes: TreeNodeInUI[];
+    folderId?: NodeId;
     selectedNodeId: NodeId | null;
     expandedPath: NodeId[];
     onSelectNode: (nodeId: NodeId) => void;
     onIconContextMenu?: (node: TreeNodeInUI, position: { left: number; top: number }) => void;
+    onBackgroundContextMenu?: (folderId: NodeId, position: { left: number; top: number }) => void;
 }
 
-function Column({ nodes, selectedNodeId, expandedPath, onSelectNode, onIconContextMenu }: ColumnProps) {
+function Column({ nodes, folderId, selectedNodeId, expandedPath, onSelectNode, onIconContextMenu, onBackgroundContextMenu }: ColumnProps) {
+    const handleContextMenu = useCallback((event: React.MouseEvent) => {
+        // Only fire when clicking empty space (not on list items)
+        const target = event.target as HTMLElement;
+        if (target.closest('.MuiListItemButton-root')) return;
+
+        event.preventDefault();
+        if (folderId && onBackgroundContextMenu) {
+            onBackgroundContextMenu(folderId, { left: event.clientX, top: event.clientY });
+        }
+    }, [folderId, onBackgroundContextMenu]);
+
     return (
         <Box
+            onContextMenu={handleContextMenu}
             sx={{
                 height: '100%',
                 overflowY: 'auto',

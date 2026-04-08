@@ -27,6 +27,7 @@ const breadcrumbModule = vi.hoisted(() => ({
   }),
   getPluginIconColor: vi.fn(() => undefined),
   isFolderNodeType: vi.fn((nodeType: string) => nodeType === 'folder'),
+  buildCreateMenuItems: vi.fn(() => []),
 }));
 
 vi.mock('@hierarchidb/ui-treeconsole-breadcrumb', () => breadcrumbModule);
