@@ -50,3 +50,42 @@ export function computeZoomLayout(zoomLevel: number): ZoomLayout {
         },
     };
 }
+
+/** Position assignment for a single node after reorganization. */
+export interface ReorganizedPosition {
+    nodeId: string;
+    col: number;
+    row: number;
+}
+
+/**
+ * Compute grid positions for reorganizing icons.
+ *
+ * 1. Calculate columns from viewport width and cell size
+ * 2. Sort nodes by name (localeCompare)
+ * 3. Assign row-major grid positions
+ *
+ * Pure function — no side effects.
+ *
+ * @param nodes - Array of nodes with id and name
+ * @param viewportWidth - Container width in pixels (must be > 0)
+ * @param cellSize - Cell dimensions from computeZoomLayout
+ * @returns Array of positions, one per input node
+ */
+export function computeReorganizedPositions(
+    nodes: ReadonlyArray<{ id: string; metadata: { name: string } }>,
+    viewportWidth: number,
+    cellSize: { width: number; height: number },
+): ReorganizedPosition[] {
+    if (nodes.length === 0) return [];
+
+    const columns = Math.max(1, Math.floor(viewportWidth / (cellSize.width + CELL_GAP_PX)));
+
+    const sorted = [...nodes].sort((a, b) => a.metadata.name.localeCompare(b.metadata.name));
+
+    return sorted.map((node, i) => ({
+        nodeId: node.id,
+        col: i % columns,
+        row: Math.floor(i / columns),
+    }));
+}

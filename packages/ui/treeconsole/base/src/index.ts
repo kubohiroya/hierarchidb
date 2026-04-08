@@ -39,3 +39,11 @@ export { viewModeAtomFamily, sortModeAtomFamily, zoomLevelAtomFamily } from './s
 // View mode sync hook
 export { useViewModeSync } from './hooks/useViewModeSync.js';
 export type { UseViewModeSyncArgs } from './hooks/useViewModeSync.js';
+
+// Background context menu
+export { BackgroundContextMenu } from './components/BackgroundContextMenu.js';
+export type { BackgroundContextMenuProps } from './components/BackgroundContextMenu.js';
+
+// Zoom layout utilities
+export { computeZoomLayout, computeReorganizedPositions, CELL_GAP_PX } from './utils/zoom-layout.js';
+export type { ZoomLayout, ReorganizedPosition } from './utils/zoom-layout.js';
