@@ -568,13 +568,17 @@ function ColumnViewWrapper({ controller, onNodeClick: _onNodeClick, columnTarget
       : undefined,
   });
 
-  // Expand ancestor nodes to load their children on initial mount
-  const expandedRef = useRef(false);
+  // Expand ancestor nodes to load their children incrementally
+  // Uses a Set to track already-expanded nodes so that newly discovered
+  // ancestors (from incremental loading) are also expanded.
+  const expandedNodesRef = useRef(new Set<NodeId>());
   useEffect(() => {
-    if (expandedRef.current || initialExpandedPath.length === 0) return;
-    expandedRef.current = true;
+    if (initialExpandedPath.length === 0) return;
     for (const nodeId of initialExpandedPath) {
-      controller.onNodeExpand?.(nodeId, true);
+      if (!expandedNodesRef.current.has(nodeId)) {
+        expandedNodesRef.current.add(nodeId);
+        controller.onNodeExpand?.(nodeId, true);
+      }
     }
   }, [initialExpandedPath, controller]);
 

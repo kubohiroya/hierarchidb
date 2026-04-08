@@ -8,7 +8,7 @@
  * - Right click → background context menu
  */
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 const DRAG_THRESHOLD = 5;
 const LONG_PRESS_MS = 500;
@@ -128,6 +128,15 @@ export function useIconViewBackground({
         setRubberBand(null);
         onBackgroundContextMenu?.({ left: e.clientX, top: e.clientY });
     }, [onBackgroundContextMenu]);
+
+    // Clean up long-press timeout on unmount to prevent memory leaks
+    useEffect(() => {
+        return () => {
+            if (longPressRef.current !== undefined) {
+                clearTimeout(longPressRef.current);
+            }
+        };
+    }, []);
 
     return {
         rubberBand,
