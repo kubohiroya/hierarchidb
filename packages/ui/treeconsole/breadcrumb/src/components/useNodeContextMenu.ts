@@ -2,22 +2,9 @@ import { type MouseEvent, useCallback, useEffect, useMemo, useRef, useState } fr
 import { useIconRegistry } from '@hierarchidb/components';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
 import { isFolderNodeType } from '~/utils/nodeTypeIconColor';
+import { buildCreateMenuItems } from './buildCreateMenuItems.js';
+import type { CreateMenuEntry } from './buildCreateMenuItems.js';
 import type { NodeContextMenuProps } from './NodeContextMenu';
-
-type CreateMenuEntry = {
-  key: string;
-  nodeType: string;
-  createType?: string;
-  label: string;
-  labelKey?: string;
-  description?: string;
-  descriptionKey?: string;
-  icon?: { muiIconName?: string; emoji?: string; color?: string };
-  children?: CreateMenuEntry[];
-};
-
-type CreateMenuBuilder = (treeId?: string) => CreateMenuEntry[];
-type GlobalMenuBuilders = { buildMenuItemsForTreeId?: CreateMenuBuilder; buildMenuItemsForContext?: CreateMenuBuilder };
 
 const buildableNodeTypes = new Set(['styler', 'shape', 'route']);
 
@@ -448,65 +435,7 @@ export function useNodeContextMenu(props: NodeContextMenuProps): UseNodeContextM
   const showImport = isFolder && Boolean(props.onImport) && canImport;
   const showExport = isFolder && Boolean(props.onExport) && canExport;
 
-  const builtCreateItems: Array<CreateMenuEntry> = (() => {
-    if (props.createItems?.length) {
-      return props.createItems.map((item) => ({
-        key: item.createType ?? item.type,
-        nodeType: item.type,
-        createType: item.createType,
-        label: item.label,
-        labelKey: item.labelKey,
-        description: item.description,
-        descriptionKey: item.descriptionKey,
-        icon: item.icon,
-        children: (item.children ?? []).map((child) => ({
-          key: child.createType ?? child.type,
-          nodeType: child.type,
-          createType: child.createType,
-          label: child.label,
-          labelKey: child.labelKey,
-          description: child.description,
-          descriptionKey: child.descriptionKey,
-          icon: child.icon,
-        })),
-      }));
-    }
-
-    try {
-      const g = (globalThis as { __HDB_MENU_BUILDERS__?: GlobalMenuBuilders }).__HDB_MENU_BUILDERS__;
-      const builder: CreateMenuBuilder | undefined = g?.buildMenuItemsForTreeId || g?.buildMenuItemsForContext;
-      if (typeof builder === 'function') {
-        const items = builder(treeId) as CreateMenuEntry[];
-        return (items || []).map((item) => ({
-          key: item.key ?? (item.createType ?? item.nodeType),
-          nodeType: item.nodeType,
-          createType: item.createType,
-          label: item.label,
-          labelKey: item.labelKey,
-          description: item.description,
-          descriptionKey: item.descriptionKey,
-          icon: item.icon,
-          children: (item.children ?? []).map((child) => ({
-            key: child.key ?? (child.createType ?? child.nodeType),
-            nodeType: child.nodeType,
-            createType: child.createType,
-            label: child.label,
-            labelKey: child.labelKey,
-            description: child.description,
-            descriptionKey: child.descriptionKey,
-            icon: child.icon,
-          })),
-        }));
-      }
-    } catch (error) {
-      logNodeContextMenuWarning('Failed to stage dynamic create menu items', error);
-    }
-
-    return [
-      { key: 'folder', nodeType: 'folder', label: 'Folder', description: undefined, icon: { muiIconName: 'Folder' } },
-      { key: 'note', nodeType: 'note', label: 'Note', description: undefined, icon: { muiIconName: 'Extension' } },
-    ];
-  })();
+  const builtCreateItems = buildCreateMenuItems(props.createItems, treeId);
 
   return {
     addMenuOpen,

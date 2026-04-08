@@ -1,7 +1,6 @@
 import type { ReactElement } from 'react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Box, Divider, ListItemIcon, ListItemText, Menu, MenuItem, Slider, Typography } from '@mui/material';
-import { GridView as RearrangeIcon, Add as CreateIcon, FileUpload as ImportIcon, FileDownload as ExportIcon } from '@mui/icons-material';
+import { Box, Slider, Typography } from '@mui/material';
 import type { TreeTableColumn } from './TreeTable/index.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
@@ -19,6 +18,8 @@ import type { ViewMode, SortMode } from '~/types/view-mode-types';
 import { IconView } from './IconView.js';
 import { ColumnView } from './ColumnView.js';
 import { useColumnView } from '~/hooks/useColumnView.js';
+import { BackgroundContextMenu } from './BackgroundContextMenu.js';
+import { computeReorganizedPositions, computeZoomLayout } from '~/utils/zoom-layout';
 
 export type TreeConsoleBreadcrumbRendererProps = BreadcrumbRendererProps;
 
@@ -216,16 +217,53 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     setIconContextMenu(null);
   }, []);
 
-  const [bgContextMenu, setBgContextMenu] = useState<{ left: number; top: number } | null>(null);
+  const [bgContextMenu, setBgContextMenu] = useState<{ left: number; top: number; targetNodeId: string } | null>(null);
 
-  const handleBgContextMenu = useCallback((position: { left: number; top: number }) => {
+  const handleBgContextMenu = useCallback((position: { left: number; top: number }, targetNodeId?: string) => {
     controller.onNodeSelect?.([], false);
-    setBgContextMenu(position);
-  }, [controller]);
+    setBgContextMenu({ ...position, targetNodeId: targetNodeId ?? props.pageNodeId ?? '' });
+  }, [controller, props.pageNodeId]);
 
   const handleBgContextMenuClose = useCallback(() => {
     setBgContextMenu(null);
   }, []);
+
+  const handleColumnBgContextMenu = useCallback((folderId: string, position: { left: number; top: number }) => {
+    controller.onNodeSelect?.([], false);
+    setBgContextMenu({ ...position, targetNodeId: folderId });
+  }, [controller]);
+
+  const handleReorganizeIcons = useCallback(() => {
+    const nodes = controller.data ?? [];
+    if (nodes.length === 0) return;
+
+    const zoomLevel = props.zoomLevel ?? 50;
+    const { cellSize } = computeZoomLayout(zoomLevel);
+
+    // Use a reasonable default viewport width; the actual container width
+    // would require a ref to the IconView container. For now, query the
+    // tree-table container as an approximation.
+    const viewportWidth = typeof document !== 'undefined'
+      ? (document.querySelector('[data-tour-id="tree-table"]')?.clientWidth ?? 800)
+      : 800;
+
+    const positions = computeReorganizedPositions(nodes, viewportWidth, cellSize);
+    const onIconPositionChange = props.onIconPositionChange;
+    if (!onIconPositionChange) return;
+
+    for (const pos of positions) {
+      onIconPositionChange(pos.nodeId as NodeId, { x: pos.col, y: pos.row });
+    }
+  }, [controller.data, props.zoomLevel, props.onIconPositionChange]);
+
+  // Adapter: BackgroundContextMenu passes { id: string } but controller expects TreeNodeInUI.
+  // Background actions (create, import, export) only need the target node id.
+  const handleBgContextAction = useCallback(
+    (action: string, node: { id: string }, options?: Record<string, unknown>) => {
+      controller.onContextAction?.(action, node as TreeNodeInUI, options);
+    },
+    [controller],
+  );
 
   if (!isPageContextValid) {
     return <Box>Invalid page context</Box>;
@@ -288,6 +326,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
                 columnTargetNodeId={props.columnTargetNodeId}
                 onColumnNavigate={props.onColumnNavigate}
                 onIconContextMenu={handleIconContextMenu}
+                onBackgroundContextMenu={handleColumnBgContextMenu}
                 columnDetailSlot={props.columnDetailSlot}
               />
             ) : (
@@ -345,6 +384,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
               columnTargetNodeId={props.columnTargetNodeId}
               onColumnNavigate={props.onColumnNavigate}
               onIconContextMenu={handleIconContextMenu}
+              onBackgroundContextMenu={handleColumnBgContextMenu}
               columnDetailSlot={props.columnDetailSlot}
             />
           ) : (
@@ -444,34 +484,28 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
             controller.onContextAction?.('copy', iconContextMenu.node);
             handleIconContextMenuClose();
           }}
+          onImport={() => {
+            controller.onContextAction?.('import', iconContextMenu.node);
+            handleIconContextMenuClose();
+          }}
+          onExport={() => {
+            controller.onContextAction?.('export', iconContextMenu.node);
+            handleIconContextMenuClose();
+          }}
         />
       )}
 
-      {/* Background context menu for IconView */}
-      <Menu
-        anchorReference="anchorPosition"
-        anchorPosition={bgContextMenu ?? undefined}
+      <BackgroundContextMenu
+        anchorPosition={bgContextMenu}
         open={Boolean(bgContextMenu)}
         onClose={handleBgContextMenuClose}
-      >
-        <MenuItem onClick={() => { /* TODO: rearrange icons */ handleBgContextMenuClose(); }}>
-          <ListItemIcon><RearrangeIcon fontSize="small" /></ListItemIcon>
-          <ListItemText>Rearrange Icons</ListItemText>
-        </MenuItem>
-        <Divider />
-        <MenuItem onClick={() => { controller.onContextAction?.('create:folder', { id: props.pageNodeId } as any); handleBgContextMenuClose(); }}>
-          <ListItemIcon><CreateIcon fontSize="small" /></ListItemIcon>
-          <ListItemText>Create</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => { controller.onContextAction?.('import', { id: props.pageNodeId } as any); handleBgContextMenuClose(); }}>
-          <ListItemIcon><ImportIcon fontSize="small" /></ListItemIcon>
-          <ListItemText>Import</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => { controller.onContextAction?.('export', { id: props.pageNodeId } as any); handleBgContextMenuClose(); }}>
-          <ListItemIcon><ExportIcon fontSize="small" /></ListItemIcon>
-          <ListItemText>Export</ListItemText>
-        </MenuItem>
-      </Menu>
+        treeId={props.treeId}
+        targetNodeId={bgContextMenu?.targetNodeId}
+        sortMode={props.sortMode}
+        showReorganize={props.viewMode === 'icon'}
+        onContextAction={handleBgContextAction}
+        onReorganizeIcons={handleReorganizeIcons}
+      />
     </Box>
   );
 });
@@ -486,10 +520,11 @@ interface ColumnViewWrapperProps {
   columnTargetNodeId?: string;
   onColumnNavigate?: (targetNodeId: string) => void;
   onIconContextMenu?: (node: TreeNodeInUI, position: { left: number; top: number }) => void;
+  onBackgroundContextMenu?: (folderId: string, position: { left: number; top: number }) => void;
   columnDetailSlot?: React.ReactNode;
 }
 
-function ColumnViewWrapper({ controller, onNodeClick: _onNodeClick, columnTargetNodeId, onColumnNavigate, onIconContextMenu, columnDetailSlot }: ColumnViewWrapperProps) {
+function ColumnViewWrapper({ controller, onNodeClick: _onNodeClick, columnTargetNodeId, onColumnNavigate, onIconContextMenu, onBackgroundContextMenu, columnDetailSlot }: ColumnViewWrapperProps) {
   const { rootNodes, childrenMap, nodesWithChildren, nodeById } = useMemo(() => {
     const allNodes = controller.data ?? [];
     const childrenMap = new Map<NodeId, TreeNodeInUI[]>();
@@ -607,6 +642,8 @@ function ColumnViewWrapper({ controller, onNodeClick: _onNodeClick, columnTarget
       onSelectNode={handleSelectNode}
       getChildren={getChildren}
       onIconContextMenu={onIconContextMenu}
+      onBackgroundContextMenu={onBackgroundContextMenu}
+      rootFolderId={controller.rootNodeId}
       detailSlot={columnDetailSlot}
     />
   );
