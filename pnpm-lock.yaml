@@ -2928,6 +2928,9 @@ importers:
       jotai:
         specifier: ^2.13.1
         version: 2.18.0(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@19.2.14)(react@19.2.4)
+      jotai-family:
+        specifier: ^1.0.1
+        version: 1.0.1(jotai@2.18.0(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@19.2.14)(react@19.2.4))
       jsdom:
         specifier: ^26.1.0
         version: 26.1.0

@@ -7,7 +7,7 @@
  */
 
 import { atom } from 'jotai';
-import { atomFamily } from 'jotai/utils';
+import { atomFamily } from 'jotai-family';
 
 import type { NodeId } from '@hierarchidb/core-types';
 import type { SortMode, ViewMode } from '~/types/view-mode-types';
