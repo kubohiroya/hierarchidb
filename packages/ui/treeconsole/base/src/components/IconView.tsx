@@ -149,6 +149,7 @@ export function IconView({
         const containerRect = outerRef.current.getBoundingClientRect();
         const { scrollLeft, scrollTop } = outerRef.current;
         const ids: string[] = [];
+        const { scrollLeft, scrollTop } = outerRef.current;
         cells.forEach((cell) => {
             const cr = cell.getBoundingClientRect();
             const cx = cr.left - containerRect.left + scrollLeft;
