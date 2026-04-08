@@ -147,11 +147,12 @@ export function IconView({
         // Find all icon cell elements by data attribute
         const cells = outerRef.current.querySelectorAll('[data-node-id]');
         const containerRect = outerRef.current.getBoundingClientRect();
+        const { scrollLeft, scrollTop } = outerRef.current;
         const ids: string[] = [];
         cells.forEach((cell) => {
             const cr = cell.getBoundingClientRect();
-            const cx = cr.left - containerRect.left + outerRef.current!.scrollLeft;
-            const cy = cr.top - containerRect.top + outerRef.current!.scrollTop;
+            const cx = cr.left - containerRect.left + scrollLeft;
+            const cy = cr.top - containerRect.top + scrollTop;
             if (cx + cr.width > rect.x && cx < rect.x + rect.width &&
                 cy + cr.height > rect.y && cy < rect.y + rect.height) {
                 const nodeId = (cell as HTMLElement).dataset.nodeId;
