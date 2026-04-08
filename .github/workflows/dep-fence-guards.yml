@@ -2,11 +2,22 @@ name: dep-fence Guards
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - "plans/**"
+      - "reports/**"
+      - "LICENSE"
+      - ".kiro/**"
   push:
     branches:
       - chore/folder-plugin/unused-sweep-v1
   workflow_dispatch: {}
+
+concurrency:
+  group: dep-fence-guards-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   guards:
@@ -25,7 +36,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: 'pnpm'
+          cache: "pnpm"
+
+      - name: Restore Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: ${{ runner.os }}-turbo-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
 
       - name: Install dependencies (workspace)
         run: pnpm install --no-frozen-lockfile
