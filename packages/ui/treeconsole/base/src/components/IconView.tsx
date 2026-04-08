@@ -198,17 +198,36 @@ const SORT_MODE_LABELS: Record<string, string> = {
 };
 
 function GridLayout({ nodes, iconSize, cellSize, sortMode, selectedIds, onNodeClick, onNodeDoubleClick, onNodeSelect, onContextMenu, onBackgroundContextMenu }: GridLayoutProps) {
-    const handleBackgroundMouseDown = useCallback((e: React.MouseEvent) => {
-        if (e.target === e.currentTarget) {
+    const longPressRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    const longPressFiredRef = useRef(false);
+
+    const handleBgMouseDown = useCallback((e: React.MouseEvent) => {
+        longPressFiredRef.current = false;
+        const clientX = e.clientX;
+        const clientY = e.clientY;
+        longPressRef.current = setTimeout(() => {
+            longPressFiredRef.current = true;
+            onBackgroundContextMenu?.({ left: clientX, top: clientY });
+        }, 500);
+    }, [onBackgroundContextMenu]);
+
+    const handleBgMouseUp = useCallback(() => {
+        if (longPressRef.current !== undefined) {
+            clearTimeout(longPressRef.current);
+            longPressRef.current = undefined;
+        }
+        if (!longPressFiredRef.current) {
             onNodeSelect?.([], false);
         }
     }, [onNodeSelect]);
 
-    const handleBackgroundContextMenu = useCallback((e: React.MouseEvent) => {
-        if (e.target === e.currentTarget) {
-            e.preventDefault();
-            onBackgroundContextMenu?.({ left: e.clientX, top: e.clientY });
+    const handleBgContextMenu = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        if (longPressRef.current !== undefined) {
+            clearTimeout(longPressRef.current);
+            longPressRef.current = undefined;
         }
+        onBackgroundContextMenu?.({ left: e.clientX, top: e.clientY });
     }, [onBackgroundContextMenu]);
 
     return (
@@ -219,8 +238,9 @@ function GridLayout({ nodes, iconSize, cellSize, sortMode, selectedIds, onNodeCl
                 </Typography>
             </Box>
             <Box
-                onMouseDown={handleBackgroundMouseDown}
-                onContextMenu={handleBackgroundContextMenu}
+                onMouseDown={handleBgMouseDown}
+                onMouseUp={handleBgMouseUp}
+                onContextMenu={handleBgContextMenu}
                 sx={{
                     display: 'grid',
                     gridTemplateColumns: `repeat(auto-fill, ${cellSize.width}px)`,
@@ -344,17 +364,36 @@ function FreeLayout({
         }
     }, [nodes, localPositions, onIconPositionChange]);
 
-    const handleBackgroundMouseDown = useCallback((e: React.MouseEvent) => {
-        if (e.target === e.currentTarget) {
+    const longPressRef2 = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    const longPressFiredRef2 = useRef(false);
+
+    const handleBgMouseDown = useCallback((e: React.MouseEvent) => {
+        longPressFiredRef2.current = false;
+        const clientX = e.clientX;
+        const clientY = e.clientY;
+        longPressRef2.current = setTimeout(() => {
+            longPressFiredRef2.current = true;
+            onBackgroundContextMenu?.({ left: clientX, top: clientY });
+        }, 500);
+    }, [onBackgroundContextMenu]);
+
+    const handleBgMouseUp = useCallback(() => {
+        if (longPressRef2.current !== undefined) {
+            clearTimeout(longPressRef2.current);
+            longPressRef2.current = undefined;
+        }
+        if (!longPressFiredRef2.current) {
             onNodeSelect?.([], false);
         }
     }, [onNodeSelect]);
 
     const handleBgContextMenu = useCallback((e: React.MouseEvent) => {
-        if (e.target === e.currentTarget) {
-            e.preventDefault();
-            onBackgroundContextMenu?.({ left: e.clientX, top: e.clientY });
+        e.preventDefault();
+        if (longPressRef2.current !== undefined) {
+            clearTimeout(longPressRef2.current);
+            longPressRef2.current = undefined;
         }
+        onBackgroundContextMenu?.({ left: e.clientX, top: e.clientY });
     }, [onBackgroundContextMenu]);
 
     // Calculate container min height from node positions
@@ -369,7 +408,8 @@ function FreeLayout({
     return (
         <Box
             ref={containerRef}
-            onMouseDown={handleBackgroundMouseDown}
+            onMouseDown={handleBgMouseDown}
+            onMouseUp={handleBgMouseUp}
             onContextMenu={handleBgContextMenu}
             sx={{
                 position: 'relative',
@@ -443,6 +483,7 @@ function IconCell({ node, iconSize, cellWidth, isSelected, onClick, onDoubleClic
     }, [onSelect, onContextMenu, node]);
 
     const handlePointerDown = useCallback((e: React.PointerEvent) => {
+        e.stopPropagation();
         longPressTriggeredRef.current = false;
         longPressTimerRef.current = setTimeout(() => {
             longPressTriggeredRef.current = true;
@@ -451,7 +492,8 @@ function IconCell({ node, iconSize, cellWidth, isSelected, onClick, onDoubleClic
         }, 500);
     }, [onSelect, onContextMenu, node]);
 
-    const handlePointerUp = useCallback(() => {
+    const handlePointerUp = useCallback((e: React.PointerEvent) => {
+        e.stopPropagation();
         if (longPressTimerRef.current !== undefined) {
             clearTimeout(longPressTimerRef.current);
             longPressTimerRef.current = undefined;
@@ -566,6 +608,7 @@ function DraggableIconCell({
     const longPressTriggeredRef = useRef(false);
 
     const handlePointerDown = useCallback((e: React.PointerEvent) => {
+        e.stopPropagation();
         e.currentTarget.setPointerCapture(e.pointerId);
         isDraggingRef.current = true;
         dragRef.current = {
