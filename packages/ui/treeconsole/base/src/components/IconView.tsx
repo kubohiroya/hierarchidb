@@ -19,6 +19,7 @@ import type { TreeNodeInUI } from '@hierarchidb/ui-treeconsole-treetable';
 import type { SortMode } from '~/types/view-mode-types';
 import { computeZoomLayout, CELL_GAP_PX } from '~/utils/zoom-layout';
 import { createSortComparator } from '~/utils/sort-comparator';
+import { useIconViewBackground, type RubberBandRect } from './useIconViewBackground.js';
 
 /** Resolve icon color matching the list view logic. */
 function resolveIconColor(node: TreeNodeInUI): string {
@@ -198,37 +199,32 @@ const SORT_MODE_LABELS: Record<string, string> = {
 };
 
 function GridLayout({ nodes, iconSize, cellSize, sortMode, selectedIds, onNodeClick, onNodeDoubleClick, onNodeSelect, onContextMenu, onBackgroundContextMenu }: GridLayoutProps) {
-    const longPressRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-    const longPressFiredRef = useRef(false);
+    const containerRef = useRef<HTMLDivElement | null>(null);
 
-    const handleBgMouseDown = useCallback((e: React.MouseEvent) => {
-        longPressFiredRef.current = false;
-        const clientX = e.clientX;
-        const clientY = e.clientY;
-        longPressRef.current = setTimeout(() => {
-            longPressFiredRef.current = true;
-            onBackgroundContextMenu?.({ left: clientX, top: clientY });
-        }, 500);
-    }, [onBackgroundContextMenu]);
+    const handleRubberBandSelect = useCallback((rect: RubberBandRect) => {
+        if (!containerRef.current) return;
+        const children = containerRef.current.children;
+        const ids: string[] = [];
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i] as HTMLElement;
+            const cr = child.getBoundingClientRect();
+            const pr = containerRef.current.getBoundingClientRect();
+            const cx = cr.left - pr.left + containerRef.current.scrollLeft;
+            const cy = cr.top - pr.top + containerRef.current.scrollTop;
+            if (cx + cr.width > rect.x && cx < rect.x + rect.width &&
+                cy + cr.height > rect.y && cy < rect.y + rect.height) {
+                const nodeId = nodes[i]?.id;
+                if (nodeId) ids.push(nodeId);
+            }
+        }
+        onNodeSelect?.(ids, true);
+    }, [nodes, onNodeSelect]);
 
-    const handleBgMouseUp = useCallback(() => {
-        if (longPressRef.current !== undefined) {
-            clearTimeout(longPressRef.current);
-            longPressRef.current = undefined;
-        }
-        if (!longPressFiredRef.current) {
-            onNodeSelect?.([], false);
-        }
-    }, [onNodeSelect]);
-
-    const handleBgContextMenu = useCallback((e: React.MouseEvent) => {
-        e.preventDefault();
-        if (longPressRef.current !== undefined) {
-            clearTimeout(longPressRef.current);
-            longPressRef.current = undefined;
-        }
-        onBackgroundContextMenu?.({ left: e.clientX, top: e.clientY });
-    }, [onBackgroundContextMenu]);
+    const { rubberBand, bgHandlers } = useIconViewBackground({
+        onNodeSelect,
+        onBackgroundContextMenu,
+        onRubberBandSelect: handleRubberBandSelect,
+    });
 
     return (
         <Box>
@@ -238,15 +234,16 @@ function GridLayout({ nodes, iconSize, cellSize, sortMode, selectedIds, onNodeCl
                 </Typography>
             </Box>
             <Box
-                onMouseDown={handleBgMouseDown}
-                onMouseUp={handleBgMouseUp}
-                onContextMenu={handleBgContextMenu}
+                ref={containerRef}
+                {...bgHandlers}
                 sx={{
                     display: 'grid',
                     gridTemplateColumns: `repeat(auto-fill, ${cellSize.width}px)`,
                     gap: `${CELL_GAP_PX}px`,
                     padding: `${CELL_GAP_PX}px`,
                     width: '100%',
+                    position: 'relative',
+                    userSelect: 'none',
                 }}
             >
                 {nodes.map((node) => (
@@ -262,6 +259,20 @@ function GridLayout({ nodes, iconSize, cellSize, sortMode, selectedIds, onNodeCl
                         onContextMenu={onContextMenu}
                     />
                 ))}
+                {rubberBand && (
+                    <Box sx={{
+                        position: 'absolute',
+                        left: rubberBand.x,
+                        top: rubberBand.y,
+                        width: rubberBand.width,
+                        height: rubberBand.height,
+                        border: '1px dashed',
+                        borderColor: 'primary.main',
+                        backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                        pointerEvents: 'none',
+                        zIndex: 10,
+                    }} />
+                )}
             </Box>
         </Box>
     );
@@ -364,37 +375,23 @@ function FreeLayout({
         }
     }, [nodes, localPositions, onIconPositionChange]);
 
-    const longPressRef2 = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-    const longPressFiredRef2 = useRef(false);
-
-    const handleBgMouseDown = useCallback((e: React.MouseEvent) => {
-        longPressFiredRef2.current = false;
-        const clientX = e.clientX;
-        const clientY = e.clientY;
-        longPressRef2.current = setTimeout(() => {
-            longPressFiredRef2.current = true;
-            onBackgroundContextMenu?.({ left: clientX, top: clientY });
-        }, 500);
-    }, [onBackgroundContextMenu]);
-
-    const handleBgMouseUp = useCallback(() => {
-        if (longPressRef2.current !== undefined) {
-            clearTimeout(longPressRef2.current);
-            longPressRef2.current = undefined;
+    const handleRubberBandSelect = useCallback((rect: RubberBandRect) => {
+        const ids: string[] = [];
+        for (const [nodeId, pos] of localPositions) {
+            const { px, py } = gridToPixel(pos.col, pos.row, cellSize.width, cellSize.height);
+            if (px + cellSize.width > rect.x && px < rect.x + rect.width &&
+                py + cellSize.height > rect.y && py < rect.y + rect.height) {
+                ids.push(nodeId);
+            }
         }
-        if (!longPressFiredRef2.current) {
-            onNodeSelect?.([], false);
-        }
-    }, [onNodeSelect]);
+        onNodeSelect?.(ids, true);
+    }, [localPositions, cellSize, onNodeSelect]);
 
-    const handleBgContextMenu = useCallback((e: React.MouseEvent) => {
-        e.preventDefault();
-        if (longPressRef2.current !== undefined) {
-            clearTimeout(longPressRef2.current);
-            longPressRef2.current = undefined;
-        }
-        onBackgroundContextMenu?.({ left: e.clientX, top: e.clientY });
-    }, [onBackgroundContextMenu]);
+    const { rubberBand, bgHandlers } = useIconViewBackground({
+        onNodeSelect,
+        onBackgroundContextMenu,
+        onRubberBandSelect: handleRubberBandSelect,
+    });
 
     // Calculate container min height from node positions
     const containerMinHeight = useMemo(() => {
@@ -408,13 +405,12 @@ function FreeLayout({
     return (
         <Box
             ref={containerRef}
-            onMouseDown={handleBgMouseDown}
-            onMouseUp={handleBgMouseUp}
-            onContextMenu={handleBgContextMenu}
+            {...bgHandlers}
             sx={{
                 position: 'relative',
                 width: '100%',
                 minHeight: containerMinHeight,
+                userSelect: 'none',
             }}
         >
             {nodes.map((node) => {
