@@ -143,6 +143,7 @@ export function IconView({
                 nodes={sortedNodes}
                 iconSize={iconSize}
                 cellSize={cellSize}
+                sortMode={sortMode}
                 selectedIds={selectedIds}
                 onNodeClick={onNodeClick}
                 onNodeDoubleClick={onNodeDoubleClick}
@@ -173,6 +174,7 @@ interface GridLayoutProps {
     nodes: TreeNodeInUI[];
     iconSize: number;
     cellSize: { width: number; height: number };
+    sortMode: SortMode;
     selectedIds?: Set<string>;
     onNodeClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
     onNodeDoubleClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
@@ -180,7 +182,17 @@ interface GridLayoutProps {
     onContextMenu?: (node: TreeNodeInUI, position: { left: number; top: number }) => void;
 }
 
-function GridLayout({ nodes, iconSize, cellSize, selectedIds, onNodeClick, onNodeDoubleClick, onNodeSelect, onContextMenu }: GridLayoutProps) {
+const SORT_MODE_LABELS: Record<string, string> = {
+    name: 'Name',
+    type: 'Type',
+    lastOpened: 'Last Opened',
+    created: 'Created',
+    modified: 'Modified',
+    size: 'Size',
+    tag: 'Tag',
+};
+
+function GridLayout({ nodes, iconSize, cellSize, sortMode, selectedIds, onNodeClick, onNodeDoubleClick, onNodeSelect, onContextMenu }: GridLayoutProps) {
     const handleBackgroundMouseDown = useCallback((e: React.MouseEvent) => {
         if (e.target === e.currentTarget) {
             onNodeSelect?.([], false);
@@ -188,29 +200,36 @@ function GridLayout({ nodes, iconSize, cellSize, selectedIds, onNodeClick, onNod
     }, [onNodeSelect]);
 
     return (
-        <Box
-            onMouseDown={handleBackgroundMouseDown}
-            sx={{
-                display: 'grid',
-                gridTemplateColumns: `repeat(auto-fill, ${cellSize.width}px)`,
-                gap: `${CELL_GAP_PX}px`,
-                padding: `${CELL_GAP_PX}px`,
-                width: '100%',
-            }}
-        >
-            {nodes.map((node) => (
-                <IconCell
-                    key={node.id}
-                    node={node}
-                    iconSize={iconSize}
-                    cellWidth={cellSize.width}
-                    isSelected={selectedIds?.has(node.id) ?? false}
-                    onClick={onNodeClick}
-                    onDoubleClick={onNodeDoubleClick}
-                    onSelect={onNodeSelect}
-                    onContextMenu={onContextMenu}
-                />
-            ))}
+        <Box>
+            <Box sx={{ px: `${CELL_GAP_PX}px`, pt: `${CELL_GAP_PX}px`, pb: 0.5 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    Sorted by: {SORT_MODE_LABELS[sortMode] ?? sortMode}
+                </Typography>
+            </Box>
+            <Box
+                onMouseDown={handleBackgroundMouseDown}
+                sx={{
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(auto-fill, ${cellSize.width}px)`,
+                    gap: `${CELL_GAP_PX}px`,
+                    padding: `${CELL_GAP_PX}px`,
+                    width: '100%',
+                }}
+            >
+                {nodes.map((node) => (
+                    <IconCell
+                        key={node.id}
+                        node={node}
+                        iconSize={iconSize}
+                        cellWidth={cellSize.width}
+                        isSelected={selectedIds?.has(node.id) ?? false}
+                        onClick={onNodeClick}
+                        onDoubleClick={onNodeDoubleClick}
+                        onSelect={onNodeSelect}
+                        onContextMenu={onContextMenu}
+                    />
+                ))}
+            </Box>
         </Box>
     );
 }

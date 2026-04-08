@@ -135,11 +135,11 @@ export function TreeConsoleToolbarContent({
       />
 
       <Box sx={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
-        {onSortModeChange && (
-          <SortModeSelector value={sortMode} onChange={onSortModeChange} />
-        )}
         {onViewModeChange && (
           <ViewModeSelector value={viewMode} onChange={onViewModeChange} />
+        )}
+        {onSortModeChange && (
+          <SortModeSelector value={sortMode} onChange={onSortModeChange} />
         )}
         <SettingsMenu
           rowClickAction={rowClickAction}
