@@ -12,6 +12,11 @@ export const createSelectionActions = (deps: TreeConsoleActionDeps) => {
 
   return {
     handleNodeSelect: (nodeIds: string[], selected: boolean) => {
+      // Empty array = clear all selection
+      if (nodeIds.length === 0) {
+        setSSOT({ selectedIds: [] });
+        return;
+      }
       const next = new Set<NodeId>((selectedIds || []).map((id) => id as NodeId));
       const ids = Array.isArray(nodeIds) ? nodeIds : [nodeIds];
       ids.forEach((rawId) => {
