@@ -203,6 +203,8 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     return set;
   }, [controller.rowSelection]);
 
+  const treeTableContainerRef = useRef<HTMLDivElement>(null);
+
   const [iconContextMenu, setIconContextMenu] = useState<{
     node: TreeNodeInUI;
     position: { left: number; top: number };
@@ -240,12 +242,8 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     const zoomLevel = props.zoomLevel ?? 50;
     const { cellSize } = computeZoomLayout(zoomLevel);
 
-    // Use a reasonable default viewport width; the actual container width
-    // would require a ref to the IconView container. For now, query the
-    // tree-table container as an approximation.
-    const viewportWidth = typeof document !== 'undefined'
-      ? (document.querySelector('[data-tour-id="tree-table"]')?.clientWidth ?? 800)
-      : 800;
+    // Read viewport width from the tree-table container ref.
+    const viewportWidth = treeTableContainerRef.current?.clientWidth ?? 800;
 
     const positions = computeReorganizedPositions(nodes, viewportWidth, cellSize);
     const onIconPositionChange = props.onIconPositionChange;
@@ -295,6 +293,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         >
           <Box sx={{ minHeight: 0, alignSelf: 'start' }}>{props.infoPanel}</Box>
           <Box
+            ref={treeTableContainerRef}
             sx={{
               flex: 1,
               overflow: 'hidden',
@@ -353,6 +352,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         </Box>
       ) : (
         <Box
+          ref={treeTableContainerRef}
           sx={{
             flex: 1,
             overflow: 'hidden',

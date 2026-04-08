@@ -224,15 +224,13 @@ export function BackgroundContextMenu(props: BackgroundContextMenuProps): ReactE
                             enterDelay={300}
                             arrow
                         >
-                            <span style={{ display: 'block' }}>
-                                <MenuItem
-                                    onClick={() => handleCreateClick(createType)}
-                                    aria-label={localizedLabel}
-                                >
-                                    <ListItemIcon>{IconEl}</ListItemIcon>
-                                    <ListItemText>{localizedLabel}</ListItemText>
-                                </MenuItem>
-                            </span>
+                            <MenuItem
+                                onClick={() => handleCreateClick(createType)}
+                                aria-label={localizedLabel}
+                            >
+                                <ListItemIcon>{IconEl}</ListItemIcon>
+                                <ListItemText>{localizedLabel}</ListItemText>
+                            </MenuItem>
                         </Tooltip>
                     );
                 })}
@@ -301,15 +299,13 @@ export function BackgroundContextMenu(props: BackgroundContextMenuProps): ReactE
                             enterDelay={300}
                             arrow
                         >
-                            <span style={{ display: 'block' }}>
-                                <MenuItem
-                                    onClick={() => handleCreateClick(createType)}
-                                    aria-label={localizedLabel}
-                                >
-                                    <ListItemIcon>{IconEl}</ListItemIcon>
-                                    <ListItemText>{localizedLabel}</ListItemText>
-                                </MenuItem>
-                            </span>
+                            <MenuItem
+                                onClick={() => handleCreateClick(createType)}
+                                aria-label={localizedLabel}
+                            >
+                                <ListItemIcon>{IconEl}</ListItemIcon>
+                                <ListItemText>{localizedLabel}</ListItemText>
+                            </MenuItem>
                         </Tooltip>
                     );
                 })}
