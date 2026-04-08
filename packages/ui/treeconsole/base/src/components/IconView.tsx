@@ -39,6 +39,7 @@ export interface IconViewProps {
     onNodeDoubleClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
     onNodeSelect?: (nodeIds: string[], selected: boolean) => void;
     onContextMenu?: (node: TreeNodeInUI, position: { left: number; top: number }) => void;
+    onBackgroundContextMenu?: (position: { left: number; top: number }) => void;
 }
 
 // -- Grid coordinate utilities --
@@ -126,6 +127,7 @@ export function IconView({
     onNodeDoubleClick,
     onNodeSelect,
     onContextMenu,
+    onBackgroundContextMenu,
 }: IconViewProps) {
     const { iconSize, cellSize } = computeZoomLayout(zoomLevel);
 
@@ -149,6 +151,7 @@ export function IconView({
                 onNodeDoubleClick={onNodeDoubleClick}
                 onNodeSelect={onNodeSelect}
                 onContextMenu={onContextMenu}
+                onBackgroundContextMenu={onBackgroundContextMenu}
             />
         );
     }
@@ -164,6 +167,7 @@ export function IconView({
             onNodeDoubleClick={onNodeDoubleClick}
             onNodeSelect={onNodeSelect}
             onContextMenu={onContextMenu}
+            onBackgroundContextMenu={onBackgroundContextMenu}
         />
     );
 }
@@ -180,6 +184,7 @@ interface GridLayoutProps {
     onNodeDoubleClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
     onNodeSelect?: (nodeIds: string[], selected: boolean) => void;
     onContextMenu?: (node: TreeNodeInUI, position: { left: number; top: number }) => void;
+    onBackgroundContextMenu?: (position: { left: number; top: number }) => void;
 }
 
 const SORT_MODE_LABELS: Record<string, string> = {
@@ -192,12 +197,19 @@ const SORT_MODE_LABELS: Record<string, string> = {
     tag: 'Tag',
 };
 
-function GridLayout({ nodes, iconSize, cellSize, sortMode, selectedIds, onNodeClick, onNodeDoubleClick, onNodeSelect, onContextMenu }: GridLayoutProps) {
+function GridLayout({ nodes, iconSize, cellSize, sortMode, selectedIds, onNodeClick, onNodeDoubleClick, onNodeSelect, onContextMenu, onBackgroundContextMenu }: GridLayoutProps) {
     const handleBackgroundMouseDown = useCallback((e: React.MouseEvent) => {
         if (e.target === e.currentTarget) {
             onNodeSelect?.([], false);
         }
     }, [onNodeSelect]);
+
+    const handleBackgroundContextMenu = useCallback((e: React.MouseEvent) => {
+        if (e.target === e.currentTarget) {
+            e.preventDefault();
+            onBackgroundContextMenu?.({ left: e.clientX, top: e.clientY });
+        }
+    }, [onBackgroundContextMenu]);
 
     return (
         <Box>
@@ -208,6 +220,7 @@ function GridLayout({ nodes, iconSize, cellSize, sortMode, selectedIds, onNodeCl
             </Box>
             <Box
                 onMouseDown={handleBackgroundMouseDown}
+                onContextMenu={handleBackgroundContextMenu}
                 sx={{
                     display: 'grid',
                     gridTemplateColumns: `repeat(auto-fill, ${cellSize.width}px)`,
@@ -246,6 +259,7 @@ interface FreeLayoutProps {
     onNodeDoubleClick?: (nodeId: NodeId, node: TreeNodeInUI) => void;
     onNodeSelect?: (nodeIds: string[], selected: boolean) => void;
     onContextMenu?: (node: TreeNodeInUI, position: { left: number; top: number }) => void;
+    onBackgroundContextMenu?: (position: { left: number; top: number }) => void;
 }
 
 function FreeLayout({
@@ -258,6 +272,7 @@ function FreeLayout({
     onNodeDoubleClick,
     onNodeSelect,
     onContextMenu,
+    onBackgroundContextMenu,
 }: FreeLayoutProps) {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const containerCols = 6;
@@ -335,6 +350,13 @@ function FreeLayout({
         }
     }, [onNodeSelect]);
 
+    const handleBgContextMenu = useCallback((e: React.MouseEvent) => {
+        if (e.target === e.currentTarget) {
+            e.preventDefault();
+            onBackgroundContextMenu?.({ left: e.clientX, top: e.clientY });
+        }
+    }, [onBackgroundContextMenu]);
+
     // Calculate container min height from node positions
     const containerMinHeight = useMemo(() => {
         let maxRow = 0;
@@ -348,6 +370,7 @@ function FreeLayout({
         <Box
             ref={containerRef}
             onMouseDown={handleBackgroundMouseDown}
+            onContextMenu={handleBgContextMenu}
             sx={{
                 position: 'relative',
                 width: '100%',

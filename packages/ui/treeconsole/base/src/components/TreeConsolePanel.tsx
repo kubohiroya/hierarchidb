@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Box, Slider, Typography } from '@mui/material';
+import { Box, Divider, ListItemIcon, ListItemText, Menu, MenuItem, Slider, Typography } from '@mui/material';
+import { GridView as RearrangeIcon, Add as CreateIcon, FileUpload as ImportIcon, FileDownload as ExportIcon } from '@mui/icons-material';
 import type { TreeTableColumn } from './TreeTable/index.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
@@ -215,6 +216,17 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     setIconContextMenu(null);
   }, []);
 
+  const [bgContextMenu, setBgContextMenu] = useState<{ left: number; top: number } | null>(null);
+
+  const handleBgContextMenu = useCallback((position: { left: number; top: number }) => {
+    controller.onNodeSelect?.([], false);
+    setBgContextMenu(position);
+  }, [controller]);
+
+  const handleBgContextMenuClose = useCallback(() => {
+    setBgContextMenu(null);
+  }, []);
+
   if (!isPageContextValid) {
     return <Box>Invalid page context</Box>;
   }
@@ -267,6 +279,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
                 onNodeDoubleClick={controller.onNodeClick ? (nodeId, node) => controller.onNodeClick?.(nodeId, node) : undefined}
                 onNodeSelect={controller.onNodeSelect}
                 onContextMenu={handleIconContextMenu}
+                onBackgroundContextMenu={handleBgContextMenu}
               />
             ) : props.viewMode === 'column' ? (
               <ColumnViewWrapper
@@ -323,6 +336,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
               onNodeDoubleClick={controller.onNodeClick ? (nodeId, node) => controller.onNodeClick?.(nodeId, node) : undefined}
               onNodeSelect={controller.onNodeSelect}
               onContextMenu={handleIconContextMenu}
+              onBackgroundContextMenu={handleBgContextMenu}
             />
           ) : props.viewMode === 'column' ? (
             <ColumnViewWrapper
@@ -432,6 +446,32 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
           }}
         />
       )}
+
+      {/* Background context menu for IconView */}
+      <Menu
+        anchorReference="anchorPosition"
+        anchorPosition={bgContextMenu ?? undefined}
+        open={Boolean(bgContextMenu)}
+        onClose={handleBgContextMenuClose}
+      >
+        <MenuItem onClick={() => { /* TODO: rearrange icons */ handleBgContextMenuClose(); }}>
+          <ListItemIcon><RearrangeIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>Rearrange Icons</ListItemText>
+        </MenuItem>
+        <Divider />
+        <MenuItem onClick={() => { controller.onContextAction?.('create:folder', { id: props.pageNodeId } as any); handleBgContextMenuClose(); }}>
+          <ListItemIcon><CreateIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>Create</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => { controller.onContextAction?.('import', { id: props.pageNodeId } as any); handleBgContextMenuClose(); }}>
+          <ListItemIcon><ImportIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>Import</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => { controller.onContextAction?.('export', { id: props.pageNodeId } as any); handleBgContextMenuClose(); }}>
+          <ListItemIcon><ExportIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>Export</ListItemText>
+        </MenuItem>
+      </Menu>
     </Box>
   );
 });
