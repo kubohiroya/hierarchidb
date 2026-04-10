@@ -90,7 +90,8 @@ export const separationThresholdRule: Rule = {
     if (componentMetrics === null) return [];
 
     // --- Skip files that already use React.memo (likely already separated) ---
-    if (componentMetrics.usesReactMemo) return [];
+    // Only skip if it uses React.memo AND does not exceed thresholds
+    if (componentMetrics.usesReactMemo && !exceedsThreshold(componentMetrics)) return [];
 
     // --- Skip *View.tsx files (already presentational) ---
     const stem = fileStem(file.absolutePath);
