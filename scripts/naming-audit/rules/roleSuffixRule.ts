@@ -14,14 +14,7 @@ import type { ExportInfo, FileAnalysis, Rule, Violation } from '../types.js';
 // Banned generic names → suggested replacement
 // ---------------------------------------------------------------------------
 
-const BANNED_GENERIC_NAMES = new Set([
-    'helper',
-    'helpers',
-    'common',
-    'shared',
-    'misc',
-    'temp',
-]);
+const BANNED_GENERIC_NAMES = new Set(['helper', 'helpers', 'common', 'shared', 'misc', 'temp']);
 
 // ---------------------------------------------------------------------------
 // Role detection helpers
@@ -91,11 +84,7 @@ export function hasCorrectSuffix(stem: string, role: SingleRole): boolean {
  *   - Append the correct role suffix in camelCase
  *   - If the stem is a banned generic name, replace entirely
  */
-export function buildSuggestedRename(
-    stem: string,
-    role: SingleRole,
-    dirName: string,
-): string {
+export function buildSuggestedRename(stem: string, role: SingleRole, dirName: string): string {
     const { suffix, standalone } = ROLE_SUFFIX_MAP[role];
 
     // If the stem is a banned generic name, try to use the standalone form
@@ -130,9 +119,14 @@ export function buildSuggestedRename(
 
 /** Known wrong suffixes that indicate a role but don't match the convention. */
 const WRONG_SUFFIXES = [
-    'Props', 'Defs', 'Definitions', 'Interfaces',
-    'Helpers', 'Helper',
-    'Consts', 'Config',
+    'Props',
+    'Defs',
+    'Definitions',
+    'Interfaces',
+    'Helpers',
+    'Helper',
+    'Consts',
+    'Config',
 ];
 
 function stripWrongSuffix(stem: string): string | null {
@@ -148,7 +142,9 @@ function sanitiseDomain(dirName: string): string {
     // Convert kebab-case directory name to camelCase domain prefix
     return dirName
         .split('-')
-        .map((part, i) => (i === 0 ? part.toLowerCase() : part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()))
+        .map((part, i) =>
+            i === 0 ? part.toLowerCase() : part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+        )
         .join('');
 }
 
