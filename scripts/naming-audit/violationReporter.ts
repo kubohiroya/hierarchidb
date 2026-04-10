@@ -1,0 +1,100 @@
+// ============================================================
+// ViolationReporter — formats and outputs detected violations.
+//
+// Supports two output formats:
+//   - "table": human-readable console table
+//   - "json":  machine-readable JSON array
+//
+// Exit codes:
+//   0 — no error-level violations (warnings are allowed)
+//   1 — at least one error-level violation detected
+//
+// Requirements: 1.1, 1.2, 1.3
+// ============================================================
+
+import type { Violation } from './types.js';
+
+// ---------------------------------------------------------------------------
+// JSON reporter
+// ---------------------------------------------------------------------------
+
+function reportJson(violations: readonly Violation[]): void {
+  const output = violations.map((v) => ({
+    file: v.file.relativePath,
+    subPackage: v.file.subPackage,
+    pattern: v.pattern,
+    severity: v.severity,
+    message: v.message,
+    suggestedRename: v.suggestedRename,
+  }));
+
+  console.log(JSON.stringify(output, null, 2));
+}
+
+// ---------------------------------------------------------------------------
+// Table reporter
+// ---------------------------------------------------------------------------
+
+function severityIcon(severity: 'error' | 'warning'): string {
+  return severity === 'error' ? '✖' : '⚠';
+}
+
+function reportTable(violations: readonly Violation[]): void {
+  if (violations.length === 0) {
+    console.log('✔ No naming violations found.');
+    return;
+  }
+
+  // Group by sub-package for readability
+  const grouped = new Map<string, Violation[]>();
+  for (const v of violations) {
+    const key = v.file.subPackage;
+    const list = grouped.get(key);
+    if (list) {
+      list.push(v);
+    } else {
+      grouped.set(key, [v]);
+    }
+  }
+
+  for (const [subPackage, items] of grouped) {
+    console.log(`\n── ${subPackage} ──`);
+    for (const v of items) {
+      const icon = severityIcon(v.severity);
+      console.log(`  ${icon} [P${v.pattern}] ${v.file.relativePath}`);
+      console.log(`    ${v.message}`);
+      console.log(`    → ${v.suggestedRename}`);
+    }
+  }
+
+  // Summary
+  const errors = violations.filter((v) => v.severity === 'error').length;
+  const warnings = violations.filter((v) => v.severity === 'warning').length;
+  console.log(`\n── Summary ──`);
+  console.log(`  Total: ${violations.length}  Errors: ${errors}  Warnings: ${warnings}`);
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+/**
+ * Report violations to stdout and return the appropriate exit code.
+ *
+ * @param violations - All detected violations
+ * @param format     - Output format: "json" or "table"
+ * @returns Exit code: 0 if no errors, 1 if error-level violations exist
+ */
+export function reportViolations(
+  violations: readonly Violation[],
+  format: 'json' | 'table'
+): number {
+  if (format === 'json') {
+    reportJson(violations);
+  } else {
+    reportTable(violations);
+  }
+
+  const hasErrors = violations.some((v) => v.severity === 'error');
+  return hasErrors ? 1 : 0;
+}
