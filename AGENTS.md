@@ -79,7 +79,7 @@
 
 - 破壊的変更を避ける目的でも、契約違反の吸収はしない。
 - 必須値（例: `nodeId`）は型で必須化し、`null/undefined` を黙認しない。
-- 新規 `*.ts/*.tsx` は `docs/ts-file-naming-guideline.md` に従う。
+- 新規 `*.ts/*.tsx` は `docs/ts-file-naming-guideline.md` に従う（`.tsx` の Container/Presentational 分離・View サフィックス規約を含む）。
 - 再エクスポート禁止（例外: `src/index.ts` と export エントリ対応のトップ `index.ts`）。
 - テスト（`__tests__`）は原則相対 import を使い、`~/*` を避ける。
 

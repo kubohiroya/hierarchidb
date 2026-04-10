@@ -1,16 +1,15 @@
-# `src/**/*.ts` ファイル命名指針
+# `src/**/*.ts` / `src/**/*.tsx` ファイル命名指針
 
-本ドキュメントは、リポジトリ全体の `src` 配下にある `*.ts` ファイル名を、役割から一意に推測できる状態へ揃えるための指針です。
+本ドキュメントは、リポジトリ全体の `src` 配下にある `*.ts` / `*.tsx` ファイル名を、役割から一意に推測できる状態へ揃えるための指針です。
 
 ## 対象範囲
 
-- `app/src/**/*.ts`
-- `packages/*/src/**/*.ts`
-- `plugins/*-plugin/src/**/*.ts`
+- `app/src/**/*.ts`, `app/src/**/*.tsx`
+- `packages/*/src/**/*.ts`, `packages/*/src/**/*.tsx`
+- `plugins/*-plugin/src/**/*.ts`, `plugins/*-plugin/src/**/*.tsx`
 
 除外:
 
-- `*.tsx`（別ガイドの対象）
 - `dist/**` など生成物
 - `*.d.ts`（型宣言ポリシーは `docs/developer-guidelines.md` を参照）
 
@@ -124,6 +123,47 @@
 4. `pnpm lint && pnpm typecheck && pnpm test`（必要フィルタ付き）で回帰確認する。
 5. PR には「命名理由」と「ロールバック方法（rename 戻し）」を明記する。
 
+## `.tsx` ファイル命名規約
+
+### コンポーネントファイル
+
+- コンポーネントファイルは PascalCase: `ComponentName.tsx`
+- ファイル名と主エクスポートのコンポーネント名を一致させる。
+
+### View サフィックス（Presentational コンポーネント）
+
+- Presentational コンポーネント（props のみに依存し、hooks を使用しない）には `*View.tsx` サフィックスを付与する。
+- 例: `CacheManagementSectionView.tsx`
+
+### Container/Presentational 分離パターン
+
+分離が必要なコンポーネントは以下の3ファイル構成（パターン A）を標準とする:
+
+```
+ComponentName/
+  ComponentName.tsx              → Container（hook 呼び出し + View 組み立て）
+  ComponentNameView.tsx          → Presentational（React.memo 適用、hooks なし）
+  useComponentNameState.ts       → State hook（Container ロジック抽出）
+```
+
+- Container は State hook を呼び出し、戻り値を View の props として渡す。
+- Presentational には `React.memo` を適用し、`displayName` を設定する。
+- re-export のみのラッパーファイル（パターン B）は禁止。実体ファイルを直接参照する。
+
+### 分離判断基準
+
+以下のいずれかを満たすコンポーネントは分離を推奨する:
+
+- JSX 行数 > 50
+- hooks 呼び出し数 > 2
+
+上記を満たさない小規模コンポーネントは分離せず、`React.memo` のみ適用する。分離しない場合はコードコメントで理由を明記する。
+
+### `.tsx` の禁止パターン
+
+- `use*.tsx`: Hook に JSX を持ち込まない（`use*.ts` を使用する）。
+- re-export のみの `.tsx` ラッパーファイル: 実体ファイルを直接参照する。
+
 ## レビュー観点（チェックリスト）
 
 - [ ] ファイル名と主エクスポート名は一致しているか
@@ -131,3 +171,6 @@
 - [ ] `index.ts` に実装ロジックが入っていないか
 - [ ] `use*.ts` 以外の hook 命名違反がないか
 - [ ] `internal/impl/core` の使用理由が説明可能か
+- [ ] Presentational コンポーネント（hooks なし）に `*View.tsx` サフィックスが付いているか
+- [ ] 分離閾値（JSX > 50行 or hooks > 2）を超えるコンポーネントが Container/Presentational 分離されているか
+- [ ] re-export のみの `.tsx` ラッパーファイルが残っていないか
