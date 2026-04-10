@@ -14,13 +14,13 @@ import type { ExportInfo, FileAnalysis, Rule, Violation } from '../types.js';
 // Banned generic names → suggested replacement
 // ---------------------------------------------------------------------------
 
-const BANNED_GENERIC_NAMES: ReadonlyMap<string, string> = new Map([
-    ['helper', 'utils'],
-    ['helpers', 'utils'],
-    ['common', null!],   // needs domain prefix — handled below
-    ['shared', null!],
-    ['misc', null!],
-    ['temp', null!],
+const BANNED_GENERIC_NAMES = new Set([
+    'helper',
+    'helpers',
+    'common',
+    'shared',
+    'misc',
+    'temp',
 ]);
 
 // ---------------------------------------------------------------------------
