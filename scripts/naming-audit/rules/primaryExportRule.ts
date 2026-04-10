@@ -15,10 +15,10 @@ import type { FileAnalysis, Rule, Violation } from '../types.js';
  * Handles double extensions like .core.ts, .internal.ts, .impl.ts.
  */
 function fileStem(filePath: string): string {
-    const base = path.basename(filePath);
-    const match = base.match(/^(.+?)\.(?:core|internal|impl)?\.[^.]+$/);
-    if (match) return match[1];
-    return path.parse(base).name;
+  const base = path.basename(filePath);
+  const match = base.match(/^(.+?)\.(?:core|internal|impl)?\.[^.]+$/);
+  if (match) return match[1];
+  return path.parse(base).name;
 }
 
 /**
@@ -26,59 +26,85 @@ function fileStem(filePath: string): string {
  * and the original file extension.
  */
 function buildExpectedFileName(primaryExportName: string, extension: string): string {
-    return `${primaryExportName}${extension}`;
+  return `${primaryExportName}${extension}`;
 }
 
 export const primaryExportRule: Rule = {
-    name: 'PrimaryExportRule',
+  name: 'PrimaryExportRule',
 
-    evaluate(analysis: FileAnalysis): Violation[] {
-        const { file, primaryExport, exports, isReExportOnly } = analysis;
+  evaluate(analysis: FileAnalysis): Violation[] {
+    const { file, primaryExport, exports, isReExportOnly } = analysis;
 
-        // Skip index.ts files — they are re-export entry points
-        const baseName = path.basename(file.absolutePath);
-        if (baseName === 'index.ts' || baseName === 'index.tsx') {
-            return [];
-        }
+    // Skip index.ts files — they are re-export entry points
+    const baseName = path.basename(file.absolutePath);
+    if (baseName === 'index.ts' || baseName === 'index.tsx') {
+      return [];
+    }
 
-        // Skip re-export-only files — handled by ViewPatternRule
-        if (isReExportOnly) {
-            return [];
-        }
+    // Skip re-export-only files — handled by ViewPatternRule
+    if (isReExportOnly) {
+      return [];
+    }
 
-        // Skip files with no exports
-        if (exports.length === 0 || primaryExport === null) {
-            return [];
-        }
+    // Skip files with no exports
+    if (exports.length === 0 || primaryExport === null) {
+      return [];
+    }
 
-        const stem = fileStem(file.absolutePath);
-        const primaryName = primaryExport.name;
+    const stem = fileStem(file.absolutePath);
+    const primaryName = primaryExport.name;
 
-        // Skip wildcard re-exports that resolved as primary
-        if (primaryName === '*') {
-            return [];
-        }
+    // Skip wildcard re-exports that resolved as primary
+    if (primaryName === '*') {
+      return [];
+    }
 
-        // For .tsx files: exact (PascalCase) match required
-        // For .ts files: case-insensitive match (hooks are camelCase, e.g. useXxx.ts)
-        const matches = file.extension === '.tsx'
-            ? stem === primaryName
-            : stem.toLowerCase() === primaryName.toLowerCase();
+    // Skip aggregation files: files with multiple own exports whose name
+    // follows a role-suffix pattern (e.g. entity-types.ts, constants.ts).
+    // These files intentionally aggregate multiple symbols and the primary
+    // export heuristic (first export) is not meaningful.
+    const ownExports = exports.filter((e) => e.kind !== 'reExport');
+    if (ownExports.length > 1) {
+      const lowerStem = stem.toLowerCase();
+      const roleSuffixes = [
+        'types',
+        'type',
+        'constants',
+        'constant',
+        'utils',
+        'util',
+        'validators',
+        'validator',
+      ];
+      const isRoleFile = roleSuffixes.some(
+        (s) => lowerStem === s || lowerStem.endsWith(s) || lowerStem.endsWith(`-${s}`)
+      );
+      if (isRoleFile) {
+        return [];
+      }
+    }
 
-        if (matches) {
-            return [];
-        }
+    // For .tsx files: exact (PascalCase) match required
+    // For .ts files: case-insensitive match (hooks are camelCase, e.g. useXxx.ts)
+    const matches =
+      file.extension === '.tsx'
+        ? stem === primaryName
+        : stem.toLowerCase() === primaryName.toLowerCase();
 
-        const suggestedRename = buildExpectedFileName(primaryName, file.extension);
+    if (matches) {
+      return [];
+    }
 
-        return [
-            {
-                file,
-                pattern: 1,
-                severity: 'error',
-                message: `File "${baseName}" does not match primary export "${primaryName}". Expected "${suggestedRename}".`,
-                suggestedRename,
-            },
-        ];
-    },
+    const suggestedRename = buildExpectedFileName(primaryName, file.extension);
+
+    return [
+      {
+        file,
+        pattern: 1,
+        severity: 'error',
+        message: `File "${baseName}" does not match primary export "${primaryName}". Expected "${suggestedRename}".`,
+        suggestedRename,
+      },
+    ];
+  },
 };
