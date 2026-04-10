@@ -2,6 +2,8 @@
 
 ## Doing
 
+- #1179 / `chore/worker-provider/remove-unused-exports` / 2026-04-08 開始
+- #1177 / `fix/worker-provider/remove-822-debug-logs` / 2026-04-08 開始
 - #1175 / `chore/treeconsole/migrate-atomfamily-jotai-family` / 2026-04-08 開始
 - #1155 / `feat/ide-gsm-client/implement` / 2026-03-27 開始
 - #1127 / `fix/shape-plugin/task-progress-version-gate-and-idle-fallback` / 2026-03-17 開始
