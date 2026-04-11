@@ -9,7 +9,7 @@ import simplify from '@turf/simplify';
 import { cleanCoords } from '@turf/clean-coords';
 import { point } from '@turf/helpers';
 import unkink from '@turf/unkink-polygon';
-import type { GeometryEngine } from './config.js';
+import type { GeometryEngine } from './configTypes.js';
 
 type Bbox = [number, number, number, number];
 

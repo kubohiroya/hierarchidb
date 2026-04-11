@@ -67,7 +67,7 @@ import type {
 } from './usePluginDialogController/data-types.js';
 import { useDialogUIStateSync } from './usePluginDialogController/useDialogUIStateSync.js';
 import { useDialogDirtyState } from './usePluginDialogController/useDialogDirtyState.js';
-import { useDialogFrameState } from './usePluginDialogController/frame-state.js';
+import { useDialogFrameState } from './usePluginDialogController/frameStateUtils.js';
 import { usePendingAction } from './usePluginDialogController/usePendingAction.js';
 import { useDialogSteps } from './usePluginDialogController/useDialogSteps.js';
 import { useStepNavigation } from './usePluginDialogController/useStepNavigation.js';

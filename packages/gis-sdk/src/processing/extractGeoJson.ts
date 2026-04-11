@@ -1,6 +1,6 @@
 import type { Feature, FeatureCollection, Geometry, GeoJsonProperties, MultiPolygon, Polygon } from 'geojson';
-import type { GeometryEngine } from '~/config';
-import { geometryCleanCoords, geometrySimplify, geometryUnkinkPolygons } from '~/geometryEngine';
+import type { GeometryEngine } from '~/configTypes';
+import { geometryCleanCoords, geometrySimplify, geometryUnkinkPolygons } from '~/geometryEngineUtils';
 
 export interface ExtractOptions {
   tolerance: number;

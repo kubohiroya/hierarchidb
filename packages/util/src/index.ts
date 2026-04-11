@@ -8,15 +8,15 @@
  */
 
 // Formatting utilities
-export * from './format.js';
+export * from './formatUtils.js';
 
 // Validation utilities
-export * from './validation.js';
+export * from './validationUtils.js';
 export { SingletonMixin } from './SingletonMixin.js';
 export { generateId } from './generateId.js';
-export * from './db-name.js';
+export * from './dbNameUtils.js';
 export * from './env.js';
-export * from './webCrypto.js';
+export * from './webCryptoUtils.js';
 export * from './dualKeyMap.js';
 export * from './treeConsoleSettings.js';
 export {

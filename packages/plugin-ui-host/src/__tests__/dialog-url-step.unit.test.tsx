@@ -3,7 +3,7 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { useDialogFrameState } from '../headless/usePluginDialogController/frame-state';
+import { useDialogFrameState } from '../headless/usePluginDialogController/frameStateUtils';
 
 type Snapshot = {
   activeStepIndex: number;

@@ -1,8 +1,8 @@
 import type { DetectionResult, FileLike, ParseOptions, TabularParseResult, TabularSchema } from './types.js';
-import { detectFormat, parseWithBest, registerParser } from './registry.js';
+import { detectFormat, parseWithBest, registerParser } from './registryUtils.js';
 import { createTabularLikeParser } from './parsers/createTabularLikeParser.js';
 import { jsonlParser } from './parsers/jsonlParser.js';
-import type { TabularIngestResult, TabularStorePort } from './store.js';
+import type { TabularIngestResult, TabularStorePort } from './storeTypes.js';
 import type { TabularContext, TabularProcessor } from './processor.js';
 
 // Register built-in parsers by default

@@ -2,8 +2,8 @@ import type { Feature, FeatureCollection, Geometry, GeoJsonProperties } from 'ge
 import type { Tile } from 'geojson-vt';
 import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { GeometryEngine } from './config.js';
-import { geometryArea } from './geometryEngine.js';
+import type { GeometryEngine } from './configTypes.js';
+import { geometryArea } from './geometryEngineUtils.js';
 import { encodeMvtFromGeojsonVt } from './vectorTileFormats.js';
 
 import {
