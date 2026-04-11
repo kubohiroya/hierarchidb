@@ -1,4 +1,4 @@
-import { generateUUID } from './webCrypto.js';
+import { generateUUID } from './webCryptoUtils.js';
 
 /**
  * Generate a unique ID for entities using secure randomness.

@@ -1,6 +1,6 @@
 import type { Theme } from '@mui/material';
 import { useMemo } from 'react';
-import type { PluginDialogShellProps } from './PluginDialogShell.types.js';
+import type { PluginDialogShellProps } from './pluginDialogShellTypes.js';
 import { usePluginDialogController } from './usePluginDialogController.js';
 
 type PluginDialogShellState = ReturnType<typeof usePluginDialogController> & {

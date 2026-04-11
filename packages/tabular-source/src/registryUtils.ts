@@ -1,4 +1,4 @@
-import type { TabularParserPort } from './ports.js';
+import type { TabularParserPort } from './portTypes.js';
 import type { DetectionResult, FileLike, ParseOptions, TabularParseResult } from './types.js';
 
 const parsers: TabularParserPort[] = [];

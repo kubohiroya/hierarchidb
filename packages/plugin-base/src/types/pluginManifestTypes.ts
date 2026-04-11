@@ -1,5 +1,5 @@
 import type { NodeType } from '@hierarchidb/core-types';
-import type { PluginManifestDatabasePrewarmConfig } from './plugin-metadata.js';
+import type { PluginManifestDatabasePrewarmConfig } from './pluginMetadataTypes.js';
 
 export interface PluginIconComponentConfig {
   specifier: string;

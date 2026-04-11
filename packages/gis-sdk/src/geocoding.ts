@@ -1,8 +1,8 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeQueryAPI } from '@hierarchidb/shape-api';
 import type { Feature, MultiPolygon, Polygon } from 'geojson';
-import type { GeometryEngine } from './config.js';
-import { geometryPointInPolygon } from './geometryEngine.js';
+import type { GeometryEngine } from './configTypes.js';
+import { geometryPointInPolygon } from './geometryEngineUtils.js';
 import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
 import { LRUCache } from 'typescript-lru-cache';

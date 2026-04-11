@@ -1,7 +1,7 @@
 import { PluginDialogFrame, UnsavedChangesDialog } from '@hierarchidb/ui-dialog';
 import type React from 'react';
 import { PluginDialogConflictDialog } from './PluginDialogControllerElements.js';
-import type { PluginDialogShellProps } from './PluginDialogShell.types.js';
+import type { PluginDialogShellProps } from './pluginDialogShellTypes.js';
 import { usePluginDialogShell } from './usePluginDialogShell.js';
 
 export const PluginDialogShell: React.FC<PluginDialogShellProps> = (props) => {

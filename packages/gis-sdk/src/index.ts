@@ -37,7 +37,7 @@ export type {
   TileKey,
   TileSummary,
   StoredTile,
-} from './tileStore';
+} from './tileStoreTypes';
 export {
   applyFeatureFiltering,
   type FeatureFilterMethod,
@@ -92,6 +92,6 @@ export {
   getSessionWithDetails,
   type ProgressInfo,
 } from './ephemeral/sessionHelpers';
-export * from './config';
+export * from './configTypes';
 export * from './geos/index';
-export * from './geometryEngine';
+export * from './geometryEngineUtils';

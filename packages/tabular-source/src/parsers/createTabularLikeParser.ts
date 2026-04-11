@@ -1,4 +1,4 @@
-import type { TabularParserPort } from '~/ports';
+import type { TabularParserPort } from '~/portTypes';
 import type {
   DetectionResult,
   FileLike,
