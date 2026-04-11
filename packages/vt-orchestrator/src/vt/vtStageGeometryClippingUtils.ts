@@ -15,7 +15,7 @@ import {
   isEmptyGeometry,
   isPointGeometry,
 } from './vtStageGeometryFeature.js';
-import { bboxIntersects } from './vtStageGeometryTile.js';
+import { bboxIntersects } from './vtStageGeometryTileUtils.js';
 
 export const clipFeatureForTile = (feature: Feature<Geometry>, tileBBox: TileBBox): Feature<Geometry> | null => {
   const geometry = feature.geometry;

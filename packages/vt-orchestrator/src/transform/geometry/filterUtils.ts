@@ -16,9 +16,9 @@ import {
   metersPerPixel,
   resolveQuantizeFactor,
 } from './metrics.js';
-import { cleanGeometry, isGeometryValid } from './validation.js';
-import { applyRingFix } from './ring.js';
-import { snapGeometryToGridWithStep } from './snap.js';
+import { cleanGeometry, isGeometryValid } from './validationUtils.js';
+import { applyRingFix } from './ringUtils.js';
+import { snapGeometryToGridWithStep } from './snapUtils.js';
 
 type OmitDetailsLevel = OmitDetailsConfig['level'];
 

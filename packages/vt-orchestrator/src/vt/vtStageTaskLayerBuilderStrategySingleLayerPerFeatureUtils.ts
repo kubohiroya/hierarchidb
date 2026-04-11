@@ -1,13 +1,13 @@
 import type { Feature, Geometry } from 'geojson';
 import type { Tile } from 'geojson-vt';
-import type { VTStageContext } from '~/contexts';
+import type { VTStageContext } from '~/contextTypes';
 import type { BandConfig } from '~/types/types';
 import type { TaskLayerContext } from './vtStageTaskLayerBuilderTypes.js';
 import { parentToChildRange, packTileId } from '~/tiles/tileId';
 import { featureBBox, isEmptyGeometry } from './vtStageGeometryFeature.js';
-import { clipFeatureForTile } from './vtStageGeometryClipping.js';
-import { countVerticesFromGeometry } from './vtStageGeometryCounts.js';
-import { bboxIntersects, expandTileBBox, resolveTileBufferPx, tileToBBox } from './vtStageGeometryTile.js';
+import { clipFeatureForTile } from './vtStageGeometryClippingUtils.js';
+import { countVerticesFromGeometry } from './vtStageGeometryCountsUtils.js';
+import { bboxIntersects, expandTileBBox, resolveTileBufferPx, tileToBBox } from './vtStageGeometryTileUtils.js';
 import { mergeLayerTiles } from './vtStageTaskLayerBuilderHelpers.js';
 import type { BuildLayerIndexForTile } from './vtStageTaskLayerBuilderTypes.js';
 import { logSingleLayerPerFeatureNoResult } from './logSingleLayerPerFeatureNoResult.js';

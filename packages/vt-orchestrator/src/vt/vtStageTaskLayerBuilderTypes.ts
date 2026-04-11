@@ -1,7 +1,7 @@
 import type { Feature, Geometry } from 'geojson';
 import type { Tile } from 'geojson-vt';
 import type { BandConfig, StageHandlerResult } from '~/types/types';
-import type { VTStageContext } from '~/contexts';
+import type { VTStageContext } from '~/contextTypes';
 import type { InputFeatureStats } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
 import type { VtDebugFocusConfig } from './vtStageDebug.js';
 import type { GeojsonVtIndex } from './buildTileLayerIndexFromFeatures.js';

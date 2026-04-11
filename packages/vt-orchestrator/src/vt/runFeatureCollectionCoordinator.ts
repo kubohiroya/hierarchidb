@@ -1,5 +1,5 @@
 import type { Feature, FeatureCollection } from 'geojson';
-import type { VTStageContext } from '~/contexts';
+import type { VTStageContext } from '~/contextTypes';
 import type { InputFeatureStats } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
 import {
   logCollectBuffersStart,
@@ -7,7 +7,7 @@ import {
   logCollectCountDone,
   logCollectCountStart,
   logCollectRecordSnapshot,
-} from './vtStageFeatureCollectorDebug.js';
+} from './vtStageFeatureCollectorDebugUtils.js';
 import { getCollectDebugSettings } from './vtStageFeatureCollectorDebugSettings.js';
 import { executeFeatureCollectLoop } from './executeFeatureCollectLoop.js';
 import { loadGeometryCacheRecordsForCollection } from './loadGeometryCacheRecordsForCollection.js';

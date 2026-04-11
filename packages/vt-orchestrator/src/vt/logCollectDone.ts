@@ -1,4 +1,4 @@
-import { getHeapSnapshot } from './vtStageCore.js';
+import { getHeapSnapshot } from './vtStageCoreUtils.js';
 import type { TaskContextForVt } from './vtStageTaskTypes.js';
 
 export const logCollectDone = (

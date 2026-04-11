@@ -1,6 +1,6 @@
 import type { StageHandlerResult } from '~/types/types';
-import { loadGeojsonVt } from './vtStageFeatureSource.js';
-import { buildLayerMap } from './vtStageFeatureMetadata.js';
+import { loadGeojsonVt } from './vtStageFeatureSourceUtils.js';
+import { buildLayerMap } from './vtStageFeatureMetadataUtils.js';
 import { createLayerIndexForTile } from './vtStageTaskLayerBuilderHelpers.js';
 import { decideLayerBuildPolicy } from './vtStageTaskLayerBuilderPolicy.js';
 import type { BuildLayerIndexForTile, VtLayerBuildInput } from './vtStageTaskLayerBuilderTypes.js';

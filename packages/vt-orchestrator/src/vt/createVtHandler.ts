@@ -1,4 +1,4 @@
-import type { VTStageContext } from '~/contexts';
+import type { VTStageContext } from '~/contextTypes';
 import type { StageHandler, StageHandlerResult, VtTaskInput } from '~/types/types';
 import { runVtTaskProcessorFlow } from './runVtTaskProcessorFlow.js';
 

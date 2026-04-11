@@ -1,6 +1,6 @@
 import { buildBoundaryFeature } from './geometry/buildBoundaryFeature.js';
 import { decodeGeometryStageCache, loadGeojsonVt } from './geometry/decodeGeometryStageCache.js';
-import { snapGeometryToGrid, simplifyGeometryInMercator } from './geometry/snap.js';
+import { snapGeometryToGrid, simplifyGeometryInMercator } from './geometry/snapUtils.js';
 import {
   simplifyFeatureCollection,
   type SimplifyIssue,

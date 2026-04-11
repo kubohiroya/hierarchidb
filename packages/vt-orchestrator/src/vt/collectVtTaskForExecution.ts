@@ -1,12 +1,12 @@
 import type { VtTaskInput } from '~/types/types';
-import type { VTStageContext } from '~/contexts';
+import type { VTStageContext } from '~/contextTypes';
 import type { TaskContextForVt, VtTaskRunInput } from './vtStageTaskTypes.js';
 import type { VtCollectionResult } from './vtStageTaskTypes.js';
 import {
   collectForVtTaskWithInput,
   logCollectDurationIfNeeded,
   logCollectStartWithHeap,
-} from './vtStageTaskProcessorExecutionCollectHelpers.js';
+} from './vtStageTaskProcessorExecutionCollectUtils.js';
 
 type VtTaskCollectionExecutionInput = {
   context: VTStageContext;

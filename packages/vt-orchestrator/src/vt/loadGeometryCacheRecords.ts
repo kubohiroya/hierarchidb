@@ -1,5 +1,5 @@
 import type { EphemeralGeometryCacheRecord } from '@hierarchidb/gis-sdk';
-import type { VTStageContext } from '~/contexts';
+import type { VTStageContext } from '~/contextTypes';
 
 type FeatureCollectorLoadConfig = {
   context: VTStageContext;

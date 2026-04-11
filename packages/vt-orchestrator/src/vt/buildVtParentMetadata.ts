@@ -1,7 +1,7 @@
 import type { BandConfig, StageHandlerResult } from '~/types/types';
 import { parentToChildRange } from '~/tiles/tileId';
 import { TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
-import { tileToBBox } from './vtStageGeometryTile.js';
+import { tileToBBox } from './vtStageGeometryTileUtils.js';
 import {
   buildAdminFeatureSummary,
   buildSkippedMessage,

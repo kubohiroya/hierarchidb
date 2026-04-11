@@ -1,5 +1,5 @@
 import type { StageHandlerResult, VtTaskInput } from '~/types/types';
-import type { VTStageContext } from '~/contexts';
+import type { VTStageContext } from '~/contextTypes';
 import type { VtCollectionResult, VtTaskRunInput } from './vtStageTaskTypes.js';
 import { logFeatureCollectionReady } from './logFeatureCollectionReady.js';
 import { executeLayerBuild } from './executeLayerBuild.js';

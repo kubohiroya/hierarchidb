@@ -23,7 +23,7 @@ export type VtTileOutputCounts = {
 };
 
 export type VtTileOutputContext = {
-  context: import('~/contexts').VTStageContext;
+  context: import('~/contextTypes').VTStageContext;
   task: {
     taskId: string;
     nodeId: string | number;
@@ -52,7 +52,7 @@ export type VtTileProgressReporter = (state: {
 }) => Promise<unknown>;
 
 export type VtTileOutputWriterInput = {
-  context: import('~/contexts').VTStageContext;
+  context: import('~/contextTypes').VTStageContext;
   taskContext: VtTileTaskContext;
   parent: VtTileParent;
   band: VtTileBandRange;
@@ -62,8 +62,8 @@ export type VtTileOutputWriterInput = {
   totalTiles: number;
   aggregatedLayersByTileId: Map<number, Record<string, import('geojson-vt').Tile>> | null;
   indexes: Map<string, import('./buildTileLayerIndexFromFeatures.js').GeojsonVtIndex> | null;
-  tileEmitConfig: import('~/contexts').VTStageContext['tileEmitConfig'];
-  tileWriter: import('~/contexts').VTStageContext['tileWriter'];
+  tileEmitConfig: import('~/contextTypes').VTStageContext['tileEmitConfig'];
+  tileWriter: import('~/contextTypes').VTStageContext['tileWriter'];
   vtpbf: typeof import('@maplibre/vt-pbf');
   debugCollect: boolean;
   bufferSetHash: string;

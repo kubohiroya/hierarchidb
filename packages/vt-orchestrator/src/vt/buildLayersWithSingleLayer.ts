@@ -1,5 +1,5 @@
 import type { Feature, Geometry } from 'geojson';
-import type { VTStageContext } from '~/contexts';
+import type { VTStageContext } from '~/contextTypes';
 import type { BandConfig } from '~/types/types';
 import { buildLayerIndexes } from './buildLayerIndexes.js';
 import type {
@@ -7,7 +7,7 @@ import type {
   LayerBuildBranchResult,
   TaskLayerContext,
 } from './vtStageTaskLayerBuilderTypes.js';
-import { buildLayerByFeatureIndex, calculateSingleLayerVertexStats } from './vtStageTaskLayerBuilderStrategySingleLayerPerFeature.js';
+import { buildLayerByFeatureIndex, calculateSingleLayerVertexStats } from './vtStageTaskLayerBuilderStrategySingleLayerPerFeatureUtils.js';
 import {
   logLayerIndexBuildDone,
   logLayerIndexBuildStart,

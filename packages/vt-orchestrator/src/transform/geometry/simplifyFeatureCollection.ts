@@ -8,15 +8,15 @@ import {
   type SelfIntersectionConfig,
   type SelfIntersectionTuningConfig,
 } from '@hierarchidb/gis-sdk';
-import { applySelfIntersectionFix, applyOmitDetailsFilter, applyPolygonAreaExclusion, recoverInvalidSelfIntersection } from './filters.js';
+import { applySelfIntersectionFix, applyOmitDetailsFilter, applyPolygonAreaExclusion, recoverInvalidSelfIntersection } from './filterUtils.js';
 import {
   isGeometryValid,
   cleanGeometry,
   validateSimplifiedGeometry,
   formatGeometryDiagnostics,
-} from './validation.js';
-import { applyRingFix } from './ring.js';
-import { snapGeometryToGrid } from './snap.js';
+} from './validationUtils.js';
+import { applyRingFix } from './ringUtils.js';
+import { snapGeometryToGrid } from './snapUtils.js';
 import { metersPerPixel, countVerticesFromGeometry, hasNonFiniteGeometry } from './metrics.js';
 
 type SimplifyProgress = {

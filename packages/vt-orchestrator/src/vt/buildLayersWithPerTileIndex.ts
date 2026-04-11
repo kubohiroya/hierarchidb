@@ -1,5 +1,5 @@
 import type { Feature, Geometry } from 'geojson';
-import type { VTStageContext } from '~/contexts';
+import type { VTStageContext } from '~/contextTypes';
 import type { BandConfig } from '~/types/types';
 import { type VtDebugFocusConfig } from './vtStageDebug.js';
 import type {
@@ -13,7 +13,7 @@ import {
 import {
   logPerTileLayerNoResult,
   logPerTileEmptyTilesSummary,
-} from './vtStageTaskLayerBuilderStrategyPerTileLog.js';
+} from './vtStageTaskLayerBuilderStrategyPerTileLogUtils.js';
 
 export const buildLayersWithPerTileIndex = async ({
   context,

@@ -1,8 +1,8 @@
 import type { FeatureCollection } from 'geojson';
 import type { BandConfig } from '~/types/types';
-import type { VTStageContext } from '~/contexts';
+import type { VTStageContext } from '~/contextTypes';
 import type { GeojsonVtIndex } from './buildTileLayerIndexFromFeatures.js';
-import { resolveMaxVerticesPerTile, resolveTileBufferPx } from './vtStageGeometryTile.js';
+import { resolveMaxVerticesPerTile, resolveTileBufferPx } from './vtStageGeometryTileUtils.js';
 
 export const buildLayerIndexes = async (
   context: VTStageContext,

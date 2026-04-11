@@ -2,12 +2,12 @@ import type { Tile } from 'geojson-vt';
 import type { InputFeatureStats, TileBBox } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
 import {
   bboxIntersects,
-} from './vtStageGeometryTile.js';
+} from './vtStageGeometryTileUtils.js';
 import {
   countTileLineStrings,
   countTilePolygons,
   countTileVertices,
-} from './vtStageGeometryCounts.js';
+} from './vtStageGeometryCountsUtils.js';
 import type { GeojsonVtIndex } from './buildTileLayerIndexFromFeatures.js';
 
 type TileLayerMap = Record<string, Tile>;

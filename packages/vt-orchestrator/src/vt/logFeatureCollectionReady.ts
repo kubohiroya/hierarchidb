@@ -1,5 +1,5 @@
 import type { VtCollectionResult } from './vtStageTaskTypes.js';
-import { getHeapSnapshot } from './vtStageCore.js';
+import { getHeapSnapshot } from './vtStageCoreUtils.js';
 
 export type FeatureCollectionBuildContext = {
   taskContext: {

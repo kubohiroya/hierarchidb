@@ -1,5 +1,5 @@
 import type { BandConfig, VtTaskInput } from '~/types/types';
-import type { VTStageContext } from '~/contexts';
+import type { VTStageContext } from '~/contextTypes';
 import type { FeatureCollection, Feature } from 'geojson';
 import type { InputFeatureStats } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
 

@@ -1,6 +1,6 @@
 import type { Feature, Geometry } from 'geojson';
 import type { Tile } from 'geojson-vt';
-import type { VTStageContext } from '~/contexts';
+import type { VTStageContext } from '~/contextTypes';
 import {
   buildTileLayerIndexFromFeatures,
 } from './buildTileLayerIndexFromFeatures.js';

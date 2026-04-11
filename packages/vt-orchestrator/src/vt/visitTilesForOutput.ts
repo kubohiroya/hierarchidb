@@ -1,4 +1,4 @@
-import { assertNotAborted } from './vtStageCore.js';
+import { assertNotAborted } from './vtStageCoreUtils.js';
 import { parentToChildRange } from '~/tiles/tileId';
 import type { VtTileBandRange, VtTileOutputCounts, VtTileParent } from './vtStageTaskOutputTypes.js';
 

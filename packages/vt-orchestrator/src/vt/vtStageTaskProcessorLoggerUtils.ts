@@ -1,6 +1,6 @@
 import type { VtTaskRunInput } from './vtStageTaskTypes.js';
 import type { TaskContextForVt } from './vtStageTaskTypes.js';
-import type { getHeapSnapshot as getHeapSnapshotType } from './vtStageCore.js';
+import type { getHeapSnapshot as getHeapSnapshotType } from './vtStageCoreUtils.js';
 
 type VtTaskProcessorLogContext = {
   taskContext: TaskContextForVt;

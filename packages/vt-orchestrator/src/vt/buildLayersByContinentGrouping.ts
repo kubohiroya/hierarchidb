@@ -1,8 +1,8 @@
 import type { Feature, Geometry } from 'geojson';
 import type { Tile } from 'geojson-vt';
-import type { VTStageContext } from '~/contexts';
+import type { VTStageContext } from '~/contextTypes';
 import type { BandConfig } from '~/types/types';
-import { buildLayerMap } from './vtStageFeatureMetadata.js';
+import { buildLayerMap } from './vtStageFeatureMetadataUtils.js';
 import {
   collectLayersForTileFromIndexes,
   logLayerIndexBuildDone,

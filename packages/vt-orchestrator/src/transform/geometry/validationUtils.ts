@@ -1,7 +1,7 @@
 import type { Feature, Geometry } from 'geojson';
 import { geometryCleanCoords, geometryIsValid } from '@hierarchidb/gis-sdk';
 import type { GeometryEngine, RingFixConfig } from '@hierarchidb/gis-sdk';
-import { applyRingFix } from './ring.js';
+import { applyRingFix } from './ringUtils.js';
 import {
   countRingsFromGeometry,
   countVerticesFromGeometry,

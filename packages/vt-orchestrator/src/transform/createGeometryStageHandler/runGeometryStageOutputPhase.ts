@@ -7,7 +7,7 @@ import {
 import type { Feature, FeatureCollection } from 'geojson';
 import type { TaskDisplayPayload } from '../../../../build-api';
 import type { StageHandlerResult, GeometryStageTaskInput } from '~/types/types';
-import { buildBoundaryFeature } from '../geometry.js';
+import { buildBoundaryFeature } from '../geometryTransformUtils.js';
 import { finalizeGeometryStageCache } from './finalizeGeometryStageCache.js';
 import { collectTileIdsForCollection, buildBoundaryDiagnostics, validateOutputForVt } from './helpers/collection.js';
 import type { GeometryOps } from './helpers/core.js';
@@ -22,7 +22,7 @@ import {
   countPolygonsFromGeometry,
   countVerticesFromGeometry,
 } from './helpers/validation.js';
-import { runStageWithLabel } from './helpers/runtime.js';
+import { runStageWithLabel } from './helpers/runtimeUtils.js';
 import { buildShapeSourceLayerName } from '@hierarchidb/gis-sdk';
 
 type UpdateTaskPhase = (

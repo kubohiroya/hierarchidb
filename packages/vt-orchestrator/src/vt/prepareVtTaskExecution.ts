@@ -1,5 +1,5 @@
 import { unpackTileId } from '~/tiles/tileId';
-import type { VTStageContext } from '~/contexts';
+import type { VTStageContext } from '~/contextTypes';
 import type { BandConfig, StageHandlerResult, VtTaskInput } from '~/types/types';
 import { resolveVtDebugFocusConfig } from './vtStageDebug.js';
 import type { TaskContextForVt, VtTaskExecutionInput } from './vtStageTaskTypes.js';

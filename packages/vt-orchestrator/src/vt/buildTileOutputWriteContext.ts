@@ -1,4 +1,4 @@
-import type { VTStageContext } from '~/contexts';
+import type { VTStageContext } from '~/contextTypes';
 import type { VtTaskInput } from '~/types/types';
 import type { VtCollectionResult, VtTaskRunInput } from './vtStageTaskTypes.js';
 import type { VtTileOutputContext } from './vtStageTaskOutputTypes.js';
