@@ -1,4 +1,4 @@
-import { authFetch } from './helpers/authFetch.js';
+import { authFetch } from './helpers/authFetchUtils.js';
 import { resolveNetworkUrl } from './helpers/resolveNetworkUrl.js';
 
 export async function postJson<T = unknown>(
@@ -17,7 +17,7 @@ export async function postJson<T = unknown>(
     );
   }
   if (headers) {
-    Object.entries(headers).forEach(([key, value]) => {mergedHeaders.set(key, value)});
+    Object.entries(headers).forEach(([key, value]) => { mergedHeaders.set(key, value) });
   }
   const initBody = typeof body === 'string' ? body : JSON.stringify(body);
   const requestInit: RequestInit = {

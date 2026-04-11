@@ -1,4 +1,4 @@
-import type { IntegrityPort, NetworkPort, ResponseLike, StoragePort } from './ports.js';
+import type { IntegrityPort, NetworkPort, ResponseLike, StoragePort } from './types.js';
 
 export interface DownloadOptions {
   concurrency?: number; // for multi-part in future
@@ -63,9 +63,9 @@ export class DownloadService {
         const idx = next++;
         const byteStart = totalSize === 0 ? 0 : idx * partSize;
         const byteEnd = totalSize === 0 ? undefined : Math.min((idx + 1) * partSize - 1, totalSize - 1);
-      const res = byteEnd !== undefined
-        ? await this.net.getRange(url, byteStart, byteEnd, buildInit(opts.signal))
-        : await this.net.get(url, buildInit(opts.signal));
+        const res = byteEnd !== undefined
+          ? await this.net.getRange(url, byteStart, byteEnd, buildInit(opts.signal))
+          : await this.net.get(url, buildInit(opts.signal));
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const buf = await res.arrayBuffer();
         await this.store.putChunk(fileId, idx, buf);

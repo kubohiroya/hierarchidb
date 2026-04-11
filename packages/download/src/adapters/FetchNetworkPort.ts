@@ -1,4 +1,4 @@
-import type { DownloadProgress, NetworkPort, NetworkRequestInit, ResponseLike } from '~/ports';
+import type { DownloadProgress, NetworkPort, NetworkRequestInit, ResponseLike } from '~/types';
 import { resolveNetworkUrl } from '~/helpers/resolveNetworkUrl';
 import { smartFetch } from '~/smartFetch';
 import { sleep } from '@hierarchidb/util';
