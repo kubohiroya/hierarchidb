@@ -59,29 +59,25 @@ export const primaryExportRule: Rule = {
       return [];
     }
 
-    // Skip aggregation files: files with multiple own exports whose name
-    // follows a role-suffix pattern (e.g. entity-types.ts, constants.ts).
-    // These files intentionally aggregate multiple symbols and the primary
-    // export heuristic (first export) is not meaningful.
-    const ownExports = exports.filter((e) => e.kind !== 'reExport');
-    if (ownExports.length > 1) {
-      const lowerStem = stem.toLowerCase();
-      const roleSuffixes = [
-        'types',
-        'type',
-        'constants',
-        'constant',
-        'utils',
-        'util',
-        'validators',
-        'validator',
-      ];
-      const isRoleFile = roleSuffixes.some(
-        (s) => lowerStem === s || lowerStem.endsWith(s) || lowerStem.endsWith(`-${s}`)
-      );
-      if (isRoleFile) {
-        return [];
-      }
+    // Skip role-suffix files: files whose name follows a role-suffix pattern
+    // (e.g. entity-types.ts, constants.ts, primitiveTypes.ts).
+    // These files are named by their role, not by their primary export.
+    const lowerStem = stem.toLowerCase();
+    const roleSuffixes = [
+      'types',
+      'type',
+      'constants',
+      'constant',
+      'utils',
+      'util',
+      'validators',
+      'validator',
+    ];
+    const isRoleFile = roleSuffixes.some(
+      (s) => lowerStem === s || lowerStem.endsWith(s) || lowerStem.endsWith(`-${s}`)
+    );
+    if (isRoleFile) {
+      return [];
     }
 
     // For .tsx files: exact (PascalCase) match required
