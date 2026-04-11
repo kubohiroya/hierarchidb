@@ -15,7 +15,7 @@ import {
     buildTaskSummaryFields,
     buildPreviewMetadataFromTask,
     sanitizeTaskMetadataForSummary
-} from './taskMetadataProcessing.js';
+} from './taskMetadataProcessingConstants.js';
 
 export type ShapeBuildTaskSummary = BuildTaskSummary & {
     nodeId?: NodeId;

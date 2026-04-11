@@ -14,7 +14,7 @@ import type {
   StageStatus,
   VectorTileRecord,
 } from '@hierarchidb/shape-store';
-import { toLegacyBuildStage } from './stageAlias.js';
+import { toLegacyBuildStage } from './stageAliasConstants.js';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;

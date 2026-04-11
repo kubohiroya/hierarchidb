@@ -9,7 +9,7 @@ import {
 import type { BuildSessionDisplayStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import type { TaskListViewPhase } from '~/ui/atoms/shapeBuildProgressTypes';
-import { areTaskListsEquivalentForView } from '~/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparison.utils';
+import { areTaskListsEquivalentForView } from '~/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparisonUtils';
 import { resolveMostAdvancedInFlightStageId, resolveMostAdvancedRunningStageId } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/stage';
 import { resolveDisplayBuildStatus } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/status';
 

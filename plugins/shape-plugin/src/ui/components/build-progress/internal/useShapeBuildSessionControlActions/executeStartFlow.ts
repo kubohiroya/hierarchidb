@@ -1,6 +1,6 @@
-import { onTraceFailure, runStartSessionRequest } from './useShapeBuildStartExecutionHelpers.js';
+import { onTraceFailure, runStartSessionRequest } from './useShapeBuildStartExecutionConstants.js';
 import type { StartExecutionArgs } from './types.js';
-import { getErrorMessage, summarizeSelectedEntries, toTransitionErrorMessage } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/errors';
+import { getErrorMessage, summarizeSelectedEntries, toTransitionErrorMessage } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/errorConstants';
 
 export const executeStartFlow = async (args: StartExecutionArgs): Promise<boolean> => {
   const {

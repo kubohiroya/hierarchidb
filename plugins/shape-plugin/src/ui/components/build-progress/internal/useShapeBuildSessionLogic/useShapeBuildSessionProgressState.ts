@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { isTaskSkipped } from '~/common/utils/taskMessages';
-import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
+import { isTaskSkipped } from '~/common/utils/taskMessageUtils';
+import { resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import type { BuildProgress, BuildSessionDisplayStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
 import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
@@ -10,7 +10,7 @@ import {
   buildElapsedByStageWithActiveStage,
   resolveTotalElapsedMs,
   shouldResetElapsedState,
-} from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/elapsed.js';
+} from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/elapsedConstants.js';
 import {
   resolveMostAdvancedInFlightStageId,
   resolveMostAdvancedRunningStageId,

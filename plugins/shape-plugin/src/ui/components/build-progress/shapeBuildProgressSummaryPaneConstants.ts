@@ -2,7 +2,7 @@ import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import type { BuildSessionDisplayStatus } from './shapeBuildProgressMapping.js';
 import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import type { BuildTaskSummary, TaskStage } from '@hierarchidb/build-api';
-import { resolveMostAdvancedStageId } from './stagePriority.js';
+import { resolveMostAdvancedStageId } from './stagePriorityConstants.js';
 import type { StageCountInfo } from './shapeBuildProgressSummaryCountHelpers.js';
 import { resolveStageAliasArray } from './stageIdAliases';
 

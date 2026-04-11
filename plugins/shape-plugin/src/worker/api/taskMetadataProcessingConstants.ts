@@ -5,8 +5,8 @@
  */
 
 import type { TaskQueueRecord } from '@hierarchidb/build-api';
-import { buildShapeTaskTitle } from '~/common/utils/taskTitles';
-import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
+import { buildShapeTaskTitle } from '~/common/utils/taskTitleUtils';
+import { resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
 import { isSourceStage, isGeometryStage, isTileEmitStage } from './taskQueueManagement.js';
 
 export const buildTaskSummaryFields = (

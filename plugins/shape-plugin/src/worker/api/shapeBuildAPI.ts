@@ -36,7 +36,7 @@ import { shapeBuildMonitoringAPI } from './shapeBuildMonitoringAPI.js';
 import { shapeBuildRuntime } from './shapeBuildRuntime.js';
 import * as shapeBuildRuntimeCore from './shapeBuildRuntimeCore.js';
 import { unconditionalEventStreamer } from './eventBuffering.js';
-import { emitSessionStatusUpdated, emitStageSnapshotUpdated } from './eventEmission.js';
+import { emitSessionStatusUpdated, emitStageSnapshotUpdated } from './eventEmissionConstants.js';
 
 export const shapeBuildAPI = {
 

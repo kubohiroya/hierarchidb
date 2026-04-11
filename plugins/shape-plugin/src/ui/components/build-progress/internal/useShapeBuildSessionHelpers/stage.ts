@@ -1,5 +1,5 @@
 import type { TaskStage } from '@hierarchidb/build-api';
-import { resolveMostAdvancedStageId } from '~/ui/components/build-progress/stagePriority';
+import { resolveMostAdvancedStageId } from '~/ui/components/build-progress/stagePriorityConstants';
 
 export type StageLikeTask = {
   stage: TaskStage;

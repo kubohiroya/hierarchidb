@@ -21,10 +21,10 @@ import {
   shouldStopAfterStage,
   summarizeStageCounts,
 } from './shapePipelineStageHelpers.ts';
-import { clearStagePlan, setGeometryPlannedTotal } from './shapeProgressPlan.ts';
+import { clearStagePlan, setGeometryPlannedTotal } from './shapeProgressPlanUtils.ts';
 import type { EphemeralDB } from '@hierarchidb/gis-sdk';
 import { buildGeometryTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
-import { resolveSourceArtifactHashById } from './shapeSourceArtifactHash.ts';
+import { resolveSourceArtifactHashById } from './shapeSourceArtifactHashUtils.ts';
 import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 
 export type ShapeGeometryStageParams = {

@@ -24,7 +24,7 @@ export {
   getShapeEntityHandler,
   getBuildSessionInternal,
   resolveSessionExpiresAt,
-} from './sessionConfiguration.js';
+} from './sessionConfigurationConstants.js';
 
 // Re-export from progress analysis
 export {

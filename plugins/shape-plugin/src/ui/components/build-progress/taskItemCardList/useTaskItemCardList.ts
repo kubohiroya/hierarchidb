@@ -2,7 +2,7 @@ import { type ForwardedRef, type MutableRefObject, useCallback, useEffect, useMe
 import { type Virtualizer, useVirtualizer } from '@tanstack/react-virtual';
 import { useSetAtom } from 'jotai';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
-import { taskViewportRangeByStageAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
+import { taskViewportRangeByStageAtom } from '~/ui/atoms/shapeBuildProgressAtomConstants';
 import { TASK_ITEM_HEIGHT } from '~/ui/components/build-progress/TaskItem/TASK_ITEM_HEIGHT';
 import { type TaskItemWithMetadata } from './types.js';
 import { isGeometryLikeStageId, isTileEmitLikeStageId } from '~/ui/components/build-progress/stageIdAliases';

@@ -4,7 +4,7 @@ import {
   isTaskPhaseDisplay,
   isTaskPhaseMessage,
   resolveTaskMetadataMessage,
-} from '~/common/utils/taskMessages';
+} from '~/common/utils/taskMessageUtils';
 
 export type TranslateFn = (key: string, fallback?: string, options?: Record<string, unknown>) => string;
 

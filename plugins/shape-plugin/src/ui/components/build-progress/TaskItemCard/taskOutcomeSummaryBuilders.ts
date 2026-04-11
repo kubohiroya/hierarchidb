@@ -1,5 +1,5 @@
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
-import { isTaskSkipped, resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
+import { isTaskSkipped, resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
 import { formatGeometrySimplifySummary, parseGeometrySimplifyError } from '~/ui/components/build-progress/geometrySimplifyError';
 import { formatTaskDisplayMessage } from '~/ui/components/build-progress/formatTaskDisplayMessage';
 import type { TaskOutcomeSummary } from '~/ui/components/build-progress/TaskItem/TaskItem';

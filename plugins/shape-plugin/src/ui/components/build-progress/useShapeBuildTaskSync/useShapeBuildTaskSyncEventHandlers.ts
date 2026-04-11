@@ -1,13 +1,13 @@
 import { useCallback } from 'react';
 import type { MutableRefObject } from 'react';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
-import type { RawTaskSummary } from './useShapeBuildTaskSync.types.js';
-import { emitRunningResidueLog, logTaskUpdate100 } from './useShapeBuildTaskSync.debug.js';
+import type { RawTaskSummary } from './useShapeBuildTaskSyncTypes.js';
+import { emitRunningResidueLog, logTaskUpdate100 } from './useShapeBuildTaskSync.debugConstants.js';
 import {
   areTasksEquivalentForView,
   isTerminalTask,
   shouldPreferNextTask,
-} from './useShapeBuildTaskSync.comparison.utils.js';
+} from './useShapeBuildTaskSync.comparisonUtils.js';
 
 type EventHandlerRefs = {
   tasksMapRef: MutableRefObject<Map<string, ShapeBuildTaskSummary>>;

@@ -13,7 +13,7 @@ import type { BuildStepStageMenu } from '@hierarchidb/ui-build-progress';
 import { useSetAtom } from 'jotai';
 import { useShapeBuildProgressPanelControllerBaseStateDataDisplay } from './useShapeBuildProgressPanelControllerBaseStateDataDisplay.js';
 import type { TranslateFn } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelStateComputedHelpers';
-import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
+import { resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
 import { normalizeUiStageId, resolveStageAliasArray } from '~/ui/components/build-progress/stageIdAliases';
 import { dispatchBuildSessionEventAtom } from '~/ui/atoms/buildSessionStateAtoms';
 

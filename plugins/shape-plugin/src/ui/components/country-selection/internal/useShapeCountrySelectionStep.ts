@@ -13,7 +13,7 @@ import { useShapeCountrySelectionStepDataLoader } from './useShapeCountrySelecti
 import { useShapeCountrySelectionStepSelectionState } from './useShapeCountrySelectionStepSelectionState.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeEntity } from '~/common/types/index';
-import { type SerializedCountryAvailability } from '~/ui/workers/countryAvailability.types';
+import { type SerializedCountryAvailability } from '~/ui/workers/countryAvailabilityTypes';
 import type { CountrySelectionIsoState } from './useShapeCountrySelectionStepSelectionState.js';
 
 type Args = {

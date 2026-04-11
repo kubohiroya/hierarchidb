@@ -1,12 +1,12 @@
 import {
   isTaskPhaseDisplay,
   resolveTaskMetadataMessage,
-} from '~/common/utils/taskMessages';
+} from '~/common/utils/taskMessageUtils';
 import type {
   RunningResidueLogPayload,
   TaskSyncDebugChannel,
   TaskSyncDebugConfig,
-} from './useShapeBuildTaskSync.types.js';
+} from './useShapeBuildTaskSyncTypes.js';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 
 const isDev = import.meta.env.DEV;

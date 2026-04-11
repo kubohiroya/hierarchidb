@@ -13,12 +13,12 @@ import type { BuildTask } from '~/common/types/index';
 import type { StageStatus } from '@hierarchidb/shape-store';
 import {
     isTaskSkipped,
-} from '~/common/utils/taskMessages';
-import { buildShapeTaskTitle } from '~/common/utils/taskTitles';
+} from '~/common/utils/taskMessageUtils';
+import { buildShapeTaskTitle } from '~/common/utils/taskTitleUtils';
 import {
     selectLatestTaskByProgress,
-} from '../taskOrdering.js';
-import { getStagePlan } from '~/services/vt/shapeProgressPlan';
+} from '../taskOrderingConstants.js';
+import { getStagePlan } from '~/services/vt/shapeProgressPlanUtils';
 import {
     toCanonicalStageId,
     isSourceStage,
@@ -29,7 +29,7 @@ import {
 } from './taskQueueManagement.js';
 import {
     resolveQueueRecordMetadataMessage
-} from './taskMetadataProcessing.js';
+} from './taskMetadataProcessingConstants.js';
 
 // Task queue analysis and progress calculation
 type ProgressTaskMeta = {

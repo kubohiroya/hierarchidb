@@ -3,12 +3,12 @@ import {
   areTaskListsEquivalentForView,
   isCompletedAtFullProgress,
   replaceSnapshotAndPreserveNonIncomingStages,
-} from './useShapeBuildTaskSync.comparison.utils.js';
+} from './useShapeBuildTaskSync.comparisonUtils.js';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import { upsertTaskInOrder } from '@hierarchidb/ui-build-sessions';
 import { useShapeBuildTaskSyncState } from './useShapeBuildTaskSyncState.js';
-import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
-import type { SyncResult, SyncSchedulingArgs } from './useShapeBuildTaskSync.types.js';
+import { resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
+import type { SyncResult, SyncSchedulingArgs } from './useShapeBuildTaskSyncTypes.js';
 
 const TASK_FLUSH_FALLBACK_TIMEOUT_MS = 120;
 

@@ -35,7 +35,7 @@ import {
   deleteRawDataDataSourceBuffersForNodeMetadataIds,
 } from '~/services/utils/chunkStore';
 import { resolveSourceStageStrategy } from '~/services/build/strategies/resolveSourceStageStrategy';
-import { emitSessionStatusUpdated, emitStageSnapshotUpdated } from './eventEmission.js';
+import { emitSessionStatusUpdated, emitStageSnapshotUpdated } from './eventEmissionConstants.js';
 import type { ShapeBuildStopReason, ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import { isStopReason } from './taskQueueManagement.js';
 // Custom error types for better error classification
@@ -61,7 +61,7 @@ import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import { runShapePipeline } from '~/services/vt/runShapePipeline';
 import { ephemeralShapeAPIImpl, shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
-import { setSourcePlannedTotal } from '~/services/vt/shapeProgressPlan';
+import { setSourcePlannedTotal } from '~/services/vt/shapeProgressPlanUtils';
 import { shouldReuseTaskQueueOnStart } from '../shouldReuseTaskQueueOnStart.js';
 import * as shapeBuildRuntimeCore from './shapeBuildRuntimeCore.js';
 import { summarizeTaskQueueStatus } from './progressAnalysis.js';
