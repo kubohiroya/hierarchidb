@@ -1,5 +1,5 @@
 import type { NodeId, NodeType, PeerEntity, Timestamp, TreeId } from '@hierarchidb/core-types';
-import type { DialogUIState } from './dialog-state.js';
+import type { DialogUIState } from './dialogStateTypes.js';
 import type { OnNameConflict } from './command-types.js';
 import type { TreeNode, TreeNodeMetadata } from './NODE_TYPES.js';
 

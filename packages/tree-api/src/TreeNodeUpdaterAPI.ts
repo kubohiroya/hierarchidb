@@ -1,7 +1,7 @@
 import type { NodeId, NodeType, PeerEntity, ValidationResult } from '@hierarchidb/core-types';
 import type { OnNameConflict } from './command-types.js';
 import type { CommitResult } from './commit-types.js';
-import type { DialogUIState } from './dialog-state.js';
+import type { DialogUIState } from './dialogStateTypes.js';
 import type { TreeNode, TreeNodeMetadata } from './NODE_TYPES.js';
 import type { ViewProperties } from './view-properties-types.js';
 

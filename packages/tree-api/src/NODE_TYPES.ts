@@ -1,4 +1,4 @@
-import type { DialogUIState } from './dialog-state.js';
+import type { DialogUIState } from './dialogStateTypes.js';
 import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
 import type { ViewProperties } from './view-properties-types.js';
 

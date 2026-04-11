@@ -12,7 +12,7 @@ import {
   toTagId,
 } from '@hierarchidb/tag-api';
 import { SingletonMixin, generateId } from '@hierarchidb/util';
-import type { TagDBPort } from './ports.js';
+import type { TagDBPort } from './types.js';
 
 /**
  * TagService - generic tagging service using a DB port.

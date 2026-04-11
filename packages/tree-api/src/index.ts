@@ -48,7 +48,7 @@ export type {
   SubscribeChildrenPayload,
   SubscriptionFilter,
   UndoPayload,
-} from './command-payloads.js';
+} from './commandPayloadTypes.js';
 export type {
   CommitConflictResult,
   CommitNameConflictResult,
@@ -56,7 +56,7 @@ export type {
   CommitResult,
   CommitStatus,
 } from './commit-types.js';
-export type { DialogDisplayMode, DialogPosition, DialogSize, DialogState, DialogUIState, DialogWindowState, DialogProgressState } from './dialog-state.js';
+export type { DialogDisplayMode, DialogPosition, DialogSize, DialogState, DialogUIState, DialogWindowState, DialogProgressState } from './dialogStateTypes.js';
 export type { TreeChangeEvent, TreeNodeEvent } from './tree-node-event-types.js';
 export type {
   DescendantProperties,
@@ -78,5 +78,5 @@ export { TREE_ROOT_NODE_TYPES } from './TREE_ROOT_NODE_TYPES.js';
 export type { TreeRootState } from './SortOrder.js';
 export { SortOrder } from './SortOrder.js';
 export type { Tree } from './tree-types.js';
-export type { UndoStateEvent } from './undo-state-events.js';
+export type { UndoStateEvent } from './undoStateEventTypes.js';
 export type { ViewMode, SortMode, IconPosition, ViewProperties } from './view-properties-types.js';
