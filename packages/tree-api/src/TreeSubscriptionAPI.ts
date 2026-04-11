@@ -7,7 +7,7 @@
 
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type { TreeNodeEvent } from './tree-node-event-types.js';
-import type { UndoStateEvent } from './undo-state-events.js';
+import type { UndoStateEvent } from './undoStateEventTypes.js';
 import type { SubscriptionId, SubscriptionOptions } from './TreeSubscriptionTypes.js';
 
 /**

@@ -36,4 +36,4 @@ export type {
 export {
   emitTaskProgressUpdated,
   emitHeartbeat,
-} from './eventEmission.js';
+} from './eventEmissionUtils.js';
