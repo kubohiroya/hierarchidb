@@ -1,4 +1,4 @@
-export * from './ports.js';
+export * from './types.js';
 export * from './MapSourceService.js';
-export * from './ports.spatial.js';
+export * from './spatialTypes.js';
 export * from './adapters/FeatureCollectionGridIndex.js';
