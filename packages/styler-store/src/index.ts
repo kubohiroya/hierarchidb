@@ -30,4 +30,4 @@ export {
   type SpreadSheetDataSourceType,
 } from './StylerEntity.js';
 export { StylerDB } from './StylerDB.js';
-export type { StylerMutationAPI, StylerQueryAPI } from './StylerAPI.js';
+export type { StylerMutationAPI, StylerQueryAPI } from './stylerApiTypes.js';

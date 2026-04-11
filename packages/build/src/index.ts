@@ -10,6 +10,6 @@ export type {
   BuildSessionTimingSnapshot,
   UseBuildSessionTimingArgs,
 } from './progress/useBuildSessionTiming.js';
-export * from './progress/progressAdapters.js';
+export * from './progress/progressAdapterUtils.js';
 export * from './session/reconcileByMetadata.js';
 export * from './types.js';
