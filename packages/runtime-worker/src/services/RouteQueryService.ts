@@ -25,8 +25,8 @@ import {
   tileToBbox,
   toTileCoord,
 } from './nearest/tileNearest.js';
-import { toLegacyBuildStage } from './stageAlias.js';
-import { DEFAULT_TILE_CACHE_SIZE, LINESTRING_CACHE_TTL_MS } from './routeQueryCacheConfig.js';
+import { toLegacyBuildStage } from './stageAliasConstants.js';
+import { DEFAULT_TILE_CACHE_SIZE, LINESTRING_CACHE_TTL_MS } from './routeQueryCacheConfigConstants.js';
 
 type RoutePointSummary = {
   name?: string;

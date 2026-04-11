@@ -2,7 +2,7 @@
 // Keeps the runtime-worker behavior unchanged; this is a typing utility only.
 
 import type { Timestamp } from '@hierarchidb/core-types';
-import type { CommandEnvelope, CommandKind, EnvelopeInit, PayloadOf } from './registry.types.js';
+import type { CommandEnvelope, CommandKind, EnvelopeInit, PayloadOf } from './registryTypes.js';
 
 type CryptoLike = { randomUUID?: () => string };
 

@@ -2,7 +2,7 @@ import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { describe, expectTypeOf, it } from 'vitest';
 import { createEnvelope } from '../../createEnvelope.js';
-import type { PayloadOf, ResultOf } from '../../registry.types';
+import type { PayloadOf, ResultOf } from '../../registryTypes';
 
 describe('CommandRegistry types: envelope inference', () => {
   it('infers payload type from kind (moveNodes)', () => {
