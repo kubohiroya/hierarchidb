@@ -212,6 +212,11 @@ export const roleSuffixRule: Rule = {
     // Skip files that already have the correct suffix
     if (hasCorrectSuffix(stem, role)) return [];
 
+    // Skip files where the primary export name matches the file stem.
+    // e.g. AuthRuntimeBridge.ts exporting AuthRuntimeBridge interface
+    // follows the "primary export match" rule and should not be flagged.
+    if (primaryExport && primaryExport.name === stem) return [];
+
     const suggestedRename = buildSuggestedRename(stem, role, dirName);
     const { suffix, standalone } = ROLE_SUFFIX_MAP[role];
 
