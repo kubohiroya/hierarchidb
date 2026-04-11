@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TabularDataApi, TabularFilterRule, TabularSelectionConfig } from '@hierarchidb/ui-tabular';
-import type { ProgressReporter } from './progress.js';
+import type { ProgressReporter } from './progressTypes.js';
 import { extractTabularRows } from './extractTabularRows.js';
 import { materializeRouteSegmentsFromTabular } from './materializeRouteSegmentsFromTabular.js';
 

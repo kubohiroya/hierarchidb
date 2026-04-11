@@ -10,7 +10,7 @@ import { LOCATION_TYPE_STYLES } from './locationTypes.js';
 import { resolveLocationAttribution } from '~/common/datasources/resolveLocationAttribution';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
 import { useIdeGsmImportOnEntry } from '~/ui/hooks/useIdeGsmImportOnEntry';
-import { subscribeIdeGsmProgress } from '~/ui/state/ideGsmProgress';
+import { subscribeIdeGsmProgress } from '~/ui/state/ideGsmProgressUtils';
 import type { IdeGsmImportProgress } from '@hierarchidb/location-api';
 import {
   DEFAULT_TYPE_COLORS,

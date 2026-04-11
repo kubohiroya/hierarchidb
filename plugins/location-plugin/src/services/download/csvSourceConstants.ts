@@ -1,12 +1,12 @@
 import type { Timestamp } from '@hierarchidb/core-types';
 import type { LocationPointProperties } from '~/common/entities/LocationPoint';
-import { parseNumber } from './mappers.js';
-import { buildHeaderIndex, getColumnValue, parseCsvTable } from './csvUtils.js';
+import { parseNumber } from './mapperUtils.js';
+import { buildHeaderIndex, getColumnValue, parseCsvTable } from './csvDownloadUtils.js';
 import {
   buildOpenFlightsPointProperties,
   buildOurAirportsPointProperties,
   buildWorldPortIndexPointProperties,
-} from '~/services/pointFactories';
+} from '~/services/pointFactoryUtils';
 
 export const parseOurAirportsCsv = async (
   text: string,

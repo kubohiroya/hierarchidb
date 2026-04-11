@@ -2,7 +2,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { TabularDataResult } from '@hierarchidb/ui-tabular';
 import { RouteDB } from '@hierarchidb/route-store';
 import type { RouteEntity } from '@hierarchidb/route-store';
-import type { ProgressReporter } from './progress.js';
+import type { ProgressReporter } from './progressTypes.js';
 
 const toNumber = (val: unknown): number | null => (typeof val === 'number' ? val : null);
 const toStringVal = (val: unknown): string | undefined => (typeof val === 'string' ? val : undefined);

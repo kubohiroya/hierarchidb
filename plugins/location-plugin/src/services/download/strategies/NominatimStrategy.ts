@@ -4,9 +4,9 @@ import type {
   LocationType,
 } from '~/common/entities/LocationEntity';
 import type { LocationPointProperties } from '~/common/entities/LocationPoint';
-import { mapType, parseNumber } from '~/services/download/mappers';
+import { mapType, parseNumber } from '~/services/download/mapperUtils';
 import type { RawNominatimResult } from '~/services/download/rawTypes';
-import { buildOsmPointProperties } from '~/services/pointFactories';
+import { buildOsmPointProperties } from '~/services/pointFactoryUtils';
 
 export class NominatimStrategy implements ILocationDownloadStrategy {
   readonly id = 'openstreetmap-nominatim';

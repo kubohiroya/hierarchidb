@@ -2,7 +2,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { FeatureItemBase } from '@hierarchidb/runtime-worker';
 import { buildTileIdByZoom } from '@hierarchidb/location-store';
 import { LocationDB } from '~/worker/locationEntitiesDB';
-import { toGroupRow, fromGroupRow } from '~/worker/normalizers';
+import { toGroupRow, fromGroupRow } from '~/worker/normalizerUtils';
 import type { LocationGroupItemData } from '~/common/types/entities';
 import type { LocationPointProperties } from '~/common/entities/LocationPoint';
 
