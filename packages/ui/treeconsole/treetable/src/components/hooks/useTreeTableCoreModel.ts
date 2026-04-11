@@ -421,10 +421,12 @@ export function useTreeTableCoreModel({
         if (next.length === 0) {
           onSortModeChange('none');
         } else {
-          const columnId = next[0].id;
-          const mapped = COLUMN_ID_TO_SORT_MODE[columnId];
-          if (mapped) {
-            onSortModeChange(mapped);
+          const first = next[0];
+          if (first) {
+            const mapped = COLUMN_ID_TO_SORT_MODE[first.id];
+            if (mapped) {
+              onSortModeChange(mapped);
+            }
           }
         }
       }

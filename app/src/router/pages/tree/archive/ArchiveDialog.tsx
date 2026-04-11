@@ -4,6 +4,7 @@ import type {
   DialogPosition,
   DialogSize,
   TreeNode,
+  ViewMode,
 } from '@hierarchidb/tree-api';
 import {
   type HeadlessFooterRenderProps,
@@ -540,7 +541,7 @@ function ArchiveDialogContent({
           onCollapseAll={() => undefined}
           onSort={(_columnId: string) => undefined}
           onFilterChange={(_filter: string) => undefined}
-          onViewModeChange={(_mode: 'list' | 'grid') => undefined}
+          onViewModeChange={(_mode: ViewMode) => undefined}
           onBreadcrumbNavigate={(
             _nodeId: string,
             _node?: TreeConsolePanelProps['breadcrumbItems'][number]

@@ -36,7 +36,7 @@ export interface ColumnViewProps {
 function resolveIconColor(node: TreeNodeInUI): string {
     const nodeType = String(node.nodeType ?? 'folder');
     const depth = node.depth ?? 0;
-    const baseColor = rainbowColors[Math.max(0, depth) % rainbowColors.length];
+    const baseColor = rainbowColors[Math.max(0, depth) % rainbowColors.length] ?? '#888';
     if (isFolderNodeType(nodeType)) return baseColor;
     return getPluginIconColor(nodeType) ?? baseColor;
 }

@@ -415,20 +415,20 @@ export function useTreeConsoleIntegrationInner({
     onViewModeChange: (mode: import('@hierarchidb/ui-treeconsole-base').ViewMode) => {
       actions.handleViewModeChange(mode);
       void navigate({
-        search: (prev: Record<string, unknown>) => ({
+        search: ((prev: Record<string, unknown>) => ({
           ...prev,
           view: mode === 'list' ? undefined : mode,
-        }),
+        })) as never,
         replace: true,
       });
     },
     onSortModeChange: (mode: import('@hierarchidb/ui-treeconsole-base').SortMode) => {
       actions.handleSortModeChange(mode);
       void navigate({
-        search: (prev: Record<string, unknown>) => ({
+        search: ((prev: Record<string, unknown>) => ({
           ...prev,
           sort: mode === 'none' ? undefined : mode,
-        }),
+        })) as never,
         replace: true,
       });
     },

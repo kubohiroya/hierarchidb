@@ -242,10 +242,10 @@ export function usePluginDialogController(
     () =>
       draft
         ? {
-            treeNodeId: draft.treeNodeId,
-            draftMetadata: draft.draftMetadata ?? null,
-            draftData: draft.draftData,
-          }
+          treeNodeId: draft.treeNodeId,
+          draftMetadata: draft.draftMetadata ?? null,
+          draftData: draft.draftData,
+        }
         : null,
     [draft]
   );
@@ -384,8 +384,8 @@ export function usePluginDialogController(
         const resolved =
           typeof next === 'function'
             ? (next as (prevState: Partial<PluginDefinedEntity>) => Partial<PluginDefinedEntity>)(
-                prev
-              )
+              prev
+            )
             : next;
         localDraftDataRef.current = resolved ?? {};
         return resolved ?? {};
@@ -545,7 +545,7 @@ export function usePluginDialogController(
   const stepDataRef = useRef<Partial<PluginDefinedEntity>>(currentStepData);
   useEffect(() => {
     stepDataRef.current = currentStepData;
-  }, [ currentStepData]);
+  }, [currentStepData]);
   const stableStepData = stepDataRef.current;
 
   const { resolveIcon } = useIconRegistry();
@@ -590,9 +590,9 @@ export function usePluginDialogController(
     const label = presentation?.label || nodeType;
     return dialogMode === 'create'
       ? t('dialogs.pluginDialog.titles.create', {
-          plugin: label,
-          defaultValue: 'Create {{plugin}}',
-        })
+        plugin: label,
+        defaultValue: 'Create {{plugin}}',
+      })
       : t('dialogs.pluginDialog.titles.edit', { plugin: label, defaultValue: 'Edit {{plugin}}' });
   }, [dialogMode, nodeType, presentation?.label, t]);
 
@@ -780,7 +780,7 @@ export function usePluginDialogController(
   });
 
   const navigateToNode = useCallback(
-    (targetId: NodeId) => {
+    (_targetId: NodeId) => {
       void navigate({ to: `/f/${treeId}/${pageNodeId}/-/folder/list` as const });
     },
     [navigate, treeId, pageNodeId]
@@ -995,7 +995,7 @@ export function usePluginDialogController(
   const handleStartBuild = useCallback(async () => {
     if (!activeStartBuild) return;
     if (pendingActionRef.current) return;
-      setIsStartingBuild(true);
+    setIsStartingBuild(true);
     try {
       await Promise.resolve(
         activeStartBuild(dialogData, {

@@ -102,7 +102,6 @@ export function NodeTypeIcon({
   const standardSizes = ['small', 'medium', 'large'];
   const isCustomSize = !standardSizes.includes(size);
   const iconSize = isCustomSize ? 'small' : (size as 'small' | 'medium' | 'large');
-  const customSizeSx = isCustomSize ? { fontSize: size } : undefined;
 
   // Fallback to default icon
   const Icon = getIconByType(nodeType);

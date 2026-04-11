@@ -8,7 +8,7 @@ import {
 } from '@hierarchidb/gis-sdk';
 import { type LayerInfo, shapeDB } from '@hierarchidb/shape-store';
 import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
-import type { VectorTileItemBase } from '../entity/store.js';
+import type { VectorTileItemBase } from '../entity/storeTypes.js';
 import { getRouteDB } from '@hierarchidb/route-store';
 import type {
   SourceWorkerAPI,

@@ -72,6 +72,18 @@ const SUBSCRIBE_TASK = gql`
   }
 `;
 
+const RSYNC_PUSH = gql`
+  mutation RsyncPush($projectRelativePath: String!, $connectionType: String!, $filter: String) {
+    rsyncPush(input: { projectRelativePath: $projectRelativePath, connectionType: $connectionType, filter: $filter })
+  }
+`;
+
+const RSYNC_PULL = gql`
+  mutation RsyncPull($projectRelativePath: String!, $connectionType: String!, $filter: String) {
+    rsyncPull(input: { projectRelativePath: $projectRelativePath, connectionType: $connectionType, filter: $filter })
+  }
+`;
+
 // ---------------------------------------------------------------------------
 // Response shapes
 // ---------------------------------------------------------------------------
@@ -90,6 +102,14 @@ interface SimulateResponse {
 
 interface ExportProjectResponse {
     exportProject: string;
+}
+
+interface RsyncPushResponse {
+    rsyncPush: string;
+}
+
+interface RsyncPullResponse {
+    rsyncPull: string;
 }
 
 interface SubscribeTaskEvent {
@@ -206,6 +226,42 @@ export class IdeGsmClient {
             variables,
         );
         return data.exportProject;
+    }
+
+    /**
+     * Push local project files to the remote IDE-GSM server via rsync.
+     * @returns The taskId of the started async task.
+     */
+    async rsyncPush(
+        projectRelativePath: string,
+        connectionType: string,
+        filter?: { include?: string[]; exclude?: string[] },
+    ): Promise<string> {
+        const client = this.createHttpClient();
+        const variables: Record<string, unknown> = { projectRelativePath, connectionType };
+        if (filter !== undefined) {
+            variables['filter'] = JSON.stringify(filter);
+        }
+        const data = await client.request<RsyncPushResponse>(RSYNC_PUSH, variables);
+        return data.rsyncPush;
+    }
+
+    /**
+     * Pull remote project files from the IDE-GSM server via rsync.
+     * @returns The taskId of the started async task.
+     */
+    async rsyncPull(
+        projectRelativePath: string,
+        connectionType: string,
+        filter?: { include?: string[]; exclude?: string[] },
+    ): Promise<string> {
+        const client = this.createHttpClient();
+        const variables: Record<string, unknown> = { projectRelativePath, connectionType };
+        if (filter !== undefined) {
+            variables['filter'] = JSON.stringify(filter);
+        }
+        const data = await client.request<RsyncPullResponse>(RSYNC_PULL, variables);
+        return data.rsyncPull;
     }
 
     // -------------------------------------------------------------------------
