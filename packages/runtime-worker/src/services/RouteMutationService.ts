@@ -25,7 +25,7 @@ import { RouteGenerator, SearouteEngine } from '@hierarchidb/route-engine';
 import type { RouteDatabaseHandle } from '@hierarchidb/route-store';
 import { ephemeralDB, type EphemeralSourceCacheRecord, type EphemeralTileIdToBufferRelation } from '@hierarchidb/gis-sdk';
 import { SingletonMixin, buildZoomBandRanges, normalizeZoomBandBoundaries } from '@hierarchidb/util';
-import { buildIdeGsmLocationIndex } from './route/ideGsmCsv.js';
+import { buildIdeGsmLocationIndex } from './route/ideGsmCsvUtils.js';
 import { filterIdeGsmRoutesBySelection, parseIdeGsmRouteRecords } from '@hierarchidb/route-api';
 import { loadTabularTableRows } from './utils/loadTabularTableRows.js';
 import { getStageProcessingClient } from './StageProcessingService.js';
@@ -48,7 +48,7 @@ export class RouteMutationService implements RouteMutationAPI {
     private db: RouteDatabaseHandle,
     private treeQueryService: TreeQueryAPI,
     private locationQueryService: LocationQueryAPI
-  ) {}
+  ) { }
 
   private async ensureOpen(): Promise<void> {
     await this.db.open?.();

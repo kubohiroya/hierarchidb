@@ -14,5 +14,5 @@ export {
   getTreeNode,
   updateTreeNodeDraftData,
   updateTreeNodeDraftMetadata,
-} from './draft/lookupOperations.js';
-export { createNewName, getChildNames } from './draft/nameUtilities.js';
+} from './draft/lookupOperationUtils.js';
+export { createNewName, getChildNames } from './draft/nameUtils.js';

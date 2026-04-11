@@ -28,7 +28,7 @@ export {
   getTreeNode,
   updateTreeNodeDraftData,
   updateTreeNodeDraftMetadata,
-} from './services/draft/lookupOperations.js';
+} from './services/draft/lookupOperationUtils.js';
 export {
   type RuntimeWorkerAdapterOptions,
   registerPluginRuntimeWorkerAdapters,
@@ -56,7 +56,7 @@ export {
 } from './services/vectorTileStageRunner.js';
 export { resolveDefaultNodeName } from './utils/resolveDefaultNodeName.js';
 export { ShapeMutationService } from './services/ShapeMutationService.js';
-export { publishBuildSessionUpdate, subscribeToBuildSessionBroadcast } from './services/buildSessionBroadcast.js';
+export { publishBuildSessionUpdate, subscribeToBuildSessionBroadcast } from './services/buildSessionBroadcastUtils.js';
 export { ShapeQueryService } from './services/ShapeQueryService.js';
 // Worker service (public API for worker bootstrap)
 export { WorkerService } from './WorkerService.js';
