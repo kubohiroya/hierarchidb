@@ -1,5 +1,5 @@
 import type { StageHandlerResult, VtTaskInput } from '~/types/types';
-import type { VTStageContext } from '~/contexts';
+import type { VTStageContext } from '~/contextTypes';
 import { buildAndWriteVtTiles } from './buildAndWriteVtTiles.js';
 import type { VtTaskRunInput } from './vtStageTaskTypes.js';
 import type { VtCollectionResult } from './vtStageTaskTypes.js';

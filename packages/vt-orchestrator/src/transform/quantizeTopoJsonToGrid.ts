@@ -1,6 +1,6 @@
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { Topology } from 'topojson-specification';
-import { snapGeometryToGrid } from './geometry.js';
+import { snapGeometryToGrid } from './geometryTransformUtils.js';
 import { getTopojsonRuntime } from './topojsonRuntimeAdapter.js';
 
 type ZoomGridConfig = {

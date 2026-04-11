@@ -6,7 +6,7 @@ import {
   type EphemeralGeometryCacheMetaRecord,
 } from '@hierarchidb/gis-sdk';
 import { DEFAULT_MAX_RATIO_VALUE, type ShapeGeometryErrorRecord } from '@hierarchidb/shape-api';
-import type { GeometryStageContext } from '~/contexts';
+import type { GeometryStageContext } from '~/contextTypes';
 import type { StageHandler, StageHandlerResult, GeometryStageTaskInput } from '~/types/types';
 import { VtTaskQueueDb, updateTask } from '~/task/taskQueue';
 import { runGeometryStageOutputPhase } from './runGeometryStageOutputPhase.js';
@@ -45,7 +45,7 @@ import {
   formatToleranceForDisplay,
   runStageWithLabel,
   runWithStallTimeout,
-} from './helpers/runtime.js';
+} from './helpers/runtimeUtils.js';
 import {
   countVertexLimitOverages,
   findBaseToleranceByBisection,

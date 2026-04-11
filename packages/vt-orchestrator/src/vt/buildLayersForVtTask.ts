@@ -1,5 +1,5 @@
 import type { VtLayerBuildInput, VtLayerBuildResult } from './vtStageTaskLayerBuilderTypes.js';
-import { assertNotAborted } from './vtStageCore.js';
+import { assertNotAborted } from './vtStageCoreUtils.js';
 import { executeLayerBuildFlow } from './executeLayerBuildFlow.js';
 import { buildLayerBuildExecutionContext } from './buildLayerBuildExecutionContext.js';
 

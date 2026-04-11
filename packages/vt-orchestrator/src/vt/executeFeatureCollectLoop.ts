@@ -1,6 +1,6 @@
 import type { Feature } from 'geojson';
 import type { EphemeralGeometryCacheRecord } from '@hierarchidb/gis-sdk';
-import type { VTStageContext } from '~/contexts';
+import type { VTStageContext } from '~/contextTypes';
 import type { InputFeatureStats } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
 import { collectFeaturesFromRecord } from './collectFeaturesFromRecord.js';
 

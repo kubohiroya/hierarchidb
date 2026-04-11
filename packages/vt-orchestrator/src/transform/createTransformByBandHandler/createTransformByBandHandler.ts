@@ -6,7 +6,7 @@ import {
   type EphemeralGeometryCacheMetaRecord,
 } from '@hierarchidb/gis-sdk';
 import { DEFAULT_MAX_RATIO_VALUE, type ShapeGeometryErrorRecord } from '@hierarchidb/shape-api';
-import type { TransformByBandStageContext } from '~/contexts';
+import type { TransformByBandStageContext } from '~/contextTypes';
 import type { StageHandler, StageHandlerResult, TransformByBandTaskInput } from '~/types/types';
 import { VtTaskQueueDb, updateTask } from '~/task/taskQueue';
 import { runTransformByBandOutputPhase } from './runTransformByBandOutputPhase.js';
@@ -45,7 +45,7 @@ import {
   formatToleranceForDisplay,
   runStageWithLabel,
   runWithStallTimeout,
-} from './helpers/runtime.js';
+} from './helpers/runtimeUtils.js';
 import {
   countVertexLimitOverages,
   findBaseToleranceByBisection,

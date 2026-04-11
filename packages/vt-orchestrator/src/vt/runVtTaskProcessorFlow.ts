@@ -1,10 +1,10 @@
 import type { StageHandlerResult } from '~/types/types';
-import type { VTStageContext } from '~/contexts';
+import type { VTStageContext } from '~/contextTypes';
 import { prepareVtTaskExecution } from './prepareVtTaskExecution.js';
 import {
   logVtTaskFocusConfig,
   logVtTaskStart,
-} from './vtStageTaskProcessorLogger.js';
+} from './vtStageTaskProcessorLoggerUtils.js';
 import { executeVtTaskProcessing } from './executeVtTaskProcessing.js';
 import type { VtTaskExecutionInput } from './vtStageTaskTypes.js';
 

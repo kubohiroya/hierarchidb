@@ -1,4 +1,4 @@
-import type { VTStageContext } from '~/contexts';
+import type { VTStageContext } from '~/contextTypes';
 import {
   collectTaskFeatures,
 } from './collectTaskFeatures.js';

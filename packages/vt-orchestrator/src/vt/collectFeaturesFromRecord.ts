@@ -1,6 +1,6 @@
 import type { Feature } from 'geojson';
 import { geometryArea, type EphemeralGeometryCacheRecord } from '@hierarchidb/gis-sdk';
-import type { VTStageContext } from '~/contexts';
+import type { VTStageContext } from '~/contextTypes';
 import type { InputFeatureStats } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
 import {
   featureBBox,
@@ -8,16 +8,16 @@ import {
 import {
   normalizeGeojsonByteSize,
   resolveFeatureId,
-} from './vtStageFeatureMetadata.js';
+} from './vtStageFeatureMetadataUtils.js';
 import {
   countLineStringsFromGeometry,
   countPolygonsFromGeometry,
   countVerticesFromGeometry,
-} from './vtStageGeometryCounts.js';
+} from './vtStageGeometryCountsUtils.js';
 import {
   decodeGeometryStageCache,
   describeBuffer,
-} from './vtStageFeatureSource.js';
+} from './vtStageFeatureSourceUtils.js';
 
 type FeatureCollectorRecordContext = {
   context: VTStageContext;

@@ -1,4 +1,4 @@
-import type { VTStageContext } from '~/contexts';
+import type { VTStageContext } from '~/contextTypes';
 import type { VtCollectionResult } from './vtStageTaskTypes.js';
 import type { VtLayerBuildInput, VtLayerBuildResult } from './vtStageTaskLayerBuilderTypes.js';
 import { buildLayersForVtTask } from './buildLayersForVtTask.js';

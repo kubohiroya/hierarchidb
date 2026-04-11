@@ -4,9 +4,9 @@ import type { VtDebugFocusConfig } from './vtStageDebug.js';
 import type { TileBBox } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
 import {
   clipFeaturesForTile,
-} from './vtStageGeometryClipping.js';
+} from './vtStageGeometryClippingUtils.js';
 import { buildFeaturesWithBBox, type FeatureWithBBox } from './vtStageGeometryFeature.js';
-import { collectUniqueFeatureIds } from './vtStageFeatureMetadata.js';
+import { collectUniqueFeatureIds } from './vtStageFeatureMetadataUtils.js';
 import { resolveVtDebugFocusMatch } from './vtStageDebug.js';
 import type { GeojsonVtEmptyTileDetail } from './vtStageSummary.js';
 import type { TaskLayerContext } from './vtStageTaskLayerBuilderTypes.js';

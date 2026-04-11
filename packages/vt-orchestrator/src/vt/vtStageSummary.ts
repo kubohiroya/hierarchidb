@@ -6,12 +6,12 @@ import {
   type VtParentInputSummaryMetadata,
 } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
 import { parseShapeSourceLayerName } from '@hierarchidb/gis-sdk';
-import { bboxIntersects } from './vtStageGeometryTile.js';
+import { bboxIntersects } from './vtStageGeometryTileUtils.js';
 import {
   countTileLineStrings,
   countTilePolygons,
   countTileVertices,
-} from './vtStageGeometryCounts.js';
+} from './vtStageGeometryCountsUtils.js';
 
 export type GeojsonVtEmptyTileDetail = {
   z: number;

@@ -1,4 +1,4 @@
-import { getHeapSnapshot } from './vtStageCore.js';
+import { getHeapSnapshot } from './vtStageCoreUtils.js';
 import type { VtTileOutputAggregates } from './vtStageTaskOutputStats.js';
 import type { VtTileBandRange, VtTileParent, VtTileTaskContext } from './vtStageTaskOutputTypes.js';
 

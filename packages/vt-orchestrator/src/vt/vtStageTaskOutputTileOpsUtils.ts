@@ -1,5 +1,5 @@
 import type { Tile } from 'geojson-vt';
-import type { VTStageContext } from '~/contexts';
+import type { VTStageContext } from '~/contextTypes';
 import {
   type VtInputTileStats,
   type VtOutputTileStats,

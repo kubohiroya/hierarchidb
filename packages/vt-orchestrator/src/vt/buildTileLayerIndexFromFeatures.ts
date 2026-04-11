@@ -1,8 +1,8 @@
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { Tile } from 'geojson-vt';
-import type { VTStageContext } from '~/contexts';
-import { resolveMaxVerticesPerTile, resolveTileBufferPx } from './vtStageGeometryTile.js';
-import { simplifyTileFeatureCollectionWithTopojson } from './vtStageTileIndexSimplification.js';
+import type { VTStageContext } from '~/contextTypes';
+import { resolveMaxVerticesPerTile, resolveTileBufferPx } from './vtStageGeometryTileUtils.js';
+import { simplifyTileFeatureCollectionWithTopojson } from './vtStageTileIndexSimplificationUtils.js';
 
 export type GeojsonVtIndex = { getTile: (z: number, x: number, y: number) => Tile | null };
 

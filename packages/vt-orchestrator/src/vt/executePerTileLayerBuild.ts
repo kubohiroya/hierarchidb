@@ -1,6 +1,6 @@
 import type { Feature, Geometry } from 'geojson';
 import type { Tile } from 'geojson-vt';
-import type { VTStageContext } from '~/contexts';
+import type { VTStageContext } from '~/contextTypes';
 import type { BandConfig } from '~/types/types';
 import type { VtDebugFocusConfig } from './vtStageDebug.js';
 import type { GeojsonVtEmptyTileDetail } from './vtStageSummary.js';
@@ -14,7 +14,7 @@ import {
   buildFeaturesWithBBoxByLayer,
   resolvePerTileLayerContribution,
 } from './vtStageTaskLayerBuilderStrategyPerTileLoopLayerUtils.js';
-import { expandTileBBox, resolveTileBufferPx, tileToBBox } from './vtStageGeometryTile.js';
+import { expandTileBBox, resolveTileBufferPx, tileToBBox } from './vtStageGeometryTileUtils.js';
 
 type PerTileLayerExecutionInput = {
   context: VTStageContext;

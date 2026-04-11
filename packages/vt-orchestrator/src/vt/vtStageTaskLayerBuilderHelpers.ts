@@ -9,4 +9,4 @@ export { createLayerIndexForTile, type GeojsonVtIndexFactory } from './createLay
 export {
   logLayerIndexBuildStart,
   logLayerIndexBuildDone,
-} from './vtStageTaskLayerBuilderLoggingHelpers.js';
+} from './vtStageTaskLayerBuilderLoggingUtils.js';

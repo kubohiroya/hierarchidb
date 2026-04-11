@@ -2,7 +2,7 @@ import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { Topology } from 'topojson-specification';
 import { quantizeTopoJsonToGrid } from '~/transform/quantizeTopoJsonToGrid';
 import { getTopojsonRuntime } from '~/transform/topojsonRuntimeAdapter';
-import { countVerticesFromGeometry } from './vtStageGeometryCounts.js';
+import { countVerticesFromGeometry } from './vtStageGeometryCountsUtils.js';
 
 const EARTH_RADIUS_METERS = 6_378_137;
 const DEFAULT_MVT_EXTENT = 4096;

@@ -1,5 +1,5 @@
-import type { VTStageContext } from '~/contexts';
-import { assertNotAborted } from './vtStageCore.js';
+import type { VTStageContext } from '~/contextTypes';
+import { assertNotAborted } from './vtStageCoreUtils.js';
 import { logVtTaskOutputCompletion } from './logVtTaskOutputCompletion.js';
 import { buildFinalTileCompletionSummary } from './buildFinalTileCompletionSummary.js';
 import { buildTileOutputResult } from './buildTileOutputResult.js';

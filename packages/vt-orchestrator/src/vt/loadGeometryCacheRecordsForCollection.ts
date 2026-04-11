@@ -1,12 +1,12 @@
 import type { EphemeralGeometryCacheRecord } from '@hierarchidb/gis-sdk';
-import type { VTStageContext } from '~/contexts';
+import type { VTStageContext } from '~/contextTypes';
 import { collectDebugTimeoutError } from './vtStageFeatureCollectorDebugSettings.js';
 import { loadGeometryCacheRecords } from './loadGeometryCacheRecords.js';
-import { getCollectTimeoutMs, withCollectTimeout } from './vtStageTaskCollectorTimeout.js';
+import { getCollectTimeoutMs, withCollectTimeout } from './vtStageTaskCollectorTimeoutUtils.js';
 import {
   logCollectTransactionRejected,
   logCollectTransactionResolved,
-} from './vtStageFeatureCollectorDebug.js';
+} from './vtStageFeatureCollectorDebugUtils.js';
 
 type FeatureCollectLoadInput = {
   context: VTStageContext;

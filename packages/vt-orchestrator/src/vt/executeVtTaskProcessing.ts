@@ -1,10 +1,10 @@
 import type { StageHandlerResult, VtTaskInput } from '~/types/types';
-import type { VTStageContext } from '~/contexts';
-import { assertNotAborted } from './vtStageCore.js';
+import type { VTStageContext } from '~/contextTypes';
+import { assertNotAborted } from './vtStageCoreUtils.js';
 import type { TaskContextForVt, VtTaskRunInput, VtTaskRunMetadata } from './vtStageTaskTypes.js';
 import {
   logVtTaskFailure,
-} from './vtStageTaskProcessorLogger.js';
+} from './vtStageTaskProcessorLoggerUtils.js';
 import { collectVtTaskForExecution } from './collectVtTaskForExecution.js';
 import { writeVtTaskFromExecution } from './writeVtTaskFromExecution.js';
 import {

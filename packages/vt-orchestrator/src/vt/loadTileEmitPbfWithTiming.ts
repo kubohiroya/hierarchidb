@@ -1,5 +1,5 @@
-import { getHeapSnapshot } from './vtStageCore.js';
-import { loadVtPbf } from './vtStageFeatureSource.js';
+import { getHeapSnapshot } from './vtStageCoreUtils.js';
+import { loadVtPbf } from './vtStageFeatureSourceUtils.js';
 
 export const loadTileEmitPbfWithTiming = async (
   taskContext: { taskId: string; nodeId: string },

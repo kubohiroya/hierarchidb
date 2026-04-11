@@ -1,5 +1,5 @@
 import type { StageHandlerResult } from '~/types/types';
-import { getHeapSnapshot } from './vtStageCore.js';
+import { getHeapSnapshot } from './vtStageCoreUtils.js';
 import type { VtTileOutputContext } from './vtStageTaskOutputTypes.js';
 import { runVtTileOutputWriter } from './runVtTileOutputWriter.js';
 import { finalizeVtTileOutput } from './finalizeVtTileOutput.js';
