@@ -11,7 +11,7 @@ import {
 } from '@hierarchidb/download';
 import { getDBName } from '@hierarchidb/util';
 import { NobleSha3HashPort } from './adapters/NobleSha3HashPort.js';
-import type { HashAlgorithm, HashPort } from './ports.js';
+import type { HashAlgorithm, HashPort } from './types.js';
 
 export { NobleSha3HashPort };
 
@@ -157,7 +157,7 @@ export class DexieChunkStore<T> implements StoragePort {
     };
     const db = options.db
       ? options.db
-      : new ChunkStoreDB(getDBName(options.dbName|| 'chunk'), tables);
+      : new ChunkStoreDB(getDBName(options.dbName || 'chunk'), tables);
 
     this.files = options.db ? (db.table(tables.files) as Table<FileRecord, ChunkStoreMetadataId>) : (db as ChunkStoreDB).files;
     this.chunks = options.db ? (db.table(tables.chunks) as Table<ChunkRecord, [ChunkStoreMetadataId, number]>) : (db as ChunkStoreDB).chunks;
@@ -547,15 +547,15 @@ export class DexieChunkStore<T> implements StoragePort {
         sizeBytes: metadata?.sizeBytes ?? buffer.byteLength,
         contentType: metadata?.contentType,
         etag: metadata?.etag,
-      lastModified: metadata?.lastModified,
-      fetchedAt: metadata?.fetchedAt,
-      hash: resolved.hash,
-      hashAlgorithm: resolved.hashAlgorithm,
-      sourceHash: metadata?.sourceHash,
-      sourceHashAlgorithm: metadata?.sourceHashAlgorithm,
-    }),
-  };
-}
+        lastModified: metadata?.lastModified,
+        fetchedAt: metadata?.fetchedAt,
+        hash: resolved.hash,
+        hashAlgorithm: resolved.hashAlgorithm,
+        sourceHash: metadata?.sourceHash,
+        sourceHashAlgorithm: metadata?.sourceHashAlgorithm,
+      }),
+    };
+  }
 
   private async ensureRelation(nodeId: NodeId, metadataId: ChunkStoreMetadataId): Promise<void> {
     await this.relations.put({ nodeId, metadataId, createdAt: Date.now() });
@@ -649,7 +649,7 @@ const generateMetadataId = (): ChunkStoreMetadataId => {
   return `meta-${Date.now().toString(36)}-${rand}`;
 };
 
-export * from './ports.js';
+export * from './types.js';
 export * from './cas/ContentAddressableStore.js';
 export * from './adapters/DexieContentIndexPort.js';
 export * from './adapters/CacheAPICachePort.js';
