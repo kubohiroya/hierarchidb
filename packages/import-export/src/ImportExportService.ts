@@ -14,7 +14,7 @@ import type {
   ImportValidationResult,
 } from '@hierarchidb/import-export-api';
 import { SingletonMixin, generateUUID } from '@hierarchidb/util';
-import type { ImportExportDBPort, VectorTileRecord } from './ports.js';
+import type { ImportExportDBPort, VectorTileRecord } from './types.js';
 
 type ImportNodeInput<T> = ImportData<T>['nodes'][number];
 type ValidationIssue = ImportValidationIssue;
