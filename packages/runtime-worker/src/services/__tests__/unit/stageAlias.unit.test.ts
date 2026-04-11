@@ -3,7 +3,7 @@ import {
   toCanonicalStageIdFromLegacyStage,
   toLegacyBuildStage,
   toLegacyBuildStageFromStageId,
-} from '../../stageAlias.js';
+} from '../../stageAliasConstants.js';
 
 describe('stageAlias (runtime-worker)', () => {
   it('maps canonical stageId to legacy stage', () => {

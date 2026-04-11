@@ -103,7 +103,9 @@ export function useColumnView({
                 // a child of any node in the current expandedPath.
                 let parentIdx = -1;
                 for (let i = 0; i < path.length; i++) {
-                    const siblings = getChildren(path[i]);
+                    const parentId = path[i];
+                    if (parentId === undefined) continue;
+                    const siblings = getChildren(parentId);
                     if (siblings.some((s) => s.id === nodeId)) {
                         parentIdx = i;
                         break;
