@@ -1,6 +1,6 @@
 import type { Table } from 'dexie';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { FeatureStore, VectorTileStore } from './store.js';
+import type { FeatureStore, VectorTileStore } from './storeTypes.js';
 
 type VectorTileRowBase = {
   tileId: string;
