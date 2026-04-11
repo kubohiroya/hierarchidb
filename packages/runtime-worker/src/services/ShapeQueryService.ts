@@ -38,8 +38,8 @@ import {
   countSourceDataSourceBuffersForNode,
   listRawDataDataSourceMetadataForNode,
   readRawDataDataSourceBuffer,
-} from './shapeChunkStore.js';
-import { toCanonicalStageIdFromLegacyStage, toLegacyBuildStage } from './stageAlias.js';
+} from './shapeChunkStoreUtils.js';
+import { toCanonicalStageIdFromLegacyStage, toLegacyBuildStage } from './stageAliasConstants.js';
 
 const toBuildStage = (
   stage: ShapeBuildProgressSummary['stage'],

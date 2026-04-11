@@ -2,7 +2,7 @@ import type { Timestamp } from '@hierarchidb/core-types';
 import type { CommandId, Seq, TreeChangeEvent } from '@hierarchidb/tree-api';
 import { generateUUID, SingletonMixin } from '@hierarchidb/util';
 import { EntityLifecycleManager } from '~/entity/EntityLifecycleManager';
-import { recordCommandLatency } from '~/utils/metrics';
+import { recordCommandLatency } from '~/utils/metricsUtils';
 import { PERFORMANCE_CONFIG } from '~/utils/PERFORMANCE_CONFIG';
 import type { CoreDB } from './CoreDB.js';
 import { executeCoreCommand } from './command/core-handlers/index.js';

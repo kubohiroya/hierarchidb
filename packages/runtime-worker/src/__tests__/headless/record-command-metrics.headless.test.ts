@@ -3,7 +3,7 @@ import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CommandProcessor } from '../../services/CommandProcessor';
 import { CoreDB } from '../../services/CoreDB';
-import { commandMetrics } from '../../services/utils/metrics';
+import { commandMetrics } from '../../services/utils/metricsUtils';
 
 describe('Headless metrics (command latency)', () => {
   beforeEach(() => {

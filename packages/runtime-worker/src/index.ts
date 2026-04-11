@@ -13,7 +13,7 @@ export type {
   RelationStore,
   VectorTileItemBase,
   VectorTileStore,
-} from './entity/store.js';
+} from './entity/storeTypes.js';
 export {
   createDexieFeatureStore,
   createDexieVectorTileStore,

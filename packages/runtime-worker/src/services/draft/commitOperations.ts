@@ -3,8 +3,8 @@ import type { DialogUIState, OnNameConflict, TreeNode } from '@hierarchidb/tree-
 import type { CoreDB } from '~/services/CoreDB';
 import type { CommandResult } from '~/command-types';
 import { WorkerErrorCodeValue } from '~/command-types';
-import { checkDraftConflict } from './lookupOperations.js';
-import { createNewName, getChildNames } from './nameUtilities.js';
+import { checkDraftConflict } from './lookupOperationUtils.js';
+import { createNewName, getChildNames } from './nameUtils.js';
 
 export type CommitOk = { status: 'ok'; nodeId: NodeId; node: TreeNode; autoRenameTo?: string };
 export type CommitConflict = {

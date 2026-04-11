@@ -24,8 +24,8 @@ import {
   type BuildStageStatus,
 } from '@hierarchidb/gis-sdk';
 import { SingletonMixin } from '@hierarchidb/util';
-import { publishBuildSessionUpdate } from './buildSessionBroadcast.js';
-import { storeRawDataDataSourceBufferForNode } from './shapeChunkStore.js';
+import { publishBuildSessionUpdate } from './buildSessionBroadcastUtils.js';
+import { storeRawDataDataSourceBufferForNode } from './shapeChunkStoreUtils.js';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;

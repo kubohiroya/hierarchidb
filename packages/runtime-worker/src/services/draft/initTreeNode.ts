@@ -2,7 +2,7 @@ import type { NodeId, NodeType, Timestamp, TreeId } from '@hierarchidb/core-type
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { CoreDB } from '~/services/CoreDB';
 import { generateNodeId } from '~/services/generateNodeId';
-import { createNewName, getChildNames } from './nameUtilities.js';
+import { createNewName, getChildNames } from './nameUtils.js';
 
 /**
  * Initialize a draft TreeNode (TreeNodeUpdater) for creation.
