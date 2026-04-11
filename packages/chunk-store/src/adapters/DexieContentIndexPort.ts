@@ -1,6 +1,6 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-import type { ContentIndexPort, ContentMeta, HashAlgorithm } from '~/ports';
+import type { ContentIndexPort, ContentMeta, HashAlgorithm } from '~/types';
 
 class ContentIndexDB extends Dexie {
   contents!: Table<ContentMeta, [string, HashAlgorithm]>;
