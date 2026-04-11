@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import { TextField } from '@mui/material';
-import type { YamlDraft } from '../../../common/types/YamlEntity.js';
+import type { YamlDraft } from '../../../common/types/yamlEntityTypes.js';
 
 export const YamlBasicInfoStep: FC<PluginStepProps<YamlDraft>> = ({
     data,

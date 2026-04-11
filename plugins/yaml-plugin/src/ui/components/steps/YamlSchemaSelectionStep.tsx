@@ -2,7 +2,7 @@ import { useMemo, type FC } from 'react';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import { List, ListItemButton, ListItemText } from '@mui/material';
 import { YAML_TEMPLATES } from '@hierarchidb/yaml-api';
-import type { YamlDraft } from '../../../common/types/YamlEntity.js';
+import type { YamlDraft } from '../../../common/types/yamlEntityTypes.js';
 
 export const YamlSchemaSelectionStep: FC<PluginStepProps<YamlDraft>> = ({
     data,

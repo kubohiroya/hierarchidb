@@ -3,7 +3,7 @@ import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import { Typography } from '@mui/material';
 import { getYamlSchema } from '@hierarchidb/yaml-api';
 import { stringify, parse } from 'yaml';
-import type { YamlDraft } from '../../../common/types/YamlEntity.js';
+import type { YamlDraft } from '../../../common/types/yamlEntityTypes.js';
 
 // Lazy import Form to avoid SSR issues
 import Form from '@rjsf/core';

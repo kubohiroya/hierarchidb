@@ -2,7 +2,7 @@ import type { MapViewState } from '@hierarchidb/ui-map';
 import { useCallback, useMemo } from 'react';
 import { getStyleAttribution } from '~/common/constants/builtInStyles';
 import type { MapStyle, MapViewport } from '~/common/types/BaseMapEntity';
-import { resolvePreviewMapStyle } from '~/ui/utils/mapStyle';
+import { resolvePreviewMapStyle } from '~/ui/utils/mapStyleUtils';
 
 interface UseBaseMapPreviewProps {
   mapStyle: MapStyle;
