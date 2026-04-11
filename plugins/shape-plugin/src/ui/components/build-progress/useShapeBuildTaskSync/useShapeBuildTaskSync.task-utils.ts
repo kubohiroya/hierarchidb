@@ -1,6 +1,6 @@
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
-import type { TileEmitParentInputSummary } from './useShapeBuildTaskSync.types.js';
-import { isTaskSkipped } from '~/common/utils/taskMessages';
+import type { TileEmitParentInputSummary } from './useShapeBuildTaskSyncTypes.js';
+import { isTaskSkipped } from '~/common/utils/taskMessageUtils';
 
 const UNKNOWN_SCOPE_VALUE = 'unknown';
 const TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY = 'tileEmitParentInputSummary';

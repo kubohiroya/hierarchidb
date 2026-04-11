@@ -25,7 +25,7 @@ import { buildStableSignature } from './buildStableSignature.ts';
 import { deleteTasksByIds, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { ephemeralDB, type EphemeralDB } from '@hierarchidb/gis-sdk';
 import { buildGeometryTaskCacheIdentity, buildTileEmitTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
-import { resolveSourceArtifactHashFromRecord } from './shapeSourceArtifactHash.ts';
+import { resolveSourceArtifactHashFromRecord } from './shapeSourceArtifactHashUtils.ts';
 
 export type ShapeGeometryByBandTaskInput = {
   sourceCacheId: string;

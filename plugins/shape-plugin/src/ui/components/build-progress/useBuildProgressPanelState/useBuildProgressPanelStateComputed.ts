@@ -3,7 +3,7 @@ import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '~/common/types/index';
-import { resolveShapeTaskTitle } from '~/common/utils/taskTitles';
+import { resolveShapeTaskTitle } from '~/common/utils/taskTitleUtils';
 import {
   ensureIso3166CountryNamesI18n,
   getLocalizedCountryName,

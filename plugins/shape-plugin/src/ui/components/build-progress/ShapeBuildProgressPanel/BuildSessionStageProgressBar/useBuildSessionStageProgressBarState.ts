@@ -3,7 +3,7 @@ import { useTheme } from '@mui/material/styles';
 import { useAtomValue } from 'jotai';
 import { useBuildStageFilter } from '@hierarchidb/ui-build-progress';
 import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
-import { taskViewportRangeByStageAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
+import { taskViewportRangeByStageAtom } from '~/ui/atoms/shapeBuildProgressAtomConstants';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 import type { TaskProgressSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import { buildTaskProgressSegments, resolveViewportIndices, type BuildSessionStageProgressBarSegment } from './useBuildSessionStageProgressBarComputation.js';

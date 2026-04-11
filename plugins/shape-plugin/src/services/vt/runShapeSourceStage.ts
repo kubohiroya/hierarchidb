@@ -61,9 +61,9 @@ import {
 import { fetchRawDataWithPipeline } from '~/services/utils/rawDataPipeline';
 import { buildGeoBoundariesMetadataUrl } from '~/services/utils/geoboundariesEndpoints';
 import type { GeoBoundariesApiResponse } from '~/services/datasources/GeoBoundariesStrategy';
-import { setSourcePlannedTotal } from './shapeProgressPlan.ts';
+import { setSourcePlannedTotal } from './shapeProgressPlanUtils.ts';
 import { buildSourceTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
-import { hashSourceArtifact, resolveSourceArtifactHashFromRecord } from './shapeSourceArtifactHash.ts';
+import { hashSourceArtifact, resolveSourceArtifactHashFromRecord } from './shapeSourceArtifactHashUtils.ts';
 
 export type ShapeSourceTaskInput = {
   url: string;
@@ -545,7 +545,7 @@ const putSourceCache = async (params: {
   try {
     await markSourceCacheWriteComplete([recordId]);
   } catch (error) {
-    const { handleCacheWriteFailure } = await import('../../worker/api/cacheWriteValidation');
+    const { handleCacheWriteFailure } = await import('../../worker/api/cacheWriteValidationConstants');
     handleCacheWriteFailure(error, {
       nodeId: params.nodeId,
       taskId: params.taskId ?? recordId,

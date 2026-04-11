@@ -38,7 +38,7 @@ import {
   toProgressSummary,
   toShapeBuildSessionRecord,
   toVectorTileRecord,
-} from './shapeSessionMappers.js';
+} from './shapeSessionMapperUtils.js';
 import { shapeDB } from '@hierarchidb/shape-store';
 import type {
   BuildSessionRecord,
@@ -806,7 +806,7 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
 
     // Validate cache write is allowed if taskId and taskQueue are provided
     if (taskId && taskQueue) {
-      const { validateCacheWriteAllowed } = await import('../../worker/api/cacheWriteValidation');
+      const { validateCacheWriteAllowed } = await import('../../worker/api/cacheWriteValidationConstants');
       await validateCacheWriteAllowed(taskQueue, taskId, 'geometry');
     }
 
@@ -967,7 +967,7 @@ export class EphemeralShapeApiImpl {
     try {
       await markGeometryCacheWriteComplete([pending]);
     } catch (error) {
-      const { handleCacheWriteFailure } = await import('../../worker/api/cacheWriteValidation');
+      const { handleCacheWriteFailure } = await import('../../worker/api/cacheWriteValidationConstants');
       handleCacheWriteFailure(error, {
         nodeId: buffer.nodeId,
         taskId: buffer.id,
@@ -989,7 +989,7 @@ export class EphemeralShapeApiImpl {
     try {
       await markGeometryCacheWriteComplete(pending);
     } catch (error) {
-      const { handleCacheWriteFailure } = await import('../../worker/api/cacheWriteValidation');
+      const { handleCacheWriteFailure } = await import('../../worker/api/cacheWriteValidationConstants');
       // Log failure for the first buffer as representative context
       const first = buffers[0];
       if (first !== undefined) {

@@ -3,7 +3,7 @@ import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useSetAtom } from 'jotai';
 import { dispatchBuildSessionEventAtom } from '~/ui/atoms/buildSessionStateAtoms';
-import { createBuildSessionWorkerEventAdapter } from '~/ui/atoms/buildSessionWorkerEventAdapter';
+import { createBuildSessionWorkerEventAdapter } from '~/ui/atoms/buildSessionWorkerEventAdapterConstants';
 import type { ShapeStageId } from '~/ui/atoms/buildSessionStateAtoms';
 import type { BuildTaskSummary, TaskStage, ProgressPhase, TaskProgressUpdatedEvent } from '@hierarchidb/build-api';
 import type {

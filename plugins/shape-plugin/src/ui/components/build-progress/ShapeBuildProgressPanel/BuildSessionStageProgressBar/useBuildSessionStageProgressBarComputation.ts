@@ -1,6 +1,6 @@
 import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
-import { isTaskSkipped } from '~/common/utils/taskMessages';
-import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
+import { isTaskSkipped } from '~/common/utils/taskMessageUtils';
+import { resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
 import { sortGeometryTasks, sortVectorTileTasks } from '~/ui/components/build-progress/taskItemCardList/useTaskItemCardList';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 import {

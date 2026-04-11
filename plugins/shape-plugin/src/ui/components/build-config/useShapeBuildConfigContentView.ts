@@ -16,7 +16,7 @@ import {
   filteringHighUrl,
   filteringLowUrl,
   filteringMediumUrl,
-} from '~/ui/assets/filtering-samples/filteringSamples';
+} from '~/ui/assets/filtering-samples/filteringSampleConstants';
 
 const toBuildConfigUpdate = (
   partial: Partial<ShapeRuntimeBuildConfig>,

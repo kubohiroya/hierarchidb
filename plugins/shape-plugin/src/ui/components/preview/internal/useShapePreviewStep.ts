@@ -17,7 +17,7 @@ import {
   shapePreviewSelectedIdsAtom,
   shapePreviewHoveredIdAtom,
   shapePreviewSelectionContextAtom,
-} from '~/ui/atoms/shapePreviewAtoms';
+} from '~/ui/atoms/shapePreviewAtomConstants';
 import type {
   MapHighlightEntry,
   MapWithVectorTilesProps,

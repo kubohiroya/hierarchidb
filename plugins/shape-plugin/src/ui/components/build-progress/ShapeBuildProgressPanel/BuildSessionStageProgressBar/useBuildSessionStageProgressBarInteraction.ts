@@ -1,6 +1,6 @@
 import { type PointerEvent, useCallback, useRef } from 'react';
 import { useSetAtom } from 'jotai';
-import { taskScrollTargetAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
+import { taskScrollTargetAtom } from '~/ui/atoms/shapeBuildProgressAtomConstants';
 import type { BuildSessionStageProgressBarSegment } from './useBuildSessionStageProgressBarComputation.js';
 
 type InteractionInput = {

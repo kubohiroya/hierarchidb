@@ -45,7 +45,7 @@ export interface WorkerLogSubscription {
 import {
     resolveTaskActivityTimestamp,
     selectLatestTaskByProgress,
-} from '../taskOrdering.js';
+} from '../taskOrderingConstants.js';
 import { summarizeTaskQueueStatus } from './progressAnalysis.js';
 import { taskStateProtection } from './taskStateProtection.js';
 

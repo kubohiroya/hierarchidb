@@ -28,7 +28,7 @@ import {
   GEOBOUNDARIES_RELEASE_TYPE,
   buildGeoBoundariesMetadataUrl,
 } from '~/services/utils/geoboundariesEndpoints';
-import { decodeFlatGeoJson, encodeFlatGeoJson } from '~/services/build/strategies/flatgeobuf';
+import { decodeFlatGeoJson, encodeFlatGeoJson } from '~/services/build/strategies/flatgeobufUtils';
 import { bufferToStream, fetchRawDataWithPipeline, streamToBuffer } from '~/services/utils/rawDataPipeline';
 import { summarizeGeojsonFeatures } from './summarizeGeojsonFeatures.js';
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
-import type { SyncArgs } from './useShapeBuildTaskSync.types.js';
+import type { SyncArgs } from './useShapeBuildTaskSyncTypes.js';
 import { useShapeBuildTaskSyncHandlers } from './useShapeBuildTaskSyncHandlers.js';
 
 export const useShapeBuildTaskSync = ({

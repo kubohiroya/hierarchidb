@@ -8,7 +8,7 @@ import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TaskStatus } from '@hierarchidb/build-api';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
-import { validateCacheWriteAllowed, isTerminalStatus, isNonTerminalStatus } from '../../worker/api/cacheWriteValidation';
+import { validateCacheWriteAllowed, isTerminalStatus, isNonTerminalStatus } from '../../worker/api/cacheWriteValidationConstants';
 
 // Mock task queue for testing
 const createMockTaskQueue = () => ({

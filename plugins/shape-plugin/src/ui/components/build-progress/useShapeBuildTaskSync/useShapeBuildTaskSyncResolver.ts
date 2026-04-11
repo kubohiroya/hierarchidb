@@ -6,13 +6,13 @@ import {
   resolveTaskDisplayStatus,
   resolveTaskProgress,
 } from './useShapeBuildTaskSync.task-utils.js';
-import type { HandlerRefs } from './useShapeBuildTaskSync.types.js';
-import type { RawTaskSummary } from './useShapeBuildTaskSync.types.js';
+import type { HandlerRefs } from './useShapeBuildTaskSyncTypes.js';
+import type { RawTaskSummary } from './useShapeBuildTaskSyncTypes.js';
 import {
   isCompletedAtFullProgress,
   resolveTaskSummaryFromRaw,
-} from './useShapeBuildTaskSync.comparison.utils.js';
-import { isTaskSkipped, resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
+} from './useShapeBuildTaskSync.comparisonUtils.js';
+import { isTaskSkipped, resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
 import { isTileEmitLikeStageId } from '~/ui/components/build-progress/stageIdAliases';
 
 const resolveTaskMetadataText = (task: ReturnType<typeof resolveTaskSummaryFromRaw>): string => {

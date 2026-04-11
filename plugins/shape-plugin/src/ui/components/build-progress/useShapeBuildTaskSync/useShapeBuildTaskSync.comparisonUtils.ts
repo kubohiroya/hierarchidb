@@ -1,8 +1,8 @@
 import type { TaskDisplayPayload, TaskStage } from '@hierarchidb/build-api';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
-import type { RawTaskSummary } from './useShapeBuildTaskSync.types.js';
-import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
-import { isTaskSkipped } from '~/common/utils/taskMessages';
+import type { RawTaskSummary } from './useShapeBuildTaskSyncTypes.js';
+import { resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
+import { isTaskSkipped } from '~/common/utils/taskMessageUtils';
 import { normalizeUiStageId, toLegacyUiStageId } from '~/ui/components/build-progress/stageIdAliases';
 
 const isValidProgressValue = (value: unknown): value is number => (

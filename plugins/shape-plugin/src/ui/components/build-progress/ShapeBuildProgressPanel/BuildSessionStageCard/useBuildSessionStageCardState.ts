@@ -4,9 +4,9 @@ import { useAtomValue, useSetAtom } from 'jotai';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import { type TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 import { sortGeometryTasks, sortVectorTileTasks } from '~/ui/components/build-progress/taskItemCardList/useTaskItemCardList';
-import { taskScrollTargetAtom, taskViewportRangeByStageAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
-import { isTaskSkipped } from '~/common/utils/taskMessages';
-import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
+import { taskScrollTargetAtom, taskViewportRangeByStageAtom } from '~/ui/atoms/shapeBuildProgressAtomConstants';
+import { isTaskSkipped } from '~/common/utils/taskMessageUtils';
+import { resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
 import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 import {
   isGeometryLikeStageId,

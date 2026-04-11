@@ -2,7 +2,7 @@ import { type ReactNode } from 'react';
 import { Box } from '@mui/material';
 import { FlagOverlay } from '@hierarchidb/components';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
-import { isTaskSkipped } from '~/common/utils/taskMessages';
+import { isTaskSkipped } from '~/common/utils/taskMessageUtils';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 import { TaskItem, type TaskOutcomeSummary } from '~/ui/components/build-progress/TaskItem/TaskItem';
 import {

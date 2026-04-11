@@ -3,7 +3,7 @@
  * Keeps metrics, status, progress, and snapshot calculation entrypoints.
  */
 import * as shapeBuildRuntimeCore from './shapeBuildRuntimeCore.js';
-import { selectLatestTaskByProgress, resolveTaskProcessingTimestamp } from '../taskOrdering.js';
+import { selectLatestTaskByProgress, resolveTaskProcessingTimestamp } from '../taskOrderingConstants.js';
 
 export const shapeBuildRuntimeAggregation = {
   countTaskQueueStatuses: shapeBuildRuntimeCore.countTaskQueueStatuses,

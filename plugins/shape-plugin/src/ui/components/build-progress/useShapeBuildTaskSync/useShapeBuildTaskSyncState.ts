@@ -1,7 +1,7 @@
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import { useCallback } from 'react';
-import { isCompletedAtFullProgress } from './useShapeBuildTaskSync.comparison.utils.js';
-import type { HandlerRefs, SyncResult } from './useShapeBuildTaskSync.types.js';
+import { isCompletedAtFullProgress } from './useShapeBuildTaskSync.comparisonUtils.js';
+import type { HandlerRefs, SyncResult } from './useShapeBuildTaskSyncTypes.js';
 
 export type TaskSyncStateArgs = {
   refs: Pick<

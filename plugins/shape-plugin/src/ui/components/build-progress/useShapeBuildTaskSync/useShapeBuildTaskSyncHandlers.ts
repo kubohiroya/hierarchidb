@@ -1,9 +1,9 @@
 import { useShapeBuildTaskSyncCore } from './useShapeBuildTaskSync.core.js';
 import { useShapeBuildTaskSyncEventHandlers } from './useShapeBuildTaskSyncEventHandlers.js';
 import { useMemo } from 'react';
-import type { SyncArgs } from './useShapeBuildTaskSync.types.js';
-import type { HandlerRefs } from './useShapeBuildTaskSync.types.js';
-import type { RawTaskSummary } from './useShapeBuildTaskSync.types.js';
+import type { SyncArgs } from './useShapeBuildTaskSyncTypes.js';
+import type { HandlerRefs } from './useShapeBuildTaskSyncTypes.js';
+import type { RawTaskSummary } from './useShapeBuildTaskSyncTypes.js';
 
 type HandlerDeps = {
   sessionNodeId: SyncArgs['sessionNodeId'];

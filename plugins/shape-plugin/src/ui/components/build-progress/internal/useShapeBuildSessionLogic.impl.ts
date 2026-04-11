@@ -24,7 +24,7 @@ import {
 } from './useShapeBuildSessionHelpers/startupTrace.js';
 import {
   shouldResetElapsedState,
-} from './useShapeBuildSessionHelpers/elapsed.js';
+} from './useShapeBuildSessionHelpers/elapsedConstants.js';
 import {
   resolveDisplayBuildStatus,
   toBuildStatus,

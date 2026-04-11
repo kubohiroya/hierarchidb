@@ -10,7 +10,7 @@ export {
 export {
   chooseInFlightStage,
   makePaneProgress,
-} from './shapeBuildProgressSummaryPaneHelpers.js';
+} from './shapeBuildProgressSummaryPaneConstants.js';
 
 export {
   estimateStageRemainingMs,

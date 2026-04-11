@@ -28,7 +28,7 @@ import {
     type TaskQueueStatusCounts,
     countTaskQueueStatuses,
 } from './taskQueueManagement.js';
-import { toBuildSessionRecord } from '~/services/build/shapeSessionMappers';
+import { toBuildSessionRecord } from '~/services/build/shapeSessionMapperUtils';
 
 // Singleton entity handler
 const shapeEntityHandlerSingleton = new ShapeEntityHandler();

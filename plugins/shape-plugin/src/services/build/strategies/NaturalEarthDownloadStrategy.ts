@@ -8,7 +8,7 @@ import type {
   SourcePayloadBuildContext,
 } from './SourceStageStrategy.ts';
 import type { CountryMetadata, SourceTask, SourceTaskPayload } from '~/common/types/index';
-import { decodeFlatGeoJson, encodeFlatGeoJson } from './flatgeobuf.js';
+import { decodeFlatGeoJson, encodeFlatGeoJson } from './flatgeobufUtils.js';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import { buildSourceTaskId, generateDownloadTaskPayloadsFromSelection } from '~/services/utils/shapeBuildUtils';
 import { buildRawDataDataSourceCacheKey, readRawDataDataSourceBuffer, storeRawDataDataSourceBufferForNode } from '~/services/utils/chunkStore';
