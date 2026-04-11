@@ -1,4 +1,4 @@
-import type { BBox, FeatureCollection, MapSourcePort, TileCoord } from './ports.js';
+import type { BBox, FeatureCollection, MapSourcePort, TileCoord } from './types.js';
 
 export class MapSourceService {
   constructor(private source: MapSourcePort) {
