@@ -1,3 +1,3 @@
 export * from './ImportExportService.js';
-export * from './ports.js';
-export * from './capability.js';
+export * from './types.js';
+export * from './capabilityUtils.js';
