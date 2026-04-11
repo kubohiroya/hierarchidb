@@ -8,7 +8,7 @@ import { atom, type PrimitiveAtom } from 'jotai';
 import { createStore } from 'jotai/vanilla';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { MapStyle, MapViewport } from '~/common/types/BaseMapEntity';
-import { resolveMapStyleSource } from '~/ui/utils/mapStyle';
+import { resolveMapStyleSource } from '~/ui/utils/mapStyleUtils';
 
 export interface ViewportStepParams {
   value: MapViewport | undefined;

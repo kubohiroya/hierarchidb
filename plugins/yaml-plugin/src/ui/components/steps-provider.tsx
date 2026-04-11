@@ -3,7 +3,7 @@ import { YAML_NODE_TYPE } from '../../common/constants.js';
 import { YamlBasicInfoStep } from './steps/YamlBasicInfoStep.js';
 import { YamlSchemaSelectionStep } from './steps/YamlSchemaSelectionStep.js';
 import { YamlSchemaEditorStep } from './steps/YamlSchemaEditorStep.js';
-import type { YamlDraft } from '../../common/types/YamlEntity.js';
+import type { YamlDraft } from '../../common/types/yamlEntityTypes.js';
 
 const registry = PluginStepRegistry.getInstance();
 

@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BUILT_IN_STYLES } from '~/common/constants/builtInStyles';
 import type { BaseMapEntity } from '~/common/types/BaseMapEntity';
 import { useBaseMapEntity } from '~/ui/hooks/useBaseMapEntity';
-import { resolveMapStyleSource } from '~/ui/utils/mapStyle';
+import { resolveMapStyleSource } from '~/ui/utils/mapStyleUtils';
 
 interface DemoFeatureCollection {
   type: 'FeatureCollection';
