@@ -3,7 +3,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { RouteSourceOrchestrator } from '~/common/orchestrator/RouteSourceOrchestrator';
 import { RouteBuildOrchestrationService } from '~/common/orchestrator/RouteBuildOrchestrationService';
 import type { RouteBuildSpec } from '~/common/orchestrator/types';
-import { getOsrmEngineDefaults, getOsrmThrottleDefaults } from '~/services/config/osrm-defaults';
+import { getOsrmEngineDefaults, getOsrmThrottleDefaults } from '~/services/config/osrmDefaultUtils';
 import { getNetPort } from '~/services/net/getNetPort';
 import { RouteBuildSessionOrchestrator } from '~/services/RouteBuildSessionOrchestrator';
 import { OsrmEngine } from '~/services/engines/OsrmEngine';

@@ -12,9 +12,9 @@ import type {
     LocationType,
 } from '~/common/entities/LocationEntity';
 import type { LocationPointProperties } from '~/common/entities/LocationPoint';
-import { mapType, parseNumber } from './download/mappers.js';
-import { buildOsmPointProperties, buildOverpassPointProperties } from './pointFactories.js';
-import { parseOpenFlightsCsv, parseOurAirportsCsv, parseWorldPortIndexCsv } from './download/csvSources.js';
+import { mapType, parseNumber } from './download/mapperUtils.js';
+import { buildOsmPointProperties, buildOverpassPointProperties } from './pointFactoryUtils.js';
+import { parseOpenFlightsCsv, parseOurAirportsCsv, parseWorldPortIndexCsv } from './download/csvSourceConstants.js';
 import { appendLocationPoints, replaceLocationPoints } from './pointRepository.js';
 import type { RawNominatimResult, RawOverpassElement } from './download/rawTypes.js';
 import { getLocationDataSource } from '~/common/datasources/LocationDataSourceDefinitions';
@@ -123,7 +123,7 @@ export class LocationBuildSession extends AbstractBuildSession<LocationBuildConf
 
     private async searchLocations(config: LocationSearchConfig): Promise<LocationPointProperties[]> {
         try {
-            const { getLocationStrategy } = await import('./download/strategyRegistry.js');
+            const { getLocationStrategy } = await import('./download/strategyRegistryUtils.js');
             const strategy = getLocationStrategy(config);
             if (strategy) {
                 const list = await strategy.search(config);

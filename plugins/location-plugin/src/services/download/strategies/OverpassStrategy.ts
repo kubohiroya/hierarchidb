@@ -5,9 +5,9 @@ import type {
 import type { LocationPointProperties } from '~/common/entities/LocationPoint';
 import {
   mapType,
-} from '~/services/download/mappers';
+} from '~/services/download/mapperUtils';
 import type { RawOverpassElement } from '~/services/download/rawTypes';
-import { buildOverpassPointProperties } from '~/services/pointFactories';
+import { buildOverpassPointProperties } from '~/services/pointFactoryUtils';
 
 export class OverpassStrategy implements ILocationDownloadStrategy {
   readonly id = 'openstreetmap-overpass';

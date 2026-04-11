@@ -17,7 +17,7 @@ import {
   filteringHighUrl,
   filteringLowUrl,
   filteringMediumUrl,
-} from '~/ui/assets/filtering-samples/filteringSamples';
+} from '~/ui/assets/filtering-samples/filteringSampleConstants';
 
 export interface RouteProcessingStepProps {
   draft: Partial<RouteEntity>;

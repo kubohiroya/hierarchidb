@@ -8,8 +8,8 @@ import { resolveDbPrefix } from '@hierarchidb/util';
 import type { LocationEntity } from '~/common/types/index';
 import type { IdeGsmSourceEntry } from '@hierarchidb/location-api';
 import { BASE_LOCATION_TYPES } from '~/ui/components/steps/locationTypes';
-import { updateIdeGsmProgress } from '~/ui/state/ideGsmProgress';
-import { buildIdeGsmSelectionEntries, buildIdeGsmSelectionHash } from '~/ui/utils/ideGsmSelection';
+import { updateIdeGsmProgress } from '~/ui/state/ideGsmProgressUtils';
+import { buildIdeGsmSelectionEntries, buildIdeGsmSelectionHash } from '~/ui/utils/ideGsmSelectionUtils';
 
 const debugPrefix = '[LocationIdeGsmImport]';
 const inFlightByNode = new Map<string, boolean>();

@@ -2,7 +2,7 @@ import { describe, expect, vi, it, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { RouteDetailsStep } from '../components/RouteDetailsStep';
 import { RouteType, TransportMode, type RouteEntity, type RouteUpdaterPayload, type NodeId } from '../types/index';
-import { createRouteUpdaterPayloadBase, mergeRouteUpdaterPayload } from '../utils/draft';
+import { createRouteUpdaterPayloadBase, mergeRouteUpdaterPayload } from '../utils/draftUtils';
 import { en as enTranslations } from '../i18n/en';
 import "@testing-library/jest-dom/vitest";
 

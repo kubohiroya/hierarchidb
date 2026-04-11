@@ -7,7 +7,7 @@ import type {
 } from '~/common/entities/LocationPoint';
 import type { LocationPointKind } from '~/common/entities/LocationPoint';
 import type { RawNominatimResult, RawOverpassElement } from './download/rawTypes.js';
-import { sanitizeTags } from './download/mappers.js';
+import { sanitizeTags } from './download/mapperUtils.js';
 
 interface BasePointParams {
   pointId: LocationPointId;

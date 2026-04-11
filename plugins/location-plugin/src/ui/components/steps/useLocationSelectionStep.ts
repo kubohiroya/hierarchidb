@@ -3,7 +3,7 @@ import type { LocationEntity } from '~/common/types/index';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { parseIdeGsmRecords } from '@hierarchidb/location-api';
 import { notify } from '@hierarchidb/components';
-import { buildAvailabilityMapFromIdeGsmPoints, buildSelectionMapFromAvailability } from '~/ui/utils/ideGsmSelection';
+import { buildAvailabilityMapFromIdeGsmPoints, buildSelectionMapFromAvailability } from '~/ui/utils/ideGsmSelectionUtils';
 import type { LocationType } from '~/common/types/index';
 import type { IdeGsmSourceEntry } from '@hierarchidb/location-api';
 import {
