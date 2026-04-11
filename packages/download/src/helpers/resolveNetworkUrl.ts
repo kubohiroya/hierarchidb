@@ -1,4 +1,4 @@
-import { shouldUseLocalProxy, toLocalProxyUrl } from './localProxy.js';
+import { shouldUseLocalProxy, toLocalProxyUrl } from './localProxyUtils.js';
 
 export interface ResolveNetworkUrlOptions {
   corsProxyBaseURL?: string;
