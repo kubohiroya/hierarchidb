@@ -9,7 +9,7 @@ export {
   type VTMetadataContext,
   type VectorTileProgress,
   type VectorTileRow,
-} from './vectorTiles';
+} from './vectorTiles/index';
 export {
   lonToTileX,
   latToTileY,

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
 import type { FeatureCollection, Feature, Polygon } from 'geojson';
-import { generateVectorTilesFromFeatureCollection } from './vectorTiles';
+import { generateVectorTilesFromFeatureCollection } from './vectorTiles/index';
 import type { NodeId } from '@hierarchidb/core-types';
 
 const toNodeId = (value: string): NodeId => value as NodeId;
@@ -27,7 +27,7 @@ const polygonFeatureCollection = (featureRows: Array<{
           [0, 0],
         ],
       ],
-      },
+    },
   })),
 });
 
@@ -39,9 +39,9 @@ const extractTileLayers = (data: Uint8Array, z: number, x: number, y: number): s
 describe('vectorTiles layer name resolution', () => {
   it('normalizes canonical shape layer properties into source-layer names', async () => {
     const collection = polygonFeatureCollection([
-      {name: 'fill', properties: {layer: '0'}},
-      {name: 'fill_upper', properties: {sourceLayer: '1'}},
-      {name: 'boundary', properties: {source_layer: '2-b'}},
+      { name: 'fill', properties: { layer: '0' } },
+      { name: 'fill_upper', properties: { sourceLayer: '1' } },
+      { name: 'boundary', properties: { source_layer: '2-b' } },
     ]);
 
     const result = await generateVectorTilesFromFeatureCollection(
@@ -66,9 +66,9 @@ describe('vectorTiles layer name resolution', () => {
 
   it('keeps fill and boundary layers separated by admin level and boundary flag', async () => {
     const collection = polygonFeatureCollection([
-      {name: 'fill', properties: {adminLevel: 1, boundary: 'fill'}},
-      {name: 'boundary', properties: {adminLevel: 1, boundary: 'boundary'}},
-      {name: '0', properties: {adminLevel: 0}},
+      { name: 'fill', properties: { adminLevel: 1, boundary: 'fill' } },
+      { name: 'boundary', properties: { adminLevel: 1, boundary: 'boundary' } },
+      { name: '0', properties: { adminLevel: 0 } },
     ]);
 
     const result = await generateVectorTilesFromFeatureCollection(
@@ -89,8 +89,8 @@ describe('vectorTiles layer name resolution', () => {
 
   it('normalizes canonical boundary markers and keeps canonical names', async () => {
     const collection = polygonFeatureCollection([
-      {name: 'symbolicFill', properties: {layer: '0'}},
-      {name: 'symbolicBoundary', properties: {layer: '2-b'}},
+      { name: 'symbolicFill', properties: { layer: '0' } },
+      { name: 'symbolicBoundary', properties: { layer: '2-b' } },
     ]);
 
     const result = await generateVectorTilesFromFeatureCollection(
@@ -112,9 +112,9 @@ describe('vectorTiles layer name resolution', () => {
 
   it('rejects symbolic and non-canonical shape layer names', async () => {
     const collection = polygonFeatureCollection([
-      {name: 'legacyFill', properties: {layer: 'shape-adm0'}},
-      {name: 'short', properties: {layer: '1-boundary'}},
-      {name: 'symbolic', properties: {layer: 's-2-b'}},
+      { name: 'legacyFill', properties: { layer: 'shape-adm0' } },
+      { name: 'short', properties: { layer: '1-boundary' } },
+      { name: 'symbolic', properties: { layer: 's-2-b' } },
     ]);
 
     const result = await generateVectorTilesFromFeatureCollection(
