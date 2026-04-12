@@ -7,6 +7,7 @@ export const pluginWorkerLoaders: Record<string, () => Promise<unknown>> = {
   "route": async () => import("@hierarchidb/route-plugin/worker"),
   "shape": async () => import("@hierarchidb/shape-plugin/worker"),
   "spreadsheet": async () => import("@hierarchidb/spreadsheet-plugin/worker"),
+  "yaml-file": async () => import("@hierarchidb/yaml-plugin/worker"),
 };
 export const pluginWorkerPreloads: Record<string, string[]> = {
   "linker": ["registerLinkerWorkerStores","loadLinkerEntitiesDbModule"],
@@ -14,4 +15,5 @@ export const pluginWorkerPreloads: Record<string, string[]> = {
   "route": ["registerRouteWorkerStores"],
   "shape": ["registerShapeWorkerStores","loadShapeEntitiesDbModule"],
   "spreadsheet": ["registerSpreadsheetWorkerStores"],
+  "yaml-file": ["registerYamlWorkerStores"],
 };

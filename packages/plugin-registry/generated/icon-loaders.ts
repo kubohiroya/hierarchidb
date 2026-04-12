@@ -62,4 +62,10 @@ export const pluginIconLoaders: Record<string, () => Promise<unknown>> = {
     if (!componentExport) { throw new Error('Plugin icon component export not found for timeline'); }
     return componentExport;
   },
+  "yaml-file": async () => {
+    const mod = await import('@hierarchidb/yaml-plugin/icon');
+    const componentExport = (mod as Record<string, unknown>)["YamlPluginIcon"];
+    if (!componentExport) { throw new Error('Plugin icon component export not found for yaml-file'); }
+    return componentExport;
+  },
 };

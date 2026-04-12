@@ -12,6 +12,7 @@ export const pluginUiLoaders: Record<string, () => Promise<unknown>> = {
   "spreadsheet": async () => import("@hierarchidb/spreadsheet-plugin/ui"),
   "styler": async () => import("@hierarchidb/styler-plugin/ui"),
   "timeline": async () => import("@hierarchidb/timeline-plugin/ui"),
+  "yaml-file": async () => import("@hierarchidb/yaml-plugin/ui"),
 };
 export const pluginUiModuleMap: Record<string, string> = {
   "basemap": "@hierarchidb/basemap-plugin/ui",
@@ -24,4 +25,5 @@ export const pluginUiModuleMap: Record<string, string> = {
   "spreadsheet": "@hierarchidb/spreadsheet-plugin/ui",
   "styler": "@hierarchidb/styler-plugin/ui",
   "timeline": "@hierarchidb/timeline-plugin/ui",
+  "yaml-file": "@hierarchidb/yaml-plugin/ui",
 };

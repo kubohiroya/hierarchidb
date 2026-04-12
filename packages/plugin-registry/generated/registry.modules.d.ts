@@ -124,3 +124,18 @@ declare module '@hierarchidb/timeline-plugin/icon' {
   export const TimelinePluginIcon: unknown;
   export default TimelinePluginIcon;
 }
+
+declare module '@hierarchidb/yaml-plugin/ui' {
+  const mod: Record<string, unknown>;
+  export default mod;
+}
+
+declare module '@hierarchidb/yaml-plugin/worker' {
+  const mod: Record<string, unknown>;
+  export default mod;
+}
+
+declare module '@hierarchidb/yaml-plugin/icon' {
+  export const YamlPluginIcon: unknown;
+  export default YamlPluginIcon;
+}

@@ -138,7 +138,10 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/util",
         "@hierarchidb/plugin-ui-sdk",
         "@hierarchidb/plugin-service-api",
-        "@hierarchidb/plugin-base"
+        "@hierarchidb/plugin-base",
+        "jszip",
+        "@hierarchidb/yaml-api",
+        "@hierarchidb/yaml-store"
       ],
     exports: ["","icon","ui"],
     manifest: {
@@ -171,7 +174,10 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/util",
           "@hierarchidb/plugin-ui-sdk",
           "@hierarchidb/plugin-service-api",
-          "@hierarchidb/plugin-base"
+          "@hierarchidb/plugin-base",
+          "jszip",
+          "@hierarchidb/yaml-api",
+          "@hierarchidb/yaml-store"
         ],
         "stepTitleKeys": {
           "1": "basicInfo"
@@ -1510,6 +1516,118 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         specifier: "@hierarchidb/timeline-plugin/icon",
         source: "plugins/timeline-plugin/src/icon/index.ts",
         exportName: "TimelinePluginIcon",
+      }
+  }
+  },
+  {
+    nodeType: "yaml-file",
+    packageName: "@hierarchidb/yaml-plugin",
+    version: "0.1.0",
+    dependencies: [
+        "@emotion/react",
+        "@emotion/styled",
+        "@hierarchidb/core-types",
+        "@hierarchidb/plugin-base",
+        "@hierarchidb/yaml-api",
+        "@hierarchidb/yaml-store",
+        "@mui/icons-material",
+        "@mui/material",
+        "@rjsf/core",
+        "@rjsf/mui",
+        "@rjsf/utils",
+        "@rjsf/validator-ajv8",
+        "react",
+        "yaml"
+      ],
+    exports: ["","icon","worker","ui"],
+    manifest: {
+        "id": "@hierarchidb/yaml-plugin",
+        "name": "YAML File Plugin",
+        "displayName": "YAML File",
+        "i18nNamespace": "yaml-plugin",
+        "nodeType": "yaml-file",
+        "version": "0.1.0",
+        "description": "YAML configuration file node for IDE-GSM integration",
+        "extends": "folder",
+        "priority": 500,
+        "dependencies": [
+          "@emotion/react",
+          "@emotion/styled",
+          "@hierarchidb/core-types",
+          "@hierarchidb/plugin-base",
+          "@hierarchidb/yaml-api",
+          "@hierarchidb/yaml-store",
+          "@mui/icons-material",
+          "@mui/material",
+          "@rjsf/core",
+          "@rjsf/mui",
+          "@rjsf/utils",
+          "@rjsf/validator-ajv8",
+          "react",
+          "yaml"
+        ],
+        "stepTitleKeys": {
+          "1": "basicInfo",
+          "2": "schemaSelection",
+          "3": "schemaEditor"
+        },
+        "icon": {
+          "mui": "Description",
+          "emoji": "📄",
+          "color": "#4caf50",
+          "muiIconName": "Description",
+          "component": {
+            "specifier": "@hierarchidb/yaml-plugin/icon",
+            "exportName": "YamlPluginIcon"
+          }
+        },
+        "category": {
+          "menuGroup": "yaml",
+          "createOrder": 500
+        },
+        "schema": {
+          "inherits": "folder",
+          "fields": [
+            {
+              "name": "name",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "schemaId",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "content",
+              "type": "string",
+              "required": false
+            }
+          ]
+        },
+        "worker": {
+          "preload": [
+            "registerYamlWorkerStores"
+          ]
+        },
+        "packageName": "@hierarchidb/yaml-plugin"
+      },
+    modules: {
+    root: {
+        specifier: "@hierarchidb/yaml-plugin",
+      },
+    ui: {
+        specifier: "@hierarchidb/yaml-plugin/ui",
+        source: "plugins/yaml-plugin/src/ui/index.ts",
+      },
+    worker: {
+        specifier: "@hierarchidb/yaml-plugin/worker",
+        source: "plugins/yaml-plugin/src/worker/index.ts",
+      },
+    icon: {
+        specifier: "@hierarchidb/yaml-plugin/icon",
+        source: "plugins/yaml-plugin/src/icon/index.ts",
+        exportName: "YamlPluginIcon",
       }
   }
   },
