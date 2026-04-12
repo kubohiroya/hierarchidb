@@ -1,7 +1,7 @@
 import type { Feature } from 'geojson';
 import type { Endpoint, Remote } from 'comlink';
 import { releaseProxy, wrap } from 'comlink';
-import type { Bbox, GeoJSON, GeosSimplifyOptions, GeosWorkerApi } from './geosWorker.types.ts';
+import type { Bbox, GeoJSON, GeosSimplifyOptions, GeosWorkerApi } from './geosWorkerTypes.ts';
 
 const IDLE_TIMEOUT_MS = 30_000;
 

@@ -6,15 +6,15 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import { createClipboardActions } from './actions/clipboard.ts';
-import { createContextMenuAction } from './actions/contextMenu.ts';
+import { createClipboardActions } from './actions/clipboardUtils.ts';
+import { createContextMenuAction } from './actions/contextMenuUtils.ts';
 import { createDialogHelpers } from './actions/dialog.ts';
-import { createHistoryActions } from './actions/history.ts';
-import { createImportExportActions } from './actions/importExport.ts';
-import { createMutationActions } from './actions/mutations.ts';
+import { createHistoryActions } from './actions/historyUtils.ts';
+import { createImportExportActions } from './actions/importExportUtils.ts';
+import { createMutationActions } from './actions/mutationUtils.ts';
 import { createNavigationActions, createNavigationHelpers } from './actions/navigation.ts';
-import { createSearchActions } from './actions/search.ts';
-import { createSelectionActions } from './actions/selection.ts';
+import { createSearchActions } from './actions/searchUtils.ts';
+import { createSelectionActions } from './actions/selectionUtils.ts';
 import type { TreeConsoleActionDeps, TreeConsoleActions } from './types.js';
 
 export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConsoleActions {

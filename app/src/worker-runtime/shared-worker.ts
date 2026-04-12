@@ -6,7 +6,7 @@
 import './worker-react-refresh-shim.js';
 import type { WorkerInitMessage, WorkerInitRequest } from '@hierarchidb/ui-worker-client';
 import { WorkerInitializationReporter } from '@hierarchidb/ui-worker-client';
-import { ensureRuntimeWorkerBootstrap } from './workerBootstrap.ts';
+import { ensureRuntimeWorkerBootstrap } from './workerBootstrapUtils.ts';
 
 const ports = new Set<MessagePort>();
 let initCompleted = false;

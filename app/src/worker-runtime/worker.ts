@@ -5,7 +5,7 @@
 
 import './worker-react-refresh-shim.js';
 import { WorkerInitializationReporter } from '@hierarchidb/ui-worker-client';
-import { ensureRuntimeWorkerBootstrap } from './workerBootstrap.ts';
+import { ensureRuntimeWorkerBootstrap } from './workerBootstrapUtils.ts';
 
 const reporter = new WorkerInitializationReporter(
   [

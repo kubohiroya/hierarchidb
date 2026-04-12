@@ -6,7 +6,7 @@
  * bootstrap flow so that consumers never observe a null client reference.
  */
 
-import type { BuildWorkerAPI } from '~/types/worker-api';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import { useTranslation } from '@hierarchidb/ui-plugin-shell/ui-i18n';
 import type { WorkerInitializationChannel } from '@hierarchidb/ui-worker-client';
 import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
@@ -43,11 +43,11 @@ import {
   getWorkerInitCompleteMessage,
   getWorkerInitFallbackMessage,
   getWorkerInitStartMessage,
-} from '~/i18n/workerInitMessages';
+} from '~/i18n/workerInitMessageConstants';
 import type { WorkerInitializationProgress } from '~/worker-runtime/WorkerClientProxy';
 import { useWorkerRuntimeProxy } from '~/hooks/useWorkerRuntimeProxy';
 import { bootLog } from '~/utils/bootLog';
-import { sanitizeRemoteForReact } from '~/utils/comlinkSafeProxy';
+import { sanitizeRemoteForReact } from '~/utils/comlinkSafeProxyUtils';
 import { resetWorkerState } from '~/worker-runtime/WorkerStateStore';
 import {
   getWorkerAPIClientModule,

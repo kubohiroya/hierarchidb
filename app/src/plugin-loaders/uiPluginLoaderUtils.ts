@@ -1,6 +1,6 @@
 import type { PluginDefinition } from '@hierarchidb/plugin-registry/types';
-import { getPluginRegistryContainer } from './di/container.ts';
-import type { PluginUiModuleLoader } from './di/interfaces.ts';
+import { getPluginRegistryContainer } from './di/containerUtils.ts';
+import type { PluginUiModuleLoader } from './di/interfaceTypes.ts';
 import { UIPluginRegistryTokens } from './di/tokens.ts';
 
 type DefinitionWithDeps = PluginDefinition & {

@@ -9,7 +9,7 @@ import {
   geosSimplify,
   initGeos,
 } from '@hierarchidb/gis-sdk';
-import type { GeosWorkerApi } from './geosWorker.types.ts';
+import type { GeosWorkerApi } from './geosWorkerTypes.ts';
 
 const initPromise = initGeos();
 

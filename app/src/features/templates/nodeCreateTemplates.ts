@@ -1,7 +1,7 @@
 import type { NodeId, PeerEntity, TreeId } from '@hierarchidb/core-types';
 import type { NodePayload, TreeNodeData } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
-import type { BuildWorkerAPI } from '~/types/worker-api';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import {
   buildShapePresetDraftDataPatch,
   getShapePresetMenuEntries,

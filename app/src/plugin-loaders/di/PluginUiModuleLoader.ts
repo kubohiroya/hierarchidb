@@ -1,5 +1,5 @@
 import { inject, injectable } from 'inversify';
-import type { PluginUiModuleLoader as PluginUiModuleLoaderContract } from './interfaces.js';
+import type { PluginUiModuleLoader as PluginUiModuleLoaderContract } from './interfaceTypes.js';
 import { UIPluginRegistryTokens } from './tokens.js';
 
 type PluginUiModuleMap = Record<string, string>;

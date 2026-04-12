@@ -3,7 +3,7 @@ import {
   setMaintenanceLock,
   type MaintenanceLockRecord,
 } from './maintenanceLock.js';
-import { broadcastMaintenanceShutdownRequest } from './maintenanceChannel.js';
+import { broadcastMaintenanceShutdownRequest } from './maintenanceChannelConstants.js';
 import { shutdownRuntimeHandles, type RuntimeShutdownResult } from './runtimeShutdown.js';
 
 const DEFAULT_LOCK_DURATION_MS = 120_000;

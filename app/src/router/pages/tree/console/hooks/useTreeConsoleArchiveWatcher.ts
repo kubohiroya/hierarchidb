@@ -1,11 +1,11 @@
-import type { BuildWorkerAPI } from '~/types/worker-api';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type { Remote } from 'comlink';
 import { proxy as comlinkProxy } from 'comlink';
 import { useEffect, useRef, useState } from 'react';
 import { type SubscriptionCallback, Subscriptions } from '~/hooks/SubscriptionServices';
 import { isSubscriptionDebug, logIntegrationWarning } from '../treeConsoleIntegrationUtils.js';
-import { sanitizeForComlink } from '~/utils/comlinkSanitizer';
+import { sanitizeForComlink } from '~/utils/comlinkSanitizerUtils';
 
 export type ArchiveWatcherState = {
   hasArchiveItems: boolean;

@@ -1,10 +1,10 @@
-import type { BuildWorkerAPI } from '~/types/worker-api';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import { NodeAction, type Tree, type TreeNode } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
 import type { LoadAppConfigReturn } from './loadAppConfig.ts';
 import { loadAppConfig } from './loadAppConfig.ts';
-import { normalizeNodeType } from './utils/nodeTypeNormalize.ts';
+import { normalizeNodeType } from './utils/nodeTypeNormalizeUtils.ts';
 import { createWorkerClientHandle } from './worker-runtime/WorkerStateStore.ts';
 
 export type { LoadAppConfigReturn };

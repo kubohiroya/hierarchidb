@@ -13,7 +13,7 @@ import {
   resolveNodeCreateDefaults,
   resolveNodeTemplateExecution,
 } from '~/features/templates/nodeCreateTemplates';
-import { loadUIPlugin } from '~/plugin-loaders/ui-plugin-loader';
+import { loadUIPlugin } from '~/plugin-loaders/uiPluginLoaderUtils';
 import { startBuildFlow } from '~/router/pages/tree/console/buildFlow';
 import type { ContextAction, TreeConsoleActionDeps } from '~/hooks/treeconsole/types';
 import { PREVIEW_GUARD_MESSAGE, PREVIEW_GUARD_NODE_TYPES } from './dialog.js';
