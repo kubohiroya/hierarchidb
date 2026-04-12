@@ -8,14 +8,14 @@ import { throwIfAborted, decodeFeatureCollectionFromJsonBuffer } from './utils.j
 import { generateVectorTilesFromFeatureCollection } from './generateVectorTilesFromFeatureCollection.js';
 
 export const generateVectorTilesFromJsonBuffer = async (
-    nodeId: NodeId,
-    buffer: ArrayBuffer,
-    config: VTGenerateConfig,
-    onProgress?: (progress: VectorTileProgress) => void,
+  nodeId: NodeId,
+  buffer: ArrayBuffer,
+  config: VTGenerateConfig,
+  onProgress?: (progress: VectorTileProgress) => void
 ): Promise<VTGenerateResult> => {
-    throwIfAborted(config.signal);
-    const geojson = await decodeFeatureCollectionFromJsonBuffer(buffer);
-    throwIfAborted(config.signal);
-    if (!geojson) return { tilesGenerated: 0, totalBytes: 0, tiles: [] };
-    return generateVectorTilesFromFeatureCollection(nodeId, geojson, config, onProgress);
+  throwIfAborted(config.signal);
+  const geojson = await decodeFeatureCollectionFromJsonBuffer(buffer);
+  throwIfAborted(config.signal);
+  if (!geojson) return { tilesGenerated: 0, totalBytes: 0, tiles: [] };
+  return generateVectorTilesFromFeatureCollection(nodeId, geojson, config, onProgress);
 };

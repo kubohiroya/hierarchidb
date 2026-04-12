@@ -1,11 +1,11 @@
 // Re-export public API from vectorTiles module.
 export type {
-    FeatureCollectionLike,
-    VTGenerateConfig,
-    VTGenerateResult,
-    VTMetadataContext,
-    VectorTileProgress,
-    VectorTileRow,
+  FeatureCollectionLike,
+  VTGenerateConfig,
+  VTGenerateResult,
+  VTMetadataContext,
+  VectorTileProgress,
+  VectorTileRow,
 } from './types.js';
 export { encodeFlatGeobufFromFeatureCollection } from './encodeFlatGeobufFromFeatureCollection.js';
 export { generateVectorTilesFromFeatureCollection } from './generateVectorTilesFromFeatureCollection.js';
