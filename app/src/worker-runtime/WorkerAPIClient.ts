@@ -2,9 +2,9 @@
  * WorkerAPIClient - Synchronous singleton for Worker access
  */
 
-import type { BuildWorkerAPI } from '~/types/worker-api';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import type { Remote } from 'comlink';
-import { sanitizeRemoteForReact } from '~/utils/comlinkSafeProxy';
+import { sanitizeRemoteForReact } from '~/utils/comlinkSafeProxyUtils';
 
 // Create a type that matches the shared contract
 type WorkerInterface = Remote<BuildWorkerAPI>;
@@ -140,14 +140,14 @@ function getRawWorkerInstance(): Worker | MessagePort | null {
 type WorkerStatusWindow = Window & {
   __HDB_INIT_COMPLETE__?: boolean;
 };
-type ClientModule = typeof import('./client.ts');
+type ClientModule = typeof import('./clientUtils.ts');
 
 let clientModule: ClientModule | null = null;
 let clientModulePromise: Promise<ClientModule> | null = null;
 
 async function loadClientModule(): Promise<ClientModule> {
   if (!clientModulePromise) {
-    clientModulePromise = import('./client.ts')
+    clientModulePromise = import('./clientUtils.ts')
       .then((module) => {
         clientModule = module;
         return module;

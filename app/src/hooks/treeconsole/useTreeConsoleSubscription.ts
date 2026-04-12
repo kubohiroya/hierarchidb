@@ -5,7 +5,7 @@
  * when change events stream in from the runtime-worker.
  */
 
-import type { BuildWorkerAPI } from '~/types/worker-api';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { DualKeyMap } from '@hierarchidb/util';
@@ -13,9 +13,9 @@ import type { Remote } from 'comlink';
 import { proxy as comlinkProxy } from 'comlink';
 import { useCallback, useEffect, useRef } from 'react';
 import { Subscriptions } from '~/hooks/SubscriptionServices';
-import { sanitizeForComlink } from '~/utils/comlinkSanitizer';
+import { sanitizeForComlink } from '~/utils/comlinkSanitizerUtils';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms';
-import { buildVisibleRows, removeNodeAndDescendants } from '~/state/treeconsole.derive';
+import { buildVisibleRows, removeNodeAndDescendants } from '~/state/treeconsole.deriveUtils';
 import type { LoadChildrenOf } from './types.js';
 
 interface Params {

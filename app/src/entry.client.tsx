@@ -1,11 +1,11 @@
 import { RouterProvider } from '@tanstack/react-router';
 import { startTransition, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { clearAppIndexedDBsViaPlugins } from './plugin-runtime/clearIndexedDb.ts';
+import { clearAppIndexedDBsViaPlugins } from './plugin-runtime/clearIndexedDbUtils.ts';
 import AppRoot from './root.js';
 import { createHierarchiRouter, getBasePath, getRouterMode } from './router/index.js';
 import { initializeBrowserGlobals } from './router/init/initializeBrowserGlobals.ts';
-import { preloadPluginWorkerStores } from './worker-runtime/WorkerModuleLoader.js';
+import { preloadPluginWorkerStores } from './worker-runtime/workerModuleLoaderUtils.js';
 
 type HydrateLoader = {
   setProgress: (progress: number, message?: string) => void;

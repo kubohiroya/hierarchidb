@@ -2,10 +2,10 @@
  * UI-side worker bootstrap: create and wrap SharedWorker via Comlink.
  */
 
-import type { BuildWorkerAPI } from '~/types/worker-api';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import type { Remote } from 'comlink';
 import { bootLog } from '~/utils/bootLog';
-import { APP_VERSION } from '~/version';
+import { APP_VERSION } from '~/versionConstants';
 import { isMaintenanceLockActive } from '~/maintenance/maintenanceLock';
 import sharedWorkerScriptUrl from './shared-worker.ts?sharedworker&url';
 

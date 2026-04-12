@@ -7,7 +7,7 @@ import type { TreeNode } from '@hierarchidb/tree-api';
 import { composeStepConfigs } from '@hierarchidb/plugin-base';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { DualKeyMap } from '@hierarchidb/util';
-import { loadUIPlugin } from '~/plugin-loaders/ui-plugin-loader';
+import { loadUIPlugin } from '~/plugin-loaders/uiPluginLoaderUtils';
 import type { TreeConsoleActionDeps } from '~/hooks/treeconsole/types';
 import { showCommandError } from './treeConsoleActionUtils.ts';
 import { openInNewTab } from '~/utils/openInNewTab';

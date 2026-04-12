@@ -43,9 +43,9 @@ import {
   type WorkerInitializationReporter,
   wirePluginsFromModules,
 } from '@hierarchidb/ui-worker-client';
-import type { BuildWorkerAPI } from '~/types/worker-api';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import { pluginDefinitions as staticPluginDefinitions } from '~/plugin-loaders/index';
-import { pluginWorkerLoaders } from '~/plugin-loaders/worker-loaders';
+import { pluginWorkerLoaders } from '~/plugin-loaders/workerLoaderUtils';
 
 /** Runtime export metadata (subset consumed during bootstrap). */
 type RuntimeExportEntry = {

@@ -15,8 +15,8 @@ import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useImportExport } from '~/hooks/useImportExport';
 import { getMenuSpec } from '~/plugin-loaders/menu-spec';
 import { useTreeConsoleSSOT } from '~/state/treeconsole.atoms';
-import { buildVisibleRows, syncNodeIndex } from '~/state/treeconsole.derive';
-import { convertTreeNodeToTreeNodeData, createDefaultColumns } from '~/utils/treeNodeConverter';
+import { buildVisibleRows, syncNodeIndex } from '~/state/treeconsole.deriveUtils';
+import { convertTreeNodeToTreeNodeData, createDefaultColumns } from '~/utils/treeNodeConverterUtils';
 import { createTreeConsoleActions } from './treeconsole/createTreeConsoleActions.js';
 import { applySortFilterSearch, deriveConfigFromState } from './treeconsole/sortFilter.js';
 import type {

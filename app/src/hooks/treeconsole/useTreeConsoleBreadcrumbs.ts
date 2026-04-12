@@ -5,14 +5,14 @@
  * a truncated breadcrumb list suitable for rendering in the console.
  */
 
-import type { BuildWorkerAPI } from '~/types/worker-api';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import type { NodeId } from '@hierarchidb/core-types';
 import { getTreeNodeName, type SubscriptionId, type TreeNode } from '@hierarchidb/tree-api';
 import { isFolderNodeType, type BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type { Remote } from 'comlink';
 import { proxy as comlinkProxy } from 'comlink';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { sanitizeForComlink } from '~/utils/comlinkSanitizer';
+import { sanitizeForComlink } from '~/utils/comlinkSanitizerUtils';
 
 interface Params {
   client: Remote<BuildWorkerAPI> | undefined;

@@ -1,9 +1,9 @@
 import { getWorkerClientHook, registerWorkerClientHook } from '@hierarchidb/ui-worker-provider';
-import { initializeMaintenanceChannel } from '~/maintenance/maintenanceChannel';
+import { initializeMaintenanceChannel } from '~/maintenance/maintenanceChannelConstants';
 import { pluginRegistry } from '~/plugin-loaders/index';
 import { useWorker } from '~/contexts/WorkerProvider';
 import { bootLog } from '~/utils/bootLog';
-import { APP_VERSION, BUILD_TIME } from '~/version';
+import { APP_VERSION, BUILD_TIME } from '~/versionConstants';
 
 type TreeConsolePanelGlobal = typeof import('@hierarchidb/ui-treeconsole-base')['TreeConsolePanel'];
 
@@ -217,7 +217,7 @@ export function initializeBrowserGlobals(): void {
   const shouldPrewarm = prewarmFlag === '1' || (import.meta.env.PROD && prewarmFlag !== '0');
 
   if (shouldPrewarm) {
-    void import('~/plugin-runtime/databases')
+    void import('~/plugin-runtime/databaseUtils')
       .then(async (db) => {
         const nodeTypes = await db.prewarmPluginDatabases();
         window.dispatchEvent(

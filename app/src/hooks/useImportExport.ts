@@ -3,7 +3,7 @@ import type {
   ImportData,
   ImportValidationResult,
 } from '~/types/import-export';
-import type { BuildWorkerAPI } from '~/types/worker-api';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';

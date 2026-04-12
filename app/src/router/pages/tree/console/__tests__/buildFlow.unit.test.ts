@@ -11,7 +11,7 @@ vi.mock('@hierarchidb/plugin-base', () => ({
     composeStepConfigsMock(...args),
 }));
 
-vi.mock('~/plugin-loaders/ui-plugin-loader', () => ({
+vi.mock('~/plugin-loaders/uiPluginLoaderUtils', () => ({
   loadUIPlugin: vi.fn(() => Promise.resolve(true)),
 }));
 

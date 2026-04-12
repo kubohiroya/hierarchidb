@@ -1,4 +1,4 @@
-import type { BuildWorkerAPI } from '~/types/worker-api';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { NodeAction, Tree, TreeNode } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';

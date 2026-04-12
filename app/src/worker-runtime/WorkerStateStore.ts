@@ -1,10 +1,10 @@
-import type { BuildWorkerAPI } from '~/types/worker-api';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import type { Remote } from 'comlink';
 import {
   getWorkerInitCompleteMessage,
   getWorkerInitStartMessage,
-} from '~/i18n/workerInitMessages';
-import { ensureWorkerRuntime, resetWorkerRuntime } from './WorkerModuleLoader.js';
+} from '~/i18n/workerInitMessageConstants';
+import { ensureWorkerRuntime, resetWorkerRuntime } from './workerModuleLoaderUtils.js';
 import { getWorkerAPIClientModule, loadWorkerAPIClientModule } from './workerApiClientLoader.js';
 
 export type WorkerRuntimeState = 'uninitialized' | 'initializing' | 'ready' | 'failed';

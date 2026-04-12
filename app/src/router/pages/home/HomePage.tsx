@@ -15,7 +15,7 @@ import { useMemo } from 'react';
 import { loadAppConfig, resolveAssetHref } from '~/loadAppConfig';
 import { createMaintenanceSessionUrl } from '~/maintenance/maintenanceSession';
 import { formatAppTitle, useAppDocumentTitle } from '~/router/title/pageTitle';
-import { APP_VERSION, BUILD_TIME } from '~/version';
+import { APP_VERSION, BUILD_TIME } from '~/versionConstants';
 import { TitleLogo } from './TitleLogo.js';
 import { TopPageGuidedTour } from './tour/TopPageGuidedTour.js';
 import { useHomePage } from './useHomePage.js';

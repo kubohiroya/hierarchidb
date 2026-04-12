@@ -15,15 +15,15 @@ import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useWorker } from '~/contexts/WorkerProvider';
 import { Subscriptions } from '~/hooks/SubscriptionServices';
 import { useTreeConsoleSSOT } from '~/state/treeconsole.atoms';
-import { convertTreeNodeToTreeNodeData } from '~/utils/treeNodeConverter';
-import { sanitizeForComlink } from '~/utils/comlinkSanitizer';
+import { convertTreeNodeToTreeNodeData } from '~/utils/treeNodeConverterUtils';
+import { sanitizeForComlink } from '~/utils/comlinkSanitizerUtils';
 import {
   collectBuildUrlsForFolder,
   resolveBuildTargetForNode,
   startBuildFlow,
 } from '../buildFlow.ts';
 import { resolvePreviewGuardState } from '~/hooks/treeconsole/actions/dialog';
-import { resolveOpenStepsForNode } from '~/hooks/treeconsole/resolveOpenSteps';
+import { resolveOpenStepsForNode } from '~/hooks/treeconsole/resolveOpenStepUtils';
 
 type ContextMenuHandler = NonNullable<TreeConsolePanelProps['onContextMenuAction']>;
 
