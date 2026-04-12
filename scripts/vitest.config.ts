@@ -2,8 +2,8 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    environment: 'node',
-    include: ['scripts/__tests__/**/*.test.ts'],
-    passWithNoTests: false,
+    root: import.meta.dirname,
+    include: ['**/__tests__/**/*.test.ts', '**/*.test.ts'],
+    exclude: ['**/node_modules/**'],
   },
 });
