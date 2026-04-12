@@ -309,15 +309,6 @@ function main(): void {
         progressState: updatedProgress,
     };
 
-    if (options.validateOnly) {
-        // In validate-only mode, only report validation results
-        const hasViolations = validationResults.some((v) => !v.valid);
-        reportResults(report, options.format);
-        progressDone('Done');
-        process.exit(hasViolations ? 1 : 0);
-        return;
-    }
-
     reportResults(report, options.format);
     progressDone('Done');
 

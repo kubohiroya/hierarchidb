@@ -229,7 +229,7 @@ export function buildDependencyGraph(sourceFile: SourceFile): DependencyGraph {
 
         nodes.push({
             name: raw.name,
-            kind: raw.isExported ? raw.kind : 'local',
+            kind: raw.kind,
             isExported: raw.isExported,
             startLine: raw.startLine,
             endLine: raw.endLine,
@@ -281,9 +281,8 @@ export function analyzeStructure(
     // Reuse existing export analysis from naming-audit
     const analysis = analyzeFile(file, project);
 
-    // Count lines from the source file text
-    const text = sourceFile.getFullText();
-    const lineCount = text.split('\n').length;
+    // Count lines efficiently using ts-morph's built-in line tracking
+    const lineCount = sourceFile.getEndLineNumber();
 
     return {
         file,

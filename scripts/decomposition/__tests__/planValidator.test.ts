@@ -294,15 +294,70 @@ describe('detectCircularImports', () => {
         expect(detectCircularImports(plan)).toHaveLength(0);
     });
 
-    it('returns empty array for multiple targets (simplified check)', () => {
+    it('returns empty array when no graph is provided', () => {
         const plan = makePlan({
             targets: [
                 makeTarget({ targetPath: 'src/a.ts', symbols: ['foo'] }),
                 makeTarget({ targetPath: 'src/b.ts', symbols: ['bar'] }),
             ],
         });
-        // Simplified implementation returns empty without full dependency info
         expect(detectCircularImports(plan)).toHaveLength(0);
+    });
+
+    it('returns empty array for acyclic inter-target references', () => {
+        const plan = makePlan({
+            targets: [
+                makeTarget({ targetPath: 'src/a.ts', symbols: ['foo'] }),
+                makeTarget({ targetPath: 'src/b.ts', symbols: ['bar'] }),
+            ],
+        });
+        const graph: DependencyGraph = {
+            nodes: [
+                { name: 'foo', kind: 'function', isExported: true, startLine: 1, endLine: 10, references: ['bar'] },
+                { name: 'bar', kind: 'function', isExported: true, startLine: 11, endLine: 20, references: [] },
+            ],
+            edges: new Map([['foo', ['bar']], ['bar', []]]),
+        };
+        expect(detectCircularImports(plan, graph)).toHaveLength(0);
+    });
+
+    it('detects a two-target circular import', () => {
+        const plan = makePlan({
+            targets: [
+                makeTarget({ targetPath: 'src/a.ts', symbols: ['foo'] }),
+                makeTarget({ targetPath: 'src/b.ts', symbols: ['bar'] }),
+            ],
+        });
+        const graph: DependencyGraph = {
+            nodes: [
+                { name: 'foo', kind: 'function', isExported: true, startLine: 1, endLine: 10, references: ['bar'] },
+                { name: 'bar', kind: 'function', isExported: true, startLine: 11, endLine: 20, references: ['foo'] },
+            ],
+            edges: new Map([['foo', ['bar']], ['bar', ['foo']]]),
+        };
+        const warnings = detectCircularImports(plan, graph);
+        expect(warnings.length).toBeGreaterThanOrEqual(1);
+        expect(warnings[0].message).toContain('Circular');
+    });
+
+    it('detects a three-target circular import', () => {
+        const plan = makePlan({
+            targets: [
+                makeTarget({ targetPath: 'src/a.ts', symbols: ['foo'] }),
+                makeTarget({ targetPath: 'src/b.ts', symbols: ['bar'] }),
+                makeTarget({ targetPath: 'src/c.ts', symbols: ['baz'] }),
+            ],
+        });
+        const graph: DependencyGraph = {
+            nodes: [
+                { name: 'foo', kind: 'function', isExported: true, startLine: 1, endLine: 10, references: ['bar'] },
+                { name: 'bar', kind: 'function', isExported: true, startLine: 11, endLine: 20, references: ['baz'] },
+                { name: 'baz', kind: 'function', isExported: true, startLine: 21, endLine: 30, references: ['foo'] },
+            ],
+            edges: new Map([['foo', ['bar']], ['bar', ['baz']], ['baz', ['foo']]]),
+        };
+        const warnings = detectCircularImports(plan, graph);
+        expect(warnings.length).toBeGreaterThanOrEqual(1);
     });
 });
 

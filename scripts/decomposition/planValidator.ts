@@ -10,6 +10,7 @@ import type {
     SplitPlan,
     SplitTarget,
     FileStructure,
+    DependencyGraph,
     ValidationResult,
     NamingViolation,
     CircularImportWarning,
@@ -265,18 +266,16 @@ function suggestGenericFix(fileName: string, targetPath: string): string {
 /**
  * Detect circular imports in the proposed split structure.
  *
- * Simplified check: since SplitPlan doesn't carry full dependency info,
- * we build a directed graph from symbol overlap between targets and use
- * DFS to detect cycles.
+ * Builds a directed graph between targets based on symbol references
+ * from the original DependencyGraph, then uses DFS to detect cycles.
  *
- * A potential import edge exists from target A to target B if A's symbols
- * reference symbols that are in B (based on the original dependency graph
- * info embedded in the plan's source structure). Since we only have symbol
- * names in SplitTarget, we check for name-based overlap as a heuristic.
- *
- * Returns empty array when we can't determine references.
+ * When no graph is provided, returns an empty array (cannot determine
+ * import edges without dependency information).
  */
-export function detectCircularImports(plan: SplitPlan): CircularImportWarning[] {
+export function detectCircularImports(
+    plan: SplitPlan,
+    graph?: DependencyGraph,
+): CircularImportWarning[] {
     const targets = plan.targets;
     if (targets.length <= 1) {
         return [];
@@ -290,9 +289,96 @@ export function detectCircularImports(plan: SplitPlan): CircularImportWarning[] 
         }
     }
 
-    // Without full dependency info, we can't determine actual import edges.
-    // Return empty array as documented.
-    return [];
+    // Without a dependency graph we cannot determine actual import edges
+    if (!graph) {
+        return [];
+    }
+
+    // Build a target-level directed graph: target A → target B means
+    // a symbol in A references a symbol in B (requiring an import).
+    const targetEdges = new Map<string, Set<string>>();
+    const edgeSymbols = new Map<string, Set<string>>(); // "from->to" → symbol names
+
+    for (const target of targets) {
+        targetEdges.set(target.targetPath, new Set());
+    }
+
+    for (const node of graph.nodes) {
+        const fromTarget = symbolToTarget.get(node.name);
+        if (fromTarget === undefined) continue;
+
+        const refs = graph.edges.get(node.name) ?? [];
+        for (const ref of refs) {
+            const toTarget = symbolToTarget.get(ref);
+            if (toTarget === undefined || toTarget === fromTarget) continue;
+
+            const edges = targetEdges.get(fromTarget);
+            if (edges) {
+                edges.add(toTarget);
+            }
+
+            const edgeKey = `${fromTarget}->${toTarget}`;
+            let syms = edgeSymbols.get(edgeKey);
+            if (!syms) {
+                syms = new Set();
+                edgeSymbols.set(edgeKey, syms);
+            }
+            syms.add(node.name);
+            syms.add(ref);
+        }
+    }
+
+    // DFS-based cycle detection on the target graph
+    const warnings: CircularImportWarning[] = [];
+    const visited = new Set<string>();
+    const inStack = new Set<string>();
+    const pathStack: string[] = [];
+
+    function dfs(targetPath: string): void {
+        visited.add(targetPath);
+        inStack.add(targetPath);
+        pathStack.push(targetPath);
+
+        const neighbors = targetEdges.get(targetPath) ?? new Set<string>();
+        for (const neighbor of neighbors) {
+            if (inStack.has(neighbor)) {
+                // Found a cycle
+                const cycleStart = pathStack.indexOf(neighbor);
+                const cycle = pathStack.slice(cycleStart);
+
+                const involved = new Set<string>();
+                for (let i = 0; i < cycle.length; i++) {
+                    const from = cycle[i];
+                    const to = cycle[(i + 1) % cycle.length];
+                    const key = `${from}->${to}`;
+                    const syms = edgeSymbols.get(key);
+                    if (syms) {
+                        for (const s of syms) {
+                            involved.add(s);
+                        }
+                    }
+                }
+
+                warnings.push({
+                    cycle,
+                    message: `Circular import detected: ${cycle.join(' → ')} → ${neighbor}`,
+                });
+            } else if (!visited.has(neighbor)) {
+                dfs(neighbor);
+            }
+        }
+
+        pathStack.pop();
+        inStack.delete(targetPath);
+    }
+
+    for (const target of targets) {
+        if (!visited.has(target.targetPath)) {
+            dfs(target.targetPath);
+        }
+    }
+
+    return warnings;
 }
 
 // ---------------------------------------------------------------------------

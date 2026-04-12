@@ -835,7 +835,7 @@ export function generateSplitPlan(
     }
 
     // Verify threshold compliance – split oversized targets if possible
-    targets = enforceThreshold(targets, options.threshold);
+    targets = enforceThreshold(targets, options.threshold, groups);
 
     // Import updates are left empty; the CLI will enrich them later
     const importUpdates: ImportUpdate[] = [];
@@ -856,13 +856,23 @@ export function generateSplitPlan(
 /**
  * Ensure all targets have estimatedLineCount <= threshold.
  * If a target exceeds the threshold and contains multiple symbols,
- * attempt to split it further. If it cannot be split (single symbol),
- * keep it as-is and let the validator flag it.
+ * attempt to split it further using actual symbol line counts.
+ * If it cannot be split (single symbol), keep it as-is and let
+ * the validator flag it.
  */
 function enforceThreshold(
     targets: readonly SplitTarget[],
     threshold: number,
+    groups: readonly CohesionGroup[],
 ): SplitTarget[] {
+    // Build a lookup from symbol name to SymbolNode for accurate line counts
+    const symbolMap = new Map<string, SymbolNode>();
+    for (const g of groups) {
+        for (const s of g.symbols) {
+            symbolMap.set(s.name, s);
+        }
+    }
+
     const result: SplitTarget[] = [];
 
     for (const target of targets) {
@@ -872,33 +882,58 @@ function enforceThreshold(
             continue;
         }
 
-        // Attempt to split the oversized target into roughly equal halves
-        const mid = Math.ceil(target.symbols.length / 2);
-        const firstHalf = target.symbols.slice(0, mid);
-        const secondHalf = target.symbols.slice(mid);
+        // Resolve SymbolNode objects for accurate line-count-based splitting
+        const resolvedSymbols: SymbolNode[] = [];
+        for (const name of target.symbols) {
+            const node = symbolMap.get(name);
+            if (node) {
+                resolvedSymbols.push(node);
+            }
+        }
 
-        // Estimate line counts proportionally
-        const ratio = firstHalf.length / target.symbols.length;
-        const rawFirst = Math.ceil(
-            (target.estimatedLineCount - MIN_OVERHEAD_LINES) * ratio,
+        if (resolvedSymbols.length <= 1) {
+            result.push(target);
+            continue;
+        }
+
+        // Split into two halves based on cumulative line counts
+        const totalLines = resolvedSymbols.reduce(
+            (sum, s) => sum + (s.endLine - s.startLine + 1),
+            0,
         );
-        const rawSecond =
-            target.estimatedLineCount - MIN_OVERHEAD_LINES - rawFirst;
+        const halfTarget = totalLines / 2;
+        let accumulated = 0;
+        let splitIdx = 0;
+
+        for (let i = 0; i < resolvedSymbols.length; i++) {
+            accumulated += resolvedSymbols[i].endLine - resolvedSymbols[i].startLine + 1;
+            if (accumulated >= halfTarget) {
+                splitIdx = i + 1;
+                break;
+            }
+        }
+
+        // Ensure at least one symbol in each half
+        if (splitIdx === 0) splitIdx = 1;
+        if (splitIdx >= resolvedSymbols.length) splitIdx = resolvedSymbols.length - 1;
+
+        const firstSymbols = resolvedSymbols.slice(0, splitIdx);
+        const secondSymbols = resolvedSymbols.slice(splitIdx);
 
         const basePath = target.targetPath.replace(/(\.[^.]+)$/, '');
         const ext = target.targetPath.match(/(\.[^.]+)$/)?.[1] ?? '.ts';
 
         result.push({
             targetPath: `${basePath}Part1${ext}`,
-            symbols: [...firstHalf],
-            estimatedLineCount: estimateFromRawLines(rawFirst),
+            symbols: firstSymbols.map((s) => s.name),
+            estimatedLineCount: estimateLineCount(firstSymbols),
             role: target.role,
         });
 
         result.push({
             targetPath: `${basePath}Part2${ext}`,
-            symbols: [...secondHalf],
-            estimatedLineCount: estimateFromRawLines(rawSecond),
+            symbols: secondSymbols.map((s) => s.name),
+            estimatedLineCount: estimateLineCount(secondSymbols),
             role: target.role,
         });
     }

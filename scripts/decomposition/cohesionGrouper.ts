@@ -43,9 +43,12 @@ function tarjanSCC(graph: DependencyGraph): string[][] {
         result: [],
     };
 
+    // Pre-build a Set of node names for O(1) existence checks
+    const nodeNames = new Set(graph.nodes.map((n) => n.name));
+
     for (const node of graph.nodes) {
         if (!state.indices.has(node.name)) {
-            strongconnect(node.name, graph, state);
+            strongconnect(node.name, graph, state, nodeNames);
         }
     }
 
@@ -56,6 +59,7 @@ function strongconnect(
     v: string,
     graph: DependencyGraph,
     state: TarjanState,
+    nodeNames: ReadonlySet<string>,
 ): void {
     state.indices.set(v, state.index);
     state.lowlinks.set(v, state.index);
@@ -66,14 +70,14 @@ function strongconnect(
     // Visit successors
     const successors = graph.edges.get(v) ?? [];
     for (const w of successors) {
-        // Only consider edges to nodes that exist in the graph
-        if (!graph.nodes.some((n) => n.name === w)) {
+        // Only consider edges to nodes that exist in the graph (O(1) lookup)
+        if (!nodeNames.has(w)) {
             continue;
         }
 
         if (!state.indices.has(w)) {
             // w has not been visited; recurse
-            strongconnect(w, graph, state);
+            strongconnect(w, graph, state, nodeNames);
             const vLow = state.lowlinks.get(v) ?? 0;
             const wLow = state.lowlinks.get(w) ?? 0;
             state.lowlinks.set(v, Math.min(vLow, wLow));

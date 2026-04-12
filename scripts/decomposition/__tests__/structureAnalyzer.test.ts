@@ -49,7 +49,7 @@ describe('buildDependencyGraph', () => {
 
         const bar = graph.nodes.find((n) => n.name === 'bar');
         expect(bar).toBeDefined();
-        expect(bar?.kind).toBe('local');
+        expect(bar?.kind).toBe('function');
         expect(bar?.isExported).toBe(false);
     });
 
@@ -63,7 +63,7 @@ describe('buildDependencyGraph', () => {
 
         expect(graph.nodes).toHaveLength(2);
         expect(graph.nodes.find((n) => n.name === 'MyClass')?.kind).toBe('class');
-        expect(graph.nodes.find((n) => n.name === 'Internal')?.kind).toBe('local');
+        expect(graph.nodes.find((n) => n.name === 'Internal')?.kind).toBe('class');
     });
 
     it('extracts type aliases and interfaces', () => {
@@ -293,7 +293,7 @@ describe('analyzeStructure', () => {
         const result = analyzeStructure(file, project);
 
         expect(result.graph.nodes).toHaveLength(2);
-        expect(result.graph.nodes.every((n) => n.kind === 'local')).toBe(true);
+        expect(result.graph.nodes.every((n) => !n.isExported)).toBe(true);
         expect(result.analysis.exports).toHaveLength(0);
     });
 });
