@@ -175,9 +175,6 @@ const calculateColorFromNormalized = (
 };
 
 /**
- * :
- * :
- * :
  * @param value - Input value
  * @param allValues - All values for quantile calculation
  * @param config - Styler configuration
@@ -235,7 +232,6 @@ export function valueToColor(
     };
   }
 
-  //const _mapping = maybeConfig ? (mappingOrConfig as StylerMapping) : undefined;
   const config = maybeConfig ?? (mappingOrConfig as StylerConfig);
   const effectiveConfig = normalizeStylerConfig(config);
 

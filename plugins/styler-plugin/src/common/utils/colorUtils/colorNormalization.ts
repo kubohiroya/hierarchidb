@@ -51,9 +51,47 @@ const upperBound = (sorted: number[], value: number): number => {
   return low;
 };
 
+// ---------------------------------------------------------------------------
+// Memoization cache for sorted arrays and Jenks breaks.
+// Uses reference equality on the input array to avoid redundant computation
+// when the same allValues array is passed repeatedly in a loop.
+// ---------------------------------------------------------------------------
+
+let _cachedSortedSource: number[] | null = null;
+let _cachedSorted: number[] | null = null;
+
+function getSortedValues(allValues: number[]): number[] {
+  if (_cachedSortedSource === allValues && _cachedSorted) {
+    return _cachedSorted;
+  }
+  const sorted = [...allValues].sort((a, b) => a - b);
+  _cachedSortedSource = allValues;
+  _cachedSorted = sorted;
+  return sorted;
+}
+
+let _cachedJenksSource: number[] | null = null;
+let _cachedJenksClassCount = 0;
+let _cachedJenksBreaks: number[] | null = null;
+
+function getCachedJenksBreaks(allValues: number[], classCount: number): number[] {
+  if (
+    _cachedJenksSource === allValues &&
+    _cachedJenksClassCount === classCount &&
+    _cachedJenksBreaks
+  ) {
+    return _cachedJenksBreaks;
+  }
+  const breaks = calculateJenksBreaks(allValues, classCount);
+  _cachedJenksSource = allValues;
+  _cachedJenksClassCount = classCount;
+  _cachedJenksBreaks = breaks;
+  return breaks;
+}
+
 export const normalizeQuantile = (value: number, allValues: number[]): number => {
   if (!allValues.length) return 0;
-  const sorted = [...allValues].sort((a, b) => a - b);
+  const sorted = getSortedValues(allValues);
   if (sorted.length === 1) return 0;
   const idx = upperBound(sorted, value);
   const rank = Math.max(0, Math.min(sorted.length - 1, idx - 1));
@@ -149,7 +187,7 @@ const calculateJenksBreaks = (values: number[], classCount: number): number[] =>
 const normalizeJenks = (value: number, allValues: number[], classCount: number): number => {
   if (!allValues.length) return 0;
   const classes = Math.max(1, Math.min(classCount, allValues.length));
-  const breaks = calculateJenksBreaks(allValues, classes);
+  const breaks = getCachedJenksBreaks(allValues, classes);
   let classIndex = 0;
   for (let i = 1; i < breaks.length; i += 1) {
     const threshold = breaks[i];
