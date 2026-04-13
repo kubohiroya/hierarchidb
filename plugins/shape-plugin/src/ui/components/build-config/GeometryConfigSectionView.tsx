@@ -27,6 +27,7 @@ export const GeometryConfigSectionView = React.memo<GeometryConfigSectionViewPro
   ({
     t,
     disabled,
+    disableHoverLift,
     hoverCardSx,
     baseGeometryConfig,
     simplifyAlgorithm,
@@ -111,7 +112,7 @@ export const GeometryConfigSectionView = React.memo<GeometryConfigSectionViewPro
             <SimplifyToleranceByAdminLevelCard
               geometryConfig={baseGeometryConfig}
               disabled={disabled}
-              disableHoverLift={disabled}
+              disableHoverLift={disableHoverLift}
               onChange={onGeometryUpdate}
             />
           </Stack>

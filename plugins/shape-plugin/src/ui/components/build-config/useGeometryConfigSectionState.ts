@@ -21,6 +21,7 @@ interface GeometryConfigSectionStateProps {
 export interface GeometryConfigSectionViewProps {
     readonly t: TFunction;
     readonly disabled: boolean;
+    readonly disableHoverLift: boolean;
     readonly hoverCardSx: SxProps<Theme>;
     readonly baseGeometryConfig: ShapeBuildGeometryConfig;
     readonly simplifyAlgorithm: 'topojson' | 'geojson';
@@ -59,6 +60,7 @@ export function useGeometryConfigSectionState(
     return {
         t,
         disabled,
+        disableHoverLift,
         hoverCardSx,
         baseGeometryConfig,
         simplifyAlgorithm,
