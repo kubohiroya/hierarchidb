@@ -14,7 +14,7 @@ Step6 (Preview) should become usable while the build is still running, as soon a
 - [x] (2026-01-10 14:25 JST) Add a Preview-ready guard that checks for metadata or tile existence and wire it into navigation.
 - [x] (2026-01-10 14:30 JST) Add metadata polling in the Preview hook so the table refreshes during ongoing builds.
 - [x] (2026-01-10 14:35 JST) Confirm download-stage base metadata persistence precedes stats aggregation (no changes required).
-- [x] (2026-01-10 14:40 JST) Update TASKS.md logs with done/blocked and any validation evidence.
+- [x] (2026-01-10 14:40 JST) Update the retired local task log with done/blocked and any validation evidence.
 
 ## Surprises & Discoveries
 

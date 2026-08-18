@@ -10,7 +10,7 @@ Users need to understand why simplify preprocessing is dropping valid geometry d
 
 ## Progress
 
-- [x] (2026-01-18 00:30 JST) Created the task entry in TASKS.md and started the ExecPlan draft.
+- [x] (2026-01-18 00:30 JST) Created the task entry in the retired local task log and started the ExecPlan draft.
 - [x] (2026-01-18 00:35 JST) Identified transform preprocessing and error-record paths in `packages/vt-orchestrator/src/transform/geometry.ts` and `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`.
 - [x] (2026-01-18 00:40 JST) Confirmed preview overlay is driven by `ShapeTransformErrorRecord.lineFeatures` in Step6 (`plugins/shape-plugin/src/ui/components/step6/useShapePreviewStep.ts`).
 - [x] (2026-01-19 09:20 JST) Added simplify issue tracking hooks and relaxed ring/self-intersection area filtering to retain major polygons.
@@ -79,7 +79,7 @@ Finally, update Step6 preview to surface these diagnostics by mapping the new er
    - `applySelfIntersectionFix`: when `dropSmallPolygons` is enabled, ensure the largest polygon survives even if some fragments are below threshold.
    - `applyPolygonAreaExclusion`: only exclude polygons below threshold after confirming their area relative to the largest polygon in the feature, preventing loss of major landmasses.
 
-7) Run `pnpm typecheck` at the repository root and record the result in TASKS.md.
+7) Run `pnpm typecheck` at the repository root and record the result in the linked GitHub Issue.
 
 ## Validation and Acceptance
 

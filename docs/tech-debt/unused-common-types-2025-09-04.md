@@ -105,7 +105,7 @@ type | ValidationFunction — packages/common/types/src/validation-plugin-defini
 
 ## 推奨アクション（非破壊）
 - 第一段階（このPR）
-  - 上記候補を `TASKS.md` に記録（受け入れ基準/ロールバック手順含む）。
+  - 上記候補を GitHub Issue に記録（受け入れ基準/ロールバック手順含む）。
   - 実コードは削除せず、まずは「API表面の縮小」を目的に `export` を外し、ファイル内限定利用に降格できるものは降格。
 - 第二段階（次PR）
   - 実際に未使用が確定したものを削除（`.bak` は即時削除推奨）。
@@ -113,4 +113,3 @@ type | ValidationFunction — packages/common/types/src/validation-plugin-defini
 
 ## ロールバック指針
 - 影響発生時は、該当コミットをリバートし `RuntimeWorkerService.ts` の再エクスポートを元に戻せば即時復旧可能。
-

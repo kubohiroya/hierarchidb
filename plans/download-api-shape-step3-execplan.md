@@ -111,7 +111,7 @@ Finally, update Shape Step3 to use the new cached JSON helper for geoboundaries 
 
 ## Idempotence and Recovery
 
-All edits are source changes and can be re-run safely. If a change breaks a caller, revert the corresponding import updates and restore the prior export in `packages//src/index.ts`. If the cache helper misbehaves, fall back to the previous `downloadJson` path and log the decision in `TASKS.md`.
+All edits are source changes and can be re-run safely. If a change breaks a caller, revert the corresponding import updates and restore the prior export in `packages//src/index.ts`. If the cache helper misbehaves, fall back to the previous `downloadJson` path and log the decision in the linked GitHub Issue.
 
 ## Artifacts and Notes
 

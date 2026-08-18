@@ -58,7 +58,7 @@ Flag evaluation is currently implemented separately per plugin using `localStora
 
 Create a shared helper in `packages/runtime-worker/src` that encapsulates the feature-flag check, optional dynamic import of `@hierarchidb/runtime-worker-worker`, and the final `registerRuntimeWorkerClient` call. The helper must accept a plugin id and a flag name. It should also allow a custom client factory for environments where `createStageWorkerClient` is directly available. After adding the helper and exporting it, replace the plugin-specific `registerRuntimeWorkerAdapters` implementations in shape, location, and route with thin wrappers that call the new helper using their plugin id and flag name. Keep the plugin-specific `RuntimeWorkerClient` wrapper modules, but remove any custom logic duplicated across plugins.
 
-If the helper uses `readRuntimeEnvValue`, update `packages/runtime-worker` dependencies to include `@hierarchidb/util`. Document the new `SHAPE_RUNTIME_WORKER` flag in `TASKS.md` or a central feature-flag document so it is discoverable alongside location/route flags.
+If the helper uses `readRuntimeEnvValue`, update `packages/runtime-worker` dependencies to include `@hierarchidb/util`. Document the new `SHAPE_RUNTIME_WORKER` flag in the linked GitHub Issue or a central feature-flag document so it is discoverable alongside location/route flags.
 
 ## Concrete Steps
 

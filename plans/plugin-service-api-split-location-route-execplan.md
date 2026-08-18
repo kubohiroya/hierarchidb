@@ -18,7 +18,7 @@ After this change, the definitive type definitions for location and route live i
 - [x] 2026-01-30 10:35 JST `plugin-service-api` re-exports API packages and local duplicates removed.
 - [x] 2026-01-30 10:35 JST Moved DB initialization/registration selection to the app and removed plugin auto-registration side effects.
 - [x] 2026-01-30 10:35 JST Aligned `*-api` (schema + API) vs `*-store` (DB init) responsibilities per new policy.
-- [x] 2026-01-30 12:05 JST Ran `pnpm --filter @hierarchidb/app typecheck` (tsdown define warning noted) and updated TASKS.md.
+- [x] 2026-01-30 12:05 JST Ran `pnpm --filter @hierarchidb/app typecheck` (tsdown define warning noted) and updated the retired local task log.
 
 ## Surprises & Discoveries
 
@@ -65,7 +65,7 @@ Fourth, shift DB initialization/registration to the app layer. The app should ex
 
 Fifth, update UI imports in `plugins/location-plugin` and `plugins/route-plugin` so they depend only on the API packages. Remove any `@hierarchidb/location-store` / `@hierarchidb/route-store` dependency from UI package.json files if no longer used on the UI side. If worker-side code still needs store packages, keep those dependencies scoped to worker modules only.
 
-Finally, run typechecks for the new API packages and the affected consumers. Document results and any deviations in TASKS.md.
+Finally, run typechecks for the new API packages and the affected consumers. Document results and any deviations in the linked GitHub Issue.
 
 ## Concrete Steps
 
@@ -123,7 +123,7 @@ All commands run from repository root: `/Users/hiroya/WebstormProjects/hierarchi
    - `pnpm --filter @hierarchidb/location-plugin typecheck`
    - `pnpm --filter @hierarchidb/route-plugin typecheck`
 
-Expected output is exit 0 for each command. Capture failures and update this plan and TASKS.md before proceeding.
+Expected output is exit 0 for each command. Capture failures and update this plan and the linked GitHub Issue before proceeding.
 
 ## Validation and Acceptance
 

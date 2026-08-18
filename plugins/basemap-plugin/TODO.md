@@ -20,4 +20,4 @@ Ensure the base-map plugin remains compatible with the evolving dialog/batch inf
 ## Phase 4: Verification
 - [ ] `pnpm --filter @hierarchidb/base-map-plugin typecheck`
 - [ ] Reinstate tests around dialog and preview operations.
-- [ ] Log outcomes/risks in TASKS.md.
+- [ ] Log outcomes/risks in the linked GitHub Issue.

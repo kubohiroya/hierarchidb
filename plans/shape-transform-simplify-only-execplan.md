@@ -16,7 +16,7 @@ Users will have a single, reliable transform path that uses simplify-only proces
 - [x] Remove or restructure full-only configuration fields in `packages//src/config.ts` and default config in `plugins/shape-plugin/src/common/types/constants.ts`.
 - [x] Update shape plugin UI to remove simplify-only-ineffective controls and align i18n.
 - [x] Update tests and fixtures that reference removed config fields.
-- [x] Run `pnpm typecheck` and capture output summary in `TASKS.md`.
+- [x] Run `pnpm typecheck` and capture output summary in the retired local task log.
 - [x] Record decisions, discoveries, and retrospective.
 
 ## Surprises & Discoveries
@@ -60,7 +60,7 @@ Work in `/Users/hiroya/WebstormProjects/hierarchidb`.
 
 5) Update tests and fixtures in `plugins/shape-plugin/src/**/__tests__/**` that rely on removed config fields.
 
-6) Run `pnpm typecheck` at the repo root and record the command output summary in `TASKS.md`.
+6) Run `pnpm typecheck` at the repo root and record the command output summary in the linked GitHub Issue.
 
 ## Validation and Acceptance
 
@@ -72,7 +72,7 @@ Edits are safe to re-apply and should be idempotent. If the refactor breaks beha
 
 ## Artifacts and Notes
 
-Include brief `pnpm typecheck` output summaries in `TASKS.md` for verification.
+Include brief `pnpm typecheck` output summaries in the linked GitHub Issue for verification.
 
 ## Interfaces and Dependencies
 

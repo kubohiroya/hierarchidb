@@ -14,7 +14,7 @@ Shape Step4 uses repeated UI patterns for cards and section headers, which makes
 - [x] (2026-01-28 23:54 JST) Added shared section title component in `plugins/shape-plugin/src/ui/components/step4/Step4SectionTitle.tsx`.
 - [x] (2026-01-28 23:54 JST) Replaced local hover/section title patterns in Step4 components to use shared helpers.
 - [x] (2026-01-28 23:55 JST) Ran `pnpm --filter @hierarchidb/shape-plugin typecheck` and confirmed success.
-- [x] (2026-01-28 23:55 JST) Updated `TASKS.md` with completion logs and marked the task done.
+- [x] (2026-01-28 23:55 JST) Updated the retired local task log with completion logs and marked the task done.
 
 ## Surprises & Discoveries
 
@@ -49,7 +49,7 @@ Create a shared `Step4SectionTitle` component that renders an icon and subtitle,
 
 2) Replace local `SectionTitle` components and hover-card style objects in Step4 components with the shared helper/component.
 
-3) Run `pnpm --filter @hierarchidb/shape-plugin typecheck` from the repository root and record the output in `TASKS.md`.
+3) Run `pnpm --filter @hierarchidb/shape-plugin typecheck` from the repository root and record the output in the linked GitHub Issue.
 
 ## Validation and Acceptance
 

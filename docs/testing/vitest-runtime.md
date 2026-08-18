@@ -59,4 +59,4 @@ pnpm -C app test -- --run app/src/services/__tests__/plugin-presentation.test.ts
 
 ---
 
-> 補足: このガイドは `TASKS.md` の `fix/test-env/fetch-polyfill` タスクと連動しています。追加のポリフィルやサードパーティ依存を導入した場合は、このファイルに手順と理由を追記し、再発防止に役立ててください。
+> 補足: このガイドに関連する変更は対象 GitHub Issue で追跡します。追加のポリフィルやサードパーティ依存を導入した場合は、このファイルに手順と理由を追記し、再発防止に役立ててください。

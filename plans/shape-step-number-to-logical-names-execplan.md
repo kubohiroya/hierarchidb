@@ -10,12 +10,12 @@ shape-plugin 内の「step4/step5/step6」など物理的な番号を含むシ�
 
 ## Progress
 
-- [x] (2026-01-29 07:59 JST) TASKS.md にタスクを追加して着手ログを記載。
+- [x] (2026-01-29 07:59 JST) retired local task log にタスクを追加して着手ログを記載。
 - [x] (2026-01-29 08:05 JST) step番号を含むシンボル/ファイル/i18nキー/UI文言の一覧を作成。
 - [x] (2026-01-29 08:05 JST) 論理名の対応表を決定し、rename対象を確定。
 - [x] (2026-01-29 08:05 JST) ファイル名・コンポーネント名・関数名・型名・i18nキー・UI文言を置換。
 - [x] (2026-01-29 08:06 JST) `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行。
-- [x] (2026-01-29 08:06 JST) TASKS.md に完了ログを記載しタスクを完了。
+- [x] (2026-01-29 08:06 JST) retired local task log に完了ログを記載しタスクを完了。
 
 ## Surprises & Discoveries
 
@@ -55,7 +55,7 @@ shape-plugin 内の「step4/step5/step6」など物理的な番号を含むシ�
 3) 参照を壊さないようにファイル名・export/import・型名・関数名・コンポーネント名を置換する。i18nキーも同時に更新し、キー参照を一致させる。
 4) UI表示文言に残る「Step4」等の表記を論理名へ更新する。
 5) `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行し、問題があれば修正する。
-6) TASKS.md に完了ログを記載する。
+6) GitHub Issue に完了ログを記載する。
 
 ## Concrete Steps
 

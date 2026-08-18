@@ -7,4 +7,4 @@ The location plugin shares dialog and build UX patterns with shape/route plugins
 - [ ] Restore build progress/recovery UI to call the real worker APIs (remove placeholders).
 - [ ] Update path/tsconfig settings so UI code is type-checked alongside services.
 - [ ] Run `pnpm --filter @hierarchidb/location-plugin typecheck` and expand automated tests covering dialog/build flows.
-- [ ] Log milestones and risks in `TASKS.md` when completed.
+- [ ] Log milestones and risks in the linked GitHub Issue when completed.

@@ -83,7 +83,7 @@ Add or update unit tests where feasible. If there are existing tests that cover 
    Expected result:
      Exit code 0
 
-6) Update TASKS.md log entries with start/update/done, including the command outputs summary.
+6) Update the linked GitHub Issue log entries with start/update/done, including the command outputs summary.
 
 ## Validation and Acceptance
 

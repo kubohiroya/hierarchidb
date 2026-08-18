@@ -88,7 +88,7 @@
 - `pnpm-workspace.yaml` / `turbo.json`: `build`・`typecheck` パイプラインを `tsdown` 基準に再定義。
 - `tsup.base.config.ts`（現状）→ `tsdown.base.config.ts` へ置き換え。
 - ルート `tsconfig.*`（必要であれば `tsconfig.esm-nodenext.json` 等）: 参照チェーンを `tsdown` と整合させるための最小構成に整理。
-- `TASKS.md`: タスク登録および運用ログ更新。
+- 対象 GitHub Issue: タスク登録および運用ログ更新。
 
 ## 作業計画（turbo + tsdown への段階移行）
 1. **現状調査と PoC**
@@ -111,7 +111,7 @@
    - CI 設定・ドキュメントを更新。
 5. **クリーンアップと文書化**
    - 未使用となった `tsconfig.build.json` 等を削除。
-   - `tsdown` 導入手順・ロールバック手順を `docs/` と `TASKS.md` に明記。
+   - `tsdown` 導入手順・ロールバック手順を `docs/` と対象 GitHub Issue に明記。
    - Turbo キャッシュや `.tsbuildinfo` を初期化し、最終確認の `turbo run build` を実行。
 
 ## DoD（Definition of Done）
@@ -119,7 +119,7 @@
 - Turbo パイプラインにおいて `build`/`build:types`/`typecheck` が `tsdown` 基準で成功する（`turbo run build` のワークスペース実行ログ取得済み）。
 - ルートおよび各パッケージの `tsconfig.*` が `tsdown` 前提に整理され、不要な `tsconfig.build.json` 等が削除済み。
 - `tsdown.base.config.ts`（新規ファイル）により、共通ビルド設定が一本化されている。
-- `TASKS.md` の Kanban と運用ログに、移行タスクの進捗／検証結果／ロールバック手順が記録されている。
+- GitHub Issue と Project に、移行タスクの進捗／検証結果／ロールバック手順が記録されている。
 - CI 設定（`pnpm typecheck` 等）が `tsdown` を前提とした内容に更新され、ベースライン実行結果が共有されている。
 
 ## ロールバック指針

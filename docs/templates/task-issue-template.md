@@ -28,4 +28,4 @@
 - Expected: exit 0
 
 ## Notes
-- Source: `TASKS.obsolete.2026-02-10.md:<line>`
+- Related Issues / historical source:

@@ -62,7 +62,7 @@ Implement the storage changes in these steps:
 - Route: rename `RouteDatabase` to `RouteDB`, change the DB name to `getDBName('route')`, and consolidate vector tiles into a `vectorTiles` table in `RouteDB`. Replace `lineStrings` with `features` and update read/write paths. If `TilesDB` remains necessary for other features, scope its usage away from route map previews. Update route query services to fetch tiles from the new `RouteDB.vectorTiles`.
 - Entity lifecycle: update `storeRegistry` and `EntityLifecycleManager` to process `features` and `vectorTiles` stores (plus existing relations). Remove `groupEntities` naming from the registry and any plugin stores. Ensure duplicate/paste/import operations copy `features` and (if present) `vectorTiles`, and delete operations clean up both.
 
-Update the worker query/mutation services to use the new DB classes and tables. Then update `/map` layer construction to reference the new DB names and tile sources. Finally, run targeted typecheck/tests or document why they were skipped. Ensure `TASKS.md` includes the migration and rollback steps.
+Update the worker query/mutation services to use the new DB classes and tables. Then update `/map` layer construction to reference the new DB names and tile sources. Finally, run targeted typecheck/tests or document why they were skipped. Ensure the linked GitHub Issue includes the migration and rollback steps.
 
 ## Concrete Steps
 
@@ -70,7 +70,7 @@ Work from the repository root `/Users/hiroya/WebstormProjects/hierarchidb`.
 
 1) Inventory current storage and APIs:
    - Run: `rg -n "getDBName\('|vectorTiles|features|LocationEntitiesDB|RouteDatabase|TilesDB" app packages plugins`
-   - Record the findings in `TASKS.md` under task 1966.
+   - Record the findings in the linked GitHub Issue under task 1966.
 
 2) Update location storage to `LocationDB` with `features` and `vectorTiles`.
    - Edit `plugins/location-plugin/src/worker/locationEntitiesDB.ts` to rename `LocationEntitiesDB` to `LocationDB` and `groupEntities` to `features`.
@@ -95,7 +95,7 @@ Work from the repository root `/Users/hiroya/WebstormProjects/hierarchidb`.
 
 6) Validate and document.
    - Run: `pnpm --filter @hierarchidb/location-plugin typecheck` and `pnpm --filter @hierarchidb/route-plugin typecheck`.
-   - If not run, document the reason in `TASKS.md` with a follow-up plan.
+   - If not run, document the reason in the linked GitHub Issue with a follow-up plan.
 
 ## Validation and Acceptance
 

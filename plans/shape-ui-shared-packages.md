@@ -15,7 +15,7 @@ The shape plugin currently owns hooks and UI logic that are useful across GIS-or
 - [x] (2025-12-21 23:18) Move generic preview hooks into ui-gis and update shape-plugin imports.
 - [x] (2025-12-21 23:18) Move generic batch hooks into ui-build-progress and update shape-plugin imports.
 - [x] (2025-12-21 23:18) Update workspace paths and package dependencies.
-- [x] (2025-12-21 23:18) Run shape-plugin typecheck and record results in `TASKS.md`.
+- [x] (2025-12-21 23:18) Run shape-plugin typecheck and record results in the retired local task log.
 - [x] (2026-01-09) Consolidate preview hooks into `@hierarchidb/ui-map` and remove `@hierarchidb/ui-gis`.
 
 ## Surprises & Discoveries
@@ -51,7 +51,7 @@ Create the new `packages/ui/gis` and `packages/ui/batch` packages with `package.
 3) Move preview hooks to `packages/ui/map/src/preview` and update shape-plugin references.
 4) Move batch hooks to `packages/ui/batch/src/hooks` and update shape-plugin references.
 5) Update `tsconfig.base.json` paths and shape-plugin package dependencies.
-6) Run `pnpm --filter @hierarchidb/shape-plugin typecheck` and record the exit code in `TASKS.md`.
+6) Run `pnpm --filter @hierarchidb/shape-plugin typecheck` and record the exit code in the linked GitHub Issue.
 
 ## Validation and Acceptance
 

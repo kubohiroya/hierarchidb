@@ -15,7 +15,7 @@ Users should be able to delete Transform caches and run Shape build steps withou
 - [x] Updated worker/task queue mapping and session mappers to use transform only (shape + route).
 - [x] Updated Transform cache deletion to clear stale task state and legacy stage rows.
 - [x] Adjusted build polling/resume logic to rely on runtime status rather than draft processingStatus.
-- [x] Run pnpm typecheck and capture results in TASKS.md.
+- [x] Run pnpm typecheck and capture results in the retired local task log.
 
 ## Surprises & Discoveries
 
@@ -73,7 +73,7 @@ After edits, run:
 
   pnpm typecheck
 
-Record exit code and any warnings in `TASKS.md` under task 2241.
+Record exit code and any warnings in the linked GitHub Issue under task 2241.
 
 ## Validation and Acceptance
 

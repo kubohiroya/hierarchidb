@@ -25,5 +25,5 @@ pnpm --filter <affected package> typecheck
 - `codemods/xxxx.ts`: 個別の変換ロジック。`runCodemod()` を export し、runner から呼び出される形に統一します。
 
 ## 注意事項
-- Codemod の追加・更新時は `docs/requirements/dynamic-import-unification.md` と `TASKS.md` に進捗を記録してください。
+- Codemod の追加・更新時は `docs/requirements/dynamic-import-unification.md` と GitHub Issue に進捗を記録してください。
 - CI で dry-run を実行できるよう、将来的には `pnpm codemod:run --check` を追加する計画です。

@@ -126,7 +126,7 @@ tree-api は `packages//src`、import-export-api は `packages//src`、build-api
 
 ## Artifacts and Notes
 
-- 主要な検索結果、build/typecheck のログを TASKS.md の運用ログに残す。
+- 主要な検索結果、build/typecheck のログを GitHub Issue の運用ログに残す。
 - 移設先の決定は Decision Log に追記する。
 
 ## Interfaces and Dependencies

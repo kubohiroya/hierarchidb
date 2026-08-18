@@ -20,4 +20,4 @@ Timeline plugin should align with the shared dialog and worker infrastructure.
 ## Phase 4: Verification
 - [ ] `pnpm --filter @hierarchidb/timeline-plugin typecheck`
 - [ ] Reinstate tests covering dialog/preview flows.
-- [ ] Document progress in TASKS.md.
+- [ ] Document progress in the linked GitHub Issue.

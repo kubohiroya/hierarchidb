@@ -14,7 +14,7 @@ Users will be able to run shape-plugin batch builds where each data source contr
 - [x] 2025-12-22 11:05 JST: Implement strategy interface and fixed map; refactor SessionController to delegate download task creation and postprocessing.
 - [x] 2025-12-22 11:05 JST: Implement data-source strategies (GADM, GeoBoundaries, NaturalEarth, OSM) with pass-through or split outputs.
 - [x] 2025-12-22 11:36 JST: Add/adjust tests for strategy behavior and country/admin-level extraction, and run targeted vitest command.
-- [x] 2025-12-22 11:36 JST: Record test command outcomes in TASKS.md logs.
+- [x] 2025-12-22 11:36 JST: Record test command outcomes in the retired local task log.
 
 ## Surprises & Discoveries
 
@@ -83,7 +83,7 @@ Add tests for the strategy behavior. Use fixture GeoJSON and metadata to verify 
 - NaturalEarth/OSM can produce multiple buffers from a single download task.
 - The generated extract tasks match the produced buffers and include the correct `countryCode`/`adminLevel`.
 
-Update TASKS.md logs with start/progress/done, and add rollback steps referencing the touched files.
+Update the linked GitHub Issue logs with start/progress/done, and add rollback steps referencing the touched files.
 
 ## Concrete Steps
 

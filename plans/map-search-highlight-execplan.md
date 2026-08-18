@@ -16,7 +16,7 @@ Users can now search visible map features by specific attributes, toggle which a
 - [x] (2025-12-27 07:10Z) Add MapLibre controls configuration in the map route.
 - [x] (2025-12-27 07:20Z) Implement search matching, hover, and click selection logic using MapLibre feature-state.
 - [x] (2025-12-27 07:25Z) Update vector layer paint to reflect highlight states across point/line/polygon layers.
-- [ ] (2025-12-27 07:30Z) Record validation evidence in `TASKS.md` and finalize outcomes.
+- [ ] (2025-12-27 07:30Z) Record validation evidence in the linked GitHub Issue and finalize outcomes.
 
 ## Surprises & Discoveries
 

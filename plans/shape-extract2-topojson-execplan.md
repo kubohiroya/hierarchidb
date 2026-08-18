@@ -14,7 +14,7 @@ PLANS.md はリポジトリ直下の `PLANS.md` を参照し、この文書は�
 - [x] 2025-12-30 18:55 JST topojson-simplify を追加し、TopoJSON 簡略化ユーティリティを実装した。
 - [x] 2025-12-30 19:05 JST extract2 の worker/local 実装を TopoJSON ベースの簡略化に切り替えた。
 - [x] 2025-12-30 19:15 JST Step4 のデフォルト値を適正化し、UI と設定の整合を取った。
-- [ ] 手動検証またはログ確認を行い、結果を TASKS.md に記録する。
+- [ ] 手動検証またはログ確認を行い、結果を GitHub Issue に記録する。
 
 ## Surprises & Discoveries
 
@@ -80,7 +80,7 @@ UI 側の `VTConfigSection.tsx` で表示されるデフォルト値も同じ値
 3. `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts` の `processExtract2Task` に TopoJSON 簡略化を挿入し、失敗時は既存の `extractGeoJson` にフォールバックする。
 4. `plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapters.ts` の `LocalExtract2Adapter` でも同様に TopoJSON 簡略化を使用する。
 5. `plugins/shape-plugin/src/common/types/constants.ts` と `plugins/shape-plugin/src/ui/components/steps/VTConfigSection.tsx` の Step4 デフォルト値を上記の数値に更新する。
-6. `TASKS.md` の運用ログに変更内容・理由・検証結果を記載する。
+6. GitHub Issue の運用ログに変更内容・理由・検証結果を記載する。
 
 ## Validation and Acceptance
 

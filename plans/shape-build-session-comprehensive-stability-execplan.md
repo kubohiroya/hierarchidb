@@ -11,7 +11,7 @@ After this change, a user can clear IndexedDB, re-authenticate, start a Shape bu
 ## Progress
 
 - [x] (2026-02-13 08:56 JST) Created GitHub Issue #238 and moved it to Project `hierarchidb` status `In Progress`.
-- [x] (2026-02-13 08:56 JST) Created branch `codex/fix/shape/build-session-comprehensive-stability` and updated `TASKS.md`.
+- [x] (2026-02-13 08:56 JST) Created branch `codex/fix/shape/build-session-comprehensive-stability` and updated the retired local task log.
 - [x] (2026-02-13 09:10 JST) Identified startup-risk points: `receiving-task-snapshot` signal criteria and `requestAnimationFrame`-only flush path in task sync.
 - [x] (2026-02-13 09:17 JST) Implemented task flush fallback timer in `useShapeBuildTaskSync.ts`.
 - [x] (2026-02-13 09:20 JST) Implemented broader receiving-task-snapshot signal handling in `useShapeBuildStep.ts`.

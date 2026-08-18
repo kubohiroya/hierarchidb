@@ -99,7 +99,7 @@ runtime-worker 側の `RealVectorTileWorker.readBuffer()` に `stage-tile:` プ�
 
 ## Idempotence and Recovery
 
-タイル前処理は `nodeId` をキーに保存するため、同じノードで再実行すると上書き更新される。安全なやり直しが可能である。ロールバックは、`ShapeTileMetadataDB` と `SessionController`、`StageProcessingService` の変更を revert し、`TASKS.md` の運用ログ追記を削除する。
+タイル前処理は `nodeId` をキーに保存するため、同じノードで再実行すると上書き更新される。安全なやり直しが可能である。ロールバックは、`ShapeTileMetadataDB` と `SessionController`、`StageProcessingService` の変更を revert し、結果を GitHub Issue に追記する。
 
 ## Artifacts and Notes
 

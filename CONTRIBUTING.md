@@ -30,7 +30,7 @@ Further details are duplicated in:
 
 ### 例外と補足
 - ユーティリティ集は `fooBarUtil.ts` のように lowerCamelCase で命名し、同名の関数が存在しなくても構いません。ただしファイルの責務はファイル名に沿って最小限に保ちます。
-- 複数 export が不可避な場合は、TASKS.md や PR 説明で理由と主要 export を明確化し、命名の衝突を避けます。可能であればファイル分割を優先し、どうしても束ねる場合は static class などで意図を明示します。
+- 複数 export が不可避な場合は、対象 GitHub Issue や PR 説明で理由と主要 export を明確化し、命名の衝突を避けます。可能であればファイル分割を優先し、どうしても束ねる場合は static class などで意図を明示します。
 - Plain オブジェクト（`export const Foo = { … }`）による命名空間化はアクセス制御ができず規約から外れるため原則禁止です。必要になった場合はレビューで合意を得てください。
 
 ### 型公開ファイルについて
@@ -81,7 +81,7 @@ class FooBatchSession extends AbstractBatchSession<Config, Task, void> {
 }
 ```
 ## Task Management
-- Tasks are managed with mrtask (this is the single source of truth).
-- Do not edit PLAN.md or TASKS.md; use `mrtask add|done|cancel|list` instead.
-- Preferred flow: one task = one branch = one git worktree created by `mrtask add`.
-- Bulk import: provide `TASKS.csv` with headers `branch,slug,description,dir1,dir2,...` and use `mrtask add -t TASKS.csv:<lineNo>`.
+- GitHub Issues and the repository Project are the single source of truth.
+- Use one Issue, one branch, and one worktree for each implementation unit.
+- Define the acceptance criteria and rollback plan in the Issue before editing code.
+- Record progress, blockers, and verification results in the Issue and keep the Project status current.

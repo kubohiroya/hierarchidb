@@ -122,7 +122,7 @@ The steps are safe to re-run. If a step fails, revert the modified files and rer
 
 ## Artifacts and Notes
 
-Include short diffs or logs for moved GIS functions and dependency changes as evidence when the plan is executed. Keep records of test outputs in `TASKS.md` under the relevant worklog entry.
+Include short diffs or logs for moved GIS functions and dependency changes as evidence when the plan is executed. Keep records of test outputs in the linked GitHub Issue under the relevant worklog entry.
 
 ## Interfaces and Dependencies
 

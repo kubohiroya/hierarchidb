@@ -25,7 +25,7 @@
 - `docs/design/worker-dynamic-import-architecture.md` のステートマシン/フェーズに沿ったテスト (ユニット / 統合 / E2E) を追加または更新している。
 - `.github/` 配下の CI ワークフロー/スクリプトを新しい import 体系に合わせて更新し、検証がグリーンである。
 - `scripts/` や `knip.json`、`tsup.*`、`vitest.config.ts`、その他ビルド/解析系設定ファイルを新構成に合わせて更新し、関連コマンドが成功する。
-- `TASKS.md` へ各フェーズ進捗・成果・ロールバック指針が記録されている。
+- 対象 GitHub Issue へ各フェーズ進捗・成果・ロールバック指針が記録されている。
 
 ## 6. 非対象 / 制約
 - 既存 API を即座に破壊する変更は禁止。互換レイヤを設け、段階的に移行する。
@@ -35,7 +35,7 @@
 ## 7. 関連ドキュメント
 - 設計メモ: `docs/design/worker-dynamic-import-architecture.md`
 - 運用ルール: `AGENTS.md`（Codemod / ts-morph 運用指針含む）
-- タスク管理: `TASKS.md`
+- タスク管理: GitHub Issues + Project
 
 ## 8. 実装指針
 - `WorkerRuntimeProvider` / `WorkerClientProxy` / `WorkerModuleLoader` / `WorkerStateStore` を Phase 1 で導入。
@@ -67,7 +67,7 @@
 | テストカバレッジ低下 | Phase ごとにユニット + 統合 + E2E の追加を必須化 |
 
 ## 11. 受け入れ手順
-1. Phase 1〜4 を順次実施し、各 Phase 完了時に `TASKS.md` で DoD を満たしたことを記録。
+1. Phase 1〜4 を順次実施し、各 Phase 完了時に対象 GitHub Issue で DoD を満たしたことを記録。
 2. 最終的に `pnpm build:turbo` / `pnpm -w typecheck` / 主要パッケージの `pnpm test` を成功させる。
 3. ドキュメント（本ファイルと設計メモ）を更新し、レビュワー承認を得る。
 

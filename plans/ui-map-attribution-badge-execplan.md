@@ -89,7 +89,7 @@ Suggested local validation commands (choose the smallest relevant subset if time
 
 Open `/map/<nodeId>` and confirm the attribution badge appears. The badge should list the data sources backing the visible layers, with license text and links where available. Then open the Shape, Location, and Route Step6 previews and verify the badge also appears with the selected data source. For a minimal manual check, pick one dataset with a well-known attribution such as OpenStreetMap and verify “© OpenStreetMap contributors” appears in the badge.
 
-If automated tests are added, run the project’s typecheck commands listed above and confirm they pass. If any test fails due to unrelated workspace state, document the failure in `TASKS.md` as `blocked` with the command and error summary.
+If automated tests are added, run the project’s typecheck commands listed above and confirm they pass. If any test fails due to unrelated workspace state, document the failure in the linked GitHub Issue as `blocked` with the command and error summary.
 
 ## Idempotence and Recovery
 

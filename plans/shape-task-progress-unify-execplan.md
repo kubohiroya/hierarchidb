@@ -68,7 +68,7 @@ First, locate the canonical task record type in the worker and DB. Identify the 
    Expected result:
      Exit code 0; task ordering tests pass.
 
-7) Update TASKS.md with start/update/done and include command outcomes.
+7) Update the linked GitHub Issue with start/update/done and include command outcomes.
 
 ## Validation and Acceptance
 

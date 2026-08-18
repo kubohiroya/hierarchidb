@@ -21,4 +21,4 @@ Styler plugin builds on the same extensible dialog pattern. Coordinate refactor 
 ## Phase 4: Verification
 - [ ] `pnpm --filter @hierarchidb/styler-plugin typecheck`
 - [ ] Reinstate unit/integration tests for dialog flow and preview rendering.
-- [ ] Document progress in TASKS.md alongside spreadsheet plugin updates.
+- [ ] Document progress in the linked GitHub Issue alongside spreadsheet plugin updates.

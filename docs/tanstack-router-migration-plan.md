@@ -359,11 +359,11 @@ sequenceDiagram
 - [ ] feature flag を既定 ON にし、React Router 実装を削除。`entry.client.tsx` から React Router import を除去。
 - [ ] `patches/@react-router+dev@*.patch` と生成スクリプトを削除。`setupUIPlugins()` の導入に合わせて `scripts/generate-routes-manifest.mjs` など不要資産も整理。
 - [ ] `docs/developer-guidelines.md`・`README.md` に TanStack Router への移行手順・HashRouter オプション・GitHub Pages 404 対応を反映。
-- [ ] `TASKS.md` の該当項目を Done へ移動し、テスト結果を運用ログに記載。
+- [ ] 対象 GitHub Issue の受け入れ基準を更新し、テスト結果をコメントに記載。
 
 ### テスト / DoD
 - `pnpm -C app typecheck`, `pnpm -C app lint`, `pnpm -w test` を全て GREEN。
-- Playwright の全シナリオ（フェーズ 3,4 で整備したもの）を再実行し、成功ログを `TASKS.md` に記録。
+- Playwright の全シナリオ（フェーズ 3,4 で整備したもの）を再実行し、成功ログを対象 GitHub Issue に記録。
 - GitHub Pages 用ビルド (`pnpm -C app build`) を実施し、`dist/404.html` の有無が `VITE_USE_HASH_ROUTING` に沿っていることを確認。
 
 ### 並列化ポイント

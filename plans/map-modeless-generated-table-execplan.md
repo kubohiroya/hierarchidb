@@ -10,11 +10,11 @@ After this change, the map page can show generated outputs for shape, location, 
 
 ## Progress
 
-- [x] 2025-12-29 14:05 JST Added the task to `TASKS.md` with DoD, rollback, and a start log entry.
+- [x] 2025-12-29 14:05 JST Added the task to the retired local task log with DoD, rollback, and a start log entry.
 - [x] 2025-12-29 14:15 JST Drafted this ExecPlan file in `plans/map-modeless-generated-table-execplan.md`.
 - [x] 2025-12-29 14:35 JST Implemented the new modeless dialog content and data loading hooks.
 - [x] 2025-12-29 14:50 JST Added pagination controls for shape/route tables when more than 1000 rows are loaded.
-- [ ] Validate manually on `/map/<nodeId>` and record results in `TASKS.md`.
+- [ ] Validate manually on `/map/<nodeId>` and record results in the linked GitHub Issue.
 
 ## Surprises & Discoveries
 
@@ -86,7 +86,7 @@ Expected snippet for manual verification (example):
 
 Run the app and verify in the browser. From the repo root, execute `pnpm dev` and open `/map/<nodeId>` for a folder that contains generated shape/location/route layers. Confirm that the “Data Table” modeless dialog is available, that each tab renders a virtualized grid, and that typing in the search field filters rows. For Location, ensure that if no batch has run, the dialog shows an empty-state message rather than crashing.
 
-If you cannot run the app, record that limitation in `TASKS.md` and at least confirm the component renders by reading the code paths in `app/src/router/routes/map.tsx`, `app/src/router/routes/modeless/ModelessDialogManager.tsx`, and `app/src/router/routes/modeless/modelessDialogContent.tsx`.
+If you cannot run the app, record that limitation in the linked GitHub Issue and at least confirm the component renders by reading the code paths in `app/src/router/routes/map.tsx`, `app/src/router/routes/modeless/ModelessDialogManager.tsx`, and `app/src/router/routes/modeless/modelessDialogContent.tsx`.
 
 ## Idempotence and Recovery
 

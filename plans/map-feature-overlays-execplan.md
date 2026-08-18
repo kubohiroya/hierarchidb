@@ -15,7 +15,7 @@ After this change, the /map screen clearly distinguishes five feature states: (A
 - [x] (2025-12-29 14:01 JST) Update /map route to populate layer metadata and viewport feature state, and enrich highlight entries with node info.
 - [x] (2025-12-29 14:01 JST) Update modeless data table to filter by viewport state and apply match/hover/selection styles.
 - [x] (2025-12-29 14:01 JST) Add row hover/leave callbacks to GenericDataGrid to sync hover state from table to map.
-- [ ] (2025-12-29 14:01 JST) Manually verify map/table overlay behavior and record evidence in TASKS.md.
+- [ ] (2025-12-29 14:01 JST) Manually verify map/table overlay behavior and record evidence in the linked GitHub Issue.
 
 ## Surprises & Discoveries
 
@@ -74,7 +74,7 @@ Manual verification steps (no automated tests required for this UI-only change):
 - Hover a table row; the map should show a hover glow on the corresponding feature. Hover a map feature; the table row should reflect the hover styling.
 - Click a table row; the map should show the selection outline, and clicking the same row again should clear it. Clicking a map feature should update the selected row.
 
-If manual validation cannot be performed, record that in `TASKS.md` with the reason and suggested follow-up.
+If manual validation cannot be performed, record that in the linked GitHub Issue with the reason and suggested follow-up.
 
 ## Idempotence and Recovery
 

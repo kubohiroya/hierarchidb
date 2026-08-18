@@ -10,12 +10,12 @@ Enable the Location plugin map preview to show a Snackbar on mouse hover with th
 
 ## Progress
 
-- [x] (2025-12-27 10:36 JST) Added task entry 1916 in `TASKS.md` and recorded start log.
+- [x] (2025-12-27 10:36 JST) Added task entry 1916 in the retired local task log and recorded start log.
 - [x] (2025-12-27 11:02 JST) Implemented LocationQueryAPI nearest-point request/response types and method signature.
 - [x] (2025-12-27 11:15 JST) Implemented nearest-point lookup and tile cache in `LocationQueryService` using per-tile BTree and LRUMap.
 - [x] (2025-12-27 11:22 JST) Added UI hover handling and Snackbar display in `LocationMapPreview`.
 - [ ] Update any affected tests or mocks if type changes require it.
-- [ ] Record verification evidence (typecheck or test command) and update `TASKS.md` with progress/done/rollback notes.
+- [ ] Record verification evidence (typecheck or test command) and update the linked GitHub Issue with progress/done/rollback notes.
 
 ## Surprises & Discoveries
 

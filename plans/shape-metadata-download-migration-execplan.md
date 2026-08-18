@@ -14,7 +14,7 @@ fetch-save-metadata パッケージを完全に削除し、Shape Plugin の Step
 - [x] (2026-01-03 18:12 JST) Step3/UI/Worker の OpenStreetMap 例外とメタデータ読み込みの挙動を更新した。
 - [x] (2026-01-03 18:14 JST) fetch-save-metadata を削除し、関連スクリプト/alias/型宣言を整理した。
 - [x] (2026-01-03 18:16 JST) メタデータ関連のユニットテストと URL 生成テストを更新した。
-- [ ] 検証コマンド実行と TASKS.md の運用ログ/ロールバック記述を更新する（完了: なし／残り: 実行・追記）。
+- [ ] 検証コマンド実行と GitHub Issue の運用ログ/ロールバック記述を更新する（完了: なし／残り: 実行・追記）。
 
 ## Surprises & Discoveries
 
@@ -89,7 +89,7 @@ Step3 の UI/Worker については、`useCountryMetadata` が OpenStreetMap の
 ## Idempotence and Recovery
 
 - downloadText 追加と metadata 差し替えは繰り返し適用可能。fetch-save-metadata 削除は戻しにくいので、`git restore` で復元できるよう差分を小さく保つ。
-- ロールバックは、`fetch-save-metadata` の復元と `MetadataLoader` の静的 JSON import への戻しで実現可能。`TASKS.md` に具体的な revert 対象ファイルを列挙する。
+- ロールバックは、`fetch-save-metadata` の復元と `MetadataLoader` の静的 JSON import への戻しで実現可能。GitHub Issue に具体的な revert 対象ファイルを列挙する。
 
 ## Artifacts and Notes
 

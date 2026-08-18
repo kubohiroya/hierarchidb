@@ -13,7 +13,7 @@ After this change, shape builds can select a new `geoBoundaries:TopoJSON` data s
 - [x] (2026-01-26 15:20 JST) Added `geoboundaries-topojson` data source config and selection wiring (type updates + UI configs).
 - [x] (2026-01-26 15:40 JST) Implemented fetch-stage TopoJSON download, Canada/Greenland merge, zoom-based omission, and topojson+gzip cache storage.
 - [x] (2026-01-26 15:55 JST) Extended transform-stage decoding for TopoJSON cache with zoom tolerance simplification and retry on vertex overflow.
-- [x] (2026-01-26 16:05 JST) Ran pnpm install/build/typecheck updates and logged outcomes in TASKS.md.
+- [x] (2026-01-26 16:05 JST) Ran pnpm install/build/typecheck updates and logged outcomes in the retired local task log.
 
 ## Surprises & Discoveries
 

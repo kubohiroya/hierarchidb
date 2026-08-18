@@ -72,7 +72,7 @@ Finally, ensure preview reads from vector tiles when available. If a tile previe
 
 6) Update preview to read tiles from the ephemeral route DB or vectortile runtime worker rather than only GeoJSON. Ensure tiles display even when they do not contain start/end points.
 
-7) Run `pnpm --filter @hierarchidb/route-plugin typecheck` and any targeted tests. Record command outputs in TASKS.md.
+7) Run `pnpm --filter @hierarchidb/route-plugin typecheck` and any targeted tests. Record command outputs in the linked GitHub Issue.
 
 ## Validation and Acceptance
 

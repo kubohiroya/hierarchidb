@@ -653,7 +653,7 @@ vt-orchestrator は fetch の実行は行わない。
 - [ ] `transformRouteSimplificationTolerance`（route）
 - [ ] `vtRouteSimplificationTolerance`（route）
 - [ ] `processing.extraction.tolerance` のスケール変更（route: 0.1〜5.0）
-- 運用: 実装時は TASKS.md の運用ログに適用状況を記録する
+- 運用: 実装時は対象 GitHub Issue に適用状況を記録する
 
 ### 4) 既存UIと新設計の差分・移行点
 

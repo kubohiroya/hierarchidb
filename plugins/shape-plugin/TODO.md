@@ -27,4 +27,4 @@
 - [ ] `pnpm --filter @hierarchidb/shape-plugin typecheck`
 - [ ] Restore/Add unit/integration tests for dialog flow and build controls (Vitest/Jest).
 - [ ] Manual UI smoke test (dialog steps, notifications, build workflow).
-- [ ] Document progress and remaining risks in `TASKS.md`.
+- [ ] Document progress and remaining risks in the linked GitHub Issue.

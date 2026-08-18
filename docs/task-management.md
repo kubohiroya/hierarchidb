@@ -1,73 +1,66 @@
-# Task Management Policy (Scalable)
+# GitHub Issues + Project タスク管理方針
 
 ## 目的
 
-巨大な単一 Markdown でのタスク運用を廃止し、検索性・並列性・監査性を改善する。
+タスクの状態、受け入れ基準、依存関係、検証結果、ロールバック手順を GitHub に集約し、ローカル文書との二重管理をなくす。
 
-## 現在のソース構成
+## SSOT
 
-- 運用ハブ: `TASKS.md`
-- 旧台帳（参照専用）: `TASKS.obsolete.2026-02-10.md`
-- 実タスク台帳: GitHub Issues + Project
+- タスクの実体: GitHub Issue
+- 優先順位と進行状態: repository Project
+- 実装とレビュー: 1 Issue = 1 branch = 1 worktree = 1 purpose の PR
 - Issue 本文テンプレート: `docs/templates/task-issue-template.md`
+- ローカル Markdown のタスク台帳は作成・更新しない。GitHub が利用できない場合もローカル台帳へフォールバックしない。
 
-## 単位と責務
+過去の台帳や ExecPlan に残る記述は履歴資料であり、現在のタスク状態を表さない。現在の判断には必ず GitHub Issue と Project を使う。
 
-- 1 Issue = 1 タスク
-- 1 PR = 1 目的（小粒）
-- 親子関係:
-  - Epic Issue: 成果物を束ねる
-  - Child Issue: 実装・検証の実行単位
+## Issue の必須項目
 
-## 必須フィールド（Issue）
-
-- Summary
-- Background
-- Scope (In/Out)
+- Summary / Background
+- Scope (In / Out)
 - Dependencies
 - Acceptance Criteria (DoD)
-- Rollback
-- Verification Commands
+- Rollback Plan
+- Verification Commands と期待結果
+- 作業ブランチ、進捗、阻害要因、検証結果
 
-## Project 推奨フィールド
+## Project の運用
 
-- `Status`: Backlog / Ready / Doing / Blocked / Review / Done
-- `Priority`: P0 / P1 / P2 / P3
-- `Area`: app / packages / plugins / docs / infra
-- `Due`: date
-- `Owner`: assignee
+- 着手前に対象 Issue を Project へ追加する。
+- `Status` は原則 `Todo` / `In Progress` / `Done` を使う。
+- 阻害中を表す選択肢が Project にある場合はそれを使い、ない場合は `In Progress` のまま Issue に `blocked` の要因と解除条件を記録する。
+- 優先度、規模、担当など利用可能なフィールドは、Project の現行スキーマに合わせる。文書側で存在しない選択肢を仮定しない。
 
-## 運用フロー
+## 着手フロー
 
-1. Task 起票
-- `docs/templates/task-issue-template.md` を Issue 本文へ貼り付けて起票。
-- DoD と Rollback を先に定義する。
+1. 関連する `docs/` 配下の仕様書・設計書を確認する。
+2. 仕様との矛盾があれば実装前に報告し、仕様を確定する。
+3. DoD と Rollback Plan を提示し、ユーザー承認を得る。
+4. Issue を作成し、Assignee を設定する。
+5. Issue を Project に追加し、`Status=In Progress` にする。
+6. `<type>/<scope>/<slug>` 形式のブランチと専用 worktree を作る。
+7. 以上を満たしてから編集と検証を開始する。
 
-2. 着手
-- ブランチ作成: `<type>/<scope>/<slug>`。
-- `TASKS.md` の `Doing` へ 1 行追加（Issue 番号とブランチ名）。
+## 実装・検証
 
-3. 実装
-- 小さい差分で進める。
-- 主要検証: `pnpm lint && pnpm format && pnpm typecheck && pnpm test`
+- 小さくレビュー可能な差分に分ける。
+- 影響範囲に応じて package 限定検証またはルート検証を実行する。
+- 実行コマンド、終了コード、要点を Issue に記録する。
+- 失敗時は原因、発生範囲、解除条件を Issue に記録する。
 
-4. 完了
-- PR に `Refs #<issue>` を記載。
-- `TASKS.md` から `Doing` を削除、`Done` は Issue/Project 側に集約。
+## PR・完了
 
-## 旧台帳からの移行ルール
+1. PR に対象 Issue をリンクし、Scope、DoD、Rollback、Verification を記載する。
+2. マージ前に DoD と検証結果を確認する。
+3. マージ後に Issue を Close し、Project を `Done` にする。
+4. worktree が clean であることを確認してから、worktree とローカルブランチを安全に削除する。
 
-- `TASKS.obsolete.2026-02-10.md` は追記禁止。
-- 移行対象は優先順で Issue 化:
-  1. `進行中` かつ直近 14 日更新
-  2. `blocked` で解消見込みがあるもの
-  3. 未着手の高優先度項目
-- 各移行 Issue の末尾に、旧台帳の参照を残す。
-  - 例: `Source: TASKS.obsolete.2026-02-10.md:464`
+## GitHub が利用できない場合
 
-## ロールバック
+- Issue の作成または必要な更新ができなければ、実装を開始・継続しない。
+- 失敗コマンド、エラー要約、解除条件をユーザーへ報告する。
+- GitHub 復旧後に Issue / Project を更新してから再開する。
 
-- もし Issue/Project 運用に問題が出た場合:
-  1. `TASKS.md` に一時的 Kanban（Doing/Blocked/ToDo）を拡張
-  2. 原因分析完了まで新規 Issue 起票を継続
-  3. 復旧後に `TASKS.md` を再び薄いハブへ戻す
+## 外部公開操作
+
+Issue / Project / PR の作成・編集・コメント・Close・Merge、`git push` などの公開操作は、対象と操作を特定したユーザーの明示承認後に実行する。詳細は `AGENTS.md` の権限境界に従う。

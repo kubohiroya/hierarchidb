@@ -10,12 +10,12 @@ The map page should be able to show multiple non-modal dialog windows on top of 
 
 ## Progress
 
-- [x] 2025-12-26 16:43 Captured requirements and staged the task in `TASKS.md` with DoD, rollback, and a start log entry.
+- [x] 2025-12-26 16:43 Captured requirements and staged the task in the retired local task log with DoD, rollback, and a start log entry.
 - [x] 2025-12-26 17:04 Define the shared dialog base (`AbstractDialog`) and update existing `HeadlessPluginDialog` to delegate to it without behavior changes.
 - [x] 2025-12-26 17:04 Introduce a modeless dialog frame component with drag/resize and minimized handling, and export it from `@hierarchidb/ui-dialog`.
 - [x] 2025-12-26 17:04 Extend dialog context to expose minimize state + handler and add the minimize control to the header UI (only when enabled).
 - [x] 2025-12-26 17:04 Implement a map window manager that persists window state + stacking order to localStorage and renders multiple modeless dialogs on `/map/$nodeId`.
-- [ ] 2025-12-26 18:30 Validate map behavior manually (multiple windows, z-order rotation, drag/resize, minimize/maximize/full-screen, icon restore) and record results in `TASKS.md`.
+- [ ] 2025-12-26 18:30 Validate map behavior manually (multiple windows, z-order rotation, drag/resize, minimize/maximize/full-screen, icon restore) and record results in the linked GitHub Issue.
 
 ## Surprises & Discoveries
 
@@ -69,7 +69,7 @@ Finally, implement a map window manager in `app/src/router/routes/mapDialogWindo
 
 - Manual validation: run the app, navigate to `/hierarchidb/map/<nodeId>`, confirm at least two modeless windows are present and can be dragged, resized, minimized, maximized, and full-screened. Click different windows to confirm z-order changes (active window is on top). Reload the page and confirm window positions/sizes/minimized state restore from localStorage.
 - Regression check: open any standard modal PluginDialog (e.g., create folder) and confirm the header layout/controls and modal behavior remain unchanged.
-- Record the verification steps and outcome in `TASKS.md` worklog #18.
+- Record the verification steps and outcome in the linked GitHub Issue worklog #18.
 
 ## Idempotence and Recovery
 

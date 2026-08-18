@@ -20,4 +20,4 @@ The linker plugin (if present) may participate in the shared dialog/worker archi
 ## Phase 4: Verification
 - [ ] `pnpm --filter @hierarchidb/linker-plugin typecheck`
 - [ ] Add/restore tests for dialog and integration points.
-- [ ] Record status in TASKS.md.
+- [ ] Record status in the linked GitHub Issue.

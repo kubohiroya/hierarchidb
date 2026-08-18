@@ -120,7 +120,7 @@ Finally, refactor SessionController to use the new services and API methods. Rem
 
 6) Validate.
    - Run `pnpm --filter @hierarchidb/shape-plugin typecheck` from the repo root.
-   - If new tests are added, run them and record results in TASKS.md worklog.
+   - If new tests are added, run them and record results in the linked GitHub Issue worklog.
 
 ## Validation and Acceptance
 

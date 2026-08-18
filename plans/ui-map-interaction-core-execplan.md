@@ -16,7 +16,7 @@ Users should get the same map interaction capabilities (FitScreen, search, hover
 - [x] (2026-01-19 00:35 JST) Added route preview list screen wiring using the ui-map shared list component with error columns.
 - [x] (2026-01-19 01:25 JST) Updated shared list screens to render in floating windows and ensured error-only rows are included in the Shape feature list.
 - [ ] Ensure interaction toggles (search/hover/selection/fit/snackbar/box select/Enter-fit) are wired and configurable from ui-map props for preview screens.
-- [x] (2026-01-19 01:10 JST) Ran `pnpm typecheck` and recorded results in TASKS.md.
+- [x] (2026-01-19 01:10 JST) Ran `pnpm typecheck` and recorded results in the retired local task log.
 
 ## Surprises & Discoveries
 
@@ -73,7 +73,7 @@ Finally, validate that interaction toggles are available through ui-map props fo
    - FitScreen, search, hover/nearby list, selection, box selection, snackbar, and Enter-to-fit should remain ui-map responsibilities.
    - Shape/route preview components should pass config flags, not custom event wiring.
 
-6) Run `pnpm typecheck` from the repo root and record the results in `TASKS.md`.
+6) Run `pnpm typecheck` from the repo root and record the results in the linked GitHub Issue.
 
 ## Validation and Acceptance
 

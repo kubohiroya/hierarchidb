@@ -64,7 +64,7 @@ Typecheck が成功し、各 Step の UI で表示や操作が従来と同じで
 
 ## Artifacts and Notes
 
-実行したコマンドと結果は `TASKS.md` の運用ログへ記載する。
+実行したコマンドと結果は GitHub Issue の運用ログへ記載する。
 
 ## Interfaces and Dependencies
 

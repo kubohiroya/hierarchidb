@@ -10,12 +10,12 @@ shape-plugin の UI コンポーネントには、描画ロジックとデータ
 
 ## Progress
 
-- [x] (2026-01-29 08:10 JST) TASKS.md にタスクを追加して着手ログを記載。
+- [x] (2026-01-29 08:10 JST) retired local task log にタスクを追加して着手ログを記載。
 - [x] (2026-01-29 08:18 JST) 表示/ロジック混在の対象コンポーネントを列挙。
 - [x] (2026-01-29 08:19 JST) 対象ごとに抽出フック案を決定。
 - [x] (2026-01-29 08:22 JST) Build Progress パネル/ステップのロジックをフックに抽出し、UI を薄くする。
 - [x] (2026-01-29 08:16 JST) `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行。
-- [x] (2026-01-29 08:16 JST) TASKS.md に完了ログを記載。
+- [x] (2026-01-29 08:16 JST) retired local task log に完了ログを記載。
 
 ## Surprises & Discoveries
 
@@ -41,7 +41,7 @@ shape-plugin の UI コンポーネントには、描画ロジックとデータ
 1) `plugins/shape-plugin/src/ui/components` 配下のコンポーネントを確認し、状態管理・計算・副作用が混在するものを列挙する。
 2) 各対象について、抽出対象のロジックを定めてカスタムフックへ切り出す。
 3) UI コンポーネントは props とフックの戻り値に基づく描画だけに整理する。
-4) typecheck を実行し、TASKS.md にログを残す。
+4) typecheck を実行し、GitHub Issue にログを残す。
 
 ## Concrete Steps
 

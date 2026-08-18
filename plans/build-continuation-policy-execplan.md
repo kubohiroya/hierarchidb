@@ -14,7 +14,7 @@ Users can choose a build continuation policy in the TreeConsole settings (finish
 - [x] Extend Worker API start calls to carry buildContinuationPolicy.
 - [x] Update Shape batch worker to accept the policy and apply it to pipeline execution.
 - [x] Apply policy to stage failure handling and stage-to-stage continuation logic.
-- [x] Run pnpm typecheck and capture results in TASKS.md.
+- [x] Run pnpm typecheck and capture results in the retired local task log.
 
 ## Surprises & Discoveries
 
@@ -38,7 +38,7 @@ Users can choose a build continuation policy in the TreeConsole settings (finish
 ## Outcomes & Retrospective
 
 - Completed policy wiring from TreeConsole settings through Worker API into Shape pipeline.
-- `pnpm typecheck` exit 0 (tsdown define warnings noted in TASKS.md).
+- `pnpm typecheck` exit 0 (tsdown define warnings noted in the retired local task log).
 
 ## Context and Orientation
 
@@ -67,7 +67,7 @@ Edit the files listed in Context and Orientation to pass policy end-to-end. Afte
 
   pnpm typecheck
 
-Record exit code and warnings in TASKS.md under task 2242.
+Record exit code and warnings in the linked GitHub Issue under task 2242.
 
 ## Validation and Acceptance
 

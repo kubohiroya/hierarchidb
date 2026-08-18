@@ -14,7 +14,7 @@ Large UI components in this repo embed business logic, state orchestration, and 
 - [x] (2026-01-17 18:00 JST) Defined hook file naming convention and per-component extraction rules in this plan.
 - [x] (2026-01-17 18:05 JST) Extracted hooks for app/src components (LicenseInfo, HomePage, TagsPage, PluginDialogRoute) and updated imports.
 - [x] (2026-01-17 18:25 JST) Extracted hooks for plugins/*/src components and updated imports (resolver steps, folder inputs, styler, basemap, spreadsheet).
-- [x] (2026-01-17 18:45 JST) Validated with `pnpm typecheck` and updated TASKS.md logs.
+- [x] (2026-01-17 18:45 JST) Validated with `pnpm typecheck` and updated the retired local task log.
 
 ## Surprises & Discoveries
 
@@ -73,7 +73,7 @@ Proceed in this order to keep changes manageable:
 1) app/src components, top-down order as listed above.
 2) plugins components, grouped by plugin to avoid interleaving unrelated changes.
 
-Update TASKS.md logs after each logical batch and record any blocked items.
+Update the linked GitHub Issue logs after each logical batch and record any blocked items.
 
 ## Concrete Steps
 
@@ -123,4 +123,4 @@ The component should import the hook via a relative path and call it once at the
 
 ---
 
-Plan change log: 2026-01-17 created initial ExecPlan for extracting hooks from app and plugins components listed in TASKS.md.
+Plan change log: 2026-01-17 created initial ExecPlan for extracting hooks from app and plugins components listed in the retired local task log.

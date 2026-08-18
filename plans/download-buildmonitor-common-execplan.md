@@ -13,7 +13,7 @@ After this change, plugin download/auth calls and BuildMonitor logic will be cen
 - [x] (2025-12-29 09:45 JST) Created initial ExecPlan framework and confirmed target shared package for BuildMonitor.
 - [x] (2025-12-29 10:05 JST) Added shared BuildMonitor utilities to packages/ui/monitoring and updated shape/route callers to use them directly; removed plugin-local buildMonitor modules.
 - [x] (2025-12-29 10:15 JST) Replaced plugin-specific download/auth wrappers with direct calls to @hierarchidb/download, removed redundant registry modules/tests, and preserved Location strategy registry via a dedicated module.
-- [ ] (pending) Validate with targeted tests and update TASKS.md with results and rollback steps.
+- [ ] (pending) Validate with targeted tests and update the linked GitHub Issue with results and rollback steps.
 
 ## Surprises & Discoveries
 
@@ -93,7 +93,7 @@ Work in repository root /Users/hiroya/WebstormProjects/hierarchidb.
    - Update code to import from @hierarchidb/download directly.
    - Delete wrapper modules and wrapper-only tests; update plugin index exports if needed.
 
-4) Update TASKS.md logs with progress and decisions.
+4) Update the linked GitHub Issue logs with progress and decisions.
 
 ## Validation and Acceptance
 
@@ -112,7 +112,7 @@ Acceptance criteria:
 
 ## Idempotence and Recovery
 
-All steps are safe to repeat. If any change introduces regressions, revert the modified files and restore the deleted wrapper modules. If a deletion is discovered to be needed elsewhere, reintroduce it explicitly and document the dependency in TASKS.md.
+All steps are safe to repeat. If any change introduces regressions, revert the modified files and restore the deleted wrapper modules. If a deletion is discovered to be needed elsewhere, reintroduce it explicitly and document the dependency in the linked GitHub Issue.
 
 ## Artifacts and Notes
 
