@@ -15,7 +15,7 @@ Extract task execution currently reads tolerance, min-area, zoom levels, and til
 - [ ] Replace task-field usage with TreeQueryAPI-derived settings in Extract1/2 adapters and worker.
 - [ ] Remove ExtractTask field copies (tolerance/minArea/zoomLevels/tileSize) and update task builders.
 - [ ] Update task registration and status updates to use typed input/output payloads in Dexie.
-- [ ] Validate extract execution paths and update TASKS.md log with results.
+- [ ] Validate extract execution paths and update the linked GitHub Issue log with results.
 
 ## Surprises & Discoveries
 
@@ -76,7 +76,7 @@ Finally, remove the redundant fields from `ExtractTask` in `plugins/shape-plugin
    - Edit `plugins/shape-plugin/src/common/types/build.ts` to remove those properties from `ExtractTask`.
    - Remove their assignments in `plugins/shape-plugin/src/services/batch/SessionController.ts` when building Extract1/Extract2 tasks.
 
-6) Update TASKS.md log with outcomes, reasons, rollback, and verification status.
+6) Update the linked GitHub Issue log with outcomes, reasons, rollback, and verification status.
 
 ## Validation and Acceptance
 

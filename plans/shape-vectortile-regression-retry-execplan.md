@@ -15,7 +15,7 @@ PLANS.md is located at `PLANS.md` from the repository root and this plan must be
 - [x] (2025-12-30 14:20 JST) vectortile サイズ超過時に regression + retry 更新を実装する。
 - [x] (2025-12-30 14:25 JST) regression 検知で extract2 の再始動と vectortile 再実行を行う。
 - [x] (2025-12-30 14:25 JST) extract2 の簡略化ロジックで retry 値に応じた強化を行う。
-- [ ] (2025-12-30 11:50 JST) 検証手順を実施し、TASKS.md に結果を記録する。
+- [ ] (2025-12-30 11:50 JST) 検証手順を実施し、GitHub Issue に結果を記録する。
 
 ## Surprises & Discoveries
 
@@ -87,7 +87,7 @@ PLANS.md is located at `PLANS.md` from the repository root and this plan must be
 
 ## Artifacts and Notes
 
-検証時に出力されたログは `TASKS.md` の運用ログに短く貼る。
+検証時に出力されたログは GitHub Issue の運用ログに短く貼る。
 
 ## Interfaces and Dependencies
 

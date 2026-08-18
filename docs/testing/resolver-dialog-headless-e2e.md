@@ -18,7 +18,7 @@
   - `pnpm -w test -- --filter resolver-plugin`
 
 ## ロールバック手順
-- テストを一時停止する場合は `packages/plugins/resolver-plugin/src/components/__tests__/ResolverDialog.e2e.test.tsx` を `describe.skip` に戻し、タスク管理（TASKS.md）のチェックリストを更新してください。
+- テストを一時停止する場合は `packages/plugins/resolver-plugin/src/components/__tests__/ResolverDialog.e2e.test.tsx` を `describe.skip` に戻し、対象 GitHub Issue のチェックリストを更新してください。
 - HeadlessPluginDialog 側の API 変更でテストが壊れた場合は、このノートを参照して隠しコントロールやフィクスチャの更新箇所を特定し、再調整してください。
 
 ## メモ

@@ -94,7 +94,7 @@ Changes are additive and use existing managers/services. If a batch build fails,
 
 ## Artifacts and Notes
 
-Record validation outputs and any runtime-worker adapter changes in `TASKS.md` and this plan’s Progress section. Document any discovered worker feature gaps in the Decision Log.
+Record validation outputs and any runtime-worker adapter changes in the linked GitHub Issue and this plan’s Progress section. Document any discovered worker feature gaps in the Decision Log.
 
 ## Interfaces and Dependencies
 

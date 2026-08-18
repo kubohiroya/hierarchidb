@@ -52,7 +52,7 @@ Second, split `useShapeBuildStep.ts` into smaller hooks or internal helpers: a p
 
 Third, modularize `runShapePipeline` by extracting each stage execution into a dedicated function (e.g., `runFetchStage`, `runTransformStage`, `runVtStage`) within `shapePipeline.ts` or adjacent file(s). Keep stage sequencing and error handling equivalent to current behavior. Ensure the “pending queued after stage completion -> mark failed” logic remains identical, just moved. Verify that resume and continuation policy checks still use the same logic.
 
-Finally, update any imports and run typecheck/tests. Update this ExecPlan and TASKS.md as work progresses.
+Finally, update any imports and run typecheck/tests. Update this ExecPlan and the linked GitHub Issue as work progresses.
 
 ## Concrete Steps
 

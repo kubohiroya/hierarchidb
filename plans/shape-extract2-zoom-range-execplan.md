@@ -17,7 +17,7 @@ Enable extract2 to generate tasks per configured zoom range segment and scale si
 - [ ] Verify that vectortile inputs use tileId relations so each zoom range’s extract2 outputs are used as intended.
 - [x] (2026-01-04 15:10 JST) Update type definitions (shape-store / plugin-service-api / common types) to carry new input fields.
 - [x] (2026-01-04 15:10 JST) Update test expectations or add tests for the new task generation behavior.
-- [ ] Record final notes, rollback details, and verification results in TASKS.md (log updated; verification pending).
+- [ ] Record final notes, rollback details, and verification results in the linked GitHub Issue (log updated; verification pending).
 
 ## Surprises & Discoveries
 

@@ -70,7 +70,7 @@ Third, simplify `@hierarchidb/download` so that Dexie-specific storage and plugi
 
 Fourth, update plugin call sites (spreadsheet, styler, and any other chunk-store consumers) so they inject serializer/deserializer functions into chunk-store rather than relying on download helpers to parse or cache content. The plugin code should explicitly handle serialization boundaries.
 
-Finally, update docs (download and chunk-store READMEs), run typechecks, and log results in `TASKS.md`.
+Finally, update docs (download and chunk-store READMEs), run typechecks, and log results in the linked GitHub Issue.
 
 ## Concrete Steps
 

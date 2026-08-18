@@ -15,12 +15,12 @@ We need a single low-level GIS API that can switch between turf and geos-wasm fo
 - [ ] Implement turf-backed wrapper functions and move existing turf call sites to the wrapper.
 - [ ] Implement geos-backed wrapper functions (using existing geos-wasm wrapper), including kinks → isValid replacement.
 - [ ] Update geometryEngine plumbing so all call sites receive an engine selection (transform/fetch/metadata/VT/other).
-- [ ] Run typechecks and update TASKS.md with the completed milestones.
+- [ ] Run typechecks and update the linked GitHub Issue with the completed milestones.
 
 ## Surprises & Discoveries
 
 - Observation: `@turf/unkink-polygon` is referenced in `packages/gis-sdk/src/processing/geometryExtract.ts` and previously caused install failures; this needs a replacement path or explicit error in geos mode.
-  Evidence: `TASKS.md` entries around 2566 indicate `@turf/unlink` resolution failures.
+  Evidence: the retired local task log entries around 2566 indicate `@turf/unlink` resolution failures.
 
 ## Decision Log
 
@@ -66,7 +66,7 @@ Second, update all direct turf imports across the repo to call this wrapper inst
 
 Third, ensure geometryEngine is propagated to all call sites, not only transform. For modules that already receive `TransformConfig`, use `geometryConfig.geometryEngine`. For other modules, add a `geometryEngine` parameter or read from existing build config structures where available. Avoid implicit defaults beyond the current `geometryEngine ?? 'turf'` behavior.
 
-Fourth, run typechecks for `@hierarchidb/gis-sdk`, `@hierarchidb/vt-orchestrator`, and `@hierarchidb/shape-plugin`, updating TASKS.md logs as you complete milestones.
+Fourth, run typechecks for `@hierarchidb/gis-sdk`, `@hierarchidb/vt-orchestrator`, and `@hierarchidb/shape-plugin`, updating the linked GitHub Issue logs as you complete milestones.
 
 ## Concrete Steps
 
@@ -109,7 +109,7 @@ All edits are safe to re-apply. If a step fails, revert the specific file and re
 
 ## Artifacts and Notes
 
-At each milestone, capture short diffs or command transcripts in TASKS.md to show the replacements and typecheck outputs.
+At each milestone, capture short diffs or command transcripts in the linked GitHub Issue to show the replacements and typecheck outputs.
 
 ## Interfaces and Dependencies
 

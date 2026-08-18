@@ -13,7 +13,7 @@ shape/location/route のベクトルタイル生成において、chunk-store �
 - [x] (2026-01-03 19:24 JST) gis-sdk に FlatGeobuf 生成ユーティリティを追加し、location/route の入力生成に再利用した。
 - [x] (2026-01-03 19:30 JST) shape/location/route の入力バッファ生成と config 配線を更新した（入力フォーマット選択）。
 - [x] (2026-01-03 19:31 JST) 型定義（plugin-service-api / route-store / location-store / shape config）を更新した。
-- [ ] テスト/検証手順と TASKS.md の運用ログ・ロールバック手順を更新する（完了: なし／残り: 記録・検証）。
+- [ ] テスト/検証手順と GitHub Issue の運用ログ・ロールバック手順を更新する（完了: なし／残り: 記録・検証）。
 
 ## Surprises & Discoveries
 
@@ -65,7 +65,7 @@ shape/location/route のベクトルタイル生成において、chunk-store �
 ## Idempotence and Recovery
 
 - 追加した inputFormat/inputCompression は既定値が `geojson` / `none` であるため、設定が無い場合の挙動は維持される。
-- ロールバックは該当ファイルの差分を revert し、vector tile 入力が JSON のみの経路に戻すことで実現できる。TASKS.md に戻し先のファイルを列挙する。
+- ロールバックは該当ファイルの差分を revert し、vector tile 入力が JSON のみの経路に戻すことで実現できる。GitHub Issue に戻し先のファイルを列挙する。
 
 ## Artifacts and Notes
 

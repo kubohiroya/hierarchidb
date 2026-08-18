@@ -14,7 +14,7 @@ After this change, developers can locate exported types and services quickly bec
 - [x] (2025-12-28 14:35 JST) Decide the scope for “type name = file name” (component props vs. shared API types).
 - [x] (2025-12-28 14:35 JST) Define rename/merge rules for duplicated symbols and document them.
 - [x] (2025-12-28 14:47 JST) Apply renames, update imports/exports, and keep tests passing (RouteEngine extraction, LaneSemaphoreRegistry re-export, PluginWorkerModuleLoaderContract rename, plugin-service-api PascalCase files).
-- [ ] (pending) Run targeted typechecks/tests and record results in TASKS.md.
+- [ ] (pending) Run targeted typechecks/tests and record results in the linked GitHub Issue.
 
 ## Surprises & Discoveries
 

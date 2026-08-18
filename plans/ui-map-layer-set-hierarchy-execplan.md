@@ -14,7 +14,7 @@ Users need layer sets that do not depend on admin level names, can be toggled in
 - [x] (2026-01-22 20:23 JST) Update plan to include UI toggles for /map and shape preview plus grouped list.
 - [ ] Implement layer set definitions, resolution utilities, and priority ordering.
 - [ ] Add layer set toggle UI and grouped list UI to /map and shape preview.
-- [ ] Run pnpm typecheck and record results in TASKS.md.
+- [ ] Run pnpm typecheck and record results in the linked GitHub Issue.
 
 ## Surprises & Discoveries
 
@@ -79,7 +79,7 @@ Finally, update the vector layer construction in useShapePreviewStepView.ts to u
    - Update plugins/shape-plugin/src/ui/components/step6/useShapePreviewStepView.ts to read layerSetName from buildConfig.tileEmitConfig.layerSetName (default to "shape" only if missing).
    - Use the layer set resolver to build ResourceVectorLayer entries in the defined order and respect visibility toggles.
 
-6) Run pnpm typecheck and record the results in TASKS.md.
+6) Run pnpm typecheck and record the results in the linked GitHub Issue.
 
 ## Validation and Acceptance
 

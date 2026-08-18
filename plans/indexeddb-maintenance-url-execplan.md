@@ -22,7 +22,7 @@ The behavior is observable: open the user menu, start maintenance, confirm on `/
 - [x] (2026-02-13 01:33Z) Added user-menu entry and app callbacks to open maintenance URL from home/tree layouts.
 - [x] (2026-02-13 01:34Z) Added localization strings for maintenance entry in app/package locale bundles.
 - [x] (2026-02-13 01:36Z) Added unit tests for session, lock, and execution blocked/success behavior.
-- [x] (2026-02-13 01:38Z) Ran test/typecheck commands, updated `TASKS.md`, and documented external blockers.
+- [x] (2026-02-13 01:38Z) Ran test/typecheck commands, updated the retired local task log, and documented external blockers.
 - [x] (2026-02-13 01:57Z) Fixed router unit-test mock compatibility (`configure-router-mode`) for `maintenanceRoute` addition and re-ran targeted app tests.
 
 ## Surprises & Discoveries
@@ -60,7 +60,7 @@ The behavior is observable: open the user menu, start maintenance, confirm on `/
 
 Implemented the full maintenance URL flow with explicit consent and one-time session gating, integrated from avatar menu to a new `/maintenance` route. The route now validates short-lived session credentials, requires typed destructive confirmation (and email confirmation when available), executes worker shutdown/reset plus IndexedDB deletion with blocked handling, and re-initializes the worker runtime to trigger upgrades.
 
-New unit tests (`maintenanceSession`, `maintenanceLock`, `maintenanceExecution`) all pass, and router compatibility test (`configure-router-mode`) also passes after mock adjustment. Runtime-worker and ui-usermenu typechecks pass. Full `@hierarchidb/app` turbo typecheck remains blocked by pre-existing `@hierarchidb/shape-plugin` readonly/mutable mismatch (`tileEmitConfig.debug.tiles`), which was logged in `TASKS.md`.
+New unit tests (`maintenanceSession`, `maintenanceLock`, `maintenanceExecution`) all pass, and router compatibility test (`configure-router-mode`) also passes after mock adjustment. Runtime-worker and ui-usermenu typechecks pass. Full `@hierarchidb/app` turbo typecheck remains blocked by pre-existing `@hierarchidb/shape-plugin` readonly/mutable mismatch (`tileEmitConfig.debug.tiles`), which was logged in the retired local task log.
 
 ## Context and Orientation
 
@@ -110,7 +110,7 @@ Run from `/Users/hiroya/WebstormProjects/hierarchidb-maintenance-url`.
 4. Execute:
    - `pnpm -w turbo run typecheck --filter @hierarchidb/app --filter @hierarchidb/runtime-worker`
    - `pnpm -w turbo run test --filter @hierarchidb/app --filter @hierarchidb/runtime-worker`
-5. Record results in Issue #239 and `TASKS.md`.
+5. Record results in GitHub Issue #239.
 
 Expected terminal signals (abridged): successful commands exit with code `0`; failing command output must be captured and logged as blocked if unrelated external failures appear.
 

@@ -10,12 +10,12 @@ Step5(Build Progress) の集計ロジックが shape-plugin と ui-build で重�
 
 ## Progress
 
-- [x] (2026-01-29 09:12 JST) TASKS.md にタスク追加と着手ログを記載。
+- [x] (2026-01-29 09:12 JST) retired local task log にタスク追加と着手ログを記載。
 - [x] (2026-01-29 09:25 JST) Step5 集計ロジックを共通ユーティリティへ集約。
 - [x] (2026-01-29 09:25 JST) useShapeBuildStep の責務を分割フックへ移行。
 - [x] (2026-01-29 09:25 JST) runShapePipeline をステージ単位ランナーへ分割。
 - [x] (2026-01-29 09:28 JST) `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行。
-- [x] (2026-01-29 09:28 JST) TASKS.md に完了ログを記載。
+- [x] (2026-01-29 09:28 JST) retired local task log に完了ログを記載。
 
 ## Surprises & Discoveries
 
@@ -41,7 +41,7 @@ Step5(Build Progress) の集計ロジックが shape-plugin と ui-build で重�
 1) Step5 集計ロジックを共通ユーティリティへ移動し、shape-plugin と ui-build から参照する。
 2) `useShapeBuildStep` のロジックを「進捗計算」「表示ラベル」「自動再開/タイマー」「サマリ生成」単位で分割フック化する。
 3) `runShapePipeline` をステージ単位ランナーに分割し orchestrator を薄くする。
-4) typecheck を実行し、TASKS.md にログを残す。
+4) typecheck を実行し、GitHub Issue にログを残す。
 
 ## Validation and Acceptance
 

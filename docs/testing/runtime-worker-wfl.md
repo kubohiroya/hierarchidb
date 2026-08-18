@@ -33,4 +33,4 @@ pnpm --filter @hierarchidb/runtime-worker-worker wfl
 
 - `packages/runtime/worker/package.json` — `wfl` スクリプト定義
 - `turbo.json` — `wfl` タスクの依存関係
-- `TASKS.md` — Route/Worker バッチ結合テスト整備タスクの進捗とロールバック手順
+- 対象 GitHub Issue — Route/Worker バッチ結合テスト整備タスクの進捗とロールバック手順

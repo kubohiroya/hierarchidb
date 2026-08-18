@@ -2,6 +2,8 @@
 
 This document describes the requirements for an execution plan ("ExecPlan"), a design document that a coding agent can follow to deliver a working feature or system change. Treat the reader as a complete beginner to this repository: they have only the current working tree and the single ExecPlan file you provide. There is no memory of prior plans and no external context.
 
+GitHub Issues and the repository Project are the single source of truth for task status, acceptance criteria, blockers, verification evidence, and rollback records. An ExecPlan may contain detailed implementation progress and design decisions, but it must link to its GitHub Issue and must not create or depend on a local Markdown task ledger. References to retired local task logs in historical ExecPlans describe past events only and are not current instructions.
+
 ## How to use ExecPlans and PLANS.md
 
 When authoring an executable specification (ExecPlan), follow PLANS.md _to the letter_. If it is not in your context, refresh your memory by reading the entire PLANS.md file. Be thorough in reading (and re-reading) source material to produce an accurate specification. When creating a spec, start from the skeleton and flesh it out as you do your research.

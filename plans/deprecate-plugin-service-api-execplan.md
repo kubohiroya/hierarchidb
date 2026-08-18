@@ -98,7 +98,7 @@ All steps are additive and can be rerun safely. If a step fails, revert the most
 
 ## Artifacts and Notes
 
-Collect command output for build/typecheck runs in the TASKS.md log. Keep any warnings (such as tsdown define warnings) recorded for later cleanup.
+Collect command output for build/typecheck runs in the linked GitHub Issue log. Keep any warnings (such as tsdown define warnings) recorded for later cleanup.
 
 ## Interfaces and Dependencies
 

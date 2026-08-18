@@ -63,7 +63,7 @@ Third, remove styler-store’s dependency on spreadsheet-plugin by creating a ne
 
 Fourth, update host package.json dependencies to remove direct plugin dependencies. app/package.json and packages/runtime-worker/package.json should keep plugin-registry and store packages, while direct plugin dependencies should be removed unless the dependency is explicitly required for plugin-registry generation. For Vite config alias lists, decide whether those lists can be derived from plugin-registry outputs or the existing plugin alias plugin without direct plugin dependencies; document the decision and align config accordingly.
 
-Finally, rerun dependency-cruiser and grep scans to confirm that host-side plugin imports are gone. Capture the output in TASKS.md and update this plan’s Progress and Outcomes sections.
+Finally, rerun dependency-cruiser and grep scans to confirm that host-side plugin imports are gone. Capture the output in the linked GitHub Issue and update this plan’s Progress and Outcomes sections.
 
 ## Concrete Steps
 
@@ -71,7 +71,7 @@ Run the following commands from the repository root and compare results to the e
 
 1) Inventory direct plugin imports in host code.
    Command: rg -n "@hierarchidb/[^\"'\s]*-plugin" packages/runtime-worker packages/common packages packages/ui app -g"*.ts*" -g"*.js"
-   Expectation: The remaining hits should be limited to plugin-registry infrastructure or be flagged as disallowed. Record the disallowed list in this plan and TASKS.md.
+   Expectation: The remaining hits should be limited to plugin-registry infrastructure or be flagged as disallowed. Record the disallowed list in this plan and the linked GitHub Issue.
 
 2) Move IDE-GSM helpers from location-plugin to location-store and update imports.
    Files: packages//src (new modules as needed), plugins/location-plugin/src/services/ide-gsm/ideGsmRouteCsv.ts, plugins/location-plugin/src/services/pointRepository.ts, plugins/location-plugin/src/services/index.ts, packages/runtime-worker/src/services/LocationMutationService.ts.
@@ -87,13 +87,13 @@ Run the following commands from the repository root and compare results to the e
 
 5) Validate the dependency graph.
    Command: pnpm exec dependency-cruiser -c .dependency-cruiser.cjs packages app
-   Expectation: any remaining host-to-plugin edges are mediated by plugin-registry. Record the output in TASKS.md and update this plan.
+   Expectation: any remaining host-to-plugin edges are mediated by plugin-registry. Record the output in the linked GitHub Issue and update this plan.
 
 ## Validation and Acceptance
 
 Run the dependency-cruiser command above after updates. Acceptance is met when the output no longer lists host-side imports of plugin packages outside plugin-registry, and the grep inventory from step 1 is clean of disallowed imports.
 
-If typecheck is feasible, run pnpm --filter @hierarchidb/runtime-worker typecheck and pnpm --filter @hierarchidb/app typecheck, and record any failures or skips in TASKS.md.
+If typecheck is feasible, run pnpm --filter @hierarchidb/runtime-worker typecheck and pnpm --filter @hierarchidb/app typecheck, and record any failures or skips in the linked GitHub Issue.
 
 ## Idempotence and Recovery
 
@@ -101,7 +101,7 @@ All steps are file edits and can be repeated safely. If a change causes a regres
 
 ## Artifacts and Notes
 
-Capture the dependency-cruiser output and any before/after grep output in TASKS.md under the active worklog entry for this task.
+Capture the dependency-cruiser output and any before/after grep output in the linked GitHub Issue under the active worklog entry for this task.
 
 ## Interfaces and Dependencies
 

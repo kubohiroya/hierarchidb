@@ -97,7 +97,7 @@ Success criteria:
 
 ## Idempotence and Recovery
 
-Schema changes should be additive and versioned so they can be re-run safely. If a regression is found, revert the schema changes and restore TilesDB usage; ensure the rollback notes are recorded in TASKS.md.
+Schema changes should be additive and versioned so they can be re-run safely. If a regression is found, revert the schema changes and restore TilesDB usage; ensure the rollback notes are recorded in the linked GitHub Issue.
 
 ## Artifacts and Notes
 

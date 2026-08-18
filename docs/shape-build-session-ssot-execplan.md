@@ -10,7 +10,7 @@ Shape Step5 の進捗表示は、現在 `tasksLoading`・`startPending`・`start
 
 ## Progress
 
-- [x] (2026-02-28 20:05 JST) Issue #642 起票、Project `In Progress` 設定、専用ブランチ作成、TASKS.md 追記を完了。
+- [x] (2026-02-28 20:05 JST) Issue #642 起票、Project `In Progress` 設定、専用ブランチ作成、当時のローカル運用ログ追記を完了（ローカル台帳は現在廃止）。
 - [x] (2026-02-28 20:09 JST) 既存の build-progress 状態経路（task sync, stage state, panel controller）を再調査し、SSOT 化の差し込み点を特定。
 - [x] `task list view phase` 型と atom を追加し、`useShapeBuildStepStageState` で phase を単一路で算出する。
 - [x] `useShapeBuildStep` と atom sync 経路で phase を伝搬し、`ShapeBuildProgressPanelController` の skeleton 判定を phase ベースへ置換する。
@@ -103,7 +103,7 @@ Shape Step5 の進捗 UI は次の経路で構成される。
 
 ## Artifacts and Notes
 
-- 進捗ログ・検証ログは #642 と `TASKS.md` の `今日の運用ログ` に逐次追記する。
+- 進捗ログ・検証ログは GitHub Issue #642 に集約する。
 - #641 の最小修正試作は stash `wip-641-skeleton-fix` に退避済み。必要なら後で比較参照する。
 
 ## Interfaces and Dependencies

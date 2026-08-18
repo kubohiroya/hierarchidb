@@ -15,7 +15,7 @@ The UI packages for tabular previews and data grids have confusing names (`ui-ta
 - [x] Rename `@hierarchidb/ui-tabular-extract` → `@hierarchidb/ui-tabular` and update paths/imports.
 - [x] Rename key exports (`TabularPreviewLite` → `TabularPreviewGrid`, `TabularPreview` → `DataGridPreview`) and update usages.
 - [x] Update plugin registry references, docs, and configs.
-- [x] Run `pnpm --filter @hierarchidb/shape-plugin typecheck` and record in `TASKS.md`.
+- [x] Run `pnpm --filter @hierarchidb/shape-plugin typecheck` and record in the retired local task log.
 
 ## Surprises & Discoveries
 
@@ -51,7 +51,7 @@ Update package names in `packages/ui/data-grid/package.json` and `packages/ui/ta
 4) Replace all imports of `@hierarchidb/ui-data-grid` → `@hierarchidb/ui-grid` and `@hierarchidb/ui-tabular-extract` → `@hierarchidb/ui-tabular`.
 5) Update `package.json` dependencies in plugins and packages to the new names.
 6) Update generated registry references or regenerate registry if needed.
-7) Run `pnpm --filter @hierarchidb/shape-plugin typecheck` and record the result in `TASKS.md`.
+7) Run `pnpm --filter @hierarchidb/shape-plugin typecheck` and record the result in the linked GitHub Issue.
 
 ## Validation and Acceptance
 

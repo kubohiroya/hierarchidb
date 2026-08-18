@@ -362,7 +362,7 @@ flowchart LR
 ```
 
 ### 12.2 Phase 0 – 準備
-- [ ] 本ドキュメントと `TASKS.md` の該当タスクを最新化し、レビューを受ける
+- [ ] 本ドキュメントと対象 GitHub Issue を最新化し、レビューを受ける
 - [ ] メインブランチとの差分を把握し、並行作業とのコンフリクトリスクを共有
 - [ ] ESLint/tsconfig のルール（旧パス検出など）を先行整備するかどうか検討
 
@@ -374,7 +374,7 @@ flowchart LR
 
 進捗ログ（Phase 1）
 - 2025-09-25: `packages/runtime-worker/worker*` を `packages/runtime/worker` / `packages/runtime/worker-bootstrap` へ移行し、ESLint / Vitest / tsconfig / Vite / pnpm-lock を新パスへ更新
-- 2025-09-26: Phase 1 の移行後点検として `pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm --filter @hierarchidb/ui-worker-client typecheck` / `pnpm -C app typecheck` を再実行し、`docs/design/worker-dynamic-import-architecture.md` と `TASKS.md` に検証結果を反映
+- 2025-09-26: Phase 1 の移行後点検として `pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm --filter @hierarchidb/ui-worker-client typecheck` / `pnpm -C app typecheck` を再実行し、`docs/design/worker-dynamic-import-architecture.md` と当時の運用記録に検証結果を反映
 
 ### 12.4 Phase 2a – 代表プラグインでの試験移行
 - [ ] 1〜2 個のプラグイン（例: folder, resolver）を `ui-static` / `ui-dynamic` / `worker-factory` / `types` へ再配置
@@ -405,7 +405,7 @@ flowchart LR
 ### 12.7 Phase 4 – ドキュメント更新
 - [ ] `docs/design/worker-dynamic-import-architecture.md` を最新状態に反映し、最終版としてレビュー
 - [ ] 開発者ガイド (`docs/developer-guidelines.md` 等) に新しい構成と作業手順を追記
-- [ ] `TASKS.md` の該当タスクを Done に移し、実施内容をまとめて記録
+- [ ] 対象 GitHub Issue の受け入れ基準を完了し、実施内容をまとめて記録
 
 ### 12.8 作業時の注意事項
 - **中断可能な単位でコミット**: 各 Phase/サブタスクごとにコミットを分け、途中で中断しても戻しやすいようにする

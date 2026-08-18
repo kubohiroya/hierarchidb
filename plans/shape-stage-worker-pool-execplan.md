@@ -93,7 +93,7 @@ vector tile は metadataReplace を 1 回だけ行う必要があるため、最
 ## Idempotence and Recovery
 
 - Worker 起動数の変更は実行時のみで、再実行しても DB を破壊しない。
-- ロールバックは、今回編集したファイルの差分を revert し、TASKS.md の運用ログ追記を削除する。
+- ロールバックは、今回編集したファイルの差分を revert し、結果を GitHub Issue に追記する。
 
 ## Artifacts and Notes
 

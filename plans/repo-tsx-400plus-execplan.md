@@ -42,7 +42,7 @@ The repository contains multiple TSX files over 400 lines (excluding tests/stori
 1) For each target TSX, identify logic candidates (state, effects, data transform, handlers).
 2) Extract logic into a sibling `use*` hook or helper component file.
 3) Replace in-file logic with hook calls and keep UI behavior unchanged.
-4) Run package/plugin typecheck after each target (or batch) and record results in TASKS.md.
+4) Run package/plugin typecheck after each target (or batch) and record results in the linked GitHub Issue.
 5) Update this ExecPlan progress and surprises.
 
 ## Validation and Acceptance
@@ -50,5 +50,5 @@ The repository contains multiple TSX files over 400 lines (excluding tests/stori
 - Each target TSX delegates non-view logic to a hook or helper component.
 - Rendering output and behavior remain unchanged.
 - Target package/plugin typecheck succeeds (exit 0).
-- TASKS.md and ExecPlan contain progress and verification logs.
+- the linked GitHub Issue and ExecPlan contain progress and verification logs.
 Plan change note: Completed Route 1 modelessDialogContent split and recorded app typecheck. Completed Route 2 ResourceLayerMap stats hook extraction and recorded ui-map typecheck. Completed Route 3 LocationMapPreviewStep hook split and recorded location-plugin typecheck. Completed Route 4 usePluginDialogController step-navigation hook split and recorded plugin-ui-host typecheck. Completed Route 5 MapPage hook split and recorded app typecheck after normalize-dts update.

@@ -21,4 +21,4 @@
 ## 注意事項 / オープンな検討点
 - 互換目的で `FolderUIPlugin` 参照を外部が要求している場合、`unknown` ベースの薄いラッパーを提供して破壊的変更を避ける案を検討。
 - registry への副作用登録順序が依存解決と一致しているか、`~/plugin-registry` の `pluginDefinitions` を確認してから削除作業を進める。
-- cleanup 時は `pnpm --filter @hierarchidb/folder-plugin typecheck` / `build` をセットで回し、ロールバック手順を TASKS.md へ追記する。
+- cleanup 時は `pnpm --filter @hierarchidb/folder-plugin typecheck` / `build` をセットで回し、ロールバック手順を GitHub Issue へ追記する。

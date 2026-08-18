@@ -20,4 +20,4 @@ The resolver plugin leverages the same extensible dialog framework. Track requir
 ## Phase 4: Verification
 - [ ] `pnpm --filter @hierarchidb/resolver-plugin typecheck`
 - [ ] Restore tests for dialog/worker integration.
-- [ ] Update TASKS.md with progress and remaining risks.
+- [ ] Update the linked GitHub Issue with progress and remaining risks.

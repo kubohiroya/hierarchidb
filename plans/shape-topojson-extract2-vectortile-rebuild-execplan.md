@@ -15,7 +15,7 @@ Rebuild the shape-plugin TopoJSON path so extract2 and vectortile follow a unifi
 - [x] (2026-01-04 16:10 JST) Add Step4 settings for tile expansion factor and margin, persist them in ObsolateBuildConfig, and pass them into worker config.
 - [x] (2026-01-04 16:10 JST) Implement the new TopoJSON extract2 pipeline: group by region, build TopoJSON, simplify, write flatgeobuf buffers, and record tileId relations.
 - [x] (2026-01-04 16:10 JST) Update vectortile inputs to dedupe featureIds during tile assembly.
-- [ ] Update/extend tests and record verification in TASKS.md.
+- [ ] Update/extend tests and record verification in the linked GitHub Issue.
 
 ## Surprises & Discoveries
 

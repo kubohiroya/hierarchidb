@@ -58,7 +58,7 @@
 
 4) route 側は `RouteBatchSession` の `optimization` で、route line string から GeoJSON を構築し、共通ユーティリティでタイル生成を実行する。生成結果は `@hierarchidb/gis-sdk` の TilesDB に保存されるため、`RouteQueryService` が取得できる状態になる。
 
-5) 変更後に typecheck と該当ユニットテストを実行し、`TASKS.md` に結果を記録する。
+5) 変更後に typecheck と該当ユニットテストを実行し、GitHub Issue に結果を記録する。
 
 ## Concrete Steps
 
@@ -89,7 +89,7 @@
   - `pnpm --filter @hierarchidb/shape-plugin typecheck`
   - `pnpm --filter @hierarchidb/location-plugin typecheck`
   - `pnpm --filter @hierarchidb/route-plugin typecheck`
-  - 失敗した場合はログを `TASKS.md` に記録し、原因と対応方針を追記
+  - 失敗した場合はログを GitHub Issue に記録し、原因と対応方針を追記
 
 ## Validation and Acceptance
 
@@ -100,11 +100,11 @@
 ## Idempotence and Recovery
 
 - 変更は段階的に適用でき、各プラグインで `runVectorTileStage` を使わない旧ロジックへ戻すことで切り戻し可能。
-- ロールバック時は変更した各プラグインファイルと共通ユーティリティを revert し、`TASKS.md` の記録を戻す。
+- ロールバック時は変更した各プラグインファイルと共通ユーティリティを revert し、結果を GitHub Issue に追記する。
 
 ## Artifacts and Notes
 
-- 進捗や失敗ログは `TASKS.md` の運用ログに記録する。
+- 進捗や失敗ログは GitHub Issue の運用ログに記録する。
 
 ## Interfaces and Dependencies
 

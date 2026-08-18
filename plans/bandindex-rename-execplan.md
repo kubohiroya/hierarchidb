@@ -45,7 +45,7 @@ First, replace all TypeScript-level uses of `bandIndex` with `bandIndex` across 
 
 Second, update the Dexie schema in `packages//src/EphemeralShapeDB.ts` by bumping the version and changing indexes from `[nodeId+bandIndex]` to `[nodeId+bandIndex]`. Add an upgrade step that clears `transformCache` and `tileIdToBufferRelations` so there is no mixed field state.
 
-Third, update documentation and plan references to use `bandIndex`. Finish by running typechecks for impacted packages and updating TASKS.md logs.
+Third, update documentation and plan references to use `bandIndex`. Finish by running typechecks for impacted packages and updating the linked GitHub Issue logs.
 
 ## Concrete Steps
 
@@ -67,7 +67,7 @@ Run these steps from the repository root (`/Users/hiroya/WebstormProjects/hierar
      pnpm --filter @hierarchidb/vt-orchestrator typecheck
      pnpm --filter @hierarchidb/shape-plugin typecheck
 
-5) Record the commands and outcomes in `TASKS.md` and update this ExecPlan Progress.
+5) Record the commands and outcomes in the linked GitHub Issue and update this ExecPlan Progress.
 
 ## Validation and Acceptance
 
@@ -81,7 +81,7 @@ These changes are safe to re-run. If the schema upgrade clears caches, the data 
 
 ## Artifacts and Notes
 
-- Expected typecheck command output should end with exit code 0. Capture this in `TASKS.md`.
+- Expected typecheck command output should end with exit code 0. Capture this in the linked GitHub Issue.
 
 ## Interfaces and Dependencies
 

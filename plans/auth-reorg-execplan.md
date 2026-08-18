@@ -15,7 +15,7 @@ auth 周りの責務が分散し、auth-recovery は名称と実態が一致せ�
 - [x] (2026-01-31 02:12Z) auth-api/auth の分担（型と実装）を確定し、移行対象の API 一覧を作成する。
 - [x] (2026-01-31 02:28Z) 新 auth パッケージ作成、auth-recovery/common-auth の実装移管と削除を実施する。
 - [x] (2026-01-31 02:36Z) 参照更新と依存関係の修正（package.json, tsconfig, vite alias, plugin registry）を完了する。
-- [x] (2026-01-31 03:05Z) 型チェックと必要なテストを通し、TASKS.md のログを完了に更新する。
+- [x] (2026-01-31 03:05Z) 型チェックと必要なテストを通し、retired local task log のログを完了に更新する。
 
 ## Surprises & Discoveries
 

@@ -15,7 +15,7 @@ The shape plugin contains several large UI components and hooks that bundle mult
 - [x] (2025-12-21 22:45) Split preview logic into focused hooks (metadata load, search/selection, table data, map layers).
 - [x] (2025-12-21 22:46) Split build-progress logic into focused hooks (status mapping, stage definitions, session actions).
 - [x] (2025-12-21 22:47) Split large processing UI sections (Download/Extraction) into subcomponents.
-- [x] (2025-12-21 22:49) Update imports/exports and confirm typecheck passes; record logs in `TASKS.md`.
+- [x] (2025-12-21 22:49) Update imports/exports and confirm typecheck passes; record logs in the retired local task log.
 
 ## Surprises & Discoveries
 
@@ -61,7 +61,7 @@ Then, split UI sections:
 
 Ensure each new subcomponent receives its data and event handlers via props only, with no direct state access, to preserve reusability.
 
-Finally, update imports/exports, ensure the step components render the same UI, and run `pnpm --filter @hierarchidb/shape-plugin typecheck`. Record command outputs in `TASKS.md`.
+Finally, update imports/exports, ensure the step components render the same UI, and run `pnpm --filter @hierarchidb/shape-plugin typecheck`. Record command outputs in the linked GitHub Issue.
 
 ## Concrete Steps
 
@@ -71,11 +71,11 @@ Finally, update imports/exports, ensure the step components render the same UI, 
 4) From repo root, run:
    pnpm --filter @hierarchidb/shape-plugin typecheck
    Expect exit code 0.
-5) Record the command and result in `TASKS.md`.
+5) Record the command and result in the linked GitHub Issue.
 
 ## Validation and Acceptance
 
-Run `pnpm --filter @hierarchidb/shape-plugin typecheck` from the repository root and confirm exit code 0. Manually open the shape dialog steps (Step2–Step5) and verify that download/extraction settings, build progress, and preview behave as before (no missing UI or errors). Record the typecheck result in `TASKS.md`.
+Run `pnpm --filter @hierarchidb/shape-plugin typecheck` from the repository root and confirm exit code 0. Manually open the shape dialog steps (Step2–Step5) and verify that download/extraction settings, build progress, and preview behave as before (no missing UI or errors). Record the typecheck result in the linked GitHub Issue.
 
 ## Idempotence and Recovery
 

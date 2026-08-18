@@ -10,7 +10,7 @@ PLANS.md はリポジトリ直下の `PLANS.md` に存在する。本ドキュ�
 
 ## Progress
 
-- [x] (2026-02-08 10:00 JST) TASKS.md にタスクを追加し、着手ログを記載した。
+- [x] (2026-02-08 10:00 JST) retired local task log にタスクを追加し、着手ログを記載した。
 
 ## Surprises & Discoveries
 

@@ -60,7 +60,7 @@ Run the following commands and verify they complete successfully:
   - From repo root: `pnpm --filter @hierarchidb/runtime-worker typecheck`
   - From repo root: `pnpm --filter @hierarchidb/location-plugin typecheck`
   - From repo root: `pnpm --filter @hierarchidb/route-plugin typecheck`
-If tests are skipped, record the reason in `TASKS.md`.
+If tests are skipped, record the reason in the linked GitHub Issue.
 
 ## Idempotence and Recovery
 

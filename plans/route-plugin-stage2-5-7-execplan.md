@@ -16,7 +16,7 @@ Note: The broader route reorg direction (RouteEntity/RouteLineString, IDE-GSM in
 - [ ] Stage 2 partially completed (2025-12-26 20:50 JST): StageProcessingService now uses EphemeralGisDB; remaining: adapter naming alignment and any SDK delegation gaps.
 - [ ] Stage 5 partially completed (2025-12-26 21:05 JST): ObsolateBuildConfig aliases added for shape/location/route; remaining: finish naming alignment and update any remaining imports.
 - [ ] Stage 7 partially completed (2025-12-26 21:25 JST): BaseBatchSessionManager hooks added and managers refactored; remaining: verify persistence coverage and adjust any remaining manager usage.
-- [ ] Validation completed and results recorded in TASKS.md.
+- [ ] Validation completed and results recorded in the linked GitHub Issue.
 
 ## Surprises & Discoveries
 
@@ -100,7 +100,7 @@ Changes are safe to reapply. If a step fails, revert the affected files and reru
 
 ## Artifacts and Notes
 
-Record typecheck outputs and key diffs in `TASKS.md` under the Stage2/5/7 task log. Include any renamed file paths and compatibility export notes.
+Record typecheck outputs and key diffs in the linked GitHub Issue under the Stage2/5/7 task log. Include any renamed file paths and compatibility export notes.
 
 ## Interfaces and Dependencies
 

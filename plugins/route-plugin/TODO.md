@@ -6,4 +6,4 @@ Route plugin is the most complete reference for the desired UX. Ensure it stays 
 - [ ] Double-check build progress UI (live progress, table preview, recovery) and remove lingering mocks or unused adapters.
 - [ ] Align `tsconfig` so UI/service code type-check together; prune redundant path aliases.
 - [ ] Harden unit/integration tests around dialog validation and build orchestration.
-- [ ] Document maintenance checklist in `TASKS.md` to keep route as canonical reference.
+- [ ] Document maintenance checklist in the linked GitHub Issue to keep route as canonical reference.

@@ -34,7 +34,7 @@
 
 | ステップ | 内容 | 成功条件 |
 | --- | --- | --- |
-| 1. 現状棚卸し | ターゲットプラグインの Draft 型・ハンドラー・UI を洗い出し、余剰フィールドや UI 状態混入箇所を列挙する。 | 影響ファイル一覧と除去対象フィールドをドキュメント化（TASKS.md / 運用ログ）。 |
+| 1. 現状棚卸し | ターゲットプラグインの Draft 型・ハンドラー・UI を洗い出し、余剰フィールドや UI 状態混入箇所を列挙する。 | 影響ファイル一覧と除去対象フィールドを対象 GitHub Issue に記録。 |
 | 2. 型定義更新 | `types/*` ファイルで `DraftDraft<TEntity>` と `Partial<TEntity>` を合成した型を定義し、Draft payload を最小限に再設計する。 | TypeScript の型エラーがなく、Draft payload に必要フィールドが明示される。 |
 | 3. ハンドラー整備 | `createDraft` / `commitDraft` / `discardDraft` を新型に合わせて調整。`treeNodeId` ベースで Dexie 操作を統一。 | `pnpm --filter <plugin> typecheck` が成功し、Diff に `treeNodeId` 以外のキー保存が残っていない。 |
 | 4. UI 更新 | フォーム/ステップコンポーネントが Draft を直接 mutate せず、`Partial<TEntity>` の更新関数を介して `markDraftUpdated` と整合するようにする。 | フォームコンポーネントの Props が `Partial<TEntity>` ベースへ揃い、暗黙 any が消える。 |
@@ -69,4 +69,3 @@
 - `docs/plugins/draft-baseline.md`
 - `packages/plugins/basemap-plugin/src/types/BaseMapEntity.ts`
 - `packages/plugins/resolver-plugin/src/types/RuntimeWorkerService.ts`
-

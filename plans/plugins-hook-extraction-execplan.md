@@ -45,7 +45,7 @@ Plugins under `plugins/` contain TSX components that mix rendering (JSX) with st
 - [x] (2026-02-02 00:58 JST) Ran `pnpm --filter @hierarchidb/resolver-plugin typecheck` (exit 0).
 - [ ] Extract logic into hooks for remaining target components.
 - [ ] Run typecheck for remaining affected plugins and record results.
-- [ ] Update TASKS.md with progress and completion notes.
+- [ ] Update the linked GitHub Issue with progress and completion notes.
 
 ## Surprises & Discoveries
 
@@ -93,7 +93,7 @@ Key constraints and conventions:
 - Keep component props and external behavior unchanged.
 - The hook must be a named function exported from its file (no default export), returning the minimum values the component needs to render.
 - Avoid introducing new dependencies or modifying unrelated files.
-- Comments and docs must be in English; TASKS.md stays in Japanese.
+- Comments and docs must be in English; the linked GitHub Issue stays in Japanese.
 
 ## Plan of Work
 
@@ -128,14 +128,14 @@ Example expected transcript:
   > @hierarchidb/shape-plugin@0.1.0 typecheck ...
   > tsc --noEmit
 
-4) Update TASKS.md with progress and completion notes for each batch.
+4) Update the linked GitHub Issue with progress and completion notes for each batch.
 
 ## Validation and Acceptance
 
 - Each targeted component has a sibling hook file and delegates non-view logic to it.
 - Rendering output and behavior are unchanged when the component is exercised manually.
 - `pnpm --filter @hierarchidb/<plugin> typecheck` exits with code 0 for every modified plugin.
-- TASKS.md contains start/update/done logs with commands and outcomes.
+- the linked GitHub Issue contains start/update/done logs with commands and outcomes.
 
 ## Idempotence and Recovery
 

@@ -13,7 +13,7 @@ PLANS.md はリポジトリ直下の `PLANS.md` を参照し、この文書は�
 - [x] (2025-12-31 01:50 JST) ExecPlan を作成し、現行の抽出/タイル生成/TopoJSONユーティリティの関係を整理する。
 - [x] (2025-12-31 02:08 JST) extract2 のタスク生成を大陸/国/自治体の階層グループへ再構成し、欠落メタデータは警告して除外する。
 - [x] (2025-12-31 02:08 JST) extract2 のTopoJSON化は既存の中心点タイル方式を維持しつつ、大陸グルーピングを反映する。
-- [ ] 進捗とメタデータ保存の整合性を確認し、TASKS.md に結果を記録する。
+- [ ] 進捗とメタデータ保存の整合性を確認し、GitHub Issue に結果を記録する。
 - [ ] 必要なテストまたは手動確認を実行し、成功条件を記録する。
 
 ## Surprises & Discoveries
@@ -62,7 +62,7 @@ extract2 ステージのタスク生成を「大陸/国/自治体コード」の
 
 2. `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts` と `plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapters.ts` で、extract2 前にFeature propertiesへ `continent`/`countryCode`/`countryName`/`featureGroupId` を補う処理を追加する。
 
-4. `TASKS.md` の運用ログに変更内容と検証結果を記録する。
+4. GitHub Issue の運用ログに変更内容と検証結果を記録する。
 
 ## Validation and Acceptance
 

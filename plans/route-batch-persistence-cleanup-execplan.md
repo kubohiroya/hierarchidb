@@ -15,7 +15,7 @@ Users should be able to run route builds without accumulating unused persistence
 - [x] (2025-12-27 03:40Z) Remove routeCursors persistence and references, shifting progress to UI state.
 - [x] (2025-12-27 03:55Z) Align route build start/finish markers and crash insight with shape build monitor behavior.
 - [x] (2025-12-27 03:55Z) Provide route cleanup actions for lineStrings and document recovery flow in UI copy.
-- [ ] (2025-12-27 03:55Z) Validate with targeted typecheck and document results in TASKS.md.
+- [ ] (2025-12-27 03:55Z) Validate with targeted typecheck and document results in the linked GitHub Issue.
 
 ## Surprises & Discoveries
 
@@ -58,7 +58,7 @@ Second, add route build start/finish timestamps to the route draft entity and im
 
 Third, add cleanup actions in the route processing step for data types that can block restart. This includes deleting lineStrings and clearing the local build monitor record. These buttons should use route mutation APIs where possible and should reset the draft’s build markers to allow restart.
 
-Finally, run `pnpm --filter @hierarchidb/route-plugin typecheck` and record results in TASKS.md. If runtime-worker types change, run its typecheck as well.
+Finally, run `pnpm --filter @hierarchidb/route-plugin typecheck` and record results in the linked GitHub Issue. If runtime-worker types change, run its typecheck as well.
 
 ## Concrete Steps
 
@@ -81,7 +81,7 @@ All commands are run from the repository root `/Users/hiroya/WebstormProjects/hi
 
 4) Validate and log.
    - Run `pnpm --filter @hierarchidb/route-plugin typecheck` and capture the result.
-   - Update TASKS.md with progress, results, and any blockers.
+   - Update the linked GitHub Issue with progress, results, and any blockers.
 
 ## Validation and Acceptance
 

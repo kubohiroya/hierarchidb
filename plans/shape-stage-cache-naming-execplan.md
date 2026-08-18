@@ -16,7 +16,7 @@ After this change, the shape build pipeline uses four explicit stages (fetch, tr
 - [x] Rewire transform-by-zoom to use cache naming consistently and remove redundant stores.
 - [x] Update deletion paths and counts to align with the new cache layout.
 - [x] Rename ephemeral cache tables (EphemeralGisDB/EphemeralShapeDB) to cache naming and update usages.
-- [x] Run `pnpm typecheck` and record evidence in `TASKS.md`.
+- [x] Run `pnpm typecheck` and record evidence in the retired local task log.
 
 ## Surprises & Discoveries
 
@@ -73,7 +73,7 @@ Run all commands from repository root `/Users/hiroya/WebstormProjects/hierarchid
 
 5) Validation.
    - Run `pnpm typecheck` and capture a short snippet of the success output and any warnings.
-   - Manually verify Step4 cache delete buttons disable after deletion by checking counts in the UI (record in TASKS.md).
+   - Manually verify Step4 cache delete buttons disable after deletion by checking counts in the UI (record in the linked GitHub Issue).
 
 ## Validation and Acceptance
 

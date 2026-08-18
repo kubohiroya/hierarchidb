@@ -10,7 +10,7 @@ Shape Step5 currently has duplicated task sync logic, and data source configurat
 
 ## Progress
 
-- [x] (2026-01-28 23:20 JST) Created task entry in `TASKS.md` for this refactor and recorded start log.
+- [x] (2026-01-28 23:20 JST) Created task entry in the retired local task log for this refactor and recorded start log.
 - [x] (2026-01-28 23:30 JST) Introduced `plugins/shape-plugin/src/ui/components/step5/useShapeBuildTaskSync.ts` and refactored `useShapeBuildTasks.ts` to use it.
 - [x] (2026-01-28 23:35 JST) Added `plugins/shape-plugin/src/common/utils/estimates.ts` and removed usage of `plugins/shape-plugin/src/common/mock/data.ts` in Step3.
 - [x] (2026-01-28 23:38 JST) Added `SHAPE_DATA_SOURCE_BY_NAME` and updated data source lookups in Step2/Step3/CountryAvailabilityResolver.
@@ -18,7 +18,7 @@ Shape Step5 currently has duplicated task sync logic, and data source configurat
 - [x] (2026-01-28 23:41 JST) Split `shapeFetchStage.ts` to extract payload resolution and task reconciliation helpers.
 - [x] (2026-01-28 23:45 JST) Audited for remaining references to deprecated data source configs or mock files; none remain in code.
 - [x] (2026-01-28 23:46 JST) Ran `pnpm --filter @hierarchidb/shape-plugin typecheck` and confirmed success.
-- [x] (2026-01-28 23:46 JST) Updated `TASKS.md` with progress logs for this refactor.
+- [x] (2026-01-28 23:46 JST) Updated the retired local task log with progress logs for this refactor.
 
 ## Surprises & Discoveries
 
@@ -69,7 +69,7 @@ First, verify that all task sync logic has moved into `useShapeBuildTaskSync.ts`
 
 2) Inspect `shapeFetchStage.ts` to confirm the helpers are used correctly. If any helper returns values that are unused or still duplicated, simplify the runner and add short comments where the logic is non-obvious.
 
-3) Run `pnpm --filter @hierarchidb/shape-plugin typecheck` from the repository root and record the result in `TASKS.md` under this task.
+3) Run `pnpm --filter @hierarchidb/shape-plugin typecheck` from the repository root and record the result in the linked GitHub Issue under this task.
 
 ## Validation and Acceptance
 

@@ -14,7 +14,7 @@ After this change, shape/location/route plugins will call shared packages direct
 - [x] (2025-12-29 10:30 JST) Inventoried wrapper candidates and removed thin pass-through modules (location sharedNet, shape RuntimeTileClient, route download type aliases, shape auth wrapper) by updating call sites to direct shared API usage.
 - [x] (2025-12-29 10:45 JST) Replaced LocationVectorTileService with shared tile helpers, updated UI call sites, and moved unit coverage to common/tiles.
 - [x] (2025-12-29 11:05 JST) Removed route createRouteBatchManager wrappers and RuntimeWorkerClient facade, and updated route UI/orchestrator to construct managers directly.
-- [ ] (pending) Validate with targeted tests and update TASKS.md with results and rollback steps.
+- [ ] (pending) Validate with targeted tests and update the linked GitHub Issue with results and rollback steps.
 
 ## Surprises & Discoveries
 
@@ -71,7 +71,7 @@ Milestone 1: Inventory and classify wrappers/adapters.
 
 Search for plugin-local modules in shape/location/route that primarily import a shared API and re-export or forward to it. Use search terms such as registry, adapter, wrapper, bridge, shared, facade, or helper. For each candidate, inspect the file and classify it as one of: thin wrapper (remove), behaviorful adapter (retain but refactor to direct shared usage), or public facade (retain only if it is part of the plugin’s documented API).
 
-Record the inventory and decisions in TASKS.md and in this ExecPlan’s Surprises & Discoveries section as needed.
+Record the inventory and decisions in the linked GitHub Issue and in this ExecPlan’s Surprises & Discoveries section as needed.
 
 Milestone 2: Replace wrappers with direct shared usage.
 
@@ -81,7 +81,7 @@ Ensure each plugin’s package.json includes any new shared dependencies require
 
 Milestone 3: Validate and document.
 
-Run the most relevant plugin-level tests and typechecks. Update TASKS.md with the changes, the validation commands run, and the rollback steps.
+Run the most relevant plugin-level tests and typechecks. Update the linked GitHub Issue with the changes, the validation commands run, and the rollback steps.
 
 ## Concrete Steps
 
@@ -100,7 +100,7 @@ Work in repository root /Users/hiroya/WebstormProjects/hierarchidb.
 
 4) Update package.json peer/dev deps where new direct imports are introduced.
 
-5) Update TASKS.md and ExecPlan Progress with outcomes.
+5) Update the linked GitHub Issue and ExecPlan Progress with outcomes.
 
 ## Validation and Acceptance
 

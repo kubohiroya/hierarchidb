@@ -54,7 +54,7 @@ UI 側は Step5 で Worker 実行中の進捗を表示し、完了したら従�
 3. Worker から必要なユーティリティが使えるように、location 側の CSV パース/国コード/管理区分解決の処理を `plugins/location-plugin/src/services/ide-gsm/` へ移動し、UI と Worker から共有する。
 4. UI 側の `plugins/location-plugin/src/ui/components/steps-provider.tsx` と `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx` を更新し、Worker API を呼び出す。進捗コールバックで Step5 の進捗表示を更新する。
 5. Step5 の進捗表示は既存の BuildStep を流用し、進捗割合とフェーズ名を表示する。必要なら新しいステージ定義（例: `ide-gsm-import`）を追加する。
-6. 変更後、`pnpm --filter @hierarchidb/location-plugin test` と `pnpm --filter @hierarchidb/route-plugin test` を実行し、結果を TASKS.md に記録する。
+6. 変更後、`pnpm --filter @hierarchidb/location-plugin test` と `pnpm --filter @hierarchidb/route-plugin test` を実行し、結果を GitHub Issue に記録する。
 
 ## Validation and Acceptance
 
