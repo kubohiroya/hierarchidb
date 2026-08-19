@@ -14,13 +14,12 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
-    // Keep thread pool by default for CI stability; allow opt-in fork pool for local diagnostics.
+    // Direct Vitest runs use threads; the package test script opts into isolated forks.
     pool: useForkPool ? 'forks' : 'threads',
     maxWorkers: 1,
     minWorkers: 1,
     ...(useForkPool
       ? {
-        isolate: false,
         execArgv: ['--max-old-space-size=8192'],
       }
       : {}),
