@@ -183,6 +183,7 @@ function main(): void {
     const options = parseArgs(process.argv);
 
     const scannerOptions: FileScannerOptions = {
+        rootDir: process.cwd(),
         targetDirs: options.targets,
         excludePatterns: DEFAULT_EXCLUDE_PATTERNS,
     };

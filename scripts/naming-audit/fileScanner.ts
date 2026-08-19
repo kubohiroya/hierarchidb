@@ -19,18 +19,18 @@ import type { FileEntry, FileScannerOptions } from './types.js';
  * Resolve a single target-dir pattern (which may contain `*` wildcards)
  * into concrete directory paths that exist on disk.
  */
-function resolveTargetDirs(pattern: string): string[] {
+function resolveTargetDirs(pattern: string, rootDir: string): string[] {
     const normalized = pattern.replace(/\/+$/, '');
 
     if (!normalized.includes('*')) {
-        const abs = path.resolve(normalized);
+        const abs = path.resolve(rootDir, normalized);
         return fs.existsSync(abs) ? [abs] : [];
     }
 
     const segments = normalized.split('/');
     const wildcardIdx = segments.findIndex((s) => s.includes('*'));
 
-    const baseDir = path.resolve(segments.slice(0, wildcardIdx).join('/'));
+    const baseDir = path.resolve(rootDir, segments.slice(0, wildcardIdx).join('/'));
     if (!fs.existsSync(baseDir)) return [];
 
     const wildcardSegment = segments[wildcardIdx];
@@ -38,7 +38,7 @@ function resolveTargetDirs(pattern: string): string[] {
 
     // Convert the wildcard segment into a simple regex.
     const escaped = wildcardSegment.replace(/[.+?^{}()|[\]\\]/g, '\\$&');
-    const regexStr = '^' + escaped.replace(/\*/g, '[^/]+') + '$';
+    const regexStr = `^${escaped.replace(/\*/g, '[^/]+')}$`;
     const regex = new RegExp(regexStr);
 
     const entries = fs.readdirSync(baseDir, { withFileTypes: true });
@@ -69,8 +69,8 @@ function resolveTargetDirs(pattern: string): string[] {
  *   app/src           -> "app"
  *   fallback          -> last meaningful segment
  */
-function deriveSubPackage(resolvedDir: string): string {
-    const rel = path.relative(process.cwd(), resolvedDir).replace(/\\/g, '/');
+function deriveSubPackage(resolvedDir: string, rootDir: string): string {
+    const rel = path.relative(rootDir, resolvedDir).replace(/\\/g, '/');
     const parts = rel.split('/');
 
     // plugins/<name>/src or packages/<name>/src
@@ -101,7 +101,7 @@ function deriveSubPackage(resolvedDir: string): string {
  *   "*.d.ts"     -> exclude files ending with ".d.ts"
  *   "__tests__/" -> exclude any path segment named "__tests__"
  */
-function isExcluded(
+export function isExcluded(
     relativePath: string,
     excludePatterns: readonly string[],
 ): boolean {
@@ -162,14 +162,14 @@ function walkDir(dir: string): string[] {
  * @returns an array of FileEntry objects
  */
 export function scanFiles(options: FileScannerOptions): FileEntry[] {
-    const { targetDirs, excludePatterns } = options;
+    const { rootDir, targetDirs, excludePatterns } = options;
     const entries: FileEntry[] = [];
 
     for (const targetDir of targetDirs) {
-        const resolvedDirs = resolveTargetDirs(targetDir);
+        const resolvedDirs = resolveTargetDirs(targetDir, rootDir);
 
         for (const resolvedDir of resolvedDirs) {
-            const subPackage = deriveSubPackage(resolvedDir);
+            const subPackage = deriveSubPackage(resolvedDir, rootDir);
             const allFiles = walkDir(resolvedDir);
 
             for (const absPath of allFiles) {
