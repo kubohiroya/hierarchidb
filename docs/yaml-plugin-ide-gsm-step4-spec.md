@@ -245,6 +245,18 @@ raw recordの`data`はproperty missing、`undefined`、`null`をcommitted payloa
 - optional plugin preloadは例外をworker-ready failureとして伝播できないため、preflight、migration、storage readinessのgateとして使用しない。CoreDB `open()` / upgradeの成功をawaitするworker bootだけがquery / mutation APIをreadyにできる。
 - migrationのblockedまたはrejectを、全IndexedDB削除を案内するgeneric recoveryへ変換しない。storage migration専用のtyped stateを保持し、blockedは同じ`open()` requestの待機、rejectはworker boot failureとして通知する。別request retry、v1 fallback、自動DB削除を行わない。
 
+#### Read-only migration planner contract
+
+- plannerは`@hierarchidb/yaml-api/migration`の独立subpathだけから公開し、package rootから再exportしない。production DB、reader、writer、worker bootstrapから到達不能なdormant artifactとしてmainへmergeする。
+- callerはCoreDBから選択した全`yaml-file` raw recordの`readonly unknown[]`、opaqueで空でないmigration ID、正の整数で`to > from`を満たすCoreDB version pair、SHA-256 digest portを明示的に渡す。plannerはmigration ID、version、digest実装をrandom生成、推測、default補完しない。candidateに`nodeType !== 'yaml-file'`のrecordが含まれる場合は無視せずcontract errorにする。
+- plannerはTreeNode normalizer、型cast、JSON round-tripを入力前処理に使用しない。raw own data propertyを基準にmissing、`undefined`、`null`、empty plain object、array、non-empty objectを区別し、accessorを実行せず、record、metadata、payloadの不正shapeをfail-closedにする。各candidateの`version`はown data propertyのnon-negative safe integerを必須とし、`0`を有効なtemporary node versionとして扱う。
+- YAML contentはYAML 1.2 core schemaでstrictにparseし、単一documentのplain mappingだけを受け入れる。duplicate key、parse error、複数document、scalar、sequenceを失敗させる。parse結果をserializeし直さず、入力contentを変更しない。
+- current revisionの`YAML_SCHEMAS`に宣言されたconstraintsをauthoritative validation inputとする。Ajvはstrict mode、all errors、type coercionなし、default追加なし、property除去なしで使用する。schemaにない`additionalProperties: false`やrequired propertyをplanner側で注入せず、未宣言制約を推測しない。
+- migration contextが同一の場合、plan entryとerrorはnode ID昇順、同一node内はcommitted、draftの順に固定する。1件でもvalidationまたはdigest failureがあればsuccess plan、postimage、journal entry、partial resultを返さない。
+- canonical postimage digestはfilename、subtype、schemaId、contentの順に各UTF-8 byte列へ8-byte unsigned big-endian lengthを前置して連結し、injected portから得た64文字のSHA-256 lowercase hexだけを受け入れる。不正なdigest outputまたはport failureをtyped errorにし、別hashへfallbackしない。
+- error reportはsource index、取得できた場合のnode ID、slot、stable error code、安全なcontract contextだけを含める。YAML本文、raw parser / Ajv error、preimage、postimage、token、credential、endpointをerror、message、console、snapshotへ含めない。
+- success planは全candidateをnode ID順に1件ずつ対応付ける`sourceIndex`、node ID、expected node versionのguardを含める。activation coordinatorはplanner inputのimmutable raw snapshotをplanと同じlifetimeで非公開に保持し、serialize、log、journal保存しない。versionchange transaction内では選択されたYAML node集合の追加、欠落、重複を照合し、各nodeのID / version、metadata name、draft metadataのown presence / name、data / draftDataのown presenceと全payload key / value、`isTemporary`のown presence / valueを同じsnapshotと完全比較する。normalizer、reparse、JSON round-trip、fallbackを使用せず、1件の差分でtransaction全体をabortする。snapshotを保持せずplanを永続化または別runtimeへ転送する将来設計では、同じ比較材料をplan内のself-contained guardへ仕様化するまで実装しない。
+
 runtime activationは次の順序で実行する。
 
 1. 新runtimeのlegacy / canonical YAML reader、writer、ZIP、SimulationWorkflow、command入口を未公開のまま保ち、旧tabと旧workerへ停止・connection closeを要求する。新runtime内のlegacy create / edit / commit / ZIP import / export / SimulationWorkflow entry pointは開始しない。この時点の協調停止だけをwrite fence成立とみなさない。

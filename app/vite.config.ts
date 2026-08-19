@@ -1656,6 +1656,7 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
         '@rjsf/mui',
         '@rjsf/utils',
         '@rjsf/validator-ajv8',
+        'ajv',
 
         // --- YAML ---
         'yaml',

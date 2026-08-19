@@ -40,9 +40,21 @@ The canonical storage contract is defined in [`docs/yaml-plugin-ide-gsm-step4-sp
 
 The current `YamlFileNodeData` type remains a legacy runtime shape until the coordinated writer and storage migration issues cut over all consumers. Its presence does not make YamlDB authoritative.
 
+## Dormant migration planner
+
+`@hierarchidb/yaml-api/migration` is a separate export entry for the pure, read-only CoreDB YAML migration planner. It is intentionally not re-exported from the package root and is not connected to CoreDB, Dexie, workers, plugin preload, or any production reader or writer.
+
+The caller supplies raw YAML node candidates, an explicit migration ID and CoreDB version pair, and a SHA-256 digest port. The planner never reads or writes storage, chooses a version, generates a migration ID, or falls back to a different digest. A single invalid record or digest failure returns only a sanitized error report and never a partial plan.
+
+Each raw candidate must expose its node version as an own data property containing a non-negative safe integer. The success plan carries a deterministic source/node/version guard for every candidate. A later activation coordinator must retain the same immutable raw snapshot privately and compare the complete raw slot state again in the versionchange transaction; the planner does not persist, serialize, or log that snapshot.
+
+YAML content validation uses the constraints declared by the current `YAML_SCHEMAS` revision with strict Ajv options. It does not add undeclared required properties or a global `additionalProperties: false` rule. The explicit strictness of the `rsync.yml` and `git.yml` schemas remains authoritative.
+
 ## Dependencies
 
-`@hierarchidb/core-types`
+- `@hierarchidb/core-types`
+- `ajv`
+- `yaml`
 
 ## Related packages
 

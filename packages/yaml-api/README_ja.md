@@ -40,9 +40,21 @@ storage migration、`metadata.name`へのcutover、ZIP import/export、UI統合�
 
 現行`YamlFileNodeData`型は、writerとstorage migrationの後続Issueが全consumerを協調してcutoverするまでのlegacy runtime shapeである。この型の存在はYamlDBをauthoritative storeにしない。
 
+## Dormant migration planner
+
+`@hierarchidb/yaml-api/migration`は、pureかつread-onlyなCoreDB YAML migration planner専用のexport entryである。package rootから再exportせず、CoreDB、Dexie、worker、plugin preload、production reader / writerへ接続しない。
+
+callerはraw YAML node candidate、明示的なmigration IDとCoreDB version pair、SHA-256 digest portを渡す。plannerはstorageをread / writeせず、versionまたはmigration IDを生成せず、別digestへfallbackしない。1件でもinvalid recordまたはdigest failureがあればsanitized error reportだけを返し、partial planを返さない。
+
+各raw candidateはnode versionをown data propertyのnon-negative safe integerとして持たなければならない。success planは全candidateに対するdeterministicなsource / node / version guardを持つ。後続activation coordinatorは同じimmutable raw snapshotを非公開で保持し、versionchange transaction内でraw slot state全体を再比較する。plannerはそのsnapshotを永続化、serialize、log出力しない。
+
+YAML content validationはcurrent revisionの`YAML_SCHEMAS`に宣言されたconstraintをstrict Ajv optionで適用する。未宣言のrequired propertyまたはglobalな`additionalProperties: false`を追加しない。`rsync.yml`と`git.yml`で明示されたstrictnessを正規契約とする。
+
 ## 依存関係
 
-`@hierarchidb/core-types`
+- `@hierarchidb/core-types`
+- `ajv`
+- `yaml`
 
 ## 関連package
 

@@ -1,8 +1,9 @@
 import { YAML_SCHEMA_IDS, type YamlSchemaId } from './YAML_SUBTYPE_REGISTRY.js';
 
 /**
- * JSON Schema objects for each IDE-GSM schemaId.
- * These are minimal but structurally valid JSON Schemas used by the rjsf form editor.
+ * Declared JSON Schema constraints for each IDE-GSM schemaId.
+ * UI and migration validation share these constraints. Consumers must not
+ * infer constraints that are not declared by the selected schema.
  */
 export const YAML_SCHEMAS: Readonly<Record<YamlSchemaId, object>> = {
   'ide-gsm/sources': {

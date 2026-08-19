@@ -10,10 +10,24 @@
         ".": {
             "types": "./dist/index.d.ts",
             "import": "./dist/index.js"
+        },
+        "./migration": {
+            "types": "./dist/migration/index.d.ts",
+            "import": "./dist/migration/index.js"
+        }
+    },
+    "typesVersions": {
+        "*": {
+            "migration": [
+                "dist/migration/index.d.ts"
+            ],
+            "*": [
+                "dist/index.d.ts"
+            ]
         }
     },
     "scripts": {
-        "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist",
+        "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist && tsdown src/migration/index.ts --config ../../tsdown.config.ts --outDir dist/migration",
         "clean": "rm -rf dist",
         "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
         "test": "vitest run --passWithNoTests",
@@ -21,6 +35,10 @@
     },
     "peerDependencies": {
         "@hierarchidb/core-types": "workspace:*"
+    },
+    "dependencies": {
+        "ajv": "^8.18.0",
+        "yaml": "^2.0.0"
     },
     "devDependencies": {
         "@hierarchidb/core-types": "workspace:*",
