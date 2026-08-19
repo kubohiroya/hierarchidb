@@ -1,13 +1,13 @@
+import {
+  NodeTypeIcon,
+  SEARCH_FIELD_MIN_WIDTH_PX,
+  SEARCH_FIELD_WIDTH_PX,
+} from '@hierarchidb/components';
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import { getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
 import { useOptionalBuildSessionRuntimeContext } from '@hierarchidb/ui-build-sessions';
-import {
-  isFolderNodeType,
-  NodeContextMenu,
-  NodeTypeIcon,
-} from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { TreeConsolePanelProps } from '@hierarchidb/ui-treeconsole-base';
-import { SEARCH_FIELD_MIN_WIDTH_PX, SEARCH_FIELD_WIDTH_PX } from '@hierarchidb/components';
+import { isFolderNodeType, NodeContextMenu } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import {
   ArrowBack as ArrowBackIcon,
   Construction as ConstructionIcon,
