@@ -62,6 +62,18 @@ type SessionStatusUpdatedEvent = {
 
 **UI-side effect**: Update `lifecycle.phase`, `lifecycle.isActive`, `lifecycle.startedAt`, `lifecycle.inactiveMs`, `lifecycle.completedAt`, and `lifecycleExtras.stopReason`. `stageId` drives the UI synchronization/selection signal. Per-stage timing is stored only from `stageSnapshotUpdated`, avoiding a second timing owner.
 
+After `sessionStatusUpdated` selects a started stage and before the first authoritative
+`stageSnapshotUpdated` for that stage arrives, the UI is in `ui-initializing`. The
+status event still carries and validates `stageStartedAt` and `stageInactiveMs` as
+required above, but those fields are not copied into the UI timing tree. Its
+`stageId` updates the active-stage selection without advancing the stage UI sync
+phase to `running`; only the corresponding stage snapshot completes that
+handshake. The active-stage selection is valid during this interval, while
+`stageTimingByStageAtom` does not yet own timing for the stage. Elapsed-time
+consumers must therefore wait for the stage snapshot instead of requiring or
+synthesizing timing in the UI tree. Once a stage snapshot is received, its explicit
+timing is mandatory and is validated without fallback.
+
 **Deduplication**: None. Every emission is applied unconditionally. The caller (adapter) is responsible for not emitting duplicate events.
 
 ---
