@@ -2,7 +2,10 @@ import path from 'path';
 import { defineConfig } from 'vitest/config';
 
 const RUN_AUTH_TESTS = process.env.AUTH_TESTS === '1';
-const defaultTestFiles = ['src/services/__tests__/resolveAuthReturnUrl.unit.test.ts'];
+const defaultTestFiles = [
+  'src/services/__tests__/AuthSessionStorage.unit.test.ts',
+  'src/services/__tests__/resolveAuthReturnUrl.unit.test.ts',
+];
 
 export default defineConfig({
   test: {

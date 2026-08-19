@@ -5,18 +5,10 @@
  */
 
 import type { AuthProviderType } from '~/types/AuthProviderType';
+import { AuthSessionStorage, type BFFUser } from './AuthSessionStorage.js';
 import { maybeEmitBffWarning, readWarningFromResponse } from './BffWarning.js';
 
-export interface BFFUser {
-  id: string;
-  email: string;
-  name: string;
-  picture?: string;
-  access_token: string;
-  refresh_token?: string;
-  expires_at: number;
-  provider?: AuthProviderType;
-}
+export type { BFFUser } from './AuthSessionStorage.js';
 
 export interface BFFSignInOptions {
   returnUrl?: string;
@@ -29,22 +21,6 @@ export interface BFFAuthResponse {
   user?: BFFUser;
   error?: string;
   redirect_url?: string;
-}
-
-type TokenResponseUserInfo = Partial<Record<'sub' | 'email' | 'name' | 'picture', string>>;
-
-interface TokenResponsePayload {
-  access_token?: string;
-  refresh_token?: string;
-  refresh_token_id?: string;
-  id_token?: string;
-  expires_in?: number;
-  provider?: AuthProviderType;
-  sub?: string;
-  email?: string;
-  name?: string;
-  picture?: string;
-  userinfo?: TokenResponseUserInfo;
 }
 
 const base64UrlEncode = (array: Uint8Array): string =>
@@ -73,9 +49,6 @@ const generateCodeChallenge = async (verifier: string): Promise<string> => {
 export class BFFAuthService {
   private static instance: BFFAuthService | null = null;
   private static codeExchangePromises = new Map<string, Promise<BFFUser>>();
-  private readonly USERINFO_STORAGE_KEYS = {
-    userinfo: 'userinfo',
-  } as const;
   private baseUrl: string;
   private popupWindow: Window | null = null;
   private refreshDisabled = false;
@@ -119,6 +92,7 @@ export class BFFAuthService {
 
     // Store for later use
     localStorage.setItem('pkce_code_verifier', codeVerifier);
+    localStorage.setItem('auth_provider', provider);
     if (returnUrl) {
       localStorage.setItem('auth_return_url', returnUrl);
     }
@@ -134,22 +108,6 @@ export class BFFAuthService {
 
     // Wait for authentication to complete
     return this.waitForPopupAuth(popup);
-  }
-
-  private persistUser(user: BFFUser): void {
-    try {
-      const payload = {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        picture: user.picture,
-        provider: user.provider,
-        expires_at: user.expires_at,
-      };
-      localStorage.setItem(this.USERINFO_STORAGE_KEYS.userinfo, JSON.stringify(payload));
-    } catch {
-      // Ignore storage errors (e.g., quota)
-    }
   }
 
   /**
@@ -187,7 +145,7 @@ export class BFFAuthService {
     window.location.href = authUrl.toString();
 
     // This will never resolve as the page redirects
-    return new Promise(() => { });
+    return new Promise(() => {});
   }
 
   /**
@@ -268,10 +226,8 @@ export class BFFAuthService {
             clearInterval(checkInterval);
 
             // Check if authentication was successful
-            const token = localStorage.getItem('access_token');
-            if (token) {
-              // Parse and return user data
-              const user = this.parseTokenToUser(token);
+            const user = AuthSessionStorage.load();
+            if (user) {
               resolve(user);
             } else {
               reject(new Error('Authentication cancelled'));
@@ -312,21 +268,21 @@ export class BFFAuthService {
       throw new Error('No authorization code received');
     }
 
-    // If we already have a token (e.g., callback executed once and re-rendered),
-    // short-circuit to avoid double-exchanging the same code.
-    const existingToken = localStorage.getItem('access_token');
-    if (existingToken) {
-      try {
-        return this.parseTokenToUser(existingToken);
-      } catch {
-        // fall through and retry exchange
-      }
-    }
-
     // Deduplicate concurrent/double-invoked exchanges (e.g., React Strict Mode)
     const existingPromise = BFFAuthService.codeExchangePromises.get(code);
     if (existingPromise) {
       return existingPromise;
+    }
+
+    const codeVerifier = localStorage.getItem('pkce_code_verifier');
+    if (!codeVerifier) {
+      // A completed callback can be rendered again after its PKCE state is removed.
+      // Reuse only a fully valid persisted session; contract violations remain visible.
+      const existingUser = AuthSessionStorage.load();
+      if (existingUser) {
+        return existingUser;
+      }
+      throw new Error('No PKCE code verifier found');
     }
 
     // Verify atoms for CSRF protection
@@ -336,14 +292,11 @@ export class BFFAuthService {
     }
 
     const exchangePromise = (async () => {
-      // Get stored PKCE verifier
-      const codeVerifier = localStorage.getItem('pkce_code_verifier');
-      if (!codeVerifier) {
-        throw new Error('No PKCE code verifier found');
-      }
-
       // Get provider
-      const provider = localStorage.getItem('auth_provider') || 'google';
+      const provider = AuthSessionStorage.parseProvider(
+        localStorage.getItem('auth_provider'),
+        'auth_provider'
+      );
 
       // Exchange code for tokens via BFF
       const { isAbsolute, authBase } = this.resolveAuthBase();
@@ -375,7 +328,8 @@ export class BFFAuthService {
 
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
-          errorData.error_description || `Token exchange failed: ${response.status} ${response.statusText}`
+          errorData.error_description ||
+            `Token exchange failed: ${response.status} ${response.statusText}`
         );
       }
 
@@ -387,24 +341,15 @@ export class BFFAuthService {
         responseOk: response.ok,
       });
 
-      const data = await response.json();
-      maybeEmitBffWarning(data?.warning);
+      const data: unknown = await response.json();
+      maybeEmitBffWarning((data as { warning?: unknown } | null)?.warning);
 
-      // Store tokens
-      if (data.access_token) {
-        localStorage.setItem('access_token', data.access_token);
-      }
-      if (data.refresh_token_id) {
-        localStorage.setItem('refresh_token_id', data.refresh_token_id);
-      }
+      const user = AuthSessionStorage.persistTokenResponse(data, provider);
 
       // Clean up OAuth flow state (keep return URL until caller consumes it)
       this.clearAuthFlowState({ preserveReturnUrl: true });
 
-      // Parse user from token response
-      const user = this.parseTokenResponse(data);
       this.refreshDisabled = false;
-      this.persistUser(user);
       return user;
     })();
 
@@ -460,6 +405,10 @@ export class BFFAuthService {
       if (!token) {
         return null;
       }
+      const currentUser = AuthSessionStorage.load();
+      if (!currentUser) {
+        throw new Error('Invalid persisted auth session: userinfo is required for token refresh');
+      }
 
       const { authBase } = this.resolveAuthBase();
       const response = await fetch(`${authBase}/refresh`, {
@@ -489,19 +438,13 @@ export class BFFAuthService {
         return null;
       }
 
-      // Update tokens
-      if (data && 'access_token' in data && data.access_token) {
-        localStorage.setItem('access_token', data.access_token);
-      }
-      if (data && 'refresh_token_id' in data && data.refresh_token_id) {
-        localStorage.setItem('refresh_token_id', data.refresh_token_id);
-      }
-
-      const user = this.parseTokenResponse(data as TokenResponsePayload);
+      const user = AuthSessionStorage.persistTokenResponse(data, currentUser.provider);
       this.refreshDisabled = false;
-      this.persistUser(user);
       return user;
-    } catch {
+    } catch (error) {
+      if (AuthSessionStorage.isContractError(error)) {
+        throw error;
+      }
       return null;
     }
   }
@@ -510,84 +453,7 @@ export class BFFAuthService {
    * Get current user info
    */
   async getCurrentUser(): Promise<BFFUser | null> {
-    // Prefer persisted user info if available
-    try {
-      const persisted = localStorage.getItem(this.USERINFO_STORAGE_KEYS.userinfo);
-      if (persisted) {
-        const parsed = JSON.parse(persisted) as Partial<BFFUser> & { expires_at?: number };
-        const token = localStorage.getItem('access_token') || '';
-        if (token && parsed.id) {
-          return {
-            id: parsed.id,
-            email: parsed.email || '',
-            name: parsed.name || parsed.email || '',
-            picture: parsed.picture,
-            access_token: token,
-            refresh_token: localStorage.getItem('refresh_token_id') || undefined,
-            expires_at: parsed.expires_at || Date.now() + 3600 * 1000,
-            provider: (parsed.provider as AuthProviderType | undefined) || 'google',
-          };
-        }
-      }
-    } catch {
-      // ignore parse errors
-    }
-
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      return null;
-    }
-
-    try {
-      // Parse JWT to get user info (without verification)
-      return this.parseTokenToUser(token);
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * Parse token response to user object
-   */
-  private parseTokenResponse(data: TokenResponsePayload): BFFUser {
-    const userInfo = data.userinfo || {};
-
-    return {
-      id: userInfo.sub || data.sub || '',
-      email: userInfo.email || data.email || '',
-      name: userInfo.name || data.name || '',
-      picture: userInfo.picture || data.picture,
-      access_token: data.access_token || data.id_token || '',
-      refresh_token: data.refresh_token,
-      expires_at: Date.now() + (data.expires_in || 3600) * 1000,
-      provider: data.provider || 'google',
-    };
-  }
-
-  /**
-   * Parse JWT token to extract user info
-   */
-  private parseTokenToUser(token: string): BFFUser {
-    try {
-      const data = token.split('.');
-      if (data.length < 2 || !data[1]) {
-        throw new Error('Invalid token format');
-      }
-      // Decode JWT payload (base64)
-      const payload = JSON.parse(atob(data[1]));
-
-      return {
-        id: payload.sub || '',
-        email: payload.email || '',
-        name: payload.name || '',
-        picture: payload.picture,
-        access_token: token,
-        expires_at: (payload.exp || 0) * 1000, // Convert to milliseconds
-        provider: payload.provider || 'google',
-      };
-    } catch {
-      throw new Error('Invalid token format');
-    }
+    return AuthSessionStorage.load();
   }
 
   /**
@@ -610,7 +476,7 @@ export class BFFAuthService {
       url,
       'oauth-popup',
       `width=${width},height=${height},left=${left},top=${top},` +
-      'toolbar=no,menubar=no,location=no,status=no'
+        'toolbar=no,menubar=no,location=no,status=no'
     );
 
     return this.popupWindow;
@@ -638,11 +504,6 @@ export class BFFAuthService {
    */
   private clearAuthData(options: { preserveReturnUrl?: boolean } = {}): void {
     this.clearAuthFlowState(options);
-
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token_id');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('id_token');
-    localStorage.removeItem(this.USERINFO_STORAGE_KEYS.userinfo);
+    AuthSessionStorage.clear();
   }
 }
