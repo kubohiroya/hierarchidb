@@ -107,6 +107,8 @@ export interface BuildSessionStatus {
   status: BuildStatus;
   stopReason?: StopReason;
   completedAt?: number;
+  inactiveMs?: number;
+  canResume?: boolean;
 }
 
 /**

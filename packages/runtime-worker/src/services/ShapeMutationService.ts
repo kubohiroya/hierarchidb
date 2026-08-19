@@ -30,6 +30,30 @@ import { storeRawDataDataSourceBufferForNode } from './shapeChunkStoreUtils.js';
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
+const BUILD_STAGES = ['source', 'geometry', 'tileEmit'] as const;
+
+const resolveRunningBuildStage = (value: unknown): BuildStage | undefined => {
+  if (value === undefined) return undefined;
+  if (!isRecord(value)) {
+    throw new Error('[ShapeMutationService] stages must be an object');
+  }
+  const runningStages = BUILD_STAGES.filter((stage) => {
+    const candidate = value[stage];
+    return isRecord(candidate) && candidate.status === 'running';
+  });
+  if (runningStages.length > 1) {
+    throw new Error('[ShapeMutationService] only one build stage may be running');
+  }
+  return runningStages[0];
+};
+
+const requireFiniteNonNegativeTiming = (value: unknown, label: string): number => {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    throw new Error(`[ShapeMutationService] ${label} must be a finite non-negative number`);
+  }
+  return value;
+};
+
 /**
  * Convert ShapeBuildSessionRecord to four normalized table records
  * 
@@ -46,14 +70,27 @@ const toBuildSessionRecords = (session: ShapeBuildSessionRecord): {
   stageStatus?: BuildStageStatus;
 } => {
   // Extract stage from stages map if available
-  const stageEntries = Object.entries(session.stages);
-  const currentStageEntry = stageEntries.find(([_, stageData]) => {
-    if (isRecord(stageData) && 'status' in stageData) {
-      return stageData.status === 'running';
-    }
-    return false;
-  });
-  const currentStage = currentStageEntry?.[0] as BuildStage | undefined;
+  const currentStage = resolveRunningBuildStage(session.stages);
+  const startedAt = requireFiniteNonNegativeTiming(session.startedAt, 'startedAt');
+  const inactiveMs =
+    session.inactiveMs === undefined
+      ? undefined
+      : requireFiniteNonNegativeTiming(session.inactiveMs, 'inactiveMs');
+  const completedAt =
+    session.completedAt === undefined
+      ? undefined
+      : requireFiniteNonNegativeTiming(session.completedAt, 'completedAt');
+  if (
+    (session.status === 'completed' || session.status === 'failed') &&
+    completedAt === undefined
+  ) {
+    throw new Error(
+      `[ShapeMutationService] completedAt is required for terminal status ${session.status}`
+    );
+  }
+  if (completedAt !== undefined && completedAt - startedAt - (inactiveMs ?? 0) < 0) {
+    throw new Error('[ShapeMutationService] completed session interval must be non-negative');
+  }
 
   return {
     config: {
@@ -61,28 +98,38 @@ const toBuildSessionRecords = (session: ShapeBuildSessionRecord): {
       domainType: 'shape',
       selectedArrayByCountries: session.selectedArrayByCountries,
       selectedArrayVersion: undefined, // Not available in ShapeBuildSessionRecord
-      startedAt: session.startedAt,
+      startedAt,
       sourceStageMaxima: session.sourceStageMaxima,
     },
-    heartbeat: session.lastHeartbeatAt ? {
-      nodeId: session.nodeId,
-      lastHeartbeatAt: session.lastHeartbeatAt,
-    } : undefined,
+    heartbeat:
+      session.lastHeartbeatAt !== undefined
+        ? {
+            nodeId: session.nodeId,
+            lastHeartbeatAt: requireFiniteNonNegativeTiming(
+              session.lastHeartbeatAt,
+              'lastHeartbeatAt'
+            ),
+          }
+        : undefined,
     status: {
       nodeId: session.nodeId,
       status: session.status,
       stopReason: session.stopReason,
-      completedAt: session.completedAt,
+      completedAt,
+      inactiveMs,
+      canResume: session.canResume,
     },
-    stageStatus: currentStage ? {
-      id: `${session.nodeId}:${currentStage}`,
-      nodeId: session.nodeId,
-      stage: currentStage,
-      status: 'running',
-      startedAt: session.stageStartedAt ?? session.startedAt,
-      inactiveMs: session.stageInactiveMs,
-      stageId: session.stageId,
-    } : undefined,
+    stageStatus: currentStage
+      ? {
+          id: `${session.nodeId}:${currentStage}`,
+          nodeId: session.nodeId,
+          stage: currentStage,
+          status: 'running',
+          startedAt: requireFiniteNonNegativeTiming(session.stageStartedAt, 'stageStartedAt'),
+          inactiveMs: requireFiniteNonNegativeTiming(session.stageInactiveMs, 'stageInactiveMs'),
+          stageId: session.stageId,
+        }
+      : undefined,
   };
 };
 
@@ -137,15 +184,30 @@ export class ShapeMutationService implements ShapeMutationAPI {
     
     // Split session into four normalized records
     const records = toBuildSessionRecords(session);
-    
-    // Insert into all four tables
-    await Promise.all([
-      ephemeralDB.buildSessionConfigs.put(records.config),
-      records.heartbeat ? ephemeralDB.buildSessionHeartbeats.put(records.heartbeat) : Promise.resolve(),
-      ephemeralDB.buildSessionStatuses.put(records.status),
-      records.stageStatus ? ephemeralDB.buildStageStatuses.put(records.stageStatus) : Promise.resolve(),
-    ]);
-    
+
+    await ephemeralDB.transaction(
+      'rw',
+      [
+        ephemeralDB.buildSessionConfigs,
+        ephemeralDB.buildSessionHeartbeats,
+        ephemeralDB.buildSessionStatuses,
+        ephemeralDB.buildStageStatuses,
+      ],
+      async () => {
+        await Promise.all([
+          ephemeralDB.buildSessionConfigs.put(records.config),
+          records.heartbeat
+            ? ephemeralDB.buildSessionHeartbeats.put(records.heartbeat)
+            : ephemeralDB.buildSessionHeartbeats.delete(session.nodeId),
+          ephemeralDB.buildSessionStatuses.put(records.status),
+          ephemeralDB.buildStageStatuses.where('nodeId').equals(session.nodeId).delete(),
+        ]);
+        if (records.stageStatus) {
+          await ephemeralDB.buildStageStatuses.put(records.stageStatus);
+        }
+      }
+    );
+
     publishBuildSessionUpdate({ nodeId: session.nodeId, status: session.status });
   }
 
@@ -155,93 +217,147 @@ export class ShapeMutationService implements ShapeMutationAPI {
   ): Promise<void> {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
-    
-    const updatePromises: Promise<unknown>[] = [];
-    
-    // Heartbeat update - only update buildSessionHeartbeats table
-    if (updates.lastHeartbeatAt !== undefined) {
-      updatePromises.push(
-        ephemeralDB.buildSessionHeartbeats.put({
-          nodeId,
-          lastHeartbeatAt: updates.lastHeartbeatAt,
-        })
-      );
+    const heartbeatAt =
+      updates.lastHeartbeatAt === undefined
+        ? undefined
+        : requireFiniteNonNegativeTiming(updates.lastHeartbeatAt, 'lastHeartbeatAt');
+    const statusFields = [
+      'status',
+      'stopReason',
+      'completedAt',
+      'inactiveMs',
+      'canResume',
+    ] as const;
+    const hasStatusUpdate = statusFields.some((field) => updates[field] !== undefined);
+    const currentStage = resolveRunningBuildStage(updates.stages);
+    const hasStageTimingUpdate =
+      updates.stageStartedAt !== undefined || updates.stageInactiveMs !== undefined;
+    if (hasStageTimingUpdate && currentStage === undefined) {
+      throw new Error('[ShapeMutationService] active stage is required for stage timing updates');
     }
-    
-    // Status update - only update buildSessionStatuses table
-    const statusFields = ['status', 'stopReason', 'completedAt'] as const;
-    const hasStatusUpdate = statusFields.some(field => updates[field] !== undefined);
-    if (hasStatusUpdate) {
-      updatePromises.push((async () => {
+    await ephemeralDB.transaction(
+      'rw',
+      [
+        ephemeralDB.buildSessionConfigs,
+        ephemeralDB.buildSessionHeartbeats,
+        ephemeralDB.buildSessionStatuses,
+        ephemeralDB.buildStageStatuses,
+      ],
+      async () => {
+        const currentConfig = await ephemeralDB.buildSessionConfigs.get(nodeId);
+        if (!currentConfig) {
+          throw new Error(
+            `[ShapeMutationService] build session config is missing: ${String(nodeId)}`
+          );
+        }
         const currentStatus = await ephemeralDB.buildSessionStatuses.get(nodeId);
-        const nextStatus: BuildSessionStatus = {
-          nodeId,
-          status: updates.status ?? currentStatus?.status ?? 'idle',
-          stopReason: updates.stopReason ?? currentStatus?.stopReason,
-          completedAt: updates.completedAt ?? currentStatus?.completedAt,
-        };
-        await ephemeralDB.buildSessionStatuses.put(nextStatus);
-      })());
-    }
-    
-    // Stage update - update buildStageStatuses table
-    // Note: For stage transitions (moving from one stage to another), the caller should:
-    // 1. Update the previous stage's completedAt by calling buildStageStatuses.update()
-    // 2. Create a new stage record by calling buildStageStatuses.put()
-    // This method handles updates to the current stage's fields.
-    const stageFields = ['stageInactiveMs', 'stageStartedAt', 'stageId'] as const;
-    const hasStageUpdate = stageFields.some(field => updates[field] !== undefined);
-    if (hasStageUpdate || updates.stages !== undefined) {
-      // Extract current stage from stages map if available
-      let currentStage: BuildStage | undefined;
-      if (updates.stages) {
-        const stageEntries = Object.entries(updates.stages);
-        const currentStageEntry = stageEntries.find(([_, stageData]) => {
-          if (isRecord(stageData) && 'status' in stageData) {
-            return stageData.status === 'running';
+        if (!currentStatus) {
+          throw new Error(
+            `[ShapeMutationService] build session status is missing: ${String(nodeId)}`
+          );
+        }
+
+        let nextStatus: BuildSessionStatus | undefined;
+        if (hasStatusUpdate) {
+          const status = updates.status ?? currentStatus.status;
+          const nextInactiveMs = updates.inactiveMs ?? currentStatus.inactiveMs;
+          const inactiveMs =
+            nextInactiveMs === undefined
+              ? undefined
+              : requireFiniteNonNegativeTiming(nextInactiveMs, 'inactiveMs');
+          const nextCompletedAt = updates.completedAt ?? currentStatus.completedAt;
+          const completedAt =
+            nextCompletedAt === undefined
+              ? undefined
+              : requireFiniteNonNegativeTiming(nextCompletedAt, 'completedAt');
+          if ((status === 'completed' || status === 'failed') && completedAt === undefined) {
+            throw new Error(
+              `[ShapeMutationService] completedAt is required for terminal status ${status}`
+            );
           }
-          return false;
-        });
-        currentStage = currentStageEntry?.[0] as BuildStage | undefined;
-      }
-      
-      if (currentStage) {
-        const stageId = `${nodeId}:${currentStage}`;
-        updatePromises.push((async () => {
+          const startedAt = requireFiniteNonNegativeTiming(currentConfig.startedAt, 'startedAt');
+          if (completedAt !== undefined && completedAt - startedAt - (inactiveMs ?? 0) < 0) {
+            throw new Error(
+              '[ShapeMutationService] completed session interval must be non-negative'
+            );
+          }
+          nextStatus = {
+            nodeId,
+            status,
+            stopReason: updates.stopReason ?? currentStatus.stopReason,
+            completedAt,
+            inactiveMs,
+            canResume: updates.canResume ?? currentStatus.canResume,
+          };
+        }
+
+        let nextStageStatus: BuildStageStatus | undefined;
+        if (currentStage) {
+          const stageId = `${nodeId}:${currentStage}`;
           const currentStageStatus = await ephemeralDB.buildStageStatuses.get(stageId);
-          const nextStageStatus: BuildStageStatus = {
+          const isNewStageRun =
+            updates.stageStartedAt !== undefined &&
+            updates.stageStartedAt !== currentStageStatus?.startedAt;
+          nextStageStatus = {
             id: stageId,
             nodeId,
             stage: currentStage,
-            status: currentStageStatus?.status ?? 'running',
-            startedAt: updates.stageStartedAt ?? currentStageStatus?.startedAt ?? Date.now(),
-            inactiveMs: updates.stageInactiveMs ?? currentStageStatus?.inactiveMs,
+            status: 'running',
+            startedAt: requireFiniteNonNegativeTiming(
+              updates.stageStartedAt ?? currentStageStatus?.startedAt,
+              'stageStartedAt'
+            ),
+            inactiveMs: requireFiniteNonNegativeTiming(
+              updates.stageInactiveMs ?? currentStageStatus?.inactiveMs,
+              'stageInactiveMs'
+            ),
             stageId: updates.stageId ?? currentStageStatus?.stageId,
-            completedAt: currentStageStatus?.completedAt,
+            completedAt: isNewStageRun ? undefined : currentStageStatus?.completedAt,
           };
-          await ephemeralDB.buildStageStatuses.put(nextStageStatus);
-        })());
+        }
+
+        const writes: Promise<unknown>[] = [];
+        if (heartbeatAt !== undefined) {
+          writes.push(
+            ephemeralDB.buildSessionHeartbeats.put({ nodeId, lastHeartbeatAt: heartbeatAt })
+          );
+        }
+        if (nextStatus) {
+          writes.push(ephemeralDB.buildSessionStatuses.put(nextStatus));
+        }
+        if (nextStageStatus) {
+          writes.push(ephemeralDB.buildStageStatuses.put(nextStageStatus));
+        }
+        await Promise.all(writes);
       }
-    }
-    
-    // Execute all updates in parallel
-    await Promise.all(updatePromises);
-    
+    );
+
     publishBuildSessionUpdate({ nodeId, status: updates.status });
   }
 
   async deleteBuildSession(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
-    
+
     // Delete from all four tables atomically
-    await Promise.all([
-      ephemeralDB.buildSessionConfigs.delete(nodeId),
-      ephemeralDB.buildSessionHeartbeats.delete(nodeId),
-      ephemeralDB.buildSessionStatuses.delete(nodeId),
-      ephemeralDB.buildStageStatuses.where('nodeId').equals(nodeId).delete(),
-    ]);
-    
+    await ephemeralDB.transaction(
+      'rw',
+      [
+        ephemeralDB.buildSessionConfigs,
+        ephemeralDB.buildSessionHeartbeats,
+        ephemeralDB.buildSessionStatuses,
+        ephemeralDB.buildStageStatuses,
+      ],
+      async () => {
+        await Promise.all([
+          ephemeralDB.buildSessionConfigs.delete(nodeId),
+          ephemeralDB.buildSessionHeartbeats.delete(nodeId),
+          ephemeralDB.buildSessionStatuses.delete(nodeId),
+          ephemeralDB.buildStageStatuses.where('nodeId').equals(nodeId).delete(),
+        ]);
+      }
+    );
+
     publishBuildSessionUpdate({ nodeId, status: 'deleted' });
   }
 

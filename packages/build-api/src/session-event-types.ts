@@ -32,13 +32,13 @@ export interface SessionStatusUpdatedEvent {
         nodeId: NodeId;
         phase: SessionPhase;
         isActive: boolean;
-        startedAt?: number;
-        completedAt?: number;
+        startedAt?: number;       // required after starting completes
+        completedAt?: number;     // required for completed/failed
         stopReason?: string;
         stageId?: string;
-        inactiveMs?: number;
-        stageStartedAt?: number;
-        stageInactiveMs?: number;
+        inactiveMs?: number;      // optional; absence means no recorded inactivity
+        stageStartedAt?: number;  // required when stageId is present
+        stageInactiveMs?: number; // required when stageId is present
     };
 }
 

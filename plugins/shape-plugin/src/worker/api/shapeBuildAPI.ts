@@ -23,7 +23,6 @@ import {
   requireDataSourceName,
   getPreferredCountryCodeFormat,
 } from '~/common/types/index';
-import { Dexie } from 'dexie';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import { normalizeCountryCodeFormat } from '~/services/utils/iso3166';
 import {
@@ -36,7 +35,11 @@ import { shapeBuildMonitoringAPI } from './shapeBuildMonitoringAPI.js';
 import { shapeBuildRuntime } from './shapeBuildRuntime.js';
 import * as shapeBuildRuntimeCore from './shapeBuildRuntimeCore.js';
 import { unconditionalEventStreamer } from './eventBuffering.js';
-import { emitSessionStatusUpdated, emitStageSnapshotUpdated } from './eventEmissionConstants.js';
+import {
+  emitSessionStatusUpdated,
+  emitStageSnapshotUpdated,
+  readStartedStageTiming,
+} from './eventEmissionConstants.js';
 
 export const shapeBuildAPI = {
 
@@ -243,10 +246,9 @@ export const shapeBuildAPI = {
     lastActivity: number;
     expiresAt: number;
   }> => {
-    const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
+    const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId);
     if (sessionRecord) {
-      const fallbackLastActivity = sessionRecord.updatedAt ?? Date.now();
-      const lastActivity = sessionRecord.lastActivity ?? fallbackLastActivity;
+      const lastActivity = sessionRecord.lastActivity ?? sessionRecord.updatedAt;
       const expiresAt = sessionRecord.expiresAt ?? shapeBuildRuntime.resolveSessionExpiresAt(lastActivity);
       return {
         exists: true,
@@ -256,22 +258,6 @@ export const shapeBuildAPI = {
       };
     }
 
-    const taskQueue = new VtTaskQueueDb();
-    const counts = await shapeBuildRuntimeCore.countTaskQueueStatuses(taskQueue, nodeId);
-    if (counts.total > 0) {
-      const now = Date.now();
-      const firstTask = await taskQueue.tasks
-        .where('[nodeId+index]')
-        .between([nodeId, Dexie.minKey], [nodeId, Dexie.maxKey])
-        .first();
-      const lastActivity = typeof firstTask?.updatedAt === 'number' ? firstTask.updatedAt : now;
-      return {
-        exists: true,
-        canResume: shapeBuildRuntimeCore.getPauseState(nodeId).paused,
-        lastActivity,
-        expiresAt: shapeBuildRuntimeCore.resolveSessionExpiresAt(lastActivity),
-      };
-    }
     return {
       exists: false,
       canResume: false,
@@ -451,6 +437,7 @@ export const shapeBuildAPI = {
     const key = String(nodeId);
     const existing = shapeBuildRuntimeCore.sessionStateCallbacks.get(key);
     existing?.unsubscribe?.();
+    let subscriptionActive = true;
 
     // Subscribe to unconditional event stream
     const unsubscribeStream = unconditionalEventStreamer.subscribe(nodeId, 'session-state', (event) => {
@@ -458,6 +445,7 @@ export const shapeBuildAPI = {
     });
 
     const unsubscribe = () => {
+      subscriptionActive = false;
       unsubscribeStream();
       shapeBuildRuntimeCore.sessionStateCallbacks.delete(key);
     };
@@ -469,11 +457,13 @@ export const shapeBuildAPI = {
     // before subscribeAll completes (race condition on session start).
     // Per spec: "when the initial runtime snapshot is loaded on subscription start"
     void shapeQueryAPIImpl.getBuildSessionRecord(nodeId).then((record) => {
+      if (!subscriptionActive) return;
       if (record) {
         emitSessionStatusUpdated(nodeId, record);
       }
-    }).catch(() => {
-      // No record yet — normal for a brand-new session; silently skip.
+    }).catch((error: unknown) => {
+      if (!subscriptionActive) return;
+      throw error;
     });
 
     return () => {
@@ -489,6 +479,7 @@ export const shapeBuildAPI = {
     const key = String(nodeId);
     const existing = shapeBuildRuntimeCore.stageSnapshotCallbacks.get(key);
     existing?.unsubscribe?.();
+    let subscriptionActive = true;
 
     // Subscribe to unconditional event stream
     const unsubscribeStream = unconditionalEventStreamer.subscribe(nodeId, 'stage-snapshot', (event) => {
@@ -496,6 +487,7 @@ export const shapeBuildAPI = {
     });
 
     const unsubscribe = () => {
+      subscriptionActive = false;
       unsubscribeStream();
       shapeBuildRuntimeCore.stageSnapshotCallbacks.delete(key);
     };
@@ -505,19 +497,19 @@ export const shapeBuildAPI = {
     // Deliver the current stage snapshot immediately on subscription start.
     // Per spec: "Initial snapshot on subscription start (only for stages that have started)"
     void shapeQueryAPIImpl.getBuildSessionRecord(nodeId).then(async (record) => {
+      if (!subscriptionActive) return;
       if (!record) return;
-      const rawStageId = record.stageId;
-      const stageStartedAt = record.stageStartedAt;
-      if (!rawStageId || typeof stageStartedAt !== 'number' || !Number.isFinite(stageStartedAt)) return;
-      if (rawStageId !== 'source' && rawStageId !== 'geometry' && rawStageId !== 'tileEmit') return;
+      const timing = readStartedStageTiming(record);
+      if (!timing) return;
       await emitStageSnapshotUpdated(
         nodeId,
-        rawStageId,
-        stageStartedAt,
-        record.stageInactiveMs ?? 0,
+        timing.stage,
+        timing.stageStartedAt,
+        timing.stageInactiveMs,
       );
-    }).catch(() => {
-      // No record yet — normal for a brand-new session; silently skip.
+    }).catch((error: unknown) => {
+      if (!subscriptionActive) return;
+      throw error;
     });
 
     return () => {
@@ -612,7 +604,7 @@ export const shapeBuildAPI = {
   // ===================================
 
   getSessionStateOnDemand: async (nodeId: NodeId): Promise<ShapeBuildSessionRecord | null> => {
-    return shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
+    return shapeQueryAPIImpl.getBuildSessionRecord(nodeId);
   },
 
   forceCleanup: async (): Promise<{

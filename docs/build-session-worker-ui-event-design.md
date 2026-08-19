@@ -38,6 +38,12 @@ tasks for that stage have been removed.
 **UI effect**: Replace `tasksById` / `taskOrder` for the stage atomically. Update
 `stageTimingByStageAtom` for the stage.
 
+The Worker initializes `stageStartedAt` and `stageInactiveMs = 0` when the stage
+actually starts. Snapshot emission then reads those persisted fields and validates
+them; it never manufactures missing values. `stageStartedAt` and `stageInactiveMs`
+must be finite and non-negative. If `stageCompletedAt` exists, the completed duration
+must also be finite and non-negative. Invalid timing aborts emission.
+
 ---
 
 ### 2. `taskProgressUpdated`
@@ -84,20 +90,47 @@ redundantly separated.
 | `nodeId` | `string` | Node this session belongs to |
 | `phase` | `SessionPhase` | New lifecycle phase |
 | `isActive` | `boolean` | Whether the session is currently executing |
-| `startedAt` | `number \| undefined` | Unix ms — session start time |
-| `completedAt` | `number \| undefined` | Unix ms — session end time (terminal states only) |
+| `startedAt` | `number \| undefined` | Unix ms — required after `starting` completes |
+| `completedAt` | `number \| undefined` | Unix ms — required for `completed` / `failed` |
 | `stopReason` | `StopReason \| undefined` | Why the session stopped (terminal/paused states) |
 | `stageId` | `StageId \| undefined` | Current stage at time of event |
-| `inactiveMs` | `number \| undefined` | Cumulative session-level inactive duration (ms) |
-| `stageStartedAt` | `number \| undefined` | Unix ms — current stage start time |
-| `stageInactiveMs` | `number \| undefined` | Cumulative inactive duration for current stage (ms) |
+| `inactiveMs` | `number \| undefined` | Cumulative session inactivity; absence means none recorded |
+| `stageStartedAt` | `number \| undefined` | Unix ms — required when `stageId` is present |
+| `stageInactiveMs` | `number \| undefined` | Required when `stageId` is present |
 
-**UI effect**: Update `lifecycleAtom` (phase, isActive, startedAt, completedAt,
-stopReason) and `lifecycleExtrasAtom` (stageId, inactiveMs, stageStartedAt,
-stageInactiveMs).
+**UI effect**: Update `lifecycleAtom` (phase, isActive, startedAt, inactiveMs,
+completedAt) and `lifecycleExtrasAtom` (stopReason). `stageId` drives the UI
+synchronization/selection signal. Per-stage timing remains owned by the
+`stageSnapshotUpdated` path and is not duplicated from this event.
 
 **Note**: `heartbeatAt` is intentionally absent. Heartbeat timing is carried only by
 the `heartbeat` event to avoid polluting this event with high-frequency data.
+
+Session timing is validated at both emission and UI adapter boundaries. `idle` and
+`starting` may omit timing; later phases require `startedAt`; terminal phases require `completedAt`; all supplied timing
+values must be finite and non-negative. Any available interval must produce a finite,
+non-negative duration. The UI uses the current clock only for `running`, the persisted
+heartbeat for `paused`, and `completedAt` for terminal phases. Missing persisted
+endpoints are contract violations, not reasons to fall back to `Date.now()`.
+
+The normalized persistence boundary follows the same ownership rules. The session
+config row owns `startedAt`; the session status row owns `status`, `completedAt`,
+`inactiveMs`, and `canResume`; and each stage status row owns its canonical `stage`, `startedAt`, and
+`inactiveMs`. The optional persisted stage-row `stageId` remains opaque. Worker/UI
+events derive their canonical `stageId` from the row's `stage` field. The compatibility
+read model derives `updatedAt` as the maximum of persisted session, heartbeat, stage,
+and task timestamps, without consulting the read clock. A partial normalized session
+or orphan heartbeat/stage row fails at the persistence/query boundary, as does missing
+timing for a started stage. The current stage is the unique row with the greatest
+`startedAt`; a tie at that greatest timestamp is an ambiguous persisted state and
+fails reconstruction. Session reconstruction reads its normalized rows and tasks
+in one database transaction; the task queue and current clock do not synthesize a
+replacement record.
+
+Failure persistence is secondary to the originating execution error. If persisting
+a startup failure also fails, the persistence error is logged while the original
+startup error remains the rejected value. Terminal-state finalization errors are
+reported separately and are never reclassified as pipeline failures.
 
 ---
 
@@ -152,16 +185,17 @@ type StageTiming = {
 
 ### New derived atom: `stageDurationMsByStageAtom`
 
-Derived from `stageTimingByStageAtom` × `elapsedTickMsAtom`. No React state or ref.
+Derived from `stageTimingByStageAtom`. No React state or ref.
 
 Calculation per stage:
 
-- Stage active (`stageCompletedAt === undefined`):
-  `now - stageStartedAt - stageInactiveMs`
-- Stage completed:
-  `stageCompletedAt - stageStartedAt - stageInactiveMs`
+- Unstarted or active (`timing === null` or `stageCompletedAt === undefined`): `0`
+- Completed: `stageCompletedAt - stageStartedAt - stageInactiveMs`
 
-Where `now` comes from `elapsedTickMsAtom` (ticked by the existing 1 s interval).
+The completed duration must be finite and non-negative or the atom throws. The active
+stage duration is calculated by the build-session progress hook from the same persisted
+stage timing plus the current clock (`running`) or persisted endpoint (`paused` /
+terminal). It is not stored in React state or a ref.
 
 ### Updated call site: `useShapeBuildStepLogic.impl.ts`
 

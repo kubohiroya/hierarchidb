@@ -21,7 +21,7 @@ type BaseTaskSummary = {
 };
 
 type StageTiming = {
-  stageStartedAt: number | undefined;
+  stageStartedAt: number;
   stageInactiveMs: number;
   stageCompletedAt?: number;
 };
@@ -54,6 +54,7 @@ type BuildSessionLifecycleState<SessionPhase extends string> = {
   phase: SessionPhase;
   isActive: boolean;
   startedAt?: number;
+  inactiveMs?: number;
   heartbeatAt?: number;
   completedAt?: number;
   stopReason?: string;
@@ -88,6 +89,7 @@ type SessionStatusUpdatedEvent<SessionPhase extends string> = {
     phase: SessionPhase;
     isActive: boolean;
     startedAt?: number;
+    inactiveMs?: number;
     completedAt?: number;
     stopReason?: string;
   };
@@ -106,7 +108,7 @@ type StageSnapshotUpdatedEvent<StageId extends string, TaskSummary extends BaseT
   payload: {
     stageId: StageId;
     tasks: TaskSummary[];
-    stageStartedAt: number | undefined;
+    stageStartedAt: number;
     stageInactiveMs: number;
     stageCompletedAt?: number;
   };
@@ -179,6 +181,13 @@ const assertProgressRange = (value: number): void => {
 const assertFiniteNumber = (value: number, label: string): void => {
   if (!Number.isFinite(value)) {
     throw new Error(`[buildSessionStateAtoms] ${label} must be a finite number, received ${value}`);
+  }
+};
+
+const assertFiniteNonNegativeNumber = (value: number, label: string): void => {
+  assertFiniteNumber(value, label);
+  if (value < 0) {
+    throw new Error(`[buildSessionStateAtoms] ${label} must be non-negative, received ${value}`);
   }
 };
 
@@ -296,6 +305,24 @@ export const createBuildSessionStateAtoms = <
         return initialState();
 
       case 'sessionStatusUpdated':
+        if (event.payload.startedAt !== undefined) {
+          assertFiniteNonNegativeNumber(event.payload.startedAt, 'startedAt');
+        }
+        if (event.payload.inactiveMs !== undefined) {
+          assertFiniteNonNegativeNumber(event.payload.inactiveMs, 'inactiveMs');
+        }
+        if (event.payload.completedAt !== undefined) {
+          assertFiniteNonNegativeNumber(event.payload.completedAt, 'completedAt');
+          if (event.payload.startedAt !== undefined) {
+            const inactiveMs = event.payload.inactiveMs === undefined ? 0 : event.payload.inactiveMs;
+            const durationMs = event.payload.completedAt - event.payload.startedAt - inactiveMs;
+            if (!Number.isFinite(durationMs) || durationMs < 0) {
+              throw new Error(
+                `[buildSessionStateAtoms] session duration must be finite and non-negative, received ${durationMs}`,
+              );
+            }
+          }
+        }
         return {
           ...state,
           lifecycle: {
@@ -304,6 +331,7 @@ export const createBuildSessionStateAtoms = <
             phase: event.payload.phase,
             isActive: event.payload.isActive,
             startedAt: event.payload.startedAt ?? state.lifecycle.startedAt,
+            inactiveMs: event.payload.inactiveMs ?? state.lifecycle.inactiveMs,
             completedAt: event.payload.completedAt ?? state.lifecycle.completedAt,
             stopReason: event.payload.stopReason ?? state.lifecycle.stopReason,
           },
@@ -321,13 +349,20 @@ export const createBuildSessionStateAtoms = <
       }
 
       case 'stageSnapshotUpdated': {
-        // stageStartedAt may be undefined when the stage has not yet started
-        if (event.payload.stageStartedAt !== undefined) {
-          assertFiniteNumber(event.payload.stageStartedAt, 'stageStartedAt');
-        }
-        assertFiniteNumber(event.payload.stageInactiveMs, 'stageInactiveMs');
+        assertFiniteNonNegativeNumber(event.payload.stageStartedAt, 'stageStartedAt');
+        assertFiniteNonNegativeNumber(event.payload.stageInactiveMs, 'stageInactiveMs');
         if (event.payload.stageCompletedAt !== undefined) {
-          assertFiniteNumber(event.payload.stageCompletedAt, 'stageCompletedAt');
+          assertFiniteNonNegativeNumber(event.payload.stageCompletedAt, 'stageCompletedAt');
+          const durationMs = (
+            event.payload.stageCompletedAt
+            - event.payload.stageStartedAt
+            - event.payload.stageInactiveMs
+          );
+          if (!Number.isFinite(durationMs) || durationMs < 0) {
+            throw new Error(
+              `[buildSessionStateAtoms] stage duration must be finite and non-negative, received ${durationMs}`,
+            );
+          }
         }
         const timing: StageTiming = {
           stageStartedAt: event.payload.stageStartedAt,

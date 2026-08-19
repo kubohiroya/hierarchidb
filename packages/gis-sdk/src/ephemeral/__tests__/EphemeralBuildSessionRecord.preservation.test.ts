@@ -88,6 +88,7 @@ describe('Preservation: Query Interface Compatibility', () => {
       stage: 'source',
       status: 'running',
       startedAt,
+      inactiveMs: 0,
     });
 
     // Query session status using unified query interface
@@ -183,6 +184,7 @@ describe('Preservation: Query Interface Compatibility', () => {
       stage: 'source',
       status: 'running',
       startedAt: Date.now(),
+      inactiveMs: 0,
     });
 
     // Pause session (update status table)
@@ -239,6 +241,7 @@ describe('Preservation: Query Interface Compatibility', () => {
       stage: 'geometry',
       status: 'running',
       startedAt: Date.now() + 500,
+      inactiveMs: 0,
       stageId: 'stage-geo-1',
     });
 
@@ -298,6 +301,7 @@ describe('Preservation: Query Interface Compatibility', () => {
       status: 'completed',
       startedAt: Date.now(),
       completedAt: Date.now() + 5000,
+      inactiveMs: 0,
     });
 
     // Create related tasks
@@ -362,20 +366,32 @@ describe('Preservation: Query Interface Compatibility', () => {
           await db.buildStageStatuses.where('nodeId').equals(nodeId).delete();
 
           // Create initial session in normalized tables
+          const sessionStartedAt = Date.now();
           await db.buildSessionConfigs.put({
             nodeId,
             domainType: 'shape',
-            startedAt: Date.now(),
+            startedAt: sessionStartedAt,
           });
           await db.buildSessionStatuses.put({
             nodeId,
             status: initialStatus,
           });
 
-          // Apply transitions
+          // Apply transitions with unique persisted stage start timestamps.
+          let transitionSequence = 0;
           for (const transition of transitions) {
-            await db.buildSessionStatuses.update(nodeId, {
+            transitionSequence += 1;
+            const isTerminal = transition.status === 'completed' || transition.status === 'failed';
+            const transitionAt = sessionStartedAt + transitionSequence;
+            await db.buildSessionStatuses.put({
+              nodeId,
               status: transition.status,
+              ...(isTerminal
+                ? {
+                    completedAt: transitionAt,
+                    stopReason: transition.status === 'failed' ? 'failed' : 'completed',
+                  }
+                : {}),
             });
 
             // If stage is specified, upsert stage status with updated startedAt
@@ -385,16 +401,17 @@ describe('Preservation: Query Interface Compatibility', () => {
 
               if (existingStage) {
                 await db.buildStageStatuses.update(existingStage.id, {
-                  startedAt: Date.now(),
+                  startedAt: transitionAt,
                   status: 'running',
                 });
               } else {
                 await db.buildStageStatuses.add({
-                  id: `${nodeId}-${transition.stage}-${Date.now()}`,
+                  id: `${nodeId}-${transition.stage}`,
                   nodeId,
                   stage: transition.stage,
                   status: 'running',
-                  startedAt: Date.now(),
+                  startedAt: transitionAt,
+                  inactiveMs: 0,
                 });
               }
             }
@@ -405,8 +422,7 @@ describe('Preservation: Query Interface Compatibility', () => {
             expect(updated?.nodeId).toBe(nodeId);
             expect(updated?.status).toBe(transition.status);
             if (transition.stage !== undefined) {
-              // Verify the stage exists in stageStatuses (may not be the "current" stage
-              // if multiple stages have the same startedAt timestamp)
+              // Verify the stage exists in stageStatuses.
               const stageStatuses = await db.buildStageStatuses.where('nodeId').equals(nodeId).toArray();
               expect(stageStatuses.some(s => s.stage === transition.stage)).toBe(true);
             }
@@ -468,11 +484,12 @@ describe('Preservation: Query Interface Compatibility', () => {
             stage: 'source',
             status: 'running',
             startedAt: Date.now(),
+            inactiveMs: 0,
           });
 
           // Create tasks with specified ratios
           const completedCount = Math.floor(taskCount * completedRatio);
-          const failedCount = Math.floor(taskCount * failedRatio);
+          const failedCount = Math.floor((taskCount - completedCount) * failedRatio);
           const remainingCount = taskCount - completedCount - failedCount;
 
           const tasks: EphemeralBuildTaskRecord[] = [];
@@ -602,6 +619,7 @@ describe('Preservation: Query Interface Compatibility', () => {
               stage,
               status: 'running',
               startedAt: Date.now(),
+              inactiveMs: 0,
               stageId,
             });
           }
@@ -617,9 +635,14 @@ describe('Preservation: Query Interface Compatibility', () => {
             expect(queried?.selectedArrayByCountries).toBeDefined();
           }
 
-          if (hasStageId && stage) {
-            expect(queried?.stageId).toBe(`stage-${stage}-1`);
+          if (stage) {
+            expect(queried?.stageId).toBe(stage);
             expect(queried?.stageStartedAt).toBeDefined();
+
+            const storedStage = await db.buildStageStatuses.get(
+              hasStageId ? `stage-${stage}-1` : `${nodeId}-${stage}-1`
+            );
+            expect(storedStage?.stageId).toBe(hasStageId ? `stage-${stage}-1` : undefined);
           }
 
           // Cleanup
@@ -735,6 +758,7 @@ describe('Preservation: Query Interface Compatibility', () => {
       stage: 'geometry',
       status: 'running',
       startedAt: Date.now(),
+      inactiveMs: 0,
     });
 
     // Create tasks with mixed statuses across stages

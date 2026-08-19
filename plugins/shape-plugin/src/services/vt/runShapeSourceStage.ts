@@ -1671,7 +1671,8 @@ export const runShapeSourceStage = async (params: ShapeSourceStageParams): Promi
         source: payload.source,
       });
     } catch (error) {
-      console.warn('[ShapeSource] notify tasks enqueued failed', error);
+      console.error('[ShapeSource] notify tasks enqueued failed', error);
+      throw error;
     }
   };
   const notifyStageTasksPrepared = async (taskCount: number): Promise<void> => {
@@ -1683,7 +1684,8 @@ export const runShapeSourceStage = async (params: ShapeSourceStageParams): Promi
         taskCount,
       });
     } catch (error) {
-      console.warn('[ShapeSource] notify stage tasks prepared failed', error);
+      console.error('[ShapeSource] notify stage tasks prepared failed', error);
+      throw error;
     }
   };
   if (!resumeExistingTasks) {

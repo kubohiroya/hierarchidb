@@ -9,6 +9,7 @@ import {
   buildSessionStageProgressAtom,
   buildSessionTasksByStageAtom,
   buildSessionSnapshotHandshakeReceivedAtom,
+  stageDurationMsByStageAtom,
   pendingUserActionAtom,
   isStopRequestedInFlightAtom,
   completionSnapshotAtom,
@@ -76,6 +77,33 @@ describe('buildSessionStateAtoms write atom', () => {
     expect(counters.running).toBe(1);
     expect(counters.terminal).toBe(1);
     expect(counters.failed).toBe(0);
+  });
+
+  it('computes completed stage duration without clamping', () => {
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'stageSnapshotUpdated',
+      payload: {
+        stageId: 'source',
+        tasks: [],
+        stageStartedAt: 1_000,
+        stageInactiveMs: 100,
+        stageCompletedAt: 1_600,
+      },
+    });
+    expect(store.get(stageDurationMsByStageAtom).source).toBe(500);
+  });
+
+  it('rejects a reversed completed stage interval', () => {
+    expect(() => store.set(dispatchBuildSessionEventAtom, {
+      type: 'stageSnapshotUpdated',
+      payload: {
+        stageId: 'source',
+        tasks: [],
+        stageStartedAt: 1_000,
+        stageInactiveMs: 100,
+        stageCompletedAt: 1_050,
+      },
+    })).toThrowError('stage duration must be finite and non-negative');
   });
 
   it('rejects out-of-range progress instead of normalizing it', () => {

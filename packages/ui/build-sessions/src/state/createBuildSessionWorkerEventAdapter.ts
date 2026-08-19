@@ -26,8 +26,12 @@ export type AdapterSessionStatusUpdatedEvent = {
     phase: string;
     isActive: boolean;
     startedAt?: number;
+    inactiveMs?: number;
     completedAt?: number;
     stopReason?: string;
+    stageId?: string;
+    stageStartedAt?: number;
+    stageInactiveMs?: number;
   };
 };
 
@@ -89,6 +93,58 @@ const requireFiniteNumber = (value: unknown, label: string): number => {
   return value;
 };
 
+const requireFiniteNonNegativeNumber = (value: unknown, label: string): number => {
+  const resolved = requireFiniteNumber(value, label);
+  if (resolved < 0) {
+    throw new Error(
+      `[buildSessionWorkerEventAdapter] ${label} must be non-negative, received ${String(value)}`,
+    );
+  }
+  return resolved;
+};
+
+const validateSessionTiming = (
+  phase: string,
+  payload: AdapterSessionStatusUpdatedEvent['payload'],
+): void => {
+  const requiresStartedAt = phase !== 'idle' && phase !== 'starting';
+  const requiresCompletedAt = phase === 'completed' || phase === 'failed';
+  const startedAt = payload.startedAt === undefined
+    ? undefined
+    : requireFiniteNonNegativeNumber(payload.startedAt, 'startedAt');
+  const inactiveMs = payload.inactiveMs === undefined
+    ? 0
+    : requireFiniteNonNegativeNumber(payload.inactiveMs, 'inactiveMs');
+  const completedAt = payload.completedAt === undefined
+    ? undefined
+    : requireFiniteNonNegativeNumber(payload.completedAt, 'completedAt');
+
+  if (requiresStartedAt && startedAt === undefined) {
+    throw new Error(`[buildSessionWorkerEventAdapter] startedAt is required for phase ${phase}`);
+  }
+  if (requiresCompletedAt && completedAt === undefined) {
+    throw new Error(`[buildSessionWorkerEventAdapter] completedAt is required for phase ${phase}`);
+  }
+  if (startedAt !== undefined && completedAt !== undefined) {
+    const durationMs = completedAt - startedAt - inactiveMs;
+    if (!Number.isFinite(durationMs) || durationMs < 0) {
+      throw new Error(
+        `[buildSessionWorkerEventAdapter] session duration must be finite and non-negative, received ${durationMs}`,
+      );
+    }
+  }
+  if (payload.stageId === undefined) {
+    if (payload.stageStartedAt !== undefined || payload.stageInactiveMs !== undefined) {
+      throw new Error(
+        '[buildSessionWorkerEventAdapter] stage timing must be absent when stageId is absent',
+      );
+    }
+    return;
+  }
+  requireFiniteNonNegativeNumber(payload.stageStartedAt, 'stageStartedAt');
+  requireFiniteNonNegativeNumber(payload.stageInactiveMs, 'stageInactiveMs');
+};
+
 export const createBuildSessionWorkerEventAdapter = <
   StageId extends string,
   SessionPhase extends string,
@@ -101,14 +157,20 @@ export const createBuildSessionWorkerEventAdapter = <
     onRuntimeRecord: (record) => {
       if (String(record.nodeId) !== String(nodeId)) return;
       const phase = config.mapRuntimeStatusToPhase(record.status);
+      const payload: AdapterSessionStatusUpdatedEvent['payload'] = {
+        nodeId: String(record.nodeId),
+        phase: String(phase),
+        isActive: record.isActive,
+        startedAt: record.startedAt,
+        inactiveMs: record.inactiveMs,
+        completedAt: record.completedAt,
+      };
+      validateSessionTiming(String(phase), payload);
       dispatch({
         type: 'sessionStatusUpdated',
         payload: {
-          nodeId: String(record.nodeId),
+          ...payload,
           phase,
-          isActive: record.isActive,
-          startedAt: record.startedAt,
-          completedAt: record.completedAt,
         },
       });
     },
@@ -116,6 +178,10 @@ export const createBuildSessionWorkerEventAdapter = <
     onSessionState: (event) => {
       if (String(event.payload.nodeId) !== String(nodeId)) return;
       const phase = config.mapSessionRecordStatusToPhase(event.payload.phase);
+      validateSessionTiming(String(phase), event.payload);
+      if (event.payload.stageId !== undefined) {
+        config.resolveStageId(event.payload.stageId);
+      }
       dispatch({
         type: 'sessionStatusUpdated',
         payload: {
@@ -123,6 +189,7 @@ export const createBuildSessionWorkerEventAdapter = <
           phase,
           isActive: event.payload.isActive,
           startedAt: event.payload.startedAt,
+          inactiveMs: event.payload.inactiveMs,
           completedAt: event.payload.completedAt,
           stopReason: event.payload.stopReason,
         },
@@ -132,14 +199,27 @@ export const createBuildSessionWorkerEventAdapter = <
     onTaskEvent: (event) => {
       const stageId = config.resolveStageId(event.payload.stageId);
       const tasks = event.payload.tasks.map((rawTask) => asTaskSummary(rawTask));
+      const stageStartedAt = requireFiniteNonNegativeNumber(event.payload.stageStartedAt, 'stageStartedAt');
+      const stageInactiveMs = requireFiniteNonNegativeNumber(event.payload.stageInactiveMs, 'stageInactiveMs');
+      const stageCompletedAt = event.payload.stageCompletedAt === undefined
+        ? undefined
+        : requireFiniteNonNegativeNumber(event.payload.stageCompletedAt, 'stageCompletedAt');
+      if (stageCompletedAt !== undefined) {
+        const durationMs = stageCompletedAt - stageStartedAt - stageInactiveMs;
+        if (!Number.isFinite(durationMs) || durationMs < 0) {
+          throw new Error(
+            `[buildSessionWorkerEventAdapter] stage duration must be finite and non-negative, received ${durationMs}`,
+          );
+        }
+      }
       dispatch({
         type: 'stageSnapshotUpdated',
         payload: {
           stageId,
           tasks,
-          stageStartedAt: event.payload.stageStartedAt,
-          stageInactiveMs: event.payload.stageInactiveMs,
-          stageCompletedAt: event.payload.stageCompletedAt,
+          stageStartedAt,
+          stageInactiveMs,
+          stageCompletedAt,
         },
       });
     },

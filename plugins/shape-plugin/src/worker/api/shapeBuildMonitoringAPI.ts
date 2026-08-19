@@ -55,7 +55,7 @@ export const shapeBuildMonitoringAPI = {
       };
     }
 
-    const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
+    const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId);
     if (sessionRecord) {
       const status = sessionRecord.status === 'running'
         ? 'processing'

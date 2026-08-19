@@ -70,6 +70,30 @@ const mapStatus = (status: ShapeBuildSessionSummary['status'] | 'running' | 'idl
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
+const BUILD_STAGES = ['source', 'geometry', 'tileEmit'] as const;
+
+const resolveRunningBuildStage = (value: unknown): BuildTaskType | undefined => {
+  if (value === undefined) return undefined;
+  if (!isRecord(value)) {
+    throw new Error('[ShapeMutationAPI] stages must be an object');
+  }
+  const runningStages = BUILD_STAGES.filter((stage) => {
+    const candidate = value[stage];
+    return isRecord(candidate) && candidate.status === 'running';
+  });
+  if (runningStages.length > 1) {
+    throw new Error('[ShapeMutationAPI] only one build stage may be running');
+  }
+  return runningStages[0];
+};
+
+const requireFiniteNonNegativeTiming = (value: unknown, label: string): number => {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    throw new Error(`[ShapeMutationAPI] ${label} must be a finite non-negative number`);
+  }
+  return value;
+};
+
 const isNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
 
@@ -151,7 +175,7 @@ const readSourceStageMaxima = (value: unknown): SourceStageMaxima | undefined =>
   };
 };
 
-const normalizeBuildSessionStatus = (status: string | undefined): BuildSessionRecord['status'] => {
+const requireBuildSessionStatus = (status: unknown): BuildSessionRecord['status'] => {
   if (status === 'idle'
     || status === 'running'
     || status === 'paused'
@@ -159,10 +183,7 @@ const normalizeBuildSessionStatus = (status: string | undefined): BuildSessionRe
     || status === 'failed') {
     return status;
   }
-  if (status === 'queued') {
-    return 'running';
-  }
-  return 'idle';
+  throw new Error(`[ShapeBuildAPIClient] unsupported build session status: ${String(status)}`);
 };
 
 const toBuildSessionRecordFromEphemeral = (
@@ -174,7 +195,7 @@ const toBuildSessionRecordFromEphemeral = (
   if (!isNumber(session.startedAt) || !isNumber(session.updatedAt)) return null;
   return {
     nodeId: session.nodeId,
-    status: normalizeBuildSessionStatus(session.status),
+    status: requireBuildSessionStatus(session.status),
     selectedArrayByCountries: isSelectedArrayByCountries(session.selectedArrayByCountries)
       ? session.selectedArrayByCountries
       : undefined,
@@ -205,13 +226,23 @@ const isNonNull = <T>(value: T | null): value is T => value !== null;
  * This replaces direct access to the old monolithic ephemeralDB.sessions table
  */
 const getEphemeralSessionWithDetails = async (nodeId: NodeId): Promise<EphemeralBuildSessionRecord | null> => {
-  return getSessionWithDetails(nodeId, {
-    getConfig: async (nodeId) => ephemeralDB.buildSessionConfigs.get(nodeId),
-    getHeartbeat: async (nodeId) => ephemeralDB.buildSessionHeartbeats.get(nodeId),
-    getStatus: async (nodeId) => ephemeralDB.buildSessionStatuses.get(nodeId),
-    getStageStatuses: async (nodeId) => ephemeralDB.buildStageStatuses.where('nodeId').equals(nodeId).toArray(),
-    getTasks: async (nodeId) => ephemeralDB.buildTasks.where('nodeId').equals(nodeId).toArray(),
-  });
+  return ephemeralDB.transaction(
+    'r',
+    [
+      ephemeralDB.buildSessionConfigs,
+      ephemeralDB.buildSessionHeartbeats,
+      ephemeralDB.buildSessionStatuses,
+      ephemeralDB.buildStageStatuses,
+      ephemeralDB.buildTasks,
+    ],
+    async () => getSessionWithDetails(nodeId, {
+      getConfig: async (nodeId) => ephemeralDB.buildSessionConfigs.get(nodeId),
+      getHeartbeat: async (nodeId) => ephemeralDB.buildSessionHeartbeats.get(nodeId),
+      getStatus: async (nodeId) => ephemeralDB.buildSessionStatuses.get(nodeId),
+      getStageStatuses: async (nodeId) => ephemeralDB.buildStageStatuses.where('nodeId').equals(nodeId).toArray(),
+      getTasks: async (nodeId) => ephemeralDB.buildTasks.where('nodeId').equals(nodeId).toArray(),
+    })
+  );
 };
 
 const readBuildSessionsByNode = async (nodeId: NodeId): Promise<BuildSessionRecord[]> => {
@@ -626,6 +657,10 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
     if (record.startedAt === undefined) {
       throw new Error('startedAt is required for session creation');
     }
+    const runningStage = resolveRunningBuildStage(session.stages);
+    if (record.stage !== undefined && record.stage !== runningStage) {
+      throw new Error('[ShapeMutationAPI] progress stage must match the running stage');
+    }
 
     // Split the monolithic record into four normalized tables
     const config: GisBuildSessionRecord = {
@@ -637,35 +672,74 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
       sourceStageMaxima: record.sourceStageMaxima,
     };
 
-    const heartbeat: BuildSessionHeartbeat | undefined = record.lastHeartbeatAt ? {
+    const heartbeat: BuildSessionHeartbeat | undefined = record.lastHeartbeatAt !== undefined ? {
       nodeId: record.nodeId,
-      lastHeartbeatAt: record.lastHeartbeatAt,
+      lastHeartbeatAt: requireFiniteNonNegativeTiming(record.lastHeartbeatAt, 'lastHeartbeatAt'),
     } : undefined;
+
+    const startedAt = requireFiniteNonNegativeTiming(record.startedAt, 'startedAt');
+    const inactiveMs = record.inactiveMs === undefined
+      ? undefined
+      : requireFiniteNonNegativeTiming(record.inactiveMs, 'inactiveMs');
+    const completedAt = record.completedAt === undefined
+      ? undefined
+      : requireFiniteNonNegativeTiming(record.completedAt, 'completedAt');
+    if ((record.status === 'completed' || record.status === 'failed') && completedAt === undefined) {
+      throw new Error(`[ShapeMutationAPI] completedAt is required for terminal status ${record.status}`);
+    }
+    if (completedAt !== undefined && completedAt - startedAt - (inactiveMs ?? 0) < 0) {
+      throw new Error('[ShapeMutationAPI] completed session interval must be non-negative');
+    }
 
     const status: BuildSessionStatus = {
       nodeId: record.nodeId,
       status: record.status,
       stopReason: record.stopReason,
-      completedAt: record.completedAt,
+      completedAt,
+      inactiveMs,
+      canResume: record.canResume,
     };
 
-    const stageStatus: BuildStageStatus | undefined = record.stage ? {
-      id: `${record.nodeId}:${record.stage}`,
-      nodeId: record.nodeId,
-      stage: record.stage,
-      status: 'running',
-      startedAt: record.stageStartedAt ?? record.startedAt,
-      inactiveMs: record.stageInactiveMs,
-      stageId: record.stageId,
-    } : undefined;
+    const stageStatus: BuildStageStatus | undefined = runningStage
+      ? (() => {
+          const stageStartedAt = requireFiniteNonNegativeTiming(
+            record.stageStartedAt,
+            'stageStartedAt',
+          );
+          const stageInactiveMs = requireFiniteNonNegativeTiming(
+            record.stageInactiveMs,
+            'stageInactiveMs',
+          );
+          return {
+            id: `${record.nodeId}:${runningStage}`,
+            nodeId: record.nodeId,
+            stage: runningStage,
+            status: 'running',
+            startedAt: stageStartedAt,
+            inactiveMs: stageInactiveMs,
+            stageId: record.stageId,
+          };
+        })()
+      : undefined;
 
-    // Insert into all four tables
-    await Promise.all([
-      ephemeralDB.buildSessionConfigs.put(config),
-      heartbeat ? ephemeralDB.buildSessionHeartbeats.put(heartbeat) : Promise.resolve(),
-      ephemeralDB.buildSessionStatuses.put(status),
-      stageStatus ? ephemeralDB.buildStageStatuses.put(stageStatus) : Promise.resolve(),
-    ]);
+    await ephemeralDB.transaction('rw', [
+      ephemeralDB.buildSessionConfigs,
+      ephemeralDB.buildSessionHeartbeats,
+      ephemeralDB.buildSessionStatuses,
+      ephemeralDB.buildStageStatuses,
+    ], async () => {
+      await Promise.all([
+        ephemeralDB.buildSessionConfigs.put(config),
+        heartbeat
+          ? ephemeralDB.buildSessionHeartbeats.put(heartbeat)
+          : ephemeralDB.buildSessionHeartbeats.delete(record.nodeId),
+        ephemeralDB.buildSessionStatuses.put(status),
+        ephemeralDB.buildStageStatuses.where('nodeId').equals(record.nodeId).delete(),
+      ]);
+      if (stageStatus) {
+        await ephemeralDB.buildStageStatuses.put(stageStatus);
+      }
+    });
   }
 
   async updateBuildSession(nodeId: NodeId, updates: Partial<ShapeBuildSessionRecord>): Promise<void> {
@@ -673,69 +747,110 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
     if (!patch) {
       throw new Error('Invalid build session config update');
     }
-
-    // Update the appropriate tables based on what fields are being updated
-    const updatePromises: Promise<unknown>[] = [];
-
-    // Heartbeat updates
-    if (patch.lastHeartbeatAt !== undefined) {
-      updatePromises.push(
-        ephemeralDB.buildSessionHeartbeats.put({
-          nodeId,
-          lastHeartbeatAt: patch.lastHeartbeatAt,
-        })
-      );
+    const heartbeatAt = patch.lastHeartbeatAt === undefined
+      ? undefined
+      : requireFiniteNonNegativeTiming(patch.lastHeartbeatAt, 'lastHeartbeatAt');
+    const hasStatusUpdate = patch.status !== undefined || patch.stopReason !== undefined ||
+      patch.completedAt !== undefined || patch.inactiveMs !== undefined || patch.canResume !== undefined;
+    const runningStage = resolveRunningBuildStage(updates.stages);
+    const targetStage = runningStage ?? patch.stage;
+    const hasStageTimingUpdate = patch.stageStartedAt !== undefined ||
+      patch.stageInactiveMs !== undefined;
+    if (hasStageTimingUpdate && targetStage === undefined) {
+      throw new Error('[ShapeMutationAPI] active stage is required for stage timing updates');
     }
+    const hasConfigUpdate = patch.selectedArrayByCountries !== undefined ||
+      patch.selectedArrayVersion !== undefined || patch.sourceStageMaxima !== undefined;
 
-    // Status updates
-    if (patch.status !== undefined || patch.stopReason !== undefined || patch.completedAt !== undefined) {
+    await ephemeralDB.transaction('rw', [
+      ephemeralDB.buildSessionConfigs,
+      ephemeralDB.buildSessionHeartbeats,
+      ephemeralDB.buildSessionStatuses,
+      ephemeralDB.buildStageStatuses,
+    ], async () => {
+      const currentConfig = await ephemeralDB.buildSessionConfigs.get(nodeId);
+      if (!currentConfig) {
+        throw new Error(`[ShapeMutationAPI] build session config is missing: ${String(nodeId)}`);
+      }
       const currentStatus = await ephemeralDB.buildSessionStatuses.get(nodeId);
-      updatePromises.push(
-        ephemeralDB.buildSessionStatuses.put({
+      if (!currentStatus) {
+        throw new Error(`[ShapeMutationAPI] build session status is missing: ${String(nodeId)}`);
+      }
+
+      let nextStatusRecord: BuildSessionStatus | undefined;
+      if (hasStatusUpdate) {
+        const nextStatus = patch.status ?? currentStatus.status;
+        const nextInactiveMs = patch.inactiveMs ?? currentStatus.inactiveMs;
+        const inactiveMs = nextInactiveMs === undefined
+          ? undefined
+          : requireFiniteNonNegativeTiming(nextInactiveMs, 'inactiveMs');
+        const nextCompletedAt = patch.completedAt ?? currentStatus.completedAt;
+        const completedAt = nextCompletedAt === undefined
+          ? undefined
+          : requireFiniteNonNegativeTiming(nextCompletedAt, 'completedAt');
+        if ((nextStatus === 'completed' || nextStatus === 'failed') && completedAt === undefined) {
+          throw new Error(`[ShapeMutationAPI] completedAt is required for terminal status ${nextStatus}`);
+        }
+        const startedAt = requireFiniteNonNegativeTiming(currentConfig.startedAt, 'startedAt');
+        if (completedAt !== undefined && completedAt - startedAt - (inactiveMs ?? 0) < 0) {
+          throw new Error('[ShapeMutationAPI] completed session interval must be non-negative');
+        }
+        nextStatusRecord = {
           nodeId,
-          status: patch.status ?? currentStatus?.status ?? 'idle',
-          stopReason: patch.stopReason ?? currentStatus?.stopReason,
-          completedAt: patch.completedAt ?? currentStatus?.completedAt,
-        })
-      );
-    }
-
-    // Stage updates
-    if (patch.stage !== undefined || patch.stageStartedAt !== undefined ||
-      patch.stageInactiveMs !== undefined || patch.stageId !== undefined) {
-      const currentConfig = await ephemeralDB.buildSessionConfigs.get(nodeId);
-      if (currentConfig && patch.stage) {
-        updatePromises.push(
-          ephemeralDB.buildStageStatuses.put({
-            id: `${nodeId}:${patch.stage}`,
-            nodeId,
-            stage: patch.stage,
-            status: 'running',
-            startedAt: patch.stageStartedAt ?? Date.now(),
-            inactiveMs: patch.stageInactiveMs,
-            stageId: patch.stageId,
-          })
-        );
+          status: nextStatus,
+          stopReason: patch.stopReason ?? currentStatus.stopReason,
+          completedAt,
+          inactiveMs,
+          canResume: patch.canResume ?? currentStatus.canResume,
+        };
       }
-    }
 
-    // Config updates (immutable fields - should rarely be updated)
-    if (patch.selectedArrayByCountries !== undefined || patch.selectedArrayVersion !== undefined ||
-      patch.sourceStageMaxima !== undefined) {
-      const currentConfig = await ephemeralDB.buildSessionConfigs.get(nodeId);
-      if (currentConfig) {
-        updatePromises.push(
-          ephemeralDB.buildSessionConfigs.put({
-            ...currentConfig,
-            selectedArrayByCountries: patch.selectedArrayByCountries ?? currentConfig.selectedArrayByCountries,
-            selectedArrayVersion: patch.selectedArrayVersion ?? currentConfig.selectedArrayVersion,
-            sourceStageMaxima: patch.sourceStageMaxima ?? currentConfig.sourceStageMaxima,
-          })
+      let nextStageStatus: BuildStageStatus | undefined;
+      if (targetStage !== undefined) {
+        const stageRowId = `${nodeId}:${targetStage}`;
+        const currentStageStatus = await ephemeralDB.buildStageStatuses.get(stageRowId);
+        const stageStartedAt = requireFiniteNonNegativeTiming(
+          patch.stageStartedAt ?? currentStageStatus?.startedAt,
+          'stageStartedAt',
         );
+        const stageInactiveMs = requireFiniteNonNegativeTiming(
+          patch.stageInactiveMs ?? currentStageStatus?.inactiveMs,
+          'stageInactiveMs',
+        );
+        const isNewStageRun = patch.stageStartedAt !== undefined &&
+          patch.stageStartedAt !== currentStageStatus?.startedAt;
+        nextStageStatus = {
+          id: stageRowId,
+          nodeId,
+          stage: targetStage,
+          status: 'running',
+          startedAt: stageStartedAt,
+          inactiveMs: stageInactiveMs,
+          stageId: patch.stageId ?? currentStageStatus?.stageId,
+          completedAt: isNewStageRun ? undefined : currentStageStatus?.completedAt,
+        };
       }
-    }
 
-    await Promise.all(updatePromises);
+      const writes: Promise<unknown>[] = [];
+      if (heartbeatAt !== undefined) {
+        writes.push(ephemeralDB.buildSessionHeartbeats.put({ nodeId, lastHeartbeatAt: heartbeatAt }));
+      }
+      if (nextStatusRecord) {
+        writes.push(ephemeralDB.buildSessionStatuses.put(nextStatusRecord));
+      }
+      if (nextStageStatus) {
+        writes.push(ephemeralDB.buildStageStatuses.put(nextStageStatus));
+      }
+      if (hasConfigUpdate) {
+        writes.push(ephemeralDB.buildSessionConfigs.put({
+          ...currentConfig,
+          selectedArrayByCountries: patch.selectedArrayByCountries ?? currentConfig.selectedArrayByCountries,
+          selectedArrayVersion: patch.selectedArrayVersion ?? currentConfig.selectedArrayVersion,
+          sourceStageMaxima: patch.sourceStageMaxima ?? currentConfig.sourceStageMaxima,
+        }));
+      }
+      await Promise.all(writes);
+    });
   }
 
   async deleteBuildSession(nodeId: NodeId): Promise<void> {

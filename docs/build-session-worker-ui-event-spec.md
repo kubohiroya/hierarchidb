@@ -30,18 +30,37 @@ type SessionStatusUpdatedEvent = {
     nodeId: NodeId;
     phase: SessionPhase;           // e.g. 'idle' | 'starting' | 'running' | 'pausing' | 'paused' | 'resuming' | 'finalizing' | 'completed' | 'failed'
     isActive: boolean;
-    startedAt?: number;            // session start timestamp (ms)
-    completedAt?: number;          // session end timestamp (ms, terminal states only)
+    startedAt?: number;            // required after starting completes
+    completedAt?: number;          // required for completed/failed
     stopReason?: string;           // e.g. 'user-pause' | 'failed' | 'completed' | 'route-leave'
     stageId?: StageId;             // current stage at time of event (undefined if no stage is active)
-    inactiveMs?: number;           // cumulative session-level inactive duration (ms)
-    stageStartedAt?: number;       // current stage start timestamp (ms)
-    stageInactiveMs?: number;      // cumulative inactive duration for current stage (ms)
+    inactiveMs?: number;           // cumulative session inactivity; absence means none recorded
+    stageStartedAt?: number;       // required when stageId is present
+    stageInactiveMs?: number;      // required when stageId is present
   };
 };
 ```
 
-**UI-side effect**: Update `lifecycle.phase`, `lifecycle.isActive`, `lifecycle.startedAt`, `lifecycle.completedAt`, `lifecycleExtras.stopReason`, `lifecycleExtras.stageId`, `lifecycleExtras.inactiveMs`, `lifecycleExtras.stageStartedAt`, `lifecycleExtras.stageInactiveMs`.
+**Timing contract**:
+
+- `idle` and `starting` may omit session timing. Every later execution or terminal phase requires a finite, non-negative `startedAt`.
+- `completed` and `failed` additionally require a finite, non-negative `completedAt`.
+- When present, `inactiveMs` must be finite and non-negative. Its absence means that no session-level inactive interval was recorded; it is not a repair value supplied by the consumer.
+- When both session endpoints are present, `completedAt - startedAt - inactiveMs` must be finite and non-negative. A violation throws.
+- When `stageId` is present, `stageStartedAt` and `stageInactiveMs` are required and follow the stage timing contract below. When `stageId` is absent, both stage timing fields must also be absent.
+
+**Normalized persistence boundary**:
+
+- `buildSessionConfigs.startedAt` is the persisted session start endpoint.
+- `buildSessionStatuses` owns session `status`, `completedAt`, `inactiveMs`, and `canResume`.
+- A `buildStageStatuses` row owns the canonical `stage`, `startedAt`, and `inactiveMs` for that stage. Its optional stored `stageId` is an opaque persistence identifier and is never used as the event `stageId`; the event value is derived from the row's canonical `stage`.
+- The compatibility read model derives `updatedAt` from the maximum persisted session, heartbeat, stage, and task timestamp. It never substitutes the read clock.
+- Session reconstruction reads the normalized rows and tasks in a single database read transaction.
+- Worker/API callers propagate persistence/query contract violations; only a successful `null` read means that no session exists. UI polling may report the error, but must not convert it into a missing-session result.
+- A new stage row requires explicit `startedAt` and `inactiveMs`. A partial normalized session or missing stage timing is a contract violation; task-queue state and the current clock must not synthesize a replacement session.
+- The current stage is the unique stage row with the greatest `startedAt`. Equal greatest timestamps are ambiguous persisted state and fail reconstruction instead of being resolved by stage order.
+
+**UI-side effect**: Update `lifecycle.phase`, `lifecycle.isActive`, `lifecycle.startedAt`, `lifecycle.inactiveMs`, `lifecycle.completedAt`, and `lifecycleExtras.stopReason`. `stageId` drives the UI synchronization/selection signal. Per-stage timing is stored only from `stageSnapshotUpdated`, avoiding a second timing owner.
 
 **Deduplication**: None. Every emission is applied unconditionally. The caller (adapter) is responsible for not emitting duplicate events.
 
@@ -101,20 +120,29 @@ type StageSnapshotUpdatedEvent = {
 - Replace the entire task list for `stageId` (full replacement, not merge).
 - Update `stageTimingByStageAtom[stageId]` with `{ stageStartedAt, stageInactiveMs, stageCompletedAt }`.
 
-**Constraint**: All `task.progress` values must be finite numbers in `[0, 100]`. Violation throws immediately.
+**Constraints**:
+
+- All `task.progress` values must be finite numbers in `[0, 100]`.
+- `stageStartedAt` and `stageInactiveMs` are required finite, non-negative numbers.
+- When `stageCompletedAt` is present, it must be finite and non-negative, and `stageCompletedAt - stageStartedAt - stageInactiveMs` must be non-negative.
+- Missing or invalid timing throws immediately. It must not be replaced with `Date.now()` / `0`, clamped, or silently skipped.
+- `Date.now()` is allowed only as the actual current clock for a running duration, or as the explicit timestamp recorded when a stage starts.
 
 **Stage elapsed time derivation (UI-side)**:
 
-`stageDurationMsByStageAtom` is a derived atom computed from `stageTimingByStageAtom` and `elapsedTickMsAtom`:
+Completed durations in `stageDurationMsByStageAtom` are derived directly from `stageTimingByStageAtom`. The active stage duration is derived in the build-session progress hook using the current clock while running, or the persisted heartbeat/completion endpoint after execution stops:
 
 ```
-if stageCompletedAt is defined:
-  duration = stageCompletedAt - stageStartedAt - stageInactiveMs
-else (stage is active):
-  duration = now - stageStartedAt - stageInactiveMs
+end = stageCompletedAt when present
+    | current clock while running
+    | persisted heartbeat after pausing/stopping
+duration = end - stageStartedAt - stageInactiveMs
+assert finite(duration) and duration >= 0
 ```
 
-This replaces the previous `sessionStageDurationByStageSnapshot` prop (which was always `null`) and the `completedStageDurationMsByStage` React state in `useShapeBuildStepProgressState`.
+An unstarted stage has `timing === null` and contributes `0`; no timing sentinel is generated. A started stage with missing or invalid timing throws instead of contributing `0`.
+
+Session elapsed time uses the same fail-fast rule. `running` uses the current clock, `paused` requires the persisted heartbeat endpoint, and `completed` / `failed` require `completedAt`. The consumer never substitutes the current clock for a missing persisted endpoint.
 
 ---
 
@@ -205,21 +233,23 @@ const stageTimingByStageAtom = atom<Record<ShapeStageId, StageTiming | null>>({
   tileEmit: null,
 });
 
-// Derived atom: computed from stageTimingByStageAtom + elapsedTickMsAtom
+// Derived atom: completed durations only; active duration is computed by the UI hook.
 const stageDurationMsByStageAtom = atom<Record<ShapeStageId, number>>((get) => {
   const timing = get(stageTimingByStageAtom);
-  const now = get(elapsedTickMsAtom);
   return {
-    source: computeStageDuration(timing.source, now),
-    geometry: computeStageDuration(timing.geometry, now),
-    tileEmit: computeStageDuration(timing.tileEmit, now),
+    source: computeCompletedStageDuration(timing.source),
+    geometry: computeCompletedStageDuration(timing.geometry),
+    tileEmit: computeCompletedStageDuration(timing.tileEmit),
   };
 });
 
-const computeStageDuration = (timing: StageTiming | null, now: number): number => {
-  if (!timing) return 0;
-  const end = timing.stageCompletedAt ?? now;
-  return Math.max(0, end - timing.stageStartedAt - timing.stageInactiveMs);
+const computeCompletedStageDuration = (timing: StageTiming | null): number => {
+  if (!timing || timing.stageCompletedAt === undefined) return 0;
+  const duration = timing.stageCompletedAt - timing.stageStartedAt - timing.stageInactiveMs;
+  if (!Number.isFinite(duration) || duration < 0) {
+    throw new Error('stage duration contract violation');
+  }
+  return duration;
 };
 ```
 

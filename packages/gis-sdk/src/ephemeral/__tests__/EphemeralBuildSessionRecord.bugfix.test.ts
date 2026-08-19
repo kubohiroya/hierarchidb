@@ -51,7 +51,8 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
    * - Heartbeat updates only touch buildSessionHeartbeats table
    * - Stage transitions create new records preserving history
    * - Computed fields (progress, stages) are not stored
-   * - Unused fields (expiresAt, canResume, resourceUsage) are absent
+   * - Compatibility-only fields (expiresAt, resourceUsage) are absent
+   * - canResume is status-owned and absent from config/heartbeat rows
    */
   it('should pass after fix: session schema is normalized', async () => {
     // Generate a test session
@@ -83,6 +84,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
       stage: 'source',
       status: 'running',
       startedAt: now,
+      inactiveMs: 0,
     };
 
     // Insert into all four tables
@@ -124,6 +126,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
       stage: 'geometry',
       status: 'running',
       startedAt: geometryStageTime,
+      inactiveMs: 0,
     };
 
     // Complete source stage
@@ -154,7 +157,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
     expect(configAfterHeartbeat).not.toHaveProperty('progress');
     expect(configAfterHeartbeat).not.toHaveProperty('stages');
 
-    // TEST 5: Verify unused fields are absent from all tables
+    // TEST 5: Verify fields are stored only in their normalized owner
     expect(configAfterHeartbeat).not.toHaveProperty('expiresAt');
     expect(configAfterHeartbeat).not.toHaveProperty('canResume');
     expect(configAfterHeartbeat).not.toHaveProperty('resourceUsage');
@@ -169,7 +172,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
    * - Heartbeat updates are efficient (small serialization size)
    * - Stage transitions preserve history
    * - Computed fields are not stored in config table
-   * - Unused fields are absent
+   * - Fields are stored only in their normalized owner
    */
   it('should pass after fix: property-based test for session normalization', async () => {
     await fc.assert(
@@ -211,6 +214,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
             stage: sessionData.stage,
             status: 'running',
             startedAt: now,
+            inactiveMs: 0,
           };
 
           // Insert into all four tables
@@ -237,7 +241,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
           expect(storedConfig).not.toHaveProperty('progress');
           expect(storedConfig).not.toHaveProperty('stages');
 
-          // Property 3: No unused fields in any table
+          // Property 3: Config and heartbeat rows do not own compatibility/status fields
           expect(storedConfig).not.toHaveProperty('expiresAt');
           expect(storedConfig).not.toHaveProperty('canResume');
           expect(storedConfig).not.toHaveProperty('resourceUsage');
@@ -264,7 +268,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
    * 1. Heartbeat updates only serialize 16-byte record (nodeId + timestamp)
    * 2. Stage transitions preserve historical data in separate table
    * 3. Computed fields (progress, stages) are not stored in config table
-   * 4. Unused fields (expiresAt, canResume, resourceUsage) are absent
+   * 4. Compatibility-only fields are absent and canResume is not config-owned
    */
   it('should demonstrate the bug is fixed', async () => {
     const nodeId: NodeId = 'counterexample-node' as NodeId;
@@ -298,6 +302,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
       stage: 'source',
       status: 'running',
       startedAt: now,
+      inactiveMs: 0,
     };
 
     await db.buildSessionConfigs.add(config);
@@ -344,6 +349,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
       stage: 'geometry',
       status: 'running',
       startedAt: geometryStageTime,
+      inactiveMs: 0,
     };
     await db.buildStageStatuses.add(geometryStage);
 
@@ -372,12 +378,12 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
     expect(configAfterHeartbeat).not.toHaveProperty('progress');
     expect(configAfterHeartbeat).not.toHaveProperty('stages');
 
-    // Demonstration 4: Unused fields absent
-    console.log(`Demonstration 4: Unused fields absent from all tables`);
+    // Demonstration 4: Config ownership remains normalized
+    console.log(`Demonstration 4: Compatibility/status fields absent from config`);
     console.log(`  expiresAt present in config: ${(configAfterHeartbeat as any).expiresAt !== undefined}`);
     console.log(`  canResume present in config: ${(configAfterHeartbeat as any).canResume !== undefined}`);
     console.log(`  resourceUsage present in config: ${(configAfterHeartbeat as any).resourceUsage !== undefined}`);
-    console.log(`  Expected: These fields should not exist in normalized schema`);
+    console.log(`  Expected: These fields should not exist in the config row`);
 
     expect(configAfterHeartbeat).not.toHaveProperty('expiresAt');
     expect(configAfterHeartbeat).not.toHaveProperty('canResume');
@@ -420,6 +426,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
       status: 'completed',
       startedAt: now,
       completedAt: now + 5000,
+      inactiveMs: 0,
     };
 
     const geometryStage: BuildStageStatus = {
@@ -428,6 +435,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
       stage: 'geometry',
       status: 'running',
       startedAt: now + 5000,
+      inactiveMs: 0,
     };
 
     // Create some tasks for progress computation

@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   runStartSessionRequest,
-} from '../../../components/build-progress/internal/useShapeBuildSessionControlActions/useShapeBuildStartExecutionHelpers';
+  toPersistedStartStatusPatch,
+} from '../../../components/build-progress/internal/useShapeBuildSessionControlActions/useShapeBuildStartExecutionConstants';
 
 describe('useShapeBuildStartExecutionHelpers', () => {
   let onTrace: ReturnType<typeof vi.fn>;
@@ -104,4 +105,48 @@ describe('useShapeBuildStartExecutionHelpers', () => {
     );
     expect(result.statusResult.status).toBe('running');
   });
+
+  it.each(['completed', 'failed'] as const)(
+    'persists a terminal endpoint for a %s start response',
+    (status) => {
+      expect(toPersistedStartStatusPatch(status, 1_700_000_000_200)).toEqual({
+        status,
+        stopReason: status,
+        canResume: false,
+        completedAt: 1_700_000_000_200,
+      });
+    }
+  );
+
+  it('does not synthesize a terminal endpoint for a running start response', () => {
+    expect(toPersistedStartStatusPatch('running', undefined)).toEqual({
+      status: 'running',
+      canResume: false,
+    });
+  });
+
+  it('preserves a paused start response', () => {
+    expect(toPersistedStartStatusPatch('paused', undefined)).toEqual({
+      status: 'paused',
+      canResume: true,
+    });
+  });
+
+  it.each(['idle', 'queued', 'recycled'] as const)(
+    'rejects an unsupported %s start response',
+    (status) => {
+      expect(() => toPersistedStartStatusPatch(status, undefined)).toThrow(
+        `unsupported start response status: ${status}`
+      );
+    }
+  );
+
+  it.each(['completed', 'failed'] as const)(
+    'rejects a %s start response without its persisted terminal endpoint',
+    (status) => {
+      expect(() => toPersistedStartStatusPatch(status, undefined)).toThrow(
+        `completedAt is required for terminal status ${status}`
+      );
+    }
+  );
 });
