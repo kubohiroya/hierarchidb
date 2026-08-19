@@ -28,6 +28,103 @@ export {
     emitHeartbeat,
 } from '@hierarchidb/build-runtime-services';
 
+type ShapeTaskStage = TaskQueueRecord['stage'];
+
+const isShapeTaskStage = (value: unknown): value is ShapeTaskStage => (
+    value === 'source' || value === 'geometry' || value === 'tileEmit'
+);
+
+const requireFiniteNonNegativeNumber = (value: unknown, label: string): number => {
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+        throw new Error(`[eventEmission] ${label} must be a finite non-negative number, received ${String(value)}`);
+    }
+    return value;
+};
+
+export const validateSessionTimingContract = (
+    phase: SessionPhase,
+    timing: Pick<
+        SessionStatusUpdatedEvent['payload'],
+        'startedAt' | 'completedAt' | 'inactiveMs' | 'stageId' | 'stageStartedAt' | 'stageInactiveMs'
+    >,
+): void => {
+    const startedAt = timing.startedAt === undefined
+        ? undefined
+        : requireFiniteNonNegativeNumber(timing.startedAt, 'startedAt');
+    const inactiveMs = timing.inactiveMs === undefined
+        ? 0
+        : requireFiniteNonNegativeNumber(timing.inactiveMs, 'inactiveMs');
+    const completedAt = timing.completedAt === undefined
+        ? undefined
+        : requireFiniteNonNegativeNumber(timing.completedAt, 'completedAt');
+
+    if (phase !== 'idle' && phase !== 'starting' && startedAt === undefined) {
+        throw new Error(`[eventEmission] startedAt is required for phase ${phase}`);
+    }
+    if ((phase === 'completed' || phase === 'failed') && completedAt === undefined) {
+        throw new Error(`[eventEmission] completedAt is required for phase ${phase}`);
+    }
+    if (startedAt !== undefined && completedAt !== undefined) {
+        const durationMs = completedAt - startedAt - inactiveMs;
+        if (!Number.isFinite(durationMs) || durationMs < 0) {
+            throw new Error(`[eventEmission] session duration must be finite and non-negative, received ${durationMs}`);
+        }
+    }
+
+    if (timing.stageId === undefined) {
+        if (timing.stageStartedAt !== undefined || timing.stageInactiveMs !== undefined) {
+            throw new Error('[eventEmission] stage timing must be absent when stageId is absent');
+        }
+        return;
+    }
+    if (!isShapeTaskStage(timing.stageId)) {
+        throw new Error(`[eventEmission] unsupported stageId: ${String(timing.stageId)}`);
+    }
+    requireFiniteNonNegativeNumber(timing.stageStartedAt, 'stageStartedAt');
+    requireFiniteNonNegativeNumber(timing.stageInactiveMs, 'stageInactiveMs');
+};
+
+export const validateStageTimingContract = (
+    stageStartedAt: unknown,
+    stageInactiveMs: unknown,
+    stageCompletedAt?: unknown,
+): void => {
+    const resolvedStartedAt = requireFiniteNonNegativeNumber(stageStartedAt, 'stageStartedAt');
+    const resolvedInactiveMs = requireFiniteNonNegativeNumber(stageInactiveMs, 'stageInactiveMs');
+    if (stageCompletedAt === undefined) return;
+    const resolvedCompletedAt = requireFiniteNonNegativeNumber(stageCompletedAt, 'stageCompletedAt');
+    const durationMs = resolvedCompletedAt - resolvedStartedAt - resolvedInactiveMs;
+    if (!Number.isFinite(durationMs) || durationMs < 0) {
+        throw new Error(`[eventEmission] stage duration must be finite and non-negative, received ${durationMs}`);
+    }
+};
+
+export const readStartedStageTiming = (
+    sessionRecord: ShapeBuildSessionRecord,
+    expectedStage?: ShapeTaskStage,
+): { stage: ShapeTaskStage; stageStartedAt: number; stageInactiveMs: number } | null => {
+    const { stageId, stageStartedAt, stageInactiveMs } = sessionRecord;
+    if (stageId === undefined) {
+        if (stageStartedAt !== undefined || stageInactiveMs !== undefined) {
+            throw new Error('[eventEmission] stage timing must be absent when stageId is absent');
+        }
+        return null;
+    }
+    if (!isShapeTaskStage(stageId)) {
+        throw new Error(`[eventEmission] unsupported stageId: ${String(stageId)}`);
+    }
+    if (expectedStage !== undefined && stageId !== expectedStage) {
+        throw new Error(`[eventEmission] expected stage ${expectedStage}, received ${stageId}`);
+    }
+    const resolvedStageStartedAt = requireFiniteNonNegativeNumber(stageStartedAt, 'stageStartedAt');
+    const resolvedStageInactiveMs = requireFiniteNonNegativeNumber(stageInactiveMs, 'stageInactiveMs');
+    return {
+        stage: stageId,
+        stageStartedAt: resolvedStageStartedAt,
+        stageInactiveMs: resolvedStageInactiveMs,
+    };
+};
+
 /**
  * Maps ShapeBuildSessionRecord status to the canonical SessionPhase.
  * Unknown values throw immediately — no fallback.
@@ -57,6 +154,14 @@ export const emitSessionStatusUpdated = (
     sessionRecord: ShapeBuildSessionRecord,
 ): void => {
     const phase = mapStatusToSessionPhase(sessionRecord.status);
+    validateSessionTimingContract(phase, {
+        startedAt: sessionRecord.startedAt,
+        completedAt: sessionRecord.completedAt,
+        inactiveMs: sessionRecord.inactiveMs,
+        stageId: sessionRecord.stageId,
+        stageStartedAt: sessionRecord.stageStartedAt,
+        stageInactiveMs: sessionRecord.stageInactiveMs,
+    });
     const event: SessionStatusUpdatedEvent = {
         type: 'sessionStatusUpdated',
         payload: {
@@ -86,12 +191,7 @@ export const emitStageSnapshotUpdated = async (
     stageInactiveMs: number,
     stageCompletedAt?: number,
 ): Promise<void> => {
-    if (!Number.isFinite(stageStartedAt)) {
-        throw new Error(`[eventEmission] stageStartedAt must be finite, received ${String(stageStartedAt)}`);
-    }
-    if (!Number.isFinite(stageInactiveMs)) {
-        throw new Error(`[eventEmission] stageInactiveMs must be finite, received ${String(stageInactiveMs)}`);
-    }
+    validateStageTimingContract(stageStartedAt, stageInactiveMs, stageCompletedAt);
     const taskQueue = new VtTaskQueueDb();
     const rawTasks = await listTasksByStage(taskQueue, nodeId, stage);
     const tasks = rawTasks.map((task) => mapTaskQueueRecordToTaskSummary(task));

@@ -85,6 +85,7 @@ type ShapeSessionStatusUpdatedEvent = {
     phase: ShapeSessionPhase;
     isActive: boolean;
     startedAt?: number;
+    inactiveMs?: number;
     completedAt?: number;
     stopReason?: ShapeBuildStopReason;
   };
@@ -103,7 +104,7 @@ type ShapeStageSnapshotUpdatedEvent = {
   payload: {
     stageId: ShapeStageId;
     tasks: ShapeTaskSummary[];
-    stageStartedAt: number | undefined;
+    stageStartedAt: number;
     stageInactiveMs: number;
     stageCompletedAt?: number;
   };
@@ -184,6 +185,7 @@ export const buildSessionLifecycleAtom = atom((get) => {
     isActive: state.lifecycle.isActive,
     activeStageId: state.view.activeStageId,
     startedAt: state.lifecycle.startedAt,
+    inactiveMs: state.lifecycle.inactiveMs,
     heartbeatAt: state.lifecycle.heartbeatAt,
     completedAt: state.lifecycle.completedAt,
     criticalError: extras.criticalError,
@@ -236,12 +238,18 @@ export const stageTimingByStageAtom = atom((get) => {
 
 // Returns the completed duration for a stage. Returns 0 for stages that have not yet completed,
 // keeping this function pure (no Date.now()). Live durations for running stages must be
-// computed in UI components using elapsedTickMsAtom.
+// computed by the build-session progress hook from the current clock.
 const computeCompletedStageDuration = (
-  timing: { stageStartedAt: number | undefined; stageInactiveMs: number; stageCompletedAt?: number } | null,
+  timing: { stageStartedAt: number; stageInactiveMs: number; stageCompletedAt?: number } | null,
 ): number => {
-  if (!timing || timing.stageStartedAt === undefined || timing.stageCompletedAt === undefined) return 0;
-  return Math.max(0, timing.stageCompletedAt - timing.stageStartedAt - timing.stageInactiveMs);
+  if (!timing || timing.stageCompletedAt === undefined) return 0;
+  const durationMs = timing.stageCompletedAt - timing.stageStartedAt - timing.stageInactiveMs;
+  if (!Number.isFinite(durationMs) || durationMs < 0) {
+    throw new Error(
+      `[shape buildSessionStateAtoms] stage duration must be finite and non-negative, received ${durationMs}`,
+    );
+  }
+  return durationMs;
 };
 
 // Derived atom: computed directly from stageTimingByStageAtom (no ticker needed)
@@ -315,6 +323,7 @@ const applyBuildSessionEventAtom = atom(
             phase: event.payload.phase,
             isActive: event.payload.isActive,
             startedAt: event.payload.startedAt,
+            inactiveMs: event.payload.inactiveMs,
             completedAt: event.payload.completedAt,
             stopReason: event.payload.stopReason,
           },

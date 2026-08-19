@@ -258,11 +258,13 @@ export const useShapeBuildSession = ({ data, nodeId }: Args) => {
     sessionStageDurationByStageSnapshot: stageDurationMsByStage,
     runtimeTiming: {
       startedAt: runtime.startedAt,
+      inactiveMs: runtime.inactiveMs,
       completedAt: runtime.completedAt,
       heartbeatAt: runtime.heartbeatAt,
       stageId: runtime.activeStageId,
       stageStartedAt: stageTimingByStage[runtime.activeStageId]?.stageStartedAt,
       stageInactiveMs: stageTimingByStage[runtime.activeStageId]?.stageInactiveMs,
+      stageCompletedAt: stageTimingByStage[runtime.activeStageId]?.stageCompletedAt,
     },
   });
 

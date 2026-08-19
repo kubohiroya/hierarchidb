@@ -35,7 +35,11 @@ import {
   deleteRawDataDataSourceBuffersForNodeMetadataIds,
 } from '~/services/utils/chunkStore';
 import { resolveSourceStageStrategy } from '~/services/build/strategies/resolveSourceStageStrategy';
-import { emitSessionStatusUpdated, emitStageSnapshotUpdated } from './eventEmissionConstants.js';
+import {
+  emitSessionStatusUpdated,
+  emitStageSnapshotUpdated,
+  readStartedStageTiming,
+} from './eventEmissionConstants.js';
 import type { ShapeBuildStopReason, ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import { isStopReason } from './taskQueueManagement.js';
 // Custom error types for better error classification
@@ -114,22 +118,11 @@ const upsertBuildSessionSnapshot = async (data: {
   // silently dropping the event (the previous "if (newSessionRecord)" guard was
   // the root cause of lifecycle.phase staying 'idle').
   if (data.status) {
-    const newSessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(data.nodeId).catch(() => null);
-    if (newSessionRecord) {
-      emitSessionStatusUpdated(data.nodeId, newSessionRecord);
-    } else {
-      emitSessionStatusUpdated(data.nodeId, {
-        nodeId: data.nodeId,
-        status: data.status,
-        stopReason: data.stopReason,
-        canResume: data.canResume,
-        startedAt: data.startedAt ?? 0,
-        updatedAt: Date.now(),
-        completedAt: data.completedAt,
-        progress: {} as any,
-        stages: {},
-      });
+    const newSessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(data.nodeId);
+    if (!newSessionRecord) {
+      throw new Error(`[shapeBuildAPI] build session record is missing after update: ${String(data.nodeId)}`);
     }
+    emitSessionStatusUpdated(data.nodeId, newSessionRecord);
   }
 };
 
@@ -147,23 +140,46 @@ const updateBuildSessionFromTasks = async (nodeId: NodeId, data: {
   });
 
   if (data.status) {
-    const newSessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
-    if (newSessionRecord) {
-      emitSessionStatusUpdated(nodeId, newSessionRecord);
-    } else {
-      emitSessionStatusUpdated(nodeId, {
-        nodeId,
-        status: data.status,
-        stopReason: data.stopReason,
-        canResume: data.canResume,
-        startedAt: 0,
-        updatedAt: Date.now(),
-        completedAt: data.completedAt,
-        progress: {} as any,
-        stages: {},
-      });
+    const newSessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId);
+    if (!newSessionRecord) {
+      throw new Error(`[shapeBuildAPI] build session record is missing after task update: ${String(nodeId)}`);
+    }
+    emitSessionStatusUpdated(nodeId, newSessionRecord);
+  }
+};
+
+const initializeAndReadStageTiming = async (
+  nodeId: NodeId,
+  stage: TaskStage,
+): Promise<{ stageStartedAt: number; stageInactiveMs: number }> => {
+  let sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId);
+  if (!sessionRecord) {
+    throw new Error(`[shapeBuildAPI] build session record is missing before stage snapshot: ${String(nodeId)}`);
+  }
+  const currentTiming = readStartedStageTiming(sessionRecord);
+  if (currentTiming?.stage !== stage) {
+    const stageStartedAt = Date.now();
+    await shapeMutationAPIImpl.updateBuildSession(nodeId, {
+      stageId: stage,
+      stageStartedAt,
+      stageInactiveMs: 0,
+      stages: {
+        [stage]: { status: 'running' },
+      },
+    });
+    sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId);
+    if (!sessionRecord) {
+      throw new Error(`[shapeBuildAPI] build session record is missing after stage start: ${String(nodeId)}`);
     }
   }
+  const timing = readStartedStageTiming(sessionRecord, stage);
+  if (!timing) {
+    throw new Error(`[shapeBuildAPI] stage timing is missing after stage start: ${String(nodeId)}:${stage}`);
+  }
+  return {
+    stageStartedAt: timing.stageStartedAt,
+    stageInactiveMs: timing.stageInactiveMs,
+  };
 };
 
 type CanonicalStageId = 'source-stage' | 'geometry-stage' | 'tile-emit-stage';
@@ -925,13 +941,12 @@ const startBuildSessionInternal = async (
       // Source tasks are now enqueued; emit stageSnapshotUpdated so the UI can
       // display the task list. stageStartedAt is read from the session record.
       if (payload.stage !== 'source') return;
-      const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(payload.nodeId).catch(() => null);
-      const stageStartedAt = sessionRecord?.stageStartedAt ?? Date.now();
+      const timing = await initializeAndReadStageTiming(payload.nodeId, payload.stage);
       await emitStageSnapshotUpdated(
         payload.nodeId,
         payload.stage,
-        stageStartedAt,
-        sessionRecord?.stageInactiveMs ?? 0,
+        timing.stageStartedAt,
+        timing.stageInactiveMs,
       );
     };
     const emitStageTaskSnapshotBarrier = async (payload: {
@@ -940,15 +955,14 @@ const startBuildSessionInternal = async (
       taskCount: number;
     }): Promise<void> => {
       void payload.taskCount;
-      // Read stageStartedAt from the session record; the pipeline has already
-      // written it before calling this callback.
-      const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(payload.nodeId).catch(() => null);
-      const stageStartedAt = sessionRecord?.stageStartedAt ?? Date.now();
+      // Initialize timing only at an actual stage transition, then read the
+      // persisted values back before emitting the snapshot.
+      const timing = await initializeAndReadStageTiming(payload.nodeId, payload.stage);
       await emitStageSnapshotUpdated(
         payload.nodeId,
         payload.stage,
-        stageStartedAt,
-        sessionRecord?.stageInactiveMs ?? 0,
+        timing.stageStartedAt,
+        timing.stageInactiveMs,
       );
     };
     emitStartupStepLog('start', 'pipeline-dispatch', {

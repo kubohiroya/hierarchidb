@@ -36,7 +36,11 @@ import { shapeBuildMonitoringAPI } from './shapeBuildMonitoringAPI.js';
 import { shapeBuildRuntime } from './shapeBuildRuntime.js';
 import * as shapeBuildRuntimeCore from './shapeBuildRuntimeCore.js';
 import { unconditionalEventStreamer } from './eventBuffering.js';
-import { emitSessionStatusUpdated, emitStageSnapshotUpdated } from './eventEmissionConstants.js';
+import {
+  emitSessionStatusUpdated,
+  emitStageSnapshotUpdated,
+  readStartedStageTiming,
+} from './eventEmissionConstants.js';
 
 export const shapeBuildAPI = {
 
@@ -451,6 +455,7 @@ export const shapeBuildAPI = {
     const key = String(nodeId);
     const existing = shapeBuildRuntimeCore.sessionStateCallbacks.get(key);
     existing?.unsubscribe?.();
+    let subscriptionActive = true;
 
     // Subscribe to unconditional event stream
     const unsubscribeStream = unconditionalEventStreamer.subscribe(nodeId, 'session-state', (event) => {
@@ -458,6 +463,7 @@ export const shapeBuildAPI = {
     });
 
     const unsubscribe = () => {
+      subscriptionActive = false;
       unsubscribeStream();
       shapeBuildRuntimeCore.sessionStateCallbacks.delete(key);
     };
@@ -469,11 +475,13 @@ export const shapeBuildAPI = {
     // before subscribeAll completes (race condition on session start).
     // Per spec: "when the initial runtime snapshot is loaded on subscription start"
     void shapeQueryAPIImpl.getBuildSessionRecord(nodeId).then((record) => {
+      if (!subscriptionActive) return;
       if (record) {
         emitSessionStatusUpdated(nodeId, record);
       }
-    }).catch(() => {
-      // No record yet — normal for a brand-new session; silently skip.
+    }).catch((error: unknown) => {
+      if (!subscriptionActive) return;
+      throw error;
     });
 
     return () => {
@@ -489,6 +497,7 @@ export const shapeBuildAPI = {
     const key = String(nodeId);
     const existing = shapeBuildRuntimeCore.stageSnapshotCallbacks.get(key);
     existing?.unsubscribe?.();
+    let subscriptionActive = true;
 
     // Subscribe to unconditional event stream
     const unsubscribeStream = unconditionalEventStreamer.subscribe(nodeId, 'stage-snapshot', (event) => {
@@ -496,6 +505,7 @@ export const shapeBuildAPI = {
     });
 
     const unsubscribe = () => {
+      subscriptionActive = false;
       unsubscribeStream();
       shapeBuildRuntimeCore.stageSnapshotCallbacks.delete(key);
     };
@@ -505,19 +515,19 @@ export const shapeBuildAPI = {
     // Deliver the current stage snapshot immediately on subscription start.
     // Per spec: "Initial snapshot on subscription start (only for stages that have started)"
     void shapeQueryAPIImpl.getBuildSessionRecord(nodeId).then(async (record) => {
+      if (!subscriptionActive) return;
       if (!record) return;
-      const rawStageId = record.stageId;
-      const stageStartedAt = record.stageStartedAt;
-      if (!rawStageId || typeof stageStartedAt !== 'number' || !Number.isFinite(stageStartedAt)) return;
-      if (rawStageId !== 'source' && rawStageId !== 'geometry' && rawStageId !== 'tileEmit') return;
+      const timing = readStartedStageTiming(record);
+      if (!timing) return;
       await emitStageSnapshotUpdated(
         nodeId,
-        rawStageId,
-        stageStartedAt,
-        record.stageInactiveMs ?? 0,
+        timing.stage,
+        timing.stageStartedAt,
+        timing.stageInactiveMs,
       );
-    }).catch(() => {
-      // No record yet — normal for a brand-new session; silently skip.
+    }).catch((error: unknown) => {
+      if (!subscriptionActive) return;
+      throw error;
     });
 
     return () => {

@@ -15,7 +15,7 @@ import {
   stageTimingByStageAtom,
   dispatchBuildSessionEventAtom,
 } from '../../../atoms/buildSessionStateAtoms';
-import { createBuildSessionWorkerEventAdapter } from '../../../atoms/buildSessionWorkerEventAdapter';
+import { createBuildSessionWorkerEventAdapter } from '../../../atoms/buildSessionWorkerEventAdapterConstants';
 
 describe('buildSessionWorkerEventAdapter', () => {
   const store = createStore();
@@ -165,6 +165,82 @@ describe('buildSessionWorkerEventAdapter', () => {
     expect(timing.geometry?.stageInactiveMs).toBe(0);
   });
 
+  it('rejects invalid stage snapshot timing at the adapter boundary', () => {
+    const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
+    const baseEvent: AdapterStageSnapshotUpdatedEvent = {
+      type: 'stageSnapshotUpdated',
+      payload: {
+        stageId: 'geometry',
+        tasks: [],
+        stageStartedAt: 1_000,
+        stageInactiveMs: 100,
+      },
+    };
+    expect(() => adapter.onTaskEvent({
+      ...baseEvent,
+      payload: { ...baseEvent.payload, stageStartedAt: Number.NaN },
+    })).toThrowError('stageStartedAt must be a finite number');
+    expect(() => adapter.onTaskEvent({
+      ...baseEvent,
+      payload: { ...baseEvent.payload, stageInactiveMs: -1 },
+    })).toThrowError('stageInactiveMs must be non-negative');
+    expect(() => adapter.onTaskEvent({
+      ...baseEvent,
+      payload: { ...baseEvent.payload, stageCompletedAt: 1_050 },
+    })).toThrowError('stage duration must be finite and non-negative');
+    expect(() => adapter.onTaskEvent({
+      ...baseEvent,
+      payload: {
+        ...baseEvent.payload,
+        stageStartedAt: undefined,
+      },
+    } as unknown as AdapterStageSnapshotUpdatedEvent)).toThrowError(
+      'stageStartedAt must be a finite number',
+    );
+  });
+
+  it('rejects session timing that is incomplete for its lifecycle phase', () => {
+    const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
+    expect(() => adapter.onSessionState({
+      type: 'sessionStatusUpdated',
+      payload: {
+        nodeId: 'node-1',
+        phase: 'running',
+        isActive: true,
+      },
+    })).toThrowError('startedAt is required for phase running');
+    expect(() => adapter.onSessionState({
+      type: 'sessionStatusUpdated',
+      payload: {
+        nodeId: 'node-1',
+        phase: 'completed',
+        isActive: false,
+        startedAt: 1_000,
+      },
+    })).toThrowError('completedAt is required for phase completed');
+    expect(() => adapter.onSessionState({
+      type: 'sessionStatusUpdated',
+      payload: {
+        nodeId: 'node-1',
+        phase: 'completed',
+        isActive: false,
+        startedAt: 1_000,
+        inactiveMs: 100,
+        completedAt: 1_050,
+      },
+    })).toThrowError('session duration must be finite and non-negative');
+    expect(() => adapter.onSessionState({
+      type: 'sessionStatusUpdated',
+      payload: {
+        nodeId: 'node-1',
+        phase: 'running',
+        isActive: true,
+        startedAt: 1_000,
+        stageId: 'source',
+      },
+    })).toThrowError('stageStartedAt must be a finite number');
+  });
+
   it('throws when sessionRecord stopReason is outside ShapeBuildStopReason', () => {
     const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
     expect(() => {
@@ -213,5 +289,18 @@ describe('buildSessionWorkerEventAdapter', () => {
     expect(runtime.phase).toBe('queued');
     expect(runtime.isActive).toBe(true);
     expect(runtime.startedAt).toBe(100);
+  });
+
+  it('allows starting before a session start timestamp has been recorded', () => {
+    const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
+    expect(() => adapter.onSessionState({
+      type: 'sessionStatusUpdated',
+      payload: {
+        nodeId: 'node-1',
+        phase: 'starting',
+        isActive: true,
+      },
+    })).not.toThrow();
+    expect(store.get(buildSessionLifecycleAtom).phase).toBe('starting');
   });
 });

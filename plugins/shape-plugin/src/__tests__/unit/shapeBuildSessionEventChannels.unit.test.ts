@@ -34,6 +34,11 @@ import {
   taskProgressCallbacks,
 } from '../../worker/api/shapeBuildRuntimeCore';
 import { shapeBuildAPI } from '../../worker/api/shapeBuildAPI';
+import {
+  readStartedStageTiming,
+  validateSessionTimingContract,
+  validateStageTimingContract,
+} from '../../worker/api/eventEmissionConstants';
 
 const asNodeId = (value: string): NodeId => value as NodeId;
 
@@ -77,5 +82,65 @@ describe('shapeBuildAPI 4-channel subscriptions', () => {
     expect(stageSnapshotCallbacks.has(String(nodeId))).toBe(false);
     expect(heartbeatCallbacks.has(String(nodeId))).toBe(false);
     expect(taskProgressCallbacks.has(String(nodeId))).toBe(false);
+  });
+});
+
+describe('build session event timing contracts', () => {
+  it('accepts valid session and stage timing', () => {
+    expect(() => validateSessionTimingContract('running', {
+      startedAt: 1_000,
+      inactiveMs: 100,
+      stageId: 'source',
+      stageStartedAt: 1_100,
+      stageInactiveMs: 50,
+    })).not.toThrow();
+    expect(() => validateStageTimingContract(1_100, 50, 1_500)).not.toThrow();
+  });
+
+  it('rejects missing and non-finite started timestamps', () => {
+    expect(() => validateSessionTimingContract('running', {})).toThrowError(
+      'startedAt is required for phase running',
+    );
+    expect(() => validateSessionTimingContract('running', {
+      startedAt: 1_000,
+      inactiveMs: Number.POSITIVE_INFINITY,
+    })).toThrowError('inactiveMs must be a finite non-negative number');
+    expect(() => validateStageTimingContract(Number.NaN, 0)).toThrowError(
+      'stageStartedAt must be a finite non-negative number',
+    );
+  });
+
+  it('rejects negative inactive duration and reversed completion timestamps', () => {
+    expect(() => validateStageTimingContract(1_000, -1)).toThrowError(
+      'stageInactiveMs must be a finite non-negative number',
+    );
+    expect(() => validateStageTimingContract(1_000, 100, 1_050)).toThrowError(
+      'stage duration must be finite and non-negative',
+    );
+    expect(() => validateSessionTimingContract('completed', {
+      startedAt: 1_000,
+      inactiveMs: 100,
+      completedAt: 1_050,
+    })).toThrowError('session duration must be finite and non-negative');
+  });
+
+  it('distinguishes an unstarted stage from an invalid started-stage record', () => {
+    const baseRecord = {
+      nodeId: 'shape-1' as NodeId,
+      status: 'running' as const,
+      startedAt: 1_000,
+      updatedAt: 1_000,
+      progress: { total: 0, completed: 0, failed: 0, skipped: 0, percentage: 0 },
+      stages: {},
+    };
+    expect(readStartedStageTiming(baseRecord)).toBeNull();
+    expect(() => readStartedStageTiming({
+      ...baseRecord,
+      stageId: 'source',
+    })).toThrowError('stageStartedAt must be a finite non-negative number');
+    expect(() => readStartedStageTiming({
+      ...baseRecord,
+      stageStartedAt: 1_100,
+    })).toThrowError('stage timing must be absent when stageId is absent');
   });
 });

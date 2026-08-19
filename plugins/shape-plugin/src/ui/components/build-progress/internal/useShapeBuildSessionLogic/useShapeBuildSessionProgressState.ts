@@ -8,6 +8,8 @@ import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import { useShapeBuildProgressSummaryComputation } from '~/ui/components/build-progress/useShapeBuildProgressSummaryComputation.js';
 import {
   buildElapsedByStageWithActiveStage,
+  resolveSessionElapsedMs,
+  resolveStageElapsedMs,
   resolveTotalElapsedMs,
   shouldResetElapsedState,
 } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/elapsedConstants.js';
@@ -26,6 +28,7 @@ type RuntimeTimingLike = {
   inactiveMs?: number;
   stageStartedAt?: number;
   stageInactiveMs?: number;
+  stageCompletedAt?: number;
 };
 
 type SummaryResult = ReturnType<typeof useShapeBuildProgressSummaryComputation<ShapeBuildTaskSummary>>;
@@ -137,22 +140,33 @@ export const useShapeBuildSessionProgressState = ({
     if (!timingStageId) {
       return 0;
     }
-    if (timingStageId !== sessionStageTimingStageIdSnapshot || runtimeTiming.stageStartedAt === undefined) {
+    if (timingStageId !== sessionStageTimingStageIdSnapshot) {
       return stageElapsedMs;
     }
-    const stageBaseTime = buildStatus === 'running'
+    if (runtimeTiming.stageStartedAt === undefined) {
+      throw new Error('[shape elapsed] stageStartedAt is required for the active stage');
+    }
+    if (runtimeTiming.stageInactiveMs === undefined) {
+      throw new Error('[shape elapsed] stageInactiveMs is required for the active stage');
+    }
+    const stageEndAt = buildStatus === 'running'
       ? Date.now()
-      : runtimeTiming.heartbeatAt ?? Date.now();
-    const activeStageElapsedMs = Math.max(
-      0,
-      stageBaseTime - runtimeTiming.stageStartedAt - (runtimeTiming.stageInactiveMs ?? 0),
-    );
+      : (runtimeTiming.stageCompletedAt ?? runtimeTiming.heartbeatAt);
+    if (stageEndAt === undefined) {
+      throw new Error(`[shape elapsed] stage end timestamp is required for build status ${buildStatus}`);
+    }
+    const activeStageElapsedMs = resolveStageElapsedMs({
+      stageStartedAt: runtimeTiming.stageStartedAt,
+      stageInactiveMs: runtimeTiming.stageInactiveMs,
+      endAt: stageEndAt,
+    });
     return Math.max(stageElapsedMs, activeStageElapsedMs);
   }, [
     buildStatus,
     sessionStageTimingStageIdSnapshot,
     runtimeTiming.heartbeatAt,
     runtimeTiming.stageInactiveMs,
+    runtimeTiming.stageCompletedAt,
     runtimeTiming.stageStartedAt,
     stageElapsedMs,
     timingStageId,
@@ -167,23 +181,19 @@ export const useShapeBuildSessionProgressState = ({
   ), [sessionStageDurationSnapshot, resolvedStageElapsedMs, timingStageId]);
 
   const resolvedSessionElapsedMs = useMemo(() => {
-    if (typeof runtimeTiming.durationMs === 'number' && runtimeTiming.durationMs > 0) {
-      return runtimeTiming.durationMs;
-    }
-    const startedAt = runtimeTiming.startedAt;
-    if (typeof startedAt !== 'number' || Number.isNaN(startedAt) || startedAt <= 0) {
-      return 0;
-    }
-    const inactiveMs = 0;
-    const endAt = buildStatus === 'running'
-      ? Date.now()
-      : (runtimeTiming.heartbeatAt ?? runtimeTiming.completedAt ?? Date.now());
-    return Math.max(0, endAt - startedAt - inactiveMs);
+    return resolveSessionElapsedMs({
+      buildStatus,
+      startedAt: runtimeTiming.startedAt,
+      completedAt: runtimeTiming.completedAt,
+      heartbeatAt: runtimeTiming.heartbeatAt,
+      inactiveMs: runtimeTiming.inactiveMs,
+      now: Date.now(),
+    });
   }, [
     buildStatus,
     runtimeTiming.completedAt,
-    runtimeTiming.durationMs,
     runtimeTiming.heartbeatAt,
+    runtimeTiming.inactiveMs,
     runtimeTiming.startedAt,
   ]);
 

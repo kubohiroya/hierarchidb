@@ -8,8 +8,10 @@ import {
 } from '../../../components/build-progress/internal/useShapeBuildSessionLogic';
 import {
   buildElapsedByStageWithActiveStage,
+  resolveSessionElapsedMs,
+  resolveStageElapsedMs,
   resolveTotalElapsedMs,
-} from '../../../components/build-progress/internal/useShapeBuildSessionHelpers/elapsed';
+} from '../../../components/build-progress/internal/useShapeBuildSessionHelpers/elapsedConstants';
 
 describe('shouldResetElapsedState', () => {
   it('returns false while build is running', () => {
@@ -59,6 +61,15 @@ describe('shouldResetElapsedState', () => {
       sessionStageDurationByStage: {},
       localStageDurationByStage: {},
     })).toBe(false);
+  });
+
+  it('rejects an invalid persisted total duration', () => {
+    expect(() => shouldResetElapsedState({
+      buildStatus: 'completed',
+      buildDurationMs: -1,
+      sessionStageDurationByStage: {},
+      localStageDurationByStage: {},
+    })).toThrowError('buildDurationMs must be a finite non-negative number');
   });
 });
 
@@ -189,5 +200,82 @@ describe('resolveTotalElapsedMs', () => {
       sessionDurationMs: 40_000,
     });
     expect(total).toBe(40_000);
+  });
+});
+
+describe('timing contract validation', () => {
+  it('calculates valid stage and session elapsed time', () => {
+    expect(resolveStageElapsedMs({
+      stageStartedAt: 1_000,
+      stageInactiveMs: 100,
+      endAt: 1_600,
+    })).toBe(500);
+    expect(resolveSessionElapsedMs({
+      buildStatus: 'completed',
+      startedAt: 1_000,
+      inactiveMs: 100,
+      completedAt: 2_000,
+      now: 3_000,
+    })).toBe(900);
+  });
+
+  it('requires phase-specific session timestamps', () => {
+    expect(() => resolveSessionElapsedMs({
+      buildStatus: 'running',
+      now: 2_000,
+    })).toThrowError('startedAt must be a finite non-negative number');
+    expect(() => resolveSessionElapsedMs({
+      buildStatus: 'paused',
+      startedAt: 1_000,
+      now: 2_000,
+    })).toThrowError('heartbeatAt must be a finite non-negative number');
+    expect(() => resolveSessionElapsedMs({
+      buildStatus: 'failed',
+      startedAt: 1_000,
+      now: 2_000,
+    })).toThrowError('completedAt must be a finite non-negative number');
+  });
+
+  it('validates supplied idle timing without requiring a start timestamp', () => {
+    expect(resolveSessionElapsedMs({
+      buildStatus: 'idle',
+      now: 2_000,
+    })).toBe(0);
+    expect(() => resolveSessionElapsedMs({
+      buildStatus: 'idle',
+      inactiveMs: -1,
+      now: 2_000,
+    })).toThrowError('inactiveMs must be a finite non-negative number');
+    expect(() => resolveSessionElapsedMs({
+      buildStatus: 'idle',
+      startedAt: 1_000,
+      completedAt: 900,
+      now: 2_000,
+    })).toThrowError('session duration must be finite and non-negative');
+  });
+
+  it('rejects non-finite, negative, and reversed timing values', () => {
+    expect(() => resolveStageElapsedMs({
+      stageStartedAt: Number.POSITIVE_INFINITY,
+      stageInactiveMs: 0,
+      endAt: 2_000,
+    })).toThrowError('stageStartedAt must be a finite non-negative number');
+    expect(() => resolveStageElapsedMs({
+      stageStartedAt: 1_000,
+      stageInactiveMs: -1,
+      endAt: 2_000,
+    })).toThrowError('stageInactiveMs must be a finite non-negative number');
+    expect(() => resolveStageElapsedMs({
+      stageStartedAt: 1_000,
+      stageInactiveMs: 100,
+      endAt: 1_050,
+    })).toThrowError('stage duration must be finite and non-negative');
+    expect(() => resolveSessionElapsedMs({
+      buildStatus: 'completed',
+      startedAt: 1_000,
+      inactiveMs: 100,
+      completedAt: 1_050,
+      now: 2_000,
+    })).toThrowError('session duration must be finite and non-negative');
   });
 });
