@@ -5,6 +5,7 @@
 
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { AUTH_SESSION_CHANGED_EVENT } from '~/services/AuthSessionStorage';
 import { BFFAuthService, type BFFSignInOptions, type BFFUser } from '~/services/BFFAuthService';
 import { PopupDetectionService } from '~/services/PopupDetectionService';
 import type { AuthProviderType } from '~/types/AuthProviderType';
@@ -26,18 +27,52 @@ export const useBFFAuthService = () => {
   const [user, setUser] = useState<BFFUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Initialize user from stored token
+  // Keep every hook instance synchronized with the canonical persisted session.
   useEffect(() => {
-    const initUser = async () => {
+    let isActive = true;
+
+    const syncUser = async () => {
       setIsLoading(true);
       try {
         const currentUser = await authService.getCurrentUser();
-        setUser(currentUser);
+        if (isActive) {
+          setUser(currentUser);
+        }
+      } catch (error) {
+        console.error('[BFF Auth] Failed to restore the persisted auth session:', error);
+        if (isActive) {
+          setUser(null);
+        }
       } finally {
-        setIsLoading(false);
+        if (isActive) {
+          setIsLoading(false);
+        }
       }
     };
-    initUser();
+
+    const handleSessionChanged = () => {
+      void syncUser();
+    };
+    const handleStorageChanged = (event: StorageEvent) => {
+      if (
+        event.key === 'access_token' ||
+        event.key === 'refresh_token_id' ||
+        event.key === 'userinfo' ||
+        event.key === null
+      ) {
+        void syncUser();
+      }
+    };
+
+    void syncUser();
+    window.addEventListener(AUTH_SESSION_CHANGED_EVENT, handleSessionChanged);
+    window.addEventListener('storage', handleStorageChanged);
+
+    return () => {
+      isActive = false;
+      window.removeEventListener(AUTH_SESSION_CHANGED_EVENT, handleSessionChanged);
+      window.removeEventListener('storage', handleStorageChanged);
+    };
   }, [authService]);
 
   return {

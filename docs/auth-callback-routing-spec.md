@@ -61,6 +61,10 @@ base pathname と hash route を結合しないため、node ID や app base pat
 timeout、callback 画面からの離脱確認は Issue #818 の責務とする。ただし hash target を
 TanStack Router の browser path として渡してはならない。
 
+token response の検証、認証 session の保存、同一タブ通知、reload 復元は
+`docs/auth-session-contract.md` の責務とする。return URL 解決は認証 session の保存が成功した後に
+のみ開始する。
+
 ## 検証
 
 - `packages/ui/auth/src/services/__tests__/resolveAuthReturnUrl.unit.test.ts`

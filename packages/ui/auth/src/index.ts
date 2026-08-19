@@ -27,6 +27,7 @@ export { getIdToken, useAuth } from './hooks/useAuth.js';
 export { AuthCallbackHandler } from './services/AuthCallbackHandler.js';
 export type { AuthMethod } from './services/AuthService.js';
 export { AuthService } from './services/AuthService.js';
+export { AUTH_SESSION_CHANGED_EVENT, AuthSessionStorage } from './services/AuthSessionStorage.js';
 export type { BFFAuthResponse, BFFSignInOptions, BFFUser } from './services/BFFAuthService.js';
 export { BFFAuthService } from './services/BFFAuthService.js';
 export { handleAuthError } from './services/handleAuthError.js';

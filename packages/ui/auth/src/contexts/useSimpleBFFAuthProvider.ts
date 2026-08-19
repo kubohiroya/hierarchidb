@@ -1,4 +1,9 @@
 import React from 'react';
+import {
+  AUTH_SESSION_CHANGED_EVENT,
+  AuthSessionStorage,
+  type BFFUser,
+} from '~/services/AuthSessionStorage';
 import { maybeEmitBffWarning, readWarningFromResponse } from '~/services/BffWarning';
 import { PopupDetectionService } from '~/services/PopupDetectionService';
 import type { AuthProviderType } from '~/types/AuthProviderType';
@@ -47,7 +52,7 @@ const normalizeGooglePhotoUrl = (photoUrl: string | undefined): string | undefin
  */
 const normalizeProfilePhotoUrl = (
   photoUrl: string | undefined,
-  provider: AuthProviderType,
+  provider: AuthProviderType
 ): string | undefined => {
   if (!photoUrl) return undefined;
 
@@ -62,6 +67,18 @@ const normalizeProfilePhotoUrl = (
 
   return photoUrl;
 };
+
+const toAuthUser = (user: BFFUser): AuthUser => ({
+  id: user.id,
+  email: user.email,
+  name: user.name,
+  picture: normalizeProfilePhotoUrl(user.picture, user.provider),
+  provider: user.provider,
+  access_token: user.access_token,
+  id_token: user.access_token,
+  refresh_token: user.refresh_token,
+  expires_at: user.expires_at,
+});
 
 // PKCE helper functions
 function generateRandomString(length: number): string {
@@ -133,7 +150,6 @@ export function useSimpleBFFAuthProvider({ homeUrl }: UseSimpleBFFAuthProviderPa
   React.useEffect(() => {
     const loadUser = () => {
       try {
-        const storedToken = localStorage.getItem('access_token');
         const userInfo = localStorage.getItem('userinfo');
 
         // Check for stuck authentication atoms
@@ -153,28 +169,16 @@ export function useSimpleBFFAuthProvider({ homeUrl }: UseSimpleBFFAuthProviderPa
           }
         }
 
-        if (storedToken && userInfo) {
-          const userData = JSON.parse(userInfo);
-          // Normalize photo URL based on provider
-          if (userData.picture && userData.provider) {
-            userData.picture = normalizeProfilePhotoUrl(userData.picture, userData.provider);
-          }
-          const authUser: AuthUser = {
-            id: userData.sub ?? userData.id,
-            email: userData.email,
-            name: userData.name,
-            picture: userData.picture,
-            provider: (userData.provider ?? 'google') as AuthProviderType,
-            access_token: storedToken,
-            id_token: localStorage.getItem('id_token') ?? undefined,
-            expires_at: Date.now() + 48 * 60 * 60 * 1000, // 48 hours default
-          };
-          setUser(authUser);
+        const storedUser = AuthSessionStorage.load();
+        if (storedUser) {
+          setUser(toAuthUser(storedUser));
         } else {
           // Ensure isAuthenticating is false if no user
           setIsAuthenticating(false);
         }
-      } catch {
+      } catch (error) {
+        console.error('[Simple BFF Auth] Failed to restore the persisted auth session:', error);
+        setUser(null);
         setIsAuthenticating(false);
       } finally {
         setIsLoading(false);
@@ -332,7 +336,7 @@ export function useSimpleBFFAuthProvider({ homeUrl }: UseSimpleBFFAuthProviderPa
           const popup = window.open(
             authUrl.toString(),
             `${provider}-auth`,
-            `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`,
+            `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
           );
 
           if (!popup) {
@@ -525,7 +529,7 @@ export function useSimpleBFFAuthProvider({ homeUrl }: UseSimpleBFFAuthProviderPa
         localStorage.setItem('auth_force_cleanup', 'true');
       }
     },
-    [homeUrl, isAuthenticating, user],
+    [homeUrl, isAuthenticating, user]
   );
 
   const signOut = React.useCallback(async () => {
@@ -533,9 +537,7 @@ export function useSimpleBFFAuthProvider({ homeUrl }: UseSimpleBFFAuthProviderPa
       const token = localStorage.getItem('access_token');
 
       // Clear local storage
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('id_token');
-      localStorage.removeItem('userinfo');
+      AuthSessionStorage.clear();
 
       // Clear auth history tracking
       localStorage.removeItem('auth_history_length');
@@ -618,6 +620,10 @@ export function useSimpleBFFAuthProvider({ homeUrl }: UseSimpleBFFAuthProviderPa
     lastRefreshAttemptRef.current = now;
 
     try {
+      const currentSession = AuthSessionStorage.load();
+      if (!currentSession) {
+        throw new Error('Cannot refresh without a persisted authenticated UI session');
+      }
       const authBase = normalizeAuthBase(import.meta.env.VITE_BFF_BASE_URL ?? DEFAULT_BFF_BASE_URL);
 
       // Call BFF refresh endpoint
@@ -630,7 +636,7 @@ export function useSimpleBFFAuthProvider({ homeUrl }: UseSimpleBFFAuthProviderPa
         credentials: 'include', // Include cookies if BFF uses them
       });
 
-      const data = await response.json().catch(() => null);
+      const data: unknown = await response.json().catch(() => null);
       const warning = maybeEmitBffWarning((data as { warning?: unknown })?.warning);
       if (warning?.operation === 'refresh') {
         refreshDisabledRef.current = true;
@@ -639,9 +645,7 @@ export function useSimpleBFFAuthProvider({ homeUrl }: UseSimpleBFFAuthProviderPa
       if (!response.ok) {
         if (response.status === 401) {
           // Clear auth storage and trigger re-authentication
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('id_token');
-          localStorage.removeItem('userinfo');
+          AuthSessionStorage.clear();
           localStorage.removeItem('auth_provider');
           localStorage.removeItem('auth_callback_processing');
           localStorage.removeItem('auth_processing_code');
@@ -661,36 +665,13 @@ export function useSimpleBFFAuthProvider({ homeUrl }: UseSimpleBFFAuthProviderPa
         return false;
       }
 
-      if (data && 'access_token' in data && data.access_token) {
-        // Update tokens in local storage
-        localStorage.setItem('access_token', data.access_token);
-        if (data.id_token) {
-          localStorage.setItem('id_token', data.id_token);
-        }
-
-        // Update user info if provided
-        if (data.userinfo) {
-          localStorage.setItem('userinfo', JSON.stringify(data.userinfo));
-
-          // Update user atoms
-          const authUser: AuthUser = {
-            id: data.userinfo.sub ?? data.userinfo.id,
-            email: data.userinfo.email,
-            name: data.userinfo.name,
-            picture: normalizeProfilePhotoUrl(data.userinfo.picture, data.provider ?? 'google'),
-            provider: (data.provider ?? 'google') as AuthProviderType,
-            access_token: data.access_token,
-            id_token: data.id_token ?? data.access_token,
-            expires_at: data.expires_at ?? Date.now() + 3600000, // Default 1 hour
-          };
-
-          setUser(authUser);
-        }
-
-        return true;
+      const refreshedUser = AuthSessionStorage.persistTokenResponse(data, currentSession.provider);
+      setUser(toAuthUser(refreshedUser));
+      return true;
+    } catch (error) {
+      if (AuthSessionStorage.isContractError(error)) {
+        throw error;
       }
-      return false;
-    } catch {
       return false;
     } finally {
       refreshInProgressRef.current = false;
@@ -700,35 +681,20 @@ export function useSimpleBFFAuthProvider({ homeUrl }: UseSimpleBFFAuthProviderPa
   // Update user from local storage (called by callback page)
   React.useEffect(() => {
     const handleStorageChange = () => {
-      const userInfo = localStorage.getItem('userinfo');
-      const accessToken = localStorage.getItem('access_token');
+      try {
+        const storedUser = AuthSessionStorage.load();
 
-      // Skip if user is already authenticated with same access token
-      if (user && user.access_token === accessToken) {
-        return;
-      }
-
-      if (userInfo && accessToken) {
-        const userData = JSON.parse(userInfo);
-        const authUser: AuthUser = {
-          id: userData.sub ?? userData.id,
-          email: userData.email,
-          name: userData.name,
-          picture: normalizeProfilePhotoUrl(userData.picture, userData.provider ?? 'google'),
-          provider: (userData.provider ?? 'google') as AuthProviderType,
-          access_token: accessToken,
-          id_token: localStorage.getItem('id_token') ?? undefined,
-          expires_at: Date.now() + 48 * 60 * 60 * 1000, // 48 hours default
-        };
-
-        setUser(authUser);
-
-        // Store token expiry time for monitoring
-        const expiresIn = localStorage.getItem('token_expires_in');
-        if (expiresIn) {
-          const expiresAt = Date.now() + Number.parseInt(expiresIn, 10) * 1000;
-          localStorage.setItem('token_expires_at', expiresAt.toString());
+        if (user?.access_token === storedUser?.access_token) {
+          setIsAuthenticating(false);
+          return;
         }
+        if (!storedUser) {
+          setUser(null);
+          setIsAuthenticating(false);
+          return;
+        }
+
+        setUser(toAuthUser(storedUser));
 
         // Mark authentication as completed - use localStorage to persist
         localStorage.setItem('last_auth_completion', Date.now().toString());
@@ -740,6 +706,10 @@ export function useSimpleBFFAuthProvider({ homeUrl }: UseSimpleBFFAuthProviderPa
         localStorage.removeItem('pkce_timestamp');
         localStorage.removeItem('auth_callback_processing');
         localStorage.removeItem('auth_processing_code');
+      } catch (error) {
+        console.error('[Simple BFF Auth] Failed to synchronize the auth session:', error);
+        setUser(null);
+        setIsAuthenticating(false);
       }
     };
 
@@ -785,9 +755,11 @@ export function useSimpleBFFAuthProvider({ homeUrl }: UseSimpleBFFAuthProviderPa
 
     // Listen for storage changes (this works across tabs/windows)
     window.addEventListener('storage', handleStorageChange);
+    window.addEventListener(AUTH_SESSION_CHANGED_EVENT, handleStorageChange);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener(AUTH_SESSION_CHANGED_EVENT, handleStorageChange);
       if (checkInterval) clearInterval(checkInterval);
       if (timeoutHandle) clearTimeout(timeoutHandle);
     };
