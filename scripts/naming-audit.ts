@@ -7,6 +7,7 @@
 // Options:
 //   --ci                 Compare the current report with --baseline
 //   --baseline <file>    Base-revision JSON report (required with --ci)
+//   --changed-since <ref> Audit files changed since the specified Git ref
 //   --report-only        Emit a JSON report without failing on violations
 //   --root <dir>         Repository root to audit (default: current directory)
 //   --format <fmt>       Output format: "json" | "table" (default: "table")
@@ -28,6 +29,8 @@ import {
   DEFAULT_NAMING_AUDIT_TARGET_DIRS,
   NAMING_AUDIT_ROUTER_EXCEPTION_PATHS,
 } from './naming-audit/namingAuditConstants.js';
+import { readGitChangedPaths } from './naming-audit/readGitChangedPaths.js';
+import { requiresNamingAuditFullScan } from './naming-audit/requiresNamingAuditFullScan.js';
 import { evaluateRules } from './naming-audit/ruleEngine.js';
 import { implSuffixRule } from './naming-audit/rules/implSuffixRule.js';
 import { primaryExportRule } from './naming-audit/rules/primaryExportRule.js';
@@ -45,6 +48,7 @@ import { reportNamingAuditComparison, reportViolations } from './naming-audit/vi
 interface CliOptions {
   readonly baselinePath: string | null;
   readonly ci: boolean;
+  readonly changedSince: string | null;
   readonly format: 'json' | 'table';
   readonly reportOnly: boolean;
   readonly rootDir: string;
@@ -62,6 +66,7 @@ function requireOptionValue(args: readonly string[], optionIndex: number, option
 function parseArgs(argv: readonly string[]): CliOptions {
   let baselinePath: string | null = null;
   let ci = false;
+  let changedSince: string | null = null;
   let format: 'json' | 'table' = 'table';
   let reportOnly = false;
   let rootDir = process.cwd();
@@ -76,6 +81,10 @@ function parseArgs(argv: readonly string[]): CliOptions {
         break;
       case '--baseline':
         baselinePath = requireOptionValue(args, index, '--baseline');
+        index += 1;
+        break;
+      case '--changed-since':
+        changedSince = requireOptionValue(args, index, '--changed-since');
         index += 1;
         break;
       case '--report-only':
@@ -119,6 +128,7 @@ function parseArgs(argv: readonly string[]): CliOptions {
   return {
     baselinePath,
     ci,
+    changedSince,
     format,
     reportOnly,
     rootDir: path.resolve(rootDir),
@@ -169,10 +179,17 @@ function run(): number {
     throw new Error(`Naming audit root is not a directory: ${options.rootDir}`);
   }
 
+  const changedPaths =
+    options.changedSince === null ? null : readGitChangedPaths(options.changedSince);
+  const requiresFullScan = changedPaths?.some(requiresNamingAuditFullScan) ?? false;
+
+  const auditsAlternateRevision = path.resolve(process.cwd()) !== options.rootDir;
   const scannerOptions: FileScannerOptions = {
     rootDir: options.rootDir,
     targetDirs: options.targets,
     excludePatterns: DEFAULT_NAMING_AUDIT_EXCLUDE_PATTERNS,
+    includeFiles: changedPaths !== null && !requiresFullScan ? changedPaths : undefined,
+    allowMissingIncludeFiles: auditsAlternateRevision,
   };
   const ruleConfig: RuleEngineConfig = {
     routerExceptionPaths: NAMING_AUDIT_ROUTER_EXCEPTION_PATHS,
@@ -180,19 +197,21 @@ function run(): number {
   const tsConfigPath = path.join(options.rootDir, 'tsconfig.json');
   const exportAnalyzer = createExportAnalyzer(tsConfigPath);
 
-  progress('Scanning files…');
+  progress(
+    requiresFullScan
+      ? 'Naming Audit implementation changed; scanning all files…'
+      : changedPaths === null
+        ? 'Scanning files…'
+        : `Scanning files changed since ${options.changedSince}…`
+  );
   const files = scanFiles(scannerOptions);
-  if (files.length === 0) {
+  if (files.length === 0 && (changedPaths === null || requiresFullScan)) {
     throw new Error(`Naming audit found no files under root: ${options.rootDir}`);
   }
   progressDone(`✔ Scanned ${files.length} files`);
 
   const analyses: FileAnalysis[] = [];
-  for (let index = 0; index < files.length; index += 1) {
-    const file = files[index];
-    if (file === undefined) {
-      throw new Error(`Naming audit file index ${index} is missing.`);
-    }
+  for (const [index, file] of files.entries()) {
     progress(`Analysing exports… (${index + 1}/${files.length}) ${file.relativePath}`);
     analyses.push(exportAnalyzer.analyze(file));
   }

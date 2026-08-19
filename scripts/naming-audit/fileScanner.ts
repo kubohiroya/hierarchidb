@@ -34,6 +34,9 @@ function resolveTargetDirs(pattern: string, rootDir: string): string[] {
     if (!fs.existsSync(baseDir)) return [];
 
     const wildcardSegment = segments[wildcardIdx];
+    if (wildcardSegment === undefined) {
+        throw new Error(`Invalid target directory wildcard: ${pattern}`);
+    }
     const rest = segments.slice(wildcardIdx + 1).join('/');
 
     // Convert the wildcard segment into a simple regex.
@@ -79,7 +82,11 @@ function deriveSubPackage(resolvedDir: string, rootDir: string): string {
         (parts[0] === 'plugins' || parts[0] === 'packages') &&
         parts[parts.length - 1] === 'src'
     ) {
-        return parts[1];
+        const packageName = parts[1];
+        if (packageName === undefined) {
+            throw new Error(`Unable to derive package name from target directory: ${resolvedDir}`);
+        }
+        return packageName;
     }
 
     // app/src
@@ -89,8 +96,19 @@ function deriveSubPackage(resolvedDir: string, rootDir: string): string {
 
     // Fallback: use the parent of "src" if present, otherwise the last segment.
     const srcIdx = parts.lastIndexOf('src');
-    if (srcIdx > 0) return parts[srcIdx - 1];
-    return parts[parts.length - 1] || 'unknown';
+    if (srcIdx > 0) {
+        const srcParent = parts[srcIdx - 1];
+        if (srcParent === undefined) {
+            throw new Error(`Unable to derive src parent from target directory: ${resolvedDir}`);
+        }
+        return srcParent;
+    }
+
+    const finalPart = parts.at(-1);
+    if (!finalPart) {
+        throw new Error(`Unable to derive package name from target directory: ${resolvedDir}`);
+    }
+    return finalPart;
 }
 
 /**
@@ -162,33 +180,80 @@ function walkDir(dir: string): string[] {
  * @returns an array of FileEntry objects
  */
 export function scanFiles(options: FileScannerOptions): FileEntry[] {
-    const { rootDir, targetDirs, excludePatterns } = options;
+    const {
+        rootDir,
+        targetDirs,
+        excludePatterns,
+        includeFiles,
+        allowMissingIncludeFiles = false,
+    } = options;
     const entries: FileEntry[] = [];
+    const resolvedTargets = targetDirs.flatMap((targetDir) =>
+        resolveTargetDirs(targetDir, rootDir).map((resolvedDir) => ({
+            resolvedDir,
+            subPackage: deriveSubPackage(resolvedDir, rootDir),
+        })),
+    );
 
-    for (const targetDir of targetDirs) {
-        const resolvedDirs = resolveTargetDirs(targetDir, rootDir);
+    if (includeFiles !== undefined) {
+        const seen = new Set<string>();
 
-        for (const resolvedDir of resolvedDirs) {
-            const subPackage = deriveSubPackage(resolvedDir, rootDir);
-            const allFiles = walkDir(resolvedDir);
+        for (const filePath of includeFiles) {
+            const absPath = path.resolve(rootDir, filePath);
+            if (seen.has(absPath)) continue;
 
-            for (const absPath of allFiles) {
-                const relPath = path
-                    .relative(resolvedDir, absPath)
-                    .replace(/\\/g, '/');
+            const target = resolvedTargets.find(({ resolvedDir }) => {
+                const relativePath = path.relative(resolvedDir, absPath);
+                return (
+                    relativePath !== '' &&
+                    !relativePath.startsWith(`..${path.sep}`) &&
+                    relativePath !== '..' &&
+                    !path.isAbsolute(relativePath)
+                );
+            });
+            if (!target) continue;
 
-                if (isExcluded(relPath, excludePatterns)) continue;
+            const relPath = path.relative(target.resolvedDir, absPath).replace(/\\/g, '/');
+            if (isExcluded(relPath, excludePatterns)) continue;
 
-                const ext = path.extname(absPath);
-                if (ext !== '.ts' && ext !== '.tsx') continue;
-
-                entries.push({
-                    absolutePath: absPath,
-                    relativePath: relPath,
-                    subPackage,
-                    extension: ext as '.ts' | '.tsx',
-                });
+            const ext = path.extname(absPath);
+            if (ext !== '.ts' && ext !== '.tsx') continue;
+            if (!fs.existsSync(absPath) || !fs.statSync(absPath).isFile()) {
+                if (allowMissingIncludeFiles) continue;
+                throw new Error(`Changed audit target does not exist as a file: ${filePath}`);
             }
+
+            seen.add(absPath);
+            entries.push({
+                absolutePath: absPath,
+                relativePath: relPath,
+                subPackage: target.subPackage,
+                extension: ext,
+            });
+        }
+
+        return entries;
+    }
+
+    for (const { resolvedDir, subPackage } of resolvedTargets) {
+        const allFiles = walkDir(resolvedDir);
+
+        for (const absPath of allFiles) {
+            const relPath = path
+                .relative(resolvedDir, absPath)
+                .replace(/\\/g, '/');
+
+            if (isExcluded(relPath, excludePatterns)) continue;
+
+            const ext = path.extname(absPath);
+            if (ext !== '.ts' && ext !== '.tsx') continue;
+
+            entries.push({
+                absolutePath: absPath,
+                relativePath: relPath,
+                subPackage,
+                extension: ext as '.ts' | '.tsx',
+            });
         }
     }
 
