@@ -268,17 +268,21 @@ export class BFFAuthService {
       throw new Error('No authorization code received');
     }
 
-    // If we already have a token (e.g., callback executed once and re-rendered),
-    // short-circuit to avoid double-exchanging the same code.
-    const existingUser = AuthSessionStorage.load();
-    if (existingUser) {
-      return existingUser;
-    }
-
     // Deduplicate concurrent/double-invoked exchanges (e.g., React Strict Mode)
     const existingPromise = BFFAuthService.codeExchangePromises.get(code);
     if (existingPromise) {
       return existingPromise;
+    }
+
+    const codeVerifier = localStorage.getItem('pkce_code_verifier');
+    if (!codeVerifier) {
+      // A completed callback can be rendered again after its PKCE state is removed.
+      // Reuse only a fully valid persisted session; contract violations remain visible.
+      const existingUser = AuthSessionStorage.load();
+      if (existingUser) {
+        return existingUser;
+      }
+      throw new Error('No PKCE code verifier found');
     }
 
     // Verify atoms for CSRF protection
@@ -288,12 +292,6 @@ export class BFFAuthService {
     }
 
     const exchangePromise = (async () => {
-      // Get stored PKCE verifier
-      const codeVerifier = localStorage.getItem('pkce_code_verifier');
-      if (!codeVerifier) {
-        throw new Error('No PKCE code verifier found');
-      }
-
       // Get provider
       const provider = AuthSessionStorage.parseProvider(
         localStorage.getItem('auth_provider'),

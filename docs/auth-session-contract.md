@@ -46,6 +46,20 @@ OAuth callback または token refresh が成功した後に、UI が認証済�
 
 契約違反は callback error として失敗させ、認証成功画面や成功後 navigation に進めない。
 
+## Callback replacement and idempotency contract
+
+有効な `pkce_code_verifier` と `auth_provider` が存在する callback は、新しい認証 flow として
+必ず authorization code を交換する。保存済み session が存在しても、その session を返して code
+exchange を省略してはならない。これにより、旧形式・部分保存・期限切れの session が新しい認証を
+阻害せず、account switch も新しい token response で確定する。
+
+同じ authorization code の同時処理は、code ごとの単一 Promise を共有して重複 exchange を防ぐ。
+callback の再描画または reload で PKCE verifier が既に削除されている場合に限り、完全な保存済み
+session を再利用できる。保存済み session が契約違反なら例外にし、削除、field merge、JWT解析、
+既定値補完で処理を継続しない。
+
+新しい token response の検証と保存が成功した場合だけ、保存済み session 全体を置き換える。
+
 ## Persistence contract
 
 token response 全体を検証した後、次を同一の session として `localStorage` に保存する。
@@ -79,6 +93,9 @@ session clear 後も同じ custom event を dispatch し、全 consumer が unau
 - 正常応答を保存し、custom event を通知する。
 - `access_token`、`expires_in`、必須 userinfo が欠ける応答を拒否し、session を保存しない。
 - 保存済み session を reload 相当で復元する。
+- 旧形式または部分保存 session が存在しても、active PKCE callback は新しい code を交換し、検証済み
+  session 全体で置き換える。
+- app root が使用する `SimpleBFFAuthProvider` が同一タブ通知と reload の両方で認証済みになる。
 - callback の token exchange が不完全な成功応答を受けた場合、明示的な callback error にする。
 - `pnpm -w turbo run test --filter @hierarchidb/ui-auth`
 - `pnpm -w turbo run typecheck --filter @hierarchidb/ui-auth`

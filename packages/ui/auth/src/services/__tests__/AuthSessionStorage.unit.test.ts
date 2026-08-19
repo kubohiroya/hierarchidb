@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useSimpleBFFAuthProvider } from '../../contexts/useSimpleBFFAuthProvider.js';
 import { useBFFAuthService } from '../../hooks/useAuth.js';
 import { AUTH_SESSION_CHANGED_EVENT, AuthSessionStorage } from '../AuthSessionStorage.js';
 import { BFFAuthService } from '../BFFAuthService.js';
@@ -172,6 +173,62 @@ describe('BFFAuthService callback contract', () => {
     expect(callbackUser.id).toBe('user-1');
     await expect(service.getCurrentUser()).resolves.toEqual(callbackUser);
   });
+
+  it('replaces an invalid persisted session during an active PKCE callback', async () => {
+    localStorage.setItem('access_token', 'stale-session-jwt');
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(JSON.stringify(validTokenResponse()), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const service = BFFAuthService.getInstance();
+    const callbackUser = await service.handleCallback(
+      new URLSearchParams({ code: 'replace-invalid-session' })
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(callbackUser.access_token).toBe('session-jwt');
+    await expect(service.getCurrentUser()).resolves.toEqual(callbackUser);
+  });
+
+  it('exchanges a new code instead of reusing a valid persisted session', async () => {
+    AuthSessionStorage.persistTokenResponse(validTokenResponse(), 'google');
+    localStorage.setItem('auth_provider', 'github');
+    const replacementResponse = {
+      ...validTokenResponse(),
+      access_token: 'replacement-session-jwt',
+      userinfo: {
+        ...validTokenResponse().userinfo,
+        sub: 'user-2',
+        email: 'replacement@example.com',
+        name: 'Replacement User',
+      },
+    };
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(JSON.stringify(replacementResponse), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const callbackUser = await BFFAuthService.getInstance().handleCallback(
+      new URLSearchParams({ code: 'replace-valid-session' })
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(callbackUser).toMatchObject({
+      id: 'user-2',
+      access_token: 'replacement-session-jwt',
+      provider: 'github',
+    });
+    await expect(BFFAuthService.getInstance().getCurrentUser()).resolves.toEqual(callbackUser);
+  });
 });
 
 describe('useBFFAuthService session propagation', () => {
@@ -200,6 +257,43 @@ describe('useBFFAuthService session propagation', () => {
       AuthSessionStorage.clear();
     });
     await waitFor(() => expect(result.current.isAuthenticated).toBe(false));
+    unmount();
+  });
+});
+
+describe('SimpleBFFAuthProvider session propagation', () => {
+  beforeEach(() => {
+    vi.stubGlobal('localStorage', createMemoryStorage());
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('becomes authenticated from the callback event in the same document', async () => {
+    const { result, unmount } = renderHook(() => useSimpleBFFAuthProvider({ homeUrl: '/' }));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.isAuthenticated).toBe(false);
+
+    act(() => {
+      AuthSessionStorage.persistTokenResponse(validTokenResponse(), 'google');
+    });
+
+    await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
+    expect(result.current.user?.id).toBe('user-1');
+    unmount();
+  });
+
+  it('restores the persisted authenticated session on mount', async () => {
+    AuthSessionStorage.persistTokenResponse(validTokenResponse(), 'github');
+
+    const { result, unmount } = renderHook(() => useSimpleBFFAuthProvider({ homeUrl: '/' }));
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.isAuthenticated).toBe(true);
+    expect(result.current.user?.provider).toBe('github');
+    expect(result.current.user?.access_token).toBe('session-jwt');
     unmount();
   });
 });
