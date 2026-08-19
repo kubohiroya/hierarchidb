@@ -103,6 +103,17 @@ completedAt) and `lifecycleExtrasAtom` (stopReason). `stageId` drives the UI
 synchronization/selection signal. Per-stage timing remains owned by the
 `stageSnapshotUpdated` path and is not duplicated from this event.
 
+The interval between selecting a started stage and receiving its first
+`stageSnapshotUpdated` event is represented by `ui-initializing`. During that
+interval, `sessionStatusUpdated` still carries and validates its required stage
+timing fields. Its `stageId` updates selection but does not advance UI sync to
+`running`; only the matching stage snapshot completes that handshake. The
+selection therefore exists without copying the status event timing into the UI
+timing tree, and elapsed-time calculation stays pending. The consumer must not
+manufacture stage timing from the current clock or from session timing. After the
+snapshot arrives, its explicit timing becomes the only input to stage elapsed-time
+calculation.
+
 **Note**: `heartbeatAt` is intentionally absent. Heartbeat timing is carried only by
 the `heartbeat` event to avoid polluting this event with high-frequency data.
 

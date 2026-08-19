@@ -32,6 +32,12 @@ export { BFFAuthService } from './services/BFFAuthService.js';
 export { handleAuthError } from './services/handleAuthError.js';
 export type { PopupCapability } from './services/PopupDetectionService.js';
 export { PopupDetectionService } from './services/PopupDetectionService.js';
+export type {
+  AuthRouterMode,
+  ResolveAuthReturnUrlOptions,
+  ResolvedAuthReturnUrl,
+} from './services/resolveAuthReturnUrl.js';
+export { resolveAuthReturnUrl } from './services/resolveAuthReturnUrl.js';
 export { registerAuthUIHandlers } from './services/UIAuthRecoveryClient.js';
 export type { AuthContextType } from './types/AuthContextType.js';
 export type { AuthProviderConfig } from './types/AuthProviderConfig.js';

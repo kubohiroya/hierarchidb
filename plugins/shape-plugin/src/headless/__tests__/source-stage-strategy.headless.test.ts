@@ -6,7 +6,7 @@ import type { BuildProcessConfig } from '../../services/build/types';
 import type { SourceTaskPayload } from '../../common/types/index';
 import { DEFAULT_BUILD_CONFIG } from '../../common/types/index';
 //import { getShapeDbApiClient } from '../services/build/ShapeBuildApiClient.js';
-import { encodeFlatGeoJson } from '../../services/build/strategies/flatgeobuf';
+import { encodeFlatGeoJson } from '../../services/build/strategies/flatgeobufUtils';
 import { GadmSourceStageStrategy } from '../../services/build/strategies/GadmSourceStageStrategy';
 import { GeoBoundariesSourceStageStrategy } from '../../services/build/strategies/GeoBoundariesSourceStageStrategy';
 import { NaturalEarthDownloadStrategy } from '../../services/build/strategies/NaturalEarthDownloadStrategy';

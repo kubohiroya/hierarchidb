@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildShapeTaskTitle } from '../../utils/taskTitles';
+import { buildShapeTaskTitle } from '../../utils/taskTitleUtils';
 
 describe('taskTitles', () => {
   it('formats geometry task title as country/admin and band/zoom summary', () => {

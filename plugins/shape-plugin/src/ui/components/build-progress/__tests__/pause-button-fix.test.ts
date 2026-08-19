@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { waitForSessionStateSync } from '../internal/useShapeBuildSessionHelpers/elapsed';
+import { waitForSessionStateSync } from '../internal/useShapeBuildSessionHelpers/elapsedConstants';
 import { PAUSE_COMMAND_TIMEOUT_MS, PAUSE_STATE_SYNC_TIMEOUT_MS } from '../internal/useShapeBuildSessionHelpers/constants';
 
 describe('Pause Button Fix', () => {

@@ -71,7 +71,10 @@ describe('runShapeSourceStage message', () => {
   let db: VtTaskQueueDb | null = null;
   let nodeId: NodeId;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    if (!ephemeralDB.isOpen()) {
+      await ephemeralDB.open();
+    }
     nodeId = `shape-source-stage-message-node-${Date.now()}-${Math.random()}` as NodeId;
     mockFetchData.mockReset();
     mockProcessData.mockReset();
@@ -83,7 +86,9 @@ describe('runShapeSourceStage message', () => {
 
   afterEach(async () => {
     if (!db) return;
-    await db.tasks.clear();
+    if (!ephemeralDB.isOpen()) {
+      await ephemeralDB.open();
+    }
     await ephemeralDB.clearNodeData(nodeId);
     db = null;
   });

@@ -102,7 +102,6 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             geometry: [],
             tileEmit: [],
         };
-        let activeStageId: ShapeStageId = 'source';
         let flushTimerId: number | null = null;
 
         // Per-stage buffer manager for task-progress version gating.
@@ -177,14 +176,9 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
         };
 
         const processStageSnapshotEvent = (event: StageSnapshotUpdatedEvent): void => {
-            const snapshotStages = new Set<ShapeStageId>();
-            for (const task of event.payload.tasks) {
-                const stageId = resolveShapeStageId(task.stage);
-                if (stageId) snapshotStages.add(stageId);
-            }
+            const snapshotStages = resolveSnapshotTargetStages(event);
             adapter.onTaskEvent(toAdapterStageSnapshotEvent(event));
-            for (const stageId of SHAPE_STAGE_IDS) {
-                if (snapshotStages.size > 0 && !snapshotStages.has(stageId)) continue;
+            for (const stageId of snapshotStages) {
                 dispatchUiSyncPhase(stageId, 'running');
             }
             scheduleFlush();
@@ -194,10 +188,6 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             const stageId = resolveShapeStageId(event.payload.stageId);
             if (!stageId) {
                 throw new Error(`[useShapeBuildSessionStateAtomBridge] unknown stageId in taskProgressUpdated: ${String(event.payload.stageId)}`);
-            }
-            if (activeStageId !== stageId) {
-                activeStageId = stageId;
-                dispatchUiSyncPhase(stageId, 'ui-initializing');
             }
             progressBufferByStage[stageId].push(event);
             if (uiSyncByStage[stageId] !== 'running') return;
@@ -211,12 +201,12 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             // and must not be interpreted here.
             const stageId = resolveShapeStageId(event.payload.stageId);
             if (!stageId) return;
-            if (activeStageId !== stageId) {
-                activeStageId = stageId;
-            }
-            const phase = event.payload.phase;
-            if (phase === 'running') {
-                dispatchUiSyncPhase(stageId, 'running');
+            dispatch({
+                type: 'viewSelectionChanged',
+                payload: { activeStageId: stageId },
+            });
+            const uiSyncPhase = uiSyncByStage[stageId];
+            if (event.payload.phase === 'running' && uiSyncPhase === 'running') {
                 scheduleFlush();
             }
         };
