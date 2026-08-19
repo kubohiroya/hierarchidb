@@ -4,6 +4,7 @@ on:
   pull_request:
     branches: [main, master]
     paths:
+      - ".github/workflows/naming-audit.yml"
       - "app/src/**/*.ts"
       - "app/src/**/*.tsx"
       - "packages/*/src/**/*.ts"
@@ -52,6 +53,7 @@ jobs:
           git worktree add --detach "${naming_audit_base_dir}" "${NAMING_AUDIT_BASE_SHA}"
           pnpm tsx scripts/naming-audit.ts \
             --root "${naming_audit_base_dir}" \
+            --changed-since "${NAMING_AUDIT_BASE_SHA}" \
             --format json \
             --report-only > "${naming_audit_base_report}"
           git worktree remove "${naming_audit_base_dir}"
@@ -59,4 +61,5 @@ jobs:
 
           pnpm tsx scripts/naming-audit.ts \
             --ci \
+            --changed-since "${NAMING_AUDIT_BASE_SHA}" \
             --baseline "${naming_audit_base_report}"

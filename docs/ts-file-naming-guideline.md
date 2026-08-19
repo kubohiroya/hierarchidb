@@ -28,21 +28,28 @@ error が1件以上あれば終了コード `1` とする。
 pnpm tsx scripts/naming-audit.ts
 ```
 
-Pull Request のCIでは、同じAuditコードとルールをbase revisionとhead revisionの
-両方へ適用する。headの全違反を表示した上で、厳密に一致するbase側errorを既存分
-として差し引き、新規または悪化したerrorがある場合だけ終了コード `1` とする。
-既存errorの解消数とwarning総数の変化もCIログへ表示する。
+Pull Request のCIでは、base SHAから追加・変更・コピー・renameされた監査対象
+ファイルだけに、同じAuditコードとルールをbase revisionとhead revisionの両方で
+適用する。headの違反を表示した上で、厳密に一致するbase側errorを既存分として
+差し引き、新規または悪化したerrorがある場合だけ終了コード `1` とする。変更範囲内
+の既存error解消数とwarning数の変化もCIログへ表示する。削除済みファイルは解析しない。
+
+監査スクリプトまたはNaming Audit workflow自体を変更した場合は、規則変更の影響を
+確認するためbase/headの全対象ファイルを解析する。CLIで
+`--changed-since <base-ref>`を指定しない場合も全対象ファイルを解析する。
 
 base側レポートはJSON schemaを厳密に検証する。base commitの取得失敗、レポートの
-欠落・破損、schema不一致、監査対象0件は成功扱いにせず終了コード `2` とする。
+欠落・破損、schema不一致は成功扱いにせず終了コード `2` とする。incremental scanで
+変更対象が0件になることは正常系とするが、full scanで対象が0件なら終了コード `2`
+とする。不正なbase refをfull scanへフォールバックさせない。
 
 CI内部ではbase側のJSON生成に次のreport-onlyモードを使う。このモードは違反を
 無視する一般的な成功フォールバックではなく、base/head比較用データを生成する
 場合に限って使用する。
 
 ```bash
-pnpm tsx scripts/naming-audit.ts --root <base-worktree> --format json --report-only
-pnpm tsx scripts/naming-audit.ts --ci --baseline <base-report.json>
+pnpm tsx scripts/naming-audit.ts --root <base-worktree> --changed-since <base-sha> --format json --report-only
+pnpm tsx scripts/naming-audit.ts --ci --changed-since <base-sha> --baseline <base-report.json>
 ```
 
 ## `app/src` への適用注記

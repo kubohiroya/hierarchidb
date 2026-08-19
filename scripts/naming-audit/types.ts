@@ -26,6 +26,10 @@ export interface FileScannerOptions {
     readonly targetDirs: readonly string[];
     /** Glob patterns to exclude */
     readonly excludePatterns: readonly string[];
+    /** Repository-relative or absolute files to include; omit for a full scan */
+    readonly includeFiles?: readonly string[];
+    /** Allow selected files to be absent from the scanned revision */
+    readonly allowMissingIncludeFiles?: boolean;
 }
 
 // ---------------------------------------------------------------------------
