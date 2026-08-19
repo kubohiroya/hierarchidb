@@ -115,43 +115,42 @@ describe('UIEventBufferManager state management', () => {
 
     describe('task-progress per-taskId version deduplication', () => {
         it('accepts first event for a taskId', () => {
-            const result = manager.applyTaskProgress('task-1', 1, { value: 10 });
-            expect(result).toBeDefined();
+            const result = manager.applyTaskProgress('task-1', 1);
+            expect(result).toBe(true);
         });
 
         it('accepts event with higher version', () => {
-            manager.applyTaskProgress('task-1', 5, { value: 50 });
-            const result = manager.applyTaskProgress('task-1', 7, { value: 70 });
-            expect(result).toBeDefined();
-            expect((result?.payload as { value: number }).value).toBe(70);
+            manager.applyTaskProgress('task-1', 5);
+            const result = manager.applyTaskProgress('task-1', 7);
+            expect(result).toBe(true);
         });
 
         it('drops event with equal version (duplicate)', () => {
-            manager.applyTaskProgress('task-1', 5, { value: 50 });
-            const result = manager.applyTaskProgress('task-1', 5, { value: 50 });
-            expect(result).toBeUndefined();
+            manager.applyTaskProgress('task-1', 5);
+            const result = manager.applyTaskProgress('task-1', 5);
+            expect(result).toBe(false);
         });
 
         it('drops event with lower version (stale)', () => {
-            manager.applyTaskProgress('task-1', 10, { value: 100 });
-            const result = manager.applyTaskProgress('task-1', 3, { value: 30 });
-            expect(result).toBeUndefined();
+            manager.applyTaskProgress('task-1', 10);
+            const result = manager.applyTaskProgress('task-1', 3);
+            expect(result).toBe(false);
         });
 
         it('tracks versions independently per taskId', () => {
-            manager.applyTaskProgress('task-A', 10, { value: 100 });
-            const acceptedB = manager.applyTaskProgress('task-B', 1, { value: 10 });
-            const staleA = manager.applyTaskProgress('task-A', 9, { value: 90 });
+            manager.applyTaskProgress('task-A', 10);
+            const acceptedB = manager.applyTaskProgress('task-B', 1);
+            const staleA = manager.applyTaskProgress('task-A', 9);
 
-            expect(acceptedB).toBeDefined();
-            expect(staleA).toBeUndefined();
+            expect(acceptedB).toBe(true);
+            expect(staleA).toBe(false);
         });
 
         it('accepts monotonically increasing versions', () => {
             const results = [1, 2, 3, 4, 5].map((v) =>
-                manager.applyTaskProgress('task-1', v, { value: v * 10 })
+                manager.applyTaskProgress('task-1', v)
             );
-            expect(results.every((r) => r !== undefined)).toBe(true);
+            expect(results.every((result) => result)).toBe(true);
         });
     });
 
@@ -170,11 +169,11 @@ describe('UIEventBufferManager state management', () => {
         });
 
         it('clears per-taskId version state', () => {
-            manager.applyTaskProgress('task-1', 10, { value: 100 });
+            manager.applyTaskProgress('task-1', 10);
             manager.reset();
             // After reset, version 1 must be accepted again
-            const result = manager.applyTaskProgress('task-1', 1, { value: 10 });
-            expect(result).toBeDefined();
+            const result = manager.applyTaskProgress('task-1', 1);
+            expect(result).toBe(true);
         });
 
         it('allows new FIFO events after reset', () => {

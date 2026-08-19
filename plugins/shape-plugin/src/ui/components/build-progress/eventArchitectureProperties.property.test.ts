@@ -198,32 +198,32 @@ describe('Event Architecture Properties', () => {
             const taskId = 'task-1';
 
             // version 5 — accepted (first for this taskId)
-            const accepted1 = testBuffer.applyTaskProgress(taskId, 5, { value: 50 });
+            const accepted1 = testBuffer.applyTaskProgress(taskId, 5);
             // version 3 — stale (< 5) — dropped
-            const dropped = testBuffer.applyTaskProgress(taskId, 3, { value: 30 });
+            const dropped = testBuffer.applyTaskProgress(taskId, 3);
             // version 5 — duplicate (=== 5) — dropped
-            const duplicate = testBuffer.applyTaskProgress(taskId, 5, { value: 50 });
+            const duplicate = testBuffer.applyTaskProgress(taskId, 5);
             // version 7 — accepted (> 5)
-            const accepted2 = testBuffer.applyTaskProgress(taskId, 7, { value: 70 });
+            const accepted2 = testBuffer.applyTaskProgress(taskId, 7);
 
-            expect(accepted1).toBeDefined();
-            expect(dropped).toBeUndefined();
-            expect(duplicate).toBeUndefined();
-            expect(accepted2).toBeDefined();
+            expect(accepted1).toBe(true);
+            expect(dropped).toBe(false);
+            expect(duplicate).toBe(false);
+            expect(accepted2).toBe(true);
         });
 
         it('should track versions independently per taskId', () => {
             const testBuffer = new UIEventBufferManager();
 
             // task-A at version 10
-            testBuffer.applyTaskProgress('task-A', 10, { value: 100 });
+            testBuffer.applyTaskProgress('task-A', 10);
             // task-B at version 1 — independent from task-A
-            const accepted = testBuffer.applyTaskProgress('task-B', 1, { value: 10 });
+            const accepted = testBuffer.applyTaskProgress('task-B', 1);
             // task-A at version 9 — stale for task-A
-            const stale = testBuffer.applyTaskProgress('task-A', 9, { value: 90 });
+            const stale = testBuffer.applyTaskProgress('task-A', 9);
 
-            expect(accepted).toBeDefined();
-            expect(stale).toBeUndefined();
+            expect(accepted).toBe(true);
+            expect(stale).toBe(false);
         });
     });
 
