@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   finalizePipelineOutcome,
   persistFailureAndRethrow,
-} from '../../worker/api/shapeBuildRuntimeFailureHandling.js';
+} from '../../worker/api/shapeBuildRuntimeFailureHandlingUtils.js';
 
 describe('shape build runtime failure handling', () => {
   it('persists a terminal failure before rethrowing the originating error', async () => {

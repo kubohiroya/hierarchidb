@@ -72,7 +72,7 @@ import { summarizeTaskQueueStatus } from './progressAnalysis.js';
 import {
   finalizePipelineOutcome,
   persistFailureAndRethrow,
-} from './shapeBuildRuntimeFailureHandling.js';
+} from './shapeBuildRuntimeFailureHandlingUtils.js';
 
 // Available functions from the new structure
 const {
