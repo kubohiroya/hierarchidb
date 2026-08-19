@@ -1,6 +1,6 @@
 # @hierarchidb/folder-plugin
 
-最終更新: 2026-04-05
+最終更新: 2026-08-20
 
 HierarchiDB のツリー構造における基本的なコンテナノードを提供するプラグイン。フォルダノードは階層的にさまざまな種類のノードを整理・格納するためのコンテナとして機能する。
 
@@ -177,36 +177,11 @@ import { FolderIcon } from '@hierarchidb/folder-plugin/ui';
 <FolderIcon open={true} />
 ```
 
-### YAML スナップショットのエクスポート
+## Legacy YAML snapshot boundary
 
-```typescript
-import { exportYamlNodesToSnapshot } from '@hierarchidb/folder-plugin';
-import type { ExportableNode } from '@hierarchidb/folder-plugin';
+現行の`exportYamlNodesToSnapshot`と`importYamlNodesFromSnapshot` helperはlegacyかつnon-canonicalな実装である。exportは`data.name`を読み、importは空schema IDを持つYamlDB-only rowを逐次writeし、authoritativeなCoreDB `TreeNode`を作成しない。後続writeが失敗するとYamlDBに部分rowが残り得る。
 
-const nodes: ExportableNode[] = [
-  {
-    nodeId: toNodeId('node-1'),
-    nodeType: 'yaml',
-    data: { name: 'config.yml', schemaId: '', content: 'key: value' },
-  },
-];
-
-const result = await exportYamlNodesToSnapshot(nodes);
-if (result.ok) {
-  // result.snapshot contains Base64-encoded ZIP
-}
-```
-
-### YAML スナップショットのインポート
-
-```typescript
-import { importYamlNodesFromSnapshot } from '@hierarchidb/folder-plugin';
-
-const result = await importYamlNodesFromSnapshot(base64Snapshot, parentId);
-if (result.ok) {
-  console.log('Imported node IDs:', result.nodeIds);
-}
-```
+これらをcanonical IDE-GSM snapshot pathまたはStep 4 runtime dependencyとして使用してはならない。cutoverはCoreDB migration成功までblockedとし、その後の別Issueで全entry preflightとnode / parent更新を含むCoreDB単一transactionを実装する。[正規YAML storage契約](../../docs/yaml-plugin-ide-gsm-step4-spec.md)と[legacy YamlDB boundary](../../packages/yaml-store/README_ja.md)を参照する。
 
 ## ディレクトリ構成
 
@@ -250,24 +225,24 @@ src/
 
 ### 依存パッケージ
 
-- [`@hierarchidb/plugin-base`](../packages/plugin-base/) — プラグイン基盤（PluginManifest、PluginStepRegistry）
-- [`@hierarchidb/core-types`](../packages/core-types/) — NodeId、NodeType 等の共有型定義
-- [`@hierarchidb/tree-api`](../packages/tree-api/) — TreeNode 型定義
-- [`@hierarchidb/tag-api`](../packages/tag-api/) — TagId、TagSuggestion 型
-- [`@hierarchidb/yaml-api`](../packages/yaml-api/) — YAML ノード型定義
-- [`@hierarchidb/yaml-store`](../packages/yaml-store/) — YAML ノード作成 API
-- [`@hierarchidb/util`](../packages/util/) — generateId 等のユーティリティ
-- [`@hierarchidb/plugin-ui-sdk`](../packages/plugin-ui-sdk/) — プラグイン UI SDK
-- [`@hierarchidb/plugin-service-api`](../packages/plugin-service-api/) — プラグインサービス API
-- [`@hierarchidb/components`](../packages/components/) — 共有 UI コンポーネント（notify 等）
-- [`@hierarchidb/ui-dialog`](../packages/ui/dialog/) — ダイアログ基盤
-- [`@hierarchidb/ui-plugin-basic-info`](../packages/ui/plugin-basic-info/) — プラグイン基本情報ステップ
+- [`@hierarchidb/plugin-base`](../../packages/plugin-base/) — プラグイン基盤（PluginManifest、PluginStepRegistry）
+- [`@hierarchidb/core-types`](../../packages/core-types/) — NodeId、NodeType 等の共有型定義
+- [`@hierarchidb/tree-api`](../../packages/tree-api/) — TreeNode 型定義
+- [`@hierarchidb/tag-api`](../../packages/tag-api/) — TagId、TagSuggestion 型
+- [`@hierarchidb/yaml-api`](../../packages/yaml-api/) — YAML ノード型定義
+- [`@hierarchidb/yaml-store`](../../packages/yaml-store/) — Legacy YamlDB recovery boundary
+- [`@hierarchidb/util`](../../packages/util/) — generateId 等のユーティリティ
+- [`@hierarchidb/plugin-ui-sdk`](../../packages/plugin-ui-sdk/) — プラグイン UI SDK
+- [`@hierarchidb/plugin-service-api`](../../packages/plugin-service-api/) — プラグインサービス API
+- [`@hierarchidb/components`](../../packages/components/) — 共有 UI コンポーネント（notify 等）
+- [`@hierarchidb/ui-dialog`](../../packages/ui/dialog/) — ダイアログ基盤
+- [`@hierarchidb/ui-plugin-basic-info`](../../packages/ui/plugin-basic-info/) — プラグイン基本情報ステップ
 
 ### folder-plugin を継承するプラグイン
 
-- [`spreadsheet-plugin`](../plugins/spreadsheet-plugin/) — CSV/TSV/Excel ソース管理
-- [`styler-plugin`](../plugins/styler-plugin/) — スタイル定義・Map スタイル適用
-- [`linker-plugin`](../plugins/linker-plugin/) — プロジェクト領域管理
+- [`spreadsheet-plugin`](../spreadsheet-plugin/) — CSV/TSV/Excel ソース管理
+- [`styler-plugin`](../styler-plugin/) — スタイル定義・Map スタイル適用
+- [`linker-plugin`](../linker-plugin/) — プロジェクト領域管理
 
 ## ライセンス
 
