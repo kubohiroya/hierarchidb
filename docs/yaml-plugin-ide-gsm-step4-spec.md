@@ -329,6 +329,17 @@ already-canonical slotは毎回strict validationし、write対象へ追加しな
 
 ### Inverse rollback
 
+`@hierarchidb/yaml-api/inverse-migration`は、CoreDBへ接続しないpureかつdormantなinverse plan artifact専用subpathとする。package rootから再exportせず、CoreDB、Dexie、IndexedDB、YamlDB、worker、feature flag、writer、timer、random、environmentへ依存しない。公開APIは`planExactYamlCoreDbInverseMigration`と`planReleaseYamlCoreDbInverseMigration`の別関数・別input/output typeとし、generic mode、default、exactからreleaseへのfallbackを提供しない。
+
+- exact callerはnon-empty rollback IDとforward migration ID、`rollbackTargetVersion > currentCoreDbVersion`を満たすsafe integer version pair、全CoreDB YAML nodeのimmutable raw snapshot、対象forward migrationの全raw journal snapshot、forward plannerと同じSHA-256 digest port、literal `canonical-writer-never-published`を明示する。
+- release callerはnon-empty rollback ID、同じversion pair、全CoreDB YAML nodeのimmutable raw snapshot、literal `canonical-writer-published-or-unknown`を明示する。artifactはactivation phase、feature flag、runtime stateからpublication事実を推測しない。
+- top-level input、raw snapshot配列、raw node、raw journalはown data propertyだけをdescriptorで読む。missing、`undefined`、accessor、symbol/extra property、sparse/拡張array、non-plain record、Proxy reflection failure、duplicate node IDをfail-closedで拒否し、getterを実行しない。
+- success planは全candidateについて`sourceIndex`、`nodeId`、`expectedVersion`を決定的順序で保持する。exact planはさらにjournalの全fieldを複製したguardを保持し、migration ID、from/to version cohort、`nodeId + slot` compound key、node/slot存在、legacy nameとslot metadata nameの一致、canonical postimage digestの再計算一致を全件検証する。
+- exact planはjournal対象slotだけをlegacy化する。journal対象外のstrict canonical slot、temporary placeholder、metadata-only draftは検証済みno-opとし、変更対象へ昇格しない。release planはjournalを使わず、存在する全committed/draft slotをstrict canonical validationし、legacy、mixed、incomplete、unknown、metadata不一致を1件でも検出した場合は全体を失敗させる。
+- exactのlegacy `name`は検証済みjournal `legacyName`、releaseのlegacy `name`は対応するmetadata nameだけをsourceとする。両planとも`schemaId`と`content`をbyte-for-byteで維持し、canonical `subtype`だけを除去する。
+- resultはdeeply immutableなcomplete planまたはstable code/contextだけのsanitized errorsのいずれかとする。partial entries/guards、raw object、YAML本文、pre/postimage、parser/Ajv/Proxy message、credentialをerrorへ含めず、input/raw snapshotをmutate、normalize、serialize、log出力しない。
+- planは適用許可ではない。後続coordinatorはpublication requirementを実publication事実へ結び付け、planner inputと同じlifetimeでimmutable raw snapshotsを非公開保持する。より新しいCoreDB versionのversionchange transaction内で全node/journalをraw再読し、version、own slot presence/value、journal guardをsnapshotと完全比較してから、all-or-none writeを実行する。
+
 - canonical writer公開前のexact rollbackは、同じCoreDB upgrade transactionで保存したmigration journalに記録されたslotだけを対象にし、migration直前のlegacy preimageだけを復元する。canonical postimage digestを全件照合し、strict validation後にlegacy nameを戻す。already-canonicalだったslotとplaceholderを変更せず、exact rollbackを全canonical slotのlegacy化として扱わない。
 - canonical writer公開後のrelease rollbackは、すべてのYAML writerをfenceし、対象となる全CoreDB canonical slotをraw再読してstrict validationする。mixed、incomplete、unknown、metadata不一致を検出した場合はrollback全体を失敗させる。
 - どちらのrollbackもDB versionを下げず、より新しいCoreDB versionの単一versionchange transactionでstrict canonicalからlegacyへのmigrationとして実行する。対象canonical payloadから`subtype`を除去し、exact rollbackはjournalのlegacy name、release rollbackは対応metadata nameを`name`として設定する。`schemaId`と`content`は変更しない。
