@@ -234,6 +234,7 @@ export const useShapeBuildSession = ({ data, nodeId }: Args) => {
     buildStatus,
     taskListViewPhase,
   } = stageState;
+  const activeStageTiming = stageTimingByStage[runtime.activeStageId];
 
   const {
     completedStageElapsedMs,
@@ -261,10 +262,10 @@ export const useShapeBuildSession = ({ data, nodeId }: Args) => {
       inactiveMs: runtime.inactiveMs,
       completedAt: runtime.completedAt,
       heartbeatAt: runtime.heartbeatAt,
-      stageId: runtime.activeStageId,
-      stageStartedAt: stageTimingByStage[runtime.activeStageId]?.stageStartedAt,
-      stageInactiveMs: stageTimingByStage[runtime.activeStageId]?.stageInactiveMs,
-      stageCompletedAt: stageTimingByStage[runtime.activeStageId]?.stageCompletedAt,
+      stageId: activeStageTiming === null ? undefined : runtime.activeStageId,
+      stageStartedAt: activeStageTiming?.stageStartedAt,
+      stageInactiveMs: activeStageTiming?.stageInactiveMs,
+      stageCompletedAt: activeStageTiming?.stageCompletedAt,
     },
   });
 

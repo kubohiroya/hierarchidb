@@ -1,21 +1,22 @@
-import React from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { NodeId } from '@hierarchidb/core-types';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { Provider } from 'jotai';
 import { createStore, type Store } from 'jotai/vanilla';
-import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressTypes';
+import type React from 'react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { dispatchBuildSessionEventAtom } from '../../../atoms/buildSessionStateAtoms';
 import {
   taskScrollTargetAtom,
   taskViewportRangeByStageAtom,
 } from '../../../atoms/shapeBuildProgressAtomConstants';
-import { dispatchBuildSessionEventAtom } from '../../../atoms/buildSessionStateAtoms';
+import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressTypes';
+import { useShapeBuildSession } from '../../../components/build-progress/internal/useShapeBuildSessionLogic.impl';
 import { ShapeBuildProgressPanel } from '../../../components/build-progress/ShapeBuildProgressPanel/ShapeBuildProgressPanel';
 
 class ResizeObserverMock {
-  observe() { }
-  unobserve() { }
-  disconnect() { }
+  observe() {}
+  unobserve() {}
+  disconnect() {}
 }
 
 // @ts-expect-error test shim
@@ -71,41 +72,35 @@ vi.mock('@hierarchidb/ui-build-progress', async (importOriginal) => {
 let taskVersionCounter = 1;
 const TEST_SESSION_STARTED_AT = 1_000;
 const TEST_SESSION_COMPLETED_AT = 2_000;
+type TestStageId = 'source' | 'geometry' | 'tileEmit';
+type TestStageTiming = {
+  stageStartedAt: number;
+  stageInactiveMs: number;
+  stageCompletedAt?: number;
+};
 
 const nextTaskVersion = () => {
   taskVersionCounter += 1;
   return taskVersionCounter;
 };
 
-const setStageProgress = (
-  store: Store,
-  progressByStage: Partial<Record<'source' | 'geometry' | 'tileEmit', number>>,
-) => {
-  const stages: Array<'source' | 'geometry' | 'tileEmit'> = ['source', 'geometry', 'tileEmit'];
-  for (const stageId of stages) {
-    store.set(dispatchBuildSessionEventAtom, {
-      type: 'taskProgressUpdated',
-      payload: {
-        stageId,
-        value: progressByStage[stageId] ?? 0,
-      },
-    });
-  }
-};
-
 const setTasksByStage = (
   store: Store,
-  tasksByStage: Partial<Record<'source' | 'geometry' | 'tileEmit', ShapeBuildTaskSummary[]>>,
-  completedAtByStage: Partial<Record<'source' | 'geometry' | 'tileEmit', number>> = {}
+  tasksByStage: Partial<Record<TestStageId, ShapeBuildTaskSummary[]>>,
+  timingByStage: Partial<Record<TestStageId, TestStageTiming>> = {}
 ) => {
   const stageEntries = Object.entries(tasksByStage) as Array<
-    ['source' | 'geometry' | 'tileEmit', ShapeBuildTaskSummary[] | undefined]
+    [TestStageId, ShapeBuildTaskSummary[] | undefined]
   >;
   for (const [stageId, stageTasks] of stageEntries) {
     if (!stageTasks) {
       throw new Error(`Test fixture requires an explicit task snapshot for stage ${stageId}.`);
     }
     const version = nextTaskVersion();
+    const timing = timingByStage[stageId] ?? {
+      stageStartedAt: TEST_SESSION_STARTED_AT + version,
+      stageInactiveMs: 0,
+    };
     store.set(dispatchBuildSessionEventAtom, {
       type: 'stageSnapshotUpdated',
       payload: {
@@ -116,9 +111,16 @@ const setTasksByStage = (
           version: task.version ?? version + index,
           sequence: task.sequence ?? index,
         })),
-        stageStartedAt: TEST_SESSION_STARTED_AT + version,
-        stageInactiveMs: 0,
-        stageCompletedAt: completedAtByStage[stageId],
+        stageStartedAt: timing.stageStartedAt,
+        stageInactiveMs: timing.stageInactiveMs,
+        stageCompletedAt: timing.stageCompletedAt,
+      },
+    });
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'uiSyncPhaseChanged',
+      payload: {
+        stageId,
+        phase: 'running',
       },
     });
   }
@@ -126,15 +128,24 @@ const setTasksByStage = (
 
 const setSessionPhase = (
   store: Store,
-  phase: 'idle' | 'starting' | 'running' | 'pausing' | 'paused' | 'resuming' | 'finalizing' | 'completed' | 'failed',
+  phase:
+    | 'idle'
+    | 'starting'
+    | 'running'
+    | 'pausing'
+    | 'paused'
+    | 'resuming'
+    | 'finalizing'
+    | 'completed'
+    | 'failed',
+  stageId?: TestStageId
 ) => {
-  const isActive = (
-    phase === 'starting'
-    || phase === 'running'
-    || phase === 'pausing'
-    || phase === 'resuming'
-    || phase === 'finalizing'
-  );
+  const isActive =
+    phase === 'starting' ||
+    phase === 'running' ||
+    phase === 'pausing' ||
+    phase === 'resuming' ||
+    phase === 'finalizing';
   const hasStarted = phase !== 'idle' && phase !== 'starting';
   const isTerminal = phase === 'completed' || phase === 'failed';
   store.set(dispatchBuildSessionEventAtom, {
@@ -152,24 +163,42 @@ const setSessionPhase = (
       ...(isTerminal ? { completedAt: TEST_SESSION_COMPLETED_AT } : {}),
     },
   });
+  if (stageId !== undefined) {
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'viewSelectionChanged',
+      payload: { activeStageId: stageId },
+    });
+  }
 };
 
 const makeStore = () => {
   const store = createStore();
-  setStageProgress(store, { source: 100, geometry: 50, tileEmit: 0 });
   setSessionPhase(store, 'idle');
-  setTasksByStage(store, { source: [] }, { source: TEST_SESSION_COMPLETED_AT });
   return store;
 };
 
-const renderPanel = (store: Store) => render(
-  <Provider store={store}>
-    <ShapeBuildProgressPanel data={{}} nodeId={'node-1' as NodeId} />
-  </Provider>,
-);
+const renderPanel = (store: Store) =>
+  render(
+    <Provider store={store}>
+      <ShapeBuildProgressPanel data={{}} nodeId={'node-1' as NodeId} />
+    </Provider>
+  );
+
+const SessionElapsedProbe = () => {
+  const session = useShapeBuildSession({ data: {}, nodeId: 'node-1' as NodeId });
+  return <span data-testid="stage-elapsed-ms">{session.stageElapsedMs}</span>;
+};
+
+const renderSessionElapsedProbe = (store: Store) =>
+  render(
+    <Provider store={store}>
+      <SessionElapsedProbe />
+    </Provider>
+  );
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
 });
 
 describe('ShapeBuildProgressPanel (state-tree)', () => {
@@ -195,8 +224,18 @@ describe('ShapeBuildProgressPanel (state-tree)', () => {
         },
       },
     } as ShapeBuildTaskSummary;
-    setTasksByStage(store, { geometry: [failedTask] }, { geometry: TEST_SESSION_COMPLETED_AT });
-    setSessionPhase(store, 'failed');
+    setTasksByStage(
+      store,
+      { geometry: [failedTask] },
+      {
+        geometry: {
+          stageStartedAt: TEST_SESSION_STARTED_AT,
+          stageInactiveMs: 0,
+          stageCompletedAt: TEST_SESSION_COMPLETED_AT,
+        },
+      }
+    );
+    setSessionPhase(store, 'failed', 'geometry');
 
     const view = renderPanel(store);
 
@@ -208,7 +247,7 @@ describe('ShapeBuildProgressPanel (state-tree)', () => {
 
   it('shows task skeleton while awaiting first snapshot in running state', async () => {
     const store = makeStore();
-    setSessionPhase(store, 'running');
+    setSessionPhase(store, 'running', 'source');
 
     renderPanel(store);
 
@@ -219,6 +258,28 @@ describe('ShapeBuildProgressPanel (state-tree)', () => {
     const skeletons = document.querySelectorAll('.MuiSkeleton-root');
     expect(skeletons.length).toBeGreaterThan(0);
     expect(screen.queryByText('No tasks yet.')).toBeNull();
+  });
+
+  it('calculates elapsed time from the authoritative stage snapshot timing', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(10_000);
+    const store = makeStore();
+    setSessionPhase(store, 'running', 'source');
+    setTasksByStage(
+      store,
+      { source: [] },
+      {
+        source: {
+          stageStartedAt: 4_000,
+          stageInactiveMs: 1_000,
+        },
+      }
+    );
+
+    renderSessionElapsedProbe(store);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('stage-elapsed-ms').textContent).toBe('5000');
+    });
   });
 
   it('does not show task skeleton while idle before start is requested', async () => {
@@ -256,7 +317,7 @@ describe('ShapeBuildProgressPanel (state-tree)', () => {
       progress: 0,
       message: 'Queued',
     } as ShapeBuildTaskSummary;
-    setSessionPhase(store, 'running');
+    setSessionPhase(store, 'running', 'source');
     setTasksByStage(store, { source: [runningTask, queuedTask] });
     store.set(taskViewportRangeByStageAtom, {
       source: {
@@ -326,7 +387,7 @@ describe('ShapeBuildProgressPanel (state-tree)', () => {
         },
       },
     } as ShapeBuildTaskSummary;
-    setSessionPhase(store, 'running');
+    setSessionPhase(store, 'running', 'geometry');
     setTasksByStage(store, { geometry: [runningTop, queuedBottom] });
     store.set(taskScrollTargetAtom, {
       stageId: 'geometry',
@@ -350,8 +411,12 @@ describe('ShapeBuildProgressPanel (state-tree)', () => {
     await local.findByRole('group', { name: 'Build control buttons' });
 
     await waitFor(() => {
-      expect(local.queryByRole('button', { name: 'Scroll up to running or queued task' })).toBeNull();
-      expect(local.queryByRole('button', { name: 'Scroll down to running or queued task' })).toBeNull();
+      expect(
+        local.queryByRole('button', { name: 'Scroll up to running or queued task' })
+      ).toBeNull();
+      expect(
+        local.queryByRole('button', { name: 'Scroll down to running or queued task' })
+      ).toBeNull();
     });
   });
 });

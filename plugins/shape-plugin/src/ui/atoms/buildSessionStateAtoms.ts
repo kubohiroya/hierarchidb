@@ -384,13 +384,6 @@ const applyBuildSessionEventAtom = atom(
       }
 
       case 'uiSyncPhaseChanged': {
-        const stateEvent: ShapeStateEvent = {
-          type: 'viewSelectionChanged',
-          payload: {
-            activeStageId: event.payload.stageId,
-          },
-        };
-        set(shapeSessionAtoms.dispatchBuildSessionEventAtom, stateEvent);
         set(uiSyncPhaseByStageAtom, (current) => ({
           ...current,
           [event.payload.stageId]: event.payload.phase,
