@@ -8,7 +8,9 @@ HierarchiDB のシミュレーションワークフローパッケージ。IDE-G
 
 productionの`SimulationWorkflow.runSimulation` pathは現行folder-pluginのlegacy YAML serializerを直接呼び出し、package testはその現行動作をcoverしている。このpackageはYAML storage authorityまたはStep 4 executorではない。legacy serializerはnon-canonicalであり、Step 4 snapshot pathとして公開してはならない。
 
-CoreDB migration、canonical dialog writer、canonical folder ZIP cutoverが完了した後、別Issueでこのconsumerを更新・検証してからnon-SSH integrationへ進む。[正規YAML storage契約](../../docs/yaml-plugin-ide-gsm-step4-spec.md)と[folder legacy boundary](../../plugins/folder-plugin/README_ja.md#legacy-yaml-snapshot-boundary)を参照する。
+dormant canonical folder ZIP APIのmerge後、single activation変更より前に、別Issueでdormant canonical SimulationWorkflow consumerを実装・testする。そのconsumerはproductionから到達不能な状態を維持し、現行`runSimulation` routingは変更しない。このpre-activation regressionではdormant canonical dependencyだけを検証する。
+
+single activation変更の開始時にlegacy SimulationWorkflow routeをfenceし、dormant canonical consumerは非公開のままにする。production routingがcanonical consumerを公開できるのは、CoreDB migrationのcommitとCoreDB initializationがともに成功した後だけである。migrationがblockedまたは失敗した場合はどちらのrouteも公開せず、legacy serializerへfallbackしない。non-SSH integrationへ進む前に、別のpost-activation regressionでproduction routeを検証する。[正規YAML storage契約](../../docs/yaml-plugin-ide-gsm-step4-spec.md)と[folder legacy boundary](../../plugins/folder-plugin/README_ja.md#legacy-yaml-snapshot-boundary)を参照する。
 
 ## 依存関係
 
