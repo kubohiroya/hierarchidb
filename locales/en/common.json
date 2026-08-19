@@ -79,16 +79,25 @@
     }
   },
   "dialogs": {
+    "common": {
+      "actions": {
+        "close": "Close dialog"
+      },
+      "displayMode": {
+        "ariaLabel": "Display mode",
+        "normal": "Normal (windowed)",
+        "maximize": "Maximize",
+        "restore": "Restore",
+        "fullScreen": "Full screen",
+        "exitFullScreen": "Exit full screen"
+      }
+    },
     "archive": {
       "modeMenu": {
         "ariaLabel": "Display mode",
         "normal": "Normal (windowed)",
         "maximize": "Maximize (browser window)",
         "fullScreen": "Full-screen (system)"
-      },
-      "actions": {
-        "close": "Close dialog",
-        "exitFullscreen": "Exit full screen"
       },
       "title": {
         "empty": "Delete Items",
@@ -152,7 +161,9 @@
           "maximize": "Maximize",
           "restoreSize": "Restore",
           "fullscreen": "Full screen",
-          "exitFullscreen": "Exit full screen"
+          "exitFullscreen": "Exit full screen",
+          "minimize": "Minimize",
+          "restoreMinimized": "Restore"
         },
         "tooltips": {
           "saveDraftDisabled": "No changes to save",
@@ -160,7 +171,14 @@
           "maximize": "Maximize",
           "restoreSize": "Restore",
           "fullscreen": "Full screen",
-          "exitFullscreen": "Exit full screen"
+          "exitFullscreen": "Exit full screen",
+          "minimize": "Minimize",
+          "restoreMinimized": "Restore"
+        },
+        "contextMenu": {
+          "openInNewTab": "Open In New Tab",
+          "openInNewWindow": "Open In New Window",
+          "copyLinkUrl": "Copy Link URL"
         }
       }
     },
@@ -168,6 +186,19 @@
       "titles": {
         "create": "Create {{plugin}}",
         "edit": "Edit {{plugin}}"
+      },
+      "buttons": {
+        "minimize": "Minimize",
+        "restoreMinimized": "Restore"
+      },
+      "tooltips": {
+        "maximize": "Maximize",
+        "restoreSize": "Restore",
+        "fullscreen": "Full screen",
+        "exitFullscreen": "Exit full screen",
+        "minimize": "Minimize",
+        "restoreMinimized": "Restore",
+        "close": "Close dialog"
       }
     }
   },
@@ -473,6 +504,46 @@
     "hidden": "Hidden",
     "checkReference": "Check reference",
     "preview": "Preview"
+  },
+  "stage": {
+    "timing": {
+      "inlineDuration": "{{hours}}h {{minutes}}m {{seconds}}s",
+      "elapsedRemaining": "Elapsed {{elapsed}} ・ Est. remaining {{remaining}}"
+    }
+  },
+  "buildControl": {
+    "buttons": {
+      "startBuild": "Start Build",
+      "resumeBuild": "Resume Build",
+      "pause": "Pause",
+      "cancel": "Cancel",
+      "resetDelete": "Reset/Delete",
+      "resetDeleteMenu": "Reset/Delete menu"
+    },
+    "status": {
+      "running": "Build in progress",
+      "paused": "Build paused",
+      "completed": "Build completed",
+      "failed": "Build failed",
+      "ready": "Ready to start build"
+    }
+  },
+  "common": {
+    "basicInfo": {
+      "title": "Info",
+      "subtitle": "Enter a name and optional description.",
+      "name": {
+        "label": "Name",
+        "helper": "Enter a descriptive name",
+        "required": "Name is required",
+        "placeholder": "Enter name"
+      },
+      "description": {
+        "label": "Description",
+        "helper": "Describe the purpose or contents (optional)",
+        "placeholder": "Enter description (optional)"
+      }
+    }
   },
   "buildSessionQueue": {
     "empty": "No running or queued build sessions found",

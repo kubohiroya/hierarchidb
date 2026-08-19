@@ -1,0 +1,1 @@
+import"./vendor-react-348d4Zyy.js";import{vi as e}from"./index.js";const t=e;var n=t;export{t as TimelinePluginIcon,n as default};

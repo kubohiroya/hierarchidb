@@ -1,0 +1,1 @@
+import"./vendor-react-348d4Zyy.js";import{Zr as e}from"./index.js";const t=e;var n=t;export{t as LocationPluginIcon,n as default};

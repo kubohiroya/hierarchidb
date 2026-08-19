@@ -79,16 +79,25 @@
     }
   },
   "dialogs": {
+    "common": {
+      "actions": {
+        "close": "ダイアログを閉じる"
+      },
+      "displayMode": {
+        "ariaLabel": "表示モード",
+        "normal": "通常（ウィンドウ）",
+        "maximize": "最大化",
+        "restore": "元に戻す",
+        "fullScreen": "全画面",
+        "exitFullScreen": "全画面を終了"
+      }
+    },
     "archive": {
       "modeMenu": {
         "ariaLabel": "表示モード",
         "normal": "Normal（通常）",
         "maximize": "Maximize（最大）",
         "fullScreen": "Full-screen（全画面）"
-      },
-      "actions": {
-        "close": "ダイアログを閉じる",
-        "exitFullscreen": "全画面を終了"
       },
       "title": {
         "empty": "アーカイブから削除する",
@@ -152,7 +161,9 @@
           "maximize": "最大化",
           "restoreSize": "元に戻す",
           "fullscreen": "全画面",
-          "exitFullscreen": "全画面を終了"
+          "exitFullscreen": "全画面を終了",
+          "minimize": "最小化",
+          "restoreMinimized": "元に戻す"
         },
         "tooltips": {
           "saveDraftDisabled": "変更がないため保存できません",
@@ -160,7 +171,14 @@
           "maximize": "最大化",
           "restoreSize": "元に戻す",
           "fullscreen": "全画面",
-          "exitFullscreen": "全画面を終了"
+          "exitFullscreen": "全画面を終了",
+          "minimize": "最小化",
+          "restoreMinimized": "元に戻す"
+        },
+        "contextMenu": {
+          "openInNewTab": "新しいタブで開く",
+          "openInNewWindow": "新しいウィンドウで開く",
+          "copyLinkUrl": "リンクURLをコピー"
         }
       }
     },
@@ -168,6 +186,19 @@
       "titles": {
         "create": "{{plugin}}の作成",
         "edit": "{{plugin}}の編集"
+      },
+      "buttons": {
+        "minimize": "最小化",
+        "restoreMinimized": "元に戻す"
+      },
+      "tooltips": {
+        "maximize": "最大化",
+        "restoreSize": "元に戻す",
+        "fullscreen": "全画面",
+        "exitFullscreen": "全画面を終了",
+        "minimize": "最小化",
+        "restoreMinimized": "元に戻す",
+        "close": "ダイアログを閉じる"
       }
     }
   },
@@ -452,6 +483,46 @@
       "default": "列"
     },
     "emptyCell": "-"
+  },
+  "stage": {
+    "timing": {
+      "inlineDuration": "{{hours}}時間{{minutes}}分{{seconds}}秒",
+      "elapsedRemaining": "経過時間 {{elapsed}} ・ 推計残り {{remaining}}"
+    }
+  },
+  "buildControl": {
+    "buttons": {
+      "startBuild": "ビルド開始",
+      "resumeBuild": "ビルド再開",
+      "pause": "一時停止",
+      "cancel": "キャンセル",
+      "resetDelete": "リセット/削除",
+      "resetDeleteMenu": "リセット/削除メニュー"
+    },
+    "status": {
+      "running": "ビルド処理中",
+      "paused": "ビルド一時停止中",
+      "completed": "ビルド完了",
+      "failed": "ビルド失敗",
+      "ready": "ビルドを開始する準備ができています"
+    }
+  },
+  "common": {
+    "basicInfo": {
+      "title": "基本情報",
+      "subtitle": "名前と説明（任意）を入力してください。",
+      "name": {
+        "label": "名前",
+        "helper": "わかりやすい名前を入力してください",
+        "required": "名前は必須です",
+        "placeholder": "名前を入力"
+      },
+      "description": {
+        "label": "説明",
+        "helper": "目的や内容を説明してください（任意）",
+        "placeholder": "説明を入力（任意）"
+      }
+    }
   },
   "buildSessionQueue": {
     "empty": "実行中または待機中のセッションが見つかりません",

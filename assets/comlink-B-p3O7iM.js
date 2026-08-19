@@ -1,1 +1,0 @@
-import{at as e,ct as t,et as n,it as r,lt as i,nt as a,ot as o,rt as s,st as c,tt as l}from"../shared-worker.js";export{n as createEndpoint,l as expose,a as finalizer,s as proxy,r as proxyMarker,e as releaseProxy,o as transfer,c as transferHandlers,t as windowEndpoint,i as wrap};
