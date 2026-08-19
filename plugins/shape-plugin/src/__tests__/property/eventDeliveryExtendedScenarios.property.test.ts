@@ -6,10 +6,8 @@
  *   Property 26: performance under load (UIEventBufferManager)
  *   Property 27: edge cases and invalid data
  *
- * Design note: UIEventBufferManager uses FIFO queues for all event types.
- * There is no version gating -- per build-session-worker-ui-event-spec.md:
- * "eventVersion fields are not used. All events are applied unconditionally
- * in FIFO order per channel."
+ * Design note: UIEventBufferManager uses FIFO queues for session-state and
+ * stage-snapshot events, and per-taskId version gating for task-progress events.
  */
 
 import { describe, it, expect, afterEach } from 'vitest';
@@ -265,8 +263,8 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
 
                         // Monotonically increasing versions — all must be accepted
                         for (let i = 1; i <= eventCount; i++) {
-                            const result = mgr.applyTaskProgress('task-1', i, { value: 50 });
-                            if (result !== undefined) accepted++;
+                            const result = mgr.applyTaskProgress('task-1', i);
+                            if (result) accepted++;
                         }
 
                         expect(accepted).toBe(eventCount);
@@ -350,17 +348,15 @@ describe('Property 24-27: Extended Event Delivery Scenarios', () => {
             );
         });
 
-        it('task-progress applyTaskProgress with any payload does not throw', () => {
+        it('task-progress accepts the first version for independent task IDs', () => {
             fc.assert(
                 fc.property(
                     fc.integer({ min: 1, max: 20 }),
                     (count) => {
                         const mgr = new UIEventBufferManager();
-                        expect(() => {
-                            for (let i = 1; i <= count; i++) {
-                                mgr.applyTaskProgress(`task-${i}`, 1, { value: 50 });
-                            }
-                        }).not.toThrow();
+                        for (let i = 1; i <= count; i++) {
+                            expect(mgr.applyTaskProgress(`task-${i}`, 1)).toBe(true);
+                        }
                     },
                 ),
                 { numRuns: PROPERTY_TEST_RUNS },

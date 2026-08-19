@@ -112,8 +112,8 @@ describe("Property: UIEventBufferManager accuracy", () => {
                         const mgr = new UIEventBufferManager();
                         let accepted = 0;
                         for (let i = 1; i <= count; i++) {
-                            const result = mgr.applyTaskProgress('task-1', i, { value: i });
-                            if (result !== undefined) accepted++;
+                            const result = mgr.applyTaskProgress('task-1', i);
+                            if (result) accepted++;
                         }
                         expect(accepted).toBe(count);
                     },
@@ -129,12 +129,12 @@ describe("Property: UIEventBufferManager accuracy", () => {
                     (highVersion) => {
                         const mgr = new UIEventBufferManager();
                         // Accept high version first
-                        mgr.applyTaskProgress('task-1', highVersion, { value: highVersion });
+                        mgr.applyTaskProgress('task-1', highVersion);
                         // All lower versions must be dropped
                         let dropped = 0;
                         for (let v = 1; v < highVersion; v++) {
-                            const result = mgr.applyTaskProgress('task-1', v, { value: v });
-                            if (result === undefined) dropped++;
+                            const result = mgr.applyTaskProgress('task-1', v);
+                            if (!result) dropped++;
                         }
                         expect(dropped).toBe(highVersion - 1);
                     },
@@ -171,11 +171,11 @@ describe("Property: UIEventBufferManager accuracy", () => {
                     fc.integer({ min: 5, max: 20 }),
                     (highVersion) => {
                         const mgr = new UIEventBufferManager();
-                        mgr.applyTaskProgress('task-1', highVersion, { value: highVersion });
+                        mgr.applyTaskProgress('task-1', highVersion);
                         mgr.reset();
                         // After reset, version 1 must be accepted again
-                        const result = mgr.applyTaskProgress('task-1', 1, { value: 1 });
-                        expect(result).toBeDefined();
+                        const result = mgr.applyTaskProgress('task-1', 1);
+                        expect(result).toBe(true);
                     },
                 ),
                 { numRuns: PROPERTY_TEST_RUNS },

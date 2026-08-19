@@ -289,7 +289,15 @@ The `BuildSessionWorkerEventAdapter` translates raw Worker wire events into the 
 3. Mapping Worker-side status strings to `SessionPhase` — unknown values throw.
 4. Splitting a multi-stage task snapshot into per-stage `stageSnapshotUpdated` events.
 
-The adapter does **not** perform deduplication or version gating. That responsibility is removed. `eventVersion` fields are not used; each event stream is applied unconditionally in FIFO order.
+The state adapter itself does **not** store versions or perform deduplication. Before a
+`taskProgressUpdated` event reaches the adapter, the UI delivery layer applies the
+per-`taskId` version gate defined above through `UIEventBufferManager`. Accepted events
+are then mapped into state; `taskId` and `version` are delivery metadata and are not
+stored in the state tree.
+
+`sessionStatusUpdated` and `stageSnapshotUpdated` are applied unconditionally in FIFO
+arrival order. `heartbeat` is applied immediately. No global or cross-stream version
+counter is used.
 
 ---
 

@@ -43,7 +43,8 @@ tasks for that stage have been removed.
 ### 2. `taskProgressUpdated`
 
 **Concept**: Progress value for a single task, emitted by a parallel worker. Sent
-frequently; must not carry any information beyond the progress value itself.
+frequently; it carries task identity and per-task ordering metadata alongside the
+progress value, but does not carry lifecycle state.
 
 **Replaces**: `progressReceived`
 
@@ -51,10 +52,17 @@ frequently; must not carry any information beyond the progress value itself.
 
 | Field | Type | Description |
 |---|---|---|
+| `taskId` | `string` | Task whose progress is being reported |
+| `version` | `number` | Monotonically increasing version scoped to `taskId` |
 | `stageId` | `StageId` | Stage the task belongs to |
 | `value` | `number` | Progress 0–100 (finite; outside range is a contract violation) |
 | `message` | `string \| undefined` | Optional human-readable label |
 | `metadata` | `Record<string, unknown> \| undefined` | Optional opaque metadata |
+
+The UI delivery layer accepts an event only when its `version` is greater than the
+last accepted version for the same `taskId`. Events with an equal or lower version are
+dropped. The state adapter receives only accepted events and does not retain `taskId`
+or `version` in the state tree.
 
 **Note**: `phase` is intentionally absent. It was erroneously included in the original design. Session phase is managed exclusively by `sessionStatusUpdated`.
 
@@ -194,11 +202,15 @@ remaining-count numerator because no processing time was spent on them.
 
 ## Event Version Ordering
 
-`eventVersion` fields are **not used**. All events are applied unconditionally in FIFO order per channel. The adapter does not perform deduplication or version gating.
+There is no global or cross-stream `eventVersion` counter.
 
-`heartbeat` is always applied unconditionally.
+`taskProgressUpdated` uses `version` only as a per-`taskId` ordering key in the UI
+delivery layer. An event is accepted when its version is greater than the last accepted
+version for that task; equal or lower versions are dropped. This gate runs before
+`BuildSessionWorkerEventAdapter`, so the adapter itself stores no version state.
 
-`lastAcceptedEventVersion` is removed from the top-level `meta` object. Version tracking is not part of the design.
+`sessionStatusUpdated` and `stageSnapshotUpdated` are applied unconditionally in FIFO
+arrival order. `heartbeat` is applied immediately on receipt.
 
 ---
 
