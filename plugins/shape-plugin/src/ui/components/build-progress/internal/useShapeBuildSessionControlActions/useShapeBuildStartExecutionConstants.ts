@@ -1,6 +1,9 @@
 import type { BuildSessionStatus } from '@hierarchidb/build-api';
-import type { StartExecutionArgs } from './types.js';
-import { getErrorMessage, summarizeSelectedEntries } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/errorConstants';
+import type { ShapeBuildSessionPatch, StartExecutionArgs } from './types.js';
+import {
+  getErrorMessage,
+  summarizeSelectedEntries,
+} from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/errorConstants';
 import { SHAPE_NODE_TYPE } from '~/ui/components/build-progress/shapeBuildTaskSyncDebug';
 
 type BaseRequestContext = Pick<
@@ -24,6 +27,7 @@ type StartSessionRequestContext = BaseRequestContext & {
 
 type StartSessionResponse = {
   status: BuildSessionStatus['status'];
+  completedAt?: BuildSessionStatus['completedAt'];
   error?: BuildSessionStatus['error'];
 };
 
@@ -31,6 +35,36 @@ type StartSessionResult = {
   statusResult: StartSessionResponse;
   selectionSummary: ReturnType<typeof summarizeSelectedEntries>;
   resolvedDataSource: string | null | undefined;
+};
+
+export const toPersistedStartStatusPatch = (
+  status: StartSessionResponse['status'],
+  completedAt: number | undefined
+): ShapeBuildSessionPatch => {
+  if (status === 'completed' || status === 'failed') {
+    if (typeof completedAt !== 'number' || !Number.isFinite(completedAt) || completedAt < 0) {
+      throw new Error(`[startExecution] completedAt is required for terminal status ${status}`);
+    }
+    return {
+      status,
+      stopReason: status,
+      canResume: false,
+      completedAt,
+    };
+  }
+  if (status === 'running') {
+    return {
+      status,
+      canResume: false,
+    };
+  }
+  if (status === 'paused') {
+    return {
+      status,
+      canResume: true,
+    };
+  }
+  throw new Error(`[startExecution] unsupported start response status: ${status}`);
 };
 
 export const onTraceFailure = (

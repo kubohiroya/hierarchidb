@@ -12,27 +12,24 @@ import type { NodeId } from '@hierarchidb/core-types';
 describe('getSessionWithDetails', () => {
   const mockNodeId = 'test-node-id' as NodeId;
 
-  it('should return null when config is missing', async () => {
-    const result = await getSessionWithDetails(mockNodeId, {
-      getConfig: async () => undefined,
-      getHeartbeat: async () => undefined,
-      getStatus: async () => ({
-        nodeId: mockNodeId,
-        status: 'running',
-      }),
-      getStageStatuses: async () => [],
-      getTasks: async () => [],
-    });
-
-    expect(result).toBeNull();
+  it('should reject a normalized session with a missing config row', async () => {
+    await expect(
+      getSessionWithDetails(mockNodeId, {
+        getConfig: async () => undefined,
+        getHeartbeat: async () => undefined,
+        getStatus: async () => ({
+          nodeId: mockNodeId,
+          status: 'running',
+        }),
+        getStageStatuses: async () => [],
+        getTasks: async () => [],
+      })
+    ).rejects.toThrow('normalized session is incomplete');
   });
 
-  it('should return null when status is missing', async () => {
+  it('should return null when both required session rows are absent', async () => {
     const result = await getSessionWithDetails(mockNodeId, {
-      getConfig: async () => ({
-        nodeId: mockNodeId,
-        startedAt: Date.now(),
-      }),
+      getConfig: async () => undefined,
       getHeartbeat: async () => undefined,
       getStatus: async () => undefined,
       getStageStatuses: async () => [],
@@ -40,6 +37,51 @@ describe('getSessionWithDetails', () => {
     });
 
     expect(result).toBeNull();
+  });
+
+  it('should reject an orphan heartbeat without required session rows', async () => {
+    await expect(getSessionWithDetails(mockNodeId, {
+      getConfig: async () => undefined,
+      getHeartbeat: async () => ({
+        nodeId: mockNodeId,
+        lastHeartbeatAt: 1_000,
+      }),
+      getStatus: async () => undefined,
+      getStageStatuses: async () => [],
+      getTasks: async () => [],
+    })).rejects.toThrow('normalized session has orphan rows');
+  });
+
+  it('should reject an orphan stage without required session rows', async () => {
+    await expect(getSessionWithDetails(mockNodeId, {
+      getConfig: async () => undefined,
+      getHeartbeat: async () => undefined,
+      getStatus: async () => undefined,
+      getStageStatuses: async () => [{
+        id: `${mockNodeId}:source`,
+        nodeId: mockNodeId,
+        stage: 'source',
+        status: 'running',
+        startedAt: 1_000,
+        inactiveMs: 0,
+      }],
+      getTasks: async () => [],
+    })).rejects.toThrow('normalized session has orphan rows');
+  });
+
+  it('should reject a normalized session with a missing status row', async () => {
+    await expect(
+      getSessionWithDetails(mockNodeId, {
+        getConfig: async () => ({
+          nodeId: mockNodeId,
+          startedAt: Date.now(),
+        }),
+        getHeartbeat: async () => undefined,
+        getStatus: async () => undefined,
+        getStageStatuses: async () => [],
+        getTasks: async () => [],
+      })
+    ).rejects.toThrow('normalized session is incomplete');
   });
 
   it('should return unified record with minimal data', async () => {
@@ -82,7 +124,10 @@ describe('getSessionWithDetails', () => {
       selectedArrayByCountries: undefined,
       selectedArrayVersion: undefined,
       startedAt,
+      updatedAt: startedAt,
       completedAt: undefined,
+      inactiveMs: undefined,
+      canResume: undefined,
       lastHeartbeatAt: undefined,
       stageStartedAt: undefined,
       stageInactiveMs: undefined,
@@ -116,6 +161,8 @@ describe('getSessionWithDetails', () => {
       status: 'completed',
       stopReason: 'completed',
       completedAt,
+      inactiveMs: 50,
+      canResume: false,
     };
 
     const stageStatuses: BuildStageStatus[] = [
@@ -126,6 +173,7 @@ describe('getSessionWithDetails', () => {
         status: 'completed',
         startedAt: stageStartedAt,
         completedAt: stageStartedAt + 1000,
+        inactiveMs: 0,
       },
       {
         id: `${mockNodeId}:geometry`,
@@ -192,11 +240,14 @@ describe('getSessionWithDetails', () => {
       selectedArrayByCountries: { US: [true, false, true] },
       selectedArrayVersion: 'v1.0',
       startedAt,
+      updatedAt: completedAt,
       completedAt,
+      inactiveMs: 50,
+      canResume: false,
       lastHeartbeatAt,
       stageStartedAt: stageStartedAt + 1000, // Latest stage's startedAt
       stageInactiveMs: 100,
-      stageId: 'stage-123',
+      stageId: 'geometry',
       sourceStageMaxima: { featureMax: 1000, polygonMax: 500 },
     });
   });
@@ -305,6 +356,7 @@ describe('getSessionWithDetails', () => {
         status: 'completed',
         startedAt: 1000,
         completedAt: 2000,
+        inactiveMs: 0,
       },
       {
         id: `${mockNodeId}:geometry`,
@@ -313,6 +365,7 @@ describe('getSessionWithDetails', () => {
         status: 'completed',
         startedAt: 2000,
         completedAt: 3000,
+        inactiveMs: 0,
       },
       {
         id: `${mockNodeId}:tileEmit`,
@@ -320,6 +373,7 @@ describe('getSessionWithDetails', () => {
         stage: 'tileEmit',
         status: 'running',
         startedAt: 3000,
+        inactiveMs: 0,
       },
     ];
 
@@ -335,15 +389,54 @@ describe('getSessionWithDetails', () => {
     expect(result?.stageStartedAt).toBe(3000);
   });
 
-  it('should handle stage with failed tasks', async () => {
+  it('should reject ambiguous latest stage timestamps', async () => {
     const config: BuildSessionRecord = {
       nodeId: mockNodeId,
-      startedAt: Date.now(),
+      startedAt: 1_000,
+    };
+    const status: BuildSessionStatus = {
+      nodeId: mockNodeId,
+      status: 'running',
+    };
+    const stageStatuses: BuildStageStatus[] = [
+      {
+        id: `${mockNodeId}:source`,
+        nodeId: mockNodeId,
+        stage: 'source',
+        status: 'running',
+        startedAt: 2_000,
+        inactiveMs: 0,
+      },
+      {
+        id: `${mockNodeId}:geometry`,
+        nodeId: mockNodeId,
+        stage: 'geometry',
+        status: 'running',
+        startedAt: 2_000,
+        inactiveMs: 0,
+      },
+    ];
+
+    await expect(getSessionWithDetails(mockNodeId, {
+      getConfig: async () => config,
+      getHeartbeat: async () => undefined,
+      getStatus: async () => status,
+      getStageStatuses: async () => stageStatuses,
+      getTasks: async () => [],
+    })).rejects.toThrow('normalized session has ambiguous current stage');
+  });
+
+  it('should handle stage with failed tasks', async () => {
+    const startedAt = Date.now();
+    const config: BuildSessionRecord = {
+      nodeId: mockNodeId,
+      startedAt,
     };
     const status: BuildSessionStatus = {
       nodeId: mockNodeId,
       status: 'failed',
       stopReason: 'failed',
+      completedAt: startedAt,
     };
 
     const tasks: EphemeralBuildTaskRecord[] = [
@@ -367,5 +460,61 @@ describe('getSessionWithDetails', () => {
       tasksCompleted: 1,
       tasksFailed: 2,
     });
+  });
+
+  it('should reject invalid session and stage timing', async () => {
+    const config: BuildSessionRecord = {
+      nodeId: mockNodeId,
+      startedAt: 1_000,
+    };
+    const query = {
+      getConfig: async () => config,
+      getHeartbeat: async () => undefined,
+      getTasks: async () => [],
+    };
+
+    await expect(
+      getSessionWithDetails(mockNodeId, {
+        ...query,
+        getStatus: async () => ({
+          nodeId: mockNodeId,
+          status: 'failed' as const,
+        }),
+        getStageStatuses: async () => [],
+      })
+    ).rejects.toThrow('status.completedAt is required for terminal status failed');
+
+    await expect(
+      getSessionWithDetails(mockNodeId, {
+        ...query,
+        getStatus: async () => ({
+          nodeId: mockNodeId,
+          status: 'running' as const,
+          inactiveMs: -1,
+        }),
+        getStageStatuses: async () => [],
+      })
+    ).rejects.toThrow('status.inactiveMs must be a finite non-negative number');
+
+    await expect(
+      getSessionWithDetails(mockNodeId, {
+        ...query,
+        getStatus: async () => ({
+          nodeId: mockNodeId,
+          status: 'running' as const,
+        }),
+        getStageStatuses: async () => [
+          {
+            id: `${mockNodeId}:source`,
+            nodeId: mockNodeId,
+            stage: 'source' as const,
+            status: 'completed' as const,
+            startedAt: 2_000,
+            completedAt: 2_050,
+            inactiveMs: 100,
+          },
+        ],
+      })
+    ).rejects.toThrow('stageStatuses[0] completed interval must be non-negative');
   });
 });

@@ -1325,9 +1325,9 @@ export const TaskItemDetailWindow = ({
         if (cancelled) return;
         setSourceStageMaxima(readSourceStageMaxima(session?.sourceStageMaxima));
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (cancelled) return;
-        setSourceStageMaxima(null);
+        console.error('[TaskItemDetailWindow] Failed to load build session metadata', error);
       });
     return () => {
       cancelled = true;

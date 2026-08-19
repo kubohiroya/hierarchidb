@@ -109,6 +109,8 @@ export const toEphemeralBuildSessionRecord = (session: ShapeBuildSessionRecord):
   stopReason: session.stopReason,
   startedAt: session.startedAt,
   completedAt: session.completedAt,
+  canResume: session.canResume,
+  inactiveMs: session.inactiveMs,
   lastHeartbeatAt: session.lastHeartbeatAt,
   stageInactiveMs: session.stageInactiveMs,
   stageStartedAt: session.stageStartedAt,
@@ -146,6 +148,8 @@ export const toBuildSessionRecord = (session: ShapeBuildSessionRecord): BuildSes
     startedAt: session.startedAt,
     updatedAt: session.updatedAt,
     completedAt: session.completedAt,
+    canResume: session.canResume,
+    inactiveMs: session.inactiveMs,
     progress: toProgressInfo(session.progress, session.stageId),
     stages: toStageMap(session.stages),
     stopReason: session.stopReason,
@@ -168,6 +172,8 @@ export const toBuildSessionUpdates = (
   if (updates.startedAt !== undefined) next.startedAt = updates.startedAt;
   if (updates.updatedAt !== undefined) next.updatedAt = updates.updatedAt;
   if (updates.completedAt !== undefined) next.completedAt = updates.completedAt;
+  if (updates.canResume !== undefined) next.canResume = updates.canResume;
+  if (updates.inactiveMs !== undefined) next.inactiveMs = updates.inactiveMs;
   if (updates.progress !== undefined) next.progress = toProgressInfo(updates.progress, updates.stageId);
   if (updates.stages !== undefined) next.stages = toStageMap(updates.stages);
   if (updates.stopReason !== undefined) next.stopReason = updates.stopReason;
@@ -192,6 +198,8 @@ export const toEphemeralBuildSessionUpdates = (
   }
   if (updates.startedAt !== undefined) next.startedAt = updates.startedAt;
   if (updates.completedAt !== undefined) next.completedAt = updates.completedAt;
+  if (updates.canResume !== undefined) next.canResume = updates.canResume;
+  if (updates.inactiveMs !== undefined) next.inactiveMs = updates.inactiveMs;
   if (updates.progress !== undefined) next.progress = toProgressSummary(updates.progress, updates.stageId);
   if (updates.stages !== undefined) {
     next.stages = toStageMap(updates.stages as Record<string, unknown> | undefined);
@@ -215,6 +223,8 @@ export const toShapeBuildSessionRecord = (session: BuildSessionRecord): ShapeBui
   startedAt: session.startedAt,
   updatedAt: session.updatedAt,
   completedAt: session.completedAt,
+  canResume: session.canResume,
+  inactiveMs: session.inactiveMs,
   progress: toProgressSummary(session.progress, session.stageId),
   stages: { ...session.stages },
   stopReason: session.stopReason,
@@ -236,6 +246,8 @@ export const toShapeBuildSessionUpdates = (
   if (updates.startedAt !== undefined) next.startedAt = updates.startedAt;
   if (updates.updatedAt !== undefined) next.updatedAt = updates.updatedAt;
   if (updates.completedAt !== undefined) next.completedAt = updates.completedAt;
+  if (updates.canResume !== undefined) next.canResume = updates.canResume;
+  if (updates.inactiveMs !== undefined) next.inactiveMs = updates.inactiveMs;
   if (updates.progress !== undefined) next.progress = toProgressSummary(updates.progress, updates.stageId);
   if (updates.stages !== undefined) next.stages = { ...updates.stages };
   if (updates.stopReason !== undefined) next.stopReason = updates.stopReason;

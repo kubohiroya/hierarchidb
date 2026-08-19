@@ -1,7 +1,8 @@
 import 'fake-indexeddb/auto';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
+import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import type { DataSourceName } from '../../common/types/index';
 import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants';
 import { SourceStageAuthPendingError, runShapeSourceStageSection } from '../../services/vt/shapePipelineSourceStage';
@@ -68,9 +69,30 @@ const createQueuedSourceTask = (taskId: string): TaskQueueRecord => ({
 describe('runShapeSourceStageSection', () => {
   let db: VtTaskQueueDb | null = null;
 
+  beforeEach(async () => {
+    await ephemeralDB.open();
+    await Promise.all([
+      ephemeralDB.buildSessionConfigs.delete(NODE_ID),
+      ephemeralDB.buildSessionStatuses.delete(NODE_ID),
+      ephemeralDB.buildSessionHeartbeats.delete(NODE_ID),
+      ephemeralDB.buildStageStatuses.where('nodeId').equals(NODE_ID).delete(),
+    ]);
+    await Promise.all([
+      ephemeralDB.buildSessionConfigs.put({ nodeId: NODE_ID, startedAt: Date.now() }),
+      ephemeralDB.buildSessionStatuses.put({ nodeId: NODE_ID, status: 'running' }),
+    ]);
+  });
+
   afterEach(async () => {
-    if (!db) return;
-    await db.tasks.clear();
+    if (db) {
+      await db.tasks.clear();
+    }
+    await Promise.all([
+      ephemeralDB.buildSessionConfigs.delete(NODE_ID),
+      ephemeralDB.buildSessionStatuses.delete(NODE_ID),
+      ephemeralDB.buildSessionHeartbeats.delete(NODE_ID),
+      ephemeralDB.buildStageStatuses.where('nodeId').equals(NODE_ID).delete(),
+    ]);
     db = null;
   });
 

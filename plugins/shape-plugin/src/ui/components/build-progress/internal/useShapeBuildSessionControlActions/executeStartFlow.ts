@@ -1,4 +1,8 @@
-import { onTraceFailure, runStartSessionRequest } from './useShapeBuildStartExecutionConstants.js';
+import {
+  onTraceFailure,
+  runStartSessionRequest,
+  toPersistedStartStatusPatch,
+} from './useShapeBuildStartExecutionConstants.js';
 import type { StartExecutionArgs } from './types.js';
 import { getErrorMessage, summarizeSelectedEntries, toTransitionErrorMessage } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/errorConstants';
 
@@ -196,11 +200,10 @@ export const executeStartFlow = async (args: StartExecutionArgs): Promise<boolea
       : statusResult.status === 'failed'
         ? 'failed'
         : 'processing';
-    void updateSessionRecord({
-      status: nextStatus === 'processing' ? 'running' : nextStatus,
-      stopReason: nextStatus === 'processing' ? undefined : nextStatus,
-      canResume: nextStatus === 'processing',
-    });
+    void updateSessionRecord(toPersistedStartStatusPatch(
+      statusResult.status,
+      statusResult.completedAt,
+    ));
 
     if (nextStatus === 'failed') {
       const message = toTransitionErrorMessage(

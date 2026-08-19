@@ -20,13 +20,18 @@ export const useShapeBuildConfigStepSession = ({ nodeId }: Args) => {
     }
     let cancelled = false;
     const load = async () => {
-      const session = await shapeQueryAPIImpl.getBuildSessionRecord(resolvedNodeId).catch(() => null);
+      const session = await shapeQueryAPIImpl.getBuildSessionRecord(resolvedNodeId);
       if (cancelled) return;
       setSessionStatus(session?.status ?? null);
     };
-    void load();
+    const reportLoadError = (error: unknown): void => {
+      if (!cancelled) {
+        console.error('[useShapeBuildConfigStepSession] Failed to read build session', error);
+      }
+    };
+    void load().catch(reportLoadError);
     const timer = window.setInterval(() => {
-      void load();
+      void load().catch(reportLoadError);
     }, 2000);
     return () => {
       cancelled = true;

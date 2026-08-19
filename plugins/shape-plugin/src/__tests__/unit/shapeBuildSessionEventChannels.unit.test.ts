@@ -108,6 +108,12 @@ describe('build session event timing contracts', () => {
     expect(() => validateStageTimingContract(Number.NaN, 0)).toThrowError(
       'stageStartedAt must be a finite non-negative number',
     );
+    expect(() => validateSessionTimingContract('failed', {
+      startedAt: 1_000,
+    })).toThrowError('completedAt is required for phase failed');
+    expect(() => validateSessionTimingContract('completed', {
+      startedAt: 1_000,
+    })).toThrowError('completedAt is required for phase completed');
   });
 
   it('rejects negative inactive duration and reversed completion timestamps', () => {

@@ -272,13 +272,23 @@ const isShapeBuildTaskRecord = (
  * Query session data from EphemeralDB using the unified query interface
  */
 async function getEphemeralSessionWithDetails(nodeId: NodeId): Promise<EphemeralBuildSessionRecord | null> {
-  return getSessionWithDetails(nodeId, {
-    getConfig: async (nodeId) => ephemeralDB.buildSessionConfigs.get(nodeId),
-    getHeartbeat: async (nodeId) => ephemeralDB.buildSessionHeartbeats.get(nodeId),
-    getStatus: async (nodeId) => ephemeralDB.buildSessionStatuses.get(nodeId),
-    getStageStatuses: async (nodeId) => ephemeralDB.buildStageStatuses.where('nodeId').equals(nodeId).toArray(),
-    getTasks: async (nodeId) => ephemeralDB.buildTasks.where('nodeId').equals(nodeId).toArray(),
-  });
+  return ephemeralDB.transaction(
+    'r',
+    [
+      ephemeralDB.buildSessionConfigs,
+      ephemeralDB.buildSessionHeartbeats,
+      ephemeralDB.buildSessionStatuses,
+      ephemeralDB.buildStageStatuses,
+      ephemeralDB.buildTasks,
+    ],
+    async () => getSessionWithDetails(nodeId, {
+      getConfig: async (nodeId) => ephemeralDB.buildSessionConfigs.get(nodeId),
+      getHeartbeat: async (nodeId) => ephemeralDB.buildSessionHeartbeats.get(nodeId),
+      getStatus: async (nodeId) => ephemeralDB.buildSessionStatuses.get(nodeId),
+      getStageStatuses: async (nodeId) => ephemeralDB.buildStageStatuses.where('nodeId').equals(nodeId).toArray(),
+      getTasks: async (nodeId) => ephemeralDB.buildTasks.where('nodeId').equals(nodeId).toArray(),
+    })
+  );
 }
 
 /**

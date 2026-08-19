@@ -18,16 +18,8 @@ import {
     requireDataSourceName,
 } from '~/common/types/index';
 import { ShapeEntityHandler } from '../handlers/index.js';
-import { Dexie } from 'dexie';
-import {
-    VtTaskQueueDb,
-} from '@hierarchidb/vt-orchestrator';
 import type { BuildSessionConfig, BuildSessionRecord } from '@hierarchidb/shape-store';
 import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
-import {
-    type TaskQueueStatusCounts,
-    countTaskQueueStatuses,
-} from './taskQueueManagement.js';
 import { toBuildSessionRecord } from '~/services/build/shapeSessionMapperUtils';
 
 // Singleton entity handler
@@ -45,6 +37,11 @@ const mapBuildSessionRecordToBuildSession = (
     startedAt: record.startedAt,
     updatedAt: record.updatedAt,
     completedAt: record.completedAt,
+    inactiveMs: record.inactiveMs,
+    lastHeartbeatAt: record.lastHeartbeatAt,
+    stageInactiveMs: record.stageInactiveMs,
+    stageStartedAt: record.stageStartedAt,
+    stageId: record.stageId,
     progress: record.progress,
     canResume: record.canResume,
     lastActivity: record.lastActivity ?? record.updatedAt,
@@ -80,33 +77,6 @@ const buildBuildSessionConfig = (buildConfig: ShapeRuntimeBuildConfig): BuildSes
     };
 };
 
-const resolveBuildSessionStatusFromCounts = (
-    nodeId: NodeId,
-    counts: TaskQueueStatusCounts,
-    getPauseState: (nodeId: NodeId) => { paused: boolean },
-): BuildSession['status'] => {
-    const effectiveTotal = Math.max(0, counts.total - counts.recycled);
-    if (getPauseState(nodeId).paused) return 'paused';
-    if (counts.running > 0) return 'running';
-    if (counts.failed > 0) return 'failed';
-    if (effectiveTotal > 0 && counts.completed + counts.failed >= effectiveTotal) return 'completed';
-    if (effectiveTotal > 0) return 'queued';
-    if (counts.recycled > 0) return 'completed';
-    return 'idle';
-};
-
-const buildProgressFromCounts = (counts: TaskQueueStatusCounts): BuildSession['progress'] => {
-    const effectiveTotal = Math.max(0, counts.total - counts.recycled);
-    const doneCount = Math.min(effectiveTotal, counts.completed + counts.failed);
-    return {
-        total: effectiveTotal,
-        completed: counts.completed,
-        failed: counts.failed,
-        skipped: 0,
-        percentage: effectiveTotal > 0 ? Math.round((doneCount / effectiveTotal) * 100) : 0,
-    };
-};
-
 export const resolveSessionExpiresAt = (lastActivity: number): number => (
     lastActivity + 5 * 60 * 1000
 );
@@ -114,41 +84,10 @@ export const resolveSessionExpiresAt = (lastActivity: number): number => (
 export const getBuildSessionInternal = async (
     nodeId: NodeId,
 ): Promise<BuildSession | undefined> => {
-    // Import getPauseState dynamically to avoid circular dependency
-    const { getPauseState } = await import('./stateManagement.js');
-
     const config = await resolveBuildSessionConfig(nodeId);
-    const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
+    const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId);
     const buildSession = sessionRecord ? toBuildSessionRecord(sessionRecord) : null;
-    if (buildSession) {
-        return mapBuildSessionRecordToBuildSession(buildSession, config);
-    }
-
-    const taskQueue = new VtTaskQueueDb();
-    const counts = await countTaskQueueStatuses(taskQueue, nodeId);
-    if (counts.total === 0) return undefined;
-
-    const firstTask = await taskQueue.tasks
-        .where('[nodeId+index]')
-        .between([nodeId, Dexie.minKey], [nodeId, Dexie.maxKey])
-        .first();
-    const now = Date.now();
-    const status = resolveBuildSessionStatusFromCounts(nodeId, counts, getPauseState);
-    const progress = buildProgressFromCounts(counts);
-    const startedAt = typeof firstTask?.createdAt === 'number' ? firstTask.createdAt : now;
-
-    return {
-        nodeId,
-        status,
-        config,
-        startedAt,
-        updatedAt: now,
-        completedAt: status === 'completed' ? now : undefined,
-        progress,
-        canResume: status === 'paused',
-        lastActivity: now,
-        expiresAt: resolveSessionExpiresAt(now),
-        stages: {},
-        resourceUsage: undefined,
-    };
+    return buildSession
+        ? mapBuildSessionRecordToBuildSession(buildSession, config)
+        : undefined;
 };

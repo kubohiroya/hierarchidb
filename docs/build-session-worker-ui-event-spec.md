@@ -49,6 +49,17 @@ type SessionStatusUpdatedEvent = {
 - When both session endpoints are present, `completedAt - startedAt - inactiveMs` must be finite and non-negative. A violation throws.
 - When `stageId` is present, `stageStartedAt` and `stageInactiveMs` are required and follow the stage timing contract below. When `stageId` is absent, both stage timing fields must also be absent.
 
+**Normalized persistence boundary**:
+
+- `buildSessionConfigs.startedAt` is the persisted session start endpoint.
+- `buildSessionStatuses` owns session `status`, `completedAt`, `inactiveMs`, and `canResume`.
+- A `buildStageStatuses` row owns the canonical `stage`, `startedAt`, and `inactiveMs` for that stage. Its optional stored `stageId` is an opaque persistence identifier and is never used as the event `stageId`; the event value is derived from the row's canonical `stage`.
+- The compatibility read model derives `updatedAt` from the maximum persisted session, heartbeat, stage, and task timestamp. It never substitutes the read clock.
+- Session reconstruction reads the normalized rows and tasks in a single database read transaction.
+- Worker/API callers propagate persistence/query contract violations; only a successful `null` read means that no session exists. UI polling may report the error, but must not convert it into a missing-session result.
+- A new stage row requires explicit `startedAt` and `inactiveMs`. A partial normalized session or missing stage timing is a contract violation; task-queue state and the current clock must not synthesize a replacement session.
+- The current stage is the unique stage row with the greatest `startedAt`. Equal greatest timestamps are ambiguous persisted state and fail reconstruction instead of being resolved by stage order.
+
 **UI-side effect**: Update `lifecycle.phase`, `lifecycle.isActive`, `lifecycle.startedAt`, `lifecycle.inactiveMs`, `lifecycle.completedAt`, and `lifecycleExtras.stopReason`. `stageId` drives the UI synchronization/selection signal. Per-stage timing is stored only from `stageSnapshotUpdated`, avoiding a second timing owner.
 
 **Deduplication**: None. Every emission is applied unconditionally. The caller (adapter) is responsible for not emitting duplicate events.

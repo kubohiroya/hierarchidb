@@ -23,7 +23,6 @@ import {
   requireDataSourceName,
   getPreferredCountryCodeFormat,
 } from '~/common/types/index';
-import { Dexie } from 'dexie';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import { normalizeCountryCodeFormat } from '~/services/utils/iso3166';
 import {
@@ -247,10 +246,9 @@ export const shapeBuildAPI = {
     lastActivity: number;
     expiresAt: number;
   }> => {
-    const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
+    const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId);
     if (sessionRecord) {
-      const fallbackLastActivity = sessionRecord.updatedAt ?? Date.now();
-      const lastActivity = sessionRecord.lastActivity ?? fallbackLastActivity;
+      const lastActivity = sessionRecord.lastActivity ?? sessionRecord.updatedAt;
       const expiresAt = sessionRecord.expiresAt ?? shapeBuildRuntime.resolveSessionExpiresAt(lastActivity);
       return {
         exists: true,
@@ -260,22 +258,6 @@ export const shapeBuildAPI = {
       };
     }
 
-    const taskQueue = new VtTaskQueueDb();
-    const counts = await shapeBuildRuntimeCore.countTaskQueueStatuses(taskQueue, nodeId);
-    if (counts.total > 0) {
-      const now = Date.now();
-      const firstTask = await taskQueue.tasks
-        .where('[nodeId+index]')
-        .between([nodeId, Dexie.minKey], [nodeId, Dexie.maxKey])
-        .first();
-      const lastActivity = typeof firstTask?.updatedAt === 'number' ? firstTask.updatedAt : now;
-      return {
-        exists: true,
-        canResume: shapeBuildRuntimeCore.getPauseState(nodeId).paused,
-        lastActivity,
-        expiresAt: shapeBuildRuntimeCore.resolveSessionExpiresAt(lastActivity),
-      };
-    }
     return {
       exists: false,
       canResume: false,
@@ -622,7 +604,7 @@ export const shapeBuildAPI = {
   // ===================================
 
   getSessionStateOnDemand: async (nodeId: NodeId): Promise<ShapeBuildSessionRecord | null> => {
-    return shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
+    return shapeQueryAPIImpl.getBuildSessionRecord(nodeId);
   },
 
   forceCleanup: async (): Promise<{

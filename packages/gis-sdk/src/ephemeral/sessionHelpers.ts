@@ -21,6 +21,94 @@ export interface ProgressInfo {
   percentage: number;
 }
 
+const requireFiniteNonNegativeTime = (value: unknown, label: string): number => {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    throw new Error(
+      `[getSessionWithDetails] ${label} must be a finite non-negative number, received ${String(value)}`
+    );
+  }
+  return value;
+};
+
+const validateCompletedInterval = (params: {
+  startedAt: number;
+  completedAt: number | undefined;
+  inactiveMs: number | undefined;
+  label: string;
+}): void => {
+  const inactiveMs =
+    params.inactiveMs === undefined
+      ? 0
+      : requireFiniteNonNegativeTime(params.inactiveMs, `${params.label}.inactiveMs`);
+  if (params.completedAt === undefined) return;
+  const completedAt = requireFiniteNonNegativeTime(
+    params.completedAt,
+    `${params.label}.completedAt`
+  );
+  if (completedAt - params.startedAt - inactiveMs < 0) {
+    throw new Error(
+      `[getSessionWithDetails] ${params.label} completed interval must be non-negative`
+    );
+  }
+};
+
+const resolveSessionUpdatedAt = (params: {
+  config: BuildSessionRecord;
+  heartbeat: BuildSessionHeartbeat | undefined;
+  status: BuildSessionStatus;
+  stageStatuses: BuildStageStatus[];
+  tasks: EphemeralBuildTaskRecord[];
+}): number => {
+  const startedAt = requireFiniteNonNegativeTime(params.config.startedAt, 'config.startedAt');
+  if (
+    (params.status.status === 'completed' || params.status.status === 'failed') &&
+    params.status.completedAt === undefined
+  ) {
+    throw new Error(
+      `[getSessionWithDetails] status.completedAt is required for terminal status ${params.status.status}`
+    );
+  }
+  validateCompletedInterval({
+    startedAt,
+    completedAt: params.status.completedAt,
+    inactiveMs: params.status.inactiveMs,
+    label: 'status',
+  });
+  const timestamps = [startedAt];
+  const appendOptional = (value: unknown, label: string): void => {
+    if (value !== undefined) {
+      timestamps.push(requireFiniteNonNegativeTime(value, label));
+    }
+  };
+  appendOptional(params.heartbeat?.lastHeartbeatAt, 'heartbeat.lastHeartbeatAt');
+  appendOptional(params.status.completedAt, 'status.completedAt');
+  params.stageStatuses.forEach((stageStatus, index) => {
+    const stageStartedAt = requireFiniteNonNegativeTime(
+      stageStatus.startedAt,
+      `stageStatuses[${index}].startedAt`
+    );
+    const stageInactiveMs = requireFiniteNonNegativeTime(
+      stageStatus.inactiveMs,
+      `stageStatuses[${index}].inactiveMs`
+    );
+    validateCompletedInterval({
+      startedAt: stageStartedAt,
+      completedAt: stageStatus.completedAt,
+      inactiveMs: stageInactiveMs,
+      label: `stageStatuses[${index}]`,
+    });
+    timestamps.push(stageStartedAt);
+    appendOptional(stageStatus.completedAt, `stageStatuses[${index}].completedAt`);
+  });
+  params.tasks.forEach((task, index) => {
+    appendOptional(task.createdAt, `tasks[${index}].createdAt`);
+    appendOptional(task.updatedAt, `tasks[${index}].updatedAt`);
+    appendOptional(task.startedAt, `tasks[${index}].startedAt`);
+    appendOptional(task.completedAt, `tasks[${index}].completedAt`);
+  });
+  return Math.max(...timestamps);
+};
+
 /**
  * Compute progress information from an array of build tasks
  * 
@@ -122,9 +210,14 @@ export async function getSessionWithDetails(
     queryFn.getTasks(nodeId),
   ]);
 
-  // Session must have at least config and status
-  if (!config || !status) {
+  if (!config && !status) {
+    if (heartbeat || stageStatuses.length > 0) {
+      throw new Error(`[getSessionWithDetails] normalized session has orphan rows: ${String(nodeId)}`);
+    }
     return null;
+  }
+  if (!config || !status) {
+    throw new Error(`[getSessionWithDetails] normalized session is incomplete: ${String(nodeId)}`);
   }
 
   // Compute progress from tasks
@@ -133,12 +226,18 @@ export async function getSessionWithDetails(
   // Compute stages from tasks
   const stages = computeStagesFromTasks(tasks);
 
-  // Get current stage (latest by startedAt from buildStageStatuses)
-  const currentStage = stageStatuses.length > 0
-    ? stageStatuses.reduce((latest, current) =>
-        current.startedAt > latest.startedAt ? current : latest
-      )
-    : undefined;
+  const updatedAt = resolveSessionUpdatedAt({ config, heartbeat, status, stageStatuses, tasks });
+  const latestStageStartedAt = stageStatuses.reduce(
+    (latest, current) => Math.max(latest, current.startedAt),
+    Number.NEGATIVE_INFINITY
+  );
+  const latestStages = stageStatuses.filter((stage) => stage.startedAt === latestStageStartedAt);
+  if (latestStages.length > 1) {
+    throw new Error(
+      `[getSessionWithDetails] normalized session has ambiguous current stage: ${String(nodeId)}`
+    );
+  }
+  const currentStage = latestStages[0];
 
   // Reconstruct unified record matching old EphemeralBuildSessionRecord structure
   return {
@@ -152,11 +251,17 @@ export async function getSessionWithDetails(
     selectedArrayByCountries: config.selectedArrayByCountries,
     selectedArrayVersion: config.selectedArrayVersion,
     startedAt: config.startedAt,
+    updatedAt,
     completedAt: status.completedAt,
+    inactiveMs: status.inactiveMs,
+    canResume: status.canResume,
     lastHeartbeatAt: heartbeat?.lastHeartbeatAt,
     stageStartedAt: currentStage?.startedAt,
-    stageInactiveMs: currentStage?.inactiveMs,
-    stageId: currentStage?.stageId,
+    stageInactiveMs:
+      currentStage === undefined
+        ? undefined
+        : requireFiniteNonNegativeTime(currentStage.inactiveMs, 'currentStage.inactiveMs'),
+    stageId: currentStage?.stage,
     sourceStageMaxima: config.sourceStageMaxima,
   };
 }
