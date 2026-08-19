@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms';
+import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressTypes';
 import { buildGeometryTaskOutcomeSummary } from '../../../components/build-progress/TaskItemCard/taskOutcomeSummaryBuilders';
 
 const t = (_key: string, fallback?: string): string => fallback ?? _key;

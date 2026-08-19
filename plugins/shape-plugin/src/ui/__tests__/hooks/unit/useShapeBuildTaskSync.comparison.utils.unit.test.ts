@@ -4,8 +4,8 @@ import {
   replaceSnapshotTasks,
   shouldPreferNextTask,
   resolveTaskSummaryFromRaw,
-} from '../../../components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparison.utils';
-import type { RawTaskSummary } from '../../../components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.types';
+} from '../../../components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparisonUtils';
+import type { RawTaskSummary } from '../../../components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSyncTypes';
 
 const makeTask = (overrides: Partial<ShapeBuildTaskSummary>): ShapeBuildTaskSummary => ({
   taskId: 'task-unknown',

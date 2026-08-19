@@ -4,10 +4,9 @@
  */
 
 import fc from 'fast-check';
-import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TaskStatus } from '@hierarchidb/build-api';
-import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import { validateCacheWriteAllowed, isTerminalStatus, isNonTerminalStatus } from '../../worker/api/cacheWriteValidationConstants';
 
 // Mock task queue for testing
@@ -18,15 +17,6 @@ const createMockTaskQueue = () => ({
 } as any);
 
 describe('Property 12: No Intermediate Persistence', () => {
-  beforeEach(async () => {
-    await ephemeralDB.delete();
-    await ephemeralDB.open();
-  });
-
-  afterEach(async () => {
-    await ephemeralDB.delete();
-  });
-
   it('should prevent cache writes for running tasks', async () => {
     await fc.assert(
       fc.asyncProperty(
@@ -135,15 +125,6 @@ describe('Property 12: No Intermediate Persistence', () => {
 });
 
 describe('Property 13: Running Task Cache Invariant', () => {
-  beforeEach(async () => {
-    await ephemeralDB.delete();
-    await ephemeralDB.open();
-  });
-
-  afterEach(async () => {
-    await ephemeralDB.delete();
-  });
-
   it('should maintain invariant that non-terminal tasks have no valid cache entries', async () => {
     await fc.assert(
       fc.asyncProperty(

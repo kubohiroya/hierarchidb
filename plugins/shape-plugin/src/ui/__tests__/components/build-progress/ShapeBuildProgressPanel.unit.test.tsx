@@ -5,7 +5,10 @@ import { Provider } from 'jotai';
 import { createStore, type Store } from 'jotai/vanilla';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressTypes';
-import { taskScrollTargetAtom, taskViewportRangeAtom } from '../../../atoms/shapeBuildProgressAtoms';
+import {
+  taskScrollTargetAtom,
+  taskViewportRangeByStageAtom,
+} from '../../../atoms/shapeBuildProgressAtomConstants';
 import { dispatchBuildSessionEventAtom } from '../../../atoms/buildSessionStateAtoms';
 import { ShapeBuildProgressPanel } from '../../../components/build-progress/ShapeBuildProgressPanel/ShapeBuildProgressPanel';
 
@@ -66,6 +69,9 @@ vi.mock('@hierarchidb/ui-build-progress', async (importOriginal) => {
 });
 
 let taskVersionCounter = 1;
+const TEST_SESSION_STARTED_AT = 1_000;
+const TEST_SESSION_COMPLETED_AT = 2_000;
+
 const nextTaskVersion = () => {
   taskVersionCounter += 1;
   return taskVersionCounter;
@@ -90,22 +96,29 @@ const setStageProgress = (
 const setTasksByStage = (
   store: Store,
   tasksByStage: Partial<Record<'source' | 'geometry' | 'tileEmit', ShapeBuildTaskSummary[]>>,
+  completedAtByStage: Partial<Record<'source' | 'geometry' | 'tileEmit', number>> = {}
 ) => {
-  const stages: Array<'source' | 'geometry' | 'tileEmit'> = ['source', 'geometry', 'tileEmit'];
-  for (const stageId of stages) {
+  const stageEntries = Object.entries(tasksByStage) as Array<
+    ['source' | 'geometry' | 'tileEmit', ShapeBuildTaskSummary[] | undefined]
+  >;
+  for (const [stageId, stageTasks] of stageEntries) {
+    if (!stageTasks) {
+      throw new Error(`Test fixture requires an explicit task snapshot for stage ${stageId}.`);
+    }
     const version = nextTaskVersion();
     store.set(dispatchBuildSessionEventAtom, {
       type: 'stageSnapshotUpdated',
       payload: {
         stageId,
-        tasks: (tasksByStage[stageId] ?? []).map((task, index) => ({
+        tasks: stageTasks.map((task, index) => ({
           ...task,
           stage: stageId,
           version: task.version ?? version + index,
           sequence: task.sequence ?? index,
         })),
-        stageStartedAt: version,
+        stageStartedAt: TEST_SESSION_STARTED_AT + version,
         stageInactiveMs: 0,
+        stageCompletedAt: completedAtByStage[stageId],
       },
     });
   }
@@ -122,12 +135,21 @@ const setSessionPhase = (
     || phase === 'resuming'
     || phase === 'finalizing'
   );
+  const hasStarted = phase !== 'idle' && phase !== 'starting';
+  const isTerminal = phase === 'completed' || phase === 'failed';
   store.set(dispatchBuildSessionEventAtom, {
     type: 'sessionStatusUpdated',
     payload: {
       nodeId: 'test-node',
       phase,
       isActive,
+      ...(hasStarted
+        ? {
+            startedAt: TEST_SESSION_STARTED_AT,
+            inactiveMs: 0,
+          }
+        : {}),
+      ...(isTerminal ? { completedAt: TEST_SESSION_COMPLETED_AT } : {}),
     },
   });
 };
@@ -136,7 +158,7 @@ const makeStore = () => {
   const store = createStore();
   setStageProgress(store, { source: 100, geometry: 50, tileEmit: 0 });
   setSessionPhase(store, 'idle');
-  setTasksByStage(store, { source: [], geometry: [], tileEmit: [] });
+  setTasksByStage(store, { source: [] }, { source: TEST_SESSION_COMPLETED_AT });
   return store;
 };
 
@@ -173,7 +195,7 @@ describe('ShapeBuildProgressPanel (state-tree)', () => {
         },
       },
     } as ShapeBuildTaskSummary;
-    setTasksByStage(store, { geometry: [failedTask] });
+    setTasksByStage(store, { geometry: [failedTask] }, { geometry: TEST_SESSION_COMPLETED_AT });
     setSessionPhase(store, 'failed');
 
     const view = renderPanel(store);
@@ -187,7 +209,6 @@ describe('ShapeBuildProgressPanel (state-tree)', () => {
   it('shows task skeleton while awaiting first snapshot in running state', async () => {
     const store = makeStore();
     setSessionPhase(store, 'running');
-    setTasksByStage(store, { source: [], geometry: [], tileEmit: [] });
 
     renderPanel(store);
 
@@ -203,7 +224,6 @@ describe('ShapeBuildProgressPanel (state-tree)', () => {
   it('does not show task skeleton while idle before start is requested', async () => {
     const store = makeStore();
     setSessionPhase(store, 'idle');
-    setTasksByStage(store, { source: [], geometry: [], tileEmit: [] });
 
     renderPanel(store);
 
@@ -237,15 +257,16 @@ describe('ShapeBuildProgressPanel (state-tree)', () => {
       message: 'Queued',
     } as ShapeBuildTaskSummary;
     setSessionPhase(store, 'running');
-    setTasksByStage(store, { source: [runningTask, queuedTask], geometry: [], tileEmit: [] });
-    store.set(taskViewportRangeAtom, {
-      stageId: 'source',
-      startTaskId: 'task-running-0',
-      endTaskId: 'task-running-0',
-      startIndex: 0,
-      endIndex: 0,
-      total: 2,
-      updatedAt: 1,
+    setTasksByStage(store, { source: [runningTask, queuedTask] });
+    store.set(taskViewportRangeByStageAtom, {
+      source: {
+        stageId: 'source',
+        startTaskId: 'task-running-0',
+        endTaskId: 'task-running-0',
+        startIndex: 0,
+        endIndex: 0,
+        total: 2,
+      },
     });
 
     const view = renderPanel(store);
@@ -306,20 +327,21 @@ describe('ShapeBuildProgressPanel (state-tree)', () => {
       },
     } as ShapeBuildTaskSummary;
     setSessionPhase(store, 'running');
-    setTasksByStage(store, { source: [], geometry: [runningTop, queuedBottom], tileEmit: [] });
+    setTasksByStage(store, { geometry: [runningTop, queuedBottom] });
     store.set(taskScrollTargetAtom, {
       stageId: 'geometry',
       taskId: 'a-running-target',
       requestedAt: 1,
     });
-    store.set(taskViewportRangeAtom, {
-      stageId: 'geometry',
-      startTaskId: 'a-running-target',
-      endTaskId: 'a-running-target',
-      startIndex: 0,
-      endIndex: 0,
-      total: 2,
-      updatedAt: 1,
+    store.set(taskViewportRangeByStageAtom, {
+      geometry: {
+        stageId: 'geometry',
+        startTaskId: 'a-running-target',
+        endTaskId: 'a-running-target',
+        startIndex: 0,
+        endIndex: 0,
+        total: 2,
+      },
     });
 
     const view = renderPanel(store);
