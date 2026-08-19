@@ -1,6 +1,6 @@
 # @hierarchidb/yaml-plugin
 
-最終更新: 2026-04-05
+最終更新: 2026-08-20
 
 HierarchiDB の YAML ファイルノードプラグイン。IDE-GSM 統合のための YAML 設定ファイルをツリーノードとして管理する。JSON Schema ベースのスキーマ選択・バリデーション付きエディタを提供し、YAML コンテンツの構造化された編集を可能にする。
 
@@ -44,7 +44,7 @@ import { YamlPluginIcon } from '@hierarchidb/yaml-plugin/icon';
 
 ## Worker 層
 
-`registerYamlWorkerStores` が `preload` として登録され、`@hierarchidb/yaml-store` の `YamlDB` シングルトンを初期化する。
+現行実装では`registerYamlWorkerStores`が`preload`として登録され、`@hierarchidb/yaml-store`のlegacy YamlDB v1 singletonを初期化する。
 
 ```typescript
 // plugin-manifest.ts
@@ -53,13 +53,23 @@ worker: {
 }
 ```
 
-CRUD 操作は `@hierarchidb/yaml-store` の API を通じて行われる。
+このpreloadは一時的なlegacy runtime pathであり、YAML storage authorityではない。後続Issueでlegacy rowをinventory / recoveryしてからruntime pathを除去する。既存YamlDB mutation helperはlegacy専用であり、canonical dialog、ZIP、simulation、Step 4 pathから呼び出してはならない。現行の[folder YAML import](../folder-plugin/README_ja.md#legacy-yaml-snapshot-boundary)はnon-canonicalであり、cutoverをblockedとする。新しいCRUD caller、YamlDB write、dual-write、fallback readを追加してはならない。
 
-## データベーススキーマ
+## Storage authority
 
-yaml-plugin は `@hierarchidb/yaml-store` が提供する `YamlDB`（Dexie ベース）を使用する。専用のデータベース定義は yaml-store パッケージ側に存在する。
+正規契約は[`docs/yaml-plugin-ide-gsm-step4-spec.md`](../../docs/yaml-plugin-ide-gsm-step4-spec.md)で定義する。
 
-### エンティティ構造
+- committed filename / payload stateはCoreDB `TreeNode.metadata/data`へ保存する。
+- draft filename / payload stateはCoreDB `TreeNode.draftMetadata/draftData`へ保存する。
+- filenameは対応metadataの`name`だけに保存する。
+- canonical payloadは`{ subtype, schemaId, content }`とする。
+- YamlDB v1はfrozenかつnon-authoritativeなlegacy recovery sourceであり、cacheまたはdual-write先ではない。
+
+CoreDBとYamlDBは別IndexedDBであるため、CoreDB migrationとYamlDB inventory/recoveryは別atomic boundaryとする。missing name、空schema ID、unknown tuple、conflictはerrorとし、plugin側で推測または補完しない。
+
+### 現行legacy entity shape
+
+全consumerを協調してcutoverするcanonical writer / CoreDB migration Issueが完了するまで、sourceは次のlegacy型を使用する。これは現行コードの説明であり、正規storage契約を上書きしない。
 
 ```typescript
 // YamlFileNodeData (from @hierarchidb/yaml-api)
@@ -72,6 +82,8 @@ interface YamlFileNodeData {
 // Draft type for create/edit
 type YamlDraft = Partial<YamlFileNodeData>;
 ```
+
+canonical writerは`name`を対応metadata slotへ移し、registryで検証した明示的な`subtype`を追加し、不完全または不一致なrecordを保存前に拒否しなければならない。
 
 ## 依存プラグイン
 
@@ -176,7 +188,8 @@ src/
 - [`@hierarchidb/core-types`](../../packages/core-types/) — NodeType 等の共有型定義
 - [`@hierarchidb/plugin-base`](../../packages/plugin-base/) — PluginManifest、PluginStepRegistry
 - [`@hierarchidb/yaml-api`](../../packages/yaml-api/) — YamlFileNodeData 型定義
-- [`@hierarchidb/yaml-store`](../../packages/yaml-store/) — YamlDB（Dexie データストア）
+- [`@hierarchidb/yaml-store`](../../packages/yaml-store/) — legacy YamlDB v1 recovery boundary（authoritative runtime storeではない）
+- [`正規storage契約`](../../docs/yaml-plugin-ide-gsm-step4-spec.md) — CoreDB authority、migration、recovery、rollback規則
 
 ### 親プラグイン
 

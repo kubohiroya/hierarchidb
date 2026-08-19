@@ -1,6 +1,6 @@
 # @hierarchidb/yaml-api
 
-Last updated: 2026-08-19
+Last updated: 2026-08-20
 
 Pure type and validation contracts shared by the YAML plugin and its storage and execution consumers.
 
@@ -28,13 +28,25 @@ Issue #1266 only introduces the pure API contract. It does not migrate stored da
 
 Storage migration, `metadata.name` cutover, ZIP import/export, and UI integration are tracked by follow-up issues under Epic #1162.
 
+## Storage authority and migration boundary
+
+The canonical storage contract is defined in [`docs/yaml-plugin-ide-gsm-step4-spec.md`](../../docs/yaml-plugin-ide-gsm-step4-spec.md):
+
+- CoreDB `TreeNode.metadata/data` is the only authoritative committed store.
+- CoreDB `TreeNode.draftMetadata/draftData` is the only authoritative draft store.
+- The independent YamlDB v1 is a frozen, non-authoritative legacy recovery source. It is not a cache or a dual-write target.
+- CoreDB migration and YamlDB inventory/recovery use separate atomic boundaries because they are separate IndexedDB databases.
+- Missing legacy names, empty schema IDs, unknown tuples, and conflicts are reported as errors. Consumers must not infer or supply contract values.
+
+The current `YamlFileNodeData` type remains a legacy runtime shape until the coordinated writer and storage migration issues cut over all consumers. Its presence does not make YamlDB authoritative.
+
 ## Dependencies
 
 `@hierarchidb/core-types`
 
 ## Related packages
 
-- [`@hierarchidb/yaml-store`](../yaml-store/) — YAML data store
+- [`@hierarchidb/yaml-store`](../yaml-store/) — legacy YamlDB v1 recovery boundary; not the authoritative runtime store
 - [`@hierarchidb/core-types`](../core-types/) — shared type definitions
 
 ## License

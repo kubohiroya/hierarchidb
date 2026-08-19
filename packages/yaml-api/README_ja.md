@@ -1,6 +1,6 @@
 # @hierarchidb/yaml-api
 
-最終更新: 2026-08-19
+最終更新: 2026-08-20
 
 YAML pluginとstorage／実行consumerで共有するpureな型・validation契約を提供する。
 
@@ -28,13 +28,25 @@ Issue #1266はpure API contractだけを導入し、永続化データやruntime
 
 storage migration、`metadata.name`へのcutover、ZIP import/export、UI統合はEpic #1162配下の後続Issueで実施する。
 
+## Storage authorityとmigration boundary
+
+正規のstorage契約は[`docs/yaml-plugin-ide-gsm-step4-spec.md`](../../docs/yaml-plugin-ide-gsm-step4-spec.md)で定義する。
+
+- CoreDB `TreeNode.metadata/data`を唯一のauthoritative committed storeとする。
+- CoreDB `TreeNode.draftMetadata/draftData`を唯一のauthoritative draft storeとする。
+- 独立したYamlDB v1はfrozenかつnon-authoritativeなlegacy recovery sourceであり、cacheまたはdual-write先ではない。
+- CoreDB migrationとYamlDB inventory/recoveryは別IndexedDBを扱うため、別のatomic boundaryとする。
+- missing legacy name、空schema ID、unknown tuple、conflictはerrorとして報告し、consumerによる推測や補完を禁止する。
+
+現行`YamlFileNodeData`型は、writerとstorage migrationの後続Issueが全consumerを協調してcutoverするまでのlegacy runtime shapeである。この型の存在はYamlDBをauthoritative storeにしない。
+
 ## 依存関係
 
 `@hierarchidb/core-types`
 
 ## 関連package
 
-- [`@hierarchidb/yaml-store`](../yaml-store/) — YAML data store
+- [`@hierarchidb/yaml-store`](../yaml-store/) — legacy YamlDB v1 recovery boundary（authoritative runtime storeではない）
 - [`@hierarchidb/core-types`](../core-types/) — 共有型定義
 
 ## ライセンス

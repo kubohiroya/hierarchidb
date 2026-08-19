@@ -1,6 +1,6 @@
 # @hierarchidb/yaml-plugin
 
-Last updated: 2026-04-05
+Last updated: 2026-08-20
 
 A YAML file node plugin for HierarchiDB. Manages YAML configuration files as tree nodes for IDE-GSM integration. Provides JSON Schema-based schema selection and a validated editor for structured YAML content editing.
 
@@ -44,7 +44,7 @@ import { YamlPluginIcon } from '@hierarchidb/yaml-plugin/icon';
 
 ## Worker Layer
 
-`registerYamlWorkerStores` is registered as a `preload` entry and initializes the `YamlDB` singleton from `@hierarchidb/yaml-store`.
+The current implementation registers `registerYamlWorkerStores` as a `preload` entry and initializes the legacy YamlDB v1 singleton from `@hierarchidb/yaml-store`.
 
 ```typescript
 // plugin-manifest.ts
@@ -53,13 +53,23 @@ worker: {
 }
 ```
 
-CRUD operations are performed through the `@hierarchidb/yaml-store` API.
+This preload is a temporary legacy runtime path, not the YAML storage authority. Follow-up issues will inventory and recover legacy rows before removing the runtime path. Existing YamlDB mutation helpers are legacy-only; canonical dialog, ZIP, simulation, and Step 4 paths must not call them. The current [folder YAML import](../folder-plugin/README.md#legacy-yaml-snapshot-boundary) remains non-canonical and blocked from cutover. New CRUD callers, YamlDB writes, dual-write, and fallback reads must not be added.
 
-## Database Schema
+## Storage Authority
 
-yaml-plugin uses the Dexie-based `YamlDB` provided by `@hierarchidb/yaml-store`. The database definition resides in the yaml-store package.
+The canonical contract is [`docs/yaml-plugin-ide-gsm-step4-spec.md`](../../docs/yaml-plugin-ide-gsm-step4-spec.md):
 
-### Entity Structure
+- committed filename and payload state is stored in CoreDB `TreeNode.metadata/data`;
+- draft filename and payload state is stored in CoreDB `TreeNode.draftMetadata/draftData`;
+- the filename is stored only in the corresponding metadata `name`;
+- the canonical payload is `{ subtype, schemaId, content }`;
+- YamlDB v1 is a frozen, non-authoritative legacy recovery source, not a cache or dual-write destination.
+
+CoreDB migration and YamlDB inventory/recovery are separate atomic boundaries because they are separate IndexedDB databases. Missing names, empty schema IDs, unknown tuples, and conflicts are errors; the plugin must not infer or supply them.
+
+### Current Legacy Entity Shape
+
+The source still uses the following legacy type until the coordinated canonical writer and CoreDB migration issues cut over all consumers. This documents current code and does not supersede the canonical storage contract.
 
 ```typescript
 // YamlFileNodeData (from @hierarchidb/yaml-api)
@@ -72,6 +82,8 @@ interface YamlFileNodeData {
 // Draft type for create/edit
 type YamlDraft = Partial<YamlFileNodeData>;
 ```
+
+The canonical writer must move `name` to the matching metadata slot, add an explicit registry-validated `subtype`, and reject incomplete or mismatched records before saving.
 
 ## Plugin Dependencies
 
@@ -176,7 +188,8 @@ src/
 - [`@hierarchidb/core-types`](../../packages/core-types/) — Shared type definitions (NodeType, etc.)
 - [`@hierarchidb/plugin-base`](../../packages/plugin-base/) — PluginManifest, PluginStepRegistry
 - [`@hierarchidb/yaml-api`](../../packages/yaml-api/) — YamlFileNodeData type definitions
-- [`@hierarchidb/yaml-store`](../../packages/yaml-store/) — YamlDB (Dexie data store)
+- [`@hierarchidb/yaml-store`](../../packages/yaml-store/) — legacy YamlDB v1 recovery boundary; not the authoritative runtime store
+- [`Canonical storage contract`](../../docs/yaml-plugin-ide-gsm-step4-spec.md) — CoreDB authority, migration, recovery, and rollback rules
 
 ### Parent Plugin
 

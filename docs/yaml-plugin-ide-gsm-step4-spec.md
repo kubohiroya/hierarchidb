@@ -2,7 +2,7 @@
 
 ## 位置付け
 
-本書は YAML plugin の subtype、IDE-GSM command、draft 同期、認証、実行状態に関する正規仕様である。親 Epic [#1162](https://github.com/kubohiroya/hierarchidb/issues/1162) と仕様 Issue [#1253](https://github.com/kubohiroya/hierarchidb/issues/1253) に基づく。
+本書は YAML plugin の subtype、IDE-GSM command、draft 同期、認証、実行状態に関する正規仕様である。親 Epic [#1162](https://github.com/kubohiroya/hierarchidb/issues/1162)、仕様 Issue [#1253](https://github.com/kubohiroya/hierarchidb/issues/1253)、storage migration契約Issue [#1271](https://github.com/kubohiroya/hierarchidb/issues/1271) に基づく。
 
 型、DB migration、client、executor、UI の実装は本書に従う。本書と `.kiro/specs/yaml-file-node` または `.kiro/specs/ide-gsm-client` が矛盾する場合、本書を優先する。
 
@@ -183,13 +183,110 @@ validation、serialization、`importProject` のいずれかが失敗した場�
 
 ## Migration と import
 
-- 既存 record は、`TreeNode.metadata.name`、legacy `YamlFileNodeData.name`、schemaId がすべて存在し、両方の name が完全一致した上で registry の単一 subtype に一致する場合だけ migration する。
-- metadata name と legacy payload name の不一致または片方の欠落を検出した場合、どちらかを優先せず migration 全体を失敗させる。
-- migration 成功時だけ legacy payload の `name` を除去し、metadata name を唯一の SSOT とする。
-- 不一致、未知、曖昧、必須 field 欠落を検出した場合、対象を報告して migration 全体を失敗させる。部分更新しない。
-- ZIP import は registry にある canonical filename の YAML file だけを受け入れ、対応する subtype と schemaId を明示設定する。
-- unknown filename、重複 canonical filename、invalid YAML、schema 不一致を検出した場合、import 全体を失敗させる。
-- default subtype、`generic` subtype、拡張子だけに基づく受入、既存データへの fallback を追加しない。
+### Storage authority
+
+- CoreDB `TreeNode` を YAML domain data の唯一の authoritative store とする。
+- committed filename と payload の組は `metadata.name` / `data`、draft filename と payload の組は `draftMetadata.name` / `draftData` とする。各 slot は対応する metadata とだけ照合し、committed と draft の間で値を補完しない。
+- 独立した YamlDB v1 は authoritative store、cache、dual-write 先ではない。既存 row の回復可否を調べるための frozen legacy recovery source とし、新規 write、自動 merge、自動 copy、自動 delete を禁止する。
+- CoreDB と YamlDB は別の IndexedDB database であり、単一 transaction に含められない。CoreDB migration、YamlDB inventory/recovery、YamlDB runtime path 廃止、物理 database 削除は別の Issue と atomic boundary で扱う。
+- CoreDB migration 中は YamlDB を変更しない。YamlDB recovery が CoreDB record を作る場合も、先に source snapshot 全体を fencing と preflight で固定し、write は CoreDB だけの単一 transaction で行う。YamlDB row の削除を同じ成功条件に含めない。
+
+### Record shape と共通 validation
+
+各 payload slot は次のいずれかに分類する。
+
+| classification | payload shape | 処理 |
+| --- | --- | --- |
+| legacy | `name`、`schemaId`、`content` があり、`subtype` がない | 対応 metadata name と payload name が完全一致し、registry の単一 entry に一致するときだけ canonical shape へ変換する |
+| canonical | `subtype`、`schemaId`、`content` があり、`name` がない | strict validation 後に変更しない |
+| mixed | `name` と `subtype` の両方がある | contract error として migration 全体を失敗させる |
+| incomplete | 必須 field、対応 metadata、または有効な文字列値が欠ける | contract error として migration 全体を失敗させる |
+| unknown | registry にない subtype、schemaId、filename、または余分な field がある | contract error として migration 全体を失敗させる |
+
+- legacy record は、対応 metadata name、payload `name`、`schemaId` がすべて存在し、両 name が完全一致し、その組が registry の単一 subtype に一致する場合だけ変換対象にする。
+- canonical record は subtype、schemaId、対応 metadata name の組が同じ registry entry と完全一致しなければならない。already-canonical record を legacy へ戻したり書き直したりしない。
+- legacy と canonical のどちらについても `content` を YAML として parse し、root shape と選択された registry schema の JSON Schema に対して検証する。parse error、schema mismatch、必須 property 欠落、追加禁止 property を検出した場合は全体を失敗させる。
+- 同一 payload に `name` と `subtype` が併存する mixed shape だけを禁止する。committed slot と draft slot は独立分類し、同じ `TreeNode` の `data` が canonical、`draftData` が legacy の場合は、committed slotをvalidated no-op、draft slotをmigration対象とする。
+- legacy / canonicalの`content`は検証のためにparseするだけとし、migrationで本文を整形、serialize、補完、変更しない。error reportまたはlogにも本文を含めない。
+- error report は source、node ID、slot、typed error code を含める。YAML本文、認証情報、endpoint、token を含めない。
+- missing legacy `name`、metadata/payload name 不一致、`schemaId: ''`、unknown/ambiguous mapping を filename、schemaId、別 slot、既存 record から推測または補完しない。`data.name ?? metadata.name` のような fallback を禁止する。
+
+### CoreDB slot 決定表
+
+raw recordの`data`はproperty missing、`undefined`、`null`をcommitted payload absentとして扱う。`draftMetadata`はproperty missing、`undefined`、`null`をdraft metadata absent、`draftData`はproperty missingまたは`undefined`をdraft payload absentとして扱う。normalizerでこれらを別の値へ変換してから分類しない。
+
+| `TreeNode` の状態 | 判定と処理 |
+| --- | --- |
+| `data` があり `metadata` がある | committed slot として両者だけを共通 validation にかける |
+| `data` があり `metadata` がない | incomplete。migration 全体を失敗させる |
+| `data` がなく、base `metadata`と完全な `draftMetadata` / 非空`draftData` がある | `isTemporary`に関係なくcommitted slotは未作成としてskipし、draft slotだけを検証・migrationする |
+| `isTemporary === true`、`data === null`、base `metadata`とnon-null `draftMetadata`があり、`draftData`がown-key 0のplain object | uninitialized placeholderとしてwriteせずskipする。値を補完しない |
+| `data` がなく、上記の完全なdraft pairまたは厳密なplaceholder条件を満たさない | incomplete record。migration全体を失敗させる |
+| 非空`draftData`がlegacy/canonicalの完全shapeでない | incomplete partial draft。`isTemporary`に関係なくmigration全体を失敗させる |
+| `draftMetadata === null` かつ `draftData === undefined` | active draftなし。draft slotをskipする |
+| `draftMetadata` と `draftData` の両方がある | draft slotとして両者だけを共通 validation にかける |
+| `draftMetadata` だけがある rename-only draft | committed slotを独立に検証した後、`draftMetadata.name === metadata.name`のmetadata-only draftだけをno-opにする。name差分は全体を失敗させる |
+| `draftData` だけがある | metadataをcommitted slotから補わず incomplete として全体を失敗させる |
+
+- `isTemporary` の例外は `data === null`、base metadata、non-null draftMetadata、own-key 0のplain `draftData`を同時に満たすuninitialized placeholderだけとする。property missing、`undefined`、配列、prototype由来keyだけのobjectをplaceholderとして扱わない。非空payloadについて必須fieldやschema validationを緩和せず、partial draftをskipまたはdefault補完しない。
+- rename-only draftの判定ではcommitted payloadをdraftへcopyせず、subtype、schemaId、filenameを推測しない。metadata nameが同一であることだけを検証する。
+- committed slotとdraft slotは別々のsubtypeを持ち得るが、それぞれが対応metadataを含む完全なregistry tupleでなければならない。
+- migration成功時だけlegacy payloadの`name`を除去し、対応metadata nameを唯一のfilename SSOTとする。`schemaId`と`content`は値を変更せず、registryから得た明示的な`subtype`を追加する。
+
+### CoreDB preflight、atomicity、fencing
+
+1. migration対象versionを開く前に、旧runtimeのYAML create、edit、commit、ZIP import writerを停止する。
+2. 全CoreDB `yaml-file` nodeのcommitted slotとdraft slotを列挙し、決定的な順序でmigration planまたはerror reportを作る。read-only preflight中にmigration IDと各canonical postimage digestを計算し、journalへ書く値をplanへ固定する。digest対象のfilenameはcommitted slotでは`metadata.name`、draft slotでは`draftMetadata.name`とし、filename、subtype、schemaId、contentの順に各UTF-8 byte列へ8-byte unsigned big-endian byte lengthを前置して連結し、SHA-256 lowercase hexを計算する。全件preflightが成功するまでwriteを開始しない。
+3. CoreDB schema versionを上げる`versionchange`だけをwrite fenceとする。旧connectionへcloseを要求し、旧tabはreload、旧workerはterminateを必要とする。connectionが残る間は明示的なblocked状態とし、worker/APIをreadyにせず、同じ`open()` requestだけを待機させる。connectionがcloseしたら同じrequestでupgradeをresumeし、別requestによるretry、強制継続、v1 fallbackを行わない。
+4. 同じCoreDB versionchange transaction内で`nodes` tableのraw recordを全件再読する。normalizerやread-time fallbackを通さず、全slotを再分類・再検証し、preflight時のnode ID、version、slot shape、値との完全一致を確認する。差分または検証失敗があればtransactionをabortする。
+5. raw recordがpreflight snapshotと完全一致した後、同じtransaction内でlegacy slotを一括更新し、専用migration journalへpreflight planで固定したmigration ID、from/to CoreDB version、node ID、slot、legacy name、canonical postimage digestを保存する。already-canonical slotとplaceholderはjournalまたはwrite対象へ追加しない。YAML本文をjournalへ複製しない。
+6. validation、raw再読、journal保存、または一括更新の1件でも失敗した場合はtransaction全体をabortし、CoreDB `open()` / upgradeをrejectしてworker bootを失敗させる。commit後にだけchange notificationを発行する。
+7. blocked中またはreject後にquery/mutation APIと新runtimeのYAML writerを公開しない。legacy writer、dual-write、lazy migration、read-time fallbackへ切り替えない。
+
+CoreDB versionchange transaction内ではnetwork、WebCrypto、その他の外部asyncをawaitしない。migration ID、digest、postimage、journal valueはread-only preflightで準備する。将来、transaction外promiseの待機が不可避になった場合は、対象と上限時間を本仕様で追加確定し、明示的な`Dexie.waitFor`と失敗時abortを実装するまで導入しない。
+
+already-canonical slotは毎回strict validationし、write対象へ追加しない。成功済みmigrationを同じ入力へ再実行した場合は、全slotがvalid canonicalであることを確認したno-opにする。migration済みversion markerだけを根拠にvalidationを省略しない。
+
+### YamlDB v1 inventory と recovery
+
+- YamlDB v1の全rowをread-onlyでinventoryし、`nodeId`、`parentId`、name、schemaId、対応CoreDB node/parentの有無を検証する。
+- 各rowのcontentをYAML parseしてregistry schemaで検証し、CoreDB parentの存在とfolder型、同一node IDの既存target、`parentId + metadata.name`のsibling index targetを調べる。
+- 各rowを`duplicate/no-op`、`recoverable`（recoverable orphan）、`orphan/blocked`、`conflict`、`invalid`、`explicitly discarded`のいずれかとしてaccountする。`duplicate/no-op`はYamlDB rowから構成するcanonical targetと既存CoreDB nodeのnode ID、node type、parent ID、`metadata.name`、canonical subtype、schemaId、contentがすべて一致し、string fieldがbyte-for-byteで同一の場合だけとする。その他の既存node IDまたはsibling index衝突は`conflict`とする。CoreDBにtarget nodeがなく、node IDとsibling indexが衝突せず、回復先parentが存在してfolder型の場合だけ`recoverable`とし、この状態をrecoverable orphanと定義する。target nodeがなくても、回復先parentがmissingまたはfolder型でない場合は`orphan/blocked`とし、推測したparentへ付け替えない。discardは対象rowと理由をユーザーが明示承認した場合だけ許可し、inventory側で自動判断しない。
+- orphan、CoreDBとのnode ID / parent / payload conflict、`schemaId: ''`、missing name、invalid content、unknown/ambiguous mappingをskip、filename-only分類、自動copyで処理しない。全対象とtyped errorを報告する。
+- CoreDB migrationの成功はYamlDB inventoryのrowを削除または移動したことを意味しない。回復は別Issueで明示的に承認された規則だけを使う。
+- recovery sourceを確定する前にproduction YamlDB writerを除去してfenceし、read-only inventoryを作る。inventory snapshotが変化した場合はCoreDB write前に全体を失敗させる。cross-DB transactionがないため、snapshot固定を証明できない場合はrecoveryを開始しない。
+- ユーザーが明示承認したrecovery batchだけを対象に、全rowとtargetを再preflightした後、CoreDBの単一transactionで一括commitする。1件の失敗でbatch全体をabortし、source YamlDBは成功時も変更しない。
+- YamlDB runtime pathを廃止しても物理databaseを直ちに削除しない。CoreDB migrationの本番適用後、少なくとも30日かつ後続のstable releaseが1回受け入れ済みになるまで保持し、全row accountedとrollback不要を確認する別Issueでのみ削除できる。
+
+### Canonical ZIP import / export boundary
+
+- exportはCoreDBから選んだ`yaml-file` nodeだけを読み、filenameは`metadata.name`、contentはstrict validation済み`data`または明示的に選んだ検証済みdraft slotから取得する。YamlDBを参照しない。
+- ZIP importは全entryをdecodeしてから、registryにあるcanonical filenameだけを受け入れる。canonical filenameから対応するsubtypeとschemaIdを明示設定する処理は、このimport boundaryに限って許可する。
+- unknown filename、重複canonical filename、duplicate target、invalid UTF-8、invalid YAML、schema mismatch、parent不在、sibling name conflictを全entryについて検出する。拡張子だけによる受入や`generic` subtypeを禁止する。
+- 全entry、生成するnode ID、target parent、parent更新をpreflightした後、CoreDBのnodesと必要なparent更新を単一transactionでcommitする。1件でも失敗した場合はnodeとparentの両方をrollbackする。
+- ZIP importはYamlDBへwriteしない。CoreDB write後にYamlDBへcopyする処理も追加しない。
+
+### Inverse rollback
+
+- canonical writer公開前のexact rollbackは、同じCoreDB upgrade transactionで保存したmigration journalに記録されたslotだけを対象にし、migration直前のlegacy preimageだけを復元する。canonical postimage digestを全件照合し、strict validation後にlegacy nameを戻す。already-canonicalだったslotとplaceholderを変更せず、exact rollbackを全canonical slotのlegacy化として扱わない。
+- canonical writer公開後のrelease rollbackは、すべてのYAML writerをfenceし、対象となる全CoreDB canonical slotをraw再読してstrict validationする。mixed、incomplete、unknown、metadata不一致を検出した場合はrollback全体を失敗させる。
+- どちらのrollbackもDB versionを下げず、より新しいCoreDB versionの単一versionchange transactionでstrict canonicalからlegacyへのmigrationとして実行する。対象canonical payloadから`subtype`を除去し、exact rollbackはjournalのlegacy name、release rollbackは対応metadata nameを`name`として設定する。`schemaId`と`content`は変更しない。
+- rollback transactionの1件でも失敗した場合は全変更をabortする。YamlDBはCoreDB rollbackの対象に含めず、保持中のlegacy sourceを変更しない。
+- runtime rollbackは後続依存グラフの逆順で行う。旧binaryをinverse migrationより先に起動せず、fallbackまたはdual-writeでrollbackしない。
+- exact rollback後にlegacy runtimeを起動できるのは、migration preimageにcanonical slotが0件だった場合、または対象旧runtimeがそのmixed preimageをstrictに処理できることを検証済みの場合だけとする。通常のlegacy runtime復帰は、全valid canonical slotを変換するrelease rollbackが成功した後に限る。
+
+CoreDB / runtime laneのrollback順は次で固定する。
+
+1. final integration、SSH integration、non-SSH integrationを停止し、全YAML writerとcommand実行をfenceする。
+2. Step 4 UIを無効化する。
+3. executor、credential provider、feature flag compositionを無効化する。
+4. SimulationWorkflowのcanonical snapshot consumer変更をrevertする。
+5. canonical folder ZIP import / exportを無効化する。
+6. canonical dialog writerを無効化する。
+7. 次のCoreDB versionchange transactionでstrict canonicalからlegacyへのinverse migrationを完了する。
+8. inverse migration成功後に限り、必要なlegacy type consumerを起動する。
+
+YamlDB laneのrollbackはCoreDB laneと別に扱う。物理databaseを保持している間にrevertできるのはread-only inventory / recovery accessだけとし、YamlDB writer、SSOT、cache、dual-writeを再有効化しない。物理database削除後はgit revertでrowを復元できないため、削除Issueで明示承認された検証済みbackupがなければrollbackをblockedとして停止する。別sourceからの自動copy、CoreDBからの逆生成、fallback、dual-writeで復元しない。
 
 ## Upstream blocker
 
@@ -197,9 +294,38 @@ SSH で公開されている mutation は `simulateSsh` と `calibrateSsh` だ�
 
 ## 後続実装順序
 
-1. subtype、template、schema、migration/import
-2. IDE-GSM client mutation、rsync input、task status
-3. app-level executor、credential provider、feature flag
-4. Step 4 UI
-5. snapshot/import/command integration test
-6. upstream API 公開後の SSH lifecycle
+```mermaid
+graph TD
+  Registry["#1266 subtype / schema / command registry"] --> Preflight["全件preflight / migration plan"]
+  Registry --> CoreMigration["CoreDB atomic migration"]
+  Registry --> DialogWriter["canonical dialog writer"]
+  Registry --> SnapshotIO["canonical folder ZIP import / export"]
+  Registry --> Step4["Step 4 UI"]
+  Contract["#1271 storage migration contract"] --> Preflight
+  Preflight --> CoreMigration["CoreDB atomic migration"]
+  CoreMigration --> DialogWriter["canonical dialog writer"]
+  DialogWriter --> SnapshotIO["canonical folder ZIP import / export"]
+  Client["#1265 typed IDE-GSM client"] --> Executor["app executor / credential provider / feature flag"]
+  SnapshotIO --> Executor
+  Executor --> Step4
+  SnapshotIO --> SimulationRegression["SimulationWorkflow regression"]
+  Step4 --> NonSshIntegration["non-SSH snapshot / command integration"]
+  SimulationRegression --> NonSshIntegration
+
+  Contract --> FreezeYamlWrites["YamlDB production write除去 / fence"]
+  CoreMigration --> FreezeYamlWrites
+  FreezeYamlWrites --> LegacyRecovery["YamlDB v1 read-only inventory / recovery"]
+  LegacyRecovery --> RemoveYamlReads["残存read path除去 / runtime retirement"]
+  RemoveYamlReads --> RetentionGate["30日 + stable release + 全row accounted"]
+  RetentionGate --> DeleteYamlDB["YamlDB物理削除"]
+
+  UpstreamSsh["upstream SSH lifecycle API"] --> SshIntegration["SSH client / UI integration"]
+  NonSshIntegration --> FinalIntegration["final integration"]
+  SshIntegration --> FinalIntegration
+```
+
+- subtype、template、schema、strict command registryは[#1266](https://github.com/kubohiroya/hierarchidb/issues/1266)、typed IDE-GSM clientは[#1265](https://github.com/kubohiroya/hierarchidb/issues/1265)で先行済みとする。
+- CoreDB preflight / migration、canonical dialog writer、canonical ZIP import/exportは本契約の完了後に別Issue、別branch、別worktreeで直列に実施する。migration完了前にcanonical writerまたはZIP pathを公開しない。
+- canonical ZIPの後にSimulationWorkflow regressionを行う。executor / Step 4と合わせたnon-SSH integrationを、SSH lifecycleを含むfinal integrationから分離する。
+- YamlDB laneはproduction write除去 / fence、read-only inventory / recovery、残存read path除去 / runtime retirementの順とする。物理database削除はruntime廃止、30日、後続stable release受入、全row accountedのすべてを満たす別Issueとする。
+- SSH client / UI integrationはupstream API公開と本仕様のrevision更新までblockedとし、完了後にfinal integrationへ進む。

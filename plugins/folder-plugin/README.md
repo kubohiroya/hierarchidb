@@ -1,6 +1,6 @@
 # @hierarchidb/folder-plugin
 
-Last updated: 2026-04-05
+Last updated: 2026-08-20
 
 A plugin that provides the fundamental container node for HierarchiDB's tree structure. Folder nodes act as containers that semantically organize and consolidate various types of nodes in a hierarchy.
 
@@ -177,36 +177,11 @@ import { FolderIcon } from '@hierarchidb/folder-plugin/ui';
 <FolderIcon open={true} />
 ```
 
-### Exporting YAML Snapshots
+## Legacy YAML snapshot boundary
 
-```typescript
-import { exportYamlNodesToSnapshot } from '@hierarchidb/folder-plugin';
-import type { ExportableNode } from '@hierarchidb/folder-plugin';
+The current `exportYamlNodesToSnapshot` and `importYamlNodesFromSnapshot` helpers are a legacy, non-canonical implementation. Export still reads `data.name`; import writes sequential YamlDB-only rows with an empty schema ID and does not create authoritative CoreDB `TreeNode` records. A later write failure can therefore leave partial YamlDB rows.
 
-const nodes: ExportableNode[] = [
-  {
-    nodeId: toNodeId('node-1'),
-    nodeType: 'yaml',
-    data: { name: 'config.yml', schemaId: '', content: 'key: value' },
-  },
-];
-
-const result = await exportYamlNodesToSnapshot(nodes);
-if (result.ok) {
-  // result.snapshot contains Base64-encoded ZIP
-}
-```
-
-### Importing YAML Snapshots
-
-```typescript
-import { importYamlNodesFromSnapshot } from '@hierarchidb/folder-plugin';
-
-const result = await importYamlNodesFromSnapshot(base64Snapshot, parentId);
-if (result.ok) {
-  console.log('Imported node IDs:', result.nodeIds);
-}
-```
+Do not use these helpers as the canonical IDE-GSM snapshot path or a Step 4 runtime dependency. Their cutover is blocked until CoreDB migration succeeds, after which a separate issue must implement all-entry preflight and one CoreDB transaction for node and parent updates. See the [canonical YAML storage contract](../../docs/yaml-plugin-ide-gsm-step4-spec.md) and the [legacy YamlDB boundary](../../packages/yaml-store/README.md).
 
 ## Directory Structure
 
@@ -250,24 +225,24 @@ src/
 
 ### Dependencies
 
-- [`@hierarchidb/plugin-base`](../packages/plugin-base/) — Plugin base (PluginManifest, PluginStepRegistry)
-- [`@hierarchidb/core-types`](../packages/core-types/) — Shared type definitions (NodeId, NodeType, etc.)
-- [`@hierarchidb/tree-api`](../packages/tree-api/) — TreeNode type definitions
-- [`@hierarchidb/tag-api`](../packages/tag-api/) — TagId, TagSuggestion types
-- [`@hierarchidb/yaml-api`](../packages/yaml-api/) — YAML node type definitions
-- [`@hierarchidb/yaml-store`](../packages/yaml-store/) — YAML node creation API
-- [`@hierarchidb/util`](../packages/util/) — Utilities (generateId, etc.)
-- [`@hierarchidb/plugin-ui-sdk`](../packages/plugin-ui-sdk/) — Plugin UI SDK
-- [`@hierarchidb/plugin-service-api`](../packages/plugin-service-api/) — Plugin service API
-- [`@hierarchidb/components`](../packages/components/) — Shared UI components (notify, etc.)
-- [`@hierarchidb/ui-dialog`](../packages/ui/dialog/) — Dialog base
-- [`@hierarchidb/ui-plugin-basic-info`](../packages/ui/plugin-basic-info/) — Plugin basic info step
+- [`@hierarchidb/plugin-base`](../../packages/plugin-base/) — Plugin base (PluginManifest, PluginStepRegistry)
+- [`@hierarchidb/core-types`](../../packages/core-types/) — Shared type definitions (NodeId, NodeType, etc.)
+- [`@hierarchidb/tree-api`](../../packages/tree-api/) — TreeNode type definitions
+- [`@hierarchidb/tag-api`](../../packages/tag-api/) — TagId, TagSuggestion types
+- [`@hierarchidb/yaml-api`](../../packages/yaml-api/) — YAML node type definitions
+- [`@hierarchidb/yaml-store`](../../packages/yaml-store/) — Legacy YamlDB recovery boundary
+- [`@hierarchidb/util`](../../packages/util/) — Utilities (generateId, etc.)
+- [`@hierarchidb/plugin-ui-sdk`](../../packages/plugin-ui-sdk/) — Plugin UI SDK
+- [`@hierarchidb/plugin-service-api`](../../packages/plugin-service-api/) — Plugin service API
+- [`@hierarchidb/components`](../../packages/components/) — Shared UI components (notify, etc.)
+- [`@hierarchidb/ui-dialog`](../../packages/ui/dialog/) — Dialog base
+- [`@hierarchidb/ui-plugin-basic-info`](../../packages/ui/plugin-basic-info/) — Plugin basic info step
 
 ### Plugins Inheriting from folder-plugin
 
-- [`spreadsheet-plugin`](../plugins/spreadsheet-plugin/) — CSV/TSV/Excel source management
-- [`styler-plugin`](../plugins/styler-plugin/) — Style definitions and map style application
-- [`linker-plugin`](../plugins/linker-plugin/) — Project domain management
+- [`spreadsheet-plugin`](../spreadsheet-plugin/) — CSV/TSV/Excel source management
+- [`styler-plugin`](../styler-plugin/) — Style definitions and map style application
+- [`linker-plugin`](../linker-plugin/) — Project domain management
 
 ## License
 
