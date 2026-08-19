@@ -3,6 +3,21 @@
 本ドキュメントは、shape/route の共通パイプライン設計をまとめる。
 個別差分は `docs/vt-shape-pipeline-design.md` / `docs/vt-route-pipeline-design.md` に記載する。
 
+## ビルドセッションのstage vocabulary（SSOT）
+
+実行時の `TaskStage` は `docs/build-session-spec.md` を SSOT とし、shape/route ともに
+`source → geometry → tileEmit` を使用する。
+
+| canonical `TaskStage` | 本文で扱う処理 | 旧stage表記 |
+| --- | --- | --- |
+| `source` | 外部入力の取得、正規化、source artifact の生成 | `shape-fetch` / `route-fetch` / `fetch` |
+| `geometry` | band別の簡略化、geometry artifact と tile index の生成 | `transform` |
+| `tileEmit` | geometry artifact から vector tile を生成・保存 | `vt` |
+
+旧stage表記を `TaskStage`、taskQueueの `stage`、またはbuild-session eventのstage IDとして使用してはならない。
+ただし、`stage1Buffers`、`transformBandBuffers`、`vtBand3Reservations`、`vt-pbf`、
+`vt-orchestrator`、既存config fieldなどの識別子はartifact・形式・package名であり、stage IDではないため維持する。
+
 ## 目的
 
 - 多数のデータから高ズーム帯まで大量タイル生成を可能にする
@@ -11,7 +26,7 @@
 
 ## 前提
 
-- 旧ステージ名 `vectortile` は廃止し、新ステージ名は `vt` とする
+- 旧stage ID `vectortile` / `fetch` / `transform` / `vt` は廃止し、canonical IDは `source` / `geometry` / `tileEmit` とする
 - 旧実装との併存は行わない（切替は一度きり）
 - 既存データは破棄し、再生成を前提とする
 - ズーム帯は以下を基本とし、band3 は条件付きで自動 ON
@@ -34,20 +49,20 @@
 - **zBase**: 各 band の最小ズーム（0/3/6/9）
 - **buffer**: FGB で永続化した地物群
 - **tileId**: `packXY(x,y,z)` の 32bit パック値
-- **stage1**: `shape-fetch` / `route-fetch` のこと
+- **stage1**: `source` stage が生成する入力artifact群の歴史的な総称。`TaskStage` 値ではない
 
 ## 構成要素と責務
 
 - **shape/route plugin**
-  - stage1（fetch）とドメイン固有ロジックを担当
+  - source stageの取得処理とドメイン固有ロジックを担当
   - smartFetch による取得・キャッシュ・リトライを実行
-  - transform タスク生成（stage1 の成果に基づくタスク分割）
+  - `geometry`タスク生成（source artifactに基づくタスク分割）
 - **plugin → vt-orchestrator**
-  - plugin が fetch タスクを **taskQueue に記録**し、自身で fetch を実行する
-  - plugin が transform/vt タスクを生成し、vt-orchestrator に投入する
-  - vt-orchestrator は transform/vt の実行とリソース制御を担う
+  - pluginが`source`タスクを **taskQueueに記録**し、自身で取得処理を実行する
+  - pluginが`geometry` / `tileEmit`タスクを生成し、vt-orchestratorに投入する
+  - vt-orchestratorは`geometry` / `tileEmit`の実行とリソース制御を担う
 - **EphemeralShapeDB / EphemeralRouteDB / EphemeralLocationDB（Location は未実装）**
-  - stage1/transform の中間ストア（スキーマ + Query/Mutation）
+  - `source` / `geometry` artifactの中間ストア（スキーマ + Query/Mutation）
 - **ShapeDB / RouteDB / LocationDB（Location は features 永続のみ）**
   - 生成済みベクトルタイルや成果物の永続化と Query/Mutation
 - **vt-orchestrator**
@@ -66,16 +81,16 @@
   - LocationDB（features の永続化）
   - EphemeralLocationDB（中間生成物。未実装のため必要時に新設）
 - `packages/vt-orchestrator`
-  - buildConfig を受け取り、transform/vt のタスクを実行
+  - buildConfigを受け取り、`geometry` / `tileEmit`タスクを実行
   - maxBuffersPerTask / maxVerticesPerTask / band3 予約上限を適用
 - `plugins/shape-plugin`
-  - shape-fetch + build UI + domain ルール
+  - shapeのsource処理 + build UI + ドメイン規則
   - smartFetch を用いて GeoJSON を取得し stage1Buffers を生成
 - `plugins/route-plugin`
-  - route-fetch + build UI + domain ルール
+  - routeのsource処理 + build UI + ドメイン規則
   - smartFetch で外部 API を呼び出し stage1Buffers を生成
 - `packages/location-store`
-  - route-fetch が参照する地点 DB（LocationQuery/Mutation）
+  - routeのsource処理が参照する地点DB（LocationQuery/Mutation）
 
 ## ファイル単位の実装スケッチ（想定）
 
@@ -86,7 +101,7 @@
 - `packages//src/ShapeDB.ts`
   - ShapeDB（成果物の永続化）
 - `packages//src/EphemeralShapeDB.ts`
-  - EphemeralShapeDB（stage1/transform の中間生成物）
+  - EphemeralShapeDB（source/geometry artifact）
 - `packages//src/RouteDB.ts`
   - RouteDB（成果物の永続化）
 - `packages//src/LocationDB.ts`
@@ -100,7 +115,7 @@
   - `runTransform(buildConfig)`
   - `runVt(buildConfig)`
 - `packages/vt-orchestrator/src/task/taskQueue.ts`
-  - plugin が記録する fetch タスクと、orchestrator が実行する transform/vt タスクの永続化
+  - pluginが記録する`source`タスクと、orchestratorが実行する`geometry` / `tileEmit`タスクの永続化
   - Dexie.js 永続化によりタスクメタデータを受け渡しする
   - 進捗割合 / エラーメッセージを通知する（現行実装の責務を継承）
 - `packages/vt-orchestrator/src/transform/transformBand.ts`
@@ -139,30 +154,30 @@
 
 | 旧名称 | 新名称 | 備考 |
 | --- | --- | --- |
-| `vectortile` ステージ | `vt` ステージ | 旧ステージは廃止 |
+| `vectortile` stage | `tileEmit` stage | 旧stageは廃止 |
 | `shape-store` | `EphemeralShapeDB` / `ShapeDB` | 中間生成物と成果物を分離 |
 | `vectortile-store` | 各ドメインDB（ShapeDB/RouteDB/LocationDB） | ノード種別DBへ統合 |
 | `vectortile-orchestrator` | `vt-orchestrator` | 内部実装を全面刷新 |
-| `shape-plugin/src/services/batch` | `shape-fetch/transform/vt` へ再編 | 旧バッチは削除 |
+| `shape-plugin/src/services/batch` | `source/geometry/tileEmit` へ再編 | 旧バッチは削除 |
 | `shape-plugin/src/worker` | 新 vt パイプライン用に再実装 | 旧実装を削除 |
 ## 全体像（3ステージ）
 
 ```mermaid
 flowchart LR
-  A[stage1] --> B[transform]
-  B --> C[vt]
+  A[source] --> B[geometry]
+  B --> C[tileEmit]
   Q[(taskQueue\nDexie)] --> UI[Step5 LRUSplitPane]
 
-  subgraph A1[stage1 domain-specific（plugin実行）]
-    A10[fetchタスク記録] -.-> Q
+  subgraph A1[source domain-specific（plugin実行）]
+    A10[source task記録] -.-> Q
     A10 --> A11[入力取得]
     A11 --> A12[domain-specific FGB生成]
     A12 --> A13[stage1Buffers保存]
-    A13 --> A14[transformタスク生成&taskQueue記録（plugin）]
+    A13 --> A14[geometryタスク生成&taskQueue記録（plugin）]
     A14 -.-> Q
   end
 
-  subgraph B1[transform（orchestrator実行）]
+  subgraph B1[geometry（orchestrator実行）]
     B11[stage1Buffers読込]
     B11 --> B12[ズーム帯ごとに簡略化]
     B12 --> B13[transformBandBuffers保存]
@@ -172,7 +187,7 @@ flowchart LR
     B12 -.-> Q
   end
 
-  subgraph C1[vt（orchestrator実行）]
+  subgraph C1[tileEmit（orchestrator実行）]
     C11[固定タスク生成] --> C12[band3予約タスク追加]
     C12 --> C13[tileIndexからbufferId取得]
     C13 --> C14[geojson-vtでタイル生成]
@@ -182,18 +197,19 @@ flowchart LR
   end
 ```
 
-## ステージ命名（共通）
+## TaskStage命名（共通）
 
-- shape: `shape-fetch` → `transform` → `vt`
-- route: `route-fetch` → `transform` → `vt`
+- shape: `source` → `geometry` → `tileEmit`
+- route: `source` → `geometry` → `tileEmit`
+- domain固有の取得処理はtask metadataで識別し、stage IDへ `shape-fetch` / `route-fetch` を導入しない
 
 ## 責務分担と smartFetch
 
 - 複雑なロジックは各 plugin（shape/route）に寄せる
 - `vt-{shape,route}-store` は **Query/Mutation とスキーマ定義**までを責務範囲とする
-- `shape-fetch` / `route-fetch` は **smartFetch を通して入出力を行う**
+- shape/routeのsource処理は **smartFetchを通して入出力を行う**
   - HTTP GET の認証・リトライ・chunk-store による nodeId 関連キャッシュ
-  - `route-fetch` は外部 API の HTTP POST を含む場合も smartFetch を使用
+  - routeのsource処理は外部APIのHTTP POSTを含む場合もsmartFetchを使用
 
 ## 共通データモデル（DBスキーマ）
 
@@ -212,7 +228,7 @@ flowchart LR
 
 **命名ルール**
 - テーブル名は `stage1Buffers` に固定し、`domainType` で shape/route を識別する
-- 以後の transform/vt は `stage1Buffers` を共通の入力として扱う
+- 以後のgeometry/tileEmit stageは `stage1Buffers` を共通の入力として扱う
 - `sourceKey` は **再実行時も同一値**になるよう決定する（idempotency 前提）
 
 ### transformBandBuffers
@@ -291,7 +307,7 @@ flowchart LR
 
 ## band3 予約タスクの軽量永続化
 
-- transform で adminLevel>=2 を扱うタスクは、
+- geometry stageでadminLevel>=2を扱うtaskは、
   **そのタスクが扱う地物の union BBox を z9 タイル集合へ変換**し、予約として保存
 - 重複排除は `&[nodeId+tileId]` で保証
 - `maxBand3Reservations` を超える場合は **安全策としてエラー**とする
@@ -353,17 +369,17 @@ export function parentTileToChildRange(tile: Tile, zTarget: number): { xStart: n
 
 | ステージ | 入力 | 出力 |
 | --- | --- | --- |
-| stage1 (shape-fetch / route-fetch) | remote GeoJSON / route metadata | `stage1Buffers` + transform タスク |
-| transform | `stage1Buffers` | `transformBandBuffers` + `tileIndexBand` + `vtBand3Reservations` |
-| vt | `tileIndexBand` + `transformBandBuffers` | VTMutationAPI へ vt-pbf 保存 |
+| `source` | remote GeoJSON / route metadata | `stage1Buffers` + `geometry`タスク |
+| `geometry` | `stage1Buffers` | `transformBandBuffers` + `tileIndexBand` + `vtBand3Reservations` |
+| `tileEmit` | `tileIndexBand` + `transformBandBuffers` | VTMutationAPI へ vt-pbf 保存 |
 
 ## タスク payload（最小要件）
 
-### fetch タスク（plugin → taskQueue）
+### `source`タスク（plugin → taskQueue）
 
-stage1 は plugin が実行するが、進捗可視化のため taskQueue で管理する。
-fetch の開始/進捗/完了（succeeded/reused/failed）は plugin 側が taskQueue に書き込み、
-vt-orchestrator は fetch の実行は行わない。
+source処理はpluginが実行するが、進捗可視化のためtaskQueueで管理する。
+取得処理の開始/進捗/完了（succeeded/reused/failed）はplugin側がtaskQueueに書き込み、
+vt-orchestratorはsource処理を実行しない。
 
 - `nodeId`
 - `domainType` (`shape` / `route`)
@@ -371,11 +387,11 @@ vt-orchestrator は fetch の実行は行わない。
 - `countryCode` / `adminLevel`（shape の場合）
 - `srcId` / `dstId`（route の場合）
 
-**fetch 成功時のキャッシュ**
-- fetch タスクが `succeeded` の場合は smartFetch でキャッシュを保存する
+**source取得成功時のキャッシュ**
+- `source`タスクが `succeeded` の場合はsmartFetchでキャッシュを保存する
 - 以降の同様タスクはキャッシュを用いて `reused` として処理する
 
-### transform タスク（plugin → taskQueue）
+### `geometry`タスク（plugin → taskQueue）
 
 - `nodeId`
 - `bandIndex`
@@ -384,7 +400,7 @@ vt-orchestrator は fetch の実行は行わない。
 - `sourceKey`
 - `stagePriority`（ステージ内実行優先度。小さいほど先に実行）
  
-### vt タスク（plugin → taskQueue）
+### `tileEmit`タスク（plugin → taskQueue）
 
 - `nodeId`
 - `bandIndex`
@@ -407,7 +423,7 @@ vt-orchestrator は fetch の実行は行わない。
 
 - `taskId`
 - `nodeId`
-- `stage` (`fetch` / `transform` / `vt`)
+- `stage` (`source` / `geometry` / `tileEmit`)
 - `status` (`queued` / `running` / `succeeded` / `failed` / `skipped` / `reused`)
 - `progress` (0-100)
 - `message`（任意、ログ/補足）
@@ -444,11 +460,11 @@ vt-orchestrator は fetch の実行は行わない。
 > 状態は現行の taskQueue 型に合わせ、`waiting/running/completed/failed` を使用する。
 > reused/skipped は **message 前置詞**で表現し、UI 側は現行の `isSkippedMessage` 互換を維持する。
 
-### fetch（shape-fetch / route-fetch）
+### source（shape/route input acquisition）
 
 - **判定キー**: `domainType + sourceKey + dataSource + requestSignature`
   - fetch-shape（geoBoundaries/GADM）は **GETのみ**で利用するため、`requestSignature` は **URLそのもの**をキーとして扱う
-  - route-fetch は POST を含むため、smartFetch の requestSignature（URL/method/body/auth）に準拠
+  - routeのsource requestはPOSTを含むため、smartFetchのrequestSignature（URL/method/body/auth）に準拠
 - **reused 条件**:
   - smartFetch が **外部アクセス無し**でキャッシュヒットした場合
   - route の waypoints 計算が **キャッシュヒット**した場合（大圏航路 / searoute-jp / 外部API）
@@ -460,7 +476,7 @@ vt-orchestrator は fetch の実行は行わない。
   - 取得条件（国/レベル/route 種別）の変更
   - smartFetch キャッシュ削除
 
-### transform
+### geometry
 
 - **判定キー**: `domainType + sourceKey + bandIndex + geometryConfigHash`
   - geometryConfigHash に含める項目:
@@ -480,7 +496,7 @@ vt-orchestrator は fetch の実行は行わない。
   - transform 設定（簡略化強度・band・grid-snap 条件）の変更
   - band3 判定の変更
 
-### vt
+### tileEmit
 
 - **判定キー**: `domainType + bandIndex + zBase + tileId + bufferSetHash + tileEmitConfigHash`
   - bufferSetHash に含める項目:
@@ -531,20 +547,20 @@ vt-orchestrator は fetch の実行は行わない。
 
 **現行想定の課題（批判的検討）**
 - 自動採番のみでは再実行・再起動時に同一タスクの同定が難しい
-- fetch/transform/vt の粒度が異なるため、衝突回避のキー設計が必要
+- source/geometry/tileEmit の粒度が異なるため、衝突回避のキー設計が必要
 
 **新仕様（決定規則）**
 - `taskId` は **安定・再現可能**であることを必須とする
 - `taskId` は `nodeId` と `stage` を含み、**sourceKey ベースで一意**になるようにする
 
 **taskId の構成（例）**
-- `fetch`: `${nodeId}:fetch:${domainType}:${sourceKey}`
-- `transform`: `${nodeId}:transform:${bandIndex}:${domainType}:${sourceKey}`
-- `vt`: `${nodeId}:vt:${bandIndex}:${zBase}:${tileId}:${bufferSetHash}`
+- `source`: `${nodeId}:source:${domainType}:${sourceKey}`
+- `geometry`: `${nodeId}:geometry:${bandIndex}:${domainType}:${sourceKey}`
+- `tileEmit`: `${nodeId}:tileEmit:${bandIndex}:${zBase}:${tileId}:${bufferSetHash}`
 
 **拡張例（hash を含める場合）**
-- `transform`: `${nodeId}:transform:${bandIndex}:${domainType}:${sourceKey}:${geometryConfigHash}`
-- `vt`: `${nodeId}:vt:${bandIndex}:${zBase}:${tileId}:${bufferSetHash}:${tileEmitConfigHash}`
+- `geometry`: `${nodeId}:geometry:${bandIndex}:${domainType}:${sourceKey}:${geometryConfigHash}`
+- `tileEmit`: `${nodeId}:tileEmit:${bandIndex}:${zBase}:${tileId}:${bufferSetHash}:${tileEmitConfigHash}`
 
 **補足**
 - `bufferSetHash` は `bufferIds[]` の内容を安定ハッシュ化した値
@@ -585,9 +601,9 @@ vt-orchestrator は fetch の実行は行わない。
 - 自動再試行が過剰だと I/O が過負荷になる
 
 **新仕様（決定規則）**
-- `fetch`: ネットワーク系はリトライ（回数は buildConfig の retryAttempts を使用）
-- `transform`: deterministic なので基本再試行なし（失敗は failed）
-- `vt`: リトライ不要（失敗は failed）
+- `source`: ネットワーク系はリトライ（回数は buildConfig の retryAttempts を使用）
+- `geometry`: deterministic なので基本再試行なし（失敗は failed）
+- `tileEmit`: リトライ不要（失敗は failed）
 
 ## tileIndexBand の生成ルール
 
@@ -598,12 +614,12 @@ vt-orchestrator は fetch の実行は行わない。
 ## idempotency と再実行
 
 - `stage1Buffers` / `transformBandBuffers` / `tileIndexBand` は **同一キーで upsert**
-- `vt` は `nodeId + z + x + y + layer` 単位で上書き可能にする
+- `tileEmit` は `nodeId + z + x + y + layer` 単位で上書き可能にする
 - タスク再実行で同一結果が得られることを前提に設計する
 
 ## 中間ストアのライフサイクル
 
-- `vt` 完了後に `stage1Buffers` / `transformBandBuffers` / `tileIndexBand` を削除してよい
+- `tileEmit` 完了後に `stage1Buffers` / `transformBandBuffers` / `tileIndexBand` を削除してよい
 - `vtBand3Reservations` は band3 完了後に削除してよい
 - 中間ストア/タスクの削除は PluginLifecycleAPI を通じて実行する
 ## パラメータ（初期値案）
@@ -615,7 +631,7 @@ vt-orchestrator は fetch の実行は行わない。
 ## Step4 設定（補足）
 
 - `band3Enabled`: 自動判定（表示のみ、ユーザー操作は不可）
-- `maxBuffersPerTask` / `maxVerticesPerTask` / `maxBand3Reservations`: vt タスクの分割上限（Advanced Settings 内）
+- `maxBuffersPerTask` / `maxVerticesPerTask` / `maxBand3Reservations`: `tileEmit`タスクの分割上限（Advanced Settings 内）
 - band の z 範囲は固定（表示のみ）
 
 ## Step4 入力仕様（最終参照）
@@ -635,15 +651,15 @@ vt-orchestrator は fetch の実行は行わない。
 ### 2) 非Legacy項目（要約）
 
 #### shape
-- fetch: `downloadConfig.maxConcurrent`, `timeoutMs`, `retryDelay`, `retryAttempts`（fetch 設定）
-- transform: `transformShapeSimplificationTolerance`, `featureFilterMethod`, `areaThreshold`, `hybridFilterConfig.*`
-- vt: `tileConfig.minZoom/maxZoom`, `zoomBreakpoints`, `bufferSize`, `tileExpandFactor`, `tileExpandMargin`, `vtShapeSimplificationTolerance`
+- source: `downloadConfig.maxConcurrent`, `timeoutMs`, `retryDelay`, `retryAttempts`（既存fetch設定）
+- geometry: `transformShapeSimplificationTolerance`, `featureFilterMethod`, `areaThreshold`, `hybridFilterConfig.*`
+- tileEmit: `tileConfig.minZoom/maxZoom`, `zoomBreakpoints`, `bufferSize`, `tileExpandFactor`, `tileExpandMargin`, `vtShapeSimplificationTolerance`
 - task split: `maxBuffersPerTask`, `maxVerticesPerTask`, `maxBand3Reservations`
 
 #### route
-- fetch: `processing.apiThrottle.requestsPerSecond`, `processing.apiThrottle.maxConcurrent`
-- transform: `transformRouteSimplificationTolerance`（旧 `processing.extraction.tolerance` は移行対象）
-- vt: `processing.vectorTiles.minZoom/maxZoom`, `processing.vectorTiles.buffer`, `vtRouteSimplificationTolerance`
+- source: `processing.apiThrottle.requestsPerSecond`, `processing.apiThrottle.maxConcurrent`
+- geometry: `transformRouteSimplificationTolerance`（旧 `processing.extraction.tolerance` は移行対象）
+- tileEmit: `processing.vectorTiles.minZoom/maxZoom`, `processing.vectorTiles.buffer`, `vtRouteSimplificationTolerance`
 - task split: `maxBuffersPerTask`, `maxVerticesPerTask`, `maxBand3Reservations`
 
 ### 3) 移行後に有効化する項目（チェックリスト）
@@ -680,29 +696,29 @@ vt-orchestrator は fetch の実行は行わない。
 
 ### 5) Step4 UI 表記（最終版）
 
-- `Build Settings (shape-fetch / transform / vt)` / `ビルド設定（shape-fetch / transform / vt）`
-- `shape-fetch` / `route-fetch`
-- `Transform` / `Transform`
-- `VT` / `VT`
+- `Build Settings (Source / Geometry / Tile Emit)` / `ビルド設定（Source / Geometry / Tile Emit）`
+- `Source` / `Source`
+- `Geometry` / `Geometry`
+- `Tile Emit` / `Tile Emit`
 - `Simplification strength` / `簡略化強度`
-- `Transform preprocessing` / `Transform 前処理`
-- `VT generation` / `VT 生成`
-- `Delete fetch cache` / `fetch キャッシュ削除`
-- `Delete transform cache` / `transform キャッシュ削除`
-- `Delete vt cache` / `vt キャッシュ削除`
+- `Geometry preprocessing` / `Geometry 前処理`
+- `Tile generation` / `タイル生成`
+- `Delete source cache` / `source キャッシュ削除`
+- `Delete geometry cache` / `geometry キャッシュ削除`
+- `Delete tile cache` / `tile キャッシュ削除`
 - `Legacy controls` 表示文: `旧 Extract 互換のため残置（Advanced Settings 内）` / `Kept for legacy Extract compatibility (Advanced Settings)`
 
 **説明文の最終形**
-- Transform: 「Transform で形状を簡略化し、以降の vt 生成に備える」
-- VT: 「VT 生成設定（vt-pbf への出力と境界線のデデュープ）」
+- Geometry: 「Geometry stageで形状を簡略化し、以降のtile生成に備える」
+- Tile Emit: 「Tile Emit設定（vt-pbfへの出力と境界線のデデュープ）」
 - Simplification: 「簡略化強度を調整し、RDP の許容誤差へ変換」
-- Fetch: 「shape-fetch / route-fetch でデータ取得（smartFetch 経由）」
+- Source: 「Source stageでデータ取得（smartFetch経由）」
 
 ### 6) Step4 入力仕様（詳細）
 
 #### shape
 
-##### fetch（shape-fetch）
+##### source（既存fetch設定）
 
 - `downloadConfig.maxConcurrent`（Rating, fetch 設定）
   - 形式: number（整数）
@@ -725,7 +741,7 @@ vt-orchestrator は fetch の実行は行わない。
   - バリデーション: max=10
   - 既定値出典: `DEFAULT_PROCESSING_CONFIG.downloadConfig.retryAttempts`（未設定時は 3）
 
-##### transform
+##### geometry（既存transform設定）
 
 - `extract1Config.workers`（Rating）
   - 形式: number（整数）
@@ -796,7 +812,7 @@ vt-orchestrator は fetch の実行は行わない。
   - バリデーション: min=0.1, max=5.0, step=0.1
   - 既定値出典: 新設計で追加予定（仕様値は 1.0）
 
-##### vt
+##### tileEmit（既存VT出力設定）
 
 - `tileConfig.workers`（Rating）
   - 形式: number（整数）
@@ -857,7 +873,7 @@ vt-orchestrator は fetch の実行は行わない。
 
 #### route
 
-##### fetch（route-fetch）
+##### source（既存fetch設定）
 
 - `processing.apiThrottle.requestsPerSecond`（Slider）
   - 形式: number（整数）
@@ -870,7 +886,7 @@ vt-orchestrator は fetch の実行は行わない。
   - バリデーション: min=1, max=10
   - 既定値出典: `DEFAULT_CONFIG.apiThrottle.maxConcurrent`（未設定時は 2）
 
-##### transform
+##### geometry（既存transform設定）
 
 - `processing.extraction.tolerance`（Slider）
   - 形式: number
@@ -889,7 +905,7 @@ vt-orchestrator は fetch の実行は行わない。
   - バリデーション: min=0.1, max=5.0, step=0.1
   - 既定値出典: 新設計で追加予定（仕様値は 1.0）
 
-##### vt
+##### tileEmit（既存VT出力設定）
 
 - `processing.vectorTiles.minZoom/maxZoom`（TextField）
   - 形式: number
@@ -1058,21 +1074,21 @@ vt-orchestrator は fetch の実行は行わない。
   - 理由: 新仕様では transform 出力は FGB 固定で、抽出モード分岐を採用しないため。
 
 **(C) ラベル/変数名の微調整が必要な項目**
-- Download → Fetch（ステージ名の統一）
-- Extract1/Extract2 → Transform（2段抽出を統合）
-- vectorTiles → vt（ステージ名の統一）
+- Download → Source（stage名の統一）
+- Extract1/Extract2 → Geometry（2段抽出を統合）
+- vectorTiles → Tile Emit（stage名の統一）
 - extract1Config / extract2Config → geometryConfig（実装名は残っても UI 表記は統一）
 
 **(D) 新規に追加すべき項目**
-- maxBuffersPerTask（vt タスク分割の上限）
-- maxVerticesPerTask（vt タスク分割の上限）
+- maxBuffersPerTask（`tileEmit`タスク分割の上限）
+- maxVerticesPerTask（`tileEmit`タスク分割の上限）
 - maxBand3Reservations（band3 予約の上限）
 - band3Enabled（自動判定の表示のみ）
 
 ### route
 
 **(A) 新仕様でもこのまま使える項目**
-- apiThrottle.requestsPerSecond / maxConcurrent（route-fetch の I/O 速度制御）
+- apiThrottle.requestsPerSecond / maxConcurrent（route source処理のI/O速度制御）
 - extraction.tolerance（LineString の簡略化）
 - vectorTiles.buffer（vt 出力のシーム対策）
 
@@ -1080,16 +1096,16 @@ vt-orchestrator は fetch の実行は行わない。
 - 現時点では該当なし
 
 **(C) ラベル/変数名の微調整が必要な項目**
-- vectorTiles → vt（ステージ名の統一）
-- 「Build Settings」配下の文言を route-fetch/transform/vt 前提に合わせて改名
+- vectorTiles → Tile Emit（stage名の統一）
+- 「Build Settings」配下の文言をsource/geometry/tileEmit前提に合わせて改名
 
 **(D) 新規に追加すべき項目**
-- maxBuffersPerTask（vt タスク分割の上限）
-- maxVerticesPerTask（vt タスク分割の上限）
+- maxBuffersPerTask（`tileEmit`タスク分割の上限）
+- maxVerticesPerTask（`tileEmit`タスク分割の上限）
 - maxBand3Reservations（band3 予約の上限）
 - band3Enabled（自動判定の表示のみ）
 
-## 簡略化（transform）
+## 簡略化（geometry）
 
 - 各 band で **ズーム帯内の最詳細タイル**に合わせた格子スナップを行う
   - 格子点はタイル境界線上にも配置する
@@ -1131,7 +1147,7 @@ simplify-js の `tolerance` は 1.0 がデフォルトで、設定範囲は 0.1�
 ### 4種類の tolerance
 
 - **TransformShapeSimplificationTolerance**
-  - fetch-shape の生データを入力として、transform ステージでズーム帯ごとの単純化を行う
+  - source stageのshape生データを入力として、geometry stageでズーム帯ごとの単純化を行う
   - 各ズーム帯の **高いズーム側**を基準に、上記の数式で simplify-js の `tolerance` を決める
   - 係数として **ShapeSimplificationTolerance** を使用する
   - band3 が必要な場合: `生データ → band3 → band2 → band1 → band0`
@@ -1139,14 +1155,14 @@ simplify-js の `tolerance` は 1.0 がデフォルトで、設定範囲は 0.1�
   - 最上位バンドは生データから開始し、以降は直前バンド出力を入力にして計算量を下げる
 
 - **TransformRouteSimplificationTolerance**
-  - fetch-route の生 LineString を入力として、transform ステージでズーム帯ごとの単純化を行う
+  - source stageのroute生LineStringを入力として、geometry stageでズーム帯ごとの単純化を行う
   - 数式と係数の考え方は TransformShape と同様
 
 - **VTShapeSimplificationTolerance**
-  - vt ステージで shape レイヤ（admin0/1/2）を vt-pbf へエンコードする際の `tolerance`
+  - tileEmit stageでshapeレイヤ（admin0/1/2）をvt-pbfへエンコードする際の `tolerance`
 
 - **VTRouteSimplificationTolerance**
-  - vt ステージで route レイヤを vt-pbf へエンコードする際の `tolerance`
+  - tileEmit stageでrouteレイヤをvt-pbfへエンコードする際の `tolerance`
 
 ### WebMercator（meters）での tolerance 計算（採用）
 
@@ -1219,7 +1235,7 @@ const lonLatCoords = simplified.map(mercatorToLonLat);
 - ポリゴンは外周 + 内周の合計座標数
 - LineString/Point も座標数を合算
 
-## vt 生成（処理詳細）
+## tileEmit（処理詳細）
 
 1. `bufferIds[]` の FGB をロードして GeoJSON に戻す
 2. geojson-vt で対象 band のタイルを生成
@@ -1275,13 +1291,13 @@ const buf = vtpbf.fromGeojsonVt({
 });
 ```
 
-## transform / vt での境界ライン生成と利用
+## geometry / tileEmit での境界ライン生成と利用
 
-- transform ステージで、簡略化後の **面情報（Polygon/MultiPolygon）** を保存する
+- geometry stageで、簡略化後の **面情報（Polygon/MultiPolygon）** を保存する
 - 併せて、admin0/1/2 の境界リングを **LineString/MultiLineString** として保存する
   - feature 名: `admin0-boundary` / `admin1-boundary` / `admin2-boundary`
   - 属性: `level=0/1/2` を付与してフィルタ可能にする
-- vt ステージでは、タイル内の地物を選定し、**面情報と線情報を併せて抽出**してタイル生成する
+- tileEmit stageでは、タイル内の地物を選定し、**面情報と線情報を併せて抽出**してタイル生成する
 
 ## 関連タスク（UI）
 
@@ -1299,12 +1315,12 @@ const buf = vtpbf.fromGeojsonVt({
 - `maxBuffersPerTask`
 - `maxVerticesPerTask`
 
-## transform タスクの優先順位（adminLevel の順序制御）
+## `geometry`タスクの優先順位（adminLevel の順序制御）
 
-- transform タスクは **adminLevel 昇順（admin0 → admin1 → admin2 …）**で実行する
+- `geometry`タスクは **adminLevel 昇順（admin0 → admin1 → admin2 …）**で実行する
 - admin1 は **全ての admin0 完了後**に実行する
 - admin2 は **全ての admin1 完了後**に実行する
 - これを実現するため、**task payload に `stagePriority` を持たせる**（小さいほど優先）
-- stage1 で transform タスクを生成する際に `stagePriority` を設定する
+- `source` stageで`geometry`タスクを生成する際に `stagePriority` を設定する
 - **同一の `stagePriority` を持つタスクは実行順を保証しない**
 - **band 跨ぎの並列制御は行わず、同一優先度内で並列実行を許可する**
