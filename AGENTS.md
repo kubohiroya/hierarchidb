@@ -30,6 +30,17 @@
 - ローカル Markdown のタスク台帳は作成・更新しない。進捗、阻害要因、検証結果、ロールバック情報は対象 Issue と Project に記録する。
 - 詳細ルールは `docs/task-management.md`、Issue本文は `docs/templates/task-issue-template.md`。
 
+## GitHub GraphQL / Project API の利用効率（必須）
+
+- GitHub Project v2 の query / mutation は、複数 agent で作業する場合も root agent が集約する。サブエージェントは明示的に委譲された場合を除き、Project の一覧取得、field discovery、item追加、Status更新を実行しない。
+- 通常運用で Project 全itemを走査しない。`gh project item-list ... --limit 1000`、同等の全件pagination、同じProject schemaの反復取得を禁止する。
+- 1件または少数のIssueを扱う場合は、Issue番号を起点に `issue.projectItems(first: 10)` で対象itemだけを取得する。少数の既知Issueをまとめる場合はalias付きqueryでbatchし、Project全体の列挙へ切り替えない。
+- Project ID、Status field ID、option ID、item IDは同一作業中に再利用する。Project schemaは未取得または変更を確認した場合だけ1回取得し、各Issueごとに再取得しない。
+- Issue / PR / Actions等、RESTまたはGitHub connectorで取得できる情報にGraphQLを使わない。GraphQLはProject v2固有のfield/item操作に限定する。
+- `--jq`や取得後のlocal filterはresponseを絞るだけで、GraphQLのquery costを削減しない。query側のfield、`first`、対象Issueを最小化する。
+- Project操作の前にRESTの`rate_limit`でGraphQL残量とreset時刻を確認する。`remaining <= 500`では新規のschema discoveryや列挙を停止し、既知IDに対する当該タスク必須操作だけに絞る。`remaining <= 100`ではProject GraphQL操作を停止し、reset後に再開する。
+- GraphQL残量の監視にGraphQLをpollingしない。別token、別account、ブラウザ操作、別経路への切替でrate limitを迂回しない。枯渇時はreset時刻とblocked理由を報告する。
+
 ## 実装着手ゲート（順番固定）
 
 1. **仕様書・設計書の確認（必須）**: 対象コンポーネント・機能に関連する `docs/` 配下の仕様書・設計書を必ず読む。仕様書が存在するにもかかわらず参照せずに実装・修正を行うことを禁止する。仕様書と実装の乖離を発見した場合は、修正前にユーザーに報告する。
