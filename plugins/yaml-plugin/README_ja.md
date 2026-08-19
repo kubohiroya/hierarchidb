@@ -85,6 +85,12 @@ type YamlDraft = Partial<YamlFileNodeData>;
 
 canonical writerは`name`を対応metadata slotへ移し、registryで検証した明示的な`subtype`を追加し、不完全または不一致なrecordを保存前に拒否しなければならない。
 
+### Dormant canonical writer
+
+独立subpath `@hierarchidb/yaml-plugin/canonical-writer`は、exactなdialog write inputを検証し、caller注入のwrite portへatomic-shaped requestを1回だけ送る。filename / payload検証は`@hierarchidb/yaml-api/validation`だけへ委譲し、filenameは`draftMetadata.name`だけ、検証済み`{ subtype, schemaId, content }`は`draftData`へ設定する。requestの`onNameConflict`は`error`固定とし、validation failureまたはport failure時にretry、auto-rename、overwrite、legacy writer fallbackを行わない。
+
+このentry pointはdormantである。package root、UI、worker、production dialog、TreeNode updater、CoreDB、YamlDB、plugin preloadからimportまたは実行しない。single activation変更まで、現行3-step UI、legacy draft shape、manifest、10件のruntime template selectorを変更しない。[canonical Step 4契約](../../docs/yaml-plugin-ide-gsm-step4-spec.md#dormant-canonical-dialog-writer)を参照する。
+
 ## 依存プラグイン
 
 ```typescript
@@ -156,6 +162,10 @@ src/
 │   ├── constants.ts          # YAML_NODE_TYPE re-export
 │   └── types/
 │       └── YamlEntity.ts     # YamlDraft type
+├── canonical-writer/
+│   ├── index.ts                              # Dormant writer entry point
+│   ├── writeYamlCanonicalDialogDraft.ts      # Strict validation and one port call
+│   └── yamlCanonicalDialogWriterTypes.ts     # Public input/request/result types
 ├── icon/
 │   ├── index.ts              # Icon entry point
 │   └── YamlPluginIcon.tsx    # MUI Description icon
@@ -180,6 +190,7 @@ src/
 | `@hierarchidb/yaml-plugin/ui` | UI コンポーネント（3 ステップ） |
 | `@hierarchidb/yaml-plugin/icon` | YamlPluginIcon |
 | `@hierarchidb/yaml-plugin/worker` | registerYamlWorkerStores |
+| `@hierarchidb/yaml-plugin/canonical-writer` | Dormant strict canonical dialog writer |
 
 ## 関連プラグイン・パッケージ
 

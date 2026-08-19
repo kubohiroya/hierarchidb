@@ -131,6 +131,18 @@ optional input は未指定のまま送信し、client 側で値を補完しな�
 - endpoint と JWT は app-level の認証済み executor/provider に閉じ込める。step props、draft、TreeNode、IndexedDB、URL、localStorage、ログへ token を渡さない。
 - command 実行は暗黙の save/commit ではない。ダイアログを閉じる、または再読み込みすると UI-only state は破棄される。
 
+### Dormant canonical dialog writer
+
+`@hierarchidb/yaml-plugin/canonical-writer`は、single activationでproduction dialog connectorを追加する前にmergeする独立subpathとする。`writeYamlCanonicalDialogDraft(input, writePort)`は`unknown`のinputとcaller注入の単一write portを受け取り、production dialog、TreeNode updater、CoreDB、YamlDB、worker、plugin preloadへ直接接続しない。
+
+- inputは`nodeId`、`mode`、`filename`、`description`、`tags`、`payload`のexact own data propertyだけを持つplain objectとする。symbolを含む余分なkey、missing、`undefined`、accessor、配列、non-plain object、Proxy reflection failureをfail-closedにし、getterを実行しない。
+- `nodeId`は非空string、`mode`は`save-draft | save`、`description`はstring、`tags`は追加keyやaccessorを持たないstring arrayとする。値をtrim、補完、coerceしない。
+- `filename`と`payload`の検証は`@hierarchidb/yaml-api/validation`の`validateYamlCanonicalPayload`だけに委譲する。writer側へregistry、YAML parser、Ajv、subtype/schema/filename推論を複製しない。
+- validation成功後だけ、`nodeId`、`mode`、`draftMetadata`、`draftData`、`onNameConflict`の5 fieldだけを持つfresh requestを作る。`draftMetadata`は`{ name: filename, description, tags: copiedTags }`、`draftData`は検証済み`{ subtype, schemaId, content }`、`onNameConflict`は`error`固定とする。
+- payloadへ`name`を保存しない。metadataとdataを別々のport callへ分割せず、write portを1回だけ呼ぶ。validation/input failureでは呼ばず、port failure後にretry、auto-rename、overwrite、legacy writerまたは別portへfallbackしない。
+- public resultはstableなdiscriminated unionとする。input、validation、port failureへraw input、YAML本文、parser/Ajv error、thrown message、endpoint、token、credentialを含めない。
+- subpathをpackage root、UI、workerから再exportせず、production sourceからimportしない。既存3-step、legacy `YamlDraft`、`YAML_TEMPLATES` 10件、manifest、preload、storage routeはsingle activationまで変更しない。
+
 ## Snapshot と command 実行順序
 
 ### 通常 command

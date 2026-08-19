@@ -85,6 +85,12 @@ type YamlDraft = Partial<YamlFileNodeData>;
 
 The canonical writer must move `name` to the matching metadata slot, add an explicit registry-validated `subtype`, and reject incomplete or mismatched records before saving.
 
+### Dormant Canonical Writer
+
+The independent `@hierarchidb/yaml-plugin/canonical-writer` subpath validates an exact dialog-write input and emits one atomic-shaped request to a caller-injected write port. It delegates filename and payload validation exclusively to `@hierarchidb/yaml-api/validation`, writes the filename only to `draftMetadata.name`, and writes the validated `{ subtype, schemaId, content }` value to `draftData`. The request fixes `onNameConflict` to `error`; validation and port failures do not retry, auto-rename, overwrite, or fall back to the legacy writer.
+
+This entry point is dormant. The package root, UI, worker, production dialog, TreeNode updater, CoreDB, YamlDB, and plugin preload do not import or invoke it. The existing three-step UI, legacy draft shape, manifest, and ten-template runtime selector remain unchanged until the single activation change. See the [canonical Step 4 contract](../../docs/yaml-plugin-ide-gsm-step4-spec.md#dormant-canonical-dialog-writer).
+
 ## Plugin Dependencies
 
 ```typescript
@@ -156,6 +162,10 @@ src/
 │   ├── constants.ts          # YAML_NODE_TYPE re-export
 │   └── types/
 │       └── YamlEntity.ts     # YamlDraft type
+├── canonical-writer/
+│   ├── index.ts                              # Dormant writer entry point
+│   ├── writeYamlCanonicalDialogDraft.ts      # Strict validation and one port call
+│   └── yamlCanonicalDialogWriterTypes.ts     # Public input/request/result types
 ├── icon/
 │   ├── index.ts              # Icon entry point
 │   └── YamlPluginIcon.tsx    # MUI Description icon
@@ -180,6 +190,7 @@ src/
 | `@hierarchidb/yaml-plugin/ui` | UI components (3 steps) |
 | `@hierarchidb/yaml-plugin/icon` | YamlPluginIcon |
 | `@hierarchidb/yaml-plugin/worker` | registerYamlWorkerStores |
+| `@hierarchidb/yaml-plugin/canonical-writer` | Dormant strict canonical dialog writer |
 
 ## Related Plugins and Packages
 
