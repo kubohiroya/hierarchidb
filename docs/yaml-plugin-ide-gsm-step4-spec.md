@@ -269,6 +269,29 @@ runtime activationは次の順序で実行する。
 4. versionchange transaction内でraw recordを再読し、preflight snapshotとの完全一致を確認してからnodesとjournalをatomicに更新する。差分または1件の失敗でtransaction全体をabortする。
 5. upgrade commitとCoreDB initializationが成功した後だけ、canonical query / mutation API、dialog writer、ZIP import / export、SimulationWorkflow consumer、command入口を公開する。commit前またはfailure後にlegacy / canonical readerまたはwriterを公開しない。
 
+#### Dormant activation phase contract
+
+`@hierarchidb/runtime-worker/yaml-storage-activation` は、activation releaseが後から接続するためのpureなstate machineとaccess decisionだけを公開する独立subpathとする。このartifact自体はCoreDB、WorkerService、bootstrap、production reader / writer / APIへ接続せず、importしてもstorage routeや現行legacy entry pointを変更しない。
+
+| phase | actual versionchange fence | legacy publication | canonical publication | YamlDB domain |
+| --- | --- | --- | --- | --- |
+| `quiescing` | 未成立 | deny | deny | deny |
+| `preflight` | 未成立 | deny | deny | deny |
+| `opening-target` | 未成立 | deny | deny | deny |
+| `blocked` | 未成立。同じ`openRequestId`のrequestを待機 | deny | deny | deny |
+| `versionchanging` | 成立 | deny | deny | deny |
+| `initializing` | 成立。upgrade commit済み | deny | deny | deny |
+| `canonical-ready` | 成立。upgrade commitとinitialization成功済み | deny | query / mutation / reader / writerをallow | deny |
+| `rejected` | rejection前の成立状態を保持 | deny | deny | deny |
+
+- activation開始時にcallerが空でない`activationId`、現在version、default補完しないtarget versionを渡す。target versionは現在versionより大きい正のsafe integerでなければならない。
+- target openに関わるeventは空でない`openRequestId`を必須とする。`blocked`から`versionchanging`へ進めるのは同じ`openRequestId`のrequestがresumeした場合だけとし、別request IDはtyped terminal rejectionにする。
+- `canonical-ready`へ進めるのは、同じactivationでupgrade commitを確認して`initializing`へ遷移した後、initialization成功を受け取った場合だけとする。順序外event、activation ID不一致、open request ID不一致はstableなcodeとstageだけを持つ`rejected`へ遷移し、reader / writerを公開しない。
+- publication判定はこのsubpathのcreate / reducerが発行してfreezeしたstateだけを正規stateとして扱う。公開されたstructural typeから捏造したstate、正規stateのclone、mutable stateを`canonical-ready`として信頼せず、typed denyにする。捏造stateをreducerへ渡して正規stateへ昇格させない。
+- access requestはown data propertyだけからdomain、representation、operationの完全な組を検証する。`null`、配列、non-plain object、accessor、Proxy reflection failure、余分なfield、unknown representation / operation / domainはthrowまたはlegacy扱いせず`INVALID_ACCESS_REQUEST`でdenyする。
+- `rejected`はterminalとし、retry、reset、新request、legacy fallbackを受け付けない。error stateへraw error、YAML content、credential、endpointを格納しない。
+- このdormant契約のreducerとaccess decisionはI/O、timer、random、時刻、environment、storageへ依存しない。独立したYamlDB domainは全phaseで常にdenyする。
+
 ### CoreDB preflight、atomicity、fencing
 
 1. activation gateに従い、migration対象versionを開く前に旧runtimeのYAML create、edit、commit、ZIP import writerを停止する。

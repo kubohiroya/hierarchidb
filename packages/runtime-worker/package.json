@@ -15,10 +15,28 @@
       "types": "./dist/stageWorker.entry.d.ts",
       "import": "./dist/stageWorker.entry.js",
       "default": "./dist/stageWorker.entry.js"
+    },
+    "./yaml-storage-activation": {
+      "types": "./dist/yaml-storage-activation/index.d.ts",
+      "import": "./dist/yaml-storage-activation/index.js",
+      "default": "./dist/yaml-storage-activation/index.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "stage-worker": [
+        "dist/stageWorker.entry.d.ts"
+      ],
+      "yaml-storage-activation": [
+        "dist/yaml-storage-activation/index.d.ts"
+      ],
+      "*": [
+        "dist/index.d.ts"
+      ]
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/stageWorker.entry.ts --config ../../../tsdown.config.ts --outDir dist",
+    "build": "tsdown src/index.ts src/stageWorker.entry.ts --config ../../../tsdown.config.ts --outDir dist && tsdown src/yaml-storage-activation/index.ts --config ../../../tsdown.config.ts --outDir dist/yaml-storage-activation",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
     "test": "vitest run",
     "test:run": "vitest run",
