@@ -242,12 +242,14 @@ raw recordの`data`はproperty missing、`undefined`、`null`をcommitted payloa
 実装をmainへ取り込む順序と、production storageをcanonical shapeへ切り替える順序を分離する。後続実装順序のmerge DAGはPR間の依存、runtime activation DAGは1つのactivation release内で必ず連続して実行する処理を表す。片方を他方の代わりに使用しない。
 
 - read-only plannerはproduction DBへ接続せず、`unknown`のraw record snapshotを入力としてmigration planまたはsanitized typed error reportを返すpure boundaryにする。CoreDB / Dexieのopen、schema version登録、transaction、write、journal table作成、worker bootstrapへの接続を含めない。1件でも不正ならpartial planを返さず、YAML本文、token、credential、endpointをreportまたはlogへ含めない。
+- [#1279](https://github.com/kubohiroya/hierarchidb/issues/1279)のshared canonical validation kernelは、canonical payloadのstrict validation authorityとmigration adapterを独立subpathで提供するdormant artifactとする。dormant canonical writer、canonical ZIP、inverse migration artifactはこのauthorityへ収束し、validationを複製しない。
+- [#1280](https://github.com/kubohiroya/hierarchidb/issues/1280)のdormant activation state machine / access decisionは、後続production legacy reader / writer fence mechanismとは別artifactとする。CoreDB、WorkerService、bootstrap、production reader / writerへ未接続のまま先行mergeし、production fence成立またはactivation完了として扱わない。
 - canonical writer、canonical ZIP import / export、canonical SimulationWorkflow consumer、inverse migration artifact、legacy reader / writer fence mechanismは、production writer、dialog step、worker API、ZIP path、SimulationWorkflow entry point、bootstrapから到達不能なdormant implementationとしてのみ先行mergeできる。activation releaseまでは既存legacy entry pointの挙動を変更しない。既存legacy writerとcanonical writerを同時に選べるflag、environment fallback、dual-write、read-time fallbackを追加しない。
 - activation PRより前にproduction `CoreDB.version(2)`を登録しない。CoreDBのtarget versionが別変更で先に進んだ場合は、本仕様とactivation Issueでtarget versionを再確定してから登録する。read-only plannerを`CoreDB.getSingleton()`、`WorkerService`、plugin preload、app bootstrapへ接続しない。
-- activation PRは、read-only planner、dormant canonical writer、dormant canonical ZIP import / export、dormant canonical SimulationWorkflow consumer、exact / release inverse migration artifact、failure-path test、legacy reader / writer fenceがmainへmerge済みである場合だけ開始できる。versionchange migration、CoreDB / worker boot接続、canonical reader / writer / API publishを同じrelease boundaryで有効化し、一部だけを先行公開しない。
+- activation PRは、read-only planner、#1279 validation kernel、#1280 activation state machine、dormant canonical writer、dormant canonical ZIP import / export、dormant canonical SimulationWorkflow consumer、exact / release inverse migration artifact、failure-path test、production legacy reader / writer fence mechanismがmainへmerge済みである場合だけ開始できる。versionchange migration、CoreDB / worker boot接続、canonical reader / writer / API publishを同じrelease boundaryで有効化し、一部だけを先行公開しない。
 - `yamlIdeGsmStep4Enabled`はStep 4 compositionの表示契約であり、storage activationまたはrollback gateとして使用しない。flag OFF、旧binary、legacy writerをmigration後のfallbackとして起動しない。
 - optional plugin preloadは例外をworker-ready failureとして伝播できないため、preflight、migration、storage readinessのgateとして使用しない。CoreDB `open()` / upgradeの成功をawaitするworker bootだけがquery / mutation APIをreadyにできる。
-- migrationのblockedまたはrejectを、全IndexedDB削除を案内するgeneric recoveryへ変換しない。storage migration専用のtyped stateを保持し、blockedは同じ`open()` requestの待機、rejectはworker boot failureとして通知する。別request retry、v1 fallback、自動DB削除を行わない。
+- migrationのblockedまたはrejectを、全IndexedDB削除を案内するgeneric recoveryへ変換しない。`@hierarchidb/runtime-worker/yaml-storage-activation`のtyped stateをauthorityとし、`blocked`は同じ`openRequestId`のtarget open requestを待つ非ready状態、`rejected`はretry、reset、別request、legacy fallbackを受け付けないterminal worker boot failureとして通知する。`quiescing`と`blocked`ではactual versionchange fenceが未成立であり、自動DB削除またはv1 reopenを行わない。
 
 #### Read-only migration planner contract
 
@@ -358,13 +360,19 @@ SSH で公開されている mutation は `simulateSsh` と `calibrateSsh` だ�
 ```mermaid
 graph TD
   Registry["#1266 subtype / schema / command registry"] --> Planner["read-only migration planner"]
+  Registry --> Validation["#1279 shared canonical validation kernel"]
   Contract["#1271 storage migration contract"] --> ActivationContract["#1273 activation gate"]
   ActivationContract --> Planner
-  Planner --> DormantWriter["dormant canonical writer"]
-  Planner --> DormantSnapshotIO["dormant canonical folder ZIP"]
+  Planner --> Validation
+  Validation --> DormantWriter["dormant canonical writer"]
+  Validation --> DormantSnapshotIO["dormant canonical folder ZIP"]
   DormantSnapshotIO --> DormantSimulation["dormant canonical SimulationWorkflow consumer"]
+  Validation --> InverseArtifacts["dormant inverse migration artifacts / tests"]
   Planner --> InverseArtifacts["dormant inverse migration artifacts / tests"]
-  ActivationContract --> WriterFence["dormant legacy reader / writer fence mechanism"]
+  ActivationContract --> ActivationState["#1280 dormant activation state / access decision"]
+  Planner --> ActivationState
+  ActivationState --> WriterFence["dormant production legacy reader / writer fence mechanism"]
+  ActivationState --> Activation["single activation PR"]
   DormantWriter --> Activation["single activation PR"]
   DormantSnapshotIO --> Activation
   DormantSimulation --> Activation
@@ -395,20 +403,31 @@ graph TD
 
 ```mermaid
 graph LR
-  Fence["旧tab / worker / legacy reader / writer fence"] --> Preflight["CoreDB v1 read-only preflight"]
-  Preflight --> Open["target version open request"]
-  Open -->|no blockers| AtomicUpgrade["raw再読 + nodes / journal atomic update"]
-  Open -. blocked .-> Blocked["API unavailable / 同じrequestを待機"]
-  Blocked --> CloseOld["旧connection close / reload"]
-  CloseOld -->|same request resumes| AtomicUpgrade
-  AtomicUpgrade --> Initialize["CoreDB initialization"]
-  Initialize --> Publish["canonical reader / writer / API publish"]
-  AtomicUpgrade -. abort .-> Failed["worker boot failure / reader / writer unavailable"]
+  Quiescing["quiescing / actual fence未成立"] --> Preflight["preflight / raw snapshot validation"]
+  Preflight --> OpeningTarget["opening-target / same openRequestId"]
+  OpeningTarget -->|no blockers| Versionchanging["versionchanging / actual fence成立"]
+  OpeningTarget -. blocked .-> Blocked["blocked / API unavailable / actual fence未成立"]
+  Blocked --> CloseOld["old connection close / reload / worker terminate"]
+  CloseOld -->|same openRequestId resumes| Versionchanging
+  Versionchanging -->|upgrade-committed| Initializing["initializing / upgrade committed"]
+  Initializing -->|initialization-succeeded| CanonicalReady["canonical-ready"]
+  CanonicalReady --> Publish["canonical reader / writer / API publish"]
+
+  Quiescing -. failure / ID mismatch / illegal .-> Rejected["rejected / terminal / API unavailable"]
+  Preflight -. failure / ID mismatch / illegal .-> Rejected
+  OpeningTarget -. failure / ID mismatch / illegal .-> Rejected
+  Blocked -. failure / ID mismatch / illegal .-> Rejected
+  CloseOld -. failure .-> Rejected
+  Versionchanging -. failure / ID mismatch / illegal .-> Rejected
+  Initializing -. failure / ID mismatch / illegal .-> Rejected
+  CanonicalReady -. ID mismatch / illegal .-> Rejected
 ```
 
-- subtype、template、schema、strict command registryは[#1266](https://github.com/kubohiroya/hierarchidb/issues/1266)、typed IDE-GSM clientは[#1265](https://github.com/kubohiroya/hierarchidb/issues/1265)で先行済みとする。
-- read-only planner、dormant canonical writer、dormant canonical ZIP、dormant canonical SimulationWorkflow consumer、inverse migration artifact、legacy reader / writer fenceは別Issue、別branch、別worktreeで実装する。mainへmergeできるのはproduction DB / reader / writerへ未接続の状態だけとし、`CoreDB.version(2)`登録、migration実行、canonical reader / writer / API publishはsingle activation PRまで禁止する。
-- activation release内ではlegacy reader / writer fence、read-only preflight、versionchange migration、CoreDB initialization、canonical reader / writer / API publishをruntime activation DAGの順に実行する。migration commit成功前にcanonical dialog、ZIP、SimulationWorkflowまたはAPIを公開せず、各処理を別releaseへ分離しない。
+- subtype、template、schema、strict command registryは[#1266](https://github.com/kubohiroya/hierarchidb/issues/1266)、typed IDE-GSM clientは[#1265](https://github.com/kubohiroya/hierarchidb/issues/1265)、shared canonical validation kernelは[#1279](https://github.com/kubohiroya/hierarchidb/issues/1279)、dormant activation state machine / access decisionは[#1280](https://github.com/kubohiroya/hierarchidb/issues/1280)で先行済みとする。#1279と#1280は独立artifactであり、相互依存させない。
+- read-only planner、validation kernel、activation state machine、dormant canonical writer、dormant canonical ZIP、dormant canonical SimulationWorkflow consumer、inverse migration artifact、production legacy reader / writer fence mechanismは別Issue、別branch、別worktreeで実装する。#1280をproduction fence mechanismとして扱わない。mainへmergeできるのはproduction DB / reader / writerへ未接続の状態だけとし、`CoreDB.version(2)`登録、migration実行、canonical reader / writer / API publishはsingle activation PRまで禁止する。
+- validation収束後はdormant canonical writer、canonical ZIP、inverse migration artifactを相互非依存のIssueとして並列実装できる。dormant canonical SimulationWorkflow consumerはcanonical ZIP API確定後、production fence mechanismは#1280を使用する別Issueとして実装する。
+- activation release内では`quiescing`で旧tab / workerの停止とcloseを要求するがactual fence成立とはみなさず、read-only preflight後に同じ`openRequestId`でtarget versionを開く。`blocked`では同じrequestだけを待機し、`versionchanging`でactual fence成立、upgrade commit後に`initializing`、initialization成功後に`canonical-ready`へ進み、その後だけcanonical reader / writer / APIを公開する。failure、ID mismatch、illegal transitionはterminal `rejected`とし、retry、reset、別request、legacy fallback、v1 reopenを行わない。
+- migration commit成功前にcanonical dialog、ZIP、SimulationWorkflowまたはAPIを公開せず、各処理を別releaseへ分離しない。
 - activation前にdormant canonical SimulationWorkflow consumerの回帰を完了し、activation後にもproduction routingを対象とする回帰を行う。executor / Step 4と合わせたnon-SSH integrationを、SSH lifecycleを含むfinal integrationから分離する。
 - YamlDB laneはproduction write除去 / fence、read-only inventory / recovery、残存read path除去 / runtime retirementの順とする。物理database削除はruntime廃止、30日、後続stable release受入、全row accountedのすべてを満たす別Issueとする。
 - SSH client / UI integrationはupstream API公開と本仕様のrevision更新までblockedとし、完了後にfinal integrationへ進む。
