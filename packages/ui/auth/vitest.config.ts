@@ -1,6 +1,8 @@
-import { defineConfig } from 'vitest/config';
 import path from 'path';
+import { defineConfig } from 'vitest/config';
+
 const RUN_AUTH_TESTS = process.env.AUTH_TESTS === '1';
+const defaultTestFiles = ['src/services/__tests__/resolveAuthReturnUrl.unit.test.ts'];
 
 export default defineConfig({
   test: {
@@ -23,14 +25,16 @@ export default defineConfig({
       '@react-oauth/google': path.resolve(__dirname, './src/test-shims/react-oauth-google.ts'),
     },
   },
-  // When not explicitly enabled, skip UI Auth tests to keep CI baseline green
-  ...(RUN_AUTH_TESTS ? {} : {
-    test: {
-      globals: true,
-      environment: 'jsdom',
-      setupFiles: ['./vitest.setup.ts'],
-      include: [],
-      exclude: ['src/**/__tests__/**', 'src/**/*.test.{ts,tsx}', '**/node_modules/**', '**/dist/**'],
-    }
-  })
+  // Run the stable contract suite by default; keep the legacy component suite opt-in.
+  ...(RUN_AUTH_TESTS
+    ? {}
+    : {
+        test: {
+          globals: true,
+          environment: 'jsdom',
+          setupFiles: ['./vitest.setup.ts'],
+          include: defaultTestFiles,
+          exclude: ['**/node_modules/**', '**/dist/**'],
+        },
+      }),
 });

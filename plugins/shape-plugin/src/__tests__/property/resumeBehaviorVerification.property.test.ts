@@ -10,6 +10,23 @@ import type { TaskStatus } from '@hierarchidb/build-api';
 import type { BuildStatus } from '@hierarchidb/gis-sdk';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
 
+const touchedNodeIds = new Set<NodeId>();
+
+const prepareEphemeralDB = async (): Promise<void> => {
+  touchedNodeIds.clear();
+  if (!ephemeralDB.isOpen()) {
+    await ephemeralDB.open();
+  }
+};
+
+const clearTouchedNodeData = async (): Promise<void> => {
+  if (!ephemeralDB.isOpen()) {
+    await ephemeralDB.open();
+  }
+  await Promise.all(Array.from(touchedNodeIds, (nodeId) => ephemeralDB.clearNodeData(nodeId)));
+  touchedNodeIds.clear();
+};
+
 // Mock build session for testing
 const createMockBuildSession = (nodeId: NodeId, status: BuildStatus) => ({
   nodeId,
@@ -39,14 +56,8 @@ const createMockTask = (taskId: string, nodeId: NodeId, status: TaskStatus, prog
 });
 
 describe('Property 14: Resume Continuation', () => {
-  beforeEach(async () => {
-    await ephemeralDB.delete();
-    await ephemeralDB.open();
-  });
-
-  afterEach(async () => {
-    await ephemeralDB.delete();
-  });
+  beforeEach(prepareEphemeralDB);
+  afterEach(clearTouchedNodeData);
 
   it('should continue from exact point where pause occurred', async () => {
     await fc.assert(
@@ -55,6 +66,7 @@ describe('Property 14: Resume Continuation', () => {
         fc.integer({ min: 0, max: 100 }),
         fc.constantFrom('running', 'completed'),
         async (nodeId: NodeId, pauseProgress: number, pauseStatus: BuildStatus) => {
+          touchedNodeIds.add(nodeId);
           // Create a session that was paused at a specific progress point
           const sessionBeforePause = createMockBuildSession(nodeId, pauseStatus);
           sessionBeforePause.progress.completed = pauseProgress;
@@ -101,14 +113,8 @@ describe('Property 14: Resume Continuation', () => {
 });
 
 describe('Property 15: Pause/Resume Equivalence', () => {
-  beforeEach(async () => {
-    await ephemeralDB.delete();
-    await ephemeralDB.open();
-  });
-
-  afterEach(async () => {
-    await ephemeralDB.delete();
-  });
+  beforeEach(prepareEphemeralDB);
+  afterEach(clearTouchedNodeData);
 
   it('should produce identical results to uninterrupted execution', async () => {
     await fc.assert(
@@ -145,14 +151,8 @@ describe('Property 15: Pause/Resume Equivalence', () => {
 });
 
 describe('Property 16: Multi-Cycle State Consistency', () => {
-  beforeEach(async () => {
-    await ephemeralDB.delete();
-    await ephemeralDB.open();
-  });
-
-  afterEach(async () => {
-    await ephemeralDB.delete();
-  });
+  beforeEach(prepareEphemeralDB);
+  afterEach(clearTouchedNodeData);
 
   it('should maintain state consistency across multiple pause/resume cycles', async () => {
     await fc.assert(
@@ -160,6 +160,7 @@ describe('Property 16: Multi-Cycle State Consistency', () => {
         fc.string({ minLength: 1, maxLength: 10 }).map(s => s as NodeId),
         fc.integer({ min: 2, max: 5 }),
         async (nodeId: NodeId, cycleCount: number) => {
+          touchedNodeIds.add(nodeId);
           let currentProgress = 0;
           const progressIncrement = Math.floor(100 / cycleCount);
 
@@ -214,14 +215,8 @@ describe('Property 16: Multi-Cycle State Consistency', () => {
 });
 
 describe('Property 17: Progress Reporting Accuracy', () => {
-  beforeEach(async () => {
-    await ephemeralDB.delete();
-    await ephemeralDB.open();
-  });
-
-  afterEach(async () => {
-    await ephemeralDB.delete();
-  });
+  beforeEach(prepareEphemeralDB);
+  afterEach(clearTouchedNodeData);
 
   it('should maintain accurate progress reporting across pause/resume boundaries', async () => {
     await fc.assert(
@@ -229,6 +224,7 @@ describe('Property 17: Progress Reporting Accuracy', () => {
         fc.string({ minLength: 1, maxLength: 10 }).map(s => s as NodeId),
         fc.array(fc.integer({ min: 0, max: 100 }), { minLength: 5, maxLength: 15 }),
         async (nodeId: NodeId, taskProgresses: number[]) => {
+          touchedNodeIds.add(nodeId);
           const totalTasks = taskProgresses.length;
           let completedTasks = 0;
           let totalProgress = 0;

@@ -3,15 +3,16 @@
  * Coordinates TreeTable controller atoms with presentational building blocks.
  */
 
-import { type ReactElement } from 'react';
-import { NodeContextMenu, NodeTypeIcon } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import { NodeTypeIcon } from '@hierarchidb/components';
+import { NodeContextMenu } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { Skeleton, TableBody, TableCell, TableRow } from '@mui/material';
+import type { ReactElement } from 'react';
 import type { TreeTableCoreProps } from '~/types';
-import { StyledTable, StyledTableContainer, StyledTableHead } from './TreeTableStyles.js';
-import { TreeTableRows } from './internal/TreeTableRows.js';
-import { TreeTableHeader } from './internal/TreeTableHeader.js';
-import { TreeTableContextMenu } from './internal/TreeTableContextMenu.js';
 import { useTreeTableCoreModel } from './hooks/useTreeTableCoreModel.js';
+import { TreeTableContextMenu } from './internal/TreeTableContextMenu.js';
+import { TreeTableHeader } from './internal/TreeTableHeader.js';
+import { TreeTableRows } from './internal/TreeTableRows.js';
+import { StyledTable, StyledTableContainer, StyledTableHead } from './TreeTableStyles.js';
 
 export function TreeTableCore({
   controller,

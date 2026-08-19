@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { TaskProgressUpdatedEvent } from '@hierarchidb/build-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import type { BuildProgressEvent } from '@hierarchidb/build-api';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { __setWorkerBridgeClientRef, getBuildWorkerBridge } from '../workerBridge';
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
@@ -12,7 +12,7 @@ describe('WorkerBridge subscribeAll', () => {
   let subscribeSessionHeartbeatMock: ReturnType<typeof vi.fn>;
   let subscribeWorkerLogMock: ReturnType<typeof vi.fn>;
   let subscribeStageSnapshotsMock: ReturnType<typeof vi.fn>;
-  let subscribeBuildProgressMock: ReturnType<typeof vi.fn>;
+  let subscribeTaskProgressMock: ReturnType<typeof vi.fn>;
 
   let taskEventProxyCallback: ((event: unknown) => void) | null;
   let progressEventProxyCallback: ((event: unknown) => void) | null;
@@ -40,49 +40,60 @@ describe('WorkerBridge subscribeAll', () => {
     workerLogUnsubscribeMock = vi.fn();
 
     // subscribeAll now uses subscribeStageSnapshots instead of subscribeBuildTasks for task events
-    subscribeStageSnapshotsMock = vi.fn(async (_nodeType: NodeType, _nodeId: NodeId, callback: (event: unknown) => void) => {
-      taskEventProxyCallback = callback;
-      return tasksUnsubscribeMock;
-    });
+    subscribeStageSnapshotsMock = vi.fn(
+      async (_nodeType: NodeType, _nodeId: NodeId, callback: (event: unknown) => void) => {
+        taskEventProxyCallback = callback;
+        return tasksUnsubscribeMock;
+      }
+    );
 
-    subscribeBuildProgressMock = vi.fn(async (_nodeType: NodeType, _nodeId: NodeId, callback: (event: unknown) => void) => {
-      progressEventProxyCallback = callback;
-      return progressUnsubscribeMock;
-    });
+    subscribeTaskProgressMock = vi.fn(
+      async (_nodeType: NodeType, _nodeId: NodeId, callback: (event: unknown) => void) => {
+        progressEventProxyCallback = callback;
+        return progressUnsubscribeMock;
+      }
+    );
 
     // WorkerApi direct methods: subscribeSessionState(nodeType, nodeId, cb)
-    subscribeSessionStateMock = vi.fn(async (_nodeType: NodeType, _nodeId: NodeId, callback: (event: unknown) => void) => {
-      sessionStateProxyCallback = callback;
-      return sessionStateUnsubscribeMock;
-    });
+    subscribeSessionStateMock = vi.fn(
+      async (_nodeType: NodeType, _nodeId: NodeId, callback: (event: unknown) => void) => {
+        sessionStateProxyCallback = callback;
+        return sessionStateUnsubscribeMock;
+      }
+    );
 
-    subscribeSessionHeartbeatMock = vi.fn(async (_nodeType: NodeType, _nodeId: NodeId, callback: (event: unknown) => void) => {
-      heartbeatProxyCallback = callback;
-      return heartbeatUnsubscribeMock;
-    });
+    subscribeSessionHeartbeatMock = vi.fn(
+      async (_nodeType: NodeType, _nodeId: NodeId, callback: (event: unknown) => void) => {
+        heartbeatProxyCallback = callback;
+        return heartbeatUnsubscribeMock;
+      }
+    );
 
-    subscribeWorkerLogMock = vi.fn(async (_nodeType: NodeType, _nodeId: NodeId, callback: (event: unknown) => void) => {
-      workerLogProxyCallback = callback;
-      return workerLogUnsubscribeMock;
-    });
+    subscribeWorkerLogMock = vi.fn(
+      async (_nodeType: NodeType, _nodeId: NodeId, callback: (event: unknown) => void) => {
+        workerLogProxyCallback = callback;
+        return workerLogUnsubscribeMock;
+      }
+    );
 
     __setWorkerBridgeClientRef({
       client: {
         subscribeStageSnapshots: subscribeStageSnapshotsMock,
-        subscribeBuildProgress: subscribeBuildProgressMock,
+        subscribeTaskProgress: subscribeTaskProgressMock,
         subscribeSessionState: subscribeSessionStateMock,
         subscribeSessionHeartbeat: subscribeSessionHeartbeatMock,
         subscribeWorkerLog: subscribeWorkerLogMock,
       } as never,
       isInitialized: true,
-      initialize: async () => { },
-      getAPI: () => ({
-        subscribeStageSnapshots: subscribeStageSnapshotsMock,
-        subscribeBuildProgress: subscribeBuildProgressMock,
-        subscribeSessionState: subscribeSessionStateMock,
-        subscribeSessionHeartbeat: subscribeSessionHeartbeatMock,
-        subscribeWorkerLog: subscribeWorkerLogMock,
-      } as never),
+      initialize: async () => {},
+      getAPI: () =>
+        ({
+          subscribeStageSnapshots: subscribeStageSnapshotsMock,
+          subscribeTaskProgress: subscribeTaskProgressMock,
+          subscribeSessionState: subscribeSessionStateMock,
+          subscribeSessionHeartbeat: subscribeSessionHeartbeatMock,
+          subscribeWorkerLog: subscribeWorkerLogMock,
+        }) as never,
     });
   });
 
@@ -107,18 +118,28 @@ describe('WorkerBridge subscribeAll', () => {
     });
 
     expect(subscribeStageSnapshotsMock).toHaveBeenCalledTimes(1);
-    expect(subscribeBuildProgressMock).toHaveBeenCalledTimes(1);
+    expect(subscribeTaskProgressMock).toHaveBeenCalledTimes(1);
     expect(subscribeSessionStateMock).toHaveBeenCalledTimes(1);
     expect(subscribeSessionHeartbeatMock).toHaveBeenCalledTimes(1);
     expect(subscribeWorkerLogMock).toHaveBeenCalledTimes(1);
 
     const taskEvent = { type: 'stageSnapshotUpdated', payload: { stageId: 'source', tasks: [] } };
     taskEventProxyCallback?.(taskEvent);
-    expect(onTaskEvent).toHaveBeenCalledWith(expect.objectContaining({ type: 'stageSnapshotUpdated' }));
+    expect(onTaskEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'stageSnapshotUpdated' })
+    );
 
-    const progressEvent = { stage: 'source', progress: 50 } as unknown as BuildProgressEvent;
+    const progressEvent: TaskProgressUpdatedEvent = {
+      type: 'taskProgressUpdated',
+      payload: {
+        taskId: 'task-1',
+        version: 1,
+        stageId: 'source',
+        value: 50,
+      },
+    };
     progressEventProxyCallback?.(progressEvent);
-    expect(onProgressEvent).toHaveBeenCalledWith(expect.objectContaining({ stage: 'source' }));
+    expect(onProgressEvent).toHaveBeenCalledWith(progressEvent);
 
     sessionStateProxyCallback?.({ nodeId: NODE_ID, sessionRecord: { stageId: 'geometry' } });
     expect(onSessionState).toHaveBeenCalledWith(expect.objectContaining({ nodeId: NODE_ID }));
@@ -137,7 +158,7 @@ describe('WorkerBridge subscribeAll', () => {
     expect(workerLogUnsubscribeMock).toHaveBeenCalledTimes(1);
   });
 
-  it('subscribes tasks and progress for non-shape node type, skips shape-specific channels', async () => {
+  it('subscribes all channels for non-shape node types', async () => {
     const bridge = getBuildWorkerBridge();
     const onTaskEvent = vi.fn();
     const onProgressEvent = vi.fn();
@@ -155,7 +176,7 @@ describe('WorkerBridge subscribeAll', () => {
 
     // subscribeAll subscribes all 5 channels regardless of nodeType
     expect(subscribeStageSnapshotsMock).toHaveBeenCalledTimes(1);
-    expect(subscribeBuildProgressMock).toHaveBeenCalledTimes(1);
+    expect(subscribeTaskProgressMock).toHaveBeenCalledTimes(1);
     expect(subscribeSessionStateMock).toHaveBeenCalledTimes(1);
     expect(subscribeSessionHeartbeatMock).toHaveBeenCalledTimes(1);
     expect(subscribeWorkerLogMock).toHaveBeenCalledTimes(1);
@@ -168,9 +189,32 @@ describe('WorkerBridge subscribeAll', () => {
     expect(workerLogUnsubscribeMock).toHaveBeenCalledTimes(1);
   });
 
-  it('does not expose individual subscribeSessionHeartbeat or subscribeTaskProgress on bridge', () => {
-    const bridge = getBuildWorkerBridge() as Record<string, unknown>;
-    expect(bridge['subscribeSessionHeartbeat']).toBeUndefined();
-    expect(bridge['subscribeTaskProgress']).toBeUndefined();
+  it('exposes task-progress subscription and delegates delivery', async () => {
+    const bridge = getBuildWorkerBridge();
+    const onProgressEvent = vi.fn();
+    const unsubscribe = await bridge.subscribeTaskProgress(
+      SHAPE_NODE_TYPE,
+      NODE_ID,
+      onProgressEvent
+    );
+    const progressEvent: TaskProgressUpdatedEvent = {
+      type: 'taskProgressUpdated',
+      payload: {
+        taskId: 'task-2',
+        version: 2,
+        stageId: 'geometry',
+        value: 75,
+      },
+    };
+
+    expect(subscribeTaskProgressMock).toHaveBeenCalledTimes(1);
+    progressEventProxyCallback?.(progressEvent);
+    expect(onProgressEvent).toHaveBeenCalledWith(progressEvent);
+
+    unsubscribe();
+    expect(progressUnsubscribeMock).toHaveBeenCalledTimes(1);
+    expect(
+      (bridge as unknown as Record<string, unknown>).subscribeSessionHeartbeat
+    ).toBeUndefined();
   });
 });

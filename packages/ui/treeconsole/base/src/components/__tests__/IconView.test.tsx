@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { IconView } from '../IconView';
 import type { TreeNodeInUI } from '@hierarchidb/ui-treeconsole-treetable';
 import type { NodeId } from '@hierarchidb/core-types';
@@ -50,15 +50,13 @@ describe('IconView', () => {
         const { container: gridContainer } = render(
             <IconView nodes={nodes} zoomLevel={50} sortMode="name" onIconPositionChange={vi.fn()} />,
         );
-        const gridChildren = gridContainer.firstElementChild?.children.length ?? 0;
+        expect(gridContainer.querySelectorAll('[data-node-id]')).toHaveLength(3);
+        expect(within(gridContainer).getByText('Sorted by: Name')).toBeInTheDocument();
 
         const { container: freeContainer } = render(
             <IconView nodes={nodes} zoomLevel={50} sortMode="none" onIconPositionChange={vi.fn()} />,
         );
-        const freeChildren = freeContainer.firstElementChild?.children.length ?? 0;
-
-        // Both should render 3 child nodes
-        expect(gridChildren).toBe(3);
-        expect(freeChildren).toBe(3);
+        expect(freeContainer.querySelectorAll('[data-node-id]')).toHaveLength(3);
+        expect(within(freeContainer).queryByText('Sorted by: Name')).not.toBeInTheDocument();
     });
 });

@@ -151,10 +151,9 @@ describe('buildSessionStateAtoms write atom', () => {
       },
     });
     store.set(dispatchBuildSessionEventAtom, {
-      type: 'uiSyncPhaseChanged',
+      type: 'viewSelectionChanged',
       payload: {
-        stageId: 'geometry',
-        phase: 'ui-initializing',
+        activeStageId: 'geometry',
       },
     });
     expect(store.get(buildSessionTaskListViewPhaseAtom)).toBe('ui-initializing');
