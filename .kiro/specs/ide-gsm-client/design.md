@@ -1,5 +1,8 @@
 # Design Document: ide-gsm-client
 
+> [!IMPORTANT]
+> Status: historical baseline. This document describes the initial client design and is not the SSOT for the current mutation, input, task-status, credential, or IDE-GSM Step 4 contract. See [`docs/yaml-plugin-ide-gsm-step4-spec.md`](../../../docs/yaml-plugin-ide-gsm-step4-spec.md). Where this document conflicts with that specification, the `docs/` specification applies.
+
 ## Overview
 
 `IdeGsmClient` is a TypeScript client library that wraps the IDE-GSM GraphQL API.

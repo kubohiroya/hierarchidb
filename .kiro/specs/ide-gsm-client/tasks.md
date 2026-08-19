@@ -1,5 +1,8 @@
 # Implementation Plan: ide-gsm-client
 
+> [!IMPORTANT]
+> Status: historical baseline. Completed items describe the initial client surface and do not represent completion of the current mutation, input, task-status, credential, or IDE-GSM Step 4 contract. See [`docs/yaml-plugin-ide-gsm-step4-spec.md`](../../../docs/yaml-plugin-ide-gsm-step4-spec.md).
+
 ## Overview
 
 `@hierarchidb/ide-gsm-client` パッケージを新規作成する。

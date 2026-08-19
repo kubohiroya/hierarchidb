@@ -2,7 +2,7 @@
 
 本ドキュメントは、各プラグインの `TreeNode.payload` とワーキングコピー (`TreeNode.draft`) がどのような初期状態で生成されるかを整理する。2025-11 以降、PeerEntity は Dexie `peerEntities` テーブルではなく `TreeNode<TPayload>` に直接保存されるようになり、PeerStore は廃止された。ここでは主に「payload 正規化の結果」と「ワーキングコピーや UI が用意する初期値」を JSON 風スニペットで記載する。
 
-> 最終更新: 2025-11-19
+> 最終更新: 2026-08-19
 
 ## folder (`nodeType: "folder"`)
 
@@ -157,6 +157,39 @@ Resolver は TreeNode.payload に最後の実行時刻を保持し、UI で「�
 ```
 
 `normalizeStylerPeerData()` は最後に適用したスタイル設定（`StylerConfig`）と任意の metadata を TreeNode.payload に保持する。UI は payload を直接読んでフォームへ反映し、保存時は Worker 側の更新フローで CoreDB へ反映する。
+
+## yaml-file (`nodeType: "yaml-file"`)
+
+YAML filename は `TreeNode.metadata.name` / `TreeNode.draftMetadata.name` に保持し、plugin payload へ重複させない。
+
+### Draft metadata
+
+```json
+{
+  "name": "scenario.yml",
+  "description": "<string>",
+  "tags": []
+}
+```
+
+### Draft data
+
+```json
+{
+  "subtype": "scenario",
+  "schemaId": "ide-gsm/scenario",
+  "content": "<validated YAML text>"
+}
+```
+
+- `subtype`、`schemaId`、canonical filename の組合せは registry と完全一致させる。
+- subtype や schema を default 値で補完せず、template の明示選択によって設定する。
+- `rsync.yml` の `draftData.content` が保持できるのは optional な `include` / `exclude` 配列だけである。`connectionType`、`projectRelativePath`、push/pull 方向は runtime input とする。
+- `git.yml` の `draftData.content` は repository `url` を保持する。GitHub token と `projectRelativePath` は runtime input とする。
+- Step 4 の command、task ID、status、result、error、endpoint、JWT は `draftMetadata` / `draftData` / TreeNode / IndexedDB へ保存しない。
+- invalid YAML、unknown subtype、schema mismatch は保存・command 実行前にエラーにする。空 object や別 subtype へ置換しない。
+
+正規契約は [YAML plugin IDE-GSM Step 4 contract](../yaml-plugin-ide-gsm-step4-spec.md) を参照する。
 
 ---
 

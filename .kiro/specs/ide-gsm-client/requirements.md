@@ -1,5 +1,8 @@
 # 要件定義書
 
+> [!IMPORTANT]
+> Status: historical baseline. 本書は初期 client surface の記録であり、現在の mutation、input、task status、credential、IDE-GSM Step 4 契約の SSOT ではない。正規契約は [`docs/yaml-plugin-ide-gsm-step4-spec.md`](../../../docs/yaml-plugin-ide-gsm-step4-spec.md) を参照し、矛盾する場合は `docs/` の仕様を優先する。
+
 ## はじめに
 
 `IdeGsmClient` は、IDE-GSM の GraphQL API（HTTP mutation および WebSocket subscription）を呼び出すクライアントライブラリである。
