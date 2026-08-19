@@ -181,7 +181,9 @@ import { FolderIcon } from '@hierarchidb/folder-plugin/ui';
 
 The current `exportYamlNodesToSnapshot` and `importYamlNodesFromSnapshot` helpers are a legacy, non-canonical implementation. Export still reads `data.name`; import writes sequential YamlDB-only rows with an empty schema ID and does not create authoritative CoreDB `TreeNode` records. A later write failure can therefore leave partial YamlDB rows.
 
-Do not use these helpers as the canonical IDE-GSM snapshot path or a Step 4 runtime dependency. Their cutover is blocked until CoreDB migration succeeds, after which a separate issue must implement all-entry preflight and one CoreDB transaction for node and parent updates. See the [canonical YAML storage contract](../../docs/yaml-plugin-ide-gsm-step4-spec.md) and the [legacy YamlDB boundary](../../packages/yaml-store/README.md).
+Do not use these helpers as the canonical IDE-GSM snapshot path or a Step 4 runtime dependency. Before the single activation change, a separate issue must implement and merge the canonical ZIP import/export path as a dormant, production-unreachable entry point. That implementation must preflight all entries and prepare one CoreDB transaction for node and parent updates, while remaining disconnected from the current legacy helpers and runtime routing.
+
+The current legacy entry points remain unchanged only until the single activation change begins. At activation start, the legacy import/export routes are fenced before migration, and both the legacy and canonical routes remain unpublished while the migration or CoreDB initialization is pending. Production routing may publish the canonical ZIP path only after the migration commits and CoreDB initialization succeeds. If migration is blocked or fails, neither route is published, and the runtime must not fall back to the legacy helpers. See the [canonical YAML storage contract](../../docs/yaml-plugin-ide-gsm-step4-spec.md) and the [legacy YamlDB boundary](../../packages/yaml-store/README.md).
 
 ## Directory Structure
 
