@@ -12,6 +12,38 @@
 
 - `dist/**` など生成物
 - `*.d.ts`（型宣言ポリシーは `docs/developer-guidelines.md` を参照）
+- `__tests__/**`
+- `*.test.ts`, `*.test.tsx`, `*.spec.ts`, `*.spec.tsx`
+
+テストファイルはテスト対象との対応を示す命名を優先するため、主エクスポート名や
+Container/Presentational 構成を検査する Naming Audit の対象外とする。配置場所に
+よって判定を変えず、`__tests__/` 配下と co-located test の両方を除外する。
+
+## Naming Audit の実行モード
+
+通常のローカル実行はリポジトリ全体を検査し、既存分を含む全違反を表示する。
+error が1件以上あれば終了コード `1` とする。
+
+```bash
+pnpm tsx scripts/naming-audit.ts
+```
+
+Pull Request のCIでは、同じAuditコードとルールをbase revisionとhead revisionの
+両方へ適用する。headの全違反を表示した上で、厳密に一致するbase側errorを既存分
+として差し引き、新規または悪化したerrorがある場合だけ終了コード `1` とする。
+既存errorの解消数とwarning総数の変化もCIログへ表示する。
+
+base側レポートはJSON schemaを厳密に検証する。base commitの取得失敗、レポートの
+欠落・破損、schema不一致、監査対象0件は成功扱いにせず終了コード `2` とする。
+
+CI内部ではbase側のJSON生成に次のreport-onlyモードを使う。このモードは違反を
+無視する一般的な成功フォールバックではなく、base/head比較用データを生成する
+場合に限って使用する。
+
+```bash
+pnpm tsx scripts/naming-audit.ts --root <base-worktree> --format json --report-only
+pnpm tsx scripts/naming-audit.ts --ci --baseline <base-report.json>
+```
 
 ## `app/src` への適用注記
 

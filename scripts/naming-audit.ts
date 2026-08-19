@@ -5,13 +5,29 @@
 //   pnpm tsx scripts/naming-audit.ts [options]
 //
 // Options:
-//   --ci              CI mode (same behaviour, explicit intent flag)
-//   --format <fmt>    Output format: "json" | "table" (default: "table")
-//   --target <dir>    Override target directories (repeatable)
+//   --ci                 Compare the current report with --baseline
+//   --baseline <file>    Base-revision JSON report (required with --ci)
+//   --report-only        Emit a JSON report without failing on violations
+//   --root <dir>         Repository root to audit (default: current directory)
+//   --format <fmt>       Output format: "json" | "table" (default: "table")
+//   --target <dir>       Override target directories (repeatable)
 // ============================================================
+
+import fs from 'node:fs';
+import path from 'node:path';
 
 import { createExportAnalyzer } from './naming-audit/exportAnalyzer.js';
 import { scanFiles } from './naming-audit/fileScanner.js';
+import {
+  compareNamingAuditViolations,
+  parseNamingAuditViolationRecords,
+  toNamingAuditViolationRecords,
+} from './naming-audit/namingAuditCiUtils.js';
+import {
+  DEFAULT_NAMING_AUDIT_EXCLUDE_PATTERNS,
+  DEFAULT_NAMING_AUDIT_TARGET_DIRS,
+  NAMING_AUDIT_ROUTER_EXCEPTION_PATHS,
+} from './naming-audit/namingAuditConstants.js';
 import { evaluateRules } from './naming-audit/ruleEngine.js';
 import { implSuffixRule } from './naming-audit/rules/implSuffixRule.js';
 import { primaryExportRule } from './naming-audit/rules/primaryExportRule.js';
@@ -24,80 +40,91 @@ import type {
   Rule,
   RuleEngineConfig,
 } from './naming-audit/types.js';
-import { reportViolations } from './naming-audit/violationReporter.js';
-
-// ---------------------------------------------------------------------------
-// Default configuration
-// ---------------------------------------------------------------------------
-
-const DEFAULT_TARGET_DIRS: readonly string[] = [
-  'app/src/',
-  'packages/*/src/',
-  'plugins/*-plugin/src/',
-];
-
-const DEFAULT_EXCLUDE_PATTERNS: readonly string[] = ['dist/', '*.d.ts', '__tests__/'];
-
-const ROUTER_EXCEPTION_PATHS: readonly string[] = ['app/src/router/**'];
-
-// ---------------------------------------------------------------------------
-// CLI argument parsing
-// ---------------------------------------------------------------------------
+import { reportNamingAuditComparison, reportViolations } from './naming-audit/violationReporter.js';
 
 interface CliOptions {
+  readonly baselinePath: string | null;
   readonly ci: boolean;
   readonly format: 'json' | 'table';
+  readonly reportOnly: boolean;
+  readonly rootDir: string;
   readonly targets: readonly string[];
 }
 
+function requireOptionValue(args: readonly string[], optionIndex: number, option: string): string {
+  const value = args[optionIndex + 1];
+  if (value === undefined || value.startsWith('--')) {
+    throw new Error(`Missing value for ${option}.`);
+  }
+  return value;
+}
+
 function parseArgs(argv: readonly string[]): CliOptions {
+  let baselinePath: string | null = null;
   let ci = false;
   let format: 'json' | 'table' = 'table';
+  let reportOnly = false;
+  let rootDir = process.cwd();
   const targets: string[] = [];
-
-  // Skip first two entries (node binary + script path)
   const args = argv.slice(2);
 
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
     switch (arg) {
       case '--ci':
         ci = true;
         break;
+      case '--baseline':
+        baselinePath = requireOptionValue(args, index, '--baseline');
+        index += 1;
+        break;
+      case '--report-only':
+        reportOnly = true;
+        break;
+      case '--root':
+        rootDir = requireOptionValue(args, index, '--root');
+        index += 1;
+        break;
       case '--format': {
-        const value = args[++i];
+        const value = requireOptionValue(args, index, '--format');
         if (value !== 'json' && value !== 'table') {
-          console.error(`Invalid format: "${value}". Expected "json" or "table".`);
-          process.exit(2);
+          throw new Error(`Invalid format: "${value}". Expected "json" or "table".`);
         }
         format = value;
+        index += 1;
         break;
       }
-      case '--target': {
-        const value = args[++i];
-        if (!value) {
-          console.error('Missing value for --target');
-          process.exit(2);
-        }
-        targets.push(value);
+      case '--target':
+        targets.push(requireOptionValue(args, index, '--target'));
+        index += 1;
         break;
-      }
       default:
-        console.error(`Unknown option: "${arg}"`);
-        process.exit(2);
+        throw new Error(`Unknown option: "${String(arg)}".`);
     }
   }
 
+  if (ci && baselinePath === null) {
+    throw new Error('--ci requires --baseline <file>.');
+  }
+  if (!ci && baselinePath !== null) {
+    throw new Error('--baseline is only valid with --ci.');
+  }
+  if (ci && reportOnly) {
+    throw new Error('--ci and --report-only cannot be used together.');
+  }
+  if (reportOnly && format !== 'json') {
+    throw new Error('--report-only requires --format json.');
+  }
+
   return {
+    baselinePath,
     ci,
     format,
-    targets: targets.length > 0 ? targets : DEFAULT_TARGET_DIRS,
+    reportOnly,
+    rootDir: path.resolve(rootDir),
+    targets: targets.length > 0 ? targets : DEFAULT_NAMING_AUDIT_TARGET_DIRS,
   };
 }
-
-// ---------------------------------------------------------------------------
-// All rules
-// ---------------------------------------------------------------------------
 
 const ALL_RULES: readonly Rule[] = [
   primaryExportRule,
@@ -107,17 +134,6 @@ const ALL_RULES: readonly Rule[] = [
   separationThresholdRule,
 ];
 
-// ExportAnalyzer — reusable ts-morph Project instance
-const exportAnalyzer = createExportAnalyzer();
-
-// ---------------------------------------------------------------------------
-// Main pipeline
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// Progress helpers (write to stderr so stdout stays clean for JSON output)
-// ---------------------------------------------------------------------------
-
 const isTTY = process.stderr.isTTY ?? false;
 
 function clearLine(): void {
@@ -126,58 +142,88 @@ function clearLine(): void {
   }
 }
 
-function progress(msg: string): void {
+function progress(message: string): void {
   if (isTTY) {
     clearLine();
-    process.stderr.write(msg);
+    process.stderr.write(message);
   } else {
-    process.stderr.write(`${msg}\n`);
+    process.stderr.write(`${message}\n`);
   }
 }
 
-function progressDone(msg: string): void {
+function progressDone(message: string): void {
   clearLine();
-  process.stderr.write(`${msg}\n`);
+  process.stderr.write(`${message}\n`);
 }
 
-// ---------------------------------------------------------------------------
-// Main pipeline
-// ---------------------------------------------------------------------------
+function readBaselineReport(baselinePath: string): unknown {
+  const resolvedPath = path.resolve(baselinePath);
+  const contents = fs.readFileSync(resolvedPath, 'utf8');
+  return JSON.parse(contents) as unknown;
+}
 
-function main(): void {
+function run(): number {
   const options = parseArgs(process.argv);
+  const rootStat = fs.statSync(options.rootDir);
+  if (!rootStat.isDirectory()) {
+    throw new Error(`Naming audit root is not a directory: ${options.rootDir}`);
+  }
 
   const scannerOptions: FileScannerOptions = {
+    rootDir: options.rootDir,
     targetDirs: options.targets,
-    excludePatterns: DEFAULT_EXCLUDE_PATTERNS,
+    excludePatterns: DEFAULT_NAMING_AUDIT_EXCLUDE_PATTERNS,
   };
-
   const ruleConfig: RuleEngineConfig = {
-    routerExceptionPaths: ROUTER_EXCEPTION_PATHS,
+    routerExceptionPaths: NAMING_AUDIT_ROUTER_EXCEPTION_PATHS,
   };
+  const tsConfigPath = path.join(options.rootDir, 'tsconfig.json');
+  const exportAnalyzer = createExportAnalyzer(tsConfigPath);
 
-  // Step 1: Scan files
   progress('Scanning files…');
   const files = scanFiles(scannerOptions);
+  if (files.length === 0) {
+    throw new Error(`Naming audit found no files under root: ${options.rootDir}`);
+  }
   progressDone(`✔ Scanned ${files.length} files`);
 
-  // Step 2: Analyse exports for each file
   const analyses: FileAnalysis[] = [];
-  for (let i = 0; i < files.length; i++) {
-    progress(`Analysing exports… (${i + 1}/${files.length}) ${files[i].relativePath}`);
-    analyses.push(exportAnalyzer.analyze(files[i]));
+  for (let index = 0; index < files.length; index += 1) {
+    const file = files[index];
+    if (file === undefined) {
+      throw new Error(`Naming audit file index ${index} is missing.`);
+    }
+    progress(`Analysing exports… (${index + 1}/${files.length}) ${file.relativePath}`);
+    analyses.push(exportAnalyzer.analyze(file));
   }
   progressDone(`✔ Analysed ${analyses.length} files`);
 
-  // Step 3: Evaluate rules
   progress('Evaluating rules…');
   const violations = evaluateRules(analyses, ALL_RULES, ruleConfig);
   progressDone(`✔ Evaluated ${ALL_RULES.length} rules — ${violations.length} violation(s) found`);
 
-  // Step 4: Report violations and determine exit code
-  const exitCode = reportViolations(violations, options.format);
+  const fullReportExitCode = reportViolations(violations, options.format);
+  if (options.reportOnly) {
+    return 0;
+  }
+  if (!options.ci) {
+    return fullReportExitCode;
+  }
 
-  process.exit(exitCode);
+  const baselinePath = options.baselinePath;
+  if (baselinePath === null) {
+    throw new Error('CI baseline path is missing after argument validation.');
+  }
+  const baselineRecords = parseNamingAuditViolationRecords(readBaselineReport(baselinePath));
+  const currentRecords = toNamingAuditViolationRecords(violations);
+  const comparison = compareNamingAuditViolations(baselineRecords, currentRecords);
+  return reportNamingAuditComparison(comparison, options.format);
 }
 
-main();
+try {
+  process.exit(run());
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(`Naming audit failed: ${message}`);
+  process.exit(2);
+}

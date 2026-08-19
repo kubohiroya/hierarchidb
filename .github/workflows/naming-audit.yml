@@ -21,7 +21,7 @@ jobs:
   naming-audit:
     name: Naming Convention Check
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,4 +41,22 @@ jobs:
         run: pnpm install --no-frozen-lockfile --force
 
       - name: Run naming audit
-        run: pnpm tsx scripts/naming-audit.ts --ci
+        env:
+          NAMING_AUDIT_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          naming_audit_parent="$(mktemp -d)"
+          naming_audit_base_dir="${naming_audit_parent}/base"
+          naming_audit_base_report="${RUNNER_TEMP}/naming-audit-base.json"
+
+          git worktree add --detach "${naming_audit_base_dir}" "${NAMING_AUDIT_BASE_SHA}"
+          pnpm tsx scripts/naming-audit.ts \
+            --root "${naming_audit_base_dir}" \
+            --format json \
+            --report-only > "${naming_audit_base_report}"
+          git worktree remove "${naming_audit_base_dir}"
+          rmdir "${naming_audit_parent}"
+
+          pnpm tsx scripts/naming-audit.ts \
+            --ci \
+            --baseline "${naming_audit_base_report}"

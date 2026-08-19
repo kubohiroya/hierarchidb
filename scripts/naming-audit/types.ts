@@ -20,6 +20,8 @@ export interface FileEntry {
 
 /** Options passed to the file scanner. */
 export interface FileScannerOptions {
+    /** Repository root used to resolve target directories */
+    readonly rootDir: string;
     /** Target directories to scan */
     readonly targetDirs: readonly string[];
     /** Glob patterns to exclude */

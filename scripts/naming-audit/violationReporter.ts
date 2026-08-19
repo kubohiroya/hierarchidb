@@ -12,6 +12,7 @@
 // Requirements: 1.1, 1.2, 1.3
 // ============================================================
 
+import { type NamingAuditComparison, toNamingAuditViolationRecords } from './namingAuditCiUtils.js';
 import type { Violation } from './types.js';
 
 // ---------------------------------------------------------------------------
@@ -19,15 +20,7 @@ import type { Violation } from './types.js';
 // ---------------------------------------------------------------------------
 
 function reportJson(violations: readonly Violation[]): void {
-  const output = violations.map((v) => ({
-    file: v.file.relativePath,
-    subPackage: v.file.subPackage,
-    pattern: v.pattern,
-    severity: v.severity,
-    message: v.message,
-    suggestedRename: v.suggestedRename,
-  }));
-
+  const output = toNamingAuditViolationRecords(violations);
   console.log(JSON.stringify(output, null, 2));
 }
 
@@ -97,4 +90,42 @@ export function reportViolations(
 
   const hasErrors = violations.some((v) => v.severity === 'error');
   return hasErrors ? 1 : 0;
+}
+
+export function reportNamingAuditComparison(
+  comparison: NamingAuditComparison,
+  format: 'json' | 'table'
+): number {
+  const summary = {
+    baselineErrors: comparison.baselineErrorCount,
+    currentErrors: comparison.currentErrorCount,
+    unchangedErrors: comparison.unchangedErrorCount,
+    newErrors: comparison.newErrors.length,
+    resolvedErrors: comparison.resolvedErrors.length,
+    baselineWarnings: comparison.baselineWarningCount,
+    currentWarnings: comparison.currentWarningCount,
+  };
+
+  if (format === 'json') {
+    console.error(JSON.stringify({ namingAuditComparison: summary }, null, 2));
+  } else {
+    console.log('\n── CI comparison (base → head) ──');
+    console.log(
+      `  Errors: ${summary.baselineErrors} → ${summary.currentErrors} ` +
+        `(unchanged: ${summary.unchangedErrors}, new: ${summary.newErrors}, resolved: ${summary.resolvedErrors})`
+    );
+    console.log(`  Warnings: ${summary.baselineWarnings} → ${summary.currentWarnings}`);
+
+    if (comparison.newErrors.length === 0) {
+      console.log('✔ No new naming errors introduced.');
+    } else {
+      console.log('\nNew naming errors:');
+      for (const violation of comparison.newErrors) {
+        console.log(`  ✖ [P${violation.pattern}] ${violation.subPackage}/${violation.file}`);
+        console.log(`    ${violation.message}`);
+      }
+    }
+  }
+
+  return comparison.newErrors.length > 0 ? 1 : 0;
 }
