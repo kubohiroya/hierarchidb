@@ -181,7 +181,9 @@ import { FolderIcon } from '@hierarchidb/folder-plugin/ui';
 
 現行の`exportYamlNodesToSnapshot`と`importYamlNodesFromSnapshot` helperはlegacyかつnon-canonicalな実装である。exportは`data.name`を読み、importは空schema IDを持つYamlDB-only rowを逐次writeし、authoritativeなCoreDB `TreeNode`を作成しない。後続writeが失敗するとYamlDBに部分rowが残り得る。
 
-これらをcanonical IDE-GSM snapshot pathまたはStep 4 runtime dependencyとして使用してはならない。cutoverはCoreDB migration成功までblockedとし、その後の別Issueで全entry preflightとnode / parent更新を含むCoreDB単一transactionを実装する。[正規YAML storage契約](../../docs/yaml-plugin-ide-gsm-step4-spec.md)と[legacy YamlDB boundary](../../packages/yaml-store/README_ja.md)を参照する。
+これらをcanonical IDE-GSM snapshot pathまたはStep 4 runtime dependencyとして使用してはならない。single activation変更より前に、別Issueでcanonical ZIP import/export pathをproductionから到達不能なdormant entryとして実装・mergeする。その実装は全entryをpreflightし、node / parent更新を含むCoreDB単一transactionを準備するが、現行legacy helperとruntime routingには接続しない。
+
+現行legacy entryを変更しないのはsingle activation変更の開始前までに限る。activation開始時にはmigrationより先にlegacy import/export routeをfenceし、migrationまたはCoreDB initializationがpendingの間はlegacy routeとcanonical routeの双方を公開しない。production routingがcanonical ZIP pathを公開できるのは、migrationのcommitとCoreDB initializationがともに成功した後だけである。migrationがblockedまたは失敗した場合はどちらのrouteも公開せず、legacy helperへfallbackしない。[正規YAML storage契約](../../docs/yaml-plugin-ide-gsm-step4-spec.md)と[legacy YamlDB boundary](../../packages/yaml-store/README_ja.md)を参照する。
 
 ## ディレクトリ構成
 

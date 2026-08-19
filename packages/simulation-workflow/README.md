@@ -8,7 +8,9 @@ Simulation workflow package for HierarchiDB. Provides IDE-GSM simulation workflo
 
 The production `SimulationWorkflow.runSimulation` path currently calls the folder-plugin's legacy YAML serializer directly, and the package tests cover that current behavior. This package is not a YAML storage authority or the Step 4 executor. The legacy serializer is non-canonical and must not be published as the Step 4 snapshot path.
 
-After CoreDB migration, canonical dialog writer, and canonical folder ZIP cutover are complete, a separate issue must update and verify this consumer before non-SSH integration. See the [canonical YAML storage contract](../../docs/yaml-plugin-ide-gsm-step4-spec.md) and the [folder legacy boundary](../../plugins/folder-plugin/README.md#legacy-yaml-snapshot-boundary).
+After the dormant canonical folder ZIP API is merged, a separate issue must implement and test a dormant canonical SimulationWorkflow consumer before the single activation change. That consumer must remain unreachable from production, while the current `runSimulation` routing remains unchanged. This pre-activation regression verifies only the dormant canonical dependency.
+
+At the start of the single activation change, the legacy SimulationWorkflow route is fenced and the dormant canonical consumer remains unpublished. Production routing may publish the canonical consumer only after the CoreDB migration commits and CoreDB initialization succeeds. If migration is blocked or fails, neither route is published, and the runtime must not fall back to the legacy serializer. A separate post-activation regression must verify the production route before non-SSH integration. See the [canonical YAML storage contract](../../docs/yaml-plugin-ide-gsm-step4-spec.md) and the [folder legacy boundary](../../plugins/folder-plugin/README.md#legacy-yaml-snapshot-boundary).
 
 ## Dependencies
 
