@@ -2,7 +2,7 @@
 
 ## Default hosting flow
 
-- TreeConsole creates a working-copy node and navigates to `/t/<treeId>/<parentId>/<wcNodeId>/<nodeType>/create`.
+- TreeConsole creates a working-copy node and navigates to `/d/<treeId>/<parentId>/<wcNodeId>/<nodeType>/create`.
 - The app route renders the shared `PluginDialogHost`. The host renders the dialog shell and drives `useTreeNodeUpdater`.
 - The host writes Basic Info (`name`, `description`, `tags`) to `draftMetadata` and plugin-specific persistent fields to `draftData`.
 - A plugin provides step components, validators, and capabilities through `PluginStepRegistry`. A plugin-specific dialog host is not required by the default route.
