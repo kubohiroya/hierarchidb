@@ -1,1 +1,0 @@
-import"./vendor-react-348d4Zyy.js";import{si as e}from"./index.js";const t=e;var n=t;export{t as YamlPluginIcon,n as default};

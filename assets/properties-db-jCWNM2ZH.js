@@ -1,1 +1,0 @@
-import{a as e,i as t,n,o as r,r as i,t as a}from"./properties-db-C5Vg3EB6.js";export{i as getSelectAll,r as saveSelectAll};
