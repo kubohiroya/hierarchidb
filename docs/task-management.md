@@ -31,6 +31,63 @@
 - 阻害中を表す選択肢が Project にある場合はそれを使い、ない場合は `In Progress` のまま Issue に `blocked` の要因と解除条件を記録する。
 - 優先度、規模、担当など利用可能なフィールドは、Project の現行スキーマに合わせる。文書側で存在しない選択肢を仮定しない。
 
+## GitHub Project v2 の低コスト運用
+
+### 責務の分離
+
+- Issue / PRの本文、state、Assignee、label、comment、Actions情報はGitHub connectorまたはRESTで取得する。
+- GraphQLはProject v2のitem、field、option、Status操作だけに使う。
+- 複数agentで作業する場合、Project v2のquery / mutationはroot agentが集約する。サブエージェントはIssue番号、URL、必要なStatusだけをroot agentへ返し、同じProject情報を重複取得しない。root agentから対象と操作を限定して委譲された場合だけ例外とする。
+
+### 対象を限定する
+
+- 禁止: `gh project item-list <project> --owner <owner> --limit 1000`、Project全itemのpagination、同じProject schemaのIssueごとの再取得。
+- 1件のIssueはrepositoryのIssue番号から`projectItems(first: 10)`を引き、対象Project IDと一致するitemだけを使う。
+- 少数の既知Issueを同時に確認する場合はalias付きqueryでbatchする。件数が不明なProject全体の列挙へ切り替えない。
+- Project ID、Status field ID、Status option ID、Project item IDは同じ作業中のcontextで保持して再利用する。IDをローカルMarkdown台帳へ保存しない。schema変更を確認した場合だけ再取得する。
+- `--jq`はGraphQL response受信後のclient-side filterであり、query costを減らさない。query document側で取得fieldと`first`を最小化する。
+
+Issueに対応するProject itemの取得例:
+
+```graphql
+query IssueProjectItem($owner: String!, $repo: String!, $number: Int!) {
+  repository(owner: $owner, name: $repo) {
+    issue(number: $number) {
+      projectItems(first: 10) {
+        nodes {
+          id
+          project {
+            id
+            number
+          }
+          fieldValueByName(name: "Status") {
+            ... on ProjectV2ItemFieldSingleSelectValue {
+              name
+              optionId
+            }
+          }
+        }
+      }
+    }
+  }
+  rateLimit {
+    cost
+    remaining
+    resetAt
+  }
+}
+```
+
+このqueryはProject itemの確認用であり、Project schemaの全fieldやIssue本文を同時に取得しない。Status更新に必要なIDが既知なら、それらを再取得せず直接mutationへ渡す。
+
+### Quota guard
+
+1. Project操作の開始前とbatch完了後に、RESTの`rate_limit`でGraphQLの`remaining`と`reset`を確認する。残量確認自体のためにGraphQLをpollingしない。
+2. `remaining > 500`でも、対象限定queryと既知IDの再利用を守る。
+3. `remaining <= 500`では新規のschema discovery、一覧取得、監査目的の反復queryを停止する。当該タスクに必須で、対象とIDが既知の直接操作だけを行う。
+4. `remaining <= 100`ではread / writeを問わずProject GraphQL操作を停止し、reset後に再開する。着手ゲートを満たせない場合は`blocked`として扱う。
+5. 別token、別account、ブラウザ操作、別経路への切替でrate limitを迂回しない。reset時刻、停止した操作、再開条件をユーザーへ報告する。
+
 ## 着手フロー
 
 1. 関連する `docs/` 配下の仕様書・設計書を確認する。
