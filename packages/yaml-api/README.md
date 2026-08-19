@@ -28,6 +28,14 @@ Issue #1266 only introduces the pure API contract. It does not migrate stored da
 
 Storage migration, `metadata.name` cutover, ZIP import/export, and UI integration are tracked by follow-up issues under Epic #1162.
 
+## Canonical validation boundary
+
+`@hierarchidb/yaml-api/validation` is a separate canonical-only export entry. `validateYamlCanonicalPayload(filename, payload)` validates the complete filename, subtype, schema ID, and content tuple against the registry and current JSON Schemas, then returns a newly constructed validated payload value.
+
+The facade rejects legacy, mixed, incomplete, unknown, accessor-backed, and non-plain payloads. It parses YAML 1.2 as exactly one plain mapping and applies strict Ajv validation without coercion, defaults, property removal, or undeclared schema constraints. Stable errors contain only safe codes and field/reason context; raw payloads, YAML content, parser details, and thrown getter or proxy messages are never returned.
+
+The neutral implementation remains package-internal. The migration subpath uses an internal adapter over the same kernel so its existing legacy classification, error precedence, ordering, and redaction remain unchanged. The package root does not re-export validation and does not load Ajv, YAML, migration, or validation modules.
+
 ## Storage authority and migration boundary
 
 The canonical storage contract is defined in [`docs/yaml-plugin-ide-gsm-step4-spec.md`](../../docs/yaml-plugin-ide-gsm-step4-spec.md):

@@ -28,6 +28,14 @@ Issue #1266はpure API contractだけを導入し、永続化データやruntime
 
 storage migration、`metadata.name`へのcutover、ZIP import/export、UI統合はEpic #1162配下の後続Issueで実施する。
 
+## Canonical validation境界
+
+`@hierarchidb/yaml-api/validation`はcanonical-onlyな独立export entryである。`validateYamlCanonicalPayload(filename, payload)`はfilename、subtype、schema ID、contentの完全な組をregistryとcurrent JSON Schemaに対して検証し、新しく構成した検証済みpayload valueを返す。
+
+facadeはlegacy、mixed、incomplete、unknown、accessor付き、non-plain payloadを拒否する。YAML 1.2の単一plain mappingとしてparseし、coercion、default、property除去、未宣言schema制約の追加なしでstrict Ajv validationを行う。stable errorには安全なcodeとfield/reason contextだけを含め、raw payload、YAML本文、parser detail、getterまたはProxyが投げたmessageを返さない。
+
+neutral implementationはpackage内部に閉じる。migration subpathは同じkernelをinternal adapter経由で使用し、既存のlegacy分類、error precedence、ordering、redactionを維持する。package rootはvalidationを再exportせず、Ajv、YAML、migration、validation moduleをloadしない。
+
 ## Storage authorityとmigration boundary
 
 正規のstorage契約は[`docs/yaml-plugin-ide-gsm-step4-spec.md`](../../docs/yaml-plugin-ide-gsm-step4-spec.md)で定義する。

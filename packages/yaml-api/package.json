@@ -14,6 +14,10 @@
         "./migration": {
             "types": "./dist/migration/index.d.ts",
             "import": "./dist/migration/index.js"
+        },
+        "./validation": {
+            "types": "./dist/validation/index.d.ts",
+            "import": "./dist/validation/index.js"
         }
     },
     "typesVersions": {
@@ -21,13 +25,16 @@
             "migration": [
                 "dist/migration/index.d.ts"
             ],
+            "validation": [
+                "dist/validation/index.d.ts"
+            ],
             "*": [
                 "dist/index.d.ts"
             ]
         }
     },
     "scripts": {
-        "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist && tsdown src/migration/index.ts --config ../../tsdown.config.ts --outDir dist/migration",
+        "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist && tsdown src/migration/index.ts --config ../../tsdown.config.ts --outDir dist/migration && tsdown src/validation/index.ts --config ../../tsdown.config.ts --outDir dist/validation",
         "clean": "rm -rf dist",
         "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
         "test": "vitest run --passWithNoTests",
