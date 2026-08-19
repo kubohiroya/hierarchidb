@@ -210,6 +210,10 @@ validation、serialization、`importProject` のいずれかが失敗した場�
 - legacy / canonicalの`content`は検証のためにparseするだけとし、migrationで本文を整形、serialize、補完、変更しない。error reportまたはlogにも本文を含めない。
 - error report は source、node ID、slot、typed error code を含める。YAML本文、認証情報、endpoint、token を含めない。
 - missing legacy `name`、metadata/payload name 不一致、`schemaId: ''`、unknown/ambiguous mapping を filename、schemaId、別 slot、既存 record から推測または補完しない。`data.name ?? metadata.name` のような fallback を禁止する。
+- strict validationの実装authorityは`@hierarchidb/yaml-api` package内部のneutral kernelとする。kernelはown data property、plain object、registry tuple、YAML 1.2の単一plain mapping、current `YAML_SCHEMAS`をcoercion、default、property除去なしで検証する。
+- public `@hierarchidb/yaml-api/validation` facadeはcanonical filenameとcanonical payloadだけを同時に検証し、legacy payloadを成功させない。成功時は検証済みの`subtype`、`schemaId`、`content`を新しい値として返し、callerにraw objectのcastまたは再readを要求しない。
+- migration plannerはpackage-internal adapterから同じkernelのlegacy/canonical分類を使用し、neutral errorを既存migration contextへ再構成する。既存のerror code、precedence、source index、node ID、slot、sorting、redactionを変更しない。
+- parser、Ajv、getter、Proxyが投げたmessage、raw payload、YAML本文をpublic errorまたはmigration errorへ含めない。public facade、migration adapterのどちらもinput/contentを変更、normalize、serializeしない。
 
 ### CoreDB slot 決定表
 
