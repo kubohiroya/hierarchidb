@@ -14,6 +14,5 @@ export default defineConfig({
     globals: true,
     pool: 'threads',
     maxWorkers: 1,
-    isolate: false,
   },
 });
