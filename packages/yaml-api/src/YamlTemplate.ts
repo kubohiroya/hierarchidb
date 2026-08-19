@@ -1,30 +1,65 @@
-/** A single YAML file template entry. */
+import {
+  YAML_SUBTYPE_REGISTRY,
+  type YamlCanonicalFilename,
+  type YamlSchemaId,
+} from './YAML_SUBTYPE_REGISTRY.js';
+import { YAML_SUBTYPES, type YamlSubtype } from './YamlSubtype.js';
+
+/** A single canonical YAML file template entry. */
 export interface YamlTemplate {
-    templateId: string;
-    displayName: string;
-    fileName: string;
-    schemaId: string;
+  readonly templateId: YamlSubtype;
+  readonly subtype: YamlSubtype;
+  readonly displayName: string;
+  readonly fileName: YamlCanonicalFilename;
+  readonly schemaId: YamlSchemaId;
 }
 
-/** All predefined YAML file templates (10 entries). */
-export const YAML_TEMPLATES: readonly YamlTemplate[] = [
-    { templateId: 'sources', displayName: 'Sources', fileName: 'sources.yml', schemaId: 'ide-gsm/sources' },
-    { templateId: 'scenario', displayName: 'Scenario', fileName: 'scenario.yml', schemaId: 'ide-gsm/scenario' },
-    { templateId: 'scenario-base', displayName: 'Scenario Base', fileName: 'scenario-base.yml', schemaId: 'ide-gsm/scenario' },
-    { templateId: 'calib', displayName: 'Calibration', fileName: 'calib.yml', schemaId: 'ide-gsm/calib' },
-    { templateId: 'remote', displayName: 'Remote', fileName: 'remote.yml', schemaId: 'ide-gsm/remote' },
-    { templateId: 'remote-base', displayName: 'Remote Base', fileName: 'remote-base.yml', schemaId: 'ide-gsm/remote' },
-    { templateId: 'ssh', displayName: 'SSH', fileName: 'ssh.yml', schemaId: 'ide-gsm/ssh' },
-    { templateId: 'ssh-base', displayName: 'SSH Base', fileName: 'ssh-base.yml', schemaId: 'ide-gsm/ssh' },
-    { templateId: 'ec2', displayName: 'EC2', fileName: 'ec2.yml', schemaId: 'ide-gsm/ec2' },
-    { templateId: 'ec2-base', displayName: 'EC2 Base', fileName: 'ec2-base.yml', schemaId: 'ide-gsm/ec2' },
-] as const;
+function createYamlTemplate(subtype: YamlSubtype): YamlTemplate {
+  const entry = YAML_SUBTYPE_REGISTRY[subtype];
+  return {
+    templateId: subtype,
+    subtype,
+    displayName: entry.displayName,
+    fileName: entry.fileName,
+    schemaId: entry.schemaId,
+  };
+}
+
+/** Total canonical template registry keyed by YAML subtype. */
+export const YAML_TEMPLATE_REGISTRY = {
+  sources: createYamlTemplate('sources'),
+  scenario: createYamlTemplate('scenario'),
+  'scenario-base': createYamlTemplate('scenario-base'),
+  calib: createYamlTemplate('calib'),
+  remote: createYamlTemplate('remote'),
+  'remote-base': createYamlTemplate('remote-base'),
+  ssh: createYamlTemplate('ssh'),
+  'ssh-base': createYamlTemplate('ssh-base'),
+  ec2: createYamlTemplate('ec2'),
+  'ec2-base': createYamlTemplate('ec2-base'),
+  rsync: createYamlTemplate('rsync'),
+  git: createYamlTemplate('git'),
+} as const satisfies Record<YamlSubtype, YamlTemplate>;
+
+/** All 12 canonical YAML templates, derived from the subtype registry. */
+export const YAML_CANONICAL_TEMPLATES: readonly YamlTemplate[] = YAML_SUBTYPES.map(
+  (subtype) => YAML_TEMPLATE_REGISTRY[subtype]
+);
 
 /**
- * Look up a template by templateId.
- * Returns undefined when the templateId is not found.
+ * Templates consumed by the existing three-step runtime.
+ *
+ * The rsync and git templates remain excluded until the later UI/storage
+ * cutover issue. This explicit list is not the canonical 12-template contract.
+ */
+export const YAML_TEMPLATES: readonly YamlTemplate[] = YAML_CANONICAL_TEMPLATES.filter(
+  (template) => template.subtype !== 'rsync' && template.subtype !== 'git'
+);
+
+/**
+ * Look up a template in the existing three-step runtime contract.
+ * Returns undefined when that runtime does not expose the template.
  */
 export function findYamlTemplate(templateId: string): YamlTemplate | undefined {
-    const found = YAML_TEMPLATES.find((t) => t.templateId === templateId);
-    return found;
+  return YAML_TEMPLATES.find((template) => template.templateId === templateId);
 }
