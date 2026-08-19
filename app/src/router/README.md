@@ -115,6 +115,14 @@ All top-level routes have been migrated to TanStack Router:
 - `/worker-test` - Worker API test page
 - `/test` - Simple test page
 
+### Auth callback return URLs
+
+OAuth callback return URL resolution is defined by
+[`docs/auth-callback-routing-spec.md`](../../../docs/auth-callback-routing-spec.md). Both the app
+callback route and the public `@hierarchidb/ui-auth` callback use the shared
+`resolveAuthReturnUrl` function. Hash-router targets use the stored `#/...` route directly and
+must not be combined with the GitHub Pages base pathname.
+
 ### Tree Routes (Phase 3 - Complete)
 
 Tree-related routes have been migrated to TanStack Router:
