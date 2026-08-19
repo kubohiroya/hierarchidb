@@ -1,5 +1,8 @@
 # Requirements Document
 
+> [!IMPORTANT]
+> Status: historical baseline. This document records the original three-step YAML implementation and is not the SSOT for the current subtype, data model, draft, or IDE-GSM Step 4 contract. See [`docs/yaml-plugin-ide-gsm-step4-spec.md`](../../../docs/yaml-plugin-ide-gsm-step4-spec.md). Where this document conflicts with that specification, the `docs/` specification applies.
+
 ## Introduction
 
 IDE-GSM との統合のため、hierarchidb のツリーに新しいノード種別 `YamlFileNode` を追加する。

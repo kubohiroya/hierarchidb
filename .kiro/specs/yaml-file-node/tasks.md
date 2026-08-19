@@ -1,5 +1,8 @@
 # 実装計画: yaml-file-node
 
+> [!IMPORTANT]
+> Status: historical baseline. 完了チェックは当時の3ステップ実装を表し、現在の subtype、data model、draft、IDE-GSM Step 4 の完了状態を表さない。正規契約は [`docs/yaml-plugin-ide-gsm-step4-spec.md`](../../../docs/yaml-plugin-ide-gsm-step4-spec.md) を参照する。
+
 ## 概要
 
 `YamlFileNode`（`nodeType = 'yaml-file'`）を hierarchidb のツリーに追加する。

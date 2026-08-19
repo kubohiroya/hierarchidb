@@ -1,22 +1,29 @@
-# Draft Dialog Hosting: Current Notes
+# Draft Dialog Hosting: Current Contract
 
-- Creation flow (TreeConsole): `create:<nodeType>` → create working copy node → navigate to `/t/<treeId>/<parentId>/<wcNodeId>/<nodeType>/create`. The dialog UI is resolved from the plugin registry entry (UI export) at runtime.
-- Responsibilities:
-  - App/host: renders the dialog shell (HeadlessPluginDialog) and drives `useTreeNodeUpdater` so Basic Info is written to `draftMetadata` and plugin-specific data to `draftData`.
-  - Plugin: exposes UI entry (via plugin registry) and provides step components/validators. Legacy NodeDialogExtension (step-state only) is deprecated; new hosts use `useTreeNodeUpdater` directly.
-- Current state:
-  - Basemap/Route/Location/Resolver: host lives in app; legacy NodeDialogExtension is no longer needed.
-  - Spreadsheet/Styler: plugin-side dialog hosts (`SpreadsheetDialog`, `StylerDialog`) are exported via `./ui`; registry-driven resolution loads them.
-- Next steps to align:
-  - Ensure plugin UI entries export the dialog host component used at runtime.
-  - Regenerate plugin registry if needed (`pnpm tools:gen-plugin-registry`).
-  - Avoid duplicating app-specific hosts; rely on registry-driven loading per nodeType.
+## Default hosting flow
 
-## Plugin Registry Generation and Consumption
-- Generation: `pnpm tools:gen-plugin-registry` scans plugins and emits `packages/plugin-registry/generated/registry.ts` (and related artifacts), listing UI/Worker/Icon entrypoints based on each plugin’s `hierarchidb.plugin` metadata.
-- Consumption: Vite dev/build imports the generated registry to resolve UI components dynamically for create/edit dialogs and other plugin assets. The app does not hardcode nodeType→component mappings; it uses the generated registry to locate UI entry exports.
-- To ensure a plugin dialog is loadable:
-  - Plugin side: expose the dialog host (HeadlessPluginDialog + `useTreeNodeUpdater`) via the standard `./ui` export in `package.json` (`"exports": { "./ui": { "types": "./dist/ui/index.d.ts", "import": "./dist/ui/index.js" } }`).
-  - App side: relies on plugin-registry resolving that `./ui` entry; no nodeType→component hardcoding.
-  - Regenerate the registry when UI entries change (`pnpm tools:gen-plugin-registry`).
-  - Vite dev/build will pick up the generated registry and load the UI entry at runtime based on nodeType.
+- TreeConsole creates a working-copy node and navigates to `/d/<treeId>/<parentId>/<wcNodeId>/<nodeType>/create`.
+- The app route renders the shared `PluginDialogHost`. The host renders the dialog shell and drives `useTreeNodeUpdater`.
+- The host writes Basic Info (`name`, `description`, `tags`) to `draftMetadata` and plugin-specific persistent fields to `draftData`.
+- A plugin provides step components, validators, and capabilities through `PluginStepRegistry`. A plugin-specific dialog host is not required by the default route.
+- Legacy `NodeDialogExtension` step-state hosting is deprecated.
+
+Some packages export plugin-specific dialog components through `./ui`, but their presence does not make the default app route select them automatically. A custom host requires an explicit app routing/registry contract; it must not be inferred from an export name.
+
+## YAML plugin
+
+YAML create/edit uses the shared `PluginDialogHost` and registered YAML steps. It must not add a separate `YamlDialog` for IDE-GSM Step 4.
+
+- filename is Basic Info metadata and belongs to `draftMetadata`;
+- subtype, schema ID, and YAML content belong to `draftData`;
+- selected command, task ID, task status, result, and error are UI-only state;
+- endpoint and JWT stay inside the app-level executor/provider and are not written to either draft area.
+
+The normative subtype, command, synchronization, and feature-flag rules are defined in [YAML plugin IDE-GSM Step 4 contract](./yaml-plugin-ide-gsm-step4-spec.md).
+
+## Plugin registry generation
+
+- `pnpm tools:gen-plugin-registry` scans plugin manifests and generates `packages/plugin-registry/generated/registry.ts` and related artifacts.
+- Vite uses the generated registry to load plugin UI entrypoints and their registration side effects.
+- When a plugin UI entry or manifest changes, regenerate the registry and verify that the step provider is reachable.
+- Do not add an app-level `nodeType` switch solely to host a plugin step.
