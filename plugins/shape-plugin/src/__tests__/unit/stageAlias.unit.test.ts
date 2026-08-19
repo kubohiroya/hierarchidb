@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { toLegacyBuildStage, toLegacyBuildStageFromStageId } from '../../services/build/stageAlias';
+import {
+  toLegacyBuildStage,
+  toLegacyBuildStageFromStageId,
+} from '../../services/build/stageAliasConstants';
 
 describe('stageAlias (shape-plugin)', () => {
   it('maps canonical stageId to legacy stage keys', () => {

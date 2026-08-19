@@ -2,10 +2,14 @@
  * OAuth2/OIDC
  */
 
-import { BFFAuthService } from '@hierarchidb/ui-plugin-shell/ui-auth';
+import {
+  BFFAuthService,
+  resolveAuthReturnUrl as resolveSharedAuthReturnUrl,
+} from '@hierarchidb/ui-plugin-shell/ui-auth';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { getRouterMode } from '~/router/config';
 
 export default function AuthCallbackRoute() {
   const navigate = useNavigate();
@@ -18,74 +22,36 @@ export default function AuthCallbackRoute() {
   //const { handleCallback } = ;
   const [error, setError] = useState<string | null>(null);
 
-  const getAppBasePrefix = useCallback(() => {
-    const base = import.meta.env.BASE_URL || '/';
-    const normalized = String(base).startsWith('/') ? String(base) : `/${String(base)}`;
-    return normalized.endsWith('/') ? normalized.slice(0, -1) : normalized;
-  }, []);
-
-  const normalizeHashReturnPath = useCallback((pathname: string) => {
-    const basePrefix = getAppBasePrefix();
-    if (!basePrefix || basePrefix === '/') return pathname;
-    if (pathname === basePrefix) return '/';
-    if (pathname.startsWith(`${basePrefix}/`)) {
-      const stripped = pathname.slice(basePrefix.length);
-      return stripped.length > 0 ? stripped : '/';
-    }
-    return pathname;
-  }, [getAppBasePrefix]);
-
   const resolveReturnUrl = useCallback((rawUrl: string) => {
-    try {
-      const resolved = new URL(rawUrl, window.location.origin);
-      if (resolved.origin !== window.location.origin) {
-        console.debug('[Auth Callback] External return URL detected:', {
-          raw: rawUrl,
-          resolved: resolved.toString(),
-        });
-        return { isExternal: true, url: resolved.toString() };
-      }
-      const usesHashRouting = window.location.hash.startsWith('#/');
-      const normalizedPath = usesHashRouting
-        ? normalizeHashReturnPath(resolved.pathname)
-        : resolved.pathname;
+    const routerMode = getRouterMode();
+    const resolved = resolveSharedAuthReturnUrl(rawUrl, {
+      appBasePath: import.meta.env.BASE_URL,
+      currentOrigin: window.location.origin,
+      routerMode,
+    });
 
-      // For hash routing, use the hash content directly instead of appending it
-      const finalUrl = usesHashRouting && resolved.hash
-        ? resolved.hash // Use hash content directly (includes the # prefix)
-        : `${normalizedPath}${resolved.search}${resolved.hash}`;
+    console.debug('[Auth Callback] Return URL resolved:', {
+      raw: rawUrl,
+      routerMode,
+      isExternal: resolved.isExternal,
+      final: resolved.url,
+    });
 
-      console.debug('[Auth Callback] Internal return URL resolved:', {
-        raw: rawUrl,
-        resolved: resolved.toString(),
-        usesHashRouting,
-        normalizedPath,
-        resolvedHash: resolved.hash,
-        final: finalUrl,
-      });
-
-      return { isExternal: false, url: finalUrl };
-    } catch (error) {
-      console.warn('[Auth Callback] Return URL resolution failed, using fallback:', {
-        raw: rawUrl,
-        error: error instanceof Error ? error.message : String(error),
-        fallback: '/',
-      });
-      return { isExternal: false, url: '/' };
-    }
-  }, [normalizeHashReturnPath]);
+    return resolved;
+  }, []);
 
   const returnUrlRef = useRef<string | null>(null);
   const takeReturnUrl = useCallback(() => {
     if (returnUrlRef.current) return returnUrlRef.current;
-    const returnUrl = localStorage.getItem('auth_return_url') || '/';
+    const returnUrl = localStorage.getItem('auth_return_url');
+    if (returnUrl === null) {
+      throw new Error('Auth return URL is missing from localStorage');
+    }
     returnUrlRef.current = returnUrl;
 
     // Debug logging for return URL retrieval
     console.debug('[Auth Callback] Return URL retrieved:', {
-      stored: localStorage.getItem('auth_return_url'),
-      fallback: '/',
-      final: returnUrl,
+      stored: returnUrl,
       currentLocation: window.location.href,
       currentPathname: window.location.pathname,
       currentHash: window.location.hash,
@@ -212,7 +178,10 @@ export default function AuthCallbackRoute() {
                 console.debug('[Auth Callback] Hash navigation completed successfully');
                 clearTimeout(navigationTimeout);
               } else {
-                console.warn('[Auth Callback] Hash navigation may have failed, current hash:', window.location.hash);
+                console.warn(
+                  '[Auth Callback] Hash navigation may have failed, current hash:',
+                  window.location.hash
+                );
                 // Let timeout handler take over
               }
             }, 500);

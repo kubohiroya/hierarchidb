@@ -13,7 +13,9 @@ import {
   updateBuildTaskProtected,
   updateTaskProgress,
   ensureSessionTaskConsistency,
-} from '../../worker/api/protectedTaskMutation.js';
+} from '../../worker/api/protectedTaskMutationUtils.js';
+
+const touchedNodeIds = new Set<NodeId>();
 
 // Mock task creation helper
 const createMockTask = (taskId: string, nodeId: NodeId, status: TaskStatus, progress: number) => ({
@@ -33,12 +35,21 @@ const createMockTask = (taskId: string, nodeId: NodeId, status: TaskStatus, prog
 
 describe('Property 3: Task State Preservation on Termination', () => {
   beforeEach(async () => {
-    await ephemeralDB.delete();
-    await ephemeralDB.open();
+    touchedNodeIds.clear();
+    if (!ephemeralDB.isOpen()) {
+      await ephemeralDB.open();
+    }
   });
 
   afterEach(async () => {
-    await ephemeralDB.delete();
+    if (!ephemeralDB.isOpen()) {
+      await ephemeralDB.open();
+    }
+    const nodeIds = Array.from(touchedNodeIds);
+    if (nodeIds.length > 0) {
+      await ephemeralDB.buildTasks.where('nodeId').anyOf(nodeIds).delete();
+    }
+    touchedNodeIds.clear();
   });
 
   it('should preserve all task state fields during abort', async () => {
@@ -48,6 +59,7 @@ describe('Property 3: Task State Preservation on Termination', () => {
         fc.constantFrom('queued', 'running', 'completed', 'failed'),
         fc.integer({ min: 0, max: 100 }),
         async (nodeId: NodeId, status: TaskStatus, progress: number) => {
+          touchedNodeIds.add(nodeId);
           const taskId = `task-${Date.now()}-${Math.random()}`;
           const originalTask = createMockTask(taskId, nodeId, status, progress);
 
@@ -113,6 +125,7 @@ describe('Property 3: Task State Preservation on Termination', () => {
         fc.string({ minLength: 1, maxLength: 10 }).map(s => s as NodeId),
         fc.array(fc.integer({ min: 0, max: 100 }), { minLength: 3, maxLength: 8 }),
         async (nodeId: NodeId, progressValues: number[]) => {
+          touchedNodeIds.add(nodeId);
           const tasks = progressValues.map((progress, i) =>
             createMockTask(`task-${i}`, nodeId, 'running', progress)
           );
@@ -177,6 +190,7 @@ describe('Property 3: Task State Preservation on Termination', () => {
         fc.string({ minLength: 1, maxLength: 10 }).map(s => s as NodeId),
         fc.constantFrom('completed', 'failed'),
         async (nodeId: NodeId, terminalStatus: TaskStatus) => {
+          touchedNodeIds.add(nodeId);
           const taskId = `terminal-task-${Date.now()}`;
           const terminalTask = createMockTask(taskId, nodeId, terminalStatus, 100);
 
@@ -224,6 +238,7 @@ describe('Property 3: Task State Preservation on Termination', () => {
           fc.integer({ min: 101, max: 200 })
         ),
         async (nodeId: NodeId, invalidProgress: number) => {
+          touchedNodeIds.add(nodeId);
           const taskId = `progress-task-${Date.now()}`;
           const task = createMockTask(taskId, nodeId, 'running', 50);
 
@@ -265,6 +280,7 @@ describe('Property 3: Task State Preservation on Termination', () => {
         fc.string({ minLength: 1, maxLength: 10 }).map(s => s as NodeId),
         fc.constantFrom('running', 'completed'),
         async (nodeId: NodeId, status: TaskStatus) => {
+          touchedNodeIds.add(nodeId);
           const taskId = `restore-task-${Date.now()}`;
           const originalTask = createMockTask(taskId, nodeId, status, 75);
 

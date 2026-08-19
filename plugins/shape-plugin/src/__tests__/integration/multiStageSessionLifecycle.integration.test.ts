@@ -15,7 +15,7 @@ import { taskStateProtection } from '../../worker/api/taskStateProtection.js';
 import { 
   updateBuildTaskProtected,
   ensureSessionTaskConsistency,
-} from '../../worker/api/protectedTaskMutation.js';
+} from '../../worker/api/protectedTaskMutationUtils.js';
 
 // Mock session configuration for multi-stage testing
 interface MockSessionConfig {
