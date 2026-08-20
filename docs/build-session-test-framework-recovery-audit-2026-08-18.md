@@ -203,7 +203,9 @@ Scope:
 pnpm e2e:shape-startup
 ```
 
-実行には有効な `E2E_AUTH_ACCESS_TOKEN` が必要である。
+実行には有効な `E2E_AUTH_ACCESS_TOKEN` と、canonical session形式の
+`E2E_AUTH_USERINFO` または `E2E_AUTH_USERINFO_B64` が必要である。persistent sessionの場合は
+`E2E_AUTH_REFRESH_TOKEN_ID` も必須とする。
 
 ### 5. 新規 Issue 案: `chore(test): remove superseded root BuildSession test framework`
 

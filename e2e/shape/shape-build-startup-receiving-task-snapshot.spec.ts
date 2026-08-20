@@ -1,5 +1,6 @@
 import '../utils/skip-if-disabled';
 import { test, expect, type ConsoleMessage, type Page, type Worker } from '@playwright/test';
+import { persistE2EAuthSessionSeed, readE2EAuthSessionSeed } from '../utils/authSessionSeed';
 import {
   buildAppUrl,
   clearTestData,
@@ -70,7 +71,6 @@ type WorkerAPI = {
   getMutationAPI?: () => Promise<TreeMutationAPI>;
   getTreeNodeUpdaterAPI?: () => Promise<TreeNodeUpdaterAPI>;
   setCorsProxyBaseURL?: (value: string) => Promise<void> | void;
-  setAuthToken?: (token: string, scheme?: string) => Promise<void> | void;
 };
 
 type WorkerClientRef = {
@@ -84,40 +84,10 @@ type WindowWithWorkerRef = Window & {
   __HDB_WORKER_CLIENT_REF__?: WorkerClientRef;
 };
 
-type E2EAuthSeed = {
-  accessToken: string;
-  idToken: string;
-  userinfoRaw: string;
-  tokenExpiresAt: number | null;
-};
-
 // Supported auth seed inputs:
 // - E2E_AUTH_ACCESS_TOKEN (required)
-// - E2E_AUTH_ID_TOKEN (optional)
-// - E2E_AUTH_USERINFO or E2E_AUTH_USERINFO_B64 (optional)
-// - E2E_AUTH_TOKEN_EXPIRES_AT (optional)
-const decodeBase64Utf8 = (value: string): string => {
-  const utf8 = Buffer.from(value, 'base64').toString('utf8');
-  return utf8.trim();
-};
-
-const readE2EAuthSeed = (): E2EAuthSeed => {
-  const accessToken = (process.env.E2E_AUTH_ACCESS_TOKEN ?? '').trim();
-  const idToken = (process.env.E2E_AUTH_ID_TOKEN ?? '').trim();
-  const tokenExpiresAtRaw = (process.env.E2E_AUTH_TOKEN_EXPIRES_AT ?? '').trim();
-  const userinfoRawFromEnv = (process.env.E2E_AUTH_USERINFO ?? '').trim();
-  const userinfoRawFromB64 = (process.env.E2E_AUTH_USERINFO_B64 ?? '').trim();
-  const userinfoRaw = userinfoRawFromEnv || (userinfoRawFromB64 ? decodeBase64Utf8(userinfoRawFromB64) : '');
-  const tokenExpiresAt = Number.isFinite(Number(tokenExpiresAtRaw)) && tokenExpiresAtRaw.length > 0
-    ? Number(tokenExpiresAtRaw)
-    : null;
-  return {
-    accessToken,
-    idToken,
-    userinfoRaw,
-    tokenExpiresAt,
-  };
-};
+// - E2E_AUTH_USERINFO or E2E_AUTH_USERINFO_B64 (required canonical userinfo)
+// - E2E_AUTH_REFRESH_TOKEN_ID (required only for persistent sessions)
 
 const readConsolePayload = async (msg: ConsoleMessage): Promise<ConsolePayload | null> => {
   const args = msg.args();
@@ -226,25 +196,9 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
 
   test('does not hit receiving-task-snapshot timeout after build start and observes receiving-task-snapshot evidence', async ({ page }) => {
     test.setTimeout(180000);
-    const authSeed = readE2EAuthSeed();
-    if (!authSeed.accessToken) {
-      throw new Error('E2E auth seed is missing: set E2E_AUTH_ACCESS_TOKEN');
-    }
+    const authSeed = readE2EAuthSessionSeed();
 
-    await page.addInitScript((seed: E2EAuthSeed) => {
-      const now = Date.now();
-      localStorage.setItem('access_token', seed.accessToken);
-      if (seed.idToken) {
-        localStorage.setItem('id_token', seed.idToken);
-      }
-      if (seed.userinfoRaw) {
-        localStorage.setItem('userinfo', seed.userinfoRaw);
-      }
-      if (typeof seed.tokenExpiresAt === 'number' && Number.isFinite(seed.tokenExpiresAt)) {
-        localStorage.setItem('token_expires_at', String(seed.tokenExpiresAt));
-      }
-      localStorage.setItem('last_auth_completion', String(now));
-    }, authSeed);
+    await page.addInitScript(persistE2EAuthSessionSeed, authSeed);
 
     await page.goto(buildAppUrl('t/r'), { waitUntil: 'domcontentloaded', timeout: 120000 });
     await dismissGuidedTour(page);
@@ -253,16 +207,13 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
       timeout: 20000,
     });
 
-    await page.evaluate(async (accessToken: string) => {
+    await page.evaluate(async () => {
       const ref = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__;
       const api = ref?.client ?? ref?.getAPI?.();
       if (api?.setCorsProxyBaseURL) {
         await api.setCorsProxyBaseURL('');
       }
-      if (api?.setAuthToken) {
-        await api.setAuthToken(accessToken, 'Bearer');
-      }
-    }, authSeed.accessToken);
+    });
     const verifyResult = await page.evaluate(async (accessToken: string) => {
       const response = await fetch('/auth/verify', {
         method: 'POST',
@@ -581,25 +532,9 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
 
   test('shows task list and summary after build start', async ({ page }) => {
     test.setTimeout(180000);
-    const authSeed = readE2EAuthSeed();
-    if (!authSeed.accessToken) {
-      throw new Error('E2E auth seed is missing: set E2E_AUTH_ACCESS_TOKEN');
-    }
+    const authSeed = readE2EAuthSessionSeed();
 
-    await page.addInitScript((seed: E2EAuthSeed) => {
-      const now = Date.now();
-      localStorage.setItem('access_token', seed.accessToken);
-      if (seed.idToken) {
-        localStorage.setItem('id_token', seed.idToken);
-      }
-      if (seed.userinfoRaw) {
-        localStorage.setItem('userinfo', seed.userinfoRaw);
-      }
-      if (typeof seed.tokenExpiresAt === 'number' && Number.isFinite(seed.tokenExpiresAt)) {
-        localStorage.setItem('token_expires_at', String(seed.tokenExpiresAt));
-      }
-      localStorage.setItem('last_auth_completion', String(now));
-    }, authSeed);
+    await page.addInitScript(persistE2EAuthSessionSeed, authSeed);
 
     await page.goto(buildAppUrl('t/r'), { waitUntil: 'domcontentloaded', timeout: 120000 });
     await dismissGuidedTour(page);
@@ -608,16 +543,13 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
       timeout: 20000,
     });
 
-    await page.evaluate(async (accessToken: string) => {
+    await page.evaluate(async () => {
       const ref = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__;
       const api = ref?.client ?? ref?.getAPI?.();
       if (api?.setCorsProxyBaseURL) {
         await api.setCorsProxyBaseURL('');
       }
-      if (api?.setAuthToken) {
-        await api.setAuthToken(accessToken, 'Bearer');
-      }
-    }, authSeed.accessToken);
+    });
 
     const verifyResult = await page.evaluate(async (accessToken: string) => {
       const response = await fetch('/auth/verify', {

@@ -1,5 +1,6 @@
 import '../utils/skip-if-disabled';
 import { expect, test } from '@playwright/test';
+import { persistE2EAuthSessionSeed, readE2EAuthSessionSeed } from '../utils/authSessionSeed';
 import {
   buildAppUrl,
   clearTestData,
@@ -55,36 +56,6 @@ type WindowWithWorkerRef = Window & {
   __HDB_WORKER_CLIENT_REF__?: WorkerClientRef;
 };
 
-type E2EAuthSeed = {
-  accessToken: string;
-  idToken: string;
-  userinfoRaw: string;
-  tokenExpiresAt: number | null;
-};
-
-const decodeBase64Utf8 = (value: string): string => {
-  const utf8 = Buffer.from(value, 'base64').toString('utf8');
-  return utf8.trim();
-};
-
-const readE2EAuthSeed = (): E2EAuthSeed => {
-  const accessToken = (process.env.E2E_AUTH_ACCESS_TOKEN ?? '').trim();
-  const idToken = (process.env.E2E_AUTH_ID_TOKEN ?? '').trim();
-  const tokenExpiresAtRaw = (process.env.E2E_AUTH_TOKEN_EXPIRES_AT ?? '').trim();
-  const userinfoRawFromEnv = (process.env.E2E_AUTH_USERINFO ?? '').trim();
-  const userinfoRawFromB64 = (process.env.E2E_AUTH_USERINFO_B64 ?? '').trim();
-  const userinfoRaw = userinfoRawFromEnv || (userinfoRawFromB64 ? decodeBase64Utf8(userinfoRawFromB64) : '');
-  const tokenExpiresAt = Number.isFinite(Number(tokenExpiresAtRaw)) && tokenExpiresAtRaw.length > 0
-    ? Number(tokenExpiresAtRaw)
-    : null;
-  return {
-    accessToken,
-    idToken,
-    userinfoRaw,
-    tokenExpiresAt,
-  };
-};
-
 test.describe('Route build controls', () => {
   test.beforeEach(async ({ page }) => {
     setupConsoleErrorTracking(page);
@@ -93,25 +64,9 @@ test.describe('Route build controls', () => {
 
   test('build start button triggers route build lifecycle in UI', async ({ page }) => {
     test.setTimeout(120000);
-    const authSeed = readE2EAuthSeed();
-    if (!authSeed.accessToken) {
-      throw new Error('E2E auth seed is missing: set E2E_AUTH_ACCESS_TOKEN');
-    }
+    const authSeed = readE2EAuthSessionSeed();
 
-    await page.addInitScript((seed: E2EAuthSeed) => {
-      const now = Date.now();
-      localStorage.setItem('access_token', seed.accessToken);
-      if (seed.idToken) {
-        localStorage.setItem('id_token', seed.idToken);
-      }
-      if (seed.userinfoRaw) {
-        localStorage.setItem('userinfo', seed.userinfoRaw);
-      }
-      if (typeof seed.tokenExpiresAt === 'number' && Number.isFinite(seed.tokenExpiresAt)) {
-        localStorage.setItem('token_expires_at', String(seed.tokenExpiresAt));
-      }
-      localStorage.setItem('last_auth_completion', String(now));
-    }, authSeed);
+    await page.addInitScript(persistE2EAuthSessionSeed, authSeed);
 
     await page.goto(buildAppUrl('t/r'), { waitUntil: 'networkidle' });
     await dismissGuidedTour(page);
@@ -119,13 +74,6 @@ test.describe('Route build controls', () => {
     await page.waitForFunction(() => Boolean((window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__?.client), null, {
       timeout: 20000,
     });
-    await page.evaluate(async (accessToken: string) => {
-      const ref = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__;
-      const api = ref?.client ?? ref?.getAPI?.();
-      if (api?.setAuthToken) {
-        await api.setAuthToken(accessToken, 'Bearer');
-      }
-    }, authSeed.accessToken);
     const verifyResult = await page.evaluate(async (accessToken: string) => {
       const response = await fetch('/auth/verify', {
         method: 'POST',

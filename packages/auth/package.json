@@ -16,6 +16,7 @@
   "scripts": {
     "build": "tsdown src/index.ts src/AuthService.ts src/AuthRecoveryService.ts src/AuthNotificationSystem.ts --config ../../../tsdown.config.ts --outDir dist",
     "clean": "rm -rf dist",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "peerDependencies": {
@@ -25,7 +26,8 @@
   "devDependencies": {
     "typescript": "workspace:^5.9.3",
     "@hierarchidb/auth-api": "workspace:*",
-    "@hierarchidb/util": "workspace:*"
+    "@hierarchidb/util": "workspace:*",
+    "vitest": "^4.1.0"
   },
   "files": [
     "dist"

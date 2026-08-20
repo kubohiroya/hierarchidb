@@ -2,6 +2,7 @@ import {
   assertOriginCoordinatorOwnedClientCreationAllowed,
   registerOriginCoordinatorOwnedClientHandle,
 } from '@hierarchidb/origin-coordinator';
+import { createAuthSessionStorageBridge } from '@hierarchidb/ui-auth';
 import { proxy, wrap } from 'comlink';
 import type { CountryAvailabilityWorkerAPI } from '~/ui/workers/countryAvailabilityTypes';
 
@@ -25,21 +26,7 @@ export const getOrCreateAvailabilityWorkerHandle = (): AvailabilityWorkerHandle 
   const worker = createAvailabilityWorker();
   registerOriginCoordinatorOwnedClientHandle({ close: () => worker.terminate() });
   const api = wrap<CountryAvailabilityWorkerAPI>(worker);
-  const bridgeReady = api
-    .setUiStorageBridge(
-      proxy({
-        getItem: async (key: string) => localStorage.getItem(key),
-        setItem: async (key: string, value: string) => {
-          localStorage.setItem(key, value);
-        },
-        removeItem: async (key: string) => {
-          localStorage.removeItem(key);
-        },
-      })
-    )
-    .catch((error) => {
-      console.warn('[ShapeCountrySelectionStep] failed to register storage bridge', error);
-    });
+  const bridgeReady = api.setUiStorageBridge(proxy(createAuthSessionStorageBridge()));
   sharedAvailabilityWorkerHandle = {
     worker,
     api,

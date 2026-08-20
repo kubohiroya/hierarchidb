@@ -10,10 +10,6 @@ export class AuthService {
   getAuthHeaders(): Record<string, string> {
     return {};
   }
-
-  setToken(_token: string, _type?: 'Bearer' | 'Basic', _expiresAt?: number): void {
-    // no-op (mock)
-  }
 }
 
 // Legacy alias

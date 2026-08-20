@@ -10,6 +10,4 @@ export interface AuthContext {
 
 export interface AuthHeadersProvider {
   getAuthHeaders(): Promise<Record<string, string>>;
-
-  setToken(token: string, type?: 'Bearer' | 'Basic', expiresAt?: number): void;
 }

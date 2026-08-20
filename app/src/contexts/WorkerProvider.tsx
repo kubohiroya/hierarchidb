@@ -6,7 +6,7 @@
  * bootstrap flow so that consumers never observe a null client reference.
  */
 
-import type { BuildWorkerAPI } from '~/types/workerApiTypes';
+import { createAuthSessionStorageBridge } from '@hierarchidb/ui-plugin-shell/ui-auth';
 import { useTranslation } from '@hierarchidb/ui-plugin-shell/ui-i18n';
 import type { WorkerInitializationChannel } from '@hierarchidb/ui-worker-client';
 import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
@@ -24,6 +24,22 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useWorkerRuntimeProxy } from '~/hooks/useWorkerRuntimeProxy';
+import {
+  getWorkerInitCompleteMessage,
+  getWorkerInitFallbackMessage,
+  getWorkerInitStartMessage,
+} from '~/i18n/workerInitMessageConstants';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
+import { bootLog } from '~/utils/bootLog';
+import { sanitizeRemoteForReact } from '~/utils/comlinkSafeProxyUtils';
+import type { WorkerInitializationProgress } from '~/worker-runtime/WorkerClientProxy';
+import { resetWorkerState } from '~/worker-runtime/WorkerStateStore';
+import {
+  getWorkerAPIClientModule,
+  loadWorkerAPIClientModule,
+} from '~/worker-runtime/workerApiClientLoader';
+import { useOptionalBootProgress } from './BootProgressProvider.js';
 
 type BootWindow = Window & {
   __HDB_INIT_COMPLETE__?: boolean;
@@ -38,22 +54,6 @@ function normalizeError(error: unknown): Error {
   }
   return new Error(String(error));
 }
-
-import {
-  getWorkerInitCompleteMessage,
-  getWorkerInitFallbackMessage,
-  getWorkerInitStartMessage,
-} from '~/i18n/workerInitMessageConstants';
-import type { WorkerInitializationProgress } from '~/worker-runtime/WorkerClientProxy';
-import { useWorkerRuntimeProxy } from '~/hooks/useWorkerRuntimeProxy';
-import { bootLog } from '~/utils/bootLog';
-import { sanitizeRemoteForReact } from '~/utils/comlinkSafeProxyUtils';
-import { resetWorkerState } from '~/worker-runtime/WorkerStateStore';
-import {
-  getWorkerAPIClientModule,
-  loadWorkerAPIClientModule,
-} from '~/worker-runtime/workerApiClientLoader';
-import { useOptionalBootProgress } from './BootProgressProvider.js';
 
 const WORKER_PROVIDER_LOG_PREFIX = '[WorkerProvider]';
 
@@ -326,8 +326,8 @@ export const WorkerProvider = ({
   const { proxy, state: proxyState, error: proxyError } = useWorkerRuntimeProxy();
   const initialProgress = proxy.getProgress();
   const [status, setStatus] = useState<WorkerStatusState>(() => ({
-    client: proxy.getCachedClient(),
-    isInitialized: proxyState === 'ready',
+    client: null,
+    isInitialized: false,
     initProgress: initialProgress.progress,
     initMessage: initialProgress.message ?? getWorkerInitStartMessage(),
     error: proxyError,
@@ -337,9 +337,15 @@ export const WorkerProvider = ({
   const latestProgressMessageRef = useRef(getWorkerInitStartMessage());
   const initializationInFlightRef = useRef<Promise<void> | null>(null);
   const completionMarkedRef = useRef(false);
-  const lastAuthTokenRef = useRef<string | null>(null);
+  const authBridgeClientRef = useRef<Remote<BuildWorkerAPI> | null>(null);
+  const authBridgeSetupRef = useRef<{
+    client: Remote<BuildWorkerAPI>;
+    promise: Promise<void>;
+  } | null>(null);
 
   const resetState = useCallback(() => {
+    authBridgeClientRef.current = null;
+    authBridgeSetupRef.current = null;
     setStatus({
       client: null,
       isInitialized: false,
@@ -368,20 +374,7 @@ export const WorkerProvider = ({
       let next = prev;
       let changed = false;
 
-      if (proxyState === 'ready') {
-        const client = proxy.getCachedClient();
-        if (client && (!prev.client || !prev.isInitialized)) {
-          next = {
-            ...prev,
-            client,
-            isInitialized: true,
-            initProgress: 100,
-            initMessage: getWorkerInitCompleteMessage(),
-            error: proxyError ?? null,
-          };
-          changed = true;
-        }
-      } else if (proxyState === 'initializing' && prev.isInitialized) {
+      if (proxyState === 'initializing' && prev.isInitialized) {
         next = {
           ...prev,
           isInitialized: false,
@@ -401,107 +394,88 @@ export const WorkerProvider = ({
       }
       return next;
     });
-  }, [proxy, proxyState, proxyError]);
+  }, [proxyState, proxyError]);
 
-  const storageBridgeClientRef = useRef<Remote<BuildWorkerAPI> | null>(null);
   const safeClient = useMemo(
     () => (status.client ? sanitizeRemoteForReact(status.client) : null),
     [status.client]
   );
 
-  useEffect(() => {
-    if (!safeClient || !status.isInitialized) return;
-    if (typeof window === 'undefined') return;
-    try {
-      const token = localStorage.getItem('access_token') || '';
-      if (!token || token === lastAuthTokenRef.current) return;
-      const rawExpires = localStorage.getItem('token_expires_at');
-      const expiresAt = rawExpires ? Number(rawExpires) : undefined;
-      safeClient
-        .setAuthToken(token, 'Bearer', Number.isFinite(expiresAt) ? expiresAt : undefined)
-        .catch((error: unknown) => {
-          logWorkerProviderWarning('Failed to sync worker auth token', error);
-        });
-      lastAuthTokenRef.current = token;
-    } catch (error) {
-      logWorkerProviderWarning('Failed to read access_token for worker', error);
+  const prepareAuthBridge = useCallback(async (client: Remote<BuildWorkerAPI>): Promise<void> => {
+    if (authBridgeClientRef.current === client) return;
+
+    const activeSetup = authBridgeSetupRef.current;
+    if (activeSetup?.client === client) {
+      await activeSetup.promise;
+      return;
     }
-  }, [safeClient, status.isInitialized]);
+    if (activeSetup) {
+      await activeSetup.promise;
+    }
 
-  useEffect(() => {
-    if (!safeClient || !status.isInitialized) return;
-    if (typeof window === 'undefined') return;
-    if (storageBridgeClientRef.current === safeClient) return;
-    storageBridgeClientRef.current = safeClient;
+    const bridge = Comlink.proxy(createAuthSessionStorageBridge());
+    const setupPromise = (async () => {
+      await client.setUiStorageBridge(bridge);
+      authBridgeClientRef.current = client;
+    })();
+    authBridgeSetupRef.current = { client, promise: setupPromise };
 
-    const setupStorageBridge = async () => {
-      const bridge = Comlink.proxy({
-        getItem: async (key: string) => localStorage.getItem(key),
-        setItem: async (key: string, value: string) => {
-          localStorage.setItem(key, value);
-        },
-        removeItem: async (key: string) => {
-          localStorage.removeItem(key);
-        },
-      });
-
-      // Setup token request callback for worker-to-UI token queries
-      const tokenRequestCallback = Comlink.proxy(async (): Promise<string | null> => {
-        try {
-          return localStorage.getItem('access_token');
-        } catch (error) {
-          logWorkerProviderWarning('Token request callback failed', error);
-          return null;
-        }
-      });
-
-      try {
-        await safeClient.setUiStorageBridge(bridge);
-        await safeClient.setUiTokenRequestCallback(tokenRequestCallback);
-      } catch (error: unknown) {
-        logWorkerProviderWarning('Failed to register UI storage bridge or token callback', error);
-      }
-    };
-
-    // Ensure storage bridge setup completes before continuing
-    void setupStorageBridge();
-  }, [safeClient, status.isInitialized]);
-
-  const finalizeInitialized = useCallback(async () => {
     try {
-      bootLog('WorkerProvider finalize');
-      const { WorkerAPIClient } = await loadWorkerAPIClientModule();
-      const client = await WorkerAPIClient.getOrInit();
-      latestProgressRef.current = 100;
-      setStatus({
-        client,
-        isInitialized: true,
-        initProgress: 100,
-        initMessage: getWorkerInitCompleteMessage(),
-        error: null,
-      });
-    } catch (error) {
-      const normalized = normalizeError(error);
-      console.error(WORKER_PROVIDER_MESSAGES.finalizeInitializedError, normalized);
-      setStatus((prev) => ({ ...prev, error: normalized }));
+      await setupPromise;
+    } finally {
+      if (authBridgeSetupRef.current?.promise === setupPromise) {
+        authBridgeSetupRef.current = null;
+      }
     }
   }, []);
 
-  const markComplete = useCallback(async () => {
-    if (completionMarkedRef.current) return;
-    completionMarkedRef.current = true;
-    const readyLabel = t('workerInit.status.ready');
-    try {
-      if (typeof window !== 'undefined') {
-        (window as BootWindow).__HDB_INIT_COMPLETE__ = true;
+  const finalizeInitialized = useCallback(
+    async (readyClient?: Remote<BuildWorkerAPI>) => {
+      try {
+        bootLog('WorkerProvider finalize');
+        const client =
+          readyClient ?? (await (await loadWorkerAPIClientModule()).WorkerAPIClient.getOrInit());
+        await prepareAuthBridge(client);
+        latestProgressRef.current = 100;
+        setStatus({
+          client,
+          isInitialized: true,
+          initProgress: 100,
+          initMessage: getWorkerInitCompleteMessage(),
+          error: null,
+        });
+      } catch (error) {
+        const normalized = normalizeError(error);
+        console.error(WORKER_PROVIDER_MESSAGES.finalizeInitializedError, normalized);
+        setStatus((prev) => ({ ...prev, error: normalized, isInitialized: false }));
+        throw normalized;
       }
-    } catch (error) {
-      logWorkerProviderWarning(WORKER_PROVIDER_DIAGNOSTIC_MESSAGES.setInitCompleteFlagFailed, error);
-    }
-    bootProgress?.setStepProgress('Worker', 100, readyLabel);
-    bootProgress?.markStepDone('Worker', readyLabel);
-    await finalizeInitialized();
-  }, [bootProgress, finalizeInitialized, t]);
+    },
+    [prepareAuthBridge]
+  );
+
+  const markComplete = useCallback(
+    async (client?: Remote<BuildWorkerAPI>) => {
+      if (completionMarkedRef.current && (!client || authBridgeClientRef.current === client))
+        return;
+      await finalizeInitialized(client);
+      completionMarkedRef.current = true;
+      const readyLabel = t('workerInit.status.ready');
+      try {
+        if (typeof window !== 'undefined') {
+          (window as BootWindow).__HDB_INIT_COMPLETE__ = true;
+        }
+      } catch (error) {
+        logWorkerProviderWarning(
+          WORKER_PROVIDER_DIAGNOSTIC_MESSAGES.setInitCompleteFlagFailed,
+          error
+        );
+      }
+      bootProgress?.setStepProgress('Worker', 100, readyLabel);
+      bootProgress?.markStepDone('Worker', readyLabel);
+    },
+    [bootProgress, finalizeInitialized, t]
+  );
 
   const isInitializationSatisfied = useCallback(() => {
     const currentProxyState = proxy.getState();
@@ -575,13 +549,7 @@ export const WorkerProvider = ({
             }
           );
         });
-        setStatus((prev) => ({
-          ...prev,
-          client,
-          isInitialized: true,
-          error: null,
-        }));
-        await markComplete();
+        await markComplete(client);
       } catch (error) {
         const normalizedRaw = normalizeError(error);
         const timedOut = normalizedRaw.name === 'AbortError';
@@ -666,7 +634,7 @@ export const WorkerProvider = ({
     });
 
     const onInitComplete = () => {
-      void markComplete();
+      void runInitialization();
     };
 
     if (typeof window !== 'undefined') {
@@ -681,14 +649,12 @@ export const WorkerProvider = ({
       if (proxyState !== 'initializing') {
         void runInitialization();
       }
-    } else if (status.isInitialized || isWorkerClientReady()) {
-      void markComplete();
     }
 
     const poll = async () => {
       try {
         if (isWorkerClientReady()) {
-          await markComplete();
+          await runInitialization();
           if (pollTimer) window.clearInterval(pollTimer);
         }
       } catch (error) {
@@ -700,7 +666,7 @@ export const WorkerProvider = ({
     if (import.meta.env.DEV) {
       devFallbackTimer = window.setTimeout(() => {
         if (isWorkerClientReady()) {
-          void markComplete();
+          void runInitialization();
         }
       }, 1500);
     }
@@ -716,7 +682,7 @@ export const WorkerProvider = ({
       if (pollTimer) window.clearInterval(pollTimer);
       if (devFallbackTimer) window.clearTimeout(devFallbackTimer);
     };
-  }, [markComplete, proxyState, runInitialization, status.error, status.isInitialized]);
+  }, [proxyState, runInitialization, status.error, status.isInitialized]);
 
   const contextValue = useMemo<WorkerContextValue>(
     () => ({

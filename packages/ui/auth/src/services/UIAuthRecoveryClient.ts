@@ -1,9 +1,10 @@
 import { AuthNotificationFactory, AuthNotificationRegistry } from '@hierarchidb/auth';
+import type { BFFUser } from './AuthSessionStorage.js';
+import { AuthSessionStorage } from './AuthSessionStorage.js';
 
 export type AuthPromptResult = {
-  token: string;
-  type?: 'Bearer' | 'Basic';
-  expiresAt?: number;
+  user: BFFUser;
+  refreshTokenId?: string;
 };
 
 export type AuthPrompt = (n: {
@@ -12,7 +13,7 @@ export type AuthPrompt = (n: {
 
 /**
  * Register UI-side handlers to resolve AuthRequired notifications.
- * The provided prompt callback should display login/consent UI and return a token.
+ * The provided prompt callback must return a complete canonical UI session.
  */
 export function registerAuthUIHandlers(prompt: AuthPrompt, opts?: { id?: string }) {
   const registry = AuthNotificationRegistry.getInstance();
@@ -24,12 +25,19 @@ export function registerAuthUIHandlers(prompt: AuthPrompt, opts?: { id?: string 
       const { requestId, sessionId } = notification.context;
       try {
         const res = await prompt(notification);
+        AuthSessionStorage.persist(res.user, res.refreshTokenId);
         const success = AuthNotificationFactory.createAuthSuccess({
           requestId,
-          newToken: res.token,
-          tokenType: res.type ?? 'Bearer',
-          expiresAt: res.expiresAt ?? Date.now() + 60 * 60 * 1000,
+          newToken: res.user.access_token,
+          tokenType: 'Bearer',
+          expiresAt: res.user.expires_at,
           sessionId,
+          userInfo: {
+            id: res.user.id,
+            email: res.user.email,
+            name: res.user.name,
+            ...(res.user.picture === undefined ? {} : { picture: res.user.picture }),
+          },
         });
         await registry.dispatch(success);
       } catch {
