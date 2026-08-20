@@ -1,5 +1,5 @@
-import { defineConfig } from 'vitest/config';
 import * as path from 'path';
+import { defineConfig } from 'vitest/config';
 
 const workspaceRoot = path.resolve(__dirname, '../..');
 const basePluginEntry = path.resolve(workspaceRoot, 'packages/plugin-ui-sdk/src/index.ts');
@@ -24,9 +24,16 @@ export default defineConfig({
       '~': path.resolve(__dirname, './src'),
       // Use source during tests to avoid requiring a prebuild
       '@hierarchidb/ui-dialog': path.resolve(workspaceRoot, 'packages/ui/dialog/src/index.ts'),
-      '@hierarchidb/runtime-worker': path.resolve(__dirname, './src/_obsolate_common/__tests__/store-registry-mocks.ts'),
+      '@hierarchidb/runtime-worker': path.resolve(
+        __dirname,
+        './src/_obsolate_common/__tests__/store-registry-mocks.ts'
+      ),
       '@hierarchidb/util': path.resolve(workspaceRoot, 'packages/util/src/index.ts'),
       '@hierarchidb/plugin-ui-sdk': basePluginEntry,
+      '@hierarchidb/yaml-api/validation': path.resolve(
+        workspaceRoot,
+        'packages/yaml-api/src/validation/index.ts'
+      ),
       '@hierarchidb/yaml-api': path.resolve(workspaceRoot, 'packages/yaml-api/src/index.ts'),
       '@hierarchidb/yaml-store': path.resolve(workspaceRoot, 'packages/yaml-store/src/index.ts'),
       '@hierarchidb/core-types': path.resolve(workspaceRoot, 'packages/core-types/src/index.ts'),

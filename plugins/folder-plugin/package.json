@@ -5,6 +5,9 @@
   "types": "dist/index.d.ts",
   "typesVersions": {
     "*": {
+      "canonical-yaml-zip-codec": [
+        "dist/canonical-yaml-zip-codec/index.d.ts"
+      ],
       "worker": [
         "dist/worker/index.d.ts"
       ],
@@ -26,6 +29,11 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./canonical-yaml-zip-codec": {
+      "types": "./dist/canonical-yaml-zip-codec/index.d.ts",
+      "import": "./dist/canonical-yaml-zip-codec/index.js",
+      "default": "./dist/canonical-yaml-zip-codec/index.js"
+    },
     "./icon": {
       "types": "./dist/icon/index.d.ts",
       "import": "./dist/icon/index.js",
@@ -43,7 +51,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/ui/index.ts src/icon/index.ts --config ../../tsdown.config.ts --splitting false --outDir dist",
+    "build": "tsdown src/index.ts src/ui/index.ts src/icon/index.ts --config ../../tsdown.config.ts --splitting false --outDir dist && tsdown src/canonical-yaml-zip-codec/index.ts --config ../../tsdown.config.ts --splitting false --outDir dist/canonical-yaml-zip-codec",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "test": "vitest run --passWithNoTests",
