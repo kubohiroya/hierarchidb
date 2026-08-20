@@ -6,7 +6,10 @@ import {
   updateTask,
   VtTaskQueueDb,
 } from '@hierarchidb/vt-orchestrator';
-import { finalizePendingStageTasks } from '../../services/vt/shapePipelineStageHelpers';
+import {
+  createPipelineLinkedAbortController,
+  finalizePendingStageTasks,
+} from '../../services/vt/shapePipelineStageHelpers';
 import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 
@@ -34,6 +37,16 @@ describe('shapePipelineStageHelpers', () => {
     if (!db) return;
     await db.tasks.clear();
     db = null;
+  });
+
+  it('propagates the pipeline abort signal to a stage controller', () => {
+    const pipelineController = new AbortController();
+    const stageController = createPipelineLinkedAbortController(pipelineController.signal);
+
+    expect(stageController.signal.aborted).toBe(false);
+    pipelineController.abort('pause-requested');
+    expect(stageController.signal.aborted).toBe(true);
+    expect(stageController.signal.reason).toBe('pause-requested');
   });
 
   it('allows explicit failed-to-queued retry transitions', async () => {

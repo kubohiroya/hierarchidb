@@ -89,6 +89,31 @@ describe('runShapeArtifactCascadeCleanup', () => {
     await store.delete();
   });
 
+  it('rejects an aborted pipeline before starting cleanup writes', async () => {
+    const abortController = new AbortController();
+    abortController.abort();
+    const deletePersistentArtifactsByNode = vi.fn(async (_nodeId: NodeId): Promise<void> => {});
+    const deleteRawSourceBuffersByKeys = vi.fn(
+      async (_nodeId: NodeId, cacheKeys: string[]): Promise<number> => cacheKeys.length
+    );
+
+    await expect(
+      runShapeArtifactCascadeCleanup({
+        nodeId: targetNodeId,
+        target: { kind: 'stage', stage: 'source' },
+        abortSignal: abortController.signal,
+        dependencies: {
+          ephemeralStore: store,
+          deletePersistentArtifactsByNode,
+          deleteRawSourceBuffersByKeys,
+        },
+      })
+    ).rejects.toMatchObject({ name: 'AbortError' });
+
+    expect(deletePersistentArtifactsByNode).not.toHaveBeenCalled();
+    expect(deleteRawSourceBuffersByKeys).not.toHaveBeenCalled();
+  });
+
   it('cascades a removed selection and preserves unrelated caches and nodes', async () => {
     await Promise.all([
       putSourceCache(store, { id: 'source-jp', nodeId: targetNodeId, sourceKey: 'JP:0' }),

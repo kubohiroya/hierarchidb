@@ -31,7 +31,7 @@ export const finalizeGeometryStageCache = async (params: {
   taskId: string;
   ephemeralDB: EphemeralDB;
   cacheRecord: GeometryCacheRecord;
-  taskQueue?: any;
+  abortSignal?: AbortSignal;
 }): Promise<void> => {
   const completedAt = Date.now();
 
@@ -72,6 +72,9 @@ export const finalizeGeometryStageCache = async (params: {
     }, TRANSFORM_CACHE_WRITE_SLOW_LOG_MS);
 
     try {
+      if (params.abortSignal?.aborted) {
+        throw new DOMException('Geometry cache write was aborted', 'AbortError');
+      }
       await withTimeout({
         taskId: params.taskId,
         operation: 'cache-write:geometryCache.put',
@@ -80,6 +83,9 @@ export const finalizeGeometryStageCache = async (params: {
           params.ephemeralDB.geometryCache,
           params.ephemeralDB.geometryCacheMeta,
         ], async () => {
+          if (params.abortSignal?.aborted) {
+            throw new DOMException('Geometry cache write was aborted', 'AbortError');
+          }
           await params.ephemeralDB.geometryCache.put({
             ...params.cacheRecord,
             timestamp: completedAt,

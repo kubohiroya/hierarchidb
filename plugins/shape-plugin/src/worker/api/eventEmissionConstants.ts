@@ -154,6 +154,21 @@ export const emitSessionStatusUpdated = (
     sessionRecord: ShapeBuildSessionRecord,
 ): void => {
     const phase = mapStatusToSessionPhase(sessionRecord.status);
+  emitSessionLifecyclePhaseUpdated(nodeId, sessionRecord, phase);
+};
+
+const isActiveSessionPhase = (phase: SessionPhase): boolean =>
+  phase === 'starting' ||
+  phase === 'running' ||
+  phase === 'pausing' ||
+  phase === 'resuming' ||
+  phase === 'finalizing';
+
+export const emitSessionLifecyclePhaseUpdated = (
+  nodeId: NodeId,
+  sessionRecord: ShapeBuildSessionRecord,
+  phase: SessionPhase
+): void => {
     validateSessionTimingContract(phase, {
         startedAt: sessionRecord.startedAt,
         completedAt: sessionRecord.completedAt,
@@ -167,7 +182,7 @@ export const emitSessionStatusUpdated = (
         payload: {
             nodeId,
             phase,
-            isActive: sessionRecord.status === 'running',
+      isActive: isActiveSessionPhase(phase),
             startedAt: sessionRecord.startedAt,
             completedAt: sessionRecord.completedAt,
             stopReason: sessionRecord.stopReason,
@@ -190,10 +205,12 @@ export const emitStageSnapshotUpdated = async (
     stageStartedAt: number,
     stageInactiveMs: number,
     stageCompletedAt?: number,
+    shouldEmit?: () => boolean,
 ): Promise<void> => {
     validateStageTimingContract(stageStartedAt, stageInactiveMs, stageCompletedAt);
     const taskQueue = new VtTaskQueueDb();
     const rawTasks = await listTasksByStage(taskQueue, nodeId, stage);
+    if (shouldEmit?.() === false) return;
     const tasks = rawTasks.map((task) => mapTaskQueueRecordToTaskSummary(task));
 
     const event: StageSnapshotUpdatedEvent = {

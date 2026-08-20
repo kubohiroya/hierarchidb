@@ -184,6 +184,16 @@ timeout is never a pseudo-`paused` state.
 Rewriting `running` task rows before shutdown confirmation is prohibited because it
 would make a task-count poll falsely report that execution drained. Late work from a
 timed-out run is stale and cannot update tasks, session state, cache, or artifacts.
+The Shape implementation retains exactly one active `{ promise, abortController,
+runId }` tuple per node. Its Worker deadline is 15 seconds and rejects with
+`ShapeBuildPauseShutdownTimeoutError` (`SHAPE_BUILD_PAUSE_SHUTDOWN_TIMEOUT`), while
+the UI command deadline remains longer so the typed Worker failure wins the race.
+The tuple remains owned through the terminal pause-state write, preventing a
+replacement run from entering between pipeline settlement and `paused` persistence.
+After timeout, the invalidated tuple remains reserved until its real Promise settles.
+The runtime clears the internal pause flag before publishing the failed state, and a
+replacement start fails before planning or any task/cache/session mutation while the
+invalidated tuple remains reserved.
 
 ---
 

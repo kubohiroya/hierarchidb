@@ -184,7 +184,7 @@ graph LR
 
 - タスク更新判定は `meta` 比較を用いる。artifact lineage cleanup は共通 coordinator に集約され、source/geometry invalidation 時は逆参照を持たない永続 tile 系を node 単位で削除する。
 - `updatedAt` を用いた更新判定は補助的であり、ソース側の時刻更新が必要なケースは未整理である。
-- pause command は実 pipeline 停止確認前に `running` task を `queued` へ戻し、timer から `paused` を永続化できるため、本書の Pause 完了条件を満たさない（#702）。
+- pause command は Worker 内の Jotai vanilla store を唯一の保持先とする nodeId ごとの PauseState に、active `{ promise, abortController, runId }` を1件だけ保持し、全 stage へ親 AbortSignal を伝播する。PauseState の module-scope collection や直接ミューテーションは持たない。対象 Promise の settle 後にのみ `running` task を `queued` へ戻して `paused / canResume=true` を永続化し、その永続化が完了するまで active tuple を解放しない。15秒以内に settle しない場合は run を invalid 化し、内部 pause flag を解除して `failed / canResume=false` と型付き `ShapeBuildPauseShutdownTimeoutError` を返す。invalid 化された run は task/cache/session/event の新規更新を開始できず、実 Promise が後から settle するまで replacement start を task/cache/session mutation より前に拒否する（#702）。
 - Geometry は `baseTolerance` / profile 欠落時のtask内探索、固定値、clampを持ち、本書および tolerance SSOT の fail-fast 契約を満たさない。
 - invalid geometry filtering は `tileEmitConfig` を読みながら Source stage で実行されており、tileEmit ownership を満たさない（#332）。
 - cache identity は source / geometry / tileEmit task生成時に必須構成値を厳密検証し、完全な `cacheKey` / `inputHash` pairを永続化する。resume/reconcileでは正規stageと永続pairだけを読み、欠落値をtask payload、legacy key、丸め、既定値から再構成しない。

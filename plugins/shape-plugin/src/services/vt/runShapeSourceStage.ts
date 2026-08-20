@@ -482,14 +482,19 @@ const buildSourceCacheMetadata = (params: {
   inputMaxPolygonVertexCount: params.inputMaxPolygonVertexCount,
   baseTolerance: params.baseTolerance,
   baseToleranceVertexLimit: params.baseToleranceVertexLimit,
-  retryAttempt: Number.isFinite(params.retryAttempt ?? NaN)
-    ? Math.trunc(params.retryAttempt!)
-    : undefined,
+  retryAttempt:
+    typeof params.retryAttempt === 'number' && Number.isFinite(params.retryAttempt)
+      ? Math.trunc(params.retryAttempt)
+      : undefined,
   rawSourceCacheKey: params.rawSourceCacheKey ?? undefined,
 });
 
-const markSourceCacheWriteComplete = async (cacheIds: string[]): Promise<void> => {
+const markSourceCacheWriteComplete = async (
+  cacheIds: string[],
+  abortSignal?: AbortSignal
+): Promise<void> => {
   if (cacheIds.length === 0) return;
+  assertNotAborted(abortSignal);
   const completedAt = Date.now();
   await Promise.all(cacheIds.map((id) => (
     ephemeralDB.sourceCache.update(id, { timestamp: completedAt })
@@ -515,11 +520,13 @@ const putSourceCache = async (params: {
   metadata?: Record<string, unknown>;
   taskId?: string;
   taskQueue?: VtTaskQueueDb;
+  abortSignal?: AbortSignal;
 }): Promise<{ id: string; contentHash: string }> => {
   const recordId = buildSourceCacheId(params.nodeId, params.sourceKey);
   const contentHash = hashSourceArtifact(params.data);
 
   // Phase 1: Write data with timestamp: 0 (invalid state)
+  assertNotAborted(params.abortSignal);
   await ephemeralDB.sourceCache.put({
     id: recordId,
     nodeId: params.nodeId,
@@ -546,7 +553,7 @@ const putSourceCache = async (params: {
 
   // Phase 2: Mark write complete with non-zero timestamp (valid state)
   try {
-    await markSourceCacheWriteComplete([recordId]);
+    await markSourceCacheWriteComplete([recordId], params.abortSignal);
   } catch (error) {
     const { handleCacheWriteFailure } = await import('../../worker/api/cacheWriteValidationConstants');
     handleCacheWriteFailure(error, {
@@ -966,27 +973,33 @@ const createSourceHandler = (params: {
     let lastUpdatedAt = 0;
     let lastMessage = '';
     return async (message: string, force = false): Promise<void> => {
+      assertNotAborted(params.abortSignal);
       if (!force && message === lastMessage) return;
       const now = Date.now();
       if (!force && now - lastUpdatedAt < 120) return;
       lastUpdatedAt = now;
       lastMessage = message;
       try {
+        assertNotAborted(params.abortSignal);
         await updateTask(taskQueue, taskId, { message });
       } catch (error) {
+        if (params.abortSignal?.aborted) throw error;
         console.warn('[ShapeSource] failed to update task message', { taskId, message, error });
       }
     };
   };
   const updateRetryAttempt = async (taskId: string, retryAttempt: number): Promise<void> => {
     try {
+      assertNotAborted(params.abortSignal);
       const record = await taskQueue.tasks.get(taskId);
+      assertNotAborted(params.abortSignal);
       const currentMetadata = isRecord(record?.metadata) ? record.metadata as Record<string, unknown> : {};
       const nextRetryAttempt = Number.isFinite(retryAttempt) && retryAttempt > 0 ? Math.trunc(retryAttempt) : 0;
       await updateTask(taskQueue, taskId, {
         metadata: { ...currentMetadata, retryAttempt: nextRetryAttempt },
       });
     } catch (error) {
+      if (params.abortSignal?.aborted) throw error;
       console.warn('[ShapeSource] failed to update task retryAttempt', {
         taskId,
         retryAttempt,
@@ -1118,10 +1131,13 @@ const createSourceHandler = (params: {
       );
     };
     const onRetryAttempt = async (attempt: number): Promise<void> => {
+      assertNotAborted(params.abortSignal);
       await updateRetryAttempt(task.taskId, attempt);
       try {
+        assertNotAborted(params.abortSignal);
         await updateTask(taskQueue, task.taskId, { progress: fetchProgressRange.start });
       } catch (error) {
+        if (params.abortSignal?.aborted) throw error;
         console.warn('[ShapeSource] failed to rewind fetch progress on retry', {
           taskId: task.taskId,
           attempt,
@@ -1132,6 +1148,7 @@ const createSourceHandler = (params: {
     };
     let lastFetchProgress: number | null = null;
     const onDownloadProgress = async (downloadPercentage: number): Promise<void> => {
+      assertNotAborted(params.abortSignal);
       if (!Number.isFinite(downloadPercentage) || downloadPercentage < 0 || downloadPercentage > 100) {
         throw new Error(`[shape-source] invalid download progress: ${downloadPercentage}`);
       }
@@ -1139,9 +1156,10 @@ const createSourceHandler = (params: {
         + Math.round(((fetchProgressRange.done - fetchProgressRange.start) * downloadPercentage) / 100);
       if (lastFetchProgress === mappedProgress) return;
       lastFetchProgress = mappedProgress;
+      assertNotAborted(params.abortSignal);
       await updateTask(taskQueue, task.taskId, { progress: mappedProgress });
     };
-    void updateRetryAttempt(task.taskId, 0);
+    await updateRetryAttempt(task.taskId, 0);
 
     assertNotAborted(params.abortSignal);
     const existing = await getSourceCache(params.nodeId, input.sourceKey);
@@ -1212,6 +1230,7 @@ const createSourceHandler = (params: {
             geometryEngine,
           });
           if (cachedMetadata.length > 0) {
+            assertNotAborted(params.abortSignal);
             await shapeMutationAPIImpl.putFeatureMetadata(cachedMetadata);
           }
           if (hasMissingFeatureIds) {
@@ -1227,6 +1246,7 @@ const createSourceHandler = (params: {
             }
             if (data) {
               sourceArtifactHash = hashSourceArtifact(data);
+              assertNotAborted(params.abortSignal);
               await ephemeralDB.sourceCache.update(existing.id, {
                 data,
                 size: data.byteLength,
@@ -1236,6 +1256,7 @@ const createSourceHandler = (params: {
               });
             }
           } else if (existing.metadata?.status !== 'completed') {
+            assertNotAborted(params.abortSignal);
             await ephemeralDB.sourceCache.update(existing.id, {
               metadata: buildCurrentSourceMetadata(),
             });
@@ -1250,7 +1271,9 @@ const createSourceHandler = (params: {
             createdAt,
             recyclingByFeatureId: params.recyclingByFeatureId,
           });
+          assertNotAborted(params.abortSignal);
           await shapeMutationAPIImpl.putFeatureMetadata([emptyMetadata]);
+          assertNotAborted(params.abortSignal);
           await ephemeralDB.sourceCache.update(existing.id, {
             metadata: {
               ...buildCurrentSourceMetadata(),
@@ -1301,6 +1324,7 @@ const createSourceHandler = (params: {
     const filterZoom = zoomRanges[0]?.max;
 
     if (isTopoJsonSource) {
+      assertNotAborted(params.abortSignal);
       await updateTask(taskQueue, task.taskId, { progress: fetchProgressRange.start });
       const downloadStart = Date.now();
       const topojsonResult = await fetchGeoBoundariesTopoJson({
@@ -1314,6 +1338,7 @@ const createSourceHandler = (params: {
         onRetryAttempt,
         onDownloadProgress,
       });
+      assertNotAborted(params.abortSignal);
       await updateTask(taskQueue, task.taskId, { progress: fetchProgressRange.done });
       const downloadTime = Date.now() - downloadStart;
       const rawSourceCacheKey = topojsonResult.downloadUrl;
@@ -1333,9 +1358,9 @@ const createSourceHandler = (params: {
       const inputSummary = await summarizeFeatureCollection(baseCollection, geometryEngine, {
         onFeatureCountProgress,
       });
-      const filteredCollection = Number.isFinite(filterZoom)
+      const filteredCollection = typeof filterZoom === 'number' && Number.isFinite(filterZoom)
         ? await filterFetchCollectionByZoom(baseCollection, {
-          zTarget: filterZoom!,
+          zTarget: filterZoom,
           omitDetailsConfig: params.buildConfig.geometryConfig.omitDetailsConfig,
           excludePolygonAreaCoefficient: params.buildConfig.geometryConfig.excludePolygonAreaCoefficient,
           minRingVertices: params.buildConfig.geometryConfig.minRingVertices,
@@ -1356,6 +1381,7 @@ const createSourceHandler = (params: {
           createdAt,
           recyclingByFeatureId: params.recyclingByFeatureId,
         });
+        assertNotAborted(params.abortSignal);
         await shapeMutationAPIImpl.putFeatureMetadata([emptyMetadata]);
         return {
           status: 'completed',
@@ -1390,6 +1416,7 @@ const createSourceHandler = (params: {
         geometryEngine,
       });
       if (featureMetadata.length > 0) {
+        assertNotAborted(params.abortSignal);
         await shapeMutationAPIImpl.putFeatureMetadata(featureMetadata);
       }
 
@@ -1439,6 +1466,7 @@ const createSourceHandler = (params: {
         }),
         taskId: task.taskId,
         taskQueue: params.taskQueue,
+        abortSignal: params.abortSignal,
       });
       const reductionSummary = [
         formatChangeSummary('features', inputSummary.featureCount, outputSummary.featureCount),
@@ -1477,6 +1505,7 @@ const createSourceHandler = (params: {
     }
 
     const downloadStart = Date.now();
+    assertNotAborted(params.abortSignal);
     await updateTask(taskQueue, task.taskId, { progress: fetchProgressRange.start });
     const raw = await strategy.fetchData({
       nodeId: params.nodeId,
@@ -1489,6 +1518,7 @@ const createSourceHandler = (params: {
       onRetryAttempt,
       onDownloadProgress,
     });
+    assertNotAborted(params.abortSignal);
     await updateTask(taskQueue, task.taskId, { progress: fetchProgressRange.done });
     const rawSourceCacheKey = resolveRawSourceCacheKey(input, raw);
     const downloadTime = Date.now() - downloadStart;
@@ -1511,9 +1541,9 @@ const createSourceHandler = (params: {
     const inputSummary = await summarizeFeatureCollection(collection, geometryEngine, {
       onFeatureCountProgress,
     });
-    const filteredCollection = Number.isFinite(filterZoom)
+    const filteredCollection = typeof filterZoom === 'number' && Number.isFinite(filterZoom)
       ? await filterFetchCollectionByZoom(collection, {
-        zTarget: filterZoom!,
+        zTarget: filterZoom,
         omitDetailsConfig: params.buildConfig.geometryConfig.omitDetailsConfig,
         excludePolygonAreaCoefficient: params.buildConfig.geometryConfig.excludePolygonAreaCoefficient,
         minRingVertices: params.buildConfig.geometryConfig.minRingVertices,
@@ -1533,6 +1563,7 @@ const createSourceHandler = (params: {
         createdAt,
         recyclingByFeatureId: params.recyclingByFeatureId,
       });
+      assertNotAborted(params.abortSignal);
       await shapeMutationAPIImpl.putFeatureMetadata([emptyMetadata]);
       return {
         status: 'completed',
@@ -1566,6 +1597,7 @@ const createSourceHandler = (params: {
       geometryEngine,
     });
     if (featureMetadata.length > 0) {
+      assertNotAborted(params.abortSignal);
       await shapeMutationAPIImpl.putFeatureMetadata(featureMetadata);
     }
 
@@ -1620,6 +1652,7 @@ const createSourceHandler = (params: {
       }),
       taskId: task.taskId,
       taskQueue: params.taskQueue,
+      abortSignal: params.abortSignal,
     });
     const reductionSummary = [
       formatChangeSummary('features', inputSummary.featureCount, featureCount),
@@ -1660,6 +1693,7 @@ const createSourceHandler = (params: {
 
 export const runShapeSourceStage = async (params: ShapeSourceStageParams): Promise<void> => {
   const abortSignal = params.abortController?.signal;
+  assertNotAborted(abortSignal);
   const resumeExistingTasks = Boolean(params.resumeExistingTasks);
   const notifyTasksEnqueued = async (payload: {
     taskCount: number;
@@ -1693,15 +1727,19 @@ export const runShapeSourceStage = async (params: ShapeSourceStageParams): Promi
   };
   if (!resumeExistingTasks) {
     const staleTasks = await listTasksByStage(params.taskQueue, params.nodeId, 'source');
+    assertNotAborted(abortSignal);
     await deleteTasksByIds(params.taskQueue, staleTasks.map((task) => task.taskId));
   }
+  assertNotAborted(abortSignal);
   const existingTasks = resumeExistingTasks
     ? await listTasksByStage(params.taskQueue, params.nodeId, 'source')
     : [];
+  assertNotAborted(abortSignal);
   existingTasks.forEach((task) => {
     resolveTaskCacheIdentity(task);
   });
   let metadataForPayloads = params.metadata ?? await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
+  assertNotAborted(abortSignal);
   let payloads = resolveSourcePayloads(params, metadataForPayloads);
   const selectedAdminPairCount = countSelectedAdminPairs(params.selectedArrayByCountries);
   if (
@@ -1712,6 +1750,7 @@ export const runShapeSourceStage = async (params: ShapeSourceStageParams): Promi
   ) {
     metadataLoader.clearCache(params.dataSource);
     const refreshedMetadata = await metadataLoader.loadMetadata(params.dataSource, params.nodeId, { force: true });
+    assertNotAborted(abortSignal);
     metadataForPayloads = refreshedMetadata;
     payloads = resolveSourcePayloads(params, metadataForPayloads);
   }
@@ -1723,6 +1762,7 @@ export const runShapeSourceStage = async (params: ShapeSourceStageParams): Promi
         + ' selected entries. Metadata may be stale or incompatible with the selection.',
       );
     }
+    assertNotAborted(abortSignal);
     setSourcePlannedTotal(params.nodeId, 0);
     await notifyTasksEnqueued({ taskCount: 0, source: 'created' });
     return;
@@ -1730,6 +1770,7 @@ export const runShapeSourceStage = async (params: ShapeSourceStageParams): Promi
   const configSignature = buildStableSignature(params.buildConfig.sourceConfig);
   if (!reuseExistingTasks) {
     const tasks = buildSourceTasks(params.nodeId, payloads, metadataForPayloads, configSignature);
+    assertNotAborted(abortSignal);
     setSourcePlannedTotal(params.nodeId, tasks.length);
     await applyStageTaskReconcile({
       taskQueue: params.taskQueue,
@@ -1739,13 +1780,18 @@ export const runShapeSourceStage = async (params: ShapeSourceStageParams): Promi
       existingTasks,
       resumeExistingTasks,
     });
+    assertNotAborted(abortSignal);
     await notifyTasksEnqueued({ taskCount: tasks.length, source: 'created' });
+    assertNotAborted(abortSignal);
     await notifyStageTasksPrepared(tasks.length);
   } else {
+    assertNotAborted(abortSignal);
     setSourcePlannedTotal(params.nodeId, existingTasks.length);
     await notifyTasksEnqueued({ taskCount: existingTasks.length, source: 'reused' });
+    assertNotAborted(abortSignal);
     await notifyStageTasksPrepared(existingTasks.length);
   }
+  assertNotAborted(abortSignal);
   await runStageTasks<ShapeSourceTaskInput, ShapeSourceTaskOutput>({
     nodeId: params.nodeId,
     stageId: 'source-stage',

@@ -80,6 +80,9 @@ type SessionStatusUpdatedEvent = {
 - Task rows must not be changed from `running` to `queued` before runtime shutdown is confirmed. A task-count query cannot prove shutdown after those rows have been rewritten.
 - If shutdown confirmation exceeds the configured timeout, the Worker persists `failed` and rejects the pause command with a typed shutdown-timeout error. The UI command handler converts that rejection into the UI-internal `criticalError` event. The Worker must not emit a fifth canonical event, emit `paused`, set `canResume=true`, or continue cache/artifact writes for that run.
 - A late completion from the timed-out run is stale and must not mutate task/session state or artifacts.
+- A failed pause clears the Worker-internal pause flag before reporting `failed`; runtime probes must not observe a synthetic paused state after the failure.
+- While an invalidated run remains unsettled, a replacement start must fail before planning, task reset, cache cleanup, session mutation, or event emission begins.
+- Shape uses a 15-second Worker shutdown deadline, which is shorter than the UI command deadline. The rejected error is named `ShapeBuildPauseShutdownTimeoutError` and carries code `SHAPE_BUILD_PAUSE_SHUTDOWN_TIMEOUT`; transport consumers must preserve or inspect the error name rather than infer success from elapsed time.
 
 After `sessionStatusUpdated` selects a started stage and before the first authoritative
 `stageSnapshotUpdated` for that stage arrives, the UI is in `ui-initializing`. The

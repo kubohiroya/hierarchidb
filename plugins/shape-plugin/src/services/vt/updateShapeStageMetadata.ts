@@ -7,7 +7,6 @@ import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
 import type { CountryMetadata, DataSourceName } from '~/common/types/index';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
-import { shapeMutationAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 
 const ORIGIN_KEY_PROP = '__hdbOriginKey';
 
@@ -198,21 +197,32 @@ export type ShapeStageMetadataParams = {
   dataSource: DataSourceName;
   shapeStore: EphemeralDB;
   shapeDb: ShapeDB;
+  abortSignal?: AbortSignal;
+};
+
+const assertMetadataPipelineActive = (abortSignal?: AbortSignal): void => {
+  if (abortSignal?.aborted) {
+    throw new DOMException('Shape metadata pipeline was aborted', 'AbortError');
+  }
 };
 
 export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams): Promise<void> => {
+  assertMetadataPipelineActive(params.abortSignal);
   const metadata = await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
+  assertMetadataPipelineActive(params.abortSignal);
   const lookup = buildCountryLookup(metadata);
   const now = Date.now();
   const existingRows = await params.shapeDb.dataSourceMetadata
     .where('nodeId')
     .equals(String(params.nodeId))
     .toArray() as ShapeDataSourceMetadata[];
+  assertMetadataPipelineActive(params.abortSignal);
   const createdAtByOrigin = new Map(existingRows.map((row) => [row.originKey, row.createdAt] as const));
 
   const origins = new Map<string, DataSourceMetadata>();
 
   await params.shapeStore.sourceCacheMeta.where('nodeId').equals(params.nodeId).each((buffer) => {
+    assertMetadataPipelineActive(params.abortSignal);
     const originKey = buildOriginKey(params.dataSource, buffer.sourceKey);
     const info = resolveOriginInfo(originKey, lookup);
     const origin = ensureOrigin(origins, originKey, {
@@ -228,8 +238,10 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
       polygonCount: buffer.polygonCount ?? 0,
     });
   });
+  assertMetadataPipelineActive(params.abortSignal);
 
   await params.shapeStore.geometryCacheMeta.where('nodeId').equals(params.nodeId).each((buffer) => {
+    assertMetadataPipelineActive(params.abortSignal);
     if (buffer.domainType !== 'shape') return;
     const originKey = buildOriginKey(params.dataSource, buffer.sourceKey);
     const info = resolveOriginInfo(originKey, lookup);
@@ -246,8 +258,10 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
       polygonCount: buffer.polygonCount ?? 0,
     });
   });
+  assertMetadataPipelineActive(params.abortSignal);
 
   const tiles = await params.shapeDb.vectorTiles.where('nodeId').equals(params.nodeId).toArray();
+  assertMetadataPipelineActive(params.abortSignal);
   tiles.forEach((tile) => {
     const buffer = tile.data_Uint8Array.buffer.slice(
       tile.data_Uint8Array.byteOffset,
@@ -290,6 +304,11 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
     vtPolygonCount: origin.tileEmit.polygonCount,
   }));
 
-  await shapeMutationAPIImpl.deleteDataSourceMetadataByNode(params.nodeId);
-  await shapeMutationAPIImpl.putDataSourceMetadata(rows);
+  assertMetadataPipelineActive(params.abortSignal);
+  await params.shapeDb.transaction('rw', params.shapeDb.dataSourceMetadata, async () => {
+    assertMetadataPipelineActive(params.abortSignal);
+    await params.shapeDb.dataSourceMetadata.where('nodeId').equals(String(params.nodeId)).delete();
+    assertMetadataPipelineActive(params.abortSignal);
+    await params.shapeDb.dataSourceMetadata.bulkPut(rows);
+  });
 };

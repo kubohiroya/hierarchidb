@@ -126,6 +126,7 @@ export const createGeometryStageHandler = (
     operation: string,
   ): Promise<void> => {
     try {
+      assertNotAborted(abortSignal);
       await withTimeout({
         taskId,
         operation,
@@ -177,7 +178,9 @@ export const createGeometryStageHandler = (
   const updateTaskRetryAttempt = async (taskId: string, retryAttempt: number): Promise<void> => {
     if (!Number.isFinite(retryAttempt) || retryAttempt < 0) return;
     try {
+      assertNotAborted(abortSignal);
       const currentTask = await taskQueue.tasks.get(taskId);
+      assertNotAborted(abortSignal);
       const currentMetadata = currentTask?.metadata;
       const baseMetadata = typeof currentMetadata === 'object' && currentMetadata !== null
         ? (currentMetadata as Record<string, unknown>)
@@ -189,6 +192,7 @@ export const createGeometryStageHandler = (
         },
       }, 'metadata:update:retry-attempt');
     } catch (error) {
+      if (abortSignal?.aborted) throw error;
       console.warn('[ShapeGeometry] failed to update task retryAttempt', {
         taskId,
         retryAttempt,
@@ -434,6 +438,7 @@ export const createGeometryStageHandler = (
       },
     ): Promise<void> => {
       if (!input) return;
+      assertNotAborted(abortSignal);
       const cacheId = `${task.nodeId}-b${input.bandIndex}-${input.domainType}-${input.sourceKey}`;
       const record: EphemeralGeometryCacheMetaRecord = {
         id: cacheId,
@@ -456,8 +461,10 @@ export const createGeometryStageHandler = (
         timestamp: Date.now(),
       };
       try {
+        assertNotAborted(abortSignal);
         await ephemeralDB.geometryCacheMeta.put(record);
       } catch (error) {
+        if (abortSignal?.aborted) throw error;
         console.error('[ShapeGeometry] failed to persist geometryCacheMeta', {
           taskId,
           status,
@@ -488,7 +495,7 @@ export const createGeometryStageHandler = (
       }
       finalEffectiveToleranceForTask = Math.max(finalEffectiveToleranceForTask, candidate);
     };
-    void updateTaskRetryAttempt(taskId, 0);
+    await updateTaskRetryAttempt(taskId, 0);
     retryAttemptForTask = 0;
     if (!firstTaskLogged && isTaskDebugLoggingEnabled()) {
       firstTaskLogged = true;
@@ -656,6 +663,7 @@ export const createGeometryStageHandler = (
         }, 5000);
       }
       const sourceCache = await ephemeralDB.sourceCache.get(input.sourceCacheId);
+      assertNotAborted(abortSignal);
       if (fetchWaitTimer) {
         clearInterval(fetchWaitTimer);
       }
@@ -719,6 +727,7 @@ export const createGeometryStageHandler = (
       assertNotAborted(abortSignal);
       const decodeStartedAt = Date.now();
       let decodeProgressActive = true;
+      const decodeProgressWrites: Promise<void>[] = [];
       const publishDecodeProgress = async (): Promise<void> => {
         if (!decodeProgressActive) return;
         const elapsedSeconds = Math.max(1, Math.floor((Date.now() - decodeStartedAt) / 1000));
@@ -728,7 +737,10 @@ export const createGeometryStageHandler = (
         });
       };
       const decodeProgressTimer = setInterval(() => {
-        void publishDecodeProgress();
+        const write = publishDecodeProgress();
+        decodeProgressWrites.push(write);
+        // Attach immediately; the original promise is still drained below.
+        void write.catch(() => undefined);
       }, TASK_PHASE_PROGRESS_UPDATE_INTERVAL_MS);
       let collection: FeatureCollection | null = null;
       try {
@@ -746,6 +758,7 @@ export const createGeometryStageHandler = (
       } finally {
         decodeProgressActive = false;
         clearInterval(decodeProgressTimer);
+        await Promise.all(decodeProgressWrites);
       }
       if (!collection || collection.features.length === 0) {
         const metadataResult = await persistResultMetadata('failed');

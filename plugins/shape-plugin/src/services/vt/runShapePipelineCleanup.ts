@@ -7,6 +7,7 @@ export type ShapeCleanupStageParams = {
   nodeId: NodeId;
   buildConfig: ShapeRuntimeBuildConfig;
   ephemeralStore: EphemeralDB;
+  abortSignal?: AbortSignal;
 };
 
 export const runShapePipelineCleanup = async (params: ShapeCleanupStageParams): Promise<void> => {
@@ -28,5 +29,6 @@ export const runShapePipelineCleanup = async (params: ShapeCleanupStageParams): 
     dependencies: {
       ephemeralStore: params.ephemeralStore,
     },
+    abortSignal: params.abortSignal,
   });
 };

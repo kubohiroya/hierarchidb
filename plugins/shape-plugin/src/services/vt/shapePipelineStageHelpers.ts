@@ -1,6 +1,6 @@
 import type { BuildContinuationPolicy, TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import { listTasksByStageAndStatus, updateTask, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
+import { listTasksByStageAndStatus, updateTask, type VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 
 export type StageCounts = {
   queued: number;
@@ -16,6 +16,21 @@ export const resolveFailureHandling = (policy: BuildContinuationPolicy): 'contin
 export const shouldStopAfterStage = (policy: BuildContinuationPolicy, failedCount: number): boolean => (
   failedCount > 0 && policy !== 'finish_all_stages'
 );
+
+export const createPipelineLinkedAbortController = (
+  pipelineSignal?: AbortSignal
+): AbortController => {
+  const controller = new AbortController();
+  if (!pipelineSignal) return controller;
+  if (pipelineSignal.aborted) {
+    controller.abort(pipelineSignal.reason);
+    return controller;
+  }
+  pipelineSignal.addEventListener('abort', () => controller.abort(pipelineSignal.reason), {
+    once: true,
+  });
+  return controller;
+};
 
 export const getFailedTaskCount = async (
   taskQueue: VtTaskQueueDb,

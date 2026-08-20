@@ -31,6 +31,8 @@
 
 旧phase名は既存artifact/config/API識別子を説明する場合に限って使用し、taskQueueやbuild-session eventのstage IDには使用しない。
 
+各 stage の AbortController は session pipeline の AbortSignal に連結する。pause 時は親 signal が source / geometry / tileEmit の実行 worker へ伝播し、実 pipeline Promise が settle するまで task status の再キューと `paused` 永続化を行わない。checkpoint heartbeat と cleanup は fire-and-forget にせず同じ Promise に含め、各永続化境界で abort を再検証する。abort 後に完了した古い run の task/cache/artifact/event 更新は拒否する。
+
 ## source stage（shape）
 
 - GeoJSON を国 + 自治体レベル単位で分割し取得

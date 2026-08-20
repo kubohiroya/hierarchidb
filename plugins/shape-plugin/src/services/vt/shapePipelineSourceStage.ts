@@ -4,7 +4,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { DataSourceName, SourceTaskPayload, SelectedArrayByCountries } from '~/common/types/index';
 import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
 import type { Feature, FeatureCollection, Geometry, MultiPolygon, Polygon } from 'geojson';
-import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
+import type { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { listTasksByStage } from '@hierarchidb/vt-orchestrator';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { geojson as geojsonApi } from 'flatgeobuf';
@@ -13,6 +13,7 @@ import type { Topology } from 'topojson-specification';
 import { geometrySimplify, type GeometryEngine } from '@hierarchidb/gis-sdk';
 import { runShapeSourceStage } from './runShapeSourceStage.js';
 import {
+  createPipelineLinkedAbortController,
   finalizePendingStageTasks,
   markStageTasksRecycled,
   resetStageRunningTasks,
@@ -270,10 +271,13 @@ const findSourceBaseToleranceByBisection = (params: {
 };
 
 export const runShapeSourceStageSection = async (params: ShapeSourceStageParams): Promise<boolean> => {
-  const sourceAbortController = new AbortController();
+  const sourceAbortController = createPipelineLinkedAbortController(params.abortSignal);
+  if (sourceAbortController.signal.aborted) return true;
   await resetStageRunningTasks(params.taskQueue, params.nodeId, 'source');
+  if (sourceAbortController.signal.aborted) return true;
   if (params.resumeExistingTasks) {
     await markStageTasksRecycled(params.taskQueue, params.nodeId, 'source');
+    if (sourceAbortController.signal.aborted) return true;
   }
   const runSourcePass = async (resumeExistingTasks: boolean): Promise<void> => {
     await runShapeSourceStage({
@@ -295,26 +299,14 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
     await runSourcePass(params.resumeExistingTasks);
   } catch (error) {
     // Handle abort errors specifically
-    if (sourceAbortController.signal.aborted || (error instanceof Error && error.name === 'AbortError')) {
+    if (params.abortSignal?.aborted || (error instanceof Error && error.name === 'AbortError')) {
       console.log('[ShapeSource][AbortHandling] Source stage aborted via signal', {
         nodeId: params.nodeId,
         runId: params.pipelineRunId ?? null,
         errorName: error instanceof Error ? error.name : 'unknown',
         errorMessage: error instanceof Error ? error.message : String(error),
       });
-      
-      // Finalize pending tasks as aborted
-      await finalizePendingStageTasks(
-        params.taskQueue,
-        params.nodeId,
-        'source',
-        'aborted: source stage terminated by abort signal',
-        '[ShapeSource][AbortHandling] source stage aborted by signal',
-        params.pipelineRunId,
-      );
-      
-      // Don't propagate abort errors as failures
-      return true; // Stop after stage due to abort
+      return true;
     }
 
     // Handle other errors
@@ -342,7 +334,11 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
     );
     throw error;
   }
+  if (sourceAbortController.signal.aborted) {
+    return true;
+  }
   let stageCounts = await summarizeStageCounts(params.taskQueue, params.nodeId, 'source');
+  if (sourceAbortController.signal.aborted) return true;
   console.warn('[ShapeSource][PipelineDiagnostics] stage source completed', JSON.stringify({
     nodeId: params.nodeId,
     runId: params.pipelineRunId ?? null,
@@ -355,12 +351,17 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
       counts: stageCounts,
     }));
     await resetStageRunningTasks(params.taskQueue, params.nodeId, 'source');
+    if (sourceAbortController.signal.aborted) return true;
     await runSourcePass(true);
+    if (sourceAbortController.signal.aborted) return true;
     stageCounts = await summarizeStageCounts(params.taskQueue, params.nodeId, 'source');
+    if (sourceAbortController.signal.aborted) return true;
   }
   if (params.resumeExistingTasks && (stageCounts.queued > 0 || stageCounts.running > 0)) {
     await resetStageRunningTasks(params.taskQueue, params.nodeId, 'source');
+    if (sourceAbortController.signal.aborted) return true;
     stageCounts = await summarizeStageCounts(params.taskQueue, params.nodeId, 'source');
+    if (sourceAbortController.signal.aborted) return true;
     if (stageCounts.queued > 0 || stageCounts.running > 0) {
       console.warn('[ShapeSource][PipelineDiagnostics] source stage left pending tasks during resume; keep queued for next retry', JSON.stringify({
         nodeId: params.nodeId,
@@ -370,6 +371,7 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
     }
   }
   const shouldFinalizePending = !params.resumeExistingTasks || (stageCounts.queued === 0 && stageCounts.running === 0);
+  if (sourceAbortController.signal.aborted) return true;
   const finalizedPending = await finalizePendingStageTasks(
     params.taskQueue,
     params.nodeId,
@@ -381,13 +383,16 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
       markFailed: shouldFinalizePending,
     },
   );
+  if (sourceAbortController.signal.aborted) return true;
   if (finalizedPending.authPending > 0) {
     throw new SourceStageAuthPendingError();
   }
   if (finalizedPending.queued > 0 || finalizedPending.running > 0) {
     stageCounts = await summarizeStageCounts(params.taskQueue, params.nodeId, 'source');
+    if (sourceAbortController.signal.aborted) return true;
   }
   const fetchTasks = await listTasksByStage(params.taskQueue, params.nodeId, 'source');
+  if (sourceAbortController.signal.aborted) return true;
   let featureMax = 0;
   let polygonMax = 0;
   let maxPolygonVertexCount = 0;
@@ -465,7 +470,9 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
     });
   }
   for (const sourceCacheId of sourceCacheIds) {
+    if (sourceAbortController.signal.aborted) return true;
     const sourceCache = await shapeQueryAPIImpl.getSourceCache(params.nodeId, sourceCacheId);
+    if (sourceAbortController.signal.aborted) return true;
     if (!sourceCache) continue;
     const cacheFormat = sourceCacheFormats.get(sourceCacheId);
     const format = cacheFormat?.format ?? 'flatgeobuf';
@@ -475,6 +482,7 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
       format,
       compression,
     });
+    if (sourceAbortController.signal.aborted) return true;
     if (!collection || collection.features.length === 0) continue;
     const maxPolygon = findMaxVertexPolygon(collection);
     if (!maxPolygon) continue;
@@ -495,6 +503,7 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
     baseTolerance = baseSearch.tolerance;
   }
 
+  if (sourceAbortController.signal.aborted) return true;
   await shapeMutationAPIImpl.updateBuildSession(params.nodeId, {
     sourceStageMaxima: {
       featureMax,
@@ -504,6 +513,7 @@ export const runShapeSourceStageSection = async (params: ShapeSourceStageParams)
       vertexLimit: baseToleranceVertexLimit,
     },
   });
+  if (sourceAbortController.signal.aborted) return true;
   if (stageCounts.failed > 0 && stageCounts.completed === 0) {
     return true;
   }
