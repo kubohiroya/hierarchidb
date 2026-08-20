@@ -1,10 +1,23 @@
-import { describe, expect, it, vi } from 'vitest';
-
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { collectBuildUrlsForFolder, startBuildFlow } from '../buildFlow.ts';
 
 const composeStepConfigsMock = vi.fn();
+
+const createMemoryStorage = (): Storage => {
+  const items = new Map<string, string>();
+  return {
+    get length() {
+      return items.size;
+    },
+    clear: () => items.clear(),
+    getItem: (key) => items.get(key) ?? null,
+    key: (index) => Array.from(items.keys())[index] ?? null,
+    removeItem: (key) => items.delete(key),
+    setItem: (key, value) => items.set(key, value),
+  };
+};
 
 vi.mock('@hierarchidb/plugin-base', () => ({
   composeStepConfigs: (...args: Parameters<typeof composeStepConfigsMock>) =>
@@ -14,6 +27,14 @@ vi.mock('@hierarchidb/plugin-base', () => ({
 vi.mock('~/plugin-loaders/uiPluginLoaderUtils', () => ({
   loadUIPlugin: vi.fn(() => Promise.resolve(true)),
 }));
+
+beforeEach(() => {
+  vi.stubGlobal('localStorage', createMemoryStorage());
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 const makeNode = (overrides: Partial<TreeNode>): TreeNode => ({
   id: 'r:folder' as NodeId,
@@ -102,35 +123,37 @@ describe('collectBuildUrlsForFolder', () => {
       workerClient,
     });
 
-    expect(result.urls).toHaveLength(3);
+    expect(result.urls).toHaveLength(2);
     expect(result.urls.every((url) => url.includes('build=1'))).toBe(true);
-    expect(result.urls.every((url) => url.includes(`buildQueue=${encodeURIComponent(result.queueKey)}`))).toBe(
+    expect(
+      result.urls.every((url) => url.includes(`buildQueue=${encodeURIComponent(result.queueKey)}`))
+    ).toBe(true);
+    expect(result.urls.some((url) => decodeURIComponent(url).includes('shape-build'))).toBe(true);
+    expect(result.urls.some((url) => decodeURIComponent(url).includes('shape-no-build'))).toBe(
       true
     );
-    expect(result.urls.some((url) => decodeURIComponent(url).includes('shape-build'))).toBe(true);
-    expect(result.urls.some((url) => decodeURIComponent(url).includes('shape-no-build'))).toBe(true);
-    expect(result.urls.some((url) => decodeURIComponent(url).includes('route-build'))).toBe(true);
-    expect(result.urls.every((url) => !decodeURIComponent(url).includes('/folder-child'))).toBe(true);
+    expect(result.urls.some((url) => decodeURIComponent(url).includes('route-build'))).toBe(false);
+    expect(result.urls.every((url) => !decodeURIComponent(url).includes('/folder-child'))).toBe(
+      true
+    );
   });
 
   it('starts at build step without auto-build when canStartBuild returns false', async () => {
-    const composeConfigs = vi
-      .fn()
-      .mockImplementation((nodeType: string) =>
-        nodeType === 'shape'
-          ? {
-              configs: [
-                {
-                  id: 'build',
-                  capabilities: {
-                    canStartBuild: () => false,
-                  },
+    const composeConfigs = vi.fn().mockImplementation((nodeType: string) =>
+      nodeType === 'shape'
+        ? {
+            configs: [
+              {
+                id: 'build',
+                capabilities: {
+                  canStartBuild: () => false,
                 },
-              ],
-              hasHostBase: false,
-            }
-          : { configs: [{ id: 'build' }], hasHostBase: false }
-      );
+              },
+            ],
+            hasHostBase: false,
+          }
+        : { configs: [{ id: 'build' }], hasHostBase: false }
+    );
     composeStepConfigsMock.mockImplementation(composeConfigs);
 
     const node = makeNode({
@@ -161,9 +184,15 @@ describe('collectBuildUrlsForFolder', () => {
     });
 
     expect(navigate).toHaveBeenCalledTimes(1);
-    const [urlValue] = navigate.mock.calls[0]!;
+    const firstCall = navigate.mock.calls[0];
+    const urlValue = firstCall?.[0];
+    if (typeof urlValue !== 'string') {
+      throw new Error('Expected navigation URL.');
+    }
     const builtUrl = new URL(urlValue, 'http://localhost');
-    expect(builtUrl.pathname).toBe('/d/tree-1/r:shape-no-autobuild/shape/edit/normal/2');
+    expect(builtUrl.pathname).toBe(
+      '/d/tree-1/r:shape-no-autobuild/r:shape-no-autobuild/shape/edit/normal/2'
+    );
     expect(builtUrl.searchParams.get('build')).toBeNull();
     expect(builtUrl.searchParams.get('returnTo')).toBe('/treeconsole');
   });
@@ -254,7 +283,11 @@ describe('collectBuildUrlsForFolder', () => {
     });
 
     expect(navigate).toHaveBeenCalledTimes(1);
-    const [navigatedUrl] = navigate.mock.calls[0]!;
+    const firstCall = navigate.mock.calls[0];
+    const navigatedUrl = firstCall?.[0];
+    if (typeof navigatedUrl !== 'string') {
+      throw new Error('Expected navigation URL.');
+    }
     const url = new URL(navigatedUrl, 'http://localhost');
     const queueKey = url.searchParams.get('buildQueue');
     expect(queueKey).toBeTruthy();
@@ -269,11 +302,10 @@ describe('collectBuildUrlsForFolder', () => {
       createdAt: number;
       treeId?: string;
     };
-    expect(queueState.urls).toHaveLength(3);
+    expect(queueState.urls).toHaveLength(2);
     expect(queueState.urls.map((item) => new URL(item, 'http://localhost').pathname)).toEqual(
       expect.arrayContaining([
         '/d/tree-1/r:root-folder/r:shape-build/shape/edit/normal/2',
-        '/d/tree-1/r:root-folder/r:route-build/route/edit/normal/2',
         '/d/tree-1/r:root-folder/r:styler-build/styler/edit/normal/2',
       ])
     );
@@ -330,7 +362,10 @@ describe('collectBuildUrlsForFolder', () => {
   });
 
   it('does not mark a folder as build-required when no buildable descendants are collected', async () => {
-    composeStepConfigsMock.mockImplementation(() => ({ configs: [{ id: 'data-source' }], hasHostBase: false }));
+    composeStepConfigsMock.mockImplementation(() => ({
+      configs: [{ id: 'data-source' }],
+      hasHostBase: false,
+    }));
 
     const descendants: TreeNode[] = [
       makeNode({

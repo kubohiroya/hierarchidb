@@ -1,6 +1,6 @@
-import type { BuildWorkerAPI } from '../../../types/worker-api.ts';
 import type { Remote } from 'comlink';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { BuildWorkerAPI } from '../../../types/worker-api.ts';
 
 const workerClientMock = vi.hoisted(() => ({
   getOrInit: vi.fn<() => Promise<Remote<BuildWorkerAPI>>>(),
@@ -30,11 +30,11 @@ const appWorkerStorePreloadsMock: Record<string, string[]> = {
   timeline: ['loadTimelineEntitiesDbModule'],
 };
 
-vi.mock('../../../plugin-loaders/worker-loaders.ts', () => ({
+vi.mock('../../../plugin-loaders/workerLoaderUtils.ts', () => ({
   pluginWorkerLoaders: {},
 }));
 
-vi.mock('../../../plugin-runtime/store-selection.ts', () => ({
+vi.mock('../../../plugin-runtime/storeSelectionUtils.ts', () => ({
   APP_WORKER_STORE_PRELOADS: appWorkerStorePreloadsMock,
 }));
 
@@ -100,7 +100,7 @@ describe('WorkerModuleLoader', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
 
-    const { ensureWorkerRuntime } = await import('../../WorkerModuleLoader.ts');
+    const { ensureWorkerRuntime } = await import('../../workerModuleLoaderUtils.ts');
 
     await ensureWorkerRuntime();
     await ensureWorkerRuntime();
