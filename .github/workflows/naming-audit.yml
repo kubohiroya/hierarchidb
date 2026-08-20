@@ -4,15 +4,15 @@ on:
   pull_request:
     branches: [main, master]
     paths:
-      - ".github/workflows/naming-audit.yml"
-      - "app/src/**/*.ts"
-      - "app/src/**/*.tsx"
-      - "packages/*/src/**/*.ts"
-      - "packages/*/src/**/*.tsx"
-      - "plugins/*-plugin/src/**/*.ts"
-      - "plugins/*-plugin/src/**/*.tsx"
-      - "scripts/naming-audit/**"
-      - "scripts/naming-audit.ts"
+      - '.github/workflows/naming-audit.yml'
+      - 'app/src/**/*.ts'
+      - 'app/src/**/*.tsx'
+      - 'packages/*/src/**/*.ts'
+      - 'packages/*/src/**/*.tsx'
+      - 'plugins/*-plugin/src/**/*.ts'
+      - 'plugins/*-plugin/src/**/*.tsx'
+      - 'scripts/naming-audit/**'
+      - 'scripts/naming-audit.ts'
 
 concurrency:
   group: naming-audit-${{ github.ref }}
@@ -36,10 +36,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: "pnpm"
+          cache: 'pnpm'
 
       - name: Install deps
-        run: pnpm install --no-frozen-lockfile --force
+        run: pnpm install --frozen-lockfile --filter .
 
       - name: Run naming audit
         env:
