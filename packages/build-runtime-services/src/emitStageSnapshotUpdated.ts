@@ -3,7 +3,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import {
   requireNonEmptyString,
   validateStageSnapshotUpdatedPayload,
-} from './canonicalSessionEventValidators.js';
+} from './canonicalSessionEventValidatorsUtils.js';
 import { unconditionalEventStreamer } from './eventStreamer.js';
 
 export const emitStageSnapshotUpdated = (

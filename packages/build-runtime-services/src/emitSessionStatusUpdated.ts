@@ -1,5 +1,5 @@
 import type { SessionStatusUpdatedEvent } from '@hierarchidb/build-api';
-import { validateSessionStatusUpdatedPayload } from './canonicalSessionEventValidators.js';
+import { validateSessionStatusUpdatedPayload } from './canonicalSessionEventValidatorsUtils.js';
 import { unconditionalEventStreamer } from './eventStreamer.js';
 
 export const emitSessionStatusUpdated = (payload: SessionStatusUpdatedEvent['payload']): void => {

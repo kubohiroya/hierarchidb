@@ -9,7 +9,7 @@
 
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TaskProgressUpdatedEvent, HeartbeatEvent } from '@hierarchidb/build-api';
-import { requireNonEmptyString } from './canonicalSessionEventValidators.js';
+import { requireNonEmptyString } from './canonicalSessionEventValidatorsUtils.js';
 import { unconditionalEventStreamer } from './eventStreamer.js';
 
 /**
