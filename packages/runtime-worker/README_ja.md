@@ -23,6 +23,14 @@ quiescing から initialization 完了までは legacy / canonical reader・writ
 
 quiescence request IDはtarget IndexedDBの`openRequestId`ではない。quiescence成功時も`actualFenceEstablished: false`を返し、実際のstorage fenceが成立するのは後続single activation releaseの`versionchanging` phaseだけである。このprotocolはproduction import、I/O、timeout、retry、participant自動探索、database access、既存maintenance flowへの接続を持たない。
 
+## CoreDB YAML read-only inventory
+
+`WorkerService.getYamlCoreDbReadOnlyInventory()`は、activation前YAML inventoryをproduction runtimeからon-demandで実行するendpointである。既にopen済みのCoreDB instanceを使用し、Dexieの`r` transactionで`nodes` snapshotを取得してexact `yaml-file` recordを選択し、record / slot分類をすべて`@hierarchidb/yaml-api/migration`へ委譲する。
+
+accepted reportはnode、slot、classification件数だけを返す。rejected reportは異常を持つ重複なしsource record数、error総数、plannerのsanitized typed errorだけを返し、YAML本文、payload、migration postimage、journal value、digest、raw exception messageを公開しない。storageまたはunexpected planning failureは別のstable failureとし、invalid record 0件へ変換しない。
+
+endpointは`CoreDB.getSingleton()`または`initialize()`を呼ばず、CoreDB / YamlDBのwrite・repair、schema version変更、canonical access公開を行わず、worker startup時に自動実行しない。test成功はactivationの運用gateを満たさない。single activation着手前にdeployment済みproduction releaseから別途endpointを実行し、invalid recordとerrorがexactly 0件である証跡を記録しなければならない。
+
 ## 依存関係
 
 多数の `@hierarchidb/*` パッケージに依存（shape-store, location-store, route-store, styler-store, tree-api, build-api, chunk-store, tabular-store 等）。

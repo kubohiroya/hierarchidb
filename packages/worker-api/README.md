@@ -8,10 +8,13 @@ Worker API interface definitions for HierarchiDB. Defines the `WorkerAPI` interf
 
 - `WorkerAPI` — Interface defining all Worker-side operations (`ping`, TreeNode CRUD, build control, etc.)
 - `WorkerStorageAPI` — Worker-side storage operations (`getItem`, `setItem`, `removeItem`)
+- `YamlCoreDbReadOnlyInventoryResult` — Sanitized on-demand CoreDB YAML inventory result. Accepted results expose only counts; rejected results expose invalid-record and typed-error counts plus redacted planner errors; execution failures use stable codes.
+
+`WorkerAPI.getYamlCoreDbReadOnlyInventory()` is a pre-activation diagnostic endpoint. It does not authorize migration or canonical publication, and its implementation must not expose YAML content, payloads, journal values, digests, or raw exception messages.
 
 ## Dependencies
 
-`@hierarchidb/core-types`, `@hierarchidb/build-api`, `@hierarchidb/tree-api`, `@hierarchidb/plugin-base`, `@hierarchidb/memory`, etc.
+`@hierarchidb/core-types`, `@hierarchidb/build-api`, `@hierarchidb/tree-api`, `@hierarchidb/plugin-base`, `@hierarchidb/memory`, `@hierarchidb/yaml-api`, etc.
 
 ## Related Packages
 

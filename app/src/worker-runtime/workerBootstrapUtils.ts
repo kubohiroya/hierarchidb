@@ -1049,6 +1049,8 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           ping: async () => services.ping(),
           initialize: () => services.initialize(),
           shutdown: () => services.shutdown(),
+          getYamlCoreDbReadOnlyInventory: async () =>
+            sanitizeForComlink(await services.getYamlCoreDbReadOnlyInventory()),
           getSystemHealth: async () => {
             const health = await services.getSystemHealth();
             return {

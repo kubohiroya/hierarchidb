@@ -1500,6 +1500,12 @@ importers:
       '@hierarchidb/vectortile-store':
         specifier: workspace:*
         version: link:../vectortile-store
+      '@hierarchidb/worker-api':
+        specifier: workspace:*
+        version: link:../worker-api
+      '@hierarchidb/yaml-api':
+        specifier: workspace:*
+        version: link:../yaml-api
       '@mapbox/vector-tile':
         specifier: ^2.0.3
         version: 2.0.4
@@ -3426,6 +3432,10 @@ importers:
         version: 5.8.2
 
   packages/worker-api:
+    dependencies:
+      '@hierarchidb/yaml-api':
+        specifier: workspace:*
+        version: link:../yaml-api
     devDependencies:
       '@hierarchidb/build-api':
         specifier: workspace:*

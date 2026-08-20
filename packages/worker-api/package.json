@@ -17,6 +17,9 @@
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
+  "dependencies": {
+    "@hierarchidb/yaml-api": "workspace:*"
+  },
   "peerDependencies": {
     "@hierarchidb/build-api": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
