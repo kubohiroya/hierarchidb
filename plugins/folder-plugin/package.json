@@ -8,6 +8,9 @@
       "canonical-yaml-zip-codec": [
         "dist/canonical-yaml-zip-codec/index.d.ts"
       ],
+      "canonical-yaml-zip-plan": [
+        "dist/canonical-yaml-zip-plan/index.d.ts"
+      ],
       "worker": [
         "dist/worker/index.d.ts"
       ],
@@ -34,6 +37,11 @@
       "import": "./dist/canonical-yaml-zip-codec/index.js",
       "default": "./dist/canonical-yaml-zip-codec/index.js"
     },
+    "./canonical-yaml-zip-plan": {
+      "types": "./dist/canonical-yaml-zip-plan/index.d.ts",
+      "import": "./dist/canonical-yaml-zip-plan/index.js",
+      "default": "./dist/canonical-yaml-zip-plan/index.js"
+    },
     "./icon": {
       "types": "./dist/icon/index.d.ts",
       "import": "./dist/icon/index.js",
@@ -51,7 +59,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/ui/index.ts src/icon/index.ts --config ../../tsdown.config.ts --splitting false --outDir dist && tsdown src/canonical-yaml-zip-codec/index.ts --config ../../tsdown.config.ts --splitting false --outDir dist/canonical-yaml-zip-codec",
+    "build": "tsdown src/index.ts src/ui/index.ts src/icon/index.ts --config ../../tsdown.config.ts --splitting false --outDir dist && tsdown src/canonical-yaml-zip-codec/index.ts --config ../../tsdown.config.ts --splitting false --outDir dist/canonical-yaml-zip-codec && tsdown src/canonical-yaml-zip-plan/index.ts --config ../../tsdown.config.ts --splitting false --outDir dist/canonical-yaml-zip-plan",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "test": "vitest run --passWithNoTests",

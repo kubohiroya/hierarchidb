@@ -190,13 +190,19 @@ import {
 
 `@hierarchidb/yaml-api` registryにある12件のcanonical root filenameだけをexact matchで受け入れ、filenameが所有する`subtype`と`schemaId`を構築し、content検証を`validateYamlCanonicalPayload`へ委譲する。raw inspectionはfilename-keyed変換より前にduplicate central recordを検出し、invalid UTF-8、unsafe path、header/CRC不一致、unreferenced leading/inter-entry/tail bytes、range overlap、comment、extra field、ZIP64、暗号化、non-STORE compression、non-canonical Base64を拒否する。encodeはUTF-8 filename byte順、STORE、固定metadataにより決定的なbytesを生成する。
 
-このentry pointはstorage、runtime、network、filesystem、timer、randomへ依存しない。package rootから再exportせず、CoreDB、YamlDB、WorkerService、下記legacy helper、SimulationWorkflowへ接続しない。後続のdormant import/export planがnode/parent preflightとinjected transaction portを担当し、production公開はsingle activation変更まで行わない。[正規YAML storage契約](../../docs/yaml-plugin-ide-gsm-step4-spec.md)を参照する。
+このentry pointはstorage、runtime、network、filesystem、timer、randomへ依存しない。package rootから再exportせず、CoreDB、YamlDB、WorkerService、下記legacy helper、SimulationWorkflowへ接続しない。下記dormant import/export planがnode/parent preflightとinjected transaction portを担当し、production公開はsingle activation変更まで行わない。[正規YAML storage契約](../../docs/yaml-plugin-ide-gsm-step4-spec.md)を参照する。
+
+## Dormant canonical YAML ZIP plan
+
+専用entry `@hierarchidb/folder-plugin/canonical-yaml-zip-plan`は、committedまたはdraftのcanonical exportとall-or-none importを計画するpure plannerを公開する。exportは`metadata.name + data`または`draftMetadata.name + draftData`を対にし、cross-slot fallbackを行わない。importは全archive、folder parent、sibling index、全existing ID snapshot、caller発行node ID、caller timestampを検証した後にだけimmutableなnode/parent patch intentを返す。
+
+`commitCanonicalYamlZipImportPlan`は本moduleが発行したplanだけを受け付け、parent/sibling/existing-ID guard、全node insert、optional parent patchをinjected transaction portへ1回だけ渡す。呼出前にplanをconsumeするため、port失敗後も同じplanをretryできない。transaction自体は実装せず、YamlDB fallbackも行わない。package rootからexportせず、single activation変更までproduction consumerを持たない。
 
 ## Legacy YAML snapshot boundary
 
 現行の`exportYamlNodesToSnapshot`と`importYamlNodesFromSnapshot` helperはlegacyかつnon-canonicalな実装である。exportは`data.name`を読み、importは空schema IDを持つYamlDB-only rowを逐次writeし、authoritativeなCoreDB `TreeNode`を作成しない。後続writeが失敗するとYamlDBに部分rowが残り得る。
 
-これらをcanonical IDE-GSM snapshot pathまたはStep 4 runtime dependencyとして使用してはならない。single activation変更より前に、別Issueでcanonical ZIP import/export pathをproductionから到達不能なdormant entryとして実装・mergeする。その実装は全entryをpreflightし、node / parent更新を含むCoreDB単一transactionを準備するが、現行legacy helperとruntime routingには接続しない。
+これらをcanonical IDE-GSM snapshot pathまたはStep 4 runtime dependencyとして使用してはならない。上記dormant canonical planは全entryをpreflightしtransaction-shaped requestを準備するが、single activation変更までは現行legacy helperとruntime routingへ接続しない。
 
 現行legacy entryを変更しないのはsingle activation変更の開始前までに限る。activation開始時にはmigrationより先にlegacy import/export routeをfenceし、migrationまたはCoreDB initializationがpendingの間はlegacy routeとcanonical routeの双方を公開しない。production routingがcanonical ZIP pathを公開できるのは、migrationのcommitとCoreDB initializationがともに成功した後だけである。migrationがblockedまたは失敗した場合はどちらのrouteも公開せず、legacy helperへfallbackしない。[正規YAML storage契約](../../docs/yaml-plugin-ide-gsm-step4-spec.md)と[legacy YamlDB boundary](../../packages/yaml-store/README_ja.md)を参照する。
 
@@ -207,6 +213,7 @@ src/
 ├── index.ts                  # Root entry point (types + manifest + YAML utilities)
 ├── plugin-manifest.ts        # PluginManifest definition
 ├── canonical-yaml-zip-codec/ # Dormant strict raw ZIP codec entry
+├── canonical-yaml-zip-plan/  # Dormant node/parent preflight and transaction plan
 ├── common/
 │   ├── locales/              # i18n resources (en, ja)
 │   ├── shared/
@@ -237,6 +244,7 @@ src/
 | --- | --- |
 | `@hierarchidb/folder-plugin` | 型定義、PluginManifest、YAML ユーティリティ |
 | `@hierarchidb/folder-plugin/canonical-yaml-zip-codec` | Dormant strict canonical YAML ZIP codec |
+| `@hierarchidb/folder-plugin/canonical-yaml-zip-plan` | Dormant canonical node/parent import-export plan |
 | `@hierarchidb/folder-plugin/ui` | UI コンポーネント（FolderDialogHost、ステップ登録） |
 | `@hierarchidb/folder-plugin/icon` | FolderPluginIcon |
 
