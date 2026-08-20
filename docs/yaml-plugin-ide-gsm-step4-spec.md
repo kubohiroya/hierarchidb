@@ -379,6 +379,18 @@ already-canonical slotは毎回strict validationし、write対象へ追加しな
 - `commitCanonicalYamlZipImportPlan`は本subpathが発行したimmutable planとcaller注入のtransaction portだけを受ける。valid planではparent/sibling/existing-ID guard、全node insert、必要なparent patchを1つのrequestとしてportへ正確に1回渡し、invalid/fabricated/consumed planまたはpreflight errorでは0回とする。port failure後に同じplanを再利用せず、retry、partial commit、別port、legacy/YamlDB fallbackを使わない。
 - plan/commit artifactはCoreDB、Dexie、IndexedDB、YamlDB、filesystem、network、timer、random、environmentへ依存しない。storage transactionの実装とsnapshot再読はsingle activation connectorだけが所有する。
 
+#### Dormant canonical SimulationWorkflow consumer
+
+`@hierarchidb/simulation-workflow/canonical-yaml-snapshot`は、#1293のcanonical export planとIDE-GSM clientの間に置くdormant consumer専用subpathとする。package root、現行`SimulationWorkflow.runSimulation`、app、worker、plugin、production routingから再exportまたはimportせず、single activationまで到達不能に保つ。
+
+- `CanonicalYamlSnapshotWorkflow`はcaller注入のclient portを受け、canonical node snapshot、`projectRelativePath`、optional export filter、optional step callbackを入力とする。Step 4 executor、storage reader、credential providerの責務を持たない。
+- snapshotは`planCanonicalYamlZipExport({ slot: 'committed', nodes })`だけで生成する。draft slot、committed/draft混在、legacy serializer、registry/YAML/ZIP validationの複製を行わない。
+- planning成功後だけplanの`archive.base64`を`importProject`へ1回渡す。planning failureではclient callとstep callbackを0回とし、raw node、YAML本文、archive bytes/Base64をerrorへ含めない。
+- workflow順はimport、calibrate、simulate、exportで固定し、各task IDをterminal successまで待ってから次へ進む。task ID欠落、client/await failureでは該当stepをfailedとして停止し、後続step、retry、別mutation、legacy fallbackを実行しない。
+- export filterはcallerが指定した場合だけ渡し、defaultを補完しない。step callbackにはstepと`running | done | failed`だけを渡し、callback failureはsanitized typed errorとして停止する。
+- public methodはinput archive、IDE-GSM export payload、task resultを返さず`void`で完了する。errorはstable code、該当step、folder planのsanitized errorだけを持ち、client、callback、parserのraw error messageを公開しない。
+- dormant subpathはCoreDB、Dexie、IndexedDB、YamlDB、app config、feature flag、environment、timer、randomへ依存しない。production publishとpost-activation return contractはsingle activation以降の別Issueで確定する。
+
 ### Inverse rollback
 
 `@hierarchidb/yaml-api/inverse-migration`は、CoreDBへ接続しないpureかつdormantなinverse plan artifact専用subpathとする。package rootから再exportせず、CoreDB、Dexie、IndexedDB、YamlDB、worker、feature flag、writer、timer、random、environmentへ依存しない。公開APIは`planExactYamlCoreDbInverseMigration`と`planReleaseYamlCoreDbInverseMigration`の別関数・別input/output typeとし、generic mode、default、exactからreleaseへのfallbackを提供しない。
