@@ -882,6 +882,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     packageName: "@hierarchidb/shape-plugin",
     version: "0.1.0",
     dependencies: [
+        "@hierarchidb/origin-coordinator",
         "@hierarchidb/shape-store",
         "@hierarchidb/vectortile-orchestrator",
         "@hierarchidb/vectortile-store",
@@ -962,6 +963,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "extends": "folder",
         "priority": 800,
         "dependencies": [
+          "@hierarchidb/origin-coordinator",
           "@hierarchidb/shape-store",
           "@hierarchidb/vectortile-orchestrator",
           "@hierarchidb/vectortile-store",
@@ -1268,6 +1270,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     packageName: "@hierarchidb/styler-plugin",
     version: "1.0.0",
     dependencies: [
+        "@hierarchidb/origin-coordinator",
         "jszip",
         "react-window",
         "xlsx",
@@ -1319,6 +1322,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "extends": "spreadsheet",
         "priority": 700,
         "dependencies": [
+          "@hierarchidb/origin-coordinator",
           "jszip",
           "react-window",
           "xlsx",

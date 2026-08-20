@@ -34,6 +34,7 @@
     "@hierarchidb/location-api": "workspace:*",
     "@hierarchidb/location-store": "workspace:*",
     "@hierarchidb/memory": "workspace:*",
+    "@hierarchidb/origin-coordinator": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/plugin-presentation": "workspace:*",
     "@hierarchidb/plugin-registry": "workspace:*",

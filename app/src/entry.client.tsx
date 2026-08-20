@@ -1,6 +1,16 @@
 import { RouterProvider } from '@tanstack/react-router';
 import { startTransition, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import {
+  getOriginCoordinatorSourceSha,
+  ORIGIN_COORDINATOR_ACTIVE_WORKER_TIMEOUT_MS,
+  ORIGIN_COORDINATOR_DATABASE_NAME,
+  ORIGIN_COORDINATOR_MESSAGE_TIMEOUT_MS,
+  ORIGIN_COORDINATOR_SCRIPT_NAME,
+} from '@hierarchidb/origin-coordinator';
+import { initializeOriginCoordinator } from './origin-coordinator/initializeOriginCoordinator.js';
+import { runOriginCoordinatorGatedBootstrap } from './origin-coordinator/runOriginCoordinatorGatedBootstrap.js';
+import type { OriginCoordinatorClientHandle } from './origin-coordinator/types.js';
 import { clearAppIndexedDBsViaPlugins } from './plugin-runtime/clearIndexedDbUtils.ts';
 import AppRoot from './root.js';
 import { createHierarchiRouter, getBasePath, getRouterMode } from './router/index.js';
@@ -14,6 +24,7 @@ type HydrateLoader = {
 
 type HydrateLoaderWindow = Window & {
   __HDB_HYDRATE_LOADER__?: HydrateLoader;
+  __HDB_ORIGIN_COORDINATOR_REF__?: OriginCoordinatorClientHandle;
 };
 
 const HYDRATE_FALLBACK_ID = 'hdb-hydrate-fallback';
@@ -65,7 +76,12 @@ const clearIndexedDbViaBrowserApi = async (): Promise<string[]> => {
   const databases = await indexedDB.databases();
   const names = databases
     .map((db) => db.name)
-    .filter((name): name is string => typeof name === 'string' && name.length > 0);
+    .filter(
+      (name): name is string =>
+        typeof name === 'string' &&
+        name.length > 0 &&
+        name !== ORIGIN_COORDINATOR_DATABASE_NAME,
+    );
   for (const name of names) {
     await deleteNamedDatabase(name);
   }
@@ -184,16 +200,36 @@ const renderIndexedDbResetControls = (initialMessage: string): void => {
  */
 async function initializeApp() {
   setHydrateProgress(0, 'Preparing client bootstrap...');
-  initializeBrowserGlobals();
-  setHydrateProgress(11, 'Browser globals initialized');
-  await preloadPluginWorkerStores();
-  setHydrateProgress(22, 'Preloading worker stores');
-  const mode = getRouterMode();
-  const basename = getBasePath();
-
-  const router = await createHierarchiRouter({
-    mode,
-    basename,
+  const appBase = import.meta.env.BASE_URL;
+  const coordinatorScriptPath = import.meta.env.DEV
+    ? `${appBase}src/origin-coordinator/originCoordinator.worker.ts`
+    : `${appBase}${ORIGIN_COORDINATOR_SCRIPT_NAME}`;
+  const router = await runOriginCoordinatorGatedBootstrap({
+    initializeCoordinator: () =>
+      initializeOriginCoordinator({
+        releaseId: getOriginCoordinatorSourceSha(),
+        registrationUrl: new URL(coordinatorScriptPath, window.location.origin).href,
+        scope: new URL(appBase, window.location.origin).href,
+        activeWorkerTimeoutMs: ORIGIN_COORDINATOR_ACTIVE_WORKER_TIMEOUT_MS,
+        messageTimeoutMs: ORIGIN_COORDINATOR_MESSAGE_TIMEOUT_MS,
+      }),
+    acceptCoordinator: (coordinator) => {
+      (window as HydrateLoaderWindow).__HDB_ORIGIN_COORDINATOR_REF__ = coordinator;
+      setHydrateProgress(6, 'Origin coordinator ready');
+    },
+    initializeBrowserGlobals: () => {
+      initializeBrowserGlobals();
+      setHydrateProgress(11, 'Browser globals initialized');
+    },
+    preloadWorkerStores: async () => {
+      await preloadPluginWorkerStores();
+      setHydrateProgress(22, 'Preloading worker stores');
+    },
+    initializeRuntime: async () => {
+      const mode = getRouterMode();
+      const basename = getBasePath();
+      return await createHierarchiRouter({ mode, basename });
+    },
   });
   setHydrateProgress(33, 'Client bootstrap complete');
 

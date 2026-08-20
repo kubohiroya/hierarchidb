@@ -1,4 +1,9 @@
 import { expose } from 'comlink';
+import {
+  getOriginCoordinatorSourceSha,
+  installOriginCoordinatorCensusResponder,
+  type OriginCoordinatorMessageTarget,
+} from '@hierarchidb/origin-coordinator';
 import { setCorsProxyBaseURL } from '@hierarchidb/download';
 import { fetchCountryAvailability } from '~/services/datasources/fetchCountryAvailability';
 import type { CountryAvailabilityWorkerAPI, SerializedCountryAvailability, UiStorageBridge } from './countryAvailabilityTypes.js';
@@ -6,6 +11,11 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import { AuthService } from '@hierarchidb/auth';
 import type { DataSourceName } from '~/common/types/index';
+
+installOriginCoordinatorCensusResponder(
+  globalThis as unknown as OriginCoordinatorMessageTarget,
+  getOriginCoordinatorSourceSha(),
+);
 
 const corsProxyBaseURL = typeof import.meta.env?.VITE_CORS_PROXY_BASE_URL === 'string'
   ? import.meta.env.VITE_CORS_PROXY_BASE_URL

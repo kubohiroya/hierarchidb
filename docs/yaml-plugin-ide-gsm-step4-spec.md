@@ -326,6 +326,20 @@ runtime activationは次の順序で実行する。
 - #1294のpure protocolはparticipant discovery、transport、production message handler、legacy YAML entrypoint revoke、owned storage handle closeを実装しない。production quiescence bridgeはこれらを所有する別artifact / releaseとし、activation releaseより前に全対象runtimeへ配備する。bridgeはprotocol stateを捏造せず、対象participant snapshotとtyped ackをprotocolへ渡すだけとし、`versionchanging`前のactual fence成立を主張しない。
 - bridge releaseより古くtyped ackへ応答できないtab / workerをparticipant snapshotから除外しない。activation開始前にreload / terminateによって終了した証拠が得られないpre-bridge context、unaccounted participant、ack timeoutはquiescence failureとしてactivationを停止し、skipまたは暗黙の成功へ変換しない。
 
+#### Origin-wide coordinator foundation
+
+production quiescence bridgeより前に、release-scoped SharedWorkerの外側へ固定URL / 固定scopeのService Worker coordinatorを配備する。現行SharedWorkerはVite生成URLと`appVersion` queryによりrelease間で別instanceになり得るため、そのport集合をorigin-wide participant directoryとして扱わない。詳細設計は[origin-wide coordinator design](./yaml-origin-coordinator-design.md)を正規参照とする。
+
+- coordination domainは同じbrowser profile / storage partition / exact Service Worker registration scopeとする。別profile、private partition、device、origin、scopeは別CoreDB / coordinator domainであり、server leaseで統合しない。
+- production coordinator scriptはapplication base直下の固定名`hdb-origin-coordinator.js`とし、registration scopeを同じbase pathへ固定する。`fetch` listener、asset cache、offline fallback、request interception、client auto-navigationを追加しない。
+- coordinatorは`clients.claim()`後、`clients.matchAll({ includeUncontrolled: true, type: 'all' })`で同一origin clientを列挙し、registration scope外をexact URL checkで除外する。window、dedicated worker、SharedWorkerを対象とし、browser-issued `Client.id`をparticipant identityに使用する。IDをrandom生成、永続化、推測、default補完しない。
+- foundation HELLO / readiness messageはliteral protocol version、coordinator buildへ埋め込んだexact 40-character source SHAと一致するrelease ID、explicit capability、readiness request ID / timeoutをstrict own-property validationする。別buildのvalid SHA、accessor、symbol / extra property、unknown literal、missing field、invalid timeoutを拒否し、retryまたは既存runtime continuationへ変換しない。
+- Service Worker module memoryはauthorityにしない。専用`hierarchidb-origin-coordinator` IndexedDBのversion 1 / `coordinator-state` storeへfirst upgrade時だけexact `{ key: 'yaml-storage', protocolVersion: 1, phase: 'allowed' }`を作成する。existing storeのrecord欠落、shape破損、unknown phase、version不一致、IDB failureを`allowed`へ補完しない。foundationはstate mutation APIを公開しない。
+- app windowはcoordinator registration、active worker、durable gate HELLO acceptanceの後だけbrowser globals、YamlDB preload、router、SharedWorker bootstrapへ進む。window、SharedWorker、dedicated runtime worker、stage worker、GEOS worker、country availability worker、tabular filter workerは共有`@hierarchidb/origin-coordinator` contractを使用し、各runtime bootstrap / message handlerより前にfoundation readiness responderをinstallする。coordinator unavailable、unsupported、timeout、invalid stateではvisible boot failureとし、legacy bootstrap、BroadcastChannel、Web Locksへfallbackしない。
+- readiness censusはscope内clientごとのstrict responseを要求し、incompatible / unresponsive clientをskipしない。browserが`Client`消滅を確認した場合だけdiscardedとして別集計し、silenceをterminationまたはackに変換しない。外部resultにはclient type別countとstable codeだけを含め、Client ID、URL、raw message、credential、endpoint、storage contentを含めない。
+- foundation releaseは#1294 reducer、quiescence request / ack、entrypoint revoke、storage close、CoreDB / YamlDB access、#1280、target `open()`、versionchangeへ接続しない。後続production responder Issueがdurable gateのmonotonic revokeとtyped ackを追加する。
+- origin-wide coordinator readiness、後続quiescence成功のどちらもactual fenceではない。`actualFenceEstablished`は後続single activationのCoreDB `versionchanging`だけで成立する。
+
 ### CoreDB activation readiness inventory
 
 - [#1317](https://github.com/kubohiroya/hierarchidb/issues/1317)は、既にopen済みのproduction CoreDBを持つ`WorkerService`へon-demand read-only inventory endpointを追加する。endpointは`CoreDB.getSingleton()`または`initialize()`を呼ばず、`nodes`のraw snapshotをDexieの`r` transactionで1回だけ取得する。app worker bootstrapは明示的なAPI callを転送するだけとし、worker startup、ready判定、activation stateへ自動接続しない。
@@ -486,7 +500,8 @@ graph TD
   ActivationContract --> ActivationState["#1280 dormant activation state / access decision"]
   Planner --> ActivationState
   ActivationState --> WriterFence["#1294 dormant legacy runtime fence protocol"]
-  WriterFence --> QuiescenceBridge["production quiescence bridge"]
+  WriterFence --> OriginCoordinator["origin-wide coordinator foundation"]
+  OriginCoordinator --> QuiescenceBridge["production quiescence bridge"]
   QuiescenceBridge --> BridgeRelease["bridge stable release accepted"]
   PlannerUpdate --> CoreInventoryEndpoint["#1317 CoreDB inventory endpoint"]
   CoreInventoryEndpoint --> CoreInventory["actual production CoreDB inventory"]

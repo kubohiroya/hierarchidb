@@ -6,6 +6,7 @@ import dts from 'vite-plugin-dts';
 import * as fs from 'node:fs';
 import * as path from 'path';
 import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { faviconPlugin } from './vite-plugins/vite-plugin-favicon.js';
 import { comlink } from 'vite-plugin-comlink';
 import { createNodeTypeAliasPlugin } from './vite-plugins/vite-plugin-hierarchidb-plugin-alias/src/index.js';
@@ -885,6 +886,21 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
   const buildExternalIds = new Set<string>(['@maplibre/vt-pbf']);
 
   const repoRoot = path.resolve(__dirname, '..');
+  const configuredSourceSha = env.HDB_SOURCE_SHA || process.env.HDB_SOURCE_SHA || '';
+  let sourceSha = configuredSourceSha;
+  if (sourceSha.length === 0) {
+    try {
+      sourceSha = execFileSync('git', ['rev-parse', 'HEAD'], {
+        cwd: repoRoot,
+        encoding: 'utf8',
+      }).trim();
+    } catch {
+      throw new Error('[origin-coordinator] exact source SHA is unavailable');
+    }
+  }
+  if (!/^[0-9a-f]{40}$/u.test(sourceSha)) {
+    throw new Error('[origin-coordinator] HDB_SOURCE_SHA must be an exact lowercase commit SHA');
+  }
   const baseDevAliasConfig = loadDevAliasConfig(repoRoot);
   const effectiveDevAliasConfig = parseDevAliasOverride(
     env.VITE_DEV_ALIAS_OVERRIDE || process.env.VITE_DEV_ALIAS_OVERRIDE,
@@ -1258,6 +1274,7 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
       return {
         __APP_VERSION__: JSON.stringify(appVersion),
         __BUILD_TIME__: JSON.stringify(buildTime),
+        __SOURCE_SHA__: JSON.stringify(sourceSha),
         // Expose selected non-VITE_ envs for client/runtime-worker packages that check them
         'import.meta.env.HDB_LOCAL_PROXY': JSON.stringify(env.HDB_LOCAL_PROXY || process.env.HDB_LOCAL_PROXY || ''),
       } as Record<string, string>;
@@ -1348,6 +1365,9 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
       strictPort: true,
       open: true,
       host: true,
+      headers: {
+        'Service-Worker-Allowed': '/',
+      },
       fs: {
         // Allow serving files from the monorepo root
         allow: [path.resolve(__dirname, '..')],
@@ -1408,10 +1428,19 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
       // MapLibre GL + deck.gl バンドル（~953 kB）に合わせて閾値を調整。
       chunkSizeWarningLimit: 954,
       rollupOptions: {
-        input: path.resolve(__dirname, 'index.html'),
+        input: {
+          index: path.resolve(__dirname, 'index.html'),
+          'hdb-origin-coordinator': path.resolve(
+            __dirname,
+            'src/origin-coordinator/originCoordinator.worker.ts',
+          ),
+        },
         external: (id) => buildExternalIds.has(id),
         output: {
-          entryFileNames: 'assets/[name].js',
+          entryFileNames: (chunkInfo) =>
+            chunkInfo.name === 'hdb-origin-coordinator'
+              ? 'hdb-origin-coordinator.js'
+              : 'assets/[name].js',
           chunkFileNames: 'assets/[name]-[hash].js',
           assetFileNames: 'assets/[name][extname]',
           ...(isSsrBuild

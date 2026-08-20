@@ -1,5 +1,10 @@
 import { expose, type Endpoint } from 'comlink';
 import {
+  getOriginCoordinatorSourceSha,
+  installOriginCoordinatorCensusResponder,
+  type OriginCoordinatorMessageTarget,
+} from '@hierarchidb/origin-coordinator';
+import {
   geosArea,
   geosBbox,
   geosClip,
@@ -10,6 +15,17 @@ import {
   initGeos,
 } from '@hierarchidb/gis-sdk';
 import type { GeosWorkerApi } from './geosWorkerTypes.ts';
+
+const shouldAutoExpose = typeof self !== 'undefined'
+  && typeof (self as { postMessage?: unknown }).postMessage === 'function'
+  && typeof (self as { document?: unknown }).document === 'undefined';
+
+if (shouldAutoExpose) {
+  installOriginCoordinatorCensusResponder(
+    globalThis as unknown as OriginCoordinatorMessageTarget,
+    getOriginCoordinatorSourceSha(),
+  );
+}
 
 const initPromise = initGeos();
 
@@ -65,10 +81,6 @@ export const createGeosWorkerApi = (): GeosWorkerApi => ({
 export const exposeGeosWorker = (endpoint?: Endpoint): void => {
   expose(createGeosWorkerApi(), endpoint);
 };
-
-const shouldAutoExpose = typeof self !== 'undefined'
-  && typeof (self as { postMessage?: unknown }).postMessage === 'function'
-  && typeof (self as { document?: unknown }).document === 'undefined';
 
 if (shouldAutoExpose) {
   exposeGeosWorker();
