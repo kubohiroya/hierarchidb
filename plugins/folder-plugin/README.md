@@ -190,13 +190,19 @@ import {
 
 It accepts only the 12 exact canonical root filenames from `@hierarchidb/yaml-api`, constructs each filename's registry-owned `subtype` and `schemaId`, and delegates content validation to `validateYamlCanonicalPayload`. Its raw inspection rejects duplicate central records before any filename-keyed conversion, invalid UTF-8, unsafe paths, mismatched headers or CRC, unreferenced leading/inter-entry/tail bytes, overlap, comments, extras, ZIP64, encryption, non-STORE compression, and non-canonical Base64. Encoding uses UTF-8 filename-byte order, STORE, and fixed metadata for deterministic bytes.
 
-This entry point has no storage, runtime, network, filesystem, timer, or random dependency. It is not re-exported from the package root and remains disconnected from CoreDB, YamlDB, WorkerService, the legacy helpers below, and SimulationWorkflow. A later dormant import/export plan owns node/parent preflight and an injected transaction port; production publication remains part of the single activation change. See the [canonical YAML storage contract](../../docs/yaml-plugin-ide-gsm-step4-spec.md).
+This entry point has no storage, runtime, network, filesystem, timer, or random dependency. It is not re-exported from the package root and remains disconnected from CoreDB, YamlDB, WorkerService, the legacy helpers below, and SimulationWorkflow. The dormant import/export plan below owns node/parent preflight and an injected transaction port; production publication remains part of the single activation change. See the [canonical YAML storage contract](../../docs/yaml-plugin-ide-gsm-step4-spec.md).
+
+## Dormant canonical YAML ZIP plan
+
+The dedicated `@hierarchidb/folder-plugin/canonical-yaml-zip-plan` entry exports pure planners for committed or draft canonical exports and all-or-none imports. Export pairs `metadata.name + data` or `draftMetadata.name + draftData` without cross-slot fallback. Import validates the complete archive, folder parent, sibling index, full existing-ID snapshot, caller-issued node IDs, and caller timestamp before returning immutable node and parent-patch intents.
+
+`commitCanonicalYamlZipImportPlan` accepts only a plan issued by this module and calls the injected transaction port once with the parent/sibling/existing-ID guards, every node insert, and the optional parent patch. The plan is consumed before that call, so a failed port cannot retry it. The module does not implement the transaction and never falls back to YamlDB. The entry is not exported from the package root and has no production consumer until the single activation change.
 
 ## Legacy YAML snapshot boundary
 
 The current `exportYamlNodesToSnapshot` and `importYamlNodesFromSnapshot` helpers are a legacy, non-canonical implementation. Export still reads `data.name`; import writes sequential YamlDB-only rows with an empty schema ID and does not create authoritative CoreDB `TreeNode` records. A later write failure can therefore leave partial YamlDB rows.
 
-Do not use these helpers as the canonical IDE-GSM snapshot path or a Step 4 runtime dependency. Before the single activation change, a separate issue must implement and merge the canonical ZIP import/export path as a dormant, production-unreachable entry point. That implementation must preflight all entries and prepare one CoreDB transaction for node and parent updates, while remaining disconnected from the current legacy helpers and runtime routing.
+Do not use these helpers as the canonical IDE-GSM snapshot path or a Step 4 runtime dependency. The dormant canonical plan above preflights all entries and prepares one transaction-shaped request, but remains disconnected from the current legacy helpers and runtime routing until the single activation change.
 
 The current legacy entry points remain unchanged only until the single activation change begins. At activation start, the legacy import/export routes are fenced before migration, and both the legacy and canonical routes remain unpublished while the migration or CoreDB initialization is pending. Production routing may publish the canonical ZIP path only after the migration commits and CoreDB initialization succeeds. If migration is blocked or fails, neither route is published, and the runtime must not fall back to the legacy helpers. See the [canonical YAML storage contract](../../docs/yaml-plugin-ide-gsm-step4-spec.md) and the [legacy YamlDB boundary](../../packages/yaml-store/README.md).
 
@@ -207,6 +213,7 @@ src/
 ├── index.ts                  # Root entry point (types + manifest + YAML utilities)
 ├── plugin-manifest.ts        # PluginManifest definition
 ├── canonical-yaml-zip-codec/ # Dormant strict raw ZIP codec entry
+├── canonical-yaml-zip-plan/  # Dormant node/parent preflight and transaction plan
 ├── common/
 │   ├── locales/              # i18n resources (en, ja)
 │   ├── shared/
@@ -237,6 +244,7 @@ src/
 | --- | --- |
 | `@hierarchidb/folder-plugin` | Type definitions, PluginManifest, YAML utilities |
 | `@hierarchidb/folder-plugin/canonical-yaml-zip-codec` | Dormant strict canonical YAML ZIP codec |
+| `@hierarchidb/folder-plugin/canonical-yaml-zip-plan` | Dormant canonical node/parent import-export plan |
 | `@hierarchidb/folder-plugin/ui` | UI components (FolderDialogHost, step registration) |
 | `@hierarchidb/folder-plugin/icon` | FolderPluginIcon |
 

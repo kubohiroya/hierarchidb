@@ -333,7 +333,7 @@ already-canonical slotは毎回strict validationし、write対象へ追加しな
 
 ### Canonical ZIP import / export boundary
 
-- exportはCoreDBから選んだ`yaml-file` nodeだけを読み、filenameは`metadata.name`、contentはstrict validation済み`data`または明示的に選んだ検証済みdraft slotから取得する。YamlDBを参照しない。
+- exportはCoreDBから選んだ`yaml-file` nodeだけを読む。callerがcommitted slotを明示した場合は`metadata.name + data`、draft slotを明示した場合は`draftMetadata.name + draftData`だけを同じslotのpairとして使う。filenameまたはpayloadが欠けても別slotから補完せず、YamlDBを参照しない。
 - ZIP importは全entryをdecodeしてから、registryにあるcanonical filenameだけを受け入れる。canonical filenameから対応するsubtypeとschemaIdを明示設定する処理は、このimport boundaryに限って許可する。
 - unknown filename、重複canonical filename、duplicate target、invalid UTF-8、invalid YAML、schema mismatch、parent不在、sibling name conflictを全entryについて検出する。拡張子だけによる受入や`generic` subtypeを禁止する。
 - 全entry、生成するnode ID、target parent、parent更新をpreflightした後、CoreDBのnodesと必要なparent更新を単一transactionでcommitする。1件でも失敗した場合はnodeとparentの両方をrollbackする。
@@ -352,6 +352,20 @@ already-canonical slotは毎回strict validationし、write対象へ追加しな
 - 検証順はraw EOCD / central / local bounds、raw duplicateとheader/range、CRC/content length、fatal UTF-8、filenameからregistry tuple構築、`validateYamlCanonicalPayload(filename, payload)`によるYAML/schema validationとする。各phaseはarchive全entryに対して完了してから次phaseへ進み、先行entryのYAML/schema errorで後続entryのfatal UTF-8 errorを隠さない。validation authorityをcodec内へ複製しない。
 - encodeはcanonical filenameのUTF-8 byte昇順、STORE、固定DOS timestamp、comment/extraなしで行い、同じvalidated input集合から同一bytesとBase64を生成する。raw bytes、content、payloadをnormalize、serializeし直さず、errorへarchive、Base64、YAML content、parser errorを含めない。
 - このcodecはnode ID、parent/sibling、transaction、write planを扱わない。後続のdormant import/export planが全entryをdecode/preflightしてからinjected CoreDB write portへ単一transactionを要求し、single activationまではproductionへ接続しない。
+
+#### Dormant canonical ZIP import / export plan
+
+`@hierarchidb/folder-plugin/canonical-yaml-zip-plan`は、raw codecとstorage connectorの間に置くpure/dormantなplan専用subpathとする。folder package root、legacy ZIP helper、UI、worker、CoreDB、YamlDB、SimulationWorkflow、production routingから再exportまたはimportせず、single activationまで到達不能に保つ。
+
+- export inputは明示的な`committed | draft` slotと全candidate node snapshotを受ける。candidateはown data propertyだけからnode ID、`nodeType === 'yaml-file'`、non-negative safe integer version、対応metadata、対応payloadを検証し、accessor、symbol/extra property、array、non-plain object、Proxy reflection failureをfail-closedにする。
+- committed exportは`metadata.name + data`、draft exportは`draftMetadata.name + draftData`だけを`validateYamlCanonicalPayload`へ渡す。cross-slot fallback、filename推測、payload castを行わず、全candidate成功後だけ#1286 codecで1つのarchiveを生成する。
+- import inputは1件以上のentryを持つarchive、target parent raw snapshot、全sibling raw snapshot、parent/siblingを含む全existing node ID snapshot、codec occurrence indexと1対1に対応するcaller生成node ID、caller timestampを明示する。node ID、timestamp、slot、parentをrandom、`Date`、default値から生成または補完しない。
+- importは#1286 codecによる全archive validation成功後、parentがfolder型であること、parent version/depth、全node ID、全existing ID snapshotがparent/siblingを被覆すること、`parentId + metadata.name` sibling index、canonical filenameの衝突をpreflightする。1件でも失敗した場合はnode、parent patch、partial planを返さない。
+- imported nodeは`nodeType: 'yaml-file'`、codec entryのcanonical filenameを持つmetadata、検証済みcanonical data、`draftMetadata: null`、draftDataなし、`depth: parent.depth + 1`、caller timestampと同じcreatedAt/updatedAt、`version: 1`、`visible: true`とする。metadataのdescriptionは空文字、tagsは空配列をcreation contractとして固定し、legacy payload `name`を追加しない。
+- parentの`hasChildren !== true`の場合だけ、`hasChildren: true`、caller timestampのupdatedAt、`version + 1`を持つparent patch intentを作る。既にtrueの場合はparentをwrite対象にしない。version incrementがsafe integerでなければ全体を失敗させる。
+- success planは全source、parent、siblingのsource index / node ID / expected version guard、全existing node ID guard、決定的なwrite順を持つ。callerは元snapshotをplanと同じlifetimeで非公開保持し、後続transactionで集合とown valueを完全再比較する。raw object、YAML本文、archive bytesをguard/error/logへ複製しない。
+- `commitCanonicalYamlZipImportPlan`は本subpathが発行したimmutable planとcaller注入のtransaction portだけを受ける。valid planではparent/sibling/existing-ID guard、全node insert、必要なparent patchを1つのrequestとしてportへ正確に1回渡し、invalid/fabricated/consumed planまたはpreflight errorでは0回とする。port failure後に同じplanを再利用せず、retry、partial commit、別port、legacy/YamlDB fallbackを使わない。
+- plan/commit artifactはCoreDB、Dexie、IndexedDB、YamlDB、filesystem、network、timer、random、environmentへ依存しない。storage transactionの実装とsnapshot再読はsingle activation connectorだけが所有する。
 
 ### Inverse rollback
 
@@ -402,13 +416,15 @@ graph TD
   ActivationContract --> Planner
   Planner --> Validation
   Validation --> DormantWriter["dormant canonical writer"]
-  Validation --> DormantSnapshotIO["dormant canonical folder ZIP"]
+  Validation --> RawSnapshotCodec["#1286 canonical ZIP raw codec"]
+  RawSnapshotCodec --> DormantSnapshotIO["#1293 canonical ZIP plan"]
+  Validation --> DormantSnapshotIO
   DormantSnapshotIO --> DormantSimulation["dormant canonical SimulationWorkflow consumer"]
   Validation --> InverseArtifacts["dormant inverse migration artifacts / tests"]
   Planner --> InverseArtifacts["dormant inverse migration artifacts / tests"]
   ActivationContract --> ActivationState["#1280 dormant activation state / access decision"]
   Planner --> ActivationState
-  ActivationState --> WriterFence["dormant production legacy reader / writer fence mechanism"]
+  ActivationState --> WriterFence["#1294 dormant production legacy reader / writer fence mechanism"]
   ActivationState --> Activation["single activation PR"]
   DormantWriter --> Activation["single activation PR"]
   DormantSnapshotIO --> Activation
@@ -416,7 +432,7 @@ graph TD
   InverseArtifacts --> Activation
   WriterFence --> Activation
   Planner --> Activation
-  Registry --> DormantSnapshotIO
+  Registry --> RawSnapshotCodec
   Registry --> Step4["Step 4 UI"]
   Client["#1265 typed IDE-GSM client"] --> Executor["app executor / credential provider / feature flag"]
   Activation --> Executor
