@@ -17,6 +17,12 @@ HierarchiDB の Worker 側データベース・処理基盤パッケージ。`Wo
 
 quiescing から initialization 完了までは legacy / canonical reader・writer の双方を非公開とし、upgrade commit 後の initialization 成功時だけ canonical access を公開する。target open が blocked の場合は同じ open request の再開だけを許可し、異なる request は terminal rejection とする。独立した YamlDB domain は全 phase で deny する。この dormant artifact は正規仕様に定める single activation release まで production entry point から到達不能のまま維持する。
 
+## dormant YAML legacy runtime fence protocol
+
+`@hierarchidb/runtime-worker/yaml-storage-legacy-fence` は、固定した legacy tab / worker の participant snapshotから明示的なquiescence ackを集める独立pure subpathである。全expected participantがcaller指定のactivation IDとquiescence request IDに完全一致し、legacy YAML entry pointの無効化と自身が所有するstorage handleのcloseを明示した場合だけ`readyForPreflight`を返す。
+
+quiescence request IDはtarget IndexedDBの`openRequestId`ではない。quiescence成功時も`actualFenceEstablished: false`を返し、実際のstorage fenceが成立するのは後続single activation releaseの`versionchanging` phaseだけである。このprotocolはproduction import、I/O、timeout、retry、participant自動探索、database access、既存maintenance flowへの接続を持たない。
+
 ## 依存関係
 
 多数の `@hierarchidb/*` パッケージに依存（shape-store, location-store, route-store, styler-store, tree-api, build-api, chunk-store, tabular-store 等）。

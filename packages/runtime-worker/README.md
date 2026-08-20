@@ -17,6 +17,12 @@ Worker-side database and processing foundation for HierarchiDB. The `WorkerServi
 
 The model keeps legacy and canonical readers and writers unavailable from quiescing through initialization. Only a committed upgrade followed by successful initialization can publish canonical access. A blocked target open can advance only by resuming the same open request; a different request produces a terminal rejection. The separate YamlDB domain is denied in every phase. This dormant artifact must remain unreachable from production entry points until the single activation release described in the canonical specification.
 
+## Dormant YAML legacy runtime fence protocol
+
+`@hierarchidb/runtime-worker/yaml-storage-legacy-fence` is a separate pure subpath for collecting explicit quiescence acknowledgements from a fixed snapshot of legacy tabs and workers. Every expected participant must match the caller-supplied activation and quiescence request identifiers, revoke its legacy YAML entry points, and close its owned storage handles before the protocol reports `readyForPreflight`.
+
+The quiescence request identifier is not the target IndexedDB `openRequestId`. A successful quiescence decision always reports `actualFenceEstablished: false`; only the later `versionchanging` phase in the single activation release can establish the actual storage fence. The protocol has no production imports, I/O, timeout, retry, participant discovery, database access, or connection to the existing maintenance flow.
+
 ## Dependencies
 
 Depends on many `@hierarchidb/*` packages (shape-store, location-store, route-store, styler-store, tree-api, build-api, chunk-store, tabular-store, etc.).
