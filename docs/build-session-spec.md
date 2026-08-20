@@ -2,7 +2,7 @@
 
 ## 目的と対象範囲
 
-本書は、Shape のビルドセッションにおけるタスク生成・実行・再開のルールを、メタデータまたはタイムスタンプ比較に基づく厳密な仕様として定義する。対象は source / geometry / tileEmit の各ステージと、それに付随するメタデータ生成である。
+本書は、Shape のビルドセッションにおけるタスク生成・実行・一時停止・再開のルールを、メタデータまたはタイムスタンプ比較に基づく厳密な仕様として定義する。対象は source / geometry / tileEmit の各ステージと、それに付随するメタデータ生成である。必須識別子・メタデータ・時刻・ライフサイクル遷移の欠落や不正値は契約違反として即時に失敗させ、補完・推測・互換読み込みで処理を継続しない。
 
 ## 用語定義
 
@@ -30,6 +30,15 @@
 
 `isActive` は `starting / running / pausing / resuming / finalizing` のいずれかのとき `true` となる。
 
+### Pause 完了条件（規範）
+
+1. pause 要求を受けたセッションは、まず `pausing` へ遷移して session の AbortController を abort する。
+2. abort 後は、その session の実 pipeline Promise が settle し、実行中の worker/job が存在しないことを確認するまで `pausing` を維持する。
+3. `running` task の `queued` への戻しと `paused` の永続化は、実 pipeline の停止確認後にのみ行う。停止確認前に task status を書き換えて drain 済みと見せてはならない。
+4. 規定時間内に停止を確認できない場合は `failed` を永続化し、pause command を型付き timeout error で reject する。UI command handler はその reject を UI 内部の `criticalError` に変換する。timeout を `paused` や再開可能状態へ読み替えない。
+5. `paused` の `canResume` は、停止確認後の再キューが完了した場合にのみ `true` とする。
+6. AbortController 等の非シリアライズ可能な runtime handle は、nodeId に対応する SSOT 状態木エントリに保持する。React state / ref / module-scope collection に同じ session 状態を複製しない。
+
 ## タスクステータス定義
 
 | ステータス | 意味 | 経過時間計算への影響 |
@@ -45,10 +54,11 @@
 
 ## データモデル要件（規範）
 
-1. 入力データは `meta` または `updatedAt` のいずれかを持つ。
-2. 国×ADM など選択スナップショットが入力となる場合、`meta` は必須で `updatedAt` は不要とする。
-3. 生成物は `meta` または `updatedAt` を持ち、元データを辿れる参照キーを保持する。
+1. 入力データは空でない安定キーと、空でない `meta` または finite かつ非負の `updatedAt` のいずれかを持つ。
+2. 国×ADM など選択スナップショットが入力となる場合、空でない `meta` は必須で `updatedAt` は不要とする。
+3. 生成物は空でない安定キー、元データを辿れる空でない参照キー、および空でない `meta` または finite かつ非負の `updatedAt` を持つ。
 4. 生成物は以下の向き付きグラフ構造で参照できる。
+5. 必須キー、参照キー、および比較に採用する `meta` または `updatedAt` が欠落・空・不正な record は stale 扱いにせず、永続化/query 境界で契約違反として失敗させる。
 
 ```mermaid
 graph LR
@@ -80,13 +90,14 @@ graph LR
 ### ルール
 
 1. 比較関数 `needsUpdate(s, a)` の定義
+   - 対応する `a` が存在しない場合は更新対象とする。
    - `s.meta` または `a.meta` のいずれかが存在する場合はメタデータ比較を採用する。
-     - `s.meta` が未定義、または `a.meta` が未定義のときは更新対象とする。
+     - 両方が空でない文字列でなければ契約違反として失敗する。
      - `s.meta !== a.meta` のとき更新対象とする。
-   - 両方の `meta` が未定義のときは `updatedAt` 比較を採用する。
-     - `s.updatedAt` が未定義なら更新対象としない。
-     - `a.updatedAt` が未定義なら更新対象とする。
-     - それ以外は `a.updatedAt < s.updatedAt` のとき更新対象とする。
+   - 両方の `meta` が存在しない場合は `updatedAt` 比較を採用する。
+     - `s.updatedAt` と `a.updatedAt` はともに finite かつ非負でなければ契約違反として失敗する。
+     - `a.updatedAt < s.updatedAt` のとき更新対象とする。
+   - 比較値の欠落を「更新不要」「更新対象」へ読み替えたり、現在時刻で補完したりしない。
 2. 新規/更新タスクの生成
    - 任意の `s ∈ S_k` に対し、対応する `a ∈ A_k` が存在しない、または `needsUpdate(s, a)` が真の場合、タスク `t(s)` を生成する。
 3. 既存生成物の保持
@@ -94,6 +105,8 @@ graph LR
 4. ソース消失時の削除
    - `A_k` に存在するが対応する `s ∈ S_k` が存在しない生成物は削除する。
    - 当該生成物を入力とする下流ステージの生成物/タスクは連鎖削除する。
+   - 連鎖削除は lineage の下流端までを同一 cleanup operation として扱い、全対象の削除完了後にのみ成功とする。
+   - cleanup の一部失敗を黙殺して session を継続しない。失敗した task/session を可視な error に遷移させ、stale artifact を再利用不可とする。
 
 ## ステージ進行規則
 
@@ -118,6 +131,7 @@ graph LR
 
 - 新規セッションでは、ソース集合が完全であればタスク生成規則のみで正しい処理順序が確定する。
 - 再開セッションでは、メタデータ比較または `updatedAt` 比較とソース消失時の削除により、未処理・失敗・更新のいずれも再決定できるため、十分である。
+- 上記の十分性は、必須キー・比較値・lineage がすべて契約を満たす場合に限る。不完全な永続 record から状態を推測して再開しない。
 
 ## 現行実装との整合性（要点）
 
@@ -150,3 +164,8 @@ graph LR
 
 - タスク更新判定は `meta` 比較に寄せて整合しつつあるが、生成物の連鎖削除は選択差分に限定される。
 - `updatedAt` を用いた更新判定は補助的であり、ソース側の時刻更新が必要なケースは未整理である。
+- pause command は実 pipeline 停止確認前に `running` task を `queued` へ戻し、timer から `paused` を永続化できるため、本書の Pause 完了条件を満たさない（#702）。
+- Geometry は `baseTolerance` / profile 欠落時のtask内探索、固定値、clampを持ち、本書および tolerance SSOT の fail-fast 契約を満たさない。
+- invalid geometry filtering は `tileEmitConfig` を読みながら Source stage で実行されており、tileEmit ownership を満たさない（#332）。
+- cache identity は欠落した sourceKey / 数値 / stage を既定値やlegacy keyへ補完する経路が残る（#1325）。
+- artifact lineage の下流端までの cleanup と一部失敗時の session failure は未完了である（#1324）。

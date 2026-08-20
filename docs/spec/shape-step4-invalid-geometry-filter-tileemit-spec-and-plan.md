@@ -5,6 +5,7 @@
 - `geojson-vt` に GeoJSON を投入する直前のデータに対して invalid geometry filtering を適用する。
 - invalid polygon 検出時は該当 polygon を除外し、feature 単位の error count をインクリメントする。
 - タスクの実行方針は「処理継続 + warning 表示（完了とは視覚的に区別）」を採用する。
+- 設定・座標・stage payload の契約違反と、明示的に有効化された品質フィルタが検出する polygon 品質問題を区別する。前者は即時失敗、後者だけを drop + warning の対象とする。
 
 ## 2. 背景
 - データソース由来の生データは、運用上ある程度クリーンであることが期待できる。
@@ -15,12 +16,15 @@
 ### 3.1 配置（UI）
 - Step4 の `Source` セクションから `Invalid geometry filtering` 設定UIを削除する。
 - Step4 の `TileEmit` セクションに `Invalid geometry filtering` 設定UIを配置する。
-- 既存の入力項目（`area`, `lineLength`, `maxEdgeLength`, `selfIntersection`, `triangleRingRatio`）は原則維持する。
+- 入力項目は `area`, `lineLength`, `maxEdgeLength`, `selfIntersection`, `triangleRingRatio` の5項目に固定する。
+- `tileEmitConfig.invalidGeometryFilter` と上記5項目は正規 config で必須とし、すべて boolean とする。新規 config の既定値は全項目 `false` だが、受信済み config の欠落を runtime で `false` に補完しない。
 
 ### 3.2 実行タイミング（Worker）
 - 適用タイミングは `geojson-vt` index 作成直前の GeoJSON collection とする。
+- stage owner は `tileEmit` とする。Source / Geometry stage は `tileEmitConfig.invalidGeometryFilter` を参照・適用しない。
 - フィルタ対象は Polygon / MultiPolygon の polygon 単位とする。
 - 判定に失敗した polygon は出力対象から除外する。
+- この「判定失敗」は有効化された品質チェック（area / lineLength / maxEdgeLength / selfIntersection / triangleRingRatio）への不適合を指す。非 finite 座標、WGS84 範囲外、必須 geometry/payload 欠落は入力契約違反として task を失敗させ、drop + warning に変換しない。
 
 ### 3.3 タスク結果セマンティクス
 - 方針は **(2) 継続 + warning** を採用する。
@@ -35,11 +39,10 @@
 - 集計として task 単位にも `droppedPolygonCount` と `affectedFeatureCount` を保持する。
 
 ## 4. ステータスモデル（warning導入）
-- Task status に warning 表示状態を導入する。
-- 実装方式は次のいずれかとする。
-- A) `status='completed'` を維持し `resultSeverity='warning'` を追加
-- B) `status='warning'` を新設し、completed と同系列の終端状態として扱う
-- 本仕様では UI/集計の互換性を優先し、**A案を推奨**する。
+- Task status は `status='completed'` を維持し、`TaskQueueRecord.metadata.resultSeverity='warning'` を必須付加する。`stageSnapshotUpdated` は `TaskSummary.metadata` としてこの値をUIへ渡す。
+- `warning` status の新設や message prefix による推測は行わない。
+- UI は `TaskSummary.metadata.resultSeverity` を明示的に検証して表示する。message や色から severity を逆算しない。
+- `resultSeverity='warning'` は有効化された品質フィルタによる drop が1件以上ある場合に限る。設定/payload/座標契約違反は `status='failed'` とする。
 
 ## 5. メトリクスと表示
 - Task detail に以下を表示する。
@@ -61,14 +64,14 @@
 8. `invalidPolygonFilteredCount > 0` の場合は warning 表示対象にする。
 
 ## 7. 互換性・移行方針
-- 既存 `fetchConfig.invalidGeometryFilter` は段階的に廃止し、`tileEmitConfig.invalidGeometryFilter` へ移行する。
-- 互換読み込みは移行期間のみ許容し、優先順は `tileEmitConfig` を上位とする。
-- 移行完了後は `fetchConfig.invalidGeometryFilter` を削除対象とする。
+- 正規キーは `tileEmitConfig.invalidGeometryFilter` のみとする。
+- `fetchConfig.invalidGeometryFilter`、`sourceConfig.invalidGeometryFilter`、旧 alias の互換読み込みは行わない。
+- 旧 config は明示的な migration / cache invalidation の対象とし、runtime で正規 config と混在させない。
 
 ## 8. ロールバック方針
-- UI移設で問題が出た場合は、設定UIを Source へ戻し、worker 側適用点を元に戻す。
-- warning 表示で既存監視が崩れる場合は、warning 表示のみを feature flag で無効化できるようにする。
-- データ破損は発生しない設計（drop-only）を維持し、戻しやすさを優先する。
+- 問題が出た場合は該当 PR を revert する。設定UIや worker 適用点を Source へ戻さない。
+- feature flag を使用する場合は既定 OFF とし、OFF 時は filtering 自体を無効化する。旧キーの互換読み込みや契約違反の黙殺へ切り替えない。
+- 品質フィルタは drop-only を維持し、元 artifact を書き換えない。
 
 ## 9. 作業計画
 ### 9.1 実装分割
@@ -76,7 +79,7 @@
 - Phase 2: Step4 UI の TileEmit への移設（i18n含む）
 - Phase 3: TileEmit 直前 filtering 実装
 - Phase 4: warning 表示導入（Task list/detail）
-- Phase 5: 互換読み込み/移行ロジック整備
+- Phase 5: 旧 config の明示的 invalidation / migration
 - Phase 6: テスト追加（unit/integration）
 
 ### 9.2 依存順序
@@ -99,13 +102,15 @@
 - warning 表示が completed と視覚的に区別されること
 - feature error count と task 集計値が一致すること
 - polygon 全除外 feature の drop 処理が正しいこと
-- `tileEmitConfig` 優先、`fetchConfig` 後方互換が期待どおりであること
+- 旧 config key が拒否され、`tileEmitConfig.invalidGeometryFilter` だけが受理されること
+- 非 finite / WGS84 範囲外座標が task failure となり、warning/drop へ変換されないこと
 
 ## 10. DoD
 - Step4 の Invalid geometry filtering が TileEmit セクションで設定できる。
 - invalid geometry filtering が geojson-vt 直前に適用される。
 - invalid polygon は除外され、feature error count が増加する。
 - タスクは継続し、warning として completed と区別表示される。
+- 契約違反は failed として可視化され、座標 clamp や旧 config 互換読み込みがない。
 - 主要テストが追加され、対象パッケージの typecheck/test が通る。
 
 ## 11. 非採用案

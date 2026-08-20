@@ -54,13 +54,21 @@ type SessionStatusUpdatedEvent = {
 - `buildSessionConfigs.startedAt` is the persisted session start endpoint.
 - `buildSessionStatuses` owns session `status`, `completedAt`, `inactiveMs`, and `canResume`.
 - A `buildStageStatuses` row owns the canonical `stage`, `startedAt`, and `inactiveMs` for that stage. Its optional stored `stageId` is an opaque persistence identifier and is never used as the event `stageId`; the event value is derived from the row's canonical `stage`.
-- The compatibility read model derives `updatedAt` from the maximum persisted session, heartbeat, stage, and task timestamp. It never substitutes the read clock.
+- The derived session read model computes `updatedAt` from the maximum persisted session, heartbeat, stage, and task timestamp. It never substitutes the read clock.
 - Session reconstruction reads the normalized rows and tasks in a single database read transaction.
 - Worker/API callers propagate persistence/query contract violations; only a successful `null` read means that no session exists. UI polling may report the error, but must not convert it into a missing-session result.
 - A new stage row requires explicit `startedAt` and `inactiveMs`. A partial normalized session or missing stage timing is a contract violation; task-queue state and the current clock must not synthesize a replacement session.
 - The current stage is the unique stage row with the greatest `startedAt`. Equal greatest timestamps are ambiguous persisted state and fail reconstruction instead of being resolved by stage order.
 
 **UI-side effect**: Update `lifecycle.phase`, `lifecycle.isActive`, `lifecycle.startedAt`, `lifecycle.inactiveMs`, `lifecycle.completedAt`, and `lifecycleExtras.stopReason`. `stageId` drives the UI synchronization/selection signal. Per-stage timing is stored only from `stageSnapshotUpdated`, avoiding a second timing owner.
+
+**Pause completion contract**:
+
+- A pause request emits `pausing` after abort has been requested, while the pipeline is still shutting down.
+- `paused` may be emitted only after the session's pipeline Promise has settled, no worker/job remains live, and tasks interrupted by the confirmed abort have been re-queued.
+- Task rows must not be changed from `running` to `queued` before runtime shutdown is confirmed. A task-count query cannot prove shutdown after those rows have been rewritten.
+- If shutdown confirmation exceeds the configured timeout, the Worker persists `failed` and rejects the pause command with a typed shutdown-timeout error. The UI command handler converts that rejection into the UI-internal `criticalError` event. The Worker must not emit a fifth canonical event, emit `paused`, set `canResume=true`, or continue cache/artifact writes for that run.
+- A late completion from the timed-out run is stale and must not mutate task/session state or artifacts.
 
 After `sessionStatusUpdated` selects a started stage and before the first authoritative
 `stageSnapshotUpdated` for that stage arrives, the UI is in `ui-initializing`. The
@@ -330,6 +338,11 @@ The `BuildSessionWorkerEventAdapter` translates raw Worker wire events into the 
 2. Validating required numeric fields — non-finite values throw immediately (no fallback).
 3. Mapping Worker-side status strings to `SessionPhase` — unknown values throw.
 4. Splitting a multi-stage task snapshot into per-stage `stageSnapshotUpdated` events.
+
+The runtime command layer, before invoking this adapter, owns pause shutdown. Its
+AbortController and pipeline Promise belong to the nodeId entry in the build-session
+SSOT state tree. The adapter must never synthesize `paused` from elapsed time or task
+row counts.
 
 The state adapter itself does **not** store versions or perform deduplication. Before a
 `taskProgressUpdated` event reaches the adapter, the UI delivery layer applies the
