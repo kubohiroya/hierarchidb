@@ -14,6 +14,8 @@ import {
   isStopRequestedInFlightAtom,
   completionSnapshotAtom,
   completionDialogOpenAtom,
+  buildSessionRecoveryRevisionAtom,
+  completeBuildSessionRecoveryAtom,
   dispatchBuildSessionEventAtom,
 } from '../../../atoms/buildSessionStateAtoms';
 
@@ -333,6 +335,44 @@ describe('criticalError event', () => {
     expect(runtime.criticalError?.message).toBe('contract violation');
     expect(runtime.stopReason).toBe('failed');
     expect(runtime.completedAt).toBe(12345);
+  });
+
+  it('stores recovery details and resets the SSOT tree before incrementing recovery revision', () => {
+    const revision = store.get(buildSessionRecoveryRevisionAtom);
+    const recovery = {
+      code: 'LEGACY_BUILD_STAGE_INACTIVE_MS_MISSING' as const,
+      recoverable: true as const,
+      nodeId: 'node-1',
+      table: 'buildStageStatuses' as const,
+      field: 'inactiveMs' as const,
+      fieldPath: 'buildStageStatuses.inactiveMs' as const,
+      stageStatusId: 'node-1:source',
+      stage: 'source' as const,
+      received: 'undefined' as const,
+      message: 'inactiveMs is missing',
+    };
+
+    store.set(dispatchBuildSessionEventAtom, {
+      type: 'criticalError',
+      payload: {
+        nodeId: 'node-1',
+        message: recovery.message,
+        error: recovery.message,
+        errorName: 'ShapeBuildSessionContractError',
+        timestamp: 12345,
+        severity: 'critical',
+        contractViolation: true,
+        recovery,
+      },
+    });
+
+    expect(store.get(buildSessionLifecycleAtom).criticalError?.recovery).toEqual(recovery);
+
+    store.set(completeBuildSessionRecoveryAtom);
+
+    expect(store.get(buildSessionLifecycleAtom).phase).toBe('idle');
+    expect(store.get(buildSessionLifecycleAtom).criticalError).toBeUndefined();
+    expect(store.get(buildSessionRecoveryRevisionAtom)).toBe(revision + 1);
   });
 
   it('forces failed even from paused phase', () => {

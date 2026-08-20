@@ -25,6 +25,9 @@ import type {
   ShapeGeometryErrorRecord,
   ShapeVectorTileRecord,
   ShapeTileEmitMetadata,
+  ShapeBuildSessionProbeResult,
+  ShapeBuildSessionRecoveryRequest,
+  ShapeBuildSessionRecoveryResult,
 } from '@hierarchidb/shape-api';
 import type { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import {
@@ -52,6 +55,7 @@ import {
   ephemeralDB,
   type EphemeralBuildSessionRecord,
   getSessionWithDetails,
+  probeBuildSession as probeEphemeralBuildSession,
   type BuildSessionRecord as GisBuildSessionRecord,
   type BuildSessionHeartbeat,
   type BuildSessionStatus,
@@ -245,6 +249,32 @@ const getEphemeralSessionWithDetails = async (nodeId: NodeId): Promise<Ephemeral
   );
 };
 
+const probeEphemeralSession = async (
+  nodeId: NodeId,
+): Promise<ShapeBuildSessionProbeResult> => {
+  return ephemeralDB.transaction(
+    'r',
+    [
+      ephemeralDB.buildSessionConfigs,
+      ephemeralDB.buildSessionHeartbeats,
+      ephemeralDB.buildSessionStatuses,
+      ephemeralDB.buildStageStatuses,
+      ephemeralDB.buildTasks,
+    ],
+    async () =>
+      probeEphemeralBuildSession(nodeId, {
+        getConfig: async (targetNodeId) => ephemeralDB.buildSessionConfigs.get(targetNodeId),
+        getHeartbeat: async (targetNodeId) =>
+          ephemeralDB.buildSessionHeartbeats.get(targetNodeId),
+        getStatus: async (targetNodeId) => ephemeralDB.buildSessionStatuses.get(targetNodeId),
+        getStageStatuses: async (targetNodeId) =>
+          ephemeralDB.buildStageStatuses.where('nodeId').equals(targetNodeId).toArray(),
+        getTasks: async (targetNodeId) =>
+          ephemeralDB.buildTasks.where('nodeId').equals(targetNodeId).toArray(),
+      }),
+  );
+};
+
 const readBuildSessionsByNode = async (nodeId: NodeId): Promise<BuildSessionRecord[]> => {
   const session = await getEphemeralSessionWithDetails(nodeId);
   if (!session) return [];
@@ -411,6 +441,10 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
       completedAt: session.completedAt,
       progress: toProgressSummary(session.progress),
     };
+  }
+
+  async probeBuildSession(nodeId: NodeId): Promise<ShapeBuildSessionProbeResult> {
+    return probeEphemeralSession(nodeId);
   }
 
   async listBuildSessionRecords(nodeId: NodeId): Promise<ShapeBuildSessionRecord[]> {
@@ -868,6 +902,12 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
         ephemeralDB.buildStageStatuses.where('nodeId').equals(nodeId).delete(),
       ]);
     });
+  }
+
+  async recoverLegacyBuildSession(
+    request: ShapeBuildSessionRecoveryRequest,
+  ): Promise<ShapeBuildSessionRecoveryResult> {
+    return ephemeralDB.recoverLegacyBuildSession(request);
   }
 
   async deleteBuildTasks(nodeId: NodeId): Promise<void> {

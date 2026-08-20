@@ -19,6 +19,8 @@ const mocks = vi.hoisted(() => ({
   deleteTasksByNode: vi.fn(),
   initializeBridge: vi.fn(),
   getBuildSessionStatus: vi.fn(),
+  getShapeMutationAPI: vi.fn(),
+  recoverLegacyBuildSession: vi.fn(),
   listBuildTasksByStage: vi.fn(),
   deleteBuildTasksByIds: vi.fn(),
   clearStage: vi.fn(),
@@ -39,6 +41,8 @@ vi.mock('@hierarchidb/ui-worker-client', () => {
     initialize: (...args: Parameters<typeof mocks.initializeBridge>) => mocks.initializeBridge(...args),
     getBuildSessionStatus: (...args: Parameters<typeof mocks.getBuildSessionStatus>) =>
       mocks.getBuildSessionStatus(...args),
+    getShapeMutationAPI: (...args: Parameters<typeof mocks.getShapeMutationAPI>) =>
+      mocks.getShapeMutationAPI(...args),
   });
   return {
     getBuildWorkerBridge: () => getBridge(),
@@ -130,6 +134,19 @@ describe('useShapeBuildCacheActions', () => {
     mocks.markSourceCachesRawCacheInvalidated.mockResolvedValue(undefined);
     mocks.initializeBridge.mockResolvedValue(undefined);
     mocks.getBuildSessionStatus.mockResolvedValue({ status: 'idle' });
+    mocks.recoverLegacyBuildSession.mockResolvedValue({
+      nodeId: 'node-1',
+      deletedRowCounts: {
+        buildSessionConfigs: 1,
+        buildSessionHeartbeats: 1,
+        buildSessionStatuses: 1,
+        buildStageStatuses: 1,
+        buildTasks: 1,
+      },
+    });
+    mocks.getShapeMutationAPI.mockResolvedValue({
+      recoverLegacyBuildSession: mocks.recoverLegacyBuildSession,
+    });
   });
 
   it('reloads cache counts after deleting source API cache', async () => {
@@ -247,5 +264,74 @@ describe('useShapeBuildCacheActions', () => {
     expect(mocks.deleteTasksByNode.mock.calls[0]?.[1]).toBe('node-1');
     expect(mocks.clearShapeArtifacts).toHaveBeenCalledWith('node-1');
     expect(mocks.deleteBuildSession).toHaveBeenCalledWith('node-1');
+  });
+
+  it('uses the Worker recovery command without deleting caches or output metadata', async () => {
+    const recovery = {
+      code: 'LEGACY_BUILD_STAGE_INACTIVE_MS_MISSING' as const,
+      recoverable: true as const,
+      nodeId: 'node-1',
+      table: 'buildStageStatuses' as const,
+      field: 'inactiveMs' as const,
+      fieldPath: 'buildStageStatuses.inactiveMs' as const,
+      stageStatusId: 'node-1:source',
+      stage: 'source' as const,
+      received: 'undefined' as const,
+      message: 'inactiveMs is missing',
+    };
+    const { result } = renderHook(() => useShapeBuildCacheActions({ nodeId: 'node-1' }), {
+      wrapper,
+    });
+
+    await waitFor(() => {
+      expect(mocks.countSourceCaches).toHaveBeenCalledWith('node-1');
+    });
+
+    await act(async () => {
+      await result.current.handleRecoverLegacyBuildSession(recovery);
+    });
+
+    expect(mocks.recoverLegacyBuildSession).toHaveBeenCalledWith({
+      nodeId: 'node-1',
+      confirmation: 'RESET_LEGACY_BUILD_SESSION_AND_TASKS',
+      error: recovery,
+    });
+    expect(mocks.deleteTasksByNode).not.toHaveBeenCalled();
+    expect(mocks.clearShapeArtifacts).not.toHaveBeenCalled();
+    expect(mocks.deleteFeatureMetadataByNode).not.toHaveBeenCalled();
+    expect(mocks.deleteDataSourceMetadataByNode).not.toHaveBeenCalled();
+    expect(mocks.deleteBuildSession).not.toHaveBeenCalled();
+    expect(mocks.notifySuccess).toHaveBeenCalledWith('Recovered legacy build session');
+  });
+
+  it('propagates Worker recovery failure without running destructive cleanup', async () => {
+    const recovery = {
+      code: 'LEGACY_BUILD_STAGE_INACTIVE_MS_MISSING' as const,
+      recoverable: true as const,
+      nodeId: 'node-1',
+      table: 'buildStageStatuses' as const,
+      field: 'inactiveMs' as const,
+      fieldPath: 'buildStageStatuses.inactiveMs' as const,
+      stageStatusId: 'node-1:source',
+      stage: 'source' as const,
+      received: 'undefined' as const,
+      message: 'inactiveMs is missing',
+    };
+    mocks.recoverLegacyBuildSession.mockRejectedValue(new Error('recovery descriptor changed'));
+    const { result } = renderHook(() => useShapeBuildCacheActions({ nodeId: 'node-1' }), {
+      wrapper,
+    });
+
+    await waitFor(() => {
+      expect(mocks.countSourceCaches).toHaveBeenCalledWith('node-1');
+    });
+
+    await expect(result.current.handleRecoverLegacyBuildSession(recovery)).rejects.toThrow(
+      'recovery descriptor changed'
+    );
+    expect(mocks.deleteTasksByNode).not.toHaveBeenCalled();
+    expect(mocks.clearShapeArtifacts).not.toHaveBeenCalled();
+    expect(mocks.deleteBuildSession).not.toHaveBeenCalled();
+    expect(mocks.notifySuccess).not.toHaveBeenCalledWith('Recovered legacy build session');
   });
 });

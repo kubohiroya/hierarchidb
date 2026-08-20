@@ -90,6 +90,8 @@ export {
   computeProgressFromTasks,
   computeStagesFromTasks,
   getSessionWithDetails,
+  probeBuildSession,
+  type BuildSessionDetailsQuery,
   type ProgressInfo,
 } from './ephemeral/sessionHelpers';
 export * from './configTypes';

@@ -18,6 +18,7 @@ import type {
   ShapeGeometryErrorRecord,
   ShapeVectorTileRecord,
   ShapeTileEmitMetadata,
+  ShapeBuildSessionProbeResult,
 } from '@hierarchidb/shape-api';
 import type {
   BuildSessionRecord,
@@ -32,6 +33,7 @@ import {
   type EphemeralBuildSessionRecord,
   type EphemeralBuildTaskRecord,
   getSessionWithDetails,
+  probeBuildSession as probeEphemeralBuildSession,
 } from '@hierarchidb/gis-sdk';
 import { SingletonMixin } from '@hierarchidb/util';
 import {
@@ -291,6 +293,29 @@ async function getEphemeralSessionWithDetails(nodeId: NodeId): Promise<Ephemeral
   );
 }
 
+async function probeEphemeralSession(nodeId: NodeId): Promise<ShapeBuildSessionProbeResult> {
+  return ephemeralDB.transaction(
+    'r',
+    [
+      ephemeralDB.buildSessionConfigs,
+      ephemeralDB.buildSessionHeartbeats,
+      ephemeralDB.buildSessionStatuses,
+      ephemeralDB.buildStageStatuses,
+      ephemeralDB.buildTasks,
+    ],
+    async () =>
+      probeEphemeralBuildSession(nodeId, {
+        getConfig: async (targetNodeId) => ephemeralDB.buildSessionConfigs.get(targetNodeId),
+        getHeartbeat: async (targetNodeId) => ephemeralDB.buildSessionHeartbeats.get(targetNodeId),
+        getStatus: async (targetNodeId) => ephemeralDB.buildSessionStatuses.get(targetNodeId),
+        getStageStatuses: async (targetNodeId) =>
+          ephemeralDB.buildStageStatuses.where('nodeId').equals(targetNodeId).toArray(),
+        getTasks: async (targetNodeId) =>
+          ephemeralDB.buildTasks.where('nodeId').equals(targetNodeId).toArray(),
+      })
+  );
+}
+
 /**
  * Query session data from ShapeDB using the unified query interface
  */
@@ -347,6 +372,11 @@ export class ShapeQueryService implements ShapeQueryAPI {
     const record = session ? toBuildSessionRecordFromEphemeral(session) : null;
     
     return record ? toSessionSummary(record) : null;
+  }
+
+  async probeBuildSession(nodeId: NodeId): Promise<ShapeBuildSessionProbeResult> {
+    await this.ensureEphemeralOpen();
+    return probeEphemeralSession(nodeId);
   }
 
   async listBuildSessionRecords(nodeId: NodeId): Promise<ShapeBuildSessionRecord[]> {

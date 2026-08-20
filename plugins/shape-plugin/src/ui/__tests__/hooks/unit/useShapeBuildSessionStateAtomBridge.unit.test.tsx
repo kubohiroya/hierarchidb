@@ -13,6 +13,7 @@ import {
   buildSessionLifecycleAtom,
   buildSessionSnapshotHandshakeReceivedAtom,
   buildSessionTasksByStageAtom,
+  completeBuildSessionRecoveryAtom,
   dispatchBuildSessionEventAtom,
   stageTimingByStageAtom,
 } from '../../../atoms/buildSessionStateAtoms';
@@ -28,6 +29,7 @@ const mocks = vi.hoisted(() => ({
   initialize: vi.fn(),
   getBuildSessionRuntime: vi.fn(),
   subscribeAll: vi.fn(),
+  probeBuildSession: vi.fn(),
   unsubscribe: vi.fn(),
   callbacks: null as BridgeCallbacks | null,
 }));
@@ -37,6 +39,7 @@ vi.mock('@hierarchidb/ui-worker-client', () => ({
     initialize: mocks.initialize,
     getBuildSessionRuntime: mocks.getBuildSessionRuntime,
     subscribeAll: mocks.subscribeAll,
+    getShapeQueryAPI: async () => ({ probeBuildSession: mocks.probeBuildSession }),
   }),
 }));
 
@@ -45,6 +48,7 @@ beforeEach(() => {
   mocks.callbacks = null;
   mocks.initialize.mockResolvedValue(undefined);
   mocks.getBuildSessionRuntime.mockResolvedValue(null);
+  mocks.probeBuildSession.mockResolvedValue({ kind: 'available' });
   mocks.subscribeAll.mockImplementation(async (_nodeType, _nodeId, callbacks) => {
     mocks.callbacks = callbacks as BridgeCallbacks;
     return mocks.unsubscribe;
@@ -149,6 +153,49 @@ const staleSourceSnapshot: StageSnapshotUpdatedEvent = {
 };
 
 describe('useShapeBuildSessionStateAtomBridge', () => {
+  it('maps a recoverable probe result to criticalError and restarts after recovery completion', async () => {
+    const recovery = {
+      code: 'LEGACY_BUILD_STAGE_INACTIVE_MS_MISSING' as const,
+      recoverable: true as const,
+      nodeId: 'node-1' as NodeId,
+      table: 'buildStageStatuses' as const,
+      field: 'inactiveMs' as const,
+      fieldPath: 'buildStageStatuses.inactiveMs' as const,
+      stageStatusId: 'node-1:source',
+      stage: 'source' as const,
+      received: 'undefined' as const,
+      message: 'inactiveMs is missing',
+    };
+    mocks.probeBuildSession
+      .mockResolvedValueOnce({ kind: 'recoverable-contract-error', error: recovery })
+      .mockResolvedValueOnce({ kind: 'missing' });
+    const store = createStore();
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <Provider store={store}>{children}</Provider>
+    );
+    const view = renderHook(() => useShapeBuildSessionStateAtomBridge('node-1' as NodeId), {
+      wrapper,
+    });
+
+    await waitFor(() => {
+      expect(store.get(buildSessionLifecycleAtom).criticalError?.recovery).toEqual(recovery);
+    });
+    expect(store.get(buildSessionLifecycleAtom).phase).toBe('failed');
+    expect(mocks.getBuildSessionRuntime).not.toHaveBeenCalled();
+    expect(mocks.subscribeAll).not.toHaveBeenCalled();
+
+    act(() => {
+      store.set(completeBuildSessionRecoveryAtom);
+    });
+
+    await waitFor(() => {
+      expect(mocks.probeBuildSession).toHaveBeenCalledTimes(2);
+      expect(mocks.subscribeAll).toHaveBeenCalledTimes(1);
+    });
+    expect(store.get(buildSessionLifecycleAtom).criticalError).toBeUndefined();
+    view.unmount();
+  });
+
   it('keeps UI sync initializing until the authoritative stage snapshot arrives', async () => {
     const store = createStore();
     const { callbacks, view } = await startBridge(store);

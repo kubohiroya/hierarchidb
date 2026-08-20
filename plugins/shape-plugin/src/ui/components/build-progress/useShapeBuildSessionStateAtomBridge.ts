@@ -1,8 +1,11 @@
 import { useEffect } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
-import { useSetAtom } from 'jotai';
-import { dispatchBuildSessionEventAtom } from '~/ui/atoms/buildSessionStateAtoms';
+import { useAtomValue, useSetAtom } from 'jotai';
+import {
+  buildSessionRecoveryRevisionAtom,
+  dispatchBuildSessionEventAtom,
+} from '~/ui/atoms/buildSessionStateAtoms';
 import { createBuildSessionWorkerEventAdapter } from '~/ui/atoms/buildSessionWorkerEventAdapterConstants';
 import type { ShapeStageId } from '~/ui/atoms/buildSessionStateAtoms';
 import type { BuildTaskSummary, TaskStage, ProgressPhase, TaskProgressUpdatedEvent } from '@hierarchidb/build-api';
@@ -45,6 +48,7 @@ export const resolveSnapshotTargetStages = (event: StageSnapshotUpdatedEvent): S
 
 export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined): void => {
     const dispatch = useSetAtom(dispatchBuildSessionEventAtom);
+    const recoveryRevision = useAtomValue(buildSessionRecoveryRevisionAtom);
 
     useEffect(() => {
         if (!nodeId) {
@@ -258,6 +262,26 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             await bridge.initialize();
             if (cancelled) return;
 
+            const shapeQueryAPI = await bridge.getShapeQueryAPI();
+            const probe = await shapeQueryAPI.probeBuildSession(nodeId);
+            if (cancelled) return;
+            if (probe.kind === 'recoverable-contract-error') {
+                dispatch({
+                    type: 'criticalError',
+                    payload: {
+                        nodeId: nodeIdText,
+                        message: probe.error.message,
+                        error: probe.error.message,
+                        errorName: 'ShapeBuildSessionContractError',
+                        timestamp: Date.now(),
+                        severity: 'critical',
+                        contractViolation: true,
+                        recovery: probe.error,
+                    },
+                });
+                return;
+            }
+
             const runtime = await bridge.getBuildSessionRuntime(SHAPE_NODE_TYPE, nodeId);
             if (cancelled) return;
             if (runtime) {
@@ -305,7 +329,25 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
 
         void run().catch((error) => {
             if (cancelled) return;
-            console.warn('[shape buildSessionStateAtomBridge] failed to start subscriptions', error);
+            const errorName = error instanceof Error ? error.name : 'UnknownError';
+            const message = error instanceof Error ? error.message : String(error);
+            console.error('[shape buildSessionStateAtomBridge] initialization failed', {
+                nodeId: nodeIdText,
+                recoveryRevision,
+                error,
+            });
+            dispatch({
+                type: 'criticalError',
+                payload: {
+                    nodeId: nodeIdText,
+                    message,
+                    error: String(error),
+                    errorName,
+                    timestamp: Date.now(),
+                    severity: 'critical',
+                    contractViolation: false,
+                },
+            });
         });
 
         return () => {
@@ -318,5 +360,5 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
             eventBufferManager.reset();
             unsubscribeAll?.();
         };
-    }, [dispatch, nodeId]);
+    }, [dispatch, nodeId, recoveryRevision]);
 };

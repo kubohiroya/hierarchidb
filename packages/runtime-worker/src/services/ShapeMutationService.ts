@@ -9,6 +9,8 @@ import type {
   ShapeDataSourceMetadata,
   ShapeGeometryCache,
   ShapeVectorTileRecord,
+  ShapeBuildSessionRecoveryRequest,
+  ShapeBuildSessionRecoveryResult,
 } from '@hierarchidb/shape-api';
 import type {
   BuildStage,
@@ -359,6 +361,15 @@ export class ShapeMutationService implements ShapeMutationAPI {
     );
 
     publishBuildSessionUpdate({ nodeId, status: 'deleted' });
+  }
+
+  async recoverLegacyBuildSession(
+    request: ShapeBuildSessionRecoveryRequest
+  ): Promise<ShapeBuildSessionRecoveryResult> {
+    await this.ensureEphemeralOpen();
+    const result = await ephemeralDB.recoverLegacyBuildSession(request);
+    publishBuildSessionUpdate({ nodeId: request.nodeId, status: 'deleted' });
+    return result;
   }
 
   async deleteBuildTasks(nodeId: NodeId): Promise<void> {

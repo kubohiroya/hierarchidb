@@ -8,11 +8,18 @@ import type {
   ShapeDataSourceMetadata,
 } from './shapeBuildTypes.js';
 import type { ShapeBuildSessionRecord, ShapeVectorTileRecord } from './shapeDbTypes.js';
+import type {
+  ShapeBuildSessionRecoveryRequest,
+  ShapeBuildSessionRecoveryResult,
+} from './ShapeBuildSessionContractError.js';
 
 export interface ShapeMutationAPI {
   upsertBuildSession(session: ShapeBuildSessionRecord): Promise<void>;
   updateBuildSession(nodeId: NodeId, updates: Partial<ShapeBuildSessionRecord>): Promise<void>;
   deleteBuildSession(nodeId: NodeId): Promise<void>;
+  recoverLegacyBuildSession(
+    request: ShapeBuildSessionRecoveryRequest
+  ): Promise<ShapeBuildSessionRecoveryResult>;
   deleteBuildTasks(nodeId: NodeId): Promise<void>;
   deleteVectorTile(tileId: string): Promise<void>;
   deleteVectorTiles(nodeId: NodeId): Promise<void>;

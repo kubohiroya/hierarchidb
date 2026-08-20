@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { BuildSessionStatus } from '@hierarchidb/build-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
+import { notify } from '@hierarchidb/components';
+import {
+  RESET_LEGACY_BUILD_SESSION_AND_TASKS,
+  type ShapeBuildSessionRecoverableContractError,
+  type ShapeMutationAPI,
+} from '@hierarchidb/shape-api';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { VtTaskQueueDb as TileEmitTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import {
@@ -25,6 +31,7 @@ import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeB
 type BuildBridge = {
   initialize: () => Promise<void>;
   getBuildSessionStatus: (nodeType: NodeType, nodeId: NodeId) => Promise<BuildSessionStatus>;
+  getShapeMutationAPI: () => Promise<ShapeMutationAPI>;
 };
 
 export type DeleteLoadingState = {
@@ -224,6 +231,28 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
   const handleResetSession = useCallback(async () => {
     await handleResetSessionAction(deps);
   }, [deps]);
+  const handleRecoverLegacyBuildSession = useCallback(
+    async (error: ShapeBuildSessionRecoverableContractError) => {
+      if (!nodeId) {
+        throw new Error(
+          '[useShapeBuildCacheActions] nodeId is required for legacy session recovery'
+        );
+      }
+      await runDelete('resetSession', async () => {
+        await bridgeRef.initialize();
+        const mutationAPI = await bridgeRef.getShapeMutationAPI();
+        await mutationAPI.recoverLegacyBuildSession({
+          nodeId,
+          confirmation: RESET_LEGACY_BUILD_SESSION_AND_TASKS,
+          error,
+        });
+        setSessionStatus(null);
+        await loadCountsSafely();
+        notify.success('Recovered legacy build session');
+      });
+    },
+    [bridgeRef, loadCountsSafely, nodeId, runDelete]
+  );
 
   const allowDeleteWhileBusy = (
     sessionStatus !== null && ['running', 'paused', 'failed', 'queued'].includes(sessionStatus)
@@ -254,5 +283,6 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
     handleDeleteTransposeIndex,
     handleDeleteMetadata,
     handleResetSession,
+    handleRecoverLegacyBuildSession,
   };
 };

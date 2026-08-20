@@ -1,6 +1,9 @@
 import { atom } from 'jotai';
 import type { BuildTaskSummary } from '@hierarchidb/build-api';
-import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
+import type {
+  ShapeBuildSessionRecoverableContractError,
+  ShapeBuildStopReason,
+} from '@hierarchidb/shape-api';
 import type { TaskListViewPhase } from './shapeBuildProgressTypes';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import {
@@ -60,6 +63,7 @@ type LifecycleExtras = {
     error: string;
     errorName: string;
     contractViolation: boolean;
+    recovery?: ShapeBuildSessionRecoverableContractError;
   };
 };
 
@@ -155,6 +159,7 @@ type ShapeCriticalErrorEvent = {
     timestamp: number;
     severity: 'critical';
     contractViolation: boolean;
+    recovery?: ShapeBuildSessionRecoverableContractError;
   };
 };
 
@@ -309,6 +314,17 @@ const resetBuildSessionStateAtom = atom(
   },
 );
 
+const buildSessionRecoveryRevisionBaseAtom = atom(0);
+
+export const buildSessionRecoveryRevisionAtom = atom((get) =>
+  get(buildSessionRecoveryRevisionBaseAtom)
+);
+
+export const completeBuildSessionRecoveryAtom = atom(null, (get, set) => {
+  set(resetBuildSessionStateAtom);
+  set(buildSessionRecoveryRevisionBaseAtom, get(buildSessionRecoveryRevisionBaseAtom) + 1);
+});
+
 // --- Event dispatch ---
 
 const applyBuildSessionEventAtom = atom(
@@ -438,6 +454,7 @@ const applyBuildSessionEventAtom = atom(
             error: event.payload.error,
             errorName: event.payload.errorName,
             contractViolation: event.payload.contractViolation,
+            recovery: event.payload.recovery,
           },
         }));
         return;

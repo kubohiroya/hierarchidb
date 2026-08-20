@@ -138,6 +138,28 @@ fails reconstruction. Session reconstruction reads its normalized rows and tasks
 in one database transaction; the task queue and current clock do not synthesize a
 replacement record.
 
+Legacy normalized rows that predate the required stage `inactiveMs` field use an
+explicit recovery path rather than a compatibility read. The strict reader throws
+`ShapeBuildSessionContractError` with a serializable details object, while
+`ShapeQueryAPI.probeBuildSession` exposes that object as a discriminated result for
+transport. The probe catches only `LEGACY_BUILD_STAGE_INACTIVE_MS_MISSING`; unrelated
+contract violations remain rejected calls.
+
+The atom bridge probes before loading the runtime record or opening subscriptions.
+When recovery is available, it dispatches the UI-internal `criticalError` with the
+exact descriptor and stops initialization. The confirmation dialog is presentation
+state only. Cancelling it does not mutate the session atom tree and does not call the
+Worker. Confirming passes the descriptor and
+`RESET_LEGACY_BUILD_SESSION_AND_TASKS` to the Worker mutation API.
+
+The mutation API re-probes inside the same Dexie read-write transaction that deletes
+the target node's four normalized session tables plus `buildTasks`. It compares every
+descriptor field before deleting. Cache, error, relation, artifact, output, node, and
+draft/config stores are outside that transaction and remain untouched. The UI resets
+the SSOT atom tree only after command success, then increments a recovery revision;
+the atom bridge includes that revision in its effect dependencies so the unchanged
+nodeId is initialized again. No missing timing value is repaired or synthesized.
+
 Failure persistence is secondary to the originating execution error. If persisting
 a startup failure also fails, the persistence error is logged while the original
 startup error remains the rejected value. Terminal-state finalization errors are

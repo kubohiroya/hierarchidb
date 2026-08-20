@@ -1,5 +1,12 @@
 import { Dexie, type Table } from 'dexie';
 import type { NodeId } from '@hierarchidb/core-types';
+import {
+  RESET_LEGACY_BUILD_SESSION_AND_TASKS,
+  isShapeBuildSessionRecoverableContractError,
+  type ShapeBuildSessionRecoverableContractError,
+  type ShapeBuildSessionRecoveryRequest,
+  type ShapeBuildSessionRecoveryResult,
+} from '@hierarchidb/shape-api';
 import { getDBName } from '@hierarchidb/util';
 import type {
   BuildSessionRecord,
@@ -15,6 +22,7 @@ import type {
   EphemeralGeometryCacheRecord,
   EphemeralGeometryErrorRecord,
 } from './EphemeralDBRecordTypes';
+import { probeBuildSession } from './sessionHelpers';
 import {
   EPHEMERAL_DB_SCHEMA_V1,
   EPHEMERAL_DB_SCHEMA_V2,
@@ -125,6 +133,44 @@ const hasStore = (transaction: HookTransaction, storeName: string): boolean => {
 
 const reportMetaSyncError = (label: string, error: unknown): void => {
   console.warn(`[EphemeralDB] failed to sync ${label}`, error);
+};
+
+const contractErrorsMatch = (
+  expected: ShapeBuildSessionRecoverableContractError,
+  actual: ShapeBuildSessionRecoverableContractError
+): boolean =>
+  expected.code === actual.code &&
+  expected.recoverable === actual.recoverable &&
+  expected.nodeId === actual.nodeId &&
+  expected.table === actual.table &&
+  expected.field === actual.field &&
+  expected.fieldPath === actual.fieldPath &&
+  expected.stageStatusId === actual.stageStatusId &&
+  expected.stage === actual.stage &&
+  expected.received === actual.received &&
+  expected.message === actual.message;
+
+const assertRecoveryRequest = (
+  request: ShapeBuildSessionRecoveryRequest
+): ShapeBuildSessionRecoverableContractError => {
+  if (request === null || typeof request !== 'object') {
+    throw new Error('[EphemeralDB] legacy build session recovery request must be an object');
+  }
+  if (typeof request.nodeId !== 'string' || request.nodeId.length === 0) {
+    throw new Error(
+      '[EphemeralDB] legacy build session recovery nodeId must be a non-empty string'
+    );
+  }
+  if (request.confirmation !== RESET_LEGACY_BUILD_SESSION_AND_TASKS) {
+    throw new Error('[EphemeralDB] legacy build session recovery requires explicit confirmation');
+  }
+  if (!isShapeBuildSessionRecoverableContractError(request.error)) {
+    throw new Error('[EphemeralDB] legacy build session recovery error contract is invalid');
+  }
+  if (request.error.nodeId !== request.nodeId) {
+    throw new Error('[EphemeralDB] legacy build session recovery nodeId does not match the error');
+  }
+  return request.error;
 };
 
 const fireAndForgetMetaOperation = (operation: () => Promise<unknown>, label: string): void => {
@@ -300,6 +346,72 @@ export class EphemeralDB extends Dexie {
       await this.buildTasks.where('nodeId').equals(nodeId).delete();
       await this.geometryErrors.where('nodeId').equals(nodeId).delete();
     });
+  }
+
+  async recoverLegacyBuildSession(
+    request: ShapeBuildSessionRecoveryRequest
+  ): Promise<ShapeBuildSessionRecoveryResult> {
+    const expectedError = assertRecoveryRequest(request);
+    const { nodeId } = request;
+
+    return this.transaction(
+      'rw',
+      [
+        this.buildSessionConfigs,
+        this.buildSessionHeartbeats,
+        this.buildSessionStatuses,
+        this.buildStageStatuses,
+        this.buildTasks,
+      ],
+      async () => {
+        const probe = await probeBuildSession(nodeId, {
+          getConfig: async (targetNodeId) => this.buildSessionConfigs.get(targetNodeId),
+          getHeartbeat: async (targetNodeId) => this.buildSessionHeartbeats.get(targetNodeId),
+          getStatus: async (targetNodeId) => this.buildSessionStatuses.get(targetNodeId),
+          getStageStatuses: async (targetNodeId) =>
+            this.buildStageStatuses.where('nodeId').equals(targetNodeId).toArray(),
+          getTasks: async (targetNodeId) =>
+            this.buildTasks.where('nodeId').equals(targetNodeId).toArray(),
+        });
+        if (probe.kind !== 'recoverable-contract-error') {
+          throw new Error(
+            `[EphemeralDB] build session is not recoverable for node ${String(nodeId)}: ${probe.kind}`
+          );
+        }
+        if (!contractErrorsMatch(expectedError, probe.error)) {
+          throw new Error(
+            `[EphemeralDB] build session recovery error changed for node ${String(nodeId)}`
+          );
+        }
+
+        const deletedRowCounts = {
+          buildSessionConfigs: await this.buildSessionConfigs
+            .where('nodeId')
+            .equals(nodeId)
+            .count(),
+          buildSessionHeartbeats: await this.buildSessionHeartbeats
+            .where('nodeId')
+            .equals(nodeId)
+            .count(),
+          buildSessionStatuses: await this.buildSessionStatuses
+            .where('nodeId')
+            .equals(nodeId)
+            .count(),
+          buildStageStatuses: await this.buildStageStatuses.where('nodeId').equals(nodeId).count(),
+          buildTasks: await this.buildTasks.where('nodeId').equals(nodeId).count(),
+        };
+
+        await Promise.all([
+          this.buildSessionConfigs.where('nodeId').equals(nodeId).delete(),
+          this.buildSessionHeartbeats.where('nodeId').equals(nodeId).delete(),
+          this.buildSessionStatuses.where('nodeId').equals(nodeId).delete(),
+          this.buildStageStatuses.where('nodeId').equals(nodeId).delete(),
+          this.buildTasks.where('nodeId').equals(nodeId).delete(),
+        ]);
+
+        return { nodeId, deletedRowCounts };
+      }
+    );
   }
 
   async hasStageData(nodeId: NodeId, stage: BuildStage): Promise<boolean> {
