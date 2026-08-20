@@ -178,10 +178,16 @@ describe('createYamlStorageLegacyFence', () => {
   it('does not invoke input or participant accessors and redacts Proxy failures', () => {
     const inputGetter = vi.fn(() => 'secret-input');
     const participantGetter = vi.fn(() => 'secret-participant');
+    const participantArrayGetter = vi.fn(() => {
+      throw new Error('secret-participant-array');
+    });
     const inputWithAccessor = createInput() as Record<string, unknown>;
     Object.defineProperty(inputWithAccessor, 'activationId', { get: inputGetter });
     const participantWithAccessor = { participantKind: 'tab' } as Record<string, unknown>;
     Object.defineProperty(participantWithAccessor, 'participantId', { get: participantGetter });
+    const participantArray = new Proxy(createInput().participants, {
+      get: participantArrayGetter,
+    });
     const proxy = new Proxy(createInput(), {
       ownKeys() {
         throw new Error('credential-proxy-secret');
@@ -199,8 +205,14 @@ describe('createYamlStorageLegacyFence', () => {
       ok: false,
       error: { code: 'INVALID_FENCE_INPUT' },
     });
+    expect(
+      createYamlStorageLegacyFence({ ...createInput(), participants: participantArray })
+    ).toMatchObject({
+      ok: true,
+    });
     expect(inputGetter).not.toHaveBeenCalled();
     expect(participantGetter).not.toHaveBeenCalled();
+    expect(participantArrayGetter).not.toHaveBeenCalled();
   });
 });
 

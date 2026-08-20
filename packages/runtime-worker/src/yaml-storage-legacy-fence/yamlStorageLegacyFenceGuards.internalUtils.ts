@@ -38,22 +38,30 @@ export function readExactYamlStorageLegacyFenceArray(value: unknown): readonly u
   if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype) {
     return null;
   }
+  const lengthProperty = readYamlStorageLegacyFenceOwnDataProperty(value, 'length');
+  if (
+    lengthProperty.found === false ||
+    typeof lengthProperty.value !== 'number' ||
+    !Number.isSafeInteger(lengthProperty.value) ||
+    lengthProperty.value < 0
+  ) {
+    return null;
+  }
+  const length = lengthProperty.value;
   const ownKeys = Reflect.ownKeys(value);
-  const expectedKeyCount = value.length + 1;
+  const expectedKeyCount = length + 1;
   if (ownKeys.length !== expectedKeyCount) {
     return null;
   }
-  const lengthProperty = readYamlStorageLegacyFenceOwnDataProperty(value, 'length');
-  if (lengthProperty.found === false || lengthProperty.value !== value.length) {
-    return null;
-  }
-  for (let index = 0; index < value.length; index += 1) {
+  const values: unknown[] = [];
+  for (let index = 0; index < length; index += 1) {
     const property = readYamlStorageLegacyFenceOwnDataProperty(value, String(index));
     if (property.found === false) {
       return null;
     }
+    values.push(property.value);
   }
-  return value;
+  return Object.freeze(values);
 }
 
 export function compareYamlStorageLegacyFenceParticipants(
