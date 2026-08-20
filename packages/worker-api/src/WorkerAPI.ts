@@ -27,6 +27,7 @@ import type {
   TreeSubscriptionAPI,
   TreeTableExpandedAPI,
 } from '@hierarchidb/tree-api';
+import type { YamlCoreDbReadOnlyInventoryResult } from './YamlCoreDbReadOnlyInventoryTypes.js';
 
 type ShapeDownloadTaskPayload = {
   url: string;
@@ -54,6 +55,7 @@ export interface WorkerAPI<T> {
   ping(): Promise<{ response: 'pong'; timestamp: number }>;
   initialize(): Promise<void>;
   shutdown(): Promise<void>;
+  getYamlCoreDbReadOnlyInventory(): Promise<YamlCoreDbReadOnlyInventoryResult>;
   getSystemHealth(): Promise<{
     databases: { coreDB: boolean; ephemeralDB: boolean };
     services: {

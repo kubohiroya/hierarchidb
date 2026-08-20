@@ -20,11 +20,13 @@ import { TagService } from '@hierarchidb/tag';
 import { SingletonMixin } from '@hierarchidb/util';
 import type { ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import type { StyleMutationAPI, StyleQueryAPI } from '@hierarchidb/style-api';
+import type { YamlCoreDbReadOnlyInventoryResult } from '@hierarchidb/worker-api';
 import { EntityLifecycleManager } from './entity/EntityLifecycleManager.js';
 import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExportDBPortCoreDBAdapter.js';
 import { TagDBPortCoreDBAdapter } from './services/adapters/TagDBPortCoreDBAdapter.js';
 import { CommandProcessor } from './services/CommandProcessor.js';
 import { CoreDB } from './services/CoreDB.js';
+import { getYamlCoreDbReadOnlyInventory } from './services/getYamlCoreDbReadOnlyInventory.js';
 import { ImportExportLifecycleService } from './services/ImportExportLifecycleService.js';
 import { LocationMutationService } from './services/LocationMutationService.js';
 import { LocationQueryService } from './services/LocationQueryService.js';
@@ -252,6 +254,10 @@ export class WorkerService {
   }
 
   async initialize(): Promise<void> {}
+
+  async getYamlCoreDbReadOnlyInventory(): Promise<YamlCoreDbReadOnlyInventoryResult> {
+    return getYamlCoreDbReadOnlyInventory(this.coreDB);
+  }
 
   getQueryAPI(): TreeQueryAPI {
     return this.queryService;

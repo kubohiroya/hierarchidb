@@ -69,6 +69,8 @@
     "@hierarchidb/styler-store": "workspace:*",
     "@hierarchidb/tag-api": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
+    "@hierarchidb/worker-api": "workspace:*",
+    "@hierarchidb/yaml-api": "workspace:*",
     "@hierarchidb/import-export-api": "workspace:*",
     "@hierarchidb/vectortile-store": "workspace:*",
     "@mapbox/vector-tile": "^2.0.3",

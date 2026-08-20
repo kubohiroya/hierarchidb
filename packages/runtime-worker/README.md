@@ -23,6 +23,14 @@ The model keeps legacy and canonical readers and writers unavailable from quiesc
 
 The quiescence request identifier is not the target IndexedDB `openRequestId`. A successful quiescence decision always reports `actualFenceEstablished: false`; only the later `versionchanging` phase in the single activation release can establish the actual storage fence. The protocol has no production imports, I/O, timeout, retry, participant discovery, database access, or connection to the existing maintenance flow.
 
+## CoreDB YAML read-only inventory
+
+`WorkerService.getYamlCoreDbReadOnlyInventory()` is an on-demand production endpoint for the pre-activation YAML inventory. It uses the already-open CoreDB instance, reads the `nodes` snapshot in a Dexie `r` transaction, selects exact `yaml-file` records, and delegates all record and slot classification to `@hierarchidb/yaml-api/migration`.
+
+An accepted report contains only node, slot, and classification counts. A rejected report contains the number of distinct invalid source records, the total error count, and the planner's sanitized typed errors; it never exposes YAML content, payloads, migration postimages, journal values, digests, or raw exception messages. A storage or unexpected planning failure is a separate stable failure and is never reported as zero invalid records.
+
+The endpoint does not call `CoreDB.getSingleton()` or `initialize()`, write or repair either CoreDB or YamlDB, change a schema version, publish canonical access, or run automatically during worker startup. Its tests do not satisfy the operational activation gate: a deployed production release must invoke the endpoint separately and record exact zero invalid records and errors before the single activation work starts.
+
 ## Dependencies
 
 Depends on many `@hierarchidb/*` packages (shape-store, location-store, route-store, styler-store, tree-api, build-api, chunk-store, tabular-store, etc.).
