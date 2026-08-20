@@ -14,6 +14,7 @@ import type { ShapeGeometryByBandTaskInput } from './shapePipelineShared.ts';
 import { resolveGeometryConfig } from './shapePipelineShared.ts';
 import { applyStageTaskReconcile } from './shapeStageReconcile.ts';
 import {
+  createPipelineLinkedAbortController,
   finalizePendingStageTasks,
   getFailedTaskCount,
   markStageTasksRecycled,
@@ -145,11 +146,18 @@ const calculateMemoryDelta = (
   jsHeapSizeLimit: subtractMemoryValue(start.jsHeapSizeLimit, finish.jsHeapSizeLimit),
 });
 
+const assertGeometryPipelineActive = (params: ShapeGeometryStageParams): void => {
+  if (params.abortSignal?.aborted) {
+    throw new DOMException('Geometry pipeline was aborted', 'AbortError');
+  }
+};
+
 const runGeometryStep = async <T>(
   params: ShapeGeometryStageParams,
   step: string,
   action: () => Promise<T>,
 ): Promise<T> => {
+  assertGeometryPipelineActive(params);
   const startedAt = Date.now();
   const memoryAtStart = captureGeometryStepMemorySnapshot();
   console.warn('[ShapeGeometry][Transition] step start', JSON.stringify({
@@ -161,6 +169,7 @@ const runGeometryStep = async <T>(
   }));
   try {
     const result = await action();
+    assertGeometryPipelineActive(params);
     const finishedAt = Date.now();
     const memoryAtFinish = captureGeometryStepMemorySnapshot();
     console.warn('[ShapeGeometry][Transition] step finish', JSON.stringify({
@@ -409,9 +418,11 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
         const taskChunk: Array<TaskQueueRecord<ShapeGeometryByBandTaskInput>> = [];
         const flushChunk = async () => {
           if (taskChunk.length === 0) return;
+          assertGeometryPipelineActive(params);
           const chunk = [...taskChunk];
           taskChunk.length = 0;
           await putTasks(params.taskQueue, chunk);
+          assertGeometryPipelineActive(params);
         };
         for (const [countryIndex, countryKey] of orderedCountries.entries()) {
           for (const band of bandsAscending) {
@@ -511,7 +522,7 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
       });
     }
 
-    const geometryByBandAbortController = new AbortController();
+    const geometryByBandAbortController = createPipelineLinkedAbortController(params.abortSignal);
     const geometryByBandHandler = await runGeometryStep(params, 'create-geometry-handler', async () => (
       createGeometryStageHandler({
         ephemeralDB: params.ephemeralStore,
@@ -537,26 +548,14 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
       });
     } catch (error) {
       // Handle abort errors specifically
-      if (geometryByBandAbortController.signal.aborted || (error instanceof Error && error.name === 'AbortError')) {
+      if (params.abortSignal?.aborted || (error instanceof Error && error.name === 'AbortError')) {
         console.log('[ShapeGeometry][AbortHandling] Geometry stage aborted via signal', {
           nodeId: params.nodeId,
           runId: params.pipelineRunId ?? null,
           errorName: error instanceof Error ? error.name : 'unknown',
           errorMessage: error instanceof Error ? error.message : String(error),
         });
-        
-        // Finalize pending tasks as aborted
-        await finalizePendingStageTasks(
-          params.taskQueue,
-          params.nodeId,
-          'geometry',
-          'aborted: geometry stage terminated by abort signal',
-          '[ShapeGeometry][AbortHandling] geometry stage aborted by signal',
-          params.pipelineRunId,
-        );
-        
-        // Don't propagate abort errors as failures
-        return true; // Stop after stage due to abort
+        return true;
       }
 
       // Handle other errors
@@ -585,19 +584,30 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
       throw error;
     }
 
+    if (geometryByBandAbortController.signal.aborted) {
+      return true;
+    }
+
+    const completedStageCounts = await runGeometryStep(
+      params,
+      'summarize-completed-geometry-stage',
+      async () => summarizeStageCounts(params.taskQueue, params.nodeId, 'geometry'),
+    );
     console.warn('[ShapeGeometry][PipelineDiagnostics] stage geometry completed', JSON.stringify({
       nodeId: params.nodeId,
       runId: params.pipelineRunId ?? null,
-      counts: await summarizeStageCounts(params.taskQueue, params.nodeId, 'geometry'),
+      counts: completedStageCounts,
     }));
-    await finalizePendingStageTasks(
-      params.taskQueue,
-      params.nodeId,
-      'geometry',
-      'aborted: geometry stage completed with pending tasks',
-      '[ShapeGeometry][PipelineDiagnostics] geometry stage finalized pending tasks',
-      params.pipelineRunId,
-    );
+    await runGeometryStep(params, 'finalize-pending-geometry-tasks', async () => {
+      await finalizePendingStageTasks(
+        params.taskQueue,
+        params.nodeId,
+        'geometry',
+        'aborted: geometry stage completed with pending tasks',
+        '[ShapeGeometry][PipelineDiagnostics] geometry stage finalized pending tasks',
+        params.pipelineRunId,
+      );
+    });
     const shouldStop = shouldStopAfterStage(
       params.buildContinuationPolicy,
       await runGeometryStep(params, 'count-failed-geometry-tasks', async () => (

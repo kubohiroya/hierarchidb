@@ -18,6 +18,7 @@ import type { Tile } from 'geojson-vt';
 import { applyStageTaskReconcile } from './shapeStageReconcile.ts';
 import { resolveTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
 import {
+  createPipelineLinkedAbortController,
   finalizePendingStageTasks,
   markStageTasksRecycled,
   readHeapSnapshot,
@@ -100,11 +101,19 @@ const loadFeatureGeojsonByteSizeById = async (nodeId: NodeId): Promise<Map<strin
 };
 
 export const runShapeTileEmitStageSection = async (params: ShapeTileEmitStageParams): Promise<void> => {
+  const tileEmitAbortController = createPipelineLinkedAbortController(params.abortSignal);
+  const assertTileEmitPipelineActive = (): void => {
+    if (tileEmitAbortController.signal.aborted) {
+      throw new DOMException('Tile emit pipeline was aborted', 'AbortError');
+    }
+  };
+  assertTileEmitPipelineActive();
   const tileEmitConfig = resolveTileEmitConfig(params.buildConfig);
   const geometryEngine = params.buildConfig.geometryConfig.geometryEngine ?? 'turf';
   let existingTileEmitTasks = params.resumeExistingTasks
     ? await listTasksByStage(params.taskQueue, params.nodeId, 'tileEmit')
     : [];
+  assertTileEmitPipelineActive();
   existingTileEmitTasks.forEach((task) => {
     resolveTaskCacheIdentity(task);
   });
@@ -117,6 +126,7 @@ export const runShapeTileEmitStageSection = async (params: ShapeTileEmitStagePar
     tileEmitConfigSignature,
     geometryEngine,
   );
+  assertTileEmitPipelineActive();
   let missingTileEmitTasks: Array<TaskQueueRecord<ShapeTileEmitTaskInput>> = [];
   if (params.resumeExistingTasks && existingTileEmitTasks.length > 0) {
     const reconciled = await applyStageTaskReconcile({
@@ -127,11 +137,13 @@ export const runShapeTileEmitStageSection = async (params: ShapeTileEmitStagePar
       existingTasks: existingTileEmitTasks,
       resumeExistingTasks: true,
     });
+    assertTileEmitPipelineActive();
     existingTileEmitTasks = reconciled.existingTasks as Array<TaskQueueRecord<ShapeTileEmitTaskInput>>;
     missingTileEmitTasks = reconciled.missingTasks as Array<TaskQueueRecord<ShapeTileEmitTaskInput>>;
   }
   if (params.resumeExistingTasks && existingTileEmitTasks.length > 0) {
     const runningTileEmitTasks = await listTasksByStageAndStatus(params.taskQueue, params.nodeId, 'tileEmit', 'running');
+    assertTileEmitPipelineActive();
     if (runningTileEmitTasks.length > 0) {
       await Promise.all(runningTileEmitTasks.map((task) => (
         updateTask(params.taskQueue, task.taskId, {
@@ -140,20 +152,27 @@ export const runShapeTileEmitStageSection = async (params: ShapeTileEmitStagePar
           completedAt: Date.now(),
         })
       )));
+      assertTileEmitPipelineActive();
     }
   }
   if (params.resumeExistingTasks) {
+    assertTileEmitPipelineActive();
     await markStageTasksRecycled(params.taskQueue, params.nodeId, 'tileEmit');
+    assertTileEmitPipelineActive();
   }
   if (params.resumeExistingTasks && existingTileEmitTasks.length === 0) {
     missingTileEmitTasks = desiredTileEmitTasks as Array<TaskQueueRecord<ShapeTileEmitTaskInput>>;
     if (missingTileEmitTasks.length > 0) {
+      assertTileEmitPipelineActive();
       await putTasks(params.taskQueue, missingTileEmitTasks);
+      assertTileEmitPipelineActive();
     }
   } else if (!params.resumeExistingTasks) {
     missingTileEmitTasks = desiredTileEmitTasks as Array<TaskQueueRecord<ShapeTileEmitTaskInput>>;
     if (missingTileEmitTasks.length > 0) {
+      assertTileEmitPipelineActive();
       await putTasks(params.taskQueue, missingTileEmitTasks);
+      assertTileEmitPipelineActive();
     }
   }
   console.warn('[ShapeTileEmit][PipelineMetrics] tileEmit task prep', JSON.stringify({
@@ -166,13 +185,17 @@ export const runShapeTileEmitStageSection = async (params: ShapeTileEmitStagePar
     return;
   }
   if (params.onStageTasksPrepared) {
+    assertTileEmitPipelineActive();
     await params.onStageTasksPrepared({
       nodeId: params.nodeId,
       stage: 'tileEmit',
       taskCount: existingTileEmitTasks.length + missingTileEmitTasks.length,
     });
+    assertTileEmitPipelineActive();
   }
+  assertTileEmitPipelineActive();
   await params.waitIfPaused?.();
+  assertTileEmitPipelineActive();
   console.warn('[ShapeTileEmit][PipelineMetrics] tileEmit queue snapshot', JSON.stringify({
     nodeId: params.nodeId,
     runId: params.pipelineRunId ?? null,
@@ -184,11 +207,12 @@ export const runShapeTileEmitStageSection = async (params: ShapeTileEmitStagePar
     bands: params.bands.length,
     heap: readHeapSnapshot(),
   }));
-  const tileEmitAbortController = new AbortController();
   const continentByCountry = params.bands.some((band) => band.zMin === 0)
     ? await params.loadContinentLookup()
     : undefined;
+  assertTileEmitPipelineActive();
   const featureGeojsonByteSizeById = await loadFeatureGeojsonByteSizeById(params.nodeId);
+  assertTileEmitPipelineActive();
   const transformRetryToleranceStep = params.buildConfig.geometryConfig.retryToleranceStep;
   const isTopojsonSource = params.buildConfig.dataSourceName === 'geoboundaries-topojson';
   const resolvedTopojsonBandIndex = (() => {
@@ -248,6 +272,9 @@ export const runShapeTileEmitStageSection = async (params: ShapeTileEmitStagePar
       layers: Record<string, Tile>;
       bufferSetHash: string;
     }) => {
+      if (tileEmitAbortController.signal.aborted) {
+        throw new DOMException('Tile emit pipeline was aborted', 'AbortError');
+      }
       const layerFeatureCounts = Object.entries(layers).map(([name, tile]) => ({
         name,
         featureCount: Array.isArray(tile.features) ? tile.features.length : 0,
@@ -294,26 +321,14 @@ export const runShapeTileEmitStageSection = async (params: ShapeTileEmitStagePar
     });
   } catch (error) {
     // Handle abort errors specifically
-    if (tileEmitAbortController.signal.aborted || (error instanceof Error && error.name === 'AbortError')) {
+    if (params.abortSignal?.aborted || (error instanceof Error && error.name === 'AbortError')) {
       console.log('[ShapeTileEmit][AbortHandling] Tile emit stage aborted via signal', {
         nodeId: params.nodeId,
         runId: params.pipelineRunId ?? null,
         errorName: error instanceof Error ? error.name : 'unknown',
         errorMessage: error instanceof Error ? error.message : String(error),
       });
-      
-      // Finalize pending tasks as aborted
-      await finalizePendingStageTasks(
-        params.taskQueue,
-        params.nodeId,
-        'tileEmit',
-        'aborted: tile-emit stage terminated by abort signal',
-        '[ShapeTileEmit][AbortHandling] tile-emit stage aborted by signal',
-        params.pipelineRunId,
-      );
-      
-      // Don't propagate abort errors as failures
-      return; // Exit gracefully due to abort
+      return;
     }
 
     // Handle other errors
@@ -341,6 +356,11 @@ export const runShapeTileEmitStageSection = async (params: ShapeTileEmitStagePar
     );
     throw error;
   }
+
+  if (tileEmitAbortController.signal.aborted) {
+    return;
+  }
+  assertTileEmitPipelineActive();
   await finalizePendingStageTasks(
     params.taskQueue,
     params.nodeId,
@@ -349,18 +369,28 @@ export const runShapeTileEmitStageSection = async (params: ShapeTileEmitStagePar
     '[ShapeTileEmit][PipelineDiagnostics] tile-emit stage finalized pending tasks',
     params.pipelineRunId,
   );
+  assertTileEmitPipelineActive();
   console.warn('[ShapeTileEmit][PipelineMetrics] stage tile-emit done', JSON.stringify({
     nodeId: params.nodeId,
     runId: params.pipelineRunId ?? null,
     heap: readHeapSnapshot(),
   }));
+  const completedStageCounts = await summarizeStageCounts(
+    params.taskQueue,
+    params.nodeId,
+    'tileEmit',
+  );
+  assertTileEmitPipelineActive();
   console.warn('[ShapeTileEmit][PipelineDiagnostics] stage tile-emit completed', JSON.stringify({
     nodeId: params.nodeId,
     runId: params.pipelineRunId ?? null,
-    counts: await summarizeStageCounts(params.taskQueue, params.nodeId, 'tileEmit'),
+    counts: completedStageCounts,
   }));
   if (params.buildConfig.geometryConfig.deleteOnComplete) {
+    assertTileEmitPipelineActive();
     await params.ephemeralStore.geometryCache.where('nodeId').equals(params.nodeId).delete();
+    assertTileEmitPipelineActive();
     await params.ephemeralStore.geometryCacheMeta.where('nodeId').equals(params.nodeId).delete();
+    assertTileEmitPipelineActive();
   }
 };

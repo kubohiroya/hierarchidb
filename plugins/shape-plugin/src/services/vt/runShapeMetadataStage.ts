@@ -30,9 +30,17 @@ export type ShapeMetadataStageParams = {
   recyclingByFeatureId?: Map<string, boolean>;
   recyclingAllowlist: Set<string>;
   diffBuildEnabled: boolean;
+  abortSignal?: AbortSignal;
+};
+
+const assertMetadataPipelineActive = (abortSignal?: AbortSignal): void => {
+  if (abortSignal?.aborted) {
+    throw new DOMException('Shape metadata pipeline was aborted', 'AbortError');
+  }
 };
 
 export const runShapeMetadataStage = async (params: ShapeMetadataStageParams): Promise<void> => {
+  assertMetadataPipelineActive(params.abortSignal);
   const featureMetadataRows = await buildFeatureMetadataFromGeometryCaches(
     params.nodeId,
     params.dataSource,
@@ -40,8 +48,10 @@ export const runShapeMetadataStage = async (params: ShapeMetadataStageParams): P
     params.geometryEngine,
     params.recyclingByFeatureId,
   );
+  assertMetadataPipelineActive(params.abortSignal);
   if (featureMetadataRows.length > 0) {
     await shapeMutationAPIImpl.putFeatureMetadata(featureMetadataRows);
+    assertMetadataPipelineActive(params.abortSignal);
   }
 
   await updateShapeStageMetadata({
@@ -49,16 +59,20 @@ export const runShapeMetadataStage = async (params: ShapeMetadataStageParams): P
     dataSource: params.dataSource,
     shapeStore: params.ephemeralStore,
     shapeDb: params.shapeDb,
+    abortSignal: params.abortSignal,
   });
+  assertMetadataPipelineActive(params.abortSignal);
 
   if (params.diffBuildEnabled && params.recyclingAllowlist.size > 0) {
     const latestRows = await shapeQueryAPIImpl.listFeatureMetadata(params.nodeId);
+    assertMetadataPipelineActive(params.abortSignal);
     const cleared = latestRows.filter((row) => params.recyclingAllowlist.has(row.featureId)).map((row) => ({
       ...row,
       recycling: false,
     }));
     if (cleared.length > 0) {
       await shapeMutationAPIImpl.putFeatureMetadata(cleared);
+      assertMetadataPipelineActive(params.abortSignal);
     }
   }
 };

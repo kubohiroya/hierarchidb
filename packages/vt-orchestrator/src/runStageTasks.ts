@@ -321,6 +321,9 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
         if (aborted || abortSignal?.aborted) return;
 
         const result = await handler(task as TaskQueueRecord<TInput, TOutput>);
+        if (abortSignal?.aborted && failureError === null) {
+          return;
+        }
         if (loggedTaskDone < maxTaskLogs) {
           loggedTaskDone += 1;
           console.warn('[tileEmit-orchestrator][runStageTasks] task done', {
@@ -360,6 +363,9 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
           completedAt: Date.now(),
         });
       } catch (error) {
+        if (abortSignal?.aborted && failureError === null) {
+          return;
+        }
         if (loggedTaskError < maxTaskLogs) {
           loggedTaskError += 1;
           const errorMessage = error instanceof Error ? error.message : String(error);

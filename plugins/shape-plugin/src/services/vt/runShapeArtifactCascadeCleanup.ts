@@ -418,8 +418,22 @@ const defaultDependencies = (): ShapeArtifactCascadeCleanupDependencies => ({
 });
 
 const wrapStepFailure = (step: ShapeArtifactCascadeCleanupStep, error: unknown): never => {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'name' in error &&
+    error.name === 'AbortError'
+  ) {
+    throw error;
+  }
   if (error instanceof ShapeArtifactCascadeCleanupError) throw error;
   throw new ShapeArtifactCascadeCleanupError(step, { cause: error });
+};
+
+const assertCleanupActive = (abortSignal?: AbortSignal): void => {
+  if (abortSignal?.aborted) {
+    throw new DOMException('Shape artifact cleanup was aborted', 'AbortError');
+  }
 };
 
 export const runShapeArtifactCascadeCleanup = async (params: {
@@ -427,13 +441,17 @@ export const runShapeArtifactCascadeCleanup = async (params: {
   target: ShapeArtifactCascadeCleanupTarget;
   deleteAllRawSourceBuffers?: boolean;
   dependencies?: Partial<ShapeArtifactCascadeCleanupDependencies>;
+  abortSignal?: AbortSignal;
 }): Promise<ShapeArtifactCascadeCleanupResult> => {
   const dependencies = { ...defaultDependencies(), ...params.dependencies };
   let plan: ShapeArtifactCleanupPlan | null;
   try {
+    assertCleanupActive(params.abortSignal);
     plan = await resolveCleanupPlan(params.nodeId, params.target, dependencies.ephemeralStore);
+    assertCleanupActive(params.abortSignal);
     if (plan !== null) {
       await assertCleanupPlanOwnership(plan, dependencies.ephemeralStore);
+      assertCleanupActive(params.abortSignal);
     }
   } catch (error) {
     return wrapStepFailure('resolve-plan', error);
@@ -442,9 +460,11 @@ export const runShapeArtifactCascadeCleanup = async (params: {
     let rawSourceBuffersDeleted = 0;
     if (params.deleteAllRawSourceBuffers === true) {
       try {
+        assertCleanupActive(params.abortSignal);
         rawSourceBuffersDeleted = await dependencies.deleteAllRawSourceBuffersForNode(
           requireNodeId(params.nodeId)
         );
+        assertCleanupActive(params.abortSignal);
       } catch (error) {
         return wrapStepFailure('delete-raw-source-buffers', error);
       }
@@ -461,25 +481,31 @@ export const runShapeArtifactCascadeCleanup = async (params: {
   }
 
   try {
+    assertCleanupActive(params.abortSignal);
     await dependencies.deletePersistentArtifactsByNode(plan.nodeId);
+    assertCleanupActive(params.abortSignal);
   } catch (error) {
     return wrapStepFailure('delete-persistent-artifacts', error);
   }
 
   let rawSourceBuffersDeleted: number;
   try {
+    assertCleanupActive(params.abortSignal);
     rawSourceBuffersDeleted = await dependencies.deleteRawSourceBuffersByKeys(
       plan.nodeId,
       plan.rawSourceCacheKeys
     );
+    assertCleanupActive(params.abortSignal);
     if (params.deleteAllRawSourceBuffers === true) {
       rawSourceBuffersDeleted += await dependencies.deleteAllRawSourceBuffersForNode(plan.nodeId);
+      assertCleanupActive(params.abortSignal);
     }
   } catch (error) {
     return wrapStepFailure('delete-raw-source-buffers', error);
   }
 
   try {
+    assertCleanupActive(params.abortSignal);
     return await dependencies.ephemeralStore.transaction(
       'rw',
       [
@@ -492,6 +518,7 @@ export const runShapeArtifactCascadeCleanup = async (params: {
         dependencies.ephemeralStore.geometryErrors,
       ],
       async () => {
+        assertCleanupActive(params.abortSignal);
         const [taskRowsDeleted, relationRowsDeleted, geometryErrorRowsDeleted] = await Promise.all([
           plan.taskScope === 'all'
             ? dependencies.ephemeralStore.buildTasks.where('nodeId').equals(plan.nodeId).delete()
@@ -510,17 +537,20 @@ export const runShapeArtifactCascadeCleanup = async (params: {
                 .delete()
             : Promise.resolve(0),
         ]);
+        assertCleanupActive(params.abortSignal);
         if (plan.geometryCacheIds.length > 0) {
           await Promise.all([
             dependencies.ephemeralStore.geometryCache.bulkDelete(plan.geometryCacheIds),
             dependencies.ephemeralStore.geometryCacheMeta.bulkDelete(plan.geometryCacheIds),
           ]);
+          assertCleanupActive(params.abortSignal);
         }
         if (plan.sourceCacheIds.length > 0) {
           await Promise.all([
             dependencies.ephemeralStore.sourceCache.bulkDelete(plan.sourceCacheIds),
             dependencies.ephemeralStore.sourceCacheMeta.bulkDelete(plan.sourceCacheIds),
           ]);
+          assertCleanupActive(params.abortSignal);
         }
         return {
           sourceCachesDeleted: plan.sourceCacheIds.length,

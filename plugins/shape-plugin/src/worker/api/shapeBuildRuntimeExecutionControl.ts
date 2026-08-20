@@ -33,6 +33,7 @@ import {
 } from '~/services/utils/shapeBuildUtils';
 import { resolveSourceStageStrategy } from '~/services/build/strategies/resolveSourceStageStrategy';
 import {
+  emitSessionLifecyclePhaseUpdated,
   emitSessionStatusUpdated,
   emitStageSnapshotUpdated,
   readStartedStageTiming,
@@ -46,6 +47,36 @@ class SourceTaskPayloadGenerationError extends Error {
     this.name = 'SourceTaskPayloadGenerationError';
   }
 }
+
+export const SHAPE_PIPELINE_SHUTDOWN_TIMEOUT_MS = 15_000;
+
+export class ShapeBuildPauseShutdownTimeoutError extends Error {
+  readonly code = 'SHAPE_BUILD_PAUSE_SHUTDOWN_TIMEOUT';
+
+  constructor(
+    readonly nodeId: NodeId,
+    readonly runId: string,
+    readonly timeoutMs: number,
+  ) {
+    super(`[shapeBuildAPI] Pipeline shutdown timed out after ${timeoutMs}ms: ${String(nodeId)}:${runId}`);
+    this.name = 'ShapeBuildPauseShutdownTimeoutError';
+  }
+}
+
+export class ShapeBuildPauseActivePipelineMissingError extends Error {
+  readonly code = 'SHAPE_BUILD_PAUSE_ACTIVE_PIPELINE_MISSING';
+
+  constructor(readonly nodeId: NodeId) {
+    super(`[shapeBuildAPI] Active pipeline is required to pause session: ${String(nodeId)}`);
+    this.name = 'ShapeBuildPauseActivePipelineMissingError';
+  }
+}
+
+const createActivePipelineAlreadyExistsError = (nodeId: NodeId, runId: string): Error => {
+  const error = new Error(`[shapeBuildAPI] active pipeline already exists: ${String(nodeId)}:${runId}`);
+  error.name = 'ShapeBuildActivePipelineAlreadyExistsError';
+  return error;
+};
 
 import {
   VtTaskQueueDb,
@@ -77,19 +108,26 @@ const {
   buildProgressPayloadFromTasks,
   progressCallbacks,
   getShapeEntityHandler,
-  setSessionAbortController,
-  clearSessionAbortController,
-  getSessionAbortController,
+  registerActivePipeline,
+  clearActivePipeline,
+  getActivePipeline,
+  invalidateActivePipeline,
+  isActivePipelineRunCurrent,
 } = shapeBuildRuntimeCore;
 
 // Placeholder functions for missing implementations
 const startSessionTracking = (_nodeId: string) => { };
-const clearStalePipelineStateIfInactive = (_nodeId: string, _previousSession?: any, _startupScope?: string) => { };
-const clearActivePipelineRuntimeState = (_nodeId: string) => {
-  // Clear the AbortController stored in PauseState so it cannot be re-triggered.
-  clearSessionAbortController(_nodeId as NodeId);
-  // Clear auth session context so stale session identity is not reused (#991).
+const clearStalePipelineStateIfInactive = (
+  _nodeId: string,
+  _previousSession?: ShapeBuildSessionRecord,
+  _startupScope?: string,
+) => { };
+const clearBuildSessionAuthContext = (): void => {
   AuthService.getSingleton().then((auth) => auth.clearBuildSessionContext()).catch(() => { });
+};
+const clearActivePipelineRuntimeState = (nodeId: NodeId, runId: string): void => {
+  if (!clearActivePipeline(nodeId, runId)) return;
+  clearBuildSessionAuthContext();
 };
 
 const upsertBuildSessionSnapshot = async (data: {
@@ -163,21 +201,28 @@ const upsertBuildSessionSnapshot = async (data: {
   }
 };
 
-const updateBuildSessionFromTasks = async (nodeId: NodeId, data: {
-  status?: ShapeBuildSessionRecord['status'];
-  stopReason?: ShapeBuildStopReason;
-  completedAt?: number;
-  canResume?: boolean
-}): Promise<void> => {
+const updateBuildSessionFromTasks = async (
+  nodeId: NodeId,
+  data: {
+    status?: ShapeBuildSessionRecord['status'];
+    stopReason?: ShapeBuildStopReason;
+    completedAt?: number;
+    canResume?: boolean
+  },
+  requireCurrentPipelineRun?: () => void,
+): Promise<void> => {
+  requireCurrentPipelineRun?.();
   await shapeMutationAPIImpl.updateBuildSession(nodeId, {
     status: data.status,
     stopReason: data.stopReason,
     completedAt: data.completedAt,
     canResume: data.canResume,
   });
+  requireCurrentPipelineRun?.();
 
   if (data.status) {
     const newSessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId);
+    requireCurrentPipelineRun?.();
     if (!newSessionRecord) {
       throw new Error(`[shapeBuildAPI] build session record is missing after task update: ${String(nodeId)}`);
     }
@@ -188,14 +233,18 @@ const updateBuildSessionFromTasks = async (nodeId: NodeId, data: {
 const initializeAndReadStageTiming = async (
   nodeId: NodeId,
   stage: TaskStage,
+  requireCurrentPipelineRun: () => void,
 ): Promise<{ stageStartedAt: number; stageInactiveMs: number }> => {
+  requireCurrentPipelineRun();
   let sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId);
+  requireCurrentPipelineRun();
   if (!sessionRecord) {
     throw new Error(`[shapeBuildAPI] build session record is missing before stage snapshot: ${String(nodeId)}`);
   }
   const currentTiming = readStartedStageTiming(sessionRecord);
   if (currentTiming?.stage !== stage) {
     const stageStartedAt = Date.now();
+    requireCurrentPipelineRun();
     await shapeMutationAPIImpl.updateBuildSession(nodeId, {
       stageId: stage,
       stageStartedAt,
@@ -204,7 +253,9 @@ const initializeAndReadStageTiming = async (
         [stage]: { status: 'running' },
       },
     });
+    requireCurrentPipelineRun();
     sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId);
+    requireCurrentPipelineRun();
     if (!sessionRecord) {
       throw new Error(`[shapeBuildAPI] build session record is missing after stage start: ${String(nodeId)}`);
     }
@@ -496,6 +547,13 @@ const startBuildSessionInternal = async (
   buildContinuationPolicy?: BuildContinuationPolicy,
   progressCallback?: (event: BuildProgressEvent) => void,
 ): Promise<NodeId> => {
+  const activePipelineBeforeStartup = getActivePipeline(draftId);
+  if (
+    activePipelineBeforeStartup !== null &&
+    !isActivePipelineRunCurrent(draftId, activePipelineBeforeStartup.runId)
+  ) {
+    throw createActivePipelineAlreadyExistsError(draftId, activePipelineBeforeStartup.runId);
+  }
   if (!buildConfig.dataSourceName) {
     throw new Error('Data source is required to start build processing');
   }
@@ -612,6 +670,14 @@ const startBuildSessionInternal = async (
     'load-session-record',
     async () => shapeQueryAPIImpl.getBuildSessionRecord(nodeForSession),
   );
+  const activePipelineAtStartup = getActivePipeline(nodeForSession);
+  if (
+    activePipelineAtStartup !== null
+    && (previousSession?.status !== 'running'
+      || !isActivePipelineRunCurrent(nodeForSession, activePipelineAtStartup.runId))
+  ) {
+    throw createActivePipelineAlreadyExistsError(nodeForSession, activePipelineAtStartup.runId);
+  }
   if (previousSession?.status === 'running') {
     await clearStalePipelineStateIfInactive(
       nodeForSession,
@@ -620,7 +686,7 @@ const startBuildSessionInternal = async (
     );
   }
   if (previousSession?.status === 'running') {
-    setPaused(nodeForSession, false);
+    await setPaused(nodeForSession, false);
     await upsertBuildSessionSnapshot({
       nodeId: nodeForSession,
       status: 'running',
@@ -631,7 +697,7 @@ const startBuildSessionInternal = async (
     return nodeForSession;
   }
   const buildStartedAt = Date.now();
-  let sourcePlan;
+  let sourcePlan: Awaited<ReturnType<typeof estimatePlannedSourceTotal>>;
   try {
     console.warn('[shapeBuildAPI] Starting plan-source-total step', {
       nodeId: nodeForSession,
@@ -732,10 +798,8 @@ const startBuildSessionInternal = async (
   const authService = await AuthService.getSingleton();
   authService.setBuildSessionContext(String(nodeForSession), buildStartedAt);
 
-  setPaused(nodeForSession, false);
-  // Register the AbortController in PauseState so session/pause can abort immediately.
+  await setPaused(nodeForSession, false);
   const abortController = new AbortController();
-  setSessionAbortController(nodeForSession, abortController);
 
   try {
     const taskQueue = new VtTaskQueueDb();
@@ -823,12 +887,18 @@ const startBuildSessionInternal = async (
       // Source tasks are now enqueued; emit stageSnapshotUpdated so the UI can
       // display the task list. stageStartedAt is read from the session record.
       if (payload.stage !== 'source') return;
-      const timing = await initializeAndReadStageTiming(payload.nodeId, payload.stage);
+      const timing = await initializeAndReadStageTiming(
+        payload.nodeId,
+        payload.stage,
+        requireCurrentPipelineRun,
+      );
       await emitStageSnapshotUpdated(
         payload.nodeId,
         payload.stage,
         timing.stageStartedAt,
         timing.stageInactiveMs,
+        undefined,
+        isCurrentPipelineRun,
       );
     };
     const emitStageTaskSnapshotBarrier = async (payload: {
@@ -839,12 +909,18 @@ const startBuildSessionInternal = async (
       void payload.taskCount;
       // Initialize timing only at an actual stage transition, then read the
       // persisted values back before emitting the snapshot.
-      const timing = await initializeAndReadStageTiming(payload.nodeId, payload.stage);
+      const timing = await initializeAndReadStageTiming(
+        payload.nodeId,
+        payload.stage,
+        requireCurrentPipelineRun,
+      );
       await emitStageSnapshotUpdated(
         payload.nodeId,
         payload.stage,
         timing.stageStartedAt,
         timing.stageInactiveMs,
+        undefined,
+        isCurrentPipelineRun,
       );
     };
     emitStartupStepLog('start', 'pipeline-dispatch', {
@@ -885,7 +961,7 @@ const startBuildSessionInternal = async (
         outcome: 'success',
         emptyBuild: true,
       });
-      clearActivePipelineRuntimeState(nodeForSession);
+      clearBuildSessionAuthContext();
       return nodeForSession;
     }
 
@@ -909,7 +985,7 @@ const startBuildSessionInternal = async (
         outcome: 'success',
         emptyBuild: true,
       });
-      clearActivePipelineRuntimeState(nodeForSession);
+      clearBuildSessionAuthContext();
       return nodeForSession;
     }
     console.warn('[shapeBuildAPI] Starting runShapePipeline execution', {
@@ -919,7 +995,20 @@ const startBuildSessionInternal = async (
       selectedAdminPairCount,
       downloadTaskPayloadsCount: downloadTaskPayloads.length,
     });
-    void finalizePipelineOutcome(
+    if (getActivePipeline(nodeForSession) !== null) {
+      throw new Error(`[shapeBuildAPI] active pipeline already exists: ${String(nodeForSession)}`);
+    }
+    const isCurrentPipelineRun = (): boolean =>
+      isActivePipelineRunCurrent(nodeForSession, pipelineRunId);
+    const requireCurrentPipelineRun = (): void => {
+      if (isCurrentPipelineRun()) return;
+      const error = new Error(
+        `[shapeBuildAPI] stale pipeline run cannot publish updates: ${String(nodeForSession)}:${pipelineRunId}`
+      );
+      error.name = 'AbortError';
+      throw error;
+    };
+    const pipelineExecutionPromise = Promise.resolve().then(() =>
       runShapePipeline({
         nodeId: nodeForSession,
         dataSource: resolvedDataSource,
@@ -931,81 +1020,88 @@ const startBuildSessionInternal = async (
         resumeExistingTasks,
         pipelineRunId,
         abortSignal: abortController.signal,
-        onTasksEnqueued: emitQueuedProgressSnapshot,
-        onStageTasksPrepared: emitStageTaskSnapshotBarrier,
-      }),
-      {
-        onSuccess: async () => {
-          console.warn('[shapeBuildAPI] runShapePipeline completed successfully', {
-            nodeId: nodeForSession,
-            runId: pipelineRunId,
-          });
-          const completedAt = Date.now();
-          const taskQueue = new VtTaskQueueDb();
-          const tasks = await listTasks(taskQueue, nodeForSession);
-          const terminalTaskStatus = summarizeTaskQueueStatus(tasks).status;
-          const pipelineFinishedWithFailure = terminalTaskStatus === 'failed';
-          await updateBuildSessionFromTasks(nodeForSession, {
+        isRunCurrent: isCurrentPipelineRun,
+        onTasksEnqueued: async (payload) => {
+          requireCurrentPipelineRun();
+          await emitQueuedProgressSnapshot(payload);
+        },
+        onStageTasksPrepared: async (payload) => {
+          requireCurrentPipelineRun();
+          await emitStageTaskSnapshotBarrier(payload);
+        },
+      })
+    );
+    const activePipelinePromise = finalizePipelineOutcome(pipelineExecutionPromise, {
+      onSuccess: async () => {
+        if (
+          abortController.signal.aborted ||
+          !isActivePipelineRunCurrent(nodeForSession, pipelineRunId)
+        ) {
+          return;
+        }
+        console.warn('[shapeBuildAPI] runShapePipeline completed successfully', {
+          nodeId: nodeForSession,
+          runId: pipelineRunId,
+        });
+        const completedAt = Date.now();
+        const taskQueue = new VtTaskQueueDb();
+        const tasks = await listTasks(taskQueue, nodeForSession);
+        requireCurrentPipelineRun();
+        const terminalTaskStatus = summarizeTaskQueueStatus(tasks).status;
+        const pipelineFinishedWithFailure = terminalTaskStatus === 'failed';
+        await updateBuildSessionFromTasks(
+          nodeForSession,
+          {
             status: pipelineFinishedWithFailure ? 'failed' : 'completed',
             stopReason: pipelineFinishedWithFailure ? 'failed' : 'completed',
             completedAt,
             canResume: false,
-          });
-          if (pipelineFinishedWithFailure) {
-          }
-        },
-        onFailure: async (error) => {
-          console.error('[shapeBuildAPI] runShapePipeline failed with error', {
-            nodeId: nodeForSession,
-            runId: pipelineRunId,
-            error: error instanceof Error ? error.message : String(error),
-            errorName: error instanceof Error ? error.name : 'Unknown',
-            errorStack: error instanceof Error ? error.stack : undefined,
-          });
+          },
+          requireCurrentPipelineRun
+        );
+        if (pipelineFinishedWithFailure) {
+        }
+      },
+      onFailure: async (error) => {
+        if (
+          abortController.signal.aborted ||
+          !isActivePipelineRunCurrent(nodeForSession, pipelineRunId)
+        ) {
+          return;
+        }
+        console.error('[shapeBuildAPI] runShapePipeline failed with error', {
+          nodeId: nodeForSession,
+          runId: pipelineRunId,
+          error: error instanceof Error ? error.message : String(error),
+          errorName: error instanceof Error ? error.name : 'Unknown',
+          errorStack: error instanceof Error ? error.stack : undefined,
+        });
 
-          // updateBuildSessionFromTasks already emits sessionStatusUpdated.
-          // No additional snapshot emission needed here.
+        // updateBuildSessionFromTasks already emits sessionStatusUpdated.
+        // No additional snapshot emission needed here.
 
-          const failedAt = Date.now();
-          const diagnostics = toErrorDiagnostics(error);
-          if (isAuthPendingPipelineError(error)) {
-            await updateBuildSessionFromTasks(nodeForSession, {
+        const failedAt = Date.now();
+        const diagnostics = toErrorDiagnostics(error);
+        if (isAuthPendingPipelineError(error)) {
+          await updateBuildSessionFromTasks(
+            nodeForSession,
+            {
               status: 'paused',
               stopReason: 'user-pause',
               canResume: true,
-            });
-            return;
-          }
-          if (isSourceTaskPayloadGenerationError(error)) {
-            console.error('[shapeBuildAPI] source task payload generation failed', error);
-            console.error(
-              '[shapeBuildAPI] startup',
-              JSON.stringify({
-                scope: startupScope,
-                phase: 'finish',
-                step: 'payload-generation',
-                nodeId: nodeForSession,
-                runId: pipelineRunId,
-                outcome: 'error',
-                failedAt,
-                ...diagnostics,
-              })
-            );
-            await updateBuildSessionFromTasks(nodeForSession, {
-              status: 'failed',
-              stopReason: 'failed',
-              completedAt: failedAt,
-              canResume: false,
-            });
-            return;
-          }
-          console.error('[shapeBuildAPI] tileEmit pipeline failed', error);
+            },
+            requireCurrentPipelineRun
+          );
+          return;
+        }
+        if (isSourceTaskPayloadGenerationError(error)) {
+          console.error('[shapeBuildAPI] source task payload generation failed', error);
           console.error(
             '[shapeBuildAPI] startup',
             JSON.stringify({
               scope: startupScope,
               phase: 'finish',
-              step: 'pipeline-run',
+              step: 'payload-generation',
               nodeId: nodeForSession,
               runId: pipelineRunId,
               outcome: 'error',
@@ -1013,26 +1109,63 @@ const startBuildSessionInternal = async (
               ...diagnostics,
             })
           );
-          await updateBuildSessionFromTasks(nodeForSession, {
+          await updateBuildSessionFromTasks(
+            nodeForSession,
+            {
+              status: 'failed',
+              stopReason: 'failed',
+              completedAt: failedAt,
+              canResume: false,
+            },
+            requireCurrentPipelineRun
+          );
+          return;
+        }
+        console.error('[shapeBuildAPI] tileEmit pipeline failed', error);
+        console.error(
+          '[shapeBuildAPI] startup',
+          JSON.stringify({
+            scope: startupScope,
+            phase: 'finish',
+            step: 'pipeline-run',
+            nodeId: nodeForSession,
+            runId: pipelineRunId,
+            outcome: 'error',
+            failedAt,
+            ...diagnostics,
+          })
+        );
+        await updateBuildSessionFromTasks(
+          nodeForSession,
+          {
             status: 'failed',
             stopReason: 'failed',
             completedAt: failedAt,
             canResume: false,
-          });
-        },
-        onFinalizationError: (finalizationError) => {
-          console.error('[shapeBuildAPI] Failed to persist terminal pipeline state', {
-            nodeId: nodeForSession,
-            runId: pipelineRunId,
-            error:
-              finalizationError instanceof Error
-                ? finalizationError.message
-                : String(finalizationError),
-          });
-        },
+          },
+          requireCurrentPipelineRun
+        );
+      },
+      onFinalizationError: (finalizationError) => {
+        console.error('[shapeBuildAPI] Failed to persist terminal pipeline state', {
+          nodeId: nodeForSession,
+          runId: pipelineRunId,
+          error:
+            finalizationError instanceof Error
+              ? finalizationError.message
+              : String(finalizationError),
+        });
+      },
+    });
+    registerActivePipeline(nodeForSession, {
+      promise: activePipelinePromise,
+      abortController,
+      runId: pipelineRunId,
+    });
+    void activePipelinePromise.then(() => {
+      if (!abortController.signal.aborted) {
+        clearActivePipelineRuntimeState(nodeForSession, pipelineRunId);
       }
-    ).finally(() => {
-      clearActivePipelineRuntimeState(nodeForSession);
     });
     emitStartupStepLog('finish', 'pipeline-dispatch', {
       runId: pipelineRunId,
@@ -1041,7 +1174,10 @@ const startBuildSessionInternal = async (
       outcome: 'success',
     });
   } catch (error) {
-    clearActivePipelineRuntimeState(nodeForSession);
+    clearActivePipelineRuntimeState(nodeForSession, pipelineRunId);
+    if (getActivePipeline(nodeForSession) === null) {
+      clearBuildSessionAuthContext();
+    }
     const failedAt = Date.now();
     return persistFailureAndRethrow(
       error,
@@ -1101,30 +1237,25 @@ const startBuildSessionInternal = async (
   return nodeForSession;
 };
 
-const sleep = (ms: number): Promise<void> => new Promise((resolve) => {
-  setTimeout(resolve, ms);
-});
-
-const waitForRunningTasksToDrain = async (
+const waitForPipelineShutdown = async (
   nodeId: NodeId,
-  options?: { timeoutMs?: number; pollMs?: number },
-): Promise<{ drained: boolean; durationMs: number; running: number; queued: number; total: number }> => {
-  const timeoutMs = options?.timeoutMs ?? 15_000;
-  const pollMs = options?.pollMs ?? 100;
-  const startedAt = Date.now();
-  const taskQueue = new VtTaskQueueDb();
-  let latest = await countTaskQueueStatuses(taskQueue, nodeId);
-  while (latest.running > 0 && Date.now() - startedAt < timeoutMs) {
-    await sleep(pollMs);
-    latest = await countTaskQueueStatuses(taskQueue, nodeId);
+  runId: string,
+  pipelinePromise: Promise<void>,
+  timeoutMs: number,
+): Promise<void> => {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  try {
+    await Promise.race([
+      pipelinePromise,
+      new Promise<void>((_resolve, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new ShapeBuildPauseShutdownTimeoutError(nodeId, runId, timeoutMs));
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId !== null) clearTimeout(timeoutId);
   }
-  return {
-    drained: latest.running === 0,
-    durationMs: Date.now() - startedAt,
-    running: latest.running,
-    queued: Math.max(0, latest.total - latest.completed - latest.failed - latest.running),
-    total: latest.total,
-  };
 };
 
 const resetRunningTasks = async (nodeId: NodeId): Promise<void> => {
@@ -1132,8 +1263,8 @@ const resetRunningTasks = async (nodeId: NodeId): Promise<void> => {
   const runningTasks = await listTasksByStatus(taskQueue, nodeId, 'running');
   if (runningTasks.length === 0) return;
 
-  // Preserve all task state during force termination - only change status to queued
-  // This ensures compliance with Requirements 1.4: Task state preservation
+  // Runtime shutdown is already confirmed at this boundary. Requeue only tasks
+  // interrupted while running and preserve their task payload/result metadata.
   await Promise.all(runningTasks.map((task) => (
     updateTask(taskQueue, task.taskId, {
       status: 'queued',
@@ -1151,104 +1282,155 @@ const invokeShapeBuildCommand = async (
   if (command === 'session/pause') {
     const nodeId = payload.nodeId as NodeId;
     if (!nodeId) throw new Error('[shapeBuildAPI] session/pause requires nodeId');
-    const rawStopReason = typeof payload.stopReason === 'string' ? payload.stopReason : undefined;
-    const stopReason = rawStopReason && isStopReason(rawStopReason) ? rawStopReason : undefined;
+    const rawStopReason = payload.stopReason;
+    if (
+      rawStopReason !== undefined &&
+      (typeof rawStopReason !== 'string' || !isStopReason(rawStopReason))
+    ) {
+      throw new Error(`[shapeBuildAPI] invalid session/pause stopReason: ${String(rawStopReason)}`);
+    }
+    const stopReason = rawStopReason ?? 'user-pause';
     console.warn('[shapeBuildAPI][PauseTrace] pause-requested', {
       nodeId,
       stopReason: stopReason ?? null,
     });
 
-    // Measure termination time
     const terminationStartTime = Date.now();
-
-    setPaused(nodeId, true);
-
-    // Immediately abort all running tasks
-    const abortController = getSessionAbortController(nodeId);
-    if (abortController) {
-      abortController.abort();
+    const activePipeline = getActivePipeline(nodeId);
+    if (activePipeline === null) {
+      const error = new ShapeBuildPauseActivePipelineMissingError(nodeId);
+      const failedAt = Date.now();
+      await setPaused(nodeId, false);
+      return persistFailureAndRethrow(
+        error,
+        async () =>
+          upsertBuildSessionSnapshot({
+            nodeId,
+            status: 'failed',
+            stopReason: 'failed',
+            completedAt: failedAt,
+            canResume: false,
+          }),
+        (persistenceError) => {
+          console.error('[shapeBuildAPI] Failed to persist missing active pipeline', {
+            nodeId,
+            persistenceError,
+          });
+        }
+      );
+    }
+    const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId);
+    if (!isActivePipelineRunCurrent(nodeId, activePipeline.runId)) {
+      throw new ShapeBuildPauseActivePipelineMissingError(nodeId);
+    }
+    if (sessionRecord === null) {
+      activePipeline.abortController.abort();
+      invalidateActivePipeline(nodeId, activePipeline.runId);
+      void activePipeline.promise.then(
+        () => clearActivePipelineRuntimeState(nodeId, activePipeline.runId),
+        () => clearActivePipelineRuntimeState(nodeId, activePipeline.runId)
+      );
+      await setPaused(nodeId, false);
+      throw new Error(
+        `[shapeBuildAPI] build session record is missing before pause: ${String(nodeId)}`
+      );
     }
 
-    // Implement timeout mechanism for force termination
-    const FORCE_TERMINATION_TIMEOUT_MS = 1000;
-    let forceTerminationExecuted = false;
-
-    // Set up force termination timeout
-    const forceTerminationTimer = setTimeout(async () => {
-      if (forceTerminationExecuted) return;
-      forceTerminationExecuted = true;
-
-      const durationMs = Date.now() - terminationStartTime;
-      console.warn('[shapeBuildAPI][PauseTrace] force-termination-triggered', {
+    activePipeline.abortController.abort();
+    try {
+      await setPaused(nodeId, true);
+      emitSessionLifecyclePhaseUpdated(
         nodeId,
-        durationMs,
-        timeoutMs: FORCE_TERMINATION_TIMEOUT_MS,
-      });
+        {
+          ...sessionRecord,
+          stopReason,
+        },
+        'pausing'
+      );
+      await waitForPipelineShutdown(
+        nodeId,
+        activePipeline.runId,
+        activePipeline.promise,
+        SHAPE_PIPELINE_SHUTDOWN_TIMEOUT_MS
+      );
+    } catch (error) {
+      invalidateActivePipeline(nodeId, activePipeline.runId);
+      void activePipeline.promise.then(
+        () => clearActivePipelineRuntimeState(nodeId, activePipeline.runId),
+        () => clearActivePipelineRuntimeState(nodeId, activePipeline.runId)
+      );
+      await setPaused(nodeId, false);
+      const failedAt = Date.now();
+      await persistFailureAndRethrow(
+        error,
+        async () =>
+          upsertBuildSessionSnapshot({
+            nodeId,
+            status: 'failed',
+            stopReason: 'failed',
+            completedAt: failedAt,
+            canResume: false,
+          }),
+        (persistenceError) => {
+          console.error('[shapeBuildAPI] Failed to persist pause shutdown failure', {
+            nodeId,
+            runId: activePipeline.runId,
+            persistenceError,
+          });
+        }
+      );
+    }
 
-      // Force reset running tasks regardless of worker termination
+    try {
       await resetRunningTasks(nodeId);
+      const taskQueue = new VtTaskQueueDb();
+      const counts = await countTaskQueueStatuses(taskQueue, nodeId);
+      if (counts.running !== 0) {
+        const error = new Error(
+          `[shapeBuildAPI] Pipeline settled but ${counts.running} running tasks remain: ${String(nodeId)}`
+        );
+        error.name = 'ShapeBuildPauseDrainInvariantError';
+        throw error;
+      }
 
-      // Update session state — emitSessionStatusUpdated is called inside upsertBuildSessionSnapshot
       await upsertBuildSessionSnapshot({
         nodeId,
         status: 'paused',
         stopReason,
         canResume: true,
       });
-    }, FORCE_TERMINATION_TIMEOUT_MS);
-
-    await resetRunningTasks(nodeId);
-    void (async () => {
-      try {
-        const initialDrain = await waitForRunningTasksToDrain(nodeId, { timeoutMs: 3_000 });
-
-        // Check if cooperative termination completed within timeout
-        const terminationElapsed = Date.now() - terminationStartTime;
-        if (terminationElapsed <= FORCE_TERMINATION_TIMEOUT_MS && !forceTerminationExecuted) {
-          // Cooperative termination succeeded, cancel force termination
-          clearTimeout(forceTerminationTimer);
-          console.warn('[shapeBuildAPI][PauseTrace] cooperative-termination-success', {
+      console.warn('[shapeBuildAPI][PauseTrace] pause-settled', {
+        nodeId,
+        runId: activePipeline.runId,
+        durationMs: Date.now() - terminationStartTime,
+        running: counts.running,
+        total: counts.total,
+      });
+    } catch (error) {
+      invalidateActivePipeline(nodeId, activePipeline.runId);
+      await setPaused(nodeId, false);
+      const failedAt = Date.now();
+      await persistFailureAndRethrow(
+        error,
+        async () =>
+          upsertBuildSessionSnapshot({
             nodeId,
-            durationMs: terminationElapsed,
-            targetMs: FORCE_TERMINATION_TIMEOUT_MS,
-          });
-        } else if (terminationElapsed > FORCE_TERMINATION_TIMEOUT_MS) {
-          console.warn('[shapeBuildAPI][PauseTrace] termination-timeout-exceeded', {
+            status: 'failed',
+            stopReason: 'failed',
+            completedAt: failedAt,
+            canResume: false,
+          }),
+        (persistenceError) => {
+          console.error('[shapeBuildAPI] Failed to persist post-drain pause failure', {
             nodeId,
-            durationMs: terminationElapsed,
-            targetMs: FORCE_TERMINATION_TIMEOUT_MS,
-          });
-        }
-
-        if (initialDrain.running > 0) {
-          console.warn('[shapeBuildAPI][PauseTrace] pause-requeue-not-complete', {
-            nodeId,
-            ...initialDrain,
+            runId: activePipeline.runId,
+            persistenceError,
           });
         }
-
-        // Only update session state if force termination hasn't been executed
-        if (!forceTerminationExecuted) {
-          await upsertBuildSessionSnapshot({
-            nodeId,
-            status: 'paused',
-            stopReason,
-            canResume: true,
-          });
-        }
-
-        const drain = await waitForRunningTasksToDrain(nodeId);
-        console.warn('[shapeBuildAPI][PauseTrace] pause-settled', {
-          nodeId,
-          ...drain,
-        });
-      } catch (error) {
-        console.warn('[shapeBuildAPI][PauseTrace] pause-settle-monitor-failed', {
-          nodeId,
-          errorMessage: error instanceof Error ? error.message : String(error),
-        });
-      }
-    })();
+      );
+    } finally {
+      clearActivePipelineRuntimeState(nodeId, activePipeline.runId);
+    }
     return;
   }
 
@@ -1263,7 +1445,7 @@ const invokeShapeBuildCommand = async (
       await invokeShapeBuildCommand('session/pause', { nodeId, stopReason });
       return;
     }
-    setPaused(nodeId, false);
+    await setPaused(nodeId, false);
     setSourcePlannedTotal(nodeId, 0);
     const taskQueue = new VtTaskQueueDb();
     await deleteTasksByNode(taskQueue, nodeId);

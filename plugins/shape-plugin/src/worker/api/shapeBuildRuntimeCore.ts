@@ -6,7 +6,7 @@
 
 import type { NodeId } from '@hierarchidb/core-types';
 import {
-  VtTaskQueueDb,
+  type VtTaskQueueDb,
   listTasks,
   onTaskQueueUpdate,
 } from '@hierarchidb/vt-orchestrator';
@@ -49,9 +49,11 @@ export {
   waitIfPaused,
   setPaused,
   resolveProgressPhase,
-  setSessionAbortController,
-  clearSessionAbortController,
-  getSessionAbortController,
+  registerActivePipeline,
+  clearActivePipeline,
+  getActivePipeline,
+  invalidateActivePipeline,
+  isActivePipelineRunCurrent,
 } from './stateManagement.js';
 
 // Task summary snapshot building

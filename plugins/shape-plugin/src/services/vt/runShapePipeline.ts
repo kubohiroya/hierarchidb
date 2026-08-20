@@ -41,6 +41,7 @@ export type ShapePipelineParams = {
   buildContinuationPolicy?: BuildContinuationPolicy;
   pipelineRunId?: string;
   abortSignal?: AbortSignal;
+  isRunCurrent?: () => boolean;
   onTasksEnqueued?: (payload: {
     nodeId: NodeId;
     stage: 'source';
@@ -52,6 +53,12 @@ export type ShapePipelineParams = {
     stage: TaskStage;
     taskCount: number;
   }) => Promise<void> | void;
+};
+
+const assertShapePipelineActive = (params: ShapePipelineParams): void => {
+  if (params.abortSignal?.aborted || params.isRunCurrent?.() === false) {
+    throw new DOMException('Shape pipeline run is no longer active', 'AbortError');
+  }
 };
 
 type ShapePipelineContext = {
@@ -162,6 +169,7 @@ const createShapePipelineContext = async (params: ShapePipelineParams): Promise<
 
 const preparePipelineRun = async (context: ShapePipelineContext): Promise<void> => {
   const { params, taskQueue, resumeExistingTasks, buildContinuationPolicy, diffBuildEnabled } = context;
+  assertShapePipelineActive(params);
   console.warn('[ShapePipeline] run start', JSON.stringify({
     nodeId: params.nodeId,
     runId: params.pipelineRunId ?? null,
@@ -169,9 +177,12 @@ const preparePipelineRun = async (context: ShapePipelineContext): Promise<void> 
     buildContinuationPolicy,
   }));
   if (!resumeExistingTasks) {
+    assertShapePipelineActive(params);
     await deleteTasksByNode(taskQueue, params.nodeId);
+    assertShapePipelineActive(params);
     if (!diffBuildEnabled) {
       await shapeMutationAPIImpl.deleteFeatureMetadataByNode(params.nodeId);
+      assertShapePipelineActive(params);
     }
   }
 };
@@ -399,6 +410,7 @@ const runMetadataStage = async (context: ShapePipelineContext): Promise<void> =>
     recyclingByFeatureId: diffBuildEnabled ? recyclingByFeatureId : undefined,
     recyclingAllowlist,
     diffBuildEnabled,
+    abortSignal: params.abortSignal,
   });
 };
 
@@ -408,6 +420,7 @@ const runCleanupStage = async (context: ShapePipelineContext): Promise<void> => 
     nodeId: params.nodeId,
     buildConfig: params.buildConfig,
     ephemeralStore,
+    abortSignal: params.abortSignal,
   });
 };
 
@@ -419,15 +432,23 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
   }));
   
   try {
+    const shouldStopPipeline = (): boolean =>
+      params.abortSignal?.aborted === true || params.isRunCurrent?.() === false;
+    if (shouldStopPipeline()) return;
     const context = await createShapePipelineContext(params);
+    if (shouldStopPipeline()) return;
     const stageProfile = createDefaultShapeStageProfile();
     validateShapeStageProfile(stageProfile);
     const executionStages = flattenShapeStageProfile(stageProfile);
-    const markPipelineCheckpoint = (stage: string, phase: 'start' | 'success' | 'error'): void => {
-      void shapeMutationAPIImpl.updateBuildSession(params.nodeId, {
+    const markPipelineCheckpoint = async (
+      stage: string,
+      phase: 'start' | 'success' | 'error',
+    ): Promise<void> => {
+      if (shouldStopPipeline()) return;
+      await shapeMutationAPIImpl.updateBuildSession(params.nodeId, {
         stageId: `pipeline:${stage}:${phase}`,
         stageHeartbeatAt: Date.now(),
-      }).catch(() => { });
+      });
     };
 
     const checkpointToProgressStage = new Map<string, TaskStage>(
@@ -445,8 +466,7 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
         action,
         runId: params.pipelineRunId,
         writeHeartbeat: async (_checkpointStage, phase) => {
-          markPipelineCheckpoint(stage, phase);
-          return undefined;
+          await markPipelineCheckpoint(stage, phase);
         },
         logger: {
           onStart: ({ startedAt, memory }) => {
@@ -490,6 +510,7 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
       runId: params.pipelineRunId ?? null,
     }));
     await checkpoint('prepare-pipeline-run', async () => preparePipelineRun(context));
+    if (shouldStopPipeline()) return;
 
     console.warn('[ShapePipeline] execution stages start', JSON.stringify({
       runId: params.pipelineRunId ?? null,
@@ -513,17 +534,22 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
         stage.checkpointStage,
         async () => runProfileStage(stage, context),
       );
+      if (shouldStopPipeline()) return;
     }
     
     console.warn('[ShapePipeline] metadata stage start', JSON.stringify({
       runId: params.pipelineRunId ?? null,
     }));
+    if (shouldStopPipeline()) return;
     await checkpoint('metadata-stage', async () => runMetadataStage(context));
+    if (shouldStopPipeline()) return;
     
     console.warn('[ShapePipeline] cleanup stage start', JSON.stringify({
       runId: params.pipelineRunId ?? null,
     }));
+    if (shouldStopPipeline()) return;
     await checkpoint('cleanup-stage', async () => runCleanupStage(context));
+    if (shouldStopPipeline()) return;
     
     console.warn('[ShapePipeline] pipeline complete', JSON.stringify({
       runId: params.pipelineRunId ?? null,

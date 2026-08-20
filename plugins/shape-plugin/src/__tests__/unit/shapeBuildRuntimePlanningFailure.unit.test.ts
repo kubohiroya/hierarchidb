@@ -9,6 +9,17 @@ const upsertBuildSessionMock = vi.hoisted(() => vi.fn(async () => undefined));
 const updateBuildSessionMock = vi.hoisted(() => vi.fn(async () => undefined));
 const buildSourceTasksMock = vi.hoisted(() => vi.fn(async () => ({ tasks: [] })));
 const emitSessionStatusUpdatedMock = vi.hoisted(() => vi.fn());
+const setPausedMock = vi.hoisted(() => vi.fn(async () => undefined));
+const getActivePipelineMock = vi.hoisted(() =>
+  vi.fn(
+    (): {
+      readonly promise: Promise<void>;
+      readonly abortController: AbortController;
+      readonly runId: string;
+    } | null => null
+  )
+);
+const isActivePipelineRunCurrentMock = vi.hoisted(() => vi.fn(() => false));
 const cleanupInvalidEntriesMock = vi.hoisted(() =>
   vi.fn(async () => ({ geometryDeleted: 0, sourceDeleted: 0 }))
 );
@@ -34,15 +45,19 @@ vi.mock('../../worker/api/shapeBuildRuntimeCore.js', () => ({
     failed: 0,
     recycled: 0,
   })),
-  setPaused: vi.fn(),
+  setPaused: (...args: Parameters<typeof setPausedMock>) => setPausedMock(...args),
   waitIfPaused: vi.fn(async () => undefined),
   resolveProgressPhase: vi.fn(() => 'running'),
   buildProgressPayloadFromTasks: vi.fn(async () => ({})),
   progressCallbacks: new Map(),
   getShapeEntityHandler: () => ({ getEntity: getEntityMock }),
-  setSessionAbortController: vi.fn(),
-  clearSessionAbortController: vi.fn(),
-  getSessionAbortController: vi.fn(() => null),
+  registerActivePipeline: vi.fn(),
+  clearActivePipeline: vi.fn(() => true),
+  getActivePipeline: (...args: Parameters<typeof getActivePipelineMock>) =>
+    getActivePipelineMock(...args),
+  invalidateActivePipeline: vi.fn(() => false),
+  isActivePipelineRunCurrent: (...args: Parameters<typeof isActivePipelineRunCurrentMock>) =>
+    isActivePipelineRunCurrentMock(...args),
 }));
 
 vi.mock('../../services/build/ShapeBuildAPIClient.js', () => ({
@@ -69,6 +84,7 @@ vi.mock('../../services/CacheValidator.js', () => ({
 }));
 
 vi.mock('../../worker/api/eventEmissionConstants.js', () => ({
+  emitSessionLifecyclePhaseUpdated: vi.fn(),
   emitSessionStatusUpdated: emitSessionStatusUpdatedMock,
   emitStageSnapshotUpdated: vi.fn(),
   readStartedStageTiming: vi.fn(() => null),
@@ -100,6 +116,8 @@ describe('shape build runtime zero-task planning failure', () => {
     getEntityMock.mockResolvedValue({ selectedArrayByCountries });
     buildSourceTasksMock.mockResolvedValue({ tasks: [] });
     cleanupInvalidEntriesMock.mockResolvedValue({ geometryDeleted: 0, sourceDeleted: 0 });
+    getActivePipelineMock.mockReturnValue(null);
+    isActivePipelineRunCurrentMock.mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -199,5 +217,42 @@ describe('shape build runtime zero-task planning failure', () => {
       completedAt: 1_000,
     });
     expect(emitSessionStatusUpdatedMock).toHaveBeenCalledOnce();
+  });
+
+  it('rejects an invalidated active run before planning or cleanup mutates state', async () => {
+    getBuildSessionRecordMock.mockResolvedValue({
+      nodeId,
+      status: 'failed',
+      startedAt: 1_000,
+      updatedAt: 1_000,
+      completedAt: 1_000,
+      progress: {
+        total: 0,
+        completed: 0,
+        failed: 0,
+        skipped: 0,
+        percentage: 0,
+      },
+      stages: {},
+      stopReason: 'failed',
+      canResume: false,
+    });
+    getActivePipelineMock.mockReturnValue({
+      promise: new Promise<void>(() => {}),
+      abortController: new AbortController(),
+      runId: 'run-timeout',
+    });
+    isActivePipelineRunCurrentMock.mockReturnValue(false);
+
+    await expect(startBuildSession()).rejects.toMatchObject({
+      name: 'ShapeBuildActivePipelineAlreadyExistsError',
+      message: expect.stringContaining('run-timeout'),
+    });
+
+    expect(buildSourceTasksMock).not.toHaveBeenCalled();
+    expect(cleanupInvalidEntriesMock).not.toHaveBeenCalled();
+    expect(setPausedMock).not.toHaveBeenCalled();
+    expect(upsertBuildSessionMock).not.toHaveBeenCalled();
+    expect(updateBuildSessionMock).not.toHaveBeenCalled();
   });
 });

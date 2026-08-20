@@ -315,6 +315,7 @@ export const runGeometryStageOutputPhase = async (
     taskId,
     ephemeralDB,
     cacheRecord,
+    abortSignal,
   });
 
   if ((globalThis as { __HDB_VT_DEBUG_COLLECT?: boolean }).__HDB_VT_DEBUG_COLLECT === true) {

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { notify } from '@hierarchidb/components/notify';
+import { useSetAtom } from 'jotai';
+import { dispatchBuildSessionEventAtom } from '~/ui/atoms/buildSessionStateAtoms.js';
 import type { PauseWithCancelHookActionsArgs, ShapeBuildPauseReason } from './types.js';
 import { runWithTimeout, waitForSessionStateSync } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/elapsedConstants';
 import { SHAPE_NODE_TYPE } from '~/ui/components/build-progress/shapeBuildTaskSyncDebug';
@@ -19,6 +21,7 @@ export const useShapeBuildPause = ({
   setIsStopAccepted,
   handleCancelQueued,
 }: PauseWithCancelHookActionsArgs) => {
+  const dispatchBuildSessionEvent = useSetAtom(dispatchBuildSessionEventAtom);
   const runtimeStatusRef = useRef(runtimeStatus);
   useEffect(() => {
     runtimeStatusRef.current = runtimeStatus;
@@ -66,15 +69,6 @@ export const useShapeBuildPause = ({
     setIsStopRequested(true);
     clearStartPendingRef.current?.();
 
-    // 強制リセット用のタイマー
-    const forceResetTimer = setTimeout(() => {
-      logPauseTrace('force-reset-triggered', { reason: 'timeout-exceeded' });
-      setIsStopRequested(false);
-      setIsStopAccepted(false);
-      setRequestedControlAction('none');
-      notify.warning('Pause operation timed out. UI state has been reset.');
-    }, PAUSE_COMMAND_TIMEOUT_MS + PAUSE_STATE_SYNC_TIMEOUT_MS);
-
     try {
       await bridgeApi.initialize();
 
@@ -105,19 +99,37 @@ export const useShapeBuildPause = ({
         logPauseTrace('session-sync-completed');
       }
 
-      clearTimeout(forceResetTimer);
       logPauseTrace('request-finished');
     } catch (error) {
-      clearTimeout(forceResetTimer);
       setIsStopRequested(false);
       setIsStopAccepted(false);
       setRequestedControlAction('none');
 
       const errorMessage = error instanceof Error ? error.message : String(error);
-      const isTimeoutError = errorMessage.includes('timed out');
+      const errorName = error instanceof Error ? error.name : 'Error';
+      const uiCommandTimeoutMessage = `Pause command timed out after ${PAUSE_COMMAND_TIMEOUT_MS}ms while worker is busy.`;
+      const isTimeoutError =
+        errorName === 'ShapeBuildPauseShutdownTimeoutError'
+        || (errorName === 'Error' && errorMessage === uiCommandTimeoutMessage);
+      dispatchBuildSessionEvent({
+        type: 'criticalError',
+        payload: {
+          nodeId: String(activeNodeId),
+          message: isTimeoutError
+            ? 'Pause failed because the active pipeline did not stop before the shutdown deadline.'
+            : 'Pause failed before active pipeline shutdown was confirmed.',
+          error: errorMessage,
+          errorName,
+          timestamp: Date.now(),
+          severity: 'critical',
+          contractViolation:
+            errorName === 'ShapeBuildPauseActivePipelineMissingError'
+            || errorName === 'ShapeBuildPauseDrainInvariantError',
+        },
+      });
 
       if (isTimeoutError) {
-        notify.error('Pause operation timed out. The build may still be pausing in the background.');
+        notify.error('Pause failed because the active pipeline could not be stopped safely.');
       } else {
         notify.error('Failed to pause build.');
       }
@@ -140,6 +152,7 @@ export const useShapeBuildPause = ({
     handleCancelQueued,
     setIsStopRequested,
     setIsStopAccepted,
+    dispatchBuildSessionEvent,
   ]);
 
   return handlePause;

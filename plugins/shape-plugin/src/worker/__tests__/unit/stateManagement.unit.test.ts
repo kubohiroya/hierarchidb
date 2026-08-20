@@ -1,18 +1,21 @@
 /**
  * Worker-side state management unit tests
  *
- * Covers: PauseState lifecycle, AbortController management, resolveProgressPhase branches
+ * Covers: PauseState lifecycle, active pipeline ownership, resolveProgressPhase branches
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/core-types';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
-    getPauseState,
-    setPaused,
-    setSessionAbortController,
-    clearSessionAbortController,
-    getSessionAbortController,
-    resolveProgressPhase,
+  clearActivePipeline,
+  getActivePipeline,
+  getPauseState,
+  invalidateActivePipeline,
+  isActivePipelineRunCurrent,
+  registerActivePipeline,
+  resolveProgressPhase,
+  setPaused,
+  waitIfPaused,
 } from '../../api/stateManagement';
 
 // ---------------------------------------------------------------------------
@@ -26,24 +29,25 @@ const nodeId = (id: string): NodeId => id as NodeId;
 // ---------------------------------------------------------------------------
 
 describe('getPauseState', () => {
-    it('initializes a new PauseState with defaults', () => {
-        const state = getPauseState(nodeId('node-init'));
-        expect(state.paused).toBe(false);
-        expect(state.waiters).toHaveLength(0);
-        expect(state.abortController).toBeNull();
-    });
+  it('initializes a new PauseState with defaults', () => {
+    const state = getPauseState(nodeId('node-init'));
+    expect(state.paused).toBe(false);
+    expect(state.waiters).toHaveLength(0);
+    expect(state.activePipeline).toBeNull();
+    expect(state.invalidatedRunId).toBeNull();
+  });
 
-    it('returns the same instance on repeated calls for the same nodeId', () => {
-        const a = getPauseState(nodeId('node-reuse'));
-        const b = getPauseState(nodeId('node-reuse'));
-        expect(a).toBe(b);
-    });
+  it('returns the same instance on repeated calls for the same nodeId', () => {
+    const a = getPauseState(nodeId('node-reuse'));
+    const b = getPauseState(nodeId('node-reuse'));
+    expect(a).toBe(b);
+  });
 
-    it('returns distinct instances for different nodeIds', () => {
-        const a = getPauseState(nodeId('node-distinct-a'));
-        const b = getPauseState(nodeId('node-distinct-b'));
-        expect(a).not.toBe(b);
-    });
+  it('returns distinct instances for different nodeIds', () => {
+    const a = getPauseState(nodeId('node-distinct-a'));
+    const b = getPauseState(nodeId('node-distinct-b'));
+    expect(a).not.toBe(b);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -51,99 +55,143 @@ describe('getPauseState', () => {
 // ---------------------------------------------------------------------------
 
 describe('setPaused', () => {
-    it('sets paused=true and does not release waiters', async () => {
-        const id = nodeId('node-pause-true');
-        const state = getPauseState(id);
-        state.paused = false;
-        state.waiters.length = 0;
+  it('sets paused=true and does not release waiters', async () => {
+    const id = nodeId('node-pause-true');
+    await setPaused(id, true);
 
-        let waiterResolved = false;
-        state.waiters.push(() => { waiterResolved = true; });
-
-        await setPaused(id, true);
-
-        expect(state.paused).toBe(true);
-        // waiters must NOT be released when pausing
-        expect(waiterResolved).toBe(false);
-        expect(state.waiters).toHaveLength(1);
+    let waiterResolved = false;
+    const waiting = waitIfPaused(id).then(() => {
+      waiterResolved = true;
     });
+    await Promise.resolve();
 
-    it('sets paused=false and releases all waiters', async () => {
-        const id = nodeId('node-pause-false');
-        const state = getPauseState(id);
-        state.paused = true;
+    await setPaused(id, true);
 
-        const resolved: number[] = [];
-        state.waiters.push(() => { resolved.push(1); });
-        state.waiters.push(() => { resolved.push(2); });
+    expect(getPauseState(id).paused).toBe(true);
+    // waiters must NOT be released when pausing
+    expect(waiterResolved).toBe(false);
+    expect(getPauseState(id).waiters).toHaveLength(1);
 
-        await setPaused(id, false);
+    await setPaused(id, false);
+    await waiting;
+  });
 
-        expect(state.paused).toBe(false);
-        expect(resolved).toEqual([1, 2]);
-        expect(state.waiters).toHaveLength(0);
+  it('sets paused=false and releases all waiters', async () => {
+    const id = nodeId('node-pause-false');
+    await setPaused(id, true);
+
+    const resolved: number[] = [];
+    const firstWaiter = waitIfPaused(id).then(() => {
+      resolved.push(1);
     });
-
-    it('clears snapshots when resuming (paused=false)', async () => {
-        const id = nodeId('node-clear-snapshots');
-        const state = getPauseState(id);
-        state.paused = true;
-        state.waiters.length = 0;
-
-        // taskStateProtection.clearSnapshots is called internally; just verify no throw
-        await expect(setPaused(id, false)).resolves.toBeUndefined();
+    const secondWaiter = waitIfPaused(id).then(() => {
+      resolved.push(2);
     });
+    await Promise.resolve();
 
-    it('does not release waiters when already paused and paused=true again', async () => {
-        const id = nodeId('node-already-paused');
-        const state = getPauseState(id);
-        state.paused = true;
+    await setPaused(id, false);
+    await Promise.all([firstWaiter, secondWaiter]);
 
-        let released = false;
-        state.waiters.push(() => { released = true; });
+    expect(getPauseState(id).paused).toBe(false);
+    expect(resolved).toEqual([1, 2]);
+    expect(getPauseState(id).waiters).toHaveLength(0);
+  });
 
-        await setPaused(id, true);
+  it('clears snapshots when resuming (paused=false)', async () => {
+    const id = nodeId('node-clear-snapshots');
+    await setPaused(id, true);
 
-        expect(released).toBe(false);
-        expect(state.waiters).toHaveLength(1);
+    // taskStateProtection.clearSnapshots is called internally; just verify no throw
+    await expect(setPaused(id, false)).resolves.toBeUndefined();
+  });
+
+  it('does not release waiters when already paused and paused=true again', async () => {
+    const id = nodeId('node-already-paused');
+    await setPaused(id, true);
+
+    let released = false;
+    const waiting = waitIfPaused(id).then(() => {
+      released = true;
     });
+    await Promise.resolve();
+
+    await setPaused(id, true);
+
+    expect(released).toBe(false);
+    expect(getPauseState(id).waiters).toHaveLength(1);
+
+    await setPaused(id, false);
+    await waiting;
+  });
 });
 
 // ---------------------------------------------------------------------------
-// AbortController management
+// Active pipeline management
 // ---------------------------------------------------------------------------
 
-describe('AbortController management', () => {
-    const id = nodeId('node-abort');
+describe('active pipeline management', () => {
+  const id = nodeId('node-active-pipeline');
 
-    beforeEach(() => {
-        clearSessionAbortController(id);
-    });
+  beforeEach(() => {
+    const active = getActivePipeline(id);
+    if (active) clearActivePipeline(id, active.runId);
+  });
 
-    it('getSessionAbortController returns null before any set', () => {
-        expect(getSessionAbortController(id)).toBeNull();
-    });
+  it('returns null before registration', () => {
+    expect(getActivePipeline(id)).toBeNull();
+  });
 
-    it('setSessionAbortController stores the controller', () => {
-        const ctrl = new AbortController();
-        setSessionAbortController(id, ctrl);
-        expect(getSessionAbortController(id)).toBe(ctrl);
-    });
+  it('stores one promise/controller/runId tuple', () => {
+    const active = {
+      promise: Promise.resolve(),
+      abortController: new AbortController(),
+      runId: 'run-1',
+    };
+    registerActivePipeline(id, active);
+    expect(getActivePipeline(id)).toBe(active);
+    expect(isActivePipelineRunCurrent(id, active.runId)).toBe(true);
+  });
 
-    it('clearSessionAbortController resets to null', () => {
-        const ctrl = new AbortController();
-        setSessionAbortController(id, ctrl);
-        clearSessionAbortController(id);
-        expect(getSessionAbortController(id)).toBeNull();
-    });
+  it('does not clear a newer run with a stale runId', () => {
+    const active = {
+      promise: Promise.resolve(),
+      abortController: new AbortController(),
+      runId: 'run-current',
+    };
+    registerActivePipeline(id, active);
+    expect(clearActivePipeline(id, 'run-stale')).toBe(false);
+    expect(getActivePipeline(id)).toBe(active);
+  });
 
-    it('replaces existing controller when set again', () => {
-        const ctrl1 = new AbortController();
-        const ctrl2 = new AbortController();
-        setSessionAbortController(id, ctrl1);
-        setSessionAbortController(id, ctrl2);
-        expect(getSessionAbortController(id)).toBe(ctrl2);
+  it('invalidates a timed-out run until its exact tuple is cleared', () => {
+    const active = {
+      promise: Promise.resolve(),
+      abortController: new AbortController(),
+      runId: 'run-timeout',
+    };
+    registerActivePipeline(id, active);
+    expect(invalidateActivePipeline(id, active.runId)).toBe(true);
+    expect(isActivePipelineRunCurrent(id, active.runId)).toBe(false);
+    expect(getActivePipeline(id)).toBe(active);
+    expect(clearActivePipeline(id, active.runId)).toBe(true);
+    expect(getActivePipeline(id)).toBeNull();
+    expect(getPauseState(id).invalidatedRunId).toBeNull();
+  });
+
+  it('rejects registration while another run is active', () => {
+    registerActivePipeline(id, {
+      promise: Promise.resolve(),
+      abortController: new AbortController(),
+      runId: 'run-existing',
     });
+    expect(() =>
+      registerActivePipeline(id, {
+        promise: Promise.resolve(),
+        abortController: new AbortController(),
+        runId: 'run-conflict',
+      })
+    ).toThrow('active pipeline already exists');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -151,24 +199,22 @@ describe('AbortController management', () => {
 // ---------------------------------------------------------------------------
 
 describe('resolveProgressPhase', () => {
-    it('returns "paused" when node is paused regardless of tasks', () => {
-        const id = nodeId('node-progress-paused');
-        const state = getPauseState(id);
-        state.paused = true;
+  it('returns "paused" when node is paused regardless of tasks', async () => {
+    const id = nodeId('node-progress-paused');
+    await setPaused(id, true);
 
-        // resolveProgressPhase uses summarizeTaskQueueStatus internally;
-        // with paused=true it short-circuits before task analysis
-        const phase = resolveProgressPhase(id, []);
-        expect(phase).toBe('paused');
+    // resolveProgressPhase uses summarizeTaskQueueStatus internally;
+    // with paused=true it short-circuits before task analysis
+    const phase = resolveProgressPhase(id, []);
+    expect(phase).toBe('paused');
 
-        state.paused = false;
-    });
+    await setPaused(id, false);
+  });
 
-    it('returns "queued" when not paused and tasks list is empty', () => {
-        const id = nodeId('node-progress-queued');
-        getPauseState(id).paused = false;
+  it('returns "queued" when not paused and tasks list is empty', () => {
+    const id = nodeId('node-progress-queued');
 
-        const phase = resolveProgressPhase(id, []);
-        expect(phase).toBe('queued');
-    });
+    const phase = resolveProgressPhase(id, []);
+    expect(phase).toBe('queued');
+  });
 });
