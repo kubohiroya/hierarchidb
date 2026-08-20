@@ -189,6 +189,63 @@ describe('WorkerBridge subscribeAll', () => {
     expect(workerLogUnsubscribeMock).toHaveBeenCalledTimes(1);
   });
 
+  it('disposes every acquired channel when subscription setup fails', async () => {
+    const subscriptionError = new Error('session state subscription failed');
+    subscribeSessionStateMock.mockRejectedValueOnce(subscriptionError);
+    const bridge = getBuildWorkerBridge();
+
+    await expect(
+      bridge.subscribeAll(SHAPE_NODE_TYPE, NODE_ID, {
+        onTaskEvent: vi.fn(),
+        onProgressEvent: vi.fn(),
+        onSessionState: vi.fn(),
+        onHeartbeat: vi.fn(),
+        onWorkerLog: vi.fn(),
+      }),
+    ).rejects.toBe(subscriptionError);
+
+    expect(tasksUnsubscribeMock).toHaveBeenCalledTimes(1);
+    expect(progressUnsubscribeMock).toHaveBeenCalledTimes(1);
+    expect(sessionStateUnsubscribeMock).not.toHaveBeenCalled();
+    expect(heartbeatUnsubscribeMock).toHaveBeenCalledTimes(1);
+    expect(workerLogUnsubscribeMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('disposes a channel that resolves after another subscription failed', async () => {
+    let resolveTaskSubscription: ((unsubscribe: () => void) => void) | null = null;
+    subscribeStageSnapshotsMock.mockImplementationOnce(
+      async (_nodeType: NodeType, _nodeId: NodeId, callback: (event: unknown) => void) => {
+        taskEventProxyCallback = callback;
+        return new Promise<() => void>((resolve) => {
+          resolveTaskSubscription = resolve;
+        });
+      }
+    );
+    const subscriptionError = new Error('session state subscription failed');
+    subscribeSessionStateMock.mockRejectedValueOnce(subscriptionError);
+    const bridge = getBuildWorkerBridge();
+
+    await expect(
+      bridge.subscribeAll(SHAPE_NODE_TYPE, NODE_ID, {
+        onTaskEvent: vi.fn(),
+        onProgressEvent: vi.fn(),
+        onSessionState: vi.fn(),
+        onHeartbeat: vi.fn(),
+        onWorkerLog: vi.fn(),
+      }),
+    ).rejects.toBe(subscriptionError);
+
+    const resolvePendingSubscription = resolveTaskSubscription;
+    if (!resolvePendingSubscription) {
+      throw new Error('Task subscription resolver was not registered.');
+    }
+    resolvePendingSubscription(tasksUnsubscribeMock);
+
+    await vi.waitFor(() => {
+      expect(tasksUnsubscribeMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it('exposes task-progress subscription and delegates delivery', async () => {
     const bridge = getBuildWorkerBridge();
     const onProgressEvent = vi.fn();

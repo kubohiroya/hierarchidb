@@ -402,31 +402,61 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
     }
   ): Promise<() => void> {
     const api = await ensureWorkerAPI();
-    const [unsubscribeTasks, unsubscribeProgress, unsubscribeSessionState, unsubscribeHeartbeat, unsubscribeWorkerLog] = await Promise.all([
-      api.subscribeStageSnapshots(nodeType, nodeId, proxy((event: unknown) => {
-        handlers.onTaskEvent(sanitizeForComlink(event));
-      })),
-      api.subscribeTaskProgress(nodeType, nodeId, proxy((event: TaskProgressUpdatedEvent) => {
-        handlers.onProgressEvent(sanitizeForComlink(event));
-      })),
-      api.subscribeSessionState(nodeType, nodeId, proxy((event: any) => {
-        handlers.onSessionState(sanitizeForComlink(event));
-      })),
-      api.subscribeSessionHeartbeat(nodeType, nodeId, proxy((event: any) => {
-        handlers.onHeartbeat(sanitizeForComlink(event));
-      })),
-      api.subscribeWorkerLog(nodeType, nodeId, proxy((event: any) => {
-        handlers.onWorkerLog(sanitizeForComlink(event));
-      })),
-    ]);
-    return () => {
-      for (const unsub of [unsubscribeTasks, unsubscribeProgress, unsubscribeSessionState, unsubscribeHeartbeat, unsubscribeWorkerLog]) {
-        try {
-          unsub();
-        } catch (error) {
-          console.warn('[BuildWorkerBridge] subscribeAll unsubscribe failed', error);
-        }
+    const acquiredUnsubscribers: Array<() => void> = [];
+    let setupFailed = false;
+
+    const unsubscribeSafely = (unsubscribe: () => void): void => {
+      try {
+        unsubscribe();
+      } catch (error) {
+        console.warn('[BuildWorkerBridge] subscribeAll unsubscribe failed', error);
       }
+    };
+    const disposeAcquired = (): void => {
+      const unsubscribers = acquiredUnsubscribers.splice(0);
+      for (const unsubscribe of unsubscribers) {
+        unsubscribeSafely(unsubscribe);
+      }
+    };
+    const acquire = async (subscription: Promise<() => void>): Promise<void> => {
+      const unsubscribe = await subscription;
+      if (setupFailed) {
+        unsubscribeSafely(unsubscribe);
+        return;
+      }
+      acquiredUnsubscribers.push(unsubscribe);
+    };
+
+    try {
+      await Promise.all([
+        acquire(api.subscribeStageSnapshots(nodeType, nodeId, proxy((event: unknown) => {
+          handlers.onTaskEvent(sanitizeForComlink(event));
+        }))),
+        acquire(api.subscribeTaskProgress(nodeType, nodeId, proxy((event: TaskProgressUpdatedEvent) => {
+          handlers.onProgressEvent(sanitizeForComlink(event));
+        }))),
+        acquire(api.subscribeSessionState(nodeType, nodeId, proxy((event: any) => {
+          handlers.onSessionState(sanitizeForComlink(event));
+        }))),
+        acquire(api.subscribeSessionHeartbeat(nodeType, nodeId, proxy((event: any) => {
+          handlers.onHeartbeat(sanitizeForComlink(event));
+        }))),
+        acquire(api.subscribeWorkerLog(nodeType, nodeId, proxy((event: any) => {
+          handlers.onWorkerLog(sanitizeForComlink(event));
+        }))),
+      ]);
+    } catch (error) {
+      setupFailed = true;
+      disposeAcquired();
+      throw error;
+    }
+
+    let disposed = false;
+    return () => {
+      if (disposed) return;
+      disposed = true;
+      setupFailed = true;
+      disposeAcquired();
     };
   }
 
