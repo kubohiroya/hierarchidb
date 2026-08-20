@@ -422,7 +422,8 @@ stateDiagram-v2
 | Worker (task execution) | `runStageTasks` | Catches `AuthRequiredError`, requeues task to `queued` with `metadata.authState='required'` |
 | Worker (fetch) | `AuthService.fetchWithAuth` | Detects 401, calls `awaitAuth` which dispatches `AUTH_REQUIRED` and throws `AuthRequiredError` |
 | Worker (fetch) | `AuthService.awaitAuth` | Dispatches `AUTH_REQUIRED` notification and throws `AuthRequiredError` |
-| Worker (fetch) | `AuthService.onAuthSuccess` | Persists new token to storage via `setToken` |
+| UI (auth session) | `AuthSessionStorage` | Validates and persists the complete session before `AUTH_SUCCESS` is dispatched |
+| Worker (fetch) | `AuthService` | Reads the persisted canonical session through the registered read-only bridge; it does not persist a standalone token |
 | UI (root) | `useAuthRequiredDialogHost` | Receives `AUTH_REQUIRED` → calls `pauseBuildSession` → shows `AuthRequiredDialog`. Uses `activeRequestIdRef` to ensure only one dialog at a time. Uses `pendingCountBySessionRef` to track parallel requests per session. |
 | UI (root) | `useAuthRequiredDialogHost` | On `AUTH_SUCCESS` → calls `startBuildSession` to resume (only when all pending requests for the session are resolved) |
 | UI (root) | `useAuthRequiredDialogHost` | On `AUTH_CANCELLED` → session stays `paused`, no auto-resume |
@@ -442,8 +443,8 @@ stateDiagram-v2
 4. `runStageTasks` catches error, requeues task with `authState: 'required'`
 5. `useAuthRequiredDialogHost.onAuthRequired` calls `pauseBuildSession('auth-required')` → session status = `paused`
 6. `AuthRequiredDialog` opens
-7a. User authenticates successfully → `AUTH_SUCCESS` dispatched
-8a. `AuthService.onAuthSuccess` persists new token via `setToken(newToken, tokenType, expiresAt)` to shared storage (uiStorage or localStorage)
+7a. User authenticates successfully → UI validates and persists the complete canonical session
+8a. UI dispatches `AUTH_SUCCESS`; the worker reads the session through the read-only UI bridge when tasks resume
 9a. `useAuthRequiredDialogHost.onAuthSuccess` calls `startBuildSession` → tasks resume from queued
 7b. User clicks Cancel → `AUTH_CANCELLED` dispatched
 8b. `useAuthRequiredDialogHost.onAuthCancelled` closes dialog, session remains `paused`

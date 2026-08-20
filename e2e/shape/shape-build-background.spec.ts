@@ -1,6 +1,10 @@
 import '../utils/skip-if-disabled';
 import { test, expect } from '@playwright/test';
 import {
+  createStatelessE2EAuthSessionSeed,
+  persistE2EAuthSessionSeed,
+} from '../utils/authSessionSeed';
+import {
   dismissGuidedTour,
   waitForTreeTableLoad,
   setupConsoleErrorTracking,
@@ -35,7 +39,6 @@ type ShapeQueryAPI = {
 
 type ShapeWorkerAPI = {
   setCorsProxyBaseURL?: (value: string) => Promise<void> | void;
-  setAuthToken?: (token: string, scheme?: string) => Promise<void> | void;
   getQueryAPI?: () => Promise<ShapeWorkerQueryAPI>;
   getMutationAPI?: () => Promise<{
     createNode: (input: {
@@ -83,6 +86,10 @@ test.describe('Shape build background (real pipeline)', () => {
   test('continues build after leaving step and persists tiles', async ({ page }) => {
     test.setTimeout(120000);
 
+    await page.addInitScript(
+      persistE2EAuthSessionSeed,
+      createStatelessE2EAuthSessionSeed('e2e-test-token')
+    );
 
     await page.goto(buildAppUrl('t/r'), { waitUntil: 'networkidle' });
     await dismissGuidedTour(page);
@@ -98,9 +105,6 @@ test.describe('Shape build background (real pipeline)', () => {
       const api = ref?.client ?? ref?.getAPI?.();
       if (api?.setCorsProxyBaseURL) {
         await api.setCorsProxyBaseURL('');
-      }
-      if (api?.setAuthToken) {
-        await api.setAuthToken('e2e-test-token', 'Bearer');
       }
     });
 

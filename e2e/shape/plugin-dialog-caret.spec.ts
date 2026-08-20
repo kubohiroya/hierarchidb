@@ -1,6 +1,10 @@
 import '../utils/skip-if-disabled';
 import { test, expect, type Page } from '@playwright/test';
 import {
+  createStatelessE2EAuthSessionSeed,
+  persistE2EAuthSessionSeed,
+} from '../utils/authSessionSeed';
+import {
   buildAppUrl,
   dismissGuidedTour,
   setupConsoleErrorTracking,
@@ -41,7 +45,6 @@ type TreeNodeUpdaterAPI = {
 
 type WorkerAPI = {
   setCorsProxyBaseURL?: (value: string) => Promise<void> | void;
-  setAuthToken?: (token: string, scheme?: string) => Promise<void> | void;
   getQueryAPI?: () => Promise<TreeQueryAPI>;
   getMutationAPI?: () => Promise<TreeMutationAPI>;
   getTreeNodeUpdaterAPI?: () => Promise<TreeNodeUpdaterAPI>;
@@ -199,20 +202,10 @@ test.describe('PluginDialog caret E2E', () => {
       });
     });
 
-    await page.addInitScript(() => {
-      localStorage.setItem('access_token', 'e2e-fake-access-token');
-      localStorage.setItem('id_token', 'e2e-fake-id-token');
-      localStorage.setItem(
-        'userinfo',
-        JSON.stringify({
-          sub: 'e2e-user',
-          name: 'E2E User',
-          email: 'e2e@example.com',
-        })
-      );
-      localStorage.setItem('token_expires_at', String(Date.now() + 60 * 60 * 1000));
-      localStorage.setItem('last_auth_completion', String(Date.now()));
-    });
+    await page.addInitScript(
+      persistE2EAuthSessionSeed,
+      createStatelessE2EAuthSessionSeed('e2e-fake-access-token')
+    );
 
     setupConsoleErrorTracking(page);
     await page.goto(buildAppUrl('t/r'), { waitUntil: 'domcontentloaded', timeout: 120000 });
@@ -224,16 +217,13 @@ test.describe('PluginDialog caret E2E', () => {
       return Boolean(ref?.client ?? ref?.getAPI?.());
     }, null, { timeout: 30000 });
 
-    await page.evaluate(async (accessToken: string) => {
+    await page.evaluate(async () => {
       const ref = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__;
       const api = ref?.client ?? ref?.getAPI?.();
       if (api?.setCorsProxyBaseURL) {
         await api.setCorsProxyBaseURL('');
       }
-      if (api?.setAuthToken) {
-        await api.setAuthToken(accessToken, 'Bearer');
-      }
-    }, 'e2e-fake-access-token');
+    });
 
     const verifyResult = await page.evaluate(async (accessToken: string) => {
       const response = await fetch('/auth/verify', {

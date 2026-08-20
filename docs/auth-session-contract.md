@@ -140,6 +140,28 @@ session を削除し、成功として継続しない。reload 時も同じ必�
 
 session clear 後も同じ custom event を dispatch し、全 consumer が unauthenticated 状態へ遷移する。
 
+## UI to worker token bridge contract
+
+`AuthSessionStorage` は UI session の唯一の検証・永続化境界である。SharedWorker または dedicated
+worker は `localStorage` を直接読まず、UI が提供する storage bridge から現在の session token を
+取得する。
+
+- bridge は `AuthSessionStorage.load()` が完全な session として検証した `access_token` だけを返す。
+- `token_expires_at` は検証済み `userinfo.expires_at` を秒単位へ変換した値とする。JWT payload の解析や
+  独立した legacy key による補完を bridge の正規経路にしない。
+- session が完全に存在しない場合だけ `null` を返す。部分保存、JSON破損、storage access failureは
+  bridge登録またはtoken取得の失敗として伝播させる。
+- worker client は bridge の登録と初回session検証が完了するまで ready として公開しない。
+- Worker API は単独tokenの注入・書込APIを公開しない。UIは完全なsessionを保存してから
+  `AUTH_SUCCESS` を通知し、workerはread-only bridgeから再読込する。
+- worker側からのsession clearは `AuthSessionStorage.clear()` を通じて `access_token`、`userinfo`、
+  `refresh_token_id` を一体として削除し、変更eventを通知する。
+- SharedWorker内部のAPIをtoken取得元として再呼び出す経路や、callback未登録時の互換fallbackを
+  設けない。
+
+この契約は現行Bearer方式のworker連携に限定する。cookie、reverse proxy、domain、BFF routingを含む
+将来のtransport選択は Issue #1316 の責務とする。
+
 ## Responsibility boundary
 
 - callback 後の return URL 解決は `docs/auth-callback-routing-spec.md` の責務とする。
@@ -160,6 +182,8 @@ session clear 後も同じ custom event を dispatch し、全 consumer が unau
 - `persistent` 応答は `refresh_token_id` を必須とし、`stateless` 応答では禁止する。
 - `stateless` sessionは期限前にrefreshせず、期限切れ時にlocal sessionを削除する。
 - `stateless` modeのlogin/revoke/logoutではKV警告を表示しない。
+- 完全な保存済みsessionだけがworker bridgeからtokenとして取得できる。
+- worker bridge登録、storage access、session検証の失敗時にworker clientをreadyとして公開しない。
 - `pnpm -w turbo run test --filter @hierarchidb/ui-auth`
 - `pnpm -w turbo run typecheck --filter @hierarchidb/ui-auth`
 - `pnpm -w turbo run typecheck --filter @hierarchidb/app`

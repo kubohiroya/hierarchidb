@@ -31,6 +31,8 @@ export type { AuthSessionMode } from './services/AuthSessionStorage.js';
 export { AUTH_SESSION_CHANGED_EVENT, AuthSessionStorage } from './services/AuthSessionStorage.js';
 export type { BFFAuthResponse, BFFSignInOptions, BFFUser } from './services/BFFAuthService.js';
 export { BFFAuthService } from './services/BFFAuthService.js';
+export type { AuthSessionStorageBridge } from './services/createAuthSessionStorageBridge.js';
+export { createAuthSessionStorageBridge } from './services/createAuthSessionStorageBridge.js';
 export { handleAuthError } from './services/handleAuthError.js';
 export type { PopupCapability } from './services/PopupDetectionService.js';
 export { PopupDetectionService } from './services/PopupDetectionService.js';
