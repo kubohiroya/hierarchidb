@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AUTH_SESSION_CHANGED_EVENT, AuthSessionStorage } from '~/services/AuthSessionStorage';
 import { BFFAuthService, type BFFSignInOptions, type BFFUser } from '~/services/BFFAuthService';
 import { PopupDetectionService } from '~/services/PopupDetectionService';
+import { requireAuthProvider } from '~/services/requireAuthProvider';
 import type { AuthProviderType } from '~/types/AuthProviderType';
 
 // Storage keys
@@ -96,10 +97,10 @@ export const useBFFAuthService = () => {
     isAuthenticated: !!user && user.expires_at > Date.now(),
     isLoading,
     user,
-    signIn: async (options?: BFFSignInOptions) => {
+    signIn: async (options: BFFSignInOptions) => {
       setIsLoading(true);
       try {
-        const authenticatedUser = await authService.signIn(options || {});
+        const authenticatedUser = await authService.signIn(options);
         setUser(authenticatedUser);
       } finally {
         setIsLoading(false);
@@ -118,7 +119,7 @@ export const useBFFAuthService = () => {
     },
     getIdToken: () => user?.access_token,
     getAccessToken: () => user?.access_token,
-    currentProvider: user?.provider || 'google',
+    currentProvider: user?.provider ?? null,
   };
 };
 
@@ -140,12 +141,13 @@ export function useAuth(homeUrl = '/') {
    * Enhanced sign in with popup detection and fallback
    */
   const signIn = useCallback(
-    async (options?: {
+    async (options: {
       returnUrl?: string;
       isUserInitiated?: boolean;
-      provider?: AuthProviderType;
+      provider: AuthProviderType;
       forceMethod?: 'popup' | 'redirect';
     }) => {
+      const provider = requireAuthProvider(options?.provider);
       // Determine return URL
       const fullPath = currentLocationHref;
       const returnUrl = options?.returnUrl || fullPath;
@@ -171,7 +173,7 @@ export function useAuth(homeUrl = '/') {
         await bffAuth.signIn({
           returnUrl,
           method,
-          provider: options?.provider || 'google',
+          provider,
         });
 
         // If popup succeeded, update capability
@@ -197,7 +199,7 @@ export function useAuth(homeUrl = '/') {
           await bffAuth.signIn({
             returnUrl,
             method: 'redirect',
-            provider: options?.provider || 'google',
+            provider,
           });
         } else {
           throw error;
@@ -287,9 +289,9 @@ export function useAuth(homeUrl = '/') {
     user,
     error: null,
     // OIDC-compatible methods
-    signinRedirect: () => signIn({ forceMethod: 'redirect' }),
+    signinRedirect: (provider: AuthProviderType) => signIn({ forceMethod: 'redirect', provider }),
     signoutRedirect: () => signOut(),
-    signinPopup: () => signIn({ forceMethod: 'popup' }),
+    signinPopup: (provider: AuthProviderType) => signIn({ forceMethod: 'popup', provider }),
     signinSilent: () => bffAuth.refreshToken(),
     signoutSilent: () => signOut(),
     removeUser: () => signOut(),

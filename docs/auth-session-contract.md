@@ -1,6 +1,6 @@
 # OAuth authenticated UI session contract
 
-最終更新: 2026-08-20
+最終更新: 2026-08-21
 
 ## 目的
 
@@ -16,6 +16,18 @@ OAuth callback または token refresh が成功した後に、UI が認証済�
 
 `BFFAuthService` と `SimpleBFFAuthProvider` は token 応答や保存済み userinfo を独自に解釈せず、
 必ず `AuthSessionStorage` を使用する。
+
+## Provider selection and propagation contract
+
+provider選択UIは、ユーザーが選択した `google | github | microsoft` を認証開始処理へ必須値として
+渡す。認証開始処理は同じproviderをauthorize endpointのpathと `auth_provider` の両方に使用する。
+
+provider引数の欠落、空文字列、未知値をGoogleとして補完してはならない。認証redirectを開始する前に
+契約違反として失敗させる。callbackのtoken exchangeは、認証開始時に保存した同じ
+`auth_provider` をBFF requestへ渡す。
+
+この契約はprovider dialog、認証必須dialog、明示的なlogin routeから開始する全BFF OAuth flowに
+適用する。
 
 ## BFF token response contract
 
