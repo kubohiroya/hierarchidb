@@ -7,6 +7,13 @@ contexts before the production quiescence bridge can connect the dormant legacy 
 The coordinator described here is a participant directory and bootstrap gate. It is not the
 storage activation state machine and it never establishes the IndexedDB write fence.
 
+The foundation implementation from #1326 uses protocol version 1 and requires the client build
+SHA to equal the SHA embedded in that coordinator build. That rule is valid only for the
+foundation deployment. It cannot be used by the production quiescence bridge because an active
+bridge coordinator must accept the later activation application while older bridge-capable
+clients are still alive. The bridge contract below therefore introduces protocol version 2 and
+separates application release evidence from coordinator compatibility.
+
 The coordination domain is one browser profile and storage partition within the exact
 HierarchiDB Service Worker registration scope. Another browser profile, private browsing
 partition, device, origin, or Service Worker scope has a distinct CoreDB and a distinct
@@ -37,6 +44,20 @@ request rewriting, or PWA behavior. Its fixed URL is not a compatibility alias f
 code. It is the stable registration anchor used by the browser to maintain one active Service
 Worker for the scope.
 
+The production bridge release is the final release allowed to change the coordinator artifact
+before single activation. From acceptance of that bridge release through completion of the
+activation release, `hdb-origin-coordinator.js` and its complete static import graph must remain
+byte-for-byte identical. The graph must not contain the application build SHA, an application
+asset hash that changes with unrelated builds, or an activation-only import. Application bundles
+continue to embed their own exact source SHA in client responders.
+
+A future byte-different coordinator protocol update is a separately specified drain release. It
+is permitted only while the current durable gate is exact `allowed`, after separately recorded
+evidence that no other in-scope client remains, and through an explicit unregister/database
+upgrade procedure defined by that future Issue. It must not deploy a new-protocol client against
+the old active worker or use `skipWaiting()`, navigation, reload, or client termination to bypass
+the active/waiting lifecycle. The bridge-to-activation lane does not perform such an update.
+
 The coordinator calls `clients.claim()` during activation. Client census uses
 `clients.matchAll({ includeUncontrolled: true, type: 'all' })`, followed by an exact origin and
 scope-path check. Same-origin applications outside the registration scope are never included.
@@ -58,7 +79,7 @@ Census results expose only counts by browser client type and a stable status cod
 URLs, raw messages, runtime errors, credentials, endpoints, and storage content remain private to
 the coordinator.
 
-## Strict foundation messages
+## Foundation messages and successor identity boundary
 
 All message validators inspect exact own data properties. Accessors, symbol properties, missing
 properties, extra properties, arrays, non-plain objects, unknown literal values, release IDs other
@@ -66,6 +87,10 @@ than the exact 40-character build source SHA, and unsupported protocol versions 
 without invoking getters. HELLO and every census response must equal the source SHA embedded in
 the coordinator build; a different valid SHA is incompatible and never accepted as the current
 release.
+
+That final equality rule describes protocol version 1 only. The bridge implementation replaces
+it with the protocol version 2 identity contract in the next section. It must not retain SHA
+equality as an alternate branch or fall back to version 1.
 
 Window bootstrap sends:
 
@@ -93,6 +118,27 @@ Foundation readiness requires an explicit non-empty request ID and an explicit p
 integer timeout. There is no default timeout or automatic retry. The response distinguishes
 compatible, incompatible, unresponsive, and browser-proven discarded counts for each client
 type. Any incompatible or unresponsive client makes readiness rejected.
+
+## Cross-release bridge identity
+
+Protocol version 2 has two separate identities:
+
+- `releaseId` is evidence for the responding application client. It remains an exact
+  40-character lowercase source SHA and is rejected if missing, malformed, accessor-backed, or
+  accompanied by an extra property. It is not compared with a SHA embedded in the coordinator.
+- Coordinator compatibility is the literal protocol version plus the exact ordered capability
+  tuple `['origin-coordinator-foundation-v1', 'yaml-storage-quiescence-bridge-v1']`. Missing,
+  extra, reordered, or unknown capabilities are incompatible.
+
+Bridge and activation windows send an exact protocol version 2 HELLO with their own `releaseId`
+and that capability tuple. The accepted bridge coordinator validates the request and durable
+gate but does not require the client release to equal the release that produced the coordinator
+artifact. A version 1 foundation responder, a pre-bridge client, or any other capability tuple is
+incompatible and is never treated as a bridge participant.
+
+The coordinator artifact has no application `releaseId` of its own in protocol version 2. Its
+identity is the byte-stable artifact graph, protocol version, and capability tuple. There is no
+trusted-SHA list, minimum-release comparison, version range, alias, or compatibility fallback.
 
 ## Durable bootstrap gate
 
@@ -125,9 +171,145 @@ The generic application IndexedDB reset action excludes the coordinator database
 database is an explicit rollback operation only; ordinary schema recovery must not erase the
 durable gate and rely on a later Service Worker install to recreate it.
 
-The later quiescence bridge will extend the durable gate with monotonic `revoked` and `rejected`
-states in its own Issue. It must not add TTL expiry, automatic reset, or an implicit return to
-`allowed`.
+The production bridge upgrades the database to version 2. The upgrade transaction accepts only
+the exact valid version 1 `allowed` record and replaces it with the exact protocol version 2
+`allowed` record. Missing, corrupt, already-revoked, unknown, or accessor-backed input aborts the
+upgrade; it is not repaired or defaulted.
+
+Protocol version 2 persists one of these exact logical records:
+
+```ts
+type BridgeCoordinatorState =
+  | {
+      key: 'yaml-storage';
+      protocolVersion: 2;
+      phase: 'allowed';
+    }
+  | {
+      key: 'yaml-storage';
+      protocolVersion: 2;
+      phase: 'revoked';
+      status: 'quiescing' | 'ready-for-preflight';
+      activationId: string;
+      quiescenceRequestId: string;
+      participants: readonly PersistedParticipant[];
+      evidence: readonly PersistedParticipantEvidence[];
+    }
+  | {
+      key: 'yaml-storage';
+      protocolVersion: 2;
+      phase: 'rejected';
+      activationId: string;
+      quiescenceRequestId: string;
+      participants: readonly PersistedParticipant[];
+      evidence: readonly PersistedParticipantEvidence[];
+      errorCode: BridgeCoordinatorErrorCode;
+      errorStage: BridgeCoordinatorErrorStage;
+    };
+
+type BridgeCoordinatorErrorCode =
+  | 'LEGACY_FENCE_REJECTED'
+  | 'PARTICIPANT_UNRESPONSIVE'
+  | 'CLIENT_LOOKUP_FAILED'
+  | 'COORDINATOR_RESTARTED_DURING_QUIESCENCE';
+
+type BridgeCoordinatorErrorStage =
+  | 'request'
+  | 'quiescing'
+  | 'reconstruction';
+```
+
+`PersistedParticipant` contains only exact `participantKind: 'tab' | 'worker'` and the non-empty
+browser-issued `participantId`. `PersistedParticipantEvidence` adds exactly one outcome,
+`acknowledged | discarded`, to the same identity. Both arrays use the #1294 deterministic order,
+contain no duplicates, and remain private to the coordinator database. IndexedDB structured
+clones are validated into new immutable values after every read; persistence itself is not
+treated as module provenance.
+
+An exact activation request atomically changes `allowed` to `revoked/quiescing` with the complete
+participant snapshot before the first request is posted. Invalid activation input is rejected
+without claiming the gate. Once claimed, the gate never returns to `allowed`. Valid evidence can
+advance the same revoked request to `ready-for-preflight`; any terminal transport, responder,
+validation, or reconstruction failure changes it to `rejected`. A failed IndexedDB transaction
+cannot be reported as a persisted rejection: it returns a sanitized storage failure and stops all
+message dispatch or further progress while preserving the last committed record. A later
+successful read of a leftover `revoked/quiescing` record follows the restart rejection rule. TTL
+expiry, automatic reset, a new request identity, and implicit recovery are forbidden.
+
+## Bridge capability acceptance
+
+Bridge stable release acceptance is a non-destructive protocol version 2 census. It requires the
+exact bridge capability from every in-scope client, at least one production window, every runtime
+context created by the production bootstrap, and zero incompatible or unresponsive clients. The
+current production bootstrap must therefore include its SharedWorker in the recorded census.
+The alternative dedicated runtime Worker and each utility worker entrypoint are covered
+individually by the automated responder test matrix and are also counted whenever present in the
+production census.
+
+Acceptance never sends a quiescence request, changes the durable `allowed` record, revokes an
+entrypoint, closes a port or database, or claims that an acknowledgement occurred. Actual
+revoke/close acknowledgement is verified by automated bridge integration tests and is first
+executed against production contexts by the single activation request. Merge, bundle inspection,
+or a foundation-only census does not satisfy stable acceptance.
+
+## Quiescence transaction and restart
+
+For a valid activation request, the caller supplies an explicit positive safe integer response
+timeout in addition to the activation and quiescence request IDs; there is no default deadline.
+The coordinator enumerates and deterministically snapshots all in-scope clients after it has
+durably revoked new legacy bootstrap. Window clients map to `tab`; dedicated and SharedWorker
+clients map to `worker`. The activation caller is included. Because its legacy runtime has not
+started, its responder must still return explicit true evidence for the empty ownership set.
+
+Each responder first changes its runtime-local gate monotonically to revoked, then prevents new
+legacy YAML operations, then closes every YAML-relevant storage handle and communication port it
+owns. It posts `legacyYamlEntrypointsRevoked: true` and `ownedStorageHandlesClosed: true` only
+after both operations complete. A close error produces an explicit failure; it is not warning-only.
+The same request identity is idempotent at the responder. A different identity after local
+revocation is a terminal failure.
+
+The Service Worker applies each accepted acknowledgement or browser-proven discard to #1294 and
+persists the resulting evidence before exposing progress. It never serializes or hydrates the
+module-private reducer state. After restart it validates the durable record, calls
+`createYamlStorageLegacyFence` with the persisted request and participant snapshot, and replays
+the persisted evidence in deterministic participant order through the public reducer.
+
+A reconstructed `ready-for-preflight` record must reproduce the same ready decision. A restart
+while the record is still `quiescing` cannot safely reconstruct the original response deadline;
+it therefore transitions the same request to terminal `rejected` with a stable restart code. It
+does not restart the timer, resend the request, create a new request ID, or return to `allowed`.
+An activation caller may query the terminal or ready result using the same IDs; that query does
+not create or retry a quiescence transaction.
+
+## Browser-proven client discard
+
+#1294 is extended by the bridge implementation with an exact
+`participant-context-discarded` event carrying the same activation ID, quiescence request ID,
+participant kind, and participant ID as the expected snapshot. The reducer accepts it as terminal
+evidence for that participant and counts a participant exactly once as either acknowledged or
+discarded. Unknown, duplicate, stale, mismatched, post-ready, or accessor-backed discard events
+produce the same terminal rejection discipline as acknowledgement events.
+
+Only a successful `clients.get(expectedClientId)` read returning `undefined` after the snapshot
+is browser proof of discard. Silence, timeout, `postMessage` failure, `messageerror`, an exception
+from `clients.get`, a closed MessagePort, or caller assertion is not proof. If the expected client
+still exists at the explicit deadline, or its existence cannot be checked, the transaction is
+terminally rejected. The coordinator does not terminate, navigate, reload, or omit that client.
+
+## Runtime ownership matrix
+
+| Runtime entry | Participant kind | Legacy entrypoints to revoke | YAML-relevant handles to close |
+| --- | --- | --- | --- |
+| application window | `tab` | dialog save/commit, folder YAML import/export, SimulationWorkflow and command launch, and creation of new runtime-worker clients | every owned dedicated/SharedWorker client port; no direct CoreDB or YamlDB handle is assumed |
+| dedicated runtime Worker | `worker` | the exposed query/mutation/draft/import-export API as a whole; a node-type filter is not an authority boundary | its WorkerService CoreDB connection and every plugin-owned YamlDB connection before closing the exposed channel |
+| SharedWorker runtime | `worker` | new `connect` handling and the exposed API on every existing port | its WorkerService CoreDB connection, every plugin-owned YamlDB connection, and all connected ports |
+| stage workers, GEOS worker, country-availability worker, tabular-filter worker | `worker` | none; these entries own no legacy YAML command or storage publication | none; explicit true evidence is valid only after the responder confirms the empty ownership set |
+
+The bridge implementation must audit every current worker entry against this table. A new or
+unclassified in-scope runtime is incompatible until this specification and its responder
+ownership are updated. A SharedWorker's multiple application ports do not create synthetic
+participants; the browser-issued SharedWorker `Client.id` remains the single participant and the
+responder owns closing all of its ports.
 
 ## Bootstrap order
 
@@ -140,6 +322,12 @@ Every foundation release window performs these steps in order:
 5. Install the readiness responder.
 6. Only then initialize browser globals, preload plugin worker stores, create the router, or start
    the SharedWorker runtime.
+
+Protocol version 2 keeps this ordering, except that the active byte-stable bridge coordinator
+validates the client release SHA without comparing it to a coordinator build SHA. A revoked or
+rejected durable result stops bootstrap before any browser global, plugin preload, router,
+WorkerService, SharedWorker, or utility worker begins. The activation window installs its bridge
+responder but does not start those legacy entrypoints before it submits the activation request.
 
 The strict census contract, build-SHA reader, and responder live in the shared
 `@hierarchidb/origin-coordinator` workspace package. The window, SharedWorker, dedicated runtime
@@ -164,6 +352,10 @@ from this foundation.
   registration URLs are not returned as public coordinator errors.
 - The foundation does not retry registration, replace the fixed scope, fall back to a
   BroadcastChannel or Web Lock, or continue legacy bootstrap after rejection.
+- Stable acceptance can be rolled back only while the protocol version 2 gate remains exact
+  `allowed`. Revert the bridge client responders and coordinator graph together, explicitly
+  unregister the coordinator, and remove its dedicated database. Do not retain a version 2 client
+  against a version 1 coordinator or preserve SHA equality as a fallback.
 - Before the production responder exists, rollback is allowed only when the durable gate is the
   valid `allowed` record. The app registration, fixed artifact, bootstrap integration, Service
   Worker registration, and coordinator database are then removed by an explicit rollback action.
