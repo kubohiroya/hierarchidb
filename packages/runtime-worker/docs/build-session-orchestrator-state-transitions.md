@@ -166,14 +166,18 @@ References:
 - `plugins/shape-plugin/src/worker/api/shapeBuildRuntimeExecutionMetrics.ts`
 - `plugins/shape-plugin/src/common/types/session-events.ts`
 
-## 5.3 Build Progress Stream (snapshot + update)
+## 5.3 Canonical Shape Task Delivery
 
-In addition to the 4 channels above, UI task rendering primarily uses build-task stream via bridge:
+Shape UI task rendering uses the stage snapshot and task progress channels listed
+above through `BuildWorkerBridge.subscribeAll`:
 
-- `subscribeBuildTasks(nodeType, nodeId, cb)`
-- event types: `snapshot` and `update`
+- `subscribeStageSnapshots(nodeType, nodeId, cb)` delivers authoritative
+  `stageSnapshotUpdated` full replacements.
+- `subscribeTaskProgress(nodeType, nodeId, cb)` delivers `taskProgressUpdated`.
+- task progress ordering is scoped to each `taskId`; equal or lower versions are
+  dropped.
 
-UI treats this as SSOT for task list/progress rendering.
+`subscribeBuildTasks` is a compatibility no-op for Shape and is not a UI SSOT.
 
 References:
 - `packages/ui/worker-client/src/workerBridge.ts`
@@ -190,22 +194,25 @@ Reference:
 
 ## 6.2 Unified Progress UI
 
-`useBuildProgressState` subscribes via `subscribeBuildProgress` and exposes unified progress state.
+`useBuildProgressState` consumes build state supplied by the canonical session,
+stage-snapshot, and task-progress delivery paths. `subscribeBuildProgress` is not a
+canonical worker method.
 
 Reference:
 - `packages/ui/build-sessions/src/hooks/useBuildProgressState.ts`
 
 ## 6.3 Shape Step Task UI (primary task SSOT path)
 
-`useShapeBuildTaskSnapshotProgressState`:
+`useShapeBuildSessionStateAtomBridge`:
 
-- subscribes to `subscribeBuildTasks`
-- applies `snapshot` to initialize task set
-- applies `update` incrementally
-- handles stale/mismatched node events defensively
+- acquires the five Shape channels with `BuildWorkerBridge.subscribeAll`
+- applies `stageSnapshotUpdated` as a full stage replacement
+- gates `taskProgressUpdated` by monotonically increasing per-task version
+- ignores callbacks after effect cancellation and disposes the acquired subscription
+- requires a fresh subscription and authoritative snapshot when the build step mounts again
 
 Reference:
-- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSnapshotProgressState/useShapeBuildTaskSnapshotProgressState.ts`
+- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildSessionStateAtomBridge.ts`
 
 ## 6.4 Stage transition synchronization (`ui-initializing`)
 
@@ -450,14 +457,9 @@ References:
 
 ## 8. Known Gaps and Non-Uniform Paths
 
-1. Stage snapshot channel exists in shape runtime, but generic UI worker bridge currently exposes no dedicated `subscribeStageSnapshots` method.
-- UI primary path currently relies on `subscribeBuildTasks` snapshot/update stream.
+1. BroadcastChannel `build-session-update` is coarse-grained and does not replace task/progress/session-detail streams.
 
-2. Heartbeat subscription is wired in UI, but shape session hook currently logs heartbeat events without applying rich derived state updates.
-
-3. BroadcastChannel `build-session-update` is coarse-grained and does not replace task/progress/session-detail streams.
-
-4. This document describes the currently implemented shape-oriented session event model; route/location adoption may still differ by implementation surface.
+2. This document describes the currently implemented shape-oriented session event model; route/location adoption may still differ by implementation surface.
 
 ## 9. Verification Pointers
 

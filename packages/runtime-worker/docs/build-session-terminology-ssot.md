@@ -24,15 +24,16 @@ used across runtime, worker API, UI, and plugin implementations.
 - `runtimeStatus`
   - In-memory live runtime state for UI/runtime reflection.
 - `stage`
-  - Build pipeline stage: `fetch | transform | vt | idle | undefined`.
-  - Persisted/API compatibility field in current rollout; not the orchestrator dispatch key.
+  - Canonical build pipeline stage: `source | geometry | tileEmit`.
+  - Legacy names such as `fetch | transform | vt` may describe historical artifacts,
+    but must not be emitted as task or build-session event stages.
 - `phase`
   - Progress lifecycle phase: `starting | running | pausing | paused | ...`.
 - `taskType`
   - UI-facing aggregation key for task grouping/summaries.
 - `stageId`
-  - Canonical stage identity (`source-stage | geometry-stage | tile-emit-stage`) accepted at adapter boundaries.
-  - Treated as higher-priority hint than legacy `stage` when both are present in boundary normalization.
+  - Canonical event stage identity: `source | geometry | tileEmit`.
+  - It must agree with the canonical task `stage` when both fields are present.
   - Not a standalone orchestrator control-state key.
 
 ### 2.3 UI State Vocabulary
@@ -59,7 +60,10 @@ used across runtime, worker API, UI, and plugin implementations.
 - `startBuildSession`
 - `pauseBuildSession`
 - `cancelQueuedBuildSession`
-- `subscribeBuildProgress`
+- `subscribeStageSnapshots`
+- `subscribeTaskProgress`
+- `subscribeSessionState`
+- `subscribeSessionHeartbeat`
 
 Compatibility note:
 
@@ -89,9 +93,12 @@ Compatibility note:
 
 ### 4.2 Progress Stream Contract
 
-- Build progress uses `snapshot` + `progress` channels as the UI SSOT.
-- `progress=100%` is treated as terminal update signal for the task/session scope.
-- The current contract does not require event sequence numbering.
+- Build progress uses authoritative `stageSnapshotUpdated` full replacements plus
+  `taskProgressUpdated` events as the UI SSOT.
+- Task terminal status is owned by the authoritative stage snapshot. A progress value
+  of `100` does not carry session phase or replace a terminal task status.
+- `taskProgressUpdated.version` is monotonic per `taskId`; equal or lower versions are
+  dropped. There is no global or cross-stream event sequence.
 
 ## 5. Migration Status (Current)
 

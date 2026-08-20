@@ -34,7 +34,7 @@ storage migration、`metadata.name`へのcutover、ZIP import/export、UI統合�
 
 facadeはlegacy、mixed、incomplete、unknown、accessor付き、non-plain payloadを拒否する。YAML 1.2の単一plain mappingとしてparseし、coercion、default、property除去、未宣言schema制約の追加なしでstrict Ajv validationを行う。stable errorには安全なcodeとfield/reason contextだけを含め、raw payload、YAML本文、parser detail、getterまたはProxyが投げたmessageを返さない。
 
-neutral implementationはpackage内部に閉じる。migration subpathは同じkernelをinternal adapter経由で使用し、既存のlegacy分類、error precedence、ordering、redactionを維持する。package rootはvalidationを再exportせず、Ajv、YAML、migration、validation moduleをloadしない。
+neutral implementationはpackage内部に閉じる。migration subpathは同じkernelをinternal adapter経由で使用し、既存のlegacy分類、error precedence、ordering、redactionを維持する。package rootはvalidationまたはinverse migrationを再exportせず、Ajv、YAML、migration、validation、inverse-migration moduleをloadしない。
 
 ## Storage authorityとmigration boundary
 
@@ -57,6 +57,16 @@ callerはraw YAML node candidate、明示的なmigration IDとCoreDB version pai
 各raw candidateはnode versionをown data propertyのnon-negative safe integerとして持たなければならない。success planは全candidateに対するdeterministicなsource / node / version guardを持つ。後続activation coordinatorは同じimmutable raw snapshotを非公開で保持し、versionchange transaction内でraw slot state全体を再比較する。plannerはそのsnapshotを永続化、serialize、log出力しない。
 
 YAML content validationはcurrent revisionの`YAML_SCHEMAS`に宣言されたconstraintをstrict Ajv optionで適用する。未宣言のrequired propertyまたはglobalな`additionalProperties: false`を追加しない。`rsync.yml`と`git.yml`で明示されたstrictnessを正規契約とする。
+
+## Dormant inverse migration planner
+
+`@hierarchidb/yaml-api/inverse-migration`はpureかつdormantな独立export entryである。`planExactYamlCoreDbInverseMigration`と`planReleaseYamlCoreDbInverseMigration`を別関数・別typeとして公開し、generic mode、publicationのdefault、exactからreleaseへのfallbackを提供しない。CoreDB、Dexie、YamlDB、worker、feature flag、production reader / writerへ接続しない。
+
+exact planは明示的な`canonical-writer-never-published`、全raw node / forward journal snapshot、forward plannerと同じSHA-256 digest portを必須とする。journal cohort、compound key、node / slot存在、legacy name、再計算したcanonical postimage digestをstrictに検証し、journal対象slotだけを復元する。release planは明示的な`canonical-writer-published-or-unknown`を必須とし、journalを使わず、存在する全slotのcanonical validation成功後にだけ全slotを復元する。両plannerは`schemaId`と`content`をbyte-for-byteで維持し、legacy nameは検証済みexact journalまたは対応するrelease metadataだけから取得する。
+
+inputとraw snapshotはgetterを実行せずown data descriptor経由で検査する。unsafe、incomplete、extra、symbol付き、accessor付き、duplicate、non-plain、reflection failureを含む値を拒否する。successはnode guardと、exactではjournal guardを含むdeeply immutableかつdeterministicなcomplete planを返す。1件でも失敗すればredacted code/context errorだけを返し、partial entries / guardsを返さない。
+
+これらのplanはwriteの許可ではない。後続coordinatorは明示的なpublication requirementをruntime事実へ結び付け、同じimmutable raw snapshotを非公開保持し、より新しいCoreDB versionchange transaction内でnode / journalの完全な状態をraw再読して比較した後、planをall-or-noneで適用する。
 
 ## 依存関係
 

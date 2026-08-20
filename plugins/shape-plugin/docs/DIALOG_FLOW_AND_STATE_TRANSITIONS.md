@@ -21,7 +21,7 @@ This document only describes Shape UI behavior that wraps those shared contracts
 - `startAccepted` / `StartAccepted`  
   Runtime accepted the request. In UI this is shown while build starts or resumes.
 - `running:<stage>`  
-  Session executing in `fetch | transform | vt` stage.
+  Session executing in `source | geometry | tileEmit` stage.
 - `StopRequested`  
   User pressed Pause/Stop and is waiting for runtime acceptance.
 - `idle` (after `StopAccepted`)  
@@ -50,17 +50,16 @@ sequenceDiagram
   UI->>UI: localCopy = undefined
   UI->>UI: localCopy = SubscriptionRequested
   UI->>UI: show skeleton
-  UI->>BO: subscribeBuildSession(nodeId, callback)
+  UI->>BO: getBuildSessionRuntime(nodeId)
   BO->>DB: lookup session
   alt session exists
-    alt status in {startAccepted, running}
-      BO->>DB: normalize session.status=idle, stage=undefined
-    end
-    BO-->>UI: initial snapshot from stored session
+    BO-->>UI: current runtime snapshot
   else no session
-    BO-->>UI: initial snapshot = "no session"
+    BO-->>UI: runtime snapshot = null
   end
-  UI->>UI: localCopy = snapshot status
+  UI->>BO: subscribeAll(nodeId, event callbacks)
+  BO-->>UI: initial session state + authoritative stage snapshot
+  UI->>UI: localCopy = subscribed state
 ```
 
 ## 3. Start/Resume (same path)
@@ -115,7 +114,7 @@ sequenceDiagram
 | --- | --- | --- |
 | Close build dialog only | continues | unsubscribed in that tab |
 | Move to non-build step in same dialog/tab | continues | unsubscribed in that tab |
-| Open build step again | resumes by re-subscribe | resync by snapshot/event stream |
+| Open build step again | unchanged until an explicit `startBuildSession` request | re-subscribes and resyncs from authoritative snapshots |
 | Close one tab (others open) | continues | only that tab unsubscribes |
 | Close all tabs | SharedWorker terminates | resume only on next tab open |
 | Runtime/Worker crash | build stops | next open normalizes `startAccepted/running -> idle` (no auto-resume) |
@@ -129,6 +128,7 @@ sequenceDiagram
 ## 7. Current implementation status (Shape)
 
 - ✅ `startBuildSession`, `pauseBuildSession`, `cancelQueuedBuildSession` wired at worker runtime API level.
+- ✅ Shape task delivery uses `subscribeStageSnapshots` + `subscribeTaskProgress`; cancelled UI subscriptions are replaced by a fresh `subscribeAll` call when the build step opens again.
 - ✅ Shape-side control states follow `StartRequested -> StartAccepted -> running -> StopRequested -> (StopAccepted) -> idle` path.
 - ✅ Receiving task snapshot / startup timeout behavior is covered by existing unit/integration/e2e tests.
 - ⚠️ Route plugin orchestration is still on its own implementation surface; cross-plugin commonization is intentionally tracked in runtime-worker workstreams.

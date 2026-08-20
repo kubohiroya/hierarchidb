@@ -1,93 +1,14 @@
 /**
  * Pure function unit tests for useShapeBuildSessionStateAtomBridge
  *
- * Covers: isTaskUpdateVersionAfterSnapshot, resolveTaskVersionAction,
- *         resolveTaskIdentityAction, resolveSnapshotTargetStages
+ * Covers: resolveSnapshotTargetStages
  */
 
 import { describe, expect, it } from 'vitest';
 import type { StageSnapshotUpdatedEvent } from '../../../../common/types/session-events';
 import {
-    isTaskUpdateVersionAfterSnapshot,
-    resolveTaskVersionAction,
-    resolveTaskIdentityAction,
-    resolveSnapshotTargetStages,
+  resolveSnapshotTargetStages,
 } from '../../../components/build-progress/useShapeBuildSessionStateAtomBridge';
-
-// ---------------------------------------------------------------------------
-// isTaskUpdateVersionAfterSnapshot
-// ---------------------------------------------------------------------------
-
-describe('isTaskUpdateVersionAfterSnapshot', () => {
-    it('returns true when taskVersion > snapshotVersionMax', () => {
-        expect(isTaskUpdateVersionAfterSnapshot(5, 6)).toBe(true);
-    });
-
-    it('returns false when taskVersion === snapshotVersionMax', () => {
-        expect(isTaskUpdateVersionAfterSnapshot(5, 5)).toBe(false);
-    });
-
-    it('returns false when taskVersion < snapshotVersionMax', () => {
-        expect(isTaskUpdateVersionAfterSnapshot(5, 4)).toBe(false);
-    });
-
-    it('handles version 0 boundary', () => {
-        expect(isTaskUpdateVersionAfterSnapshot(0, 1)).toBe(true);
-        expect(isTaskUpdateVersionAfterSnapshot(0, 0)).toBe(false);
-    });
-});
-
-// ---------------------------------------------------------------------------
-// resolveTaskVersionAction
-// ---------------------------------------------------------------------------
-
-describe('resolveTaskVersionAction', () => {
-    it('returns "accept" when lastAppliedVersion is undefined (first time)', () => {
-        expect(resolveTaskVersionAction(undefined, 1)).toBe('accept');
-    });
-
-    it('returns "accept" when nextVersion > lastAppliedVersion', () => {
-        expect(resolveTaskVersionAction(3, 4)).toBe('accept');
-    });
-
-    it('returns "drop" when nextVersion === lastAppliedVersion (duplicate)', () => {
-        expect(resolveTaskVersionAction(5, 5)).toBe('drop');
-    });
-
-    it('returns "error" when nextVersion < lastAppliedVersion (regression)', () => {
-        expect(resolveTaskVersionAction(10, 9)).toBe('error');
-    });
-
-    it('returns "error" for large regression', () => {
-        expect(resolveTaskVersionAction(100, 1)).toBe('error');
-    });
-});
-
-// ---------------------------------------------------------------------------
-// resolveTaskIdentityAction
-// ---------------------------------------------------------------------------
-
-describe('resolveTaskIdentityAction', () => {
-    it('returns "accept-known" for known task with version after snapshot', () => {
-        // snapshotVersionMax=5, taskVersion=6 → after snapshot; known task
-        expect(resolveTaskIdentityAction(true, 5, 6)).toBe('accept-known');
-    });
-
-    it('returns "accept-new" for unknown task with version after snapshot', () => {
-        expect(resolveTaskIdentityAction(false, 5, 6)).toBe('accept-new');
-    });
-
-    it('returns "drop-known-stale" for known task with version at or before snapshot', () => {
-        // taskVersion=5 is NOT after snapshotVersionMax=5 (requires strictly greater)
-        expect(resolveTaskIdentityAction(true, 5, 5)).toBe('drop-known-stale');
-        expect(resolveTaskIdentityAction(true, 5, 4)).toBe('drop-known-stale');
-    });
-
-    it('returns "error-unknown-stale" for unknown task with version at or before snapshot', () => {
-        expect(resolveTaskIdentityAction(false, 5, 5)).toBe('error-unknown-stale');
-        expect(resolveTaskIdentityAction(false, 5, 3)).toBe('error-unknown-stale');
-    });
-});
 
 // ---------------------------------------------------------------------------
 // resolveSnapshotTargetStages

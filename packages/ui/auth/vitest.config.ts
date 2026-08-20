@@ -3,8 +3,10 @@ import { defineConfig } from 'vitest/config';
 
 const RUN_AUTH_TESTS = process.env.AUTH_TESTS === '1';
 const defaultTestFiles = [
+  'src/components/__tests__/useOAuthCallbackView.unit.test.tsx',
   'src/services/__tests__/AuthSessionStorage.unit.test.ts',
   'src/services/__tests__/resolveAuthReturnUrl.unit.test.ts',
+  'src/services/__tests__/startAuthCallbackNavigation.unit.test.ts',
 ];
 
 export default defineConfig({

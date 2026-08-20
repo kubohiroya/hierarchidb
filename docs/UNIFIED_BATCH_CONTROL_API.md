@@ -17,16 +17,19 @@ getBuildSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionS
 pauseBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>
 cancelQueuedBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>
 getBuildTasks(nodeType: NodeType, nodeId: NodeId): Promise<BuildTaskSummary[]>
-subscribeBuildTasks(
+subscribeStageSnapshots(
   nodeType: NodeType,
   nodeId: NodeId,
-  callback: (event: BuildTaskUpdateEvent) => void,
+  callback: (event: StageSnapshotUpdatedEvent) => void,
 ): Promise<() => void>
-subscribeBuildProgress(
+subscribeTaskProgress(
   nodeType: NodeType,
   nodeId: NodeId,
-  callback: (event: BuildProgressEvent) => void,
+  callback: (event: TaskProgressUpdatedEvent) => void,
 ): Promise<() => void>
+subscribeSessionState(nodeType: NodeType, nodeId: NodeId, callback: SessionStateCallback): Promise<() => void>
+subscribeSessionHeartbeat(nodeType: NodeType, nodeId: NodeId, callback: HeartbeatCallback): Promise<() => void>
+subscribeWorkerLog(nodeType: NodeType, nodeId: NodeId, callback: WorkerLogCallback): Promise<() => void>
 ```
 
 ## 3. Compatibility Policy
@@ -35,12 +38,20 @@ subscribeBuildProgress(
 - New code must call `Build*` APIs.
 - Compatibility at runtime should not introduce new `Batch*` usage.
 - New code must use `startBuildSession` for Start semantics (including prior Resume-labeled UI actions).
+- `subscribeBuildTasks` remains only as a compatibility surface. Shape runtime returns a
+  no-op unsubscribe, so new UI code must use `subscribeStageSnapshots` and
+  `subscribeTaskProgress` instead.
+- `subscribeBuildProgress` is not a canonical method. Task progress uses
+  `subscribeTaskProgress`.
 
 ## 4. Event Vocabulary
 
-- `stage`: `fetch | transform | vt` (plus diagnostic values where required)
-- `phase`: queued/running/paused/completed/failed progression
-- `payload`: stage/task totals and contextual metadata
+- `stage`: `source | geometry | tileEmit`
+- session phase: `idle | starting | running | pausing | paused | resuming | finalizing | completed | failed`
+- task status: `queued | running | completed | failed | recycled`
+- stage task lists are full replacements delivered by `stageSnapshotUpdated`.
+- task progress is delivered by `taskProgressUpdated` and ordered by a version scoped
+  to each `taskId`.
 
 ## 5. Runtime Rules
 
@@ -49,6 +60,10 @@ subscribeBuildProgress(
   - If target is queued: remove from queue.
   - If target is already running: treat as stop/pause semantics.
 - Session queue policy is global FIFO across node/plugin boundaries.
+- `BuildWorkerBridge.subscribeAll` establishes the subscription bundle atomically. If
+  any channel subscription rejects, it disposes every already-acquired or
+  later-resolving channel and propagates the original error. It must not retain a
+  partial bundle, retry, or fall back to another subscription contract.
 
 ## 6. Migration Status
 
@@ -68,8 +83,11 @@ subscribeBuildProgress(
   - `pauseBuildSession`
   - `cancelQueuedBuildSession`
   - `getBuildTasks`
-  - `subscribeBuildTasks`
-  - `subscribeBuildProgress`
+  - `subscribeStageSnapshots`
+  - `subscribeTaskProgress`
+  - `subscribeSessionState`
+  - `subscribeSessionHeartbeat`
+  - `subscribeWorkerLog`
 - Canonical type/view:
   - `BuildWorkerAPI<T>`
   - `BuildWorkerBridge`

@@ -8,9 +8,11 @@ import type {
   SessionStatusUpdatedEvent,
   StageSnapshotUpdatedEvent,
 } from '../../../../common/types/session-events';
+import type { TaskProgressUpdatedEvent } from '@hierarchidb/build-api';
 import {
   buildSessionLifecycleAtom,
   buildSessionSnapshotHandshakeReceivedAtom,
+  buildSessionTasksByStageAtom,
   dispatchBuildSessionEventAtom,
   stageTimingByStageAtom,
 } from '../../../atoms/buildSessionStateAtoms';
@@ -19,6 +21,7 @@ import { useShapeBuildSessionStateAtomBridge } from '../../../components/build-p
 type BridgeCallbacks = {
   onSessionState: (event: SessionStatusUpdatedEvent) => void;
   onTaskEvent: (event: StageSnapshotUpdatedEvent) => void;
+  onProgressEvent: (event: TaskProgressUpdatedEvent) => void;
 };
 
 const mocks = vi.hoisted(() => ({
@@ -112,6 +115,39 @@ const emptySourceSnapshot: StageSnapshotUpdatedEvent = {
   },
 };
 
+const completedGeometrySnapshot: StageSnapshotUpdatedEvent = {
+  type: 'stageSnapshotUpdated',
+  payload: {
+    stageId: 'geometry',
+    tasks: [{
+      taskId: 'geometry-task-1',
+      version: 3,
+      stage: 'geometry',
+      status: 'completed',
+      progress: 100,
+    }],
+    stageStartedAt: 1_100,
+    stageInactiveMs: 0,
+    stageCompletedAt: 1_300,
+  },
+};
+
+const staleSourceSnapshot: StageSnapshotUpdatedEvent = {
+  type: 'stageSnapshotUpdated',
+  payload: {
+    stageId: 'source',
+    tasks: [{
+      taskId: 'source-task-1',
+      version: 1,
+      stage: 'source',
+      status: 'queued',
+      progress: 0,
+    }],
+    stageStartedAt: 1_050,
+    stageInactiveMs: 0,
+  },
+};
+
 describe('useShapeBuildSessionStateAtomBridge', () => {
   it('keeps UI sync initializing until the authoritative stage snapshot arrives', async () => {
     const store = createStore();
@@ -189,5 +225,87 @@ describe('useShapeBuildSessionStateAtomBridge', () => {
     expect(store.get(buildSessionLifecycleAtom).activeStageId).toBe('source');
 
     view.unmount();
+  });
+
+  it('disposes a subscription that resolves after the bridge was cancelled', async () => {
+    let resolveSubscription: ((unsubscribe: () => void) => void) | null = null;
+    mocks.subscribeAll.mockImplementationOnce(async (_nodeType, _nodeId, callbacks) => {
+      mocks.callbacks = callbacks as BridgeCallbacks;
+      return new Promise<() => void>((resolve) => {
+        resolveSubscription = resolve;
+      });
+    });
+    const store = createStore();
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <Provider store={store}>{children}</Provider>
+    );
+    const view = renderHook(() => useShapeBuildSessionStateAtomBridge('node-1' as NodeId), {
+      wrapper,
+    });
+
+    await waitFor(() => {
+      expect(resolveSubscription).not.toBeNull();
+    });
+    view.unmount();
+    expect(mocks.unsubscribe).not.toHaveBeenCalled();
+
+    const resolvePendingSubscription = resolveSubscription;
+    if (!resolvePendingSubscription) {
+      throw new Error('Subscription resolver was not registered.');
+    }
+    resolvePendingSubscription(mocks.unsubscribe);
+
+    await waitFor(() => {
+      expect(mocks.unsubscribe).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('re-subscribes after cancellation and ignores events from the cancelled subscription', async () => {
+    const store = createStore();
+    const first = await startBridge(store);
+    const cancelledCallbacks = first.callbacks;
+
+    first.view.unmount();
+    expect(mocks.unsubscribe).toHaveBeenCalledTimes(1);
+
+    const second = await startBridge(store);
+    expect(mocks.subscribeAll).toHaveBeenCalledTimes(2);
+
+    act(() => {
+      second.callbacks.onSessionState(runningGeometryStatus);
+      second.callbacks.onTaskEvent(completedGeometrySnapshot);
+    });
+
+    expect(store.get(buildSessionLifecycleAtom).activeStageId).toBe('geometry');
+    expect(store.get(buildSessionTasksByStageAtom).geometry).toEqual([
+      expect.objectContaining({
+        taskId: 'geometry-task-1',
+        status: 'completed',
+        progress: 100,
+      }),
+    ]);
+
+    act(() => {
+      cancelledCallbacks.onSessionState(runningSourceStatus);
+      cancelledCallbacks.onTaskEvent(staleSourceSnapshot);
+      cancelledCallbacks.onProgressEvent({
+        type: 'taskProgressUpdated',
+        payload: {
+          taskId: 'source-task-1',
+          version: 1,
+          stageId: 'source',
+          value: 0,
+        },
+      });
+    });
+
+    expect(store.get(buildSessionLifecycleAtom).activeStageId).toBe('geometry');
+    expect(store.get(buildSessionTasksByStageAtom).source).toEqual([]);
+    expect(store.get(buildSessionTasksByStageAtom).geometry[0]).toEqual(
+      expect.objectContaining({ status: 'completed', progress: 100 }),
+    );
+
+    second.view.unmount();
+    expect(mocks.unsubscribe).toHaveBeenCalledTimes(2);
   });
 });

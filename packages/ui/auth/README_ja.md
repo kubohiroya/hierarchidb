@@ -1,11 +1,13 @@
 # @hierarchidb/ui-auth
 
-最終更新: 2026-04-05
+最終更新: 2026-08-20
 
 HierarchiDB の認証 UI コンポーネント。ログイン画面、認証状態表示等を提供する。
 
 OAuth callback の return URL 解決には `resolveAuthReturnUrl` を使用します。routing と失敗時
 の契約は `docs/auth-callback-routing-spec.md` を参照してください。
+callback画面離脱、timeout、単一hard redirectには、同仕様に従う
+`startAuthCallbackNavigation`を使用します。
 
 BFF token 応答、UI session 保存、同一タブ通知、reload 復元の正規契約は
 `docs/auth-session-contract.md` に記載し、`AuthSessionStorage` が実装します。

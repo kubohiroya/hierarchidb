@@ -39,6 +39,15 @@ export type {
   ResolvedAuthReturnUrl,
 } from './services/resolveAuthReturnUrl.js';
 export { resolveAuthReturnUrl } from './services/resolveAuthReturnUrl.js';
+export type {
+  AuthCallbackNavigationHandle,
+  AuthCallbackNavigationLocation,
+  StartAuthCallbackNavigationOptions,
+} from './services/startAuthCallbackNavigation.js';
+export {
+  AUTH_CALLBACK_NAVIGATION_TIMEOUT_MS,
+  startAuthCallbackNavigation,
+} from './services/startAuthCallbackNavigation.js';
 export { registerAuthUIHandlers } from './services/UIAuthRecoveryClient.js';
 export type { AuthContextType } from './types/AuthContextType.js';
 export type { AuthProviderConfig } from './types/AuthProviderConfig.js';

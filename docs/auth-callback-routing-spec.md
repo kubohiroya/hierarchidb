@@ -1,6 +1,6 @@
 # Auth callback return URL routing specification
 
-最終更新: 2026-08-19
+最終更新: 2026-08-20
 
 ## 目的
 
@@ -57,9 +57,24 @@ base pathname と hash route を結合しないため、node ID や app base pat
 
 ## Navigation responsibility
 
-本仕様は return URL の解決までを対象とする。解決後の SPA navigation、hard redirect、
-timeout、callback 画面からの離脱確認は Issue #818 の責務とする。ただし hash target を
-TanStack Router の browser path として渡してはならない。
+解決後の navigation executor は
+`packages/ui/auth/src/services/startAuthCallbackNavigation.ts` を SSOT とする。app callback と
+公開 UI callback はこの executor を使用し、独自の timeout、hash 成功判定、hard redirect を
+実装してはならない。
+
+- external target は解決済み absolute URL に対して `location.assign` を一度だけ実行する。
+- browser target は TanStack Router の replace navigation を開始する。Promise が解決した場合だけ
+  SPA navigation 完了として timeout を解除する。
+- hash target は TanStack Router の browser path として渡さず、`location.hash` を設定する。
+- hash の文字列一致だけでは navigation 完了とみなさない。callback route の unmount に伴う
+  executor の dispose が完了通知になる。
+- callback route が timeout まで残った場合、現在の document pathname と解決済み hash targetを
+  組み合わせた同一URLへ `location.replace` を一度だけ実行する。
+- browser navigation の拒否または timeout では、解決済み internal targetへ
+  `location.replace` を一度だけ実行する。
+- 成功、timeout、unmountの全経路でtimerを解放する。hard redirect失敗を別URL、別routing mode、
+  既定画面へのfallbackで吸収せず、callback errorとして可視化する。
+- timeoutは正の有限数を呼び出し側から必須で渡す。欠落値や不正値に既定値を補完しない。
 
 token response の検証、認証 session の保存、同一タブ通知、reload 復元は
 `docs/auth-session-contract.md` の責務とする。return URL 解決は認証 session の保存が成功した後に
@@ -68,6 +83,8 @@ token response の検証、認証 session の保存、同一タブ通知、reloa
 ## 検証
 
 - `packages/ui/auth/src/services/__tests__/resolveAuthReturnUrl.unit.test.ts`
+- `packages/ui/auth/src/services/__tests__/startAuthCallbackNavigation.unit.test.ts`
+- `app/src/router/routes/auth/__tests__/auth.callback.unit.test.tsx`
 - `pnpm -w turbo run test --filter @hierarchidb/ui-auth`
 - `pnpm -w turbo run typecheck --filter @hierarchidb/ui-auth`
 - `pnpm -w turbo run typecheck --filter @hierarchidb/app`
