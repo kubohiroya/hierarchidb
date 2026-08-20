@@ -47,6 +47,7 @@
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "dependencies": {
+    "@hierarchidb/origin-coordinator": "workspace:*",
     "jszip": "^3.10.1",
     "react-window": "^1.8.10",
     "xlsx": "^0.18.5",

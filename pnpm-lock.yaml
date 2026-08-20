@@ -313,6 +313,9 @@ importers:
       '@hierarchidb/memory':
         specifier: workspace:*
         version: link:../packages/memory
+      '@hierarchidb/origin-coordinator':
+        specifier: workspace:*
+        version: link:../packages/origin-coordinator
       '@hierarchidb/plugin-base':
         specifier: workspace:*
         version: link:../packages/plugin-base
@@ -1111,6 +1114,15 @@ importers:
         specifier: 5.8.2
         version: 5.8.2
 
+  packages/origin-coordinator:
+    devDependencies:
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+      vitest:
+        specifier: ^4.1.0
+        version: 4.1.0(@types/node@18.19.123)(@vitest/ui@4.1.0)(happy-dom@20.8.3)(jsdom@26.1.0)(vite@7.3.1(@types/node@18.19.123)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)(yaml@2.8.2))
+
   packages/plugin-base:
     dependencies:
       react:
@@ -1470,6 +1482,9 @@ importers:
       '@hierarchidb/location-store':
         specifier: workspace:*
         version: link:../location-store
+      '@hierarchidb/origin-coordinator':
+        specifier: workspace:*
+        version: link:../origin-coordinator
       '@hierarchidb/route-api':
         specifier: workspace:*
         version: link:../route-api
@@ -4167,6 +4182,9 @@ importers:
 
   plugins/shape-plugin:
     dependencies:
+      '@hierarchidb/origin-coordinator':
+        specifier: workspace:*
+        version: link:../../packages/origin-coordinator
       '@hierarchidb/plugin-base':
         specifier: workspace:*
         version: link:../../packages/plugin-base
@@ -4511,6 +4529,9 @@ importers:
 
   plugins/styler-plugin:
     dependencies:
+      '@hierarchidb/origin-coordinator':
+        specifier: workspace:*
+        version: link:../../packages/origin-coordinator
       '@hierarchidb/plugin-base':
         specifier: workspace:*
         version: link:../../packages/plugin-base

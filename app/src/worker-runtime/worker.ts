@@ -4,8 +4,18 @@
  */
 
 import './worker-react-refresh-shim.js';
+import {
+  getOriginCoordinatorSourceSha,
+  installOriginCoordinatorCensusResponder,
+  type OriginCoordinatorMessageTarget,
+} from '@hierarchidb/origin-coordinator';
 import { WorkerInitializationReporter } from '@hierarchidb/ui-worker-client';
 import { ensureRuntimeWorkerBootstrap } from './workerBootstrapUtils.ts';
+
+installOriginCoordinatorCensusResponder(
+  globalThis as unknown as OriginCoordinatorMessageTarget,
+  getOriginCoordinatorSourceSha()
+);
 
 const reporter = new WorkerInitializationReporter(
   [

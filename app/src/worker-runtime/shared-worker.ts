@@ -4,9 +4,19 @@
  */
 
 import './worker-react-refresh-shim.js';
+import {
+  getOriginCoordinatorSourceSha,
+  installOriginCoordinatorCensusResponder,
+  type OriginCoordinatorMessageTarget,
+} from '@hierarchidb/origin-coordinator';
 import type { WorkerInitMessage, WorkerInitRequest } from '@hierarchidb/ui-worker-client';
 import { WorkerInitializationReporter } from '@hierarchidb/ui-worker-client';
 import { ensureRuntimeWorkerBootstrap } from './workerBootstrapUtils.ts';
+
+installOriginCoordinatorCensusResponder(
+  globalThis as unknown as OriginCoordinatorMessageTarget,
+  getOriginCoordinatorSourceSha(),
+);
 
 const ports = new Set<MessagePort>();
 let initCompleted = false;

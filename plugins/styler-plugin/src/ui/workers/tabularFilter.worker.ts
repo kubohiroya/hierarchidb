@@ -1,5 +1,10 @@
 /// <reference lib="webworker" />
 
+import {
+  getOriginCoordinatorSourceSha,
+  installOriginCoordinatorCensusResponder,
+  type OriginCoordinatorMessageTarget,
+} from '@hierarchidb/origin-coordinator';
 import type { TabularFilterRule } from '@hierarchidb/ui-tabular';
 import type { StylerTableRow } from '~/common/types/StylerEntity';
 import { applyFilters } from '~/ui/utils/tabularFilters';
@@ -18,6 +23,11 @@ type FilterResponse = {
 };
 
 const ctx: DedicatedWorkerGlobalScope = self as DedicatedWorkerGlobalScope;
+
+installOriginCoordinatorCensusResponder(
+  ctx as unknown as OriginCoordinatorMessageTarget,
+  getOriginCoordinatorSourceSha()
+);
 
 ctx.onmessage = (event: MessageEvent<FilterRequest>) => {
   const { id, rows, filters, limit = 1000 } = event.data ?? {};
