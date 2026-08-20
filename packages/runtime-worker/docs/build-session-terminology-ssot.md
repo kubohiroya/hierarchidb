@@ -20,7 +20,7 @@ used across runtime, worker API, UI, and plugin implementations.
 ### 2.2 State Dimensions
 
 - `persistedStatus`
-  - Durable session state in storage (`sessions.status`).
+  - Durable session state in storage (`buildSessionStatuses.status`).
 - `runtimeStatus`
   - In-memory live runtime state for UI/runtime reflection.
 - `stage`

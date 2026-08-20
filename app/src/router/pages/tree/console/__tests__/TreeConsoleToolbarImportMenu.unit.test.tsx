@@ -37,15 +37,15 @@ function renderToolbar(props?: Partial<TreeConsoleToolbarProps>) {
 describe('TreeConsoleToolbar import menu restrictions', () => {
   it('does not render Import/Export toolbar button', () => {
     renderToolbar();
-    expect(
-      screen.queryByRole('button', { name: 'aria.importExportButton' })
-    ).toBeNull();
+    expect(screen.queryByRole('button', { name: 'aria.importExportButton' })).toBeNull();
   });
 
   it('hides developer IndexedDB reset option when developer mode is disabled', async () => {
     renderToolbar();
 
-    fireEvent.click(screen.getByRole('button', { name: 'aria.settingsButton' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'treeConsole.toolbar.aria.settingsButton' })
+    );
 
     expect(
       screen.queryByRole('menuitem', {
@@ -54,11 +54,13 @@ describe('TreeConsoleToolbar import menu restrictions', () => {
     ).toBeNull();
   });
 
-  it('emits clear-indexeddb action when developer option is clicked', async () => {
+  it('does not expose the legacy clear-indexeddb action in developer mode', async () => {
     const onAction = vi.fn();
     renderToolbar({ developerModeEnabled: true, onAction });
 
-    fireEvent.click(screen.getByRole('button', { name: 'aria.settingsButton' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'treeConsole.toolbar.aria.settingsButton' })
+    );
 
     expect(
       screen.queryByRole('menuitem', {

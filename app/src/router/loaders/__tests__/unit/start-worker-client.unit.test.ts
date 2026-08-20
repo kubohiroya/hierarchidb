@@ -5,13 +5,13 @@
  * Tests retry logic, timeout handling, and success scenarios
  */
 
-import type { BuildWorkerAPI } from '../../../../types/worker-api.ts';
 import type { Remote } from 'comlink';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   getWorkerInitCompleteMessage,
   getWorkerInitStartMessage,
-} from '../../../../i18n/workerInitMessages.ts';
+} from '../../../../i18n/workerInitMessageConstants.ts';
+import type { BuildWorkerAPI } from '../../../../types/worker-api.ts';
 
 // Mock the WorkerStateStore module
 vi.mock('../../../../worker-runtime/WorkerStateStore.js', () => ({

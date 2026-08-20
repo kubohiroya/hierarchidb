@@ -4,15 +4,15 @@ on:
   pull_request:
     branches: [main, master]
     paths:
-      - ".github/workflows/naming-audit.yml"
-      - "app/src/**/*.ts"
-      - "app/src/**/*.tsx"
-      - "packages/*/src/**/*.ts"
-      - "packages/*/src/**/*.tsx"
-      - "plugins/*-plugin/src/**/*.ts"
-      - "plugins/*-plugin/src/**/*.tsx"
-      - "scripts/naming-audit/**"
-      - "scripts/naming-audit.ts"
+      - '.github/workflows/naming-audit.yml'
+      - 'app/src/**/*.ts'
+      - 'app/src/**/*.tsx'
+      - 'packages/*/src/**/*.ts'
+      - 'packages/*/src/**/*.tsx'
+      - 'plugins/*-plugin/src/**/*.ts'
+      - 'plugins/*-plugin/src/**/*.tsx'
+      - 'scripts/naming-audit/**'
+      - 'scripts/naming-audit.ts'
 
 concurrency:
   group: naming-audit-${{ github.ref }}
@@ -24,22 +24,22 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
-          package_json_path: ./package.json
+          package_json_file: package.json
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: "pnpm"
+          cache: 'pnpm'
 
       - name: Install deps
-        run: pnpm install --no-frozen-lockfile --force
+        run: pnpm install --frozen-lockfile --filter .
 
       - name: Run naming audit
         env:

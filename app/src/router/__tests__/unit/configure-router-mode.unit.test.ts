@@ -76,6 +76,11 @@ vi.mock('../../routes/tree/pageRoute.js', () => ({
   treePageRoute: createMockRoute(),
 }));
 
+vi.mock('../../routes/tree/tagsRoute.js', () => ({
+  treeTagsRoute: createMockRoute(),
+  treeTagDetailRoute: createMockRoute(),
+}));
+
 vi.mock('../../routes/tree/targetRoute.js', () => ({
   treeTargetRoute: createMockRoute(),
 }));
@@ -88,6 +93,19 @@ vi.mock('../../routes/tree/dialogRoute.js', () => ({
   treeDialogRoute: createMockRoute(),
   treeDialogModeRoute: createMockRoute(),
   treeDialogModeStepRoute: createMockRoute(),
+}));
+
+vi.mock('../../routes/folder/baseRoute.js', () => ({
+  folderBaseRoute: createMockRoute(),
+}));
+
+vi.mock('../../routes/folder/folderRoutes.js', () => ({
+  folderTreeRoute: createMockRoute(),
+  folderTreeIndexRoute: createMockRoute(),
+  folderPageRoute: createMockRoute(),
+  folderPageIndexRoute: createMockRoute(),
+  folderViewRoute: createMockRoute(),
+  folderViewSortRoute: createMockRoute(),
 }));
 
 vi.mock('maplibre-gl', () => ({
@@ -191,22 +209,7 @@ describe('getRouterMode', () => {
 });
 
 describe('getBasePath', () => {
-  it('should return "/" by default', () => {
-    expect(getBasePath()).toBe('/');
-  });
-
-  it('should remove trailing slash from BASE_URL', () => {
-    vi.stubEnv('BASE_URL', '/hierarchidb/');
-    expect(getBasePath()).toBe('/hierarchidb');
-  });
-
-  it('should keep path without trailing slash', () => {
-    vi.stubEnv('BASE_URL', '/hierarchidb');
-    expect(getBasePath()).toBe('/hierarchidb');
-  });
-
-  it('should handle root path specially', () => {
-    vi.stubEnv('BASE_URL', '/');
+  it('returns the base path statically injected by Vite', () => {
     expect(getBasePath()).toBe('/');
   });
 });

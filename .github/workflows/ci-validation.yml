@@ -1,0 +1,127 @@
+name: CI Validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'plans/**'
+      - 'reports/**'
+      - 'LICENSE'
+      - '.kiro/**'
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'plans/**'
+      - 'reports/**'
+      - 'LICENSE'
+      - '.kiro/**'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-validation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validation:
+    name: Validate affected packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v6
+        with:
+          package_json_file: package.json
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Resolve cache scope
+        id: cache-scope
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          case "${EVENT_NAME}" in
+            pull_request)
+              test -n "${PR_NUMBER}"
+              cache_scope="pr-${PR_NUMBER}"
+              ;;
+            push)
+              test "${REF_NAME}" = "main"
+              cache_scope="main"
+              ;;
+            workflow_dispatch)
+              cache_scope="manual-${REF_NAME}"
+              ;;
+            *)
+              echo "Unsupported event: ${EVENT_NAME}" >&2
+              exit 1
+              ;;
+          esac
+          echo "scope=${cache_scope}" >> "${GITHUB_OUTPUT}"
+
+      - name: Restore Turbo cache
+        uses: actions/cache@v6
+        with:
+          path: .turbo/cache
+          key: ${{ runner.os }}-turbo-${{ steps.cache-scope.outputs.scope }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-${{ steps.cache-scope.outputs.scope }}-${{ hashFiles('pnpm-lock.yaml') }}-
+            ${{ runner.os }}-turbo-main-${{ hashFiles('pnpm-lock.yaml') }}-
+
+      - name: Install dependencies (workspace)
+        run: pnpm install --frozen-lockfile
+
+      - name: Resolve validation mode
+        id: validation-mode
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "${EVENT_NAME}" = "pull_request" ]]; then
+            validation_mode="$(node scripts/ci/resolve-validation-mode.mjs --base "${BASE_SHA}" --head "${HEAD_SHA}")"
+          else
+            validation_mode="full"
+          fi
+          case "${validation_mode}" in
+            affected|full) ;;
+            *)
+              echo "Unexpected validation mode: ${validation_mode}" >&2
+              exit 1
+              ;;
+          esac
+          echo "mode=${validation_mode}" >> "${GITHUB_OUTPUT}"
+          echo "### CI validation mode: ${validation_mode}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Run repository-wide blocking checks
+        run: pnpm run ci:checks
+
+      - name: Validate affected packages
+        if: steps.validation-mode.outputs.mode == 'affected'
+        env:
+          TURBO_SCM_BASE: ${{ github.event.pull_request.base.sha }}
+          TURBO_SCM_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: pnpm run ci:validate:affected
+
+      - name: Validate full workspace
+        if: steps.validation-mode.outputs.mode == 'full'
+        run: pnpm run ci:validate:full

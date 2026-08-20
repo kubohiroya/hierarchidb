@@ -1,8 +1,8 @@
 import { cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { WorkerClientProxy } from '../worker-runtime/WorkerClientProxy';
-import { WorkerProvider } from './WorkerProvider';
+import type { WorkerClientProxy } from '../../worker-runtime/WorkerClientProxy';
+import { WorkerProvider } from '../WorkerProvider';
 
 const ensureInitializedMock = vi.fn(() => new Promise<never>(() => {}));
 let runtimeState: 'uninitialized' | 'initializing' | 'ready' | 'failed' = 'uninitialized';
@@ -21,7 +21,7 @@ vi.mock('@hierarchidb/ui-plugin-shell/ui-i18n', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
-vi.mock('../hooks/useWorkerRuntimeProxy.js', () => ({
+vi.mock('../../hooks/useWorkerRuntimeProxy.js', () => ({
   useWorkerRuntimeProxy: () => ({
     proxy: proxyMock,
     state: runtimeState,
@@ -29,7 +29,7 @@ vi.mock('../hooks/useWorkerRuntimeProxy.js', () => ({
   }),
 }));
 
-vi.mock('../worker-runtime/workerApiClientLoader.js', () => ({
+vi.mock('../../worker-runtime/workerApiClientLoader.js', () => ({
   getWorkerAPIClientModule: () => null,
   loadWorkerAPIClientModule: async () => ({
     WorkerAPIClient: {
@@ -40,7 +40,7 @@ vi.mock('../worker-runtime/workerApiClientLoader.js', () => ({
   }),
 }));
 
-vi.mock('../worker-runtime/WorkerStateStore.js', () => ({
+vi.mock('../../worker-runtime/WorkerStateStore.js', () => ({
   resetWorkerState: () => {},
 }));
 

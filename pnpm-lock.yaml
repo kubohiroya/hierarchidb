@@ -623,6 +623,9 @@ importers:
       '@hierarchidb/gis-sdk':
         specifier: workspace:*
         version: link:../packages/gis-sdk
+      '@hierarchidb/tools-load-plugin-manifest':
+        specifier: workspace:*
+        version: link:../packages/tools/load-plugin-manifest
       '@hierarchidb/vite-plugin-hierarchidb-plugin-alias':
         specifier: workspace:*
         version: link:vite-plugins/vite-plugin-hierarchidb-plugin-alias

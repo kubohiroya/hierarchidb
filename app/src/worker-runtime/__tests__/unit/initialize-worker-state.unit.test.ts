@@ -1,6 +1,6 @@
-import type { BuildWorkerAPI } from '../../../types/worker-api.ts';
 import type { Remote } from 'comlink';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { BuildWorkerAPI } from '../../../types/worker-api.ts';
 
 const workerClientMock = vi.hoisted(() => ({
   getOrInit: vi.fn<() => Promise<Remote<BuildWorkerAPI>>>(),
@@ -17,7 +17,7 @@ vi.mock('../../WorkerAPIClient.ts', () => ({
   NotInitializedError: MockNotInitializedError,
 }));
 
-vi.mock('../../WorkerModuleLoader.js', () => ({
+vi.mock('../../workerModuleLoaderUtils.js', () => ({
   ensureWorkerRuntime: ensureWorkerRuntimeMock,
 }));
 
