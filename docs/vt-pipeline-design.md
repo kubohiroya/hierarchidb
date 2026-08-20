@@ -1243,15 +1243,25 @@ const lonLatCoords = simplified.map(mercatorToLonLat);
 3. vt-pbf でエンコードし `VTMutationAPI` へ保存
 4. 子タイルの生成は `parentTileToChildRange` で範囲を算出して走査
 
+### geojson-vt → vt-pbf の型境界
+
+- `geojson-vt` 3系の実行時 `getTile()` は非Point geometryをring配列として返し、`vt-pbf` の入力契約と互換である。
+- 一方、`@types/geojson-vt` 3系は非Point geometryもPointと同じ平坦な型で表現するため、`@maplibre/vt-pbf` 4系の型とは構造上不一致になる。
+- この外部型定義差は `fromGeojsonVt` の公開引数型を参照し、`unknown` を介した型変換としてエンコード境界だけに限定する。`any` や互換フォールバックは使用しない。
+- 入力は `geojson-vt#getTile()` が返した変換済みタイルに限定し、任意構造のオブジェクトを受け入れない。
+
 **デデュープ実装メモ（例）**
 
 ```ts
+type VtPbfLayerMap = Parameters<typeof vtpbf.fromGeojsonVt>[0];
+type VtPbfLayer = VtPbfLayerMap[string];
+
 function canonicalLineKey(coords: number[][]) {
   const a = coords.map(p => (p[0] << 16) ^ p[1]).join(",");
   const b = [...coords].reverse().map(p => (p[0] << 16) ^ p[1]).join(",");
   return a < b ? a : b;
 }
-function dedupeTileLines(tile: any) {
+function dedupeTileLines(tile: VtPbfLayer) {
   const seen = new Set<string>();
   const out = [];
 
@@ -1281,14 +1291,15 @@ function dedupeTileLines(tile: any) {
   return tile;
 }
 
-const tile = tileIndexBound.getTile(z, x, y);
-if (tile) {
+const sourceTile = tileIndexBound.getTile(z, x, y);
+if (sourceTile) {
+  const tile = sourceTile as unknown as VtPbfLayer;
   dedupeTileLines(tile);
-}
 
-const buf = vtpbf.fromGeojsonVt({
-  admin2_boundary: tile,
-});
+  const buf = vtpbf.fromGeojsonVt({
+    admin2_boundary: tile,
+  });
+}
 ```
 
 ## geometry / tileEmit での境界ライン生成と利用
