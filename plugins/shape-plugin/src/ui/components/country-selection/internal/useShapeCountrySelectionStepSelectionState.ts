@@ -216,14 +216,20 @@ export const useShapeCountrySelectionStepSelectionState = ({
       return;
     }
     if (isSelectionEqual(prev, normalizedSelection)) return;
+    let ownsSelectionBaseline = true;
     void onInvalidate(prev, normalizedSelection)
+      .then(() => {
+        if (ownsSelectionBaseline) {
+          prevSelectionRef.current = normalizedSelection;
+        }
+      })
       .catch((error: unknown) => console.warn(
         '[ShapeCountrySelectionStep] failed to invalidate build after selection change',
         error,
-      ))
-      .finally(() => {
-        prevSelectionRef.current = normalizedSelection;
-      });
+      ));
+    return () => {
+      ownsSelectionBaseline = false;
+    };
   }, [baseCountries.length, nodeId, normalizedSelection, onInvalidate]);
 
   const applySelections = useCallback((nextSelections: MatrixSelection[]) => {

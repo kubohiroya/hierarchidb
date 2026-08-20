@@ -31,9 +31,6 @@ import { AuthRequiredError, AuthService } from '@hierarchidb/auth';
 import {
   countSelectedAdminPairs,
 } from '~/services/utils/shapeBuildUtils';
-import {
-  deleteRawDataDataSourceBuffersForNodeMetadataIds,
-} from '~/services/utils/chunkStore';
 import { resolveSourceStageStrategy } from '~/services/build/strategies/resolveSourceStageStrategy';
 import {
   emitSessionStatusUpdated,
@@ -53,19 +50,16 @@ class SourceTaskPayloadGenerationError extends Error {
 import {
   VtTaskQueueDb,
   deleteTasksByNode,
-  deleteTasksByIds,
   listTasks,
-  listTasksByStage,
   listTasksByStatus,
   onTaskQueueUpdate,
   updateTask,
 } from '@hierarchidb/vt-orchestrator';
 import type { BuildSessionConfig } from '@hierarchidb/shape-store';
-import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import { runShapePipeline } from '~/services/vt/runShapePipeline';
 import { ephemeralShapeAPIImpl, shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
-import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import { setSourcePlannedTotal } from '~/services/vt/shapeProgressPlanUtils';
+import { runShapeArtifactCascadeCleanup } from '~/services/vt/runShapeArtifactCascadeCleanup';
 import { shouldReuseTaskQueueOnStart } from '../shouldReuseTaskQueueOnStart.js';
 import * as shapeBuildRuntimeCore from './shapeBuildRuntimeCore.js';
 import { summarizeTaskQueueStatus } from './progressAnalysis.js';
@@ -225,23 +219,7 @@ const initializeAndReadStageTiming = async (
   };
 };
 
-type CanonicalStageId = 'source-stage' | 'geometry-stage' | 'tile-emit-stage';
 type TaskStage = 'source' | 'geometry' | 'tileEmit';
-
-const toCanonicalStageId = (stage: TaskStage): CanonicalStageId => {
-  if (stage === 'source') return 'source-stage';
-  if (stage === 'geometry') return 'geometry-stage';
-  return 'tile-emit-stage';
-};
-
-const isSourceOrGeometryStage = (stage: TaskStage): boolean => {
-  const stageId = toCanonicalStageId(stage);
-  return stageId === 'source-stage' || stageId === 'geometry-stage';
-};
-
-const isTileEmitStage = (stage: TaskStage): boolean => (
-  toCanonicalStageId(stage) === 'tile-emit-stage'
-);
 
 const buildBuildSessionConfig = (buildConfig: ShapeRuntimeBuildConfig): BuildSessionConfig => {
   const resolvedDataSource = requireDataSourceName(
@@ -448,41 +426,14 @@ const estimatePlannedSourceTotal = async (input: {
   };
 };
 
-const hasConfigDiff = <T extends object>(left: T, right: T): boolean => {
-  const keys = new Set<keyof T>([...Object.keys(left), ...Object.keys(right)] as Array<keyof T>);
-  for (const key of keys) {
-    if (!Object.is(left[key], right[key])) {
-      return true;
-    }
-  }
-  return false;
-};
-
-const resolveConfigInvalidationPlan = (
-  prevConfig: ShapeRuntimeBuildConfig | null,
-  nextConfig: ShapeRuntimeBuildConfig | null,
-): { source: boolean; geometry: boolean; tileEmit: boolean } => {
-  if (!prevConfig || !nextConfig) {
-    return { source: false, geometry: false, tileEmit: false };
-  }
-  return {
-    source: hasConfigDiff(prevConfig.sourceConfig, nextConfig.sourceConfig),
-    geometry: hasConfigDiff(prevConfig.geometryConfig, nextConfig.geometryConfig),
-    tileEmit: hasConfigDiff(prevConfig.tileEmitConfig, nextConfig.tileEmitConfig),
-  };
-};
-
-const normalizeSelectionKey = (code: string): string => code.trim().toUpperCase();
-
 const buildSelectionSet = (selection: SelectedArrayByCountries | undefined): Set<string> => {
   const set = new Set<string>();
   if (!selection || Array.isArray(selection)) return set;
   Object.entries(selection).forEach(([code, row]) => {
     if (!Array.isArray(row)) return;
-    const normalizedCode = normalizeSelectionKey(code);
     row.forEach((selected, index) => {
       if (selected) {
-        set.add(`${normalizedCode}:${index}`);
+        set.add(`${code}:${index}`);
       }
     });
   });
@@ -501,8 +452,7 @@ const computeRemovedSelectionPairs = (
     if (nextSet.has(entry)) return;
     const [countryCode, adminLevelText] = entry.split(':');
     const adminLevel = Number.parseInt(adminLevelText ?? '', 10);
-    if (!countryCode || !Number.isFinite(adminLevel)) return;
-    removed.push({ countryCode, adminLevel });
+    removed.push({ countryCode: countryCode ?? '', adminLevel });
   });
   return removed;
 };
@@ -514,111 +464,13 @@ const applySelectionDiffCleanup = async (
 ): Promise<void> => {
   const removedPairs = computeRemovedSelectionPairs(prevSelection, nextSelection);
   if (removedPairs.length === 0) return;
-  const taskQueue = new VtTaskQueueDb();
-  const removedKeyTuples = removedPairs.map((entry) => (
-    [nodeId, normalizeSelectionKey(entry.countryCode), entry.adminLevel] as const
-  ));
-  const [sourceCacheIdsRaw, geometryCacheIdsRaw, tileEmitTasks] = await Promise.all([
-    ephemeralDB.sourceCacheMeta
-      .where('[nodeId+countryCode+adminLevel]')
-      .anyOf(removedKeyTuples)
-      .primaryKeys(),
-    ephemeralDB.geometryCacheMeta
-      .where('[nodeId+countryCode+adminLevel]')
-      .anyOf(removedKeyTuples)
-      .primaryKeys(),
-    taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'tileEmit']).toArray(),
-  ]);
-  const sourceCacheIds = sourceCacheIdsRaw.map((id: unknown) => String(id));
-  if (sourceCacheIds.length > 0) {
-    await Promise.all([
-      ephemeralDB.sourceCache
-        .where('[nodeId+countryCode+adminLevel]')
-        .anyOf(removedKeyTuples)
-        .delete(),
-      ephemeralDB.sourceCacheMeta
-        .where('[nodeId+countryCode+adminLevel]')
-        .anyOf(removedKeyTuples)
-        .delete(),
-    ]);
-    await deleteRawDataDataSourceBuffersForNodeMetadataIds(nodeId, sourceCacheIds);
-  }
-
-  const geometryCacheIds = geometryCacheIdsRaw.map((id: unknown) => String(id));
-  const removedBufferSet = new Set(geometryCacheIds);
-  if (geometryCacheIds.length > 0) {
-    await Promise.all([
-      ephemeralDB.geometryCache
-        .where('[nodeId+countryCode+adminLevel]')
-        .anyOf(removedKeyTuples)
-        .delete(),
-      ephemeralDB.geometryCacheMeta
-        .where('[nodeId+countryCode+adminLevel]')
-        .anyOf(removedKeyTuples)
-        .delete(),
-    ]);
-    const relations = await ephemeralDB.tileEmitBufferRelations
-      .where('bufferId')
-      .anyOf(geometryCacheIds)
-      .toArray();
-    const affectedTileIds = new Set(relations.map((row) => row.tileId));
-    await ephemeralDB.tileEmitBufferRelations
-      .where('bufferId')
-      .anyOf(geometryCacheIds)
-      .delete();
-    const encoder = new TextEncoder();
-    const hasher = new NobleSha3HashPort();
-    const tileIdsToDelete = tileEmitTasks
-      .map((task) => {
-        const input = task.inputData as { bufferIds?: string[]; tileId?: number } | undefined;
-        if (!input?.bufferIds?.length || typeof input.tileId !== 'number') return null;
-        if (!input.bufferIds.some((bufferId) => removedBufferSet.has(bufferId))) return null;
-        const sorted = [...input.bufferIds].sort();
-        const hash = hasher.digest(encoder.encode(JSON.stringify(sorted)).buffer, 'sha3-256');
-        return `${input.tileId}|${hash}`;
-      })
-      .filter((entry): entry is string => Boolean(entry));
-    for (const tileId of tileIdsToDelete) {
-      await shapeMutationAPIImpl.deleteVectorTile(tileId);
-    }
-    if (affectedTileIds.size > 0 && tileIdsToDelete.length === 0) {
-      await shapeMutationAPIImpl.deleteVectorTiles(nodeId);
-    }
-  }
-
-  const tasks = await taskQueue.tasks.where('nodeId').equals(nodeId).toArray();
-  const removedSet = new Set(removedPairs.map((entry) => `${normalizeSelectionKey(entry.countryCode)}:${entry.adminLevel}`));
-  const removedTaskIds = tasks
-    .filter((task) => {
-      const stage = task.stage;
-      if (isSourceOrGeometryStage(stage)) {
-        const input = task.inputData as { countryCode?: string; adminLevel?: number } | undefined;
-        if (!input?.countryCode || typeof input.adminLevel !== 'number') return false;
-        return removedSet.has(`${normalizeSelectionKey(input.countryCode)}:${input.adminLevel}`);
-      }
-      if (isTileEmitStage(stage)) {
-        const input = task.inputData as { bufferIds?: string[] } | undefined;
-        if (!input?.bufferIds?.length) return false;
-        return input.bufferIds.some((bufferId) => removedBufferSet.has(bufferId));
-      }
-      return false;
-    })
-    .map((task) => task.taskId);
-  if (removedTaskIds.length > 0) {
-    await taskQueue.tasks.bulkDelete(removedTaskIds);
-  }
-};
-
-const clearTaskQueueStages = async (nodeId: NodeId, stages: Array<TaskStage>): Promise<void> => {
-  if (stages.length === 0) return;
-  const taskQueue = new VtTaskQueueDb();
-  const uniqueStages = Array.from(new Set(stages));
-  const taskRows = await Promise.all(
-    uniqueStages.map((stage) => listTasksByStage(taskQueue, nodeId, stage)),
-  );
-  const taskIds = taskRows.flatMap((rows) => rows.map((task) => task.taskId));
-  if (taskIds.length === 0) return;
-  await deleteTasksByIds(taskQueue, taskIds);
+  await runShapeArtifactCascadeCleanup({
+    nodeId,
+    target: {
+      kind: 'selection',
+      removedSelections: removedPairs,
+    },
+  });
 };
 
 const clearBuildTasksByStage = async (nodeId: NodeId, stages: Array<TaskStage>): Promise<void> => {
@@ -631,42 +483,6 @@ const clearBuildTasksByStage = async (nodeId: NodeId, stages: Array<TaskStage>):
   if (taskIds.length > 0) {
     await ephemeralShapeAPIImpl.deleteBuildTasksByIds(taskIds);
   }
-};
-
-const applyConfigInvalidation = async (
-  nodeId: NodeId,
-  prevConfig: ShapeRuntimeBuildConfig | null,
-  nextConfig: ShapeRuntimeBuildConfig | null,
-): Promise<void> => {
-  const plan = resolveConfigInvalidationPlan(prevConfig, nextConfig);
-  if (!plan.source && !plan.geometry && !plan.tileEmit) return;
-
-  const stagesToClear: TaskStage[] = [];
-  if (plan.source) {
-    stagesToClear.push('source', 'geometry', 'tileEmit');
-    await ephemeralShapeAPIImpl.clearStage(nodeId, 'source');
-    await ephemeralShapeAPIImpl.clearStage(nodeId, 'geometry');
-    await shapeMutationAPIImpl.deleteVectorTiles(nodeId);
-    await shapeMutationAPIImpl.deleteFeatureMetadataByNode(nodeId);
-  } else if (plan.geometry) {
-    stagesToClear.push('geometry', 'tileEmit');
-    await ephemeralShapeAPIImpl.clearStage(nodeId, 'geometry');
-    await shapeMutationAPIImpl.deleteVectorTiles(nodeId);
-    await shapeMutationAPIImpl.deleteFeatureMetadataByNode(nodeId);
-  } else if (plan.tileEmit) {
-    stagesToClear.push('tileEmit');
-    await shapeMutationAPIImpl.deleteVectorTiles(nodeId);
-  }
-
-  await clearBuildTasksByStage(nodeId, stagesToClear);
-  await clearTaskQueueStages(nodeId, stagesToClear);
-
-  console.warn('[shapeBuildAPI] config invalidation applied', {
-    nodeId,
-    source: plan.source,
-    geometry: plan.geometry,
-    tileEmit: plan.tileEmit,
-  });
 };
 
 type StartBuildSessionScope = 'startBuildSession';
@@ -928,21 +744,16 @@ const startBuildSessionInternal = async (
     await executeStartupStep(
       'cleanup-invalid-cache-entries',
       async () => {
-        try {
-          const cleanupResult = await cacheValidator.cleanupInvalidEntries(nodeForSession);
-          console.log(
-            `[shapeBuildAPI] Cache cleanup completed for node ${nodeForSession}:`,
-            {
-              geometryDeleted: cleanupResult.geometryDeleted,
-              sourceDeleted: cleanupResult.sourceDeleted,
-              totalDeleted: cleanupResult.geometryDeleted + cleanupResult.sourceDeleted
-            }
-          );
-          return cleanupResult;
-        } catch (error) {
-          console.error(`[shapeBuildAPI] Cache cleanup failed for node ${nodeForSession}:`, error);
-          throw new Error(`Cache cleanup failed: ${error instanceof Error ? error.message : String(error)}`);
-        }
+        const cleanupResult = await cacheValidator.cleanupInvalidEntries(nodeForSession);
+        console.log(
+          `[shapeBuildAPI] Cache cleanup completed for node ${nodeForSession}:`,
+          {
+            geometryDeleted: cleanupResult.geometryDeleted,
+            sourceDeleted: cleanupResult.sourceDeleted,
+            totalDeleted: cleanupResult.geometryDeleted + cleanupResult.sourceDeleted
+          }
+        );
+        return cleanupResult;
       },
     );
 
@@ -955,8 +766,11 @@ const startBuildSessionInternal = async (
       ),
     );
     await executeStartupStep(
-      'config-invalidation',
-      async () => applyConfigInvalidation(nodeForSession, null, mergedRuntimeConfig),
+      'fresh-build-tile-artifact-invalidation',
+      async () => runShapeArtifactCascadeCleanup({
+        nodeId: nodeForSession,
+        target: { kind: 'stage', stage: 'tileEmit' },
+      }),
     );
     await executeStartupStep(
       'clear-build-task-history',
@@ -1228,7 +1042,30 @@ const startBuildSessionInternal = async (
     });
   } catch (error) {
     clearActivePipelineRuntimeState(nodeForSession);
-    throw error;
+    const failedAt = Date.now();
+    return persistFailureAndRethrow(
+      error,
+      async () => {
+        await upsertBuildSessionSnapshot({
+          nodeId: nodeForSession,
+          selectedArrayByCountries: draftEntity.selectedArrayByCountries,
+          status: 'failed',
+          stopReason: 'failed',
+          startedAt: buildStartedAt,
+          completedAt: failedAt,
+          canResume: false,
+        });
+      },
+      (persistenceError) => {
+        console.error('[shapeBuildAPI] Failed to persist startup failure', {
+          nodeId: nodeForSession,
+          persistenceError:
+            persistenceError instanceof Error
+              ? persistenceError.message
+              : String(persistenceError),
+        });
+      }
+    );
   }
 
   if (progressCallback) {

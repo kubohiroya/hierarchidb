@@ -165,6 +165,14 @@ a startup failure also fails, the persistence error is logged while the original
 startup error remains the rejected value. Terminal-state finalization errors are
 reported separately and are never reclassified as pipeline failures.
 
+Country-selection invalidation uses the same fail-fast ownership at the UI command
+boundary. Its artifact cleanup runs before draft persistence and obsolete session
+deletion. A rejection dispatches the UI-internal `criticalError`, forces the SSOT
+lifecycle to `failed`, and leaves the previous selection baseline unchanged so a
+later selection change can retry the same idempotent cleanup. Only complete command
+success advances that baseline. This remains UI-internal and does not extend the four
+canonical Worker events.
+
 Pause uses the same strict ownership. The runtime first emits `pausing`, aborts the
 nodeId session through the AbortController stored in the SSOT state-tree entry, and
 awaits the actual pipeline Promise. Only after that Promise has settled and no live

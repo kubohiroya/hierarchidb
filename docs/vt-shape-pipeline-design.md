@@ -83,8 +83,15 @@
 
 - 正規 lineage は `selection meta -> source artifact -> geometry artifact -> tileEmit artifact` とする
 - 上流 artifact の削除・置換・invalid化は、参照する下流 artifactと未完了taskを下流端まで cascade cleanup する
+- 永続 vector tile record は source/geometry cache への逆参照を持たないため、source/geometry invalidation は対象 nodeId の vector tile、tile summary、feature metadata、data-source metadata をすべて削除する。この node 単位削除は正規の lineage 境界であり、曖昧な fallback ではない
+- cleanup 順序は、永続 tile/metadata の単一 ShapeDB transaction、source artifact に保存された正規 `rawSourceCacheKey` で特定する対象 raw chunk、relation/task/error と対象 geometry/source cache の単一 EphemeralDB transaction とする。source cache ID を chunk metadata ID へ読み替えず、上流 cache を先に消して下流探索を不能にしない
+- cleanup target の cache ID は対象 nodeId に所有されることを削除前に検証し、別 node の data/meta record を指す場合は契約違反として失敗させる
+- fresh build は task生成前に対象 nodeId の tileEmit artifact/relation/task を無効化し、旧config/hashの tile を新規出力と混在させない
+- `timestamp === 0` の cache data は対応metadataが存在すれば正常な二相書込み結果である。metadataが存在しないdataだけを incomplete cache として cleanup する
+- cleanup は同一targetで再試行可能な冪等操作とし、存在しないrecordを契約違反に読み替えない
 - cleanup 完了前の artifact/cache は再利用不可とし、一部削除失敗を成功扱いしない
 - cleanup failure は session/task の可視な error とし、stale artifact を残したまま次stageやresumeへ進まない
+- UIの選択変更では cleanup、draft更新、旧build-session削除がすべて成功した後にのみ前回選択baselineを進める。失敗時はbaselineを保持し、UI-internal `criticalError` でSSOT lifecycleを`failed`にする
 
 ## 旧実装からの置換対象
 

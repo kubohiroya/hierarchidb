@@ -9,6 +9,9 @@ const upsertBuildSessionMock = vi.hoisted(() => vi.fn(async () => undefined));
 const updateBuildSessionMock = vi.hoisted(() => vi.fn(async () => undefined));
 const buildSourceTasksMock = vi.hoisted(() => vi.fn(async () => ({ tasks: [] })));
 const emitSessionStatusUpdatedMock = vi.hoisted(() => vi.fn());
+const cleanupInvalidEntriesMock = vi.hoisted(() =>
+  vi.fn(async () => ({ geometryDeleted: 0, sourceDeleted: 0 }))
+);
 
 vi.mock('@hierarchidb/auth', () => {
   class MockAuthRequiredError extends Error {}
@@ -59,6 +62,12 @@ vi.mock('../../services/build/strategies/resolveSourceStageStrategy.js', () => (
   }),
 }));
 
+vi.mock('../../services/CacheValidator.js', () => ({
+  cacheValidator: {
+    cleanupInvalidEntries: cleanupInvalidEntriesMock,
+  },
+}));
+
 vi.mock('../../worker/api/eventEmissionConstants.js', () => ({
   emitSessionStatusUpdated: emitSessionStatusUpdatedMock,
   emitStageSnapshotUpdated: vi.fn(),
@@ -90,6 +99,7 @@ describe('shape build runtime zero-task planning failure', () => {
     vi.setSystemTime(1_000);
     getEntityMock.mockResolvedValue({ selectedArrayByCountries });
     buildSourceTasksMock.mockResolvedValue({ tasks: [] });
+    cleanupInvalidEntriesMock.mockResolvedValue({ geometryDeleted: 0, sourceDeleted: 0 });
   });
 
   afterEach(() => {
@@ -151,5 +161,43 @@ describe('shape build runtime zero-task planning failure', () => {
     expect(receivedError).not.toBe(persistenceError);
     expect(upsertBuildSessionMock).toHaveBeenCalledOnce();
     expect(emitSessionStatusUpdatedMock).not.toHaveBeenCalled();
+  });
+
+  it('persists a cleanup startup failure and rethrows the original error', async () => {
+    const cleanupError = new Error('artifact cleanup failed');
+    cleanupError.name = 'ShapeArtifactCascadeCleanupError';
+    buildSourceTasksMock.mockResolvedValue({ tasks: [{} as never] });
+    cleanupInvalidEntriesMock.mockRejectedValueOnce(cleanupError);
+    getBuildSessionRecordMock.mockResolvedValueOnce(null).mockResolvedValue({
+      nodeId,
+      status: 'failed',
+      startedAt: 1_000,
+      updatedAt: 1_000,
+      completedAt: 1_000,
+      progress: {
+        total: 0,
+        completed: 0,
+        failed: 0,
+        skipped: 0,
+        percentage: 0,
+      },
+      stages: {},
+      stopReason: 'failed',
+      canResume: false,
+    });
+
+    await expect(startBuildSession()).rejects.toBe(cleanupError);
+
+    expect(upsertBuildSessionMock).toHaveBeenCalledOnce();
+    expect(upsertBuildSessionMock.mock.calls[0]?.[0]).toMatchObject({
+      nodeId,
+      status: 'failed',
+      selectedArrayByCountries,
+      stopReason: 'failed',
+      canResume: false,
+      startedAt: 1_000,
+      completedAt: 1_000,
+    });
+    expect(emitSessionStatusUpdatedMock).toHaveBeenCalledOnce();
   });
 });

@@ -10,17 +10,19 @@
  * and the count of deleted entries should be logged.
  * 
  * This test verifies the cleanup behavior for both geometry and source caches:
- * 1. Identify all cache entries with timestamp === 0 (invalid entries)
+ * 1. Identify cache entries with timestamp === 0 and no matching metadata
  * 2. Delete those invalid entries
  * 3. Complete cleanup before processing tasks
  * 4. Log the count of deleted entries
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import * as fc from 'fast-check';
-import { ephemeralDB } from '@hierarchidb/gis-sdk';
-import { CacheValidator } from '../../services/CacheValidator';
 import type { NodeId } from '@hierarchidb/core-types';
+import { ephemeralDB } from '@hierarchidb/gis-sdk';
+import * as fc from 'fast-check';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { CacheValidator } from '../../services/CacheValidator';
+
+const nodeIdArbitrary = fc.uuid().map((value) => `node-${value}` as NodeId);
 
 describe('Property 8: Invalid Cache Cleanup', () => {
     let validator: CacheValidator;
@@ -42,11 +44,12 @@ describe('Property 8: Invalid Cache Cleanup', () => {
         await fc.assert(
             fc.asyncProperty(
                 fc.record({
-                    nodeId: fc.string().map(s => `node-${s}` as NodeId),
+                    nodeId: nodeIdArbitrary,
                     invalidCount: fc.integer({ min: 1, max: 10 }),
                     validCount: fc.integer({ min: 0, max: 5 }),
                 }),
                 async ({ nodeId, invalidCount, validCount }) => {
+                    await ephemeralDB.clearNodeData(nodeId);
                     const data = new ArrayBuffer(100);
 
                     // Create invalid geometry cache entries (timestamp: 0)
@@ -58,7 +61,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                             nodeId,
                             domainType: 'shape',
                             bandIndex: i,
-                            sourceKey: `source-${i}`,
+                            sourceKey: `JP:${i}`,
                             data,
                             featureCount: 0,
                             vertexCount: 0,
@@ -67,6 +70,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                             tolerance: 0,
                             timestamp: 0, // Invalid entry
                         });
+                        await ephemeralDB.geometryCacheMeta.delete(id);
                         invalidIds.push(id);
                     }
 
@@ -79,7 +83,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                             nodeId,
                             domainType: 'shape',
                             bandIndex: i + 100,
-                            sourceKey: `source-valid-${i}`,
+                            sourceKey: `US:${i}`,
                             data,
                             featureCount: 0,
                             vertexCount: 0,
@@ -128,11 +132,12 @@ describe('Property 8: Invalid Cache Cleanup', () => {
         await fc.assert(
             fc.asyncProperty(
                 fc.record({
-                    nodeId: fc.string().map(s => `node-${s}` as NodeId),
+                    nodeId: nodeIdArbitrary,
                     invalidCount: fc.integer({ min: 1, max: 10 }),
                     validCount: fc.integer({ min: 0, max: 5 }),
                 }),
                 async ({ nodeId, invalidCount, validCount }) => {
+                    await ephemeralDB.clearNodeData(nodeId);
                     const data = new ArrayBuffer(100);
 
                     // Create invalid source cache entries (timestamp: 0)
@@ -142,14 +147,16 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                         await ephemeralDB.sourceCache.put({
                             id,
                             nodeId,
-                            sourceKey: `source-${i}`,
+                            sourceKey: `JP:${i}`,
                             data,
                             featureCount: 0,
                             bbox: [0, 0, 0, 0],
                             downloadTime: 0,
                             size: 100,
+                            metadata: { rawSourceCacheKey: `download:test:jp:${i}` },
                             timestamp: 0, // Invalid entry
                         });
+                        await ephemeralDB.sourceCacheMeta.delete(id);
                         invalidIds.push(id);
                     }
 
@@ -160,12 +167,13 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                         await ephemeralDB.sourceCache.put({
                             id,
                             nodeId,
-                            sourceKey: `source-valid-${i}`,
+                            sourceKey: `US:${i}`,
                             data,
                             featureCount: 0,
                             bbox: [0, 0, 0, 0],
                             downloadTime: 0,
                             size: 100,
+                            metadata: { rawSourceCacheKey: `download:test:us:${i}` },
                             timestamp: Date.now(), // Valid entry
                         });
                         validIds.push(id);
@@ -208,7 +216,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
         await fc.assert(
             fc.asyncProperty(
                 fc.record({
-                    nodeId: fc.string().map(s => `node-${s}` as NodeId),
+                    nodeId: nodeIdArbitrary,
                     invalidGeometryCount: fc.integer({ min: 0, max: 8 }),
                     invalidSourceCount: fc.integer({ min: 0, max: 8 }),
                     validGeometryCount: fc.integer({ min: 0, max: 3 }),
@@ -221,6 +229,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                     validGeometryCount,
                     validSourceCount,
                 }) => {
+                    await ephemeralDB.clearNodeData(nodeId);
                     const data = new ArrayBuffer(100);
 
                     // Create invalid geometry cache entries
@@ -232,7 +241,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                             nodeId,
                             domainType: 'shape',
                             bandIndex: i,
-                            sourceKey: `source-${i}`,
+                            sourceKey: `JP:${i}`,
                             data,
                             featureCount: 0,
                             vertexCount: 0,
@@ -241,6 +250,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                             tolerance: 0,
                             timestamp: 0,
                         });
+                        await ephemeralDB.geometryCacheMeta.delete(id);
                         invalidGeomIds.push(id);
                     }
 
@@ -251,14 +261,16 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                         await ephemeralDB.sourceCache.put({
                             id,
                             nodeId,
-                            sourceKey: `source-${i}`,
+                            sourceKey: `JP:${i}`,
                             data,
                             featureCount: 0,
                             bbox: [0, 0, 0, 0],
                             downloadTime: 0,
                             size: 100,
+                            metadata: { rawSourceCacheKey: `download:test:jp:${i}` },
                             timestamp: 0,
                         });
+                        await ephemeralDB.sourceCacheMeta.delete(id);
                         invalidSourceIds.push(id);
                     }
 
@@ -271,7 +283,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                             nodeId,
                             domainType: 'shape',
                             bandIndex: i + 100,
-                            sourceKey: `source-valid-${i}`,
+                            sourceKey: `US:${i}`,
                             data,
                             featureCount: 0,
                             vertexCount: 0,
@@ -290,12 +302,13 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                         await ephemeralDB.sourceCache.put({
                             id,
                             nodeId,
-                            sourceKey: `source-valid-${i}`,
+                            sourceKey: `US:${i}`,
                             data,
                             featureCount: 0,
                             bbox: [0, 0, 0, 0],
                             downloadTime: 0,
                             size: 100,
+                            metadata: { rawSourceCacheKey: `download:test:us:${i}` },
                             timestamp: Date.now(),
                         });
                         validSourceIds.push(id);
@@ -351,11 +364,12 @@ describe('Property 8: Invalid Cache Cleanup', () => {
         await fc.assert(
             fc.asyncProperty(
                 fc.record({
-                    nodeId: fc.string().map(s => `node-${s}` as NodeId),
+                    nodeId: nodeIdArbitrary,
                     invalidGeometryCount: fc.integer({ min: 1, max: 5 }),
                     invalidSourceCount: fc.integer({ min: 1, max: 5 }),
                 }),
                 async ({ nodeId, invalidGeometryCount, invalidSourceCount }) => {
+                    await ephemeralDB.clearNodeData(nodeId);
                     const data = new ArrayBuffer(100);
 
                     // Create invalid entries
@@ -365,7 +379,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                             nodeId,
                             domainType: 'shape',
                             bandIndex: i,
-                            sourceKey: `source-${i}`,
+                            sourceKey: `JP:${i}`,
                             data,
                             featureCount: 0,
                             vertexCount: 0,
@@ -374,20 +388,23 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                             tolerance: 0,
                             timestamp: 0,
                         });
+                        await ephemeralDB.geometryCacheMeta.delete(`geom-invalid-${nodeId}-${i}`);
                     }
 
                     for (let i = 0; i < invalidSourceCount; i++) {
                         await ephemeralDB.sourceCache.put({
                             id: `source-invalid-${nodeId}-${i}`,
                             nodeId,
-                            sourceKey: `source-${i}`,
+                            sourceKey: `JP:${i}`,
                             data,
                             featureCount: 0,
                             bbox: [0, 0, 0, 0],
                             downloadTime: 0,
                             size: 100,
+                            metadata: { rawSourceCacheKey: `download:test:jp:${i}` },
                             timestamp: 0,
                         });
+                        await ephemeralDB.sourceCacheMeta.delete(`source-invalid-${nodeId}-${i}`);
                     }
 
                     // First cleanup
@@ -422,8 +439,8 @@ describe('Property 8: Invalid Cache Cleanup', () => {
         await fc.assert(
             fc.asyncProperty(
                 fc.record({
-                    targetNodeId: fc.string().map(s => `target-${s}` as NodeId),
-                    otherNodeId: fc.string().map(s => `other-${s}` as NodeId),
+                    targetNodeId: fc.uuid().map((value) => `target-${value}` as NodeId),
+                    otherNodeId: fc.uuid().map((value) => `other-${value}` as NodeId),
                     targetInvalidCount: fc.integer({ min: 1, max: 5 }),
                     otherInvalidCount: fc.integer({ min: 1, max: 5 }),
                 }),
@@ -431,6 +448,10 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                     // Ensure node IDs are different
                     fc.pre(targetNodeId !== otherNodeId);
 
+                    await Promise.all([
+                        ephemeralDB.clearNodeData(targetNodeId),
+                        ephemeralDB.clearNodeData(otherNodeId),
+                    ]);
                     const data = new ArrayBuffer(100);
 
                     // Create invalid entries for target node
@@ -442,7 +463,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                             nodeId: targetNodeId,
                             domainType: 'shape',
                             bandIndex: i,
-                            sourceKey: `source-${i}`,
+                            sourceKey: `JP:${i}`,
                             data,
                             featureCount: 0,
                             vertexCount: 0,
@@ -451,6 +472,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                             tolerance: 0,
                             timestamp: 0,
                         });
+                        await ephemeralDB.geometryCacheMeta.delete(id);
                         targetInvalidIds.push(id);
                     }
 
@@ -463,7 +485,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                             nodeId: otherNodeId,
                             domainType: 'shape',
                             bandIndex: i,
-                            sourceKey: `source-${i}`,
+                            sourceKey: `JP:${i}`,
                             data,
                             featureCount: 0,
                             vertexCount: 0,
@@ -472,6 +494,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                             tolerance: 0,
                             timestamp: 0,
                         });
+                        await ephemeralDB.geometryCacheMeta.delete(id);
                         otherInvalidIds.push(id);
                     }
 
@@ -511,10 +534,11 @@ describe('Property 8: Invalid Cache Cleanup', () => {
         await fc.assert(
             fc.asyncProperty(
                 fc.record({
-                    nodeId: fc.string().map(s => `node-${s}` as NodeId),
+                    nodeId: nodeIdArbitrary,
                     invalidCount: fc.integer({ min: 1, max: 10 }),
                 }),
                 async ({ nodeId, invalidCount }) => {
+                    await ephemeralDB.clearNodeData(nodeId);
                     const data = new ArrayBuffer(100);
 
                     // Create invalid entries
@@ -528,7 +552,7 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                             nodeId,
                             domainType: 'shape',
                             bandIndex: i,
-                            sourceKey: `source-${i}`,
+                            sourceKey: `JP:${i}`,
                             data,
                             featureCount: 0,
                             vertexCount: 0,
@@ -537,18 +561,21 @@ describe('Property 8: Invalid Cache Cleanup', () => {
                             tolerance: 0,
                             timestamp: 0,
                         });
+                        await ephemeralDB.geometryCacheMeta.delete(geomId);
 
                         await ephemeralDB.sourceCache.put({
                             id: sourceId,
                             nodeId,
-                            sourceKey: `source-${i}`,
+                            sourceKey: `JP:${i}`,
                             data,
                             featureCount: 0,
                             bbox: [0, 0, 0, 0],
                             downloadTime: 0,
                             size: 100,
+                            metadata: { rawSourceCacheKey: `download:test:jp:${i}` },
                             timestamp: 0,
                         });
+                        await ephemeralDB.sourceCacheMeta.delete(sourceId);
 
                         invalidIds.push(geomId, sourceId);
                     }
