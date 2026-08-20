@@ -6,7 +6,7 @@ vi.unmock('comlink');
 
 let geosWorkerClient: typeof import('../geosWorkerClient').geosWorkerClient;
 let setGeosWorkerEndpointFactoryForTests: typeof import('../geosWorkerClient').setGeosWorkerEndpointFactoryForTests;
-let exposeGeosWorker: typeof import('../geosWorker.entry.ts').exposeGeosWorker;
+let exposeGeosWorker: typeof import('../createGeosWorkerApi.ts').exposeGeosWorker;
 
 describe('geosWorkerClient (Comlink worker)', () => {
   const originalWorker = globalThis.Worker;
@@ -17,7 +17,7 @@ describe('geosWorkerClient (Comlink worker)', () => {
     const clientModule = await import('../geosWorkerClient');
     geosWorkerClient = clientModule.geosWorkerClient;
     setGeosWorkerEndpointFactoryForTests = clientModule.setGeosWorkerEndpointFactoryForTests;
-    const workerModule = await import('../geosWorker.entry');
+    const workerModule = await import('../createGeosWorkerApi');
     exposeGeosWorker = workerModule.exposeGeosWorker;
   });
 

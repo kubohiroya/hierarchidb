@@ -1,10 +1,8 @@
-import { getOriginCoordinatorSourceSha } from '@hierarchidb/origin-coordinator';
 import type { OriginCoordinatorServiceWorkerScope } from './OriginCoordinatorServiceWorker.js';
 import { OriginCoordinatorServiceWorker } from './OriginCoordinatorServiceWorker.js';
 
 const coordinator = new OriginCoordinatorServiceWorker(
-  globalThis as unknown as OriginCoordinatorServiceWorkerScope,
-  getOriginCoordinatorSourceSha()
+  globalThis as unknown as OriginCoordinatorServiceWorkerScope
 );
 
 coordinator.install();

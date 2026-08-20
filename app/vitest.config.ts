@@ -26,6 +26,10 @@ function createAliasMap(): Record<string, string> {
   const baseEntries: Record<string, string> = {
     '#app': path.resolve(rootDir, 'src'),
     'node-fetch': path.resolve(rootDir, 'src/virtual/node-fetch.ts'),
+    '@hierarchidb/runtime-worker/yaml-storage-legacy-fence': path.resolve(
+      rootDir,
+      '../packages/runtime-worker/src/yaml-storage-legacy-fence/index.ts'
+    ),
     '@hierarchidb/runtime-worker': path.resolve(rootDir, '../packages/runtime-worker/src/index.ts'),
     '@hierarchidb/util': path.resolve(rootDir, '../packages/util/src/index.ts'),
     '@hierarchidb/plugin-base': path.resolve(rootDir, '../packages/plugin-base/src/index.ts'),

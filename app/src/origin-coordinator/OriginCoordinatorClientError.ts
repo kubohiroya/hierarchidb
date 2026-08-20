@@ -6,7 +6,8 @@ export type OriginCoordinatorClientErrorCode =
   | 'MESSAGE_TIMEOUT'
   | 'INVALID_COORDINATOR_RESPONSE'
   | 'HELLO_REJECTED'
-  | 'INVALID_READINESS_INPUT';
+  | 'INVALID_READINESS_INPUT'
+  | 'INVALID_QUIESCENCE_INPUT';
 
 export class OriginCoordinatorClientError extends Error {
   constructor(readonly code: OriginCoordinatorClientErrorCode) {

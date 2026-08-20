@@ -1,13 +1,15 @@
-import { RouterProvider } from '@tanstack/react-router';
-import { startTransition, useEffect, useState } from 'react';
-import { createRoot } from 'react-dom/client';
 import {
   getOriginCoordinatorSourceSha,
   ORIGIN_COORDINATOR_ACTIVE_WORKER_TIMEOUT_MS,
   ORIGIN_COORDINATOR_DATABASE_NAME,
   ORIGIN_COORDINATOR_MESSAGE_TIMEOUT_MS,
   ORIGIN_COORDINATOR_SCRIPT_NAME,
+  revokeOriginCoordinatorOwnedClientHandles,
 } from '@hierarchidb/origin-coordinator';
+import { revokeLegacyYamlAccessAndClose } from '@hierarchidb/yaml-store';
+import { RouterProvider } from '@tanstack/react-router';
+import { startTransition, useEffect, useState } from 'react';
+import { createRoot } from 'react-dom/client';
 import { initializeOriginCoordinator } from './origin-coordinator/initializeOriginCoordinator.js';
 import { runOriginCoordinatorGatedBootstrap } from './origin-coordinator/runOriginCoordinatorGatedBootstrap.js';
 import type { OriginCoordinatorClientHandle } from './origin-coordinator/types.js';
@@ -15,6 +17,10 @@ import { clearAppIndexedDBsViaPlugins } from './plugin-runtime/clearIndexedDbUti
 import AppRoot from './root.js';
 import { createHierarchiRouter, getBasePath, getRouterMode } from './router/index.js';
 import { initializeBrowserGlobals } from './router/init/initializeBrowserGlobals.ts';
+import {
+  relayOriginCoordinatorSharedWorkerRequest,
+  revokeRuntimeWorkerAccessAndClose,
+} from './worker-runtime/clientUtils.js';
 import { preloadPluginWorkerStores } from './worker-runtime/workerModuleLoaderUtils.js';
 
 type HydrateLoader = {
@@ -52,23 +58,25 @@ const toErrorMessage = (error: unknown): string => {
 
 const shouldOfferIndexedDbReset = (error: unknown): boolean => {
   const message = toErrorMessage(error);
-  return message.includes('UpgradeError')
-    || message.includes('Not yet support for changing primary key');
+  return (
+    message.includes('UpgradeError') || message.includes('Not yet support for changing primary key')
+  );
 };
 
 const deleteNamedDatabase = (name: string): Promise<void> =>
   new Promise((resolve, reject) => {
     const request = indexedDB.deleteDatabase(name);
     request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error ?? new Error(`Failed to delete database: ${name}`));
+    request.onerror = () =>
+      reject(request.error ?? new Error(`Failed to delete database: ${name}`));
     request.onblocked = () => reject(new Error(`Delete blocked for database: ${name}`));
   });
 
 const clearIndexedDbViaBrowserApi = async (): Promise<string[]> => {
   if (
-    typeof window === 'undefined'
-    || !('indexedDB' in window)
-    || typeof indexedDB.databases !== 'function'
+    typeof window === 'undefined' ||
+    !('indexedDB' in window) ||
+    typeof indexedDB.databases !== 'function'
   ) {
     return [];
   }
@@ -78,9 +86,7 @@ const clearIndexedDbViaBrowserApi = async (): Promise<string[]> => {
     .map((db) => db.name)
     .filter(
       (name): name is string =>
-        typeof name === 'string' &&
-        name.length > 0 &&
-        name !== ORIGIN_COORDINATOR_DATABASE_NAME,
+        typeof name === 'string' && name.length > 0 && name !== ORIGIN_COORDINATOR_DATABASE_NAME
     );
   for (const name of names) {
     await deleteNamedDatabase(name);
@@ -212,6 +218,26 @@ async function initializeApp() {
         scope: new URL(appBase, window.location.origin).href,
         activeWorkerTimeoutMs: ORIGIN_COORDINATOR_ACTIVE_WORKER_TIMEOUT_MS,
         messageTimeoutMs: ORIGIN_COORDINATOR_MESSAGE_TIMEOUT_MS,
+        relaySharedWorkerRequest: relayOriginCoordinatorSharedWorkerRequest,
+        revokeLegacyYamlAccess: async () => {
+          let closeFailed = false;
+          try {
+            revokeRuntimeWorkerAccessAndClose();
+          } catch {
+            closeFailed = true;
+          }
+          try {
+            await revokeOriginCoordinatorOwnedClientHandles();
+          } catch {
+            closeFailed = true;
+          }
+          try {
+            revokeLegacyYamlAccessAndClose();
+          } catch {
+            closeFailed = true;
+          }
+          if (closeFailed) throw new Error('window-quiescence-close-failed');
+        },
       }),
     acceptCoordinator: (coordinator) => {
       (window as HydrateLoaderWindow).__HDB_ORIGIN_COORDINATOR_REF__ = coordinator;
@@ -252,7 +278,7 @@ const BootstrappedApp = () => {
       if (!shouldOfferIndexedDbReset(event.reason)) return;
       setHydrateProgress(33, 'IndexedDB schema upgrade failed.');
       renderIndexedDbResetControls(
-        'Detected IndexedDB schema mismatch (primary key change).\n「DB初期化して再読み込み」を実行してください。',
+        'Detected IndexedDB schema mismatch (primary key change).\n「DB初期化して再読み込み」を実行してください。'
       );
     };
 
@@ -268,7 +294,7 @@ const BootstrappedApp = () => {
         setHydrateProgress(33, 'Client bootstrap failed. Check console.');
         if (shouldOfferIndexedDbReset(error)) {
           renderIndexedDbResetControls(
-            'Detected IndexedDB schema mismatch (primary key change).\n「DB初期化して再読み込み」を実行してください。',
+            'Detected IndexedDB schema mismatch (primary key change).\n「DB初期化して再読み込み」を実行してください。'
           );
         }
         console.error('[entry.client] initializeApp failed', error);
@@ -279,11 +305,7 @@ const BootstrappedApp = () => {
     };
   }, []);
 
-  return (
-    <AppRoot>
-      {router ? <RouterProvider router={router} /> : null}
-    </AppRoot>
-  );
+  return <AppRoot>{router ? <RouterProvider router={router} /> : null}</AppRoot>;
 };
 
 let rootElement = document.getElementById('root');

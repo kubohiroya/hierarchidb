@@ -6,16 +6,57 @@
 import './worker-react-refresh-shim.js';
 import {
   getOriginCoordinatorSourceSha,
-  installOriginCoordinatorCensusResponder,
-  type OriginCoordinatorMessageTarget,
+  installOriginCoordinatorBridgeResponder,
+  revokeOriginCoordinatorOwnedClientHandles,
 } from '@hierarchidb/origin-coordinator';
 import { WorkerInitializationReporter } from '@hierarchidb/ui-worker-client';
+import { revokeLegacyYamlAccessAndClose } from '@hierarchidb/yaml-store';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import { ensureRuntimeWorkerBootstrap } from './workerBootstrapUtils.ts';
 
-installOriginCoordinatorCensusResponder(
-  globalThis as unknown as OriginCoordinatorMessageTarget,
-  getOriginCoordinatorSourceSha()
-);
+let bootstrapPromise: Promise<{ api: BuildWorkerAPI; servicesReadyAt: number }> | null = null;
+
+const responder = installOriginCoordinatorBridgeResponder({
+  target: globalThis.navigator.serviceWorker,
+  releaseId: getOriginCoordinatorSourceSha(),
+  revokeLegacyYamlAccess: async () => {
+    let closeFailed = false;
+    const bootstrap = bootstrapPromise;
+    if (bootstrap !== null) {
+      try {
+        const { api } = await bootstrap;
+        await api.shutdown();
+      } catch {
+        closeFailed = true;
+      }
+    }
+    try {
+      await revokeOriginCoordinatorOwnedClientHandles();
+    } catch {
+      closeFailed = true;
+    }
+    try {
+      revokeLegacyYamlAccessAndClose();
+    } catch {
+      closeFailed = true;
+    }
+    if (closeFailed) throw new Error('runtime-worker-quiescence-close-failed');
+  },
+});
+
+const guardApi = (api: BuildWorkerAPI): BuildWorkerAPI =>
+  new Proxy(api, {
+    get(target, property, receiver) {
+      responder.assertLegacyYamlAccessAllowed();
+      const value = Reflect.get(target, property, receiver) as unknown;
+      return typeof value === 'function'
+        ? (...args: unknown[]) => {
+            responder.assertLegacyYamlAccessAllowed();
+            return Reflect.apply(value, target, args);
+          }
+        : value;
+    },
+  });
 
 const reporter = new WorkerInitializationReporter(
   [
@@ -33,14 +74,17 @@ reporter.reportStepProgress('Load Comlink', 0);
 
 (async () => {
   try {
-    const { api } = await ensureRuntimeWorkerBootstrap({
+    responder.assertLegacyYamlAccessAllowed();
+    bootstrapPromise = ensureRuntimeWorkerBootstrap({
       reporter,
       messageTarget: self,
     });
+    const { api } = await bootstrapPromise;
+    responder.assertLegacyYamlAccessAllowed();
 
     reporter.reportStepProgress('Expose API', 10);
     const Comlink = await import('comlink');
-    Comlink.expose(api);
+    Comlink.expose(guardApi(api));
     reporter.reportStepProgress('Expose API', 100);
     reporter.reportComplete();
   } catch (error) {

@@ -45,6 +45,19 @@ function createAcknowledgement(
   };
 }
 
+function createDiscard(
+  participantKind: 'tab' | 'worker',
+  participantId: string
+): YamlStorageLegacyFenceEvent {
+  return {
+    type: 'participant-context-discarded',
+    activationId: ACTIVATION_ID,
+    quiescenceRequestId: QUIESCENCE_REQUEST_ID,
+    participantKind,
+    participantId,
+  };
+}
+
 function reduceSuccessfully(
   state: YamlStorageLegacyFenceState,
   event: unknown
@@ -96,11 +109,13 @@ describe('createYamlStorageLegacyFence', () => {
         { participantKind: 'worker', participantId: 'worker-1' },
       ],
       acknowledgedParticipants: [],
+      discardedParticipants: [],
     });
     expect(Object.isFrozen(state)).toBe(true);
     expect(Object.isFrozen(state.participants)).toBe(true);
     expect(state.participants.every(Object.isFrozen)).toBe(true);
     expect(Object.isFrozen(state.acknowledgedParticipants)).toBe(true);
+    expect(Object.isFrozen(state.discardedParticipants)).toBe(true);
     expect('openRequestId' in state).toBe(false);
   });
 
@@ -232,6 +247,7 @@ describe('reduceYamlStorageLegacyFence', () => {
     });
     expect(ready.phase).toBe('ready-for-preflight');
     expect(ready.acknowledgedParticipants).toEqual(initial.participants);
+    expect(ready.discardedParticipants).toEqual([]);
     expect(getYamlStorageLegacyFenceDecision(ready)).toEqual({
       readyForPreflight: true,
       actualFenceEstablished: false,
@@ -239,6 +255,25 @@ describe('reduceYamlStorageLegacyFence', () => {
     });
     expect(Object.isFrozen(ready)).toBe(true);
     expect(Object.isFrozen(ready.acknowledgedParticipants)).toBe(true);
+    expect(Object.isFrozen(ready.discardedParticipants)).toBe(true);
+  });
+
+  it('becomes ready with exactly one acknowledgement or discard per participant', () => {
+    const initial = createState();
+    const first = reduceSuccessfully(initial, createDiscard('tab', 'tab-2'));
+    const second = reduceSuccessfully(first, createAcknowledgement('worker', 'worker-1'));
+    const ready = reduceSuccessfully(second, createDiscard('tab', 'tab-1'));
+
+    expect(first.phase).toBe('quiescing');
+    expect(second.phase).toBe('quiescing');
+    expect(ready.phase).toBe('ready-for-preflight');
+    expect(ready.acknowledgedParticipants).toEqual([
+      { participantKind: 'worker', participantId: 'worker-1' },
+    ]);
+    expect(ready.discardedParticipants).toEqual([
+      { participantKind: 'tab', participantId: 'tab-1' },
+      { participantKind: 'tab', participantId: 'tab-2' },
+    ]);
   });
 
   it('produces the same acknowledged order for every event order', () => {
@@ -297,6 +332,19 @@ describe('reduceYamlStorageLegacyFence', () => {
       createAcknowledgement('tab', 'tab-1'),
       'DUPLICATE_PARTICIPANT_ACK'
     );
+  });
+
+  it('terminally rejects duplicate and conflicting participant evidence', () => {
+    const discarded = reduceSuccessfully(createState(), createDiscard('tab', 'tab-1'));
+    expectRejected(discarded, createDiscard('tab', 'tab-1'), 'DUPLICATE_PARTICIPANT_DISCARD');
+    expectRejected(
+      discarded,
+      createAcknowledgement('tab', 'tab-1'),
+      'PARTICIPANT_EVIDENCE_CONFLICT'
+    );
+
+    const acknowledged = reduceSuccessfully(createState(), createAcknowledgement('tab', 'tab-1'));
+    expectRejected(acknowledged, createDiscard('tab', 'tab-1'), 'PARTICIPANT_EVIDENCE_CONFLICT');
   });
 
   it.each([
@@ -364,10 +412,13 @@ describe('reduceYamlStorageLegacyFence', () => {
   it.each([
     ['quiescing', 'participant-quiescence-acknowledged'],
     ['quiescing', 'participant-quiescence-failed'],
+    ['quiescing', 'participant-context-discarded'],
     ['ready-for-preflight', 'participant-quiescence-acknowledged'],
     ['ready-for-preflight', 'participant-quiescence-failed'],
+    ['ready-for-preflight', 'participant-context-discarded'],
     ['rejected', 'participant-quiescence-acknowledged'],
     ['rejected', 'participant-quiescence-failed'],
+    ['rejected', 'participant-context-discarded'],
   ] as const)('covers the %s × %s transition', (phase, eventType) => {
     const state =
       phase === 'quiescing'
@@ -381,13 +432,15 @@ describe('reduceYamlStorageLegacyFence', () => {
     const event =
       eventType === 'participant-quiescence-acknowledged'
         ? createAcknowledgement('tab', 'tab-1')
-        : {
-            type: eventType,
-            activationId: ACTIVATION_ID,
-            quiescenceRequestId: QUIESCENCE_REQUEST_ID,
-            participantKind: 'tab',
-            participantId: 'tab-1',
-          };
+        : eventType === 'participant-context-discarded'
+          ? createDiscard('tab', 'tab-1')
+          : {
+              type: eventType,
+              activationId: ACTIVATION_ID,
+              quiescenceRequestId: QUIESCENCE_REQUEST_ID,
+              participantKind: 'tab',
+              participantId: 'tab-1',
+            };
     const next = reduceSuccessfully(state, event);
 
     if (phase === 'rejected') {
@@ -402,7 +455,7 @@ describe('reduceYamlStorageLegacyFence', () => {
       return;
     }
     expect(next.phase).toBe(
-      eventType === 'participant-quiescence-acknowledged' ? 'quiescing' : 'rejected'
+      eventType === 'participant-quiescence-failed' ? 'rejected' : 'quiescing'
     );
   });
 
@@ -444,6 +497,7 @@ describe('reduceYamlStorageLegacyFence', () => {
       'quiescenceRequestId',
       'participants',
       'acknowledgedParticipants',
+      'discardedParticipants',
       'error',
     ]);
     expect(JSON.stringify(rejected)).not.toContain('legacyYamlEntrypointsRevoked');

@@ -93,6 +93,7 @@ export function createYamlStorageLegacyFence(input: unknown): YamlStorageLegacyF
     participants.sort(compareYamlStorageLegacyFenceParticipants);
     const frozenParticipants = Object.freeze(participants);
     const frozenAcknowledgedParticipants = Object.freeze([] as YamlStorageLegacyFenceParticipant[]);
+    const frozenDiscardedParticipants = Object.freeze([] as YamlStorageLegacyFenceParticipant[]);
     return Object.freeze({
       ok: true,
       state: freezeIssuedYamlStorageLegacyFenceState({
@@ -101,6 +102,7 @@ export function createYamlStorageLegacyFence(input: unknown): YamlStorageLegacyF
         quiescenceRequestId,
         participants: frozenParticipants,
         acknowledgedParticipants: frozenAcknowledgedParticipants,
+        discardedParticipants: frozenDiscardedParticipants,
       }),
     });
   } catch {

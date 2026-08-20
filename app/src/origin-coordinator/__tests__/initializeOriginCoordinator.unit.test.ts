@@ -69,6 +69,8 @@ function createOptions() {
     scope: `${window.location.origin}/hierarchidb/`,
     activeWorkerTimeoutMs: 100,
     messageTimeoutMs: 100,
+    relaySharedWorkerRequest: vi.fn(),
+    revokeLegacyYamlAccess: vi.fn(),
   } as const;
 }
 
@@ -102,6 +104,7 @@ describe('initializeOriginCoordinator', () => {
           protocolVersion: ORIGIN_COORDINATOR_PROTOCOL_VERSION,
           requestId: getRequestId(message),
           status: 'accepted',
+          actualFenceEstablished: false,
           counts: {
             window: { compatible: 1, incompatible: 0, unresponsive: 0, discarded: 0 },
             worker: { compatible: 0, incompatible: 0, unresponsive: 0, discarded: 0 },
@@ -138,6 +141,62 @@ describe('initializeOriginCoordinator', () => {
     ]);
     expect(readiness.status).toBe('accepted');
     expect(harness.addEventListener).toHaveBeenCalledOnce();
+  });
+
+  it('sends strict quiescence start and status queries through the accepted handle', async () => {
+    const harness = createServiceWorkerHarness((message, port) => {
+      if (typeof message !== 'object' || message === null || !('type' in message)) {
+        throw new Error('invalid-request');
+      }
+      if (message.type === 'HDB_COORDINATOR_HELLO') {
+        port.postMessage({
+          type: 'HDB_COORDINATOR_HELLO_RESULT',
+          protocolVersion: ORIGIN_COORDINATOR_PROTOCOL_VERSION,
+          status: 'accepted',
+          legacyYamlAccess: 'allowed',
+        });
+      } else if (
+        message.type === 'HDB_COORDINATOR_QUIESCENCE_START_REQUEST' ||
+        message.type === 'HDB_COORDINATOR_QUIESCENCE_STATUS_REQUEST'
+      ) {
+        port.postMessage({
+          type: 'HDB_COORDINATOR_QUIESCENCE_RESULT',
+          protocolVersion: ORIGIN_COORDINATOR_PROTOCOL_VERSION,
+          status: 'ready-for-preflight',
+          activationId: 'activation-1',
+          quiescenceRequestId: 'quiescence-1',
+          actualFenceEstablished: false,
+          progress: { participantCount: 2, acknowledgedCount: 1, discardedCount: 1 },
+        });
+      } else {
+        throw new Error('unexpected-request');
+      }
+      port.close();
+    });
+    vi.stubGlobal('navigator', { serviceWorker: harness.serviceWorkerContainer });
+    const { initializeOriginCoordinator } = await import('../initializeOriginCoordinator.js');
+    const handle = await initializeOriginCoordinator(createOptions());
+
+    await expect(
+      handle.startQuiescence({
+        activationId: 'activation-1',
+        quiescenceRequestId: 'quiescence-1',
+        timeoutMs: 100,
+      })
+    ).resolves.toMatchObject({ status: 'ready-for-preflight', actualFenceEstablished: false });
+    await expect(
+      handle.getQuiescenceStatus({
+        activationId: 'activation-1',
+        quiescenceRequestId: 'quiescence-1',
+      })
+    ).resolves.toMatchObject({ status: 'ready-for-preflight', actualFenceEstablished: false });
+    expect(harness.order).toEqual([
+      'register',
+      'HDB_COORDINATOR_HELLO',
+      'responder-installed',
+      'HDB_COORDINATOR_QUIESCENCE_START_REQUEST',
+      'HDB_COORDINATOR_QUIESCENCE_STATUS_REQUEST',
+    ]);
   });
 
   it('does not install a responder or continue after HELLO rejection', async () => {

@@ -1,20 +1,24 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import {
+  type GeometryEngine,
   generateVectorTilesFromFgbBuffer,
   generateVectorTilesFromJsonBuffer,
-  type GeometryEngine,
   type VectorTileRow,
   type VTGenerateConfig,
 } from '@hierarchidb/gis-sdk';
+import {
+  assertOriginCoordinatorOwnedClientCreationAllowed,
+  registerOriginCoordinatorOwnedClientHandle,
+} from '@hierarchidb/origin-coordinator';
+import { getRouteDB } from '@hierarchidb/route-store';
 import { type LayerInfo, shapeDB } from '@hierarchidb/shape-store';
 import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
 import type { VectorTileItemBase } from '../entity/storeTypes.js';
-import { getRouteDB } from '@hierarchidb/route-store';
 import type {
-  SourceWorkerAPI,
   GeometryWorkerAPI,
-  VectorTileProgress,
+  SourceWorkerAPI,
   TileEmitWorkerAPI,
+  VectorTileProgress,
 } from '../types.js';
 import type { SharedFetchService } from './downloadAdapter.js';
 import { createSharedDownloadService } from './downloadAdapter.js';
@@ -82,10 +86,7 @@ class RealGeometryWorker implements GeometryWorkerAPI {
     bufferRegistry.set(out, { parent: inputBufferId, stage: 's1', ts: Date.now() });
     return { outputBufferId: out };
   }
-  async geometryStage2(
-    inputBufferId: string,
-    _config: { zoomLevels: number[]; tileSize: number }
-  ) {
+  async geometryStage2(inputBufferId: string, _config: { zoomLevels: number[]; tileSize: number }) {
     const out = `${inputBufferId}-s2`;
     bufferRegistry.set(out, { parent: inputBufferId, stage: 's2', ts: Date.now() });
     return { outputBufferId: out };
@@ -292,8 +293,7 @@ class RealTileEmitWorker implements TileEmitWorkerAPI {
     const shouldLogDebug =
       typeof console !== 'undefined' &&
       typeof console.debug === 'function' &&
-      !(globalThis as { __HDB_SILENCE_WORKER_LOGS__?: boolean })
-        .__HDB_SILENCE_WORKER_LOGS__;
+      !(globalThis as { __HDB_SILENCE_WORKER_LOGS__?: boolean }).__HDB_SILENCE_WORKER_LOGS__;
     const abortKey = config.abortKey;
     const controller = abortKey ? new AbortController() : null;
     if (abortKey && controller) {
@@ -430,10 +430,7 @@ class RealTileEmitWorker implements TileEmitWorkerAPI {
     if (resolvedType === 'route') {
       const db = getRouteDB();
       await db.open?.();
-      const tile = await db.vectorTiles
-        .where('[nodeId+z+x+y]')
-        .equals([nodeId, z, x, y])
-        .first();
+      const tile = await db.vectorTiles.where('[nodeId+z+x+y]').equals([nodeId, z, x, y]).first();
       return tile?.data ? new Uint8Array(tile.data) : null;
     }
     return null;
@@ -524,15 +521,24 @@ export async function getStageWorkerProxy<T extends (...args: never[]) => unknow
 }
 
 // Comlink-based client factory for browser Worker threads
-export async function createStageWorkerClient(): Promise<StageProcessingService & { terminate?: () => void }> {
+export async function createStageWorkerClient(): Promise<
+  StageProcessingService & { terminate?: () => void }
+> {
   // Note: stageWorker.entry is built to JS and emitted alongside index.ts
+  assertOriginCoordinatorOwnedClientCreationAllowed();
   const worker = new Worker(new URL('./stageWorker.entry.js', import.meta.url), { type: 'module' });
+  const unregister = registerOriginCoordinatorOwnedClientHandle({
+    close: () => worker.terminate(),
+  });
   const mod = await getComlinkModule();
   const client = mod.wrap<StageProcessingService>(worker);
   const proxy = new Proxy({} as StageProcessingService & { terminate?: () => void }, {
     get: (_target, prop) => {
       if (prop === 'terminate') {
-        return () => worker.terminate();
+        return () => {
+          unregister();
+          worker.terminate();
+        };
       }
       return Reflect.get(client, prop);
     },

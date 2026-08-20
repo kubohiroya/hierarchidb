@@ -1,4 +1,4 @@
-import { isOriginCoordinatorReleaseId } from './censusProbeValidatorUtils.js';
+import { isOriginCoordinatorReleaseId } from './originCoordinatorProtocolValidatorUtils.js';
 
 declare const __SOURCE_SHA__: string;
 

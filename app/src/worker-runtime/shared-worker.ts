@@ -4,23 +4,85 @@
  */
 
 import './worker-react-refresh-shim.js';
+import type { OriginCoordinatorMessageTarget } from '@hierarchidb/origin-coordinator';
 import {
   getOriginCoordinatorSourceSha,
-  installOriginCoordinatorCensusResponder,
-  type OriginCoordinatorMessageTarget,
+  installOriginCoordinatorBridgeResponder,
+  revokeOriginCoordinatorOwnedClientHandles,
 } from '@hierarchidb/origin-coordinator';
 import type { WorkerInitMessage, WorkerInitRequest } from '@hierarchidb/ui-worker-client';
 import { WorkerInitializationReporter } from '@hierarchidb/ui-worker-client';
+import { revokeLegacyYamlAccessAndClose } from '@hierarchidb/yaml-store';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import { ensureRuntimeWorkerBootstrap } from './workerBootstrapUtils.ts';
 
-installOriginCoordinatorCensusResponder(
-  globalThis as unknown as OriginCoordinatorMessageTarget,
-  getOriginCoordinatorSourceSha(),
-);
-
 const ports = new Set<MessagePort>();
+const coordinatorMessageListeners = new Set<(event: MessageEvent<unknown>) => void>();
 let initCompleted = false;
-let bootstrapPromise: Promise<{ api: unknown; servicesReadyAt: number }> | null = null;
+let runtimeAccessRevoked = false;
+let bootstrapPromise: Promise<{ api: BuildWorkerAPI; servicesReadyAt: number }> | null = null;
+
+const coordinatorMessageTarget: OriginCoordinatorMessageTarget = {
+  addEventListener(_type, listener): void {
+    coordinatorMessageListeners.add(listener);
+    for (const port of ports) port.addEventListener('message', listener);
+  },
+  removeEventListener(_type, listener): void {
+    coordinatorMessageListeners.delete(listener);
+    for (const port of ports) port.removeEventListener('message', listener);
+  },
+};
+
+const responder = installOriginCoordinatorBridgeResponder({
+  target: coordinatorMessageTarget,
+  releaseId: getOriginCoordinatorSourceSha(),
+  revokeLegacyYamlAccess: async () => {
+    runtimeAccessRevoked = true;
+    let closeFailed = false;
+    const bootstrap = bootstrapPromise;
+    if (bootstrap !== null) {
+      try {
+        const { api } = await bootstrap;
+        await api.shutdown();
+      } catch {
+        closeFailed = true;
+      }
+    }
+    try {
+      await revokeOriginCoordinatorOwnedClientHandles();
+    } catch {
+      closeFailed = true;
+    }
+    try {
+      revokeLegacyYamlAccessAndClose();
+    } catch {
+      closeFailed = true;
+    }
+    for (const port of ports) {
+      try {
+        port.close();
+      } catch {
+        closeFailed = true;
+      }
+    }
+    ports.clear();
+    if (closeFailed) throw new Error('shared-worker-quiescence-close-failed');
+  },
+});
+
+const guardApi = (api: BuildWorkerAPI): BuildWorkerAPI =>
+  new Proxy(api, {
+    get(target, property, receiver) {
+      responder.assertLegacyYamlAccessAllowed();
+      const value = Reflect.get(target, property, receiver) as unknown;
+      return typeof value === 'function'
+        ? (...args: unknown[]) => {
+            responder.assertLegacyYamlAccessAllowed();
+            return Reflect.apply(value, target, args);
+          }
+        : value;
+    },
+  });
 
 const broadcastMessage = (message: unknown) => {
   for (const port of ports) {
@@ -51,15 +113,17 @@ const reporter = new WorkerInitializationReporter(
 reporter.reportStepProgress('Load Comlink', 0);
 
 const ensureBootstrap = async () => {
+  responder.assertLegacyYamlAccessAllowed();
   if (!bootstrapPromise) {
-    const bootstrap = async () => ensureRuntimeWorkerBootstrap({
-      reporter,
-      messageTarget: {
-        postMessage: (msg: unknown) => {
-          broadcastMessage(msg);
+    const bootstrap = async () =>
+      ensureRuntimeWorkerBootstrap({
+        reporter,
+        messageTarget: {
+          postMessage: (msg: unknown) => {
+            broadcastMessage(msg);
+          },
         },
-      },
-    });
+      });
 
     // SharedWorker is already single-runtime per origin/process.
     // Avoid Web Locks here to prevent lock-wait deadlocks across stale contexts.
@@ -88,7 +152,10 @@ const handleInitRequest = (port: MessagePort, request: WorkerInitRequest) => {
     return;
   }
   if (request.type === 'PING') {
-    port.postMessage({ type: 'PING_RESPONSE', payload: { timestamp: Date.now() } } satisfies WorkerInitMessage);
+    port.postMessage({
+      type: 'PING_RESPONSE',
+      payload: { timestamp: Date.now() },
+    } satisfies WorkerInitMessage);
   }
 };
 
@@ -103,6 +170,13 @@ globalScope.addEventListener('connect', ((event: Event) => {
   const connectEvent = event as SharedWorkerConnectEvent;
   const port = connectEvent.ports[0];
   if (!port) return;
+  for (const listener of coordinatorMessageListeners) {
+    port.addEventListener('message', listener);
+  }
+  if (runtimeAccessRevoked) {
+    port.close();
+    return;
+  }
   ports.add(port);
   port.start();
 
@@ -114,20 +188,23 @@ globalScope.addEventListener('connect', ((event: Event) => {
     }
   });
 
-  void ensureBootstrap().then(async ({ api, servicesReadyAt }) => {
-    const Comlink = await import('comlink');
-    if (!initCompleted) {
-      reporter.reportStepProgress('Expose API', 10);
-    }
-    Comlink.expose(api as object, port);
+  void ensureBootstrap()
+    .then(async ({ api, servicesReadyAt }) => {
+      responder.assertLegacyYamlAccessAllowed();
+      const Comlink = await import('comlink');
+      if (!initCompleted) {
+        reporter.reportStepProgress('Expose API', 10);
+      }
+      Comlink.expose(guardApi(api), port);
 
-    if (!initCompleted) {
-      reporter.reportStepProgress('Expose API', 100);
-      reporter.reportComplete();
-      initCompleted = true;
-    }
+      if (!initCompleted) {
+        reporter.reportStepProgress('Expose API', 100);
+        reporter.reportComplete();
+        initCompleted = true;
+      }
 
-    sendServicesReady(port, servicesReadyAt);
-    reporter.sendStatusTo(port);
-  }).catch(() => {});
+      sendServicesReady(port, servicesReadyAt);
+      reporter.sendStatusTo(port);
+    })
+    .catch(() => {});
 }) as EventListener);

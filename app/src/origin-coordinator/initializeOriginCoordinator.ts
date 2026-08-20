@@ -1,13 +1,17 @@
 import {
-  installOriginCoordinatorCensusResponder,
+  installOriginCoordinatorBridgeResponder,
   isOriginCoordinatorReleaseId,
   ORIGIN_COORDINATOR_FOUNDATION_CAPABILITY,
   ORIGIN_COORDINATOR_MAX_CENSUS_TIMEOUT_MS,
   ORIGIN_COORDINATOR_PROTOCOL_VERSION,
+  ORIGIN_COORDINATOR_QUIESCENCE_BRIDGE_CAPABILITY,
 } from '@hierarchidb/origin-coordinator';
 import { OriginCoordinatorClientError } from './OriginCoordinatorClientError.js';
 import {
   parseOriginCoordinatorHelloResult,
+  parseOriginCoordinatorQuiescenceResult,
+  parseOriginCoordinatorQuiescenceStartRequest,
+  parseOriginCoordinatorQuiescenceStatusRequest,
   parseOriginCoordinatorReadinessRequest,
   parseOriginCoordinatorReadinessResult,
 } from './originCoordinatorValidatorUtils.js';
@@ -15,6 +19,11 @@ import type {
   OriginCoordinatorClientHandle,
   OriginCoordinatorHelloRequest,
   OriginCoordinatorInitializeOptions,
+  OriginCoordinatorQuiescenceResult,
+  OriginCoordinatorQuiescenceStartInput,
+  OriginCoordinatorQuiescenceStartRequest,
+  OriginCoordinatorQuiescenceStatusInput,
+  OriginCoordinatorQuiescenceStatusRequest,
   OriginCoordinatorReadinessInput,
   OriginCoordinatorReadinessRequest,
   OriginCoordinatorReadinessResult,
@@ -31,6 +40,8 @@ function validateOptions(options: OriginCoordinatorInitializeOptions): boolean {
     options.scope.length === 0 ||
     !isPositiveSafeInteger(options.activeWorkerTimeoutMs) ||
     !isPositiveSafeInteger(options.messageTimeoutMs) ||
+    typeof options.relaySharedWorkerRequest !== 'function' ||
+    typeof options.revokeLegacyYamlAccess !== 'function' ||
     options.activeWorkerTimeoutMs > ORIGIN_COORDINATOR_MAX_CENSUS_TIMEOUT_MS ||
     options.messageTimeoutMs > ORIGIN_COORDINATOR_MAX_CENSUS_TIMEOUT_MS
   ) {
@@ -148,6 +159,61 @@ function createClientHandle(
       }
       return result;
     },
+    async startQuiescence(
+      input: OriginCoordinatorQuiescenceStartInput
+    ): Promise<OriginCoordinatorQuiescenceResult> {
+      const requestValue: OriginCoordinatorQuiescenceStartRequest = {
+        type: 'HDB_COORDINATOR_QUIESCENCE_START_REQUEST',
+        protocolVersion: ORIGIN_COORDINATOR_PROTOCOL_VERSION,
+        activationId: input.activationId,
+        quiescenceRequestId: input.quiescenceRequestId,
+        timeoutMs: input.timeoutMs,
+      };
+      const request = parseOriginCoordinatorQuiescenceStartRequest(requestValue);
+      if (request === null) {
+        throw new OriginCoordinatorClientError('INVALID_QUIESCENCE_INPUT');
+      }
+      const rawResult = await sendCoordinatorRequest(
+        worker,
+        request,
+        request.timeoutMs + messageTimeoutMs
+      );
+      const result = parseOriginCoordinatorQuiescenceResult(rawResult);
+      if (
+        result === null ||
+        (result.status !== 'request-rejected' &&
+          (result.activationId !== request.activationId ||
+            result.quiescenceRequestId !== request.quiescenceRequestId))
+      ) {
+        throw new OriginCoordinatorClientError('INVALID_COORDINATOR_RESPONSE');
+      }
+      return result;
+    },
+    async getQuiescenceStatus(
+      input: OriginCoordinatorQuiescenceStatusInput
+    ): Promise<OriginCoordinatorQuiescenceResult> {
+      const requestValue: OriginCoordinatorQuiescenceStatusRequest = {
+        type: 'HDB_COORDINATOR_QUIESCENCE_STATUS_REQUEST',
+        protocolVersion: ORIGIN_COORDINATOR_PROTOCOL_VERSION,
+        activationId: input.activationId,
+        quiescenceRequestId: input.quiescenceRequestId,
+      };
+      const request = parseOriginCoordinatorQuiescenceStatusRequest(requestValue);
+      if (request === null) {
+        throw new OriginCoordinatorClientError('INVALID_QUIESCENCE_INPUT');
+      }
+      const rawResult = await sendCoordinatorRequest(worker, request, messageTimeoutMs);
+      const result = parseOriginCoordinatorQuiescenceResult(rawResult);
+      if (
+        result === null ||
+        (result.status !== 'request-rejected' &&
+          (result.activationId !== request.activationId ||
+            result.quiescenceRequestId !== request.quiescenceRequestId))
+      ) {
+        throw new OriginCoordinatorClientError('INVALID_COORDINATOR_RESPONSE');
+      }
+      return result;
+    },
   });
 }
 
@@ -186,7 +252,10 @@ export function initializeOriginCoordinator(
       type: 'HDB_COORDINATOR_HELLO',
       protocolVersion: ORIGIN_COORDINATOR_PROTOCOL_VERSION,
       releaseId: options.releaseId,
-      capabilities: Object.freeze([ORIGIN_COORDINATOR_FOUNDATION_CAPABILITY] as const),
+      capabilities: Object.freeze([
+        ORIGIN_COORDINATOR_FOUNDATION_CAPABILITY,
+        ORIGIN_COORDINATOR_QUIESCENCE_BRIDGE_CAPABILITY,
+      ] as const),
     });
     const rawResult = await sendCoordinatorRequest(activeWorker, hello, options.messageTimeoutMs);
     const result = parseOriginCoordinatorHelloResult(rawResult);
@@ -196,7 +265,12 @@ export function initializeOriginCoordinator(
     if (result.status !== 'accepted') {
       throw new OriginCoordinatorClientError('HELLO_REJECTED');
     }
-    installOriginCoordinatorCensusResponder(navigator.serviceWorker, options.releaseId);
+    installOriginCoordinatorBridgeResponder({
+      target: navigator.serviceWorker,
+      releaseId: options.releaseId,
+      relaySharedWorkerRequest: options.relaySharedWorkerRequest,
+      revokeLegacyYamlAccess: options.revokeLegacyYamlAccess,
+    });
     return createClientHandle(activeWorker, options.messageTimeoutMs);
   })();
   return initializationPromise;
