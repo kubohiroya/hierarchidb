@@ -103,7 +103,7 @@ sequenceDiagram
     
     User->>Frontend: Click Login
     Frontend->>Frontend: Generate PKCE challenge
-    Frontend->>BFF: GET /auth/{provider}/authorize
+    Frontend->>BFF: GET /auth/authorize/{provider}
     Note over BFF: Validate origin
     BFF->>BFF: Store state & PKCE
     BFF->>OAuth: Redirect to OAuth provider
@@ -111,10 +111,13 @@ sequenceDiagram
     User->>OAuth: Approve
     OAuth->>BFF: Callback with code
     BFF->>BFF: Validate state
-    BFF->>OAuth: Exchange code for token
+    BFF->>Frontend: Redirect callback with code and state
+    Frontend->>BFF: POST /auth/token with code, provider, and PKCE verifier
+    BFF->>OAuth: Exchange code for provider token
     OAuth->>BFF: Return access token
+    BFF->>OAuth: Request provider user info
     BFF->>BFF: Generate JWT
-    BFF->>Frontend: Redirect with JWT
+    BFF->>Frontend: Return session token response
     Frontend->>Frontend: Store JWT
 ```
 
@@ -138,8 +141,8 @@ sequenceDiagram
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/auth/{provider}/authorize` | GET | Initiate OAuth flow |
-| `/auth/{provider}/callback` | GET | Handle OAuth callback |
+| `/auth/authorize/{provider}` | GET | Initiate OAuth flow |
+| `/auth/callback` | GET | Validate state and return the authorization code to the frontend callback |
 | `/auth/token` | POST | Exchange code for JWT |
 | `/auth/userinfo` | GET | Get user information |
 | `/auth/verify` | POST | Verify JWT token |
@@ -330,6 +333,27 @@ if (failureCount > 5) {
   "error_uri": "https://docs.hierarchidb.com/errors#invalid_request"
 }
 ```
+
+### Token exchange request and diagnostics
+
+`POST /auth/token` requires a non-empty authorization `code` and an explicit
+`provider` whose value is `google | github | microsoft`. Missing, empty, or unknown providers are
+HTTP 400 `invalid_request`; the BFF does not default them to Google.
+
+Internal token exchange failures return the generic HTTP 500 `server_error` response. Cloudflare
+server logs distinguish these stages without logging request credentials or personal data:
+
+- `provider_configuration`
+- `provider_token_exchange`
+- `provider_userinfo`
+- `session_configuration`
+- `session_jwt`
+- `session_persistence`
+
+Failure log metadata is limited to the stage, provider, error type, provider HTTP status, and a
+provider-defined machine-readable error code when available. Logs and client responses must not
+include authorization codes, PKCE verifiers, provider access or refresh tokens, OAuth client secrets,
+JWTs, email addresses, names, or provider user information.
 
 ### Common Error Codes
 

@@ -14,6 +14,11 @@ import {
   getMicrosoftUserInfo,
   type MicrosoftOAuth2Config,
 } from '~/auth/microsoft';
+import { TokenExchangeStageError, type TokenExchangeStage } from '~/auth/TokenExchangeStageError';
+import {
+  parseTokenExchangeRequest,
+  type TokenExchangeProvider,
+} from '~/auth/parseTokenExchangeRequest';
 import { type BffContext, getEnv } from '~/utils/env';
 import { createSessionToken } from '~/utils/jwt';
 import { KVStorageManager } from '~/utils/kv-storage';
@@ -22,14 +27,13 @@ import { type AuthSessionMode, parseAuthSessionConfig } from '~/utils/parseAuthS
 import {
   buildAppCallbackUrl,
   getAppCallbackUrlFromState,
-  getDynamicRedirectUri,
   validateRedirectUri,
 } from '~/utils/redirect-uri';
 import { StateManager } from '~/utils/state-manager';
 
 /**
  * Handle OAuth2 callback from OAuth providers
- * This receives the authorization code and exchanges it for tokens
+ * This validates the provider callback and returns the authorization code to the frontend
  */
 export async function handleOAuth2Callback(c: BffContext) {
   let stateOrigin: string | undefined;
@@ -115,15 +119,45 @@ type GetAuthorizationCodeReturn = {
   userInfo: UserInfo;
 };
 
+const runTokenExchangeStage = async <T>(
+  stage: TokenExchangeStage,
+  provider: TokenExchangeProvider,
+  operation: () => Promise<T>
+): Promise<T> => {
+  try {
+    return await operation();
+  } catch (error) {
+    throw new TokenExchangeStageError(stage, provider, error);
+  }
+};
+
+const logTokenExchangeFailure = (error: unknown): void => {
+  if (error instanceof TokenExchangeStageError) {
+    console.error('[auth][token] exchange failed', {
+      stage: error.stage,
+      provider: error.provider,
+      errorType: error.errorType,
+      ...(error.providerStatus === undefined ? {} : { providerStatus: error.providerStatus }),
+      ...(error.providerErrorCode === undefined
+        ? {}
+        : { providerErrorCode: error.providerErrorCode }),
+    });
+    return;
+  }
+
+  console.error('[auth][token] exchange failed', {
+    stage: 'unclassified',
+    errorType: error instanceof Error ? error.name : typeof error,
+  });
+};
+
 const getAuthorizationCode = async ({
   provider,
   env,
-  redirect_uri,
   code,
   code_verifier,
-  c,
 }: {
-  provider: string;
+  provider: TokenExchangeProvider;
   env: {
     GOOGLE_CLIENT_ID?: string;
     GOOGLE_CLIENT_SECRET?: string;
@@ -131,25 +165,35 @@ const getAuthorizationCode = async ({
     GITHUB_CLIENT_SECRET?: string;
     MICROSOFT_CLIENT_ID?: string;
     MICROSOFT_CLIENT_SECRET?: string;
+    REDIRECT_URI?: string;
+    GITHUB_REDIRECT_URI?: string;
+    MICROSOFT_REDIRECT_URI?: string;
   };
-  redirect_uri: string;
   code: string;
   code_verifier?: string;
-  c: BffContext;
 }): Promise<GetAuthorizationCodeReturn> => {
   switch (provider) {
     case 'google': {
-      if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
-        throw new Error('Google OAuth not configured');
-      }
-      const config: GoogleOAuth2Config = {
-        clientId: env.GOOGLE_CLIENT_ID,
-        clientSecret: env.GOOGLE_CLIENT_SECRET,
-        redirectUri: redirect_uri || getDynamicRedirectUri(c, 'google'),
-      };
-
-      const tokens = await exchangeCodeForTokens(code, config, code_verifier);
-      const userInfo = await getGoogleUserInfo(tokens.access_token);
+      const config = await runTokenExchangeStage(
+        'provider_configuration',
+        provider,
+        async (): Promise<GoogleOAuth2Config> => {
+          if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET || !env.REDIRECT_URI) {
+            throw new Error('Google OAuth configuration is incomplete');
+          }
+          return {
+            clientId: env.GOOGLE_CLIENT_ID,
+            clientSecret: env.GOOGLE_CLIENT_SECRET,
+            redirectUri: env.REDIRECT_URI,
+          };
+        }
+      );
+      const tokens = await runTokenExchangeStage('provider_token_exchange', provider, () =>
+        exchangeCodeForTokens(code, config, code_verifier)
+      );
+      const userInfo = await runTokenExchangeStage('provider_userinfo', provider, () =>
+        getGoogleUserInfo(tokens.access_token)
+      );
       return {
         tokens,
         userInfo,
@@ -157,18 +201,26 @@ const getAuthorizationCode = async ({
     }
 
     case 'github': {
-      if (!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET) {
-        throw new Error('GitHub OAuth not configured');
-      }
-
-      const config: GitHubOAuth2Config = {
-        clientId: env.GITHUB_CLIENT_ID,
-        clientSecret: env.GITHUB_CLIENT_SECRET,
-        redirectUri: redirect_uri || getDynamicRedirectUri(c, 'github'),
-      };
-
-      const tokens = await exchangeGitHubCodeForTokens(code, config);
-      const userInfo = await getGitHubUserInfo(tokens.access_token);
+      const config = await runTokenExchangeStage(
+        'provider_configuration',
+        provider,
+        async (): Promise<GitHubOAuth2Config> => {
+          if (!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET || !env.GITHUB_REDIRECT_URI) {
+            throw new Error('GitHub OAuth configuration is incomplete');
+          }
+          return {
+            clientId: env.GITHUB_CLIENT_ID,
+            clientSecret: env.GITHUB_CLIENT_SECRET,
+            redirectUri: env.GITHUB_REDIRECT_URI,
+          };
+        }
+      );
+      const tokens = await runTokenExchangeStage('provider_token_exchange', provider, () =>
+        exchangeGitHubCodeForTokens(code, config)
+      );
+      const userInfo = await runTokenExchangeStage('provider_userinfo', provider, () =>
+        getGitHubUserInfo(tokens.access_token)
+      );
 
       return {
         tokens,
@@ -182,34 +234,42 @@ const getAuthorizationCode = async ({
     }
 
     case 'microsoft': {
-      if (!env.MICROSOFT_CLIENT_ID || !env.MICROSOFT_CLIENT_SECRET) {
-        throw new Error('Microsoft OAuth not configured');
-      }
-
-      const config: MicrosoftOAuth2Config = {
-        clientId: env.MICROSOFT_CLIENT_ID,
-        clientSecret: env.MICROSOFT_CLIENT_SECRET,
-        redirectUri: redirect_uri || getDynamicRedirectUri(c, 'microsoft'),
-      };
-
-      const tokens = await exchangeMicrosoftCodeForTokens(code, config);
-      const userInfo = await getMicrosoftUserInfo(tokens.access_token);
+      const config = await runTokenExchangeStage(
+        'provider_configuration',
+        provider,
+        async (): Promise<MicrosoftOAuth2Config> => {
+          if (
+            !env.MICROSOFT_CLIENT_ID ||
+            !env.MICROSOFT_CLIENT_SECRET ||
+            !env.MICROSOFT_REDIRECT_URI
+          ) {
+            throw new Error('Microsoft OAuth configuration is incomplete');
+          }
+          return {
+            clientId: env.MICROSOFT_CLIENT_ID,
+            clientSecret: env.MICROSOFT_CLIENT_SECRET,
+            redirectUri: env.MICROSOFT_REDIRECT_URI,
+          };
+        }
+      );
+      const tokens = await runTokenExchangeStage('provider_token_exchange', provider, () =>
+        exchangeMicrosoftCodeForTokens(code, config, code_verifier)
+      );
+      const userInfo = await runTokenExchangeStage('provider_userinfo', provider, () =>
+        getMicrosoftUserInfo(tokens.access_token)
+      );
 
       // Normalize Microsoft user info
       return {
         tokens,
         userInfo: {
           id: userInfo.id,
-          email: userInfo.mail ?? undefined,
+          email: userInfo.mail || userInfo.userPrincipalName,
           name: userInfo.displayName || userInfo.userPrincipalName,
           picture: undefined,
         },
       };
     }
-
-    default:
-      throw new Error('Invalid provider');
-    //return c.json({ error:  }, 400);
   }
 };
 
@@ -218,53 +278,66 @@ const getAuthorizationCode = async ({
  * This is a POST endpoint that completes the OAuth2 flow
  */
 export async function exchangeCodeForToken(c: BffContext) {
+  let body: unknown;
   try {
-    const body = await c.req.json();
-    const { code, redirect_uri, provider = 'google', code_verifier } = body;
+    body = await c.req.json<unknown>();
+  } catch {
+    return c.json(
+      { error: 'invalid_request', error_description: 'Token exchange body must be valid JSON' },
+      400
+    );
+  }
 
-    if (!code) {
-      return c.json({ error: 'Missing authorization code' }, 400);
-    }
+  const parsedRequest = parseTokenExchangeRequest(body);
+  if (!parsedRequest.ok) {
+    return c.json(
+      { error: 'invalid_request', error_description: parsedRequest.errorDescription },
+      400
+    );
+  }
 
-    //  redirect_uri
-    if (redirect_uri && !validateRedirectUri(redirect_uri, c)) {
-      console.error(`Invalid redirect_uri received: ${redirect_uri}`);
-      return c.json(
-        {
-          error: 'invalid_request',
-          error_description: 'Invalid redirect_uri parameter',
-        },
-        400
-      );
-    }
+  const { code, redirect_uri, provider, code_verifier } = parsedRequest.value;
 
+  if (redirect_uri && !validateRedirectUri(redirect_uri, c)) {
+    return c.json(
+      {
+        error: 'invalid_request',
+        error_description: 'Invalid redirect_uri parameter',
+      },
+      400
+    );
+  }
+
+  try {
     const env = getEnv(c);
-
-    const effectiveRedirectUri = env.REDIRECT_URI || redirect_uri;
 
     const { userInfo, tokens } = await getAuthorizationCode({
       provider,
-      redirect_uri: effectiveRedirectUri,
       code,
       code_verifier,
-      c,
       env,
     });
 
     // Create session JWT
-    const authSessionConfig = parseAuthSessionConfig(env);
+    const authSessionConfig = await runTokenExchangeStage(
+      'session_configuration',
+      provider,
+      async () => parseAuthSessionConfig(env)
+    );
     const sessionDuration = authSessionConfig.durationHours;
-    const sessionToken = await createSessionToken(
-      {
-        sub: userInfo.id,
-        email: userInfo.email,
-        name: userInfo.name,
-        picture: userInfo.picture,
-        provider,
-      },
-      env.JWT_SECRET,
-      sessionDuration,
-      env.JWT_ISSUER
+    const sessionToken = await runTokenExchangeStage('session_jwt', provider, () =>
+      createSessionToken(
+        {
+          sub: userInfo.id,
+          email: userInfo.email,
+          name: userInfo.name,
+          picture: userInfo.picture,
+          provider,
+        },
+        env.JWT_SECRET,
+        sessionDuration,
+        env.JWT_ISSUER
+      )
     );
 
     let kvWarning: KvWarning | undefined;
@@ -273,7 +346,11 @@ export async function exchangeCodeForToken(c: BffContext) {
     if (authSessionConfig.mode === 'stateless') {
       responseSessionMode = 'stateless';
     } else if (!env.AUTH_KV) {
-      console.error('KV namespace AUTH_KV is not configured');
+      console.error('[auth][token] session persistence degraded', {
+        stage: 'session_persistence',
+        provider,
+        errorType: 'MissingBinding',
+      });
       kvWarning = buildKvWarning('login', 'missing_kv', 'none');
       responseSessionMode = 'stateless';
     } else {
@@ -291,7 +368,11 @@ export async function exchangeCodeForToken(c: BffContext) {
           sessionDuration,
         });
       } catch (error) {
-        console.error('Failed to store session in KV:', error);
+        console.error('[auth][token] session persistence degraded', {
+          stage: 'session_persistence',
+          provider,
+          errorType: error instanceof Error ? error.name : typeof error,
+        });
         kvWarning = buildKvWarning('login', 'kv_error', 'none');
         responseSessionMode = 'stateless';
       }
@@ -314,7 +395,7 @@ export async function exchangeCodeForToken(c: BffContext) {
       ...(kvWarning ? { warning: kvWarning } : {}),
     });
   } catch (error) {
-    console.error('Token exchange error:', error);
+    logTokenExchangeFailure(error);
     return c.json(
       {
         error: 'server_error',

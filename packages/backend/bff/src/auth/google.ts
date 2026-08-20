@@ -1,4 +1,5 @@
 import { generateCodeChallenge, generateCodeVerifier, generateState } from '~/utils/pkce';
+import { OAuthProviderError } from './OAuthProviderError.js';
 
 export interface GoogleOAuth2Config {
   clientId: string;
@@ -40,6 +41,13 @@ export type ExchangeCodeForTokensReturn = {
   refresh_token?: string;
 };
 
+const readProviderErrorCode = (input: unknown): string | undefined => {
+  if (typeof input !== 'object' || input === null || Array.isArray(input)) return undefined;
+  const value = (input as Record<string, unknown>).error;
+  if (typeof value !== 'string' || !/^[a-z0-9_.-]{1,64}$/i.test(value)) return undefined;
+  return value;
+};
+
 export async function exchangeCodeForTokens(
   code: string,
   config: GoogleOAuth2Config,
@@ -69,10 +77,14 @@ export async function exchangeCodeForTokens(
   });
 
   if (!response.ok) {
-    const detail = await response.text().catch(() => '');
-    throw new Error(
-      `Failed to exchange code for tokens: ${response.status} ${response.statusText} ${detail}`
-    );
+    const body: unknown = await response.json().catch(() => null);
+    const providerErrorCode = readProviderErrorCode(body);
+    throw new OAuthProviderError({
+      provider: 'google',
+      operation: 'token_exchange',
+      status: response.status,
+      ...(providerErrorCode === undefined ? {} : { providerErrorCode }),
+    });
   }
 
   return await response.json();
@@ -86,7 +98,11 @@ export async function getGoogleUserInfo(accessToken: string): Promise<GoogleUser
   });
 
   if (!response.ok) {
-    throw new Error('Failed to get user info');
+    throw new OAuthProviderError({
+      provider: 'google',
+      operation: 'userinfo',
+      status: response.status,
+    });
   }
 
   return await response.json();
