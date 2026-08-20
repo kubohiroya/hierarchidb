@@ -177,6 +177,21 @@ import { FolderIcon } from '@hierarchidb/folder-plugin/ui';
 <FolderIcon open={true} />
 ```
 
+## Dormant canonical YAML ZIP codec
+
+The pure codec is available only from the dedicated dormant entry point:
+
+```typescript
+import {
+  decodeCanonicalYamlZip,
+  encodeCanonicalYamlZip,
+} from '@hierarchidb/folder-plugin/canonical-yaml-zip-codec';
+```
+
+It accepts only the 12 exact canonical root filenames from `@hierarchidb/yaml-api`, constructs each filename's registry-owned `subtype` and `schemaId`, and delegates content validation to `validateYamlCanonicalPayload`. Its raw inspection rejects duplicate central records before any filename-keyed conversion, invalid UTF-8, unsafe paths, mismatched headers or CRC, unreferenced leading/inter-entry/tail bytes, overlap, comments, extras, ZIP64, encryption, non-STORE compression, and non-canonical Base64. Encoding uses UTF-8 filename-byte order, STORE, and fixed metadata for deterministic bytes.
+
+This entry point has no storage, runtime, network, filesystem, timer, or random dependency. It is not re-exported from the package root and remains disconnected from CoreDB, YamlDB, WorkerService, the legacy helpers below, and SimulationWorkflow. A later dormant import/export plan owns node/parent preflight and an injected transaction port; production publication remains part of the single activation change. See the [canonical YAML storage contract](../../docs/yaml-plugin-ide-gsm-step4-spec.md).
+
 ## Legacy YAML snapshot boundary
 
 The current `exportYamlNodesToSnapshot` and `importYamlNodesFromSnapshot` helpers are a legacy, non-canonical implementation. Export still reads `data.name`; import writes sequential YamlDB-only rows with an empty schema ID and does not create authoritative CoreDB `TreeNode` records. A later write failure can therefore leave partial YamlDB rows.
@@ -191,6 +206,7 @@ The current legacy entry points remain unchanged only until the single activatio
 src/
 ├── index.ts                  # Root entry point (types + manifest + YAML utilities)
 ├── plugin-manifest.ts        # PluginManifest definition
+├── canonical-yaml-zip-codec/ # Dormant strict raw ZIP codec entry
 ├── common/
 │   ├── locales/              # i18n resources (en, ja)
 │   ├── shared/
@@ -220,6 +236,7 @@ src/
 | Path | Contents |
 | --- | --- |
 | `@hierarchidb/folder-plugin` | Type definitions, PluginManifest, YAML utilities |
+| `@hierarchidb/folder-plugin/canonical-yaml-zip-codec` | Dormant strict canonical YAML ZIP codec |
 | `@hierarchidb/folder-plugin/ui` | UI components (FolderDialogHost, step registration) |
 | `@hierarchidb/folder-plugin/icon` | FolderPluginIcon |
 

@@ -177,6 +177,21 @@ import { FolderIcon } from '@hierarchidb/folder-plugin/ui';
 <FolderIcon open={true} />
 ```
 
+## Dormant canonical YAML ZIP codec
+
+pure codecは専用のdormant entry pointからのみ利用できる。
+
+```typescript
+import {
+  decodeCanonicalYamlZip,
+  encodeCanonicalYamlZip,
+} from '@hierarchidb/folder-plugin/canonical-yaml-zip-codec';
+```
+
+`@hierarchidb/yaml-api` registryにある12件のcanonical root filenameだけをexact matchで受け入れ、filenameが所有する`subtype`と`schemaId`を構築し、content検証を`validateYamlCanonicalPayload`へ委譲する。raw inspectionはfilename-keyed変換より前にduplicate central recordを検出し、invalid UTF-8、unsafe path、header/CRC不一致、unreferenced leading/inter-entry/tail bytes、range overlap、comment、extra field、ZIP64、暗号化、non-STORE compression、non-canonical Base64を拒否する。encodeはUTF-8 filename byte順、STORE、固定metadataにより決定的なbytesを生成する。
+
+このentry pointはstorage、runtime、network、filesystem、timer、randomへ依存しない。package rootから再exportせず、CoreDB、YamlDB、WorkerService、下記legacy helper、SimulationWorkflowへ接続しない。後続のdormant import/export planがnode/parent preflightとinjected transaction portを担当し、production公開はsingle activation変更まで行わない。[正規YAML storage契約](../../docs/yaml-plugin-ide-gsm-step4-spec.md)を参照する。
+
 ## Legacy YAML snapshot boundary
 
 現行の`exportYamlNodesToSnapshot`と`importYamlNodesFromSnapshot` helperはlegacyかつnon-canonicalな実装である。exportは`data.name`を読み、importは空schema IDを持つYamlDB-only rowを逐次writeし、authoritativeなCoreDB `TreeNode`を作成しない。後続writeが失敗するとYamlDBに部分rowが残り得る。
@@ -191,6 +206,7 @@ import { FolderIcon } from '@hierarchidb/folder-plugin/ui';
 src/
 ├── index.ts                  # Root entry point (types + manifest + YAML utilities)
 ├── plugin-manifest.ts        # PluginManifest definition
+├── canonical-yaml-zip-codec/ # Dormant strict raw ZIP codec entry
 ├── common/
 │   ├── locales/              # i18n resources (en, ja)
 │   ├── shared/
@@ -220,6 +236,7 @@ src/
 | パス | 内容 |
 | --- | --- |
 | `@hierarchidb/folder-plugin` | 型定義、PluginManifest、YAML ユーティリティ |
+| `@hierarchidb/folder-plugin/canonical-yaml-zip-codec` | Dormant strict canonical YAML ZIP codec |
 | `@hierarchidb/folder-plugin/ui` | UI コンポーネント（FolderDialogHost、ステップ登録） |
 | `@hierarchidb/folder-plugin/icon` | FolderPluginIcon |
 
