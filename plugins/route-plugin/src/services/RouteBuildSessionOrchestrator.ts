@@ -5,7 +5,7 @@ import { DEFAULT_ROUTE_BUILD_CONFIG } from '~/common/config/buildConfig';
 import type { RouteBuildConfig } from '@hierarchidb/route-api';
 import type { BuildProgressCallback, BuildSessionStatus } from '@hierarchidb/build-api';
 import {
-  BaseBuildSessionManager,
+  CanonicalBuildSessionManager,
 } from '@hierarchidb/build-runtime-services';
 
 export interface RouteBuildSessionConfig {
@@ -19,13 +19,15 @@ export interface RouteBuildInput {
   routes: RouteBuildRouteInput[];
 }
 
-export class RouteBuildSessionOrchestrator extends BaseBuildSessionManager {
+export class RouteBuildSessionOrchestrator extends CanonicalBuildSessionManager {
   private readonly manager: RouteBuildManager;
   private readonly pendingSessions = new Map<NodeId, { config: RouteBuildConfig; routes: RouteBuildRouteInput[] }>();
 
   constructor(deps?: RouteBuildManagerDeps) {
     super();
-    this.manager = new RouteBuildManager(deps);
+    this.manager = new RouteBuildManager(deps, {
+      onSessionReady: (session) => this.registerSession(session),
+    });
   }
 
   async prepareSession(nodeId: NodeId, config: RouteBuildSessionConfig | RouteBuildConfig | undefined, data: RouteBuildInput): Promise<void> {
@@ -49,11 +51,9 @@ export class RouteBuildSessionOrchestrator extends BaseBuildSessionManager {
     }
 
     const sessionNodeId = await this.manager.startRouteBuildSession(nodeId, config, routes);
-    const session = this.manager.getSession(sessionNodeId);
-    if (!session) {
+    if (!this.manager.getSession(sessionNodeId)) {
       throw new Error(`Route build session not found after start: ${sessionNodeId}`);
     }
-    this.registerSession(session);
     return this.getBuildSessionStatus(sessionNodeId);
   }
 
@@ -68,6 +68,7 @@ export class RouteBuildSessionOrchestrator extends BaseBuildSessionManager {
   }
 
   protected async onSessionStatusChange(_session: RouteBuildSession): Promise<void> {
+    await super.onSessionStatusChange(_session);
     const state = _session.getState();
     if (state.status === 'completed' || state.status === 'failed') {
       this.sessions.delete(state.nodeId);

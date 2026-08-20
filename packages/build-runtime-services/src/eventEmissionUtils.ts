@@ -2,13 +2,14 @@
  * Plugin-agnostic event emission helpers for the 4 canonical Worker→UI events.
  * Defined in docs/build-session-worker-ui-event-spec.md.
  *
- * Shape-plugin-specific emitters (emitSessionStatusUpdated, emitStageSnapshotUpdated)
- * remain in the shape-plugin because they depend on ShapeBuildSessionRecord and
- * VtTaskQueueDb which are shape-plugin-specific types.
+ * Session and stage emitters are defined alongside these helpers and consume
+ * the canonical payload types directly. Shape-specific persistence adapters
+ * remain responsible for constructing those payloads.
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TaskProgressUpdatedEvent, HeartbeatEvent } from '@hierarchidb/build-api';
+import { requireNonEmptyString } from './canonicalSessionEventValidators.js';
 import { unconditionalEventStreamer } from './eventStreamer.js';
 
 /**
@@ -25,6 +26,9 @@ export const emitTaskProgressUpdated = (
     message?: string,
     metadata?: Record<string, unknown>,
 ): void => {
+    requireNonEmptyString(nodeId, 'nodeId');
+    requireNonEmptyString(taskId, 'taskId');
+    requireNonEmptyString(stageId, 'stageId');
     if (!Number.isFinite(value) || value < 0 || value > 100) {
         throw new Error(`[eventEmission] taskProgressUpdated value must be finite 0..100, received ${String(value)}`);
     }
@@ -42,6 +46,7 @@ export const emitTaskProgressUpdated = (
  * Emits heartbeat. heartbeatAt must be finite — violation throws.
  */
 export const emitHeartbeat = (nodeId: NodeId, heartbeatAt: number): void => {
+    requireNonEmptyString(nodeId, 'nodeId');
     if (!Number.isFinite(heartbeatAt)) {
         throw new Error(`[eventEmission] heartbeatAt must be finite, received ${String(heartbeatAt)}`);
     }

@@ -8,6 +8,7 @@ import type { RouteGenerationConfig } from '@hierarchidb/route-store';
 import type { RouteBuildConfig } from '@hierarchidb/route-store';
 import {
   RouteBuildSession,
+  type RouteBuildSessionDeps,
   type RouteBuildTask,
 } from './RouteBuildSession.js';
 import type { TaskStage, TaskQueueRecord } from '@hierarchidb/build-api';
@@ -15,6 +16,11 @@ import { VtTaskQueueDb, deleteTasksByNode, putTasks } from '@hierarchidb/vt-orch
 
 export type RouteBuildManagerDeps = {
   engines?: unknown;
+  session?: RouteBuildSessionDeps;
+};
+
+export type RouteBuildManagerHooks = {
+  onSessionReady: (session: RouteBuildSession) => void;
 };
 
 export type RouteBuildRouteInput = {
@@ -32,7 +38,10 @@ const logRouteBuildWarning = (message: string, error: unknown): void => {
 };
 
 export class RouteBuildManager {
-  constructor(protected readonly deps?: RouteBuildManagerDeps) { }
+  constructor(
+    protected readonly deps?: RouteBuildManagerDeps,
+    private readonly hooks?: RouteBuildManagerHooks,
+  ) { }
 
   private routeSpecificTasks = new Map<NodeId, RouteBuildTask[]>();
   private activeSessions = new Map<NodeId, RouteBuildSession>();
@@ -58,6 +67,8 @@ export class RouteBuildManager {
         nodeId,
         stage: 'source',
         status: 'queued',
+        progress: 0,
+        version: 1,
         index: routeTasks.length,
         routeData: createRouteTaskData(route, config),
       });
@@ -74,6 +85,8 @@ export class RouteBuildManager {
         nodeId,
         stage: 'geometry',
         status: 'queued',
+        progress: 0,
+        version: 1,
         index: routeTasks.length,
         routeData: createRouteTaskData(route, config),
       });
@@ -85,6 +98,8 @@ export class RouteBuildManager {
       nodeId,
       stage: 'tileEmit',
       status: 'queued',
+      progress: 0,
+      version: 1,
       index: routeTasks.length,
     });
 
@@ -94,9 +109,10 @@ export class RouteBuildManager {
     await deleteTasksByNode(taskQueue, nodeId);
     await putTasks(taskQueue, routeTasks.map((task) => toTaskQueueRecord(task)));
 
-    const session = new RouteBuildSession(nodeId, config, routeTasks);
+    const session = new RouteBuildSession(nodeId, config, routeTasks, this.deps?.session);
     this.activeSessions.set(nodeId, session);
     await session.initialize();
+    this.hooks?.onSessionReady(session);
     const runPromise = session.start();
     void runPromise.catch((error: unknown) => {
       logRouteBuildWarning('Route build session failed', error);
@@ -166,11 +182,11 @@ function toTaskQueueRecord(task: RouteBuildTask): TaskQueueRecord {
   return {
     taskId: task.taskId,
     nodeId: task.nodeId,
-    version: 1,
+    version: task.version,
     stage: task.stage as TaskStage,
     status: 'queued',
     index: task.index,
-    progress: 0,
+    progress: task.progress,
     inputData: {
       routeStage: task.stage,
       routeData: task.routeData,

@@ -7,7 +7,7 @@ const { strategySearch } = vi.hoisted(() => ({
   strategySearch: vi.fn(),
 }));
 
-vi.mock('../../download/strategyRegistry.js', () => ({
+vi.mock('../../download/strategyRegistryUtils.js', () => ({
   getLocationStrategy: () => ({
     search: strategySearch,
   }),

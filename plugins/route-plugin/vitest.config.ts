@@ -24,6 +24,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '~/common/config/buildConfig': path.resolve(__dirname, 'src/common/config/buildConfig.ts'),
       '@hierarchidb/plugin-ui-sdk': basePluginEntry,
       '@hierarchidb/ui-i18n': path.resolve(__dirname, '../../packages/ui/i18n/src/index.ts'),
     },

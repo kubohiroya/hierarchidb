@@ -7,10 +7,10 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { LocationBuildConfig } from '~/common/entities/LocationEntity';
 import type { LocationPointProperties } from '~/common/entities/LocationPoint';
 import type { BuildProgressCallback, BuildSessionStatus } from '@hierarchidb/build-api';
-import { BaseBuildSessionManager } from '@hierarchidb/build-runtime-services';
+import { CanonicalBuildSessionManager } from '@hierarchidb/build-runtime-services';
 import { LocationBuildSession } from './LocationBuildSession.js';
 
-export class LocationBuildManager extends BaseBuildSessionManager {
+export class LocationBuildManager extends CanonicalBuildSessionManager {
   async startBuildSession(nodeId: NodeId): Promise<BuildSessionStatus> {
     throw new Error(`startBuildSession requires config; use startLocationBuildSession(nodeId, config) instead. nodeId=${nodeId}`);
   }

@@ -109,6 +109,10 @@ location/route の独自実装のうち、shape と共通化して置換すべ�
   - `plugins/location-plugin/src/common/hooks/useLocationProgress.ts`
   - `plugins/route-plugin/src/ui/hooks/useRouteBatchProgress.ts`
   - shape 由来の共通化計画（Stage4）へ置換。
+- Worker→UI build-session event:
+  - route/location の build session は `CanonicalBuildSessionEventSource` として、明示的な stage timing、authoritative task snapshot、task 単位の version 付き progress を提供する。
+  - manager/orchestrator は `CanonicalBuildSessionManager` の `registerSession` 経由で `sessionStatusUpdated / stageSnapshotUpdated / taskProgressUpdated / heartbeat` を配信する。
+  - aggregate な旧 `BuildProgressEvent` から canonical task event を推測・変換しない。旧 API surface 自体の削除は Issue #1142 で行う。
 - Tabular API 作成/メタデータ管理:
   - `plugins/location-plugin/src/common/tabular/createLocationTabularApi.ts`
   - `plugins/route-plugin/src/common/tabular/createRouteTabularApi.ts`

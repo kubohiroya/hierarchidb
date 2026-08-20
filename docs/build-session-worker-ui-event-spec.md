@@ -394,9 +394,12 @@ As of Issue #1143, the canonical event types and plugin-agnostic emitters have b
 ### `@hierarchidb/build-runtime-services`
 
 - `eventStreamer.ts` — `UnconditionalEventStreamer` class and `unconditionalEventStreamer` singleton
-- `eventEmission.ts` — plugin-agnostic emitters:
+- plugin-agnostic canonical emitters:
+  - `emitSessionStatusUpdated(payload)`
+  - `emitStageSnapshotUpdated(nodeId, payload)`
   - `emitTaskProgressUpdated(nodeId, taskId, version, stageId, value, message?, metadata?)`
   - `emitHeartbeat(nodeId, heartbeatAt)`
+- `CanonicalBuildSessionManager` — shared manager that emits the four events above from a canonical event source registered through `registerSession`. It emits session status only when the payload changes, emits each changed stage snapshot as a full replacement of authoritative task state, suppresses byte-equivalent snapshot payloads per stage, and emits heartbeat only while the session is active.
 
 ### `plugins/shape-plugin`
 
@@ -406,3 +409,10 @@ As of Issue #1143, the canonical event types and plugin-agnostic emitters have b
   - `emitStageSnapshotUpdated(nodeId, stage, stageStartedAt, stageInactiveMs, stageCompletedAt?)`
   - re-exports `emitTaskProgressUpdated` and `emitHeartbeat` from `@hierarchidb/build-runtime-services`
 - `src/common/types/session-events.ts` — re-exports all canonical types from `@hierarchidb/build-api`
+
+### `plugins/route-plugin` / `plugins/location-plugin`
+
+- Each build session implements `CanonicalBuildSessionEventSource` and supplies the shared manager with explicit timing for started stages, authoritative full task snapshots, and monotonically increasing per-task versions.
+- The manager or orchestrator extends `CanonicalBuildSessionManager` and registers each session before execution starts.
+- Route emits the `source`, `geometry`, and `tileEmit` stages. Location emits the `source` stage owned by its current pipeline. Neither emits snapshots for unstarted stages.
+- Aggregate legacy `BuildProgressEvent` values are not converted into task progress. Removal of the legacy API surface remains the responsibility of Issue #1142.

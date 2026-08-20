@@ -1,5 +1,13 @@
-import { AbstractBuildSession } from '@hierarchidb/build-runtime-services';
-import type { BuildProgressEvent, TaskStatus } from '@hierarchidb/build-api';
+import {
+  AbstractBuildSession,
+  type CanonicalBuildSessionEventSource,
+} from '@hierarchidb/build-runtime-services';
+import type {
+  BuildProgressEvent,
+  StageSnapshotUpdatedEvent,
+  TaskProgressUpdatedEvent,
+  TaskStatus,
+} from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { RouteGenerationConfig, RouteGenerationMethod } from '@hierarchidb/route-store';
 import type { RouteBuildConfig } from '@hierarchidb/route-store';
@@ -15,6 +23,8 @@ export type RouteBuildTask = {
   nodeId: NodeId;
   stage: RouteBuildTaskStage;
   status: TaskStatus;
+  progress: number;
+  version: number;
   index: number;
   routeData?: {
     startLocationId?: NodeId;
@@ -46,10 +56,21 @@ const DEFAULT_LANE_CAPS: Record<string, number> = {
   custom: 8,
 };
 
-export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
+type RouteStageTiming = {
+  stageStartedAt: number;
+  stageInactiveMs: number;
+  stageCompletedAt?: number;
+};
+
+export class RouteBuildSession
+  extends AbstractBuildSession<RouteBuildConfig>
+  implements CanonicalBuildSessionEventSource {
   private readonly tasks: RouteBuildTask[];
   private readonly tasksById: Map<string, RouteBuildTask>;
   private readonly generator: RouteBuildSessionDeps['generator'];
+  private readonly stageTiming = new Map<RouteBuildTaskStage, RouteStageTiming>();
+  private readonly pendingTaskProgressUpdates: TaskProgressUpdatedEvent['payload'][] = [];
+  private activeStage: RouteBuildTaskStage | null = null;
 
   constructor(nodeId: NodeId, config: RouteBuildConfig, tasks: RouteBuildTask[], deps?: RouteBuildSessionDeps) {
     super(nodeId, config);
@@ -63,11 +84,12 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
 
     const total = this.tasks.length;
     let { completed, failed } = this.countTaskResults();
-    this.updateProgress({ total, completed, failed });
 
     const resolveTaskFilter = (routeStage: RouteBuildTaskStage) =>
       (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => task.inputData?.routeStage === routeStage;
 
+    this.beginStage('source');
+    this.updateProgress({ total, completed, failed }, 'source');
     await runStageTasks<RouteBuildTaskQueueInput>({
       nodeId: this.nodeId,
       stage: 'source',
@@ -85,8 +107,11 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
       },
     });
     ({ completed, failed } = this.countTaskResults());
+    this.completeStage('source');
     this.updateProgress({ total, completed, failed }, 'source');
 
+    this.beginStage('geometry');
+    this.updateProgress({ total, completed, failed }, 'geometry');
     await runStageTasks<RouteBuildTaskQueueInput>({
       nodeId: this.nodeId,
       stage: 'geometry',
@@ -96,8 +121,11 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
       failureHandling: 'continue',
     });
     ({ completed, failed } = this.countTaskResults());
+    this.completeStage('geometry');
     this.updateProgress({ total, completed, failed }, 'geometry');
 
+    this.beginStage('tileEmit');
+    this.updateProgress({ total, completed, failed }, 'tileEmit');
     await runStageTasks<RouteBuildTaskQueueInput>({
       nodeId: this.nodeId,
       stage: 'tileEmit',
@@ -106,6 +134,7 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
       failureHandling: 'continue',
     });
     ({ completed, failed } = this.countTaskResults());
+    this.completeStage('tileEmit');
     this.updateProgress({ total, completed, failed }, 'tileEmit');
 
     if (failed > 0) {
@@ -114,6 +143,32 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
   }
 
   protected onBuildProgressEvent(_event: BuildProgressEvent): void {}
+
+  getCanonicalStageSnapshot(): StageSnapshotUpdatedEvent['payload'] | null {
+    if (!this.activeStage) return null;
+    const timing = this.stageTiming.get(this.activeStage);
+    if (!timing) {
+      throw new Error(`Route stage ${this.activeStage} is active without timing`);
+    }
+    return {
+      stageId: this.activeStage,
+      tasks: this.tasks
+        .filter((task) => task.stage === this.activeStage)
+        .map((task) => ({
+          taskId: task.taskId,
+          stage: task.stage,
+          status: task.status,
+          progress: task.progress,
+          version: task.version,
+          errorMessage: task.error,
+        })),
+      ...timing,
+    };
+  }
+
+  takeCanonicalTaskProgressUpdates(): TaskProgressUpdatedEvent['payload'][] {
+    return this.pendingTaskProgressUpdates.splice(0);
+  }
 
   private async handleSourceRouteTask(
     task: TaskQueueRecord<RouteBuildTaskQueueInput>,
@@ -128,6 +183,8 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
 
     localTask.status = 'running';
     localTask.error = undefined;
+    this.updateRouteTaskProgress(localTask, 0);
+    this.updateProgressByStage('source');
 
     const method = localTask.routeData?.method ?? this.config.routeGeneration.method;
     const options = localTask.routeData?.methodOptions;
@@ -155,6 +212,8 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
 
     localTask.status = 'running';
     localTask.error = undefined;
+    this.updateRouteTaskProgress(localTask, 0);
+    this.updateProgressByStage('geometry');
     // Geometry-stage logic for route tasks will be implemented as needed.
     return this.completeRouteTask(localTask, 'geometry');
   }
@@ -170,6 +229,8 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
 
     localTask.status = 'running';
     localTask.error = undefined;
+    this.updateRouteTaskProgress(localTask, 0);
+    this.updateProgressByStage('tileEmit');
     // TileEmit-stage logic for route tasks will be implemented as needed.
     return this.completeRouteTask(localTask, 'tileEmit');
   }
@@ -189,6 +250,7 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
   private completeRouteTask(task: RouteBuildTask, stage: RouteBuildTaskStage): { status: 'completed'; progress: number } {
     task.status = 'completed';
     task.error = undefined;
+    this.updateRouteTaskProgress(task, 100);
     this.updateProgressByStage(stage);
     return {
       status: 'completed',
@@ -199,6 +261,7 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
   private failRouteTask(task: RouteBuildTask, stage: RouteBuildTaskStage, error: string): { status: 'completed'; progress: number } {
     task.status = 'failed';
     task.error = error;
+    this.updateRouteTaskProgress(task, task.progress, error);
     this.updateProgressByStage(stage);
     throw new Error(error);
   }
@@ -228,6 +291,40 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
   private updateProgressByStage(stage: RouteBuildTaskStage): void {
     const { completed, failed } = this.countTaskResults();
     this.updateProgress({ total: this.tasks.length, completed, failed }, stage);
+  }
+
+  private beginStage(stage: RouteBuildTaskStage): void {
+    if (this.stageTiming.has(stage)) {
+      throw new Error(`Route stage ${stage} has already started`);
+    }
+    this.activeStage = stage;
+    this.stageTiming.set(stage, {
+      stageStartedAt: Date.now(),
+      stageInactiveMs: 0,
+    });
+  }
+
+  private completeStage(stage: RouteBuildTaskStage): void {
+    const timing = this.stageTiming.get(stage);
+    if (!timing || this.activeStage !== stage) {
+      throw new Error(`Route stage ${stage} cannot complete before it starts`);
+    }
+    timing.stageCompletedAt = Date.now();
+  }
+
+  private updateRouteTaskProgress(task: RouteBuildTask, value: number, message?: string): void {
+    if (!Number.isFinite(value) || value < 0 || value > 100) {
+      throw new Error(`Route task progress must be finite 0..100, received ${String(value)}`);
+    }
+    task.progress = value;
+    task.version += 1;
+    this.pendingTaskProgressUpdates.push({
+      taskId: task.taskId,
+      version: task.version,
+      stageId: task.stage,
+      value,
+      message,
+    });
   }
 }
 
