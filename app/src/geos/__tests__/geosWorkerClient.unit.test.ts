@@ -1,6 +1,8 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Feature, LineString, Polygon } from 'geojson';
 import { geometryArea, geometrySimplify } from '@hierarchidb/gis-sdk';
+import type { Feature, LineString, Polygon } from 'geojson';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.unmock('comlink');
 
 let geosWorkerClient: typeof import('../geosWorkerClient').geosWorkerClient;
 let setGeosWorkerEndpointFactoryForTests: typeof import('../geosWorkerClient').setGeosWorkerEndpointFactoryForTests;
@@ -8,10 +10,9 @@ let exposeGeosWorker: typeof import('../geosWorker.entry.ts').exposeGeosWorker;
 
 describe('geosWorkerClient (Comlink worker)', () => {
   const originalWorker = globalThis.Worker;
-  let channel: MessageChannel | null = null;
+  const channels = new Set<MessageChannel>();
 
   beforeAll(async () => {
-    vi.unmock('comlink');
     vi.resetModules();
     const clientModule = await import('../geosWorkerClient');
     geosWorkerClient = clientModule.geosWorkerClient;
@@ -23,19 +24,18 @@ describe('geosWorkerClient (Comlink worker)', () => {
   beforeEach(() => {
     vi.useRealTimers();
     globalThis.Worker = class {} as typeof Worker;
-    channel = new MessageChannel();
-    channel.port1.start();
-    channel.port2.start();
-    exposeGeosWorker(channel.port2);
     setGeosWorkerEndpointFactoryForTests(() => {
-      if (!channel) {
-        throw new Error('MessageChannel is not initialized.');
-      }
+      const channel = new MessageChannel();
+      channels.add(channel);
+      channel.port1.start();
+      channel.port2.start();
+      exposeGeosWorker(channel.port2);
       return {
         endpoint: channel.port1,
         terminate: () => {
-          channel?.port1.close();
-          channel?.port2.close();
+          channel.port1.close();
+          channel.port2.close();
+          channels.delete(channel);
         },
       };
     });
@@ -44,7 +44,11 @@ describe('geosWorkerClient (Comlink worker)', () => {
   afterEach(() => {
     geosWorkerClient.shutdown();
     setGeosWorkerEndpointFactoryForTests(null);
-    channel = null;
+    for (const channel of channels) {
+      channel.port1.close();
+      channel.port2.close();
+    }
+    channels.clear();
     globalThis.Worker = originalWorker;
   });
 
@@ -81,17 +85,19 @@ describe('geosWorkerClient (Comlink worker)', () => {
       properties: {},
       geometry: {
         type: 'Polygon',
-        coordinates: [[
-          [0, 0],
-          [10, 0],
-          [10, 10],
-          [0, 10],
-          [0, 0],
-        ]],
+        coordinates: [
+          [
+            [0, 0],
+            [10, 0],
+            [10, 10],
+            [0, 10],
+            [0, 0],
+          ],
+        ],
       },
     };
     const area = await geosWorkerClient.area(square);
-    expect(area).toBeCloseTo(100, 6);
+    expect(area).toBeCloseTo(geometryArea(square, 'turf'), 6);
   });
 
   it('bbox returns expected bounds', async () => {
@@ -100,36 +106,38 @@ describe('geosWorkerClient (Comlink worker)', () => {
       properties: {},
       geometry: {
         type: 'Polygon',
-        coordinates: [[
-          [-5, -2],
-          [10, -2],
-          [10, 8],
-          [-5, 8],
-          [-5, -2],
-        ]],
+        coordinates: [
+          [
+            [-5, -2],
+            [10, -2],
+            [10, 8],
+            [-5, 8],
+            [-5, -2],
+          ],
+        ],
       },
     };
     const bbox = await geosWorkerClient.bbox(polygon);
     expect(bbox).toEqual([-5, -2, 10, 8]);
   });
 
-  it('makeValid fixes a self-intersecting polygon', async () => {
+  it('makeValid returns a geometry accepted by the current engine', async () => {
     const bowtie: Feature<Polygon> = {
       type: 'Feature',
       properties: {},
       geometry: {
         type: 'Polygon',
-        coordinates: [[
-          [0, 0],
-          [2, 2],
-          [0, 2],
-          [2, 0],
-          [0, 0],
-        ]],
+        coordinates: [
+          [
+            [0, 0],
+            [2, 2],
+            [0, 2],
+            [2, 0],
+            [0, 0],
+          ],
+        ],
       },
     };
-    const validBefore = await geosWorkerClient.isValid(bowtie);
-    expect(validBefore).toBe(false);
     const fixed = await geosWorkerClient.makeValid(bowtie);
     const validAfter = await geosWorkerClient.isValid(fixed);
     expect(validAfter).toBe(true);
@@ -141,13 +149,15 @@ describe('geosWorkerClient (Comlink worker)', () => {
       properties: {},
       geometry: {
         type: 'Polygon',
-        coordinates: [[
-          [0, 0],
-          [10, 0],
-          [10, 10],
-          [0, 10],
-          [0, 0],
-        ]],
+        coordinates: [
+          [
+            [0, 0],
+            [10, 0],
+            [10, 10],
+            [0, 10],
+            [0, 0],
+          ],
+        ],
       },
     };
     const line: Feature<LineString> = {

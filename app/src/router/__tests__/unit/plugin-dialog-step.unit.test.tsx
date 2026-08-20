@@ -1,11 +1,12 @@
 /// <reference types="vitest/globals" />
-import { render } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { NodeAction } from '@hierarchidb/tree-api';
+
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import type { Tree } from '@hierarchidb/tree-api';
-import type { BuildWorkerAPI } from '../../../types/worker-api.ts';
+import { NodeAction } from '@hierarchidb/tree-api';
+import { render } from '@testing-library/react';
 import type { Remote } from 'comlink';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { BuildWorkerAPI } from '../../../types/worker-api.ts';
 import { treeRouteIds } from '../../routes/tree/treeRouteIds.ts';
 import { usePluginDialogRoute } from '../../routes/tree/usePluginDialogRoute.ts';
 
@@ -20,10 +21,14 @@ vi.mock('@tanstack/react-router', () => ({
     select({ matches: mockMatches }),
 }));
 
-vi.mock('@hierarchidb/util', () => ({
-  loadTreeConsoleSettings: () => ({ dialogBackdropDismissEnabled: false }),
-  TREE_CONSOLE_SETTINGS_STORAGE_KEY: 'treeConsoleSettings',
-}));
+vi.mock('@hierarchidb/util', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@hierarchidb/util')>();
+  return {
+    ...actual,
+    loadTreeConsoleSettings: () => ({ dialogBackdropDismissEnabled: false }),
+    TREE_CONSOLE_SETTINGS_STORAGE_KEY: 'treeConsoleSettings',
+  };
+});
 
 vi.mock('../../pages/tree/console/buildQueue.ts', () => ({
   shiftBuildQueue: vi.fn(),
@@ -33,7 +38,10 @@ type HookResult = {
   currentStep: number;
   urlDisplayMode: 'normal' | 'maximize' | 'full-screen';
   mode: 'create' | 'edit' | 'preview';
-  handleUrlStateChange: (next: { mode: 'normal' | 'maximize' | 'full-screen'; step: number }) => void;
+  handleUrlStateChange: (next: {
+    mode: 'normal' | 'maximize' | 'full-screen';
+    step: number;
+  }) => void;
 };
 
 const HookHarness = ({
@@ -116,7 +124,14 @@ describe('usePluginDialogRoute step params', () => {
     } satisfies Parameters<typeof usePluginDialogRoute>[0];
 
     let result: HookResult | null = null;
-    render(<HookHarness data={data} onResult={(value) => (result = value)} />);
+    render(
+      <HookHarness
+        data={data}
+        onResult={(value) => {
+          result = value;
+        }}
+      />
+    );
 
     const snapshot = result as HookResult | null;
     expect(snapshot?.currentStep).toBe(5);
@@ -163,14 +178,21 @@ describe('usePluginDialogRoute step params', () => {
     } satisfies Parameters<typeof usePluginDialogRoute>[0];
 
     let result: HookResult | null = null;
-    render(<HookHarness data={data} onResult={(value) => (result = value)} />);
+    render(
+      <HookHarness
+        data={data}
+        onResult={(value) => {
+          result = value;
+        }}
+      />
+    );
 
     const snapshot = result as HookResult | null;
     expect(snapshot?.currentStep).toBe(5);
     expect(snapshot?.urlDisplayMode).toBe('normal');
   });
 
-  it('falls back to pathname mode/step when route params are not hydrated yet', () => {
+  it('falls back to legacy /t pathname mode/step when route params are not hydrated yet', () => {
     mockMatches = [
       {
         routeId: treeRouteIds.dialog,
@@ -184,7 +206,7 @@ describe('usePluginDialogRoute step params', () => {
       },
     ];
     mockLocation = {
-      pathname: '/d/r/r:root/node-1/shape/edit/maximize/5',
+      pathname: '/t/r/r:root/node-1/shape/edit/maximize/5',
       searchStr: '',
       hash: '',
     };
@@ -213,14 +235,21 @@ describe('usePluginDialogRoute step params', () => {
     } satisfies Parameters<typeof usePluginDialogRoute>[0];
 
     let result: HookResult | null = null;
-    render(<HookHarness data={data} onResult={(value) => (result = value)} />);
+    render(
+      <HookHarness
+        data={data}
+        onResult={(value) => {
+          result = value;
+        }}
+      />
+    );
 
     const snapshot = result as HookResult | null;
     expect(snapshot?.currentStep).toBe(5);
     expect(snapshot?.urlDisplayMode).toBe('maximize');
   });
 
-  it('resolves create/maximize deep link from pathname with encoded page node id', () => {
+  it('resolves a legacy /t create deep link with an encoded page node id', () => {
     mockMatches = [
       {
         routeId: treeRouteIds.dialog,
@@ -234,7 +263,7 @@ describe('usePluginDialogRoute step params', () => {
       },
     ];
     mockLocation = {
-      pathname: '/d/r/r%3Aroot/node-1/shape/create/maximize/5',
+      pathname: '/t/r/r%3Aroot/node-1/shape/create/maximize/5',
       searchStr: '',
       hash: '',
     };
@@ -263,7 +292,14 @@ describe('usePluginDialogRoute step params', () => {
     } satisfies Parameters<typeof usePluginDialogRoute>[0];
 
     let result: HookResult | null = null;
-    render(<HookHarness data={data} onResult={(value) => (result = value)} />);
+    render(
+      <HookHarness
+        data={data}
+        onResult={(value) => {
+          result = value;
+        }}
+      />
+    );
 
     const snapshot = result as HookResult | null;
     expect(snapshot?.mode).toBe('create');
@@ -314,7 +350,14 @@ describe('usePluginDialogRoute step params', () => {
     } satisfies Parameters<typeof usePluginDialogRoute>[0];
 
     let result: HookResult | null = null;
-    render(<HookHarness data={data} onResult={(value) => (result = value)} />);
+    render(
+      <HookHarness
+        data={data}
+        onResult={(value) => {
+          result = value;
+        }}
+      />
+    );
 
     const snapshot = result as HookResult | null;
     expect(snapshot?.mode).toBe('create');
@@ -367,7 +410,14 @@ describe('usePluginDialogRoute step params', () => {
     } satisfies Parameters<typeof usePluginDialogRoute>[0];
 
     let result: HookResult | null = null;
-    render(<HookHarness data={data} onResult={(value) => (result = value)} />);
+    render(
+      <HookHarness
+        data={data}
+        onResult={(value) => {
+          result = value;
+        }}
+      />
+    );
 
     const snapshot = result as HookResult | null;
     snapshot?.handleUrlStateChange({ mode: 'normal', step: 5 });
