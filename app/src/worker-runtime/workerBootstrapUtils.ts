@@ -5,16 +5,15 @@
 import { AuthService } from '@hierarchidb/auth';
 import type {
   BuildProgress,
-  StageKey,
   BuildSessionRuntimeFilter,
   BuildSessionRuntimeRecord,
   BuildSessionRuntimeStatus,
   BuildSessionStatus,
   BuildTaskSummary,
   BuildTaskUpdateEvent,
+  StageKey,
   TaskProgressUpdatedEvent,
 } from '@hierarchidb/build-api';
-import type { UiStorageBridge } from '@hierarchidb/worker-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { setCorsProxyBaseURL } from '@hierarchidb/download';
 import {
@@ -23,29 +22,31 @@ import {
   type HeapPressureEvent,
 } from '@hierarchidb/memory';
 import type { PluginDefinition } from '@hierarchidb/plugin-registry/types';
+import {
+  configureWorkerContainer,
+  getWorkerContainer,
+  type PluginWorkerModuleLoaderContract,
+  publishBuildSessionUpdate,
+  subscribeToBuildSessionBroadcast,
+  WorkerDiTokens,
+  WorkerService,
+} from '@hierarchidb/runtime-worker';
 import type {
   ShapeBuildProgressSummary,
   ShapeBuildSessionRecord,
   ShapeDataSourceName,
 } from '@hierarchidb/shape-api';
 import {
-  configureWorkerContainer,
-  getWorkerContainer,
-  publishBuildSessionUpdate,
-  type PluginWorkerModuleLoaderContract,
-  subscribeToBuildSessionBroadcast,
-  WorkerDiTokens,
-  WorkerService,
-} from '@hierarchidb/runtime-worker';
-import { liveQuery } from 'dexie';
-import {
   getAllRuntimeExports,
   type WorkerInitializationReporter,
   wirePluginsFromModules,
 } from '@hierarchidb/ui-worker-client';
-import type { BuildWorkerAPI } from '~/types/workerApiTypes';
+import type { UiStorageBridge } from '@hierarchidb/worker-api';
+import { liveQuery } from 'dexie';
+import { resolveRequiredCorsProxyBaseURL } from '~/config/resolveRequiredCorsProxyBaseURL';
 import { pluginDefinitions as staticPluginDefinitions } from '~/plugin-loaders/index';
 import { pluginWorkerLoaders } from '~/plugin-loaders/workerLoaderUtils';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 
 /** Runtime export metadata (subset consumed during bootstrap). */
 type RuntimeExportEntry = {
@@ -326,15 +327,10 @@ if (!globalShim.process.env) {
   globalShim.process.env = {};
 }
 {
-  const fromVite = typeof import.meta.env?.VITE_CORS_PROXY_BASE_URL === 'string'
-    ? import.meta.env.VITE_CORS_PROXY_BASE_URL.trim()
-    : '';
-  const value = fromVite || (import.meta.env?.DEV
-    ? 'https://hierarchidb-cors-proxy.kubohiroya.workers.dev'
-    : '');
-  if (!value) {
-    throw new Error('VITE_CORS_PROXY_BASE_URL is required for worker startup.');
-  }
+  const value = resolveRequiredCorsProxyBaseURL(
+    import.meta.env?.VITE_CORS_PROXY_BASE_URL,
+    'worker'
+  );
   setCorsProxyBaseURL(value);
 }
 
