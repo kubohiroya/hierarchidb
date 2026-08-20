@@ -33,8 +33,8 @@ interface ReleaseInputValues {
   readonly rawNodes: unknown;
 }
 
-function isNonBlankString(value: unknown): value is string {
-  return typeof value === 'string' && value.trim().length > 0;
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0;
 }
 
 function isPositiveSafeInteger(value: unknown): value is number {
@@ -43,7 +43,7 @@ function isPositiveSafeInteger(value: unknown): value is number {
 
 function validateReleaseInput(input: ReleaseInputValues): YamlCoreDbInverseMigrationError[] {
   const errors: YamlCoreDbInverseMigrationError[] = [];
-  if (!isNonBlankString(input.rollbackId)) {
+  if (!isNonEmptyString(input.rollbackId)) {
     errors.push(createInverseInputError('INVALID_ROLLBACK_ID', 'rollbackId'));
   }
   const hasValidCurrentVersion = isPositiveSafeInteger(input.currentCoreDbVersion);

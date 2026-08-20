@@ -101,6 +101,14 @@ describe('planReleaseYamlCoreDbInverseMigration success contract', () => {
       expect(Object.isFrozen(entry.postimage)).toBe(true);
     }
   });
+
+  it('preserves a non-empty whitespace-only rollback ID', () => {
+    const plan = expectReleasePlan(
+      planReleaseYamlCoreDbInverseMigration(releaseInput({ rollbackId: ' ' }))
+    );
+
+    expect(plan.rollbackId).toBe(' ');
+  });
 });
 
 describe('planReleaseYamlCoreDbInverseMigration fail-closed matrix', () => {
@@ -218,7 +226,7 @@ describe('planReleaseYamlCoreDbInverseMigration fail-closed matrix', () => {
   it.each([
     ['missing publication proof', { publicationRequirement: undefined }],
     ['wrong publication proof', { publicationRequirement: 'never-published' }],
-    ['empty rollback ID', { rollbackId: ' ' }],
+    ['empty rollback ID', { rollbackId: '' }],
     ['same target version', { rollbackTargetVersion: 2 }],
     ['unsafe current version', { currentCoreDbVersion: Number.MAX_SAFE_INTEGER + 1 }],
   ])('rejects %s', (_label, override) => {

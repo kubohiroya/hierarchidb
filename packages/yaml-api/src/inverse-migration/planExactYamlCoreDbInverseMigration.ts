@@ -78,8 +78,8 @@ type InspectJournalResult =
   | Readonly<{ readonly ok: true; readonly value: InspectedJournal }>
   | Readonly<{ readonly ok: false; readonly errors: readonly YamlCoreDbInverseMigrationError[] }>;
 
-function isNonBlankString(value: unknown): value is string {
-  return typeof value === 'string' && value.trim().length > 0;
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0;
 }
 
 function isPositiveSafeInteger(value: unknown): value is number {
@@ -88,10 +88,10 @@ function isPositiveSafeInteger(value: unknown): value is number {
 
 function validateExactInput(input: ExactInputValues): YamlCoreDbInverseMigrationError[] {
   const errors: YamlCoreDbInverseMigrationError[] = [];
-  if (!isNonBlankString(input.rollbackId)) {
+  if (!isNonEmptyString(input.rollbackId)) {
     errors.push(createInverseInputError('INVALID_ROLLBACK_ID', 'rollbackId'));
   }
-  if (!isNonBlankString(input.forwardMigrationId)) {
+  if (!isNonEmptyString(input.forwardMigrationId)) {
     errors.push(createInverseInputError('INVALID_FORWARD_MIGRATION_ID', 'forwardMigrationId'));
   }
   const hasValidCurrentVersion = isPositiveSafeInteger(input.currentCoreDbVersion);
@@ -253,7 +253,7 @@ function inspectExactJournal(
       }
 
       let valid = true;
-      if (!isNonBlankString(migrationId)) {
+      if (!isNonEmptyString(migrationId)) {
         errors.push(
           journalFieldError(sourceIndex, accessibleNodeId, 'migrationId', 'invalid-type')
         );
@@ -286,7 +286,7 @@ function inspectExactJournal(
         );
         valid = false;
       }
-      if (!isNonBlankString(nodeId)) {
+      if (!isNonEmptyString(nodeId)) {
         errors.push(journalFieldError(sourceIndex, undefined, 'nodeId', 'invalid-type'));
         valid = false;
       }
@@ -294,7 +294,7 @@ function inspectExactJournal(
         errors.push(journalFieldError(sourceIndex, accessibleNodeId, 'slot', 'invalid-type'));
         valid = false;
       }
-      if (!isNonBlankString(legacyName)) {
+      if (!isNonEmptyString(legacyName)) {
         errors.push(journalFieldError(sourceIndex, accessibleNodeId, 'legacyName', 'invalid-type'));
         valid = false;
       }

@@ -139,6 +139,22 @@ describe('planExactYamlCoreDbInverseMigration success contract', () => {
       expect(Object.isFrozen(entry.postimage)).toBe(true);
     }
   });
+
+  it('preserves non-empty whitespace-only rollback and forward migration IDs', async () => {
+    const plan = expectExactPlan(
+      await planExactYamlCoreDbInverseMigration(
+        exactInput({
+          rollbackId: ' ',
+          forwardMigrationId: ' ',
+          rawJournalEntries: [{ ...exactJournal('scenario-node'), migrationId: ' ' }],
+        })
+      )
+    );
+
+    expect(plan.rollbackId).toBe(' ');
+    expect(plan.forwardMigrationId).toBe(' ');
+    expect(plan.journalGuards[0]?.migrationId).toBe(' ');
+  });
 });
 
 describe('planExactYamlCoreDbInverseMigration journal contract', () => {
@@ -254,7 +270,7 @@ describe('planExactYamlCoreDbInverseMigration fail-closed boundary', () => {
   it.each([
     ['missing publication proof', { publicationRequirement: undefined }],
     ['wrong publication proof', { publicationRequirement: 'published' }],
-    ['empty rollback ID', { rollbackId: ' ' }],
+    ['empty rollback ID', { rollbackId: '' }],
     ['empty forward migration ID', { forwardMigrationId: '' }],
     ['same target version', { rollbackTargetVersion: 2 }],
     ['unsafe current version', { currentCoreDbVersion: Number.MAX_SAFE_INTEGER + 1 }],
