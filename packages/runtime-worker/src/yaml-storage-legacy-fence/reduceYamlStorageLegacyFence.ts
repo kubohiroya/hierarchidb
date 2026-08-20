@@ -33,6 +33,13 @@ const FAILED_EVENT_KEYS = [
   'participantKind',
   'participantId',
 ] as const;
+const DISCARDED_EVENT_KEYS = [
+  'type',
+  'activationId',
+  'quiescenceRequestId',
+  'participantKind',
+  'participantId',
+] as const;
 
 function freezeError(
   code: YamlStorageLegacyFenceErrorCode,
@@ -64,6 +71,7 @@ function reject(
     quiescenceRequestId: state.quiescenceRequestId,
     participants: state.participants,
     acknowledgedParticipants: state.acknowledgedParticipants,
+    discardedParticipants: state.discardedParticipants,
     error: freezeError(code, state.phase),
   });
 }
@@ -90,7 +98,9 @@ function parseEvent(value: unknown): YamlStorageLegacyFenceEvent | null {
       ? ACKNOWLEDGED_EVENT_KEYS
       : typeProperty.value === 'participant-quiescence-failed'
         ? FAILED_EVENT_KEYS
-        : null;
+        : typeProperty.value === 'participant-context-discarded'
+          ? DISCARDED_EVENT_KEYS
+          : null;
   if (expectedKeys === null || !hasExactYamlStorageLegacyFenceObjectKeys(value, expectedKeys)) {
     return null;
   }
@@ -110,7 +120,10 @@ function parseEvent(value: unknown): YamlStorageLegacyFenceEvent | null {
   ) {
     return null;
   }
-  if (typeProperty.value === 'participant-quiescence-failed') {
+  if (
+    typeProperty.value === 'participant-quiescence-failed' ||
+    typeProperty.value === 'participant-context-discarded'
+  ) {
     return {
       type: typeProperty.value,
       activationId,
@@ -162,26 +175,44 @@ function hasAcknowledgement(
   );
 }
 
-function addAcknowledgement(
+function hasDiscard(
+  discardedParticipants: readonly YamlStorageLegacyFenceParticipant[],
+  participantId: string
+): boolean {
+  return discardedParticipants.some((participant) => participant.participantId === participantId);
+}
+
+function addEvidence(
   state: Exclude<YamlStorageLegacyFenceState, YamlStorageLegacyFenceRejectedState>,
-  acknowledgedParticipant: YamlStorageLegacyFenceParticipant
+  evidenceParticipant: YamlStorageLegacyFenceParticipant,
+  outcome: 'acknowledged' | 'discarded'
 ): YamlStorageLegacyFenceState {
   const acknowledgedParticipants = Object.freeze(
     state.participants.filter(
       (participant) =>
-        participant.participantId === acknowledgedParticipant.participantId ||
+        (outcome === 'acknowledged' &&
+          participant.participantId === evidenceParticipant.participantId) ||
         hasAcknowledgement(state.acknowledgedParticipants, participant.participantId)
+    )
+  );
+  const discardedParticipants = Object.freeze(
+    state.participants.filter(
+      (participant) =>
+        (outcome === 'discarded' &&
+          participant.participantId === evidenceParticipant.participantId) ||
+        hasDiscard(state.discardedParticipants, participant.participantId)
     )
   );
   return freezeIssuedYamlStorageLegacyFenceState({
     phase:
-      acknowledgedParticipants.length === state.participants.length
+      acknowledgedParticipants.length + discardedParticipants.length === state.participants.length
         ? 'ready-for-preflight'
         : 'quiescing',
     activationId: state.activationId,
     quiescenceRequestId: state.quiescenceRequestId,
     participants: state.participants,
     acknowledgedParticipants,
+    discardedParticipants,
   });
 }
 
@@ -222,11 +253,25 @@ export function reduceYamlStorageLegacyFence(
   if (participant.participantKind !== event.participantKind) {
     return successfulReduceResult(reject(stateValue, 'PARTICIPANT_KIND_MISMATCH'));
   }
-  if (hasAcknowledgement(stateValue.acknowledgedParticipants, event.participantId)) {
+  const alreadyAcknowledged = hasAcknowledgement(
+    stateValue.acknowledgedParticipants,
+    event.participantId
+  );
+  const alreadyDiscarded = hasDiscard(stateValue.discardedParticipants, event.participantId);
+  if (event.type === 'participant-quiescence-acknowledged' && alreadyAcknowledged) {
     return successfulReduceResult(reject(stateValue, 'DUPLICATE_PARTICIPANT_ACK'));
+  }
+  if (event.type === 'participant-context-discarded' && alreadyDiscarded) {
+    return successfulReduceResult(reject(stateValue, 'DUPLICATE_PARTICIPANT_DISCARD'));
+  }
+  if (alreadyAcknowledged || alreadyDiscarded) {
+    return successfulReduceResult(reject(stateValue, 'PARTICIPANT_EVIDENCE_CONFLICT'));
   }
   if (event.type === 'participant-quiescence-failed') {
     return successfulReduceResult(reject(stateValue, 'PARTICIPANT_QUIESCENCE_FAILED'));
+  }
+  if (event.type === 'participant-context-discarded') {
+    return successfulReduceResult(addEvidence(stateValue, participant, 'discarded'));
   }
   if (event.legacyYamlEntrypointsRevoked !== true) {
     return successfulReduceResult(reject(stateValue, 'LEGACY_ENTRYPOINTS_NOT_REVOKED'));
@@ -234,5 +279,5 @@ export function reduceYamlStorageLegacyFence(
   if (event.ownedStorageHandlesClosed !== true) {
     return successfulReduceResult(reject(stateValue, 'STORAGE_HANDLES_NOT_CLOSED'));
   }
-  return successfulReduceResult(addAcknowledgement(stateValue, participant));
+  return successfulReduceResult(addEvidence(stateValue, participant, 'acknowledged'));
 }

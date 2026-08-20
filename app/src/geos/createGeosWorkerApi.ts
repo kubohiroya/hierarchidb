@@ -1,9 +1,3 @@
-import { expose, type Endpoint } from 'comlink';
-import {
-  getOriginCoordinatorSourceSha,
-  installOriginCoordinatorCensusResponder,
-  type OriginCoordinatorMessageTarget,
-} from '@hierarchidb/origin-coordinator';
 import {
   geosArea,
   geosBbox,
@@ -14,17 +8,24 @@ import {
   geosSimplify,
   initGeos,
 } from '@hierarchidb/gis-sdk';
+import {
+  getOriginCoordinatorSourceSha,
+  installOriginCoordinatorBridgeResponder,
+} from '@hierarchidb/origin-coordinator';
+import { type Endpoint, expose } from 'comlink';
 import type { GeosWorkerApi } from './geosWorkerTypes.ts';
 
-const shouldAutoExpose = typeof self !== 'undefined'
-  && typeof (self as { postMessage?: unknown }).postMessage === 'function'
-  && typeof (self as { document?: unknown }).document === 'undefined';
+const shouldAutoExpose =
+  typeof self !== 'undefined' &&
+  typeof (self as { postMessage?: unknown }).postMessage === 'function' &&
+  typeof (self as { document?: unknown }).document === 'undefined';
 
 if (shouldAutoExpose) {
-  installOriginCoordinatorCensusResponder(
-    globalThis as unknown as OriginCoordinatorMessageTarget,
-    getOriginCoordinatorSourceSha(),
-  );
+  installOriginCoordinatorBridgeResponder({
+    target: globalThis.navigator.serviceWorker,
+    releaseId: getOriginCoordinatorSourceSha(),
+    revokeLegacyYamlAccess: () => undefined,
+  });
 }
 
 const initPromise = initGeos();

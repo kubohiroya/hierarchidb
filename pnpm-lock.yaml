@@ -403,6 +403,9 @@ importers:
       '@hierarchidb/worker-api':
         specifier: workspace:*
         version: link:../packages/worker-api
+      '@hierarchidb/yaml-store':
+        specifier: workspace:*
+        version: link:../packages/yaml-store
       '@mapbox/vector-tile':
         specifier: ^2.0.4
         version: 2.0.4

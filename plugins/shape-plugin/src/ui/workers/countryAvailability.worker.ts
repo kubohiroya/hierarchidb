@@ -1,25 +1,30 @@
-import { expose } from 'comlink';
+import { AuthService } from '@hierarchidb/auth';
+import type { NodeId } from '@hierarchidb/core-types';
+import { setCorsProxyBaseURL } from '@hierarchidb/download';
 import {
   getOriginCoordinatorSourceSha,
-  installOriginCoordinatorCensusResponder,
-  type OriginCoordinatorMessageTarget,
+  installOriginCoordinatorBridgeResponder,
 } from '@hierarchidb/origin-coordinator';
-import { setCorsProxyBaseURL } from '@hierarchidb/download';
-import { fetchCountryAvailability } from '~/services/datasources/fetchCountryAvailability';
-import type { CountryAvailabilityWorkerAPI, SerializedCountryAvailability, UiStorageBridge } from './countryAvailabilityTypes.js';
-import type { NodeId } from '@hierarchidb/core-types';
-import { metadataLoader } from '~/services/metadata/MetadataLoader';
-import { AuthService } from '@hierarchidb/auth';
+import { expose } from 'comlink';
 import type { DataSourceName } from '~/common/types/index';
+import { fetchCountryAvailability } from '~/services/datasources/fetchCountryAvailability';
+import { metadataLoader } from '~/services/metadata/MetadataLoader';
+import type {
+  CountryAvailabilityWorkerAPI,
+  SerializedCountryAvailability,
+  UiStorageBridge,
+} from './countryAvailabilityTypes.js';
 
-installOriginCoordinatorCensusResponder(
-  globalThis as unknown as OriginCoordinatorMessageTarget,
-  getOriginCoordinatorSourceSha(),
-);
+installOriginCoordinatorBridgeResponder({
+  target: globalThis.navigator.serviceWorker,
+  releaseId: getOriginCoordinatorSourceSha(),
+  revokeLegacyYamlAccess: () => undefined,
+});
 
-const corsProxyBaseURL = typeof import.meta.env?.VITE_CORS_PROXY_BASE_URL === 'string'
-  ? import.meta.env.VITE_CORS_PROXY_BASE_URL
-  : '';
+const corsProxyBaseURL =
+  typeof import.meta.env?.VITE_CORS_PROXY_BASE_URL === 'string'
+    ? import.meta.env.VITE_CORS_PROXY_BASE_URL
+    : '';
 if (corsProxyBaseURL) {
   setCorsProxyBaseURL(corsProxyBaseURL);
 }
@@ -29,14 +34,19 @@ const api: CountryAvailabilityWorkerAPI = {
     const auth = await AuthService.getSingleton();
     await auth.setUiStorageBridge(bridge);
   },
-  async loadAvailability(dataSource: DataSourceName, nodeId: NodeId): Promise<SerializedCountryAvailability> {
+  async loadAvailability(
+    dataSource: DataSourceName,
+    nodeId: NodeId
+  ): Promise<SerializedCountryAvailability> {
     const availability = await fetchCountryAvailability(dataSource, nodeId);
     return {
       dataSource: availability.dataSource,
-      entries: Array.from(availability.availableAdminLevels.entries()).map(([countryCode, adminLevels]) => ({
-        countryCode,
-        adminLevels,
-      })),
+      entries: Array.from(availability.availableAdminLevels.entries()).map(
+        ([countryCode, adminLevels]) => ({
+          countryCode,
+          adminLevels,
+        })
+      ),
       maxAdminLevel: availability.maxAdminLevel,
       source: availability.source,
       fetchedAt: Date.now(),

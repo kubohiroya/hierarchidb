@@ -2,11 +2,16 @@
  * UI-side worker bootstrap: create and wrap SharedWorker via Comlink.
  */
 
-import type { BuildWorkerAPI } from '~/types/workerApiTypes';
+import type { OriginCoordinatorSharedWorkerRelayRequest } from '@hierarchidb/origin-coordinator';
+import {
+  assertOriginCoordinatorOwnedClientCreationAllowed,
+  registerOriginCoordinatorOwnedClientHandle,
+} from '@hierarchidb/origin-coordinator';
 import type { Remote } from 'comlink';
+import { isMaintenanceLockActive } from '~/maintenance/maintenanceLock';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import { bootLog } from '~/utils/bootLog';
 import { APP_VERSION } from '~/versionConstants';
-import { isMaintenanceLockActive } from '~/maintenance/maintenanceLock';
 import sharedWorkerScriptUrl from './shared-worker.ts?sharedworker&url';
 
 // Mirrors WorkerInitMessageType defined in @hierarchidb/ui-worker-client to avoid `any` fallbacks
@@ -42,7 +47,10 @@ type BootWindow = Window & {
 
 let workerInstance: Remote<BuildWorkerAPI> | null = null;
 let rawSharedWorkerPort: MessagePort | null = null;
+let rawSharedWorkerUrl: string | null = null;
 let workerInitCompleted = false;
+let legacyWorkerAccessRevoked = false;
+let unregisterOwnedWorkerHandle: (() => void) | null = null;
 
 const logInitWorkerWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -87,11 +95,10 @@ const ensureSharedWorkerReady = (): void => {
 const MAINTENANCE_LOCK_POLL_MS = 1_000;
 const MAINTENANCE_LOCK_MAX_WAIT_MS = 30_000;
 
-const wait = (ms: number): Promise<void> => (
+const wait = (ms: number): Promise<void> =>
   new Promise((resolve) => {
     setTimeout(resolve, ms);
-  })
-);
+  });
 
 function getBootWindow(): BootWindow | null {
   if (typeof window === 'undefined') return null;
@@ -181,12 +188,39 @@ const attachMessageHandlers = (target: MessagePort) => {
 };
 
 const cleanupWorkerHandles = () => {
+  unregisterOwnedWorkerHandle?.();
+  unregisterOwnedWorkerHandle = null;
   rawSharedWorkerPort?.close();
   rawSharedWorkerPort = null;
+  rawSharedWorkerUrl = null;
   // SharedWorker instances are scoped by MessagePort; closing the port is sufficient.
   workerInstance = null;
   workerInitCompleted = false;
 };
+
+const assertLegacyWorkerAccessAllowed = (): void => {
+  if (legacyWorkerAccessRevoked) throw new Error('legacy-worker-access-revoked');
+};
+
+export function revokeRuntimeWorkerAccessAndClose(): void {
+  legacyWorkerAccessRevoked = true;
+  cleanupWorkerHandles();
+}
+
+export function relayOriginCoordinatorSharedWorkerRequest(
+  relay: OriginCoordinatorSharedWorkerRelayRequest,
+  responsePort: MessagePort
+): void {
+  if (
+    rawSharedWorkerPort === null ||
+    rawSharedWorkerUrl === null ||
+    rawSharedWorkerUrl !== relay.targetClientUrl
+  ) {
+    responsePort.close();
+    return;
+  }
+  rawSharedWorkerPort.postMessage(relay.request, [responsePort]);
+}
 
 const ensureMaintenanceUnlocked = (): void => {
   if (!isMaintenanceLockActive()) return;
@@ -194,7 +228,9 @@ const ensureMaintenanceUnlocked = (): void => {
   throw new Error('maintenance-lock-active');
 };
 
-const waitForMaintenanceUnlock = async (deadlineMs = MAINTENANCE_LOCK_MAX_WAIT_MS): Promise<void> => {
+const waitForMaintenanceUnlock = async (
+  deadlineMs = MAINTENANCE_LOCK_MAX_WAIT_MS
+): Promise<void> => {
   const startedAt = Date.now();
   let delayMs = MAINTENANCE_LOCK_POLL_MS;
   while (isMaintenanceLockActive()) {
@@ -210,10 +246,12 @@ const waitForMaintenanceUnlock = async (deadlineMs = MAINTENANCE_LOCK_MAX_WAIT_M
 };
 
 export async function initializeWorker(): Promise<Remote<BuildWorkerAPI>> {
+  assertLegacyWorkerAccessAllowed();
   ensureSharedWorkerReady();
   const RETRY_DELAYS = [2000, 3000, 7000];
   for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
     await waitForMaintenanceUnlock();
+    assertLegacyWorkerAccessAllowed();
     // Reduce console noise; log only via bootLog when explicitly enabled
     bootLog('client:initWorker attempt=%d', attempt + 1);
     try {
@@ -223,8 +261,13 @@ export async function initializeWorker(): Promise<Remote<BuildWorkerAPI>> {
 
       const workerUrl = resolveSharedWorkerUrl();
       workerUrl.searchParams.set('retry', String(attempt));
+      assertOriginCoordinatorOwnedClientCreationAllowed();
       const sharedWorker = new SharedWorker(workerUrl, { type: 'module' });
       rawSharedWorkerPort = sharedWorker.port;
+      rawSharedWorkerUrl = workerUrl.href;
+      unregisterOwnedWorkerHandle = registerOriginCoordinatorOwnedClientHandle({
+        close: cleanupWorkerHandles,
+      });
       rawSharedWorkerPort.start();
       attachMessageHandlers(rawSharedWorkerPort);
 
@@ -248,7 +291,9 @@ export async function initializeWorker(): Promise<Remote<BuildWorkerAPI>> {
 }
 
 export async function getWorkerClient(): Promise<Remote<BuildWorkerAPI>> {
+  assertLegacyWorkerAccessAllowed();
   await waitForMaintenanceUnlock();
+  assertLegacyWorkerAccessAllowed();
   if (!workerInstance) return await initializeWorker();
   return workerInstance;
 }

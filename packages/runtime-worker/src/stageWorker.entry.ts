@@ -3,16 +3,16 @@
 
 import {
   getOriginCoordinatorSourceSha,
-  installOriginCoordinatorCensusResponder,
-  type OriginCoordinatorMessageTarget,
+  installOriginCoordinatorBridgeResponder,
 } from '@hierarchidb/origin-coordinator';
 import { expose } from 'comlink';
 import { getStageProcessingService } from './services/StageProcessingService.js';
 
-installOriginCoordinatorCensusResponder(
-  globalThis as unknown as OriginCoordinatorMessageTarget,
-  getOriginCoordinatorSourceSha()
-);
+installOriginCoordinatorBridgeResponder({
+  target: globalThis.navigator.serviceWorker,
+  releaseId: getOriginCoordinatorSourceSha(),
+  revokeLegacyYamlAccess: () => undefined,
+});
 
 async function main() {
   const svc = await getStageProcessingService();

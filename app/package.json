@@ -63,6 +63,7 @@
     "@hierarchidb/ui-dynamic-speed-dial": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
     "@hierarchidb/worker-api": "workspace:*",
+    "@hierarchidb/yaml-store": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@mui/icons-material": "^7.3.8",
     "@mui/material": "^7.3.8",

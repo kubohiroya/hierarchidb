@@ -26,6 +26,8 @@ export type YamlStorageLegacyFenceErrorCode =
   | 'UNKNOWN_PARTICIPANT'
   | 'PARTICIPANT_KIND_MISMATCH'
   | 'DUPLICATE_PARTICIPANT_ACK'
+  | 'DUPLICATE_PARTICIPANT_DISCARD'
+  | 'PARTICIPANT_EVIDENCE_CONFLICT'
   | 'LEGACY_ENTRYPOINTS_NOT_REVOKED'
   | 'STORAGE_HANDLES_NOT_CLOSED'
   | 'PARTICIPANT_QUIESCENCE_FAILED'
@@ -41,6 +43,7 @@ interface YamlStorageLegacyFenceContext {
   readonly quiescenceRequestId: string;
   readonly participants: readonly YamlStorageLegacyFenceParticipant[];
   readonly acknowledgedParticipants: readonly YamlStorageLegacyFenceParticipant[];
+  readonly discardedParticipants: readonly YamlStorageLegacyFenceParticipant[];
 }
 
 export interface YamlStorageLegacyFenceQuiescingState extends YamlStorageLegacyFenceContext {
@@ -93,6 +96,13 @@ export type YamlStorageLegacyFenceEvent =
     }
   | {
       readonly type: 'participant-quiescence-failed';
+      readonly activationId: string;
+      readonly quiescenceRequestId: string;
+      readonly participantKind: YamlStorageLegacyFenceParticipantKind;
+      readonly participantId: string;
+    }
+  | {
+      readonly type: 'participant-context-discarded';
       readonly activationId: string;
       readonly quiescenceRequestId: string;
       readonly participantKind: YamlStorageLegacyFenceParticipantKind;

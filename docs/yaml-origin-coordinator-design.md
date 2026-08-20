@@ -246,6 +246,17 @@ The alternative dedicated runtime Worker and each utility worker entrypoint are 
 individually by the automated responder test matrix and are also counted whenever present in the
 production census.
 
+Chromium does not expose `navigator.serviceWorker` inside a SharedWorker. The coordinator therefore
+must not treat direct `Client.postMessage()` delivery as a SharedWorker responder transport. For an
+in-scope SharedWorker, the Service Worker sends an exact relay envelope to the in-scope windows;
+each window forwards it only when its currently owned SharedWorker URL exactly equals the target
+client URL, using that window-owned `MessagePort`. The SharedWorker installs one logical responder
+across all connected ports. The browser-issued SharedWorker `Client.id` remains the participant
+identity and browser-discard authority. This relay is accepted only when the target URL identifies
+exactly one in-scope SharedWorker client; duplicate exact URLs are incompatible because a window
+port cannot prove which browser client it reaches. A missing, closed, or non-matching relay port is
+unresponsive, never acknowledged or discarded.
+
 Acceptance never sends a quiescence request, changes the durable `allowed` record, revokes an
 entrypoint, closes a port or database, or claims that an acknowledgement occurred. Actual
 revoke/close acknowledgement is verified by automated bridge integration tests and is first
@@ -260,6 +271,12 @@ The coordinator enumerates and deterministically snapshots all in-scope clients 
 durably revoked new legacy bootstrap. Window clients map to `tab`; dedicated and SharedWorker
 clients map to `worker`. The activation caller is included. Because its legacy runtime has not
 started, its responder must still return explicit true evidence for the empty ownership set.
+
+SharedWorker requests are relayed before any window quiescence request is dispatched. This ordering
+lets a window transfer the response port to its SharedWorker before the window responder closes its
+owned SharedWorker port. The transferred response port is independent of that owned application
+port. All participant results are still reduced and persisted in the deterministic participant
+snapshot order; relay dispatch order does not change protocol order.
 
 Each responder first changes its runtime-local gate monotonically to revoked, then prevents new
 legacy YAML operations, then closes every YAML-relevant storage handle and communication port it
@@ -300,16 +317,30 @@ terminally rejected. The coordinator does not terminate, navigate, reload, or om
 
 | Runtime entry | Participant kind | Legacy entrypoints to revoke | YAML-relevant handles to close |
 | --- | --- | --- | --- |
-| application window | `tab` | dialog save/commit, folder YAML import/export, SimulationWorkflow and command launch, and creation of new runtime-worker clients | every owned dedicated/SharedWorker client port; no direct CoreDB or YamlDB handle is assumed |
+| application window | `tab` | dialog save/commit, folder YAML import/export, SimulationWorkflow and command launch, and creation of new runtime-worker clients | every owned dedicated/SharedWorker client port and any window-owned YamlDB connection opened by legacy folder YAML import; no direct CoreDB handle is assumed |
 | dedicated runtime Worker | `worker` | the exposed query/mutation/draft/import-export API as a whole; a node-type filter is not an authority boundary | its WorkerService CoreDB connection and every plugin-owned YamlDB connection before closing the exposed channel |
-| SharedWorker runtime | `worker` | new `connect` handling and the exposed API on every existing port | its WorkerService CoreDB connection, every plugin-owned YamlDB connection, and all connected ports |
+| SharedWorker runtime | `worker` | new `connect` handling and the exposed API on every existing port; coordinator requests arrive through an exact window-owned port relay because Chromium has no SharedWorker `navigator.serviceWorker` | its WorkerService CoreDB connection, every plugin-owned YamlDB connection, and all connected ports |
 | stage workers, GEOS worker, country-availability worker, tabular-filter worker | `worker` | none; these entries own no legacy YAML command or storage publication | none; explicit true evidence is valid only after the responder confirms the empty ownership set |
 
 The bridge implementation must audit every current worker entry against this table. A new or
 unclassified in-scope runtime is incompatible until this specification and its responder
 ownership are updated. A SharedWorker's multiple application ports do not create synthetic
 participants; the browser-issued SharedWorker `Client.id` remains the single participant and the
-responder owns closing all of its ports.
+responder owns closing all of its ports. Multiple browser SharedWorker clients with the same exact
+URL are incompatible because the relay cannot bind an owned window port to one of their IDs.
+
+The legacy folder import entrypoint executes `createYamlNode()` in its caller and can therefore
+open the YamlDB singleton in an application window. The window responder must revoke that
+entrypoint and close an already-created window-owned YamlDB connection before acknowledging. It
+must not instantiate or open YamlDB merely to prove that no handle exists, and closing only the
+runtime-worker ports is insufficient evidence when the window owns such a connection.
+
+Each JavaScript runtime keeps a local registry of the Worker, SharedWorker port, and other
+YAML-relevant client handles it owns. Handle creation checks a monotonic runtime-local revocation
+gate, registers the handle immediately after construction, and unregisters it on normal close.
+The participant responder closes the complete registry before acknowledging. This registry is
+only an inventory of non-serializable runtime handles; it is not durable authority and does not
+replace the coordinator IndexedDB state or the browser-issued `Client.id` participant snapshot.
 
 ## Bootstrap order
 
@@ -333,8 +364,11 @@ The strict census contract, build-SHA reader, and responder live in the shared
 `@hierarchidb/origin-coordinator` workspace package. The window, SharedWorker, dedicated runtime
 worker, stage worker, GEOS worker, country availability worker, and tabular filter worker all use
 that one contract. Every worker entry installs the responder before its runtime bootstrap or
-application message handler begins. The foundation responder does not revoke entrypoints, close
-storage, or acknowledge quiescence.
+application message handler begins. A SharedWorker installs the responder on its connected
+application ports rather than on an unavailable `navigator.serviceWorker`; its window owner keeps
+the exact worker URL beside the port and forwards only strict coordinator relay envelopes for that
+URL. The foundation responder does not revoke entrypoints, close storage, or acknowledge
+quiescence.
 
 ## Authority boundary
 

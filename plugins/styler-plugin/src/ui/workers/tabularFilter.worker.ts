@@ -2,8 +2,7 @@
 
 import {
   getOriginCoordinatorSourceSha,
-  installOriginCoordinatorCensusResponder,
-  type OriginCoordinatorMessageTarget,
+  installOriginCoordinatorBridgeResponder,
 } from '@hierarchidb/origin-coordinator';
 import type { TabularFilterRule } from '@hierarchidb/ui-tabular';
 import type { StylerTableRow } from '~/common/types/StylerEntity';
@@ -24,10 +23,11 @@ type FilterResponse = {
 
 const ctx: DedicatedWorkerGlobalScope = self as DedicatedWorkerGlobalScope;
 
-installOriginCoordinatorCensusResponder(
-  ctx as unknown as OriginCoordinatorMessageTarget,
-  getOriginCoordinatorSourceSha()
-);
+installOriginCoordinatorBridgeResponder({
+  target: ctx.navigator.serviceWorker,
+  releaseId: getOriginCoordinatorSourceSha(),
+  revokeLegacyYamlAccess: () => undefined,
+});
 
 ctx.onmessage = (event: MessageEvent<FilterRequest>) => {
   const { id, rows, filters, limit = 1000 } = event.data ?? {};

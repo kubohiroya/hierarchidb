@@ -1,3 +1,7 @@
+import {
+  assertOriginCoordinatorOwnedClientCreationAllowed,
+  registerOriginCoordinatorOwnedClientHandle,
+} from '@hierarchidb/origin-coordinator';
 import type { TabularFilterRule } from '@hierarchidb/ui-tabular';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { StylerTableRow } from '~/common/types/StylerEntity';
@@ -58,10 +62,17 @@ export const useTabularFilterWorker = ({
   useEffect(() => {
     if (!supportsWorker) return undefined;
     try {
+      assertOriginCoordinatorOwnedClientCreationAllowed();
       const worker = new Worker(new URL('../workers/tabularFilter.worker', import.meta.url), {
         type: 'module',
       });
       workerRef.current = worker;
+      const unregister = registerOriginCoordinatorOwnedClientHandle({
+        close: () => {
+          worker.terminate();
+          if (workerRef.current === worker) workerRef.current = null;
+        },
+      });
       const handleMessage = (event: MessageEvent<WorkerResponse>) => {
         const { id, rows: nextRows, error } = event.data ?? {};
         if (id !== latestRequestRef.current) {
@@ -83,6 +94,7 @@ export const useTabularFilterWorker = ({
       };
       worker.addEventListener('message', handleMessage);
       return () => {
+        unregister();
         worker.removeEventListener('message', handleMessage);
         worker.terminate();
         workerRef.current = null;
@@ -114,12 +126,18 @@ export const useTabularFilterWorker = ({
     latestRequestRef.current = requestId;
     setIsFiltering(true);
     debounceTimerRef.current = window.setTimeout(() => {
-      workerRef.current?.postMessage({
-        id: requestId,
-        rows,
-        filters,
-        limit,
-      });
+      try {
+        assertOriginCoordinatorOwnedClientCreationAllowed();
+        workerRef.current?.postMessage({
+          id: requestId,
+          rows,
+          filters,
+          limit,
+        });
+      } catch {
+        setWorkerError('origin-coordinator-owned-client-creation-revoked');
+        setIsFiltering(false);
+      }
     }, debounceMs);
 
     return () => {

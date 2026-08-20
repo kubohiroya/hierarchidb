@@ -12,7 +12,9 @@ const normalizeBasePath = (value: string | undefined): string => {
   return value.replace(/^\/+|\/+$/g, '');
 };
 
-const appName = normalizeBasePath(process.env.VITE_APP_NAME ?? process.env.PLAYWRIGHT_APP_NAME);
+const appName = normalizeBasePath(
+  process.env.VITE_APP_NAME ?? process.env.PLAYWRIGHT_APP_NAME ?? 'hierarchidb'
+);
 const defaultBaseURL = (() => {
   const basePath = appName ? `/${appName}` : '';
   return `http://localhost:4200${basePath}`;
@@ -79,7 +81,6 @@ export default defineConfig({
       },
     },
 
-
     /* Test against branded browsers. */
     // {
     //   name: 'Microsoft Edge',
@@ -97,7 +98,7 @@ export default defineConfig({
     : {
         // Build and preview the app to avoid file watcher limits in CI/sandboxes
         command:
-          'pnpm --filter @hierarchidb/app stage && pnpm --filter @hierarchidb/app preview -- --host 127.0.0.1 --port 4200',
+          'HDB_SOURCE_SHA=0000000000000000000000000000000000000000 VITE_APP_NAME=hierarchidb pnpm -w turbo run build --filter @hierarchidb/app... && pnpm --filter @hierarchidb/app exec vite preview --host 127.0.0.1 --port 4200',
         url: baseURLWithSlash,
         reuseExistingServer: !process.env.CI,
         timeout: 480 * 1000, // allow enough headroom because the app stage routinely exceeds 3 minutes
