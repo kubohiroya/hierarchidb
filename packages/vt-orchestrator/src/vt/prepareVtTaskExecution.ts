@@ -52,8 +52,29 @@ export const prepareVtTaskExecution = (params: VtTaskPreparationInput): VtTaskPr
     };
   }
 
-  const bufferIds = input.bufferIds ?? [];
-  const bufferIdSample = bufferIds.length > 0 ? bufferIds.slice(0, Math.min(bufferIds.length, 3)) : [];
+  if (!Array.isArray(input.bufferIds)) {
+    return {
+      kind: 'skipped',
+      result: { status: 'failed', errorMessage: 'tileEmit task input requires bufferIds' },
+    };
+  }
+  if (
+    input.bufferIds.some(
+      (bufferId) =>
+        typeof bufferId !== 'string' || bufferId.length === 0 || bufferId !== bufferId.trim()
+    )
+  ) {
+    return {
+      kind: 'skipped',
+      result: {
+        status: 'failed',
+        errorMessage: 'tileEmit task input requires non-empty canonical bufferIds',
+      },
+    };
+  }
+  const bufferIds = input.bufferIds;
+  const bufferIdSample =
+    bufferIds.length > 0 ? bufferIds.slice(0, Math.min(bufferIds.length, 3)) : [];
   const taskContext: TaskContextForVt = {
     taskId: task.taskId,
     nodeId: String(task.nodeId),
@@ -61,7 +82,7 @@ export const prepareVtTaskExecution = (params: VtTaskPreparationInput): VtTaskPr
     tileId: input.tileId,
     bufferCount: bufferIds.length,
   };
-  if (!input.bufferIds || input.bufferIds.length === 0) {
+  if (bufferIds.length === 0) {
     return {
       kind: 'skipped',
       result: { status: 'completed', message: 'skipped: bufferIds is empty' },

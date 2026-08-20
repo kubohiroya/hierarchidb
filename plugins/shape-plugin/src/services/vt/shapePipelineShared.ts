@@ -22,9 +22,13 @@ import type { CountryMetadata, SourceTaskPayload, SelectedArrayByCountries } fro
 import type { ShapeTileLayerInfo, ShapeVectorTileRecord } from '@hierarchidb/shape-api';
 import { extractGeometryStats } from './featureMetadataUtils.ts';
 import { buildStableSignature } from './buildStableSignature.ts';
-import { deleteTasksByIds, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
+import { deleteTasksByIds, type VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { ephemeralDB, type EphemeralDB } from '@hierarchidb/gis-sdk';
-import { buildGeometryTaskCacheIdentity, buildTileEmitTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
+import {
+  buildGeometryTaskCacheIdentity,
+  buildTileEmitTaskCacheIdentity,
+  requireShapeSourceBaseTolerance,
+} from './shapeTaskCacheIdentity.ts';
 import { resolveSourceArtifactHashFromRecord } from './shapeSourceArtifactHashUtils.ts';
 
 export type ShapeGeometryByBandTaskInput = {
@@ -33,9 +37,9 @@ export type ShapeGeometryByBandTaskInput = {
   sourceCacheFormat?: 'flatgeobuf' | 'topojson';
   sourceCacheCompression?: 'gzip' | 'none';
   bandIndex: number;
-  bandMinZoom?: number;
-  bandMaxZoom?: number;
-  sourceBaseTolerance?: number;
+  bandMinZoom: number;
+  bandMaxZoom: number;
+  sourceBaseTolerance: number;
   inputVertexCount?: number;
   inputPolygonCount?: number;
   domainType: 'shape';
@@ -51,9 +55,9 @@ export type ShapeGeometryByBandTaskInput = {
   sourceFeatureOutputCount?: number;
   sourcePolygonInputCount?: number;
   sourcePolygonOutputCount?: number;
-  configSignature?: string;
-  cacheKey?: string;
-  inputHash?: string;
+  configSignature: string;
+  cacheKey: string;
+  inputHash: string;
 };
 
 export type ShapeTileEmitTaskInput = {
@@ -66,9 +70,9 @@ export type ShapeTileEmitTaskInput = {
   featureCount: number;
   domainType: 'shape';
   sourceKey: string;
-  configSignature?: string;
-  cacheKey?: string;
-  inputHash?: string;
+  configSignature: string;
+  cacheKey: string;
+  inputHash: string;
 };
 
 const HIGH_DETAIL_ZOOM_MIN = 9;
@@ -482,7 +486,9 @@ export const buildGeometryByBandTasks = async (
       const countryCode = buffer.countryCode?.trim().toUpperCase();
       const countryMeta = countryCode ? countryLookup.get(countryCode) : undefined;
       const bufferMetadata = (buffer.metadata ?? {}) as Record<string, unknown>;
-      const sourceBaseTolerance = readNumericProperty(bufferMetadata, 'baseTolerance');
+      const sourceBaseTolerance = requireShapeSourceBaseTolerance(
+        readNumericProperty(bufferMetadata, 'baseTolerance'),
+      );
       for (const band of bands) {
         if (band.zMin >= HIGH_DETAIL_ZOOM_MIN) {
           if (!enableHighDetailBands) continue;

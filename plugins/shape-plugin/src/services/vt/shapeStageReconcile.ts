@@ -73,6 +73,9 @@ export type ApplyStageTaskReconcileResult<TInput, TOutput> = {
 export const applyStageTaskReconcile = async <TInput, TOutput>(
   params: ApplyStageTaskReconcileParams<TInput, TOutput>,
 ): Promise<ApplyStageTaskReconcileResult<TInput, TOutput>> => {
+  params.desiredTasks.forEach((task) => {
+    buildDescriptor(task as TaskLike);
+  });
   if (!params.resumeExistingTasks) {
     if (params.desiredTasks.length > 0) {
       await putTasks(params.taskQueue, params.desiredTasks);

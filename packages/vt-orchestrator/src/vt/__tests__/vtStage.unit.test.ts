@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { FeatureCollection } from 'geojson';
+import type { VTStageContext } from '../../contextTypes.js';
+import { prepareVtTaskExecution } from '../prepareVtTaskExecution.js';
 import { vtStageTestUtils } from '../vtStageTestUtils.js';
+
+const buildPreparationContext = (): VTStageContext => ({
+  tileEmitConfig: { layerSetName: 'shape' },
+  bands: [],
+} as unknown as VTStageContext);
 
 describe('vtStage summary helpers', () => {
   it('builds admin feature summary from feature levels', () => {
@@ -176,5 +183,72 @@ describe('vtStage summary helpers', () => {
 
     expect(totals.polygonCount).toBeGreaterThan(0);
     expect(totals.vertexCount).toBeGreaterThan(0);
+  });
+
+  it('fails a tileEmit task when bufferIds is missing', () => {
+    const result = prepareVtTaskExecution({
+      context: buildPreparationContext(),
+      task: {
+        taskId: 'missing-buffer-ids',
+        nodeId: 'node-1',
+        inputData: {
+          bandIndex: 0,
+          zBase: 0,
+          tileId: 0,
+          domainType: 'shape',
+          sourceKey: 'mixed',
+        } as never,
+      },
+    });
+
+    expect(result).toEqual({
+      kind: 'skipped',
+      result: { status: 'failed', errorMessage: 'tileEmit task input requires bufferIds' },
+    });
+  });
+
+  it('distinguishes explicit empty bufferIds from invalid entries', () => {
+    const empty = prepareVtTaskExecution({
+      context: buildPreparationContext(),
+      task: {
+        taskId: 'empty-buffer-ids',
+        nodeId: 'node-1',
+        inputData: {
+          bandIndex: 0,
+          zBase: 0,
+          tileId: 0,
+          bufferIds: [],
+          domainType: 'shape',
+          sourceKey: 'mixed',
+        },
+      },
+    });
+    const invalid = prepareVtTaskExecution({
+      context: buildPreparationContext(),
+      task: {
+        taskId: 'invalid-buffer-ids',
+        nodeId: 'node-1',
+        inputData: {
+          bandIndex: 0,
+          zBase: 0,
+          tileId: 0,
+          bufferIds: [''],
+          domainType: 'shape',
+          sourceKey: 'mixed',
+        },
+      },
+    });
+
+    expect(empty).toEqual({
+      kind: 'skipped',
+      result: { status: 'completed', message: 'skipped: bufferIds is empty' },
+    });
+    expect(invalid).toEqual({
+      kind: 'skipped',
+      result: {
+        status: 'failed',
+        errorMessage: 'tileEmit task input requires non-empty canonical bufferIds',
+      },
+    });
   });
 });
