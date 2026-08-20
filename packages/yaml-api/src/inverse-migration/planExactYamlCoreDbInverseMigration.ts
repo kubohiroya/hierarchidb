@@ -6,15 +6,18 @@ import { yamlCoreDbInverseMigrationGuards } from './yamlCoreDbInverseMigrationGu
 import type {
   PlanExactYamlCoreDbInverseMigrationInput,
   PlanExactYamlCoreDbInverseMigrationResult,
+  YamlCoreDbExactHostSplitLegacyInverseMigrationEntry,
   YamlCoreDbExactInverseMigrationEntry,
   YamlCoreDbExactInverseMigrationJournalGuard,
   YamlCoreDbExactInverseMigrationPlanEntry,
+  YamlCoreDbExactLegacyWithNameInverseMigrationEntry,
   YamlCoreDbInverseMigrationError,
   YamlCoreDbInverseMigrationSlot,
 } from './yamlCoreDbInverseMigrationTypes.js';
 
 const {
   compareNodeSlot,
+  createFrozenHostSplitLegacyPayload,
   createFrozenLegacyPayload,
   createInverseError,
   createInverseInputError,
@@ -35,6 +38,7 @@ const JOURNAL_KEYS = new Set<PropertyKey>([
   'toCoreDbVersion',
   'nodeId',
   'slot',
+  'preimageRepresentation',
   'legacyName',
   'canonicalPostimageDigest',
 ]);
@@ -67,6 +71,7 @@ type JournalField =
   | 'toCoreDbVersion'
   | 'nodeId'
   | 'slot'
+  | 'preimageRepresentation'
   | 'legacyName'
   | 'canonicalPostimageDigest';
 
@@ -233,6 +238,13 @@ function inspectExactJournal(
         accessibleNodeId,
         entryErrors
       );
+      const preimageRepresentation = readJournalDataProperty(
+        rawJournal,
+        'preimageRepresentation',
+        sourceIndex,
+        accessibleNodeId,
+        entryErrors
+      );
       const legacyName = readJournalDataProperty(
         rawJournal,
         'legacyName',
@@ -294,6 +306,15 @@ function inspectExactJournal(
         errors.push(journalFieldError(sourceIndex, accessibleNodeId, 'slot', 'invalid-type'));
         valid = false;
       }
+      if (
+        preimageRepresentation !== 'legacy-with-name' &&
+        preimageRepresentation !== 'host-split-legacy'
+      ) {
+        errors.push(
+          journalFieldError(sourceIndex, accessibleNodeId, 'preimageRepresentation', 'invalid-type')
+        );
+        valid = false;
+      }
       if (!isNonEmptyString(legacyName)) {
         errors.push(journalFieldError(sourceIndex, accessibleNodeId, 'legacyName', 'invalid-type'));
         valid = false;
@@ -344,6 +365,9 @@ function inspectExactJournal(
           toCoreDbVersion: validTo,
           nodeId: nodeId as string,
           slot: validSlot,
+          preimageRepresentation: preimageRepresentation as
+            | 'legacy-with-name'
+            | 'host-split-legacy',
           legacyName: legacyName as string,
           canonicalPostimageDigest: canonicalPostimageDigest as string,
         })
@@ -518,14 +542,33 @@ export async function planExactYamlCoreDbInverseMigration(
       );
       continue;
     }
-    const entry: YamlCoreDbExactInverseMigrationEntry = Object.freeze({
-      action: 'restore-exact-legacy',
-      nodeId: slot.nodeId,
-      slot: slot.slot,
-      preimage: slot.payload,
-      postimage: createFrozenLegacyPayload(guard.legacyName, slot.payload),
-      expectedCanonicalPostimageDigest: guard.canonicalPostimageDigest,
-    });
+    let entry: YamlCoreDbExactInverseMigrationEntry;
+    if (guard.preimageRepresentation === 'legacy-with-name') {
+      const legacyWithNameEntry: YamlCoreDbExactLegacyWithNameInverseMigrationEntry = Object.freeze(
+        {
+          action: 'restore-exact-legacy',
+          nodeId: slot.nodeId,
+          slot: slot.slot,
+          preimageRepresentation: guard.preimageRepresentation,
+          preimage: slot.payload,
+          postimage: createFrozenLegacyPayload(guard.legacyName, slot.payload),
+          expectedCanonicalPostimageDigest: guard.canonicalPostimageDigest,
+        }
+      );
+      entry = legacyWithNameEntry;
+    } else {
+      const hostSplitLegacyEntry: YamlCoreDbExactHostSplitLegacyInverseMigrationEntry =
+        Object.freeze({
+          action: 'restore-exact-legacy',
+          nodeId: slot.nodeId,
+          slot: slot.slot,
+          preimageRepresentation: guard.preimageRepresentation,
+          preimage: slot.payload,
+          postimage: createFrozenHostSplitLegacyPayload(slot.payload),
+          expectedCanonicalPostimageDigest: guard.canonicalPostimageDigest,
+        });
+      entry = hostSplitLegacyEntry;
+    }
     entries.push(entry);
   }
 

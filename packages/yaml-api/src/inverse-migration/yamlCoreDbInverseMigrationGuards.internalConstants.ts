@@ -9,6 +9,7 @@ import type {
   YamlCoreDbInverseMigrationNodeGuard,
   YamlCoreDbInverseMigrationSlot,
   YamlCoreDbInverseMigrationValidatedNoop,
+  YamlHostSplitLegacyInverseMigrationPayload,
   YamlLegacyInverseMigrationPayload,
 } from './yamlCoreDbInverseMigrationTypes.js';
 
@@ -235,6 +236,12 @@ function createFrozenLegacyPayload(
   payload: YamlCanonicalInverseMigrationPayload
 ): YamlLegacyInverseMigrationPayload {
   return Object.freeze({ name, schemaId: payload.schemaId, content: payload.content });
+}
+
+function createFrozenHostSplitLegacyPayload(
+  payload: YamlCanonicalInverseMigrationPayload
+): YamlHostSplitLegacyInverseMigrationPayload {
+  return Object.freeze({ schemaId: payload.schemaId, content: payload.content });
 }
 
 function freezeValidatedNoop(
@@ -717,6 +724,7 @@ function inspectYamlCoreDbInverseNodes(rawNodes: unknown): InspectYamlInverseNod
 
 export const yamlCoreDbInverseMigrationGuards = Object.freeze({
   compareNodeSlot,
+  createFrozenHostSplitLegacyPayload,
   createFrozenLegacyPayload,
   createInverseError,
   createInverseInputError,

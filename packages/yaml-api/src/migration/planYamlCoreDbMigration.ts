@@ -9,26 +9,44 @@ import {
 } from './validateYamlCoreDbMigrationSlot.js';
 import type {
   YamlCanonicalMigrationPayload,
+  YamlCoreDbHostSplitLegacyMigrateEntry,
+  YamlCoreDbLegacyWithNameMigrateEntry,
   YamlCoreDbMigrateEntry,
   YamlCoreDbMigrationError,
   YamlCoreDbMigrationInput,
+  YamlCoreDbMigrationJournalValue,
   YamlCoreDbMigrationNodeGuard,
   YamlCoreDbMigrationPlanEntry,
   YamlCoreDbMigrationResult,
   YamlCoreDbMigrationSlot,
   YamlCoreDbValidatedNoopEntry,
+  YamlHostSplitLegacyMigrationPayload,
   YamlLegacyMigrationPayload,
 } from './yamlCoreDbMigrationTypes.js';
 
-interface PendingMigrationEntry {
+interface PendingMigrationEntryBase {
   readonly action: 'migrate';
   readonly sourceIndex: number;
   readonly nodeId: string;
   readonly slot: YamlCoreDbMigrationSlot;
   readonly filename: string;
-  readonly preimage: YamlLegacyMigrationPayload;
+  readonly legacyName: string;
   readonly postimage: YamlCanonicalMigrationPayload;
 }
+
+interface PendingLegacyWithNameMigrationEntry extends PendingMigrationEntryBase {
+  readonly preimageRepresentation: 'legacy-with-name';
+  readonly preimage: YamlLegacyMigrationPayload;
+}
+
+interface PendingHostSplitLegacyMigrationEntry extends PendingMigrationEntryBase {
+  readonly preimageRepresentation: 'host-split-legacy';
+  readonly preimage: YamlHostSplitLegacyMigrationPayload;
+}
+
+type PendingMigrationEntry =
+  | PendingLegacyWithNameMigrationEntry
+  | PendingHostSplitLegacyMigrationEntry;
 
 type PendingPlanEntry = PendingMigrationEntry | YamlCoreDbValidatedNoopEntry;
 
@@ -209,13 +227,29 @@ function addValidatedSlot(
     });
     return true;
   }
+  if (result.value.classification === 'host-split-legacy') {
+    pendingEntries.push({
+      action: 'migrate',
+      sourceIndex,
+      nodeId,
+      slot,
+      filename: metadataName,
+      preimageRepresentation: 'host-split-legacy',
+      preimage: result.value.preimage,
+      legacyName: result.value.legacyName,
+      postimage: result.value.postimage,
+    });
+    return true;
+  }
   pendingEntries.push({
     action: 'migrate',
     sourceIndex,
     nodeId,
     slot,
     filename: metadataName,
+    preimageRepresentation: 'legacy-with-name',
     preimage: result.value.preimage,
+    legacyName: result.value.preimage.name,
     postimage: result.value.postimage,
   });
   return true;
@@ -547,24 +581,41 @@ export async function planYamlCoreDbMigration(
         pendingEntry.postimage,
         input.digestSha256Hex
       );
-      const migratedEntry: YamlCoreDbMigrateEntry = {
-        action: 'migrate',
+      const journalValue: YamlCoreDbMigrationJournalValue = {
+        migrationId: input.migrationId,
+        fromCoreDbVersion: input.fromCoreDbVersion,
+        toCoreDbVersion: input.toCoreDbVersion,
         nodeId: pendingEntry.nodeId,
         slot: pendingEntry.slot,
-        preimage: pendingEntry.preimage,
-        postimage: pendingEntry.postimage,
-        legacyName: pendingEntry.preimage.name,
+        preimageRepresentation: pendingEntry.preimageRepresentation,
+        legacyName: pendingEntry.legacyName,
         canonicalPostimageDigest,
-        journalValue: {
-          migrationId: input.migrationId,
-          fromCoreDbVersion: input.fromCoreDbVersion,
-          toCoreDbVersion: input.toCoreDbVersion,
-          nodeId: pendingEntry.nodeId,
-          slot: pendingEntry.slot,
-          legacyName: pendingEntry.preimage.name,
-          canonicalPostimageDigest,
-        },
       };
+      const commonEntry = {
+        action: 'migrate' as const,
+        nodeId: pendingEntry.nodeId,
+        slot: pendingEntry.slot,
+        postimage: pendingEntry.postimage,
+        legacyName: pendingEntry.legacyName,
+        canonicalPostimageDigest,
+        journalValue,
+      };
+      let migratedEntry: YamlCoreDbMigrateEntry;
+      if (pendingEntry.preimageRepresentation === 'legacy-with-name') {
+        const legacyWithNameEntry: YamlCoreDbLegacyWithNameMigrateEntry = {
+          ...commonEntry,
+          preimageRepresentation: pendingEntry.preimageRepresentation,
+          preimage: pendingEntry.preimage,
+        };
+        migratedEntry = legacyWithNameEntry;
+      } else {
+        const hostSplitLegacyEntry: YamlCoreDbHostSplitLegacyMigrateEntry = {
+          ...commonEntry,
+          preimageRepresentation: pendingEntry.preimageRepresentation,
+          preimage: pendingEntry.preimage,
+        };
+        migratedEntry = hostSplitLegacyEntry;
+      }
       entries.push(migratedEntry);
     } catch (error) {
       const code =

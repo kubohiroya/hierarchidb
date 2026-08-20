@@ -58,6 +58,21 @@ function canonicalNode(id: string, subtype: YamlSubtype): Readonly<Record<string
   };
 }
 
+function hostSplitLegacyNode(id: string, subtype: YamlSubtype): Readonly<Record<string, unknown>> {
+  const entry = YAML_SUBTYPE_REGISTRY[subtype];
+  return {
+    id,
+    version: 1,
+    nodeType: 'yaml-file',
+    metadata: { name: entry.fileName },
+    draftMetadata: null,
+    data: {
+      schemaId: entry.schemaId,
+      content: VALID_CONTENT[subtype],
+    },
+  };
+}
+
 function createInput(
   rawNodes: readonly unknown[],
   digestSha256Hex: (bytes: Uint8Array) => Promise<string> = async () => VALID_DIGEST
@@ -103,6 +118,7 @@ describe('planYamlCoreDbMigration registry and plan contract', () => {
       if (registryEntry === undefined) continue;
       const expectedSubtype = registryEntry.subtype;
       expect(entry.slot).toBe('committed');
+      expect(entry.preimageRepresentation).toBe('legacy-with-name');
       expect(entry.preimage).toEqual({
         name: registryEntry.fileName,
         schemaId: registryEntry.schemaId,
@@ -119,6 +135,47 @@ describe('planYamlCoreDbMigration registry and plan contract', () => {
         toCoreDbVersion: 2,
         nodeId: entry.nodeId,
         slot: 'committed',
+        preimageRepresentation: 'legacy-with-name',
+        legacyName: registryEntry.fileName,
+        canonicalPostimageDigest: VALID_DIGEST,
+      });
+    }
+  });
+
+  it('plans exact host-split legacy migrations for all 12 subtypes', async () => {
+    const rawNodes = Object.values(YAML_SUBTYPE_REGISTRY).map((entry) =>
+      hostSplitLegacyNode(`host-split-${entry.subtype}`, entry.subtype)
+    );
+
+    const plan = expectPlan(await planYamlCoreDbMigration(createInput(rawNodes)));
+
+    expect(plan.entries).toHaveLength(12);
+    for (const entry of plan.entries) {
+      expect(entry.action).toBe('migrate');
+      if (entry.action !== 'migrate') continue;
+      const registryEntry = Object.values(YAML_SUBTYPE_REGISTRY).find(
+        (candidate) => entry.nodeId === `host-split-${candidate.subtype}`
+      );
+      expect(registryEntry).toBeDefined();
+      if (registryEntry === undefined) continue;
+      expect(entry.preimageRepresentation).toBe('host-split-legacy');
+      expect(entry.preimage).toEqual({
+        schemaId: registryEntry.schemaId,
+        content: VALID_CONTENT[registryEntry.subtype],
+      });
+      expect(entry.legacyName).toBe(registryEntry.fileName);
+      expect(entry.postimage).toEqual({
+        subtype: registryEntry.subtype,
+        schemaId: registryEntry.schemaId,
+        content: VALID_CONTENT[registryEntry.subtype],
+      });
+      expect(entry.journalValue).toEqual({
+        migrationId: 'yaml-v1-to-v2',
+        fromCoreDbVersion: 1,
+        toCoreDbVersion: 2,
+        nodeId: entry.nodeId,
+        slot: 'committed',
+        preimageRepresentation: 'host-split-legacy',
         legacyName: registryEntry.fileName,
         canonicalPostimageDigest: VALID_DIGEST,
       });
@@ -181,6 +238,52 @@ describe('planYamlCoreDbMigration slot decision table', () => {
     const plan = expectPlan(await planYamlCoreDbMigration(createInput([rawNode])));
     expect(plan.entries).toHaveLength(1);
     expect(plan.entries[0]).toMatchObject({ action: 'migrate', slot: 'draft' });
+  });
+
+  it('migrates an exact host-split draft without reading the committed metadata name', async () => {
+    const entry = YAML_SUBTYPE_REGISTRY.git;
+    const rawNode = {
+      id: 'host-split-draft-only',
+      version: 1,
+      nodeType: 'yaml-file',
+      metadata: { name: 'scenario.yml' },
+      draftMetadata: { name: entry.fileName },
+      draftData: {
+        schemaId: entry.schemaId,
+        content: VALID_CONTENT.git,
+      },
+    };
+
+    const plan = expectPlan(await planYamlCoreDbMigration(createInput([rawNode])));
+    expect(plan.entries).toEqual([
+      {
+        action: 'migrate',
+        nodeId: 'host-split-draft-only',
+        slot: 'draft',
+        preimageRepresentation: 'host-split-legacy',
+        preimage: {
+          schemaId: entry.schemaId,
+          content: VALID_CONTENT.git,
+        },
+        postimage: {
+          subtype: 'git',
+          schemaId: entry.schemaId,
+          content: VALID_CONTENT.git,
+        },
+        legacyName: entry.fileName,
+        canonicalPostimageDigest: VALID_DIGEST,
+        journalValue: {
+          migrationId: 'yaml-v1-to-v2',
+          fromCoreDbVersion: 1,
+          toCoreDbVersion: 2,
+          nodeId: 'host-split-draft-only',
+          slot: 'draft',
+          preimageRepresentation: 'host-split-legacy',
+          legacyName: entry.fileName,
+          canonicalPostimageDigest: VALID_DIGEST,
+        },
+      },
+    ]);
   });
 
   it('accepts only the exact temporary empty placeholder as a no-op', async () => {
@@ -302,11 +405,7 @@ describe('planYamlCoreDbMigration strict payload and content validation', () => 
       },
       'MIXED_PAYLOAD',
     ],
-    [
-      'missing selector',
-      { schemaId: 'ide-gsm/scenario', content: 'name: demo\n' },
-      'INCOMPLETE_PAYLOAD',
-    ],
+    ['partial host-split payload', { schemaId: 'ide-gsm/scenario' }, 'INCOMPLETE_PAYLOAD'],
     [
       'unknown field',
       { name: 'scenario.yml', schemaId: 'ide-gsm/scenario', content: 'name: demo\n', extra: true },

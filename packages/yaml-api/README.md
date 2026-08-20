@@ -34,7 +34,7 @@ Storage migration, `metadata.name` cutover, ZIP import/export, and UI integratio
 
 The facade rejects legacy, mixed, incomplete, unknown, accessor-backed, and non-plain payloads. It parses YAML 1.2 as exactly one plain mapping and applies strict Ajv validation without coercion, defaults, property removal, or undeclared schema constraints. Stable errors contain only safe codes and field/reason context; raw payloads, YAML content, parser details, and thrown getter or proxy messages are never returned.
 
-The neutral implementation remains package-internal. The migration subpath uses an internal adapter over the same kernel so its existing legacy classification, error precedence, ordering, and redaction remain unchanged. The package root does not re-export validation or inverse migration and does not load Ajv, YAML, migration, validation, or inverse-migration modules.
+The neutral implementation remains package-internal. The migration subpath uses an internal adapter over the same kernel for strict legacy-with-name, host-split-legacy, and canonical classification while preserving error precedence, ordering, and redaction. The canonical-only facade still rejects host-split payloads. The package root does not re-export validation or inverse migration and does not load Ajv, YAML, migration, validation, or inverse-migration modules.
 
 ## Storage authority and migration boundary
 
@@ -44,7 +44,7 @@ The canonical storage contract is defined in [`docs/yaml-plugin-ide-gsm-step4-sp
 - CoreDB `TreeNode.draftMetadata/draftData` is the only authoritative draft store.
 - The independent YamlDB v1 is a frozen, non-authoritative legacy recovery source. It is not a cache or a dual-write target.
 - CoreDB migration and YamlDB inventory/recovery use separate atomic boundaries because they are separate IndexedDB databases.
-- Missing legacy names, empty schema IDs, unknown tuples, and conflicts are reported as errors. Consumers must not infer or supply contract values.
+- A missing legacy name is accepted only for the exact historical host-split payload with own data keys `schemaId` and `content`, validated against the corresponding metadata name and one registry entry. Partial payloads, empty schema IDs, unknown tuples, and conflicts are errors; consumers must not apply a general metadata fallback.
 
 The current `YamlFileNodeData` type remains a legacy runtime shape until the coordinated writer and storage migration issues cut over all consumers. Its presence does not make YamlDB authoritative.
 
@@ -58,11 +58,13 @@ Each raw candidate must expose its node version as an own data property containi
 
 YAML content validation uses the constraints declared by the current `YAML_SCHEMAS` revision with strict Ajv options. It does not add undeclared required properties or a global `additionalProperties: false` rule. The explicit strictness of the `rsync.yml` and `git.yml` schemas remains authoritative.
 
+Migration mode accepts the exact historical `{ schemaId, content }` host-split payload in addition to legacy-with-name and canonical payloads. It does not accept `{ schemaId }`, missing content, extra or symbol keys, accessors, or ambiguous registry matches. Each migrate entry and journal value carries `preimageRepresentation: legacy-with-name | host-split-legacy`; `legacyName` is the validated payload/metadata name for legacy-with-name and the validated metadata name for host-split-legacy.
+
 ## Dormant inverse migration planners
 
 `@hierarchidb/yaml-api/inverse-migration` is a separate pure, dormant export entry. It exposes `planExactYamlCoreDbInverseMigration` and `planReleaseYamlCoreDbInverseMigration` as separate functions and types; there is no generic mode, default publication assumption, or exact-to-release fallback. The entry is not connected to CoreDB, Dexie, YamlDB, workers, feature flags, production readers, or writers.
 
-Exact planning requires the explicit `canonical-writer-never-published` literal, the complete raw node and forward-journal snapshots, and the forward planner's SHA-256 digest port. It strictly validates the journal cohort, compound keys, node/slot presence, legacy name, and recomputed canonical postimage digest, and restores only journaled slots. Release planning requires explicit `canonical-writer-published-or-unknown`, does not use a journal, and restores every present slot only after all slots pass canonical validation. Both planners preserve `schemaId` and `content` byte-for-byte and derive legacy names only from the validated exact journal or the corresponding release metadata.
+Exact planning requires the explicit `canonical-writer-never-published` literal, the complete raw node and forward-journal snapshots, and the forward planner's SHA-256 digest port. It strictly validates the journal cohort, compound keys, node/slot presence, preimage representation, legacy name, and recomputed canonical postimage digest, and restores only journaled slots. A `legacy-with-name` entry restores exact `{ name, schemaId, content }`; a `host-split-legacy` entry restores exact `{ schemaId, content }` without adding `name`. Release planning requires explicit `canonical-writer-published-or-unknown`, does not use a journal, and restores every present slot to legacy-with-name only after all slots pass canonical validation. Both planners preserve `schemaId` and `content` byte-for-byte.
 
 Inputs and raw snapshots are inspected through own data descriptors without running getters. Unsafe, incomplete, extra, symbol-backed, accessor-backed, duplicate, non-plain, or reflection-failing values are rejected. Success returns a deeply immutable, deterministic complete plan with node guards and, for exact planning, journal guards. Any failure returns only redacted code/context errors and no partial entries or guards.
 

@@ -67,7 +67,8 @@ export function legacyNode(id: string, subtype: YamlSubtype): Readonly<Record<st
 export function exactJournal(
   nodeId: string,
   slot: YamlCoreDbInverseMigrationSlot = 'committed',
-  legacyName = 'scenario.yml'
+  legacyName = 'scenario.yml',
+  preimageRepresentation: 'legacy-with-name' | 'host-split-legacy' = 'legacy-with-name'
 ): Readonly<Record<string, unknown>> {
   return {
     migrationId: 'yaml-v1-to-v2',
@@ -75,6 +76,7 @@ export function exactJournal(
     toCoreDbVersion: 2,
     nodeId,
     slot,
+    preimageRepresentation,
     legacyName,
     canonicalPostimageDigest: VALID_DIGEST,
   };

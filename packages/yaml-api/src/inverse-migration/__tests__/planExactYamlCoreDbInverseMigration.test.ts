@@ -40,6 +40,7 @@ describe('planExactYamlCoreDbInverseMigration success contract', () => {
         toCoreDbVersion: 2,
         nodeId: 'z-node',
         slot: 'committed',
+        preimageRepresentation: 'legacy-with-name',
         legacyName: 'scenario.yml',
         canonicalPostimageDigest: VALID_DIGEST,
       },
@@ -55,6 +56,7 @@ describe('planExactYamlCoreDbInverseMigration success contract', () => {
         action: 'restore-exact-legacy',
         nodeId: 'z-node',
         slot: 'committed',
+        preimageRepresentation: 'legacy-with-name',
         preimage: {
           subtype: 'scenario',
           schemaId: 'ide-gsm/scenario',
@@ -62,6 +64,41 @@ describe('planExactYamlCoreDbInverseMigration success contract', () => {
         },
         postimage: {
           name: 'scenario.yml',
+          schemaId: 'ide-gsm/scenario',
+          content: VALID_CONTENT.scenario,
+        },
+        expectedCanonicalPostimageDigest: VALID_DIGEST,
+      },
+    ]);
+  });
+
+  it('restores an exact host-split legacy preimage without adding name', async () => {
+    const plan = expectExactPlan(
+      await planExactYamlCoreDbInverseMigration(
+        exactInput({
+          rawJournalEntries: [
+            exactJournal('scenario-node', 'committed', 'scenario.yml', 'host-split-legacy'),
+          ],
+        })
+      )
+    );
+
+    expect(plan.journalGuards[0]).toMatchObject({
+      preimageRepresentation: 'host-split-legacy',
+      legacyName: 'scenario.yml',
+    });
+    expect(plan.entries).toEqual([
+      {
+        action: 'restore-exact-legacy',
+        nodeId: 'scenario-node',
+        slot: 'committed',
+        preimageRepresentation: 'host-split-legacy',
+        preimage: {
+          subtype: 'scenario',
+          schemaId: 'ide-gsm/scenario',
+          content: VALID_CONTENT.scenario,
+        },
+        postimage: {
           schemaId: 'ide-gsm/scenario',
           content: VALID_CONTENT.scenario,
         },
@@ -170,6 +207,11 @@ describe('planExactYamlCoreDbInverseMigration journal contract', () => {
       'INVALID_JOURNAL_FIELD',
     ],
     [
+      'invalid preimage representation',
+      [{ ...exactJournal('scenario-node'), preimageRepresentation: 'unknown' }],
+      'INVALID_JOURNAL_FIELD',
+    ],
+    [
       'unknown field',
       [{ ...exactJournal('scenario-node'), secret: 'must-not-pass' }],
       'INVALID_RAW_JOURNAL_ENTRY',
@@ -184,6 +226,7 @@ describe('planExactYamlCoreDbInverseMigration journal contract', () => {
           nodeId: 'scenario-node',
           slot: 'committed',
           legacyName: 'scenario.yml',
+          canonicalPostimageDigest: VALID_DIGEST,
         },
       ],
       'INVALID_RAW_JOURNAL_ENTRY',
