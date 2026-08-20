@@ -1,1 +1,0 @@
-import"./vendor-react-DKKM8Ty3.js";import{yi as e}from"./index.js";const t=e;var n=t;export{t as StylerPluginIcon,n as default};

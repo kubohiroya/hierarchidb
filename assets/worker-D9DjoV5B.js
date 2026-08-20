@@ -1,0 +1,1 @@
+import{xs as e}from"./index.js";async function t(t={}){t.signal?.aborted||e()}export{t as registerYamlWorkerStores};
