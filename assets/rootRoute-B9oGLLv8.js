@@ -1,1 +1,0 @@
-import"./vendor-react-348d4Zyy.js";import"./uiPluginLoaderUtils-5ZffU_CW.js";import{t as e}from"./rootRoute-CNIOvkcu.js";export{e as rootRoute};

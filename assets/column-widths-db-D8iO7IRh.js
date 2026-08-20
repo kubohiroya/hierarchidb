@@ -1,1 +1,0 @@
-import{i as e,t}from"./properties-db-D423ap7c.js";export{t as getColumnWidths,e as saveColumnWidths};

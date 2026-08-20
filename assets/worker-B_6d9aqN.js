@@ -1,0 +1,2 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/locationEntitiesDB-CF6K_u2G.js","assets/index.js","assets/originCoordinatorValidatorUtils-BBabyZU5.js","assets/vendor-react-DKKM8Ty3.js","assets/rolldown-runtime-CbIIB0ob.js"])))=>i.map(i=>d[i]);
+import{cs as e}from"./index.js";async function t(e={}){e.signal?.aborted}async function n(){try{return await e(()=>import(`./locationEntitiesDB-CF6K_u2G.js`),__vite__mapDeps([0,1,2,3,4]))}catch{return null}}export{n as loadLocationEntitiesDbModule,t as registerLocationWorkerStores};

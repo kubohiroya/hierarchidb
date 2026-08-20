@@ -1,0 +1,1 @@
+import"./flatgeobuf-CCdtbkJ7.js";import{a as e,c as t}from"./src-hhIxXIsN.js";var n=e=>({taskId:e.taskId,version:e.version,stage:e.stage,status:e.status,progress:e.progress,metadata:e.metadata});async function r(r){return(await t(new e,r)).map(n)}const i=async()=>{};var a=i;export{a as default,r as getBuildTasks,i as registerRouteWorkerStores};

@@ -1,0 +1,1 @@
+import{n as e}from"../shared-worker.js";export{e as EntityLifecycleManager};

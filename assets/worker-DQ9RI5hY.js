@@ -1,0 +1,1 @@
+import{X as e}from"../shared-worker.js";async function t(t={}){t.signal?.aborted||e()}export{t as registerYamlWorkerStores};

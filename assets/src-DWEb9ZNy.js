@@ -1,1 +1,0 @@
-import{_r as e,cr as t,gr as n,hr as r,lr as i,ur as a}from"./index.js";export{t as authFetch};

@@ -1,1 +1,0 @@
-import{Cs as e,es as t}from"./index.js";var n=class extends t{nodes;constructor(){super(e(`yaml`)),this.version(1).stores({nodes:`&nodeId, parentId`}),this.nodes=this.table(`nodes`)}},r=null;function i(){return r||=new n,r}async function a(e={}){e.signal?.aborted||i()}export{a as registerYamlWorkerStores};

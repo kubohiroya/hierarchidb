@@ -1,0 +1,1 @@
+import"./vendor-react-DKKM8Ty3.js";import{Bi as e}from"./index.js";const t=e;var n=t;export{t as SpreadsheetPluginIcon,n as default};
