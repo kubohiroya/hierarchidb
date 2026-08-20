@@ -1,6 +1,9 @@
 import type { FeatureCollection, GeoJsonProperties, Geometry } from 'geojson';
 import type { Tile } from 'geojson-vt';
+
 import type vtPbfNS = require('@maplibre/vt-pbf');
+
+type VtPbfLayerMap = Parameters<typeof vtPbfNS.fromGeojsonVt>[0];
 
 export type VectorTileFormat = 'mvt' | 'pbf' | 'geojson';
 
@@ -26,11 +29,13 @@ const loadVtPbf = async (): Promise<typeof vtPbfNS> => {
  */
 export async function encodeMvtFromGeojsonVt(
   layers: Record<string, Tile>,
-  options: EncodeMvtOptions = {},
+  options: EncodeMvtOptions = {}
 ): Promise<Uint8Array> {
   const vtpbf = await loadVtPbf();
   const version = options.version ?? 2;
-  const pbf = vtpbf.fromGeojsonVt(layers as any, {
+  // @types/geojson-vt flattens non-point geometry compared with geojson-vt's runtime output.
+  // Isolate that external typing gap at the vt-pbf boundary without weakening either public API.
+  const pbf = vtpbf.fromGeojsonVt(layers as unknown as VtPbfLayerMap, {
     version,
     extent: 4096,
   });
