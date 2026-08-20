@@ -136,10 +136,10 @@ wrangler tail --format pretty | grep -E "error|Error|ERROR"
    ```javascript
    // ブラウザのコンソールで実行
    // LocalStorageのJWTトークン確認
-   console.log(localStorage.getItem('auth_token'));
+   console.log(localStorage.getItem('access_token'));
    
    // トークンのデコード（JWTの内容確認）
-   const token = localStorage.getItem('auth_token');
+   const token = localStorage.getItem('access_token');
    if (token) {
      const payload = JSON.parse(atob(token.split('.')[1]));
      console.log('Token payload:', payload);
@@ -208,7 +208,7 @@ curl -H "Authorization: Bearer invalid-token" \
 // ブラウザコンソールで実行
 // 古いトークンをセット（テスト用）
 const expiredToken = "eyJ..."; // 期限切れのトークン
-localStorage.setItem('auth_token', expiredToken);
+localStorage.setItem('access_token', expiredToken);
 
 // APIコール実行
 fetch('https://hierarchidb-bff.kubohiroya.workers.dev/auth/userinfo', {
@@ -246,18 +246,54 @@ wait
 # すべて正常に応答することを確認
 ```
 
-## 9. KVストレージの確認（設定している場合）
+## 9. session modeと `AUTH_KV` の確認
+
+最初に対象環境の `AUTH_SESSION_MODE` と `SESSION_DURATION_HOURS` を確認する。両方とも必須であり、
+checked-in設定の期限は4時間である。現行BFFが `persistent` modeの認証sessionに使用するbindingは
+`AUTH_KV` だけである。旧文書の `RATE_LIMIT_KV`、`AUDIT_LOG_KV`、`SESSION_KV` は対象ではない。
 
 ```bash
-# レート制限データの確認
-wrangler kv:key list --namespace-id=your-rate-limit-kv-id
+cd packages/backend/bff
 
-# 監査ログの確認
-wrangler kv:key list --namespace-id=your-audit-log-kv-id
+# persistentの場合だけCloudflare account内にnamespaceが存在することを確認
+pnpm exec wrangler kv namespace list
 
-# セッションデータの確認
-wrangler kv:key list --namespace-id=your-session-kv-id
+# production bindingを解決できることをdeploy前に確認
+pnpm exec wrangler deploy --dry-run \
+  --config wrangler.hierarchidb.toml \
+  --env production
 ```
+
+`persistent` のデプロイ後は次を順に確認する。
+
+1. 新規loginが `session_mode=persistent` と `refresh_token_id` を返し、警告が表示されない。
+2. token refreshが成功する。
+3. revokeが成功する。
+4. revoke済みsessionのrefreshが `Session not found` で失敗する。
+5. Workerログに `AUTH_KV is not configured` またはKV read/write/delete失敗がない。
+
+`persistent` で未bindingまたはKVエラーを意図的に検証する場合の期待結果は次のとおり。
+
+| 操作 | 期待結果 |
+| --- | --- |
+| login/token exchange | `session_mode=stateless` の短命tokenと `operation=login`、`action=none` の警告を返す |
+| refresh | HTTP 503と `operation=refresh`、`action=relogin` の警告を返す |
+| revoke | HTTP 2xxのローカル完了と `operation=revoke`、`action=none` の警告を返す |
+| logout | HTTP 2xxのローカル完了と `operation=logout`、`action=none` の警告を返す |
+
+quota超過とその他のKV障害は、どちらも `reason=kv_error` になる。quota上限とreset条件は
+Cloudflareの契約planおよび管理画面で確認し、この文書の固定値を根拠にしない。
+
+`stateless` のデプロイ後は次を確認する。
+
+1. 新規loginが `session_mode=stateless` を返し、`refresh_token_id` とKV警告を含まない。
+2. BFFとUIが `AUTH_KV` を参照せず、token期限の5分前にも `/auth/refresh` を呼ばない。
+3. token期限切れ時にlocal sessionが削除され、次の認証時にloginをやり直せる。
+4. `/auth/refresh` を直接呼ぶとHTTP 401 `reauthentication_required` が警告なしで返る。
+5. revoke/logoutがローカル完了し、KV警告を返さない。
+
+key一覧の確認が必要な場合は、[BFF `AUTH_KV` 運用仕様](./auth-kv-operations.md)の機密情報に関する
+注意事項とロールバック手順に従う。
 
 ## 10. 包括的な検証スクリプト
 

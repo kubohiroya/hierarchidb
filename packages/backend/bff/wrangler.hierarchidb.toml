@@ -11,7 +11,8 @@ compatibility_date = "2025-06-28"
 [vars]
 # JWT Configuration
 JWT_ISSUER = "hierarchidb-bff"
-SESSION_DURATION_HOURS = "48"
+AUTH_SESSION_MODE = "stateless"
+SESSION_DURATION_HOURS = "4"
 
 # ================================================================
 # CORS Configuration - すべてのデプロイ先を許可
@@ -63,7 +64,8 @@ name = "hierarchidb-bff"
 [env.production.vars]
 ENVIRONMENT = "production"
 JWT_ISSUER = "hierarchidb-bff"
-SESSION_DURATION_HOURS = "48"
+AUTH_SESSION_MODE = "persistent"
+SESSION_DURATION_HOURS = "4"
 ALLOWED_ORIGINS = """
 https://kubohiroya.github.io,
 https://hierarchidb.vercel.app,
@@ -88,26 +90,9 @@ GITHUB_CLIENT_ID = "YOUR_HIERARCHIDB_GITHUB_CLIENT_ID"
 binding = "AUTH_KV"
 id = "da78bdafc3754499b4041d92c90202b9"
 preview_id = "b3eae729f09f4425aa037e7c446da353"
-# ================================================================
-# KV Namespaces（必要に応じて作成）
-# ================================================================
-# レート制限用KV
-# wrangler kv:namespace create "RATE_LIMIT"
-# [[kv_namespaces]]
-# binding = "RATE_LIMIT_KV"
-# id = "your-rate-limit-kv-id"
-
-# 監査ログ用KV
-# wrangler kv:namespace create "AUDIT_LOG"
-# [[kv_namespaces]]
-# binding = "AUDIT_LOG_KV"
-# id = "your-audit-log-kv-id"
-
-# セッション管理用KV
-# wrangler kv:namespace create "SESSION"
-# [[kv_namespaces]]
-# binding = "SESSION_KV"
-# id = "your-session-kv-id"
+# `AUTH_KV` is the only KV binding used by the current authentication implementation.
+# Provisioning, verification, and rollback:
+# docs/auth-kv-operations.md
 
 # ================================================================
 # Development environment（開発環境設定）
@@ -118,7 +103,20 @@ name = "hierarchidb-bff-dev"
 [env.development.vars]
 ENVIRONMENT = "development"
 JWT_ISSUER = "hierarchidb-bff-dev"
-SESSION_DURATION_HOURS = "48"
+AUTH_SESSION_MODE = "stateless"
+SESSION_DURATION_HOURS = "4"
+REDIRECT_URI = "https://hierarchidb-bff-dev.kubohiroya.workers.dev/auth/callback"
+GITHUB_REDIRECT_URI = "https://hierarchidb-bff-dev.kubohiroya.workers.dev/auth/github/callback"
+APP_BASE_URLS = """
+http://localhost:3000,
+http://localhost:4200,
+http://localhost:5173,
+http://127.0.0.1:3000,
+http://127.0.0.1:4200,
+http://127.0.0.1:5173
+"""
+GOOGLE_CLIENT_ID = "116194448043-hesk0hio07cec1qdgm510kurefh0gh61.apps.googleusercontent.com"
+GITHUB_CLIENT_ID = "YOUR_HIERARCHIDB_GITHUB_CLIENT_ID"
 
 # 開発環境のみlocalhost許可
 ALLOWED_ORIGINS = """

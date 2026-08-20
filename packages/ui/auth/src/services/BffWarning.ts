@@ -11,16 +11,23 @@ export type BffWarning = {
 
 export const BFF_WARNING_EVENT = 'hierarchidb:bff-warning';
 
-const isString = (value: unknown): value is string => typeof value === 'string';
+const isBffWarningOperation = (value: unknown): value is BffWarningOperation =>
+  value === 'login' || value === 'refresh' || value === 'revoke' || value === 'logout';
+
+const isBffWarningAction = (value: unknown): value is BffWarningAction =>
+  value === 'none' || value === 'relogin';
+
+const isBffWarningReason = (value: unknown): value is BffWarningReason =>
+  value === 'missing_kv' || value === 'kv_error';
 
 export const isBffWarning = (value: unknown): value is BffWarning => {
   if (!value || typeof value !== 'object') return false;
-  const candidate = value as BffWarning;
+  const candidate = value as Record<string, unknown>;
   return (
     candidate.code === 'kv_unavailable' &&
-    isString(candidate.operation) &&
-    isString(candidate.action) &&
-    isString(candidate.reason)
+    isBffWarningOperation(candidate.operation) &&
+    isBffWarningAction(candidate.action) &&
+    isBffWarningReason(candidate.reason)
   );
 };
 

@@ -1,6 +1,14 @@
-import { Alert, Dialog, DialogActions, DialogContent, DialogTitle, Button, Typography } from '@mui/material';
-import type React from 'react';
 import { useTranslation } from '@hierarchidb/ui-i18n';
+import {
+  Alert,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Typography,
+} from '@mui/material';
+import type React from 'react';
 import { useBffKvWarningDialogView } from './useBffKvWarningDialogView.js';
 
 export const BffKvWarningDialog: React.FC = () => {
@@ -15,7 +23,7 @@ export const BffKvWarningDialog: React.FC = () => {
           <Typography variant="body2">
             {t(
               'auth.kvFallback.summary',
-              'Server-side session storage is temporarily unavailable. Some authentication operations are limited.'
+              'Server-side session storage is unavailable. Some authentication operations are limited.'
             )}
           </Typography>
         </Alert>
@@ -26,15 +34,13 @@ export const BffKvWarningDialog: React.FC = () => {
         ) : null}
         <Typography variant="body2" color="text.secondary">
           {t(
-            'auth.kvFallback.resetNotice',
-            'This limitation resets daily (around 09:00 JST).'
+            'auth.kvFallback.recoveryNotice',
+            'Recovery depends on server configuration and Cloudflare service status. If refresh is unavailable, sign in again when prompted.'
           )}
         </Typography>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose}>
-          {t('auth.kvFallback.action', 'Close')}
-        </Button>
+        <Button onClick={handleClose}>{t('auth.kvFallback.action', 'Close')}</Button>
       </DialogActions>
     </Dialog>
   );

@@ -1,15 +1,3 @@
-import { type BffContext, getEnv } from '~/utils/env';
-import { createSessionToken } from '~/utils/jwt';
-import { KVStorageManager } from '~/utils/kv-storage';
-import { parseEnvInt } from '~/utils/number';
-import {
-  buildAppCallbackUrl,
-  getAppCallbackUrlFromState,
-  getDynamicRedirectUri,
-  validateRedirectUri,
-} from '~/utils/redirect-uri';
-import { StateManager } from '~/utils/state-manager';
-import { buildKvWarning, type KvWarning } from '~/utils/kv-warning';
 import {
   exchangeCodeForTokens as exchangeGitHubCodeForTokens,
   type GitHubOAuth2Config,
@@ -26,6 +14,18 @@ import {
   getMicrosoftUserInfo,
   type MicrosoftOAuth2Config,
 } from '~/auth/microsoft';
+import { type BffContext, getEnv } from '~/utils/env';
+import { createSessionToken } from '~/utils/jwt';
+import { KVStorageManager } from '~/utils/kv-storage';
+import { buildKvWarning, type KvWarning } from '~/utils/kv-warning';
+import { type AuthSessionMode, parseAuthSessionConfig } from '~/utils/parseAuthSessionConfig';
+import {
+  buildAppCallbackUrl,
+  getAppCallbackUrlFromState,
+  getDynamicRedirectUri,
+  validateRedirectUri,
+} from '~/utils/redirect-uri';
+import { StateManager } from '~/utils/state-manager';
 
 /**
  * Handle OAuth2 callback from OAuth providers
@@ -252,7 +252,8 @@ export async function exchangeCodeForToken(c: BffContext) {
     });
 
     // Create session JWT
-    const sessionDuration = parseEnvInt(env.SESSION_DURATION_HOURS, 24);
+    const authSessionConfig = parseAuthSessionConfig(env);
+    const sessionDuration = authSessionConfig.durationHours;
     const sessionToken = await createSessionToken(
       {
         sub: userInfo.id,
@@ -267,13 +268,18 @@ export async function exchangeCodeForToken(c: BffContext) {
     );
 
     let kvWarning: KvWarning | undefined;
-    if (!env.AUTH_KV) {
+    let responseSessionMode: AuthSessionMode = authSessionConfig.mode;
+    let refreshTokenId: string | undefined;
+    if (authSessionConfig.mode === 'stateless') {
+      responseSessionMode = 'stateless';
+    } else if (!env.AUTH_KV) {
       console.error('KV namespace AUTH_KV is not configured');
       kvWarning = buildKvWarning('login', 'missing_kv', 'none');
+      responseSessionMode = 'stateless';
     } else {
       const kvManager = new KVStorageManager(env.AUTH_KV, env.JWT_SECRET);
       try {
-        await kvManager.storeUserAuth(userInfo.id, {
+        refreshTokenId = await kvManager.storeUserAuth(userInfo.id, {
           email: userInfo.email,
           name: userInfo.name,
           picture: userInfo.picture,
@@ -287,6 +293,7 @@ export async function exchangeCodeForToken(c: BffContext) {
       } catch (error) {
         console.error('Failed to store session in KV:', error);
         kvWarning = buildKvWarning('login', 'kv_error', 'none');
+        responseSessionMode = 'stateless';
       }
     }
 
@@ -294,7 +301,9 @@ export async function exchangeCodeForToken(c: BffContext) {
       access_token: sessionToken,
       token_type: 'Bearer',
       expires_in: sessionDuration * 3600,
+      session_mode: responseSessionMode,
       id_token: sessionToken,
+      ...(refreshTokenId ? { refresh_token_id: refreshTokenId } : {}),
       scope: 'openid profile email',
       userinfo: {
         sub: userInfo.id,

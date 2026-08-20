@@ -21,6 +21,7 @@ NC='\033[0m' # No Color
 
 # 設定ファイルのチェック
 CONFIG_FILE="wrangler.hierarchidb.toml"
+WRANGLER=(pnpm exec wrangler)
 if [ ! -f "$CONFIG_FILE" ]; then
     echo -e "${RED}Error: $CONFIG_FILE not found${NC}"
     echo "Please ensure you're in the packages/backend/bff directory"
@@ -93,31 +94,23 @@ if [ "$confirm" != "y" ]; then
     exit 1
 fi
 
-# 3. KV Namespaces のセットアップ（オプション）
+# 3. Set up the authentication KV namespace for persistent mode when needed.
 echo ""
-echo "Setting up KV Namespaces (optional)..."
-echo "These are used for rate limiting and audit logging."
+echo "AUTH_SESSION_MODE=stateless uses a short-lived JWT and does not require AUTH_KV."
+echo "AUTH_SESSION_MODE=persistent requires AUTH_KV for refresh and server-side revocation."
 echo ""
-read -p "Do you want to create KV namespaces? (y/n): " create_kv
+read -p "Is this a persistent environment that needs a new AUTH_KV namespace? (y/n): " create_kv
 
 if [ "$create_kv" = "y" ]; then
-    echo "Creating KV namespaces..."
-    
-    # Rate Limit KV
-    echo "Creating RATE_LIMIT namespace..."
-    wrangler kv:namespace create "RATE_LIMIT" --config "$CONFIG_FILE" --env "$ENV" || true
-    
-    # Audit Log KV
-    echo "Creating AUDIT_LOG namespace..."
-    wrangler kv:namespace create "AUDIT_LOG" --config "$CONFIG_FILE" --env "$ENV" || true
-    
-    # Session KV
-    echo "Creating SESSION namespace..."
-    wrangler kv:namespace create "SESSION" --config "$CONFIG_FILE" --env "$ENV" || true
-    
+    echo "Creating AUTH_KV namespace..."
+    "${WRANGLER[@]}" kv namespace create "AUTH_KV" --config "$CONFIG_FILE" --env "$ENV"
+
+    echo "Creating AUTH_KV preview namespace..."
+    "${WRANGLER[@]}" kv namespace create "AUTH_KV" --preview --config "$CONFIG_FILE" --env "$ENV"
+
     echo ""
-    echo -e "${YELLOW}Note: Add the KV namespace IDs to your $CONFIG_FILE${NC}"
-    echo "The IDs are shown above in the format: id = \"xxxxx\""
+    echo -e "${YELLOW}Add both IDs to [[env.$ENV.kv_namespaces]] in $CONFIG_FILE.${NC}"
+    echo "Use binding = \"AUTH_KV\", id = \"...\", and preview_id = \"...\"."
     echo ""
     read -p "Press Enter to continue after updating the config file..."
 fi
@@ -135,20 +128,20 @@ echo ""
 # Google Client Secret
 echo "1. Google OAuth Client Secret"
 echo "   (from Google Cloud Console > APIs & Services > Credentials)"
-wrangler secret put GOOGLE_CLIENT_SECRET --config "$CONFIG_FILE" --env "$ENV"
+"${WRANGLER[@]}" secret put GOOGLE_CLIENT_SECRET --config "$CONFIG_FILE" --env "$ENV"
 
 # GitHub Client Secret  
 echo ""
 echo "2. GitHub OAuth Client Secret"
 echo "   (from GitHub > Settings > Developer settings > OAuth Apps)"
-wrangler secret put GITHUB_CLIENT_SECRET --config "$CONFIG_FILE" --env "$ENV"
+"${WRANGLER[@]}" secret put GITHUB_CLIENT_SECRET --config "$CONFIG_FILE" --env "$ENV"
 
 # JWT Secret
 echo ""
 echo "3. JWT Secret (for token signing)"
 echo "   You can generate one with: openssl rand -base64 32"
 echo "   Or use any secure random string (minimum 32 characters)"
-wrangler secret put JWT_SECRET --config "$CONFIG_FILE" --env "$ENV"
+"${WRANGLER[@]}" secret put JWT_SECRET --config "$CONFIG_FILE" --env "$ENV"
 
 # 5. デプロイ実行
 echo ""
@@ -161,9 +154,9 @@ echo "Config file: $CONFIG_FILE"
 echo ""
 
 if [ "$ENV" = "production" ]; then
-    wrangler deploy --config "$CONFIG_FILE" --env production
+    "${WRANGLER[@]}" deploy --config "$CONFIG_FILE" --env production
 else
-    wrangler deploy --config "$CONFIG_FILE" --env development
+    "${WRANGLER[@]}" deploy --config "$CONFIG_FILE" --env development
 fi
 
 # 6. デプロイ結果
@@ -201,7 +194,7 @@ if [ $? -eq 0 ]; then
     echo "   Open http://localhost:4200 and test login"
     echo ""
     echo "3. Monitor logs:"
-    echo "   wrangler tail --config $CONFIG_FILE --env $ENV"
+    echo "   pnpm exec wrangler tail --config $CONFIG_FILE --env $ENV"
     echo ""
 else
     echo ""

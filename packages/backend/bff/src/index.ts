@@ -3,11 +3,7 @@
 import { type Context, Hono } from 'hono';
 import { exchangeCodeForToken, handleOAuth2Callback } from '~/auth/callback';
 import type { GitHubOAuth2Config } from '~/auth/github';
-import {
-  exchangeCodeForTokens,
-  type GoogleOAuth2Config,
-  getGoogleUserInfo,
-} from '~/auth/google';
+import { exchangeCodeForTokens, type GoogleOAuth2Config, getGoogleUserInfo } from '~/auth/google';
 import type { MicrosoftOAuth2Config } from '~/auth/microsoft';
 import { refreshToken, revokeToken } from '~/auth/refresh';
 import { mapEnvironmentVariables } from '~/env-mapper';
@@ -16,7 +12,7 @@ import { getCORSHeaders, parseAllowedOrigins } from '~/utils/cors';
 import { type BffBindings, getEnv } from '~/utils/env';
 import { createSessionToken, extractBearerToken, verifySessionToken } from '~/utils/jwt';
 import { buildKvWarning, type KvWarning } from '~/utils/kv-warning';
-import { parseEnvInt } from '~/utils/number';
+import { type AuthSessionMode, parseAuthSessionConfig } from '~/utils/parseAuthSessionConfig';
 import { getDynamicRedirectUri, resolveStateOrigin } from '~/utils/redirect-uri';
 import { StateManager } from '~/utils/state-manager';
 import { requireTurnstile } from '~/utils/turnstile';
@@ -62,10 +58,7 @@ app.use('*', async (c, next) => {
   const appBases = [env.APP_BASE_URL, ...parseAppBaseUrls(env.APP_BASE_URLS)].filter(
     (value): value is string => typeof value === 'string' && value.length > 0
   );
-  const allowedOrigins = [
-    ...parseAllowedOrigins(env.ALLOWED_ORIGINS),
-    ...extractOrigins(appBases),
-  ];
+  const allowedOrigins = [...parseAllowedOrigins(env.ALLOWED_ORIGINS), ...extractOrigins(appBases)];
   const corsHeaders = getCORSHeaders(origin, { allowedOrigins });
 
   // Handle preflight OPTIONS requests
@@ -311,7 +304,8 @@ app.post('/auth/google/callback', async (c) => {
     const userInfo = await getGoogleUserInfo(tokens.access_token);
 
     // Create session JWT
-    const sessionDuration = parseEnvInt(env.SESSION_DURATION_HOURS, 24);
+    const authSessionConfig = parseAuthSessionConfig(env);
+    const sessionDuration = authSessionConfig.durationHours;
     const sessionToken = await createSessionToken(
       {
         sub: userInfo.id,
@@ -325,8 +319,41 @@ app.post('/auth/google/callback', async (c) => {
       env.JWT_ISSUER
     );
 
+    let responseSessionMode: AuthSessionMode = authSessionConfig.mode;
+    let refreshTokenId: string | undefined;
+    let kvWarning: KvWarning | undefined;
+    if (authSessionConfig.mode === 'persistent') {
+      if (!env.AUTH_KV) {
+        console.error('KV namespace AUTH_KV is not configured');
+        responseSessionMode = 'stateless';
+        kvWarning = buildKvWarning('login', 'missing_kv', 'none');
+      } else {
+        try {
+          const kvManager = new (await import('./utils/kv-storage.js')).KVStorageManager(
+            env.AUTH_KV,
+            env.JWT_SECRET
+          );
+          refreshTokenId = await kvManager.storeUserAuth(userInfo.id, {
+            email: userInfo.email,
+            name: userInfo.name,
+            picture: userInfo.picture,
+            provider: 'google',
+            googleRefreshToken: tokens.refresh_token,
+            sessionToken,
+            sessionDuration,
+          });
+        } catch (error) {
+          console.error('Failed to store session in KV:', error);
+          responseSessionMode = 'stateless';
+          kvWarning = buildKvWarning('login', 'kv_error', 'none');
+        }
+      }
+    }
+
     return c.json({
       sessionToken,
+      sessionMode: responseSessionMode,
+      ...(refreshTokenId ? { refreshTokenId } : {}),
       user: {
         id: userInfo.id,
         email: userInfo.email,
@@ -335,6 +362,7 @@ app.post('/auth/google/callback', async (c) => {
         provider: 'google',
       },
       expiresIn: sessionDuration * 3600, // Convert hours to seconds
+      ...(kvWarning ? { warning: kvWarning } : {}),
     });
   } catch (error) {
     console.error('Failed to process OAuth callback:', error);
@@ -430,30 +458,33 @@ app.post('/auth/revoke', revokeToken);
 // Logout endpoint (invalidate session)
 app.post('/auth/logout', async (c) => {
   const env = getEnv(c);
+  const authSessionConfig = parseAuthSessionConfig(env);
   let kvWarning: KvWarning | undefined;
 
-  if (!env.AUTH_KV) {
-    console.error('KV namespace AUTH_KV is not configured');
-    kvWarning = buildKvWarning('logout', 'missing_kv', 'none');
-  } else {
-    try {
-      const authHeader = c.req.header('Authorization');
-      const token = extractBearerToken(authHeader);
+  if (authSessionConfig.mode === 'persistent') {
+    if (!env.AUTH_KV) {
+      console.error('KV namespace AUTH_KV is not configured');
+      kvWarning = buildKvWarning('logout', 'missing_kv', 'none');
+    } else {
+      try {
+        const authHeader = c.req.header('Authorization');
+        const token = extractBearerToken(authHeader);
 
-      if (token) {
-        const kvManager = new (await import('./utils/kv-storage.js')).KVStorageManager(
-          env.AUTH_KV,
-          env.JWT_SECRET
-        );
+        if (token) {
+          const kvManager = new (await import('./utils/kv-storage.js')).KVStorageManager(
+            env.AUTH_KV,
+            env.JWT_SECRET
+          );
 
-        const userData = await kvManager.getUserAuthBySession(token);
-        if (userData) {
-          await kvManager.revokeUser(userData.userId);
+          const userData = await kvManager.getUserAuthBySession(token);
+          if (userData) {
+            await kvManager.revokeUser(userData.userId);
+          }
         }
+      } catch (error) {
+        console.error('Failed to revoke tokens during logout:', error);
+        kvWarning = buildKvWarning('logout', 'kv_error', 'none');
       }
-    } catch (error) {
-      console.error('Failed to revoke tokens during logout:', error);
-      kvWarning = buildKvWarning('logout', 'kv_error', 'none');
     }
   }
 

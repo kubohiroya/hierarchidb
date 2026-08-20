@@ -14,6 +14,7 @@ export interface Env {
   // JWT Configuration
   JWT_SECRET: string;
   JWT_ISSUER?: string;
+  AUTH_SESSION_MODE?: string;
   SESSION_DURATION_HOURS?: string;
   ENVIRONMENT?: string;
   NODE_ENV?: string;
@@ -28,6 +29,7 @@ export interface Env {
 
   // BFF-specific prefixed variables
   BFF_JWT_ISSUER?: string;
+  BFF_AUTH_SESSION_MODE?: string;
   BFF_SESSION_DURATION_HOURS?: string;
   BFF_ALLOWED_ORIGINS?: string;
   BFF_APP_BASE_URL?: string;

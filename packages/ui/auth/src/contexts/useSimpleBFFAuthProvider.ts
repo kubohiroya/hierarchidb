@@ -78,6 +78,7 @@ const toAuthUser = (user: BFFUser): AuthUser => ({
   id_token: user.access_token,
   refresh_token: user.refresh_token,
   expires_at: user.expires_at,
+  session_mode: user.session_mode,
 });
 
 // PKCE helper functions
@@ -190,9 +191,9 @@ export function useSimpleBFFAuthProvider({ homeUrl }: UseSimpleBFFAuthProviderPa
 
   React.useEffect(() => {
     if (user?.access_token) {
-      refreshDisabledRef.current = false;
+      refreshDisabledRef.current = user.session_mode === 'stateless';
     }
-  }, [user?.access_token]);
+  }, [user?.access_token, user?.session_mode]);
 
   const signIn = React.useCallback(
     async (options?: {
@@ -624,6 +625,14 @@ export function useSimpleBFFAuthProvider({ homeUrl }: UseSimpleBFFAuthProviderPa
       if (!currentSession) {
         throw new Error('Cannot refresh without a persisted authenticated UI session');
       }
+      if (currentSession.session_mode === 'stateless') {
+        refreshDisabledRef.current = true;
+        if (currentSession.expires_at <= Date.now()) {
+          AuthSessionStorage.clear();
+          setUser(null);
+        }
+        return false;
+      }
       const authBase = normalizeAuthBase(import.meta.env.VITE_BFF_BASE_URL ?? DEFAULT_BFF_BASE_URL);
 
       // Call BFF refresh endpoint
@@ -777,11 +786,15 @@ export function useSimpleBFFAuthProvider({ homeUrl }: UseSimpleBFFAuthProviderPa
       const expiresIn = Math.floor((expiresAt - now) / 1000); // Convert to seconds
 
       if (expiresIn < 0) {
-        refreshAccessToken();
-      } else if (expiresIn < 300) {
+        if (currentUser.session_mode === 'stateless') {
+          AuthSessionStorage.clear();
+          setUser(null);
+          return;
+        }
+        void refreshAccessToken();
+      } else if (expiresIn < 300 && currentUser.session_mode === 'persistent') {
         // 5 minutes before expiry
-
-        refreshAccessToken();
+        void refreshAccessToken();
       }
     };
 

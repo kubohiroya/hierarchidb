@@ -2,6 +2,8 @@ import type { AuthProviderType } from '~/types/AuthProviderType';
 
 export const AUTH_SESSION_CHANGED_EVENT = 'hierarchidb:auth-session-changed';
 
+export type AuthSessionMode = 'persistent' | 'stateless';
+
 export interface BFFUser {
   id: string;
   email: string;
@@ -11,6 +13,7 @@ export interface BFFUser {
   refresh_token?: string;
   expires_at: number;
   provider: AuthProviderType;
+  session_mode: AuthSessionMode;
 }
 
 interface ParsedTokenResponse {
@@ -61,6 +64,34 @@ const readOptionalString = (value: unknown, fieldName: string): string | undefin
   return requireString(value, fieldName);
 };
 
+const requireSessionMode = (value: unknown, fieldName: string): AuthSessionMode => {
+  if (value === 'persistent' || value === 'stateless') {
+    return value;
+  }
+  throw new AuthSessionContractError(
+    `Invalid auth session contract: ${fieldName} must be persistent or stateless`
+  );
+};
+
+const requireRefreshTokenForMode = (
+  value: unknown,
+  sessionMode: AuthSessionMode,
+  fieldName: string
+): string | undefined => {
+  const refreshTokenId = readOptionalString(value, fieldName);
+  if (sessionMode === 'persistent' && refreshTokenId === undefined) {
+    throw new AuthSessionContractError(
+      `Invalid auth session contract: ${fieldName} is required in persistent mode`
+    );
+  }
+  if (sessionMode === 'stateless' && refreshTokenId !== undefined) {
+    throw new AuthSessionContractError(
+      `Invalid auth session contract: ${fieldName} is forbidden in stateless mode`
+    );
+  }
+  return refreshTokenId;
+};
+
 const requirePositiveNumber = (value: unknown, fieldName: string): number => {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
     throw new AuthSessionContractError(
@@ -109,7 +140,12 @@ export const AuthSessionStorage = {
     const accessToken = requireString(response.access_token, 'access_token');
     const expiresIn = requirePositiveNumber(response.expires_in, 'expires_in');
     const expiresAt = now + expiresIn * 1000;
-    const refreshTokenId = readOptionalString(response.refresh_token_id, 'refresh_token_id');
+    const sessionMode = requireSessionMode(response.session_mode, 'session_mode');
+    const refreshTokenId = requireRefreshTokenForMode(
+      response.refresh_token_id,
+      sessionMode,
+      'refresh_token_id'
+    );
 
     if (!Number.isFinite(expiresAt)) {
       throw new AuthSessionContractError(
@@ -127,6 +163,7 @@ export const AuthSessionStorage = {
         refresh_token: refreshTokenId,
         expires_at: expiresAt,
         provider,
+        session_mode: sessionMode,
       },
       refreshTokenId,
     };
@@ -146,19 +183,22 @@ export const AuthSessionStorage = {
       picture: readOptionalString(user.picture, 'user.picture'),
       provider: AuthSessionStorage.parseProvider(user.provider, 'user.provider'),
       expires_at: requirePositiveNumber(user.expires_at, 'user.expires_at'),
+      session_mode: requireSessionMode(user.session_mode, 'user.session_mode'),
     };
     const accessToken = requireString(user.access_token, 'user.access_token');
+    const validatedRefreshTokenId = requireRefreshTokenForMode(
+      refreshTokenId,
+      persistedUser.session_mode,
+      'refresh_token_id'
+    );
 
     try {
       localStorage.setItem(STORAGE_KEYS.accessToken, accessToken);
       localStorage.setItem(STORAGE_KEYS.userinfo, JSON.stringify(persistedUser));
-      if (refreshTokenId === undefined) {
+      if (validatedRefreshTokenId === undefined) {
         localStorage.removeItem(STORAGE_KEYS.refreshTokenId);
       } else {
-        localStorage.setItem(
-          STORAGE_KEYS.refreshTokenId,
-          requireString(refreshTokenId, 'refresh_token_id')
-        );
+        localStorage.setItem(STORAGE_KEYS.refreshTokenId, validatedRefreshTokenId);
       }
     } catch {
       removePersistedSession();
@@ -191,7 +231,15 @@ export const AuthSessionStorage = {
     }
 
     const userinfo = requireRecord(payload, 'persisted userinfo');
-    const refreshTokenId = localStorage.getItem(STORAGE_KEYS.refreshTokenId) ?? undefined;
+    const sessionMode = requireSessionMode(
+      userinfo.session_mode,
+      'persisted userinfo.session_mode'
+    );
+    const refreshTokenId = requireRefreshTokenForMode(
+      localStorage.getItem(STORAGE_KEYS.refreshTokenId) ?? undefined,
+      sessionMode,
+      'persisted refresh_token_id'
+    );
 
     return {
       id: requireString(userinfo.id, 'persisted userinfo.id'),
@@ -202,6 +250,7 @@ export const AuthSessionStorage = {
       refresh_token: readOptionalString(refreshTokenId, 'persisted refresh_token_id'),
       expires_at: requirePositiveNumber(userinfo.expires_at, 'persisted userinfo.expires_at'),
       provider: AuthSessionStorage.parseProvider(userinfo.provider, 'persisted userinfo.provider'),
+      session_mode: sessionMode,
     };
   },
 

@@ -9,7 +9,7 @@ Before installing the HierarchiDB BFF, ensure you have:
 - Cloudflare account with Workers enabled
 - Google Cloud Platform account (for Google OAuth)
 - GitHub account (for GitHub OAuth)
-- `wrangler` CLI installed (`npm install -g wrangler`)
+- Repository dependencies installed with `pnpm install` (the BFF package pins the supported `wrangler` CLI)
 
 ## Step-by-Step Installation
 
@@ -80,6 +80,7 @@ cd packages/backend/bff
    6. Authorized redirect URIs:
       https://hierarchidb-bff.kubohiroya.workers.dev/auth/callback
       https://hierarchidb-bff.kubohiroya.workers.dev/auth/google/callback
+      https://hierarchidb-bff-dev.kubohiroya.workers.dev/auth/callback
       http://localhost:4200/auth/callback
    7. Click "Create"
    8. Save the Client ID and Client Secret
@@ -94,8 +95,10 @@ cd packages/backend/bff
    3. Fill in:
       - Application name: HierarchiDB
       - Homepage URL: https://kubohiroya.github.io/hierarchidb
-      - Authorization callback URL: 
+      - Authorization callback URL for the production OAuth App:
         https://hierarchidb-bff.kubohiroya.workers.dev/auth/github/callback
+      - Authorization callback URL for a separate development OAuth App:
+        https://hierarchidb-bff-dev.kubohiroya.workers.dev/auth/github/callback
    4. Click "Register application"
    5. Click "Generate a new client secret"
    6. Save the Client ID and Client Secret
@@ -103,11 +106,14 @@ cd packages/backend/bff
 
 ### Step 3: Configure Wrangler
 
-1. **Copy configuration file**
+1. **Select the configuration file**
    ```bash
-   # Use the HierarchiDB-specific config
-   cp wrangler.hierarchidb.toml wrangler.toml
+   # Run all Wrangler commands with this repository-owned configuration.
+   export BFF_WRANGLER_CONFIG="wrangler.hierarchidb.toml"
    ```
+
+   Do not copy production namespace IDs into another Cloudflare account. For a separate `persistent`
+   deployment, create its own `AUTH_KV` namespace in Step 5 and replace the environment-specific IDs.
 
 2. **Update Client IDs**
    ```bash
@@ -120,6 +126,25 @@ cd packages/backend/bff
    GOOGLE_CLIENT_ID = "your-google-client-id.apps.googleusercontent.com"
    GITHUB_CLIENT_ID = "your-github-client-id"
    ```
+
+3. **Select the authentication session mode**
+
+   Both variables are required. The BFF does not infer a mode from the KV binding and does not default an
+   invalid duration.
+
+   ```toml
+   # Development or operational preparation without KV
+   AUTH_SESSION_MODE = "stateless"
+   SESSION_DURATION_HOURS = "4"
+
+   # Persistent operation with AUTH_KV
+   AUTH_SESSION_MODE = "persistent"
+   SESSION_DURATION_HOURS = "4"
+   ```
+
+   `stateless` issues a short-lived JWT, never calls KV, never refreshes the token, and requires a new login
+   after expiry. This is a supported operating mode and does not show a KV warning. `persistent` requires a
+   valid `AUTH_KV` binding and shows a warning if the binding or a KV operation fails.
 
 ### Step 4: Set Secrets
 
@@ -147,68 +172,48 @@ wrangler secret put GITHUB_CLIENT_SECRET --env production
 wrangler secret put JWT_SECRET --env production
 ```
 
-### Step 5: Create KV Namespaces (Optional)
+### Step 5: Create and Bind `AUTH_KV`
 
-KV namespaces provide persistent storage for rate limiting, audit logging, and sessions.
+Skip this step for `AUTH_SESSION_MODE=stateless`; that mode must not access KV. For
+`AUTH_SESSION_MODE=persistent`, create one normal namespace and one preview namespace with the
+repository-pinned Wrangler CLI.
 
 ```bash
-# Create rate limit namespace
-wrangler kv:namespace create "RATE_LIMIT"
-# Output: ⚡️ Successfully created KV namespace "RATE_LIMIT" with ID "xxxxx"
+pnpm exec wrangler kv namespace create AUTH_KV \
+  --config "$BFF_WRANGLER_CONFIG" \
+  --env production
 
-# Create audit log namespace
-wrangler kv:namespace create "AUDIT_LOG"
-# Output: ⚡️ Successfully created KV namespace "AUDIT_LOG" with ID "yyyyy"
-
-# Create session namespace
-wrangler kv:namespace create "SESSION"
-# Output: ⚡️ Successfully created KV namespace "SESSION" with ID "zzzzz"
+pnpm exec wrangler kv namespace create AUTH_KV \
+  --preview \
+  --config "$BFF_WRANGLER_CONFIG" \
+  --env production
 ```
 
-Add the IDs to your `wrangler.toml`:
+Add the returned IDs to the matching environment. Never reuse the production namespace for development.
+
 ```toml
-[[kv_namespaces]]
-binding = "RATE_LIMIT_KV"
-id = "xxxxx"
-
-[[kv_namespaces]]
-binding = "AUDIT_LOG_KV"
-id = "yyyyy"
-
-[[kv_namespaces]]
-binding = "SESSION_KV"
-id = "zzzzz"
+[[env.production.kv_namespaces]]
+binding = "AUTH_KV"
+id = "<production-namespace-id>"
+preview_id = "<preview-namespace-id>"
 ```
+
+The old `RATE_LIMIT_KV`, `AUDIT_LOG_KV`, and `SESSION_KV` examples do not describe the current
+authentication implementation. See [BFF `AUTH_KV` operations](./auth-kv-operations.md) for the data,
+failure, verification, and rollback contracts.
 
 ### Step 6: Deploy BFF
 
-#### Using the deployment script (Recommended)
-
-```bash
-# Make script executable
-chmod +x deploy-hierarchidb.sh
-
-# Run deployment script
-./deploy-hierarchidb.sh
-
-# Follow the prompts:
-# 1. Select environment (1 for development, 2 for production)
-# 2. Confirm checklist items
-# 3. Create KV namespaces if needed
-# 4. The script will guide you through secret setup
-```
-
-#### Manual deployment
+Use the pinned Wrangler CLI and the explicit configuration path. The interactive deployment script uses the
+same explicit session-mode and `AUTH_KV` layout, but the commands below remain the canonical, auditable
+deployment path.
 
 ```bash
 # Deploy to development
-wrangler deploy --env development
+pnpm exec wrangler deploy --config "$BFF_WRANGLER_CONFIG" --env development
 
 # Deploy to production
-wrangler deploy --env production
-
-# Or deploy without environment (uses default)
-wrangler deploy
+pnpm exec wrangler deploy --config "$BFF_WRANGLER_CONFIG" --env production
 ```
 
 ### Step 7: Update Frontend Configuration
@@ -280,6 +285,9 @@ wrangler deploy
    - Click "Sign in with Google" or "Sign in with GitHub"
    - Complete OAuth flow
    - Verify successful authentication
+   - In `stateless`, verify `session_mode=stateless`, no KV warning appears, and login is required again after
+     the four-hour JWT expires
+   - In `persistent`, verify `session_mode=persistent` and token refresh succeeds
 
 ### Monitoring and Maintenance
 
@@ -290,12 +298,20 @@ wrangler deploy
 
 2. **Check KV storage**
    ```bash
-   # List KV keys
-   wrangler kv:key list --namespace-id=xxxxx
-   
-   # Get specific key value
-   wrangler kv:key get "ratelimit:192.168.1.1" --namespace-id=xxxxx
+   # Confirm the namespace exists in the active Cloudflare account.
+   pnpm exec wrangler kv namespace list
+
+   # If an authorized operational check is required, list only user-auth keys.
+   pnpm exec wrangler kv key list \
+     --binding AUTH_KV \
+     --prefix user_auth: \
+     --remote \
+     --config "$BFF_WRANGLER_CONFIG" \
+     --env production
    ```
+
+   Key names contain user IDs, so do not save or share the output. Do not list `session_index:` keys because
+   their names contain session tokens.
 
 3. **Update secrets**
    ```bash
@@ -313,7 +329,10 @@ wrangler deploy
 | "Worker name already exists" | Use a unique name in wrangler.toml or add suffix |
 | "Invalid Client ID" | Verify Client ID matches exactly from OAuth provider |
 | "Redirect URI mismatch" | Ensure redirect URIs match exactly in OAuth settings |
-| "KV namespace not found" | Check namespace ID in wrangler.toml matches created ID |
+| "KV namespace not found" | In `persistent`, check that the target environment binds the created namespace as exactly `AUTH_KV` |
+| `KV namespace AUTH_KV is not configured` | If KV-free operation is intentional, set `AUTH_SESSION_MODE=stateless`; otherwise bind `AUTH_KV` and keep `persistent` |
+| `kv_unavailable` warning | Check Worker logs and Cloudflare KV usage/status; the BFF reports quota and other KV failures as `kv_error` |
+| `reauthentication_required` | Expected from `/auth/refresh` in `stateless`; do not refresh and start a new login after JWT expiry |
 | "Secret not found" | Re-run `wrangler secret put` for missing secret |
 
 ### Debug Commands

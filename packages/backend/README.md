@@ -191,7 +191,9 @@ const proxyRequest = {
 - **@cloudflare/workers-types**: TypeScript型定義
 
 ### ストレージ・セキュリティ
-- **Cloudflare KV**: 分散キーバリューストレージ（セッション管理）
+- **Cloudflare KV**: `AUTH_SESSION_MODE=persistent` の場合だけ `AUTH_KV` bindingで認証sessionを管理。
+  `stateless` はKVを使用せず短命JWT期限後に再ログインする。運用契約は
+  [BFF `AUTH_KV` 運用仕様](./bff/docs/auth-kv-operations.md)を参照
 - **Cloudflare Secrets**: 暗号化された環境変数管理
 - **Turnstile**: Cloudflareのボット対策ソリューション
 
@@ -202,7 +204,7 @@ const proxyRequest = {
 ```bash
 # BFFサービス開発
 cd packages/backend/bff
-wrangler dev
+pnpm exec wrangler dev --config wrangler.hierarchidb.toml --env development
 
 # CORS Proxyサービス開発
 cd packages/backend/cors-proxy  
@@ -226,7 +228,8 @@ GITHUB_CLIENT_SECRET=your-github-client-secret  # Cloudflare Secret
 # JWT設定  
 JWT_SECRET=your-jwt-secret                       # Cloudflare Secret
 JWT_ISSUER=https://your-bff-domain.workers.dev
-SESSION_DURATION_HOURS=24
+AUTH_SESSION_MODE=stateless
+SESSION_DURATION_HOURS=4
 
 # CORS設定
 ALLOWED_ORIGINS=http://localhost:4200,https://your-app-domain.com
@@ -250,19 +253,22 @@ ALLOWED_ORIGINS=http://localhost:4200,https://your-app-domain.com
 ```toml
 # wrangler.toml（BFF）
 name = "hierarchidb-bff"
-main = "src/RuntimeWorkerService.ts"
-compatibility_date = "2024-08-21"
+main = "src/index.ts"
+compatibility_date = "2025-06-28"
 
 [env.production]
-name = "hierarchidb-bff-prod"
+name = "hierarchidb-bff"
 vars = { 
   JWT_ISSUER = "https://hierarchidb-bff-prod.workers.dev",
+  AUTH_SESSION_MODE = "persistent",
+  SESSION_DURATION_HOURS = "4",
   ALLOWED_ORIGINS = "https://your-production-domain.com"
 }
 
 [[env.production.kv_namespaces]]
 binding = "AUTH_KV"
 id = "your-production-kv-id"
+preview_id = "your-preview-kv-id"
 
 # Rate limiting
 [env.production.limits]

@@ -2,6 +2,7 @@ import type { Env } from '~/types';
 
 export type PrefixedEnv = {
   BFF_JWT_ISSUER?: string;
+  BFF_AUTH_SESSION_MODE?: string;
   BFF_SESSION_DURATION_HOURS?: string;
   BFF_ALLOWED_ORIGINS?: string;
   BFF_APP_BASE_URL?: string;
@@ -27,7 +28,8 @@ export type RawEnv = Env & PrefixedEnv & AdditionalEnv & Record<string, unknown>
 
 export interface MappedEnv extends Env, AdditionalEnv {
   JWT_ISSUER: string;
-  SESSION_DURATION_HOURS: string;
+  AUTH_SESSION_MODE?: string;
+  SESSION_DURATION_HOURS?: string;
   ALLOWED_ORIGINS: string;
   APP_BASE_URL?: string;
   APP_BASE_URLS?: string;
@@ -45,7 +47,8 @@ export function mapEnvironmentVariables(env: RawEnv): MappedEnv {
   return {
     ...env,
     JWT_ISSUER: env.BFF_JWT_ISSUER || env.JWT_ISSUER || '',
-    SESSION_DURATION_HOURS: env.BFF_SESSION_DURATION_HOURS || env.SESSION_DURATION_HOURS || '24',
+    AUTH_SESSION_MODE: env.BFF_AUTH_SESSION_MODE ?? env.AUTH_SESSION_MODE,
+    SESSION_DURATION_HOURS: env.BFF_SESSION_DURATION_HOURS ?? env.SESSION_DURATION_HOURS,
     ALLOWED_ORIGINS: env.BFF_ALLOWED_ORIGINS || env.ALLOWED_ORIGINS || '',
     APP_BASE_URL: env.BFF_APP_BASE_URL || env.APP_BASE_URL,
     APP_BASE_URLS: env.BFF_APP_BASE_URLS || env.APP_BASE_URLS,

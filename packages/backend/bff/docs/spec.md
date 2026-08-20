@@ -61,7 +61,8 @@ The BFF automatically detects the request origin and applies appropriate setting
 
 | Setting | Development | Production |
 |---------|-------------|------------|
-| JWT Expiry | 24 hours | 2 hours |
+| Authentication session mode | `stateless` | `persistent` |
+| JWT Expiry | 4 hours | 4 hours |
 | Rate Limit | 100 req/min | 20 req/min |
 | Log Level | debug | warn |
 | Security Headers | Basic | Strict |
@@ -143,7 +144,8 @@ sequenceDiagram
 | `/auth/userinfo` | GET | Get user information |
 | `/auth/verify` | POST | Verify JWT token |
 | `/auth/refresh` | POST | Refresh JWT token |
-| `/auth/logout` | POST | Invalidate session |
+| `/auth/revoke` | POST | Revoke all sessions for the authenticated user |
+| `/auth/logout` | POST | Complete local logout and revoke all server-side sessions for the authenticated user |
 
 ### Health & Discovery
 
@@ -175,7 +177,8 @@ sequenceDiagram
 - **Signing Algorithm**: HS256
 - **Secret Storage**: Cloudflare Secrets
 - **Rotation Policy**: Quarterly rotation recommended
-- **Expiry**: Environment-specific (2-24 hours)
+- **Expiry**: Required positive integer configuration; checked-in environments use 4 hours
+- **Stateless expiry behavior**: Clear the local session and require a new login
 
 ## Configuration
 
@@ -189,6 +192,8 @@ sequenceDiagram
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret | Stored as secret |
 | `JWT_SECRET` | JWT signing secret | Generated with `openssl rand -base64 32` |
 | `JWT_ISSUER` | JWT issuer identifier | `hierarchidb-bff` |
+| `AUTH_SESSION_MODE` | `persistent` or `stateless` authentication mode | `stateless` |
+| `SESSION_DURATION_HOURS` | Positive integer JWT lifetime; no implicit default | `4` |
 | `ALLOWED_ORIGINS` | Comma-separated allowed origins | `http://localhost:4200,https://kubohiroya.github.io` |
 
 #### Optional Variables
@@ -197,7 +202,6 @@ sequenceDiagram
 |----------|-------------|---------|
 | `GITHUB_CLIENT_ID` | GitHub OAuth client ID | - |
 | `GITHUB_CLIENT_SECRET` | GitHub OAuth client secret | - |
-| `SESSION_DURATION_HOURS` | Session duration | `48` |
 | `ENABLE_RATE_LIMIT` | Enable rate limiting | `true` |
 | `RATE_LIMIT_PER_MINUTE` | Requests per minute | `30` |
 | `ENABLE_AUDIT_LOG` | Enable audit logging | `true` |
@@ -205,11 +209,69 @@ sequenceDiagram
 
 ### KV Namespaces
 
+The current authentication implementation uses one Cloudflare Workers KV binding.
+
 | Namespace | Binding | Purpose |
 |-----------|---------|---------|
-| RATE_LIMIT | `RATE_LIMIT_KV` | Rate limiting data |
-| AUDIT_LOG | `AUDIT_LOG_KV` | Audit logs |
-| SESSION | `SESSION_KV` | Session storage |
+| Environment-specific authentication namespace | `AUTH_KV` | Encrypted user authentication data and session-token indexes |
+
+`AUTH_SESSION_MODE` explicitly selects the authentication contract. `persistent` requires `AUTH_KV` for
+session persistence, token refresh, and server-side revocation. `stateless` does not access `AUTH_KV`,
+does not refresh tokens, and requires a new login after the configured JWT lifetime. A missing binding in
+`stateless` mode is expected and must not produce a KV warning.
+
+`AUTH_SESSION_MODE` and `SESSION_DURATION_HOURS` are required. Missing values, unknown modes, zero,
+negative, fractional, or non-numeric durations are configuration errors rather than defaulted values.
+
+The former `RATE_LIMIT_KV`, `AUDIT_LOG_KV`, and `SESSION_KV` bindings are not used by the current
+authentication implementation. Provisioning, verification, rollback, key prefixes, and TTL rules are
+defined in [BFF `AUTH_KV` operations](./auth-kv-operations.md).
+
+### Authentication Session Modes
+
+| Configured mode | Login response | Refresh | Revoke/logout | KV warning |
+|-----------------|----------------|---------|---------------|------------|
+| `persistent` with healthy KV | `session_mode=persistent` and `refresh_token_id` | Rotate the session | Revoke server-side state | No |
+| `persistent` with missing/failing KV | Effective `session_mode=stateless` | Unavailable | Local completion | Yes |
+| `stateless` | `session_mode=stateless`, no refresh ID | HTTP 401 `reauthentication_required` | Local completion | No |
+
+The UI persists `session_mode`. It never calls `/auth/refresh` for `stateless` sessions and clears the local
+session when the JWT expires, after which the user signs in again. The warning dialog is response-driven:
+it is shown only for an explicit valid `warning` returned from an unexpectedly degraded `persistent`
+operation. It must not claim a fixed Cloudflare quota reset or recovery time.
+
+### `AUTH_KV` Unexpected-Degradation Contract
+
+When `persistent` is configured and the binding is missing or a KV operation fails, the BFF includes this
+warning object in the response:
+
+```json
+{
+  "warning": {
+    "code": "kv_unavailable",
+    "operation": "refresh",
+    "action": "relogin",
+    "reason": "missing_kv"
+  }
+}
+```
+
+Allowed values are:
+
+- `operation`: `login | refresh | revoke | logout`
+- `action`: `none | relogin`
+- `reason`: `missing_kv | kv_error`
+
+| Operation | Available KV in `persistent` | Missing binding or KV failure in `persistent` |
+|-----------|------------------------------|-----------------------------------------------|
+| Login/token exchange | Persist the session and return `session_mode=persistent` | Return an effective `session_mode=stateless` token without persistence and include an `action=none` warning |
+| Refresh | Validate the session and rotate the token | Return HTTP 503 with an `action=relogin` warning; do not issue a token |
+| Revoke | Delete the user's server-side sessions | Return local completion with an `action=none` warning |
+| Logout | Delete all server-side sessions for the authenticated user | Return local logout completion with an `action=none` warning |
+
+The BFF reports quota exhaustion and other KV operation failures as `reason=kv_error`; it does not infer a
+more specific cause. Cloudflare plan limits and reset conditions must be checked in the active Cloudflare
+account rather than hard-coded into this specification.
 
 ## Security Considerations
 
