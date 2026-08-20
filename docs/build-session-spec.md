@@ -120,6 +120,11 @@ graph LR
    - `A_k` に存在するが対応する `s ∈ S_k` が存在しない生成物は削除する。
    - 当該生成物を入力とする下流ステージの生成物/タスクは連鎖削除する。
    - 連鎖削除は lineage の下流端までを同一 cleanup operation として扱い、全対象の削除完了後にのみ成功とする。
+   - 現行の永続 tile record は source/geometry cache への逆参照を持たない。このため source または geometry の invalidation では、対象 nodeId の vector tile、tile summary、feature metadata、data-source metadata をすべて削除する。この node 単位境界は正規仕様であり、逆参照欠落を補う fallback ではない。
+   - cleanup は下流から上流へ、(1) 対象 nodeId の永続 tile/metadata を単一 ShapeDB transaction で削除、(2) source artifact に保存された正規 `rawSourceCacheKey` で対象 raw chunk を削除、(3) relation/task/error と対象 geometry/source cache を単一 EphemeralDB transaction で削除、の順に実行する。source cache ID を chunk metadata ID として読み替えない。
+   - cleanup target の source/geometry cache ID は同じ nodeId に所有されなければならない。別 node の record を指す ID は永続成果物の削除前に契約違反として失敗させる。
+   - 各削除は存在しない record に対しても成功する冪等操作とし、途中失敗後は同じ cleanup target で再試行できる。
+   - 二相 cache write の data record は `timestamp === 0` だけでは invalid ではない。対応する metadata が存在しない場合に限り incomplete cache として cascade cleanup の対象にする。
    - cleanup の一部失敗を黙殺して session を継続しない。失敗した task/session を可視な error に遷移させ、stale artifact を再利用不可とする。
 
 ## ステージ進行規則
@@ -159,8 +164,9 @@ graph LR
 
 - ソース消失時の生成物削除
   - 仕様: ソース消失→生成物と下流生成物を削除。
-  - 実装: 選択差分に基づく削除は行うが、生成物そのものの連鎖削除は一部処理に限定される。
-  - 参照: `plugins/shape-plugin/src/worker/api.ts`（`applySelectionDiffCleanup`）
+  - 実装: 選択差分、invalid cache、pipeline cleanup、fresh build の各入口を共通 coordinator に集約し、永続成果物→raw source chunk→一時 lineage の順で連鎖削除する。
+  - 参照: `plugins/shape-plugin/src/services/vt/runShapeArtifactCascadeCleanup.ts`
+  - 参照: `plugins/shape-plugin/src/worker/api/shapeBuildRuntimeExecutionControl.ts`
 
 - ステージ順序とタスク生成のタイミング
   - 仕様: 各ステージ開始時にタスク生成規則を適用。
@@ -176,10 +182,10 @@ graph LR
 
 ## 実装との差異まとめ
 
-- タスク更新判定は `meta` 比較に寄せて整合しつつあるが、生成物の連鎖削除は選択差分に限定される。
+- タスク更新判定は `meta` 比較を用いる。artifact lineage cleanup は共通 coordinator に集約され、source/geometry invalidation 時は逆参照を持たない永続 tile 系を node 単位で削除する。
 - `updatedAt` を用いた更新判定は補助的であり、ソース側の時刻更新が必要なケースは未整理である。
 - pause command は実 pipeline 停止確認前に `running` task を `queued` へ戻し、timer から `paused` を永続化できるため、本書の Pause 完了条件を満たさない（#702）。
 - Geometry は `baseTolerance` / profile 欠落時のtask内探索、固定値、clampを持ち、本書および tolerance SSOT の fail-fast 契約を満たさない。
 - invalid geometry filtering は `tileEmitConfig` を読みながら Source stage で実行されており、tileEmit ownership を満たさない（#332）。
 - cache identity は source / geometry / tileEmit task生成時に必須構成値を厳密検証し、完全な `cacheKey` / `inputHash` pairを永続化する。resume/reconcileでは正規stageと永続pairだけを読み、欠落値をtask payload、legacy key、丸め、既定値から再構成しない。
-- artifact lineage の下流端までの cleanup と一部失敗時の session failure は未完了である（#1324）。
+- artifact lineage cleanup は下流端まで実施し、一部失敗は typed error として session/UI の失敗経路へ伝播する（#1324）。

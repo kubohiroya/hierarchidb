@@ -1,8 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
-import { shapeMutationAPIImpl } from '~/services/build/ShapeBuildAPIClient';
-import { deleteRawDataDataSourceBuffersForNode } from '~/services/utils/chunkStore';
 import type { EphemeralDB } from '@hierarchidb/gis-sdk';
+import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
+import { runShapeArtifactCascadeCleanup } from './runShapeArtifactCascadeCleanup.ts';
 
 export type ShapeCleanupStageParams = {
   nodeId: NodeId;
@@ -12,24 +11,22 @@ export type ShapeCleanupStageParams = {
 
 export const runShapePipelineCleanup = async (params: ShapeCleanupStageParams): Promise<void> => {
   const cleanupConfig = params.buildConfig.cleanupConfig;
-  if (cleanupConfig?.deleteSourceFilteredCache) {
-    await params.ephemeralStore.sourceCache
-      .where('nodeId')
-      .equals(params.nodeId)
-      .delete();
-    await params.ephemeralStore.sourceCacheMeta
-      .where('nodeId')
-      .equals(params.nodeId)
-      .delete();
-  }
-  if (cleanupConfig?.deleteSourceApiCache) {
-    await deleteRawDataDataSourceBuffersForNode(params.nodeId);
-  }
-  if (cleanupConfig?.deleteGeometryCache) {
-    await params.ephemeralStore.geometryCache.where('nodeId').equals(params.nodeId).delete();
-    await params.ephemeralStore.geometryCacheMeta.where('nodeId').equals(params.nodeId).delete();
-  }
-  if (cleanupConfig?.deleteTileEmitCache) {
-    await shapeMutationAPIImpl.deleteVectorTiles(params.nodeId);
-  }
+  const stage = cleanupConfig?.deleteSourceFilteredCache
+    ? 'source'
+    : cleanupConfig?.deleteGeometryCache
+      ? 'geometry'
+      : cleanupConfig?.deleteTileEmitCache
+        ? 'tileEmit'
+        : null;
+  await runShapeArtifactCascadeCleanup({
+    nodeId: params.nodeId,
+    target:
+      stage === null
+        ? { kind: 'invalid-caches', sourceCacheIds: [], geometryCacheIds: [] }
+        : { kind: 'stage', stage },
+    deleteAllRawSourceBuffers: cleanupConfig?.deleteSourceApiCache === true,
+    dependencies: {
+      ephemeralStore: params.ephemeralStore,
+    },
+  });
 };

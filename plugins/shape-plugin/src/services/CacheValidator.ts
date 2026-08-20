@@ -1,12 +1,13 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
+import { runShapeArtifactCascadeCleanup } from './vt/runShapeArtifactCascadeCleanup.ts';
 
 /**
  * CacheValidator service for identifying and cleaning up invalid cache entries.
  * 
  * Invalid cache entries are those where:
  * - Cache data exists with timestamp === 0
- * - No corresponding metadata exists (or metadata is incomplete)
+ * - No corresponding metadata exists
  * 
  * This service implements the metadata-based validation strategy from
  * Requirements 4.1, 4.2, 4.3, 4.4.
@@ -15,8 +16,8 @@ export class CacheValidator {
     /**
      * Find and delete invalid cache entries for a node.
      * 
-     * Invalid entries are cache data records with timestamp === 0,
-     * which indicates the write was interrupted before metadata could be written.
+     * Invalid entries are cache data records with timestamp === 0 and no matching metadata.
+     * A timestamp of zero alone is the expected first phase of the cache write protocol.
      * 
      * @param nodeId - The node ID to clean up cache entries for
      * @returns Object containing counts of deleted entries by cache type
@@ -25,34 +26,42 @@ export class CacheValidator {
         geometryDeleted: number;
         sourceDeleted: number;
     }> {
-        // Query and delete invalid geometry cache entries (timestamp === 0)
-        const invalidGeometryEntries = await ephemeralDB.geometryCache
+        const pendingGeometryEntries = await ephemeralDB.geometryCache
             .where('[nodeId+timestamp]')
             .between([nodeId, 0], [nodeId, 0], true, true)
             .toArray();
-
+        const geometryMetadata = await ephemeralDB.geometryCacheMeta.bulkGet(
+            pendingGeometryEntries.map((entry) => entry.id)
+        );
+        const invalidGeometryEntries = pendingGeometryEntries.filter(
+            (_entry, index) => geometryMetadata[index] === undefined
+        );
         const geometryDeleted = invalidGeometryEntries.length;
 
-        if (geometryDeleted > 0) {
-            const geometryIds = invalidGeometryEntries.map((entry) => entry.id);
-            await ephemeralDB.geometryCache.bulkDelete(geometryIds);
-        }
-
-        // Query and delete invalid source cache entries (timestamp === 0)
-        const invalidSourceEntries = await ephemeralDB.sourceCache
+        const pendingSourceEntries = await ephemeralDB.sourceCache
             .where('nodeId')
             .equals(nodeId)
             .and((entry) => entry.timestamp === 0)
             .toArray();
-
+        const sourceMetadata = await ephemeralDB.sourceCacheMeta.bulkGet(
+            pendingSourceEntries.map((entry) => entry.id)
+        );
+        const invalidSourceEntries = pendingSourceEntries.filter(
+            (_entry, index) => sourceMetadata[index] === undefined
+        );
         const sourceDeleted = invalidSourceEntries.length;
 
-        if (sourceDeleted > 0) {
-            const sourceIds = invalidSourceEntries.map((entry) => entry.id);
-            await ephemeralDB.sourceCache.bulkDelete(sourceIds);
+        if (geometryDeleted > 0 || sourceDeleted > 0) {
+            await runShapeArtifactCascadeCleanup({
+                nodeId,
+                target: {
+                    kind: 'invalid-caches',
+                    geometryCacheIds: invalidGeometryEntries.map((entry) => entry.id),
+                    sourceCacheIds: invalidSourceEntries.map((entry) => entry.id),
+                },
+            });
         }
 
-        // Log cleanup results
         const totalDeleted = geometryDeleted + sourceDeleted;
         if (totalDeleted > 0) {
             console.log(

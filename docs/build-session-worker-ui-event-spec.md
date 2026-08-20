@@ -242,7 +242,7 @@ These events are dispatched internally by the UI and are not part of the Workerâ
 | `taskStreamConnectionChanged` | WebSocket/SharedWorker connection state |
 | `viewSelectionChanged` | Active stage tab / selected task |
 | `uiSyncPhaseChanged` | UI initialization handshake per stage |
-| `criticalError` | Contract violation detected in the UI layer; optionally carries a serializable legacy-session recovery descriptor |
+| `criticalError` | Critical UI-command or contract failure, including selection-triggered artifact cleanup failure; optionally carries a serializable legacy-session recovery descriptor |
 | `reset` | Full state reset on nodeId change or after a successful explicit recovery |
 
 The optional `criticalError.payload.recovery` is the exact descriptor returned by
@@ -251,6 +251,13 @@ must not reconstruct it from an error message. A successful recovery uses the
 dedicated completion write atom to reset session state and increment the recovery
 revision atomically from the UI's perspective. A plain `reset` does not increment
 that revision.
+
+Selection-triggered artifact invalidation is a UI command path, not a fifth Worker
+event. If its strict cleanup coordinator rejects, the UI dispatches `criticalError`,
+sets the SSOT lifecycle to `failed`, and keeps the previous selection baseline. The
+baseline advances only after cleanup, draft persistence, and obsolete build-session
+deletion all succeed. Startup or pipeline cleanup failures instead follow the Worker
+failure-persistence path and become the canonical failed `sessionStatusUpdated` state.
 
 ---
 

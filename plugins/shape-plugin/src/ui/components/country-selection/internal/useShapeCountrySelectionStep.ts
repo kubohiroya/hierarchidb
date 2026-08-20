@@ -1,4 +1,5 @@
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
+import { useSetAtom } from 'jotai';
 import { useDialogContext } from '@hierarchidb/ui-dialog';
 import { getBuildWorkerBridge, type BuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import {
@@ -9,12 +10,14 @@ import {
 import type { MatrixConfig, MatrixSelection } from '@hierarchidb/ui-country-select';
 import type { Country } from '@hierarchidb/ui-country-select';
 import { invalidateBuildForSelectionChange } from './invalidateBuildForSelectionChange.js';
+import { ShapeArtifactCascadeCleanupError } from '~/services/vt/runShapeArtifactCascadeCleanup';
 import { useShapeCountrySelectionStepDataLoader } from './useShapeCountrySelectionStepDataLoader.js';
 import { useShapeCountrySelectionStepSelectionState } from './useShapeCountrySelectionStepSelectionState.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeEntity } from '~/common/types/index';
-import { type SerializedCountryAvailability } from '~/ui/workers/countryAvailabilityTypes';
+import type { SerializedCountryAvailability } from '~/ui/workers/countryAvailabilityTypes';
 import type { CountrySelectionIsoState } from './useShapeCountrySelectionStepSelectionState.js';
+import { dispatchBuildSessionEventAtom } from '~/ui/atoms/buildSessionStateAtoms';
 
 type Args = {
   data: Partial<ShapeEntity>;
@@ -85,6 +88,36 @@ const useDataSourceState = (data: Partial<ShapeEntity>) => {
 export const useShapeCountrySelectionStep = ({ data, onChange, nodeId }: Args): CountrySelectionState => {
   const { onStepNavigate } = useDialogContext<Partial<ShapeEntity>>();
   const bridgeRef = useMemo<BuildWorkerBridge>(() => getBuildWorkerBridge(), []);
+  const dispatchBuildSessionEvent = useSetAtom(dispatchBuildSessionEventAtom);
+
+  const invalidateSelection = useCallback(async (
+    prev: Record<string, boolean[]>,
+    nextSelection: Record<string, boolean[]>,
+  ): Promise<void> => {
+    try {
+      await invalidateBuildForSelectionChange({
+        bridgeRef,
+        nodeId,
+        prev,
+        nextSelection,
+      });
+    } catch (error) {
+      dispatchBuildSessionEvent({
+        type: 'criticalError',
+        payload: {
+          nodeId: String(nodeId),
+          message: 'Shape build invalidation failed',
+          error: error instanceof Error ? error.message : String(error),
+          errorName: error instanceof Error ? error.name : 'Error',
+          timestamp: Date.now(),
+          severity: 'critical',
+          contractViolation:
+            error instanceof ShapeArtifactCascadeCleanupError && error.step === 'resolve-plan',
+        },
+      });
+      throw error;
+    }
+  }, [bridgeRef, dispatchBuildSessionEvent, nodeId]);
 
   const { dataSourceKey, dataSourceError } = useDataSourceState(data);
   useEffect(() => {
@@ -139,12 +172,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId }: Args): 
       return undefined;
     })(),
     onChange: onChange as (patch: Partial<Record<string, unknown>>) => void,
-    onInvalidate: (prev, next) => invalidateBuildForSelectionChange({
-      bridgeRef,
-      nodeId,
-      prev,
-      nextSelection: next,
-    }),
+    onInvalidate: invalidateSelection,
   });
 
   const error = dataSourceError ?? loader.availabilityError ?? loader.metadataError;
