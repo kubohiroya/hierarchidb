@@ -38,6 +38,12 @@ Dependency CruiserとSyncpackは非blocking診断である。PRごとのblocking
 
 Naming Auditは`docs/ts-file-naming-guideline.md`のbase/head比較契約を維持する。audit実行に必要なroot dependenciesだけをinstallし、workspace全体のlinkは行わない。
 
+## Runtime policy
+
+workflow内のproject commandは`actions/setup-node`の`node-version: 24`で実行する。これは`actions/checkout`などのJavaScript action自身が使用するruntimeとは独立した契約である。action runtimeの非推奨警告を抑える目的でproject Nodeを変更してはならず、対象actionをNode 24 runtime対応majorへ更新する。
+
+現行workflowは`actions/checkout@v7`、`actions/setup-node@v7`、`actions/cache@v6`、`pnpm/action-setup@v6`を使用する。major更新時は既存inputの互換性を確認し、actionlint、YAML parse、実CIを通してNode runtimeの非推奨annotationが発生しないことを検証する。
+
 ## Cache policy
 
 Turbo local cache keyはlockfile、実行scope、commit SHAを含む。
