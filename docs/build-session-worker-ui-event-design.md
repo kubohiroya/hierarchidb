@@ -128,8 +128,8 @@ The normalized persistence boundary follows the same ownership rules. The sessio
 config row owns `startedAt`; the session status row owns `status`, `completedAt`,
 `inactiveMs`, and `canResume`; and each stage status row owns its canonical `stage`, `startedAt`, and
 `inactiveMs`. The optional persisted stage-row `stageId` remains opaque. Worker/UI
-events derive their canonical `stageId` from the row's `stage` field. The compatibility
-read model derives `updatedAt` as the maximum of persisted session, heartbeat, stage,
+events derive their canonical `stageId` from the row's `stage` field. The derived
+session read model computes `updatedAt` as the maximum of persisted session, heartbeat, stage,
 and task timestamps, without consulting the read clock. A partial normalized session
 or orphan heartbeat/stage row fails at the persistence/query boundary, as does missing
 timing for a started stage. The current stage is the unique row with the greatest
@@ -142,6 +142,18 @@ Failure persistence is secondary to the originating execution error. If persisti
 a startup failure also fails, the persistence error is logged while the original
 startup error remains the rejected value. Terminal-state finalization errors are
 reported separately and are never reclassified as pipeline failures.
+
+Pause uses the same strict ownership. The runtime first emits `pausing`, aborts the
+nodeId session through the AbortController stored in the SSOT state-tree entry, and
+awaits the actual pipeline Promise. Only after that Promise has settled and no live
+worker/job remains may interrupted tasks be re-queued and `paused` be emitted. On
+timeout, the Worker persists `failed` and rejects the pause command with a typed
+shutdown-timeout error. The UI command handler translates that rejection into the
+UI-internal `criticalError` event; `criticalError` is not a fifth Worker event. A
+timeout is never a pseudo-`paused` state.
+Rewriting `running` task rows before shutdown confirmation is prohibited because it
+would make a task-count poll falsely report that execution drained. Late work from a
+timed-out run is stale and cannot update tasks, session state, cache, or artifacts.
 
 ---
 

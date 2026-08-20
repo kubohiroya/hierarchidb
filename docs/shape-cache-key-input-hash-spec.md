@@ -1,11 +1,11 @@
 # Shape Cache Key and Input Hash Specification
 
 ## Status
-- Draft
-- Last updated: 2026-02-13
+- Normative
+- Last updated: 2026-08-20
 
 ## 1. Purpose
-This document defines how cache identity must be handled in the shape build pipeline (`fetch`, `transform`, `vt`).
+This document defines how cache identity must be handled in the shape build pipeline (`source`, `geometry`, `tileEmit`).
 
 The design uses two separate identifiers:
 - `cacheKey`: coarse lookup key
@@ -25,15 +25,18 @@ The design uses two separate identifiers:
   - `global`: share cache across nodes
 8. Artifact persistence must use upsert-by-key semantics (overwrite on same key).
 9. Recommended default namespace policy:
-  - `fetch`: `global`
-  - `transform`: `node`
-  - `vt`: `node`
+  - `source`: `global`
+  - `geometry`: `node`
+  - `tileEmit`: `node`
 10. A dedicated `countryMetadataCache` is out of scope and must not be introduced in this design.
+11. Every stage-specific required identity input must be present and valid before key construction. Missing inputs throw; they are not normalized to sentinel/default values.
+12. A persisted identity is valid only when both `cacheKey` and `inputHash` are non-empty strings. A partial identity is a contract violation.
+13. Unknown stages throw. A legacy/taskId-derived cache identity must not be generated.
 
 ## 3. Definitions
 - `cacheKey`: stage-specific key string for indexed retrieval.
-- `inputHash`: `sha256(canonical_json(payload))`, where payload contains only output-affecting inputs excluding `cacheKey` fields.
-- `artifactHash`: hash of stage output artifact bytes/content identity.
+- `inputHash`: canonical JSON token used for strict equality. The field name is retained, but its current representation is not a cryptographic digest.
+- `artifactHash`: SHA3-256 digest of stage output artifact bytes/content identity.
 - `pipelineVersion`: semantic version for stage logic affecting output bytes/geometry.
 - `cacheNamespaceMode`: config value choosing key namespace scope (`node` or `global`).
 - `namespacePrefix`:
@@ -46,17 +49,22 @@ The design uses two separate identifiers:
 - ISO country codes are normalized to uppercase where applicable.
 - Numbers are normalized to canonical JSON numeric form.
 - Null/undefined policy:
-  - Undefined fields are omitted.
-  - Explicit null remains null.
+  - Undefined may be omitted only for schema-declared optional fields.
+  - A missing/null required field throws before canonicalization.
+  - Explicit null remains null only for schema-declared nullable fields.
+- Non-finite numbers throw. Integer/range-constrained fields are validated before serialization; they are not rounded or clamped.
+- Empty strings throw for required string fields.
+- Canonicalization must be schema-aware. It must not sort every primitive array because band/profile/config arrays are ordered inputs.
 
 ## 5. Stage-Specific Key and Hash Definitions
 All keys below are prefixed with `{namespacePrefix}:`.
 
-### 5.1 Fetch Stage
+### 5.1 Source Stage
 #### `cacheKey`
-`{namespacePrefix}:shape:fetch:v1:{dataSource}:{iso2}:adm{adminLevel}:{endpointId}`
+`{namespacePrefix}:shape:source:v1:{dataSource}:{sourceKey}:{endpointId}`
 
 - `endpointId` is a stable endpoint identifier (not raw query noise).
+- `dataSource`, canonical `sourceKey` (`{ISO2}:{adminLevel}`), and `endpointId` are required non-empty values.
 
 #### `inputHash` payload (exclude key fields)
 - `upstreamRevision` (e.g. ETag / Last-Modified / content digest)
@@ -69,35 +77,42 @@ All keys below are prefixed with `{namespacePrefix}:`.
   - `geometryEngine`
 - `pipelineVersion`
 
-### 5.2 Transform Stage
+`upstreamRevision` is optional only when the upstream supplies no revision. When absent it is represented explicitly as `null`; a present empty string is invalid.
+
+### 5.2 Geometry Stage
 #### `cacheKey`
-`{namespacePrefix}:shape:transform:v1:{dataSource}:{iso2}:adm{adminLevel}:band{bandIndex}`
+`{namespacePrefix}:shape:geometry:v1:{sourceKey}:band{bandIndex}`
 
 #### `inputHash` payload (exclude key fields)
-- `fetchArtifactHash`
+- `sourceArtifactHash`
+- `sourceBaseTolerance`
+- `sourceVertexLimit` (must be `6553`)
 - `bandMinZoom`
 - `bandMaxZoom`
-- `zBase`
-- `geometryConfigAffectingOutput`
+- `geometryConfigSignature`
 - `pipelineVersion`
 
-### 5.3 VT Stage
+All fields above are required. `sourceBaseTolerance`, band values, and profile/config values are validated by the tolerance contract before token construction.
+
+### 5.3 TileEmit Stage
 #### `cacheKey`
-`{namespacePrefix}:shape:vt:v1:band{bandIndex}:z{zBase}:tile{tileId}`
+`{namespacePrefix}:shape:tileEmit:v1:band{bandIndex}:z{zBase}:tile{tileId}`
 
 #### `inputHash` payload (exclude key fields)
-- `transformArtifactSetHash` (derived from ordered transform artifacts used for the tile)
-- `tileEmitConfigAffectingOutput`
-- `layerSchema`
-- `geometryEngine` (if output-relevant)
+- `transformArtifactSet` (sorted, duplicate-free `bufferIds` set)
+- `bandMinZoom`
+- `bandMaxZoom`
+- `tileEmitConfigSignature`
 - `pipelineVersion`
+
+`bufferIds` is a required array. An explicit empty array is the canonical empty-tile case; a missing array or any empty/non-string member is a contract violation.
 
 ## 6. Persistence Requirements
 Each cacheable artifact record must store:
 - `cacheKey` (indexed)
 - `inputHash` (indexed)
 - `artifactHash` (indexed)
-- stage identity (`fetch` / `transform` / `vt`)
+- stage identity (`source` / `geometry` / `tileEmit`)
 - produced output metadata (size/count/timestamps)
 
 Recommended uniqueness:
@@ -118,13 +133,14 @@ When writing a new artifact with the same (`stage`, `cacheKey`), the record must
 Important:
 - Step 4 is direct string comparison only.
 - No recomputation of `inputHash` from stored artifacts during hit check.
+- A missing/partial task or artifact identity fails the task. It is not treated as a cache miss.
 
 ## 8. Lifecycle Behavior
 - `Start`:
   - Tasks are newly generated.
   - Cache reuse is allowed via (`cacheKey`, `inputHash`) matching.
-- `Resume`:
-  - Continue existing tasks.
+- Start of a resumable session:
+  - `startBuildSession` continues existing tasks according to persisted session state.
   - Same cache matching rule applies.
 - `Reset`:
   - Remove runtime/task state only.
@@ -132,9 +148,10 @@ Important:
 - Explicit `Reload`:
   - Invalidate target cache domain and regenerate.
 
-Legacy policy:
+Invalid persisted identity policy:
 - Artifacts without `inputHash` are treated as invalid and must not be reused.
-- They may be dropped eagerly during reset/reload or lazily on first key lookup.
+- Artifacts with a missing/empty `cacheKey`, partial identity, unknown stage, or invalid lineage are also invalid.
+- Invalid artifacts are removed through the explicit lineage cleanup/invalidation path. Runtime lookup does not derive a compatibility identity.
 
 ## 9. Non-Goals
 - This spec does not define storage TTL/LRU policy details.
@@ -151,3 +168,8 @@ Minimum required tests:
 6. Fields used only by lookup key do not affect `inputHash`.
 7. Same (`stage`, `cacheKey`) write overwrites previous artifact record.
 8. Namespace mode switch (`node` / `global`) changes key space as expected.
+9. Missing/empty source identity fields throw; no `unknown`, `XX`, `:0`, empty endpoint, or taskId-derived key is produced.
+10. Invalid/non-finite band, zoom, tile, tolerance, or config values throw; they are not rounded, clamped, sorted into range, or defaulted.
+11. Ordered config arrays with the same members in a different order produce different `inputHash` values.
+12. Unordered `bufferIds` sets produce the same token after sorting and deduplication; missing/invalid members throw.
+13. Partial persisted `cacheKey` / `inputHash` pairs and unknown stages throw.

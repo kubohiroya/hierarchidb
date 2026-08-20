@@ -378,7 +378,7 @@ export function parentTileToChildRange(tile: Tile, zTarget: number): { xStart: n
 ### `source`タスク（plugin → taskQueue）
 
 source処理はpluginが実行するが、進捗可視化のためtaskQueueで管理する。
-取得処理の開始/進捗/完了（succeeded/reused/failed）はplugin側がtaskQueueに書き込み、
+取得処理の開始/進捗/完了（completed/recycled/failed）はplugin側がtaskQueueに書き込み、
 vt-orchestratorはsource処理を実行しない。
 
 - `nodeId`
@@ -388,8 +388,8 @@ vt-orchestratorはsource処理を実行しない。
 - `srcId` / `dstId`（route の場合）
 
 **source取得成功時のキャッシュ**
-- `source`タスクが `succeeded` の場合はsmartFetchでキャッシュを保存する
-- 以降の同様タスクはキャッシュを用いて `reused` として処理する
+- `source`タスクが `completed` の場合はsmartFetchでキャッシュを保存する
+- 以降の同一identityタスクはキャッシュを用いて `recycled` として処理する
 
 ### `geometry`タスク（plugin → taskQueue）
 
@@ -414,17 +414,17 @@ vt-orchestratorはsource処理を実行しない。
 
 ### 状態遷移
 
-- `queued` → `running` → `succeeded`
+- `queued` → `running` → `completed`
 - `queued` → `running` → `failed`
 - `queued` → `running` → `skipped`
-- `queued` → `running` → `reused`
+- `queued` → `recycled`
 
 ### 進捗イベント（最小フォーマット）
 
 - `taskId`
 - `nodeId`
 - `stage` (`source` / `geometry` / `tileEmit`)
-- `status` (`queued` / `running` / `succeeded` / `failed` / `skipped` / `reused`)
+- `status` (`queued` / `running` / `completed` / `failed` / `skipped` / `recycled`)
 - `progress` (0-100)
 - `message`（任意、ログ/補足）
 - `error`（任意、失敗時の詳細）
@@ -435,37 +435,36 @@ vt-orchestratorはsource処理を実行しない。
 **skipped の条件（例）**
 - 依存タスクが不要と判定された
 
-**reused の条件（例）**
+**recycled の条件（例）**
 - 重要処理（例: fetch-* の外部アクセス）を実行せず、キャッシュ等で **成功時と同等の成果**を提供する
 
 **後段タスク/リソース提供の差**
-- `reused`: 重要処理は実行しないが、後段ステージに **成功時と同等の成果**を提供する
+- `recycled`: 重要処理は実行しないが、後段ステージに **成功時と同等の成果**を提供する
 - `skipped`: 重要処理を実行せず、後段ステージに **提供する内容がない**（エラー報告は不要）
 
-## 再実行・再利用の判定（計画）
+## 再実行・再利用の判定
 
-> 現行の ephemeral taskQueue を前提にし、状態は `completed` に統一しつつ **message 前置詞で再利用/スキップを表現**する。
-> 例: `message = "reused: <reason>"` / `message = "skipped: <reason>"`（UI 側は現行の `isSkippedMessage` で判定）。
+`completed` / `skipped` / `recycled` は `docs/build-session-spec.md` の正規statusをそのまま永続化する。message prefix からstatusを推測しない。
 
 ### 実装手順（taskQueue 更新の流れ）
 
-1. **queued 登録**: taskQueue に `status=waiting` で登録（taskId は安定生成）
+1. **queued 登録**: taskQueue に `status=queued` で登録（taskId は安定生成）
 2. **開始**: 実処理を開始する直前に `status=running` を記録
 3. **判定**:
-   - reused 判定が成立した場合: `status=completed`, `message="reused: <reason>"` で更新
-   - skipped 判定が成立した場合: `status=completed`, `message="skipped: <reason>"` で更新
+   - recycled 判定が成立した場合: 実処理を開始せず `status=recycled` で更新
+   - skipped 判定が成立した場合: `status=skipped` で更新
 4. **成功**: 処理が完了した場合は `status=completed`（message は任意）
 5. **失敗**: 失敗時は `status=failed` + `errorMessage`
-
-> 状態は現行の taskQueue 型に合わせ、`waiting/running/completed/failed` を使用する。
-> reused/skipped は **message 前置詞**で表現し、UI 側は現行の `isSkippedMessage` 互換を維持する。
 
 ### source（shape/route input acquisition）
 
 - **判定キー**: `domainType + sourceKey + dataSource + requestSignature`
   - fetch-shape（geoBoundaries/GADM）は **GETのみ**で利用するため、`requestSignature` は **URLそのもの**をキーとして扱う
   - routeのsource requestはPOSTを含むため、smartFetchのrequestSignature（URL/method/body/auth）に準拠
-- **reused 条件**:
+- **契約**:
+  - `domainType`、`sourceKey`、`dataSource`、`requestSignature` は空でない canonical 値を必須とする
+  - 欠落値を `unknown`、`XX`、`:0`、空URL、taskId由来のlegacy keyで補完しない
+- **recycled 条件**:
   - smartFetch が **外部アクセス無し**でキャッシュヒットした場合
   - route の waypoints 計算が **キャッシュヒット**した場合（大圏航路 / searoute-jp / 外部API）
 - **skipped 条件**:
@@ -485,12 +484,16 @@ vt-orchestratorはsource処理を実行しない。
     - `simplificationTolerance`（Transform の係数）
     - `quantize`（transform の量子化）
     - `tileIndex`（geojson-vt の indexMaxZoom, buffer, extent）
-- **reused 条件**:
+- **契約**:
+  - source artifact hash と、shape では Source session が確定した `baseTolerance` / `vertexLimit=6553` も必須の identity input とする
+  - band/config/profile の欠落や不正値を band0、0、既定profile、固定toleranceへ補完しない
+- **recycled 条件**:
   - `transformBandBuffers` と `tileIndexBand` が同一キーで存在し、内容が一致する場合
   - band3 予約タスクが既に登録済みで、予約上限に達していない場合
 - **skipped 条件**:
-  - `stage1Buffers` が無い
-  - 対象 band に該当する地物が無く、後段の tileIndex を生成しない場合
+  - 正規 source artifact が明示的な空 collection で、対象 band に渡す地物が無い場合
+- **failed 条件**:
+  - geometry task が参照する `stage1Buffer`、source artifact hash、lineage が欠落・不一致の場合
 - **再実行トリガ**:
   - stage1Buffer の更新/削除
   - transform 設定（簡略化強度・band・grid-snap 条件）の変更
@@ -508,11 +511,16 @@ vt-orchestratorはsource処理を実行しない。
     - `vtSimplificationTolerance`（VT の係数）
     - `boundaryDedupe`（on/off + 実装バージョン）
     - `layers`（出力対象レイヤーの固定順リスト）
-- **reused 条件**:
+- **契約**:
+  - `bandIndex`、`zBase`、`tileId` は finite な定義済み整数、`bufferIds` は必須配列とする
+  - 空 `bufferIds` は正規の empty-tile 判定としてのみ許容する。field 欠落や不正要素を空配列へ正規化しない
+- **recycled 条件**:
   - 各ドメインDBで同一キーのタイルが存在し、contentHash が一致する場合
 - **skipped 条件**:
   - tileIndex に該当地物が無い（空タイル）
-  - `bufferIds` が空、または対応バッファが欠損している場合
+  - 必須 field として渡された `bufferIds` が空配列である場合
+- **failed 条件**:
+  - `bufferIds` field が欠落・不正、または列挙された対応バッファが1件でも欠損している場合
 - **再実行トリガ**:
   - transformBandBuffers / tileIndexBand の更新
   - vt 設定（tolerance / buffer / extent / dedupe）の変更
@@ -526,10 +534,12 @@ vt-orchestratorはsource処理を実行しない。
 - **値の正規化**:
   - boolean は `true/false`
   - 数値は小数誤差がないよう固定精度（例: `toFixed(6)`）
-  - undefined は除外、null は `null` として扱う
+  - undefined の除外は schema で optional と定義された値に限る。required 値の undefined/null/空値は hash 化前に契約違反として失敗する
+  - optional な null は `null` として扱う
 - **シリアライズ**:
   - JSON 文字列化（キー順固定）を基本とする
-  - 文字列化後にハッシュ化（既存実装の **SHA3** を使用）
+  - `inputHash` は厳密比較用の canonical JSON token とし、暗号学的digestへ再変換しない
+  - artifact bytes/content の `artifactHash` は SHA3-256 を使用する
 
 ## FGB 保存先（再掲）
 
@@ -622,6 +632,8 @@ vt-orchestratorはsource処理を実行しない。
 - `tileEmit` 完了後に `stage1Buffers` / `transformBandBuffers` / `tileIndexBand` を削除してよい
 - `vtBand3Reservations` は band3 完了後に削除してよい
 - 中間ストア/タスクの削除は PluginLifecycleAPI を通じて実行する
+- 上流 artifact の削除・置換時は、参照する下流 artifact と未完了 task を lineage の下流端まで cascade cleanup する
+- cleanup 完了前の cache/artifact は再利用不可とし、一部失敗を成功扱いしない。cleanup failure は session/task の可視な error とする
 ## パラメータ（初期値案）
 
 - `maxBuffersPerTask`: 64-256
@@ -634,11 +646,20 @@ vt-orchestratorはsource処理を実行しない。
 - `maxBuffersPerTask` / `maxVerticesPerTask` / `maxBand3Reservations`: `tileEmit`タスクの分割上限（Advanced Settings 内）
 - band の z 範囲は固定（表示のみ）
 
-## Step4 入力仕様（最終参照）
+## Step4 入力契約（規範）
 
-> UI実装の現行値を基準に整理。後続で型/境界/既定値の確定が必要。  
-> 本節が Step4 入力仕様の **最終的な参照元** であり、他文書はこの内容に従う。  
-> 読み順: 1) Legacy controls → 2) 非Legacy要約 → 3) 詳細 → 4) UI構造
+- shape の正規 top-level config は `sourceConfig` / `geometryConfig` / `tileEmitConfig` / `cleanupConfig` とする。
+- すべての required field は config 作成時に確定し、Worker/API 境界で型・finite・整数・範囲・配列長・相互順序を検証する。
+- UI slider/rating の min/max は入力支援であり、runtime の clamp 根拠ではない。不正値は契約違反として失敗させる。
+- 旧 `downloadConfig` / `extract1Config` / `extract2Config` / `tileConfig`、route の旧 alias を runtime で互換読み込みしない。旧 config は明示的 migration または cache invalidation の対象とする。
+- shape の tolerance は `docs/spec/shape4-geometry-tolerance-bisection-spec.md`、invalid geometry は `docs/spec/shape-step4-invalid-geometry-filter-tileemit-spec-and-plan.md` をSSOTとする。
+- shape の `tileEmitConfig.invalidGeometryFilter` は必須の5 boolean fieldを持ち、Source/Geometry stageでは参照しない。
+
+## Step4 入力仕様（履歴資料・非規範）
+
+> 以下の Step4 節は旧UI調査時の項目表と移行案を保存した履歴資料であり、runtime契約ではない。
+> `Legacy controls`、旧 field の既定値、段階移行、UIでの丸め/正規化を実装根拠にしてはならない。
+> 現行実装と後続変更は直前の「Step4 入力契約（規範）」およびshape/route固有仕様に従う。
 
 ### 1) Legacy controls（旧Extract互換）
 
@@ -1228,12 +1249,16 @@ const lonLatCoords = simplified.map(mercatorToLonLat);
 - tolerance の UI ラベルは **「簡略化強度」** とする
 - Transform/VT の既定係数 `k` は **1.0**
 - route の `processing.extraction.tolerance` は **段階移行**とし、移行完了時に **0.1〜5.0** へ統一する
+- 既定係数は新規 config 作成時にのみ設定する。Worker/API が欠落・非 finite・範囲外の係数を `1.0` や min/max へ補完・clampしてはならない
+- WebMercator 変換前に経度・緯度が finite かつ WGS84 範囲内であることを検証し、clamp/wrapせず契約違反として失敗させる
+- shape の Source-derived `baseTolerance` と profile 契約は `docs/spec/shape4-geometry-tolerance-bisection-spec.md` に従う
 
 ## vertexCount の算出ルール
 
 - 各 feature の geometry に含まれる座標数の合計
 - ポリゴンは外周 + 内周の合計座標数
 - LineString/Point も座標数を合算
+- shape の geometry simplification 閾値は `6553` で、正常な feature は `vertexCount < 6553` を満たす。`65535` は誤記として使用しない
 
 ## tileEmit（処理詳細）
 

@@ -38,6 +38,8 @@
 - flatgeobuf に変換して stage1Buffers に保存
   - `domainType`: `shape`
   - `sourceKey`: `${countryCode}:${adminLevel}`（countryCode は **ISO2 を正**とし、dataSource 側で ISO2/ISO3 の揺れを吸収しない）
+- `dataSource`、ISO2 `countryCode`、整数 `adminLevel`、`sourceKey`、source request signature は cache/source identity の必須要素とする。upstream revision は取得できる場合に identity へ含め、存在する空文字を欠落扱いで無視しない
+- identity の欠落・空値・非 canonical 値を `unknown`、`XX`、`:0`、空 URL、node/task 情報からの推測で補完しない
 - タスク単位: `countryCode + adminLevel`（1タスク=1 stage1Buffer）
 - `geometry`タスク生成はplugin側が責務を持つ
   - vt-orchestratorには`geometry` / `tileEmit`タスクを投入する
@@ -53,11 +55,32 @@
 - タスク単位: `stage1Buffer` × `band`（band0/1/2、band3 は条件付き）
 - band3 は「いずれかの国で adminLevel>=2 が選択された場合」に自動 ON
 - 簡略化は turf の Ramer–Douglas–Peucker を使用し、許容誤差は Step4 設定に従う（入力仕様は `docs/vt-pipeline-design.md` を参照）
+- Source stage が session に保存した finite `baseTolerance` と整数 `vertexLimit=6553` を必須入力とする。Geometry task 内で代表 feature の再探索や固定 tolerance へのフォールバックを行わない
+- `vertexLimit=6553` は排他的な閾値であり、正常出力は feature ごとの `vertexCount < 6553` を満たす
+- multiplier/minRatio/maxRatio は band ごとに finite、`0.0..2.0`、`minRatio <= multiplier <= maxRatio` を満たすことを事前検証し、clamp・並べ替え・既定値補完を行わない
 
 ## tileEmit stage（shape）
 
 - 固定タスク（1+64+4096） + band3 予約タスク
 - geojson-vt でタイル生成し VTMutationAPI へ保存
+- `tileEmitConfig.invalidGeometryFilter` は5つの boolean check を持つ必須 config とし、旧 source/fetch config key を読まない
+- invalid geometry filtering の stage owner は tileEmit とし、geometry artifact を GeoJSON collection に復元した後、tileEmit が使用する geojson-vt index の作成直前に一度だけ適用する
+- 非 finite / WGS84 範囲外座標、必須 geometry/payload 欠落は task failure とする。明示的に有効な品質 check に不適合な polygon だけを drop + `TaskQueueRecord.metadata.resultSeverity='warning'` の対象とする
+
+## Cache identity 契約（shape）
+
+- source: 必須の `dataSource + sourceKey + request signature + output shaping config signature` と、存在する場合の upstream revision
+- geometry: `sourceKey + bandIndex + source artifact hash + baseTolerance + geometry config signature`
+- tileEmit: `bandIndex + zBase + tileId + canonical bufferIds[] + tileEmit config signature`
+- 各必須文字列は空でなく、各数値は finite かつ定義された整数/範囲でなければならない。`bufferIds` は field 自体を必須とし、空配列は正規の empty-tile 判定としてのみ許容する
+- 永続済み `cacheKey` / `inputHash` は両方が空でない場合だけ有効とする。一方だけの欠落、stage不明、identity構成値欠落をlegacy keyや既定値で補完しない
+
+## Artifact lineage / cleanup 契約（shape）
+
+- 正規 lineage は `selection meta -> source artifact -> geometry artifact -> tileEmit artifact` とする
+- 上流 artifact の削除・置換・invalid化は、参照する下流 artifactと未完了taskを下流端まで cascade cleanup する
+- cleanup 完了前の artifact/cache は再利用不可とし、一部削除失敗を成功扱いしない
+- cleanup failure は session/task の可視な error とし、stale artifact を残したまま次stageやresumeへ進まない
 
 ## 旧実装からの置換対象
 
