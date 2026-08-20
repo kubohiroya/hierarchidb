@@ -1,12 +1,33 @@
+import {
+  YAML_SUBTYPE_REGISTRY,
+  type YamlCanonicalFilename,
+  type YamlSubtypeRegistryEntry,
+} from '@hierarchidb/yaml-api';
 import { validateYamlCanonicalPayload } from '@hierarchidb/yaml-api/validation';
 import type {
   CanonicalYamlZipCodecError,
   DecodeCanonicalYamlZipResult,
   DecodedCanonicalYamlZipEntry,
 } from './canonicalYamlZipCodecTypes.js';
+import { decodeCanonicalYamlZipUtf8 } from './canonicalYamlZipUtf8.internalUtils.js';
 import { CANONICAL_YAML_ZIP_LIMITS } from './constants.js';
 import { decodeCanonicalYamlZipBase64 } from './decodeCanonicalYamlZipBase64.internalUtils.js';
-import { inspectCanonicalYamlZipCentralDirectory } from './inspectCanonicalYamlZipCentralDirectory.internal.js';
+import {
+  type InspectedCanonicalYamlZipEntry,
+  inspectCanonicalYamlZipCentralDirectory,
+} from './inspectCanonicalYamlZipCentralDirectory.internal.js';
+
+interface Utf8DecodedCanonicalYamlZipEntry {
+  readonly inspectedEntry: InspectedCanonicalYamlZipEntry;
+  readonly content: string;
+}
+
+interface RegistryResolvedCanonicalYamlZipEntry {
+  readonly occurrenceIndex: number;
+  readonly filename: YamlCanonicalFilename;
+  readonly registryEntry: YamlSubtypeRegistryEntry;
+  readonly content: string;
+}
 
 function failure(
   code: CanonicalYamlZipCodecError['code'],
@@ -21,21 +42,22 @@ function failure(
   return { ok: false, error };
 }
 
-function bytesEqual(left: Uint8Array, right: Uint8Array): boolean {
-  if (left.length !== right.length) return false;
-  for (let index = 0; index < left.length; index += 1) {
-    if (left[index] !== right[index]) return false;
-  }
-  return true;
+function isUnsafeFilename(filename: string): boolean {
+  return (
+    filename.length === 0 ||
+    filename.includes('\0') ||
+    filename.includes('/') ||
+    filename.includes('\\') ||
+    filename === '.' ||
+    filename === '..' ||
+    filename.startsWith('/') ||
+    /^[A-Za-z]:/.test(filename) ||
+    filename.normalize('NFC') !== filename
+  );
 }
 
-function decodeFatalUtf8(bytes: Uint8Array): string | undefined {
-  try {
-    const value = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
-    return bytesEqual(new TextEncoder().encode(value), bytes) ? value : undefined;
-  } catch {
-    return undefined;
-  }
+function findRegistryEntry(filename: string): YamlSubtypeRegistryEntry | undefined {
+  return Object.values(YAML_SUBTYPE_REGISTRY).find((entry) => entry.fileName === filename);
 }
 
 function resolveArchiveBytes(
@@ -62,22 +84,48 @@ export function decodeCanonicalYamlZip(input: string | Uint8Array): DecodeCanoni
     const inspection = inspectCanonicalYamlZipCentralDirectory(archiveBytes.bytes);
     if (!inspection.ok) return { ok: false, error: inspection.error };
 
-    const entries: DecodedCanonicalYamlZipEntry[] = [];
+    const utf8DecodedEntries: Utf8DecodedCanonicalYamlZipEntry[] = [];
     for (const inspectedEntry of inspection.entries) {
-      const content = decodeFatalUtf8(inspectedEntry.contentBytes);
+      const content = decodeCanonicalYamlZipUtf8(inspectedEntry.contentBytes);
       if (content === undefined) {
         return failure('INVALID_UTF8_CONTENT', inspectedEntry.occurrenceIndex);
       }
+      utf8DecodedEntries.push({ inspectedEntry, content });
+    }
 
-      const validation = validateYamlCanonicalPayload(inspectedEntry.filename, {
-        subtype: inspectedEntry.registryEntry.subtype,
-        schemaId: inspectedEntry.registryEntry.schemaId,
+    const registryResolvedEntries: RegistryResolvedCanonicalYamlZipEntry[] = [];
+    for (const utf8DecodedEntry of utf8DecodedEntries) {
+      const { inspectedEntry, content } = utf8DecodedEntry;
+      const { decodedFilename } = inspectedEntry;
+      if (decodedFilename.endsWith('/')) {
+        return failure('DIRECTORY_ENTRY_UNSUPPORTED', inspectedEntry.occurrenceIndex);
+      }
+      if (isUnsafeFilename(decodedFilename)) {
+        return failure('UNSAFE_FILENAME', inspectedEntry.occurrenceIndex);
+      }
+      const registryEntry = findRegistryEntry(decodedFilename);
+      if (registryEntry === undefined) {
+        return failure('UNKNOWN_FILENAME', inspectedEntry.occurrenceIndex);
+      }
+      registryResolvedEntries.push({
+        occurrenceIndex: inspectedEntry.occurrenceIndex,
+        filename: registryEntry.fileName,
+        registryEntry,
         content,
+      });
+    }
+
+    const entries: DecodedCanonicalYamlZipEntry[] = [];
+    for (const registryResolvedEntry of registryResolvedEntries) {
+      const validation = validateYamlCanonicalPayload(registryResolvedEntry.filename, {
+        subtype: registryResolvedEntry.registryEntry.subtype,
+        schemaId: registryResolvedEntry.registryEntry.schemaId,
+        content: registryResolvedEntry.content,
       });
       if (!validation.ok) {
         return failure(
           'CANONICAL_VALIDATION_FAILED',
-          inspectedEntry.occurrenceIndex,
+          registryResolvedEntry.occurrenceIndex,
           validation.error.code
         );
       }
@@ -89,8 +137,8 @@ export function decodeCanonicalYamlZip(input: string | Uint8Array): DecodeCanoni
       });
       entries.push(
         Object.freeze({
-          occurrenceIndex: inspectedEntry.occurrenceIndex,
-          filename: inspectedEntry.filename,
+          occurrenceIndex: registryResolvedEntry.occurrenceIndex,
+          filename: registryResolvedEntry.filename,
           payload,
         })
       );

@@ -254,6 +254,31 @@ describe('canonical YAML ZIP deterministic round trip', () => {
     });
   });
 
+  it('preserves a UTF-8 BOM as U+FEFF byte-for-byte', () => {
+    const entry = YAML_SUBTYPE_REGISTRY.scenario;
+    const content = '\uFEFFname: demo\n';
+    const encoded = expectEncoded([
+      {
+        filename: entry.fileName,
+        payload: { subtype: entry.subtype, schemaId: entry.schemaId, content },
+      },
+    ]);
+    const record = requireRecord(centralRecords(encoded.bytes), 0);
+    const contentOffset =
+      record.localOffset + LOCAL_HEADER_BYTES + readUint16(encoded.bytes, record.localOffset + 26);
+    expect(encoded.bytes.slice(contentOffset, contentOffset + 3)).toEqual(
+      new Uint8Array([0xef, 0xbb, 0xbf])
+    );
+
+    const decoded = decodeCanonicalYamlZip(encoded.bytes);
+    expect(decoded.ok).toBe(true);
+    if (!decoded.ok) throw new Error('Expected decode success');
+    expect(decoded.value.entries[0]?.payload.content).toBe(content);
+    expect(new TextEncoder().encode(decoded.value.entries[0]?.payload.content)).toEqual(
+      new TextEncoder().encode(content)
+    );
+  });
+
   it('does not mutate archive bytes or input payloads', () => {
     const input = canonicalEntries().slice(0, 2);
     const inputSnapshot = structuredClone(input);
@@ -349,6 +374,49 @@ describe('canonical YAML ZIP raw archive rejection', () => {
     replaceStoredContent(bytes, record, replacement);
     expectDecodeError(bytes, 'INVALID_UTF8_CONTENT');
   });
+
+  it('completes fatal content UTF-8 decoding archive-wide before schema validation', () => {
+    const encoded = expectEncoded(
+      canonicalEntries().filter(
+        (entry) => entry.filename === 'scenario-base.yml' || entry.filename === 'scenario.yml'
+      )
+    );
+    const bytes = new Uint8Array(encoded.bytes);
+    const records = centralRecords(bytes);
+    const schemaInvalidFirst = requireRecord(records, 0);
+    const invalidUtf8Later = requireRecord(records, 1);
+    replaceStoredContent(bytes, schemaInvalidFirst, new TextEncoder().encode('aaaaaaaaaaa'));
+    replaceStoredContent(bytes, invalidUtf8Later, new Uint8Array(11).fill(0xff));
+
+    expect(decodeCanonicalYamlZip(bytes)).toEqual({
+      ok: false,
+      error: { code: 'INVALID_UTF8_CONTENT', entryIndex: 1 },
+    });
+  });
+
+  it.each(['unknown-entry.yml', 'unsafe/path-x.yml'])(
+    'reports later invalid content UTF-8 before earlier filename semantics for %s',
+    (replacementFilename) => {
+      const encoded = expectEncoded(
+        canonicalEntries().filter(
+          (entry) => entry.filename === 'scenario-base.yml' || entry.filename === 'scenario.yml'
+        )
+      );
+      const bytes = new Uint8Array(encoded.bytes);
+      const records = centralRecords(bytes);
+      const semanticInvalidFirst = requireRecord(records, 0);
+      const invalidUtf8Later = requireRecord(records, 1);
+      const replacementFilenameBytes = new TextEncoder().encode(replacementFilename);
+      expect(replacementFilenameBytes.length).toBe(semanticInvalidFirst.filenameLength);
+      replaceFilenameInBothHeaders(bytes, semanticInvalidFirst, replacementFilenameBytes);
+      replaceStoredContent(bytes, invalidUtf8Later, new Uint8Array(11).fill(0xff));
+
+      expect(decodeCanonicalYamlZip(bytes)).toEqual({
+        ok: false,
+        error: { code: 'INVALID_UTF8_CONTENT', entryIndex: 1 },
+      });
+    }
+  );
 
   it('rejects nested, unknown, and directory entries without skipping them', () => {
     const encoded = expectEncoded(canonicalEntries().slice(0, 1));

@@ -6,6 +6,7 @@ import type {
   CanonicalYamlZipInputEntry,
   EncodeCanonicalYamlZipResult,
 } from './canonicalYamlZipCodecTypes.js';
+import { encodeCanonicalYamlZipUtf8 } from './canonicalYamlZipUtf8.internalUtils.js';
 import {
   CANONICAL_YAML_ZIP_LIMITS,
   CANONICAL_YAML_ZIP_STORE_METHOD,
@@ -69,15 +70,6 @@ function compareBytes(left: Uint8Array, right: Uint8Array): number {
   return left.length - right.length;
 }
 
-function encodeLosslessUtf8(value: string): Uint8Array | undefined {
-  const bytes = new TextEncoder().encode(value);
-  try {
-    return new TextDecoder('utf-8', { fatal: true }).decode(bytes) === value ? bytes : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
 function isPlainEntry(value: unknown): value is Readonly<Record<PropertyKey, unknown>> {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
   const prototype = Object.getPrototypeOf(value);
@@ -139,8 +131,8 @@ function validateEncodeEntries(
       return failure('CANONICAL_VALIDATION_FAILED', entryIndex, validation.error.code);
     }
 
-    const filenameBytes = encodeLosslessUtf8(registryEntry.fileName);
-    const contentBytes = encodeLosslessUtf8(validation.value.content);
+    const filenameBytes = encodeCanonicalYamlZipUtf8(registryEntry.fileName);
+    const contentBytes = encodeCanonicalYamlZipUtf8(validation.value.content);
     if (filenameBytes === undefined) return failure('INVALID_UTF8_FILENAME', entryIndex);
     if (contentBytes === undefined) return failure('INVALID_UTF8_CONTENT', entryIndex);
     if (contentBytes.length > CANONICAL_YAML_ZIP_LIMITS.entryBytes) {

@@ -1,10 +1,6 @@
-import {
-  YAML_SUBTYPE_REGISTRY,
-  type YamlCanonicalFilename,
-  type YamlSubtypeRegistryEntry,
-} from '@hierarchidb/yaml-api';
 import { calculateCanonicalYamlZipCrc32 } from './calculateCanonicalYamlZipCrc32.internalUtils.js';
 import type { CanonicalYamlZipCodecError } from './canonicalYamlZipCodecTypes.js';
+import { decodeCanonicalYamlZipUtf8 } from './canonicalYamlZipUtf8.internalUtils.js';
 import {
   CANONICAL_YAML_ZIP_LIMITS,
   CANONICAL_YAML_ZIP_STORE_METHOD,
@@ -42,9 +38,12 @@ interface RawInspectedCanonicalYamlZipEntry {
 
 export interface InspectedCanonicalYamlZipEntry {
   readonly occurrenceIndex: number;
-  readonly filename: YamlCanonicalFilename;
-  readonly registryEntry: YamlSubtypeRegistryEntry;
+  readonly decodedFilename: string;
   readonly contentBytes: Uint8Array;
+}
+
+interface FilenameDecodedCanonicalYamlZipEntry extends InspectedCanonicalYamlZipEntry {
+  readonly externalAttributes: number;
 }
 
 type InspectCanonicalYamlZipCentralDirectoryResult =
@@ -90,37 +89,10 @@ function bytesEqual(left: Uint8Array, right: Uint8Array): boolean {
   return true;
 }
 
-function decodeFatalUtf8(bytes: Uint8Array): string | undefined {
-  try {
-    const value = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
-    return bytesEqual(new TextEncoder().encode(value), bytes) ? value : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
 function isDirectoryExternalAttribute(externalAttributes: number): boolean {
   const dosDirectoryBit = (externalAttributes & 0x10) !== 0;
   const unixFileType = (externalAttributes >>> 16) & 0xf000;
   return dosDirectoryBit || unixFileType === 0x4000;
-}
-
-function isUnsafeFilename(filename: string): boolean {
-  return (
-    filename.length === 0 ||
-    filename.includes('\0') ||
-    filename.includes('/') ||
-    filename.includes('\\') ||
-    filename === '.' ||
-    filename === '..' ||
-    filename.startsWith('/') ||
-    /^[A-Za-z]:/.test(filename) ||
-    filename.normalize('NFC') !== filename
-  );
-}
-
-function findRegistryEntry(filename: string): YamlSubtypeRegistryEntry | undefined {
-  return Object.values(YAML_SUBTYPE_REGISTRY).find((entry) => entry.fileName === filename);
 }
 
 function parseCentralDirectoryRecords(
@@ -341,30 +313,29 @@ function inspectLocalRecords(
     }
   }
 
-  const inspectedEntries: InspectedCanonicalYamlZipEntry[] = [];
+  const filenameDecodedEntries: FilenameDecodedCanonicalYamlZipEntry[] = [];
   for (const rawInspectedEntry of rawInspectedEntries) {
-    const filename = decodeFatalUtf8(rawInspectedEntry.filenameBytes);
-    if (filename === undefined) {
+    const decodedFilename = decodeCanonicalYamlZipUtf8(rawInspectedEntry.filenameBytes);
+    if (decodedFilename === undefined) {
       return failure('INVALID_UTF8_FILENAME', rawInspectedEntry.occurrenceIndex);
     }
-    if (
-      filename.endsWith('/') ||
-      isDirectoryExternalAttribute(rawInspectedEntry.externalAttributes)
-    ) {
-      return failure('DIRECTORY_ENTRY_UNSUPPORTED', rawInspectedEntry.occurrenceIndex);
-    }
-    if (isUnsafeFilename(filename)) {
-      return failure('UNSAFE_FILENAME', rawInspectedEntry.occurrenceIndex);
-    }
-    const registryEntry = findRegistryEntry(filename);
-    if (registryEntry === undefined) {
-      return failure('UNKNOWN_FILENAME', rawInspectedEntry.occurrenceIndex);
+    filenameDecodedEntries.push({
+      occurrenceIndex: rawInspectedEntry.occurrenceIndex,
+      decodedFilename,
+      contentBytes: rawInspectedEntry.contentBytes,
+      externalAttributes: rawInspectedEntry.externalAttributes,
+    });
+  }
+
+  const inspectedEntries: InspectedCanonicalYamlZipEntry[] = [];
+  for (const filenameDecodedEntry of filenameDecodedEntries) {
+    if (isDirectoryExternalAttribute(filenameDecodedEntry.externalAttributes)) {
+      return failure('DIRECTORY_ENTRY_UNSUPPORTED', filenameDecodedEntry.occurrenceIndex);
     }
     inspectedEntries.push({
-      occurrenceIndex: rawInspectedEntry.occurrenceIndex,
-      filename: registryEntry.fileName,
-      registryEntry,
-      contentBytes: rawInspectedEntry.contentBytes,
+      occurrenceIndex: filenameDecodedEntry.occurrenceIndex,
+      decodedFilename: filenameDecodedEntry.decodedFilename,
+      contentBytes: filenameDecodedEntry.contentBytes,
     });
   }
 

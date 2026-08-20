@@ -335,9 +335,9 @@ already-canonical slotは毎回strict validationし、write対象へ追加しな
 - single-disk、non-ZIP64、non-encrypted、STOREだけを受け入れる。directory entry、archive/file comment、extra field、data descriptor、unknown flag、unknown root entryを拒否する。
 - EOCDはarchive末尾の固定位置に1件だけ存在し、central directory末尾はEOCD先頭と一致しなければならない。local entry rangeはoffset順に`[0, centralDirectoryOffset)`を隙間なく完全被覆し、leading bytes、entry間gap、最後のlocal entryとcentral directory間のjunk、range overlap、central-directory侵入、trailing dataを拒否する。
 - central recordは出現順とoccurrence indexを保持した配列として監査し、duplicate filename検査より前にfilename-keyed `Map` / objectまたはJSZip公開結果へ変換しない。同一local header offsetを複数central recordから参照するarchiveも全体errorとする。
-- central/local headerのfilename bytes、UTF-8 flag、method、CRC32、compressed/uncompressed sizeを一致させる。filenameとcontentはfatal UTF-8でdecodeし、replacement、normalization、sanitize、safe-name fallbackを行わない。
+- central/local headerのfilename bytes、UTF-8 flag、method、CRC32、compressed/uncompressed sizeを一致させる。filenameとcontentはfatal UTF-8でdecodeし、BOMは`U+FEFF`として保持してbyte-for-byte round-tripを要求する。replacement、normalization、sanitize、safe-name fallbackを行わない。
 - filenameはslash/backslash、absolute path、drive prefix、dot/dot-dot、NUL、非NFCを含まず、#1266 registryの12 canonical root filenameのいずれかとbyte-for-byteで一致しなければならない。
-- 検証順はraw EOCD / central / local bounds、raw duplicateとheader/range、CRC/content length、fatal UTF-8、filenameからregistry tuple構築、`validateYamlCanonicalPayload(filename, payload)`によるYAML/schema validationとする。validation authorityをcodec内へ複製しない。
+- 検証順はraw EOCD / central / local bounds、raw duplicateとheader/range、CRC/content length、fatal UTF-8、filenameからregistry tuple構築、`validateYamlCanonicalPayload(filename, payload)`によるYAML/schema validationとする。各phaseはarchive全entryに対して完了してから次phaseへ進み、先行entryのYAML/schema errorで後続entryのfatal UTF-8 errorを隠さない。validation authorityをcodec内へ複製しない。
 - encodeはcanonical filenameのUTF-8 byte昇順、STORE、固定DOS timestamp、comment/extraなしで行い、同じvalidated input集合から同一bytesとBase64を生成する。raw bytes、content、payloadをnormalize、serializeし直さず、errorへarchive、Base64、YAML content、parser errorを含めない。
 - このcodecはnode ID、parent/sibling、transaction、write planを扱わない。後続のdormant import/export planが全entryをdecode/preflightしてからinjected CoreDB write portへ単一transactionを要求し、single activationまではproductionへ接続しない。
 
