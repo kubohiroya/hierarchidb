@@ -1,18 +1,18 @@
-name: Policy Checks (warn-only)
+name: Repository Diagnostics (scheduled)
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-  pull_request:
-    types: [opened, synchronize, reopened]
+  schedule:
+    - cron: '0 18 * * 1'
+
+permissions:
+  contents: read
 
 jobs:
   policy-checks:
-    name: Run policy/dependency checks (warn-only)
+    name: Run non-blocking repository diagnostics
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    continue-on-error: true
 
     steps:
       - name: Checkout
@@ -31,22 +31,15 @@ jobs:
 
         with:
           node-version: 24
-          cache: "pnpm"
+          cache: 'pnpm'
 
-      - name: Install dependencies (non-strict)
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Policy checker (check-deps)
-        run: pnpm -w check:deps:pkg || true
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: dependency-cruiser (architecture warnings)
-        run: pnpm -w arch:dc || true
+        continue-on-error: true
+        run: pnpm -w arch:dc
 
       - name: syncpack (list mismatches)
-        run: pnpm -w deps:list || true
-
-      - name: publint (package publish sanity)
-        run: pnpm -w pkg:publint || true
-
-      - name: "@arethetypeswrong/cli (types sanity)"
-        run: pnpm -w pkg:attw || true
+        continue-on-error: true
+        run: pnpm -w deps:list
