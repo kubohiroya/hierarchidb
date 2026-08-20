@@ -60,6 +60,17 @@ type SessionStatusUpdatedEvent = {
 - A new stage row requires explicit `startedAt` and `inactiveMs`. A partial normalized session or missing stage timing is a contract violation; task-queue state and the current clock must not synthesize a replacement session.
 - The current stage is the unique stage row with the greatest `startedAt`. Equal greatest timestamps are ambiguous persisted state and fail reconstruction instead of being resolved by stage order.
 
+**Explicit recovery for legacy normalized rows**:
+
+- A persisted stage row whose `inactiveMs` is absent remains a strict read failure. The persistence reader throws `ShapeBuildSessionContractError` with code `LEGACY_BUILD_STAGE_INACTIVE_MS_MISSING`, the affected node, field path, stage-row id, and canonical stage.
+- Because transport serialization does not preserve custom `Error` fields, `ShapeQueryAPI.probeBuildSession` returns a serializable discriminated result. It catches only the typed recoverable error; every other query/contract error is rethrown.
+- The atom bridge runs this probe before requesting the runtime snapshot or subscribing. A recoverable result is converted into the UI-internal `criticalError` event with its recovery descriptor and terminates `ui-initializing` as `failed`. It does not add a fifth Worker event.
+- Recovery requires an explicit user confirmation and the literal `RESET_LEGACY_BUILD_SESSION_AND_TASKS`. Cancellation sends no command and changes neither persistence nor the SSOT state tree.
+- The Worker recovery command re-probes and compares the descriptor inside one read-write transaction, then deletes only the target node's `buildSessionConfigs`, `buildSessionHeartbeats`, `buildSessionStatuses`, `buildStageStatuses`, and `buildTasks` rows. A changed/missing error or invalid confirmation aborts without deletion.
+- Source/geometry/tile caches, geometry errors, tile relations, artifacts, outputs, node data, and draft/config data are not transaction participants and are preserved.
+- Only after the transaction succeeds does the UI reset the SSOT state tree and increment its recovery revision. The bridge depends on that revision so the same nodeId is probed and subscribed again.
+- Supplying `0`, the current clock, a migration, or a compatibility fallback for missing stage inactivity is prohibited.
+
 **UI-side effect**: Update `lifecycle.phase`, `lifecycle.isActive`, `lifecycle.startedAt`, `lifecycle.inactiveMs`, `lifecycle.completedAt`, and `lifecycleExtras.stopReason`. `stageId` drives the UI synchronization/selection signal. Per-stage timing is stored only from `stageSnapshotUpdated`, avoiding a second timing owner.
 
 **Pause completion contract**:
@@ -222,7 +233,7 @@ type TaskProgressUpdatedEvent = {
 
 ---
 
-## Non-Worker Events (UI-internal, unchanged)
+## Non-Worker Events (UI-internal)
 
 These events are dispatched internally by the UI and are not part of the Workerâ†’UI contract:
 
@@ -231,8 +242,15 @@ These events are dispatched internally by the UI and are not part of the Workerâ
 | `taskStreamConnectionChanged` | WebSocket/SharedWorker connection state |
 | `viewSelectionChanged` | Active stage tab / selected task |
 | `uiSyncPhaseChanged` | UI initialization handshake per stage |
-| `criticalError` | Contract violation detected in UI layer |
-| `reset` | Full state reset on nodeId change |
+| `criticalError` | Contract violation detected in the UI layer; optionally carries a serializable legacy-session recovery descriptor |
+| `reset` | Full state reset on nodeId change or after a successful explicit recovery |
+
+The optional `criticalError.payload.recovery` is the exact descriptor returned by
+`probeBuildSession`. It is stored in `lifecycleExtras.criticalError.recovery`; the UI
+must not reconstruct it from an error message. A successful recovery uses the
+dedicated completion write atom to reset session state and increment the recovery
+revision atomically from the UI's perspective. A plain `reset` does not increment
+that revision.
 
 ---
 
@@ -289,7 +307,7 @@ sessionStageDurationByStageSnapshot: useAtomValue(stageDurationMsByStageAtom),
 
 ### Reset
 
-`resetBuildSessionStateAtom` must also reset `stageTimingByStageAtom` to its initial value (`{ source: null, geometry: null, tileEmit: null }`).
+`resetBuildSessionStateAtom` must also reset `stageTimingByStageAtom` to its initial value (`{ source: null, geometry: null, tileEmit: null }`). The successful-recovery write atom invokes that reset and then increments `buildSessionRecoveryRevisionAtom`; cancellation invokes neither operation.
 
 ---
 

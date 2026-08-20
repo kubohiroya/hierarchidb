@@ -1,4 +1,10 @@
 import type { NodeId } from '@hierarchidb/core-types';
+import {
+  LEGACY_BUILD_STAGE_INACTIVE_MS_MISSING,
+  ShapeBuildSessionContractError,
+  isShapeBuildSessionContractError,
+  type ShapeBuildSessionProbeResult,
+} from '@hierarchidb/shape-api';
 import type {
   BuildSessionHeartbeat,
   BuildSessionRecord,
@@ -21,6 +27,14 @@ export interface ProgressInfo {
   percentage: number;
 }
 
+export type BuildSessionDetailsQuery = {
+  getConfig: (nodeId: NodeId) => Promise<BuildSessionRecord | undefined>;
+  getHeartbeat: (nodeId: NodeId) => Promise<BuildSessionHeartbeat | undefined>;
+  getStatus: (nodeId: NodeId) => Promise<BuildSessionStatus | undefined>;
+  getStageStatuses: (nodeId: NodeId) => Promise<BuildStageStatus[]>;
+  getTasks: (nodeId: NodeId) => Promise<EphemeralBuildTaskRecord[]>;
+};
+
 const requireFiniteNonNegativeTime = (value: unknown, label: string): number => {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
     throw new Error(
@@ -28,6 +42,29 @@ const requireFiniteNonNegativeTime = (value: unknown, label: string): number => 
     );
   }
   return value;
+};
+
+const requireStageInactiveMs = (
+  nodeId: NodeId,
+  stageStatus: BuildStageStatus,
+  index: number
+): number => {
+  if (stageStatus.inactiveMs === undefined) {
+    const message = `[getSessionWithDetails] stageStatuses[${index}].inactiveMs must be a finite non-negative number, received undefined`;
+    throw new ShapeBuildSessionContractError({
+      code: LEGACY_BUILD_STAGE_INACTIVE_MS_MISSING,
+      recoverable: true,
+      nodeId,
+      table: 'buildStageStatuses',
+      field: 'inactiveMs',
+      fieldPath: 'buildStageStatuses.inactiveMs',
+      stageStatusId: stageStatus.id,
+      stage: stageStatus.stage,
+      received: 'undefined',
+      message,
+    });
+  }
+  return requireFiniteNonNegativeTime(stageStatus.inactiveMs, `stageStatuses[${index}].inactiveMs`);
 };
 
 const validateCompletedInterval = (params: {
@@ -87,10 +124,7 @@ const resolveSessionUpdatedAt = (params: {
       stageStatus.startedAt,
       `stageStatuses[${index}].startedAt`
     );
-    const stageInactiveMs = requireFiniteNonNegativeTime(
-      stageStatus.inactiveMs,
-      `stageStatuses[${index}].inactiveMs`
-    );
+    const stageInactiveMs = requireStageInactiveMs(params.config.nodeId, stageStatus, index);
     validateCompletedInterval({
       startedAt: stageStartedAt,
       completedAt: stageStatus.completedAt,
@@ -193,13 +227,7 @@ export function computeStagesFromTasks(
  */
 export async function getSessionWithDetails(
   nodeId: NodeId,
-  queryFn: {
-    getConfig: (nodeId: NodeId) => Promise<BuildSessionRecord | undefined>;
-    getHeartbeat: (nodeId: NodeId) => Promise<BuildSessionHeartbeat | undefined>;
-    getStatus: (nodeId: NodeId) => Promise<BuildSessionStatus | undefined>;
-    getStageStatuses: (nodeId: NodeId) => Promise<BuildStageStatus[]>;
-    getTasks: (nodeId: NodeId) => Promise<EphemeralBuildTaskRecord[]>;
-  }
+  queryFn: BuildSessionDetailsQuery
 ): Promise<EphemeralBuildSessionRecord | null> {
   // Query all tables in parallel
   const [config, heartbeat, status, stageStatuses, tasks] = await Promise.all([
@@ -264,4 +292,22 @@ export async function getSessionWithDetails(
     stageId: currentStage?.stage,
     sourceStageMaxima: config.sourceStageMaxima,
   };
+}
+
+export async function probeBuildSession(
+  nodeId: NodeId,
+  queryFn: BuildSessionDetailsQuery
+): Promise<ShapeBuildSessionProbeResult> {
+  try {
+    const session = await getSessionWithDetails(nodeId, queryFn);
+    return session === null ? { kind: 'missing' } : { kind: 'available' };
+  } catch (error) {
+    if (isShapeBuildSessionContractError(error)) {
+      return {
+        kind: 'recoverable-contract-error',
+        error: error.details,
+      };
+    }
+    throw error;
+  }
 }

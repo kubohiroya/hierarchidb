@@ -38,12 +38,21 @@ export const useShapeBuildSessionState = ({
             setIsRuntimeReady(false);
             return;
         }
-        shapeQueryAPIImpl.getBuildSessionRecord(activeNodeId)
-            .then(() => setIsRuntimeReady(true))
-            .catch((error) => {
+        let cancelled = false;
+        void shapeQueryAPIImpl
+            .probeBuildSession(activeNodeId)
+            .then((probe) => {
+                if (cancelled) return;
+                setIsRuntimeReady(probe.kind !== 'recoverable-contract-error');
+            })
+            .catch((error: unknown) => {
+                if (cancelled) return;
                 console.warn('[ShapeBuildSessionState] Failed to probe session record', error);
-                setIsRuntimeReady(true);
+                setIsRuntimeReady(false);
             });
+        return () => {
+            cancelled = true;
+        };
     }, [activeNodeId]);
 
     // Browser reload state consistency check

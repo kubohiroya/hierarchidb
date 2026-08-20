@@ -461,6 +461,14 @@
       "deleteSimplifiedCache": "簡略化キャッシュを削除",
       "deleteTransposeIndex": "転置インデックスを削除"
     },
+    "legacySessionRecovery": {
+      "title": "旧形式のビルドセッションを回復する必要があります",
+      "message": "保存済みビルドセッションに必須の時間情報がないため、再開できません。このノードのビルドセッション記録と待機中のビルドタスクだけを削除して回復します。",
+      "preserved": "ソース・ジオメトリ・タイルのキャッシュ、生成済み出力、ノードデータ、ドラフト設定は保持されます。",
+      "cancel": "キャンセル",
+      "confirm": "セッションを回復",
+      "recovering": "回復中..."
+    },
     "timing": {
       "totalElapsed": "総経過時間:",
       "stageElapsed": "経過時間",

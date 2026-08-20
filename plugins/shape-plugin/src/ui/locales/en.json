@@ -461,6 +461,14 @@
       "deleteSimplifiedCache": "Delete simplified cache",
       "deleteTransposeIndex": "Delete transpose index"
     },
+    "legacySessionRecovery": {
+      "title": "Legacy build session requires recovery",
+      "message": "This saved build session is missing required timing data and cannot be resumed. Recover it by deleting only this node’s build-session records and queued build tasks.",
+      "preserved": "Source, geometry, and tile caches, generated outputs, node data, and draft configuration will be preserved.",
+      "cancel": "Cancel",
+      "confirm": "Recover session",
+      "recovering": "Recovering..."
+    },
     "timing": {
       "totalElapsed": "Total elapsed:",
       "stageElapsed": "Time elapsed",

@@ -39,6 +39,20 @@
 5. `paused` の `canResume` は、停止確認後の再キューが完了した場合にのみ `true` とする。
 6. AbortController 等の非シリアライズ可能な runtime handle は、nodeId に対応する SSOT 状態木エントリに保持する。React state / ref / module-scope collection に同じ session 状態を複製しない。
 
+### 旧形式セッションの明示回復（規範）
+
+現行契約で必須の `buildStageStatuses.inactiveMs` を持たない旧形式の永続セッションは、再開可能なセッションやセッション不存在へ読み替えない。通常の厳格読取は、nodeId・不正フィールド・stage row を含む型付き `ShapeBuildSessionContractError` で失敗する。
+
+1. UI は Worker の serializable な session probe を先に実行する。probe が `LEGACY_BUILD_STAGE_INACTIVE_MS_MISSING` を返した場合、UI 内部の `criticalError` に recovery descriptor を格納して `ui-initializing` を `failed` で終了する。これは Worker→UI の第5イベントではない。
+2. UI は回復内容と保持対象を示す確認ダイアログを表示する。キャンセルはダイアログを閉じるだけであり、Worker command、永続データ変更、SSOT 状態木の reset を実行しない。
+3. ユーザー確認後だけ、confirmation literal `RESET_LEGACY_BUILD_SESSION_AND_TASKS` と probe で得た error descriptor を Worker の回復 command に渡す。
+4. Worker は同一 Dexie read-write transaction 内で対象 nodeId を再 probe し、現在も同じ recoverable error であることを照合してから削除する。error が解消・変化している場合や confirmation が一致しない場合は、何も削除せず失敗する。
+5. 削除対象は対象 nodeId の `buildSessionConfigs` / `buildSessionHeartbeats` / `buildSessionStatuses` / `buildStageStatuses` / `buildTasks` の5テーブルだけとする。
+6. node data、draft/config、source/geometry/tile cache、geometry errors、tile relation、artifact、生成済み output は保持する。汎用の `clearNodeData` / `clearShapeArtifacts` / metadata cleanup を回復 command から呼び出してはならない。
+7. transaction 成功後にのみ UI の SSOT 状態木を reset し、recovery revision を進める。同じ nodeId の bridge はこの revision を依存値として再初期化し、新規セッションを開始可能にする。
+
+欠落した `inactiveMs` を `0`、現在時刻、migration、互換 fallback で補完することは禁止する。この回復経路は不正な旧セッションを明示的に破棄するものであり、契約違反データを受理する経路ではない。
+
 ## タスクステータス定義
 
 | ステータス | 意味 | 経過時間計算への影響 |

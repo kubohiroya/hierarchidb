@@ -46,3 +46,15 @@ export type {
 } from './shapeDbTypes.js';
 export type { ShapeQueryAPI } from './ShapeQueryAPI.js';
 export type { ShapeMutationAPI } from './ShapeMutationAPI.js';
+export {
+  LEGACY_BUILD_STAGE_INACTIVE_MS_MISSING,
+  RESET_LEGACY_BUILD_SESSION_AND_TASKS,
+  ShapeBuildSessionContractError,
+  isShapeBuildSessionContractError,
+  isShapeBuildSessionRecoverableContractError,
+  type ShapeBuildSessionProbeResult,
+  type ShapeBuildSessionRecoverableContractError,
+  type ShapeBuildSessionRecoveryDeletedRowCounts,
+  type ShapeBuildSessionRecoveryRequest,
+  type ShapeBuildSessionRecoveryResult,
+} from './ShapeBuildSessionContractError.js';

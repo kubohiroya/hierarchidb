@@ -14,6 +14,7 @@ import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskIt
 import type { BuildProgressPanelStateComputed } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelStateComputed';
 import type { StartWarning } from '~/ui/components/build-progress/useBuildProgressPanelState/useShapeBuildProgressWarnings';
 import type { TranslateFn } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelStateComputedHelpers';
+import type { ShapeBuildSessionRecoverableContractError } from '@hierarchidb/shape-api';
 
 type StageMetadataMap<T> = Record<string, T>;
 type CrashSuspectControls = {
@@ -146,6 +147,11 @@ type DisplayArgs = {
   handleStartClickWithHold: () => Promise<void>;
   handleConfirmStartWithHold: () => Promise<void>;
   handleResetSessionWithSkeleton: () => Promise<void>;
+  legacySessionRecoveryError?: ShapeBuildSessionRecoverableContractError;
+  legacySessionRecoveryDialogOpen: boolean;
+  legacySessionRecoveryFailure: string | null;
+  handleLegacySessionRecoveryCancel: () => void;
+  handleLegacySessionRecoveryConfirm: () => Promise<void>;
   handleSourceRetryIndicatorClick: (event: MouseEvent<HTMLElement>) => void;
   handleStageConcurrencyIndicatorClick: (stageId: string, event: MouseEvent<HTMLElement>) => void;
   concurrencyEditorAnchor: HTMLElement | null;
@@ -250,6 +256,11 @@ export const useShapeBuildProgressPanelControllerBaseStateDataDisplay = (args: D
     handleStartClickWithHold,
     handleConfirmStartWithHold,
     handleResetSessionWithSkeleton,
+    legacySessionRecoveryError,
+    legacySessionRecoveryDialogOpen,
+    legacySessionRecoveryFailure,
+    handleLegacySessionRecoveryCancel,
+    handleLegacySessionRecoveryConfirm,
     handleSourceRetryIndicatorClick,
     handleStageConcurrencyIndicatorClick,
     concurrencyEditorAnchor,
@@ -345,6 +356,11 @@ export const useShapeBuildProgressPanelControllerBaseStateDataDisplay = (args: D
     handleStartClickWithHold,
     handleConfirmStartWithHold,
     handleResetSessionWithSkeleton,
+    legacySessionRecoveryError,
+    legacySessionRecoveryDialogOpen,
+    legacySessionRecoveryFailure,
+    handleLegacySessionRecoveryCancel,
+    handleLegacySessionRecoveryConfirm,
     counts: cacheCounts,
     resultCounts: cacheResultCounts,
     isTaskSummaryLoadingForDisplay,

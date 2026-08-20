@@ -18,12 +18,14 @@ import type {
   ShapeTileEmitMetadata,
 } from './shapeBuildTypes.js';
 import type { ShapeBuildSessionRecord, ShapeVectorTileRecord } from './shapeDbTypes.js';
+import type { ShapeBuildSessionProbeResult } from './ShapeBuildSessionContractError.js';
 
 export interface ShapeQueryAPI {
   listBuildSessions(nodeId: NodeId): Promise<ShapeBuildSessionSummary[]>;
   getBuildSession(nodeId: NodeId): Promise<ShapeBuildSessionSummary | null>;
   listBuildSessionRecords(nodeId: NodeId): Promise<ShapeBuildSessionRecord[]>;
   getBuildSessionRecord(nodeId: NodeId): Promise<ShapeBuildSessionRecord | null>;
+  probeBuildSession(nodeId: NodeId): Promise<ShapeBuildSessionProbeResult>;
   listBuildSessionRecordsByStatus(
     statuses: Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>,
   ): Promise<ShapeBuildSessionRecord[]>;

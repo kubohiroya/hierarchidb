@@ -49,6 +49,24 @@ vi.mock('../../../components/build-progress/internal/useShapeBuildSessionState.j
   }),
 }));
 
+const workerBridgeMocks = vi.hoisted(() => ({
+  initialize: vi.fn().mockResolvedValue(undefined),
+  probeBuildSession: vi.fn().mockResolvedValue({ kind: 'available' }),
+  getBuildSessionRuntime: vi.fn().mockResolvedValue(null),
+  subscribeAll: vi.fn().mockResolvedValue(vi.fn()),
+}));
+
+vi.mock('@hierarchidb/ui-worker-client', () => ({
+  getBuildWorkerBridge: () => ({
+    initialize: workerBridgeMocks.initialize,
+    getShapeQueryAPI: async () => ({
+      probeBuildSession: workerBridgeMocks.probeBuildSession,
+    }),
+    getBuildSessionRuntime: workerBridgeMocks.getBuildSessionRuntime,
+    subscribeAll: workerBridgeMocks.subscribeAll,
+  }),
+}));
+
 const mockStages = [
   { id: 'source', title: 'Source', description: '', icon: null },
   { id: 'geometry', title: 'Geometry', description: '', icon: null },

@@ -2,7 +2,11 @@ import { createElement, type ReactNode, useCallback, useEffect, useMemo, useRef,
 import { Stack, Typography } from '@mui/material';
 import type { SourceConfig } from '@hierarchidb/gis-sdk';
 import type { ShapeProcessingConfig } from '~/common/types/BuildTaskResult';
-import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/shape-api';
+import {
+  DEFAULT_BUILD_CONFIG,
+  DEFAULT_PROCESSING_CONFIG,
+  type ShapeBuildSessionRecoverableContractError,
+} from '@hierarchidb/shape-api';
 import { applyBuildConfigPatch, mergeProcessingConfig } from '~/services/utils/shapeBuildUtils';
 import { useShapeBuildProgressPanel } from '~/ui/components/build-progress/useShapeBuildProgressPanel/useShapeBuildProgressPanel';
 import { useShapeBuildCacheActions } from '~/ui/hooks/useShapeBuildCacheActions';
@@ -10,12 +14,16 @@ import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskIt
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildStepStageMenu } from '@hierarchidb/ui-build-progress';
-import { useSetAtom } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { useShapeBuildProgressPanelControllerBaseStateDataDisplay } from './useShapeBuildProgressPanelControllerBaseStateDataDisplay.js';
 import type { TranslateFn } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelStateComputedHelpers';
 import { resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
 import { normalizeUiStageId, resolveStageAliasArray } from '~/ui/components/build-progress/stageIdAliases';
-import { dispatchBuildSessionEventAtom } from '~/ui/atoms/buildSessionStateAtoms';
+import {
+  buildSessionLifecycleAtom,
+  completeBuildSessionRecoveryAtom,
+  dispatchBuildSessionEventAtom,
+} from '~/ui/atoms/buildSessionStateAtoms';
 
 type StageMetadataMap<T> = Record<string, T>;
 
@@ -67,6 +75,8 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
   onChange,
 }: ShapeBuildProgressPanelControllerBaseProps) => {
   const dispatchBuildSessionEvent = useSetAtom(dispatchBuildSessionEventAtom);
+  const completeBuildSessionRecovery = useSetAtom(completeBuildSessionRecoveryAtom);
+  const buildSessionLifecycle = useAtomValue(buildSessionLifecycleAtom);
   const handleResetSessionState = useCallback(() => {
     dispatchBuildSessionEvent({ type: 'reset' });
   }, [dispatchBuildSessionEvent]);
@@ -128,9 +138,14 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     handleDeleteTileEmitCache: cacheHandleDeleteTileEmitCache,
     handleDeleteMetadata: cacheHandleDeleteMetadata,
     handleResetSession: cacheHandleResetSession,
+    handleRecoverLegacyBuildSession: cacheHandleRecoverLegacyBuildSession,
   } = useShapeBuildCacheActions({ nodeId, onResetSession: handleResetSessionState });
 
   const [isResetSessionPending, setIsResetSessionPending] = useState(false);
+  const [legacySessionRecoveryDialogOpen, setLegacySessionRecoveryDialogOpen] = useState(false);
+  const [legacySessionRecoveryFailure, setLegacySessionRecoveryFailure] = useState<string | null>(
+    null
+  );
   const [startPendingHold, setStartPendingHold] = useState(false);
   const [taskSearchText, setTaskSearchText] = useState('');
   const [stagePreviewWindowPendingMap, setStagePreviewWindowPendingMap] = useState<Record<string, boolean>>({});
@@ -154,6 +169,13 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
 
   const isResetSessionLoading = isResetSessionPending || cacheDeleteLoading.resetSession;
   const isTerminalStatus = summary.buildStatus === 'completed' || summary.buildStatus === 'failed';
+  const legacySessionRecoveryError: ShapeBuildSessionRecoverableContractError | undefined =
+    buildSessionLifecycle.criticalError?.recovery;
+
+  useEffect(() => {
+    setLegacySessionRecoveryDialogOpen(legacySessionRecoveryError !== undefined);
+    setLegacySessionRecoveryFailure(null);
+  }, [legacySessionRecoveryError]);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -202,6 +224,11 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
   }, [handleConfirmStart]);
 
   const handleResetSessionWithSkeleton = useCallback(async () => {
+    if (legacySessionRecoveryError) {
+      setLegacySessionRecoveryFailure(null);
+      setLegacySessionRecoveryDialogOpen(true);
+      return;
+    }
     if (isResetSessionLoading) return;
     setStartPendingHold(false);
     setIsResetSessionPending(true);
@@ -211,7 +238,33 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
       setStartPendingHold(false);
       setIsResetSessionPending(false);
     }
-  }, [cacheHandleResetSession, isResetSessionLoading]);
+  }, [cacheHandleResetSession, isResetSessionLoading, legacySessionRecoveryError]);
+
+  const handleLegacySessionRecoveryCancel = useCallback(() => {
+    if (isResetSessionLoading) return;
+    setLegacySessionRecoveryDialogOpen(false);
+  }, [isResetSessionLoading]);
+
+  const handleLegacySessionRecoveryConfirm = useCallback(async () => {
+    if (!legacySessionRecoveryError || isResetSessionLoading) return;
+    setLegacySessionRecoveryFailure(null);
+    setIsResetSessionPending(true);
+    try {
+      await cacheHandleRecoverLegacyBuildSession(legacySessionRecoveryError);
+      completeBuildSessionRecovery();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setLegacySessionRecoveryFailure(message);
+      console.error('[ShapeBuildProgressPanel] legacy session recovery failed', error);
+    } finally {
+      setIsResetSessionPending(false);
+    }
+  }, [
+    cacheHandleRecoverLegacyBuildSession,
+    completeBuildSessionRecovery,
+    isResetSessionLoading,
+    legacySessionRecoveryError,
+  ]);
 
   const isTasksLoadingForDisplay = isTasksLoading
     || isResetSessionLoading
@@ -533,6 +586,11 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     handleStartClickWithHold,
     handleConfirmStartWithHold,
     handleResetSessionWithSkeleton,
+    legacySessionRecoveryError,
+    legacySessionRecoveryDialogOpen,
+    legacySessionRecoveryFailure,
+    handleLegacySessionRecoveryCancel,
+    handleLegacySessionRecoveryConfirm,
     handleSourceRetryIndicatorClick,
     handleStageConcurrencyIndicatorClick,
     concurrencyEditorAnchor,
