@@ -1,12 +1,13 @@
+import { FloatingWindowPortalProvider } from '@hierarchidb/components';
 import { setCorsProxyBaseURL } from '@hierarchidb/download';
 import { NotificationSystem } from '@hierarchidb/ui-plugin-shell/components';
 import { SimpleBFFAuthProvider } from '@hierarchidb/ui-plugin-shell/ui-auth';
 import { LanguageProvider } from '@hierarchidb/ui-plugin-shell/ui-i18n';
 import { ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-plugin-shell/ui-theme';
-import { FloatingWindowPortalProvider } from '@hierarchidb/components';
 import { Box, CircularProgress, CssBaseline } from '@mui/material';
 import { StyledEngineProvider } from '@mui/material/styles';
 import type { ReactNode } from 'react';
+import { resolveRequiredCorsProxyBaseURL } from '~/config/resolveRequiredCorsProxyBaseURL';
 import { AppConfigProvider } from '~/contexts/AppConfigContext';
 import { BootProgressProvider } from '~/contexts/BootProgressProvider';
 import { WorkerProvider } from '~/contexts/WorkerProvider';
@@ -22,28 +23,9 @@ import { AppThemeProvider } from './AppThemeProvider.js';
 import { AppIconRegistryProvider } from './IconRegistryProvider.js';
 import { LanguageEventsBridge } from './LanguageEventsBridge.js';
 
-const resolveCorsProxyBaseURL = (): string => {
-  const fromVite =
-    typeof import.meta.env?.VITE_CORS_PROXY_BASE_URL === 'string'
-      ? import.meta.env.VITE_CORS_PROXY_BASE_URL.trim()
-      : '';
-  if (fromVite) {
-    return fromVite;
-  }
-
-  if (import.meta.env?.DEV) {
-    return 'https://hierarchidb-cors-proxy.kubohiroya.workers.dev';
-  }
-
-  return '';
-};
-
-// UI-thread default CORS proxy (worker側と同等に初期化しておく)
+// Configure the UI-thread CORS proxy before providers initialize.
 {
-  const value = resolveCorsProxyBaseURL();
-  if (!value) {
-    throw new Error('VITE_CORS_PROXY_BASE_URL is required for app startup.');
-  }
+  const value = resolveRequiredCorsProxyBaseURL(import.meta.env?.VITE_CORS_PROXY_BASE_URL, 'app');
   setCorsProxyBaseURL(value);
 }
 
