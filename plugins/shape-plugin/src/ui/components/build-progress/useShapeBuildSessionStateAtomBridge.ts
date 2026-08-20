@@ -18,37 +18,6 @@ const SHAPE_STAGE_IDS = ['source', 'geometry', 'tileEmit'] as const satisfies re
 
 type UiSyncPhase = 'ui-initializing' | 'running';
 
-// ---------------------------------------------------------------------------
-// Exported pure functions (used by tests and internal logic)
-// ---------------------------------------------------------------------------
-
-export const isTaskUpdateVersionAfterSnapshot = (
-    snapshotVersionMax: number,
-    taskVersion: number,
-): boolean => taskVersion > snapshotVersionMax;
-
-export const resolveTaskVersionAction = (
-    lastAppliedVersion: number | undefined,
-    nextVersion: number,
-): 'accept' | 'drop' | 'error' => {
-    if (typeof lastAppliedVersion !== 'number') return 'accept';
-    if (nextVersion > lastAppliedVersion) return 'accept';
-    if (nextVersion === lastAppliedVersion) return 'drop';
-    return 'error';
-};
-
-export const resolveTaskIdentityAction = (
-    isKnownTaskId: boolean,
-    snapshotVersionMax: number,
-    taskVersion: number,
-): 'accept-known' | 'accept-new' | 'drop-known-stale' | 'error-unknown-stale' => {
-    if (isTaskUpdateVersionAfterSnapshot(snapshotVersionMax, taskVersion)) {
-        return isKnownTaskId ? 'accept-known' : 'accept-new';
-    }
-    if (isKnownTaskId) return 'drop-known-stale';
-    return 'error-unknown-stale';
-};
-
 const resolveShapeStageId = (value: unknown): ShapeStageId | undefined => {
     if (value === 'source' || value === 'geometry' || value === 'tileEmit') {
         return value;
