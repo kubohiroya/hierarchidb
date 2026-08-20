@@ -81,7 +81,7 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
         fallbackOrigin
       );
       const segments = candidate.pathname.split('/').filter(Boolean);
-      if (segments[0] !== 't' || segments.length < STEP_ROUTE_BASE_SEGMENTS) {
+      if (segments[0] !== 'd' || segments.length < STEP_ROUTE_BASE_SEGMENTS) {
         return null;
       }
       const modeSegment = segments[6] ?? 'normal';
