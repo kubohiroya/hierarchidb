@@ -7,7 +7,7 @@ import {
   listTasksByStage,
   putTasks,
   runStageTasks,
-  VtTaskQueueDb,
+  type VtTaskQueueDb,
 } from '@hierarchidb/vt-orchestrator';
 import { buildStableSignature } from './buildStableSignature.ts';
 import type { ShapeGeometryByBandTaskInput } from './shapePipelineShared.ts';
@@ -23,7 +23,11 @@ import {
 } from './shapePipelineStageHelpers.ts';
 import { clearStagePlan, setGeometryPlannedTotal } from './shapeProgressPlanUtils.ts';
 import type { EphemeralDB } from '@hierarchidb/gis-sdk';
-import { buildGeometryTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
+import {
+  buildGeometryTaskCacheIdentity,
+  requireShapeSourceBaseTolerance,
+  resolveTaskCacheIdentity,
+} from './shapeTaskCacheIdentity.ts';
 import { resolveSourceArtifactHashById } from './shapeSourceArtifactHashUtils.ts';
 import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 
@@ -96,13 +100,6 @@ const readString = (value: unknown): string | null => (
 const readNumber = (value: unknown): number | null => (
   typeof value === 'number' && Number.isFinite(value) ? value : null
 );
-
-const readSourceBaseTolerance = (value: unknown): number | undefined => {
-  if (!isRecord(value)) return undefined;
-  const baseTolerance = readNumber(value.baseTolerance);
-  if (baseTolerance === null || baseTolerance < 0) return undefined;
-  return baseTolerance;
-};
 
 const readMetricCount = (value: unknown, key: 'input' | 'output'): number | undefined => {
   if (!isRecord(value)) return undefined;
@@ -213,6 +210,9 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
       listTasksByStage(params.taskQueue, params.nodeId, 'geometry')
     ))
     : [];
+  existingGeometryByBandTasks.forEach((task) => {
+    resolveTaskCacheIdentity(task);
+  });
   const geometryConfig = resolveGeometryConfig(params.buildConfig);
   const geometryConfigSignature = buildStableSignature(geometryConfig);
   const bandsAscending = [...params.bands].sort((a, b) => a.zMax - b.zMax);
@@ -229,7 +229,7 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
   const sessionRecord = await runGeometryStep(params, 'load-build-session', async () => (
     shapeQueryAPIImpl.getBuildSessionRecord(params.nodeId)
   ));
-  const sourceBaseTolerance = readSourceBaseTolerance(sessionRecord?.sourceStageMaxima);
+  const sourceStageMaxima = sessionRecord?.sourceStageMaxima;
   const buffers = await runGeometryStep(params, 'build-geometry-buffer-metadata', async () => {
     const next: GeometryBufferMeta[] = [];
     for (const task of fetchTasks) {
@@ -285,6 +285,9 @@ export const runShapeGeometryStageSection = async (params: ShapeGeometryStagePar
     }));
     return false;
   }
+  const sourceBaseTolerance = requireShapeSourceBaseTolerance(
+    isRecord(sourceStageMaxima) ? sourceStageMaxima.baseTolerance : undefined,
+  );
 
   const { buffersByCountry, orderedCountries } = await runGeometryStep(params, 'group-buffers-by-country', async () => {
     const countryTotals = new Map<string, number>();

@@ -16,6 +16,7 @@ import type { ShapeTileEmitTaskInput } from './shapePipelineShared.ts';
 import { buildShapeVectorTileRecord, buildTileEmitTasks, resolveTileEmitConfig } from './shapePipelineShared.ts';
 import type { Tile } from 'geojson-vt';
 import { applyStageTaskReconcile } from './shapeStageReconcile.ts';
+import { resolveTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
 import {
   finalizePendingStageTasks,
   markStageTasksRecycled,
@@ -104,6 +105,9 @@ export const runShapeTileEmitStageSection = async (params: ShapeTileEmitStagePar
   let existingTileEmitTasks = params.resumeExistingTasks
     ? await listTasksByStage(params.taskQueue, params.nodeId, 'tileEmit')
     : [];
+  existingTileEmitTasks.forEach((task) => {
+    resolveTaskCacheIdentity(task);
+  });
   const tileEmitConfigSignature = buildStableSignature(tileEmitConfig);
   const desiredTileEmitTasks = await buildTileEmitTasks(
     params.nodeId,

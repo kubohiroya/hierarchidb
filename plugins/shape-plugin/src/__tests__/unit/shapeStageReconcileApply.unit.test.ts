@@ -4,6 +4,7 @@ import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import { listTasksByStage, putTasks, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { applyStageTaskReconcile } from '../../services/vt/shapeStageReconcile';
+import { ShapeTaskCacheIdentityContractError } from '../../services/vt/shapeTaskCacheIdentity';
 
 type TestTaskInput = {
   value?: string;
@@ -106,5 +107,37 @@ describe('applyStageTaskReconcile', () => {
     expect(stored.map((task) => task.taskId)).toEqual(['t1']);
     expect(result.missingTasks.map((task) => task.taskId)).toEqual(['t1']);
     expect(result.obsoleteTaskIds).toEqual([]);
+  });
+
+  it('rejects invalid desired identity before writing a fresh run', async () => {
+    await expect(
+      applyStageTaskReconcile({
+        taskQueue,
+        nodeId: NODE_ID,
+        stage: 'source',
+        desiredTasks: [buildTask('invalid')],
+        resumeExistingTasks: false,
+      }),
+    ).rejects.toThrowError(ShapeTaskCacheIdentityContractError);
+
+    expect(await listTasksByStage(taskQueue, NODE_ID, 'source')).toEqual([]);
+  });
+
+  it('preserves an invalid existing task when resume validation rejects', async () => {
+    const existing = buildTask('legacy');
+    await putTasks(taskQueue, [existing]);
+
+    await expect(
+      applyStageTaskReconcile({
+        taskQueue,
+        nodeId: NODE_ID,
+        stage: 'source',
+        desiredTasks: [buildTask('replacement', { cacheKey: 'k:1', inputHash: 'h:1' })],
+        resumeExistingTasks: true,
+      }),
+    ).rejects.toThrowError(ShapeTaskCacheIdentityContractError);
+
+    const stored = await listTasksByStage(taskQueue, NODE_ID, 'source');
+    expect(stored.map((task) => task.taskId)).toEqual(['legacy']);
   });
 });

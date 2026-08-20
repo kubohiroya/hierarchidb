@@ -62,7 +62,10 @@ import { fetchRawDataWithPipeline } from '~/services/utils/rawDataPipeline';
 import { buildGeoBoundariesMetadataUrl } from '~/services/utils/geoboundariesEndpoints';
 import type { GeoBoundariesApiResponse } from '~/services/datasources/GeoBoundariesStrategy';
 import { setSourcePlannedTotal } from './shapeProgressPlanUtils.ts';
-import { buildSourceTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
+import {
+  buildSourceTaskCacheIdentity,
+  resolveTaskCacheIdentity,
+} from './shapeTaskCacheIdentity.ts';
 import { hashSourceArtifact, resolveSourceArtifactHashFromRecord } from './shapeSourceArtifactHashUtils.ts';
 
 export type ShapeSourceTaskInput = {
@@ -74,9 +77,9 @@ export type ShapeSourceTaskInput = {
   countryName?: string;
   urlCountryCode: string;
   adminLevel: number;
-  configSignature?: string;
-  cacheKey?: string;
-  inputHash?: string;
+  configSignature: string;
+  cacheKey: string;
+  inputHash: string;
 };
 
 export type ShapeSourceTaskOutput = {
@@ -1695,6 +1698,9 @@ export const runShapeSourceStage = async (params: ShapeSourceStageParams): Promi
   const existingTasks = resumeExistingTasks
     ? await listTasksByStage(params.taskQueue, params.nodeId, 'source')
     : [];
+  existingTasks.forEach((task) => {
+    resolveTaskCacheIdentity(task);
+  });
   let metadataForPayloads = params.metadata ?? await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
   let payloads = resolveSourcePayloads(params, metadataForPayloads);
   const selectedAdminPairCount = countSelectedAdminPairs(params.selectedArrayByCountries);
@@ -1721,7 +1727,7 @@ export const runShapeSourceStage = async (params: ShapeSourceStageParams): Promi
     await notifyTasksEnqueued({ taskCount: 0, source: 'created' });
     return;
   }
-  const configSignature = buildStableSignature(params.buildConfig.sourceConfig ?? null);
+  const configSignature = buildStableSignature(params.buildConfig.sourceConfig);
   if (!reuseExistingTasks) {
     const tasks = buildSourceTasks(params.nodeId, payloads, metadataForPayloads, configSignature);
     setSourcePlannedTotal(params.nodeId, tasks.length);

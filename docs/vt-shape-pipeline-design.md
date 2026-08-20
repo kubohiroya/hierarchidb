@@ -74,6 +74,10 @@
 - tileEmit: `bandIndex + zBase + tileId + canonical bufferIds[] + tileEmit config signature`
 - 各必須文字列は空でなく、各数値は finite かつ定義された整数/範囲でなければならない。`bufferIds` は field 自体を必須とし、空配列は正規の empty-tile 判定としてのみ許容する
 - 永続済み `cacheKey` / `inputHash` は両方が空でない場合だけ有効とする。一方だけの欠落、stage不明、identity構成値欠落をlegacy keyや既定値で補完しない
+- `sourceKey` は正規の `ISO2:adminLevel`、source request は絶対HTTP(S) URLとして検証する。URLのrequest targetはsource `inputHash`へ含め、queryの異なるrequestを同一入力へ収束させない。upstream revisionは存在する場合に空でない値を要求する
+- identity builderは文字列のtrim、数値の丸め、空配列への置換を行わない。`bufferIds` は明示された配列の各要素を検証した後にsetとしてsort/deduplicateし、field欠落と明示的な空配列を区別する
+- task生成時に完全な `cacheKey` / `inputHash` pairを永続化する。resume/reconcileのreaderはtaskの正規stageとこのpairだけを読み、他のtask payloadからidentityを再構成しない
+- identity契約違反はtaskのinsert/deleteより前にreconcileをrejectする。pipeline/sessionは失敗を正規error経路でUIへ可視化し、不完全なtaskや既存artifactを変更しない
 
 ## Artifact lineage / cleanup 契約（shape）
 

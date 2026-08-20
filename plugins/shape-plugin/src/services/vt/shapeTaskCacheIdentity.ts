@@ -1,5 +1,6 @@
 import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
+import type { DataSourceName } from '~/common/types/index';
 import { buildStableSignature } from './buildStableSignature.ts';
 
 export type ShapeStage = 'source' | 'geometry' | 'tileEmit';
@@ -21,6 +22,18 @@ type CacheIdentityEnvelope = {
   inputHash?: unknown;
 };
 
+export class ShapeTaskCacheIdentityContractError extends Error {
+  readonly code = 'SHAPE_TASK_CACHE_IDENTITY_CONTRACT_VIOLATION';
+
+  constructor(
+    readonly field: string,
+    expectation: string
+  ) {
+    super(`[shape-cache-identity] ${field} ${expectation}`);
+    this.name = 'ShapeTaskCacheIdentityContractError';
+  }
+}
+
 const SHAPE_CACHE_KEY_VERSION = 'v1';
 const SHAPE_SOURCE_PIPELINE_VERSION = 'source-v1';
 const SHAPE_GEOMETRY_PIPELINE_VERSION = 'geometry-v1';
@@ -32,92 +45,183 @@ const DEFAULT_STAGE_CACHE_NAMESPACE_POLICY: ShapeStageCacheNamespacePolicy = {
   tileEmit: 'node',
 };
 
-const normalizeString = (value: unknown): string => (
-  typeof value === 'string' ? value.trim() : ''
-);
+const DATA_SOURCE_NAMES = new Set<DataSourceName>([
+  'naturalearth',
+  'geoboundaries',
+  'geoboundaries-topojson',
+  'gadm',
+]);
 
-const normalizeCountryCode = (value: unknown): string => {
-  const text = normalizeString(value);
-  return text.length > 0 ? text.toUpperCase() : 'XX';
+const contractViolation = (field: string, expectation: string): never => {
+  throw new ShapeTaskCacheIdentityContractError(field, expectation);
 };
 
-const normalizeInteger = (value: unknown, fallback: number): number => (
-  typeof value === 'number' && Number.isFinite(value) ? Math.round(value) : fallback
-);
-
-const normalizeTolerance = (value: unknown): number | null => {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
-  if (value < 0) return null;
-  return Number(value.toFixed(12));
-};
-
-const normalizeEndpointId = (urlLike: unknown): string => {
-  const value = normalizeString(urlLike);
-  if (!value) return 'endpoint';
-  try {
-    const parsed = new URL(value);
-    return `${parsed.origin}${parsed.pathname}`.toLowerCase();
-  } catch {
-    return value.toLowerCase();
+const requireNonEmptyString = (field: string, value: unknown): string => {
+  if (typeof value !== 'string' || value.length === 0 || value !== value.trim()) {
+    return contractViolation(field, 'must be a non-empty string without surrounding whitespace');
   }
+  return value;
 };
 
-const resolveNamespacePrefix = (
-  nodeId: NodeId,
-  mode: ShapeCacheNamespaceMode,
-): string => (mode === 'global' ? 'global' : `node:${String(nodeId)}`);
+const requireOptionalNonEmptyString = (field: string, value: unknown): string | undefined => {
+  if (value === undefined) return undefined;
+  return requireNonEmptyString(field, value);
+};
+
+const requireNodeId = (value: unknown): NodeId => requireNonEmptyString('nodeId', value) as NodeId;
+
+const requireDataSourceName = (value: unknown): DataSourceName => {
+  const dataSource = requireNonEmptyString('dataSource', value) as DataSourceName;
+  if (!DATA_SOURCE_NAMES.has(dataSource)) {
+    return contractViolation('dataSource', 'must be a canonical Shape data source name');
+  }
+  return dataSource;
+};
+
+const requireSourceKey = (value: unknown): string => {
+  const sourceKey = requireNonEmptyString('sourceKey', value);
+  if (!/^[A-Z]{2}:(0|[1-9]\d*)$/.test(sourceKey)) {
+    return contractViolation('sourceKey', 'must use canonical ISO2:adminLevel form');
+  }
+  return sourceKey;
+};
+
+const requireInteger = (
+  field: string,
+  value: unknown,
+  options: { min: number; max?: number }
+): number => {
+  if (typeof value !== 'number' || !Number.isFinite(value) || !Number.isInteger(value)) {
+    return contractViolation(field, 'must be a finite integer');
+  }
+  if (value < options.min || (options.max !== undefined && value > options.max)) {
+    return contractViolation(
+      field,
+      options.max === undefined
+        ? `must be greater than or equal to ${options.min}`
+        : `must be in the inclusive range ${options.min}..${options.max}`
+    );
+  }
+  return value;
+};
+
+const requireFiniteNonNegative = (field: string, value: unknown): number => {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    return contractViolation(field, 'must be a finite non-negative number');
+  }
+  return value;
+};
+
+export const requireShapeSourceBaseTolerance = (value: unknown): number =>
+  requireFiniteNonNegative('sourceBaseTolerance', value);
+
+const requireZoomRange = (
+  bandMinZoomValue: unknown,
+  bandMaxZoomValue: unknown
+): { bandMinZoom: number; bandMaxZoom: number } => {
+  const bandMinZoom = requireInteger('bandMinZoom', bandMinZoomValue, { min: 0 });
+  const bandMaxZoom = requireInteger('bandMaxZoom', bandMaxZoomValue, { min: 0 });
+  if (bandMinZoom > bandMaxZoom) {
+    return contractViolation('bandMinZoom/bandMaxZoom', 'must satisfy bandMinZoom <= bandMaxZoom');
+  }
+  return { bandMinZoom, bandMaxZoom };
+};
+
+const requireSourceUrl = (value: unknown): { endpointId: string; requestSignature: string } => {
+  const sourceUrl = requireNonEmptyString('url', value);
+  let parsed: URL;
+  try {
+    parsed = new URL(sourceUrl);
+  } catch {
+    return contractViolation('url', 'must be an absolute URL');
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    return contractViolation('url', 'must use the http or https protocol');
+  }
+  parsed.hash = '';
+  return {
+    endpointId: `${parsed.origin}${parsed.pathname}`,
+    requestSignature: parsed.href,
+  };
+};
+
+const resolveNamespacePrefix = (nodeIdValue: NodeId, mode: ShapeCacheNamespaceMode): string => {
+  const nodeId = requireNodeId(nodeIdValue);
+  return mode === 'global' ? 'global' : `node:${String(nodeId)}`;
+};
 
 const resolveNamespaceMode = (
   stage: ShapeStage,
-  namespacePolicy?: Partial<ShapeStageCacheNamespacePolicy>,
+  namespacePolicy?: Partial<ShapeStageCacheNamespacePolicy>
 ): ShapeCacheNamespaceMode => {
   const override = namespacePolicy?.[stage];
-  if (override === 'node' || override === 'global') {
-    return override;
+  if (override === undefined) {
+    return DEFAULT_STAGE_CACHE_NAMESPACE_POLICY[stage];
   }
-  return DEFAULT_STAGE_CACHE_NAMESPACE_POLICY[stage];
+  if (override !== 'node' && override !== 'global') {
+    return contractViolation(`namespacePolicy.${stage}`, 'must be node or global');
+  }
+  return override;
 };
 
 const normalizeBufferIds = (bufferIds: unknown): string[] => {
-  if (!Array.isArray(bufferIds)) return [];
-  const normalized = bufferIds
-    .map((value) => normalizeString(value))
-    .filter((value) => value.length > 0);
-  return Array.from(new Set(normalized)).sort((a, b) => a.localeCompare(b));
+  if (!Array.isArray(bufferIds)) {
+    return contractViolation('bufferIds', 'must be an explicitly present array');
+  }
+  const validated = bufferIds.map((value, index) =>
+    requireNonEmptyString(`bufferIds[${index}]`, value)
+  );
+  return Array.from(new Set(validated)).sort((a, b) => a.localeCompare(b));
 };
 
-const asRecord = (value: unknown): Record<string, unknown> | null => (
-  value && typeof value === 'object' ? value as Record<string, unknown> : null
-);
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
 
-const readPersistedIdentity = (inputData: unknown): ShapeTaskCacheIdentity | null => {
+const readPersistedIdentity = (inputData: unknown): ShapeTaskCacheIdentity => {
   const envelope = asRecord(inputData) as CacheIdentityEnvelope | null;
-  const cacheKey = normalizeString(envelope?.cacheKey);
-  const inputHash = normalizeString(envelope?.inputHash);
-  if (!cacheKey || !inputHash) return null;
+  if (!envelope) {
+    return contractViolation('inputData', 'must be an object containing cacheKey and inputHash');
+  }
+  if (!Object.hasOwn(envelope, 'cacheKey') || !Object.hasOwn(envelope, 'inputHash')) {
+    return contractViolation(
+      'inputData.cacheKey/inputHash',
+      'must be persisted as a complete pair'
+    );
+  }
+  const cacheKey = requireNonEmptyString('inputData.cacheKey', envelope.cacheKey);
+  const inputHash = requireNonEmptyString('inputData.inputHash', envelope.inputHash);
   return { cacheKey, inputHash };
 };
 
 export const buildSourceTaskCacheIdentity = (params: {
   nodeId: NodeId;
-  dataSource: string;
+  dataSource: DataSourceName;
   sourceKey: string;
   url: string;
   upstreamRevision?: string;
-  configSignature?: string;
+  configSignature: string;
   namespacePolicy?: Partial<ShapeStageCacheNamespacePolicy>;
 }): ShapeTaskCacheIdentity => {
   const namespacePrefix = resolveNamespacePrefix(
     params.nodeId,
-    resolveNamespaceMode('source', params.namespacePolicy),
+    resolveNamespaceMode('source', params.namespacePolicy)
   );
-  const dataSource = normalizeString(params.dataSource) || 'unknown';
-  const sourceKey = normalizeString(params.sourceKey) || 'unknown:0';
-  const endpointId = encodeURIComponent(normalizeEndpointId(params.url));
+  const dataSource = requireDataSourceName(params.dataSource);
+  const sourceKey = requireSourceKey(params.sourceKey);
+  const { endpointId: endpoint, requestSignature } = requireSourceUrl(params.url);
+  const endpointId = encodeURIComponent(endpoint);
+  const upstreamRevision = requireOptionalNonEmptyString(
+    'upstreamRevision',
+    params.upstreamRevision
+  );
+  const configSignature = requireNonEmptyString('configSignature', params.configSignature);
   const cacheKey = `${namespacePrefix}:shape:source:${SHAPE_CACHE_KEY_VERSION}:${dataSource}:${sourceKey}:${endpointId}`;
   const inputHash = buildStableSignature({
-    upstreamRevision: normalizeString(params.upstreamRevision) || null,
-    fetchOutputShapingSignature: normalizeString(params.configSignature) || null,
+    requestSignature,
+    upstreamRevision: upstreamRevision ?? null,
+    fetchOutputShapingSignature: configSignature,
     pipelineVersion: SHAPE_SOURCE_PIPELINE_VERSION,
   });
   return { cacheKey, inputHash };
@@ -128,25 +232,32 @@ export const buildGeometryTaskCacheIdentity = (params: {
   sourceKey: string;
   bandIndex: number;
   sourceArtifactHash: string;
-  sourceBaseTolerance?: number;
-  bandMinZoom?: number;
-  bandMaxZoom?: number;
-  configSignature?: string;
+  sourceBaseTolerance: number;
+  bandMinZoom: number;
+  bandMaxZoom: number;
+  configSignature: string;
   namespacePolicy?: Partial<ShapeStageCacheNamespacePolicy>;
 }): ShapeTaskCacheIdentity => {
   const namespacePrefix = resolveNamespacePrefix(
     params.nodeId,
-    resolveNamespaceMode('geometry', params.namespacePolicy),
+    resolveNamespaceMode('geometry', params.namespacePolicy)
   );
-  const sourceKey = normalizeString(params.sourceKey) || 'unknown:0';
-  const bandIndex = normalizeInteger(params.bandIndex, 0);
+  const sourceKey = requireSourceKey(params.sourceKey);
+  const bandIndex = requireInteger('bandIndex', params.bandIndex, { min: 0 });
+  const sourceArtifactHash = requireNonEmptyString('sourceArtifactHash', params.sourceArtifactHash);
+  const sourceBaseTolerance = requireFiniteNonNegative(
+    'sourceBaseTolerance',
+    params.sourceBaseTolerance
+  );
+  const { bandMinZoom, bandMaxZoom } = requireZoomRange(params.bandMinZoom, params.bandMaxZoom);
+  const configSignature = requireNonEmptyString('configSignature', params.configSignature);
   const cacheKey = `${namespacePrefix}:shape:geometry:${SHAPE_CACHE_KEY_VERSION}:${sourceKey}:band${bandIndex}`;
   const inputHash = buildStableSignature({
-    sourceArtifactHash: normalizeString(params.sourceArtifactHash),
-    sourceBaseTolerance: normalizeTolerance(params.sourceBaseTolerance),
-    bandMinZoom: normalizeInteger(params.bandMinZoom, 0),
-    bandMaxZoom: normalizeInteger(params.bandMaxZoom, 0),
-    geometryConfigSignature: normalizeString(params.configSignature) || null,
+    sourceArtifactHash,
+    sourceBaseTolerance,
+    bandMinZoom,
+    bandMaxZoom,
+    geometryConfigSignature: configSignature,
     pipelineVersion: SHAPE_GEOMETRY_PIPELINE_VERSION,
   });
   return { cacheKey, inputHash };
@@ -158,80 +269,39 @@ export const buildTileEmitTaskCacheIdentity = (params: {
   zBase: number;
   tileId: number;
   bufferIds: string[];
-  bandMinZoom?: number;
-  bandMaxZoom?: number;
-  configSignature?: string;
+  bandMinZoom: number;
+  bandMaxZoom: number;
+  configSignature: string;
   namespacePolicy?: Partial<ShapeStageCacheNamespacePolicy>;
 }): ShapeTaskCacheIdentity => {
   const namespacePrefix = resolveNamespacePrefix(
     params.nodeId,
-    resolveNamespaceMode('tileEmit', params.namespacePolicy),
+    resolveNamespaceMode('tileEmit', params.namespacePolicy)
   );
-  const bandIndex = normalizeInteger(params.bandIndex, 0);
-  const zBase = normalizeInteger(params.zBase, 0);
-  const tileId = normalizeInteger(params.tileId, 0);
+  const bandIndex = requireInteger('bandIndex', params.bandIndex, { min: 0 });
+  const zBase = requireInteger('zBase', params.zBase, { min: 0 });
+  const tileId = requireInteger('tileId', params.tileId, { min: 0 });
+  const { bandMinZoom, bandMaxZoom } = requireZoomRange(params.bandMinZoom, params.bandMaxZoom);
+  if (zBase < bandMinZoom || zBase > bandMaxZoom) {
+    return contractViolation('zBase', 'must be inside bandMinZoom..bandMaxZoom');
+  }
+  const configSignature = requireNonEmptyString('configSignature', params.configSignature);
   const cacheKey = `${namespacePrefix}:shape:tileEmit:${SHAPE_CACHE_KEY_VERSION}:band${bandIndex}:z${zBase}:tile${tileId}`;
   const transformArtifactSet = normalizeBufferIds(params.bufferIds);
   const inputHash = buildStableSignature({
     transformArtifactSet,
-    bandMinZoom: normalizeInteger(params.bandMinZoom, 0),
-    bandMaxZoom: normalizeInteger(params.bandMaxZoom, 0),
-    tileEmitConfigSignature: normalizeString(params.configSignature) || null,
+    bandMinZoom,
+    bandMaxZoom,
+    tileEmitConfigSignature: configSignature,
     pipelineVersion: SHAPE_TILE_EMIT_PIPELINE_VERSION,
   });
   return { cacheKey, inputHash };
 };
 
-export const resolveTaskCacheIdentity = (
-  task: TaskQueueRecord,
-  namespacePolicy?: Partial<ShapeStageCacheNamespacePolicy>,
-): ShapeTaskCacheIdentity => {
-  const persisted = readPersistedIdentity(task.inputData);
-  if (persisted) {
-    return persisted;
+export const resolveTaskCacheIdentity = (task: TaskQueueRecord): ShapeTaskCacheIdentity => {
+  requireNodeId(task.nodeId);
+  if (task.stage !== 'source' && task.stage !== 'geometry' && task.stage !== 'tileEmit') {
+    return contractViolation('stage', 'must be source, geometry, or tileEmit');
   }
-
-  const input = asRecord(task.inputData) ?? {};
-  const stage = task.stage;
-  if (stage === 'source') {
-    return buildSourceTaskCacheIdentity({
-      nodeId: task.nodeId,
-      dataSource: normalizeString(input.dataSource) || 'unknown',
-      sourceKey: normalizeString(input.sourceKey) || `${normalizeCountryCode(input.countryCode)}:${normalizeInteger(input.adminLevel, 0)}`,
-      url: normalizeString(input.url),
-      upstreamRevision: normalizeString(input.upstreamRevision) || undefined,
-      configSignature: normalizeString(input.configSignature) || undefined,
-      namespacePolicy,
-    });
-  }
-  if (stage === 'geometry') {
-    return buildGeometryTaskCacheIdentity({
-      nodeId: task.nodeId,
-      sourceKey: normalizeString(input.sourceKey) || `${normalizeCountryCode(input.countryCode)}:${normalizeInteger(input.adminLevel, 0)}`,
-      bandIndex: normalizeInteger(input.bandIndex, 0),
-      sourceArtifactHash: normalizeString(input.sourceArtifactHash),
-      sourceBaseTolerance: typeof input.sourceBaseTolerance === 'number' ? input.sourceBaseTolerance : undefined,
-      bandMinZoom: normalizeInteger(input.bandMinZoom, 0),
-      bandMaxZoom: normalizeInteger(input.bandMaxZoom, 0),
-      configSignature: normalizeString(input.configSignature) || undefined,
-      namespacePolicy,
-    });
-  }
-  if (stage === 'tileEmit') {
-    return buildTileEmitTaskCacheIdentity({
-      nodeId: task.nodeId,
-      bandIndex: normalizeInteger(input.bandIndex, 0),
-      zBase: normalizeInteger(input.zBase, 0),
-      tileId: normalizeInteger(input.tileId, 0),
-      bufferIds: normalizeBufferIds(input.bufferIds),
-      bandMinZoom: normalizeInteger(input.bandMinZoom, 0),
-      bandMaxZoom: normalizeInteger(input.bandMaxZoom, 0),
-      configSignature: normalizeString(input.configSignature) || undefined,
-      namespacePolicy,
-    });
-  }
-  return {
-    cacheKey: `node:${String(task.nodeId)}:shape:legacy:${task.taskId}`,
-    inputHash: buildStableSignature(input),
-  };
+  return readPersistedIdentity(task.inputData);
 };

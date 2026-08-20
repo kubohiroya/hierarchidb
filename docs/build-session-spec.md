@@ -181,5 +181,5 @@ graph LR
 - pause command は実 pipeline 停止確認前に `running` task を `queued` へ戻し、timer から `paused` を永続化できるため、本書の Pause 完了条件を満たさない（#702）。
 - Geometry は `baseTolerance` / profile 欠落時のtask内探索、固定値、clampを持ち、本書および tolerance SSOT の fail-fast 契約を満たさない。
 - invalid geometry filtering は `tileEmitConfig` を読みながら Source stage で実行されており、tileEmit ownership を満たさない（#332）。
-- cache identity は欠落した sourceKey / 数値 / stage を既定値やlegacy keyへ補完する経路が残る（#1325）。
+- cache identity は source / geometry / tileEmit task生成時に必須構成値を厳密検証し、完全な `cacheKey` / `inputHash` pairを永続化する。resume/reconcileでは正規stageと永続pairだけを読み、欠落値をtask payload、legacy key、丸め、既定値から再構成しない。
 - artifact lineage の下流端までの cleanup と一部失敗時の session failure は未完了である（#1324）。
