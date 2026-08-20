@@ -34,7 +34,7 @@ Storage migration, `metadata.name` cutover, ZIP import/export, and UI integratio
 
 The facade rejects legacy, mixed, incomplete, unknown, accessor-backed, and non-plain payloads. It parses YAML 1.2 as exactly one plain mapping and applies strict Ajv validation without coercion, defaults, property removal, or undeclared schema constraints. Stable errors contain only safe codes and field/reason context; raw payloads, YAML content, parser details, and thrown getter or proxy messages are never returned.
 
-The neutral implementation remains package-internal. The migration subpath uses an internal adapter over the same kernel so its existing legacy classification, error precedence, ordering, and redaction remain unchanged. The package root does not re-export validation and does not load Ajv, YAML, migration, or validation modules.
+The neutral implementation remains package-internal. The migration subpath uses an internal adapter over the same kernel so its existing legacy classification, error precedence, ordering, and redaction remain unchanged. The package root does not re-export validation or inverse migration and does not load Ajv, YAML, migration, validation, or inverse-migration modules.
 
 ## Storage authority and migration boundary
 
@@ -57,6 +57,16 @@ The caller supplies raw YAML node candidates, an explicit migration ID and CoreD
 Each raw candidate must expose its node version as an own data property containing a non-negative safe integer. The success plan carries a deterministic source/node/version guard for every candidate. A later activation coordinator must retain the same immutable raw snapshot privately and compare the complete raw slot state again in the versionchange transaction; the planner does not persist, serialize, or log that snapshot.
 
 YAML content validation uses the constraints declared by the current `YAML_SCHEMAS` revision with strict Ajv options. It does not add undeclared required properties or a global `additionalProperties: false` rule. The explicit strictness of the `rsync.yml` and `git.yml` schemas remains authoritative.
+
+## Dormant inverse migration planners
+
+`@hierarchidb/yaml-api/inverse-migration` is a separate pure, dormant export entry. It exposes `planExactYamlCoreDbInverseMigration` and `planReleaseYamlCoreDbInverseMigration` as separate functions and types; there is no generic mode, default publication assumption, or exact-to-release fallback. The entry is not connected to CoreDB, Dexie, YamlDB, workers, feature flags, production readers, or writers.
+
+Exact planning requires the explicit `canonical-writer-never-published` literal, the complete raw node and forward-journal snapshots, and the forward planner's SHA-256 digest port. It strictly validates the journal cohort, compound keys, node/slot presence, legacy name, and recomputed canonical postimage digest, and restores only journaled slots. Release planning requires explicit `canonical-writer-published-or-unknown`, does not use a journal, and restores every present slot only after all slots pass canonical validation. Both planners preserve `schemaId` and `content` byte-for-byte and derive legacy names only from the validated exact journal or the corresponding release metadata.
+
+Inputs and raw snapshots are inspected through own data descriptors without running getters. Unsafe, incomplete, extra, symbol-backed, accessor-backed, duplicate, non-plain, or reflection-failing values are rejected. Success returns a deeply immutable, deterministic complete plan with node guards and, for exact planning, journal guards. Any failure returns only redacted code/context errors and no partial entries or guards.
+
+These plans are not authorization to write. A later coordinator must bind the explicit publication requirement to runtime facts, retain the same immutable raw snapshots privately, reread and compare the complete node and journal state inside a newer CoreDB versionchange transaction, and then apply the plan all-or-none.
 
 ## Dependencies
 
