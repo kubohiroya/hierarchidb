@@ -92,7 +92,7 @@ Then it publishes broadcast notification (`build-session-update`).
 
 References:
 - `packages/runtime-worker/src/services/ShapeMutationService.ts`
-- `packages/runtime-worker/src/services/buildSessionBroadcast.ts`
+- `packages/runtime-worker/src/services/buildSessionBroadcastUtils.ts`
 
 ## 4.3 Session Read
 
@@ -135,7 +135,7 @@ Payload:
 Used for coarse cross-context awareness when persistence changes.
 
 Reference:
-- `packages/runtime-worker/src/services/buildSessionBroadcast.ts`
+- `packages/runtime-worker/src/services/buildSessionBroadcastUtils.ts`
 
 ## 5.2 Shape Build Session Event Channels (shape worker API)
 
@@ -163,7 +163,8 @@ Shape worker runtime keeps per-node callback registries for 4 channels:
 
 References:
 - `plugins/shape-plugin/src/worker/api/shapeBuildAPI.ts`
-- `plugins/shape-plugin/src/worker/api/shapeBuildRuntimeExecutionMetrics.ts`
+- `plugins/shape-plugin/src/worker/api/eventEmissionConstants.ts`
+- `plugins/shape-plugin/src/worker/api/shapeBuildRuntimeExecutionControl.ts`
 - `plugins/shape-plugin/src/common/types/session-events.ts`
 
 ## 5.3 Canonical Shape Task Delivery
@@ -181,7 +182,7 @@ above through `BuildWorkerBridge.subscribeAll`:
 
 References:
 - `packages/ui/worker-client/src/workerBridge.ts`
-- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSnapshotProgressState/useShapeBuildTaskSnapshotProgressState.ts`
+- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildSessionStateAtomBridge.ts`
 
 ## 6. UI Consumption Model
 
@@ -238,7 +239,7 @@ Rationale:
   - `running + geometry(ui-initializing -> running)`
   - `running + tileEmit(ui-initializing -> running)`
 
-### 6.3.1 Progress Value Handling Matrix (Transposed)
+### 6.4.1 Progress Value Handling Matrix (Transposed)
 
 This matrix documents how UI task-state logic reacts to incoming `progress` values.
 The primary implementation path is:
@@ -252,7 +253,7 @@ The primary implementation path is:
 Transposed matrix (rows are processing steps, columns are raw progress ranges):
 
 | Processing step | `p_raw` is missing / NaN / non-number | `p_raw < 0` | `0 <= p_raw < 100` | `p_raw = 100` | `p_raw > 100` |
-|ぐ --- | --- | --- | --- | --- | --- |
+| --- | --- | --- | --- | --- | --- |
 | Numeric validation (`resolveProgressValue`) | error (`invalid progress`) | error (`invalid progress`) | accept as-is | accept as-is | error (`invalid progress`) |
 | Status auto-promotion (`resolveTaskDisplayStatus`, only when `status_raw=running`) | not reached (error) | not reached (error) | keeps `running` | becomes `completed` | not reached (error) |
 | Status preservation (`status_raw` is not `running`) | not reached (error) | not reached (error) | keeps original status | keeps original status (but may fail next step) | not reached (error) |
@@ -351,12 +352,12 @@ Additional acceptance guards:
 
 References for this section:
 
-- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparison.utils.ts`
+- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparisonUtils.ts`
 - `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.task-utils.ts`
 - `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSyncResolver.ts`
 - `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSyncEventHandlers.ts`
 
-## 6.4 Shape Session State UI
+## 6.5 Shape Session State UI
 
 `useShapeBuildSessionState`:
 
@@ -468,15 +469,16 @@ Use these files as source of truth when updating this document:
 - `packages/gis-sdk/src/ephemeral/EphemeralDBRecordTypes.ts`
 - `packages/gis-sdk/src/ephemeral/sessionHelpers.ts`
 - `packages/runtime-worker/src/services/ShapeMutationService.ts`
-- `packages/runtime-worker/src/services/buildSessionBroadcast.ts`
-- `plugins/shape-plugin/src/worker/api/shapeBuildRuntimeExecutionMetrics.ts`
+- `packages/runtime-worker/src/services/buildSessionBroadcastUtils.ts`
+- `plugins/shape-plugin/src/worker/api/eventEmissionConstants.ts`
+- `plugins/shape-plugin/src/worker/api/shapeBuildRuntimeExecutionControl.ts`
 - `plugins/shape-plugin/src/worker/api/shapeBuildAPI.ts`
 - `packages/ui/worker-client/src/workerBridge.ts`
 - `packages/ui/build-sessions/src/hooks/useBuildSessionSnapshots.ts`
 - `packages/ui/build-sessions/src/hooks/useBuildProgressState.ts`
 - `plugins/shape-plugin/src/ui/components/build-progress/internal/useShapeBuildSessionState.ts`
-- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSnapshotProgressState/useShapeBuildTaskSnapshotProgressState.ts`
-- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparison.utils.ts`
+- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildSessionStateAtomBridge.ts`
+- `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparisonUtils.ts`
 - `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.task-utils.ts`
 - `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSyncResolver.ts`
 - `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSyncEventHandlers.ts`

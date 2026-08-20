@@ -14,6 +14,8 @@ PR の待ち時間を短縮しながら、変更された workspace package の 
 
 `affected` では `TURBO_SCM_BASE` と `TURBO_SCM_HEAD` を固定し、Turbo filter `[<base>...<head>]` で直接変更されたpackageをentry pointにする。`build typecheck test lint`のtask依存に必要な上流packageは実行するが、変更packageを利用する下流packageのtestとlintはPRごとに実行しない。下流packageを含む回帰検証はmainのfull validationが担当する。
 
+Vite、Turbo、build scriptなどのconfig評価時に直接または間接的にworkspace packageを読み込むpackageは、そのworkspace packageを直接dependencyとして宣言し、Turboのtask graphへbuild依存を明示する。必要な`dist`生成を、別taskのcache miss時にだけ発生する副作用へ依存させてはならない。
+
 Turboの成功task logは`errors-only`で抑制し、失敗taskの診断情報とrun summaryだけを表示する。
 
 base/head が欠落、不正、未取得、または差分が空の場合はCIを失敗させる。`full` や成功への暗黙フォールバックは禁止する。
@@ -37,6 +39,12 @@ Dep-Fence strict、dependency guard、license summary、公開型参照・shim�
 Dependency CruiserとSyncpackは非blocking診断である。PRごとのblocking validationから外し、週次または手動の`Repository Diagnostics` workflowで実行する。publish artifactを生成しない状態のPublintとAre The Types WrongはCI診断から外し、release/package検証時の明示コマンドとして残す。
 
 Naming Auditは`docs/ts-file-naming-guideline.md`のbase/head比較契約を維持する。audit実行に必要なroot dependenciesだけをinstallし、workspace全体のlinkは行わない。
+
+## Runtime policy
+
+workflow内のproject commandは`actions/setup-node`の`node-version: 24`で実行する。これは`actions/checkout`などのJavaScript action自身が使用するruntimeとは独立した契約である。action runtimeの非推奨警告を抑える目的でproject Nodeを変更してはならず、対象actionをNode 24 runtime対応majorへ更新する。
+
+現行workflowは`actions/checkout@v7`、`actions/setup-node@v7`、`actions/cache@v6`、`pnpm/action-setup@v6`を使用する。major更新時は既存inputの互換性を確認し、actionlint、YAML parse、実CIを通してNode runtimeの非推奨annotationが発生しないことを検証する。
 
 ## Cache policy
 

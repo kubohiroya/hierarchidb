@@ -245,7 +245,7 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
         fallbackOrigin
       );
       const segments = candidate.pathname.split('/').filter(Boolean);
-      if (segments[0] !== 't' || segments.length < STEP_ROUTE_BASE_SEGMENTS) {
+      if (segments[0] !== 'd' || segments.length < STEP_ROUTE_BASE_SEGMENTS) {
         return null;
       }
       const nextModeSegment = segments[6] ?? toModeSegment(ctx.displayMode ?? 'normal');
