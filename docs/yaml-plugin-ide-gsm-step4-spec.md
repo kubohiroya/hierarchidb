@@ -306,6 +306,18 @@ runtime activationは次の順序で実行する。
 - `rejected`はterminalとし、retry、reset、新request、legacy fallbackを受け付けない。error stateへraw error、YAML content、credential、endpointを格納しない。
 - このdormant契約のreducerとaccess decisionはI/O、timer、random、時刻、environment、storageへ依存しない。独立したYamlDB domainは全phaseで常にdenyする。
 
+#### Dormant legacy runtime fence protocol
+
+`@hierarchidb/runtime-worker/yaml-storage-legacy-fence`は、activation releaseがproduction停止connectorを接続する前にmergeするpureかつdormantなquiescence protocol専用subpathとする。runtime-worker package rootから再exportせず、CoreDB、WorkerService、bootstrap、maintenance、BroadcastChannel、MessagePort、SharedWorker、YamlDB、plugin preloadへ接続しない。
+
+- callerは空でない`activationId`と`quiescenceRequestId`、1件以上の明示的なparticipant snapshotを渡す。participantは`tab | worker`のkindと空でないglobal uniqueなparticipant IDを持ち、protocolはkind順を`tab`、`worker`、同kind内をparticipant IDのcode-unit昇順に固定する。participantを自動探索、skip、追加、default補完しない。
+- `quiescenceRequestId`は旧runtimeへの協調停止要求だけを識別し、target IndexedDBの`openRequestId`とは別identityとする。ackまたはstateへ`openRequestId`を含めず、target open requestを生成、保持、resumeしない。後続activation connectorだけがpreflight成功後にtarget open requestを1回作成して#1280へ渡す。
+- ackは`activationId`、`quiescenceRequestId`、participant kind / IDをexpected snapshotへ完全一致させ、`legacyYamlEntrypointsRevoked === true`と`ownedStorageHandlesClosed === true`を明示する。expected participant全件のvalid ackが揃うまでは`readyForPreflight: false`、全件が揃った場合だけ`true`とする。
+- quiescence完了はpreflight開始条件であってactual storage fence成立の証拠ではない。quiescing、ready-for-preflight、rejectedの全stateでdecisionは`actualFenceEstablished: false`を返し、実際のfenceは#1280の`versionchanging` phaseだけで成立する。
+- unknown participant、duplicate ack、staleまたはmismatchしたidentity、false evidence、明示failure、malformed input / event、ready後のeventはstable codeだけを持つterminal rejectionとする。rejected stateからretry、reset、新request、participant追加、timeout recovery、legacy fallbackへ遷移しない。
+- create / reducerが発行してdeep freezeしたmodule-private provenance付きstateだけを正規stateとして扱う。structural typeから作ったstate、clone、mutable state、accessor、symbol / extra property、Proxy reflection failureをfail-closedにし、getterを実行しない。state、decision、errorへraw ack、runtime message、YAML content、credential、endpointを格納しない。
+- protocolはI/O、timer、TTL、random、時刻、environment、storageへ依存しない。既存maintenance shutdownはtyped participant ackまたはactual fenceのauthorityとして再利用せず、production停止connectorとversionchangeはsingle activation Issueでのみ接続する。
+
 ### CoreDB preflight、atomicity、fencing
 
 1. activation gateに従い、migration対象versionを開く前に旧runtimeのYAML create、edit、commit、ZIP import writerを停止する。
@@ -424,7 +436,7 @@ graph TD
   Planner --> InverseArtifacts["dormant inverse migration artifacts / tests"]
   ActivationContract --> ActivationState["#1280 dormant activation state / access decision"]
   Planner --> ActivationState
-  ActivationState --> WriterFence["#1294 dormant production legacy reader / writer fence mechanism"]
+  ActivationState --> WriterFence["#1294 dormant legacy runtime fence protocol"]
   ActivationState --> Activation["single activation PR"]
   DormantWriter --> Activation["single activation PR"]
   DormantSnapshotIO --> Activation
@@ -477,7 +489,7 @@ graph LR
 ```
 
 - subtype、template、schema、strict command registryは[#1266](https://github.com/kubohiroya/hierarchidb/issues/1266)、typed IDE-GSM clientは[#1265](https://github.com/kubohiroya/hierarchidb/issues/1265)、shared canonical validation kernelは[#1279](https://github.com/kubohiroya/hierarchidb/issues/1279)、dormant activation state machine / access decisionは[#1280](https://github.com/kubohiroya/hierarchidb/issues/1280)で先行済みとする。#1279と#1280は独立artifactであり、相互依存させない。
-- read-only planner、validation kernel、activation state machine、dormant canonical writer、dormant canonical ZIP、dormant canonical SimulationWorkflow consumer、inverse migration artifact、production legacy reader / writer fence mechanismは別Issue、別branch、別worktreeで実装する。#1280をproduction fence mechanismとして扱わない。mainへmergeできるのはproduction DB / reader / writerへ未接続の状態だけとし、`CoreDB.version(2)`登録、migration実行、canonical reader / writer / API publishはsingle activation PRまで禁止する。
+- read-only planner、validation kernel、activation state machine、dormant canonical writer、dormant canonical ZIP、dormant canonical SimulationWorkflow consumer、inverse migration artifact、[#1294](https://github.com/kubohiroya/hierarchidb/issues/1294)のlegacy runtime fence protocolは別Issue、別branch、別worktreeで実装する。#1280をproduction fence mechanismとして扱わず、#1294のquiescence完了もactual fence成立として扱わない。mainへmergeできるのはproduction DB / reader / writerへ未接続の状態だけとし、`CoreDB.version(2)`登録、migration実行、canonical reader / writer / API publishはsingle activation PRまで禁止する。
 - validation収束後はdormant canonical writer、canonical ZIP、inverse migration artifactを相互非依存のIssueとして並列実装できる。dormant canonical SimulationWorkflow consumerはcanonical ZIP API確定後、production fence mechanismは#1280を使用する別Issueとして実装する。
 - activation release内では`quiescing`で旧tab / workerの停止とcloseを要求するがactual fence成立とはみなさず、read-only preflight後に同じ`openRequestId`でtarget versionを開く。`blocked`では同じrequestだけを待機し、`versionchanging`でactual fence成立、upgrade commit後に`initializing`、initialization成功後に`canonical-ready`へ進み、その後だけcanonical reader / writer / APIを公開する。failure、ID mismatch、illegal transitionはterminal `rejected`とし、retry、reset、別request、legacy fallback、v1 reopenを行わない。
 - migration commit成功前にcanonical dialog、ZIP、SimulationWorkflowまたはAPIを公開せず、各処理を別releaseへ分離しない。
