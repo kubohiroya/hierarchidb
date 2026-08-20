@@ -8,6 +8,7 @@ import type {
   YamlCanonicalMigrationPayload,
   YamlCoreDbMigrationError,
   YamlCoreDbMigrationSlot,
+  YamlHostSplitLegacyMigrationPayload,
   YamlLegacyMigrationPayload,
 } from './yamlCoreDbMigrationTypes.js';
 
@@ -21,7 +22,17 @@ interface ValidatedCanonicalSlot {
   readonly classification: 'canonical';
 }
 
-export type ValidatedYamlCoreDbMigrationSlot = ValidatedLegacySlot | ValidatedCanonicalSlot;
+interface ValidatedHostSplitLegacySlot {
+  readonly classification: 'host-split-legacy';
+  readonly preimage: YamlHostSplitLegacyMigrationPayload;
+  readonly legacyName: string;
+  readonly postimage: YamlCanonicalMigrationPayload;
+}
+
+export type ValidatedYamlCoreDbMigrationSlot =
+  | ValidatedLegacySlot
+  | ValidatedHostSplitLegacySlot
+  | ValidatedCanonicalSlot;
 
 export type ValidateYamlCoreDbMigrationSlotResult =
   | Readonly<{ readonly ok: true; readonly value: ValidatedYamlCoreDbMigrationSlot }>
@@ -115,6 +126,17 @@ export function validateYamlCoreDbMigrationSlot(
 
   if (result.value.classification === 'canonical') {
     return { ok: true, value: { classification: 'canonical' } };
+  }
+  if (result.value.classification === 'host-split-legacy') {
+    return {
+      ok: true,
+      value: {
+        classification: 'host-split-legacy',
+        preimage: result.value.preimage,
+        legacyName: result.value.legacyName,
+        postimage: result.value.postimage,
+      },
+    };
   }
   return {
     ok: true,

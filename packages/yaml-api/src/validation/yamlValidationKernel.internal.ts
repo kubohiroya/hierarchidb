@@ -64,12 +64,25 @@ interface ValidatedLegacyPayload {
   readonly postimage: ValidatedYamlCanonicalPayload;
 }
 
+interface ValidatedHostSplitLegacyPayload {
+  readonly classification: 'host-split-legacy';
+  readonly preimage: Readonly<{
+    readonly schemaId: string;
+    readonly content: string;
+  }>;
+  readonly legacyName: string;
+  readonly postimage: ValidatedYamlCanonicalPayload;
+}
+
 interface ValidatedCanonicalPayload {
   readonly classification: 'canonical';
   readonly payload: ValidatedYamlCanonicalPayload;
 }
 
-export type ValidatedYamlPayload = ValidatedLegacyPayload | ValidatedCanonicalPayload;
+export type ValidatedYamlPayload =
+  | ValidatedLegacyPayload
+  | ValidatedHostSplitLegacyPayload
+  | ValidatedCanonicalPayload;
 
 export type ValidateYamlPayloadWithKernelResult =
   | Readonly<{ readonly ok: true; readonly value: ValidatedYamlPayload }>
@@ -109,9 +122,11 @@ function createError(
 
 function validatePayloadKeySet(
   payload: Readonly<Record<PropertyKey, unknown>>,
-  selector: 'name' | 'subtype'
+  selector: 'name' | 'subtype' | undefined
 ): YamlValidationKernelError | undefined {
-  const expectedKeys = new Set<PropertyKey>([selector, 'schemaId', 'content']);
+  const expectedKeys = new Set<PropertyKey>(
+    selector === undefined ? ['schemaId', 'content'] : [selector, 'schemaId', 'content']
+  );
   const ownKeys = Reflect.ownKeys(payload);
   if (ownKeys.some((key) => readOwnYamlValidationProperty(payload, key).kind !== 'data')) {
     return createError('UNSAFE_PROPERTY_DESCRIPTOR', {
@@ -265,7 +280,8 @@ function validateYamlPayload(
       error: createError('LEGACY_PAYLOAD', { field: 'payload' }),
     };
   }
-  if (!hasLegacyName && !hasSubtype) {
+  const isHostSplitLegacy = !hasLegacyName && !hasSubtype && mode === 'migration';
+  if (!hasLegacyName && !hasSubtype && !isHostSplitLegacy) {
     const allowedIncompleteKeys = new Set<PropertyKey>(['schemaId', 'content']);
     const hasUnexpectedKey = Reflect.ownKeys(payloadValue).some(
       (key) => !allowedIncompleteKeys.has(key)
@@ -279,20 +295,15 @@ function validateYamlPayload(
     };
   }
 
-  const selector = hasLegacyName ? 'name' : 'subtype';
+  const selector = hasLegacyName ? 'name' : hasSubtype ? 'subtype' : undefined;
   const keySetError = validatePayloadKeySet(payloadValue, selector);
   if (keySetError !== undefined) {
     return { ok: false, error: keySetError };
   }
 
-  const selectorProperty = readOwnYamlValidationProperty(payloadValue, selector);
   const schemaIdProperty = readOwnYamlValidationProperty(payloadValue, 'schemaId');
   const contentProperty = readOwnYamlValidationProperty(payloadValue, 'content');
-  if (
-    selectorProperty.kind !== 'data' ||
-    schemaIdProperty.kind !== 'data' ||
-    contentProperty.kind !== 'data'
-  ) {
+  if (schemaIdProperty.kind !== 'data' || contentProperty.kind !== 'data') {
     return {
       ok: false,
       error: createError('UNSAFE_PROPERTY_DESCRIPTOR', {
@@ -302,18 +313,8 @@ function validateYamlPayload(
     };
   }
 
-  const selectorValue = selectorProperty.value;
   const schemaId = schemaIdProperty.value;
   const content = contentProperty.value;
-  if (typeof selectorValue !== 'string' || selectorValue.length === 0) {
-    return {
-      ok: false,
-      error: createError('INVALID_PAYLOAD_FIELD', {
-        field: selector,
-        reason: selectorValue === '' ? 'empty' : 'invalid-type',
-      }),
-    };
-  }
   if (typeof schemaId !== 'string' || schemaId.length === 0) {
     return {
       ok: false,
@@ -335,17 +336,8 @@ function validateYamlPayload(
 
   let registryEntry: YamlSubtypeRegistryEntry;
   let legacyName: string | undefined;
-  if (selector === 'name') {
-    if (selectorValue !== metadataName) {
-      return {
-        ok: false,
-        error: createError('METADATA_PAYLOAD_NAME_MISMATCH', {
-          field: 'name',
-          reason: 'name-mismatch',
-        }),
-      };
-    }
-    const entries = findLegacyRegistryEntry(selectorValue, schemaId);
+  if (selector === undefined) {
+    const entries = findLegacyRegistryEntry(metadataName, schemaId);
     if (entries.length !== 1) {
       return {
         ok: false,
@@ -366,23 +358,77 @@ function validateYamlPayload(
       };
     }
     registryEntry = matchedEntry;
-    legacyName = selectorValue;
+    legacyName = metadataName;
   } else {
-    const matchedEntry = findCanonicalRegistryEntry(selectorValue);
-    if (
-      matchedEntry === undefined ||
-      matchedEntry.schemaId !== schemaId ||
-      matchedEntry.fileName !== metadataName
-    ) {
+    const selectorProperty = readOwnYamlValidationProperty(payloadValue, selector);
+    if (selectorProperty.kind !== 'data') {
       return {
         ok: false,
-        error: createError('UNKNOWN_REGISTRY_TUPLE', {
+        error: createError('UNSAFE_PROPERTY_DESCRIPTOR', {
           field: 'payload',
-          reason: 'registry-mismatch',
+          reason: 'accessor-property',
         }),
       };
     }
-    registryEntry = matchedEntry;
+    const selectorValue = selectorProperty.value;
+    if (typeof selectorValue !== 'string' || selectorValue.length === 0) {
+      return {
+        ok: false,
+        error: createError('INVALID_PAYLOAD_FIELD', {
+          field: selector,
+          reason: selectorValue === '' ? 'empty' : 'invalid-type',
+        }),
+      };
+    }
+    if (selector === 'name') {
+      if (selectorValue !== metadataName) {
+        return {
+          ok: false,
+          error: createError('METADATA_PAYLOAD_NAME_MISMATCH', {
+            field: 'name',
+            reason: 'name-mismatch',
+          }),
+        };
+      }
+      const entries = findLegacyRegistryEntry(selectorValue, schemaId);
+      if (entries.length !== 1) {
+        return {
+          ok: false,
+          error: createError(
+            entries.length === 0 ? 'UNKNOWN_REGISTRY_TUPLE' : 'AMBIGUOUS_REGISTRY_TUPLE',
+            { field: 'payload', reason: 'registry-mismatch' }
+          ),
+        };
+      }
+      const matchedEntry = entries[0];
+      if (matchedEntry === undefined) {
+        return {
+          ok: false,
+          error: createError('UNKNOWN_REGISTRY_TUPLE', {
+            field: 'payload',
+            reason: 'registry-mismatch',
+          }),
+        };
+      }
+      registryEntry = matchedEntry;
+      legacyName = selectorValue;
+    } else {
+      const matchedEntry = findCanonicalRegistryEntry(selectorValue);
+      if (
+        matchedEntry === undefined ||
+        matchedEntry.schemaId !== schemaId ||
+        matchedEntry.fileName !== metadataName
+      ) {
+        return {
+          ok: false,
+          error: createError('UNKNOWN_REGISTRY_TUPLE', {
+            field: 'payload',
+            reason: 'registry-mismatch',
+          }),
+        };
+      }
+      registryEntry = matchedEntry;
+    }
   }
 
   const contentError = validateYamlContent(content, schemaId);
@@ -399,6 +445,17 @@ function validateYamlPayload(
     return {
       ok: true,
       value: { classification: 'canonical', payload: canonicalPayload },
+    };
+  }
+  if (isHostSplitLegacy) {
+    return {
+      ok: true,
+      value: {
+        classification: 'host-split-legacy',
+        preimage: { schemaId, content },
+        legacyName,
+        postimage: canonicalPayload,
+      },
     };
   }
   return {

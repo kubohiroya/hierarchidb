@@ -97,6 +97,13 @@ export interface YamlLegacyMigrationPayload {
   readonly content: string;
 }
 
+export interface YamlHostSplitLegacyMigrationPayload {
+  readonly schemaId: string;
+  readonly content: string;
+}
+
+export type YamlCoreDbMigrationPreimageRepresentation = 'legacy-with-name' | 'host-split-legacy';
+
 export interface YamlCanonicalMigrationPayload {
   readonly subtype: YamlSubtype;
   readonly schemaId: string;
@@ -109,20 +116,34 @@ export interface YamlCoreDbMigrationJournalValue {
   readonly toCoreDbVersion: number;
   readonly nodeId: string;
   readonly slot: YamlCoreDbMigrationSlot;
+  readonly preimageRepresentation: YamlCoreDbMigrationPreimageRepresentation;
   readonly legacyName: string;
   readonly canonicalPostimageDigest: string;
 }
 
-export interface YamlCoreDbMigrateEntry {
+interface YamlCoreDbMigrateEntryBase {
   readonly action: 'migrate';
   readonly nodeId: string;
   readonly slot: YamlCoreDbMigrationSlot;
-  readonly preimage: YamlLegacyMigrationPayload;
   readonly postimage: YamlCanonicalMigrationPayload;
   readonly legacyName: string;
   readonly canonicalPostimageDigest: string;
   readonly journalValue: YamlCoreDbMigrationJournalValue;
 }
+
+export interface YamlCoreDbLegacyWithNameMigrateEntry extends YamlCoreDbMigrateEntryBase {
+  readonly preimageRepresentation: 'legacy-with-name';
+  readonly preimage: YamlLegacyMigrationPayload;
+}
+
+export interface YamlCoreDbHostSplitLegacyMigrateEntry extends YamlCoreDbMigrateEntryBase {
+  readonly preimageRepresentation: 'host-split-legacy';
+  readonly preimage: YamlHostSplitLegacyMigrationPayload;
+}
+
+export type YamlCoreDbMigrateEntry =
+  | YamlCoreDbLegacyWithNameMigrateEntry
+  | YamlCoreDbHostSplitLegacyMigrateEntry;
 
 export interface YamlCoreDbValidatedNoopEntry {
   readonly action: 'validated-noop';

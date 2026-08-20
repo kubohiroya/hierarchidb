@@ -78,7 +78,7 @@ describe('validateYamlCanonicalPayload registry contract', () => {
       'MIXED_PAYLOAD',
     ],
     [
-      'incomplete payload',
+      'host-split legacy payload',
       'scenario.yml',
       { schemaId: 'ide-gsm/scenario', content: 'name: demo\n' },
       'INCOMPLETE_PAYLOAD',

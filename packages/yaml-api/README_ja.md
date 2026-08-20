@@ -34,7 +34,7 @@ storage migration、`metadata.name`へのcutover、ZIP import/export、UI統合�
 
 facadeはlegacy、mixed、incomplete、unknown、accessor付き、non-plain payloadを拒否する。YAML 1.2の単一plain mappingとしてparseし、coercion、default、property除去、未宣言schema制約の追加なしでstrict Ajv validationを行う。stable errorには安全なcodeとfield/reason contextだけを含め、raw payload、YAML本文、parser detail、getterまたはProxyが投げたmessageを返さない。
 
-neutral implementationはpackage内部に閉じる。migration subpathは同じkernelをinternal adapter経由で使用し、既存のlegacy分類、error precedence、ordering、redactionを維持する。package rootはvalidationまたはinverse migrationを再exportせず、Ajv、YAML、migration、validation、inverse-migration moduleをloadしない。
+neutral implementationはpackage内部に閉じる。migration subpathは同じkernelをinternal adapter経由で使用し、legacy-with-name、host-split-legacy、canonicalをstrictに分類しながらerror precedence、ordering、redactionを維持する。canonical-only facadeはhost-split payloadを引き続き拒否する。package rootはvalidationまたはinverse migrationを再exportせず、Ajv、YAML、migration、validation、inverse-migration moduleをloadしない。
 
 ## Storage authorityとmigration boundary
 
@@ -44,7 +44,7 @@ neutral implementationはpackage内部に閉じる。migration subpathは同じk
 - CoreDB `TreeNode.draftMetadata/draftData`を唯一のauthoritative draft storeとする。
 - 独立したYamlDB v1はfrozenかつnon-authoritativeなlegacy recovery sourceであり、cacheまたはdual-write先ではない。
 - CoreDB migrationとYamlDB inventory/recoveryは別IndexedDBを扱うため、別のatomic boundaryとする。
-- missing legacy name、空schema ID、unknown tuple、conflictはerrorとして報告し、consumerによる推測や補完を禁止する。
+- missing legacy nameを受理するのは、own data keyが`schemaId`と`content`だけのhistorical host-split payloadを対応metadata nameとregistryの単一entryに対して検証できた場合だけとする。partial payload、空schema ID、unknown tuple、conflictはerrorとし、consumerによる一般的なmetadata fallbackを禁止する。
 
 現行`YamlFileNodeData`型は、writerとstorage migrationの後続Issueが全consumerを協調してcutoverするまでのlegacy runtime shapeである。この型の存在はYamlDBをauthoritative storeにしない。
 
@@ -58,11 +58,13 @@ callerはraw YAML node candidate、明示的なmigration IDとCoreDB version pai
 
 YAML content validationはcurrent revisionの`YAML_SCHEMAS`に宣言されたconstraintをstrict Ajv optionで適用する。未宣言のrequired propertyまたはglobalな`additionalProperties: false`を追加しない。`rsync.yml`と`git.yml`で明示されたstrictnessを正規契約とする。
 
+migration modeはlegacy-with-nameとcanonicalに加え、exact historical `{ schemaId, content }` host-split payloadだけを受理する。`{ schemaId }`、missing content、余分またはsymbol key、accessor、ambiguous registry matchを受理しない。各migrate entryとjournal valueは`preimageRepresentation: legacy-with-name | host-split-legacy`を持つ。`legacyName`はlegacy-with-nameでは検証済みpayload / metadata共通name、host-split-legacyでは検証済みmetadata nameとする。
+
 ## Dormant inverse migration planner
 
 `@hierarchidb/yaml-api/inverse-migration`はpureかつdormantな独立export entryである。`planExactYamlCoreDbInverseMigration`と`planReleaseYamlCoreDbInverseMigration`を別関数・別typeとして公開し、generic mode、publicationのdefault、exactからreleaseへのfallbackを提供しない。CoreDB、Dexie、YamlDB、worker、feature flag、production reader / writerへ接続しない。
 
-exact planは明示的な`canonical-writer-never-published`、全raw node / forward journal snapshot、forward plannerと同じSHA-256 digest portを必須とする。journal cohort、compound key、node / slot存在、legacy name、再計算したcanonical postimage digestをstrictに検証し、journal対象slotだけを復元する。release planは明示的な`canonical-writer-published-or-unknown`を必須とし、journalを使わず、存在する全slotのcanonical validation成功後にだけ全slotを復元する。両plannerは`schemaId`と`content`をbyte-for-byteで維持し、legacy nameは検証済みexact journalまたは対応するrelease metadataだけから取得する。
+exact planは明示的な`canonical-writer-never-published`、全raw node / forward journal snapshot、forward plannerと同じSHA-256 digest portを必須とする。journal cohort、compound key、node / slot存在、preimage representation、legacy name、再計算したcanonical postimage digestをstrictに検証し、journal対象slotだけを復元する。`legacy-with-name`はexact `{ name, schemaId, content }`、`host-split-legacy`は`name`を追加せずexact `{ schemaId, content }`へ復元する。release planは明示的な`canonical-writer-published-or-unknown`を必須とし、journalを使わず、存在する全slotのcanonical validation成功後にだけ全slotをlegacy-with-nameへ復元する。両plannerは`schemaId`と`content`をbyte-for-byteで維持する。
 
 inputとraw snapshotはgetterを実行せずown data descriptor経由で検査する。unsafe、incomplete、extra、symbol付き、accessor付き、duplicate、non-plain、reflection failureを含む値を拒否する。successはnode guardと、exactではjournal guardを含むdeeply immutableかつdeterministicなcomplete planを返す。1件でも失敗すればredacted code/context errorだけを返し、partial entries / guardsを返さない。
 

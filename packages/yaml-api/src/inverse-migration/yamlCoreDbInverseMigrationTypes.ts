@@ -95,6 +95,7 @@ export interface YamlCoreDbInverseMigrationError {
       | 'toCoreDbVersion'
       | 'nodeId'
       | 'slot'
+      | 'preimageRepresentation'
       | 'legacyName'
       | 'canonicalPostimageDigest';
     readonly reason?:
@@ -136,6 +137,15 @@ export interface YamlLegacyInverseMigrationPayload {
   readonly content: string;
 }
 
+export interface YamlHostSplitLegacyInverseMigrationPayload {
+  readonly schemaId: string;
+  readonly content: string;
+}
+
+export type YamlCoreDbInverseMigrationPreimageRepresentation =
+  | 'legacy-with-name'
+  | 'host-split-legacy';
+
 export interface YamlCoreDbInverseMigrationNodeGuard {
   readonly sourceIndex: number;
   readonly nodeId: string;
@@ -149,6 +159,7 @@ export interface YamlCoreDbExactInverseMigrationJournalGuard {
   readonly toCoreDbVersion: number;
   readonly nodeId: string;
   readonly slot: YamlCoreDbInverseMigrationSlot;
+  readonly preimageRepresentation: YamlCoreDbInverseMigrationPreimageRepresentation;
   readonly legacyName: string;
   readonly canonicalPostimageDigest: string;
 }
@@ -160,14 +171,29 @@ export interface YamlCoreDbInverseMigrationValidatedNoop {
   readonly reason: 'non-journal-canonical' | 'temporary-placeholder' | 'metadata-only-draft';
 }
 
-export interface YamlCoreDbExactInverseMigrationEntry {
+interface YamlCoreDbExactInverseMigrationEntryBase {
   readonly action: 'restore-exact-legacy';
   readonly nodeId: string;
   readonly slot: YamlCoreDbInverseMigrationSlot;
   readonly preimage: YamlCanonicalInverseMigrationPayload;
-  readonly postimage: YamlLegacyInverseMigrationPayload;
   readonly expectedCanonicalPostimageDigest: string;
 }
+
+export interface YamlCoreDbExactLegacyWithNameInverseMigrationEntry
+  extends YamlCoreDbExactInverseMigrationEntryBase {
+  readonly preimageRepresentation: 'legacy-with-name';
+  readonly postimage: YamlLegacyInverseMigrationPayload;
+}
+
+export interface YamlCoreDbExactHostSplitLegacyInverseMigrationEntry
+  extends YamlCoreDbExactInverseMigrationEntryBase {
+  readonly preimageRepresentation: 'host-split-legacy';
+  readonly postimage: YamlHostSplitLegacyInverseMigrationPayload;
+}
+
+export type YamlCoreDbExactInverseMigrationEntry =
+  | YamlCoreDbExactLegacyWithNameInverseMigrationEntry
+  | YamlCoreDbExactHostSplitLegacyInverseMigrationEntry;
 
 export interface YamlCoreDbReleaseInverseMigrationEntry {
   readonly action: 'restore-release-legacy';
