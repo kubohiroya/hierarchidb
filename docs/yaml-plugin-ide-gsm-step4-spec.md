@@ -2,7 +2,7 @@
 
 ## 位置付け
 
-本書は YAML plugin の subtype、IDE-GSM command、draft 同期、認証、実行状態に関する正規仕様である。親 Epic [#1162](https://github.com/kubohiroya/hierarchidb/issues/1162)、仕様 Issue [#1253](https://github.com/kubohiroya/hierarchidb/issues/1253)、storage migration契約Issue [#1271](https://github.com/kubohiroya/hierarchidb/issues/1271)、storage activation gate Issue [#1273](https://github.com/kubohiroya/hierarchidb/issues/1273) に基づく。
+本書は YAML plugin の subtype、IDE-GSM command、draft 同期、認証、実行状態に関する正規仕様である。親 Epic [#1162](https://github.com/kubohiroya/hierarchidb/issues/1162)、仕様 Issue [#1253](https://github.com/kubohiroya/hierarchidb/issues/1253)、storage migration契約Issue [#1271](https://github.com/kubohiroya/hierarchidb/issues/1271)、storage activation gate Issue [#1273](https://github.com/kubohiroya/hierarchidb/issues/1273)、historical CoreDB shape / activation readiness訂正Issue [#1312](https://github.com/kubohiroya/hierarchidb/issues/1312) に基づく。
 
 型、DB migration、client、executor、UI の実装は本書に従う。本書と `.kiro/specs/yaml-file-node` または `.kiro/specs/ide-gsm-client` が矛盾する場合、本書を優先する。
 
@@ -127,6 +127,7 @@ optional input は未指定のまま送信し、client 側で値を補完しな�
 - YAML plugin は app の汎用 `PluginDialogHost` と `PluginStepRegistry` を使用する。専用 `YamlDialog` を追加しない。
 - Basic Info は host が `draftMetadata` として管理する。
 - plugin 固有の永続 draft は `draftData` の `subtype`、`schemaId`、`content` だけとする。
+- single activation前の現行3-stepはBasic Infoのfilenameを`draftMetadata.name`へ保存し、hostがplugin dataから`name`、`description`、`tags`を除去してから`draftData`へ保存する。このため履歴上のCoreDBにはexact own keyが`schemaId`、`content`だけの`host-split-legacy` payloadが存在し得る。これはactivation後の永続化契約ではなく、migration inputとしてだけ受理する履歴形式とする。
 - Step 4 の選択 command、task ID、status、result、error は UI-only state とする。`draftMetadata`、`draftData`、TreeNode、IndexedDB へ保存しない。
 - endpoint と JWT は app-level の認証済み executor/provider に閉じ込める。step props、draft、TreeNode、IndexedDB、URL、localStorage、ログへ token を渡さない。
 - command 実行は暗黙の save/commit ではない。ダイアログを閉じる、または再読み込みすると UI-only state は破棄される。
@@ -210,21 +211,23 @@ validation、serialization、`importProject` のいずれかが失敗した場�
 | classification | payload shape | 処理 |
 | --- | --- | --- |
 | legacy | `name`、`schemaId`、`content` があり、`subtype` がない | 対応 metadata name と payload name が完全一致し、registry の単一 entry に一致するときだけ canonical shape へ変換する |
+| host-split-legacy | exact own keyが`schemaId`、`content`であり、`name`と`subtype`がない | 対応 metadata name とpayload `schemaId`がregistryの単一entryに一致するときだけcanonical shapeへ変換する |
 | canonical | `subtype`、`schemaId`、`content` があり、`name` がない | strict validation 後に変更しない |
 | mixed | `name` と `subtype` の両方がある | contract error として migration 全体を失敗させる |
 | incomplete | 必須 field、対応 metadata、または有効な文字列値が欠ける | contract error として migration 全体を失敗させる |
 | unknown | registry にない subtype、schemaId、filename、または余分な field がある | contract error として migration 全体を失敗させる |
 
 - legacy record は、対応 metadata name、payload `name`、`schemaId` がすべて存在し、両 name が完全一致し、その組が registry の単一 subtype に一致する場合だけ変換対象にする。
+- host-split-legacy recordは、payloadのexact own keyが`schemaId`と`content`だけで、対応metadata nameとpayload `schemaId`がregistryの単一subtypeに完全一致する場合だけ変換対象にする。payload `name`の欠落を許すのはこのexact shapeの分類時だけとし、`data.name ?? metadata.name`、partial payload、別slot、filenameだけによる一般fallbackへ拡張しない。
 - canonical record は subtype、schemaId、対応 metadata name の組が同じ registry entry と完全一致しなければならない。already-canonical record を legacy へ戻したり書き直したりしない。
-- legacy と canonical のどちらについても `content` を YAML として parse し、root shape と選択された registry schema の JSON Schema に対して検証する。parse error、schema mismatch、必須 property 欠落、追加禁止 property を検出した場合は全体を失敗させる。
-- 同一 payload に `name` と `subtype` が併存する mixed shape だけを禁止する。committed slot と draft slot は独立分類し、同じ `TreeNode` の `data` が canonical、`draftData` が legacy の場合は、committed slotをvalidated no-op、draft slotをmigration対象とする。
-- legacy / canonicalの`content`は検証のためにparseするだけとし、migrationで本文を整形、serialize、補完、変更しない。error reportまたはlogにも本文を含めない。
+- legacy、host-split-legacy、canonicalのいずれについても`content`をYAMLとしてparseし、root shapeと選択されたregistry schemaのJSON Schemaに対して検証する。parse error、schema mismatch、必須property欠落、追加禁止propertyを検出した場合は全体を失敗させる。
+- 同一 payload に `name` と `subtype` が併存する mixed shape だけを禁止する。committed slot と draft slot は独立分類し、同じ `TreeNode` の `data` が canonical、`draftData` が legacyまたはhost-split-legacyの場合は、committed slotをvalidated no-op、draft slotをmigration対象とする。
+- legacy / host-split-legacy / canonicalの`content`は検証のためにparseするだけとし、migrationで本文を整形、serialize、補完、変更しない。error reportまたはlogにも本文を含めない。
 - error report は source、node ID、slot、typed error code を含める。YAML本文、認証情報、endpoint、token を含めない。
-- missing legacy `name`、metadata/payload name 不一致、`schemaId: ''`、unknown/ambiguous mapping を filename、schemaId、別 slot、既存 record から推測または補完しない。`data.name ?? metadata.name` のような fallback を禁止する。
+- host-split-legacyのexact分類に該当しないmissing legacy `name`、metadata/payload name不一致、`schemaId: ''`、missing `content`、unknown/ambiguous mappingをfilename、schemaId、別slot、既存recordから推測または補完しない。特に`{ schemaId }`、`{ content }`、余分なfieldを持つshapeをhost-split-legacyとして受け入れず、一般的なmetadata fallbackを禁止する。
 - strict validationの実装authorityは`@hierarchidb/yaml-api` package内部のneutral kernelとする。kernelはown data property、plain object、registry tuple、YAML 1.2の単一plain mapping、current `YAML_SCHEMAS`をcoercion、default、property除去なしで検証する。
 - public `@hierarchidb/yaml-api/validation` facadeはcanonical filenameとcanonical payloadだけを同時に検証し、legacy payloadを成功させない。成功時は検証済みの`subtype`、`schemaId`、`content`を新しい値として返し、callerにraw objectのcastまたは再readを要求しない。
-- migration plannerはpackage-internal adapterから同じkernelのlegacy/canonical分類を使用し、neutral errorを既存migration contextへ再構成する。既存のerror code、precedence、source index、node ID、slot、sorting、redactionを変更しない。
+- migration plannerはpackage-internal adapterから同じkernelのlegacy / host-split-legacy / canonical分類を使用し、neutral errorを既存migration contextへ再構成する。既存のerror code、precedence、source index、node ID、slot、sorting、redactionを変更しない。
 - parser、Ajv、getter、Proxyが投げたmessage、raw payload、YAML本文をpublic errorまたはmigration errorへ含めない。public facade、migration adapterのどちらもinput/contentを変更、normalize、serializeしない。
 
 ### CoreDB slot 決定表
@@ -238,7 +241,7 @@ raw recordの`data`はproperty missing、`undefined`、`null`をcommitted payloa
 | `data` がなく、base `metadata`と完全な `draftMetadata` / 非空`draftData` がある | `isTemporary`に関係なくcommitted slotは未作成としてskipし、draft slotだけを検証・migrationする |
 | `isTemporary === true`、`data === null`、base `metadata`とnon-null `draftMetadata`があり、`draftData`がown-key 0のplain object | uninitialized placeholderとしてwriteせずskipする。値を補完しない |
 | `data` がなく、上記の完全なdraft pairまたは厳密なplaceholder条件を満たさない | incomplete record。migration全体を失敗させる |
-| 非空`draftData`がlegacy/canonicalの完全shapeでない | incomplete partial draft。`isTemporary`に関係なくmigration全体を失敗させる |
+| 非空`draftData`がlegacy/host-split-legacy/canonicalの完全shapeでない | incomplete partial draft。`{ schemaId }`を含め、`isTemporary`に関係なくmigration全体を失敗させる |
 | `draftMetadata === null` かつ `draftData === undefined` | active draftなし。draft slotをskipする |
 | `draftMetadata` と `draftData` の両方がある | draft slotとして両者だけを共通 validation にかける |
 | `draftMetadata` だけがある rename-only draft | committed slotを独立に検証した後、`draftMetadata.name === metadata.name`のmetadata-only draftだけをno-opにする。name差分は全体を失敗させる |
@@ -247,7 +250,7 @@ raw recordの`data`はproperty missing、`undefined`、`null`をcommitted payloa
 - `isTemporary` の例外は `data === null`、base metadata、non-null draftMetadata、own-key 0のplain `draftData`を同時に満たすuninitialized placeholderだけとする。property missing、`undefined`、配列、prototype由来keyだけのobjectをplaceholderとして扱わない。非空payloadについて必須fieldやschema validationを緩和せず、partial draftをskipまたはdefault補完しない。
 - rename-only draftの判定ではcommitted payloadをdraftへcopyせず、subtype、schemaId、filenameを推測しない。metadata nameが同一であることだけを検証する。
 - committed slotとdraft slotは別々のsubtypeを持ち得るが、それぞれが対応metadataを含む完全なregistry tupleでなければならない。
-- migration成功時だけlegacy payloadの`name`を除去し、対応metadata nameを唯一のfilename SSOTとする。`schemaId`と`content`は値を変更せず、registryから得た明示的な`subtype`を追加する。
+- migration成功時だけlegacy payloadの`name`を除去し、host-split-legacyではpayloadへ`name`を追加せず、対応metadata nameを唯一のfilename SSOTとする。どちらも`schemaId`と`content`は値を変更せず、registryから得た明示的な`subtype`を追加する。
 
 ### Merge gate と runtime activation gate
 
@@ -256,9 +259,11 @@ raw recordの`data`はproperty missing、`undefined`、`null`をcommitted payloa
 - read-only plannerはproduction DBへ接続せず、`unknown`のraw record snapshotを入力としてmigration planまたはsanitized typed error reportを返すpure boundaryにする。CoreDB / Dexieのopen、schema version登録、transaction、write、journal table作成、worker bootstrapへの接続を含めない。1件でも不正ならpartial planを返さず、YAML本文、token、credential、endpointをreportまたはlogへ含めない。
 - [#1279](https://github.com/kubohiroya/hierarchidb/issues/1279)のshared canonical validation kernelは、canonical payloadのstrict validation authorityとmigration adapterを独立subpathで提供するdormant artifactとする。dormant canonical writer、canonical ZIP、inverse migration artifactはこのauthorityへ収束し、validationを複製しない。
 - [#1280](https://github.com/kubohiroya/hierarchidb/issues/1280)のdormant activation state machine / access decisionは、後続production legacy reader / writer fence mechanismとは別artifactとする。CoreDB、WorkerService、bootstrap、production reader / writerへ未接続のまま先行mergeし、production fence成立またはactivation完了として扱わない。
-- canonical writer、canonical ZIP import / export、canonical SimulationWorkflow consumer、inverse migration artifact、legacy reader / writer fence mechanismは、production writer、dialog step、worker API、ZIP path、SimulationWorkflow entry point、bootstrapから到達不能なdormant implementationとしてのみ先行mergeできる。activation releaseまでは既存legacy entry pointの挙動を変更しない。既存legacy writerとcanonical writerを同時に選べるflag、environment fallback、dual-write、read-time fallbackを追加しない。
+- canonical writer、canonical ZIP import / export、canonical SimulationWorkflow consumer、inverse migration artifact、pure legacy fence protocolは、production writer、dialog step、worker API、ZIP path、SimulationWorkflow entry point、bootstrapから到達不能なdormant implementationとしてのみ先行mergeできる。production quiescence bridgeは別のpre-activation releaseでmessage transportとresponderを配備するが、有効なactivation requestを受け取るまでは既存legacy entry pointの挙動を変更しない。既存legacy writerとcanonical writerを同時に選べるflag、environment fallback、dual-write、read-time fallbackを追加しない。
 - activation PRより前にproduction `CoreDB.version(2)`を登録しない。CoreDBのtarget versionが別変更で先に進んだ場合は、本仕様とactivation Issueでtarget versionを再確定してから登録する。read-only plannerを`CoreDB.getSingleton()`、`WorkerService`、plugin preload、app bootstrapへ接続しない。
-- activation PRは、read-only planner、#1279 validation kernel、#1280 activation state machine、dormant canonical writer、dormant canonical ZIP import / export、dormant canonical SimulationWorkflow consumer、exact / release inverse migration artifact、failure-path test、production legacy reader / writer fence mechanismがmainへmerge済みである場合だけ開始できる。versionchange migration、CoreDB / worker boot接続、canonical reader / writer / API publishを同じrelease boundaryで有効化し、一部だけを先行公開しない。
+- [#1312](https://github.com/kubohiroya/hierarchidb/issues/1312)で確定したhost-split-legacyをread-only planner、shared validation adapter、inverse migration journalへ反映し、同じ分類契約を使うproduction CoreDB read-only inventoryをactivationより前のreleaseで実行する。全`yaml-file` slotをaccountし、invalid recordが0件であることを受入条件とする。inventoryはwrite、repair、migration、publicationを行わず、activation時のauthoritative preflightを省略させない。
+- [#1294](https://github.com/kubohiroya/hierarchidb/issues/1294)のpure protocolだけではparticipant discovery、transport、production responder、entrypoint revoke、owned connection closeを提供しない。これらを接続するproduction quiescence bridgeをactivationより前のstable releaseで配備し、旧tab / workerを含む対象runtimeがtyped ackへ応答できることを受け入れる。bridge releaseをactual storage fenceまたはcanonical activationとして扱わない。
+- activation PRは、read-only planner、host-split-legacy対応validation adapter、#1280 activation state machine、dormant canonical writer、dormant canonical ZIP import / export、dormant canonical SimulationWorkflow consumer、exact / release inverse migration artifact、failure-path testがmainへmerge済みで、CoreDB read-only inventoryのinvalid recordが0件であり、production quiescence bridgeを含むstable releaseが受入済みの場合だけ開始できる。versionchange migration、CoreDB / worker boot接続、canonical reader / writer / API publishを同じrelease boundaryで有効化し、一部だけを先行公開しない。
 - `yamlIdeGsmStep4Enabled`はStep 4 compositionの表示契約であり、storage activationまたはrollback gateとして使用しない。flag OFF、旧binary、legacy writerをmigration後のfallbackとして起動しない。
 - optional plugin preloadは例外をworker-ready failureとして伝播できないため、preflight、migration、storage readinessのgateとして使用しない。CoreDB `open()` / upgradeの成功をawaitするworker bootだけがquery / mutation APIをreadyにできる。
 - migrationのblockedまたはrejectを、全IndexedDB削除を案内するgeneric recoveryへ変換しない。`@hierarchidb/runtime-worker/yaml-storage-activation`のtyped stateをauthorityとし、`blocked`は同じ`openRequestId`のtarget open requestを待つ非ready状態、`rejected`はretry、reset、別request、legacy fallbackを受け付けないterminal worker boot failureとして通知する。`quiescing`と`blocked`ではactual versionchange fenceが未成立であり、自動DB削除またはv1 reopenを行わない。
@@ -268,6 +273,7 @@ raw recordの`data`はproperty missing、`undefined`、`null`をcommitted payloa
 - plannerは`@hierarchidb/yaml-api/migration`の独立subpathだけから公開し、package rootから再exportしない。production DB、reader、writer、worker bootstrapから到達不能なdormant artifactとしてmainへmergeする。
 - callerはCoreDBから選択した全`yaml-file` raw recordの`readonly unknown[]`、opaqueで空でないmigration ID、正の整数で`to > from`を満たすCoreDB version pair、SHA-256 digest portを明示的に渡す。plannerはmigration ID、version、digest実装をrandom生成、推測、default補完しない。candidateに`nodeType !== 'yaml-file'`のrecordが含まれる場合は無視せずcontract errorにする。
 - plannerはTreeNode normalizer、型cast、JSON round-tripを入力前処理に使用しない。raw own data propertyを基準にmissing、`undefined`、`null`、empty plain object、array、non-empty objectを区別し、accessorを実行せず、record、metadata、payloadの不正shapeをfail-closedにする。各candidateの`version`はown data propertyのnon-negative safe integerを必須とし、`0`を有効なtemporary node versionとして扱う。
+- plannerは各non-empty payload slotをlegacy、host-split-legacy、canonical、mixed、incomplete、unknownのいずれかへ分類する。host-split-legacyはexact own keyが`schemaId`、`content`だけの場合に限定し、対応metadata nameとregistryを使ってcanonical postimageを計画する。`{ schemaId }`、missing content、余分なfield、ambiguous mappingをpartial migrationまたはmetadata fallbackで受理しない。
 - YAML contentはYAML 1.2 core schemaでstrictにparseし、単一documentのplain mappingだけを受け入れる。duplicate key、parse error、複数document、scalar、sequenceを失敗させる。parse結果をserializeし直さず、入力contentを変更しない。
 - current revisionの`YAML_SCHEMAS`に宣言されたconstraintsをauthoritative validation inputとする。Ajvはstrict mode、all errors、type coercionなし、default追加なし、property除去なしで使用する。schemaにない`additionalProperties: false`やrequired propertyをplanner側で注入せず、未宣言制約を推測しない。
 - migration contextが同一の場合、plan entryとerrorはnode ID昇順、同一node内はcommitted、draftの順に固定する。1件でもvalidationまたはdigest failureがあればsuccess plan、postimage、journal entry、partial resultを返さない。
@@ -277,8 +283,8 @@ raw recordの`data`はproperty missing、`undefined`、`null`をcommitted payloa
 
 runtime activationは次の順序で実行する。
 
-1. 新runtimeのlegacy / canonical YAML reader、writer、ZIP、SimulationWorkflow、command入口を未公開のまま保ち、旧tabと旧workerへ停止・connection closeを要求する。新runtime内のlegacy create / edit / commit / ZIP import / export / SimulationWorkflow entry pointは開始しない。この時点の協調停止だけをwrite fence成立とみなさない。
-2. CoreDB v1 raw snapshotへread-only preflightを実行し、migration plan、migration ID、postimage digest、journal valueを確定する。失敗時はversionchangeを開始しない。
+1. 新runtimeのlegacy / canonical YAML reader、writer、ZIP、SimulationWorkflow、command入口を未公開のまま保ち、事前配備済みproduction quiescence bridgeを介して旧tabと旧workerへentrypoint停止・connection closeを要求する。新runtime内のlegacy create / edit / commit / ZIP import / export / SimulationWorkflow entry pointは開始しない。この時点の協調停止だけをwrite fence成立とみなさない。
+2. CoreDB v1 raw snapshotへread-only preflightを実行し、migration plan、migration ID、postimage digest、journal valueを確定する。事前inventoryの結果やversion markerを代用せず、quiescence完了後の現在snapshotを全件再分類する。失敗時はversionchangeを開始しない。
 3. preflightに使用したconnectionを閉じてtarget versionの`open()`を1回だけ開始する。旧connectionが残る間はblockedとしてAPIをreadyにせず、旧tabのreloadと旧workerのterminateによって同じrequestをresumeする。
 4. versionchange transaction内でraw recordを再読し、preflight snapshotとの完全一致を確認してからnodesとjournalをatomicに更新する。差分または1件の失敗でtransaction全体をabortする。
 5. upgrade commitとCoreDB initializationが成功した後だけ、canonical query / mutation API、dialog writer、ZIP import / export、SimulationWorkflow consumer、command入口を公開する。commit前またはfailure後にlegacy / canonical readerまたはwriterを公開しない。
@@ -316,7 +322,16 @@ runtime activationは次の順序で実行する。
 - quiescence完了はpreflight開始条件であってactual storage fence成立の証拠ではない。quiescing、ready-for-preflight、rejectedの全stateでdecisionは`actualFenceEstablished: false`を返し、実際のfenceは#1280の`versionchanging` phaseだけで成立する。
 - unknown participant、duplicate ack、staleまたはmismatchしたidentity、false evidence、明示failure、malformed input / event、ready後のeventはstable codeだけを持つterminal rejectionとする。rejected stateからretry、reset、新request、participant追加、timeout recovery、legacy fallbackへ遷移しない。
 - create / reducerが発行してdeep freezeしたmodule-private provenance付きstateだけを正規stateとして扱う。structural typeから作ったstate、clone、mutable state、accessor、symbol / extra property、Proxy reflection failureをfail-closedにし、getterを実行しない。state、decision、errorへraw ack、runtime message、YAML content、credential、endpointを格納しない。
-- protocolはI/O、timer、TTL、random、時刻、environment、storageへ依存しない。既存maintenance shutdownはtyped participant ackまたはactual fenceのauthorityとして再利用せず、production停止connectorとversionchangeはsingle activation Issueでのみ接続する。
+- protocolはI/O、timer、TTL、random、時刻、environment、storageへ依存しない。既存maintenance shutdownはtyped participant ackまたはactual fenceのauthorityとして再利用しない。production quiescence bridgeはpre-activation Issueでprotocolをtransport / responderへ接続し、target versionchange connectorはsingle activation Issueでだけ#1280へ接続する。
+- #1294のpure protocolはparticipant discovery、transport、production message handler、legacy YAML entrypoint revoke、owned storage handle closeを実装しない。production quiescence bridgeはこれらを所有する別artifact / releaseとし、activation releaseより前に全対象runtimeへ配備する。bridgeはprotocol stateを捏造せず、対象participant snapshotとtyped ackをprotocolへ渡すだけとし、`versionchanging`前のactual fence成立を主張しない。
+- bridge releaseより古くtyped ackへ応答できないtab / workerをparticipant snapshotから除外しない。activation開始前にreload / terminateによって終了した証拠が得られないpre-bridge context、unaccounted participant、ack timeoutはquiescence failureとしてactivationを停止し、skipまたは暗黙の成功へ変換しない。
+
+### CoreDB activation readiness inventory
+
+- single activationより前のproduction releaseで、全CoreDB `yaml-file` raw recordを対象にread-only inventoryを実行する。inventoryはmigration plannerと同じslot決定、legacy / host-split-legacy / canonical分類、registry、YAML/schema validation、error precedence、redactionを使用し、別の受入規則を持たない。
+- reportは全slotをclassification別にaccountし、node ID、slot、stable error code、安全なcontextだけを出力する。YAML本文、raw payload、parser / Ajv message、credential、endpointを出力しない。`invalidRecordCount`はmixed、incomplete、unknown slotとrecord-level contract errorの合計とし、activationへ進めるのはこれがexactly `0`の場合だけとする。
+- inventoryはCoreDB / YamlDBへのwrite、repair、normalization、migration、journal作成、canonical publicationを行わない。invalid recordをskip、default補完、自動修復せず、0件にならない場合はactivationをblockedにする。
+- inventory成功はそのsnapshotを固定せず、quiescence、actual `versionchanging` fence、activation preflightの代替証拠にならない。activationは事前配備済みbridgeでquiescenceを完了した後、同じ契約で全raw snapshotを再読・再検証する。
 
 ### CoreDB preflight、atomicity、fencing
 
@@ -324,13 +339,17 @@ runtime activationは次の順序で実行する。
 2. 全CoreDB `yaml-file` nodeのcommitted slotとdraft slotを列挙し、決定的な順序でmigration planまたはerror reportを作る。read-only preflight中にmigration IDと各canonical postimage digestを計算し、journalへ書く値をplanへ固定する。digest対象のfilenameはcommitted slotでは`metadata.name`、draft slotでは`draftMetadata.name`とし、filename、subtype、schemaId、contentの順に各UTF-8 byte列へ8-byte unsigned big-endian byte lengthを前置して連結し、SHA-256 lowercase hexを計算する。全件preflightが成功するまでwriteを開始しない。
 3. CoreDB schema versionを上げる`versionchange`だけをwrite fenceとする。旧connectionへcloseを要求し、旧tabはreload、旧workerはterminateを必要とする。connectionが残る間は明示的なblocked状態とし、worker/APIをreadyにせず、同じ`open()` requestだけを待機させる。connectionがcloseしたら同じrequestでupgradeをresumeし、別requestによるretry、強制継続、v1 fallbackを行わない。
 4. 同じCoreDB versionchange transaction内で`nodes` tableのraw recordを全件再読する。normalizerやread-time fallbackを通さず、全slotを再分類・再検証し、preflight時のnode ID、version、slot shape、値との完全一致を確認する。差分または検証失敗があればtransactionをabortする。
-5. raw recordがpreflight snapshotと完全一致した後、同じtransaction内でlegacy slotを一括更新し、専用migration journalへpreflight planで固定したmigration ID、from/to CoreDB version、node ID、slot、legacy name、canonical postimage digestを保存する。already-canonical slotとplaceholderはjournalまたはwrite対象へ追加しない。YAML本文をjournalへ複製しない。
+5. raw recordがpreflight snapshotと完全一致した後、同じtransaction内でlegacyとhost-split-legacy slotを一括更新し、専用migration journalへpreflight planで固定した値を保存する。already-canonical slotとplaceholderはjournalまたはwrite対象へ追加しない。YAML本文をjournalへ複製しない。
 6. validation、raw再読、journal保存、または一括更新の1件でも失敗した場合はtransaction全体をabortし、CoreDB `open()` / upgradeをrejectしてworker bootを失敗させる。commit後にだけchange notificationを発行する。
 7. blocked中またはreject後にquery/mutation APIと新runtimeのYAML writerを公開しない。legacy writer、dual-write、lazy migration、read-time fallbackへ切り替えない。
 
 CoreDB versionchange transaction内ではnetwork、WebCrypto、その他の外部asyncをawaitしない。migration ID、digest、postimage、journal valueはread-only preflightで準備する。将来、transaction外promiseの待機が不可避になった場合は、対象と上限時間を本仕様で追加確定し、明示的な`Dexie.waitFor`と失敗時abortを実装するまで導入しない。
 
 already-canonical slotは毎回strict validationし、write対象へ追加しない。成功済みmigrationを同じ入力へ再実行した場合は、全slotがvalid canonicalであることを確認したno-opにする。migration済みversion markerだけを根拠にvalidationを省略しない。
+
+migration journalのproduction schemaはCoreDB v2 table `yamlMigrationJournal`とし、Dexie schema stringを`&[migrationId+nodeId+slot],[migrationId+fromCoreDbVersion+toCoreDbVersion]`に固定する。primary keyは`[migrationId+nodeId+slot]`、cohort query indexは`[migrationId+fromCoreDbVersion+toCoreDbVersion]`であり、別key、単一field scan、nodes tableへの埋込みを使用しない。
+
+journal valueのexact own data propertyは`migrationId`、`fromCoreDbVersion`、`toCoreDbVersion`、`nodeId`、`slot`、`preimageRepresentation`、`legacyName`、`canonicalPostimageDigest`だけとする。`slot`は`committed | draft`、`preimageRepresentation`は`legacy-with-name | host-split-legacy`とする。`legacyName`はlegacyでは検証済みpayload / metadata共通name、host-split-legacyでは検証済み対応metadata nameを保存する。YAML本文、payload preimage、canonical postimage、description、tagsを保存しない。
 
 ### YamlDB v1 inventory と recovery
 
@@ -389,7 +408,18 @@ already-canonical slotは毎回strict validationし、write対象へ追加しな
 - workflow順はimport、calibrate、simulate、exportで固定し、各task IDをterminal successまで待ってから次へ進む。task ID欠落、client/await failureでは該当stepをfailedとして停止し、後続step、retry、別mutation、legacy fallbackを実行しない。
 - export filterはcallerが指定した場合だけ渡し、defaultを補完しない。step callbackにはstepと`running | done | failed`だけを渡し、callback failureはsanitized typed errorとして停止する。
 - public methodはinput archive、IDE-GSM export payload、task resultを返さず`void`で完了する。errorはstable code、該当step、folder planのsanitized errorだけを持ち、client、callback、parserのraw error messageを公開しない。
-- dormant subpathはCoreDB、Dexie、IndexedDB、YamlDB、app config、feature flag、environment、timer、randomへ依存しない。production publishとpost-activation return contractはsingle activation以降の別Issueで確定する。
+- dormant subpathはCoreDB、Dexie、IndexedDB、YamlDB、app config、feature flag、environment、timer、randomへ依存しない。production publishは次項のsingle activation boundaryでだけ行う。
+
+### Canonical publication boundary
+
+single activationのupgrade commitとCoreDB initializationが成功し、同じactivation stateが`canonical-ready`へ到達した後だけ、次のproduction contractを一括公開する。一部だけの先行公開、旧entrypointとのflag切替、read-time fallback、dual routingを行わない。
+
+- `@hierarchidb/yaml-api` package rootの`YamlFileNodeData`をexact `{ subtype, schemaId, content }`へ変更し、`name`を型とpayloadから除去する。filenameは対応する`TreeNode.metadata.name` / `draftMetadata.name`だけから読む。
+- generic Worker query / mutation APIはcanonical-readyのaccess decisionを通過した後だけYAML nodeを公開・更新する。YAML専用のbootstrap迂回API、version markerだけを信頼するreader、legacy payload serializerを追加しない。
+- YAML dialogのproduction connectorをYAML save / save-draftの唯一のrouteとし、dormant canonical writerが発行するmetadataとdataを1つの`TreeNodeUpdater` requestとしてcommitする。汎用hostからyaml-fileだけvalidationを迂回して直接writeせず、port failure後にlegacy dialog writerへ戻さない。
+- `@hierarchidb/folder-plugin` package rootからlegacy `exportYamlNodesToSnapshot`と`importYamlNodesFromSnapshot`を除去し、production ZIP routeはcanonical plan / connectorだけを使用する。legacy helperへのalias、wrapper、runtime fallbackを残さない。
+- `SimulationWorkflow.runSimulation`はcanonical committed node snapshotだけをconsumerへ渡し、return contractを`Promise<void>`に変更する。IDE-GSM `exportProject`の`paramsJson`、raw task result、input archiveをcallerへ返さない。`runSimulationWithRsync`はsnapshotを扱わない別APIとして維持できるが、legacy YAML serializerまたはZIP routeへfallbackさせない。
+- activation前のdormant subpathはpackage rootから未公開のまま保ち、activation時にroot exportまたはrootからの明示wrapperへ置き換える。activation後のproduction sourceとtestsはlegacy root APIをimportせず、到達不能なlegacy implementationを互換aliasとして保持しない。
 
 ### Inverse rollback
 
@@ -398,15 +428,15 @@ already-canonical slotは毎回strict validationし、write対象へ追加しな
 - exact callerはnon-empty rollback IDとforward migration ID、`rollbackTargetVersion > currentCoreDbVersion`を満たすsafe integer version pair、全CoreDB YAML nodeのimmutable raw snapshot、対象forward migrationの全raw journal snapshot、forward plannerと同じSHA-256 digest port、literal `canonical-writer-never-published`を明示する。
 - release callerはnon-empty rollback ID、同じversion pair、全CoreDB YAML nodeのimmutable raw snapshot、literal `canonical-writer-published-or-unknown`を明示する。artifactはactivation phase、feature flag、runtime stateからpublication事実を推測しない。
 - top-level input、raw snapshot配列、raw node、raw journalはown data propertyだけをdescriptorで読む。missing、`undefined`、accessor、symbol/extra property、sparse/拡張array、non-plain record、Proxy reflection failure、duplicate node IDをfail-closedで拒否し、getterを実行しない。
-- success planは全candidateについて`sourceIndex`、`nodeId`、`expectedVersion`を決定的順序で保持する。exact planはさらにjournalの全fieldを複製したguardを保持し、migration ID、from/to version cohort、`nodeId + slot` compound key、node/slot存在、legacy nameとslot metadata nameの一致、canonical postimage digestの再計算一致を全件検証する。
+- success planは全candidateについて`sourceIndex`、`nodeId`、`expectedVersion`を決定的順序で保持する。exact planはさらにjournalの全fieldを複製したguardを保持し、migration ID、from/to version cohort、`nodeId + slot` compound key、node/slot存在、`preimageRepresentation`、legacy nameとslot metadata nameの一致、canonical postimage digestの再計算一致を全件検証する。
 - exact planはjournal対象slotだけをlegacy化する。journal対象外のstrict canonical slot、temporary placeholder、metadata-only draftは検証済みno-opとし、変更対象へ昇格しない。release planはjournalを使わず、存在する全committed/draft slotをstrict canonical validationし、legacy、mixed、incomplete、unknown、metadata不一致を1件でも検出した場合は全体を失敗させる。
-- exactのlegacy `name`は検証済みjournal `legacyName`、releaseのlegacy `name`は対応するmetadata nameだけをsourceとする。両planとも`schemaId`と`content`をbyte-for-byteで維持し、canonical `subtype`だけを除去する。
+- exact planはjournal `preimageRepresentation`が`legacy-with-name`なら検証済みjournal `legacyName`をpayload `name`として復元し、`host-split-legacy`ならpayload `name`を追加せずexact `{ schemaId, content }`へ復元する。release planは対応するmetadata nameだけをpayload `name`のsourceとし、全対象をlegacy-with-nameへ変換する。両planとも`schemaId`と`content`をbyte-for-byteで維持し、canonical `subtype`だけを除去する。
 - resultはdeeply immutableなcomplete planまたはstable code/contextだけのsanitized errorsのいずれかとする。partial entries/guards、raw object、YAML本文、pre/postimage、parser/Ajv/Proxy message、credentialをerrorへ含めず、input/raw snapshotをmutate、normalize、serialize、log出力しない。
 - planは適用許可ではない。後続coordinatorはpublication requirementを実publication事実へ結び付け、planner inputと同じlifetimeでimmutable raw snapshotsを非公開保持する。より新しいCoreDB versionのversionchange transaction内で全node/journalをraw再読し、version、own slot presence/value、journal guardをsnapshotと完全比較してから、all-or-none writeを実行する。
 
-- canonical writer公開前のexact rollbackは、同じCoreDB upgrade transactionで保存したmigration journalに記録されたslotだけを対象にし、migration直前のlegacy preimageだけを復元する。canonical postimage digestを全件照合し、strict validation後にlegacy nameを戻す。already-canonicalだったslotとplaceholderを変更せず、exact rollbackを全canonical slotのlegacy化として扱わない。
+- canonical writer公開前のexact rollbackは、同じCoreDB upgrade transactionで保存したmigration journalに記録されたslotだけを対象にし、migration直前のlegacy-with-nameまたはhost-split-legacy preimageをrepresentationも含めてexactに復元する。canonical postimage digestを全件照合し、strict validation後にjournalどおりnameの有無を復元する。already-canonicalだったslotとplaceholderを変更せず、exact rollbackを全canonical slotのlegacy化として扱わない。
 - canonical writer公開後のrelease rollbackは、すべてのYAML writerをfenceし、対象となる全CoreDB canonical slotをraw再読してstrict validationする。mixed、incomplete、unknown、metadata不一致を検出した場合はrollback全体を失敗させる。
-- どちらのrollbackもDB versionを下げず、より新しいCoreDB versionの単一versionchange transactionでstrict canonicalからlegacyへのmigrationとして実行する。対象canonical payloadから`subtype`を除去し、exact rollbackはjournalのlegacy name、release rollbackは対応metadata nameを`name`として設定する。`schemaId`と`content`は変更しない。
+- どちらのrollbackもDB versionを下げず、より新しいCoreDB versionの単一versionchange transactionでstrict canonicalからlegacy representationへのmigrationとして実行する。対象canonical payloadから`subtype`を除去し、exact rollbackはjournalの`preimageRepresentation`どおり`name`を復元または省略し、release rollbackは対応metadata nameを`name`として設定する。`schemaId`と`content`は変更しない。
 - rollback transactionの1件でも失敗した場合は全変更をabortする。YamlDBはCoreDB rollbackの対象に含めず、保持中のlegacy sourceを変更しない。
 - runtime rollbackは後続依存グラフの逆順で行う。旧binaryをinverse migrationより先に起動せず、fallbackまたはdual-writeでrollbackしない。
 - exact rollback後にlegacy runtimeを起動できるのは、migration preimageにcanonical slotが0件だった場合、または対象旧runtimeがそのmixed preimageをstrictに処理できることを検証済みの場合だけとする。通常のlegacy runtime復帰は、全valid canonical slotを変換するrelease rollbackが成功した後に限る。
@@ -421,6 +451,7 @@ CoreDB / runtime laneのrollback順は次で固定する。
 6. canonical dialog writerを無効化する。
 7. 次のCoreDB versionchange transactionでstrict canonicalからlegacyへのinverse migrationを完了する。
 8. inverse migration成功後に限り、必要なlegacy type consumerを起動する。
+9. production quiescence bridgeはinverse migrationとlegacy runtime復帰が完了するまで維持する。全activation-era contextが終了した後にだけ別releaseで無効化または除去でき、rollback途中で先にrevertしない。
 
 YamlDB laneのrollbackはCoreDB laneと別に扱う。物理databaseを保持している間にrevertできるのはread-only inventory / recovery accessだけとし、YamlDB writer、SSOT、cache、dual-writeを再有効化しない。物理database削除後はgit revertでrowを復元できないため、削除Issueで明示承認された検証済みbackupがなければrollbackをblockedとして停止する。別sourceからの自動copy、CoreDBからの逆生成、fallback、dual-writeで復元しない。
 
@@ -437,8 +468,11 @@ graph TD
   Registry["#1266 subtype / schema / command registry"] --> Planner["read-only migration planner"]
   Registry --> Validation["#1279 shared canonical validation kernel"]
   Contract["#1271 storage migration contract"] --> ActivationContract["#1273 activation gate"]
+  HistoricalContract["#1312 historical shape / activation readiness contract"] --> PlannerUpdate["host-split planner / inverse journal update"]
   ActivationContract --> Planner
   Planner --> Validation
+  Planner --> PlannerUpdate
+  Validation --> PlannerUpdate
   Validation --> DormantWriter["dormant canonical writer"]
   Validation --> RawSnapshotCodec["#1286 canonical ZIP raw codec"]
   RawSnapshotCodec --> DormantSnapshotIO["#1293 canonical ZIP plan"]
@@ -449,13 +483,19 @@ graph TD
   ActivationContract --> ActivationState["#1280 dormant activation state / access decision"]
   Planner --> ActivationState
   ActivationState --> WriterFence["#1294 dormant legacy runtime fence protocol"]
+  WriterFence --> QuiescenceBridge["production quiescence bridge"]
+  QuiescenceBridge --> BridgeRelease["bridge stable release accepted"]
+  PlannerUpdate --> CoreInventory["pre-activation CoreDB read-only inventory"]
+  CoreInventory --> InventoryAccepted["invalid record = 0"]
   ActivationState --> Activation["single activation PR"]
   DormantWriter --> Activation["single activation PR"]
   DormantSnapshotIO --> Activation
   DormantSimulation --> Activation
   InverseArtifacts --> Activation
-  WriterFence --> Activation
-  Planner --> Activation
+  InverseArtifacts --> PlannerUpdate
+  PlannerUpdate --> Activation
+  BridgeRelease --> Activation
+  InventoryAccepted --> Activation
   Registry --> RawSnapshotCodec
   Registry --> Step4["Step 4 UI"]
   Client["#1265 typed IDE-GSM client"] --> Executor["app executor / credential provider / feature flag"]
@@ -465,7 +505,7 @@ graph TD
   Step4 --> NonSshIntegration["non-SSH snapshot / command integration"]
   SimulationRegression --> NonSshIntegration
 
-  WriterFence --> LegacyRecovery["YamlDB v1 read-only inventory / recovery"]
+  QuiescenceBridge --> LegacyRecovery["YamlDB v1 read-only inventory / recovery"]
   Activation --> LegacyRecovery
   LegacyRecovery --> RemoveYamlReads["残存read path除去 / runtime retirement"]
   RemoveYamlReads --> RetentionGate["30日 + stable release + 全row accounted"]
@@ -501,10 +541,11 @@ graph LR
 ```
 
 - subtype、template、schema、strict command registryは[#1266](https://github.com/kubohiroya/hierarchidb/issues/1266)、typed IDE-GSM clientは[#1265](https://github.com/kubohiroya/hierarchidb/issues/1265)、shared canonical validation kernelは[#1279](https://github.com/kubohiroya/hierarchidb/issues/1279)、dormant activation state machine / access decisionは[#1280](https://github.com/kubohiroya/hierarchidb/issues/1280)で先行済みとする。#1279と#1280は独立artifactであり、相互依存させない。
-- read-only planner、validation kernel、activation state machine、dormant canonical writer、dormant canonical ZIP、dormant canonical SimulationWorkflow consumer、inverse migration artifact、[#1294](https://github.com/kubohiroya/hierarchidb/issues/1294)のlegacy runtime fence protocolは別Issue、別branch、別worktreeで実装する。#1280をproduction fence mechanismとして扱わず、#1294のquiescence完了もactual fence成立として扱わない。mainへmergeできるのはproduction DB / reader / writerへ未接続の状態だけとし、`CoreDB.version(2)`登録、migration実行、canonical reader / writer / API publishはsingle activation PRまで禁止する。
-- validation収束後はdormant canonical writer、canonical ZIP、inverse migration artifactを相互非依存のIssueとして並列実装できる。dormant canonical SimulationWorkflow consumerはcanonical ZIP API確定後、production fence mechanismは#1280を使用する別Issueとして実装する。
+- read-only planner、validation kernel、activation state machine、dormant canonical writer、dormant canonical ZIP、dormant canonical SimulationWorkflow consumer、inverse migration artifact、[#1294](https://github.com/kubohiroya/hierarchidb/issues/1294)のlegacy runtime fence protocolは別Issue、別branch、別worktreeで実装する。#1280をproduction fence mechanismとして扱わず、#1294のpure protocolだけをproduction quiescence bridgeとして扱わない。mainへmergeできるdormant artifactはproduction DB / reader / writerへ未接続の状態だけとし、`CoreDB.version(2)`登録、migration実行、canonical reader / writer / API publishはsingle activation PRまで禁止する。
+- [#1312](https://github.com/kubohiroya/hierarchidb/issues/1312)の後、planner / validation adapter / inverse journalをhost-split-legacyへ更新し、その同じ契約を使うCoreDB read-only inventoryをproductionで実行する。これはYamlDB v1 inventoryとは別gateであり、invalid recordが0件になるまでsingle activationを開始しない。inventory成功後もactivation preflightを省略しない。
+- validation収束後はdormant canonical writer、canonical ZIP、inverse migration artifactを相互非依存のIssueとして並列実装できる。dormant canonical SimulationWorkflow consumerはcanonical ZIP API確定後に実装する。production quiescence bridgeは#1294をtab / worker transportとresponderへ接続する別Issueとし、activationより前のstable releaseへ配備して対象participantの応答を受け入れる。#1280との接続とtarget `open()`生成はsingle activation coordinatorだけが行う。
 - activation release内では`quiescing`で旧tab / workerの停止とcloseを要求するがactual fence成立とはみなさず、read-only preflight後に同じ`openRequestId`でtarget versionを開く。`blocked`では同じrequestだけを待機し、`versionchanging`でactual fence成立、upgrade commit後に`initializing`、initialization成功後に`canonical-ready`へ進み、その後だけcanonical reader / writer / APIを公開する。failure、ID mismatch、illegal transitionはterminal `rejected`とし、retry、reset、別request、legacy fallback、v1 reopenを行わない。
-- migration commit成功前にcanonical dialog、ZIP、SimulationWorkflowまたはAPIを公開せず、各処理を別releaseへ分離しない。
+- migration commit成功前にcanonical `YamlFileNodeData`、dialog、ZIP、SimulationWorkflowまたはWorker APIを公開せず、各処理を別releaseへ分離しない。`SimulationWorkflow.runSimulation`のproduction return contractは同じactivationで`Promise<void>`へ切り替える。
 - activation前にdormant canonical SimulationWorkflow consumerの回帰を完了し、activation後にもproduction routingを対象とする回帰を行う。executor / Step 4と合わせたnon-SSH integrationを、SSH lifecycleを含むfinal integrationから分離する。
 - YamlDB laneはproduction write除去 / fence、read-only inventory / recovery、残存read path除去 / runtime retirementの順とする。物理database削除はruntime廃止、30日、後続stable release受入、全row accountedのすべてを満たす別Issueとする。
 - SSH client / UI integrationはupstream API公開と本仕様のrevision更新までblockedとし、完了後にfinal integrationへ進む。
