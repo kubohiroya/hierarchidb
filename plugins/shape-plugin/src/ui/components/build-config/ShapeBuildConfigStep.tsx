@@ -1,26 +1,24 @@
-import type React from 'react';
-import { Alert, Button, Stack, Typography } from '@mui/material';
 import {
   BuildConfigShell,
   SourceConfigSection,
   TileEmitConfigSection,
 } from '@hierarchidb/ui-accordion-config';
-import { GeometryConfigSection } from './GeometryConfigSection.js';
-import { ZoomBandConfigSection } from './ZoomBandConfigSection.js';
+import { useDialogContext } from '@hierarchidb/ui-dialog';
+import { useTranslation } from '@hierarchidb/ui-i18n';
+import { Alert, Button, Stack, Typography } from '@mui/material';
+import type React from 'react';
+import type { ShapeEntity } from '~/common/types/index';
+import type { ShapeDialogStepProps } from '~/ui/components/ShapeDialogStepProps';
 import { CacheManagementSection } from './CacheManagementSection.tsx';
+import { GeometryConfigSection } from './GeometryConfigSection.js';
 import {
   SourceGeometryIntakeGuardCard,
   TileEmitInvalidGeometryFilterCard,
 } from './SourceInvalidGeometryFilterCard.tsx';
-import { useShapeBuildConfigStep } from './useShapeBuildConfigStep.js';
-import { useTranslation } from '@hierarchidb/ui-i18n';
-import type { ShapeDialogStepProps } from '~/ui/components/ShapeDialogStepProps';
-import { useDialogContext } from '@hierarchidb/ui-dialog';
-import {
-  type ShapeEntity,
-} from '~/common/types/index';
 import { useShapeBuildConfigContentView } from './useShapeBuildConfigContentView.js';
+import { useShapeBuildConfigStep } from './useShapeBuildConfigStep.js';
 import { useShapeBuildConfigStepSession } from './useShapeBuildConfigStepSession.js';
+import { ZoomBandConfigSection } from './ZoomBandConfigSection.js';
 
 /**
  * Processing configuration step for Shape plugin.
@@ -112,14 +110,14 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
         showConcurrencyCard={false}
         disabled={disabled}
         disableHoverLift
-        additionalCards={(
+        additionalCards={
           <TileEmitInvalidGeometryFilterCard
             config={workingConfig}
             onChange={updateWorkingConfig}
             disabled={disabled}
             disableHoverLift
           />
-        )}
+        }
       />
       <CacheManagementSection
         config={workingConfig}
@@ -132,9 +130,16 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
   );
 };
 
-const ShapeBuildConfigRunningNotice: React.FC = () => {
+type ShapeBuildConfigRunningNoticeProps = {
+  buildStepIndex: number;
+  handleOpenBuildStep: () => void;
+};
+
+const ShapeBuildConfigRunningNotice: React.FC<ShapeBuildConfigRunningNoticeProps> = ({
+  buildStepIndex,
+  handleOpenBuildStep,
+}) => {
   const { t } = useTranslation('shape-plugin');
-  const { buildStepIndex, handleOpenBuildStep } = useShapeBuildConfigStepSession({ nodeId: undefined });
 
   return (
     <Stack spacing={2} sx={{ p: 2 }}>
@@ -155,9 +160,16 @@ const ShapeBuildConfigRunningNotice: React.FC = () => {
 };
 
 export const ShapeBuildConfigStep: React.FC<ShapeDialogStepProps> = (props) => {
-  const { isBuildRunning } = useShapeBuildConfigStepSession({ nodeId: props.nodeId });
+  const { buildStepIndex, handleOpenBuildStep, isBuildRunning } = useShapeBuildConfigStepSession({
+    nodeId: props.nodeId,
+  });
   if (isBuildRunning) {
-    return <ShapeBuildConfigRunningNotice />;
+    return (
+      <ShapeBuildConfigRunningNotice
+        buildStepIndex={buildStepIndex}
+        handleOpenBuildStep={handleOpenBuildStep}
+      />
+    );
   }
   return <ShapeBuildConfigContent {...props} />;
 };

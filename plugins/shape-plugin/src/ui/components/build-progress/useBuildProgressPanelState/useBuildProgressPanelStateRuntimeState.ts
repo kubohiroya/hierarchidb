@@ -1,29 +1,32 @@
-import { useMemo, useRef } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
-import { useTranslation } from '@hierarchidb/ui-i18n';
-import { useBuildCrashInsight } from '~/ui/components/build-progress/useBuildCrashInsight/useBuildCrashInsight';
 import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { PaneProgress } from '@hierarchidb/ui-lru-splitview';
+import { useAtomValue, useSetAtom } from 'jotai';
+import { useMemo, useRef } from 'react';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
+import type { CompletionSnapshotData, PendingUserAction } from '~/ui/atoms/buildSessionStateAtoms';
+import {
+  completionDialogOpenAtom,
+  completionSnapshotAtom,
+  pendingUserActionAtom,
+} from '~/ui/atoms/buildSessionStateAtoms';
 import type {
+  ShapeBuildTaskSummary,
   TaskListViewPhase,
   TaskProgressControls,
   TaskProgressSummary,
 } from '~/ui/atoms/shapeBuildProgressTypes';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
-import { useBuildProgressPanelStateComputed } from './useBuildProgressPanelStateComputed.js';
-import type { BuildProgressPanelStateComputed } from './useBuildProgressPanelStateComputed.js';
-import { resolveCompletionFailedStageLabel, resolveActiveRunningStageId } from './useBuildProgressPanelState.utils.js';
-import { useBuildProgressPanelStateSideEffects } from './useBuildProgressPanelStateSideEffects.js';
 import { useShapeBuildSession } from '~/ui/components/build-progress/internal/useShapeBuildSessionLogic.js';
-import { useShapeBuildSessionStateAtomBridge } from '~/ui/components/build-progress/useShapeBuildSessionStateAtomBridge.js';
-import { useAtomValue, useSetAtom } from 'jotai';
+import { useBuildCrashInsight } from '~/ui/components/build-progress/useBuildCrashInsight/useBuildCrashInsight';
+import { useShapeBuildSessionStateAtomBridge } from '~/ui/hooks/useShapeBuildSessionStateAtomBridge.js';
 import {
-  pendingUserActionAtom,
-  completionSnapshotAtom,
-  completionDialogOpenAtom,
-} from '~/ui/atoms/buildSessionStateAtoms';
-import type { PendingUserAction, CompletionSnapshotData } from '~/ui/atoms/buildSessionStateAtoms';
+  resolveActiveRunningStageId,
+  resolveCompletionFailedStageLabel,
+} from './useBuildProgressPanelState.utils.js';
+import type { BuildProgressPanelStateComputed } from './useBuildProgressPanelStateComputed.js';
+import { useBuildProgressPanelStateComputed } from './useBuildProgressPanelStateComputed.js';
+import { useBuildProgressPanelStateSideEffects } from './useBuildProgressPanelStateSideEffects.js';
 
 type RuntimeStateParams = {
   data?: Partial<ShapeEntity>;
@@ -64,7 +67,7 @@ export type UseBuildProgressPanelStateRuntimeState = {
 };
 
 export const useBuildProgressPanelStateRuntimeState = (
-  params: RuntimeStateParams,
+  params: RuntimeStateParams
 ): UseBuildProgressPanelStateRuntimeState => {
   const resolvedNodeId = params.nodeId;
   const nodeIdForLog = resolvedNodeId ? String(resolvedNodeId) : undefined;
@@ -182,7 +185,7 @@ export const useBuildProgressPanelStateRuntimeState = (
       ...computedCompletionSnapshotData,
       completionFailedStageLabel,
     }),
-    [computedCompletionSnapshotData, completionFailedStageLabel],
+    [computedCompletionSnapshotData, completionFailedStageLabel]
   );
 
   useBuildProgressPanelStateSideEffects({

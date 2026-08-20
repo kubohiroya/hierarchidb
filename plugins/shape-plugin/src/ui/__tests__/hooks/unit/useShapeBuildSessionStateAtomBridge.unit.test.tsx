@@ -1,3 +1,4 @@
+import type { TaskProgressUpdatedEvent } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { Provider } from 'jotai';
@@ -8,7 +9,6 @@ import type {
   SessionStatusUpdatedEvent,
   StageSnapshotUpdatedEvent,
 } from '../../../../common/types/session-events';
-import type { TaskProgressUpdatedEvent } from '@hierarchidb/build-api';
 import {
   buildSessionLifecycleAtom,
   buildSessionSnapshotHandshakeReceivedAtom,
@@ -17,7 +17,7 @@ import {
   dispatchBuildSessionEventAtom,
   stageTimingByStageAtom,
 } from '../../../atoms/buildSessionStateAtoms';
-import { useShapeBuildSessionStateAtomBridge } from '../../../components/build-progress/useShapeBuildSessionStateAtomBridge';
+import { useShapeBuildSessionStateAtomBridge } from '../../../hooks/useShapeBuildSessionStateAtomBridge';
 
 type BridgeCallbacks = {
   onSessionState: (event: SessionStatusUpdatedEvent) => void;
@@ -123,13 +123,15 @@ const completedGeometrySnapshot: StageSnapshotUpdatedEvent = {
   type: 'stageSnapshotUpdated',
   payload: {
     stageId: 'geometry',
-    tasks: [{
-      taskId: 'geometry-task-1',
-      version: 3,
-      stage: 'geometry',
-      status: 'completed',
-      progress: 100,
-    }],
+    tasks: [
+      {
+        taskId: 'geometry-task-1',
+        version: 3,
+        stage: 'geometry',
+        status: 'completed',
+        progress: 100,
+      },
+    ],
     stageStartedAt: 1_100,
     stageInactiveMs: 0,
     stageCompletedAt: 1_300,
@@ -140,13 +142,15 @@ const staleSourceSnapshot: StageSnapshotUpdatedEvent = {
   type: 'stageSnapshotUpdated',
   payload: {
     stageId: 'source',
-    tasks: [{
-      taskId: 'source-task-1',
-      version: 1,
-      stage: 'source',
-      status: 'queued',
-      progress: 0,
-    }],
+    tasks: [
+      {
+        taskId: 'source-task-1',
+        version: 1,
+        stage: 'source',
+        status: 'queued',
+        progress: 0,
+      },
+    ],
     stageStartedAt: 1_050,
     stageInactiveMs: 0,
   },
@@ -349,7 +353,7 @@ describe('useShapeBuildSessionStateAtomBridge', () => {
     expect(store.get(buildSessionLifecycleAtom).activeStageId).toBe('geometry');
     expect(store.get(buildSessionTasksByStageAtom).source).toEqual([]);
     expect(store.get(buildSessionTasksByStageAtom).geometry[0]).toEqual(
-      expect.objectContaining({ status: 'completed', progress: 100 }),
+      expect.objectContaining({ status: 'completed', progress: 100 })
     );
 
     second.view.unmount();
