@@ -18,7 +18,7 @@ const isNumberOrUndefined = (value: unknown): value is number | undefined =>
 export async function createSessionToken(
   payload: Omit<SessionPayload, 'iat' | 'exp'>,
   secret: string,
-  durationHours: number = 24,
+  durationHours: number,
   issuer?: string
 ): Promise<string> {
   const secretKey = new TextEncoder().encode(secret);

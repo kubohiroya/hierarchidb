@@ -1,28 +1,39 @@
-name = "hierarchiidb-bff"
-main = "src/openstreetmap-type.ts"
-compatibility_date = "2024-12-01"
+name = "hierarchidb-bff"
+main = "src/index.ts"
+compatibility_date = "2025-06-28"
 
 # Development environment
 [env.development]
-name = "hierarchiidb-bff-dev"
+name = "hierarchidb-bff-dev"
 
 [env.development.vars]
 GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID"
-REDIRECT_URI = "http://localhost:5173/auth/callback"
-SESSION_DURATION_HOURS = "24"
-JWT_ISSUER = "hierarchiidb-bff"
+REDIRECT_URI = "https://hierarchidb-bff-dev.<account-subdomain>.workers.dev/auth/callback"
+GITHUB_REDIRECT_URI = "https://hierarchidb-bff-dev.<account-subdomain>.workers.dev/auth/github/callback"
+APP_BASE_URLS = "http://localhost:5173,http://localhost:3000"
+AUTH_SESSION_MODE = "stateless"
+SESSION_DURATION_HOURS = "4"
+JWT_ISSUER = "hierarchidb-bff-dev"
 ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:3000"
 
 # Production environment
 [env.production]
-name = "hierarchiidb-bff-prod"
+name = "hierarchidb-bff-prod"
 
 [env.production.vars]
 GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID"
-REDIRECT_URI = "https://your-domain.com/auth/callback"
-SESSION_DURATION_HOURS = "24"
-JWT_ISSUER = "hierarchiidb-bff"
-ALLOWED_ORIGINS = "https://your-domain.com"
+REDIRECT_URI = "https://hierarchidb-bff.<account-subdomain>.workers.dev/auth/callback"
+GITHUB_REDIRECT_URI = "https://hierarchidb-bff.<account-subdomain>.workers.dev/auth/github/callback"
+APP_BASE_URLS = "https://your-app-domain.com"
+AUTH_SESSION_MODE = "persistent"
+SESSION_DURATION_HOURS = "4"
+JWT_ISSUER = "hierarchidb-bff"
+ALLOWED_ORIGINS = "https://your-app-domain.com"
+
+[[env.production.kv_namespaces]]
+binding = "AUTH_KV"
+id = "YOUR_PRODUCTION_AUTH_KV_ID"
+preview_id = "YOUR_PRODUCTION_AUTH_KV_PREVIEW_ID"
 
 # Secrets (set using wrangler secret put)
 # - GOOGLE_CLIENT_SECRET

@@ -10,9 +10,9 @@ Backend for Frontend (BFF) service for hierarchidb - OAuth2 authentication and s
   - Microsoft OAuth2 with PKCE
 - 🔑 **Session Management**
   - JWT-based session tokens
-  - Token refresh mechanism
-  - Session revocation
-  - KV storage for persistent sessions
+  - Explicit `persistent` and `stateless` modes
+  - KV-backed token refresh and revocation in `persistent`
+  - Short-lived JWT and re-login after expiry in `stateless`
 - 🌐 **Standards Compliance**
   - OpenID Connect Discovery endpoint
   - Standard OAuth2 token endpoint
@@ -37,9 +37,12 @@ Backend for Frontend (BFF) service for hierarchidb - OAuth2 authentication and s
 # Install dependencies
 pnpm install
 
-# Copy configuration template
-cp wrangler.toml.template wrangler.toml
+# Inspect the repository-owned configuration and replace environment-specific IDs for another account.
+pnpm exec wrangler --version
 ```
+
+Use `wrangler.hierarchidb.toml` for this repository. Do not copy its production namespace IDs into another
+Cloudflare account; create and bind account-specific `AUTH_KV` namespaces as described below.
 
 ### OAuth Provider Setup
 
@@ -76,13 +79,8 @@ Edit `wrangler.toml`:
 
 ```toml
 name = "hierarchidb-bff"
-main = "src/openstreetmap-type.ts"
-compatibility_date = "2024-12-01"
-
-# Optional: KV namespace for session storage
-# [[kv_namespaces]]
-# binding = "AUTH_KV"
-# id = "your-kv-namespace-id"
+main = "src/index.ts"
+compatibility_date = "2025-06-28"
 
 # Development environment
 [env.development]
@@ -93,7 +91,8 @@ GOOGLE_CLIENT_ID = "your-google-client-id"
 GITHUB_CLIENT_ID = "your-github-client-id"  # Optional
 MICROSOFT_CLIENT_ID = "your-microsoft-client-id"  # Optional
 REDIRECT_URI = "http://localhost:8787/auth/callback"
-SESSION_DURATION_HOURS = "24"
+AUTH_SESSION_MODE = "stateless"
+SESSION_DURATION_HOURS = "4"
 JWT_ISSUER = "hierarchidb-bff"
 ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:3000"
 APP_BASE_URL = "http://localhost:5173"  # Your frontend URL
@@ -107,11 +106,23 @@ GOOGLE_CLIENT_ID = "your-google-client-id"
 GITHUB_CLIENT_ID = "your-github-client-id"  # Optional
 MICROSOFT_CLIENT_ID = "your-microsoft-client-id"  # Optional
 REDIRECT_URI = "https://your-bff-worker.workers.dev/auth/callback"
-SESSION_DURATION_HOURS = "24"
+AUTH_SESSION_MODE = "persistent"
+SESSION_DURATION_HOURS = "4"
 JWT_ISSUER = "hierarchidb-bff"
 ALLOWED_ORIGINS = "https://your-app.com"
 APP_BASE_URL = "https://your-app.com"
+
+[[env.production.kv_namespaces]]
+binding = "AUTH_KV"
+id = "your-production-kv-namespace-id"
+preview_id = "your-preview-kv-namespace-id"
 ```
+
+`AUTH_SESSION_MODE` and `SESSION_DURATION_HOURS` are required. `stateless` is the supported KV-free mode:
+it issues a four-hour JWT, does not refresh it, and requires login again after expiry without showing a KV
+warning. `persistent` requires `AUTH_KV` for refresh and server-side revocation; missing or failing KV in
+that mode produces an explicit warning. Follow [BFF `AUTH_KV` operations](./docs/auth-kv-operations.md)
+for the complete contract.
 
 ### Setting Secrets
 
@@ -209,7 +220,9 @@ Response:
 {
   "access_token": "jwt_token",
   "token_type": "Bearer",
-  "expires_in": 86400,
+  "expires_in": 14400,
+  "session_mode": "persistent",
+  "refresh_token_id": "opaque-refresh-id",
   "id_token": "jwt_token",
   "scope": "openid profile email",
   "userinfo": {
@@ -349,7 +362,8 @@ const response = await fetch('https://your-bff-worker.workers.dev/auth/token', {
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret (set via wrangler secret) |
 | `JWT_SECRET` | Secret key for JWT signing (set via wrangler secret) |
 | `JWT_ISSUER` | JWT issuer identifier |
-| `SESSION_DURATION_HOURS` | Session duration in hours |
+| `AUTH_SESSION_MODE` | Explicit `persistent` or `stateless` session contract |
+| `SESSION_DURATION_HOURS` | Positive integer JWT duration in hours; no implicit default |
 | `ALLOWED_ORIGINS` | Comma-separated list of allowed CORS origins |
 | `REDIRECT_URI` | OAuth redirect URI |
 
@@ -362,13 +376,19 @@ const response = await fetch('https://your-bff-worker.workers.dev/auth/token', {
 | `MICROSOFT_CLIENT_ID` | Microsoft OAuth client ID |
 | `MICROSOFT_CLIENT_SECRET` | Microsoft OAuth client secret |
 | `APP_BASE_URL` | Frontend application base URL |
-| `AUTH_KV` | KV namespace binding for session storage |
+
+### Cloudflare Bindings
+
+| Binding | Requirement | Description |
+|---------|-------------|-------------|
+| `AUTH_KV` | Required only when `AUTH_SESSION_MODE=persistent` | Encrypted authentication data and session-token indexes |
 
 ### Environment Variable Prefixes
 
 The BFF supports prefixed environment variables for better namespace separation:
 
 - `BFF_JWT_ISSUER` → `JWT_ISSUER`
+- `BFF_AUTH_SESSION_MODE` → `AUTH_SESSION_MODE`
 - `BFF_SESSION_DURATION_HOURS` → `SESSION_DURATION_HOURS`
 - `BFF_ALLOWED_ORIGINS` → `ALLOWED_ORIGINS`
 - `BFF_APP_BASE_URL` → `APP_BASE_URL`
@@ -401,8 +421,9 @@ The BFF supports prefixed environment variables for better namespace separation:
    - Check `JWT_ISSUER` matches between token creation and verification
 
 4. **KV storage not working**
-   - Ensure KV namespace is properly bound in wrangler.toml
-   - Check KV namespace ID is correct
+   - Ensure the selected Wrangler environment binds the namespace as exactly `AUTH_KV`
+   - Check the namespace ID against `wrangler kv namespace list`
+   - Treat `kv_unavailable` as a visible degraded condition and follow the operations guide
 
 ## Testing
 

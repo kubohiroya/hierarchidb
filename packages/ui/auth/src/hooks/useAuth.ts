@@ -5,7 +5,7 @@
 
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AUTH_SESSION_CHANGED_EVENT } from '~/services/AuthSessionStorage';
+import { AUTH_SESSION_CHANGED_EVENT, AuthSessionStorage } from '~/services/AuthSessionStorage';
 import { BFFAuthService, type BFFSignInOptions, type BFFUser } from '~/services/BFFAuthService';
 import { PopupDetectionService } from '~/services/PopupDetectionService';
 import type { AuthProviderType } from '~/types/AuthProviderType';
@@ -74,6 +74,23 @@ export const useBFFAuthService = () => {
       window.removeEventListener('storage', handleStorageChanged);
     };
   }, [authService]);
+
+  const sessionMode = user?.session_mode;
+  const sessionExpiresAt = user?.expires_at;
+
+  useEffect(() => {
+    if (sessionMode !== 'stateless' || sessionExpiresAt === undefined) return;
+
+    const clearExpiredSession = () => {
+      if (sessionExpiresAt <= Date.now()) {
+        AuthSessionStorage.clear();
+      }
+    };
+
+    clearExpiredSession();
+    const intervalId = window.setInterval(clearExpiredSession, 60_000);
+    return () => window.clearInterval(intervalId);
+  }, [sessionExpiresAt, sessionMode]);
 
   return {
     isAuthenticated: !!user && user.expires_at > Date.now(),

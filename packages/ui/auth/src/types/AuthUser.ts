@@ -3,6 +3,7 @@
  * @description Type definitions for authenticated user data
  */
 
+import type { AuthSessionMode } from '../services/AuthSessionStorage.js';
 import type { AuthProviderType } from './AuthProviderType.js';
 
 export interface AuthUser {
@@ -15,4 +16,5 @@ export interface AuthUser {
   id_token?: string;
   refresh_token?: string;
   expires_at: number;
+  session_mode?: AuthSessionMode;
 }

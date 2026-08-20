@@ -1,8 +1,8 @@
 import { type BffContext, getEnv } from '~/utils/env';
 import { createSessionToken, extractBearerToken } from '~/utils/jwt';
 import { KVStorageManager } from '~/utils/kv-storage';
-import { parseEnvInt } from '~/utils/number';
 import { buildKvWarning } from '~/utils/kv-warning';
+import { parseAuthSessionConfig } from '~/utils/parseAuthSessionConfig';
 
 /**
  * Refresh token endpoint handler
@@ -21,6 +21,17 @@ export async function refreshToken(c: BffContext) {
     }
 
     const env = getEnv(c);
+    const authSessionConfig = parseAuthSessionConfig(env);
+
+    if (authSessionConfig.mode === 'stateless') {
+      return c.json(
+        {
+          error: 'reauthentication_required',
+          error_description: 'Stateless sessions cannot be refreshed; sign in again',
+        },
+        401
+      );
+    }
 
     if (!env.AUTH_KV) {
       console.error('KV namespace AUTH_KV is not configured');
@@ -35,7 +46,7 @@ export async function refreshToken(c: BffContext) {
     }
 
     const kvManager = new KVStorageManager(env.AUTH_KV, env.JWT_SECRET);
-    const sessionDuration = parseEnvInt(env.SESSION_DURATION_HOURS, 24);
+    const sessionDuration = authSessionConfig.durationHours;
 
     // Create new session token first
     let userData: Awaited<ReturnType<typeof kvManager.getUserAuthBySession>>;
@@ -108,13 +119,17 @@ export async function refreshToken(c: BffContext) {
         401
       );
     }
+    if (!result.newRefreshTokenId) {
+      throw new Error('Persistent token refresh did not return a refresh token ID');
+    }
 
     return c.json({
       access_token: newSessionToken,
       token_type: 'Bearer',
       expires_in: sessionDuration * 3600,
+      session_mode: 'persistent',
       id_token: newSessionToken,
-      refresh_token_id: result.newRefreshTokenId, //  ID
+      refresh_token_id: result.newRefreshTokenId,
       scope: 'openid profile email',
       userinfo: {
         sub: userData.userId,
@@ -148,6 +163,11 @@ export async function revokeToken(c: BffContext) {
     }
 
     const env = getEnv(c);
+    const authSessionConfig = parseAuthSessionConfig(env);
+
+    if (authSessionConfig.mode === 'stateless') {
+      return c.json({ message: 'Token revocation completed locally' });
+    }
 
     if (!env.AUTH_KV) {
       console.error('KV namespace AUTH_KV is not configured');

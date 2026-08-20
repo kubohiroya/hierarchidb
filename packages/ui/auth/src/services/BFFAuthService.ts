@@ -349,7 +349,7 @@ export class BFFAuthService {
       // Clean up OAuth flow state (keep return URL until caller consumes it)
       this.clearAuthFlowState({ preserveReturnUrl: true });
 
-      this.refreshDisabled = false;
+      this.refreshDisabled = user.session_mode === 'stateless';
       return user;
     })();
 
@@ -396,9 +396,6 @@ export class BFFAuthService {
    */
   async refreshToken(): Promise<BFFUser | null> {
     try {
-      if (this.refreshDisabled) {
-        return null;
-      }
       const token = localStorage.getItem('access_token');
       const refreshTokenId = localStorage.getItem('refresh_token_id');
 
@@ -408,6 +405,16 @@ export class BFFAuthService {
       const currentUser = AuthSessionStorage.load();
       if (!currentUser) {
         throw new Error('Invalid persisted auth session: userinfo is required for token refresh');
+      }
+      if (currentUser.session_mode === 'stateless') {
+        this.refreshDisabled = true;
+        if (currentUser.expires_at <= Date.now()) {
+          AuthSessionStorage.clear();
+        }
+        return null;
+      }
+      if (this.refreshDisabled) {
+        return null;
       }
 
       const { authBase } = this.resolveAuthBase();
@@ -453,7 +460,12 @@ export class BFFAuthService {
    * Get current user info
    */
   async getCurrentUser(): Promise<BFFUser | null> {
-    return AuthSessionStorage.load();
+    const user = AuthSessionStorage.load();
+    if (user?.session_mode === 'stateless' && user.expires_at <= Date.now()) {
+      AuthSessionStorage.clear();
+      return null;
+    }
+    return user;
   }
 
   /**

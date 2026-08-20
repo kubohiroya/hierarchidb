@@ -8,6 +8,7 @@ import { BFFAuthService } from '../BFFAuthService.js';
 const validTokenResponse = () => ({
   access_token: 'session-jwt',
   expires_in: 3600,
+  session_mode: 'persistent' as const,
   userinfo: {
     sub: 'user-1',
     email: 'user@example.com',
@@ -16,6 +17,11 @@ const validTokenResponse = () => ({
   },
   refresh_token_id: 'refresh-1',
 });
+
+const validStatelessTokenResponse = () => {
+  const { refresh_token_id: _refreshTokenId, ...response } = validTokenResponse();
+  return { ...response, session_mode: 'stateless' as const };
+};
 
 const createMemoryStorage = (): Storage => {
   const values = new Map<string, string>();
@@ -57,6 +63,7 @@ describe('AuthSessionStorage', () => {
       refresh_token: 'refresh-1',
       expires_at: 3_601_000,
       provider: 'github',
+      session_mode: 'persistent',
     });
     expect(localStorage.getItem('access_token')).toBe('session-jwt');
     expect(localStorage.getItem('refresh_token_id')).toBe('refresh-1');
@@ -105,7 +112,50 @@ describe('AuthSessionStorage', () => {
       refresh_token: 'refresh-1',
       expires_at: 3_605_000,
       provider: 'google',
+      session_mode: 'persistent',
     });
+  });
+
+  it('persists stateless mode without a refresh token ID', () => {
+    const user = AuthSessionStorage.persistTokenResponse(
+      validStatelessTokenResponse(),
+      'google',
+      1_000
+    );
+
+    expect(user.session_mode).toBe('stateless');
+    expect(user.refresh_token).toBeUndefined();
+    expect(localStorage.getItem('refresh_token_id')).toBeNull();
+    expect(AuthSessionStorage.load()?.session_mode).toBe('stateless');
+  });
+
+  it('rejects refresh token IDs that do not match the session mode', () => {
+    expect(() =>
+      AuthSessionStorage.parseTokenResponse(
+        { ...validTokenResponse(), refresh_token_id: undefined },
+        'google'
+      )
+    ).toThrow('refresh_token_id is required in persistent mode');
+
+    expect(() =>
+      AuthSessionStorage.parseTokenResponse(
+        { ...validStatelessTokenResponse(), refresh_token_id: 'unexpected-refresh-id' },
+        'google'
+      )
+    ).toThrow('refresh_token_id is forbidden in stateless mode');
+  });
+
+  it('rejects missing or unknown session modes', () => {
+    const { session_mode: _sessionMode, ...withoutMode } = validTokenResponse();
+    expect(() => AuthSessionStorage.parseTokenResponse(withoutMode, 'google')).toThrow(
+      'session_mode must be persistent or stateless'
+    );
+    expect(() =>
+      AuthSessionStorage.parseTokenResponse(
+        { ...validTokenResponse(), session_mode: 'automatic' },
+        'google'
+      )
+    ).toThrow('session_mode must be persistent or stateless');
   });
 
   it('rejects persisted state when access_token and userinfo are not both present', () => {
@@ -172,6 +222,34 @@ describe('BFFAuthService callback contract', () => {
 
     expect(callbackUser.id).toBe('user-1');
     await expect(service.getCurrentUser()).resolves.toEqual(callbackUser);
+  });
+
+  it('does not call refresh for a stateless callback session', async () => {
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(JSON.stringify(validStatelessTokenResponse()), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const service = BFFAuthService.getInstance();
+    const callbackUser = await service.handleCallback(
+      new URLSearchParams({ code: 'stateless-auth-session' })
+    );
+
+    expect(callbackUser.session_mode).toBe('stateless');
+    await expect(service.refreshToken()).resolves.toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears an expired stateless session instead of refreshing it', async () => {
+    AuthSessionStorage.persistTokenResponse(validStatelessTokenResponse(), 'google', 0);
+
+    await expect(BFFAuthService.getInstance().getCurrentUser()).resolves.toBeNull();
+    expect(localStorage.getItem('access_token')).toBeNull();
+    expect(localStorage.getItem('userinfo')).toBeNull();
   });
 
   it('replaces an invalid persisted session during an active PKCE callback', async () => {
@@ -294,6 +372,34 @@ describe('SimpleBFFAuthProvider session propagation', () => {
     expect(result.current.isAuthenticated).toBe(true);
     expect(result.current.user?.provider).toBe('github');
     expect(result.current.user?.access_token).toBe('session-jwt');
+    unmount();
+  });
+
+  it('does not refresh a stateless session during the pre-expiry window', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    AuthSessionStorage.persistTokenResponse(
+      { ...validStatelessTokenResponse(), expires_in: 120 },
+      'google'
+    );
+
+    const { result, unmount } = renderHook(() => useSimpleBFFAuthProvider({ homeUrl: '/' }));
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.isAuthenticated).toBe(true);
+    expect(fetchMock).not.toHaveBeenCalled();
+    unmount();
+  });
+
+  it('clears an expired stateless session on mount', async () => {
+    AuthSessionStorage.persistTokenResponse(validStatelessTokenResponse(), 'google', 0);
+
+    const { result, unmount } = renderHook(() => useSimpleBFFAuthProvider({ homeUrl: '/' }));
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await waitFor(() => expect(result.current.isAuthenticated).toBe(false));
+    expect(localStorage.getItem('access_token')).toBeNull();
+    expect(localStorage.getItem('userinfo')).toBeNull();
     unmount();
   });
 });

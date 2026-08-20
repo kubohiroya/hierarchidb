@@ -1,6 +1,6 @@
 # OAuth authenticated UI session contract
 
-最終更新: 2026-08-19
+最終更新: 2026-08-20
 
 ## 目的
 
@@ -24,27 +24,85 @@ OAuth callback または token refresh が成功した後に、UI が認証済�
 ```json
 {
   "access_token": "non-empty session JWT",
-  "expires_in": 86400,
+  "expires_in": 14400,
+  "session_mode": "persistent",
   "userinfo": {
     "sub": "non-empty provider user ID",
     "email": "non-empty email",
     "name": "non-empty display name",
     "picture": "optional non-empty URL"
   },
-  "refresh_token_id": "optional non-empty opaque ID"
+  "refresh_token_id": "non-empty opaque ID in persistent mode"
 }
 ```
 
 - `access_token` は非空文字列でなければならない。
 - `expires_in` は正の有限数（秒）でなければならない。
+- `session_mode` は `persistent | stateless` のどちらかでなければならない。
 - `userinfo` は object で、`sub`、`email`、`name` は非空文字列でなければならない。
-- `picture` と `refresh_token_id` は省略可能だが、存在する場合は非空文字列でなければならない。
+- `picture` は省略可能だが、存在する場合は非空文字列でなければならない。
+- `persistent` 応答には非空の `refresh_token_id` が必須である。`stateless` 応答に
+  `refresh_token_id` を含めてはならない。
 - provider は token response から補完しない。認証開始時に保存した `auth_provider` を callback が
   必須入力として使用し、refresh は保存済み session の provider を使用する。
 - `id_token` を `access_token` の代替として使用しない。`expires_in`、userinfo、provider に既定値を
   与えない。
 
 契約違反は callback error として失敗させ、認証成功画面や成功後 navigation に進めない。
+
+## BFF session mode contract
+
+BFFの設定 `AUTH_SESSION_MODE` は `persistent | stateless` の必須値である。bindingの有無から
+運用意図を推測してはならない。
+
+| 設定mode | `AUTH_KV` | token refresh | JWT期限後 | 通常時のKV警告 |
+| --- | --- | --- | --- | --- |
+| `persistent` | session保存、refresh、revokeに使用 | 使用する | KV sessionから更新 | なし |
+| `stateless` | 使用しない | 使用しない | sessionを削除し再ログイン | なし |
+
+`SESSION_DURATION_HOURS` は必須の正整数であり、欠落または不正値を既定値で補完しない。
+repositoryのchecked-in設定は4時間とする。`stateless` は開発中、運用準備中、またはKVを利用しない
+正式運用として選択でき、`AUTH_KV` が未bindingでも障害ではない。
+
+token応答の `session_mode` は、そのtokenが実際にrefresh可能かを表す。`persistent` loginでKV保存に
+失敗して短命JWTだけを返す場合は、設定modeにかかわらず応答を `session_mode=stateless` とし、後述の
+KV警告を付ける。UIは `session_mode=stateless` のtokenに対して `/auth/refresh` を呼ばない。
+
+`stateless` modeで `/auth/refresh` が直接呼ばれた場合、BFFはHTTP 401
+`reauthentication_required` を警告なしで返し、tokenを発行しない。revoke/logoutは端末内のsession
+終了として完了し、KV警告を返さない。
+
+## BFF KV warning contract
+
+BFFは `AUTH_SESSION_MODE=persistent` のときだけCloudflare Workers KVを `AUTH_KV` bindingとして
+使用する。このmodeで未bindingまたはKV操作失敗が発生した場合、意図した `stateless` 運用と混同せず
+警告を返す。`AUTH_SESSION_MODE=stateless` では `AUTH_KV` の有無にかかわらずKV警告を返さない。
+
+BFF応答の任意の `warning` fieldは、次の完全な契約を満たす場合だけKV警告として扱う。
+
+```json
+{
+  "code": "kv_unavailable",
+  "operation": "refresh",
+  "action": "relogin",
+  "reason": "missing_kv"
+}
+```
+
+- `code` は `kv_unavailable` だけを許可する。
+- `operation` は `login | refresh | revoke | logout` だけを許可する。
+- `action` は `none | relogin` だけを許可する。
+- `reason` は `missing_kv | kv_error` だけを許可する。
+- field欠落、型違反、未知の文字列を警告として受理しない。
+
+有効な警告を受信したUIは `hierarchidb:bff-warning` eventを発行し、警告dialogを表示する。
+refreshの警告では新しいtokenを保存せず、そのBFF client instanceのrefreshを停止する。次に成功した
+login/token exchangeが完了するまで、refreshを暗黙に再試行してはならない。
+
+警告dialogは原因や復旧時刻を推測しない。quota resetの固定時刻を表示してはならない。
+
+login、revoke、logoutの縮退動作と `AUTH_KV` の作成・検証・ロールバックは
+`packages/backend/bff/docs/auth-kv-operations.md` をSSOTとする。
 
 ## Callback replacement and idempotency contract
 
@@ -67,8 +125,8 @@ token response 全体を検証した後、次を同一の session として `loc
 | key | value |
 | --- | --- |
 | `access_token` | 検証済み session JWT |
-| `userinfo` | `id`、`email`、`name`、任意の `picture`、`provider`、絶対時刻 `expires_at` |
-| `refresh_token_id` | 応答に存在する場合だけ保存する |
+| `userinfo` | `id`、`email`、`name`、任意の `picture`、`provider`、絶対時刻 `expires_at`、`session_mode` |
+| `refresh_token_id` | `persistent` の場合だけ必須で保存し、`stateless` では削除する |
 
 `access_token` と `userinfo` の片方だけが存在する状態は無効である。保存処理が失敗した場合は部分的な
 session を削除し、成功として継続しない。reload 時も同じ必須値を再検証し、JWT payload 解析や既定値
@@ -97,6 +155,11 @@ session clear 後も同じ custom event を dispatch し、全 consumer が unau
   session 全体で置き換える。
 - app root が使用する `SimpleBFFAuthProvider` が同一タブ通知と reload の両方で認証済みになる。
 - callback の token exchange が不完全な成功応答を受けた場合、明示的な callback error にする。
+- 許可された全KV警告を受理し、未知の `operation`、`action`、`reason` を拒否する。
+- refreshのKV警告受信後はtokenを置換せず、次の成功したloginまでrefreshを停止する。
+- `persistent` 応答は `refresh_token_id` を必須とし、`stateless` 応答では禁止する。
+- `stateless` sessionは期限前にrefreshせず、期限切れ時にlocal sessionを削除する。
+- `stateless` modeのlogin/revoke/logoutではKV警告を表示しない。
 - `pnpm -w turbo run test --filter @hierarchidb/ui-auth`
 - `pnpm -w turbo run typecheck --filter @hierarchidb/ui-auth`
 - `pnpm -w turbo run typecheck --filter @hierarchidb/app`
