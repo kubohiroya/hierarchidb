@@ -37,3 +37,9 @@ export {
   emitTaskProgressUpdated,
   emitHeartbeat,
 } from './eventEmissionUtils.js';
+
+export { emitSessionStatusUpdated } from './emitSessionStatusUpdated.js';
+export { emitStageSnapshotUpdated } from './emitStageSnapshotUpdated.js';
+export { createSessionStatusUpdatedPayload } from './createSessionStatusUpdatedPayload.js';
+export { CanonicalBuildSessionManager } from './CanonicalBuildSessionManager.js';
+export type { CanonicalBuildSessionEventSource } from './CanonicalBuildSessionManager.js';

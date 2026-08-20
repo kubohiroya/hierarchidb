@@ -3,7 +3,15 @@
  * @description Location build session extending AbstractBuildSession.
  */
 
-import { AbstractBuildSession } from '@hierarchidb/build-runtime-services';
+import {
+    AbstractBuildSession,
+    type CanonicalBuildSessionEventSource,
+} from '@hierarchidb/build-runtime-services';
+import type {
+    StageSnapshotUpdatedEvent,
+    TaskProgressUpdatedEvent,
+    TaskStatus,
+} from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
     LocationBuildConfig,
@@ -43,48 +51,153 @@ const isRawNominatimArray = (value: unknown): value is RawNominatimLike[] => (
 
 const ISO3166_CSV_URL = resolveIso3166CsvUrl();
 
-export class LocationBuildSession extends AbstractBuildSession<LocationBuildConfig> {
+type LocationBuildTaskState = {
+    taskId: string;
+    searchConfig: LocationSearchConfig;
+    status: TaskStatus;
+    progress: number;
+    version: number;
+    index: number;
+    errorMessage?: string;
+};
+
+type LocationStageTiming = {
+    stageStartedAt: number;
+    stageInactiveMs: number;
+    stageCompletedAt?: number;
+};
+
+export class LocationBuildSession
+    extends AbstractBuildSession<LocationBuildConfig>
+    implements CanonicalBuildSessionEventSource {
     private net: FetchNetworkPort | null = null;
+    private readonly tasks: LocationBuildTaskState[];
+    private readonly pendingTaskProgressUpdates: TaskProgressUpdatedEvent['payload'][] = [];
+    private sourceStageTiming: LocationStageTiming | null = null;
     countryNameMap: Map<string, string> | null = null;
 
     constructor(nodeId: NodeId, config: LocationBuildConfig) {
         super(nodeId, config);
+        this.tasks = config.searchConfigs.map((searchConfig, index) => ({
+            taskId: `${String(nodeId)}:source:${String(index)}`,
+            searchConfig,
+            status: 'queued',
+            progress: 0,
+            version: 1,
+            index,
+        }));
     }
 
     protected async processBatch(signal: AbortSignal): Promise<void> {
-        const { searchConfigs, processingOptions } = this.config;
-        const total = searchConfigs.length;
+        const { processingOptions } = this.config;
+        const total = this.tasks.length;
         let completed = 0;
         let failed = 0;
 
+        this.beginSourceStage();
         this.updateProgress({ total, completed, failed }, 'source');
 
         const concurrent = typeof processingOptions.concurrent === 'number'
             ? processingOptions.concurrent
             : 1;
 
-        const batches = createBatches(searchConfigs, concurrent);
+        const batches = createBatches(this.tasks, concurrent);
 
         for (const batch of batches) {
             if (signal.aborted) throw abortError('Location build aborted');
 
-            await Promise.all(batch.map(async (searchConfig) => {
+            await Promise.all(batch.map(async (task) => {
+                task.status = 'running';
+                task.errorMessage = undefined;
+                this.updateLocationTaskProgress(task, 0);
+                this.updateProgress({ total, completed, failed }, 'source');
                 try {
-                    const results = await this.searchLocations(searchConfig);
+                    const results = await this.searchLocations(task.searchConfig);
                     const validated = await this.validateAndFilterLocations(results, this.config.filterCriteria);
                     await this.persistLocationPoints(this.nodeId, validated);
                     completed += 1;
+                    task.status = 'completed';
+                    this.updateLocationTaskProgress(task, 100);
                 } catch (error) {
                     failed += 1;
+                    task.status = 'failed';
+                    task.errorMessage = error instanceof Error ? error.message : String(error);
+                    this.updateLocationTaskProgress(task, task.progress, task.errorMessage);
                     logLocationBuildWarning('Location search task failed', error);
                 }
                 this.updateProgress({ total, completed, failed }, 'source');
             }));
         }
 
+        this.completeSourceStage();
+        this.updateProgress({ total, completed, failed }, 'source');
         if (failed > 0) {
             throw new Error(`Location build completed with ${failed} failures`);
         }
+    }
+
+    getCanonicalStageSnapshot(): StageSnapshotUpdatedEvent['payload'] | null {
+        if (!this.sourceStageTiming) return null;
+        return {
+            stageId: 'source',
+            tasks: this.tasks.map((task) => ({
+                taskId: task.taskId,
+                stage: 'source',
+                status: task.status,
+                progress: task.progress,
+                version: task.version,
+                errorMessage: task.errorMessage,
+                metadata: {
+                    dataSource: task.searchConfig.dataSource,
+                    index: task.index,
+                },
+            })),
+            ...this.sourceStageTiming,
+        };
+    }
+
+    takeCanonicalTaskProgressUpdates(): TaskProgressUpdatedEvent['payload'][] {
+        return this.pendingTaskProgressUpdates.splice(0);
+    }
+
+    private beginSourceStage(): void {
+        if (this.sourceStageTiming) {
+            throw new Error('Location source stage has already started');
+        }
+        this.sourceStageTiming = {
+            stageStartedAt: Date.now(),
+            stageInactiveMs: 0,
+        };
+    }
+
+    private completeSourceStage(): void {
+        if (!this.sourceStageTiming) {
+            throw new Error('Location source stage cannot complete before it starts');
+        }
+        this.sourceStageTiming.stageCompletedAt = Date.now();
+    }
+
+    private updateLocationTaskProgress(
+        task: LocationBuildTaskState,
+        value: number,
+        message?: string,
+    ): void {
+        if (!Number.isFinite(value) || value < 0 || value > 100) {
+            throw new Error(`Location task progress must be finite 0..100, received ${String(value)}`);
+        }
+        task.progress = value;
+        task.version += 1;
+        this.pendingTaskProgressUpdates.push({
+            taskId: task.taskId,
+            version: task.version,
+            stageId: 'source',
+            value,
+            message,
+            metadata: {
+                dataSource: task.searchConfig.dataSource,
+                index: task.index,
+            },
+        });
     }
 
     private async persistLocationPoints(
