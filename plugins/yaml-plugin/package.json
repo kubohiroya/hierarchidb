@@ -26,6 +26,11 @@
             "types": "./dist/ui/index.d.ts",
             "import": "./dist/ui/index.js",
             "default": "./dist/ui/index.js"
+        },
+        "./canonical-writer": {
+            "types": "./dist/canonical-writer/index.d.ts",
+            "import": "./dist/canonical-writer/index.js",
+            "default": "./dist/canonical-writer/index.js"
         }
     },
     "typesVersions": {
@@ -39,13 +44,16 @@
             "icon": [
                 "dist/icon/index.d.ts"
             ],
+            "canonical-writer": [
+                "dist/canonical-writer/index.d.ts"
+            ],
             "*": [
                 "dist/index.d.ts"
             ]
         }
     },
     "scripts": {
-        "build": "tsdown src/index.ts src/ui/index.ts src/worker/index.ts src/icon/index.ts --config ../../tsdown.config.ts --outDir dist",
+        "build": "tsdown src/index.ts src/ui/index.ts src/worker/index.ts src/icon/index.ts src/canonical-writer/index.ts --config ../../tsdown.config.ts --outDir dist",
         "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
         "test": "vitest run --passWithNoTests",
         "test:run": "vitest run",
