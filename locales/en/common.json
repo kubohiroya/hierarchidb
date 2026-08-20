@@ -6,14 +6,14 @@
   "auth": {
     "kvFallback": {
       "title": "Authentication warning",
-      "summary": "Server-side session storage is temporarily unavailable. Some authentication operations are limited.",
+      "summary": "Server-side session storage is unavailable. Some authentication operations are limited.",
       "detail": {
         "login": "Login succeeded, but the server cannot track sessions right now.",
         "refresh": "Token refresh is disabled. Please sign in again after the token expires.",
         "revoke": "Logout/revocation is local only; the server cannot invalidate the token.",
         "logout": "Logout/revocation is local only; the server cannot invalidate the token."
       },
-      "resetNotice": "This limitation resets daily (around 09:00 JST).",
+      "recoveryNotice": "Recovery depends on server configuration and Cloudflare service status. If refresh is unavailable, sign in again when prompted.",
       "action": "Close"
     }
   },
