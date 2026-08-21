@@ -1,55 +1,43 @@
-import type { Feature, FeatureCollection, Geometry, MultiPolygon, Polygon } from 'geojson';
+import type { StageHandler, TaskQueueRecord, TaskStage } from '@hierarchidb/build-api';
 import type { ISO2, NodeId } from '@hierarchidb/core-types';
 import {
   encodeFlatGeobufFromFeatureCollection,
-  geometryBbox,
+  ephemeralDB,
   type GeometryEngine,
-} from '@hierarchidb/gis-sdk';
-import type { StageHandler, TaskQueueRecord } from '@hierarchidb/build-api';
-import type { TaskStage } from '@hierarchidb/build-api';
-import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
-import {
-  VtTaskQueueDb,
-  deleteTasksByIds,
-  listTasksByStage,
-  runStageTasks,
-  updateTask,
-} from '@hierarchidb/vt-orchestrator';
-import { ephemeralDB } from '@hierarchidb/gis-sdk';
-import type { ShapeFeatureMetadata } from '@hierarchidb/shape-api';
-import {
+  geometryBbox,
   pickAdminCode,
   pickAdminLevel,
   pickCountryCode,
   pickCountryName,
 } from '@hierarchidb/gis-sdk';
+import type { ShapeFeatureMetadata } from '@hierarchidb/shape-api';
+import { buildZoomBandRanges } from '@hierarchidb/util';
+import {
+  deleteTasksByIds,
+  listTasksByStage,
+  runStageTasks,
+  updateTask,
+  VtTaskQueueDb,
+} from '@hierarchidb/vt-orchestrator';
 import { geojson as geojsonApi } from 'flatgeobuf';
+import type { Feature, FeatureCollection, Geometry, MultiPolygon, Polygon } from 'geojson';
+import { feature as topojsonFeature, merge as topojsonMerge } from 'topojson-client';
+import { topology as topojsonTopology } from 'topojson-server';
+import type { Topology } from 'topojson-specification';
 import type {
   CountryMetadata,
   DataSourceName,
-  SourceTaskPayload,
   SelectedArrayByCountries,
   ShapeFeaturePayload,
+  ShapeRuntimeBuildConfig,
+  SourceTaskPayload,
 } from '~/common/types/index';
-import { countSelectedAdminPairs, generateDownloadTaskPayloadsFromSelection } from '~/services/utils/shapeBuildUtils';
-import { metadataLoader } from '~/services/metadata/MetadataLoader';
-import { DataSourceStrategyFactory } from '~/services/datasources/DataSourceStrategyFactory';
-import { resolveStrategyIdFromDataSource } from '~/services/datasources/resolveStrategyIdFromDataSource';
-import type { RetryConfig } from '~/services/datasources/DataSourceStrategy';
-import type { Topology } from 'topojson-specification';
-import { feature as topojsonFeature, merge as topojsonMerge } from 'topojson-client';
-import { topology as topojsonTopology } from 'topojson-server';
 import { shapeMutationAPIImpl } from '~/services/build/ShapeBuildAPIClient';
-import {
-  buildFeatureId,
-  extractGeometryStats,
-  measureFeatureGeoJsonByteSize,
-  resolveAdminHierarchyFields,
-} from './featureMetadataUtils.ts';
-import { filterFetchCollectionByZoom } from './filterFetchCollectionByZoom.ts';
-import { buildZoomBandRanges } from '@hierarchidb/util';
-import { buildStableSignature } from './buildStableSignature.ts';
-import { applyStageTaskReconcile } from './shapeStageReconcile.ts';
+import type { RetryConfig } from '~/services/datasources/DataSourceStrategy';
+import { DataSourceStrategyFactory } from '~/services/datasources/DataSourceStrategyFactory';
+import type { GeoBoundariesApiResponse } from '~/services/datasources/GeoBoundariesStrategy';
+import { resolveStrategyIdFromDataSource } from '~/services/datasources/resolveStrategyIdFromDataSource';
+import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import {
   buildRawDataDataSourceCacheKey,
   buildShapeCacheKey,
@@ -58,15 +46,30 @@ import {
   jsonDeserializer,
   jsonSerializer,
 } from '~/services/utils/chunkStore';
-import { fetchRawDataWithPipeline } from '~/services/utils/rawDataPipeline';
 import { buildGeoBoundariesMetadataUrl } from '~/services/utils/geoboundariesEndpoints';
-import type { GeoBoundariesApiResponse } from '~/services/datasources/GeoBoundariesStrategy';
+import { fetchRawDataWithPipeline } from '~/services/utils/rawDataPipeline';
+import {
+  countSelectedAdminPairs,
+  generateDownloadTaskPayloadsFromSelection,
+} from '~/services/utils/shapeBuildUtils';
+import { buildStableSignature } from './buildStableSignature.ts';
+import {
+  buildFeatureId,
+  extractGeometryStats,
+  measureFeatureGeoJsonByteSize,
+  resolveAdminHierarchyFields,
+} from './featureMetadataUtils.ts';
+import { filterFetchCollectionByZoom } from './filterFetchCollectionByZoom.ts';
 import { setSourcePlannedTotal } from './shapeProgressPlanUtils.ts';
+import {
+  hashSourceArtifact,
+  resolveSourceArtifactHashFromRecord,
+} from './shapeSourceArtifactHashUtils.ts';
+import { applyStageTaskReconcile } from './shapeStageReconcile.ts';
 import {
   buildSourceTaskCacheIdentity,
   resolveTaskCacheIdentity,
 } from './shapeTaskCacheIdentity.ts';
-import { hashSourceArtifact, resolveSourceArtifactHashFromRecord } from './shapeSourceArtifactHashUtils.ts';
 
 export type ShapeSourceTaskInput = {
   url: string;
@@ -96,15 +99,13 @@ const textDecoder = new TextDecoder('utf-8');
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
-const asRecord = (value: unknown): Record<string, unknown> | null => (
-  isRecord(value) ? value : null
-);
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  isRecord(value) ? value : null;
 
 const GEOBOUNDARIES_MERGE_COUNTRIES = new Set(['CAN', 'GRL', 'CA', 'GL']);
 
-const isGeoBoundariesSource = (source: DataSourceName): boolean => (
-  source === 'geoboundaries' || source === 'geoboundaries-topojson'
-);
+const isGeoBoundariesSource = (source: DataSourceName): boolean =>
+  source === 'geoboundaries' || source === 'geoboundaries-topojson';
 
 const shouldMergeGeoBoundaries = (params: {
   dataSource: DataSourceName;
@@ -144,11 +145,12 @@ const decodeTopoJson = (buffer: ArrayBuffer): Topology => {
   return JSON.parse(text) as Topology;
 };
 
-const encodeTopoJson = (topology: Topology): ArrayBuffer => (
-  textEncoder.encode(JSON.stringify(topology)).buffer
-);
+const encodeTopoJson = (topology: Topology): ArrayBuffer =>
+  textEncoder.encode(JSON.stringify(topology)).buffer;
 
-const resolveTopoJsonObject = (topology: Topology): { key: string; object: Topology['objects'][string] } | null => {
+const resolveTopoJsonObject = (
+  topology: Topology
+): { key: string; object: Topology['objects'][string] } | null => {
   const keys = Object.keys(topology.objects ?? {});
   const key = keys[0];
   if (!key) return null;
@@ -164,7 +166,7 @@ const normalizeTopoJsonCollection = (topology: Topology): FeatureCollection => {
   }
   const geojson = topojsonFeature(
     topology,
-    entry.object as Parameters<typeof topojsonFeature>[1],
+    entry.object as Parameters<typeof topojsonFeature>[1]
   ) as FeatureCollection | Feature;
   if ('features' in geojson) {
     const features = Array.isArray(geojson.features) ? geojson.features : [];
@@ -173,7 +175,10 @@ const normalizeTopoJsonCollection = (topology: Topology): FeatureCollection => {
   return { type: 'FeatureCollection', features: [geojson] };
 };
 
-const mergeTopoJsonCollection = (topology: Topology, properties?: Record<string, unknown>): FeatureCollection | null => {
+const mergeTopoJsonCollection = (
+  topology: Topology,
+  properties?: Record<string, unknown>
+): FeatureCollection | null => {
   const entry = resolveTopoJsonObject(topology);
   if (!entry) return null;
   const geometries = (entry.object as { geometries?: unknown[] }).geometries;
@@ -182,11 +187,13 @@ const mergeTopoJsonCollection = (topology: Topology, properties?: Record<string,
   if (!merged) return null;
   return {
     type: 'FeatureCollection',
-    features: [{
-      type: 'Feature',
-      geometry: merged as Geometry,
-      properties: { ...(properties ?? {}) },
-    }],
+    features: [
+      {
+        type: 'Feature',
+        geometry: merged as Geometry,
+        properties: { ...(properties ?? {}) },
+      },
+    ],
   };
 };
 
@@ -254,28 +261,29 @@ const fetchGeoBoundariesApiData = async (params: {
   const adminLabel = `ADM${params.adminLevel}`;
   const normalizedCountry = params.country.trim().toUpperCase();
   const url = buildGeoBoundariesMetadataUrl(normalizedCountry, adminLabel);
-  const cacheKey = params.cacheKeyMode === 'url'
-    ? url
-    : buildShapeCacheKey(`geoboundaries:metadata:${normalizedCountry}:${adminLabel}`, url);
+  const cacheKey =
+    params.cacheKeyMode === 'url'
+      ? url
+      : buildShapeCacheKey(`geoboundaries:metadata:${normalizedCountry}:${adminLabel}`, url);
   const store = createShapeChunkStore(jsonSerializer, jsonDeserializer);
   const entry = params.retryConfig
     ? await getOrFetchWithRetry(
-      store,
-      params.nodeId,
-      url,
-      {
+        store,
+        params.nodeId,
+        url,
+        {
+          accept: 'application/json',
+          cacheKey,
+          signal: params.signal,
+        },
+        params.retryConfig,
+        params.onRetryAttempt
+      )
+    : await store.getOrFetchForNode(params.nodeId, url, {
         accept: 'application/json',
         cacheKey,
         signal: params.signal,
-      },
-      params.retryConfig,
-      params.onRetryAttempt,
-    )
-    : await store.getOrFetchForNode(params.nodeId, url, {
-      accept: 'application/json',
-      cacheKey,
-      signal: params.signal,
-    });
+      });
   return entry.value as GeoBoundariesApiResponse;
 };
 
@@ -300,19 +308,22 @@ const fetchGeoBoundariesTopoJson = async (params: {
   });
   const downloadUrl = apiData.tjDownloadURL;
   if (!downloadUrl || typeof downloadUrl !== 'string') {
-    throw new Error(`TopoJSON download URL is missing for ${params.country} ADM${params.adminLevel}`);
+    throw new Error(
+      `TopoJSON download URL is missing for ${params.country} ADM${params.adminLevel}`
+    );
   }
   const pipeline = {
     prepareRequest: () => ({
       url: downloadUrl,
-      cacheKey: params.cacheKeyMode === 'url'
-        ? downloadUrl
-        : buildRawDataDataSourceCacheKey({
-          dataSource: 'geoboundaries-topojson',
-          countryCode: params.country,
-          adminLevel: params.adminLevel,
-          url: downloadUrl,
-        }),
+      cacheKey:
+        params.cacheKeyMode === 'url'
+          ? downloadUrl
+          : buildRawDataDataSourceCacheKey({
+              dataSource: 'geoboundaries-topojson',
+              countryCode: params.country,
+              adminLevel: params.adminLevel,
+              url: downloadUrl,
+            }),
       accept: 'application/json',
     }),
     transformStream: async (stream: ReadableStream<Uint8Array>) => ({
@@ -349,17 +360,14 @@ const buildCountryLookup = (metadata: CountryMetadata[]): Map<string, CountryMet
   return map;
 };
 
-const buildShapeSourceTaskId = (nodeId: NodeId, sourceKey: string): string => (
-  `${String(nodeId)}:source:${sourceKey}`
-);
+const buildShapeSourceTaskId = (nodeId: NodeId, sourceKey: string): string =>
+  `${String(nodeId)}:source:${sourceKey}`;
 
-const buildSourceCacheId = (nodeId: NodeId, sourceKey: string): string => (
-  `${String(nodeId)}-shape-${sourceKey}`
-);
+const buildSourceCacheId = (nodeId: NodeId, sourceKey: string): string =>
+  `${String(nodeId)}-shape-${sourceKey}`;
 
-const formatCount = (value: number): string => (
-  Number.isFinite(value) ? new Intl.NumberFormat('en-US').format(value) : '-'
-);
+const formatCount = (value: number): string =>
+  Number.isFinite(value) ? new Intl.NumberFormat('en-US').format(value) : '-';
 
 const formatSignedPercent = (output: number, input: number): string => {
   if (!Number.isFinite(input) || input <= 0) return '-0.0%';
@@ -378,11 +386,12 @@ const buildSourceFilterReductionSummary = (inputSummary: {
   featureCount: number;
   polygonCount: number;
   vertexCount: number;
-}): string => ([
-  formatChangeSummary('features', inputSummary.featureCount, 0),
-  formatChangeSummary('polygons', inputSummary.polygonCount, 0),
-  formatChangeSummary('vertices', inputSummary.vertexCount, 0),
-].join(', '));
+}): string =>
+  [
+    formatChangeSummary('features', inputSummary.featureCount, 0),
+    formatChangeSummary('polygons', inputSummary.polygonCount, 0),
+    formatChangeSummary('vertices', inputSummary.vertexCount, 0),
+  ].join(', ');
 
 const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureCollection | null> => {
   if (!decoded || typeof decoded !== 'object') return null;
@@ -401,15 +410,17 @@ const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureColl
   return null;
 };
 
-const readNumericProperty = (properties: Record<string, unknown>, key: string): number | undefined => {
+const readNumericProperty = (
+  properties: Record<string, unknown>,
+  key: string
+): number | undefined => {
   const value = properties[key];
   if (typeof value !== 'number') return undefined;
   return Number.isFinite(value) ? value : undefined;
 };
 
-const readString = (value: unknown): string | null => (
-  typeof value === 'string' && value.trim().length > 0 ? value.trim() : null
-);
+const readString = (value: unknown): string | null =>
+  typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
 
 const decodeSourceCacheData = async (params: {
   data: ArrayBuffer;
@@ -419,9 +430,8 @@ const decodeSourceCacheData = async (params: {
   const format = params.format ?? 'flatgeobuf';
   if (format === 'topojson') {
     try {
-      const buffer = params.compression === 'gzip'
-        ? await decompressGzip(params.data)
-        : params.data;
+      const buffer =
+        params.compression === 'gzip' ? await decompressGzip(params.data) : params.data;
       const topology = decodeTopoJson(buffer);
       return normalizeTopoJsonCollection(topology);
     } catch {
@@ -436,12 +446,8 @@ const decodeSourceCacheData = async (params: {
   }
 };
 
-const getSourceCache = async (nodeId: NodeId, sourceKey: string) => (
-  await ephemeralDB.sourceCache
-    .where('[nodeId+sourceKey]')
-    .equals([nodeId, sourceKey])
-    .first()
-);
+const getSourceCache = async (nodeId: NodeId, sourceKey: string) =>
+  await ephemeralDB.sourceCache.where('[nodeId+sourceKey]').equals([nodeId, sourceKey]).first();
 
 const buildSourceCacheMetadata = (params: {
   status: 'completed' | 'failed' | 'skipped';
@@ -496,9 +502,9 @@ const markSourceCacheWriteComplete = async (
   if (cacheIds.length === 0) return;
   assertNotAborted(abortSignal);
   const completedAt = Date.now();
-  await Promise.all(cacheIds.map((id) => (
-    ephemeralDB.sourceCache.update(id, { timestamp: completedAt })
-  )));
+  await Promise.all(
+    cacheIds.map((id) => ephemeralDB.sourceCache.update(id, { timestamp: completedAt }))
+  );
 };
 
 const putSourceCache = async (params: {
@@ -555,7 +561,9 @@ const putSourceCache = async (params: {
   try {
     await markSourceCacheWriteComplete([recordId], params.abortSignal);
   } catch (error) {
-    const { handleCacheWriteFailure } = await import('../../worker/api/cacheWriteValidationConstants');
+    const { handleCacheWriteFailure } = await import(
+      '../../worker/api/cacheWriteValidationConstants'
+    );
     handleCacheWriteFailure(error, {
       nodeId: params.nodeId,
       taskId: params.taskId ?? recordId,
@@ -576,9 +584,8 @@ const buildSourceFeatureCollection = (
   const features: Feature[] = [];
   for (const entity of entities) {
     if (!entity?.geometry) continue;
-    const entityProperties = isRecord(entity) && isRecord(entity.properties)
-      ? entity.properties
-      : undefined;
+    const entityProperties =
+      isRecord(entity) && isRecord(entity.properties) ? entity.properties : undefined;
     const properties = {
       ...(entityProperties ?? {}),
     } as Record<string, unknown>;
@@ -613,9 +620,12 @@ const parseOriginKey = (originKey: string): { countryCode?: string; adminLevel?:
 
 const resolveFeatureOriginInfo = (
   properties: Record<string, unknown>,
-  lookup?: Map<string, CountryMetadata>,
+  lookup?: Map<string, CountryMetadata>
 ): { countryCode?: ISO2; countryName?: string; adminLevel?: number } => {
-  const originKey = typeof properties[ORIGIN_KEY_PROP] === 'string' ? properties[ORIGIN_KEY_PROP] as string : undefined;
+  const originKey =
+    typeof properties[ORIGIN_KEY_PROP] === 'string'
+      ? (properties[ORIGIN_KEY_PROP] as string)
+      : undefined;
   const originInfo = originKey ? parseOriginKey(originKey) : {};
   const rawCountryCode = originInfo.countryCode ?? pickCountryCode(properties);
   const rawAdminLevel = originInfo.adminLevel ?? pickAdminLevel(properties);
@@ -683,8 +693,9 @@ const buildSourceFeatureMetadata = (params: {
       adminLevel,
     });
     const resolvedAdminLevel = adminHierarchy.resolvedAdminLevel ?? adminLevel;
-    const adminCode = pickAdminCode(properties)
-      ?? (resolvedAdminLevel === 2
+    const adminCode =
+      pickAdminCode(properties) ??
+      (resolvedAdminLevel === 2
         ? adminHierarchy.admin2Code
         : resolvedAdminLevel === 1
           ? adminHierarchy.admin1Code
@@ -694,8 +705,10 @@ const buildSourceFeatureMetadata = (params: {
       properties.__hdbFeatureId = featureId;
     }
     const stats = extractGeometryStats(feature, params.geometryEngine);
-    const fetchVertexCount = readNumericProperty(properties, '__hdbFetchVertexCount') ?? stats.vertexCount;
-    const fetchPolygonCount = readNumericProperty(properties, '__hdbFetchPolygonCount') ?? stats.polygonCount;
+    const fetchVertexCount =
+      readNumericProperty(properties, '__hdbFetchVertexCount') ?? stats.vertexCount;
+    const fetchPolygonCount =
+      readNumericProperty(properties, '__hdbFetchPolygonCount') ?? stats.polygonCount;
     let fetchMaxPolygonVertexCount = 0;
     visitPolygons(feature.geometry, ({ vertexCount }) => {
       if (vertexCount > fetchMaxPolygonVertexCount) {
@@ -731,9 +744,8 @@ const buildSourceFeatureMetadata = (params: {
   return records;
 };
 
-const buildOriginKey = (dataSource: DataSourceName, sourceKey: string): string => (
-  `${dataSource}:${sourceKey}`
-);
+const buildOriginKey = (dataSource: DataSourceName, sourceKey: string): string =>
+  `${dataSource}:${sourceKey}`;
 
 const assertNotAborted = (signal?: AbortSignal): void => {
   if (signal?.aborted) {
@@ -781,10 +793,7 @@ const countPolygonVertices = (coordinates: unknown): number => {
 
 const visitPolygons = (
   geometry: Geometry | null | undefined,
-  visit: (polygon: {
-    vertexCount: number;
-    geometry: Polygon;
-  }) => void,
+  visit: (polygon: { vertexCount: number; geometry: Polygon }) => void
 ): void => {
   if (!geometry) return;
   if (geometry.type === 'Polygon') {
@@ -812,7 +821,10 @@ const visitPolygons = (
   }
 };
 
-const applyOriginPropertiesToCollection = (collection: FeatureCollection, originKey: string): FeatureCollection => {
+const applyOriginPropertiesToCollection = (
+  collection: FeatureCollection,
+  originKey: string
+): FeatureCollection => {
   const features = collection.features.map((feature) => {
     const properties = { ...(feature.properties ?? {}) } as Record<string, unknown>;
     if (!properties.__hdbOriginKey) {
@@ -837,7 +849,7 @@ const summarizeFeatureCollection = async (
   geometryEngine: GeometryEngine,
   options?: {
     onFeatureCountProgress?: (featureIndex: number, featureTotal: number) => Promise<void> | void;
-  },
+  }
 ): Promise<{
   featureCount: number;
   vertexCount: number;
@@ -870,19 +882,30 @@ const summarizeFeatureCollection = async (
   let bbox: [number, number, number, number] = [0, 0, 0, 0];
   {
     const bounds = geometryBbox(collection, geometryEngine);
-    if (Array.isArray(bounds) && bounds.length === 4 && bounds.every((value) => Number.isFinite(value))) {
+    if (
+      Array.isArray(bounds) &&
+      bounds.length === 4 &&
+      bounds.every((value) => Number.isFinite(value))
+    ) {
       const [minX, minY, maxX, maxY] = bounds as [number, number, number, number];
       bbox = [minX, minY, maxX, maxY];
     }
   }
-  return { featureCount, vertexCount, polygonCount, maxPolygonPerFeature, maxPolygonVertexCount, bbox };
+  return {
+    featureCount,
+    vertexCount,
+    polygonCount,
+    maxPolygonPerFeature,
+    maxPolygonVertexCount,
+    bbox,
+  };
 };
 
 const buildSourceTasks = (
   nodeId: NodeId,
   payloads: SourceTaskPayload[],
   metadata: CountryMetadata[],
-  configSignature: string,
+  configSignature: string
 ): Array<TaskQueueRecord<ShapeSourceTaskInput, ShapeSourceTaskOutput>> => {
   const lookup = buildCountryLookup(metadata);
   return payloads.map((payload, index) => {
@@ -952,9 +975,8 @@ const createSourceHandler = (params: {
     done: 40,
   } as const;
   const retryConfig = buildRetryConfig(params.buildConfig);
-  const buildCountPolygonsVerticesMessage = (featureIndex: number, featureTotal: number): string => (
-    `Count polygons/vertices of feature ${featureIndex} of ${featureTotal}`
-  );
+  const buildCountPolygonsVerticesMessage = (featureIndex: number, featureTotal: number): string =>
+    `Count polygons/vertices of feature ${featureIndex} of ${featureTotal}`;
   const createTaskMessageReporter = (taskId: string) => {
     let lastUpdatedAt = 0;
     let lastMessage = '';
@@ -979,8 +1001,11 @@ const createSourceHandler = (params: {
       assertNotAborted(params.abortSignal);
       const record = await taskQueue.tasks.get(taskId);
       assertNotAborted(params.abortSignal);
-      const currentMetadata = isRecord(record?.metadata) ? record.metadata as Record<string, unknown> : {};
-      const nextRetryAttempt = Number.isFinite(retryAttempt) && retryAttempt > 0 ? Math.trunc(retryAttempt) : 0;
+      const currentMetadata = isRecord(record?.metadata)
+        ? (record.metadata as Record<string, unknown>)
+        : {};
+      const nextRetryAttempt =
+        Number.isFinite(retryAttempt) && retryAttempt > 0 ? Math.trunc(retryAttempt) : 0;
       await updateTask(taskQueue, taskId, {
         metadata: { ...currentMetadata, retryAttempt: nextRetryAttempt },
       });
@@ -1003,14 +1028,12 @@ const createSourceHandler = (params: {
     return metadataLookupPromise;
   };
 
-  const normalizeCount = (value: number | null | undefined): number | null => (
-    typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.round(value)) : null
-  );
-  const normalizeTolerance = (value: number | null | undefined): number | null => (
+  const normalizeCount = (value: number | null | undefined): number | null =>
+    typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.round(value)) : null;
+  const normalizeTolerance = (value: number | null | undefined): number | null =>
     typeof value === 'number' && Number.isFinite(value) && value >= 0
       ? Number.parseFloat(value.toFixed(8))
-      : null
-  );
+      : null;
 
   const buildSourceDetailMetadata = (
     input: ShapeSourceTaskInput,
@@ -1031,7 +1054,7 @@ const createSourceHandler = (params: {
       sourceCacheFormat?: 'flatgeobuf' | 'topojson';
       sourceCacheCompression?: 'gzip' | 'none';
       rawSourceCacheKey?: string | null;
-    },
+    }
   ): Record<string, unknown> => ({
     baseTolerance: normalizeTolerance(counts.baseTolerance),
     baseToleranceVertexLimit: normalizeCount(counts.baseToleranceVertexLimit),
@@ -1066,12 +1089,14 @@ const createSourceHandler = (params: {
       sourceUrl: input.url,
       sourceCountryCode: input.urlCountryCode || input.countryCode,
       adminLevel: input.adminLevel,
-      rawSourceCacheKey: preview?.rawSourceCacheKey ?? buildRawDataDataSourceCacheKey({
-        dataSource: input.dataSource,
-        countryCode: input.urlCountryCode,
-        adminLevel: input.adminLevel,
-        url: input.url,
-      }),
+      rawSourceCacheKey:
+        preview?.rawSourceCacheKey ??
+        buildRawDataDataSourceCacheKey({
+          dataSource: input.dataSource,
+          countryCode: input.urlCountryCode,
+          adminLevel: input.adminLevel,
+          url: input.url,
+        }),
       sourceCacheId: preview?.sourceCacheId ?? null,
       sourceCacheFormat: preview?.sourceCacheFormat ?? 'flatgeobuf',
       sourceCacheCompression: preview?.sourceCacheCompression ?? 'none',
@@ -1080,17 +1105,19 @@ const createSourceHandler = (params: {
 
   const resolveRawSourceCacheKey = (
     input: ShapeSourceTaskInput,
-    rawData: unknown,
+    rawData: unknown
   ): string | null => {
     const rawRecord = asRecord(rawData);
     const rawMetadata = asRecord(rawRecord?.metadata);
     const apiResponse = asRecord(rawMetadata?.apiResponse);
-    return readString(rawMetadata?.rawSourceCacheKey)
-      ?? readString(rawMetadata?.downloadUrl)
-      ?? readString(rawMetadata?.endpoint)
-      ?? readString(apiResponse?.simplifiedGeometryGeoJSON)
-      ?? readString(input.url)
-      ?? null;
+    return (
+      readString(rawMetadata?.rawSourceCacheKey) ??
+      readString(rawMetadata?.downloadUrl) ??
+      readString(rawMetadata?.endpoint) ??
+      readString(apiResponse?.simplifiedGeometryGeoJSON) ??
+      readString(input.url) ??
+      null
+    );
   };
 
   return async (task) => {
@@ -1100,10 +1127,13 @@ const createSourceHandler = (params: {
     }
 
     const reportTaskMessage = createTaskMessageReporter(task.taskId);
-    const onFeatureCountProgress = async (featureIndex: number, featureTotal: number): Promise<void> => {
+    const onFeatureCountProgress = async (
+      featureIndex: number,
+      featureTotal: number
+    ): Promise<void> => {
       await reportTaskMessage(
         buildCountPolygonsVerticesMessage(featureIndex, featureTotal),
-        featureTotal > 0 && featureIndex >= featureTotal,
+        featureTotal > 0 && featureIndex >= featureTotal
       );
     };
     const onRetryAttempt = async (attempt: number): Promise<void> => {
@@ -1125,11 +1155,18 @@ const createSourceHandler = (params: {
     let lastFetchProgress: number | null = null;
     const onDownloadProgress = async (downloadPercentage: number): Promise<void> => {
       assertNotAborted(params.abortSignal);
-      if (!Number.isFinite(downloadPercentage) || downloadPercentage < 0 || downloadPercentage > 100) {
+      if (
+        !Number.isFinite(downloadPercentage) ||
+        downloadPercentage < 0 ||
+        downloadPercentage > 100
+      ) {
         throw new Error(`[shape-source] invalid download progress: ${downloadPercentage}`);
       }
-      const mappedProgress = fetchProgressRange.start
-        + Math.round(((fetchProgressRange.done - fetchProgressRange.start) * downloadPercentage) / 100);
+      const mappedProgress =
+        fetchProgressRange.start +
+        Math.round(
+          ((fetchProgressRange.done - fetchProgressRange.start) * downloadPercentage) / 100
+        );
       if (lastFetchProgress === mappedProgress) return;
       lastFetchProgress = mappedProgress;
       assertNotAborted(params.abortSignal);
@@ -1144,31 +1181,38 @@ const createSourceHandler = (params: {
       const isRawCacheInvalidated = existingMetadata.rawCacheInvalidated === true;
       if (!isRawCacheInvalidated) {
         const createdAt = Date.now();
-        let sourceArtifactHash = await resolveSourceArtifactHashFromRecord(ephemeralDB.sourceCache, existing);
+        let sourceArtifactHash = await resolveSourceArtifactHashFromRecord(
+          ephemeralDB.sourceCache,
+          existing
+        );
         const existingInputFeatureCount = existing.inputFeatureCount ?? existing.featureCount;
         const existingOutputFeatureCount = existing.featureCount;
-        const cachedPolygonPerFeatureMax = readNumericProperty(existingMetadata, 'polygonPerFeatureMax')
-          ?? (existingOutputFeatureCount > 0
+        const cachedPolygonPerFeatureMax =
+          readNumericProperty(existingMetadata, 'polygonPerFeatureMax') ??
+          (existingOutputFeatureCount > 0
             ? (existing.polygonCount ?? 0) / existingOutputFeatureCount
             : 0);
-        const cachedInputPolygonPerFeatureMax = readNumericProperty(existingMetadata, 'inputPolygonPerFeatureMax')
-          ?? (existingInputFeatureCount > 0
+        const cachedInputPolygonPerFeatureMax =
+          readNumericProperty(existingMetadata, 'inputPolygonPerFeatureMax') ??
+          (existingInputFeatureCount > 0
             ? (existing.inputPolygonCount ?? existing.polygonCount ?? 0) / existingInputFeatureCount
             : 0);
-        const cachedMaxPolygonVertexCount = readNumericProperty(existingMetadata, 'maxPolygonVertexCount')
-          ?? 0;
-        const cachedInputMaxPolygonVertexCount = readNumericProperty(existingMetadata, 'inputMaxPolygonVertexCount')
-          ?? cachedMaxPolygonVertexCount;
+        const cachedMaxPolygonVertexCount =
+          readNumericProperty(existingMetadata, 'maxPolygonVertexCount') ?? 0;
+        const cachedInputMaxPolygonVertexCount =
+          readNumericProperty(existingMetadata, 'inputMaxPolygonVertexCount') ??
+          cachedMaxPolygonVertexCount;
         const cachedRawSourceCacheKey = readString(existingMetadata.rawSourceCacheKey);
         const cachedBaseTolerance = readNumericProperty(existingMetadata, 'baseTolerance');
-        const cachedBaseToleranceVertexLimit = readNumericProperty(existingMetadata, 'baseToleranceVertexLimit')
-          ?? SOURCE_BASE_TOLERANCE_VERTEX_LIMIT;
+        const cachedBaseToleranceVertexLimit =
+          readNumericProperty(existingMetadata, 'baseToleranceVertexLimit') ??
+          SOURCE_BASE_TOLERANCE_VERTEX_LIMIT;
         const cachedCollection = await decodeSourceCacheData({
           data: existing.data,
           format: existing.format,
           compression: existing.compression,
         });
-        const buildCurrentSourceMetadata = (): Record<string, unknown> => (
+        const buildCurrentSourceMetadata = (): Record<string, unknown> =>
           buildSourceCacheMetadata({
             status: 'completed',
             dataSource: input.dataSource,
@@ -1188,8 +1232,7 @@ const createSourceHandler = (params: {
             baseTolerance: cachedBaseTolerance,
             baseToleranceVertexLimit: cachedBaseToleranceVertexLimit,
             rawSourceCacheKey: cachedRawSourceCacheKey ?? undefined,
-          })
-        );
+          });
         if (cachedCollection && cachedCollection.features.length > 0) {
           const hasMissingFeatureIds = cachedCollection.features.some((feature) => {
             const props = feature?.properties as Record<string, unknown> | undefined;
@@ -1214,9 +1257,7 @@ const createSourceHandler = (params: {
             if (existing.format === 'topojson') {
               const topology = topojsonTopology({ collection: cachedCollection });
               const encoded = encodeTopoJson(topology);
-              data = existing.compression === 'gzip'
-                ? await compressGzip(encoded)
-                : encoded;
+              data = existing.compression === 'gzip' ? await compressGzip(encoded) : encoded;
             } else if (existing.format === 'flatgeobuf' || !existing.format) {
               data = await encodeFlatGeobufFromFeatureCollection(cachedCollection);
             }
@@ -1260,30 +1301,46 @@ const createSourceHandler = (params: {
         const cachedVertexCount = existing.vertexCount ?? 0;
         const cachedPolygonCount = existing.polygonCount ?? 0;
         const cachedSummary = [
-          formatChangeSummary('features', existing.inputFeatureCount ?? existing.featureCount, existing.featureCount),
-          formatChangeSummary('polygons', existing.inputPolygonCount ?? cachedPolygonCount, cachedPolygonCount),
-          formatChangeSummary('vertices', existing.inputVertexCount ?? cachedVertexCount, cachedVertexCount),
+          formatChangeSummary(
+            'features',
+            existing.inputFeatureCount ?? existing.featureCount,
+            existing.featureCount
+          ),
+          formatChangeSummary(
+            'polygons',
+            existing.inputPolygonCount ?? cachedPolygonCount,
+            cachedPolygonCount
+          ),
+          formatChangeSummary(
+            'vertices',
+            existing.inputVertexCount ?? cachedVertexCount,
+            cachedVertexCount
+          ),
         ].join(', ');
         return {
           status: 'completed',
           message: `reused: source cache exists (${cachedSummary})`,
-          metadata: buildSourceDetailMetadata(input, {
-            inputFeatureCount: existingInputFeatureCount,
-            featureCount: existing.featureCount,
-            inputPolygonCount: existing.inputPolygonCount ?? cachedPolygonCount,
-            polygonCount: cachedPolygonCount,
-            inputPolygonPerFeatureMax: cachedInputPolygonPerFeatureMax,
-            polygonPerFeatureMax: cachedPolygonPerFeatureMax,
-            inputMaxPolygonVertexCount: cachedInputMaxPolygonVertexCount,
-            maxPolygonVertexCount: cachedMaxPolygonVertexCount,
-            baseTolerance: cachedBaseTolerance,
-            baseToleranceVertexLimit: cachedBaseToleranceVertexLimit,
-          }, {
-            sourceCacheId: existing.id,
-            sourceCacheFormat: existing.format === 'topojson' ? 'topojson' : 'flatgeobuf',
-            sourceCacheCompression: existing.compression === 'gzip' ? 'gzip' : 'none',
-            rawSourceCacheKey: cachedRawSourceCacheKey,
-          }),
+          metadata: buildSourceDetailMetadata(
+            input,
+            {
+              inputFeatureCount: existingInputFeatureCount,
+              featureCount: existing.featureCount,
+              inputPolygonCount: existing.inputPolygonCount ?? cachedPolygonCount,
+              polygonCount: cachedPolygonCount,
+              inputPolygonPerFeatureMax: cachedInputPolygonPerFeatureMax,
+              polygonPerFeatureMax: cachedPolygonPerFeatureMax,
+              inputMaxPolygonVertexCount: cachedInputMaxPolygonVertexCount,
+              maxPolygonVertexCount: cachedMaxPolygonVertexCount,
+              baseTolerance: cachedBaseTolerance,
+              baseToleranceVertexLimit: cachedBaseToleranceVertexLimit,
+            },
+            {
+              sourceCacheId: existing.id,
+              sourceCacheFormat: existing.format === 'topojson' ? 'topojson' : 'flatgeobuf',
+              sourceCacheCompression: existing.compression === 'gzip' ? 'gzip' : 'none',
+              rawSourceCacheKey: cachedRawSourceCacheKey,
+            }
+          ),
           outputData: {
             sourceCacheId: existing.id,
             sourceArtifactHash,
@@ -1320,12 +1377,17 @@ const createSourceHandler = (params: {
       const rawSourceCacheKey = topojsonResult.downloadUrl;
 
       let baseCollection = normalizeTopoJsonCollection(topojsonResult.topology);
-      if (shouldMergeGeoBoundaries({
-        dataSource: input.dataSource,
-        adminLevel: input.adminLevel,
-        countryCode: input.urlCountryCode,
-      })) {
-        const merged = mergeTopoJsonCollection(topojsonResult.topology, baseCollection.features[0]?.properties ?? {});
+      if (
+        shouldMergeGeoBoundaries({
+          dataSource: input.dataSource,
+          adminLevel: input.adminLevel,
+          countryCode: input.urlCountryCode,
+        })
+      ) {
+        const merged = mergeTopoJsonCollection(
+          topojsonResult.topology,
+          baseCollection.features[0]?.properties ?? {}
+        );
         if (merged) {
           baseCollection = merged;
         }
@@ -1334,15 +1396,17 @@ const createSourceHandler = (params: {
       const inputSummary = await summarizeFeatureCollection(baseCollection, geometryEngine, {
         onFeatureCountProgress,
       });
-      const filteredCollection = typeof filterZoom === 'number' && Number.isFinite(filterZoom)
-        ? await filterFetchCollectionByZoom(baseCollection, {
-          zTarget: filterZoom,
-          omitDetailsConfig: params.buildConfig.geometryConfig.omitDetailsConfig,
-          excludePolygonAreaCoefficient: params.buildConfig.geometryConfig.excludePolygonAreaCoefficient,
-          minRingVertices: params.buildConfig.geometryConfig.minRingVertices,
-          geometryEngine,
-        })
-        : baseCollection;
+      const filteredCollection =
+        typeof filterZoom === 'number' && Number.isFinite(filterZoom)
+          ? await filterFetchCollectionByZoom(baseCollection, {
+              zTarget: filterZoom,
+              omitDetailsConfig: params.buildConfig.geometryConfig.omitDetailsConfig,
+              excludePolygonAreaCoefficient:
+                params.buildConfig.geometryConfig.excludePolygonAreaCoefficient,
+              minRingVertices: params.buildConfig.geometryConfig.minRingVertices,
+              geometryEngine,
+            })
+          : baseCollection;
 
       if (filteredCollection.features.length === 0) {
         const createdAt = Date.now();
@@ -1360,20 +1424,24 @@ const createSourceHandler = (params: {
         return {
           status: 'completed',
           message: buildSourceFilterReductionSummary(inputSummary),
-          metadata: buildSourceDetailMetadata(input, {
-            inputFeatureCount: inputSummary.featureCount,
-            featureCount: 0,
-            inputPolygonCount: inputSummary.polygonCount,
-            polygonCount: 0,
-            inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
-            polygonPerFeatureMax: 0,
-            inputMaxPolygonVertexCount: inputSummary.maxPolygonVertexCount,
-            maxPolygonVertexCount: 0,
-            baseTolerance: 0,
-            baseToleranceVertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
-          }, {
-            rawSourceCacheKey,
-          }),
+          metadata: buildSourceDetailMetadata(
+            input,
+            {
+              inputFeatureCount: inputSummary.featureCount,
+              featureCount: 0,
+              inputPolygonCount: inputSummary.polygonCount,
+              polygonCount: 0,
+              inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
+              polygonPerFeatureMax: 0,
+              inputMaxPolygonVertexCount: inputSummary.maxPolygonVertexCount,
+              maxPolygonVertexCount: 0,
+              baseTolerance: 0,
+              baseToleranceVertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
+            },
+            {
+              rawSourceCacheKey,
+            }
+          ),
         };
       }
 
@@ -1451,23 +1519,27 @@ const createSourceHandler = (params: {
       return {
         status: 'completed',
         message: reductionSummary,
-        metadata: buildSourceDetailMetadata(input, {
-          inputFeatureCount: inputSummary.featureCount,
-          featureCount: outputSummary.featureCount,
-          inputPolygonCount: inputSummary.polygonCount,
-          polygonCount: outputSummary.polygonCount,
-          inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
-          polygonPerFeatureMax: outputSummary.maxPolygonPerFeature,
-          inputMaxPolygonVertexCount: inputSummary.maxPolygonVertexCount,
-          maxPolygonVertexCount: outputSummary.maxPolygonVertexCount,
-          baseTolerance: undefined,
-          baseToleranceVertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
-        }, {
-          sourceCacheId: sourceCacheRecord.id,
-          sourceCacheFormat: 'topojson',
-          sourceCacheCompression: 'gzip',
-          rawSourceCacheKey,
-        }),
+        metadata: buildSourceDetailMetadata(
+          input,
+          {
+            inputFeatureCount: inputSummary.featureCount,
+            featureCount: outputSummary.featureCount,
+            inputPolygonCount: inputSummary.polygonCount,
+            polygonCount: outputSummary.polygonCount,
+            inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
+            polygonPerFeatureMax: outputSummary.maxPolygonPerFeature,
+            inputMaxPolygonVertexCount: inputSummary.maxPolygonVertexCount,
+            maxPolygonVertexCount: outputSummary.maxPolygonVertexCount,
+            baseTolerance: undefined,
+            baseToleranceVertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
+          },
+          {
+            sourceCacheId: sourceCacheRecord.id,
+            sourceCacheFormat: 'topojson',
+            sourceCacheCompression: 'gzip',
+            rawSourceCacheKey,
+          }
+        ),
         outputData: {
           sourceCacheId: sourceCacheRecord.id,
           sourceArtifactHash: sourceCacheRecord.contentHash,
@@ -1504,26 +1576,30 @@ const createSourceHandler = (params: {
       validation: true,
     });
     let collection = buildSourceFeatureCollection(processed, originKey);
-    if (shouldMergeGeoBoundaries({
-      dataSource: input.dataSource,
-      adminLevel: input.adminLevel,
-      countryCode: input.urlCountryCode,
-    })) {
+    if (
+      shouldMergeGeoBoundaries({
+        dataSource: input.dataSource,
+        adminLevel: input.adminLevel,
+        countryCode: input.urlCountryCode,
+      })
+    ) {
       collection = mergeGeojsonCollection(collection);
     }
     collection = normalizeGeojsonCollection(collection);
     const inputSummary = await summarizeFeatureCollection(collection, geometryEngine, {
       onFeatureCountProgress,
     });
-    const filteredCollection = typeof filterZoom === 'number' && Number.isFinite(filterZoom)
-      ? await filterFetchCollectionByZoom(collection, {
-        zTarget: filterZoom,
-        omitDetailsConfig: params.buildConfig.geometryConfig.omitDetailsConfig,
-        excludePolygonAreaCoefficient: params.buildConfig.geometryConfig.excludePolygonAreaCoefficient,
-        minRingVertices: params.buildConfig.geometryConfig.minRingVertices,
-        geometryEngine,
-      })
-      : collection;
+    const filteredCollection =
+      typeof filterZoom === 'number' && Number.isFinite(filterZoom)
+        ? await filterFetchCollectionByZoom(collection, {
+            zTarget: filterZoom,
+            omitDetailsConfig: params.buildConfig.geometryConfig.omitDetailsConfig,
+            excludePolygonAreaCoefficient:
+              params.buildConfig.geometryConfig.excludePolygonAreaCoefficient,
+            minRingVertices: params.buildConfig.geometryConfig.minRingVertices,
+            geometryEngine,
+          })
+        : collection;
     if (filteredCollection.features.length === 0) {
       const createdAt = Date.now();
       const emptyMetadata = buildEmptyFeatureMetadata({
@@ -1540,20 +1616,24 @@ const createSourceHandler = (params: {
       return {
         status: 'completed',
         message: buildSourceFilterReductionSummary(inputSummary),
-        metadata: buildSourceDetailMetadata(input, {
-          inputFeatureCount: inputSummary.featureCount,
-          featureCount: 0,
-          inputPolygonCount: inputSummary.polygonCount,
-          polygonCount: 0,
-          inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
-          polygonPerFeatureMax: 0,
-          inputMaxPolygonVertexCount: inputSummary.maxPolygonVertexCount,
-          maxPolygonVertexCount: 0,
-          baseTolerance: 0,
-          baseToleranceVertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
-        }, {
-          rawSourceCacheKey,
-        }),
+        metadata: buildSourceDetailMetadata(
+          input,
+          {
+            inputFeatureCount: inputSummary.featureCount,
+            featureCount: 0,
+            inputPolygonCount: inputSummary.polygonCount,
+            polygonCount: 0,
+            inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
+            polygonPerFeatureMax: 0,
+            inputMaxPolygonVertexCount: inputSummary.maxPolygonVertexCount,
+            maxPolygonVertexCount: 0,
+            baseTolerance: 0,
+            baseToleranceVertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
+          },
+          {
+            rawSourceCacheKey,
+          }
+        ),
       };
     }
 
@@ -1635,23 +1715,27 @@ const createSourceHandler = (params: {
     return {
       status: 'completed',
       message: reductionSummary,
-      metadata: buildSourceDetailMetadata(input, {
-        inputFeatureCount: inputSummary.featureCount,
-        featureCount,
-        inputPolygonCount: inputSummary.polygonCount,
-        polygonCount,
-        inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
-        polygonPerFeatureMax: maxPolygonPerFeature,
-        inputMaxPolygonVertexCount: inputSummary.maxPolygonVertexCount,
-        maxPolygonVertexCount,
-        baseTolerance: undefined,
-        baseToleranceVertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
-      }, {
-        sourceCacheId: sourceCacheRecord.id,
-        sourceCacheFormat: 'flatgeobuf',
-        sourceCacheCompression: 'none',
-        rawSourceCacheKey,
-      }),
+      metadata: buildSourceDetailMetadata(
+        input,
+        {
+          inputFeatureCount: inputSummary.featureCount,
+          featureCount,
+          inputPolygonCount: inputSummary.polygonCount,
+          polygonCount,
+          inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
+          polygonPerFeatureMax: maxPolygonPerFeature,
+          inputMaxPolygonVertexCount: inputSummary.maxPolygonVertexCount,
+          maxPolygonVertexCount,
+          baseTolerance: undefined,
+          baseToleranceVertexLimit: SOURCE_BASE_TOLERANCE_VERTEX_LIMIT,
+        },
+        {
+          sourceCacheId: sourceCacheRecord.id,
+          sourceCacheFormat: 'flatgeobuf',
+          sourceCacheCompression: 'none',
+          rawSourceCacheKey,
+        }
+      ),
       outputData: {
         sourceCacheId: sourceCacheRecord.id,
         sourceArtifactHash: sourceCacheRecord.contentHash,
@@ -1700,7 +1784,10 @@ export const runShapeSourceStage = async (params: ShapeSourceStageParams): Promi
   if (!resumeExistingTasks) {
     const staleTasks = await listTasksByStage(params.taskQueue, params.nodeId, 'source');
     assertNotAborted(abortSignal);
-    await deleteTasksByIds(params.taskQueue, staleTasks.map((task) => task.taskId));
+    await deleteTasksByIds(
+      params.taskQueue,
+      staleTasks.map((task) => task.taskId)
+    );
   }
   assertNotAborted(abortSignal);
   const existingTasks = resumeExistingTasks
@@ -1710,28 +1797,32 @@ export const runShapeSourceStage = async (params: ShapeSourceStageParams): Promi
   existingTasks.forEach((task) => {
     resolveTaskCacheIdentity(task);
   });
-  let metadataForPayloads = params.metadata ?? await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
+  let metadataForPayloads =
+    params.metadata ?? (await metadataLoader.loadMetadata(params.dataSource, params.nodeId));
   assertNotAborted(abortSignal);
   let payloads = resolveSourcePayloads(params, metadataForPayloads);
   const selectedAdminPairCount = countSelectedAdminPairs(params.selectedArrayByCountries);
   if (
-    payloads.length === 0
-    && selectedAdminPairCount > 0
-    && (!params.downloadTaskPayloads || params.downloadTaskPayloads.length === 0)
-    && !params.metadata
+    payloads.length === 0 &&
+    selectedAdminPairCount > 0 &&
+    (!params.downloadTaskPayloads || params.downloadTaskPayloads.length === 0) &&
+    !params.metadata
   ) {
     metadataLoader.clearCache(params.dataSource);
-    const refreshedMetadata = await metadataLoader.loadMetadata(params.dataSource, params.nodeId, { force: true });
+    const refreshedMetadata = await metadataLoader.loadMetadata(params.dataSource, params.nodeId, {
+      force: true,
+    });
     assertNotAborted(abortSignal);
     metadataForPayloads = refreshedMetadata;
     payloads = resolveSourcePayloads(params, metadataForPayloads);
   }
-  const reuseExistingTasks = resumeExistingTasks && existingTasks.length > 0 && payloads.length === 0;
+  const reuseExistingTasks =
+    resumeExistingTasks && existingTasks.length > 0 && payloads.length === 0;
   if (payloads.length === 0 && !reuseExistingTasks) {
     if (selectedAdminPairCount > 0) {
       throw new Error(
-        `[shape-source] No source tasks generated for ${selectedAdminPairCount}`
-        + ' selected entries. Metadata may be stale or incompatible with the selection.',
+        `[shape-source] No source tasks generated for ${selectedAdminPairCount}` +
+          ' selected entries. Metadata may be stale or incompatible with the selection.'
       );
     }
     assertNotAborted(abortSignal);
@@ -1785,7 +1876,7 @@ export const runShapeSourceStage = async (params: ShapeSourceStageParams): Promi
 
 const resolveSourcePayloads = (
   params: ShapeSourceStageParams,
-  metadata: CountryMetadata[],
+  metadata: CountryMetadata[]
 ): SourceTaskPayload[] => {
   if (params.downloadTaskPayloads && params.downloadTaskPayloads.length > 0) {
     return params.downloadTaskPayloads;
@@ -1793,6 +1884,6 @@ const resolveSourcePayloads = (
   return generateDownloadTaskPayloadsFromSelection(
     params.dataSource,
     params.selectedArrayByCountries,
-    metadata,
+    metadata
   );
 };

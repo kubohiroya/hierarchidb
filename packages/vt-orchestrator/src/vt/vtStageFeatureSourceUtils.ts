@@ -1,12 +1,16 @@
 import { geojson as geojsonApi } from 'flatgeobuf';
 import type { FeatureCollection } from 'geojson';
 
-export const decodeGeometryStageCache = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
+export const decodeGeometryStageCache = async (
+  buffer: ArrayBuffer
+): Promise<FeatureCollection | null> => {
   const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
   return normalizeFeatureCollection(decoded);
 };
 
-export const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureCollection | null> => {
+export const normalizeFeatureCollection = async (
+  decoded: unknown
+): Promise<FeatureCollection | null> => {
   if (!decoded || typeof decoded !== 'object') return null;
   const collection = decoded as FeatureCollection;
   if (collection.type === 'FeatureCollection') {
@@ -15,20 +19,29 @@ export const normalizeFeatureCollection = async (decoded: unknown): Promise<Feat
   }
   if (typeof (decoded as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
     const features: FeatureCollection['features'] = [];
-    const iterator = (decoded as AsyncIterable<FeatureCollection['features'][number]>)[Symbol.asyncIterator]();
-    const testIterTimeoutMs = (globalThis as { __HDB_VT_ASYNC_ITER_TIMEOUT_MS?: number }).__HDB_VT_ASYNC_ITER_TIMEOUT_MS;
+    const iterator = (decoded as AsyncIterable<FeatureCollection['features'][number]>)[
+      Symbol.asyncIterator
+    ]();
+    const testIterTimeoutMs = (globalThis as { __HDB_VT_ASYNC_ITER_TIMEOUT_MS?: number })
+      .__HDB_VT_ASYNC_ITER_TIMEOUT_MS;
     while (true) {
-      const next = typeof testIterTimeoutMs === 'number' && testIterTimeoutMs > 0
-        ? await new Promise<IteratorResult<FeatureCollection['features'][number]>>((resolve, reject) => {
-          const timeoutId = setTimeout(() => {
-            reject(new Error(`[tileEmit] async iterator timeout after ${testIterTimeoutMs}ms`));
-          }, testIterTimeoutMs);
-          iterator.next()
-            .then((value) => resolve(value))
-            .catch((error) => reject(error))
-            .finally(() => clearTimeout(timeoutId));
-        })
-        : await iterator.next();
+      const next =
+        typeof testIterTimeoutMs === 'number' && testIterTimeoutMs > 0
+          ? await new Promise<IteratorResult<FeatureCollection['features'][number]>>(
+              (resolve, reject) => {
+                const timeoutId = setTimeout(() => {
+                  reject(
+                    new Error(`[tileEmit] async iterator timeout after ${testIterTimeoutMs}ms`)
+                  );
+                }, testIterTimeoutMs);
+                iterator
+                  .next()
+                  .then((value) => resolve(value))
+                  .catch((error) => reject(error))
+                  .finally(() => clearTimeout(timeoutId));
+              }
+            )
+          : await iterator.next();
       if (next.done) break;
       features.push(next.value);
     }
@@ -37,7 +50,9 @@ export const normalizeFeatureCollection = async (decoded: unknown): Promise<Feat
   return null;
 };
 
-export const describeBuffer = (buffer: ArrayBuffer): {
+export const describeBuffer = (
+  buffer: ArrayBuffer
+): {
   byteLength: number;
   headHex: string;
   headAscii: string;
@@ -45,10 +60,12 @@ export const describeBuffer = (buffer: ArrayBuffer): {
 } => {
   const bytes = new Uint8Array(buffer);
   const head = bytes.slice(0, 16);
-  const headHex = Array.from(head).map((value) => value.toString(16).padStart(2, '0')).join('');
-  const headAscii = Array.from(head).map((value) => (
-    value >= 0x20 && value <= 0x7e ? String.fromCharCode(value) : '.'
-  )).join('');
+  const headHex = Array.from(head)
+    .map((value) => value.toString(16).padStart(2, '0'))
+    .join('');
+  const headAscii = Array.from(head)
+    .map((value) => (value >= 0x20 && value <= 0x7e ? String.fromCharCode(value) : '.'))
+    .join('');
   let firstNonWhitespace: number | null = null;
   for (let i = 0; i < bytes.length; i += 1) {
     const value = bytes[i];
@@ -74,6 +91,8 @@ export const loadGeojsonVt = async () => {
 
 export const loadVtPbf = async () => {
   const mod = await import('@maplibre/vt-pbf');
-  const candidate = mod as { default?: typeof import('@maplibre/vt-pbf') } & typeof import('@maplibre/vt-pbf');
+  const candidate = mod as {
+    default?: typeof import('@maplibre/vt-pbf');
+  } & typeof import('@maplibre/vt-pbf');
   return candidate.default ?? candidate;
 };

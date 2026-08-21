@@ -1,24 +1,16 @@
+import { type EphemeralGeometryCacheRecord, geometryArea } from '@hierarchidb/gis-sdk';
 import type { Feature } from 'geojson';
-import { geometryArea, type EphemeralGeometryCacheRecord } from '@hierarchidb/gis-sdk';
 import type { VTStageContext } from '~/contextTypes';
 import type { InputFeatureStats } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
-import type { CollectedFeatureSource } from './vtStageTaskTypes.js';
-import {
-  featureBBox,
-} from './vtStageGeometryFeature.js';
-import {
-  normalizeGeojsonByteSize,
-  resolveFeatureId,
-} from './vtStageFeatureMetadataUtils.js';
+import { normalizeGeojsonByteSize, resolveFeatureId } from './vtStageFeatureMetadataUtils.js';
+import { decodeGeometryStageCache, describeBuffer } from './vtStageFeatureSourceUtils.js';
 import {
   countLineStringsFromGeometry,
   countPolygonsFromGeometry,
   countVerticesFromGeometry,
 } from './vtStageGeometryCountsUtils.js';
-import {
-  decodeGeometryStageCache,
-  describeBuffer,
-} from './vtStageFeatureSourceUtils.js';
+import { featureBBox } from './vtStageGeometryFeature.js';
+import type { CollectedFeatureSource } from './vtStageTaskTypes.js';
 
 type FeatureCollectorRecordContext = {
   context: VTStageContext;
@@ -34,7 +26,7 @@ type FeatureCollectorRecordContext = {
 
 export const collectFeaturesFromRecord = async (
   input: FeatureCollectorRecordContext,
-  record: EphemeralGeometryCacheRecord,
+  record: EphemeralGeometryCacheRecord
 ) => {
   const {
     nodeId,
@@ -52,47 +44,59 @@ export const collectFeaturesFromRecord = async (
   }
   bufferSizes.set(record.id, record.data.byteLength);
   if (debugCollect) {
-    console.info('[tileEmit][debug] record loop entry', JSON.stringify({
-      nodeId,
-      bufferId: record.id,
-      byteLength: record.data.byteLength,
-    }));
+    console.info(
+      '[tileEmit][debug] record loop entry',
+      JSON.stringify({
+        nodeId,
+        bufferId: record.id,
+        byteLength: record.data.byteLength,
+      })
+    );
   }
   if (debugCollect) {
-    console.info('[tileEmit][debug] decode start', JSON.stringify({
-      nodeId,
-      bufferId: record.id,
-      byteLength: record.data.byteLength,
-    }));
+    console.info(
+      '[tileEmit][debug] decode start',
+      JSON.stringify({
+        nodeId,
+        bufferId: record.id,
+        byteLength: record.data.byteLength,
+      })
+    );
   }
   const collection = await decodeGeometryStageCache(record.data);
   if (debugCollect) {
-    console.info('[tileEmit][debug] decode done', JSON.stringify({
-      nodeId,
-      bufferId: record.id,
-      hasCollection: Boolean(collection),
-      featureCount: collection?.features?.length ?? 0,
-    }));
+    console.info(
+      '[tileEmit][debug] decode done',
+      JSON.stringify({
+        nodeId,
+        bufferId: record.id,
+        hasCollection: Boolean(collection),
+        featureCount: collection?.features?.length ?? 0,
+      })
+    );
   }
   if (!collection) {
     const debug = describeBuffer(record.data);
-    console.warn('[shape-tileEmit] failed to decode geometry cache for tileEmit stage', JSON.stringify({
-      nodeId,
-      bufferId: record.id,
-      timestamp: record.timestamp,
-      byteLength: debug.byteLength,
-      headHex: debug.headHex,
-      headAscii: debug.headAscii,
-      jsonLike: debug.isJsonLike,
-    }));
+    console.warn(
+      '[shape-tileEmit] failed to decode geometry cache for tileEmit stage',
+      JSON.stringify({
+        nodeId,
+        bufferId: record.id,
+        timestamp: record.timestamp,
+        byteLength: debug.byteLength,
+        headHex: debug.headHex,
+        headAscii: debug.headAscii,
+        jsonLike: debug.isJsonLike,
+      })
+    );
     throw new Error(`[tileEmit] failed to decode geometry cache record ${record.id}`);
   }
   const continentKey = featuresByContinent
     ? (() => {
-      const rawCountry = record.countryCode ?? record.sourceKey?.split(':')[0] ?? '';
-      const code = rawCountry.trim().toUpperCase();
-      return (code ? continentByCountry?.get(code) : undefined) ?? 'Unknown';
-    })()
+        const rawCountry = record.countryCode ?? record.sourceKey?.split(':')[0] ?? '';
+        const code = rawCountry.trim().toUpperCase();
+        return (code ? continentByCountry?.get(code) : undefined) ?? 'Unknown';
+      })()
     : null;
 
   collection.features.forEach((feature) => {
@@ -109,9 +113,8 @@ export const collectFeaturesFromRecord = async (
     const geojsonByteSize = featureId
       ? normalizeGeojsonByteSize(context.featureGeojsonByteSizeById?.get(featureId))
       : undefined;
-    const normalizedCountryCode = typeof record.countryCode === 'string'
-      ? record.countryCode.trim().toUpperCase()
-      : '';
+    const normalizedCountryCode =
+      typeof record.countryCode === 'string' ? record.countryCode.trim().toUpperCase() : '';
     featureSources.set(feature, {
       bufferId: record.id,
       ...(normalizedCountryCode.length > 0 ? { countryCode: normalizedCountryCode } : {}),

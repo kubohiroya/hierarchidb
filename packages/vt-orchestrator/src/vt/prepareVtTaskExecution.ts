@@ -1,9 +1,9 @@
-import { unpackTileId } from '~/tiles/tileId';
 import type { VTStageContext } from '~/contextTypes';
+import { unpackTileId } from '~/tiles/tileId';
 import type { BandConfig, StageHandlerResult, VtTaskInput } from '~/types/types';
+import { assertTileEmitInvalidGeometryFilterConfig } from './filterInvalidGeometryForTileEmit.js';
 import { resolveVtDebugFocusConfig } from './vtStageDebug.js';
 import type { TaskContextForVt, VtTaskExecutionInput } from './vtStageTaskTypes.js';
-import { assertTileEmitInvalidGeometryFilterConfig } from './filterInvalidGeometryForTileEmit.js';
 
 type VtTaskPreparationInput = {
   context: VTStageContext;
@@ -19,20 +19,20 @@ type TopojsonSimplifyConfig = {
 
 export type VtTaskPreparationResult =
   | {
-    kind: 'ready';
-    input: VtTaskInput;
-    taskContext: TaskContextForVt;
-    band: BandConfig;
-    parent: { z: number; x: number; y: number };
-    layerSetName: string;
-    debugCollect: boolean;
-    debugFocusConfig: ReturnType<typeof resolveVtDebugFocusConfig>;
-    groupByContinent: boolean;
-    useTopojsonTileSimplify: boolean;
-    topojsonSimplify: TopojsonSimplifyConfig;
-    bufferIds: string[];
-    bufferIdSample: string[];
-  }
+      kind: 'ready';
+      input: VtTaskInput;
+      taskContext: TaskContextForVt;
+      band: BandConfig;
+      parent: { z: number; x: number; y: number };
+      layerSetName: string;
+      debugCollect: boolean;
+      debugFocusConfig: ReturnType<typeof resolveVtDebugFocusConfig>;
+      groupByContinent: boolean;
+      useTopojsonTileSimplify: boolean;
+      topojsonSimplify: TopojsonSimplifyConfig;
+      bufferIds: string[];
+      bufferIdSample: string[];
+    }
   | { kind: 'skipped'; result: StageHandlerResult };
 
 export const prepareVtTaskExecution = (params: VtTaskPreparationInput): VtTaskPreparationResult => {
@@ -97,7 +97,8 @@ export const prepareVtTaskExecution = (params: VtTaskPreparationInput): VtTaskPr
       result: { status: 'failed', errorMessage: `Unknown bandIndex: ${input.bandIndex}` },
     };
   }
-  const noOpBand0Topojson = input.bandIndex === 0 && band.zMin <= 2 && context.topojsonSource === true;
+  const noOpBand0Topojson =
+    input.bandIndex === 0 && band.zMin <= 2 && context.topojsonSource === true;
   if (noOpBand0Topojson) {
     return {
       kind: 'skipped',
@@ -123,20 +124,18 @@ export const prepareVtTaskExecution = (params: VtTaskPreparationInput): VtTaskPr
 
   const parent = unpackTileId(input.tileId, band.zBase);
   const groupByContinent = Boolean(
-    context.continentByCountry
-    && parent.z === 0
-    && parent.x === 0
-    && parent.y === 0,
+    context.continentByCountry && parent.z === 0 && parent.x === 0 && parent.y === 0
   );
   const useTopojsonTileSimplify = Boolean(context.topojsonSimplify?.enabled);
-  const topojsonSimplify = useTopojsonTileSimplify && context.topojsonSimplify
-    ? {
-      enabled: true,
-      toleranceK: context.topojsonSimplify.toleranceK,
-      retryToleranceStep: context.topojsonSimplify.retryToleranceStep,
-      quantize: context.topojsonSimplify.quantize,
-    }
-    : null;
+  const topojsonSimplify =
+    useTopojsonTileSimplify && context.topojsonSimplify
+      ? {
+          enabled: true,
+          toleranceK: context.topojsonSimplify.toleranceK,
+          retryToleranceStep: context.topojsonSimplify.retryToleranceStep,
+          quantize: context.topojsonSimplify.quantize,
+        }
+      : null;
   return {
     kind: 'ready',
     input,
@@ -144,7 +143,8 @@ export const prepareVtTaskExecution = (params: VtTaskPreparationInput): VtTaskPr
     band,
     parent,
     layerSetName,
-    debugCollect: (globalThis as { __HDB_VT_DEBUG_COLLECT?: boolean }).__HDB_VT_DEBUG_COLLECT === true,
+    debugCollect:
+      (globalThis as { __HDB_VT_DEBUG_COLLECT?: boolean }).__HDB_VT_DEBUG_COLLECT === true,
     debugFocusConfig: resolveVtDebugFocusConfig(tileEmitConfig.debug),
     groupByContinent,
     useTopojsonTileSimplify,

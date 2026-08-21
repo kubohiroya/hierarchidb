@@ -1,22 +1,23 @@
-import { describe, expect, it } from 'vitest';
 import type { FeatureCollection } from 'geojson';
+import { describe, expect, it } from 'vitest';
 import type { VTStageContext } from '../../contextTypes.js';
 import { prepareVtTaskExecution } from '../prepareVtTaskExecution.js';
 import { vtStageTestUtils } from '../vtStageTestUtils.js';
 
-const buildPreparationContext = (): VTStageContext => ({
-  tileEmitConfig: {
-    layerSetName: 'shape',
-    invalidGeometryFilter: {
-      area: false,
-      lineLength: false,
-      maxEdgeLength: false,
-      selfIntersection: false,
-      triangleRingRatio: false,
+const buildPreparationContext = (): VTStageContext =>
+  ({
+    tileEmitConfig: {
+      layerSetName: 'shape',
+      invalidGeometryFilter: {
+        area: false,
+        lineLength: false,
+        maxEdgeLength: false,
+        selfIntersection: false,
+        triangleRingRatio: false,
+      },
     },
-  },
-  bands: [],
-} as unknown as VTStageContext);
+    bands: [],
+  }) as unknown as VTStageContext;
 
 describe('vtStage summary helpers', () => {
   it('builds admin feature summary from feature levels', () => {
@@ -45,7 +46,7 @@ describe('vtStage summary helpers', () => {
     const summary = vtStageTestUtils.buildSkippedMessage(
       'features: ADM0:1',
       'tiles -> 0/1',
-      'no layers',
+      'no layers'
     );
 
     expect(summary).toBe('features: ADM0:1, tiles -> 0/1 (skipped: no layers)');
@@ -117,7 +118,7 @@ describe('vtStage summary helpers', () => {
     const match = vtStageTestUtils.resolveVtDebugFocusMatch(
       config,
       vtStageTestUtils.buildTileKey(3, 0, 2),
-      ['feat-z', 'feat-b'],
+      ['feat-z', 'feat-b']
     );
 
     expect(match.shouldLog).toBe(true);
@@ -186,9 +187,9 @@ describe('vtStage summary helpers', () => {
       },
     ];
 
-    const totals = vtStageTestUtils.computeOutputTileTotals(tiles as Parameters<
-      typeof vtStageTestUtils.computeOutputTileTotals
-    >[0]);
+    const totals = vtStageTestUtils.computeOutputTileTotals(
+      tiles as Parameters<typeof vtStageTestUtils.computeOutputTileTotals>[0]
+    );
 
     expect(totals.polygonCount).toBeGreaterThan(0);
     expect(totals.vertexCount).toBeGreaterThan(0);
