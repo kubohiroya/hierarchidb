@@ -91,6 +91,7 @@ export function validateBuildConfig(
   buildConfig: ShapeBuildConfig,
   processingConfig?: ShapeProcessingConfig
 ): ShapeStepValidationResult {
+  assertShapeBuildConfigTileEmitContract(buildConfig);
   const errors: string[] = [];
 
   const mergedBuildConfig = applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, buildConfig);
@@ -458,19 +459,35 @@ export function mergeProcessingConfig(
   };
 }
 
-export function composeRuntimeBuildConfig(
-  buildConfig: ShapeBuildConfig,
-  processingConfig: ShapeProcessingConfig
-): ShapeRuntimeBuildConfig {
+const INVALID_GEOMETRY_FILTER_KEYS = [
+  'area',
+  'lineLength',
+  'maxEdgeLength',
+  'selfIntersection',
+  'triangleRingRatio',
+] as const;
+
+export function assertShapeBuildConfigTileEmitContract(buildConfig: ShapeBuildConfig): void {
   const buildConfigRecord = buildConfig as unknown as Record<string, unknown>;
-  const sourceConfigRecord = buildConfig.sourceConfig as unknown as Record<string, unknown>;
   if (Object.hasOwn(buildConfigRecord, 'fetchConfig')) {
     throw new Error('[shape-build] fetchConfig.invalidGeometryFilter is not supported');
   }
-  if (Object.hasOwn(sourceConfigRecord, 'invalidGeometryFilter')) {
+
+  const sourceConfig = buildConfigRecord.sourceConfig;
+  if (
+    sourceConfig &&
+    typeof sourceConfig === 'object' &&
+    !Array.isArray(sourceConfig) &&
+    Object.hasOwn(sourceConfig, 'invalidGeometryFilter')
+  ) {
     throw new Error('[shape-build] sourceConfig.invalidGeometryFilter is not supported');
   }
-  const invalidGeometryFilter = buildConfig.tileEmitConfig.invalidGeometryFilter as unknown;
+
+  const tileEmitConfig = buildConfigRecord.tileEmitConfig;
+  if (!tileEmitConfig || typeof tileEmitConfig !== 'object' || Array.isArray(tileEmitConfig)) {
+    throw new Error('[shape-build] tileEmitConfig.invalidGeometryFilter is required');
+  }
+  const invalidGeometryFilter = (tileEmitConfig as Record<string, unknown>).invalidGeometryFilter;
   if (
     !invalidGeometryFilter ||
     typeof invalidGeometryFilter !== 'object' ||
@@ -479,14 +496,7 @@ export function composeRuntimeBuildConfig(
     throw new Error('[shape-build] tileEmitConfig.invalidGeometryFilter is required');
   }
   const invalidGeometryFilterRecord = invalidGeometryFilter as Record<string, unknown>;
-  const invalidGeometryFilterKeys = [
-    'area',
-    'lineLength',
-    'maxEdgeLength',
-    'selfIntersection',
-    'triangleRingRatio',
-  ] as const;
-  for (const key of invalidGeometryFilterKeys) {
+  for (const key of INVALID_GEOMETRY_FILTER_KEYS) {
     if (
       !Object.hasOwn(invalidGeometryFilterRecord, key) ||
       typeof invalidGeometryFilterRecord[key] !== 'boolean'
@@ -494,15 +504,27 @@ export function composeRuntimeBuildConfig(
       throw new Error(`[shape-build] tileEmitConfig.invalidGeometryFilter.${key} must be boolean`);
     }
   }
-  const supportedInvalidGeometryFilterKeys = new Set<string>(invalidGeometryFilterKeys);
-  const unsupportedInvalidGeometryFilterKey = Object.keys(invalidGeometryFilterRecord).find(
-    (key) => !supportedInvalidGeometryFilterKeys.has(key)
+  const supportedKeys = new Set<string>(INVALID_GEOMETRY_FILTER_KEYS);
+  const unsupportedKey = Object.keys(invalidGeometryFilterRecord).find(
+    (key) => !supportedKeys.has(key)
   );
-  if (unsupportedInvalidGeometryFilterKey) {
+  if (unsupportedKey) {
     throw new Error(
-      `[shape-build] tileEmitConfig.invalidGeometryFilter.${unsupportedInvalidGeometryFilterKey} is not supported`
+      `[shape-build] tileEmitConfig.invalidGeometryFilter.${unsupportedKey} is not supported`
     );
   }
+  if ((tileEmitConfig as Record<string, unknown>).enableTopojsonSimplify !== false) {
+    throw new Error(
+      '[shape-build] tileEmitConfig.enableTopojsonSimplify must be false at the canonical invalid-geometry filter boundary'
+    );
+  }
+}
+
+export function composeRuntimeBuildConfig(
+  buildConfig: ShapeBuildConfig,
+  processingConfig: ShapeProcessingConfig
+): ShapeRuntimeBuildConfig {
+  assertShapeBuildConfigTileEmitContract(buildConfig);
   return {
     ...buildConfig,
     sourceConfig: {

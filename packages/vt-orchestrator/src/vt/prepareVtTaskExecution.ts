@@ -39,6 +39,11 @@ export const prepareVtTaskExecution = (params: VtTaskPreparationInput): VtTaskPr
   const { context, task } = params;
   const { bands, tileEmitConfig } = context;
   assertTileEmitInvalidGeometryFilterConfig(tileEmitConfig.invalidGeometryFilter);
+  if (context.topojsonSimplify?.enabled) {
+    throw new Error(
+      '[tileEmit] tile-local TopoJSON simplification is not supported after the canonical invalid-geometry filter boundary'
+    );
+  }
   const layerSetName = tileEmitConfig.layerSetName;
   if (!layerSetName) {
     return {

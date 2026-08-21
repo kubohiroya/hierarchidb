@@ -18,9 +18,11 @@
 - Step4 の `TileEmit` セクションに `Invalid geometry filtering` 設定UIを配置する。
 - 入力項目は `area`, `lineLength`, `maxEdgeLength`, `selfIntersection`, `triangleRingRatio` の5項目に固定する。
 - `tileEmitConfig.invalidGeometryFilter` と上記5項目は正規 config で必須とし、すべて boolean とする。新規 config の既定値は全項目 `false` だが、受信済み config の欠落を runtime で `false` に補完しない。
+- legacy の tile-local `enableTopojsonSimplify=true` は canonical filter 後に geometry を再変形し、task 単位の warning metadata を二重計数せずに最終入力を再filterできないため拒否する。黙って無効化しない。再有効化する場合は、簡略化を task 単位の canonical filter より前へ移し、同じ filtered collection から集計と全 index flow を構築する。
 
 ### 3.2 実行タイミング（Worker）
 - 適用タイミングは `geojson-vt` index 作成直前の GeoJSON collection とする。
+- canonical quality filter 後に geometry を再簡略化しない。tile partitioning で生成された各 `geojson-vt` 入力は、index 作成直前に構造・finite・WGS84・ring contract を再検証するが、task 単位の品質checkとwarning metadataを二重計数しない。
 - stage owner は `tileEmit` とする。Source / Geometry stage は `tileEmitConfig.invalidGeometryFilter` を参照・適用しない。
 - フィルタ対象は Polygon / MultiPolygon の polygon 単位とする。
 - 判定に失敗した polygon は出力対象から除外する。
@@ -92,6 +94,7 @@
 - 正規キーは `tileEmitConfig.invalidGeometryFilter` のみとする。
 - `fetchConfig.invalidGeometryFilter`、`sourceConfig.invalidGeometryFilter`、旧 alias の互換読み込みは行わない。
 - 旧 config は明示的な migration / cache invalidation の対象とし、runtime で正規 config と混在させない。
+- `enableTopojsonSimplify=true` の受信済み config も明示的な設定契約違反として失敗させる。`false` へのruntime補完やsilent disableは行わない。
 
 ## 8. ロールバック方針
 - 問題が出た場合は該当 PR を revert する。設定UIや worker 適用点を Source へ戻さない。
@@ -136,6 +139,7 @@
 - invalid polygon は除外され、feature error count が増加する。
 - タスクは継続し、warning として completed と区別表示される。
 - 契約違反は failed として可視化され、座標 clamp や旧 config 互換読み込みがない。
+- canonical filter 後のgeometry再簡略化がなく、各geojson-vt入力が直前に構造・座標contractを満たすことを再検証される。
 - 主要テストが追加され、対象パッケージの typecheck/test が通る。
 
 ## 11. 非採用案

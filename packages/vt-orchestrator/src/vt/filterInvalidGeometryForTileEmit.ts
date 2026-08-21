@@ -69,6 +69,13 @@ const CHECK_ORDER: readonly TileEmitInvalidGeometryCheck[] = [
   'triangleRingRatio',
 ];
 const CHECK_KEY_SET = new Set<string>(CHECK_ORDER);
+const CONTRACT_ONLY_CONFIG: TileEmitInvalidGeometryFilterConfig = {
+  area: false,
+  lineLength: false,
+  maxEdgeLength: false,
+  selfIntersection: false,
+  triangleRingRatio: false,
+};
 
 const createCheckCounter = (): Record<TileEmitInvalidGeometryCheck, number> => ({
   area: 0,
@@ -634,4 +641,17 @@ export const filterInvalidGeometryForTileEmit = async (
       invalidPolygonFilteredByCheck: context.filteredByCheck,
     },
   };
+};
+
+export const assertTileEmitGeojsonVtInputContract = async (
+  collection: FeatureCollection,
+  geometryEngine: GeometryEngine
+): Promise<void> => {
+  const result = await filterInvalidGeometryForTileEmit(collection, {
+    config: CONTRACT_ONLY_CONFIG,
+    geometryEngine,
+  });
+  if (result.metrics.invalidPolygonFilteredCount !== 0) {
+    throw new Error('[tileEmit] contract-only geojson-vt input validation filtered geometry');
+  }
 };

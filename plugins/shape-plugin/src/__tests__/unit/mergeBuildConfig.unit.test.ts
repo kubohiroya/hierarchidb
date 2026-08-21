@@ -3,6 +3,7 @@ import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '../../common/ty
 import type { ShapeBuildConfig } from '../../common/types/index';
 import {
   applyBuildConfigPatch,
+  assertShapeBuildConfigTileEmitContract,
   composeRuntimeBuildConfig,
 } from '../../services/utils/shapeBuildUtils';
 
@@ -206,6 +207,26 @@ describe('composeRuntimeBuildConfig invalid geometry filter contract', () => {
 
     expect(() => composeRuntimeBuildConfig(buildConfig, DEFAULT_PROCESSING_CONFIG)).toThrow(
       'tileEmitConfig.invalidGeometryFilter.legacyAreaCheck is not supported'
+    );
+  });
+
+  it('rejects a missing required boolean before a received config can be default-filled', () => {
+    const receivedConfig = structuredClone(DEFAULT_BUILD_CONFIG) as ShapeBuildConfig;
+    delete (
+      receivedConfig.tileEmitConfig.invalidGeometryFilter as unknown as Record<string, unknown>
+    ).lineLength;
+
+    expect(() => assertShapeBuildConfigTileEmitContract(receivedConfig)).toThrow(
+      'tileEmitConfig.invalidGeometryFilter.lineLength must be boolean'
+    );
+  });
+
+  it('rejects tile-local TopoJSON simplification after the canonical filter boundary', () => {
+    const receivedConfig = structuredClone(DEFAULT_BUILD_CONFIG) as ShapeBuildConfig;
+    receivedConfig.tileEmitConfig.enableTopojsonSimplify = true;
+
+    expect(() => assertShapeBuildConfigTileEmitContract(receivedConfig)).toThrow(
+      'tileEmitConfig.enableTopojsonSimplify must be false'
     );
   });
 });

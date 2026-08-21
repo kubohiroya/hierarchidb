@@ -217,6 +217,34 @@ describe('vtStage summary helpers', () => {
     });
   });
 
+  it('rejects tile-local TopoJSON simplification before task preparation', () => {
+    const context = buildPreparationContext();
+    context.topojsonSimplify = {
+      enabled: true,
+      sourceKeys: new Set(),
+      toleranceK: 0.1,
+      retryToleranceStep: 0.02,
+    };
+
+    expect(() =>
+      prepareVtTaskExecution({
+        context,
+        task: {
+          taskId: 'legacy-topojson-simplify',
+          nodeId: 'node-1',
+          inputData: {
+            bandIndex: 0,
+            zBase: 0,
+            tileId: 0,
+            bufferIds: ['buffer-1'],
+            domainType: 'shape',
+            sourceKey: 'mixed',
+          },
+        },
+      })
+    ).toThrow('tile-local TopoJSON simplification is not supported');
+  });
+
   it('distinguishes explicit empty bufferIds from invalid entries', () => {
     const empty = prepareVtTaskExecution({
       context: buildPreparationContext(),
