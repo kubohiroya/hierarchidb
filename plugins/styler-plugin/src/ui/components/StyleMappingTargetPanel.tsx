@@ -1,10 +1,5 @@
-import {
-  MAPLIBRE_PROPERTY_GROUPS,
-  MAPLIBRE_PROPERTY_METADATA,
-  type MapLibreStyleProperty,
-  type PropertyGroup,
-} from '@hierarchidb/styler-plugin';
 import { useIconRegistry } from '@hierarchidb/components';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   BorderColor as BorderColorIcon,
   FormatColorFill as FormatColorFillIcon,
@@ -19,8 +14,11 @@ import {
 import { Box, FormHelperText, Paper, Stack, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import type { ElementType } from 'react';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
+  MAPLIBRE_PROPERTY_GROUPS,
+  MAPLIBRE_PROPERTY_METADATA,
+  type MapLibreStyleProperty,
+  type PropertyGroup,
   STYLE_TYPE_OPTIONS,
   type StylerDialogData,
   type StylerStepData,
