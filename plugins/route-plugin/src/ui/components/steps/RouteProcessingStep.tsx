@@ -12,7 +12,7 @@ import {
   ZoomBandConfigSection,
 } from '@hierarchidb/ui-accordion-config';
 import { useTranslation } from '@hierarchidb/ui-i18n';
-import { Stack, TextField, Typography } from '@mui/material';
+import { Stack, Typography } from '@mui/material';
 import type React from 'react';
 import { useCallback, useMemo } from 'react';
 import { mergeRouteBuildConfig } from '~/common/config/buildConfig';
@@ -21,6 +21,7 @@ import {
   filteringLowUrl,
   filteringMediumUrl,
 } from '~/ui/assets/filtering-samples/filteringSampleConstants';
+import { RouteGeometryBandValuesField } from './RouteGeometryBandValuesField.js';
 import { useRouteBuildConfigStep } from './useRouteBuildConfigStep.js';
 
 export interface RouteProcessingStepProps {
@@ -54,27 +55,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
     }),
     []
   );
-  const boundaries = config.geometryConfig.zoomBandBoundaries ?? [];
-  const bandCount = Math.max(0, boundaries.length - 1);
-  const minDistanceValue = useMemo(
-    () =>
-      (config.routeGeometryConfig?.minDistanceMetersByBand ?? []).slice(0, bandCount).join(', '),
-    [bandCount, config.routeGeometryConfig?.minDistanceMetersByBand]
-  );
-  const simplifyToleranceValue = useMemo(
-    () =>
-      (config.routeGeometryConfig?.simplifyToleranceByBand ?? []).slice(0, bandCount).join(', '),
-    [bandCount, config.routeGeometryConfig?.simplifyToleranceByBand]
-  );
-  const parseBandNumbers = useCallback(
-    (raw: string): number[] =>
-      raw
-        .split(',')
-        .map((entry) => Number(entry.trim()))
-        .filter((entry) => Number.isFinite(entry))
-        .slice(0, bandCount),
-    [bandCount]
-  );
+  const bandCount = config.geometryConfig.zoomBandBoundaries.length - 1;
 
   return (
     <BuildConfigShell padding={0} spacing={3}>
@@ -106,44 +87,41 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
       />
       <Stack spacing={1.5}>
         <Typography variant="subtitle2">
-          {t('route.processing.routeTransform.title', 'Route geometry by zoom band')}
+          {t('processing.routeTransform.title', 'Route geometry by zoom band')}
         </Typography>
         <Typography variant="body2" color="text.secondary">
           {t(
-            'route.processing.routeTransform.description',
+            'processing.routeTransform.description',
             'Provide comma-separated values per band (same order as zoom bands).'
           )}
         </Typography>
-        <TextField
-          label={t('route.processing.routeTransform.minDistance', 'Min distance per band (meters)')}
-          value={minDistanceValue}
-          onChange={(event) => {
+        <RouteGeometryBandValuesField
+          label={t('processing.routeTransform.minDistance', 'Min distance per band (meters)')}
+          values={config.routeGeometryConfig.minDistanceMetersByBand}
+          bandCount={bandCount}
+          onValuesChange={(minDistanceMetersByBand) => {
             updateBuildConfig({
               routeGeometryConfig: {
                 ...config.routeGeometryConfig,
-                minDistanceMetersByBand: parseBandNumbers(event.target.value),
+                minDistanceMetersByBand,
               },
             });
           }}
           disabled={disabled}
-          fullWidth
         />
-        <TextField
-          label={t(
-            'route.processing.routeTransform.tolerance',
-            'Geometry simplify tolerance per band'
-          )}
-          value={simplifyToleranceValue}
-          onChange={(event) => {
+        <RouteGeometryBandValuesField
+          label={t('processing.routeTransform.tolerance', 'Geometry simplify tolerance per band')}
+          values={config.routeGeometryConfig.simplifyToleranceByBand}
+          bandCount={bandCount}
+          onValuesChange={(simplifyToleranceByBand) => {
             updateBuildConfig({
               routeGeometryConfig: {
                 ...config.routeGeometryConfig,
-                simplifyToleranceByBand: parseBandNumbers(event.target.value),
+                simplifyToleranceByBand,
               },
             });
           }}
           disabled={disabled}
-          fullWidth
         />
       </Stack>
     </BuildConfigShell>

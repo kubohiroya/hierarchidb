@@ -116,13 +116,14 @@ const collectSegmentTileIds = (
   let nextBoundaryY = resolveNextBoundaryParameter(start.y, deltaY, tileY, stepY);
 
   while (tileX !== endTileX || tileY !== endTileY) {
-    if (nextBoundaryX < nextBoundaryY) {
+    const boundaryOrder = compareBoundaryParameters(nextBoundaryX, nextBoundaryY);
+    if (boundaryOrder < 0) {
       tileX += stepX;
       nextBoundaryX += deltaTileX;
       addTile(segmentTileIds, tileX, tileY, zoom, scale);
       continue;
     }
-    if (nextBoundaryY < nextBoundaryX) {
+    if (boundaryOrder > 0) {
       tileY += stepY;
       nextBoundaryY += deltaTileY;
       addTile(segmentTileIds, tileX, tileY, zoom, scale);
@@ -188,6 +189,16 @@ const resolveNextBoundaryParameter = (
   if (step === 0) return Number.POSITIVE_INFINITY;
   const boundary = step > 0 ? tileIndex + 1 : tileIndex;
   return (boundary - projected) / delta;
+};
+
+const compareBoundaryParameters = (left: number, right: number): -1 | 0 | 1 => {
+  if (Object.is(left, right)) return 0;
+  if (!Number.isFinite(left)) return 1;
+  if (!Number.isFinite(right)) return -1;
+  const tolerance =
+    Number.EPSILON * Math.max(1, Math.abs(left), Math.abs(right)) * PROJECTED_BOUNDARY_ULP_FACTOR;
+  if (Math.abs(left - right) <= tolerance) return 0;
+  return left < right ? -1 : 1;
 };
 
 const addBoundaryTouchingTiles = (

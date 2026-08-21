@@ -141,4 +141,52 @@ describe('collectLineStringTileIds', () => {
       { x: 3, y: 1, z: 2 },
     ]);
   });
+
+  it('includes every tile touching a projected tile corner despite projection roundoff', () => {
+    const zoom = 2;
+    const scale = 2 ** zoom;
+    const toLongitudeLatitude = (x: number, y: number): [number, number] => [
+      (x / scale) * 360 - 180,
+      (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / scale))) * 180) / Math.PI,
+    ];
+    const tiles = collectLineStringTileIds(
+      [toLongitudeLatitude(0.5, 0.5), toLongitudeLatitude(2.5, 2.5)],
+      zoom
+    ).map((tileId) => unpackTileId(tileId, zoom));
+
+    expect(tiles).toEqual([
+      { x: 0, y: 0, z: zoom },
+      { x: 0, y: 1, z: zoom },
+      { x: 1, y: 0, z: zoom },
+      { x: 1, y: 1, z: zoom },
+      { x: 1, y: 2, z: zoom },
+      { x: 2, y: 1, z: zoom },
+      { x: 2, y: 2, z: zoom },
+    ]);
+  });
+
+  it('does not snap a line passing near a projected tile corner onto the corner', () => {
+    const zoom = 2;
+    const scale = 2 ** zoom;
+    const projectedOffset = 0.000001;
+    const toLongitudeLatitude = (x: number, y: number): [number, number] => [
+      (x / scale) * 360 - 180,
+      (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / scale))) * 180) / Math.PI,
+    ];
+    const tiles = collectLineStringTileIds(
+      [
+        toLongitudeLatitude(0.5, 0.5 + projectedOffset),
+        toLongitudeLatitude(2.5, 2.5 + projectedOffset),
+      ],
+      zoom
+    ).map((tileId) => unpackTileId(tileId, zoom));
+
+    expect(tiles).toEqual([
+      { x: 0, y: 0, z: zoom },
+      { x: 0, y: 1, z: zoom },
+      { x: 1, y: 1, z: zoom },
+      { x: 1, y: 2, z: zoom },
+      { x: 2, y: 2, z: zoom },
+    ]);
+  });
 });
