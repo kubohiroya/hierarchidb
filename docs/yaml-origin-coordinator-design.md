@@ -422,12 +422,13 @@ must still fail the separately verified artifact SHA-256 gate; the stable filena
 acceptance substitute.
 
 The database prefix is an exact build-time `VITE_APP_PREFIX`; a missing or malformed prefix fails
-the build and there is no `hidb` or runtime fallback. Before any `open()`, the inspector calls
-`indexedDB.databases()` once and verifies exact presence and version of the coordinator, CoreDB,
-and YamlDB databases. Any missing database, duplicate catalog entry, or version mismatch rejects
-without opening any of them. Every subsequent transaction is `readonly`; an unexpected upgrade,
-blocked open, topology mismatch, read failure, reflection failure, or digest failure becomes a
-stable sanitized rejection.
+the build and there is no `hidb` or runtime fallback. The production value is declared explicitly
+in `app/.env.production` so the ordinary CI application build and the deployment shell resolve the
+same database names. Before any `open()`, the inspector calls `indexedDB.databases()` once and
+verifies exact presence and version of the coordinator, CoreDB, and YamlDB databases. Any missing
+database, duplicate catalog entry, or version mismatch rejects without opening any of them. Every
+subsequent transaction is `readonly`; an unexpected upgrade, blocked open, topology mismatch, read
+failure, reflection failure, or digest failure becomes a stable sanitized rejection.
 
 Pre mode requires the exact coordinator v2 single `allowed` record, exact CoreDB v1 topology, and
 exact YamlDB v1 topology. Post mode requires the exact coordinator v2 single
@@ -438,6 +439,12 @@ emit only their count and deterministic SHA-256. The public result contains only
 or rejected status, stable code, exact release version, timestamp, database/protocol versions,
 phase/status, topology status, sanitized counts, and digest. It never contains raw records, YAML,
 participant identity, client URL, database prefix, native error, credential, or endpoint.
+
+The diagnostic document is intentionally not a census responder or activation participant. In pre
+mode, the operator records the result and closes the diagnostic tab before loading or reloading the
+production root. Leaving it open keeps a non-responsive scoped window in the Service Worker client
+census and therefore blocks activation fail-closed. The page never closes itself or navigates to the
+production root.
 
 The strict census contract, build-SHA reader, and responder live in the shared
 `@hierarchidb/origin-coordinator` workspace package. The window, SharedWorker, dedicated runtime

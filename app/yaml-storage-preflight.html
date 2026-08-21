@@ -82,6 +82,11 @@
         This independent page performs one read-only inspection after one explicit click. It does
         not bootstrap the application, start activation, persist state, copy data, or send results.
       </p>
+      <p>
+        In pre mode, record the result and close this diagnostic tab before loading or reloading the
+        production root. An open diagnostic tab is intentionally not a coordinator participant and
+        therefore blocks activation census fail-closed.
+      </p>
       <dl>
         <dt>Mode</dt>
         <dd id="preflight-mode">unresolved</dd>
