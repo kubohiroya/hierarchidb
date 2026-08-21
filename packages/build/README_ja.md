@@ -1,17 +1,22 @@
 # @hierarchidb/build
 
-最終更新: 2026-04-05
+最終更新: 2026-08-21
 
-HierarchiDB のビルドシステム基盤パッケージ。`BuildService`（チャンク並列処理）、`AbstractBuildSession`（セッションライフサイクル）、`BaseBuildSessionManager`（セッション管理）、レーンセマフォ、進捗アダプタ等を提供する。shape-plugin / location-plugin / route-plugin のバッチ処理がこのパッケージに依存する。
+HierarchiDB のビルドシステム基盤パッケージ。`BuildService`（チャンク並列処理）、`AbstractBuildSession`（セッションライフサイクル）、`BaseBuildSessionManager`（セッション管理）、レーンセマフォを提供する。shape-plugin / location-plugin / route-plugin のバッチ処理がこのパッケージに依存する。
 
 ## 主要な機能
 
 - `BuildService` — 非同期イテレータのチャンク並列マッピング
-- `AbstractBuildSession` — ビルドセッションの抽象基底クラス（状態管理、進捗追跡、中断制御）
-- `BaseBuildSessionManager` — セッションの登録・進捗・ステータス変更のフック管理
+- `AbstractBuildSession` — ビルドセッションの抽象基底クラス（状態管理、payloadなしのsession update通知、中断制御）
+- `BaseBuildSessionManager` — セッション登録とsession update hookの管理
 - `LaneSemaphoreRegistry` — メソッド別並列数制御（レーンポリシー）
-- `useBuildProgress` / `useBuildSessionTiming` — React フック（進捗表示・タイミング計算）
-- 進捗アダプタ（`progressEventToUnified`, `createAdapterFromProgressSubscribe`）
+
+canonical Worker→UIイベントは、managerがsession stateとpluginのcanonical event
+sourceを再読込した後、`@hierarchidb/build-runtime-services`が生成する。session層は
+aggregate progress eventを生成・転送しない。
+
+legacy progress adapterのexportは後続Issueで削除するまで互換用としてのみ残し、
+session/managerの通知経路からは使用しない。
 
 ## 依存関係
 

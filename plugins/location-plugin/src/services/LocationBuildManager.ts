@@ -6,7 +6,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { LocationBuildConfig } from '~/common/entities/LocationEntity';
 import type { LocationPointProperties } from '~/common/entities/LocationPoint';
-import type { BuildProgressCallback, BuildSessionStatus } from '@hierarchidb/build-api';
+import type { BuildSessionStatus } from '@hierarchidb/build-api';
 import { CanonicalBuildSessionManager } from '@hierarchidb/build-runtime-services';
 import { LocationBuildSession } from './LocationBuildSession.js';
 
@@ -50,9 +50,5 @@ export class LocationBuildManager extends CanonicalBuildSessionManager {
     }
     this.sessions.delete(nodeId);
     this.cleanupSessionTracking(nodeId);
-  }
-
-  onBuildProgress(nodeId: NodeId, callback: BuildProgressCallback): () => void {
-    return super.onBuildProgress(nodeId, callback);
   }
 }

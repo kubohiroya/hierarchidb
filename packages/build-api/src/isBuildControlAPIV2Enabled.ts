@@ -135,7 +135,6 @@ export interface IBuildSessionManager<TConfig = unknown, TData = unknown> {
   startBuildSession(nodeId: NodeId): Promise<BuildSessionStatus>;
   pauseBuildSession(nodeId: NodeId): Promise<void>;
   getBuildSessionStatus(nodeId: NodeId): Promise<BuildSessionStatus>;
-  onBuildProgress(nodeId: NodeId, callback: BuildProgressCallback): () => void;
 }
 
 export type BuildManagerFactory<TManager extends IBuildSessionManager = IBuildSessionManager> = () => TManager;

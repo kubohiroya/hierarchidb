@@ -3,7 +3,6 @@ import {
   type CanonicalBuildSessionEventSource,
 } from '@hierarchidb/build-runtime-services';
 import type {
-  BuildProgressEvent,
   StageSnapshotUpdatedEvent,
   TaskProgressUpdatedEvent,
   TaskStatus,
@@ -141,8 +140,6 @@ export class RouteBuildSession
       throw new Error('Route build completed with failures');
     }
   }
-
-  protected onBuildProgressEvent(_event: BuildProgressEvent): void {}
 
   getCanonicalStageSnapshot(): StageSnapshotUpdatedEvent['payload'] | null {
     if (!this.activeStage) return null;

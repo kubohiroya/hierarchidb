@@ -193,14 +193,15 @@ References:
 Reference:
 - `packages/ui/build-sessions/src/hooks/useBuildSessionSnapshots.ts`
 
-## 6.2 Unified Progress UI
+## 6.2 Canonical Progress UI
 
-`useBuildProgressState` consumes build state supplied by the canonical session,
-stage-snapshot, and task-progress delivery paths. `subscribeBuildProgress` is not a
-canonical worker method.
+`useBuildSessionStateTreeBridge` consumes `sessionStatusUpdated`,
+`stageSnapshotUpdated`, `taskProgressUpdated`, and `heartbeat` directly. The UI derives
+`BuildSessionStatus` and `BuildTaskCountSummary` from that state tree; it does not create
+an aggregate worker event.
 
 Reference:
-- `packages/ui/build-sessions/src/hooks/useBuildProgressState.ts`
+- `packages/ui/build-sessions/src/hooks/useBuildSessionStateTreeBridge.ts`
 
 ## 6.3 Shape Step Task UI (primary task SSOT path)
 
@@ -476,7 +477,7 @@ Use these files as source of truth when updating this document:
 - `plugins/shape-plugin/src/worker/api/shapeBuildAPI.ts`
 - `packages/ui/worker-client/src/workerBridge.ts`
 - `packages/ui/build-sessions/src/hooks/useBuildSessionSnapshots.ts`
-- `packages/ui/build-sessions/src/hooks/useBuildProgressState.ts`
+- `packages/ui/build-sessions/src/hooks/useBuildSessionStateTreeBridge.ts`
 - `plugins/shape-plugin/src/ui/components/build-progress/internal/useShapeBuildSessionState.ts`
 - `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildSessionStateAtomBridge.ts`
 - `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparisonUtils.ts`

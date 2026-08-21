@@ -1,7 +1,5 @@
 import type { NodeId, Timestamp } from '@hierarchidb/core-types';
 import type {
-  BuildProgressCallback,
-  BuildProgressEvent,
   BuildSessionStatus,
   IBuildSessionManager,
 } from '@hierarchidb/build-api';
@@ -19,9 +17,7 @@ export interface BuildPersistence<TConfig, TData> {
     | UnifiedBuildSession<TConfig, TData>
     | undefined;
   onSessionStarted?(nodeId: NodeId, payload: UnifiedBuildSession<TConfig, TData>): Promise<void> | void;
-  onSessionProgress?(nodeId: NodeId, event: BuildProgressEvent): Promise<void> | void;
   onSessionStatusChange?(nodeId: NodeId, status: BuildSessionStatus): Promise<void> | void;
-  onSessionCompleted?(nodeId: NodeId): Promise<void> | void;
 }
 
 export abstract class UnifiedBuildManagerBase<TConfig, TData> implements IBuildSessionManager<TConfig, TData> {
@@ -58,7 +54,7 @@ export abstract class UnifiedBuildManagerBase<TConfig, TData> implements IBuildS
     }
 
     const status = await this.performStart(nodeId, payload.config, payload.data);
-    if (!status.nodeId) status.nodeId = nodeId;
+    assertMatchingNodeId(status, nodeId, 'performStart');
     if (this.persistence?.onSessionStarted) {
       await this.persistence.onSessionStarted(nodeId, payload);
     }
@@ -72,39 +68,33 @@ export abstract class UnifiedBuildManagerBase<TConfig, TData> implements IBuildS
 
   async getBuildSessionStatus(nodeId: NodeId): Promise<BuildSessionStatus> {
     const status = await this.performStatus(nodeId);
-    if (!status.nodeId) status.nodeId = nodeId;
+    assertMatchingNodeId(status, nodeId, 'performStatus');
     if (this.persistence?.onSessionStatusChange) {
       await this.persistence.onSessionStatusChange(nodeId, status);
     }
     return status;
   }
 
-  onBuildProgress(nodeId: NodeId, callback: BuildProgressCallback): () => void {
-    return this.performSubscribe(nodeId, (event: BuildProgressEvent) => {
-      let nextEvent = event;
-      if (!nextEvent.nodeId) {
-        nextEvent = { ...nextEvent, nodeId };
-      }
-      callback(nextEvent);
-      if (this.persistence?.onSessionProgress) {
-        void this.persistence.onSessionProgress(nodeId, nextEvent);
-      }
-      if (nextEvent.phase === 'completed' || nextEvent.phase === 'failed') {
-        if (this.persistence?.onSessionCompleted) {
-          void this.persistence.onSessionCompleted(nodeId);
-        }
-      }
-    });
-  }
   protected abstract performStart(nodeId: NodeId, config: TConfig, data: TData): Promise<BuildSessionStatus>;
   protected abstract performPause(nodeId: NodeId): Promise<void>;
   protected abstract performStatus(nodeId: NodeId): Promise<BuildSessionStatus>;
-  protected abstract performSubscribe(nodeId: NodeId, callback: BuildProgressCallback): () => void;
 
   private async notifyStatus(nodeId: NodeId): Promise<void> {
     if (!this.persistence?.onSessionStatusChange) return;
     const status = await this.performStatus(nodeId);
-    if (!status.nodeId) status.nodeId = nodeId;
+    assertMatchingNodeId(status, nodeId, 'performStatus');
     await this.persistence.onSessionStatusChange(nodeId, status);
   }
 }
+
+const assertMatchingNodeId = (
+  status: BuildSessionStatus,
+  expectedNodeId: NodeId,
+  source: string
+): void => {
+  if (status.nodeId !== expectedNodeId) {
+    throw new Error(
+      `[UnifiedBuildManagerBase] ${source} returned nodeId=${String(status.nodeId)} for requested nodeId=${String(expectedNodeId)}`
+    );
+  }
+};

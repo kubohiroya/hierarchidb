@@ -14,7 +14,6 @@ export const shapeBuildRuntimePublic = {
   getShapeEntityHandler: shapeBuildRuntimeCore.getShapeEntityHandler,
   onTaskQueueUpdate: shapeBuildRuntimeCore.onTaskQueueUpdate,
   buildTaskSummarySnapshot: shapeBuildRuntimeCore.buildTaskSummarySnapshot,
-  progressCallbacks: shapeBuildRuntimeCore.progressCallbacks,
   taskCallbacks: shapeBuildRuntimeCore.taskCallbacks,
   sessionStateCallbacks: shapeBuildRuntimeCore.sessionStateCallbacks,
   stageSnapshotCallbacks: shapeBuildRuntimeCore.stageSnapshotCallbacks,

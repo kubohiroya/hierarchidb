@@ -1,426 +1,89 @@
-# ビルド処理通知システム
+# ビルドセッション通知
 
-## 概要
+## 目的
 
-Shape Pluginのビルド処理では、Worker層からUI層へリアルタイムで進捗状況、エラー、完了通知を送信する仕組みを提供します。このドキュメントでは、通知システムの詳細な動作を説明します。
+Shape Plugin のビルド状態は、Worker が配信する canonical 4-event contract を通じて UI の SSOT 状態木へ反映する。本書は、build session 内部の更新通知と Worker→UI イベントの責務境界を定義する。
 
-## アーキテクチャ
+正規仕様は次の文書とし、本書は Shape 固有の接続方法だけを補足する。
 
-```
-┌─────────────┐     Comlink RPC      ┌──────────────┐      Events      ┌──────────────┐
-│   UI Layer  │ ◄──────────────────► │ Worker Layer │ ◄──────────────► │ EphemeralDB  │
-│   (React)   │                       │   (Service)  │                  │   (Dexie)    │
-└─────────────┘                       └──────────────┘                  └──────────────┘
-      ▲                                      │
-      │                                      │
-      └──────── Progress Events ─────────────┘
-```
+- `docs/build-session-spec.md`
+- `docs/build-session-worker-ui-event-spec.md`
+- `docs/build-session-worker-ui-event-design.md`
 
-## 通知フロー
+## 責務境界
 
-### 1. セッション開始時の通知登録
-
-```typescript
-// UI層でのコールバック登録
-const orchestrator = new BuildSessionOrchestrator();
-const sessionId = await orchestrator.startBuildSession(
-  nodeId,
-  config,
-  countries,
-  adminLevels,
-  (event: BuildProgressEvent) => {
-    // 進捗イベントを受信
-    console.log(`Progress: ${event.stage} - ${event.progress}%`);
-    updateUIProgress(event);
-  }
-);
+```text
+AbstractBuildSession
+  └─ payload を持たない session update 通知
+       └─ BaseBuildSessionManager
+            └─ CanonicalBuildSessionManager
+                 ├─ sessionStatusUpdated
+                 ├─ stageSnapshotUpdated
+                 ├─ taskProgressUpdated
+                 └─ heartbeat
+                      └─ Shape UI SSOT 状態木
 ```
 
-### 2. 進捗イベントの構造
+`AbstractBuildSession` は `BuildProgressEvent` を生成しない。状態または内部の task count が変化したとき、`addSessionUpdateListener` で登録された listener をpayloadなしで呼び出す。通知を受けた manager は session の `getState()` と `CanonicalBuildSessionEventSource` を読み直し、正規イベントを生成する。
 
-```typescript
-interface BuildProgressEvent {
-  sessionId: string;
-  treeNodeId: NodeId;
-  stage: 'download' | 'extract1' | 'extract2' | 'vectorTiles';
-  progress: number;        // 0-100のパーセンテージ
-  completedTasks: number;  // 完了したタスク数
-  totalTasks: number;      // 全タスク数
-  currentTask: string;     // 現在処理中のタスクの説明
-  timestamp: number;       // イベント発生時刻
-  error?: {               // エラー情報（オプション）
-    message: string;
-    code: string;
-    details?: any;
-  };
-}
-```
+session update 通知は transport event ではなく、同一ランタイム内の再読込トリガーである。task count、phase、stage、時刻を通知payloadへ複製してはならない。
 
-## 実装詳細
+## Canonical 4イベント
 
-### Worker層（BuildSessionOrchestrator）
+| チャネル | イベント | 所有する情報 |
+| --- | --- | --- |
+| `session-state` | `sessionStatusUpdated` | lifecycle phase、active状態、session timing、current stage |
+| `stage-snapshot` | `stageSnapshotUpdated` | stage単位のauthoritative task全置換とstage timing |
+| `task-progress` | `taskProgressUpdated` | taskId単位のversion付き進捗 |
+| `heartbeat` | `heartbeat` | active sessionのliveness時刻 |
 
-#### 1. コールバック管理
+task countとpercentageはauthoritative stage snapshot/task stateから導出する。`sessionStatusUpdated`から件数ゼロのaggregate progressを生成しない。
 
-```typescript
-export class BuildSessionOrchestrator {
-  private progressCallbacks: Map<string, (event: BuildProgressEvent) => void> = new Map();
+## Shape Worker API
 
-  async startBuildSession(
-    treeNodeId: NodeId,
-    config: ObsolateBuildConfig,
-    countries: string[],
-    adminLevels: number[],
-    progressCallback?: (event: BuildProgressEvent) => void
-  ): Promise<string> {
-    const sessionId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
-    // コールバックを登録
-    if (progressCallback) {
-      this.progressCallbacks.set(sessionId, progressCallback);
-    }
-    
-    return sessionId;
-  }
-}
-```
+Shape UI は `BuildWorkerBridge.subscribeAll` でcanonical 4チャネルを購読する。Worker診断ログは正規状態とは独立して `subscribeWorkerLog` から購読し、SSOT状態木へreducer入力として渡さない。
 
-#### 2. 進捗イベントの発行
+Shape の `startBuildSession` はprogress callbackを受け取らない。旧`subscribeProgress`とcallback registryも公開・保持しない。テストハーネスがtask状態を確認する場合は、目的に応じて`subscribeStageSnapshots`、`subscribeTaskProgress`、`subscribeSessionState`、`subscribeSessionHeartbeat`を使用する。
 
-```typescript
-private emitProgressEvent(sessionId: string, event: BuildProgressEvent): void {
-  const callback = this.progressCallbacks.get(sessionId);
-  if (callback) {
-    callback(event);
-  }
-}
-```
+Route と Location は現在managerとUI consumerが同じUI realmに存在するため、`unconditionalEventStreamer`のsame-realm transportを使用する。Worker transportへの暗黙fallbackは行わない。
 
-#### 3. 各ステージでの通知
+## 配信規則
 
-**Download Stage (0-25%)**
-```typescript
-async executeDownloadStage(sessionId: string): Promise<BuildStageResult> {
-  // 各タスク完了時
-  for (const task of downloadTasks) {
-    // ... ダウンロード処理 ...
-    
-    const currentProgress = Math.round((processedTasks / downloadTasks.length) * 25);
-    
-    this.emitProgressEvent(sessionId, {
-      sessionId,
-      treeNodeId: status.nodeId,
-      stage: 'download',
-      progress: currentProgress,
-      completedTasks: processedTasks,
-      totalTasks: downloadTasks.length,
-      currentTask: `Downloaded ${task.country}_L${task.adminLevel}`,
-      timestamp: Date.now(),
-    });
-  }
-  
-  // ステージ完了時
-  this.emitProgressEvent(sessionId, {
-    sessionId,
-    treeNodeId: status.nodeId,
-    stage: 'download',
-    progress: 25,
-    completedTasks: processedTasks,
-    totalTasks: downloadTasks.length,
-    currentTask: `Download completed: ${totalFeatures} features`,
-    timestamp: Date.now(),
-  });
-}
-```
+- manager/orchestratorはsession実行前にsessionを登録する。
+- session updateごとにcanonical sourceを読み、session state、未配信task progress、authoritative stage snapshotを配信する。
+- byte-equivalentなsession statusとstage snapshotはmanagerが抑制してよい。
+- task progressのversionはtaskId単位で単調増加させる。global event versionを作らない。
+- heartbeatはactive sessionだけで配信し、phaseやtask情報を含めない。
+- session終了時はlistener、heartbeat timer、managerのsnapshot fingerprintを解放する。
 
-**Extract1 Stage (25-50%)**
-```typescript
-async executeExtract1Stage(sessionId: string): Promise<BuildStageResult> {
-  const progressOffset = 25;
-  const progressRange = 25;
-  
-  for (const task of extractTasks) {
-    // ... 簡略化処理 ...
-    
-    const currentProgress = progressOffset + 
-      Math.round((processedTasks / extractTasks.length) * progressRange);
-    
-    this.emitProgressEvent(sessionId, {
-      sessionId,
-      treeNodeId: status.nodeId,
-      stage: 'extract1',
-      progress: currentProgress,
-      completedTasks: processedTasks,
-      totalTasks: extractTasks.length,
-      currentTask: `Extracted features for ${task.country}_L${task.adminLevel}`,
-      timestamp: Date.now(),
-    });
-  }
-}
-```
+## 契約違反
 
-**Extract2 Stage (50-75%)**
-```typescript
-async executeExtract2Stage(sessionId: string): Promise<BuildStageResult> {
-  const progressOffset = 50;
-  const progressRange = 25;
-  
-  // タイル準備処理と通知...
-}
-```
+以下は即時に失敗させる。
 
-**VectorTiles Stage (75-100%)**
-```typescript
-async executeVectorTilesStage(sessionId: string): Promise<BuildStageResult> {
-  const progressOffset = 75;
-  const progressRange = 25;
-  
-  // タイル生成処理...
-  
-  // 完了通知
-  this.emitProgressEvent(sessionId, {
-    sessionId,
-    treeNodeId: status.nodeId,
-    stage: 'vectorTiles',
-    progress: 100,
-    completedTasks: processedTasks,
-    totalTasks: vectorTileTasks.length,
-    currentTask: `Vector tile generation completed: ${generatedTiles} tiles`,
-    timestamp: Date.now(),
-  });
-}
-```
+- progressがfiniteな`0..100`でない。
+- task countが非整数、負数、またはterminal countがtotalを超える。
+- started stageのtimingが欠落・非finite・負数である。
+- lifecycle phaseと`isActive`が一致しない。
+- requested nodeIdとsession/statusのnodeIdが一致しない。
 
-## エラーハンドリング
+clamp、丸め、現在時刻、ゼロ、旧event aliasによる補完は禁止する。回復が必要なlegacy永続行は、正規仕様に定めた明示確認付きrecovery commandだけを使用する。
 
-### エラー発生時の通知
+## UI状態
 
-```typescript
-catch (error) {
-  console.error(`Download task failed:`, error);
-  failedTasks++;
-  
-  // エラーイベントを発行
-  this.emitProgressEvent(sessionId, {
-    sessionId,
-    treeNodeId: status.nodeId,
-    stage: 'download',
-    progress: status.progress,
-    completedTasks: processedTasks,
-    totalTasks: downloadTasks.length,
-    currentTask: `Error: ${error.message}`,
-    timestamp: Date.now(),
-    error: {
-      message: error.message,
-      code: 'DOWNLOAD_FAILED',
-      details: {
-        country: task.country,
-        adminLevel: task.adminLevel,
-        url: downloadConfig.url
-      }
-    }
-  });
-}
-```
+UIはReact state、ref、module-scope変数にbuild session状態を複製しない。ShapeのJotai状態木を唯一の真実の源とし、初回authoritative stage snapshotが届くまでは`ui-initializing`として扱う。明示的な空snapshotだけが「開始済みstageにtaskが0件」を表す。
 
-## UI層での実装例
+## 一時停止・再開
 
-### React Componentでの使用
+pauseはpipeline Promiseのsettleを確認してから`paused`を永続化する。停止確認前にrunning taskをqueuedへ戻さない。timeoutはtyped errorと`failed`で可視化し、`paused`や再開可能状態へ読み替えない。
 
-```typescript
-import { useState, useEffect } from 'react';
-import { BuildSessionOrchestrator } from '@hierarchidb/plugin-loader-shape-plugin';
+Start（UI上の旧Resumeラベルを含む）は`startBuildSession`の単一入口を使用する。canonical event購読はcommand APIではなく、状態観測だけを担当する。
 
-export function BuildProcessingPanel({ nodeId }: { nodeId: NodeId }) {
-  const [progress, setProgress] = useState(0);
-  const [stage, setStage] = useState<string>('');
-  const [currentTask, setCurrentTask] = useState('');
-  const [errors, setErrors] = useState<string[]>([]);
-  
-  const startBuildSession = async () => {
-    const orchestrator = new BuildSessionOrchestrator();
-    
-    const sessionId = await orchestrator.startBuildSession(
-      nodeId,
-      config,
-      downloadTaskPayloads,
-      (event) => {
-        // 進捗状態を更新
-        setProgress(event.progress);
-        setStage(event.stage);
-        setCurrentTask(event.currentTask);
-        
-        // エラーを記録
-        if (event.error) {
-          setErrors(prev => [...prev, event.error.message]);
-        }
-        
-        // 完了時の処理
-        if (event.progress === 100) {
-          handleCompletion();
-        }
-      }
-    );
-    
-    // ビルド処理を実行
-    await orchestrator.executeFullPipeline(sessionId);
-  };
-  
-  return (
-    <div>
-      <h3>ビルド処理進捗</h3>
-      <div>ステージ: {stage}</div>
-      <div>進捗: {progress}%</div>
-      <ProgressBar value={progress} max={100} />
-      <div>現在のタスク: {currentTask}</div>
-      {errors.length > 0 && (
-        <div className="errors">
-          <h4>エラー:</h4>
-          {errors.map((error, i) => (
-            <div key={i} className="error">{error}</div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-```
+## 禁止される旧経路
 
-### Material-UIを使用した進捗表示
+- `BuildProgressEvent` callbackをsession開始引数へ渡すこと。
+- `subscribeProgress`でaggregate progressを購読すること。
+- `progressCallbacks` registryを保持すること。
+- aggregate eventからcanonical task eventを推測すること。
+- `download / extract1 / extract2 / vectorTiles`をcanonical stage IDとして使用すること。
 
-Note: `useShapeAPI` has been removed. Use `getBuildWorkerBridge()` with `getShapeQueryAPI` / `getShapeMutationAPI` and build-control APIs instead. The snippet below reflects legacy usage.
-
-```typescript
-import { Box, LinearProgress, Typography, Alert } from '@mui/material';
-import { useShapeAPI } from '../hooks/useShapeAPI';
-
-export function ShapeProcessingStatus({ nodeId }: { nodeId: NodeId }) {
-  const { startBuildSession, progress, stage, errors } = useShapeAPI(nodeId);
-  
-  const getStageLabel = (stage: string) => {
-    const labels = {
-      'download': 'データダウンロード中...',
-      'extract1': '初期簡略化処理中...',
-      'extract2': 'タイル準備中...',
-      'vectorTiles': 'ベクタータイル生成中...'
-    };
-    return labels[stage] || '準備中...';
-  };
-  
-  const getStageColor = (progress: number) => {
-    if (progress < 25) return 'primary';
-    if (progress < 50) return 'secondary';
-    if (progress < 75) return 'info';
-    if (progress < 100) return 'warning';
-    return 'success';
-  };
-  
-  return (
-    <Box sx={{ width: '100%', p: 2 }}>
-      <Typography variant="h6">
-        {getStageLabel(stage)}
-      </Typography>
-      
-      <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
-        <Box sx={{ width: '100%', mr: 1 }}>
-          <LinearProgress 
-            variant="determinate" 
-            value={progress} 
-            color={getStageColor(progress)}
-          />
-        </Box>
-        <Box sx={{ minWidth: 35 }}>
-          <Typography variant="body2" color="text.secondary">
-            {`${Math.round(progress)}%`}
-          </Typography>
-        </Box>
-      </Box>
-      
-      {errors.map((error, index) => (
-        <Alert key={index} severity="error" sx={{ mt: 1 }}>
-          {error}
-        </Alert>
-      ))}
-    </Box>
-  );
-}
-```
-
-## セッション管理
-
-### セッションの一時停止
-
-```typescript
-// UI層での一時停止処理
-const handlePause = async () => {
-  await orchestrator.pauseSession(sessionId);
-  
-  // 一時停止通知が自動的に発行される
-  // コールバックで status === 'paused' をチェック
-};
-```
-
-### セッション状態の取得
-
-```typescript
-// 現在の状態を同期的に取得
-const status = orchestrator.getSessionStatus(sessionId);
-console.log(`Progress: ${status.progress}%`);
-console.log(`Stage: ${status.stage}`);
-console.log(`Completed: ${status.isCompleted}`);
-```
-
-## パフォーマンス考慮事項
-
-### 1. 通知の頻度調整
-
-大量のタスクを処理する場合、通知頻度を調整してUIの負荷を軽減：
-
-```typescript
-// 10タスクごとに通知
-if (processedTasks % 10 === 0 || processedTasks === totalTasks) {
-  this.emitProgressEvent(sessionId, event);
-}
-```
-
-### 2. ビルド
-
-複数の小さな更新をビルド処理：
-
-```typescript
-const pendingEvents: BuildProgressEvent[] = [];
-const flushInterval = setInterval(() => {
-  if (pendingEvents.length > 0) {
-    callback(pendingEvents[pendingEvents.length - 1]);
-    pendingEvents.length = 0;
-  }
-}, 100); // 100ms間隔で更新
-```
-
-## デバッグとロギング
-
-### イベントログの有効化
-
-```typescript
-// 開発環境でのデバッグ用
-if (process.env.NODE_ENV === 'development') {
-  this.emitProgressEvent = new Proxy(this.emitProgressEvent, {
-    apply: (target, thisArg, args) => {
-      console.log('Progress Event:', args[1]);
-      return target.apply(thisArg, args);
-    }
-  });
-}
-```
-
-## まとめ
-
-Shape Pluginのビルド処理通知システムは以下の特徴を持ちます：
-
-1. **リアルタイム通知**: Worker層からUI層へ即座に進捗を通知
-2. **4段階の進捗管理**: Download → Extract1 → Extract2 → VectorTiles
-3. **エラーハンドリング**: エラー情報を含む詳細な通知
-4. **柔軟なコールバック**: UI層で自由にカスタマイズ可能
-5. **セッション管理**: 複数の処理を並行して管理可能
-
-この通知システムにより、ユーザーは長時間かかるビルド処理の進捗を視覚的に確認でき、エラー発生時も適切に対処できます。
+canonical stage IDは`source / geometry / tileEmit`である。

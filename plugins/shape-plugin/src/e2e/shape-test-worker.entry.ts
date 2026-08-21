@@ -2,11 +2,10 @@
 // Runs in the same process for simplicity; fake-indexeddb provides IndexedDB in Node.
 import 'fake-indexeddb/auto';
 import type {
-  BuildProgressEvent,
-  BuildProgressPayload,
   BuildTaskSummary,
   BuildTaskUpdateEvent,
   BuildContinuationPolicy,
+  StageSnapshotUpdatedEvent,
 } from '@hierarchidb/build-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
@@ -87,9 +86,9 @@ type ShapeBuildTestAPI = {
     downloadTaskPayloads: SourceTaskPayload[];
     buildContinuationPolicy?: BuildContinuationPolicy;
   }): Promise<NodeId>;
-  subscribeProgress(
+  subscribeStageSnapshots(
     nodeId: NodeId,
-    callback: (event: BuildProgressEvent<BuildProgressPayload>) => void
+    callback: (event: StageSnapshotUpdatedEvent) => void
   ): () => void;
   subscribeTasks(
     nodeId: NodeId,
@@ -269,7 +268,9 @@ async function main(endpoint?: Endpoint): Promise<void> {
     if (!paused && state.waiters.length > 0) {
       const waiters = state.waiters.slice();
       state.waiters.length = 0;
-      waiters.forEach((resume) => resume());
+      waiters.forEach((resume) => {
+        resume();
+      });
     }
   };
 
@@ -477,7 +478,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
       payload.downloadTaskPayloads,
       payload.buildContinuationPolicy,
     ),
-    subscribeProgress: (nodeId, callback) => proxy(shapeBuildAPI.subscribeProgress(nodeId, callback)),
+    subscribeStageSnapshots: (nodeId, callback) => proxy(shapeBuildAPI.subscribeStageSnapshots(nodeId, callback)),
     subscribeTasks: (nodeId, callback) => proxy(shapeBuildAPI.subscribeTasks(nodeId, callback)),
     getBuildTasks: async (nodeId) => shapeBuildAPI.getBuildTasks(nodeId),
   };

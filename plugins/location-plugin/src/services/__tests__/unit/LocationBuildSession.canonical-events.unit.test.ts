@@ -82,8 +82,11 @@ describe('LocationBuildSession canonical events', () => {
     expect(sessionEvents.map((event) => event.payload.phase)).toEqual([
       'idle',
       'running',
+      'running',
       'completed',
     ]);
+    expect(sessionEvents[1]?.payload.stageId).toBeUndefined();
+    expect(sessionEvents[2]?.payload.stageId).toBe('source');
     expect(events.some((event) => event.type === 'heartbeat')).toBe(true);
 
     const progressEvents = events.filter((event) => event.type === 'taskProgressUpdated');

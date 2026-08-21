@@ -1,7 +1,7 @@
 /**
  * Worker-side state management unit tests
  *
- * Covers: PauseState lifecycle, active pipeline ownership, resolveProgressPhase branches
+ * Covers: PauseState lifecycle, active pipeline ownership, resolveBuildStatus branches
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
@@ -13,7 +13,7 @@ import {
   invalidateActivePipeline,
   isActivePipelineRunCurrent,
   registerActivePipeline,
-  resolveProgressPhase,
+  resolveBuildStatus,
   setPaused,
   waitIfPaused,
 } from '../../api/stateManagement';
@@ -195,17 +195,17 @@ describe('active pipeline management', () => {
 });
 
 // ---------------------------------------------------------------------------
-// resolveProgressPhase
+// resolveBuildStatus
 // ---------------------------------------------------------------------------
 
-describe('resolveProgressPhase', () => {
+describe('resolveBuildStatus', () => {
   it('returns "paused" when node is paused regardless of tasks', async () => {
     const id = nodeId('node-progress-paused');
     await setPaused(id, true);
 
-    // resolveProgressPhase uses summarizeTaskQueueStatus internally;
+    // resolveBuildStatus uses summarizeTaskQueueStatus internally;
     // with paused=true it short-circuits before task analysis
-    const phase = resolveProgressPhase(id, []);
+    const phase = resolveBuildStatus(id, []);
     expect(phase).toBe('paused');
 
     await setPaused(id, false);
@@ -214,7 +214,7 @@ describe('resolveProgressPhase', () => {
   it('returns "queued" when not paused and tasks list is empty', () => {
     const id = nodeId('node-progress-queued');
 
-    const phase = resolveProgressPhase(id, []);
+    const phase = resolveBuildStatus(id, []);
     expect(phase).toBe('queued');
   });
 });

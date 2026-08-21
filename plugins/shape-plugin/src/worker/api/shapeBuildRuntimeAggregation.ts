@@ -8,8 +8,7 @@ import { selectLatestTaskByProgress, resolveTaskProcessingTimestamp } from '../t
 export const shapeBuildRuntimeAggregation = {
   countTaskQueueStatuses: shapeBuildRuntimeCore.countTaskQueueStatuses,
   resolveSessionExpiresAt: shapeBuildRuntimeCore.resolveSessionExpiresAt,
-  resolveProgressPhase: shapeBuildRuntimeCore.resolveProgressPhase,
-  buildProgressPayloadFromTasks: shapeBuildRuntimeCore.buildProgressPayloadFromTasks,
+  resolveBuildStatus: shapeBuildRuntimeCore.resolveBuildStatus,
   selectLatestTaskByProgress,
   resolveTaskProcessingTimestamp,
 } as const;

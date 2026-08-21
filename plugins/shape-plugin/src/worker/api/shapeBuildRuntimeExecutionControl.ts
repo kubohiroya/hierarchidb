@@ -23,7 +23,6 @@ import {
   requireDataSourceName,
   validateBuildConfig,
 } from '~/common/types/index';
-import type { BuildProgressEvent } from '@hierarchidb/build-api';
 
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import { cacheValidator } from '~/services/CacheValidator';
@@ -83,7 +82,6 @@ import {
   deleteTasksByNode,
   listTasks,
   listTasksByStatus,
-  onTaskQueueUpdate,
   updateTask,
 } from '@hierarchidb/vt-orchestrator';
 import type { BuildSessionConfig } from '@hierarchidb/shape-store';
@@ -104,9 +102,6 @@ const {
   countTaskQueueStatuses,
   setPaused,
   waitIfPaused,
-  resolveProgressPhase,
-  buildProgressPayloadFromTasks,
-  progressCallbacks,
   getShapeEntityHandler,
   registerActivePipeline,
   clearActivePipeline,
@@ -545,7 +540,6 @@ const startBuildSessionInternal = async (
   processingConfig: ShapeProcessingConfig | undefined,
   downloadTaskPayloads: SourceTaskPayload[],
   buildContinuationPolicy?: BuildContinuationPolicy,
-  progressCallback?: (event: BuildProgressEvent) => void,
 ): Promise<NodeId> => {
   const activePipelineBeforeStartup = getActivePipeline(draftId);
   if (
@@ -1202,36 +1196,6 @@ const startBuildSessionInternal = async (
         });
       }
     );
-  }
-
-  if (progressCallback) {
-    const existing = progressCallbacks.get(String(nodeForSession));
-    existing?.unsubscribe?.();
-    const taskQueue = new VtTaskQueueDb();
-    const unsubscribe = onTaskQueueUpdate(nodeForSession, (event) => {
-      if (event.type === 'delete') {
-        return;
-      }
-      void (async () => {
-        try {
-          const vtTasks = await listTasks(taskQueue, event.nodeId);
-          progressCallback({
-            nodeId: event.nodeId,
-            stage: event.task.stage,
-            phase: resolveProgressPhase(event.nodeId, vtTasks),
-            timestamp: Date.now(),
-            message: event.task.errorMessage,
-            payload: await buildProgressPayloadFromTasks(event.nodeId, vtTasks, {
-              eventTask: event.task,
-              source: 'event',
-            }),
-          });
-        } catch (error) {
-          console.error('[shapeBuildAPI] progress payload build failed', error);
-        }
-      })();
-    });
-    progressCallbacks.set(String(nodeForSession), { unsubscribe, callback: progressCallback });
   }
 
   return nodeForSession;
