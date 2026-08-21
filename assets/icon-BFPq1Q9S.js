@@ -1,0 +1,1 @@
+import"./vendor-react-vKfaDDdF.js";import{en as e}from"./index.js";const t=e;var n=t;export{t as FolderPluginIcon,n as default};

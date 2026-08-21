@@ -1,1 +1,0 @@
-import"./vendor-react-MkMV_rSf.js";import{Xt as e}from"./index.js";const t=e;var n=t;export{t as ShapePluginIcon,n as default};

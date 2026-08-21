@@ -1,0 +1,1 @@
+import{i as e,t}from"./properties-db-CdaQ6S4u.js";export{t as getColumnWidths,e as saveColumnWidths};

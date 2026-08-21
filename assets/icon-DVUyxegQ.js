@@ -1,0 +1,1 @@
+import"./vendor-react-vKfaDDdF.js";import{Vt as e}from"./index.js";const t=e;var n=t;export{t as StylerPluginIcon,n as default};
