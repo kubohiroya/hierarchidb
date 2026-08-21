@@ -1,3 +1,4 @@
+import type { SessionPhase } from '@hierarchidb/build-api';
 import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { Provider } from 'jotai';
@@ -109,10 +110,7 @@ vi.mock('@hierarchidb/vt-orchestrator', () => {
   };
 });
 
-import {
-  dispatchBuildSessionEventAtom,
-  type ShapeSessionPhase,
-} from '../../../atoms/buildSessionStateAtoms';
+import { dispatchBuildSessionEventAtom } from '../../../atoms/buildSessionStateAtoms';
 import { useShapeBuildCacheActions } from '../../../hooks/useShapeBuildCacheActions';
 
 const wrapper = ({ children }: { children: ReactNode }) => <Provider>{children}</Provider>;
@@ -123,7 +121,7 @@ const createWrapper =
 
 const emitLifecycle = (
   store: ReturnType<typeof createStore>,
-  phase: ShapeSessionPhase,
+  phase: SessionPhase,
   options: {
     nodeId?: string;
     stopReason?: ShapeBuildStopReason;
@@ -133,7 +131,6 @@ const emitLifecycle = (
 ) => {
   const isActive =
     phase === 'starting' ||
-    phase === 'queued' ||
     phase === 'running' ||
     phase === 'pausing' ||
     phase === 'resuming' ||
@@ -277,7 +274,7 @@ describe('useShapeBuildCacheActions', () => {
     expect(mocks.countSourceCaches).toHaveBeenCalledTimes(1);
 
     await act(async () => {
-      emitLifecycle(store, 'queued', { startedAt: 1_000 });
+      emitLifecycle(store, 'starting');
       await Promise.resolve();
     });
     await act(async () => {
