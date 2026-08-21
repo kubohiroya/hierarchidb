@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useBuildStageFilter } from '@hierarchidb/ui-build-progress';
 import { useAtomValue, useSetAtom } from 'jotai';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
-import { type TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
+import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 import { sortGeometryTasks, sortVectorTileTasks } from '~/ui/components/build-progress/taskItemCardList/useTaskItemCardList';
 import { taskScrollTargetAtom, taskViewportRangeByStageAtom } from '~/ui/atoms/shapeBuildProgressAtomConstants';
 import { isTaskSkipped } from '~/common/utils/taskMessageUtils';
@@ -14,6 +14,7 @@ import {
   normalizeUiStageId,
   resolveStageAliasArray,
 } from '~/ui/components/build-progress/stageIdAliases';
+import { isTaskVisibleForProgressFilter } from '../isTaskVisibleForProgressFilter.js';
 
 type BuildSessionStageCardStateArgs = {
   stage: {
@@ -152,10 +153,11 @@ export const useBuildSessionStageCardState = ({
 
   const filteredTasks = useMemo(() => stageTasksForDisplay.filter((task) => {
     if (!matchesSearchQuery(task)) return false;
-    if (isTaskSkipped(task.display, resolveTaskMetadataMessage(task.metadata))) return filter.skippedMode;
-    if (task.status === 'failed') return filter.failedMode;
-    if (task.status === 'completed' || task.status === 'recycled') return filter.completedMode;
-    return true;
+    return isTaskVisibleForProgressFilter({
+      statusValue: task.status.toLowerCase(),
+      isSkipped: isTaskSkipped(task.display, resolveTaskMetadataMessage(task.metadata)),
+      filter,
+    });
   }), [filter, matchesSearchQuery, stageTasksForDisplay]);
 
   const orderedTasks = useMemo(() => {

@@ -1,13 +1,20 @@
 import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
-import { isTaskSkipped } from '~/common/utils/taskMessageUtils';
-import { resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
-import { sortGeometryTasks, sortVectorTileTasks } from '~/ui/components/build-progress/taskItemCardList/useTaskItemCardList';
-import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
+import { isTaskSkipped, resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
 import {
   isGeometryLikeStageId,
   isTileEmitLikeStageId,
   normalizeUiStageId,
 } from '~/ui/components/build-progress/stageIdAliases';
+import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
+import {
+  sortGeometryTasks,
+  sortVectorTileTasks,
+} from '~/ui/components/build-progress/taskItemCardList/useTaskItemCardList';
+import {
+  isTaskProgressFilterActive,
+  isTaskVisibleForProgressFilter,
+  type TaskProgressVisibilityFilter,
+} from '../isTaskVisibleForProgressFilter.js';
 
 export type ViewportRange = {
   stageId: string;
@@ -37,11 +44,7 @@ export type TaskProgressComputeInput = {
   runningColor: string;
   pausedColor: string;
   skippedColor: string;
-  filter: {
-    skippedMode: boolean;
-    failedMode: boolean;
-    completedMode: boolean;
-  };
+  filter: TaskProgressVisibilityFilter;
 };
 
 const resolveStatusColor = (params: {
@@ -76,16 +79,13 @@ const resolveStatusColor = (params: {
 export const resolveViewportIndices = (
   viewportRange: ViewportRange | null | undefined,
   tasksByStage: Record<string, TaskItemWithMetadata[]>,
+  filter: TaskProgressVisibilityFilter
 ) => {
   let viewportStartIndex: number | null = null;
   let viewportEndIndex: number | null = null;
   if (viewportRange?.stageId && viewportRange.startTaskId && viewportRange.endTaskId) {
     const stageTasks = resolveTasksByStageId(tasksByStage, viewportRange.stageId);
-    const ordered = isTileEmitLikeStageId(viewportRange.stageId)
-      ? sortVectorTileTasks(stageTasks)
-      : isGeometryLikeStageId(viewportRange.stageId)
-        ? sortGeometryTasks(stageTasks)
-        : stageTasks;
+    const ordered = resolveVisibleOrderedTasks(viewportRange.stageId, stageTasks, filter);
     const start = ordered.findIndex((task) => task.taskId === viewportRange.startTaskId);
     const end = ordered.findIndex((task) => task.taskId === viewportRange.endTaskId);
     if (start >= 0 && end >= 0) {
@@ -96,7 +96,11 @@ export const resolveViewportIndices = (
   return { viewportStartIndex, viewportEndIndex };
 };
 
-const resolveSourceStageId = (stage: BuildStage, stages: BuildStage[], tasksByStage: Record<string, TaskItemWithMetadata[]>) => {
+const resolveSourceStageId = (
+  stage: BuildStage,
+  stages: BuildStage[],
+  tasksByStage: Record<string, TaskItemWithMetadata[]>
+) => {
   const isGeometryStage = isGeometryLikeStageId(stage.id);
   const isSingleGeometryFlow = stages.length === 1;
   const hasSingleGeometrySource = resolveTasksByStageId(tasksByStage, 'source').length > 0;
@@ -111,7 +115,7 @@ const resolveSourceStageId = (stage: BuildStage, stages: BuildStage[], tasksBySt
 
 const resolveTasksByStageId = (
   tasksByStage: Record<string, TaskItemWithMetadata[]>,
-  stageId: string,
+  stageId: string
 ): TaskItemWithMetadata[] => {
   const direct = tasksByStage[stageId];
   if (direct) return direct;
@@ -119,37 +123,28 @@ const resolveTasksByStageId = (
   if (!canonical) return [];
   const canonicalTasks = tasksByStage[canonical];
   if (canonicalTasks) return canonicalTasks;
-  const aliasEntry = Object.entries(tasksByStage).find(([key]) => normalizeUiStageId(key) === canonical);
+  const aliasEntry = Object.entries(tasksByStage).find(
+    ([key]) => normalizeUiStageId(key) === canonical
+  );
   return aliasEntry?.[1] ?? [];
 };
 
-const shouldIncludeTask = (params: {
-  statusValue: string;
-  isSkipped: boolean;
-  filter: {
-    skippedMode: boolean;
-    failedMode: boolean;
-    completedMode: boolean;
-  };
-}) => {
-  const { statusValue, isSkipped, filter } = params;
+const resolveVisibleOrderedTasks = (
+  stageId: string,
+  stageTasks: TaskItemWithMetadata[],
+  filter: TaskProgressVisibilityFilter
+): TaskItemWithMetadata[] => {
+  const orderedTasks = isTileEmitLikeStageId(stageId)
+    ? sortVectorTileTasks(stageTasks)
+    : isGeometryLikeStageId(stageId)
+      ? sortGeometryTasks(stageTasks)
+      : stageTasks;
 
-  // Queued, Running, and Paused tasks are always visible (no filter UI for these)
-  if (statusValue === 'queued' || statusValue === 'running' || statusValue === 'paused') {
-    return true;
-  }
-
-  // If all filters are off, include all tasks
-  if (!filter.skippedMode && !filter.failedMode && !filter.completedMode) {
-    return true;
-  }
-
-  // OR logic: include if any active filter matches
-  if (filter.skippedMode && isSkipped) return true;
-  if (filter.failedMode && statusValue === 'failed') return true;
-  if (filter.completedMode && (statusValue === 'completed' || statusValue === 'recycled')) return true;
-
-  return false;
+  return orderedTasks.filter((task) => {
+    const statusValue = task.status.toLowerCase();
+    const isSkipped = isTaskSkipped(task.display, resolveTaskMetadataMessage(task.metadata));
+    return isTaskVisibleForProgressFilter({ statusValue, isSkipped, filter });
+  });
 };
 
 export const buildTaskProgressSegments = (params: TaskProgressComputeInput) => {
@@ -182,17 +177,16 @@ export const buildTaskProgressSegments = (params: TaskProgressComputeInput) => {
       : isGeometryLikeStageId(sourceStageId)
         ? sortGeometryTasks(stageTasks)
         : stageTasks;
-    const expectedStageTotal = Math.max(orderedTasks.length, plannedStageTotal);
+    const visibleOrderedTasks = resolveVisibleOrderedTasks(sourceStageId, stageTasks, filter);
+    const hasActiveFilter = isTaskProgressFilterActive(filter);
+    const expectedStageTotal = hasActiveFilter
+      ? visibleOrderedTasks.length
+      : Math.max(orderedTasks.length, plannedStageTotal);
     nextStageCounts.set(stage.id, expectedStageTotal);
 
-    orderedTasks.forEach((task) => {
-      const statusValue = (task.status ?? '').toString().toLowerCase();
+    visibleOrderedTasks.forEach((task) => {
+      const statusValue = task.status.toLowerCase();
       const isSkipped = isTaskSkipped(task.display, resolveTaskMetadataMessage(task.metadata));
-
-      // Check if task should be included based on filter
-      if (!shouldIncludeTask({ statusValue, isSkipped, filter })) {
-        return;
-      }
 
       const fill = resolveStatusColor({
         taskStatus: statusValue,
@@ -216,7 +210,7 @@ export const buildTaskProgressSegments = (params: TaskProgressComputeInput) => {
       totalCount += 1;
     });
 
-    const waitingCount = expectedStageTotal - orderedTasks.length;
+    const waitingCount = hasActiveFilter ? 0 : expectedStageTotal - orderedTasks.length;
     if (waitingCount > 0) {
       nextSegments.push({
         fill: waitingColor,
@@ -230,7 +224,10 @@ export const buildTaskProgressSegments = (params: TaskProgressComputeInput) => {
     }
   });
 
-  const viewWidth = Math.max(1, nextSegments.reduce((total, segment) => total + segment.width, 0));
+  const viewWidth = Math.max(
+    1,
+    nextSegments.reduce((total, segment) => total + segment.width, 0)
+  );
 
   return {
     segments: nextSegments,

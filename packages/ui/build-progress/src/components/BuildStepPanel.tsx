@@ -30,10 +30,17 @@ export type BuildControlMenuItem = {
   disabled?: boolean;
 };
 
+const DEFAULT_STAGE_FILTER: BuildStageFilter = {
+  failedMode: true,
+  completedMode: true,
+  skippedMode: true,
+};
+
 export type BuildStepPanelProps = {
   status: BuildStatus;
   overallProgress?: number;
   stages: BuildStage[];
+  defaultStageFilter?: BuildStageFilter;
   stageProgress?: Record<string, number>;
   paneProgress?: PaneProgress[];
   stageConcurrencyIndicators?: Record<string, { maxConcurrent: number; isRunning: boolean }>;
@@ -48,7 +55,7 @@ export type BuildStepPanelProps = {
   stageContents?: Record<string, ReactNode>;
   stageProgressContent?: Record<string, ReactNode>;
   stageLoadingState?: Record<string, boolean>;
-  tasksByStageForDisplay?: Record<string, any[]>;
+  tasksByStageForDisplay?: Record<string, unknown[]>;
   chipPlacement?: 'top' | 'bottom';
   onPause?: () => void;
   onResume?: () => void;
@@ -83,6 +90,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   status,
   overallProgress,
   stages,
+  defaultStageFilter = DEFAULT_STAGE_FILTER,
   stageProgress = {},
   paneProgress,
   stageConcurrencyIndicators,
@@ -134,21 +142,19 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   const [controlMenuAnchorEl, setControlMenuAnchorEl] = useState<HTMLElement | null>(null);
 
   const resolveStageFilter = useCallback((stageId: string): BuildStageFilter => (
-    stageFilters[stageId] ?? { failedMode: true, completedMode: true, skippedMode: true }
-  ), [stageFilters]);
+    stageFilters[stageId] ?? defaultStageFilter
+  ), [defaultStageFilter, stageFilters]);
 
   const updateStageFilter = useCallback((stageId: string, patch: Partial<BuildStageFilter>) => {
     setStageFilters((prev) => ({
       ...prev,
       [stageId]: {
-        failedMode: true,
-        completedMode: true,
-        skippedMode: true,
+        ...defaultStageFilter,
         ...prev[stageId],
         ...patch,
       },
     }));
-  }, []);
+  }, [defaultStageFilter]);
 
   const resolveStageProgress = useCallback((stageId: string): number =>
     Math.min(100, Math.max(0, stageProgress[stageId] ?? overallProgress ?? 0)), [

@@ -1,12 +1,16 @@
-import { type PointerEvent, useId, useMemo } from 'react';
-import { useTheme } from '@mui/material/styles';
-import { useAtomValue } from 'jotai';
 import { useBuildStageFilter } from '@hierarchidb/ui-build-progress';
 import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
+import { useTheme } from '@mui/material/styles';
+import { useAtomValue } from 'jotai';
+import { type PointerEvent, useId, useMemo } from 'react';
 import { taskViewportRangeByStageAtom } from '~/ui/atoms/shapeBuildProgressAtomConstants';
-import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 import type { TaskProgressSummary } from '~/ui/atoms/shapeBuildProgressTypes';
-import { buildTaskProgressSegments, resolveViewportIndices, type BuildSessionStageProgressBarSegment } from './useBuildSessionStageProgressBarComputation.js';
+import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
+import {
+  type BuildSessionStageProgressBarSegment,
+  buildTaskProgressSegments,
+  resolveViewportIndices,
+} from './useBuildSessionStageProgressBarComputation.js';
 import { useBuildSessionStageProgressBarInteraction } from './useBuildSessionStageProgressBarInteraction.js';
 
 export type { BuildSessionStageProgressBarSegment } from './useBuildSessionStageProgressBarComputation.js';
@@ -55,7 +59,8 @@ export const useBuildSessionStageProgressBarState = ({
   const viewportRangeByStage = useAtomValue(taskViewportRangeByStageAtom);
   // Use the active stage's viewport range for the progress bar indicator.
   // activeStageId may be null when no stage is active; fall back to null in that case.
-  const viewportRange = (activeStageId != null ? viewportRangeByStage[activeStageId] : undefined) ?? null;
+  const viewportRange =
+    (activeStageId != null ? viewportRangeByStage[activeStageId] : undefined) ?? null;
 
   const waitingColor = theme.palette.grey[300];
   const emptyColor = buildStatus === 'failed' ? theme.palette.error.main : theme.palette.grey[500];
@@ -65,53 +70,60 @@ export const useBuildSessionStageProgressBarState = ({
   const successColor = theme.palette.success.main;
   const pausedColor = theme.palette.warning.main;
 
-  const computeInput = useMemo(() => ({
-    stages,
-    tasksByStage,
-    stageTotals,
-    activeStageId,
-    buildStatus,
-    resolveTaskTitle,
-    waitingColor,
-    successColor,
-    failedColor,
-    runningColor,
-    pausedColor,
-    skippedColor,
-    filter: {
-      skippedMode: filter.skippedMode,
-      failedMode: filter.failedMode,
-      completedMode: filter.completedMode,
-    },
-  }), [
-    activeStageId,
-    buildStatus,
-    filter.completedMode,
-    filter.failedMode,
-    filter.skippedMode,
-    runningColor,
-    pausedColor,
-    resolveTaskTitle,
-    failedColor,
-    stageTotals,
-    stages,
-    skippedColor,
-    successColor,
-    tasksByStage,
-    waitingColor,
-  ]);
+  const computeInput = useMemo(
+    () => ({
+      stages,
+      tasksByStage,
+      stageTotals,
+      activeStageId,
+      buildStatus,
+      resolveTaskTitle,
+      waitingColor,
+      successColor,
+      failedColor,
+      runningColor,
+      pausedColor,
+      skippedColor,
+      filter: {
+        skippedMode: filter.skippedMode,
+        failedMode: filter.failedMode,
+        completedMode: filter.completedMode,
+      },
+    }),
+    [
+      activeStageId,
+      buildStatus,
+      filter.completedMode,
+      filter.failedMode,
+      filter.skippedMode,
+      runningColor,
+      pausedColor,
+      resolveTaskTitle,
+      failedColor,
+      stageTotals,
+      stages,
+      skippedColor,
+      successColor,
+      tasksByStage,
+      waitingColor,
+    ]
+  );
 
-  const {
-    segments,
-    stageOffsets,
-    stageCounts,
-    viewWidth,
-  } = useMemo(() => buildTaskProgressSegments(computeInput), [computeInput]);
+  const { segments, stageOffsets, stageCounts, viewWidth } = useMemo(
+    () => buildTaskProgressSegments(computeInput),
+    [computeInput]
+  );
 
-  const isSelfActiveStage = Boolean(activeStageId && stages.some((stage) => stage.id === activeStageId));
+  const isSelfActiveStage = Boolean(
+    activeStageId && stages.some((stage) => stage.id === activeStageId)
+  );
   const showFlowBand = buildStatus === 'running' && isSelfActiveStage;
 
-  const { viewportStartIndex, viewportEndIndex } = resolveViewportIndices(viewportRange, tasksByStage);
+  const { viewportStartIndex, viewportEndIndex } = resolveViewportIndices(
+    viewportRange,
+    tasksByStage,
+    computeInput.filter
+  );
   const { viewportStartGlobal, viewportEndGlobal } = useMemo(() => {
     if (!viewportRange?.stageId || viewportStartIndex === null || viewportEndIndex === null) {
       return { viewportStartGlobal: null, viewportEndGlobal: null };
