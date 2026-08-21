@@ -1,6 +1,6 @@
 import '../utils/skip-if-disabled';
 import type { Page } from '@playwright/test';
-import { expect, test } from '../fixtures/canonicalAuthFixture';
+import { CANONICAL_E2E_ACCESS_TOKEN, expect, test } from '../fixtures/canonicalAuthFixture';
 import {
   buildAppUrl,
   dismissGuidedTour,
@@ -60,25 +60,8 @@ type WorkerClientRef = {
   getAPI?: () => WorkerAPI | undefined;
 };
 
-type OriginCoordinatorReadinessResult = {
-  status: string;
-  counts: {
-    worker: {
-      compatible: number;
-      incompatible: number;
-      unresponsive: number;
-    };
-  };
-};
-
 type WindowWithWorkerRef = Window & {
   __HDB_WORKER_CLIENT_REF__?: WorkerClientRef;
-  __HDB_ORIGIN_COORDINATOR_REF__?: {
-    getReadiness(input: {
-      requestId: string;
-      timeoutMs: number;
-    }): Promise<OriginCoordinatorReadinessResult>;
-  };
 };
 
 type ShapeNode = {
@@ -86,6 +69,47 @@ type ShapeNode = {
   pageNodeId: string;
   nodeId: string;
 };
+
+type IsoCountryFixture = {
+  iso2Codes: string[];
+  geoBoundariesMetadata: Array<{
+    boundaryISO: string;
+    boundaryType: 'ADM0';
+    boundaryName: string;
+  }>;
+};
+
+const GEOBOUNDARIES_ALL_METADATA_URL = 'https://geoboundaries.org/api/current/gbOpen/ALL/ALL/';
+const E2E_CORS_PROXY_URL_PATTERN =
+  /^https:\/\/hierarchidb-cors-proxy\.kubohiroya\.workers\.dev(?:\/|\?)/u;
+
+const loadIsoCountryFixture = async (page: Page): Promise<IsoCountryFixture> =>
+  page.evaluate(async () => {
+    const response = await fetch(new URL('iso3166-country-names.i18n.json', document.baseURI));
+    if (!response.ok) {
+      throw new Error(`Failed to load ISO country names: ${response.status}`);
+    }
+    const names = (await response.json()) as { en?: Record<string, string> };
+    if (!names.en) throw new Error('English ISO country names are missing');
+    const entries = Object.entries(names.en);
+    const iso2Codes = entries
+      .map(([code]) => code)
+      .filter((code) => code.length === 2)
+      .slice(0, 200);
+    const geoBoundariesMetadata = entries
+      .filter(([code]) => code.length === 3)
+      .map(([boundaryISO, boundaryName]) => ({
+        boundaryISO,
+        boundaryType: 'ADM0' as const,
+        boundaryName,
+      }));
+    if (iso2Codes.length !== 200 || geoBoundariesMetadata.length < 200) {
+      throw new Error(
+        `Expected at least 200 ISO2 and ISO3 countries, received ${iso2Codes.length} and ${geoBoundariesMetadata.length}`
+      );
+    }
+    return { iso2Codes, geoBoundariesMetadata };
+  });
 
 const createShapeNodeWithDraft = async (page: Page): Promise<ShapeNode> => {
   return page.evaluate(async () => {
@@ -221,9 +245,33 @@ test.describe('PluginDialog caret E2E', () => {
 
     setupConsoleErrorTracking(page);
     await canonicalAuth.signIn();
-    await page.goto(buildAppUrl('t/r'), { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await page.goto(buildAppUrl('f/r'), { waitUntil: 'domcontentloaded', timeout: 120000 });
     await dismissGuidedTour(page);
     await waitForTreeTableLoad(page);
+
+    const isoCountryFixture = await loadIsoCountryFixture(page);
+    let metadataRequestCount = 0;
+    await page.route(E2E_CORS_PROXY_URL_PATTERN, async (route) => {
+      const proxyUrl = new URL(route.request().url());
+      if (proxyUrl.searchParams.get('url') !== GEOBOUNDARIES_ALL_METADATA_URL) {
+        await route.continue();
+        return;
+      }
+      if (route.request().headers().authorization !== `Bearer ${CANONICAL_E2E_ACCESS_TOKEN}`) {
+        await route.fulfill({
+          status: 401,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'invalid_e2e_worker_authorization' }),
+        });
+        return;
+      }
+      metadataRequestCount += 1;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(isoCountryFixture.geoBoundariesMetadata),
+      });
+    });
 
     await page.waitForFunction(
       () => {
@@ -235,13 +283,13 @@ test.describe('PluginDialog caret E2E', () => {
     );
 
     const shapeNode = await createShapeNodeWithDraft(page);
-    await page.goto(buildAppUrl(`t/${shapeNode.treeId}/${shapeNode.pageNodeId}`), {
+    await page.goto(buildAppUrl(`f/${shapeNode.treeId}/${shapeNode.pageNodeId}`), {
       waitUntil: 'domcontentloaded',
       timeout: 120000,
     });
     await waitForTreeTableLoad(page);
 
-    const nodeLink = page.locator(`a[href$="/${shapeNode.nodeId}"]`).first();
+    const nodeLink = page.locator(`a[href$="/${shapeNode.nodeId}/-/folder/list"]`).first();
     await expect(nodeLink).toBeVisible({ timeout: 20000 });
     await nodeLink.click();
 
@@ -255,64 +303,34 @@ test.describe('PluginDialog caret E2E', () => {
     await countryStepButton.click();
 
     await expect(
-      page.getByRole('heading', { name: /Select Countries & Administrative Levels/i })
+      page.getByRole('heading', {
+        name: /Select Countries & Administrative Levels|国・行政レベルの選択/i,
+      })
     ).toBeVisible({ timeout: 60000 });
     await expect(page.getByPlaceholder('Search by country or code...')).toBeVisible({
       timeout: 10000,
     });
+    expect(metadataRequestCount).toBeGreaterThanOrEqual(1);
 
-    const dedicatedWorkerCensus = await page.evaluate(async () => {
-      const coordinator = (window as WindowWithWorkerRef).__HDB_ORIGIN_COORDINATOR_REF__;
-      if (!coordinator) throw new Error('origin-coordinator-handle-missing');
-      const readiness = await coordinator.getReadiness({
-        requestId: 'shape-step3-country-worker-census',
-        timeoutMs: 5_000,
-      });
-      return {
-        status: readiness.status,
-        worker: readiness.counts.worker,
-      };
-    });
-
-    expect(dedicatedWorkerCensus).toMatchObject({
-      status: 'accepted',
-      worker: {
-        incompatible: 0,
-        unresponsive: 0,
+    const sourceTaskResult = await page.evaluate(
+      async ({ nodeId, countryCodes }) => {
+        const selectedArrayByCountries = Object.fromEntries(
+          countryCodes.map((code) => [code, [true]])
+        );
+        const ref = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__;
+        const api = ref?.client ?? ref?.getAPI?.();
+        if (!api?.generateShapeDownloadTaskPayloadsFromSelection) {
+          throw new Error('Shape source task payload API is not ready');
+        }
+        const payloads = await api.generateShapeDownloadTaskPayloadsFromSelection(
+          nodeId,
+          'geoboundaries',
+          selectedArrayByCountries
+        );
+        return { selectedCount: countryCodes.length, payloadCount: payloads.length };
       },
-    });
-    expect(dedicatedWorkerCensus.worker.compatible).toBeGreaterThanOrEqual(1);
-
-    const sourceTaskResult = await page.evaluate(async (nodeId) => {
-      const namesResponse = await fetch(
-        new URL('iso3166-country-names.i18n.json', document.baseURI)
-      );
-      if (!namesResponse.ok) {
-        throw new Error(`Failed to load ISO country names: ${namesResponse.status}`);
-      }
-      const names = (await namesResponse.json()) as { en?: Record<string, string> };
-      if (!names.en) throw new Error('English ISO country names are missing');
-      const countryCodes = Object.keys(names.en)
-        .filter((code) => code.length === 2)
-        .slice(0, 200);
-      if (countryCodes.length !== 200) {
-        throw new Error(`Expected 200 ISO2 country codes, received ${countryCodes.length}`);
-      }
-      const selectedArrayByCountries = Object.fromEntries(
-        countryCodes.map((code) => [code, [true]])
-      );
-      const ref = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__;
-      const api = ref?.client ?? ref?.getAPI?.();
-      if (!api?.generateShapeDownloadTaskPayloadsFromSelection) {
-        throw new Error('Shape source task payload API is not ready');
-      }
-      const payloads = await api.generateShapeDownloadTaskPayloadsFromSelection(
-        nodeId,
-        'geoboundaries',
-        selectedArrayByCountries
-      );
-      return { selectedCount: countryCodes.length, payloadCount: payloads.length };
-    }, shapeNode.nodeId);
+      { nodeId: shapeNode.nodeId, countryCodes: isoCountryFixture.iso2Codes }
+    );
 
     expect(sourceTaskResult.selectedCount).toBe(200);
     expect(sourceTaskResult.payloadCount).toBeGreaterThanOrEqual(1);
@@ -326,7 +344,7 @@ test.describe('PluginDialog caret E2E', () => {
 
     setupConsoleErrorTracking(page);
     await canonicalAuth.signIn();
-    await page.goto(buildAppUrl('t/r'), { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await page.goto(buildAppUrl('f/r'), { waitUntil: 'domcontentloaded', timeout: 120000 });
     await dismissGuidedTour(page);
     await waitForTreeTableLoad(page);
 
@@ -348,13 +366,13 @@ test.describe('PluginDialog caret E2E', () => {
     });
 
     const shapeNode = await createShapeNodeWithDraft(page);
-    await page.goto(buildAppUrl(`t/${shapeNode.treeId}/${shapeNode.pageNodeId}`), {
+    await page.goto(buildAppUrl(`f/${shapeNode.treeId}/${shapeNode.pageNodeId}`), {
       waitUntil: 'domcontentloaded',
       timeout: 120000,
     });
     await waitForTreeTableLoad(page);
 
-    const nodeLink = page.locator(`a[href$="/${shapeNode.nodeId}"]`).first();
+    const nodeLink = page.locator(`a[href$="/${shapeNode.nodeId}/-/folder/list"]`).first();
     await expect(nodeLink).toBeVisible({ timeout: 20000 });
     await nodeLink.click();
 

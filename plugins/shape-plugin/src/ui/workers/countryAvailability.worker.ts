@@ -6,10 +6,12 @@ import {
   installOriginCoordinatorBridgeResponder,
   requireOriginCoordinatorDedicatedWorkerTarget,
 } from '@hierarchidb/origin-coordinator';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import { expose } from 'comlink';
 import type { DataSourceName } from '~/common/types/index';
 import { fetchCountryAvailability } from '~/services/datasources/fetchCountryAvailability';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
+import { initializeShapeChunkStore } from '~/services/utils/initializeShapeChunkStore';
 import type {
   CountryAvailabilityWorkerAPI,
   SerializedCountryAvailability,
@@ -21,6 +23,8 @@ installOriginCoordinatorBridgeResponder({
   releaseId: getOriginCoordinatorSourceSha(),
   revokeLegacyYamlAccess: () => undefined,
 });
+
+initializeShapeChunkStore(getDBName(getBuildDatabasePrefix(), 'shape-chunks'));
 
 const corsProxyBaseURL =
   typeof import.meta.env?.VITE_CORS_PROXY_BASE_URL === 'string'

@@ -593,6 +593,11 @@ and deadline expiry are converted to sanitized visible UI errors. A failed Worke
 unregistered from the owned-client inventory, and removed from the shared handle so an explicit
 user retry can create a fresh instance. Metadata and availability loading stop; the UI must not
 remain in an indefinite loading state or continue through an alternate transport or data source.
+The Worker is a separate JavaScript realm from the Shape UI entry. Before exposing its metadata or
+availability API, its own composition entry initializes the inert Shape chunk-store reference once
+with the exact `shape-chunks` database name derived from the immutable build prefix. UI-realm
+initialization is not treated as Worker initialization, and missing or conflicting initialization
+fails closed before metadata access.
 
 ## Authority boundary
 
