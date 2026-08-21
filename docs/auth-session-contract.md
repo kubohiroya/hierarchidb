@@ -179,6 +179,8 @@ worker は `localStorage` を直接読まず、UI が提供する storage bridge
 - callback 後の return URL 解決は `docs/auth-callback-routing-spec.md` の責務とする。
 - callback 画面からの離脱、navigation timeout、hard redirect は Issue #818 の責務とする。
 - BFF provider token exchange、session JWT 発行、KV 保存は backend BFF の責務とする。
+- 通常のPlaywright E2EにおけるOAuth/BFF境界のmock方法は
+  `docs/e2e-authentication-spec.md` の責務とする。
 
 ## 検証
 
@@ -196,6 +198,9 @@ worker は `localStorage` を直接読まず、UI が提供する storage bridge
 - `stateless` modeのlogin/revoke/logoutではKV警告を表示しない。
 - 完全な保存済みsessionだけがworker bridgeからtokenとして取得できる。
 - worker bridge登録、storage access、session検証の失敗時にworker clientをreadyとして公開しない。
+- canonical Playwright fixtureが製品のlogin UI、PKCE authorize、callback、token exchange、session保存、
+  React consumerを通して認証済みUIへ遷移する。
+- auth-required E2Eはsessionを直接書き込まず、同じcanonical fixtureを使用する。
 - `pnpm -w turbo run test --filter @hierarchidb/ui-auth`
 - `pnpm -w turbo run typecheck --filter @hierarchidb/ui-auth`
 - `pnpm -w turbo run typecheck --filter @hierarchidb/app`
