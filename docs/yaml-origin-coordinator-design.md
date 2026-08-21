@@ -448,8 +448,8 @@ HTML entry `yaml-storage-preflight.html`, never by conversation-generated DevToo
 clipboard payload. The entry does not import the coordinator worker or its fixed validator graph,
 does not load the application entry, and does not register or message a Service Worker. Loading the
 page is inert: an exact single `mode=pre`, `mode=post`, `mode=recovery-pre`,
-`mode=recovery-post`, `mode=recovery-interrupted-core`, or
-`mode=recovery-interrupted-core-v1` query and one explicit button click are required before one
+`mode=recovery-post`, `mode=recovery-interrupted-core`, `mode=recovery-interrupted-core-v1`, or
+`mode=recovery-interrupted-core-preservation` query and one explicit button click are required before one
 inspection starts.
 It does not poll, retry, navigate, persist state, write to a
 clipboard, or transmit evidence.
@@ -526,6 +526,18 @@ duplicate catalog entry, blocked or upgrade open, or any topology mismatch rejec
 The public result is limited to source SHA, timestamp, native version, `exact-logical-v1 | mismatch`,
 aggregate record count, and a stable code. It does not change recovery acceptance or claims, load the
 application root, or write, repair, copy, rename, delete, retry, or expose raw records or store counts.
+
+The separately reviewed `recovery-interrupted-core-preservation` mode is available only after the
+logical-v1 diagnostic reports a non-empty exact snapshot. It retains the same literal database name,
+native version, catalog cardinality, no-upgrade open, and runtime-worker topology authority. After
+those gates pass, it reads all five stores in one readonly transaction and requires every record to
+be accounted as exact initializer state, modified initializer identity, additional state, or invalid.
+It validates the contract-defined virtual root anchors and tag relations, and delegates YAML slot
+classification to the existing migration planner. The public result contains only store and aggregate
+counts plus stable graph and YAML planning status; it excludes identities, names, metadata, YAML,
+timestamps, individual digests, and native errors. Page load remains inert and exactly one explicit
+click can start the inspection. This mode is not a recovery claim or write authority and never creates,
+upgrades, copies, merges, renames, deletes, repairs, reloads, or retries storage.
 
 The strict census contract, build-SHA reader, and responder live in the shared
 `@hierarchidb/origin-coordinator` workspace package. The window, SharedWorker, dedicated runtime

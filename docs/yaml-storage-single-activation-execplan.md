@@ -85,6 +85,20 @@ After completion, YAML filenames live only in the matching metadata slot and YAM
   exact topology match. It is not a retry, fallback, or change to the #1388 recovery acceptance set.
   Date: 2026-08-22.
 
+- Decision: Classify the non-empty logical-v1 `hidb-core` snapshot before defining any copy or
+  migration recovery.
+  Rationale: Production evidence reports 15 records while the persisted initializer cohort contains
+  12. The classifier must account for every record in one readonly transaction, distinguish exact
+  initializer records, modified initializer identities, additional records, and invalid records,
+  and reuse the YAML migration planner without publishing raw values. Historical initializer shape,
+  not a newer TypeScript declaration, is the default-cohort authority: the initializer deliberately
+  persisted `metadata.description: undefined` and omitted `visible`. The historical
+  `tagAssociations` store indexes `createdAt` while the record contract stores `assignedAt`; the
+  classifier validates the exact record field and referential relation and does not synthesize an
+  indexed timestamp. These historical mismatches are evidence to preserve, never fields to default,
+  normalize, or repair.
+  Date: 2026-08-22.
+
 - Decision: Treat a genuinely missing CoreDB as a distinct same-activation fresh-v2 creation, not
   as an empty v1 migration or a revoked successor recovery.
   Rationale: New installations otherwise stop permanently at `CORE_DB_NOT_FOUND`. The sole

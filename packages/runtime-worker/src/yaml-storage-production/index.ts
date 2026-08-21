@@ -1,4 +1,12 @@
 export { activateYamlStorageCoreDb } from './activateYamlStorageCoreDb.js';
+export type {
+  ClassifyInterruptedCoreV1SnapshotInput,
+  InterruptedCoreV1PreservationClassificationCode,
+  InterruptedCoreV1PreservationClassificationResult,
+  InterruptedCoreV1PreservationSummary,
+  InterruptedCoreV1Snapshot,
+} from './classifyInterruptedCoreV1Snapshot.js';
+export { classifyInterruptedCoreV1Snapshot } from './classifyInterruptedCoreV1Snapshot.js';
 export { inspectCanonicalYamlStorageCoreDb } from './inspectCanonicalYamlStorageCoreDb.js';
 export { recoverMissingYamlStorageCoreDb } from './recoverMissingYamlStorageCoreDb.js';
 export { validateCanonicalYamlStorageCoreDb } from './validateCanonicalYamlStorageCoreDb.js';
