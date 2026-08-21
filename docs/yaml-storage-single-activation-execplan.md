@@ -140,6 +140,14 @@ When allowed, `entry.client.tsx` generates distinct activation and quiescence UU
 
 When revoked, the application starts the canonical-only Worker path. The Worker validates v2 and initializes before exposing Comlink. Only after the Worker reports an issued post-activation canonical-ready decision may the application initialize canonical browser globals and the router. It never calls the legacy YAML preload.
 
+The React entry mounts only a minimal bootstrap container before this decision. Importing the root
+component performs no browser-global initialization. `AppRoot`, `AppProviders`, `WorkerProvider`,
+and `RouterProvider` remain unmounted through activation, reload handoff, and terminal failure. On a
+successor boot, the fixed order is canonical WorkerAPIClient preparation, browser-global
+initialization, router creation, and one provider-tree mount. That mount reuses the prepared client
+through the shared loader cache. The static hydrate fallback is removed only after the ready tree
+commits and remains visible for reload or terminal failure; no retry or legacy fallback is added.
+
 Replace the current generic IndexedDB reset detection so activation-specific errors cannot match or render the reset control. Existing unrelated database recovery behavior remains unchanged.
 
 ### Milestone 4: canonical production routes

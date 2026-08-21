@@ -12,8 +12,9 @@ import { activateYamlStorageCoreDb } from '@hierarchidb/runtime-worker/yaml-stor
 import { digestSha256Hex, getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import { revokeLegacyYamlAccessAndClose } from '@hierarchidb/yaml-store/legacy-close';
 import { RouterProvider } from '@tanstack/react-router';
-import { startTransition, useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
+import { RuntimeBootstrap, type RuntimeBootstrapOperations } from './bootstrap/RuntimeBootstrap.js';
 import { initializeOriginCoordinator } from './origin-coordinator/initializeOriginCoordinator.js';
 import { runOriginCoordinatorGatedBootstrap } from './origin-coordinator/runOriginCoordinatorGatedBootstrap.js';
 import { runYamlStorageActivationContender } from './origin-coordinator/runYamlStorageActivationContender.js';
@@ -27,6 +28,7 @@ import {
   relayOriginCoordinatorSharedWorkerRequest,
   revokeRuntimeWorkerAccessAndClose,
 } from './worker-runtime/clientUtils.js';
+import { loadWorkerAPIClientModule } from './worker-runtime/workerApiClientLoader.js';
 
 type HydrateLoader = {
   setProgress: (progress: number, message?: string) => void;
@@ -283,7 +285,7 @@ async function initializeApp() {
     },
     prepareCanonicalRuntime: async () => {
       configureCanonicalRuntimeWorkerBoot();
-      const { WorkerAPIClient } = await import('./worker-runtime/WorkerAPIClient.js');
+      const { WorkerAPIClient } = await loadWorkerAPIClientModule();
       await WorkerAPIClient.initialize();
       if (!WorkerAPIClient.isReady()) {
         throw new Error('canonical-runtime-worker-not-ready');
@@ -300,57 +302,55 @@ async function initializeApp() {
       return await createHierarchiRouter({ mode, basename });
     },
   });
-  if (bootstrap.status === 'reload-requested') return null;
-  setHydrateProgress(33, 'Client bootstrap complete');
-
-  return bootstrap.runtime;
+  if (bootstrap.status === 'runtime-ready') {
+    setHydrateProgress(33, 'Client bootstrap complete');
+  }
+  return bootstrap;
 }
 
 function removeHydrateFallback(): void {
   document.getElementById('hdb-hydrate-fallback')?.remove();
 }
 
-type BootRouter = Awaited<ReturnType<typeof initializeApp>>;
+type BootRouter = Awaited<ReturnType<typeof createHierarchiRouter>>;
 
-const BootstrappedApp = () => {
-  const [router, setRouter] = useState<BootRouter | null>(null);
-
+// This bootstrap boundary owns one effect and one provider wrapper, so a separate View adds no value.
+function RuntimeReadyApp({ router }: { router: BootRouter }) {
   useEffect(() => {
-    let active = true;
-    const onUnhandledRejection = (event: PromiseRejectionEvent) => {
-      if (!active) return;
-      if (!shouldOfferIndexedDbReset(event.reason)) return;
-      setHydrateProgress(33, 'IndexedDB schema upgrade failed.');
-      renderIndexedDbResetControls(
-        'Detected IndexedDB schema mismatch (primary key change).\n「DB初期化して再読み込み」を実行してください。'
-      );
-    };
-
-    window.addEventListener('unhandledrejection', onUnhandledRejection);
-
-    initializeApp()
-      .then((nextRouter) => {
-        if (!active || nextRouter === null) return;
-        removeHydrateFallback();
-        startTransition(() => setRouter(nextRouter));
-      })
-      .catch((error) => {
-        setHydrateProgress(33, 'Client bootstrap failed. Check console.');
-        if (shouldOfferIndexedDbReset(error)) {
-          renderIndexedDbResetControls(
-            'Detected IndexedDB schema mismatch (primary key change).\n「DB初期化して再読み込み」を実行してください。'
-          );
-        }
-        console.error('[entry.client] initializeApp failed', error);
-      });
-    return () => {
-      active = false;
-      window.removeEventListener('unhandledrejection', onUnhandledRejection);
-    };
+    removeHydrateFallback();
   }, []);
 
-  return <AppRoot>{router ? <RouterProvider router={router} /> : null}</AppRoot>;
+  return (
+    <AppRoot>
+      <RouterProvider router={router} />
+    </AppRoot>
+  );
+}
+
+const handleUnhandledRejection = (reason: unknown): void => {
+  if (!shouldOfferIndexedDbReset(reason)) return;
+  setHydrateProgress(33, 'IndexedDB schema upgrade failed.');
+  renderIndexedDbResetControls(
+    'Detected IndexedDB schema mismatch (primary key change).\n「DB初期化して再読み込み」を実行してください。'
+  );
 };
+
+const handleBootstrapFailure = (error: unknown): void => {
+  setHydrateProgress(33, 'Client bootstrap failed. Check console.');
+  if (shouldOfferIndexedDbReset(error)) {
+    renderIndexedDbResetControls(
+      'Detected IndexedDB schema mismatch (primary key change).\n「DB初期化して再読み込み」を実行してください。'
+    );
+  }
+  console.error('[entry.client] initializeApp failed', error);
+};
+
+const runtimeBootstrapOperations: RuntimeBootstrapOperations<BootRouter> = Object.freeze({
+  initializeRuntime: initializeApp,
+  renderReadyRuntime: (router: BootRouter) => <RuntimeReadyApp router={router} />,
+  handleBootstrapFailure,
+  handleUnhandledRejection,
+});
 
 let rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -359,4 +359,4 @@ if (!rootElement) {
   document.body.appendChild(rootElement);
 }
 
-createRoot(rootElement).render(<BootstrappedApp />);
+createRoot(rootElement).render(<RuntimeBootstrap operations={runtimeBootstrapOperations} />);
