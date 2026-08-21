@@ -65,9 +65,10 @@ type LocationPoint = GroupEntity<string> & {
 - 認証失敗や通信エラーが発生した場合は、Shape Plugin の通知設計を踏襲し、中断・再試行・キャンセルを制御する。
 
 ### 6. UI 方針
-- LocationDialog のフッターに Start Build ボタンを追加し、`canStartBuild` 条件を「名称入力済み」「利用規約チェック済み」「データソース選択済み」などに設定する。
-- Start Build 押下時には、ダイアログのワーキングコピーから最新設定を収集して `prepareSession` を呼び出し、そのまま Worker へセッション開始を指示する。
-- ビルド専用の進捗ダイアログ（または Drawer）を導入し、処理状況・エラー・完了通知をリアルタイムに提示する。
+- Location の進捗ダイアログは `BuildSessionProgressPanel` と共通 canonical subscription/control kernel を使用する。
+- Location build manager は当面 UI realm で実行されるため、subscription と command は `same-realm` transport を明示選択する。Worker transport への暗黙 fallback は行わない。
+- Start / Pause / Resume / queued Cancel は `canonicalBuildAPI` の canonical command へ接続し、React local state による疑似 pause/cancel や console-only cancel は持たない。
+- 認証通知、ログ、地図プレビュー、データテーブルタブは Location adapter の固有責務として保持する。
 
 ### 7. 保守・拡張ポイント
 - データソース別のパーサ／バリデータを `services/datasources` で拡張可能にする。

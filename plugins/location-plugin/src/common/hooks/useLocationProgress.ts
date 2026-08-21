@@ -1,7 +1,10 @@
 import { AuthNotificationRegistry } from '@hierarchidb/auth';
 import type { BuildStatus } from '@hierarchidb/build-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import type { BuildSessionProgressSnapshot } from '@hierarchidb/ui-build-sessions';
+import type {
+  BuildSessionLifecycleSnapshot,
+  BuildSessionProgressSnapshot,
+} from '@hierarchidb/ui-build-sessions';
 import { useBuildSessionStateTreeBridge } from '@hierarchidb/ui-build-sessions';
 import { useEffect, useId, useRef, useState } from 'react';
 
@@ -33,6 +36,8 @@ export interface LocationAuthNotice {
 export interface UseLocationProgressState {
   progress: LocationProgressEvent | null;
   sessionProgress: BuildSessionProgressSnapshot | null;
+  sessionStatus: BuildSessionLifecycleSnapshot | null;
+  subscriptionReady: boolean;
   authNotice: LocationAuthNotice | null;
   error: Error | null;
 }
@@ -71,7 +76,7 @@ export function useLocationProgress(
   const [authNotice, setAuthNotice] = useState<LocationAuthNotice | null>(null);
   const handlerInstanceId = useId();
   const acceptedAuthRequestIdsRef = useRef(new Set<string>());
-  const { progressState } = useBuildSessionStateTreeBridge<LocationStageId>({
+  const { progressState, subscriptionReady } = useBuildSessionStateTreeBridge<LocationStageId>({
     nodeType: LOCATION_NODE_TYPE,
     nodeId,
     autoSubscribe: options.autoSubscribe ?? true,
@@ -138,6 +143,8 @@ export function useLocationProgress(
   return {
     progress: derivedProgress,
     sessionProgress: progressState.progress,
+    sessionStatus: progressState.status,
+    subscriptionReady,
     authNotice,
     error: progressState.error,
   };

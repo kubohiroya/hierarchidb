@@ -127,6 +127,7 @@
     "zoomMin": "Min zoom to generate",
     "zoomMax": "Max zoom to generate",
     "stages": {
+      "source": "Source",
       "download": "Download",
       "filtering": "Filtering",
       "clustering": "Clustering",
@@ -213,6 +214,8 @@
     "prereq": "Select a data source and complete previous steps before building.",
     "statusLabel": "Build status",
     "status": {
+      "connecting": "Connecting to the build session...",
+      "queued": "Waiting for the canonical build to start...",
       "idle": "Waiting for build start.",
       "running": "Build in progress.",
       "paused": "Build paused.",
@@ -226,7 +229,22 @@
     "startLabel": "Start",
     "controlsLabel": "Build controls",
     "mutationError": "Build control failed: {{message}}",
+    "controls": {
+      "cancel": "Cancel",
+      "close": "Close"
+    },
+    "progress": {
+      "completedTitle": "Build completed",
+      "failedTitle": "Build failed",
+      "completedReason": "All canonical tasks completed.",
+      "failedReason": "Build failed due to task errors.",
+      "pausedTitle": "Build paused",
+      "pausedReason": "The canonical Location session is paused and can be resumed."
+    },
     "stages": {
+      "source": {
+        "description": "Download and persist selected location source records."
+      },
       "download": "Download",
       "filter": "Filter",
       "cluster": "Cluster",
