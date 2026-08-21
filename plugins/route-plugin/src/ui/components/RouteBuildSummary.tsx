@@ -56,16 +56,20 @@ export function RouteBuildSummary({ nodeId }: RouteBuildSummaryProps): ReactElem
         </div>
       )}
       <div style={{ display: 'grid', gap: 4, color: '#333' }}>
-        <div>
+        <div data-testid="route-summary-completed">
           {completedLabel}: {completed ?? 'N/A'} / {totalLabel}: {total ?? 'N/A'}
         </div>
-        <div>
+        <div data-testid="route-summary-results">
           {resultsLabel}: {resultsCount ?? 'N/A'}
         </div>
-        <div>
+        <div data-testid="route-summary-failed">
           {failedLabel}: {failed ?? 'N/A'}
         </div>
-        <div style={{ color: displayError ? '#d32f2f' : '#555' }}>
+        <div
+          data-testid="route-summary-last-error"
+          data-error-atoms={displayError ? 'error' : 'none'}
+          style={{ color: displayError ? '#d32f2f' : '#555' }}
+        >
           {lastErrorLabel}: {displayError ?? noneLabel}
         </div>
       </div>

@@ -151,7 +151,7 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
 
   const derivedProgress = useMemo<ProgressInfo | null>(() => {
     if (!locationProgress) return null;
-    const phase = locationProgress.stage.toLowerCase();
+    const phase = locationProgress.status.toLowerCase();
     const phaseText = phaseLabel(phase);
     const taskLabel = locationProgress.message ?? phaseText;
 
@@ -186,7 +186,13 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
       } else if (index < currentIndex) {
         status = 'completed';
       } else if (index === currentIndex) {
-        status = derivedProgress.phase === 'failed' ? 'failed' : 'running';
+        if (locationProgress.status === 'completed') {
+          status = 'completed';
+        } else if (locationProgress.status === 'failed') {
+          status = 'failed';
+        } else {
+          status = 'running';
+        }
       } else {
         status = 'waiting';
       }

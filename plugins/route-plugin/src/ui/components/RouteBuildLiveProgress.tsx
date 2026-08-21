@@ -32,7 +32,11 @@ export function RouteBuildLiveProgress({ jobId }: { jobId: string }) {
   const barColor = isPaused ? '#757575' : '#1976d2';
 
   return (
-    <div style={{ display: 'grid', gap: 6 }}>
+    <div
+      data-testid="route-live-progress"
+      data-progress-atoms={phaseKey ?? 'pending'}
+      style={{ display: 'grid', gap: 6 }}
+    >
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         {pct === null ? (
           <CircularProgress size={16} aria-label={String(phaseLabel)} />
@@ -50,15 +54,22 @@ export function RouteBuildLiveProgress({ jobId }: { jobId: string }) {
             />
           </div>
         )}
-        <span style={{ fontFamily: 'monospace', fontSize: 12 }}>
+        <span
+          data-testid="route-live-progress-percentage"
+          style={{ fontFamily: 'monospace', fontSize: 12 }}
+        >
           {pct === null ? '—' : `${pct}%`}
         </span>
-        <span style={{ fontSize: 12, color: '#555' }}>{stageLabel}</span>
+        <span data-testid="route-live-progress-stage" style={{ fontSize: 12, color: '#555' }}>
+          {stageLabel}
+        </span>
         <Tooltip title={tooltipLabel} placement="top">
           <span>
             <Button
               size="small"
               variant="outlined"
+              data-testid="route-live-progress-toggle"
+              aria-pressed={isPaused}
               onClick={handleClick}
               disabled={isMutating || (!progress && !status)}
               startIcon={isMutating ? <CircularProgress size={16} /> : <Icon fontSize="small" />}
@@ -70,6 +81,7 @@ export function RouteBuildLiveProgress({ jobId }: { jobId: string }) {
       </div>
       {mutationError && (
         <div
+          data-testid="route-live-progress-error"
           style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#d32f2f', fontSize: 12 }}
         >
           <ErrorOutlineIcon fontSize="small" />

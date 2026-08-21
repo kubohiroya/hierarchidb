@@ -1,24 +1,31 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import { RouteBuildLiveProgress } from '../RouteBuildLiveProgress';
-import { RouteBuildSummary } from '../RouteBuildSummary';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { RouteBuildLiveProgress } from '../../RouteBuildLiveProgress';
+import { RouteBuildSummary } from '../../RouteBuildSummary';
 
-const mockUseRouteBuildProgress = vi.fn();
+const { mockUseRouteBuildProgress } = vi.hoisted(() => ({
+  mockUseRouteBuildProgress: vi.fn(),
+}));
 
 beforeEach(() => {
   mockUseRouteBuildProgress.mockReset();
 });
 
-vi.mock('../../hooks/useRouteBuildProgress.js', () => ({
+vi.mock('~/ui/hooks/useRouteBuildProgress', () => ({
   useRouteBuildProgress: mockUseRouteBuildProgress,
 }));
 
 describe('RouteBuildLiveProgress', () => {
   it('exposes progress indicators via data-testid attributes', () => {
     mockUseRouteBuildProgress.mockReturnValue({
-      snapshot: undefined,
+      snapshot: null,
       ready: true,
-      progress: { percentage: 42, stage: 'routing' },
+      progress: {
+        percentage: 42,
+        stage: 'geometry',
+        status: 'running',
+        taskCounts: { total: 10, completed: 4, failed: 0, skipped: 0 },
+      },
       status: { status: 'running' },
       isPaused: false,
       isMutating: false,
@@ -33,15 +40,23 @@ describe('RouteBuildLiveProgress', () => {
     const root = screen.getByTestId('route-live-progress');
     expect(root).toHaveAttribute('data-progress-atoms', 'running');
     expect(screen.getByTestId('route-live-progress-percentage').textContent).toBe('42%');
-    expect(screen.getByTestId('route-live-progress-stage').textContent).toBe('ルート生成');
-    expect(screen.getByTestId('route-live-progress-toggle')).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByTestId('route-live-progress-stage').textContent).toBe('geometry');
+    expect(screen.getByTestId('route-live-progress-toggle')).toHaveAttribute(
+      'aria-pressed',
+      'false'
+    );
   });
 
   it('marks paused atoms and surfaces mutation errors', () => {
     mockUseRouteBuildProgress.mockReturnValue({
-      snapshot: undefined,
+      snapshot: null,
       ready: true,
-      progress: { percentage: 55, stage: 'routing' },
+      progress: {
+        percentage: 55,
+        stage: 'geometry',
+        status: 'paused',
+        taskCounts: { total: 10, completed: 5, failed: 0, skipped: 0 },
+      },
       status: { status: 'paused' },
       isPaused: true,
       isMutating: false,
@@ -53,8 +68,14 @@ describe('RouteBuildLiveProgress', () => {
 
     render(<RouteBuildLiveProgress jobId="job-2" />);
 
-    expect(screen.getByTestId('route-live-progress')).toHaveAttribute('data-progress-atoms', 'paused');
-    expect(screen.getByTestId('route-live-progress-toggle')).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByTestId('route-live-progress')).toHaveAttribute(
+      'data-progress-atoms',
+      'paused'
+    );
+    expect(screen.getByTestId('route-live-progress-toggle')).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
     expect(screen.getByTestId('route-live-progress-error')).toHaveTextContent('Network error');
   });
 });
@@ -62,9 +83,14 @@ describe('RouteBuildLiveProgress', () => {
 describe('RouteBuildSummary', () => {
   it('renders summary metrics with stable data-testid selectors', async () => {
     mockUseRouteBuildProgress.mockReturnValue({
-      snapshot: undefined,
+      snapshot: null,
       ready: true,
-      progress: { completed: 4, total: 10, failed: 2, percentage: 40 },
+      progress: {
+        percentage: 40,
+        stage: 'source',
+        status: 'running',
+        taskCounts: { completed: 4, total: 10, failed: 2, skipped: 0 },
+      },
       status: { status: 'running' },
       isPaused: false,
       isMutating: false,
@@ -77,12 +103,19 @@ describe('RouteBuildSummary', () => {
     render(<RouteBuildSummary nodeId="job-3" />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('route-summary-completed').textContent).toContain('完了: 4');
+      expect(screen.getByTestId('route-summary-completed')).toHaveTextContent(
+        'Completed: 4 / Total: 10'
+      );
     });
 
-    expect(screen.getByTestId('route-summary-results').textContent).toContain('結果: 4');
-    expect(screen.getByTestId('route-summary-failed').textContent).toBe('失敗: 2');
-    expect(screen.getByTestId('route-summary-last-error')).toHaveAttribute('data-error-atoms', 'error');
-    expect(screen.getByTestId('route-summary-last-error').textContent).toContain('最新のエラー: Worker error');
+    expect(screen.getByTestId('route-summary-results')).toHaveTextContent('Results: 4');
+    expect(screen.getByTestId('route-summary-failed')).toHaveTextContent('Failed: 2');
+    expect(screen.getByTestId('route-summary-last-error')).toHaveAttribute(
+      'data-error-atoms',
+      'error'
+    );
+    expect(screen.getByTestId('route-summary-last-error')).toHaveTextContent(
+      'Last error: Worker error'
+    );
   });
 });

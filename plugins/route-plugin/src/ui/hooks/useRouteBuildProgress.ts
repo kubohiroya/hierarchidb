@@ -24,6 +24,7 @@ export function useRouteBuildProgress(nodeId: NodeId | null): RouteBuildProgress
   const { progressState } = useBuildSessionStateTreeBridge<RouteStageId>({
     nodeType: ROUTE_NODE_TYPE,
     nodeId,
+    subscriptionTransport: 'same-realm',
     stageIds: ROUTE_STAGE_IDS,
     defaultActiveStageId: 'source',
     resolveStageId: resolveRouteStageId,

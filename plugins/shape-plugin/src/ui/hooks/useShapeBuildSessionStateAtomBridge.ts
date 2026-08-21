@@ -349,29 +349,6 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
           if (cancelled) return;
           adapter.onHeartbeat(requireEventShape<HeartbeatEvent>(event, 'heartbeat', 'onHeartbeat'));
         },
-        onWorkerLog: (event) => {
-          if (cancelled) return;
-          const level = (event as { level?: string }).level;
-          if (level === 'error') {
-            console.error(
-              '[Worker]',
-              (event as { message?: string }).message,
-              (event as { data?: unknown }).data
-            );
-          } else if (level === 'warn') {
-            console.warn(
-              '[Worker]',
-              (event as { message?: string }).message,
-              (event as { data?: unknown }).data
-            );
-          } else {
-            console.log(
-              '[Worker]',
-              (event as { message?: string }).message,
-              (event as { data?: unknown }).data
-            );
-          }
-        },
       });
 
       if (cancelled) {

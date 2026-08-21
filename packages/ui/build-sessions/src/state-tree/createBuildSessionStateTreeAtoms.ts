@@ -359,12 +359,23 @@ export const createBuildSessionStateTreeAtoms = <StageId extends string>(
         };
         nextOrderedByStage[stageId] = [];
         for (const rawTask of event.payload.tasks) {
-          const task = sanitizeTask(rawTask);
-          if (task.stage !== stageId) {
+          const snapshotTask = sanitizeTask(rawTask);
+          if (snapshotTask.stage !== stageId) {
             throw new Error(
-              `[buildSessionStateTree] tasksReplaced stage mismatch: task.stage=${String(task.stage)} target=${String(stageId)}`
+              `[buildSessionStateTree] tasksReplaced stage mismatch: task.stage=${String(snapshotTask.stage)} target=${String(stageId)}`
             );
           }
+          const existingTask = state.tasks.byId[snapshotTask.taskId];
+          const task =
+            existingTask?.stage === stageId && existingTask.version > snapshotTask.version
+              ? {
+                  ...snapshotTask,
+                  version: existingTask.version,
+                  progress: existingTask.progress,
+                  message: existingTask.message,
+                  metadata: existingTask.metadata,
+                }
+              : snapshotTask;
           nextById[task.taskId] = task;
           nextOrderedByStage[stageId] = insertTaskIdInOrder(
             nextOrderedByStage[stageId],

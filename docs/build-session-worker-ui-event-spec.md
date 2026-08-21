@@ -217,9 +217,15 @@ type TaskProgressUpdatedEvent = {
 
 ## Canonical UI Consumption Boundary
 
-- `@hierarchidb/ui-build-sessions` consumes only the four canonical channels exposed by
-  `BuildWorkerBridge.subscribeAll`: `sessionStatusUpdated`,
-  `stageSnapshotUpdated`, `taskProgressUpdated`, and `heartbeat`.
+- `@hierarchidb/ui-build-sessions` consumes only the four canonical channels:
+  `sessionStatusUpdated`, `stageSnapshotUpdated`, `taskProgressUpdated`, and
+  `heartbeat`. Shape selects the explicit `BuildWorkerBridge.subscribeAll` transport.
+  Route and Location currently execute their canonical managers in the UI realm and
+  therefore select the explicit same-realm `unconditionalEventStreamer` transport.
+  The bridge never falls back from one transport to the other.
+- The same-realm streamer is live-only and does not buffer or replay events. A
+  same-realm UI consumer must establish its subscription before starting the local
+  build session. Late mounting must not be treated as an empty or idle session.
 - A `sessionStatusUpdated` event updates lifecycle state only. It never creates an
   aggregate progress record with zero task counts.
 - `isActive` must match the lifecycle phase defined by `build-session-spec.md`;
@@ -234,8 +240,9 @@ type TaskProgressUpdatedEvent = {
 - Progress timestamps are derived from explicit persisted session, heartbeat, and
   stage timing endpoints. Missing timing is never replaced with `Date.now()`, zero,
   clamping, or an aggregate-progress compatibility payload.
-- Derived task counts come from authoritative task snapshots. `recycled` tasks are
-  excluded from the progress denominator because they consume no processing time.
+- Derived task counts come from the authoritative snapshot for the active stage only.
+  Completed snapshots from earlier stages do not remain in the current stage's
+  denominator. `recycled` tasks are excluded because they consume no processing time.
 - The legacy UI aggregate hooks and mappers
   (`useBuildProgressState`, `usePluginBuildProgress`,
   `useUnifiedBuildSessionProgress`, and `buildSessionStatusMapper`) are not part
@@ -402,10 +409,13 @@ row counts.
 
 The Shape-specific `BuildSessionWorkerEventAdapter` does **not** store versions or
 perform deduplication. Its `UIEventBufferManager` applies the per-`taskId` gate before
-the adapter. The shared `useBuildSessionStateTreeBridge` instead compares an incoming
-progress version with the task version in its authoritative snapshot state; this also
-lets it drain progress that raced ahead of the first snapshot. Both paths implement
-the same per-task ordering contract and neither uses a global event-version counter.
+the adapter. The shared `useBuildSessionStateTreeBridge` instead stores `taskId` and
+the greatest accepted task version in its state tree; this also lets it drain progress
+that raced ahead of the first snapshot. If a later full snapshot carries a lower task
+version, the snapshot still owns membership, ordering, and task status, while the
+newer accepted progress value, message, metadata, and version remain. Both paths
+implement the same per-task ordering contract and neither uses a global event-version
+counter.
 
 `sessionStatusUpdated` and `stageSnapshotUpdated` are applied unconditionally in FIFO
 arrival order. `heartbeat` is applied immediately. No global or cross-stream version

@@ -1,8 +1,9 @@
 import { AuthNotificationRegistry } from '@hierarchidb/auth';
+import type { BuildStatus } from '@hierarchidb/build-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { BuildSessionProgressSnapshot } from '@hierarchidb/ui-build-sessions';
 import { useBuildSessionStateTreeBridge } from '@hierarchidb/ui-build-sessions';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 export interface UseLocationProgressOptions {
   autoSubscribe?: boolean;
@@ -11,6 +12,7 @@ export interface UseLocationProgressOptions {
 type ProgressEvent = {
   nodeId: NodeId;
   stage: string;
+  status: BuildStatus;
   total: number;
   completed: number;
   failed: number;
@@ -50,7 +52,8 @@ const toProgressEvent = (
   if (!progress) return null;
   return {
     nodeId: progress.nodeId,
-    stage: progress.status === 'completed' ? 'completed' : progress.stage,
+    stage: progress.stage,
+    status: progress.status,
     total: progress.taskCounts.total,
     completed: progress.taskCounts.completed,
     failed: progress.taskCounts.failed,
@@ -66,20 +69,22 @@ export function useLocationProgress(
   options: UseLocationProgressOptions = {}
 ): UseLocationProgressState {
   const [authNotice, setAuthNotice] = useState<LocationAuthNotice | null>(null);
+  const handlerInstanceId = useId();
+  const acceptedAuthRequestIdsRef = useRef(new Set<string>());
   const { progressState } = useBuildSessionStateTreeBridge<LocationStageId>({
     nodeType: LOCATION_NODE_TYPE,
     nodeId,
     autoSubscribe: options.autoSubscribe ?? true,
+    subscriptionTransport: 'same-realm',
     stageIds: LOCATION_STAGE_IDS,
     defaultActiveStageId: 'source',
     resolveStageId: resolveLocationStageId,
   });
   const derivedProgress = toProgressEvent(progressState.progress);
 
-  // The registry callback does not capture node-specific state; register it for
-  // the lifetime of this hook instance.
   useEffect(() => {
     if (progressState.progress?.status === 'running') {
+      acceptedAuthRequestIdsRef.current.clear();
       setAuthNotice(null);
     }
   }, [progressState.progress?.status]);
@@ -87,16 +92,27 @@ export function useLocationProgress(
   useEffect(() => {
     const registry = AuthNotificationRegistry.getInstance?.();
     if (!registry) return;
-    const id = 'location-progress-hook';
+    const id = `location-progress-hook:${String(nodeId)}:${handlerInstanceId}`;
+    const acceptedRequestIds = acceptedAuthRequestIdsRef.current;
     registry.register?.(id, {
       onAuthRequired: async (notification) => {
+        if (notification.context.pluginType !== 'location') return;
+        if (
+          notification.context.sessionId !== undefined &&
+          notification.context.sessionId !== String(nodeId)
+        ) {
+          return;
+        }
+        acceptedRequestIds.add(notification.context.requestId);
         setAuthNotice({
           state: 'required',
           timestamp: Date.now(),
           message: notification?.context?.errorMessage,
         });
       },
-      onAuthSuccess: async () => {
+      onAuthSuccess: async (notification) => {
+        if (!acceptedRequestIds.delete(notification.context.requestId)) return;
+        if (acceptedRequestIds.size > 0) return;
         setAuthNotice({
           state: 'resumed',
           timestamp: Date.now(),
@@ -104,6 +120,8 @@ export function useLocationProgress(
         });
       },
       onAuthCancelled: async (notification) => {
+        if (!acceptedRequestIds.delete(notification.context.requestId)) return;
+        if (acceptedRequestIds.size > 0) return;
         setAuthNotice({
           state: 'cancelled',
           timestamp: Date.now(),
@@ -113,8 +131,9 @@ export function useLocationProgress(
     });
     return () => {
       registry.unregister?.(id);
+      acceptedRequestIds.clear();
     };
-  }, []);
+  }, [handlerInstanceId, nodeId]);
 
   return {
     progress: derivedProgress,

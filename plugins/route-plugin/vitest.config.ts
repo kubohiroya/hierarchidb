@@ -1,5 +1,6 @@
+import * as path from 'node:path';
 import { defineConfig } from 'vitest/config';
-import * as path from 'path';
+
 const RUN_ROUTE_TESTS = process.env.ROUTE_TESTS === '1';
 
 const basePluginEntry = path.resolve(__dirname, '../base-plugin/src/index.ts');
@@ -10,12 +11,9 @@ export default defineConfig({
     globals: true,
     setupFiles: [path.resolve(__dirname, '../../vitest.setup.ts')],
     pool: 'threads',
-    include: RUN_ROUTE_TESTS ? [
-      'src/**/*.unit.test.ts',
-      'src/**/*.unit.test.tsx',
-      'src/**/*.test.ts',
-      'src/**/*.test.tsx',
-    ] : [],
+    include: RUN_ROUTE_TESTS
+      ? ['src/**/*.unit.test.ts', 'src/**/*.unit.test.tsx', 'src/**/*.test.ts', 'src/**/*.test.tsx']
+      : [],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
@@ -23,10 +21,9 @@ export default defineConfig({
     ],
   },
   resolve: {
-    alias: {
-      '~/common/config/buildConfig': path.resolve(__dirname, 'src/common/config/buildConfig.ts'),
-      '@hierarchidb/plugin-ui-sdk': basePluginEntry,
-      '@hierarchidb/ui-i18n': path.resolve(__dirname, '../../packages/ui/i18n/src/index.ts'),
-    },
+    alias: [
+      { find: /^~\/(.*)$/, replacement: path.resolve(__dirname, 'src/$1') },
+      { find: '@hierarchidb/plugin-ui-sdk', replacement: basePluginEntry },
+    ],
   },
 });

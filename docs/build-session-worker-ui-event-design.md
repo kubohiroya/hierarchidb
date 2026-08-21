@@ -67,8 +67,11 @@ progress value, but does not carry lifecycle state.
 
 The UI delivery layer accepts an event only when its `version` is greater than the
 last accepted version for the same `taskId`. Events with an equal or lower version are
-dropped. The state adapter receives only accepted events and does not retain `taskId`
-or `version` in the state tree.
+dropped. Shape's plugin-owned adapter receives only accepted events and does not
+retain the delivery key. The shared UI bridge retains `taskId` and the greatest
+accepted task version in its state tree so a delayed lower-version snapshot cannot
+lower the progress gate. The delayed snapshot still owns task membership, ordering,
+and status; the newer accepted progress value, message, metadata, and version remain.
 
 **Note**: `phase` is intentionally absent. It was erroneously included in the original design. Session phase is managed exclusively by `sessionStatusUpdated`.
 
@@ -219,9 +222,13 @@ any phase or task recalculation.
 
 ## Shared UI Bridge
 
-`useBuildSessionStateTreeBridge` subscribes through the four canonical Worker
-channels as a single lifecycle-owned subscription. It does not call the legacy
-aggregate progress hook or reconstruct task counts from `sessionStatusUpdated`.
+`useBuildSessionStateTreeBridge` subscribes to the four canonical channels as a single
+lifecycle-owned subscription. Shape selects the Worker bridge transport. Route and
+Location currently run their canonical managers in the UI realm and explicitly select
+the same-realm event-streamer transport. There is no implicit fallback between these
+transports. The same-realm streamer remains live-only, so its UI subscription must be
+mounted before the local session starts. The bridge does not call the legacy aggregate
+progress hook or reconstruct task counts from `sessionStatusUpdated`.
 
 The bridge keeps lifecycle readiness and per-stage snapshot readiness distinct.
 Receiving a session status selects the active stage but leaves progress absent until
@@ -234,9 +241,11 @@ equal or older task-scoped versions. Contract-invalid phase timing, stage timing
 task versions, or progress values fail at the event boundary.
 
 The UI-facing progress snapshot is a derived read model. Its task counts come only
-from authoritative stage task state, and its timestamp is the maximum available
-persisted session, heartbeat, or stage endpoint. The bridge never creates a current
-clock timestamp or zero-count compatibility payload for missing Worker data.
+from the authoritative task state for the active stage, so starting a later stage does
+not retain completed earlier-stage tasks in the denominator. Its timestamp is the
+maximum available persisted session, heartbeat, or stage endpoint. The bridge never
+creates a current clock timestamp or zero-count compatibility payload for missing
+canonical data.
 
 Route and Location UI consumers use this derived snapshot directly. Shape UI keeps
 its plugin-owned SSOT state tree but no longer converts
@@ -333,8 +342,10 @@ There is no global or cross-stream `eventVersion` counter.
 accepted when its version is greater than the last accepted version for that task;
 equal or lower versions are dropped. Shape's `UIEventBufferManager` runs this gate
 before `BuildSessionWorkerEventAdapter`. The shared UI bridge compares against the
-task version held in its authoritative snapshot state and buffers events that arrive
-before the first snapshot. Neither path uses a global event-version value.
+greatest task version retained in its authoritative state tree and buffers events that
+arrive before the first snapshot. A delayed lower-version snapshot updates membership,
+ordering, and status without lowering that retained progress version or its associated
+progress fields. Neither path uses a global event-version value.
 
 `sessionStatusUpdated` and `stageSnapshotUpdated` are applied unconditionally in FIFO
 arrival order. `heartbeat` is applied immediately on receipt.

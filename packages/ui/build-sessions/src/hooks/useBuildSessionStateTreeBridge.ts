@@ -8,6 +8,7 @@ import type {
   TaskProgressUpdatedEvent,
   TaskSummary,
 } from '@hierarchidb/build-api';
+import { unconditionalEventStreamer } from '@hierarchidb/build-runtime-services';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useAtomValue, useSetAtom } from 'jotai';
@@ -25,6 +26,7 @@ type Config<StageId extends StageKey> = {
   nodeType: NodeType;
   nodeId: NodeId | null;
   autoSubscribe?: boolean;
+  subscriptionTransport?: 'worker' | 'same-realm';
   stageIds: readonly StageId[];
   defaultActiveStageId: StageId;
   resolveStageId: (value: unknown) => StageId;
@@ -89,7 +91,12 @@ const requireNonEmptyString = (value: unknown, label: string): string => {
 
 const requireOptionalString = (value: unknown, label: string): string | undefined => {
   if (value === undefined) return undefined;
-  return requireNonEmptyString(value, label);
+  if (typeof value !== 'string') {
+    throw new Error(
+      `[buildSessionStateTreeBridge] ${label} must be a string, received ${String(value)}`
+    );
+  }
+  return value;
 };
 
 const requireOptionalRecord = (
@@ -268,11 +275,39 @@ const toTaskItem = <StageId extends StageKey>(
   };
 };
 
+type CanonicalSubscriptionHandlers = {
+  onTaskEvent: (event: unknown) => void;
+  onProgressEvent: (event: unknown) => void;
+  onSessionState: (event: unknown) => void;
+  onHeartbeat: (event: unknown) => void;
+};
+
+const subscribeSameRealmCanonicalEvents = (
+  nodeId: NodeId,
+  handlers: CanonicalSubscriptionHandlers
+): (() => void) => {
+  const unsubscribers = [
+    unconditionalEventStreamer.subscribe(nodeId, 'stage-snapshot', handlers.onTaskEvent),
+    unconditionalEventStreamer.subscribe(nodeId, 'task-progress', handlers.onProgressEvent),
+    unconditionalEventStreamer.subscribe(nodeId, 'session-state', handlers.onSessionState),
+    unconditionalEventStreamer.subscribe(nodeId, 'heartbeat', handlers.onHeartbeat),
+  ];
+  let disposed = false;
+  return () => {
+    if (disposed) return;
+    disposed = true;
+    for (const unsubscribe of unsubscribers) {
+      unsubscribe();
+    }
+  };
+};
+
 export const useBuildSessionStateTreeBridge = <StageId extends StageKey>(
   config: Config<StageId>
 ) => {
   const { nodeType, nodeId, stageIds, defaultActiveStageId, resolveStageId } = config;
   const autoSubscribe = config.autoSubscribe ?? true;
+  const subscriptionTransport = config.subscriptionTransport ?? 'worker';
   const nodeIdText = nodeId ? String(nodeId) : '';
 
   const stateTree = useMemo(
@@ -292,8 +327,6 @@ export const useBuildSessionStateTreeBridge = <StageId extends StageKey>(
   const dispatch = useSetAtom(stateTree.dispatchBuildSessionStateTreeEventAtom);
   const state = useAtomValue(stateTree.buildSessionStateTreeAtom);
   const activeStageCounts = useAtomValue(stateTree.activeStageCountsAtom);
-  const overallCounts = useAtomValue(stateTree.overallCountsAtom);
-  const totalElapsedMs = useAtomValue(stateTree.totalElapsedMsAtom);
   const [subscriptionError, setSubscriptionError] = useState<Error | null>(null);
 
   useEffect(() => {
@@ -306,11 +339,18 @@ export const useBuildSessionStateTreeBridge = <StageId extends StageKey>(
     setSubscriptionError(null);
     if (!autoSubscribe) return;
 
-    const bridge = getBuildWorkerBridge();
     const unsubscribers: Array<() => void> = [];
     const initializedStages = new Set<StageId>();
     const bufferedProgressByStage = new Map<StageId, TaskProgressUpdatedEvent[]>();
     let cancelled = false;
+    let acceptedSessionStartedAt: number | undefined;
+    let acceptedSessionPhase: BuildSessionStateTreeLifecyclePhase | undefined;
+
+    const resetForNewSession = (): void => {
+      initializedStages.clear();
+      bufferedProgressByStage.clear();
+      dispatch({ type: 'reset' });
+    };
 
     const dispatchTaskProgress = (event: TaskProgressUpdatedEvent): void => {
       const stageId = resolveStageId(event.payload.stageId);
@@ -334,6 +374,20 @@ export const useBuildSessionStateTreeBridge = <StageId extends StageKey>(
       const stopReason = requireOptionalString(event.payload.stopReason, 'session.stopReason');
       const { phase, isActive, startedAt, inactiveMs, completedAt } =
         validateSessionStatusEvent(event);
+      const enteredStarting = phase === 'starting' && acceptedSessionPhase !== 'starting';
+      const startedAtChanged =
+        startedAt !== undefined &&
+        acceptedSessionStartedAt !== undefined &&
+        startedAt !== acceptedSessionStartedAt;
+      if (enteredStarting || startedAtChanged) {
+        resetForNewSession();
+      }
+      if (enteredStarting) {
+        acceptedSessionStartedAt = undefined;
+      } else if (startedAt !== undefined) {
+        acceptedSessionStartedAt = startedAt;
+      }
+      acceptedSessionPhase = phase;
       dispatch({
         type: 'sessionPatched',
         payload: {
@@ -456,24 +510,31 @@ export const useBuildSessionStateTreeBridge = <StageId extends StageKey>(
       }
     };
 
+    const handlers: CanonicalSubscriptionHandlers = {
+      onTaskEvent: (event: unknown) => {
+        if (!cancelled) deliverCanonicalEvent(handleStageSnapshot, event);
+      },
+      onProgressEvent: (event: unknown) => {
+        if (!cancelled) deliverCanonicalEvent(handleTaskProgress, event);
+      },
+      onSessionState: (event: unknown) => {
+        if (!cancelled) deliverCanonicalEvent(handleSessionStatus, event);
+      },
+      onHeartbeat: (event: unknown) => {
+        if (!cancelled) deliverCanonicalEvent(handleHeartbeat, event);
+      },
+    };
+
     const run = async (): Promise<void> => {
-      await bridge.initialize();
-      if (cancelled) return;
-      const unsubscribeAll = await bridge.subscribeAll(nodeType, nodeId, {
-        onTaskEvent: (event: unknown) => {
-          if (!cancelled) deliverCanonicalEvent(handleStageSnapshot, event);
-        },
-        onProgressEvent: (event: unknown) => {
-          if (!cancelled) deliverCanonicalEvent(handleTaskProgress, event);
-        },
-        onSessionState: (event: unknown) => {
-          if (!cancelled) deliverCanonicalEvent(handleSessionStatus, event);
-        },
-        onHeartbeat: (event: unknown) => {
-          if (!cancelled) deliverCanonicalEvent(handleHeartbeat, event);
-        },
-        onWorkerLog: () => {},
-      });
+      let unsubscribeAll: () => void;
+      if (subscriptionTransport === 'same-realm') {
+        unsubscribeAll = subscribeSameRealmCanonicalEvents(nodeId, handlers);
+      } else {
+        const bridge = getBuildWorkerBridge();
+        await bridge.initialize();
+        if (cancelled) return;
+        unsubscribeAll = await bridge.subscribeAll(nodeType, nodeId, handlers);
+      }
       if (cancelled) {
         unsubscribeAll();
         return;
@@ -493,16 +554,24 @@ export const useBuildSessionStateTreeBridge = <StageId extends StageKey>(
         unsubscribe();
       }
     };
-  }, [autoSubscribe, dispatch, nodeId, nodeIdText, nodeType, resolveStageId]);
+  }, [
+    autoSubscribe,
+    dispatch,
+    nodeId,
+    nodeIdText,
+    nodeType,
+    resolveStageId,
+    subscriptionTransport,
+  ]);
 
   const taskCounts = useMemo(
     () => ({
-      total: overallCounts.total - overallCounts.recycled,
-      completed: overallCounts.completed,
-      failed: overallCounts.failed,
-      skipped: overallCounts.skipped,
+      total: activeStageCounts.total - activeStageCounts.recycled,
+      completed: activeStageCounts.completed,
+      failed: activeStageCounts.failed,
+      skipped: activeStageCounts.skipped,
     }),
-    [overallCounts]
+    [activeStageCounts]
   );
   const percentage = useMemo(() => computePercentage(taskCounts), [taskCounts]);
   const buildStatus = mapLifecyclePhaseToBuildStatus(state.session.phase);
@@ -574,7 +643,6 @@ export const useBuildSessionStateTreeBridge = <StageId extends StageKey>(
     atoms: stateTree,
     tree: state,
     activeStageCounts,
-    totalElapsedMs,
     progressState,
   };
 };
