@@ -135,6 +135,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
   const hasRequiredFields = Boolean(
     draft.dataSourceName &&
       draft.transportMode &&
+      draft.routeMode &&
       draft.generationMethod &&
       draft.startLocationId &&
       draft.endLocationId,
@@ -343,7 +344,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     heapPauseRef.current = heapEvent.timestamp;
     setStatus('paused');
     setHeapDialogOpen(true);
-  }, [heapEvent, setStatus, setHeapDialogOpen, status]);
+  }, [heapEvent, setStatus, status]);
 
   useEffect(() => {
     if (!monitorKey) return;

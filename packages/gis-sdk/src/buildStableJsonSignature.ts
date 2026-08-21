@@ -37,6 +37,6 @@ const normalizeValue = (value: unknown): unknown => {
   return value;
 };
 
-export const buildStableSignature = (value: unknown): string => (
+export const buildStableJsonSignature = (value: unknown): string => (
   JSON.stringify(normalizeValue(value ?? null))
 );

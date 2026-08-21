@@ -1,6 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { RouteBuildConfig } from '@hierarchidb/route-api';
+import { ROUTE_MODES, type RouteBuildConfig } from '@hierarchidb/route-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_ROUTE_BUILD_CONFIG } from '../../../common/config/buildConfig.js';
 import { RouteBuildSession, type RouteBuildTask } from '../../../services/RouteBuildSession';
 
 const { runStageTasksMock } = vi.hoisted(() => ({
@@ -26,6 +27,7 @@ describe('RouteBuildSession lane gating', () => {
 
   it('sets the osm_route lane concurrency to 1 even when maxConcurrent is high', async () => {
     const config: RouteBuildConfig = {
+      ...DEFAULT_ROUTE_BUILD_CONFIG,
       routeGeneration: {
         method: 'osm_route',
         parallel: true,
@@ -47,8 +49,14 @@ describe('RouteBuildSession lane gating', () => {
         index: 0,
         routeData: {
           method: 'osm_route',
+          routeMode: ROUTE_MODES.ROAD,
+          startLocationId: 'location-start' as NodeId,
+          endLocationId: 'location-end' as NodeId,
           startCoordinates: [0, 0],
           endCoordinates: [1, 1],
+          sourceKey: 'road:location-start:location-end',
+          inputHash: 'route-source-input',
+          bidirectional: false,
         },
       },
     ];

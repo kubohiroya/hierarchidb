@@ -97,6 +97,7 @@ export interface RouteEntityPayload {
   roadType?: 'highway' | 'general';
   generationMethod?: RouteGenerationMethod;
   generationOptions?: RouteGenerationOptions;
+  routeMode?: RouteMode;
   startLocationId?: NodeId;
   endLocationId?: NodeId;
   lineGeometry?: [number, number][];

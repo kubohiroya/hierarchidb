@@ -99,3 +99,4 @@ export {
 export * from './configTypes';
 export * from './geos/index';
 export * from './geometryEngineUtils';
+export { buildStableJsonSignature } from './buildStableJsonSignature';

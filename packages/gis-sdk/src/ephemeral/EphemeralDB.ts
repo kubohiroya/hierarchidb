@@ -80,19 +80,9 @@ const isEphemeralGeometryCacheRecord = (value: unknown): value is EphemeralGeome
 };
 
 const toSourceCacheMeta = (record: EphemeralSourceCacheRecord): EphemeralSourceCacheMetaRecord => {
-  return {
-    id: record.id,
-    nodeId: record.nodeId,
-    sourceKey: record.sourceKey,
-    countryCode: record.countryCode,
-    adminLevel: record.adminLevel,
-    featureCount: record.featureCount,
-    bbox: record.bbox,
-    downloadTime: record.downloadTime,
-    size: record.size,
-    metadata: record.metadata,
-    timestamp: record.timestamp,
-  };
+  const { data, ...meta } = record;
+  void data;
+  return meta;
 };
 
 const toGeometryCacheMeta = (record: EphemeralGeometryCacheRecord): EphemeralGeometryCacheMetaRecord => {

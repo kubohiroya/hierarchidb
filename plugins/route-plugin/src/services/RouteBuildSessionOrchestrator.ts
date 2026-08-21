@@ -6,7 +6,9 @@ import { DEFAULT_ROUTE_BUILD_CONFIG } from '~/common/config/buildConfig';
 import {
   RouteBuildManager,
   type RouteBuildManagerDeps,
+  type RouteBuildRouteCandidate,
   type RouteBuildRouteInput,
+  requireRouteBuildRouteInput,
 } from './RouteBuildManager.js';
 
 export interface RouteBuildSessionConfig {
@@ -18,6 +20,10 @@ export interface RouteBuildSessionConfig {
 
 export interface RouteBuildInput {
   routes: RouteBuildRouteInput[];
+}
+
+export interface LegacyRouteBuildInput {
+  routes: RouteBuildRouteCandidate[];
 }
 
 export class RouteBuildSessionOrchestrator extends CanonicalBuildSessionManager {
@@ -48,9 +54,11 @@ export class RouteBuildSessionOrchestrator extends CanonicalBuildSessionManager 
   async prepareLegacySession(
     nodeId: NodeId,
     config: RouteBuildSessionConfig | undefined,
-    data: RouteBuildInput
+    data: LegacyRouteBuildInput
   ): Promise<void> {
-    await this.prepareSession(nodeId, resolveLegacyRouteConfig(config), data);
+    await this.prepareSession(nodeId, resolveLegacyRouteConfig(config), {
+      routes: data.routes.map((route, index) => requireRouteBuildRouteInput(route, index)),
+    });
   }
 
   async startBuildSession(nodeId: NodeId): Promise<BuildSessionStatus> {
@@ -59,8 +67,7 @@ export class RouteBuildSessionOrchestrator extends CanonicalBuildSessionManager 
     if (!pending) {
       throw new Error(`No pending route build session for node ${nodeId}`);
     }
-    const config = pending.config as RouteBuildConfig;
-    const routes = (pending.routes as RouteBuildRouteInput[]) ?? [];
+    const { config, routes } = pending;
     if (routes.length === 0) {
       throw new Error('Route build session requires at least one route');
     }

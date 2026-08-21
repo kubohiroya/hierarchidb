@@ -162,7 +162,7 @@ export interface EphemeralSourceCacheRecord {
   countryCode?: string;
   adminLevel?: number;
   data: ArrayBuffer;
-  format?: 'flatgeobuf' | 'topojson';
+  format?: 'flatgeobuf' | 'topojson' | 'geojson';
   compression?: 'gzip' | 'none';
   featureCount: number;
   inputFeatureCount?: number;
