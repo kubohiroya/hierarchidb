@@ -104,6 +104,7 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
       filename: file.name,
       fileSizeBytes: file.size,
       contentHash,
+      rowStoreDatabaseName: this.rowStoreDatabaseName,
     });
 
     const parseOptions = this.toParseOptions(config);

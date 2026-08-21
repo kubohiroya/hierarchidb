@@ -13,7 +13,6 @@ import {
   type TabularColumnType,
   type TabularTableMetadataLike,
 } from '@hierarchidb/tabular-store';
-import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import type { SpreadsheetMetadataManager } from './SpreadsheetMetadataManager.js';
 
 interface SpreadsheetStorePortOptions {
@@ -22,6 +21,7 @@ interface SpreadsheetStorePortOptions {
   filename: string;
   fileSizeBytes: number;
   contentHash: string;
+  rowStoreDatabaseName: string;
 }
 
 type ColumnStats = {
@@ -80,6 +80,7 @@ export class SpreadsheetStorePort implements TabularStorePort<TabularTableMetada
   private readonly filename: string;
   private readonly fileSizeBytes: number;
   private readonly contentHash: string;
+  private readonly rowStoreDatabaseName: string;
   private readonly sessions = new Map<string, SessionData>();
 
   constructor(options: SpreadsheetStorePortOptions) {
@@ -88,6 +89,7 @@ export class SpreadsheetStorePort implements TabularStorePort<TabularTableMetada
     this.filename = options.filename;
     this.fileSizeBytes = options.fileSizeBytes;
     this.contentHash = options.contentHash;
+    this.rowStoreDatabaseName = options.rowStoreDatabaseName;
   }
 
   async beginIngest(schema: TabularSchema, _ctx: TabularIngestContext): Promise<TabularIngestSession> {
@@ -96,7 +98,7 @@ export class SpreadsheetStorePort implements TabularStorePort<TabularTableMetada
     }
     const writer = new TabularWriter(this.pluginId, {
       metadataDbName: this.metadataManager.databaseName,
-      rowStoreDbName: getDBName(getBuildDatabasePrefix(), 'tabular-source-rowstore-db'),
+      rowStoreDbName: this.rowStoreDatabaseName,
     });
     const tableId = await writer.begin({
       filename: this.filename,

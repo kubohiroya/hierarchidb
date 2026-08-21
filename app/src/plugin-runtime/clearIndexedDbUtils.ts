@@ -1,8 +1,8 @@
 import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import { Dexie } from 'dexie';
-import { databaseStoreLoaders, APP_DATABASE_NODE_TYPES_SET } from './database-store-loaders.ts';
+import { APP_DATABASE_NODE_TYPES_SET, databaseStoreLoaders } from './database-store-loaders.ts';
 
-type ClearFn = () => Promise<void> | void;
+type ClearFn = (databaseName: string) => Promise<void> | void;
 
 type ClearModule =
   | { clearDatabases?: ClearFn; clearDatabase?: ClearFn; clearIndexedDb?: ClearFn; clear?: ClearFn }
@@ -31,13 +31,14 @@ const asClearFn = (mod: ClearModule): ClearFn | undefined => {
 
 const CORE_DB_SUFFIXES = ['core'];
 
-async function clearCoreDatabases(): Promise<void> {
+async function clearCoreDatabases(databasePrefix: string): Promise<void> {
   for (const suffix of CORE_DB_SUFFIXES) {
-    await Dexie.delete(getDBName(getBuildDatabasePrefix(), suffix));
+    await Dexie.delete(getDBName(databasePrefix, suffix));
   }
 }
 
 export async function clearAppIndexedDBsViaPlugins(): Promise<ClearResult> {
+  const databasePrefix = getBuildDatabasePrefix();
   const invoked: string[] = [];
   const missing: string[] = [];
   const errors: Array<{ nodeType: string; error: unknown }> = [];
@@ -51,7 +52,7 @@ export async function clearAppIndexedDBsViaPlugins(): Promise<ClearResult> {
   }
 
   try {
-    await clearCoreDatabases();
+    await clearCoreDatabases(databasePrefix);
     invoked.push('core');
   } catch (error) {
     errors.push({ nodeType: 'core', error });
@@ -75,7 +76,7 @@ export async function clearAppIndexedDBsViaPlugins(): Promise<ClearResult> {
         missing.push(nodeType);
         continue;
       }
-      await clearFn();
+      await clearFn(getDBName(databasePrefix, entry.databaseSuffix));
       invoked.push(nodeType);
     } catch (error) {
       errors.push({ nodeType, error });

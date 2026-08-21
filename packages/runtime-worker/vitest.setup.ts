@@ -7,12 +7,16 @@
 import 'fake-indexeddb/auto';
 import '../../vitest.database-prefix.setup.ts';
 import { initializeEphemeralDB } from '@hierarchidb/gis-sdk';
+import { initializeLocationDB } from '@hierarchidb/location-store';
+import { initializeRouteDB } from '@hierarchidb/route-store';
 import { initializeShapeDB } from '@hierarchidb/shape-store';
 import { getDBName } from '@hierarchidb/util';
 import { ReadableStream, WritableStream } from 'node:stream/web';
 import { gzipSync, gunzipSync } from 'node:zlib';
 
 initializeEphemeralDB(getDBName('test', 'ephemeral'));
+initializeLocationDB(getDBName('test', 'location'));
+initializeRouteDB(getDBName('test', 'route'));
 initializeShapeDB(getDBName('test', 'shape'));
 
 // Minimal worker-specific test setup for isolated unit tests.

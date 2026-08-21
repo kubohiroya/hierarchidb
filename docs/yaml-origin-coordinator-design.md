@@ -434,7 +434,11 @@ browser, worker, or test composition boundary initializes them with one exact co
 before initialization and reinitialization with another name both fail closed; importing a package
 never reads the build prefix or constructs a database. Row-store writers, indexers, query services,
 and plugin drivers carry the same explicit complete row-store name through every operation rather
-than resolving it again. Before any `open()`, the inspector calls
+than resolving it again. Location, route, and resolver deletion requires the exact complete database
+name and never derives another target from the build prefix or singleton state. Chunk-store writers
+require an exact complete database name in their operation options, or an inert package reference
+must be initialized once by its browser, worker, or test composition entry before use; package
+helpers never substitute a build-derived chunk-store name. Before any `open()`, the inspector calls
 `indexedDB.databases()` once and
 verifies exact presence and version of the coordinator, CoreDB, and YamlDB databases. Any missing
 database, duplicate catalog entry, or version mismatch rejects without opening any of them. Every

@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ShapeDB } from '@hierarchidb/shape-store';
 import type { NodeId } from '@hierarchidb/core-types';
+import type { ShapeDB } from '@hierarchidb/shape-store';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ShapeQueryService } from '../../ShapeQueryService.js';
 
 const hoisted = vi.hoisted(() => {
@@ -30,6 +30,7 @@ vi.mock('@hierarchidb/gis-sdk', () => ({
 const createShapeDbStub = (): ShapeDB => ({
   open: (...args: Parameters<typeof hoisted.dbOpen>) => hoisted.dbOpen(...args),
 } as unknown as ShapeDB);
+const SHAPE_CHUNK_STORE_DATABASE_NAME = 'test-shape-chunks';
 
 describe('ShapeQueryService listBuildTasks metadata handoff', () => {
   beforeEach(() => {
@@ -57,7 +58,7 @@ describe('ShapeQueryService listBuildTasks metadata handoff', () => {
       },
     ]);
 
-    const service = new ShapeQueryService(createShapeDbStub());
+    const service = new ShapeQueryService(createShapeDbStub(), SHAPE_CHUNK_STORE_DATABASE_NAME);
     const tasks = await service.listBuildTasks('node-1' as NodeId);
 
     expect(tasks).toHaveLength(1);
@@ -93,7 +94,7 @@ describe('ShapeQueryService listBuildTasks metadata handoff', () => {
       },
     ]);
 
-    const service = new ShapeQueryService(createShapeDbStub());
+    const service = new ShapeQueryService(createShapeDbStub(), SHAPE_CHUNK_STORE_DATABASE_NAME);
     const tasks = await service.listBuildTasks('node-1' as NodeId);
 
     expect(tasks).toHaveLength(1);

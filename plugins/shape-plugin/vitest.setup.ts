@@ -9,9 +9,11 @@ import { setCorsProxyBaseURL } from '@hierarchidb/download';
 import { initializeEphemeralDB } from '@hierarchidb/gis-sdk';
 import { initializeShapeDB } from '@hierarchidb/shape-store';
 import { getDBName } from '@hierarchidb/util';
+import { initializeShapeChunkStore } from './src/services/utils/initializeShapeChunkStore.js';
 
 initializeEphemeralDB(getDBName('test', 'ephemeral'));
 initializeShapeDB(getDBName('test', 'shape'));
+initializeShapeChunkStore(getDBName('test', 'shape-chunks'));
 
 // Default: run network integration tests directly in Node (no CORS proxy).
 setCorsProxyBaseURL('');

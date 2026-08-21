@@ -330,11 +330,24 @@ async function getShapeSessionWithDetails(db: ShapeDB, nodeId: NodeId): Promise<
 }
 
 export class ShapeQueryService implements ShapeQueryAPI {
-  static async getSingleton(db: ShapeDB): Promise<ShapeQueryService> {
-    return SingletonMixin.getSingleton('ShapeQueryService', async () => new ShapeQueryService(db));
+  static async getSingleton(
+    db: ShapeDB,
+    shapeChunkStoreDatabaseName: string
+  ): Promise<ShapeQueryService> {
+    const instance = await SingletonMixin.getSingleton(
+      'ShapeQueryService',
+      async () => new ShapeQueryService(db, shapeChunkStoreDatabaseName)
+    );
+    if (instance.shapeChunkStoreDatabaseName !== shapeChunkStoreDatabaseName) {
+      throw new Error('shape-query-chunk-store-database-name-mismatch');
+    }
+    return instance;
   }
 
-  constructor(private db: ShapeDB) {}
+  constructor(
+    private db: ShapeDB,
+    private readonly shapeChunkStoreDatabaseName: string
+  ) {}
 
   private async ensureOpen(): Promise<void> {
     await this.db.open?.();
@@ -598,12 +611,19 @@ export class ShapeQueryService implements ShapeQueryAPI {
   }
 
   async listSourceCaches(nodeId: NodeId): Promise<ShapeSourceCache[]> {
-    const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
+    const metadata = await listRawDataDataSourceMetadataForNode(
+      this.shapeChunkStoreDatabaseName,
+      nodeId
+    );
     const records = await Promise.all(
       metadata.map(async (entry) => {
         const cacheKey = entry.cacheKey;
         if (!cacheKey) return null;
-        const data = await readRawDataDataSourceBuffer(nodeId, cacheKey);
+        const data = await readRawDataDataSourceBuffer(
+          this.shapeChunkStoreDatabaseName,
+          nodeId,
+          cacheKey
+        );
         if (!data) return null;
         return {
           id: cacheKey,
@@ -621,7 +641,11 @@ export class ShapeQueryService implements ShapeQueryAPI {
   }
 
   async getSourceCache(nodeId: NodeId, bufferId: string): Promise<ShapeSourceCache | null> {
-    const data = await readRawDataDataSourceBuffer(nodeId, bufferId);
+    const data = await readRawDataDataSourceBuffer(
+      this.shapeChunkStoreDatabaseName,
+      nodeId,
+      bufferId
+    );
     if (!data) return null;
     return {
       id: bufferId,
@@ -636,7 +660,7 @@ export class ShapeQueryService implements ShapeQueryAPI {
   }
 
   async countSourceCaches(nodeId: NodeId): Promise<number> {
-    return countSourceDataSourceBuffersForNode(nodeId);
+    return countSourceDataSourceBuffersForNode(this.shapeChunkStoreDatabaseName, nodeId);
   }
 
   async listGeometryCaches(nodeId: NodeId): Promise<ShapeGeometryCache[]> {

@@ -10,11 +10,11 @@ import type { TagAPI } from '@hierarchidb/tag-api';
 import type { NodeType } from '@hierarchidb/core-types';
 import { enableAllExporters, enableAllImporters } from '@hierarchidb/import-export';
 import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/location-api';
-import { getLocationDB } from '@hierarchidb/location-store';
+import { initializeLocationDB } from '@hierarchidb/location-store';
 import type { PluginLifecycleAPI } from '@hierarchidb/plugin-base';
 import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/route-api';
 import type { RouteDatabaseHandle } from '@hierarchidb/route-store';
-import { getRouteDB } from '@hierarchidb/route-store';
+import { initializeRouteDB } from '@hierarchidb/route-store';
 import { initializeEphemeralDB } from '@hierarchidb/gis-sdk';
 import { initializeShapeDB, type ShapeDB } from '@hierarchidb/shape-store';
 import { StylerDB } from '@hierarchidb/styler-store';
@@ -150,6 +150,10 @@ export class WorkerService {
       );
 
       const shapeDB = initializeShapeDB(getDBName(options.databasePrefix, 'shape'));
+      const shapeChunkStoreDatabaseName = getDBName(
+        options.databasePrefix,
+        'shape-chunks'
+      );
 
       // Import/Export services
       const iePort = new ImportExportDBPortCoreDBAdapter(coreDB, shapeDB);
@@ -196,14 +200,17 @@ export class WorkerService {
       );
       const styleService: StyleQueryAPI & StyleMutationAPI =
         await StyleService.getSingleton(styleDB);
-      const shapeQueryService: ShapeQueryAPI = await ShapeQueryService.getSingleton(shapeDB);
+      const shapeQueryService: ShapeQueryAPI = await ShapeQueryService.getSingleton(
+        shapeDB,
+        shapeChunkStoreDatabaseName
+      );
       const shapeMutationService: ShapeMutationAPI =
-        await ShapeMutationService.getSingleton(shapeDB);
-      getLocationDB(getDBName(options.databasePrefix, 'location'));
+        await ShapeMutationService.getSingleton(shapeDB, shapeChunkStoreDatabaseName);
+      initializeLocationDB(getDBName(options.databasePrefix, 'location'));
       const locationQueryService: LocationQueryAPI = await LocationQueryService.getSingleton();
       const locationMutationService: LocationMutationAPI =
         await LocationMutationService.getSingleton();
-      const routeDB = getRouteDB(
+      const routeDB = initializeRouteDB(
         getDBName(options.databasePrefix, 'route')
       ) as RouteDatabaseHandle;
       const routeQueryService: RouteQueryAPI = await RouteQueryService.getSingleton(routeDB);

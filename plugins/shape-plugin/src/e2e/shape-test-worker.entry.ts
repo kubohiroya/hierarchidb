@@ -13,6 +13,8 @@ import type { CountryMetadata, SourceTaskPayload, SelectedArrayByCountries, Shap
 import type { Endpoint as ComlinkEndpoint } from 'comlink';
 import { expose, proxy } from 'comlink';
 import { initializeShapeDB } from '@hierarchidb/shape-store';
+import { initializeRouteDB } from '@hierarchidb/route-store';
+import { initializeShapeChunkStore } from '../services/utils/initializeShapeChunkStore.js';
 import { initializeEphemeralDB } from '@hierarchidb/gis-sdk';
 import { VtTaskQueueDb, deleteTasksByNode } from '@hierarchidb/vt-orchestrator';
 import { metadataLoader } from '../../services/metadata/MetadataLoader';
@@ -31,6 +33,8 @@ import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 const testDatabasePrefix = getBuildDatabasePrefix();
 const shapeDB = initializeShapeDB(getDBName(testDatabasePrefix, 'shape'));
 const ephemeralDB = initializeEphemeralDB(getDBName(testDatabasePrefix, 'ephemeral'));
+initializeRouteDB(getDBName(testDatabasePrefix, 'route'));
+initializeShapeChunkStore(getDBName(testDatabasePrefix, 'shape-chunks'));
 
 type Endpoint = MessagePort | Worker | ComlinkEndpoint;
 
@@ -490,8 +494,15 @@ async function main(endpoint?: Endpoint): Promise<void> {
     getBuildTasks: async (nodeId) => shapeBuildAPI.getBuildTasks(nodeId),
   };
 
-  const queryService = await ShapeQueryService.getSingleton(shapeDB);
-  const mutationService = await ShapeMutationService.getSingleton(shapeDB);
+  const shapeChunkStoreDatabaseName = getDBName(testDatabasePrefix, 'shape-chunks');
+  const queryService = await ShapeQueryService.getSingleton(
+    shapeDB,
+    shapeChunkStoreDatabaseName
+  );
+  const mutationService = await ShapeMutationService.getSingleton(
+    shapeDB,
+    shapeChunkStoreDatabaseName
+  );
   const api: ShapeWorkerTestAPI = {
     getShapeQueryAPI: () => proxy(queryService),
     getShapeMutationAPI: () => proxy(mutationService),

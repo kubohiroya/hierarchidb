@@ -1,6 +1,5 @@
-import { Dexie, type Table } from 'dexie';
 import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
-import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
+import { Dexie, type Table } from 'dexie';
 
 export interface ResolverEntityPayload {
   nodeId: NodeId;
@@ -24,10 +23,24 @@ export class ResolverDB extends Dexie {
 
 let singleton: ResolverDB | null = null;
 
-export function getResolverDB(): ResolverDB {
-  if (!singleton) {
-    singleton = new ResolverDB(getDBName(getBuildDatabasePrefix(), 'resolver-db'));
+const requireResolverDatabaseName = (databaseName: unknown): string => {
+  if (typeof databaseName !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(databaseName)) {
+    throw new Error('resolver-database-name-invalid');
   }
+  return databaseName;
+};
+
+export function initializeResolverDB(databaseName: string): ResolverDB {
+  const exactDatabaseName = requireResolverDatabaseName(databaseName);
+  if (!singleton) singleton = new ResolverDB(exactDatabaseName);
+  if (singleton.name !== exactDatabaseName) {
+    throw new Error('resolver-database-name-mismatch');
+  }
+  return singleton;
+}
+
+export function getResolverDB(): ResolverDB {
+  if (!singleton) throw new Error('resolver-database-not-initialized');
   return singleton;
 }
 
@@ -38,6 +51,6 @@ export async function closeResolverDB(): Promise<void> {
   }
 }
 
-export async function clearResolverDatabases(): Promise<void> {
-  await Dexie.delete(getDBName(getBuildDatabasePrefix(), 'resolver-db'));
+export async function clearResolverDatabases(databaseName: string): Promise<void> {
+  await Dexie.delete(requireResolverDatabaseName(databaseName));
 }
