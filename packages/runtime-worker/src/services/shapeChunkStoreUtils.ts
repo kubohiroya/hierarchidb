@@ -1,10 +1,10 @@
-import {
-  type ChunkStoreDeserializer,
-  type ChunkStoreMetadata,
-  type ChunkStoreSerializer,
-  DexieChunkStore,
+import type {
+  ChunkStoreDeserializer,
+  ChunkStoreMetadata,
+  ChunkStoreSerializer,
 } from '@hierarchidb/chunk-store';
 import type { NodeId } from '@hierarchidb/core-types';
+import { LocalShapeChunkStore } from './LocalShapeChunkStore.js';
 
 const bufferSerializer: ChunkStoreSerializer<ArrayBuffer> = (value) => value;
 const bufferDeserializer: ChunkStoreDeserializer<ArrayBuffer> = (value) => value;
@@ -12,9 +12,9 @@ const bufferDeserializer: ChunkStoreDeserializer<ArrayBuffer> = (value) => value
 const RAW_DATA_DEFAULT_CONTENT_TYPE = 'application/octet-stream';
 const RAW_DATA_CACHE_PREFIX = 'download:';
 
-const createShapeChunkStore = (databaseName: string): DexieChunkStore<ArrayBuffer> =>
-  new DexieChunkStore<ArrayBuffer>({
-    dbName: databaseName,
+const createShapeChunkStore = (databaseName: string): LocalShapeChunkStore =>
+  new LocalShapeChunkStore({
+    databaseName,
     serializer: bufferSerializer,
     deserializer: bufferDeserializer,
   });
