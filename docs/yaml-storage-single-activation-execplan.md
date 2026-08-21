@@ -4,17 +4,17 @@ This ExecPlan is a living implementation plan for [GitHub Issue #1340](https://g
 
 ## Purpose and user-visible outcome
 
-The release replaces the production legacy YAML storage graph with one canonical CoreDB-backed graph. On the first activation-capable load, exactly one origin context quiesces all compatible legacy contexts, validates the complete raw CoreDB v1 YAML cohort, upgrades CoreDB to v2 atomically, initializes the database, and performs a success-only reload handoff. The new runtime and every later runtime publish YAML APIs only after exact CoreDB v2 schema validation, canonical-only raw YAML validation, and current WorkerService initialization succeed.
+The release replaces the production legacy YAML storage graph with one canonical CoreDB-backed graph. On the first activation-capable load, exactly one origin context quiesces all compatible legacy contexts, validates the complete raw CoreDB logical v1 / native v10 YAML cohort, upgrades CoreDB to logical v2 / native v20 atomically, initializes the database, and performs a success-only reload handoff. The new runtime and every later runtime publish YAML APIs only after exact CoreDB logical v2 / native v20 schema validation, canonical-only raw YAML validation, and current WorkerService initialization succeed.
 
-After completion, YAML filenames live only in the matching metadata slot and YAML payloads have the exact shape `{ subtype, schemaId, content }`. Dialog save/save-draft, generic Worker CRUD, folder ZIP import/export, and SimulationWorkflow all use CoreDB. Production code cannot reach a YamlDB writer, the legacy folder ZIP serializer, or the legacy Simulation serializer. Activation failures remain visible and fail closed; they do not offer a generic IndexedDB reset, retry the upgrade, reopen v1, or fall back to legacy storage.
+After completion, YAML filenames live only in the matching metadata slot and YAML payloads have the exact shape `{ subtype, schemaId, content }`. Dialog save/save-draft, generic Worker CRUD, folder ZIP import/export, and SimulationWorkflow all use CoreDB. Production code cannot reach a YamlDB writer, the legacy folder ZIP serializer, or the legacy Simulation serializer. Activation failures remain visible and fail closed; they do not offer a generic IndexedDB reset, retry the upgrade, reopen logical v1 / native v10, or fall back to legacy storage.
 
 ## Progress
 
-- [x] 2026-08-21: Confirmed #1338 accepted evidence, CoreDB v1, clean main, and byte-unchanged fixed coordinator graph.
+- [x] 2026-08-21: Confirmed #1338 accepted evidence, CoreDB logical v1 / native v10, clean main, and byte-unchanged fixed coordinator graph.
 - [x] 2026-08-21: Updated #1340 dependency, DoD, rollback, and Project status after user approval.
 - [x] 2026-08-21: Added the single-executor and post-activation bootstrap contract to the canonical specifications.
 - [x] 2026-08-21: Implemented and tested strict post-activation canonical-ready state creation.
-- [x] 2026-08-21: Implemented raw CoreDB inspection, v1 preflight, v2 versionchange migration, journal writes, and distinct fresh-v2 creation.
+- [x] 2026-08-21: Implemented raw CoreDB inspection, logical v1 / native v10 preflight, logical v2 / native v20 versionchange migration, journal writes, and distinct fresh-v2 creation.
 - [x] 2026-08-21: Connected the activation-aware window bootstrap and success-only reload handoff.
 - [x] 2026-08-21: Gated production Worker publication and all exposed Worker APIs on current canonical-ready evidence.
 - [x] 2026-08-21: Connected canonical dialog, generic CRUD validation, ZIP, and Simulation routes.
@@ -33,11 +33,12 @@ After completion, YAML filenames live only in the matching metadata slot and YAM
 - The fixed coordinator correctly persists `allowed | revoked | rejected`, but an existing `initializeOriginCoordinator()` call turns every rejected HELLO into a generic `HELLO_REJECTED`. The application therefore cannot currently distinguish the expected post-activation `LEGACY_YAML_ACCESS_REVOKED` state from terminal rejection.
 - The dormant activation reducer can issue `canonical-ready` only after an in-memory same-runtime v1-to-v2 transition. Its provenance is intentionally not serializable, so a successful reload loses the ready state and needs a separately specified strict constructor.
 - The winning window's owned-client creation gate is monotonically revoked during quiescence. It cannot safely create a new SharedWorker after migration. A new JavaScript runtime is therefore required after successful commit and initialization.
-- `CoreDB` registers only version 1. This matches the pre-activation contract and means version 2 can still be introduced exclusively by #1340.
+- At the plan start, `CoreDB` registered only logical version 1 / native version 10. This matched the pre-activation contract and left logical version 2 / native version 20 to be introduced exclusively by #1340; the completed implementation now registers both logical schemas while refusing unplanned upgrades.
 - At the plan start, the YAML plugin preload opened YamlDB in the application window before runtime creation. The implementation removes that production preload rather than repurposing it as an activation gate.
 - The generic TreeNode updater already sends draft metadata and draft data in one `updateTreeNode()` request. The canonical dialog connector can validate the exact YAML input and delegate to one internal updater operation without adding a second write.
 - A genuinely fresh installation has no CoreDB. Treating missing as a terminal preflight error would permanently block new users, so only the sole allowed/quiesced executor receives a distinct oldVersion-0 fresh-v2 path. Revoked successor inspection still treats missing as terminal.
 - The fixed coordinator intentionally returns `LEGACY_YAML_ACCESS_REVOKED` for both active `quiescing` and durable `ready-for-preflight`; application code must strictly reread the existing durable record before constructing successor evidence.
+- Dexie logical CoreDB versions 1 and 2 are persisted by IndexedDB as native versions 10 and 20. The original connector incorrectly used native 1 and 2, so raw discovery, target open, and schema validation could not interoperate with a real `CoreDB` instance.
 
 ## Decision log
 
@@ -53,8 +54,8 @@ After completion, YAML filenames live only in the matching metadata slot and YAM
   Rationale: The local revocation gate is deliberately monotonic and must not be reset. Reload after full quiescence, commit, and initialization is a runtime handoff, not a retry or stale-client bypass.
   Date: 2026-08-21.
 
-- Decision: A revoked successor boot requires exact CoreDB v2 topology, exact journal schema, a full canonical-only raw YAML validation pass, and current initialization.
-  Rationale: Version 2 alone is insufficient evidence, and a journal row count cannot be required because a fully canonical or empty v1 database can legitimately migrate with zero journal rows.
+- Decision: A revoked successor boot requires exact CoreDB logical v2 / native v20 topology, exact journal schema, a full canonical-only raw YAML validation pass, and current initialization.
+  Rationale: The version pair alone is insufficient evidence, and a journal row count cannot be required because a fully canonical or empty logical v1 / native v10 database can legitimately migrate with zero journal rows.
   Date: 2026-08-21.
 
 - Decision: Do not implement interrupted-v1 automatic recovery in #1340.
@@ -64,7 +65,7 @@ After completion, YAML filenames live only in the matching metadata slot and YAM
 - Decision: Treat a genuinely missing CoreDB as a distinct same-activation fresh-v2 creation, not
   as an empty v1 migration or a revoked successor recovery.
   Rationale: New installations otherwise stop permanently at `CORE_DB_NOT_FOUND`. The sole
-  quiescence winner can safely create exact v2 with one oldVersion-0 target request, while a
+  quiescence winner can safely create exact logical v2 / native v20 with one oldVersion-0 target request, while a
   successor missing the database still indicates corruption or deletion and remains terminal.
   Date: 2026-08-21.
 
@@ -74,6 +75,13 @@ After completion, YAML filenames live only in the matching metadata slot and YAM
   into the same revoked code. A single strict read preserves the fixed coordinator graph while
   preventing an in-progress activation from being promoted to successor evidence. The read never
   polls, mutates coordinator state, or exposes participant identities.
+  Date: 2026-08-21.
+
+- Decision: Keep logical CoreDB v1/v2 in activation state, migration plans, and journal metadata,
+  while using exact native IndexedDB v10/v20 for catalog, raw open, versionchange, and schema checks.
+  Rationale: Dexie owns the logical-to-native representation and persists these exact versions.
+  Mixing the two domains created native v2 and then forced real Dexie initialization to attempt a
+  second upgrade to native v20. Native v1/v2 is not accepted as a compatibility form.
   Date: 2026-08-21.
 
 ## Context and orientation
@@ -102,23 +110,23 @@ Extend the activation state types with an explicit readiness proof. Forward acti
 
 Keep `getYamlStorageAccessDecision()` unchanged in authority: only an issued canonical-ready state allows canonical runtime operations, and every other state denies. Add property-based and table tests for extra fields, accessors, proxies, wrong versions, incomplete evidence, fabricated states, and both readiness proofs.
 
-### Milestone 2: CoreDB v2 activation connector
+### Milestone 2: CoreDB logical v2 / native v20 activation connector
 
 Add a production-only runtime-worker subpath for the activation and successor inspection boundary. It must not enter the fixed coordinator graph. The connector will:
 
-1. Resolve the exact CoreDB name and inspect the existing database without registering v2.
-2. For initial activation, require observed version 1, exact v1 stores needed by CoreDB, and one readonly raw `nodes` snapshot.
+1. Resolve the exact CoreDB name and inspect the existing database without registering logical v2 / native v20.
+2. For initial activation, require observed logical v1 / native v10, exact v1 stores needed by CoreDB, and one readonly raw `nodes` snapshot.
 3. Select every exact-own `nodeType === "yaml-file"` record and call the existing migration planner with caller-supplied identifiers and a Web Crypto SHA-256 port.
 4. Retain the immutable raw snapshot and successful plan only in memory.
-5. Close the preflight connection and create exactly one CoreDB v2 open request.
+5. Close the preflight connection and create exactly one CoreDB logical v2 / native v20 open request.
 6. Register `yamlMigrationJournal` with `&[migrationId+nodeId+slot],[migrationId+fromCoreDbVersion+toCoreDbVersion]`.
 7. In the versionchange transaction, reread the full raw YAML cohort, compare every guarded field and slot to the preflight snapshot, then update all planned node slots and journal rows atomically. No digest, network, timer, or external promise runs inside the transaction.
 8. Abort the whole upgrade on any cohort, value, node-version, write, or journal mismatch.
 9. Initialize CoreDB after commit, validate the resulting raw canonical cohort, and advance the same activation state to canonical-ready.
 
-Normal CoreDB construction registers v2 but refuses an existing v1-to-v2 upgrade unless the activation connector supplies the validated plan. A missing database uses the same quiescence winner and open request to create exact v2 directly, then initializes and validates before readiness. A revoked successor never uses this path. `WorkerService.getSingleton()` must no longer be reachable from the allowed pre-activation bootstrap.
+Normal CoreDB construction registers logical v2 / native v20 but refuses an existing logical v1-to-v2 upgrade unless the activation connector supplies the validated plan. A missing database uses the same quiescence winner and open request to create exact native v20 directly, then initializes and validates before readiness. A revoked successor never uses this path. `WorkerService.getSingleton()` must no longer be reachable from the allowed pre-activation bootstrap.
 
-For successor boot, inspect exact v2 version and IDB topology before constructing WorkerService. Validate the `yamlMigrationJournal` key path and cohort index, read every raw YAML node once, require the migration planner to classify every non-placeholder slot as already canonical and produce zero migrate entries, then initialize WorkerService and create the strict post-activation canonical-ready state.
+For successor boot, inspect exact logical v2 / native v20 and IDB topology before constructing WorkerService. Validate the `yamlMigrationJournal` key path and cohort index, read every raw YAML node once, require the migration planner to classify every non-placeholder slot as already canonical and produce zero migrate entries, then initialize WorkerService and create the strict post-activation canonical-ready state.
 
 ### Milestone 3: activation-aware application bootstrap
 
@@ -186,7 +194,7 @@ Read-only inspection and canonical successor validation are safe to rerun on an 
 
 The initial v1-to-v2 target open is deliberately not retryable. A failed or aborted versionchange leaves the upgrade uncommitted, while the durable coordinator remains revoked. The application does not restore allowed state, reopen v1, delete databases, or try a second open. This terminal condition requires a separate reviewed recovery release.
 
-Once v2 commits, exact or release inverse migration can only run as a newer CoreDB version under the rollback contract. The release never downgrades the IndexedDB version. YamlDB remains untouched for the #1341 recovery window.
+Once logical v2 / native v20 commits, exact or release inverse migration can only run as a newer CoreDB logical/native version pair under the rollback contract. The release never downgrades the IndexedDB native version. YamlDB remains untouched for the #1341 recovery window.
 
 ## Artifacts and notes
 

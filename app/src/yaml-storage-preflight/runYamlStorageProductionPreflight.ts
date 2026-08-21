@@ -1,4 +1,10 @@
 import {
+  CORE_DB_CANONICAL_LOGICAL_VERSION,
+  CORE_DB_CANONICAL_NATIVE_VERSION,
+  CORE_DB_LEGACY_LOGICAL_VERSION,
+  CORE_DB_LEGACY_NATIVE_VERSION,
+} from '@hierarchidb/runtime-worker/yaml-storage-production';
+import {
   type CoordinatorStateSummary,
   encodeYamlDatabaseSnapshot,
   parseCoordinatorState,
@@ -63,7 +69,8 @@ export type YamlStorageProductionPreflightResult =
         readonly evidenceCount: number;
       }>;
       readonly coreDb: Readonly<{
-        readonly databaseVersion: 1 | 2;
+        readonly logicalVersion: 1 | 2;
+        readonly nativeVersion: 10 | 20;
         readonly topologyStatus: 'exact';
         readonly journalTopologyStatus: 'absent' | 'exact';
         readonly journalRecordCount?: number;
@@ -352,7 +359,10 @@ export async function runYamlStorageProductionPreflight(
   const coordinatorDatabaseName = `${input.databasePrefix}-origin-coordinator`;
   const coreDatabaseName = `${input.databasePrefix}-core`;
   const yamlDatabaseName = `${input.databasePrefix}-yaml`;
-  const coreVersion = input.mode === 'pre' ? 1 : 2;
+  const coreLogicalVersion =
+    input.mode === 'pre' ? CORE_DB_LEGACY_LOGICAL_VERSION : CORE_DB_CANONICAL_LOGICAL_VERSION;
+  const coreNativeVersion =
+    input.mode === 'pre' ? CORE_DB_LEGACY_NATIVE_VERSION : CORE_DB_CANONICAL_NATIVE_VERSION;
   let coordinatorDatabase: IDBDatabase | null = null;
   let coreDatabase: IDBDatabase | null = null;
   let yamlDatabase: IDBDatabase | null = null;
@@ -371,7 +381,7 @@ export async function runYamlStorageProductionPreflight(
       catalogFailureCode(
         discovery.entries,
         coreDatabaseName,
-        coreVersion,
+        coreNativeVersion,
         'CORE_DATABASE_NOT_FOUND',
         'CORE_DATABASE_VERSION_MISMATCH'
       ),
@@ -401,31 +411,34 @@ export async function runYamlStorageProductionPreflight(
     );
     if (!coordinator.ok) return rejected(input.mode, coordinator.code, context);
 
-    const coreOpen = await openExactDatabase(input.factory, coreDatabaseName, coreVersion, {
+    const coreOpen = await openExactDatabase(input.factory, coreDatabaseName, coreNativeVersion, {
       open: 'CORE_DATABASE_OPEN_FAILED',
       blocked: 'CORE_DATABASE_OPEN_BLOCKED',
       upgrade: 'CORE_DATABASE_UNEXPECTED_UPGRADE',
     });
     if (!coreOpen.ok) return rejected(input.mode, coreOpen.code, context);
     coreDatabase = coreOpen.database;
-    if (!validateCoreDatabaseSchema(coreDatabase, coreVersion)) {
+    if (!validateCoreDatabaseSchema(coreDatabase, coreLogicalVersion)) {
       return rejected(input.mode, 'CORE_SCHEMA_MISMATCH', context);
     }
     let coreDbResult:
       | Readonly<{
-          readonly databaseVersion: 1;
+          readonly logicalVersion: 1;
+          readonly nativeVersion: 10;
           readonly topologyStatus: 'exact';
           readonly journalTopologyStatus: 'absent';
         }>
       | Readonly<{
-          readonly databaseVersion: 2;
+          readonly logicalVersion: 2;
+          readonly nativeVersion: 20;
           readonly topologyStatus: 'exact';
           readonly journalTopologyStatus: 'exact';
           readonly journalRecordCount: number;
         }>;
     if (input.mode === 'pre') {
       coreDbResult = Object.freeze({
-        databaseVersion: 1,
+        logicalVersion: CORE_DB_LEGACY_LOGICAL_VERSION,
+        nativeVersion: CORE_DB_LEGACY_NATIVE_VERSION,
         topologyStatus: 'exact',
         journalTopologyStatus: 'absent',
       });
@@ -435,7 +448,8 @@ export async function runYamlStorageProductionPreflight(
         return rejected(input.mode, 'CORE_JOURNAL_READ_FAILED', context);
       }
       coreDbResult = Object.freeze({
-        databaseVersion: 2,
+        logicalVersion: CORE_DB_CANONICAL_LOGICAL_VERSION,
+        nativeVersion: CORE_DB_CANONICAL_NATIVE_VERSION,
         topologyStatus: 'exact',
         journalTopologyStatus: 'exact',
         journalRecordCount,

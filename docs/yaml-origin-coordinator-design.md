@@ -366,14 +366,19 @@ runtime before the quiescence claim. Each contender supplies a distinct cryptogr
 activation and quiescence identity. The atomic durable transition selects exactly one executor;
 identity-mismatched contenders stop before CoreDB preflight.
 
-After `ready-for-preflight`, the sole executor performs one CoreDB discovery. An exact existing v1
-database follows the raw preflight and atomic v1-to-v2 upgrade path. A genuinely missing database
+After `ready-for-preflight`, the sole executor performs one CoreDB discovery. An exact existing
+logical v1 database means native IndexedDB v10 and follows the raw preflight and atomic
+logical v1-to-v2 / native v10-to-v20 upgrade path. A genuinely missing database
 follows a distinct same-activation fresh-create path: the same executor and open-request identity
-issue one `open(name, 2)`, require `oldVersion === 0`, create the exact v2 topology, initialize
+issue one `open(name, 20)`, require `oldVersion === 0` and `newVersion === 20`, create the exact
+logical v2 / native v20 topology, initialize
 CoreDB, and validate the resulting canonical YAML cohort before issuing
 `same-activation-fresh-create` readiness. It does not manufacture an empty v1 database, run the
 migration planner, write migration journal rows, reset the coordinator, or transfer execution to
-another context. Any discovered version or schema other than missing or exact v1 is terminal.
+another context. Any discovered native version or schema other than missing or exact native v10 is
+terminal. Migration state, planner input, and journal metadata retain logical v1/v2; raw IndexedDB
+catalog, open, versionchange, and schema checks use only native v10/v20. These exact pairs are not an
+arbitrary arithmetic conversion and native v1/v2 is never accepted as a fallback.
 
 A `LEGACY_YAML_ACCESS_REVOKED` HELLO result never authorizes legacy bootstrap and is not by itself
 proof of `ready-for-preflight`, because the fixed coordinator returns the same code while an active
@@ -389,10 +394,11 @@ accepted release while this application-only path evolves.
 
 After the successful v1-to-v2 activation or same-activation fresh-v2 creation, an
 activation-aware client with that exact durable evidence may enter the canonical-only successor
-bootstrap. It must verify exact CoreDB v2 topology, the exact migration-journal schema, every current
-raw YAML slot as canonical, and current WorkerService initialization before issuing a fresh
-canonical-ready decision. A revoked result paired with CoreDB v1, an unknown version, invalid
-schema or payload, or failed initialization is a terminal boot failure. A
+bootstrap. It must verify exact CoreDB logical v2 / native v20 topology, the exact migration-journal
+schema, every current raw YAML slot as canonical, and current WorkerService initialization before
+issuing a fresh canonical-ready decision. A revoked result paired with CoreDB logical v1 / native
+v10, an unknown native version, invalid schema or payload, or failed initialization is a terminal
+boot failure. A
 `LEGACY_YAML_ACCESS_REJECTED` result is always terminal. Neither result permits a generic IndexedDB
 reset prompt, coordinator reset, quiescence retry, or legacy fallback.
 The successor path never treats a missing CoreDB as a fresh installation; only the sole executor
@@ -445,13 +451,15 @@ database, duplicate catalog entry, or version mismatch rejects without opening a
 subsequent transaction is `readonly`; an unexpected upgrade, blocked open, topology mismatch, read
 failure, reflection failure, or digest failure becomes a stable sanitized rejection.
 
-Pre mode requires the exact coordinator v2 single `allowed` record, exact CoreDB v1 topology, and
-exact YamlDB v1 topology. Post mode requires the exact coordinator v2 single
+Pre mode requires the exact coordinator native v2 single `allowed` record, exact CoreDB logical v1 /
+native v10 topology, and exact YamlDB v1 topology. Post mode requires the exact coordinator v2 single
 `revoked/ready-for-preflight` record including globally unique ordered participants and one ordered
-acknowledged/discarded evidence item per participant, plus exact CoreDB v2 topology and migration
-journal schema. Both modes read the YamlDB v1 rows and primary keys in one readonly transaction and
+acknowledged/discarded evidence item per participant, plus exact CoreDB logical v2 / native v20
+topology and migration journal schema. Both modes read the YamlDB v1 rows and primary keys in one
+readonly transaction and
 emit only their count and deterministic SHA-256. The public result contains only the mode, accepted
-or rejected status, stable code, exact release version, timestamp, database/protocol versions,
+or rejected status, stable code, exact release version, timestamp, coordinator/YamlDB native
+database versions, explicit CoreDB `logicalVersion` / `nativeVersion`, protocol version,
 phase/status, topology status, sanitized counts, and digest. It never contains raw records, YAML,
 participant identity, client URL, database prefix, native error, credential, or endpoint.
 
