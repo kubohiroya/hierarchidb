@@ -2,7 +2,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { RouteEntity, RouteTransportSelection } from '@hierarchidb/route-api';
 import { resolveBuildStages } from '@hierarchidb/ui-build-progress';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
-import { useBuildSessionMutation } from '@hierarchidb/ui-build-sessions';
+import { useCanonicalBuildSessionControls } from '@hierarchidb/ui-build-sessions';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { CheckCircle } from '@mui/icons-material';
 import { Alert, Box, Chip, Stack, Typography } from '@mui/material';
@@ -22,6 +22,10 @@ interface RouteBuildStepProps {
 }
 
 const ROUTE_STAGE_IDS = ['source', 'geometry', 'tileEmit'] as const;
+const ROUTE_BUILD_COMMAND_TRANSPORT = {
+  kind: 'worker',
+  nodeType: PLUGIN_NODE_TYPE,
+} as const;
 
 const TRANSPORT_SELECTION_LABELS: Record<
   RouteTransportSelection,
@@ -95,10 +99,18 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({ draft, onUpdate,
     lastError,
     subscriptionReady,
   } = useRouteBuildProgress(routeNodeId);
-  const { isMutating, mutationError, pauseSession, resumeSession } = useBuildSessionMutation(
-    PLUGIN_NODE_TYPE,
-    routeNodeId
-  );
+  const {
+    canStartBuildSession,
+    pendingCommand,
+    mutationError,
+    pauseBuildSession,
+    startBuildSession,
+  } = useCanonicalBuildSessionControls({
+    nodeId: routeNodeId,
+    subscriptionReady,
+    commandTransport: ROUTE_BUILD_COMMAND_TRANSPORT,
+  });
+  const isMutating = pendingCommand !== null;
   const status = resolveUiBuildStatus(lifecycleStatus?.status ?? progress?.status);
   const overallProgress = resolveOverallProgress(status, progress?.stage, progress?.percentage);
   const crashInsight = useRouteBuildCrashInsight({
@@ -175,15 +187,12 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({ draft, onUpdate,
   );
 
   const handleStartOrResume = useCallback(async (): Promise<void> => {
-    if (!subscriptionReady) {
-      throw new Error('[RouteBuildStep] canonical event subscription is not ready');
-    }
-    await resumeSession();
-  }, [resumeSession, subscriptionReady]);
+    await startBuildSession();
+  }, [startBuildSession]);
 
   const handlePause = useCallback(async (): Promise<void> => {
-    await pauseSession();
-  }, [pauseSession]);
+    await pauseBuildSession();
+  }, [pauseBuildSession]);
 
   useEffect(() => {
     if (persistedStatusRef.current === status) return;
@@ -250,7 +259,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({ draft, onUpdate,
     stageProgress,
     onPause: status === 'running' && !isMutating ? () => void handlePause() : undefined,
     onResume:
-      hasRequiredFields && subscriptionReady && status !== 'running' && !isMutating
+      hasRequiredFields && canStartBuildSession && status !== 'running'
         ? () => void handleStartOrResume()
         : undefined,
     stopRequested: status === 'running' && isMutating,
@@ -277,7 +286,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({ draft, onUpdate,
     stagesLength: stages.length,
   });
 
-  const visibleError = mutationError ?? lastError;
+  const visibleError = mutationError?.message ?? lastError;
   const dataSource = draft.dataSourceName ?? t('stage.notConfigured', 'Not configured');
   const generationMethod = draft.generationMethod ?? t('stage.notConfigured', 'Not configured');
   const startLocation = draft.startLocationId ?? t('stage.notConfigured', 'Not configured');

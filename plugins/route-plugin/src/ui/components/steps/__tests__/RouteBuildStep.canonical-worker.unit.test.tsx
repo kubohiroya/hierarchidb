@@ -25,17 +25,18 @@ const mocks = vi.hoisted(() => ({
     lastError: null,
     subscriptionReady: false,
   } as ProgressResult,
-  resumeSession: vi.fn(async () => true),
-  pauseSession: vi.fn(async () => true),
+  startBuildSession: vi.fn(async () => true),
+  pauseBuildSession: vi.fn(async () => true),
   panelProps: null as ProgressPanelProps | null,
 }));
 
 vi.mock('@hierarchidb/ui-build-sessions', () => ({
-  useBuildSessionMutation: () => ({
-    isMutating: false,
+  useCanonicalBuildSessionControls: () => ({
+    canStartBuildSession: mocks.progress.subscriptionReady,
+    pendingCommand: null,
     mutationError: null,
-    pauseSession: mocks.pauseSession,
-    resumeSession: mocks.resumeSession,
+    pauseBuildSession: mocks.pauseBuildSession,
+    startBuildSession: mocks.startBuildSession,
   }),
 }));
 
@@ -76,8 +77,8 @@ describe('RouteBuildStep canonical Worker launch', () => {
       lastError: null,
       subscriptionReady: false,
     };
-    mocks.resumeSession.mockClear();
-    mocks.pauseSession.mockClear();
+    mocks.startBuildSession.mockClear();
+    mocks.pauseBuildSession.mockClear();
     mocks.panelProps = null;
   });
 
@@ -98,7 +99,7 @@ describe('RouteBuildStep canonical Worker launch', () => {
     );
 
     expect(screen.getByRole('button', { name: 'start' })).toBeDisabled();
-    expect(mocks.resumeSession).not.toHaveBeenCalled();
+    expect(mocks.startBuildSession).not.toHaveBeenCalled();
 
     mocks.progress = { ...mocks.progress, subscriptionReady: true };
     rerender(<RouteBuildStep draft={draft} onUpdate={vi.fn()} nodeId="route-node" mode="edit" />);
@@ -107,6 +108,6 @@ describe('RouteBuildStep canonical Worker launch', () => {
     await act(async () => {
       fireEvent.click(startButton);
     });
-    expect(mocks.resumeSession).toHaveBeenCalledOnce();
+    expect(mocks.startBuildSession).toHaveBeenCalledOnce();
   });
 });
