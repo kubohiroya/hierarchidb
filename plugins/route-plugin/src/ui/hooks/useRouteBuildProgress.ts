@@ -1,30 +1,22 @@
-import type { NodeId, NodeType } from '@hierarchidb/core-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import {
   type BuildSessionProgressResult,
   useBuildSessionStateTreeBridge,
 } from '@hierarchidb/ui-build-sessions';
-
-const ROUTE_NODE_TYPE = 'route' as NodeType;
-const ROUTE_STAGE_IDS = ['source', 'geometry', 'tileEmit'] as const;
-type RouteStageId = (typeof ROUTE_STAGE_IDS)[number];
-
-const resolveRouteStageId = (value: unknown): RouteStageId => {
-  if (value === 'source' || value === 'geometry' || value === 'tileEmit') return value;
-  throw new Error(`[route buildSessionStateTreeBridge] unsupported stage: ${String(value)}`);
-};
+import { type RouteBuildStageId, routeBuildUiAdapter } from '~/ui/routeBuildUiAdapter.js';
 
 export type RouteBuildProgressResult = BuildSessionProgressResult & {
   subscriptionReady: boolean;
 };
 
 export function useRouteBuildProgress(nodeId: NodeId | null): RouteBuildProgressResult {
-  const { progressState, subscriptionReady } = useBuildSessionStateTreeBridge<RouteStageId>({
-    nodeType: ROUTE_NODE_TYPE,
+  const { progressState, subscriptionReady } = useBuildSessionStateTreeBridge<RouteBuildStageId>({
+    nodeType: routeBuildUiAdapter.nodeType,
     nodeId,
-    subscriptionTransport: 'worker',
-    stageIds: ROUTE_STAGE_IDS,
-    defaultActiveStageId: 'source',
-    resolveStageId: resolveRouteStageId,
+    subscriptionTransport: routeBuildUiAdapter.subscriptionTransport,
+    stageIds: routeBuildUiAdapter.stageIds,
+    defaultActiveStageId: routeBuildUiAdapter.defaultActiveStageId,
+    resolveStageId: routeBuildUiAdapter.resolveStageId,
   });
 
   return {

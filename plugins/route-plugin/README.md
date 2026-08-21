@@ -36,6 +36,8 @@ OpenStreetMapやNatural Earth等のオープンデータソースから、航路
   - metadata には location 由来の座標、admin0〜2 の name/code、距離、中継点数を保存する。
 - routeは既定で方向付きとし、明示的にbidirectionalなrouteだけ始終点を正規化して同一`sourceKey`にする。
 - build sessionの正規entry pointは`RouteBuildSessionOrchestrator -> RouteBuildSession`とする。
+- Build Stepは共通canonical subscription/control kernelと`BuildSessionProgressPanel`を使用し、
+  route固有UIはstage label、必須設定、結果表示だけを保持する。
 - 未実装stage、engine欠落、不正設定をno-op成功や別engineへの暗黙fallbackで処理しない。
 - Step6 は shape/location と同等のプレビュー UI を共用する。
   - FloatingWindow で Metadata: routes / 交通モードトグル / スタイル設定を重ね表示可能。
@@ -45,12 +47,12 @@ OpenStreetMapやNatural Earth等のオープンデータソースから、航路
   - 変更: カスケード変更するかキャンセル。座標/admin code 変更時は fetch キャッシュ削除 + `rebuild required` 表示 + sessions に「再ビルド予約」を route ノード単位で作成する。
   - それ以外の項目変更時は route metadata を即時更新する。
 
-### 移行状況（2026-08-21）
+### 適用状況（2026-08-22）
 
-- UIからroute mutation APIを3段階で直接呼ぶ経路と、canonical eventを配信する`RouteBuildSession`経路が併存している。
-- `RouteBuildSession`の`source` handlerはgenerator結果を永続化せず、
-  `geometry` / `tileEmit` handlerも実成果物を生成しない。
-- 上記はIssue #549で正規経路へ統合する。完了までは本節をtarget contract、実装を移行中として扱う。
+- Issue #549 / #1373 / #1374 / #1375 により、UI の起動経路は canonical Worker command、
+  実行経路は `RouteBuildSessionOrchestrator -> RouteBuildSession` に一本化済みである。
+- `source` / `geometry` / `tileEmit` はそれぞれ正規成果物を生成・永続化し、canonical 4 event を配信する。
+- browser-local orchestrator と3段階の direct route mutation APIは削除済みであり、互換経路として再導入しない。
 
 ## 主要機能
 
