@@ -19,6 +19,13 @@ const warningTask = (metadata: Record<string, unknown>): ShapeBuildTaskSummary =
     invalidPolygonFilteredRate: 0.25,
     affectedFeatureCount: 1,
     featureErrorCountTotal: 3,
+    invalidPolygonFilteredByCheck: {
+      area: 2,
+      lineLength: 0,
+      maxEdgeLength: 0,
+      selfIntersection: 0,
+      triangleRingRatio: 0,
+    },
     ...metadata,
   },
 });
@@ -64,5 +71,24 @@ describe('tileEmit warning outcome summary', () => {
         status: 'failed',
       })
     ).toThrow('must have completed status');
+  });
+
+  it('rejects inconsistent per-check counts', () => {
+    expect(() =>
+      buildTileEmitTaskOutcomeSummary({
+        task: warningTask({
+          invalidPolygonFilteredByCheck: {
+            area: 1,
+            lineLength: 0,
+            maxEdgeLength: 0,
+            selfIntersection: 0,
+            triangleRingRatio: 0,
+          },
+        }),
+        stageId: 'tileEmit',
+        taskTitle: 'tile-emit-1',
+        translate,
+      })
+    ).toThrow('must sum to invalidPolygonFilteredCount');
   });
 });

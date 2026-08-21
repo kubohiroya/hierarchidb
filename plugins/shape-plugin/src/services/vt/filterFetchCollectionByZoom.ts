@@ -34,7 +34,52 @@ const OMIT_DETAILS_PRESETS: Record<OmitDetailsConfig['level'], OmitDetailsThresh
 
 const metersPerPixel = (z: number): number => (2 * Math.PI * EARTH_RADIUS) / (MVT_EXTENT * 2 ** z);
 
+const assertLonLat = (value: unknown, label: string): LonLat => {
+  if (!Array.isArray(value) || value.length < 2) {
+    throw new Error(`[shape-source] ${label} must contain longitude and latitude`);
+  }
+  for (let index = 0; index < value.length; index += 1) {
+    const coordinate = value[index];
+    if (typeof coordinate !== 'number' || !Number.isFinite(coordinate)) {
+      throw new Error(`[shape-source] ${label}[${index}] must be a finite number`);
+    }
+  }
+  const longitude = value[0];
+  const latitude = value[1];
+  if (typeof longitude !== 'number' || longitude < -180 || longitude > 180) {
+    throw new Error(`[shape-source] ${label} longitude must be within -180..180`);
+  }
+  if (typeof latitude !== 'number' || latitude < -90 || latitude > 90) {
+    throw new Error(`[shape-source] ${label} latitude must be within -90..90`);
+  }
+  return [longitude, latitude];
+};
+
+const assertLinearRing = (value: unknown, label: string): number[][] => {
+  if (!Array.isArray(value) || value.length < 4) {
+    throw new Error(`[shape-source] ${label} must contain at least four positions`);
+  }
+  const positions = value.map((position, index) => {
+    assertLonLat(position, `${label}[${index}]`);
+    return position as number[];
+  });
+  const first = positions[0];
+  const last = positions[positions.length - 1];
+  if (!first || !last || first[0] !== last[0] || first[1] !== last[1]) {
+    throw new Error(`[shape-source] ${label} must be closed`);
+  }
+  return positions;
+};
+
+const assertPolygonCoordinates = (value: unknown, label: string): number[][][] => {
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new Error(`[shape-source] ${label} must contain at least one linear ring`);
+  }
+  return value.map((ring, index) => assertLinearRing(ring, `${label}[${index}]`));
+};
+
 const lonLatToMercator = ([lon, lat]: LonLat): Mercator => {
+  // The projection latitude is bounded for Web Mercator metrics only; source coordinates stay intact.
   const clampedLat = Math.min(MAX_MERCATOR_LAT, Math.max(-MAX_MERCATOR_LAT, lat));
   const x = (lon * Math.PI * EARTH_RADIUS) / 180;
   const y = EARTH_RADIUS * Math.log(Math.tan(Math.PI / 4 + (clampedLat * Math.PI) / 360));
@@ -47,9 +92,11 @@ const computeRingLengthMeters = (ring: number[][]): number => {
   for (let index = 1; index < ring.length; index += 1) {
     const previous = ring[index - 1];
     const current = ring[index];
-    if (!previous || !current) continue;
-    const [previousX, previousY] = lonLatToMercator([previous[0] ?? 0, previous[1] ?? 0]);
-    const [currentX, currentY] = lonLatToMercator([current[0] ?? 0, current[1] ?? 0]);
+    if (!previous || !current) {
+      throw new Error('[shape-source] validated ring lost a position');
+    }
+    const [previousX, previousY] = lonLatToMercator(assertLonLat(previous, `ring[${index - 1}]`));
+    const [currentX, currentY] = lonLatToMercator(assertLonLat(current, `ring[${index}]`));
     length += Math.hypot(currentX - previousX, currentY - previousY);
   }
   return length;
@@ -64,8 +111,9 @@ const computeOuterRingBounds = (
   let minY = Number.POSITIVE_INFINITY;
   let maxX = Number.NEGATIVE_INFINITY;
   let maxY = Number.NEGATIVE_INFINITY;
-  for (const position of outer) {
-    const [x, y] = lonLatToMercator([position[0] ?? 0, position[1] ?? 0]);
+  for (let index = 0; index < outer.length; index += 1) {
+    const position = outer[index];
+    const [x, y] = lonLatToMercator(assertLonLat(position, `outerRing[${index}]`));
     minX = Math.min(minX, x);
     minY = Math.min(minY, y);
     maxX = Math.max(maxX, x);
@@ -132,9 +180,11 @@ const filterPolygons = (
     geometryEngine: GeometryEngine;
   }
 ): number[][][][] =>
-  polygons.filter((coordinates) => {
+  polygons.filter((coordinates, polygonIndex) => {
+    assertPolygonCoordinates(coordinates, `polygon[${polygonIndex}]`);
     const outer = coordinates[0];
-    if (!outer || outer.length < options.minRingVertices) return false;
+    if (!outer) throw new Error(`[shape-source] polygon[${polygonIndex}] lost its outer ring`);
+    if (outer.length < options.minRingVertices) return false;
     if (
       shouldOmitByDetails(
         coordinates,
@@ -185,9 +235,11 @@ export const filterFetchCollectionByZoom = (
   }
 ): FeatureCollection => {
   const features: Feature[] = [];
-  for (const feature of collection.features) {
+  for (let featureIndex = 0; featureIndex < collection.features.length; featureIndex += 1) {
+    const feature = collection.features[featureIndex];
+    if (!feature) throw new Error(`[shape-source] feature[${featureIndex}] is required`);
     const geometry = feature.geometry;
-    if (!geometry) continue;
+    if (!geometry) throw new Error(`[shape-source] feature[${featureIndex}].geometry is required`);
     const filteredGeometry = filterGeometry(geometry, options);
     if (filteredGeometry) features.push({ ...feature, geometry: filteredGeometry });
   }

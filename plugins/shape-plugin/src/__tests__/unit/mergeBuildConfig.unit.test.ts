@@ -1,24 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '../../common/types/constants';
+import type { ShapeBuildConfig } from '../../common/types/index';
 import {
   applyBuildConfigPatch,
   composeRuntimeBuildConfig,
 } from '../../services/utils/shapeBuildUtils';
-import type { ShapeBuildConfig } from '../../common/types/index';
 
 describe('applyBuildConfigPatch', () => {
   it('preserves omitDetailsConfig.level when override provides empty omitDetailsConfig object', () => {
-    const merged = applyBuildConfigPatch(
-      DEFAULT_BUILD_CONFIG,
-      {
-        geometryConfig: {
-          omitDetailsConfig: {},
-        },
-      } as Partial<ShapeBuildConfig>,
-    );
+    const merged = applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, {
+      geometryConfig: {
+        omitDetailsConfig: {},
+      },
+    } as Partial<ShapeBuildConfig>);
 
     expect(merged.geometryConfig.omitDetailsConfig.level).toBe(
-      DEFAULT_BUILD_CONFIG.geometryConfig.omitDetailsConfig.level,
+      DEFAULT_BUILD_CONFIG.geometryConfig.omitDetailsConfig.level
     );
   });
 
@@ -35,26 +32,20 @@ describe('applyBuildConfigPatch', () => {
   });
 
   it('normalizes legacy omitDetailsConfig level aliases from persisted drafts', () => {
-    const mergedFromNone = applyBuildConfigPatch(
-      DEFAULT_BUILD_CONFIG,
-      {
-        geometryConfig: {
-          omitDetailsConfig: {
-            level: 'none',
-          },
+    const mergedFromNone = applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, {
+      geometryConfig: {
+        omitDetailsConfig: {
+          level: 'none',
         },
-      } as Partial<ShapeBuildConfig>,
-    );
-    const mergedFromModerate = applyBuildConfigPatch(
-      DEFAULT_BUILD_CONFIG,
-      {
-        geometryConfig: {
-          omitDetailsConfig: {
-            level: 'moderate',
-          },
+      },
+    } as Partial<ShapeBuildConfig>);
+    const mergedFromModerate = applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, {
+      geometryConfig: {
+        omitDetailsConfig: {
+          level: 'moderate',
         },
-      } as Partial<ShapeBuildConfig>,
-    );
+      },
+    } as Partial<ShapeBuildConfig>);
 
     expect(mergedFromNone.geometryConfig.omitDetailsConfig.level).toBe('weak');
     expect(mergedFromModerate.geometryConfig.omitDetailsConfig.level).toBe('medium');
@@ -62,16 +53,13 @@ describe('applyBuildConfigPatch', () => {
 
   it('throws for unsupported omitDetailsConfig level values', () => {
     expect(() =>
-      applyBuildConfigPatch(
-        DEFAULT_BUILD_CONFIG,
-        {
-          geometryConfig: {
-            omitDetailsConfig: {
-              level: 'invalid-level',
-            },
+      applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, {
+        geometryConfig: {
+          omitDetailsConfig: {
+            level: 'invalid-level',
           },
-        } as Partial<ShapeBuildConfig>,
-      ),
+        },
+      } as Partial<ShapeBuildConfig>)
     ).toThrow('unsupported omit-details level: invalid-level');
   });
 
@@ -185,24 +173,39 @@ describe('applyBuildConfigPatch', () => {
 
 describe('composeRuntimeBuildConfig invalid geometry filter contract', () => {
   it.each(['fetchConfig', 'sourceConfig'] as const)('rejects the legacy %s key', (legacyOwner) => {
-    const buildConfig = structuredClone(DEFAULT_BUILD_CONFIG) as ShapeBuildConfig & Record<string, unknown>;
+    const buildConfig = structuredClone(DEFAULT_BUILD_CONFIG) as ShapeBuildConfig &
+      Record<string, unknown>;
     if (legacyOwner === 'fetchConfig') {
       buildConfig.fetchConfig = { invalidGeometryFilter: { area: true } };
     } else {
-      (buildConfig.sourceConfig as unknown as Record<string, unknown>).invalidGeometryFilter = { area: true };
+      (buildConfig.sourceConfig as unknown as Record<string, unknown>).invalidGeometryFilter = {
+        area: true,
+      };
     }
 
     expect(() => composeRuntimeBuildConfig(buildConfig, DEFAULT_PROCESSING_CONFIG)).toThrow(
-      `${legacyOwner}.invalidGeometryFilter is not supported`,
+      `${legacyOwner}.invalidGeometryFilter is not supported`
     );
   });
 
   it('rejects a missing required tileEmit boolean', () => {
     const buildConfig = structuredClone(DEFAULT_BUILD_CONFIG) as ShapeBuildConfig;
-    delete (buildConfig.tileEmitConfig.invalidGeometryFilter as unknown as Record<string, unknown>).lineLength;
+    delete (buildConfig.tileEmitConfig.invalidGeometryFilter as unknown as Record<string, unknown>)
+      .lineLength;
 
     expect(() => composeRuntimeBuildConfig(buildConfig, DEFAULT_PROCESSING_CONFIG)).toThrow(
-      'tileEmitConfig.invalidGeometryFilter.lineLength must be boolean',
+      'tileEmitConfig.invalidGeometryFilter.lineLength must be boolean'
+    );
+  });
+
+  it('rejects an unsupported tileEmit filter key', () => {
+    const buildConfig = structuredClone(DEFAULT_BUILD_CONFIG) as ShapeBuildConfig;
+    (
+      buildConfig.tileEmitConfig.invalidGeometryFilter as unknown as Record<string, unknown>
+    ).legacyAreaCheck = true;
+
+    expect(() => composeRuntimeBuildConfig(buildConfig, DEFAULT_PROCESSING_CONFIG)).toThrow(
+      'tileEmitConfig.invalidGeometryFilter.legacyAreaCheck is not supported'
     );
   });
 });

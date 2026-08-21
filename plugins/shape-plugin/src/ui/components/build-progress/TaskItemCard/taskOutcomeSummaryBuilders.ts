@@ -1,7 +1,10 @@
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import { isTaskSkipped, resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
-import { formatGeometrySimplifySummary, parseGeometrySimplifyError } from '~/ui/components/build-progress/geometrySimplifyError';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import { formatTaskDisplayMessage } from '~/ui/components/build-progress/formatTaskDisplayMessage';
+import {
+  formatGeometrySimplifySummary,
+  parseGeometrySimplifyError,
+} from '~/ui/components/build-progress/geometrySimplifyError';
 import type { TaskOutcomeSummary } from '~/ui/components/build-progress/TaskItem/TaskItem';
 
 type Translate = (key: string, fallback?: string) => string;
@@ -14,7 +17,7 @@ export type TaskOutcomeSummaryBuilderContext = {
 };
 
 export type TaskOutcomeSummaryBuilder = (
-  context: TaskOutcomeSummaryBuilderContext,
+  context: TaskOutcomeSummaryBuilderContext
 ) => TaskOutcomeSummary;
 
 const numberFormatter = new Intl.NumberFormat('en-US');
@@ -40,7 +43,10 @@ const readNumber = (rawValue: unknown): number | null => {
   return null;
 };
 
-const readMetadataNumber = (metadata: Record<string, unknown> | undefined, keys: string[]): number | null => {
+const readMetadataNumber = (
+  metadata: Record<string, unknown> | undefined,
+  keys: string[]
+): number | null => {
   for (const key of keys) {
     const rawValue = key.split('.').reduce<unknown>((current, segment) => {
       if (!current || typeof current !== 'object') {
@@ -56,7 +62,7 @@ const readMetadataNumber = (metadata: Record<string, unknown> | undefined, keys:
 
 const readDisplayMetric = (
   task: ShapeBuildTaskSummary,
-  metric: 'features' | 'polygons' | 'vertices',
+  metric: 'features' | 'polygons' | 'vertices'
 ): { input: number | null; output: number | null } => {
   if (task.display?.kind !== 'summary') {
     return { input: null, output: null };
@@ -76,7 +82,8 @@ const resolveFailedMessage = (task: ShapeBuildTaskSummary): string | null => {
   return failed.length > 0 ? failed : null;
 };
 
-const compact = (value: string, max = 72): string => (value.length > max ? `${value.slice(0, max)}...` : value);
+const compact = (value: string, max = 72): string =>
+  value.length > max ? `${value.slice(0, max)}...` : value;
 
 const resolveSummaryKind = (task: ShapeBuildTaskSummary): TaskOutcomeSummary['kind'] => {
   if (isTaskSkipped(task.display)) return 'skipped';
@@ -85,13 +92,21 @@ const resolveSummaryKind = (task: ShapeBuildTaskSummary): TaskOutcomeSummary['ki
   return 'other';
 };
 
-export const buildSimpleTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task, taskTitle, translate }) => {
+export const buildSimpleTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({
+  task,
+  taskTitle,
+  translate,
+}) => {
   const kind = resolveSummaryKind(task);
   const displayMessage = formatTaskDisplayMessage(task.display, translate);
   const failedMessage = resolveFailedMessage(task);
 
   if (kind === 'skipped') {
-    const reason = (displayMessage || resolveTaskMetadataMessage(task.metadata) || taskTitle).trim();
+    const reason = (
+      displayMessage ||
+      resolveTaskMetadataMessage(task.metadata) ||
+      taskTitle
+    ).trim();
     return {
       kind,
       visualization: 'none',
@@ -121,7 +136,11 @@ export const buildSimpleTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task,
   }
 
   const vertexLimitValidationMessage = formatVertexLimitValidationMessage(task.metadata);
-  const info = vertexLimitValidationMessage || resolveTaskMetadataMessage(task.metadata) || displayMessage || taskTitle;
+  const info =
+    vertexLimitValidationMessage ||
+    resolveTaskMetadataMessage(task.metadata) ||
+    displayMessage ||
+    taskTitle;
   return {
     kind,
     visualization: 'none',
@@ -133,11 +152,13 @@ export const buildSimpleTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task,
 const readTileEmitWarningNumber = (
   metadata: Record<string, unknown>,
   key: string,
-  options: { integer: boolean; rate?: boolean },
+  options: { integer: boolean; rate?: boolean }
 ): number => {
   const value = metadata[key];
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
-    throw new Error(`[shape-ui] tileEmit warning metadata.${key} must be a finite non-negative number`);
+    throw new Error(
+      `[shape-ui] tileEmit warning metadata.${key} must be a finite non-negative number`
+    );
   }
   if (options.integer && !Number.isInteger(value)) {
     throw new Error(`[shape-ui] tileEmit warning metadata.${key} must be an integer`);
@@ -148,6 +169,39 @@ const readTileEmitWarningNumber = (
   return value;
 };
 
+const TILE_EMIT_INVALID_GEOMETRY_CHECKS = [
+  'area',
+  'lineLength',
+  'maxEdgeLength',
+  'selfIntersection',
+  'triangleRingRatio',
+] as const;
+
+const readTileEmitWarningCountsByCheck = (
+  metadata: Record<string, unknown>
+): Record<(typeof TILE_EMIT_INVALID_GEOMETRY_CHECKS)[number], number> => {
+  const value = metadata.invalidPolygonFilteredByCheck;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(
+      '[shape-ui] tileEmit warning metadata.invalidPolygonFilteredByCheck must be an object'
+    );
+  }
+  const record = value as Record<string, unknown>;
+  const supportedKeys = new Set<string>(TILE_EMIT_INVALID_GEOMETRY_CHECKS);
+  const unsupportedKey = Object.keys(record).find((key) => !supportedKeys.has(key));
+  if (unsupportedKey) {
+    throw new Error(
+      `[shape-ui] tileEmit warning metadata.invalidPolygonFilteredByCheck.${unsupportedKey} is not supported`
+    );
+  }
+  return Object.fromEntries(
+    TILE_EMIT_INVALID_GEOMETRY_CHECKS.map((key) => [
+      key,
+      readTileEmitWarningNumber(record, key, { integer: true }),
+    ])
+  ) as Record<(typeof TILE_EMIT_INVALID_GEOMETRY_CHECKS)[number], number>;
+};
+
 export const isTileEmitWarningResult = (task: ShapeBuildTaskSummary): boolean => {
   const severity = task.metadata?.resultSeverity;
   if (severity === undefined) return false;
@@ -155,7 +209,9 @@ export const isTileEmitWarningResult = (task: ShapeBuildTaskSummary): boolean =>
     throw new Error(`[shape-ui] unsupported tileEmit resultSeverity: ${String(severity)}`);
   }
   if (task.status !== 'completed') {
-    throw new Error(`[shape-ui] tileEmit warning result must have completed status: ${task.taskId}`);
+    throw new Error(
+      `[shape-ui] tileEmit warning result must have completed status: ${task.taskId}`
+    );
   }
   return true;
 };
@@ -165,14 +221,61 @@ export const buildTileEmitTaskOutcomeSummary: TaskOutcomeSummaryBuilder = (conte
   if (!isTileEmitWarningResult(task)) return buildSimpleTaskOutcomeSummary(context);
   const metadata = task.metadata;
   if (!metadata) throw new Error('[shape-ui] tileEmit warning metadata is required');
-  const filtered = readTileEmitWarningNumber(metadata, 'invalidPolygonFilteredCount', { integer: true });
-  const checked = readTileEmitWarningNumber(metadata, 'invalidPolygonCheckedCount', { integer: true });
-  const rate = readTileEmitWarningNumber(metadata, 'invalidPolygonFilteredRate', { integer: false, rate: true });
-  const affectedFeatures = readTileEmitWarningNumber(metadata, 'affectedFeatureCount', { integer: true });
-  const featureErrors = readTileEmitWarningNumber(metadata, 'featureErrorCountTotal', { integer: true });
-  const summaryLine = `${translate('task.status.warning', 'Warning')}: `
-    + `${translate('task.tileEmit.invalidGeometryFilter.filtered', 'Filtered polygons')} `
-    + `${formatInt(filtered)}/${formatInt(checked)} (${formatPercent(rate)})`;
+  const filtered = readTileEmitWarningNumber(metadata, 'invalidPolygonFilteredCount', {
+    integer: true,
+  });
+  const checked = readTileEmitWarningNumber(metadata, 'invalidPolygonCheckedCount', {
+    integer: true,
+  });
+  const rate = readTileEmitWarningNumber(metadata, 'invalidPolygonFilteredRate', {
+    integer: false,
+    rate: true,
+  });
+  const affectedFeatures = readTileEmitWarningNumber(metadata, 'affectedFeatureCount', {
+    integer: true,
+  });
+  const featureErrors = readTileEmitWarningNumber(metadata, 'featureErrorCountTotal', {
+    integer: true,
+  });
+  const filteredByCheck = readTileEmitWarningCountsByCheck(metadata);
+  const filteredByCheckTotal = TILE_EMIT_INVALID_GEOMETRY_CHECKS.reduce(
+    (total, key) => total + filteredByCheck[key],
+    0
+  );
+  if (filtered === 0) {
+    throw new Error(
+      '[shape-ui] tileEmit warning metadata.invalidPolygonFilteredCount must be greater than zero'
+    );
+  }
+  if (filtered > checked) {
+    throw new Error(
+      '[shape-ui] tileEmit warning metadata.invalidPolygonFilteredCount must not exceed invalidPolygonCheckedCount'
+    );
+  }
+  if (filteredByCheckTotal !== filtered) {
+    throw new Error(
+      '[shape-ui] tileEmit warning metadata.invalidPolygonFilteredByCheck must sum to invalidPolygonFilteredCount'
+    );
+  }
+  if (rate !== filtered / checked) {
+    throw new Error(
+      '[shape-ui] tileEmit warning metadata.invalidPolygonFilteredRate must equal filtered / checked'
+    );
+  }
+  if (affectedFeatures === 0 || affectedFeatures > filtered) {
+    throw new Error(
+      '[shape-ui] tileEmit warning metadata.affectedFeatureCount must be within 1..invalidPolygonFilteredCount'
+    );
+  }
+  if (featureErrors < filtered) {
+    throw new Error(
+      '[shape-ui] tileEmit warning metadata.featureErrorCountTotal must be at least invalidPolygonFilteredCount'
+    );
+  }
+  const summaryLine =
+    `${translate('task.status.warning', 'Warning')}: ` +
+    `${translate('task.tileEmit.invalidGeometryFilter.filtered', 'Filtered polygons')} ` +
+    `${formatInt(filtered)}/${formatInt(checked)} (${formatPercent(rate)})`;
   return {
     kind: 'completed',
     visualization: 'none',
@@ -187,7 +290,10 @@ export const buildTileEmitTaskOutcomeSummary: TaskOutcomeSummaryBuilder = (conte
   };
 };
 
-const readMetadataString = (metadata: Record<string, unknown> | undefined, keys: string[]): string | null => {
+const readMetadataString = (
+  metadata: Record<string, unknown> | undefined,
+  keys: string[]
+): string | null => {
   for (const key of keys) {
     const rawValue = key.split('.').reduce<unknown>((current, segment) => {
       if (!current || typeof current !== 'object') {
@@ -218,7 +324,9 @@ const resolveRatio = (output: number | null, input: number | null): number | nul
   return Math.max(0, Math.min(1, output / input));
 };
 
-const formatVertexLimitValidationMessage = (metadata: Record<string, unknown> | undefined): string | null => {
+const formatVertexLimitValidationMessage = (
+  metadata: Record<string, unknown> | undefined
+): string | null => {
   if (!metadata) return null;
   const raw = metadata.vertexLimitValidation;
   if (!raw || typeof raw !== 'object') return null;
@@ -230,47 +338,41 @@ const formatVertexLimitValidationMessage = (metadata: Record<string, unknown> | 
   const limit = readNumber(record.retryVertexLimit);
   const tolerance = readNumber(record.effectiveTolerance);
   if (
-    processed === null
-    || total === null
-    || overLimit === null
-    || maxVertices === null
-    || limit === null
-    || tolerance === null
+    processed === null ||
+    total === null ||
+    overLimit === null ||
+    maxVertices === null ||
+    limit === null ||
+    tolerance === null
   ) {
     return null;
   }
-  return `Vertex limit validate: ${Math.floor(processed)}/${Math.floor(total)} features, `
-    + `over-limit ${Math.floor(overLimit)}, `
-    + `max vertices ${Math.floor(maxVertices)}, `
-    + `limit ${Math.floor(limit)}, `
-    + `tol ${Number.parseFloat(tolerance.toFixed(6))}`;
+  return (
+    `Vertex limit validate: ${Math.floor(processed)}/${Math.floor(total)} features, ` +
+    `over-limit ${Math.floor(overLimit)}, ` +
+    `max vertices ${Math.floor(maxVertices)}, ` +
+    `limit ${Math.floor(limit)}, ` +
+    `tol ${Number.parseFloat(tolerance.toFixed(6))}`
+  );
 };
 
-export const buildSourceTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task, taskTitle, translate }) => {
+export const buildSourceTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({
+  task,
+  taskTitle,
+  translate,
+}) => {
   const kind = resolveSummaryKind(task);
   const displayMessage = formatTaskDisplayMessage(task.display, translate);
   const failedMessage = resolveFailedMessage(task);
 
-  const countryName = readMetadataString(task.metadata, [
-    'fetchDetail.countryName',
-  ]);
-  const countryCode = readMetadataString(task.metadata, [
-    'fetchDetail.countryCode',
-  ]);
-  const adminLevelRaw = readMetadataNumber(task.metadata, [
-    'fetchDetail.adminLevel',
-  ]);
+  const countryName = readMetadataString(task.metadata, ['fetchDetail.countryName']);
+  const countryCode = readMetadataString(task.metadata, ['fetchDetail.countryCode']);
+  const adminLevelRaw = readMetadataNumber(task.metadata, ['fetchDetail.adminLevel']);
   const adminLevel = adminLevelRaw !== null ? Math.floor(adminLevelRaw) : null;
-  const url = readMetadataString(task.metadata, [
-    'fetchDetail.url',
-  ]);
+  const url = readMetadataString(task.metadata, ['fetchDetail.url']);
 
-  const featuresInput = readMetadataNumber(task.metadata, [
-    'fetchDetail.features.input',
-  ]);
-  const featuresOutput = readMetadataNumber(task.metadata, [
-    'fetchDetail.features.output',
-  ]);
+  const featuresInput = readMetadataNumber(task.metadata, ['fetchDetail.features.input']);
+  const featuresOutput = readMetadataNumber(task.metadata, ['fetchDetail.features.output']);
   const polygonsInput = readMetadataNumber(task.metadata, [
     'fetchDetail.polygons.input',
     'fetchDetail.polygonsPerFeature.input',
@@ -281,14 +383,19 @@ export const buildSourceTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task,
   ]);
   const featuresRatio = resolveRatio(featuresOutput, featuresInput);
   const polygonsRatio = resolveRatio(polygonsOutput, polygonsInput);
-  const hasSourceDetails = url !== null
-    || featuresInput !== null
-    || featuresOutput !== null
-    || polygonsInput !== null
-    || polygonsOutput !== null;
+  const hasSourceDetails =
+    url !== null ||
+    featuresInput !== null ||
+    featuresOutput !== null ||
+    polygonsInput !== null ||
+    polygonsOutput !== null;
 
   if (kind === 'skipped') {
-    const reason = (displayMessage || resolveTaskMetadataMessage(task.metadata) || taskTitle).trim();
+    const reason = (
+      displayMessage ||
+      resolveTaskMetadataMessage(task.metadata) ||
+      taskTitle
+    ).trim();
     return {
       kind,
       visualization: 'none',
@@ -308,15 +415,14 @@ export const buildSourceTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task,
   }
 
   if (kind === 'completed') {
-    const summaryLine = (
-      featuresInput !== null
-      && featuresOutput !== null
-      && polygonsInput !== null
-      && polygonsOutput !== null
-    )
-      ? `F ${formatInt(featuresOutput)}/${formatInt(featuresInput)} (${formatPercent(featuresRatio)}), `
-      + `P ${formatInt(polygonsOutput)}/${formatInt(polygonsInput)} (${formatPercent(polygonsRatio)})`
-      : (displayMessage || 'Completed');
+    const summaryLine =
+      featuresInput !== null &&
+      featuresOutput !== null &&
+      polygonsInput !== null &&
+      polygonsOutput !== null
+        ? `F ${formatInt(featuresOutput)}/${formatInt(featuresInput)} (${formatPercent(featuresRatio)}), ` +
+          `P ${formatInt(polygonsOutput)}/${formatInt(polygonsInput)} (${formatPercent(polygonsRatio)})`
+        : displayMessage || 'Completed';
     return {
       kind,
       visualization: hasSourceDetails ? 'fetchMetrics' : 'none',
@@ -334,7 +440,11 @@ export const buildSourceTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task,
   }
 
   const vertexLimitValidationMessage = formatVertexLimitValidationMessage(task.metadata);
-  const info = vertexLimitValidationMessage || resolveTaskMetadataMessage(task.metadata) || displayMessage || taskTitle;
+  const info =
+    vertexLimitValidationMessage ||
+    resolveTaskMetadataMessage(task.metadata) ||
+    displayMessage ||
+    taskTitle;
   return {
     kind,
     visualization: hasSourceDetails ? 'fetchMetrics' : 'none',
@@ -351,7 +461,11 @@ export const buildSourceTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task,
   };
 };
 
-export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task, taskTitle, translate }) => {
+export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({
+  task,
+  taskTitle,
+  translate,
+}) => {
   const kind = resolveSummaryKind(task);
   const displayMessage = formatTaskDisplayMessage(task.display, translate);
   const failedMessage = resolveFailedMessage(task);
@@ -368,9 +482,8 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
     'tolerance',
   ]);
   const effectiveTolerance = effectiveToleranceRaw;
-  const effectiveToleranceText = effectiveTolerance === null
-    ? 'N/A'
-    : `${Number.parseFloat(effectiveTolerance.toFixed(6))}`;
+  const effectiveToleranceText =
+    effectiveTolerance === null ? 'N/A' : `${Number.parseFloat(effectiveTolerance.toFixed(6))}`;
   const baseTolerance = readMetadataNumber(task.metadata, [
     'baseTolerance',
     'fetchDetail.baseTolerance',
@@ -381,13 +494,15 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
     'metadata.initialTolerance',
   ]);
 
-  const retryAttemptRaw = readMetadataNumber(task.metadata, [
-    'finalRetryAttempts',
-    'metadata.finalRetryAttempts',
-    'retryAttempt',
-    'metadata.retryAttempt',
-  ]) ?? readNumber(task.retryAttempt);
-  const retryAttempt = retryAttemptRaw !== null && retryAttemptRaw >= 0 ? Math.floor(retryAttemptRaw) : null;
+  const retryAttemptRaw =
+    readMetadataNumber(task.metadata, [
+      'finalRetryAttempts',
+      'metadata.finalRetryAttempts',
+      'retryAttempt',
+      'metadata.retryAttempt',
+    ]) ?? readNumber(task.retryAttempt);
+  const retryAttempt =
+    retryAttemptRaw !== null && retryAttemptRaw >= 0 ? Math.floor(retryAttemptRaw) : null;
 
   const retryMaxRaw = readMetadataNumber(task.metadata, [
     'retryMax',
@@ -411,13 +526,15 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
     vertices: readDisplayMetric(task, 'vertices'),
   };
 
-  const vertexReductionRate = (
-    metrics.vertices.input !== null
-    && metrics.vertices.input > 0
-    && metrics.vertices.output !== null
-  )
-    ? Math.max(0, Math.min(1, (metrics.vertices.input - metrics.vertices.output) / metrics.vertices.input))
-    : null;
+  const vertexReductionRate =
+    metrics.vertices.input !== null &&
+    metrics.vertices.input > 0 &&
+    metrics.vertices.output !== null
+      ? Math.max(
+          0,
+          Math.min(1, (metrics.vertices.input - metrics.vertices.output) / metrics.vertices.input)
+        )
+      : null;
 
   const extractionRatio = readMetadataNumber(task.metadata, [
     'extractionRatio',
@@ -448,22 +565,24 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
   const adminLevel = adminLevelRaw !== null ? Math.floor(adminLevelRaw) : null;
 
   const maxPolygonVertices = {
-    input: readMetadataNumber(task.metadata, [
-      'maxPolygonVertices.input',
-      'maxPolygonVertexCount.input',
-      'largestPolygonVertices.input',
-      'metadata.maxPolygonVertices.input',
-      'metadata.maxPolygonVertexCount.input',
-      'metadata.largestPolygonVertices.input',
-    ]) ?? readMessageNumber(failedMessage, [/maxVertices=(\d+)/i]),
-    output: readMetadataNumber(task.metadata, [
-      'maxPolygonVertices.output',
-      'maxPolygonVertexCount.output',
-      'largestPolygonVertices.output',
-      'metadata.maxPolygonVertices.output',
-      'metadata.maxPolygonVertexCount.output',
-      'metadata.largestPolygonVertices.output',
-    ]) ?? readMessageNumber(failedMessage, [/finalVertexCount=(\d+)/i]),
+    input:
+      readMetadataNumber(task.metadata, [
+        'maxPolygonVertices.input',
+        'maxPolygonVertexCount.input',
+        'largestPolygonVertices.input',
+        'metadata.maxPolygonVertices.input',
+        'metadata.maxPolygonVertexCount.input',
+        'metadata.largestPolygonVertices.input',
+      ]) ?? readMessageNumber(failedMessage, [/maxVertices=(\d+)/i]),
+    output:
+      readMetadataNumber(task.metadata, [
+        'maxPolygonVertices.output',
+        'maxPolygonVertexCount.output',
+        'largestPolygonVertices.output',
+        'metadata.maxPolygonVertices.output',
+        'metadata.maxPolygonVertexCount.output',
+        'metadata.largestPolygonVertices.output',
+      ]) ?? readMessageNumber(failedMessage, [/finalVertexCount=(\d+)/i]),
   };
 
   const vertexLimit = (() => {
@@ -484,7 +603,11 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
   })();
 
   if (kind === 'skipped') {
-    const reason = (displayMessage || resolveTaskMetadataMessage(task.metadata) || taskTitle).trim();
+    const reason = (
+      displayMessage ||
+      resolveTaskMetadataMessage(task.metadata) ||
+      taskTitle
+    ).trim();
     return {
       kind,
       visualization: 'none',
@@ -495,12 +618,19 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
 
   if (kind === 'completed' || kind === 'failed') {
     if (retryAttempt === null) {
-      throw new Error(`[shape-plugin] geometry retryAttempt is missing for terminal task: ${task.taskId}`);
+      throw new Error(
+        `[shape-plugin] geometry retryAttempt is missing for terminal task: ${task.taskId}`
+      );
     }
     if (retryMax === null) {
-      throw new Error(`[shape-plugin] geometry retryMax is missing for terminal task: ${task.taskId}`);
+      throw new Error(
+        `[shape-plugin] geometry retryMax is missing for terminal task: ${task.taskId}`
+      );
     }
-    const prefix = kind === 'failed' ? translate('task.status.failed', 'Failed') : translate('task.status.completed', 'Completed');
+    const prefix =
+      kind === 'failed'
+        ? translate('task.status.failed', 'Failed')
+        : translate('task.status.completed', 'Completed');
     const retryText = `${translate('task.status.attempt', 'Attempt')}: ${retryAttempt}/${retryMax}`;
     const summaryLine = `${prefix} (Tol: ${effectiveToleranceText}, ${retryText}, F/Pol/V: ${formatInt(metrics.features.output)}/${formatInt(metrics.polygons.output)}/${formatInt(metrics.vertices.output)})`;
 
@@ -515,10 +645,14 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
       `${translate('task.details.extractionRate', 'Extraction Rate')}: ${formatPercent(extractionRatio)}`,
     ];
     if (vertexLimit !== null) {
-      detailLines.push(`${translate('task.details.vertexLimit', 'Vertex Limit')}: ${formatInt(vertexLimit)}`);
+      detailLines.push(
+        `${translate('task.details.vertexLimit', 'Vertex Limit')}: ${formatInt(vertexLimit)}`
+      );
     }
     if (kind === 'failed') {
-      detailLines.push(`${translate('task.details.failureReason', 'Failure Reason')}: ${failedMessage ?? 'N/A'}`);
+      detailLines.push(
+        `${translate('task.details.failureReason', 'Failure Reason')}: ${failedMessage ?? 'N/A'}`
+      );
     }
     if (geometryDetails) {
       detailLines.push(...formatGeometrySimplifySummary(geometryDetails));
@@ -544,7 +678,11 @@ export const buildGeometryTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ tas
   }
 
   const vertexLimitValidationMessage = formatVertexLimitValidationMessage(task.metadata);
-  const info = vertexLimitValidationMessage || resolveTaskMetadataMessage(task.metadata) || displayMessage || taskTitle;
+  const info =
+    vertexLimitValidationMessage ||
+    resolveTaskMetadataMessage(task.metadata) ||
+    displayMessage ||
+    taskTitle;
   return {
     kind,
     visualization: 'none',

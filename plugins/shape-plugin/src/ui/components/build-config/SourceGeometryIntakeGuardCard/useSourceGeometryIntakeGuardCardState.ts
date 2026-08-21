@@ -23,10 +23,19 @@ export const resolveGeometryIntakeGuard = (config: ShapeBuildConfig): GeometryIn
   };
 };
 
-export const useSourceGeometryIntakeGuardCardView = (
+export type SourceGeometryIntakeGuardCardState = {
+  resolvedGuard: GeometryIntakeGuardState;
+  handleValidationLevelChange: (_event: unknown, value: string | null) => void;
+  handleDedupeEpsilonChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  handleMinRingAreaThresholdChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  handleNormalizeRingOrientationChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  handleKeepBaselineSnapshotChange: (event: ChangeEvent<HTMLInputElement>) => void;
+};
+
+export const useSourceGeometryIntakeGuardCardState = (
   config: ShapeBuildConfig,
   onChange: UpdateFn
-) => {
+): SourceGeometryIntakeGuardCardState => {
   const resolvedGuard = useMemo(() => resolveGeometryIntakeGuard(config), [config]);
   const updateGuard = useCallback(
     (partial: Partial<GeometryIntakeGuardState>): void => {

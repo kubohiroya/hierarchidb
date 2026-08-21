@@ -206,4 +206,13 @@ describe('filterInvalidGeometryForTileEmit', () => {
       })
     ).rejects.toThrow('invalidGeometryFilter.lineLength must be boolean');
   });
+
+  it('rejects unsupported config keys instead of ignoring them', async () => {
+    await expect(
+      filterInvalidGeometryForTileEmit(collection(polygonFeature(square)), {
+        config: { ...allDisabled, legacyAreaCheck: true },
+        geometryEngine: 'turf',
+      })
+    ).rejects.toThrow('invalidGeometryFilter.legacyAreaCheck is not supported');
+  });
 });

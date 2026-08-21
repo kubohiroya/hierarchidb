@@ -5,12 +5,21 @@ import { applyBuildConfigPatch } from '~/common/types/index';
 
 type UpdateFn = (next: ShapeBuildConfig | ((prev: ShapeBuildConfig) => ShapeBuildConfig)) => void;
 
-type SwitchItem = {
+export type SwitchItem = {
   checked: boolean;
   disabled: boolean;
   label: string;
   onChange: (event: ChangeEvent<HTMLInputElement>) => void;
 };
+
+const INVALID_GEOMETRY_FILTER_KEYS: readonly (keyof TileEmitInvalidGeometryFilterConfig)[] = [
+  'area',
+  'lineLength',
+  'maxEdgeLength',
+  'selfIntersection',
+  'triangleRingRatio',
+];
+const INVALID_GEOMETRY_FILTER_KEY_SET = new Set<string>(INVALID_GEOMETRY_FILTER_KEYS);
 
 export const resolveTileEmitInvalidGeometryFilter = (
   config: ShapeBuildConfig
@@ -20,27 +29,32 @@ export const resolveTileEmitInvalidGeometryFilter = (
     throw new Error('[shape-ui] tileEmitConfig.invalidGeometryFilter is required');
   }
   const record = value as Record<string, unknown>;
-  const keys: Array<keyof TileEmitInvalidGeometryFilterConfig> = [
-    'area',
-    'lineLength',
-    'maxEdgeLength',
-    'selfIntersection',
-    'triangleRingRatio',
-  ];
-  for (const key of keys) {
-    if (typeof record[key] !== 'boolean') {
+  for (const key of INVALID_GEOMETRY_FILTER_KEYS) {
+    if (!Object.hasOwn(record, key) || typeof record[key] !== 'boolean') {
       throw new Error(`[shape-ui] tileEmitConfig.invalidGeometryFilter.${key} must be boolean`);
     }
+  }
+  const unsupportedKey = Object.keys(record).find(
+    (key) => !INVALID_GEOMETRY_FILTER_KEY_SET.has(key)
+  );
+  if (unsupportedKey) {
+    throw new Error(
+      `[shape-ui] tileEmitConfig.invalidGeometryFilter.${unsupportedKey} is not supported`
+    );
   }
   return record as TileEmitInvalidGeometryFilterConfig;
 };
 
-export const useTileEmitInvalidGeometryFilterCardView = (
+export type TileEmitInvalidGeometryFilterCardState = {
+  switchGroups: Array<Array<SwitchItem>>;
+};
+
+export const useTileEmitInvalidGeometryFilterCardState = (
   config: ShapeBuildConfig,
   onChange: UpdateFn,
   disabled: boolean | undefined,
   labels: Record<keyof TileEmitInvalidGeometryFilterConfig, string>
-) => {
+): TileEmitInvalidGeometryFilterCardState => {
   const resolved = useMemo(() => resolveTileEmitInvalidGeometryFilter(config), [config]);
   const isDisabled = Boolean(disabled);
   const updateFilter = useCallback(

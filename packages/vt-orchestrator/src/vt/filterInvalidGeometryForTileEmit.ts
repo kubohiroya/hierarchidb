@@ -68,6 +68,7 @@ const CHECK_ORDER: readonly TileEmitInvalidGeometryCheck[] = [
   'selfIntersection',
   'triangleRingRatio',
 ];
+const CHECK_KEY_SET = new Set<string>(CHECK_ORDER);
 
 const createCheckCounter = (): Record<TileEmitInvalidGeometryCheck, number> => ({
   area: 0,
@@ -89,9 +90,15 @@ export const assertTileEmitInvalidGeometryFilterConfig = (
 ): TileEmitInvalidGeometryFilterConfig => {
   const record = assertRecord(value, 'tileEmitConfig.invalidGeometryFilter');
   for (const key of CHECK_ORDER) {
-    if (typeof record[key] !== 'boolean') {
+    if (!Object.hasOwn(record, key) || typeof record[key] !== 'boolean') {
       throw new Error(`[tileEmit] tileEmitConfig.invalidGeometryFilter.${key} must be boolean`);
     }
+  }
+  const unsupportedKey = Object.keys(record).find((key) => !CHECK_KEY_SET.has(key));
+  if (unsupportedKey) {
+    throw new Error(
+      `[tileEmit] tileEmitConfig.invalidGeometryFilter.${unsupportedKey} is not supported`
+    );
   }
   return record as TileEmitInvalidGeometryFilterConfig;
 };
