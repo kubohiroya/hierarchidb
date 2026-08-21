@@ -188,7 +188,25 @@ Referrer-Policy: strict-origin-when-cross-origin
 
 ## 7. エラーケースのテスト
 
-### 7.1 無効なトークンでのアクセス
+### 7.1 token exchangeのprovider契約
+
+```bash
+curl -i \
+  -H "Origin: https://kubohiroya.github.io" \
+  -H "Content-Type: application/json" \
+  --data '{"code":"invalid-test-code"}' \
+  https://hierarchidb-bff.kubohiroya.workers.dev/auth/token
+```
+
+期待結果:
+
+- HTTP 400 `invalid_request`
+- providerをGoogleとして補完しない
+- Cloudflare logにauthorization codeを出力しない
+
+`provider=unknown` も同じくHTTP 400で拒否する。
+
+### 7.2 無効なトークンでのアクセス
 
 ```bash
 # 無効なJWTトークンでユーザー情報取得を試行
@@ -202,7 +220,7 @@ curl -H "Authorization: Bearer invalid-token" \
 }
 ```
 
-### 7.2 期限切れトークンのテスト
+### 7.3 期限切れトークンのテスト
 
 ```javascript
 // ブラウザコンソールで実行
