@@ -3,7 +3,7 @@ import type {
   CanonicalYamlSnapshotWorkflowErrorContext,
 } from './canonicalYamlSnapshotTypes.js';
 
-/** Sanitized failure from the dormant canonical YAML snapshot workflow. */
+/** Sanitized failure from the production canonical YAML snapshot workflow. */
 export class CanonicalYamlSnapshotWorkflowError extends Error {
   readonly code: CanonicalYamlSnapshotWorkflowErrorCode;
   readonly context: CanonicalYamlSnapshotWorkflowErrorContext;

@@ -249,15 +249,17 @@ export const createContextMenuAction = (
             }
             const wcNodeId = res.nodeId as NodeId;
 
-            await applyDraftMetadata(wcNodeId, {
-              name: resolvedName,
-              description: templateDefaults?.description,
-              buildMetadata: newType === 'shape' ? { buildRequired: true } : undefined,
-            });
+            if (newType !== 'yaml-file') {
+              await applyDraftMetadata(wcNodeId, {
+                name: resolvedName,
+                description: templateDefaults?.description,
+                buildMetadata: newType === 'shape' ? { buildRequired: true } : undefined,
+              });
 
-            if (templateDefaults?.draftPatch) {
-              const updaterAPI = await client.getTreeNodeUpdaterAPI();
-              await updaterAPI.updateTreeNodeDraftData(wcNodeId, templateDefaults.draftPatch);
+              if (templateDefaults?.draftPatch) {
+                const updaterAPI = await client.getTreeNodeUpdaterAPI();
+                await updaterAPI.updateTreeNodeDraftData(wcNodeId, templateDefaults.draftPatch);
+              }
             }
 
             const navigateToCreateDialog = () => {

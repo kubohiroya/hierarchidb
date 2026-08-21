@@ -10,10 +10,24 @@
         ".": {
             "types": "./dist/index.d.ts",
             "import": "./dist/index.js"
+        },
+        "./legacy-close": {
+            "types": "./dist/legacy-close/index.d.ts",
+            "import": "./dist/legacy-close/index.js"
+        }
+    },
+    "typesVersions": {
+        "*": {
+            "legacy-close": [
+                "dist/legacy-close/index.d.ts"
+            ],
+            "*": [
+                "dist/index.d.ts"
+            ]
         }
     },
     "scripts": {
-        "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist",
+        "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist && tsdown src/legacy-close/index.ts --config ../../tsdown.config.ts --outDir dist/legacy-close",
         "clean": "rm -rf dist",
         "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
         "test": "vitest run --passWithNoTests",

@@ -15,6 +15,11 @@ declare module '@hierarchidb/folder-plugin/ui' {
   export default mod;
 }
 
+declare module '@hierarchidb/folder-plugin/worker' {
+  const mod: Record<string, unknown>;
+  export default mod;
+}
+
 declare module '@hierarchidb/folder-plugin/icon' {
   export const FolderPluginIcon: unknown;
   export default FolderPluginIcon;

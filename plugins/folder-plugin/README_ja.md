@@ -1,6 +1,6 @@
 # @hierarchidb/folder-plugin
 
-最終更新: 2026-08-20
+最終更新: 2026-08-21
 
 HierarchiDB のツリー構造における基本的なコンテナノードを提供するプラグイン。フォルダノードは階層的にさまざまな種類のノードを整理・格納するためのコンテナとして機能する。
 
@@ -59,16 +59,9 @@ import { FolderPluginIcon } from '@hierarchidb/folder-plugin/icon';
 
 ## Worker 層
 
-folder-plugin は **Worker レス設計** を採用している。フォルダノードのデータは CoreDB の `TreeNode` payload/draft に直接格納され、専用の Worker データベースや EntityHandler は存在しない。
+folder node dataはCoreDB `TreeNode` stateへ直接保存し、専用databaseまたはEntityHandlerを持たない。`./worker` entryはruntime-owned CoreDB transaction portを用いてproduction canonical YAML ZIP APIを生成する。plugin manifestにstorage preloadはない。
 
-Worker の `preload` 設定として `registerFolderWorkerStores` が登録されており、payload peer store の登録のみを行う。
-
-```typescript
-// plugin-manifest.ts
-worker: {
-  preload: ['registerFolderWorkerStores'],
-}
-```
+ZIP accessを公開できるのはorigin coordinatorとCoreDB activationがcanonical-ready evidenceを発行した後だけである。exportは1つのauthoritative folder snapshotを読む。importはarchive全体をplanし、parent、siblings、完全なID setを再検査して全nodeとoptional parent patchをcommitする1つのCoreDB transaction portを呼ぶ。
 
 ### ライフサイクル
 
@@ -177,9 +170,9 @@ import { FolderIcon } from '@hierarchidb/folder-plugin/ui';
 <FolderIcon open={true} />
 ```
 
-## Dormant canonical YAML ZIP codec
+## Canonical YAML ZIP codec
 
-pure codecは専用のdormant entry pointからのみ利用できる。
+pure codecは専用entry pointから利用できる。
 
 ```typescript
 import {
@@ -190,36 +183,30 @@ import {
 
 `@hierarchidb/yaml-api` registryにある12件のcanonical root filenameだけをexact matchで受け入れ、filenameが所有する`subtype`と`schemaId`を構築し、content検証を`validateYamlCanonicalPayload`へ委譲する。raw inspectionはfilename-keyed変換より前にduplicate central recordを検出し、invalid UTF-8、unsafe path、header/CRC不一致、unreferenced leading/inter-entry/tail bytes、range overlap、comment、extra field、ZIP64、暗号化、non-STORE compression、non-canonical Base64を拒否する。encodeはUTF-8 filename byte順、STORE、固定metadataにより決定的なbytesを生成する。
 
-このentry pointはstorage、runtime、network、filesystem、timer、randomへ依存しない。package rootから再exportせず、CoreDB、YamlDB、WorkerService、下記legacy helper、SimulationWorkflowへ接続しない。下記dormant import/export planがnode/parent preflightとinjected transaction portを担当し、production公開はsingle activation変更まで行わない。[正規YAML storage契約](../../docs/yaml-plugin-ide-gsm-step4-spec.md)を参照する。
+このentry pointはstorage、runtime、network、filesystem、timer、randomへ依存せず、package rootから再exportしない。production worker serviceが下記planおよびinjected CoreDB portと組み合わせる。[正規YAML storage契約](../../docs/yaml-plugin-ide-gsm-step4-spec.md)を参照する。
 
-## Dormant canonical YAML ZIP plan
+## Canonical YAML ZIP plan
 
 専用entry `@hierarchidb/folder-plugin/canonical-yaml-zip-plan`は、committedまたはdraftのcanonical exportとall-or-none importを計画するpure plannerを公開する。exportは`metadata.name + data`または`draftMetadata.name + draftData`を対にし、cross-slot fallbackを行わない。importは全archive、folder parent、sibling index、全existing ID snapshot、caller発行node ID、caller timestampを検証した後にだけimmutableなnode/parent patch intentを返す。
 
-`commitCanonicalYamlZipImportPlan`は本moduleが発行したplanだけを受け付け、parent/sibling/existing-ID guard、全node insert、optional parent patchをinjected transaction portへ1回だけ渡す。呼出前にplanをconsumeするため、port失敗後も同じplanをretryできない。transaction自体は実装せず、YamlDB fallbackも行わない。package rootからexportせず、single activation変更までproduction consumerを持たない。
+`commitCanonicalYamlZipImportPlan`は本moduleが発行したplanだけを受け付け、parent/sibling/existing-ID guard、全node insert、optional parent patchをinjected transaction portへ1回だけ渡す。呼出前にplanをconsumeするため、port失敗後も同じplanをretryできない。transaction自体は実装せず、YamlDB fallbackも行わない。production `./worker` serviceだけがruntime connectorとして使用する。
 
-## Legacy YAML snapshot boundary
+## 削除済みlegacy YAML snapshot route
 
-現行の`exportYamlNodesToSnapshot`と`importYamlNodesFromSnapshot` helperはlegacyかつnon-canonicalな実装である。exportは`data.name`を読み、importは空schema IDを持つYamlDB-only rowを逐次writeし、authoritativeなCoreDB `TreeNode`を作成しない。後続writeが失敗するとYamlDBに部分rowが残り得る。
-
-これらをcanonical IDE-GSM snapshot pathまたはStep 4 runtime dependencyとして使用してはならない。上記dormant canonical planは全entryをpreflightしtransaction-shaped requestを準備するが、single activation変更までは現行legacy helperとruntime routingへ接続しない。
-
-現行legacy entryを変更しないのはsingle activation変更の開始前までに限る。activation開始時にはmigrationより先にlegacy import/export routeをfenceし、migrationまたはCoreDB initializationがpendingの間はlegacy routeとcanonical routeの双方を公開しない。production routingがcanonical ZIP pathを公開できるのは、migrationのcommitとCoreDB initializationがともに成功した後だけである。migrationがblockedまたは失敗した場合はどちらのrouteも公開せず、legacy helperへfallbackしない。[正規YAML storage契約](../../docs/yaml-plugin-ide-gsm-step4-spec.md)と[legacy YamlDB boundary](../../packages/yaml-store/README_ja.md)を参照する。
+non-canonicalな`exportYamlNodesToSnapshot` / `importYamlNodesFromSnapshot` helper、root export、YamlDB dependencyは削除済みである。production ZIP operationはcanonical worker serviceとCoreDBだけを使用する。activationまたはvalidation失敗時はAPIを非公開のままにし、旧serializerへfallbackしない。
 
 ## ディレクトリ構成
 
 ```text
 src/
-├── index.ts                  # Root entry point (types + manifest + YAML utilities)
+├── index.ts                  # Root entry point (types + manifest)
 ├── plugin-manifest.ts        # PluginManifest definition
-├── canonical-yaml-zip-codec/ # Dormant strict raw ZIP codec entry
-├── canonical-yaml-zip-plan/  # Dormant node/parent preflight and transaction plan
+├── canonical-yaml-zip-codec/ # Strict raw ZIP codec entry
+├── canonical-yaml-zip-plan/  # Node/parent preflight and transaction plan
 ├── common/
 │   ├── locales/              # i18n resources (en, ja)
 │   ├── shared/
-│   │   ├── folderValidation.ts   # Name/data validation
-│   │   ├── yamlFolderExport.ts   # YAML snapshot export
-│   │   └── yamlFolderImport.ts   # YAML snapshot import
+│   │   └── folderValidation.ts   # Name/data validation
 │   └── types/
 │       ├── constants.ts      # Validation/display constants
 │       ├── FolderEntity.ts   # FolderEntity type (TreeNode alias)
@@ -227,6 +214,9 @@ src/
 │       └── types.ts          # CreateFolderData, UpdateFolderData, FolderPeerData
 ├── icon/
 │   └── index.ts              # FolderPluginIcon (re-export of MUI Folder)
+├── worker/
+│   ├── index.ts              # Production worker entry
+│   └── createYamlCanonicalZipService.ts # Canonical ZIP/CoreDB connector
 └── ui/
     ├── FolderDialogHost.tsx   # Deprecated dialog host (returns null)
     ├── index.ts               # UI entry point
@@ -242,9 +232,10 @@ src/
 
 | パス | 内容 |
 | --- | --- |
-| `@hierarchidb/folder-plugin` | 型定義、PluginManifest、YAML ユーティリティ |
-| `@hierarchidb/folder-plugin/canonical-yaml-zip-codec` | Dormant strict canonical YAML ZIP codec |
-| `@hierarchidb/folder-plugin/canonical-yaml-zip-plan` | Dormant canonical node/parent import-export plan |
+| `@hierarchidb/folder-plugin` | 型定義、PluginManifest |
+| `@hierarchidb/folder-plugin/canonical-yaml-zip-codec` | Strict canonical YAML ZIP codec |
+| `@hierarchidb/folder-plugin/canonical-yaml-zip-plan` | Canonical node/parent import-export plan |
+| `@hierarchidb/folder-plugin/worker` | Canonical YAML ZIP/CoreDB service factory |
 | `@hierarchidb/folder-plugin/ui` | UI コンポーネント（FolderDialogHost、ステップ登録） |
 | `@hierarchidb/folder-plugin/icon` | FolderPluginIcon |
 
@@ -257,7 +248,7 @@ src/
 - [`@hierarchidb/tree-api`](../../packages/tree-api/) — TreeNode 型定義
 - [`@hierarchidb/tag-api`](../../packages/tag-api/) — TagId、TagSuggestion 型
 - [`@hierarchidb/yaml-api`](../../packages/yaml-api/) — YAML ノード型定義
-- [`@hierarchidb/yaml-store`](../../packages/yaml-store/) — Legacy YamlDB recovery boundary
+- [`@hierarchidb/worker-api`](../../packages/worker-api/) — canonical ZIP APIとinjected CoreDB port契約
 - [`@hierarchidb/util`](../../packages/util/) — generateId 等のユーティリティ
 - [`@hierarchidb/plugin-ui-sdk`](../../packages/plugin-ui-sdk/) — プラグイン UI SDK
 - [`@hierarchidb/plugin-service-api`](../../packages/plugin-service-api/) — プラグインサービス API

@@ -1,4 +1,8 @@
 import { isYamlStorageActualFenceEstablished } from './getYamlStorageAccessDecision.js';
+import {
+  freezeIssuedYamlStorageActivationState,
+  isIssuedYamlStorageActivationState,
+} from './yamlStorageActivationProvenanceUtils.js';
 import type {
   YamlStorageActivationCreateResult,
   YamlStorageActivationError,
@@ -7,12 +11,9 @@ import type {
   YamlStorageActivationEvent,
   YamlStorageActivationInput,
   YamlStorageActivationState,
+  YamlStorageFreshActivationInput,
   YamlStorageRejectedState,
 } from './yamlStorageActivationTypes.js';
-import {
-  freezeIssuedYamlStorageActivationState,
-  isIssuedYamlStorageActivationState,
-} from './yamlStorageActivationProvenanceUtils.js';
 
 function freezeError(
   code: YamlStorageActivationErrorCode,
@@ -62,6 +63,8 @@ function failureCodeForStage(
     case 'initializing':
     case 'canonical-ready':
       return 'INITIALIZATION_FAILED';
+    case 'post-activation-boot':
+      return 'INVALID_POST_ACTIVATION_EVIDENCE';
     default: {
       const exhaustiveStage: never = stage;
       return exhaustiveStage;
@@ -90,6 +93,27 @@ export function createYamlStorageActivation(
       phase: 'quiescing',
       activationId: input.activationId,
       currentVersion: input.currentVersion,
+      targetVersion: input.targetVersion,
+    }),
+  });
+}
+
+/** Issues the activation state used only after authoritative discovery proves CoreDB is absent. */
+export function createYamlStorageFreshActivation(
+  input: YamlStorageFreshActivationInput
+): YamlStorageActivationCreateResult {
+  if (typeof input.activationId !== 'string' || input.activationId.length === 0) {
+    return Object.freeze({ ok: false, error: freezeError('INVALID_ACTIVATION_ID', 'input') });
+  }
+  if (!isPositiveSafeInteger(input.targetVersion)) {
+    return Object.freeze({ ok: false, error: freezeError('INVALID_TARGET_VERSION', 'input') });
+  }
+  return Object.freeze({
+    ok: true,
+    state: freezeState({
+      phase: 'quiescing',
+      activationId: input.activationId,
+      currentVersion: 0,
       targetVersion: input.targetVersion,
     }),
   });
@@ -168,6 +192,8 @@ export function reduceYamlStorageActivation(
           phase: 'canonical-ready',
           upgradeCommitted: true,
           initializationSucceeded: true,
+          readinessProof:
+            state.currentVersion === 0 ? 'same-activation-fresh-create' : 'same-activation-upgrade',
         });
       }
       return reject(state, 'ILLEGAL_TRANSITION');

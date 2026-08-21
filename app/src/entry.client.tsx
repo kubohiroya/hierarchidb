@@ -2,26 +2,31 @@ import {
   getOriginCoordinatorSourceSha,
   ORIGIN_COORDINATOR_ACTIVE_WORKER_TIMEOUT_MS,
   ORIGIN_COORDINATOR_DATABASE_NAME,
+  ORIGIN_COORDINATOR_MAX_CENSUS_TIMEOUT_MS,
   ORIGIN_COORDINATOR_MESSAGE_TIMEOUT_MS,
   ORIGIN_COORDINATOR_SCRIPT_NAME,
   revokeOriginCoordinatorOwnedClientHandles,
 } from '@hierarchidb/origin-coordinator';
-import { revokeLegacyYamlAccessAndClose } from '@hierarchidb/yaml-store';
+import { CoreDB } from '@hierarchidb/runtime-worker';
+import { activateYamlStorageCoreDb } from '@hierarchidb/runtime-worker/yaml-storage-production';
+import { digestSha256Hex, getDBName } from '@hierarchidb/util';
+import { revokeLegacyYamlAccessAndClose } from '@hierarchidb/yaml-store/legacy-close';
 import { RouterProvider } from '@tanstack/react-router';
 import { startTransition, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { initializeOriginCoordinator } from './origin-coordinator/initializeOriginCoordinator.js';
 import { runOriginCoordinatorGatedBootstrap } from './origin-coordinator/runOriginCoordinatorGatedBootstrap.js';
+import { runYamlStorageActivationContender } from './origin-coordinator/runYamlStorageActivationContender.js';
 import type { OriginCoordinatorClientHandle } from './origin-coordinator/types.js';
 import { clearAppIndexedDBsViaPlugins } from './plugin-runtime/clearIndexedDbUtils.ts';
 import AppRoot from './root.js';
 import { createHierarchiRouter, getBasePath, getRouterMode } from './router/index.js';
 import { initializeBrowserGlobals } from './router/init/initializeBrowserGlobals.ts';
 import {
+  configureCanonicalRuntimeWorkerBoot,
   relayOriginCoordinatorSharedWorkerRequest,
   revokeRuntimeWorkerAccessAndClose,
 } from './worker-runtime/clientUtils.js';
-import { preloadPluginWorkerStores } from './worker-runtime/workerModuleLoaderUtils.js';
 
 type HydrateLoader = {
   setProgress: (progress: number, message?: string) => void;
@@ -210,7 +215,7 @@ async function initializeApp() {
   const coordinatorScriptPath = import.meta.env.DEV
     ? `${appBase}src/origin-coordinator/originCoordinator.worker.ts`
     : `${appBase}${ORIGIN_COORDINATOR_SCRIPT_NAME}`;
-  const router = await runOriginCoordinatorGatedBootstrap({
+  const bootstrap = await runOriginCoordinatorGatedBootstrap({
     initializeCoordinator: () =>
       initializeOriginCoordinator({
         releaseId: getOriginCoordinatorSourceSha(),
@@ -239,17 +244,55 @@ async function initializeApp() {
           if (closeFailed) throw new Error('window-quiescence-close-failed');
         },
       }),
-    acceptCoordinator: (coordinator) => {
+    acceptActivationCoordinator: (coordinator) => {
       (window as HydrateLoaderWindow).__HDB_ORIGIN_COORDINATOR_REF__ = coordinator;
       setHydrateProgress(6, 'Origin coordinator ready');
     },
+    activateCanonicalStorage: async (coordinator) => {
+      const databaseName = getDBName('core');
+      await runYamlStorageActivationContender({
+        coordinator,
+        quiescenceTimeoutMs: ORIGIN_COORDINATOR_MAX_CENSUS_TIMEOUT_MS,
+        createIdentity: () => globalThis.crypto.randomUUID(),
+        activateCoreDb: async ({ state, migrationId, openRequestId }) =>
+          await activateYamlStorageCoreDb({
+            state,
+            databaseName,
+            migrationId,
+            openRequestId,
+            environment: {
+              indexedDB,
+              digestSha256Hex,
+              initializeCoreDb: async () => {
+                const coreDB = CoreDB.createForCanonicalRuntime(databaseName);
+                try {
+                  await coreDB.open();
+                  await coreDB.initialize();
+                } finally {
+                  coreDB.close();
+                }
+              },
+            },
+          }),
+      });
+      setHydrateProgress(30, 'Canonical storage activated');
+    },
+    requestSuccessReload: () => {
+      setHydrateProgress(33, 'Canonical storage ready. Reloading...');
+      window.location.reload();
+    },
+    prepareCanonicalRuntime: async () => {
+      configureCanonicalRuntimeWorkerBoot();
+      const { WorkerAPIClient } = await import('./worker-runtime/WorkerAPIClient.js');
+      await WorkerAPIClient.initialize();
+      if (!WorkerAPIClient.isReady()) {
+        throw new Error('canonical-runtime-worker-not-ready');
+      }
+      setHydrateProgress(22, 'Canonical runtime ready');
+    },
     initializeBrowserGlobals: () => {
       initializeBrowserGlobals();
-      setHydrateProgress(11, 'Browser globals initialized');
-    },
-    preloadWorkerStores: async () => {
-      await preloadPluginWorkerStores();
-      setHydrateProgress(22, 'Preloading worker stores');
+      setHydrateProgress(26, 'Browser globals initialized');
     },
     initializeRuntime: async () => {
       const mode = getRouterMode();
@@ -257,9 +300,10 @@ async function initializeApp() {
       return await createHierarchiRouter({ mode, basename });
     },
   });
+  if (bootstrap.status === 'reload-requested') return null;
   setHydrateProgress(33, 'Client bootstrap complete');
 
-  return router;
+  return bootstrap.runtime;
 }
 
 function removeHydrateFallback(): void {
@@ -286,7 +330,7 @@ const BootstrappedApp = () => {
 
     initializeApp()
       .then((nextRouter) => {
-        if (!active) return;
+        if (!active || nextRouter === null) return;
         removeHydrateFallback();
         startTransition(() => setRouter(nextRouter));
       })

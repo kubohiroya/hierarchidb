@@ -51,9 +51,6 @@ export const PLUGIN_MANIFEST: PluginManifest = {
             { name: 'content', type: 'string', required: false },
         ],
     },
-    worker: {
-        preload: ['registerYamlWorkerStores'],
-    },
 };
 
 export type YamlPluginManifest = typeof PLUGIN_MANIFEST;
