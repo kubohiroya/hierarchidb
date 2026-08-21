@@ -1,7 +1,10 @@
-import type { IdeGsmClient } from '@hierarchidb/ide-gsm-client';
-import type { ExportableNode } from '@hierarchidb/folder-plugin';
-import { exportYamlNodesToSnapshot } from '@hierarchidb/folder-plugin';
-import type { ExportFilter } from '@hierarchidb/ide-gsm-client';
+import { planCanonicalYamlZipExport } from '@hierarchidb/folder-plugin/canonical-yaml-zip-plan';
+import type { ExportFilter, IdeGsmClient } from '@hierarchidb/ide-gsm-client';
+import { CanonicalYamlSnapshotWorkflowError } from './canonical-yaml-snapshot/CanonicalYamlSnapshotWorkflowError.js';
+import type {
+    CanonicalYamlSnapshotStep,
+    CanonicalYamlSnapshotWorkflowErrorCode,
+} from './canonical-yaml-snapshot/canonicalYamlSnapshotTypes.js';
 import type {
     ConnectionType,
     OnStepChange,
@@ -26,6 +29,27 @@ function notify(
         onStepChange(step, status);
     }
 }
+
+function notifyCanonical(
+    onStepChange: OnStepChange | undefined,
+    step: CanonicalYamlSnapshotStep,
+    status: 'running' | 'done' | 'failed',
+): void {
+    try {
+        notify(onStepChange, step, status);
+    } catch {
+        throw new CanonicalYamlSnapshotWorkflowError('STEP_CALLBACK_FAILED', { step });
+    }
+}
+
+const STEP_ERROR_CODES: Readonly<
+    Record<CanonicalYamlSnapshotStep, CanonicalYamlSnapshotWorkflowErrorCode>
+> = Object.freeze({
+    import: 'IMPORT_FAILED',
+    calibrate: 'CALIBRATE_FAILED',
+    simulate: 'SIMULATE_FAILED',
+    export: 'EXPORT_FAILED',
+});
 
 // ---------------------------------------------------------------------------
 // SimulationWorkflow
@@ -60,70 +84,60 @@ export class SimulationWorkflow {
      * @param projectRelativePath - IDE-GSM project path.
      * @param exportFilter - Optional file-glob filter for the export step.
      * @param onStepChange - Optional progress callback.
-     * @returns The ProjectSnapshot string from the export step's TaskResult.paramsJson.
      */
     async runSimulation(
-        nodes: readonly ExportableNode[],
+        nodes: readonly unknown[],
         projectRelativePath: string,
         exportFilter?: ExportFilter,
         onStepChange?: OnStepChange,
-    ): Promise<string> {
-        // Serialize nodes → ProjectSnapshot (no onStepChange on serialization error)
-        const serializeResult = await exportYamlNodesToSnapshot(nodes);
-        if (!serializeResult.ok) {
-            throw new Error(serializeResult.error);
+    ): Promise<void> {
+        const snapshotPlan = planCanonicalYamlZipExport({ slot: 'committed', nodes });
+        if (!snapshotPlan.ok) {
+            throw new CanonicalYamlSnapshotWorkflowError('SNAPSHOT_PLANNING_FAILED', {
+                planningErrors: snapshotPlan.errors,
+            });
         }
-        const projectSnapshot = serializeResult.snapshot;
+        await this.runCanonicalTask(
+            'import',
+            () => this.client.importProject(snapshotPlan.plan.archive.base64, projectRelativePath),
+            onStepChange,
+        );
+        await this.runCanonicalTask(
+            'calibrate',
+            () => this.client.calibrate(projectRelativePath),
+            onStepChange,
+        );
+        await this.runCanonicalTask(
+            'simulate',
+            () => this.client.simulate(projectRelativePath),
+            onStepChange,
+        );
+        await this.runCanonicalTask(
+            'export',
+            () => exportFilter === undefined
+                ? this.client.exportProject(projectRelativePath)
+                : this.client.exportProject(projectRelativePath, exportFilter),
+            onStepChange,
+        );
+    }
 
-        // import step
-        notify(onStepChange, 'import', 'running');
+    private async runCanonicalTask(
+        step: 'import' | 'calibrate' | 'simulate' | 'export',
+        start: () => Promise<string>,
+        onStepChange: OnStepChange | undefined,
+    ): Promise<void> {
+        notifyCanonical(onStepChange, step, 'running');
         try {
-            const importTaskId = await this.client.importProject(projectSnapshot, projectRelativePath);
-            await this.client.awaitTask(importTaskId);
-        } catch (err) {
-            notify(onStepChange, 'import', 'failed');
-            throw err;
+            const taskId = await start();
+            if (typeof taskId !== 'string' || taskId.length === 0) {
+                throw new Error('Invalid task contract');
+            }
+            await this.client.awaitTask(taskId);
+        } catch {
+            notifyCanonical(onStepChange, step, 'failed');
+            throw new CanonicalYamlSnapshotWorkflowError(STEP_ERROR_CODES[step], { step });
         }
-        notify(onStepChange, 'import', 'done');
-
-        // calibrate step
-        notify(onStepChange, 'calibrate', 'running');
-        try {
-            const calibrateTaskId = await this.client.calibrate(projectRelativePath);
-            await this.client.awaitTask(calibrateTaskId);
-        } catch (err) {
-            notify(onStepChange, 'calibrate', 'failed');
-            throw err;
-        }
-        notify(onStepChange, 'calibrate', 'done');
-
-        // simulate step
-        notify(onStepChange, 'simulate', 'running');
-        try {
-            const simulateTaskId = await this.client.simulate(projectRelativePath);
-            await this.client.awaitTask(simulateTaskId);
-        } catch (err) {
-            notify(onStepChange, 'simulate', 'failed');
-            throw err;
-        }
-        notify(onStepChange, 'simulate', 'done');
-
-        // export step
-        notify(onStepChange, 'export', 'running');
-        let exportParamsJson: string;
-        try {
-            const exportTaskId = exportFilter !== undefined
-                ? await this.client.exportProject(projectRelativePath, exportFilter)
-                : await this.client.exportProject(projectRelativePath);
-            const exportResult = await this.client.awaitTask(exportTaskId);
-            exportParamsJson = exportResult.paramsJson;
-        } catch (err) {
-            notify(onStepChange, 'export', 'failed');
-            throw err;
-        }
-        notify(onStepChange, 'export', 'done');
-
-        return exportParamsJson;
+        notifyCanonical(onStepChange, step, 'done');
     }
 
     // -------------------------------------------------------------------------

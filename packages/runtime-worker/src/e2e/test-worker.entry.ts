@@ -21,7 +21,9 @@ import { WorkerService } from '~/WorkerService';
 type Endpoint = MessagePort | Worker | ComlinkEndpoint;
 
 async function main(endpoint?: Endpoint): Promise<void> {
-  const svc = await WorkerService.getSingleton([]);
+  const svc = await WorkerService.getSingleton([], {
+    assertYamlStorageCanonicalAccess: () => {},
+  });
   // No per-API facades; return Comlink proxies of service instances directly
 
   const api = {

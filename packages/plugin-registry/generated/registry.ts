@@ -129,9 +129,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/core-types",
         "@hierarchidb/tag-api",
         "@hierarchidb/tree-api",
+        "@hierarchidb/worker-api",
         "@hierarchidb/components",
-        "@hierarchidb/runtime-worker",
-        "@hierarchidb/ui-worker-provider",
         "@hierarchidb/ui-plugin-basic-info",
         "@hierarchidb/tag",
         "@hierarchidb/ui-dialog",
@@ -139,11 +138,9 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/plugin-ui-sdk",
         "@hierarchidb/plugin-service-api",
         "@hierarchidb/plugin-base",
-        "jszip",
-        "@hierarchidb/yaml-api",
-        "@hierarchidb/yaml-store"
+        "@hierarchidb/yaml-api"
       ],
-    exports: ["","icon","ui"],
+    exports: ["","canonical-yaml-zip-codec","canonical-yaml-zip-plan","worker","icon","ui"],
     manifest: {
         "id": "@hierarchidb/folder-plugin",
         "name": "Folder Plugin",
@@ -165,9 +162,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/core-types",
           "@hierarchidb/tag-api",
           "@hierarchidb/tree-api",
+          "@hierarchidb/worker-api",
           "@hierarchidb/components",
-          "@hierarchidb/runtime-worker",
-          "@hierarchidb/ui-worker-provider",
           "@hierarchidb/ui-plugin-basic-info",
           "@hierarchidb/tag",
           "@hierarchidb/ui-dialog",
@@ -175,9 +171,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/plugin-ui-sdk",
           "@hierarchidb/plugin-service-api",
           "@hierarchidb/plugin-base",
-          "jszip",
-          "@hierarchidb/yaml-api",
-          "@hierarchidb/yaml-store"
+          "@hierarchidb/yaml-api"
         ],
         "stepTitleKeys": {
           "1": "basicInfo"
@@ -219,6 +213,10 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     ui: {
         specifier: "@hierarchidb/folder-plugin/ui",
         source: "plugins/folder-plugin/src/ui/index.ts",
+      },
+    worker: {
+        specifier: "@hierarchidb/folder-plugin/worker",
+        source: "plugins/folder-plugin/src/worker/index.ts",
       },
     icon: {
         specifier: "@hierarchidb/folder-plugin/icon",
@@ -1533,7 +1531,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/core-types",
         "@hierarchidb/plugin-base",
         "@hierarchidb/yaml-api",
-        "@hierarchidb/yaml-store",
         "@mui/icons-material",
         "@mui/material",
         "@rjsf/core",
@@ -1543,7 +1540,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "react",
         "yaml"
       ],
-    exports: ["","icon","worker","ui"],
+    exports: ["","icon","worker","ui","canonical-writer"],
     manifest: {
         "id": "@hierarchidb/yaml-plugin",
         "name": "YAML File Plugin",
@@ -1560,7 +1557,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/core-types",
           "@hierarchidb/plugin-base",
           "@hierarchidb/yaml-api",
-          "@hierarchidb/yaml-store",
           "@mui/icons-material",
           "@mui/material",
           "@rjsf/core",
@@ -1607,11 +1603,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
               "type": "string",
               "required": false
             }
-          ]
-        },
-        "worker": {
-          "preload": [
-            "registerYamlWorkerStores"
           ]
         },
         "packageName": "@hierarchidb/yaml-plugin"

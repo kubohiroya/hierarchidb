@@ -18,6 +18,8 @@ YAML create/edit uses the shared `PluginDialogHost` and registered YAML steps. I
 - subtype, schema ID, and YAML content belong to `draftData`;
 - selected command, task ID, task status, result, and error are UI-only state;
 - endpoint and JWT stay inside the app-level executor/provider and are not written to either draft area.
+- YAML create navigates from the exact temporary placeholder without calling the split draft metadata or draft data mutation methods.
+- Save and save-draft send the host's exact `mode`, `draftMetadata`, `draftData`, and `dialogUIState` request through the canonical YAML connector; the connector persists all accepted fields in one updater operation.
 
 The normative subtype, command, synchronization, and feature-flag rules are defined in [YAML plugin IDE-GSM Step 4 contract](./yaml-plugin-ide-gsm-step4-spec.md).
 

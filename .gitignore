@@ -182,6 +182,9 @@ generated/
 .codex/
 e2e-results.*
 
+# Legacy E2E auth seeds may contain live session tokens and are unsupported.
+e2e/.auth/*.json
+
 # gh-pages build artifacts (must not be committed to main branch)
 /assets/
 /auth/

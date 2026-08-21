@@ -1,6 +1,5 @@
 import '../utils/skip-if-disabled';
-import { expect, test } from '@playwright/test';
-import { persistE2EAuthSessionSeed, readE2EAuthSessionSeed } from '../utils/authSessionSeed';
+import { expect, test } from '../fixtures/canonicalAuthFixture';
 import {
   buildAppUrl,
   clearTestData,
@@ -62,11 +61,12 @@ test.describe('Route build controls', () => {
     await clearTestData(page);
   });
 
-  test('build start button triggers route build lifecycle in UI', async ({ page }) => {
+  test('build start button triggers route build lifecycle in UI', async ({
+    page,
+    canonicalAuth,
+  }) => {
     test.setTimeout(120000);
-    const authSeed = readE2EAuthSessionSeed();
-
-    await page.addInitScript(persistE2EAuthSessionSeed, authSeed);
+    await canonicalAuth.signIn();
 
     await page.goto(buildAppUrl('t/r'), { waitUntil: 'networkidle' });
     await dismissGuidedTour(page);
@@ -74,22 +74,6 @@ test.describe('Route build controls', () => {
     await page.waitForFunction(() => Boolean((window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__?.client), null, {
       timeout: 20000,
     });
-    const verifyResult = await page.evaluate(async (accessToken: string) => {
-      const response = await fetch('/auth/verify', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: '{}',
-      });
-      return { ok: response.ok, status: response.status };
-    }, authSeed.accessToken);
-    expect(
-      verifyResult.ok,
-      `E2E auth token should pass /auth/verify before build start (status=${verifyResult.status})`,
-    ).toBe(true);
-
     const routeNode = await page.evaluate(async (): Promise<WorkerNode> => {
       const ref = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__;
       if (!ref) throw new Error('Worker client reference is unavailable');

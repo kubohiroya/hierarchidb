@@ -1,9 +1,5 @@
 import '../utils/skip-if-disabled';
-import { test, expect } from '@playwright/test';
-import {
-  createStatelessE2EAuthSessionSeed,
-  persistE2EAuthSessionSeed,
-} from '../utils/authSessionSeed';
+import { expect, test } from '../fixtures/canonicalAuthFixture';
 import {
   dismissGuidedTour,
   waitForTreeTableLoad,
@@ -83,13 +79,13 @@ test.describe('Shape build background (real pipeline)', () => {
     await clearTestData(page);
   });
 
-  test('continues build after leaving step and persists tiles', async ({ page }) => {
+  test('continues build after leaving step and persists tiles', async ({
+    page,
+    canonicalAuth,
+  }) => {
     test.setTimeout(120000);
 
-    await page.addInitScript(
-      persistE2EAuthSessionSeed,
-      createStatelessE2EAuthSessionSeed('e2e-test-token')
-    );
+    await canonicalAuth.signIn();
 
     await page.goto(buildAppUrl('t/r'), { waitUntil: 'networkidle' });
     await dismissGuidedTour(page);

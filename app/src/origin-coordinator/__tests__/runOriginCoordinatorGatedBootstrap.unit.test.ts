@@ -1,88 +1,122 @@
 import { describe, expect, it, vi } from 'vitest';
 import { runOriginCoordinatorGatedBootstrap } from '../runOriginCoordinatorGatedBootstrap.js';
+import type { OriginCoordinatorClientHandle } from '../types.js';
+
+const coordinator = Object.freeze({}) as OriginCoordinatorClientHandle;
 
 describe('runOriginCoordinatorGatedBootstrap', () => {
-  it('starts browser storage and runtime only after coordinator acceptance', async () => {
+  it('runs only activation and success handoff for an allowed contender', async () => {
     const order: string[] = [];
-    const coordinator = Object.freeze({ kind: 'coordinator' });
+    const prepareCanonicalRuntime = vi.fn(async () => undefined);
+    const initializeBrowserGlobals = vi.fn();
+    const initializeRuntime = vi.fn(async () => 'router');
 
-    const runtime = await runOriginCoordinatorGatedBootstrap({
+    const result = await runOriginCoordinatorGatedBootstrap({
       initializeCoordinator: async () => {
-        order.push('coordinator:start');
-        await Promise.resolve();
-        order.push('coordinator:accepted');
-        return coordinator;
+        order.push('coordinator:allowed');
+        return { status: 'activation-allowed', coordinator };
       },
-      acceptCoordinator: (accepted) => {
+      acceptActivationCoordinator: (accepted) => {
         expect(accepted).toBe(coordinator);
         order.push('coordinator:stored');
       },
-      initializeBrowserGlobals: () => {
-        order.push('browser-globals');
+      activateCanonicalStorage: async (accepted) => {
+        expect(accepted).toBe(coordinator);
+        order.push('storage:canonical-ready');
       },
-      preloadWorkerStores: async () => {
-        order.push('worker-stores:start');
-        await Promise.resolve();
-        order.push('worker-stores:ready');
+      requestSuccessReload: () => order.push('reload'),
+      prepareCanonicalRuntime,
+      initializeBrowserGlobals,
+      initializeRuntime,
+    });
+
+    expect(result).toEqual({ status: 'reload-requested' });
+    expect(order).toEqual([
+      'coordinator:allowed',
+      'coordinator:stored',
+      'storage:canonical-ready',
+      'reload',
+    ]);
+    expect(prepareCanonicalRuntime).not.toHaveBeenCalled();
+    expect(initializeBrowserGlobals).not.toHaveBeenCalled();
+    expect(initializeRuntime).not.toHaveBeenCalled();
+  });
+
+  it('validates the canonical worker before browser globals and runtime', async () => {
+    const order: string[] = [];
+    const activateCanonicalStorage = vi.fn(async () => undefined);
+    const requestSuccessReload = vi.fn();
+
+    const result = await runOriginCoordinatorGatedBootstrap({
+      initializeCoordinator: async () => ({
+        status: 'canonical-revoked',
+        coordinatorGate: 'revoked-ready-for-preflight',
+        helloCode: 'LEGACY_YAML_ACCESS_REVOKED',
+      }),
+      acceptActivationCoordinator: vi.fn(),
+      activateCanonicalStorage,
+      requestSuccessReload,
+      prepareCanonicalRuntime: async () => {
+        order.push('canonical-worker');
       },
+      initializeBrowserGlobals: () => order.push('browser-globals'),
       initializeRuntime: async () => {
         order.push('runtime');
         return 'router';
       },
     });
 
-    expect(runtime).toBe('router');
-    expect(order).toEqual([
-      'coordinator:start',
-      'coordinator:accepted',
-      'coordinator:stored',
-      'browser-globals',
-      'worker-stores:start',
-      'worker-stores:ready',
-      'runtime',
-    ]);
+    expect(result).toEqual({ status: 'runtime-ready', runtime: 'router' });
+    expect(order).toEqual(['canonical-worker', 'browser-globals', 'runtime']);
+    expect(activateCanonicalStorage).not.toHaveBeenCalled();
+    expect(requestSuccessReload).not.toHaveBeenCalled();
   });
 
-  it('does not start any legacy bootstrap action after coordinator rejection', async () => {
-    const failure = new Error('coordinator-rejected');
-    const acceptCoordinator = vi.fn();
+  it('does not request reload after activation failure', async () => {
+    const failure = new Error('activation-failed');
+    const requestSuccessReload = vi.fn();
+
+    await expect(
+      runOriginCoordinatorGatedBootstrap({
+        initializeCoordinator: async () => ({ status: 'activation-allowed', coordinator }),
+        acceptActivationCoordinator: vi.fn(),
+        activateCanonicalStorage: async () => {
+          throw failure;
+        },
+        requestSuccessReload,
+        prepareCanonicalRuntime: vi.fn(async () => undefined),
+        initializeBrowserGlobals: vi.fn(),
+        initializeRuntime: vi.fn(async () => 'router'),
+      })
+    ).rejects.toBe(failure);
+
+    expect(requestSuccessReload).not.toHaveBeenCalled();
+  });
+
+  it('publishes nothing when canonical worker preparation fails', async () => {
+    const failure = new Error('canonical-worker-failed');
     const initializeBrowserGlobals = vi.fn();
-    const preloadWorkerStores = vi.fn(async () => undefined);
     const initializeRuntime = vi.fn(async () => 'router');
 
     await expect(
       runOriginCoordinatorGatedBootstrap({
-        initializeCoordinator: async () => {
+        initializeCoordinator: async () => ({
+          status: 'canonical-revoked',
+          coordinatorGate: 'revoked-ready-for-preflight',
+          helloCode: 'LEGACY_YAML_ACCESS_REVOKED',
+        }),
+        acceptActivationCoordinator: vi.fn(),
+        activateCanonicalStorage: vi.fn(async () => undefined),
+        requestSuccessReload: vi.fn(),
+        prepareCanonicalRuntime: async () => {
           throw failure;
         },
-        acceptCoordinator,
         initializeBrowserGlobals,
-        preloadWorkerStores,
         initializeRuntime,
       })
     ).rejects.toBe(failure);
 
-    expect(acceptCoordinator).not.toHaveBeenCalled();
     expect(initializeBrowserGlobals).not.toHaveBeenCalled();
-    expect(preloadWorkerStores).not.toHaveBeenCalled();
-    expect(initializeRuntime).not.toHaveBeenCalled();
-  });
-
-  it('does not initialize runtime when worker-store preload fails', async () => {
-    const initializeRuntime = vi.fn(async () => 'router');
-
-    await expect(
-      runOriginCoordinatorGatedBootstrap({
-        initializeCoordinator: async () => 'coordinator',
-        acceptCoordinator: () => {},
-        initializeBrowserGlobals: () => {},
-        preloadWorkerStores: async () => {
-          throw new Error('preload-failed');
-        },
-        initializeRuntime,
-      })
-    ).rejects.toThrow('preload-failed');
-
     expect(initializeRuntime).not.toHaveBeenCalled();
   });
 });

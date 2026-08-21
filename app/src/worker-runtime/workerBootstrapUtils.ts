@@ -23,6 +23,7 @@ import {
 } from '@hierarchidb/memory';
 import type { PluginDefinition } from '@hierarchidb/plugin-registry/types';
 import {
+  CoreDB,
   configureWorkerContainer,
   getWorkerContainer,
   type PluginWorkerModuleLoaderContract,
@@ -30,7 +31,13 @@ import {
   subscribeToBuildSessionBroadcast,
   WorkerDiTokens,
   WorkerService,
+  type WorkerServiceOptions,
 } from '@hierarchidb/runtime-worker';
+import {
+  getYamlStorageAccessDecision,
+  type YamlStorageCanonicalReadyState,
+} from '@hierarchidb/runtime-worker/yaml-storage-activation';
+import { inspectCanonicalYamlStorageCoreDb } from '@hierarchidb/runtime-worker/yaml-storage-production';
 import type {
   ShapeBuildProgressSummary,
   ShapeBuildSessionRecord,
@@ -41,7 +48,8 @@ import {
   type WorkerInitializationReporter,
   wirePluginsFromModules,
 } from '@hierarchidb/ui-worker-client';
-import type { UiStorageBridge } from '@hierarchidb/worker-api';
+import { digestSha256Hex, getDBName } from '@hierarchidb/util';
+import type { UiStorageBridge, YamlCanonicalZipServiceFactory } from '@hierarchidb/worker-api';
 import { liveQuery } from 'dexie';
 import { resolveRequiredCorsProxyBaseURL } from '~/config/resolveRequiredCorsProxyBaseURL';
 import { pluginDefinitions as staticPluginDefinitions } from '~/plugin-loaders/index';
@@ -53,6 +61,8 @@ type RuntimeExportEntry = {
   lifecycle?: unknown;
   createEntityHandler?: () => Promise<unknown>;
 };
+
+type YamlCanonicalDialogWriter = NonNullable<WorkerServiceOptions['yamlCanonicalDialogWriter']>;
 
 type ManualPluginSelf = typeof self & {
   __HIERARCHIDB_MANUAL_PLUGIN_DEFS__?: PluginDefinition[];
@@ -114,6 +124,37 @@ const setHeapContext = (context: HeapPressureContext | null) => {
 
 const toComlinkProxy = <T extends object>(Comlink: typeof import('comlink'), value: T): T =>
   Comlink.proxy(value) as T;
+
+const guardCanonicalWorkerApi = (
+  api: BuildWorkerAPI,
+  canonicalReadyState: YamlStorageCanonicalReadyState
+): BuildWorkerAPI =>
+  new Proxy(api, {
+    get(target, property, receiver) {
+      const decision = getYamlStorageAccessDecision(canonicalReadyState, {
+        domain: 'runtime',
+        representation: 'canonical',
+        operation: 'query',
+      });
+      if (!decision.allowed) {
+        throw new Error(`yaml-storage-canonical-access-denied:${decision.code}`);
+      }
+      const value = Reflect.get(target, property, receiver) as unknown;
+      return typeof value === 'function'
+        ? (...args: unknown[]) => {
+            const callDecision = getYamlStorageAccessDecision(canonicalReadyState, {
+              domain: 'runtime',
+              representation: 'canonical',
+              operation: 'mutation',
+            });
+            if (!callDecision.allowed) {
+              throw new Error(`yaml-storage-canonical-access-denied:${callDecision.code}`);
+            }
+            return Reflect.apply(value, target, args);
+          }
+        : value;
+    },
+  });
 
 const sanitizeForComlink = <T>(value: T, seen = new WeakMap<object, unknown>()): T => {
   if (typeof value === 'bigint') {
@@ -348,6 +389,7 @@ const resolveManualPluginDefinitions = (): PluginDefinition[] => {
 export const ensureRuntimeWorkerBootstrap = async (options: {
   reporter: WorkerInitializationReporter;
   messageTarget?: WorkerMessageTarget | null;
+  yamlStorageGate: 'revoked-ready-for-preflight';
 }): Promise<RuntimeWorkerBootstrap> => {
   if (bootstrapPromise) return bootstrapPromise;
 
@@ -355,6 +397,48 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
     const reporter = options.reporter;
 
     try {
+      if (options.yamlStorageGate !== 'revoked-ready-for-preflight') {
+        throw new Error('yaml-storage-canonical-gate-required');
+      }
+      if (typeof crypto?.randomUUID !== 'function') {
+        throw new Error('yaml-storage-crypto-identity-unavailable');
+      }
+      const canonicalInspection = await inspectCanonicalYamlStorageCoreDb({
+        activationId: crypto.randomUUID(),
+        databaseName: getDBName('core'),
+        targetVersion: 2,
+        openRequestId: crypto.randomUUID(),
+        coordinatorGate: options.yamlStorageGate,
+        environment: {
+          indexedDB,
+          digestSha256Hex,
+          initializeCoreDb: async () => {
+            await CoreDB.getSingleton();
+          },
+        },
+      });
+      if (canonicalInspection.ok === false) {
+        throw new Error(`yaml-storage-post-activation-failed:${canonicalInspection.error.code}`);
+      }
+      const accessDecision = getYamlStorageAccessDecision(canonicalInspection.state, {
+        domain: 'runtime',
+        representation: 'canonical',
+        operation: 'query',
+      });
+      if (!accessDecision.allowed) {
+        throw new Error(`yaml-storage-canonical-access-denied:${accessDecision.code}`);
+      }
+      const assertYamlStorageCanonicalAccess = (): void => {
+        const currentDecision = getYamlStorageAccessDecision(canonicalInspection.state, {
+          domain: 'runtime',
+          representation: 'canonical',
+          operation: 'mutation',
+        });
+        if (!currentDecision.allowed) {
+          throw new Error(`yaml-storage-canonical-access-denied:${currentDecision.code}`);
+        }
+      };
+
       reporter.reportStepProgress('Load Comlink', 10);
       const Comlink = await import('comlink');
       reporter.reportStepProgress('Load Comlink', 100);
@@ -431,6 +515,35 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
         await wirePluginsFromModules(moduleEntries);
       }
 
+      const yamlModule = moduleEntries.find((entry) => entry.nodeType === 'yaml-file')?.mod;
+      const yamlCanonicalDialogWriter =
+        yamlModule !== null &&
+        typeof yamlModule === 'object' &&
+        'writeYamlCanonicalDialogDraft' in yamlModule &&
+        typeof yamlModule.writeYamlCanonicalDialogDraft === 'function'
+          ? (yamlModule.writeYamlCanonicalDialogDraft as YamlCanonicalDialogWriter)
+          : null;
+      if (
+        pluginDefinitions.some((definition) => definition.nodeType === 'yaml-file') &&
+        yamlCanonicalDialogWriter === null
+      ) {
+        throw new Error('yaml-canonical-dialog-writer-unavailable');
+      }
+      const folderModule = moduleEntries.find((entry) => entry.nodeType === 'folder')?.mod;
+      const yamlCanonicalZipServiceFactory =
+        folderModule !== null &&
+        typeof folderModule === 'object' &&
+        'createYamlCanonicalZipService' in folderModule &&
+        typeof folderModule.createYamlCanonicalZipService === 'function'
+          ? (folderModule.createYamlCanonicalZipService as YamlCanonicalZipServiceFactory)
+          : null;
+      if (
+        pluginDefinitions.some((definition) => definition.nodeType === 'folder') &&
+        yamlCanonicalZipServiceFactory === null
+      ) {
+        throw new Error('yaml-canonical-zip-service-factory-unavailable');
+      }
+
       if (pluginDefinitions.length > 0) {
         reporter.reportStepProgress('Load plugin-loaders', 100);
       }
@@ -458,7 +571,12 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
         // Use a static import to avoid bundler facade re-export mismatches in preview builds.
         reporter.reportStepProgress('Bootstrap services', 10);
         const services = await WorkerService.getSingleton(
-          enrichedDefinitions.length > 0 ? enrichedDefinitions : pluginDefinitions
+          enrichedDefinitions.length > 0 ? enrichedDefinitions : pluginDefinitions,
+          {
+            ...(yamlCanonicalDialogWriter === null ? {} : { yamlCanonicalDialogWriter }),
+            ...(yamlCanonicalZipServiceFactory === null ? {} : { yamlCanonicalZipServiceFactory }),
+            assertYamlStorageCanonicalAccess,
+          }
         );
         reporter.reportStepProgress('Bootstrap services', 60);
         reporter.reportStepProgress('Bootstrap services', 100);
@@ -1048,6 +1166,8 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           shutdown: () => services.shutdown(),
           getYamlCoreDbReadOnlyInventory: async () =>
             sanitizeForComlink(await services.getYamlCoreDbReadOnlyInventory()),
+          getYamlCanonicalZipAPI: async () =>
+            toComlinkProxy(Comlink, services.getYamlCanonicalZipAPI()),
           getSystemHealth: async () => {
             const health = await services.getSystemHealth();
             return {
@@ -1252,7 +1372,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
         reporter.reportStepProgress('Create API facade', 100);
         await recoverBuildSessionFromPersistedState();
 
-        return { api, servicesReadyAt };
+        return { api: guardCanonicalWorkerApi(api, canonicalInspection.state), servicesReadyAt };
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
         console.warn('[worker bootstrap] runtime-worker-worker wiring failed:', msg);

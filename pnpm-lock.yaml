@@ -3647,9 +3647,6 @@ importers:
       '@hierarchidb/plugin-ui-sdk':
         specifier: workspace:*
         version: link:../../packages/plugin-ui-sdk
-      '@hierarchidb/runtime-worker':
-        specifier: workspace:*
-        version: link:../../packages/runtime-worker
       '@hierarchidb/tag':
         specifier: workspace:*
         version: link:../../packages/tag
@@ -3665,18 +3662,15 @@ importers:
       '@hierarchidb/ui-plugin-basic-info':
         specifier: workspace:*
         version: link:../../packages/ui/plugin-basic-info
-      '@hierarchidb/ui-worker-provider':
-        specifier: workspace:*
-        version: link:../../packages/ui/worker-provider
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../packages/util
+      '@hierarchidb/worker-api':
+        specifier: workspace:*
+        version: link:../../packages/worker-api
       '@hierarchidb/yaml-api':
         specifier: workspace:*
         version: link:../../packages/yaml-api
-      '@hierarchidb/yaml-store':
-        specifier: workspace:*
-        version: link:../../packages/yaml-store
       '@mui/icons-material':
         specifier: ^7.3.6
         version: 7.3.9(@mui/material@7.3.9(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
@@ -4724,9 +4718,6 @@ importers:
       '@hierarchidb/yaml-api':
         specifier: workspace:*
         version: link:../../packages/yaml-api
-      '@hierarchidb/yaml-store':
-        specifier: workspace:*
-        version: link:../../packages/yaml-store
       '@mui/icons-material':
         specifier: ^7.3.6
         version: 7.3.9(@mui/material@7.3.9(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
