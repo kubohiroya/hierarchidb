@@ -1,13 +1,15 @@
 import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
-import { isTaskSkipped } from '~/common/utils/taskMessageUtils';
-import { resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
-import { sortGeometryTasks, sortVectorTileTasks } from '~/ui/components/build-progress/taskItemCardList/useTaskItemCardList';
-import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
+import { isTaskSkipped, resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
 import {
   isGeometryLikeStageId,
   isTileEmitLikeStageId,
   normalizeUiStageId,
 } from '~/ui/components/build-progress/stageIdAliases';
+import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
+import {
+  sortGeometryTasks,
+  sortVectorTileTasks,
+} from '~/ui/components/build-progress/taskItemCardList/useTaskItemCardList';
 
 export type ViewportRange = {
   stageId: string;
@@ -78,7 +80,7 @@ const resolveStatusColor = (params: {
 export const resolveViewportIndices = (
   viewportRange: ViewportRange | null | undefined,
   tasksByStage: Record<string, TaskItemWithMetadata[]>,
-  filter: TaskProgressVisibilityFilter,
+  filter: TaskProgressVisibilityFilter
 ) => {
   let viewportStartIndex: number | null = null;
   let viewportEndIndex: number | null = null;
@@ -95,7 +97,11 @@ export const resolveViewportIndices = (
   return { viewportStartIndex, viewportEndIndex };
 };
 
-const resolveSourceStageId = (stage: BuildStage, stages: BuildStage[], tasksByStage: Record<string, TaskItemWithMetadata[]>) => {
+const resolveSourceStageId = (
+  stage: BuildStage,
+  stages: BuildStage[],
+  tasksByStage: Record<string, TaskItemWithMetadata[]>
+) => {
   const isGeometryStage = isGeometryLikeStageId(stage.id);
   const isSingleGeometryFlow = stages.length === 1;
   const hasSingleGeometrySource = resolveTasksByStageId(tasksByStage, 'source').length > 0;
@@ -110,7 +116,7 @@ const resolveSourceStageId = (stage: BuildStage, stages: BuildStage[], tasksBySt
 
 const resolveTasksByStageId = (
   tasksByStage: Record<string, TaskItemWithMetadata[]>,
-  stageId: string,
+  stageId: string
 ): TaskItemWithMetadata[] => {
   const direct = tasksByStage[stageId];
   if (direct) return direct;
@@ -118,7 +124,9 @@ const resolveTasksByStageId = (
   if (!canonical) return [];
   const canonicalTasks = tasksByStage[canonical];
   if (canonicalTasks) return canonicalTasks;
-  const aliasEntry = Object.entries(tasksByStage).find(([key]) => normalizeUiStageId(key) === canonical);
+  const aliasEntry = Object.entries(tasksByStage).find(
+    ([key]) => normalizeUiStageId(key) === canonical
+  );
   return aliasEntry?.[1] ?? [];
 };
 
@@ -143,7 +151,7 @@ const shouldIncludeTask = (params: {
 const resolveVisibleOrderedTasks = (
   stageId: string,
   stageTasks: TaskItemWithMetadata[],
-  filter: TaskProgressVisibilityFilter,
+  filter: TaskProgressVisibilityFilter
 ): TaskItemWithMetadata[] => {
   const orderedTasks = isTileEmitLikeStageId(stageId)
     ? sortVectorTileTasks(stageTasks)
@@ -235,7 +243,10 @@ export const buildTaskProgressSegments = (params: TaskProgressComputeInput) => {
     }
   });
 
-  const viewWidth = Math.max(1, nextSegments.reduce((total, segment) => total + segment.width, 0));
+  const viewWidth = Math.max(
+    1,
+    nextSegments.reduce((total, segment) => total + segment.width, 0)
+  );
 
   return {
     segments: nextSegments,
