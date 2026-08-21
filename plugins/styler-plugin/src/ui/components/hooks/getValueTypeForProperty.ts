@@ -2,7 +2,7 @@ import {
   MAPLIBRE_PROPERTY_METADATA,
   type MapLibreStyleProperty,
   type StylerValueType,
-} from '~/common/types/StylerEntity';
+} from '@hierarchidb/styler-store';
 
 export const getValueTypeForProperty = (
   property: MapLibreStyleProperty | null
