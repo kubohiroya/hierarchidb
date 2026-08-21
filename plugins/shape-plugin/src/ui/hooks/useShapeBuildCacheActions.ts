@@ -1,32 +1,38 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { BuildSessionStatus } from '@hierarchidb/build-api';
-import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { notify } from '@hierarchidb/components';
+import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import {
   RESET_LEGACY_BUILD_SESSION_AND_TASKS,
   type ShapeBuildSessionRecoverableContractError,
+  type ShapeBuildStopReason,
   type ShapeMutationAPI,
 } from '@hierarchidb/shape-api';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { VtTaskQueueDb as TileEmitTaskQueueDb } from '@hierarchidb/vt-orchestrator';
+import { useAtomValue } from 'jotai';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import {
-  loadCacheCounts,
-  clearBuildTasksForStages,
-  SHAPE_NODE_TYPE,
-  type CacheCounts,
-  type ResultCounts,
-} from './useShapeBuildCacheActions/useShapeBuildCacheActions.helpers.js';
+  buildSessionLifecycleAtom,
+  type ShapeSessionPhase,
+} from '~/ui/atoms/buildSessionStateAtoms';
 import {
+  type CacheActionKey,
+  handleDeleteFeatureMetadata,
+  handleDeleteGeometryCache as handleDeleteGeometryCacheAction,
   handleDeleteSourceApiCache as handleDeleteSourceApiCacheAction,
   handleDeleteSourceFilteredCache as handleDeleteSourceFilteredCacheAction,
-  handleDeleteFeatureMetadata,
-  handleResetSession as handleResetSessionAction,
   handleDeleteTileEmitCache as handleDeleteTileEmitCacheAction,
   handleDeleteTransposeIndex as handleDeleteTransposeIndexAction,
-  handleDeleteGeometryCache as handleDeleteGeometryCacheAction,
-  type CacheActionKey,
+  handleResetSession as handleResetSessionAction,
 } from './useShapeBuildCacheActions/useShapeBuildCacheActions.handlers.js';
-import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
+import {
+  type CacheCounts,
+  clearBuildTasksForStages,
+  loadCacheCounts,
+  type ResultCounts,
+  SHAPE_NODE_TYPE,
+} from './useShapeBuildCacheActions/useShapeBuildCacheActions.helpers.js';
 
 type BuildBridge = {
   initialize: () => Promise<void>;
@@ -65,18 +71,44 @@ const initialResultCounts: ResultCounts = {
 
 type ActionDeps = {
   nodeId?: NodeId;
-  sessionStatus: BuildSessionStatus['status'] | null;
+  sessionPhase: ShapeSessionPhase;
   runDelete: (key: CacheActionKey, action: () => Promise<void>) => Promise<void>;
   loadCountsSafely: () => Promise<void>;
   hasPersistedOutputs: () => Promise<boolean>;
   hasRunningBuildSession: () => Promise<boolean>;
   onResetSession?: () => void;
   persistSessionReset: () => Promise<void>;
-  runClearTaskQueueStages: (taskTypes: Parameters<typeof clearBuildTasksForStages>[2]) => Promise<void>;
+  runClearTaskQueueStages: (
+    taskTypes: Parameters<typeof clearBuildTasksForStages>[2]
+  ) => Promise<void>;
+};
+
+type RefreshOutcome = 'completed' | 'failed' | 'queued-cancel';
+
+const resolveRefreshOutcome = (
+  phase: ShapeSessionPhase,
+  stopReason: ShapeBuildStopReason | undefined
+): RefreshOutcome | null => {
+  if (phase === 'completed' || phase === 'failed') {
+    return phase;
+  }
+  if (phase === 'idle' && stopReason !== undefined) {
+    return 'queued-cancel';
+  }
+  return null;
 };
 
 export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: Args) => {
   const bridgeRef = useMemo<BuildBridge>(() => getBuildWorkerBridge(), []);
+  const lifecycle = useAtomValue(buildSessionLifecycleAtom);
+  const latestNodeIdRef = useRef(nodeId);
+  const loadGenerationRef = useRef(0);
+  const lifecycleRefreshRef = useRef<{
+    initialized: boolean;
+    nodeId?: NodeId;
+    outcome: RefreshOutcome | null;
+  }>({ initialized: false, outcome: null });
+  latestNodeIdRef.current = nodeId;
   const [countsLoading, setCountsLoading] = useState(false);
   const [counts, setCounts] = useState(initialCounts);
   const [resultCounts, setResultCounts] = useState(initialResultCounts);
@@ -89,7 +121,6 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
     metadata: false,
     resetSession: false,
   });
-  const [sessionStatus, setSessionStatus] = useState<BuildSessionStatus['status'] | null>(null);
 
   const runClearTaskQueueStages = useCallback(
     async (taskTypes: Parameters<typeof clearBuildTasksForStages>[2]) => {
@@ -97,42 +128,62 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
       const taskQueue = new TileEmitTaskQueueDb();
       await clearBuildTasksForStages(taskQueue, nodeId, taskTypes);
     },
-    [nodeId],
+    [nodeId]
   );
 
   const loadCounts = useCallback(async () => {
+    const generation = loadGenerationRef.current + 1;
+    loadGenerationRef.current = generation;
     if (!nodeId) {
       setCounts(initialCounts);
       setResultCounts(initialResultCounts);
-      setSessionStatus(null);
       setCountsLoading(false);
       return;
     }
 
     setCountsLoading(true);
     try {
-      const result = await loadCacheCounts({
-        nodeId,
-        sessionBridge: bridgeRef,
-      });
-      setSessionStatus(result.sessionStatus);
+      const result = await loadCacheCounts({ nodeId });
+      if (generation !== loadGenerationRef.current || latestNodeIdRef.current !== nodeId) {
+        return;
+      }
       setCounts(result.counts);
       setResultCounts(result.resultCounts);
     } finally {
-      setCountsLoading(false);
+      if (generation === loadGenerationRef.current && latestNodeIdRef.current === nodeId) {
+        setCountsLoading(false);
+      }
     }
-  }, [bridgeRef, nodeId]);
+  }, [nodeId]);
 
   useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      await loadCounts();
-      if (cancelled) return;
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [loadCounts]);
+    const tracker = lifecycleRefreshRef.current;
+    const outcome = resolveRefreshOutcome(lifecycle.phase, lifecycle.stopReason);
+    const nodeChanged = !tracker.initialized || tracker.nodeId !== nodeId;
+
+    if (nodeChanged) {
+      tracker.initialized = true;
+      tracker.nodeId = nodeId;
+      tracker.outcome = outcome;
+      void loadCounts().catch((error: unknown) => {
+        console.warn('[shapeBuildCache] failed to load counts', error);
+      });
+      return;
+    }
+
+    if (outcome === null) {
+      tracker.outcome = null;
+      return;
+    }
+    if (tracker.outcome === outcome) {
+      return;
+    }
+
+    tracker.outcome = outcome;
+    void loadCounts().catch((error: unknown) => {
+      console.warn('[shapeBuildCache] failed to load terminal counts', error);
+    });
+  }, [lifecycle.phase, lifecycle.stopReason, loadCounts, nodeId]);
 
   const runDelete = useCallback(
     async (key: CacheActionKey, action: () => Promise<void>): Promise<void> => {
@@ -143,7 +194,7 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
         setDeleteLoading((prev) => ({ ...prev, [key]: false }));
       }
     },
-    [],
+    []
   );
 
   const loadCountsSafely = useCallback(async () => {
@@ -179,24 +230,24 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
     if (!nodeId) return;
     try {
       await shapeMutationAPIImpl.deleteBuildSession(nodeId);
-      setSessionStatus(null);
     } catch (error) {
       console.warn('[ShapeDownloadConfigSection] failed to persist session reset', error);
     }
   }, [nodeId]);
 
   const deps = useMemo(
-    () => ({
-      nodeId,
-      sessionStatus,
-      runDelete,
-      loadCountsSafely,
-      hasPersistedOutputs,
-      hasRunningBuildSession,
-      onResetSession,
-      persistSessionReset,
-      runClearTaskQueueStages,
-    } satisfies ActionDeps),
+    () =>
+      ({
+        nodeId,
+        sessionPhase: lifecycle.phase,
+        runDelete,
+        loadCountsSafely,
+        hasPersistedOutputs,
+        hasRunningBuildSession,
+        onResetSession,
+        persistSessionReset,
+        runClearTaskQueueStages,
+      }) satisfies ActionDeps,
     [
       hasPersistedOutputs,
       hasRunningBuildSession,
@@ -205,9 +256,9 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
       persistSessionReset,
       runClearTaskQueueStages,
       runDelete,
-      sessionStatus,
+      lifecycle.phase,
       loadCountsSafely,
-    ],
+    ]
   );
 
   const handleDeleteSourceApiCache = useCallback(async () => {
@@ -246,7 +297,6 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
           confirmation: RESET_LEGACY_BUILD_SESSION_AND_TASKS,
           error,
         });
-        setSessionStatus(null);
         await loadCountsSafely();
         notify.success('Recovered legacy build session');
       });
@@ -254,9 +304,8 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
     [bridgeRef, loadCountsSafely, nodeId, runDelete]
   );
 
-  const allowDeleteWhileBusy = (
-    sessionStatus !== null && ['running', 'paused', 'failed', 'queued'].includes(sessionStatus)
-  );
+  const allowDeleteWhileBusy =
+    lifecycle.isActive || lifecycle.phase === 'paused' || lifecycle.phase === 'failed';
   const deleteEnabled = allowDeleteWhileBusy || !disabled;
   const canDeleteSourceApiCache = deleteEnabled && counts.sourceApi > 0;
   const canDeleteSourceFilteredCache = deleteEnabled && counts.sourceFiltered > 0;

@@ -103,6 +103,20 @@ completedAt) and `lifecycleExtrasAtom` (stopReason). `stageId` drives the UI
 synchronization/selection signal. Per-stage timing remains owned by the
 `stageSnapshotUpdated` path and is not duplicated from this event.
 
+The Shape cache actions hook derives count-refresh triggers from this lifecycle atom
+only. It performs one initial load for each observed node, then one load for each new
+`completed` or `failed` outcome and for queued cancellation encoded as `idle` with a
+`stopReason`. `paused` is not an outcome. A non-outcome phase clears the remembered
+outcome, allowing the next session to refresh, while duplicate terminal events and
+re-renders do not. Manual delete/reset actions keep their explicit refresh path.
+
+Count reads use Shape query APIs and the task-queue API boundary; the hook neither
+polls Worker session status nor reads Dexie directly. Each request captures a
+monotonic generation and `nodeId`, and commits results or loading state only while
+both still match the latest rendered node. This prevents a slower response for a
+previous node or request from overwriting current counts. No compatibility fallback
+may turn a lifecycle or query failure into a synthetic count state.
+
 The interval between selecting a started stage and receiving its first
 `stageSnapshotUpdated` event is represented by `ui-initializing`. During that
 interval, `sessionStatusUpdated` still carries and validates its required stage
