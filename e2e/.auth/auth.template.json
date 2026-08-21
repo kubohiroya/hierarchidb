@@ -1,15 +1,14 @@
 {
   "accessToken": "",
   "accessTokenB64": "",
-  "idToken": "",
   "userinfo": {
     "id": "",
     "email": "",
     "name": "",
-    "picture": "",
     "provider": "",
-    "expires_at": 0
+    "expires_at": 0,
+    "session_mode": ""
   },
   "userinfoB64": "",
-  "tokenExpiresAt": 0
+  "refreshTokenId": ""
 }
