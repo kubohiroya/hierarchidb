@@ -4,6 +4,7 @@ import { setCorsProxyBaseURL } from '@hierarchidb/download';
 import {
   getOriginCoordinatorSourceSha,
   installOriginCoordinatorBridgeResponder,
+  requireOriginCoordinatorDedicatedWorkerTarget,
 } from '@hierarchidb/origin-coordinator';
 import { expose } from 'comlink';
 import type { DataSourceName } from '~/common/types/index';
@@ -16,7 +17,7 @@ import type {
 } from './countryAvailabilityTypes.js';
 
 installOriginCoordinatorBridgeResponder({
-  target: globalThis.navigator.serviceWorker,
+  target: requireOriginCoordinatorDedicatedWorkerTarget(globalThis),
   releaseId: getOriginCoordinatorSourceSha(),
   revokeLegacyYamlAccess: () => undefined,
 });

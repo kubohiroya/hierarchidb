@@ -33,11 +33,14 @@ type TreeMutationAPI = {
 };
 
 type TreeNodeUpdaterAPI = {
-  updateTreeNode: (nodeId: string, payload: {
-    mode: string;
-    data: unknown;
-    draftData: unknown;
-  }) => Promise<void>;
+  updateTreeNode: (
+    nodeId: string,
+    payload: {
+      mode: string;
+      data: unknown;
+      draftData: unknown;
+    }
+  ) => Promise<void>;
 };
 
 type WorkerAPI = {
@@ -45,6 +48,11 @@ type WorkerAPI = {
   getQueryAPI?: () => Promise<TreeQueryAPI>;
   getMutationAPI?: () => Promise<TreeMutationAPI>;
   getTreeNodeUpdaterAPI?: () => Promise<TreeNodeUpdaterAPI>;
+  generateShapeDownloadTaskPayloadsFromSelection?: (
+    nodeId: string,
+    dataSourceName: string,
+    selectedArrayByCountries: Record<string, boolean[]>
+  ) => Promise<unknown[]>;
 };
 
 type WorkerClientRef = {
@@ -52,8 +60,25 @@ type WorkerClientRef = {
   getAPI?: () => WorkerAPI | undefined;
 };
 
+type OriginCoordinatorReadinessResult = {
+  status: string;
+  counts: {
+    worker: {
+      compatible: number;
+      incompatible: number;
+      unresponsive: number;
+    };
+  };
+};
+
 type WindowWithWorkerRef = Window & {
   __HDB_WORKER_CLIENT_REF__?: WorkerClientRef;
+  __HDB_ORIGIN_COORDINATOR_REF__?: {
+    getReadiness(input: {
+      requestId: string;
+      timeoutMs: number;
+    }): Promise<OriginCoordinatorReadinessResult>;
+  };
 };
 
 type ShapeNode = {
@@ -188,6 +213,111 @@ const createShapeNodeWithDraft = async (page: Page): Promise<ShapeNode> => {
 };
 
 test.describe('PluginDialog caret E2E', () => {
+  test('Shape Step 3 loads countries and a 200-entry selection produces source tasks', async ({
+    page,
+    canonicalAuth,
+  }) => {
+    test.setTimeout(180000);
+
+    setupConsoleErrorTracking(page);
+    await canonicalAuth.signIn();
+    await page.goto(buildAppUrl('t/r'), { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await dismissGuidedTour(page);
+    await waitForTreeTableLoad(page);
+
+    await page.waitForFunction(
+      () => {
+        const ref = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__;
+        return Boolean(ref?.client ?? ref?.getAPI?.());
+      },
+      null,
+      { timeout: 30000 }
+    );
+
+    const shapeNode = await createShapeNodeWithDraft(page);
+    await page.goto(buildAppUrl(`t/${shapeNode.treeId}/${shapeNode.pageNodeId}`), {
+      waitUntil: 'domcontentloaded',
+      timeout: 120000,
+    });
+    await waitForTreeTableLoad(page);
+
+    const nodeLink = page.locator(`a[href$="/${shapeNode.nodeId}"]`).first();
+    await expect(nodeLink).toBeVisible({ timeout: 20000 });
+    await nodeLink.click();
+
+    const openEditButton = page.getByRole('button', { name: /ノードを編集|Edit/i }).first();
+    await expect(openEditButton).toBeVisible({ timeout: 10000 });
+    await openEditButton.click();
+
+    const countryStepButton = page.getByRole('button', { name: /^3\s*/ }).first();
+    await expect(countryStepButton).toBeVisible({ timeout: 10000 });
+    await expect(countryStepButton).toBeEnabled({ timeout: 10000 });
+    await countryStepButton.click();
+
+    await expect(
+      page.getByRole('heading', { name: /Select Countries & Administrative Levels/i })
+    ).toBeVisible({ timeout: 60000 });
+    await expect(page.getByPlaceholder('Search by country or code...')).toBeVisible({
+      timeout: 10000,
+    });
+
+    const dedicatedWorkerCensus = await page.evaluate(async () => {
+      const coordinator = (window as WindowWithWorkerRef).__HDB_ORIGIN_COORDINATOR_REF__;
+      if (!coordinator) throw new Error('origin-coordinator-handle-missing');
+      const readiness = await coordinator.getReadiness({
+        requestId: 'shape-step3-country-worker-census',
+        timeoutMs: 5_000,
+      });
+      return {
+        status: readiness.status,
+        worker: readiness.counts.worker,
+      };
+    });
+
+    expect(dedicatedWorkerCensus).toMatchObject({
+      status: 'accepted',
+      worker: {
+        incompatible: 0,
+        unresponsive: 0,
+      },
+    });
+    expect(dedicatedWorkerCensus.worker.compatible).toBeGreaterThanOrEqual(1);
+
+    const sourceTaskResult = await page.evaluate(async (nodeId) => {
+      const namesResponse = await fetch(
+        new URL('iso3166-country-names.i18n.json', document.baseURI)
+      );
+      if (!namesResponse.ok) {
+        throw new Error(`Failed to load ISO country names: ${namesResponse.status}`);
+      }
+      const names = (await namesResponse.json()) as { en?: Record<string, string> };
+      if (!names.en) throw new Error('English ISO country names are missing');
+      const countryCodes = Object.keys(names.en)
+        .filter((code) => code.length === 2)
+        .slice(0, 200);
+      if (countryCodes.length !== 200) {
+        throw new Error(`Expected 200 ISO2 country codes, received ${countryCodes.length}`);
+      }
+      const selectedArrayByCountries = Object.fromEntries(
+        countryCodes.map((code) => [code, [true]])
+      );
+      const ref = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__;
+      const api = ref?.client ?? ref?.getAPI?.();
+      if (!api?.generateShapeDownloadTaskPayloadsFromSelection) {
+        throw new Error('Shape source task payload API is not ready');
+      }
+      const payloads = await api.generateShapeDownloadTaskPayloadsFromSelection(
+        nodeId,
+        'geoboundaries',
+        selectedArrayByCountries
+      );
+      return { selectedCount: countryCodes.length, payloadCount: payloads.length };
+    }, shapeNode.nodeId);
+
+    expect(sourceTaskResult.selectedCount).toBe(200);
+    expect(sourceTaskResult.payloadCount).toBeGreaterThanOrEqual(1);
+  });
+
   test('PluginDialog caret: Step1/Step5 inputs stay editable after menu interactions', async ({
     page,
     canonicalAuth,
@@ -200,10 +330,14 @@ test.describe('PluginDialog caret E2E', () => {
     await dismissGuidedTour(page);
     await waitForTreeTableLoad(page);
 
-    await page.waitForFunction(() => {
-      const ref = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__;
-      return Boolean(ref?.client ?? ref?.getAPI?.());
-    }, null, { timeout: 30000 });
+    await page.waitForFunction(
+      () => {
+        const ref = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__;
+        return Boolean(ref?.client ?? ref?.getAPI?.());
+      },
+      null,
+      { timeout: 30000 }
+    );
 
     await page.evaluate(async () => {
       const ref = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__;
@@ -251,7 +385,8 @@ test.describe('PluginDialog caret E2E', () => {
     if (!hasBuildStep) {
       test.info().annotations.push({
         type: 'note',
-        description: 'Build step is not exposed in this runtime configuration; Step5 assertions were skipped.',
+        description:
+          'Build step is not exposed in this runtime configuration; Step5 assertions were skipped.',
       });
       return;
     }

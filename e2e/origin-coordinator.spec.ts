@@ -9,7 +9,11 @@ type ReadinessResult = {
       readonly incompatible: number;
       readonly unresponsive: number;
     };
-    readonly worker: { readonly incompatible: number; readonly unresponsive: number };
+    readonly worker: {
+      readonly compatible: number;
+      readonly incompatible: number;
+      readonly unresponsive: number;
+    };
     readonly sharedworker: {
       readonly compatible: number;
       readonly incompatible: number;
@@ -52,7 +56,7 @@ test('production bridge census accounts for the window and SharedWorker without 
       }
     ).__HDB_ORIGIN_COORDINATOR_REF__;
     if (!coordinator) throw new Error('origin-coordinator-handle-missing');
-    return await coordinator.getReadiness({
+    return coordinator.getReadiness({
       requestId: 'e2e-stable-acceptance-census',
       timeoutMs: 5_000,
     });
@@ -89,4 +93,83 @@ test('production bridge census accounts for the window and SharedWorker without 
   });
 
   expect(durableRecords).toEqual([{ key: 'yaml-storage', protocolVersion: 2, phase: 'allowed' }]);
+});
+
+test('country availability Dedicated Worker responds on its owner channel', async ({
+  baseURL,
+  page,
+}) => {
+  if (typeof baseURL !== 'string') throw new Error('playwright-base-url-missing');
+  const workerHostUrl = `${baseURL.replace(/\/*$/u, '')}/dedicated-worker-e2e-host.html`;
+  await page.route(workerHostUrl, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/html',
+      body: '<!doctype html><title>Dedicated Worker E2E Host</title>',
+    });
+  });
+  await page.goto(workerHostUrl, { waitUntil: 'domcontentloaded' });
+
+  const response = await page.evaluate(async (): Promise<unknown> => {
+    const worker = new Worker(new URL('countryAvailability.worker.js', document.baseURI), {
+      type: 'module',
+    });
+    try {
+      return await new Promise<unknown>((resolve, reject) => {
+        const channel = new MessageChannel();
+        let settled = false;
+        const finish = (value: unknown, error: Error | null): void => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          worker.removeEventListener('error', onWorkerError);
+          worker.removeEventListener('messageerror', onWorkerMessageError);
+          channel.port1.close();
+          if (error === null) {
+            resolve(value);
+          } else {
+            reject(error);
+          }
+        };
+        const onWorkerError = (): void => {
+          finish(undefined, new Error('dedicated-worker-script-error'));
+        };
+        const onWorkerMessageError = (): void => {
+          finish(undefined, new Error('dedicated-worker-message-error'));
+        };
+        const timer = setTimeout(
+          () => finish(undefined, new Error('dedicated-worker-responder-timeout')),
+          5_000
+        );
+        worker.addEventListener('error', onWorkerError);
+        worker.addEventListener('messageerror', onWorkerMessageError);
+        channel.port1.onmessage = (event: MessageEvent<unknown>) => finish(event.data, null);
+        channel.port1.onmessageerror = () =>
+          finish(undefined, new Error('dedicated-worker-response-message-error'));
+        channel.port1.start();
+        try {
+          worker.postMessage(
+            {
+              type: 'HDB_COORDINATOR_CENSUS_PROBE',
+              protocolVersion: 2,
+              requestId: 'e2e-country-availability-worker-probe',
+            },
+            [channel.port2]
+          );
+        } catch {
+          channel.port2.close();
+          finish(undefined, new Error('dedicated-worker-probe-dispatch-failed'));
+        }
+      });
+    } finally {
+      worker.terminate();
+    }
+  });
+
+  expect(response).toMatchObject({
+    type: 'HDB_COORDINATOR_CENSUS_RESPONSE',
+    protocolVersion: 2,
+    requestId: 'e2e-country-availability-worker-probe',
+    capabilities: ['origin-coordinator-foundation-v1', 'yaml-storage-quiescence-bridge-v1'],
+  });
 });
