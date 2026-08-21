@@ -55,6 +55,10 @@ describe('initializeYamlStorageProductionPreflight', () => {
     ['https://example.test/preflight?mode=recovery-pre', 'recovery-pre'],
     ['https://example.test/preflight?mode=recovery-post', 'recovery-post'],
     ['https://example.test/preflight?mode=recovery-interrupted-core', 'recovery-interrupted-core'],
+    [
+      'https://example.test/preflight?mode=recovery-interrupted-core-v1',
+      'recovery-interrupted-core-v1',
+    ],
     ['https://example.test/preflight', null],
     ['https://example.test/preflight?mode=pre&mode=post', null],
     ['https://example.test/preflight?mode=unknown', null],

@@ -448,8 +448,9 @@ HTML entry `yaml-storage-preflight.html`, never by conversation-generated DevToo
 clipboard payload. The entry does not import the coordinator worker or its fixed validator graph,
 does not load the application entry, and does not register or message a Service Worker. Loading the
 page is inert: an exact single `mode=pre`, `mode=post`, `mode=recovery-pre`,
-`mode=recovery-post`, or `mode=recovery-interrupted-core` query and one explicit button click are
-required before one inspection starts.
+`mode=recovery-post`, `mode=recovery-interrupted-core`, or
+`mode=recovery-interrupted-core-v1` query and one explicit button click are required before one
+inspection starts.
 It does not poll, retry, navigate, persist state, write to a
 clipboard, or transmit evidence.
 
@@ -515,6 +516,16 @@ from that native version, and counts all stores in one readonly transaction. It 
 SHA, timestamp, native version, topology status, total record count, and stable code. It does not
 change the `incident-1388-v1` acceptance set, authorize recovery, load the application root, or write,
 repair, copy, rename, delete, retry, or expose raw records.
+
+The separately reviewed `recovery-interrupted-core-v1` mode is a second diagnostic authority, not a
+retry or a broader branch of the first mode. It calls the catalog once and accepts only one literal
+`hidb-core` entry at exact native version 10. It opens that exact version without upgrade and reuses
+the runtime-worker logical-v1 schema validator as the store/index/key-path authority. Only an exact
+logical-v1 topology is counted, in one readonly transaction. A wrong native version, missing or
+duplicate catalog entry, blocked or upgrade open, or any topology mismatch rejects without counting.
+The public result is limited to source SHA, timestamp, native version, `exact-logical-v1 | mismatch`,
+aggregate record count, and a stable code. It does not change recovery acceptance or claims, load the
+application root, or write, repair, copy, rename, delete, retry, or expose raw records or store counts.
 
 The strict census contract, build-SHA reader, and responder live in the shared
 `@hierarchidb/origin-coordinator` workspace package. The window, SharedWorker, dedicated runtime

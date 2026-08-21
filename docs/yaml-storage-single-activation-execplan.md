@@ -78,6 +78,13 @@ After completion, YAML filenames live only in the matching metadata slot and YAM
   unchanged.
   Date: 2026-08-21.
 
+- Decision: After production evidence identified the literal historical `hidb-core` as native
+  version 10 but not logical-v2 topology, diagnose exact logical-v1 topology through a new mode.
+  Rationale: Native version 10 alone is not schema evidence. The new mode requires that exact native
+  version, reuses the runtime-worker logical-v1 schema authority, and counts records only after an
+  exact topology match. It is not a retry, fallback, or change to the #1388 recovery acceptance set.
+  Date: 2026-08-22.
+
 - Decision: Treat a genuinely missing CoreDB as a distinct same-activation fresh-v2 creation, not
   as an empty v1 migration or a revoked successor recovery.
   Rationale: New installations otherwise stop permanently at `CORE_DB_NOT_FOUND`. The sole

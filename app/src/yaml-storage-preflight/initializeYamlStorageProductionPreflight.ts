@@ -1,4 +1,5 @@
 import type { InterruptedCoreDatabaseInspectionResult } from '../yaml-storage-recovery/inspectInterruptedCoreDatabase.js';
+import type { InterruptedCoreV1DatabaseInspectionResult } from '../yaml-storage-recovery/inspectInterruptedCoreV1Database.js';
 import type {
   YamlStorageCorrectiveRecoveryInspectionResult,
   YamlStorageCorrectiveRecoveryInspectionStage,
@@ -11,12 +12,14 @@ import type {
 export type YamlStorageInspectionMode =
   | YamlStorageProductionPreflightMode
   | YamlStorageCorrectiveRecoveryInspectionStage
-  | 'recovery-interrupted-core';
+  | 'recovery-interrupted-core'
+  | 'recovery-interrupted-core-v1';
 
 export type YamlStorageInspectionResult =
   | YamlStorageProductionPreflightResult
   | YamlStorageCorrectiveRecoveryInspectionResult
-  | InterruptedCoreDatabaseInspectionResult;
+  | InterruptedCoreDatabaseInspectionResult
+  | InterruptedCoreV1DatabaseInspectionResult;
 
 export interface InitializeYamlStorageProductionPreflightInput {
   readonly document: Document;
@@ -62,7 +65,8 @@ export function parseYamlStorageProductionPreflightMode(
       modes[0] === 'post' ||
       modes[0] === 'recovery-pre' ||
       modes[0] === 'recovery-post' ||
-      modes[0] === 'recovery-interrupted-core')
+      modes[0] === 'recovery-interrupted-core' ||
+      modes[0] === 'recovery-interrupted-core-v1')
     ? modes[0]
     : null;
 }
