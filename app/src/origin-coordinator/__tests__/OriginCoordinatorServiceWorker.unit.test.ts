@@ -731,7 +731,7 @@ describe('OriginCoordinatorServiceWorker', () => {
     const result = await dispatchMessage(
       getListener(harness.listeners, 'message'),
       windowClient,
-      createQuiescenceRequest(5)
+      createQuiescenceRequest()
     );
 
     expect(result).toMatchObject({

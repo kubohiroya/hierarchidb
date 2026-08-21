@@ -1,9 +1,12 @@
-import type { BuildSessionStatus } from '@hierarchidb/build-api';
-import type { BuildTaskType } from '@hierarchidb/shape-store';
-import type { NodeId } from '@hierarchidb/core-types';
 import { notify } from '@hierarchidb/components';
-import { deleteTasksByNode, VtTaskQueueDb as TileEmitTaskQueueDb } from '@hierarchidb/vt-orchestrator';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { BuildTaskType } from '@hierarchidb/shape-store';
+import {
+  deleteTasksByNode,
+  VtTaskQueueDb as TileEmitTaskQueueDb,
+} from '@hierarchidb/vt-orchestrator';
 import { ephemeralShapeAPIImpl, shapeMutationAPIImpl } from '~/services/build/ShapeBuildAPIClient';
+import type { ShapeSessionPhase } from '~/ui/atoms/buildSessionStateAtoms';
 import { deleteSourceRawCache } from './useShapeBuildCacheActions.helpers.js';
 
 type FilterContext = {
@@ -11,11 +14,18 @@ type FilterContext = {
   runClearTaskQueueStages: (taskTypes: BuildTaskType[]) => Promise<void>;
 };
 
-export type CacheActionKey = 'sourceApi' | 'sourceFiltered' | 'geometry' | 'tileEmit' | 'transposeIndex' | 'metadata' | 'resetSession';
+export type CacheActionKey =
+  | 'sourceApi'
+  | 'sourceFiltered'
+  | 'geometry'
+  | 'tileEmit'
+  | 'transposeIndex'
+  | 'metadata'
+  | 'resetSession';
 
 type ActionDeps = {
   nodeId?: NodeId;
-  sessionStatus: BuildSessionStatus['status'] | null;
+  sessionPhase: ShapeSessionPhase;
   runDelete: (key: CacheActionKey, action: () => Promise<void>) => Promise<void>;
   loadCountsSafely: () => Promise<void>;
   hasPersistedOutputs: () => Promise<boolean>;
@@ -27,8 +37,11 @@ type ActionDeps = {
 
 const filterByStage = async (_deps: FilterContext, _taskTypes: BuildTaskType[]) => {};
 
-const clearSessionQueueIfNeeded = async (deps: ActionDeps, skipIfRunning = false): Promise<boolean> => {
-  if (!deps.sessionStatus || deps.sessionStatus === 'completed') return false;
+const clearSessionQueueIfNeeded = async (
+  deps: ActionDeps,
+  skipIfRunning = false
+): Promise<boolean> => {
+  if (deps.sessionPhase === 'completed') return false;
 
   const running = await deps.hasRunningBuildSession();
   if (running) {
@@ -37,7 +50,7 @@ const clearSessionQueueIfNeeded = async (deps: ActionDeps, skipIfRunning = false
   if (skipIfRunning) {
     return false;
   }
-  if (deps.sessionStatus !== 'running') {
+  if (deps.sessionPhase !== 'running') {
     return false;
   }
   deps.onResetSession?.();
@@ -45,12 +58,18 @@ const clearSessionQueueIfNeeded = async (deps: ActionDeps, skipIfRunning = false
   return true;
 };
 
-const clearMetadataAndTaskStates = async (deps: ActionDeps, taskTypes: BuildTaskType[]): Promise<void> => {
+const clearMetadataAndTaskStates = async (
+  deps: ActionDeps,
+  taskTypes: BuildTaskType[]
+): Promise<void> => {
   await deps.runClearTaskQueueStages(taskTypes);
   await filterByStage(deps, taskTypes);
 };
 
-const handleDeleteTileEmitArtifacts = async (deps: ActionDeps, successMessage: string): Promise<void> => {
+const handleDeleteTileEmitArtifacts = async (
+  deps: ActionDeps,
+  successMessage: string
+): Promise<void> => {
   const nodeId = deps.nodeId;
   if (!nodeId) return;
   const taskTypes: BuildTaskType[] = ['tileEmit'];
@@ -59,7 +78,8 @@ const handleDeleteTileEmitArtifacts = async (deps: ActionDeps, successMessage: s
   await shapeMutationAPIImpl.deleteVectorTiles(nodeId);
   await clearMetadataAndTaskStates(deps, taskTypes);
   await taskQueue.tasks.where('nodeId').equals(nodeId).delete();
-  const shouldPreserveSession = deps.sessionStatus === 'completed' || (await deps.hasPersistedOutputs());
+  const shouldPreserveSession =
+    deps.sessionPhase === 'completed' || (await deps.hasPersistedOutputs());
   const resetByStale = await clearSessionQueueIfNeeded(deps);
   if (!shouldPreserveSession && !resetByStale) {
     deps.onResetSession?.();
@@ -107,7 +127,8 @@ export const handleDeleteSourceFilteredCache = async (deps: ActionDeps): Promise
     await ephemeralShapeAPIImpl.clearStage(nodeId, 'source');
     await clearMetadataAndTaskStates(deps, taskTypes);
 
-    const shouldPreserveSession = deps.sessionStatus === 'completed' || (await deps.hasPersistedOutputs());
+    const shouldPreserveSession =
+      deps.sessionPhase === 'completed' || (await deps.hasPersistedOutputs());
     const resetByStale = await clearSessionQueueIfNeeded(deps);
     if (!shouldPreserveSession && !resetByStale) {
       deps.onResetSession?.();

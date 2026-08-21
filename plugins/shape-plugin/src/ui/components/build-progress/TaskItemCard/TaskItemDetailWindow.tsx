@@ -1,40 +1,42 @@
-import type React from 'react';
-import { cloneElement, isValidElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Box,
-  IconButton,
-  Stack,
-  Typography,
-  useTheme,
-} from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import LayersIcon from '@mui/icons-material/Layers';
+import { Box, IconButton, Stack, Typography, useTheme } from '@mui/material';
+import { geojson as geojsonApi } from 'flatgeobuf';
 import type { Feature, FeatureCollection } from 'geojson';
+import L from 'leaflet';
+import type React from 'react';
+import {
+  cloneElement,
+  isValidElement,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { feature as topojsonFeature } from 'topojson-client';
 import type { Topology } from 'topojson-specification';
-import { geojson as geojsonApi } from 'flatgeobuf';
-import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { FloatingWindow, useFloatingWindow } from '@hierarchidb/components';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeSourceCache } from '@hierarchidb/shape-api';
+import { useTranslation } from '@hierarchidb/ui-i18n';
+import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import {
   buildRawDataDataSourceCacheKey,
   readRawDataDataSourceBuffer,
 } from '~/services/utils/chunkStore';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
-import type { TaskOutcomeSummary } from '~/ui/components/build-progress/TaskItem/TaskItem';
-import type { TaskDetailPayload, TaskDetailSelection } from './TaskItemDetailTypes';
-import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
-import { TileEmitTaskItemDetailWindow } from '~/ui/components/build-progress/tile-emit/TileEmitTaskItemDetailWindow';
-import { FloatingWindow, useFloatingWindow } from '@hierarchidb/components';
-import { useTranslation } from '@hierarchidb/ui-i18n';
-import { useShapeBuildStages } from '~/ui/components/build-progress/useShapeBuildStages/useShapeBuildStages';
 import {
   isGeometryLikeStageId,
   isTileEmitLikeStageId,
   normalizeUiStageId,
 } from '~/ui/components/build-progress/stageIdAliases';
+import type { TaskOutcomeSummary } from '~/ui/components/build-progress/TaskItem/TaskItemView';
+import { TileEmitTaskItemDetailWindow } from '~/ui/components/build-progress/tile-emit/TileEmitTaskItemDetailWindow';
+import { useShapeBuildStages } from '~/ui/components/build-progress/useShapeBuildStages/useShapeBuildStages';
+import type { TaskDetailPayload, TaskDetailSelection } from './TaskItemDetailTypes';
 
 export type { TaskDetailSelection };
 
@@ -72,7 +74,16 @@ type OverlaySpec = {
 };
 
 type TitleBarIconProps = {
-  color?: 'inherit' | 'primary' | 'secondary' | 'action' | 'error' | 'disabled' | 'info' | 'success' | 'warning';
+  color?:
+    | 'inherit'
+    | 'primary'
+    | 'secondary'
+    | 'action'
+    | 'error'
+    | 'disabled'
+    | 'info'
+    | 'success'
+    | 'warning';
   fontSize?: 'inherit' | 'small' | 'medium' | 'large';
 };
 
@@ -80,7 +91,7 @@ const resolveNodeIdFromTask = (task: ShapeBuildTaskSummary): NodeId | null => {
   if (task.nodeId) return task.nodeId;
   if (typeof task.taskId !== 'string' || !task.taskId.includes(':')) return null;
   const prefix = task.taskId.split(':')[0];
-  return prefix ? prefix as NodeId : null;
+  return prefix ? (prefix as NodeId) : null;
 };
 
 const VERTEX_LIMIT = 6553;
@@ -117,22 +128,29 @@ const formatTolerance = (value: number | null | undefined): string => {
   return `${Number.parseFloat(value.toFixed(6))}`;
 };
 
-const resolveRatio = (output: number | null | undefined, input: number | null | undefined): number | null => {
-  if (output === null || output === undefined || input === null || input === undefined || input <= 0) return null;
+const resolveRatio = (
+  output: number | null | undefined,
+  input: number | null | undefined
+): number | null => {
+  if (
+    output === null ||
+    output === undefined ||
+    input === null ||
+    input === undefined ||
+    input <= 0
+  )
+    return null;
   return Math.max(0, Math.min(1, output / input));
 };
 
-const asRecord = (value: unknown): Record<string, unknown> | null => (
-  typeof value === 'object' && value !== null ? value as Record<string, unknown> : null
-);
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : null;
 
-const readString = (value: unknown): string | null => (
-  typeof value === 'string' && value.trim().length > 0 ? value.trim() : null
-);
+const readString = (value: unknown): string | null =>
+  typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
 
-const readNumber = (value: unknown): number | null => (
-  typeof value === 'number' && Number.isFinite(value) ? value : null
-);
+const readNumber = (value: unknown): number | null =>
+  typeof value === 'number' && Number.isFinite(value) ? value : null;
 
 const formatKb = (bytes: number): string => {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 kB';
@@ -201,7 +219,7 @@ const decodeTopoJsonCollection = async (buffer: ArrayBuffer): Promise<FeatureCol
 const decodeSourceCacheCollection = async (
   cache: ShapeSourceCache,
   format: 'flatgeobuf' | 'topojson',
-  compression: 'none' | 'gzip',
+  compression: 'none' | 'gzip'
 ): Promise<FeatureCollection | null> => {
   if (format === 'topojson') {
     const source = compression === 'gzip' ? await decompressGzip(cache.data) : cache.data;
@@ -211,7 +229,9 @@ const decodeSourceCacheCollection = async (
   return normalizeFeatureCollection(decoded);
 };
 
-const decodeGeometryCacheCollection = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
+const decodeGeometryCacheCollection = async (
+  buffer: ArrayBuffer
+): Promise<FeatureCollection | null> => {
   const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
   return normalizeFeatureCollection(decoded);
 };
@@ -221,7 +241,9 @@ const measureCollectionBytes = (collection: FeatureCollection | null): number =>
   return new TextEncoder().encode(JSON.stringify(collection)).byteLength;
 };
 
-const decodeJsonSourceCollection = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
+const decodeJsonSourceCollection = async (
+  buffer: ArrayBuffer
+): Promise<FeatureCollection | null> => {
   try {
     const text = new TextDecoder('utf-8').decode(buffer);
     const parsed = JSON.parse(text) as unknown;
@@ -256,22 +278,26 @@ const decodeJsonSourceCollection = async (buffer: ArrayBuffer): Promise<FeatureC
 
 const loadSourceCollectionFromCache = async (
   nodeId: NodeId,
-  preview: Record<string, unknown> | null,
+  preview: Record<string, unknown> | null
 ): Promise<CollectionLoadResult | null> => {
-  const rawSourceCacheKeys = Array.from(new Set([
-    readString(preview?.rawSourceCacheKey),
-    readString(preview?.sourceUrl),
-    (() => {
-      const sourceUrl = readString(preview?.sourceUrl);
-      if (!sourceUrl) return null;
-      return buildRawDataDataSourceCacheKey({
-        dataSource: readString(preview?.dataSource) ?? undefined,
-        countryCode: readString(preview?.sourceCountryCode) ?? undefined,
-        adminLevel: readNumber(preview?.adminLevel) ?? undefined,
-        url: sourceUrl,
-      });
-    })(),
-  ].filter((value): value is string => Boolean(value))));
+  const rawSourceCacheKeys = Array.from(
+    new Set(
+      [
+        readString(preview?.rawSourceCacheKey),
+        readString(preview?.sourceUrl),
+        (() => {
+          const sourceUrl = readString(preview?.sourceUrl);
+          if (!sourceUrl) return null;
+          return buildRawDataDataSourceCacheKey({
+            dataSource: readString(preview?.dataSource) ?? undefined,
+            countryCode: readString(preview?.sourceCountryCode) ?? undefined,
+            adminLevel: readNumber(preview?.adminLevel) ?? undefined,
+            url: sourceUrl,
+          });
+        })(),
+      ].filter((value): value is string => Boolean(value))
+    )
+  );
   if (rawSourceCacheKeys.length === 0) {
     return null;
   }
@@ -285,7 +311,9 @@ const loadSourceCollectionFromCache = async (
   }
   const collection = await decodeJsonSourceCollection(rawBuffer);
   if (!collection) {
-    throw new Error('[shape-plugin] raw source buffer decoding failed: expected JSON/Topology/FlatGeobuf payload');
+    throw new Error(
+      '[shape-plugin] raw source buffer decoding failed: expected JSON/Topology/FlatGeobuf payload'
+    );
   }
   return {
     collection,
@@ -296,7 +324,7 @@ const loadSourceCollectionFromCache = async (
 const resolveCacheId = (
   preview: Record<string, unknown> | null,
   task: ShapeBuildTaskSummary,
-  key: 'sourceCacheId' | 'geometryCacheId',
+  key: 'sourceCacheId' | 'geometryCacheId'
 ): string | null => {
   const taskRecord = task as unknown as Record<string, unknown>;
   const previewId = readString(preview?.[key]);
@@ -323,18 +351,23 @@ const loadPreviewData = async (detail: TaskDetailPayload): Promise<PreviewData> 
   }
   if (taskStage === 'source') {
     const sourceCacheId = resolveCacheId(preview, detail.task, 'sourceCacheId');
-    const sourceCacheFormat = readString(preview?.sourceCacheFormat) === 'topojson' ? 'topojson' : 'flatgeobuf';
-    const sourceCacheCompression = readString(preview?.sourceCacheCompression) === 'gzip' ? 'gzip' : 'none';
+    const sourceCacheFormat =
+      readString(preview?.sourceCacheFormat) === 'topojson' ? 'topojson' : 'flatgeobuf';
+    const sourceCacheCompression =
+      readString(preview?.sourceCacheCompression) === 'gzip' ? 'gzip' : 'none';
     const [sourceCollectionResult, sourceCache] = await Promise.all([
       loadSourceCollectionFromCache(nodeId, preview),
-      sourceCacheId ? shapeQueryAPIImpl.getSourceCache(nodeId, sourceCacheId) : Promise.resolve(null),
+      sourceCacheId
+        ? shapeQueryAPIImpl.getSourceCache(nodeId, sourceCacheId)
+        : Promise.resolve(null),
     ]);
     const resultCollection = sourceCache
       ? await decodeSourceCacheCollection(sourceCache, sourceCacheFormat, sourceCacheCompression)
       : null;
     const sourceCollection = sourceCollectionResult?.collection ?? resultCollection;
-    const sourceRawBytes = sourceCollectionResult?.rawBytes
-      ?? ((sourceCache?.size && sourceCache.size > 0)
+    const sourceRawBytes =
+      sourceCollectionResult?.rawBytes ??
+      (sourceCache?.size && sourceCache.size > 0
         ? sourceCache.size
         : measureCollectionBytes(sourceCollection));
     if (sourceCache && !resultCollection) {
@@ -345,21 +378,26 @@ const loadPreviewData = async (detail: TaskDetailPayload): Promise<PreviewData> 
       result: resultCollection,
       previousOriginal: null,
       originalBytes: sourceRawBytes,
-      resultBytes: (sourceCache?.size && sourceCache.size > 0)
-        ? sourceCache.size
-        : measureCollectionBytes(resultCollection),
+      resultBytes:
+        sourceCache?.size && sourceCache.size > 0
+          ? sourceCache.size
+          : measureCollectionBytes(resultCollection),
     };
   }
 
   if (isGeometryLikeStageId(taskStage)) {
     const sourceCacheId = resolveCacheId(preview, detail.task, 'sourceCacheId');
-    const sourceCacheFormat = readString(preview?.sourceCacheFormat) === 'topojson' ? 'topojson' : 'flatgeobuf';
-    const sourceCacheCompression = readString(preview?.sourceCacheCompression) === 'gzip' ? 'gzip' : 'none';
+    const sourceCacheFormat =
+      readString(preview?.sourceCacheFormat) === 'topojson' ? 'topojson' : 'flatgeobuf';
+    const sourceCacheCompression =
+      readString(preview?.sourceCacheCompression) === 'gzip' ? 'gzip' : 'none';
     const geometryCacheId = resolveCacheId(preview, detail.task, 'geometryCacheId');
 
     const [sourceCollectionResult, sourceCache, geometryCache] = await Promise.all([
       loadSourceCollectionFromCache(nodeId, preview),
-      sourceCacheId ? shapeQueryAPIImpl.getSourceCache(nodeId, sourceCacheId) : Promise.resolve(null),
+      sourceCacheId
+        ? shapeQueryAPIImpl.getSourceCache(nodeId, sourceCacheId)
+        : Promise.resolve(null),
       geometryCacheId ? shapeQueryAPIImpl.getGeometryCache(geometryCacheId) : Promise.resolve(null),
     ]);
     const sourceCollection = sourceCollectionResult?.collection ?? null;
@@ -381,12 +419,14 @@ const loadPreviewData = async (detail: TaskDetailPayload): Promise<PreviewData> 
       original: originalCollection,
       result: resultCollection,
       previousOriginal: sourceCollection ?? originalCollection,
-      originalBytes: (sourceCache?.size && sourceCache.size > 0)
-        ? sourceCache.size
-        : (sourceCollectionResult?.rawBytes ?? measureCollectionBytes(originalCollection)),
-      resultBytes: (geometryCache?.data.byteLength && geometryCache.data.byteLength > 0)
-        ? geometryCache.data.byteLength
-        : measureCollectionBytes(resultCollection),
+      originalBytes:
+        sourceCache?.size && sourceCache.size > 0
+          ? sourceCache.size
+          : (sourceCollectionResult?.rawBytes ?? measureCollectionBytes(originalCollection)),
+      resultBytes:
+        geometryCache?.data.byteLength && geometryCache.data.byteLength > 0
+          ? geometryCache.data.byteLength
+          : measureCollectionBytes(resultCollection),
     };
   }
 
@@ -404,14 +444,13 @@ const renderVolumeRow = (
   output: number | null | undefined,
   input: number | null | undefined,
   colorToken: string,
-  withVertexLimitLine: boolean,
+  withVertexLimitLine: boolean
 ): React.ReactNode => {
   const ratio = resolveRatio(output, input);
-  const vertexLimitRatio = (
+  const vertexLimitRatio =
     withVertexLimitLine && input !== null && input !== undefined && input > 0
-  )
-    ? Math.max(0, Math.min(1, VERTEX_LIMIT / input))
-    : null;
+      ? Math.max(0, Math.min(1, VERTEX_LIMIT / input))
+      : null;
 
   const text = `${formatNumber(output)} / ${formatNumber(input)} (${formatPercent(ratio)})`;
 
@@ -420,9 +459,27 @@ const renderVolumeRow = (
       <Typography variant="caption" sx={{ width: 56, color: 'text.secondary' }}>
         {label}
       </Typography>
-      <Box sx={{ position: 'relative', flex: 1, height: 20, bgcolor: 'grey.300', borderRadius: 0.75, overflow: 'hidden' }}>
+      <Box
+        sx={{
+          position: 'relative',
+          flex: 1,
+          height: 20,
+          bgcolor: 'grey.300',
+          borderRadius: 0.75,
+          overflow: 'hidden',
+        }}
+      >
         {ratio !== null ? (
-          <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${ratio * 100}%`, bgcolor: colorToken }} />
+          <Box
+            sx={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: `${ratio * 100}%`,
+              bgcolor: colorToken,
+            }}
+          />
         ) : null}
         {vertexLimitRatio !== null ? (
           <Box
@@ -432,7 +489,8 @@ const renderVolumeRow = (
               bottom: 0,
               left: `${vertexLimitRatio * 100}%`,
               width: '2px',
-              background: (theme) => `linear-gradient(to right, ${theme.palette.warning.main} 0 1px, ${theme.palette.common.black} 1px 2px)`,
+              background: (theme) =>
+                `linear-gradient(to right, ${theme.palette.warning.main} 0 1px, ${theme.palette.common.black} 1px 2px)`,
             }}
           />
         ) : null}
@@ -464,10 +522,12 @@ const renderVertexLimitReferencedRow = (
   output: number | null | undefined,
   input: number | null | undefined,
   colorToken: string,
-  limit = VERTEX_LIMIT,
+  limit = VERTEX_LIMIT
 ): React.ReactNode => {
-  const safeInput = typeof input === 'number' && Number.isFinite(input) && input >= 0 ? input : null;
-  const safeOutput = typeof output === 'number' && Number.isFinite(output) && output >= 0 ? output : null;
+  const safeInput =
+    typeof input === 'number' && Number.isFinite(input) && input >= 0 ? input : null;
+  const safeOutput =
+    typeof output === 'number' && Number.isFinite(output) && output >= 0 ? output : null;
   const scaleMax = Math.max(safeInput ?? 0, safeOutput ?? 0, 1);
   const inputScale = safeInput !== null ? Math.max(0, Math.min(1, safeInput / scaleMax)) : null;
   const outputScale = safeOutput !== null ? Math.max(0, Math.min(1, safeOutput / scaleMax)) : null;
@@ -481,7 +541,16 @@ const renderVertexLimitReferencedRow = (
       <Typography variant="caption" sx={{ width: 56, color: 'text.secondary' }}>
         {label}
       </Typography>
-      <Box sx={{ position: 'relative', flex: 1, height: 20, bgcolor: 'grey.300', borderRadius: 0.75, overflow: 'hidden' }}>
+      <Box
+        sx={{
+          position: 'relative',
+          flex: 1,
+          height: 20,
+          bgcolor: 'grey.300',
+          borderRadius: 0.75,
+          overflow: 'hidden',
+        }}
+      >
         {inputScale !== null ? (
           <Box
             sx={{
@@ -516,7 +585,8 @@ const renderVertexLimitReferencedRow = (
               bottom: 0,
               left: `calc(${limitScale * 100}% - 2px)`,
               width: '4px',
-              background: (theme) => `linear-gradient(to right, ${theme.palette.warning.main} 0 2px, ${theme.palette.common.black} 2px 4px)`,
+              background: (theme) =>
+                `linear-gradient(to right, ${theme.palette.warning.main} 0 2px, ${theme.palette.common.black} 2px 4px)`,
             }}
           />
         ) : null}
@@ -549,7 +619,7 @@ const renderStackedRatioRow = (
   input: number | null | undefined,
   colorToken: string,
   maxScale?: number | null,
-  hideBarWhenNoScale = false,
+  hideBarWhenNoScale = false
 ): React.ReactNode => {
   void maxScale;
   void hideBarWhenNoScale;
@@ -560,9 +630,27 @@ const renderStackedRatioRow = (
       <Typography variant="caption" sx={{ width: 56, color: 'text.secondary' }}>
         {label}
       </Typography>
-      <Box sx={{ position: 'relative', flex: 1, height: 20, bgcolor: 'grey.300', borderRadius: 0.75, overflow: 'hidden' }}>
+      <Box
+        sx={{
+          position: 'relative',
+          flex: 1,
+          height: 20,
+          bgcolor: 'grey.300',
+          borderRadius: 0.75,
+          overflow: 'hidden',
+        }}
+      >
         {ratio !== null ? (
-          <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${ratio * 100}%`, bgcolor: colorToken }} />
+          <Box
+            sx={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: `${ratio * 100}%`,
+              bgcolor: colorToken,
+            }}
+          />
         ) : null}
         <Typography
           variant="caption"
@@ -589,7 +677,7 @@ const renderStackedRatioRow = (
 
 const renderSimpleMetricText = (
   label: string,
-  value: number | null | undefined,
+  value: number | null | undefined
 ): React.ReactNode => (
   <Typography variant="caption" color="text.secondary">
     {label}: {formatNumber(value)}
@@ -605,18 +693,20 @@ const latToTileY = (lat: number, zoom: number): number => {
   const clamped = Math.max(-85.05112878, Math.min(85.05112878, lat));
   const rad = (clamped * Math.PI) / 180;
   const scale = 2 ** zoom;
-  const mercator = Math.log(Math.tan(rad) + (1 / Math.cos(rad)));
-  return Math.floor((1 - (mercator / Math.PI)) * 0.5 * scale);
+  const mercator = Math.log(Math.tan(rad) + 1 / Math.cos(rad));
+  return Math.floor((1 - mercator / Math.PI) * 0.5 * scale);
 };
 
-const tileXToLon = (x: number, zoom: number): number => ((x / (2 ** zoom)) * 360) - 180;
+const tileXToLon = (x: number, zoom: number): number => (x / 2 ** zoom) * 360 - 180;
 
 const tileYToLat = (y: number, zoom: number): number => {
-  const n = Math.PI - ((2 * Math.PI * y) / (2 ** zoom));
+  const n = Math.PI - (2 * Math.PI * y) / 2 ** zoom;
   return (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
 };
 
-const resolveSubTileGuideConfig = (adminLevel: number | null): {
+const resolveSubTileGuideConfig = (
+  adminLevel: number | null
+): {
   divisions: number;
   color: string;
   opacity: number;
@@ -675,34 +765,52 @@ const GeometryPreviewMap = ({
         const eastLon = tileXToLon(x + 1, zoom);
         const northLat = tileYToLat(y, zoom);
         const southLat = tileYToLat(y + 1, zoom);
-        L.rectangle([[southLat, westLon], [northLat, eastLon]], {
-          color: '#1976d2',
-          weight: 1,
-          opacity: 0.45,
-          fillOpacity: 0,
-          interactive: false,
-        }).addTo(tileLayers);
+        L.rectangle(
+          [
+            [southLat, westLon],
+            [northLat, eastLon],
+          ],
+          {
+            color: '#1976d2',
+            weight: 1,
+            opacity: 0.45,
+            fillOpacity: 0,
+            interactive: false,
+          }
+        ).addTo(tileLayers);
         if (subTileGuide) {
           const { divisions, color, opacity } = subTileGuide;
           const lonStep = (eastLon - westLon) / divisions;
           const latStep = (northLat - southLat) / divisions;
           for (let i = 1; i < divisions; i += 1) {
-            const lon = westLon + (lonStep * i);
-            L.polyline([[southLat, lon], [northLat, lon]], {
-              color,
-              opacity,
-              weight: 1,
-              dashArray: '2,4',
-              interactive: false,
-            }).addTo(tileLayers);
-            const lat = southLat + (latStep * i);
-            L.polyline([[lat, westLon], [lat, eastLon]], {
-              color,
-              opacity,
-              weight: 1,
-              dashArray: '2,4',
-              interactive: false,
-            }).addTo(tileLayers);
+            const lon = westLon + lonStep * i;
+            L.polyline(
+              [
+                [southLat, lon],
+                [northLat, lon],
+              ],
+              {
+                color,
+                opacity,
+                weight: 1,
+                dashArray: '2,4',
+                interactive: false,
+              }
+            ).addTo(tileLayers);
+            const lat = southLat + latStep * i;
+            L.polyline(
+              [
+                [lat, westLon],
+                [lat, eastLon],
+              ],
+              {
+                color,
+                opacity,
+                weight: 1,
+                dashArray: '2,4',
+                interactive: false,
+              }
+            ).addTo(tileLayers);
           }
         }
         L.marker([northLat, westLon], {
@@ -862,8 +970,26 @@ const GeometryPreviewMap = ({
         }}
       >
         {ratio !== null ? (
-          <Box sx={{ position: 'relative', width: '100%', height: 16, bgcolor: 'grey.300', borderRadius: 0.5, overflow: 'hidden' }}>
-            <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: ratioBarWidth, bgcolor: resultColor }} />
+          <Box
+            sx={{
+              position: 'relative',
+              width: '100%',
+              height: 16,
+              bgcolor: 'grey.300',
+              borderRadius: 0.5,
+              overflow: 'hidden',
+            }}
+          >
+            <Box
+              sx={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: ratioBarWidth,
+                bgcolor: resultColor,
+              }}
+            />
             <Typography
               variant="caption"
               sx={{
@@ -896,7 +1022,7 @@ const GeometryPreviewMap = ({
 
 const toDownloadLayerCollection = (
   collection: FeatureCollection | null,
-  layer: 'source' | 'original' | 'result',
+  layer: 'source' | 'original' | 'result'
 ): Feature[] => {
   if (!collection) return [];
   return collection.features.map((feature) => ({
@@ -965,7 +1091,9 @@ const toCollectionMetrics = (collection: FeatureCollection | null): CollectionMe
       return;
     }
     if (geometry.type === 'GeometryCollection') {
-      (geometry.geometries ?? []).forEach((child) => processGeometry(child));
+      (geometry.geometries ?? []).forEach((child) => {
+        processGeometry(child);
+      });
     }
   };
 
@@ -1015,15 +1143,18 @@ const TaskDetailContent = ({
 }: TaskDetailContentProps): React.ReactElement => {
   const sourceFilteredMetrics = toCollectionMetrics(preview?.original ?? null);
   const geometryMetrics = toCollectionMetrics(preview?.result ?? null);
-  const hasPreviewGeometryMetrics = sourceFilteredMetrics.featureCount > 0 && geometryMetrics.featureCount > 0;
-  const transformFeatureOutput = summary.sourceMetrics?.features.output
-    ?? summary.fetchDetails?.features.output
-    ?? summary.metrics?.features.output
-    ?? null;
-  const transformPolygonOutput = summary.sourceMetrics?.polygons.output
-    ?? summary.fetchDetails?.polygons.output
-    ?? summary.metrics?.polygons.output
-    ?? null;
+  const hasPreviewGeometryMetrics =
+    sourceFilteredMetrics.featureCount > 0 && geometryMetrics.featureCount > 0;
+  const transformFeatureOutput =
+    summary.sourceMetrics?.features.output ??
+    summary.fetchDetails?.features.output ??
+    summary.metrics?.features.output ??
+    null;
+  const transformPolygonOutput =
+    summary.sourceMetrics?.polygons.output ??
+    summary.fetchDetails?.polygons.output ??
+    summary.metrics?.polygons.output ??
+    null;
   const transformVertexInput = hasPreviewGeometryMetrics
     ? sourceFilteredMetrics.vertexCount
     : (summary.metrics?.vertices.input ?? null);
@@ -1036,26 +1167,30 @@ const TaskDetailContent = ({
   const maxPolygonVertexOutput = hasPreviewGeometryMetrics
     ? geometryMetrics.maxPolygonVertexCount
     : (summary.maxPolygonVertices?.output ?? null);
-  const sizeMetricInput = summary.visualization === 'fetchMetrics'
-    ? (summary.fetchDetails?.polygons.input ?? summary.fetchDetails?.features.input ?? null)
-    : (summary.sourceMetrics?.polygons.input ?? summary.sourceMetrics?.features.input ?? null);
-  const sizeMetricOutput = summary.visualization === 'fetchMetrics'
-    ? (summary.fetchDetails?.polygons.output ?? summary.fetchDetails?.features.output ?? null)
-    : (summary.sourceMetrics?.polygons.output ?? summary.sourceMetrics?.features.output ?? null);
+  const sizeMetricInput =
+    summary.visualization === 'fetchMetrics'
+      ? (summary.fetchDetails?.polygons.input ?? summary.fetchDetails?.features.input ?? null)
+      : (summary.sourceMetrics?.polygons.input ?? summary.sourceMetrics?.features.input ?? null);
+  const sizeMetricOutput =
+    summary.visualization === 'fetchMetrics'
+      ? (summary.fetchDetails?.polygons.output ?? summary.fetchDetails?.features.output ?? null)
+      : (summary.sourceMetrics?.polygons.output ?? summary.sourceMetrics?.features.output ?? null);
   let previewOriginalBytes = preview?.originalBytes ?? 0;
   const previewResultBytes = preview?.resultBytes ?? 0;
-  const canEstimateOriginalSize = (
-    previewResultBytes > 0
-    && previewOriginalBytes <= previewResultBytes
-    && typeof sizeMetricInput === 'number'
-    && Number.isFinite(sizeMetricInput)
-    && typeof sizeMetricOutput === 'number'
-    && Number.isFinite(sizeMetricOutput)
-    && sizeMetricInput > sizeMetricOutput
-    && sizeMetricOutput > 0
-  );
+  const canEstimateOriginalSize =
+    previewResultBytes > 0 &&
+    previewOriginalBytes <= previewResultBytes &&
+    typeof sizeMetricInput === 'number' &&
+    Number.isFinite(sizeMetricInput) &&
+    typeof sizeMetricOutput === 'number' &&
+    Number.isFinite(sizeMetricOutput) &&
+    sizeMetricInput > sizeMetricOutput &&
+    sizeMetricOutput > 0;
   if (canEstimateOriginalSize) {
-    previewOriginalBytes = Math.max(previewOriginalBytes, Math.round(previewResultBytes * (sizeMetricInput / sizeMetricOutput)));
+    previewOriginalBytes = Math.max(
+      previewOriginalBytes,
+      Math.round(previewResultBytes * (sizeMetricInput / sizeMetricOutput))
+    );
   }
 
   return (
@@ -1094,11 +1229,7 @@ const TaskDetailContent = ({
           </Box>
         </Typography>
         {withDownloadButton ? (
-          <IconButton
-            size="small"
-            aria-label="Download preview geojson"
-            onClick={onDownload}
-          >
+          <IconButton size="small" aria-label="Download preview geojson" onClick={onDownload}>
             <DownloadIcon fontSize="small" />
           </IconButton>
         ) : null}
@@ -1117,26 +1248,20 @@ const TaskDetailContent = ({
             <Typography variant="caption" color="text.secondary">
               Retry attempts: {summary.retryAttempt ?? 'N/A'} / {summary.retryMax ?? 'N/A'}
             </Typography>
-            {renderSimpleMetricText(
-              'Features',
-              transformFeatureOutput,
-            )}
-            {renderSimpleMetricText(
-              'Polygons',
-              transformPolygonOutput,
-            )}
+            {renderSimpleMetricText('Features', transformFeatureOutput)}
+            {renderSimpleMetricText('Polygons', transformPolygonOutput)}
             {renderVolumeRow(
               'Vertices',
               transformVertexOutput,
               transformVertexInput,
               chartColor,
-              false,
+              false
             )}
             {renderVertexLimitReferencedRow(
               'Max Vertices',
               maxPolygonVertexOutput,
               maxPolygonVertexInput,
-              chartColor,
+              chartColor
             )}
           </Stack>
         ) : null}
@@ -1151,7 +1276,7 @@ const TaskDetailContent = ({
               summary.fetchDetails?.features.input,
               chartColor,
               sourceStageMaxima?.featureMax ?? null,
-              true,
+              true
             )}
             {renderStackedRatioRow(
               'Polygons',
@@ -1159,13 +1284,16 @@ const TaskDetailContent = ({
               summary.fetchDetails?.polygons.input,
               chartColor,
               sourceStageMaxima?.polygonMax ?? null,
-              true,
+              true
             )}
           </Stack>
         ) : null}
-        {(summary.visualization !== 'fetchMetrics' && summary.visualization !== 'transformMetrics') ? (
+        {summary.visualization !== 'fetchMetrics' &&
+        summary.visualization !== 'transformMetrics' ? (
           <Stack spacing={0.25}>
-            <Typography variant="caption" color="text.secondary">{summary.summaryLine ?? '-'}</Typography>
+            <Typography variant="caption" color="text.secondary">
+              {summary.summaryLine ?? '-'}
+            </Typography>
             {(summary.detailLines ?? [])
               .filter((line) => {
                 const trimmedLine = line.trim();
@@ -1174,11 +1302,19 @@ const TaskDetailContent = ({
                 if (trimmedLine === trimmedSummary) return false;
                 if (summary.kind !== 'failed') return true;
                 const normalized = line.trim().replace(/^Failure:\s*/i, '');
-                const summaryNormalized = (summary.summaryLine ?? '').trim().replace(/^Failed:\s*/i, '');
+                const summaryNormalized = (summary.summaryLine ?? '')
+                  .trim()
+                  .replace(/^Failed:\s*/i, '');
                 return normalized.length > 0 && normalized !== summaryNormalized;
               })
               .map((line, index) => (
-                <Typography key={`${line}-${String(index)}`} variant="caption" color="text.secondary">{line}</Typography>
+                <Typography
+                  key={`${line}-${String(index)}`}
+                  variant="caption"
+                  color="text.secondary"
+                >
+                  {line}
+                </Typography>
               ))}
           </Stack>
         ) : null}
@@ -1200,7 +1336,9 @@ const TaskDetailContent = ({
             }}
           >
             <Typography variant="caption" color="text.secondary">
-              {previewLoading ? 'Loading preview...' : (previewErrorMessage ?? 'Preview unavailable')}
+              {previewLoading
+                ? 'Loading preview...'
+                : (previewErrorMessage ?? 'Preview unavailable')}
             </Typography>
           </Box>
         ) : (
@@ -1243,11 +1381,13 @@ export const TaskItemDetailWindow = ({
   const effectiveStageId = normalizeUiStageId(activeDetail?.task.stage ?? stageId) ?? 'unknown';
   const stageIconMap = useMemo(
     () => new Map(stages.map((stage) => [stage.id, stage.icon])),
-    [stages],
+    [stages]
   );
   const summary = activeDetail?.summary;
   const title = activeDetail?.title ?? '';
-  const countryFlag = toFlagEmoji(summary?.fetchDetails?.countryCode ?? extractCountryCodeFromTitle(title));
+  const countryFlag = toFlagEmoji(
+    summary?.fetchDetails?.countryCode ?? extractCountryCodeFromTitle(title)
+  );
   const detailColor = summary?.kind === 'failed' ? 'error.main' : 'text.secondary';
   const chartColor = summary?.kind === 'failed' ? 'error.main' : 'primary.main';
 
@@ -1320,7 +1460,8 @@ export const TaskItemDetailWindow = ({
       return;
     }
     let cancelled = false;
-    void shapeQueryAPIImpl.getBuildSessionRecord(nodeId)
+    void shapeQueryAPIImpl
+      .getBuildSessionRecord(nodeId)
       .then((session) => {
         if (cancelled) return;
         setSourceStageMaxima(readSourceStageMaxima(session?.sourceStageMaxima));
@@ -1368,7 +1509,13 @@ export const TaskItemDetailWindow = ({
     if (summary.kind === 'failed') return theme.palette.error.main;
     if (summary.kind === 'skipped') return theme.palette.warning.main;
     return theme.palette.success.main;
-  }, [summary, theme.palette.error.main, theme.palette.info.main, theme.palette.success.main, theme.palette.warning.main]);
+  }, [
+    summary,
+    theme.palette.error.main,
+    theme.palette.info.main,
+    theme.palette.success.main,
+    theme.palette.warning.main,
+  ]);
 
   const overlays = useMemo<OverlaySpec[]>(() => {
     if (!open || !preview) return [];
@@ -1422,39 +1569,42 @@ export const TaskItemDetailWindow = ({
   };
 
   const isVtTask = isTileEmitLikeStageId(activeDetail?.task.stage);
-  const content = isVtTask && activeDetail ? (
-    <TileEmitTaskItemDetailWindow detail={activeDetail} buildConfig={buildConfig} />
-  ) : (summary ? TaskDetailContent({
-    title,
-    summary,
-    detailColor,
-    chartColor,
-    countryFlag,
-    preview,
-    previewLoading,
-    previewErrorMessage,
-    overlays,
-    sizeAccentColor: theme.palette.success.main,
-    sourceStageMaxima,
-    previewBoxHeight: Math.max(140, Math.floor(windowState.size.height * 0.45)),
-    withDownloadButton: true,
-    onDownload: handleDownload,
-  }) : (
-    <Box
-      sx={{
-        width: 320,
-        p: 1.5,
-        bgcolor: 'background.paper',
-        border: '1px solid',
-        borderColor: 'divider',
-        borderRadius: 1,
-      }}
-    >
-      <Typography variant="caption" color="text.secondary">
-        Hover a task status chip to preview source and result geometry.
-      </Typography>
-    </Box>
-  ));
+  const content =
+    isVtTask && activeDetail ? (
+      <TileEmitTaskItemDetailWindow detail={activeDetail} buildConfig={buildConfig} />
+    ) : summary ? (
+      TaskDetailContent({
+        title,
+        summary,
+        detailColor,
+        chartColor,
+        countryFlag,
+        preview,
+        previewLoading,
+        previewErrorMessage,
+        overlays,
+        sizeAccentColor: theme.palette.success.main,
+        sourceStageMaxima,
+        previewBoxHeight: Math.max(140, Math.floor(windowState.size.height * 0.45)),
+        withDownloadButton: true,
+        onDownload: handleDownload,
+      })
+    ) : (
+      <Box
+        sx={{
+          width: 320,
+          p: 1.5,
+          bgcolor: 'background.paper',
+          border: '1px solid',
+          borderColor: 'divider',
+          borderRadius: 1,
+        }}
+      >
+        <Typography variant="caption" color="text.secondary">
+          Hover a task status chip to preview source and result geometry.
+        </Typography>
+      </Box>
+    );
 
   const handleWindowClose = useCallback(() => {
     handleFloatingClose();
@@ -1462,15 +1612,20 @@ export const TaskItemDetailWindow = ({
   }, [handleFloatingClose, onClose]);
 
   if (!open || !windowState.isVisible) return null;
-  const stageLabel = effectiveStageId === 'source'
-    ? 'Source'
-    : (effectiveStageId === 'geometry' ? 'Geometry' : (effectiveStageId === 'tileEmit' ? 'TileEmit' : effectiveStageId));
+  const stageLabel =
+    effectiveStageId === 'source'
+      ? 'Source'
+      : effectiveStageId === 'geometry'
+        ? 'Geometry'
+        : effectiveStageId === 'tileEmit'
+          ? 'TileEmit'
+          : effectiveStageId;
   const rawStageIcon = stageIconMap.get(effectiveStageId) ?? <LayersIcon fontSize="small" />;
   const stageIcon = isValidElement<TitleBarIconProps>(rawStageIcon)
     ? cloneElement(rawStageIcon, {
-      color: 'inherit',
-      fontSize: 'small',
-    })
+        color: 'inherit',
+        fontSize: 'small',
+      })
     : rawStageIcon;
   const buildTileEmitBandLabel = (taskId: string | undefined): string => {
     if (!taskId) return 'band ? z?';
@@ -1488,11 +1643,13 @@ export const TaskItemDetailWindow = ({
   return (
     <FloatingWindow
       title={windowTitle}
-      titleIcon={stageIcon ? (
-        <Box sx={{ color: 'inherit', display: 'inline-flex', alignItems: 'center' }}>
-          {stageIcon}
-        </Box>
-      ) : undefined}
+      titleIcon={
+        stageIcon ? (
+          <Box sx={{ color: 'inherit', display: 'inline-flex', alignItems: 'center' }}>
+            {stageIcon}
+          </Box>
+        ) : undefined
+      }
       initialState={{
         ...windowState,
         zIndex, // Apply zIndex from props without resetting position/size
@@ -1504,9 +1661,7 @@ export const TaskItemDetailWindow = ({
       minWidth={420}
       minHeight={280}
     >
-      <Box sx={{ position: 'relative', flex: 1, minHeight: 0 }}>
-        {content}
-      </Box>
+      <Box sx={{ position: 'relative', flex: 1, minHeight: 0 }}>{content}</Box>
     </FloatingWindow>
   );
 };

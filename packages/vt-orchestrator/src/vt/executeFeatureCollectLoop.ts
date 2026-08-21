@@ -1,8 +1,9 @@
-import type { Feature } from 'geojson';
 import type { EphemeralGeometryCacheRecord } from '@hierarchidb/gis-sdk';
+import type { Feature } from 'geojson';
 import type { VTStageContext } from '~/contextTypes';
-import type { InputFeatureStats } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
 import { collectFeaturesFromRecord } from './collectFeaturesFromRecord.js';
+import type { InputFeatureStats } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
+import type { CollectedFeatureSource } from './vtStageTaskTypes.js';
 
 type FeatureCollectorFlowInput = {
   context: VTStageContext;
@@ -20,41 +21,44 @@ type FeatureCollectorState = {
   featureStats: InputFeatureStats[];
   bufferSizes: Map<string, number>;
   featuresByContinent?: Map<string, Feature[]>;
+  featureSources: Map<Feature, CollectedFeatureSource>;
 };
 
 export const executeFeatureCollectLoop = async (
-  input: FeatureCollectorFlowInput,
+  input: FeatureCollectorFlowInput
 ): Promise<FeatureCollectorState> => {
-  const {
-    context,
-    nodeId,
-    records,
-    debugCollect,
-    options,
-  } = input;
+  const { context, nodeId, records, debugCollect, options } = input;
   const allFeatures: Feature[] = [];
   const featureStats: InputFeatureStats[] = [];
   const bufferSizes = new Map<string, number>();
   const featuresByContinent = options?.groupByContinent ? new Map<string, Feature[]>() : undefined;
+  const featureSources = new Map<Feature, CollectedFeatureSource>();
 
   for (const record of records) {
-    await collectFeaturesFromRecord({
-      context,
-      nodeId,
-      allFeatures,
-      featureStats,
-      bufferSizes,
-      featuresByContinent,
-      continentByCountry: options?.continentByCountry,
-      debugCollect,
-    }, record);
-    if (debugCollect) {
-      console.info('[tileEmit][debug] feature loop done', JSON.stringify({
+    await collectFeaturesFromRecord(
+      {
+        context,
         nodeId,
-        bufferId: record.id,
-        featureCount: allFeatures.length,
-        featureStatsCount: featureStats.length,
-      }));
+        allFeatures,
+        featureStats,
+        bufferSizes,
+        featuresByContinent,
+        featureSources,
+        continentByCountry: options?.continentByCountry,
+        debugCollect,
+      },
+      record
+    );
+    if (debugCollect) {
+      console.info(
+        '[tileEmit][debug] feature loop done',
+        JSON.stringify({
+          nodeId,
+          bufferId: record.id,
+          featureCount: allFeatures.length,
+          featureStatsCount: featureStats.length,
+        })
+      );
     }
   }
   return {
@@ -62,5 +66,6 @@ export const executeFeatureCollectLoop = async (
     featureStats,
     bufferSizes,
     featuresByContinent,
+    featureSources,
   };
 };

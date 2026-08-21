@@ -1,4 +1,40 @@
-# route ビルド前〜ビルド仕様（2026-02-14 確定）
+# route ビルド前〜ビルド仕様
+
+最終更新: 2026-08-21
+
+## 仕様の位置づけと優先順位
+
+本書を route の Step2〜Step6、location 連動、ビルド設定、ステージ責務、
+cache identity の正規仕様（SSOT）とする。
+
+- `docs/build-session-worker-ui-event-spec.md` は Worker→UI の4イベント契約を定義する。
+- `docs/build-session-spec.md` の `source / geometry / tileEmit`、task status、fail-fast 原則を
+  route にも適用する。
+- `docs/vt-route-pipeline-design.md` は本書のステージ別詳細だけを補足する。
+- `docs/location-route-design-gap.md` と `plans/current-route-stage-flow.md` は調査・移行資料であり、
+  本書と衝突する記述を仕様根拠にしない。
+- `plugins/route-plugin/README.md` / `README_ja.md` は利用者向け概要であり、契約の詳細は本書を参照する。
+
+旧文書・旧コードで使われる語は次のように対応させる。新規の型、event、task、永続recordでは
+旧語を使わない。
+
+| 正規ステージ | 旧称 | 責務 |
+| --- | --- | --- |
+| `source` | `fetch`, `route-fetch` | 入力取得、location解決、LineString生成、source cache永続化 |
+| `geometry` | `transform` | ズーム帯別filtering、simplification、tile転置index生成、geometry cache永続化 |
+| `tileEmit` | `vt`, `vectorTile` | geometry cache/indexからMVTを生成し、route storeへ永続化 |
+
+## 確定した非交渉事項
+
+- 1つの `nodeId` に対する build session は1つだけ存在する。
+- Worker側の正規entry pointは
+  `RouteBuildSessionOrchestrator -> RouteBuildSession` とする。
+- UIは正規Worker commandを通じてstart/pause/resumeを要求する。UIから
+  `importIdeGsmRoutes -> buildRouteTileIndex -> generateRouteVectorTiles` を独立に直列実行する経路は
+  移行対象であり、正規経路として残さない。
+- 各ステージは実成果物を生成する。未実装/no-op handlerがtaskやstageを`completed`にしてはならない。
+- 必須入力、設定、engine、cache metadata、timingが欠落・不正な場合は即時に失敗する。
+  丸め、clamp、既定値補完、別engineへの暗黙fallbackで継続しない。
 
 ## 目的
 
@@ -24,8 +60,12 @@
 
 ### 初期状態
 
-- Step2 で読み込んだデータに存在する「国×交通モード」だけチェックボックスを生成する。
+- Step2 のデータソースが返したcoverageに存在する「国×交通モード」だけチェックボックスを有効化する。
 - 生成されたチェックボックスは初期状態で `checked` とする。
+- coverageはデータソース入力の実在範囲であり、location DB内の現在のノード集合ではない。
+  したがって、coverageに存在する国はlocation DBに解決可能なPointがまだ無くても表示する。
+- 選択されたroute行の始点/終点をsourceステージで解決できない場合は、理由を持つtask errorとして
+  可視化する。「処理対象なし」や空成果物へ読み替えない。
 
 ### OR/AND 連動
 
@@ -44,6 +84,21 @@
 - VT 設定カードも shape と共用する。
 - 将来拡張として OSRM Route API / searoute-js の追加パラメータを導入可能にする。
 
+### 設定のSSOT
+
+- 永続化する唯一のbuild設定は `RouteEntity.buildConfig` に格納する `RouteBuildConfig` とする。
+- 共通ステージ設定は `sourceConfig / geometryConfig / tileEmitConfig / cleanupConfig` に保持する。
+- route固有設定は `routeGeneration / routeGeometryConfig / laneCaps` 等、`RouteBuildConfig` の
+  明示フィールドに保持する。
+- `RouteProcessingConfig` を別の永続設定木として併存させない。runtime-only handleはbuild設定へ
+  シリアライズせず、nodeIdに対応するbuild-session SSOT状態木へ保持する。
+- 同じ設定を `buildConfig` と別フィールドへ複製したり、欠落値を別フィールドから補完したりしない。
+
+2026-08-21時点の`RouteEntity.buildConfig`は`BaseBuildConfig<string>`型で、route固有フィールドを
+型として保証していない。また、`RouteProcessingConfig`型は存在するが永続設定として使用されていない。
+#248の設定分離DoDはこのSSOT決定で置き換え、後続実装では`buildConfig`を`RouteBuildConfig`へ
+型整合させ、未使用の第二設定型を残さない。
+
 ## Step5: Build
 
 ### UI/制御
@@ -53,29 +108,39 @@
 
 ### 内部パイプライン
 
-- fetch ステージ:
+- `source` ステージ:
   - shape と同様にデータソースごとの strategy pattern で実装を切り替える。
   - 交通モードに応じた LineString GeoJSON を生成する。
-  - `featureCache` には「オリジナル 1 本のみ」の LineString GeoJSON を保存する。
+  - source cache には「オリジナル 1 本のみ」の LineString GeoJSON を保存する。
     - shape のようなズーム帯別 GeoJSON コピーは作成しない。
-- transform ステージ:
+- `geometry` ステージ:
   - route では filtering と simplification を一括で実行する。
   - simplification algorithm と tolerance の単位は shape transform と共通。
-  - shape との差分は、shape が fetch 終端で filtering していた点のみ。
-- VT ステージ:
+  - LineStringの端点を保持し、ズーム帯ごとのtile転置indexを生成する。
+  - filtering / simplification / index生成のいずれかを省略して成功扱いにしない。
+- `tileEmit` ステージ:
   - shape と完全に同じ処理を利用する。
+  - geometry cacheとtile転置indexを読み、MVT生成とroute storeへの永続化までを完了する。
 
-### fetch キャッシュキー
+### source key / cache identity
 
-- キーは `<交通モード> + <start/end 正規化座標>` で構成する。
-- 正規化座標は `(lon,lat)` タプルで比較し、昇順ソートしてから連結する。
-- 双方向経路は同一キーに正規化される。
+- `sourceKey` は論理route identityであり、`<routeMode>:<fromLocationId>:<toLocationId>` とする。
+- routeは既定で方向付きとし、始点/終点の順序を保持する。
+- `metadata.bidirectional === true` または `metadata.oneway === false` が契約どおり明示されたrouteだけ、
+  `(longitude, latitude, locationId)` の辞書順で端点を並べ、双方向を同一`sourceKey`へ正規化する。
+- directionality metadataが欠落している場合にbidirectionalと推測しない。不正型を既定値へ補完しない。
+- geometry生成に影響する座標、generation method/options、build設定は入力`meta`/`inputHash`へ含める。
+  `sourceKey`が同一でも入力署名が異なればcacheを再利用しない。
+- routeMode、locationId、座標、入力署名の必須要素が欠落・不正な場合は契約違反として失敗する。
 
 例:
 
 ```text
-<mode>:<min(lon,lat)>|<max(lon,lat)>
+road:location-a:location-b                  # directional
+waterway:location-a:location-b              # explicitly bidirectional and canonicalized
 ```
+
+無条件に始終点をsortする旧仕様と、常に`${srcId}/${dstId}`で方向を保持する旧仕様は廃止する。
 
 ### metadata 保存
 
@@ -134,3 +199,12 @@
   - `✅同期済み(件数)`
   - `⚠️更新が必要(件数/全体件数)`
 - stale 判定は自動では行わず、手動ボタンで実行する。
+
+## Worker→UI event契約
+
+- route sessionは `sessionStatusUpdated / heartbeat / stageSnapshotUpdated / taskProgressUpdated` の
+  4イベントだけを配信する。
+- `stageSnapshotUpdated` は開始済みstageのauthoritative full task snapshotであり、未開始stageには配信しない。
+- task progressはfiniteな`0..100`だけを受理し、taskIdごとの単調増加versionを持つ。
+- aggregateな`BuildProgressEvent`からcanonical eventを推測・変換しない。
+- 詳細は `docs/build-session-worker-ui-event-spec.md` を参照する。

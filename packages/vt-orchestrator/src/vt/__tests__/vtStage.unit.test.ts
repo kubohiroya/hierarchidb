@@ -1,13 +1,23 @@
-import { describe, expect, it } from 'vitest';
 import type { FeatureCollection } from 'geojson';
+import { describe, expect, it } from 'vitest';
 import type { VTStageContext } from '../../contextTypes.js';
 import { prepareVtTaskExecution } from '../prepareVtTaskExecution.js';
 import { vtStageTestUtils } from '../vtStageTestUtils.js';
 
-const buildPreparationContext = (): VTStageContext => ({
-  tileEmitConfig: { layerSetName: 'shape' },
-  bands: [],
-} as unknown as VTStageContext);
+const buildPreparationContext = (): VTStageContext =>
+  ({
+    tileEmitConfig: {
+      layerSetName: 'shape',
+      invalidGeometryFilter: {
+        area: false,
+        lineLength: false,
+        maxEdgeLength: false,
+        selfIntersection: false,
+        triangleRingRatio: false,
+      },
+    },
+    bands: [],
+  }) as unknown as VTStageContext;
 
 describe('vtStage summary helpers', () => {
   it('builds admin feature summary from feature levels', () => {
@@ -36,7 +46,7 @@ describe('vtStage summary helpers', () => {
     const summary = vtStageTestUtils.buildSkippedMessage(
       'features: ADM0:1',
       'tiles -> 0/1',
-      'no layers',
+      'no layers'
     );
 
     expect(summary).toBe('features: ADM0:1, tiles -> 0/1 (skipped: no layers)');
@@ -108,7 +118,7 @@ describe('vtStage summary helpers', () => {
     const match = vtStageTestUtils.resolveVtDebugFocusMatch(
       config,
       vtStageTestUtils.buildTileKey(3, 0, 2),
-      ['feat-z', 'feat-b'],
+      ['feat-z', 'feat-b']
     );
 
     expect(match.shouldLog).toBe(true);
@@ -177,9 +187,9 @@ describe('vtStage summary helpers', () => {
       },
     ];
 
-    const totals = vtStageTestUtils.computeOutputTileTotals(tiles as Parameters<
-      typeof vtStageTestUtils.computeOutputTileTotals
-    >[0]);
+    const totals = vtStageTestUtils.computeOutputTileTotals(
+      tiles as Parameters<typeof vtStageTestUtils.computeOutputTileTotals>[0]
+    );
 
     expect(totals.polygonCount).toBeGreaterThan(0);
     expect(totals.vertexCount).toBeGreaterThan(0);
@@ -205,6 +215,34 @@ describe('vtStage summary helpers', () => {
       kind: 'skipped',
       result: { status: 'failed', errorMessage: 'tileEmit task input requires bufferIds' },
     });
+  });
+
+  it('rejects tile-local TopoJSON simplification before task preparation', () => {
+    const context = buildPreparationContext();
+    context.topojsonSimplify = {
+      enabled: true,
+      sourceKeys: new Set(),
+      toleranceK: 0.1,
+      retryToleranceStep: 0.02,
+    };
+
+    expect(() =>
+      prepareVtTaskExecution({
+        context,
+        task: {
+          taskId: 'legacy-topojson-simplify',
+          nodeId: 'node-1',
+          inputData: {
+            bandIndex: 0,
+            zBase: 0,
+            tileId: 0,
+            bufferIds: ['buffer-1'],
+            domainType: 'shape',
+            sourceKey: 'mixed',
+          },
+        },
+      })
+    ).toThrow('tile-local TopoJSON simplification is not supported');
   });
 
   it('distinguishes explicit empty bufferIds from invalid entries', () => {

@@ -1,8 +1,23 @@
 # @hierarchidb/route-plugin
 
-最終更新: 2026-04-05
+最終更新: 2026-08-21
 
 HierarchiDB の交通路・輸送ルート管理プラグイン。OpenStreetMap、OpenFlights、searoute-js、Transitland、Natural Earth 等のオープンデータソースから航路・海路・道路・鉄道・高速鉄道のルートデータをバッチダウンロードし、IndexedDB に永続化して地図上で可視化・分析する。`RouteBuildSession`（`AbstractBuildSession` を継承）による 3 ステージバッチ処理（source → geometry → tileEmit）、レーンポリシーによる並列制御、MapLibre ベースの Map プレビュー（交通モード別色分け・線幅調整）をサポートする。
+
+## 正規仕様と移行状況
+
+- Step2〜Step6、location連動、設定SSOT、cache identityの正規仕様は
+  `docs/route-build-flow-spec.md`を参照する。
+- ステージ詳細は`docs/vt-route-pipeline-design.md`、Worker→UI eventは
+  `docs/build-session-worker-ui-event-spec.md`を参照する。
+- 永続build設定は`RouteEntity.buildConfig`内の`RouteBuildConfig`だけをSSOTとする。
+- routeは既定で方向付きであり、契約どおりbidirectionalと明示されたrouteだけ
+  始終点を正規化して同一`sourceKey`にする。
+- build sessionの正規entry pointは`RouteBuildSessionOrchestrator -> RouteBuildSession`とする。
+- 2026-08-21時点ではUIの直接実行経路とsession経路が併存する。session側は
+  `source`でgenerator結果を永続化せず、`geometry` / `tileEmit`でも実成果物を生成しない。
+  Issue #549で単一の正規経路へ統合する。
+- 未実装stage、engine欠落、不正設定をno-op成功や別engineへの暗黙fallbackで処理しない。
 
 ## ノードタイプと継承関係
 

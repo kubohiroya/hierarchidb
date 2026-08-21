@@ -382,6 +382,10 @@ read of the existing coordinator database after that HELLO result and enters suc
 only when the durable record is exact `revoked/ready-for-preflight`. A `quiescing`, `rejected`,
 invalid, missing, version-mismatched, or unreadable record is a terminal visible bootstrap failure;
 the application does not poll, retry, mutate the record, or expose participant identities.
+This successor read is implemented in an application-only module that does not import the fixed
+coordinator service-worker state or validator modules. Production acceptance requires both the
+fixed coordinator artifact hash and its static-import graph hash to remain exactly equal to the
+accepted release while this application-only path evolves.
 
 After the successful v1-to-v2 activation or same-activation fresh-v2 creation, an
 activation-aware client with that exact durable evidence may enter the canonical-only successor

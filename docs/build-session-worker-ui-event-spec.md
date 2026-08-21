@@ -73,6 +73,14 @@ type SessionStatusUpdatedEvent = {
 
 **UI-side effect**: Update `lifecycle.phase`, `lifecycle.isActive`, `lifecycle.startedAt`, `lifecycle.inactiveMs`, `lifecycle.completedAt`, and `lifecycleExtras.stopReason`. `stageId` drives the UI synchronization/selection signal. Per-stage timing is stored only from `stageSnapshotUpdated`, avoiding a second timing owner.
 
+**Shape cache/result count synchronization**:
+
+- The Shape cache actions UI observes the canonical lifecycle atom. It must not keep a second lifecycle status in React state, poll the Worker for status, or use a count query as a lifecycle source.
+- It loads counts once when a node is first observed. After that, it reloads exactly once for each newly observed `completed` or `failed` outcome and once when queued cancellation is represented by `idle` with `stopReason`.
+- `paused` does not trigger a count reload. Any non-outcome phase re-arms outcome detection so consecutive sessions can each refresh; duplicate events and re-renders for the same outcome do not refresh again.
+- A node switch or newer request invalidates an older count response. Both request generation and the currently rendered `nodeId` must match before count results or loading state are committed.
+- Counts are read through the Shape query APIs and task-queue API boundary. UI-side direct Dexie access or a compatibility fallback is prohibited.
+
 **Pause completion contract**:
 
 - A pause request emits `pausing` after abort has been requested, while the pipeline is still shutting down.

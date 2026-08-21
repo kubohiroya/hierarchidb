@@ -19,6 +19,7 @@ import {
   DEFAULT_PROCESSING_CONFIG,
   composeRuntimeBuildConfig,
   applyBuildConfigPatch,
+  assertShapeBuildConfigTileEmitContract,
   mergeProcessingConfig,
   requireDataSourceName,
   validateBuildConfig,
@@ -611,6 +612,10 @@ const startBuildSessionInternal = async (
   );
   const draftBuildConfig = draftEntity?.buildConfig;
   const draftProcessingConfig = draftEntity?.processingConfig;
+  if (draftBuildConfig) {
+    assertShapeBuildConfigTileEmitContract(draftBuildConfig);
+  }
+  assertShapeBuildConfigTileEmitContract(buildConfig);
   const normalizedDraftConfig = draftBuildConfig
     ? applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, draftBuildConfig)
     : null;

@@ -18,7 +18,7 @@
 交通路・輸送ルート情報の収集、管理、可視化を行うHierarchiDBプラグインです。
 OpenStreetMapやNatural Earth等のオープンデータソースから、航路、海路、道路、鉄道等のルートデータをビルドダウンロードし、地図上で可視化・分析できます。
 
-## 2026-02-14 確定仕様（優先）
+## 正規仕様（優先）
 
 この節は、route の「ビルド前〜ビルド」仕様の現行定義です。既存の Step 説明と衝突する場合は本節を優先してください。
 詳細は `docs/route-build-flow-spec.md` を参照してください。
@@ -28,9 +28,15 @@ OpenStreetMapやNatural Earth等のオープンデータソースから、航路
   - OR を選択したモードは同一行の AND が自動 `checked/disabled` になる。
   - チェックボックスは Step2 で読み込んだデータ上で実在する国×モードのみ生成し、初期状態は `checked`。
 - Step4 は shape の build 設定 UI（TileEmit 設定カードを含む）を共用する。
-- Step5 は shape と同じ UI/実行構成を最大限共用するが、route は transform で filtering と simplification を一括実行する。
-  - fetch の `featureCache` はズーム帯別コピーではなく、オリジナルの LineString GeoJSON 1 本のみ保存する。
+- 永続する設定SSOTは`RouteEntity.buildConfig`内の`RouteBuildConfig`とし、別の`processingConfig`設定木を併存させない。
+- Step5 は`source -> geometry -> tileEmit`の3ステージで実行する。
+  - `source`はズーム帯別コピーではなく、オリジナルの LineString GeoJSON 1 本だけを保存する。
+  - `geometry`はfiltering、端点を保持するsimplification、tile転置index生成を行う。
+  - `tileEmit`はgeometry成果物からMVTを生成して永続化する。
   - metadata には location 由来の座標、admin0〜2 の name/code、距離、中継点数を保存する。
+- routeは既定で方向付きとし、明示的にbidirectionalなrouteだけ始終点を正規化して同一`sourceKey`にする。
+- build sessionの正規entry pointは`RouteBuildSessionOrchestrator -> RouteBuildSession`とする。
+- 未実装stage、engine欠落、不正設定をno-op成功や別engineへの暗黙fallbackで処理しない。
 - Step6 は shape/location と同等のプレビュー UI を共用する。
   - FloatingWindow で Metadata: routes / 交通モードトグル / スタイル設定を重ね表示可能。
   - 交通モードは 5 アイコンの複数 on/off トグル。保存先は shape と同様の FloatingWindow 永続化設定。
@@ -38,6 +44,13 @@ OpenStreetMapやNatural Earth等のオープンデータソースから、航路
   - 削除: 参照中 route もカスケード削除するかキャンセル。
   - 変更: カスケード変更するかキャンセル。座標/admin code 変更時は fetch キャッシュ削除 + `rebuild required` 表示 + sessions に「再ビルド予約」を route ノード単位で作成する。
   - それ以外の項目変更時は route metadata を即時更新する。
+
+### 移行状況（2026-08-21）
+
+- UIからroute mutation APIを3段階で直接呼ぶ経路と、canonical eventを配信する`RouteBuildSession`経路が併存している。
+- `RouteBuildSession`の`source` handlerはgenerator結果を永続化せず、
+  `geometry` / `tileEmit` handlerも実成果物を生成しない。
+- 上記はIssue #549で正規経路へ統合する。完了までは本節をtarget contract、実装を移行中として扱う。
 
 ## 主要機能
 
@@ -105,7 +118,13 @@ OpenStreetMapやNatural Earth等のオープンデータソースから、航路
 | **越境道路** | パンアメリカンハイウェイ | 各国セグメントに分割 | 通過国それぞれで選択 |
 | **国際鉄道** | シベリア鉄道、ユーロスター | 運行国ごとに分割管理 | 各国で該当区間を選択 |
 
-## ステップバイステップ設定UI
+## 参考: 旧プロダクト構想（非規範）
+
+以下のStep構成、型例、DB schema、使用例は初期構想の履歴であり、現行API/実装契約ではありません。
+現行のStep2〜Step6とbuild pipelineは本READMEの「正規仕様（優先）」および
+`docs/route-build-flow-spec.md`を参照してください。
+
+### ステップバイステップ設定UI（旧構想）
 
 ### Step 1: 基本情報設定
 ```typescript

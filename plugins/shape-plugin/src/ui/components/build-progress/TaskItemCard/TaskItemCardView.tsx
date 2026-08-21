@@ -1,20 +1,24 @@
-import { type ReactNode } from 'react';
-import { Box } from '@mui/material';
 import { FlagOverlay } from '@hierarchidb/components';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
+import { Box } from '@mui/material';
+import type { ReactNode } from 'react';
 import { isTaskSkipped } from '~/common/utils/taskMessageUtils';
-import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
-import { TaskItem, type TaskOutcomeSummary } from '~/ui/components/build-progress/TaskItem/TaskItem';
-import {
-  type TaskOutcomeSummaryBuilder,
-  buildSourceTaskOutcomeSummary,
-  buildSimpleTaskOutcomeSummary,
-  buildGeometryTaskOutcomeSummary,
-} from './taskOutcomeSummaryBuilders';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import {
   isGeometryLikeStageId,
   isTileEmitLikeStageId,
 } from '~/ui/components/build-progress/stageIdAliases';
+import {
+  TaskItemView,
+  type TaskOutcomeSummary,
+} from '~/ui/components/build-progress/TaskItem/TaskItemView';
+import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
+import {
+  buildGeometryTaskOutcomeSummary,
+  buildSourceTaskOutcomeSummary,
+  buildTileEmitTaskOutcomeSummary,
+  isTileEmitWarningResult,
+  type TaskOutcomeSummaryBuilder,
+} from './taskOutcomeSummaryBuilderUtils';
 
 type Translate = (key: string, fallback?: string) => string;
 
@@ -23,15 +27,24 @@ type TaskItemCardProps = {
   stageId: string;
   stageValue: number;
   resolveStatusLabel: (statusValue?: string, skipped?: boolean) => string;
-  resolveStatusColor: (statusValue?: string, skipped?: boolean) => 'default' | 'success' | 'error' | 'warning' | 'info';
+  resolveStatusColor: (
+    statusValue?: string,
+    skipped?: boolean
+  ) => 'default' | 'success' | 'error' | 'warning' | 'info';
   resolveTaskTitle: (task: TaskItemWithMetadata) => string;
   stageIcon?: ReactNode | null;
   translate: Translate;
   summaryBuilder?: TaskOutcomeSummaryBuilder;
   isDetailSelected?: boolean;
   isDetailHoverPreviewActive?: boolean;
-  onDetailHoverChange?: (value: { title: string; summary: TaskOutcomeSummary; task: ShapeBuildTaskSummary } | null) => void;
-  onDetailClick?: (value: { title: string; summary: TaskOutcomeSummary; task: ShapeBuildTaskSummary }) => void;
+  onDetailHoverChange?: (
+    value: { title: string; summary: TaskOutcomeSummary; task: ShapeBuildTaskSummary } | null
+  ) => void;
+  onDetailClick?: (value: {
+    title: string;
+    summary: TaskOutcomeSummary;
+    task: ShapeBuildTaskSummary;
+  }) => void;
 };
 
 const readRetryNumber = (value: unknown): number | null => {
@@ -43,7 +56,10 @@ const readRetryNumber = (value: unknown): number | null => {
   return null;
 };
 
-const readMetadataNumber = (metadata: Record<string, unknown> | undefined, keys: string[]): number | null => {
+const readMetadataNumber = (
+  metadata: Record<string, unknown> | undefined,
+  keys: string[]
+): number | null => {
   for (const key of keys) {
     const rawValue = key.split('.').reduce<unknown>((current, segment) => {
       if (!current || typeof current !== 'object') return undefined;
@@ -55,10 +71,14 @@ const readMetadataNumber = (metadata: Record<string, unknown> | undefined, keys:
   return null;
 };
 
-const resolveRetryAttemptFromTask = (task: ShapeBuildTaskSummary, summaryRetryAttempt?: number | null): number | null => {
-  const rawValue = summaryRetryAttempt
-    ?? readRetryNumber(task.retryAttempt)
-    ?? readMetadataNumber(task.metadata, [
+const resolveRetryAttemptFromTask = (
+  task: ShapeBuildTaskSummary,
+  summaryRetryAttempt?: number | null
+): number | null => {
+  const rawValue =
+    summaryRetryAttempt ??
+    readRetryNumber(task.retryAttempt) ??
+    readMetadataNumber(task.metadata, [
       'retryAttempt',
       'retries',
       'attempts',
@@ -73,20 +93,25 @@ const resolveRetryAttemptFromTask = (task: ShapeBuildTaskSummary, summaryRetryAt
   return rounded >= 0 ? rounded : null;
 };
 
-const readString = (value: unknown): string | null => (
-  typeof value === 'string' && value.trim().length > 0 ? value.trim() : null
-);
+const readString = (value: unknown): string | null =>
+  typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
 
-const resolveCountryCodeFromTask = (task: ShapeBuildTaskSummary, taskTitle: string): string | null => {
-  const metadata = (task.metadata && typeof task.metadata === 'object')
-    ? task.metadata as Record<string, unknown>
-    : null;
-  const fetchDetail = (metadata?.fetchDetail && typeof metadata.fetchDetail === 'object')
-    ? metadata.fetchDetail as Record<string, unknown>
-    : null;
-  const preview = (metadata?.preview && typeof metadata.preview === 'object')
-    ? metadata.preview as Record<string, unknown>
-    : null;
+const resolveCountryCodeFromTask = (
+  task: ShapeBuildTaskSummary,
+  taskTitle: string
+): string | null => {
+  const metadata =
+    task.metadata && typeof task.metadata === 'object'
+      ? (task.metadata as Record<string, unknown>)
+      : null;
+  const fetchDetail =
+    metadata?.fetchDetail && typeof metadata.fetchDetail === 'object'
+      ? (metadata.fetchDetail as Record<string, unknown>)
+      : null;
+  const preview =
+    metadata?.preview && typeof metadata.preview === 'object'
+      ? (metadata.preview as Record<string, unknown>)
+      : null;
   const candidates = [
     readString(fetchDetail?.countryCode),
     readString(preview?.sourceCountryCode),
@@ -113,14 +138,16 @@ const toFlagEmoji = (countryCode: string | null): string | null => {
 
 const resolveTileEmitTopCountryCodes = (task: ShapeBuildTaskSummary): string[] => {
   if (!isTileEmitLikeStageId(task.stage)) return [];
-  const metadata = (task.metadata && typeof task.metadata === 'object')
-    ? task.metadata as Record<string, unknown>
-    : null;
-  const summary = (metadata?.tileEmitParentInputSummary && typeof metadata.tileEmitParentInputSummary === 'object')
-    ? metadata.tileEmitParentInputSummary as Record<string, unknown>
-    : null;
+  const metadata =
+    task.metadata && typeof task.metadata === 'object'
+      ? (task.metadata as Record<string, unknown>)
+      : null;
+  const summary =
+    metadata?.tileEmitParentInputSummary && typeof metadata.tileEmitParentInputSummary === 'object'
+      ? (metadata.tileEmitParentInputSummary as Record<string, unknown>)
+      : null;
   const rows = Array.isArray(summary?.topCountriesByIntersectingArea)
-    ? summary.topCountriesByIntersectingArea as unknown[]
+    ? (summary.topCountriesByIntersectingArea as unknown[])
     : [];
   return rows
     .map((row) => {
@@ -132,7 +159,7 @@ const resolveTileEmitTopCountryCodes = (task: ShapeBuildTaskSummary): string[] =
     .slice(0, 2);
 };
 
-export const TaskItemCard = ({
+export const TaskItemCardView = ({
   task,
   stageId,
   stageValue,
@@ -150,15 +177,19 @@ export const TaskItemCard = ({
   const statusValue = task.status;
   const skipped = isTaskSkipped(task.display);
   const displayProgress = Math.min(100, Math.max(0, task.progress ?? stageValue));
-  const statusLabelValue = resolveStatusLabel(statusValue, skipped);
-  const statusColor = resolveStatusColor(statusValue, skipped);
+  const warningResult = isTileEmitLikeStageId(stageId) && isTileEmitWarningResult(task);
+  const statusLabelValue = warningResult
+    ? translate('task.status.warning', 'Warning')
+    : resolveStatusLabel(statusValue, skipped);
+  const statusColor = warningResult ? 'warning' : resolveStatusColor(statusValue, skipped);
   const taskTitle = resolveTaskTitle(task as TaskItemWithMetadata);
-  const builder = summaryBuilder
-    ?? (
-      isGeometryLikeStageId(stageId)
-        ? buildGeometryTaskOutcomeSummary
-        : (isTileEmitLikeStageId(stageId) ? buildSimpleTaskOutcomeSummary : buildSourceTaskOutcomeSummary)
-    );
+  const builder =
+    summaryBuilder ??
+    (isGeometryLikeStageId(stageId)
+      ? buildGeometryTaskOutcomeSummary
+      : isTileEmitLikeStageId(stageId)
+        ? buildTileEmitTaskOutcomeSummary
+        : buildSourceTaskOutcomeSummary);
   const summary = builder({
     task,
     stageId,
@@ -167,24 +198,20 @@ export const TaskItemCard = ({
   });
 
   const normalizedRetryAttempt = resolveRetryAttemptFromTask(task, summary.retryAttempt ?? null);
-  const statusLabel = isGeometryLikeStageId(stageId)
-    && (task.status === 'completed' || task.status === 'failed')
-    ? (
-      task.status === 'failed'
+  const statusLabel =
+    isGeometryLikeStageId(stageId) && (task.status === 'completed' || task.status === 'failed')
+      ? task.status === 'failed'
         ? translate('task.status.failed', 'Failed')
-        : (
-          normalizedRetryAttempt !== null && normalizedRetryAttempt > 0
-            ? `${translate('task.status.completed', 'Completed')}: ${translate('task.status.attempt', 'Attempt')} ${normalizedRetryAttempt}`
-            : translate('task.status.completed', 'Completed')
-        )
-    )
-    : statusLabelValue;
+        : normalizedRetryAttempt !== null && normalizedRetryAttempt > 0
+          ? `${translate('task.status.completed', 'Completed')}: ${translate('task.status.attempt', 'Attempt')} ${normalizedRetryAttempt}`
+          : translate('task.status.completed', 'Completed')
+      : statusLabelValue;
 
   const countryCode = resolveCountryCodeFromTask(task, taskTitle);
   const flag = toFlagEmoji(countryCode);
   const tileEmitTopCountryCodes = resolveTileEmitTopCountryCodes(task);
-  const leadingIcon: ReactNode = tileEmitTopCountryCodes.length > 0
-    ? (
+  const leadingIcon: ReactNode =
+    tileEmitTopCountryCodes.length > 0 ? (
       <Box
         data-testid="task-icon-tileEmit-flag-overlay"
         sx={{
@@ -207,33 +234,33 @@ export const TaskItemCard = ({
           }))}
         />
       </Box>
-    )
-    : flag
-      ? (
-        <Box
-          data-testid="task-icon-flag"
-          sx={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 16,
-            lineHeight: 1,
-            width: 18,
-            opacity: task.status === 'recycled' ? 0.5 : 1,
-          }}
-        >
-          <span title={countryCode ?? 'country-flag'}>{flag}</span>
-        </Box>
-      )
-      : (stageIcon ?? null);
+    ) : flag ? (
+      <Box
+        data-testid="task-icon-flag"
+        sx={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 16,
+          lineHeight: 1,
+          width: 18,
+          opacity: task.status === 'recycled' ? 0.5 : 1,
+        }}
+      >
+        <span title={countryCode ?? 'country-flag'}>{flag}</span>
+      </Box>
+    ) : (
+      (stageIcon ?? null)
+    );
 
   return (
-    <TaskItem
+    <TaskItemView
       task={task}
       title={taskTitle}
       leadingIcon={leadingIcon}
       statusLabel={statusLabel}
       statusColor={statusColor}
+      isWarningResult={warningResult}
       isRunning={task.status === 'running'}
       summary={summary}
       progress={displayProgress}
