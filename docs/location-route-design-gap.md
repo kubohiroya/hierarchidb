@@ -2,6 +2,12 @@
 
 本ドキュメントは、location/route の設計概要を整理し、現行実装との差分を列挙し、必要な開発作業の計画を示す。
 
+> **Status (2026-08-21): historical gap snapshot.**
+> routeの正規仕様は`docs/route-build-flow-spec.md`、ステージ詳細は
+> `docs/vt-route-pipeline-design.md`を参照する。本書のrouteに関する「確定事項」「現状」
+> 「開発再開」の記述は作成時点の調査記録であり、正規仕様や現在の実装状態として扱わない。
+> Worker→UI eventに関する節だけはIssue #1142/#1143/#1342の移行記録として維持する。
+
 ## 設計概要（要求仕様）
 
 ### location ノード
@@ -10,7 +16,7 @@
 - 作成フロー:
   1. Step2: データソース選択。
   2. Step3: 国 × データ種別（セントロイド / 空港 / 港 / 駅 / インターチェンジ）の選択。
-3. Step4: ズームレベル範囲などの処理設定（入力仕様は `docs/vt-pipeline-design.md` を参照）。
+  3. Step4: ズームレベル範囲などの処理設定（入力仕様は `docs/vt-pipeline-design.md` を参照）。
   4. Step5: 選択データソースから以下をダウンロードし、メタデータとして保存。
      - 国名
      - 位置名
@@ -36,18 +42,23 @@
   5. Step6: 地図とメタデータ一覧でプレビュー。
   6. Step5 を再実施すると、location ノード探索と Point 定義の反映を再実行する。
 
-## 設計の確定事項（追加の方針）
+## 設計検討時の決定メモ（履歴）
 
 - `plugins/location-plugin/src/common/entities/LocationPoint.ts` はゼロベースで見直し、GroupEntity として扱う。
 - route の LineString も GroupEntity として扱い、ツリーノードのライフサイクル（削除/複製/復元）に追随する。
 - Point のメタデータは、地点名/座標など Point としての使用目的が明確な項目以外を `Record<string, string | number | null>` に保持する。
 - Route のメタデータは、始点/終点 ID や交通手法など LineString の使用目的が明確な項目以外を `Record<string, string | number | null>` に保持する。
-- route Step3 の国選択は「始点または終点に含まれる国」を対象とする。location に存在しない国の選択は許容し、ビルド結果が「処理対象なし」となる。
+- route Step3 の国選択は「始点または終点に含まれる国」を対象とする、という案だった。
+  現行仕様ではStep2 data-source coverageに存在する国×交通モードだけを有効化し、
+  location DBの現在のPoint集合は表示条件にしない。source stageで始点/終点を解決できない場合は
+  「処理対象なし」へ読み替えず、理由を持つtask errorとして扱う。
 - location 探索順序は「兄弟ノード（アルファベット順）→兄弟フォルダの子孫（階層浅い順、同階層はアルファベット順）→先祖フォルダの兄弟ノード（階層深い順、同階層はアルファベット順）」とし、重複排除して合算する。
 - route Step5 の再ビルドは差分生成方式とする。Step4 に「ダウンロードファイル削除」「キャッシュ中間データ削除」「メタデータ削除」ボタンを追加する（shape Step4 と同等の操作性）。
 - Step6 のメタデータ一覧は shape 由来の共通 UI（仮想テーブル）へ寄せる。
 
-## 現状実装の確認
+## 旧実装スナップショット
+
+以下は本書作成時のファイル構成と不足事項であり、2026-08-21のmainを表さない。
 
 ### location 実装の現状
 
@@ -158,7 +169,8 @@ location/route の独自実装のうち、shape と共通化して置換すべ�
 
 ## 開発再開のための要点
 
-- 本ドキュメントの「設計の確定事項」が現時点の仕様の単一ソースである。
+- 本節は履歴上の再開メモであり、仕様の単一ソースではない。
+- route作業は`docs/route-build-flow-spec.md`と親Issue #1356の着手順に従う。
 - location は Point GroupEntity の再設計と、Step2/Step3 選択の build 反映が最優先である。
 - route は LineString GroupEntity の導入、location 探索順序、Step5 差分生成と Step4 削除操作が最優先である。
 - 共通化は Stage1〜4 を段階導入し、shape の挙動維持を最優先とする。
