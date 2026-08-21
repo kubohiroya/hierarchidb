@@ -1,13 +1,12 @@
-import { describe, expect, it, vi } from 'vitest';
 import { AuthNotificationFactory, AuthNotificationRegistry } from '@hierarchidb/auth';
 import { toNodeId } from '@hierarchidb/core-types';
 import { act, renderHook } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { useLocationProgress } from '../../useLocationProgress';
 
 const bridgeMock = {
   initialize: vi.fn().mockResolvedValue(undefined),
-  subscribeBuildProgress: vi.fn().mockResolvedValue(() => {
-  }),
+  subscribeBuildProgress: vi.fn().mockResolvedValue(() => {}),
   getBuildSessionStatus: vi.fn(),
 };
 
@@ -16,19 +15,32 @@ vi.mock('@hierarchidb/ui-worker-client', () => ({
 }));
 
 describe('useLocationProgress - auth notifications', () => {
-  it('emits auth-required and resumed progress events when notifications fire', async () => {
-    const { result } = renderHook(() => useLocationProgress(toNodeId('node-1'), { autoSubscribe: false }));
+  it('keeps auth notices separate from canonical task progress', async () => {
+    const { result } = renderHook(() =>
+      useLocationProgress(toNodeId('node-1'), { autoSubscribe: false })
+    );
 
     const reg = AuthNotificationRegistry.getInstance();
     const authReq = AuthNotificationFactory.createAuthRequired({
-      source: 'worker', requestId: 'r1', url: 'https://example.com', method: 'GET', errorCode: 401,
-      errorMessage: 'Unauthorized', sessionId: 'sess-1', pluginType: 'shape', retryCount: 0,
+      source: 'worker',
+      requestId: 'r1',
+      url: 'https://example.com',
+      method: 'GET',
+      errorCode: 401,
+      errorMessage: 'Unauthorized',
+      sessionId: 'sess-1',
+      pluginType: 'shape',
+      retryCount: 0,
     });
 
     await act(async () => {
       await reg.dispatch(authReq);
     });
-    expect(result.current.progress?.stage).toBe('auth-required');
+    expect(result.current.progress).toBeNull();
+    expect(result.current.authNotice).toMatchObject({
+      state: 'required',
+      message: 'Unauthorized',
+    });
 
     const success = AuthNotificationFactory.createAuthSuccess({
       requestId: 'r1',
@@ -40,6 +52,10 @@ describe('useLocationProgress - auth notifications', () => {
     await act(async () => {
       await reg.dispatch(success);
     });
-    expect(result.current.progress?.stage).toBe('resumed');
+    expect(result.current.progress).toBeNull();
+    expect(result.current.authNotice).toMatchObject({
+      state: 'resumed',
+      message: 'Authentication successful - resuming',
+    });
   });
 });

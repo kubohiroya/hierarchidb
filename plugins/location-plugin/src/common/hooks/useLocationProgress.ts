@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
-import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import type { BuildProgressPayload, BuildUnifiedProgressInfo } from '@hierarchidb/build-api';
 import { AuthNotificationRegistry } from '@hierarchidb/auth';
-import { usePluginBuildProgress } from '@hierarchidb/ui-build-sessions';
+import type { NodeId, NodeType } from '@hierarchidb/core-types';
+import type { BuildSessionProgressSnapshot } from '@hierarchidb/ui-build-sessions';
+import { useBuildSessionStateTreeBridge } from '@hierarchidb/ui-build-sessions';
+import { useEffect, useState } from 'react';
 
 export interface UseLocationProgressOptions {
   autoSubscribe?: boolean;
@@ -22,135 +22,104 @@ export interface LocationProgressEvent extends ProgressEvent {
   message?: string;
 }
 
+export interface LocationAuthNotice {
+  state: 'required' | 'resumed' | 'cancelled';
+  timestamp: number;
+  message?: string;
+}
+
 export interface UseLocationProgressState {
   progress: LocationProgressEvent | null;
-  unifiedProgress: BuildUnifiedProgressInfo | null;
+  sessionProgress: BuildSessionProgressSnapshot | null;
+  authNotice: LocationAuthNotice | null;
   error: Error | null;
 }
 
 const LOCATION_NODE_TYPE = 'location' as NodeType;
+const LOCATION_STAGE_IDS = ['source'] as const;
+type LocationStageId = (typeof LOCATION_STAGE_IDS)[number];
 
-const assertFiniteNumber = (value: unknown, label: string): number => {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    throw new Error(`[useLocationProgress] ${label} must be a finite number, received ${String(value)}`);
-  }
-  return value;
+const resolveLocationStageId = (value: unknown): LocationStageId => {
+  if (value === 'source') return value;
+  throw new Error(`[useLocationProgress] unsupported stage: ${String(value)}`);
 };
 
-function toProgressEvent(
-  info: BuildUnifiedProgressInfo | null,
-  fallbackNodeId: NodeId,
-): LocationProgressEvent | null {
-  if (!info) return null;
-  const resolvedNodeId = info.nodeId ?? fallbackNodeId;
-  const payload = info.payload as BuildProgressPayload | undefined;
-  if (!payload) {
-    throw new Error(`[useLocationProgress] info.payload is required but was absent (nodeId=${String(resolvedNodeId)}, stage=${String(info.stage)})`);
-  }
-  const total = assertFiniteNumber(payload.total, 'payload.total');
-  const completed = assertFiniteNumber(payload.completed, 'payload.completed');
-  const failed = assertFiniteNumber(payload.failed, 'payload.failed');
-  const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-  const stage = info.phase === 'completed' ? 'completed' : info.stage;
+const toProgressEvent = (
+  progress: BuildSessionProgressSnapshot | null
+): LocationProgressEvent | null => {
+  if (!progress) return null;
   return {
-    nodeId: resolvedNodeId,
-    stage,
-    total,
-    completed,
-    failed,
-    percentage,
-    timestamp: typeof info.timestamp === 'number' ? info.timestamp : Date.now(),
-    message: info.message,
+    nodeId: progress.nodeId,
+    stage: progress.status === 'completed' ? 'completed' : progress.stage,
+    total: progress.taskCounts.total,
+    completed: progress.taskCounts.completed,
+    failed: progress.taskCounts.failed,
+    percentage: progress.percentage,
+    timestamp: progress.timestamp,
+    message: progress.message,
   };
-}
+};
 
-/**
- * useLocationProgress - Subscribe to Location build progress events via WorkerBridge.
- */
+/** Subscribe to canonical Location build-session events through the shared state tree. */
 export function useLocationProgress(
   nodeId: NodeId,
-  options: UseLocationProgressOptions = {},
-): UseLocationProgressState & { subscribe: () => void; unsubscribe: () => void } {
-  const { autoSubscribe = true } = options;
-  const [overrideProgress, setOverrideProgress] = useState<LocationProgressEvent | null>(null);
-  const {
-    progress: derivedProgress,
-    unifiedProgress,
-    error,
-    subscribe,
-    unsubscribe,
-  } = usePluginBuildProgress<LocationProgressEvent>(
-    LOCATION_NODE_TYPE,
+  options: UseLocationProgressOptions = {}
+): UseLocationProgressState {
+  const [authNotice, setAuthNotice] = useState<LocationAuthNotice | null>(null);
+  const { progressState } = useBuildSessionStateTreeBridge<LocationStageId>({
+    nodeType: LOCATION_NODE_TYPE,
     nodeId,
-    {
-      autoSubscribe,
-      mapUnifiedToProgress: (info: BuildUnifiedProgressInfo | null) =>
-        toProgressEvent(info, nodeId),
-    },
-  );
+    autoSubscribe: options.autoSubscribe ?? true,
+    stageIds: LOCATION_STAGE_IDS,
+    defaultActiveStageId: 'source',
+    resolveStageId: resolveLocationStageId,
+  });
+  const derivedProgress = toProgressEvent(progressState.progress);
 
+  // The registry callback does not capture node-specific state; register it for
+  // the lifetime of this hook instance.
   useEffect(() => {
-    setOverrideProgress(null);
-  }, []);
-
-  useEffect(() => {
-    if (unifiedProgress) {
-      setOverrideProgress(null);
+    if (progressState.progress?.status === 'running') {
+      setAuthNotice(null);
     }
-  }, [unifiedProgress]);
+  }, [progressState.progress?.status]);
 
   useEffect(() => {
     const registry = AuthNotificationRegistry.getInstance?.();
     if (!registry) return;
     const id = 'location-progress-hook';
     registry.register?.(id, {
-      onAuthRequired: async (n) => {
-        setOverrideProgress({
-          nodeId,
-          stage: 'auth-required',
-          total: 1,
-          completed: 0,
-          failed: 0,
-          percentage: 0,
+      onAuthRequired: async (notification) => {
+        setAuthNotice({
+          state: 'required',
           timestamp: Date.now(),
-          message: n?.context?.errorMessage,
+          message: notification?.context?.errorMessage,
         });
       },
-      onAuthSuccess: async (_n) => {
-        setOverrideProgress({
-          nodeId,
-          stage: 'resumed',
-          total: 1,
-          completed: 1,
-          failed: 0,
-          percentage: 100,
+      onAuthSuccess: async () => {
+        setAuthNotice({
+          state: 'resumed',
           timestamp: Date.now(),
           message: 'Authentication successful - resuming',
         });
       },
-      onAuthCancelled: async (n) => {
-        setOverrideProgress({
-          nodeId,
-          stage: 'failed',
-          total: 1,
-          completed: 0,
-          failed: 1,
-          percentage: 0,
+      onAuthCancelled: async (notification) => {
+        setAuthNotice({
+          state: 'cancelled',
           timestamp: Date.now(),
-          message: n?.context?.reason,
+          message: notification?.context?.reason,
         });
       },
     });
     return () => {
       registry.unregister?.(id);
     };
-  }, [nodeId]);
+  }, []);
 
   return {
-    progress: derivedProgress ?? overrideProgress,
-    unifiedProgress: unifiedProgress ?? null,
-    error,
-    subscribe,
-    unsubscribe,
+    progress: derivedProgress,
+    sessionProgress: progressState.progress,
+    authNotice,
+    error: progressState.error,
   };
 }

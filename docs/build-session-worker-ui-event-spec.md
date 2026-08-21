@@ -215,6 +215,34 @@ type TaskProgressUpdatedEvent = {
 
 ---
 
+## Canonical UI Consumption Boundary
+
+- `@hierarchidb/ui-build-sessions` consumes only the four canonical channels exposed by
+  `BuildWorkerBridge.subscribeAll`: `sessionStatusUpdated`,
+  `stageSnapshotUpdated`, `taskProgressUpdated`, and `heartbeat`.
+- A `sessionStatusUpdated` event updates lifecycle state only. It never creates an
+  aggregate progress record with zero task counts.
+- `isActive` must match the lifecycle phase defined by `build-session-spec.md`;
+  inconsistent phase/activity pairs fail at the UI event boundary.
+- UI progress remains absent until both an authoritative session status and the
+  matching active-stage `stageSnapshotUpdated` event have arrived. An explicit
+  empty snapshot is the only canonical representation of a started stage with zero
+  tasks.
+- A task progress event received before its stage snapshot is buffered. After the
+  snapshot arrives, the UI applies only versions greater than the task version in
+  the authoritative snapshot or the last accepted progress event.
+- Progress timestamps are derived from explicit persisted session, heartbeat, and
+  stage timing endpoints. Missing timing is never replaced with `Date.now()`, zero,
+  clamping, or an aggregate-progress compatibility payload.
+- Derived task counts come from authoritative task snapshots. `recycled` tasks are
+  excluded from the progress denominator because they consume no processing time.
+- The legacy UI aggregate hooks and mappers
+  (`useBuildProgressState`, `usePluginBuildProgress`,
+  `useUnifiedBuildSessionProgress`, and `buildSessionStatusMapper`) are not part
+  of the public UI package surface.
+
+---
+
 ## Removed Events
 
 | Removed event | Reason |
@@ -372,11 +400,12 @@ AbortController and pipeline Promise belong to the nodeId entry in the build-ses
 SSOT state tree. The adapter must never synthesize `paused` from elapsed time or task
 row counts.
 
-The state adapter itself does **not** store versions or perform deduplication. Before a
-`taskProgressUpdated` event reaches the adapter, the UI delivery layer applies the
-per-`taskId` version gate defined above through `UIEventBufferManager`. Accepted events
-are then mapped into state; `taskId` and `version` are delivery metadata and are not
-stored in the state tree.
+The Shape-specific `BuildSessionWorkerEventAdapter` does **not** store versions or
+perform deduplication. Its `UIEventBufferManager` applies the per-`taskId` gate before
+the adapter. The shared `useBuildSessionStateTreeBridge` instead compares an incoming
+progress version with the task version in its authoritative snapshot state; this also
+lets it drain progress that raced ahead of the first snapshot. Both paths implement
+the same per-task ordering contract and neither uses a global event-version counter.
 
 `sessionStatusUpdated` and `stageSnapshotUpdated` are applied unconditionally in FIFO
 arrival order. `heartbeat` is applied immediately. No global or cross-stream version

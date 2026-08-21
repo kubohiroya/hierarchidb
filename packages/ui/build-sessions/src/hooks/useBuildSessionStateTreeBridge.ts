@@ -1,305 +1,574 @@
-import { useEffect, useMemo } from 'react';
-import { useAtomValue, useSetAtom } from 'jotai';
 import type {
-  BuildSessionStatus,
-  BuildTaskSummary,
-  BuildTaskUpdateEvent,
-  BuildUnifiedProgressInfo,
+  BuildStatus,
+  HeartbeatEvent,
+  SessionPhase,
+  SessionStatusUpdatedEvent,
+  StageKey,
+  StageSnapshotUpdatedEvent,
+  TaskProgressUpdatedEvent,
+  TaskSummary,
 } from '@hierarchidb/build-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
+import { useAtomValue, useSetAtom } from 'jotai';
+import { useEffect, useMemo, useState } from 'react';
+import type { BuildSessionProgressState } from '../progressTypes.js';
 import {
-  createBuildSessionStateTreeAtoms,
   type BuildSessionStateTreeLifecyclePhase,
+  type BuildSessionTaskItem,
   type BuildSessionTaskStatus,
+  createBuildSessionStateTreeAtoms,
 } from '../state-tree/createBuildSessionStateTreeAtoms.js';
 import { computePercentage } from '../utils/taskProgressSummary.js';
-import { usePluginBuildProgress } from './usePluginBuildProgress.js';
 
-type Config<StageId extends string> = {
+type Config<StageId extends StageKey> = {
   nodeType: NodeType;
   nodeId: NodeId | null;
   autoSubscribe?: boolean;
   stageIds: readonly StageId[];
   defaultActiveStageId: StageId;
   resolveStageId: (value: unknown) => StageId;
-  mapBuildStatusToPhase: (status: BuildSessionStatus['status']) => BuildSessionStateTreeLifecyclePhase;
 };
 
-const asFiniteNumber = (value: unknown, label: string): number => {
+const requireFiniteNumber = (value: unknown, label: string): number => {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
-    throw new Error(`[buildSessionStateTreeBridge] ${label} must be a finite number, received ${String(value)}`);
+    throw new Error(
+      `[buildSessionStateTreeBridge] ${label} must be a finite number, received ${String(value)}`
+    );
   }
   return value;
 };
 
-const resolveSessionEventVersion = (sessionRecord: Record<string, unknown>): number => {
-  const stageHeartbeatAt = sessionRecord.stageHeartbeatAt;
-  if (typeof stageHeartbeatAt === 'number' && Number.isFinite(stageHeartbeatAt)) {
-    return stageHeartbeatAt;
+const requireNonNegativeNumber = (value: unknown, label: string): number => {
+  const resolved = requireFiniteNumber(value, label);
+  if (resolved < 0) {
+    throw new Error(
+      `[buildSessionStateTreeBridge] ${label} must be non-negative, received ${resolved}`
+    );
   }
-  const completedAt = sessionRecord.completedAt;
-  if (typeof completedAt === 'number' && Number.isFinite(completedAt)) {
-    return completedAt;
-  }
-  const startedAt = sessionRecord.startedAt;
-  if (typeof startedAt === 'number' && Number.isFinite(startedAt)) {
-    return startedAt;
-  }
-  throw new Error('[buildSessionStateTreeBridge] session record event version must come from stageHeartbeatAt/completedAt/startedAt');
+  return resolved;
 };
 
-const resolveSnapshotVersion = (event: BuildTaskUpdateEvent): number => {
-  if (event.type !== 'snapshot') {
-    throw new Error('[buildSessionStateTreeBridge] resolveSnapshotVersion requires snapshot event');
+const requireEvent = <T extends { type: string; payload: object }>(
+  event: unknown,
+  expectedType: T['type']
+): T => {
+  if (!event || typeof event !== 'object') {
+    throw new Error(`[buildSessionStateTreeBridge] ${expectedType} event must be an object`);
   }
-  if (event.tasks.length > 0) {
-    return event.tasks.reduce((max, task) => Math.max(max, task.version), Number.MIN_SAFE_INTEGER);
+  const type = (event as { type?: unknown }).type;
+  if (type !== expectedType) {
+    throw new Error(
+      `[buildSessionStateTreeBridge] expected ${expectedType}, received ${String(type)}`
+    );
   }
-  return asFiniteNumber((event as { version?: unknown }).version, 'task snapshot event.version');
+  const payload = (event as { payload?: unknown }).payload;
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    throw new Error(`[buildSessionStateTreeBridge] ${expectedType}.payload must be an object`);
+  }
+  return event as T;
 };
 
-const mapTaskStatus = (status: BuildTaskSummary['status']): BuildSessionTaskStatus => {
-  if (status === 'queued') return 'queued';
-  if (status === 'running') return 'running';
-  if (status === 'completed') return 'completed';
-  if (status === 'failed') return 'failed';
-  if (status === 'recycled') return 'recycled';
-  throw new Error(`[buildSessionStateTreeBridge] unsupported task status: ${String(status)}`);
+const requireBoolean = (value: unknown, label: string): boolean => {
+  if (typeof value !== 'boolean') {
+    throw new Error(
+      `[buildSessionStateTreeBridge] ${label} must be boolean, received ${String(value)}`
+    );
+  }
+  return value;
 };
 
-const toTaskItem = <StageId extends string>(task: BuildTaskSummary, resolveStageId: (value: unknown) => StageId) => ({
-  taskId: task.taskId,
-  version: task.version,
-  stage: resolveStageId(task.stage),
-  status: mapTaskStatus(task.status),
-  progress: task.progress,
-  index: typeof task.sequence === 'number' ? task.sequence : Number.MAX_SAFE_INTEGER,
-  message: undefined,
-  display: task.display,
-  metadata: task.metadata,
-});
+const requireNonEmptyString = (value: unknown, label: string): string => {
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new Error(
+      `[buildSessionStateTreeBridge] ${label} must be a non-empty string, received ${String(value)}`
+    );
+  }
+  return value;
+};
 
-export const useBuildSessionStateTreeBridge = <StageId extends string>(
-  config: Config<StageId>,
+const requireOptionalString = (value: unknown, label: string): string | undefined => {
+  if (value === undefined) return undefined;
+  return requireNonEmptyString(value, label);
+};
+
+const requireOptionalRecord = (
+  value: unknown,
+  label: string
+): Record<string, unknown> | undefined => {
+  if (value === undefined) return undefined;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(
+      `[buildSessionStateTreeBridge] ${label} must be an object, received ${String(value)}`
+    );
+  }
+  return value as Record<string, unknown>;
+};
+
+const requireProgressValue = (value: unknown, label: string): number => {
+  const resolved = requireFiniteNumber(value, label);
+  if (resolved < 0 || resolved > 100) {
+    throw new Error(
+      `[buildSessionStateTreeBridge] ${label} must be within 0..100, received ${resolved}`
+    );
+  }
+  return resolved;
+};
+
+const requirePositiveInteger = (value: unknown, label: string): number => {
+  const resolved = requireFiniteNumber(value, label);
+  if (!Number.isInteger(resolved) || resolved <= 0) {
+    throw new Error(
+      `[buildSessionStateTreeBridge] ${label} must be a positive integer, received ${resolved}`
+    );
+  }
+  return resolved;
+};
+
+const resolveLifecyclePhase = (value: unknown): BuildSessionStateTreeLifecyclePhase => {
+  const phases: readonly SessionPhase[] = [
+    'idle',
+    'starting',
+    'running',
+    'pausing',
+    'paused',
+    'resuming',
+    'finalizing',
+    'completed',
+    'failed',
+  ];
+  if (typeof value === 'string' && phases.includes(value as SessionPhase)) {
+    return value as BuildSessionStateTreeLifecyclePhase;
+  }
+  throw new Error(`[buildSessionStateTreeBridge] unsupported session phase: ${String(value)}`);
+};
+
+const mapLifecyclePhaseToBuildStatus = (
+  phase: BuildSessionStateTreeLifecyclePhase
+): BuildStatus => {
+  if (phase === 'idle') return 'idle';
+  if (phase === 'starting') return 'queued';
+  if (phase === 'paused') return 'paused';
+  if (phase === 'completed') return 'completed';
+  if (phase === 'failed') return 'failed';
+  return 'running';
+};
+
+type ValidatedSessionTiming = {
+  phase: BuildSessionStateTreeLifecyclePhase;
+  isActive: boolean;
+  startedAt: number | undefined;
+  inactiveMs: number | undefined;
+  completedAt: number | undefined;
+};
+
+const validateSessionStatusEvent = (event: SessionStatusUpdatedEvent): ValidatedSessionTiming => {
+  const { payload } = event;
+  const phase = resolveLifecyclePhase(payload.phase);
+  const isActive = requireBoolean(payload.isActive, 'session.isActive');
+  const expectedIsActive =
+    phase === 'starting' ||
+    phase === 'running' ||
+    phase === 'pausing' ||
+    phase === 'resuming' ||
+    phase === 'finalizing';
+  if (isActive !== expectedIsActive) {
+    throw new Error(
+      `[buildSessionStateTreeBridge] session.isActive=${String(isActive)} is invalid for phase ${phase}`
+    );
+  }
+  const startedAt =
+    payload.startedAt === undefined
+      ? undefined
+      : requireNonNegativeNumber(payload.startedAt, 'session.startedAt');
+  const inactiveMs =
+    payload.inactiveMs === undefined
+      ? undefined
+      : requireNonNegativeNumber(payload.inactiveMs, 'session.inactiveMs');
+  const completedAt =
+    payload.completedAt === undefined
+      ? undefined
+      : requireNonNegativeNumber(payload.completedAt, 'session.completedAt');
+
+  if (phase !== 'idle' && phase !== 'starting' && startedAt === undefined) {
+    throw new Error(
+      `[buildSessionStateTreeBridge] session.startedAt is required for phase ${phase}`
+    );
+  }
+  if ((phase === 'completed' || phase === 'failed') && completedAt === undefined) {
+    throw new Error(
+      `[buildSessionStateTreeBridge] session.completedAt is required for phase ${phase}`
+    );
+  }
+  if (startedAt !== undefined && completedAt !== undefined) {
+    const durationMs = completedAt - startedAt - (inactiveMs ?? 0);
+    if (!Number.isFinite(durationMs) || durationMs < 0) {
+      throw new Error(
+        `[buildSessionStateTreeBridge] session duration must be finite and non-negative, received ${durationMs}`
+      );
+    }
+  }
+
+  if (payload.stageId === undefined) {
+    if (payload.stageStartedAt !== undefined || payload.stageInactiveMs !== undefined) {
+      throw new Error(
+        '[buildSessionStateTreeBridge] stage timing must be absent when session.stageId is absent'
+      );
+    }
+  } else {
+    requireNonNegativeNumber(payload.stageStartedAt, 'session.stageStartedAt');
+    requireNonNegativeNumber(payload.stageInactiveMs, 'session.stageInactiveMs');
+  }
+
+  return { phase, isActive, startedAt, inactiveMs, completedAt };
+};
+
+const resolveTaskStatus = (value: unknown): BuildSessionTaskStatus => {
+  if (
+    value === 'queued' ||
+    value === 'running' ||
+    value === 'completed' ||
+    value === 'failed' ||
+    value === 'recycled' ||
+    value === 'skipped'
+  ) {
+    return value;
+  }
+  throw new Error(`[buildSessionStateTreeBridge] unsupported task status: ${String(value)}`);
+};
+
+const toTaskItem = <StageId extends StageKey>(
+  value: unknown,
+  index: number,
+  targetStageId: StageId,
+  resolveStageId: (value: unknown) => StageId
+): BuildSessionTaskItem<StageId> => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(
+      `[buildSessionStateTreeBridge] snapshot task at index ${index} must be an object`
+    );
+  }
+  const task = value as TaskSummary;
+  const taskId = requireNonEmptyString(task.taskId, `snapshot.tasks[${index}].taskId`);
+  const taskStageId = resolveStageId(task.stage);
+  if (taskStageId !== targetStageId) {
+    throw new Error(
+      `[buildSessionStateTreeBridge] snapshot task stage mismatch: task.stage=${String(taskStageId)} snapshot.stageId=${String(targetStageId)}`
+    );
+  }
+  return {
+    taskId,
+    version: requirePositiveInteger(task.version, `snapshot.tasks[${index}].version`),
+    stage: taskStageId,
+    status: resolveTaskStatus(task.status),
+    progress: requireProgressValue(task.progress, `snapshot.tasks[${index}].progress`),
+    index,
+    message: requireOptionalString(task.errorMessage, `snapshot.tasks[${index}].errorMessage`),
+    metadata: requireOptionalRecord(task.metadata, `snapshot.tasks[${index}].metadata`),
+  };
+};
+
+export const useBuildSessionStateTreeBridge = <StageId extends StageKey>(
+  config: Config<StageId>
 ) => {
-  const nodeIdText = config.nodeId ? String(config.nodeId) : '';
-  const stageIds = config.stageIds;
+  const { nodeType, nodeId, stageIds, defaultActiveStageId, resolveStageId } = config;
+  const autoSubscribe = config.autoSubscribe ?? true;
+  const nodeIdText = nodeId ? String(nodeId) : '';
 
-  const stateTree = useMemo(() => (
-    createBuildSessionStateTreeAtoms<StageId>({
-      nodeId: nodeIdText,
-      stageIds,
-      defaultActiveStageId: config.defaultActiveStageId,
-      initialSession: {
-        phase: 'idle',
-        isActive: false,
-      },
-    })
-  ), [config.defaultActiveStageId, nodeIdText, stageIds]);
+  const stateTree = useMemo(
+    () =>
+      createBuildSessionStateTreeAtoms<StageId>({
+        nodeId: nodeIdText,
+        stageIds,
+        defaultActiveStageId,
+        initialSession: {
+          phase: 'idle',
+          isActive: false,
+        },
+      }),
+    [defaultActiveStageId, nodeIdText, stageIds]
+  );
 
   const dispatch = useSetAtom(stateTree.dispatchBuildSessionStateTreeEventAtom);
   const state = useAtomValue(stateTree.buildSessionStateTreeAtom);
   const activeStageCounts = useAtomValue(stateTree.activeStageCountsAtom);
+  const overallCounts = useAtomValue(stateTree.overallCountsAtom);
   const totalElapsedMs = useAtomValue(stateTree.totalElapsedMsAtom);
-
-  const progressState = usePluginBuildProgress<BuildUnifiedProgressInfo, BuildSessionStatus>(
-    config.nodeType,
-    config.nodeId,
-    {
-      autoSubscribe: config.autoSubscribe ?? true,
-      mapUnifiedToProgress: (info) => info ?? null,
-      mapUnifiedToStatus: (info) => {
-        if (!config.nodeId || !info) return null;
-        const payload = info.payload as { total: number; completed: number; failed: number; skipped?: number; estimatedTimeRemaining?: number } | undefined;
-        if (!payload) {
-          throw new Error(`[useBuildSessionStateTreeBridge] info.payload is required but was absent (nodeId=${String(info.nodeId)}, stage=${String(info.stage)})`);
-        }
-        const status = info.phase;
-        const skipped = payload.skipped ?? 0;
-        return {
-          nodeId: config.nodeId,
-          status,
-          progress: {
-            total: payload.total,
-            completed: payload.completed,
-            failed: payload.failed,
-            skipped: payload.skipped,
-            percentage: computePercentage({
-              total: payload.total,
-              completed: payload.completed,
-              failed: payload.failed,
-              skipped,
-            }),
-            stage: info.stage,
-            estimatedTimeRemaining: payload.estimatedTimeRemaining,
-          },
-          lastActivity: info.timestamp,
-          error: info.message,
-        };
-      },
-    },
-  );
+  const [subscriptionError, setSubscriptionError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (!config.nodeId) {
+    if (!nodeId) {
       dispatch({ type: 'reset' });
+      setSubscriptionError(null);
       return;
     }
-    dispatch({
-      type: 'sessionPatched',
-      eventVersion: Date.now(),
-      payload: {
-        phase: 'idle',
-        isActive: false,
-        error: undefined,
-      },
-    });
-  }, [config.nodeId, dispatch]);
+    dispatch({ type: 'reset' });
+    setSubscriptionError(null);
+    if (!autoSubscribe) return;
 
-  useEffect(() => {
-    const info = progressState.unifiedProgress;
-    if (!config.nodeId || !info) return;
-    dispatch({
-      type: 'activeStageChanged',
-      payload: { stageId: config.resolveStageId(info.stage) },
-    });
-    dispatch({
-      type: 'sessionPatched',
-      eventVersion: asFiniteNumber(info.timestamp, 'progress.timestamp'),
-      payload: {
-        phase: config.mapBuildStatusToPhase(info.phase),
-        isActive: info.phase === 'queued' || info.phase === 'running',
-        error: info.phase === 'failed' ? (info.message ?? 'Build failed') : undefined,
-      },
-    });
-  }, [config, dispatch, progressState.unifiedProgress]);
-
-  useEffect(() => {
-    const nodeId = config.nodeId;
-    if (!nodeId) return;
+    const bridge = getBuildWorkerBridge();
+    const unsubscribers: Array<() => void> = [];
+    const initializedStages = new Set<StageId>();
+    const bufferedProgressByStage = new Map<StageId, TaskProgressUpdatedEvent[]>();
     let cancelled = false;
-    let unsubscribeTasks: (() => void) | null = null;
-    let unsubscribeSession: (() => void) | null = null;
 
-    const run = async () => {
-      const bridge = getBuildWorkerBridge();
-      await bridge.initialize();
-      const tasks = await bridge.getBuildTasks(config.nodeType, nodeId);
-      if (!cancelled) {
-        const grouped = new Map<StageId, BuildTaskSummary[]>();
-        for (const task of tasks) {
-          const stageId = config.resolveStageId(task.stage);
-          const current = grouped.get(stageId) ?? [];
-          current.push(task);
-          grouped.set(stageId, current);
-        }
-        for (const stageId of stageIds) {
-          const stageTasks = grouped.get(stageId) ?? [];
-          dispatch({
-            type: 'tasksReplaced',
-            eventVersion: stageTasks.length > 0
-              ? stageTasks.reduce((max, task) => Math.max(max, task.version), Number.MIN_SAFE_INTEGER)
-              : Date.now(),
-            payload: {
-              stageId,
-              tasks: stageTasks.map((task) => toTaskItem(task, config.resolveStageId)),
-            },
-          });
+    const dispatchTaskProgress = (event: TaskProgressUpdatedEvent): void => {
+      const stageId = resolveStageId(event.payload.stageId);
+      dispatch({
+        type: 'taskProgressUpdated',
+        payload: {
+          taskId: event.payload.taskId,
+          version: event.payload.version,
+          stageId,
+          value: event.payload.value,
+          message: event.payload.message,
+          metadata: event.payload.metadata,
+        },
+      });
+    };
+
+    const handleSessionStatus = (rawEvent: unknown): void => {
+      const event = requireEvent<SessionStatusUpdatedEvent>(rawEvent, 'sessionStatusUpdated');
+      const eventNodeId = requireNonEmptyString(event.payload.nodeId, 'session.nodeId');
+      if (eventNodeId !== nodeIdText) return;
+      const stopReason = requireOptionalString(event.payload.stopReason, 'session.stopReason');
+      const { phase, isActive, startedAt, inactiveMs, completedAt } =
+        validateSessionStatusEvent(event);
+      dispatch({
+        type: 'sessionPatched',
+        payload: {
+          phase,
+          isActive,
+          hasAuthoritativeStatus: true,
+          startedAt,
+          inactiveMs,
+          completedAt,
+          error: phase === 'failed' ? stopReason : undefined,
+        },
+      });
+      if (event.payload.stageId !== undefined) {
+        dispatch({
+          type: 'activeStageChanged',
+          payload: { stageId: resolveStageId(event.payload.stageId) },
+        });
+      }
+    };
+
+    const handleStageSnapshot = (rawEvent: unknown): void => {
+      const event = requireEvent<StageSnapshotUpdatedEvent>(rawEvent, 'stageSnapshotUpdated');
+      const stageId = resolveStageId(event.payload.stageId);
+      if (!Array.isArray(event.payload.tasks)) {
+        throw new Error('[buildSessionStateTreeBridge] stageSnapshot.tasks must be an array');
+      }
+      const stageStartedAt = requireNonNegativeNumber(
+        event.payload.stageStartedAt,
+        'stageSnapshot.stageStartedAt'
+      );
+      const stageInactiveMs = requireNonNegativeNumber(
+        event.payload.stageInactiveMs,
+        'stageSnapshot.stageInactiveMs'
+      );
+      const stageCompletedAt =
+        event.payload.stageCompletedAt === undefined
+          ? undefined
+          : requireNonNegativeNumber(
+              event.payload.stageCompletedAt,
+              'stageSnapshot.stageCompletedAt'
+            );
+      if (stageCompletedAt !== undefined) {
+        const durationMs = stageCompletedAt - stageStartedAt - stageInactiveMs;
+        if (!Number.isFinite(durationMs) || durationMs < 0) {
+          throw new Error(
+            `[buildSessionStateTreeBridge] stage duration must be finite and non-negative, received ${durationMs}`
+          );
         }
       }
-      unsubscribeTasks = await bridge.subscribeBuildTasks(
-        config.nodeType,
-        nodeId,
-        (event) => {
-          if (cancelled) return;
-          if (event.type === 'snapshot') {
-            const grouped = new Map<StageId, BuildTaskSummary[]>();
-            for (const task of event.tasks) {
-              const stageId = config.resolveStageId(task.stage);
-              const current = grouped.get(stageId) ?? [];
-              current.push(task);
-              grouped.set(stageId, current);
-            }
-            for (const stageId of stageIds) {
-              const stageTasks = grouped.get(stageId) ?? [];
-              dispatch({
-                type: 'tasksReplaced',
-                eventVersion: resolveSnapshotVersion(event),
-                payload: {
-                  stageId,
-                  tasks: stageTasks.map((task) => toTaskItem(task, config.resolveStageId)),
-                },
-              });
-            }
-            return;
-          }
-          if (event.type === 'update') {
-            dispatch({
-              type: 'taskUpserted',
-              eventVersion: asFiniteNumber(event.task.version, 'task.version'),
-              payload: {
-                task: toTaskItem(event.task, config.resolveStageId),
-              },
-            });
-            return;
-          }
-          dispatch({
-            type: 'taskDeleted',
-            eventVersion: asFiniteNumber((event as { version?: unknown }).version, 'task delete event.version'),
-            payload: {
-              stageId: config.defaultActiveStageId,
-              taskId: event.taskId,
-            },
-          });
+      dispatch({
+        type: 'tasksReplaced',
+        payload: {
+          stageId,
+          tasks: event.payload.tasks.map((task, index) =>
+            toTaskItem(task, index, stageId, resolveStageId)
+          ),
         },
-      );
-      unsubscribeSession = await bridge.subscribeSessionState(
-        config.nodeType,
-        nodeId,
-        (event: { sessionRecord?: Record<string, unknown> | null }) => {
-          if (cancelled) return;
-          const sessionRecord = event.sessionRecord;
-          if (!sessionRecord || typeof sessionRecord !== 'object') return;
-          const status = sessionRecord.status as BuildSessionStatus['status'] | undefined;
-          const stage = sessionRecord.stage as unknown;
-          const eventVersion = resolveSessionEventVersion(sessionRecord);
-          if (status) {
-            dispatch({
-              type: 'sessionPatched',
-              eventVersion,
-              payload: {
-                phase: config.mapBuildStatusToPhase(status),
-                isActive: status === 'queued' || status === 'running',
-              },
-            });
-          }
-          if (stage !== undefined) {
-            const stageId = config.resolveStageId(stage);
-            dispatch({
-              type: 'timingPatched',
-              eventVersion,
-              payload: {
-                stageId,
-                patch: {
-                  startedAtUtime: sessionRecord.stageStartedAt as number | undefined,
-                  pausedTotalMs: sessionRecord.stageInactiveMs as number | undefined,
-                  completedAtUtime: sessionRecord.completedAt as number | undefined,
-                },
-              },
-            });
-          }
+      });
+      dispatch({
+        type: 'timingPatched',
+        payload: {
+          stageId,
+          patch: {
+            snapshotReceived: true,
+            startedAtUtime: stageStartedAt,
+            pausedTotalMs: stageInactiveMs,
+            completedAtUtime: stageCompletedAt,
+          },
         },
-      );
+      });
+      initializedStages.add(stageId);
+      const buffered = bufferedProgressByStage.get(stageId) ?? [];
+      bufferedProgressByStage.delete(stageId);
+      for (const progressEvent of buffered) {
+        dispatchTaskProgress(progressEvent);
+      }
     };
 
-    void run();
+    const handleTaskProgress = (rawEvent: unknown): void => {
+      const event = requireEvent<TaskProgressUpdatedEvent>(rawEvent, 'taskProgressUpdated');
+      const stageId = resolveStageId(event.payload.stageId);
+      requireNonEmptyString(event.payload.taskId, 'taskProgress.taskId');
+      requirePositiveInteger(event.payload.version, 'taskProgress.version');
+      requireProgressValue(event.payload.value, 'taskProgress.value');
+      requireOptionalString(event.payload.message, 'taskProgress.message');
+      requireOptionalRecord(event.payload.metadata, 'taskProgress.metadata');
+      if (!initializedStages.has(stageId)) {
+        const buffered = bufferedProgressByStage.get(stageId) ?? [];
+        buffered.push(event);
+        bufferedProgressByStage.set(stageId, buffered);
+        return;
+      }
+      dispatchTaskProgress(event);
+    };
+
+    const handleHeartbeat = (rawEvent: unknown): void => {
+      const event = requireEvent<HeartbeatEvent>(rawEvent, 'heartbeat');
+      const eventNodeId = requireNonEmptyString(event.payload.nodeId, 'heartbeat.nodeId');
+      if (eventNodeId !== nodeIdText) return;
+      dispatch({
+        type: 'heartbeatReceived',
+        payload: {
+          heartbeatAt: requireNonNegativeNumber(event.payload.heartbeatAt, 'heartbeat.heartbeatAt'),
+        },
+      });
+    };
+
+    const deliverCanonicalEvent = (
+      handler: (rawEvent: unknown) => void,
+      rawEvent: unknown
+    ): void => {
+      try {
+        handler(rawEvent);
+      } catch (error) {
+        const resolved = error instanceof Error ? error : new Error(String(error));
+        if (!cancelled) {
+          setSubscriptionError(resolved);
+        }
+        throw resolved;
+      }
+    };
+
+    const run = async (): Promise<void> => {
+      await bridge.initialize();
+      if (cancelled) return;
+      const unsubscribeAll = await bridge.subscribeAll(nodeType, nodeId, {
+        onTaskEvent: (event: unknown) => {
+          if (!cancelled) deliverCanonicalEvent(handleStageSnapshot, event);
+        },
+        onProgressEvent: (event: unknown) => {
+          if (!cancelled) deliverCanonicalEvent(handleTaskProgress, event);
+        },
+        onSessionState: (event: unknown) => {
+          if (!cancelled) deliverCanonicalEvent(handleSessionStatus, event);
+        },
+        onHeartbeat: (event: unknown) => {
+          if (!cancelled) deliverCanonicalEvent(handleHeartbeat, event);
+        },
+        onWorkerLog: () => {},
+      });
+      if (cancelled) {
+        unsubscribeAll();
+        return;
+      }
+      unsubscribers.push(unsubscribeAll);
+    };
+
+    void run().catch((error: unknown) => {
+      if (cancelled) return;
+      setSubscriptionError(error instanceof Error ? error : new Error(String(error)));
+    });
+
     return () => {
       cancelled = true;
-      unsubscribeTasks?.();
-      unsubscribeSession?.();
+      bufferedProgressByStage.clear();
+      for (const unsubscribe of unsubscribers.splice(0)) {
+        unsubscribe();
+      }
     };
-  }, [config, dispatch, stageIds]);
+  }, [autoSubscribe, dispatch, nodeId, nodeIdText, nodeType, resolveStageId]);
+
+  const taskCounts = useMemo(
+    () => ({
+      total: overallCounts.total - overallCounts.recycled,
+      completed: overallCounts.completed,
+      failed: overallCounts.failed,
+      skipped: overallCounts.skipped,
+    }),
+    [overallCounts]
+  );
+  const percentage = useMemo(() => computePercentage(taskCounts), [taskCounts]);
+  const buildStatus = mapLifecyclePhaseToBuildStatus(state.session.phase);
+  const activeTaskMessage = state.tasks.orderedIdsByStage[state.ui.activeStageId]
+    .map((taskId) => state.tasks.byId[taskId])
+    .find((task) => task?.message)?.message;
+  const explicitActivityTimes = [
+    state.session.lastHeartbeatAt,
+    state.session.completedAt,
+    state.session.startedAt,
+    ...stageIds.flatMap((stageId) => {
+      const timing = state.timing.byStage[stageId];
+      return [timing.startedAtUtime, timing.completedAtUtime];
+    }),
+  ].filter((value): value is number => value !== undefined);
+  const lastActivity =
+    explicitActivityTimes.length > 0 ? Math.max(...explicitActivityTimes) : undefined;
+  const activeStageSnapshotReceived = state.timing.byStage[state.ui.activeStageId].snapshotReceived;
+
+  const progressState = useMemo<BuildSessionProgressState>(() => {
+    if (!nodeId) {
+      return { progress: null, status: null, error: subscriptionError };
+    }
+    const message = state.session.error ?? activeTaskMessage;
+    return {
+      progress:
+        state.session.hasAuthoritativeStatus &&
+        activeStageSnapshotReceived &&
+        lastActivity !== undefined
+          ? {
+              nodeId,
+              stage: state.ui.activeStageId,
+              status: buildStatus,
+              timestamp: lastActivity,
+              taskCounts,
+              percentage,
+              message,
+            }
+          : null,
+      status: state.session.hasAuthoritativeStatus
+        ? {
+            nodeId,
+            status: buildStatus,
+            startedAt: state.session.startedAt,
+            completedAt: state.session.completedAt,
+            lastActivity,
+            error: state.session.error,
+          }
+        : null,
+      error: subscriptionError,
+    };
+  }, [
+    activeTaskMessage,
+    activeStageSnapshotReceived,
+    buildStatus,
+    lastActivity,
+    nodeId,
+    percentage,
+    state.session.completedAt,
+    state.session.error,
+    state.session.hasAuthoritativeStatus,
+    state.session.startedAt,
+    state.ui.activeStageId,
+    subscriptionError,
+    taskCounts,
+  ]);
 
   return {
     atoms: stateTree,

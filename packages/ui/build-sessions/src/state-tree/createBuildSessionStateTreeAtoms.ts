@@ -1,7 +1,7 @@
-import { atom, type Atom } from 'jotai';
+import type { TaskDisplayPayload } from '@hierarchidb/build-api';
+import { type Atom, atom } from 'jotai';
 import { selectAtom } from 'jotai/utils';
 import { atomFamily } from 'jotai-family';
-import type { TaskDisplayPayload } from '@hierarchidb/build-api';
 
 export type BuildSessionTaskStatus =
   | 'queued'
@@ -47,6 +47,7 @@ export type BuildSessionStageUiState = {
 };
 
 export type BuildSessionStageTimingState = {
+  snapshotReceived: boolean;
   startedAtUtime?: number;
   pausedTotalMs?: number;
   completedAtUtime?: number;
@@ -58,6 +59,11 @@ export type BuildSessionStateTree<StageId extends string> = {
   session: {
     phase: BuildSessionStateTreeLifecyclePhase;
     isActive: boolean;
+    hasAuthoritativeStatus: boolean;
+    startedAt?: number;
+    inactiveMs?: number;
+    completedAt?: number;
+    lastHeartbeatAt?: number;
     error?: string;
   };
   tasks: {
@@ -70,9 +76,6 @@ export type BuildSessionStateTree<StageId extends string> = {
   ui: {
     activeStageId: StageId;
     byStage: Record<StageId, BuildSessionStageUiState>;
-  };
-  meta: {
-    lastAcceptedEventVersion: number;
   };
 };
 
@@ -93,56 +96,58 @@ type BuildSessionStageStateSlice<StageId extends string> = {
   ui: BuildSessionStageUiState;
 };
 
-type EventWithVersion = { eventVersion: number };
-
 type BuildSessionStateTreeEvent<StageId extends string> =
   | {
-    type: 'reset';
-  }
-  | ({
-    type: 'sessionPatched';
-    payload: Partial<BuildSessionStateTree<StageId>['session']>;
-  } & EventWithVersion)
-  | ({
-    type: 'tasksReplaced';
-    payload: {
-      stageId: StageId;
-      tasks: BuildSessionTaskItem<StageId>[];
-    };
-  } & EventWithVersion)
-  | ({
-    type: 'taskUpserted';
-    payload: {
-      task: BuildSessionTaskItem<StageId>;
-    };
-  } & EventWithVersion)
-  | ({
-    type: 'taskDeleted';
-    payload: {
-      stageId: StageId;
-      taskId: string;
-    };
-  } & EventWithVersion)
-  | ({
-    type: 'timingPatched';
-    payload: {
-      stageId: StageId;
-      patch: Partial<BuildSessionStageTimingState>;
-    };
-  } & EventWithVersion)
+      type: 'reset';
+    }
   | {
-    type: 'activeStageChanged';
-    payload: {
-      stageId: StageId;
-    };
-  }
+      type: 'sessionPatched';
+      payload: Partial<BuildSessionStateTree<StageId>['session']>;
+    }
   | {
-    type: 'stageUiPatched';
-    payload: {
-      stageId: StageId;
-      patch: Partial<BuildSessionStageUiState>;
+      type: 'tasksReplaced';
+      payload: {
+        stageId: StageId;
+        tasks: BuildSessionTaskItem<StageId>[];
+      };
+    }
+  | {
+      type: 'taskProgressUpdated';
+      payload: {
+        taskId: string;
+        version: number;
+        stageId: StageId;
+        value: number;
+        message?: string;
+        metadata?: Record<string, unknown>;
+      };
+    }
+  | {
+      type: 'timingPatched';
+      payload: {
+        stageId: StageId;
+        patch: Partial<BuildSessionStageTimingState>;
+      };
+    }
+  | {
+      type: 'heartbeatReceived';
+      payload: {
+        heartbeatAt: number;
+      };
+    }
+  | {
+      type: 'activeStageChanged';
+      payload: {
+        stageId: StageId;
+      };
+    }
+  | {
+      type: 'stageUiPatched';
+      payload: {
+        stageId: StageId;
+        patch: Partial<BuildSessionStageUiState>;
+      };
     };
-  };
 
 type Config<StageId extends string> = {
   nodeId: string;
@@ -153,7 +158,9 @@ type Config<StageId extends string> = {
 
 const assertFiniteNumber = (value: unknown, label: string): number => {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
-    throw new Error(`[buildSessionStateTree] ${label} must be a finite number, received ${String(value)}`);
+    throw new Error(
+      `[buildSessionStateTree] ${label} must be a finite number, received ${String(value)}`
+    );
   }
   return value;
 };
@@ -161,14 +168,16 @@ const assertFiniteNumber = (value: unknown, label: string): number => {
 const assertProgressRange = (value: number): number => {
   const normalized = assertFiniteNumber(value, 'task.progress');
   if (normalized < 0 || normalized > 100) {
-    throw new Error(`[buildSessionStateTree] task.progress must be within 0..100, received ${normalized}`);
+    throw new Error(
+      `[buildSessionStateTree] task.progress must be within 0..100, received ${normalized}`
+    );
   }
   return normalized;
 };
 
 const compareTaskOrder = <StageId extends string>(
   left: BuildSessionTaskItem<StageId>,
-  right: BuildSessionTaskItem<StageId>,
+  right: BuildSessionTaskItem<StageId>
 ): number => {
   if (left.index !== right.index) {
     return left.index - right.index;
@@ -183,46 +192,82 @@ const stageUiInitialState = (): BuildSessionStageUiState => ({
 });
 
 const stageTimingInitialState = (): BuildSessionStageTimingState => ({
+  snapshotReceived: false,
   startedAtUtime: undefined,
   pausedTotalMs: undefined,
   completedAtUtime: undefined,
 });
 
-const hasVersion = <StageId extends string>(
-  event: BuildSessionStateTreeEvent<StageId>,
-): event is Extract<BuildSessionStateTreeEvent<StageId>, EventWithVersion> => (
-  'eventVersion' in event
-);
-
 const sanitizeTask = <StageId extends string>(
-  task: BuildSessionTaskItem<StageId>,
-): BuildSessionTaskItem<StageId> => ({
-  ...task,
-  version: assertFiniteNumber(task.version, 'task.version'),
-  progress: assertProgressRange(task.progress),
-  index: assertFiniteNumber(task.index, 'task.index'),
-});
+  task: BuildSessionTaskItem<StageId>
+): BuildSessionTaskItem<StageId> => {
+  if (task.taskId.length === 0) {
+    throw new Error('[buildSessionStateTree] task.taskId must not be empty');
+  }
+  const version = assertFiniteNumber(task.version, 'task.version');
+  if (!Number.isInteger(version) || version <= 0) {
+    throw new Error(
+      `[buildSessionStateTree] task.version must be a positive integer, received ${version}`
+    );
+  }
+  const index = assertFiniteNumber(task.index, 'task.index');
+  if (!Number.isInteger(index) || index < 0) {
+    throw new Error(
+      `[buildSessionStateTree] task.index must be a non-negative integer, received ${index}`
+    );
+  }
+  return {
+    ...task,
+    version,
+    progress: assertProgressRange(task.progress),
+    index,
+  };
+};
 
-const sanitizeTimingPatch = (patch: Partial<BuildSessionStageTimingState>): Partial<BuildSessionStageTimingState> => {
+const sanitizeTimingPatch = (
+  patch: Partial<BuildSessionStageTimingState>
+): Partial<BuildSessionStageTimingState> => {
   const next: Partial<BuildSessionStageTimingState> = {};
+  if (patch.snapshotReceived !== undefined) {
+    if (typeof patch.snapshotReceived !== 'boolean') {
+      throw new Error(
+        `[buildSessionStateTree] timing.snapshotReceived must be boolean, received ${String(patch.snapshotReceived)}`
+      );
+    }
+    next.snapshotReceived = patch.snapshotReceived;
+  }
   if (patch.startedAtUtime !== undefined) {
-    next.startedAtUtime = assertFiniteNumber(patch.startedAtUtime, 'timing.startedAtUtime');
+    const startedAtUtime = assertFiniteNumber(patch.startedAtUtime, 'timing.startedAtUtime');
+    if (startedAtUtime < 0) {
+      throw new Error(
+        `[buildSessionStateTree] timing.startedAtUtime must be non-negative, received ${startedAtUtime}`
+      );
+    }
+    next.startedAtUtime = startedAtUtime;
   }
   if (patch.pausedTotalMs !== undefined) {
     const paused = assertFiniteNumber(patch.pausedTotalMs, 'timing.pausedTotalMs');
     if (paused < 0) {
-      throw new Error(`[buildSessionStateTree] timing.pausedTotalMs must be >= 0, received ${paused}`);
+      throw new Error(
+        `[buildSessionStateTree] timing.pausedTotalMs must be >= 0, received ${paused}`
+      );
     }
     next.pausedTotalMs = paused;
   }
   if (patch.completedAtUtime !== undefined) {
-    next.completedAtUtime = assertFiniteNumber(patch.completedAtUtime, 'timing.completedAtUtime');
+    const completedAtUtime = assertFiniteNumber(patch.completedAtUtime, 'timing.completedAtUtime');
+    if (completedAtUtime < 0) {
+      throw new Error(
+        `[buildSessionStateTree] timing.completedAtUtime must be non-negative, received ${completedAtUtime}`
+      );
+    }
+    next.completedAtUtime = completedAtUtime;
   }
   return next;
 };
 
 export const createBuildSessionStateTreeAtoms = <StageId extends string>(
-  config: Config<StageId>,
+  config: Config<StageId>
 ) => {
   const stageIds = [...config.stageIds];
   if (stageIds.length === 0) {
@@ -244,6 +289,7 @@ export const createBuildSessionStateTreeAtoms = <StageId extends string>(
       session: {
         phase: config.initialSession?.phase ?? 'idle',
         isActive: config.initialSession?.isActive ?? false,
+        hasAuthoritativeStatus: config.initialSession?.hasAuthoritativeStatus ?? false,
         error: config.initialSession?.error,
       },
       tasks: {
@@ -257,30 +303,13 @@ export const createBuildSessionStateTreeAtoms = <StageId extends string>(
         activeStageId: config.defaultActiveStageId,
         byStage: uiByStage,
       },
-      meta: {
-        lastAcceptedEventVersion: 0,
-      },
-    };
-  };
-
-  const applyVersionGate = (
-    state: BuildSessionStateTree<StageId>,
-    event: BuildSessionStateTreeEvent<StageId>,
-  ): BuildSessionStateTree<StageId> | null => {
-    if (!hasVersion(event)) return state;
-    if (event.eventVersion <= state.meta.lastAcceptedEventVersion) return null;
-    return {
-      ...state,
-      meta: {
-        lastAcceptedEventVersion: event.eventVersion,
-      },
     };
   };
 
   const insertTaskIdInOrder = (
     ids: string[],
     byId: Record<string, BuildSessionTaskItem<StageId>>,
-    taskId: string,
+    taskId: string
   ): string[] => {
     const next = ids.filter((id) => id !== taskId);
     const task = byId[taskId];
@@ -304,82 +333,87 @@ export const createBuildSessionStateTreeAtoms = <StageId extends string>(
 
   const reduce = (
     state: BuildSessionStateTree<StageId>,
-    event: BuildSessionStateTreeEvent<StageId>,
+    event: BuildSessionStateTreeEvent<StageId>
   ): BuildSessionStateTree<StageId> => {
     if (event.type === 'reset') {
       return createInitialState();
     }
 
-    const accepted = applyVersionGate(state, event);
-    if (!accepted) return state;
-
     switch (event.type) {
       case 'sessionPatched':
         return {
-          ...accepted,
+          ...state,
           session: {
-            ...accepted.session,
+            ...state.session,
             ...event.payload,
           },
         };
       case 'tasksReplaced': {
         const stageId = event.payload.stageId;
-        const nextById = { ...accepted.tasks.byId };
-        for (const existingTaskId of accepted.tasks.orderedIdsByStage[stageId]) {
+        const nextById = { ...state.tasks.byId };
+        for (const existingTaskId of state.tasks.orderedIdsByStage[stageId]) {
           delete nextById[existingTaskId];
         }
         const nextOrderedByStage = {
-          ...accepted.tasks.orderedIdsByStage,
+          ...state.tasks.orderedIdsByStage,
         };
         nextOrderedByStage[stageId] = [];
         for (const rawTask of event.payload.tasks) {
           const task = sanitizeTask(rawTask);
           if (task.stage !== stageId) {
             throw new Error(
-              `[buildSessionStateTree] tasksReplaced stage mismatch: task.stage=${String(task.stage)} target=${String(stageId)}`,
+              `[buildSessionStateTree] tasksReplaced stage mismatch: task.stage=${String(task.stage)} target=${String(stageId)}`
             );
           }
           nextById[task.taskId] = task;
-          nextOrderedByStage[stageId] = insertTaskIdInOrder(nextOrderedByStage[stageId], nextById, task.taskId);
+          nextOrderedByStage[stageId] = insertTaskIdInOrder(
+            nextOrderedByStage[stageId],
+            nextById,
+            task.taskId
+          );
         }
         return {
-          ...accepted,
+          ...state,
           tasks: {
             byId: nextById,
             orderedIdsByStage: nextOrderedByStage,
           },
         };
       }
-      case 'taskUpserted': {
-        const task = sanitizeTask(event.payload.task);
-        const stageId = task.stage;
-        const nextById = {
-          ...accepted.tasks.byId,
-          [task.taskId]: task,
-        };
-        const nextOrderedByStage = {
-          ...accepted.tasks.orderedIdsByStage,
-          [stageId]: insertTaskIdInOrder(accepted.tasks.orderedIdsByStage[stageId], nextById, task.taskId),
+      case 'taskProgressUpdated': {
+        const existing = state.tasks.byId[event.payload.taskId];
+        if (!existing) {
+          throw new Error(
+            `[buildSessionStateTree] progress received before task snapshot: ${event.payload.taskId}`
+          );
+        }
+        if (existing.stage !== event.payload.stageId) {
+          throw new Error(
+            `[buildSessionStateTree] task progress stage mismatch: task.stage=${String(existing.stage)} event.stageId=${String(event.payload.stageId)}`
+          );
+        }
+        const version = assertFiniteNumber(event.payload.version, 'taskProgress.version');
+        if (!Number.isInteger(version) || version <= 0) {
+          throw new Error(
+            `[buildSessionStateTree] taskProgress.version must be a positive integer, received ${version}`
+          );
+        }
+        if (version <= existing.version) return state;
+        const value = assertProgressRange(event.payload.value);
+        const task: BuildSessionTaskItem<StageId> = {
+          ...existing,
+          version,
+          progress: value,
+          message: event.payload.message,
+          metadata: event.payload.metadata ?? existing.metadata,
         };
         return {
-          ...accepted,
+          ...state,
           tasks: {
-            byId: nextById,
-            orderedIdsByStage: nextOrderedByStage,
-          },
-        };
-      }
-      case 'taskDeleted': {
-        const stageId = event.payload.stageId;
-        const nextById = { ...accepted.tasks.byId };
-        delete nextById[event.payload.taskId];
-        return {
-          ...accepted,
-          tasks: {
-            byId: nextById,
-            orderedIdsByStage: {
-              ...accepted.tasks.orderedIdsByStage,
-              [stageId]: accepted.tasks.orderedIdsByStage[stageId].filter((taskId) => taskId !== event.payload.taskId),
+            ...state.tasks,
+            byId: {
+              ...state.tasks.byId,
+              [task.taskId]: task,
             },
           },
         };
@@ -387,37 +421,69 @@ export const createBuildSessionStateTreeAtoms = <StageId extends string>(
       case 'timingPatched': {
         const stageId = event.payload.stageId;
         const patch = sanitizeTimingPatch(event.payload.patch);
+        const timing = {
+          ...state.timing.byStage[stageId],
+          ...patch,
+        };
+        if (timing.snapshotReceived) {
+          if (timing.startedAtUtime === undefined || timing.pausedTotalMs === undefined) {
+            throw new Error(
+              `[buildSessionStateTree] started stage ${String(stageId)} requires startedAtUtime and pausedTotalMs`
+            );
+          }
+          if (timing.completedAtUtime !== undefined) {
+            const durationMs =
+              timing.completedAtUtime - timing.startedAtUtime - timing.pausedTotalMs;
+            if (!Number.isFinite(durationMs) || durationMs < 0) {
+              throw new Error(
+                `[buildSessionStateTree] stage duration must be finite and non-negative, received ${durationMs}`
+              );
+            }
+          }
+        }
         return {
-          ...accepted,
+          ...state,
           timing: {
             byStage: {
-              ...accepted.timing.byStage,
-              [stageId]: {
-                ...accepted.timing.byStage[stageId],
-                ...patch,
-              },
+              ...state.timing.byStage,
+              [stageId]: timing,
             },
+          },
+        };
+      }
+      case 'heartbeatReceived': {
+        const heartbeatAt = assertFiniteNumber(event.payload.heartbeatAt, 'heartbeatAt');
+        if (heartbeatAt < 0) {
+          throw new Error(
+            `[buildSessionStateTree] heartbeatAt must be non-negative, received ${heartbeatAt}`
+          );
+        }
+        return {
+          ...state,
+          session: {
+            ...state.session,
+            lastHeartbeatAt: heartbeatAt,
           },
         };
       }
       case 'activeStageChanged':
         return {
-          ...accepted,
+          ...state,
           ui: {
-            ...accepted.ui,
+            ...state.ui,
             activeStageId: event.payload.stageId,
           },
         };
       case 'stageUiPatched': {
         const stageId = event.payload.stageId;
         return {
-          ...accepted,
+          ...state,
           ui: {
-            ...accepted.ui,
+            ...state.ui,
             byStage: {
-              ...accepted.ui.byStage,
+              ...state.ui.byStage,
               [stageId]: {
-                ...accepted.ui.byStage[stageId],
+                ...state.ui.byStage[stageId],
                 ...event.payload.patch,
               },
             },
@@ -425,7 +491,7 @@ export const createBuildSessionStateTreeAtoms = <StageId extends string>(
         };
       }
       default:
-        return accepted;
+        return state;
     }
   };
 
@@ -440,48 +506,51 @@ export const createBuildSessionStateTreeAtoms = <StageId extends string>(
       if (next !== current) {
         set(buildSessionStateTreeAtom, next);
       }
-    },
+    }
   );
 
-  const stageStateAtomFamily = atomFamily((stageId: StageId) => (
-    selectAtom(buildSessionStateTreeAtom, (state) => ({
-      orderedIds: state.tasks.orderedIdsByStage[stageId],
-      byId: state.tasks.byId,
-      timing: state.timing.byStage[stageId],
-      ui: state.ui.byStage[stageId],
-    }))
-  ) as Atom<BuildSessionStageStateSlice<StageId>>);
+  const stageStateAtomFamily = atomFamily(
+    (stageId: StageId) =>
+      selectAtom(buildSessionStateTreeAtom, (state) => ({
+        orderedIds: state.tasks.orderedIdsByStage[stageId],
+        byId: state.tasks.byId,
+        timing: state.timing.byStage[stageId],
+        ui: state.ui.byStage[stageId],
+      })) as Atom<BuildSessionStageStateSlice<StageId>>
+  );
 
-  const stageTasksAtomFamily = atomFamily((stageId: StageId) => (
-    atom((get) => {
-      const { orderedIds, byId } = get(stageStateAtomFamily(stageId));
-      const tasks: BuildSessionTaskItem<StageId>[] = [];
-      for (const taskId of orderedIds) {
-        const task = byId[taskId];
-        if (task) tasks.push(task);
-      }
-      return tasks;
-    })
-  ) as Atom<BuildSessionTaskItem<StageId>[]>);
+  const stageTasksAtomFamily = atomFamily(
+    (stageId: StageId) =>
+      atom((get) => {
+        const { orderedIds, byId } = get(stageStateAtomFamily(stageId));
+        const tasks: BuildSessionTaskItem<StageId>[] = [];
+        for (const taskId of orderedIds) {
+          const task = byId[taskId];
+          if (task) tasks.push(task);
+        }
+        return tasks;
+      }) as Atom<BuildSessionTaskItem<StageId>[]>
+  );
 
-  const stageCountsAtomFamily = atomFamily((stageId: StageId) => (
-    atom((get): BuildSessionStageCounts => {
-      const tasks = get(stageTasksAtomFamily(stageId));
-      const counts: BuildSessionStageCounts = {
-        total: tasks.length,
-        queued: 0,
-        running: 0,
-        completed: 0,
-        failed: 0,
-        recycled: 0,
-        skipped: 0,
-      };
-      for (const task of tasks) {
-        counts[task.status] += 1;
-      }
-      return counts;
-    })
-  ) as Atom<BuildSessionStageCounts>);
+  const stageCountsAtomFamily = atomFamily(
+    (stageId: StageId) =>
+      atom((get): BuildSessionStageCounts => {
+        const tasks = get(stageTasksAtomFamily(stageId));
+        const counts: BuildSessionStageCounts = {
+          total: tasks.length,
+          queued: 0,
+          running: 0,
+          completed: 0,
+          failed: 0,
+          recycled: 0,
+          skipped: 0,
+        };
+        for (const task of tasks) {
+          counts[task.status] += 1;
+        }
+        return counts;
+      }) as Atom<BuildSessionStageCounts>
+  );
 
   const overallCountsAtom = atom((get): BuildSessionStageCounts => {
     const counts: BuildSessionStageCounts = {
@@ -506,15 +575,35 @@ export const createBuildSessionStateTreeAtoms = <StageId extends string>(
     return counts;
   });
 
-  const stageElapsedMsAtomFamily = atomFamily((stageId: StageId) => (
-    atom((get): number => {
-      const { timing } = get(stageStateAtomFamily(stageId));
-      if (typeof timing.startedAtUtime !== 'number') return 0;
-      const pausedTotalMs = timing.pausedTotalMs ?? 0;
-      const endTime = timing.completedAtUtime ?? get(nowUtimeAtom);
-      return Math.max(0, endTime - timing.startedAtUtime - pausedTotalMs);
-    })
-  ) as Atom<number>);
+  const stageElapsedMsAtomFamily = atomFamily(
+    (stageId: StageId) =>
+      atom((get): number => {
+        const { timing } = get(stageStateAtomFamily(stageId));
+        if (!timing.snapshotReceived) return 0;
+        if (timing.startedAtUtime === undefined || timing.pausedTotalMs === undefined) {
+          throw new Error(
+            `[buildSessionStateTree] started stage ${String(stageId)} has incomplete timing`
+          );
+        }
+        const session = get(buildSessionStateTreeAtom).session;
+        if (!session.hasAuthoritativeStatus) return 0;
+        const endTime =
+          timing.completedAtUtime ??
+          (session.isActive ? get(nowUtimeAtom) : (session.lastHeartbeatAt ?? session.completedAt));
+        if (endTime === undefined) {
+          throw new Error(
+            `[buildSessionStateTree] inactive stage ${String(stageId)} requires a persisted end timestamp`
+          );
+        }
+        const durationMs = endTime - timing.startedAtUtime - timing.pausedTotalMs;
+        if (!Number.isFinite(durationMs) || durationMs < 0) {
+          throw new Error(
+            `[buildSessionStateTree] stage duration must be finite and non-negative, received ${durationMs}`
+          );
+        }
+        return durationMs;
+      }) as Atom<number>
+  );
 
   const totalElapsedMsAtom = atom((get): number => {
     let total = 0;

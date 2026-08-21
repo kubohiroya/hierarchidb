@@ -1,6 +1,6 @@
 import type {
+  BuildStatus,
   BuildTaskSummary,
-  ProgressPhase,
   TaskProgressUpdatedEvent,
   TaskStage,
 } from '@hierarchidb/build-api';
@@ -123,7 +123,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
       flushTimerId = window.requestAnimationFrame(flushProgressBuffer);
     };
 
-    const resolveProgressPhase = (value: string): ProgressPhase => {
+    const resolveBuildStatus = (value: string): BuildStatus => {
       if (
         value === 'idle' ||
         value === 'queued' ||
@@ -152,7 +152,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
           taskId: task.taskId,
           version: task.version,
           stage: stage as TaskStage,
-          status: resolveProgressPhase(task.status),
+          status: resolveBuildStatus(task.status),
           progress: task.progress,
           errorMessage: task.errorMessage,
           metadata: task.metadata,
