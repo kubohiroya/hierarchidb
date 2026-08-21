@@ -111,7 +111,11 @@ export const useBuildSessionStageProgressBarState = ({
   const isSelfActiveStage = Boolean(activeStageId && stages.some((stage) => stage.id === activeStageId));
   const showFlowBand = buildStatus === 'running' && isSelfActiveStage;
 
-  const { viewportStartIndex, viewportEndIndex } = resolveViewportIndices(viewportRange, tasksByStage);
+  const { viewportStartIndex, viewportEndIndex } = resolveViewportIndices(
+    viewportRange,
+    tasksByStage,
+    computeInput.filter,
+  );
   const { viewportStartGlobal, viewportEndGlobal } = useMemo(() => {
     if (!viewportRange?.stageId || viewportStartIndex === null || viewportEndIndex === null) {
       return { viewportStartGlobal: null, viewportEndGlobal: null };

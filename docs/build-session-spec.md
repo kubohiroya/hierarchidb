@@ -66,6 +66,15 @@
 
 残り時間の推定において、`recycled` タスクは平均処理時間の分母から除外する。`skipped` タスクは `done` カウントに含める。
 
+### Step 5 task progress bar のフィルター契約
+
+- `failedMode` / `skippedMode` / `completedMode` がすべて `false` の場合、全 task と計画済みの waiting slot を表示する。
+- 1つ以上が `true` の場合、選択された outcome category だけを OR 条件で表示する。`failedMode` は `failed`、`skippedMode` は skip display または skip message を持つ task、`completedMode` は skip ではない `completed / recycled` を対象とする。
+- skipped 判定は status 判定より優先する。skipped task を `completedMode` だけで表示してはならない。
+- active filter 中は `queued / running / paused / waiting` を表示しない。
+- segment、stage offset、stage count、view width、viewport index は同一のフィルター済み task 列から導出する。
+- 非選択 task を `fillOpacity` で dim 表示してはならない。
+
 ## データモデル要件（規範）
 
 1. 入力データは空でない安定キーと、空でない `meta` または finite かつ非負の `updatedAt` のいずれかを持つ。
