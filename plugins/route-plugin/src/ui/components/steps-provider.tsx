@@ -1,18 +1,18 @@
+import { notify } from '@hierarchidb/components';
+import { type NodeId, toNodeId } from '@hierarchidb/core-types';
 import {
-  PluginStepRegistry,
-  type PluginStepProps,
   type PluginStepConfig,
+  type PluginStepProps,
+  PluginStepRegistry,
   type StartBuildContext,
 } from '@hierarchidb/plugin-base';
-import { toNodeId, type NodeId } from '@hierarchidb/core-types';
 import type { RouteEntity } from '@hierarchidb/route-api';
 import { i18n } from '@hierarchidb/ui-i18n';
-import { RouteSelectionStep } from './steps/RouteSelectionStep.js';
-import { RouteProcessingStep } from './steps/RouteProcessingStep.js';
+import { RouteBuildStep } from './steps/RouteBuildStep/RouteBuildStep.js';
 import { RouteDataSourceStep } from './steps/RouteDataSourceStep.js';
-import { RouteBuildStep } from './steps/RouteBuildStep.js';
 import { RoutePreviewStep } from './steps/RoutePreviewStep.js';
-import { notify } from '@hierarchidb/components';
+import { RouteProcessingStep } from './steps/RouteProcessingStep.js';
+import { RouteSelectionStep } from './steps/RouteSelectionStep.js';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -20,9 +20,8 @@ type RouteStepData = Partial<RouteEntity>;
 
 type StepProps = PluginStepProps<RouteStepData>;
 
-const resolveNodeId = (nodeId?: string): NodeId | undefined => (
-  typeof nodeId === 'string' && nodeId.length > 0 ? toNodeId(nodeId) : undefined
-);
+const resolveNodeId = (nodeId?: string): NodeId | undefined =>
+  typeof nodeId === 'string' && nodeId.length > 0 ? toNodeId(nodeId) : undefined;
 
 const mergeDraft = (current: RouteStepData, updates: Partial<RouteStepData>): RouteStepData => {
   return {
@@ -58,7 +57,7 @@ const serializeComparable = (value: unknown): string => {
 
 const createDraftUpdater = (
   initial: RouteStepData,
-  onChange: (next: RouteStepData) => void,
+  onChange: (next: RouteStepData) => void
 ): ((updates: Partial<RouteEntity>) => void) => {
   let latestDraft = { ...(initial ?? {}) };
   let latestSignature = serializeComparable(latestDraft);
@@ -88,7 +87,9 @@ const hasRouteDataSourceReady = (data?: Partial<RouteEntity>): boolean => {
 };
 
 const hasRouteConfig = (data?: RouteStepData): boolean => {
-  return Boolean(hasRouteDataSourceReady(data) && hasAnyRouteSelection(data?.selectedArrayByCountries));
+  return Boolean(
+    hasRouteDataSourceReady(data) && hasAnyRouteSelection(data?.selectedArrayByCountries)
+  );
 };
 
 const isRouteBuildPersisted = (data?: RouteStepData): boolean =>
@@ -98,15 +99,22 @@ const startRouteBuild = async (data: RouteStepData, _context: StartBuildContext)
   const t = (key: string, fallback: string) =>
     String(i18n.t(key, { ns: 'route-plugin', defaultValue: fallback }));
   const hasEssentials = Boolean(
-    hasRouteDataSourceReady(data) && hasAnyRouteSelection(data?.selectedArrayByCountries),
+    hasRouteDataSourceReady(data) && hasAnyRouteSelection(data?.selectedArrayByCountries)
   );
 
   if (!hasEssentials) {
-    notify.info(t('messages.completeBeforeBuild', 'Complete the required route settings before starting a stage.'));
+    notify.info(
+      t(
+        'messages.completeBeforeBuild',
+        'Complete the required route settings before starting a stage.'
+      )
+    );
     return;
   }
 
-  notify.info(t('messages.batchNotImplemented', 'Route build launch is not yet implemented in this dialog.'));
+  notify.info(
+    t('messages.batchNotImplemented', 'Route build launch is not yet implemented in this dialog.')
+  );
 };
 
 registry.registerConfigProvider<RouteStepData>({
@@ -188,7 +196,7 @@ registry.registerConfigProvider<RouteStepData>({
         capabilities: {
           canStartBuild: (data: RouteStepData) => {
             return Boolean(
-              hasRouteDataSourceReady(data) && hasAnyRouteSelection(data?.selectedArrayByCountries),
+              hasRouteDataSourceReady(data) && hasAnyRouteSelection(data?.selectedArrayByCountries)
             );
           },
           startBuild: (data, context) => startRouteBuild(data as RouteStepData, context),

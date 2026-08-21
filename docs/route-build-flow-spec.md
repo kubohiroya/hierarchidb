@@ -105,6 +105,18 @@ cache identity の正規仕様（SSOT）とする。
 
 - build ステップの UI 構成と動作は shape と基本的に同一とする。
 - 実装は最大限共用し、route 固有差分のみ差し込む。
+- `RouteBuildStep` は Container、hooksを持たない `RouteBuildStepView`、
+  `useRouteBuildStepState` に分離する。Viewは共通`BuildSessionProgressPanel`を直接使用し、
+  route専用の再ラップcomponentやbrowser-local lifecycle stateを持たない。
+- route UI adapterが所有するのは`source / geometry / tileEmit`のstage vocabulary、表示label、
+  必須build入力、Worker transport指定、結果表示へのdraft反映だけとする。購読検証、snapshot readiness、
+  progress buffering、command mutation stateは`@hierarchidb/ui-build-sessions`の共通kernelを使用する。
+- subscriptionおよびcommand transportの初期化が完了するまでstart/resumeを禁止する。
+  canonical sessionが`queued`の間はqueued cancelだけを表示し、
+  `cancelQueuedBuildSession`へ接続する。pause/resume/cancel成功をlocal stateで合成しない。
+- canonical `paused / completed / failed`とRoute固有の前回crash insightは、共通Panelの
+  suspend/completion/crash dialog surfaceへ接続する。canonical timingの欠落を
+  draft timestampや`Date.now()`で補完しない。
 
 ### 内部パイプライン
 
