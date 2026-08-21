@@ -1,0 +1,203 @@
+# YAML storage single canonical activation
+
+This ExecPlan is a living implementation plan for [GitHub Issue #1340](https://github.com/kubohiroya/hierarchidb/issues/1340). GitHub Issue #1340 and the repository Project remain the status SSOT. This document records implementation reasoning and concrete repository operations; it is not a second task ledger.
+
+## Purpose and user-visible outcome
+
+The release replaces the production legacy YAML storage graph with one canonical CoreDB-backed graph. On the first activation-capable load, exactly one origin context quiesces all compatible legacy contexts, validates the complete raw CoreDB v1 YAML cohort, upgrades CoreDB to v2 atomically, initializes the database, and performs a success-only reload handoff. The new runtime and every later runtime publish YAML APIs only after exact CoreDB v2 schema validation, canonical-only raw YAML validation, and current WorkerService initialization succeed.
+
+After completion, YAML filenames live only in the matching metadata slot and YAML payloads have the exact shape `{ subtype, schemaId, content }`. Dialog save/save-draft, generic Worker CRUD, folder ZIP import/export, and SimulationWorkflow all use CoreDB. Production code cannot reach a YamlDB writer, the legacy folder ZIP serializer, or the legacy Simulation serializer. Activation failures remain visible and fail closed; they do not offer a generic IndexedDB reset, retry the upgrade, reopen v1, or fall back to legacy storage.
+
+## Progress
+
+- [x] 2026-08-21: Confirmed #1338 accepted evidence, CoreDB v1, clean main, and byte-unchanged fixed coordinator graph.
+- [x] 2026-08-21: Updated #1340 dependency, DoD, rollback, and Project status after user approval.
+- [x] 2026-08-21: Added the single-executor and post-activation bootstrap contract to the canonical specifications.
+- [x] 2026-08-21: Implemented and tested strict post-activation canonical-ready state creation.
+- [x] 2026-08-21: Implemented raw CoreDB inspection, v1 preflight, v2 versionchange migration, journal writes, and distinct fresh-v2 creation.
+- [x] 2026-08-21: Connected the activation-aware window bootstrap and success-only reload handoff.
+- [x] 2026-08-21: Gated production Worker publication and all exposed Worker APIs on current canonical-ready evidence.
+- [x] 2026-08-21: Connected canonical dialog, generic CRUD validation, ZIP, and Simulation routes.
+- [x] 2026-08-21: Removed legacy YamlDB writer exports, folder ZIP helpers, Simulation serializer/subpath, and YAML plugin preload reachability.
+- [x] 2026-08-21: Updated the English and Japanese package READMEs.
+- [ ] Run the complete #1340 verification matrix.
+- [ ] Record verification in #1340 and prepare the single-purpose PR after separate publication approval.
+
+## Surprises and discoveries
+
+- The fixed coordinator correctly persists `allowed | revoked | rejected`, but an existing `initializeOriginCoordinator()` call turns every rejected HELLO into a generic `HELLO_REJECTED`. The application therefore cannot currently distinguish the expected post-activation `LEGACY_YAML_ACCESS_REVOKED` state from terminal rejection.
+- The dormant activation reducer can issue `canonical-ready` only after an in-memory same-runtime v1-to-v2 transition. Its provenance is intentionally not serializable, so a successful reload loses the ready state and needs a separately specified strict constructor.
+- The winning window's owned-client creation gate is monotonically revoked during quiescence. It cannot safely create a new SharedWorker after migration. A new JavaScript runtime is therefore required after successful commit and initialization.
+- `CoreDB` registers only version 1. This matches the pre-activation contract and means version 2 can still be introduced exclusively by #1340.
+- At the plan start, the YAML plugin preload opened YamlDB in the application window before runtime creation. The implementation removes that production preload rather than repurposing it as an activation gate.
+- The generic TreeNode updater already sends draft metadata and draft data in one `updateTreeNode()` request. The canonical dialog connector can validate the exact YAML input and delegate to one internal updater operation without adding a second write.
+- A genuinely fresh installation has no CoreDB. Treating missing as a terminal preflight error would permanently block new users, so only the sole allowed/quiesced executor receives a distinct oldVersion-0 fresh-v2 path. Revoked successor inspection still treats missing as terminal.
+
+## Decision log
+
+- Decision: Keep the accepted coordinator script and its static import graph byte-for-byte unchanged.
+  Rationale: #1338 acceptance fixed this artifact through activation completion. The missing successor behavior belongs in activation-aware application and runtime clients, not the Service Worker.
+  Date: 2026-08-21.
+
+- Decision: Use distinct Web Crypto UUIDs for every activation contender and let the coordinator's atomic `allowed` to `revoked/quiescing` transition select the only executor.
+  Rationale: A shared fixed identity lets two already-accepted windows observe the same ready result and both start preflight. Distinct identities make every loser receive an identity mismatch before storage access.
+  Date: 2026-08-21.
+
+- Decision: Use a success-only reload after the winner has reached canonical-ready, rather than resetting the winner's local owned-client gate.
+  Rationale: The local revocation gate is deliberately monotonic and must not be reset. Reload after full quiescence, commit, and initialization is a runtime handoff, not a retry or stale-client bypass.
+  Date: 2026-08-21.
+
+- Decision: A revoked successor boot requires exact CoreDB v2 topology, exact journal schema, a full canonical-only raw YAML validation pass, and current initialization.
+  Rationale: Version 2 alone is insufficient evidence, and a journal row count cannot be required because a fully canonical or empty v1 database can legitimately migrate with zero journal rows.
+  Date: 2026-08-21.
+
+- Decision: Do not implement interrupted-v1 automatic recovery in #1340.
+  Rationale: A new target open would violate the no-retry and same-open-request contract. Interrupted activation stays terminal until a separately specified and approved recovery release exists.
+  Date: 2026-08-21.
+
+- Decision: Treat a genuinely missing CoreDB as a distinct same-activation fresh-v2 creation, not
+  as an empty v1 migration or a revoked successor recovery.
+  Rationale: New installations otherwise stop permanently at `CORE_DB_NOT_FOUND`. The sole
+  quiescence winner can safely create exact v2 with one oldVersion-0 target request, while a
+  successor missing the database still indicates corruption or deletion and remains terminal.
+  Date: 2026-08-21.
+
+## Context and orientation
+
+The fixed origin coordinator lives in `app/src/origin-coordinator/originCoordinator.worker.ts`, `OriginCoordinatorServiceWorker.ts`, `originCoordinatorStateDbUtils.ts`, and `originCoordinatorValidatorUtils.ts`, together with `packages/origin-coordinator`. Those files form the accepted coordinator graph and are read-only for this issue. Application-side coordinator initialization is in `app/src/origin-coordinator/initializeOriginCoordinator.ts` and may change because it is not part of the Service Worker static graph.
+
+At the plan start, the application bootstrap in `app/src/entry.client.tsx` accepted only an allowed HELLO and then initialized browser globals, plugin worker preloads, and the router. Worker clients are created from `app/src/worker-runtime/clientUtils.ts`; SharedWorker and dedicated Worker entries live beside it. `workerBootstrapUtils.ts` constructs `WorkerService`, which opens `CoreDB` from `packages/runtime-worker/src/services/CoreDB.ts` and exposes the generic Worker facade.
+
+The strict dormant artifacts available at the plan start were:
+
+- `@hierarchidb/yaml-api/migration` plans v1 raw payload migration and journal values.
+- `@hierarchidb/yaml-api/validation` validates canonical payloads.
+- `@hierarchidb/runtime-worker/yaml-storage-activation` issues activation states and access decisions.
+- `@hierarchidb/runtime-worker/yaml-storage-legacy-fence` models quiescence evidence.
+- `@hierarchidb/yaml-plugin/canonical-writer` validates one dialog write and calls one injected port.
+- `@hierarchidb/folder-plugin/canonical-yaml-zip-plan` plans canonical ZIP import/export.
+- the pre-activation `@hierarchidb/simulation-workflow/canonical-yaml-snapshot` consumer, since replaced by the production package-root `SimulationWorkflow`.
+
+The implementation removes the legacy reachability that existed in the YAML plugin preload, `@hierarchidb/yaml-store` mutation exports, folder-plugin root YAML helpers, and the earlier SimulationWorkflow root implementation.
+
+## Implementation plan
+
+### Milestone 1: strict canonical successor state
+
+Extend the activation state types with an explicit readiness proof. Forward activation produces `same-activation-upgrade`; a new strict post-activation constructor produces `post-activation-boot`. The constructor accepts `unknown`, validates exact own data properties without invoking accessors, requires a revoked/ready gate, equal positive safe observed and target versions, exact schema validation, canonical snapshot validation, successful current initialization, and a non-empty current open request ID. It issues a frozen provenance-bearing canonical-ready state. Any malformed or incomplete evidence returns a sanitized typed error and no state.
+
+Keep `getYamlStorageAccessDecision()` unchanged in authority: only an issued canonical-ready state allows canonical runtime operations, and every other state denies. Add property-based and table tests for extra fields, accessors, proxies, wrong versions, incomplete evidence, fabricated states, and both readiness proofs.
+
+### Milestone 2: CoreDB v2 activation connector
+
+Add a production-only runtime-worker subpath for the activation and successor inspection boundary. It must not enter the fixed coordinator graph. The connector will:
+
+1. Resolve the exact CoreDB name and inspect the existing database without registering v2.
+2. For initial activation, require observed version 1, exact v1 stores needed by CoreDB, and one readonly raw `nodes` snapshot.
+3. Select every exact-own `nodeType === "yaml-file"` record and call the existing migration planner with caller-supplied identifiers and a Web Crypto SHA-256 port.
+4. Retain the immutable raw snapshot and successful plan only in memory.
+5. Close the preflight connection and create exactly one CoreDB v2 open request.
+6. Register `yamlMigrationJournal` with `&[migrationId+nodeId+slot],[migrationId+fromCoreDbVersion+toCoreDbVersion]`.
+7. In the versionchange transaction, reread the full raw YAML cohort, compare every guarded field and slot to the preflight snapshot, then update all planned node slots and journal rows atomically. No digest, network, timer, or external promise runs inside the transaction.
+8. Abort the whole upgrade on any cohort, value, node-version, write, or journal mismatch.
+9. Initialize CoreDB after commit, validate the resulting raw canonical cohort, and advance the same activation state to canonical-ready.
+
+Normal CoreDB construction registers v2 but refuses an existing v1-to-v2 upgrade unless the activation connector supplies the validated plan. A missing database uses the same quiescence winner and open request to create exact v2 directly, then initializes and validates before readiness. A revoked successor never uses this path. `WorkerService.getSingleton()` must no longer be reachable from the allowed pre-activation bootstrap.
+
+For successor boot, inspect exact v2 version and IDB topology before constructing WorkerService. Validate the `yamlMigrationJournal` key path and cohort index, read every raw YAML node once, require the migration planner to classify every non-placeholder slot as already canonical and produce zero migrate entries, then initialize WorkerService and create the strict post-activation canonical-ready state.
+
+### Milestone 3: activation-aware application bootstrap
+
+Refactor application-side coordinator initialization to return a discriminated boot gate:
+
+- `activation-allowed` includes the existing coordinator client handle and installed bridge responder.
+- `canonical-revoked` carries only strict evidence that HELLO returned `LEGACY_YAML_ACCESS_REVOKED`.
+- every other rejection throws a stable terminal client error.
+
+When allowed, `entry.client.tsx` generates distinct activation and quiescence UUIDs, starts quiescence, and proceeds only for the winning identity and exact `ready-for-preflight`. It calls the activation connector without initializing browser globals, plugin preloads, router, WorkerService, or SharedWorker. After same-activation canonical-ready it closes the activation CoreDB connection and invokes an explicit success-only reload handoff.
+
+When revoked, the application starts the canonical-only Worker path. The Worker validates v2 and initializes before exposing Comlink. Only after the Worker reports an issued post-activation canonical-ready decision may the application initialize canonical browser globals and the router. It never calls the legacy YAML preload.
+
+Replace the current generic IndexedDB reset detection so activation-specific errors cannot match or render the reset control. Existing unrelated database recovery behavior remains unchanged.
+
+### Milestone 4: canonical production routes
+
+Connect the canonical writer inside `TreeNodeUpdaterService`. For `yaml-file`, public draft metadata/data split methods reject direct mutation. `updateTreeNode()` derives the exact canonical writer input from the one supplied draft request, invokes `writeYamlCanonicalDialogDraft()`, and lets its injected port call one internal unchecked updater operation. Both save and save-draft require exact filename, description, tags, subtype, schemaId, and content; they never auto-rename or merge a partial payload.
+
+Guard every production YAML query and mutation path with the same canonical-ready decision. Generic TreeNode creation permits only the explicitly specified temporary YAML placeholder or a complete canonical postimage. Update validates the complete resulting committed and draft slots before one transaction. Delete acts on CoreDB only. No path reads or writes YamlDB.
+
+Publish canonical folder ZIP connectors from the production folder route. Export obtains one authoritative CoreDB snapshot for the caller-selected committed or draft slot, validates node guards, then returns the deterministic archive. Import obtains the parent, sibling, and existing-ID snapshot, plans all nodes, and commits the issued plan through one CoreDB transaction port. The transaction rechecks every guard and either inserts all nodes plus the parent patch or inserts none.
+
+Replace the SimulationWorkflow root implementation with the canonical committed snapshot workflow and change `runSimulation()` to `Promise<void>`. Remove the legacy return payload and serializer dependency without adding an alias.
+
+### Milestone 5: remove the legacy production graph
+
+Remove `registerYamlWorkerStores` from the YAML plugin manifest and worker entry. Remove YamlDB mutation functions from the package root and delete production imports. Keep only the read-only/close boundary needed by #1341; do not delete the physical database.
+
+Remove `exportYamlNodesToSnapshot` and `importYamlNodesFromSnapshot` from the folder-plugin root, delete their production implementations when no test-only consumer remains, and replace the legacy round-trip tests with canonical ZIP/CoreDB connector tests. Remove the legacy Simulation serializer and update package dependencies and exports.
+
+Update English and Japanese package READMEs and the canonical specification in the same commits as their implementation decisions. Run the dependency and naming guards to prove that dormant/legacy imports no longer enter the production graph.
+
+## Concrete steps
+
+All commands run from `/Users/hiroya/WebstormProjects/hierarchidb-wt/single-canonical-activation`.
+
+1. Install the existing lockfile graph with `pnpm install --frozen-lockfile` if the worktree has no usable modules.
+2. Implement Milestone 1 and run the runtime-worker activation unit tests and filtered typecheck.
+3. Implement Milestone 2 with fake-indexeddb tests covering v1 success, blocked/resume identity, raw mismatch, journal failure, all-canonical no-op, empty database, v2 successor success, and invalid v2 rejection.
+4. Implement Milestone 3 and run app origin-coordinator/bootstrap/worker-entry unit tests. Verify the fixed coordinator graph has no diff from accepted source `f297cdc70a4e1665e1d26d4d931563af1e05bcd9`.
+5. Implement Milestone 4 package by package, with one focused test suite after each connector.
+6. Implement Milestone 5, regenerate plugin registry, and run reachability searches before the full matrix.
+7. Run every verification command from #1340, inspect generated changes, and record exit codes and sanitized results in the Issue after separate external-write approval.
+
+## Validation and acceptance
+
+Focused validation must establish these observable behaviors:
+
+- Two distinct activation attempts produce exactly one storage executor; the loser performs zero CoreDB reads and writes.
+- Quiescence failure performs zero preflight reads. Preflight failure performs zero v2 open requests. A blocked open keeps the same request and publishes no API.
+- The versionchange transaction writes every planned node and journal row or none. A changed node, changed slot, extra/missing YAML node, or journal failure aborts the upgrade.
+- Same-activation canonical-ready occurs only after commit and initialization. Success-only handoff is called exactly once and only from that state.
+- Revoked + exact canonical v2 + current initialization publishes canonical access. Revoked + v1, invalid/future version, invalid schema, legacy slot, invalid canonical slot, or failed initialization publishes nothing.
+- Dialog save and save-draft perform one updater request. Invalid input performs zero writes.
+- ZIP import creates all CoreDB nodes and the parent patch in one transaction or none. ZIP export and Simulation read committed canonical CoreDB nodes only.
+- No production import reaches a YamlDB writer, legacy folder ZIP serializer, or legacy Simulation serializer.
+- Fixed coordinator files and their static imports are unchanged from the accepted source.
+
+The final command matrix is the one recorded in #1340. Every command must exit zero. `git diff --check` must be clean, and no generated JavaScript or source map may appear under a `src` directory.
+
+## Idempotence and recovery
+
+Read-only inspection and canonical successor validation are safe to rerun on an already canonical v2 database. They perform no migration writes and do not use journal row count as readiness proof.
+
+The initial v1-to-v2 target open is deliberately not retryable. A failed or aborted versionchange leaves the upgrade uncommitted, while the durable coordinator remains revoked. The application does not restore allowed state, reopen v1, delete databases, or try a second open. This terminal condition requires a separate reviewed recovery release.
+
+Once v2 commits, exact or release inverse migration can only run as a newer CoreDB version under the rollback contract. The release never downgrades the IndexedDB version. YamlDB remains untouched for the #1341 recovery window.
+
+## Artifacts and notes
+
+The accepted stable coordinator evidence is:
+
+- source: `f297cdc70a4e1665e1d26d4d931563af1e05bcd9`
+- deployment: `e94912deb29e3cc44278b21c4128ed377d1b0ed6`
+- coordinator SHA-256: `674f8172afabfec3b13cf91a3491d8baa99a2b64c6f2d626952766b11b2ad9d4`
+
+The production CoreDB inventory accepted before activation reported `status=accepted`, `invalidRecordCount=0`, and `errorCount=0`. It is historical gate evidence only; activation still rereads and validates the current post-quiescence raw snapshot.
+
+## Interfaces introduced or changed
+
+The exact names may change only if the naming audit requires a more specific primary-export match; their responsibilities may not broaden.
+
+- `createYamlStoragePostActivationReady(input: unknown)` in `@hierarchidb/runtime-worker/yaml-storage-activation` issues a strict post-activation canonical-ready state or a sanitized input error.
+- `createYamlStorageFreshActivation(input)` issues currentVersion-zero state only after authoritative missing-database discovery; its ready proof is `same-activation-fresh-create`.
+- `activateYamlStorageCoreDb(input)` in a production-only runtime-worker subpath performs either the one v1-to-v2 plan/open/upgrade/initialize sequence or the distinct one-request fresh-v2 creation and returns the issued same-activation state.
+- `inspectCanonicalYamlStorageCoreDb(input)` performs exact v2 schema and canonical raw snapshot validation without writes.
+- The application-side coordinator initializer returns `activation-allowed | canonical-revoked` instead of erasing the HELLO rejection reason.
+- The production Worker bootstrap returns or retains an issued `YamlStorageCanonicalReadyState` and uses it to guard its Comlink facade.
+- `SimulationWorkflow.runSimulation()` changes from `Promise<string>` to `Promise<void>` and uses only the canonical committed snapshot implementation.
+
+No compatibility alias, dual writer, feature flag for storage authority, default subtype, read fallback, or retry interface is introduced.
+
+## Outcomes and retrospective
+
+Complete this section after implementation and verification. Record what shipped, any deliberate deviation from this plan, the exact validation summary, and remaining follow-up work in #1341 or later Epic lanes.

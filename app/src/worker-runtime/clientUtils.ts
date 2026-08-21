@@ -50,6 +50,7 @@ let rawSharedWorkerPort: MessagePort | null = null;
 let rawSharedWorkerUrl: string | null = null;
 let workerInitCompleted = false;
 let legacyWorkerAccessRevoked = false;
+let canonicalWorkerBootConfigured = false;
 let unregisterOwnedWorkerHandle: (() => void) | null = null;
 
 const logInitWorkerWarning = (message: string, error: unknown): void => {
@@ -72,17 +73,26 @@ function resolveSharedWorkerUrl(): URL {
     if (typeof window !== 'undefined') {
       const url = new URL(sharedWorkerScriptUrl, window.location.origin);
       url.searchParams.set('appVersion', APP_VERSION);
+      if (canonicalWorkerBootConfigured) {
+        url.searchParams.set('yamlStorageGate', 'revoked-ready-for-preflight');
+      }
       return url;
     }
     const globalScope = globalThis as { location?: Location };
     if (globalScope.location?.origin) {
       const url = new URL(sharedWorkerScriptUrl, globalScope.location.origin);
       url.searchParams.set('appVersion', APP_VERSION);
+      if (canonicalWorkerBootConfigured) {
+        url.searchParams.set('yamlStorageGate', 'revoked-ready-for-preflight');
+      }
       return url;
     }
   }
   const fallbackUrl = new URL(/* @vite-ignore */ './shared-worker.js', import.meta.url);
   fallbackUrl.searchParams.set('appVersion', APP_VERSION);
+  if (canonicalWorkerBootConfigured) {
+    fallbackUrl.searchParams.set('yamlStorageGate', 'revoked-ready-for-preflight');
+  }
   return fallbackUrl;
 }
 
@@ -205,6 +215,13 @@ const assertLegacyWorkerAccessAllowed = (): void => {
 export function revokeRuntimeWorkerAccessAndClose(): void {
   legacyWorkerAccessRevoked = true;
   cleanupWorkerHandles();
+}
+
+export function configureCanonicalRuntimeWorkerBoot(): void {
+  if (legacyWorkerAccessRevoked || workerInstance !== null || rawSharedWorkerPort !== null) {
+    throw new Error('canonical-worker-boot-configuration-too-late');
+  }
+  canonicalWorkerBootConfigured = true;
 }
 
 export function relayOriginCoordinatorSharedWorkerRequest(

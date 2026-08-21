@@ -1,6 +1,6 @@
 # @hierarchidb/yaml-plugin
 
-最終更新: 2026-08-20
+最終更新: 2026-08-21
 
 HierarchiDB の YAML ファイルノードプラグイン。IDE-GSM 統合のための YAML 設定ファイルをツリーノードとして管理する。JSON Schema ベースのスキーマ選択・バリデーション付きエディタを提供し、YAML コンテンツの構造化された編集を可能にする。
 
@@ -44,16 +44,7 @@ import { YamlPluginIcon } from '@hierarchidb/yaml-plugin/icon';
 
 ## Worker 層
 
-現行実装では`registerYamlWorkerStores`が`preload`として登録され、`@hierarchidb/yaml-store`のlegacy YamlDB v1 singletonを初期化する。
-
-```typescript
-// plugin-manifest.ts
-worker: {
-  preload: ['registerYamlWorkerStores'],
-}
-```
-
-このpreloadは一時的なlegacy runtime pathであり、YAML storage authorityではない。後続Issueでlegacy rowをinventory / recoveryしてからruntime pathを除去する。既存YamlDB mutation helperはlegacy専用であり、canonical dialog、ZIP、simulation、Step 4 pathから呼び出してはならない。現行の[folder YAML import](../folder-plugin/README_ja.md#legacy-yaml-snapshot-boundary)はnon-canonicalであり、cutoverをblockedとする。新しいCRUD caller、YamlDB write、dual-write、fallback readを追加してはならない。
+plugin manifestはstorage preloadを持たず、worker entryもYamlDBを初期化しない。runtime YAML persistenceはorigin coordinatorとCoreDB activationがcanonical-ready evidenceを公開した後のCoreDBだけが担う。
 
 ## Storage authority
 
@@ -67,9 +58,9 @@ worker: {
 
 CoreDBとYamlDBは別IndexedDBであるため、CoreDB migrationとYamlDB inventory/recoveryは別atomic boundaryとする。missing name、空schema ID、unknown tuple、conflictはerrorとし、plugin側で推測または補完しない。
 
-### 現行legacy entity shape
+### Dialog draft input
 
-全consumerを協調してcutoverするcanonical writer / CoreDB migration Issueが完了するまで、sourceは次のlegacy型を使用する。これは現行コードの説明であり、正規storage契約を上書きしない。
+dialog編集中のUI draft fieldはpartialになり得る。
 
 ```typescript
 // YamlFileNodeData (from @hierarchidb/yaml-api)
@@ -83,13 +74,13 @@ interface YamlFileNodeData {
 type YamlDraft = Partial<YamlFileNodeData>;
 ```
 
-canonical writerは`name`を対応metadata slotへ移し、registryで検証した明示的な`subtype`を追加し、不完全または不一致なrecordを保存前に拒否しなければならない。
+永続化前に`TreeNodeUpdaterService`がexact writer inputを構築する。canonical writerは`name`を`draftMetadata.name`だけへ保存し、registryで検証した`{ subtype, schemaId, content }`を`draftData`だけへ保存する。不完全または不一致なrecordはwriteせず拒否する。
 
-### Dormant canonical writer
+### Canonical writer
 
 独立subpath `@hierarchidb/yaml-plugin/canonical-writer`は、exactなdialog write inputを検証し、caller注入のwrite portへatomic-shaped requestを1回だけ送る。filename / payload検証は`@hierarchidb/yaml-api/validation`だけへ委譲し、filenameは`draftMetadata.name`だけ、検証済み`{ subtype, schemaId, content }`は`draftData`へ設定する。requestの`onNameConflict`は`error`固定とし、validation failureまたはport failure時にretry、auto-rename、overwrite、legacy writer fallbackを行わない。
 
-このentry pointはdormantである。package root、UI、worker、production dialog、TreeNode updater、CoreDB、YamlDB、plugin preloadからimportまたは実行しない。single activation変更まで、現行3-step UI、legacy draft shape、manifest、10件のruntime template selectorを変更しない。[canonical Step 4契約](../../docs/yaml-plugin-ide-gsm-step4-spec.md#dormant-canonical-dialog-writer)を参照する。
+production `TreeNodeUpdaterService`はYAML dialogのsave / save-draftでこのwriterを呼び、1回のinternal CoreDB updateを実行する。generic CoreDB writeも完全なYAML postimageを検証するため、別mutation APIからlegacyまたはpartial payloadを保存できない。[canonical Step 4契約](../../docs/yaml-plugin-ide-gsm-step4-spec.md)を参照する。
 
 ## 依存プラグイン
 
@@ -163,7 +154,7 @@ src/
 │   └── types/
 │       └── YamlEntity.ts     # YamlDraft type
 ├── canonical-writer/
-│   ├── index.ts                              # Dormant writer entry point
+│   ├── index.ts                              # Strict writer entry point
 │   ├── writeYamlCanonicalDialogDraft.ts      # Strict validation and one port call
 │   └── yamlCanonicalDialogWriterTypes.ts     # Public input/request/result types
 ├── icon/
@@ -178,8 +169,7 @@ src/
 │           ├── YamlSchemaSelectionStep.tsx # Schema selection step
 │           └── YamlSchemaEditorStep.tsx    # Schema editor step (RJSF)
 └── worker/
-    ├── index.ts                        # Worker entry point
-    └── registerYamlWorkerStores.ts     # YamlDB singleton initialization
+    └── index.ts                        # Worker-safe canonical writer export
 ```
 
 ## エクスポートエントリポイント
@@ -189,8 +179,8 @@ src/
 | `@hierarchidb/yaml-plugin` | PluginManifest、YAML_NODE_TYPE、YAML_PLUGIN_ID |
 | `@hierarchidb/yaml-plugin/ui` | UI コンポーネント（3 ステップ） |
 | `@hierarchidb/yaml-plugin/icon` | YamlPluginIcon |
-| `@hierarchidb/yaml-plugin/worker` | registerYamlWorkerStores |
-| `@hierarchidb/yaml-plugin/canonical-writer` | Dormant strict canonical dialog writer |
+| `@hierarchidb/yaml-plugin/worker` | Worker-safe canonical writer export |
+| `@hierarchidb/yaml-plugin/canonical-writer` | Strict canonical dialog writer |
 
 ## 関連プラグイン・パッケージ
 
@@ -199,7 +189,6 @@ src/
 - [`@hierarchidb/core-types`](../../packages/core-types/) — NodeType 等の共有型定義
 - [`@hierarchidb/plugin-base`](../../packages/plugin-base/) — PluginManifest、PluginStepRegistry
 - [`@hierarchidb/yaml-api`](../../packages/yaml-api/) — YamlFileNodeData 型定義
-- [`@hierarchidb/yaml-store`](../../packages/yaml-store/) — legacy YamlDB v1 recovery boundary（authoritative runtime storeではない）
 - [`正規storage契約`](../../docs/yaml-plugin-ide-gsm-step4-spec.md) — CoreDB authority、migration、recovery、rollback規則
 
 ### 親プラグイン

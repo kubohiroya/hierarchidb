@@ -122,7 +122,9 @@ describe('initializeOriginCoordinator', () => {
     vi.stubGlobal('navigator', { serviceWorker: harness.serviceWorkerContainer });
     const { initializeOriginCoordinator } = await import('../initializeOriginCoordinator.js');
 
-    const handle = await initializeOriginCoordinator(createOptions());
+    const gate = await initializeOriginCoordinator(createOptions());
+    if (gate.status !== 'activation-allowed') throw new Error('activation-gate-missing');
+    const handle = gate.coordinator;
     const readiness = await handle.getReadiness({ requestId: 'request-1', timeoutMs: 100 });
 
     expect(harness.register).toHaveBeenCalledWith(
@@ -175,7 +177,9 @@ describe('initializeOriginCoordinator', () => {
     });
     vi.stubGlobal('navigator', { serviceWorker: harness.serviceWorkerContainer });
     const { initializeOriginCoordinator } = await import('../initializeOriginCoordinator.js');
-    const handle = await initializeOriginCoordinator(createOptions());
+    const gate = await initializeOriginCoordinator(createOptions());
+    if (gate.status !== 'activation-allowed') throw new Error('activation-gate-missing');
+    const handle = gate.coordinator;
 
     await expect(
       handle.startQuiescence({
@@ -214,6 +218,28 @@ describe('initializeOriginCoordinator', () => {
 
     await expect(initializeOriginCoordinator(createOptions())).rejects.toMatchObject({
       code: 'HELLO_REJECTED',
+    });
+    expect(harness.order).toEqual(['register', 'HDB_COORDINATOR_HELLO']);
+    expect(harness.addEventListener).not.toHaveBeenCalled();
+  });
+
+  it('returns strict canonical successor evidence for the durable revoked gate', async () => {
+    const harness = createServiceWorkerHarness((_message, port) => {
+      port.postMessage({
+        type: 'HDB_COORDINATOR_HELLO_RESULT',
+        protocolVersion: ORIGIN_COORDINATOR_PROTOCOL_VERSION,
+        status: 'rejected',
+        code: 'LEGACY_YAML_ACCESS_REVOKED',
+      });
+      port.close();
+    });
+    vi.stubGlobal('navigator', { serviceWorker: harness.serviceWorkerContainer });
+    const { initializeOriginCoordinator } = await import('../initializeOriginCoordinator.js');
+
+    await expect(initializeOriginCoordinator(createOptions())).resolves.toEqual({
+      status: 'canonical-revoked',
+      coordinatorGate: 'revoked-ready-for-preflight',
+      helloCode: 'LEGACY_YAML_ACCESS_REVOKED',
     });
     expect(harness.order).toEqual(['register', 'HDB_COORDINATOR_HELLO']);
     expect(harness.addEventListener).not.toHaveBeenCalled();

@@ -1,3 +1,5 @@
+import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
+import type { NodeTagAssociation, TagAssociationScope, TagEntity } from '@hierarchidb/tag-api';
 import type {
   DialogUIState,
   ListChildrenOptions,
@@ -7,16 +9,37 @@ import type {
   TreeNode,
   TreeRootState,
 } from '@hierarchidb/tree-api';
-import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
-import type {
-  NodeTagAssociation,
-  TagAssociationScope,
-  TagEntity,
-} from '@hierarchidb/tag-api';
 import { getDBName, SingletonMixin } from '@hierarchidb/util';
+import type { YamlCoreDbMigrationJournalValue } from '@hierarchidb/yaml-api/migration';
 import type { BulkError } from 'dexie';
 import { Dexie, type Table } from 'dexie';
 import { Subject } from 'rxjs';
+import { assertYamlCanonicalTreeNodePostimage } from './validateYamlCanonicalTreeNodePostimage.js';
+
+export const CORE_DB_CANONICAL_VERSION = 2 as const;
+export const YAML_MIGRATION_JOURNAL_STORE_NAME = 'yamlMigrationJournal' as const;
+export const YAML_MIGRATION_JOURNAL_SCHEMA =
+  '&[migrationId+nodeId+slot],[migrationId+fromCoreDbVersion+toCoreDbVersion]' as const;
+
+export const CORE_DB_V1_STORES = Object.freeze({
+  trees: '&id, rootId, archiveRootId, superRootId',
+  nodes: [
+    '&id',
+    'parentId',
+    '&[parentId+metadata.name]',
+    '[parentId+updatedAt]',
+    'depth',
+    '*references',
+  ].join(', '),
+  rootStates: '&rootNodeId',
+  tags: '&id, name, createdAt',
+  tagAssociations: '&id, nodeId, tagId, scope, createdAt, &[nodeId+tagId+scope]',
+});
+
+export const CORE_DB_V2_STORES = Object.freeze({
+  ...CORE_DB_V1_STORES,
+  [YAML_MIGRATION_JOURNAL_STORE_NAME]: YAML_MIGRATION_JOURNAL_SCHEMA,
+});
 
 const normalizeTreeNodeForPersist = (node: TreeNode): TreeNode => {
   const {
@@ -88,12 +111,23 @@ const normalizeTreeNodeForPersist = (node: TreeNode): TreeNode => {
   };
 };
 
+const readNodeType = (value: object): unknown => {
+  const descriptor = Object.getOwnPropertyDescriptor(value, 'nodeType');
+  return descriptor !== undefined && Object.hasOwn(descriptor, 'value')
+    ? descriptor.value
+    : undefined;
+};
+
 export class CoreDB extends Dexie {
   trees!: Table<Tree, TreeId>;
   nodes!: Table<TreeNode<NodePayload>, NodeId>;
   rootStates!: Table<TreeRootState, NodeId>;
   tags!: Table<TagEntity, TagEntity['id']>;
   tagAssociations!: Table<NodeTagAssociation, NodeTagAssociation['id']>;
+  yamlMigrationJournal!: Table<
+    YamlCoreDbMigrationJournalValue,
+    [string, string, YamlCoreDbMigrationJournalValue['slot']]
+  >;
 
   //  Subject
   public changeSubject = new Subject<TreeChangeEvent>();
@@ -105,7 +139,9 @@ export class CoreDB extends Dexie {
    */
   async runInTx<T>(
     mode: 'r' | 'rw',
-    tableNames: Array<'trees' | 'nodes' | 'rootStates' | 'tags' | 'tagAssociations'>,
+    tableNames: Array<
+      'trees' | 'nodes' | 'rootStates' | 'tags' | 'tagAssociations' | 'yamlMigrationJournal'
+    >,
     fn: () => Promise<T>
   ): Promise<T> {
     const tableMap = {
@@ -114,6 +150,7 @@ export class CoreDB extends Dexie {
       rootStates: this.rootStates,
       tags: this.tags,
       tagAssociations: this.tagAssociations,
+      yamlMigrationJournal: this.yamlMigrationJournal,
     } as const;
 
     const tables = tableNames
@@ -127,7 +164,7 @@ export class CoreDB extends Dexie {
 
   static async getSingleton(_name?: string): Promise<CoreDB> {
     return SingletonMixin.getSingleton('CoreDB', async () => {
-      const instance = new CoreDB(getDBName('core'));
+      const instance = new CoreDB(getDBName('core'), true);
       await instance.open();
       await instance.initialize();
       return instance;
@@ -135,24 +172,67 @@ export class CoreDB extends Dexie {
   }
 
   static createForTest(name: string): CoreDB {
-    return new CoreDB(name);
+    return new CoreDB(name, false);
   }
 
-  private constructor(name: string) {
+  static createForCanonicalRuntime(name: string): CoreDB {
+    return new CoreDB(name, true);
+  }
+
+  private constructor(name: string, enforceCanonicalYamlWrites: boolean) {
     super(name);
-    this.version(1).stores({
-      trees: '&id, rootId, archiveRootId, superRootId',
-      nodes: [
-        '&id',
-        'parentId',
-        '&[parentId+metadata.name]',
-        '[parentId+updatedAt]',
-        'depth',
-        '*references',
-      ].join(', '),
-      rootStates: '&rootNodeId',
-      tags: '&id, name, createdAt',
-      tagAssociations: '&id, nodeId, tagId, scope, createdAt, &[nodeId+tagId+scope]',
+    this.version(1).stores(CORE_DB_V1_STORES);
+    this.version(CORE_DB_CANONICAL_VERSION)
+      .stores(CORE_DB_V2_STORES)
+      .upgrade(() => {
+        throw new Error('yaml-storage-activation-required');
+      });
+    if (enforceCanonicalYamlWrites) this.installCanonicalYamlWriteGuard();
+  }
+
+  private installCanonicalYamlWriteGuard(): void {
+    this.nodes.hook('creating', (_primaryKey, object) => {
+      if (object.nodeType === ('yaml-file' as NodeType)) {
+        assertYamlCanonicalTreeNodePostimage(object);
+      }
+    });
+    this.nodes.hook('updating', (modifications, _primaryKey, object) => {
+      const descriptors = Object.getOwnPropertyDescriptors(object);
+      if (
+        Reflect.ownKeys(object).some((key) => {
+          const descriptor = Object.getOwnPropertyDescriptor(object, key);
+          return descriptor === undefined || !Object.hasOwn(descriptor, 'value');
+        })
+      ) {
+        throw new Error('yaml-canonical-tree-node-postimage-required');
+      }
+      const postimage = Object.create(Object.getPrototypeOf(object), descriptors) as Record<
+        PropertyKey,
+        unknown
+      >;
+      for (const key of Reflect.ownKeys(modifications)) {
+        if (typeof key !== 'string' || key.includes('.')) {
+          if (object.nodeType === ('yaml-file' as NodeType)) {
+            throw new Error('yaml-canonical-tree-node-postimage-required');
+          }
+          continue;
+        }
+        const descriptor = Object.getOwnPropertyDescriptor(modifications, key);
+        if (descriptor === undefined || !Object.hasOwn(descriptor, 'value')) {
+          throw new Error('yaml-canonical-tree-node-postimage-required');
+        }
+        Object.defineProperty(postimage, key, {
+          configurable: true,
+          enumerable: true,
+          writable: true,
+          value: descriptor.value,
+        });
+      }
+      const nextNodeType = readNodeType(postimage);
+      if (object.nodeType === ('yaml-file' as NodeType) && nextNodeType !== 'yaml-file') {
+        throw new Error('yaml-canonical-tree-node-postimage-required');
+      }
+      if (nextNodeType === 'yaml-file') assertYamlCanonicalTreeNodePostimage(postimage);
     });
   }
 
@@ -169,12 +249,9 @@ export class CoreDB extends Dexie {
 
       const isEmpty = treesCount === 0 && nodesCount === 0 && rootStatesCount === 0;
 
-      // If database is partially initialized, clear it and start fresh
+      // Contract violations remain visible; initialization must never repair or clear user data.
       if (!isEmpty && (treesCount !== 2 || rootStatesCount !== 6)) {
-        console.warn('Database is in an inconsistent atoms. Clearing and reinitializing...');
-        await this.trees.clear();
-        await this.nodes.clear();
-        await this.rootStates.clear();
+        throw new Error('core-db-initialization-state-invalid');
       }
 
       type RootNodeId = NodeId;

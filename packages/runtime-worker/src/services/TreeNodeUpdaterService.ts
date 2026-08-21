@@ -28,6 +28,90 @@ import {
   updateTreeNodeDraftMetadata,
 } from './DraftTreeNodeOperations.js';
 
+interface YamlCanonicalDialogWriteRequest {
+  readonly nodeId: NodeId;
+  readonly mode: 'save-draft' | 'save';
+  readonly draftMetadata: Readonly<{
+    readonly name: string;
+    readonly description: string;
+    readonly tags: readonly string[];
+  }>;
+  readonly draftData: Readonly<Record<string, unknown>>;
+  readonly onNameConflict: 'error';
+}
+
+export type YamlCanonicalDialogWriter = (
+  input: unknown,
+  writePort: (request: YamlCanonicalDialogWriteRequest) => Promise<void>
+) => Promise<
+  Readonly<{ readonly ok: boolean; readonly error?: Readonly<{ readonly code: string }> }>
+>;
+
+function readOwnDataProperty(
+  value: object,
+  key: PropertyKey
+): Readonly<{ readonly ok: true; readonly value: unknown }> | Readonly<{ readonly ok: false }> {
+  try {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    return descriptor !== undefined && Object.hasOwn(descriptor, 'value')
+      ? Object.freeze({ ok: true, value: descriptor.value })
+      : Object.freeze({ ok: false });
+  } catch {
+    return Object.freeze({ ok: false });
+  }
+}
+
+function hasExactOwnKeys(value: unknown, expectedKeys: readonly string[]): value is object {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
+  try {
+    const prototype = Object.getPrototypeOf(value);
+    const ownKeys = Reflect.ownKeys(value);
+    return (
+      (prototype === Object.prototype || prototype === null) &&
+      ownKeys.length === expectedKeys.length &&
+      ownKeys.every((key) => typeof key === 'string' && expectedKeys.includes(key))
+    );
+  } catch {
+    return false;
+  }
+}
+
+function createYamlCanonicalDialogInput(
+  nodeId: NodeId,
+  request: CommitDraftRequest<TreeNodeData> | undefined
+): Readonly<Record<string, unknown>> | null {
+  if (!hasExactOwnKeys(request, ['draftMetadata', 'draftData', 'mode', 'onNameConflict'])) {
+    return null;
+  }
+  const draftMetadata = readOwnDataProperty(request, 'draftMetadata');
+  const draftData = readOwnDataProperty(request, 'draftData');
+  const mode = readOwnDataProperty(request, 'mode');
+  const onNameConflict = readOwnDataProperty(request, 'onNameConflict');
+  if (
+    !draftMetadata.ok ||
+    !draftData.ok ||
+    !mode.ok ||
+    !onNameConflict.ok ||
+    (mode.value !== 'save' && mode.value !== 'save-draft') ||
+    onNameConflict.value !== 'error' ||
+    !hasExactOwnKeys(draftMetadata.value, ['name', 'description', 'tags'])
+  ) {
+    return null;
+  }
+  const name = readOwnDataProperty(draftMetadata.value, 'name');
+  const description = readOwnDataProperty(draftMetadata.value, 'description');
+  const tags = readOwnDataProperty(draftMetadata.value, 'tags');
+  if (!name.ok || !description.ok || !tags.ok) return null;
+  return Object.freeze({
+    nodeId,
+    mode: mode.value,
+    filename: name.value,
+    description: description.value,
+    tags: tags.value,
+    payload: draftData.value,
+  });
+}
+
 /**
  * DraftService - minimal implementation backed by CoreDB TreeNodes.
  * Note: This service returns only serializable data. It does not expose ProxyMarked types.
@@ -36,7 +120,8 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
   constructor(
     private coreDB: CoreDB,
     _commandProcessor?: CommandProcessor,
-    private tagService?: TagAPI
+    private tagService?: TagAPI,
+    private yamlCanonicalDialogWriter?: YamlCanonicalDialogWriter
   ) { }
 
   private readonly defaultDialogUIState: DialogUIState = {
@@ -364,6 +449,10 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
     nodeId: NodeId,
     updater: Partial<TreeNodeMetadata> | null
   ): Promise<void> {
+    const node = await this.coreDB.nodes.get(nodeId);
+    if (node?.nodeType === 'yaml-file') {
+      throw new Error('yaml-canonical-dialog-update-required');
+    }
     await updateTreeNodeDraftMetadata(this.coreDB, nodeId, updater);
   }
 
@@ -371,6 +460,10 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
     nodeId: NodeId,
     updater: Partial<PeerEntity<TreeNodeData>>
   ): Promise<void> {
+    const node = await this.coreDB.nodes.get(nodeId);
+    if (node?.nodeType === 'yaml-file') {
+      throw new Error('yaml-canonical-dialog-update-required');
+    }
     await updateTreeNodeDraftData(this.coreDB, nodeId, updater);
   }
 
@@ -386,6 +479,45 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
   }
 
   async updateTreeNode(
+    draftId: NodeId,
+    request?: CommitDraftRequest<TreeNodeData>
+  ): Promise<CommitResult> {
+    const node = await this.coreDB.nodes.get(draftId);
+    if (node?.nodeType === 'yaml-file') {
+      const input = createYamlCanonicalDialogInput(draftId, request);
+      if (input === null || this.yamlCanonicalDialogWriter === undefined) {
+        throw new Error('yaml-canonical-dialog-write-rejected:INVALID_INPUT');
+      }
+      let commitResult: CommitResult | null = null;
+      const writerResult = await this.yamlCanonicalDialogWriter(input, async (canonicalRequest) => {
+        if (canonicalRequest.nodeId !== draftId) {
+          throw new Error('yaml-canonical-dialog-node-id-mismatch');
+        }
+        commitResult = await this.updateTreeNodeUnchecked(draftId, {
+          mode: canonicalRequest.mode,
+          draftMetadata: {
+            name: canonicalRequest.draftMetadata.name,
+            description: canonicalRequest.draftMetadata.description,
+            tags: [...canonicalRequest.draftMetadata.tags],
+          },
+          draftData: canonicalRequest.draftData,
+          onNameConflict: canonicalRequest.onNameConflict,
+        });
+      });
+      if (!writerResult.ok) {
+        throw new Error(
+          `yaml-canonical-dialog-write-rejected:${writerResult.error?.code ?? 'UNKNOWN'}`
+        );
+      }
+      if (commitResult === null) {
+        throw new Error('yaml-canonical-dialog-write-rejected:WRITE_PORT_FAILED');
+      }
+      return commitResult;
+    }
+    return await this.updateTreeNodeUnchecked(draftId, request);
+  }
+
+  private async updateTreeNodeUnchecked(
     draftId: NodeId,
     request?: CommitDraftRequest<TreeNodeData>
   ): Promise<CommitResult> {

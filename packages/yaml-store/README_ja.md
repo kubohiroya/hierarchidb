@@ -1,31 +1,22 @@
 # @hierarchidb/yaml-store
 
-最終更新: 2026-08-20
+最終更新: 2026-08-21
 
-現行のlegacy Dexie-based YamlDB v1とCRUD helperを提供するpackage。YAML domain dataのauthoritative storeではない。
+別途reviewするrecovery / retirement作業のため、frozenなlegacy Dexie-based YamlDB v1を保持するpackageである。authoritative runtime storeではない。
 
-## Storage authority
+## Production boundary
 
 正規契約は[`docs/yaml-plugin-ide-gsm-step4-spec.md`](../../docs/yaml-plugin-ide-gsm-step4-spec.md)で定義する。
 
 - CoreDB `TreeNode.metadata/data`がcommitted YAML stateを保持する。
 - CoreDB `TreeNode.draftMetadata/draftData`がdraft YAML stateを保持する。
-- YamlDB v1はfrozenかつnon-authoritativeなlegacy recovery sourceであり、cacheまたはdual-write先として使用しない。
-- CoreDBとYamlDBは別IndexedDBであり、1つのtransactionに含められない。CoreDB migrationとYamlDB inventory/recoveryは別Issue・別atomic boundaryとする。
+- YamlDBをcache、dual-write先、fallback reader、CoreDB rollback sourceとして使用しない。
+- package rootはruntime database APIもmutation APIも公開しない。
+- `@hierarchidb/yaml-store/legacy-close`はactivation時の冪等なrevoke / close操作だけを公開する。
 
-後続のrecovery / retirement Issueが完了するまで、sourceには`getYamlDB()`とmutation helperが残る。これらはlegacy専用であり、canonical dialog、ZIP、simulation、Step 4 runtime pathから呼び出してはならない。現行の[folder YAML import](../../plugins/folder-plugin/README_ja.md#legacy-yaml-snapshot-boundary)はYamlDB-only rowへwriteするnon-canonical実装であり、cutoverをblockedとする。missing name、空schema ID、orphan row、conflictはread-only inventoryで報告し、自動推測、copy、merge、deleteを行わない。
+基礎となるv1実装は、#1341で明示的なrecovery boundaryを追加・reviewできるようにするためだけに残す。canonical dialog、ZIP、Simulation、Worker、Step 4 routeからはimportしない。物理削除は別の破壊的操作であり、single activation変更の対象外とする。
 
-YamlDBの物理削除は別の破壊的操作とする。本番CoreDB migrationから少なくとも30日、かつ後続stable releaseが1回受け入れ済みになるまでの長い方をrollback observation / recovery windowとし、YamlDBを変更しない。inverse CoreDB migrationはYamlDBをread / modifyせず、YamlDBをCoreDB rollback sourceとして使用しない。
-
-## 依存関係
-
-`@hierarchidb/core-types`, `@hierarchidb/util`, `@hierarchidb/yaml-api`
-
-## 関連パッケージ
-
-- [`@hierarchidb/yaml-api`](../yaml-api/) — YAML API 型定義
-- [`@hierarchidb/core-types`](../core-types/) — 共有型定義
-- [`正規storage契約`](../../docs/yaml-plugin-ide-gsm-step4-spec.md) — authority、migration、recovery、rollback規則
+YamlDBは本番CoreDB migrationから少なくとも30日、かつ後続stable releaseが1回受け入れ済みになるまでの長い方の期間、変更しない。missing name、空schema ID、orphan row、conflictはread-only inventoryで報告し、自動推測、copy、merge、deleteを行わない。
 
 ## ライセンス
 

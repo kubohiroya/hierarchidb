@@ -35,7 +35,6 @@ export default defineConfig({
         'packages/yaml-api/src/validation/index.ts'
       ),
       '@hierarchidb/yaml-api': path.resolve(workspaceRoot, 'packages/yaml-api/src/index.ts'),
-      '@hierarchidb/yaml-store': path.resolve(workspaceRoot, 'packages/yaml-store/src/index.ts'),
       '@hierarchidb/core-types': path.resolve(workspaceRoot, 'packages/core-types/src/index.ts'),
     },
   },

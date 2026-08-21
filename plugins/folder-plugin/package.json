@@ -42,15 +42,15 @@
       "import": "./dist/canonical-yaml-zip-plan/index.js",
       "default": "./dist/canonical-yaml-zip-plan/index.js"
     },
-    "./icon": {
-      "types": "./dist/icon/index.d.ts",
-      "import": "./dist/icon/index.js",
-      "default": "./dist/icon/index.js"
-    },
     "./worker": {
       "types": "./dist/worker/index.d.ts",
       "import": "./dist/worker/index.js",
       "default": "./dist/worker/index.js"
+    },
+    "./icon": {
+      "types": "./dist/icon/index.d.ts",
+      "import": "./dist/icon/index.js",
+      "default": "./dist/icon/index.js"
     },
     "./ui": {
       "types": "./dist/ui/index.d.ts",
@@ -59,7 +59,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/ui/index.ts src/icon/index.ts --config ../../tsdown.config.ts --splitting false --outDir dist && tsdown src/canonical-yaml-zip-codec/index.ts --config ../../tsdown.config.ts --splitting false --outDir dist/canonical-yaml-zip-codec && tsdown src/canonical-yaml-zip-plan/index.ts --config ../../tsdown.config.ts --splitting false --outDir dist/canonical-yaml-zip-plan",
+    "build": "tsdown src/index.ts src/ui/index.ts src/icon/index.ts --config ../../tsdown.config.ts --splitting false --outDir dist && tsdown src/canonical-yaml-zip-codec/index.ts --config ../../tsdown.config.ts --splitting false --outDir dist/canonical-yaml-zip-codec && tsdown src/canonical-yaml-zip-plan/index.ts --config ../../tsdown.config.ts --splitting false --outDir dist/canonical-yaml-zip-plan && tsdown src/worker/index.ts --config ../../tsdown.config.ts --splitting false --outDir dist/worker",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "test": "vitest run --passWithNoTests",
@@ -82,9 +82,8 @@
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/tag-api": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
+    "@hierarchidb/worker-api": "workspace:*",
     "@hierarchidb/components": "workspace:*",
-    "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/ui-worker-provider": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/tag": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
@@ -92,9 +91,7 @@
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
-    "jszip": "^3.10.1",
-    "@hierarchidb/yaml-api": "workspace:*",
-    "@hierarchidb/yaml-store": "workspace:*"
+    "@hierarchidb/yaml-api": "workspace:*"
   },
   "devDependencies": {
     "@mui/icons-material": "^7.3.6",
@@ -110,9 +107,8 @@
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/tag-api": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
+    "@hierarchidb/worker-api": "workspace:*",
     "@hierarchidb/components": "workspace:*",
-    "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/ui-worker-provider": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/tag": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
@@ -122,7 +118,6 @@
     "@hierarchidb/plugin-base": "workspace:*",
     "jszip": "^3.10.1",
     "@hierarchidb/yaml-api": "workspace:*",
-    "@hierarchidb/yaml-store": "workspace:*",
     "fast-check": "^4.5.3"
   },
   "keywords": [

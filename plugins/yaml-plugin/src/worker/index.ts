@@ -1,2 +1,1 @@
-export { registerYamlWorkerStores } from './registerYamlWorkerStores.js';
-export type { RegisterYamlWorkerStoresOptions } from './registerYamlWorkerStores.js';
+export { writeYamlCanonicalDialogDraft } from '../canonical-writer/writeYamlCanonicalDialogDraft.js';
