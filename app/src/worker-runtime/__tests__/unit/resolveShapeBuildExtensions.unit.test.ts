@@ -1,0 +1,34 @@
+import { describe, expect, it, vi } from 'vitest';
+import { resolveShapeBuildExtensions } from '../../resolveShapeBuildExtensions.js';
+
+const createExtensions = () => ({
+  setCorsProxyBaseURL: vi.fn(),
+  generateDownloadTaskPayloadsFromSelection: vi.fn(),
+});
+
+describe('resolveShapeBuildExtensions', () => {
+  it('accepts the exact Shape worker extension contract', () => {
+    const shapeBuildExtensions = createExtensions();
+    expect(resolveShapeBuildExtensions({ shapeBuildExtensions })).toBe(shapeBuildExtensions);
+  });
+
+  it('rejects a missing Shape proxy configuration method', () => {
+    expect(() =>
+      resolveShapeBuildExtensions({
+        shapeBuildExtensions: {
+          generateDownloadTaskPayloadsFromSelection: vi.fn(),
+        },
+      })
+    ).toThrow('shapeBuildExtensions.setCorsProxyBaseURL must be a function');
+  });
+
+  it('rejects a missing Shape payload generation method', () => {
+    expect(() =>
+      resolveShapeBuildExtensions({
+        shapeBuildExtensions: {
+          setCorsProxyBaseURL: vi.fn(),
+        },
+      })
+    ).toThrow('shapeBuildExtensions.generateDownloadTaskPayloadsFromSelection must be a function');
+  });
+});

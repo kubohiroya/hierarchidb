@@ -1,13 +1,17 @@
-import type { NodeId } from '@hierarchidb/core-types';
 import {
-  DexieChunkStore,
-  type ChunkStoreMetadata,
   type ChunkStoreDeserializer,
   type ChunkStoreEntry,
   type ChunkStoreFetchOptions,
+  type ChunkStoreMetadata,
   type ChunkStoreSerializer,
+  DexieChunkStore,
 } from '@hierarchidb/chunk-store';
-import { FetchNetworkPort, type FetchNetworkPortOptions, getCorsProxyBaseURL } from '@hierarchidb/download';
+import type { NodeId } from '@hierarchidb/core-types';
+import {
+  FetchNetworkPort,
+  type FetchNetworkPortOptions,
+  getCorsProxyBaseURL,
+} from '@hierarchidb/download';
 import { sleep } from '@hierarchidb/util';
 import { getShapeChunkStoreDatabaseName } from './initializeShapeChunkStore.js';
 
@@ -15,6 +19,7 @@ const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
 let sharedNet: FetchNetworkPort | null = null;
+let sharedNetCorsProxyBaseURL: string | undefined;
 
 // Auth is handled inside FetchNetworkPort via @hierarchidb/download smartFetch → AuthService.
 
@@ -29,8 +34,10 @@ export const createShapeNetworkPort = (options: FetchNetworkPortOptions = {}): F
 };
 
 const getShapeNetworkPort = (): FetchNetworkPort => {
-  if (sharedNet) return sharedNet;
+  const corsProxyBaseURL = getCorsProxyBaseURL() || undefined;
+  if (sharedNet && sharedNetCorsProxyBaseURL === corsProxyBaseURL) return sharedNet;
   sharedNet = createShapeNetworkPort();
+  sharedNetCorsProxyBaseURL = corsProxyBaseURL;
   return sharedNet;
 };
 

@@ -60,6 +60,10 @@ import { pluginDefinitions as staticPluginDefinitions } from '~/plugin-loaders/i
 import { pluginWorkerLoaders } from '~/plugin-loaders/workerLoaderUtils';
 import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import { resolveCanonicalPluginBuildAPI } from './resolveCanonicalPluginBuildAPI.js';
+import {
+  resolveShapeBuildExtensions,
+  type ShapeDownloadTaskPayload,
+} from './resolveShapeBuildExtensions.js';
 
 /** Runtime export metadata (subset consumed during bootstrap). */
 type RuntimeExportEntry = {
@@ -75,22 +79,6 @@ type ManualPluginSelf = typeof self & {
 
 type WorkerMessageTarget = {
   postMessage?: (msg: unknown) => void;
-};
-
-type ShapeDownloadTaskPayload = {
-  url: string;
-  countryCode: string;
-  countryName?: string;
-  adminLevel: number;
-  dataSource?: ShapeDataSourceName;
-};
-
-type ShapeBuildExtensions = {
-  generateDownloadTaskPayloadsFromSelection?: (
-    nodeId: NodeId,
-    dataSource: ShapeDataSourceName,
-    selectedArrayByCountries: Record<string, boolean[]>
-  ) => Promise<ShapeDownloadTaskPayload[]>;
 };
 
 type RuntimeWorkerBootstrap = {
@@ -191,23 +179,6 @@ const sanitizeForComlink = <T>(value: T, seen = new WeakMap<object, unknown>()):
     safe[key] = sanitizeForComlink(rawValue, seen);
   }
   return safe as T;
-};
-
-const resolveShapeBuildExtensions = (mod: unknown): ShapeBuildExtensions | null => {
-  if (!mod || (typeof mod !== 'object' && typeof mod !== 'function')) return null;
-  const record = mod as Record<string, unknown>;
-  const candidate = record.shapeBuildExtensions;
-  if (candidate === undefined) return null;
-  if (candidate === null || typeof candidate !== 'object') {
-    throw new Error('[worker bootstrap] shapeBuildExtensions export must be an object');
-  }
-  const extensions = candidate as Record<string, unknown>;
-  if (typeof extensions.generateDownloadTaskPayloadsFromSelection !== 'function') {
-    throw new Error(
-      '[worker bootstrap] shapeBuildExtensions.generateDownloadTaskPayloadsFromSelection must be a function'
-    );
-  }
-  return candidate as ShapeBuildExtensions;
 };
 
 const isTaskStage = (value: unknown): value is StageKey =>
@@ -321,13 +292,11 @@ if (!globalShim.process) {
 if (!globalShim.process.env) {
   globalShim.process.env = {};
 }
-{
-  const value = resolveRequiredCorsProxyBaseURL(
-    import.meta.env?.VITE_CORS_PROXY_BASE_URL,
-    'worker'
-  );
-  setCorsProxyBaseURL(value);
-}
+const initialCorsProxyBaseURL = resolveRequiredCorsProxyBaseURL(
+  import.meta.env?.VITE_CORS_PROXY_BASE_URL,
+  'worker'
+);
+setCorsProxyBaseURL(initialCorsProxyBaseURL);
 
 let bootstrapPromise: Promise<RuntimeWorkerBootstrap> | null = null;
 
@@ -523,6 +492,11 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
       }
       const shapeModule = moduleEntries.find((entry) => entry.nodeType === SHAPE_NODE_TYPE)?.mod;
       const shapeBuildExtensions = resolveShapeBuildExtensions(shapeModule);
+      const applyCorsProxyBaseURL = (url: string): void => {
+        setCorsProxyBaseURL(url);
+        shapeBuildExtensions.setCorsProxyBaseURL(url);
+      };
+      applyCorsProxyBaseURL(initialCorsProxyBaseURL);
 
       try {
         // Use a static import to avoid bundler facade re-export mismatches in preview builds.
@@ -1107,11 +1081,6 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             dataSource: ShapeDataSourceName,
             selectedArrayByCountries: Record<string, boolean[]>
           ): Promise<ShapeDownloadTaskPayload[]> => {
-            if (!shapeBuildExtensions?.generateDownloadTaskPayloadsFromSelection) {
-              throw new Error(
-                '[worker bootstrap] generateDownloadTaskPayloadsFromSelection is not available'
-              );
-            }
             const payloads = await shapeBuildExtensions.generateDownloadTaskPayloadsFromSelection(
               nodeId,
               dataSource,
@@ -1265,7 +1234,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             await auth.setUiStorageBridge(bridge);
           },
           setCorsProxyBaseURL: async (url: string): Promise<void> => {
-            setCorsProxyBaseURL(url);
+            applyCorsProxyBaseURL(url);
           },
         };
 

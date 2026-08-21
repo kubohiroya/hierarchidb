@@ -40,6 +40,12 @@
 - SharedWorker本体の `WorkerService` による初期化を、shape plugin worker bundle側の初期化として扱わない
 - 既に異なる名前で初期化されたsingleton、空のdatabase名、未初期化アクセスは契約違反として失敗させ、lazy initialization、既定名補完、fallbackで処理を継続しない
 
+## Worker network設定の所有境界（shape）
+
+- runtime bootstrapは起動時とWorker API更新時のCORS proxy base URLを、必須の `shapeBuildExtensions.setCorsProxyBaseURL` を通じてshape worker moduleへ明示伝播する
+- shape worker moduleは自身の `@hierarchidb/download` stateを更新する。共有network portは次回参照時に設定値の一致を検証し、変更済みなら再生成する
+- dynamic plugin chunkとruntime bootstrap chunkがmodule scopeを暗黙共有すると仮定しない。別runtime moduleの設定、環境変数、compatibility既定値からproxyを推測しない
+
 ## source stage（shape）
 
 - GeoJSON を国 + 自治体レベル単位で分割し取得

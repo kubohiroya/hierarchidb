@@ -1,5 +1,6 @@
 import { canonicalPluginBuildAPIMethodNames } from '@hierarchidb/build-api';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getCorsProxyBaseURL } from '@hierarchidb/download';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '../../common/types/constants.js';
 
 const shapeBuildAPIMocks = vi.hoisted(() => ({
@@ -40,6 +41,10 @@ describe('shape canonicalBuildAPI contract', () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    shapeBuildExtensions.setCorsProxyBaseURL('');
+  });
+
   it('exports exactly the canonical plugin build API methods', () => {
     expect(Object.keys(canonicalBuildAPI)).toEqual([...canonicalPluginBuildAPIMethodNames]);
   });
@@ -49,8 +54,11 @@ describe('shape canonicalBuildAPI contract', () => {
     shapeBuildAPIMocks.generateDownloadTaskPayloadsFromSelection.mockResolvedValue(payloads);
 
     expect(Object.keys(shapeBuildExtensions)).toEqual([
+      'setCorsProxyBaseURL',
       'generateDownloadTaskPayloadsFromSelection',
     ]);
+    shapeBuildExtensions.setCorsProxyBaseURL('https://shape-proxy.example/');
+    expect(getCorsProxyBaseURL()).toBe('https://shape-proxy.example/');
     await expect(
       shapeBuildExtensions.generateDownloadTaskPayloadsFromSelection(
         'shape-contract-node',

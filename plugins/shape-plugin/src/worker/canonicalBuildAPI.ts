@@ -6,6 +6,7 @@ import type {
 } from '@hierarchidb/build-api';
 import { requireCanonicalStageBuildConfig } from '@hierarchidb/build-runtime-services';
 import type { BuildSession, ShapeBuildConfig, ShapeProcessingConfig } from '~/common/types/index';
+import { setShapeCorsProxyBaseURL } from '~/services/utils/setShapeCorsProxyBaseURL';
 import { shapeBuildAPI } from './api.js';
 
 const BUILD_SESSION_STATUSES = new Set<BuildSessionStatus['status']>([
@@ -292,6 +293,7 @@ export const canonicalBuildAPI = {
 } satisfies CanonicalPluginBuildAPI;
 
 export const shapeBuildExtensions = {
+  setCorsProxyBaseURL: (url: string): void => setShapeCorsProxyBaseURL(url),
   generateDownloadTaskPayloadsFromSelection: (
     ...args: Parameters<typeof shapeBuildAPI.generateDownloadTaskPayloadsFromSelection>
   ) => shapeBuildAPI.generateDownloadTaskPayloadsFromSelection(...args),
