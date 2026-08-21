@@ -24,7 +24,13 @@ import { ROUTE_MODES } from '@hierarchidb/route-api';
 import { RouteGenerator, SearouteEngine } from '@hierarchidb/route-engine';
 import type { RouteDatabaseHandle } from '@hierarchidb/route-store';
 import { ephemeralDB, type EphemeralSourceCacheRecord, type EphemeralTileIdToBufferRelation } from '@hierarchidb/gis-sdk';
-import { SingletonMixin, buildZoomBandRanges, normalizeZoomBandBoundaries } from '@hierarchidb/util';
+import {
+  SingletonMixin,
+  buildZoomBandRanges,
+  getBuildDatabasePrefix,
+  getDBName,
+  normalizeZoomBandBoundaries,
+} from '@hierarchidb/util';
 import { buildIdeGsmLocationIndex } from './route/ideGsmCsvUtils.js';
 import { filterIdeGsmRoutesBySelection, parseIdeGsmRouteRecords } from '@hierarchidb/route-api';
 import { loadTabularTableRows } from './utils/loadTabularTableRows.js';
@@ -92,7 +98,11 @@ export class RouteMutationService implements RouteMutationAPI {
       throw new Error('No related location nodes found.');
     }
 
-    const { headers, rows } = await loadTabularTableRows('route', request.tabularSourceId);
+    const { headers, rows } = await loadTabularTableRows(
+      'route',
+      request.tabularSourceId,
+      getBuildDatabasePrefix()
+    );
     const locationIndex = await buildIdeGsmLocationIndex(this.locationQueryService, locationNodeIds);
     const { lineStrings, errors } = parseIdeGsmRouteRecords(headers, rows, locationIndex, request.nodeId);
     const coverage = buildCoverageByCountry(lineStrings);
@@ -129,7 +139,11 @@ export class RouteMutationService implements RouteMutationAPI {
         this.locationQueryService,
         locationNodeIds
       );
-      const { headers, rows } = await loadTabularTableRows('route', request.tabularSourceId);
+      const { headers, rows } = await loadTabularTableRows(
+        'route',
+        request.tabularSourceId,
+        getBuildDatabasePrefix()
+      );
       const { lineStrings, errors } = parseIdeGsmRouteRecords(headers, rows, locationIndex, request.nodeId);
       const filteredLineStrings = filterIdeGsmRoutesBySelection(
         lineStrings,
@@ -560,7 +574,7 @@ export class RouteMutationService implements RouteMutationAPI {
         inputCompression: request.inputCompression ?? 'none',
         nodeId: request.nodeId,
         tileId: bufferId,
-        chunkStoreName: 'hidb-chunks',
+        chunkStoreName: getDBName(getBuildDatabasePrefix(), 'chunks'),
       });
       const result = await stage.tileEmit.generateTiles(bufferId, {
         format: 'mvt',

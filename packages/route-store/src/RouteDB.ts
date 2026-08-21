@@ -3,12 +3,10 @@
  * @description Database schema and operations for Route plugin
  */
 
-import { Dexie, type Table } from 'dexie';
-import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/core-types';
-import { VectorTileDbBase } from '@hierarchidb/vectortile-store';
-
 import type { RouteFeature } from '@hierarchidb/route-api';
+import { VectorTileDbBase } from '@hierarchidb/vectortile-store';
+import { Dexie, type Table } from 'dexie';
 
 export type RouteVectorTileRecord = {
   tileId: string;
@@ -37,7 +35,7 @@ export class RouteDB extends VectorTileDbBase {
   vectorTiles!: Table<RouteVectorTileRecord, string>;
   tileIndex!: Table<RouteTileIndexRecord, string>;
 
-  constructor(dbName: string = getDBName('route')) {
+  constructor(dbName: string) {
     super(dbName);
     this.version(1).stores(this.mergeVectorTileStores({
       features: '&id, nodeId, startLocationId, endLocationId',
@@ -55,8 +53,24 @@ export class RouteDB extends VectorTileDbBase {
 
 let singleton: RouteDB | null = null;
 
+const requireRouteDatabaseName = (databaseName: unknown): string => {
+  if (typeof databaseName !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(databaseName)) {
+    throw new Error('route-database-name-invalid');
+  }
+  return databaseName;
+};
+
+export function initializeRouteDB(databaseName: string): RouteDB {
+  const exactDatabaseName = requireRouteDatabaseName(databaseName);
+  if (!singleton) singleton = new RouteDB(exactDatabaseName);
+  if (singleton.name !== exactDatabaseName) {
+    throw new Error('route-database-name-mismatch');
+  }
+  return singleton;
+}
+
 export function getRouteDB(): RouteDB {
-  if (!singleton) singleton = new RouteDB();
+  if (!singleton) throw new Error('route-database-not-initialized');
   return singleton;
 }
 
@@ -67,8 +81,8 @@ export async function closeRouteDB(): Promise<void> {
   }
 }
 
-export async function clearRouteDatabases(): Promise<void> {
-  await Dexie.delete(getDBName('route'));
+export async function clearRouteDatabases(databaseName: string): Promise<void> {
+  await Dexie.delete(requireRouteDatabaseName(databaseName));
 }
 
 export async function hasRouteReferencesToLocations(

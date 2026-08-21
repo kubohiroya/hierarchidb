@@ -241,7 +241,7 @@ graph TB
 | timeline-plugin | timeline | folder | timeline-entities-db | - | - | - | - | - | なし | 利用最小（ドラフト不要） |
 
 注記:
-- データベース名は `Dexie(getDBName('…'))` に渡すサフィックス（kebab-case）を示しています。接頭辞は `WORKER_DB_PREFIX` → `VITE_APP_PREFIX` → `hidb` の順で自動付与。複数持つ場合はカンマ区切り。
+- データベース名の欄は、build-time authorityである `VITE_APP_PREFIX` とkebab-caseのサフィックスから `getDBName(prefix, suffix)` が生成する完全名のサフィックス部分を示します。prefix欠落・不正値、未初期化、別名での再初期化はエラーであり、`WORKER_DB_PREFIX`・application名・`hidb`へのfallbackはありません。複数持つ場合はカンマ区切り。
 - Import/Export は CoreDB と Persistent なエンティティDBのシリアライズ/デシリアライズにより原則サポートされます（本表のカラムからは削除）。フォルダやタグ等の共通メタも対象に含まれます。
 - ネットワーク要件: shape/location/route は作成・編集時にネット接続が必要なケースがあります。basemap はタイルサーバを利用する場合、運用中に外部タイルサーバへの接続が必要。その他は基本オフラインで運用可能。
 - バッチは非同期一括処理の仕組み（セッション/レーン/タスク管理等）が実装されている場合に「Yes」。route は `RouteBatchManager/RouteBatchSession` に基づくバッチが実装済みです。

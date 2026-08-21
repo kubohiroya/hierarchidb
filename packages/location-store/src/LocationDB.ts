@@ -2,17 +2,16 @@
  * LocationDB - storage for persistent Location features.
  */
 
-import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/core-types';
-import { Dexie, type Table } from 'dexie';
 import type { LocationFeature } from '@hierarchidb/location-api';
+import { Dexie, type Table } from 'dexie';
 
 
 export class LocationDB extends Dexie {
   features!: Table<LocationFeature, [NodeId, string]>;
 
-  constructor() {
-    super(getDBName('location'));
+  constructor(databaseName: string) {
+    super(databaseName);
     this.version(1).stores({
       features: '&[nodeId+id], nodeId, [nodeId+mortonKey], [nodeId+type+mortonKey], centroidForShapeContainerNodeId',
     });
@@ -29,8 +28,24 @@ export class LocationDB extends Dexie {
 
 let singleton: LocationDB | null = null;
 
+const requireLocationDatabaseName = (databaseName: unknown): string => {
+  if (typeof databaseName !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(databaseName)) {
+    throw new Error('location-database-name-invalid');
+  }
+  return databaseName;
+};
+
+export function initializeLocationDB(databaseName: string): LocationDB {
+  const exactDatabaseName = requireLocationDatabaseName(databaseName);
+  if (!singleton) singleton = new LocationDB(exactDatabaseName);
+  if (singleton.name !== exactDatabaseName) {
+    throw new Error('location-database-name-mismatch');
+  }
+  return singleton;
+}
+
 export function getLocationDB(): LocationDB {
-  if (!singleton) singleton = new LocationDB();
+  if (!singleton) throw new Error('location-database-not-initialized');
   return singleton;
 }
 
@@ -41,8 +56,8 @@ export async function closeLocationDB(): Promise<void> {
   }
 }
 
-export async function clearLocationDatabases(): Promise<void> {
-  await Dexie.delete(getDBName('location'));
+export async function clearLocationDatabases(databaseName: string): Promise<void> {
+  await Dexie.delete(requireLocationDatabaseName(databaseName));
 }
 
 export async function hasLocationReferencesToShapes(

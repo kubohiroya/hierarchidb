@@ -254,5 +254,3 @@ export async function deleteTasksByIds(
     emitTaskDeleteEvent(task.nodeId, task.taskId);
   });
 }
-
-export const vtTaskQueueDB = new VtTaskQueueDb();

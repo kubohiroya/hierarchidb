@@ -1,6 +1,5 @@
 import { DexieChunkStore } from '@hierarchidb/chunk-store';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { GeometryEngine } from '@hierarchidb/gis-sdk';
 import type { TileEmitWorkerAPI, VectorTileProgress } from '~/types';
 
 export type VectorTileStageInput = {
@@ -37,13 +36,21 @@ export type VectorTileStageResult = {
 };
 
 export type VectorTileStageOptions = {
-  chunkStoreName?: string;
+  chunkStoreName: string;
+  nodeId?: NodeId;
+  tileId?: string;
+};
+
+export type VectorTileInputWriteOptions = {
+  chunkStoreName: string;
+  contentType?: string;
+  inputFormat?: VectorTileInputFormat;
+  inputCompression?: VectorTileInputCompression;
   nodeId?: NodeId;
   tileId?: string;
 };
 
 const DEFAULT_NODE_ID = 'tile-emit-shared' as NodeId;
-const DEFAULT_CHUNK_STORE = 'hidb-chunks';
 
 type VectorTileInputFormat = 'geojson' | 'flatgeobuf';
 type VectorTileInputCompression = 'gzip' | 'none';
@@ -74,28 +81,17 @@ const compressBuffer = async (
 export async function writeVectorTileInput(
   bufferId: string,
   buffer: ArrayBuffer,
-  contentTypeOrOptions:
-    | string
-    | {
-        contentType?: string;
-        inputFormat?: VectorTileInputFormat;
-        inputCompression?: VectorTileInputCompression;
-        nodeId?: NodeId;
-        tileId?: string;
-        chunkStoreName?: string;
-      } = 'application/json'
+  options: VectorTileInputWriteOptions
 ): Promise<void> {
-  const options = typeof contentTypeOrOptions === 'string' ? null : contentTypeOrOptions;
-  const inputFormat = options?.inputFormat ?? 'geojson';
-  const inputCompression = options?.inputCompression ?? 'none';
+  const inputFormat = options.inputFormat ?? 'geojson';
+  const inputCompression = options.inputCompression ?? 'none';
   const contentType =
-    (typeof contentTypeOrOptions === 'string' ? contentTypeOrOptions : options?.contentType) ??
+    options.contentType ??
     resolveInputContentType(inputFormat, inputCompression);
-  const nodeId = options?.nodeId ?? DEFAULT_NODE_ID;
+  const nodeId = options.nodeId ?? DEFAULT_NODE_ID;
   const payload = await compressBuffer(buffer, inputCompression);
-  const resolvedChunkStoreName = options?.chunkStoreName ?? DEFAULT_CHUNK_STORE;
   const storageAdapter = new DexieChunkStore<ArrayBuffer>({
-    dbName: resolvedChunkStoreName,
+    dbName: options.chunkStoreName,
     serializer: (value) => value,
     deserializer: (value) => value,
     networkOptions: {
@@ -112,7 +108,7 @@ export async function writeVectorTileInput(
 export async function runVectorTileStage(
   input: VectorTileStageInput,
   client: TileEmitWorkerAPI,
-  options: VectorTileStageOptions = {}
+  options: VectorTileStageOptions
 ): Promise<VectorTileStageResult> {
   const { bufferId, buffer, contentType, config, onProgress } = input;
   if (buffer) {
@@ -126,7 +122,7 @@ export async function runVectorTileStage(
       inputCompression,
       nodeId,
       tileId,
-      chunkStoreName: options.chunkStoreName ?? DEFAULT_CHUNK_STORE,
+      chunkStoreName: options.chunkStoreName,
     });
   }
   const generated = await client.generateTiles(bufferId, config, onProgress);

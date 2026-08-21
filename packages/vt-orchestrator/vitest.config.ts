@@ -8,7 +8,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     root: path.resolve(__dirname),
-    setupFiles: [],
+    setupFiles: [path.resolve(__dirname, 'vitest.setup.ts')],
     include: [
       'src/**/*.test.ts',
       'src/**/*.spec.ts',

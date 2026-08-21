@@ -15,6 +15,7 @@ import type {
 import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import { CoreDB } from '@hierarchidb/runtime-worker';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -129,7 +130,9 @@ export class ShapeEntityService {
   private coreDBPromise: Promise<CoreDB>;
 
   constructor(coreDB?: CoreDB) {
-    this.coreDBPromise = coreDB ? Promise.resolve(coreDB) : CoreDB.getSingleton();
+    this.coreDBPromise = coreDB
+      ? Promise.resolve(coreDB)
+      : CoreDB.getSingleton(getDBName(getBuildDatabasePrefix(), 'core'));
   }
 
   private async ensureCoreDB(): Promise<CoreDB> {

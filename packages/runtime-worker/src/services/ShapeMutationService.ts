@@ -163,14 +163,24 @@ const toVectorTileRecord = (tile: ShapeVectorTileRecord): VectorTileRecord => {
 };
 
 export class ShapeMutationService implements ShapeMutationAPI {
-  static async getSingleton(db: ShapeDB): Promise<ShapeMutationService> {
-    return SingletonMixin.getSingleton(
+  static async getSingleton(
+    db: ShapeDB,
+    shapeChunkStoreDatabaseName: string
+  ): Promise<ShapeMutationService> {
+    const instance = await SingletonMixin.getSingleton(
       'ShapeMutationService',
-      async () => new ShapeMutationService(db)
+      async () => new ShapeMutationService(db, shapeChunkStoreDatabaseName)
     );
+    if (instance.shapeChunkStoreDatabaseName !== shapeChunkStoreDatabaseName) {
+      throw new Error('shape-mutation-chunk-store-database-name-mismatch');
+    }
+    return instance;
   }
 
-  constructor(private db: ShapeDB) {}
+  constructor(
+    private db: ShapeDB,
+    private readonly shapeChunkStoreDatabaseName: string
+  ) {}
 
   private async ensureOpen(): Promise<void> {
     await this.db.open?.();
@@ -418,6 +428,7 @@ export class ShapeMutationService implements ShapeMutationAPI {
     await Promise.all(
       buffers.map((buffer) =>
         storeRawDataDataSourceBufferForNode({
+          databaseName: this.shapeChunkStoreDatabaseName,
           nodeId: buffer.nodeId,
           cacheKey: buffer.id,
           buffer: buffer.data,

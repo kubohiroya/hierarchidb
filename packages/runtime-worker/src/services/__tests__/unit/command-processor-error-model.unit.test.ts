@@ -5,13 +5,14 @@ import { CommandProcessor } from '../../CommandProcessor';
 import { CoreDB } from '../../CoreDB';
 import { commandRegistry } from '../../command/commandRegistry';
 import { WorkerErrorCodeValue } from '../../WorkerErrorCodeValue';
+import { getDBName } from '@hierarchidb/util';
 
 describe('CommandProcessor error model', () => {
   let core: CoreDB;
   let processor: CommandProcessor;
 
   beforeEach(async () => {
-    core = await CoreDB.getSingleton();
+    core = await CoreDB.getSingleton(getDBName('test', 'core'));
     processor = new CommandProcessor(core);
   });
 

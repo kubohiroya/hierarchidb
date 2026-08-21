@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Dexie } from 'dexie';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   countRawDataDataSourceBuffersForNode,
   createShapeChunkStore,
@@ -8,12 +8,13 @@ import {
   listRawDataDataSourceMetadataForNode,
   storeRawDataDataSourceBufferForNode,
 } from '../../../services/utils/chunkStore';
+import { initializeShapeChunkStore } from '../../../services/utils/initializeShapeChunkStore';
 
 const textEncoder = new TextEncoder();
 
 const encode = (value: string): ArrayBuffer => textEncoder.encode(value).buffer;
 
-const dbName = 'shape-chunks';
+const dbName = 'test-shape-chunks';
 
 describe('chunkStore raw data metadata-id based cache deletion', () => {
   beforeEach(async () => {
@@ -22,6 +23,16 @@ describe('chunkStore raw data metadata-id based cache deletion', () => {
 
   afterEach(async () => {
     await Dexie.delete(dbName);
+  });
+
+  it('rejects a conflicting database name before opening IndexedDB', () => {
+    const openSpy = vi.spyOn(indexedDB, 'open');
+
+    expect(() => initializeShapeChunkStore('other-shape-chunks')).toThrow(
+      'shape-chunk-store-database-name-mismatch'
+    );
+    expect(openSpy).not.toHaveBeenCalled();
+    openSpy.mockRestore();
   });
 
   it('removes raw data by metadataId and keeps shared chunks until last relation is removed', async () => {

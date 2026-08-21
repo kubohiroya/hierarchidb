@@ -351,8 +351,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
     dbV1.close();
 
     // Step 2: Open database with V2 schema (triggers migration)
-    db = new ShapeDB();
-    (db as any).name = testDbName;
+    db = new ShapeDB(testDbName);
     await db.open();
 
     // Step 3: Verify new tables are empty

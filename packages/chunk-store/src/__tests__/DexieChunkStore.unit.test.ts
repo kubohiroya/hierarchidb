@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/core-types';
 import { Dexie } from 'dexie';
 import type { NetworkPort, ResponseLike } from '@hierarchidb/download';
@@ -35,6 +35,29 @@ describe('DexieChunkStore', () => {
         await Dexie.delete(name);
       }
     }
+  });
+
+  it('rejects a missing database name before IndexedDB open', () => {
+    const openSpy = vi.spyOn(indexedDB, 'open');
+
+    expect(() => new DexieChunkStore<string>({
+      serializer: serialize,
+      deserializer: deserialize,
+    })).toThrow('chunk-store-database-name-required');
+    expect(openSpy).not.toHaveBeenCalled();
+    openSpy.mockRestore();
+  });
+
+  it('rejects conflicting database authorities', () => {
+    const db = new Dexie('chunk-store-explicit');
+
+    expect(() => new DexieChunkStore<string>({
+      db,
+      dbName: 'chunk-store-conflicting',
+      serializer: serialize,
+      deserializer: deserialize,
+    })).toThrow('chunk-store-database-name-mismatch');
+    db.close();
   });
 
   it('stores, reads, and deletes per node', async () => {

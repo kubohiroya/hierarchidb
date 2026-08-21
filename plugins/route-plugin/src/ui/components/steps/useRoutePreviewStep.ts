@@ -43,7 +43,7 @@ import {
 } from './routeSelectionConstants.js';
 import { ROUTE_MODES, type RouteMode } from '@hierarchidb/route-api';
 import { ROUTE_DATA_SOURCES } from '~/common/datasource/ROUTE_DATA_SOURCES';
-import { getDBName } from '@hierarchidb/util';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import { buildRouteColorExpression, mergeRouteStyleConfig, resolveLineDashArray } from '~/common/styles/routeStyle';
 import { RoutePreviewHoverMatch } from './RoutePreviewStepElements.js';
 
@@ -573,7 +573,7 @@ export const useRoutePreviewStep = ({
       {
         nodeId: String(previewNodeId),
         nodeType: 'route',
-        dbName: getDBName('route'),
+        dbName: getDBName(getBuildDatabasePrefix(), 'route'),
         tileDataProvider: async (z, x, y, nodeIdOverride) => {
           const api = await workerBridgeRef.current.getRouteQueryAPI();
           const targetId = (nodeIdOverride ?? previewNodeId) as NodeId;

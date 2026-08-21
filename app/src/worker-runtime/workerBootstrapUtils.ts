@@ -52,7 +52,7 @@ import {
   type WorkerInitializationReporter,
   wirePluginsFromModules,
 } from '@hierarchidb/ui-worker-client';
-import { digestSha256Hex, getDBName } from '@hierarchidb/util';
+import { digestSha256Hex, getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import type { UiStorageBridge, YamlCanonicalZipServiceFactory } from '@hierarchidb/worker-api';
 import { liveQuery } from 'dexie';
 import { resolveRequiredCorsProxyBaseURL } from '~/config/resolveRequiredCorsProxyBaseURL';
@@ -360,9 +360,11 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
       if (typeof crypto?.randomUUID !== 'function') {
         throw new Error('yaml-storage-crypto-identity-unavailable');
       }
+      const databasePrefix = getBuildDatabasePrefix();
+      const coreDatabaseName = getDBName(databasePrefix, 'core');
       const canonicalInspection = await inspectCanonicalYamlStorageCoreDb({
         activationId: crypto.randomUUID(),
-        databaseName: getDBName('core'),
+        databaseName: coreDatabaseName,
         targetVersion: 2,
         openRequestId: crypto.randomUUID(),
         coordinatorGate: options.yamlStorageGate,
@@ -370,7 +372,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           indexedDB,
           digestSha256Hex,
           initializeCoreDb: async () => {
-            await CoreDB.getSingleton();
+            await CoreDB.getSingleton(coreDatabaseName);
           },
         },
       });
@@ -528,6 +530,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
         const services = await WorkerService.getSingleton(
           enrichedDefinitions.length > 0 ? enrichedDefinitions : pluginDefinitions,
           {
+            databasePrefix,
             ...(yamlCanonicalDialogWriter === null ? {} : { yamlCanonicalDialogWriter }),
             ...(yamlCanonicalZipServiceFactory === null ? {} : { yamlCanonicalZipServiceFactory }),
             assertYamlStorageCanonicalAccess,

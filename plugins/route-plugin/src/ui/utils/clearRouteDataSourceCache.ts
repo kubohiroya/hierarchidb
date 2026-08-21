@@ -1,12 +1,13 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import { DexieChunkStore } from '@hierarchidb/chunk-store';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
 const createRouteChunkStore = (): DexieChunkStore<string> => (
   new DexieChunkStore<string>({
-    dbName: 'hidb-chunks',
+    dbName: getDBName(getBuildDatabasePrefix(), 'chunks'),
     serializer: (value) => textEncoder.encode(value).buffer,
     deserializer: (buffer) => textDecoder.decode(new Uint8Array(buffer)),
   })

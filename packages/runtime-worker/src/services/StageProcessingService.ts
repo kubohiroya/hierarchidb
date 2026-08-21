@@ -13,6 +13,7 @@ import {
 import { getRouteDB } from '@hierarchidb/route-store';
 import { type LayerInfo, shapeDB } from '@hierarchidb/shape-store';
 import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import type { VectorTileItemBase } from '../entity/storeTypes.js';
 import type {
   GeometryWorkerAPI,
@@ -61,7 +62,7 @@ class RealSourceWorker implements SourceWorkerAPI {
   private async getShared(): Promise<SharedFetchService> {
     if (!this.sharedPromise) {
       this.sharedPromise = createSharedDownloadService({
-        dbPrefix: 'hidb',
+        dbPrefix: getBuildDatabasePrefix(),
         perHostConcurrency: 4,
         scope: 'shape',
       });
@@ -100,7 +101,7 @@ class RealTileEmitWorker implements TileEmitWorkerAPI {
   private async getShared(): Promise<SharedFetchService> {
     if (!this.sharedPromise) {
       this.sharedPromise = createSharedDownloadService({
-        dbPrefix: 'hidb',
+        dbPrefix: getBuildDatabasePrefix(),
         perHostConcurrency: 2,
         scope: 'shape',
       });
@@ -210,7 +211,10 @@ class RealTileEmitWorker implements TileEmitWorkerAPI {
     replace?: boolean
   ): Promise<void> {
     if (nodeType !== 'shape' || !featureMetadata || featureMetadata.length === 0) return;
-    const mutation = await ShapeMutationService.getSingleton(shapeDB);
+    const mutation = await ShapeMutationService.getSingleton(
+      shapeDB,
+      getDBName(getBuildDatabasePrefix(), 'shape-chunks')
+    );
     if (replace) {
       await mutation.deleteFeatureMetadataByNode(nodeId);
     }

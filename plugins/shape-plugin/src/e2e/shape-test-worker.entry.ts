@@ -12,8 +12,10 @@ import type { ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import type { CountryMetadata, SourceTaskPayload, SelectedArrayByCountries, ShapeBuildConfig, ShapeProcessingConfig } from '../common/types/index';
 import type { Endpoint as ComlinkEndpoint } from 'comlink';
 import { expose, proxy } from 'comlink';
-import { shapeDB } from '@hierarchidb/shape-store';
-import { ephemeralDB } from '@hierarchidb/gis-sdk';
+import { initializeShapeDB } from '@hierarchidb/shape-store';
+import { initializeRouteDB } from '@hierarchidb/route-store';
+import { initializeShapeChunkStore } from '../services/utils/initializeShapeChunkStore.js';
+import { initializeEphemeralDB } from '@hierarchidb/gis-sdk';
 import { VtTaskQueueDb, deleteTasksByNode } from '@hierarchidb/vt-orchestrator';
 import { metadataLoader } from '../../services/metadata/MetadataLoader';
 import { shapeBuildAPI } from '../../worker/api';
@@ -26,6 +28,13 @@ import { runShapeMetadataStage } from '../services/vt/runShapeMetadataStage';
 import { runShapePipelineCleanup } from '../services/vt/runShapePipelineCleanup';
 import { resolveFailureHandling } from '../services/vt/shapePipelineStageHelpers';
 import { CoreDB, ShapeMutationService, ShapeQueryService } from '@hierarchidb/runtime-worker';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
+
+const testDatabasePrefix = getBuildDatabasePrefix();
+const shapeDB = initializeShapeDB(getDBName(testDatabasePrefix, 'shape'));
+const ephemeralDB = initializeEphemeralDB(getDBName(testDatabasePrefix, 'ephemeral'));
+initializeRouteDB(getDBName(testDatabasePrefix, 'route'));
+initializeShapeChunkStore(getDBName(testDatabasePrefix, 'shape-chunks'));
 
 type Endpoint = MessagePort | Worker | ComlinkEndpoint;
 
@@ -447,7 +456,9 @@ async function main(endpoint?: Endpoint): Promise<void> {
 
   const buildApi: ShapeBuildTestAPI = {
     seedDraftNode: async (payload) => {
-      const coreDB = await CoreDB.getSingleton();
+      const coreDB = await CoreDB.getSingleton(
+        getDBName(getBuildDatabasePrefix(), 'core')
+      );
       const rootId = await ensureRootNode(coreDB);
       const now = Date.now();
       const existing = await coreDB.getNode(payload.nodeId);
@@ -483,8 +494,15 @@ async function main(endpoint?: Endpoint): Promise<void> {
     getBuildTasks: async (nodeId) => shapeBuildAPI.getBuildTasks(nodeId),
   };
 
-  const queryService = await ShapeQueryService.getSingleton(shapeDB);
-  const mutationService = await ShapeMutationService.getSingleton(shapeDB);
+  const shapeChunkStoreDatabaseName = getDBName(testDatabasePrefix, 'shape-chunks');
+  const queryService = await ShapeQueryService.getSingleton(
+    shapeDB,
+    shapeChunkStoreDatabaseName
+  );
+  const mutationService = await ShapeMutationService.getSingleton(
+    shapeDB,
+    shapeChunkStoreDatabaseName
+  );
   const api: ShapeWorkerTestAPI = {
     getShapeQueryAPI: () => proxy(queryService),
     getShapeMutationAPI: () => proxy(mutationService),

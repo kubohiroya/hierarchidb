@@ -30,7 +30,12 @@ describe('SpreadsheetTabularApiDriver', () => {
   let driver: SpreadsheetTabularApiDriver;
 
   beforeEach(() => {
-    driver = new SpreadsheetTabularApiDriver(new SpreadsheetMetadataManager(), 'spreadsheet');
+    driver = new SpreadsheetTabularApiDriver(
+      new SpreadsheetMetadataManager('test-spreadsheet-metadata'),
+      'spreadsheet',
+      'test-spreadsheet-chunks',
+      'spreadsheet-driver-explicit-rowstore'
+    );
   });
 
   it('uploads a CSV file and infers column metadata', async () => {

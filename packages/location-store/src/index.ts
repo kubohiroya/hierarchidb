@@ -1,8 +1,10 @@
 export * from '@hierarchidb/location-api';
 export {
-  LocationDB,
-  closeLocationDB,
   clearLocationDatabases,
+  clearLocationDatabases as clearDatabases,
+  closeLocationDB,
   getLocationDB,
   hasLocationReferencesToShapes,
+  initializeLocationDB,
+  LocationDB,
 } from './LocationDB.js';

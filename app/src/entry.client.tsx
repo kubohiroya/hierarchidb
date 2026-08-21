@@ -9,7 +9,7 @@ import {
 } from '@hierarchidb/origin-coordinator';
 import { CoreDB } from '@hierarchidb/runtime-worker';
 import { activateYamlStorageCoreDb } from '@hierarchidb/runtime-worker/yaml-storage-production';
-import { digestSha256Hex, getDBName } from '@hierarchidb/util';
+import { digestSha256Hex, getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import { revokeLegacyYamlAccessAndClose } from '@hierarchidb/yaml-store/legacy-close';
 import { RouterProvider } from '@tanstack/react-router';
 import { startTransition, useEffect, useState } from 'react';
@@ -249,7 +249,7 @@ async function initializeApp() {
       setHydrateProgress(6, 'Origin coordinator ready');
     },
     activateCanonicalStorage: async (coordinator) => {
-      const databaseName = getDBName('core');
+      const databaseName = getDBName(getBuildDatabasePrefix(), 'core');
       await runYamlStorageActivationContender({
         coordinator,
         quiescenceTimeoutMs: ORIGIN_COORDINATOR_MAX_CENSUS_TIMEOUT_MS,

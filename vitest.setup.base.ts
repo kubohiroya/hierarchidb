@@ -6,6 +6,7 @@
  */
 
 import 'fake-indexeddb/auto';
+import './vitest.database-prefix.setup.ts';
 import '@testing-library/jest-dom/vitest';
 import { beforeEach, vi } from 'vitest';
 

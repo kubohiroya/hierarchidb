@@ -1,7 +1,10 @@
+import { initializeEphemeralDB } from '@hierarchidb/gis-sdk';
+import { initializeShapeDB } from '@hierarchidb/shape-store';
 import { getWorkerClientHook, registerWorkerClientHook } from '@hierarchidb/ui-worker-provider';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
+import { useWorker } from '~/contexts/WorkerProvider';
 import { initializeMaintenanceChannel } from '~/maintenance/maintenanceChannelConstants';
 import { pluginRegistry } from '~/plugin-loaders/index';
-import { useWorker } from '~/contexts/WorkerProvider';
 import { bootLog } from '~/utils/bootLog';
 import { APP_VERSION, BUILD_TIME } from '~/versionConstants';
 
@@ -47,7 +50,10 @@ const openDebugLogDb = (): Promise<IDBDatabase> => {
       reject(new Error('indexedDB is not available'));
       return;
     }
-    const request = indexedDB.open('hidb-debug-log', 1);
+    const request = indexedDB.open(
+      getDBName(getBuildDatabasePrefix(), 'debug-log'),
+      1
+    );
     request.onupgradeneeded = () => {
       const db = request.result;
       if (!db.objectStoreNames.contains('logs')) {
@@ -104,6 +110,10 @@ const clearDebugLogs = async (): Promise<void> => {
 
 export function initializeBrowserGlobals(): void {
   if (initialized) return;
+
+  const databasePrefix = getBuildDatabasePrefix();
+  initializeEphemeralDB(getDBName(databasePrefix, 'ephemeral'));
+  initializeShapeDB(getDBName(databasePrefix, 'shape'));
   initialized = true;
 
   initializeMaintenanceChannel();
