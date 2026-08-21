@@ -20,7 +20,10 @@ After completion, YAML filenames live only in the matching metadata slot and YAM
 - [x] 2026-08-21: Connected canonical dialog, generic CRUD validation, ZIP, and Simulation routes.
 - [x] 2026-08-21: Removed legacy YamlDB writer exports, folder ZIP helpers, Simulation serializer/subpath, and YAML plugin preload reachability.
 - [x] 2026-08-21: Updated the English and Japanese package READMEs.
-- [ ] Run the complete #1340 verification matrix.
+- [x] 2026-08-21: Integrated current `main` through `de6713d15` without conflicts and reran the scoped install, registry, typecheck, test, build, and lint matrix successfully.
+- [x] 2026-08-21: Verified the fixed coordinator source graph has zero diff from `f297cdc70a4e1665e1d26d4d931563af1e05bcd9` and the built coordinator SHA-256 remains `674f8172afabfec3b13cf91a3491d8baa99a2b64c6f2d626952766b11b2ad9d4`.
+- [x] 2026-08-21: Ran the CI-style naming baseline comparison: base 3 errors to head 3 errors, with zero new naming errors.
+- [ ] Reconcile #1340's raw `pnpm format` and raw naming commands with the repository baseline before claiming every recorded command exits zero.
 - [ ] Record verification in #1340 and prepare the single-purpose PR after separate publication approval.
 
 ## Surprises and discoveries
@@ -200,4 +203,36 @@ No compatibility alias, dual writer, feature flag for storage authority, default
 
 ## Outcomes and retrospective
 
-Complete this section after implementation and verification. Record what shipped, any deliberate deviation from this plan, the exact validation summary, and remaining follow-up work in #1341 or later Epic lanes.
+The local implementation now provides one canonical CoreDB activation and successor graph. It keeps
+the accepted coordinator byte-identical, adds the one-executor v1-to-v2 or fresh-v2 activation path,
+requires strict post-activation validation before Worker API publication, routes dialog and generic
+CRUD through guarded CoreDB writes, publishes canonical folder ZIP operations, switches Simulation
+to the committed canonical snapshot, and removes production reachability to the legacy writers and
+serializers. No compatibility fallback, dual writer, retry, database reset, or default payload repair
+was introduced.
+
+Validation against current `main` completed with these results:
+
+- frozen install and plugin registry generation: exit 0, generated registry unchanged;
+- filtered typecheck: 197 of 197 Turbo tasks successful;
+- filtered package tests: 58 of 58 Turbo tasks successful, including 351 runtime-worker, 58 folder,
+  45 YAML plugin, 7 Simulation, and 2 yaml-store tests; the three application activation suites add
+  15 passing tests;
+- filtered build: 100 of 100 Turbo tasks successful;
+- repository lint: 14 of 14 available lint tasks successful;
+- fixed coordinator graph diff: empty; built coordinator SHA-256 matches the accepted value;
+- naming CI comparison: 3 base errors to 3 head errors, zero new errors;
+- `git diff --check`: clean; no generated JavaScript or source map exists under a `src` directory.
+
+The repository-wide raw format and naming commands recorded in #1340 cannot currently satisfy their
+literal exit-zero expectation without unrelated cleanup. `pnpm format` stops at the pre-existing
+`packages/ui/tour/src/components/GenericGuidedTour.tsx` nested-component violation and can rewrite
+unrelated files before stopping. A non-writing Biome comparison over the files changed by this branch
+reports 23 base errors versus 15 head errors, so this branch introduces no new violation. The raw
+naming audit reports the same three base-existing primary-export violations at head, while the
+workflow's base/head comparison exits zero. The Issue verification text must use the repository's
+non-regression form, or the unrelated baseline must be resolved under separately approved scope,
+before the Issue can truthfully claim every listed command exits zero.
+
+External publication and Issue status updates remain pending explicit approval. YamlDB physical
+recovery and retirement remain follow-up work for #1341 or a later Epic lane.
