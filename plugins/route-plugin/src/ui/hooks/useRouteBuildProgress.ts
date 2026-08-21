@@ -13,13 +13,15 @@ const resolveRouteStageId = (value: unknown): RouteStageId => {
   throw new Error(`[route buildSessionStateTreeBridge] unsupported stage: ${String(value)}`);
 };
 
-export type RouteBuildProgressResult = BuildSessionProgressResult;
+export type RouteBuildProgressResult = BuildSessionProgressResult & {
+  subscriptionReady: boolean;
+};
 
 export function useRouteBuildProgress(nodeId: NodeId | null): RouteBuildProgressResult {
-  const { progressState } = useBuildSessionStateTreeBridge<RouteStageId>({
+  const { progressState, subscriptionReady } = useBuildSessionStateTreeBridge<RouteStageId>({
     nodeType: ROUTE_NODE_TYPE,
     nodeId,
-    subscriptionTransport: 'same-realm',
+    subscriptionTransport: 'worker',
     stageIds: ROUTE_STAGE_IDS,
     defaultActiveStageId: 'source',
     resolveStageId: resolveRouteStageId,
@@ -35,5 +37,6 @@ export function useRouteBuildProgress(nodeId: NodeId | null): RouteBuildProgress
       progressState.progress?.message ??
       progressState.error?.message ??
       null,
+    subscriptionReady,
   };
 }
