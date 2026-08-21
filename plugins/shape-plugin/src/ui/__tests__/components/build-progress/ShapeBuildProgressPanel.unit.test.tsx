@@ -54,6 +54,7 @@ const workerBridgeMocks = vi.hoisted(() => ({
   probeBuildSession: vi.fn().mockResolvedValue({ kind: 'available' }),
   getBuildSessionRuntime: vi.fn().mockResolvedValue(null),
   subscribeAll: vi.fn().mockResolvedValue(vi.fn()),
+  subscribeWorkerLog: vi.fn().mockResolvedValue(vi.fn()),
 }));
 
 vi.mock('@hierarchidb/ui-worker-client', () => ({
@@ -64,6 +65,7 @@ vi.mock('@hierarchidb/ui-worker-client', () => ({
     }),
     getBuildSessionRuntime: workerBridgeMocks.getBuildSessionRuntime,
     subscribeAll: workerBridgeMocks.subscribeAll,
+    subscribeWorkerLog: workerBridgeMocks.subscribeWorkerLog,
   }),
 }));
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildSessionDisplayStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
+import type { BuildSessionDisplayStatus } from '~/ui/components/build-progress/shapeBuildProgressTypes';
 import { UI_QUIET_THRESHOLD_MS } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/constants.js';
 
 const POLL_INTERVAL_MS = 1000;
