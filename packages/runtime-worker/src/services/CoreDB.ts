@@ -14,9 +14,12 @@ import type { YamlCoreDbMigrationJournalValue } from '@hierarchidb/yaml-api/migr
 import type { BulkError } from 'dexie';
 import { Dexie, type Table } from 'dexie';
 import { Subject } from 'rxjs';
+import {
+  CORE_DB_CANONICAL_LOGICAL_VERSION,
+  CORE_DB_LEGACY_LOGICAL_VERSION,
+} from '../yaml-storage-production/yamlStorageCoreDbVersionConstants.js';
 import { assertYamlCanonicalTreeNodePostimage } from './yamlCanonicalTreeNodePostimageUtils.js';
 
-export const CORE_DB_CANONICAL_VERSION = 2 as const;
 export const YAML_MIGRATION_JOURNAL_STORE_NAME = 'yamlMigrationJournal' as const;
 export const YAML_MIGRATION_JOURNAL_SCHEMA =
   '&[migrationId+nodeId+slot],[migrationId+fromCoreDbVersion+toCoreDbVersion]' as const;
@@ -185,8 +188,8 @@ export class CoreDB extends Dexie {
 
   private constructor(name: string, enforceCanonicalYamlWrites: boolean) {
     super(name);
-    this.version(1).stores(CORE_DB_V1_STORES);
-    this.version(CORE_DB_CANONICAL_VERSION)
+    this.version(CORE_DB_LEGACY_LOGICAL_VERSION).stores(CORE_DB_V1_STORES);
+    this.version(CORE_DB_CANONICAL_LOGICAL_VERSION)
       .stores(CORE_DB_V2_STORES)
       .upgrade(() => {
         throw new Error('yaml-storage-activation-required');

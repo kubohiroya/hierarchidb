@@ -1,8 +1,11 @@
-import {
-  CORE_DB_CANONICAL_VERSION,
-  YAML_MIGRATION_JOURNAL_STORE_NAME,
-} from '../services/CoreDB.js';
+import { YAML_MIGRATION_JOURNAL_STORE_NAME } from '../services/CoreDB.js';
 import type { YamlStorageCoreDbErrorCode } from './yamlStorageCoreDbTypes.js';
+import {
+  CORE_DB_CANONICAL_LOGICAL_VERSION,
+  CORE_DB_CANONICAL_NATIVE_VERSION,
+  CORE_DB_LEGACY_LOGICAL_VERSION,
+  CORE_DB_LEGACY_NATIVE_VERSION,
+} from './yamlStorageCoreDbVersionConstants.js';
 
 interface IndexSpec {
   readonly name: string;
@@ -196,12 +199,15 @@ export function createCoreDbV2Schema(database: IDBDatabase): void {
 }
 
 export function validateCoreDbV1Schema(database: IDBDatabase): boolean {
-  return database.version === 1 && validateStoreSpecs(database, CORE_DB_V1_STORE_SPECS);
+  return (
+    database.version === CORE_DB_LEGACY_NATIVE_VERSION &&
+    validateStoreSpecs(database, CORE_DB_V1_STORE_SPECS)
+  );
 }
 
 export function validateCoreDbV2Schema(database: IDBDatabase): boolean {
   return (
-    database.version === CORE_DB_CANONICAL_VERSION &&
+    database.version === CORE_DB_CANONICAL_NATIVE_VERSION &&
     validateStoreSpecs(database, [...CORE_DB_V1_STORE_SPECS, YAML_MIGRATION_JOURNAL_STORE_SPEC])
   );
 }
@@ -335,7 +341,10 @@ export function readAllCoreDbNodes(database: IDBDatabase): Promise<readonly unkn
 }
 
 export const yamlStorageCoreDbSchema = Object.freeze({
-  canonicalVersion: CORE_DB_CANONICAL_VERSION,
+  legacyLogicalVersion: CORE_DB_LEGACY_LOGICAL_VERSION,
+  canonicalLogicalVersion: CORE_DB_CANONICAL_LOGICAL_VERSION,
+  legacyNativeVersion: CORE_DB_LEGACY_NATIVE_VERSION,
+  canonicalNativeVersion: CORE_DB_CANONICAL_NATIVE_VERSION,
   journalStoreName: YAML_MIGRATION_JOURNAL_STORE_NAME,
   journalPrimaryKey: Object.freeze(['migrationId', 'nodeId', 'slot']),
   journalCohortIndexName: '[migrationId+fromCoreDbVersion+toCoreDbVersion]',

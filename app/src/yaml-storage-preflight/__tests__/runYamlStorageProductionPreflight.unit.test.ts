@@ -1,4 +1,10 @@
 import { createHash } from 'node:crypto';
+import {
+  CORE_DB_CANONICAL_LOGICAL_VERSION,
+  CORE_DB_CANONICAL_NATIVE_VERSION,
+  CORE_DB_LEGACY_LOGICAL_VERSION,
+  CORE_DB_LEGACY_NATIVE_VERSION,
+} from '@hierarchidb/runtime-worker/yaml-storage-production';
 import { IDBFactory } from 'fake-indexeddb';
 import { describe, expect, it, vi } from 'vitest';
 import { runYamlStorageProductionPreflight } from '../runYamlStorageProductionPreflight.js';
@@ -86,7 +92,11 @@ function seedCore(
   version: 1 | 2,
   includeJournalRecord = false
 ): Promise<void> {
-  return createDatabase(factory, `${DATABASE_PREFIX}-core`, version, (database) => {
+  const nativeVersion =
+    version === CORE_DB_LEGACY_LOGICAL_VERSION
+      ? CORE_DB_LEGACY_NATIVE_VERSION
+      : CORE_DB_CANONICAL_NATIVE_VERSION;
+  return createDatabase(factory, `${DATABASE_PREFIX}-core`, nativeVersion, (database) => {
     createCoreV1Stores(database);
     if (version === 2) {
       const journal = createJournalStore(database);
@@ -202,7 +212,8 @@ describe('runYamlStorageProductionPreflight', () => {
         evidenceCount: 0,
       },
       coreDb: {
-        databaseVersion: 1,
+        logicalVersion: CORE_DB_LEGACY_LOGICAL_VERSION,
+        nativeVersion: CORE_DB_LEGACY_NATIVE_VERSION,
         topologyStatus: 'exact',
         journalTopologyStatus: 'absent',
       },
@@ -232,7 +243,8 @@ describe('runYamlStorageProductionPreflight', () => {
         evidenceCount: 2,
       },
       coreDb: {
-        databaseVersion: 2,
+        logicalVersion: CORE_DB_CANONICAL_LOGICAL_VERSION,
+        nativeVersion: CORE_DB_CANONICAL_NATIVE_VERSION,
         topologyStatus: 'exact',
         journalTopologyStatus: 'exact',
         journalRecordCount: 1,
@@ -273,6 +285,31 @@ describe('runYamlStorageProductionPreflight', () => {
     expect(await factory.databases()).toContainEqual({
       name: `${DATABASE_PREFIX}-yaml`,
       version: 2,
+    });
+  });
+
+  it('rejects a logical CoreDB version encoded as the native database version', async () => {
+    const factory = new IDBFactory();
+    await seedCoordinator(factory, allowedState);
+    await createDatabase(
+      factory,
+      `${DATABASE_PREFIX}-core`,
+      CORE_DB_LEGACY_LOGICAL_VERSION,
+      (database) => createCoreV1Stores(database)
+    );
+    await seedYaml(factory);
+    const open = vi.spyOn(factory, 'open');
+
+    const result = await runYamlStorageProductionPreflight(input(factory, 'pre'));
+
+    expect(result).toMatchObject({
+      status: 'rejected',
+      code: 'CORE_DATABASE_VERSION_MISMATCH',
+    });
+    expect(open).not.toHaveBeenCalled();
+    expect(await factory.databases()).toContainEqual({
+      name: `${DATABASE_PREFIX}-core`,
+      version: CORE_DB_LEGACY_LOGICAL_VERSION,
     });
   });
 
@@ -340,10 +377,15 @@ describe('runYamlStorageProductionPreflight', () => {
   it('rejects an inexact CoreDB topology instead of accepting extra stores', async () => {
     const factory = new IDBFactory();
     await seedCoordinator(factory, allowedState);
-    await createDatabase(factory, `${DATABASE_PREFIX}-core`, 1, (database) => {
-      createCoreV1Stores(database);
-      database.createObjectStore('legacyFallback', { keyPath: 'id' });
-    });
+    await createDatabase(
+      factory,
+      `${DATABASE_PREFIX}-core`,
+      CORE_DB_LEGACY_NATIVE_VERSION,
+      (database) => {
+        createCoreV1Stores(database);
+        database.createObjectStore('legacyFallback', { keyPath: 'id' });
+      }
+    );
     await seedYaml(factory);
 
     await expect(runYamlStorageProductionPreflight(input(factory, 'pre'))).resolves.toMatchObject({

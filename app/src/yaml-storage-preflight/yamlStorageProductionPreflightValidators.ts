@@ -1,3 +1,10 @@
+import {
+  CORE_DB_CANONICAL_LOGICAL_VERSION,
+  CORE_DB_CANONICAL_NATIVE_VERSION,
+  CORE_DB_LEGACY_LOGICAL_VERSION,
+  CORE_DB_LEGACY_NATIVE_VERSION,
+} from '@hierarchidb/runtime-worker/yaml-storage-production';
+
 interface IndexSpec {
   readonly name: string;
   readonly keyPath: string | readonly string[];
@@ -354,12 +361,22 @@ export function validateCoordinatorDatabaseSchema(database: IDBDatabase): boolea
   return database.version === 2 && validateStoreSpecs(database, [COORDINATOR_STORE_SPEC]);
 }
 
-export function validateCoreDatabaseSchema(database: IDBDatabase, version: 1 | 2): boolean {
+export function validateCoreDatabaseSchema(database: IDBDatabase, logicalVersion: number): boolean {
+  if (
+    logicalVersion !== CORE_DB_LEGACY_LOGICAL_VERSION &&
+    logicalVersion !== CORE_DB_CANONICAL_LOGICAL_VERSION
+  ) {
+    return false;
+  }
   const specs =
-    version === 1
+    logicalVersion === CORE_DB_LEGACY_LOGICAL_VERSION
       ? CORE_DB_V1_STORE_SPECS
       : [...CORE_DB_V1_STORE_SPECS, YAML_MIGRATION_JOURNAL_STORE_SPEC];
-  return database.version === version && validateStoreSpecs(database, specs);
+  const nativeVersion =
+    logicalVersion === CORE_DB_LEGACY_LOGICAL_VERSION
+      ? CORE_DB_LEGACY_NATIVE_VERSION
+      : CORE_DB_CANONICAL_NATIVE_VERSION;
+  return database.version === nativeVersion && validateStoreSpecs(database, specs);
 }
 
 export function validateYamlDatabaseSchema(database: IDBDatabase): boolean {

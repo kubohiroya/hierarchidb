@@ -2,10 +2,7 @@ import {
   planYamlCoreDbMigration,
   type YamlCoreDbMigrationPlan,
 } from '@hierarchidb/yaml-api/migration';
-import {
-  CORE_DB_CANONICAL_VERSION,
-  YAML_MIGRATION_JOURNAL_STORE_NAME,
-} from '../services/CoreDB.js';
+import { YAML_MIGRATION_JOURNAL_STORE_NAME } from '../services/CoreDB.js';
 import {
   createYamlStorageFreshActivation,
   reduceYamlStorageActivation,
@@ -27,6 +24,12 @@ import type {
   YamlStorageCoreDbError,
   YamlStorageCoreDbErrorCode,
 } from './yamlStorageCoreDbTypes.js';
+import {
+  CORE_DB_CANONICAL_LOGICAL_VERSION,
+  CORE_DB_CANONICAL_NATIVE_VERSION,
+  CORE_DB_LEGACY_LOGICAL_VERSION,
+  CORE_DB_LEGACY_NATIVE_VERSION,
+} from './yamlStorageCoreDbVersionConstants.js';
 import {
   cloneYamlStorageRawNode,
   selectYamlStorageRawNodes,
@@ -77,8 +80,8 @@ function isValidInput(input: ActivateYamlStorageCoreDbInput): boolean {
   return (
     isIssuedYamlStorageActivationState(input.state) &&
     input.state.phase === 'preflight' &&
-    input.state.currentVersion === 1 &&
-    input.state.targetVersion === CORE_DB_CANONICAL_VERSION &&
+    input.state.currentVersion === CORE_DB_LEGACY_LOGICAL_VERSION &&
+    input.state.targetVersion === CORE_DB_CANONICAL_LOGICAL_VERSION &&
     typeof input.databaseName === 'string' &&
     input.databaseName.length > 0 &&
     typeof input.migrationId === 'string' &&
@@ -152,7 +155,10 @@ function openAndUpgradeCoreDb(
     };
     let request: IDBOpenDBRequest;
     try {
-      request = input.environment.indexedDB.open(input.databaseName, CORE_DB_CANONICAL_VERSION);
+      request = input.environment.indexedDB.open(
+        input.databaseName,
+        CORE_DB_CANONICAL_NATIVE_VERSION
+      );
     } catch {
       finish(Object.freeze({ ok: false, code: 'MIGRATION_TARGET_OPEN_FAILED' }));
       return;
@@ -178,8 +184,8 @@ function openAndUpgradeCoreDb(
       const transaction = request.transaction;
       if (
         transaction === null ||
-        event.oldVersion !== 1 ||
-        event.newVersion !== CORE_DB_CANONICAL_VERSION
+        event.oldVersion !== CORE_DB_LEGACY_NATIVE_VERSION ||
+        event.newVersion !== CORE_DB_CANONICAL_NATIVE_VERSION
       ) {
         transaction?.abort();
         return;
@@ -259,7 +265,10 @@ function openAndCreateFreshCoreDb(
     };
     let request: IDBOpenDBRequest;
     try {
-      request = input.environment.indexedDB.open(input.databaseName, CORE_DB_CANONICAL_VERSION);
+      request = input.environment.indexedDB.open(
+        input.databaseName,
+        CORE_DB_CANONICAL_NATIVE_VERSION
+      );
     } catch {
       finish(Object.freeze({ ok: false, code: 'MIGRATION_TARGET_OPEN_FAILED' }));
       return;
@@ -280,7 +289,7 @@ function openAndCreateFreshCoreDb(
       if (
         transaction === null ||
         event.oldVersion !== 0 ||
-        event.newVersion !== CORE_DB_CANONICAL_VERSION
+        event.newVersion !== CORE_DB_CANONICAL_NATIVE_VERSION
       ) {
         transaction?.abort();
         return;
@@ -321,7 +330,7 @@ async function validateActivatedCoreDb(input: ActivateYamlStorageCoreDbInput): P
   const opened = await openCoreDbAtExactVersion(
     input.environment.indexedDB,
     input.databaseName,
-    CORE_DB_CANONICAL_VERSION
+    CORE_DB_CANONICAL_NATIVE_VERSION
   );
   if (opened.ok === false) return opened;
   try {
@@ -344,7 +353,7 @@ export async function activateYamlStorageCoreDb(
   const preflightOpen = await openExistingCoreDb(
     input.environment.indexedDB,
     input.databaseName,
-    input.state.currentVersion
+    CORE_DB_LEGACY_NATIVE_VERSION
   );
   if (preflightOpen.ok === false) {
     if (preflightOpen.code !== 'CORE_DB_NOT_FOUND') {

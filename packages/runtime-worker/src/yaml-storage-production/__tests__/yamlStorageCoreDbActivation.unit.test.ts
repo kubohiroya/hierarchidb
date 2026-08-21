@@ -1,5 +1,7 @@
-import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Dexie } from 'dexie';
+import { IDBFactory, IDBKeyRange, IDBObjectStore } from 'fake-indexeddb';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { CoreDB } from '../../services/CoreDB.js';
 import {
   createYamlStorageActivation,
   reduceYamlStorageActivation,
@@ -7,10 +9,17 @@ import {
 } from '../../yaml-storage-activation/index.js';
 import { activateYamlStorageCoreDb } from '../activateYamlStorageCoreDb.js';
 import { inspectCanonicalYamlStorageCoreDb } from '../inspectCanonicalYamlStorageCoreDb.js';
+import {
+  CORE_DB_CANONICAL_NATIVE_VERSION,
+  CORE_DB_LEGACY_LOGICAL_VERSION,
+  CORE_DB_LEGACY_NATIVE_VERSION,
+} from '../yamlStorageCoreDbVersionConstants.js';
 import { selectYamlStorageRawNodes } from '../yamlStorageRawSnapshotUtils.js';
 
 const DATABASE_NAME = 'yaml-storage-activation-test';
 const VALID_DIGEST = '0123456789abcdef'.repeat(4);
+const ORIGINAL_DEXIE_INDEXED_DB = Dexie.dependencies.indexedDB;
+const ORIGINAL_DEXIE_KEY_RANGE = Dexie.dependencies.IDBKeyRange;
 
 function legacyNode(id = 'yaml-1'): Record<string, unknown> {
   return {
@@ -69,17 +78,65 @@ function createV1Schema(database: IDBDatabase): void {
   });
 }
 
-function seedV1Database(
+function seedCoreDbV1SchemaAtNativeVersion(
   factory: IDBFactory,
-  rawNodes: readonly Record<string, unknown>[] = [legacyNode()]
+  nativeVersion: number,
+  rawNodes: readonly Record<string, unknown>[] = [legacyNode()],
+  includeInitializedCore = false
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    const request = factory.open(DATABASE_NAME, 1);
+    const request = factory.open(DATABASE_NAME, nativeVersion);
     request.onerror = () => reject(new Error('seed-open-failed'));
     request.onupgradeneeded = () => {
       createV1Schema(request.result);
-      const nodes = request.transaction?.objectStore('nodes');
-      if (nodes === undefined) throw new Error('seed-transaction-missing');
+      const transaction = request.transaction;
+      if (transaction === null) throw new Error('seed-transaction-missing');
+      const nodes = transaction.objectStore('nodes');
+      if (includeInitializedCore) {
+        const trees = transaction.objectStore('trees');
+        const rootStates = transaction.objectStore('rootStates');
+        for (const treeId of ['r', 'p'] as const) {
+          const rootName = treeId === 'r' ? 'Resources' : 'Projects';
+          trees.add({
+            id: treeId,
+            name: rootName,
+            superRootId: `${treeId}:superRoot`,
+            rootId: `${treeId}:root`,
+            archiveRootId: `${treeId}:archive`,
+          });
+          nodes.add({
+            id: `${treeId}:root`,
+            parentId: `${treeId}:superRoot`,
+            nodeType: 'folder',
+            depth: 0,
+            createdAt: 1,
+            updatedAt: 1,
+            version: 1,
+            metadata: { name: rootName, tags: [] },
+            draftMetadata: null,
+            data: null,
+          });
+          nodes.add({
+            id: `${treeId}:archive`,
+            parentId: `${treeId}:superRoot`,
+            nodeType: 'archive',
+            depth: 0,
+            createdAt: 1,
+            updatedAt: 1,
+            version: 1,
+            metadata: { name: 'Archive', tags: [] },
+            draftMetadata: null,
+            data: null,
+          });
+          for (const rootType of ['root', 'archive', 'draft'] as const) {
+            rootStates.add({
+              treeId,
+              rootNodeId: `${treeId}:${rootType}`,
+              expanded: {},
+            });
+          }
+        }
+      }
       for (const rawNode of rawNodes) nodes.add(rawNode);
     };
     request.onsuccess = () => {
@@ -87,6 +144,29 @@ function seedV1Database(
       resolve();
     };
   });
+}
+
+function seedV1Database(
+  factory: IDBFactory,
+  rawNodes: readonly Record<string, unknown>[] = [legacyNode()],
+  includeInitializedCore = false
+): Promise<void> {
+  return seedCoreDbV1SchemaAtNativeVersion(
+    factory,
+    CORE_DB_LEGACY_NATIVE_VERSION,
+    rawNodes,
+    includeInitializedCore
+  );
+}
+
+async function initializeRealCoreDb(): Promise<void> {
+  const coreDb = CoreDB.createForCanonicalRuntime(DATABASE_NAME);
+  try {
+    await coreDb.open();
+    await coreDb.initialize();
+  } finally {
+    coreDb.close();
+  }
 }
 
 function openDatabase(factory: IDBFactory): Promise<IDBDatabase> {
@@ -169,11 +249,19 @@ describe('single CoreDB YAML storage activation', () => {
 
   beforeEach(() => {
     factory = new IDBFactory();
+    Dexie.dependencies.indexedDB = factory;
+    Dexie.dependencies.IDBKeyRange = IDBKeyRange;
+  });
+
+  afterEach(() => {
+    Dexie.dependencies.indexedDB = ORIGINAL_DEXIE_INDEXED_DB;
+    Dexie.dependencies.IDBKeyRange = ORIGINAL_DEXIE_KEY_RANGE;
+    vi.restoreAllMocks();
   });
 
   it('upgrades v1 exactly once and publishes canonical-ready only after initialization', async () => {
-    await seedV1Database(factory);
-    const initializeCoreDb = vi.fn(async () => undefined);
+    await seedV1Database(factory, [legacyNode()], true);
+    const initializeCoreDb = vi.fn(initializeRealCoreDb);
 
     const result = await activateYamlStorageCoreDb(
       activationInput(factory, 'activation-1', initializeCoreDb)
@@ -188,10 +276,10 @@ describe('single CoreDB YAML storage activation', () => {
     });
     expect(initializeCoreDb).toHaveBeenCalledTimes(1);
     const snapshot = await readDatabaseSnapshot(factory);
-    expect(snapshot.version).toBe(2);
+    expect(snapshot.version).toBe(CORE_DB_CANONICAL_NATIVE_VERSION);
     expect(snapshot.journal).toHaveLength(1);
-    expect(snapshot.nodes).toHaveLength(1);
-    expect(snapshot.nodes[0]).toMatchObject({
+    const migratedNode = snapshot.nodes.find((node) => (node as { id?: unknown }).id === 'yaml-1');
+    expect(migratedNode).toMatchObject({
       id: 'yaml-1',
       data: {
         subtype: 'scenario',
@@ -199,11 +287,11 @@ describe('single CoreDB YAML storage activation', () => {
         content: 'name: demo\n',
       },
     });
-    expect((snapshot.nodes[0] as { data?: { name?: unknown } }).data?.name).toBeUndefined();
+    expect((migratedNode as { data?: { name?: unknown } }).data?.name).toBeUndefined();
   });
 
   it('creates an absent CoreDB directly at canonical v2 without migration journal rows', async () => {
-    const initializeCoreDb = vi.fn(async () => undefined);
+    const initializeCoreDb = vi.fn(initializeRealCoreDb);
 
     const result = await activateYamlStorageCoreDb(
       activationInput(factory, 'fresh-install', initializeCoreDb)
@@ -219,7 +307,9 @@ describe('single CoreDB YAML storage activation', () => {
     });
     expect(initializeCoreDb).toHaveBeenCalledTimes(1);
     const snapshot = await readDatabaseSnapshot(factory);
-    expect(snapshot).toEqual({ version: 2, nodes: [], journal: [] });
+    expect(snapshot.version).toBe(CORE_DB_CANONICAL_NATIVE_VERSION);
+    expect(snapshot.nodes).toHaveLength(4);
+    expect(snapshot.journal).toEqual([]);
   });
 
   it.each([
@@ -234,7 +324,7 @@ describe('single CoreDB YAML storage activation', () => {
     if (!result.ok) throw new Error('zero-write-activation-failed');
     expect(result.state.readinessProof).toBe('same-activation-upgrade');
     const snapshot = await readDatabaseSnapshot(factory);
-    expect(snapshot.version).toBe(2);
+    expect(snapshot.version).toBe(CORE_DB_CANONICAL_NATIVE_VERSION);
     expect(snapshot.journal).toEqual([]);
   });
 
@@ -256,9 +346,28 @@ describe('single CoreDB YAML storage activation', () => {
     });
     expect(open.mock.calls).toEqual([[DATABASE_NAME]]);
     const database = await openDatabase(factory);
-    expect(database.version).toBe(1);
+    expect(database.version).toBe(CORE_DB_LEGACY_NATIVE_VERSION);
     expect(Array.from(database.objectStoreNames)).not.toContain('yamlMigrationJournal');
     database.close();
+  });
+
+  it('rejects a logical CoreDB version encoded as the native database version', async () => {
+    await seedCoreDbV1SchemaAtNativeVersion(factory, CORE_DB_LEGACY_LOGICAL_VERSION);
+    const open = vi.spyOn(factory, 'open');
+
+    const result = await activateYamlStorageCoreDb(
+      activationInput(factory, 'logical-version-as-native')
+    );
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: { code: 'CORE_DB_VERSION_MISMATCH' },
+    });
+    expect(open).not.toHaveBeenCalled();
+    expect(await factory.databases()).toContainEqual({
+      name: DATABASE_NAME,
+      version: CORE_DB_LEGACY_LOGICAL_VERSION,
+    });
   });
 
   it('aborts all node and schema changes when a journal write throws', async () => {
@@ -284,7 +393,7 @@ describe('single CoreDB YAML storage activation', () => {
       add.mockRestore();
     }
     const database = await openDatabase(factory);
-    expect(database.version).toBe(1);
+    expect(database.version).toBe(CORE_DB_LEGACY_NATIVE_VERSION);
     expect(Array.from(database.objectStoreNames)).not.toContain('yamlMigrationJournal');
     expect(await readAll(database.transaction('nodes', 'readonly').objectStore('nodes'))).toEqual([
       legacyNode(),
@@ -361,7 +470,7 @@ describe('single CoreDB YAML storage activation', () => {
     expect(result.error.code).toBe('MIGRATION_SNAPSHOT_MISMATCH');
     expect(result.state.phase).toBe('rejected');
     const database = await openDatabase(factory);
-    expect(database.version).toBe(1);
+    expect(database.version).toBe(CORE_DB_LEGACY_NATIVE_VERSION);
     expect(Array.from(database.objectStoreNames)).not.toContain('yamlMigrationJournal');
     database.close();
   });
@@ -377,7 +486,7 @@ describe('single CoreDB YAML storage activation', () => {
     expect(results.filter((result) => result.ok)).toHaveLength(1);
     expect(results.filter((result) => !result.ok)).toHaveLength(1);
     const snapshot = await readDatabaseSnapshot(factory);
-    expect(snapshot.version).toBe(2);
+    expect(snapshot.version).toBe(CORE_DB_CANONICAL_NATIVE_VERSION);
     expect(snapshot.journal).toHaveLength(1);
   });
 
@@ -400,7 +509,7 @@ describe('single CoreDB YAML storage activation', () => {
     const database = await openDatabase(factory);
     database.close();
     await new Promise<void>((resolve, reject) => {
-      const request = factory.open(DATABASE_NAME, 2);
+      const request = factory.open(DATABASE_NAME, CORE_DB_CANONICAL_NATIVE_VERSION);
       request.onerror = () => reject(new Error('manual-v2-open-failed'));
       request.onupgradeneeded = () => {
         const journal = request.result.createObjectStore('yamlMigrationJournal', {

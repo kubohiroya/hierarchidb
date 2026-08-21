@@ -1,4 +1,3 @@
-import { CORE_DB_CANONICAL_VERSION } from '../services/CoreDB.js';
 import { createYamlStoragePostActivationReady } from '../yaml-storage-activation/index.js';
 import { validateCanonicalYamlStorageCoreDb } from './validateCanonicalYamlStorageCoreDb.js';
 import { openExistingCoreDb } from './yamlStorageCoreDbSchemaUtils.js';
@@ -8,6 +7,10 @@ import type {
   YamlStorageCoreDbError,
   YamlStorageCoreDbErrorCode,
 } from './yamlStorageCoreDbTypes.js';
+import {
+  CORE_DB_CANONICAL_LOGICAL_VERSION,
+  CORE_DB_CANONICAL_NATIVE_VERSION,
+} from './yamlStorageCoreDbVersionConstants.js';
 
 function failedResult(
   code: YamlStorageCoreDbErrorCode,
@@ -28,7 +31,7 @@ function isValidInput(input: InspectCanonicalYamlStorageCoreDbInput): boolean {
     input.activationId.length > 0 &&
     typeof input.databaseName === 'string' &&
     input.databaseName.length > 0 &&
-    input.targetVersion === CORE_DB_CANONICAL_VERSION &&
+    input.targetVersion === CORE_DB_CANONICAL_LOGICAL_VERSION &&
     typeof input.openRequestId === 'string' &&
     input.openRequestId.length > 0 &&
     input.coordinatorGate === 'revoked-ready-for-preflight' &&
@@ -45,7 +48,7 @@ export async function inspectCanonicalYamlStorageCoreDb(
   const opened = await openExistingCoreDb(
     input.environment.indexedDB,
     input.databaseName,
-    CORE_DB_CANONICAL_VERSION
+    CORE_DB_CANONICAL_NATIVE_VERSION
   );
   if (opened.ok === false) return failedResult(opened.code);
 
