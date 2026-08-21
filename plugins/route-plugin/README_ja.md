@@ -14,8 +14,9 @@ HierarchiDB の交通路・輸送ルート管理プラグイン。OpenStreetMap�
 - routeは既定で方向付きであり、契約どおりbidirectionalと明示されたrouteだけ
   始終点を正規化して同一`sourceKey`にする。
 - build sessionの正規entry pointは`RouteBuildSessionOrchestrator -> RouteBuildSession`とする。
-- 2026-08-21時点ではUIの直接実行経路とsession経路が併存し、session側の
-  `geometry` / `tileEmit`は実成果物を生成しない。Issue #549で単一の正規経路へ統合する。
+- 2026-08-21時点ではUIの直接実行経路とsession経路が併存する。session側は
+  `source`でgenerator結果を永続化せず、`geometry` / `tileEmit`でも実成果物を生成しない。
+  Issue #549で単一の正規経路へ統合する。
 - 未実装stage、engine欠落、不正設定をno-op成功や別engineへの暗黙fallbackで処理しない。
 
 ## ノードタイプと継承関係

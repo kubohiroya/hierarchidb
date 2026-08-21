@@ -48,7 +48,8 @@ OpenStreetMapやNatural Earth等のオープンデータソースから、航路
 ### 移行状況（2026-08-21）
 
 - UIからroute mutation APIを3段階で直接呼ぶ経路と、canonical eventを配信する`RouteBuildSession`経路が併存している。
-- `RouteBuildSession`の`geometry` / `tileEmit` handlerは実成果物を生成しない。
+- `RouteBuildSession`の`source` handlerはgenerator結果を永続化せず、
+  `geometry` / `tileEmit` handlerも実成果物を生成しない。
 - 上記はIssue #549で正規経路へ統合する。完了までは本節をtarget contract、実装を移行中として扱う。
 
 ## 主要機能

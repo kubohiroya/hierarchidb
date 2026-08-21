@@ -102,13 +102,14 @@ flowchart TD
   FORM[RouteBuildLaunchForm]
   FORM --> ORCH[RouteBuildSessionOrchestrator]
   ORCH --> SESSION[RouteBuildSession]
-  SESSION --> SOURCE[source: generation]
+  SESSION --> SOURCE[source: generator result discarded]
   SESSION --> NOOP1[geometry: no-op]
   SESSION --> NOOP2[tileEmit: no-op]
 ```
 
 直接経路は実成果物を生成するがcanonical session/eventの所有外である。
-session経路はcanonical event sourceだがgeometry/tileEmitが実処理を行わない。
+session経路はcanonical event sourceだが、sourceはgenerator結果を永続化せず、
+geometry/tileEmitは実処理を行わない。
 どちらも単独では正規仕様を満たさない。
 
 ## Issue #549の統合順

@@ -105,8 +105,10 @@ geometry cache/indexが欠落・不正な場合は失敗する。source artifact
 
 ## 現行mainとの差分（2026-08-21）
 
-- `RouteBuildSession`の`geometry` / `tileEmit` handlerは実成果物を生成せず完了するため、
-  本仕様を満たさない。
+- `RouteBuildSession`の`source` handlerはgeneratorを呼ぶが、返り値を破棄し、
+  LineStringとsource cacheを永続化しない。
+- `RouteBuildSession`の`geometry` / `tileEmit` handlerは実成果物を生成せず完了する。
+  したがってsession経路は3stageすべてのartifact契約を満たさない。
 - `RouteBuildStep`には
   `importIdeGsmRoutes -> buildRouteTileIndex -> generateRouteVectorTiles` の直接実行経路が残る。
 - `RouteGenerator` / `SearouteEngine`にはengine欠落・load失敗時の暗黙fallbackが残る。
