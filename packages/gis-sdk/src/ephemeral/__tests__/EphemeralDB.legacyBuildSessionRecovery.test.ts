@@ -220,7 +220,7 @@ describe('EphemeralDB legacy build session recovery', () => {
     expect(await db.sourceCache.get('source-cache')).toBeDefined();
     expect(await db.sourceCacheMeta.get('source-cache')).toBeDefined();
     expect(await db.geometryCache.get('geometry-cache')).toBeDefined();
-    expect(await db.geometryCacheMeta.get('geometry-cache')).toBeDefined();
+    expect(await db.geometryCacheMeta.get('geometry-cache')).toMatchObject({ tolerance: 0 });
     expect(await db.tileEmitBufferRelations.get('tile-relation')).toBeDefined();
     expect(await db.geometryErrors.get('geometry-error')).toBeDefined();
 

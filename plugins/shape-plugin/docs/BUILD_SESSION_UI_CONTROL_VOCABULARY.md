@@ -43,6 +43,9 @@ This intent is UI-only metadata for rendering and must not redefine runtime sema
 
 ## Progress update handling
 
-- Task/session progress visibility is driven by Worker `snapshot` + `progress`.
-- `progress=100%` is treated as terminal update signal.
-- Additional event sequence numbers are out of scope for this UI contract.
+- Task/session progress visibility is driven by canonical
+  `stageSnapshotUpdated` + `taskProgressUpdated` events.
+- `progress=100%` does not define task or session terminal status. Terminal task
+  status is owned by the authoritative stage snapshot.
+- Progress ordering uses a positive integer `version` scoped to each `taskId`.
+  Equal or lower versions are discarded; there is no global event sequence.

@@ -4,6 +4,7 @@ export interface OriginCoordinatorGatedBootstrapOperations<TRuntime> {
   initializeCoordinator(): Promise<OriginCoordinatorBootGate>;
   acceptActivationCoordinator(coordinator: OriginCoordinatorClientHandle): void;
   activateCanonicalStorage(coordinator: OriginCoordinatorClientHandle): Promise<void>;
+  recoverCanonicalStorageIfAuthorized(): Promise<'not-required' | 'recovered'>;
   requestSuccessReload(): void;
   prepareCanonicalRuntime(): Promise<void>;
   initializeBrowserGlobals(): void;
@@ -21,6 +22,12 @@ export async function runOriginCoordinatorGatedBootstrap<TRuntime>(
   if (gate.status === 'activation-allowed') {
     operations.acceptActivationCoordinator(gate.coordinator);
     await operations.activateCanonicalStorage(gate.coordinator);
+    operations.requestSuccessReload();
+    return Object.freeze({ status: 'reload-requested' });
+  }
+
+  const recovery = await operations.recoverCanonicalStorageIfAuthorized();
+  if (recovery === 'recovered') {
     operations.requestSuccessReload();
     return Object.freeze({ status: 'reload-requested' });
   }

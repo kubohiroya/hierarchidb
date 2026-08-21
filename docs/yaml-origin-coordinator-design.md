@@ -404,6 +404,26 @@ reset prompt, coordinator reset, quiescence retry, or legacy fallback.
 The successor path never treats a missing CoreDB as a fresh installation; only the sole executor
 that moved an `allowed` gate through quiescence may perform fresh creation.
 
+The separately approved Issue #1388 corrective release is the only exception, and it is not a
+generic successor rule. Its build-time mode is exactly `incident-1388-v1`; every normal build must
+declare the mode as `disabled` and must not carry a recovery fingerprint. Before any write, the
+recovery build requires an exact `revoked/ready-for-preflight` record whose deterministic SHA-256
+matches the build-fixed fingerprint, a missing exact canonical CoreDB name, an absent or exact-empty
+historical `hidb-core` native-v2 interrupted artifact, an absent or exact YamlDB v1 snapshot, and an
+absent dedicated recovery database. Unknown, non-empty, duplicate, malformed, blocked, or
+version-mismatched state is terminal.
+
+The one executor is selected by creating the dedicated
+`<prefix>-yaml-storage-recovery` native-v1 database and its exact `claimed` record in the same
+versionchange transaction. An existing database or record is never accepted as a retry claim. Only
+that claimant may issue one `open(<prefix>-core, 20)`, require `oldVersion === 0`, create the exact
+logical-v2 topology, initialize and validate canonical CoreDB, and atomically change the claim to
+`completed`. Success alone requests the normal reload handoff. A failure leaves `claimed` as a
+terminal recovery record; no context deletes a database, resets the coordinator, reopens a lower
+version, copies YamlDB, mutates `hidb-core`, or retries. After acceptance, production is rebuilt with
+recovery explicitly disabled. The fixed coordinator artifact and static-import graph remain
+byte-identical throughout this corrective release.
+
 The activation executor reaches canonical-ready before requesting a success-only reload handoff.
 The handoff creates a new JavaScript runtime because the winning window's local client-creation gate
 is monotonically revoked. It is not a way to bypass an unacknowledged client or retry a failed target
@@ -427,8 +447,11 @@ Production evidence before and after the single activation is collected by the i
 HTML entry `yaml-storage-preflight.html`, never by conversation-generated DevTools code or a
 clipboard payload. The entry does not import the coordinator worker or its fixed validator graph,
 does not load the application entry, and does not register or message a Service Worker. Loading the
-page is inert: an exact single `mode=pre` or `mode=post` query and one explicit button click are
-required before one inspection starts. It does not poll, retry, navigate, persist state, write to a
+page is inert: an exact single `mode=pre`, `mode=post`, `mode=recovery-pre`,
+`mode=recovery-post`, `mode=recovery-interrupted-core`, or
+`mode=recovery-interrupted-core-v1` query and one explicit button click are required before one
+inspection starts.
+It does not poll, retry, navigate, persist state, write to a
 clipboard, or transmit evidence.
 
 The fixed coordinator validator chunk keeps its accepted output filename as well as its accepted
@@ -478,6 +501,31 @@ mode, the operator records the result and closes the diagnostic tab before loadi
 production root. Leaving it open keeps a non-responsive scoped window in the Service Worker client
 census and therefore blocks activation fail-closed. The page never closes itself or navigates to the
 production root.
+
+Recovery-pre and recovery-post are read-only evidence modes for Issue #1388 and never start the
+corrective recovery. Recovery-pre emits the sanitized coordinator fingerprint and requires the
+canonical target and recovery claim database to be absent. Recovery-post requires exact canonical
+logical v2 / native v20 validation, the same unchanged interrupted/YamlDB baseline, and one exact
+`completed` claim for the current source SHA. Both modes expose only sanitized status, versions,
+counts, and digests; they never expose raw records or identities.
+
+The separately reviewed `recovery-interrupted-core` mode is diagnostic evidence only. It calls the
+database catalog once, selects only the literal historical name `hidb-core`, opens its exact observed
+positive native version without upgrade, validates the logical-v2 store/index topology independently
+from that native version, and counts all stores in one readonly transaction. It emits only the source
+SHA, timestamp, native version, topology status, total record count, and stable code. It does not
+change the `incident-1388-v1` acceptance set, authorize recovery, load the application root, or write,
+repair, copy, rename, delete, retry, or expose raw records.
+
+The separately reviewed `recovery-interrupted-core-v1` mode is a second diagnostic authority, not a
+retry or a broader branch of the first mode. It calls the catalog once and accepts only one literal
+`hidb-core` entry at exact native version 10. It opens that exact version without upgrade and reuses
+the runtime-worker logical-v1 schema validator as the store/index/key-path authority. Only an exact
+logical-v1 topology is counted, in one readonly transaction. A wrong native version, missing or
+duplicate catalog entry, blocked or upgrade open, or any topology mismatch rejects without counting.
+The public result is limited to source SHA, timestamp, native version, `exact-logical-v1 | mismatch`,
+aggregate record count, and a stable code. It does not change recovery acceptance or claims, load the
+application root, or write, repair, copy, rename, delete, retry, or expose raw records or store counts.
 
 The strict census contract, build-SHA reader, and responder live in the shared
 `@hierarchidb/origin-coordinator` workspace package. The window, SharedWorker, dedicated runtime

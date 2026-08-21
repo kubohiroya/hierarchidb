@@ -77,6 +77,32 @@ describe('useBuildSessionStateTreeBridge canonical event consumption', () => {
     unconditionalEventStreamer.cleanup(NODE_ID);
   });
 
+  it('reports readiness only after all worker event subscriptions are installed', async () => {
+    let releaseSubscription: (() => void) | null = null;
+    const subscriptionInstalled = new Promise<void>((resolve) => {
+      releaseSubscription = resolve;
+    });
+    workerMocks.subscribeAll.mockImplementation(
+      async (_nodeType: NodeType, _nodeId: NodeId, handlers: SubscriptionHandlers) => {
+        workerMocks.handlers = handlers;
+        await subscriptionInstalled;
+        return workerMocks.unsubscribe;
+      }
+    );
+
+    const { result, unmount } = renderBridge();
+    expect(result.current.subscriptionReady).toBe(false);
+    await waitFor(() => expect(workerMocks.handlers).not.toBeNull());
+    expect(result.current.subscriptionReady).toBe(false);
+
+    const release = releaseSubscription;
+    if (!release) throw new Error('Subscription release callback is unavailable');
+    act(() => release());
+    await waitFor(() => expect(result.current.subscriptionReady).toBe(true));
+    unmount();
+    expect(workerMocks.unsubscribe).toHaveBeenCalledOnce();
+  });
+
   it('does not synthesize aggregate progress from session status alone', async () => {
     const { result, unmount } = renderBridge();
     await waitFor(() => expect(workerMocks.handlers).not.toBeNull());

@@ -1,5 +1,11 @@
 export { activateYamlStorageCoreDb } from './activateYamlStorageCoreDb.js';
 export { inspectCanonicalYamlStorageCoreDb } from './inspectCanonicalYamlStorageCoreDb.js';
+export { recoverMissingYamlStorageCoreDb } from './recoverMissingYamlStorageCoreDb.js';
+export { validateCanonicalYamlStorageCoreDb } from './validateCanonicalYamlStorageCoreDb.js';
+export {
+  validateCoreDbV1Schema,
+  validateCoreDbV2StoreTopology,
+} from './yamlStorageCoreDbSchemaUtils.js';
 export type * from './yamlStorageCoreDbTypes.js';
 export {
   CORE_DB_CANONICAL_LOGICAL_VERSION,

@@ -148,6 +148,17 @@
     "geometry": {
       "title": "Geometry"
     },
+    "routeTransform": {
+      "title": "Route geometry by zoom band",
+      "description": "Provide comma-separated values per band in the same order as the zoom bands.",
+      "minDistance": "Min distance per band (meters)",
+      "tolerance": "Geometry simplify tolerance per band",
+      "errors": {
+        "bandCount": "Configure at least one valid zoom band first.",
+        "valueCount": "Enter one comma-separated value for every zoom band.",
+        "invalidValue": "Each value must be a finite non-negative number."
+      }
+    },
     "tileEmit": {
       "title": "TileEmit"
     }

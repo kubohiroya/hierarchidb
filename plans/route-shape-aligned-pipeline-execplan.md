@@ -1,5 +1,12 @@
 # Align route build pipeline with shape fetch/transform/vt stages
 
+> **Superseded (2026-08-22):** This document records the former
+> `fetch / transform / vt` direct-mutation implementation from 2026-01-31. The current
+> specification and implementation are the `source / geometry / tileEmit` canonical Worker flow
+> defined by `docs/route-build-flow-spec.md`, `docs/vt-route-pipeline-design.md`, and
+> `plans/current-route-stage-flow.md`. Do not restore the direct UI/API or GeoJSON fallbacks
+> described below.
+
 This ExecPlan is a living document. The sections `Progress`, `Surprises & Discoveries`, `Decision Log`, and `Outcomes & Retrospective` must be kept up to date as work proceeds.
 
 The plan must be maintained in accordance with `PLANS.md` at the repository root.
@@ -36,7 +43,10 @@ Route builds should behave like shape builds: a clear fetch/transform/vt pipelin
 
 ## Outcomes & Retrospective
 
-- Implemented a fetch/transform/vt pipeline for route builds with tile index and vector tile generation, and updated preview to read vector tiles. Typechecks for route-api, route-store, runtime-worker, and route-plugin succeeded after fixing a bulkGet type mismatch. Remaining work is to confirm behavior in the UI (build stage progression and tile rendering) with an IDE-GSM dataset.
+- The fetch/transform/vt direct-mutation path implemented on 2026-01-31 was superseded by
+  Issue #1375 on 2026-08-22. Browser-local orchestration and the direct mutation APIs were removed.
+  The sole current path uses Worker canonical commands/events, `RouteBuildSession`, the shared VT
+  handler, and read-back validation of `RouteDB.vectorTiles`.
 
 ## Context and Orientation
 
@@ -87,7 +97,8 @@ Expected commands:
 
 ## Idempotence and Recovery
 
-Edits are safe to re-run; rebuilding the route pipeline should overwrite prior stage wiring. If the vt stage introduces regressions, revert the new pipeline coordinator and re-enable the prior IDE-GSM-only build path. If vector tile generation fails, the fetch stage results remain stored and can be reused once the vt stage is fixed.
+If the current path regresses, revert Issue #1375. Do not restore the removed IDE-GSM direct UI/API,
+browser-local orchestrator, or GeoJSON fallback.
 
 ## Artifacts and Notes
 
@@ -95,13 +106,11 @@ Edits are safe to re-run; rebuilding the route pipeline should overwrite prior s
 
 ## Interfaces and Dependencies
 
-Use existing modules to minimize risk:
-- `RouteMutationService.importIdeGsmRoutes` for fetch+parse+waypoints+save.
-- `RouteVectorTileService.startSession` for vt generation (MVT).
-- `RouteBuildStep` for UI stage progression and error dialogs.
-- Any inverted index builder should be placed in `plugins/route-plugin/src/services` and invoked from the transform stage.
-
-If a new worker API is needed, extend `RouteMutationAPI` or add a new route-specific service that can be called from the UI build step. Keep data flow within the worker to avoid large payloads crossing the UI bridge.
+The current interfaces are `canonicalBuildAPI`, `RouteBuildSessionOrchestrator`,
+`RouteBuildSession`, `persistRouteSourceArtifact`, `persistRouteGeometryArtifacts`,
+`prepareRouteTileEmitTasks`, the shared shape/location `createVtHandler`, and
+`RouteTileArtifactStore`. Do not add build operations to `RouteMutationAPI` or call it from the
+UI build step.
 
 Note on plan maintenance: update `Progress`, `Decision Log`, and `Surprises & Discoveries` after each milestone. At completion, fill `Outcomes & Retrospective` with the final status and lessons learned.
 
