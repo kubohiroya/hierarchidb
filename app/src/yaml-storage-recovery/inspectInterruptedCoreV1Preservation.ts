@@ -4,6 +4,7 @@ import {
   type InterruptedCoreV1PreservationClassificationCode,
   type InterruptedCoreV1PreservationSummary,
   type InterruptedCoreV1Snapshot,
+  sanitizeInterruptedCoreV1PreservationSummary,
   validateCoreDbV1Schema,
 } from '@hierarchidb/runtime-worker/yaml-storage-production';
 import {
@@ -223,13 +224,37 @@ export async function inspectInterruptedCoreV1Preservation(
         snapshot: snapshot.snapshot,
         digestSha256Hex: input.digestSha256Hex,
       });
+      const preservation =
+        classification.summary === undefined
+          ? undefined
+          : sanitizeInterruptedCoreV1PreservationSummary(classification.summary);
+      if (preservation === null) {
+        return rejected(
+          'INTERRUPTED_CORE_V1_PRESERVATION_INTERNAL_FAILED',
+          context,
+          Object.freeze({
+            nativeVersion: CORE_DB_LEGACY_NATIVE_VERSION,
+            topologyStatus: 'exact-logical-v1',
+          })
+        );
+      }
       const interruptedCoreDb = Object.freeze({
         nativeVersion: CORE_DB_LEGACY_NATIVE_VERSION,
         topologyStatus: 'exact-logical-v1' as const,
-        ...(classification.summary === undefined ? {} : { preservation: classification.summary }),
+        ...(preservation === undefined ? {} : { preservation }),
       });
       if (classification.ok === false) {
         return rejected(classification.code, context, interruptedCoreDb);
+      }
+      if (preservation === undefined) {
+        return rejected(
+          'INTERRUPTED_CORE_V1_PRESERVATION_INTERNAL_FAILED',
+          context,
+          Object.freeze({
+            nativeVersion: CORE_DB_LEGACY_NATIVE_VERSION,
+            topologyStatus: 'exact-logical-v1',
+          })
+        );
       }
       return Object.freeze({
         mode: 'recovery-interrupted-core-preservation',
@@ -239,7 +264,7 @@ export async function inspectInterruptedCoreV1Preservation(
         interruptedCoreDb: Object.freeze({
           nativeVersion: CORE_DB_LEGACY_NATIVE_VERSION,
           topologyStatus: 'exact-logical-v1',
-          preservation: classification.summary,
+          preservation,
         }),
       });
     } finally {
