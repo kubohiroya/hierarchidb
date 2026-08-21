@@ -83,7 +83,7 @@
     <link rel="modulepreload" crossorigin href="/hierarchidb/assets/src-BCjMNpP-.js">
     <link rel="modulepreload" crossorigin href="/hierarchidb/assets/validation-EJ8Ignoa.js">
     <link rel="modulepreload" crossorigin href="/hierarchidb/assets/migration-DmRB9Lo2.js">
-    <link rel="modulepreload" crossorigin href="/hierarchidb/assets/inspectYamlStorageCorrectiveRecovery-IATcvZ65.js">
+    <link rel="modulepreload" crossorigin href="/hierarchidb/assets/inspectYamlStorageCorrectiveRecovery-DEpq6mle.js">
   </head>
   <body>
     <main>
@@ -95,6 +95,10 @@
       <p>
         Recovery-pre and recovery-post modes validate the separately approved corrective-recovery
         inventory and durable one-shot claim. They are read-only and never start recovery.
+      </p>
+      <p>
+        Recovery-interrupted-core reports only the fixed historical database native version,
+        logical-v2 topology status, and total record count. It never authorizes recovery.
       </p>
       <p>
         In pre mode, record the result and close this diagnostic tab before loading or reloading the
