@@ -7,7 +7,6 @@ import {
   ORIGIN_COORDINATOR_QUIESCENCE_BRIDGE_CAPABILITY,
 } from '@hierarchidb/origin-coordinator';
 import { OriginCoordinatorClientError } from './OriginCoordinatorClientError.js';
-import { readOriginCoordinatorStateDb } from './originCoordinatorStateDbUtils.js';
 import {
   parseOriginCoordinatorHelloResult,
   parseOriginCoordinatorQuiescenceResult,
@@ -16,6 +15,7 @@ import {
   parseOriginCoordinatorReadinessRequest,
   parseOriginCoordinatorReadinessResult,
 } from './originCoordinatorValidatorUtils.js';
+import { readOriginCoordinatorSuccessorState } from './readOriginCoordinatorSuccessorState.js';
 import type {
   OriginCoordinatorBootGate,
   OriginCoordinatorClientHandle,
@@ -268,12 +268,8 @@ export function initializeOriginCoordinator(
       if (typeof indexedDB === 'undefined') {
         throw new OriginCoordinatorClientError('HELLO_REJECTED');
       }
-      const durableState = await readOriginCoordinatorStateDb(indexedDB);
-      if (
-        !durableState.ok ||
-        durableState.state.phase !== 'revoked' ||
-        durableState.state.status !== 'ready-for-preflight'
-      ) {
+      const durableState = await readOriginCoordinatorSuccessorState(indexedDB);
+      if (!durableState.ok) {
         throw new OriginCoordinatorClientError('HELLO_REJECTED');
       }
       return Object.freeze({
