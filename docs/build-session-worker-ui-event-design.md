@@ -275,6 +275,13 @@ Shape subscribes to Worker diagnostics separately with
 `BuildWorkerBridge.subscribeWorkerLog`. Worker log events remain outside the four
 canonical channels and are never reduced into the build-session SSOT state tree.
 
+The shared runtime trigger below the canonical manager is deliberately payload-free.
+`AbstractBuildSession.addSessionUpdateListener` only reports that state changed;
+`BaseBuildSessionManager.onSessionUpdated` then causes the canonical manager to reread
+session state and `CanonicalBuildSessionEventSource`. This prevents an aggregate
+progress object from becoming a second owner of phase, counts, stage, or timing. The
+trigger is internal to one runtime and does not extend the four-event wire contract.
+
 ---
 
 ## Removed Concepts

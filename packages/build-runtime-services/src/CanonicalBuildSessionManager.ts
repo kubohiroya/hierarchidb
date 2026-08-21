@@ -23,7 +23,7 @@ export abstract class CanonicalBuildSessionManager extends BaseBuildSessionManag
     return Promise.resolve();
   }
 
-  protected override onSessionProgress(session: AbstractBuildSession): Promise<void> {
+  protected override onSessionUpdated(session: AbstractBuildSession): Promise<void> {
     this.publishCanonicalState(requireCanonicalSession(session), true);
     return Promise.resolve();
   }

@@ -1,30 +1,29 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
-  BuildProgressCallback,
-  BuildProgressEvent,
+  BuildStatus,
   BuildSessionStatus,
   IBuildSessionManager,
 } from '@hierarchidb/build-api';
-import { isBuildControlAPIV2Enabled } from '@hierarchidb/build-api';
 import type { AbstractBuildSession } from '../session/AbstractBuildSession';
 
 /**
  * Base implementation for plugin build session managers.
- * It tracks in-memory sessions and forwards progress callbacks.
+ * It tracks in-memory sessions and notifies subclasses when session state changes.
  */
 export abstract class BaseBuildSessionManager implements IBuildSessionManager {
   protected sessions = new Map<NodeId, AbstractBuildSession>();
-  protected progressCallbacks = new Map<NodeId, Set<BuildProgressCallback>>();
-  private sessionProgressTeardown = new Map<NodeId, () => void>();
-  private lastPhaseBySession = new Map<NodeId, BuildProgressEvent['phase']>();
+  private sessionUpdateTeardown = new Map<NodeId, () => void>();
+  private lastStatusBySession = new Map<NodeId, BuildStatus>();
 
   abstract startBuildSession(nodeId: NodeId): Promise<BuildSessionStatus>;
 
   protected async onSessionRegistered(_session: AbstractBuildSession): Promise<void> {}
-  protected async onSessionProgress(_session: AbstractBuildSession, _event: BuildProgressEvent): Promise<void> {}
+  protected async onSessionUpdated(_session: AbstractBuildSession): Promise<void> {}
   protected async onSessionStatusChange(_session: AbstractBuildSession): Promise<void> {}
   protected cleanupSessionTracking(nodeId: NodeId): void {
-    this.lastPhaseBySession.delete(nodeId);
+    this.sessionUpdateTeardown.get(nodeId)?.();
+    this.sessionUpdateTeardown.delete(nodeId);
+    this.lastStatusBySession.delete(nodeId);
   }
 
   async pauseBuildSession(nodeId: NodeId): Promise<void> {
@@ -56,59 +55,26 @@ export abstract class BaseBuildSessionManager implements IBuildSessionManager {
     };
   }
 
-  onBuildProgress(nodeId: NodeId, callback: BuildProgressCallback): () => void {
-    let callbacks = this.progressCallbacks.get(nodeId);
-    if (!callbacks) {
-      callbacks = new Set();
-      this.progressCallbacks.set(nodeId, callbacks);
-    }
-    callbacks.add(callback);
-
-    return () => {
-      const cbs = this.progressCallbacks.get(nodeId);
-      if (!cbs) return;
-      cbs.delete(callback);
-      if (cbs.size === 0) {
-        this.progressCallbacks.delete(nodeId);
-      }
-    };
-  }
-
-  protected emitProgress(nodeId: NodeId, event: BuildProgressEvent): void {
-    const callbacks = this.progressCallbacks.get(nodeId);
-    if (!callbacks) return;
-    for (const callback of callbacks) {
-      try {
-        callback(event);
-      } catch (error) {
-        console.error('Error in progress callback:', error);
-      }
-    }
-  }
-
   protected registerSession(session: AbstractBuildSession): void {
     const nodeId = session.getState().nodeId as NodeId;
     this.sessions.set(nodeId, session);
     void this.onSessionRegistered(session);
 
-    const teardown = this.sessionProgressTeardown.get(nodeId);
+    const teardown = this.sessionUpdateTeardown.get(nodeId);
     if (teardown) {
       teardown();
-      this.sessionProgressTeardown.delete(nodeId);
+      this.sessionUpdateTeardown.delete(nodeId);
     }
 
-    const shouldEmit = isBuildControlAPIV2Enabled();
-    const unsubscribe = session.addBuildProgressListener((event: BuildProgressEvent) => {
-      if (shouldEmit) {
-        this.emitProgress(nodeId, event);
-      }
-      void this.onSessionProgress(session, event);
-      const lastPhase = this.lastPhaseBySession.get(nodeId);
-      if (event.phase !== lastPhase) {
-        this.lastPhaseBySession.set(nodeId, event.phase);
+    const unsubscribe = session.addSessionUpdateListener(() => {
+      void this.onSessionUpdated(session);
+      const status = session.getState().status;
+      const lastStatus = this.lastStatusBySession.get(nodeId);
+      if (status !== lastStatus) {
+        this.lastStatusBySession.set(nodeId, status);
         void this.onSessionStatusChange(session);
       }
     });
-    this.sessionProgressTeardown.set(nodeId, unsubscribe);
+    this.sessionUpdateTeardown.set(nodeId, unsubscribe);
   }
 }

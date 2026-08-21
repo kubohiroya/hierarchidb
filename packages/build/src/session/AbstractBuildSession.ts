@@ -2,12 +2,9 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type {
   BaseBuildConfig,
   BuildProgress,
-  BuildProgressEvent,
-  BuildProgressPayload,
-  StageKey,
   BuildSessionState,
-  ProgressPhase,
   ResourceUsage,
+  StageKey,
 } from '@hierarchidb/build-api';
 
 /**
@@ -20,7 +17,7 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
   protected resourceUsage?: ResourceUsage;
   protected abortController: AbortController | null = null;
 
-  private readonly progressListeners = new Set<(event: BuildProgressEvent) => void>();
+  private readonly sessionUpdateListeners = new Set<() => void>();
   private readonly state: BuildSessionState;
   private progress: BuildProgress;
 
@@ -37,6 +34,7 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
       total: 0,
       completed: 0,
       failed: 0,
+      skipped: 0,
       stage: 'source',
       percentage: 0,
     };
@@ -78,6 +76,7 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
     this.state.status = 'running';
     this.state.startedAt = this.state.startedAt ?? Date.now();
     this.state.lastActivity = Date.now();
+    this.emitSessionUpdate();
 
     try {
       await this.onStart();
@@ -85,32 +84,22 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
       this.state.status = 'completed';
       this.state.completedAt = Date.now();
       this.state.lastActivity = this.state.completedAt;
-      this.emitProgress({
-        phase: 'completed',
-        stage: this.progress.stage,
-        payload: this.toProgressPayload(),
-      });
+      this.emitSessionUpdate();
       await this.onComplete();
     } catch (error) {
       if (controller.signal.aborted) {
         this.state.status = 'failed';
         this.state.error = 'Session aborted';
-        this.emitProgress({
-          phase: 'failed',
-          stage: this.progress.stage,
-          payload: this.toProgressPayload(),
-        });
+        this.state.completedAt = Date.now();
+        this.state.lastActivity = this.state.completedAt;
+        this.emitSessionUpdate();
         throw abortError('Session aborted');
       }
       this.state.status = 'failed';
       this.state.error = error instanceof Error ? error.message : String(error);
       this.state.completedAt = Date.now();
-      this.emitProgress({
-        phase: 'failed',
-        stage: this.progress.stage,
-        error: formatProgressError(error),
-        payload: this.toProgressPayload(),
-      });
+      this.state.lastActivity = this.state.completedAt;
+      this.emitSessionUpdate();
       throw error;
     }
   }
@@ -125,7 +114,7 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
     this.state.status = 'paused';
     this.state.lastActivity = Date.now();
     await this.onPause();
-    this.emitProgress({ phase: 'paused', stage: this.progress.stage, payload: this.toProgressPayload() });
+    this.emitSessionUpdate();
   }
 
   async resume(): Promise<void> {
@@ -135,62 +124,53 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
     this.state.status = 'running';
     this.state.lastActivity = Date.now();
     await this.onResume();
-    this.emitProgress({ phase: 'running', stage: this.progress.stage, payload: this.toProgressPayload() });
+    this.emitSessionUpdate();
   }
 
-  addBuildProgressListener(listener: (event: BuildProgressEvent) => void): () => void {
-    this.progressListeners.add(listener);
+  addSessionUpdateListener(listener: () => void): () => void {
+    this.sessionUpdateListeners.add(listener);
     return () => {
-      this.progressListeners.delete(listener);
+      this.sessionUpdateListeners.delete(listener);
     };
   }
 
   protected updateProgress(partial: Partial<BuildProgress>, stage?: StageKey): void {
+    if (Object.prototype.hasOwnProperty.call(partial, 'percentage')) {
+      throw new Error(
+        '[AbstractBuildSession] percentage is derived from task counts and must not be provided'
+      );
+    }
     const merged: BuildProgress = {
       ...this.progress,
       ...partial,
     };
-    const total = merged.total && merged.total > 0 ? merged.total : this.progress.total;
-    merged.total = total;
-    if (typeof merged.completed === 'number' && typeof total === 'number' && total > 0) {
-      merged.percentage = Math.min(100, Math.round((merged.completed / total) * 100));
+    const total = requireTaskCount(merged.total, 'total');
+    const completed = requireTaskCount(merged.completed, 'completed');
+    const failed = requireTaskCount(merged.failed, 'failed');
+    const skipped = requireTaskCount(merged.skipped, 'skipped');
+    const terminal = completed + failed + skipped;
+    if (terminal > total) {
+      throw new Error(
+        `[AbstractBuildSession] terminal task count must not exceed total: terminal=${terminal}, total=${total}`
+      );
     }
+    merged.total = total;
+    merged.completed = completed;
+    merged.failed = failed;
+    merged.skipped = skipped;
+    merged.percentage = total === 0 ? 0 : (terminal / total) * 100;
     if (stage) {
       merged.stage = stage;
     }
     this.progress = merged;
     this.state.lastActivity = Date.now();
-    this.emitProgress({
-      stage: merged.stage ?? this.progress.stage,
-      phase: this.state.status === 'running' ? 'running' : (this.state.status as ProgressPhase),
-      payload: this.toProgressPayload(),
-    });
+    this.emitSessionUpdate();
   }
 
-  protected toProgressPayload(): BuildProgressPayload {
-    const { total, completed, failed, skipped, estimatedTimeRemaining } = this.progress;
-    return { total, completed, failed, skipped, estimatedTimeRemaining };
-  }
-
-  protected emitProgress(event: Partial<BuildProgressEvent>): void {
-    const errorPayload = event.error;
-    const formattedError =
-      errorPayload && typeof errorPayload === 'object' && 'code' in (errorPayload as object)
-        ? formatProgressError(errorPayload)
-        : event.error;
-    const full: BuildProgressEvent = {
-      nodeId: this.nodeId,
-      stage: event.stage ?? this.progress.stage,
-      phase: event.phase ?? (this.state.status as ProgressPhase),
-      timestamp: Date.now(),
-      payload: event.payload,
-      message: event.message,
-      error: formattedError,
-    };
-    for (const listener of this.progressListeners) {
-      listener(full);
+  protected emitSessionUpdate(): void {
+    for (const listener of this.sessionUpdateListeners) {
+      listener();
     }
-    this.onBuildProgressEvent(full);
   }
 
   protected setResourceUsage(usage: ResourceUsage | undefined): void {
@@ -212,7 +192,6 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
   protected async onPause(): Promise<void> {}
   protected async onResume(): Promise<void> {}
   protected async onComplete(): Promise<void> {}
-  protected onBuildProgressEvent(_event: BuildProgressEvent): void {}
 }
 
 function abortError(message: string): Error {
@@ -224,14 +203,11 @@ function abortError(message: string): Error {
   return error;
 }
 
-function formatProgressError(error: unknown): { code?: string; detail?: unknown } | undefined {
-  if (!error) return undefined;
-  if (typeof error === 'object' && error !== null) {
-    if ('code' in (error) || 'detail' in (error)) {
-      const existing = error as { code?: string; detail?: unknown };
-      return { code: existing.code, detail: existing.detail ?? error };
-    }
-    return { detail: error };
+function requireTaskCount(value: unknown, label: string): number {
+  if (!Number.isInteger(value) || (value as number) < 0) {
+    throw new Error(
+      `[AbstractBuildSession] ${label} must be a non-negative integer, received ${String(value)}`
+    );
   }
-  return { detail: error };
+  return value as number;
 }

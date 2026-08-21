@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildContinuationPolicy, BuildTaskSummary, BuildTaskUpdateEvent, BuildProgressEvent, TaskProgressUpdatedEvent } from '@hierarchidb/build-api';
+import type { BuildContinuationPolicy, BuildTaskSummary, BuildTaskUpdateEvent, TaskProgressUpdatedEvent } from '@hierarchidb/build-api';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import type {
   SessionStatusUpdatedEvent,
@@ -130,7 +130,6 @@ export const shapeBuildAPI = {
     processingConfig: ShapeProcessingConfig | undefined,
     downloadTaskPayloads: SourceTaskPayload[],
     buildContinuationPolicy?: BuildContinuationPolicy,
-    progressCallback?: (event: BuildProgressEvent) => void,
   ): Promise<NodeId> => shapeBuildRuntime.startBuildSessionInternal(
     'startBuildSession',
     draftId,
@@ -138,7 +137,6 @@ export const shapeBuildAPI = {
     processingConfig,
     downloadTaskPayloads,
     buildContinuationPolicy,
-    progressCallback,
   ),
   pauseBuildSession: async (draftId: NodeId, reason?: string): Promise<void> => {
     await shapeBuildAPI.invokeBuildCommand('session/pause', {
@@ -301,49 +299,6 @@ export const shapeBuildAPI = {
       expiredBuildSessions: 0,
       estimatedSpaceUsed: 0,
       lastCleanupAt: Date.now(),
-    };
-  },
-
-  // ===================================
-  // Real-time Progress Subscription
-  // ===================================
-
-  subscribeProgress: (nodeId: NodeId, callback: (event: BuildProgressEvent) => void): (() => void) => {
-    const existing = shapeBuildRuntimeCore.progressCallbacks.get(String(nodeId));
-    existing?.unsubscribe?.();
-    const taskQueue = new VtTaskQueueDb();
-    const unsubscribeTaskQueue = shapeBuildRuntimeCore.onTaskQueueUpdate(nodeId, (event) => {
-      if (event.type === 'delete') {
-        return;
-      }
-      void (async () => {
-        try {
-          const vtTasks = await shapeBuildRuntimeCore.listTasks(taskQueue, event.nodeId);
-          callback({
-            nodeId: event.nodeId,
-            stage: event.task.stage,
-            phase: shapeBuildRuntimeCore.resolveProgressPhase(event.nodeId, vtTasks),
-            timestamp: Date.now(),
-            message: event.task.errorMessage,
-            payload: await shapeBuildRuntimeCore.buildProgressPayloadFromTasks(nodeId, vtTasks, {
-              eventTask: event.task,
-              source: 'event',
-            }),
-          });
-        } catch (error) {
-          console.error('[shapeBuildAPI] progress payload build failed', error);
-        }
-      })();
-    });
-    const unsubscribe = () => {
-      unsubscribeTaskQueue();
-    };
-    shapeBuildRuntimeCore.progressCallbacks.set(String(nodeId), { unsubscribe, callback });
-
-    return () => {
-      const active = shapeBuildRuntimeCore.progressCallbacks.get(String(nodeId));
-      active?.unsubscribe?.();
-      shapeBuildRuntimeCore.progressCallbacks.delete(String(nodeId));
     };
   },
 

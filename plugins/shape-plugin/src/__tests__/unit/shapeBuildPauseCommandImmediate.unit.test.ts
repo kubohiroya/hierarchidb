@@ -67,9 +67,6 @@ vi.mock('../../worker/api/shapeBuildRuntimeCore.js', () => ({
     countTaskQueueStatusesMock(...args),
   setPaused: (...args: Parameters<typeof setPausedMock>) => setPausedMock(...args),
   waitIfPaused: async () => undefined,
-  resolveProgressPhase: () => 'running',
-  buildProgressPayloadFromTasks: async () => ({}),
-  progressCallbacks: new Map(),
   getShapeEntityHandler: () => ({ getEntity: async () => null }),
   getActivePipeline: (nodeId: NodeId) => activePipelineStore.get(String(nodeId)) ?? null,
   registerActivePipeline: (nodeId: NodeId, active: ActivePipeline) => {

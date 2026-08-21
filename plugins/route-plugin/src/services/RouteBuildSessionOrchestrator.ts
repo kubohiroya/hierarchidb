@@ -3,7 +3,7 @@ import { RouteBuildManager, type RouteBuildRouteInput, type RouteBuildManagerDep
 import type { RouteBuildSession } from './RouteBuildSession.js';
 import { DEFAULT_ROUTE_BUILD_CONFIG } from '~/common/config/buildConfig';
 import type { RouteBuildConfig } from '@hierarchidb/route-api';
-import type { BuildProgressCallback, BuildSessionStatus } from '@hierarchidb/build-api';
+import type { BuildSessionStatus } from '@hierarchidb/build-api';
 import {
   CanonicalBuildSessionManager,
 } from '@hierarchidb/build-runtime-services';
@@ -61,10 +61,6 @@ export class RouteBuildSessionOrchestrator extends CanonicalBuildSessionManager 
     if (this.sessions.has(nodeId)) {
       await super.pauseBuildSession(nodeId);
     }
-  }
-
-  onBuildProgress(nodeId: NodeId, callback: BuildProgressCallback): () => void {
-    return super.onBuildProgress(nodeId, callback);
   }
 
   protected async onSessionStatusChange(_session: RouteBuildSession): Promise<void> {

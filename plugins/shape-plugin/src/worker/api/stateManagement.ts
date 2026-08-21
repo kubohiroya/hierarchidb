@@ -1,13 +1,12 @@
 /**
  * State Management
  *
- * Handles pause state, session status, and progress phase management
+ * Handles pause state and session status management.
  */
 
 import type {
-  BuildProgressEvent,
+  BuildStatus,
   BuildTaskUpdateEvent,
-  ProgressPhase,
   TaskProgressUpdatedEvent,
   TaskQueueRecord,
 } from '@hierarchidb/build-api';
@@ -54,12 +53,6 @@ import {
 import { summarizeTaskQueueStatus } from './progressAnalysis.js';
 import { taskStateProtection } from './taskStateProtection.js';
 
-// Core runtime state management
-export interface ProgressSubscription {
-  unsubscribe?: () => void;
-  callback?: (event: BuildProgressEvent) => void;
-}
-
 export interface TaskSubscription {
   unsubscribe?: () => void;
   callback?: (event: BuildTaskUpdateEvent) => void;
@@ -79,7 +72,6 @@ export type PauseState = {
 };
 
 // Global state maps
-export const progressCallbacks = new Map<string, ProgressSubscription>();
 export const taskCallbacks = new Map<string, TaskSubscription>();
 export const sessionStateCallbacks = new Map<string, SessionStateSubscription>();
 export const stageSnapshotCallbacks = new Map<string, StageSnapshotSubscription>();
@@ -208,7 +200,7 @@ const setPaused = async (nodeId: NodeId, paused: boolean): Promise<void> => {
   }
 };
 
-const resolveProgressPhase = (nodeId: NodeId, tasks: TaskQueueRecord[]): ProgressPhase => {
+const resolveBuildStatus = (nodeId: NodeId, tasks: TaskQueueRecord[]): BuildStatus => {
   if (getPauseState(nodeId).paused) return 'paused';
   const status = summarizeTaskQueueStatus(tasks).status;
   switch (status) {
@@ -229,7 +221,7 @@ export {
   resolveSessionLastActivity,
   waitIfPaused,
   setPaused,
-  resolveProgressPhase,
+  resolveBuildStatus,
   taskStateProtection,
 };
 

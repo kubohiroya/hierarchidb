@@ -29,14 +29,11 @@ export {
 // Re-export from progress analysis
 export {
   buildTaskQueueSummary,
-  buildProgressPayloadFromTasks,
 } from './progressAnalysis.js';
 
 // Re-export from state management
 export {
-  type ProgressSubscription,
   type TaskSubscription,
-  progressCallbacks,
   taskCallbacks,
   sessionStateCallbacks,
   stageSnapshotCallbacks,
@@ -48,7 +45,7 @@ export {
   resolveSessionLastActivity,
   waitIfPaused,
   setPaused,
-  resolveProgressPhase,
+  resolveBuildStatus,
   registerActivePipeline,
   clearActivePipeline,
   getActivePipeline,

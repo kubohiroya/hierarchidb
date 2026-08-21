@@ -11,7 +11,6 @@ vi.mock('../../worker/api/shapeBuildRuntime.js', () => ({
     heartbeatCallbacks: new Map(),
     taskProgressCallbacks: new Map(),
     taskCallbacks: new Map(),
-    progressCallbacks: new Map(),
     invokeShapeBuildCommand: async () => undefined,
     startBuildSessionInternal: async () => 'node-1' as NodeId,
     getBuildSessionInternal: async () => undefined,

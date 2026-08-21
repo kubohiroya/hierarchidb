@@ -1,46 +1,28 @@
 /**
  * Progress Analysis
  * 
- * Handles task queue progress analysis, stage status mapping, and progress payload building
+ * Handles task queue status and summary analysis.
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import type { TaskQueueRecord, BuildProgressPayload } from '@hierarchidb/build-api';
+import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type {
     ShapeBuildProgressSummary,
 } from '@hierarchidb/shape-api';
 import type { BuildTask } from '~/common/types/index';
-import type { StageStatus } from '@hierarchidb/shape-store';
 import {
     isTaskSkipped,
 } from '~/common/utils/taskMessageUtils';
-import { buildShapeTaskTitle } from '~/common/utils/taskTitleUtils';
-import {
-    selectLatestTaskByProgress,
-} from '../taskOrderingConstants.js';
 import { getStagePlan } from '~/services/vt/shapeProgressPlanUtils';
 import {
     toCanonicalStageId,
-    isSourceStage,
-    isGeometryStage,
-    isTileEmitStage,
     resolveEffectiveTaskStatus,
-    resolveTaskProgress,
 } from './taskQueueManagement.js';
 import {
     resolveQueueRecordMetadataMessage
 } from './taskMetadataProcessingConstants.js';
 
 // Task queue analysis and progress calculation
-type ProgressTaskMeta = {
-    taskId: string;
-    status: TaskQueueRecord['status'];
-    stage: TaskQueueRecord['stage'];
-    progress: number;
-    title?: string;
-    display?: any;
-};
-
 const resolveTaskType = (tasks: TaskQueueRecord[]): TaskQueueRecord['stage'] | undefined => {
     const stageOrder = ['source-stage', 'geometry-stage', 'tile-emit-stage'] as const;
     const matchedStageId = stageOrder.find((stageId) => (
@@ -167,142 +149,6 @@ export const buildTaskQueueSummary = async (nodeId: NodeId, tasks: TaskQueueReco
     return {
         status: statusSummary.status,
         progress,
-    };
-};
-
-// Stage status building and mapping
-const buildStageStatus = (tasks: TaskQueueRecord[], plannedTotal?: number): StageStatus => {
-    let completed = 0;
-    let failed = 0;
-    let skipped = 0;
-    let running = 0;
-    let recycled = 0;
-    let actualTotal = 0;
-
-    tasks.forEach((task) => {
-        const status = resolveEffectiveTaskStatus(task);
-        if (status === 'recycled') {
-            recycled += 1;
-            return;
-        }
-        actualTotal += 1;
-        if (status === 'failed') {
-            failed += 1;
-            return;
-        }
-        if (status === 'completed') {
-            if (isTaskSkipped(task.display, resolveQueueRecordMetadataMessage(task))) {
-                skipped += 1;
-            } else {
-                completed += 1;
-            }
-            return;
-        }
-        if (status === 'running') {
-            running += 1;
-        }
-    });
-
-    const adjustedPlannedTotal = typeof plannedTotal === 'number'
-        ? Math.max(0, plannedTotal - recycled)
-        : undefined;
-    const total = typeof adjustedPlannedTotal === 'number'
-        ? Math.max(adjustedPlannedTotal, actualTotal)
-        : actualTotal;
-    const doneCount = Math.min(total, completed + skipped + failed);
-    const progress = total > 0 ? Math.round((doneCount / total) * 100) : 0;
-
-    const status: StageStatus['status'] = failed > 0
-        ? 'failed'
-        : total > 0 && doneCount >= total
-            ? 'completed'
-            : running > 0
-                ? 'running'
-                : recycled > 0
-                    ? 'completed'
-                    : 'queued';
-
-    return {
-        status,
-        progress,
-        tasksTotal: total,
-        tasksCompleted: completed + skipped,
-        tasksFailed: failed,
-    };
-};
-
-const buildStageStatusMap = (
-    nodeId: NodeId,
-    tasks: TaskQueueRecord[]
-): Record<TaskQueueRecord['stage'], StageStatus> => {
-    const plan = getStagePlan(nodeId);
-    const sourceTasks = tasks.filter((task) => isSourceStage(task.stage));
-    const geometryTasks = tasks.filter((task) => isGeometryStage(task.stage));
-    const tileEmitTasks = tasks.filter((task) => isTileEmitStage(task.stage));
-
-    return {
-        source: buildStageStatus(sourceTasks, plan?.sourceTotal),
-        geometry: buildStageStatus(geometryTasks, plan?.geometryTotal),
-        tileEmit: buildStageStatus(tileEmitTasks),
-    };
-};
-
-// Progress payload building with stage status mapping
-type ShapeProgressPayload = BuildProgressPayload & {
-    percentage: number;
-};
-
-export const buildProgressPayloadFromTasks = async (
-    nodeId: NodeId,
-    tasks: TaskQueueRecord[],
-    options?: { eventTask?: TaskQueueRecord; source?: 'event' | 'snapshot' },
-): Promise<ShapeProgressPayload> => {
-    const summary = await summarizeTaskQueueProgress(nodeId, tasks, resolveTaskType(tasks));
-    const stageStatusMap = buildStageStatusMap(nodeId, tasks);
-    const progressTask = options?.eventTask ?? selectLatestTaskByProgress(tasks) ?? undefined;
-    const meta: Record<string, unknown> = {};
-
-    if (progressTask) {
-        const progressTaskMeta: ProgressTaskMeta = {
-            taskId: progressTask.taskId,
-            status: progressTask.status,
-            stage: progressTask.stage,
-            progress: resolveTaskProgress(progressTask),
-            title: buildShapeTaskTitle(progressTask),
-            display: progressTask.display,
-        };
-        meta.progressTask = progressTaskMeta;
-    }
-
-    if (options?.source) {
-        meta.source = options.source;
-    }
-
-    meta.stageTotals = {
-        source: {
-            total: stageStatusMap.source.tasksTotal,
-            completed: stageStatusMap.source.tasksCompleted,
-            failed: stageStatusMap.source.tasksFailed,
-        },
-        geometry: {
-            total: stageStatusMap.geometry.tasksTotal,
-            completed: stageStatusMap.geometry.tasksCompleted,
-            failed: stageStatusMap.geometry.tasksFailed,
-        },
-        tileEmit: {
-            total: stageStatusMap.tileEmit.tasksTotal,
-            completed: stageStatusMap.tileEmit.tasksCompleted,
-            failed: stageStatusMap.tileEmit.tasksFailed,
-        },
-    };
-
-    return {
-        total: summary.total,
-        completed: summary.completed,
-        failed: summary.failed,
-        skipped: summary.skipped,
-        percentage: summary.percentage,
-        meta: Object.keys(meta).length > 0 ? meta : undefined,
     };
 };
 

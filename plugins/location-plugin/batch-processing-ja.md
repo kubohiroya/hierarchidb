@@ -60,8 +60,8 @@ type LocationPoint = GroupEntity<string> & {
 - 生成されたタイルは将来導入予定の `vectorTiles` テーブルやオブジェクトストレージに保存する。
 
 ### 5. 進捗監視と通知
-- `UnifiedLocationBuildManager` + `WorkerBridge` を用い、`prepareSession → startBuildSession → onBuildProgress` の流れを確立する。
-- `useLocationProgress` フックで進捗イベント（download / parse / persist / tiles / completed）を購読し、ダイアログや通知センターへ表示する。
+- `LocationBuildManager` は `sessionStatusUpdated` / `stageSnapshotUpdated` / `taskProgressUpdated` / `heartbeat` の4イベントを発行する。
+- `useLocationProgress` はcanonical eventを共有state treeへ適用し、`BuildSessionStatus` と `BuildTaskCountSummary` をUI表示用に導出する。セッションphaseとタスク件数を単一のWorkerイベントへ再結合しない。
 - 認証失敗や通信エラーが発生した場合は、Shape Plugin の通知設計を踏襲し、中断・再試行・キャンセルを制御する。
 
 ### 6. UI 方針
@@ -87,7 +87,7 @@ UnifiedLocationBuildManager と LocationBuildSessionManager の組み合わせ�
    - LocationPoints の永続化（`appendLocationPoints`）完了後にタイル生成へ進む。統合テストでは `LocationDB.features` に書き込まれるレコード数をアサートする。
 
 3. **progress / completion**
-   - `onBuildProgress` で `sessions.progress` と `status` が更新され、完了時は `completed`、失敗時は `failed` となる。
+   - `taskProgressUpdated` はタスク単位の進捗だけを更新し、`sessionStatusUpdated` が完了時の `completed`、失敗時の `failed` を通知する。
    - Dexie の値を読み出して検証するユニットテストを用意する。
 
 4. **resume / pause / cancel**

@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import type { BuildProgressEvent, BuildProgressPayload, BuildContinuationPolicy } from '@hierarchidb/build-api';
+import type { BuildContinuationPolicy, StageSnapshotUpdatedEvent } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildSessionRecord, ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import type { SourceTaskPayload, SelectedArrayByCountries, ShapeBuildConfig, ShapeProcessingConfig } from '../../common/types/index';
@@ -246,9 +246,9 @@ type ShapeBuildTestAPI = {
     downloadTaskPayloads: SourceTaskPayload[];
     buildContinuationPolicy?: BuildContinuationPolicy;
   }): Promise<NodeId>;
-  subscribeProgress(
+  subscribeStageSnapshots(
     nodeId: NodeId,
-    callback: (event: BuildProgressEvent<BuildProgressPayload>) => void
+    callback: (event: StageSnapshotUpdatedEvent) => void
   ): Promise<() => void> | (() => void);
 };
 
@@ -475,11 +475,11 @@ describe('Comlink + fake-indexeddb integration: shape build pause/resume (pipeli
         selectedArrayByCountries,
       });
 
-      const progressEvents: Array<BuildProgressEvent<BuildProgressPayload>> = [];
-      const unsubscribe = await batch.subscribeProgress(
+      const snapshotEvents: StageSnapshotUpdatedEvent[] = [];
+      const unsubscribe = await batch.subscribeStageSnapshots(
         nodeId,
-        Comlink.proxy((event: BuildProgressEvent<BuildProgressPayload>) => {
-          progressEvents.push(event);
+        Comlink.proxy((event: StageSnapshotUpdatedEvent) => {
+          snapshotEvents.push(event);
         }),
       );
 
@@ -490,17 +490,10 @@ describe('Comlink + fake-indexeddb integration: shape build pause/resume (pipeli
         downloadTaskPayloads,
       });
 
-      await waitFor(async () => progressEvents.length > 0, { label: 'progress snapshot' });
+      await waitFor(async () => snapshotEvents.length > 0, { label: 'stage snapshot' });
 
-      const snapshotEvent =
-        progressEvents.find((event) => (
-          (event.payload?.meta as { source?: string } | undefined)?.source === 'snapshot'
-        )) ?? progressEvents[0];
-      const stageTotals = (snapshotEvent.payload?.meta as {
-        stageTotals?: { source?: { total?: number } };
-      } | undefined)?.stageTotals;
-
-      expect(stageTotals?.source?.total ?? 0).toBeGreaterThan(0);
+      const sourceSnapshot = snapshotEvents.find((event) => event.payload.stageId === 'source');
+      expect(sourceSnapshot?.payload.tasks.length ?? 0).toBeGreaterThan(0);
 
       if (typeof unsubscribe === 'function') {
         await unsubscribe();
