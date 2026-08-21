@@ -1,3 +1,4 @@
+import { inspectYamlStorageCorrectiveRecovery } from '../yaml-storage-recovery/inspectYamlStorageCorrectiveRecovery.js';
 import {
   initializeYamlStorageProductionPreflight,
   parseYamlStorageProductionPreflightMode,
@@ -7,6 +8,8 @@ import { runYamlStorageProductionPreflight } from './runYamlStorageProductionPre
 
 declare const __HDB_DATABASE_PREFIX__: string;
 declare const __SOURCE_SHA__: string;
+
+const ORIGIN_COORDINATOR_DATABASE_NAME = 'hierarchidb-origin-coordinator' as const;
 
 async function digestSha256Hex(bytes: Uint8Array): Promise<string> {
   const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes);
@@ -21,14 +24,32 @@ if (mode === null) {
     document,
     mode,
     releaseVersion: __SOURCE_SHA__,
-    execute: async () =>
-      await runYamlStorageProductionPreflight({
+    execute: async () => {
+      const timestamp = new Date().toISOString();
+      if (mode === 'recovery-pre' || mode === 'recovery-post') {
+        return await inspectYamlStorageCorrectiveRecovery({
+          stage: mode,
+          factory: globalThis.indexedDB,
+          databaseNames: Object.freeze({
+            coordinator: ORIGIN_COORDINATOR_DATABASE_NAME,
+            canonicalCore: `${__HDB_DATABASE_PREFIX__}-core`,
+            interruptedCore: 'hidb-core',
+            yaml: `${__HDB_DATABASE_PREFIX__}-yaml`,
+            recovery: `${__HDB_DATABASE_PREFIX__}-yaml-storage-recovery`,
+          }),
+          releaseVersion: __SOURCE_SHA__,
+          timestamp,
+          digestSha256Hex,
+        });
+      }
+      return await runYamlStorageProductionPreflight({
         mode,
         factory: globalThis.indexedDB,
         databasePrefix: __HDB_DATABASE_PREFIX__,
         releaseVersion: __SOURCE_SHA__,
-        timestamp: new Date().toISOString(),
+        timestamp,
         digestSha256Hex,
-      }),
+      });
+    },
   });
 }

@@ -207,9 +207,16 @@ export function validateCoreDbV1Schema(database: IDBDatabase): boolean {
 
 export function validateCoreDbV2Schema(database: IDBDatabase): boolean {
   return (
-    database.version === CORE_DB_CANONICAL_NATIVE_VERSION &&
-    validateStoreSpecs(database, [...CORE_DB_V1_STORE_SPECS, YAML_MIGRATION_JOURNAL_STORE_SPEC])
+    database.version === CORE_DB_CANONICAL_NATIVE_VERSION && validateCoreDbV2StoreTopology(database)
   );
+}
+
+/** Validates the canonical store graph independently from a historical native-version bug. */
+export function validateCoreDbV2StoreTopology(database: IDBDatabase): boolean {
+  return validateStoreSpecs(database, [
+    ...CORE_DB_V1_STORE_SPECS,
+    YAML_MIGRATION_JOURNAL_STORE_SPEC,
+  ]);
 }
 
 export type OpenExistingCoreDbResult =

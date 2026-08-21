@@ -52,6 +52,8 @@ describe('initializeYamlStorageProductionPreflight', () => {
   it.each([
     ['https://example.test/preflight?mode=pre', 'pre'],
     ['https://example.test/preflight?mode=post', 'post'],
+    ['https://example.test/preflight?mode=recovery-pre', 'recovery-pre'],
+    ['https://example.test/preflight?mode=recovery-post', 'recovery-post'],
     ['https://example.test/preflight', null],
     ['https://example.test/preflight?mode=pre&mode=post', null],
     ['https://example.test/preflight?mode=unknown', null],
