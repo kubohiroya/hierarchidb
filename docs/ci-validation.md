@@ -30,7 +30,7 @@ base/head が欠落、不正、未取得、または差分が空の場合はCI�
 
 同じ ref の古い実行は concurrency 制御でキャンセルし、最新commitの検証を優先する。
 
-現行mainのfull workspace testは、Vitest project間で同じ`sequence.groupOrder`に異なる`maxWorkers`が設定されているため、test開始前に失敗する。full workspace typecheckも`styler-plugin`のself-referenceを解決できず失敗する。これらの既存不整合が別Issueで解消されるまでは、full validationへtestとtypecheckを含めない。package-local PRでは変更packageのtestとtypecheckをblockingで実行し、失敗の無視や`|| true`による成功化は禁止する。
+現行mainのfull workspace testは、Vitest project間で同じ`sequence.groupOrder`に異なる`maxWorkers`が設定されているため、test開始前に失敗する。この既存不整合が別Issueで解消されるまでは、full validationへtestを含めない。full workspace typecheckを妨げていた`styler-plugin`のself-referenceは#1368で解消したが、full validationへのtypecheck追加は全workspaceの独立した検証と別Issueを必要とする。package-local PRでは変更packageのtestとtypecheckをblockingで実行し、失敗の無視や`|| true`による成功化は禁止する。
 
 ## Repository-wide checks
 
