@@ -411,6 +411,16 @@ open. On the new runtime, canonical publication remains closed until the success
 complete. The coordinator script, its static import graph, protocol, database version, and durable
 record remain byte-for-byte unchanged throughout this handoff.
 
+The React entry may mount only a minimal coordinator bootstrap container before that boundary.
+Importing `root.tsx` has no browser-global, WorkerAPIClient, SharedWorker, or plugin-preload side
+effect. `AppRoot`, `AppProviders`, `WorkerProvider`, and `RouterProvider` first mount as one provider
+tree only after the successor has prepared and verified the canonical WorkerAPIClient, initialized
+browser globals, and created the router, in that order. The provider reuses the prepared client
+singleton through the shared module loader and never creates a second legacy worker. The static
+hydrate fallback remains mounted for an activation reload and for a terminal failure; it is removed
+only after the runtime-ready provider tree commits. No branch retries bootstrap or falls back to a
+legacy runtime.
+
 ## Source-controlled production preflight surface
 
 Production evidence before and after the single activation is collected by the independent Vite
