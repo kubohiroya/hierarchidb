@@ -148,6 +148,8 @@ session を削除し、成功として継続しない。reload 時も同じ必�
 
 保存完了後、同一 document に `hierarchidb:auth-session-changed` event を dispatch する。
 `useBFFAuthService` と `SimpleBFFAuthProvider` はこの event を購読し、保存済み session を再読込する。
+`WorkerProvider` も同eventを購読し、prepare済みの同一canonical clientへread-only bridgeを再登録して、
+保存完了後の完全sessionをSharedWorker側で再検証する。
 別タブ・別 window からの変更は標準の `storage` event で同期する。
 
 session clear 後も同じ custom event を dispatch し、全 consumer が unauthenticated 状態へ遷移する。
@@ -164,6 +166,19 @@ worker は `localStorage` を直接読まず、UI が提供する storage bridge
 - session が完全に存在しない場合だけ `null` を返す。部分保存、JSON破損、storage access failureは
   bridge登録またはtoken取得の失敗として伝播させる。
 - worker client は bridge の登録と初回session検証が完了するまで ready として公開しない。
+- 同一documentでsession変更eventを受けたworker clientは、単独tokenを書き込まず、read-only bridgeを
+  再登録して完全sessionを再検証する。
+- SharedWorkerへのbridge登録が競合した場合、失敗した登録は、登録開始前または後から検証に成功した
+  現行bridgeを未登録状態へ戻してはならない。
+- session変更eventによるbridge再登録はevent順に直列化する。先行登録が失敗しても、後続の明示eventは
+  そのrejectを結果として引き継がず、自身の完全sessionを新しいbridgeで検証する。後続登録が成功した
+  場合は、先行失敗によるWorkerProviderのerror状態を解除する。
+- ready公開後のbridge再登録が失敗した場合、WorkerProviderは失敗を隠蔽せず、空画面にもせず、理由と
+  retry/reload操作を持つterminal overlayを表示する。
+- query付きURLで起動するSharedWorker entryを、worker内の動的chunkからqueryなしのURLで再importしては
+  ならない。auth bridgeと`AuthService` singletonを含む共有moduleは副作用を持つSharedWorker entryとは
+  別のneutral chunkへ出力し、entryと動的chunkが同一module URLを参照しなければならない。production
+  buildは、entry以外のworker artifactが`shared-worker.js`をimportしないことを検証する。
 - Worker API は単独tokenの注入・書込APIを公開しない。UIは完全なsessionを保存してから
   `AUTH_SUCCESS` を通知し、workerはread-only bridgeから再読込する。
 - worker側からのsession clearは `AuthSessionStorage.clear()` を通じて `access_token`、`userinfo`、
