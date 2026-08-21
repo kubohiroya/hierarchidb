@@ -1,6 +1,6 @@
 import '../utils/skip-if-disabled';
-import { test, expect, type ConsoleMessage, type Page, type Worker } from '@playwright/test';
-import { persistE2EAuthSessionSeed, readE2EAuthSessionSeed } from '../utils/authSessionSeed';
+import type { ConsoleMessage, Page, Worker } from '@playwright/test';
+import { expect, test } from '../fixtures/canonicalAuthFixture';
 import {
   buildAppUrl,
   clearTestData,
@@ -83,11 +83,6 @@ type WorkerClientRef = {
 type WindowWithWorkerRef = Window & {
   __HDB_WORKER_CLIENT_REF__?: WorkerClientRef;
 };
-
-// Supported auth seed inputs:
-// - E2E_AUTH_ACCESS_TOKEN (required)
-// - E2E_AUTH_USERINFO or E2E_AUTH_USERINFO_B64 (required canonical userinfo)
-// - E2E_AUTH_REFRESH_TOKEN_ID (required only for persistent sessions)
 
 const readConsolePayload = async (msg: ConsoleMessage): Promise<ConsolePayload | null> => {
   const args = msg.args();
@@ -194,11 +189,12 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
     await clearTestData(page);
   });
 
-  test('does not hit receiving-task-snapshot timeout after build start and observes receiving-task-snapshot evidence', async ({ page }) => {
+  test('does not hit receiving-task-snapshot timeout after build start and observes receiving-task-snapshot evidence', async ({
+    page,
+    canonicalAuth,
+  }) => {
     test.setTimeout(180000);
-    const authSeed = readE2EAuthSessionSeed();
-
-    await page.addInitScript(persistE2EAuthSessionSeed, authSeed);
+    await canonicalAuth.signIn();
 
     await page.goto(buildAppUrl('t/r'), { waitUntil: 'domcontentloaded', timeout: 120000 });
     await dismissGuidedTour(page);
@@ -214,22 +210,6 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
         await api.setCorsProxyBaseURL('');
       }
     });
-    const verifyResult = await page.evaluate(async (accessToken: string) => {
-      const response = await fetch('/auth/verify', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: '{}',
-      });
-      return { ok: response.ok, status: response.status };
-    }, authSeed.accessToken);
-    expect(
-      verifyResult.ok,
-      `E2E auth token should pass /auth/verify before build start (status=${verifyResult.status})`,
-    ).toBe(true);
-
     const selectedArrayByCountries: SelectedArrayByCountries = { JP: [true] };
     const buildConfig = await page.evaluate(() => {
       return {
@@ -530,11 +510,9 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
     }
   });
 
-  test('shows task list and summary after build start', async ({ page }) => {
+  test('shows task list and summary after build start', async ({ page, canonicalAuth }) => {
     test.setTimeout(180000);
-    const authSeed = readE2EAuthSessionSeed();
-
-    await page.addInitScript(persistE2EAuthSessionSeed, authSeed);
+    await canonicalAuth.signIn();
 
     await page.goto(buildAppUrl('t/r'), { waitUntil: 'domcontentloaded', timeout: 120000 });
     await dismissGuidedTour(page);
@@ -550,22 +528,6 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
         await api.setCorsProxyBaseURL('');
       }
     });
-
-    const verifyResult = await page.evaluate(async (accessToken: string) => {
-      const response = await fetch('/auth/verify', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: '{}',
-      });
-      return { ok: response.ok, status: response.status };
-    }, authSeed.accessToken);
-    expect(
-      verifyResult.ok,
-      `E2E auth token should pass /auth/verify before build start (status=${verifyResult.status})`,
-    ).toBe(true);
 
     const selectedArrayByCountries: SelectedArrayByCountries = { JP: [true] };
     const buildConfig = await page.evaluate(() => {

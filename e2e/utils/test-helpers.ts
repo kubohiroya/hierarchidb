@@ -5,7 +5,9 @@ const normalizeBasePath = (value: string | undefined): string => {
   return value.replace(/^\/+|\/+$/g, '');
 };
 
-const appName = normalizeBasePath(process.env.VITE_APP_NAME ?? process.env.PLAYWRIGHT_APP_NAME);
+const appName = normalizeBasePath(
+  process.env.VITE_APP_NAME ?? process.env.PLAYWRIGHT_APP_NAME ?? 'hierarchidb'
+);
 const defaultBaseURL = (() => {
   const basePath = appName ? `/${appName}` : '';
   return `http://localhost:4200${basePath}`;
