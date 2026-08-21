@@ -49,6 +49,7 @@ vi.mock('@hierarchidb/gis-sdk', async (importOriginal) => {
 });
 
 const asNodeId = (value: string): NodeId => value as NodeId;
+const SHAPE_CHUNK_STORE_DATABASE_NAME = 'test-shape-chunks';
 
 describe('ShapeMutationService.updateBuildSession', () => {
   beforeEach(() => {
@@ -71,7 +72,10 @@ describe('ShapeMutationService.updateBuildSession', () => {
   });
 
   it('rejects a partial normalized session when the status row is missing', async () => {
-    const service = new ShapeMutationService({ open: openMock } as never);
+    const service = new ShapeMutationService(
+      { open: openMock } as never,
+      SHAPE_CHUNK_STORE_DATABASE_NAME
+    );
     statusGetMock.mockResolvedValue(undefined);
 
     await expect(
@@ -85,7 +89,10 @@ describe('ShapeMutationService.updateBuildSession', () => {
   });
 
   it('upserts stage row when stage row is missing', async () => {
-    const service = new ShapeMutationService({ open: openMock } as never);
+    const service = new ShapeMutationService(
+      { open: openMock } as never,
+      SHAPE_CHUNK_STORE_DATABASE_NAME
+    );
     stageGetMock.mockResolvedValue(undefined);
 
     await service.updateBuildSession(asNodeId('shape-1'), {
@@ -111,7 +118,10 @@ describe('ShapeMutationService.updateBuildSession', () => {
   });
 
   it('rejects a new stage row when persisted timing is missing', async () => {
-    const service = new ShapeMutationService({ open: openMock } as never);
+    const service = new ShapeMutationService(
+      { open: openMock } as never,
+      SHAPE_CHUNK_STORE_DATABASE_NAME
+    );
     stageGetMock.mockResolvedValue(undefined);
 
     await expect(
@@ -126,7 +136,10 @@ describe('ShapeMutationService.updateBuildSession', () => {
   });
 
   it('rejects an invalid heartbeat before writing any normalized row', async () => {
-    const service = new ShapeMutationService({ open: openMock } as never);
+    const service = new ShapeMutationService(
+      { open: openMock } as never,
+      SHAPE_CHUNK_STORE_DATABASE_NAME
+    );
 
     await expect(
       service.updateBuildSession(asNodeId('shape-1'), {
@@ -140,7 +153,10 @@ describe('ShapeMutationService.updateBuildSession', () => {
   });
 
   it('does not create an orphan heartbeat when the session config is missing', async () => {
-    const service = new ShapeMutationService({ open: openMock } as never);
+    const service = new ShapeMutationService(
+      { open: openMock } as never,
+      SHAPE_CHUNK_STORE_DATABASE_NAME
+    );
     configGetMock.mockResolvedValue(undefined);
 
     await expect(

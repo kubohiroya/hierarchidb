@@ -9,6 +9,7 @@ import {
 } from '@hierarchidb/chunk-store';
 import { FetchNetworkPort, type FetchNetworkPortOptions, getCorsProxyBaseURL } from '@hierarchidb/download';
 import { sleep } from '@hierarchidb/util';
+import { getShapeChunkStoreDatabaseName } from './initializeShapeChunkStore.js';
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
@@ -38,7 +39,7 @@ export const createShapeChunkStore = <T>(
   deserializer: ChunkStoreDeserializer<T>,
 ): DexieChunkStore<T> => (
   new DexieChunkStore<T>({
-    dbName: 'shape-chunks',
+    dbName: getShapeChunkStoreDatabaseName(),
     serializer,
     deserializer,
     networkPort: getShapeNetworkPort(),
@@ -51,7 +52,7 @@ export const createShapeChunkStoreWithNetworkPort = <T>(
   networkPort: FetchNetworkPort,
 ): DexieChunkStore<T> => (
   new DexieChunkStore<T>({
-    dbName: 'shape-chunks',
+    dbName: getShapeChunkStoreDatabaseName(),
     serializer,
     deserializer,
     networkPort,

@@ -1,5 +1,6 @@
 export type DatabaseStoreLoaderEntry = {
   moduleSpecifier: string;
+  databaseSuffix: string;
   loader: () => Promise<unknown>;
   prewarm: Array<{
     specifier: string;
@@ -11,6 +12,7 @@ export type DatabaseStoreLoaderEntry = {
 export const databaseStoreLoaders: Record<string, DatabaseStoreLoaderEntry> = {
   location: {
     moduleSpecifier: '@hierarchidb/location-store',
+    databaseSuffix: 'location',
     async loader() {
       return await import('@hierarchidb/location-store');
     },
@@ -26,6 +28,7 @@ export const databaseStoreLoaders: Record<string, DatabaseStoreLoaderEntry> = {
   },
   route: {
     moduleSpecifier: '@hierarchidb/route-store',
+    databaseSuffix: 'route',
     async loader() {
       return await import('@hierarchidb/route-store');
     },
@@ -41,6 +44,7 @@ export const databaseStoreLoaders: Record<string, DatabaseStoreLoaderEntry> = {
   },
   shape: {
     moduleSpecifier: '@hierarchidb/shape-store',
+    databaseSuffix: 'shape',
     async loader() {
       return await import('@hierarchidb/shape-store');
     },

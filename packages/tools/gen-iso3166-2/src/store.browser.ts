@@ -1,5 +1,5 @@
 import { Dexie, type Table } from "dexie";
-import { getDBName } from "@hierarchidb/util";
+import { getBuildDatabasePrefix, getDBName } from "@hierarchidb/util";
 import { DEFAULT_COUNTRY_NAMES_I18N_OUTPUT, parseCsv } from "./csv.js";
 import type {
   CountryRecord,
@@ -12,7 +12,7 @@ class Iso3166Dexie extends Dexie {
   countries!: Table<CountryRecord, string>;
   subdivisions!: Table<SubdivisionRecord, string>;
 
-  constructor(name = getDBName("iso3166-2-cache")) {
+  constructor(name: string) {
     super(name);
     this.version(1).stores({
       countries: "&alpha2, alpha3",
@@ -148,7 +148,11 @@ async function loadCsvToStore(csvText: string, db: Iso3166Dexie | null) {
 }
 
 export async function ensureIso3166Data(options: EnsureIsoOptions = {}) {
-  const db = hasIndexedDB() ? (dexieDb ?? (dexieDb = new Iso3166Dexie())) : null;
+  const db = hasIndexedDB()
+    ? (dexieDb ?? (dexieDb = new Iso3166Dexie(
+      getDBName(getBuildDatabasePrefix(), "iso3166-2-cache"),
+    )))
+    : null;
 
   if (db) {
     const count = await db.subdivisions.count();

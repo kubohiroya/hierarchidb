@@ -1,11 +1,13 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { TabularWriter, closeRowStoreDB } from '@hierarchidb/tabular-store';
+import {
+  closeRowStoreDB,
+  getRowStoreDB,
+  readChunkRows,
+  TabularQueryService,
+  TabularWriter,
+} from '@hierarchidb/tabular-store';
 import { getDBName } from '@hierarchidb/util';
 import { loadTabularTableRows } from '../loadTabularTableRows';
-
-type PrefixGlobal = typeof globalThis & { APP_PREFIX?: string };
-const globalWithPrefix = globalThis as PrefixGlobal;
-const originalPrefix = globalWithPrefix.APP_PREFIX;
 
 const deleteDatabase = async (name: string): Promise<void> => {
   await new Promise<void>((resolve) => {
@@ -19,24 +21,20 @@ const deleteDatabase = async (name: string): Promise<void> => {
 describe('loadTabularTableRows', () => {
   afterEach(async () => {
     await closeRowStoreDB();
-    for (const prefix of ['hidb', 'cart']) {
-      await deleteDatabase(getDBName('location-metadata', prefix));
-      await deleteDatabase(getDBName('tabular-source-rowstore-db', prefix));
-    }
-    if (typeof originalPrefix === 'string') {
-      globalWithPrefix.APP_PREFIX = originalPrefix;
-    } else {
-      delete globalWithPrefix.APP_PREFIX;
+    for (const prefix of ['test-default', 'test-source']) {
+      await deleteDatabase(getDBName(prefix, 'location-metadata'));
+      await deleteDatabase(getDBName(prefix, 'tabular-source-rowstore-db'));
     }
   });
 
   it('uses the explicitly provided db prefix', async () => {
-    const sourcePrefix = 'cart';
-    const workerDefaultPrefix = 'hidb';
-    globalWithPrefix.APP_PREFIX = sourcePrefix;
+    const sourcePrefix = 'test-source';
+    const workerDefaultPrefix = 'test-default';
 
     const writer = new TabularWriter('location', {
-      metadataDbName: getDBName('location-metadata', sourcePrefix),
+      metadataDbName: getDBName(sourcePrefix, 'location-metadata'),
+      rowStoreDbName: getDBName(sourcePrefix, 'tabular-source-rowstore-db'),
+      indexColumns: ['name'],
     });
     const tableId = await writer.begin({
       filename: 'locations.csv',
@@ -45,7 +43,25 @@ describe('loadTabularTableRows', () => {
     await writer.writeRows([{ name: 'Tokyo', latitude: 35.6764, longitude: 139.65 }]);
     await writer.commit();
     await closeRowStoreDB();
-    globalWithPrefix.APP_PREFIX = workerDefaultPrefix;
+    const reopenedRowStore = getRowStoreDB(
+      getDBName(sourcePrefix, 'tabular-source-rowstore-db')
+    );
+    const chunks = await reopenedRowStore.rowChunks
+      .where('[pluginId+tableId]')
+      .equals(['location', tableId])
+      .toArray();
+    expect(chunks).toHaveLength(1);
+    expect(readChunkRows(chunks[0] as (typeof chunks)[number])).toHaveLength(1);
+    const queryService = new TabularQueryService(
+      'location',
+      getDBName(sourcePrefix, 'tabular-source-rowstore-db'),
+    );
+    await expect(queryService.query(tableId, [{ column: 'name', op: 'eq', value: 'Tokyo' }]))
+      .resolves.toEqual([{ name: 'Tokyo', latitude: 35.6764, longitude: 139.65 }]);
+    await closeRowStoreDB();
+    expect(
+      await getRowStoreDB(getDBName(sourcePrefix, 'tabular-source-rowstore-db')).rowChunks.count()
+    ).toBe(1);
 
     await expect(loadTabularTableRows('location', tableId, workerDefaultPrefix)).rejects.toThrow(
       'Tabular table not found',

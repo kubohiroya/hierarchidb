@@ -1,5 +1,5 @@
 import { Dexie, type Table } from 'dexie';
-import { getDBName } from '@hierarchidb/util';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 
 type DialogDisplayMode = 'normal' | 'maximize' | 'full-screen';
 
@@ -30,7 +30,7 @@ class UIStateDB extends Dexie {
   treetableExpanded!: Table<TreeTableExpandedRow, [string, string]>;
 
   constructor() {
-    super(getDBName('ui-atoms'));
+    super(getDBName(getBuildDatabasePrefix(), 'ui-atoms'));
     this.version(1).stores({
       treetableProps: '&pageNodeId',
       treetableExpanded: '&[pageNodeId+nodeId], pageNodeId, nodeId',

@@ -1,5 +1,4 @@
 import { Dexie, type Table } from 'dexie';
-import { getDBName } from '@hierarchidb/util';
 
 export interface RowChunk {
   id: string;
@@ -27,7 +26,7 @@ export class RowStoreDB extends Dexie {
   rowChunks!: Table<RowChunk, string>;
   rowIndexes!: Table<RowIndexEntry, string>;
 
-  constructor(name: string = getDBName('tabular-source-rowstore-db')) {
+  constructor(name: string) {
     super(name);
     this.version(1).stores({
       rowChunks: '&id, [pluginId+tableId], [pluginId+tableId+startRowIndex], [pluginId+tableId+endRowIndex], tableId, pluginId, chunkIndex, createdAt',
@@ -38,8 +37,14 @@ export class RowStoreDB extends Dexie {
 
 let singleton: RowStoreDB | null = null;
 
-export function getRowStoreDB(): RowStoreDB {
-  if (!singleton) singleton = new RowStoreDB();
+export function getRowStoreDB(databaseName: string): RowStoreDB {
+  if (typeof databaseName !== 'string' || databaseName.length === 0) {
+    throw new Error('row-store-database-name-required');
+  }
+  if (!singleton) singleton = new RowStoreDB(databaseName);
+  if (singleton.name !== databaseName) {
+    throw new Error('row-store-database-name-mismatch');
+  }
   return singleton;
 }
 

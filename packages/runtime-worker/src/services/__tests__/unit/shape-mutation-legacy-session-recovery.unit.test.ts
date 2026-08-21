@@ -26,6 +26,8 @@ vi.mock('../../buildSessionBroadcastUtils.js', () => ({
 
 import { ShapeMutationService } from '../../ShapeMutationService';
 
+const SHAPE_CHUNK_STORE_DATABASE_NAME = 'test-shape-chunks';
+
 describe('ShapeMutationService.recoverLegacyBuildSession', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -59,7 +61,10 @@ describe('ShapeMutationService.recoverLegacyBuildSession', () => {
         message: 'inactiveMs is missing',
       },
     };
-    const service = new ShapeMutationService({ open: mocks.open } as never);
+    const service = new ShapeMutationService(
+      { open: mocks.open } as never,
+      SHAPE_CHUNK_STORE_DATABASE_NAME
+    );
 
     await expect(service.recoverLegacyBuildSession(request)).resolves.toEqual(
       expect.objectContaining({ nodeId })
@@ -75,7 +80,10 @@ describe('ShapeMutationService.recoverLegacyBuildSession', () => {
   it('does not publish deletion when the transactional recovery rejects', async () => {
     mocks.recoverLegacyBuildSession.mockRejectedValue(new Error('confirmation changed'));
     const nodeId = 'node-1' as NodeId;
-    const service = new ShapeMutationService({ open: mocks.open } as never);
+    const service = new ShapeMutationService(
+      { open: mocks.open } as never,
+      SHAPE_CHUNK_STORE_DATABASE_NAME
+    );
 
     await expect(
       service.recoverLegacyBuildSession({

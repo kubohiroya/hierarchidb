@@ -1,6 +1,5 @@
 import { TabularDatabaseManager } from './TabularDatabaseManager.js';
 import type { TabularColumnInfo, TabularTableMetadataLike } from './types.js';
-import { getDBName } from '@hierarchidb/util';
 import { getRowStoreDB, type RowChunk } from './RowStoreDB.js';
 
 export class TabularWriter {
@@ -10,15 +9,18 @@ export class TabularWriter {
   private rowsBuffered: unknown[] = [];
   private readonly chunkSize: number;
   private readonly manager: TabularDatabaseManager;
+  private readonly rowStoreDbName: string;
 
-  constructor(private readonly pluginId: string, opts?: {
+  constructor(private readonly pluginId: string, opts: {
     chunkSize?: number;
-    metadataDbName?: string;
+    metadataDbName: string;
+    rowStoreDbName: string;
     indexColumns?: string[]
   }) {
-    this.chunkSize = opts?.chunkSize ?? 2000;
-    this.manager = new TabularDatabaseManager(opts?.metadataDbName ?? getDBName(`${pluginId}-metadata`));
-    this.indexColumns = opts?.indexColumns ?? [];
+    this.chunkSize = opts.chunkSize ?? 2000;
+    this.manager = new TabularDatabaseManager(opts.metadataDbName);
+    this.rowStoreDbName = opts.rowStoreDbName;
+    this.indexColumns = opts.indexColumns ?? [];
   }
 
   private indexColumns: string[];
@@ -44,7 +46,8 @@ export class TabularWriter {
 
   async writeRows(rows: ReadonlyArray<unknown>): Promise<void> {
     if (!this.tableId) throw new Error('begin() not called');
-    const db = getRowStoreDB();
+    const tableId = this.tableId;
+    const db = getRowStoreDB(this.rowStoreDbName);
     for (const r of rows) {
       this.rowsBuffered.push(r);
       if (this.rowsBuffered.length >= this.chunkSize) {
@@ -53,7 +56,7 @@ export class TabularWriter {
         const chunk: RowChunk = {
           id: crypto.randomUUID(),
           pluginId: this.pluginId,
-          tableId: this.tableId,
+          tableId,
           chunkIndex: this.chunkIndex++,
           startRowIndex: this.rowCursor,
           endRowIndex: this.rowCursor + this.rowsBuffered.length - 1,
@@ -64,7 +67,8 @@ export class TabularWriter {
         await db.rowChunks.add(chunk);
         if (this.indexColumns.length > 0) {
           const { TabularIndexer } = await import('./TabularIndexer.js');
-          await new TabularIndexer(this.pluginId).indexRows(this.tableId!, this.indexColumns);
+          await new TabularIndexer(this.pluginId, this.rowStoreDbName)
+            .indexRows(tableId, this.indexColumns);
         }
         this.rowCursor += this.rowsBuffered.length;
         this.rowsBuffered = [];
@@ -74,14 +78,15 @@ export class TabularWriter {
 
   async flush(): Promise<void> {
     if (!this.tableId) return;
+    const tableId = this.tableId;
     if (this.rowsBuffered.length === 0) return;
-    const db = getRowStoreDB();
+    const db = getRowStoreDB(this.rowStoreDbName);
     const payload = JSON.stringify(this.rowsBuffered);
     const buf = new TextEncoder().encode(payload).buffer;
     const chunk: RowChunk = {
       id: crypto.randomUUID(),
       pluginId: this.pluginId,
-      tableId: this.tableId,
+      tableId,
       chunkIndex: this.chunkIndex++,
       startRowIndex: this.rowCursor,
       endRowIndex: this.rowCursor + this.rowsBuffered.length - 1,
@@ -92,7 +97,8 @@ export class TabularWriter {
     await db.rowChunks.add(chunk);
     if (this.indexColumns.length > 0) {
       const { TabularIndexer } = await import('./TabularIndexer.js');
-      await new TabularIndexer(this.pluginId).indexRows(this.tableId!, this.indexColumns);
+      await new TabularIndexer(this.pluginId, this.rowStoreDbName)
+        .indexRows(tableId, this.indexColumns);
     }
     this.rowCursor += this.rowsBuffered.length;
     this.rowsBuffered = [];

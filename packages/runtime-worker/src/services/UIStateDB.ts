@@ -1,4 +1,4 @@
-import { getDBName, SingletonMixin } from '@hierarchidb/util';
+import { SingletonMixin } from '@hierarchidb/util';
 import { Dexie, type Table } from 'dexie';
 
 export type TreeTablePropsRow = {
@@ -16,16 +16,20 @@ export class UIStateDB extends Dexie {
   treetableProps!: Table<TreeTablePropsRow, string>;
   treetableExpanded!: Table<TreeTableExpandedRow, [string, string]>;
 
-  static async getSingleton(name?: string): Promise<UIStateDB> {
-    return SingletonMixin.getSingleton('UIStateDB', async () => {
-      const db = new UIStateDB(name);
+  static async getSingleton(databaseName: string): Promise<UIStateDB> {
+    const instance = await SingletonMixin.getSingleton('UIStateDB', async () => {
+      const db = new UIStateDB(databaseName);
       await db.open();
       return db;
     });
+    if (instance.name !== databaseName) {
+      throw new Error('ui-state-database-name-mismatch');
+    }
+    return instance;
   }
 
-  constructor(name: string = getDBName('ui-atoms')) {
-    super(name);
+  constructor(databaseName: string) {
+    super(databaseName);
     this.version(1).stores({
       treetableProps: '&pageNodeId',
       treetableExpanded: '&[pageNodeId+nodeId], pageNodeId, nodeId',

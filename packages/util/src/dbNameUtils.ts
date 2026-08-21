@@ -1,35 +1,44 @@
-interface EnvRecord {
-  [key: string]: unknown;
-}
+declare const __HDB_DATABASE_PREFIX__: unknown;
 
-interface HierarchidbGlobal {
-  APP_PREFIX?: unknown;
-}
+const DATABASE_NAME_COMPONENT_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 
-const readVitePrefix = (): string => {
-  try {
-    const meta = import.meta as ImportMeta & { env?: EnvRecord };
-    const prefix = meta.env?.VITE_APP_PREFIX;
-    return typeof prefix === 'string' ? prefix : '';
-  } catch {
-    // ignore if import.meta is not supported in this environment
-    return '';
+function requireDatabaseNameComponent(
+  value: unknown,
+  requiredCode: string,
+  invalidCode: string
+): string {
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new Error(requiredCode);
   }
-};
-
-const readGlobalPrefix = (): string => {
-  const candidate = globalThis as HierarchidbGlobal;
-  const fromAppPrefix = candidate.APP_PREFIX;
-  return typeof fromAppPrefix === 'string' ? fromAppPrefix : '';
-};
-
-export function resolveDbPrefix(): string {
-  const fromGlobal = readGlobalPrefix();
-  const fromVite = readVitePrefix();
-  return (fromGlobal || fromVite || 'hidb').trim();
+  if (!DATABASE_NAME_COMPONENT_PATTERN.test(value)) {
+    throw new Error(invalidCode);
+  }
+  return value;
 }
 
-export function getDBName(suffix: string, prefix?: string): string {
-  const p = (prefix ?? resolveDbPrefix()).replace(/\s+/g, '-');
-  return `${p}-${suffix}`;
+/** Reads the single database prefix injected by the application build. */
+export function getBuildDatabasePrefix(): string {
+  if (typeof __HDB_DATABASE_PREFIX__ === 'undefined') {
+    throw new Error('database-prefix-required');
+  }
+  return requireDatabaseNameComponent(
+    __HDB_DATABASE_PREFIX__,
+    'database-prefix-required',
+    'database-prefix-invalid'
+  );
+}
+
+/** Creates an exact database name from explicit, validated components. */
+export function getDBName(prefix: string, suffix: string): string {
+  const exactPrefix = requireDatabaseNameComponent(
+    prefix,
+    'database-prefix-required',
+    'database-prefix-invalid'
+  );
+  const exactSuffix = requireDatabaseNameComponent(
+    suffix,
+    'database-suffix-required',
+    'database-suffix-invalid'
+  );
+  return `${exactPrefix}-${exactSuffix}`;
 }

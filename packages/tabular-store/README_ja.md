@@ -12,6 +12,8 @@ HierarchiDB の表形式データ永続化パッケージ。`TabularWriter`（�
 - `TabularQueryService` — フィルタ条件による行データクエリ
 - `TabularIndexer` — 列値の等値インデックス（遅延作成）
 
+`RowStoreDB`、`TabularWriter`、`TabularIndexer`、`TabularQueryService`には同一の完全なrow-storeデータベース名を明示的に渡す。package内でbuild prefixを推定したりfallbackしたりしない。
+
 ## 依存関係
 
 `@hierarchidb/util`

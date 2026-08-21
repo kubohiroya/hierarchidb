@@ -1,5 +1,4 @@
 import { Dexie, type Table } from 'dexie';
-import { getDBName } from '@hierarchidb/util';
 import type { ContentIndexPort, ContentMeta, HashAlgorithm } from '~/types';
 
 class ContentIndexDB extends Dexie {
@@ -18,7 +17,7 @@ class ContentIndexDB extends Dexie {
 export class DexieContentIndexPort implements ContentIndexPort {
   private db: ContentIndexDB;
 
-  constructor(name: string = getDBName('cas-db')) {
+  constructor(name: string) {
     this.db = new ContentIndexDB(name);
   }
 

@@ -12,6 +12,9 @@ Tabular data persistence package for HierarchiDB. Provides `TabularWriter` (chun
 - `TabularQueryService` — Row data query with filter conditions
 - `TabularIndexer` — Column value equality index (lazy creation)
 
+`RowStoreDB`, `TabularWriter`, `TabularIndexer`, and `TabularQueryService` require the same explicit
+complete row-store database name. The package does not infer or fall back to a build prefix.
+
 ## Dependencies
 
 `@hierarchidb/util`

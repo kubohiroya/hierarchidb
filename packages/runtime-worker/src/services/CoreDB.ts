@@ -9,7 +9,7 @@ import type {
   TreeNode,
   TreeRootState,
 } from '@hierarchidb/tree-api';
-import { getDBName, SingletonMixin } from '@hierarchidb/util';
+import { SingletonMixin } from '@hierarchidb/util';
 import type { YamlCoreDbMigrationJournalValue } from '@hierarchidb/yaml-api/migration';
 import type { BulkError } from 'dexie';
 import { Dexie, type Table } from 'dexie';
@@ -162,13 +162,17 @@ export class CoreDB extends Dexie {
     return await this.transaction(mode, tables, fn);
   }
 
-  static async getSingleton(_name?: string): Promise<CoreDB> {
-    return SingletonMixin.getSingleton('CoreDB', async () => {
-      const instance = new CoreDB(getDBName('core'), true);
+  static async getSingleton(databaseName: string): Promise<CoreDB> {
+    const instance = await SingletonMixin.getSingleton('CoreDB', async () => {
+      const instance = new CoreDB(databaseName, true);
       await instance.open();
       await instance.initialize();
       return instance;
     });
+    if (instance.name !== databaseName) {
+      throw new Error('core-database-name-mismatch');
+    }
+    return instance;
   }
 
   static createForTest(name: string): CoreDB {

@@ -19,7 +19,6 @@ import { FetchNetworkPort } from '@hierarchidb/download';
 import type { AuthScope } from '@hierarchidb/auth-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import { toNodeId } from '@hierarchidb/core-types';
-import { getDBName } from '@hierarchidb/util';
 import { SpreadsheetMetadataManager } from './SpreadsheetMetadataManager.js';
 import { SpreadsheetStorePort } from './SpreadsheetStorePort.js';
 import { hashFile } from './utils/hashUtils.js';
@@ -64,18 +63,31 @@ const hashString = (input: string): string => {
 export class SpreadsheetTabularApiDriver implements TabularDataApi {
   private readonly pluginId: string;
   private readonly metadataManager: TabularDatabaseManager;
+  private readonly downloadDatabaseName: string;
+  private readonly rowStoreDatabaseName: string;
   private readonly tabularService = new TabularService();
   private downloadStore: DexieChunkStore<ArrayBuffer> | null = null;
   private networkPort: FetchNetworkPort | null = null;
 
-  constructor(pluginIdOrManager: string | TabularDatabaseManager = SPREADSHEET_PLUGIN_ID, pluginIdOverride?: string) {
+  constructor(
+    pluginIdOrManager: string | TabularDatabaseManager,
+    pluginIdOverride: string | undefined,
+    downloadDatabaseName: string,
+    rowStoreDatabaseName: string,
+    metadataDatabaseName?: string
+  ) {
     if (typeof pluginIdOrManager === 'string') {
       this.pluginId = pluginIdOrManager;
-      this.metadataManager = new SpreadsheetMetadataManager();
+      if (metadataDatabaseName === undefined) {
+        throw new Error('spreadsheet-metadata-database-name-required');
+      }
+      this.metadataManager = new SpreadsheetMetadataManager(metadataDatabaseName);
     } else {
       this.metadataManager = pluginIdOrManager;
       this.pluginId = pluginIdOverride ?? SPREADSHEET_PLUGIN_ID;
     }
+    this.downloadDatabaseName = downloadDatabaseName;
+    this.rowStoreDatabaseName = rowStoreDatabaseName;
   }
 
   async uploadTabularFile(file: File, config: TabularProcessingConfig = {}): Promise<TabularTableMetadata> {
@@ -92,6 +104,7 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
       filename: file.name,
       fileSizeBytes: file.size,
       contentHash,
+      rowStoreDatabaseName: this.rowStoreDatabaseName,
     });
 
     const parseOptions = this.toParseOptions(config);
@@ -149,7 +162,7 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
     if (this.downloadStore) return this.downloadStore;
     const networkPort = this.getNetworkPort();
     this.downloadStore = new DexieChunkStore<ArrayBuffer>({
-      dbName: getDBName(`${this.pluginId}-chunks`),
+      dbName: this.downloadDatabaseName,
       serializer: (value) => value,
       deserializer: (value) => value,
       networkPort,
@@ -295,7 +308,7 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
     limit: number,
     projectionOrder: string[],
   ): Promise<{ rows: Array<Record<string, string | number | null>>; totalMatches: number }> {
-    const db = getRowStoreDB();
+    const db = getRowStoreDB(this.rowStoreDatabaseName);
     const chunks = await db.rowChunks
       .where('[pluginId+tableId]')
       .equals([this.pluginId, tableId])
@@ -332,7 +345,7 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
   }
 
   private async removeRowData(tableId: string): Promise<void> {
-    const db = getRowStoreDB();
+    const db = getRowStoreDB(this.rowStoreDatabaseName);
     await db.transaction('rw', db.rowChunks, db.rowIndexes, async () => {
       await db.rowChunks.where('[pluginId+tableId]').equals([this.pluginId, tableId]).delete();
       await db.rowIndexes

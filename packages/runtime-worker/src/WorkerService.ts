@@ -10,14 +10,16 @@ import type { TagAPI } from '@hierarchidb/tag-api';
 import type { NodeType } from '@hierarchidb/core-types';
 import { enableAllExporters, enableAllImporters } from '@hierarchidb/import-export';
 import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/location-api';
+import { initializeLocationDB } from '@hierarchidb/location-store';
 import type { PluginLifecycleAPI } from '@hierarchidb/plugin-base';
 import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/route-api';
 import type { RouteDatabaseHandle } from '@hierarchidb/route-store';
-import { RouteDB } from '@hierarchidb/route-store';
-import { ShapeDB } from '@hierarchidb/shape-store';
+import { initializeRouteDB } from '@hierarchidb/route-store';
+import { initializeEphemeralDB } from '@hierarchidb/gis-sdk';
+import { initializeShapeDB, type ShapeDB } from '@hierarchidb/shape-store';
 import { StylerDB } from '@hierarchidb/styler-store';
 import { TagService } from '@hierarchidb/tag';
-import { SingletonMixin } from '@hierarchidb/util';
+import { getBuildDatabasePrefix, getDBName, SingletonMixin } from '@hierarchidb/util';
 import type { ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import type { StyleMutationAPI, StyleQueryAPI } from '@hierarchidb/style-api';
 import type {
@@ -55,6 +57,7 @@ import { YamlCanonicalZipCoreDbPort } from './services/YamlCanonicalZipCoreDbPor
 import type { RuntimePluginDefinition } from './types/RuntimePluginDefinition.js';
 
 export interface WorkerServiceOptions {
+  readonly databasePrefix: string;
   readonly yamlCanonicalDialogWriter?: YamlCanonicalDialogWriter;
   readonly yamlCanonicalZipServiceFactory?: YamlCanonicalZipServiceFactory;
   readonly assertYamlStorageCanonicalAccess?: () => void;
@@ -83,10 +86,15 @@ export class WorkerService {
 
   static async getSingleton(
     plugins: RuntimePluginDefinition[],
-    options: WorkerServiceOptions = {}
+    options: WorkerServiceOptions
   ): Promise<WorkerService> {
-    return SingletonMixin.getSingleton('WorkerService', async () => {
-      const coreDB: CoreDB = await CoreDB.getSingleton();
+    if (options.databasePrefix !== getBuildDatabasePrefix()) {
+      throw new Error('worker-service-database-prefix-mismatch');
+    }
+    const instance = await SingletonMixin.getSingleton('WorkerService', async () => {
+      const coreDatabaseName = getDBName(options.databasePrefix, 'core');
+      const coreDB: CoreDB = await CoreDB.getSingleton(coreDatabaseName);
+      initializeEphemeralDB(getDBName(options.databasePrefix, 'ephemeral'));
       // Plugin-side Dexie peer stores are expected to self-register where applicable.
       // We avoid forcing worker-bundle imports here to keep bundles lean and prevent divergence.
 
@@ -141,7 +149,11 @@ export class WorkerService {
         pluginMap
       );
 
-      const shapeDB = new ShapeDB();
+      const shapeDB = initializeShapeDB(getDBName(options.databasePrefix, 'shape'));
+      const shapeChunkStoreDatabaseName = getDBName(
+        options.databasePrefix,
+        'shape-chunks'
+      );
 
       // Import/Export services
       const iePort = new ImportExportDBPortCoreDBAdapter(coreDB, shapeDB);
@@ -175,22 +187,32 @@ export class WorkerService {
         },
       };
 
-      const uiStateDB = await UIStateDB.getSingleton();
+      const uiStateDB = await UIStateDB.getSingleton(
+        getDBName(options.databasePrefix, 'ui-atoms')
+      );
       const treeTableExpandedService: TreeTableExpandedAPI = new TreeTableExpandedService(
         uiStateDB,
         treeQueryService
       );
 
-      const styleDB = await StylerDB.getSingleton();
+      const styleDB = await StylerDB.getSingleton(
+        getDBName(options.databasePrefix, 'style')
+      );
       const styleService: StyleQueryAPI & StyleMutationAPI =
         await StyleService.getSingleton(styleDB);
-      const shapeQueryService: ShapeQueryAPI = await ShapeQueryService.getSingleton(shapeDB);
+      const shapeQueryService: ShapeQueryAPI = await ShapeQueryService.getSingleton(
+        shapeDB,
+        shapeChunkStoreDatabaseName
+      );
       const shapeMutationService: ShapeMutationAPI =
-        await ShapeMutationService.getSingleton(shapeDB);
+        await ShapeMutationService.getSingleton(shapeDB, shapeChunkStoreDatabaseName);
+      initializeLocationDB(getDBName(options.databasePrefix, 'location'));
       const locationQueryService: LocationQueryAPI = await LocationQueryService.getSingleton();
       const locationMutationService: LocationMutationAPI =
         await LocationMutationService.getSingleton();
-      const routeDB = new RouteDB() as RouteDatabaseHandle;
+      const routeDB = initializeRouteDB(
+        getDBName(options.databasePrefix, 'route')
+      ) as RouteDatabaseHandle;
       const routeQueryService: RouteQueryAPI = await RouteQueryService.getSingleton(routeDB);
       const routeMutationService: RouteMutationAPI = await RouteMutationService.getSingleton(
         routeDB,
@@ -205,6 +227,7 @@ export class WorkerService {
       await WorkerService.recoverBuildSessionRuntimeRecordsOnWarmStart();
 
       return new WorkerService(
+        options.databasePrefix,
         coreDB,
         treeQueryService,
         treeMutationService,
@@ -229,6 +252,10 @@ export class WorkerService {
         assertCanonicalAccess
       );
     });
+    if (instance.databasePrefix !== options.databasePrefix) {
+      throw new Error('worker-service-database-prefix-mismatch');
+    }
+    return instance;
   }
 
   private static async recoverBuildSessionRuntimeRecordsOnWarmStart(): Promise<void> {
@@ -246,6 +273,7 @@ export class WorkerService {
   }
 
   constructor(
+    private readonly databasePrefix: string,
     private coreDB: CoreDB,
     private queryService: TreeQueryAPI,
     private mutationService: TreeMutationAPI,

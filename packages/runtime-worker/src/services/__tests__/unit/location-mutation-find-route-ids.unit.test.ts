@@ -2,8 +2,14 @@ import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { LocationFeatureId } from '@hierarchidb/location-api';
 import type { RouteMode, RouteLineString } from '@hierarchidb/route-api';
+import {
+  clearRouteDatabases,
+  closeRouteDB,
+  countRouteReferencesToLocations,
+  getRouteDB,
+  initializeRouteDB,
+} from '@hierarchidb/route-store';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { clearRouteDatabases, closeRouteDB, countRouteReferencesToLocations, getRouteDB } from '@hierarchidb/route-store';
 import { LocationMutationService } from '../../LocationMutationService';
 
 const asNodeId = (value: string): NodeId => value as NodeId;
@@ -84,7 +90,7 @@ const createRouteLineString = (overrides: RouteLineStringFixture = {}): RouteLin
 
 describe('route location reference indexing and legacy fallback', () => {
   beforeEach(async () => {
-    const db = getRouteDB();
+    const db = initializeRouteDB('test-route');
     await db.open?.();
     await db.features.clear();
     await db.vectorTiles.clear();
@@ -93,7 +99,7 @@ describe('route location reference indexing and legacy fallback', () => {
 
   afterEach(async () => {
     await closeRouteDB();
-    await clearRouteDatabases();
+    await clearRouteDatabases('test-route');
     await closeRouteDB();
   });
 
