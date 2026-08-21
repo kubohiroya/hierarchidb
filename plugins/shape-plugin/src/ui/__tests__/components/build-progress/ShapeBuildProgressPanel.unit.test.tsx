@@ -280,6 +280,47 @@ describe('ShapeBuildProgressPanel (state-tree)', () => {
     expect(screen.queryByText('No tasks yet.')).toBeNull();
   });
 
+  it('starts unfiltered and applies an outcome filter to progress segments', async () => {
+    const store = makeStore();
+    setTasksByStage(store, {
+      source: [
+        {
+          taskId: 'source-running',
+          nodeId: 'node-1',
+          stage: 'source',
+          taskType: 'source',
+          status: 'running',
+          progress: 50,
+        } as ShapeBuildTaskSummary,
+        {
+          taskId: 'source-completed',
+          nodeId: 'node-1',
+          stage: 'source',
+          taskType: 'source',
+          status: 'completed',
+          progress: 100,
+        } as ShapeBuildTaskSummary,
+      ],
+    });
+    setSessionPhase(store, 'running', 'source');
+
+    renderPanel(store);
+
+    await waitFor(() => {
+      expect(document.querySelector('svg a[href="#task-source-running"]')).toBeTruthy();
+      expect(document.querySelector('svg a[href="#task-source-completed"]')).toBeTruthy();
+    });
+
+    const completedFilter = screen.getByRole('button', { name: 'Completed 1/2' });
+    expect(completedFilter.className).toContain('MuiChip-outlined');
+    fireEvent.click(completedFilter);
+
+    await waitFor(() => {
+      expect(document.querySelector('svg a[href="#task-source-running"]')).toBeNull();
+      expect(document.querySelector('svg a[href="#task-source-completed"]')).toBeTruthy();
+    });
+  });
+
   it('calculates elapsed time from the authoritative stage snapshot timing', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(10_000);
     const store = makeStore();

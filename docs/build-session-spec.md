@@ -68,11 +68,13 @@
 
 ### Step 5 task progress bar のフィルター契約
 
+- Shape の Step 5 は `failedMode=false / skippedMode=false / completedMode=false` を stage filter の初期値として共有 Panel へ明示的に渡す。共有 Panel の他 consumer に対する既定値から推測してはならない。
 - `failedMode` / `skippedMode` / `completedMode` がすべて `false` の場合、全 task と計画済みの waiting slot を表示する。
 - 1つ以上が `true` の場合、選択された outcome category だけを OR 条件で表示する。`failedMode` は `failed`、`skippedMode` は skip display または skip message を持つ task、`completedMode` は skip ではない `completed / recycled` を対象とする。
 - skipped 判定は status 判定より優先する。skipped task を `completedMode` だけで表示してはならない。
 - active filter 中は `queued / running / paused / waiting` を表示しない。
 - segment、stage offset、stage count、view width、viewport index は同一のフィルター済み task 列から導出する。
+- task progress bar と task card list は同一の visibility predicate を使用する。
 - 非選択 task を `fillOpacity` で dim 表示してはならない。
 
 ## データモデル要件（規範）

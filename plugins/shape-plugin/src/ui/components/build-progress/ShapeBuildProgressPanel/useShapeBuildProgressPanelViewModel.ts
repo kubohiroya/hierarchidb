@@ -1,4 +1,4 @@
-import type { BuildControlMenuItem } from '@hierarchidb/ui-build-progress';
+import type { BuildControlMenuItem, BuildStageFilter } from '@hierarchidb/ui-build-progress';
 import { IconButton } from '@mui/material';
 import {
   type BuildSessionProgressPanelViewModel,
@@ -25,6 +25,12 @@ type UseShapeBuildProgressPanelViewModelArgs = {
 };
 
 type ShapeBuildProgressPanelControllerResult = ReturnType<typeof useShapeBuildProgressPanelController>;
+
+const SHAPE_DEFAULT_STAGE_FILTER: BuildStageFilter = {
+  failedMode: false,
+  completedMode: false,
+  skippedMode: false,
+};
 
 type ShapeBuildProgressPanelViewModel = {
   status: ShapeBuildProgressPanelControllerResult['summary']['buildStatus'];
@@ -148,6 +154,7 @@ export const useShapeBuildProgressPanelViewModel = ({
     status: summary.buildStatus,
     overallProgress: summary.overallProgress,
     stages: stagesWithPreviewTrigger,
+    defaultStageFilter: SHAPE_DEFAULT_STAGE_FILTER,
     stageProgress: stageProgressForDisplay,
     paneProgress: paneProgressForDisplay,
     tasksByStageForDisplay,

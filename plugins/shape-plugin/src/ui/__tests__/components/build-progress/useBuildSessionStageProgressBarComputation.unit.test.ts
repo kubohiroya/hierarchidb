@@ -4,8 +4,8 @@ import {
   buildTaskProgressSegments,
   resolveViewportIndices,
   type TaskProgressComputeInput,
-  type TaskProgressVisibilityFilter,
 } from '../../../components/build-progress/ShapeBuildProgressPanel/BuildSessionStageProgressBar/useBuildSessionStageProgressBarComputation';
+import type { TaskProgressVisibilityFilter } from '../../../components/build-progress/ShapeBuildProgressPanel/isTaskVisibleForProgressFilter';
 import type { TaskItemWithMetadata } from '../../../components/build-progress/taskItemCardList/types';
 
 const stages: BuildStage[] = [

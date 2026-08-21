@@ -10,6 +10,11 @@ import {
   sortGeometryTasks,
   sortVectorTileTasks,
 } from '~/ui/components/build-progress/taskItemCardList/useTaskItemCardList';
+import {
+  isTaskProgressFilterActive,
+  isTaskVisibleForProgressFilter,
+  type TaskProgressVisibilityFilter,
+} from '../isTaskVisibleForProgressFilter.js';
 
 export type ViewportRange = {
   stageId: string;
@@ -24,12 +29,6 @@ export type BuildSessionStageProgressBarSegment = {
   taskId?: string;
   title: string;
   width: number;
-};
-
-export type TaskProgressVisibilityFilter = {
-  skippedMode: boolean;
-  failedMode: boolean;
-  completedMode: boolean;
 };
 
 export type TaskProgressComputeInput = {
@@ -130,24 +129,6 @@ const resolveTasksByStageId = (
   return aliasEntry?.[1] ?? [];
 };
 
-const shouldIncludeTask = (params: {
-  statusValue: string;
-  isSkipped: boolean;
-  filter: TaskProgressVisibilityFilter;
-}) => {
-  const { statusValue, isSkipped, filter } = params;
-
-  if (!filter.skippedMode && !filter.failedMode && !filter.completedMode) {
-    return true;
-  }
-
-  if (isSkipped) return filter.skippedMode;
-  if (statusValue === 'failed') return filter.failedMode;
-  if (statusValue === 'completed' || statusValue === 'recycled') return filter.completedMode;
-
-  return false;
-};
-
 const resolveVisibleOrderedTasks = (
   stageId: string,
   stageTasks: TaskItemWithMetadata[],
@@ -162,7 +143,7 @@ const resolveVisibleOrderedTasks = (
   return orderedTasks.filter((task) => {
     const statusValue = task.status.toLowerCase();
     const isSkipped = isTaskSkipped(task.display, resolveTaskMetadataMessage(task.metadata));
-    return shouldIncludeTask({ statusValue, isSkipped, filter });
+    return isTaskVisibleForProgressFilter({ statusValue, isSkipped, filter });
   });
 };
 
@@ -197,7 +178,7 @@ export const buildTaskProgressSegments = (params: TaskProgressComputeInput) => {
         ? sortGeometryTasks(stageTasks)
         : stageTasks;
     const visibleOrderedTasks = resolveVisibleOrderedTasks(sourceStageId, stageTasks, filter);
-    const hasActiveFilter = filter.skippedMode || filter.failedMode || filter.completedMode;
+    const hasActiveFilter = isTaskProgressFilterActive(filter);
     const expectedStageTotal = hasActiveFilter
       ? visibleOrderedTasks.length
       : Math.max(orderedTasks.length, plannedStageTotal);
