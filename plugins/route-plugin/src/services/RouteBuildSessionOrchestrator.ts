@@ -1,12 +1,13 @@
-import type { NodeId } from '@hierarchidb/core-types';
-import { RouteBuildManager, type RouteBuildRouteInput, type RouteBuildManagerDeps } from './RouteBuildManager.js';
-import type { RouteBuildSession } from './RouteBuildSession.js';
-import { DEFAULT_ROUTE_BUILD_CONFIG } from '~/common/config/buildConfig';
-import type { RouteBuildConfig } from '@hierarchidb/route-api';
 import type { BuildSessionStatus } from '@hierarchidb/build-api';
+import { CanonicalBuildSessionManager } from '@hierarchidb/build-runtime-services';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { RouteBuildConfig } from '@hierarchidb/route-api';
+import { DEFAULT_ROUTE_BUILD_CONFIG } from '~/common/config/buildConfig';
 import {
-  CanonicalBuildSessionManager,
-} from '@hierarchidb/build-runtime-services';
+  RouteBuildManager,
+  type RouteBuildManagerDeps,
+  type RouteBuildRouteInput,
+} from './RouteBuildManager.js';
 
 export interface RouteBuildSessionConfig {
   routeGeneration?: Partial<RouteBuildConfig['routeGeneration']>;
@@ -21,7 +22,10 @@ export interface RouteBuildInput {
 
 export class RouteBuildSessionOrchestrator extends CanonicalBuildSessionManager {
   private readonly manager: RouteBuildManager;
-  private readonly pendingSessions = new Map<NodeId, { config: RouteBuildConfig; routes: RouteBuildRouteInput[] }>();
+  private readonly pendingSessions = new Map<
+    NodeId,
+    { config: RouteBuildConfig; routes: RouteBuildRouteInput[] }
+  >();
 
   constructor(deps?: RouteBuildManagerDeps) {
     super();
@@ -30,12 +34,23 @@ export class RouteBuildSessionOrchestrator extends CanonicalBuildSessionManager 
     });
   }
 
-  async prepareSession(nodeId: NodeId, config: RouteBuildSessionConfig | RouteBuildConfig | undefined, data: RouteBuildInput): Promise<void> {
-    const fullConfig = resolveRouteConfig(config);
+  async prepareSession(
+    nodeId: NodeId,
+    config: RouteBuildConfig,
+    data: RouteBuildInput
+  ): Promise<void> {
     this.pendingSessions.set(nodeId, {
-      config: fullConfig,
+      config,
       routes: data.routes,
     });
+  }
+
+  async prepareLegacySession(
+    nodeId: NodeId,
+    config: RouteBuildSessionConfig | undefined,
+    data: RouteBuildInput
+  ): Promise<void> {
+    await this.prepareSession(nodeId, resolveLegacyRouteConfig(config), data);
   }
 
   async startBuildSession(nodeId: NodeId): Promise<BuildSessionStatus> {
@@ -56,24 +71,9 @@ export class RouteBuildSessionOrchestrator extends CanonicalBuildSessionManager 
     }
     return this.getBuildSessionStatus(sessionNodeId);
   }
-
-  async pauseBuildSession(nodeId: NodeId): Promise<void> {
-    if (this.sessions.has(nodeId)) {
-      await super.pauseBuildSession(nodeId);
-    }
-  }
-
-  protected async onSessionStatusChange(_session: RouteBuildSession): Promise<void> {
-    await super.onSessionStatusChange(_session);
-    const state = _session.getState();
-    if (state.status === 'completed' || state.status === 'failed') {
-      this.sessions.delete(state.nodeId);
-      this.cleanupSessionTracking(state.nodeId);
-    }
-  }
 }
 
-function resolveRouteConfig(config?: RouteBuildSessionConfig | RouteBuildConfig): RouteBuildConfig {
+function resolveLegacyRouteConfig(config?: RouteBuildSessionConfig): RouteBuildConfig {
   const defaults = DEFAULT_ROUTE_BUILD_CONFIG;
   const routeGenerationDefaults = DEFAULT_ROUTE_BUILD_CONFIG.routeGeneration;
   const routeGeneration: RouteBuildConfig['routeGeneration'] = {

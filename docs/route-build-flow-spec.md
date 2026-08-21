@@ -208,3 +208,14 @@ waterway:location-a:location-b              # explicitly bidirectional and canon
 - task progressはfiniteな`0..100`だけを受理し、taskIdごとの単調増加versionを持つ。
 - aggregate progressからcanonical eventを推測・変換しない。
 - 詳細は `docs/build-session-worker-ui-event-spec.md` を参照する。
+
+## canonical Worker start入力
+
+- Runtime bootstrapはTreeNodeの`draftData`を無加工でroute pluginへ渡す。
+- 現行のdirect-route入力は`RouteEntityPayload.buildConfig / startLocationId / endLocationId /
+  lineGeometry`を必須とし、`lineGeometry`の先頭・末尾を始点・終点座標として使う。
+- 存在しない`draftData.routes`を別の入力SSOTとして追加しない。
+- 座標はfiniteかつlongitude `-180..180` / latitude `-90..90`を満たすことを要求し、
+  location ID、座標、またはbuild設定が不正な場合はstartを失敗させる。
+- `selectedArrayByCountries`から複数routeを計画するsource strategyへの移行は
+  Issue #549の対象であり、direct-route入力と混在させない。

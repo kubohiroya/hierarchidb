@@ -5,7 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LocationBuildConfig } from '../../../common/entities/LocationEntity';
 import { LocationBuildManager } from '../../LocationBuildManager';
 
-const { strategySearch } = vi.hoisted(() => ({
+const { appendLocationPoints, strategySearch } = vi.hoisted(() => ({
+  appendLocationPoints: vi.fn(),
   strategySearch: vi.fn(),
 }));
 
@@ -16,7 +17,7 @@ vi.mock('../../download/strategyRegistryUtils.js', () => ({
 }));
 
 vi.mock('../../pointRepository.js', () => ({
-  appendLocationPoints: vi.fn(async () => {}),
+  appendLocationPoints,
   replaceLocationPoints: vi.fn(async () => {}),
 }));
 
@@ -30,6 +31,8 @@ const nodeId = 'location-canonical-events' as NodeId;
 
 describe('LocationBuildSession canonical events', () => {
   beforeEach(() => {
+    appendLocationPoints.mockReset();
+    appendLocationPoints.mockResolvedValue(undefined);
     strategySearch.mockReset();
   });
 
@@ -78,6 +81,18 @@ describe('LocationBuildSession canonical events', () => {
     await manager.startLocationBuildSession(nodeId, config);
     await completed;
 
+    await expect(manager.getBuildSessionStatus(nodeId)).resolves.toMatchObject({
+      nodeId,
+      status: 'completed',
+    });
+    await expect(manager.getBuildTasks(nodeId)).resolves.toEqual([
+      expect.objectContaining({
+        stage: 'source',
+        status: 'completed',
+        progress: 100,
+      }),
+    ]);
+
     const sessionEvents = events.filter((event) => event.type === 'sessionStatusUpdated');
     expect(sessionEvents.map((event) => event.payload.phase)).toEqual([
       'idle',
@@ -101,5 +116,73 @@ describe('LocationBuildSession canonical events', () => {
       expect.objectContaining({ status: 'completed', progress: 100, version: 3 }),
     ]);
     expect(finalSnapshot?.payload.stageCompletedAt).toEqual(expect.any(Number));
+  });
+
+  it('stops active processing and requeues the task before publishing paused state', async () => {
+    const phases: string[] = [];
+    unconditionalEventStreamer.subscribe(nodeId, 'session-state', (event) => {
+      if (event.type === 'sessionStatusUpdated') phases.push(event.payload.phase);
+    });
+    let finishSearch: (() => void) | null = null;
+    const searchResult = new Promise<never[]>((resolve) => {
+      finishSearch = () => resolve([]);
+    });
+    strategySearch.mockReturnValue(searchResult);
+    const config: LocationBuildConfig = {
+      searchConfigs: [{ dataSource: 'ourairports' }],
+      processingOptions: { concurrent: 1 },
+    };
+    const manager = new LocationBuildManager();
+    await manager.startLocationBuildSession(nodeId, config);
+    await vi.waitFor(() => {
+      expect(strategySearch).toHaveBeenCalledTimes(1);
+    });
+
+    const pausePromise = manager.pauseBuildSession(nodeId, 'route-leave');
+    expect(phases.at(-1)).toBe('pausing');
+    const completeSearch = finishSearch;
+    if (!completeSearch) throw new Error('Search completion resolver is unavailable');
+    completeSearch();
+    await pausePromise;
+
+    await expect(manager.getBuildSessionStatus(nodeId)).resolves.toMatchObject({
+      status: 'paused',
+      stopReason: 'route-leave',
+    });
+    expect(phases.slice(-2)).toEqual(['pausing', 'paused']);
+    await expect(manager.getBuildTasks(nodeId)).resolves.toEqual([
+      expect.objectContaining({
+        stage: 'source',
+        status: 'queued',
+        progress: 0,
+      }),
+    ]);
+    expect(appendLocationPoints).not.toHaveBeenCalled();
+  });
+
+  it('publishes failed instead of converting a source failure into an empty success', async () => {
+    strategySearch.mockRejectedValue(new Error('source unavailable'));
+    const failed = new Promise<void>((resolve) => {
+      unconditionalEventStreamer.subscribe(nodeId, 'session-state', (event) => {
+        if (event.type === 'sessionStatusUpdated' && event.payload.phase === 'failed') resolve();
+      });
+    });
+    const manager = new LocationBuildManager();
+    await manager.startLocationBuildSession(nodeId, {
+      searchConfigs: [{ dataSource: 'ourairports' }],
+      processingOptions: { concurrent: 1 },
+    });
+
+    await failed;
+
+    await expect(manager.getBuildSessionStatus(nodeId)).resolves.toMatchObject({
+      status: 'failed',
+      stopReason: 'failed',
+      error: 'Location build completed with 1 failures',
+    });
+    await expect(manager.getBuildTasks(nodeId)).resolves.toEqual([
+      expect.objectContaining({ status: 'failed', errorMessage: 'source unavailable' }),
+    ]);
+    expect(appendLocationPoints).not.toHaveBeenCalled();
   });
 });

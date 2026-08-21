@@ -1,4 +1,12 @@
 export * from './isBuildControlAPIV2Enabled.js';
+export {
+  canonicalPluginBuildAPIMethodNames,
+} from './CanonicalPluginBuildAPI.js';
+export type {
+  CanonicalPluginBuildAPI,
+  CanonicalPluginBuildStartRequest,
+  CanonicalPluginBuildUnsubscribe,
+} from './CanonicalPluginBuildAPI.js';
 export type {
   BuildStage,
   BuildContinuationPolicy,

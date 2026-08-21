@@ -3,11 +3,11 @@
  * @description Location build session manager extending BaseBuildSessionManager.
  */
 
+import type { BuildSessionStatus, BuildTaskSummary } from '@hierarchidb/build-api';
+import { CanonicalBuildSessionManager } from '@hierarchidb/build-runtime-services';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { LocationBuildConfig } from '~/common/entities/LocationEntity';
 import type { LocationPointProperties } from '~/common/entities/LocationPoint';
-import type { BuildSessionStatus } from '@hierarchidb/build-api';
-import { CanonicalBuildSessionManager } from '@hierarchidb/build-runtime-services';
 import { LocationBuildSession } from './LocationBuildSession.js';
 
 export class LocationBuildManager extends CanonicalBuildSessionManager {
@@ -19,6 +19,10 @@ export class LocationBuildManager extends CanonicalBuildSessionManager {
     nodeId: NodeId,
     config: LocationBuildConfig,
   ): Promise<NodeId> {
+    const existing = this.sessions.get(nodeId);
+    if (existing?.hasActiveRun()) {
+      throw new Error(`Location build session still has an active run for node ${String(nodeId)}`);
+    }
     const session = new LocationBuildSession(nodeId, config);
     await session.initialize();
     this.registerSession(session);
@@ -27,12 +31,16 @@ export class LocationBuildManager extends CanonicalBuildSessionManager {
     void runPromise.catch((error: unknown) => {
       console.warn('[LocationBuildManager] Location build session failed', error);
     });
-    void runPromise.finally(() => {
-      this.sessions.delete(nodeId);
-      this.cleanupSessionTracking(nodeId);
-    });
 
     return nodeId;
+  }
+
+  async getBuildTasks(nodeId: NodeId): Promise<BuildTaskSummary[]> {
+    const session = this.sessions.get(nodeId);
+    if (!(session instanceof LocationBuildSession)) {
+      throw new Error(`Session ${String(nodeId)} not found`);
+    }
+    return session.getBuildTasks();
   }
 
   async collectLocationPoints(

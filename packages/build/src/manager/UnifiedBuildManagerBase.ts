@@ -61,7 +61,7 @@ export abstract class UnifiedBuildManagerBase<TConfig, TData> implements IBuildS
     return status;
   }
 
-  async pauseBuildSession(nodeId: NodeId): Promise<void> {
+  async pauseBuildSession(nodeId: NodeId, _reason?: string): Promise<void> {
     await this.performPause(nodeId);
     await this.notifyStatus(nodeId);
   }

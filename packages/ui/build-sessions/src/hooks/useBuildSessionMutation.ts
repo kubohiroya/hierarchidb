@@ -56,7 +56,7 @@ export const useBuildSessionMutation = (
   const resumeSession = useCallback(async (): Promise<boolean> => {
     return runMutation(async () => {
       if (!nodeId) return;
-      await bridgeRef.current.startBuildSession(nodeType, nodeId, undefined);
+      await bridgeRef.current.startBuildSession(nodeType, nodeId);
     });
   }, [nodeId, nodeType, runMutation]);
 

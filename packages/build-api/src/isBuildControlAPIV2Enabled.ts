@@ -7,8 +7,7 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import type { TaskDisplayPayload } from './task-queue-types.js';
-import type { TaskStage } from './task-queue-types.js';
+import type { TaskDisplayPayload, TaskStage } from './task-queue-types.js';
 
 export type StageKey = TaskStage;
 
@@ -21,9 +20,9 @@ export type BuildStatus =
   | 'failed'
   | 'recycled';
 
-export interface BaseBuildConfig {
-  // Intentionally minimal; build implementations extend as needed.
-}
+export type BuildSessionStatusValue = BuildStatus | 'pausing';
+
+export type BaseBuildConfig = {};
 
 export interface BuildTaskCountSummary {
   total: number;
@@ -46,21 +45,23 @@ export interface ResourceUsage {
  */
 export interface BuildSessionStatus {
   nodeId: NodeId;
-  status: BuildStatus;
+  status: BuildSessionStatusValue;
   progress: BuildProgress;
   startedAt?: number;
   completedAt?: number;
   lastActivity?: number;
   error?: string;
+  stopReason?: string;
 }
 
 export interface BuildSessionState {
   nodeId: NodeId;
-  status: BuildStatus;
+  status: BuildSessionStatusValue;
   startedAt?: number;
   completedAt?: number;
   lastActivity?: number;
   error?: string;
+  stopReason?: string;
 }
 
 export interface BuildTaskSummary {
@@ -86,18 +87,20 @@ export type BuildTaskUpdateEvent<T extends BuildTaskSummary = BuildTaskSummary> 
  */
 export interface BuildProgress extends BuildTaskCountSummary {
   percentage: number;
-  stage: StageKey;
+  /** Current stage. Absent until a stage has authoritatively started. */
+  stage?: StageKey;
   estimatedTimeRemaining?: number;
 }
 
 export interface IBuildSessionManager<TConfig = unknown, TData = unknown> {
   prepareSession?(nodeId: NodeId, config: TConfig, data: TData): Promise<void>;
   startBuildSession(nodeId: NodeId): Promise<BuildSessionStatus>;
-  pauseBuildSession(nodeId: NodeId): Promise<void>;
+  pauseBuildSession(nodeId: NodeId, reason?: string): Promise<void>;
   getBuildSessionStatus(nodeId: NodeId): Promise<BuildSessionStatus>;
 }
 
-export type BuildManagerFactory<TManager extends IBuildSessionManager = IBuildSessionManager> = () => TManager;
+export type BuildManagerFactory<TManager extends IBuildSessionManager = IBuildSessionManager> =
+  () => TManager;
 
 export type BuildSessionRuntimeStatus =
   | 'idle'

@@ -2,7 +2,10 @@ import type { BuildProgress, BuildSessionStatus } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import { describe, expect, it, vi } from 'vitest';
 import { BaseBuildSessionManager } from '../../manager/BaseBuildSessionManager.js';
-import { AbstractBuildSession } from '../AbstractBuildSession.js';
+import {
+  AbstractBuildSession,
+  BuildSessionPauseShutdownTimeoutError,
+} from '../AbstractBuildSession.js';
 
 const NODE_ID = 'node-1' as NodeId;
 
@@ -12,6 +15,48 @@ class TestBuildSession extends AbstractBuildSession {
   }
 
   protected async processBatch(): Promise<void> {}
+}
+
+class PausableTestBuildSession extends AbstractBuildSession {
+  pauseHookCalls = 0;
+
+  constructor(nodeId: NodeId, private readonly notifyStarted: () => void) {
+    super(nodeId, {});
+  }
+
+  protected async processBatch(signal: AbortSignal): Promise<void> {
+    this.notifyStarted();
+    await new Promise<void>((_resolve, reject) => {
+      signal.addEventListener(
+        'abort',
+        () => reject(createAbortError('test session paused')),
+        { once: true }
+      );
+    });
+  }
+
+  protected override async onPause(): Promise<void> {
+    this.pauseHookCalls += 1;
+  }
+}
+
+class UnsettledTestBuildSession extends AbstractBuildSession {
+  constructor(
+    nodeId: NodeId,
+    private readonly notifyStarted: () => void,
+    private readonly waitForFinish: Promise<void>
+  ) {
+    super(nodeId, {});
+  }
+
+  protected async processBatch(): Promise<void> {
+    this.notifyStarted();
+    await this.waitForFinish;
+  }
+
+  protected override getPauseShutdownTimeoutMs(): number {
+    return 10;
+  }
 }
 
 class TestBuildSessionManager extends BaseBuildSessionManager {
@@ -87,4 +132,65 @@ describe('AbstractBuildSession session update notification', () => {
     replacement.reportProgress({ total: 2 });
     expect(manager.updatedSessions).toEqual([first, replacement]);
   });
+
+  it('settles the active run before publishing paused state', async () => {
+    let notifyStarted: () => void = () => {};
+    const started = new Promise<void>((resolve) => {
+      notifyStarted = resolve;
+    });
+    const session = new PausableTestBuildSession(NODE_ID, notifyStarted);
+    const observedStatuses: BuildSessionStatus['status'][] = [];
+    session.addSessionUpdateListener(() => {
+      observedStatuses.push(session.getState().status);
+    });
+
+    const runPromise = session.start();
+    await started;
+    await expect(session.pause('route-leave')).resolves.toBeUndefined();
+    await expect(runPromise).resolves.toBeUndefined();
+
+    expect(session.getState().status).toBe('paused');
+    expect(session.pauseHookCalls).toBe(1);
+    expect(session.getState().stopReason).toBe('route-leave');
+    expect(observedStatuses).toEqual(['running', 'pausing', 'paused']);
+  });
+
+  it('fails pause on shutdown timeout and keeps the unsettled run active', async () => {
+    let notifyStarted: () => void = () => {};
+    const started = new Promise<void>((resolve) => {
+      notifyStarted = resolve;
+    });
+    let finishRun: () => void = () => {};
+    const waitForFinish = new Promise<void>((resolve) => {
+      finishRun = resolve;
+    });
+    const session = new UnsettledTestBuildSession(NODE_ID, notifyStarted, waitForFinish);
+
+    const runPromise = session.start();
+    await started;
+    await expect(session.pause()).rejects.toBeInstanceOf(
+      BuildSessionPauseShutdownTimeoutError
+    );
+
+    expect(session.getState()).toMatchObject({
+      status: 'failed',
+      error: expect.stringContaining('did not stop within 10ms'),
+      stopReason: 'failed',
+    });
+    expect(session.hasActiveRun()).toBe(true);
+
+    finishRun();
+    await runPromise;
+    expect(session.getState()).toMatchObject({
+      status: 'failed',
+      error: expect.stringContaining('did not stop within 10ms'),
+    });
+    expect(session.hasActiveRun()).toBe(false);
+  });
 });
+
+function createAbortError(message: string): Error {
+  const error = new Error(message);
+  error.name = 'AbortError';
+  return error;
+}

@@ -3,15 +3,16 @@
  * @description Location build session extending AbstractBuildSession.
  */
 
-import {
-    AbstractBuildSession,
-    type CanonicalBuildSessionEventSource,
-} from '@hierarchidb/build-runtime-services';
 import type {
+    BuildTaskSummary,
     StageSnapshotUpdatedEvent,
     TaskProgressUpdatedEvent,
     TaskStatus,
 } from '@hierarchidb/build-api';
+import {
+    AbstractBuildSession,
+    type CanonicalBuildSessionEventSource,
+} from '@hierarchidb/build-runtime-services';
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
     LocationBuildConfig,
@@ -106,19 +107,24 @@ export class LocationBuildSession
         for (const batch of batches) {
             if (signal.aborted) throw abortError('Location build aborted');
 
-            await Promise.all(batch.map(async (task) => {
+            const taskResults = await Promise.allSettled(batch.map(async (task) => {
+                requireNotAborted(signal, 'Location build paused before task start');
                 task.status = 'running';
                 task.errorMessage = undefined;
                 this.updateLocationTaskProgress(task, 0);
                 this.updateProgress({ total, completed, failed }, 'source');
                 try {
                     const results = await this.searchLocations(task.searchConfig);
+                    requireNotAborted(signal, 'Location build paused during search');
                     const validated = await this.validateAndFilterLocations(results, this.config.filterCriteria);
+                    requireNotAborted(signal, 'Location build paused during validation');
                     await this.persistLocationPoints(this.nodeId, validated);
+                    requireNotAborted(signal, 'Location build paused during persistence');
                     completed += 1;
                     task.status = 'completed';
                     this.updateLocationTaskProgress(task, 100);
                 } catch (error) {
+                    if (isAbortError(error)) throw error;
                     failed += 1;
                     task.status = 'failed';
                     task.errorMessage = error instanceof Error ? error.message : String(error);
@@ -127,6 +133,10 @@ export class LocationBuildSession
                 }
                 this.updateProgress({ total, completed, failed }, 'source');
             }));
+            const rejectedTask = taskResults.find(
+                (result): result is PromiseRejectedResult => result.status === 'rejected',
+            );
+            if (rejectedTask) throw rejectedTask.reason;
         }
 
         this.completeSourceStage();
@@ -158,6 +168,35 @@ export class LocationBuildSession
 
     takeCanonicalTaskProgressUpdates(): TaskProgressUpdatedEvent['payload'][] {
         return this.pendingTaskProgressUpdates.splice(0);
+    }
+
+    getBuildTasks(): BuildTaskSummary[] {
+        return this.tasks.map((task) => ({
+            taskId: task.taskId,
+            version: task.version,
+            stage: 'source',
+            status: task.status,
+            progress: task.progress,
+            errorMessage: task.errorMessage,
+            metadata: {
+                dataSource: task.searchConfig.dataSource,
+                index: task.index,
+            },
+        }));
+    }
+
+    protected override async onPause(): Promise<void> {
+        for (const task of this.tasks) {
+            if (task.status !== 'running') continue;
+            task.status = 'queued';
+            task.errorMessage = undefined;
+            this.updateLocationTaskProgress(task, 0);
+        }
+    }
+
+    protected override async onCancelQueued(): Promise<void> {
+        this.tasks.splice(0);
+        this.updateProgress({ total: 0, completed: 0, failed: 0, skipped: 0 });
     }
 
     private beginSourceStage(): void {
@@ -235,18 +274,14 @@ export class LocationBuildSession
     }
 
     private async searchLocations(config: LocationSearchConfig): Promise<LocationPointProperties[]> {
-        try {
-            const { getLocationStrategy } = await import('./download/strategyRegistryUtils.js');
-            const strategy = getLocationStrategy(config);
-            if (strategy) {
-                const list = await strategy.search(config);
-                const normalized = await this.normalizeCountryCodes(list);
-                const filtered = this.filterLocationsByConfig(normalized, config);
-                if (config.limit && filtered.length > (config.limit || 0)) return filtered.slice(0, config.limit);
-                return filtered;
-            }
-        } catch (error) {
-            logLocationBuildWarning('Failed to execute registered location strategy', error);
+        const { getLocationStrategy } = await import('./download/strategyRegistryUtils.js');
+        const strategy = getLocationStrategy(config);
+        if (strategy) {
+            const list = await strategy.search(config);
+            const normalized = await this.normalizeCountryCodes(list);
+            const filtered = this.filterLocationsByConfig(normalized, config);
+            if (config.limit && filtered.length > config.limit) return filtered.slice(0, config.limit);
+            return filtered;
         }
 
         const locations: LocationPointProperties[] = [];
@@ -277,7 +312,7 @@ export class LocationBuildSession
                 locations.push(...await this.searchWorldPortIndex(config));
                 break;
             default:
-                console.warn(`Unsupported data source: ${config.dataSource}`);
+                throw new Error(`Unsupported location data source: ${String(config.dataSource)}`);
         }
 
         const normalized = await this.normalizeCountryCodes(locations);
@@ -305,27 +340,19 @@ export class LocationBuildSession
         if (config.language) {
             params.append('accept-language', config.language);
         }
-        try {
-            const data = await this.getJson(`${endpoint}?${params}`);
-            if (!isRawNominatimArray(data)) {
-                logLocationBuildWarning('Unexpected Nominatim response shape', data);
-                return [];
-            }
-            return await this.convertOSMToLocations(data);
-        } catch (error) {
-            console.error('OSM search failed:', error);
-            return [];
+        const data = await this.getJson(`${endpoint}?${params}`);
+        if (!isRawNominatimArray(data)) {
+            throw new Error('Unexpected Nominatim response shape');
         }
+        return await this.convertOSMToLocations(data);
     }
 
-    private async searchGeoNames(config: LocationSearchConfig): Promise<LocationPointProperties[]> {
-        console.log('GeoNames search:', config);
-        return [];
+    private async searchGeoNames(_config: LocationSearchConfig): Promise<LocationPointProperties[]> {
+        throw new Error('GeoNames location search is not implemented');
     }
 
-    private async searchWikidata(config: LocationSearchConfig): Promise<LocationPointProperties[]> {
-        console.log('Wikidata search:', config);
-        return [];
+    private async searchWikidata(_config: LocationSearchConfig): Promise<LocationPointProperties[]> {
+        throw new Error('Wikidata location search is not implemented');
     }
 
     private async searchOverpass(config: LocationSearchConfig): Promise<LocationPointProperties[]> {
@@ -334,99 +361,69 @@ export class LocationBuildSession
         const query = typeof queryOption === 'string' && queryOption.trim().length > 0
             ? queryOption
             : this.buildOverpassQuery(config);
-        try {
-            const data = await postJson<{ elements?: RawOverpassElement[] }>(
-                'location',
-                endpoint,
-                query,
-                { 'Content-Type': 'application/x-www-form-urlencoded' },
-            );
-            return await this.convertOverpassToLocations(data);
-        } catch (error) {
-            console.error('Overpass search failed:', error);
-            return [];
-        }
+        const data = await postJson<{ elements?: RawOverpassElement[] }>(
+            'location',
+            endpoint,
+            query,
+            { 'Content-Type': 'application/x-www-form-urlencoded' },
+        );
+        return await this.convertOverpassToLocations(data);
     }
 
     private async searchCustom(config: LocationSearchConfig): Promise<LocationPointProperties[]> {
         if (!config.options?.customEndpoint) {
-            console.error('Custom endpoint not specified');
-            return [];
+            throw new Error('Custom endpoint not specified');
         }
-        try {
-            const endpointUrl = config.options.customEndpoint;
-            if (typeof endpointUrl !== 'string' || endpointUrl.length === 0) {
-                console.error('Custom endpoint is invalid');
-                return [];
-            }
-            const queryParamsRaw = config.options.queryParams as Record<string, unknown> | undefined;
-            const queryParams = queryParamsRaw
-                ? Object.entries(queryParamsRaw).reduce((acc, [key, value]) => {
-                    if (value == null) return acc;
-                    acc[key] = Array.isArray(value)
-                        ? value.map((item) => String(item)).join(',')
-                        : String(value);
-                    return acc;
-                }, {} as Record<string, string>)
-                : undefined;
-            const searchParams = new URLSearchParams(queryParams);
-            const requestUrl = searchParams.size > 0 ? `${endpointUrl}?${searchParams.toString()}` : endpointUrl;
-            const customHeaders = config.options.customHeaders as HeadersInit | undefined;
-            const init: RequestInit | undefined = customHeaders ? { headers: customHeaders } : undefined;
-            const data = await this.getJson(requestUrl, init);
-            return await this.convertCustomToLocations(data);
-        } catch (error) {
-            console.error('Custom search failed:', error);
-            return [];
+        const endpointUrl = config.options.customEndpoint;
+        if (typeof endpointUrl !== 'string' || endpointUrl.length === 0) {
+            throw new Error('Custom endpoint is invalid');
         }
+        const queryParamsRaw = config.options.queryParams as Record<string, unknown> | undefined;
+        const queryParams = queryParamsRaw
+            ? Object.entries(queryParamsRaw).reduce((acc, [key, value]) => {
+                if (value == null) return acc;
+                acc[key] = Array.isArray(value)
+                    ? value.map((item) => String(item)).join(',')
+                    : String(value);
+                return acc;
+            }, {} as Record<string, string>)
+            : undefined;
+        const searchParams = new URLSearchParams(queryParams);
+        const requestUrl = searchParams.size > 0 ? `${endpointUrl}?${searchParams.toString()}` : endpointUrl;
+        const customHeaders = config.options.customHeaders as HeadersInit | undefined;
+        const init: RequestInit | undefined = customHeaders ? { headers: customHeaders } : undefined;
+        const data = await this.getJson(requestUrl, init);
+        return await this.convertCustomToLocations(data);
     }
 
     private async searchOurAirports(config: LocationSearchConfig): Promise<LocationPointProperties[]> {
         const source = getLocationDataSource('ourairports');
         const endpoint = config.options?.sourceUrl || source?.endpoints?.airports;
         if (typeof endpoint !== 'string' || endpoint.length === 0) {
-            console.error('OurAirports endpoint not specified');
-            return [];
+            throw new Error('OurAirports endpoint not specified');
         }
-        try {
-            const csv = await this.getText(endpoint);
-            return await parseOurAirportsCsv(csv, Date.now());
-        } catch (error) {
-            console.error('OurAirports search failed:', error);
-            return [];
-        }
+        const csv = await this.getText(endpoint);
+        return await parseOurAirportsCsv(csv, Date.now());
     }
 
     private async searchOpenFlights(config: LocationSearchConfig): Promise<LocationPointProperties[]> {
         const source = getLocationDataSource('openflights');
         const endpoint = config.options?.sourceUrl || source?.endpoints?.airports;
         if (typeof endpoint !== 'string' || endpoint.length === 0) {
-            console.error('OpenFlights endpoint not specified');
-            return [];
+            throw new Error('OpenFlights endpoint not specified');
         }
-        try {
-            const csv = await this.getText(endpoint);
-            return await parseOpenFlightsCsv(csv, Date.now());
-        } catch (error) {
-            console.error('OpenFlights search failed:', error);
-            return [];
-        }
+        const csv = await this.getText(endpoint);
+        return await parseOpenFlightsCsv(csv, Date.now());
     }
 
     private async searchWorldPortIndex(config: LocationSearchConfig): Promise<LocationPointProperties[]> {
         const source = getLocationDataSource('world-port-index');
         const endpoint = config.options?.sourceUrl || source?.endpoints?.ports;
         if (typeof endpoint !== 'string' || endpoint.length === 0) {
-            console.error('World Port Index endpoint not specified');
-            return [];
+            throw new Error('World Port Index endpoint not specified');
         }
-        try {
-            const csv = await this.getText(endpoint);
-            return await parseWorldPortIndexCsv(csv, Date.now());
-        } catch (error) {
-            console.error('World Port Index search failed:', error);
-            return [];
-        }
+        const csv = await this.getText(endpoint);
+        return await parseWorldPortIndexCsv(csv, Date.now());
     }
 
     private getNetworkPort(): FetchNetworkPort {
@@ -663,6 +660,17 @@ function createBatches<T>(items: T[], batchSize: number): T[][] {
         batches.push(items.slice(i, i + batchSize));
     }
     return batches;
+}
+
+function requireNotAborted(signal: AbortSignal, message: string): void {
+    if (signal.aborted) throw abortError(message);
+}
+
+function isAbortError(error: unknown): boolean {
+    return error !== null
+        && typeof error === 'object'
+        && 'name' in error
+        && error.name === 'AbortError';
 }
 
 function abortError(message: string): Error {

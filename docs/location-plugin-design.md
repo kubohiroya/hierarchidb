@@ -158,6 +158,8 @@
 - 文字列→数値変換に失敗した行は **スキップ**する。
 - 解析対象の CSV が **想定ヘッダに一致しない**場合は空配列を返し、Step5 側で「0 件」として扱う。
 - countryCode / countryName が取得できない場合は空欄のまま保存し、Step3 の国フィルタは一致しない。
+- 正常に取得・解析できたデータが0件の場合だけ空結果として成功できる。network/auth失敗、登録strategyの
+  例外、必須endpoint欠落、またはresponse shape違反を空結果へ変換せず、task/sessionを失敗させる。
 
 ### Step6: プレビュー
 
@@ -316,6 +318,18 @@
 - `LocationDB.vectorTiles` は **移行で停止/削除**し、`locationPoints` を単一ソースとする。
 - Step5 は **データの保存のみ**を行い、タイル生成や変換処理を持たない。
 - tabular metadata はbuild-time database prefixから生成した完全名 `<prefix>-location-metadata`（TabularDatabaseManager）に保存し、行データ・index・queryは同じく明示した完全名 `<prefix>-tabular-source-rowstore-db` を共有する。`LocationDB` は features の永続化のみを担う。prefixや完全名のfallbackは行わない。
+
+## canonical Worker start入力
+
+- Runtime bootstrapはTreeNodeの`draftData`を無加工でlocation pluginへ渡す。
+- Workerは`LocationEntityPayload.dataSource / selectedArrayByCountries / concurrentDownloads`から
+  `LocationBuildConfig`を決定的に構築する。エンティティ型に存在しない
+  `draftData.buildConfig`を要求しない。
+- 選択された国ごとに1つのsearch configを作り、行のcolumn indexは
+  `area_centroid / airport / port / railway_station / interchange`の確定順序で解釈する。
+- country keyはuppercase ISO 3166-1 alpha-2を要求し、trimや大文字化で補正しない。
+- 未選択、不正な並列数、またはWorker sessionが未対応のdata sourceは
+  空buildや別sourceへ読み替えず、startを失敗させる。
 
 ## 確認事項（要決定）
 

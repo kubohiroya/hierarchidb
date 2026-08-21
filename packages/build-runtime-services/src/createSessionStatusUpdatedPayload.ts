@@ -16,7 +16,7 @@ export const createSessionStatusUpdatedPayload = (
     isActive: isActiveSessionPhase(phase),
     startedAt: state.startedAt,
     completedAt: state.completedAt,
-    stopReason: resolveStopReason(phase),
+    stopReason: state.stopReason ?? resolveStopReason(phase),
     stageId: stageSnapshot?.stageId,
     stageStartedAt: stageSnapshot?.stageStartedAt,
     stageInactiveMs: stageSnapshot?.stageInactiveMs,
@@ -31,6 +31,8 @@ const toSessionPhase = (status: BuildSessionState['status']): SessionPhase => {
       return 'starting';
     case 'running':
       return 'running';
+    case 'pausing':
+      return 'pausing';
     case 'paused':
       return 'paused';
     case 'completed':

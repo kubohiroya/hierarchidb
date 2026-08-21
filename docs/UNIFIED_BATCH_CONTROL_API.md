@@ -38,16 +38,19 @@ subscribeWorkerLog(nodeType: NodeType, nodeId: NodeId, callback: WorkerLogCallba
 - New code must call `Build*` APIs.
 - Compatibility at runtime should not introduce new `Batch*` usage.
 - New code must use `startBuildSession` for Start semantics (including prior Resume-labeled UI actions).
-- `subscribeBuildTasks` remains only as a compatibility surface. Shape runtime returns a
-  no-op unsubscribe, so new UI code must use `subscribeStageSnapshots` and
-  `subscribeTaskProgress` instead.
+- `subscribeBuildTasks` is removed from `WorkerAPI` and `BuildWorkerBridge`; task delivery
+  uses `subscribeStageSnapshots` and `subscribeTaskProgress` only.
 - No aggregate progress subscription method is exposed. Task progress uses
   `subscribeTaskProgress` exclusively.
 
 ## 4. Event Vocabulary
 
 - `stage`: `source | geometry | tileEmit`
+- `BuildProgress.stage` is absent until a stage has authoritatively started. Runtime
+  adapters must not synthesize `source` for a session with no current stage.
 - session phase: `idle | starting | running | pausing | paused | resuming | finalizing | completed | failed`
+- `BuildSessionStatus` and `BuildSessionState` represent the transient Worker shutdown state with
+  `BuildSessionStatusValue` (`BuildStatus | pausing`). `pausing` is not added to task status values.
 - task status: `queued | running | completed | failed | recycled`
 - stage task lists are full replacements delivered by `stageSnapshotUpdated`.
 - task progress is delivered by `taskProgressUpdated` and ordered by a version scoped
@@ -75,7 +78,62 @@ subscribeWorkerLog(nodeType: NodeType, nodeId: NodeId, callback: WorkerLogCallba
 - Route/Location service-layer managers now expose `Build*` as primary exports.
 - Runtime-level `Batch*` aliases are removed from build control contracts.
 
-## 7. WorkerAPI / WorkerBridge Naming Contract
+## 7. Plugin Worker Registration Contract
+
+Every build-capable worker module exposes its bootstrap-resolved build entry under the
+exact name `canonicalBuildAPI`. Shape, Route, and Location implement the same
+`CanonicalPluginBuildAPI` surface:
+
+- `startBuildSession({ nodeId, draftData })`
+- `getBuildSessionStatus`
+- `pauseBuildSession`
+- `cancelQueuedBuildSession`
+- `getBuildTasks`
+- `subscribeStageSnapshots`
+- `subscribeTaskProgress`
+- `subscribeSessionState`
+- `subscribeSessionHeartbeat`
+- `subscribeWorkerLog`
+
+The runtime bootstrap resolves only the exact `canonicalBuildAPI` export. It does not
+probe plugin-specific names, nested plugin objects, legacy listener APIs, or aggregate
+progress providers. An export that is present but lacks any required method is a
+startup contract error. A start request always obtains `draftData` from the canonical
+tree node and passes it unchanged to the plugin; the plugin owns strict validation of
+its required configuration and input data. Missing required data is rejected and is
+never replaced with defaults or a no-op session.
+
+When Shape `processingConfig` is present, its source, geometry, tileEmit, and optional
+dynamic-concurrency leaves must satisfy the complete `ShapeProcessingConfig` contract.
+The adapter rejects partial processing objects before the runtime can merge defaults.
+Source concurrency is an integer in `1..4`; retry counts are non-negative integers;
+retry delay is a finite non-negative number; and retry backoff is `linear` or
+`exponential`. Geometry concurrency is an integer in `1..8`, while tileEmit
+concurrency is a positive integer. Dynamic concurrency requires a boolean `enabled`,
+positive integer limits with optional `maxConcurrent >= minConcurrent`, finite
+watermarks in `0..1` with `lowWatermark < highWatermark`, a positive integer
+`adjustStep`, and an integer `sampleMs >= 200`.
+
+Route derives one direct route input from the persisted `buildConfig`,
+`startLocationId`, `endLocationId`, and the first and last coordinates of
+`lineGeometry`. Location derives its search configuration from the persisted
+`dataSource`, `selectedArrayByCountries`, and `concurrentDownloads`. Neither adapter
+accepts a synthetic nested `routes` or Location `buildConfig` field that is absent from
+the corresponding entity payload.
+
+Route and Location pause completes only after the active run has received abort and its
+pipeline promise has settled. Shutdown confirmation has a 15-second deadline; timeout
+fails the session and rejects the command, and a replacement start remains forbidden
+until the original run actually settles. A terminal or paused session remains queryable
+until a replacement session for the same node is registered. `getBuildTasks` is
+operational for all three plugin registrations; an adapter must not satisfy the method
+structurally by always rejecting it.
+
+Shape preview payload generation is not part of this build dispatch contract. It is
+exposed separately as the exact `shapeBuildExtensions` worker export; bootstrap does
+not discover it through `shapeBuildAPI`, `shapePluginAPI`, or nested plugin objects.
+
+## 8. WorkerAPI / WorkerBridge Naming Contract
 
 - Canonical methods:
   - `startBuildSession`

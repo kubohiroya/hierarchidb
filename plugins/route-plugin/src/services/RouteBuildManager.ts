@@ -52,7 +52,12 @@ export class RouteBuildManager {
     routes: RouteBuildRouteInput[],
   ): Promise<NodeId> {
     const existingSession = this.activeSessions.get(nodeId);
-    if (existingSession) return nodeId;
+    if (existingSession) {
+      if (existingSession.getState().status === 'failed') {
+        throw new Error(`Route build session still has an active run for node ${String(nodeId)}`);
+      }
+      return nodeId;
+    }
 
     const routeTasks: RouteBuildTask[] = [];
 
@@ -114,12 +119,13 @@ export class RouteBuildManager {
     await session.initialize();
     this.hooks?.onSessionReady(session);
     const runPromise = session.start();
-    void runPromise.catch((error: unknown) => {
-      logRouteBuildWarning('Route build session failed', error);
-    });
-    void runPromise.finally(() => {
-      this.activeSessions.delete(nodeId);
-    });
+    void runPromise
+      .catch((error: unknown) => {
+        logRouteBuildWarning('Route build session failed', error);
+      })
+      .finally(() => {
+        this.activeSessions.delete(nodeId);
+      });
 
     return nodeId;
   }

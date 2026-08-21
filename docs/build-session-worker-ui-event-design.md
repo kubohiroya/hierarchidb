@@ -244,6 +244,13 @@ transports. The same-realm streamer remains live-only, so its UI subscription mu
 mounted before the local session starts. The bridge does not call the legacy aggregate
 progress hook or reconstruct task counts from `sessionStatusUpdated`.
 
+All three build-capable worker modules also export the same `canonicalBuildAPI`
+registration surface. The SharedWorker bootstrap resolves only that exact export and
+validates every required command, query, and subscription method. This registration is
+the transport foundation for the later Route and Location ownership migration; it does
+not silently redirect their current UI-realm consumers or fall back to plugin-specific
+API names.
+
 The bridge keeps lifecycle readiness and per-stage snapshot readiness distinct.
 Receiving a session status selects the active stage but leaves progress absent until
 that stage's authoritative snapshot arrives. A snapshot with an empty task array is

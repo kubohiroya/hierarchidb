@@ -2,7 +2,7 @@ import {
   onTraceFailure,
   runStartSessionRequest,
   toPersistedStartStatusPatch,
-} from './useShapeBuildStartExecutionConstants.js';
+} from './useShapeBuildStartExecutionConstantsUtils.js';
 import type { StartExecutionArgs } from './types.js';
 import { getErrorMessage, summarizeSelectedEntries, toTransitionErrorMessage } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/errorConstants';
 

@@ -10,9 +10,13 @@ import type {
   BuildSessionRuntimeStatus,
   BuildSessionStatus,
   BuildTaskSummary,
-  BuildTaskUpdateEvent,
+  CanonicalPluginBuildAPI,
+  HeartbeatEvent,
+  SessionStatusUpdatedEvent,
   StageKey,
+  StageSnapshotUpdatedEvent,
   TaskProgressUpdatedEvent,
+  WorkerLogEvent,
 } from '@hierarchidb/build-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { setCorsProxyBaseURL } from '@hierarchidb/download';
@@ -55,6 +59,7 @@ import { resolveRequiredCorsProxyBaseURL } from '~/config/resolveRequiredCorsPro
 import { pluginDefinitions as staticPluginDefinitions } from '~/plugin-loaders/index';
 import { pluginWorkerLoaders } from '~/plugin-loaders/workerLoaderUtils';
 import type { BuildWorkerAPI } from '~/types/workerApiTypes';
+import { resolveCanonicalPluginBuildAPI } from './resolveCanonicalPluginBuildAPI.js';
 
 /** Runtime export metadata (subset consumed during bootstrap). */
 type RuntimeExportEntry = {
@@ -72,42 +77,26 @@ type WorkerMessageTarget = {
   postMessage?: (msg: unknown) => void;
 };
 
-type BuildTaskProvider = (nodeId: NodeId) => Promise<BuildTaskSummary[]>;
+type ShapeDownloadTaskPayload = {
+  url: string;
+  countryCode: string;
+  countryName?: string;
+  adminLevel: number;
+  dataSource?: ShapeDataSourceName;
+};
 
-type BuildEventSubscriber = (
-  nodeId: NodeId,
-  callback: (event: unknown) => void
-) => () => void;
-
-type ShapeBuildAPI = {
-  startBuildSession?: (
-    draftId: NodeId,
-    buildConfig: unknown,
-    processingConfig: unknown,
-    downloadTaskPayloads: unknown[],
-  ) => Promise<NodeId>;
+type ShapeBuildExtensions = {
   generateDownloadTaskPayloadsFromSelection?: (
     nodeId: NodeId,
     dataSource: ShapeDataSourceName,
     selectedArrayByCountries: Record<string, boolean[]>
-  ) => Promise<unknown[]>;
-  getDraft?: (draftId: NodeId) => Promise<unknown>;
-  getBuildSession?: (nodeId: NodeId) => Promise<unknown>;
-  pauseBuildSession?: (draftId: NodeId) => Promise<void>;
-  invokeBuildCommand?: (command: string, payload: Record<string, unknown>) => Promise<void>;
-  subscribeStageSnapshots?: BuildEventSubscriber;
-  subscribeSessionState?: BuildEventSubscriber;
-  subscribeHeartbeat?: BuildEventSubscriber;
-  subscribeTaskProgress?: BuildEventSubscriber;
-  subscribeWorkerLog?: BuildEventSubscriber;
+  ) => Promise<ShapeDownloadTaskPayload[]>;
 };
 
 type RuntimeWorkerBootstrap = {
   api: BuildWorkerAPI;
   servicesReadyAt: number;
 };
-
-type ShapeDownloadTaskPayloads = NonNullable<Parameters<BuildWorkerAPI['startBuildSession']>[2]>;
 
 const heapMonitor = createHeapPressureMonitor({ source: 'worker' });
 const heapListeners = new Set<(event: HeapPressureEvent) => void>();
@@ -204,91 +193,66 @@ const sanitizeForComlink = <T>(value: T, seen = new WeakMap<object, unknown>()):
   return safe as T;
 };
 
-const resolveBuildTaskProvider = (mod: unknown): BuildTaskProvider | null => {
+const resolveShapeBuildExtensions = (mod: unknown): ShapeBuildExtensions | null => {
   if (!mod || (typeof mod !== 'object' && typeof mod !== 'function')) return null;
   const record = mod as Record<string, unknown>;
-  const direct = record.getBuildTasks;
-  if (typeof direct === 'function') {
-    return direct as BuildTaskProvider;
+  const candidate = record.shapeBuildExtensions;
+  if (candidate === undefined) return null;
+  if (candidate === null || typeof candidate !== 'object') {
+    throw new Error('[worker bootstrap] shapeBuildExtensions export must be an object');
   }
-  const shapePlugin = record.ShapeWorkerPlugin as
-    | { api?: Record<string, unknown>; build?: Record<string, unknown> }
-    | undefined;
-  const api = shapePlugin?.build ?? shapePlugin?.api;
-  const apiFn = api?.getBuildTasks;
-  if (typeof apiFn === 'function') {
-    return (nodeId: NodeId) => (apiFn as (id: NodeId) => Promise<BuildTaskSummary[]>)(nodeId);
-  }
-  return null;
-};
-
-const resolveShapeBuildAPI = (mod: unknown): ShapeBuildAPI | null => {
-  if (!mod || (typeof mod !== 'object' && typeof mod !== 'function')) return null;
-  const record = mod as Record<string, unknown>;
-  const direct = (
-    record.shapeBuildAPI
-    ?? record.shapePluginAPI
-  ) as ShapeBuildAPI | undefined;
-  if (direct?.startBuildSession) {
-    return direct;
-  }
-  const shapePlugin = record.ShapeWorkerPlugin as
-    | { api?: ShapeBuildAPI; build?: ShapeBuildAPI }
-    | undefined;
-  const api = shapePlugin?.build ?? shapePlugin?.api;
-  if (api?.startBuildSession) {
-    return api;
-  }
-  return null;
-};
-
-const isTaskStage = (value: unknown): value is StageKey => (
-  value === 'source' || value === 'geometry' || value === 'tileEmit'
-);
-
-type BuildProgressLike = {
-  total?: number;
-  completed?: number;
-  failed?: number;
-  skipped?: number;
-  percentage?: number;
-  stage?: StageKey;
-  estimatedTimeRemaining?: number;
-};
-
-const toBuildProgress = (progress: BuildProgressLike | undefined): BuildProgress => ({
-  total: (progress?.total as number | undefined) ?? 0,
-  completed: (progress?.completed as number | undefined) ?? 0,
-  failed: (progress?.failed as number | undefined) ?? 0,
-  skipped: (progress?.skipped as number | undefined) ?? 0,
-  percentage: (progress?.percentage as number | undefined) ?? 0,
-  stage: isTaskStage((progress as { stage?: unknown } | undefined)?.stage) ? (progress?.stage as StageKey) : 'source',
-  estimatedTimeRemaining: (progress?.estimatedTimeRemaining as number | undefined),
-});
-
-const VALID_BUILD_SESSION_STATUSES = new Set<BuildSessionStatus['status']>([
-  'idle', 'queued', 'running', 'paused', 'completed', 'failed',
-]);
-
-const toBuildSessionStatus = (
-  session: Record<string, unknown> | undefined,
-  fallbackNodeId: NodeId
-): BuildSessionStatus => {
-  const rawStatus = session?.status;
-  if (!VALID_BUILD_SESSION_STATUSES.has(rawStatus as BuildSessionStatus['status'])) {
+  const extensions = candidate as Record<string, unknown>;
+  if (typeof extensions.generateDownloadTaskPayloadsFromSelection !== 'function') {
     throw new Error(
-      `[toBuildSessionStatus] invalid or missing session status: ${JSON.stringify(rawStatus)}`
+      '[worker bootstrap] shapeBuildExtensions.generateDownloadTaskPayloadsFromSelection must be a function'
     );
   }
-  const progress = session?.progress as (BuildProgressLike | ShapeBuildProgressSummary | undefined);
+  return candidate as ShapeBuildExtensions;
+};
+
+const isTaskStage = (value: unknown): value is StageKey =>
+  value === 'source' || value === 'geometry' || value === 'tileEmit';
+
+const requireBuildProgressCount = (value: unknown, field: string): number => {
+  if (!Number.isInteger(value) || (value as number) < 0) {
+    throw new Error(
+      `[worker bootstrap] build progress ${field} must be a non-negative integer, received ${String(value)}`
+    );
+  }
+  return value as number;
+};
+
+const requireBuildProgressPercentage = (value: unknown): number => {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 100) {
+    throw new Error(
+      `[worker bootstrap] build progress percentage must be finite 0..100, received ${String(value)}`
+    );
+  }
+  return value;
+};
+
+const toBuildProgress = (progress: ShapeBuildProgressSummary): BuildProgress => {
+  const total = requireBuildProgressCount(progress.total, 'total');
+  const completed = requireBuildProgressCount(progress.completed, 'completed');
+  const failed = requireBuildProgressCount(progress.failed, 'failed');
+  const skipped = requireBuildProgressCount(progress.skipped, 'skipped');
+  const terminal = completed + failed + skipped;
+  if (terminal > total) {
+    throw new Error(
+      `[worker bootstrap] terminal build task count must not exceed total: terminal=${terminal}, total=${total}`
+    );
+  }
+  const stage = (progress as { stage?: unknown }).stage;
+  if (stage !== undefined && !isTaskStage(stage)) {
+    throw new Error(`[worker bootstrap] invalid build progress stage: ${String(stage)}`);
+  }
   return {
-    nodeId: (session?.nodeId as NodeId | undefined) ?? fallbackNodeId,
-    status: rawStatus as BuildSessionStatus['status'],
-    progress: toBuildProgress(progress),
-    startedAt: session?.startedAt as number | undefined,
-    completedAt: session?.completedAt as number | undefined,
-    lastActivity: session?.updatedAt as number | undefined,
-    error: session?.error as string | undefined,
+    total,
+    completed,
+    failed,
+    skipped,
+    percentage: requireBuildProgressPercentage(progress.percentage),
+    ...(stage === undefined ? {} : { stage }),
   };
 };
 
@@ -311,8 +275,9 @@ const resolveRuntimeStatusFromBuildSession = (
       return 'completed';
     case 'failed':
       return 'failed';
+    case 'recycled':
+      throw new Error('[worker bootstrap] recycled is not a valid build session status');
     case 'idle':
-    default:
       return 'idle';
   }
 };
@@ -330,7 +295,6 @@ const resolveRuntimeStatusFromShapeRecord = (
     case 'failed':
       return 'failed';
     case 'idle':
-    default:
       return 'idle';
   }
 };
@@ -342,13 +306,6 @@ const runtimeStatusesWithActiveLock = new Set<BuildSessionRuntimeStatus>([
   'resuming',
   'finalizing',
 ]);
-
-const coerceRecord = (value: unknown): Record<string, unknown> => {
-  if (value && typeof value === 'object') {
-    return value as Record<string, unknown>;
-  }
-  return {};
-};
 
 // Provide minimal Node-like globals for libraries that expect them.
 const globalShim = globalThis as typeof globalThis & {
@@ -556,18 +513,16 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
         return extra?.lifecycle ? { ...definition, lifecycle: extra.lifecycle } : definition;
       });
 
-      const buildTaskProviders = new Map<NodeType, BuildTaskProvider>();
-      const shapeBuildAPIs = new Map<NodeType, ShapeBuildAPI>();
+      const SHAPE_NODE_TYPE = 'shape' as NodeType;
+      const canonicalBuildAPIs = new Map<NodeType, CanonicalPluginBuildAPI>();
       for (const entry of moduleEntries) {
-        const provider = resolveBuildTaskProvider(entry.mod);
-        if (provider) {
-          buildTaskProviders.set(entry.nodeType as NodeType, provider);
-        }
-        const buildApi = resolveShapeBuildAPI(entry.mod);
+        const buildApi = resolveCanonicalPluginBuildAPI(entry.mod);
         if (buildApi) {
-          shapeBuildAPIs.set(entry.nodeType as NodeType, buildApi);
+          canonicalBuildAPIs.set(entry.nodeType as NodeType, buildApi);
         }
       }
+      const shapeModule = moduleEntries.find((entry) => entry.nodeType === SHAPE_NODE_TYPE)?.mod;
+      const shapeBuildExtensions = resolveShapeBuildExtensions(shapeModule);
 
       try {
         // Use a static import to avoid bundler facade re-export mismatches in preview builds.
@@ -593,48 +548,21 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
 
         reporter.reportStepProgress('Create API facade', 10);
 
-        const resolveShapeBuildApiOrThrow = (nodeType: NodeType): ShapeBuildAPI => {
-          const api = shapeBuildAPIs.get(nodeType);
+        const resolveCanonicalBuildAPIOrThrow = (nodeType: NodeType): CanonicalPluginBuildAPI => {
+          const api = canonicalBuildAPIs.get(nodeType);
           if (!api) {
-            throw new Error(`[worker bootstrap] Build API not available for nodeType: ${nodeType}`);
+            throw new Error(
+              `[worker bootstrap] canonicalBuildAPI is not registered for nodeType: ${nodeType}`
+            );
           }
           return api;
         };
-        const getSessionSnapshot = async (
-          buildApi: ShapeBuildAPI,
-          nodeId: NodeId
-        ): Promise<unknown> => {
-          const getBuildSession = buildApi.getBuildSession;
-          if (typeof getBuildSession === 'function') {
-            return getBuildSession(nodeId);
-          }
-          return undefined;
-        };
-        const invokeStartBuildSession = async (
-          buildApi: ShapeBuildAPI,
-          nodeId: NodeId,
-          buildConfig: unknown,
-          processingConfig: unknown,
-          downloadTaskPayloads: unknown[]
-        ): Promise<NodeId> => {
-          if (typeof buildApi.startBuildSession === 'function') {
-            return buildApi.startBuildSession(
-              nodeId,
-              buildConfig,
-              processingConfig,
-              downloadTaskPayloads
-            );
-          }
-          throw new Error('[worker bootstrap] Build API missing start method');
-        };
-        const SHAPE_NODE_TYPE = 'shape' as NodeType;
         const normalizeSessionStatuses = (
           statuses: Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>
-        ): Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'> => (
+        ): Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'> =>
           statuses.length > 0
             ? statuses
-            : (['running'] as Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>)
-        );
+            : (['running'] as Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>);
         const runtimeStatusOverrides = new Map<string, BuildSessionRuntimeStatus>();
         const runtimeActiveHints = new Map<string, boolean>();
         const runtimeRevisions = new Map<string, number>();
@@ -746,13 +674,19 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             : queryAPI.listBuildSessionRecordsByStatus(statuses);
 
           const persisted = await sessionRecords;
-          const records = (Array.isArray(persisted) ? persisted : (persisted ? [persisted] : []));
-          const runtimeRecords = records.map((session) => toRuntimeRecord(SHAPE_NODE_TYPE, session));
-          const existing = new Set(runtimeRecords.map((record) => toRuntimeKey(SHAPE_NODE_TYPE, record.nodeId)));
+          const records = Array.isArray(persisted) ? persisted : persisted ? [persisted] : [];
+          const runtimeRecords = records.map((session) =>
+            toRuntimeRecord(SHAPE_NODE_TYPE, session)
+          );
+          const existing = new Set(
+            runtimeRecords.map((record) => toRuntimeKey(SHAPE_NODE_TYPE, record.nodeId))
+          );
 
           const syntheticCandidates = filter?.nodeId
             ? [{ nodeType: SHAPE_NODE_TYPE, nodeId: filter.nodeId }]
-            : Array.from(runtimeNodeIndex.values()).filter((entry) => entry.nodeType === SHAPE_NODE_TYPE);
+            : Array.from(runtimeNodeIndex.values()).filter(
+                (entry) => entry.nodeType === SHAPE_NODE_TYPE
+              );
 
           for (const candidate of syntheticCandidates) {
             const key = toRuntimeKey(candidate.nodeType, candidate.nodeId);
@@ -763,9 +697,10 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           }
 
           const statusesFilter = filter?.statuses;
-          const filteredByStatus = statusesFilter && statusesFilter.length > 0
-            ? runtimeRecords.filter((record) => statusesFilter.includes(record.status))
-            : runtimeRecords;
+          const filteredByStatus =
+            statusesFilter && statusesFilter.length > 0
+              ? runtimeRecords.filter((record) => statusesFilter.includes(record.status))
+              : runtimeRecords;
           const filteredByActive = filter?.activeOnly
             ? filteredByStatus.filter((record) => record.isActive)
             : filteredByStatus;
@@ -774,33 +709,24 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
 
         const runStartBuildSession = async (
           nodeType: NodeType,
-          nodeId: NodeId,
-          downloadTaskPayloads?: ShapeDownloadTaskPayloads,
+          nodeId: NodeId
         ): Promise<BuildSessionStatus> => {
-          const buildApi = resolveShapeBuildApiOrThrow(nodeType);
+          const buildApi = resolveCanonicalBuildAPIOrThrow(nodeType);
           setRuntimeTransientStatus(nodeType, nodeId, 'starting', true);
           try {
-            const draft = buildApi.getDraft ? await buildApi.getDraft(nodeId) : undefined;
-            const fallbackNode = await services.getTreeNodeUpdaterAPI().getTreeNode(nodeId);
-            const draftData = coerceRecord(
-              (draft as { draftData?: unknown } | undefined)?.draftData ??
-              (fallbackNode as { draftData?: unknown } | undefined)?.draftData
-            );
-            const buildConfig = (draftData as { buildConfig?: unknown }).buildConfig ?? {};
-            const processingConfig = (draftData as { processingConfig?: unknown }).processingConfig ?? {};
-            const payloads = downloadTaskPayloads ?? [];
-            await invokeStartBuildSession(
-              buildApi,
-              nodeId,
-              buildConfig,
-              processingConfig,
-              payloads
-            );
-            const session = await getSessionSnapshot(buildApi, nodeId);
-            const status = toBuildSessionStatus(
-              session as Record<string, unknown> | undefined,
-              nodeId
-            );
+            const treeNode = await services.getTreeNodeUpdaterAPI().getTreeNode(nodeId);
+            const draftData = (treeNode as { draftData?: unknown } | undefined)?.draftData;
+            if (draftData === undefined) {
+              throw new Error(
+                `[worker bootstrap] draftData is required to start build for nodeType=${String(nodeType)}, nodeId=${String(nodeId)}`
+              );
+            }
+            const status = await buildApi.startBuildSession({ nodeId, draftData });
+            if (status.nodeId !== nodeId) {
+              throw new Error(
+                `[worker bootstrap] canonical build status nodeId mismatch: expected=${String(nodeId)}, actual=${String(status.nodeId)}`
+              );
+            }
             setHeapContext({ nodeType, nodeId: status.nodeId });
             const runtimeStatus = resolveRuntimeStatusFromBuildSession(status.status);
             clearRuntimeTransientStatus(nodeType, nodeId, runtimeStatus === 'running');
@@ -816,7 +742,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           nodeId: NodeId,
           reason?: string
         ): Promise<void> => {
-          const buildApi = resolveShapeBuildApiOrThrow(nodeType);
+          const buildApi = resolveCanonicalBuildAPIOrThrow(nodeType);
           console.warn('[worker bootstrap][PauseTrace] pause-requested', {
             nodeType,
             nodeId,
@@ -824,15 +750,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           });
           setRuntimeTransientStatus(nodeType, nodeId, 'pausing', true);
           try {
-            if (buildApi.invokeBuildCommand) {
-              await buildApi.invokeBuildCommand('session/pause', { nodeId, stopReason: reason });
-            } else {
-              const session = await getSessionSnapshot(buildApi, nodeId);
-              const nodeIdForCommand = (session as { nodeId?: NodeId } | undefined)?.nodeId ?? nodeId;
-              if (buildApi.pauseBuildSession) {
-                await buildApi.pauseBuildSession(nodeIdForCommand);
-              }
-            }
+            await buildApi.pauseBuildSession(nodeId, reason);
             console.warn('[worker bootstrap][PauseTrace] pause-finished', {
               nodeType,
               nodeId,
@@ -859,35 +777,34 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           nodeId: NodeId,
           reason?: string
         ): Promise<void> => {
-          const buildApi = resolveShapeBuildApiOrThrow(nodeType);
-          if (buildApi.invokeBuildCommand) {
-            await buildApi.invokeBuildCommand('session/cancel-queued', {
-              nodeId,
-              stopReason: reason,
-            });
-            clearRuntimeTransientStatus(nodeType, nodeId, false);
-            return;
-          }
-          await runPauseBuildSession(nodeType, nodeId, reason);
+          const buildApi = resolveCanonicalBuildAPIOrThrow(nodeType);
+          await buildApi.cancelQueuedBuildSession(nodeId, reason);
+          clearRuntimeTransientStatus(nodeType, nodeId, false);
         };
 
         const runRestartBuildSession = async (
           nodeType: NodeType,
           nodeId: NodeId
         ): Promise<void> => {
-          await runStartBuildSession(nodeType, nodeId, []);
+          await runStartBuildSession(nodeType, nodeId);
         };
 
         const RESUME_SESSION_FRESHNESS_WINDOW_MS = 5 * 60 * 1000;
 
         const resolveSessionRecoveryBaselineAt = (session: ShapeBuildSessionRecord): number => {
-          if (typeof session.lastHeartbeatAt === 'number' && Number.isFinite(session.lastHeartbeatAt)) {
+          if (
+            typeof session.lastHeartbeatAt === 'number' &&
+            Number.isFinite(session.lastHeartbeatAt)
+          ) {
             return session.lastHeartbeatAt;
           }
           if (typeof session.lastActivity === 'number' && Number.isFinite(session.lastActivity)) {
             return session.lastActivity;
           }
-          if (typeof session.stageHeartbeatAt === 'number' && Number.isFinite(session.stageHeartbeatAt)) {
+          if (
+            typeof session.stageHeartbeatAt === 'number' &&
+            Number.isFinite(session.stageHeartbeatAt)
+          ) {
             return session.stageHeartbeatAt;
           }
           if (typeof session.updatedAt === 'number' && Number.isFinite(session.updatedAt)) {
@@ -901,7 +818,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
 
         const isRecoverableRunningSession = (
           session: ShapeBuildSessionRecord,
-          now: number,
+          now: number
         ): boolean => {
           if (typeof session.expiresAt === 'number' && Number.isFinite(session.expiresAt)) {
             if (session.expiresAt <= now) return false;
@@ -912,12 +829,8 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           return now - baseline <= RESUME_SESSION_FRESHNESS_WINDOW_MS;
         };
 
-        const isSessionStaleRunning = (
-          session: ShapeBuildSessionRecord,
-          now: number
-        ): boolean => (
-          !isRecoverableRunningSession(session, now)
-        );
+        const isSessionStaleRunning = (session: ShapeBuildSessionRecord, now: number): boolean =>
+          !isRecoverableRunningSession(session, now);
 
         const recoverBuildSessionFromPersistedState = async (): Promise<void> => {
           const queryAPI = services.getShapeQueryAPI();
@@ -926,39 +839,49 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           if (runningSessions.length === 0) return;
 
           const now = Date.now();
-          const staleSessions = runningSessions.filter((session) => isSessionStaleRunning(session, now));
+          const staleSessions = runningSessions.filter((session) =>
+            isSessionStaleRunning(session, now)
+          );
           const freshSessions = runningSessions
             .filter((session) => isRecoverableRunningSession(session, now))
-            .sort((a, b) => (
-              resolveSessionRecoveryBaselineAt(b) - resolveSessionRecoveryBaselineAt(a)
-            ));
+            .sort(
+              (a, b) => resolveSessionRecoveryBaselineAt(b) - resolveSessionRecoveryBaselineAt(a)
+            );
           const latestSession = freshSessions[0];
           if (staleSessions.length > 0) {
-            await Promise.all(staleSessions.map(async (session) => {
-              try {
-                const inactiveAt = resolveSessionRecoveryBaselineAt(session);
-                const inactiveDeltaMs = Math.max(0, now - inactiveAt);
-                const inactiveMs = (session.inactiveMs ?? 0) + inactiveDeltaMs;
-                await mutationAPI.updateBuildSession(session.nodeId, {
-                  status: 'paused',
-                  stopReason: 'route-leave',
-                  canResume: true,
-                  inactiveMs,
-                  lastHeartbeatAt: now,
-                });
-                console.info('[worker bootstrap][ResumeTrace] mark-stale-running-session-paused', {
-                  nodeId: session.nodeId,
-                  stopReason: 'route-leave',
-                  inactiveMs,
-                });
-              } catch (error) {
-                const msg = error instanceof Error ? error.message : String(error);
-                console.warn('[worker bootstrap][ResumeTrace] mark-stale-running-session-paused-failed', {
-                  nodeId: session.nodeId,
-                  errorMessage: msg,
-                });
-              }
-            }));
+            await Promise.all(
+              staleSessions.map(async (session) => {
+                try {
+                  const inactiveAt = resolveSessionRecoveryBaselineAt(session);
+                  const inactiveDeltaMs = Math.max(0, now - inactiveAt);
+                  const inactiveMs = (session.inactiveMs ?? 0) + inactiveDeltaMs;
+                  await mutationAPI.updateBuildSession(session.nodeId, {
+                    status: 'paused',
+                    stopReason: 'route-leave',
+                    canResume: true,
+                    inactiveMs,
+                    lastHeartbeatAt: now,
+                  });
+                  console.info(
+                    '[worker bootstrap][ResumeTrace] mark-stale-running-session-paused',
+                    {
+                      nodeId: session.nodeId,
+                      stopReason: 'route-leave',
+                      inactiveMs,
+                    }
+                  );
+                } catch (error) {
+                  const msg = error instanceof Error ? error.message : String(error);
+                  console.warn(
+                    '[worker bootstrap][ResumeTrace] mark-stale-running-session-paused-failed',
+                    {
+                      nodeId: session.nodeId,
+                      errorMessage: msg,
+                    }
+                  );
+                }
+              })
+            );
           }
 
           if (!latestSession) return;
@@ -983,35 +906,28 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
 
         const startBuildSession = async (
           nodeType: NodeType,
-          nodeId: NodeId,
-          downloadTaskPayloads?: ShapeDownloadTaskPayloads
-        ): Promise<BuildSessionStatus> => (
-          runStartBuildSession(nodeType, nodeId, downloadTaskPayloads)
-        );
+          nodeId: NodeId
+        ): Promise<BuildSessionStatus> => runStartBuildSession(nodeType, nodeId);
 
         const getBuildSessionStatus = async (
           nodeType: NodeType,
           nodeId: NodeId
         ): Promise<BuildSessionStatus> => {
-          const buildApi = resolveShapeBuildApiOrThrow(nodeType);
-          const session = await getSessionSnapshot(buildApi, nodeId);
-          return toBuildSessionStatus(session as Record<string, unknown> | undefined, nodeId);
+          const buildApi = resolveCanonicalBuildAPIOrThrow(nodeType);
+          return buildApi.getBuildSessionStatus(nodeId);
         };
 
         const pauseBuildSession = async (
           nodeType: NodeType,
           nodeId: NodeId,
           reason?: string
-        ): Promise<void> => (
-          runPauseBuildSession(nodeType, nodeId, reason)
-        );
+        ): Promise<void> => runPauseBuildSession(nodeType, nodeId, reason);
 
         const cancelQueuedBuildSession = async (
           nodeType: NodeType,
           nodeId: NodeId,
           reason?: string
         ): Promise<void> => runCancelQueuedBuildSession(nodeType, nodeId, reason);
-
 
         const safeStringify = (value: unknown): string => {
           const seen = new WeakSet<object>();
@@ -1029,11 +945,8 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           nodeId: NodeId,
           callback: (event: TaskProgressUpdatedEvent) => void
         ): Promise<() => void> => {
-          const buildApi = resolveShapeBuildApiOrThrow(nodeType);
-          if (!buildApi.subscribeTaskProgress) {
-            return () => { };
-          }
-          const wrappedCallback = (event: unknown): void => {
+          const buildApi = resolveCanonicalBuildAPIOrThrow(nodeType);
+          const wrappedCallback = (event: TaskProgressUpdatedEvent): void => {
             const sanitized = sanitizeForComlink(event);
             if (
               !sanitized ||
@@ -1046,28 +959,25 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             }
             callback(sanitized as TaskProgressUpdatedEvent);
           };
-          const unsubscribe = buildApi.subscribeTaskProgress(nodeId, wrappedCallback);
+          const unsubscribe = await buildApi.subscribeTaskProgress(nodeId, wrappedCallback);
           return toComlinkProxy(Comlink, unsubscribe);
         };
 
-        const subscribeBuildTasks = async (
-          nodeType: NodeType,
-          nodeId: NodeId,
-          callback: (event: BuildTaskUpdateEvent) => void
-        ): Promise<() => void> => {
-          // subscribeTasks was removed from ShapeBuildAPI in favour of subscribeTaskProgress.
-          // This method is kept for API compatibility but always returns a no-op unsubscribe.
-          void nodeType; void nodeId; void callback;
-          return () => { };
-        };
-
-        const requireEventType = (event: unknown, expectedType: string, context: string): Record<string, unknown> => {
+        const requireEventType = (
+          event: unknown,
+          expectedType: string,
+          context: string
+        ): Record<string, unknown> => {
           if (!event || typeof event !== 'object') {
-            throw new Error(`[${context}] event must be an object, received ${safeStringify(event)}`);
+            throw new Error(
+              `[${context}] event must be an object, received ${safeStringify(event)}`
+            );
           }
           const rec = event as Record<string, unknown>;
           if (rec.type !== expectedType) {
-            throw new Error(`[${context}] unexpected event type: expected "${expectedType}", received ${safeStringify(rec.type)}`);
+            throw new Error(
+              `[${context}] unexpected event type: expected "${expectedType}", received ${safeStringify(rec.type)}`
+            );
           }
           return rec;
         };
@@ -1075,76 +985,66 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
         const subscribeStageSnapshots = async (
           nodeType: NodeType,
           nodeId: NodeId,
-          callback: (event: unknown) => void
+          callback: (event: StageSnapshotUpdatedEvent) => void
         ): Promise<() => void> => {
-          const buildApi = resolveShapeBuildApiOrThrow(nodeType);
-          if (!buildApi.subscribeStageSnapshots) {
-            throw new Error(`[subscribeStageSnapshots] subscribeStageSnapshots not available for nodeType: ${nodeType}`);
-          }
-          const wrappedCallback = (event: unknown): void => {
+          const buildApi = resolveCanonicalBuildAPIOrThrow(nodeType);
+          const wrappedCallback = (event: StageSnapshotUpdatedEvent): void => {
             const sanitized = sanitizeForComlink(event);
             requireEventType(sanitized, 'stageSnapshotUpdated', 'subscribeStageSnapshots');
             callback(sanitized);
           };
-          const unsubscribe = buildApi.subscribeStageSnapshots(nodeId, wrappedCallback as (event: any) => void);
+          const unsubscribe = await buildApi.subscribeStageSnapshots(nodeId, wrappedCallback);
           return toComlinkProxy(Comlink, unsubscribe);
         };
 
         const subscribeSessionState = async (
           nodeType: NodeType,
           nodeId: NodeId,
-          callback: (event: unknown) => void
+          callback: (event: SessionStatusUpdatedEvent) => void
         ): Promise<() => void> => {
-          const buildApi = resolveShapeBuildApiOrThrow(nodeType);
-          if (!buildApi.subscribeSessionState) {
-            throw new Error(`[subscribeSessionState] subscribeSessionState not available for nodeType: ${nodeType}`);
-          }
-          const wrappedCallback = (event: unknown): void => {
+          const buildApi = resolveCanonicalBuildAPIOrThrow(nodeType);
+          const wrappedCallback = (event: SessionStatusUpdatedEvent): void => {
             const sanitized = sanitizeForComlink(event);
             requireEventType(sanitized, 'sessionStatusUpdated', 'subscribeSessionState');
             callback(sanitized);
           };
-          const unsubscribe = buildApi.subscribeSessionState(nodeId, wrappedCallback);
+          const unsubscribe = await buildApi.subscribeSessionState(nodeId, wrappedCallback);
           return toComlinkProxy(Comlink, unsubscribe);
         };
 
         const subscribeSessionHeartbeat = async (
           nodeType: NodeType,
           nodeId: NodeId,
-          callback: (event: unknown) => void
+          callback: (event: HeartbeatEvent) => void
         ): Promise<() => void> => {
-          const buildApi = resolveShapeBuildApiOrThrow(nodeType);
-          if (!buildApi.subscribeHeartbeat) {
-            throw new Error(`[subscribeSessionHeartbeat] subscribeHeartbeat not available for nodeType: ${nodeType}`);
-          }
-          const wrappedCallback = (event: unknown): void => {
+          const buildApi = resolveCanonicalBuildAPIOrThrow(nodeType);
+          const wrappedCallback = (event: HeartbeatEvent): void => {
             const sanitized = sanitizeForComlink(event);
             requireEventType(sanitized, 'heartbeat', 'subscribeSessionHeartbeat');
             callback(sanitized);
           };
-          const unsubscribe = buildApi.subscribeHeartbeat(nodeId, wrappedCallback);
+          const unsubscribe = await buildApi.subscribeSessionHeartbeat(nodeId, wrappedCallback);
           return toComlinkProxy(Comlink, unsubscribe);
         };
 
         const subscribeWorkerLog = async (
           nodeType: NodeType,
           nodeId: NodeId,
-          callback: (event: unknown) => void
+          callback: (event: WorkerLogEvent) => void
         ): Promise<() => void> => {
-          const buildApi = resolveShapeBuildApiOrThrow(nodeType);
-          if (!buildApi.subscribeWorkerLog) {
-            throw new Error(`[subscribeWorkerLog] subscribeWorkerLog not available for nodeType: ${nodeType}`);
-          }
-          const wrappedCallback = (event: unknown): void => {
+          const buildApi = resolveCanonicalBuildAPIOrThrow(nodeType);
+          const wrappedCallback = (event: WorkerLogEvent): void => {
             const sanitized = sanitizeForComlink(event);
             // WorkerLogEvent does not have a canonical 'type' field in the 4-event spec;
             // validate that it is at least a non-null object.
             if (!sanitized || typeof sanitized !== 'object') {
-              throw new Error(`[subscribeWorkerLog] event must be an object, received ${safeStringify(sanitized)}`);
+              throw new Error(
+                `[subscribeWorkerLog] event must be an object, received ${safeStringify(sanitized)}`
+              );
             }
             callback(sanitized);
           };
-          const unsubscribe = buildApi.subscribeWorkerLog(nodeId, wrappedCallback);
+          const unsubscribe = await buildApi.subscribeWorkerLog(nodeId, wrappedCallback);
           return toComlinkProxy(Comlink, unsubscribe);
         };
 
@@ -1152,15 +1052,8 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           nodeType: NodeType,
           nodeId: NodeId
         ): Promise<BuildTaskSummary[]> => {
-          const provider = buildTaskProviders.get(nodeType);
-          if (!provider) return [];
-          try {
-            return await provider(nodeId);
-          } catch (error) {
-            const msg = error instanceof Error ? error.message : String(error);
-            console.warn(`[worker bootstrap] getBuildTasks failed for ${nodeType}:`, msg);
-            return [];
-          }
+          const buildApi = resolveCanonicalBuildAPIOrThrow(nodeType);
+          return buildApi.getBuildTasks(nodeId);
         };
 
         const api: BuildWorkerAPI = {
@@ -1184,15 +1077,19 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           getQueryAPI: async () => toComlinkProxy(Comlink, services.getQueryAPI()),
           getMutationAPI: async () => toComlinkProxy(Comlink, services.getMutationAPI()),
           getSubscriptionAPI: async () => toComlinkProxy(Comlink, services.getSubscriptionAPI()),
-          getTreeNodeUpdaterAPI: async () => toComlinkProxy(Comlink, services.getTreeNodeUpdaterAPI()),
-          getTreeTableExpandedAPI: async () => toComlinkProxy(Comlink, services.getTreeTableExpandedAPI()),
-          getPluginLifecycleAPI: async () => toComlinkProxy(Comlink, services.getPluginLifecycleAPI()),
+          getTreeNodeUpdaterAPI: async () =>
+            toComlinkProxy(Comlink, services.getTreeNodeUpdaterAPI()),
+          getTreeTableExpandedAPI: async () =>
+            toComlinkProxy(Comlink, services.getTreeTableExpandedAPI()),
+          getPluginLifecycleAPI: async () =>
+            toComlinkProxy(Comlink, services.getPluginLifecycleAPI()),
           getStyleQueryAPI: async () => toComlinkProxy(Comlink, services.getStyleQueryAPI()),
           getStyleMutationAPI: async () => toComlinkProxy(Comlink, services.getStyleMutationAPI()),
           getShapeQueryAPI: async () => toComlinkProxy(Comlink, services.getShapeQueryAPI()),
           getShapeMutationAPI: async () => toComlinkProxy(Comlink, services.getShapeMutationAPI()),
           getLocationQueryAPI: async () => toComlinkProxy(Comlink, services.getLocationQueryAPI()),
-          getLocationMutationAPI: async () => toComlinkProxy(Comlink, services.getLocationMutationAPI()),
+          getLocationMutationAPI: async () =>
+            toComlinkProxy(Comlink, services.getLocationMutationAPI()),
           getRouteQueryAPI: async () => toComlinkProxy(Comlink, services.getRouteQueryAPI()),
           getRouteMutationAPI: async () => toComlinkProxy(Comlink, services.getRouteMutationAPI()),
           getImportExportAPI: async () => toComlinkProxy(Comlink, services.getImportExportAPI()),
@@ -1209,25 +1106,23 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             nodeId: NodeId,
             dataSource: ShapeDataSourceName,
             selectedArrayByCountries: Record<string, boolean[]>
-          ): Promise<ShapeDownloadTaskPayloads> => {
-            const api = resolveShapeBuildApiOrThrow(SHAPE_NODE_TYPE);
-            if (!api.generateDownloadTaskPayloadsFromSelection) {
+          ): Promise<ShapeDownloadTaskPayload[]> => {
+            if (!shapeBuildExtensions?.generateDownloadTaskPayloadsFromSelection) {
               throw new Error(
                 '[worker bootstrap] generateDownloadTaskPayloadsFromSelection is not available'
               );
             }
-            const payloads = await api.generateDownloadTaskPayloadsFromSelection(
+            const payloads = await shapeBuildExtensions.generateDownloadTaskPayloadsFromSelection(
               nodeId,
               dataSource,
               selectedArrayByCountries
             );
-            return payloads as ShapeDownloadTaskPayloads;
+            return payloads;
           },
           getBuildSessionStatus,
           pauseBuildSession,
           cancelQueuedBuildSession,
           subscribeTaskProgress,
-          subscribeBuildTasks,
           subscribeStageSnapshots,
           subscribeSessionState,
           subscribeSessionHeartbeat,
@@ -1273,7 +1168,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             callback: (sessions: BuildSessionRuntimeRecord[]) => void
           ): Promise<() => void> => {
             if (nodeType !== SHAPE_NODE_TYPE) {
-              return () => { };
+              return () => {};
             }
             const queryAPI = services.getShapeQueryAPI();
             const statuses = ['idle', 'running', 'paused', 'completed', 'failed'] as Array<
@@ -1331,11 +1226,13 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             callback: (sessions: ShapeBuildSessionRecord[]) => void
           ): Promise<() => void> => {
             if (nodeType !== SHAPE_NODE_TYPE) {
-              return () => { };
+              return () => {};
             }
             const queryAPI = services.getShapeQueryAPI();
             const normalized = normalizeSessionStatuses(statuses);
-            const observable = liveQuery(() => queryAPI.listBuildSessionRecordsByStatus(normalized));
+            const observable = liveQuery(() =>
+              queryAPI.listBuildSessionRecordsByStatus(normalized)
+            );
             const subscription = observable.subscribe({
               next: (sessions) => {
                 callback(sanitizeForComlink(sessions));

@@ -231,6 +231,11 @@ type TaskProgressUpdatedEvent = {
   Route and Location currently execute their canonical managers in the UI realm and
   therefore select the explicit same-realm `unconditionalEventStreamer` transport.
   The bridge never falls back from one transport to the other.
+- Shape, Route, and Location worker modules nevertheless register the same exact
+  `canonicalBuildAPI` export for SharedWorker dispatch. Registration establishes the
+  common command/query/subscription contract; moving the current Route and Location
+  UI-owned execution path to that transport is a separate migration. Runtime bootstrap
+  never resolves a plugin-specific build API name or listener fallback.
 - The shared Route canonical progress hook is read-only. It must not send pause or
   resume commands through the Worker bridge for a session owned by a UI-realm manager.
   Route pipeline command ownership is separate from canonical progress consumption.

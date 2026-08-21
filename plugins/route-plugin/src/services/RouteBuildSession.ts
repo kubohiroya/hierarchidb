@@ -1,18 +1,27 @@
+import type {
+  StageSnapshotUpdatedEvent,
+  TaskProgressUpdatedEvent,
+  TaskQueueRecord,
+  TaskStatus,
+} from '@hierarchidb/build-api';
 import {
   AbstractBuildSession,
   type CanonicalBuildSessionEventSource,
 } from '@hierarchidb/build-runtime-services';
-import type {
-  StageSnapshotUpdatedEvent,
-  TaskProgressUpdatedEvent,
-  TaskStatus,
-} from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { RouteGenerationConfig, RouteGenerationMethod } from '@hierarchidb/route-store';
-import type { RouteBuildConfig } from '@hierarchidb/route-store';
 import { RouteGenerator } from '@hierarchidb/route-engine';
-import type { TaskQueueRecord } from '@hierarchidb/build-api';
-import { runStageTasks } from '@hierarchidb/vt-orchestrator';
+import type {
+  RouteBuildConfig,
+  RouteGenerationConfig,
+  RouteGenerationMethod,
+} from '@hierarchidb/route-store';
+import {
+  deleteTasksByNode,
+  listTasksByStatus,
+  runStageTasks,
+  updateTask,
+  VtTaskQueueDb,
+} from '@hierarchidb/vt-orchestrator';
 
 export type RouteBuildTaskStage = 'source' | 'geometry' | 'tileEmit';
 
@@ -93,9 +102,11 @@ export class RouteBuildSession
       nodeId: this.nodeId,
       stage: 'source',
       taskFilter: resolveTaskFilter('source'),
-      handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => this.handleSourceRouteTask(task),
+      handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) =>
+        this.handleSourceRouteTask(task, signal),
       maxConcurrent: this.config.routeGeneration?.parallel ? Math.max(1, this.config.routeGeneration.maxConcurrent) : 1,
       failureHandling: 'continue',
+      abortController: this.ensureAbortController(),
       lanePolicy: {
         enabled: true,
         laneOfTask: (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => this.resolveRouteLane(task),
@@ -105,6 +116,7 @@ export class RouteBuildSession
         },
       },
     });
+    requireNotAborted(signal, 'Route build paused during source stage');
     ({ completed, failed } = this.countTaskResults());
     this.completeStage('source');
     this.updateProgress({ total, completed, failed }, 'source');
@@ -118,7 +130,9 @@ export class RouteBuildSession
       handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => this.handleGeometryRouteTask(task),
       maxConcurrent: this.config.geometryConfig?.maxConcurrent ?? 1,
       failureHandling: 'continue',
+      abortController: this.ensureAbortController(),
     });
+    requireNotAborted(signal, 'Route build paused during geometry stage');
     ({ completed, failed } = this.countTaskResults());
     this.completeStage('geometry');
     this.updateProgress({ total, completed, failed }, 'geometry');
@@ -131,7 +145,9 @@ export class RouteBuildSession
       taskFilter: resolveTaskFilter('tileEmit'),
       handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => this.handleTileEmitRouteTask(task),
       failureHandling: 'continue',
+      abortController: this.ensureAbortController(),
     });
+    requireNotAborted(signal, 'Route build paused during tileEmit stage');
     ({ completed, failed } = this.countTaskResults());
     this.completeStage('tileEmit');
     this.updateProgress({ total, completed, failed }, 'tileEmit');
@@ -169,6 +185,7 @@ export class RouteBuildSession
 
   private async handleSourceRouteTask(
     task: TaskQueueRecord<RouteBuildTaskQueueInput>,
+    signal: AbortSignal
   ): Promise<{ status: 'completed'; progress: number }> {
     const localTask = this.findTask(task.taskId);
     if (!localTask) {
@@ -194,6 +211,7 @@ export class RouteBuildSession
     }
 
     await this.runRouteTask([start, end], method, options);
+    requireNotAborted(signal, 'Route source task was paused');
 
     return this.completeRouteTask(localTask, 'source');
   }
@@ -323,6 +341,40 @@ export class RouteBuildSession
       message,
     });
   }
+
+  protected override async onPause(): Promise<void> {
+    for (const task of this.tasks) {
+      if (task.status !== 'running') continue;
+      task.status = 'queued';
+      task.error = undefined;
+      this.updateRouteTaskProgress(task, 0);
+    }
+
+    const taskQueue = new VtTaskQueueDb();
+    const runningTasks = await listTasksByStatus(taskQueue, this.nodeId, 'running');
+    await Promise.all(
+      runningTasks.map((task) =>
+        updateTask(taskQueue, task.taskId, {
+          status: 'queued',
+          progress: 0,
+          startedAt: undefined,
+          completedAt: undefined,
+          errorMessage: undefined,
+        })
+      )
+    );
+  }
+
+  protected override async onCancelQueued(): Promise<void> {
+    this.tasks.splice(0);
+    this.tasksById.clear();
+    await deleteTasksByNode(new VtTaskQueueDb(), this.nodeId);
+    this.updateProgress({ total: 0, completed: 0, failed: 0, skipped: 0 });
+  }
+}
+
+function requireNotAborted(signal: AbortSignal, message: string): void {
+  if (signal.aborted) throw abortError(message);
 }
 
 function abortError(message: string): Error {

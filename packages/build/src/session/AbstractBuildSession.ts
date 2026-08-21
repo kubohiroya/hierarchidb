@@ -7,6 +7,19 @@ import type {
   StageKey,
 } from '@hierarchidb/build-api';
 
+const PAUSE_SHUTDOWN_TIMEOUT_MS = 15_000;
+
+export class BuildSessionPauseShutdownTimeoutError extends Error {
+  readonly code = 'BUILD_SESSION_PAUSE_SHUTDOWN_TIMEOUT';
+
+  constructor(nodeId: NodeId, timeoutMs: number) {
+    super(
+      `Build session ${String(nodeId)} did not stop within ${String(timeoutMs)}ms after pause`
+    );
+    this.name = 'BuildSessionPauseShutdownTimeoutError';
+  }
+}
+
 /**
  * Shared lifecycle base for build-oriented workflows.
  */
@@ -20,6 +33,9 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
   private readonly sessionUpdateListeners = new Set<() => void>();
   private readonly state: BuildSessionState;
   private progress: BuildProgress;
+  private activeRunPromise: Promise<void> | null = null;
+  private invalidatedRunController: AbortController | null = null;
+  private pauseRequested = false;
 
   constructor(nodeId: NodeId, config: TConfig) {
     this.nodeId = nodeId;
@@ -35,7 +51,6 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
       completed: 0,
       failed: 0,
       skipped: 0,
-      stage: 'source',
       percentage: 0,
     };
   }
@@ -46,6 +61,10 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
 
   getProgress(): BuildProgress {
     return { ...this.progress };
+  }
+
+  hasActiveRun(): boolean {
+    return this.activeRunPromise !== null;
   }
 
   protected getAbortSignal(): AbortSignal {
@@ -60,6 +79,7 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
     this.state.startedAt = undefined;
     this.state.completedAt = undefined;
     this.state.error = undefined;
+    this.state.stopReason = undefined;
     this.state.lastActivity = Date.now();
     await this.onInitialize();
   }
@@ -68,11 +88,32 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
     if (this.state.status !== 'idle' && this.state.status !== 'paused') {
       throw new Error(`Cannot start session from state ${this.state.status}`);
     }
-    const controller = this.ensureAbortController();
-    if (controller.signal.aborted) {
-      throw abortError('Session aborted before start');
+    if (this.activeRunPromise) {
+      throw new Error(`Session ${String(this.nodeId)} already has an active run`);
     }
 
+    this.pauseRequested = false;
+    this.invalidatedRunController = null;
+    this.state.completedAt = undefined;
+    this.state.error = undefined;
+    this.state.stopReason = undefined;
+    this.abortController = new AbortController();
+    const controller = this.abortController;
+
+    const executionPromise = this.executeRun(controller);
+    const trackedPromise = executionPromise.finally(() => {
+      if (this.activeRunPromise === trackedPromise) {
+        this.activeRunPromise = null;
+      }
+      if (this.invalidatedRunController === controller) {
+        this.invalidatedRunController = null;
+      }
+    });
+    this.activeRunPromise = trackedPromise;
+    return trackedPromise;
+  }
+
+  private async executeRun(controller: AbortController): Promise<void> {
     this.state.status = 'running';
     this.state.startedAt = this.state.startedAt ?? Date.now();
     this.state.lastActivity = Date.now();
@@ -81,15 +122,29 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
     try {
       await this.onStart();
       await this.processBatch(controller.signal);
+      if (this.invalidatedRunController === controller) {
+        return;
+      }
+      if (controller.signal.aborted) {
+        throw abortError('Session aborted');
+      }
       this.state.status = 'completed';
+      this.state.stopReason = 'completed';
       this.state.completedAt = Date.now();
       this.state.lastActivity = this.state.completedAt;
       this.emitSessionUpdate();
       await this.onComplete();
     } catch (error) {
-      if (controller.signal.aborted) {
+      if (this.invalidatedRunController === controller) {
+        return;
+      }
+      if (controller.signal.aborted && this.pauseRequested && isAbortError(error)) {
+        return;
+      }
+      if (controller.signal.aborted && isAbortError(error)) {
         this.state.status = 'failed';
         this.state.error = 'Session aborted';
+        this.state.stopReason = 'failed';
         this.state.completedAt = Date.now();
         this.state.lastActivity = this.state.completedAt;
         this.emitSessionUpdate();
@@ -97,6 +152,7 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
       }
       this.state.status = 'failed';
       this.state.error = error instanceof Error ? error.message : String(error);
+      this.state.stopReason = 'failed';
       this.state.completedAt = Date.now();
       this.state.lastActivity = this.state.completedAt;
       this.emitSessionUpdate();
@@ -104,16 +160,67 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
     }
   }
 
-  async pause(): Promise<void> {
+  async pause(reason?: string): Promise<void> {
     if (this.state.status === 'paused') {
       return;
     }
     if (this.state.status !== 'running') {
       throw new Error(`Cannot pause session from state ${this.state.status}`);
     }
+    const activeRunPromise = this.activeRunPromise;
+    const controller = this.abortController;
+    if (!activeRunPromise || !controller) {
+      throw new Error(`Running session ${String(this.nodeId)} has no active run`);
+    }
+
+    this.pauseRequested = true;
+    controller.abort();
+    this.state.status = 'pausing';
+    this.state.stopReason = reason;
+    this.state.lastActivity = Date.now();
+    this.emitSessionUpdate();
+    try {
+      await waitForRunShutdown(
+        activeRunPromise,
+        this.getPauseShutdownTimeoutMs(),
+        this.nodeId
+      );
+      await this.onPause();
+    } catch (error) {
+      if (error instanceof BuildSessionPauseShutdownTimeoutError) {
+        this.invalidatedRunController = controller;
+      }
+      this.pauseRequested = false;
+      this.state.status = 'failed';
+      this.state.error = error instanceof Error ? error.message : String(error);
+      this.state.stopReason = 'failed';
+      this.state.completedAt = Date.now();
+      this.state.lastActivity = this.state.completedAt;
+      this.emitSessionUpdate();
+      throw error;
+    }
+
+    if (this.state.status !== 'pausing') {
+      this.pauseRequested = false;
+      throw new Error(`Cannot finish pausing session from state ${this.state.status}`);
+    }
     this.state.status = 'paused';
     this.state.lastActivity = Date.now();
-    await this.onPause();
+    this.pauseRequested = false;
+    this.emitSessionUpdate();
+  }
+
+  async cancelQueued(reason?: string): Promise<void> {
+    if (this.state.status !== 'queued') {
+      throw new Error(`Cannot cancel queued session from state ${this.state.status}`);
+    }
+    if (this.activeRunPromise) {
+      throw new Error(`Queued session ${String(this.nodeId)} unexpectedly has an active run`);
+    }
+    await this.onCancelQueued();
+    this.state.status = 'idle';
+    this.state.stopReason = reason;
+    this.state.lastActivity = Date.now();
     this.emitSessionUpdate();
   }
 
@@ -122,6 +229,7 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
       throw new Error(`Cannot resume session from state ${this.state.status}`);
     }
     this.state.status = 'running';
+    this.state.stopReason = undefined;
     this.state.lastActivity = Date.now();
     await this.onResume();
     this.emitSessionUpdate();
@@ -184,14 +292,46 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
     return this.abortController;
   }
 
+  protected getPauseShutdownTimeoutMs(): number {
+    return PAUSE_SHUTDOWN_TIMEOUT_MS;
+  }
+
   protected abstract processBatch(signal: AbortSignal): Promise<void>;
 
   // Hooks for subclasses to extend behaviour.
   protected async onInitialize(): Promise<void> {}
   protected async onStart(): Promise<void> {}
   protected async onPause(): Promise<void> {}
+  protected async onCancelQueued(): Promise<void> {}
   protected async onResume(): Promise<void> {}
   protected async onComplete(): Promise<void> {}
+}
+
+async function waitForRunShutdown(
+  runPromise: Promise<void>,
+  timeoutMs: number,
+  nodeId: NodeId
+): Promise<void> {
+  let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_resolve, reject) => {
+    timeoutHandle = setTimeout(() => {
+      reject(new BuildSessionPauseShutdownTimeoutError(nodeId, timeoutMs));
+    }, timeoutMs);
+  });
+  try {
+    await Promise.race([runPromise, timeoutPromise]);
+  } finally {
+    if (timeoutHandle !== undefined) clearTimeout(timeoutHandle);
+  }
+}
+
+function isAbortError(error: unknown): boolean {
+  return (
+    error !== null &&
+    typeof error === 'object' &&
+    'name' in error &&
+    error.name === 'AbortError'
+  );
 }
 
 function abortError(message: string): Error {

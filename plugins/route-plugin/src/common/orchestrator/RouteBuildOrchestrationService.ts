@@ -18,7 +18,7 @@ export class RouteBuildOrchestrationService {
     const { odPairs } = await this.source.preview(spec);
     const routes = mapRecomputeTasks(odPairs, spec.defaults, { methodOptions: spec.defaults });
     const effectiveMgr = mgr ?? new RouteBuildSessionOrchestrator(this.deps);
-    await effectiveMgr.prepareSession(nodeId, toSessionConfig(config), { routes });
+    await effectiveMgr.prepareLegacySession(nodeId, toSessionConfig(config), { routes });
     await effectiveMgr.startBuildSession(nodeId);
     return { nodeId, count: routes.length };
   }
@@ -38,7 +38,7 @@ export class RouteBuildOrchestrationService {
     const { odPairs: D } = await this.source.preview(destinations);
     const routes = mapMatrixTasks(O, D, origins.defaults ?? destinations.defaults, methodOptions);
     const effectiveMgr = mgr ?? new RouteBuildSessionOrchestrator(this.deps);
-    await effectiveMgr.prepareSession(nodeId, toSessionConfig(config), { routes });
+    await effectiveMgr.prepareLegacySession(nodeId, toSessionConfig(config), { routes });
     await effectiveMgr.startBuildSession(nodeId);
     return { nodeId, count: routes.length };
   }
@@ -56,7 +56,7 @@ export class RouteBuildOrchestrationService {
     const { odPairs } = await this.source.preview(spec);
     const routes = mapEnrichTasks(odPairs, options, spec.defaults);
     const effectiveMgr = mgr ?? new RouteBuildSessionOrchestrator(this.deps);
-    await effectiveMgr.prepareSession(nodeId, toSessionConfig(config), { routes });
+    await effectiveMgr.prepareLegacySession(nodeId, toSessionConfig(config), { routes });
     await effectiveMgr.startBuildSession(nodeId);
     return { nodeId, count: routes.length };
   }
