@@ -35,14 +35,15 @@ route pipelineは次の3ステージを、この順序で実行する。
 - route node ID
 - Step2 data-source selection
 - Step3 `selectedArrayByCountries`
-- location参照と始点/終点Point
+- data-source strategy / adapterが解決したlocation参照と始点/終点Point
 - `RouteBuildConfig.sourceConfig`
 - route generation method/options
 
 ### 処理
 
 1. data-source strategyからroute metadataを取得する。
-2. 始点/終点のlocationを解決する。
+2. data-source strategy / adapter境界で始点/終点のlocationを解決し、session入力では
+   location IDと座標を厳格検証する。
 3. `direct / great_circle / osm_route / searoute / custom` の明示されたengineで
    LineStringを生成する。
 4. routeごとにオリジナルLineStringを1本だけsource cacheへ永続化する。
@@ -50,6 +51,8 @@ route pipelineは次の3ステージを、この順序で実行する。
 
 engine、location、routeMode、座標、generation設定が欠落・不正な場合はtaskを失敗させる。
 別engine、直線、大圏航路、cacheへの暗黙fallbackは行わない。
+session内では曖昧なlocation検索を行わず、admin name/codeは正規`RouteFeature`をSSOTとして
+source cache metadataへ重複保存しない。
 
 ### source keyと入力署名
 
@@ -58,6 +61,8 @@ engine、location、routeMode、座標、generation設定が欠落・不正な�
 - 契約どおりbidirectionalと明示されたrouteだけ端点を正規化する。
 - 座標、generation method/options、stage設定は`meta`/`inputHash`に含める。
 - 同一`sourceKey`でも入力署名が変わったartifactはrecycleしない。
+- canonical direct-route startでは`routeMode`を正規値として明示必須にし、
+  `transportMode`や`transportSelection`から補完しない。
 
 ## geometry stage
 
@@ -103,16 +108,16 @@ geometry cache/indexが欠落・不正な場合は失敗する。source artifact
 - UIの`RouteBuildStep`はWorker commandとcanonical event subscriptionだけを利用する。
 - UIがroute mutation APIの3処理を独立に順次呼ぶ現行経路はIssue #549で撤去する移行対象とする。
 
-## 現行mainとの差分（2026-08-21）
+## Issue #1373適用後の残差分（2026-08-21）
 
-- `RouteBuildSession`の`source` handlerはgeneratorを呼ぶが、返り値を破棄し、
-  LineStringとsource cacheを永続化しない。
+- `RouteBuildSession`の`source` handlerはgenerator結果を検証し、direction-awareなidentityと
+  入力署名を持つLineString GeoJSONをsource cacheへ永続化する。
 - `RouteBuildSession`の`geometry` / `tileEmit` handlerは実成果物を生成せず完了する。
   したがってsession経路は3stageすべてのartifact契約を満たさない。
 - `RouteBuildStep`には
   `importIdeGsmRoutes -> buildRouteTileIndex -> generateRouteVectorTiles` の直接実行経路が残る。
-- `RouteGenerator` / `SearouteEngine`にはengine欠落・load失敗時の暗黙fallbackが残る。
-- 上記はIssue #549で正規経路へ統合し、契約違反をfail-fastへ変更する。
+- `RouteGenerator` / `SearouteEngine`はengine欠落、load失敗、不正responseをfail-fastにする。
+- geometry / tileEmitの実成果物化とUI直接実行経路の撤去はIssue #549の後続Issueで行う。
 
 ## 検証観点
 

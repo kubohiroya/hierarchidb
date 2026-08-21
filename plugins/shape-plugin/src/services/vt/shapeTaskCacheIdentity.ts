@@ -1,7 +1,7 @@
 import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
+import { buildStableJsonSignature } from '@hierarchidb/gis-sdk';
 import type { DataSourceName } from '~/common/types/index';
-import { buildStableSignature } from './buildStableSignature.ts';
 
 export type ShapeStage = 'source' | 'geometry' | 'tileEmit';
 export type ShapeCacheNamespaceMode = 'node' | 'global';
@@ -218,7 +218,7 @@ export const buildSourceTaskCacheIdentity = (params: {
   );
   const configSignature = requireNonEmptyString('configSignature', params.configSignature);
   const cacheKey = `${namespacePrefix}:shape:source:${SHAPE_CACHE_KEY_VERSION}:${dataSource}:${sourceKey}:${endpointId}`;
-  const inputHash = buildStableSignature({
+  const inputHash = buildStableJsonSignature({
     requestSignature,
     upstreamRevision: upstreamRevision ?? null,
     fetchOutputShapingSignature: configSignature,
@@ -252,7 +252,7 @@ export const buildGeometryTaskCacheIdentity = (params: {
   const { bandMinZoom, bandMaxZoom } = requireZoomRange(params.bandMinZoom, params.bandMaxZoom);
   const configSignature = requireNonEmptyString('configSignature', params.configSignature);
   const cacheKey = `${namespacePrefix}:shape:geometry:${SHAPE_CACHE_KEY_VERSION}:${sourceKey}:band${bandIndex}`;
-  const inputHash = buildStableSignature({
+  const inputHash = buildStableJsonSignature({
     sourceArtifactHash,
     sourceBaseTolerance,
     bandMinZoom,
@@ -288,7 +288,7 @@ export const buildTileEmitTaskCacheIdentity = (params: {
   const configSignature = requireNonEmptyString('configSignature', params.configSignature);
   const cacheKey = `${namespacePrefix}:shape:tileEmit:${SHAPE_CACHE_KEY_VERSION}:band${bandIndex}:z${zBase}:tile${tileId}`;
   const transformArtifactSet = normalizeBufferIds(params.bufferIds);
-  const inputHash = buildStableSignature({
+  const inputHash = buildStableJsonSignature({
     transformArtifactSet,
     bandMinZoom,
     bandMaxZoom,

@@ -9,12 +9,14 @@ import {
   type CanonicalBuildSessionEventSource,
 } from '@hierarchidb/build-runtime-services';
 import type { NodeId } from '@hierarchidb/core-types';
-import { RouteGenerator } from '@hierarchidb/route-engine';
 import type {
   RouteBuildConfig,
   RouteGenerationConfig,
   RouteGenerationMethod,
-} from '@hierarchidb/route-store';
+  RouteMode,
+} from '@hierarchidb/route-api';
+import type { RouteEnginesProvider, RouteGenerationResult } from '@hierarchidb/route-engine';
+import { RouteGenerator } from '@hierarchidb/route-engine';
 import {
   deleteTasksByNode,
   listTasksByStatus,
@@ -22,6 +24,10 @@ import {
   updateTask,
   VtTaskQueueDb,
 } from '@hierarchidb/vt-orchestrator';
+import {
+  persistRouteSourceArtifact,
+  type RouteSourceArtifactOutput,
+} from './persistRouteSourceArtifact.js';
 
 export type RouteBuildTaskStage = 'source' | 'geometry' | 'tileEmit';
 
@@ -35,12 +41,16 @@ export type RouteBuildTask = {
   version: number;
   index: number;
   routeData?: {
-    startLocationId?: NodeId;
-    endLocationId?: NodeId;
-    startCoordinates?: [number, number];
-    endCoordinates?: [number, number];
-    method?: RouteGenerationMethod;
+    startLocationId: NodeId;
+    endLocationId: NodeId;
+    startCoordinates: [number, number];
+    endCoordinates: [number, number];
+    routeMode: RouteMode;
+    method: RouteGenerationMethod;
     methodOptions?: RouteGenerationConfig['options'];
+    sourceKey: string;
+    inputHash: string;
+    bidirectional: boolean;
   };
   error?: string;
 };
@@ -48,11 +58,17 @@ export type RouteBuildTask = {
 export type RouteBuildTaskQueueInput = {
   routeStage: RouteBuildTaskStage;
   routeData?: RouteBuildTask['routeData'];
+  cacheKey?: string;
+  inputHash?: string;
 };
 
 export type RouteBuildSessionDeps = {
+  engines?: RouteEnginesProvider;
   generator?: {
-    generate: (points: [number, number][], config: RouteGenerationConfig) => Promise<unknown>;
+    generate: (
+      points: [number, number][],
+      config: RouteGenerationConfig
+    ) => Promise<RouteGenerationResult>;
   };
 };
 
@@ -72,7 +88,8 @@ type RouteStageTiming = {
 
 export class RouteBuildSession
   extends AbstractBuildSession<RouteBuildConfig>
-  implements CanonicalBuildSessionEventSource {
+  implements CanonicalBuildSessionEventSource
+{
   private readonly tasks: RouteBuildTask[];
   private readonly tasksById: Map<string, RouteBuildTask>;
   private readonly generator: RouteBuildSessionDeps['generator'];
@@ -80,11 +97,16 @@ export class RouteBuildSession
   private readonly pendingTaskProgressUpdates: TaskProgressUpdatedEvent['payload'][] = [];
   private activeStage: RouteBuildTaskStage | null = null;
 
-  constructor(nodeId: NodeId, config: RouteBuildConfig, tasks: RouteBuildTask[], deps?: RouteBuildSessionDeps) {
+  constructor(
+    nodeId: NodeId,
+    config: RouteBuildConfig,
+    tasks: RouteBuildTask[],
+    deps?: RouteBuildSessionDeps
+  ) {
     super(nodeId, config);
     this.tasks = tasks;
     this.tasksById = new Map(tasks.map((task) => [task.taskId, task]));
-    this.generator = deps?.generator ?? new RouteGenerator();
+    this.generator = deps?.generator ?? new RouteGenerator(deps?.engines);
   }
 
   protected async processBatch(signal: AbortSignal): Promise<void> {
@@ -93,26 +115,40 @@ export class RouteBuildSession
     const total = this.tasks.length;
     let { completed, failed } = this.countTaskResults();
 
-    const resolveTaskFilter = (routeStage: RouteBuildTaskStage) =>
-      (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => task.inputData?.routeStage === routeStage;
+    const resolveTaskFilter =
+      (routeStage: RouteBuildTaskStage) => (task: TaskQueueRecord<RouteBuildTaskQueueInput>) =>
+        task.inputData?.routeStage === routeStage;
 
     this.beginStage('source');
     this.updateProgress({ total, completed, failed }, 'source');
-    await runStageTasks<RouteBuildTaskQueueInput>({
+    await runStageTasks<RouteBuildTaskQueueInput, RouteSourceArtifactOutput>({
       nodeId: this.nodeId,
       stage: 'source',
       taskFilter: resolveTaskFilter('source'),
       handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) =>
         this.handleSourceRouteTask(task, signal),
-      maxConcurrent: this.config.routeGeneration?.parallel ? Math.max(1, this.config.routeGeneration.maxConcurrent) : 1,
+      maxConcurrent: this.config.routeGeneration.parallel
+        ? requirePositiveInteger(
+            'routeGeneration.maxConcurrent',
+            this.config.routeGeneration.maxConcurrent
+          )
+        : 1,
       failureHandling: 'continue',
       abortController: this.ensureAbortController(),
       lanePolicy: {
         enabled: true,
-        laneOfTask: (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => this.resolveRouteLane(task),
+        laneOfTask: (task: TaskQueueRecord<RouteBuildTaskQueueInput>) =>
+          this.resolveRouteLane(task),
         maxConcurrentForLane: (lane: string) => {
           const override = this.config.laneCaps?.[lane as RouteGenerationMethod];
-          return override ?? DEFAULT_LANE_CAPS[lane] ?? 1;
+          if (override !== undefined) {
+            return requirePositiveInteger(`laneCaps.${lane}`, override);
+          }
+          const defaultCap = DEFAULT_LANE_CAPS[lane];
+          if (defaultCap === undefined) {
+            throw new Error(`Route source task has unsupported generation lane: ${lane}`);
+          }
+          return defaultCap;
         },
       },
     });
@@ -127,7 +163,8 @@ export class RouteBuildSession
       nodeId: this.nodeId,
       stage: 'geometry',
       taskFilter: resolveTaskFilter('geometry'),
-      handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => this.handleGeometryRouteTask(task),
+      handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) =>
+        this.handleGeometryRouteTask(task),
       maxConcurrent: this.config.geometryConfig?.maxConcurrent ?? 1,
       failureHandling: 'continue',
       abortController: this.ensureAbortController(),
@@ -143,7 +180,8 @@ export class RouteBuildSession
       nodeId: this.nodeId,
       stage: 'tileEmit',
       taskFilter: resolveTaskFilter('tileEmit'),
-      handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => this.handleTileEmitRouteTask(task),
+      handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) =>
+        this.handleTileEmitRouteTask(task),
       failureHandling: 'continue',
       abortController: this.ensureAbortController(),
     });
@@ -192,7 +230,11 @@ export class RouteBuildSession
       throw new Error(`Unknown route task ${task.taskId}`);
     }
     if (localTask.stage !== 'source') {
-      return this.failRouteTask(localTask, 'source', `Unexpected route task stage. expected=source, actual=${localTask.stage}`);
+      return this.failRouteTask(
+        localTask,
+        'source',
+        `Unexpected route task stage. expected=source, actual=${localTask.stage}`
+      );
     }
 
     localTask.status = 'running';
@@ -200,29 +242,61 @@ export class RouteBuildSession
     this.updateRouteTaskProgress(localTask, 0);
     this.updateProgressByStage('source');
 
-    const method = localTask.routeData?.method ?? this.config.routeGeneration.method;
-    const options = localTask.routeData?.methodOptions;
-    const start = localTask.routeData?.startCoordinates;
-    const end = localTask.routeData?.endCoordinates;
-
-    if (!start || !end) {
-      const message = 'Route build task missing coordinates';
-      return this.failRouteTask(localTask, 'source', message);
+    const routeData = localTask.routeData;
+    if (!routeData) {
+      return this.failRouteTask(localTask, 'source', 'Route source task data is required');
     }
 
-    await this.runRouteTask([start, end], method, options);
-    requireNotAborted(signal, 'Route source task was paused');
-
-    return this.completeRouteTask(localTask, 'source');
+    try {
+      const generationStartedAt = Date.now();
+      const generationResult = await this.runRouteTask(
+        [routeData.startCoordinates, routeData.endCoordinates],
+        routeData.method,
+        routeData.methodOptions
+      );
+      requireNotAborted(signal, 'Route source task was paused');
+      const outputData = await persistRouteSourceArtifact({
+        nodeId: this.nodeId,
+        routeMode: routeData.routeMode,
+        generationMethod: routeData.method,
+        identity: {
+          sourceKey: routeData.sourceKey,
+          inputHash: routeData.inputHash,
+          bidirectional: routeData.bidirectional,
+          from: {
+            locationId: routeData.startLocationId,
+            coordinates: routeData.startCoordinates,
+          },
+          to: {
+            locationId: routeData.endLocationId,
+            coordinates: routeData.endCoordinates,
+          },
+        },
+        generationResult,
+        generationTimeMs: Date.now() - generationStartedAt,
+      });
+      requireNotAborted(signal, 'Route source artifact persistence was paused');
+      return this.completeRouteTask(localTask, 'source', outputData);
+    } catch (error) {
+      if (isAbortError(error)) throw error;
+      const message = error instanceof Error ? error.message : String(error);
+      return this.failRouteTask(localTask, 'source', message);
+    }
   }
 
-  private async handleGeometryRouteTask(task: TaskQueueRecord<RouteBuildTaskQueueInput>): Promise<{ status: 'completed'; progress: number }> {
+  private async handleGeometryRouteTask(
+    task: TaskQueueRecord<RouteBuildTaskQueueInput>
+  ): Promise<{ status: 'completed'; progress: number }> {
     const localTask = this.findTask(task.taskId);
     if (!localTask) {
       throw new Error(`Unknown route task ${task.taskId}`);
     }
     if (localTask.stage !== 'geometry') {
-      return this.failRouteTask(localTask, 'geometry', `Unexpected route task stage. expected=geometry, actual=${localTask.stage}`);
+      return this.failRouteTask(
+        localTask,
+        'geometry',
+        `Unexpected route task stage. expected=geometry, actual=${localTask.stage}`
+      );
     }
 
     localTask.status = 'running';
@@ -233,13 +307,19 @@ export class RouteBuildSession
     return this.completeRouteTask(localTask, 'geometry');
   }
 
-  private async handleTileEmitRouteTask(task: TaskQueueRecord<RouteBuildTaskQueueInput>): Promise<{ status: 'completed'; progress: number }> {
+  private async handleTileEmitRouteTask(
+    task: TaskQueueRecord<RouteBuildTaskQueueInput>
+  ): Promise<{ status: 'completed'; progress: number }> {
     const localTask = this.findTask(task.taskId);
     if (!localTask) {
       throw new Error(`Unknown route task ${task.taskId}`);
     }
     if (localTask.stage !== 'tileEmit') {
-      return this.failRouteTask(localTask, 'tileEmit', `Unexpected route task stage. expected=tileEmit, actual=${localTask.stage}`);
+      return this.failRouteTask(
+        localTask,
+        'tileEmit',
+        `Unexpected route task stage. expected=tileEmit, actual=${localTask.stage}`
+      );
     }
 
     localTask.status = 'running';
@@ -253,16 +333,23 @@ export class RouteBuildSession
   private async runRouteTask(
     points: [number, number][],
     method: RouteGenerationMethod,
-    options: RouteGenerationConfig['options'],
-  ): Promise<void> {
+    options: RouteGenerationConfig['options']
+  ): Promise<RouteGenerationResult> {
     const config: RouteGenerationConfig = {
       method,
       options,
     };
-    await this.generator?.generate(points, config);
+    if (!this.generator) {
+      throw new Error('Route generator is required');
+    }
+    return this.generator.generate(points, config);
   }
 
-  private completeRouteTask(task: RouteBuildTask, stage: RouteBuildTaskStage): { status: 'completed'; progress: number } {
+  private completeRouteTask<TOutput>(
+    task: RouteBuildTask,
+    stage: RouteBuildTaskStage,
+    outputData?: TOutput
+  ): { status: 'completed'; progress: number; outputData?: TOutput } {
     task.status = 'completed';
     task.error = undefined;
     this.updateRouteTaskProgress(task, 100);
@@ -270,10 +357,11 @@ export class RouteBuildSession
     return {
       status: 'completed',
       progress: 100,
+      ...(outputData === undefined ? {} : { outputData }),
     };
   }
 
-  private failRouteTask(task: RouteBuildTask, stage: RouteBuildTaskStage, error: string): { status: 'completed'; progress: number } {
+  private failRouteTask(task: RouteBuildTask, stage: RouteBuildTaskStage, error: string): never {
     task.status = 'failed';
     task.error = error;
     this.updateRouteTaskProgress(task, task.progress, error);
@@ -282,8 +370,11 @@ export class RouteBuildSession
   }
 
   private resolveRouteLane(task: TaskQueueRecord<RouteBuildTaskQueueInput>): string {
-    const fallbackMethod = this.config.routeGeneration.method;
-    return task.inputData?.routeData?.method ?? fallbackMethod;
+    const method = task.inputData?.routeData?.method;
+    if (method === undefined) {
+      throw new Error(`Route source task ${task.taskId} is missing generation method`);
+    }
+    return method;
   }
 
   private countTaskResults(): { completed: number; failed: number } {
@@ -384,4 +475,15 @@ function abortError(message: string): Error {
   const error = new Error(message);
   (error as Error & { name: string }).name = 'AbortError';
   return error;
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === 'AbortError';
+}
+
+function requirePositiveInteger(label: string, value: unknown): number {
+  if (!Number.isInteger(value) || (value as number) <= 0) {
+    throw new Error(`Route build ${label} must be a positive integer`);
+  }
+  return value as number;
 }

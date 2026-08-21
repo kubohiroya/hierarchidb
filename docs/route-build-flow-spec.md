@@ -128,7 +128,8 @@ cache identity の正規仕様（SSOT）とする。
 - routeは既定で方向付きとし、始点/終点の順序を保持する。
 - `metadata.bidirectional === true` または `metadata.oneway === false` が契約どおり明示されたrouteだけ、
   `(longitude, latitude, locationId)` の辞書順で端点を並べ、双方向を同一`sourceKey`へ正規化する。
-- directionality metadataが欠落している場合にbidirectionalと推測しない。不正型を既定値へ補完しない。
+- directionality metadataが欠落している場合にbidirectionalと推測しない。不正型や
+  `bidirectional` / `oneway` の矛盾を既定値へ補完しない。
 - geometry生成に影響する座標、generation method/options、build設定は入力`meta`/`inputHash`へ含める。
   `sourceKey`が同一でも入力署名が異なればcacheを再利用しない。
 - routeMode、locationId、座標、入力署名の必須要素が欠落・不正な場合は契約違反として失敗する。
@@ -144,11 +145,20 @@ waterway:location-a:location-b              # explicitly bidirectional and canon
 
 ### metadata 保存
 
-- route metadata には以下を保存する:
+- data-source strategy / location 解決境界は、正規 `RouteFeature.startPoint / endPoint` の
+  route metadata に以下を保存する:
   - location からコピーした始点/終点座標
   - 始点/終点の admin0〜2 の name/code
   - 始点終点間の距離
   - 中継点数
+- `RouteBuildSession` が受け取る `RouteBuildRouteInput` は、この境界で解決済みの
+  location ID と始点/終点座標を必須入力とする。session 内で曖昧な文字列検索や
+  別 location への fallback を行わない。
+- source cache metadata は route metadata の複製先ではない。後続stageがartifactの同一性と
+  lineageを検証できるよう、`sourceKey`、`inputHash`、content hash、route mode、directionality、
+  generation method、location ID、始点/終点座標、距離、所要時間、中継点数、feature/vertex数、
+  永続化完了時刻を保存する。admin name/codeは正規`RouteFeature`をSSOTとし、source cacheへ
+  重複保存しない。
 
 ## Step6: Preview
 
@@ -212,10 +222,12 @@ waterway:location-a:location-b              # explicitly bidirectional and canon
 ## canonical Worker start入力
 
 - Runtime bootstrapはTreeNodeの`draftData`を無加工でroute pluginへ渡す。
-- 現行のdirect-route入力は`RouteEntityPayload.buildConfig / startLocationId / endLocationId /
-  lineGeometry`を必須とし、`lineGeometry`の先頭・末尾を始点・終点座標として使う。
+- 現行のdirect-route入力は`RouteEntityPayload.buildConfig / routeMode / startLocationId /
+  endLocationId / lineGeometry`を必須とし、`lineGeometry`の先頭・末尾を始点・終点座標として使う。
+- `routeMode`は`ROUTE_MODES`の正規値を直接保持する。`transportMode`や`transportSelection`から
+  暗黙変換せず、欠落・不正値はstart時の契約違反として失敗させる。
 - 存在しない`draftData.routes`を別の入力SSOTとして追加しない。
 - 座標はfiniteかつlongitude `-180..180` / latitude `-90..90`を満たすことを要求し、
-  location ID、座標、またはbuild設定が不正な場合はstartを失敗させる。
+  routeMode、location ID、座標、またはbuild設定が不正な場合はstartを失敗させる。
 - `selectedArrayByCountries`から複数routeを計画するsource strategyへの移行は
   Issue #549の対象であり、direct-route入力と混在させない。
