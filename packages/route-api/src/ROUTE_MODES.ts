@@ -1,5 +1,5 @@
 import type { GroupEntity, ISO2, NodeId, PeerEntity, Timestamp } from '@hierarchidb/core-types';
-import type { BaseBuildConfig } from '@hierarchidb/gis-sdk';
+import type { BaseBuildConfig, RouteGeometryConfig } from '@hierarchidb/gis-sdk';
 import type { LocationFeatureId } from '@hierarchidb/location-api';
 import type { TreeNodeUpdaterPayload } from '@hierarchidb/tree-api';
 
@@ -97,6 +97,7 @@ export interface RouteEntityPayload {
   roadType?: 'highway' | 'general';
   generationMethod?: RouteGenerationMethod;
   generationOptions?: RouteGenerationOptions;
+  routeMode?: RouteMode;
   startLocationId?: NodeId;
   endLocationId?: NodeId;
   lineGeometry?: [number, number][];
@@ -115,7 +116,8 @@ export type RouteEntity = PeerEntity<RouteEntityPayload>;
 
 export type RouteUpdaterPayload = TreeNodeUpdaterPayload<RouteEntity>;
 
-export interface RouteBuildConfig extends BaseBuildConfig<string> {
+export interface RouteBuildConfig extends Omit<BaseBuildConfig<string>, 'routeGeometryConfig'> {
+  routeGeometryConfig: RouteGeometryConfig;
   routeGeneration: {
     method: RouteGenerationMethod;
     parallel: boolean;

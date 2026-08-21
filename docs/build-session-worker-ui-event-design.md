@@ -236,13 +236,14 @@ any phase or task recalculation.
 
 ## Shared UI Bridge
 
-`useBuildSessionStateTreeBridge` subscribes to the four canonical channels as a single
-lifecycle-owned subscription. Shape selects the Worker bridge transport. Route and
-Location currently run their canonical managers in the UI realm and explicitly select
-the same-realm event-streamer transport. There is no implicit fallback between these
-transports. The same-realm streamer remains live-only, so its UI subscription must be
-mounted before the local session starts. The bridge does not call the legacy aggregate
-progress hook or reconstruct task counts from `sessionStatusUpdated`.
+The node-type-neutral canonical subscription kernel subscribes to the four canonical
+channels as one lifecycle-owned subscription. Shape and Route select the Worker bridge
+transport. Location currently runs its canonical manager in the UI realm and explicitly
+selects the same-realm event-streamer transport. There is no implicit fallback between
+these transports. The same-realm streamer remains live-only, so its UI subscription must
+be ready before the local session starts. `useBuildSessionStateTreeBridge` consumes the
+kernel and does not call the legacy aggregate progress hook or reconstruct task counts
+from `sessionStatusUpdated`.
 
 All three build-capable worker modules also export the same `canonicalBuildAPI`
 registration surface. The SharedWorker bootstrap resolves only that exact export and
@@ -273,10 +274,9 @@ its plugin-owned SSOT state tree and does not convert aggregate progress through
 second mapper. Aggregate hooks are not exported by
 `@hierarchidb/ui-build-sessions`.
 
-The shared Route progress hook is a read-only same-realm consumer. It does not reuse
-the Worker command hook for pause or resume because those commands would target a
-different session owner. Route pipeline controls must be provided by the UI-realm
-owner when that command contract is implemented.
+Route progress and controls target the Worker-owned canonical API. Location remains
+a same-realm progress consumer until its manager ownership migration; the common
+kernel does not redirect commands to a different owner.
 
 Shape subscribes to Worker diagnostics separately with
 `BuildWorkerBridge.subscribeWorkerLog`. Worker log events remain outside the four

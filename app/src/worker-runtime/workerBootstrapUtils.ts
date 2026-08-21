@@ -64,6 +64,7 @@ import {
   resolveShapeBuildExtensions,
   type ShapeDownloadTaskPayload,
 } from './resolveShapeBuildExtensions.js';
+import { resolveRuntimeStatusFromBuildSession } from './resolveRuntimeStatusFromBuildSession.js';
 
 /** Runtime export metadata (subset consumed during bootstrap). */
 type RuntimeExportEntry = {
@@ -231,27 +232,6 @@ const RUNTIME_KEY_SEPARATOR = '\u0000';
 
 const toRuntimeKey = (nodeType: NodeType, nodeId: NodeId): string =>
   `${String(nodeType)}${RUNTIME_KEY_SEPARATOR}${String(nodeId)}`;
-
-const resolveRuntimeStatusFromBuildSession = (
-  status: BuildSessionStatus['status']
-): BuildSessionRuntimeStatus => {
-  switch (status) {
-    case 'queued':
-      return 'starting';
-    case 'running':
-      return 'running';
-    case 'paused':
-      return 'paused';
-    case 'completed':
-      return 'completed';
-    case 'failed':
-      return 'failed';
-    case 'recycled':
-      throw new Error('[worker bootstrap] recycled is not a valid build session status');
-    case 'idle':
-      return 'idle';
-  }
-};
 
 const resolveRuntimeStatusFromShapeRecord = (
   status: ShapeBuildSessionRecord['status']

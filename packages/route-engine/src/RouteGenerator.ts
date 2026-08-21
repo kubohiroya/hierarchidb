@@ -8,31 +8,40 @@ import type { RouteEnginesProvider } from './RouteEnginesProvider.js';
 import type { RouteGenerationResult } from './RouteGenerationResult.js';
 
 export class RouteGenerator {
-  constructor(private engines?: RouteEnginesProvider) {
-  }
+  constructor(private engines?: RouteEnginesProvider) {}
 
   async generate(
     points: [number, number][],
-    config: RouteGenerationConfig,
+    config: RouteGenerationConfig
   ): Promise<RouteGenerationResult> {
     if (points.length < 2) {
       throw new Error('At least 2 points required for route generation');
     }
+    points.forEach((point, index) => {
+      requireCoordinate(point, index);
+    });
 
+    let result: RouteGenerationResult;
     switch (config.method) {
       case 'direct':
-        return this.generateDirectRoute(points);
+        result = this.generateDirectRoute(points);
+        break;
       case 'great_circle':
-        return this.generateGreatCircleRoute(points, config.options);
+        result = this.generateGreatCircleRoute(points, config.options);
+        break;
       case 'osm_route':
-        return this.generateOSMRoute(points, config.options);
+        result = await this.generateOSMRoute(points, config.options);
+        break;
       case 'searoute':
-        return this.generateSeaRoute(points, config.options);
+        result = await this.generateSeaRoute(points, config.options);
+        break;
       case 'custom':
-        return this.generateCustomRoute(points, config.options);
+        result = await this.generateCustomRoute(points, config.options);
+        break;
       default:
-        return this.generateDirectRoute(points);
+        throw new Error(`Unsupported route generation method: ${String(config.method)}`);
     }
+    return requireGenerationResult(result);
   }
 
   private generateDirectRoute(points: [number, number][]): RouteGenerationResult {
@@ -47,19 +56,16 @@ export class RouteGenerator {
 
   private generateGreatCircleRoute(
     points: [number, number][],
-    options?: unknown,
+    options?: unknown
   ): RouteGenerationResult {
-    const numIntermediatePoints = (options as { numPoints?: number } | undefined)?.numPoints ?? 50;
+    const numIntermediatePoints = requireGreatCirclePointCount(options);
     const lineGeometry: [number, number][] = [];
 
     for (let i = 0; i < points.length - 1; i++) {
-      const start = points[i]!;
-      const end = points[i + 1]!;
-      const interpolated = this.interpolateGreatCircle(
-        start,
-        end,
-        numIntermediatePoints,
-      );
+      const start = points[i];
+      const end = points[i + 1];
+      if (!start || !end) throw new Error(`Route segment ${String(i)} is incomplete`);
+      const interpolated = this.interpolateGreatCircle(start, end, numIntermediatePoints);
 
       if (i === 0) {
         lineGeometry.push(...interpolated);
@@ -78,11 +84,10 @@ export class RouteGenerator {
 
   private async generateOSMRoute(
     points: [number, number][],
-    options?: unknown,
+    options?: unknown
   ): Promise<RouteGenerationResult> {
     if (!this.engines?.osrm) {
-      console.warn('OSRM engine not provided, using direct route');
-      return this.generateDirectRoute(points);
+      throw new Error('OSRM engine is required for osm_route generation');
     }
     const out = await this.engines.osrm.route(points, options);
     return { lineGeometry: out.line, distance: out.distance_m, duration: out.duration_s };
@@ -90,27 +95,30 @@ export class RouteGenerator {
 
   private async generateSeaRoute(
     points: [number, number][],
-    options?: unknown,
+    options?: unknown
   ): Promise<RouteGenerationResult> {
     if (!this.engines?.searoute) {
-      console.warn('SeaRoute engine not provided, using great circle');
-      return this.generateGreatCircleRoute(points, options);
+      throw new Error('Searoute engine is required for searoute generation');
     }
     const out = await this.engines.searoute.route(points, options);
     return { lineGeometry: out.line, distance: out.distance_m, duration: out.duration_s };
   }
 
-  private generateCustomRoute(
+  private async generateCustomRoute(
     points: [number, number][],
-    _options?: unknown,
-  ): RouteGenerationResult {
-    return this.generateDirectRoute(points);
+    options?: unknown
+  ): Promise<RouteGenerationResult> {
+    if (!this.engines?.custom) {
+      throw new Error('Custom route engine is required for custom generation');
+    }
+    const out = await this.engines.custom.route(points, options);
+    return { lineGeometry: out.line, distance: out.distance_m, duration: out.duration_s };
   }
 
   private interpolateGreatCircle(
     start: [number, number],
     end: [number, number],
-    numPoints: number,
+    numPoints: number
   ): [number, number][] {
     const points: [number, number][] = [];
 
@@ -120,8 +128,7 @@ export class RouteGenerator {
     const lon2 = this.toRadians(end[0]);
 
     const d = Math.acos(
-      Math.sin(lat1) * Math.sin(lat2) +
-      Math.cos(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1),
+      Math.sin(lat1) * Math.sin(lat2) + Math.cos(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1)
     );
 
     for (let i = 0; i <= numPoints; i++) {
@@ -136,10 +143,7 @@ export class RouteGenerator {
       const lat = Math.atan2(z, Math.sqrt(x * x + y * y));
       const lon = Math.atan2(y, x);
 
-      points.push([
-        this.toDegrees(lon),
-        this.toDegrees(lat),
-      ]);
+      points.push([this.toDegrees(lon), this.toDegrees(lat)]);
     }
 
     return points;
@@ -149,7 +153,10 @@ export class RouteGenerator {
     let totalDistance = 0;
 
     for (let i = 0; i < points.length - 1; i++) {
-      totalDistance += this.calculateDistance(points[i]!, points[i + 1]!);
+      const start = points[i];
+      const end = points[i + 1];
+      if (!start || !end) throw new Error(`Route segment ${String(i)} is incomplete`);
+      totalDistance += this.calculateDistance(start, end);
     }
 
     return totalDistance;
@@ -159,26 +166,26 @@ export class RouteGenerator {
     let totalDistance = 0;
 
     for (let i = 0; i < points.length - 1; i++) {
-      totalDistance += this.calculateDistance(points[i]!, points[i + 1]!);
+      const start = points[i];
+      const end = points[i + 1];
+      if (!start || !end) throw new Error(`Route segment ${String(i)} is incomplete`);
+      totalDistance += this.calculateDistance(start, end);
     }
 
     return totalDistance;
   }
 
-  private calculateDistance(
-    point1: [number, number],
-    point2: [number, number],
-  ): number {
+  private calculateDistance(point1: [number, number], point2: [number, number]): number {
     const R = 6371000;
 
     const lat1 = this.toRadians(point1[1]);
     const lat2 = this.toRadians(point2[1]);
-    const deltaLat = this.toRadians(point2[1]! - point1[1]!);
-    const deltaLon = this.toRadians(point2[0]! - point1[0]!);
+    const deltaLat = this.toRadians(point2[1] - point1[1]);
+    const deltaLon = this.toRadians(point2[0] - point1[0]);
 
-    const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-      Math.cos(lat1) * Math.cos(lat2) *
-      Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
+    const a =
+      Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+      Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
@@ -193,3 +200,64 @@ export class RouteGenerator {
     return radians * (180 / Math.PI);
   }
 }
+
+const requireCoordinate = (point: unknown, index: number): [number, number] => {
+  if (!Array.isArray(point) || point.length !== 2) {
+    throw new Error(`Route generation point ${String(index)} must be a longitude/latitude pair`);
+  }
+  const [longitude, latitude] = point;
+  if (
+    typeof longitude !== 'number' ||
+    !Number.isFinite(longitude) ||
+    longitude < -180 ||
+    longitude > 180 ||
+    typeof latitude !== 'number' ||
+    !Number.isFinite(latitude) ||
+    latitude < -90 ||
+    latitude > 90
+  ) {
+    throw new Error(`Route generation point ${String(index)} contains invalid coordinates`);
+  }
+  return [longitude, latitude];
+};
+
+const requireGenerationResult = (value: unknown): RouteGenerationResult => {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('Route engine result must be an object');
+  }
+  const candidate = value as Record<string, unknown>;
+  if (!Array.isArray(candidate.lineGeometry) || candidate.lineGeometry.length < 2) {
+    throw new Error('Route engine result lineGeometry must contain at least two coordinates');
+  }
+  const lineGeometry = candidate.lineGeometry.map((coordinate, index) =>
+    requireCoordinate(coordinate, index));
+  const distance = requireFiniteNonNegative('distance', candidate.distance);
+  const duration = candidate.duration === undefined
+    ? undefined
+    : requireFiniteNonNegative('duration', candidate.duration);
+  return {
+    lineGeometry,
+    distance,
+    ...(duration === undefined ? {} : { duration }),
+  };
+};
+
+const requireFiniteNonNegative = (label: string, value: unknown): number => {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    throw new Error(`Route engine result ${label} must be a finite non-negative number`);
+  }
+  return value;
+};
+
+const requireGreatCirclePointCount = (options: unknown): number => {
+  if (options === undefined) return 50;
+  if (options === null || typeof options !== 'object' || Array.isArray(options)) {
+    throw new Error('great_circle options must be an object when provided');
+  }
+  const numPoints = (options as Record<string, unknown>).numPoints;
+  if (numPoints === undefined) return 50;
+  if (!Number.isInteger(numPoints) || (numPoints as number) <= 0) {
+    throw new Error('great_circle options.numPoints must be a positive integer');
+  }
+  return numPoints as number;
+};

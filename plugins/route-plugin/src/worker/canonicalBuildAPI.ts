@@ -1,6 +1,7 @@
 import type { CanonicalPluginBuildAPI } from '@hierarchidb/build-api';
 import { createLiveCanonicalPluginBuildSubscriptions } from '@hierarchidb/build-runtime-services';
 import type { NodeId } from '@hierarchidb/core-types';
+import { ROUTE_MODES, type RouteMode } from '@hierarchidb/route-api';
 import type { RouteBuildRouteInput } from '~/services/RouteBuildManager.js';
 import { RouteBuildSessionOrchestrator } from '~/services/RouteBuildSessionOrchestrator.js';
 import { getBuildTasks } from './getBuildTasks.js';
@@ -8,6 +9,7 @@ import { requireRouteBuildConfig } from './requireRouteBuildConfig.js';
 
 const manager = new RouteBuildSessionOrchestrator();
 const subscriptions = createLiveCanonicalPluginBuildSubscriptions();
+const ROUTE_MODE_VALUES = new Set<RouteMode>(Object.values(ROUTE_MODES));
 
 const requireRecord = (value: unknown, label: string): Record<string, unknown> => {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {
@@ -43,6 +45,13 @@ const requireCoordinate = (value: unknown, label: string): [number, number] => {
   return [longitude, latitude];
 };
 
+const requireRouteMode = (value: unknown, label: string): RouteMode => {
+  if (!ROUTE_MODE_VALUES.has(value as RouteMode)) {
+    throw new Error(`[route canonical build API] ${label} is unsupported: ${String(value)}`);
+  }
+  return value as RouteMode;
+};
+
 const requireDirectRouteInput = (draft: Record<string, unknown>): RouteBuildRouteInput => {
   const startLocationId = requireNodeId(draft.startLocationId, 'draftData.startLocationId');
   const endLocationId = requireNodeId(draft.endLocationId, 'draftData.endLocationId');
@@ -61,6 +70,7 @@ const requireDirectRouteInput = (draft: Record<string, unknown>): RouteBuildRout
     endLocationId,
     startCoordinates,
     endCoordinates,
+    routeMode: requireRouteMode(draft.routeMode, 'draftData.routeMode'),
   };
 };
 

@@ -148,6 +148,17 @@
     "geometry": {
       "title": "Geometry"
     },
+    "routeTransform": {
+      "title": "ズーム帯別ルートジオメトリ",
+      "description": "ズーム帯と同じ順序で、帯ごとの値をカンマ区切りで入力します。",
+      "minDistance": "ズーム帯ごとの最小距離（メートル）",
+      "tolerance": "ズーム帯ごとのジオメトリ簡略化許容値",
+      "errors": {
+        "bandCount": "先に有効なズーム帯を1つ以上設定してください。",
+        "valueCount": "ズーム帯ごとに1つ、カンマ区切りで値を入力してください。",
+        "invalidValue": "各値には有限の0以上の数値を入力してください。"
+      }
+    },
     "tileEmit": {
       "title": "TileEmit"
     }

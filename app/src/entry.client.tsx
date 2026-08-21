@@ -29,6 +29,10 @@ import {
   revokeRuntimeWorkerAccessAndClose,
 } from './worker-runtime/clientUtils.js';
 import { loadWorkerAPIClientModule } from './worker-runtime/workerApiClientLoader.js';
+import { getYamlStorageCorrectiveRecoveryConfig } from './yaml-storage-recovery/getYamlStorageCorrectiveRecoveryConfig.js';
+import { runYamlStorageCorrectiveRecovery } from './yaml-storage-recovery/runYamlStorageCorrectiveRecovery.js';
+
+declare const __SOURCE_SHA__: string;
 
 type HydrateLoader = {
   setProgress: (progress: number, message?: string) => void;
@@ -44,6 +48,7 @@ const HYDRATE_FALLBACK_ID = 'hdb-hydrate-fallback';
 const HYDRATE_MESSAGE_ID = 'hdb-hydrate-progress-message';
 const HYDRATE_RECOVERY_CONTAINER_ID = 'hdb-hydrate-recovery-container';
 const HYDRATE_RECOVERY_STATUS_ID = 'hdb-hydrate-recovery-status';
+const INTERRUPTED_CORE_DATABASE_NAME = 'hidb-core';
 
 const setHydrateProgress = (progress: number, message?: string): void => {
   if (typeof window === 'undefined') return;
@@ -89,11 +94,18 @@ const clearIndexedDbViaBrowserApi = async (): Promise<string[]> => {
   }
 
   const databases = await indexedDB.databases();
+  const correctiveRecoveryDatabaseName = getDBName(
+    getBuildDatabasePrefix(),
+    'yaml-storage-recovery'
+  );
   const names = databases
     .map((db) => db.name)
     .filter(
       (name): name is string =>
-        typeof name === 'string' && name.length > 0 && name !== ORIGIN_COORDINATOR_DATABASE_NAME
+        typeof name === 'string' &&
+        name.length > 0 &&
+        name !== ORIGIN_COORDINATOR_DATABASE_NAME &&
+        name !== correctiveRecoveryDatabaseName
     );
   for (const name of names) {
     await deleteNamedDatabase(name);
@@ -217,6 +229,10 @@ async function initializeApp() {
   const coordinatorScriptPath = import.meta.env.DEV
     ? `${appBase}src/origin-coordinator/originCoordinator.worker.ts`
     : `${appBase}${ORIGIN_COORDINATOR_SCRIPT_NAME}`;
+  const databasePrefix = getBuildDatabasePrefix();
+  const canonicalCoreDatabaseName = getDBName(databasePrefix, 'core');
+  const correctiveRecoveryDatabaseName = getDBName(databasePrefix, 'yaml-storage-recovery');
+  const correctiveRecoveryConfig = getYamlStorageCorrectiveRecoveryConfig();
   const bootstrap = await runOriginCoordinatorGatedBootstrap({
     initializeCoordinator: () =>
       initializeOriginCoordinator({
@@ -251,7 +267,6 @@ async function initializeApp() {
       setHydrateProgress(6, 'Origin coordinator ready');
     },
     activateCanonicalStorage: async (coordinator) => {
-      const databaseName = getDBName(getBuildDatabasePrefix(), 'core');
       await runYamlStorageActivationContender({
         coordinator,
         quiescenceTimeoutMs: ORIGIN_COORDINATOR_MAX_CENSUS_TIMEOUT_MS,
@@ -259,14 +274,14 @@ async function initializeApp() {
         activateCoreDb: async ({ state, migrationId, openRequestId }) =>
           await activateYamlStorageCoreDb({
             state,
-            databaseName,
+            databaseName: canonicalCoreDatabaseName,
             migrationId,
             openRequestId,
             environment: {
               indexedDB,
               digestSha256Hex,
               initializeCoreDb: async () => {
-                const coreDB = CoreDB.createForCanonicalRuntime(databaseName);
+                const coreDB = CoreDB.createForCanonicalRuntime(canonicalCoreDatabaseName);
                 try {
                   await coreDB.open();
                   await coreDB.initialize();
@@ -278,6 +293,44 @@ async function initializeApp() {
           }),
       });
       setHydrateProgress(30, 'Canonical storage activated');
+    },
+    recoverCanonicalStorageIfAuthorized: async () => {
+      if (correctiveRecoveryConfig.status === 'disabled') return 'not-required';
+      setHydrateProgress(12, 'Inspecting approved corrective recovery...');
+      const recovery = await runYamlStorageCorrectiveRecovery({
+        factory: indexedDB,
+        databaseNames: Object.freeze({
+          coordinator: ORIGIN_COORDINATOR_DATABASE_NAME,
+          canonicalCore: canonicalCoreDatabaseName,
+          interruptedCore: INTERRUPTED_CORE_DATABASE_NAME,
+          yaml: getDBName(databasePrefix, 'yaml'),
+          recovery: correctiveRecoveryDatabaseName,
+        }),
+        recoveryReleaseId: correctiveRecoveryConfig.recoveryReleaseId,
+        expectedCoordinatorFingerprintSha256:
+          correctiveRecoveryConfig.expectedCoordinatorFingerprintSha256,
+        recoveryReleaseVersion: __SOURCE_SHA__,
+        timestamp: new Date().toISOString(),
+        openRequestId: globalThis.crypto.randomUUID(),
+        digestSha256Hex,
+        initializeCoreDb: async () => {
+          const coreDB = CoreDB.createForCanonicalRuntime(canonicalCoreDatabaseName);
+          try {
+            await coreDB.open();
+            await coreDB.initialize();
+          } finally {
+            coreDB.close();
+          }
+        },
+      });
+      if (recovery.ok === false) {
+        throw new Error(`yaml-storage-corrective-recovery-failed:${recovery.code}`);
+      }
+      if (recovery.status === 'recovered') {
+        setHydrateProgress(30, 'Corrective recovery completed');
+        return 'recovered';
+      }
+      return 'not-required';
     },
     requestSuccessReload: () => {
       setHydrateProgress(33, 'Canonical storage ready. Reloading...');
