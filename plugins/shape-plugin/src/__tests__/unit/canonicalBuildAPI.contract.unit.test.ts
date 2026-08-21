@@ -15,7 +15,6 @@ const shapeBuildAPIMocks = vi.hoisted(() => ({
   subscribeWorkerLog: vi.fn(),
   generateDownloadTaskPayloadsFromSelection: vi.fn(),
 }));
-
 const shapeBuildExtensionMocks = vi.hoisted(() => ({
   setShapeCorsProxyBaseURL: vi.fn(),
   setUiStorageBridge: vi.fn(),
@@ -90,6 +89,18 @@ describe('shape canonicalBuildAPI contract', () => {
         { JP: [true] }
       )
     ).resolves.toBe(payloads);
+  });
+
+  it('registers the UI auth storage bridge on the Shape auth service', async () => {
+    const bridge = {
+      getItem: vi.fn(async () => null),
+      removeItem: vi.fn(async () => undefined),
+    };
+
+    await shapeBuildExtensions.setUiStorageBridge(bridge);
+
+    expect(shapeBuildExtensionMocks.getSingleton).toHaveBeenCalledTimes(1);
+    expect(shapeBuildExtensionMocks.setUiStorageBridge).toHaveBeenCalledWith(bridge);
   });
 
   it('rejects a start request without explicit build config', async () => {

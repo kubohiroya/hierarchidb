@@ -45,4 +45,15 @@ describe('resolveShapeBuildExtensions', () => {
       })
     ).toThrow('shapeBuildExtensions.generateDownloadTaskPayloadsFromSelection must be a function');
   });
+
+  it('rejects a missing Shape auth storage bridge method', () => {
+    expect(() =>
+      resolveShapeBuildExtensions({
+        shapeBuildExtensions: {
+          setCorsProxyBaseURL: vi.fn(),
+          generateDownloadTaskPayloadsFromSelection: vi.fn(),
+        },
+      })
+    ).toThrow('shapeBuildExtensions.setUiStorageBridge must be a function');
+  });
 });
