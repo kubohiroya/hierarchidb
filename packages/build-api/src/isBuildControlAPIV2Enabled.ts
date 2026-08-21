@@ -21,19 +21,15 @@ export type BuildStatus =
   | 'failed'
   | 'recycled';
 
-export type ProgressPhase = BuildStatus;
-
 export interface BaseBuildConfig {
   // Intentionally minimal; build implementations extend as needed.
 }
 
-export interface BuildProgressPayload {
+export interface BuildTaskCountSummary {
   total: number;
   completed: number;
   failed: number;
-  skipped?: number;
-  estimatedTimeRemaining?: number;
-  meta?: Record<string, unknown>;
+  skipped: number;
 }
 
 export interface ResourceUsage {
@@ -67,30 +63,12 @@ export interface BuildSessionState {
   error?: string;
 }
 
-/**
- * Standardized progress callback signature.
- */
-export type BuildProgressCallback = (progress: BuildProgressEvent) => void;
-
-/**
- * Standardized progress event across all plugins.
- */
-export interface BuildProgressEvent<P = BuildProgressPayload> {
-  nodeId: NodeId;
-  stage: StageKey;
-  phase: ProgressPhase;
-  timestamp: number;
-  payload?: P;
-  message?: string;
-  error?: { code?: string; detail?: unknown };
-}
-
 export interface BuildTaskSummary {
   taskId: string;
   version: number;
   stage: StageKey;
   stageId?: string;
-  status: ProgressPhase;
+  status: BuildStatus;
   progress: number;
   sequence?: number;
   display?: TaskDisplayPayload;
@@ -106,28 +84,10 @@ export type BuildTaskUpdateEvent<T extends BuildTaskSummary = BuildTaskSummary> 
 /**
  * Progress information for build processing.
  */
-export interface BuildProgress {
-  total: number;
-  completed: number;
-  failed: number;
-  skipped?: number;
+export interface BuildProgress extends BuildTaskCountSummary {
   percentage: number;
   stage: StageKey;
   estimatedTimeRemaining?: number;
-}
-
-/**
- * Alias for BuildProgressEvent. Use BuildProgressEvent in new code.
- * @deprecated Use BuildProgressEvent directly.
- */
-export type BuildUnifiedProgressInfo<P = BuildProgressPayload> = BuildProgressEvent<P>;
-
-export interface BuildProgressAdapter {
-  subscribe: (consumer: (info: BuildProgressEvent) => void) => (() => void) | Promise<() => void>;
-}
-
-export interface UseBuildProgressOptions {
-  autoSubscribe?: boolean;
 }
 
 export interface IBuildSessionManager<TConfig = unknown, TData = unknown> {
@@ -138,9 +98,6 @@ export interface IBuildSessionManager<TConfig = unknown, TData = unknown> {
 }
 
 export type BuildManagerFactory<TManager extends IBuildSessionManager = IBuildSessionManager> = () => TManager;
-
-export type StandardProgressEvent = BuildProgressEvent;
-export type StandardProgressPayload = BuildProgressPayload;
 
 export type BuildSessionRuntimeStatus =
   | 'idle'

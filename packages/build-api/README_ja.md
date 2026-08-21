@@ -2,7 +2,7 @@
 
 最終更新: 2026-04-05
 
-HierarchiDB ビルドシステムの API 型定義パッケージ。ビルドセッションのイベント型（`SessionStatusUpdatedEvent`, `TaskProgressUpdatedEvent`, `StageSnapshotUpdatedEvent`, `HeartbeatEvent`）、セッション状態型、進捗ペイロード型、タスクステータス正規化ユーティリティを提供する。
+HierarchiDB ビルドシステムの API 型定義パッケージ。canonical build-sessionイベント型、セッション状態型、task summary、厳格なtask count契約を提供する。
 
 ## 主要な型
 
@@ -11,8 +11,12 @@ HierarchiDB ビルドシステムの API 型定義パッケージ。ビルドセ
 - `TaskProgressUpdatedEvent` — タスク進捗更新イベント
 - `HeartbeatEvent` — ハートビートイベント
 - `BuildSessionState` / `BuildSessionStatus` — セッション状態・ステータス
-- `BuildProgressPayload` / `ResourceUsage` — 進捗ペイロード・リソース使用量
-- `normalizeProgressPhase` / `mapProgressPhaseToBuildStatus` — ステータス正規化
+- `BuildStatus` — task/session共通のcanonical status語彙
+- `BuildTaskCountSummary` — canonical task count集計
+- `ResourceUsage` — ビルドセッションのリソース使用量
+
+aggregate progress event、互換adapter、status正規化fallbackは公開しない。canonical
+event consumerは未知のstatusと不正な数値を境界で拒否する。
 
 ## 依存関係
 

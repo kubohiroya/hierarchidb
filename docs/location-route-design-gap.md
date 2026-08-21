@@ -123,7 +123,7 @@ location/route の独自実装のうち、shape と共通化して置換すべ�
 - Worker→UI build-session event:
   - route/location の build session は `CanonicalBuildSessionEventSource` として、明示的な stage timing、authoritative task snapshot、task 単位の version 付き progress を提供する。
   - manager/orchestrator は `CanonicalBuildSessionManager` の `registerSession` 経由で `sessionStatusUpdated / stageSnapshotUpdated / taskProgressUpdated / heartbeat` を配信する。
-  - aggregate な旧 `BuildProgressEvent` から canonical task event を推測・変換しない。旧 API surface 自体の削除は Issue #1142 で行う。
+  - aggregate progressからcanonical task eventを推測・変換しない。旧API surfaceはIssue #1361で削除済み。
 - Tabular API 作成/メタデータ管理:
   - `plugins/location-plugin/src/common/tabular/createLocationTabularApi.ts`
   - `plugins/route-plugin/src/common/tabular/createRouteTabularApi.ts`

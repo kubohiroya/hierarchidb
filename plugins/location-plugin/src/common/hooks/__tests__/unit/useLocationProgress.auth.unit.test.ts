@@ -6,7 +6,6 @@ import { useLocationProgress } from '../../useLocationProgress';
 
 const bridgeMock = {
   initialize: vi.fn().mockResolvedValue(undefined),
-  subscribeBuildProgress: vi.fn().mockResolvedValue(() => {}),
   getBuildSessionStatus: vi.fn(),
 };
 

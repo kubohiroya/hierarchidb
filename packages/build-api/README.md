@@ -2,7 +2,7 @@
 
 Last updated: 2026-04-05
 
-API type definitions for the HierarchiDB build system. Provides build session event types (`SessionStatusUpdatedEvent`, `TaskProgressUpdatedEvent`, `StageSnapshotUpdatedEvent`, `HeartbeatEvent`), session state types, progress payload types, and task status normalization utilities.
+API type definitions for the HierarchiDB build system. Provides the canonical build-session event types, session state types, task summaries, and strict task-count contracts.
 
 ## Key Types
 
@@ -11,8 +11,13 @@ API type definitions for the HierarchiDB build system. Provides build session ev
 - `TaskProgressUpdatedEvent` — Task progress update event
 - `HeartbeatEvent` — Heartbeat event
 - `BuildSessionState` / `BuildSessionStatus` — Session state and status
-- `BuildProgressPayload` / `ResourceUsage` — Progress payload and resource usage
-- `normalizeProgressPhase` / `mapProgressPhaseToBuildStatus` — Status normalization
+- `BuildStatus` — Canonical task/session status vocabulary
+- `BuildTaskCountSummary` — Canonical task-count aggregation
+- `ResourceUsage` — Build-session resource usage
+
+The package does not expose aggregate progress events, compatibility adapters, or
+status-normalization fallbacks. Canonical event consumers reject unknown status and
+invalid numeric values at the boundary.
 
 ## Dependencies
 

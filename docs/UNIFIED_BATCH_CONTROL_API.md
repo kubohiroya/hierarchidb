@@ -41,8 +41,8 @@ subscribeWorkerLog(nodeType: NodeType, nodeId: NodeId, callback: WorkerLogCallba
 - `subscribeBuildTasks` remains only as a compatibility surface. Shape runtime returns a
   no-op unsubscribe, so new UI code must use `subscribeStageSnapshots` and
   `subscribeTaskProgress` instead.
-- `subscribeBuildProgress` is not a canonical method. Task progress uses
-  `subscribeTaskProgress`.
+- No aggregate progress subscription method is exposed. Task progress uses
+  `subscribeTaskProgress` exclusively.
 
 ## 4. Event Vocabulary
 
