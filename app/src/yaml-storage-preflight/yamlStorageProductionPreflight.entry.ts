@@ -1,4 +1,5 @@
 import { inspectInterruptedCoreDatabase } from '../yaml-storage-recovery/inspectInterruptedCoreDatabase.js';
+import { inspectInterruptedCoreV1Database } from '../yaml-storage-recovery/inspectInterruptedCoreV1Database.js';
 import { inspectYamlStorageCorrectiveRecovery } from '../yaml-storage-recovery/inspectYamlStorageCorrectiveRecovery.js';
 import {
   initializeYamlStorageProductionPreflight,
@@ -27,6 +28,13 @@ if (mode === null) {
     releaseVersion: __SOURCE_SHA__,
     execute: async () => {
       const timestamp = new Date().toISOString();
+      if (mode === 'recovery-interrupted-core-v1') {
+        return await inspectInterruptedCoreV1Database({
+          factory: globalThis.indexedDB,
+          releaseVersion: __SOURCE_SHA__,
+          timestamp,
+        });
+      }
       if (mode === 'recovery-interrupted-core') {
         return await inspectInterruptedCoreDatabase({
           factory: globalThis.indexedDB,

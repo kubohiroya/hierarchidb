@@ -1,6 +1,10 @@
 import { validateCoreDbV2StoreTopology } from '@hierarchidb/runtime-worker/yaml-storage-production';
+import {
+  countAllInterruptedCoreDatabaseRecords,
+  INTERRUPTED_CORE_DATABASE_NAME,
+  openExactInterruptedCoreDatabase,
+} from './interruptedCoreDatabaseInspectionUtils.js';
 
-const INTERRUPTED_CORE_DATABASE_NAME = 'hidb-core' as const;
 const SOURCE_SHA_PATTERN = /^[0-9a-f]{40}$/u;
 
 export interface InspectInterruptedCoreDatabaseInput {
@@ -54,10 +58,6 @@ export type InterruptedCoreDatabaseInspectionResult =
       readonly interruptedCoreDb?: InterruptedCoreDatabaseSummary;
     }>;
 
-type OpenExactResult =
-  | Readonly<{ readonly ok: true; readonly database: IDBDatabase }>
-  | Readonly<{ readonly ok: false; readonly reason: 'open' | 'blocked' | 'upgrade' }>;
-
 function hasExactTimestamp(value: string): boolean {
   try {
     return new Date(value).toISOString() === value;
@@ -85,76 +85,6 @@ function rejected(
     code,
     ...(context === undefined ? {} : context),
     ...(interruptedCoreDb === undefined ? {} : { interruptedCoreDb }),
-  });
-}
-
-function openExactDatabase(factory: IDBFactory, nativeVersion: number): Promise<OpenExactResult> {
-  return new Promise((resolve) => {
-    let settled = false;
-    let unexpectedUpgrade = false;
-    const finish = (result: OpenExactResult): void => {
-      if (settled) {
-        if (result.ok) result.database.close();
-        return;
-      }
-      settled = true;
-      resolve(result);
-    };
-    let request: IDBOpenDBRequest;
-    try {
-      request = factory.open(INTERRUPTED_CORE_DATABASE_NAME, nativeVersion);
-    } catch {
-      finish(Object.freeze({ ok: false, reason: 'open' }));
-      return;
-    }
-    request.onupgradeneeded = () => {
-      unexpectedUpgrade = true;
-      request.transaction?.abort();
-    };
-    request.onerror = () =>
-      finish(Object.freeze({ ok: false, reason: unexpectedUpgrade ? 'upgrade' : 'open' }));
-    request.onblocked = () => finish(Object.freeze({ ok: false, reason: 'blocked' }));
-    request.onsuccess = () => {
-      if (request.result.version !== nativeVersion) {
-        request.result.close();
-        finish(Object.freeze({ ok: false, reason: 'upgrade' }));
-        return;
-      }
-      finish(Object.freeze({ ok: true, database: request.result }));
-    };
-  });
-}
-
-function countAllRecords(database: IDBDatabase): Promise<number | null> {
-  const storeNames = Array.from(database.objectStoreNames);
-  return new Promise((resolve) => {
-    let settled = false;
-    let completedCounts = 0;
-    let total = 0;
-    const finish = (value: number | null): void => {
-      if (settled) return;
-      settled = true;
-      resolve(value);
-    };
-    let transaction: IDBTransaction;
-    try {
-      transaction = database.transaction(storeNames, 'readonly');
-      for (const storeName of storeNames) {
-        const request = transaction.objectStore(storeName).count();
-        request.onerror = () => finish(null);
-        request.onsuccess = () => {
-          total += request.result;
-          completedCounts += 1;
-        };
-      }
-    } catch {
-      finish(null);
-      return;
-    }
-    transaction.onerror = () => finish(null);
-    transaction.onabort = () => finish(null);
-    transaction.oncomplete = () =>
-      finish(completedCounts === storeNames.length && Number.isSafeInteger(total) ? total : null);
   });
 }
 
@@ -192,7 +122,7 @@ export async function inspectInterruptedCoreDatabase(
     ) {
       return rejected('INTERRUPTED_CORE_DIAGNOSTIC_CATALOG_MISMATCH', context);
     }
-    const opened = await openExactDatabase(input.factory, nativeVersion);
+    const opened = await openExactInterruptedCoreDatabase(input.factory, nativeVersion);
     if (opened.ok === false) {
       const code =
         opened.reason === 'blocked'
@@ -210,7 +140,7 @@ export async function inspectInterruptedCoreDatabase(
           Object.freeze({ nativeVersion, topologyStatus: 'mismatch', recordCount: null })
         );
       }
-      const recordCount = await countAllRecords(opened.database);
+      const recordCount = await countAllInterruptedCoreDatabaseRecords(opened.database);
       if (recordCount === null) {
         return rejected(
           'INTERRUPTED_CORE_DIAGNOSTIC_COUNT_FAILED',
