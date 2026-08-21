@@ -897,6 +897,10 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
 
   const repoRoot = path.resolve(__dirname, '..');
   const configuredSourceSha = env.HDB_SOURCE_SHA || process.env.HDB_SOURCE_SHA || '';
+  const databasePrefix = env.VITE_APP_PREFIX || process.env.VITE_APP_PREFIX || '';
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(databasePrefix)) {
+    throw new Error('[yaml-storage-preflight] VITE_APP_PREFIX must be an exact database prefix');
+  }
   let sourceSha = configuredSourceSha;
   if (sourceSha.length === 0) {
     try {
@@ -1285,6 +1289,7 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
         __APP_VERSION__: JSON.stringify(appVersion),
         __BUILD_TIME__: JSON.stringify(buildTime),
         __SOURCE_SHA__: JSON.stringify(sourceSha),
+        __HDB_DATABASE_PREFIX__: JSON.stringify(databasePrefix),
         // Expose selected non-VITE_ envs for client/runtime-worker packages that check them
         'import.meta.env.HDB_LOCAL_PROXY': JSON.stringify(env.HDB_LOCAL_PROXY || process.env.HDB_LOCAL_PROXY || ''),
       } as Record<string, string>;
@@ -1440,6 +1445,7 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
       rollupOptions: {
         input: {
           index: path.resolve(__dirname, 'index.html'),
+          'yaml-storage-preflight': path.resolve(__dirname, 'yaml-storage-preflight.html'),
           'hdb-origin-coordinator': path.resolve(
             __dirname,
             'src/origin-coordinator/originCoordinator.worker.ts',
@@ -1451,7 +1457,10 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
             chunkInfo.name === 'hdb-origin-coordinator'
               ? 'hdb-origin-coordinator.js'
               : 'assets/[name].js',
-          chunkFileNames: 'assets/[name]-[hash].js',
+          chunkFileNames: (chunkInfo) =>
+            chunkInfo.name === 'originCoordinatorValidatorUtils'
+              ? 'assets/originCoordinatorValidatorUtils-BBabyZU5.js'
+              : 'assets/[name]-[hash].js',
           assetFileNames: 'assets/[name][extname]',
           ...(isSsrBuild
             ? {}
@@ -1482,6 +1491,7 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
       // incrementally during the first browser session.
       entries: [
         'index.html',
+        'yaml-storage-preflight.html',
         'src/**/*.{ts,tsx}',
       ],
       // ---------------------------------------------------------------

@@ -370,6 +370,17 @@ production quiescence bridgeより前に、release-scoped SharedWorkerの外側�
 - 非serializableなWorker / SharedWorker port等はruntimeごとのlocal registryへ生成直後に登録し、通常close時に解除する。quiescence claim後は同じruntime内の新規handle生成をmonotonicに拒否し、registry全件のclose完了後だけackする。このregistryはhandle inventoryに限定し、durable authority、participant identity、coordinator DBの代替にしない。
 - 全expected participantがvalid ackまたはbrowser-proven discardを1件ずつ持つ場合だけ`ready-for-preflight`とする。coordinator readiness、stable acceptance、quiescence progress/completionのすべてで`actualFenceEstablished: false`を維持し、#1280、target `open()`、CoreDB versionchangeへ接続しない。
 
+#### Source-controlled production preflight evidence
+
+- actual single activationのpre/post evidenceは、独立したproduction build entry `yaml-storage-preflight.html`からだけ取得する。会話内生成script、DevTools paste、clipboard payloadを正規証跡にしない。entryはapplication bootstrap、Worker bootstrap、Service Worker registration/message、coordinator static graphをimportまたは実行しない。
+- page loadではstorageを読まず、exact single `mode=pre | post`とユーザーのbutton click 1回でread-only inspectionを正確に1回だけ開始する。自動実行、poll、retry、reload、root navigation、localStorage/sessionStorage/cookie/clipboard write、network送信を禁止する。
+- database名はbuild-time exact `VITE_APP_PREFIX`と固定suffixだけから決定する。missing/invalid prefixはbuild failureとし、`hidb`、hostname、path、既存database名からの推測またはfallbackを禁止する。
+- `indexedDB.databases()`でcoordinator v2、mode別CoreDB v1/v2、YamlDB v1のexact single catalog entryを全件確認してからだけopenする。1件でもmissing、duplicate、version mismatchなら対象3 databaseを1件もopenしない。openはexact versionとし、`onupgradeneeded`をabortする。全transactionは`readonly`に固定する。
+- preはcoordinator v2 exact single `allowed` record、CoreDB v1 exact topology、YamlDB v1 exact topologyを要求する。postはcoordinator v2 exact single `revoked/ready-for-preflight` recordとparticipant/evidence 1:1 ordered accounting、CoreDB v2 exact topology/journal schema、YamlDB v1 exact topologyを要求する。
+- YamlDBはprimary keyと全rowを同じreadonly transactionで読み、決定的encodingのSHA-256とrow countだけを返す。raw row、YAML、node/parent/client/participant identity、database prefix、native errorを返さない。公開resultはmode、accepted/rejected status、stable code、exact release version、timestamp、database/protocol version、phase/status、topology status、sanitized count、digestだけに限定する。
+- 本entryはactivation authority、fence、executor、census participant、retry/recovery surfaceではない。pre acceptanceはquiescence claimを開始せず、post acceptanceはactivation success、canonical publication、YamlDB deletionを代行しない。
+- multi-page entry追加でRollupのimporter-sensitive hashが変わってもfixed coordinatorのstatic import文字列を変えないため、validator chunk output filenameはaccepted filenameへ固定する。これはcontent acceptanceの代替ではなく、coordinator scriptとvalidator chunkの双方を別々のexact SHA-256 gateで検証し続ける。
+
 ### CoreDB activation readiness inventory
 
 - [#1317](https://github.com/kubohiroya/hierarchidb/issues/1317)は、既にopen済みのproduction CoreDBを持つ`WorkerService`へon-demand read-only inventory endpointを追加する。endpointは`CoreDB.getSingleton()`または`initialize()`を呼ばず、`nodes`のraw snapshotをDexieの`r` transactionで1回だけ取得する。app worker bootstrapは明示的なAPI callを転送するだけとし、worker startup、ready判定、activation stateへ自動接続しない。
