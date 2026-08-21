@@ -17,7 +17,7 @@ import { Subject } from 'rxjs';
 import {
   CORE_DB_CANONICAL_LOGICAL_VERSION,
   CORE_DB_LEGACY_LOGICAL_VERSION,
-} from '../yaml-storage-production/yamlStorageCoreDbVersion.js';
+} from '../yaml-storage-production/yamlStorageCoreDbVersionConstants.js';
 import { assertYamlCanonicalTreeNodePostimage } from './yamlCanonicalTreeNodePostimageUtils.js';
 
 export const YAML_MIGRATION_JOURNAL_STORE_NAME = 'yamlMigrationJournal' as const;

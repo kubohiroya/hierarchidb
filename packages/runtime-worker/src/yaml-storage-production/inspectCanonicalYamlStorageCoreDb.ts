@@ -10,7 +10,7 @@ import type {
 import {
   CORE_DB_CANONICAL_LOGICAL_VERSION,
   CORE_DB_CANONICAL_NATIVE_VERSION,
-} from './yamlStorageCoreDbVersion.js';
+} from './yamlStorageCoreDbVersionConstants.js';
 
 function failedResult(
   code: YamlStorageCoreDbErrorCode,

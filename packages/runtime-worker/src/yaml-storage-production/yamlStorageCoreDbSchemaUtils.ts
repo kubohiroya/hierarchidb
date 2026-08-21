@@ -5,7 +5,7 @@ import {
   CORE_DB_CANONICAL_NATIVE_VERSION,
   CORE_DB_LEGACY_LOGICAL_VERSION,
   CORE_DB_LEGACY_NATIVE_VERSION,
-} from './yamlStorageCoreDbVersion.js';
+} from './yamlStorageCoreDbVersionConstants.js';
 
 interface IndexSpec {
   readonly name: string;
