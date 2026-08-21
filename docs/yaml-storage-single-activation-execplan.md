@@ -22,6 +22,7 @@ After completion, YAML filenames live only in the matching metadata slot and YAM
 - [x] 2026-08-21: Updated the English and Japanese package READMEs.
 - [x] 2026-08-21: Integrated current `main` through `de6713d15` without conflicts and reran the scoped install, registry, typecheck, test, build, and lint matrix successfully.
 - [x] 2026-08-21: Verified the fixed coordinator source graph has zero diff from `f297cdc70a4e1665e1d26d4d931563af1e05bcd9` and the built coordinator SHA-256 remains `674f8172afabfec3b13cf91a3491d8baa99a2b64c6f2d626952766b11b2ad9d4`.
+- [x] 2026-08-21: Passed strict dependency fence and the repository dependency guard; the latter retained 13 baseline warnings and returned exit 0.
 - [x] 2026-08-21: Ran the CI-style naming baseline comparison: base 3 errors to head 3 errors, with zero new naming errors.
 - [ ] Reconcile #1340's raw `pnpm format` and raw naming commands with the repository baseline before claiming every recorded command exits zero.
 - [ ] Record verification in #1340 and prepare the single-purpose PR after separate publication approval.
@@ -220,6 +221,8 @@ Validation against current `main` completed with these results:
   15 passing tests;
 - filtered build: 100 of 100 Turbo tasks successful;
 - repository lint: 14 of 14 available lint tasks successful;
+- strict dependency fence: all packages passed; the additional dependency guard exited zero with
+  its 13 repository baseline warnings;
 - fixed coordinator graph diff: empty; built coordinator SHA-256 matches the accepted value;
 - naming CI comparison: 3 base errors to 3 head errors, zero new errors;
 - `git diff --check`: clean; no generated JavaScript or source map exists under a `src` directory.
