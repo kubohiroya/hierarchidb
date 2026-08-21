@@ -27,13 +27,10 @@ const LOCATION_TYPES = [
 
 const WORKER_BUILD_DATA_SOURCES = new Set<LocationDataSource>([
   'openstreetmap',
-  'geonames',
-  'wikidata',
   'overpass',
   'ourairports',
   'openflights',
   'world-port-index',
-  'custom',
 ]);
 
 const requireDataSource = (value: unknown): LocationDataSource => {
@@ -103,17 +100,8 @@ export const canonicalBuildAPI = {
     return manager.getBuildSessionStatus(nodeId);
   },
   getBuildSessionStatus: (nodeId) => manager.getBuildSessionStatus(nodeId),
-  pauseBuildSession: (nodeId) => manager.pauseBuildSession(nodeId),
-  cancelQueuedBuildSession: async (nodeId) => {
-    const status = await manager.getBuildSessionStatus(nodeId);
-    if (status.status === 'running') {
-      await manager.pauseBuildSession(nodeId);
-      return;
-    }
-    throw new Error(
-      `[location canonical build API] cannot cancel session from status ${status.status}`
-    );
-  },
+  pauseBuildSession: (nodeId, reason) => manager.pauseBuildSession(nodeId, reason),
+  cancelQueuedBuildSession: (nodeId, reason) => manager.cancelQueuedBuildSession(nodeId, reason),
   getBuildTasks: (nodeId) => manager.getBuildTasks(nodeId),
   ...subscriptions,
 } satisfies CanonicalPluginBuildAPI;

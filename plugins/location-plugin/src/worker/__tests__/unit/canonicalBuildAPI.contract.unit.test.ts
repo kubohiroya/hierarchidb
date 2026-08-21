@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   startLocationBuildSession: vi.fn(),
   getBuildSessionStatus: vi.fn(),
   pauseBuildSession: vi.fn(),
+  cancelQueuedBuildSession: vi.fn(),
   getBuildTasks: vi.fn(),
   subscribeStageSnapshots: vi.fn(),
   subscribeTaskProgress: vi.fn(),
@@ -18,6 +19,7 @@ vi.mock('~/services/LocationBuildManager.js', () => ({
     startLocationBuildSession = mocks.startLocationBuildSession;
     getBuildSessionStatus = mocks.getBuildSessionStatus;
     pauseBuildSession = mocks.pauseBuildSession;
+    cancelQueuedBuildSession = mocks.cancelQueuedBuildSession;
     getBuildTasks = mocks.getBuildTasks;
   },
 }));
@@ -101,9 +103,9 @@ describe('location canonicalBuildAPI contract', () => {
     });
     await expect(canonicalBuildAPI.getBuildSessionStatus(nodeId)).resolves.toBe(status);
     await canonicalBuildAPI.pauseBuildSession(nodeId, 'pause reason');
-    expect(mocks.pauseBuildSession).toHaveBeenCalledWith(nodeId);
+    expect(mocks.pauseBuildSession).toHaveBeenCalledWith(nodeId, 'pause reason');
     await canonicalBuildAPI.cancelQueuedBuildSession(nodeId, 'cancel reason');
-    expect(mocks.pauseBuildSession).toHaveBeenCalledTimes(2);
+    expect(mocks.cancelQueuedBuildSession).toHaveBeenCalledWith(nodeId, 'cancel reason');
     await expect(canonicalBuildAPI.getBuildTasks(nodeId)).resolves.toEqual([]);
 
     expect(canonicalBuildAPI.subscribeStageSnapshots(nodeId, callback)).toBe(unsubscribe);
@@ -142,4 +144,22 @@ describe('location canonicalBuildAPI contract', () => {
       })
     ).rejects.toThrow('must be an uppercase ISO 3166-1 alpha-2 code: jp');
   });
+
+  it.each(['geonames', 'wikidata', 'custom'])(
+    'rejects the unimplemented %s worker data source',
+    async (dataSource) => {
+      await expect(
+        canonicalBuildAPI.startBuildSession({
+          nodeId: 'location-contract-node',
+          draftData: {
+            dataSource,
+            concurrentDownloads: 2,
+            selectedArrayByCountries: {
+              JP: [true, false, false, false, false],
+            },
+          },
+        })
+      ).rejects.toThrow('is not supported by the Worker build session');
+    }
+  );
 });

@@ -42,5 +42,6 @@ export { createSessionStatusUpdatedPayload } from './createSessionStatusUpdatedP
 export {
   createLiveCanonicalPluginBuildSubscriptions,
 } from './createLiveCanonicalPluginBuildSubscriptions.js';
+export { requireCanonicalStageBuildConfig } from './requireCanonicalStageBuildConfig.js';
 export { CanonicalBuildSessionManager } from './CanonicalBuildSessionManager.js';
 export type { CanonicalBuildSessionEventSource } from './CanonicalBuildSessionManager.js';

@@ -119,6 +119,10 @@ describe('LocationBuildSession canonical events', () => {
   });
 
   it('stops active processing and requeues the task before publishing paused state', async () => {
+    const phases: string[] = [];
+    unconditionalEventStreamer.subscribe(nodeId, 'session-state', (event) => {
+      if (event.type === 'sessionStatusUpdated') phases.push(event.payload.phase);
+    });
     let finishSearch: (() => void) | null = null;
     const searchResult = new Promise<never[]>((resolve) => {
       finishSearch = () => resolve([]);
@@ -134,7 +138,8 @@ describe('LocationBuildSession canonical events', () => {
       expect(strategySearch).toHaveBeenCalledTimes(1);
     });
 
-    const pausePromise = manager.pauseBuildSession(nodeId);
+    const pausePromise = manager.pauseBuildSession(nodeId, 'route-leave');
+    expect(phases.at(-1)).toBe('pausing');
     const completeSearch = finishSearch;
     if (!completeSearch) throw new Error('Search completion resolver is unavailable');
     completeSearch();
@@ -142,7 +147,9 @@ describe('LocationBuildSession canonical events', () => {
 
     await expect(manager.getBuildSessionStatus(nodeId)).resolves.toMatchObject({
       status: 'paused',
+      stopReason: 'route-leave',
     });
+    expect(phases.slice(-2)).toEqual(['pausing', 'paused']);
     await expect(manager.getBuildTasks(nodeId)).resolves.toEqual([
       expect.objectContaining({
         stage: 'source',

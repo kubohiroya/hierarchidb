@@ -79,6 +79,7 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
     this.state.startedAt = undefined;
     this.state.completedAt = undefined;
     this.state.error = undefined;
+    this.state.stopReason = undefined;
     this.state.lastActivity = Date.now();
     await this.onInitialize();
   }
@@ -93,6 +94,9 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
 
     this.pauseRequested = false;
     this.invalidatedRunController = null;
+    this.state.completedAt = undefined;
+    this.state.error = undefined;
+    this.state.stopReason = undefined;
     this.abortController = new AbortController();
     const controller = this.abortController;
 
@@ -125,6 +129,7 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
         throw abortError('Session aborted');
       }
       this.state.status = 'completed';
+      this.state.stopReason = 'completed';
       this.state.completedAt = Date.now();
       this.state.lastActivity = this.state.completedAt;
       this.emitSessionUpdate();
@@ -139,6 +144,7 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
       if (controller.signal.aborted && isAbortError(error)) {
         this.state.status = 'failed';
         this.state.error = 'Session aborted';
+        this.state.stopReason = 'failed';
         this.state.completedAt = Date.now();
         this.state.lastActivity = this.state.completedAt;
         this.emitSessionUpdate();
@@ -146,6 +152,7 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
       }
       this.state.status = 'failed';
       this.state.error = error instanceof Error ? error.message : String(error);
+      this.state.stopReason = 'failed';
       this.state.completedAt = Date.now();
       this.state.lastActivity = this.state.completedAt;
       this.emitSessionUpdate();
@@ -153,7 +160,7 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
     }
   }
 
-  async pause(): Promise<void> {
+  async pause(reason?: string): Promise<void> {
     if (this.state.status === 'paused') {
       return;
     }
@@ -168,6 +175,10 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
 
     this.pauseRequested = true;
     controller.abort();
+    this.state.status = 'pausing';
+    this.state.stopReason = reason;
+    this.state.lastActivity = Date.now();
+    this.emitSessionUpdate();
     try {
       await waitForRunShutdown(
         activeRunPromise,
@@ -182,13 +193,14 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
       this.pauseRequested = false;
       this.state.status = 'failed';
       this.state.error = error instanceof Error ? error.message : String(error);
+      this.state.stopReason = 'failed';
       this.state.completedAt = Date.now();
       this.state.lastActivity = this.state.completedAt;
       this.emitSessionUpdate();
       throw error;
     }
 
-    if (this.state.status !== 'running') {
+    if (this.state.status !== 'pausing') {
       this.pauseRequested = false;
       throw new Error(`Cannot finish pausing session from state ${this.state.status}`);
     }
@@ -198,11 +210,26 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
     this.emitSessionUpdate();
   }
 
+  async cancelQueued(reason?: string): Promise<void> {
+    if (this.state.status !== 'queued') {
+      throw new Error(`Cannot cancel queued session from state ${this.state.status}`);
+    }
+    if (this.activeRunPromise) {
+      throw new Error(`Queued session ${String(this.nodeId)} unexpectedly has an active run`);
+    }
+    await this.onCancelQueued();
+    this.state.status = 'idle';
+    this.state.stopReason = reason;
+    this.state.lastActivity = Date.now();
+    this.emitSessionUpdate();
+  }
+
   async resume(): Promise<void> {
     if (this.state.status !== 'paused') {
       throw new Error(`Cannot resume session from state ${this.state.status}`);
     }
     this.state.status = 'running';
+    this.state.stopReason = undefined;
     this.state.lastActivity = Date.now();
     await this.onResume();
     this.emitSessionUpdate();
@@ -275,6 +302,7 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
   protected async onInitialize(): Promise<void> {}
   protected async onStart(): Promise<void> {}
   protected async onPause(): Promise<void> {}
+  protected async onCancelQueued(): Promise<void> {}
   protected async onResume(): Promise<void> {}
   protected async onComplete(): Promise<void> {}
 }

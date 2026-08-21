@@ -4,6 +4,7 @@ import type {
   CanonicalPluginBuildAPI,
   StageKey,
 } from '@hierarchidb/build-api';
+import { requireCanonicalStageBuildConfig } from '@hierarchidb/build-runtime-services';
 import type { BuildSession, ShapeBuildConfig, ShapeProcessingConfig } from '~/common/types/index';
 import { shapeBuildAPI } from './api.js';
 
@@ -11,6 +12,7 @@ const BUILD_SESSION_STATUSES = new Set<BuildSessionStatus['status']>([
   'idle',
   'queued',
   'running',
+  'pausing',
   'paused',
   'completed',
   'failed',
@@ -26,14 +28,17 @@ const requireRecord = (value: unknown, label: string): Record<string, unknown> =
 };
 
 const requireBuildConfig = (value: unknown): ShapeBuildConfig => {
-  const config = requireRecord(value, 'draftData.buildConfig');
+  const config = requireCanonicalStageBuildConfig(value, {
+    errorPrefix: 'shape canonical build API',
+    label: 'draftData.buildConfig',
+    requireSourceExecutionFields: false,
+    requireGeometryExecutionFields: false,
+    requireTileExecutionFields: false,
+  });
   if (typeof config.dataSourceName !== 'string' || config.dataSourceName.length === 0) {
     throw new Error(
       '[shape canonical build API] draftData.buildConfig.dataSourceName must be a non-empty string'
     );
-  }
-  for (const field of ['sourceConfig', 'geometryConfig', 'tileEmitConfig']) {
-    requireRecord(config[field], `draftData.buildConfig.${field}`);
   }
   return value as ShapeBuildConfig;
 };

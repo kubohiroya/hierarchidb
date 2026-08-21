@@ -194,6 +194,11 @@ export class LocationBuildSession
         }
     }
 
+    protected override async onCancelQueued(): Promise<void> {
+        this.tasks.splice(0);
+        this.updateProgress({ total: 0, completed: 0, failed: 0, skipped: 0 });
+    }
+
     private beginSourceStage(): void {
         if (this.sourceStageTiming) {
             throw new Error('Location source stage has already started');

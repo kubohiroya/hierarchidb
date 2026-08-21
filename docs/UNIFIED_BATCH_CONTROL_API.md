@@ -49,6 +49,8 @@ subscribeWorkerLog(nodeType: NodeType, nodeId: NodeId, callback: WorkerLogCallba
 - `BuildProgress.stage` is absent until a stage has authoritatively started. Runtime
   adapters must not synthesize `source` for a session with no current stage.
 - session phase: `idle | starting | running | pausing | paused | resuming | finalizing | completed | failed`
+- `BuildSessionStatus` and `BuildSessionState` represent the transient Worker shutdown state with
+  `BuildSessionStatusValue` (`BuildStatus | pausing`). `pausing` is not added to task status values.
 - task status: `queued | running | completed | failed | recycled`
 - stage task lists are full replacements delivered by `stageSnapshotUpdated`.
 - task progress is delivered by `taskProgressUpdated` and ordered by a version scoped

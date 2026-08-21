@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   runStartSessionRequest,
   toPersistedStartStatusPatch,
-} from '../../../components/build-progress/internal/useShapeBuildSessionControlActions/useShapeBuildStartExecutionConstants';
+} from '../../../components/build-progress/internal/useShapeBuildSessionControlActions/useShapeBuildStartExecutionConstantsUtils';
 
 describe('useShapeBuildStartExecutionHelpers', () => {
   let onTrace: ReturnType<typeof vi.fn>;

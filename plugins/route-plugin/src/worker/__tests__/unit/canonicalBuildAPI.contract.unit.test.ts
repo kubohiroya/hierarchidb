@@ -1,11 +1,13 @@
 import { canonicalPluginBuildAPIMethodNames } from '@hierarchidb/build-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_ROUTE_BUILD_CONFIG } from '~/common/config/buildConfig.js';
 
 const mocks = vi.hoisted(() => ({
   prepareSession: vi.fn(),
   startBuildSession: vi.fn(),
   getBuildSessionStatus: vi.fn(),
   pauseBuildSession: vi.fn(),
+  cancelQueuedBuildSession: vi.fn(),
   getBuildTasks: vi.fn(),
   subscribeStageSnapshots: vi.fn(),
   subscribeTaskProgress: vi.fn(),
@@ -20,10 +22,12 @@ vi.mock('~/services/RouteBuildSessionOrchestrator.js', () => ({
     startBuildSession = mocks.startBuildSession;
     getBuildSessionStatus = mocks.getBuildSessionStatus;
     pauseBuildSession = mocks.pauseBuildSession;
+    cancelQueuedBuildSession = mocks.cancelQueuedBuildSession;
   },
 }));
 
-vi.mock('@hierarchidb/build-runtime-services', () => ({
+vi.mock('@hierarchidb/build-runtime-services', async (importOriginal) => ({
+  ...(await importOriginal()),
   createLiveCanonicalPluginBuildSubscriptions: vi.fn(() => ({
     subscribeStageSnapshots: mocks.subscribeStageSnapshots,
     subscribeTaskProgress: mocks.subscribeTaskProgress,
@@ -78,12 +82,7 @@ describe('route canonicalBuildAPI contract', () => {
     ]) {
       subscribe.mockReturnValue(unsubscribe);
     }
-    const buildConfig = {
-      sourceConfig: {},
-      geometryConfig: {},
-      tileEmitConfig: {},
-      routeGeneration: {},
-    };
+    const buildConfig = DEFAULT_ROUTE_BUILD_CONFIG;
     const draftData = {
       buildConfig,
       startLocationId: 'location-start',
@@ -109,9 +108,9 @@ describe('route canonicalBuildAPI contract', () => {
     expect(mocks.startBuildSession).toHaveBeenCalledWith(nodeId);
     await expect(canonicalBuildAPI.getBuildSessionStatus(nodeId)).resolves.toBe(status);
     await canonicalBuildAPI.pauseBuildSession(nodeId, 'pause reason');
-    expect(mocks.pauseBuildSession).toHaveBeenCalledWith(nodeId);
+    expect(mocks.pauseBuildSession).toHaveBeenCalledWith(nodeId, 'pause reason');
     await canonicalBuildAPI.cancelQueuedBuildSession(nodeId, 'cancel reason');
-    expect(mocks.pauseBuildSession).toHaveBeenCalledTimes(2);
+    expect(mocks.cancelQueuedBuildSession).toHaveBeenCalledWith(nodeId, 'cancel reason');
     await expect(canonicalBuildAPI.getBuildTasks(nodeId)).resolves.toEqual([]);
 
     expect(canonicalBuildAPI.subscribeStageSnapshots(nodeId, callback)).toBe(unsubscribe);
@@ -126,12 +125,7 @@ describe('route canonicalBuildAPI contract', () => {
       canonicalBuildAPI.startBuildSession({
         nodeId: 'route-contract-node',
         draftData: {
-          buildConfig: {
-            sourceConfig: {},
-            geometryConfig: {},
-            tileEmitConfig: {},
-            routeGeneration: {},
-          },
+          buildConfig: DEFAULT_ROUTE_BUILD_CONFIG,
           startLocationId: 'location-start',
           endLocationId: 'location-end',
           lineGeometry: [
@@ -141,5 +135,29 @@ describe('route canonicalBuildAPI contract', () => {
         },
       })
     ).rejects.toThrow('draftData.lineGeometry[0] contains invalid coordinates');
+  });
+
+  it('rejects a build config with missing required leaf values', async () => {
+    await expect(
+      canonicalBuildAPI.startBuildSession({
+        nodeId: 'route-contract-node',
+        draftData: {
+          buildConfig: {
+            sourceConfig: {},
+            geometryConfig: {},
+            tileEmitConfig: {},
+            routeGeneration: {},
+          },
+          startLocationId: 'location-start',
+          endLocationId: 'location-end',
+          lineGeometry: [
+            [139, 35],
+            [140, 36],
+          ],
+        },
+      })
+    ).rejects.toThrow(
+      'draftData.buildConfig.sourceConfig.maxConcurrent must be a positive integer'
+    );
   });
 });

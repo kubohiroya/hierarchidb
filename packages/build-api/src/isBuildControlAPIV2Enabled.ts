@@ -20,6 +20,8 @@ export type BuildStatus =
   | 'failed'
   | 'recycled';
 
+export type BuildSessionStatusValue = BuildStatus | 'pausing';
+
 export type BaseBuildConfig = {};
 
 export interface BuildTaskCountSummary {
@@ -43,21 +45,23 @@ export interface ResourceUsage {
  */
 export interface BuildSessionStatus {
   nodeId: NodeId;
-  status: BuildStatus;
+  status: BuildSessionStatusValue;
   progress: BuildProgress;
   startedAt?: number;
   completedAt?: number;
   lastActivity?: number;
   error?: string;
+  stopReason?: string;
 }
 
 export interface BuildSessionState {
   nodeId: NodeId;
-  status: BuildStatus;
+  status: BuildSessionStatusValue;
   startedAt?: number;
   completedAt?: number;
   lastActivity?: number;
   error?: string;
+  stopReason?: string;
 }
 
 export interface BuildTaskSummary {
@@ -91,7 +95,7 @@ export interface BuildProgress extends BuildTaskCountSummary {
 export interface IBuildSessionManager<TConfig = unknown, TData = unknown> {
   prepareSession?(nodeId: NodeId, config: TConfig, data: TData): Promise<void>;
   startBuildSession(nodeId: NodeId): Promise<BuildSessionStatus>;
-  pauseBuildSession(nodeId: NodeId): Promise<void>;
+  pauseBuildSession(nodeId: NodeId, reason?: string): Promise<void>;
   getBuildSessionStatus(nodeId: NodeId): Promise<BuildSessionStatus>;
 }
 

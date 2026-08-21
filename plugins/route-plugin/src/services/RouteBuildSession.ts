@@ -16,6 +16,7 @@ import type {
   RouteGenerationMethod,
 } from '@hierarchidb/route-store';
 import {
+  deleteTasksByNode,
   listTasksByStatus,
   runStageTasks,
   updateTask,
@@ -362,6 +363,13 @@ export class RouteBuildSession
         })
       )
     );
+  }
+
+  protected override async onCancelQueued(): Promise<void> {
+    this.tasks.splice(0);
+    this.tasksById.clear();
+    await deleteTasksByNode(new VtTaskQueueDb(), this.nodeId);
+    this.updateProgress({ total: 0, completed: 0, failed: 0, skipped: 0 });
   }
 }
 

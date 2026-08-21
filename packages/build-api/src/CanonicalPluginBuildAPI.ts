@@ -8,13 +8,6 @@ import type {
   WorkerLogEvent,
 } from './session-event-types.js';
 
-export type CanonicalPluginBuildStartRequest = {
-  nodeId: NodeId;
-  draftData: unknown;
-};
-
-export type CanonicalPluginBuildUnsubscribe = () => void;
-
 export interface CanonicalPluginBuildAPI {
   startBuildSession(request: CanonicalPluginBuildStartRequest): Promise<BuildSessionStatus>;
   getBuildSessionStatus(nodeId: NodeId): Promise<BuildSessionStatus>;
@@ -42,6 +35,13 @@ export interface CanonicalPluginBuildAPI {
     callback: (event: WorkerLogEvent) => void
   ): CanonicalPluginBuildUnsubscribe | Promise<CanonicalPluginBuildUnsubscribe>;
 }
+
+export type CanonicalPluginBuildStartRequest = {
+  nodeId: NodeId;
+  draftData: unknown;
+};
+
+export type CanonicalPluginBuildUnsubscribe = () => void;
 
 export const canonicalPluginBuildAPIMethodNames = [
   'startBuildSession',

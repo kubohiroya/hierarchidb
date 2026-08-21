@@ -146,12 +146,13 @@ describe('AbstractBuildSession session update notification', () => {
 
     const runPromise = session.start();
     await started;
-    await expect(session.pause()).resolves.toBeUndefined();
+    await expect(session.pause('route-leave')).resolves.toBeUndefined();
     await expect(runPromise).resolves.toBeUndefined();
 
     expect(session.getState().status).toBe('paused');
     expect(session.pauseHookCalls).toBe(1);
-    expect(observedStatuses).toEqual(['running', 'paused']);
+    expect(session.getState().stopReason).toBe('route-leave');
+    expect(observedStatuses).toEqual(['running', 'pausing', 'paused']);
   });
 
   it('fails pause on shutdown timeout and keeps the unsettled run active', async () => {
@@ -174,6 +175,7 @@ describe('AbstractBuildSession session update notification', () => {
     expect(session.getState()).toMatchObject({
       status: 'failed',
       error: expect.stringContaining('did not stop within 10ms'),
+      stopReason: 'failed',
     });
     expect(session.hasActiveRun()).toBe(true);
 

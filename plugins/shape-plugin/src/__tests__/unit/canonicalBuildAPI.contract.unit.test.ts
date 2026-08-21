@@ -1,5 +1,6 @@
 import { canonicalPluginBuildAPIMethodNames } from '@hierarchidb/build-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants.js';
 
 const shapeBuildAPIMocks = vi.hoisted(() => ({
   startBuildSession: vi.fn(),
@@ -88,12 +89,7 @@ describe('shape canonicalBuildAPI contract', () => {
     const status = await canonicalBuildAPI.startBuildSession({
       nodeId: 'shape-contract-node',
       draftData: {
-        buildConfig: {
-          dataSourceName: 'geoboundaries',
-          sourceConfig: {},
-          geometryConfig: {},
-          tileEmitConfig: {},
-        },
+        buildConfig: DEFAULT_BUILD_CONFIG,
       },
     });
 
@@ -133,12 +129,7 @@ describe('shape canonicalBuildAPI contract', () => {
     const request = {
       nodeId,
       draftData: {
-        buildConfig: {
-          dataSourceName: 'geoboundaries',
-          sourceConfig: {},
-          geometryConfig: {},
-          tileEmitConfig: {},
-        },
+        buildConfig: DEFAULT_BUILD_CONFIG,
       },
     };
     await expect(canonicalBuildAPI.startBuildSession(request)).resolves.toMatchObject({ nodeId });
@@ -171,5 +162,21 @@ describe('shape canonicalBuildAPI contract', () => {
     expect(shapeBuildAPIMocks.subscribeSessionState).toHaveBeenCalledWith(nodeId, callback);
     expect(shapeBuildAPIMocks.subscribeHeartbeat).toHaveBeenCalledWith(nodeId, callback);
     expect(shapeBuildAPIMocks.subscribeWorkerLog).toHaveBeenCalledWith(nodeId, callback);
+  });
+
+  it('rejects a build config with missing required leaf values', async () => {
+    await expect(
+      canonicalBuildAPI.startBuildSession({
+        nodeId: 'shape-contract-node',
+        draftData: {
+          buildConfig: {
+            dataSourceName: 'geoboundaries',
+            sourceConfig: {},
+            geometryConfig: {},
+            tileEmitConfig: {},
+          },
+        },
+      })
+    ).rejects.toThrow('draftData.buildConfig.sourceConfig.deleteOnComplete must be boolean');
   });
 });

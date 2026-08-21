@@ -1,10 +1,10 @@
 import type { CanonicalPluginBuildAPI } from '@hierarchidb/build-api';
 import { createLiveCanonicalPluginBuildSubscriptions } from '@hierarchidb/build-runtime-services';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { RouteBuildConfig } from '@hierarchidb/route-api';
 import type { RouteBuildRouteInput } from '~/services/RouteBuildManager.js';
 import { RouteBuildSessionOrchestrator } from '~/services/RouteBuildSessionOrchestrator.js';
 import { getBuildTasks } from './getBuildTasks.js';
+import { requireRouteBuildConfig } from './requireRouteBuildConfig.js';
 
 const manager = new RouteBuildSessionOrchestrator();
 const subscriptions = createLiveCanonicalPluginBuildSubscriptions();
@@ -14,14 +14,6 @@ const requireRecord = (value: unknown, label: string): Record<string, unknown> =
     throw new Error(`[route canonical build API] ${label} must be an object`);
   }
   return value as Record<string, unknown>;
-};
-
-const requireBuildConfig = (value: unknown): RouteBuildConfig => {
-  const config = requireRecord(value, 'draftData.buildConfig');
-  for (const field of ['sourceConfig', 'geometryConfig', 'tileEmitConfig', 'routeGeneration']) {
-    requireRecord(config[field], `draftData.buildConfig.${field}`);
-  }
-  return value as RouteBuildConfig;
 };
 
 const requireNodeId = (value: unknown, label: string): NodeId => {
@@ -78,23 +70,14 @@ export const canonicalBuildAPI = {
     if (!Object.hasOwn(draft, 'buildConfig')) {
       throw new Error('[route canonical build API] draftData.buildConfig is required');
     }
-    const buildConfig = requireBuildConfig(draft.buildConfig);
+    const buildConfig = requireRouteBuildConfig(draft.buildConfig);
     const routes = [requireDirectRouteInput(draft)];
     await manager.prepareSession(nodeId, buildConfig, { routes });
     return manager.startBuildSession(nodeId);
   },
   getBuildSessionStatus: (nodeId) => manager.getBuildSessionStatus(nodeId),
-  pauseBuildSession: (nodeId) => manager.pauseBuildSession(nodeId),
-  cancelQueuedBuildSession: async (nodeId) => {
-    const status = await manager.getBuildSessionStatus(nodeId);
-    if (status.status === 'running') {
-      await manager.pauseBuildSession(nodeId);
-      return;
-    }
-    throw new Error(
-      `[route canonical build API] cannot cancel session from status ${status.status}`
-    );
-  },
+  pauseBuildSession: (nodeId, reason) => manager.pauseBuildSession(nodeId, reason),
+  cancelQueuedBuildSession: (nodeId, reason) => manager.cancelQueuedBuildSession(nodeId, reason),
   getBuildTasks,
   ...subscriptions,
 } satisfies CanonicalPluginBuildAPI;

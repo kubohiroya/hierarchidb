@@ -22,7 +22,10 @@ export interface RouteBuildInput {
 
 export class RouteBuildSessionOrchestrator extends CanonicalBuildSessionManager {
   private readonly manager: RouteBuildManager;
-  private readonly pendingSessions = new Map<NodeId, { config: RouteBuildConfig; routes: RouteBuildRouteInput[] }>();
+  private readonly pendingSessions = new Map<
+    NodeId,
+    { config: RouteBuildConfig; routes: RouteBuildRouteInput[] }
+  >();
 
   constructor(deps?: RouteBuildManagerDeps) {
     super();
@@ -31,12 +34,23 @@ export class RouteBuildSessionOrchestrator extends CanonicalBuildSessionManager 
     });
   }
 
-  async prepareSession(nodeId: NodeId, config: RouteBuildSessionConfig | RouteBuildConfig | undefined, data: RouteBuildInput): Promise<void> {
-    const fullConfig = resolveRouteConfig(config);
+  async prepareSession(
+    nodeId: NodeId,
+    config: RouteBuildConfig,
+    data: RouteBuildInput
+  ): Promise<void> {
     this.pendingSessions.set(nodeId, {
-      config: fullConfig,
+      config,
       routes: data.routes,
     });
+  }
+
+  async prepareLegacySession(
+    nodeId: NodeId,
+    config: RouteBuildSessionConfig | undefined,
+    data: RouteBuildInput
+  ): Promise<void> {
+    await this.prepareSession(nodeId, resolveLegacyRouteConfig(config), data);
   }
 
   async startBuildSession(nodeId: NodeId): Promise<BuildSessionStatus> {
@@ -57,10 +71,9 @@ export class RouteBuildSessionOrchestrator extends CanonicalBuildSessionManager 
     }
     return this.getBuildSessionStatus(sessionNodeId);
   }
-
 }
 
-function resolveRouteConfig(config?: RouteBuildSessionConfig | RouteBuildConfig): RouteBuildConfig {
+function resolveLegacyRouteConfig(config?: RouteBuildSessionConfig): RouteBuildConfig {
   const defaults = DEFAULT_ROUTE_BUILD_CONFIG;
   const routeGenerationDefaults = DEFAULT_ROUTE_BUILD_CONFIG.routeGeneration;
   const routeGeneration: RouteBuildConfig['routeGeneration'] = {
