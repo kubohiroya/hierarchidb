@@ -36,7 +36,8 @@ describe('SpreadsheetTabularApiDriver', () => {
     csvApi = new SpreadsheetTabularApiDriver(
       tableManager,
       undefined,
-      'test-styler-api-chunks'
+      'test-styler-api-chunks',
+      'test-tabular-source-rowstore-db',
     );
   });
 

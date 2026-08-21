@@ -6,6 +6,12 @@
 // Import base setup (includes _obsolate_common mocks and utilities)
 import '../../vitest.setup.base';
 import { setCorsProxyBaseURL } from '@hierarchidb/download';
+import { initializeEphemeralDB } from '@hierarchidb/gis-sdk';
+import { initializeShapeDB } from '@hierarchidb/shape-store';
+import { getDBName } from '@hierarchidb/util';
+
+initializeEphemeralDB(getDBName('test', 'ephemeral'));
+initializeShapeDB(getDBName('test', 'shape'));
 
 // Default: run network integration tests directly in Node (no CORS proxy).
 setCorsProxyBaseURL('');

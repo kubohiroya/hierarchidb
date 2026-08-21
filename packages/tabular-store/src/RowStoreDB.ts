@@ -1,5 +1,4 @@
 import { Dexie, type Table } from 'dexie';
-import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 
 export interface RowChunk {
   id: string;
@@ -38,11 +37,12 @@ export class RowStoreDB extends Dexie {
 
 let singleton: RowStoreDB | null = null;
 
-export function getRowStoreDB(databaseName?: string): RowStoreDB {
-  const exactDatabaseName = databaseName
-    ?? getDBName(getBuildDatabasePrefix(), 'tabular-source-rowstore-db');
-  if (!singleton) singleton = new RowStoreDB(exactDatabaseName);
-  if (singleton.name !== exactDatabaseName) {
+export function getRowStoreDB(databaseName: string): RowStoreDB {
+  if (typeof databaseName !== 'string' || databaseName.length === 0) {
+    throw new Error('row-store-database-name-required');
+  }
+  if (!singleton) singleton = new RowStoreDB(databaseName);
+  if (singleton.name !== databaseName) {
     throw new Error('row-store-database-name-mismatch');
   }
   return singleton;

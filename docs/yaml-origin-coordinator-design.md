@@ -429,7 +429,12 @@ injected constant, passes it explicitly to the pure database-name formatter, and
 resulting exact name to storage constructors. Packages do not search globals, runtime environments,
 application names, or paths, and do not normalize, default, or override the value. The runtime, the
 independent inspector, browser workers, and storage constructors therefore resolve the same database
-names from the same immutable build input. Before any `open()`, the inspector calls
+names from the same immutable build input. Package-level database references are inert until a
+browser, worker, or test composition boundary initializes them with one exact complete name. Access
+before initialization and reinitialization with another name both fail closed; importing a package
+never reads the build prefix or constructs a database. Row-store writers, indexers, query services,
+and plugin drivers carry the same explicit complete row-store name through every operation rather
+than resolving it again. Before any `open()`, the inspector calls
 `indexedDB.databases()` once and
 verifies exact presence and version of the coordinator, CoreDB, and YamlDB databases. Any missing
 database, duplicate catalog entry, or version mismatch rejects without opening any of them. Every

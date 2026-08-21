@@ -13,6 +13,7 @@ export function createRouteTabularApi(): TabularDataApi {
     pluginId: ROUTE_PLUGIN_ID,
     metadataManager,
     downloadDatabaseName: getDBName(getBuildDatabasePrefix(), 'route-chunks'),
+    rowStoreDatabaseName: getDBName(getBuildDatabasePrefix(), 'tabular-source-rowstore-db'),
     enableCorsProxy: true,
   });
 }

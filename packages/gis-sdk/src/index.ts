@@ -63,6 +63,8 @@ export {
 export {
   EphemeralDB,
   ephemeralDB,
+  getEphemeralDB,
+  initializeEphemeralDB,
 } from './ephemeral/EphemeralDB';
 export {
   EPHEMERAL_DB_SCHEMA,

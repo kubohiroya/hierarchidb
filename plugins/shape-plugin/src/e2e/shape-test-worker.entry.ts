@@ -12,8 +12,8 @@ import type { ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import type { CountryMetadata, SourceTaskPayload, SelectedArrayByCountries, ShapeBuildConfig, ShapeProcessingConfig } from '../common/types/index';
 import type { Endpoint as ComlinkEndpoint } from 'comlink';
 import { expose, proxy } from 'comlink';
-import { shapeDB } from '@hierarchidb/shape-store';
-import { ephemeralDB } from '@hierarchidb/gis-sdk';
+import { initializeShapeDB } from '@hierarchidb/shape-store';
+import { initializeEphemeralDB } from '@hierarchidb/gis-sdk';
 import { VtTaskQueueDb, deleteTasksByNode } from '@hierarchidb/vt-orchestrator';
 import { metadataLoader } from '../../services/metadata/MetadataLoader';
 import { shapeBuildAPI } from '../../worker/api';
@@ -27,6 +27,10 @@ import { runShapePipelineCleanup } from '../services/vt/runShapePipelineCleanup'
 import { resolveFailureHandling } from '../services/vt/shapePipelineStageHelpers';
 import { CoreDB, ShapeMutationService, ShapeQueryService } from '@hierarchidb/runtime-worker';
 import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
+
+const testDatabasePrefix = getBuildDatabasePrefix();
+const shapeDB = initializeShapeDB(getDBName(testDatabasePrefix, 'shape'));
+const ephemeralDB = initializeEphemeralDB(getDBName(testDatabasePrefix, 'ephemeral'));
 
 type Endpoint = MessagePort | Worker | ComlinkEndpoint;
 

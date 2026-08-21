@@ -33,16 +33,19 @@ function matchOp(value: unknown, op: ColumnFilter['op'], target: unknown): boole
 }
 
 export class TabularQueryService {
-  constructor(private readonly pluginId: string) {
+  constructor(
+    private readonly pluginId: string,
+    private readonly rowStoreDbName: string,
+  ) {
   }
 
   async query(tableId: string, filters: ColumnFilter[], limit = 1000): Promise<unknown[]> {
-    const db = getRowStoreDB();
+    const db = getRowStoreDB(this.rowStoreDbName);
     // Try index-assisted path for eq-only filters
     const eqFilters = filters.filter((f) => f.op === 'eq');
     const canUseIndex = filters.length > 0 && eqFilters.length === filters.length;
     if (canUseIndex) {
-      const indexer = new TabularIndexer(this.pluginId);
+      const indexer = new TabularIndexer(this.pluginId, this.rowStoreDbName);
       let acc: Set<number> | null = null;
       for (const f of eqFilters) {
         let ids = await indexer.getRowIds(tableId, f.column, f.value);
@@ -63,7 +66,8 @@ export class TabularQueryService {
       }
       const rowIds = [...(acc || new Set<number>())].slice(0, limit);
       if (rowIds.length > 0) {
-        return await new TabularIndexer(this.pluginId).getRowsByIds(tableId, rowIds, limit);
+        return await new TabularIndexer(this.pluginId, this.rowStoreDbName)
+          .getRowsByIds(tableId, rowIds, limit);
       }
     }
 

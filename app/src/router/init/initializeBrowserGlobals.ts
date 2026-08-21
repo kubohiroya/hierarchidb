@@ -1,10 +1,12 @@
+import { initializeEphemeralDB } from '@hierarchidb/gis-sdk';
+import { initializeShapeDB } from '@hierarchidb/shape-store';
 import { getWorkerClientHook, registerWorkerClientHook } from '@hierarchidb/ui-worker-provider';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
+import { useWorker } from '~/contexts/WorkerProvider';
 import { initializeMaintenanceChannel } from '~/maintenance/maintenanceChannelConstants';
 import { pluginRegistry } from '~/plugin-loaders/index';
-import { useWorker } from '~/contexts/WorkerProvider';
 import { bootLog } from '~/utils/bootLog';
 import { APP_VERSION, BUILD_TIME } from '~/versionConstants';
-import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 
 type TreeConsolePanelGlobal = typeof import('@hierarchidb/ui-treeconsole-base')['TreeConsolePanel'];
 
@@ -108,6 +110,10 @@ const clearDebugLogs = async (): Promise<void> => {
 
 export function initializeBrowserGlobals(): void {
   if (initialized) return;
+
+  const databasePrefix = getBuildDatabasePrefix();
+  initializeEphemeralDB(getDBName(databasePrefix, 'ephemeral'));
+  initializeShapeDB(getDBName(databasePrefix, 'shape'));
   initialized = true;
 
   initializeMaintenanceChannel();

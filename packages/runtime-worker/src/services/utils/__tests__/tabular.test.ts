@@ -3,6 +3,7 @@ import {
   closeRowStoreDB,
   getRowStoreDB,
   readChunkRows,
+  TabularQueryService,
   TabularWriter,
 } from '@hierarchidb/tabular-store';
 import { getDBName } from '@hierarchidb/util';
@@ -33,6 +34,7 @@ describe('loadTabularTableRows', () => {
     const writer = new TabularWriter('location', {
       metadataDbName: getDBName(sourcePrefix, 'location-metadata'),
       rowStoreDbName: getDBName(sourcePrefix, 'tabular-source-rowstore-db'),
+      indexColumns: ['name'],
     });
     const tableId = await writer.begin({
       filename: 'locations.csv',
@@ -50,6 +52,12 @@ describe('loadTabularTableRows', () => {
       .toArray();
     expect(chunks).toHaveLength(1);
     expect(readChunkRows(chunks[0] as (typeof chunks)[number])).toHaveLength(1);
+    const queryService = new TabularQueryService(
+      'location',
+      getDBName(sourcePrefix, 'tabular-source-rowstore-db'),
+    );
+    await expect(queryService.query(tableId, [{ column: 'name', op: 'eq', value: 'Tokyo' }]))
+      .resolves.toEqual([{ name: 'Tokyo', latitude: 35.6764, longitude: 139.65 }]);
     await closeRowStoreDB();
     expect(
       await getRowStoreDB(getDBName(sourcePrefix, 'tabular-source-rowstore-db')).rowChunks.count()

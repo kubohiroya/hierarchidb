@@ -64,6 +64,7 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
   private readonly pluginId: string;
   private readonly metadataManager: TabularDatabaseManager;
   private readonly downloadDatabaseName: string;
+  private readonly rowStoreDatabaseName: string;
   private readonly tabularService = new TabularService();
   private downloadStore: DexieChunkStore<ArrayBuffer> | null = null;
   private networkPort: FetchNetworkPort | null = null;
@@ -72,6 +73,7 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
     pluginIdOrManager: string | TabularDatabaseManager,
     pluginIdOverride: string | undefined,
     downloadDatabaseName: string,
+    rowStoreDatabaseName: string,
     metadataDatabaseName?: string
   ) {
     if (typeof pluginIdOrManager === 'string') {
@@ -85,6 +87,7 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
       this.pluginId = pluginIdOverride ?? SPREADSHEET_PLUGIN_ID;
     }
     this.downloadDatabaseName = downloadDatabaseName;
+    this.rowStoreDatabaseName = rowStoreDatabaseName;
   }
 
   async uploadTabularFile(file: File, config: TabularProcessingConfig = {}): Promise<TabularTableMetadata> {
@@ -304,7 +307,7 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
     limit: number,
     projectionOrder: string[],
   ): Promise<{ rows: Array<Record<string, string | number | null>>; totalMatches: number }> {
-    const db = getRowStoreDB();
+    const db = getRowStoreDB(this.rowStoreDatabaseName);
     const chunks = await db.rowChunks
       .where('[pluginId+tableId]')
       .equals([this.pluginId, tableId])
@@ -341,7 +344,7 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
   }
 
   private async removeRowData(tableId: string): Promise<void> {
-    const db = getRowStoreDB();
+    const db = getRowStoreDB(this.rowStoreDatabaseName);
     await db.transaction('rw', db.rowChunks, db.rowIndexes, async () => {
       await db.rowChunks.where('[pluginId+tableId]').equals([this.pluginId, tableId]).delete();
       await db.rowIndexes

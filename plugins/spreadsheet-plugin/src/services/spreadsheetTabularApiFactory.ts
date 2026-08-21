@@ -9,6 +9,7 @@ export function createSpreadsheetTabularApi(pluginId: string = SPREADSHEET_PLUGI
     pluginId,
     undefined,
     getDBName(getBuildDatabasePrefix(), 'spreadsheet-chunks'),
+    getDBName(getBuildDatabasePrefix(), 'tabular-source-rowstore-db'),
     getDBName(getBuildDatabasePrefix(), 'spreadsheet-metadata')
   );
 }
@@ -17,6 +18,7 @@ export type PluginTabularApiOptions = {
   pluginId: string;
   metadataManager: TabularDatabaseManager;
   downloadDatabaseName: string;
+  rowStoreDatabaseName: string;
   corsProxyBaseURL?: string;
   resolveCorsProxyBaseURL?: () => string | undefined;
   enableCorsProxy?: boolean;
@@ -48,7 +50,12 @@ class PluginTabularApiDriver extends SpreadsheetTabularApiDriver {
   private readonly resolveCorsProxyBaseURL: () => string | undefined;
 
   constructor(options: PluginTabularApiOptions) {
-    super(options.metadataManager, options.pluginId, options.downloadDatabaseName);
+    super(
+      options.metadataManager,
+      options.pluginId,
+      options.downloadDatabaseName,
+      options.rowStoreDatabaseName,
+    );
     this.resolveCorsProxyBaseURL = buildCorsProxyResolver(options);
   }
 

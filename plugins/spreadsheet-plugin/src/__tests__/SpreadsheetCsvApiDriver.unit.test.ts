@@ -33,7 +33,8 @@ describe('SpreadsheetTabularApiDriver', () => {
     driver = new SpreadsheetTabularApiDriver(
       new SpreadsheetMetadataManager('test-spreadsheet-metadata'),
       'spreadsheet',
-      'test-spreadsheet-chunks'
+      'test-spreadsheet-chunks',
+      'test-tabular-source-rowstore-db',
     );
   });
 

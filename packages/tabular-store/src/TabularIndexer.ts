@@ -13,11 +13,14 @@ function makeKey(pluginId: string, tableId: string, column: string, value: strin
 }
 
 export class TabularIndexer {
-  constructor(private readonly pluginId: string) {
+  constructor(
+    private readonly pluginId: string,
+    private readonly rowStoreDbName: string,
+  ) {
   }
 
   async indexRows(tableId: string, columns: string[], _chunkSize = 2000): Promise<void> {
-    const db = getRowStoreDB();
+    const db = getRowStoreDB(this.rowStoreDbName);
     const chunks = await db.rowChunks
       .where('[pluginId+tableId]')
       .equals([this.pluginId, tableId])
@@ -62,7 +65,7 @@ export class TabularIndexer {
   }
 
   async getRowIds(tableId: string, column: string, value: unknown): Promise<number[]> {
-    const db = getRowStoreDB();
+    const db = getRowStoreDB(this.rowStoreDbName);
     const id = makeKey(this.pluginId, tableId, column, norm(value));
     const entry = await db.rowIndexes.get(id);
     return entry?.rowIds || [];
@@ -70,7 +73,7 @@ export class TabularIndexer {
 
   // Resolve rows by rowIds via chunk mapping
   async getRowsByIds(tableId: string, rowIds: number[], limit = 1000): Promise<unknown[]> {
-    const db = getRowStoreDB();
+    const db = getRowStoreDB(this.rowStoreDbName);
     const chunks = await db.rowChunks
       .where('[pluginId+tableId]')
       .equals([this.pluginId, tableId])

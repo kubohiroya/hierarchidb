@@ -136,7 +136,10 @@ export const useDataGridPreview = ({
           setColumns(cols);
           if (!visibleCols) setVisibleCols(cols);
         }
-        const svc = new TabularQueryService(pluginId);
+        const svc = new TabularQueryService(
+          pluginId,
+          getDBName(getBuildDatabasePrefix(), 'tabular-source-rowstore-db'),
+        );
         const filterArgs: ColumnFilter[] = filters.map(({ column, op, value }) => ({ column, op, value }));
         const data = await svc.query(tableId, filterArgs, 1000);
         if (!cancelled) setRows(data.filter(isDataGridRow));

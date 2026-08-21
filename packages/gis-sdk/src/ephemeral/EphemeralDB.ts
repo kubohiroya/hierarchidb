@@ -7,7 +7,6 @@ import {
   type ShapeBuildSessionRecoveryRequest,
   type ShapeBuildSessionRecoveryResult,
 } from '@hierarchidb/shape-api';
-import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import type {
   BuildSessionRecord,
   BuildSessionHeartbeat,
@@ -541,6 +540,36 @@ export class EphemeralDB extends Dexie {
   }
 }
 
-export const ephemeralDB = new EphemeralDB(
-  getDBName(getBuildDatabasePrefix(), 'ephemeral')
-);
+let ephemeralDatabase: EphemeralDB | null = null;
+
+export function initializeEphemeralDB(databaseName: string): EphemeralDB {
+  if (typeof databaseName !== 'string' || databaseName.length === 0) {
+    throw new Error('ephemeral-database-name-required');
+  }
+  if (ephemeralDatabase === null) {
+    ephemeralDatabase = new EphemeralDB(databaseName);
+  }
+  if (ephemeralDatabase.name !== databaseName) {
+    throw new Error('ephemeral-database-name-mismatch');
+  }
+  return ephemeralDatabase;
+}
+
+export function getEphemeralDB(): EphemeralDB {
+  if (ephemeralDatabase === null) {
+    throw new Error('ephemeral-database-not-initialized');
+  }
+  return ephemeralDatabase;
+}
+
+const createEphemeralDatabaseReference = (): EphemeralDB => new Proxy({} as EphemeralDB, {
+  get: (_target, property) => {
+    const database = getEphemeralDB();
+    const value = Reflect.get(database, property, database) as unknown;
+    return typeof value === 'function' ? value.bind(database) : value;
+  },
+  set: (_target, property, value) => Reflect.set(getEphemeralDB(), property, value),
+});
+
+/** Stable reference backed only by an explicitly initialized database. */
+export const ephemeralDB = createEphemeralDatabaseReference();

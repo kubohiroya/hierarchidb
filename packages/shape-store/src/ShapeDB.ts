@@ -8,12 +8,11 @@
  */
 
 import {Dexie, type Table} from 'dexie';
-import {getBuildDatabasePrefix, getDBName} from '@hierarchidb/util';
 import type {ShapeContainerNodeId, ShapeTileSummaryRecord, VectorTileRecord} from "./VectorTileRecord";
 import { VectorTileDbBase } from "@hierarchidb/vectortile-store";
 import type { TabularTableMetadataLike } from "@hierarchidb/tabular-store";
 import type { NodeId } from "@hierarchidb/core-types";
-import {BuildSessionHeartbeat, BuildSessionRecord, BuildSessionStatus, BuildStageStatus } from "@hierarchidb/gis-sdk";
+import type {BuildSessionHeartbeat, BuildSessionRecord, BuildSessionStatus, BuildStageStatus } from "@hierarchidb/gis-sdk";
 
 export class ShapeDB extends VectorTileDbBase {
 
@@ -245,11 +244,43 @@ export class ShapeDB extends VectorTileDbBase {
 
 }
 
-// Aligned alias for cross-plugin naming consistency.
-// export { ShapeDB as ShapeDatabase };
-// Singleton instance
-export const shapeDB = new ShapeDB(getDBName(getBuildDatabasePrefix(), 'shape'));
+let shapeDatabase: ShapeDB | null = null;
 
-export async function clearShapeDatabases(): Promise<void> {
-  await Dexie.delete(getDBName(getBuildDatabasePrefix(), 'shape'));
+export function initializeShapeDB(databaseName: string): ShapeDB {
+  if (typeof databaseName !== 'string' || databaseName.length === 0) {
+    throw new Error('shape-database-name-required');
+  }
+  if (shapeDatabase === null) {
+    shapeDatabase = new ShapeDB(databaseName);
+  }
+  if (shapeDatabase.name !== databaseName) {
+    throw new Error('shape-database-name-mismatch');
+  }
+  return shapeDatabase;
+}
+
+export function getShapeDB(): ShapeDB {
+  if (shapeDatabase === null) {
+    throw new Error('shape-database-not-initialized');
+  }
+  return shapeDatabase;
+}
+
+const createShapeDatabaseReference = (): ShapeDB => new Proxy({} as ShapeDB, {
+  get: (_target, property) => {
+    const database = getShapeDB();
+    const value = Reflect.get(database, property, database) as unknown;
+    return typeof value === 'function' ? value.bind(database) : value;
+  },
+  set: (_target, property, value) => Reflect.set(getShapeDB(), property, value),
+});
+
+/** Stable reference backed only by an explicitly initialized database. */
+export const shapeDB = createShapeDatabaseReference();
+
+export async function clearShapeDatabases(databaseName: string): Promise<void> {
+  if (typeof databaseName !== 'string' || databaseName.length === 0) {
+    throw new Error('shape-database-name-required');
+  }
+  await Dexie.delete(databaseName);
 }

@@ -13,6 +13,7 @@ export function createLocationTabularApi(): TabularDataApi {
     pluginId: LOCATION_PLUGIN_ID,
     metadataManager,
     downloadDatabaseName: getDBName(getBuildDatabasePrefix(), 'location-chunks'),
+    rowStoreDatabaseName: getDBName(getBuildDatabasePrefix(), 'tabular-source-rowstore-db'),
     enableCorsProxy: true,
   });
 }

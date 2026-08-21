@@ -6,8 +6,14 @@
 // Import base setup (includes all _obsolate_common mocks)
 import 'fake-indexeddb/auto';
 import '../../vitest.database-prefix.setup.ts';
+import { initializeEphemeralDB } from '@hierarchidb/gis-sdk';
+import { initializeShapeDB } from '@hierarchidb/shape-store';
+import { getDBName } from '@hierarchidb/util';
 import { ReadableStream, WritableStream } from 'node:stream/web';
 import { gzipSync, gunzipSync } from 'node:zlib';
+
+initializeEphemeralDB(getDBName('test', 'ephemeral'));
+initializeShapeDB(getDBName('test', 'shape'));
 
 // Minimal worker-specific test setup for isolated unit tests.
 // Intentionally avoids importing monorepo-wide setup to prevent tsconfig resolution issues.

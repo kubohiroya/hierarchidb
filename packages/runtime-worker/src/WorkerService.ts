@@ -15,7 +15,8 @@ import type { PluginLifecycleAPI } from '@hierarchidb/plugin-base';
 import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/route-api';
 import type { RouteDatabaseHandle } from '@hierarchidb/route-store';
 import { getRouteDB } from '@hierarchidb/route-store';
-import { ShapeDB } from '@hierarchidb/shape-store';
+import { initializeEphemeralDB } from '@hierarchidb/gis-sdk';
+import { initializeShapeDB, type ShapeDB } from '@hierarchidb/shape-store';
 import { StylerDB } from '@hierarchidb/styler-store';
 import { TagService } from '@hierarchidb/tag';
 import { getBuildDatabasePrefix, getDBName, SingletonMixin } from '@hierarchidb/util';
@@ -93,6 +94,7 @@ export class WorkerService {
     const instance = await SingletonMixin.getSingleton('WorkerService', async () => {
       const coreDatabaseName = getDBName(options.databasePrefix, 'core');
       const coreDB: CoreDB = await CoreDB.getSingleton(coreDatabaseName);
+      initializeEphemeralDB(getDBName(options.databasePrefix, 'ephemeral'));
       // Plugin-side Dexie peer stores are expected to self-register where applicable.
       // We avoid forcing worker-bundle imports here to keep bundles lean and prevent divergence.
 
@@ -147,7 +149,7 @@ export class WorkerService {
         pluginMap
       );
 
-      const shapeDB = new ShapeDB(getDBName(options.databasePrefix, 'shape'));
+      const shapeDB = initializeShapeDB(getDBName(options.databasePrefix, 'shape'));
 
       // Import/Export services
       const iePort = new ImportExportDBPortCoreDBAdapter(coreDB, shapeDB);

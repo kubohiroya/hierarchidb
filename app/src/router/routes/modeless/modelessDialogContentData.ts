@@ -335,7 +335,10 @@ export const useLocationTableData = (
           return;
         }
         const columnNames = extractColumnNames(metadata?.columns);
-        const svc = new TabularQueryService('location');
+        const svc = new TabularQueryService(
+          'location',
+          getDBName(getBuildDatabasePrefix(), 'tabular-source-rowstore-db'),
+        );
         const rows = await svc.query(tableId, [], MAX_ROWS + 1);
         const filterByViewport = visibleIds !== undefined && visibleIds !== null;
         const visibleIdSet = filterByViewport ? new Set(visibleIds ?? []) : null;

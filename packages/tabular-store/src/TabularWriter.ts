@@ -46,6 +46,7 @@ export class TabularWriter {
 
   async writeRows(rows: ReadonlyArray<unknown>): Promise<void> {
     if (!this.tableId) throw new Error('begin() not called');
+    const tableId = this.tableId;
     const db = getRowStoreDB(this.rowStoreDbName);
     for (const r of rows) {
       this.rowsBuffered.push(r);
@@ -55,7 +56,7 @@ export class TabularWriter {
         const chunk: RowChunk = {
           id: crypto.randomUUID(),
           pluginId: this.pluginId,
-          tableId: this.tableId,
+          tableId,
           chunkIndex: this.chunkIndex++,
           startRowIndex: this.rowCursor,
           endRowIndex: this.rowCursor + this.rowsBuffered.length - 1,
@@ -66,7 +67,8 @@ export class TabularWriter {
         await db.rowChunks.add(chunk);
         if (this.indexColumns.length > 0) {
           const { TabularIndexer } = await import('./TabularIndexer.js');
-          await new TabularIndexer(this.pluginId).indexRows(this.tableId!, this.indexColumns);
+          await new TabularIndexer(this.pluginId, this.rowStoreDbName)
+            .indexRows(tableId, this.indexColumns);
         }
         this.rowCursor += this.rowsBuffered.length;
         this.rowsBuffered = [];
@@ -76,6 +78,7 @@ export class TabularWriter {
 
   async flush(): Promise<void> {
     if (!this.tableId) return;
+    const tableId = this.tableId;
     if (this.rowsBuffered.length === 0) return;
     const db = getRowStoreDB(this.rowStoreDbName);
     const payload = JSON.stringify(this.rowsBuffered);
@@ -83,7 +86,7 @@ export class TabularWriter {
     const chunk: RowChunk = {
       id: crypto.randomUUID(),
       pluginId: this.pluginId,
-      tableId: this.tableId,
+      tableId,
       chunkIndex: this.chunkIndex++,
       startRowIndex: this.rowCursor,
       endRowIndex: this.rowCursor + this.rowsBuffered.length - 1,
@@ -94,7 +97,8 @@ export class TabularWriter {
     await db.rowChunks.add(chunk);
     if (this.indexColumns.length > 0) {
       const { TabularIndexer } = await import('./TabularIndexer.js');
-      await new TabularIndexer(this.pluginId).indexRows(this.tableId!, this.indexColumns);
+      await new TabularIndexer(this.pluginId, this.rowStoreDbName)
+        .indexRows(tableId, this.indexColumns);
     }
     this.rowCursor += this.rowsBuffered.length;
     this.rowsBuffered = [];

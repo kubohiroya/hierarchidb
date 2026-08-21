@@ -3,7 +3,7 @@ import { shapeDB } from '@hierarchidb/shape-store';
 
 /**
  * Metadata manager dedicated to Shape plugin tabular datasets.
- * Stores metadata in the persistent ShapeDB (hidb-shape).
+ * Stores metadata in the explicitly initialized persistent ShapeDB.
  */
 export class ShapeTabularMetadataManager {
   private table = shapeDB.tabularMetadata;
