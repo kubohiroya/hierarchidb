@@ -3,7 +3,7 @@ import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressTyp
 import {
   buildTileEmitTaskOutcomeSummary,
   isTileEmitWarningResult,
-} from '../../../components/build-progress/TaskItemCard/taskOutcomeSummaryBuilders';
+} from '../../../components/build-progress/TaskItemCard/taskOutcomeSummaryBuilderUtils';
 
 const translate = (_key: string, fallback?: string): string => fallback ?? _key;
 

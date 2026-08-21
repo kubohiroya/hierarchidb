@@ -5,7 +5,7 @@ import {
   formatGeometrySimplifySummary,
   parseGeometrySimplifyError,
 } from '~/ui/components/build-progress/geometrySimplifyError';
-import type { TaskOutcomeSummary } from '~/ui/components/build-progress/TaskItem/TaskItem';
+import type { TaskOutcomeSummary } from '~/ui/components/build-progress/TaskItem/TaskItemView';
 
 type Translate = (key: string, fallback?: string) => string;
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressTypes';
-import { buildGeometryTaskOutcomeSummary } from '../../../components/build-progress/TaskItemCard/taskOutcomeSummaryBuilders';
+import { buildGeometryTaskOutcomeSummary } from '../../../components/build-progress/TaskItemCard/taskOutcomeSummaryBuilderUtils';
 
 const t = (_key: string, fallback?: string): string => fallback ?? _key;
 
@@ -200,12 +200,14 @@ describe('buildGeometryTaskOutcomeSummary metadata handoff', () => {
       },
     });
 
-    expect(() => buildGeometryTaskOutcomeSummary({
-      task,
-      stageId: 'geometry',
-      taskTitle: 'geometry-task-1',
-      translate: t,
-    })).toThrow('[shape-plugin] geometry retryMax is missing');
+    expect(() =>
+      buildGeometryTaskOutcomeSummary({
+        task,
+        stageId: 'geometry',
+        taskTitle: 'geometry-task-1',
+        translate: t,
+      })
+    ).toThrow('[shape-plugin] geometry retryMax is missing');
   });
 
   it('builds running message from metadata.vertexLimitValidation over display phase text', () => {
@@ -239,6 +241,8 @@ describe('buildGeometryTaskOutcomeSummary metadata handoff', () => {
     });
 
     expect(summary.kind).toBe('other');
-    expect(summary.summaryLine).toBe('Vertex limit validate: 342/1200 features, over-limit 3, max vertices 8121, limit 6553, tol 0.28');
+    expect(summary.summaryLine).toBe(
+      'Vertex limit validate: 342/1200 features, over-limit 3, max vertices 8121, limit 6553, tol 0.28'
+    );
   });
 });

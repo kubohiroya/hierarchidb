@@ -1,5 +1,5 @@
-import type React from 'react';
 import { Box, Chip, LinearProgress, Stack, Typography } from '@mui/material';
+import type React from 'react';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import { TASK_ITEM_HEIGHT } from './TASK_ITEM_HEIGHT.ts';
 
@@ -54,11 +54,17 @@ type Props = {
   fallbackProgress: number;
   isDetailSelected?: boolean;
   isDetailHoverPreviewActive?: boolean;
-  onDetailHoverChange?: (value: { title: string; summary: TaskOutcomeSummary; task: ShapeBuildTaskSummary } | null) => void;
-  onDetailClick?: (value: { title: string; summary: TaskOutcomeSummary; task: ShapeBuildTaskSummary }) => void;
+  onDetailHoverChange?: (
+    value: { title: string; summary: TaskOutcomeSummary; task: ShapeBuildTaskSummary } | null
+  ) => void;
+  onDetailClick?: (value: {
+    title: string;
+    summary: TaskOutcomeSummary;
+    task: ShapeBuildTaskSummary;
+  }) => void;
 };
 
-export const TaskItem: React.FC<Props> = ({
+export const TaskItemView: React.FC<Props> = ({
   task,
   title,
   leadingIcon,
@@ -91,20 +97,27 @@ export const TaskItem: React.FC<Props> = ({
       <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
         <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: '2px' }}>
           {leadingIcon ? (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {leadingIcon}
-            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>{leadingIcon}</Box>
           ) : null}
           <Typography variant="caption" sx={{ flex: 1, fontSize: '14px' }}>
             {title}
           </Typography>
           <Chip
-            label={isWarningResult ? (
-              <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
-                <Box component="span" data-testid="task-warning-icon" aria-label="warning">⚠</Box>
-                {statusLabel}
-              </Box>
-            ) : statusLabel}
+            label={
+              isWarningResult ? (
+                <Box
+                  component="span"
+                  sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
+                >
+                  <Box component="span" data-testid="task-warning-icon" aria-label="warning">
+                    ⚠
+                  </Box>
+                  {statusLabel}
+                </Box>
+              ) : (
+                statusLabel
+              )
+            }
             color={statusColor}
             size="small"
             variant="outlined"
@@ -145,9 +158,10 @@ export const TaskItem: React.FC<Props> = ({
                   borderColor: theme.palette.grey[700],
                 };
               })();
-              const hoverStyle = (!isDetailSelected && isDetailHoverPreviewActive)
-                ? { borderColor: theme.palette.primary.main }
-                : {};
+              const hoverStyle =
+                !isDetailSelected && isDetailHoverPreviewActive
+                  ? { borderColor: theme.palette.primary.main }
+                  : {};
               return {
                 ...selectedStyle,
                 ...hoverStyle,

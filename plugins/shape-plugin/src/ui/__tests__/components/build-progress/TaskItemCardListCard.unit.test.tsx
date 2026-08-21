@@ -5,7 +5,7 @@ import { createStore } from 'jotai/vanilla';
 import { createElement, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressTypes';
-import type { TaskOutcomeSummaryBuilder } from '../../../components/build-progress/TaskItemCard/taskOutcomeSummaryBuilders';
+import type { TaskOutcomeSummaryBuilder } from '../../../components/build-progress/TaskItemCard/taskOutcomeSummaryBuilderUtils';
 import { TaskItemCardListCard } from '../../../components/build-progress/TaskItemCardListCard/TaskItemCardListCard';
 
 vi.mock('../../../i18n.js', () => ({
