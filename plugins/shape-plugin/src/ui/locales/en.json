@@ -35,6 +35,20 @@
     "completeRequired": "Complete required fields and selections before building.",
     "notImplemented": "Shape build is not yet implemented in this dialog."
   },
+  "task": {
+    "status": {
+      "warning": "Warning"
+    },
+    "tileEmit": {
+      "invalidGeometryFilter": {
+        "filtered": "Filtered polygons",
+        "checked": "Checked polygons",
+        "rate": "Filtered rate",
+        "affectedFeatures": "Affected features",
+        "featureErrors": "Feature errors"
+      }
+    }
+  },
   "dialog": {
     "createTitle": "Create Shape",
     "editTitle": "Edit Shape",
@@ -66,8 +80,8 @@
     "cacheMissing": "Select a data source first.",
     "cacheMissingNode": "NodeId is missing."
   },
-    "processing": {
-      "source": {
+  "processing": {
+    "source": {
       "title": "Source",
       "descriptionTooltip": "Acquires source data, prepares filters, and provides input for Geometry.",
       "geometryIntakeGuard": {

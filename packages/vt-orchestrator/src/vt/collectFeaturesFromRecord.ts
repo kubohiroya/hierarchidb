@@ -2,6 +2,7 @@ import type { Feature } from 'geojson';
 import { geometryArea, type EphemeralGeometryCacheRecord } from '@hierarchidb/gis-sdk';
 import type { VTStageContext } from '~/contextTypes';
 import type { InputFeatureStats } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
+import type { CollectedFeatureSource } from './vtStageTaskTypes.js';
 import {
   featureBBox,
 } from './vtStageGeometryFeature.js';
@@ -26,6 +27,7 @@ type FeatureCollectorRecordContext = {
   featureStats: InputFeatureStats[];
   allFeatures: Feature[];
   featuresByContinent?: Map<string, Feature[]>;
+  featureSources: Map<Feature, CollectedFeatureSource>;
   continentByCountry?: Map<string, string>;
   debugCollect: boolean;
 };
@@ -41,10 +43,13 @@ export const collectFeaturesFromRecord = async (
     featureStats,
     bufferSizes,
     featuresByContinent,
+    featureSources,
     continentByCountry,
     debugCollect,
   } = input;
-  if (!record || record.timestamp <= 0) return;
+  if (record.timestamp <= 0) {
+    throw new Error(`[tileEmit] geometry cache record ${record.id} has an invalid timestamp`);
+  }
   bufferSizes.set(record.id, record.data.byteLength);
   if (debugCollect) {
     console.info('[tileEmit][debug] record loop entry', JSON.stringify({
@@ -80,7 +85,7 @@ export const collectFeaturesFromRecord = async (
       headAscii: debug.headAscii,
       jsonLike: debug.isJsonLike,
     }));
-    return;
+    throw new Error(`[tileEmit] failed to decode geometry cache record ${record.id}`);
   }
   const continentKey = featuresByContinent
     ? (() => {
@@ -100,8 +105,6 @@ export const collectFeaturesFromRecord = async (
         featuresByContinent.set(continentKey, [feature]);
       }
     }
-    const bbox = featureBBox(feature);
-    if (!bbox) return;
     const featureId = resolveFeatureId(feature);
     const geojsonByteSize = featureId
       ? normalizeGeojsonByteSize(context.featureGeojsonByteSizeById?.get(featureId))
@@ -109,6 +112,14 @@ export const collectFeaturesFromRecord = async (
     const normalizedCountryCode = typeof record.countryCode === 'string'
       ? record.countryCode.trim().toUpperCase()
       : '';
+    featureSources.set(feature, {
+      bufferId: record.id,
+      ...(normalizedCountryCode.length > 0 ? { countryCode: normalizedCountryCode } : {}),
+      ...(geojsonByteSize !== undefined ? { geojsonByteSize } : {}),
+      ...(continentKey ? { continentKey } : {}),
+    });
+    const bbox = featureBBox(feature);
+    if (!bbox) return;
     const featureAreaSqMeters = (() => {
       if (!feature.geometry) return undefined;
       try {

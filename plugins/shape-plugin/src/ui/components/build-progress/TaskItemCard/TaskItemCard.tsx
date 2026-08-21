@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Box } from '@mui/material';
 import { FlagOverlay } from '@hierarchidb/components';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
@@ -8,8 +8,9 @@ import { TaskItem, type TaskOutcomeSummary } from '~/ui/components/build-progres
 import {
   type TaskOutcomeSummaryBuilder,
   buildSourceTaskOutcomeSummary,
-  buildSimpleTaskOutcomeSummary,
   buildGeometryTaskOutcomeSummary,
+  buildTileEmitTaskOutcomeSummary,
+  isTileEmitWarningResult,
 } from './taskOutcomeSummaryBuilders';
 import {
   isGeometryLikeStageId,
@@ -150,14 +151,17 @@ export const TaskItemCard = ({
   const statusValue = task.status;
   const skipped = isTaskSkipped(task.display);
   const displayProgress = Math.min(100, Math.max(0, task.progress ?? stageValue));
-  const statusLabelValue = resolveStatusLabel(statusValue, skipped);
-  const statusColor = resolveStatusColor(statusValue, skipped);
+  const warningResult = isTileEmitLikeStageId(stageId) && isTileEmitWarningResult(task);
+  const statusLabelValue = warningResult
+    ? translate('task.status.warning', 'Warning')
+    : resolveStatusLabel(statusValue, skipped);
+  const statusColor = warningResult ? 'warning' : resolveStatusColor(statusValue, skipped);
   const taskTitle = resolveTaskTitle(task as TaskItemWithMetadata);
   const builder = summaryBuilder
     ?? (
       isGeometryLikeStageId(stageId)
         ? buildGeometryTaskOutcomeSummary
-        : (isTileEmitLikeStageId(stageId) ? buildSimpleTaskOutcomeSummary : buildSourceTaskOutcomeSummary)
+        : (isTileEmitLikeStageId(stageId) ? buildTileEmitTaskOutcomeSummary : buildSourceTaskOutcomeSummary)
     );
   const summary = builder({
     task,
@@ -234,6 +238,7 @@ export const TaskItemCard = ({
       leadingIcon={leadingIcon}
       statusLabel={statusLabel}
       statusColor={statusColor}
+      isWarningResult={warningResult}
       isRunning={task.status === 'running'}
       summary={summary}
       progress={displayProgress}

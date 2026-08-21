@@ -1,6 +1,7 @@
 import type { Feature, FeatureCollection } from 'geojson';
 import type { VTStageContext } from '~/contextTypes';
 import type { InputFeatureStats } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
+import type { CollectedFeatureSource } from './vtStageTaskTypes.js';
 import {
   logCollectBuffersStart,
   logCollectSummary,
@@ -27,6 +28,7 @@ type VtFeatureCollectorCoordinationResult = {
   featureStats: InputFeatureStats[];
   bufferSizes: Map<string, number>;
   featuresByContinent?: Map<string, Feature[]>;
+  featureSources: Map<Feature, CollectedFeatureSource>;
 };
 
 export const runFeatureCollectionCoordinator = async (
@@ -72,6 +74,7 @@ export const runFeatureCollectionCoordinator = async (
     featureStats: resolvedFeatureStats,
     bufferSizes: resolvedBufferSizes,
     featuresByContinent: resolvedFeaturesByContinent,
+    featureSources: resolvedFeatureSources,
   } = await executeFeatureCollectLoop({
     context,
     nodeId,
@@ -98,5 +101,6 @@ export const runFeatureCollectionCoordinator = async (
     featureStats: resolvedFeatureStats,
     bufferSizes: resolvedBufferSizes,
     ...(resolvedFeaturesByContinent ? { featuresByContinent: resolvedFeaturesByContinent } : {}),
+    featureSources: resolvedFeatureSources,
   };
 };

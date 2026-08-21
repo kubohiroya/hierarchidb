@@ -47,6 +47,7 @@ type Props = {
   leadingIcon?: React.ReactNode;
   statusLabel: string;
   statusColor: 'default' | 'success' | 'error' | 'warning' | 'info';
+  isWarningResult?: boolean;
   isRunning?: boolean;
   summary?: TaskOutcomeSummary;
   progress?: number;
@@ -63,6 +64,7 @@ export const TaskItem: React.FC<Props> = ({
   leadingIcon,
   statusLabel,
   statusColor,
+  isWarningResult = false,
   isRunning = false,
   summary,
   progress,
@@ -97,7 +99,12 @@ export const TaskItem: React.FC<Props> = ({
             {title}
           </Typography>
           <Chip
-            label={statusLabel}
+            label={isWarningResult ? (
+              <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                <Box component="span" data-testid="task-warning-icon" aria-label="warning">⚠</Box>
+                {statusLabel}
+              </Box>
+            ) : statusLabel}
             color={statusColor}
             size="small"
             variant="outlined"

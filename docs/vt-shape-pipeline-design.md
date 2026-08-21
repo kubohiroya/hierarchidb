@@ -68,6 +68,9 @@
 - `tileEmitConfig.invalidGeometryFilter` は5つの boolean check を持つ必須 config とし、旧 source/fetch config key を読まない
 - invalid geometry filtering の stage owner は tileEmit とし、geometry artifact を GeoJSON collection に復元した後、tileEmit が使用する geojson-vt index の作成直前に一度だけ適用する
 - 非 finite / WGS84 範囲外座標、必須 geometry/payload 欠落は task failure とする。明示的に有効な品質 check に不適合な polygon だけを drop + `TaskQueueRecord.metadata.resultSeverity='warning'` の対象とする
+- 品質 check の評価順は `area` → `lineLength` → `maxEdgeLength` → `selfIntersection` → `triangleRingRatio` とする。複数 check に不適合な polygon は最初の check だけに計上する
+- フィルタ後の feature だけを入力に `featureStats` と `featuresByContinent` を再構築し、親タイルサマリーと全 geojson-vt build flow が同じ collection を使用する
+- warning metadata は `invalidPolygonFilteredCount`、`invalidPolygonCheckedCount`、`invalidPolygonFilteredRate`、`affectedFeatureCount`、`featureErrorCountTotal`、`invalidPolygonFilteredByCheck` を task metadata のトップレベルに保存する
 
 ## Cache identity 契約（shape）
 

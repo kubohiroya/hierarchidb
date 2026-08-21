@@ -394,7 +394,7 @@ export function applyBuildConfigPatch(
       ...overrides.tileEmitConfig,
       invalidGeometryFilter: overrides.tileEmitConfig.invalidGeometryFilter
         ? {
-          ...(base.tileEmitConfig.invalidGeometryFilter ?? {}),
+          ...base.tileEmitConfig.invalidGeometryFilter,
           ...overrides.tileEmitConfig.invalidGeometryFilter,
         }
         : base.tileEmitConfig.invalidGeometryFilter,
@@ -453,6 +453,31 @@ export function composeRuntimeBuildConfig(
   buildConfig: ShapeBuildConfig,
   processingConfig: ShapeProcessingConfig,
 ): ShapeRuntimeBuildConfig {
+  const buildConfigRecord = buildConfig as unknown as Record<string, unknown>;
+  const sourceConfigRecord = buildConfig.sourceConfig as unknown as Record<string, unknown>;
+  if (Object.hasOwn(buildConfigRecord, 'fetchConfig')) {
+    throw new Error('[shape-build] fetchConfig.invalidGeometryFilter is not supported');
+  }
+  if (Object.hasOwn(sourceConfigRecord, 'invalidGeometryFilter')) {
+    throw new Error('[shape-build] sourceConfig.invalidGeometryFilter is not supported');
+  }
+  const invalidGeometryFilter = buildConfig.tileEmitConfig.invalidGeometryFilter as unknown;
+  if (!invalidGeometryFilter || typeof invalidGeometryFilter !== 'object' || Array.isArray(invalidGeometryFilter)) {
+    throw new Error('[shape-build] tileEmitConfig.invalidGeometryFilter is required');
+  }
+  const invalidGeometryFilterRecord = invalidGeometryFilter as Record<string, unknown>;
+  const invalidGeometryFilterKeys = [
+    'area',
+    'lineLength',
+    'maxEdgeLength',
+    'selfIntersection',
+    'triangleRingRatio',
+  ] as const;
+  for (const key of invalidGeometryFilterKeys) {
+    if (typeof invalidGeometryFilterRecord[key] !== 'boolean') {
+      throw new Error(`[shape-build] tileEmitConfig.invalidGeometryFilter.${key} must be boolean`);
+    }
+  }
   return {
     ...buildConfig,
     sourceConfig: {

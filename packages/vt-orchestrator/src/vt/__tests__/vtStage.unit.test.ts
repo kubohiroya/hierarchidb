@@ -5,7 +5,16 @@ import { prepareVtTaskExecution } from '../prepareVtTaskExecution.js';
 import { vtStageTestUtils } from '../vtStageTestUtils.js';
 
 const buildPreparationContext = (): VTStageContext => ({
-  tileEmitConfig: { layerSetName: 'shape' },
+  tileEmitConfig: {
+    layerSetName: 'shape',
+    invalidGeometryFilter: {
+      area: false,
+      lineLength: false,
+      maxEdgeLength: false,
+      selfIntersection: false,
+      triangleRingRatio: false,
+    },
+  },
   bands: [],
 } as unknown as VTStageContext);
 

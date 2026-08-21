@@ -651,4 +651,42 @@ describe('TaskItemCardListCard', () => {
 
     expect(screen.getByText('URL: https://example.com/us/close-sync.geojson')).toBeTruthy();
   });
+
+  it('renders a completed tileEmit warning with warning color and icon', () => {
+    const task = {
+      taskId: 'tile-emit-warning',
+      nodeId: 'node-1' as NodeId,
+      stage: 'tileEmit',
+      taskType: 'tileEmit',
+      status: 'completed',
+      progress: 100,
+      metadata: {
+        resultSeverity: 'warning',
+        invalidPolygonFilteredCount: 2,
+        invalidPolygonCheckedCount: 8,
+        invalidPolygonFilteredRate: 0.25,
+        affectedFeatureCount: 1,
+        featureErrorCountTotal: 2,
+      },
+    } as ShapeBuildTaskSummary;
+
+    const view = render(
+      <Provider store={createStore()}>
+        <TaskItemCardListCard
+          stageId="tileEmit"
+          tasks={[task]}
+          stageValue={100}
+          resolveStatusLabel={() => 'Completed'}
+          resolveStatusColor={() => 'success'}
+          resolveTaskTitle={(value) => value.taskId}
+          virtualize={false}
+        />
+      </Provider>,
+    );
+
+    expect(screen.getByTestId('task-warning-icon')).toBeTruthy();
+    expect(screen.getByText('Warning')).toBeTruthy();
+    expect(screen.getByText('Warning: Filtered polygons 2/8 (25%)')).toBeTruthy();
+    expect(view.container.querySelector('.MuiChip-colorWarning')).toBeTruthy();
+  });
 });

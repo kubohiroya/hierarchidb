@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants';
-import { applyBuildConfigPatch } from '../../services/utils/shapeBuildUtils';
+import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '../../common/types/constants';
+import {
+  applyBuildConfigPatch,
+  composeRuntimeBuildConfig,
+} from '../../services/utils/shapeBuildUtils';
 import type { ShapeBuildConfig } from '../../common/types/index';
 
 describe('applyBuildConfigPatch', () => {
@@ -163,8 +166,8 @@ describe('applyBuildConfigPatch', () => {
     });
 
     expect(merged.sourceConfig.geometryIntakeGuard?.validationLevel).toBe('strict');
-    expect(merged.tileEmitConfig.invalidGeometryFilter?.area).toBe(true);
-    expect(merged.tileEmitConfig.invalidGeometryFilter?.triangleRingRatio).toBe(true);
+    expect(merged.tileEmitConfig.invalidGeometryFilter.area).toBe(true);
+    expect(merged.tileEmitConfig.invalidGeometryFilter.triangleRingRatio).toBe(true);
     expect(merged.geometryConfig.executionLogLevel).toBe('verbose');
     expect(merged.geometryConfig.anomalyDetection?.scoreThreshold).toBe(1.8);
     expect(merged.geometryConfig.anomalyDetection?.geojson?.maxTriangleShareDriftPercent).toBe(4);
@@ -177,5 +180,29 @@ describe('applyBuildConfigPatch', () => {
     expect(merged.tileEmitConfig.outputQualityGuard?.maxAreaToBBoxRatio).toBe(0.12);
     expect(merged.tileEmitConfig.outputQualityGuard?.minSpanRatio).toBe(0.04);
     expect(merged.tileEmitConfig.outputQualityGuard?.minBoundaryVertexCount).toBe(2);
+  });
+});
+
+describe('composeRuntimeBuildConfig invalid geometry filter contract', () => {
+  it.each(['fetchConfig', 'sourceConfig'] as const)('rejects the legacy %s key', (legacyOwner) => {
+    const buildConfig = structuredClone(DEFAULT_BUILD_CONFIG) as ShapeBuildConfig & Record<string, unknown>;
+    if (legacyOwner === 'fetchConfig') {
+      buildConfig.fetchConfig = { invalidGeometryFilter: { area: true } };
+    } else {
+      (buildConfig.sourceConfig as unknown as Record<string, unknown>).invalidGeometryFilter = { area: true };
+    }
+
+    expect(() => composeRuntimeBuildConfig(buildConfig, DEFAULT_PROCESSING_CONFIG)).toThrow(
+      `${legacyOwner}.invalidGeometryFilter is not supported`,
+    );
+  });
+
+  it('rejects a missing required tileEmit boolean', () => {
+    const buildConfig = structuredClone(DEFAULT_BUILD_CONFIG) as ShapeBuildConfig;
+    delete (buildConfig.tileEmitConfig.invalidGeometryFilter as unknown as Record<string, unknown>).lineLength;
+
+    expect(() => composeRuntimeBuildConfig(buildConfig, DEFAULT_PROCESSING_CONFIG)).toThrow(
+      'tileEmitConfig.invalidGeometryFilter.lineLength must be boolean',
+    );
   });
 });

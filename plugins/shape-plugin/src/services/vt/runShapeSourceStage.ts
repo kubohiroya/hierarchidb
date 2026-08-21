@@ -952,22 +952,8 @@ const createSourceHandler = (params: {
     done: 40,
   } as const;
   const retryConfig = buildRetryConfig(params.buildConfig);
-  const invalidGeometryFilter = params.buildConfig.tileEmitConfig.invalidGeometryFilter;
-  const hasInvalidGeometryFilter = Boolean(
-    invalidGeometryFilter
-    && (
-      invalidGeometryFilter.area
-      || invalidGeometryFilter.lineLength
-      || invalidGeometryFilter.maxEdgeLength
-      || invalidGeometryFilter.selfIntersection
-      || invalidGeometryFilter.triangleRingRatio
-    ),
-  );
   const buildCountPolygonsVerticesMessage = (featureIndex: number, featureTotal: number): string => (
     `Count polygons/vertices of feature ${featureIndex} of ${featureTotal}`
-  );
-  const buildInvalidGeometryCheckMessage = (check: string, polygonIndex: number, polygonTotal: number): string => (
-    `Check ${check} of polygon ${polygonIndex} of ${polygonTotal}`
   );
   const createTaskMessageReporter = (taskId: string) => {
     let lastUpdatedAt = 0;
@@ -1118,16 +1104,6 @@ const createSourceHandler = (params: {
       await reportTaskMessage(
         buildCountPolygonsVerticesMessage(featureIndex, featureTotal),
         featureTotal > 0 && featureIndex >= featureTotal,
-      );
-    };
-    const onInvalidGeometryCheck = async (progress: {
-      check: string;
-      polygonIndex: number;
-      polygonTotal: number;
-    }): Promise<void> => {
-      await reportTaskMessage(
-        buildInvalidGeometryCheckMessage(progress.check, progress.polygonIndex, progress.polygonTotal),
-        progress.polygonTotal > 0 && progress.polygonIndex >= progress.polygonTotal,
       );
     };
     const onRetryAttempt = async (attempt: number): Promise<void> => {
@@ -1365,8 +1341,6 @@ const createSourceHandler = (params: {
           excludePolygonAreaCoefficient: params.buildConfig.geometryConfig.excludePolygonAreaCoefficient,
           minRingVertices: params.buildConfig.geometryConfig.minRingVertices,
           geometryEngine,
-          invalidGeometryFilter,
-          onInvalidGeometryCheck: hasInvalidGeometryFilter ? onInvalidGeometryCheck : undefined,
         })
         : baseCollection;
 
@@ -1548,8 +1522,6 @@ const createSourceHandler = (params: {
         excludePolygonAreaCoefficient: params.buildConfig.geometryConfig.excludePolygonAreaCoefficient,
         minRingVertices: params.buildConfig.geometryConfig.minRingVertices,
         geometryEngine,
-        invalidGeometryFilter,
-        onInvalidGeometryCheck: hasInvalidGeometryFilter ? onInvalidGeometryCheck : undefined,
       })
       : collection;
     if (filteredCollection.features.length === 0) {

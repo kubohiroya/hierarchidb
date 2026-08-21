@@ -47,11 +47,19 @@ export type VtTaskExecutionInput = {
 
 export type VtTaskRunMetadata = Pick<VtTaskExecutionInput, 'taskId' | 'nodeId'>;
 
+export type CollectedFeatureSource = {
+  bufferId: string;
+  countryCode?: string;
+  geojsonByteSize?: number;
+  continentKey?: string;
+};
+
 export type CollectedVtFeatures = {
   collection: FeatureCollection;
   featureStats: InputFeatureStats[];
   bufferSizes: Map<string, number>;
   featuresByContinent?: Map<string, Feature[]>;
+  featureSources: Map<Feature, CollectedFeatureSource>;
 };
 
 export type VtCollectionResult = Omit<

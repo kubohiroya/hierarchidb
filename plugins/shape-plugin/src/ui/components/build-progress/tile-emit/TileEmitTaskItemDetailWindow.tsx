@@ -41,10 +41,21 @@ export const TileEmitTaskItemDetailWindow = ({
     effectiveIndexMaxPoints,
     handleResetSelection,
   } = useTileEmitTaskItemDetailPreview({ detail, buildConfig });
+  const isWarningResult = detail.task.metadata?.resultSeverity === 'warning';
 
   return (
     <Paper variant="outlined" sx={{ p: 1.5 }}>
       <Stack spacing={1.5}>
+        {isWarningResult ? (
+          <Paper variant="outlined" sx={{ p: 1.5, borderColor: 'warning.main', bgcolor: 'warning.50' }}>
+            <Stack spacing={0.5}>
+              <Typography variant="subtitle2" color="warning.dark">⚠ {detail.summary.summaryLine}</Typography>
+              {detail.summary.detailLines?.map((line) => (
+                <Typography key={line} variant="caption" color="text.secondary">{line}</Typography>
+              ))}
+            </Stack>
+          </Paper>
+        ) : null}
         {previewData.tileBBox && previewData.bufferBBox ? (
           <Box sx={{ width: '100%', height: 480 }}>
             <Allotment vertical>

@@ -9,8 +9,8 @@ import type {
 } from '~/ui/components/build-progress/TaskItemCard/taskOutcomeSummaryBuilders';
 import {
   buildGeometryTaskOutcomeSummary,
-  buildSimpleTaskOutcomeSummary,
   buildSourceTaskOutcomeSummary,
+  buildTileEmitTaskOutcomeSummary,
 } from '~/ui/components/build-progress/TaskItemCard/taskOutcomeSummaryBuilders';
 import {
   isGeometryLikeStageId,
@@ -68,7 +68,7 @@ export const useTaskItemCardListCardView = ({
       ?? (
         isGeometryLikeStageId(taskStageId)
           ? buildGeometryTaskOutcomeSummary
-          : (isTileEmitLikeStageId(taskStageId) ? buildSimpleTaskOutcomeSummary : buildSourceTaskOutcomeSummary)
+          : (isTileEmitLikeStageId(taskStageId) ? buildTileEmitTaskOutcomeSummary : buildSourceTaskOutcomeSummary)
       );
   }, [summaryBuilders]);
   const taskByDetailId = useMemo(() => {

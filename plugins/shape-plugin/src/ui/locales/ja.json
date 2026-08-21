@@ -35,6 +35,20 @@
     "completeRequired": "ビルド前に必須項目と選択を完了してください。",
     "notImplemented": "Shape のビルドはこのダイアログでは未実装です。"
   },
+  "task": {
+    "status": {
+      "warning": "警告"
+    },
+    "tileEmit": {
+      "invalidGeometryFilter": {
+        "filtered": "除外ポリゴン",
+        "checked": "検査ポリゴン",
+        "rate": "除外率",
+        "affectedFeatures": "影響フィーチャー",
+        "featureErrors": "フィーチャーエラー"
+      }
+    }
+  },
   "dialog": {
     "createTitle": "Shape を作成",
     "editTitle": "Shape を編集",
@@ -66,8 +80,8 @@
     "cacheMissing": "先にデータソースを選択してください。",
     "cacheMissingNode": "NodeId が不足しています。"
   },
-    "processing": {
-      "source": {
+  "processing": {
+    "source": {
       "title": "Source",
       "descriptionTooltip": "取得したデータを取り込み、フィルタリングを準備して Geometry へ渡します。",
       "geometryIntakeGuard": {

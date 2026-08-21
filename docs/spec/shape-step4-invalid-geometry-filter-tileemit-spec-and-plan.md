@@ -53,6 +53,16 @@
 - `featureErrorCountTotal`
 - Task list では warning アイコン/色を表示し、hover/detail で理由を確認可能にする。
 
+### 5.1 metadata 契約
+- 次の値は `TaskQueueRecord.metadata` のトップレベルへ number として保存する。
+  - `invalidPolygonFilteredCount`: 品質 check によって除外した polygon 数（非負整数）
+  - `invalidPolygonCheckedCount`: 1つ以上の品質 check が有効なときに検査した polygon 数（非負整数。全 check OFF なら `0`）
+  - `invalidPolygonFilteredRate`: `filtered / checked`。`checked=0` なら `0`、それ以外は `0..1`
+  - `affectedFeatureCount`: 1つ以上の polygon を除外した feature 数（非負整数）
+  - `featureErrorCountTotal`: 影響 feature の更新後 `properties.errorCount` 合計（非負整数）
+- `invalidPolygonFilteredByCheck` は5つの正規 config keyを必須キーとする非負整数 map とする。
+- `invalidPolygonFilteredCount > 0` のときだけ `resultSeverity='warning'` を付与する。UI は metadata の型・範囲を検証し、message から warning を推測しない。
+
 ## 6. 実行アルゴリズム（TileEmit直前）
 1. Transform 出力 GeoJSON collection を受け取る。
 2. feature ごとに polygon を走査する。
@@ -62,6 +72,21 @@
 6. 集計メタデータを task に保存する。
 7. フィルタ済み GeoJSON を `geojson-vt` に投入する。
 8. `invalidPolygonFilteredCount > 0` の場合は warning 表示対象にする。
+
+### 6.1 契約検証と品質 check
+- 品質 check の有効/無効にかかわらず、FeatureCollection / Feature / geometry 構造、全座標の finite number、経度 `-180..180`、緯度 `-90..90`、ring の最小4座標と閉包を先に検証する。違反は throw し task failure とする。
+- 品質 check は `area` → `lineLength` → `maxEdgeLength` → `selfIntersection` → `triangleRingRatio` の順で評価する。
+- 複数 check に不適合な polygon は最初に不適合となった check だけを `invalidPolygonFilteredByCheck` に計上する。
+- Polygon は不適合なら feature ごと除外する。MultiPolygon は不適合 polygon だけを除外し、残りが0なら feature を除外する。GeometryCollection 内の Polygon / MultiPolygon も同じ規則で再帰的に処理する。
+- フィルタ後の同一 collection から `featureStats`、continent grouping、親タイル summary を再構築し、その collection をすべての geojson-vt build flow に渡す。
+- 進捗 message は `Check <check label> of polygon <current> of <total>` とする（例: `Check area of polygon 3 of 99`）。
+
+### 6.2 品質判定しきい値
+- `area`: 面積 `<= 1e-8 m²`
+- `lineLength`: 外周長 `<= 1e-6 m`
+- `maxEdgeLength`: 最大辺長 `<= 0`、または bbox 対角距離の8倍超
+- `selfIntersection`: 外周または内周の非隣接辺が交差
+- `triangleRingRatio`: 外周が3頂点のとき `polygon area / bbox area < 0.015`
 
 ## 7. 互換性・移行方針
 - 正規キーは `tileEmitConfig.invalidGeometryFilter` のみとする。

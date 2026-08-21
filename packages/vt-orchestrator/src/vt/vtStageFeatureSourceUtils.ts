@@ -10,8 +10,8 @@ export const normalizeFeatureCollection = async (decoded: unknown): Promise<Feat
   if (!decoded || typeof decoded !== 'object') return null;
   const collection = decoded as FeatureCollection;
   if (collection.type === 'FeatureCollection') {
-    const features = Array.isArray(collection.features) ? collection.features : [];
-    return { ...collection, features };
+    if (!Array.isArray(collection.features)) return null;
+    return { ...collection, features: collection.features };
   }
   if (typeof (decoded as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
     const features: FeatureCollection['features'] = [];

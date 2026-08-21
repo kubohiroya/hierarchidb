@@ -3,6 +3,7 @@ import type { VTStageContext } from '~/contextTypes';
 import type { BandConfig, StageHandlerResult, VtTaskInput } from '~/types/types';
 import { resolveVtDebugFocusConfig } from './vtStageDebug.js';
 import type { TaskContextForVt, VtTaskExecutionInput } from './vtStageTaskTypes.js';
+import { assertTileEmitInvalidGeometryFilterConfig } from './filterInvalidGeometryForTileEmit.js';
 
 type VtTaskPreparationInput = {
   context: VTStageContext;
@@ -37,6 +38,7 @@ export type VtTaskPreparationResult =
 export const prepareVtTaskExecution = (params: VtTaskPreparationInput): VtTaskPreparationResult => {
   const { context, task } = params;
   const { bands, tileEmitConfig } = context;
+  assertTileEmitInvalidGeometryFilterConfig(tileEmitConfig.invalidGeometryFilter);
   const layerSetName = tileEmitConfig.layerSetName;
   if (!layerSetName) {
     return {

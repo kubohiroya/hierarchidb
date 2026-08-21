@@ -130,6 +130,63 @@ export const buildSimpleTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task,
   };
 };
 
+const readTileEmitWarningNumber = (
+  metadata: Record<string, unknown>,
+  key: string,
+  options: { integer: boolean; rate?: boolean },
+): number => {
+  const value = metadata[key];
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    throw new Error(`[shape-ui] tileEmit warning metadata.${key} must be a finite non-negative number`);
+  }
+  if (options.integer && !Number.isInteger(value)) {
+    throw new Error(`[shape-ui] tileEmit warning metadata.${key} must be an integer`);
+  }
+  if (options.rate && value > 1) {
+    throw new Error(`[shape-ui] tileEmit warning metadata.${key} must be within 0..1`);
+  }
+  return value;
+};
+
+export const isTileEmitWarningResult = (task: ShapeBuildTaskSummary): boolean => {
+  const severity = task.metadata?.resultSeverity;
+  if (severity === undefined) return false;
+  if (severity !== 'warning') {
+    throw new Error(`[shape-ui] unsupported tileEmit resultSeverity: ${String(severity)}`);
+  }
+  if (task.status !== 'completed') {
+    throw new Error(`[shape-ui] tileEmit warning result must have completed status: ${task.taskId}`);
+  }
+  return true;
+};
+
+export const buildTileEmitTaskOutcomeSummary: TaskOutcomeSummaryBuilder = (context) => {
+  const { task, translate } = context;
+  if (!isTileEmitWarningResult(task)) return buildSimpleTaskOutcomeSummary(context);
+  const metadata = task.metadata;
+  if (!metadata) throw new Error('[shape-ui] tileEmit warning metadata is required');
+  const filtered = readTileEmitWarningNumber(metadata, 'invalidPolygonFilteredCount', { integer: true });
+  const checked = readTileEmitWarningNumber(metadata, 'invalidPolygonCheckedCount', { integer: true });
+  const rate = readTileEmitWarningNumber(metadata, 'invalidPolygonFilteredRate', { integer: false, rate: true });
+  const affectedFeatures = readTileEmitWarningNumber(metadata, 'affectedFeatureCount', { integer: true });
+  const featureErrors = readTileEmitWarningNumber(metadata, 'featureErrorCountTotal', { integer: true });
+  const summaryLine = `${translate('task.status.warning', 'Warning')}: `
+    + `${translate('task.tileEmit.invalidGeometryFilter.filtered', 'Filtered polygons')} `
+    + `${formatInt(filtered)}/${formatInt(checked)} (${formatPercent(rate)})`;
+  return {
+    kind: 'completed',
+    visualization: 'none',
+    summaryLine,
+    detailLines: [
+      `${translate('task.tileEmit.invalidGeometryFilter.filtered', 'Filtered polygons')}: ${formatInt(filtered)}`,
+      `${translate('task.tileEmit.invalidGeometryFilter.checked', 'Checked polygons')}: ${formatInt(checked)}`,
+      `${translate('task.tileEmit.invalidGeometryFilter.rate', 'Filtered rate')}: ${formatPercent(rate)}`,
+      `${translate('task.tileEmit.invalidGeometryFilter.affectedFeatures', 'Affected features')}: ${formatInt(affectedFeatures)}`,
+      `${translate('task.tileEmit.invalidGeometryFilter.featureErrors', 'Feature errors')}: ${formatInt(featureErrors)}`,
+    ],
+  };
+};
+
 const readMetadataString = (metadata: Record<string, unknown> | undefined, keys: string[]): string | null => {
   for (const key of keys) {
     const rawValue = key.split('.').reduce<unknown>((current, segment) => {

@@ -2,6 +2,7 @@ import type { Feature } from 'geojson';
 import type { EphemeralGeometryCacheRecord } from '@hierarchidb/gis-sdk';
 import type { VTStageContext } from '~/contextTypes';
 import type { InputFeatureStats } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
+import type { CollectedFeatureSource } from './vtStageTaskTypes.js';
 import { collectFeaturesFromRecord } from './collectFeaturesFromRecord.js';
 
 type FeatureCollectorFlowInput = {
@@ -20,6 +21,7 @@ type FeatureCollectorState = {
   featureStats: InputFeatureStats[];
   bufferSizes: Map<string, number>;
   featuresByContinent?: Map<string, Feature[]>;
+  featureSources: Map<Feature, CollectedFeatureSource>;
 };
 
 export const executeFeatureCollectLoop = async (
@@ -36,6 +38,7 @@ export const executeFeatureCollectLoop = async (
   const featureStats: InputFeatureStats[] = [];
   const bufferSizes = new Map<string, number>();
   const featuresByContinent = options?.groupByContinent ? new Map<string, Feature[]>() : undefined;
+  const featureSources = new Map<Feature, CollectedFeatureSource>();
 
   for (const record of records) {
     await collectFeaturesFromRecord({
@@ -45,6 +48,7 @@ export const executeFeatureCollectLoop = async (
       featureStats,
       bufferSizes,
       featuresByContinent,
+      featureSources,
       continentByCountry: options?.continentByCountry,
       debugCollect,
     }, record);
@@ -62,5 +66,6 @@ export const executeFeatureCollectLoop = async (
     featureStats,
     bufferSizes,
     featuresByContinent,
+    featureSources,
   };
 };

@@ -8,6 +8,11 @@ import type {
   VtCollectionResult,
   VtTaskCollectInput,
 } from './vtStageTaskTypes.js';
+import {
+  applyTileEmitInvalidGeometryFilter,
+  buildTileEmitInvalidGeometryFilterTaskMetadata,
+} from './applyTileEmitInvalidGeometryFilter.js';
+import { createInvalidGeometryFilterProgressReporter } from './createInvalidGeometryFilterProgressReporter.js';
 
 export const collectForVtTask = async (
   context: VTStageContext,
@@ -38,14 +43,30 @@ export const collectForVtTask = async (
     return null;
   }
 
-  const metadata = buildTaskCollectionMetadata(band, parent, collected);
+  const filtered = await applyTileEmitInvalidGeometryFilter(
+    collected,
+    context,
+    createInvalidGeometryFilterProgressReporter({
+      taskId: taskContext.taskId,
+      nodeId: taskContext.nodeId,
+      abortSignal: context.abortSignal,
+    }),
+  );
+  const metadata = buildTaskCollectionMetadata(band, parent, filtered.collected);
+  const parentInputMetadata = buildTileEmitInvalidGeometryFilterTaskMetadata(
+    metadata.parentInputMetadata,
+    filtered.metrics,
+  );
   return {
-    ...collected,
+    ...filtered.collected,
     adminFeatureSummary: metadata.adminFeatureSummary,
     tilesByZoom: metadata.tilesByZoom,
     totalTiles: metadata.totalTiles,
-    parentInputMetadata: metadata.parentInputMetadata,
+    parentInputMetadata,
     intersectingFeatureCount: metadata.intersectingFeatureCount,
-    buildCompletedResult: metadata.buildCompletedResult,
+    buildCompletedResult: (message) => ({
+      ...metadata.buildCompletedResult(message),
+      metadata: parentInputMetadata,
+    }),
   };
 };
