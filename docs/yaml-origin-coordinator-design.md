@@ -375,8 +375,16 @@ CoreDB, and validate the resulting canonical YAML cohort before issuing
 migration planner, write migration journal rows, reset the coordinator, or transfer execution to
 another context. Any discovered version or schema other than missing or exact v1 is terminal.
 
-A `LEGACY_YAML_ACCESS_REVOKED` HELLO result never authorizes legacy bootstrap. After the successful
-v1-to-v2 activation or same-activation fresh-v2 creation, an activation-aware client may instead enter the canonical-only successor
+A `LEGACY_YAML_ACCESS_REVOKED` HELLO result never authorizes legacy bootstrap and is not by itself
+proof of `ready-for-preflight`, because the fixed coordinator returns the same code while an active
+quiescence request is still `quiescing`. The application therefore performs one read-only strict
+read of the existing coordinator database after that HELLO result and enters successor bootstrap
+only when the durable record is exact `revoked/ready-for-preflight`. A `quiescing`, `rejected`,
+invalid, missing, version-mismatched, or unreadable record is a terminal visible bootstrap failure;
+the application does not poll, retry, mutate the record, or expose participant identities.
+
+After the successful v1-to-v2 activation or same-activation fresh-v2 creation, an
+activation-aware client with that exact durable evidence may enter the canonical-only successor
 bootstrap. It must verify exact CoreDB v2 topology, the exact migration-journal schema, every current
 raw YAML slot as canonical, and current WorkerService initialization before issuing a fresh
 canonical-ready decision. A revoked result paired with CoreDB v1, an unknown version, invalid

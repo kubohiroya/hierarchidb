@@ -43,6 +43,7 @@ describe('TreeNodeUpdaterService canonical YAML dialog connector', () => {
   });
 
   afterEach(async () => {
+    (globalThis as { __HDB_SILENCE_WORKER_LOGS__?: boolean }).__HDB_SILENCE_WORKER_LOGS__ = true;
     coreDB.close();
     await coreDB.delete();
   });
@@ -73,6 +74,7 @@ describe('TreeNodeUpdaterService canonical YAML dialog connector', () => {
     const updater = new TreeNodeUpdaterService(coreDB, undefined, undefined, writer);
 
     const result = await updater.updateTreeNode(nodeId, {
+      dialogUIState: { dialogProgress: { activeStepIndex: 2 } },
       draftMetadata: {
         name: 'scenario.yml',
         description: 'Scenario',
@@ -80,7 +82,6 @@ describe('TreeNodeUpdaterService canonical YAML dialog connector', () => {
       },
       draftData: canonicalPayload,
       mode: 'save-draft',
-      onNameConflict: 'error',
     });
 
     expect(result.status).toBe('ok');
@@ -92,6 +93,7 @@ describe('TreeNodeUpdaterService canonical YAML dialog connector', () => {
         tags: ['demo'],
       },
       draftData: canonicalPayload,
+      dialogUIState: { dialogProgress: { activeStepIndex: 2 } },
       isTemporary: false,
     });
   });
@@ -103,15 +105,53 @@ describe('TreeNodeUpdaterService canonical YAML dialog connector', () => {
 
     await expect(
       updater.updateTreeNode(nodeId, {
+        dialogUIState: { dialogProgress: { activeStepIndex: 2 } },
         draftMetadata: { name: 'scenario.yml' },
         draftData: canonicalPayload,
         mode: 'save-draft',
-        onNameConflict: 'error',
       })
     ).rejects.toThrow('yaml-canonical-dialog-write-rejected:INVALID_INPUT');
 
     expect(writer).not.toHaveBeenCalled();
     expect(await coreDB.nodes.get(nodeId)).toEqual(before);
+  });
+
+  it('does not log canonical YAML content while saving', async () => {
+    const secretPayload = Object.freeze({
+      subtype: 'scenario',
+      schemaId: 'ide-gsm/scenario',
+      content: 'name: sanitized-debug-secret\n',
+    });
+    const writer = vi.fn<YamlCanonicalDialogWriter>(async (_input, writePort) => {
+      await writePort({
+        nodeId,
+        mode: 'save',
+        draftMetadata: {
+          name: 'scenario.yml',
+          description: 'Scenario',
+          tags: ['demo'],
+        },
+        draftData: secretPayload,
+        onNameConflict: 'error',
+      });
+      return { ok: true };
+    });
+    const debug = vi.spyOn(console, 'debug').mockImplementation(() => undefined);
+    (globalThis as { __HDB_SILENCE_WORKER_LOGS__?: boolean }).__HDB_SILENCE_WORKER_LOGS__ = false;
+    const updater = new TreeNodeUpdaterService(coreDB, undefined, undefined, writer);
+
+    await updater.updateTreeNode(nodeId, {
+      dialogUIState: { dialogProgress: { activeStepIndex: 2 } },
+      draftMetadata: {
+        name: 'scenario.yml',
+        description: 'Scenario',
+        tags: ['demo'],
+      },
+      draftData: secretPayload,
+      mode: 'save',
+    });
+
+    expect(JSON.stringify(debug.mock.calls)).not.toContain('sanitized-debug-secret');
   });
 
   it('rejects split YAML draft mutation methods without writing', async () => {

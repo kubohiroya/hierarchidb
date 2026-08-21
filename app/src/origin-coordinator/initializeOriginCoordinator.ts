@@ -7,6 +7,7 @@ import {
   ORIGIN_COORDINATOR_QUIESCENCE_BRIDGE_CAPABILITY,
 } from '@hierarchidb/origin-coordinator';
 import { OriginCoordinatorClientError } from './OriginCoordinatorClientError.js';
+import { readOriginCoordinatorStateDb } from './originCoordinatorStateDbUtils.js';
 import {
   parseOriginCoordinatorHelloResult,
   parseOriginCoordinatorQuiescenceResult,
@@ -264,6 +265,17 @@ export function initializeOriginCoordinator(
       throw new OriginCoordinatorClientError('INVALID_COORDINATOR_RESPONSE');
     }
     if (result.status === 'rejected' && result.code === 'LEGACY_YAML_ACCESS_REVOKED') {
+      if (typeof indexedDB === 'undefined') {
+        throw new OriginCoordinatorClientError('HELLO_REJECTED');
+      }
+      const durableState = await readOriginCoordinatorStateDb(indexedDB);
+      if (
+        !durableState.ok ||
+        durableState.state.phase !== 'revoked' ||
+        durableState.state.status !== 'ready-for-preflight'
+      ) {
+        throw new OriginCoordinatorClientError('HELLO_REJECTED');
+      }
       return Object.freeze({
         status: 'canonical-revoked',
         coordinatorGate: 'revoked-ready-for-preflight',

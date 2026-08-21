@@ -47,6 +47,11 @@ export type YamlCanonicalDialogWriter = (
   Readonly<{ readonly ok: boolean; readonly error?: Readonly<{ readonly code: string }> }>
 >;
 
+interface YamlCanonicalDialogInput {
+  readonly writerInput: Readonly<Record<string, unknown>>;
+  readonly dialogUIState: DialogUIState | null;
+}
+
 function readOwnDataProperty(
   value: object,
   key: PropertyKey
@@ -76,24 +81,41 @@ function hasExactOwnKeys(value: unknown, expectedKeys: readonly string[]): value
   }
 }
 
+function isPlainOwnDataRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
+  try {
+    const prototype = Object.getPrototypeOf(value);
+    return (
+      (prototype === Object.prototype || prototype === null) &&
+      Reflect.ownKeys(value).every((key) => {
+        if (typeof key !== 'string') return false;
+        const descriptor = Object.getOwnPropertyDescriptor(value, key);
+        return descriptor !== undefined && Object.hasOwn(descriptor, 'value');
+      })
+    );
+  } catch {
+    return false;
+  }
+}
+
 function createYamlCanonicalDialogInput(
   nodeId: NodeId,
   request: CommitDraftRequest<TreeNodeData> | undefined
-): Readonly<Record<string, unknown>> | null {
-  if (!hasExactOwnKeys(request, ['draftMetadata', 'draftData', 'mode', 'onNameConflict'])) {
+): YamlCanonicalDialogInput | null {
+  if (!hasExactOwnKeys(request, ['draftMetadata', 'draftData', 'dialogUIState', 'mode'])) {
     return null;
   }
   const draftMetadata = readOwnDataProperty(request, 'draftMetadata');
   const draftData = readOwnDataProperty(request, 'draftData');
+  const dialogUIState = readOwnDataProperty(request, 'dialogUIState');
   const mode = readOwnDataProperty(request, 'mode');
-  const onNameConflict = readOwnDataProperty(request, 'onNameConflict');
   if (
     !draftMetadata.ok ||
     !draftData.ok ||
+    !dialogUIState.ok ||
     !mode.ok ||
-    !onNameConflict.ok ||
     (mode.value !== 'save' && mode.value !== 'save-draft') ||
-    onNameConflict.value !== 'error' ||
+    (dialogUIState.value !== null && !isPlainOwnDataRecord(dialogUIState.value)) ||
     !hasExactOwnKeys(draftMetadata.value, ['name', 'description', 'tags'])
   ) {
     return null;
@@ -103,12 +125,15 @@ function createYamlCanonicalDialogInput(
   const tags = readOwnDataProperty(draftMetadata.value, 'tags');
   if (!name.ok || !description.ok || !tags.ok) return null;
   return Object.freeze({
-    nodeId,
-    mode: mode.value,
-    filename: name.value,
-    description: description.value,
-    tags: tags.value,
-    payload: draftData.value,
+    writerInput: Object.freeze({
+      nodeId,
+      mode: mode.value,
+      filename: name.value,
+      description: description.value,
+      tags: tags.value,
+      payload: draftData.value,
+    }),
+    dialogUIState: dialogUIState.value as DialogUIState | null,
   });
 }
 
@@ -489,21 +514,25 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
         throw new Error('yaml-canonical-dialog-write-rejected:INVALID_INPUT');
       }
       let commitResult: CommitResult | null = null;
-      const writerResult = await this.yamlCanonicalDialogWriter(input, async (canonicalRequest) => {
-        if (canonicalRequest.nodeId !== draftId) {
-          throw new Error('yaml-canonical-dialog-node-id-mismatch');
+      const writerResult = await this.yamlCanonicalDialogWriter(
+        input.writerInput,
+        async (canonicalRequest) => {
+          if (canonicalRequest.nodeId !== draftId) {
+            throw new Error('yaml-canonical-dialog-node-id-mismatch');
+          }
+          commitResult = await this.updateTreeNodeUnchecked(draftId, {
+            mode: canonicalRequest.mode,
+            draftMetadata: {
+              name: canonicalRequest.draftMetadata.name,
+              description: canonicalRequest.draftMetadata.description,
+              tags: [...canonicalRequest.draftMetadata.tags],
+            },
+            draftData: canonicalRequest.draftData,
+            dialogUIState: input.dialogUIState,
+            onNameConflict: canonicalRequest.onNameConflict,
+          });
         }
-        commitResult = await this.updateTreeNodeUnchecked(draftId, {
-          mode: canonicalRequest.mode,
-          draftMetadata: {
-            name: canonicalRequest.draftMetadata.name,
-            description: canonicalRequest.draftMetadata.description,
-            tags: [...canonicalRequest.draftMetadata.tags],
-          },
-          draftData: canonicalRequest.draftData,
-          onNameConflict: canonicalRequest.onNameConflict,
-        });
-      });
+      );
       if (!writerResult.ok) {
         throw new Error(
           `yaml-canonical-dialog-write-rejected:${writerResult.error?.code ?? 'UNKNOWN'}`
@@ -592,19 +621,16 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
       const node = this.normalizeForUpdater(nodeMaybe ?? undefined, requestedName);
       if (shouldLogDebug) {
         const draftMeta = (node as { draftMetadata?: TreeNodeMetadata | null })?.draftMetadata;
-        const draftData = (node as { draftData?: Record<string, unknown> })?.draftData;
         const dialogUIState = (node as { dialogUIState?: DialogUIState | null })?.dialogUIState;
         console.debug('[DraftService] commitDraft save-draft result', {
           nodeId: draftId,
           persistedNode: node
             ? {
-              id: node.id,
-              metadata: node.metadata,
-              data: node.data,
-              draftMetadata: draftMeta,
-              draftData,
-              dialogUIState,
-            }
+                id: node.id,
+                metadata: node.metadata,
+                draftMetadata: draftMeta,
+                dialogUIState,
+              }
             : null,
         });
       }
@@ -629,7 +655,6 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
         (await this.ensureDialogUIState(nodeMaybe ?? undefined, false)) ?? nodeMaybe ?? undefined;
       const node = this.normalizeForUpdater(nodeMaybe ?? undefined, requestedName);
       const draftMeta = (node as { draftMetadata?: TreeNodeMetadata | null })?.draftMetadata;
-      const draftData = (node as { draftData?: Record<string, unknown> })?.draftData;
       console.debug('[DraftService] commitDraft result', {
         status: result.status,
         nodeId: result.status === 'ok' ? result.nodeId : undefined,
@@ -639,12 +664,10 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
         wcVersion: result.status === 'COMMIT_CONFLICT' ? result.wcVersion : undefined,
         persistedNode: node
           ? {
-            id: node.id,
-            metadata: node.metadata,
-            data: node.data,
-            draftMetadata: draftMeta,
-            draftData,
-          }
+              id: node.id,
+              metadata: node.metadata,
+              draftMetadata: draftMeta,
+            }
           : null,
       });
     }

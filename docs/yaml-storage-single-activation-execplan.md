@@ -26,6 +26,7 @@ After completion, YAML filenames live only in the matching metadata slot and YAM
 - [x] 2026-08-21: Ran the CI-style naming baseline comparison: base 3 errors to head 3 errors, with zero new naming errors.
 - [ ] Reconcile #1340's raw `pnpm format` and raw naming commands with the repository baseline before claiming every recorded command exits zero.
 - [ ] Record verification in #1340 and prepare the single-purpose PR after separate publication approval.
+- [x] 2026-08-21: Addressed PR review findings for durable successor evidence, terminal Worker failure propagation, production dialog request shape, YAML create bootstrap, and YAML-content logging; scoped typecheck completed 193/193 tasks and scoped test completed 98/98 tasks.
 
 ## Surprises and discoveries
 
@@ -36,6 +37,7 @@ After completion, YAML filenames live only in the matching metadata slot and YAM
 - At the plan start, the YAML plugin preload opened YamlDB in the application window before runtime creation. The implementation removes that production preload rather than repurposing it as an activation gate.
 - The generic TreeNode updater already sends draft metadata and draft data in one `updateTreeNode()` request. The canonical dialog connector can validate the exact YAML input and delegate to one internal updater operation without adding a second write.
 - A genuinely fresh installation has no CoreDB. Treating missing as a terminal preflight error would permanently block new users, so only the sole allowed/quiesced executor receives a distinct oldVersion-0 fresh-v2 path. Revoked successor inspection still treats missing as terminal.
+- The fixed coordinator intentionally returns `LEGACY_YAML_ACCESS_REVOKED` for both active `quiescing` and durable `ready-for-preflight`; application code must strictly reread the existing durable record before constructing successor evidence.
 
 ## Decision log
 
@@ -64,6 +66,14 @@ After completion, YAML filenames live only in the matching metadata slot and YAM
   Rationale: New installations otherwise stop permanently at `CORE_DB_NOT_FOUND`. The sole
   quiescence winner can safely create exact v2 with one oldVersion-0 target request, while a
   successor missing the database still indicates corruption or deletion and remains terminal.
+  Date: 2026-08-21.
+
+- Decision: Confirm an exact durable `revoked/ready-for-preflight` record in the application after
+  a revoked HELLO and before creating the canonical Worker.
+  Rationale: The byte-fixed coordinator HELLO intentionally collapses active `quiescing` and ready
+  into the same revoked code. A single strict read preserves the fixed coordinator graph while
+  preventing an in-progress activation from being promoted to successor evidence. The read never
+  polls, mutates coordinator state, or exposes participant identities.
   Date: 2026-08-21.
 
 ## Context and orientation

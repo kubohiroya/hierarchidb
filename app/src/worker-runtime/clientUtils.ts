@@ -104,6 +104,7 @@ const ensureSharedWorkerReady = (): void => {
 
 const MAINTENANCE_LOCK_POLL_MS = 1_000;
 const MAINTENANCE_LOCK_MAX_WAIT_MS = 30_000;
+const WORKER_INITIALIZATION_TIMEOUT_MS = 30_000;
 
 const wait = (ms: number): Promise<void> =>
   new Promise((resolve) => {
@@ -129,6 +130,46 @@ function isWorkerServicesReadyMessage(value: unknown): value is WorkerServicesRe
     candidate.source === 'worker' &&
     typeof candidate.at === 'number'
   );
+}
+
+function waitForWorkerInitialization(target: MessagePort): Promise<void> {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const finish = (error: Error | null): void => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      target.removeEventListener('message', onMessage);
+      target.removeEventListener('messageerror', onMessageError);
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    };
+    const onMessage = (event: MessageEvent<unknown>): void => {
+      if (!isWorkerInitMessage(event.data)) return;
+      if (event.data.type === 'INIT_COMPLETE') {
+        finish(null);
+      } else if (event.data.type === 'INIT_ERROR') {
+        finish(new Error('runtime-worker-initialization-failed'));
+      }
+    };
+    const onMessageError = (): void => {
+      finish(new Error('runtime-worker-initialization-failed'));
+    };
+    const timer = setTimeout(
+      () => finish(new Error('runtime-worker-initialization-timeout')),
+      WORKER_INITIALIZATION_TIMEOUT_MS
+    );
+    target.addEventListener('message', onMessage);
+    target.addEventListener('messageerror', onMessageError);
+    try {
+      target.postMessage({ type: 'INIT_REQUEST', timestamp: Date.now() });
+    } catch {
+      finish(new Error('runtime-worker-initialization-failed'));
+    }
+  });
 }
 
 const attachMessageHandlers = (target: MessagePort) => {
@@ -287,6 +328,7 @@ export async function initializeWorker(): Promise<Remote<BuildWorkerAPI>> {
       });
       rawSharedWorkerPort.start();
       attachMessageHandlers(rawSharedWorkerPort);
+      await waitForWorkerInitialization(rawSharedWorkerPort);
 
       const Comlink = await import('comlink');
       const worker = Comlink.wrap<BuildWorkerAPI>(rawSharedWorkerPort);
@@ -296,6 +338,9 @@ export async function initializeWorker(): Promise<Remote<BuildWorkerAPI>> {
     } catch (error) {
       console.error(`[client:initWorker] failed attempt ${attempt + 1}:`, error);
       cleanupWorkerHandles();
+      if (canonicalWorkerBootConfigured) {
+        throw error;
+      }
       if (attempt < RETRY_DELAYS.length) {
         const delay = RETRY_DELAYS[attempt];
         await new Promise((r) => setTimeout(r, delay));
