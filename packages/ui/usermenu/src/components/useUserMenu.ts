@@ -3,6 +3,7 @@ import { detectUserLanguage, useLanguage } from '@hierarchidb/ui-i18n';
 import type { ThemeMode } from '@hierarchidb/ui-theme';
 import { ThemeContext } from '@hierarchidb/ui-theme';
 import { useCallback, useContext, useEffect, useId, useState } from 'react';
+import { createProviderSignInHandler } from './createProviderSignInHandler.js';
 
 export type LanguageSelection = 'system' | string;
 
@@ -249,9 +250,7 @@ export const useUserMenu = (): UserMenuState => {
   const openLanguageMenu = (anchor: HTMLElement) => setLanguageMenuAnchorEl(anchor);
   const closeLanguageMenu = () => setLanguageMenuAnchorEl(null);
 
-  const signInWithProvider = (_provider: AuthProviderType) => {
-    signIn({ isUserInitiated: true });
-  };
+  const signInWithProvider = createProviderSignInHandler(signIn);
 
   const themeContextAvailable = Boolean(themeContext);
 

@@ -5,7 +5,7 @@ import { useAuthProviderPromptView } from './useAuthProviderPromptView.js';
 
 interface AuthProviderPromptProps {
   isLoadingAuth: boolean;
-  onSignIn: (provider?: AuthProviderType) => void;
+  onSignIn: (provider: AuthProviderType) => void;
   title?: string;
   subtitle?: string;
 }

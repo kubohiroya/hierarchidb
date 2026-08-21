@@ -7,13 +7,14 @@
 import type { AuthProviderType } from '~/types/AuthProviderType';
 import { AuthSessionStorage, type BFFUser } from './AuthSessionStorage.js';
 import { maybeEmitBffWarning, readWarningFromResponse } from './BffWarning.js';
+import { requireAuthProvider } from './requireAuthProvider.js';
 
 export type { BFFUser } from './AuthSessionStorage.js';
 
 export interface BFFSignInOptions {
   returnUrl?: string;
   method?: 'popup' | 'redirect';
-  provider?: AuthProviderType;
+  provider: AuthProviderType;
 }
 
 export interface BFFAuthResponse {
@@ -73,7 +74,8 @@ export class BFFAuthService {
    * Initiates OAuth2 flow with the selected provider
    */
   async signIn(options: BFFSignInOptions): Promise<BFFUser> {
-    const { method = 'redirect', provider = 'google', returnUrl } = options;
+    const { method = 'redirect', returnUrl } = options;
+    const provider = requireAuthProvider(options.provider);
 
     if (method === 'popup') {
       return this.signInWithPopup(provider, returnUrl);

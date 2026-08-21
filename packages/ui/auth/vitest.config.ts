@@ -8,6 +8,7 @@ const defaultTestFiles = [
   'src/services/__tests__/createAuthSessionStorageBridge.unit.test.ts',
   'src/services/__tests__/UIAuthRecoveryClient.unit.test.ts',
   'src/services/__tests__/BffWarning.unit.test.ts',
+  'src/services/__tests__/requireAuthProvider.unit.test.ts',
   'src/services/__tests__/resolveAuthReturnUrl.unit.test.ts',
   'src/services/__tests__/startAuthCallbackNavigation.unit.test.ts',
 ];
