@@ -1,162 +1,128 @@
-# 現行 Route パイプライン（実装実体）
+# Route pipeline migration map
 
-### 全体フロー
+最終更新: 2026-08-21
 
-- この設計で最終成果物は `Route LineString` のベクトル地図タイル。  
-  そのため最重要経路は `Fetch -> Transform -> VT` の3ステージである。
-- 別種のワーカー実体を起動する構成ではなく、`runStageTasks` の実行器は `stage` と `taskFilter` を切り替えて同一ランナーで処理する。
-- `searoute_jp` は現状 `searoute` 実装へのフォールバック前提で扱う。
+## 文書の位置づけ
 
-### 実装要件の写像（今回の説明をそのまま反映）
+本書はIssue #549でroute buildを正規3ステージへ統合するための移行図である。
+仕様SSOTではない。次の正規仕様に従う。
 
-- Fetch は必須実装。`mode` 別に幾何を作る。  
-  - `mode direct` は原点・終点の直線
-  - `mode great_circle` は大圏路線
-  - `mode searoute_jp`（現状は `searoute`）は海路生成
-  - `mode osm_route` は将来 OSM API 呼び出し
-  - `mode custom` は将来外部由来の代替ルート
-- Transform は `route` の品質維持を担う必須処理。  
-  - ズーム帯ごとに、始点/終点重なりを起点に線の可視性崩れを防ぐフィルタ  
-  - ズーム帯ごとに RDP で中継点を間引き（端点は必ず保持）  
-  - ズーム帯ごとの転置インデックスを作成
-- VT は Shape と同型。Transform の結果を受け、band 別の最終ベクトルタイル生成に進む。
+- `docs/route-build-flow-spec.md`
+- `docs/vt-route-pipeline-design.md`
+- `docs/build-session-worker-ui-event-spec.md`
 
-- Shape/Route の共通化方針:
-  - Fetch は mode/ソース由来幾何生成とキャッシュ永続化を担う。
-  - Transform はズーム帯別フィルタと簡略化、転置インデックス作成を担う。
-  - VT は生成済み transform cache を再利用して MVT 化する。
+## 正規フロー
 
 ```mermaid
 flowchart TD
-  A[RouteBuildManager.startRouteBuildSession] --> A1[RouteBuildTask生成]
-  A1 --> A2[RouteBuildSession.processBatch]
-  A2 --> R1[Fetch Stage]
-  R1 --> R2[Transform Stage]
-  R2 --> R3[VT Stage]
-  R3 --> R4[Done]
+  UI[RouteBuildStep] --> CMD[canonical Worker build command]
+  CMD --> ORCH[RouteBuildSessionOrchestrator]
+  ORCH --> SESSION[RouteBuildSession]
+  SESSION --> SOURCE[source]
+  SOURCE --> GEOMETRY[geometry]
+  GEOMETRY --> TILE[tileEmit]
+  TILE --> DONE[completed]
 
-  U --> R1
-  U --> R2
-  U --> R3
+  SESSION --> EVENTS[canonical 4 Worker events]
+  EVENTS --> UI
 ```
 
-### 実装上の補足（No-op 由来の混線除去）
+正規stage IDは`source / geometry / tileEmit`である。旧語は次の対応で読み替える。
 
-- `validation` と `vt` を独立実体として解釈しない。  
-  この設計記述では VT は Shape同型の MVT化責務までを含む最終実体。  
-- 旧実装で見える `Route Tile Output` への分割呼び出しは、設計上 VT の内部責務として統合して扱う。
+| 正規stage | 旧語 |
+| --- | --- |
+| `source` | fetch, route-fetch |
+| `geometry` | transform |
+| `tileEmit` | vt, vectorTile |
 
-### Fetch Stage
+## source
 
 ```mermaid
-flowchart TB
-  subgraph RF[Fetch Stage
-  RouteBuildSession.processBatch
-  plugins/route-plugin/src/services/RouteBuildSession.ts]
-    direction LR
-    RF0[fetch runStageTasks 開始]
-    RF1[runStageTasks stage fetch]
-    RF2[タスクメタ情報を元に mode 分岐]
-    RF3[Fork fetch worker pool]
-    RF4[parallel task 処理]
-    RF5[Join barrier]
-    RF6[Fetch cache 永続化]
-    RF7[Fetch task 完了]
-
-    RF0 --> RF1 --> RF2 --> RF3 --> RF4 --> RF5 --> RF6 --> RF7
-  end
-
-  subgraph WF[Fetch task handler
-  plugins/route-plugin/src/services/RouteBuildSession.ts]
-    direction LR
-    WF1[task 受領]
-    WF2[mode direct/great_circle/searoute_jp/osm_route/custom 判定]
-    WF3[origin/destination 解決]
-    WF4[幾何を生成]
-    WF5[fetch cache 追記]
-    WF6[Task status completed]
-    WF1 --> WF2 --> WF3 --> WF4 --> WF5 --> WF6
-  end
+flowchart LR
+  S0[data-source + Step3 selection]
+  S1[location resolution]
+  S2[explicit route engine]
+  S3[original LineString]
+  S4[source cache + lineage]
+  S5[geometry tasks]
+  S0 --> S1 --> S2 --> S3 --> S4 --> S5
 ```
 
-### Transform Stage route simplification
+- routeごとにオリジナルLineStringを1本だけ生成する。
+- engineは`direct / great_circle / osm_route / searoute / custom`から明示する。
+- engine欠落、未対応method、load失敗を別engineへfallbackしない。
+- `searoute_jp`を`searoute`の別名として受理しない。入力に現れた場合は契約違反として失敗する。
+- source artifactの永続化後にのみsource taskを完了する。
+
+## geometry
 
 ```mermaid
-flowchart TB
-  subgraph RT[Transform Stage
-  RouteBuildSession.processBatch]
-    direction LR
-    RT0[runStageTasks stage transform]
-    RT1[route generation 以外の task を除外]
-    RT2[Fork transform worker pool]
-    RT3[ズーム帯別 route-filter を適用]
-    RT4[ズーム帯別 RDP 簡略化]
-    RT5[ズーム帯別転置インデックス作成]
-    RT6[Join barrier]
-    RT7[Task status completed]
-
-    RT0 --> RT1 --> RT2 --> RT3 --> RT4 --> RT5 --> RT6 --> RT7
-  end
-
-  subgraph WT[Transform task handler
-  plugins/route-plugin/src/services/RouteBuildSession.ts]
-    direction LR
-    WT1[task 受領]
-    WT2[始点と終点の重なり判定]
-    WT3[始点終点を保護した RDP 処理]
-    WT4[中継点間のズーム帯別簡略化]
-    WT5[Tile candidate を band index 化]
-    WT6[transform cache 永続化]
-    WT1 --> WT2 --> WT3 --> WT4 --> WT5 --> WT6
-  end
+flowchart LR
+  G0[source cache]
+  G1[zoom-band filtering]
+  G2[endpoint-preserving RDP]
+  G3[tile-to-route inverted index]
+  G4[geometry cache]
+  G5[tileEmit tasks]
+  G0 --> G1 --> G2 --> G3 --> G4 --> G5
 ```
 
-### VT Stage（Shape 同型）
+- filtering、simplification、index生成を同じstageで行う。
+- 始点/終点は必ず保持する。
+- LineStringが横切るtileを、端点がtile外でもindexへ含める。
+- no-op handlerはtaskを`completed`にしない。
+
+## tileEmit
 
 ```mermaid
-flowchart TB
-  subgraph RVT[VT Stage
-  RouteBuildSession.processBatch
-  plugins/route-plugin/src/services/RouteBuildSession.ts]
-    direction LR
-    VT0[runStageTasks stage vt]
-    VT1[Route tile 対応バンドを列挙]
-    VT2[Fork vt worker pool]
-    VT3[route-transform cache を読む]
-    VT4[band ごとに MVT 生成]
-    VT5[Join barrier]
-    VT6[Task status completed]
-
-    VT0 --> VT1 --> VT2 --> VT3 --> VT4 --> VT5 --> VT6
-  end
-
-  subgraph WV[VT worker handler
-  RouteBuildSession.processBatch
-  plugins/route-plugin/src/services/RouteBuildSession.ts]
-    direction LR
-    WV1[task 受領]
-    WV2[必要バンドの cache を取得]
-    WV3[Vector tile 作成]
-    WV4[Tile 永続化]
-    WV1 --> WV2 --> WV3 --> WV4
-  end
+flowchart LR
+  T0[geometry cache + index]
+  T1[tile clipping]
+  T2[MVT encoding]
+  T3[route vector-tile store]
+  T4[tile summary]
+  T0 --> T1 --> T2 --> T3 --> T4
 ```
+
+- geometry成果物だけを入力とする。
+- MVTとsummaryの永続化後にtask/stageを完了する。
+- geometry成果物欠落をsource直読みや空tileで補完しない。
+
+## 現行mainの二重経路
+
+2026-08-21時点では、次の2経路が併存する。
 
 ```mermaid
-flowchart TB
-  subgraph RO[VT出力（Shape同型）]
-    direction LR
-    RO1[VT処理完了通知]
-    RO2[band ごとのtransform cache参照]
-    RO3[transform cache -> MVT feature化]
-    RO4[TileID でバンド分割書き出し]
-    RO5[ベクトルタイル永続化]
-    RO6[Done]
-    RO1 --> RO2 --> RO3 --> RO4 --> RO5 --> RO6
-  end
+flowchart TD
+  UI[RouteBuildStep]
+  UI --> DIRECT[importIdeGsmRoutes]
+  DIRECT --> INDEX[buildRouteTileIndex]
+  INDEX --> MVT[generateRouteVectorTiles]
+
+  FORM[RouteBuildLaunchForm]
+  FORM --> ORCH[RouteBuildSessionOrchestrator]
+  ORCH --> SESSION[RouteBuildSession]
+  SESSION --> SOURCE[source: generation]
+  SESSION --> NOOP1[geometry: no-op]
+  SESSION --> NOOP2[tileEmit: no-op]
 ```
 
-### 補足
+直接経路は実成果物を生成するがcanonical session/eventの所有外である。
+session経路はcanonical event sourceだがgeometry/tileEmitが実処理を行わない。
+どちらも単独では正規仕様を満たさない。
 
-- VT は Shape と同様に、transform cache を consume して MVT 保存まで担当する中間ステージとして明示する。
-- ベクタタイル最終化は `RouteBuildSession` 内部で VT を経由し、UI側の成果物生成 API と同等の責務分離に収束させる方針。
+## Issue #549の統合順
+
+1. `RouteBuildSession`の各stageをWorker serviceの実処理へ接続する。
+2. canonical command/APIから`RouteBuildSessionOrchestrator`を起動可能にする。
+3. `RouteBuildStep`をcanonical command + event subscriptionへ切り替える。
+4. UIの直接3処理経路を削除する。
+5. `RouteBuildLaunchForm`が本番導線でない場合は削除し、必要なら同じcanonical commandへ接続する。
+6. 同一nodeIdに複数session/runが存在しないことをテストする。
+
+## 完了条件
+
+- UIからWorkerまで正規entry pointが1つである。
+- `source -> geometry -> tileEmit`の各stageに対応artifactがある。
+- canonical 4イベントがstage/taskのauthoritative stateを配信する。
+- no-op成功、暗黙fallback、別経路への互換切替が存在しない。

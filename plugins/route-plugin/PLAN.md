@@ -1,5 +1,10 @@
 # Route Plugin — Build Processing Implementation Plan
 
+> **Status (2026-08-21): historical plan.**
+> 本書は2025年時点のjob構想と旧パスを含むため、現行route buildの仕様・着手順には使用しない。
+> 正規仕様は`docs/route-build-flow-spec.md`と`docs/vt-route-pipeline-design.md`、
+> 実施順は親Issue #1356に従う。特に旧stage名、互換shim、暗黙fallbackの記述は非規範とする。
+
 Status: Draft (to be refined with reviewer input)
 Target Branch: `feat/route/build-processing-implementation`
 Last Updated: 2025-09-06
