@@ -1,5 +1,5 @@
 import { computePercentage, type TaskCountSummary } from '@hierarchidb/ui-build-sessions';
-import type { BuildProgress } from './shapeBuildProgressMapping.js';
+import type { BuildProgress } from './shapeBuildProgressTypes.js';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import type { StageCountInfo } from './shapeBuildProgressSummaryCountHelpers.js';
 

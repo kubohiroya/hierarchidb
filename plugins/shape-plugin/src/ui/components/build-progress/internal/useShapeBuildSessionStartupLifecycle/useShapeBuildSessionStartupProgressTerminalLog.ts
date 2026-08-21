@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { isTaskPhaseDisplay } from '~/common/utils/taskMessageUtils';
-import type { BuildProgress } from '~/ui/components/build-progress/shapeBuildProgressMapping';
+import type { BuildProgress } from '~/ui/components/build-progress/shapeBuildProgressTypes';
 import type { BuildSessionTransitionState } from '@hierarchidb/ui-build-progress/build-session';
 import type { BuildSessionTransitionPhase } from '../useShapeBuildSessionHelpers/startupTrace';
-import type { BuildSessionDisplayStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
+import type { BuildSessionDisplayStatus } from '~/ui/components/build-progress/shapeBuildProgressTypes';
 
 type UseShapeBuildSessionStartupProgressTerminalLogArgs = {
   buildStatus: BuildSessionDisplayStatus['status'];

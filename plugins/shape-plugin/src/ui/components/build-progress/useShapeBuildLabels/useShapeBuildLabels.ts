@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import type { TaskCountSummary } from '@hierarchidb/ui-build-sessions';
-import type { BuildProgress, BuildSessionDisplayStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
+import type { BuildProgress, BuildSessionDisplayStatus } from '~/ui/components/build-progress/shapeBuildProgressTypes';
 import { formatTaskDisplayMessage } from '~/ui/components/build-progress/formatTaskDisplayMessage';
 
 type Translate = (key: string, fallback?: string, options?: Record<string, unknown>) => string;

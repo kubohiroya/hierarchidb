@@ -1,5 +1,5 @@
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
-import type { BuildSessionDisplayStatus } from './shapeBuildProgressMapping.js';
+import type { BuildSessionDisplayStatus } from './shapeBuildProgressTypes.js';
 import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import type { BuildTaskSummary, TaskStage } from '@hierarchidb/build-api';
 import { resolveMostAdvancedStageId } from './stagePriorityConstants.js';
