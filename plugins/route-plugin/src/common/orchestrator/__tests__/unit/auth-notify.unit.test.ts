@@ -1,17 +1,22 @@
-import { describe, it, expect, vi } from 'vitest';
-import { RouteSourceOrchestrator } from '../RouteSourceOrchestrator';
 import { FetchNetworkPort, registerPluginAuthNotifier } from '@hierarchidb/download';
-import type { RouteBuildSpec } from '../types';
+import { describe, expect, it, vi } from 'vitest';
+import { RouteSourceOrchestrator } from '../../RouteSourceOrchestrator';
+import type { RouteBuildSpec } from '../../types';
 
 describe('RouteSourceOrchestrator auth notifier', () => {
   it('notifies on auth error during preview download', async () => {
     const spy = vi.fn();
     registerPluginAuthNotifier('route', spy);
 
-    const getMock = vi.spyOn(FetchNetworkPort.prototype, 'get').mockResolvedValue(createResponse({ ok: false, status: 401 }));
+    const getMock = vi
+      .spyOn(FetchNetworkPort.prototype, 'get')
+      .mockResolvedValue(createResponse({ ok: false, status: 401 }));
 
     const orch = new RouteSourceOrchestrator();
-    const spec: RouteBuildSpec = { sources: [{ type: 'csv', url: 'https://example.com/protected.csv' }], defaults: {} };
+    const spec: RouteBuildSpec = {
+      sources: [{ type: 'csv', url: 'https://example.com/protected.csv' }],
+      defaults: {},
+    };
 
     await expect(orch.preview(spec)).rejects.toThrowError();
     expect(spy).toHaveBeenCalledTimes(1);

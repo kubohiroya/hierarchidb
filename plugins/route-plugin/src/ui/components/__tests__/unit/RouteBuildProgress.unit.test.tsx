@@ -1,24 +1,35 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import { RouteBuildLiveProgress } from '../RouteBuildLiveProgress';
-import { RouteBuildSummary } from '../RouteBuildSummary';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { RouteBuildLiveProgress } from '../../RouteBuildLiveProgress';
+import { RouteBuildSummary } from '../../RouteBuildSummary';
 
-const mockUseRouteBuildProgress = vi.fn();
+const { mockUseRouteBuildProgress } = vi.hoisted(() => ({
+  mockUseRouteBuildProgress: vi.fn(),
+}));
 
 beforeEach(() => {
   mockUseRouteBuildProgress.mockReset();
 });
 
-vi.mock('../../hooks/useRouteBuildProgress.js', () => ({
+vi.mock('~/ui/hooks/useRouteBuildProgress', () => ({
   useRouteBuildProgress: mockUseRouteBuildProgress,
 }));
 
+vi.mock('@hierarchidb/ui-i18n', () => ({
+  useTranslation: () => ({
+    t: (_key: string, fallback?: string) => fallback ?? '',
+  }),
+}));
+
 describe('RouteBuildLiveProgress', () => {
-  it('exposes progress indicators via data-testid attributes', () => {
+  it('renders progress, stage, and pause control', () => {
     mockUseRouteBuildProgress.mockReturnValue({
       snapshot: undefined,
       ready: true,
-      progress: { percentage: 42, stage: 'routing' },
+      progress: {
+        stage: 'routing',
+        payload: { total: 100, completed: 42, failed: 0, skipped: 0 },
+      },
       status: { status: 'running' },
       isPaused: false,
       isMutating: false,
@@ -30,18 +41,19 @@ describe('RouteBuildLiveProgress', () => {
 
     render(<RouteBuildLiveProgress jobId="job-1" />);
 
-    const root = screen.getByTestId('route-live-progress');
-    expect(root).toHaveAttribute('data-progress-atoms', 'running');
-    expect(screen.getByTestId('route-live-progress-percentage').textContent).toBe('42%');
-    expect(screen.getByTestId('route-live-progress-stage').textContent).toBe('ルート生成');
-    expect(screen.getByTestId('route-live-progress-toggle')).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByText('42%')).toBeInTheDocument();
+    expect(screen.getByText('routing')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Pause' })).toBeEnabled();
   });
 
-  it('marks paused atoms and surfaces mutation errors', () => {
+  it('renders resume control and mutation errors while paused', () => {
     mockUseRouteBuildProgress.mockReturnValue({
       snapshot: undefined,
       ready: true,
-      progress: { percentage: 55, stage: 'routing' },
+      progress: {
+        stage: 'routing',
+        payload: { total: 100, completed: 55, failed: 0, skipped: 0 },
+      },
       status: { status: 'paused' },
       isPaused: true,
       isMutating: false,
@@ -53,18 +65,19 @@ describe('RouteBuildLiveProgress', () => {
 
     render(<RouteBuildLiveProgress jobId="job-2" />);
 
-    expect(screen.getByTestId('route-live-progress')).toHaveAttribute('data-progress-atoms', 'paused');
-    expect(screen.getByTestId('route-live-progress-toggle')).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByTestId('route-live-progress-error')).toHaveTextContent('Network error');
+    expect(screen.getByRole('button', { name: 'Resume' })).toBeEnabled();
+    expect(screen.getByText('Network error')).toBeInTheDocument();
   });
 });
 
 describe('RouteBuildSummary', () => {
-  it('renders summary metrics with stable data-testid selectors', async () => {
+  it('renders summary metrics and the last error', async () => {
     mockUseRouteBuildProgress.mockReturnValue({
       snapshot: undefined,
       ready: true,
-      progress: { completed: 4, total: 10, failed: 2, percentage: 40 },
+      progress: {
+        payload: { completed: 4, total: 10, failed: 2, skipped: 0 },
+      },
       status: { status: 'running' },
       isPaused: false,
       isMutating: false,
@@ -77,12 +90,11 @@ describe('RouteBuildSummary', () => {
     render(<RouteBuildSummary nodeId="job-3" />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('route-summary-completed').textContent).toContain('完了: 4');
+      expect(screen.getByText(/Completed: 4 \/ Total: 10/)).toBeInTheDocument();
     });
 
-    expect(screen.getByTestId('route-summary-results').textContent).toContain('結果: 4');
-    expect(screen.getByTestId('route-summary-failed').textContent).toBe('失敗: 2');
-    expect(screen.getByTestId('route-summary-last-error')).toHaveAttribute('data-error-atoms', 'error');
-    expect(screen.getByTestId('route-summary-last-error').textContent).toContain('最新のエラー: Worker error');
+    expect(screen.getByText('Results: 4')).toBeInTheDocument();
+    expect(screen.getByText('Failed: 2')).toBeInTheDocument();
+    expect(screen.getByText('Last error: Worker error')).toBeInTheDocument();
   });
 });

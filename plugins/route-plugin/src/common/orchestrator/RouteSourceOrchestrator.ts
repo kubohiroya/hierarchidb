@@ -1,13 +1,26 @@
-import type { DataSourceSpec, DataSourceStrategy, OdPair, ParseTask, RouteBuildSpec, StrategyContext, TaskPlan } from './types.js';
-import { FetchNetworkPort, getCorsProxyBaseURL, notifyPluginAuthRequired } from '@hierarchidb/download';
-import { TabularStrategy } from './strategies/TabularStrategy.js';
+import {
+  FetchNetworkPort,
+  getCorsProxyBaseURL,
+  notifyPluginAuthRequired,
+} from '@hierarchidb/download';
 import { GeoJsonStrategy } from './strategies/GeoJsonStrategy.js';
+import { TabularStrategy } from './strategies/TabularStrategy.js';
+import type {
+  DataSourceSpec,
+  DataSourceStrategy,
+  OdPair,
+  ParseTask,
+  RouteBuildSpec,
+  StrategyContext,
+  TaskPlan,
+} from './types.js';
 
 export class RouteSourceOrchestrator {
-  private readonly strategies: DataSourceStrategy[] = [new TabularStrategy(), new GeoJsonStrategy()];
+  private readonly strategies: DataSourceStrategy[] = [
+    new TabularStrategy(),
+    new GeoJsonStrategy(),
+  ];
   private net: FetchNetworkPort | null = null;
-
-  constructor() {}
 
   async plan(spec: RouteBuildSpec): Promise<TaskPlan> {
     const planId = crypto.randomUUID();
@@ -30,7 +43,6 @@ export class RouteSourceOrchestrator {
       try {
         const response = await net.get(f.url);
         if (response.status === 401 || response.status === 403) {
-          notifyPluginAuthRequired('route', { resource: f.url, provider: 'datasource', hint: 'Authentication required' });
           throw new Error(`Auth required: ${response.status}`);
         }
         if (!response.ok) {
@@ -41,14 +53,19 @@ export class RouteSourceOrchestrator {
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         if (/HTTP 401|HTTP 403|Auth required/i.test(message)) {
-          notifyPluginAuthRequired('route', { resource: f.url, provider: 'datasource', hint: 'Authentication required' });
+          notifyPluginAuthRequired('route', {
+            resource: f.url,
+            provider: 'datasource',
+            hint: 'Authentication required',
+          });
         }
         throw error;
       }
     }
     for (const src of spec.sources) {
       if (src.inline && !src.url) {
-        const ref = plan.parse.find(p => p.source === src.type)?.payloadRef ?? crypto.randomUUID();
+        const ref =
+          plan.parse.find((p) => p.source === src.type)?.payloadRef ?? crypto.randomUUID();
         blobs.set(ref, new Blob([src.inline]));
       }
     }
