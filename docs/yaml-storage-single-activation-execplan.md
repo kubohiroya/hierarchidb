@@ -70,6 +70,14 @@ After completion, YAML filenames live only in the matching metadata slot and YAM
   production state and select one executor without changing the fixed coordinator.
   Date: 2026-08-21.
 
+- Decision: Diagnose the rejected historical `hidb-core` catalog entry through a separate
+  source-controlled read-only mode before defining any recovery amendment.
+  Rationale: `RECOVERY_INTERRUPTED_CORE_CATALOG_MISMATCH` proves only that the database is not the
+  approved native-v2 state. Publishing its sanitized observed native version, logical-v2 topology
+  status, and total record count avoids guessing while leaving `incident-1388-v1` terminal and
+  unchanged.
+  Date: 2026-08-21.
+
 - Decision: Treat a genuinely missing CoreDB as a distinct same-activation fresh-v2 creation, not
   as an empty v1 migration or a revoked successor recovery.
   Rationale: New installations otherwise stop permanently at `CORE_DB_NOT_FOUND`. The sole

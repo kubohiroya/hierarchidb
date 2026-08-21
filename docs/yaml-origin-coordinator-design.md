@@ -447,8 +447,9 @@ Production evidence before and after the single activation is collected by the i
 HTML entry `yaml-storage-preflight.html`, never by conversation-generated DevTools code or a
 clipboard payload. The entry does not import the coordinator worker or its fixed validator graph,
 does not load the application entry, and does not register or message a Service Worker. Loading the
-page is inert: an exact single `mode=pre`, `mode=post`, `mode=recovery-pre`, or
-`mode=recovery-post` query and one explicit button click are required before one inspection starts.
+page is inert: an exact single `mode=pre`, `mode=post`, `mode=recovery-pre`,
+`mode=recovery-post`, or `mode=recovery-interrupted-core` query and one explicit button click are
+required before one inspection starts.
 It does not poll, retry, navigate, persist state, write to a
 clipboard, or transmit evidence.
 
@@ -506,6 +507,14 @@ canonical target and recovery claim database to be absent. Recovery-post require
 logical v2 / native v20 validation, the same unchanged interrupted/YamlDB baseline, and one exact
 `completed` claim for the current source SHA. Both modes expose only sanitized status, versions,
 counts, and digests; they never expose raw records or identities.
+
+The separately reviewed `recovery-interrupted-core` mode is diagnostic evidence only. It calls the
+database catalog once, selects only the literal historical name `hidb-core`, opens its exact observed
+positive native version without upgrade, validates the logical-v2 store/index topology independently
+from that native version, and counts all stores in one readonly transaction. It emits only the source
+SHA, timestamp, native version, topology status, total record count, and stable code. It does not
+change the `incident-1388-v1` acceptance set, authorize recovery, load the application root, or write,
+repair, copy, rename, delete, retry, or expose raw records.
 
 The strict census contract, build-SHA reader, and responder live in the shared
 `@hierarchidb/origin-coordinator` workspace package. The window, SharedWorker, dedicated runtime

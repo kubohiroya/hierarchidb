@@ -87,6 +87,10 @@
         inventory and durable one-shot claim. They are read-only and never start recovery.
       </p>
       <p>
+        Recovery-interrupted-core reports only the fixed historical database native version,
+        logical-v2 topology status, and total record count. It never authorizes recovery.
+      </p>
+      <p>
         In pre mode, record the result and close this diagnostic tab before loading or reloading the
         production root. An open diagnostic tab is intentionally not a coordinator participant and
         therefore blocks activation census fail-closed.
