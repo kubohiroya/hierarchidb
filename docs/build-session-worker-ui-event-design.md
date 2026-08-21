@@ -186,6 +186,10 @@ draft/config stores are outside that transaction and remain untouched. The UI re
 the SSOT atom tree only after command success, then increments a recovery revision;
 the atom bridge includes that revision in its effect dependencies so the unchanged
 nodeId is initialized again. No missing timing value is repaired or synthesized.
+The reset render treats `idle` plus an empty authoritative task tree as an immediate
+display boundary: a task snapshot retained in React only to bridge subscription gaps
+is excluded synchronously. Its later effect cleanup is storage hygiene and does not
+participate in status derivation.
 
 Failure persistence is secondary to the originating execution error. If persisting
 a startup failure also fails, the persistence error is logged while the original
