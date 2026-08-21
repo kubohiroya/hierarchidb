@@ -471,6 +471,7 @@ function classifyNodes(states: RecordState[]): ParsedNode[] {
     const draftDataValid =
       !draftDataProperty.found ||
       draftDataProperty.value === undefined ||
+      draftDataProperty.value === null ||
       isPlainRecord(draftDataProperty.value);
     const visibleValid = !visibleProperty.found || typeof visibleProperty.value === 'boolean';
     const references = !referencesProperty.found

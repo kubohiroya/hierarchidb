@@ -290,6 +290,82 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
     expect(Object.hasOwn(olderRoot.metadata, 'tags')).toBe(false);
   });
 
+  it('accepts historical null draftData as an absent draft without mutating records', async () => {
+    const baseline = createDefaultSnapshot();
+    const historicalRoot = {
+      ...defaultNode('p', 'root'),
+      draftData: null,
+    };
+    const firstYamlNode = {
+      ...legacyYamlNode(),
+      draftData: null,
+    };
+    const secondYamlNode = {
+      ...legacyYamlNode(),
+      id: 'yaml-2',
+      metadata: { name: 'sources.yml', description: '', tags: [] },
+      data: {
+        name: 'sources.yml',
+        schemaId: 'ide-gsm/sources',
+        content: 'sources: []\n',
+      },
+      draftData: null,
+    };
+    const thirdYamlNode = {
+      ...legacyYamlNode(),
+      id: 'yaml-3',
+      metadata: { name: 'git.yml', description: '', tags: [] },
+      data: {
+        name: 'git.yml',
+        schemaId: 'ide-gsm/git',
+        content: 'url: https://example.test/repository.git\n',
+      },
+      draftData: null,
+    };
+
+    const result = await classify({
+      ...baseline,
+      nodes: [
+        baseline.nodes[0],
+        baseline.nodes[1],
+        historicalRoot,
+        baseline.nodes[3],
+        firstYamlNode,
+        secondYamlNode,
+        thirdYamlNode,
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok === false) throw new Error('Expected historical null draftData acceptance');
+    expect(result.summary.storeCounts).toEqual({
+      trees: 2,
+      nodes: 7,
+      rootStates: 6,
+      tags: 0,
+      tagAssociations: 0,
+      total: 15,
+    });
+    expect(result.summary.recordClassification).toEqual({
+      exactDefault: 11,
+      modifiedDefaultIdentity: 1,
+      additional: 3,
+      invalid: 0,
+    });
+    expect(result.summary.invalidDiagnostics).toEqual(ZERO_INVALID_DIAGNOSTICS);
+    expect(result.summary.additionalNodeCounts).toEqual({ yaml: 3, nonYaml: 0 });
+    expect(result.summary.yamlSlotCounts).toEqual({
+      canonical: 0,
+      legacyWithName: 3,
+      hostSplitLegacy: 0,
+      temporaryPlaceholder: 0,
+      metadataOnlyDraft: 0,
+    });
+    expect(Object.hasOwn(historicalRoot, 'draftData')).toBe(true);
+    expect(historicalRoot.draftData).toBeNull();
+    expect(firstYamlNode.draftData).toBeNull();
+  });
+
   it('aggregates canonical, host-split legacy, and temporary placeholder YAML states', async () => {
     const baseline = createDefaultSnapshot();
     const common = {
