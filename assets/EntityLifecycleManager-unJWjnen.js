@@ -1,1 +1,0 @@
-import{N as e}from"./index.js";export{e as EntityLifecycleManager};

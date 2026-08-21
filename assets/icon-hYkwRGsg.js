@@ -1,0 +1,1 @@
+import"./vendor-react-MkMV_rSf.js";import{Lt as e}from"./index.js";const t=e;var n=t;export{t as RoutePluginIcon,n as default};
