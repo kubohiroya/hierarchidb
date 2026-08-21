@@ -82,6 +82,32 @@ source cache metadataへ重複保存しない。
 LineStringは、始点/終点がtile外でも交差するtileの候補に含める。
 filtering、simplification、index生成の一部をno-opにしてtaskを`completed`へ進めない。
 
+### zoom band / config契約
+
+- `geometryConfig.zoomBandBoundaries`は2要素以上のstrictly increasingな`0..22`整数列とする。
+- `routeGeometryConfig.minDistanceMetersByBand`と`simplifyToleranceByBand`は必須で、
+  長さが`zoomBandBoundaries.length - 1`と一致するfiniteな非負値列とする。
+- geometry engineは`turf`、simplification algorithmは`geojson`を明示し、RDP toleranceはdegree単位とする。
+- 中間bandは`[boundary[i], boundary[i+1]-1]`、最終bandは
+  `[boundary[last-1], boundary[last]]`、`zBase=boundary[i]`とする。
+- 不正値を丸め、sort、clamp、末尾値反復、既定値で修復しない。
+
+### artifact / index契約
+
+- 1 route×1 zoom bandにつき1つのGeoJSON FeatureCollectionを
+  `EphemeralDB.geometryCache`へ永続化する。filter通過時は端点保持済みLineStringを1本、
+  filter除外時は空featuresを保存する。
+- geometry metadataはsource cache ID、source input/content hash、geometry input/content hash、
+  route mode、band、filter/simplification設定、filter結果、count、完了時刻を保持する。
+- tile転置indexは`EphemeralDB.tileEmitBufferRelations`のpacked tile ID→geometry buffer関係とし、
+  VT orchestratorの共通tile ID encodingを使う。境界への接触も交差に含める。
+- Web Mercator緯度範囲外のLineStringは失敗させ、tile座標へclampしない。
+- 経度差が180°を超えるsegmentはantimeridianを横断するworld-wrap区間として列挙し、
+  経度seamの両側tileをindexへ含める。
+- 同一sourceの旧geometry artifact/relation削除と新artifact/meta/relation書込みは、
+  read-back検証を含む単一EphemeralDB transactionで行う。
+- `RouteDB.tileIndex`をcanonical geometry→tileEmit lineageのSSOTとして参照しない。
+
 ## tileEmit stage
 
 ### 入力
@@ -108,16 +134,17 @@ geometry cache/indexが欠落・不正な場合は失敗する。source artifact
 - UIの`RouteBuildStep`はWorker commandとcanonical event subscriptionだけを利用する。
 - UIがroute mutation APIの3処理を独立に順次呼ぶ現行経路はIssue #549で撤去する移行対象とする。
 
-## Issue #1373適用後の残差分（2026-08-21）
+## Issue #1374適用後の残差分（2026-08-21）
 
 - `RouteBuildSession`の`source` handlerはgenerator結果を検証し、direction-awareなidentityと
   入力署名を持つLineString GeoJSONをsource cacheへ永続化する。
-- `RouteBuildSession`の`geometry` / `tileEmit` handlerは実成果物を生成せず完了する。
-  したがってsession経路は3stageすべてのartifact契約を満たさない。
+- `RouteBuildSession`の`geometry` handlerはsource artifactを検証し、zoom band別geometry
+  artifactとtile転置indexを永続化する。`tileEmit` handlerはなお実成果物を生成せず完了するため、
+  session経路は3stageすべてのartifact契約をまだ満たさない。
 - `RouteBuildStep`には
   `importIdeGsmRoutes -> buildRouteTileIndex -> generateRouteVectorTiles` の直接実行経路が残る。
 - `RouteGenerator` / `SearouteEngine`はengine欠落、load失敗、不正responseをfail-fastにする。
-- geometry / tileEmitの実成果物化とUI直接実行経路の撤去はIssue #549の後続Issueで行う。
+- tileEmitの実成果物化とUI直接実行経路の撤去はIssue #1375で行う。
 
 ## 検証観点
 

@@ -1,10 +1,10 @@
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import type { NodeId } from '@hierarchidb/core-types';
 import {
-  ephemeralDB,
   type EphemeralDB,
   type EphemeralSourceCacheMetaRecord,
   type EphemeralSourceCacheRecord,
+  ephemeralDB,
 } from '@hierarchidb/gis-sdk';
 import type { RouteGenerationMethod, RouteMode } from '@hierarchidb/route-api';
 import type { RouteGenerationResult } from '@hierarchidb/route-engine';
@@ -45,11 +45,8 @@ export const persistRouteSourceArtifact = async (
     'generationResult.duration',
     params.generationResult.duration
   );
-  const generationTimeMs = requireFiniteNonNegative(
-    'generationTimeMs',
-    params.generationTimeMs
-  );
-  const sourceCacheId = `${String(params.nodeId)}:source:${params.identity.sourceKey}`;
+  const generationTimeMs = requireFiniteNonNegative('generationTimeMs', params.generationTimeMs);
+  const sourceCacheId = buildRouteSourceCacheId(params.nodeId, params.identity.sourceKey);
   const payload = buildFeatureCollection({
     sourceCacheId,
     routeMode: params.routeMode,
@@ -143,6 +140,13 @@ export const persistRouteSourceArtifact = async (
   };
 };
 
+export const buildRouteSourceCacheId = (nodeId: NodeId, sourceKey: string): string => {
+  if (typeof sourceKey !== 'string' || sourceKey.length === 0) {
+    return contractViolation('sourceKey', 'must be a non-empty string');
+  }
+  return `${String(nodeId)}:source:${sourceKey}`;
+};
+
 const buildFeatureCollection = (params: {
   sourceCacheId: string;
   routeMode: RouteMode;
@@ -153,35 +157,39 @@ const buildFeatureCollection = (params: {
   durationSeconds?: number;
 }) => ({
   type: 'FeatureCollection' as const,
-  features: [{
-    type: 'Feature' as const,
-    id: params.sourceCacheId,
-    properties: {
-      sourceKey: params.identity.sourceKey,
-      inputHash: params.identity.inputHash,
-      routeMode: params.routeMode,
-      bidirectional: params.identity.bidirectional,
-      generationMethod: params.generationMethod,
-      startLocationId: String(params.identity.from.locationId),
-      endLocationId: String(params.identity.to.locationId),
-      distanceMeters: params.distanceMeters,
-      durationSeconds: params.durationSeconds ?? null,
+  features: [
+    {
+      type: 'Feature' as const,
+      id: params.sourceCacheId,
+      properties: {
+        sourceKey: params.identity.sourceKey,
+        inputHash: params.identity.inputHash,
+        routeMode: params.routeMode,
+        bidirectional: params.identity.bidirectional,
+        generationMethod: params.generationMethod,
+        startLocationId: String(params.identity.from.locationId),
+        endLocationId: String(params.identity.to.locationId),
+        distanceMeters: params.distanceMeters,
+        durationSeconds: params.durationSeconds ?? null,
+      },
+      geometry: {
+        type: 'LineString' as const,
+        coordinates: params.lineGeometry,
+      },
     },
-    geometry: {
-      type: 'LineString' as const,
-      coordinates: params.lineGeometry,
-    },
-  }],
+  ],
 });
 
 const requireLineGeometry = (value: unknown): [number, number][] => {
   if (!Array.isArray(value) || value.length < 2) {
-    return contractViolation('generationResult.lineGeometry', 'must contain at least two coordinates');
+    return contractViolation(
+      'generationResult.lineGeometry',
+      'must contain at least two coordinates'
+    );
   }
-  return value.map((coordinate, index) => requireCoordinate(
-    `generationResult.lineGeometry[${String(index)}]`,
-    coordinate
-  ));
+  return value.map((coordinate, index) =>
+    requireCoordinate(`generationResult.lineGeometry[${String(index)}]`, coordinate)
+  );
 };
 
 const requireCoordinate = (label: string, value: unknown): [number, number] => {
@@ -190,14 +198,14 @@ const requireCoordinate = (label: string, value: unknown): [number, number] => {
   }
   const [longitude, latitude] = value;
   if (
-    typeof longitude !== 'number'
-    || !Number.isFinite(longitude)
-    || longitude < -180
-    || longitude > 180
-    || typeof latitude !== 'number'
-    || !Number.isFinite(latitude)
-    || latitude < -90
-    || latitude > 90
+    typeof longitude !== 'number' ||
+    !Number.isFinite(longitude) ||
+    longitude < -180 ||
+    longitude > 180 ||
+    typeof latitude !== 'number' ||
+    !Number.isFinite(latitude) ||
+    latitude < -90 ||
+    latitude > 90
   ) {
     return contractViolation(label, 'contains invalid coordinates');
   }
@@ -211,26 +219,21 @@ const requireFiniteNonNegative = (label: string, value: unknown): number => {
   return value;
 };
 
-const requireOptionalFiniteNonNegative = (
-  label: string,
-  value: unknown
-): number | undefined => {
+const requireOptionalFiniteNonNegative = (label: string, value: unknown): number | undefined => {
   if (value === undefined) return undefined;
   return requireFiniteNonNegative(label, value);
 };
 
-const buildLineBbox = (
-  coordinates: [number, number][]
-): [number, number, number, number] => {
+const buildLineBbox = (coordinates: [number, number][]): [number, number, number, number] => {
   let minLongitude = coordinates[0]?.[0];
   let minLatitude = coordinates[0]?.[1];
   let maxLongitude = minLongitude;
   let maxLatitude = minLatitude;
   if (
-    minLongitude === undefined
-    || minLatitude === undefined
-    || maxLongitude === undefined
-    || maxLatitude === undefined
+    minLongitude === undefined ||
+    minLatitude === undefined ||
+    maxLongitude === undefined ||
+    maxLatitude === undefined
   ) {
     return contractViolation('generationResult.lineGeometry', 'must not be empty');
   }
@@ -254,10 +257,10 @@ const requirePersistedArtifact = (
     contentHash: string;
   }
 ): void => {
-  const persistedRecord = record
-    ?? contractViolation('sourceCache record', 'must exist after artifact persistence');
-  const persistedMeta = meta
-    ?? contractViolation('sourceCache metadata', 'must exist with the source artifact');
+  const persistedRecord =
+    record ?? contractViolation('sourceCache record', 'must exist after artifact persistence');
+  const persistedMeta =
+    meta ?? contractViolation('sourceCache metadata', 'must exist with the source artifact');
   requirePersistedArtifactRecord(persistedRecord, expected);
   requirePersistedArtifactRecord(persistedMeta, expected);
 };
@@ -273,17 +276,17 @@ const requirePersistedArtifactRecord = (
   }
 ): void => {
   if (
-    candidate.id !== expected.sourceCacheId
-    || candidate.nodeId !== expected.nodeId
-    || candidate.domainType !== 'route'
-    || candidate.sourceKey !== expected.sourceKey
-    || candidate.format !== 'geojson'
-    || candidate.compression !== 'none'
-    || candidate.featureCount !== 1
-    || candidate.contentHash !== expected.contentHash
-    || !Number.isFinite(candidate.timestamp)
-    || candidate.timestamp <= 0
-    || candidate.metadata?.inputHash !== expected.inputHash
+    candidate.id !== expected.sourceCacheId ||
+    candidate.nodeId !== expected.nodeId ||
+    candidate.domainType !== 'route' ||
+    candidate.sourceKey !== expected.sourceKey ||
+    candidate.format !== 'geojson' ||
+    candidate.compression !== 'none' ||
+    candidate.featureCount !== 1 ||
+    candidate.contentHash !== expected.contentHash ||
+    !Number.isFinite(candidate.timestamp) ||
+    candidate.timestamp <= 0 ||
+    candidate.metadata?.inputHash !== expected.inputHash
   ) {
     contractViolation('sourceCache metadata', 'does not match the generated artifact');
   }
