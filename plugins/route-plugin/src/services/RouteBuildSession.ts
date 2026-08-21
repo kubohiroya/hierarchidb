@@ -25,6 +25,10 @@ import {
   VtTaskQueueDb,
 } from '@hierarchidb/vt-orchestrator';
 import {
+  persistRouteGeometryArtifacts,
+  type RouteGeometryArtifactOutput,
+} from './persistRouteGeometryArtifacts.js';
+import {
   persistRouteSourceArtifact,
   type RouteSourceArtifactOutput,
 } from './persistRouteSourceArtifact.js';
@@ -58,6 +62,7 @@ export type RouteBuildTask = {
 export type RouteBuildTaskQueueInput = {
   routeStage: RouteBuildTaskStage;
   routeData?: RouteBuildTask['routeData'];
+  sourceCacheId?: string;
   cacheKey?: string;
   inputHash?: string;
 };
@@ -159,13 +164,16 @@ export class RouteBuildSession
 
     this.beginStage('geometry');
     this.updateProgress({ total, completed, failed }, 'geometry');
-    await runStageTasks<RouteBuildTaskQueueInput>({
+    await runStageTasks<RouteBuildTaskQueueInput, RouteGeometryArtifactOutput>({
       nodeId: this.nodeId,
       stage: 'geometry',
       taskFilter: resolveTaskFilter('geometry'),
       handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) =>
-        this.handleGeometryRouteTask(task),
-      maxConcurrent: this.config.geometryConfig?.maxConcurrent ?? 1,
+        this.handleGeometryRouteTask(task, signal),
+      maxConcurrent: requirePositiveInteger(
+        'geometryConfig.maxConcurrent',
+        this.config.geometryConfig.maxConcurrent
+      ),
       failureHandling: 'continue',
       abortController: this.ensureAbortController(),
     });
@@ -285,8 +293,9 @@ export class RouteBuildSession
   }
 
   private async handleGeometryRouteTask(
-    task: TaskQueueRecord<RouteBuildTaskQueueInput>
-  ): Promise<{ status: 'completed'; progress: number }> {
+    task: TaskQueueRecord<RouteBuildTaskQueueInput>,
+    signal: AbortSignal
+  ): Promise<{ status: 'completed'; progress: number; outputData?: RouteGeometryArtifactOutput }> {
     const localTask = this.findTask(task.taskId);
     if (!localTask) {
       throw new Error(`Unknown route task ${task.taskId}`);
@@ -303,8 +312,56 @@ export class RouteBuildSession
     localTask.error = undefined;
     this.updateRouteTaskProgress(localTask, 0);
     this.updateProgressByStage('geometry');
-    // Geometry-stage logic for route tasks will be implemented as needed.
-    return this.completeRouteTask(localTask, 'geometry');
+    const routeData = localTask.routeData;
+    if (!routeData) {
+      return this.failRouteTask(localTask, 'geometry', 'Route geometry task data is required');
+    }
+    const sourceCacheId = task.inputData?.sourceCacheId;
+    if (typeof sourceCacheId !== 'string' || sourceCacheId.length === 0) {
+      return this.failRouteTask(localTask, 'geometry', 'Route geometry sourceCacheId is required');
+    }
+    if (
+      task.inputData?.cacheKey !== routeData.sourceKey ||
+      task.inputData?.inputHash !== routeData.inputHash
+    ) {
+      return this.failRouteTask(
+        localTask,
+        'geometry',
+        'Route geometry task input identity does not match the planned route'
+      );
+    }
+
+    try {
+      const outputData = await persistRouteGeometryArtifacts({
+        nodeId: this.nodeId,
+        sourceCacheId,
+        expected: {
+          sourceKey: routeData.sourceKey,
+          sourceInputHash: routeData.inputHash,
+          routeMode: routeData.routeMode,
+          startLocationId: routeData.startLocationId,
+          endLocationId: routeData.endLocationId,
+          startCoordinates: routeData.startCoordinates,
+          endCoordinates: routeData.endCoordinates,
+        },
+        geometryConfig: this.config.geometryConfig,
+        routeGeometryConfig: this.config.routeGeometryConfig,
+        signal,
+      });
+      requireNotAborted(signal, 'Route geometry artifact persistence was paused');
+      if (
+        outputData.sourceCacheId !== sourceCacheId ||
+        outputData.sourceKey !== routeData.sourceKey ||
+        outputData.sourceInputHash !== routeData.inputHash
+      ) {
+        throw new Error('Route geometry output lineage does not match the planned route');
+      }
+      return this.completeRouteTask(localTask, 'geometry', outputData);
+    } catch (error) {
+      if (isAbortError(error)) throw error;
+      const message = error instanceof Error ? error.message : String(error);
+      return this.failRouteTask(localTask, 'geometry', message);
+    }
   }
 
   private async handleTileEmitRouteTask(

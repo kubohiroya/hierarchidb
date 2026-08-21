@@ -202,8 +202,8 @@ export interface TileEmitConfig {
 }
 
 export interface RouteGeometryConfig {
-  minDistanceMetersByBand?: number[];
-  simplifyToleranceByBand?: number[];
+  minDistanceMetersByBand: number[];
+  simplifyToleranceByBand: number[];
 }
 
 export interface BaseBuildConfig<TDataSourceName = unknown> {

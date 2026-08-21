@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import type { CanonicalSessionEvent } from '@hierarchidb/build-api';
 import { unconditionalEventStreamer } from '@hierarchidb/build-runtime-services';
 import type { NodeId } from '@hierarchidb/core-types';
@@ -18,10 +20,19 @@ describe('RouteBuildSession canonical events', () => {
     await deleteTasksByNode(taskQueue, nodeId);
     await ephemeralStore.transaction(
       'rw',
-      [ephemeralStore.sourceCache, ephemeralStore.sourceCacheMeta],
+      [
+        ephemeralStore.sourceCache,
+        ephemeralStore.sourceCacheMeta,
+        ephemeralStore.geometryCache,
+        ephemeralStore.geometryCacheMeta,
+        ephemeralStore.tileEmitBufferRelations,
+      ],
       async () => {
         await ephemeralStore.sourceCache.where('nodeId').equals(nodeId).delete();
         await ephemeralStore.sourceCacheMeta.where('nodeId').equals(nodeId).delete();
+        await ephemeralStore.geometryCache.where('nodeId').equals(nodeId).delete();
+        await ephemeralStore.geometryCacheMeta.where('nodeId').equals(nodeId).delete();
+        await ephemeralStore.tileEmitBufferRelations.where('nodeId').equals(nodeId).delete();
       }
     );
   });
@@ -34,7 +45,8 @@ describe('RouteBuildSession canonical events', () => {
         events.push(canonicalEvent);
         if (
           canonicalEvent.type === 'sessionStatusUpdated' &&
-          canonicalEvent.payload.phase === 'completed'
+          (canonicalEvent.payload.phase === 'completed' ||
+            canonicalEvent.payload.phase === 'failed')
         ) {
           resolve();
         }
@@ -79,10 +91,15 @@ describe('RouteBuildSession canonical events', () => {
     await orchestrator.startBuildSession(nodeId);
     await completed;
 
-    await expect(orchestrator.getBuildSessionStatus(nodeId)).resolves.toMatchObject({
-      nodeId,
-      status: 'completed',
-    });
+    const finalStatus = await orchestrator.getBuildSessionStatus(nodeId);
+    if (finalStatus.status !== 'completed') {
+      const taskFailures = events
+        .filter((event) => event.type === 'stageSnapshotUpdated')
+        .flatMap((event) => event.payload.tasks)
+        .filter((task) => task.status === 'failed');
+      throw new Error(`Route session failed: ${JSON.stringify(taskFailures)}`);
+    }
+    expect(finalStatus).toMatchObject({ nodeId, status: 'completed' });
 
     const sessionEvents = events.filter((event) => event.type === 'sessionStatusUpdated');
     expect(sessionEvents.at(0)?.payload.phase).toBe('idle');
@@ -120,20 +137,46 @@ describe('RouteBuildSession canonical events', () => {
       format: 'geojson',
       featureCount: 1,
     });
+    const geometryArtifacts = await ephemeralStore.geometryCache
+      .where('nodeId')
+      .equals(nodeId)
+      .sortBy('bandIndex');
+    expect(geometryArtifacts).toHaveLength(3);
+    expect(geometryArtifacts.map((artifact) => artifact.featureCount)).toEqual([1, 0, 0]);
+    expect(geometryArtifacts[0]?.metadata).toMatchObject({
+      sourceCacheId: `${String(nodeId)}:source:road:location-start:location-end`,
+      endpointPreserved: true,
+      filtered: false,
+    });
     const completedTasks = await listTasksByStatus(taskQueue, nodeId, 'completed');
-    expect(completedTasks).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        stage: 'source',
-        inputData: expect.objectContaining({
-          cacheKey: 'road:location-start:location-end',
+    expect(completedTasks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          stage: 'source',
+          inputData: expect.objectContaining({
+            cacheKey: 'road:location-start:location-end',
+          }),
+          outputData: expect.objectContaining({
+            sourceCacheId: `${String(nodeId)}:source:road:location-start:location-end`,
+            sourceKey: 'road:location-start:location-end',
+            format: 'geojson',
+          }),
         }),
-        outputData: expect.objectContaining({
-          sourceCacheId: `${String(nodeId)}:source:road:location-start:location-end`,
-          sourceKey: 'road:location-start:location-end',
-          format: 'geojson',
+        expect.objectContaining({
+          stage: 'geometry',
+          inputData: expect.objectContaining({
+            sourceCacheId: `${String(nodeId)}:source:road:location-start:location-end`,
+          }),
+          outputData: expect.objectContaining({
+            sourceCacheId: `${String(nodeId)}:source:road:location-start:location-end`,
+            artifacts: expect.arrayContaining([
+              expect.objectContaining({ bandIndex: 0, featureCount: 1, filtered: false }),
+              expect.objectContaining({ bandIndex: 1, featureCount: 0, filtered: true }),
+            ]),
+          }),
         }),
-      }),
-    ]));
+      ])
+    );
   });
 
   it('aborts the active route task before publishing paused state', async () => {
@@ -285,7 +328,10 @@ describe('RouteBuildSession canonical events', () => {
     let engineCalls = 0;
     const completed = new Promise<void>((resolve) => {
       unconditionalEventStreamer.subscribe(nodeId, 'session-state', (event) => {
-        if (event.type === 'sessionStatusUpdated' && event.payload.phase === 'completed') {
+        if (
+          event.type === 'sessionStatusUpdated' &&
+          (event.payload.phase === 'completed' || event.payload.phase === 'failed')
+        ) {
           resolve();
         }
       });
@@ -305,7 +351,11 @@ describe('RouteBuildSession canonical events', () => {
           async route() {
             engineCalls += 1;
             return {
-              line: [[0, 0], [0.5, 0.5], [1, 1]],
+              line: [
+                [0, 0],
+                [0.5, 0.5],
+                [1, 1],
+              ],
               distance_m: 10,
               duration_s: 2,
             };

@@ -19,11 +19,84 @@ export const requireRouteBuildConfig = (value: unknown): RouteBuildConfig => {
   });
   requireRouteGeneration(config.routeGeneration);
   requireOptionalConfig(config.cleanupConfig, 'draftData.buildConfig.cleanupConfig');
-  requireOptionalConfig(config.routeGeometryConfig, 'draftData.buildConfig.routeGeometryConfig');
+  requireRouteGeometryConfig(config.geometryConfig, config.routeGeometryConfig);
   requireOptionalConfig(config.locationResolution, 'draftData.buildConfig.locationResolution');
   requireOptionalConfig(config.validation, 'draftData.buildConfig.validation');
   requireOptionalConfig(config.laneCaps, 'draftData.buildConfig.laneCaps');
   return value as RouteBuildConfig;
+};
+
+const requireRouteGeometryConfig = (geometryValue: unknown, routeValue: unknown): void => {
+  const geometry = requireRecord(geometryValue, 'draftData.buildConfig.geometryConfig');
+  const route = requireRecord(routeValue, 'draftData.buildConfig.routeGeometryConfig');
+  const boundaries = requireStrictZoomBoundaries(
+    geometry.zoomBandBoundaries,
+    'draftData.buildConfig.geometryConfig.zoomBandBoundaries'
+  );
+  if (geometry.enableFeatureFiltering !== true) {
+    throw new Error(
+      '[route canonical build API] draftData.buildConfig.geometryConfig.enableFeatureFiltering must be true'
+    );
+  }
+  requireEnum(
+    geometry.geometryEngine,
+    new Set(['turf']),
+    'draftData.buildConfig.geometryConfig.geometryEngine'
+  );
+  requireEnum(
+    geometry.simplifyAlgorithm,
+    new Set(['geojson']),
+    'draftData.buildConfig.geometryConfig.simplifyAlgorithm'
+  );
+  const bandCount = boundaries.length - 1;
+  requireBandValues(
+    route.minDistanceMetersByBand,
+    bandCount,
+    'draftData.buildConfig.routeGeometryConfig.minDistanceMetersByBand'
+  );
+  requireBandValues(
+    route.simplifyToleranceByBand,
+    bandCount,
+    'draftData.buildConfig.routeGeometryConfig.simplifyToleranceByBand'
+  );
+};
+
+const requireStrictZoomBoundaries = (value: unknown, label: string): number[] => {
+  if (!Array.isArray(value) || value.length < 2) {
+    throw new Error(`[route canonical build API] ${label} must contain at least two values`);
+  }
+  const boundaries = value.map((candidate, index) => {
+    if (!Number.isInteger(candidate) || (candidate as number) < 0 || (candidate as number) > 22) {
+      throw new Error(
+        `[route canonical build API] ${label}[${String(index)}] must be an integer in 0..22`
+      );
+    }
+    return candidate as number;
+  });
+  for (let index = 1; index < boundaries.length; index += 1) {
+    const previous = boundaries[index - 1];
+    const current = boundaries[index];
+    if (previous === undefined || current === undefined || current <= previous) {
+      throw new Error(`[route canonical build API] ${label} must be strictly increasing`);
+    }
+  }
+  return boundaries;
+};
+
+const requireBandValues = (value: unknown, bandCount: number, label: string): void => {
+  if (!Array.isArray(value) || value.length !== bandCount) {
+    throw new Error(
+      `[route canonical build API] ${label} must contain exactly ${String(bandCount)} values`
+    );
+  }
+  for (let index = 0; index < value.length; index += 1) {
+    const candidate = value[index];
+    if (typeof candidate !== 'number' || !Number.isFinite(candidate) || candidate < 0) {
+      throw new Error(
+        `[route canonical build API] ${label}[${String(index)}] must be a non-negative finite number`
+      );
+    }
+  }
 };
 
 const requireRouteGeneration = (value: unknown): void => {

@@ -13,6 +13,7 @@ import type {
 } from '@hierarchidb/route-api';
 import type { RouteEnginesProvider } from '@hierarchidb/route-engine';
 import { deleteTasksByNode, putTasks, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
+import { buildRouteSourceCacheId } from './persistRouteSourceArtifact.js';
 import {
   RouteBuildSession,
   type RouteBuildSessionDeps,
@@ -262,6 +263,7 @@ function toTaskQueueRecord(task: RouteBuildTask): TaskQueueRecord {
         ? {
             cacheKey: task.routeData.sourceKey,
             inputHash: task.routeData.inputHash,
+            sourceCacheId: buildRouteSourceCacheId(task.nodeId, task.routeData.sourceKey),
           }
         : {}),
     },

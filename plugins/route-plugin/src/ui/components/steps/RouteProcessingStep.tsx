@@ -3,21 +3,25 @@
  * Configures shared build settings reused by the Shape pipeline.
  */
 
+import type { NodeId } from '@hierarchidb/core-types';
+import type { RouteBuildConfig, RouteEntity } from '@hierarchidb/route-api';
+import {
+  BuildConfigShell,
+  SourceConfigSection,
+  TileEmitConfigSection,
+  ZoomBandConfigSection,
+} from '@hierarchidb/ui-accordion-config';
+import { useTranslation } from '@hierarchidb/ui-i18n';
+import { Stack, TextField, Typography } from '@mui/material';
 import type React from 'react';
 import { useCallback, useMemo } from 'react';
-import { Stack, TextField, Typography } from '@mui/material';
-import { BuildConfigShell, SourceConfigSection, TileEmitConfigSection, ZoomBandConfigSection } from '@hierarchidb/ui-accordion-config';
-import type { NodeId } from '@hierarchidb/core-types';
-import type { BaseBuildConfig } from '@hierarchidb/gis-sdk';
-import type { RouteEntity } from '@hierarchidb/route-api';
-import { useTranslation } from '@hierarchidb/ui-i18n';
-import { useRouteBuildConfigStep } from './useRouteBuildConfigStep.js';
 import { mergeRouteBuildConfig } from '~/common/config/buildConfig';
 import {
   filteringHighUrl,
   filteringLowUrl,
   filteringMediumUrl,
 } from '~/ui/assets/filtering-samples/filteringSampleConstants';
+import { useRouteBuildConfigStep } from './useRouteBuildConfigStep.js';
 
 export interface RouteProcessingStepProps {
   draft: Partial<RouteEntity>;
@@ -25,8 +29,6 @@ export interface RouteProcessingStepProps {
   nodeId?: NodeId;
   disabled?: boolean;
 }
-
-type BuildConfig = BaseBuildConfig<string>;
 
 export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
   draft,
@@ -38,31 +40,41 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
     data: draft,
     onChange: onUpdate,
   });
-  const updateBuildConfig = useCallback((partial: Partial<BuildConfig>) => {
-    handleChange(mergeRouteBuildConfig(config, partial));
-  }, [config, handleChange]);
-  const filteringPreviewImages = useMemo(() => ({
-    weak: filteringLowUrl,
-    medium: filteringMediumUrl,
-    strong: filteringHighUrl,
-  }), []);
+  const updateBuildConfig = useCallback(
+    (partial: Partial<RouteBuildConfig>) => {
+      handleChange(mergeRouteBuildConfig(config, partial));
+    },
+    [config, handleChange]
+  );
+  const filteringPreviewImages = useMemo(
+    () => ({
+      weak: filteringLowUrl,
+      medium: filteringMediumUrl,
+      strong: filteringHighUrl,
+    }),
+    []
+  );
   const boundaries = config.geometryConfig.zoomBandBoundaries ?? [];
   const bandCount = Math.max(0, boundaries.length - 1);
   const minDistanceValue = useMemo(
-    () => (config.routeGeometryConfig?.minDistanceMetersByBand ?? []).slice(0, bandCount).join(', '),
-    [bandCount, config.routeGeometryConfig?.minDistanceMetersByBand],
+    () =>
+      (config.routeGeometryConfig?.minDistanceMetersByBand ?? []).slice(0, bandCount).join(', '),
+    [bandCount, config.routeGeometryConfig?.minDistanceMetersByBand]
   );
   const simplifyToleranceValue = useMemo(
-    () => (config.routeGeometryConfig?.simplifyToleranceByBand ?? []).slice(0, bandCount).join(', '),
-    [bandCount, config.routeGeometryConfig?.simplifyToleranceByBand],
+    () =>
+      (config.routeGeometryConfig?.simplifyToleranceByBand ?? []).slice(0, bandCount).join(', '),
+    [bandCount, config.routeGeometryConfig?.simplifyToleranceByBand]
   );
-  const parseBandNumbers = useCallback((raw: string): number[] => (
-    raw
-      .split(',')
-      .map((entry) => Number(entry.trim()))
-      .filter((entry) => Number.isFinite(entry))
-      .slice(0, bandCount)
-  ), [bandCount]);
+  const parseBandNumbers = useCallback(
+    (raw: string): number[] =>
+      raw
+        .split(',')
+        .map((entry) => Number(entry.trim()))
+        .filter((entry) => Number.isFinite(entry))
+        .slice(0, bandCount),
+    [bandCount]
+  );
 
   return (
     <BuildConfigShell padding={0} spacing={3}>
@@ -99,7 +111,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
         <Typography variant="body2" color="text.secondary">
           {t(
             'route.processing.routeTransform.description',
-            'Provide comma-separated values per band (same order as zoom bands).',
+            'Provide comma-separated values per band (same order as zoom bands).'
           )}
         </Typography>
         <TextField
@@ -117,7 +129,10 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
           fullWidth
         />
         <TextField
-          label={t('route.processing.routeTransform.tolerance', 'Geometry simplify tolerance per band')}
+          label={t(
+            'route.processing.routeTransform.tolerance',
+            'Geometry simplify tolerance per band'
+          )}
           value={simplifyToleranceValue}
           onChange={(event) => {
             updateBuildConfig({

@@ -115,8 +115,18 @@ cache identity の正規仕様（SSOT）とする。
     - shape のようなズーム帯別 GeoJSON コピーは作成しない。
 - `geometry` ステージ:
   - route では filtering と simplification を一括で実行する。
-  - simplification algorithm と tolerance の単位は shape transform と共通。
-  - LineStringの端点を保持し、ズーム帯ごとのtile転置indexを生成する。
+  - `geometryConfig.geometryEngine='turf'` と `simplifyAlgorithm='geojson'` を明示必須とし、
+    route の RDP simplification tolerance は緯度経度のdegree単位とする。
+  - `zoomBandBoundaries` は `0..22` のstrictly increasingな整数列で2要素以上、
+    `minDistanceMetersByBand` / `simplifyToleranceByBand` はband数と同じ長さのfiniteな非負値列とする。
+    値の丸め、sort、clamp、末尾値の反復、既定値補完は行わない。
+  - 各bandは`zBase=zMin`とし、中間bandの上端は次boundaryの直前、最終bandだけ最後のboundaryを
+    含む。LineStringの端点を保持し、`zBase`で横切るtileの転置indexを生成する。
+  - filteringでrouteが除外されたbandも、空FeatureCollectionのgeometry artifactを永続化する。
+    空成果物をno-op成功へ読み替えず、filter結果とlineageをartifact metadataへ保持する。
+  - tile index対象のLineStringはWeb Mercator緯度範囲内でなければならない。範囲外座標を
+    tile端へclampしない。経度差が180°を超えるsegmentはantimeridianを横断するworld-wrap区間とし、
+    経度seamの両側tileをindexへ含める。
   - filtering / simplification / index生成のいずれかを省略して成功扱いにしない。
 - `tileEmit` ステージ:
   - shape と完全に同じ処理を利用する。
@@ -159,6 +169,15 @@ waterway:location-a:location-b              # explicitly bidirectional and canon
   generation method、location ID、始点/終点座標、距離、所要時間、中継点数、feature/vertex数、
   永続化完了時刻を保存する。admin name/codeは正規`RouteFeature`をSSOTとし、source cacheへ
   重複保存しない。
+- geometry cacheはroute×zoom bandごとに1件を`EphemeralDB.geometryCache`へ保存し、
+  `geometryCacheMeta`へdata以外のlineageを保存する。metadataにはsource cache ID、source input/content
+  hash、geometry input/content hash、route mode、band範囲、filter閾値、simplification tolerance、
+  filter結果、feature/vertex/tile数、永続化完了時刻を含める。
+- 正規tile転置indexは`EphemeralDB.tileEmitBufferRelations`のtile→geometry buffer関係とする。
+  tile IDはVT orchestratorの共通packed IDを使い、tile境界への接触も交差として含める。
+  旧`RouteDB.tileIndex`はcanonical geometry→tileEmit lineageのSSOTとして使用しない。
+- 同一route sourceのgeometry cache更新は、旧band artifact/relation削除、新artifact/meta、
+  新relation書込み、read-back検証を1つのEphemeralDB transactionで完了する。
 
 ## Step6: Preview
 

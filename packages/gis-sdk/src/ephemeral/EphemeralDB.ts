@@ -98,6 +98,7 @@ const toGeometryCacheMeta = (record: EphemeralGeometryCacheRecord): EphemeralGeo
     vertexCount: record.vertexCount,
     polygonCount: record.polygonCount,
     extractionRatio: record.extractionRatio,
+    tolerance: record.tolerance,
     metadata: record.metadata,
     timestamp: record.timestamp,
   };
