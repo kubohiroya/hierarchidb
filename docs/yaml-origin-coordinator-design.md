@@ -405,6 +405,47 @@ open. On the new runtime, canonical publication remains closed until the success
 complete. The coordinator script, its static import graph, protocol, database version, and durable
 record remain byte-for-byte unchanged throughout this handoff.
 
+## Source-controlled production preflight surface
+
+Production evidence before and after the single activation is collected by the independent Vite
+HTML entry `yaml-storage-preflight.html`, never by conversation-generated DevTools code or a
+clipboard payload. The entry does not import the coordinator worker or its fixed validator graph,
+does not load the application entry, and does not register or message a Service Worker. Loading the
+page is inert: an exact single `mode=pre` or `mode=post` query and one explicit button click are
+required before one inspection starts. It does not poll, retry, navigate, persist state, write to a
+clipboard, or transmit evidence.
+
+The fixed coordinator validator chunk keeps its accepted output filename as well as its accepted
+bytes. This prevents an unrelated multi-page entry from changing the coordinator worker's static
+import string through Rollup's importer-sensitive filename hash. Any future validator byte change
+must still fail the separately verified artifact SHA-256 gate; the stable filename is not a content
+acceptance substitute.
+
+The database prefix is an exact build-time `VITE_APP_PREFIX`; a missing or malformed prefix fails
+the build and there is no `hidb` or runtime fallback. The production value is declared explicitly
+in `app/.env.production` so the ordinary CI application build and the deployment shell resolve the
+same database names. Before any `open()`, the inspector calls `indexedDB.databases()` once and
+verifies exact presence and version of the coordinator, CoreDB, and YamlDB databases. Any missing
+database, duplicate catalog entry, or version mismatch rejects without opening any of them. Every
+subsequent transaction is `readonly`; an unexpected upgrade, blocked open, topology mismatch, read
+failure, reflection failure, or digest failure becomes a stable sanitized rejection.
+
+Pre mode requires the exact coordinator v2 single `allowed` record, exact CoreDB v1 topology, and
+exact YamlDB v1 topology. Post mode requires the exact coordinator v2 single
+`revoked/ready-for-preflight` record including globally unique ordered participants and one ordered
+acknowledged/discarded evidence item per participant, plus exact CoreDB v2 topology and migration
+journal schema. Both modes read the YamlDB v1 rows and primary keys in one readonly transaction and
+emit only their count and deterministic SHA-256. The public result contains only the mode, accepted
+or rejected status, stable code, exact release version, timestamp, database/protocol versions,
+phase/status, topology status, sanitized counts, and digest. It never contains raw records, YAML,
+participant identity, client URL, database prefix, native error, credential, or endpoint.
+
+The diagnostic document is intentionally not a census responder or activation participant. In pre
+mode, the operator records the result and closes the diagnostic tab before loading or reloading the
+production root. Leaving it open keeps a non-responsive scoped window in the Service Worker client
+census and therefore blocks activation fail-closed. The page never closes itself or navigates to the
+production root.
+
 The strict census contract, build-SHA reader, and responder live in the shared
 `@hierarchidb/origin-coordinator` workspace package. The window, SharedWorker, dedicated runtime
 worker, stage worker, GEOS worker, country availability worker, and tabular filter worker all use
