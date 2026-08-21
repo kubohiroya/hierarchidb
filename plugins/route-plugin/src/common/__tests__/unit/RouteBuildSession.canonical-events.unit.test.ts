@@ -2,7 +2,7 @@ import type { CanonicalSessionEvent } from '@hierarchidb/build-api';
 import { unconditionalEventStreamer } from '@hierarchidb/build-runtime-services';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { RouteBuildConfig } from '@hierarchidb/route-api';
-import { deleteTasksByNode, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
+import { deleteTasksByNode, listTasksByStatus, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { afterEach, describe, expect, it } from 'vitest';
 import { RouteBuildSessionOrchestrator } from '../../../services/RouteBuildSessionOrchestrator';
 
@@ -63,6 +63,11 @@ describe('RouteBuildSession canonical events', () => {
     await orchestrator.startBuildSession(nodeId);
     await completed;
 
+    await expect(orchestrator.getBuildSessionStatus(nodeId)).resolves.toMatchObject({
+      nodeId,
+      status: 'completed',
+    });
+
     const sessionEvents = events.filter((event) => event.type === 'sessionStatusUpdated');
     expect(sessionEvents.at(0)?.payload.phase).toBe('idle');
     expect(sessionEvents.at(-1)?.payload.phase).toBe('completed');
@@ -91,5 +96,61 @@ describe('RouteBuildSession canonical events', () => {
           event.payload.value <= 100
       )
     ).toBe(true);
+  });
+
+  it('aborts the active route task before publishing paused state', async () => {
+    let resolveGeneration: (() => void) | null = null;
+    const generationStarted = new Promise<void>((resolve) => {
+      resolveGeneration = resolve;
+    });
+    let finishGeneration: (() => void) | null = null;
+    const generationResult = new Promise<{
+      lineGeometry: [number, number][];
+      distance: number;
+      duration: number;
+    }>((resolve) => {
+      finishGeneration = () => resolve({ lineGeometry: [], distance: 0, duration: 0 });
+    });
+    const orchestrator = new RouteBuildSessionOrchestrator({
+      session: {
+        generator: {
+          generate: async () => {
+            const notifyGenerationStarted = resolveGeneration;
+            if (!notifyGenerationStarted)
+              throw new Error('Generation start resolver is unavailable');
+            notifyGenerationStarted();
+            return generationResult;
+          },
+        },
+      },
+    });
+    const config: RouteBuildConfig = {
+      routeGeneration: {
+        method: 'direct',
+        parallel: false,
+        maxConcurrent: 1,
+        retryOnFailure: false,
+        maxRetries: 0,
+      },
+    };
+    await orchestrator.prepareSession(nodeId, config, {
+      routes: [{ startCoordinates: [0, 0], endCoordinates: [1, 1], method: 'direct' }],
+    });
+    await orchestrator.startBuildSession(nodeId);
+    await generationStarted;
+
+    const pausePromise = orchestrator.pauseBuildSession(nodeId);
+    const completeGeneration = finishGeneration;
+    if (!completeGeneration) throw new Error('Generation completion resolver is unavailable');
+    completeGeneration();
+    await pausePromise;
+
+    await expect(orchestrator.getBuildSessionStatus(nodeId)).resolves.toMatchObject({
+      status: 'paused',
+    });
+    const runningTasks = await listTasksByStatus(taskQueue, nodeId, 'running');
+    expect(runningTasks).toEqual([]);
+    const queuedTasks = await listTasksByStatus(taskQueue, nodeId, 'queued');
+    expect(queuedTasks).toHaveLength(3);
   });
 });

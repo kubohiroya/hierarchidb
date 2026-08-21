@@ -1,12 +1,13 @@
-import type { NodeId } from '@hierarchidb/core-types';
-import { RouteBuildManager, type RouteBuildRouteInput, type RouteBuildManagerDeps } from './RouteBuildManager.js';
-import type { RouteBuildSession } from './RouteBuildSession.js';
-import { DEFAULT_ROUTE_BUILD_CONFIG } from '~/common/config/buildConfig';
-import type { RouteBuildConfig } from '@hierarchidb/route-api';
 import type { BuildSessionStatus } from '@hierarchidb/build-api';
+import { CanonicalBuildSessionManager } from '@hierarchidb/build-runtime-services';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { RouteBuildConfig } from '@hierarchidb/route-api';
+import { DEFAULT_ROUTE_BUILD_CONFIG } from '~/common/config/buildConfig';
 import {
-  CanonicalBuildSessionManager,
-} from '@hierarchidb/build-runtime-services';
+  RouteBuildManager,
+  type RouteBuildManagerDeps,
+  type RouteBuildRouteInput,
+} from './RouteBuildManager.js';
 
 export interface RouteBuildSessionConfig {
   routeGeneration?: Partial<RouteBuildConfig['routeGeneration']>;
@@ -57,20 +58,6 @@ export class RouteBuildSessionOrchestrator extends CanonicalBuildSessionManager 
     return this.getBuildSessionStatus(sessionNodeId);
   }
 
-  async pauseBuildSession(nodeId: NodeId): Promise<void> {
-    if (this.sessions.has(nodeId)) {
-      await super.pauseBuildSession(nodeId);
-    }
-  }
-
-  protected async onSessionStatusChange(_session: RouteBuildSession): Promise<void> {
-    await super.onSessionStatusChange(_session);
-    const state = _session.getState();
-    if (state.status === 'completed' || state.status === 'failed') {
-      this.sessions.delete(state.nodeId);
-      this.cleanupSessionTracking(state.nodeId);
-    }
-  }
 }
 
 function resolveRouteConfig(config?: RouteBuildSessionConfig | RouteBuildConfig): RouteBuildConfig {

@@ -84,12 +84,28 @@ describe('route canonicalBuildAPI contract', () => {
       tileEmitConfig: {},
       routeGeneration: {},
     };
-    const routes = [{ startCoordinates: [139, 35], endCoordinates: [140, 36] }];
+    const draftData = {
+      buildConfig,
+      startLocationId: 'location-start',
+      endLocationId: 'location-end',
+      lineGeometry: [
+        [139, 35],
+        [139.5, 35.5],
+        [140, 36],
+      ],
+    };
 
-    await expect(
-      canonicalBuildAPI.startBuildSession({ nodeId, draftData: { buildConfig, routes } })
-    ).resolves.toBe(status);
-    expect(mocks.prepareSession).toHaveBeenCalledWith(nodeId, buildConfig, { routes });
+    await expect(canonicalBuildAPI.startBuildSession({ nodeId, draftData })).resolves.toBe(status);
+    expect(mocks.prepareSession).toHaveBeenCalledWith(nodeId, buildConfig, {
+      routes: [
+        {
+          startLocationId: 'location-start',
+          endLocationId: 'location-end',
+          startCoordinates: [139, 35],
+          endCoordinates: [140, 36],
+        },
+      ],
+    });
     expect(mocks.startBuildSession).toHaveBeenCalledWith(nodeId);
     await expect(canonicalBuildAPI.getBuildSessionStatus(nodeId)).resolves.toBe(status);
     await canonicalBuildAPI.pauseBuildSession(nodeId, 'pause reason');
@@ -103,5 +119,27 @@ describe('route canonicalBuildAPI contract', () => {
     expect(canonicalBuildAPI.subscribeSessionState(nodeId, callback)).toBe(unsubscribe);
     expect(canonicalBuildAPI.subscribeSessionHeartbeat(nodeId, callback)).toBe(unsubscribe);
     expect(canonicalBuildAPI.subscribeWorkerLog(nodeId, callback)).toBe(unsubscribe);
+  });
+
+  it('rejects invalid persisted direct-route coordinates', async () => {
+    await expect(
+      canonicalBuildAPI.startBuildSession({
+        nodeId: 'route-contract-node',
+        draftData: {
+          buildConfig: {
+            sourceConfig: {},
+            geometryConfig: {},
+            tileEmitConfig: {},
+            routeGeneration: {},
+          },
+          startLocationId: 'location-start',
+          endLocationId: 'location-end',
+          lineGeometry: [
+            [181, 35],
+            [140, 36],
+          ],
+        },
+      })
+    ).rejects.toThrow('draftData.lineGeometry[0] contains invalid coordinates');
   });
 });

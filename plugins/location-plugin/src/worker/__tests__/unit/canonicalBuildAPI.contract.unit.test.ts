@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   startLocationBuildSession: vi.fn(),
   getBuildSessionStatus: vi.fn(),
   pauseBuildSession: vi.fn(),
+  getBuildTasks: vi.fn(),
   subscribeStageSnapshots: vi.fn(),
   subscribeTaskProgress: vi.fn(),
   subscribeSessionState: vi.fn(),
@@ -17,6 +18,7 @@ vi.mock('~/services/LocationBuildManager.js', () => ({
     startLocationBuildSession = mocks.startLocationBuildSession;
     getBuildSessionStatus = mocks.getBuildSessionStatus;
     pauseBuildSession = mocks.pauseBuildSession;
+    getBuildTasks = mocks.getBuildTasks;
   },
 }));
 
@@ -41,13 +43,13 @@ describe('location canonicalBuildAPI contract', () => {
     expect(Object.keys(canonicalBuildAPI)).toEqual([...canonicalPluginBuildAPIMethodNames]);
   });
 
-  it('rejects a start request without explicit build config', async () => {
+  it('rejects a start request without an actual entity data source', async () => {
     await expect(
       canonicalBuildAPI.startBuildSession({
         nodeId: 'location-contract-node',
         draftData: {},
       })
-    ).rejects.toThrow('draftData.buildConfig is required');
+    ).rejects.toThrow('draftData.dataSource is not supported by the Worker build session');
   });
 
   it('delegates commands, queries, and subscriptions through the canonical surface', async () => {
@@ -61,6 +63,7 @@ describe('location canonicalBuildAPI contract', () => {
     };
     mocks.startLocationBuildSession.mockResolvedValue(nodeId);
     mocks.getBuildSessionStatus.mockResolvedValue(status);
+    mocks.getBuildTasks.mockResolvedValue([]);
     for (const subscribe of [
       mocks.subscribeStageSnapshots,
       mocks.subscribeTaskProgress,
@@ -70,25 +73,73 @@ describe('location canonicalBuildAPI contract', () => {
     ]) {
       subscribe.mockReturnValue(unsubscribe);
     }
-    const buildConfig = { searchConfigs: [], processingOptions: {} };
+    const draftData = {
+      dataSource: 'openstreetmap',
+      concurrentDownloads: 3,
+      selectedArrayByCountries: {
+        US: [false, true, false, false, true],
+        JP: [true, false, true, false, false],
+      },
+    };
 
-    await expect(
-      canonicalBuildAPI.startBuildSession({ nodeId, draftData: { buildConfig } })
-    ).resolves.toBe(status);
-    expect(mocks.startLocationBuildSession).toHaveBeenCalledWith(nodeId, buildConfig);
+    await expect(canonicalBuildAPI.startBuildSession({ nodeId, draftData })).resolves.toBe(status);
+    expect(mocks.startLocationBuildSession).toHaveBeenCalledWith(nodeId, {
+      searchConfigs: [
+        {
+          dataSource: 'openstreetmap',
+          countryCode: 'JP',
+          types: ['area_centroid', 'port'],
+        },
+        {
+          dataSource: 'openstreetmap',
+          countryCode: 'US',
+          types: ['airport', 'interchange'],
+        },
+      ],
+      concurrentDownloads: 3,
+      processingOptions: { concurrent: 3 },
+    });
     await expect(canonicalBuildAPI.getBuildSessionStatus(nodeId)).resolves.toBe(status);
     await canonicalBuildAPI.pauseBuildSession(nodeId, 'pause reason');
     expect(mocks.pauseBuildSession).toHaveBeenCalledWith(nodeId);
     await canonicalBuildAPI.cancelQueuedBuildSession(nodeId, 'cancel reason');
     expect(mocks.pauseBuildSession).toHaveBeenCalledTimes(2);
-    await expect(canonicalBuildAPI.getBuildTasks(nodeId)).rejects.toThrow(
-      'authoritative task query is unavailable'
-    );
+    await expect(canonicalBuildAPI.getBuildTasks(nodeId)).resolves.toEqual([]);
 
     expect(canonicalBuildAPI.subscribeStageSnapshots(nodeId, callback)).toBe(unsubscribe);
     expect(canonicalBuildAPI.subscribeTaskProgress(nodeId, callback)).toBe(unsubscribe);
     expect(canonicalBuildAPI.subscribeSessionState(nodeId, callback)).toBe(unsubscribe);
     expect(canonicalBuildAPI.subscribeSessionHeartbeat(nodeId, callback)).toBe(unsubscribe);
     expect(canonicalBuildAPI.subscribeWorkerLog(nodeId, callback)).toBe(unsubscribe);
+  });
+
+  it('rejects a selection matrix without selected location types', async () => {
+    await expect(
+      canonicalBuildAPI.startBuildSession({
+        nodeId: 'location-contract-node',
+        draftData: {
+          dataSource: 'openstreetmap',
+          concurrentDownloads: 2,
+          selectedArrayByCountries: {
+            JP: [false, false, false, false, false],
+          },
+        },
+      })
+    ).rejects.toThrow('must select at least one location type');
+  });
+
+  it('rejects a non-canonical country key instead of normalizing it', async () => {
+    await expect(
+      canonicalBuildAPI.startBuildSession({
+        nodeId: 'location-contract-node',
+        draftData: {
+          dataSource: 'openstreetmap',
+          concurrentDownloads: 2,
+          selectedArrayByCountries: {
+            jp: [true, false, false, false, false],
+          },
+        },
+      })
+    ).rejects.toThrow('must be an uppercase ISO 3166-1 alpha-2 code: jp');
   });
 });

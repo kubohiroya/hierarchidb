@@ -14,6 +14,29 @@ class TestBuildSession extends AbstractBuildSession {
   protected async processBatch(): Promise<void> {}
 }
 
+class PausableTestBuildSession extends AbstractBuildSession {
+  pauseHookCalls = 0;
+
+  constructor(nodeId: NodeId, private readonly notifyStarted: () => void) {
+    super(nodeId, {});
+  }
+
+  protected async processBatch(signal: AbortSignal): Promise<void> {
+    this.notifyStarted();
+    await new Promise<void>((_resolve, reject) => {
+      signal.addEventListener(
+        'abort',
+        () => reject(createAbortError('test session paused')),
+        { once: true }
+      );
+    });
+  }
+
+  protected override async onPause(): Promise<void> {
+    this.pauseHookCalls += 1;
+  }
+}
+
 class TestBuildSessionManager extends BaseBuildSessionManager {
   readonly updatedSessions: AbstractBuildSession[] = [];
 
@@ -87,4 +110,31 @@ describe('AbstractBuildSession session update notification', () => {
     replacement.reportProgress({ total: 2 });
     expect(manager.updatedSessions).toEqual([first, replacement]);
   });
+
+  it('settles the active run before publishing paused state', async () => {
+    let notifyStarted: () => void = () => {};
+    const started = new Promise<void>((resolve) => {
+      notifyStarted = resolve;
+    });
+    const session = new PausableTestBuildSession(NODE_ID, notifyStarted);
+    const observedStatuses: BuildSessionStatus['status'][] = [];
+    session.addSessionUpdateListener(() => {
+      observedStatuses.push(session.getState().status);
+    });
+
+    const runPromise = session.start();
+    await started;
+    await expect(session.pause()).resolves.toBeUndefined();
+    await expect(runPromise).resolves.toBeUndefined();
+
+    expect(session.getState().status).toBe('paused');
+    expect(session.pauseHookCalls).toBe(1);
+    expect(observedStatuses).toEqual(['running', 'paused']);
+  });
 });
+
+function createAbortError(message: string): Error {
+  const error = new Error(message);
+  error.name = 'AbortError';
+  return error;
+}

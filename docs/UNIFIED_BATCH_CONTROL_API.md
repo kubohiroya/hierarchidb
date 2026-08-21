@@ -101,6 +101,19 @@ tree node and passes it unchanged to the plugin; the plugin owns strict validati
 its required configuration and input data. Missing required data is rejected and is
 never replaced with defaults or a no-op session.
 
+Route derives one direct route input from the persisted `buildConfig`,
+`startLocationId`, `endLocationId`, and the first and last coordinates of
+`lineGeometry`. Location derives its search configuration from the persisted
+`dataSource`, `selectedArrayByCountries`, and `concurrentDownloads`. Neither adapter
+accepts a synthetic nested `routes` or Location `buildConfig` field that is absent from
+the corresponding entity payload.
+
+Route and Location pause completes only after the active run has received abort and its
+pipeline promise has settled. A terminal or paused session remains queryable until a
+replacement session for the same node is registered. `getBuildTasks` is operational for
+all three plugin registrations; an adapter must not satisfy the method structurally by
+always rejecting it.
+
 Shape preview payload generation is not part of this build dispatch contract. It is
 exposed separately as the exact `shapeBuildExtensions` worker export; bootstrap does
 not discover it through `shapeBuildAPI`, `shapePluginAPI`, or nested plugin objects.

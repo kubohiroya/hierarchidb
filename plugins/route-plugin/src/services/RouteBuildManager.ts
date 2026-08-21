@@ -114,12 +114,13 @@ export class RouteBuildManager {
     await session.initialize();
     this.hooks?.onSessionReady(session);
     const runPromise = session.start();
-    void runPromise.catch((error: unknown) => {
-      logRouteBuildWarning('Route build session failed', error);
-    });
-    void runPromise.finally(() => {
-      this.activeSessions.delete(nodeId);
-    });
+    void runPromise
+      .catch((error: unknown) => {
+        logRouteBuildWarning('Route build session failed', error);
+      })
+      .finally(() => {
+        this.activeSessions.delete(nodeId);
+      });
 
     return nodeId;
   }

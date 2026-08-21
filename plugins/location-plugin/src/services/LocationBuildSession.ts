@@ -3,15 +3,16 @@
  * @description Location build session extending AbstractBuildSession.
  */
 
-import {
-    AbstractBuildSession,
-    type CanonicalBuildSessionEventSource,
-} from '@hierarchidb/build-runtime-services';
 import type {
+    BuildTaskSummary,
     StageSnapshotUpdatedEvent,
     TaskProgressUpdatedEvent,
     TaskStatus,
 } from '@hierarchidb/build-api';
+import {
+    AbstractBuildSession,
+    type CanonicalBuildSessionEventSource,
+} from '@hierarchidb/build-runtime-services';
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
     LocationBuildConfig,
@@ -106,19 +107,24 @@ export class LocationBuildSession
         for (const batch of batches) {
             if (signal.aborted) throw abortError('Location build aborted');
 
-            await Promise.all(batch.map(async (task) => {
+            const taskResults = await Promise.allSettled(batch.map(async (task) => {
+                requireNotAborted(signal, 'Location build paused before task start');
                 task.status = 'running';
                 task.errorMessage = undefined;
                 this.updateLocationTaskProgress(task, 0);
                 this.updateProgress({ total, completed, failed }, 'source');
                 try {
                     const results = await this.searchLocations(task.searchConfig);
+                    requireNotAborted(signal, 'Location build paused during search');
                     const validated = await this.validateAndFilterLocations(results, this.config.filterCriteria);
+                    requireNotAborted(signal, 'Location build paused during validation');
                     await this.persistLocationPoints(this.nodeId, validated);
+                    requireNotAborted(signal, 'Location build paused during persistence');
                     completed += 1;
                     task.status = 'completed';
                     this.updateLocationTaskProgress(task, 100);
                 } catch (error) {
+                    if (isAbortError(error)) throw error;
                     failed += 1;
                     task.status = 'failed';
                     task.errorMessage = error instanceof Error ? error.message : String(error);
@@ -127,6 +133,10 @@ export class LocationBuildSession
                 }
                 this.updateProgress({ total, completed, failed }, 'source');
             }));
+            const rejectedTask = taskResults.find(
+                (result): result is PromiseRejectedResult => result.status === 'rejected',
+            );
+            if (rejectedTask) throw rejectedTask.reason;
         }
 
         this.completeSourceStage();
@@ -158,6 +168,30 @@ export class LocationBuildSession
 
     takeCanonicalTaskProgressUpdates(): TaskProgressUpdatedEvent['payload'][] {
         return this.pendingTaskProgressUpdates.splice(0);
+    }
+
+    getBuildTasks(): BuildTaskSummary[] {
+        return this.tasks.map((task) => ({
+            taskId: task.taskId,
+            version: task.version,
+            stage: 'source',
+            status: task.status,
+            progress: task.progress,
+            errorMessage: task.errorMessage,
+            metadata: {
+                dataSource: task.searchConfig.dataSource,
+                index: task.index,
+            },
+        }));
+    }
+
+    protected override async onPause(): Promise<void> {
+        for (const task of this.tasks) {
+            if (task.status !== 'running') continue;
+            task.status = 'queued';
+            task.errorMessage = undefined;
+            this.updateLocationTaskProgress(task, 0);
+        }
     }
 
     private beginSourceStage(): void {
@@ -663,6 +697,17 @@ function createBatches<T>(items: T[], batchSize: number): T[][] {
         batches.push(items.slice(i, i + batchSize));
     }
     return batches;
+}
+
+function requireNotAborted(signal: AbortSignal, message: string): void {
+    if (signal.aborted) throw abortError(message);
+}
+
+function isAbortError(error: unknown): boolean {
+    return error !== null
+        && typeof error === 'object'
+        && 'name' in error
+        && error.name === 'AbortError';
 }
 
 function abortError(message: string): Error {

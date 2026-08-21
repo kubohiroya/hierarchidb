@@ -317,6 +317,18 @@
 - Step5 は **データの保存のみ**を行い、タイル生成や変換処理を持たない。
 - tabular metadata は `hidb-location-metadata`（TabularDatabaseManager）に保存し、`LocationDB` は features の永続化のみを担う。
 
+## canonical Worker start入力
+
+- Runtime bootstrapはTreeNodeの`draftData`を無加工でlocation pluginへ渡す。
+- Workerは`LocationEntityPayload.dataSource / selectedArrayByCountries / concurrentDownloads`から
+  `LocationBuildConfig`を決定的に構築する。エンティティ型に存在しない
+  `draftData.buildConfig`を要求しない。
+- 選択された国ごとに1つのsearch configを作り、行のcolumn indexは
+  `area_centroid / airport / port / railway_station / interchange`の確定順序で解釈する。
+- country keyはuppercase ISO 3166-1 alpha-2を要求し、trimや大文字化で補正しない。
+- 未選択、不正な並列数、またはWorker sessionが未対応のdata sourceは
+  空buildや別sourceへ読み替えず、startを失敗させる。
+
 ## 確認事項（要決定）
 
 - なし。

@@ -20,6 +20,8 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
   private readonly sessionUpdateListeners = new Set<() => void>();
   private readonly state: BuildSessionState;
   private progress: BuildProgress;
+  private activeRunPromise: Promise<void> | null = null;
+  private pauseRequested = false;
 
   constructor(nodeId: NodeId, config: TConfig) {
     this.nodeId = nodeId;
@@ -35,7 +37,6 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
       completed: 0,
       failed: 0,
       skipped: 0,
-      stage: 'source',
       percentage: 0,
     };
   }
@@ -68,11 +69,25 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
     if (this.state.status !== 'idle' && this.state.status !== 'paused') {
       throw new Error(`Cannot start session from state ${this.state.status}`);
     }
-    const controller = this.ensureAbortController();
-    if (controller.signal.aborted) {
-      throw abortError('Session aborted before start');
+    if (this.activeRunPromise) {
+      throw new Error(`Session ${String(this.nodeId)} already has an active run`);
     }
 
+    this.pauseRequested = false;
+    this.abortController = new AbortController();
+    const controller = this.abortController;
+
+    const executionPromise = this.executeRun(controller);
+    const trackedPromise = executionPromise.finally(() => {
+      if (this.activeRunPromise === trackedPromise) {
+        this.activeRunPromise = null;
+      }
+    });
+    this.activeRunPromise = trackedPromise;
+    return trackedPromise;
+  }
+
+  private async executeRun(controller: AbortController): Promise<void> {
     this.state.status = 'running';
     this.state.startedAt = this.state.startedAt ?? Date.now();
     this.state.lastActivity = Date.now();
@@ -81,13 +96,19 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
     try {
       await this.onStart();
       await this.processBatch(controller.signal);
+      if (controller.signal.aborted) {
+        throw abortError('Session aborted');
+      }
       this.state.status = 'completed';
       this.state.completedAt = Date.now();
       this.state.lastActivity = this.state.completedAt;
       this.emitSessionUpdate();
       await this.onComplete();
     } catch (error) {
-      if (controller.signal.aborted) {
+      if (controller.signal.aborted && this.pauseRequested && isAbortError(error)) {
+        return;
+      }
+      if (controller.signal.aborted && isAbortError(error)) {
         this.state.status = 'failed';
         this.state.error = 'Session aborted';
         this.state.completedAt = Date.now();
@@ -111,9 +132,34 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
     if (this.state.status !== 'running') {
       throw new Error(`Cannot pause session from state ${this.state.status}`);
     }
+    const activeRunPromise = this.activeRunPromise;
+    const controller = this.abortController;
+    if (!activeRunPromise || !controller) {
+      throw new Error(`Running session ${String(this.nodeId)} has no active run`);
+    }
+
+    this.pauseRequested = true;
+    controller.abort();
+    try {
+      await activeRunPromise;
+      await this.onPause();
+    } catch (error) {
+      this.pauseRequested = false;
+      this.state.status = 'failed';
+      this.state.error = error instanceof Error ? error.message : String(error);
+      this.state.completedAt = Date.now();
+      this.state.lastActivity = this.state.completedAt;
+      this.emitSessionUpdate();
+      throw error;
+    }
+
+    if (this.state.status !== 'running') {
+      this.pauseRequested = false;
+      throw new Error(`Cannot finish pausing session from state ${this.state.status}`);
+    }
     this.state.status = 'paused';
     this.state.lastActivity = Date.now();
-    await this.onPause();
+    this.pauseRequested = false;
     this.emitSessionUpdate();
   }
 
@@ -192,6 +238,15 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
   protected async onPause(): Promise<void> {}
   protected async onResume(): Promise<void> {}
   protected async onComplete(): Promise<void> {}
+}
+
+function isAbortError(error: unknown): boolean {
+  return (
+    error !== null &&
+    typeof error === 'object' &&
+    'name' in error &&
+    error.name === 'AbortError'
+  );
 }
 
 function abortError(message: string): Error {
