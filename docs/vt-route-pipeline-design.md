@@ -1,6 +1,6 @@
 # route vector-tile pipeline design
 
-最終更新: 2026-08-21
+最終更新: 2026-08-22
 
 本書は `docs/route-build-flow-spec.md` のステージ別実装契約を補足する。
 route のStep2〜Step6、location連動、設定SSOT、cache identityに関して本書と同仕様が
@@ -94,9 +94,12 @@ filtering、simplification、index生成の一部をno-opにしてtaskを`comple
 
 ### artifact / index契約
 
-- 1 route×1 zoom bandにつき1つのGeoJSON FeatureCollectionを
-  `EphemeralDB.geometryCache`へ永続化する。filter通過時は端点保持済みLineStringを1本、
-  filter除外時は空featuresを保存する。
+- 1 route×1 zoom bandにつき1つのgeometry artifactを`EphemeralDB.geometryCache`へ永続化する。
+  filter通過時は端点保持済みLineStringを1本含むFlatGeobufとし、shape/locationと共通の
+  VT handlerが読む正規binary入力に揃える。filter除外時はtile転置indexへ登録せず、
+  空featuresのGeoJSONを明示的な空artifactとして保存する。
+- geometry metadataの`format`は非空artifactで`flatgeobuf`、filter除外artifactで`geojson`とする。
+  tileEmit対象relationが`flatgeobuf`以外を参照した場合は形式fallbackせず失敗する。
 - geometry metadataはsource cache ID、source input/content hash、geometry input/content hash、
   route mode、band、filter/simplification設定、filter結果、count、完了時刻を保持する。
 - tile転置indexは`EphemeralDB.tileEmitBufferRelations`のpacked tile ID→geometry buffer関係とし、
@@ -123,6 +126,12 @@ filtering、simplification、index生成の一部をno-opにしてtaskを`comple
 3. route vector-tile storeへ永続化する。
 4. tile summaryとtask/stage完了状態を、永続化成功後に更新する。
 
+tileEmitはshape/locationと同じ`createVtHandler`を使用し、
+`EphemeralDB.tileEmitBufferRelations`から親tile単位のtaskを決定的に生成する。
+成果物は`RouteDB.vectorTiles`へ保存し、正のbyte数をread-back検証してからtaskを完了する。
+task計画の入力集合は現在のsessionが計画したroute×bandのgeometry cache IDに固定する。
+同じnodeIdに残る過去sessionの別source artifact/relationを現在のMVTへ混入させない。
+
 geometry cache/indexが欠落・不正な場合は失敗する。source artifactを直接読んでtileを生成する
 互換経路や、空tile成功への読み替えは行わない。
 
@@ -132,19 +141,20 @@ geometry cache/indexが欠落・不正な場合は失敗する。source artifact
 - `RouteBuildSession`は各stageの実処理をWorker serviceへ委譲し、canonical event sourceとして
   authoritative task snapshotとtask progressを提供する。
 - UIの`RouteBuildStep`はWorker commandとcanonical event subscriptionだけを利用する。
-- UIがroute mutation APIの3処理を独立に順次呼ぶ現行経路はIssue #549で撤去する移行対象とする。
+- 旧route mutation APIの`importIdeGsmRoutes / buildRouteTileIndex / generateRouteVectorTiles`と
+  browser-local orchestratorは使用・公開せず、canonical sessionと競合する別build経路を持たない。
 
-## Issue #1374適用後の残差分（2026-08-21）
+## Issue #1375適用後の状態（2026-08-22）
 
 - `RouteBuildSession`の`source` handlerはgenerator結果を検証し、direction-awareなidentityと
   入力署名を持つLineString GeoJSONをsource cacheへ永続化する。
 - `RouteBuildSession`の`geometry` handlerはsource artifactを検証し、zoom band別geometry
-  artifactとtile転置indexを永続化する。`tileEmit` handlerはなお実成果物を生成せず完了するため、
-  session経路は3stageすべてのartifact契約をまだ満たさない。
-- `RouteBuildStep`には
-  `importIdeGsmRoutes -> buildRouteTileIndex -> generateRouteVectorTiles` の直接実行経路が残る。
+  artifactとtile転置indexを永続化する。
+- `tileEmit` handlerは共通`createVtHandler`でMVTを生成し、`RouteDB.vectorTiles`への書込みと
+  read-back検証を完了してからtask/stageを完了する。
+- `RouteBuildStep`はWorker canonical subscription確立後にcanonical commandだけを送信する。
+- browser-local orchestrator、直接3処理のroute mutation API、重複session mapは削除済みである。
 - `RouteGenerator` / `SearouteEngine`はengine欠落、load失敗、不正responseをfail-fastにする。
-- tileEmitの実成果物化とUI直接実行経路の撤去はIssue #1375で行う。
 
 ## 検証観点
 

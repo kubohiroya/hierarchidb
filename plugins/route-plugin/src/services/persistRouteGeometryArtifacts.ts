@@ -8,6 +8,7 @@ import {
   type EphemeralSourceCacheMetaRecord,
   type EphemeralSourceCacheRecord,
   type EphemeralTileIdToBufferRelation,
+  encodeFlatGeobufFromFeatureCollection,
   ephemeralDB,
   geometrySimplify,
 } from '@hierarchidb/gis-sdk';
@@ -60,7 +61,7 @@ type SourceArtifact = {
   contentHash: string;
 };
 
-type GeometryBand = {
+export type RouteGeometryBand = {
   bandIndex: number;
   zMin: number;
   zMax: number;
@@ -87,8 +88,10 @@ export const persistRouteGeometryArtifacts = async (
   const store = params.store ?? ephemeralDB;
   const source = await readSourceArtifact(store, params);
   requireNotAborted(params.signal);
-  const bands = requireGeometryBands(params.geometryConfig, params.routeGeometryConfig);
-  const prepared = bands.map((band) => prepareGeometryArtifact(params, source, band));
+  const bands = requireRouteGeometryBands(params.geometryConfig, params.routeGeometryConfig);
+  const prepared = await Promise.all(
+    bands.map((band) => prepareGeometryArtifact(params, source, band))
+  );
   requireNotAborted(params.signal);
   await persistPreparedArtifacts(store, params, prepared);
   requireNotAborted(params.signal);
@@ -292,10 +295,10 @@ const requireSourceProperties = (
   }
 };
 
-const requireGeometryBands = (
+export const requireRouteGeometryBands = (
   geometryConfig: RouteBuildConfig['geometryConfig'],
   routeGeometryConfig: RouteBuildConfig['routeGeometryConfig']
-): GeometryBand[] => {
+): RouteGeometryBand[] => {
   if (geometryConfig.enableFeatureFiltering !== true) {
     return contractViolation('geometryConfig.enableFeatureFiltering', 'must be true');
   }
@@ -335,11 +338,11 @@ const requireGeometryBands = (
   });
 };
 
-const prepareGeometryArtifact = (
+const prepareGeometryArtifact = async (
   params: PersistRouteGeometryArtifactsParams,
   source: SourceArtifact,
-  band: GeometryBand
-): PreparedGeometryArtifact => {
+  band: RouteGeometryBand
+): Promise<PreparedGeometryArtifact> => {
   const filtered = source.distanceMeters < band.minDistanceMeters;
   const simplifiedCoordinates = filtered
     ? []
@@ -376,7 +379,9 @@ const prepareGeometryArtifact = (
     filtered,
     simplifiedCoordinates,
   });
-  const data = new TextEncoder().encode(JSON.stringify(payload)).buffer;
+  const data = filtered
+    ? new TextEncoder().encode(JSON.stringify(payload)).buffer
+    : await encodeFlatGeobufFromFeatureCollection(payload);
   const contentHash = geometryArtifactHasher.digest(data, 'sha3-256');
   const tileIds = filtered ? [] : collectLineStringTileIds(simplifiedCoordinates, band.zBase);
   const featureCount = filtered ? 0 : 1;
@@ -394,7 +399,7 @@ const prepareGeometryArtifact = (
     sourceContentHash: source.contentHash,
     inputHash,
     contentHash,
-    format: 'geojson',
+    format: filtered ? 'geojson' : 'flatgeobuf',
     compression: 'none',
     routeMode: params.expected.routeMode,
     bandIndex: band.bandIndex,
@@ -435,7 +440,7 @@ const buildGeometryFeatureCollection = (params: {
   geometryCacheId: string;
   inputHash: string;
   source: SourceArtifact;
-  band: GeometryBand;
+  band: RouteGeometryBand;
   filtered: boolean;
   simplifiedCoordinates: [number, number][];
 }) => ({
@@ -448,6 +453,8 @@ const buildGeometryFeatureCollection = (params: {
           id: params.geometryCacheId,
           properties: {
             ...params.source.properties,
+            id: params.geometryCacheId,
+            layer: 'layer0',
             geometryInputHash: params.inputHash,
             sourceContentHash: params.source.contentHash,
             bandIndex: params.band.bandIndex,

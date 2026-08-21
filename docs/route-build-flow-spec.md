@@ -1,6 +1,6 @@
 # route ビルド前〜ビルド仕様
 
-最終更新: 2026-08-21
+最終更新: 2026-08-22
 
 ## 仕様の位置づけと優先順位
 
@@ -31,7 +31,7 @@ cache identity の正規仕様（SSOT）とする。
   `RouteBuildSessionOrchestrator -> RouteBuildSession` とする。
 - UIは正規Worker commandを通じてstart/pause/resumeを要求する。UIから
   `importIdeGsmRoutes -> buildRouteTileIndex -> generateRouteVectorTiles` を独立に直列実行する経路は
-  移行対象であり、正規経路として残さない。
+  使用しない。この3つのdirect mutation APIとbrowser-local orchestratorは削除し、正規経路として残さない。
 - 各ステージは実成果物を生成する。未実装/no-op handlerがtaskやstageを`completed`にしてはならない。
 - 必須入力、設定、engine、cache metadata、timingが欠落・不正な場合は即時に失敗する。
   丸め、clamp、既定値補完、別engineへの暗黙fallbackで継続しない。
@@ -129,8 +129,12 @@ cache identity の正規仕様（SSOT）とする。
     経度seamの両側tileをindexへ含める。
   - filtering / simplification / index生成のいずれかを省略して成功扱いにしない。
 - `tileEmit` ステージ:
-  - shape と完全に同じ処理を利用する。
+  - shape/location と共通の`createVtHandler`を利用する。
   - geometry cacheとtile転置indexを読み、MVT生成とroute storeへの永続化までを完了する。
+  - 親tile単位のtaskはtile転置indexから決定的に生成し、各taskは正のtile件数を生成しなければ失敗する。
+  - task入力は現在のsessionが計画したroute×bandのgeometry cache IDだけに限定し、同じnodeIdに残る
+    過去sessionの別source artifact/relationを現在のMVTへ混入させない。
+  - `RouteDB.vectorTiles`への書込み結果をbyte単位でread-back検証した後にのみ完了する。
 
 ### source key / cache identity
 
@@ -173,6 +177,9 @@ waterway:location-a:location-b              # explicitly bidirectional and canon
   `geometryCacheMeta`へdata以外のlineageを保存する。metadataにはsource cache ID、source input/content
   hash、geometry input/content hash、route mode、band範囲、filter閾値、simplification tolerance、
   filter結果、feature/vertex/tile数、永続化完了時刻を含める。
+- tileEmit対象となる非空geometry artifactは、shape/locationと共通のVT handlerが読むFlatGeobufで保存し、
+  metadataの`format`を`flatgeobuf`とする。filter除外artifactは転置indexへ登録せず、空featuresの
+  GeoJSONと`format=geojson`を保存する。転置indexが非FlatGeobuf artifactを参照した場合は失敗する。
 - 正規tile転置indexは`EphemeralDB.tileEmitBufferRelations`のtile→geometry buffer関係とする。
   tile IDはVT orchestratorの共通packed IDを使い、tile境界への接触も交差として含める。
   旧`RouteDB.tileIndex`はcanonical geometry→tileEmit lineageのSSOTとして使用しない。
@@ -249,4 +256,4 @@ waterway:location-a:location-b              # explicitly bidirectional and canon
 - 座標はfiniteかつlongitude `-180..180` / latitude `-90..90`を満たすことを要求し、
   routeMode、location ID、座標、またはbuild設定が不正な場合はstartを失敗させる。
 - `selectedArrayByCountries`から複数routeを計画するsource strategyへの移行は
-  Issue #549の対象であり、direct-route入力と混在させない。
+  location連動とStep3選択契約を実装するIssue #262の対象であり、direct-route入力と混在させない。

@@ -328,15 +328,18 @@ export const useBuildSessionStateTreeBridge = <StageId extends StageKey>(
   const state = useAtomValue(stateTree.buildSessionStateTreeAtom);
   const activeStageCounts = useAtomValue(stateTree.activeStageCountsAtom);
   const [subscriptionError, setSubscriptionError] = useState<Error | null>(null);
+  const [subscriptionReady, setSubscriptionReady] = useState(false);
 
   useEffect(() => {
     if (!nodeId) {
       dispatch({ type: 'reset' });
       setSubscriptionError(null);
+      setSubscriptionReady(false);
       return;
     }
     dispatch({ type: 'reset' });
     setSubscriptionError(null);
+    setSubscriptionReady(false);
     if (!autoSubscribe) return;
 
     const unsubscribers: Array<() => void> = [];
@@ -540,6 +543,7 @@ export const useBuildSessionStateTreeBridge = <StageId extends StageKey>(
         return;
       }
       unsubscribers.push(unsubscribeAll);
+      setSubscriptionReady(true);
     };
 
     void run().catch((error: unknown) => {
@@ -644,5 +648,6 @@ export const useBuildSessionStateTreeBridge = <StageId extends StageKey>(
     tree: state,
     activeStageCounts,
     progressState,
+    subscriptionReady,
   };
 };

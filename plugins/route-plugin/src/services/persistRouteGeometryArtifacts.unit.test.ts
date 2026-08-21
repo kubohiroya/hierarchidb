@@ -2,13 +2,17 @@
 
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import type { NodeId } from '@hierarchidb/core-types';
-import { EphemeralDB } from '@hierarchidb/gis-sdk';
+import { EphemeralDB, generateVectorTilesFromFgbBuffer } from '@hierarchidb/gis-sdk';
 import { ROUTE_MODES } from '@hierarchidb/route-api';
 import { collectLineStringTileIds } from '@hierarchidb/vt-orchestrator';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_ROUTE_BUILD_CONFIG } from '~/common/config/buildConfig.js';
-import { persistRouteGeometryArtifacts } from './persistRouteGeometryArtifacts.js';
+import {
+  persistRouteGeometryArtifacts,
+  requireRouteGeometryBands,
+} from './persistRouteGeometryArtifacts.js';
 import { persistRouteSourceArtifact } from './persistRouteSourceArtifact.js';
+import { prepareRouteTileEmitTasks } from './prepareRouteTileEmitTasks.js';
 import { buildRouteSourceIdentity } from './routeSourceIdentity.js';
 
 describe('persistRouteGeometryArtifacts', () => {
@@ -81,17 +85,22 @@ describe('persistRouteGeometryArtifacts', () => {
       sourceInputHash: source.identity.inputHash,
       endpointPreserved: true,
       filtered: false,
+      format: 'flatgeobuf',
     });
     expect(records[1]?.metadata).toMatchObject({
       endpointPreserved: false,
       filtered: true,
+      format: 'geojson',
     });
 
-    const decodedIncluded = decodeFeatureCollection(records[0]?.data);
-    expect(decodedIncluded.features[0]?.geometry.coordinates).toEqual([
-      [-100, 40],
-      [10, 20],
-    ]);
+    const includedData = records[0]?.data;
+    if (!includedData) throw new Error('Included geometry artifact data is required');
+    const generated = await generateVectorTilesFromFgbBuffer(nodeId, includedData, {
+      minZoom: 1,
+      maxZoom: 1,
+      inputFormat: 'flatgeobuf',
+    });
+    expect(generated.tilesGenerated).toBeGreaterThan(0);
     const decodedFiltered = decodeFeatureCollection(records[1]?.data);
     expect(decodedFiltered.features).toEqual([]);
 
@@ -252,6 +261,190 @@ describe('persistRouteGeometryArtifacts', () => {
     ).rejects.toThrow('must be within Web Mercator latitude range');
 
     await expect(store.geometryCache.count()).resolves.toBe(0);
+  });
+
+  it('rejects an indexed non-FlatGeobuf geometry artifact', async () => {
+    const source = await createSourceArtifact({
+      coordinates: [
+        [139, 35],
+        [140, 36],
+      ],
+      distanceMeters: 150_000,
+    });
+    const geometryConfig = {
+      ...DEFAULT_ROUTE_BUILD_CONFIG.geometryConfig,
+      zoomBandBoundaries: [1, 2],
+    };
+    const routeGeometryConfig = {
+      minDistanceMetersByBand: [0],
+      simplifyToleranceByBand: [0],
+    };
+    const output = await persistRouteGeometryArtifacts({
+      ...source.params,
+      sourceCacheId: source.sourceCacheId,
+      geometryConfig,
+      routeGeometryConfig,
+      store,
+    });
+    const geometryCacheId = output.artifacts[0]?.geometryCacheId;
+    if (!geometryCacheId) throw new Error('Geometry artifact is required');
+    const record = await store.geometryCache.get(geometryCacheId);
+    if (!record) throw new Error('Geometry cache record is required');
+    await store.geometryCache.put({
+      ...record,
+      metadata: { ...record.metadata, format: 'geojson' },
+    });
+
+    await expect(
+      prepareRouteTileEmitTasks({
+        nodeId,
+        bands: requireRouteGeometryBands(geometryConfig, routeGeometryConfig),
+        expectedGeometryCacheIds: output.artifacts.map((artifact) => artifact.geometryCacheId),
+        startIndex: 2,
+        store,
+      })
+    ).rejects.toThrow('does not satisfy the planned route artifact contract');
+  });
+
+  it('excludes geometry artifacts and transpose relations from an older session', async () => {
+    const source = await createSourceArtifact({
+      coordinates: [
+        [139, 35],
+        [140, 36],
+      ],
+      distanceMeters: 150_000,
+    });
+    const geometryConfig = {
+      ...DEFAULT_ROUTE_BUILD_CONFIG.geometryConfig,
+      zoomBandBoundaries: [1, 2],
+    };
+    const routeGeometryConfig = {
+      minDistanceMetersByBand: [0],
+      simplifyToleranceByBand: [0],
+    };
+    const output = await persistRouteGeometryArtifacts({
+      ...source.params,
+      sourceCacheId: source.sourceCacheId,
+      geometryConfig,
+      routeGeometryConfig,
+      store,
+    });
+    const geometryCacheId = output.artifacts[0]?.geometryCacheId;
+    if (!geometryCacheId) throw new Error('Geometry artifact is required');
+    const record = await store.geometryCache.get(geometryCacheId);
+    if (!record) throw new Error('Geometry cache record is required');
+    const relations = await store.tileEmitBufferRelations
+      .where('bufferId')
+      .equals(geometryCacheId)
+      .toArray();
+    if (relations.length === 0) throw new Error('Tile transpose relation is required');
+
+    const staleGeometryCacheId = `${geometryCacheId}:stale`;
+    await store.geometryCache.put({
+      ...record,
+      id: staleGeometryCacheId,
+      sourceKey: 'stale-source',
+    });
+    await store.tileEmitBufferRelations.bulkPut(
+      relations.map((relation) => ({
+        ...relation,
+        id: `${relation.id}:stale`,
+        bufferId: staleGeometryCacheId,
+      }))
+    );
+
+    const tasks = await prepareRouteTileEmitTasks({
+      nodeId,
+      bands: requireRouteGeometryBands(geometryConfig, routeGeometryConfig),
+      expectedGeometryCacheIds: output.artifacts.map((artifact) => artifact.geometryCacheId),
+      startIndex: 2,
+      store,
+    });
+    const plannedBufferIds = new Set(tasks.flatMap((task) => task.inputData.bufferIds));
+    expect(plannedBufferIds).toContain(geometryCacheId);
+    expect(plannedBufferIds).not.toContain(staleGeometryCacheId);
+  });
+
+  it('rejects a transpose relation owned by a different node', async () => {
+    const source = await createSourceArtifact({
+      coordinates: [
+        [139, 35],
+        [140, 36],
+      ],
+      distanceMeters: 150_000,
+    });
+    const geometryConfig = {
+      ...DEFAULT_ROUTE_BUILD_CONFIG.geometryConfig,
+      zoomBandBoundaries: [1, 2],
+    };
+    const routeGeometryConfig = {
+      minDistanceMetersByBand: [0],
+      simplifyToleranceByBand: [0],
+    };
+    const output = await persistRouteGeometryArtifacts({
+      ...source.params,
+      sourceCacheId: source.sourceCacheId,
+      geometryConfig,
+      routeGeometryConfig,
+      store,
+    });
+    const geometryCacheId = output.artifacts[0]?.geometryCacheId;
+    if (!geometryCacheId) throw new Error('Geometry artifact is required');
+    const relation = await store.tileEmitBufferRelations
+      .where('bufferId')
+      .equals(geometryCacheId)
+      .first();
+    if (!relation) throw new Error('Tile transpose relation is required');
+    await store.tileEmitBufferRelations.put({
+      ...relation,
+      nodeId: 'different-route-node' as NodeId,
+    });
+
+    await expect(
+      prepareRouteTileEmitTasks({
+        nodeId,
+        bands: requireRouteGeometryBands(geometryConfig, routeGeometryConfig),
+        expectedGeometryCacheIds: output.artifacts.map((artifact) => artifact.geometryCacheId),
+        startIndex: 2,
+        store,
+      })
+    ).rejects.toThrow('does not belong to the planned route node');
+  });
+
+  it('rejects a missing tile transpose index', async () => {
+    const source = await createSourceArtifact({
+      coordinates: [
+        [139, 35],
+        [140, 36],
+      ],
+      distanceMeters: 150_000,
+    });
+    const geometryConfig = {
+      ...DEFAULT_ROUTE_BUILD_CONFIG.geometryConfig,
+      zoomBandBoundaries: [1, 2],
+    };
+    const routeGeometryConfig = {
+      minDistanceMetersByBand: [0],
+      simplifyToleranceByBand: [0],
+    };
+    const output = await persistRouteGeometryArtifacts({
+      ...source.params,
+      sourceCacheId: source.sourceCacheId,
+      geometryConfig,
+      routeGeometryConfig,
+      store,
+    });
+    await store.tileEmitBufferRelations.where('nodeId').equals(nodeId).delete();
+
+    await expect(
+      prepareRouteTileEmitTasks({
+        nodeId,
+        bands: requireRouteGeometryBands(geometryConfig, routeGeometryConfig),
+        expectedGeometryCacheIds: output.artifacts.map((artifact) => artifact.geometryCacheId),
+        startIndex: 2,
+        store,
+      })
+    ).rejects.toThrow('tile transpose index is missing');
   });
 
   const createSourceArtifact = async (input: {

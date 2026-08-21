@@ -1,6 +1,6 @@
 # Route pipeline migration map
 
-最終更新: 2026-08-21
+最終更新: 2026-08-22
 
 ## 文書の位置づけ
 
@@ -85,41 +85,40 @@ flowchart LR
 ```
 
 - geometry成果物だけを入力とする。
+- shape/locationと共通の`createVtHandler`を使う。
+- task入力は現在のsessionが計画したgeometry cache IDだけに限定し、過去sessionの別sourceを混入させない。
 - MVTとsummaryの永続化後にtask/stageを完了する。
 - geometry成果物欠落をsource直読みや空tileで補完しない。
 
-## 現行mainの二重経路
+## Issue #1375適用後の単一経路
 
-2026-08-21時点では、次の2経路が併存する。
+2026-08-22のIssue #1375適用後は、route build entry pointを次の1経路に限定する。
 
 ```mermaid
 flowchart TD
   UI[RouteBuildStep]
-  UI --> DIRECT[importIdeGsmRoutes]
-  DIRECT --> INDEX[buildRouteTileIndex]
-  INDEX --> MVT[generateRouteVectorTiles]
-
-  FORM[RouteBuildLaunchForm]
-  FORM --> ORCH[RouteBuildSessionOrchestrator]
+  UI --> WORKER[canonical Worker command]
+  WORKER --> ORCH[RouteBuildSessionOrchestrator]
   ORCH --> SESSION[RouteBuildSession]
-  SESSION --> SOURCE[source: generator result discarded]
-  SESSION --> NOOP1[geometry: no-op]
-  SESSION --> NOOP2[tileEmit: no-op]
+  SESSION --> SOURCE[source artifact]
+  SOURCE --> GEOMETRY[geometry cache + transpose index]
+  GEOMETRY --> TILE[tileEmit MVT + RouteDB]
+  SESSION --> EVENTS[canonical 4 events]
+  EVENTS --> UI
 ```
 
-直接経路は実成果物を生成するがcanonical session/eventの所有外である。
-session経路はcanonical event sourceだが、sourceはgenerator結果を永続化せず、
-geometry/tileEmitは実処理を行わない。
-どちらも単独では正規仕様を満たさない。
+`RouteBuildLaunchForm`、browser-local orchestrator、直接3処理のroute mutation API、
+重複session state mapは削除する。UIはWorker event subscriptionの確立後にcommandを送る。
+同一nodeIdのsessionは`CanonicalBuildSessionManager.sessions`だけが所有する。
 
 ## Issue #549の統合順
 
-1. `RouteBuildSession`の各stageをWorker serviceの実処理へ接続する。
-2. canonical command/APIから`RouteBuildSessionOrchestrator`を起動可能にする。
-3. `RouteBuildStep`をcanonical command + event subscriptionへ切り替える。
-4. UIの直接3処理経路を削除する。
-5. `RouteBuildLaunchForm`が本番導線でない場合は削除し、必要なら同じcanonical commandへ接続する。
-6. 同一nodeIdに複数session/runが存在しないことをテストする。
+1. [完了] `RouteBuildSession`の各stageをWorker serviceの実処理へ接続する。
+2. [完了] canonical command/APIから`RouteBuildSessionOrchestrator`を起動可能にする。
+3. [完了] `RouteBuildStep`をcanonical command + event subscriptionへ切り替える。
+4. [完了] UIの直接3処理経路と対応route mutation APIを削除する。
+5. [完了] `RouteBuildLaunchForm`とbrowser-local orchestratorを削除する。
+6. [完了] 同一nodeIdに複数session/runが存在しないことを回帰テストする。
 
 ## 完了条件
 
