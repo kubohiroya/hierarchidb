@@ -11,7 +11,7 @@ type RecordClassification =
   | 'modified-default-identity'
   | 'additional'
   | 'invalid';
-type InvalidReasonCode =
+export type InterruptedCoreV1InvalidReasonCode =
   | 'record-shape'
   | 'required-identity'
   | 'required-field-contract'
@@ -26,7 +26,7 @@ interface RecordState {
   readonly value: unknown;
   identity: string | null;
   classification: RecordClassification;
-  invalidReason: InvalidReasonCode | null;
+  invalidReason: InterruptedCoreV1InvalidReasonCode | null;
 }
 
 interface ParsedTree {
@@ -101,7 +101,7 @@ export interface InterruptedCoreV1PreservationSummary {
       readonly tagAssociations: number;
       readonly total: number;
     }>;
-    readonly byReason: Readonly<Record<InvalidReasonCode, number>>;
+    readonly byReason: Readonly<Record<InterruptedCoreV1InvalidReasonCode, number>>;
     readonly byIdentityClass: Readonly<{
       readonly defaultIdentity: number;
       readonly additionalIdentity: number;
@@ -152,6 +152,44 @@ const STORE_NAMES = Object.freeze([
   'tags',
   'tagAssociations',
 ] as const satisfies readonly StoreName[]);
+const STORE_COUNT_NAMES = Object.freeze([...STORE_NAMES, 'total'] as const);
+const RECORD_CLASSIFICATION_NAMES = Object.freeze([
+  'exactDefault',
+  'modifiedDefaultIdentity',
+  'additional',
+  'invalid',
+] as const);
+const INVALID_REASON_CODES = Object.freeze([
+  'record-shape',
+  'required-identity',
+  'required-field-contract',
+  'metadata-contract',
+  'relationship-contract',
+  'duplicate-identity',
+  'yaml-contract',
+] as const satisfies readonly InterruptedCoreV1InvalidReasonCode[]);
+const INVALID_IDENTITY_CLASS_NAMES = Object.freeze([
+  'defaultIdentity',
+  'additionalIdentity',
+  'unavailableIdentity',
+] as const);
+const ADDITIONAL_NODE_COUNT_NAMES = Object.freeze(['yaml', 'nonYaml'] as const);
+const YAML_SLOT_COUNT_NAMES = Object.freeze([
+  'canonical',
+  'legacyWithName',
+  'hostSplitLegacy',
+  'temporaryPlaceholder',
+  'metadataOnlyDraft',
+] as const);
+const SUMMARY_PROPERTY_NAMES = Object.freeze([
+  'storeCounts',
+  'recordClassification',
+  'invalidDiagnostics',
+  'additionalNodeCounts',
+  'graphStatus',
+  'yamlPlanningStatus',
+  'yamlSlotCounts',
+] as const);
 
 const DEFAULT_TREE_IDENTITIES = Object.freeze(['r', 'p'] as const);
 const DEFAULT_NODE_IDENTITIES = Object.freeze(
@@ -199,7 +237,9 @@ function isPlainRecord(value: unknown): value is PlainRecord {
 
 function hasOnlyOwnDataProperties(value: PlainRecord): boolean {
   try {
-    return Reflect.ownKeys(value).every((key) => readOwnDataProperty(value, key).found);
+    return Reflect.ownKeys(value).every(
+      (key) => typeof key === 'string' && readOwnDataProperty(value, key).found
+    );
   } catch {
     return false;
   }
@@ -288,7 +328,7 @@ function createRecordStates(store: StoreName, values: readonly unknown[]): Recor
   }));
 }
 
-function setInvalidReason(state: RecordState, reason: InvalidReasonCode): void {
+function setInvalidReason(state: RecordState, reason: InterruptedCoreV1InvalidReasonCode): void {
   state.invalidReason ??= reason;
 }
 
@@ -631,7 +671,7 @@ function markDuplicateIdentitiesInvalid<T extends { readonly state: RecordState 
 
 function markStateInvalid(
   state: RecordState,
-  reason: InvalidReasonCode = 'relationship-contract'
+  reason: InterruptedCoreV1InvalidReasonCode = 'relationship-contract'
 ): false {
   state.classification = 'invalid';
   setInvalidReason(state, reason);
@@ -740,7 +780,7 @@ function isDefaultIdentity(state: RecordState): boolean {
   );
 }
 
-function createEmptyReasonCounts(): Record<InvalidReasonCode, number> {
+function createEmptyReasonCounts(): Record<InterruptedCoreV1InvalidReasonCode, number> {
   return {
     'record-shape': 0,
     'required-identity': 0,
@@ -823,6 +863,7 @@ function summarize(
 }
 
 function summaryCountersAreConsistent(summary: InterruptedCoreV1PreservationSummary): boolean {
+  const storeTotal = STORE_NAMES.reduce((total, store) => total + summary.storeCounts[store], 0);
   const classificationTotal =
     summary.recordClassification.exactDefault +
     summary.recordClassification.modifiedDefaultIdentity +
@@ -837,6 +878,7 @@ function summaryCountersAreConsistent(summary: InterruptedCoreV1PreservationSumm
     summary.invalidDiagnostics.byIdentityClass.additionalIdentity +
     summary.invalidDiagnostics.byIdentityClass.unavailableIdentity;
   return (
+    summary.storeCounts.total === storeTotal &&
     summary.storeCounts.total === classificationTotal &&
     summary.invalidDiagnostics.byStore.total === summary.recordClassification.invalid &&
     summary.invalidDiagnostics.byStore.total ===
@@ -845,9 +887,133 @@ function summaryCountersAreConsistent(summary: InterruptedCoreV1PreservationSumm
         summary.invalidDiagnostics.byStore.rootStates +
         summary.invalidDiagnostics.byStore.tags +
         summary.invalidDiagnostics.byStore.tagAssociations &&
+    STORE_NAMES.every(
+      (store) => summary.invalidDiagnostics.byStore[store] <= summary.storeCounts[store]
+    ) &&
     invalidReasonTotal === summary.recordClassification.invalid &&
-    invalidIdentityTotal === summary.recordClassification.invalid
+    invalidIdentityTotal === summary.recordClassification.invalid &&
+    summary.additionalNodeCounts.yaml + summary.additionalNodeCounts.nonYaml <=
+      summary.recordClassification.additional
   );
+}
+
+function readExactCounterRecord<Key extends string>(
+  value: unknown,
+  names: readonly Key[]
+): Readonly<Record<Key, number>> | null {
+  if (!isPlainRecord(value) || !hasExactOwnDataProperties(value, names)) return null;
+  const counters = {} as Record<Key, number>;
+  for (const name of names) {
+    const property = readOwnDataProperty(value, name);
+    if (
+      !property.found ||
+      typeof property.value !== 'number' ||
+      !Number.isSafeInteger(property.value) ||
+      property.value < 0
+    ) {
+      return null;
+    }
+    counters[name] = property.value;
+  }
+  return Object.freeze(counters);
+}
+
+/** Rebuilds the exact public allowlist and rejects malformed or inconsistent counters. */
+export function sanitizeInterruptedCoreV1PreservationSummary(
+  value: unknown
+): InterruptedCoreV1PreservationSummary | null {
+  try {
+    if (!isPlainRecord(value) || !hasExactOwnDataProperties(value, SUMMARY_PROPERTY_NAMES)) {
+      return null;
+    }
+    const storeCountsProperty = readOwnDataProperty(value, 'storeCounts');
+    const recordClassificationProperty = readOwnDataProperty(value, 'recordClassification');
+    const invalidDiagnosticsProperty = readOwnDataProperty(value, 'invalidDiagnostics');
+    const additionalNodeCountsProperty = readOwnDataProperty(value, 'additionalNodeCounts');
+    const graphStatusProperty = readOwnDataProperty(value, 'graphStatus');
+    const yamlPlanningStatusProperty = readOwnDataProperty(value, 'yamlPlanningStatus');
+    const yamlSlotCountsProperty = readOwnDataProperty(value, 'yamlSlotCounts');
+    if (
+      !storeCountsProperty.found ||
+      !recordClassificationProperty.found ||
+      !invalidDiagnosticsProperty.found ||
+      !additionalNodeCountsProperty.found ||
+      !graphStatusProperty.found ||
+      !yamlPlanningStatusProperty.found ||
+      !yamlSlotCountsProperty.found
+    ) {
+      return null;
+    }
+    const storeCounts = readExactCounterRecord(storeCountsProperty.value, STORE_COUNT_NAMES);
+    const recordClassification = readExactCounterRecord(
+      recordClassificationProperty.value,
+      RECORD_CLASSIFICATION_NAMES
+    );
+    const additionalNodeCounts = readExactCounterRecord(
+      additionalNodeCountsProperty.value,
+      ADDITIONAL_NODE_COUNT_NAMES
+    );
+    if (
+      storeCounts === null ||
+      recordClassification === null ||
+      additionalNodeCounts === null ||
+      !isPlainRecord(invalidDiagnosticsProperty.value) ||
+      !hasExactOwnDataProperties(invalidDiagnosticsProperty.value, [
+        'byStore',
+        'byReason',
+        'byIdentityClass',
+      ])
+    ) {
+      return null;
+    }
+    const byStoreProperty = readOwnDataProperty(invalidDiagnosticsProperty.value, 'byStore');
+    const byReasonProperty = readOwnDataProperty(invalidDiagnosticsProperty.value, 'byReason');
+    const byIdentityClassProperty = readOwnDataProperty(
+      invalidDiagnosticsProperty.value,
+      'byIdentityClass'
+    );
+    if (!byStoreProperty.found || !byReasonProperty.found || !byIdentityClassProperty.found) {
+      return null;
+    }
+    const byStore = readExactCounterRecord(byStoreProperty.value, STORE_COUNT_NAMES);
+    const byReason = readExactCounterRecord(byReasonProperty.value, INVALID_REASON_CODES);
+    const byIdentityClass = readExactCounterRecord(
+      byIdentityClassProperty.value,
+      INVALID_IDENTITY_CLASS_NAMES
+    );
+    if (byStore === null || byReason === null || byIdentityClass === null) return null;
+
+    const graphStatus = graphStatusProperty.value;
+    if (graphStatus !== 'not-evaluated' && graphStatus !== 'exact' && graphStatus !== 'invalid') {
+      return null;
+    }
+    const yamlPlanningStatus = yamlPlanningStatusProperty.value;
+    if (
+      yamlPlanningStatus !== 'not-run' &&
+      yamlPlanningStatus !== 'valid' &&
+      yamlPlanningStatus !== 'invalid'
+    ) {
+      return null;
+    }
+    const yamlSlotCounts =
+      yamlSlotCountsProperty.value === null
+        ? null
+        : readExactCounterRecord(yamlSlotCountsProperty.value, YAML_SLOT_COUNT_NAMES);
+    if (yamlSlotCountsProperty.value !== null && yamlSlotCounts === null) return null;
+
+    const summary: InterruptedCoreV1PreservationSummary = Object.freeze({
+      storeCounts,
+      recordClassification,
+      invalidDiagnostics: Object.freeze({ byStore, byReason, byIdentityClass }),
+      additionalNodeCounts,
+      graphStatus,
+      yamlPlanningStatus,
+      yamlSlotCounts,
+    });
+    return summaryCountersAreConsistent(summary) ? summary : null;
+  } catch {
+    return null;
+  }
 }
 
 function failed(
@@ -890,8 +1056,10 @@ export async function classifyInterruptedCoreV1Snapshot(
     const rootStates = classifyRootStates(statesByStore.rootStates);
     const tags = classifyTags(statesByStore.tags);
     const tagAssociations = classifyTagAssociations(statesByStore.tagAssociations);
-    let summary = summarize(statesByStore, nodes, 'not-evaluated', 'not-run', null);
-    if (!summaryCountersAreConsistent(summary)) {
+    let summary = sanitizeInterruptedCoreV1PreservationSummary(
+      summarize(statesByStore, nodes, 'not-evaluated', 'not-run', null)
+    );
+    if (summary === null) {
       return failed('INTERRUPTED_CORE_V1_PRESERVATION_INTERNAL_FAILED');
     }
     if (summary.recordClassification.invalid > 0) {
@@ -901,8 +1069,10 @@ export async function classifyInterruptedCoreV1Snapshot(
     const graphAccepted =
       graphValid &&
       hasCompleteDefaultIdentitySet(STORE_NAMES.flatMap((store) => statesByStore[store]));
-    summary = summarize(statesByStore, nodes, graphAccepted ? 'exact' : 'invalid', 'not-run', null);
-    if (!summaryCountersAreConsistent(summary)) {
+    summary = sanitizeInterruptedCoreV1PreservationSummary(
+      summarize(statesByStore, nodes, graphAccepted ? 'exact' : 'invalid', 'not-run', null)
+    );
+    if (summary === null) {
       return failed('INTERRUPTED_CORE_V1_PRESERVATION_INTERNAL_FAILED');
     }
     if (!graphAccepted) {
@@ -933,8 +1103,10 @@ export async function classifyInterruptedCoreV1Snapshot(
           setInvalidReason(invalidNode.state, 'yaml-contract');
         }
       }
-      summary = summarize(statesByStore, nodes, 'exact', 'invalid', null);
-      if (!summaryCountersAreConsistent(summary)) {
+      summary = sanitizeInterruptedCoreV1PreservationSummary(
+        summarize(statesByStore, nodes, 'exact', 'invalid', null)
+      );
+      if (summary === null) {
         return failed('INTERRUPTED_CORE_V1_PRESERVATION_INTERNAL_FAILED');
       }
       return failed('INTERRUPTED_CORE_V1_PRESERVATION_YAML_INVALID', summary);
@@ -958,8 +1130,10 @@ export async function classifyInterruptedCoreV1Snapshot(
         yamlSlotCounts.temporaryPlaceholder += 1;
       } else yamlSlotCounts.metadataOnlyDraft += 1;
     }
-    summary = summarize(statesByStore, nodes, 'exact', 'valid', Object.freeze(yamlSlotCounts));
-    if (!summaryCountersAreConsistent(summary)) {
+    summary = sanitizeInterruptedCoreV1PreservationSummary(
+      summarize(statesByStore, nodes, 'exact', 'valid', Object.freeze(yamlSlotCounts))
+    );
+    if (summary === null) {
       return failed('INTERRUPTED_CORE_V1_PRESERVATION_INTERNAL_FAILED');
     }
     return Object.freeze({

@@ -36,7 +36,11 @@ function createCoreV1Stores(database: IDBDatabase, extraStore = false): void {
   if (extraStore) database.createObjectStore('unexpected', { keyPath: 'id' });
 }
 
-function seedExact15(factory: IDBFactory, extraStore = false): Promise<void> {
+function seedExact15(
+  factory: IDBFactory,
+  extraStore = false,
+  invalidYamlMetadata = false
+): Promise<void> {
   return new Promise((resolve, reject) => {
     const request = factory.open(DATABASE_NAME, NATIVE_VERSION);
     request.onupgradeneeded = () => {
@@ -87,7 +91,9 @@ function seedExact15(factory: IDBFactory, extraStore = false): Promise<void> {
         createdAt: 2,
         updatedAt: 2,
         version: 1,
-        metadata: { name: 'scenario.yml', description: '', tags: ['important'] },
+        metadata: invalidYamlMetadata
+          ? { description: 'sensitive-invalid-description', tags: ['important'] }
+          : { name: 'scenario.yml', description: '', tags: ['important'] },
         draftMetadata: null,
         data: {
           name: 'scenario.yml',
@@ -140,7 +146,7 @@ describe('inspectInterruptedCoreV1Preservation', () => {
 
       expect(databasesSpy).toHaveBeenCalledTimes(1);
       expect(getAllSpy).toHaveBeenCalledTimes(5);
-      expect(result).toMatchObject({
+      expect(result).toEqual({
         mode: 'recovery-interrupted-core-preservation',
         status: 'accepted',
         code: 'INTERRUPTED_CORE_V1_PRESERVATION_ACCEPTED',
@@ -164,8 +170,40 @@ describe('inspectInterruptedCoreV1Preservation', () => {
               additional: 3,
               invalid: 0,
             },
+            invalidDiagnostics: {
+              byStore: {
+                trees: 0,
+                nodes: 0,
+                rootStates: 0,
+                tags: 0,
+                tagAssociations: 0,
+                total: 0,
+              },
+              byReason: {
+                'record-shape': 0,
+                'required-identity': 0,
+                'required-field-contract': 0,
+                'metadata-contract': 0,
+                'relationship-contract': 0,
+                'duplicate-identity': 0,
+                'yaml-contract': 0,
+              },
+              byIdentityClass: {
+                defaultIdentity: 0,
+                additionalIdentity: 0,
+                unavailableIdentity: 0,
+              },
+            },
+            additionalNodeCounts: { yaml: 1, nonYaml: 0 },
             graphStatus: 'exact',
             yamlPlanningStatus: 'valid',
+            yamlSlotCounts: {
+              canonical: 0,
+              legacyWithName: 1,
+              hostSplitLegacy: 0,
+              temporaryPlaceholder: 0,
+              metadataOnlyDraft: 0,
+            },
           },
         },
       });
@@ -177,6 +215,73 @@ describe('inspectInterruptedCoreV1Preservation', () => {
     } finally {
       getAllSpy.mockRestore();
     }
+  });
+
+  it('preserves only the sanitized invalid-diagnostic allowlist at the app boundary', async () => {
+    const factory = new IDBFactory();
+    await seedExact15(factory, false, true);
+
+    const result = await inspectInterruptedCoreV1Preservation(input(factory));
+
+    expect(result).toEqual({
+      mode: 'recovery-interrupted-core-preservation',
+      status: 'rejected',
+      code: 'INTERRUPTED_CORE_V1_PRESERVATION_SNAPSHOT_INVALID',
+      timestamp: TIMESTAMP,
+      releaseVersion: RELEASE_VERSION,
+      interruptedCoreDb: {
+        nativeVersion: NATIVE_VERSION,
+        topologyStatus: 'exact-logical-v1',
+        preservation: {
+          storeCounts: {
+            trees: 2,
+            nodes: 5,
+            rootStates: 6,
+            tags: 1,
+            tagAssociations: 1,
+            total: 15,
+          },
+          recordClassification: {
+            exactDefault: 12,
+            modifiedDefaultIdentity: 0,
+            additional: 2,
+            invalid: 1,
+          },
+          invalidDiagnostics: {
+            byStore: {
+              trees: 0,
+              nodes: 1,
+              rootStates: 0,
+              tags: 0,
+              tagAssociations: 0,
+              total: 1,
+            },
+            byReason: {
+              'record-shape': 0,
+              'required-identity': 0,
+              'required-field-contract': 0,
+              'metadata-contract': 1,
+              'relationship-contract': 0,
+              'duplicate-identity': 0,
+              'yaml-contract': 0,
+            },
+            byIdentityClass: {
+              defaultIdentity: 0,
+              additionalIdentity: 1,
+              unavailableIdentity: 0,
+            },
+          },
+          additionalNodeCounts: { yaml: 0, nonYaml: 0 },
+          graphStatus: 'not-evaluated',
+          yamlPlanningStatus: 'not-run',
+          yamlSlotCounts: null,
+        },
+      },
+    });
+    const serialized = JSON.stringify(result);
+    expect(serialized).not.toContain('yaml-1');
+    expect(serialized).not.toContain('sensitive-invalid-description');
+    expect(serialized).not.toContain('name: demo');
   });
 
   it('rejects a topology mismatch before reading records', async () => {

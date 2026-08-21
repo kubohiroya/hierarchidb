@@ -543,7 +543,10 @@ database prefixes, and inferred database names. Page load remains inert and exac
 click can start the inspection. This mode is not a recovery claim or write authority and never creates,
 upgrades, copies, merges, renames, deletes, repairs, reloads, or retries storage. All public counters
 must be internally consistent with store totals and classification totals; any mismatch is a sanitized
-internal failure, not a rounded or accepted result.
+internal failure, not a rounded or accepted result. Accessor-bearing, symbol-bearing, and non-plain raw
+records fail as `record-shape` without reading their values. The app boundary reconstructs the exact
+summary allowlist and repeats the counter-consistency check before publishing the result; extra fields
+or a mismatch become the same sanitized internal failure.
 
 The strict census contract, build-SHA reader, and responder live in the shared
 `@hierarchidb/origin-coordinator` workspace package. The window, SharedWorker, dedicated runtime

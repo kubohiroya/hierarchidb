@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   classifyInterruptedCoreV1Snapshot,
   type InterruptedCoreV1Snapshot,
+  sanitizeInterruptedCoreV1PreservationSummary,
 } from '../classifyInterruptedCoreV1Snapshot.js';
 
 const VALID_DIGEST = '0123456789abcdef'.repeat(4);
@@ -508,5 +509,62 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
       byReason: { 'duplicate-identity': 2 },
       byIdentityClass: { defaultIdentity: 2 },
     });
+  });
+
+  it('rejects a symbol-bearing record without reading or exposing the symbol value', async () => {
+    const baseline = createDefaultSnapshot();
+    const sensitiveSymbol = Symbol('sensitive-symbol-description');
+    const tag = {
+      id: 'tag-symbol',
+      name: 'Symbol Tag',
+      color: '#000000',
+      createdAt: 2,
+      [sensitiveSymbol]: 'sensitive-symbol-value',
+    };
+
+    const result = await classify({ ...baseline, tags: [tag] });
+
+    expect(result.code).toBe('INTERRUPTED_CORE_V1_PRESERVATION_SNAPSHOT_INVALID');
+    if (result.ok) throw new Error('Expected symbol-bearing record rejection');
+    expect(result.summary?.invalidDiagnostics).toMatchObject({
+      byStore: { tags: 1, total: 1 },
+      byReason: { 'record-shape': 1 },
+      byIdentityClass: { unavailableIdentity: 1 },
+    });
+    expect(JSON.stringify(result)).not.toContain('sensitive-symbol');
+  });
+
+  it('rejects a non-plain record without exposing its values', async () => {
+    const baseline = createDefaultSnapshot();
+    const tag = Object.assign(Object.create({ inherited: 'sensitive-inherited-value' }), {
+      id: 'tag-non-plain',
+      name: 'Non Plain Tag',
+      color: '#000000',
+      createdAt: 2,
+    });
+
+    const result = await classify({ ...baseline, tags: [tag] });
+
+    expect(result.code).toBe('INTERRUPTED_CORE_V1_PRESERVATION_SNAPSHOT_INVALID');
+    if (result.ok) throw new Error('Expected non-plain record rejection');
+    expect(result.summary?.invalidDiagnostics).toMatchObject({
+      byStore: { tags: 1, total: 1 },
+      byReason: { 'record-shape': 1 },
+      byIdentityClass: { unavailableIdentity: 1 },
+    });
+    expect(JSON.stringify(result)).not.toContain('sensitive-inherited-value');
+  });
+
+  it('rejects inconsistent counters and non-allowlisted summary fields', async () => {
+    const result = await classify(createDefaultSnapshot());
+    if (result.ok === false) throw new Error('Expected preservation classification acceptance');
+    const counterMismatch = {
+      ...result.summary,
+      storeCounts: { ...result.summary.storeCounts, total: 13 },
+    };
+    const extraField = { ...result.summary, rawRecord: { id: 'sensitive-record-id' } };
+
+    expect(sanitizeInterruptedCoreV1PreservationSummary(counterMismatch)).toBeNull();
+    expect(sanitizeInterruptedCoreV1PreservationSummary(extraField)).toBeNull();
   });
 });
