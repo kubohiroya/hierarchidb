@@ -1,1 +1,1 @@
-export { revokeLegacyYamlAccessAndClose } from '../legacyYamlAccessGate.js';
+export { revokeLegacyYamlAccessAndClose } from '../legacyYamlAccessGateUtils.js';

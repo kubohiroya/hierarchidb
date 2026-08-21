@@ -14,7 +14,7 @@ import type { YamlCoreDbMigrationJournalValue } from '@hierarchidb/yaml-api/migr
 import type { BulkError } from 'dexie';
 import { Dexie, type Table } from 'dexie';
 import { Subject } from 'rxjs';
-import { assertYamlCanonicalTreeNodePostimage } from './validateYamlCanonicalTreeNodePostimage.js';
+import { assertYamlCanonicalTreeNodePostimage } from './yamlCanonicalTreeNodePostimageUtils.js';
 
 export const CORE_DB_CANONICAL_VERSION = 2 as const;
 export const YAML_MIGRATION_JOURNAL_STORE_NAME = 'yamlMigrationJournal' as const;

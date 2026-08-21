@@ -5,9 +5,9 @@ import { Dexie, type Table } from 'dexie';
 import {
   assertLegacyYamlAccessAllowed,
   registerLegacyYamlDatabaseClose,
-} from './legacyYamlAccessGate.js';
+} from './legacyYamlAccessGateUtils.js';
 
-export { revokeLegacyYamlAccessAndClose } from './legacyYamlAccessGate.js';
+export { revokeLegacyYamlAccessAndClose } from './legacyYamlAccessGateUtils.js';
 
 export type YamlNodeRecord = YamlFileNodeData & { nodeId: NodeId; parentId: NodeId };
 
