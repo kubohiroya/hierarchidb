@@ -256,4 +256,4 @@ waterway:location-a:location-b              # explicitly bidirectional and canon
 - 座標はfiniteかつlongitude `-180..180` / latitude `-90..90`を満たすことを要求し、
   routeMode、location ID、座標、またはbuild設定が不正な場合はstartを失敗させる。
 - `selectedArrayByCountries`から複数routeを計画するsource strategyへの移行は
-  Issue #549の対象であり、direct-route入力と混在させない。
+  location連動とStep3選択契約を実装するIssue #262の対象であり、direct-route入力と混在させない。

@@ -109,7 +109,7 @@ browser-local orchestrator, or GeoJSON fallback.
 The current interfaces are `canonicalBuildAPI`, `RouteBuildSessionOrchestrator`,
 `RouteBuildSession`, `persistRouteSourceArtifact`, `persistRouteGeometryArtifacts`,
 `prepareRouteTileEmitTasks`, the shared shape/location `createVtHandler`, and
-`persistRouteTileArtifacts`. Do not add build operations to `RouteMutationAPI` or call it from the
+`RouteTileArtifactStore`. Do not add build operations to `RouteMutationAPI` or call it from the
 UI build step.
 
 Note on plan maintenance: update `Progress`, `Decision Log`, and `Surprises & Discoveries` after each milestone. At completion, fill `Outcomes & Retrospective` with the final status and lessons learned.

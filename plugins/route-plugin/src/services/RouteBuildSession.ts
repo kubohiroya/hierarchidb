@@ -42,8 +42,8 @@ import {
   persistRouteSourceArtifact,
   type RouteSourceArtifactOutput,
 } from './persistRouteSourceArtifact.js';
-import { createRouteTileArtifactWriter } from './persistRouteTileArtifacts.js';
 import { prepareRouteTileEmitTasks } from './prepareRouteTileEmitTasks.js';
+import { createRouteTileArtifactWriter } from './RouteTileArtifactStore.js';
 
 export type RouteBuildTaskStage = 'source' | 'geometry' | 'tileEmit';
 
