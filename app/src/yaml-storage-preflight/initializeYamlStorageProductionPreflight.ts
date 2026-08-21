@@ -1,13 +1,25 @@
 import type {
+  YamlStorageCorrectiveRecoveryInspectionResult,
+  YamlStorageCorrectiveRecoveryInspectionStage,
+} from '../yaml-storage-recovery/yamlStorageCorrectiveRecoveryTypes.js';
+import type {
   YamlStorageProductionPreflightMode,
   YamlStorageProductionPreflightResult,
 } from './runYamlStorageProductionPreflight.js';
 
+export type YamlStorageInspectionMode =
+  | YamlStorageProductionPreflightMode
+  | YamlStorageCorrectiveRecoveryInspectionStage;
+
+export type YamlStorageInspectionResult =
+  | YamlStorageProductionPreflightResult
+  | YamlStorageCorrectiveRecoveryInspectionResult;
+
 export interface InitializeYamlStorageProductionPreflightInput {
   readonly document: Document;
-  readonly mode: YamlStorageProductionPreflightMode;
+  readonly mode: YamlStorageInspectionMode;
   readonly releaseVersion: string;
-  readonly execute: () => Promise<YamlStorageProductionPreflightResult>;
+  readonly execute: () => Promise<YamlStorageInspectionResult>;
 }
 
 interface PreflightElements {
@@ -40,9 +52,15 @@ function readElements(document: Document): PreflightElements {
 
 export function parseYamlStorageProductionPreflightMode(
   url: URL
-): YamlStorageProductionPreflightMode | null {
+): YamlStorageInspectionMode | null {
   const modes = url.searchParams.getAll('mode');
-  return modes.length === 1 && (modes[0] === 'pre' || modes[0] === 'post') ? modes[0] : null;
+  return modes.length === 1 &&
+    (modes[0] === 'pre' ||
+      modes[0] === 'post' ||
+      modes[0] === 'recovery-pre' ||
+      modes[0] === 'recovery-post')
+    ? modes[0]
+    : null;
 }
 
 export function renderYamlStorageProductionPreflightModeFailure(

@@ -83,6 +83,10 @@
         not bootstrap the application, start activation, persist state, copy data, or send results.
       </p>
       <p>
+        Recovery-pre and recovery-post modes validate the separately approved corrective-recovery
+        inventory and durable one-shot claim. They are read-only and never start recovery.
+      </p>
+      <p>
         In pre mode, record the result and close this diagnostic tab before loading or reloading the
         production root. An open diagnostic tab is intentionally not a coordinator participant and
         therefore blocks activation census fail-closed.

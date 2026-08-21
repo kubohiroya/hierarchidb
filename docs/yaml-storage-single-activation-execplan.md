@@ -1,6 +1,6 @@
 # YAML storage single canonical activation
 
-This ExecPlan is a living implementation plan for [GitHub Issue #1340](https://github.com/kubohiroya/hierarchidb/issues/1340). GitHub Issue #1340 and the repository Project remain the status SSOT. This document records implementation reasoning and concrete repository operations; it is not a second task ledger.
+This ExecPlan is a living implementation plan for [GitHub Issue #1340](https://github.com/kubohiroya/hierarchidb/issues/1340). The separately approved corrective recovery amendment is tracked by [GitHub Issue #1388](https://github.com/kubohiroya/hierarchidb/issues/1388). GitHub Issues and the repository Project remain the status SSOT. This document records implementation reasoning and concrete repository operations; it is not a second task ledger.
 
 ## Purpose and user-visible outcome
 
@@ -60,6 +60,14 @@ After completion, YAML filenames live only in the matching metadata slot and YAM
 
 - Decision: Do not implement interrupted-v1 automatic recovery in #1340.
   Rationale: A new target open would violate the no-retry and same-open-request contract. Interrupted activation stays terminal until a separately specified and approved recovery release exists.
+  Date: 2026-08-21.
+
+- Decision: Implement #1388 as one build-fixed incident recovery, never as generic
+  `revoked + missing => fresh create` successor behavior.
+  Rationale: The durable revoked state cannot distinguish a genuinely interrupted incident from a
+  later manual deletion. The exact coordinator fingerprint, strict database inventory, and a
+  separately created origin-wide claim database bind the exceptional write to the approved
+  production state and select one executor without changing the fixed coordinator.
   Date: 2026-08-21.
 
 - Decision: Treat a genuinely missing CoreDB as a distinct same-activation fresh-v2 creation, not
@@ -201,6 +209,18 @@ The final command matrix is the one recorded in #1340. Every command must exit z
 Read-only inspection and canonical successor validation are safe to rerun on an already canonical v2 database. They perform no migration writes and do not use journal row count as readiness proof.
 
 The initial v1-to-v2 target open is deliberately not retryable. A failed or aborted versionchange leaves the upgrade uncommitted, while the durable coordinator remains revoked. The application does not restore allowed state, reopen v1, delete databases, or try a second open. This terminal condition requires a separate reviewed recovery release.
+
+Issue #1388 supplies that separate release only for its exact accepted incident state. A diagnostic
+build with recovery disabled first runs read-only `recovery-pre`, records the deterministic
+coordinator fingerprint and strict inventory, and closes the diagnostic page. The same exact source
+is then rebuilt with mode `incident-1388-v1` and that 64-hex fingerprint. The revoked successor path
+creates `<prefix>-yaml-storage-recovery` native v1 with one exact `claimed` record as the atomic
+origin-wide claim, then creates only the exact canonical CoreDB name at native v20 from oldVersion
+zero, initializes and validates it, changes the record to `completed`, and reloads only on success.
+The historical `hidb-core` and YamlDB are read-only evidence and are never copied, renamed, deleted,
+or repaired. Any failure or existing claimed record is terminal. Recovery-post must prove the same
+baseline and completed claim; the accepted production follow-up is rebuilt with recovery explicitly
+disabled. Generic revoked successor behavior continues to reject missing CoreDB.
 
 Once logical v2 / native v20 commits, exact or release inverse migration can only run as a newer CoreDB logical/native version pair under the rollback contract. The release never downgrades the IndexedDB native version. YamlDB remains untouched for the #1341 recovery window.
 
