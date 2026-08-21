@@ -103,6 +103,17 @@ tree node and passes it unchanged to the plugin; the plugin owns strict validati
 its required configuration and input data. Missing required data is rejected and is
 never replaced with defaults or a no-op session.
 
+When Shape `processingConfig` is present, its source, geometry, tileEmit, and optional
+dynamic-concurrency leaves must satisfy the complete `ShapeProcessingConfig` contract.
+The adapter rejects partial processing objects before the runtime can merge defaults.
+Source concurrency is an integer in `1..4`; retry counts are non-negative integers;
+retry delay is a finite non-negative number; and retry backoff is `linear` or
+`exponential`. Geometry concurrency is an integer in `1..8`, while tileEmit
+concurrency is a positive integer. Dynamic concurrency requires a boolean `enabled`,
+positive integer limits with optional `maxConcurrent >= minConcurrent`, finite
+watermarks in `0..1` with `lowWatermark < highWatermark`, a positive integer
+`adjustStep`, and an integer `sampleMs >= 200`.
+
 Route derives one direct route input from the persisted `buildConfig`,
 `startLocationId`, `endLocationId`, and the first and last coordinates of
 `lineGeometry`. Location derives its search configuration from the persisted

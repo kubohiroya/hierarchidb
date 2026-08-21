@@ -1,6 +1,6 @@
 import { canonicalPluginBuildAPIMethodNames } from '@hierarchidb/build-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants.js';
+import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '../../common/types/constants.js';
 
 const shapeBuildAPIMocks = vi.hoisted(() => ({
   startBuildSession: vi.fn(),
@@ -178,5 +178,46 @@ describe('shape canonicalBuildAPI contract', () => {
         },
       })
     ).rejects.toThrow('draftData.buildConfig.sourceConfig.deleteOnComplete must be boolean');
+  });
+
+  it('rejects a processing config with missing required leaf values', async () => {
+    await expect(
+      canonicalBuildAPI.startBuildSession({
+        nodeId: 'shape-contract-node',
+        draftData: {
+          buildConfig: DEFAULT_BUILD_CONFIG,
+          processingConfig: {
+            source: {},
+            geometry: {},
+            tileEmit: {},
+          },
+        },
+      })
+    ).rejects.toThrow('draftData.processingConfig.source.maxConcurrent must be an integer in 1..4');
+    expect(shapeBuildAPIMocks.startBuildSession).not.toHaveBeenCalled();
+  });
+
+  it('rejects dynamic concurrency sampling that the runtime would otherwise round up', async () => {
+    await expect(
+      canonicalBuildAPI.startBuildSession({
+        nodeId: 'shape-contract-node',
+        draftData: {
+          buildConfig: DEFAULT_BUILD_CONFIG,
+          processingConfig: {
+            ...DEFAULT_PROCESSING_CONFIG,
+            tileEmit: {
+              ...DEFAULT_PROCESSING_CONFIG.tileEmit,
+              dynamicConcurrency: {
+                ...DEFAULT_PROCESSING_CONFIG.tileEmit.dynamicConcurrency,
+                sampleMs: 199,
+              },
+            },
+          },
+        },
+      })
+    ).rejects.toThrow(
+      'draftData.processingConfig.tileEmit.dynamicConcurrency.sampleMs must be an integer at least 200'
+    );
+    expect(shapeBuildAPIMocks.startBuildSession).not.toHaveBeenCalled();
   });
 });

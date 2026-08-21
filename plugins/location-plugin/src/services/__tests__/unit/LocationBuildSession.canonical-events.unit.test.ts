@@ -159,4 +159,30 @@ describe('LocationBuildSession canonical events', () => {
     ]);
     expect(appendLocationPoints).not.toHaveBeenCalled();
   });
+
+  it('publishes failed instead of converting a source failure into an empty success', async () => {
+    strategySearch.mockRejectedValue(new Error('source unavailable'));
+    const failed = new Promise<void>((resolve) => {
+      unconditionalEventStreamer.subscribe(nodeId, 'session-state', (event) => {
+        if (event.type === 'sessionStatusUpdated' && event.payload.phase === 'failed') resolve();
+      });
+    });
+    const manager = new LocationBuildManager();
+    await manager.startLocationBuildSession(nodeId, {
+      searchConfigs: [{ dataSource: 'ourairports' }],
+      processingOptions: { concurrent: 1 },
+    });
+
+    await failed;
+
+    await expect(manager.getBuildSessionStatus(nodeId)).resolves.toMatchObject({
+      status: 'failed',
+      stopReason: 'failed',
+      error: 'Location build completed with 1 failures',
+    });
+    await expect(manager.getBuildTasks(nodeId)).resolves.toEqual([
+      expect.objectContaining({ status: 'failed', errorMessage: 'source unavailable' }),
+    ]);
+    expect(appendLocationPoints).not.toHaveBeenCalled();
+  });
 });

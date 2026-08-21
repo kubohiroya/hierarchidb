@@ -27,6 +27,54 @@ const requireRecord = (value: unknown, label: string): Record<string, unknown> =
   return value as Record<string, unknown>;
 };
 
+const requireBoolean = (value: unknown, label: string): boolean => {
+  if (typeof value !== 'boolean') {
+    throw new Error(`[shape canonical build API] ${label} must be boolean`);
+  }
+  return value;
+};
+
+const requireIntegerInRange = (
+  value: unknown,
+  label: string,
+  minimum: number,
+  maximum?: number
+): number => {
+  if (
+    !Number.isInteger(value) ||
+    (value as number) < minimum ||
+    (maximum !== undefined && (value as number) > maximum)
+  ) {
+    const constraint =
+      maximum === undefined
+        ? `at least ${String(minimum)}`
+        : `in ${String(minimum)}..${String(maximum)}`;
+    throw new Error(`[shape canonical build API] ${label} must be an integer ${constraint}`);
+  }
+  return value as number;
+};
+
+const requireFiniteNumberInRange = (
+  value: unknown,
+  label: string,
+  minimum: number,
+  maximum?: number
+): number => {
+  if (
+    typeof value !== 'number' ||
+    !Number.isFinite(value) ||
+    value < minimum ||
+    (maximum !== undefined && value > maximum)
+  ) {
+    const constraint =
+      maximum === undefined
+        ? `at least ${String(minimum)}`
+        : `in ${String(minimum)}..${String(maximum)}`;
+    throw new Error(`[shape canonical build API] ${label} must be a finite number ${constraint}`);
+  }
+  return value;
+};
+
 const requireBuildConfig = (value: unknown): ShapeBuildConfig => {
   const config = requireCanonicalStageBuildConfig(value, {
     errorPrefix: 'shape canonical build API',
@@ -45,8 +93,89 @@ const requireBuildConfig = (value: unknown): ShapeBuildConfig => {
 
 const requireProcessingConfig = (value: unknown): ShapeProcessingConfig => {
   const config = requireRecord(value, 'draftData.processingConfig');
-  for (const field of ['source', 'geometry', 'tileEmit']) {
-    requireRecord(config[field], `draftData.processingConfig.${field}`);
+  const source = requireRecord(config.source, 'draftData.processingConfig.source');
+  requireIntegerInRange(
+    source.maxConcurrent,
+    'draftData.processingConfig.source.maxConcurrent',
+    1,
+    4
+  );
+  requireIntegerInRange(source.retryAttempts, 'draftData.processingConfig.source.retryAttempts', 0);
+  requireFiniteNumberInRange(source.retryDelay, 'draftData.processingConfig.source.retryDelay', 0);
+  requireIntegerInRange(source.retryLimit, 'draftData.processingConfig.source.retryLimit', 0);
+  if (source.retryBackoff !== 'linear' && source.retryBackoff !== 'exponential') {
+    throw new Error(
+      '[shape canonical build API] draftData.processingConfig.source.retryBackoff must be linear or exponential'
+    );
+  }
+
+  const geometry = requireRecord(config.geometry, 'draftData.processingConfig.geometry');
+  requireIntegerInRange(
+    geometry.maxConcurrent,
+    'draftData.processingConfig.geometry.maxConcurrent',
+    1,
+    8
+  );
+
+  const tileEmit = requireRecord(config.tileEmit, 'draftData.processingConfig.tileEmit');
+  requireIntegerInRange(
+    tileEmit.maxConcurrent,
+    'draftData.processingConfig.tileEmit.maxConcurrent',
+    1
+  );
+  if (tileEmit.dynamicConcurrency !== undefined) {
+    const dynamic = requireRecord(
+      tileEmit.dynamicConcurrency,
+      'draftData.processingConfig.tileEmit.dynamicConcurrency'
+    );
+    requireBoolean(
+      dynamic.enabled,
+      'draftData.processingConfig.tileEmit.dynamicConcurrency.enabled'
+    );
+    const minimum = requireIntegerInRange(
+      dynamic.minConcurrent,
+      'draftData.processingConfig.tileEmit.dynamicConcurrency.minConcurrent',
+      1
+    );
+    if (dynamic.maxConcurrent !== undefined) {
+      const maximum = requireIntegerInRange(
+        dynamic.maxConcurrent,
+        'draftData.processingConfig.tileEmit.dynamicConcurrency.maxConcurrent',
+        1
+      );
+      if (maximum < minimum) {
+        throw new Error(
+          '[shape canonical build API] draftData.processingConfig.tileEmit.dynamicConcurrency.maxConcurrent must be greater than or equal to minConcurrent'
+        );
+      }
+    }
+    const highWatermark = requireFiniteNumberInRange(
+      dynamic.highWatermark,
+      'draftData.processingConfig.tileEmit.dynamicConcurrency.highWatermark',
+      0,
+      1
+    );
+    const lowWatermark = requireFiniteNumberInRange(
+      dynamic.lowWatermark,
+      'draftData.processingConfig.tileEmit.dynamicConcurrency.lowWatermark',
+      0,
+      1
+    );
+    if (lowWatermark >= highWatermark) {
+      throw new Error(
+        '[shape canonical build API] draftData.processingConfig.tileEmit.dynamicConcurrency.lowWatermark must be less than highWatermark'
+      );
+    }
+    requireIntegerInRange(
+      dynamic.adjustStep,
+      'draftData.processingConfig.tileEmit.dynamicConcurrency.adjustStep',
+      1
+    );
+    requireIntegerInRange(
+      dynamic.sampleMs,
+      'draftData.processingConfig.tileEmit.dynamicConcurrency.sampleMs',
+      200
+    );
   }
   return value as ShapeProcessingConfig;
 };
