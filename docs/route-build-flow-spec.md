@@ -61,9 +61,12 @@ cache identity の正規仕様（SSOT）とする。
 ### 初期状態
 
 - Step2 のデータソースが返したcoverageに存在する「国×交通モード」だけチェックボックスを有効化する。
+- Step3の行はcoverageに存在する国だけで構成する。coverage外のISO国をdisabled行として描画しない。
 - 生成されたチェックボックスは初期状態で `checked` とする。
 - coverageはデータソース入力の実在範囲であり、location DB内の現在のノード集合ではない。
   したがって、coverageに存在する国はlocation DBに解決可能なPointがまだ無くても表示する。
+- coverage APIの正規payloadは `coverageByCountryOr` と `coverageByCountryAnd` だけである。
+  `coverageByCountry` alias、5-cell行、nullish fallback、空coverage、不明route modeは契約違反として失敗させる。
 - 選択されたroute行の始点/終点をsourceステージで解決できない場合は、理由を持つtask errorとして
   可視化する。「処理対象なし」や空成果物へ読み替えない。
 
@@ -75,6 +78,7 @@ cache identity の正規仕様（SSOT）とする。
 ### state 更新
 
 - Step3 の操作結果は `selectedArrayByCountries` に反映する。
+- `selectedArrayByCountries` はcoverage国だけをkeyに持ち、各rowはOR 5列 + AND 5列の10 booleanだけを保持する。
 - Step5 の fetch 対象は `selectedArrayByCountries` を唯一の選択入力として扱う。
 
 ## Step4: Build 設定
