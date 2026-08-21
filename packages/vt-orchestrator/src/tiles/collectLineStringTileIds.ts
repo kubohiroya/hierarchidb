@@ -4,6 +4,7 @@ export type LineStringCoordinate = readonly [number, number];
 
 const MAX_TILE_ZOOM = 22;
 const MAX_MERCATOR_LATITUDE = 85.05112877980659;
+const PROJECTED_BOUNDARY_ULP_FACTOR = 8;
 
 type ProjectedCoordinate = {
   x: number;
@@ -137,13 +138,17 @@ const collectSegmentTileIds = (
   }
 
   addBoundaryTouchingTiles(segmentTileIds, end, zoom, scale);
-  if (deltaY === 0 && Number.isInteger(start.y) && start.y > 0 && start.y < scale) {
-    duplicateBoundaryRow(segmentTileIds, zoom, scale, resolveVerticalTileIndex(start.y, scale) - 1);
+  const horizontalBoundaryY = deltaY === 0 ? resolveProjectedTileBoundary(start.y, scale) : null;
+  if (horizontalBoundaryY !== null && horizontalBoundaryY > 0 && horizontalBoundaryY < scale) {
+    const primaryY = resolveVerticalTileIndex(start.y, scale);
+    const adjacentY =
+      primaryY === horizontalBoundaryY ? horizontalBoundaryY - 1 : horizontalBoundaryY;
+    duplicateBoundaryRow(segmentTileIds, zoom, scale, adjacentY);
   }
-  if (deltaX === 0 && Number.isInteger(start.x)) {
+  const verticalBoundaryX = deltaX === 0 ? resolveProjectedTileBoundary(start.x, scale) : null;
+  if (verticalBoundaryX !== null) {
     const primaryX = resolveHorizontalTileIndex(start.x, scale);
-    const boundaryX = Math.round(start.x);
-    const adjacentX = primaryX === boundaryX ? boundaryX - 1 : boundaryX;
+    const adjacentX = primaryX === verticalBoundaryX ? verticalBoundaryX - 1 : verticalBoundaryX;
     duplicateBoundaryColumn(segmentTileIds, zoom, scale, adjacentX);
   }
   for (const tileId of segmentTileIds) tileIds.add(tileId);
@@ -193,9 +198,8 @@ const addBoundaryTouchingTiles = (
 ): void => {
   const x = resolveHorizontalTileIndex(coordinate.x, scale);
   const y = resolveVerticalTileIndex(coordinate.y, scale);
-  const xCandidates = Number.isInteger(coordinate.x)
-    ? [Math.round(coordinate.x) - 1, Math.round(coordinate.x)]
-    : [x];
+  const boundaryX = resolveProjectedTileBoundary(coordinate.x, scale);
+  const xCandidates = boundaryX === null ? [x] : [boundaryX - 1, boundaryX];
   const yCandidates = resolveVerticalBoundaryCandidates(coordinate.y, y, scale);
   for (const candidateX of xCandidates) {
     for (const candidateY of yCandidates) {
@@ -209,9 +213,15 @@ const resolveVerticalBoundaryCandidates = (
   index: number,
   scale: number
 ): number[] => {
-  return Number.isInteger(projected) && projected > 0 && projected < scale
-    ? [index - 1, index]
-    : [index];
+  const boundary = resolveProjectedTileBoundary(projected, scale);
+  return boundary !== null && boundary > 0 && boundary < scale ? [boundary - 1, boundary] : [index];
+};
+
+const resolveProjectedTileBoundary = (projected: number, scale: number): number | null => {
+  const nearestBoundary = Math.round(projected);
+  const tolerance =
+    Number.EPSILON * Math.max(1, Math.abs(projected), scale) * PROJECTED_BOUNDARY_ULP_FACTOR;
+  return Math.abs(projected - nearestBoundary) <= tolerance ? nearestBoundary : null;
 };
 
 const duplicateBoundaryRow = (

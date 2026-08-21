@@ -222,7 +222,9 @@ const requireSourceRecord = (
       contractViolation('sourceCache record', 'does not satisfy the geometry input contract');
     }
   }
-  if (record.contentHash !== meta.contentHash || record.timestamp !== meta.timestamp) {
+  const { data: _data, ...expectedMeta } = record;
+  void _data;
+  if (!contractValuesEqual(expectedMeta, meta)) {
     contractViolation('sourceCache metadata', 'does not mirror the source artifact');
   }
 };
@@ -249,6 +251,9 @@ const decodeSourceFeatureCollection = (
     return contractViolation('source artifact features', 'must contain exactly one feature');
   }
   const feature = requireRecord('source artifact feature', collection.features[0]);
+  if (feature.type !== 'Feature') {
+    return contractViolation('source artifact feature', 'must be a GeoJSON Feature');
+  }
   const geometry = requireRecord('source artifact geometry', feature.geometry);
   if (geometry.type !== 'LineString' || !Array.isArray(geometry.coordinates)) {
     return contractViolation('source artifact geometry', 'must be a LineString');
@@ -668,6 +673,32 @@ const requireRecord = (label: string, value: unknown): Record<string, unknown> =
     return contractViolation(label, 'must be an object');
   }
   return value as Record<string, unknown>;
+};
+
+const contractValuesEqual = (left: unknown, right: unknown): boolean => {
+  if (Object.is(left, right)) return true;
+  if (Array.isArray(left) || Array.isArray(right)) {
+    return (
+      Array.isArray(left) &&
+      Array.isArray(right) &&
+      left.length === right.length &&
+      left.every((value, index) => contractValuesEqual(value, right[index]))
+    );
+  }
+  if (left === null || right === null || typeof left !== 'object' || typeof right !== 'object') {
+    return false;
+  }
+  const leftRecord = left as Record<string, unknown>;
+  const rightRecord = right as Record<string, unknown>;
+  const leftKeys = Object.keys(leftRecord).sort();
+  const rightKeys = Object.keys(rightRecord).sort();
+  return (
+    leftKeys.length === rightKeys.length &&
+    leftKeys.every(
+      (key, index) =>
+        key === rightKeys[index] && contractValuesEqual(leftRecord[key], rightRecord[key])
+    )
+  );
 };
 
 const requireCoordinate = (label: string, value: unknown): [number, number] => {

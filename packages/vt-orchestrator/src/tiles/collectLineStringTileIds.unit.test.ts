@@ -38,6 +38,56 @@ describe('collectLineStringTileIds', () => {
     ]);
   });
 
+  it.each([2, 22])(
+    'includes both sides of a non-equatorial projected tile boundary at zoom %i',
+    (zoom) => {
+      const scale = 2 ** zoom;
+      const boundaryY = 1;
+      const boundaryX = scale / 2;
+      const boundaryLatitude =
+        (Math.atan(Math.sinh(Math.PI * (1 - (2 * boundaryY) / scale))) * 180) / Math.PI;
+      const startLongitude = ((boundaryX - 0.25) / scale) * 360 - 180;
+      const endLongitude = ((boundaryX + 0.25) / scale) * 360 - 180;
+      const tiles = collectLineStringTileIds(
+        [
+          [startLongitude, boundaryLatitude],
+          [endLongitude, boundaryLatitude],
+        ],
+        zoom
+      ).map((tileId) => unpackTileId(tileId, zoom));
+
+      expect(tiles).toEqual([
+        { x: boundaryX - 1, y: 0, z: zoom },
+        { x: boundaryX - 1, y: 1, z: zoom },
+        { x: boundaryX, y: 0, z: zoom },
+        { x: boundaryX, y: 1, z: zoom },
+      ]);
+    }
+  );
+
+  it('does not snap a valid projected coordinate onto a nearby boundary', () => {
+    const zoom = 22;
+    const scale = 2 ** zoom;
+    const projectedY = 1 + 0.000001;
+    const boundaryX = scale / 2;
+    const latitude =
+      (Math.atan(Math.sinh(Math.PI * (1 - (2 * projectedY) / scale))) * 180) / Math.PI;
+    const startLongitude = ((boundaryX - 0.25) / scale) * 360 - 180;
+    const endLongitude = ((boundaryX + 0.25) / scale) * 360 - 180;
+    const tiles = collectLineStringTileIds(
+      [
+        [startLongitude, latitude],
+        [endLongitude, latitude],
+      ],
+      zoom
+    ).map((tileId) => unpackTileId(tileId, zoom));
+
+    expect(tiles).toEqual([
+      { x: boundaryX - 1, y: 1, z: zoom },
+      { x: boundaryX, y: 1, z: zoom },
+    ]);
+  });
+
   it('rejects coordinates outside the Web Mercator contract', () => {
     expect(() =>
       collectLineStringTileIds(

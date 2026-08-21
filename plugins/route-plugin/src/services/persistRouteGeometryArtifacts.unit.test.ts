@@ -1,5 +1,6 @@
 // @vitest-environment node
 
+import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import type { NodeId } from '@hierarchidb/core-types';
 import { EphemeralDB } from '@hierarchidb/gis-sdk';
 import { ROUTE_MODES } from '@hierarchidb/route-api';
@@ -133,6 +134,74 @@ describe('persistRouteGeometryArtifacts', () => {
 
     await expect(store.geometryCache.count()).resolves.toBe(0);
     await expect(store.tileEmitBufferRelations.count()).resolves.toBe(0);
+  });
+
+  it('rejects source metadata that does not mirror the source record', async () => {
+    const source = await createSourceArtifact({
+      coordinates: [
+        [139, 35],
+        [140, 36],
+      ],
+      distanceMeters: 150_000,
+    });
+    await store.sourceCacheMeta.update(source.sourceCacheId, { vertexCount: 999 });
+
+    await expect(
+      persistRouteGeometryArtifacts({
+        ...source.params,
+        sourceCacheId: source.sourceCacheId,
+        geometryConfig: DEFAULT_ROUTE_BUILD_CONFIG.geometryConfig,
+        routeGeometryConfig: DEFAULT_ROUTE_BUILD_CONFIG.routeGeometryConfig,
+        store,
+      })
+    ).rejects.toThrow('sourceCache metadata does not mirror the source artifact');
+
+    await expect(store.geometryCache.count()).resolves.toBe(0);
+  });
+
+  it('rejects a source collection entry that is not a GeoJSON Feature', async () => {
+    const source = await createSourceArtifact({
+      coordinates: [
+        [139, 35],
+        [140, 36],
+      ],
+      distanceMeters: 150_000,
+    });
+    const record = await store.sourceCache.get(source.sourceCacheId);
+    if (!record) throw new Error('Source artifact is required');
+    const collection = JSON.parse(new TextDecoder().decode(new Uint8Array(record.data))) as {
+      features: Array<{ type: string }>;
+    };
+    const feature = collection.features[0];
+    if (!feature) throw new Error('Source feature is required');
+    feature.type = 'Invalid';
+    const data = new TextEncoder().encode(JSON.stringify(collection)).buffer;
+    const contentHash = new NobleSha3HashPort().digest(data, 'sha3-256');
+    const nextRecord = {
+      ...record,
+      data,
+      size: data.byteLength,
+      contentHash,
+      metadata: { ...record.metadata, contentHash },
+    };
+    const { data: _data, ...nextMeta } = nextRecord;
+    void _data;
+    await store.transaction('rw', [store.sourceCache, store.sourceCacheMeta], async () => {
+      await store.sourceCache.put(nextRecord);
+      await store.sourceCacheMeta.put(nextMeta);
+    });
+
+    await expect(
+      persistRouteGeometryArtifacts({
+        ...source.params,
+        sourceCacheId: source.sourceCacheId,
+        geometryConfig: DEFAULT_ROUTE_BUILD_CONFIG.geometryConfig,
+        routeGeometryConfig: DEFAULT_ROUTE_BUILD_CONFIG.routeGeometryConfig,
+        store,
+      })
+    ).rejects.toThrow('source artifact feature must be a GeoJSON Feature');
+
+    await expect(store.geometryCache.count()).resolves.toBe(0);
   });
 
   it('rejects mismatched zoom-band config instead of repeating the final value', async () => {
