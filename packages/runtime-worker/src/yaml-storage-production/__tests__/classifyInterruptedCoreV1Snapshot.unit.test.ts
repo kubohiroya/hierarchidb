@@ -5,6 +5,30 @@ import {
 } from '../classifyInterruptedCoreV1Snapshot.js';
 
 const VALID_DIGEST = '0123456789abcdef'.repeat(4);
+const ZERO_INVALID_DIAGNOSTICS = {
+  byStore: {
+    trees: 0,
+    nodes: 0,
+    rootStates: 0,
+    tags: 0,
+    tagAssociations: 0,
+    total: 0,
+  },
+  byReason: {
+    'record-shape': 0,
+    'required-identity': 0,
+    'required-field-contract': 0,
+    'metadata-contract': 0,
+    'relationship-contract': 0,
+    'duplicate-identity': 0,
+    'yaml-contract': 0,
+  },
+  byIdentityClass: {
+    defaultIdentity: 0,
+    additionalIdentity: 0,
+    unavailableIdentity: 0,
+  },
+};
 
 function defaultTree(treeId: 'r' | 'p'): Readonly<Record<string, unknown>> {
   return {
@@ -137,6 +161,7 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
           additional: 0,
           invalid: 0,
         },
+        invalidDiagnostics: ZERO_INVALID_DIAGNOSTICS,
         additionalNodeCounts: { yaml: 0, nonYaml: 0 },
         graphStatus: 'exact',
         yamlPlanningStatus: 'valid',
@@ -194,6 +219,7 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
       additional: 3,
       invalid: 0,
     });
+    expect(result.summary.invalidDiagnostics).toEqual(ZERO_INVALID_DIAGNOSTICS);
     expect(result.summary.additionalNodeCounts).toEqual({ yaml: 1, nonYaml: 0 });
     expect(result.summary.yamlSlotCounts).toEqual({
       canonical: 0,
@@ -229,6 +255,7 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
       additional: 1,
       invalid: 0,
     });
+    expect(result.summary.invalidDiagnostics).toEqual(ZERO_INVALID_DIAGNOSTICS);
     expect(result.summary.additionalNodeCounts).toEqual({ yaml: 0, nonYaml: 1 });
   });
 
@@ -257,6 +284,7 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
       additional: 0,
       invalid: 0,
     });
+    expect(result.summary.invalidDiagnostics).toEqual(ZERO_INVALID_DIAGNOSTICS);
     expect(Object.hasOwn(olderRoot, 'data')).toBe(false);
     expect(Object.hasOwn(olderRoot.metadata, 'tags')).toBe(false);
   });
@@ -341,6 +369,11 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
     if (result.ok) throw new Error('Expected graph rejection');
     expect(result.summary?.graphStatus).toBe('invalid');
     expect(result.summary?.recordClassification.invalid).toBe(1);
+    expect(result.summary?.invalidDiagnostics).toMatchObject({
+      byStore: { tagAssociations: 1, total: 1 },
+      byReason: { 'relationship-contract': 1 },
+      byIdentityClass: { additionalIdentity: 1 },
+    });
   });
 
   it('rejects malformed structural records before YAML planning', async () => {
@@ -352,7 +385,13 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
     expect(result.code).toBe('INTERRUPTED_CORE_V1_PRESERVATION_SNAPSHOT_INVALID');
     if (result.ok) throw new Error('Expected snapshot rejection');
     expect(result.summary?.recordClassification.invalid).toBe(1);
+    expect(result.summary?.invalidDiagnostics).toMatchObject({
+      byStore: { nodes: 1, total: 1 },
+      byReason: { 'metadata-contract': 1 },
+      byIdentityClass: { additionalIdentity: 1 },
+    });
     expect(result.summary?.yamlPlanningStatus).toBe('not-run');
+    expect(JSON.stringify(result)).not.toContain('description');
   });
 
   it('rejects invalid YAML through the existing migration planner', async () => {
@@ -372,6 +411,11 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
     if (result.ok) throw new Error('Expected YAML rejection');
     expect(result.summary?.yamlPlanningStatus).toBe('invalid');
     expect(result.summary?.recordClassification.invalid).toBe(1);
+    expect(result.summary?.invalidDiagnostics).toMatchObject({
+      byStore: { nodes: 1, total: 1 },
+      byReason: { 'yaml-contract': 1 },
+      byIdentityClass: { additionalIdentity: 1 },
+    });
     expect(JSON.stringify(result)).not.toContain('not: [valid');
   });
 
@@ -384,6 +428,7 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
     if (result.ok) throw new Error('Expected default identity rejection');
     expect(result.summary?.graphStatus).toBe('invalid');
     expect(result.summary?.storeCounts.total).toBe(11);
+    expect(result.summary?.invalidDiagnostics).toEqual(ZERO_INVALID_DIAGNOSTICS);
   });
 
   it('rejects a default root state linked to a different tree', async () => {
@@ -405,6 +450,11 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
     expect(result.code).toBe('INTERRUPTED_CORE_V1_PRESERVATION_GRAPH_INVALID');
     if (result.ok) throw new Error('Expected cross-tree root-state rejection');
     expect(result.summary?.graphStatus).toBe('invalid');
+    expect(result.summary?.invalidDiagnostics).toMatchObject({
+      byStore: { rootStates: 1, total: 1 },
+      byReason: { 'relationship-contract': 1 },
+      byIdentityClass: { defaultIdentity: 1 },
+    });
   });
 
   it('rejects a snapshot array with an extra own property', async () => {
@@ -416,6 +466,47 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
     expect(result).toEqual({
       ok: false,
       code: 'INTERRUPTED_CORE_V1_PRESERVATION_SNAPSHOT_INVALID',
+    });
+  });
+
+  it('aggregates unavailable identity and record-shape invalid diagnostics without raw values', async () => {
+    const baseline = createDefaultSnapshot();
+    const malformed = Object.create(null) as Record<string, unknown>;
+    Object.defineProperty(malformed, 'id', {
+      get() {
+        throw new Error('sensitive-accessor-error');
+      },
+    });
+    const result = await classify({
+      ...baseline,
+      tags: [malformed],
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.code).toBe('INTERRUPTED_CORE_V1_PRESERVATION_SNAPSHOT_INVALID');
+    if (result.ok) throw new Error('Expected snapshot rejection');
+    expect(result.summary?.invalidDiagnostics).toMatchObject({
+      byStore: { tags: 1, total: 1 },
+      byReason: { 'record-shape': 1 },
+      byIdentityClass: { unavailableIdentity: 1 },
+    });
+    expect(JSON.stringify(result)).not.toContain('sensitive-accessor-error');
+  });
+
+  it('aggregates duplicate default identities as stable invalid diagnostics', async () => {
+    const baseline = createDefaultSnapshot();
+    const result = await classify({
+      ...baseline,
+      trees: [...baseline.trees, defaultTree('r')],
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.code).toBe('INTERRUPTED_CORE_V1_PRESERVATION_GRAPH_INVALID');
+    if (result.ok) throw new Error('Expected graph rejection');
+    expect(result.summary?.invalidDiagnostics).toMatchObject({
+      byStore: { trees: 2, total: 2 },
+      byReason: { 'duplicate-identity': 2 },
+      byIdentityClass: { defaultIdentity: 2 },
     });
   });
 });
