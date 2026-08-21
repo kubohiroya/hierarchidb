@@ -52,7 +52,12 @@ export class RouteBuildManager {
     routes: RouteBuildRouteInput[],
   ): Promise<NodeId> {
     const existingSession = this.activeSessions.get(nodeId);
-    if (existingSession) return nodeId;
+    if (existingSession) {
+      if (existingSession.getState().status === 'failed') {
+        throw new Error(`Route build session still has an active run for node ${String(nodeId)}`);
+      }
+      return nodeId;
+    }
 
     const routeTasks: RouteBuildTask[] = [];
 

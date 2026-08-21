@@ -20,8 +20,8 @@ export class LocationBuildManager extends CanonicalBuildSessionManager {
     config: LocationBuildConfig,
   ): Promise<NodeId> {
     const existing = this.sessions.get(nodeId);
-    if (existing?.getState().status === 'running') {
-      throw new Error(`Location build session is already running for node ${String(nodeId)}`);
+    if (existing?.hasActiveRun()) {
+      throw new Error(`Location build session still has an active run for node ${String(nodeId)}`);
     }
     const session = new LocationBuildSession(nodeId, config);
     await session.initialize();

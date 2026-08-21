@@ -109,10 +109,12 @@ accepts a synthetic nested `routes` or Location `buildConfig` field that is abse
 the corresponding entity payload.
 
 Route and Location pause completes only after the active run has received abort and its
-pipeline promise has settled. A terminal or paused session remains queryable until a
-replacement session for the same node is registered. `getBuildTasks` is operational for
-all three plugin registrations; an adapter must not satisfy the method structurally by
-always rejecting it.
+pipeline promise has settled. Shutdown confirmation has a 15-second deadline; timeout
+fails the session and rejects the command, and a replacement start remains forbidden
+until the original run actually settles. A terminal or paused session remains queryable
+until a replacement session for the same node is registered. `getBuildTasks` is
+operational for all three plugin registrations; an adapter must not satisfy the method
+structurally by always rejecting it.
 
 Shape preview payload generation is not part of this build dispatch contract. It is
 exposed separately as the exact `shapeBuildExtensions` worker export; bootstrap does
