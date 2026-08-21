@@ -1,7 +1,6 @@
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import {
   type BuildSessionProgressResult,
-  useBuildSessionMutation,
   useBuildSessionStateTreeBridge,
 } from '@hierarchidb/ui-build-sessions';
 
@@ -17,10 +16,6 @@ const resolveRouteStageId = (value: unknown): RouteStageId => {
 export type RouteBuildProgressResult = BuildSessionProgressResult;
 
 export function useRouteBuildProgress(nodeId: NodeId | null): RouteBuildProgressResult {
-  const { isMutating, mutationError, pauseSession, resumeSession } = useBuildSessionMutation(
-    ROUTE_NODE_TYPE,
-    nodeId
-  );
   const { progressState } = useBuildSessionStateTreeBridge<RouteStageId>({
     nodeType: ROUTE_NODE_TYPE,
     nodeId,
@@ -35,19 +30,10 @@ export function useRouteBuildProgress(nodeId: NodeId | null): RouteBuildProgress
     ready: progressState.progress != null,
     progress: progressState.progress,
     status: progressState.status,
-    isPaused: progressState.status?.status === 'paused',
-    isMutating,
-    mutationError,
     lastError:
       progressState.status?.error ??
       progressState.progress?.message ??
       progressState.error?.message ??
       null,
-    pause: async () => {
-      await pauseSession();
-    },
-    resume: async () => {
-      await resumeSession();
-    },
   };
 }

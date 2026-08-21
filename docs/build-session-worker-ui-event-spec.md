@@ -223,6 +223,11 @@ type TaskProgressUpdatedEvent = {
   Route and Location currently execute their canonical managers in the UI realm and
   therefore select the explicit same-realm `unconditionalEventStreamer` transport.
   The bridge never falls back from one transport to the other.
+- The shared Route canonical progress hook is read-only. It must not send pause or
+  resume commands through the Worker bridge for a session owned by a UI-realm manager.
+  Route pipeline command ownership is separate from canonical progress consumption.
+- Shape Worker diagnostics remain outside the canonical state tree and are subscribed
+  independently through `BuildWorkerBridge.subscribeWorkerLog`.
 - The same-realm streamer is live-only and does not buffer or replay events. A
   same-realm UI consumer must establish its subscription before starting the local
   build session. Late mounting must not be treated as an empty or idle session.

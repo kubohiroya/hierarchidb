@@ -252,6 +252,15 @@ its plugin-owned SSOT state tree but no longer converts
 `BuildUnifiedProgressInfo` through the removed aggregate mappers. The removed
 aggregate hooks are not exported by `@hierarchidb/ui-build-sessions`.
 
+The shared Route progress hook is a read-only same-realm consumer. It does not reuse
+the Worker command hook for pause or resume because those commands would target a
+different session owner. Route pipeline controls must be provided by the UI-realm
+owner when that command contract is implemented.
+
+Shape subscribes to Worker diagnostics separately with
+`BuildWorkerBridge.subscribeWorkerLog`. Worker log events remain outside the four
+canonical channels and are never reduced into the build-session SSOT state tree.
+
 ---
 
 ## Removed Concepts

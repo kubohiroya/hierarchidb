@@ -38,10 +38,5 @@ export interface BuildSessionProgressResult {
   ready: boolean;
   progress: BuildSessionProgressSnapshot | null;
   status: BuildSessionLifecycleSnapshot | null;
-  isPaused: boolean;
-  isMutating: boolean;
-  mutationError: string | null;
   lastError: string | null;
-  pause: () => Promise<void>;
-  resume: () => Promise<void>;
 }

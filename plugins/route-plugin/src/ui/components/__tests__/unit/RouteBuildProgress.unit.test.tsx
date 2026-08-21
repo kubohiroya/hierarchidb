@@ -27,12 +27,7 @@ describe('RouteBuildLiveProgress', () => {
         taskCounts: { total: 10, completed: 4, failed: 0, skipped: 0 },
       },
       status: { status: 'running' },
-      isPaused: false,
-      isMutating: false,
-      mutationError: null,
       lastError: null,
-      pause: vi.fn(),
-      resume: vi.fn(),
     });
 
     render(<RouteBuildLiveProgress jobId="job-1" />);
@@ -41,13 +36,10 @@ describe('RouteBuildLiveProgress', () => {
     expect(root).toHaveAttribute('data-progress-atoms', 'running');
     expect(screen.getByTestId('route-live-progress-percentage').textContent).toBe('42%');
     expect(screen.getByTestId('route-live-progress-stage').textContent).toBe('geometry');
-    expect(screen.getByTestId('route-live-progress-toggle')).toHaveAttribute(
-      'aria-pressed',
-      'false'
-    );
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
-  it('marks paused atoms and surfaces mutation errors', () => {
+  it('marks paused canonical state without exposing a cross-realm mutation control', () => {
     mockUseRouteBuildProgress.mockReturnValue({
       snapshot: null,
       ready: true,
@@ -58,12 +50,7 @@ describe('RouteBuildLiveProgress', () => {
         taskCounts: { total: 10, completed: 5, failed: 0, skipped: 0 },
       },
       status: { status: 'paused' },
-      isPaused: true,
-      isMutating: false,
-      mutationError: 'Network error',
       lastError: 'Network error',
-      pause: vi.fn(),
-      resume: vi.fn(),
     });
 
     render(<RouteBuildLiveProgress jobId="job-2" />);
@@ -72,11 +59,7 @@ describe('RouteBuildLiveProgress', () => {
       'data-progress-atoms',
       'paused'
     );
-    expect(screen.getByTestId('route-live-progress-toggle')).toHaveAttribute(
-      'aria-pressed',
-      'true'
-    );
-    expect(screen.getByTestId('route-live-progress-error')).toHaveTextContent('Network error');
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 });
 
@@ -92,12 +75,7 @@ describe('RouteBuildSummary', () => {
         taskCounts: { completed: 4, total: 10, failed: 2, skipped: 0 },
       },
       status: { status: 'running' },
-      isPaused: false,
-      isMutating: false,
-      mutationError: null,
       lastError: 'Worker error',
-      pause: vi.fn(),
-      resume: vi.fn(),
     });
 
     render(<RouteBuildSummary nodeId="job-3" />);
