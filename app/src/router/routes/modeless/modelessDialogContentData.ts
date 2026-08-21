@@ -21,7 +21,7 @@ import {
   mapViewportFeatureIdsAtom,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
-import { getDBName } from '@hierarchidb/util';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import { useAtomValue, useSetAtom } from 'jotai';
 import type { MapFeatureIdSet, MapLayerInfo, MapNodeType } from '~/state/mapSearch.atoms';
 import { mapLayerInfoAtom } from '~/state/mapSearch.atoms';
@@ -213,7 +213,10 @@ export const useRouteTableData = (
   rowsPerPage: number,
   visibleIds?: Set<string | number> | null
 ): DataGridState => {
-  const routeDb = useMemo(() => new RouteDB(), []);
+  const routeDb = useMemo(
+    () => new RouteDB(getDBName(getBuildDatabasePrefix(), 'route')),
+    []
+  );
   const [state, setState] = useState<DataGridState>({
     rows: [],
     columns: buildColumns([
@@ -315,7 +318,9 @@ export const useLocationTableData = (
       setState((prev) => ({ ...prev, loading: true, error: undefined }));
       try {
         const tableId = String(nodeId);
-        const manager = new TabularDatabaseManager(getDBName('location-metadata'));
+        const manager = new TabularDatabaseManager(
+          getDBName(getBuildDatabasePrefix(), 'location-metadata')
+        );
         const metadata = await manager.get(tableId);
         if (!metadata) {
           if (!cancelled) {

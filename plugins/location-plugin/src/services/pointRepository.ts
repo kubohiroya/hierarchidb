@@ -5,6 +5,7 @@ import { LocationDB } from '~/worker/locationEntitiesDB';
 import { toGroupRow, fromGroupRow } from '~/worker/normalizerUtils';
 import type { LocationGroupItemData } from '~/common/types/entities';
 import type { LocationPointProperties } from '~/common/entities/LocationPoint';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 
 type PointItem = FeatureItemBase<LocationGroupItemData>;
 type PointProperties = LocationPointProperties;
@@ -21,7 +22,7 @@ let dbPromise: Promise<LocationDB> | null = null;
 async function getDb(): Promise<LocationDB> {
   if (!dbPromise) {
     dbPromise = (async () => {
-      const db = new LocationDB();
+      const db = new LocationDB(getDBName(getBuildDatabasePrefix(), 'location'));
       await db.open?.();
       return db;
     })();

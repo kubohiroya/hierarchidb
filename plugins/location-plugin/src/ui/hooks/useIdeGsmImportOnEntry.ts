@@ -4,7 +4,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { useIsoCountries } from '@hierarchidb/ui-country-select';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
 import { IDE_GSM_BULK_CHUNK_SIZE, type IdeGsmImportProgress } from '@hierarchidb/location-api';
-import { resolveDbPrefix } from '@hierarchidb/util';
+import { getBuildDatabasePrefix } from '@hierarchidb/util';
 import type { LocationEntity } from '~/common/types/index';
 import type { IdeGsmSourceEntry } from '@hierarchidb/location-api';
 import { BASE_LOCATION_TYPES } from '~/ui/components/steps/locationTypes';
@@ -109,7 +109,7 @@ export const useIdeGsmImportOnEntry = ({
     () => sourceKey.split('|').filter((value) => value.length > 0),
     [sourceKey],
   );
-  const tabularDbPrefix = useMemo(() => resolveDbPrefix(), []);
+  const tabularDbPrefix = useMemo(() => getBuildDatabasePrefix(), []);
   const combinedHash = useMemo(
     () => (selectionHash ? `${selectionHash}::${sourceKey}` : `__all__::${sourceKey}`),
     [selectionHash, sourceKey],

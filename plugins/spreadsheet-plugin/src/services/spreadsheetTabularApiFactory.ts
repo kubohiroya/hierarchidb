@@ -2,14 +2,21 @@ import type { TabularDataApi, TabularProcessingConfig } from '@hierarchidb/ui-ta
 import type { TabularDatabaseManager } from '@hierarchidb/tabular-store';
 import { SpreadsheetTabularApiDriver } from './SpreadsheetTabularApiDriver.js';
 import { SPREADSHEET_PLUGIN_ID } from '../common/constants.js';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 
 export function createSpreadsheetTabularApi(pluginId: string = SPREADSHEET_PLUGIN_ID): TabularDataApi {
-  return new SpreadsheetTabularApiDriver(pluginId);
+  return new SpreadsheetTabularApiDriver(
+    pluginId,
+    undefined,
+    getDBName(getBuildDatabasePrefix(), 'spreadsheet-chunks'),
+    getDBName(getBuildDatabasePrefix(), 'spreadsheet-metadata')
+  );
 }
 
 export type PluginTabularApiOptions = {
   pluginId: string;
   metadataManager: TabularDatabaseManager;
+  downloadDatabaseName: string;
   corsProxyBaseURL?: string;
   resolveCorsProxyBaseURL?: () => string | undefined;
   enableCorsProxy?: boolean;
@@ -41,7 +48,7 @@ class PluginTabularApiDriver extends SpreadsheetTabularApiDriver {
   private readonly resolveCorsProxyBaseURL: () => string | undefined;
 
   constructor(options: PluginTabularApiOptions) {
-    super(options.metadataManager, options.pluginId);
+    super(options.metadataManager, options.pluginId, options.downloadDatabaseName);
     this.resolveCorsProxyBaseURL = buildCorsProxyResolver(options);
   }
 

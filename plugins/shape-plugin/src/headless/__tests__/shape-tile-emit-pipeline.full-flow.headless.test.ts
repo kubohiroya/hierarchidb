@@ -11,7 +11,7 @@ const nodeId = 'shape-full-flow-test-node' as NodeId;
 const shouldRunNetworkTests = process.env.HDB_NETWORK_TESTS === '1';
 const describeNetwork = shouldRunNetworkTests ? describe : describe.skip;
 
-const APP_PREFIX = `hidb-test-shape-full-flow-${Math.random().toString(36).slice(2)}`;
+const DATABASE_PREFIX = `test-shape-full-flow-${Math.random().toString(36).slice(2)}`;
 
 let VtTaskQueueDb: typeof import('@hierarchidb/vt-orchestrator').VtTaskQueueDb;
 let listTasksByStageAndStatus: typeof import('@hierarchidb/vt-orchestrator').listTasksByStageAndStatus;
@@ -76,7 +76,10 @@ const clearNodeArtifacts = async (): Promise<void> => {
 
 describeNetwork('Shape full-flow pipeline', () => {
   beforeEach(async () => {
-    (globalThis as { APP_PREFIX?: string }).APP_PREFIX = APP_PREFIX;
+    Object.defineProperty(globalThis, '__HDB_DATABASE_PREFIX__', {
+      configurable: true,
+      value: DATABASE_PREFIX,
+    });
     if (!VtTaskQueueDb) {
       ({ VtTaskQueueDb, listTasksByStageAndStatus } = await import('@hierarchidb/vt-orchestrator'));
       ({ ephemeralDB: ephemeralDB } = await import('@hierarchidb/gis-sdk'));

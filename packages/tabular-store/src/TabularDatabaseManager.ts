@@ -1,5 +1,4 @@
 import { Dexie, type Table } from 'dexie';
-import { getDBName } from '@hierarchidb/util';
 import type { TabularTableMetadataLike } from './types.js';
 
 class CSVMetadataDB extends Dexie {
@@ -19,8 +18,10 @@ class CSVMetadataDB extends Dexie {
  */
 export class TabularDatabaseManager {
   private db: CSVMetadataDB;
+  readonly databaseName: string;
 
-  constructor(dbName: string = getDBName('spreadsheet')) {
+  constructor(dbName: string) {
+    this.databaseName = dbName;
     this.db = new CSVMetadataDB(dbName);
   }
 

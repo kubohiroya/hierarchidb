@@ -4,7 +4,7 @@
  */
 
 import { Dexie, type Table } from 'dexie';
-import { getDBName } from '@hierarchidb/util';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/core-types';
 import { VectorTileDbBase } from '@hierarchidb/vectortile-store';
 
@@ -37,7 +37,7 @@ export class RouteDB extends VectorTileDbBase {
   vectorTiles!: Table<RouteVectorTileRecord, string>;
   tileIndex!: Table<RouteTileIndexRecord, string>;
 
-  constructor(dbName: string = getDBName('route')) {
+  constructor(dbName: string) {
     super(dbName);
     this.version(1).stores(this.mergeVectorTileStores({
       features: '&id, nodeId, startLocationId, endLocationId',
@@ -55,8 +55,13 @@ export class RouteDB extends VectorTileDbBase {
 
 let singleton: RouteDB | null = null;
 
-export function getRouteDB(): RouteDB {
-  if (!singleton) singleton = new RouteDB();
+export function getRouteDB(databaseName?: string): RouteDB {
+  const exactDatabaseName =
+    databaseName ?? getDBName(getBuildDatabasePrefix(), 'route');
+  if (!singleton) singleton = new RouteDB(exactDatabaseName);
+  if (singleton.name !== exactDatabaseName) {
+    throw new Error('route-database-name-mismatch');
+  }
   return singleton;
 }
 
@@ -68,7 +73,7 @@ export async function closeRouteDB(): Promise<void> {
 }
 
 export async function clearRouteDatabases(): Promise<void> {
-  await Dexie.delete(getDBName('route'));
+  await Dexie.delete(getDBName(getBuildDatabasePrefix(), 'route'));
 }
 
 export async function hasRouteReferencesToLocations(

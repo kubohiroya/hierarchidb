@@ -1,5 +1,6 @@
 import 'fake-indexeddb/auto';
 import '@testing-library/jest-dom/vitest';
+import '../../vitest.database-prefix.setup.ts';
 import { Blob, File } from 'node:buffer';
 
 type GlobalFileTarget = typeof globalThis & {

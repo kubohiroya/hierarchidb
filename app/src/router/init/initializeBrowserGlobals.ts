@@ -4,6 +4,7 @@ import { pluginRegistry } from '~/plugin-loaders/index';
 import { useWorker } from '~/contexts/WorkerProvider';
 import { bootLog } from '~/utils/bootLog';
 import { APP_VERSION, BUILD_TIME } from '~/versionConstants';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 
 type TreeConsolePanelGlobal = typeof import('@hierarchidb/ui-treeconsole-base')['TreeConsolePanel'];
 
@@ -47,7 +48,10 @@ const openDebugLogDb = (): Promise<IDBDatabase> => {
       reject(new Error('indexedDB is not available'));
       return;
     }
-    const request = indexedDB.open('hidb-debug-log', 1);
+    const request = indexedDB.open(
+      getDBName(getBuildDatabasePrefix(), 'debug-log'),
+      1
+    );
     request.onupgradeneeded = () => {
       const db = request.result;
       if (!db.objectStoreNames.contains('logs')) {

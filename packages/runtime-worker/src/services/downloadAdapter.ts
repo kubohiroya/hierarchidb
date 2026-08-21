@@ -2,9 +2,10 @@ import type { AuthScope } from '@hierarchidb/auth-api';
 import { AuthService } from '@hierarchidb/auth';
 import { DexieChunkStore } from '@hierarchidb/chunk-store';
 import { DownloadService, FetchNetworkPort } from '@hierarchidb/download';
+import { getDBName } from '@hierarchidb/util';
 
 export interface SharedDownloadOptions {
-  dbPrefix?: string;
+  dbPrefix: string;
   perHostConcurrency?: number;
   /**
    * AuthRequired通知/認証プロバイダ選択ダイアログの文脈を決めるためのスコープ。
@@ -25,17 +26,17 @@ export interface SharedFetchService {
 }
 
 export async function createSharedDownloadService(
-  opts?: SharedDownloadOptions
+  opts: SharedDownloadOptions
 ): Promise<SharedFetchService> {
   const auth = await AuthService.getSingleton();
-  const scope = opts?.scope ?? 'generic';
+  const scope = opts.scope ?? 'generic';
   const net = new FetchNetworkPort({
     headers: () => auth.getAuthHeaders(),
-    perHostConcurrency: opts?.perHostConcurrency ?? 4,
-    authFetch: (url, init) => auth.fetchWithAuth(url, init, { scope, sessionId: opts?.sessionId, sessionStartedAt: opts?.sessionStartedAt }),
+    perHostConcurrency: opts.perHostConcurrency ?? 4,
+    authFetch: (url, init) => auth.fetchWithAuth(url, init, { scope, sessionId: opts.sessionId, sessionStartedAt: opts.sessionStartedAt }),
   });
   const storage = new DexieChunkStore<ArrayBuffer>({
-    dbName: `${opts?.dbPrefix || 'hidb'}-chunks`,
+    dbName: getDBName(opts.dbPrefix, 'chunks'),
     serializer: (value) => value,
     deserializer: (buffer) => buffer,
     networkOptions: {

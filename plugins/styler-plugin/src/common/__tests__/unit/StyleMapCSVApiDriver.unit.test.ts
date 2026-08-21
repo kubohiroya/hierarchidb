@@ -32,8 +32,12 @@ describe('SpreadsheetTabularApiDriver', () => {
   let tableManager: StylerMetadataManager;
 
   beforeEach(async () => {
-    tableManager = new StylerMetadataManager();
-    csvApi = new SpreadsheetTabularApiDriver(tableManager);
+    tableManager = new StylerMetadataManager('test-styler-api-metadata');
+    csvApi = new SpreadsheetTabularApiDriver(
+      tableManager,
+      undefined,
+      'test-styler-api-chunks'
+    );
   });
 
   afterEach(async () => {

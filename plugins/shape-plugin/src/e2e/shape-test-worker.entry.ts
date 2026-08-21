@@ -26,6 +26,7 @@ import { runShapeMetadataStage } from '../services/vt/runShapeMetadataStage';
 import { runShapePipelineCleanup } from '../services/vt/runShapePipelineCleanup';
 import { resolveFailureHandling } from '../services/vt/shapePipelineStageHelpers';
 import { CoreDB, ShapeMutationService, ShapeQueryService } from '@hierarchidb/runtime-worker';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 
 type Endpoint = MessagePort | Worker | ComlinkEndpoint;
 
@@ -447,7 +448,9 @@ async function main(endpoint?: Endpoint): Promise<void> {
 
   const buildApi: ShapeBuildTestAPI = {
     seedDraftNode: async (payload) => {
-      const coreDB = await CoreDB.getSingleton();
+      const coreDB = await CoreDB.getSingleton(
+        getDBName(getBuildDatabasePrefix(), 'core')
+      );
       const rootId = await ensureRootNode(coreDB);
       const now = Date.now();
       const existing = await coreDB.getNode(payload.nodeId);

@@ -1,6 +1,5 @@
 import { TabularDatabaseManager } from './TabularDatabaseManager.js';
 import type { TabularColumnInfo, TabularTableMetadataLike } from './types.js';
-import { getDBName } from '@hierarchidb/util';
 import { getRowStoreDB, type RowChunk } from './RowStoreDB.js';
 
 export class TabularWriter {
@@ -10,15 +9,18 @@ export class TabularWriter {
   private rowsBuffered: unknown[] = [];
   private readonly chunkSize: number;
   private readonly manager: TabularDatabaseManager;
+  private readonly rowStoreDbName: string;
 
-  constructor(private readonly pluginId: string, opts?: {
+  constructor(private readonly pluginId: string, opts: {
     chunkSize?: number;
-    metadataDbName?: string;
+    metadataDbName: string;
+    rowStoreDbName: string;
     indexColumns?: string[]
   }) {
-    this.chunkSize = opts?.chunkSize ?? 2000;
-    this.manager = new TabularDatabaseManager(opts?.metadataDbName ?? getDBName(`${pluginId}-metadata`));
-    this.indexColumns = opts?.indexColumns ?? [];
+    this.chunkSize = opts.chunkSize ?? 2000;
+    this.manager = new TabularDatabaseManager(opts.metadataDbName);
+    this.rowStoreDbName = opts.rowStoreDbName;
+    this.indexColumns = opts.indexColumns ?? [];
   }
 
   private indexColumns: string[];
@@ -44,7 +46,7 @@ export class TabularWriter {
 
   async writeRows(rows: ReadonlyArray<unknown>): Promise<void> {
     if (!this.tableId) throw new Error('begin() not called');
-    const db = getRowStoreDB();
+    const db = getRowStoreDB(this.rowStoreDbName);
     for (const r of rows) {
       this.rowsBuffered.push(r);
       if (this.rowsBuffered.length >= this.chunkSize) {
@@ -75,7 +77,7 @@ export class TabularWriter {
   async flush(): Promise<void> {
     if (!this.tableId) return;
     if (this.rowsBuffered.length === 0) return;
-    const db = getRowStoreDB();
+    const db = getRowStoreDB(this.rowStoreDbName);
     const payload = JSON.stringify(this.rowsBuffered);
     const buf = new TextEncoder().encode(payload).buffer;
     const chunk: RowChunk = {

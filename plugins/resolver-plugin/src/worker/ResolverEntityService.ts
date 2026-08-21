@@ -10,6 +10,7 @@ import type {
   ValidationRule,
 } from '~/common/entities/ResolverEntity';
 import { CoreDB } from '@hierarchidb/runtime-worker';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 
 type ResolverEntityPayload = ResolverEntity & {
   name: string;
@@ -64,7 +65,9 @@ export class ResolverEntityService {
   private coreDBPromise: Promise<CoreDB>;
 
   constructor(coreDB?: CoreDB) {
-    this.coreDBPromise = coreDB ? Promise.resolve(coreDB) : CoreDB.getSingleton();
+    this.coreDBPromise = coreDB
+      ? Promise.resolve(coreDB)
+      : CoreDB.getSingleton(getDBName(getBuildDatabasePrefix(), 'core'));
   }
 
   private async ensureCoreDB(): Promise<CoreDB> {

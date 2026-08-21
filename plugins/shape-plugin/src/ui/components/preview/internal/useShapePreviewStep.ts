@@ -41,7 +41,7 @@ import {
   useVectorTilePreviewSearch,
   useVectorTilePreviewSelection,
 } from '@hierarchidb/ui-map';
-import { getDBName } from '@hierarchidb/util';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 //import { getShapeDbAPIClient } from '../../../services/build/ShapeBuildAPIClient.ts';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
@@ -102,7 +102,7 @@ export const useShapePreviewStep = (
   const baseLayerId = 'shape-preview';
   const baseSourceId = 'shape-preview-source';
   const layerSetName = data.buildConfig?.tileEmitConfig?.layerSetName ?? 'shape';
-  const tileDbName = getDBName('shape');
+  const tileDbName = getDBName(getBuildDatabasePrefix(), 'shape');
   const [selectionMetadata, setSelectionMetadata] = useState<SourceTaskPayload[]>([]);
   const workerClientHook = useMemo(() => {
     try {

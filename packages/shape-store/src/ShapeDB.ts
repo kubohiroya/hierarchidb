@@ -8,7 +8,7 @@
  */
 
 import {Dexie, type Table} from 'dexie';
-import {getDBName} from '@hierarchidb/util';
+import {getBuildDatabasePrefix, getDBName} from '@hierarchidb/util';
 import type {ShapeContainerNodeId, ShapeTileSummaryRecord, VectorTileRecord} from "./VectorTileRecord";
 import { VectorTileDbBase } from "@hierarchidb/vectortile-store";
 import type { TabularTableMetadataLike } from "@hierarchidb/tabular-store";
@@ -28,8 +28,8 @@ export class ShapeDB extends VectorTileDbBase {
   buildSessionStatuses!: Table<BuildSessionStatus, NodeId>;
   buildStageStatuses!: Table<BuildStageStatus, string>;
 
-  constructor() {
-    super(getDBName('shape'));
+  constructor(databaseName: string) {
+    super(databaseName);
 
     // Version 1: Original schema with monolithic sessions table
     this.version(1).stores(this.mergeVectorTileStores({
@@ -248,8 +248,8 @@ export class ShapeDB extends VectorTileDbBase {
 // Aligned alias for cross-plugin naming consistency.
 // export { ShapeDB as ShapeDatabase };
 // Singleton instance
-export const shapeDB = new ShapeDB();
+export const shapeDB = new ShapeDB(getDBName(getBuildDatabasePrefix(), 'shape'));
 
 export async function clearShapeDatabases(): Promise<void> {
-  await Dexie.delete(getDBName('shape'));
+  await Dexie.delete(getDBName(getBuildDatabasePrefix(), 'shape'));
 }

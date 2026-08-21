@@ -897,8 +897,11 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
 
   const repoRoot = path.resolve(__dirname, '..');
   const configuredSourceSha = env.HDB_SOURCE_SHA || process.env.HDB_SOURCE_SHA || '';
-  const databasePrefix = env.VITE_APP_PREFIX || process.env.VITE_APP_PREFIX || '';
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(databasePrefix)) {
+  const databasePrefix = env.VITE_APP_PREFIX;
+  if (
+    typeof databasePrefix !== 'string'
+    || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(databasePrefix)
+  ) {
     throw new Error('[yaml-storage-preflight] VITE_APP_PREFIX must be an exact database prefix');
   }
   let sourceSha = configuredSourceSha;

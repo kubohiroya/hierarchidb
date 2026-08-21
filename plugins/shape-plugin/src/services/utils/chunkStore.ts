@@ -8,7 +8,7 @@ import {
   type ChunkStoreSerializer,
 } from '@hierarchidb/chunk-store';
 import { FetchNetworkPort, type FetchNetworkPortOptions, getCorsProxyBaseURL } from '@hierarchidb/download';
-import { sleep } from '@hierarchidb/util';
+import { getBuildDatabasePrefix, getDBName, sleep } from '@hierarchidb/util';
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
@@ -38,7 +38,7 @@ export const createShapeChunkStore = <T>(
   deserializer: ChunkStoreDeserializer<T>,
 ): DexieChunkStore<T> => (
   new DexieChunkStore<T>({
-    dbName: 'shape-chunks',
+    dbName: getDBName(getBuildDatabasePrefix(), 'shape-chunks'),
     serializer,
     deserializer,
     networkPort: getShapeNetworkPort(),
@@ -51,7 +51,7 @@ export const createShapeChunkStoreWithNetworkPort = <T>(
   networkPort: FetchNetworkPort,
 ): DexieChunkStore<T> => (
   new DexieChunkStore<T>({
-    dbName: 'shape-chunks',
+    dbName: getDBName(getBuildDatabasePrefix(), 'shape-chunks'),
     serializer,
     deserializer,
     networkPort,

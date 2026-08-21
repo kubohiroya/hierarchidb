@@ -1,5 +1,6 @@
 // Test setup file
 import { afterEach, beforeEach, describe, expect, it, test } from 'vitest';
+import '../../../../../vitest.database-prefix.setup.ts';
 
 // Make vitest globals available
 globalThis.expect = expect;

@@ -18,7 +18,7 @@ import {
   buildRouteSourceLayerName,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import { ensureWorkerAPI } from '@hierarchidb/ui-worker-client';
-import { getDBName } from '@hierarchidb/util';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import { useEffect, useState } from 'react';
 import { parseZxyParam } from '~/router/loaders/mapLoader';
 import type { MapInfoSummary } from '~/router/routes/modeless/modelessDialogContent';
@@ -490,7 +490,7 @@ export const useFolderLayers = ({
               layerSetId: 'shape',
               layerPriority: resolveLayerSetPriority('shape'),
               layerLabel: absolutePath ?? String(node.id),
-              dbName: getDBName('shape'),
+              dbName: getDBName(getBuildDatabasePrefix(), 'shape'),
               tileDataProvider: async (z, x, y, tileNodeId) => {
                 if (!tileNodeId) return null;
                 const api = await getShapeQueryAPI();
@@ -541,7 +541,7 @@ export const useFolderLayers = ({
                 layerSetId: 'route',
                 layerPriority: resolveLayerSetPriority('route'),
                 layerLabel: absolutePath ?? String(node.id),
-                dbName: getDBName('route'),
+                dbName: getDBName(getBuildDatabasePrefix(), 'route'),
                 tileDataProvider: async (z, x, y) => {
                   const api = await getRouteQueryAPI();
                   return api.getVectorTile(String(node.id) as NodeId, z, x, y);

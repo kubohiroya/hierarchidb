@@ -9,7 +9,6 @@ import {
   type StorageMetadata,
   type StoragePort,
 } from '@hierarchidb/download';
-import { getDBName } from '@hierarchidb/util';
 import { NobleSha3HashPort } from './adapters/NobleSha3HashPort.js';
 import type { HashAlgorithm, HashPort } from './types.js';
 
@@ -155,9 +154,19 @@ export class DexieChunkStore<T> implements StoragePort {
       relations: options.tables?.relations ?? DEFAULT_TABLES.relations,
       keys: options.tables?.keys ?? DEFAULT_TABLES.keys,
     };
-    const db = options.db
-      ? options.db
-      : new ChunkStoreDB(getDBName(options.dbName || 'chunk'), tables);
+    let db: Dexie;
+    if (options.db !== undefined) {
+      if (options.dbName !== undefined && options.db.name !== options.dbName) {
+        throw new Error('chunk-store-database-name-mismatch');
+      }
+      db = options.db;
+    } else {
+      const databaseName = options.dbName;
+      if (databaseName === undefined) {
+        throw new Error('chunk-store-database-name-required');
+      }
+      db = new ChunkStoreDB(databaseName, tables);
+    }
 
     this.files = options.db ? (db.table(tables.files) as Table<FileRecord, ChunkStoreMetadataId>) : (db as ChunkStoreDB).files;
     this.chunks = options.db ? (db.table(tables.chunks) as Table<ChunkRecord, [ChunkStoreMetadataId, number]>) : (db as ChunkStoreDB).chunks;

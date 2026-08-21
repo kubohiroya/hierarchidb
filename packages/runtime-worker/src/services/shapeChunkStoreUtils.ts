@@ -5,6 +5,7 @@ import {
   DexieChunkStore,
 } from '@hierarchidb/chunk-store';
 import type { NodeId } from '@hierarchidb/core-types';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 
 const bufferSerializer: ChunkStoreSerializer<ArrayBuffer> = (value) => value;
 const bufferDeserializer: ChunkStoreDeserializer<ArrayBuffer> = (value) => value;
@@ -14,7 +15,7 @@ const RAW_DATA_CACHE_PREFIX = 'download:';
 
 const createShapeChunkStore = (): DexieChunkStore<ArrayBuffer> =>
   new DexieChunkStore<ArrayBuffer>({
-    dbName: 'shape-chunks',
+    dbName: getDBName(getBuildDatabasePrefix(), 'shape-chunks'),
     serializer: bufferSerializer,
     deserializer: bufferDeserializer,
   });

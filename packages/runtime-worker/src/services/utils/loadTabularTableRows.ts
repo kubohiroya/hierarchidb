@@ -1,5 +1,4 @@
-import { Dexie, type Table } from 'dexie';
-import { readChunkRows, TabularDatabaseManager } from '@hierarchidb/tabular-store';
+import { RowStoreDB, readChunkRows, TabularDatabaseManager } from '@hierarchidb/tabular-store';
 import { getDBName } from '@hierarchidb/util';
 
 type TabularRowRecord = Record<string, unknown>;
@@ -14,8 +13,6 @@ type RowChunkRecord = {
   createdAt: number;
   updatedAt: number;
 };
-type RowStoreLookupDB = Dexie & { rowChunks: Table<RowChunkRecord, string> };
-
 const ROW_STORE_SUFFIX = 'tabular-source-rowstore-db';
 
 const collectRowsFromChunks = (chunks: Array<{ binaryData: ArrayBuffer }>): TabularRowRecord[] => {
@@ -35,11 +32,7 @@ const loadRowsFromStore = async (
   pluginId: string,
   tableId: string,
 ): Promise<TabularRowRecord[]> => {
-  const db = new Dexie(dbName) as RowStoreLookupDB;
-  db.version(1).stores({
-    rowChunks: '&id, [pluginId+tableId], [pluginId+tableId+startRowIndex], [pluginId+tableId+endRowIndex], tableId, pluginId, chunkIndex, createdAt',
-    rowIndexes: '&id, [pluginId+tableId+column], [pluginId+tableId+column+value]',
-  });
+  const db = new RowStoreDB(dbName);
   try {
     await db.open();
     const chunks = await db.rowChunks
@@ -55,9 +48,9 @@ const loadRowsFromStore = async (
 const resolveMetadataHeaders = async (
   pluginId: string,
   tableId: string,
-  dbPrefix?: string,
+  dbPrefix: string,
 ): Promise<string[]> => {
-  const metadataDbName = getDBName(`${pluginId}-metadata`, dbPrefix);
+  const metadataDbName = getDBName(dbPrefix, `${pluginId}-metadata`);
   const metadataManager = new TabularDatabaseManager(metadataDbName);
   try {
     const metadata = await metadataManager.get(tableId);
@@ -84,10 +77,10 @@ export type TabularTableLoadResult = {
 export const loadTabularTableRows = async (
   pluginId: string,
   tableId: string,
-  dbPrefix?: string,
+  dbPrefix: string,
 ): Promise<TabularTableLoadResult> => {
   const headers = await resolveMetadataHeaders(pluginId, tableId, dbPrefix);
-  const rowStoreDbName = getDBName(ROW_STORE_SUFFIX, dbPrefix);
+  const rowStoreDbName = getDBName(dbPrefix, ROW_STORE_SUFFIX);
   const rows = await loadRowsFromStore(rowStoreDbName, pluginId, tableId);
   return { headers, rows };
 };

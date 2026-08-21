@@ -1,6 +1,7 @@
 import { DexieChunkStore } from '@hierarchidb/chunk-store';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { GeometryEngine } from '@hierarchidb/gis-sdk';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import type { TileEmitWorkerAPI, VectorTileProgress } from '~/types';
 
 export type VectorTileStageInput = {
@@ -43,7 +44,6 @@ export type VectorTileStageOptions = {
 };
 
 const DEFAULT_NODE_ID = 'tile-emit-shared' as NodeId;
-const DEFAULT_CHUNK_STORE = 'hidb-chunks';
 
 type VectorTileInputFormat = 'geojson' | 'flatgeobuf';
 type VectorTileInputCompression = 'gzip' | 'none';
@@ -93,7 +93,8 @@ export async function writeVectorTileInput(
     resolveInputContentType(inputFormat, inputCompression);
   const nodeId = options?.nodeId ?? DEFAULT_NODE_ID;
   const payload = await compressBuffer(buffer, inputCompression);
-  const resolvedChunkStoreName = options?.chunkStoreName ?? DEFAULT_CHUNK_STORE;
+  const resolvedChunkStoreName =
+    options?.chunkStoreName ?? getDBName(getBuildDatabasePrefix(), 'chunks');
   const storageAdapter = new DexieChunkStore<ArrayBuffer>({
     dbName: resolvedChunkStoreName,
     serializer: (value) => value,
@@ -126,7 +127,8 @@ export async function runVectorTileStage(
       inputCompression,
       nodeId,
       tileId,
-      chunkStoreName: options.chunkStoreName ?? DEFAULT_CHUNK_STORE,
+      chunkStoreName:
+        options.chunkStoreName ?? getDBName(getBuildDatabasePrefix(), 'chunks'),
     });
   }
   const generated = await client.generateTiles(bufferId, config, onProgress);

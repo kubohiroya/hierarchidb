@@ -1,4 +1,4 @@
-import { getDBName } from '@hierarchidb/util';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import { Dexie } from 'dexie';
 import { databaseStoreLoaders, APP_DATABASE_NODE_TYPES_SET } from './database-store-loaders.ts';
 
@@ -33,7 +33,7 @@ const CORE_DB_SUFFIXES = ['core'];
 
 async function clearCoreDatabases(): Promise<void> {
   for (const suffix of CORE_DB_SUFFIXES) {
-    await Dexie.delete(getDBName(suffix));
+    await Dexie.delete(getDBName(getBuildDatabasePrefix(), suffix));
   }
 }
 

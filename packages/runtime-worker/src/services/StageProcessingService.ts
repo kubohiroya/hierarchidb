@@ -13,6 +13,7 @@ import {
 import { getRouteDB } from '@hierarchidb/route-store';
 import { type LayerInfo, shapeDB } from '@hierarchidb/shape-store';
 import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
+import { getBuildDatabasePrefix } from '@hierarchidb/util';
 import type { VectorTileItemBase } from '../entity/storeTypes.js';
 import type {
   GeometryWorkerAPI,
@@ -61,7 +62,7 @@ class RealSourceWorker implements SourceWorkerAPI {
   private async getShared(): Promise<SharedFetchService> {
     if (!this.sharedPromise) {
       this.sharedPromise = createSharedDownloadService({
-        dbPrefix: 'hidb',
+        dbPrefix: getBuildDatabasePrefix(),
         perHostConcurrency: 4,
         scope: 'shape',
       });
@@ -100,7 +101,7 @@ class RealTileEmitWorker implements TileEmitWorkerAPI {
   private async getShared(): Promise<SharedFetchService> {
     if (!this.sharedPromise) {
       this.sharedPromise = createSharedDownloadService({
-        dbPrefix: 'hidb',
+        dbPrefix: getBuildDatabasePrefix(),
         perHostConcurrency: 2,
         scope: 'shape',
       });

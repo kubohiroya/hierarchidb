@@ -5,6 +5,7 @@
 
 // Import base setup (includes all _obsolate_common mocks)
 import 'fake-indexeddb/auto';
+import '../../vitest.database-prefix.setup.ts';
 import { ReadableStream, WritableStream } from 'node:stream/web';
 import { gzipSync, gunzipSync } from 'node:zlib';
 

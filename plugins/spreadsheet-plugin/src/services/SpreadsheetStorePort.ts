@@ -13,6 +13,7 @@ import {
   type TabularColumnType,
   type TabularTableMetadataLike,
 } from '@hierarchidb/tabular-store';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import type { SpreadsheetMetadataManager } from './SpreadsheetMetadataManager.js';
 
 interface SpreadsheetStorePortOptions {
@@ -93,7 +94,10 @@ export class SpreadsheetStorePort implements TabularStorePort<TabularTableMetada
     if (!schema.columns || schema.columns.length === 0) {
       throw new Error('No columns found in uploaded file');
     }
-    const writer = new TabularWriter(this.pluginId);
+    const writer = new TabularWriter(this.pluginId, {
+      metadataDbName: this.metadataManager.databaseName,
+      rowStoreDbName: getDBName(getBuildDatabasePrefix(), 'tabular-source-rowstore-db'),
+    });
     const tableId = await writer.begin({
       filename: this.filename,
       columns: schema.columns.map((column) => column.name),

@@ -13,6 +13,7 @@ import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/locatio
 import type { StyleMutationAPI, StyleQueryAPI } from '@hierarchidb/style-api';
 import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/route-api';
 import type { ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
+import { getBuildDatabasePrefix } from '@hierarchidb/util';
 import type { Endpoint as ComlinkEndpoint } from 'comlink';
 import { expose, proxy } from 'comlink';
 import type { CommandProcessor } from '~/services/CommandProcessor';
@@ -22,6 +23,7 @@ type Endpoint = MessagePort | Worker | ComlinkEndpoint;
 
 async function main(endpoint?: Endpoint): Promise<void> {
   const svc = await WorkerService.getSingleton([], {
+    databasePrefix: getBuildDatabasePrefix(),
     assertYamlStorageCanonicalAccess: () => {},
   });
   // No per-API facades; return Comlink proxies of service instances directly

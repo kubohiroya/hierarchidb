@@ -1,6 +1,6 @@
 import { Dexie, type Table } from 'dexie';
 import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
-import { getDBName } from '@hierarchidb/util';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 
 export interface ResolverEntityPayload {
   nodeId: NodeId;
@@ -13,8 +13,8 @@ export type ResolverEntity = PeerEntity<ResolverEntityPayload>;
 export class ResolverDB extends Dexie {
   resolvers!: Table<ResolverEntity, string>;
 
-  constructor() {
-    super(getDBName('resolver-db'));
+  constructor(databaseName: string) {
+    super(databaseName);
     this.version(1).stores({
       resolvers: '&id, nodeId, name',
     });
@@ -25,7 +25,9 @@ export class ResolverDB extends Dexie {
 let singleton: ResolverDB | null = null;
 
 export function getResolverDB(): ResolverDB {
-  if (!singleton) singleton = new ResolverDB();
+  if (!singleton) {
+    singleton = new ResolverDB(getDBName(getBuildDatabasePrefix(), 'resolver-db'));
+  }
   return singleton;
 }
 
@@ -37,5 +39,5 @@ export async function closeResolverDB(): Promise<void> {
 }
 
 export async function clearResolverDatabases(): Promise<void> {
-  await Dexie.delete(getDBName('resolver-db'));
+  await Dexie.delete(getDBName(getBuildDatabasePrefix(), 'resolver-db'));
 }

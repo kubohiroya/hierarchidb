@@ -7,7 +7,7 @@ import {
   type ShapeBuildSessionRecoveryRequest,
   type ShapeBuildSessionRecoveryResult,
 } from '@hierarchidb/shape-api';
-import { getDBName } from '@hierarchidb/util';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import type {
   BuildSessionRecord,
   BuildSessionHeartbeat,
@@ -209,7 +209,7 @@ export class EphemeralDB extends Dexie {
   geometryErrors!: Table<EphemeralGeometryErrorRecord, string>;
   tileEmitBufferRelations!: Table<EphemeralTileIdToBufferRelation, string>;
 
-  constructor(dbName: string = getDBName('ephemeral')) {
+  constructor(dbName: string) {
     super(dbName);
     this.version(1).stores(EPHEMERAL_DB_SCHEMA_V1);
     this.version(2).stores(EPHEMERAL_DB_SCHEMA_V2);
@@ -541,4 +541,6 @@ export class EphemeralDB extends Dexie {
   }
 }
 
-export const ephemeralDB = new EphemeralDB();
+export const ephemeralDB = new EphemeralDB(
+  getDBName(getBuildDatabasePrefix(), 'ephemeral')
+);

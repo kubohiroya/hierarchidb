@@ -1,4 +1,5 @@
 import { Dexie, type Table } from 'dexie';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 
 export type PersistentDebugLogLevel = 'log' | 'warn' | 'error';
 
@@ -11,15 +12,14 @@ type PersistentDebugLogEntry = {
   dataText?: string;
 };
 
-const DEBUG_LOG_DB_NAME = 'hidb-debug-log';
 const DEBUG_LOG_TABLE = 'logs';
 const DEBUG_LOG_LIMIT = 2000;
 
 class DebugLogDB extends Dexie {
   logs!: Table<PersistentDebugLogEntry, number>;
 
-  constructor() {
-    super(DEBUG_LOG_DB_NAME);
+  constructor(databaseName: string) {
+    super(databaseName);
     this.version(1).stores({
       [DEBUG_LOG_TABLE]: '++id,ts,level,tag',
     });
@@ -35,7 +35,9 @@ const isIndexedDbAvailable = (): boolean => typeof indexedDB !== 'undefined';
 const getDebugLogDb = (): DebugLogDB | null => {
   if (!isIndexedDbAvailable()) return null;
   if (!debugLogDb) {
-    debugLogDb = new DebugLogDB();
+    debugLogDb = new DebugLogDB(
+      getDBName(getBuildDatabasePrefix(), 'debug-log')
+    );
   }
   return debugLogDb;
 };

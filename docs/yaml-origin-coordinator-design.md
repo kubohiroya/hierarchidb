@@ -421,10 +421,16 @@ import string through Rollup's importer-sensitive filename hash. Any future vali
 must still fail the separately verified artifact SHA-256 gate; the stable filename is not a content
 acceptance substitute.
 
-The database prefix is an exact build-time `VITE_APP_PREFIX`; a missing or malformed prefix fails
-the build and there is no `hidb` or runtime fallback. The production value is declared explicitly
-in `app/.env.production` so the ordinary CI application build and the deployment shell resolve the
-same database names. Before any `open()`, the inspector calls `indexedDB.databases()` once and
+The database prefix is the exact build-time `__HDB_DATABASE_PREFIX__` derived from
+`VITE_APP_PREFIX`; a missing or malformed prefix fails the build and there is no global, runtime
+environment, application-name, base-path, or `hidb` fallback. The production value is declared
+explicitly in `app/.env.production`. Each browser and worker composition boundary reads only that
+injected constant, passes it explicitly to the pure database-name formatter, and then passes the
+resulting exact name to storage constructors. Packages do not search globals, runtime environments,
+application names, or paths, and do not normalize, default, or override the value. The runtime, the
+independent inspector, browser workers, and storage constructors therefore resolve the same database
+names from the same immutable build input. Before any `open()`, the inspector calls
+`indexedDB.databases()` once and
 verifies exact presence and version of the coordinator, CoreDB, and YamlDB databases. Any missing
 database, duplicate catalog entry, or version mismatch rejects without opening any of them. Every
 subsequent transaction is `readonly`; an unexpected upgrade, blocked open, topology mismatch, read
