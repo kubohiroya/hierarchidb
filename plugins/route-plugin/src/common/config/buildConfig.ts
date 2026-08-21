@@ -49,6 +49,13 @@ export const DEFAULT_ROUTE_BUILD_CONFIG: RouteBuildConfig = {
     boundaryDisableAtZoomOrAbove: 3,
   },
   tileEmitConfig: {
+    invalidGeometryFilter: {
+      area: false,
+      lineLength: false,
+      maxEdgeLength: false,
+      selfIntersection: false,
+      triangleRingRatio: false,
+    },
     enableTopojsonSimplify: false,
     maxConcurrent: 1,
     dynamicConcurrency: {
