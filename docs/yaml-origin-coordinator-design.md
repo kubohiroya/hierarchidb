@@ -421,6 +421,13 @@ hydrate fallback remains mounted for an activation reload and for a terminal fai
 only after the runtime-ready provider tree commits. No branch retries bootstrap or falls back to a
 legacy runtime.
 
+The production SharedWorker entry URL carries release and gate query parameters. A dynamically
+loaded worker chunk must never import the queryless `shared-worker.js` entry, because the browser
+would evaluate that distinct module URL again inside the same worker and create a second set of
+module singletons. Shared runtime modules are emitted in a side-effect-free neutral chunk referenced
+by both the entry and dynamic chunks. Production build acceptance rejects any non-entry worker
+artifact that imports `shared-worker.js`.
+
 ## Source-controlled production preflight surface
 
 Production evidence before and after the single activation is collected by the independent Vite

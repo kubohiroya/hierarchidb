@@ -46,10 +46,8 @@ const normalizeBasePath = (value: string): string => {
 };
 
 const resolveBaseUrl = (): string => {
-  const meta = (typeof import.meta !== "undefined"
-    ? (import.meta as { env?: { BASE_URL?: string; VITE_BASE_URL?: string } })
-    : null);
-  const envBase = meta?.env?.VITE_BASE_URL || meta?.env?.BASE_URL;
+  const env = (import.meta as { env?: { BASE_URL?: string; VITE_BASE_URL?: string } }).env;
+  const envBase = env?.VITE_BASE_URL || env?.BASE_URL;
   if (typeof envBase === "string" && envBase.length > 0) {
     return normalizeBasePath(envBase);
   }

@@ -1435,6 +1435,13 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
         external: ['@maplibre/vt-pbf'],
         output: {
           entryFileNames: '[name].js',
+          manualChunks(id: string) {
+            const moduleId = id.split('?', 1)[0]?.replaceAll('\\', '/');
+            if (moduleId?.endsWith('/app/src/worker-runtime/workerBootstrapUtils.ts')) {
+              return 'worker-runtime-shared';
+            }
+            return undefined;
+          },
         },
       },
     },
