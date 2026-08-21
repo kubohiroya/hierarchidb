@@ -1,0 +1,1 @@
+import{t as e}from"./jszip.min-BCXnJx1i.js";export default e();

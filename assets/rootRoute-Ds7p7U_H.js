@@ -1,0 +1,1 @@
+import"./src-BCjMNpP-.js";import"./vendor-react-BX4gRsVm.js";import"./uiPluginLoaderUtils-CCdJhIeS.js";import{t as e}from"./rootRoute-C1MGZSvX.js";export{e as rootRoute};

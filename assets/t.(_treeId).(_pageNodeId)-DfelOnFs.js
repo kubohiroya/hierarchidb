@@ -1,1 +1,0 @@
-import{s as e}from"./rolldown-runtime-CbIIB0ob.js";import{a as t}from"./vendor-react-vKfaDDdF.js";import{t as n}from"./TreeConsoleRoutePage-9k_6SqP_.js";import{Ri as r}from"./index.js";var i=e(t());function a(){return(0,i.jsx)(n,{data:r({from:`/d/$treeId/$pageNodeId`})})}function o({data:e}){return(0,i.jsx)(n,{data:e})}export{o as n,a as t};

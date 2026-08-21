@@ -1,0 +1,1 @@
+import{s as e}from"./rolldown-runtime-CbIIB0ob.js";import{a as t}from"./vendor-react-BX4gRsVm.js";import{Hr as n}from"./index.js";var r=n((0,e(t()).jsx)(`path`,{d:`M6 19h4V5H6zm8-14v14h4V5z`}),`Pause`);export{r as t};

@@ -1,0 +1,1 @@
+import"./vendor-react-BX4gRsVm.js";import{fn as e}from"./index.js";const t=e;var n=t;export{t as LinkerPluginIcon,n as default};

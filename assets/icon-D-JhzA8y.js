@@ -1,0 +1,1 @@
+import"./vendor-react-BX4gRsVm.js";import{cn as e}from"./index.js";const t=e;var n=t;export{t as SpreadsheetPluginIcon,n as default};

@@ -1,1 +1,0 @@
-import"./vendor-react-vKfaDDdF.js";import{fn as e}from"./index.js";const t=e;var n=t;export{t as LinkerPluginIcon,n as default};

@@ -1,0 +1,1 @@
+const e=[];function t(t){for(let n of e)if(n.supports(t))return n;return null}export{t as getLocationStrategy};

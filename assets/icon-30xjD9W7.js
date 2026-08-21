@@ -1,0 +1,1 @@
+import"./vendor-react-BX4gRsVm.js";import{Lt as e}from"./index.js";const t=e;var n=t;export{t as RoutePluginIcon,n as default};

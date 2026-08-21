@@ -1,0 +1,1 @@
+import"./vendor-react-BX4gRsVm.js";import{nn as e}from"./index.js";const t=e;var n=t;export{t as YamlPluginIcon,n as default};
