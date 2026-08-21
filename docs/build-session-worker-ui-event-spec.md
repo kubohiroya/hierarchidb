@@ -85,6 +85,7 @@ type SessionStatusUpdatedEvent = {
 
 - A pause request emits `pausing` after abort has been requested, while the pipeline is still shutting down.
 - `paused` may be emitted only after the session's pipeline Promise has settled, no worker/job remains live, and tasks interrupted by the confirmed abort have been re-queued.
+- The same transaction that persists `paused` also persists the explicit pause-completion timestamp as `buildSessionHeartbeats.lastHeartbeatAt`. The Worker emits that timestamp through `heartbeat` before `sessionStatusUpdated(paused)`, so the UI already owns the persisted session/stage end point when it renders the paused phase.
 - Task rows must not be changed from `running` to `queued` before runtime shutdown is confirmed. A task-count query cannot prove shutdown after those rows have been rewritten.
 - If shutdown confirmation exceeds the configured timeout, the Worker persists `failed` and rejects the pause command with a typed shutdown-timeout error. The UI command handler converts that rejection into the UI-internal `criticalError` event. The Worker must not emit a fifth canonical event, emit `paused`, set `canResume=true`, or continue cache/artifact writes for that run.
 - A late completion from the timed-out run is stale and must not mutate task/session state or artifacts.
@@ -186,7 +187,7 @@ Because `paused` status and `heartbeat` are delivered as separate events, the UI
 
 An unstarted stage has `timing === null` and contributes `0`; no timing sentinel is generated. A started stage with missing or invalid timing throws instead of contributing `0`.
 
-Session elapsed time uses the same fail-fast rule. `running` uses the current clock, `paused` requires the persisted heartbeat endpoint emitted by the Worker after the active pipeline has settled and before the `paused` session status is emitted, and `completed` / `failed` require `completedAt`. The consumer never substitutes the current clock for a missing persisted endpoint.
+Session elapsed time uses the same fail-fast rule. `running` uses the current clock, `paused` requires the persisted pause-completion heartbeat endpoint emitted by the Worker after the active pipeline has settled and before the `paused` session status is emitted, and `completed` / `failed` require `completedAt`. The consumer never substitutes the current clock, an earlier periodic heartbeat, or any invented endpoint for a missing pause-completion endpoint.
 
 ---
 

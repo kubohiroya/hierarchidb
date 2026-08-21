@@ -193,7 +193,12 @@ canonical Worker events.
 Pause uses the same strict ownership. The runtime first emits `pausing`, aborts the
 nodeId session through the AbortController stored in the SSOT state-tree entry, and
 awaits the actual pipeline Promise. Only after that Promise has settled and no live
-worker/job remains may interrupted tasks be re-queued and `paused` be emitted. On
+worker/job remains may interrupted tasks be re-queued and `paused` be emitted. The
+terminal pause write stores the explicit pause-completion timestamp in the normalized
+heartbeat row in the same transaction as `paused`; its `heartbeat` event is emitted
+before `sessionStatusUpdated(paused)`. The UI therefore freezes session and active-stage
+elapsed time at that persisted endpoint without a read-clock or periodic-heartbeat
+fallback. On
 timeout, the Worker persists `failed` and rejects the pause command with a typed
 shutdown-timeout error. The UI command handler translates that rejection into the
 UI-internal `criticalError` event; `criticalError` is not a fifth Worker event. A

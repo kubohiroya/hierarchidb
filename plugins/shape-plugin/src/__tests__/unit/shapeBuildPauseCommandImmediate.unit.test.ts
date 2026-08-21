@@ -13,6 +13,8 @@ const setPausedMock = vi.hoisted(() => vi.fn(async () => undefined));
 const updateBuildSessionMock = vi.hoisted(() => vi.fn(async () => undefined));
 const emitHeartbeatMock = vi.hoisted(() => vi.fn());
 const emitSessionLifecyclePhaseUpdatedMock = vi.hoisted(() => vi.fn());
+const emitSessionStatusUpdatedMock = vi.hoisted(() => vi.fn());
+const emitHeartbeatMock = vi.hoisted(() => vi.fn());
 const activePipelineStore = vi.hoisted(() => new Map<string, ActivePipeline>());
 const invalidatedRunIds = vi.hoisted(() => new Map<string, string>());
 const countTaskQueueStatusesMock = vi.hoisted(() =>
@@ -25,20 +27,24 @@ const countTaskQueueStatusesMock = vi.hoisted(() =>
   }))
 );
 const getBuildSessionRecordMock = vi.hoisted(() =>
-  vi.fn(async (nodeId: string) => ({
-    nodeId,
-    status: 'running' as const,
-    startedAt: 1,
-    updatedAt: 1,
-    progress: {
-      total: 0,
-      completed: 0,
-      failed: 0,
-      skipped: 0,
-      percentage: 0,
-    },
-    stages: {},
-  }))
+  vi.fn(async (nodeId: string) => {
+    const latestUpdate = updateBuildSessionMock.mock.calls.at(-1)?.[1];
+    return {
+      nodeId,
+      status: latestUpdate?.status ?? ('running' as const),
+      startedAt: 1,
+      updatedAt: 1,
+      lastHeartbeatAt: latestUpdate?.lastHeartbeatAt,
+      progress: {
+        total: 0,
+        completed: 0,
+        failed: 0,
+        skipped: 0,
+        percentage: 0,
+      },
+      stages: {},
+    };
+  })
 );
 
 vi.mock('../../services/build/ShapeBuildAPIClient.js', () => ({
@@ -59,7 +65,8 @@ vi.mock('../../worker/api/eventEmissionConstants.js', () => ({
   emitSessionLifecyclePhaseUpdated: (
     ...args: Parameters<typeof emitSessionLifecyclePhaseUpdatedMock>
   ) => emitSessionLifecyclePhaseUpdatedMock(...args),
-  emitSessionStatusUpdated: vi.fn(),
+  emitSessionStatusUpdated: (...args: Parameters<typeof emitSessionStatusUpdatedMock>) =>
+    emitSessionStatusUpdatedMock(...args),
   emitStageSnapshotUpdated: vi.fn(async () => undefined),
   readStartedStageTiming: vi.fn(() => null),
 }));
@@ -190,7 +197,25 @@ describe('shape build pause command pipeline drain', () => {
       stopReason: 'user-pause',
       canResume: true,
       completedAt: undefined,
+      lastHeartbeatAt: expect.any(Number),
     });
+    const pausedUpdate = updateBuildSessionMock.mock.calls.find(
+      ([, update]) => update.status === 'paused'
+    )?.[1];
+    if (typeof pausedUpdate?.lastHeartbeatAt !== 'number') {
+      throw new Error('paused update is missing lastHeartbeatAt');
+    }
+    expect(emitHeartbeatMock).toHaveBeenCalledWith(TEST_NODE_ID, pausedUpdate.lastHeartbeatAt);
+    expect(emitSessionStatusUpdatedMock).toHaveBeenCalledWith(
+      TEST_NODE_ID,
+      expect.objectContaining({
+        status: 'paused',
+        lastHeartbeatAt: pausedUpdate.lastHeartbeatAt,
+      })
+    );
+    expect(emitHeartbeatMock.mock.invocationCallOrder[0]).toBeLessThan(
+      emitSessionStatusUpdatedMock.mock.invocationCallOrder[0]
+    );
   });
 
   it('persists failed and rejects with a typed error on shutdown timeout', async () => {
