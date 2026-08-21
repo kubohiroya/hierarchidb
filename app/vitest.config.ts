@@ -30,6 +30,14 @@ function createAliasMap(): Record<string, string> {
       rootDir,
       '../packages/runtime-worker/src/yaml-storage-legacy-fence/index.ts'
     ),
+    '@hierarchidb/runtime-worker/yaml-storage-activation': path.resolve(
+      rootDir,
+      '../packages/runtime-worker/src/yaml-storage-activation/index.ts'
+    ),
+    '@hierarchidb/runtime-worker/yaml-storage-production': path.resolve(
+      rootDir,
+      '../packages/runtime-worker/src/yaml-storage-production/index.ts'
+    ),
     '@hierarchidb/runtime-worker': path.resolve(rootDir, '../packages/runtime-worker/src/index.ts'),
     '@hierarchidb/util': path.resolve(rootDir, '../packages/util/src/index.ts'),
     '@hierarchidb/plugin-base': path.resolve(rootDir, '../packages/plugin-base/src/index.ts'),

@@ -360,6 +360,51 @@ rejected durable result stops bootstrap before any browser global, plugin preloa
 WorkerService, SharedWorker, or utility worker begins. The activation window installs its bridge
 responder but does not start those legacy entrypoints before it submits the activation request.
 
+The single activation release refines the stopped state without changing the fixed coordinator.
+An `allowed` HELLO result enters the one-time activation bootstrap and still starts no application
+runtime before the quiescence claim. Each contender supplies a distinct cryptographically generated
+activation and quiescence identity. The atomic durable transition selects exactly one executor;
+identity-mismatched contenders stop before CoreDB preflight.
+
+After `ready-for-preflight`, the sole executor performs one CoreDB discovery. An exact existing v1
+database follows the raw preflight and atomic v1-to-v2 upgrade path. A genuinely missing database
+follows a distinct same-activation fresh-create path: the same executor and open-request identity
+issue one `open(name, 2)`, require `oldVersion === 0`, create the exact v2 topology, initialize
+CoreDB, and validate the resulting canonical YAML cohort before issuing
+`same-activation-fresh-create` readiness. It does not manufacture an empty v1 database, run the
+migration planner, write migration journal rows, reset the coordinator, or transfer execution to
+another context. Any discovered version or schema other than missing or exact v1 is terminal.
+
+A `LEGACY_YAML_ACCESS_REVOKED` HELLO result never authorizes legacy bootstrap and is not by itself
+proof of `ready-for-preflight`, because the fixed coordinator returns the same code while an active
+quiescence request is still `quiescing`. The application therefore performs one read-only strict
+read of the existing coordinator database after that HELLO result and enters successor bootstrap
+only when the durable record is exact `revoked/ready-for-preflight`. A `quiescing`, `rejected`,
+invalid, missing, version-mismatched, or unreadable record is a terminal visible bootstrap failure;
+the application does not poll, retry, mutate the record, or expose participant identities.
+This successor read is implemented in an application-only module that does not import the fixed
+coordinator service-worker state or validator modules. Production acceptance requires both the
+fixed coordinator artifact hash and its static-import graph hash to remain exactly equal to the
+accepted release while this application-only path evolves.
+
+After the successful v1-to-v2 activation or same-activation fresh-v2 creation, an
+activation-aware client with that exact durable evidence may enter the canonical-only successor
+bootstrap. It must verify exact CoreDB v2 topology, the exact migration-journal schema, every current
+raw YAML slot as canonical, and current WorkerService initialization before issuing a fresh
+canonical-ready decision. A revoked result paired with CoreDB v1, an unknown version, invalid
+schema or payload, or failed initialization is a terminal boot failure. A
+`LEGACY_YAML_ACCESS_REJECTED` result is always terminal. Neither result permits a generic IndexedDB
+reset prompt, coordinator reset, quiescence retry, or legacy fallback.
+The successor path never treats a missing CoreDB as a fresh installation; only the sole executor
+that moved an `allowed` gate through quiescence may perform fresh creation.
+
+The activation executor reaches canonical-ready before requesting a success-only reload handoff.
+The handoff creates a new JavaScript runtime because the winning window's local client-creation gate
+is monotonically revoked. It is not a way to bypass an unacknowledged client or retry a failed target
+open. On the new runtime, canonical publication remains closed until the successor checks above
+complete. The coordinator script, its static import graph, protocol, database version, and durable
+record remain byte-for-byte unchanged throughout this handoff.
+
 The strict census contract, build-SHA reader, and responder live in the shared
 `@hierarchidb/origin-coordinator` workspace package. The window, SharedWorker, dedicated runtime
 worker, stage worker, GEOS worker, country availability worker, and tabular filter worker all use

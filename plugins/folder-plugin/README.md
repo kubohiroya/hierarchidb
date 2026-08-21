@@ -1,6 +1,6 @@
 # @hierarchidb/folder-plugin
 
-Last updated: 2026-08-20
+Last updated: 2026-08-21
 
 A plugin that provides the fundamental container node for HierarchiDB's tree structure. Folder nodes act as containers that semantically organize and consolidate various types of nodes in a hierarchy.
 
@@ -59,16 +59,9 @@ import { FolderPluginIcon } from '@hierarchidb/folder-plugin/icon';
 
 ## Worker Layer
 
-folder-plugin adopts a **Worker-less design**. Folder node data is stored directly in CoreDB `TreeNode` payload/draft, with no dedicated Worker database or EntityHandler.
+Folder node data is stored directly in CoreDB `TreeNode` state; the plugin has no dedicated database or EntityHandler. Its `./worker` entry creates the production canonical YAML ZIP API around a runtime-owned CoreDB transaction port. The plugin manifest has no storage preload.
 
-The Worker `preload` configuration registers `registerFolderWorkerStores`, which only registers the payload peer store.
-
-```typescript
-// plugin-manifest.ts
-worker: {
-  preload: ['registerFolderWorkerStores'],
-}
-```
+ZIP access is published only after the origin coordinator and CoreDB activation produce canonical-ready evidence. Export reads one authoritative folder snapshot. Import plans the full archive and calls one CoreDB transaction port that rechecks the parent, siblings, and complete ID set before committing every node and the optional parent patch.
 
 ### Lifecycle
 
@@ -177,9 +170,9 @@ import { FolderIcon } from '@hierarchidb/folder-plugin/ui';
 <FolderIcon open={true} />
 ```
 
-## Dormant canonical YAML ZIP codec
+## Canonical YAML ZIP codec
 
-The pure codec is available only from the dedicated dormant entry point:
+The pure codec is available from its dedicated entry point:
 
 ```typescript
 import {
@@ -190,36 +183,30 @@ import {
 
 It accepts only the 12 exact canonical root filenames from `@hierarchidb/yaml-api`, constructs each filename's registry-owned `subtype` and `schemaId`, and delegates content validation to `validateYamlCanonicalPayload`. Its raw inspection rejects duplicate central records before any filename-keyed conversion, invalid UTF-8, unsafe paths, mismatched headers or CRC, unreferenced leading/inter-entry/tail bytes, overlap, comments, extras, ZIP64, encryption, non-STORE compression, and non-canonical Base64. Encoding uses UTF-8 filename-byte order, STORE, and fixed metadata for deterministic bytes.
 
-This entry point has no storage, runtime, network, filesystem, timer, or random dependency. It is not re-exported from the package root and remains disconnected from CoreDB, YamlDB, WorkerService, the legacy helpers below, and SimulationWorkflow. The dormant import/export plan below owns node/parent preflight and an injected transaction port; production publication remains part of the single activation change. See the [canonical YAML storage contract](../../docs/yaml-plugin-ide-gsm-step4-spec.md).
+This entry point has no storage, runtime, network, filesystem, timer, or random dependency. It is not re-exported from the package root. The production worker service composes it with the plan below and an injected CoreDB port. See the [canonical YAML storage contract](../../docs/yaml-plugin-ide-gsm-step4-spec.md).
 
-## Dormant canonical YAML ZIP plan
+## Canonical YAML ZIP plan
 
 The dedicated `@hierarchidb/folder-plugin/canonical-yaml-zip-plan` entry exports pure planners for committed or draft canonical exports and all-or-none imports. Export pairs `metadata.name + data` or `draftMetadata.name + draftData` without cross-slot fallback. Import validates the complete archive, folder parent, sibling index, full existing-ID snapshot, caller-issued node IDs, and caller timestamp before returning immutable node and parent-patch intents.
 
-`commitCanonicalYamlZipImportPlan` accepts only a plan issued by this module and calls the injected transaction port once with the parent/sibling/existing-ID guards, every node insert, and the optional parent patch. The plan is consumed before that call, so a failed port cannot retry it. The module does not implement the transaction and never falls back to YamlDB. The entry is not exported from the package root and has no production consumer until the single activation change.
+`commitCanonicalYamlZipImportPlan` accepts only a plan issued by this module and calls the injected transaction port once with the parent/sibling/existing-ID guards, every node insert, and the optional parent patch. The plan is consumed before that call, so a failed port cannot retry it. The module does not implement the transaction and never falls back to YamlDB. The production `./worker` service is its only runtime connector.
 
-## Legacy YAML snapshot boundary
+## Removed legacy YAML snapshot route
 
-The current `exportYamlNodesToSnapshot` and `importYamlNodesFromSnapshot` helpers are a legacy, non-canonical implementation. Export still reads `data.name`; import writes sequential YamlDB-only rows with an empty schema ID and does not create authoritative CoreDB `TreeNode` records. A later write failure can therefore leave partial YamlDB rows.
-
-Do not use these helpers as the canonical IDE-GSM snapshot path or a Step 4 runtime dependency. The dormant canonical plan above preflights all entries and prepares one transaction-shaped request, but remains disconnected from the current legacy helpers and runtime routing until the single activation change.
-
-The current legacy entry points remain unchanged only until the single activation change begins. At activation start, the legacy import/export routes are fenced before migration, and both the legacy and canonical routes remain unpublished while the migration or CoreDB initialization is pending. Production routing may publish the canonical ZIP path only after the migration commits and CoreDB initialization succeeds. If migration is blocked or fails, neither route is published, and the runtime must not fall back to the legacy helpers. See the [canonical YAML storage contract](../../docs/yaml-plugin-ide-gsm-step4-spec.md) and the [legacy YamlDB boundary](../../packages/yaml-store/README.md).
+The non-canonical `exportYamlNodesToSnapshot` and `importYamlNodesFromSnapshot` helpers, their root exports, and their YamlDB dependency have been removed. Production ZIP operations use only the canonical worker service and CoreDB. Activation or validation failure leaves the API unpublished and never falls back to the former serializer.
 
 ## Directory Structure
 
 ```text
 src/
-├── index.ts                  # Root entry point (types + manifest + YAML utilities)
+├── index.ts                  # Root entry point (types + manifest)
 ├── plugin-manifest.ts        # PluginManifest definition
-├── canonical-yaml-zip-codec/ # Dormant strict raw ZIP codec entry
-├── canonical-yaml-zip-plan/  # Dormant node/parent preflight and transaction plan
+├── canonical-yaml-zip-codec/ # Strict raw ZIP codec entry
+├── canonical-yaml-zip-plan/  # Node/parent preflight and transaction plan
 ├── common/
 │   ├── locales/              # i18n resources (en, ja)
 │   ├── shared/
-│   │   ├── folderValidation.ts   # Name/data validation
-│   │   ├── yamlFolderExport.ts   # YAML snapshot export
-│   │   └── yamlFolderImport.ts   # YAML snapshot import
+│   │   └── folderValidation.ts   # Name/data validation
 │   └── types/
 │       ├── constants.ts      # Validation/display constants
 │       ├── FolderEntity.ts   # FolderEntity type (TreeNode alias)
@@ -227,6 +214,9 @@ src/
 │       └── types.ts          # CreateFolderData, UpdateFolderData, FolderPeerData
 ├── icon/
 │   └── index.ts              # FolderPluginIcon (re-export of MUI Folder)
+├── worker/
+│   ├── index.ts              # Production worker entry
+│   └── createYamlCanonicalZipService.ts # Canonical ZIP/CoreDB connector
 └── ui/
     ├── FolderDialogHost.tsx   # Deprecated dialog host (returns null)
     ├── index.ts               # UI entry point
@@ -242,9 +232,10 @@ src/
 
 | Path | Contents |
 | --- | --- |
-| `@hierarchidb/folder-plugin` | Type definitions, PluginManifest, YAML utilities |
-| `@hierarchidb/folder-plugin/canonical-yaml-zip-codec` | Dormant strict canonical YAML ZIP codec |
-| `@hierarchidb/folder-plugin/canonical-yaml-zip-plan` | Dormant canonical node/parent import-export plan |
+| `@hierarchidb/folder-plugin` | Type definitions and PluginManifest |
+| `@hierarchidb/folder-plugin/canonical-yaml-zip-codec` | Strict canonical YAML ZIP codec |
+| `@hierarchidb/folder-plugin/canonical-yaml-zip-plan` | Canonical node/parent import-export plan |
+| `@hierarchidb/folder-plugin/worker` | Canonical YAML ZIP/CoreDB service factory |
 | `@hierarchidb/folder-plugin/ui` | UI components (FolderDialogHost, step registration) |
 | `@hierarchidb/folder-plugin/icon` | FolderPluginIcon |
 
@@ -257,7 +248,7 @@ src/
 - [`@hierarchidb/tree-api`](../../packages/tree-api/) — TreeNode type definitions
 - [`@hierarchidb/tag-api`](../../packages/tag-api/) — TagId, TagSuggestion types
 - [`@hierarchidb/yaml-api`](../../packages/yaml-api/) — YAML node type definitions
-- [`@hierarchidb/yaml-store`](../../packages/yaml-store/) — Legacy YamlDB recovery boundary
+- [`@hierarchidb/worker-api`](../../packages/worker-api/) — canonical ZIP API and injected CoreDB port contracts
 - [`@hierarchidb/util`](../../packages/util/) — Utilities (generateId, etc.)
 - [`@hierarchidb/plugin-ui-sdk`](../../packages/plugin-ui-sdk/) — Plugin UI SDK
 - [`@hierarchidb/plugin-service-api`](../../packages/plugin-service-api/) — Plugin service API

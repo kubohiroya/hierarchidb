@@ -15,7 +15,9 @@ import {
   parseOriginCoordinatorReadinessRequest,
   parseOriginCoordinatorReadinessResult,
 } from './originCoordinatorValidatorUtils.js';
+import { readOriginCoordinatorSuccessorState } from './readOriginCoordinatorSuccessorState.js';
 import type {
+  OriginCoordinatorBootGate,
   OriginCoordinatorClientHandle,
   OriginCoordinatorHelloRequest,
   OriginCoordinatorInitializeOptions,
@@ -217,11 +219,11 @@ function createClientHandle(
   });
 }
 
-let initializationPromise: Promise<OriginCoordinatorClientHandle> | null = null;
+let initializationPromise: Promise<OriginCoordinatorBootGate> | null = null;
 
 export function initializeOriginCoordinator(
   options: OriginCoordinatorInitializeOptions
-): Promise<OriginCoordinatorClientHandle> {
+): Promise<OriginCoordinatorBootGate> {
   if (initializationPromise) return initializationPromise;
   initializationPromise = (async () => {
     if (typeof window === 'undefined' || typeof navigator === 'undefined') {
@@ -262,6 +264,20 @@ export function initializeOriginCoordinator(
     if (result === null) {
       throw new OriginCoordinatorClientError('INVALID_COORDINATOR_RESPONSE');
     }
+    if (result.status === 'rejected' && result.code === 'LEGACY_YAML_ACCESS_REVOKED') {
+      if (typeof indexedDB === 'undefined') {
+        throw new OriginCoordinatorClientError('HELLO_REJECTED');
+      }
+      const durableState = await readOriginCoordinatorSuccessorState(indexedDB);
+      if (!durableState.ok) {
+        throw new OriginCoordinatorClientError('HELLO_REJECTED');
+      }
+      return Object.freeze({
+        status: 'canonical-revoked',
+        coordinatorGate: 'revoked-ready-for-preflight',
+        helloCode: result.code,
+      });
+    }
     if (result.status !== 'accepted') {
       throw new OriginCoordinatorClientError('HELLO_REJECTED');
     }
@@ -271,7 +287,10 @@ export function initializeOriginCoordinator(
       relaySharedWorkerRequest: options.relaySharedWorkerRequest,
       revokeLegacyYamlAccess: options.revokeLegacyYamlAccess,
     });
-    return createClientHandle(activeWorker, options.messageTimeoutMs);
+    return Object.freeze({
+      status: 'activation-allowed',
+      coordinator: createClientHandle(activeWorker, options.messageTimeoutMs),
+    });
   })();
   return initializationPromise;
 }

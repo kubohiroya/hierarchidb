@@ -22,10 +22,6 @@ export default defineConfig({
         replacement: path.resolve(workspaceRoot, 'packages/yaml-api/src/index.ts'),
       },
       {
-        find: '@hierarchidb/yaml-store',
-        replacement: path.resolve(workspaceRoot, 'packages/yaml-store/src/index.ts'),
-      },
-      {
         find: '@hierarchidb/plugin-base',
         replacement: path.resolve(pluginBaseSrc, 'index.ts'),
       },

@@ -2,164 +2,64 @@
 
 ## 設計原則
 
-### Single Source of Truth + 差分管理
+公開可能な共通値を `base.sh`、環境差分を各環境script、ローカル秘密値をGit管理外の
+`app/.env.secrets` に分離する。
 
-```
-base.sh (共通設定)
-    ↓
-local.sh / staging.sh / production.sh (差分のみ)
-    ↓
-.env.secrets (セキュアな値、オプション)
-    ↓
-pnpm scripts (`pnpm dev`, `pnpm build`, など)
+```text
+base.sh
+  └─ development.sh / staging.sh / production.sh
+       └─ app/.env.secrets（任意）
+            └─ pnpm script
 ```
 
-## ファイル構成
+読み込み後の優先順位は `.env.secrets`、環境別設定、`base.sh` の順である。
 
-```
-scripts/
-├── env/                    # 環境設定ディレクトリ
-│   ├── base.sh            # 共通設定（Single Source of Truth）
-│   ├── local.sh           # ローカル環境の差分
-│   ├── staging.sh         # ステージング環境の差分
-│   └── production.sh      # 本番環境の差分
-└── env/README.md          # このファイル
+## ファイル
 
-app/
-├── .env.secrets           # セキュアな値（Gitignore対象）
-└── .env.secrets.example   # テンプレート
-```
+| ファイル | 用途 |
+| --- | --- |
+| `scripts/env/base.sh` | 公開可能な共通設定 |
+| `scripts/env/development.sh` | `pnpm dev` の開発設定 |
+| `scripts/env/staging.sh` | staging向け差分 |
+| `scripts/env/production.sh` | buildとproduction previewの設定 |
+| `app/.env.secrets` | Git管理外の秘密値 |
 
-## 動作の流れ
+削除済みの `scripts/env/local.sh` は使用しない。通常のPlaywright E2E認証は環境scriptや実OAuth
+secretに依存せず、`docs/e2e-authentication-spec.md` のcanonical mocked OAuth fixtureを使用する。
 
-1. **コマンド実行**
-   ```bash
-   pnpm dev              # development.sh を読み込む
-   pnpm dev:production   # production.sh を読み込む
-   ```
-
-2. **設定の読み込み順序**
-   ```bash
-   1. base.sh       # 共通のデフォルト値
-   2. local.sh      # 環境固有の上書き
-   3. .env.secrets  # セキュアな値（あれば）
-   ```
-
-3. **変数の優先順位**
-   - `.env.secrets` > 環境別設定 > base.sh > デフォルト値
-
-## 設定の追加・変更方法
-
-### 新しい共通設定を追加
-
-`scripts/env/base.sh` に追加：
-```bash
-# 新機能の設定
-export VITE_NEW_FEATURE_ENABLED="${VITE_NEW_FEATURE_ENABLED:-false}"
-```
-
-### 特定環境でのみ値を変更
-
-`scripts/env/staging.sh` に追加：
-```bash
-# ステージングでは新機能を有効化
-export VITE_NEW_FEATURE_ENABLED="true"
-
-## Worker features flags (runtime-worker-worker)
-
-### セキュアな値を追加
-
-`app/.env.secrets` に追加：
-```bash
-# APIキー等
-NEW_API_SECRET=actual-secret-value
-```
-
-## 利点
-
-✅ **Single Source of Truth**: 共通設定は `base.sh` に集約
-✅ **DRY原則**: 重複を排除、差分のみ管理
-✅ **理解しやすい**: 純粋なBashスクリプト、魔法なし
-✅ **デバッグ容易**: `source` コマンドの連鎖が明確
-✅ **拡張性**: 新環境の追加が簡単（新しい差分ファイルを作成）
-
-## デバッグ方法
-
-### 設定値の確認
+## 実行
 
 ```bash
-# 環境設定を読み込んで確認
-source scripts/env/local.sh
-env | grep VITE_
-
-# または一時的に読み込んで確認
-bash -lc 'set -a; source scripts/env/local.sh; env | grep VITE_'
+pnpm dev
+pnpm dev:production
+pnpm preview:init
 ```
 
-### トラブルシューティング
+rootの `package.json` が対象の環境scriptを読み込み、その後に存在する場合だけ
+`app/.env.secrets` を読み込む。
+
+## 設定の変更
+
+共通の公開値は `base.sh` に追加する。特定環境だけの公開値は対応する環境scriptへ追加する。
+API keyやsecretは `app/.env.secrets` またはCI/CD・Cloudflareのsecret管理へ設定し、Gitへ追加しない。
+
+設定値を確認する場合は、実行対象と同じ環境scriptを明示的に読み込む。
 
 ```bash
-# bash のデバッグモードで環境設定を確認
-bash -lc 'set -a; set -x; source scripts/env/local.sh'
-
-# 特定の変数を追跡
-echo "BFF URL: $VITE_BFF_BASE_URL"
+bash -lc 'set -a; source scripts/env/development.sh; env | grep VITE_'
+bash -lc 'set -a; set -x; source scripts/env/production.sh'
 ```
 
 ## 新しい環境の追加
 
-1. **環境設定ファイルを作成**
-   ```bash
-   cp scripts/env/staging.sh scripts/env/qa.sh
-   vi scripts/env/qa.sh  # 必要な差分を編集
-   ```
+1. 既存の環境scriptを基に、`base.sh` を読み込む差分scriptを追加する。
+2. root `package.json` に読み込み用scriptを追加する。
+3. 公開値だけがGit管理対象であることを確認する。
+4. 対応する起動・buildを実行し、終了コードを確認する。
 
-2. **package.jsonにスクリプトを追加**
-   ```json
-   "dev:start:qa": "bash -lc 'set -a; source scripts/env/qa.sh; if [ -f app/.env.secrets ]; then source app/.env.secrets; fi; set +a; pnpm --filter @hierarchidb/app dev'",
-   "dev:qa": "pnpm run dev:pre && pnpm run dev:start:qa"
-   ```
+## セキュリティ
 
-3. **実行**
-   ```bash
-   pnpm dev:qa
-   ```
-
-## 移行ガイド（古いスクリプトから）
-
-### Before（個別スクリプト）
-```bash
-# scripts/start-local.sh
-export VITE_BFF_BASE_URL="http://localhost:8787/api/auth"
-export VITE_USE_HASH_ROUTING="false"
-export VITE_APP_NAME=""
-# ... 重複する設定 ...
-```
-
-### After（差分管理）
-```bash
-# scripts/env/base.sh
-export VITE_APP_PREFIX="hierarchidb"  # 共通
-
-# scripts/env/local.sh
-source "$(dirname "$0")/base.sh"
-export VITE_BFF_BASE_URL="http://localhost:8787/api/auth"  # 差分のみ
-```
-
-## CI/CD環境での使用
-
-```yaml
-# GitHub Actions例
-- name: Build Production
-  run: |
-    echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> app/.env.secrets
-    echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> app/.env.secrets
-    pnpm run build
-```
-
-## セキュリティ注意事項
-
-⚠️ **重要**:
-- `base.sh`, `local.sh` 等: 公開可能な値のみ（Gitで管理）
-- `.env.secrets`: セキュアな値のみ（Gitignore対象）
-- 本番シークレット: CI/CD環境変数で管理
+- token、cookie、session内容をログへ出力しない。
+- `app/.env.secrets` をGitへ追加しない。
+- production secretはCloudflareまたはCI/CDのsecret管理を使用する。
+- 通常E2Eのために実OAuth credentialや保存済みsessionをコピーしない。

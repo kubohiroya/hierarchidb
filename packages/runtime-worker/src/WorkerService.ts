@@ -20,12 +20,17 @@ import { TagService } from '@hierarchidb/tag';
 import { SingletonMixin } from '@hierarchidb/util';
 import type { ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import type { StyleMutationAPI, StyleQueryAPI } from '@hierarchidb/style-api';
-import type { YamlCoreDbReadOnlyInventoryResult } from '@hierarchidb/worker-api';
+import type {
+  YamlCanonicalZipAPI,
+  YamlCanonicalZipServiceFactory,
+  YamlCoreDbReadOnlyInventoryResult,
+} from '@hierarchidb/worker-api';
 import { EntityLifecycleManager } from './entity/EntityLifecycleManager.js';
 import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExportDBPortCoreDBAdapter.js';
 import { TagDBPortCoreDBAdapter } from './services/adapters/TagDBPortCoreDBAdapter.js';
 import { CommandProcessor } from './services/CommandProcessor.js';
 import { CoreDB } from './services/CoreDB.js';
+import { generateNodeId } from './services/generateNodeId.js';
 import { getYamlCoreDbReadOnlyInventory } from './services/getYamlCoreDbReadOnlyInventory.js';
 import { ImportExportLifecycleService } from './services/ImportExportLifecycleService.js';
 import { LocationMutationService } from './services/LocationMutationService.js';
@@ -37,13 +42,23 @@ import { ShapeMutationService } from './services/ShapeMutationService.js';
 import { ShapeQueryService } from './services/ShapeQueryService.js';
 import { StyleService } from './services/StyleService.js';
 import { TreeMutationService } from './services/TreeMutationService.js';
-import { TreeNodeUpdaterService } from './services/TreeNodeUpdaterService.js';
+import {
+  TreeNodeUpdaterService,
+  type YamlCanonicalDialogWriter,
+} from './services/TreeNodeUpdaterService.js';
 import { TreeQueryService } from './services/TreeQueryService.js';
 import { TreeSubscriptionService } from './services/TreeSubscriptionService.js';
 import { TreeTableExpandedService } from './services/TreeTableExpandedService.js';
 import { UIStateDB } from './services/UIStateDB.js';
 import { reconcileRunningBuildSessions } from './services/utils/reconcileStaleBuildSessions.js';
+import { YamlCanonicalZipCoreDbPort } from './services/YamlCanonicalZipCoreDbPort.js';
 import type { RuntimePluginDefinition } from './types/RuntimePluginDefinition.js';
+
+export interface WorkerServiceOptions {
+  readonly yamlCanonicalDialogWriter?: YamlCanonicalDialogWriter;
+  readonly yamlCanonicalZipServiceFactory?: YamlCanonicalZipServiceFactory;
+  readonly assertYamlStorageCanonicalAccess?: () => void;
+}
 
 interface PerformanceMemoryStats {
   usedJSHeapSize?: number;
@@ -66,7 +81,10 @@ const readHeapStats = (): { used: number; limit: number } => {
 export class WorkerService {
   private readonly startTime = Date.now();
 
-  static async getSingleton(plugins: RuntimePluginDefinition[]): Promise<WorkerService> {
+  static async getSingleton(
+    plugins: RuntimePluginDefinition[],
+    options: WorkerServiceOptions = {}
+  ): Promise<WorkerService> {
     return SingletonMixin.getSingleton('WorkerService', async () => {
       const coreDB: CoreDB = await CoreDB.getSingleton();
       // Plugin-side Dexie peer stores are expected to self-register where applicable.
@@ -133,8 +151,29 @@ export class WorkerService {
       const treeNodeUpdaterService: TreeNodeUpdaterAPI<TreeNodeData> = new TreeNodeUpdaterService(
         coreDB,
         commandProcessor,
-        tagService
+        tagService,
+        options.yamlCanonicalDialogWriter
       );
+      const assertCanonicalAccess =
+        options.assertYamlStorageCanonicalAccess ??
+        (() => {
+          throw new Error('yaml-storage-canonical-access-guard-required');
+        });
+      const yamlCanonicalZipService: YamlCanonicalZipAPI = options.yamlCanonicalZipServiceFactory?.(
+        {
+          coreDB: new YamlCanonicalZipCoreDbPort(coreDB),
+          assertCanonicalAccess,
+          generateNodeId,
+          now: Date.now,
+        }
+      ) ?? {
+        async exportYamlCanonicalZip() {
+          return Object.freeze({ ok: false, code: 'ACCESS_DENIED' as const });
+        },
+        async importYamlCanonicalZip() {
+          return Object.freeze({ ok: false, code: 'ACCESS_DENIED' as const });
+        },
+      };
 
       const uiStateDB = await UIStateDB.getSingleton();
       const treeTableExpandedService: TreeTableExpandedAPI = new TreeTableExpandedService(
@@ -185,7 +224,9 @@ export class WorkerService {
         locationMutationService,
         routeDB,
         routeQueryService,
-        routeMutationService
+        routeMutationService,
+        yamlCanonicalZipService,
+        assertCanonicalAccess
       );
     });
   }
@@ -224,8 +265,31 @@ export class WorkerService {
     private locationMutationService: LocationMutationAPI,
     private routeDB: RouteDatabaseHandle,
     private routeQueryService: RouteQueryAPI,
-    private routeMutationService: RouteMutationAPI
+    private routeMutationService: RouteMutationAPI,
+    private yamlCanonicalZipService: YamlCanonicalZipAPI,
+    private assertCanonicalAccess: () => void
   ) {}
+
+  private readonly guardedServiceApis = new WeakMap<object, object>();
+
+  private guardServiceApi<T extends object>(service: T): T {
+    const existing = this.guardedServiceApis.get(service);
+    if (existing !== undefined) return existing as T;
+    const guarded = new Proxy(service, {
+      get: (target, property, receiver) => {
+        this.assertCanonicalAccess();
+        const value = Reflect.get(target, property, receiver) as unknown;
+        return typeof value === 'function'
+          ? (...args: unknown[]) => {
+              this.assertCanonicalAccess();
+              return Reflect.apply(value, target, args);
+            }
+          : value;
+      },
+    });
+    this.guardedServiceApis.set(service, guarded);
+    return guarded;
+  }
 
   ping(): { response: 'pong'; timestamp: number } {
     const shouldLogInfo =
@@ -256,23 +320,28 @@ export class WorkerService {
   async initialize(): Promise<void> {}
 
   async getYamlCoreDbReadOnlyInventory(): Promise<YamlCoreDbReadOnlyInventoryResult> {
+    this.assertCanonicalAccess();
     return getYamlCoreDbReadOnlyInventory(this.coreDB);
   }
 
+  getYamlCanonicalZipAPI(): YamlCanonicalZipAPI {
+    return this.guardServiceApi(this.yamlCanonicalZipService);
+  }
+
   getQueryAPI(): TreeQueryAPI {
-    return this.queryService;
+    return this.guardServiceApi(this.queryService);
   }
 
   getMutationAPI() {
-    return this.mutationService;
+    return this.guardServiceApi(this.mutationService);
   }
 
   getSubscriptionAPI() {
-    return this.subscriptionService;
+    return this.guardServiceApi(this.subscriptionService);
   }
 
   getTreeNodeUpdaterAPI() {
-    return this.treeNodeUpdaterService;
+    return this.guardServiceApi(this.treeNodeUpdaterService);
   }
 
   getTreeTableExpandedAPI() {
@@ -280,7 +349,7 @@ export class WorkerService {
   }
 
   getImportExportAPI() {
-    return this.importExportService;
+    return this.guardServiceApi(this.importExportService);
   }
 
   getTagAPI() {

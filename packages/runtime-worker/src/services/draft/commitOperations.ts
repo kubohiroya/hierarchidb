@@ -84,8 +84,6 @@ export async function commitTreeNodeDraft(
     console.debug('[commitDraft] finalizing draft', {
       id: draft.id,
       draftMetadata: pendingMeta,
-      draftData: finalizedData,
-      dataBefore: draft.data,
     });
   }
 

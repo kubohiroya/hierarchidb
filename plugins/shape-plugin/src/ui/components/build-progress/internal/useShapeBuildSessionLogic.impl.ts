@@ -15,7 +15,7 @@ import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worke
 import { useShapeBuildStages } from '~/ui/components/build-progress/useShapeBuildStages/useShapeBuildStages';
 import { useShapeBuildLabels } from '~/ui/components/build-progress/useShapeBuildLabels/useShapeBuildLabels';
 import { resolveBuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
-import type { BuildSessionDisplayStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
+import type { BuildSessionDisplayStatus } from '~/ui/components/build-progress/shapeBuildProgressTypes';
 import { useShapeBuildSessionState } from './useShapeBuildSessionState.js';
 
 const POLL_INTERVAL_MS = 1000;

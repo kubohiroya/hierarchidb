@@ -10,7 +10,7 @@ import {
 import {
   type BuildProgress,
   type BuildSessionDisplayStatus,
-} from '~/ui/components/build-progress/shapeBuildProgressMapping';
+} from '~/ui/components/build-progress/shapeBuildProgressTypes';
 
 export type { BuildProgress, BuildSessionDisplayStatus };
 

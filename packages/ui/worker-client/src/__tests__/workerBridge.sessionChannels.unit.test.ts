@@ -18,7 +18,6 @@ describe('WorkerBridge subscribeAll', () => {
   let progressEventProxyCallback: ((event: unknown) => void) | null;
   let sessionStateProxyCallback: ((event: unknown) => void) | null;
   let heartbeatProxyCallback: ((event: unknown) => void) | null;
-  let workerLogProxyCallback: ((event: unknown) => void) | null;
 
   let tasksUnsubscribeMock: ReturnType<typeof vi.fn>;
   let progressUnsubscribeMock: ReturnType<typeof vi.fn>;
@@ -31,7 +30,6 @@ describe('WorkerBridge subscribeAll', () => {
     progressEventProxyCallback = null;
     sessionStateProxyCallback = null;
     heartbeatProxyCallback = null;
-    workerLogProxyCallback = null;
 
     tasksUnsubscribeMock = vi.fn();
     progressUnsubscribeMock = vi.fn();
@@ -70,8 +68,7 @@ describe('WorkerBridge subscribeAll', () => {
     );
 
     subscribeWorkerLogMock = vi.fn(
-      async (_nodeType: NodeType, _nodeId: NodeId, callback: (event: unknown) => void) => {
-        workerLogProxyCallback = callback;
+      async (_nodeType: NodeType, _nodeId: NodeId, _callback: (event: unknown) => void) => {
         return workerLogUnsubscribeMock;
       }
     );
@@ -101,27 +98,25 @@ describe('WorkerBridge subscribeAll', () => {
     __setWorkerBridgeClientRef(null);
   });
 
-  it('subscribes all channels in a single call and routes events to correct handlers', async () => {
+  it('subscribes the four canonical channels and routes events to correct handlers', async () => {
     const bridge = getBuildWorkerBridge();
     const onTaskEvent = vi.fn();
     const onProgressEvent = vi.fn();
     const onSessionState = vi.fn();
     const onHeartbeat = vi.fn();
-    const onWorkerLog = vi.fn();
 
     const unsubscribe = await bridge.subscribeAll(SHAPE_NODE_TYPE, NODE_ID, {
       onTaskEvent,
       onProgressEvent,
       onSessionState,
       onHeartbeat,
-      onWorkerLog,
     });
 
     expect(subscribeStageSnapshotsMock).toHaveBeenCalledTimes(1);
     expect(subscribeTaskProgressMock).toHaveBeenCalledTimes(1);
     expect(subscribeSessionStateMock).toHaveBeenCalledTimes(1);
     expect(subscribeSessionHeartbeatMock).toHaveBeenCalledTimes(1);
-    expect(subscribeWorkerLogMock).toHaveBeenCalledTimes(1);
+    expect(subscribeWorkerLogMock).not.toHaveBeenCalled();
 
     const taskEvent = { type: 'stageSnapshotUpdated', payload: { stageId: 'source', tasks: [] } };
     taskEventProxyCallback?.(taskEvent);
@@ -147,15 +142,12 @@ describe('WorkerBridge subscribeAll', () => {
     heartbeatProxyCallback?.({ nodeId: NODE_ID, heartbeatAt: 200n });
     expect(onHeartbeat).toHaveBeenCalledWith(expect.objectContaining({ heartbeatAt: '200' }));
 
-    workerLogProxyCallback?.({ level: 'info', message: 'test log' });
-    expect(onWorkerLog).toHaveBeenCalledWith(expect.objectContaining({ message: 'test log' }));
-
     unsubscribe();
     expect(tasksUnsubscribeMock).toHaveBeenCalledTimes(1);
     expect(progressUnsubscribeMock).toHaveBeenCalledTimes(1);
     expect(sessionStateUnsubscribeMock).toHaveBeenCalledTimes(1);
     expect(heartbeatUnsubscribeMock).toHaveBeenCalledTimes(1);
-    expect(workerLogUnsubscribeMock).toHaveBeenCalledTimes(1);
+    expect(workerLogUnsubscribeMock).not.toHaveBeenCalled();
   });
 
   it('subscribes all channels for non-shape node types', async () => {
@@ -164,29 +156,27 @@ describe('WorkerBridge subscribeAll', () => {
     const onProgressEvent = vi.fn();
     const onSessionState = vi.fn();
     const onHeartbeat = vi.fn();
-    const onWorkerLog = vi.fn();
 
     const unsubscribe = await bridge.subscribeAll(FOLDER_NODE_TYPE, NODE_ID, {
       onTaskEvent,
       onProgressEvent,
       onSessionState,
       onHeartbeat,
-      onWorkerLog,
     });
 
-    // subscribeAll subscribes all 5 channels regardless of nodeType
+    // subscribeAll is restricted to the four canonical channels regardless of nodeType.
     expect(subscribeStageSnapshotsMock).toHaveBeenCalledTimes(1);
     expect(subscribeTaskProgressMock).toHaveBeenCalledTimes(1);
     expect(subscribeSessionStateMock).toHaveBeenCalledTimes(1);
     expect(subscribeSessionHeartbeatMock).toHaveBeenCalledTimes(1);
-    expect(subscribeWorkerLogMock).toHaveBeenCalledTimes(1);
+    expect(subscribeWorkerLogMock).not.toHaveBeenCalled();
 
     expect(() => unsubscribe()).not.toThrow();
     expect(tasksUnsubscribeMock).toHaveBeenCalledTimes(1);
     expect(progressUnsubscribeMock).toHaveBeenCalledTimes(1);
     expect(sessionStateUnsubscribeMock).toHaveBeenCalledTimes(1);
     expect(heartbeatUnsubscribeMock).toHaveBeenCalledTimes(1);
-    expect(workerLogUnsubscribeMock).toHaveBeenCalledTimes(1);
+    expect(workerLogUnsubscribeMock).not.toHaveBeenCalled();
   });
 
   it('disposes every acquired channel when subscription setup fails', async () => {
@@ -200,15 +190,14 @@ describe('WorkerBridge subscribeAll', () => {
         onProgressEvent: vi.fn(),
         onSessionState: vi.fn(),
         onHeartbeat: vi.fn(),
-        onWorkerLog: vi.fn(),
-      }),
+      })
     ).rejects.toBe(subscriptionError);
 
     expect(tasksUnsubscribeMock).toHaveBeenCalledTimes(1);
     expect(progressUnsubscribeMock).toHaveBeenCalledTimes(1);
     expect(sessionStateUnsubscribeMock).not.toHaveBeenCalled();
     expect(heartbeatUnsubscribeMock).toHaveBeenCalledTimes(1);
-    expect(workerLogUnsubscribeMock).toHaveBeenCalledTimes(1);
+    expect(workerLogUnsubscribeMock).not.toHaveBeenCalled();
   });
 
   it('disposes a channel that resolves after another subscription failed', async () => {
@@ -231,8 +220,7 @@ describe('WorkerBridge subscribeAll', () => {
         onProgressEvent: vi.fn(),
         onSessionState: vi.fn(),
         onHeartbeat: vi.fn(),
-        onWorkerLog: vi.fn(),
-      }),
+      })
     ).rejects.toBe(subscriptionError);
 
     const resolvePendingSubscription = resolveTaskSubscription;

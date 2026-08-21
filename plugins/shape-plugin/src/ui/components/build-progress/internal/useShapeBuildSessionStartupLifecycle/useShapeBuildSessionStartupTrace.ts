@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { emitShapeProgressStepTrace, isShapeProgressStepDebugEnabled } from '../useShapeBuildSessionHelpers/debug';
 import type { ShapeProgressStepTracePayload } from '../useShapeBuildSessionHelpers/startupTrace';
-import type { BuildProgress } from '~/ui/components/build-progress/shapeBuildProgressMapping';
+import type { BuildProgress } from '~/ui/components/build-progress/shapeBuildProgressTypes';
 import type { BuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
 
 type UseShapeBuildSessionStartupTraceArgs = {

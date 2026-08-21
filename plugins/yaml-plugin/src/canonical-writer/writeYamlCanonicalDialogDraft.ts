@@ -158,7 +158,7 @@ function parseInput(inputValue: unknown): ParseInputResult {
   }
 }
 
-/** Validates and emits one dormant canonical YAML dialog write request. */
+/** Validates and emits one canonical YAML dialog write request. */
 export async function writeYamlCanonicalDialogDraft(
   inputValue: unknown,
   writePort: YamlCanonicalDialogWritePort
