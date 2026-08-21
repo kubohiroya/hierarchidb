@@ -11,6 +11,14 @@ type RecordClassification =
   | 'modified-default-identity'
   | 'additional'
   | 'invalid';
+type InvalidReasonCode =
+  | 'record-shape'
+  | 'required-identity'
+  | 'required-field-contract'
+  | 'metadata-contract'
+  | 'relationship-contract'
+  | 'duplicate-identity'
+  | 'yaml-contract';
 
 interface RecordState {
   readonly store: StoreName;
@@ -18,6 +26,7 @@ interface RecordState {
   readonly value: unknown;
   identity: string | null;
   classification: RecordClassification;
+  invalidReason: InvalidReasonCode | null;
 }
 
 interface ParsedTree {
@@ -82,6 +91,22 @@ export interface InterruptedCoreV1PreservationSummary {
     readonly modifiedDefaultIdentity: number;
     readonly additional: number;
     readonly invalid: number;
+  }>;
+  readonly invalidDiagnostics: Readonly<{
+    readonly byStore: Readonly<{
+      readonly trees: number;
+      readonly nodes: number;
+      readonly rootStates: number;
+      readonly tags: number;
+      readonly tagAssociations: number;
+      readonly total: number;
+    }>;
+    readonly byReason: Readonly<Record<InvalidReasonCode, number>>;
+    readonly byIdentityClass: Readonly<{
+      readonly defaultIdentity: number;
+      readonly additionalIdentity: number;
+      readonly unavailableIdentity: number;
+    }>;
   }>;
   readonly additionalNodeCounts: Readonly<{
     readonly yaml: number;
@@ -259,7 +284,12 @@ function createRecordStates(store: StoreName, values: readonly unknown[]): Recor
     value,
     identity: null,
     classification: 'invalid',
+    invalidReason: null,
   }));
+}
+
+function setInvalidReason(state: RecordState, reason: InvalidReasonCode): void {
+  state.invalidReason ??= reason;
 }
 
 function exactEmptyPlainRecord(value: unknown): boolean {
@@ -326,20 +356,22 @@ function defaultTreeName(treeId: string): string | null {
 function classifyTrees(states: RecordState[]): ParsedTree[] {
   const parsed: ParsedTree[] = [];
   for (const state of states) {
-    if (!isPlainRecord(state.value) || !hasOnlyOwnDataProperties(state.value)) continue;
+    if (!isPlainRecord(state.value) || !hasOnlyOwnDataProperties(state.value)) {
+      setInvalidReason(state, 'record-shape');
+      continue;
+    }
     const id = readNonEmptyString(state.value, 'id');
     const name = readNonEmptyString(state.value, 'name');
     const rootId = readNonEmptyString(state.value, 'rootId');
     const archiveRootId = readNonEmptyString(state.value, 'archiveRootId');
     const superRootId = readNonEmptyString(state.value, 'superRootId');
     state.identity = id;
-    if (
-      id === null ||
-      name === null ||
-      rootId === null ||
-      archiveRootId === null ||
-      superRootId === null
-    ) {
+    if (id === null) {
+      setInvalidReason(state, 'required-identity');
+      continue;
+    }
+    if (name === null || rootId === null || archiveRootId === null || superRootId === null) {
+      setInvalidReason(state, 'required-field-contract');
       continue;
     }
     const expectedName = defaultTreeName(id);
@@ -368,7 +400,10 @@ function classifyTrees(states: RecordState[]): ParsedTree[] {
 function classifyNodes(states: RecordState[]): ParsedNode[] {
   const parsed: ParsedNode[] = [];
   for (const state of states) {
-    if (!isPlainRecord(state.value) || !hasOnlyOwnDataProperties(state.value)) continue;
+    if (!isPlainRecord(state.value) || !hasOnlyOwnDataProperties(state.value)) {
+      setInvalidReason(state, 'record-shape');
+      continue;
+    }
     const id = readNonEmptyString(state.value, 'id');
     const parentId = readNonEmptyString(state.value, 'parentId');
     const nodeType = readNonEmptyString(state.value, 'nodeType');
@@ -401,22 +436,27 @@ function classifyNodes(states: RecordState[]): ParsedNode[] {
     const references = !referencesProperty.found
       ? Object.freeze([])
       : readExactStringArray(referencesProperty.value);
+    if (id === null) {
+      setInvalidReason(state, 'required-identity');
+      continue;
+    }
     if (
-      id === null ||
       parentId === null ||
       nodeType === null ||
       depth === null ||
       createdAt === null ||
       updatedAt === null ||
       version === null ||
-      !metadataProperty.found ||
-      !validMetadata(metadataProperty.value) ||
-      !draftMetadataValid ||
       !dataValid ||
       !draftDataValid ||
       !visibleValid ||
       references === null
     ) {
+      setInvalidReason(state, 'required-field-contract');
+      continue;
+    }
+    if (!metadataProperty.found || !validMetadata(metadataProperty.value) || !draftMetadataValid) {
+      setInvalidReason(state, 'metadata-contract');
       continue;
     }
     if (!DEFAULT_NODE_IDENTITY_SET.has(id)) {
@@ -466,13 +506,23 @@ function classifyNodes(states: RecordState[]): ParsedNode[] {
 function classifyRootStates(states: RecordState[]): ParsedRootState[] {
   const parsed: ParsedRootState[] = [];
   for (const state of states) {
-    if (!isPlainRecord(state.value) || !hasOnlyOwnDataProperties(state.value)) continue;
+    if (!isPlainRecord(state.value) || !hasOnlyOwnDataProperties(state.value)) {
+      setInvalidReason(state, 'record-shape');
+      continue;
+    }
     const rootNodeId = readNonEmptyString(state.value, 'rootNodeId');
     const treeId = readNonEmptyString(state.value, 'treeId');
     const expandedProperty = readOwnDataProperty(state.value, 'expanded');
     const expandedNodeIds = expandedProperty.found ? validExpanded(expandedProperty.value) : null;
     state.identity = rootNodeId;
-    if (rootNodeId === null || treeId === null || expandedNodeIds === null) continue;
+    if (rootNodeId === null) {
+      setInvalidReason(state, 'required-identity');
+      continue;
+    }
+    if (treeId === null || expandedNodeIds === null) {
+      setInvalidReason(state, 'required-field-contract');
+      continue;
+    }
     if (!DEFAULT_ROOT_STATE_IDENTITY_SET.has(rootNodeId)) {
       state.classification = 'additional';
     } else {
@@ -491,15 +541,21 @@ function classifyRootStates(states: RecordState[]): ParsedRootState[] {
 function classifyTags(states: RecordState[]): ParsedTag[] {
   const parsed: ParsedTag[] = [];
   for (const state of states) {
-    if (!isPlainRecord(state.value) || !hasOnlyOwnDataProperties(state.value)) continue;
+    if (!isPlainRecord(state.value) || !hasOnlyOwnDataProperties(state.value)) {
+      setInvalidReason(state, 'record-shape');
+      continue;
+    }
     const id = readNonEmptyString(state.value, 'id');
     const name = readNonEmptyString(state.value, 'name');
     const color = readNonEmptyString(state.value, 'color');
     const createdAt = readSafeTimestamp(state.value, 'createdAt');
     const description = readOwnDataProperty(state.value, 'description');
     state.identity = id;
+    if (id === null) {
+      setInvalidReason(state, 'required-identity');
+      continue;
+    }
     if (
-      id === null ||
       name === null ||
       color === null ||
       createdAt === null ||
@@ -507,6 +563,7 @@ function classifyTags(states: RecordState[]): ParsedTag[] {
         description.value !== undefined &&
         typeof description.value !== 'string')
     ) {
+      setInvalidReason(state, 'required-field-contract');
       continue;
     }
     state.classification = 'additional';
@@ -518,7 +575,10 @@ function classifyTags(states: RecordState[]): ParsedTag[] {
 function classifyTagAssociations(states: RecordState[]): ParsedTagAssociation[] {
   const parsed: ParsedTagAssociation[] = [];
   for (const state of states) {
-    if (!isPlainRecord(state.value) || !hasOnlyOwnDataProperties(state.value)) continue;
+    if (!isPlainRecord(state.value) || !hasOnlyOwnDataProperties(state.value)) {
+      setInvalidReason(state, 'record-shape');
+      continue;
+    }
     const id = readNonEmptyString(state.value, 'id');
     const nodeId = readNonEmptyString(state.value, 'nodeId');
     const tagId = readNonEmptyString(state.value, 'tagId');
@@ -526,14 +586,18 @@ function classifyTagAssociations(states: RecordState[]): ParsedTagAssociation[] 
     const assignedAt = readSafeTimestamp(state.value, 'assignedAt');
     const assignedBy = readOwnDataProperty(state.value, 'assignedBy');
     state.identity = id;
+    if (id === null) {
+      setInvalidReason(state, 'required-identity');
+      continue;
+    }
     if (
-      id === null ||
       nodeId === null ||
       tagId === null ||
       (scope !== 'draft' && scope !== 'published') ||
       assignedAt === null ||
       (assignedBy.found && assignedBy.value !== undefined && typeof assignedBy.value !== 'string')
     ) {
+      setInvalidReason(state, 'required-field-contract');
       continue;
     }
     state.classification = 'additional';
@@ -557,13 +621,20 @@ function markDuplicateIdentitiesInvalid<T extends { readonly state: RecordState 
   for (const duplicates of byIdentity.values()) {
     if (duplicates.length < 2) continue;
     valid = false;
-    for (const duplicate of duplicates) duplicate.state.classification = 'invalid';
+    for (const duplicate of duplicates) {
+      duplicate.state.classification = 'invalid';
+      setInvalidReason(duplicate.state, 'duplicate-identity');
+    }
   }
   return valid;
 }
 
-function markStateInvalid(state: RecordState): false {
+function markStateInvalid(
+  state: RecordState,
+  reason: InvalidReasonCode = 'relationship-contract'
+): false {
   state.classification = 'invalid';
+  setInvalidReason(state, reason);
   return false;
 }
 
@@ -660,6 +731,27 @@ function hasCompleteDefaultIdentitySet(states: readonly RecordState[]): boolean 
   return identities.size === EXPECTED_DEFAULT_IDENTITY_COUNT;
 }
 
+function isDefaultIdentity(state: RecordState): boolean {
+  if (state.identity === null) return false;
+  return (
+    (state.store === 'trees' && DEFAULT_TREE_IDENTITY_SET.has(state.identity)) ||
+    (state.store === 'nodes' && DEFAULT_NODE_IDENTITY_SET.has(state.identity)) ||
+    (state.store === 'rootStates' && DEFAULT_ROOT_STATE_IDENTITY_SET.has(state.identity))
+  );
+}
+
+function createEmptyReasonCounts(): Record<InvalidReasonCode, number> {
+  return {
+    'record-shape': 0,
+    'required-identity': 0,
+    'required-field-contract': 0,
+    'metadata-contract': 0,
+    'relationship-contract': 0,
+    'duplicate-identity': 0,
+    'yaml-contract': 0,
+  };
+}
+
 function summarize(
   statesByStore: Readonly<Record<StoreName, readonly RecordState[]>>,
   nodes: readonly ParsedNode[],
@@ -674,12 +766,34 @@ function summarize(
     additional: 0,
     invalid: 0,
   };
+  const invalidByStore = {
+    trees: 0,
+    nodes: 0,
+    rootStates: 0,
+    tags: 0,
+    tagAssociations: 0,
+    total: 0,
+  };
+  const invalidByReason = createEmptyReasonCounts();
+  const invalidByIdentityClass = {
+    defaultIdentity: 0,
+    additionalIdentity: 0,
+    unavailableIdentity: 0,
+  };
   for (const state of allStates) {
     if (state.classification === 'exact-default') classification.exactDefault += 1;
     else if (state.classification === 'modified-default-identity') {
       classification.modifiedDefaultIdentity += 1;
     } else if (state.classification === 'additional') classification.additional += 1;
-    else classification.invalid += 1;
+    else {
+      classification.invalid += 1;
+      invalidByStore[state.store] += 1;
+      invalidByStore.total += 1;
+      invalidByReason[state.invalidReason ?? 'record-shape'] += 1;
+      if (state.identity === null) invalidByIdentityClass.unavailableIdentity += 1;
+      else if (isDefaultIdentity(state)) invalidByIdentityClass.defaultIdentity += 1;
+      else invalidByIdentityClass.additionalIdentity += 1;
+    }
   }
   const additionalNodes = nodes.filter((node) => node.state.classification === 'additional');
   const storeCounts = {
@@ -693,6 +807,11 @@ function summarize(
   return Object.freeze({
     storeCounts: Object.freeze(storeCounts),
     recordClassification: Object.freeze(classification),
+    invalidDiagnostics: Object.freeze({
+      byStore: Object.freeze(invalidByStore),
+      byReason: Object.freeze(invalidByReason),
+      byIdentityClass: Object.freeze(invalidByIdentityClass),
+    }),
     additionalNodeCounts: Object.freeze({
       yaml: additionalNodes.filter((node) => node.nodeType === 'yaml-file').length,
       nonYaml: additionalNodes.filter((node) => node.nodeType !== 'yaml-file').length,
@@ -701,6 +820,34 @@ function summarize(
     yamlPlanningStatus,
     yamlSlotCounts,
   });
+}
+
+function summaryCountersAreConsistent(summary: InterruptedCoreV1PreservationSummary): boolean {
+  const classificationTotal =
+    summary.recordClassification.exactDefault +
+    summary.recordClassification.modifiedDefaultIdentity +
+    summary.recordClassification.additional +
+    summary.recordClassification.invalid;
+  const invalidReasonTotal = Object.values(summary.invalidDiagnostics.byReason).reduce(
+    (total, count) => total + count,
+    0
+  );
+  const invalidIdentityTotal =
+    summary.invalidDiagnostics.byIdentityClass.defaultIdentity +
+    summary.invalidDiagnostics.byIdentityClass.additionalIdentity +
+    summary.invalidDiagnostics.byIdentityClass.unavailableIdentity;
+  return (
+    summary.storeCounts.total === classificationTotal &&
+    summary.invalidDiagnostics.byStore.total === summary.recordClassification.invalid &&
+    summary.invalidDiagnostics.byStore.total ===
+      summary.invalidDiagnostics.byStore.trees +
+        summary.invalidDiagnostics.byStore.nodes +
+        summary.invalidDiagnostics.byStore.rootStates +
+        summary.invalidDiagnostics.byStore.tags +
+        summary.invalidDiagnostics.byStore.tagAssociations &&
+    invalidReasonTotal === summary.recordClassification.invalid &&
+    invalidIdentityTotal === summary.recordClassification.invalid
+  );
 }
 
 function failed(
@@ -744,6 +891,9 @@ export async function classifyInterruptedCoreV1Snapshot(
     const tags = classifyTags(statesByStore.tags);
     const tagAssociations = classifyTagAssociations(statesByStore.tagAssociations);
     let summary = summarize(statesByStore, nodes, 'not-evaluated', 'not-run', null);
+    if (!summaryCountersAreConsistent(summary)) {
+      return failed('INTERRUPTED_CORE_V1_PRESERVATION_INTERNAL_FAILED');
+    }
     if (summary.recordClassification.invalid > 0) {
       return failed('INTERRUPTED_CORE_V1_PRESERVATION_SNAPSHOT_INVALID', summary);
     }
@@ -752,6 +902,9 @@ export async function classifyInterruptedCoreV1Snapshot(
       graphValid &&
       hasCompleteDefaultIdentitySet(STORE_NAMES.flatMap((store) => statesByStore[store]));
     summary = summarize(statesByStore, nodes, graphAccepted ? 'exact' : 'invalid', 'not-run', null);
+    if (!summaryCountersAreConsistent(summary)) {
+      return failed('INTERRUPTED_CORE_V1_PRESERVATION_INTERNAL_FAILED');
+    }
     if (!graphAccepted) {
       return failed('INTERRUPTED_CORE_V1_PRESERVATION_GRAPH_INVALID', summary);
     }
@@ -766,13 +919,24 @@ export async function classifyInterruptedCoreV1Snapshot(
     });
     if (planning.ok === false) {
       const invalidIndexes = new Set(
-        planning.errors.map((error) => error.sourceIndex).filter((sourceIndex) => sourceIndex >= 0)
+        planning.errors
+          .map((error) => error.sourceIndex)
+          .filter(
+            (sourceIndex): sourceIndex is number =>
+              Number.isSafeInteger(sourceIndex) && sourceIndex >= 0
+          )
       );
       for (const sourceIndex of invalidIndexes) {
         const invalidNode = yamlNodes[sourceIndex];
-        if (invalidNode !== undefined) invalidNode.state.classification = 'invalid';
+        if (invalidNode !== undefined) {
+          invalidNode.state.classification = 'invalid';
+          setInvalidReason(invalidNode.state, 'yaml-contract');
+        }
       }
       summary = summarize(statesByStore, nodes, 'exact', 'invalid', null);
+      if (!summaryCountersAreConsistent(summary)) {
+        return failed('INTERRUPTED_CORE_V1_PRESERVATION_INTERNAL_FAILED');
+      }
       return failed('INTERRUPTED_CORE_V1_PRESERVATION_YAML_INVALID', summary);
     }
     const yamlSlotCounts = {
@@ -795,6 +959,9 @@ export async function classifyInterruptedCoreV1Snapshot(
       } else yamlSlotCounts.metadataOnlyDraft += 1;
     }
     summary = summarize(statesByStore, nodes, 'exact', 'valid', Object.freeze(yamlSlotCounts));
+    if (!summaryCountersAreConsistent(summary)) {
+      return failed('INTERRUPTED_CORE_V1_PRESERVATION_INTERNAL_FAILED');
+    }
     return Object.freeze({
       ok: true,
       code: 'INTERRUPTED_CORE_V1_PRESERVATION_ACCEPTED',

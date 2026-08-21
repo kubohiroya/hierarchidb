@@ -534,10 +534,16 @@ those gates pass, it reads all five stores in one readonly transaction and requi
 be accounted as exact initializer state, modified initializer identity, additional state, or invalid.
 It validates the contract-defined virtual root anchors and tag relations, and delegates YAML slot
 classification to the existing migration planner. The public result contains only store and aggregate
-counts plus stable graph and YAML planning status; it excludes identities, names, metadata, YAML,
-timestamps, individual digests, and native errors. Page load remains inert and exactly one explicit
+counts, stable graph and YAML planning status, and invalid diagnostics limited to store-level counts,
+coarse reason-code counts, and identity-class counts (`defaultIdentity`, `additionalIdentity`,
+`unavailableIdentity`). These diagnostics never expose the identity value. They are used only to plan
+a later recovery decision; `SNAPSHOT_INVALID` remains rejected. The result excludes raw records,
+record IDs, names, metadata bodies, YAML text, timestamps, individual digests, native errors,
+database prefixes, and inferred database names. Page load remains inert and exactly one explicit
 click can start the inspection. This mode is not a recovery claim or write authority and never creates,
-upgrades, copies, merges, renames, deletes, repairs, reloads, or retries storage.
+upgrades, copies, merges, renames, deletes, repairs, reloads, or retries storage. All public counters
+must be internally consistent with store totals and classification totals; any mismatch is a sanitized
+internal failure, not a rounded or accepted result.
 
 The strict census contract, build-SHA reader, and responder live in the shared
 `@hierarchidb/origin-coordinator` workspace package. The window, SharedWorker, dedicated runtime
