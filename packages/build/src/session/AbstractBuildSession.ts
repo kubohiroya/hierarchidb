@@ -135,6 +135,11 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
   }
 
   protected updateProgress(partial: Partial<BuildProgress>, stage?: StageKey): void {
+    if (Object.prototype.hasOwnProperty.call(partial, 'percentage')) {
+      throw new Error(
+        '[AbstractBuildSession] percentage is derived from task counts and must not be provided'
+      );
+    }
     const merged: BuildProgress = {
       ...this.progress,
       ...partial,

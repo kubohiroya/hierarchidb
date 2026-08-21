@@ -61,6 +61,7 @@ Route と Location は現在managerとUI consumerが同じUI realmに存在す�
 以下は即時に失敗させる。
 
 - progressがfiniteな`0..100`でない。
+- `updateProgress`へ派生値`percentage`を明示指定する。
 - task countが非整数、負数、またはterminal countがtotalを超える。
 - started stageのtimingが欠落・非finite・負数である。
 - lifecycle phaseと`isActive`が一致しない。

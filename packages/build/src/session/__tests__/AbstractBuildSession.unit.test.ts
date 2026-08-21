@@ -57,9 +57,12 @@ describe('AbstractBuildSession session update notification', () => {
     expect(listener).toHaveBeenCalledTimes(1);
   });
 
-  it('rejects invalid task counts instead of clamping or retaining prior values', () => {
+  it('rejects caller-supplied percentage and invalid task counts', () => {
     const session = new TestBuildSession(NODE_ID, {});
 
+    expect(() => session.reportProgress({ percentage: 200 })).toThrow(
+      /percentage is derived from task counts and must not be provided/
+    );
     expect(() => session.reportProgress({ total: -1 })).toThrow(/total must be a non-negative integer/);
     expect(() =>
       session.reportProgress({ total: 1, completed: 1, failed: 1, skipped: 0 })

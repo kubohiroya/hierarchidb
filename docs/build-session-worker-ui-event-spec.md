@@ -463,6 +463,9 @@ signal, not a fifth event and not an aggregate progress payload. On every signal
 `CanonicalBuildSessionManager` rereads `getState()`, the authoritative stage
 snapshot, and pending per-task progress from `CanonicalBuildSessionEventSource`.
 No `BuildProgressEvent` is created or forwarded along this path.
+`AbstractBuildSession.updateProgress` accepts task-count updates but not an explicit
+`percentage`; percentage is derived from validated integer counts, and an explicit
+value is a contract violation rather than an override or compatibility input.
 
 ### `plugins/shape-plugin`
 
