@@ -48,6 +48,28 @@ describe('buildSessionWorkerEventAdapter', () => {
     expect(runtime.startedAt).toBe(10);
   });
 
+  it('maps a paused runtime record and its persisted endpoint atomically', () => {
+    const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
+    const runtimeRecord: BuildSessionRuntimeRecord = {
+      nodeId: 'node-1',
+      status: 'paused',
+      isActive: false,
+      revision: 4,
+      startedAt: 10,
+      updatedAt: 40,
+      lastHeartbeatAt: 30,
+    };
+
+    adapter.onRuntimeRecord(runtimeRecord);
+
+    expect(store.get(buildSessionLifecycleAtom)).toMatchObject({
+      phase: 'paused',
+      isActive: false,
+      startedAt: 10,
+      heartbeatAt: 30,
+    });
+  });
+
   it('maps task pub/sub snapshot to stage counters', () => {
     const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
 
@@ -201,6 +223,25 @@ describe('buildSessionWorkerEventAdapter', () => {
 
   it('rejects session timing that is incomplete for its lifecycle phase', () => {
     const adapter = createBuildSessionWorkerEventAdapter('node-1', dispatch);
+    expect(() => adapter.onSessionState({
+      type: 'sessionStatusUpdated',
+      payload: {
+        nodeId: 'node-1',
+        phase: 'paused',
+        isActive: false,
+        startedAt: 1_000,
+      },
+    })).toThrowError('pausedAt is required for phase paused');
+    expect(() => adapter.onSessionState({
+      type: 'sessionStatusUpdated',
+      payload: {
+        nodeId: 'node-1',
+        phase: 'running',
+        isActive: true,
+        startedAt: 1_000,
+        pausedAt: 1_500,
+      },
+    })).toThrowError('pausedAt must be absent for phase running');
     expect(() => adapter.onSessionState({
       type: 'sessionStatusUpdated',
       payload: {

@@ -22,6 +22,7 @@ export type ValidatedCanonicalSessionStatus<StageId extends string> = {
   startedAt: number | undefined;
   inactiveMs: number | undefined;
   completedAt: number | undefined;
+  pausedAt: number | undefined;
   stopReason: string | undefined;
   stageId: StageId | undefined;
 };
@@ -233,17 +234,35 @@ const validateSessionStatus = <StageId extends string>(
     payload.completedAt === undefined
       ? undefined
       : requireNonNegativeNumber(payload.completedAt, 'session.completedAt');
+  const pausedAt =
+    payload.pausedAt === undefined
+      ? undefined
+      : requireNonNegativeNumber(payload.pausedAt, 'session.pausedAt');
   if (phase !== 'idle' && phase !== 'starting' && startedAt === undefined) {
     throw new Error(`${ERROR_PREFIX} session.startedAt is required for phase ${phase}`);
   }
   if ((phase === 'completed' || phase === 'failed') && completedAt === undefined) {
     throw new Error(`${ERROR_PREFIX} session.completedAt is required for phase ${phase}`);
   }
+  if (phase === 'paused' && pausedAt === undefined) {
+    throw new Error(`${ERROR_PREFIX} session.pausedAt is required for phase paused`);
+  }
+  if (phase !== 'paused' && pausedAt !== undefined) {
+    throw new Error(`${ERROR_PREFIX} session.pausedAt must be absent for phase ${phase}`);
+  }
   if (startedAt !== undefined && completedAt !== undefined) {
     const durationMs = completedAt - startedAt - (inactiveMs ?? 0);
     if (!Number.isFinite(durationMs) || durationMs < 0) {
       throw new Error(
         `${ERROR_PREFIX} session duration must be finite and non-negative, received ${durationMs}`
+      );
+    }
+  }
+  if (startedAt !== undefined && pausedAt !== undefined) {
+    const durationMs = pausedAt - startedAt - (inactiveMs ?? 0);
+    if (!Number.isFinite(durationMs) || durationMs < 0) {
+      throw new Error(
+        `${ERROR_PREFIX} paused session duration must be finite and non-negative, received ${durationMs}`
       );
     }
   }
@@ -265,6 +284,7 @@ const validateSessionStatus = <StageId extends string>(
     startedAt,
     inactiveMs,
     completedAt,
+    pausedAt,
     stopReason: requireOptionalString(payload.stopReason, 'session.stopReason'),
     stageId,
   };

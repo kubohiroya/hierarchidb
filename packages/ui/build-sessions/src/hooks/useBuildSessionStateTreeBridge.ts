@@ -87,6 +87,7 @@ export const useBuildSessionStateTreeBridge = <StageId extends StageKey>(
           startedAt: status.startedAt,
           inactiveMs: status.inactiveMs,
           completedAt: status.completedAt,
+          ...(status.pausedAt === undefined ? {} : { lastHeartbeatAt: status.pausedAt }),
           error: status.phase === 'failed' ? status.stopReason : undefined,
         },
       });

@@ -129,6 +129,21 @@ describe('build session event timing contracts', () => {
     })).toThrowError('session duration must be finite and non-negative');
   });
 
+  it('requires the explicit pause endpoint only for paused status', () => {
+    expect(() => validateSessionTimingContract('paused', {
+      startedAt: 1_000,
+    })).toThrowError('pausedAt is required for phase paused');
+    expect(() => validateSessionTimingContract('paused', {
+      startedAt: 1_000,
+      inactiveMs: 100,
+      pausedAt: 1_500,
+    })).not.toThrow();
+    expect(() => validateSessionTimingContract('running', {
+      startedAt: 1_000,
+      pausedAt: 1_500,
+    })).toThrowError('pausedAt must be absent for phase running');
+  });
+
   it('distinguishes an unstarted stage from an invalid started-stage record', () => {
     const baseRecord = {
       nodeId: 'shape-1' as NodeId,

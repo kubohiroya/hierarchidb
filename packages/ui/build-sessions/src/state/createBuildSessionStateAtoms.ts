@@ -91,6 +91,7 @@ type SessionStatusUpdatedEvent<SessionPhase extends string> = {
     startedAt?: number;
     inactiveMs?: number;
     completedAt?: number;
+    pausedAt?: number;
     stopReason?: string;
   };
 };
@@ -323,6 +324,26 @@ export const createBuildSessionStateAtoms = <
             }
           }
         }
+        if (event.payload.pausedAt !== undefined) {
+          assertFiniteNonNegativeNumber(event.payload.pausedAt, 'pausedAt');
+          if (event.payload.startedAt !== undefined) {
+            const inactiveMs = event.payload.inactiveMs === undefined ? 0 : event.payload.inactiveMs;
+            const durationMs = event.payload.pausedAt - event.payload.startedAt - inactiveMs;
+            if (!Number.isFinite(durationMs) || durationMs < 0) {
+              throw new Error(
+                `[buildSessionStateAtoms] paused session duration must be finite and non-negative, received ${durationMs}`,
+              );
+            }
+          }
+        }
+        if (String(event.payload.phase) === 'paused' && event.payload.pausedAt === undefined) {
+          throw new Error('[buildSessionStateAtoms] pausedAt is required for phase paused');
+        }
+        if (String(event.payload.phase) !== 'paused' && event.payload.pausedAt !== undefined) {
+          throw new Error(
+            `[buildSessionStateAtoms] pausedAt must be absent for phase ${String(event.payload.phase)}`,
+          );
+        }
         return {
           ...state,
           lifecycle: {
@@ -333,6 +354,7 @@ export const createBuildSessionStateAtoms = <
             startedAt: event.payload.startedAt ?? state.lifecycle.startedAt,
             inactiveMs: event.payload.inactiveMs ?? state.lifecycle.inactiveMs,
             completedAt: event.payload.completedAt ?? state.lifecycle.completedAt,
+            heartbeatAt: event.payload.pausedAt ?? state.lifecycle.heartbeatAt,
             stopReason: event.payload.stopReason ?? state.lifecycle.stopReason,
           },
         };

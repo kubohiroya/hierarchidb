@@ -91,6 +91,7 @@ type ShapeSessionStatusUpdatedEvent = {
     startedAt?: number;
     inactiveMs?: number;
     completedAt?: number;
+    pausedAt?: number;
     stopReason?: ShapeBuildStopReason;
   };
 };
@@ -341,6 +342,7 @@ const applyBuildSessionEventAtom = atom(
             startedAt: event.payload.startedAt,
             inactiveMs: event.payload.inactiveMs,
             completedAt: event.payload.completedAt,
+            pausedAt: event.payload.pausedAt,
             stopReason: event.payload.stopReason,
           },
         };
