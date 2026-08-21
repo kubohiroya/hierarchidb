@@ -33,6 +33,13 @@
 
 各 stage の AbortController は session pipeline の AbortSignal に連結する。pause 時は親 signal が source / geometry / tileEmit の実行 worker へ伝播し、実 pipeline Promise が settle するまで task status の再キューと `paused` 永続化を行わない。checkpoint heartbeat と cleanup は fire-and-forget にせず同じ Promise に含め、各永続化境界で abort を再検証する。abort 後に完了した古い run の task/cache/artifact/event 更新は拒否する。
 
+## Worker database 所有境界（shape）
+
+- shape worker entry はAPIを利用可能にする前に、同じbundle module graphが参照する `ephemeral`、`shape`、`shape-chunks` の3 database singletonを明示初期化する
+- database名は単一の `getBuildDatabasePrefix()` から `getDBName(prefix, kind)` で導出し、各database kindを固定する
+- SharedWorker本体の `WorkerService` による初期化を、shape plugin worker bundle側の初期化として扱わない
+- 既に異なる名前で初期化されたsingleton、空のdatabase名、未初期化アクセスは契約違反として失敗させ、lazy initialization、既定名補完、fallbackで処理を継続しない
+
 ## source stage（shape）
 
 - GeoJSON を国 + 自治体レベル単位で分割し取得
