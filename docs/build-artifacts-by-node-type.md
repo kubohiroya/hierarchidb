@@ -100,6 +100,10 @@ CoreDB でツリーノードが削除された場合、ノード種別に応じ�
 - Shape: `plugins/shape-plugin/src/services/utils/chunkStore.ts` で `DexieChunkStore` を作成し、
   `plugins/shape-plugin/src/services/metadata/metadataSources.ts` や
   `plugins/shape-plugin/src/services/datasources/GeoBoundariesStrategy.ts` で `getOrFetchForNode` を使用。
+  `ShapeQueryAPI.listSourceCaches` / `getSourceCache` が扱う「source cache」は、現行buildが
+  download URLをkeyとして保存するraw source-download entry（および明示的なlegacy key modeの
+  `download:` entry）だけである。同じChunkStore内の `geoboundaries:metadata:*` 等のmetadata entryは、
+  手動の「API cache」件数・取得・削除対象に含めない。
 - Route: `packages/runtime-worker/src/services/RouteMutationService.ts` で
   `getOrFetchForNode` により nodeId と URL の関係を保存。
 

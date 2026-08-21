@@ -40,7 +40,9 @@ export interface ShapeQueryAPI {
   getVectorTile(nodeId: NodeId, z: number, x: number, y: number): Promise<Uint8Array | null>;
   listVectorTiles(nodeId: NodeId): Promise<ShapeTileSummaryEntry[]>;
   getVectorTileSummary(nodeId: NodeId): Promise<ShapeTileSummary>;
+  /** Lists raw source-download cache entries; metadata chunks are excluded. */
   listSourceCaches(nodeId: NodeId): Promise<ShapeSourceCache[]>;
+  /** Reads a raw source-download cache entry; non-raw chunk keys return null. */
   getSourceCache(nodeId: NodeId, bufferId: string): Promise<ShapeSourceCache | null>;
   listGeometryCaches(nodeId: NodeId): Promise<ShapeGeometryCache[]>;
   getGeometryCache(bufferId: string): Promise<ShapeGeometryCache | null>;

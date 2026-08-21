@@ -9,7 +9,10 @@ import {
   LocalShapeChunkStoreNetworkAccessError,
 } from '../../LocalShapeChunkStore.js';
 import { ShapeQueryService } from '../../ShapeQueryService.js';
-import { storeRawDataDataSourceBufferForNode } from '../../shapeChunkStoreUtils.js';
+import {
+  isRawDataDataSourceCacheKey,
+  storeRawDataDataSourceBufferForNode,
+} from '../../shapeChunkStoreUtils.js';
 
 const databaseNames: string[] = [];
 
@@ -24,10 +27,19 @@ afterEach(async () => {
 });
 
 describe('local-only Shape ChunkStore', () => {
-  it('stores, lists, counts, and reads raw cache data without auth or network setup', async () => {
+  it('classifies current and explicitly selected legacy raw cache keys', () => {
+    expect(isRawDataDataSourceCacheKey('https://example.com/source.json')).toBe(true);
+    expect(isRawDataDataSourceCacheKey('http://example.com/source.json')).toBe(true);
+    expect(isRawDataDataSourceCacheKey('download:test:us:adm0:cache-key')).toBe(true);
+    expect(isRawDataDataSourceCacheKey('geoboundaries:metadata:all:catalog')).toBe(false);
+    expect(isRawDataDataSourceCacheKey(undefined)).toBe(false);
+  });
+
+  it('stores, lists, counts, and reads only raw cache data without auth or network setup', async () => {
     const databaseName = createDatabaseName();
     const nodeId = 'node-1' as NodeId;
-    const cacheKey = 'download:test:us:adm0:cache-key';
+    const cacheKey = 'https://example.com/source.json';
+    const metadataCacheKey = 'geoboundaries:metadata:all:catalog';
     const buffer = new ArrayBuffer(3);
     new Uint8Array(buffer).set([1, 2, 3]);
 
@@ -37,6 +49,12 @@ describe('local-only Shape ChunkStore', () => {
       cacheKey,
       buffer,
     });
+    const localStore = new LocalShapeChunkStore({
+      databaseName,
+      serializer: (value) => value,
+      deserializer: (value) => value,
+    });
+    await localStore.setForNode(nodeId, metadataCacheKey, new Uint8Array([9]).buffer);
 
     const queryService = new ShapeQueryService({} as ShapeDB, databaseName);
     const caches = await queryService.listSourceCaches(nodeId);
@@ -48,6 +66,15 @@ describe('local-only Shape ChunkStore', () => {
     const stored = await queryService.getSourceCache(nodeId, cacheKey);
     expect(stored).not.toBeNull();
     expect(Array.from(new Uint8Array(stored?.data ?? new ArrayBuffer(0)))).toEqual([1, 2, 3]);
+    await expect(queryService.getSourceCache(nodeId, metadataCacheKey)).resolves.toBeNull();
+    await expect(
+      storeRawDataDataSourceBufferForNode({
+        databaseName,
+        nodeId,
+        cacheKey: metadataCacheKey,
+        buffer: new Uint8Array([9]).buffer,
+      })
+    ).rejects.toThrow('invalid raw source cache key');
   });
 
   it('rejects the network fetch API before stale-cache fallback can run', async () => {
