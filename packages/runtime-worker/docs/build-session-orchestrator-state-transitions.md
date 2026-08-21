@@ -178,7 +178,8 @@ above through `BuildWorkerBridge.subscribeAll`:
 - task progress ordering is scoped to each `taskId`; equal or lower versions are
   dropped.
 
-`subscribeBuildTasks` is a compatibility no-op for Shape and is not a UI SSOT.
+`subscribeBuildTasks` is not exposed. There is no compatibility no-op or aggregate
+task subscription fallback.
 
 References:
 - `packages/ui/worker-client/src/workerBridge.ts`

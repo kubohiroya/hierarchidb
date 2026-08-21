@@ -3,8 +3,11 @@ import type {
   BuildSessionRuntimeRecord,
   BuildSessionStatus,
   BuildTaskSummary,
-  BuildTaskUpdateEvent,
+  HeartbeatEvent,
+  SessionStatusUpdatedEvent,
+  StageSnapshotUpdatedEvent,
   TaskProgressUpdatedEvent,
+  WorkerLogEvent,
 } from '@hierarchidb/build-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
@@ -19,17 +22,11 @@ export interface BuildWorkerBridge {
   startBuildSession(
     nodeType: NodeType,
     nodeId: NodeId,
-    downloadTaskPayloads?: Parameters<WorkerApi['startBuildSession']>[2],
   ): Promise<BuildSessionStatus>;
   getBuildSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>;
   pauseBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
   cancelQueuedBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
   getBuildTasks(nodeType: NodeType, nodeId: NodeId): Promise<BuildTaskSummary[]>;
-  subscribeBuildTasks(
-    nodeType: NodeType,
-    nodeId: NodeId,
-    cb: (event: BuildTaskUpdateEvent) => void
-  ): Promise<() => void>;
   getBuildSessionRuntime(
     nodeType: NodeType,
     nodeId: NodeId
@@ -62,28 +59,28 @@ export interface BuildWorkerBridge {
   subscribeSessionState(
     nodeType: NodeType,
     nodeId: NodeId,
-    cb: (event: any) => void
+    cb: (event: SessionStatusUpdatedEvent) => void
   ): Promise<() => void>;
   subscribeStageSnapshots(
     nodeType: NodeType,
     nodeId: NodeId,
-    cb: (event: any) => void
+    cb: (event: StageSnapshotUpdatedEvent) => void
   ): Promise<() => void>;
   /** Subscribe to the four canonical build-session channels for a node. */
   subscribeAll(
     nodeType: NodeType,
     nodeId: NodeId,
     handlers: {
-      onTaskEvent: (event: unknown) => void;
-      onProgressEvent: (event: unknown) => void;
-      onSessionState: (event: unknown) => void;
-      onHeartbeat: (event: unknown) => void;
+      onTaskEvent: (event: StageSnapshotUpdatedEvent) => void;
+      onProgressEvent: (event: TaskProgressUpdatedEvent) => void;
+      onSessionState: (event: SessionStatusUpdatedEvent) => void;
+      onHeartbeat: (event: HeartbeatEvent) => void;
     }
   ): Promise<() => void>;
   subscribeWorkerLog(
     nodeType: NodeType,
     nodeId: NodeId,
-    cb: (event: any) => void
+    cb: (event: WorkerLogEvent) => void
   ): Promise<() => void>;
 }
 
@@ -189,10 +186,9 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
   async startBuildSession(
     nodeType: NodeType,
     nodeId: NodeId,
-    downloadTaskPayloads?: Parameters<WorkerApi['startBuildSession']>[2]
   ): Promise<BuildSessionStatus> {
     const api = await ensureWorkerAPI();
-    return api.startBuildSession(nodeType, nodeId, downloadTaskPayloads);
+    return api.startBuildSession(nodeType, nodeId);
   }
 
   async getBuildSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus> {
@@ -213,24 +209,6 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
   async getBuildTasks(nodeType: NodeType, nodeId: NodeId): Promise<BuildTaskSummary[]> {
     const api = await ensureWorkerAPI();
     return api.getBuildTasks(nodeType, nodeId);
-  }
-
-  async subscribeBuildTasks(
-    nodeType: NodeType,
-    nodeId: NodeId,
-    cb: (event: BuildTaskUpdateEvent) => void
-  ): Promise<() => void> {
-    const api = await ensureWorkerAPI();
-    const unsubscribe = await api.subscribeBuildTasks(nodeType, nodeId, proxy((event) => {
-      cb(sanitizeForComlink(event));
-    }));
-    return () => {
-      try {
-        unsubscribe();
-      } catch (error) {
-        console.warn('[BuildWorkerBridge] unsubscribe failed', error);
-      }
-    };
   }
 
   async getBuildSessionRuntime(
@@ -356,10 +334,10 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
   async subscribeSessionState(
     nodeType: NodeType,
     nodeId: NodeId,
-    cb: (event: any) => void
+    cb: (event: SessionStatusUpdatedEvent) => void
   ): Promise<() => void> {
     const api = await ensureWorkerAPI();
-    const unsubscribe = await api.subscribeSessionState(nodeType, nodeId, proxy((event: any) => {
+    const unsubscribe = await api.subscribeSessionState(nodeType, nodeId, proxy((event) => {
       cb(sanitizeForComlink(event));
     }));
     return () => {
@@ -374,10 +352,10 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
   async subscribeStageSnapshots(
     nodeType: NodeType,
     nodeId: NodeId,
-    cb: (event: any) => void
+    cb: (event: StageSnapshotUpdatedEvent) => void
   ): Promise<() => void> {
     const api = await ensureWorkerAPI();
-    const unsubscribe = await api.subscribeStageSnapshots(nodeType, nodeId, proxy((event: unknown) => {
+    const unsubscribe = await api.subscribeStageSnapshots(nodeType, nodeId, proxy((event) => {
       cb(sanitizeForComlink(event));
     }));
     return () => {
@@ -393,10 +371,10 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
     nodeType: NodeType,
     nodeId: NodeId,
     handlers: {
-      onTaskEvent: (event: unknown) => void;
-      onProgressEvent: (event: unknown) => void;
-      onSessionState: (event: unknown) => void;
-      onHeartbeat: (event: unknown) => void;
+      onTaskEvent: (event: StageSnapshotUpdatedEvent) => void;
+      onProgressEvent: (event: TaskProgressUpdatedEvent) => void;
+      onSessionState: (event: SessionStatusUpdatedEvent) => void;
+      onHeartbeat: (event: HeartbeatEvent) => void;
     }
   ): Promise<() => void> {
     const api = await ensureWorkerAPI();
@@ -427,16 +405,16 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
 
     try {
       await Promise.all([
-        acquire(api.subscribeStageSnapshots(nodeType, nodeId, proxy((event: unknown) => {
+        acquire(api.subscribeStageSnapshots(nodeType, nodeId, proxy((event) => {
           handlers.onTaskEvent(sanitizeForComlink(event));
         }))),
         acquire(api.subscribeTaskProgress(nodeType, nodeId, proxy((event: TaskProgressUpdatedEvent) => {
           handlers.onProgressEvent(sanitizeForComlink(event));
         }))),
-        acquire(api.subscribeSessionState(nodeType, nodeId, proxy((event: any) => {
+        acquire(api.subscribeSessionState(nodeType, nodeId, proxy((event) => {
           handlers.onSessionState(sanitizeForComlink(event));
         }))),
-        acquire(api.subscribeSessionHeartbeat(nodeType, nodeId, proxy((event: any) => {
+        acquire(api.subscribeSessionHeartbeat(nodeType, nodeId, proxy((event) => {
           handlers.onHeartbeat(sanitizeForComlink(event));
         }))),
       ]);
@@ -458,10 +436,10 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
   async subscribeWorkerLog(
     nodeType: NodeType,
     nodeId: NodeId,
-    cb: (event: any) => void
+    cb: (event: WorkerLogEvent) => void
   ): Promise<() => void> {
     const api = await ensureWorkerAPI();
-    const unsubscribe = await api.subscribeWorkerLog(nodeType, nodeId, proxy((event: any) => {
+    const unsubscribe = await api.subscribeWorkerLog(nodeType, nodeId, proxy((event) => {
       cb(sanitizeForComlink(event));
     }));
     return () => {

@@ -15,8 +15,11 @@ import type {
   BuildSessionRuntimeRecord,
   BuildSessionStatus,
   BuildTaskSummary,
-  BuildTaskUpdateEvent,
+  HeartbeatEvent,
+  SessionStatusUpdatedEvent,
+  StageSnapshotUpdatedEvent,
   TaskProgressUpdatedEvent,
+  WorkerLogEvent,
 } from '@hierarchidb/build-api';
 import type { ImportExportAPI } from '@hierarchidb/import-export-api';
 import type { TagAPI } from '@hierarchidb/tag-api';
@@ -90,7 +93,6 @@ export interface WorkerAPI<T> {
   startBuildSession(
     nodeType: NodeType,
     nodeId: NodeId,
-    downloadTaskPayloads?: ShapeDownloadTaskPayload[],
   ): Promise<BuildSessionStatus>;
   /** Canonical build API. */
   getBuildSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>;
@@ -104,17 +106,11 @@ export interface WorkerAPI<T> {
   cancelQueuedBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
   /** Canonical build API. */
   getBuildTasks(nodeType: NodeType, nodeId: NodeId): Promise<BuildTaskSummary[]>;
-  /** Canonical build API. */
-  subscribeBuildTasks(
-    nodeType: NodeType,
-    nodeId: NodeId,
-    callback: (event: BuildTaskUpdateEvent) => void
-  ): Promise<() => void>;
-  /** Subscribe to stage snapshot events (stageSnapshotUpdated) for a specific node. Shape-plugin only. */
+  /** Subscribe to canonical stage snapshot events for a specific node. */
   subscribeStageSnapshots(
     nodeType: NodeType,
     nodeId: NodeId,
-    callback: (event: unknown) => void
+    callback: (event: StageSnapshotUpdatedEvent) => void
   ): Promise<() => void>;
   listBuildSessionRecordsByStatus(
     nodeType: NodeType,
@@ -151,23 +147,23 @@ export interface WorkerAPI<T> {
     callback: (event: TaskProgressUpdatedEvent) => void
   ): Promise<() => void>;
   subscribeHeapPressure(callback: (event: HeapPressureEvent) => void): Promise<() => void>;
-  /** Subscribe to session state change events for a specific node. Shape-plugin only. */
+  /** Subscribe to canonical session state events for a specific node. */
   subscribeSessionState(
     nodeType: NodeType,
     nodeId: NodeId,
-    callback: (event: unknown) => void
+    callback: (event: SessionStatusUpdatedEvent) => void
   ): Promise<() => void>;
-  /** Subscribe to session heartbeat events for a specific node. Shape-plugin only. */
+  /** Subscribe to canonical session heartbeat events for a specific node. */
   subscribeSessionHeartbeat(
     nodeType: NodeType,
     nodeId: NodeId,
-    callback: (event: unknown) => void
+    callback: (event: HeartbeatEvent) => void
   ): Promise<() => void>;
-  /** Subscribe to worker log events for a specific node. Shape-plugin only. */
+  /** Subscribe to worker log events for a specific node. */
   subscribeWorkerLog(
     nodeType: NodeType,
     nodeId: NodeId,
-    callback: (event: unknown) => void
+    callback: (event: WorkerLogEvent) => void
   ): Promise<() => void>;
   setUiStorageBridge(bridge: UiStorageBridge): Promise<void>;
   setCorsProxyBaseURL(url: string): Promise<void>;

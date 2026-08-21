@@ -47,16 +47,7 @@ type ShapeWorkerAPI = {
   getTreeNodeUpdaterAPI?: () => Promise<{
     updateTreeNode: (nodeId: string, payload: Record<string, unknown>) => Promise<void>;
   }>;
-  generateShapeDownloadTaskPayloadsFromSelection?: (
-    nodeId: string,
-    dataSourceName: string,
-    selectedArrayByCountries: Record<string, boolean[]>,
-  ) => Promise<unknown[]>;
-  startBuildSession?: (
-    nodeType: string,
-    nodeId: string,
-    payloads?: unknown[],
-  ) => Promise<{ status?: string }>;
+  startBuildSession?: (nodeType: string, nodeId: string) => Promise<{ status?: string }>;
   getBuildTasks?: (nodeType: string, nodeId: string) => Promise<Array<{ status?: string; [key: string]: unknown }>>;
   initialize?: () => Promise<void> | void;
   getShapeQueryAPI?: () => Promise<ShapeQueryAPI>;
@@ -226,9 +217,9 @@ test.describe('Shape build background (real pipeline)', () => {
       };
     }, { buildConfig, selectedArrayByCountries, nodeType: 'shape' });
 
-    const startResult = await page.evaluate(async ({ nodeId, selectedArrayByCountries, dataSourceName }) => {
+    const startResult = await page.evaluate(async (nodeId) => {
       const ref = (window as ShapeBackgroundWindow).__HDB_WORKER_CLIENT_REF__;
-        const api = ref?.client ?? ref?.getAPI?.();
+      const api = ref?.client ?? ref?.getAPI?.();
       if (!api) {
         throw new Error('Worker client not ready');
       }
@@ -237,22 +228,13 @@ test.describe('Shape build background (real pipeline)', () => {
       } else if (api.initialize) {
         await api.initialize();
       }
-      const payloads = await api.generateShapeDownloadTaskPayloadsFromSelection(
-        nodeId,
-        dataSourceName,
-        selectedArrayByCountries,
-      );
-      const result = await api.startBuildSession('shape', nodeId, payloads);
+      const result = await api.startBuildSession('shape', nodeId);
       const tasks = await api.getBuildTasks('shape', nodeId).catch(() => []);
       return {
         status: result?.status ?? null,
         taskCount: Array.isArray(tasks) ? tasks.length : 0,
       };
-    }, {
-      nodeId: shapeNode.nodeId,
-      selectedArrayByCountries,
-      dataSourceName: buildConfig.dataSourceName,
-    });
+    }, shapeNode.nodeId);
 
     if (!startResult) {
       throw new Error('startBuildSession returned null');

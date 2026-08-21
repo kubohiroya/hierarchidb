@@ -37,7 +37,7 @@ describe('WorkerBridge subscribeAll', () => {
     heartbeatUnsubscribeMock = vi.fn();
     workerLogUnsubscribeMock = vi.fn();
 
-    // subscribeAll now uses subscribeStageSnapshots instead of subscribeBuildTasks for task events
+    // subscribeAll acquires the authoritative stage snapshot channel for task state.
     subscribeStageSnapshotsMock = vi.fn(
       async (_nodeType: NodeType, _nodeId: NodeId, callback: (event: unknown) => void) => {
         taskEventProxyCallback = callback;

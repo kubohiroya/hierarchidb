@@ -39,5 +39,8 @@ export {
 export { emitSessionStatusUpdated } from './emitSessionStatusUpdated.js';
 export { emitStageSnapshotUpdated } from './emitStageSnapshotUpdated.js';
 export { createSessionStatusUpdatedPayload } from './createSessionStatusUpdatedPayload.js';
+export {
+  createLiveCanonicalPluginBuildSubscriptions,
+} from './createLiveCanonicalPluginBuildSubscriptions.js';
 export { CanonicalBuildSessionManager } from './CanonicalBuildSessionManager.js';
 export type { CanonicalBuildSessionEventSource } from './CanonicalBuildSessionManager.js';

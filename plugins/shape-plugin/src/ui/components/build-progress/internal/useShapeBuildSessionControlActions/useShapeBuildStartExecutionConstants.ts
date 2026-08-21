@@ -124,7 +124,7 @@ export const runStartSessionRequest = async (context: StartSessionRequestContext
     selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
   });
   const statusResult = await runTimedStep('session-start-request', () => (
-    bridgeApi.startBuildSession(SHAPE_NODE_TYPE, activeNodeId, undefined)
+    bridgeApi.startBuildSession(SHAPE_NODE_TYPE, activeNodeId)
   ));
   finishBuildStartupStep('session-start-request', 'success', {
     status: statusResult.status,

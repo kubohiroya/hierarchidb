@@ -49,33 +49,34 @@ describe('useShapeBuildStartExecutionHelpers', () => {
       advanceBuildSessionTransitionPhase,
     });
 
-    expect(bridgeRef.current.startBuildSession).toHaveBeenCalledWith(
-      'shape',
-      'node-start-test',
-      undefined,
+    expect(bridgeRef.current.startBuildSession).toHaveBeenCalledWith('shape', 'node-start-test');
+    expect(beginBuildStartupStep).toHaveBeenCalledWith(
+      'payload-build',
+      expect.objectContaining({
+        source: 'manual',
+        mode: 'worker-side',
+        dataSource: 'manual-ds',
+      })
     );
-    expect(beginBuildStartupStep).toHaveBeenCalledWith('payload-build', expect.objectContaining({
-      source: 'manual',
-      mode: 'worker-side',
-      dataSource: 'manual-ds',
-    }));
     expect(finishBuildStartupStep).toHaveBeenCalledWith(
       'session-start-request',
       'success',
       expect.objectContaining({
         status: 'running',
         hasError: false,
-      }),
+      })
     );
     expect(emitBuildSessionTransitionLog).toHaveBeenCalledWith(
       'info',
       'start session response',
-      expect.objectContaining({ status: 'running', hasError: false }),
+      expect.objectContaining({ status: 'running', hasError: false })
     );
-    expect(onTrace).toHaveBeenCalledWith(expect.objectContaining({
-      event: 'request-finished:success',
-      payload: expect.objectContaining({ nextStatus: 'running' }),
-    }));
+    expect(onTrace).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'request-finished:success',
+        payload: expect.objectContaining({ nextStatus: 'running' }),
+      })
+    );
     expect(result.statusResult.status).toBe('running');
   });
 
@@ -100,8 +101,7 @@ describe('useShapeBuildStartExecutionHelpers', () => {
 
     expect(bridgeRef.current.startBuildSession).toHaveBeenCalledWith(
       'shape',
-      'node-resume-label-test',
-      undefined,
+      'node-resume-label-test'
     );
     expect(result.statusResult.status).toBe('running');
   });

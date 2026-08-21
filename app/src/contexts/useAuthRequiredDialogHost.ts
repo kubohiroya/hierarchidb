@@ -26,6 +26,23 @@ const isAuthDebugEnabled = () => {
   }
 };
 
+const resolveSessionTarget = (
+  next: AuthRequiredNotification
+): { nodeType: NodeType; nodeId: ReturnType<typeof toNodeId> } | null => {
+  const rawSessionId = next.context.sessionId;
+  if (typeof rawSessionId !== 'string' || rawSessionId.length === 0) {
+    return null;
+  }
+  const pluginType = next.context.pluginType;
+  if (pluginType !== 'shape' && pluginType !== 'location' && pluginType !== 'route') {
+    return null;
+  }
+  return {
+    nodeType: toNodeType(pluginType),
+    nodeId: toNodeId(rawSessionId),
+  };
+};
+
 export function useAuthRequiredDialogHost(): AuthRequiredDialogHostState {
   const registry = AuthNotificationRegistry.getInstance();
   const workerBridgeRef = useRef(getBuildWorkerBridge());
@@ -36,21 +53,6 @@ export function useAuthRequiredDialogHost(): AuthRequiredDialogHostState {
   // Tracks cancelled build attempts as `${sessionId}:${sessionStartedAt}` keys.
   // AUTH_REQUIRED notifications matching a cancelled attempt are suppressed (#991).
   const cancelledSessionEpochsRef = useRef(new Set<string>());
-
-  const resolveSessionTarget = (next: AuthRequiredNotification): { nodeType: NodeType; nodeId: ReturnType<typeof toNodeId> } | null => {
-    const rawSessionId = next.context.sessionId;
-    if (typeof rawSessionId !== 'string' || rawSessionId.length === 0) {
-      return null;
-    }
-    const pluginType = next.context.pluginType;
-    if (pluginType !== 'shape' && pluginType !== 'location' && pluginType !== 'route') {
-      return null;
-    }
-    return {
-      nodeType: toNodeType(pluginType),
-      nodeId: toNodeId(rawSessionId),
-    };
-  };
 
   const handleSuccess = () => {
     activeRequestIdRef.current = null;
@@ -153,7 +155,7 @@ export function useAuthRequiredDialogHost(): AuthRequiredDialogHostState {
             const nodeType = toNodeType(sessionKey.slice(0, separator));
             const nodeId = toNodeId(sessionKey.slice(separator + 1));
             try {
-              await workerBridgeRef.current.startBuildSession(nodeType, nodeId, undefined);
+              await workerBridgeRef.current.startBuildSession(nodeType, nodeId);
             } catch (error) {
               console.warn('[auth][ui] failed to restart build session on auth success', error);
             }
