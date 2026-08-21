@@ -84,6 +84,13 @@
                 }
               },
               "tileEmitConfig": {
+                "invalidGeometryFilter": {
+                  "area": false,
+                  "lineLength": false,
+                  "maxEdgeLength": false,
+                  "selfIntersection": false,
+                  "triangleRingRatio": false
+                },
                 "enableTopojsonSimplify": false,
                 "maxConcurrent": 1,
                 "tolerance": 1,

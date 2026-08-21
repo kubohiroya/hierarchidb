@@ -69,7 +69,7 @@ export interface BuildWorkerBridge {
     nodeId: NodeId,
     cb: (event: any) => void
   ): Promise<() => void>;
-  /** Subscribe to all build session channels for a node in a single call. Returns a single unsubscribe function. */
+  /** Subscribe to the four canonical build-session channels for a node. */
   subscribeAll(
     nodeType: NodeType,
     nodeId: NodeId,
@@ -78,7 +78,6 @@ export interface BuildWorkerBridge {
       onProgressEvent: (event: unknown) => void;
       onSessionState: (event: unknown) => void;
       onHeartbeat: (event: unknown) => void;
-      onWorkerLog: (event: unknown) => void;
     }
   ): Promise<() => void>;
   subscribeWorkerLog(
@@ -398,7 +397,6 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
       onProgressEvent: (event: unknown) => void;
       onSessionState: (event: unknown) => void;
       onHeartbeat: (event: unknown) => void;
-      onWorkerLog: (event: unknown) => void;
     }
   ): Promise<() => void> {
     const api = await ensureWorkerAPI();
@@ -440,9 +438,6 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
         }))),
         acquire(api.subscribeSessionHeartbeat(nodeType, nodeId, proxy((event: any) => {
           handlers.onHeartbeat(sanitizeForComlink(event));
-        }))),
-        acquire(api.subscribeWorkerLog(nodeType, nodeId, proxy((event: any) => {
-          handlers.onWorkerLog(sanitizeForComlink(event));
         }))),
       ]);
     } catch (error) {

@@ -10,21 +10,10 @@
         ".": {
             "types": "./dist/index.d.ts",
             "import": "./dist/index.js"
-        },
-        "./canonical-yaml-snapshot": {
-            "types": "./dist/canonical-yaml-snapshot/index.d.ts",
-            "import": "./dist/canonical-yaml-snapshot/index.js"
-        }
-    },
-    "typesVersions": {
-        "*": {
-            "canonical-yaml-snapshot": [
-                "dist/canonical-yaml-snapshot/index.d.ts"
-            ]
         }
     },
     "scripts": {
-        "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist && tsdown src/canonical-yaml-snapshot/index.ts --config ../../tsdown.config.ts --splitting false --outDir dist/canonical-yaml-snapshot",
+        "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist",
         "clean": "rm -rf dist",
         "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
         "test": "vitest run --passWithNoTests",

@@ -2,6 +2,7 @@
 /// <reference path="./registry.modules.d.ts" />
 
 export const pluginWorkerLoaders: Record<string, () => Promise<unknown>> = {
+  "folder": async () => import("@hierarchidb/folder-plugin/worker"),
   "linker": async () => import("@hierarchidb/linker-plugin/worker"),
   "location": async () => import("@hierarchidb/location-plugin/worker"),
   "route": async () => import("@hierarchidb/route-plugin/worker"),
@@ -15,5 +16,4 @@ export const pluginWorkerPreloads: Record<string, string[]> = {
   "route": ["registerRouteWorkerStores"],
   "shape": ["registerShapeWorkerStores","loadShapeEntitiesDbModule"],
   "spreadsheet": ["registerSpreadsheetWorkerStores"],
-  "yaml-file": ["registerYamlWorkerStores"],
 };

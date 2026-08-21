@@ -10,6 +10,7 @@ export type YamlStorageActivationPhase =
 
 export type YamlStorageActivationErrorStage =
   | 'input'
+  | 'post-activation-boot'
   | Exclude<YamlStorageActivationPhase, 'rejected'>;
 
 export type YamlStorageActivationErrorCode =
@@ -25,7 +26,8 @@ export type YamlStorageActivationErrorCode =
   | 'PREFLIGHT_FAILED'
   | 'TARGET_OPEN_FAILED'
   | 'UPGRADE_FAILED'
-  | 'INITIALIZATION_FAILED';
+  | 'INITIALIZATION_FAILED'
+  | 'INVALID_POST_ACTIVATION_EVIDENCE';
 
 export interface YamlStorageActivationError {
   readonly code: YamlStorageActivationErrorCode;
@@ -35,6 +37,11 @@ export interface YamlStorageActivationError {
 export interface YamlStorageActivationInput {
   readonly activationId: string;
   readonly currentVersion: number;
+  readonly targetVersion: number;
+}
+
+export interface YamlStorageFreshActivationInput {
+  readonly activationId: string;
   readonly targetVersion: number;
 }
 
@@ -77,6 +84,10 @@ export interface YamlStorageCanonicalReadyState extends YamlStorageOpenRequestCo
   readonly phase: 'canonical-ready';
   readonly upgradeCommitted: true;
   readonly initializationSucceeded: true;
+  readonly readinessProof:
+    | 'same-activation-upgrade'
+    | 'same-activation-fresh-create'
+    | 'post-activation-boot';
 }
 
 export interface YamlStorageRejectedState extends YamlStorageActivationContext {
@@ -105,6 +116,27 @@ export type YamlStorageActivationCreateResult =
       readonly ok: false;
       readonly error: YamlStorageActivationError;
     };
+
+export interface YamlStoragePostActivationReadyInput {
+  readonly activationId: string;
+  readonly currentVersion: number;
+  readonly targetVersion: number;
+  readonly openRequestId: string;
+  readonly coordinatorGate: 'revoked-ready-for-preflight';
+  readonly schemaValidated: true;
+  readonly canonicalSnapshotValidated: true;
+  readonly initializationSucceeded: true;
+}
+
+export type YamlStoragePostActivationReadyResult =
+  | Readonly<{
+      readonly ok: true;
+      readonly state: YamlStorageCanonicalReadyState;
+    }>
+  | Readonly<{
+      readonly ok: false;
+      readonly error: YamlStorageActivationError;
+    }>;
 
 interface YamlStorageActivationEventBase {
   readonly activationId: string;

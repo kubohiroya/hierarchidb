@@ -179,6 +179,14 @@ function createRuntimeAliasConfig({
   };
 
   if (isDev) {
+    addAlias('@hierarchidb/runtime-worker/yaml-storage-activation', '../packages/runtime-worker/src/yaml-storage-activation/index.ts', {
+      exclude: true,
+      exact: true,
+    });
+    addAlias('@hierarchidb/runtime-worker/yaml-storage-production', '../packages/runtime-worker/src/yaml-storage-production/index.ts', {
+      exclude: true,
+      exact: true,
+    });
     registerDevPackage('@hierarchidb/runtime-worker-worker', '../packages/runtime-worker/worker/src/index.ts', {
       group: 'runtime-worker',
       exclude: true,
@@ -292,6 +300,8 @@ function createRuntimeAliasConfig({
     // Productionも原則srcを参照する（ビルド済みdistへのエイリアスは依存解決順や存在に依存し脆弱）
     // runtime-worker は preview/worker stage で循環的な facade re-export を避けるため dist を優先する。
     addAlias('@hierarchidb/runtime-worker', '../packages/runtime-worker/dist/index.js', { exclude: true, exact: true });
+    addAlias('@hierarchidb/runtime-worker/yaml-storage-activation', '../packages/runtime-worker/dist/yaml-storage-activation/index.js', { exclude: true, exact: true });
+    addAlias('@hierarchidb/runtime-worker/yaml-storage-production', '../packages/runtime-worker/dist/yaml-storage-production/index.js', { exclude: true, exact: true });
     addAlias('@hierarchidb/runtime-worker/stage-worker', '../packages/runtime-worker/dist/stageWorker.entry.js', {
       exclude: true,
       exact: true,

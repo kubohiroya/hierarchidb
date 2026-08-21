@@ -1,8 +1,24 @@
 /**
-  * Build Dialog
-   */
+ * Build Dialog
+ */
 
-import React, { useCallback, useMemo, useState } from 'react';
+import { CrossViewSnackbar, DataGridPreview } from '@hierarchidb/ui-grid';
+import { i18n as i18nInstance, useTranslation } from '@hierarchidb/ui-i18n';
+import {
+  Assessment,
+  CheckCircle,
+  Close,
+  Download,
+  Error as ErrorIcon,
+  HourglassEmpty,
+  Map as MapIcon,
+  Pause,
+  PlayArrow,
+  Stop,
+  TableView,
+  Timeline,
+  Warning,
+} from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -33,26 +49,10 @@ import {
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import {
-  Assessment,
-  CheckCircle,
-  Close,
-  Download,
-  Error as ErrorIcon,
-  HourglassEmpty,
-  Map as MapIcon,
-  Pause,
-  PlayArrow,
-  Stop,
-  TableView,
-  Timeline,
-  Warning,
-} from '@mui/icons-material';
-import type { NodeId } from '~/common/types/index';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useLocationProgress } from '~/common/hooks/useLocationProgress';
-import { useTranslation, i18n as i18nInstance } from '@hierarchidb/ui-i18n';
 import { formatBytes as formatBytesIntl, formatNumber } from '~/common/i18n/index';
-import { CrossViewSnackbar, DataGridPreview } from '@hierarchidb/ui-grid';
+import type { NodeId } from '~/common/types/index';
 
 interface ProgressInfo {
   percentage: number;
@@ -61,9 +61,8 @@ interface ProgressInfo {
   taskLabel: string;
   timeElapsed: string;
   timeRemaining: string;
-  estimatedCompletion: string;
-  itemsPerSecond: number;
-  bytesPerSecond: number;
+  itemsPerSecond: number | null;
+  bytesPerSecond: number | null;
   completed: number;
   total: number;
   failed: number;
@@ -97,10 +96,6 @@ interface LogEntry {
   // details?: any;
 }
 
-const isRecord = (value: unknown): value is Record<string, unknown> => (
-  typeof value === 'object' && value !== null
-);
-
 export interface BuildProgressDialogProps {
   open: boolean;
   onClose: () => void;
@@ -113,20 +108,11 @@ interface TabPanelProps {
   value: number;
 }
 
-interface ThroughputMeta {
-  itemsPerSecond?: number;
-  bytesPerSecond?: number;
-}
-
-const extractThroughputMeta = (meta: unknown): ThroughputMeta => {
-  if (!isRecord(meta)) return {};
-  const itemsPerSecond = typeof (meta as Record<string, unknown>).itemsPerSecond === 'number'
-    ? (meta as Record<string, number>).itemsPerSecond
-    : undefined;
-  const bytesPerSecond = typeof (meta as Record<string, unknown>).bytesPerSecond === 'number'
-    ? (meta as Record<string, number>).bytesPerSecond
-    : undefined;
-  return { itemsPerSecond, bytesPerSecond };
+const requireProgressPercentage = (value: number): number => {
+  if (!Number.isFinite(value) || value < 0 || value > 100) {
+    throw new Error(`[BuildProgressDialog] percentage must be within 0..100, received ${value}`);
+  }
+  return value;
 };
 
 const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
@@ -151,72 +137,68 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
   const datasetId = React.useMemo(() => (tableId ? `location:${tableId}` : null), [tableId]);
   const { t } = useTranslation('location-plugin');
   const locale = (i18nInstance.language ?? 'en') as 'en' | 'ja';
-  const {
-    progress: locationProgress,
-    unifiedProgress,
-  } = useLocationProgress(nodeId, { autoSubscribe: true });
-  const showAuthRequired = locationProgress?.stage === 'auth-required';
-  const phaseLabel = useCallback((phase: string) => {
-    const label = t(`batch.phases.${phase}`, '');
-    return label || phase;
-  }, [t]);
+  const { progress: locationProgress, authNotice } = useLocationProgress(nodeId, {
+    autoSubscribe: true,
+  });
+  const showAuthRequired = authNotice?.state === 'required';
+  const phaseLabel = useCallback(
+    (phase: string) => {
+      const label = t(`batch.phases.${phase}`, '');
+      return label || phase;
+    },
+    [t]
+  );
 
-  const derivedProgress: ProgressInfo = useMemo(() => {
-    const payload = unifiedProgress?.payload;
-    const total = typeof payload?.total === 'number' ? payload.total : locationProgress?.total ?? 0;
-    const completed = typeof payload?.completed === 'number' ? payload.completed : locationProgress?.completed ?? 0;
-    const failed = typeof payload?.failed === 'number' ? payload.failed : locationProgress?.failed ?? 0;
-    const percentageRaw = (total > 0 ? Math.round((completed / total) * 100) : 0) || locationProgress?.percentage || 0;
-    const phase = (unifiedProgress?.phase ?? locationProgress?.stage ?? 'running').toLowerCase();
+  const derivedProgress = useMemo<ProgressInfo | null>(() => {
+    if (!locationProgress) return null;
+    const phase = locationProgress.status.toLowerCase();
     const phaseText = phaseLabel(phase);
-    const taskLabel = unifiedProgress?.message
-      ?? locationProgress?.message
-      ?? phaseText;
-    const { itemsPerSecond = 0, bytesPerSecond = 0 } = extractThroughputMeta(payload?.meta);
+    const taskLabel = locationProgress.message ?? phaseText;
 
     return {
-      percentage: Math.max(0, Math.min(100, Math.round(percentageRaw))),
+      percentage: requireProgressPercentage(locationProgress.percentage),
       phase,
       phaseLabel: phaseText,
       taskLabel,
       timeElapsed: '--:--:--',
       timeRemaining: '--:--:--',
-      estimatedCompletion: '--:--',
-      itemsPerSecond,
-      bytesPerSecond,
-      completed,
-      total,
-      failed,
+      itemsPerSecond: null,
+      bytesPerSecond: null,
+      completed: locationProgress.completed,
+      total: locationProgress.total,
+      failed: locationProgress.failed,
     } satisfies ProgressInfo;
-  }, [unifiedProgress, locationProgress, phaseLabel]);
+  }, [locationProgress, phaseLabel]);
 
-  const stageDefinitions = useMemo(() => ([
-    { id: 'download', label: t('batch.stages.download', 'Download') },
-    { id: 'extract1', label: t('batch.stages.filtering', 'Filtering') },
-    { id: 'extract2', label: t('batch.stages.clustering', 'Clustering') },
-    { id: 'vectortile', label: t('batch.stages.indexing', 'Indexing') },
-  ]), [t]);
+  const stageDefinitions = useMemo(
+    () => [{ id: 'source', label: t('batch.stages.source', 'Source') }],
+    [t]
+  );
 
   const stages: StageInfo[] = useMemo(() => {
-    const normalizedStage = (unifiedProgress?.stage ?? locationProgress?.stage ?? '').toLowerCase();
+    if (!derivedProgress || !locationProgress) return [];
+    const normalizedStage = locationProgress.stage.toLowerCase();
     const currentIndex = stageDefinitions.findIndex((stage) => normalizedStage.includes(stage.id));
     return stageDefinitions.map((stage, index) => {
       let status: StageInfo['status'];
       if (currentIndex === -1) {
-        status = index === 0 ? 'running' : 'waiting';
+        status = 'waiting';
       } else if (index < currentIndex) {
         status = 'completed';
       } else if (index === currentIndex) {
-        status = derivedProgress.phase === 'failed' ? 'failed' : 'running';
+        if (locationProgress.status === 'completed') {
+          status = 'completed';
+        } else if (locationProgress.status === 'failed') {
+          status = 'failed';
+        } else {
+          status = 'running';
+        }
       } else {
         status = 'waiting';
       }
 
-      const stageProgress = index < currentIndex
-        ? 100
-        : index === currentIndex
-          ? derivedProgress.percentage
-          : 0;
+      const stageProgress =
+        index < currentIndex ? 100 : index === currentIndex ? derivedProgress.percentage : 0;
 
       return {
         name: stage.label,
@@ -227,7 +209,7 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
         errors: index === currentIndex ? derivedProgress.failed : 0,
       } satisfies StageInfo;
     });
-  }, [stageDefinitions, unifiedProgress, locationProgress, derivedProgress]);
+  }, [stageDefinitions, locationProgress, derivedProgress]);
 
   const activeTasks = useMemo<ActiveTask[]>(() => [], []);
 
@@ -236,21 +218,23 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
       return [];
     }
 
-    return [{
-      timestamp: new Date(locationProgress?.timestamp ?? Date.now()),
-      level: 'info',
-      source: 'BuildWorker',
-      message: locationProgress?.message ?? t('batch.logsDefault', 'Running'),
-    }];
-  }, [locationProgress?.message, locationProgress?.timestamp, t]);
+    return [
+      {
+        timestamp: new Date(locationProgress.timestamp),
+        level: 'info',
+        source: 'BuildWorker',
+        message: locationProgress.message,
+      },
+    ];
+  }, [locationProgress?.message, locationProgress?.timestamp]);
 
   const [isPaused, setIsPaused] = useState(false);
 
   const formatTemplate = useCallback(
-    (template: string, values: Record<string, string | number>) => template.replace(/\{(\w+)\}/g, (_, key) => String(values[key] ?? `{${key}}`)),
-    [],
+    (template: string, values: Record<string, string | number>) =>
+      template.replace(/\{(\w+)\}/g, (_, key) => String(values[key] ?? `{${key}}`)),
+    []
   );
-
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -267,6 +251,37 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
   const handleCancel = () => {
     console.log('Cancelling build process...');
   };
+
+  if (!derivedProgress) {
+    return (
+      <Dialog open={open} onClose={onClose} maxWidth="xl" fullWidth>
+        <DialogTitle>{t('batch.dialogTitle', 'Build Progress')}</DialogTitle>
+        <DialogContent>
+          {showAuthRequired ? (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              {`🔐 ${formatTemplate(
+                String(t('batch.authRequired', 'Authentication required — {message}')),
+                {
+                  message:
+                    authNotice?.message ??
+                    String(t('batch.authFallback', 'Authentication required to continue')),
+                }
+              )}`}
+            </Alert>
+          ) : null}
+          <Box display="flex" alignItems="center" gap={2} py={3}>
+            <CircularProgress size={24} />
+            <Typography>
+              {t('batch.awaitingSnapshot', 'Waiting for the authoritative task snapshot')}
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose}>{t('common.close', 'Close')}</Button>
+        </DialogActions>
+      </Dialog>
+    );
+  }
 
   const getStageIcon = (status: StageInfo['status']) => {
     switch (status) {
@@ -296,7 +311,11 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
           <Typography variant="h6">{t('batch.dialogTitle', 'Build Progress')}</Typography>
           <Box display="flex" alignItems="center" gap={1}>
             <Chip label={derivedProgress.phaseLabel} color="primary" size="small" />
-            <IconButton size="small" onClick={onClose} aria-label={String(t('common.close', 'Close'))}>
+            <IconButton
+              size="small"
+              onClick={onClose}
+              aria-label={String(t('common.close', 'Close'))}
+            >
               <Close />
             </IconButton>
           </Box>
@@ -336,9 +355,14 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
         {datasetId && <CrossViewSnackbar datasetId={datasetId} />}
         {showAuthRequired ? (
           <Alert severity="warning" sx={{ m: 2 }}>
-            {`🔐 ${formatTemplate(String(t('batch.authRequired', 'Authentication required — {message}')), {
-              message: locationProgress?.message ?? String(t('batch.authFallback', 'Authentication required to continue')),
-            })}`}
+            {`🔐 ${formatTemplate(
+              String(t('batch.authRequired', 'Authentication required — {message}')),
+              {
+                message:
+                  authNotice?.message ??
+                  String(t('batch.authFallback', 'Authentication required to continue')),
+              }
+            )}`}
           </Alert>
         ) : null}
         {/*
@@ -348,7 +372,7 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
           <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
             <Grid container spacing={3}>
               {/*
-*/}
+               */}
               <Grid size={{ xs: 12, md: 4 }}>
                 <Card>
                   <CardContent>
@@ -374,12 +398,16 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
                       {t('batch.throughputLabel', 'Throughput')}
                     </Typography>
                     <Typography variant="h4" color="success.main">
-                      {derivedProgress.itemsPerSecond.toFixed(1)}
+                      {derivedProgress.itemsPerSecond === null
+                        ? 'N/A'
+                        : derivedProgress.itemsPerSecond.toFixed(1)}
                     </Typography>
                     <Typography color="textSecondary">
-                      {formatTemplate(t('batch.throughputUnit', 'points/s ({rate}/s)'), {
-                        rate: formatBytesIntl(derivedProgress.bytesPerSecond, locale),
-                      })}
+                      {derivedProgress.bytesPerSecond === null
+                        ? 'N/A'
+                        : formatTemplate(t('batch.throughputUnit', 'points/s ({rate}/s)'), {
+                            rate: formatBytesIntl(derivedProgress.bytesPerSecond, locale),
+                          })}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -394,15 +422,13 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
                     <Typography variant="h4" color="error.main">
                       {formatNumber(derivedProgress.failed, locale)}
                     </Typography>
-                    <Typography color="textSecondary">
-                      {t('batch.errorsUnit', 'items')}
-                    </Typography>
+                    <Typography color="textSecondary">{t('batch.errorsUnit', 'items')}</Typography>
                   </CardContent>
                 </Card>
               </Grid>
 
               {/*
-*/}
+               */}
               <Grid size={{ xs: 12, md: 6 }}>
                 <Typography variant="h6" gutterBottom>
                   {t('batch.stageListTitle', 'Processing Stages')}
@@ -424,10 +450,13 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
                       <StepContent>
                         <Box>
                           <Typography variant="body2" color="text.secondary">
-                            {formatTemplate(t('batch.stageProgress', '{completed} / {total} completed'), {
-                              completed: formatNumber(stage.itemsProcessed, locale),
-                              total: formatNumber(stage.totalItems, locale),
-                            })}
+                            {formatTemplate(
+                              t('batch.stageProgress', '{completed} / {total} completed'),
+                              {
+                                completed: formatNumber(stage.itemsProcessed, locale),
+                                total: formatNumber(stage.totalItems, locale),
+                              }
+                            )}
                           </Typography>
                           {stage.status === 'running' && (
                             <LinearProgress
@@ -451,7 +480,7 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
               </Grid>
 
               {/*
-*/}
+               */}
               <Grid size={{ xs: 12, md: 6 }}>
                 <Typography variant="h6" gutterBottom>
                   {t('batch.tasksTitle', 'Active Tasks')}
@@ -461,51 +490,59 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
                     <ListItem>
                       <ListItemText
                         primary={t('batch.tasksEmpty', 'No active tasks at the moment')}
-                        secondary={t('batch.tasksEmptyHint', 'Tasks will appear here while the build is running')}
-                      />
-                    </ListItem>
-                  ) : activeTasks.map(task => (
-                    <ListItem key={task.id} divider>
-                      <ListItemIcon>
-                        {task.status === 'running' ? (
-                          <CircularProgress size={20} />
-                        ) : task.status === 'failed' ? (
-                          <ErrorIcon color="error" />
-                        ) : (
-                          <Warning color="warning" />
+                        secondary={t(
+                          'batch.tasksEmptyHint',
+                          'Tasks will appear here while the build is running'
                         )}
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={
-                          <Box display="flex" alignItems="center" gap={1}>
-                            <Typography variant="body2">
-                              Worker {task.worker}: {task.target}
-                            </Typography>
-                            <Chip
-                              label={task.status}
-                              size="small"
-                              color={
-                                task.status === 'running' ? 'success' :
-                                  task.status === 'retrying' ? 'warning' : 'error'
-                              }
-                            />
-                          </Box>
-                        }
-                        secondary={
-                          <Box>
-                            <LinearProgress
-                              variant="determinate"
-                              value={task.progress}
-                              sx={{ mb: 0.5 }}
-                            />
-                            <Typography variant="caption" color="text.secondary">
-                              {task.progress}% | {task.speed} | ETA: {task.eta}
-                            </Typography>
-                          </Box>
-                        }
                       />
                     </ListItem>
-                  ))}
+                  ) : (
+                    activeTasks.map((task) => (
+                      <ListItem key={task.id} divider>
+                        <ListItemIcon>
+                          {task.status === 'running' ? (
+                            <CircularProgress size={20} />
+                          ) : task.status === 'failed' ? (
+                            <ErrorIcon color="error" />
+                          ) : (
+                            <Warning color="warning" />
+                          )}
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={
+                            <Box display="flex" alignItems="center" gap={1}>
+                              <Typography variant="body2">
+                                Worker {task.worker}: {task.target}
+                              </Typography>
+                              <Chip
+                                label={task.status}
+                                size="small"
+                                color={
+                                  task.status === 'running'
+                                    ? 'success'
+                                    : task.status === 'retrying'
+                                      ? 'warning'
+                                      : 'error'
+                                }
+                              />
+                            </Box>
+                          }
+                          secondary={
+                            <Box>
+                              <LinearProgress
+                                variant="determinate"
+                                value={task.progress}
+                                sx={{ mb: 0.5 }}
+                              />
+                              <Typography variant="caption" color="text.secondary">
+                                {task.progress}% | {task.speed} | ETA: {task.eta}
+                              </Typography>
+                            </Box>
+                          }
+                        />
+                      </ListItem>
+                    ))
+                  )}
                 </List>
               </Grid>
             </Grid>
@@ -520,27 +557,27 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
             <List>
               {logs.length === 0 ? (
                 <ListItem>
-                  <ListItemText
-                    primary={t('batch.logsEmpty', 'No log entries yet')}
-                  />
+                  <ListItemText primary={t('batch.logsEmpty', 'No log entries yet')} />
                 </ListItem>
-              ) : logs.map((log, index) => (
-                <ListItem key={String(index)} divider>
-                  <ListItemIcon>
-                    {log.level === 'error' ? (
-                      <ErrorIcon color="error" />
-                    ) : log.level === 'warning' ? (
-                      <Warning color="warning" />
-                    ) : (
-                      <CheckCircle color="success" />
-                    )}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={log.message}
-                    secondary={`${log.timestamp.toLocaleTimeString(locale === 'ja' ? 'ja-JP' : 'en-US')} - ${log.source}`}
-                  />
-                </ListItem>
-              ))}
+              ) : (
+                logs.map((log, index) => (
+                  <ListItem key={String(index)} divider>
+                    <ListItemIcon>
+                      {log.level === 'error' ? (
+                        <ErrorIcon color="error" />
+                      ) : log.level === 'warning' ? (
+                        <Warning color="warning" />
+                      ) : (
+                        <CheckCircle color="success" />
+                      )}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={log.message}
+                      secondary={`${log.timestamp.toLocaleTimeString(locale === 'ja' ? 'ja-JP' : 'en-US')} - ${log.source}`}
+                    />
+                  </ListItem>
+                ))
+              )}
             </List>
           </Box>
         </TabPanel>
@@ -567,13 +604,11 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={onClose}>
-          {t('batch.close', 'Close')}
-        </Button>
+        <Button onClick={onClose}>{t('batch.close', 'Close')}</Button>
       </DialogActions>
 
       {/*
-*/}
+       */}
       <SpeedDial
         ariaLabel={String(t('batch.ariaLabel', 'Build actions'))}
         sx={{ position: 'absolute', bottom: 16, right: 16 }}
@@ -582,9 +617,9 @@ export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
       >
         <SpeedDialAction
           icon={isPaused ? <PlayArrow /> : <Pause />}
-          tooltipTitle={isPaused
-            ? t('batch.resumeTooltip', 'Resume')
-            : t('batch.pauseTooltip', 'Pause')}
+          tooltipTitle={
+            isPaused ? t('batch.resumeTooltip', 'Resume') : t('batch.pauseTooltip', 'Pause')
+          }
           onClick={isPaused ? handleResume : handlePause}
         />
         <SpeedDialAction

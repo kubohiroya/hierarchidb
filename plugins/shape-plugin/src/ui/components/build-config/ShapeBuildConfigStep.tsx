@@ -11,10 +11,8 @@ import type { ShapeEntity } from '~/common/types/index';
 import type { ShapeDialogStepProps } from '~/ui/components/ShapeDialogStepProps';
 import { CacheManagementSection } from './CacheManagementSection.tsx';
 import { GeometryConfigSection } from './GeometryConfigSection.js';
-import {
-  SourceGeometryIntakeGuardCard,
-  TileEmitInvalidGeometryFilterCard,
-} from './SourceInvalidGeometryFilterCard.tsx';
+import { SourceGeometryIntakeGuardCard } from './SourceGeometryIntakeGuardCard/SourceGeometryIntakeGuardCard.js';
+import { TileEmitInvalidGeometryFilterCard } from './TileEmitInvalidGeometryFilterCard/TileEmitInvalidGeometryFilterCard.js';
 import { useShapeBuildConfigContentView } from './useShapeBuildConfigContentView.js';
 import { useShapeBuildConfigStep } from './useShapeBuildConfigStep.js';
 import { useShapeBuildConfigStepSession } from './useShapeBuildConfigStepSession.js';

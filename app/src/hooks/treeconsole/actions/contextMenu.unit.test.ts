@@ -25,6 +25,9 @@ vi.mock('~/features/templates/nodeCreateTemplates', () => ({
     if (action === 'create:shape::preset:world-level0') {
       return { nodeType: 'shape', shapePresetId: 'world-level0' as const };
     }
+    if (action === 'create:yaml-file') {
+      return { nodeType: 'yaml-file' };
+    }
     return null;
   }),
   resolveNodeCreateDefaults: vi.fn(() => ({
@@ -83,6 +86,7 @@ const createContext = (): {
     getTreeNodeUpdaterAPI: ReturnType<typeof vi.fn>;
   };
   spies: {
+    pushPath: ReturnType<typeof vi.fn>;
     updateTreeNodeDraftMetadata: ReturnType<typeof vi.fn>;
     updateTreeNodeDraftData: ReturnType<typeof vi.fn>;
   };
@@ -123,12 +127,13 @@ const createContext = (): {
     pushToNode: vi.fn(),
   };
 
+  const pushPath = vi.fn();
   const deps: Omit<TreeConsoleActionDeps, 'searchMode' | 'searchTerm'> = {
     client,
     treeId: 'r' as TreeId,
     pageNodeId: 'r:root' as NodeId,
     pageTreeNode: buildNode(),
-    pushPath: vi.fn(),
+    pushPath,
     selectedIds: [],
     expandedIds: [],
     translateWithFallback: vi.fn((_, fallback) => fallback),
@@ -167,6 +172,7 @@ const createContext = (): {
     action: action.handleContextMenuAction,
     api: { getMutationAPI, getQueryAPI, getTreeNodeUpdaterAPI },
     spies: {
+      pushPath,
       updateTreeNodeDraftMetadata,
       updateTreeNodeDraftData,
     },
@@ -230,5 +236,27 @@ describe('createContextMenuAction', () => {
         processingConfig: expect.any(Object),
       })
     );
+  });
+
+  it('opens the YAML create dialog without split draft mutations', async () => {
+    const { action, api, spies } = createContext();
+    const targetNode = {
+      id: 'r:folder-1' as NodeId,
+      nodeType: 'folder',
+      metadata: { name: 'Root Folder', description: '', tags: [] },
+      draftMetadata: null,
+    };
+
+    action('create:yaml-file', targetNode as Parameters<typeof action>[1], {
+      source: 'speedDial',
+    });
+    await flushAsync();
+
+    expect(api.getMutationAPI).toHaveBeenCalled();
+    expect(api.getQueryAPI).toHaveBeenCalled();
+    expect(api.getTreeNodeUpdaterAPI).not.toHaveBeenCalled();
+    expect(spies.updateTreeNodeDraftMetadata).not.toHaveBeenCalled();
+    expect(spies.updateTreeNodeDraftData).not.toHaveBeenCalled();
+    expect(spies.pushPath).toHaveBeenCalledWith('/d/r/r:folder-1/r:new-shape/yaml-file/create');
   });
 });

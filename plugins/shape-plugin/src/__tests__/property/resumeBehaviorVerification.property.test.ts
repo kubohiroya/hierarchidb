@@ -67,6 +67,7 @@ describe('Property 14: Resume Continuation', () => {
         fc.constantFrom('running', 'completed'),
         async (nodeId: NodeId, pauseProgress: number, pauseStatus: BuildStatus) => {
           touchedNodeIds.add(nodeId);
+          await ephemeralDB.buildTasks.where('nodeId').equals(nodeId).delete();
           // Create a session that was paused at a specific progress point
           const sessionBeforePause = createMockBuildSession(nodeId, pauseStatus);
           sessionBeforePause.progress.completed = pauseProgress;
@@ -74,7 +75,12 @@ describe('Property 14: Resume Continuation', () => {
 
           // Create tasks representing the state at pause
           const tasksAtPause = Array.from({ length: 5 }, (_, i) => 
-            createMockTask(`task-${i}`, nodeId, i < pauseProgress / 20 ? 'completed' : 'queued', i < pauseProgress / 20 ? 100 : 0)
+            createMockTask(
+              `${String(nodeId)}:task-${i}`,
+              nodeId,
+              i < pauseProgress / 20 ? 'completed' : 'queued',
+              i < pauseProgress / 20 ? 100 : 0
+            )
           );
 
           // Store session and tasks
@@ -225,6 +231,7 @@ describe('Property 17: Progress Reporting Accuracy', () => {
         fc.array(fc.integer({ min: 0, max: 100 }), { minLength: 5, maxLength: 15 }),
         async (nodeId: NodeId, taskProgresses: number[]) => {
           touchedNodeIds.add(nodeId);
+          await ephemeralDB.buildTasks.where('nodeId').equals(nodeId).delete();
           const totalTasks = taskProgresses.length;
           let completedTasks = 0;
           let totalProgress = 0;
@@ -239,7 +246,12 @@ describe('Property 17: Progress Reporting Accuracy', () => {
 
           // Create tasks with given progress values
           const tasks = taskProgresses.map((progress, i) => 
-            createMockTask(`task-${i}`, nodeId, progress === 100 ? 'completed' : 'running', progress)
+            createMockTask(
+              `${String(nodeId)}:task-${i}`,
+              nodeId,
+              progress === 100 ? 'completed' : 'running',
+              progress
+            )
           );
 
           // Store tasks

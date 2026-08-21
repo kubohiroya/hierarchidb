@@ -4,7 +4,7 @@ import { useShapeBuildSessionStartupProgressTerminalLog } from './useShapeBuildS
 import type {
   BuildSessionTransitionState,
 } from '@hierarchidb/ui-build-progress/build-session';
-import type { BuildProgress } from '~/ui/components/build-progress/shapeBuildProgressMapping';
+import type { BuildProgress } from '~/ui/components/build-progress/shapeBuildProgressTypes';
 import type { BuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
 import type {
   BuildSessionTransitionPhase,

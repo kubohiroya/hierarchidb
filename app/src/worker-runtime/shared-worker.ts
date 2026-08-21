@@ -12,7 +12,7 @@ import {
 } from '@hierarchidb/origin-coordinator';
 import type { WorkerInitMessage, WorkerInitRequest } from '@hierarchidb/ui-worker-client';
 import { WorkerInitializationReporter } from '@hierarchidb/ui-worker-client';
-import { revokeLegacyYamlAccessAndClose } from '@hierarchidb/yaml-store';
+import { revokeLegacyYamlAccessAndClose } from '@hierarchidb/yaml-store/legacy-close';
 import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import { ensureRuntimeWorkerBootstrap } from './workerBootstrapUtils.ts';
 
@@ -21,6 +21,8 @@ const coordinatorMessageListeners = new Set<(event: MessageEvent<unknown>) => vo
 let initCompleted = false;
 let runtimeAccessRevoked = false;
 let bootstrapPromise: Promise<{ api: BuildWorkerAPI; servicesReadyAt: number }> | null = null;
+
+const yamlStorageGate = new URL(self.location.href).searchParams.get('yamlStorageGate');
 
 const coordinatorMessageTarget: OriginCoordinatorMessageTarget = {
   addEventListener(_type, listener): void {
@@ -118,6 +120,12 @@ const ensureBootstrap = async () => {
     const bootstrap = async () =>
       ensureRuntimeWorkerBootstrap({
         reporter,
+        yamlStorageGate:
+          yamlStorageGate === 'revoked-ready-for-preflight'
+            ? yamlStorageGate
+            : (() => {
+                throw new Error('yaml-storage-canonical-gate-required');
+              })(),
         messageTarget: {
           postMessage: (msg: unknown) => {
             broadcastMessage(msg);

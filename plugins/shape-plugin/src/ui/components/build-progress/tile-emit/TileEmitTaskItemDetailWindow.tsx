@@ -1,9 +1,9 @@
 import { Box, Divider, Paper, Stack, Tooltip, Typography, useTheme } from '@mui/material';
+import { Allotment } from 'allotment';
 import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 import type { TaskDetailSelection } from '~/ui/components/build-progress/TaskItemCard/TaskItemDetailTypes';
 import { FeaturePreviewLauncherButtonGroupCard } from './FeaturePreviewLauncherButtonGroupCard';
 import { TileEmitGeometryPreviewMap } from './TileEmitGeometryPreviewMap';
-import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
 import { useTileEmitTaskItemDetailPreview } from './useTileEmitTaskItemDetailPreview.js';
 
@@ -41,10 +41,28 @@ export const TileEmitTaskItemDetailWindow = ({
     effectiveIndexMaxPoints,
     handleResetSelection,
   } = useTileEmitTaskItemDetailPreview({ detail, buildConfig });
+  const isWarningResult = detail.task.metadata?.resultSeverity === 'warning';
 
   return (
     <Paper variant="outlined" sx={{ p: 1.5 }}>
       <Stack spacing={1.5}>
+        {isWarningResult ? (
+          <Paper
+            variant="outlined"
+            sx={{ p: 1.5, borderColor: 'warning.main', bgcolor: 'warning.50' }}
+          >
+            <Stack spacing={0.5}>
+              <Typography variant="subtitle2" color="warning.dark">
+                ⚠ {detail.summary.summaryLine}
+              </Typography>
+              {detail.summary.detailLines?.map((line) => (
+                <Typography key={line} variant="caption" color="text.secondary">
+                  {line}
+                </Typography>
+              ))}
+            </Stack>
+          </Paper>
+        ) : null}
         {previewData.tileBBox && previewData.bufferBBox ? (
           <Box sx={{ width: '100%', height: 480 }}>
             <Allotment vertical>
@@ -85,29 +103,55 @@ export const TileEmitTaskItemDetailWindow = ({
                   <Tooltip
                     arrow
                     placement="top-start"
-                    title={(
+                    title={
                       <Paper variant="outlined" sx={{ p: 1 }}>
                         <Stack spacing={0.5}>
-                          <Typography variant="caption" color="text.secondary">geojson-vt parameters</Typography>
-                          <Typography variant="caption">tolerance: {formatNumber(tileEmitConfig.tolerance)}</Typography>
-                          <Typography variant="caption">extent: {formatNumber(tileEmitConfig.extent)}</Typography>
-                          <Typography variant="caption">buffer: {formatNumber(tileBuffer)}</Typography>
-                          <Typography variant="caption">indexMaxPoints: {formatNumber(effectiveIndexMaxPoints)}</Typography>
-                          <Typography variant="caption">promoteId: {tileEmitConfig.promoteId ?? 'N/A'}</Typography>
-                          <Typography variant="caption">layerSet: {tileEmitConfig.layerSetName ?? 'N/A'}</Typography>
-                          <Typography variant="caption">format: {tileEmitConfig.format ?? 'N/A'}</Typography>
-                          <Typography variant="caption">compression: {tileEmitConfig.compression ?? 'N/A'}</Typography>
-                          <Typography variant="caption">enableTopojsonSimplify: {tileEmitConfig.enableTopojsonSimplify ? 'true' : 'false'}</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            geojson-vt parameters
+                          </Typography>
+                          <Typography variant="caption">
+                            tolerance: {formatNumber(tileEmitConfig.tolerance)}
+                          </Typography>
+                          <Typography variant="caption">
+                            extent: {formatNumber(tileEmitConfig.extent)}
+                          </Typography>
+                          <Typography variant="caption">
+                            buffer: {formatNumber(tileBuffer)}
+                          </Typography>
+                          <Typography variant="caption">
+                            indexMaxPoints: {formatNumber(effectiveIndexMaxPoints)}
+                          </Typography>
+                          <Typography variant="caption">
+                            promoteId: {tileEmitConfig.promoteId ?? 'N/A'}
+                          </Typography>
+                          <Typography variant="caption">
+                            layerSet: {tileEmitConfig.layerSetName ?? 'N/A'}
+                          </Typography>
+                          <Typography variant="caption">
+                            format: {tileEmitConfig.format ?? 'N/A'}
+                          </Typography>
+                          <Typography variant="caption">
+                            compression: {tileEmitConfig.compression ?? 'N/A'}
+                          </Typography>
+                          <Typography variant="caption">
+                            enableTopojsonSimplify:{' '}
+                            {tileEmitConfig.enableTopojsonSimplify ? 'true' : 'false'}
+                          </Typography>
                         </Stack>
                       </Paper>
-                    )}
+                    }
                     componentsProps={{
                       tooltip: { sx: { p: 0, bgcolor: 'transparent', boxShadow: 'none' } },
                     }}
                   >
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-                      <Typography variant="caption" color="text.secondary">Tile data sizes</Typography>
-                      <Typography variant="caption" sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      <Typography variant="caption" color="text.secondary">
+                        Tile data sizes
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}
+                      >
                         <Box component="span">Parent:</Box>
                         <Box component="span" sx={{ color: 'success.main', fontWeight: 600 }}>
                           {formatBytesToKb(previewData.parentTileBytes)}
@@ -121,7 +165,16 @@ export const TileEmitTaskItemDetailWindow = ({
                           {formatBytesToKb(previewData.inputBytes)}
                         </Box>
                       </Typography>
-                      <Box sx={{ position: 'relative', width: '100%', height: 10, bgcolor: 'grey.300', borderRadius: 0.5, overflow: 'hidden' }}>
+                      <Box
+                        sx={{
+                          position: 'relative',
+                          width: '100%',
+                          height: 10,
+                          bgcolor: 'grey.300',
+                          borderRadius: 0.5,
+                          overflow: 'hidden',
+                        }}
+                      >
                         <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'grey.300' }} />
                         <Box
                           sx={{

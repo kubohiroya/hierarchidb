@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import type { BuildProgress, BuildSessionDisplayStatus } from './shapeBuildProgressMapping.js';
+import type { BuildProgress, BuildSessionDisplayStatus } from './shapeBuildProgressTypes.js';
 import {
   buildStageTaskSummary,
   buildTaskCountSummary,

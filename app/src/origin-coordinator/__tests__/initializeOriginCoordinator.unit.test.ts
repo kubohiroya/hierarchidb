@@ -1,8 +1,14 @@
+import 'fake-indexeddb/auto';
 import {
+  ORIGIN_COORDINATOR_DATABASE_NAME,
   ORIGIN_COORDINATOR_FOUNDATION_CAPABILITY,
   ORIGIN_COORDINATOR_PROTOCOL_VERSION,
 } from '@hierarchidb/origin-coordinator';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  initializeOriginCoordinatorStateDb,
+  transitionOriginCoordinatorStateDb,
+} from '../originCoordinatorStateDbUtils.js';
 
 const RELEASE_ID = '0123456789abcdef0123456789abcdef01234567';
 
@@ -74,14 +80,53 @@ function createOptions() {
   } as const;
 }
 
-describe('initializeOriginCoordinator', () => {
-  beforeEach(() => {
-    vi.resetModules();
+const deleteCoordinatorDatabase = (): Promise<void> =>
+  new Promise((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(ORIGIN_COORDINATOR_DATABASE_NAME);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error ?? new Error('coordinator-delete-failed'));
+    request.onblocked = () => reject(new Error('coordinator-delete-blocked'));
   });
 
-  afterEach(() => {
+async function writeRevokedState(status: 'quiescing' | 'ready-for-preflight'): Promise<void> {
+  await expect(initializeOriginCoordinatorStateDb(indexedDB)).resolves.toMatchObject({ ok: true });
+  const participant = Object.freeze({
+    participantKind: 'tab' as const,
+    participantId: 'window-1',
+  });
+  await expect(
+    transitionOriginCoordinatorStateDb(indexedDB, (state) =>
+      state.phase === 'allowed'
+        ? {
+            key: state.key,
+            protocolVersion: ORIGIN_COORDINATOR_PROTOCOL_VERSION,
+            phase: 'revoked',
+            status,
+            activationId: 'activation-1',
+            quiescenceRequestId: 'quiescence-1',
+            participants: Object.freeze([participant]),
+            evidence:
+              status === 'ready-for-preflight'
+                ? Object.freeze([
+                    Object.freeze({ ...participant, outcome: 'acknowledged' as const }),
+                  ])
+                : Object.freeze([]),
+          }
+        : null
+    )
+  ).resolves.toMatchObject({ ok: true, state: { phase: 'revoked', status } });
+}
+
+describe('initializeOriginCoordinator', () => {
+  beforeEach(async () => {
+    vi.resetModules();
+    await deleteCoordinatorDatabase();
+  });
+
+  afterEach(async () => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    await deleteCoordinatorDatabase();
   });
 
   it('installs the responder only after accepted HELLO and returns strict readiness', async () => {
@@ -122,7 +167,9 @@ describe('initializeOriginCoordinator', () => {
     vi.stubGlobal('navigator', { serviceWorker: harness.serviceWorkerContainer });
     const { initializeOriginCoordinator } = await import('../initializeOriginCoordinator.js');
 
-    const handle = await initializeOriginCoordinator(createOptions());
+    const gate = await initializeOriginCoordinator(createOptions());
+    if (gate.status !== 'activation-allowed') throw new Error('activation-gate-missing');
+    const handle = gate.coordinator;
     const readiness = await handle.getReadiness({ requestId: 'request-1', timeoutMs: 100 });
 
     expect(harness.register).toHaveBeenCalledWith(
@@ -175,7 +222,9 @@ describe('initializeOriginCoordinator', () => {
     });
     vi.stubGlobal('navigator', { serviceWorker: harness.serviceWorkerContainer });
     const { initializeOriginCoordinator } = await import('../initializeOriginCoordinator.js');
-    const handle = await initializeOriginCoordinator(createOptions());
+    const gate = await initializeOriginCoordinator(createOptions());
+    if (gate.status !== 'activation-allowed') throw new Error('activation-gate-missing');
+    const handle = gate.coordinator;
 
     await expect(
       handle.startQuiescence({
@@ -206,6 +255,50 @@ describe('initializeOriginCoordinator', () => {
         protocolVersion: ORIGIN_COORDINATOR_PROTOCOL_VERSION,
         status: 'rejected',
         code: 'INVALID_DURABLE_STATE',
+      });
+      port.close();
+    });
+    vi.stubGlobal('navigator', { serviceWorker: harness.serviceWorkerContainer });
+    const { initializeOriginCoordinator } = await import('../initializeOriginCoordinator.js');
+
+    await expect(initializeOriginCoordinator(createOptions())).rejects.toMatchObject({
+      code: 'HELLO_REJECTED',
+    });
+    expect(harness.order).toEqual(['register', 'HDB_COORDINATOR_HELLO']);
+    expect(harness.addEventListener).not.toHaveBeenCalled();
+  });
+
+  it('returns strict canonical successor evidence for the durable revoked gate', async () => {
+    await writeRevokedState('ready-for-preflight');
+    const harness = createServiceWorkerHarness((_message, port) => {
+      port.postMessage({
+        type: 'HDB_COORDINATOR_HELLO_RESULT',
+        protocolVersion: ORIGIN_COORDINATOR_PROTOCOL_VERSION,
+        status: 'rejected',
+        code: 'LEGACY_YAML_ACCESS_REVOKED',
+      });
+      port.close();
+    });
+    vi.stubGlobal('navigator', { serviceWorker: harness.serviceWorkerContainer });
+    const { initializeOriginCoordinator } = await import('../initializeOriginCoordinator.js');
+
+    await expect(initializeOriginCoordinator(createOptions())).resolves.toEqual({
+      status: 'canonical-revoked',
+      coordinatorGate: 'revoked-ready-for-preflight',
+      helloCode: 'LEGACY_YAML_ACCESS_REVOKED',
+    });
+    expect(harness.order).toEqual(['register', 'HDB_COORDINATOR_HELLO']);
+    expect(harness.addEventListener).not.toHaveBeenCalled();
+  });
+
+  it('does not promote an active quiescence HELLO rejection to successor evidence', async () => {
+    await writeRevokedState('quiescing');
+    const harness = createServiceWorkerHarness((_message, port) => {
+      port.postMessage({
+        type: 'HDB_COORDINATOR_HELLO_RESULT',
+        protocolVersion: ORIGIN_COORDINATOR_PROTOCOL_VERSION,
+        status: 'rejected',
+        code: 'LEGACY_YAML_ACCESS_REVOKED',
       });
       port.close();
     });
