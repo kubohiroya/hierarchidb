@@ -15,8 +15,8 @@ Canonical Worker→UI events are produced by `@hierarchidb/build-runtime-service
 the manager rereads session state and the plugin's canonical event source. The session
 layer does not create or forward aggregate progress events.
 
-The legacy progress adapter exports remain compatibility-only until their dedicated
-follow-up removal; they are not used by the session/manager notification path.
+Task counts use the `BuildTaskCountSummary` contract exported by
+`@hierarchidb/build-api`; aggregate progress adapters and hooks are not public APIs.
 
 ## Dependencies
 

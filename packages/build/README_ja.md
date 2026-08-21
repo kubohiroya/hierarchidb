@@ -15,8 +15,8 @@ canonical Worker→UIイベントは、managerがsession stateとpluginのcanoni
 sourceを再読込した後、`@hierarchidb/build-runtime-services`が生成する。session層は
 aggregate progress eventを生成・転送しない。
 
-legacy progress adapterのexportは後続Issueで削除するまで互換用としてのみ残し、
-session/managerの通知経路からは使用しない。
+task countは`@hierarchidb/build-api`が公開する`BuildTaskCountSummary`契約を使用し、
+aggregate progress adapterとhookは公開APIに含めない。
 
 ## 依存関係
 

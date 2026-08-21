@@ -262,9 +262,9 @@ creates a current clock timestamp or zero-count compatibility payload for missin
 canonical data.
 
 Route and Location UI consumers use this derived snapshot directly. Shape UI keeps
-its plugin-owned SSOT state tree but no longer converts
-`BuildUnifiedProgressInfo` through the removed aggregate mappers. The removed
-aggregate hooks are not exported by `@hierarchidb/ui-build-sessions`.
+its plugin-owned SSOT state tree and does not convert aggregate progress through a
+second mapper. Aggregate hooks are not exported by
+`@hierarchidb/ui-build-sessions`.
 
 The shared Route progress hook is a read-only same-realm consumer. It does not reuse
 the Worker command hook for pause or resume because those commands would target a

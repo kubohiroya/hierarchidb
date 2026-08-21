@@ -1,19 +1,12 @@
-import type { BuildStatus, StageKey } from '@hierarchidb/build-api';
+import type { BuildStatus, BuildTaskCountSummary, StageKey } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
-
-export interface BuildSessionTaskCounts {
-  total: number;
-  completed: number;
-  failed: number;
-  skipped: number;
-}
 
 export interface BuildSessionProgressSnapshot {
   nodeId: NodeId;
   stage: StageKey;
   status: BuildStatus;
   timestamp: number;
-  taskCounts: BuildSessionTaskCounts;
+  taskCounts: BuildTaskCountSummary;
   percentage: number;
   message?: string;
 }

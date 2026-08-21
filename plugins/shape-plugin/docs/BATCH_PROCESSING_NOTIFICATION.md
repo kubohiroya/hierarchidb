@@ -24,7 +24,7 @@ AbstractBuildSession
                       └─ Shape UI SSOT 状態木
 ```
 
-`AbstractBuildSession` は `BuildProgressEvent` を生成しない。状態または内部の task count が変化したとき、`addSessionUpdateListener` で登録された listener をpayloadなしで呼び出す。通知を受けた manager は session の `getState()` と `CanonicalBuildSessionEventSource` を読み直し、正規イベントを生成する。
+`AbstractBuildSession` はaggregate progress eventを生成しない。状態または内部の task count が変化したとき、`addSessionUpdateListener` で登録された listener をpayloadなしで呼び出す。通知を受けた manager は session の `getState()` と `CanonicalBuildSessionEventSource` を読み直し、正規イベントを生成する。
 
 session update 通知は transport event ではなく、同一ランタイム内の再読込トリガーである。task count、phase、stage、時刻を通知payloadへ複製してはならない。
 
@@ -81,7 +81,7 @@ Start（UI上の旧Resumeラベルを含む）は`startBuildSession`の単一入
 
 ## 禁止される旧経路
 
-- `BuildProgressEvent` callbackをsession開始引数へ渡すこと。
+- aggregate progress callbackをsession開始引数へ渡すこと。
 - `subscribeProgress`でaggregate progressを購読すること。
 - `progressCallbacks` registryを保持すること。
 - aggregate eventからcanonical task eventを推測すること。

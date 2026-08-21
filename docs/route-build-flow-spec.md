@@ -206,5 +206,5 @@ waterway:location-a:location-b              # explicitly bidirectional and canon
   4イベントだけを配信する。
 - `stageSnapshotUpdated` は開始済みstageのauthoritative full task snapshotであり、未開始stageには配信しない。
 - task progressはfiniteな`0..100`だけを受理し、taskIdごとの単調増加versionを持つ。
-- aggregateな`BuildProgressEvent`からcanonical eventを推測・変換しない。
+- aggregate progressからcanonical eventを推測・変換しない。
 - 詳細は `docs/build-session-worker-ui-event-spec.md` を参照する。

@@ -87,7 +87,7 @@ describe('useTreeViewController', () => {
         startBuildSession: vi.fn(),
         getBuildSessionStatus: vi.fn(),
         pauseBuildSession: vi.fn(),
-        subscribeBuildProgress: vi.fn(),
+        subscribeTaskProgress: vi.fn(),
         ping: vi.fn(() => ({ response: 'pong' as const, timestamp: Date.now() })),
         initialize: vi.fn(async () => {}),
         shutdown: vi.fn(async () => {}),

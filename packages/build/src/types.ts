@@ -2,20 +2,12 @@ export type {
   BaseBuildConfig,
   BuildStatus,
   BuildProgress,
-  BuildProgressAdapter,
-  BuildProgressCallback,
-  BuildProgressEvent,
-  BuildProgressPayload,
+  BuildTaskCountSummary,
   BuildSessionState,
   BuildSessionStatus,
   BuildManagerFactory,
   IBuildSessionManager,
-  ProgressPhase,
   StageKey,
-  BuildUnifiedProgressInfo,
-  UseBuildProgressOptions,
-  StandardProgressEvent,
-  StandardProgressPayload,
 } from '@hierarchidb/build-api';
 
 export type {
