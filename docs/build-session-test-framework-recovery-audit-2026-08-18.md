@@ -131,7 +131,7 @@ pnpm exec vitest run --config vitest.config.ts
 | --- | --- | --- | --- |
 | Step5 empty / receiving / task-list / terminal 表示 | `plugins/shape-plugin/src/ui/__tests__/components/build-progress/` | shape-plugin の Vitest、既存 atom/test utility | `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run <target>` |
 | Worker→UI の順序、別 node の排除、数値契約違反 | `plugins/shape-plugin/src/ui/components/build-progress/eventBufferingUI.ts` と既存 unit/property tests | `#1127` で確定した4イベント契約 | shape-plugin の targeted test + typecheck |
-| build start 後の task list と summary | `e2e/shape/shape-build-startup-receiving-task-snapshot.spec.ts` | `@playwright/test`、E2E auth seed、実 Worker API | `pnpm e2e:shape-startup` |
+| build start 後の task list と summary | `e2e/shape/shape-build-startup-receiving-task-snapshot.spec.ts` | `@playwright/test`、canonical mocked OAuth fixture、実 Worker API | `pnpm e2e:shape-startup` |
 | 性能観測項目 | 実測対象が確定した package の benchmark/test | deterministic input、fake clock、明示的な測定境界 | 対象 package の専用 benchmark/test |
 
 旧 E2E の「既存 Shape へ fallback」「固定の `17/229`」「文言が見つからなくても継続」「`waitForTimeout` 後に assertion なし」は再利用しない。現行 E2E は node を Worker API で作成し、認証を事前検証し、`receiving-task-snapshot` の明示的な成功/失敗を観測しているため、旧2 specs の主要な価値をすでに代替している。
@@ -194,7 +194,7 @@ DoD:
 Scope:
 
 - 現行 `shape-build-startup-receiving-task-snapshot.spec.ts` を基礎に、未被覆と確認できた outcome だけを追加する。
-- Worker API で test node を作成・削除し、auth seed 不足は明示エラーにする。
+- Worker API で test node を作成・削除し、canonical login/callback failureは明示エラーにする。
 - stable test id または role を使用し、screenshot は失敗時 artifact に限定する。
 
 最小検証:
@@ -203,9 +203,8 @@ Scope:
 pnpm e2e:shape-startup
 ```
 
-実行には有効な `E2E_AUTH_ACCESS_TOKEN` と、canonical session形式の
-`E2E_AUTH_USERINFO` または `E2E_AUTH_USERINFO_B64` が必要である。persistent sessionの場合は
-`E2E_AUTH_REFRESH_TOKEN_ID` も必須とする。
+2026-08-21更新: Issue #1355により、実行時のauth seedと実token入力を廃止した。認証が必要なE2Eは
+`docs/e2e-authentication-spec.md` のcanonical mocked OAuth fixtureを使用する。
 
 ### 5. 新規 Issue 案: `chore(test): remove superseded root BuildSession test framework`
 

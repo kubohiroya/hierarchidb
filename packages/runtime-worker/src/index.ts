@@ -59,4 +59,4 @@ export { ShapeMutationService } from './services/ShapeMutationService.js';
 export { publishBuildSessionUpdate, subscribeToBuildSessionBroadcast } from './services/buildSessionBroadcastUtils.js';
 export { ShapeQueryService } from './services/ShapeQueryService.js';
 // Worker service (public API for worker bootstrap)
-export { WorkerService } from './WorkerService.js';
+export { WorkerService, type WorkerServiceOptions } from './WorkerService.js';

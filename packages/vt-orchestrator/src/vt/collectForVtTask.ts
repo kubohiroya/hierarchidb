@@ -1,24 +1,19 @@
 import type { VTStageContext } from '~/contextTypes';
 import {
-  collectTaskFeatures,
-} from './collectTaskFeatures.js';
-import { logCollectDone } from './logCollectDone.js';
+  applyTileEmitInvalidGeometryFilter,
+  buildTileEmitInvalidGeometryFilterTaskMetadata,
+} from './applyTileEmitInvalidGeometryFilter.js';
 import { buildTaskCollectionMetadata } from './buildTaskCollectionMetadata.js';
-import type {
-  VtCollectionResult,
-  VtTaskCollectInput,
-} from './vtStageTaskTypes.js';
+import { collectTaskFeatures } from './collectTaskFeatures.js';
+import { createInvalidGeometryFilterProgressReporter } from './createInvalidGeometryFilterProgressReporter.js';
+import { logCollectDone } from './logCollectDone.js';
+import type { VtCollectionResult, VtTaskCollectInput } from './vtStageTaskTypes.js';
 
 export const collectForVtTask = async (
   context: VTStageContext,
-  params: VtTaskCollectInput,
+  params: VtTaskCollectInput
 ): Promise<VtCollectionResult | null> => {
-  const {
-    taskContext,
-    band,
-    parent,
-    groupByContinent,
-  } = params;
+  const { taskContext, band, parent, groupByContinent } = params;
 
   const collectStartedAt = Date.now();
   const collected = await collectTaskFeatures(context, {
@@ -32,20 +27,36 @@ export const collectForVtTask = async (
     taskContext,
     params.input.bufferIds.length,
     Date.now() - collectStartedAt,
-    Boolean(collected),
+    Boolean(collected)
   );
   if (!collected) {
     return null;
   }
 
-  const metadata = buildTaskCollectionMetadata(band, parent, collected);
+  const filtered = await applyTileEmitInvalidGeometryFilter(
+    collected,
+    context,
+    createInvalidGeometryFilterProgressReporter({
+      taskId: taskContext.taskId,
+      nodeId: taskContext.nodeId,
+      abortSignal: context.abortSignal,
+    })
+  );
+  const metadata = buildTaskCollectionMetadata(band, parent, filtered.collected);
+  const parentInputMetadata = buildTileEmitInvalidGeometryFilterTaskMetadata(
+    metadata.parentInputMetadata,
+    filtered.metrics
+  );
   return {
-    ...collected,
+    ...filtered.collected,
     adminFeatureSummary: metadata.adminFeatureSummary,
     tilesByZoom: metadata.tilesByZoom,
     totalTiles: metadata.totalTiles,
-    parentInputMetadata: metadata.parentInputMetadata,
+    parentInputMetadata,
     intersectingFeatureCount: metadata.intersectingFeatureCount,
-    buildCompletedResult: metadata.buildCompletedResult,
+    buildCompletedResult: (message) => ({
+      ...metadata.buildCompletedResult(message),
+      metadata: parentInputMetadata,
+    }),
   };
 };

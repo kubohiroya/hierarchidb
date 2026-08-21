@@ -1,6 +1,6 @@
 # @hierarchidb/yaml-plugin
 
-Last updated: 2026-08-20
+Last updated: 2026-08-21
 
 A YAML file node plugin for HierarchiDB. Manages YAML configuration files as tree nodes for IDE-GSM integration. Provides JSON Schema-based schema selection and a validated editor for structured YAML content editing.
 
@@ -44,16 +44,7 @@ import { YamlPluginIcon } from '@hierarchidb/yaml-plugin/icon';
 
 ## Worker Layer
 
-The current implementation registers `registerYamlWorkerStores` as a `preload` entry and initializes the legacy YamlDB v1 singleton from `@hierarchidb/yaml-store`.
-
-```typescript
-// plugin-manifest.ts
-worker: {
-  preload: ['registerYamlWorkerStores'],
-}
-```
-
-This preload is a temporary legacy runtime path, not the YAML storage authority. Follow-up issues will inventory and recover legacy rows before removing the runtime path. Existing YamlDB mutation helpers are legacy-only; canonical dialog, ZIP, simulation, and Step 4 paths must not call them. The current [folder YAML import](../folder-plugin/README.md#legacy-yaml-snapshot-boundary) remains non-canonical and blocked from cutover. New CRUD callers, YamlDB writes, dual-write, and fallback reads must not be added.
+The plugin manifest has no storage preload and the worker entry does not initialize YamlDB. Runtime YAML persistence is provided by CoreDB only, after the origin coordinator and CoreDB activation publish canonical-ready evidence.
 
 ## Storage Authority
 
@@ -67,9 +58,9 @@ The canonical contract is [`docs/yaml-plugin-ide-gsm-step4-spec.md`](../../docs/
 
 CoreDB migration and YamlDB inventory/recovery are separate atomic boundaries because they are separate IndexedDB databases. Missing names, empty schema IDs, unknown tuples, and conflicts are errors; the plugin must not infer or supply them.
 
-### Current Legacy Entity Shape
+### Dialog draft input
 
-The source still uses the following legacy type until the coordinated canonical writer and CoreDB migration issues cut over all consumers. This documents current code and does not supersede the canonical storage contract.
+UI draft fields may be partial while the dialog is being edited:
 
 ```typescript
 // YamlFileNodeData (from @hierarchidb/yaml-api)
@@ -83,13 +74,13 @@ interface YamlFileNodeData {
 type YamlDraft = Partial<YamlFileNodeData>;
 ```
 
-The canonical writer must move `name` to the matching metadata slot, add an explicit registry-validated `subtype`, and reject incomplete or mismatched records before saving.
+Before persistence, `TreeNodeUpdaterService` constructs an exact writer input. The canonical writer stores `name` only in `draftMetadata.name`, stores the registry-validated `{ subtype, schemaId, content }` only in `draftData`, and rejects incomplete or mismatched records without writing.
 
-### Dormant Canonical Writer
+### Canonical Writer
 
-The independent `@hierarchidb/yaml-plugin/canonical-writer` subpath validates an exact dialog-write input and emits one atomic-shaped request to a caller-injected write port. It delegates filename and payload validation exclusively to `@hierarchidb/yaml-api/validation`, writes the filename only to `draftMetadata.name`, and writes the validated `{ subtype, schemaId, content }` value to `draftData`. The request fixes `onNameConflict` to `error`; validation and port failures do not retry, auto-rename, overwrite, or fall back to the legacy writer.
+The independent `@hierarchidb/yaml-plugin/canonical-writer` subpath validates an exact dialog-write input and emits one atomic-shaped request to a caller-injected write port. It delegates filename and payload validation exclusively to `@hierarchidb/yaml-api/validation`. The request fixes `onNameConflict` to `error`; validation and port failures do not retry, auto-rename, overwrite, or fall back to a legacy writer.
 
-This entry point is dormant. The package root, UI, worker, production dialog, TreeNode updater, CoreDB, YamlDB, and plugin preload do not import or invoke it. The existing three-step UI, legacy draft shape, manifest, and ten-template runtime selector remain unchanged until the single activation change. See the [canonical Step 4 contract](../../docs/yaml-plugin-ide-gsm-step4-spec.md#dormant-canonical-dialog-writer).
+The production `TreeNodeUpdaterService` invokes this writer for YAML dialog save and save-draft, then performs one internal CoreDB update. Generic CoreDB writes also validate the complete YAML postimage, so alternate mutation APIs cannot persist a legacy or partial payload. See the [canonical Step 4 contract](../../docs/yaml-plugin-ide-gsm-step4-spec.md).
 
 ## Plugin Dependencies
 
@@ -163,7 +154,7 @@ src/
 │   └── types/
 │       └── YamlEntity.ts     # YamlDraft type
 ├── canonical-writer/
-│   ├── index.ts                              # Dormant writer entry point
+│   ├── index.ts                              # Strict writer entry point
 │   ├── writeYamlCanonicalDialogDraft.ts      # Strict validation and one port call
 │   └── yamlCanonicalDialogWriterTypes.ts     # Public input/request/result types
 ├── icon/
@@ -178,8 +169,7 @@ src/
 │           ├── YamlSchemaSelectionStep.tsx # Schema selection step
 │           └── YamlSchemaEditorStep.tsx    # Schema editor step (RJSF)
 └── worker/
-    ├── index.ts                        # Worker entry point
-    └── registerYamlWorkerStores.ts     # YamlDB singleton initialization
+    └── index.ts                        # Worker-safe canonical writer export
 ```
 
 ## Export Entry Points
@@ -189,8 +179,8 @@ src/
 | `@hierarchidb/yaml-plugin` | PluginManifest, YAML_NODE_TYPE, YAML_PLUGIN_ID |
 | `@hierarchidb/yaml-plugin/ui` | UI components (3 steps) |
 | `@hierarchidb/yaml-plugin/icon` | YamlPluginIcon |
-| `@hierarchidb/yaml-plugin/worker` | registerYamlWorkerStores |
-| `@hierarchidb/yaml-plugin/canonical-writer` | Dormant strict canonical dialog writer |
+| `@hierarchidb/yaml-plugin/worker` | Worker-safe canonical writer export |
+| `@hierarchidb/yaml-plugin/canonical-writer` | Strict canonical dialog writer |
 
 ## Related Plugins and Packages
 
@@ -199,7 +189,6 @@ src/
 - [`@hierarchidb/core-types`](../../packages/core-types/) — Shared type definitions (NodeType, etc.)
 - [`@hierarchidb/plugin-base`](../../packages/plugin-base/) — PluginManifest, PluginStepRegistry
 - [`@hierarchidb/yaml-api`](../../packages/yaml-api/) — YamlFileNodeData type definitions
-- [`@hierarchidb/yaml-store`](../../packages/yaml-store/) — legacy YamlDB v1 recovery boundary; not the authoritative runtime store
 - [`Canonical storage contract`](../../docs/yaml-plugin-ide-gsm-step4-spec.md) — CoreDB authority, migration, recovery, and rollback rules
 
 ### Parent Plugin

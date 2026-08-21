@@ -1,5 +1,8 @@
 # E2E認証テスト実行手順書
 
+> Deprecated: 認証E2Eの現行仕様は `docs/e2e-authentication-spec.md` を参照する。本書にある実OAuth、
+> token/session logging、旧実行scriptの手順は使用しない。
+
 **作成日**: 2025年8月25日  
 **更新日**: 2025年8月25日
 

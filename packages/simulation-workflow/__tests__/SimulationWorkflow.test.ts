@@ -1,323 +1,245 @@
-/**
- * Tests for SimulationWorkflow.
- *
- * Uses vitest + fast-check for property-based tests.
- * All imports are relative (no ~/ aliases).
- */
-import { describe, it, expect, vi } from 'vitest';
-import * as fc from 'fast-check';
+import { decodeCanonicalYamlZip } from '@hierarchidb/folder-plugin/canonical-yaml-zip-codec';
+import { describe, expect, it, vi } from 'vitest';
+import { CanonicalYamlSnapshotWorkflowError } from '../src/canonical-yaml-snapshot/CanonicalYamlSnapshotWorkflowError.js';
+import type {
+  CanonicalYamlSnapshotClientPort,
+  CanonicalYamlSnapshotOnStepChange,
+  CanonicalYamlSnapshotStep,
+  CanonicalYamlSnapshotWorkflowErrorCode,
+} from '../src/canonical-yaml-snapshot/canonicalYamlSnapshotTypes.js';
 import { SimulationWorkflow } from '../src/SimulationWorkflow.js';
-import type { IdeGsmClient } from '@hierarchidb/ide-gsm-client';
-import type { ExportableNode } from '@hierarchidb/folder-plugin';
-import type { OnStepChange, StepName, StepStatus } from '../src/simulationWorkflowTypes.js';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+const scenario = {
+  fileName: 'scenario.yml',
+  subtype: 'scenario',
+  schemaId: 'ide-gsm/scenario',
+} as const;
 
-/** Build a minimal mock IdeGsmClient. All methods resolve successfully by default. */
-function makeMockClient(overrides: Partial<Record<keyof IdeGsmClient, unknown>> = {}): IdeGsmClient {
-    return {
-        importProject: vi.fn().mockResolvedValue('task-import'),
-        calibrate: vi.fn().mockResolvedValue('task-calibrate'),
-        simulate: vi.fn().mockResolvedValue('task-simulate'),
-        exportProject: vi.fn().mockResolvedValue('task-export'),
-        rsyncPush: vi.fn().mockResolvedValue('task-rsync-push'),
-        rsyncPull: vi.fn().mockResolvedValue('task-rsync-pull'),
-        awaitTask: vi.fn().mockResolvedValue({ id: 'task-id', status: 'FINISHED', paramsJson: 'snapshot-result' }),
-        ...overrides,
-    } as unknown as IdeGsmClient;
+function canonicalNode(content = 'name: demo\n') {
+  return {
+    id: 'scenario-node',
+    parentId: 'project-folder',
+    nodeType: 'yaml-file',
+    depth: 2,
+    createdAt: 1,
+    updatedAt: 2,
+    version: 3,
+    metadata: { name: scenario.fileName, description: '', tags: [] },
+    draftMetadata: null,
+    data: {
+      subtype: scenario.subtype,
+      schemaId: scenario.schemaId,
+      content,
+    },
+    visible: true,
+  };
 }
 
-/** Build a minimal ExportableNode array (empty is valid per spec). */
-const emptyNodes: readonly ExportableNode[] = [];
+function makeClient(): CanonicalYamlSnapshotClientPort {
+  return {
+    importProject: vi.fn().mockResolvedValue('task-import'),
+    awaitTask: vi.fn().mockResolvedValue(undefined),
+    calibrate: vi.fn().mockResolvedValue('task-calibrate'),
+    simulate: vi.fn().mockResolvedValue('task-simulate'),
+    exportProject: vi.fn().mockResolvedValue('task-export'),
+  };
+}
 
-// ---------------------------------------------------------------------------
-// Unit tests
-// ---------------------------------------------------------------------------
+function rejectClientMethod(
+  client: CanonicalYamlSnapshotClientPort,
+  method: 'importProject' | 'calibrate' | 'simulate' | 'exportProject',
+  error: Error
+): void {
+  switch (method) {
+    case 'importProject':
+      client.importProject = vi.fn().mockRejectedValue(error);
+      return;
+    case 'calibrate':
+      client.calibrate = vi.fn().mockRejectedValue(error);
+      return;
+    case 'simulate':
+      client.simulate = vi.fn().mockRejectedValue(error);
+      return;
+    case 'exportProject':
+      client.exportProject = vi.fn().mockRejectedValue(error);
+  }
+}
 
-describe('SimulationWorkflow — unit tests', () => {
-    it('constructor stores IdeGsmClient without throwing', () => {
-        const client = makeMockClient();
-        expect(() => new SimulationWorkflow(client)).not.toThrow();
+describe('SimulationWorkflow canonical YAML snapshot', () => {
+  it('plans the committed canonical archive before running the fixed task sequence', async () => {
+    const client = makeClient();
+    const workflow = new SimulationWorkflow(client);
+    const events: Array<[CanonicalYamlSnapshotStep, 'running' | 'done' | 'failed']> = [];
+    const onStepChange: CanonicalYamlSnapshotOnStepChange = (step, status) => {
+      events.push([step, status]);
+    };
+
+    await expect(
+      workflow.runSimulation([canonicalNode()], 'project/path', undefined, onStepChange)
+    ).resolves.toBeUndefined();
+
+    expect(events).toEqual([
+      ['import', 'running'],
+      ['import', 'done'],
+      ['calibrate', 'running'],
+      ['calibrate', 'done'],
+      ['simulate', 'running'],
+      ['simulate', 'done'],
+      ['export', 'running'],
+      ['export', 'done'],
+    ]);
+    expect(client.awaitTask).toHaveBeenNthCalledWith(1, 'task-import');
+    expect(client.awaitTask).toHaveBeenNthCalledWith(2, 'task-calibrate');
+    expect(client.awaitTask).toHaveBeenNthCalledWith(3, 'task-simulate');
+    expect(client.awaitTask).toHaveBeenNthCalledWith(4, 'task-export');
+
+    const importCall = vi.mocked(client.importProject).mock.calls[0];
+    if (importCall === undefined) throw new Error('missing importProject call');
+    expect(importCall[1]).toBe('project/path');
+    const decoded = decodeCanonicalYamlZip(importCall[0]);
+    expect(decoded.ok).toBe(true);
+    if (!decoded.ok) return;
+    expect(decoded.value.entries).toEqual([
+      {
+        occurrenceIndex: 0,
+        filename: scenario.fileName,
+        payload: {
+          subtype: scenario.subtype,
+          schemaId: scenario.schemaId,
+          content: 'name: demo\n',
+        },
+      },
+    ]);
+  });
+
+  it('does not fall back to draft data when committed data is invalid', async () => {
+    const client = makeClient();
+    const node = canonicalNode('invalid: [\n');
+    node.draftMetadata = { name: scenario.fileName, description: '', tags: [] };
+    Object.assign(node, {
+      draftData: {
+        subtype: scenario.subtype,
+        schemaId: scenario.schemaId,
+        content: 'name: valid-draft\n',
+      },
     });
+    const events = vi.fn();
 
-    it('runSimulation without onStepChange executes all steps without error', async () => {
-        const client = makeMockClient();
-        const wf = new SimulationWorkflow(client);
-        await expect(wf.runSimulation(emptyNodes, 'project/path')).resolves.toBe('snapshot-result');
+    await expect(
+      new SimulationWorkflow(client).runSimulation([node], 'project/path', undefined, events)
+    ).rejects.toMatchObject({
+      code: 'SNAPSHOT_PLANNING_FAILED',
+      context: {
+        planningErrors: [
+          { code: 'CANONICAL_VALIDATION_FAILED', sourceIndex: 0, slot: 'committed' },
+        ],
+      },
     });
+    expect(client.importProject).not.toHaveBeenCalled();
+    expect(client.awaitTask).not.toHaveBeenCalled();
+    expect(events).not.toHaveBeenCalled();
+  });
 
-    it('runSimulationWithRsync without onStepChange executes all steps without error', async () => {
-        const client = makeMockClient();
-        const wf = new SimulationWorkflow(client);
-        await expect(wf.runSimulationWithRsync('project/path', 'remote')).resolves.toBeUndefined();
-    });
+  it('sanitizes planning failures without exposing YAML content', async () => {
+    const client = makeClient();
+    const secretContent = 'credential-secret: [\n';
 
-    it('rsyncPush / rsyncPull omit filter when not provided', async () => {
-        const client = makeMockClient();
-        const wf = new SimulationWorkflow(client);
-        await wf.runSimulationWithRsync('project/path', 'ssh');
-        expect(client.rsyncPush).toHaveBeenCalledWith('project/path', 'ssh');
-        expect(client.rsyncPull).toHaveBeenCalledWith('project/path', 'ssh');
-    });
-});
+    try {
+      await new SimulationWorkflow(client).runSimulation(
+        [canonicalNode(secretContent)],
+        'project/path'
+      );
+      throw new Error('expected planning failure');
+    } catch (error) {
+      expect(error).toBeInstanceOf(CanonicalYamlSnapshotWorkflowError);
+      expect(JSON.stringify(error)).not.toContain(secretContent);
+      expect(String(error)).not.toContain(secretContent);
+    }
+  });
 
-// ---------------------------------------------------------------------------
-// Property 1: Import flow step order invariant
-// ---------------------------------------------------------------------------
+  it('passes export filters only when the caller provides them', async () => {
+    const withoutFilter = makeClient();
+    await new SimulationWorkflow(withoutFilter).runSimulation([canonicalNode()], 'project/path');
+    expect(withoutFilter.exportProject).toHaveBeenCalledWith('project/path');
 
-describe('Property 1: Import flow step order invariant', () => {
-    // Feature: simulation-workflow, Property 1: Import flow step order invariant
-    it('onStepChange is called in exact order for successful runSimulation', async () => {
-        await fc.assert(
-            fc.asyncProperty(
-                fc.string({ minLength: 1 }),
-                async (path) => {
-                    const client = makeMockClient();
-                    const wf = new SimulationWorkflow(client);
-                    const events: Array<[StepName, StepStatus]> = [];
-                    const cb: OnStepChange = (step, status) => events.push([step, status]);
+    const withFilter = makeClient();
+    const filter = { include: ['output/**'], exclude: ['cache/**'] };
+    await new SimulationWorkflow(withFilter).runSimulation(
+      [canonicalNode()],
+      'project/path',
+      filter
+    );
+    expect(withFilter.exportProject).toHaveBeenCalledWith('project/path', filter);
+  });
 
-                    await wf.runSimulation(emptyNodes, path, undefined, cb);
+  it('stops after every failed task without retrying or exposing the client error', async () => {
+    const cases: ReadonlyArray<
+      readonly [
+        'importProject' | 'calibrate' | 'simulate' | 'exportProject',
+        CanonicalYamlSnapshotStep,
+        CanonicalYamlSnapshotWorkflowErrorCode,
+        number,
+      ]
+    > = [
+      ['importProject', 'import', 'IMPORT_FAILED', 0],
+      ['calibrate', 'calibrate', 'CALIBRATE_FAILED', 1],
+      ['simulate', 'simulate', 'SIMULATE_FAILED', 2],
+      ['exportProject', 'export', 'EXPORT_FAILED', 3],
+    ];
 
-                    expect(events).toEqual([
-                        ['import', 'running'],
-                        ['import', 'done'],
-                        ['calibrate', 'running'],
-                        ['calibrate', 'done'],
-                        ['simulate', 'running'],
-                        ['simulate', 'done'],
-                        ['export', 'running'],
-                        ['export', 'done'],
-                    ]);
-                },
-            ),
-            { numRuns: 100 },
+    for (const [method, step, code, completedSteps] of cases) {
+      const client = makeClient();
+      rejectClientMethod(client, method, new Error('endpoint-token-secret'));
+      const events: Array<[CanonicalYamlSnapshotStep, 'running' | 'done' | 'failed']> = [];
+
+      try {
+        await new SimulationWorkflow(client).runSimulation(
+          [canonicalNode()],
+          'project/path',
+          undefined,
+          (changedStep, status) => events.push([changedStep, status])
         );
-    });
-});
+        throw new Error('expected task failure');
+      } catch (error) {
+        expect(error).toMatchObject({ code, context: { step } });
+        expect(String(error)).not.toContain('endpoint-token-secret');
+        expect(JSON.stringify(error)).not.toContain('endpoint-token-secret');
+      }
 
-// ---------------------------------------------------------------------------
-// Property 2: Rsync flow step order invariant
-// ---------------------------------------------------------------------------
+      expect(events.at(-1)).toEqual([step, 'failed']);
+      expect(events).toHaveLength(completedSteps * 2 + 2);
+      expect(vi.mocked(client[method])).toHaveBeenCalledTimes(1);
+      const methodOrder = ['importProject', 'calibrate', 'simulate', 'exportProject'] as const;
+      for (const laterMethod of methodOrder.slice(completedSteps + 1)) {
+        expect(client[laterMethod]).not.toHaveBeenCalled();
+      }
+    }
+  });
 
-describe('Property 2: Rsync flow step order invariant', () => {
-    // Feature: simulation-workflow, Property 2: Rsync flow step order invariant
-    it('onStepChange is called in exact order for successful runSimulationWithRsync', async () => {
-        await fc.assert(
-            fc.asyncProperty(
-                fc.string({ minLength: 1 }),
-                fc.constantFrom('remote' as const, 'ssh' as const, 'ec2' as const),
-                async (path, connType) => {
-                    const client = makeMockClient();
-                    const wf = new SimulationWorkflow(client);
-                    const events: Array<[StepName, StepStatus]> = [];
-                    const cb: OnStepChange = (step, status) => events.push([step, status]);
+  it('rejects an invalid task ID before awaiting it', async () => {
+    const client = makeClient();
+    client.importProject = vi.fn().mockResolvedValue('');
 
-                    await wf.runSimulationWithRsync(path, connType, undefined, cb);
+    await expect(
+      new SimulationWorkflow(client).runSimulation([canonicalNode()], 'project/path')
+    ).rejects.toMatchObject({ code: 'IMPORT_FAILED', context: { step: 'import' } });
+    expect(client.awaitTask).not.toHaveBeenCalled();
+    expect(client.calibrate).not.toHaveBeenCalled();
+  });
 
-                    expect(events).toEqual([
-                        ['rsync-push', 'running'],
-                        ['rsync-push', 'done'],
-                        ['calibrate', 'running'],
-                        ['calibrate', 'done'],
-                        ['simulate', 'running'],
-                        ['simulate', 'done'],
-                        ['rsync-pull', 'running'],
-                        ['rsync-pull', 'done'],
-                    ]);
-                },
-            ),
-            { numRuns: 100 },
-        );
-    });
-});
+  it('converts callback failures to a sanitized terminal error before network access', async () => {
+    const client = makeClient();
 
-// ---------------------------------------------------------------------------
-// Property 3: Error stops subsequent steps (runSimulation)
-// ---------------------------------------------------------------------------
-
-describe('Property 3: Error stops subsequent steps — runSimulation', () => {
-    // Feature: simulation-workflow, Property 3: Error stops subsequent steps
-    it('when a step throws, no subsequent onStepChange events are emitted', async () => {
-        // Steps in order: import, calibrate, simulate, export
-        const stepMethods: Array<keyof IdeGsmClient> = ['importProject', 'calibrate', 'simulate', 'exportProject'];
-        const stepNames: StepName[] = ['import', 'calibrate', 'simulate', 'export'];
-
-        await fc.assert(
-            fc.asyncProperty(
-                fc.integer({ min: 0, max: 3 }),
-                fc.string({ minLength: 1 }),
-                async (failIndex, errMsg) => {
-                    const error = new Error(errMsg);
-                    const overrides: Partial<Record<keyof IdeGsmClient, unknown>> = {};
-                    overrides[stepMethods[failIndex]] = vi.fn().mockRejectedValue(error);
-
-                    const client = makeMockClient(overrides);
-                    const wf = new SimulationWorkflow(client);
-                    const events: Array<[StepName, StepStatus]> = [];
-                    const cb: OnStepChange = (step, status) => events.push([step, status]);
-
-                    await expect(wf.runSimulation(emptyNodes, 'path', undefined, cb)).rejects.toThrow(errMsg);
-
-                    // No 'running' or 'done' event for any step after the failed one
-                    const failedStepName = stepNames[failIndex];
-                    const failedIdx = events.findIndex(([s, st]) => s === failedStepName && st === 'failed');
-                    expect(failedIdx).toBeGreaterThanOrEqual(0);
-
-                    const eventsAfterFail = events.slice(failedIdx + 1);
-                    expect(eventsAfterFail).toHaveLength(0);
-                },
-            ),
-            { numRuns: 100 },
-        );
-    });
-});
-
-// ---------------------------------------------------------------------------
-// Property 3: Error stops subsequent steps (runSimulationWithRsync)
-// ---------------------------------------------------------------------------
-
-describe('Property 3: Error stops subsequent steps — runSimulationWithRsync', () => {
-    // Feature: simulation-workflow, Property 3: Error stops subsequent steps (rsync flow)
-    it('when a step throws, no subsequent onStepChange events are emitted', async () => {
-        const stepMethods: Array<keyof IdeGsmClient> = ['rsyncPush', 'calibrate', 'simulate', 'rsyncPull'];
-        const stepNames: StepName[] = ['rsync-push', 'calibrate', 'simulate', 'rsync-pull'];
-
-        await fc.assert(
-            fc.asyncProperty(
-                fc.integer({ min: 0, max: 3 }),
-                fc.string({ minLength: 1 }),
-                async (failIndex, errMsg) => {
-                    const error = new Error(errMsg);
-                    const overrides: Partial<Record<keyof IdeGsmClient, unknown>> = {};
-                    overrides[stepMethods[failIndex]] = vi.fn().mockRejectedValue(error);
-
-                    const client = makeMockClient(overrides);
-                    const wf = new SimulationWorkflow(client);
-                    const events: Array<[StepName, StepStatus]> = [];
-                    const cb: OnStepChange = (step, status) => events.push([step, status]);
-
-                    await expect(wf.runSimulationWithRsync('path', 'remote', undefined, cb)).rejects.toThrow(errMsg);
-
-                    const failedStepName = stepNames[failIndex];
-                    const failedIdx = events.findIndex(([s, st]) => s === failedStepName && st === 'failed');
-                    expect(failedIdx).toBeGreaterThanOrEqual(0);
-
-                    const eventsAfterFail = events.slice(failedIdx + 1);
-                    expect(eventsAfterFail).toHaveLength(0);
-                },
-            ),
-            { numRuns: 100 },
-        );
-    });
-});
-
-// ---------------------------------------------------------------------------
-// Property 4: Error propagation without modification
-// ---------------------------------------------------------------------------
-
-describe('Property 4: Error propagation without modification', () => {
-    // Feature: simulation-workflow, Property 4: Error propagation without modification
-    it('the exact error thrown by a client method reaches the caller', async () => {
-        await fc.assert(
-            fc.asyncProperty(
-                fc.string({ minLength: 1 }),
-                async (errMsg) => {
-                    const error = new Error(errMsg);
-                    const client = makeMockClient({ importProject: vi.fn().mockRejectedValue(error) });
-                    const wf = new SimulationWorkflow(client);
-
-                    await expect(wf.runSimulation(emptyNodes, 'path')).rejects.toThrow(errMsg);
-                },
-            ),
-            { numRuns: 100 },
-        );
-    });
-});
-
-// ---------------------------------------------------------------------------
-// Property 5: Serialization error prevents any step execution
-// ---------------------------------------------------------------------------
-
-describe('Property 5: Serialization error prevents any step execution', () => {
-    // Feature: simulation-workflow, Property 5: Serialization error prevents any step execution
-    it('when exportYamlNodesToSnapshot returns error, no onStepChange is called and runSimulation throws', async () => {
-        await fc.assert(
-            fc.asyncProperty(
-                fc.string({ minLength: 1 }),
-                async (_errMsg) => {
-                    // Inject a node that triggers duplicate-name error
-                    // (two nodes with the same name and correct nodeType 'yaml-file')
-                    const duplicateNodes: readonly ExportableNode[] = [
-                        { nodeId: 'n1' as never, nodeType: 'yaml-file', data: { name: 'dup.yml', schemaId: '', content: '' } },
-                        { nodeId: 'n2' as never, nodeType: 'yaml-file', data: { name: 'dup.yml', schemaId: '', content: '' } },
-                    ];
-
-                    const client = makeMockClient();
-                    const wf = new SimulationWorkflow(client);
-                    const events: Array<[StepName, StepStatus]> = [];
-                    const cb: OnStepChange = (step, status) => events.push([step, status]);
-
-                    await expect(wf.runSimulation(duplicateNodes, 'path', undefined, cb)).rejects.toThrow();
-                    expect(events).toHaveLength(0);
-                    expect(client.importProject).not.toHaveBeenCalled();
-                },
-            ),
-            { numRuns: 100 },
-        );
-    });
-});
-
-// ---------------------------------------------------------------------------
-// Property 6: ExportFilter passthrough
-// ---------------------------------------------------------------------------
-
-describe('Property 6: ExportFilter passthrough', () => {
-    // Feature: simulation-workflow, Property 6: ExportFilter passthrough
-    it('the exportFilter passed to runSimulation is forwarded unchanged to exportProject', async () => {
-        await fc.assert(
-            fc.asyncProperty(
-                fc.record({
-                    include: fc.option(fc.array(fc.string()), { nil: undefined }),
-                    exclude: fc.option(fc.array(fc.string()), { nil: undefined }),
-                }),
-                async (filter) => {
-                    const client = makeMockClient();
-                    const wf = new SimulationWorkflow(client);
-
-                    await wf.runSimulation(emptyNodes, 'path', filter);
-
-                    expect(client.exportProject).toHaveBeenCalledWith('path', filter);
-                },
-            ),
-            { numRuns: 100 },
-        );
-    });
-});
-
-// ---------------------------------------------------------------------------
-// Property 7: Export result round-trip
-// ---------------------------------------------------------------------------
-
-describe('Property 7: Export result round-trip', () => {
-    // Feature: simulation-workflow, Property 7: Export result round-trip
-    it('runSimulation returns the paramsJson from the export awaitTask result', async () => {
-        await fc.assert(
-            fc.asyncProperty(
-                fc.string({ minLength: 1 }),
-                async (paramsJson) => {
-                    const client = makeMockClient({
-                        awaitTask: vi.fn().mockResolvedValue({ id: 'task-export', status: 'FINISHED', paramsJson }),
-                    });
-                    const wf = new SimulationWorkflow(client);
-
-                    const result = await wf.runSimulation(emptyNodes, 'path');
-                    expect(result).toBe(paramsJson);
-                },
-            ),
-            { numRuns: 100 },
-        );
-    });
+    await expect(
+      new SimulationWorkflow(client).runSimulation(
+        [canonicalNode()],
+        'project/path',
+        undefined,
+        () => {
+          throw new Error('callback-secret');
+        }
+      )
+    ).rejects.toMatchObject({ code: 'STEP_CALLBACK_FAILED', context: { step: 'import' } });
+    expect(client.importProject).not.toHaveBeenCalled();
+  });
 });

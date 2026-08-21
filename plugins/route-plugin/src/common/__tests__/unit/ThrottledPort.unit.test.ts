@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ThrottledPort, type NetworkPortLike } from '../services/net/ThrottledPort';
+import { type NetworkPortLike, ThrottledPort } from '../../../services/net/ThrottledPort';
 
 class FakePort implements NetworkPortLike {
   constructor(private readonly mockDelayMs = 0) {}
@@ -19,7 +19,7 @@ class FakePort implements NetworkPortLike {
 describe('ThrottledPort', () => {
   // Queueing occurs before acquire; naive in-flight counting includes queued tasks in jsdom.
   // Skip in default CI to avoid false negatives; enable with ENABLE_THROTTLED_TESTS=1
-  const runConcurrencyTest = (process.env.ENABLE_THROTTLED_TESTS === '1' ? it : it.skip);
+  const runConcurrencyTest = process.env.ENABLE_THROTTLED_TESTS === '1' ? it : it.skip;
 
   runConcurrencyTest('limits concurrent requests', async () => {
     const base = new FakePort();

@@ -67,8 +67,11 @@ progress value, but does not carry lifecycle state.
 
 The UI delivery layer accepts an event only when its `version` is greater than the
 last accepted version for the same `taskId`. Events with an equal or lower version are
-dropped. The state adapter receives only accepted events and does not retain `taskId`
-or `version` in the state tree.
+dropped. Shape's plugin-owned adapter receives only accepted events and does not
+retain the delivery key. The shared UI bridge retains `taskId` and the greatest
+accepted task version in its state tree so a delayed lower-version snapshot cannot
+lower the progress gate. The delayed snapshot still owns task membership, ordering,
+and status; the newer accepted progress value, message, metadata, and version remain.
 
 **Note**: `phase` is intentionally absent. It was erroneously included in the original design. Session phase is managed exclusively by `sessionStatusUpdated`.
 
@@ -102,6 +105,20 @@ redundantly separated.
 completedAt) and `lifecycleExtrasAtom` (stopReason). `stageId` drives the UI
 synchronization/selection signal. Per-stage timing remains owned by the
 `stageSnapshotUpdated` path and is not duplicated from this event.
+
+The Shape cache actions hook derives count-refresh triggers from this lifecycle atom
+only. It performs one initial load for each observed node, then one load for each new
+`completed` or `failed` outcome and for queued cancellation encoded as `idle` with a
+`stopReason`. `paused` is not an outcome. A non-outcome phase clears the remembered
+outcome, allowing the next session to refresh, while duplicate terminal events and
+re-renders do not. Manual delete/reset actions keep their explicit refresh path.
+
+Count reads use Shape query APIs and the task-queue API boundary; the hook neither
+polls Worker session status nor reads Dexie directly. Each request captures a
+monotonic generation and `nodeId`, and commits results or loading state only while
+both still match the latest rendered node. This prevents a slower response for a
+previous node or request from overwriting current counts. No compatibility fallback
+may turn a lifecycle or query failure into a synthetic count state.
 
 The interval between selecting a started stage and receiving its first
 `stageSnapshotUpdated` event is represented by `ui-initializing`. During that
@@ -217,6 +234,49 @@ any phase or task recalculation.
 
 ---
 
+## Shared UI Bridge
+
+`useBuildSessionStateTreeBridge` subscribes to the four canonical channels as a single
+lifecycle-owned subscription. Shape selects the Worker bridge transport. Route and
+Location currently run their canonical managers in the UI realm and explicitly select
+the same-realm event-streamer transport. There is no implicit fallback between these
+transports. The same-realm streamer remains live-only, so its UI subscription must be
+mounted before the local session starts. The bridge does not call the legacy aggregate
+progress hook or reconstruct task counts from `sessionStatusUpdated`.
+
+The bridge keeps lifecycle readiness and per-stage snapshot readiness distinct.
+Receiving a session status selects the active stage but leaves progress absent until
+that stage's authoritative snapshot arrives. A snapshot with an empty task array is
+therefore distinguishable from a stage whose snapshot has not arrived.
+
+Task progress may race ahead of the first stage snapshot. The bridge validates and
+buffers such events, applies them after the full replacement snapshot, and rejects
+equal or older task-scoped versions. Contract-invalid phase timing, stage timing,
+task versions, or progress values fail at the event boundary.
+
+The UI-facing progress snapshot is a derived read model. Its task counts come only
+from the authoritative task state for the active stage, so starting a later stage does
+not retain completed earlier-stage tasks in the denominator. Its timestamp is the
+maximum available persisted session, heartbeat, or stage endpoint. The bridge never
+creates a current clock timestamp or zero-count compatibility payload for missing
+canonical data.
+
+Route and Location UI consumers use this derived snapshot directly. Shape UI keeps
+its plugin-owned SSOT state tree but no longer converts
+`BuildUnifiedProgressInfo` through the removed aggregate mappers. The removed
+aggregate hooks are not exported by `@hierarchidb/ui-build-sessions`.
+
+The shared Route progress hook is a read-only same-realm consumer. It does not reuse
+the Worker command hook for pause or resume because those commands would target a
+different session owner. Route pipeline controls must be provided by the UI-realm
+owner when that command contract is implemented.
+
+Shape subscribes to Worker diagnostics separately with
+`BuildWorkerBridge.subscribeWorkerLog`. Worker log events remain outside the four
+canonical channels and are never reduced into the build-session SSOT state tree.
+
+---
+
 ## Removed Concepts
 
 | Removed | Reason |
@@ -301,10 +361,14 @@ remaining-count numerator because no processing time was spent on them.
 
 There is no global or cross-stream `eventVersion` counter.
 
-`taskProgressUpdated` uses `version` only as a per-`taskId` ordering key in the UI
-delivery layer. An event is accepted when its version is greater than the last accepted
-version for that task; equal or lower versions are dropped. This gate runs before
-`BuildSessionWorkerEventAdapter`, so the adapter itself stores no version state.
+`taskProgressUpdated` uses `version` only as a per-`taskId` ordering key. An event is
+accepted when its version is greater than the last accepted version for that task;
+equal or lower versions are dropped. Shape's `UIEventBufferManager` runs this gate
+before `BuildSessionWorkerEventAdapter`. The shared UI bridge compares against the
+greatest task version retained in its authoritative state tree and buffers events that
+arrive before the first snapshot. A delayed lower-version snapshot updates membership,
+ordering, and status without lowering that retained progress version or its associated
+progress fields. Neither path uses a global event-version value.
 
 `sessionStatusUpdated` and `stageSnapshotUpdated` are applied unconditionally in FIFO
 arrival order. `heartbeat` is applied immediately on receipt.

@@ -1,7 +1,7 @@
 import type { GroupEntity, ISO2, NodeId, PeerEntity, Timestamp } from '@hierarchidb/core-types';
-import type { TreeNodeUpdaterPayload } from '@hierarchidb/tree-api';
 import type { BaseBuildConfig } from '@hierarchidb/gis-sdk';
 import type { LocationFeatureId } from '@hierarchidb/location-api';
+import type { TreeNodeUpdaterPayload } from '@hierarchidb/tree-api';
 
 export const ROUTE_MODES = {
   AIRWAY: 'airway',
@@ -12,7 +12,7 @@ export const ROUTE_MODES = {
   HIGHWAY: 'highway',
 } as const;
 
-export type RouteMode = typeof ROUTE_MODES[keyof typeof ROUTE_MODES];
+export type RouteMode = (typeof ROUTE_MODES)[keyof typeof ROUTE_MODES];
 
 export type RouteLineStyle = 'solid' | 'dashed' | 'dotted';
 
@@ -54,12 +54,7 @@ export interface RouteFeature extends GroupEntity {
 
 export type RouteLineString = RouteFeature;
 
-export type RouteGenerationMethod =
-  | 'direct'
-  | 'osm_route'
-  | 'great_circle'
-  | 'searoute'
-  | 'custom';
+export type RouteGenerationMethod = 'direct' | 'osm_route' | 'great_circle' | 'searoute' | 'custom';
 
 export interface RouteGenerationOptions {
   preferredChannels?: string[];
@@ -86,23 +81,6 @@ export type RouteTransportSelection =
   | 'highway'
   | 'road';
 
-export interface RouteProcessingConfig {
-  apiThrottle?: {
-    requestsPerSecond: number;
-    maxConcurrent: number;
-  };
-  extraction?: {
-    tolerance: number;
-  };
-  vectorTiles?: {
-    minZoom: number;
-    maxZoom: number;
-    buffer: number;
-    inputFormat?: 'geojson' | 'flatgeobuf';
-    inputCompression?: 'gzip' | 'none';
-  };
-}
-
 export interface RouteEntityPayload {
   selectedArrayByCountries: Record<ISO2, boolean[]>;
   dataSourceName?: string;
@@ -122,7 +100,7 @@ export interface RouteEntityPayload {
   startLocationId?: NodeId;
   endLocationId?: NodeId;
   lineGeometry?: [number, number][];
-  buildConfig?: BaseBuildConfig<string>;
+  buildConfig?: RouteBuildConfig;
   routeStyleConfig?: RouteStyleConfig;
   processedAt?: number;
   processingStatus?: 'pending' | 'processing' | 'completed' | 'failed';
@@ -196,11 +174,7 @@ export interface RouteNearestLineResponse {
   matches: RouteNearestLineMatch[];
 }
 
-export type RouteMetadataSyncField =
-  | 'reference'
-  | 'coordinates'
-  | 'adminCode'
-  | 'adminName';
+export type RouteMetadataSyncField = 'reference' | 'coordinates' | 'adminCode' | 'adminName';
 
 export type RouteMetadataSyncStatus = 'synced' | 'stale';
 

@@ -18,9 +18,11 @@
 - Step4 の `TileEmit` セクションに `Invalid geometry filtering` 設定UIを配置する。
 - 入力項目は `area`, `lineLength`, `maxEdgeLength`, `selfIntersection`, `triangleRingRatio` の5項目に固定する。
 - `tileEmitConfig.invalidGeometryFilter` と上記5項目は正規 config で必須とし、すべて boolean とする。新規 config の既定値は全項目 `false` だが、受信済み config の欠落を runtime で `false` に補完しない。
+- legacy の tile-local `enableTopojsonSimplify=true` は canonical filter 後に geometry を再変形し、task 単位の warning metadata を二重計数せずに最終入力を再filterできないため拒否する。黙って無効化しない。再有効化する場合は、簡略化を task 単位の canonical filter より前へ移し、同じ filtered collection から集計と全 index flow を構築する。
 
 ### 3.2 実行タイミング（Worker）
 - 適用タイミングは `geojson-vt` index 作成直前の GeoJSON collection とする。
+- canonical quality filter 後に geometry を再簡略化しない。tile partitioning で生成された各 `geojson-vt` 入力は、index 作成直前に構造・finite・WGS84・ring contract を再検証するが、task 単位の品質checkとwarning metadataを二重計数しない。
 - stage owner は `tileEmit` とする。Source / Geometry stage は `tileEmitConfig.invalidGeometryFilter` を参照・適用しない。
 - フィルタ対象は Polygon / MultiPolygon の polygon 単位とする。
 - 判定に失敗した polygon は出力対象から除外する。
@@ -53,6 +55,16 @@
 - `featureErrorCountTotal`
 - Task list では warning アイコン/色を表示し、hover/detail で理由を確認可能にする。
 
+### 5.1 metadata 契約
+- 次の値は `TaskQueueRecord.metadata` のトップレベルへ number として保存する。
+  - `invalidPolygonFilteredCount`: 品質 check によって除外した polygon 数（非負整数）
+  - `invalidPolygonCheckedCount`: 1つ以上の品質 check が有効なときに検査した polygon 数（非負整数。全 check OFF なら `0`）
+  - `invalidPolygonFilteredRate`: `filtered / checked`。`checked=0` なら `0`、それ以外は `0..1`
+  - `affectedFeatureCount`: 1つ以上の polygon を除外した feature 数（非負整数）
+  - `featureErrorCountTotal`: 影響 feature の更新後 `properties.errorCount` 合計（非負整数）
+- `invalidPolygonFilteredByCheck` は5つの正規 config keyを必須キーとする非負整数 map とする。
+- `invalidPolygonFilteredCount > 0` のときだけ `resultSeverity='warning'` を付与する。UI は metadata の型・範囲を検証し、message から warning を推測しない。
+
 ## 6. 実行アルゴリズム（TileEmit直前）
 1. Transform 出力 GeoJSON collection を受け取る。
 2. feature ごとに polygon を走査する。
@@ -63,10 +75,26 @@
 7. フィルタ済み GeoJSON を `geojson-vt` に投入する。
 8. `invalidPolygonFilteredCount > 0` の場合は warning 表示対象にする。
 
+### 6.1 契約検証と品質 check
+- 品質 check の有効/無効にかかわらず、FeatureCollection / Feature / geometry 構造、全座標の finite number、経度 `-180..180`、緯度 `-90..90`、ring の最小4座標と閉包を先に検証する。違反は throw し task failure とする。
+- 品質 check は `area` → `lineLength` → `maxEdgeLength` → `selfIntersection` → `triangleRingRatio` の順で評価する。
+- 複数 check に不適合な polygon は最初に不適合となった check だけを `invalidPolygonFilteredByCheck` に計上する。
+- Polygon は不適合なら feature ごと除外する。MultiPolygon は不適合 polygon だけを除外し、残りが0なら feature を除外する。GeometryCollection 内の Polygon / MultiPolygon も同じ規則で再帰的に処理する。
+- フィルタ後の同一 collection から `featureStats`、continent grouping、親タイル summary を再構築し、その collection をすべての geojson-vt build flow に渡す。
+- 進捗 message は `Check <check label> of polygon <current> of <total>` とする（例: `Check area of polygon 3 of 99`）。
+
+### 6.2 品質判定しきい値
+- `area`: 面積 `<= 1e-8 m²`
+- `lineLength`: 外周長 `<= 1e-6 m`
+- `maxEdgeLength`: 最大辺長 `<= 0`、または bbox 対角距離の8倍超
+- `selfIntersection`: 外周または内周の非隣接辺が交差
+- `triangleRingRatio`: 外周が3頂点のとき `polygon area / bbox area < 0.015`
+
 ## 7. 互換性・移行方針
 - 正規キーは `tileEmitConfig.invalidGeometryFilter` のみとする。
 - `fetchConfig.invalidGeometryFilter`、`sourceConfig.invalidGeometryFilter`、旧 alias の互換読み込みは行わない。
 - 旧 config は明示的な migration / cache invalidation の対象とし、runtime で正規 config と混在させない。
+- `enableTopojsonSimplify=true` の受信済み config も明示的な設定契約違反として失敗させる。`false` へのruntime補完やsilent disableは行わない。
 
 ## 8. ロールバック方針
 - 問題が出た場合は該当 PR を revert する。設定UIや worker 適用点を Source へ戻さない。
@@ -111,6 +139,7 @@
 - invalid polygon は除外され、feature error count が増加する。
 - タスクは継続し、warning として completed と区別表示される。
 - 契約違反は failed として可視化され、座標 clamp や旧 config 互換読み込みがない。
+- canonical filter 後のgeometry再簡略化がなく、各geojson-vt入力が直前に構造・座標contractを満たすことを再検証される。
 - 主要テストが追加され、対象パッケージの typecheck/test が通る。
 
 ## 11. 非採用案

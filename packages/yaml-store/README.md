@@ -1,31 +1,22 @@
 # @hierarchidb/yaml-store
 
-Last updated: 2026-08-20
+Last updated: 2026-08-21
 
-This package currently provides the legacy Dexie-based YamlDB v1 and its CRUD helpers. It is not the authoritative store for YAML domain data.
+This package preserves the frozen legacy Dexie-based YamlDB v1 for the separately reviewed recovery and retirement work. It is not an authoritative runtime store.
 
-## Storage authority
+## Production boundary
 
 The canonical contract is [`docs/yaml-plugin-ide-gsm-step4-spec.md`](../../docs/yaml-plugin-ide-gsm-step4-spec.md):
 
 - CoreDB `TreeNode.metadata/data` owns committed YAML state.
 - CoreDB `TreeNode.draftMetadata/draftData` owns draft YAML state.
-- YamlDB v1 is a frozen, non-authoritative legacy recovery source. It must not be used as a cache or dual-write destination.
-- CoreDB and YamlDB are separate IndexedDB databases and cannot participate in one transaction. CoreDB migration and YamlDB inventory/recovery therefore remain separate issues and atomic boundaries.
+- YamlDB is not a cache, dual-write destination, fallback reader, or CoreDB rollback source.
+- The package root exposes no runtime database or mutation API.
+- `@hierarchidb/yaml-store/legacy-close` exposes only the idempotent activation-time revocation/close operation.
 
-The source still exposes `getYamlDB()` and mutation helpers until the follow-up recovery and retirement issues are complete. Those APIs are legacy-only: canonical dialog, ZIP, simulation, and Step 4 runtime paths must not call them. The current [folder YAML import](../../plugins/folder-plugin/README.md#legacy-yaml-snapshot-boundary) still writes YamlDB-only rows and is a non-canonical implementation blocked from cutover. Missing names, empty schema IDs, orphan rows, and conflicts must be reported by read-only inventory; they must not be inferred, copied, merged, or deleted automatically.
+The underlying v1 implementation remains solely so #1341 can add and review its explicit recovery boundary. No canonical dialog, ZIP, Simulation, Worker, or Step 4 route imports it. Physical deletion is a separate destructive operation and is outside the single activation change.
 
-Physical YamlDB deletion is a separate destructive operation. YamlDB remains unchanged during the rollback observation and recovery window for at least 30 days after the production CoreDB migration and through acceptance of one subsequent stable release, whichever is later. The inverse CoreDB migration neither reads nor modifies YamlDB; YamlDB is not the source of CoreDB rollback.
-
-## Dependencies
-
-`@hierarchidb/core-types`, `@hierarchidb/util`, `@hierarchidb/yaml-api`
-
-## Related Packages
-
-- [`@hierarchidb/yaml-api`](../yaml-api/) — YAML API type definitions
-- [`@hierarchidb/core-types`](../core-types/) — Shared type definitions
-- [`Canonical storage contract`](../../docs/yaml-plugin-ide-gsm-step4-spec.md) — authority, migration, recovery, and rollback rules
+YamlDB remains unchanged for at least 30 days after production CoreDB migration and through acceptance of one subsequent stable release, whichever is later. Missing names, empty schema IDs, orphan rows, and conflicts must be reported by read-only inventory and never inferred, copied, merged, or deleted automatically.
 
 ## License
 

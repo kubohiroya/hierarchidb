@@ -4,7 +4,7 @@ import type {
   YamlCanonicalValidationError,
 } from '@hierarchidb/yaml-api/validation';
 
-/** Save modes accepted by the dormant canonical dialog writer. */
+/** Save modes accepted by the canonical dialog writer. */
 export type YamlCanonicalDialogWriteMode = 'save-draft' | 'save';
 
 /** Valid caller input after the runtime contract has been checked. */
@@ -30,7 +30,7 @@ export interface YamlCanonicalDialogWriteRequest {
   readonly onNameConflict: 'error';
 }
 
-/** The only side-effect boundary used by the dormant writer. */
+/** The only side-effect boundary used by the canonical writer. */
 export type YamlCanonicalDialogWritePort = (
   request: YamlCanonicalDialogWriteRequest
 ) => Promise<void>;
@@ -70,7 +70,7 @@ export type YamlCanonicalDialogWriterError =
     }>
   | Readonly<{ readonly code: 'WRITE_PORT_FAILED' }>;
 
-/** Stable, redacted result returned by the dormant canonical dialog writer. */
+/** Stable, redacted result returned by the canonical dialog writer. */
 export type YamlCanonicalDialogWriterResult =
   | Readonly<{ readonly ok: true }>
   | Readonly<{ readonly ok: false; readonly error: YamlCanonicalDialogWriterError }>;

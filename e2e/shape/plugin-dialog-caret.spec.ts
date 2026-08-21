@@ -1,9 +1,6 @@
 import '../utils/skip-if-disabled';
-import { test, expect, type Page } from '@playwright/test';
-import {
-  createStatelessE2EAuthSessionSeed,
-  persistE2EAuthSessionSeed,
-} from '../utils/authSessionSeed';
+import type { Page } from '@playwright/test';
+import { expect, test } from '../fixtures/canonicalAuthFixture';
 import {
   buildAppUrl,
   dismissGuidedTour,
@@ -191,23 +188,14 @@ const createShapeNodeWithDraft = async (page: Page): Promise<ShapeNode> => {
 };
 
 test.describe('PluginDialog caret E2E', () => {
-  test('PluginDialog caret: Step1/Step5 inputs stay editable after menu interactions', async ({ page }) => {
+  test('PluginDialog caret: Step1/Step5 inputs stay editable after menu interactions', async ({
+    page,
+    canonicalAuth,
+  }) => {
     test.setTimeout(180000);
 
-    await page.route('**/auth/verify', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: '{}',
-      });
-    });
-
-    await page.addInitScript(
-      persistE2EAuthSessionSeed,
-      createStatelessE2EAuthSessionSeed('e2e-fake-access-token')
-    );
-
     setupConsoleErrorTracking(page);
+    await canonicalAuth.signIn();
     await page.goto(buildAppUrl('t/r'), { waitUntil: 'domcontentloaded', timeout: 120000 });
     await dismissGuidedTour(page);
     await waitForTreeTableLoad(page);
@@ -224,19 +212,6 @@ test.describe('PluginDialog caret E2E', () => {
         await api.setCorsProxyBaseURL('');
       }
     });
-
-    const verifyResult = await page.evaluate(async (accessToken: string) => {
-      const response = await fetch('/auth/verify', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: '{}',
-      });
-      return { ok: response.ok, status: response.status };
-    }, 'e2e-fake-access-token');
-    expect(verifyResult.ok, `Expected mocked /auth/verify to succeed (status=${verifyResult.status})`).toBe(true);
 
     const shapeNode = await createShapeNodeWithDraft(page);
     await page.goto(buildAppUrl(`t/${shapeNode.treeId}/${shapeNode.pageNodeId}`), {

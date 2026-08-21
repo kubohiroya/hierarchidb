@@ -1,99 +1,123 @@
-# vt パイプライン設計（route 固有）
+# route vector-tile pipeline design
 
-本ドキュメントは、route 固有の差分のみを記述する。
-共通仕様は `docs/vt-pipeline-design.md` を参照。
-2026-02-14 時点の Step3〜Step6、location 連動、stale 運用の確定仕様は `docs/route-build-flow-spec.md` を優先する。
+最終更新: 2026-08-21
+
+本書は `docs/route-build-flow-spec.md` のステージ別実装契約を補足する。
+route のStep2〜Step6、location連動、設定SSOT、cache identityに関して本書と同仕様が
+衝突する場合は、`docs/route-build-flow-spec.md` を優先する。
+
+共通のbuild-session lifecycleとWorker→UI eventは、次を参照する。
+
+- `docs/build-session-spec.md`
+- `docs/build-session-worker-ui-event-spec.md`
 
 ## 対象ジオメトリ
 
-- LineString（全世界で数万本規模、長大な経路を含む）
+- GeoJSON `LineString`
+- 全世界で数万本規模、長大な経路を含む
+- 始点と終点はlocation由来のPointへlineageを持つ
 
-## UX フロー（route）
+## 正規ステージ
 
-- Step2: 交通経路のデータソース選択
-- Step3: 始点/終点の国別 + 経路種別の選択
-- Step4: ビルド設定（入力仕様は `docs/vt-pipeline-design.md` を参照）
-- Step5: ビルド
-- Step6: プレビュー
+route pipelineは次の3ステージを、この順序で実行する。
 
-## ステージ構成（route）
+1. `source`
+2. `geometry`
+3. `tileEmit`
 
-- route-fetch
-- transform
-- vt
+旧称 `route-fetch / fetch`、`transform`、`vt / vectorTile` は説明上の対応語に限り、
+新規task、event、永続recordのstage IDには使用しない。
 
-## route-fetch ステージ（route）
+## source stage
 
-- メタデータをダウンロードして始点/終点 ID を取得
-- LocationQueryAPI で始点/終点の座標を取得
-- WaypointsAPI を選択して経路の中間点を生成
-  - 直線近似
-  - 大圏航路近似
-  - searoute-jp
-  - 外部 API (OSM など)
-- 外部 API 呼び出しは smartFetch（HTTP POST を含む）経由で実行
-- LineString を FGB 化して stage1Buffers に保存
-  - `domainType`: `route`
-  - `sourceKey`: `${srcId}/${dstId}`（順序は区別）
-- タスク単位: `srcId + dstId`（1タスク=1 stage1Buffer）
-- transform タスク生成は plugin 側が責務を持つ
-  - vt-orchestrator には transform/vt タスクを投入する
+### 入力
 
-**キャッシュ**
-- 外部 API の結果は smartFetch でキャッシュする
-- 大圏航路/ searoute-jp の waypoints 計算結果もキャッシュし、再利用時は `reused` とする
+- route node ID
+- Step2 data-source selection
+- Step3 `selectedArrayByCountries`
+- location参照と始点/終点Point
+- `RouteBuildConfig.sourceConfig`
+- route generation method/options
 
-## transform ステージ（route）
+### 処理
 
-- shape と共通仕様
-- ズーム帯ごとに簡略化した FGB を生成
-- 帯内最小zのみ tileIndex 作成
-- タスク単位: `stage1Buffer` × `band`（band0/1/2、band3 は条件付き）
-- band3 は buildConfig の `band3Enabled` が true の場合のみ実行（デフォルト OFF）
-  - band3Enabled は **兄弟/子孫の shape ノードのズーム帯サポート状況**に依存して決定する
+1. data-source strategyからroute metadataを取得する。
+2. 始点/終点のlocationを解決する。
+3. `direct / great_circle / osm_route / searoute / custom` の明示されたengineで
+   LineStringを生成する。
+4. routeごとにオリジナルLineStringを1本だけsource cacheへ永続化する。
+5. geometry taskを、永続化に成功したsource artifactから生成する。
 
-**仕様**
-- LineString がタイル境界を跨いでも、そのタイルに含まれる地物として抽出・描画されること
-- tile coverage は turf を用い、tile index は geojson-vt を用いて整合させる
+engine、location、routeMode、座標、generation設定が欠落・不正な場合はtaskを失敗させる。
+別engine、直線、大圏航路、cacheへの暗黙fallbackは行わない。
 
-## band3 判定手順（route）
+### source keyと入力署名
 
-**入力**
-- route ノード（親/兄弟関係の識別）
-- 兄弟/子孫の shape ノード設定（ズーム帯サポート状況）
+- `sourceKey`は`<routeMode>:<fromLocationId>:<toLocationId>`を基本とする。
+- 方向付きrouteは始点/終点順を保持する。
+- 契約どおりbidirectionalと明示されたrouteだけ端点を正規化する。
+- 座標、generation method/options、stage設定は`meta`/`inputHash`に含める。
+- 同一`sourceKey`でも入力署名が変わったartifactはrecycleしない。
 
-**手順**
-1. 同一親配下または子孫に shape ノードが存在し、band3（z9-z11）対応が有効かを判定する
-2. 1 が true の場合に `band3Enabled = true` とする
-3. `band3Enabled` を ObsolateBuildConfig に保存し、transform/vt の実行条件に利用する
+## geometry stage
 
-**注記**
-- LineString がタイル境界を跨ぐ場合でも、関連する shape が band3 を持つ前提で
-  line の抽出/描画を一致させるため、shape 側の band3 のみで判定する
+### 入力
 
-**出力**
-- ObsolateBuildConfig の `band3Enabled` フラグ
+- source artifact
+- `RouteBuildConfig.geometryConfig`
+- `RouteBuildConfig.routeGeometryConfig`
 
-## vt ステージ（route）
+### 処理
 
-- 固定タスク（1+64+4096） + band3 予約タスク
-- geojson-vt でタイル生成し VTRouteMutationAPI へ保存
+1. ズーム帯ごとにroute filteringを適用する。
+2. 始点/終点を必ず保持してRDP simplificationを適用する。
+3. LineStringが横切るtileを列挙し、tile→routeの転置indexを生成する。
+4. ズーム帯ごとのgeometry cacheとindexを永続化する。
 
-## API 利用
+LineStringは、始点/終点がtile外でも交差するtileの候補に含める。
+filtering、simplification、index生成の一部をno-opにしてtaskを`completed`へ進めない。
 
-- LocationQueryAPI / LocationMutationAPI
-- VTRouteQueryAPI / VTRouteMutationAPI
-- WaypointsAPI（実装モジュール群を切替）
+## tileEmit stage
 
-## 旧実装からの置換対象
+### 入力
 
-- route-plugin の旧 `vectortile` ステージ関連コード
-- 旧ストアを `vt-route-store` に置換
-  - 旧ストアは **route 用の旧中間ストア**を指す
+- geometry cache
+- tile転置index
+- `RouteBuildConfig.tileEmitConfig`
 
-## route 固有のファイル補足
+### 処理
 
-- `plugins/route-plugin/src/services/build/routeBuildConfig.ts`
-  - Step4 の設定値から `ObsolateBuildConfig` を組み立てる（入力仕様は `docs/vt-pipeline-design.md` を参照）
-- `plugins/route-plugin/src/services/build/routeBuildRunner.ts`
-  - vt-orchestrator の `runPipeline` を呼び出す
+1. 対象tileごとにgeometry cacheからLineStringを読む。
+2. tile境界でclipし、MVT featureへ変換する。
+3. route vector-tile storeへ永続化する。
+4. tile summaryとtask/stage完了状態を、永続化成功後に更新する。
+
+geometry cache/indexが欠落・不正な場合は失敗する。source artifactを直接読んでtileを生成する
+互換経路や、空tile成功への読み替えは行わない。
+
+## 正規実行境界
+
+- session lifecycleの所有者は`RouteBuildSessionOrchestrator -> RouteBuildSession`とする。
+- `RouteBuildSession`は各stageの実処理をWorker serviceへ委譲し、canonical event sourceとして
+  authoritative task snapshotとtask progressを提供する。
+- UIの`RouteBuildStep`はWorker commandとcanonical event subscriptionだけを利用する。
+- UIがroute mutation APIの3処理を独立に順次呼ぶ現行経路はIssue #549で撤去する移行対象とする。
+
+## 現行mainとの差分（2026-08-21）
+
+- `RouteBuildSession`の`source` handlerはgeneratorを呼ぶが、返り値を破棄し、
+  LineStringとsource cacheを永続化しない。
+- `RouteBuildSession`の`geometry` / `tileEmit` handlerは実成果物を生成せず完了する。
+  したがってsession経路は3stageすべてのartifact契約を満たさない。
+- `RouteBuildStep`には
+  `importIdeGsmRoutes -> buildRouteTileIndex -> generateRouteVectorTiles` の直接実行経路が残る。
+- `RouteGenerator` / `SearouteEngine`にはengine欠落・load失敗時の暗黙fallbackが残る。
+- 上記はIssue #549で正規経路へ統合し、契約違反をfail-fastへ変更する。
+
+## 検証観点
+
+- `source -> geometry -> tileEmit`の順序とcanonical eventが一致する。
+- 各stageの完了時に対応artifactが存在する。
+- bidirectional指定の有無でsource keyの方向性が決定的に変わる。
+- LineStringが横切る全tileで描画される。
+- engine/cache/configの契約違反が可視なtask/session failureになる。

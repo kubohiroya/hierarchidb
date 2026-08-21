@@ -1,4 +1,4 @@
-import type { TaskProgressUpdatedEvent } from '@hierarchidb/build-api';
+import type { TaskProgressUpdatedEvent, WorkerLogEvent } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { Provider } from 'jotai';
@@ -25,13 +25,18 @@ type BridgeCallbacks = {
   onProgressEvent: (event: TaskProgressUpdatedEvent) => void;
 };
 
+type WorkerLogCallback = (event: WorkerLogEvent) => void;
+
 const mocks = vi.hoisted(() => ({
   initialize: vi.fn(),
   getBuildSessionRuntime: vi.fn(),
   subscribeAll: vi.fn(),
+  subscribeWorkerLog: vi.fn(),
   probeBuildSession: vi.fn(),
-  unsubscribe: vi.fn(),
+  unsubscribeCanonical: vi.fn(),
+  unsubscribeWorkerLog: vi.fn(),
   callbacks: null as BridgeCallbacks | null,
+  workerLogCallback: null as WorkerLogCallback | null,
 }));
 
 vi.mock('@hierarchidb/ui-worker-client', () => ({
@@ -39,6 +44,7 @@ vi.mock('@hierarchidb/ui-worker-client', () => ({
     initialize: mocks.initialize,
     getBuildSessionRuntime: mocks.getBuildSessionRuntime,
     subscribeAll: mocks.subscribeAll,
+    subscribeWorkerLog: mocks.subscribeWorkerLog,
     getShapeQueryAPI: async () => ({ probeBuildSession: mocks.probeBuildSession }),
   }),
 }));
@@ -46,12 +52,17 @@ vi.mock('@hierarchidb/ui-worker-client', () => ({
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.callbacks = null;
+  mocks.workerLogCallback = null;
   mocks.initialize.mockResolvedValue(undefined);
   mocks.getBuildSessionRuntime.mockResolvedValue(null);
   mocks.probeBuildSession.mockResolvedValue({ kind: 'available' });
   mocks.subscribeAll.mockImplementation(async (_nodeType, _nodeId, callbacks) => {
     mocks.callbacks = callbacks as BridgeCallbacks;
-    return mocks.unsubscribe;
+    return mocks.unsubscribeCanonical;
+  });
+  mocks.subscribeWorkerLog.mockImplementation(async (_nodeType, _nodeId, callback) => {
+    mocks.workerLogCallback = callback as WorkerLogCallback;
+    return mocks.unsubscribeWorkerLog;
   });
 });
 
@@ -65,6 +76,7 @@ const startBridge = async (store: ReturnType<typeof createStore>) => {
 
   await waitFor(() => {
     expect(mocks.callbacks).not.toBeNull();
+    expect(mocks.workerLogCallback).not.toBeNull();
   });
   const callbacks = mocks.callbacks;
   if (!callbacks) {
@@ -227,6 +239,41 @@ describe('useShapeBuildSessionStateAtomBridge', () => {
     view.unmount();
   });
 
+  it('subscribes Worker diagnostics separately from canonical state and releases both streams', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const store = createStore();
+      const { view } = await startBridge(store);
+      const workerLogCallback = mocks.workerLogCallback;
+      if (!workerLogCallback) {
+        throw new Error('Worker log callback was not registered.');
+      }
+
+      act(() => {
+        workerLogCallback({
+          nodeId: 'node-1' as NodeId,
+          timestamp: 1_200,
+          level: 'error',
+          message: 'snapshot failed',
+          data: { stage: 'source' },
+        });
+      });
+
+      expect(mocks.subscribeWorkerLog).toHaveBeenCalledTimes(1);
+      expect(consoleError).toHaveBeenCalledWith('[Worker]', 'snapshot failed', { stage: 'source' });
+
+      view.unmount();
+      expect(mocks.unsubscribeWorkerLog).toHaveBeenCalledTimes(1);
+      expect(mocks.unsubscribeCanonical).toHaveBeenCalledTimes(1);
+    } finally {
+      consoleError.mockRestore();
+      consoleWarn.mockRestore();
+      consoleLog.mockRestore();
+    }
+  });
+
   it('preserves completed UI sync when the stage snapshot arrives before session status', async () => {
     const store = createStore();
     const { callbacks, view } = await startBridge(store);
@@ -298,17 +345,19 @@ describe('useShapeBuildSessionStateAtomBridge', () => {
       expect(resolveSubscription).not.toBeNull();
     });
     view.unmount();
-    expect(mocks.unsubscribe).not.toHaveBeenCalled();
+    expect(mocks.unsubscribeCanonical).not.toHaveBeenCalled();
+    expect(mocks.subscribeWorkerLog).not.toHaveBeenCalled();
 
     const resolvePendingSubscription = resolveSubscription;
     if (!resolvePendingSubscription) {
       throw new Error('Subscription resolver was not registered.');
     }
-    resolvePendingSubscription(mocks.unsubscribe);
+    resolvePendingSubscription(mocks.unsubscribeCanonical);
 
     await waitFor(() => {
-      expect(mocks.unsubscribe).toHaveBeenCalledTimes(1);
+      expect(mocks.unsubscribeCanonical).toHaveBeenCalledTimes(1);
     });
+    expect(mocks.subscribeWorkerLog).not.toHaveBeenCalled();
   });
 
   it('re-subscribes after cancellation and ignores events from the cancelled subscription', async () => {
@@ -317,10 +366,12 @@ describe('useShapeBuildSessionStateAtomBridge', () => {
     const cancelledCallbacks = first.callbacks;
 
     first.view.unmount();
-    expect(mocks.unsubscribe).toHaveBeenCalledTimes(1);
+    expect(mocks.unsubscribeCanonical).toHaveBeenCalledTimes(1);
+    expect(mocks.unsubscribeWorkerLog).toHaveBeenCalledTimes(1);
 
     const second = await startBridge(store);
     expect(mocks.subscribeAll).toHaveBeenCalledTimes(2);
+    expect(mocks.subscribeWorkerLog).toHaveBeenCalledTimes(2);
 
     act(() => {
       second.callbacks.onSessionState(runningGeometryStatus);
@@ -357,6 +408,7 @@ describe('useShapeBuildSessionStateAtomBridge', () => {
     );
 
     second.view.unmount();
-    expect(mocks.unsubscribe).toHaveBeenCalledTimes(2);
+    expect(mocks.unsubscribeCanonical).toHaveBeenCalledTimes(2);
+    expect(mocks.unsubscribeWorkerLog).toHaveBeenCalledTimes(2);
   });
 });
