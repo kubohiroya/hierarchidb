@@ -3,32 +3,31 @@
  * Pure functions that can be used in both UI and Worker environments
  */
 
-import type {
-  CountryMetadata,
-  DataSourceName,
-  ShapeEntity,
-  SourceTaskPayload,
-  ShapeStepValidationResult,
-  SelectedArrayByCountries,
-} from '~/common/types/index';
-import {
-  DEFAULT_BUILD_CONFIG,
-  DEFAULT_PROCESSING_CONFIG,
-  SHAPE_DATA_SOURCES,
-} from '~/common/types/constants';
-import { GEOBOUNDARIES_RELEASE_BASE_URL } from './geoboundariesEndpoints.js';
-import type {
-  ShapeBuildConfig,
-  ShapeBuildConfigPatch,
-  ShapeProcessingConfig,
-  ShapeRuntimeBuildConfig,
-} from '~/common/types/index';
 import {
   ZOOM_BAND_MAX_RANGES,
   ZOOM_BAND_MAX_ZOOM,
   ZOOM_BAND_MIN_RANGES,
   ZOOM_BAND_MIN_ZOOM,
 } from '@hierarchidb/util';
+import {
+  DEFAULT_BUILD_CONFIG,
+  DEFAULT_PROCESSING_CONFIG,
+  SHAPE_DATA_SOURCES,
+} from '~/common/types/constants';
+import type {
+  CountryMetadata,
+  DataSourceName,
+  SelectedArrayByCountries,
+  ShapeBuildConfig,
+  ShapeBuildConfigPatch,
+  ShapeEntity,
+  ShapeProcessingConfig,
+  ShapeRuntimeBuildConfig,
+  ShapeStepValidationResult,
+  SourceTaskPayload,
+} from '~/common/types/index';
+import { GEOBOUNDARIES_RELEASE_BASE_URL } from './geoboundariesEndpoints.js';
+
 export { resolveSourceStageStrategy } from '~/services/build/strategies/resolveSourceStageStrategy';
 
 export function getDataSourceConfig(dataSource?: DataSourceName | null) {
@@ -43,13 +42,11 @@ export function getPreferredCountryCodeFormat(dataSource?: DataSourceName | null
 export function resolveCountryCodeForDataSource(
   dataSource: DataSourceName,
   country: Partial<CountryMetadata>,
-  fallback?: string,
+  fallback?: string
 ): string {
   const preferred = getPreferredCountryCodeFormat(dataSource);
   const byFormat = preferred === 'iso3' ? country.iso3 : country.iso2;
-  const candidate = (byFormat ?? country.countryCode ?? fallback ?? '')
-    .trim()
-    .toUpperCase();
+  const candidate = (byFormat ?? country.countryCode ?? fallback ?? '').trim().toUpperCase();
   if (!candidate) return fallback?.trim().toUpperCase() || '';
   if (preferred === 'iso2' && candidate.length === 3 && country.iso2) {
     return country.iso2.trim().toUpperCase();
@@ -92,8 +89,9 @@ export function mapDraftToUpdates(draft: ShapeDraft): Partial<ShapeEntity> {
  */
 export function validateBuildConfig(
   buildConfig: ShapeBuildConfig,
-  processingConfig?: ShapeProcessingConfig,
+  processingConfig?: ShapeProcessingConfig
 ): ShapeStepValidationResult {
+  assertShapeBuildConfigTileEmitContract(buildConfig);
   const errors: string[] = [];
 
   const mergedBuildConfig = applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, buildConfig);
@@ -113,7 +111,9 @@ export function validateBuildConfig(
   const zoomBandBoundaries = geometryConfig.zoomBandBoundaries;
   const zoomBandCount = Math.max(0, zoomBandBoundaries.length - 1);
   if (zoomBandCount < ZOOM_BAND_MIN_RANGES || zoomBandCount > ZOOM_BAND_MAX_RANGES) {
-    errors.push(`Zoom band count must be between ${ZOOM_BAND_MIN_RANGES} and ${ZOOM_BAND_MAX_RANGES}`);
+    errors.push(
+      `Zoom band count must be between ${ZOOM_BAND_MIN_RANGES} and ${ZOOM_BAND_MAX_RANGES}`
+    );
   }
   if (zoomBandBoundaries.length === 0) {
     errors.push('Zoom band boundaries must include at least the minimum zoom');
@@ -124,11 +124,17 @@ export function validateBuildConfig(
       errors.push(`Zoom band boundaries must start at ${ZOOM_BAND_MIN_ZOOM}`);
     }
     if (last === undefined || last < ZOOM_BAND_MIN_ZOOM || last > ZOOM_BAND_MAX_ZOOM) {
-      errors.push(`Zoom band max boundary must be between ${ZOOM_BAND_MIN_ZOOM} and ${ZOOM_BAND_MAX_ZOOM}`);
+      errors.push(
+        `Zoom band max boundary must be between ${ZOOM_BAND_MIN_ZOOM} and ${ZOOM_BAND_MAX_ZOOM}`
+      );
     }
   }
-  if (zoomBandBoundaries.some((value) => value < ZOOM_BAND_MIN_ZOOM || value > ZOOM_BAND_MAX_ZOOM)) {
-    errors.push(`Zoom band boundaries must be between ${ZOOM_BAND_MIN_ZOOM} and ${ZOOM_BAND_MAX_ZOOM}`);
+  if (
+    zoomBandBoundaries.some((value) => value < ZOOM_BAND_MIN_ZOOM || value > ZOOM_BAND_MAX_ZOOM)
+  ) {
+    errors.push(
+      `Zoom band boundaries must be between ${ZOOM_BAND_MIN_ZOOM} and ${ZOOM_BAND_MAX_ZOOM}`
+    );
   }
   for (let i = 1; i < zoomBandBoundaries.length; i += 1) {
     const current = zoomBandBoundaries[i];
@@ -155,7 +161,10 @@ export function validateBuildConfig(
 /**
  * Calculate selection statistics from URL metadata
  */
-const normalizeCountryCodeFromMetadata = (country: Partial<CountryMetadata>, index: number): string => {
+const normalizeCountryCodeFromMetadata = (
+  country: Partial<CountryMetadata>,
+  index: number
+): string => {
   const iso2 = country.iso2?.trim();
   if (iso2) return iso2.toUpperCase();
   const countryCode = country.countryCode?.trim();
@@ -179,7 +188,7 @@ export function generateDownloadTaskPayloads(
   dataSource: DataSourceName,
   countries: string[],
   adminLevels: number[],
-  countryMetadata: CountryMetadata[],
+  countryMetadata: CountryMetadata[]
 ): SourceTaskPayload[] {
   const payloads: SourceTaskPayload[] = [];
   const countryMap = new Map<string, CountryMetadata>();
@@ -202,7 +211,9 @@ export function generateDownloadTaskPayloads(
 
       const resolvedCode = resolveCountryCodeForDataSource(dataSource, country, countryCode);
       if (!resolvedCode) {
-        throw new Error(`[shape-plugin] Failed to resolve country code for ${dataSource} (${countryCode})`);
+        throw new Error(
+          `[shape-plugin] Failed to resolve country code for ${dataSource} (${countryCode})`
+        );
       }
       const url = buildDataSourceUrl(dataSource, resolvedCode, level);
       if (url) {
@@ -226,40 +237,40 @@ export function generateDownloadTaskPayloads(
 export function generateDownloadTaskPayloadsFromSelection(
   dataSource: DataSourceName,
   selectedArrayByCountries: SelectedArrayByCountries | undefined,
-  countryMetadata: CountryMetadata[],
+  countryMetadata: CountryMetadata[]
 ): SourceTaskPayload[] {
-  if (!selectedArrayByCountries || !Object.keys(selectedArrayByCountries).length || !countryMetadata.length) {
+  if (
+    !selectedArrayByCountries ||
+    !Object.keys(selectedArrayByCountries).length ||
+    !countryMetadata.length
+  ) {
     return [];
   }
   const iso3ToIso2 = new Map(
     countryMetadata
       .map((country) => {
         const iso3 = country.iso3?.trim().toUpperCase();
-        const iso2 = country.iso2?.trim().toUpperCase() ?? country.countryCode?.trim().toUpperCase();
+        const iso2 =
+          country.iso2?.trim().toUpperCase() ?? country.countryCode?.trim().toUpperCase();
         if (!iso3 || !iso2) return null;
         return [iso3, iso2] as const;
       })
-      .filter((entry): entry is [string, string] => Boolean(entry)),
+      .filter((entry): entry is [string, string] => Boolean(entry))
   );
   const selectionByIso2 = new Map<string, boolean[]>();
   Object.entries(selectedArrayByCountries).forEach(([key, row]) => {
     const normalizedKey = key.trim().toUpperCase();
-    const resolvedKey = normalizedKey.length === 2
-      ? normalizedKey
-      : iso3ToIso2.get(normalizedKey) ?? normalizedKey;
+    const resolvedKey =
+      normalizedKey.length === 2 ? normalizedKey : (iso3ToIso2.get(normalizedKey) ?? normalizedKey);
     if (!resolvedKey) return;
-    const nextRow = Array.isArray(row)
-      ? Array.from(row)
-      : [];
+    const nextRow = Array.isArray(row) ? Array.from(row) : [];
     selectionByIso2.set(resolvedKey, nextRow);
   });
   return countryMetadata.flatMap((country, index) => {
     const normalizedCode = normalizeCountryCodeFromMetadata(country, index);
     const iso2Key = normalizedCode.trim().toUpperCase();
     const selectedRow = selectionByIso2.get(
-      iso2Key.length === 2
-        ? iso2Key
-        : iso3ToIso2.get(iso2Key) ?? iso2Key,
+      iso2Key.length === 2 ? iso2Key : (iso3ToIso2.get(iso2Key) ?? iso2Key)
     );
     const selectedLevels = resolveSelectedLevels(selectedRow);
     if (selectedLevels.length === 0) return [];
@@ -267,17 +278,21 @@ export function generateDownloadTaskPayloadsFromSelection(
       if (!country.availableAdminLevels.includes(level)) return [];
       const resolvedCode = resolveCountryCodeForDataSource(dataSource, country, normalizedCode);
       if (!resolvedCode) {
-        throw new Error(`[shape-plugin] Failed to resolve country code for ${dataSource} (${normalizedCode})`);
+        throw new Error(
+          `[shape-plugin] Failed to resolve country code for ${dataSource} (${normalizedCode})`
+        );
       }
       const url = buildDataSourceUrl(dataSource, resolvedCode, level);
       if (!url) return [];
-      return [{
-        url,
-        countryCode: resolvedCode,
-        countryName: country.countryName,
-        adminLevel: level,
-        dataSource,
-      }];
+      return [
+        {
+          url,
+          countryCode: resolvedCode,
+          countryName: country.countryName,
+          adminLevel: level,
+          dataSource,
+        },
+      ];
     });
   });
 }
@@ -296,7 +311,7 @@ export const buildSourceTaskId = (nodeId: string, payload: SourceTaskPayload): s
 function buildDataSourceUrl(
   dataSource: DataSourceName,
   countryCode: string,
-  adminLevel: number,
+  adminLevel: number
 ): string | null {
   const baseUrls = {
     naturalearth: 'https://www.naturalearthdata.com/download',
@@ -312,9 +327,8 @@ function buildDataSourceUrl(
     case 'naturalearth': {
       // Prefer 50m scale; adminLevel 0 -> countries, 1 -> states/provinces
       const scale = '50m';
-      const file = adminLevel === 0
-        ? 'ne_50m_admin_0_countries.zip'
-        : 'ne_50m_admin_1_states_provinces.zip';
+      const file =
+        adminLevel === 0 ? 'ne_50m_admin_0_countries.zip' : 'ne_50m_admin_1_states_provinces.zip';
       return `${baseUrl}/${scale}/cultural/${file}`;
     }
     case 'geoboundaries':
@@ -337,26 +351,26 @@ function buildDataSourceUrl(
  */
 export function applyBuildConfigPatch(
   base: ShapeBuildConfig,
-  overrides?: ShapeBuildConfigPatch,
+  overrides?: ShapeBuildConfigPatch
 ): ShapeBuildConfig {
   if (!overrides) return base;
 
   const sourceConfig = overrides.sourceConfig
     ? {
-      ...base.sourceConfig,
-      ...overrides.sourceConfig,
-      geometryIntakeGuard: overrides.sourceConfig.geometryIntakeGuard
-        ? {
-          ...(base.sourceConfig.geometryIntakeGuard ?? {}),
-          ...overrides.sourceConfig.geometryIntakeGuard,
-        }
-        : base.sourceConfig.geometryIntakeGuard,
-    }
+        ...base.sourceConfig,
+        ...overrides.sourceConfig,
+        geometryIntakeGuard: overrides.sourceConfig.geometryIntakeGuard
+          ? {
+              ...(base.sourceConfig.geometryIntakeGuard ?? {}),
+              ...overrides.sourceConfig.geometryIntakeGuard,
+            }
+          : base.sourceConfig.geometryIntakeGuard,
+      }
     : base.sourceConfig;
 
   const bandOverrides = overrides.geometryConfig;
   const resolveOmitDetailsLevel = (
-    level: unknown,
+    level: unknown
   ): ShapeBuildConfig['geometryConfig']['omitDetailsConfig']['level'] => {
     if (level === undefined) {
       return base.geometryConfig.omitDetailsConfig.level;
@@ -374,31 +388,31 @@ export function applyBuildConfigPatch(
   };
   const geometryConfig = bandOverrides
     ? {
-      ...base.geometryConfig,
-      ...bandOverrides,
-      hybridFilterConfig: bandOverrides.hybridFilterConfig
-        ? { ...base.geometryConfig.hybridFilterConfig, ...bandOverrides.hybridFilterConfig }
-        : base.geometryConfig.hybridFilterConfig,
-      omitDetailsConfig: bandOverrides.omitDetailsConfig
-        ? {
-          ...base.geometryConfig.omitDetailsConfig,
-          ...bandOverrides.omitDetailsConfig,
-          level: resolveOmitDetailsLevel(bandOverrides.omitDetailsConfig.level),
-        }
-        : base.geometryConfig.omitDetailsConfig,
-    }
+        ...base.geometryConfig,
+        ...bandOverrides,
+        hybridFilterConfig: bandOverrides.hybridFilterConfig
+          ? { ...base.geometryConfig.hybridFilterConfig, ...bandOverrides.hybridFilterConfig }
+          : base.geometryConfig.hybridFilterConfig,
+        omitDetailsConfig: bandOverrides.omitDetailsConfig
+          ? {
+              ...base.geometryConfig.omitDetailsConfig,
+              ...bandOverrides.omitDetailsConfig,
+              level: resolveOmitDetailsLevel(bandOverrides.omitDetailsConfig.level),
+            }
+          : base.geometryConfig.omitDetailsConfig,
+      }
     : base.geometryConfig;
   const tileEmitConfig = overrides.tileEmitConfig
     ? {
-      ...base.tileEmitConfig,
-      ...overrides.tileEmitConfig,
-      invalidGeometryFilter: overrides.tileEmitConfig.invalidGeometryFilter
-        ? {
-          ...(base.tileEmitConfig.invalidGeometryFilter ?? {}),
-          ...overrides.tileEmitConfig.invalidGeometryFilter,
-        }
-        : base.tileEmitConfig.invalidGeometryFilter,
-    }
+        ...base.tileEmitConfig,
+        ...overrides.tileEmitConfig,
+        invalidGeometryFilter: overrides.tileEmitConfig.invalidGeometryFilter
+          ? {
+              ...base.tileEmitConfig.invalidGeometryFilter,
+              ...overrides.tileEmitConfig.invalidGeometryFilter,
+            }
+          : base.tileEmitConfig.invalidGeometryFilter,
+      }
     : base.tileEmitConfig;
 
   const cleanupConfig = overrides.cleanupConfig
@@ -417,27 +431,23 @@ export function applyBuildConfigPatch(
 
 export function mergeProcessingConfig(
   base: ShapeProcessingConfig,
-  overrides?: Partial<ShapeProcessingConfig>,
+  overrides?: Partial<ShapeProcessingConfig>
 ): ShapeProcessingConfig {
   if (!overrides) return base;
 
-  const source = overrides.source
-    ? { ...base.source, ...overrides.source }
-    : base.source;
-  const geometry = overrides.geometry
-    ? { ...base.geometry, ...overrides.geometry }
-    : base.geometry;
+  const source = overrides.source ? { ...base.source, ...overrides.source } : base.source;
+  const geometry = overrides.geometry ? { ...base.geometry, ...overrides.geometry } : base.geometry;
   const tileEmit = overrides.tileEmit
     ? {
-      ...base.tileEmit,
-      ...overrides.tileEmit,
-      dynamicConcurrency: overrides.tileEmit.dynamicConcurrency
-        ? {
-          ...(base.tileEmit.dynamicConcurrency ?? {}),
-          ...overrides.tileEmit.dynamicConcurrency,
-        }
-        : base.tileEmit.dynamicConcurrency,
-    }
+        ...base.tileEmit,
+        ...overrides.tileEmit,
+        dynamicConcurrency: overrides.tileEmit.dynamicConcurrency
+          ? {
+              ...(base.tileEmit.dynamicConcurrency ?? {}),
+              ...overrides.tileEmit.dynamicConcurrency,
+            }
+          : base.tileEmit.dynamicConcurrency,
+      }
     : base.tileEmit;
 
   return {
@@ -449,10 +459,72 @@ export function mergeProcessingConfig(
   };
 }
 
+const INVALID_GEOMETRY_FILTER_KEYS = [
+  'area',
+  'lineLength',
+  'maxEdgeLength',
+  'selfIntersection',
+  'triangleRingRatio',
+] as const;
+
+export function assertShapeBuildConfigTileEmitContract(buildConfig: ShapeBuildConfig): void {
+  const buildConfigRecord = buildConfig as unknown as Record<string, unknown>;
+  if (Object.hasOwn(buildConfigRecord, 'fetchConfig')) {
+    throw new Error('[shape-build] fetchConfig.invalidGeometryFilter is not supported');
+  }
+
+  const sourceConfig = buildConfigRecord.sourceConfig;
+  if (
+    sourceConfig &&
+    typeof sourceConfig === 'object' &&
+    !Array.isArray(sourceConfig) &&
+    Object.hasOwn(sourceConfig, 'invalidGeometryFilter')
+  ) {
+    throw new Error('[shape-build] sourceConfig.invalidGeometryFilter is not supported');
+  }
+
+  const tileEmitConfig = buildConfigRecord.tileEmitConfig;
+  if (!tileEmitConfig || typeof tileEmitConfig !== 'object' || Array.isArray(tileEmitConfig)) {
+    throw new Error('[shape-build] tileEmitConfig.invalidGeometryFilter is required');
+  }
+  const invalidGeometryFilter = (tileEmitConfig as Record<string, unknown>).invalidGeometryFilter;
+  if (
+    !invalidGeometryFilter ||
+    typeof invalidGeometryFilter !== 'object' ||
+    Array.isArray(invalidGeometryFilter)
+  ) {
+    throw new Error('[shape-build] tileEmitConfig.invalidGeometryFilter is required');
+  }
+  const invalidGeometryFilterRecord = invalidGeometryFilter as Record<string, unknown>;
+  for (const key of INVALID_GEOMETRY_FILTER_KEYS) {
+    if (
+      !Object.hasOwn(invalidGeometryFilterRecord, key) ||
+      typeof invalidGeometryFilterRecord[key] !== 'boolean'
+    ) {
+      throw new Error(`[shape-build] tileEmitConfig.invalidGeometryFilter.${key} must be boolean`);
+    }
+  }
+  const supportedKeys = new Set<string>(INVALID_GEOMETRY_FILTER_KEYS);
+  const unsupportedKey = Object.keys(invalidGeometryFilterRecord).find(
+    (key) => !supportedKeys.has(key)
+  );
+  if (unsupportedKey) {
+    throw new Error(
+      `[shape-build] tileEmitConfig.invalidGeometryFilter.${unsupportedKey} is not supported`
+    );
+  }
+  if ((tileEmitConfig as Record<string, unknown>).enableTopojsonSimplify !== false) {
+    throw new Error(
+      '[shape-build] tileEmitConfig.enableTopojsonSimplify must be false at the canonical invalid-geometry filter boundary'
+    );
+  }
+}
+
 export function composeRuntimeBuildConfig(
   buildConfig: ShapeBuildConfig,
-  processingConfig: ShapeProcessingConfig,
+  processingConfig: ShapeProcessingConfig
 ): ShapeRuntimeBuildConfig {
+  assertShapeBuildConfigTileEmitContract(buildConfig);
   return {
     ...buildConfig,
     sourceConfig: {
@@ -515,9 +587,13 @@ export function summarizeCheckboxState(state: SelectedArrayByCountries | undefin
 }
 
 export function countSelectedAdminPairs(
-  selectedArrayByCountries: SelectedArrayByCountries | undefined,
+  selectedArrayByCountries: SelectedArrayByCountries | undefined
 ): number {
-  if (!selectedArrayByCountries || typeof selectedArrayByCountries !== 'object' || Array.isArray(selectedArrayByCountries)) {
+  if (
+    !selectedArrayByCountries ||
+    typeof selectedArrayByCountries !== 'object' ||
+    Array.isArray(selectedArrayByCountries)
+  ) {
     return 0;
   }
   let selectedAdminPairCount = 0;

@@ -41,6 +41,7 @@ export type {
 export {
   composeRuntimeBuildConfig,
   applyBuildConfigPatch,
+  assertShapeBuildConfigTileEmitContract,
   mergeProcessingConfig,
   summarizeCheckboxState,
   getPreferredCountryCodeFormat,

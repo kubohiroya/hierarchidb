@@ -1,16 +1,17 @@
 import type { Feature, FeatureCollection } from 'geojson';
 import type { VTStageContext } from '~/contextTypes';
+import { executeFeatureCollectLoop } from './executeFeatureCollectLoop.js';
+import { loadGeometryCacheRecordsForCollection } from './loadGeometryCacheRecordsForCollection.js';
 import type { InputFeatureStats } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
+import { getCollectDebugSettings } from './vtStageFeatureCollectorDebugSettings.js';
 import {
   logCollectBuffersStart,
-  logCollectSummary,
   logCollectCountDone,
   logCollectCountStart,
   logCollectRecordSnapshot,
+  logCollectSummary,
 } from './vtStageFeatureCollectorDebugUtils.js';
-import { getCollectDebugSettings } from './vtStageFeatureCollectorDebugSettings.js';
-import { executeFeatureCollectLoop } from './executeFeatureCollectLoop.js';
-import { loadGeometryCacheRecordsForCollection } from './loadGeometryCacheRecordsForCollection.js';
+import type { CollectedFeatureSource } from './vtStageTaskTypes.js';
 
 type VtFeatureCollectorCoordinationInput = {
   context: VTStageContext;
@@ -27,24 +28,15 @@ type VtFeatureCollectorCoordinationResult = {
   featureStats: InputFeatureStats[];
   bufferSizes: Map<string, number>;
   featuresByContinent?: Map<string, Feature[]>;
+  featureSources: Map<Feature, CollectedFeatureSource>;
 };
 
 export const runFeatureCollectionCoordinator = async (
-  input: VtFeatureCollectorCoordinationInput,
+  input: VtFeatureCollectorCoordinationInput
 ): Promise<VtFeatureCollectorCoordinationResult | null> => {
-  const {
-    context,
-    bufferIds,
-    nodeId,
-    options,
-  } = input;
+  const { context, bufferIds, nodeId, options } = input;
 
-  const {
-    debugCollect,
-    testTimeoutMs,
-    useBulkGet,
-    useGetEach,
-  } = getCollectDebugSettings();
+  const { debugCollect, testTimeoutMs, useBulkGet, useGetEach } = getCollectDebugSettings();
 
   if (debugCollect) {
     const countStartedAt = logCollectCountStart(nodeId);
@@ -72,6 +64,7 @@ export const runFeatureCollectionCoordinator = async (
     featureStats: resolvedFeatureStats,
     bufferSizes: resolvedBufferSizes,
     featuresByContinent: resolvedFeaturesByContinent,
+    featureSources: resolvedFeatureSources,
   } = await executeFeatureCollectLoop({
     context,
     nodeId,
@@ -85,7 +78,7 @@ export const runFeatureCollectionCoordinator = async (
       nodeId,
       resolvedAllFeatures.length,
       resolvedFeatureStats.length,
-      resolvedBufferSizes.size,
+      resolvedBufferSizes.size
     );
   }
 
@@ -98,5 +91,6 @@ export const runFeatureCollectionCoordinator = async (
     featureStats: resolvedFeatureStats,
     bufferSizes: resolvedBufferSizes,
     ...(resolvedFeaturesByContinent ? { featuresByContinent: resolvedFeaturesByContinent } : {}),
+    featureSources: resolvedFeatureSources,
   };
 };

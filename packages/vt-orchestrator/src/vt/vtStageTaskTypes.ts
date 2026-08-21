@@ -1,6 +1,6 @@
-import type { BandConfig, VtTaskInput } from '~/types/types';
+import type { Feature, FeatureCollection } from 'geojson';
 import type { VTStageContext } from '~/contextTypes';
-import type { FeatureCollection, Feature } from 'geojson';
+import type { BandConfig, VtTaskInput } from '~/types/types';
 import type { InputFeatureStats } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
 
 export type TaskContextForVt = {
@@ -47,11 +47,19 @@ export type VtTaskExecutionInput = {
 
 export type VtTaskRunMetadata = Pick<VtTaskExecutionInput, 'taskId' | 'nodeId'>;
 
+export type CollectedFeatureSource = {
+  bufferId: string;
+  countryCode?: string;
+  geojsonByteSize?: number;
+  continentKey?: string;
+};
+
 export type CollectedVtFeatures = {
   collection: FeatureCollection;
   featureStats: InputFeatureStats[];
   bufferSizes: Map<string, number>;
   featuresByContinent?: Map<string, Feature[]>;
+  featureSources: Map<Feature, CollectedFeatureSource>;
 };
 
 export type VtCollectionResult = Omit<
