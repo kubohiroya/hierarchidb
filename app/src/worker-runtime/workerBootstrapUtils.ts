@@ -60,11 +60,11 @@ import { pluginDefinitions as staticPluginDefinitions } from '~/plugin-loaders/i
 import { pluginWorkerLoaders } from '~/plugin-loaders/workerLoaderUtils';
 import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import { resolveCanonicalPluginBuildAPI } from './resolveCanonicalPluginBuildAPI.js';
+import { resolveRuntimeStatusFromBuildSession } from './resolveRuntimeStatusFromBuildSession.js';
 import {
   resolveShapeBuildExtensions,
   type ShapeDownloadTaskPayload,
 } from './resolveShapeBuildExtensions.js';
-import { resolveRuntimeStatusFromBuildSession } from './resolveRuntimeStatusFromBuildSession.js';
 
 /** Runtime export metadata (subset consumed during bootstrap). */
 type RuntimeExportEntry = {
