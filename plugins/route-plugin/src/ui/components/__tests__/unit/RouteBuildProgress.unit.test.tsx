@@ -15,6 +15,12 @@ vi.mock('~/ui/hooks/useRouteBuildProgress', () => ({
   useRouteBuildProgress: mockUseRouteBuildProgress,
 }));
 
+vi.mock('@hierarchidb/ui-i18n', () => ({
+  useTranslation: () => ({
+    t: (_key: string, fallback?: string) => fallback ?? '',
+  }),
+}));
+
 describe('RouteBuildLiveProgress', () => {
   it('exposes progress indicators via data-testid attributes', () => {
     mockUseRouteBuildProgress.mockReturnValue({
@@ -64,7 +70,7 @@ describe('RouteBuildLiveProgress', () => {
 });
 
 describe('RouteBuildSummary', () => {
-  it('renders summary metrics with stable data-testid selectors', async () => {
+  it('renders summary metrics and the last error', async () => {
     mockUseRouteBuildProgress.mockReturnValue({
       snapshot: null,
       ready: true,

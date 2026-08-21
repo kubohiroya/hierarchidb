@@ -1,8 +1,8 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
 import type { RouteLineString } from '@hierarchidb/route-api';
 import { ROUTE_MODES } from '@hierarchidb/route-api';
 import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 
 const listRouteLineStrings = vi.fn(async () => [lineStringFixture]);
 const listRouteBuildErrors = vi.fn(async () => []);
@@ -11,27 +11,29 @@ const findNearestRouteLine = vi.fn(async () => ({
     longitude: 139,
     latitude: 35,
   },
-  matches: [{
-    line: {
-      lineStringId: lineStringFixture.id,
-      routeName: lineStringFixture.name,
-      nearestPoint: [139, 35],
-      routeMode: ROUTE_MODES.RAILWAY,
-      start: {
-        name: lineStringFixture.startPoint.name,
-        admin2Name: lineStringFixture.startPoint.admin2Name,
-        admin1Name: lineStringFixture.startPoint.admin1Name,
-        admin0Name: lineStringFixture.startPoint.admin0Name,
+  matches: [
+    {
+      line: {
+        lineStringId: lineStringFixture.id,
+        routeName: lineStringFixture.name,
+        nearestPoint: [139, 35],
+        routeMode: ROUTE_MODES.RAILWAY,
+        start: {
+          name: lineStringFixture.startPoint.name,
+          admin2Name: lineStringFixture.startPoint.admin2Name,
+          admin1Name: lineStringFixture.startPoint.admin1Name,
+          admin0Name: lineStringFixture.startPoint.admin0Name,
+        },
+        end: {
+          name: lineStringFixture.endPoint.name,
+          admin2Name: lineStringFixture.endPoint.admin2Name,
+          admin1Name: lineStringFixture.endPoint.admin1Name,
+          admin0Name: lineStringFixture.endPoint.admin0Name,
+        },
       },
-      end: {
-        name: lineStringFixture.endPoint.name,
-        admin2Name: lineStringFixture.endPoint.admin2Name,
-        admin1Name: lineStringFixture.endPoint.admin1Name,
-        admin0Name: lineStringFixture.endPoint.admin0Name,
-      },
+      distanceMeters: 12,
     },
-    distanceMeters: 12,
-  }],
+  ],
 }));
 
 const getRouteQueryAPI = vi.fn(async () => ({
@@ -50,25 +52,31 @@ vi.mock('@hierarchidb/ui-map', () => ({
   DEFAULT_MAP_CONFIG: {
     mapStyleUrl: '',
     interactionOptions: {},
+    viewState: {
+      longitude: 0,
+      latitude: 0,
+      zoom: 2,
+    },
   },
   buildCategoryFilter: () => ['all'],
-  buildRoutePreviewRows: (rows: RouteLineString[]) => rows.map((row) => ({
-    id: row.id,
-    lineId: row.id,
-    routeMode: row.routeMode,
-    routeName: row.name,
-    startName: row.startPoint.name,
-    startAdmin0: row.startPoint.admin0Name,
-    startAdmin1: row.startPoint.admin1Name,
-    startAdmin2: row.startPoint.admin2Name,
-    endName: row.endPoint.name,
-    endAdmin0: row.endPoint.admin0Name,
-    endAdmin1: row.endPoint.admin1Name,
-    endAdmin2: row.endPoint.admin2Name,
-    waypointCount: row.waypoints?.length,
-    distanceMeters: row.distance ?? 0,
-    speed: row.speed,
-  })),
+  buildRoutePreviewRows: (rows: RouteLineString[]) =>
+    rows.map((row) => ({
+      id: row.id,
+      lineId: row.id,
+      routeMode: row.routeMode,
+      routeName: row.name,
+      startName: row.startPoint.name,
+      startAdmin0: row.startPoint.admin0Name,
+      startAdmin1: row.startPoint.admin1Name,
+      startAdmin2: row.startPoint.admin2Name,
+      endName: row.endPoint.name,
+      endAdmin0: row.endPoint.admin0Name,
+      endAdmin1: row.endPoint.admin1Name,
+      endAdmin2: row.endPoint.admin2Name,
+      waypointCount: row.waypoints?.length,
+      distanceMeters: row.distance ?? 0,
+      speed: row.speed,
+    })),
   useVectorTilePreviewSearch: vi.fn(),
 }));
 
@@ -186,11 +194,14 @@ describe('useRoutePreviewStep hover popup closing', () => {
     document.body.innerHTML = '';
   });
 
-  const createHook = () => renderHook(() => useRoutePreviewStep({
-    draft: {},
-    nodeId: 'route-node-1',
-    onUpdate: vi.fn(),
-  }));
+  const createHook = () =>
+    renderHook(() =>
+      useRoutePreviewStep({
+        draft: {},
+        nodeId: 'route-node-1',
+        onUpdate: vi.fn(),
+      })
+    );
 
   const waitForMatches = async () => {
     await waitFor(() => {
@@ -204,7 +215,9 @@ describe('useRoutePreviewStep hover popup closing', () => {
     const { result, unmount } = createHook();
 
     await waitForMatches();
-    expect(result.current.lineStringsLoading).toBe(false);
+    await waitFor(() => {
+      expect(result.current.lineStringsLoading).toBe(false);
+    });
 
     act(() => {
       result.current.setMapInstance(map as MapLibreMapInstance);
@@ -229,7 +242,7 @@ describe('useRoutePreviewStep hover popup closing', () => {
     const outside = document.createElement('div');
     document.body.appendChild(outside);
     act(() => {
-      outside.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      outside.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
     });
 
     await waitFor(() => {
@@ -244,7 +257,9 @@ describe('useRoutePreviewStep hover popup closing', () => {
     const { result, unmount } = createHook();
 
     await waitForMatches();
-    expect(result.current.lineStringsLoading).toBe(false);
+    await waitFor(() => {
+      expect(result.current.lineStringsLoading).toBe(false);
+    });
 
     act(() => {
       result.current.setMapInstance(map as MapLibreMapInstance);

@@ -3,7 +3,7 @@ import { defineConfig } from 'vitest/config';
 
 const RUN_ROUTE_TESTS = process.env.ROUTE_TESTS === '1';
 
-const basePluginEntry = path.resolve(__dirname, '../base-plugin/src/index.ts');
+const basePluginEntry = path.resolve(__dirname, '../../packages/plugin-base/src/index.ts');
 
 export default defineConfig({
   test: {
@@ -21,9 +21,21 @@ export default defineConfig({
     ],
   },
   resolve: {
-    alias: [
-      { find: /^~\/(.*)$/, replacement: path.resolve(__dirname, 'src/$1') },
-      { find: '@hierarchidb/plugin-ui-sdk', replacement: basePluginEntry },
-    ],
+    alias: {
+      '~/i18n/index': path.resolve(__dirname, '../../packages/ui/i18n/src/i18n/index.ts'),
+      '~/utils/env': path.resolve(__dirname, '../../packages/ui/i18n/src/utils/env.ts'),
+      '~/registry/HostProfileRegistry': path.resolve(
+        __dirname,
+        '../../packages/plugin-base/src/registry/HostProfileRegistry.ts'
+      ),
+      '~/registry/PluginStepRegistry': path.resolve(
+        __dirname,
+        '../../packages/plugin-base/src/registry/PluginStepRegistry.ts'
+      ),
+      '~/common/config/buildConfig': path.resolve(__dirname, 'src/common/config/buildConfig.ts'),
+      '@hierarchidb/plugin-base': basePluginEntry,
+      '@hierarchidb/ui-i18n': path.resolve(__dirname, '../../packages/ui/i18n/src/index.ts'),
+      '~': path.resolve(__dirname, 'src'),
+    },
   },
 });
