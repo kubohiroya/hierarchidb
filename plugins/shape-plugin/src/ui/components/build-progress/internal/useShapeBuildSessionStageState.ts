@@ -41,7 +41,6 @@ type BuildStageStateById = Map<StageId, BuildStageState>;
 
 type Args = {
   activeNodeId: NodeId | null;
-  isSessionStopping: boolean;
   stages: StageLike[];
   processingStatus: ProcessingStatus;
   runtimeStatus: BuildSessionDisplayStatus['status'];
@@ -113,9 +112,27 @@ export const shouldClearPersistedTasksOnReset = (input: {
   && input.runtimePhase === 'idle'
 );
 
+export const resolveDisplayTasks = (input: {
+  runtimePhase: string;
+  tasks: ShapeBuildTaskSummary[];
+  persistedTasks: ShapeBuildTaskSummary[];
+}): ShapeBuildTaskSummary[] => {
+  if (input.tasks.length > 0) {
+    return input.tasks;
+  }
+  if (
+    shouldClearPersistedTasksOnReset({
+      runtimePhase: input.runtimePhase,
+      taskCount: input.tasks.length,
+    })
+  ) {
+    return input.tasks;
+  }
+  return input.persistedTasks;
+};
+
 export const useShapeBuildSessionStageState = ({
   activeNodeId,
-  isSessionStopping,
   stages,
   effectiveProgress,
   sessionProgressTotal,
@@ -268,16 +285,11 @@ export const useShapeBuildSessionStageState = ({
     setPersistedTasks([]);
   }, [runtime.phase, tasks.length]);
 
-  const rawDisplayTasks = tasks.length > 0 ? tasks : persistedTasks;
-  const displayTasks = useMemo<ShapeBuildTaskSummary[]>(() => (
-    isSessionStopping
-      ? rawDisplayTasks.map((task: ShapeBuildTaskSummary) => (
-        task.status === 'running'
-          ? { ...task, status: 'queued' }
-          : task
-      ))
-      : rawDisplayTasks
-  ), [isSessionStopping, rawDisplayTasks]);
+  const displayTasks = resolveDisplayTasks({
+    runtimePhase: runtime.phase,
+    tasks,
+    persistedTasks,
+  });
 
   const hasInFlightTasks = useMemo(() => (
     displayTasks.some((task) => task.status === 'running' || task.status === 'queued')

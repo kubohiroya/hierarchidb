@@ -38,7 +38,8 @@
 4. 規定時間内に停止を確認できない場合は `failed` を永続化し、pause command を型付き timeout error で reject する。UI command handler はその reject を UI 内部の `criticalError` に変換する。timeout を `paused` や再開可能状態へ読み替えない。
 5. `paused` の `canResume` は、停止確認後の再キューが完了した場合にのみ `true` とする。
 6. `paused` を永続化する transaction は、停止確認後に取得した明示的な pause 完了時刻を `buildSessionHeartbeats.lastHeartbeatAt` として同時に保存する。Worker は同じ時刻を `sessionStatusUpdated(paused).pausedAt` に必須で載せ、同時に同値の `heartbeat` も発行する。UI は `sessionStatusUpdated(paused)` の適用時に phase と停止端点を同じ SSOT atom 更新で確定し、別チャネルの到着順には依存しない。直前の周期 heartbeat、read 時刻、`Date.now()` fallback で pause 完了時刻を推測しない。
-7. AbortController 等の非シリアライズ可能な runtime handle は、nodeId に対応する SSOT 状態木エントリに保持する。React state / ref / module-scope collection に同じ session 状態を複製しない。
+7. UI の pause command pending 状態は、操作中表示と重複操作防止だけに使う。pending 状態から表示用 lifecycle を `paused` に先行変更してはならず、`sessionStatusUpdated(paused)` が phase と `pausedAt` を同時に確定するまでは直前の canonical phase の時間計算を維持する。
+8. AbortController 等の非シリアライズ可能な runtime handle は、nodeId に対応する SSOT 状態木エントリに保持する。React state / ref / module-scope collection に同じ session 状態を複製しない。
 
 ### 旧形式セッションの明示回復（規範）
 

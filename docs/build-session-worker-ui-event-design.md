@@ -204,7 +204,9 @@ heartbeat row in the same transaction as `paused`. `sessionStatusUpdated(paused)
 that exact timestamp as mandatory `pausedAt`, and the Worker also emits a `heartbeat` with
 the same value. The UI applies the paused phase and elapsed endpoint in one SSOT atom
 update, so correctness does not depend on delivery order across the two channels and no
-read-clock or periodic-heartbeat fallback is allowed. On
+read-clock or periodic-heartbeat fallback is allowed. UI-local command-pending state is
+limited to control feedback and duplicate-command prevention; it cannot synthesize the
+paused lifecycle before the canonical paused event is accepted. On
 timeout, the Worker persists `failed` and rejects the pause command with a typed
 shutdown-timeout error. The UI command handler translates that rejection into the
 UI-internal `criticalError` event; `criticalError` is not a fifth Worker event. A
