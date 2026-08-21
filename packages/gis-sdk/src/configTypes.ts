@@ -29,7 +29,7 @@ export type FetchGeometryIntakeGuardConfig = {
   keepBaselineSnapshot: boolean;
 };
 
-export type FetchInvalidGeometryFilterConfig = {
+export type TileEmitInvalidGeometryFilterConfig = {
   area: boolean;
   lineLength: boolean;
   maxEdgeLength: boolean;
@@ -176,7 +176,7 @@ export interface TileEmitConfig {
   enableTopojsonSimplify: boolean;
   maxConcurrent: number;
   dynamicConcurrency?: DynamicConcurrencyConfig;
-  invalidGeometryFilter?: FetchInvalidGeometryFilterConfig;
+  invalidGeometryFilter: TileEmitInvalidGeometryFilterConfig;
   tolerance: number;
   extent: number;
   buffer?: number;

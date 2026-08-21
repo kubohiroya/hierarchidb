@@ -1,8 +1,9 @@
 import type {
+  BuildStatus,
   BuildTaskSummary,
-  ProgressPhase,
   TaskProgressUpdatedEvent,
   TaskStage,
+  WorkerLogEvent,
 } from '@hierarchidb/build-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { AdapterStageSnapshotUpdatedEvent } from '@hierarchidb/ui-build-sessions';
@@ -123,7 +124,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
       flushTimerId = window.requestAnimationFrame(flushProgressBuffer);
     };
 
-    const resolveProgressPhase = (value: string): ProgressPhase => {
+    const resolveBuildStatus = (value: string): BuildStatus => {
       if (
         value === 'idle' ||
         value === 'queued' ||
@@ -152,7 +153,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
           taskId: task.taskId,
           version: task.version,
           stage: stage as TaskStage,
-          status: resolveProgressPhase(task.status),
+          status: resolveBuildStatus(task.status),
           progress: task.progress,
           errorMessage: task.errorMessage,
           metadata: task.metadata,
@@ -284,6 +285,16 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
       return event as T;
     };
 
+    const logWorkerEvent = (event: WorkerLogEvent): void => {
+      if (event.level === 'error') {
+        console.error('[Worker]', event.message, event.data);
+      } else if (event.level === 'warn') {
+        console.warn('[Worker]', event.message, event.data);
+      } else {
+        console.log('[Worker]', event.message, event.data);
+      }
+    };
+
     const run = async () => {
       await bridge.initialize();
       if (cancelled) return;
@@ -314,7 +325,7 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
         adapter.onRuntimeRecord(runtime);
       }
 
-      unsubscribeAll = await bridge.subscribeAll(SHAPE_NODE_TYPE, nodeId, {
+      const unsubscribeCanonical = await bridge.subscribeAll(SHAPE_NODE_TYPE, nodeId, {
         onTaskEvent: (event) => {
           if (cancelled) return;
           onTaskEvent(
@@ -349,36 +360,40 @@ export const useShapeBuildSessionStateAtomBridge = (nodeId: NodeId | undefined):
           if (cancelled) return;
           adapter.onHeartbeat(requireEventShape<HeartbeatEvent>(event, 'heartbeat', 'onHeartbeat'));
         },
-        onWorkerLog: (event) => {
-          if (cancelled) return;
-          const level = (event as { level?: string }).level;
-          if (level === 'error') {
-            console.error(
-              '[Worker]',
-              (event as { message?: string }).message,
-              (event as { data?: unknown }).data
-            );
-          } else if (level === 'warn') {
-            console.warn(
-              '[Worker]',
-              (event as { message?: string }).message,
-              (event as { data?: unknown }).data
-            );
-          } else {
-            console.log(
-              '[Worker]',
-              (event as { message?: string }).message,
-              (event as { data?: unknown }).data
-            );
-          }
-        },
       });
 
       if (cancelled) {
-        unsubscribeAll();
-        unsubscribeAll = null;
+        unsubscribeCanonical();
         return;
       }
+
+      let unsubscribeWorkerLog: () => void;
+      try {
+        unsubscribeWorkerLog = await bridge.subscribeWorkerLog(
+          SHAPE_NODE_TYPE,
+          nodeId,
+          (event: WorkerLogEvent) => {
+            if (!cancelled) logWorkerEvent(event);
+          }
+        );
+      } catch (error) {
+        unsubscribeCanonical();
+        throw error;
+      }
+
+      if (cancelled) {
+        unsubscribeWorkerLog();
+        unsubscribeCanonical();
+        return;
+      }
+
+      let subscriptionsDisposed = false;
+      unsubscribeAll = () => {
+        if (subscriptionsDisposed) return;
+        subscriptionsDisposed = true;
+        unsubscribeWorkerLog();
+        unsubscribeCanonical();
+      };
 
       adapter.onTaskStreamConnectionChanged(true);
     };

@@ -225,6 +225,17 @@ export interface OriginCoordinatorClientHandle {
   ): Promise<OriginCoordinatorQuiescenceResult>;
 }
 
+export type OriginCoordinatorBootGate =
+  | Readonly<{
+      readonly status: 'activation-allowed';
+      readonly coordinator: OriginCoordinatorClientHandle;
+    }>
+  | Readonly<{
+      readonly status: 'canonical-revoked';
+      readonly coordinatorGate: 'revoked-ready-for-preflight';
+      readonly helloCode: 'LEGACY_YAML_ACCESS_REVOKED';
+    }>;
+
 export interface OriginCoordinatorInitializeOptions {
   readonly releaseId: string;
   readonly registrationUrl: string;

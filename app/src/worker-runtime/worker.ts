@@ -10,11 +10,13 @@ import {
   revokeOriginCoordinatorOwnedClientHandles,
 } from '@hierarchidb/origin-coordinator';
 import { WorkerInitializationReporter } from '@hierarchidb/ui-worker-client';
-import { revokeLegacyYamlAccessAndClose } from '@hierarchidb/yaml-store';
+import { revokeLegacyYamlAccessAndClose } from '@hierarchidb/yaml-store/legacy-close';
 import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import { ensureRuntimeWorkerBootstrap } from './workerBootstrapUtils.ts';
 
 let bootstrapPromise: Promise<{ api: BuildWorkerAPI; servicesReadyAt: number }> | null = null;
+
+const yamlStorageGate = new URL(self.location.href).searchParams.get('yamlStorageGate');
 
 const responder = installOriginCoordinatorBridgeResponder({
   target: globalThis.navigator.serviceWorker,
@@ -77,6 +79,12 @@ reporter.reportStepProgress('Load Comlink', 0);
     responder.assertLegacyYamlAccessAllowed();
     bootstrapPromise = ensureRuntimeWorkerBootstrap({
       reporter,
+      yamlStorageGate:
+        yamlStorageGate === 'revoked-ready-for-preflight'
+          ? yamlStorageGate
+          : (() => {
+              throw new Error('yaml-storage-canonical-gate-required');
+            })(),
       messageTarget: self,
     });
     const { api } = await bootstrapPromise;

@@ -1,7 +1,7 @@
 import { VtTaskQueueDb } from '~/task/taskQueue';
+import { buildBufferSetHash } from './buildBufferSetHash.js';
 import { createTileProgressReporter } from './createTileProgressReporter.js';
 import { buildInitialTileProgressMessage } from './vtStageTaskOutputLogging.js';
-import { buildBufferSetHash } from './buildBufferSetHash.js';
 import { createVtOutputTotals } from './vtStageTaskOutputStats.js';
 import type { VtTileProgressReporter } from './vtStageTaskOutputTypes.js';
 
@@ -29,6 +29,8 @@ export const createVtTileOutputSession = async ({
 }: VtTileOutputSessionInput): Promise<VtTileOutputSession> => {
   const taskQueue = new VtTaskQueueDb();
   const bufferSetHash = buildBufferSetHash(bufferIds);
+  const progressMetadata = { ...parentInputMetadata };
+  delete progressMetadata.resultSeverity;
   const reportTileProgress = createTileProgressReporter({
     taskQueue,
     fixedTaskInfo: {
@@ -36,7 +38,7 @@ export const createVtTileOutputSession = async ({
       nodeId,
     },
     totalTiles,
-    parentInputMetadata,
+    parentInputMetadata: progressMetadata,
   });
 
   await reportTileProgress({

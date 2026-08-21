@@ -1,4 +1,4 @@
-import * as path from 'path';
+import * as path from 'node:path';
 import { defineConfig } from 'vitest/config';
 
 const RUN_ROUTE_TESTS = process.env.ROUTE_TESTS === '1';

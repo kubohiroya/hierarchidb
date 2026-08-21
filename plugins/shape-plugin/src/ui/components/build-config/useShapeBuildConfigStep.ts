@@ -13,6 +13,7 @@ import {
   DEFAULT_BUILD_CONFIG,
   DEFAULT_PROCESSING_CONFIG,
   applyBuildConfigPatch,
+  assertShapeBuildConfigTileEmitContract,
   mergeProcessingConfig,
 } from '~/common/types/index';
 import type { ShapeEntity } from '~/common/types/index';
@@ -41,8 +42,11 @@ const resolveInitialBuildConfig = (): ShapeBuildConfig => {
 
 const normalizeZoomBandConfig = (
   baseConfig: ShapeBuildConfig,
-  overrides?: Partial<ShapeBuildConfig>,
+  overrides?: ShapeBuildConfig,
 ): ShapeBuildConfig => {
+  if (overrides) {
+    assertShapeBuildConfigTileEmitContract(overrides);
+  }
   const merged = overrides ? applyBuildConfigPatch(baseConfig, overrides) : baseConfig;
   const rawBoundaries = merged.geometryConfig.zoomBandBoundaries;
   const normalizedBoundaries = normalizeZoomBandBoundaries(

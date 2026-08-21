@@ -22,79 +22,84 @@ vi.mock('@hierarchidb/ui-i18n', () => ({
 }));
 
 describe('RouteBuildLiveProgress', () => {
-  it('renders progress, stage, and pause control', () => {
+  it('exposes progress indicators via data-testid attributes', () => {
     mockUseRouteBuildProgress.mockReturnValue({
-      snapshot: undefined,
+      snapshot: null,
       ready: true,
       progress: {
-        stage: 'routing',
-        payload: { total: 100, completed: 42, failed: 0, skipped: 0 },
+        percentage: 42,
+        stage: 'geometry',
+        status: 'running',
+        taskCounts: { total: 10, completed: 4, failed: 0, skipped: 0 },
       },
       status: { status: 'running' },
-      isPaused: false,
-      isMutating: false,
-      mutationError: null,
       lastError: null,
-      pause: vi.fn(),
-      resume: vi.fn(),
     });
 
     render(<RouteBuildLiveProgress jobId="job-1" />);
 
-    expect(screen.getByText('42%')).toBeInTheDocument();
-    expect(screen.getByText('routing')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Pause' })).toBeEnabled();
+    const root = screen.getByTestId('route-live-progress');
+    expect(root).toHaveAttribute('data-progress-atoms', 'running');
+    expect(screen.getByTestId('route-live-progress-percentage').textContent).toBe('42%');
+    expect(screen.getByTestId('route-live-progress-stage').textContent).toBe('geometry');
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
-  it('renders resume control and mutation errors while paused', () => {
+  it('marks paused canonical state without exposing a cross-realm mutation control', () => {
     mockUseRouteBuildProgress.mockReturnValue({
-      snapshot: undefined,
+      snapshot: null,
       ready: true,
       progress: {
-        stage: 'routing',
-        payload: { total: 100, completed: 55, failed: 0, skipped: 0 },
+        percentage: 55,
+        stage: 'geometry',
+        status: 'paused',
+        taskCounts: { total: 10, completed: 5, failed: 0, skipped: 0 },
       },
       status: { status: 'paused' },
-      isPaused: true,
-      isMutating: false,
-      mutationError: 'Network error',
       lastError: 'Network error',
-      pause: vi.fn(),
-      resume: vi.fn(),
     });
 
     render(<RouteBuildLiveProgress jobId="job-2" />);
 
-    expect(screen.getByRole('button', { name: 'Resume' })).toBeEnabled();
-    expect(screen.getByText('Network error')).toBeInTheDocument();
+    expect(screen.getByTestId('route-live-progress')).toHaveAttribute(
+      'data-progress-atoms',
+      'paused'
+    );
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 });
 
 describe('RouteBuildSummary', () => {
   it('renders summary metrics and the last error', async () => {
     mockUseRouteBuildProgress.mockReturnValue({
-      snapshot: undefined,
+      snapshot: null,
       ready: true,
       progress: {
-        payload: { completed: 4, total: 10, failed: 2, skipped: 0 },
+        percentage: 40,
+        stage: 'source',
+        status: 'running',
+        taskCounts: { completed: 4, total: 10, failed: 2, skipped: 0 },
       },
       status: { status: 'running' },
-      isPaused: false,
-      isMutating: false,
-      mutationError: null,
       lastError: 'Worker error',
-      pause: vi.fn(),
-      resume: vi.fn(),
     });
 
     render(<RouteBuildSummary nodeId="job-3" />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Completed: 4 \/ Total: 10/)).toBeInTheDocument();
+      expect(screen.getByTestId('route-summary-completed')).toHaveTextContent(
+        'Completed: 4 / Total: 10'
+      );
     });
 
-    expect(screen.getByText('Results: 4')).toBeInTheDocument();
-    expect(screen.getByText('Failed: 2')).toBeInTheDocument();
-    expect(screen.getByText('Last error: Worker error')).toBeInTheDocument();
+    expect(screen.getByTestId('route-summary-results')).toHaveTextContent('Results: 4');
+    expect(screen.getByTestId('route-summary-failed')).toHaveTextContent('Failed: 2');
+    expect(screen.getByTestId('route-summary-last-error')).toHaveAttribute(
+      'data-error-atoms',
+      'error'
+    );
+    expect(screen.getByTestId('route-summary-last-error')).toHaveTextContent(
+      'Last error: Worker error'
+    );
   });
 });

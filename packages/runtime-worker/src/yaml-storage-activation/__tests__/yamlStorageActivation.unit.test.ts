@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   createYamlStorageActivation,
+  createYamlStorageFreshActivation,
   getYamlStorageAccessDecision,
   isYamlStorageActualFenceEstablished,
   reduceYamlStorageActivation,
@@ -216,6 +217,48 @@ describe('createYamlStorageActivation', () => {
     });
     expect(result.ok && Object.isFrozen(result.state)).toBe(true);
   });
+
+  it('issues currentVersion zero only through the explicit fresh-activation factory', () => {
+    const created = createYamlStorageFreshActivation({
+      activationId: ACTIVATION_ID,
+      targetVersion: 2,
+    });
+    expect(created).toMatchObject({
+      ok: true,
+      state: { phase: 'quiescing', currentVersion: 0, targetVersion: 2 },
+    });
+    if (!created.ok) throw new Error('fresh-activation-create-failed');
+    let state = reduceYamlStorageActivation(created.state, {
+      type: 'quiescing-completed',
+      activationId: ACTIVATION_ID,
+    });
+    state = reduceYamlStorageActivation(state, {
+      type: 'preflight-completed',
+      activationId: ACTIVATION_ID,
+      openRequestId: OPEN_REQUEST_ID,
+    });
+    state = reduceYamlStorageActivation(state, {
+      type: 'versionchange-started',
+      activationId: ACTIVATION_ID,
+      openRequestId: OPEN_REQUEST_ID,
+    });
+    state = reduceYamlStorageActivation(state, {
+      type: 'upgrade-committed',
+      activationId: ACTIVATION_ID,
+      openRequestId: OPEN_REQUEST_ID,
+    });
+    state = reduceYamlStorageActivation(state, {
+      type: 'initialization-succeeded',
+      activationId: ACTIVATION_ID,
+      openRequestId: OPEN_REQUEST_ID,
+    });
+
+    expect(state).toMatchObject({
+      phase: 'canonical-ready',
+      currentVersion: 0,
+      readinessProof: 'same-activation-fresh-create',
+    });
+  });
 });
 
 describe('reduceYamlStorageActivation', () => {
@@ -228,6 +271,7 @@ describe('reduceYamlStorageActivation', () => {
       openRequestId: OPEN_REQUEST_ID,
       upgradeCommitted: true,
       initializationSucceeded: true,
+      readinessProof: 'same-activation-upgrade',
     });
     expect(Object.isFrozen(ready)).toBe(true);
     expect(isYamlStorageActualFenceEstablished(ready)).toBe(true);
@@ -580,6 +624,7 @@ describe('getYamlStorageAccessDecision', () => {
       openRequestId: OPEN_REQUEST_ID,
       upgradeCommitted: true,
       initializationSucceeded: true,
+      readinessProof: 'same-activation-upgrade',
     }) as YamlStorageActivationState;
     const clonedReady = { ...issuedReady } as YamlStorageActivationState;
     const mutableReady = {
@@ -590,6 +635,7 @@ describe('getYamlStorageAccessDecision', () => {
       openRequestId: OPEN_REQUEST_ID,
       upgradeCommitted: true,
       initializationSucceeded: true,
+      readinessProof: 'same-activation-upgrade',
     } as YamlStorageActivationState;
     const request: YamlStorageAccessRequest = {
       domain: 'runtime',

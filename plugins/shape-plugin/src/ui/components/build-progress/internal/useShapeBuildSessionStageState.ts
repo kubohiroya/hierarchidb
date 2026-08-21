@@ -6,7 +6,7 @@ import {
   buildSessionLifecycleAtom,
   buildSessionTasksByStageAtom,
 } from '~/ui/atoms/buildSessionStateAtoms';
-import type { BuildSessionDisplayStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
+import type { BuildSessionDisplayStatus } from '~/ui/components/build-progress/shapeBuildProgressTypes';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import type { TaskListViewPhase } from '~/ui/atoms/shapeBuildProgressTypes';
 import { areTaskListsEquivalentForView } from '~/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparisonUtils';

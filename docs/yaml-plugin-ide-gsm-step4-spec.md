@@ -289,6 +289,23 @@ runtime activationは次の順序で実行する。
 4. versionchange transaction内でraw recordを再読し、preflight snapshotとの完全一致を確認してからnodesとjournalをatomicに更新する。差分または1件の失敗でtransaction全体をabortする。
 5. upgrade commitとCoreDB initializationが成功した後だけ、canonical query / mutation API、dialog writer、ZIP import / export、SimulationWorkflow consumer、command入口を公開する。commit前またはfailure後にlegacy / canonical readerまたはwriterを公開しない。
 
+#### Single executor と post-activation bootstrap
+
+single activation releaseは初回upgradeを実行するbootstrapと、upgrade成功後の全後続bootstrapを区別する。fixed coordinatorのdurable gateを`allowed`へ戻さず、coordinator artifactまたはstatic import graphを変更せずに次の順序を守る。
+
+- durable gateが`allowed`の場合、activation-capable windowはbrowser globals、plugin preload、router、WorkerService、SharedWorker、legacy / canonical YAML routeを開始しない。Web Cryptoが発行したattempt固有の`activationId`と`quiescenceRequestId`を明示してquiescenceを要求し、coordinator DBのatomic `allowed`から`revoked/quiescing`への遷移に成功した1 contextだけをexecutorとする。同時attemptは別identityを使用し、claim loserは`QUIESCENCE_IDENTITY_MISMATCH`で停止してpreflight、target `open()`、versionchangeを開始しない。identity生成不能を固定値、時刻、release ID、tab-local counterで補完しない。
+- executorは`ready-for-preflight`を受け取った後だけCoreDB discoveryを1回行う。exact v1が存在する場合だけraw preflightとv1-to-v2 migrationを実行する。databaseが存在しない場合だけ同じexecutorがfresh-v2 createへ進み、既存versionが0以外、重複名、unknown/future version、schema mismatchの場合はterminal failureとする。missingをv1とみなす、空v1を先に作る、既存DBを削除する、別executorへ引き継ぐことを禁止する。
+- fresh-v2 createは同じquiescence identityと1件の`openRequestId`を保持し、1回のtarget `open(name, 2)`の`oldVersion === 0` versionchangeでexact v2 topologyと空の`yamlMigrationJournal`を作る。v1 snapshot、migration planner、node/journal migration writeを実行しない。commit後にCoreDB initializationと全current YAML slotのcanonical-only validationを行い、成功時だけ`same-activation-fresh-create` proofを持つ`canonical-ready`へ進む。既存v1 migrationのproofは`same-activation-upgrade`のまま区別する。
+- executorはmigrationまたはfresh create、CoreDB initialization、canonical validationが成功して同じactivation stateが`canonical-ready`へ到達した場合だけ、現在windowのmonotonic legacy client-creation revokeを解除せずsuccess-only reload handoffを要求する。このreloadは旧cohortのquiescenceを省略する手段、target openのretry、state reset、failure recoveryではない。
+- `LEGACY_YAML_ACCESS_REVOKED` HELLOはactive quiescence中にも返るため、それだけを`revoked/ready-for-preflight`へ読み替えない。後続windowはHELLO後にcoordinator DBのexisting recordをstrict readerでread-onlyに1回確認し、exact `revoked/ready-for-preflight`の場合だけsuccessorへ進む。`quiescing`、`rejected`、invalid、missing、version mismatch、read failureはpoll、retry、state mutation、participant identity公開を行わないterminal boot failureとする。
+- successor durable readはapplication-only moduleに置き、fixed coordinator Service Workerのstate DB moduleまたはvalidator moduleをimportしない。application側のsuccessor pathを変更しても、production acceptanceではfixed coordinator artifact hashとstatic import graph hashがaccepted releaseと完全一致することを要求する。
+- durable gateがexact `revoked/ready-for-preflight`の後続windowはlegacy bootstrapを開始しない。exact CoreDB v2、exact production store topology、exact `yamlMigrationJournal` schema、全`yaml-file` raw slotのcanonical-only validationを確認し、当該runtimeのCoreDB / WorkerService initializationが成功した場合だけpost-activation boot用のfreshなissued `canonical-ready` stateを作る。CoreDB v1、missingまたはfuture version、schema mismatch、legacy / host-split-legacy / invalid slot、initialization failureではterminal boot failureとし、migrationを再実行しない。
+- post-activation bootはversion markerだけをauthorityにしない。CoreDB version / schema、全current raw YAML slot、current runtime initializationの3つを毎boot検証し、1件でも失敗した場合はgeneric Worker API、dialog、ZIP、Simulation routeを公開しない。coordinator `rejected`をpost-activation stateとして受理しない。
+- production Worker entryはfresh `canonical-ready` access decisionを保持し、generic query / mutation、dialog writer、ZIP、Simulationを各callで同じdecisionによりguardする。windowが`revoked`を観測したことだけ、Workerがv2をopenできたことだけ、journal rowが1件以上あることだけでは公開しない。migration対象0件ではjournalが空でもよいため、journal row countをready markerに使用しない。
+- activation claim後、v2 commit前にexecutorが失われた場合はv1を再openしてlegacyを公開せずterminal stopとする。別contextによる再claim、coordinatorの`allowed`復元、DB reset、同一または別`openRequestId`の再作成を行わない。復旧が必要な場合は別Issueでdurable state、CoreDB version、snapshotを再検証する明示的なrecovery releaseを仕様化し、事前承認を得る。
+- durable gateが既に`revoked/ready-for-preflight`のsuccessor bootではmissing CoreDBをfresh createへ読み替えない。fresh createを許すのは`allowed`からquiescenceを完了した唯一の同一activation executorだけであり、successorのmissingは引き続きterminal failureとする。
+- concurrent activation、success-only reload、new tab、browser restart、revoked + v1、revoked + invalid v2、coordinator rejectedをautomated regressionで検証する。concurrent claimではexecutorがexactly 1、post-activation bootではcanonical routeだけがreadyとなり、generic IndexedDB reset UIを表示しない。
+
 #### Dormant activation phase contract
 
 `@hierarchidb/runtime-worker/yaml-storage-activation` は、activation releaseが後から接続するためのpureなstate machineとaccess decisionだけを公開する独立subpathとする。このartifact自体はCoreDB、WorkerService、bootstrap、production reader / writer / APIへ接続せず、importしてもstorage routeや現行legacy entry pointを変更しない。
@@ -306,7 +323,7 @@ runtime activationは次の順序で実行する。
 
 - activation開始時にcallerが空でない`activationId`、現在version、default補完しないtarget versionを渡す。target versionは現在versionより大きい正のsafe integerでなければならない。
 - target openに関わるeventは空でない`openRequestId`を必須とする。`blocked`から`versionchanging`へ進めるのは同じ`openRequestId`のrequestがresumeした場合だけとし、別request IDはtyped terminal rejectionにする。
-- `canonical-ready`へ進めるのは、同じactivationでupgrade commitを確認して`initializing`へ遷移した後、initialization成功を受け取った場合だけとする。順序外event、activation ID不一致、open request ID不一致はstableなcodeとstageだけを持つ`rejected`へ遷移し、reader / writerを公開しない。
+- forward activationで`canonical-ready`へ進めるのは、同じactivationでupgrade commitを確認して`initializing`へ遷移した後、initialization成功を受け取った場合だけとする。post-activation bootでは別のstrict constructorを使用し、coordinator gateがexact `revoked/ready-for-preflight`、observed CoreDB versionがtarget versionと完全一致、production schemaと全raw YAML slotがcanonical-only、current initialization成功という完全なevidenceを要求する。constructorはforward upgradeを捏造せず`readinessProof: post-activation-boot`を記録する。順序外event、identity不一致、不完全なboot evidenceはstableなcodeとstageだけを持つ`rejected`へ遷移し、reader / writerを公開しない。
 - publication判定はこのsubpathのcreate / reducerが発行してfreezeしたstateだけを正規stateとして扱う。公開されたstructural typeから捏造したstate、正規stateのclone、mutable stateを`canonical-ready`として信頼せず、typed denyにする。捏造stateをreducerへ渡して正規stateへ昇格させない。
 - access requestはown data propertyだけからdomain、representation、operationの完全な組を検証する。`null`、配列、non-plain object、accessor、Proxy reflection failure、余分なfield、unknown representation / operation / domainはthrowまたはlegacy扱いせず`INVALID_ACCESS_REQUEST`でdenyする。
 - `rejected`はterminalとし、retry、reset、新request、legacy fallbackを受け付けない。error stateへraw error、YAML content、credential、endpointを格納しない。
@@ -444,9 +461,13 @@ journal valueのexact own data propertyは`migrationId`、`fromCoreDbVersion`、
 
 single activationのupgrade commitとCoreDB initializationが成功し、同じactivation stateが`canonical-ready`へ到達した後だけ、次のproduction contractを一括公開する。一部だけの先行公開、旧entrypointとのflag切替、read-time fallback、dual routingを行わない。
 
+#1340ではこのboundaryを実装し、pure codec / plan subpathは維持したままproduction folder workerから明示importする。canonical dialog writerは`TreeNodeUpdaterService`へ接続し、旧folder ZIP helper、YamlDB mutationのpackage-root export、YAML preload、旧Simulation serializer、`canonical-yaml-snapshot` subpathを削除する。production Simulation consumerはpackage-root `SimulationWorkflow`そのものであり、互換aliasを持たない。
+
 - `@hierarchidb/yaml-api` package rootの`YamlFileNodeData`をexact `{ subtype, schemaId, content }`へ変更し、`name`を型とpayloadから除去する。filenameは対応する`TreeNode.metadata.name` / `draftMetadata.name`だけから読む。
 - generic Worker query / mutation APIはcanonical-readyのaccess decisionを通過した後だけYAML nodeを公開・更新する。YAML専用のbootstrap迂回API、version markerだけを信頼するreader、legacy payload serializerを追加しない。
-- YAML dialogのproduction connectorをYAML save / save-draftの唯一のrouteとし、dormant canonical writerが発行するmetadataとdataを1つの`TreeNodeUpdater` requestとしてcommitする。汎用hostからyaml-fileだけvalidationを迂回して直接writeせず、port failure後にlegacy dialog writerへ戻さない。
+- YAML dialogのproduction connectorをYAML save / save-draftの唯一のrouteとする。shared hostからのouter requestはexact own data properties `mode`、`draftMetadata`、`draftData`、`dialogUIState`を持ち、connectorは`dialogUIState`を同じunchecked updater operationへ引き渡す。canonical writerだけがexact `nodeId`、`mode`、`draftMetadata`、`draftData`、`onNameConflict: 'error'`を発行し、metadata、data、UI stateを1回の`TreeNodeUpdater` operationでcommitする。汎用hostからyaml-fileだけvalidationを迂回して直接writeせず、port failure後にlegacy dialog writerへ戻さない。
+- YAML createはCoreDBのexact uninitialized temporary placeholder作成後にdialog routeへ直接遷移し、split draft metadata / data mutationを実行しない。最初のsave / save-draftだけが上記canonical connectorを通してplaceholderを更新する。
+- Workerのdebug logはYAML `data` / `draftData`およびcanonical writerへ渡すpayloadを出力しない。terminal errorもraw YAML本文、credential、endpointを含まないstable codeだけをwindowへ公開する。
 - `@hierarchidb/folder-plugin` package rootからlegacy `exportYamlNodesToSnapshot`と`importYamlNodesFromSnapshot`を除去し、production ZIP routeはcanonical plan / connectorだけを使用する。legacy helperへのalias、wrapper、runtime fallbackを残さない。
 - `SimulationWorkflow.runSimulation`はcanonical committed node snapshotだけをconsumerへ渡し、return contractを`Promise<void>`に変更する。IDE-GSM `exportProject`の`paramsJson`、raw task result、input archiveをcallerへ返さない。`runSimulationWithRsync`はsnapshotを扱わない別APIとして維持できるが、legacy YAML serializerまたはZIP routeへfallbackさせない。
 - activation前のdormant subpathはpackage rootから未公開のまま保ち、activation時にroot exportまたはrootからの明示wrapperへ置き換える。activation後のproduction sourceとtestsはlegacy root APIをimportせず、到達不能なlegacy implementationを互換aliasとして保持しない。

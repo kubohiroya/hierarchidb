@@ -27,6 +27,7 @@ import type {
   TreeSubscriptionAPI,
   TreeTableExpandedAPI,
 } from '@hierarchidb/tree-api';
+import type { YamlCanonicalZipAPI } from './YamlCanonicalZipTypes.js';
 import type { YamlCoreDbReadOnlyInventoryResult } from './YamlCoreDbReadOnlyInventoryTypes.js';
 
 type ShapeDownloadTaskPayload = {
@@ -55,6 +56,7 @@ export interface WorkerAPI<T> {
   initialize(): Promise<void>;
   shutdown(): Promise<void>;
   getYamlCoreDbReadOnlyInventory(): Promise<YamlCoreDbReadOnlyInventoryResult>;
+  getYamlCanonicalZipAPI(): Promise<YamlCanonicalZipAPI>;
   getSystemHealth(): Promise<{
     databases: { coreDB: boolean; ephemeralDB: boolean };
     services: {

@@ -1,12 +1,12 @@
+import type { NodeId } from '@hierarchidb/core-types';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
 import { Provider } from 'jotai';
 import { createStore } from 'jotai/vanilla';
-import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressTypes';
-import { TaskItemCardListCard } from '../../../components/build-progress/TaskItemCardListCard/TaskItemCardListCard';
-import type { TaskOutcomeSummaryBuilder } from '../../../components/build-progress/TaskItemCard/taskOutcomeSummaryBuilders';
 import { createElement, useState } from 'react';
-import type { NodeId } from "@hierarchidb/core-types";
+import { describe, expect, it, vi } from 'vitest';
+import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressTypes';
+import type { TaskOutcomeSummaryBuilder } from '../../../components/build-progress/TaskItemCard/taskOutcomeSummaryBuilderUtils';
+import { TaskItemCardListCard } from '../../../components/build-progress/TaskItemCardListCard/TaskItemCardListCard';
 
 vi.mock('../../../i18n.js', () => ({
   useTranslation: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
@@ -177,7 +177,8 @@ describe('TaskItemCardListCard', () => {
     );
 
     expect(screen.queryByText('N/A')).toBeNull();
-    const summaries = screen.getAllByTestId('task-inline-summary')
+    const summaries = screen
+      .getAllByTestId('task-inline-summary')
       .map((element) => element.textContent ?? '');
     expect(summaries.some((text) => /Completed|Loaded source data/.test(text))).toBe(true);
     expect(summaries.some((text) => /Failed:/.test(text))).toBe(true);
@@ -258,12 +259,15 @@ describe('TaskItemCardListCard', () => {
       </Provider>
     );
 
-    const chips = Array.from(new Set(
-      screen.getAllByText('Completed')
-        .map((element) => element.closest('.MuiChip-root'))
-        .filter((element): element is HTMLElement => Boolean(element))
-        .filter((element) => element.closest('[data-task-id]')),
-    ));
+    const chips = Array.from(
+      new Set(
+        screen
+          .getAllByText('Completed')
+          .map((element) => element.closest('.MuiChip-root'))
+          .filter((element): element is HTMLElement => Boolean(element))
+          .filter((element) => element.closest('[data-task-id]'))
+      )
+    );
     expect(chips.length).toBe(1);
     fireEvent.mouseEnter(chips[0]);
 
@@ -430,7 +434,11 @@ describe('TaskItemCardListCard', () => {
     const chips = Array.from(view.container.querySelectorAll('[data-task-id] .MuiChip-root'));
     expect(chips.length).toBe(1);
     fireEvent.mouseEnter(chips[0]);
-    expect(screen.getByText('Base tolerance: N/A / Initial tolerance: N/A / Effective tolerance: 0.243059')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Base tolerance: N/A / Initial tolerance: N/A / Effective tolerance: 0.243059'
+      )
+    ).toBeTruthy();
     expect(screen.getByText('Retry attempts: 0 / 24')).toBeTruthy();
 
     view.rerender(
@@ -448,7 +456,11 @@ describe('TaskItemCardListCard', () => {
       </Provider>
     );
 
-    expect(screen.getByText('Base tolerance: 0.121 / Initial tolerance: 0.243059 / Effective tolerance: 0.243059')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Base tolerance: 0.121 / Initial tolerance: 0.243059 / Effective tolerance: 0.243059'
+      )
+    ).toBeTruthy();
     expect(screen.getByText('Retry attempts: 3 / 24')).toBeTruthy();
   });
 
@@ -614,7 +626,9 @@ describe('TaskItemCardListCard', () => {
       const [open, setOpen] = useState(true);
       return (
         <>
-          <button type="button" onClick={() => setOpen(true)}>Reopen preview</button>
+          <button type="button" onClick={() => setOpen(true)}>
+            Reopen preview
+          </button>
           <TaskItemCardListCard
             stageId="source"
             tasks={tasks}
@@ -642,7 +656,9 @@ describe('TaskItemCardListCard', () => {
     fireEvent.click(chips[0]);
     expect(screen.getByText('URL: https://example.com/jp/close-sync.geojson')).toBeTruthy();
 
-    const titleBarButtons = Array.from(document.querySelectorAll('.floating-window .title-bar button')) as HTMLElement[];
+    const titleBarButtons = Array.from(
+      document.querySelectorAll('.floating-window .title-bar button')
+    ) as HTMLElement[];
     const closeButton = titleBarButtons.at(-1);
     expect(closeButton).toBeTruthy();
     fireEvent.click(closeButton as HTMLElement);
@@ -650,5 +666,50 @@ describe('TaskItemCardListCard', () => {
     fireEvent.mouseEnter(chips[1]);
 
     expect(screen.getByText('URL: https://example.com/us/close-sync.geojson')).toBeTruthy();
+  });
+
+  it('renders a completed tileEmit warning with warning color and icon', () => {
+    const task = {
+      taskId: 'tile-emit-warning',
+      nodeId: 'node-1' as NodeId,
+      stage: 'tileEmit',
+      taskType: 'tileEmit',
+      status: 'completed',
+      progress: 100,
+      metadata: {
+        resultSeverity: 'warning',
+        invalidPolygonFilteredCount: 2,
+        invalidPolygonCheckedCount: 8,
+        invalidPolygonFilteredRate: 0.25,
+        affectedFeatureCount: 1,
+        featureErrorCountTotal: 2,
+        invalidPolygonFilteredByCheck: {
+          area: 2,
+          lineLength: 0,
+          maxEdgeLength: 0,
+          selfIntersection: 0,
+          triangleRingRatio: 0,
+        },
+      },
+    } as ShapeBuildTaskSummary;
+
+    const view = render(
+      <Provider store={createStore()}>
+        <TaskItemCardListCard
+          stageId="tileEmit"
+          tasks={[task]}
+          stageValue={100}
+          resolveStatusLabel={() => 'Completed'}
+          resolveStatusColor={() => 'success'}
+          resolveTaskTitle={(value) => value.taskId}
+          virtualize={false}
+        />
+      </Provider>
+    );
+
+    expect(screen.getByTestId('task-warning-icon')).toBeTruthy();
+    expect(screen.getByText('Warning')).toBeTruthy();
+    expect(screen.getByText('Warning: Filtered polygons 2/8 (25%)')).toBeTruthy();
+    expect(view.container.querySelector('.MuiChip-colorWarning')).toBeTruthy();
   });
 });
