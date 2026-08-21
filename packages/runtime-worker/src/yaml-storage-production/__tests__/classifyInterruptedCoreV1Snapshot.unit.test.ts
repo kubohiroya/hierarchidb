@@ -137,7 +137,6 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
           additional: 0,
           invalid: 0,
         },
-        defaultIdentityStatus: 'complete',
         additionalNodeCounts: { yaml: 0, nonYaml: 0 },
         graphStatus: 'exact',
         yamlPlanningStatus: 'valid',
@@ -383,7 +382,7 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
     expect(result.ok).toBe(false);
     expect(result.code).toBe('INTERRUPTED_CORE_V1_PRESERVATION_GRAPH_INVALID');
     if (result.ok) throw new Error('Expected default identity rejection');
-    expect(result.summary?.defaultIdentityStatus).toBe('incomplete');
+    expect(result.summary?.graphStatus).toBe('invalid');
     expect(result.summary?.storeCounts.total).toBe(11);
   });
 

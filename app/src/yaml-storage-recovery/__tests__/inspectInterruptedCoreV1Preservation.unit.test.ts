@@ -233,4 +233,48 @@ describe('inspectInterruptedCoreV1Preservation', () => {
     expect(missingOpen).not.toHaveBeenCalled();
     expect(wrongFactory.open).not.toHaveBeenCalled();
   });
+
+  it('rejects duplicate exact catalog entries without opening a database', async () => {
+    const factory = {
+      databases: vi.fn(async () => [
+        { name: DATABASE_NAME, version: NATIVE_VERSION },
+        { name: DATABASE_NAME, version: NATIVE_VERSION },
+      ]),
+      open: vi.fn(),
+    } as unknown as IDBFactory;
+
+    const result = await inspectInterruptedCoreV1Preservation(input(factory));
+
+    expect(factory.databases).toHaveBeenCalledTimes(1);
+    expect(result).toMatchObject({
+      status: 'rejected',
+      code: 'INTERRUPTED_CORE_V1_PRESERVATION_CATALOG_MISMATCH',
+    });
+    expect(factory.open).not.toHaveBeenCalled();
+  });
+
+  it('rejects a snapshot read failure without retrying or exposing the native error', async () => {
+    const factory = new IDBFactory();
+    await seedExact15(factory);
+    const getAllSpy = vi.spyOn(IDBObjectStore.prototype, 'getAll').mockImplementationOnce(() => {
+      throw new Error('sensitive-native-read-error');
+    });
+
+    try {
+      const result = await inspectInterruptedCoreV1Preservation(input(factory));
+
+      expect(result).toMatchObject({
+        status: 'rejected',
+        code: 'INTERRUPTED_CORE_V1_PRESERVATION_SNAPSHOT_READ_FAILED',
+        interruptedCoreDb: {
+          nativeVersion: NATIVE_VERSION,
+          topologyStatus: 'exact-logical-v1',
+        },
+      });
+      expect(getAllSpy).toHaveBeenCalledTimes(1);
+      expect(JSON.stringify(result)).not.toContain('sensitive-native-read-error');
+    } finally {
+      getAllSpy.mockRestore();
+    }
+  });
 });

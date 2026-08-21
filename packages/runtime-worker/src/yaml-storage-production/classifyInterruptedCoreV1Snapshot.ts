@@ -83,7 +83,6 @@ export interface InterruptedCoreV1PreservationSummary {
     readonly additional: number;
     readonly invalid: number;
   }>;
-  readonly defaultIdentityStatus: 'complete' | 'incomplete';
   readonly additionalNodeCounts: Readonly<{
     readonly yaml: number;
     readonly nonYaml: number;
@@ -648,7 +647,7 @@ function validateGraph(
   return valid;
 }
 
-function defaultIdentityStatus(states: readonly RecordState[]): 'complete' | 'incomplete' {
+function hasCompleteDefaultIdentitySet(states: readonly RecordState[]): boolean {
   const identities = new Set<string>();
   for (const state of states) {
     if (state.identity === null) continue;
@@ -658,7 +657,7 @@ function defaultIdentityStatus(states: readonly RecordState[]): 'complete' | 'in
       (state.store === 'rootStates' && DEFAULT_ROOT_STATE_IDENTITY_SET.has(state.identity));
     if (isDefault) identities.add(`${state.store}:${state.identity}`);
   }
-  return identities.size === EXPECTED_DEFAULT_IDENTITY_COUNT ? 'complete' : 'incomplete';
+  return identities.size === EXPECTED_DEFAULT_IDENTITY_COUNT;
 }
 
 function summarize(
@@ -694,7 +693,6 @@ function summarize(
   return Object.freeze({
     storeCounts: Object.freeze(storeCounts),
     recordClassification: Object.freeze(classification),
-    defaultIdentityStatus: defaultIdentityStatus(allStates),
     additionalNodeCounts: Object.freeze({
       yaml: additionalNodes.filter((node) => node.nodeType === 'yaml-file').length,
       nonYaml: additionalNodes.filter((node) => node.nodeType !== 'yaml-file').length,
@@ -750,8 +748,11 @@ export async function classifyInterruptedCoreV1Snapshot(
       return failed('INTERRUPTED_CORE_V1_PRESERVATION_SNAPSHOT_INVALID', summary);
     }
     const graphValid = validateGraph({ trees, nodes, rootStates, tags, tagAssociations });
-    summary = summarize(statesByStore, nodes, graphValid ? 'exact' : 'invalid', 'not-run', null);
-    if (!graphValid || summary.defaultIdentityStatus !== 'complete') {
+    const graphAccepted =
+      graphValid &&
+      hasCompleteDefaultIdentitySet(STORE_NAMES.flatMap((store) => statesByStore[store]));
+    summary = summarize(statesByStore, nodes, graphAccepted ? 'exact' : 'invalid', 'not-run', null);
+    if (!graphAccepted) {
       return failed('INTERRUPTED_CORE_V1_PRESERVATION_GRAPH_INVALID', summary);
     }
 
