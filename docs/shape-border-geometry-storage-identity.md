@@ -100,6 +100,8 @@ Ring relation は coordinate を複製せず、ordered arc references を保存�
 
 Polygon reconstruction relation は source polygon と ring set の対応を保存する。`polygonId`、`datasetId`、outer ring、inner rings、source feature lineage、output artifact identity を必須とし、欠落時は reconstruction を開始しない。
 
+初期再構成実装は polygon relation を入力単位とし、outer ring と inner ring が参照する arc coordinate sequence から `Polygon` artifact を再構成する。入力 dataset、arc、ring、polygon relation の `datasetId`、`nodeId`、`createdFromRevision` は一致必須とし、ring の各 arc は対象 `polygonId` を owner として含まなければならない。arc reference の `direction` に従って coordinate sequence を連結し、隣接 arc の端点不一致、未閉路、ring orientation 不一致、missing arc/ring、owner 不一致、dataset lineage 不一致は補正せず失敗する。再構成失敗時に既存 `geometryCache` や vector tile output から polygon を復元して成功扱いしてはならない。
+
 ## Ownership And Lineage
 
 Border geometry storage の lineage は次の順序を正とする。
