@@ -1,7 +1,8 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/canonicalAuthFixture';
 
 type ReadinessResult = {
   readonly status: string;
+  readonly code?: string;
   readonly actualFenceEstablished: boolean;
   readonly counts: {
     readonly window: {
@@ -22,11 +23,14 @@ type ReadinessResult = {
   };
 };
 
-test('production bridge census accounts for the window and SharedWorker without mutating the gate', async ({
+test('post-activation coordinator rejects readiness after revoking the legacy gate', async ({
   baseURL,
+  canonicalAuth,
   page,
 }) => {
+  test.setTimeout(60_000);
   if (typeof baseURL !== 'string') throw new Error('playwright-base-url-missing');
+  await canonicalAuth.signIn();
   await page.goto(`${baseURL.replace(/\/*$/u, '')}/`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(
     () =>
@@ -38,41 +42,53 @@ test('production bridge census accounts for the window and SharedWorker without 
     undefined,
     { timeout: 20_000 }
   );
-  await page.waitForFunction(
-    () =>
-      typeof (
-        window as Window & {
-          __HDB_ORIGIN_COORDINATOR_REF__?: unknown;
-        }
-      ).__HDB_ORIGIN_COORDINATOR_REF__ === 'object'
-  );
-
   const readiness = await page.evaluate(async (): Promise<ReadinessResult> => {
-    const coordinator = (
-      window as Window & {
-        __HDB_ORIGIN_COORDINATOR_REF__?: {
-          getReadiness(input: { requestId: string; timeoutMs: number }): Promise<ReadinessResult>;
-        };
-      }
-    ).__HDB_ORIGIN_COORDINATOR_REF__;
-    if (!coordinator) throw new Error('origin-coordinator-handle-missing');
-    return coordinator.getReadiness({
+    const registration = await navigator.serviceWorker.ready;
+    const worker = registration.active;
+    if (!(worker instanceof ServiceWorker)) throw new Error('origin-coordinator-worker-missing');
+    const request = {
+      type: 'HDB_COORDINATOR_READINESS_REQUEST',
+      protocolVersion: 2,
       requestId: 'e2e-stable-acceptance-census',
       timeoutMs: 5_000,
+    };
+    return await new Promise<ReadinessResult>((resolve, reject) => {
+      const channel = new MessageChannel();
+      let settled = false;
+      const finish = (value: ReadinessResult | null, error: Error | null): void => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        channel.port1.close();
+        if (error) {
+          reject(error);
+        } else if (value) {
+          resolve(value);
+        } else {
+          reject(new Error('origin-coordinator-empty-readiness-response'));
+        }
+      };
+      const timer = setTimeout(
+        () => finish(null, new Error('origin-coordinator-readiness-timeout')),
+        10_000
+      );
+      channel.port1.onmessage = (event: MessageEvent<ReadinessResult>) => finish(event.data, null);
+      channel.port1.onmessageerror = () =>
+        finish(null, new Error('origin-coordinator-readiness-message-error'));
+      channel.port1.start();
+      worker.postMessage(request, [channel.port2]);
     });
   });
-
   expect(readiness).toMatchObject({
-    status: 'accepted',
+    status: 'rejected',
+    code: 'LEGACY_YAML_ACCESS_REVOKED',
     actualFenceEstablished: false,
     counts: {
-      window: { incompatible: 0, unresponsive: 0 },
-      worker: { incompatible: 0, unresponsive: 0 },
-      sharedworker: { incompatible: 0, unresponsive: 0 },
+      window: { compatible: 0, incompatible: 0, unresponsive: 0 },
+      worker: { compatible: 0, incompatible: 0, unresponsive: 0 },
+      sharedworker: { compatible: 0, incompatible: 0, unresponsive: 0 },
     },
   });
-  expect(readiness.counts.window.compatible).toBeGreaterThanOrEqual(1);
-  expect(readiness.counts.sharedworker.compatible).toBeGreaterThanOrEqual(1);
 
   const durableRecords = await page.evaluate(async () => {
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -92,7 +108,13 @@ test('production bridge census accounts for the window and SharedWorker without 
     }
   });
 
-  expect(durableRecords).toEqual([{ key: 'yaml-storage', protocolVersion: 2, phase: 'allowed' }]);
+  expect(durableRecords).toHaveLength(1);
+  expect(durableRecords[0]).toMatchObject({
+    key: 'yaml-storage',
+    protocolVersion: 2,
+    phase: 'revoked',
+    status: 'ready-for-preflight',
+  });
 });
 
 test('country availability Dedicated Worker responds on its owner channel', async ({
@@ -131,8 +153,14 @@ test('country availability Dedicated Worker responds on its owner channel', asyn
             reject(error);
           }
         };
-        const onWorkerError = (): void => {
-          finish(undefined, new Error('dedicated-worker-script-error'));
+        const onWorkerError = (event: ErrorEvent): void => {
+          const stack = event.error instanceof Error ? event.error.stack : undefined;
+          finish(
+            undefined,
+            new Error(
+              `dedicated-worker-script-error: ${event.message} (${event.filename}:${event.lineno}:${event.colno})${stack ? `\n${stack}` : ''}`
+            )
+          );
         };
         const onWorkerMessageError = (): void => {
           finish(undefined, new Error('dedicated-worker-message-error'));
