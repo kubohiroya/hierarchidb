@@ -30,6 +30,22 @@ const ZERO_INVALID_DIAGNOSTICS = {
     unavailableIdentity: 0,
   },
 };
+const ZERO_ADDITIONAL_NODE_TYPE_COUNTS = {
+  yamlFile: 0,
+  yaml: 0,
+  file: 0,
+  folder: 0,
+  otherString: 0,
+};
+const ZERO_ADDITIONAL_NODE_PAYLOAD_SHAPE_COUNTS = {
+  legacyYamlPayload: 0,
+  hostSplitYamlPayload: 0,
+  canonicalYamlPayload: 0,
+  mixedYamlPayload: 0,
+  incompleteYamlPayload: 0,
+  otherPayload: 0,
+  noPayload: 0,
+};
 
 function defaultTree(treeId: 'r' | 'p'): Readonly<Record<string, unknown>> {
   return {
@@ -164,6 +180,8 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
         },
         invalidDiagnostics: ZERO_INVALID_DIAGNOSTICS,
         additionalNodeCounts: { yaml: 0, nonYaml: 0 },
+        additionalNodeTypeCounts: ZERO_ADDITIONAL_NODE_TYPE_COUNTS,
+        additionalNodePayloadShapeCounts: ZERO_ADDITIONAL_NODE_PAYLOAD_SHAPE_COUNTS,
         graphStatus: 'exact',
         yamlPlanningStatus: 'valid',
         yamlSlotCounts: {
@@ -222,6 +240,14 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
     });
     expect(result.summary.invalidDiagnostics).toEqual(ZERO_INVALID_DIAGNOSTICS);
     expect(result.summary.additionalNodeCounts).toEqual({ yaml: 1, nonYaml: 0 });
+    expect(result.summary.additionalNodeTypeCounts).toEqual({
+      ...ZERO_ADDITIONAL_NODE_TYPE_COUNTS,
+      yamlFile: 1,
+    });
+    expect(result.summary.additionalNodePayloadShapeCounts).toEqual({
+      ...ZERO_ADDITIONAL_NODE_PAYLOAD_SHAPE_COUNTS,
+      legacyYamlPayload: 1,
+    });
     expect(result.summary.yamlSlotCounts).toEqual({
       canonical: 0,
       legacyWithName: 1,
@@ -258,6 +284,47 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
     });
     expect(result.summary.invalidDiagnostics).toEqual(ZERO_INVALID_DIAGNOSTICS);
     expect(result.summary.additionalNodeCounts).toEqual({ yaml: 0, nonYaml: 1 });
+    expect(result.summary.additionalNodeTypeCounts).toEqual({
+      ...ZERO_ADDITIONAL_NODE_TYPE_COUNTS,
+      folder: 1,
+    });
+    expect(result.summary.additionalNodePayloadShapeCounts).toEqual({
+      ...ZERO_ADDITIONAL_NODE_PAYLOAD_SHAPE_COUNTS,
+      noPayload: 1,
+    });
+  });
+
+  it('reports sanitized YAML-like payload buckets without broadening nodeType acceptance', async () => {
+    const baseline = createDefaultSnapshot();
+    const yamlLikeFileNode = {
+      ...legacyYamlNode(),
+      nodeType: 'file',
+    };
+
+    const result = await classify({
+      ...baseline,
+      nodes: [...baseline.nodes, yamlLikeFileNode],
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok === false) throw new Error('Expected preservation classification acceptance');
+    expect(result.summary.additionalNodeCounts).toEqual({ yaml: 0, nonYaml: 1 });
+    expect(result.summary.additionalNodeTypeCounts).toEqual({
+      ...ZERO_ADDITIONAL_NODE_TYPE_COUNTS,
+      file: 1,
+    });
+    expect(result.summary.additionalNodePayloadShapeCounts).toEqual({
+      ...ZERO_ADDITIONAL_NODE_PAYLOAD_SHAPE_COUNTS,
+      legacyYamlPayload: 1,
+    });
+    expect(result.summary.yamlPlanningStatus).toBe('valid');
+    expect(result.summary.yamlSlotCounts).toEqual({
+      canonical: 0,
+      legacyWithName: 0,
+      hostSplitLegacy: 0,
+      temporaryPlaceholder: 0,
+      metadataOnlyDraft: 0,
+    });
   });
 
   it('preserves older initializer omissions as a modified default identity without filling them', async () => {
@@ -358,6 +425,14 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
     });
     expect(result.summary.invalidDiagnostics).toEqual(ZERO_INVALID_DIAGNOSTICS);
     expect(result.summary.additionalNodeCounts).toEqual({ yaml: 3, nonYaml: 0 });
+    expect(result.summary.additionalNodeTypeCounts).toEqual({
+      ...ZERO_ADDITIONAL_NODE_TYPE_COUNTS,
+      yamlFile: 3,
+    });
+    expect(result.summary.additionalNodePayloadShapeCounts).toEqual({
+      ...ZERO_ADDITIONAL_NODE_PAYLOAD_SHAPE_COUNTS,
+      legacyYamlPayload: 3,
+    });
     expect(result.summary.graphStatus).toBe('exact');
     expect(result.summary.yamlPlanningStatus).toBe('valid');
     expect(result.summary.yamlSlotCounts).toEqual({
@@ -476,6 +551,16 @@ describe('classifyInterruptedCoreV1Snapshot', () => {
     expect(result.ok).toBe(true);
     if (result.ok === false) throw new Error('Expected YAML aggregate acceptance');
     expect(result.summary.additionalNodeCounts).toEqual({ yaml: 3, nonYaml: 0 });
+    expect(result.summary.additionalNodeTypeCounts).toEqual({
+      ...ZERO_ADDITIONAL_NODE_TYPE_COUNTS,
+      yamlFile: 3,
+    });
+    expect(result.summary.additionalNodePayloadShapeCounts).toEqual({
+      ...ZERO_ADDITIONAL_NODE_PAYLOAD_SHAPE_COUNTS,
+      canonicalYamlPayload: 1,
+      hostSplitYamlPayload: 1,
+      otherPayload: 1,
+    });
     expect(result.summary.yamlSlotCounts).toEqual({
       canonical: 1,
       legacyWithName: 0,

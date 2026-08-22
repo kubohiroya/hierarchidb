@@ -6,7 +6,10 @@
  * bootstrap flow so that consumers never observe a null client reference.
  */
 
-import { createAuthSessionStorageBridge } from '@hierarchidb/ui-plugin-shell/ui-auth';
+import {
+  AUTH_SESSION_CHANGED_EVENT,
+  createAuthSessionStorageBridge,
+} from '@hierarchidb/ui-plugin-shell/ui-auth';
 import { useTranslation } from '@hierarchidb/ui-plugin-shell/ui-i18n';
 import type { WorkerInitializationChannel } from '@hierarchidb/ui-worker-client';
 import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
@@ -255,7 +258,7 @@ function WorkerClientGate({
   children,
 }: WorkerClientGateProps) {
   if (status.error) {
-    return renderOverlay ? <ErrorOverlay error={status.error} onRetry={onRetry} /> : null;
+    return <ErrorOverlay error={status.error} onRetry={onRetry} />;
   }
 
   if (!status.client || !status.isInitialized) {
@@ -401,33 +404,40 @@ export const WorkerProvider = ({
     [status.client]
   );
 
-  const prepareAuthBridge = useCallback(async (client: Remote<BuildWorkerAPI>): Promise<void> => {
-    if (authBridgeClientRef.current === client) return;
-
-    const activeSetup = authBridgeSetupRef.current;
-    if (activeSetup?.client === client) {
-      await activeSetup.promise;
-      return;
-    }
-    if (activeSetup) {
-      await activeSetup.promise;
-    }
-
-    const bridge = Comlink.proxy(createAuthSessionStorageBridge());
-    const setupPromise = (async () => {
-      await client.setUiStorageBridge(bridge);
-      authBridgeClientRef.current = client;
-    })();
-    authBridgeSetupRef.current = { client, promise: setupPromise };
-
-    try {
-      await setupPromise;
-    } finally {
-      if (authBridgeSetupRef.current?.promise === setupPromise) {
-        authBridgeSetupRef.current = null;
+  const prepareAuthBridge = useCallback(
+    async (client: Remote<BuildWorkerAPI>, forceRegistration = false): Promise<void> => {
+      if (!forceRegistration && authBridgeClientRef.current === client) return;
+      const activeSetup = authBridgeSetupRef.current;
+      if (!forceRegistration && activeSetup?.client === client) {
+        await activeSetup.promise;
+        return;
       }
-    }
-  }, []);
+
+      const setupPromise = (async () => {
+        if (activeSetup) {
+          try {
+            await activeSetup.promise;
+          } catch {
+            // A later explicit registration must validate its own session after an earlier failure.
+          }
+        }
+        if (!forceRegistration && authBridgeClientRef.current === client) return;
+        const bridge = Comlink.proxy(createAuthSessionStorageBridge());
+        await client.setUiStorageBridge(bridge);
+        authBridgeClientRef.current = client;
+      })();
+      authBridgeSetupRef.current = { client, promise: setupPromise };
+
+      try {
+        await setupPromise;
+      } finally {
+        if (authBridgeSetupRef.current?.promise === setupPromise) {
+          authBridgeSetupRef.current = null;
+        }
+      }
+    },
+    []
+  );
 
   const finalizeInitialized = useCallback(
     async (readyClient?: Remote<BuildWorkerAPI>) => {
@@ -636,6 +646,22 @@ export const WorkerProvider = ({
     const onInitComplete = () => {
       void runInitialization();
     };
+    const handleAuthSessionChanged = (): void => {
+      const client = authBridgeClientRef.current;
+      if (!client) return;
+      void prepareAuthBridge(client, true).then(
+        () => {
+          setStatus((prev) =>
+            prev.client === client ? { ...prev, error: null, isInitialized: true } : prev
+          );
+        },
+        (error: unknown) => {
+          const normalized = normalizeError(error);
+          console.error(WORKER_PROVIDER_MESSAGES.finalizeInitializedError, normalized);
+          setStatus((prev) => ({ ...prev, error: normalized, isInitialized: false }));
+        }
+      );
+    };
 
     if (typeof window !== 'undefined') {
       const globalWin = window as BootWindow & { __HDB_WORKER_EVT_BOUND__?: boolean };
@@ -643,6 +669,7 @@ export const WorkerProvider = ({
         globalWin.__HDB_WORKER_EVT_BOUND__ = true;
         window.addEventListener('hierarchidb-worker-init-complete', onInitComplete, { once: true });
       }
+      window.addEventListener(AUTH_SESSION_CHANGED_EVENT, handleAuthSessionChanged);
     }
 
     if (!status.isInitialized && !status.error) {
@@ -676,13 +703,14 @@ export const WorkerProvider = ({
       initChannelRef.current = null;
       if (typeof window !== 'undefined') {
         window.removeEventListener('hierarchidb-worker-init-complete', onInitComplete);
+        window.removeEventListener(AUTH_SESSION_CHANGED_EVENT, handleAuthSessionChanged);
         const globalWin = window as BootWindow & { __HDB_WORKER_EVT_BOUND__?: boolean };
         globalWin.__HDB_WORKER_EVT_BOUND__ = false;
       }
       if (pollTimer) window.clearInterval(pollTimer);
       if (devFallbackTimer) window.clearTimeout(devFallbackTimer);
     };
-  }, [proxyState, runInitialization, status.error, status.isInitialized]);
+  }, [prepareAuthBridge, proxyState, runInitialization, status.error, status.isInitialized]);
 
   const contextValue = useMemo<WorkerContextValue>(
     () => ({

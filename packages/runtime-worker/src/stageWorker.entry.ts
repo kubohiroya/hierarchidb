@@ -5,6 +5,7 @@ import { initializeEphemeralDB } from '@hierarchidb/gis-sdk';
 import {
   getOriginCoordinatorSourceSha,
   installOriginCoordinatorBridgeResponder,
+  requireOriginCoordinatorDedicatedWorkerTarget,
 } from '@hierarchidb/origin-coordinator';
 import { initializeRouteDB } from '@hierarchidb/route-store';
 import { initializeShapeDB } from '@hierarchidb/shape-store';
@@ -18,7 +19,7 @@ initializeRouteDB(getDBName(databasePrefix, 'route'));
 initializeShapeDB(getDBName(databasePrefix, 'shape'));
 
 installOriginCoordinatorBridgeResponder({
-  target: globalThis.navigator.serviceWorker,
+  target: requireOriginCoordinatorDedicatedWorkerTarget(globalThis),
   releaseId: getOriginCoordinatorSourceSha(),
   revokeLegacyYamlAccess: () => undefined,
 });

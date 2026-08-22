@@ -32,6 +32,7 @@ export class AuthRequiredError extends Error {
 export class AuthService implements AuthHeadersProvider {
   private registry = AuthNotificationRegistry.getInstance();
   private uiStorage?: UiStorageBridge;
+  private uiStorageRegistrationVersion = 0;
 
   /**
    * Active build-session context set by the build pipeline before tasks start.
@@ -80,15 +81,13 @@ export class AuthService implements AuthHeadersProvider {
 
   async setUiStorageBridge(bridge: UiStorageBridge): Promise<void> {
     console.debug('[auth][service] setUiStorageBridge called - setting up storage bridge');
+    const registrationVersion = this.uiStorageRegistrationVersion + 1;
+    this.uiStorageRegistrationVersion = registrationVersion;
+    console.debug('[auth][service] validating token from candidate storage bridge');
+    await this.validateUiStorageBridge(bridge);
+    if (registrationVersion !== this.uiStorageRegistrationVersion) return;
     this.uiStorage = bridge;
-    try {
-      console.debug('[auth][service] uiStorage bridge set, validating token from storage');
-      await this.syncTokenFromStorage();
-      console.debug('[auth][service] setUiStorageBridge completed');
-    } catch (error) {
-      this.uiStorage = undefined;
-      throw error;
-    }
+    console.debug('[auth][service] setUiStorageBridge completed');
   }
 
   async getAuthHeaders(): Promise<Record<string, string>> {
@@ -362,13 +361,16 @@ export class AuthService implements AuthHeadersProvider {
     throw new AuthRequiredError('Authentication required');
   }
 
-  private async syncTokenFromStorage(): Promise<void> {
-    await this.resolveStoredToken();
+  private async validateUiStorageBridge(bridge: UiStorageBridge): Promise<void> {
+    const token = await bridge.getItem('access_token');
+    await this.validateTokenExpiration(token ?? '', 'uiStorage', bridge);
   }
 
-  private async clearStoredToken(): Promise<void> {
-    if (this.uiStorage) {
-      await this.uiStorage.removeItem('access_token');
+  private async clearStoredToken(
+    storageBridge: UiStorageBridge | null = this.uiStorage ?? null
+  ): Promise<void> {
+    if (storageBridge) {
+      await storageBridge.removeItem('access_token');
       return;
     }
 
@@ -382,6 +384,74 @@ export class AuthService implements AuthHeadersProvider {
         // ignore storage failures
       }
     }
+  }
+
+  private async validateTokenExpiration(
+    token: string,
+    source: string,
+    storageBridge: UiStorageBridge | null
+  ): Promise<string | null> {
+    if (!token) return null;
+
+    let storedExpiresAt: string | null = null;
+    if (storageBridge) {
+      storedExpiresAt = await storageBridge.getItem('token_expires_at');
+    } else if (typeof localStorage !== 'undefined') {
+      storedExpiresAt = localStorage.getItem('token_expires_at');
+    }
+
+    if (storageBridge) {
+      if (storedExpiresAt === null) {
+        throw new Error('Invalid auth session bridge contract: token_expires_at is required');
+      }
+      const expiresAt = Number(storedExpiresAt);
+      if (!Number.isInteger(expiresAt) || expiresAt <= 0) {
+        throw new Error(
+          'Invalid auth session bridge contract: token_expires_at must be a positive integer'
+        );
+      }
+    }
+
+    const expired = isTokenExpired(token, storedExpiresAt || undefined);
+    const now = Math.floor(Date.now() / 1000);
+
+    console.debug('[auth][service] Token expiration check - Issue #827:', {
+      source,
+      hasToken: Boolean(token),
+      tokenLength: token.length,
+      tokenPreview: `${token.substring(0, 10)}...`,
+      storedExpiresAt,
+      expired,
+      currentTimestamp: now,
+      timestamp: new Date().toISOString(),
+    });
+
+    if (expired === true) {
+      console.debug(
+        '[auth][service] Token expired, clearing storage and returning null - Issue #827:',
+        {
+          source,
+          storedExpiresAt,
+          currentTimestamp: now,
+        }
+      );
+
+      await this.clearStoredToken(storageBridge);
+      return null;
+    }
+
+    if (expired === null) {
+      console.debug(
+        '[auth][service] Cannot determine token expiration, proceeding with token - Issue #827:',
+        {
+          source,
+          hasStoredExpiration: Boolean(storedExpiresAt),
+          isJwtFormat: token.split('.').length === 3,
+        }
+      );
+    }
+
+    return token;
   }
 
   private async resolveStoredToken(): Promise<string | null> {
@@ -405,72 +475,12 @@ export class AuthService implements AuthHeadersProvider {
       resolutionStartTime: resolutionStart,
     });
 
-    // Helper function to validate token expiration
-    const validateTokenExpiration = async (token: string, source: string): Promise<string | null> => {
-      if (!token) return null;
-
-      // Try to get stored expiration timestamp
-      let storedExpiresAt: string | null = null;
-      if (this.uiStorage) {
-        storedExpiresAt = await this.uiStorage.getItem('token_expires_at');
-      } else if (typeof localStorage !== 'undefined') {
-        storedExpiresAt = localStorage.getItem('token_expires_at');
-      }
-
-      if (this.uiStorage) {
-        if (storedExpiresAt === null) {
-          throw new Error('Invalid auth session bridge contract: token_expires_at is required');
-        }
-        const expiresAt = Number(storedExpiresAt);
-        if (!Number.isInteger(expiresAt) || expiresAt <= 0) {
-          throw new Error(
-            'Invalid auth session bridge contract: token_expires_at must be a positive integer'
-          );
-        }
-      }
-
-      // Check if token is expired
-      const expired = isTokenExpired(token, storedExpiresAt || undefined);
-      const now = Math.floor(Date.now() / 1000);
-
-      console.debug('[auth][service] Token expiration check - Issue #827:', {
-        source,
-        hasToken: Boolean(token),
-        tokenLength: token.length,
-        tokenPreview: `${token.substring(0, 10)}...`,
-        storedExpiresAt,
-        expired,
-        currentTimestamp: now,
-        timestamp: new Date().toISOString(),
-      });
-
-      if (expired === true) {
-        console.debug('[auth][service] Token expired, clearing storage and returning null - Issue #827:', {
-          source,
-          storedExpiresAt,
-          currentTimestamp: now,
-        });
-
-        await this.clearStoredToken();
-        return null;
-      }
-
-      if (expired === null) {
-        console.debug('[auth][service] Cannot determine token expiration, proceeding with token - Issue #827:', {
-          source,
-          hasStoredExpiration: Boolean(storedExpiresAt),
-          isJwtFormat: token.split('.').length === 3,
-        });
-      }
-
-      return token;
-    };
-
     // First try uiStorage if available
-    if (this.uiStorage) {
+    const storageBridge = this.uiStorage;
+    if (storageBridge) {
       console.debug('[auth][service] Attempting uiStorage.getItem("access_token") - Issue #823 debug');
       const uiStorageStart = performance.now();
-      const token = await this.uiStorage.getItem('access_token');
+      const token = await storageBridge.getItem('access_token');
       const uiStorageEnd = performance.now();
       console.debug('[auth][service] resolveStoredToken from uiStorage - Issue #823 debug:', {
         hasToken: Boolean(token),
@@ -481,7 +491,7 @@ export class AuthService implements AuthHeadersProvider {
         timestamp: new Date().toISOString(),
       });
 
-      return validateTokenExpiration(token || '', 'uiStorage');
+      return this.validateTokenExpiration(token || '', 'uiStorage', storageBridge);
     } else {
       console.debug('[auth][service] uiStorage not available, skipping to next method - Issue #823 debug');
     }
@@ -501,7 +511,7 @@ export class AuthService implements AuthHeadersProvider {
         timestamp: new Date().toISOString(),
       });
 
-      return validateTokenExpiration(token || '', 'localStorage');
+      return this.validateTokenExpiration(token || '', 'localStorage', null);
     } else {
       console.debug('[auth][service] localStorage not available - Issue #823 debug');
     }

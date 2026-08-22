@@ -7,6 +7,7 @@ import './worker-react-refresh-shim.js';
 import {
   getOriginCoordinatorSourceSha,
   installOriginCoordinatorBridgeResponder,
+  requireOriginCoordinatorDedicatedWorkerTarget,
   revokeOriginCoordinatorOwnedClientHandles,
 } from '@hierarchidb/origin-coordinator';
 import { WorkerInitializationReporter } from '@hierarchidb/ui-worker-client';
@@ -19,7 +20,7 @@ let bootstrapPromise: Promise<{ api: BuildWorkerAPI; servicesReadyAt: number }> 
 const yamlStorageGate = new URL(self.location.href).searchParams.get('yamlStorageGate');
 
 const responder = installOriginCoordinatorBridgeResponder({
-  target: globalThis.navigator.serviceWorker,
+  target: requireOriginCoordinatorDedicatedWorkerTarget(globalThis),
   releaseId: getOriginCoordinatorSourceSha(),
   revokeLegacyYamlAccess: async () => {
     let closeFailed = false;

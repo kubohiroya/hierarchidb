@@ -1,15 +1,27 @@
-import React from 'react';
-import { Alert, Box, CircularProgress, IconButton, Tooltip, Typography } from '@mui/material';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import { CountryMatrixSelector } from '@hierarchidb/ui-country-select';
-import { useShapeCountrySelectionStep } from './useShapeCountrySelectionStep.js';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { NodeId } from '@hierarchidb/core-types';
 import { AuthReadyGate } from '@hierarchidb/ui-auth';
+import { CountryMatrixSelector } from '@hierarchidb/ui-country-select';
+import { useTranslation } from '@hierarchidb/ui-i18n';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  IconButton,
+  Tooltip,
+  Typography,
+} from '@mui/material';
+import React from 'react';
 import type { ShapeDialogStepProps } from '~/ui/components/ShapeDialogStepProps';
 import { useShapeCountrySelectionContentView } from './useShapeCountrySelectionContentView.js';
+import { useShapeCountrySelectionStep } from './useShapeCountrySelectionStep.js';
 
-const ShapeCountrySelectionContent: React.FC<ShapeDialogStepProps> = ({ data, onChange, nodeId }) => {
+const ShapeCountrySelectionContent: React.FC<ShapeDialogStepProps> = ({
+  data,
+  onChange,
+  nodeId,
+}) => {
   const { t } = useTranslation('shape-plugin');
   const {
     loading,
@@ -29,8 +41,17 @@ const ShapeCountrySelectionContent: React.FC<ShapeDialogStepProps> = ({ data, on
 
   if (error) {
     return (
-      <Alert severity="error">
-        {t('countrySelection.loadError', 'Failed to load country metadata: {{message}}', { message: error.message })}
+      <Alert
+        severity="error"
+        action={
+          <Button color="inherit" size="small" onClick={() => void reloadAll()}>
+            {t('countrySelection.retry', 'Retry')}
+          </Button>
+        }
+      >
+        {t('countrySelection.loadError', 'Failed to load country metadata: {{message}}', {
+          message: error.message,
+        })}
       </Alert>
     );
   }
@@ -71,7 +92,7 @@ const ShapeCountrySelectionContent: React.FC<ShapeDialogStepProps> = ({ data, on
       <Typography variant="body2" color="text.secondary" paragraph>
         {t(
           'countrySelection.description',
-          'Select countries and their administrative levels to download. Use the matrix to make precise selections.',
+          'Select countries and their administrative levels to download. Use the matrix to make precise selections.'
         )}
       </Typography>
 
@@ -102,11 +123,11 @@ export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = (props)
   return (
     <React.Suspense
       fallback={
-        <Box sx={{ height: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box
+          sx={{ height: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
           <CircularProgress />
-          <Typography sx={{ ml: 2 }}>
-            {t('auth.loading', 'Checking authentication...')}
-          </Typography>
+          <Typography sx={{ ml: 2 }}>{t('auth.loading', 'Checking authentication...')}</Typography>
         </Box>
       }
     >
