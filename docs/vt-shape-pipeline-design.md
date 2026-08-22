@@ -138,6 +138,82 @@ inert な Shape chunk-store 参照を一度だけ初期化する。UI entry の�
 - cleanup failure は session/task の可視な error とし、stale artifact を残したまま次stageやresumeへ進まない
 - UIの選択変更では cleanup、draft更新、旧build-session削除がすべて成功した後にのみ前回選択baselineを進める。失敗時はbaselineを保持し、UI-internal `criticalError` でSSOT lifecycleを`failed`にする
 
+## Border geometry / shared-arc inventory（#548）
+
+本節は #548 の実装前 inventory であり、現行 runtime の仕様を変更しない。国境・海岸線・共有境界の storage、spatial index、shared arc、arc simplification、polygon reconstruction は、以下の現行 Shape pipeline 契約を前提に小粒 Issue へ分割する。
+
+### 現行永続形式
+
+| 領域 | 現行 record / table | 所有者 | #548 での扱い |
+| --- | --- | --- | --- |
+| source artifact | `EphemeralSourceCacheRecord` / `sourceCache`, `sourceCacheMeta` | `packages/gis-sdk/src/ephemeral/EphemeralDBRecordTypes.ts` | 入力 GeoJSON/FGB 単位の artifact。shared arc storage へ読み替えない。 |
+| geometry artifact | `EphemeralGeometryCacheRecord` / `geometryCache`, `geometryCacheMeta` | `packages/gis-sdk/src/ephemeral/EphemeralDBRecordTypes.ts` | band 単位の簡略化済み FGB。topology graph や arc identity は保持しない。 |
+| tile relation | `EphemeralTileIdToBufferRelation` / `tileEmitBufferRelations` | `packages/gis-sdk/src/ephemeral/EphemeralDBRecordTypes.ts` | geometry buffer と tileEmit task の関係。spatial index の代替として扱わない。 |
+| vector tile output | `VectorTileRecord` / `vectorTiles`, `ShapeTileSummaryRecord` / `tileSummaries` | `packages/shape-store/src/VectorTileRecord.ts`, `packages/shape-store/src/ShapeDB.ts` | 最終 MVT 出力。source/geometry cache への逆参照を持たない。 |
+| metadata | `featureMetadata`, `sourceMetadata`, `tabularMetadata` | `packages/shape-store/src/ShapeDB.ts` | preview/search 用 metadata。shared arc topology の SSOT ではない。 |
+| task/session | `buildTasks`, `buildSession*`, `buildStageStatuses` | `packages/gis-sdk/src/ephemeral/EphemeralDBRecordTypes.ts`, `packages/shape-store/src/ShapeDB.ts` | build lifecycle の状態。geometry topology を保存しない。 |
+
+現行の `geometryCache` は `id / nodeId / domainType / bandIndex / sourceKey / data / featureCount / vertexCount / polygonCount / extractionRatio / tolerance / timestamp` を中心とする artifact cache である。共有境界 arc、隣接関係、arc-to-polygon reconstruction relation、topology-preserving simplification metadata は正規 field として存在しない。#548 の storage workstream は、これらを既存 field へ詰め込まず、正規 schema と ownership を先に定義する。
+
+### 現行処理境界
+
+- `source` は国×ADM selection から source artifact を生成する。`sourceKey` は ISO2 `countryCode:adminLevel` を正とする。
+- `geometry` は source artifact を band 単位に簡略化し、FGB を `geometryCache` へ保存する。`packages/vt-orchestrator/src/transform/createGeometryStageHandler/runGeometryStageOutputPhase.ts` は出力 collection から tile id を集め、`tileEmitBufferRelations` を再構築する。
+- `tileEmit` は `geometryCache` を GeoJSON collection へ復元し、invalid geometry filter 後の同一 collection から `featureStats`、`featuresByContinent`、geojson-vt index、vector tile output を作る。参照: `plugins/shape-plugin/src/services/vt/runShapeTileEmitStageSection.ts`、`packages/vt-orchestrator/src/vt/createLayerIndexForTile.ts`。
+- cascade cleanup は persistent tile/metadata、raw source buffer、ephemeral source/geometry/task/relation/error の順に削除する。参照: `plugins/shape-plugin/src/services/vt/runShapeArtifactCascadeCleanup.ts`。
+
+### 実装済み / 部分実装 / 未実装の分類
+
+| 分類 | 現状 | 根拠 | 後続判断 |
+| --- | --- | --- | --- |
+| geometry cache | 実装済み | `EphemeralGeometryCacheRecord`, `finalizeGeometryStageCache` | #548 storage schema と混同しない。必要なら新規 topology/arc store を定義する。 |
+| tile relation index | 部分実装 | `tileEmitBufferRelations` | tileEmit task 入力用 relation であり、containment query や adjacency の汎用 spatial index ではない。 |
+| simplification | 部分実装 | `createGeometryStageHandler` | 現行 handler には `fallbackTolerance`、ratio clamp、代表 feature 探索が残る。fail-fast 契約への整合は #548 とは別の前提修正または子 Issue として扱う。 |
+| invalid geometry filter | 実装済み | `tileEmitConfig.invalidGeometryFilter` | stage owner は tileEmit。shared arc simplification の品質 filter と混在させない。 |
+| shared-border arc extraction | 未実装 | 該当する正規 table / API / stage が存在しない | storage identity と input dataset alignment を先に仕様化する。 |
+| country adjacency | 未実装 | adjacency relation の正規 record が存在しない | shared arc extraction の出力から導出するか、別 index とするかを仕様で決める。 |
+| topology-preserving arc simplification | 未実装 | arc graph と polygon reconstruction relation が存在しない | per-feature RDP と別責務として扱う。 |
+| polygon reconstruction | 未実装 | coastline/shared arc から polygon を復元する stage/API が存在しない | reconstruction の入力不変条件、失敗条件、出力 artifact を先に定義する。 |
+
+### 後続 sub-issue 分割案
+
+1. `docs(shape): specify border geometry storage identity and schema`
+   - 入力: 本 inventory。
+   - DoD: arc、edge、ring、polygon reconstruction relation、dataset revision、node ownership、cache identity を定義する。
+   - Rollback: docs-only revert。
+2. `docs(shape): specify spatial index and containment query contract`
+   - 入力: storage identity/schema。
+   - DoD: tile/spatial index の用途、key、query boundary、更新/削除時の lineage を定義する。
+   - Rollback: docs-only revert。
+3. `feat(shape): add border geometry storage behind a default-off flag`
+   - 入力: storage/index docs。
+   - DoD: 新規 store を既定 OFF で追加し、既存 source/geometry/tileEmit record を読み替えない。
+   - Rollback: flag OFF、schema migration 方針に従う。
+4. `feat(shape): extract shared-border arcs with explicit topology invariants`
+   - 入力: storage store。
+   - DoD: arc identity、orientation、owner polygon relation、coastline/shared-border distinction、contract errors を実装する。
+   - Rollback: flag OFF、対象 arc store の再生成。
+5. `feat(shape): simplify shared arcs without breaking polygon topology`
+   - 入力: shared arc extraction。
+   - DoD: topology invariant を満たす simplification と検証 fixture を実装する。
+   - Rollback: flag OFF、simplified arc artifact の破棄。
+6. `feat(shape): reconstruct polygons from coastline and shared arcs`
+   - 入力: simplified arcs。
+   - DoD: reconstruction failure を可視な task error とし、clamp/default/silent repair で閉じない。
+   - Rollback: flag OFF、reconstructed artifact の破棄。
+7. `feat(shape): integrate border geometry pipeline and regression validation`
+   - 入力: reconstruction。
+   - DoD: source/geometry/tileEmit lineage、cache cleanup、Step5/preview validation、benchmark を通す。
+   - Rollback: flag OFF、対象 artifact cleanup。
+
+### #548 実装時の禁止事項
+
+- 既存 `geometryCache.metadata` に topology graph を暫定保存して正規 schema の代替にすること。
+- `tileEmitBufferRelations` を adjacency / spatial index の汎用 SSOT として扱うこと。
+- source/geometry/tileEmit の既存 `cacheKey` / `inputHash` を、arc identity や reconstruction identity へ読み替えること。
+- 共有境界の不一致、開いた ring、向き不一致、非 finite 座標を clamp、snap、default 補完で成功扱いすること。
+- 未確認の外部 geometry library を正規仕様に固定すること。
+
 ## 旧実装からの置換対象
 
 - shape-plugin の旧 `vectortile` ステージ関連コード
