@@ -65,10 +65,6 @@ import {
   type ShapeDownloadTaskPayload,
 } from './resolveShapeBuildExtensions.js';
 import { resolveRuntimeStatusFromBuildSession } from './resolveRuntimeStatusFromBuildSession.js';
-import {
-  resolveShapeBuildExtensions,
-  type ShapeDownloadTaskPayload,
-} from './resolveShapeBuildExtensions.js';
 
 /** Runtime export metadata (subset consumed during bootstrap). */
 type RuntimeExportEntry = {
