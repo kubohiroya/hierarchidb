@@ -200,9 +200,9 @@ validation、serialization、`importProject` のいずれかが失敗した場�
 
 - CoreDB `TreeNode` を YAML domain data の唯一の authoritative store とする。
 - committed filename と payload の組は `metadata.name` / `data`、draft filename と payload の組は `draftMetadata.name` / `draftData` とする。各 slot は対応する metadata とだけ照合し、committed と draft の間で値を補完しない。
-- 独立した YamlDB v1 は authoritative store、cache、dual-write 先ではない。既存 row の回復可否を調べるための frozen legacy recovery source とし、新規 write、自動 merge、自動 copy、自動 delete を禁止する。
-- CoreDB と YamlDB は別の IndexedDB database であり、単一 transaction に含められない。CoreDB migration、YamlDB inventory/recovery、YamlDB runtime path 廃止、物理 database 削除は別の Issue と atomic boundary で扱う。
-- CoreDB migration 中は YamlDB を変更しない。YamlDB recovery が CoreDB record を作る場合も、先に source snapshot 全体を fencing と preflight で固定し、write は CoreDB だけの単一 transaction で行う。YamlDB row の削除を同じ成功条件に含めない。
+- 独立した YamlDB v1 は authoritative store、cache、dual-write 先ではない。既存 rowをgraph-preserved historical sourceとしてread-only inventoryするためだけに保持し、新規 write、自動 merge、自動 copy、自動 deleteを禁止する。
+- CoreDB と YamlDB は別の IndexedDB database であり、単一 transaction に含められない。CoreDB migration、YamlDB read-only inventory、YamlDB runtime path 廃止、retention保護、物理 database 削除は別の Issue と atomic boundary で扱う。
+- CoreDB migration 中は YamlDB を変更しない。YamlDB inventoryはsource accountingとtarget comparisonだけを行い、CoreDB record作成、repair、copy、merge、discard、delete、fallbackを行わない。将来historical write pathが必要な場合は、別Issueでsource fencing、target-only atomic write、rollbackを明示確定する。
 
 ### Nonempty interrupted CoreDB preservation classification
 
@@ -438,16 +438,16 @@ migration journalのproduction schemaはCoreDB logical v2 / native v20 table `ya
 
 journal valueのexact own data propertyは`migrationId`、`fromCoreDbVersion`、`toCoreDbVersion`、`nodeId`、`slot`、`preimageRepresentation`、`legacyName`、`canonicalPostimageDigest`だけとする。`slot`は`committed | draft`、`preimageRepresentation`は`legacy-with-name | host-split-legacy`とする。`legacyName`はlegacyでは検証済みpayload / metadata共通name、host-split-legacyでは検証済み対応metadata nameを保存する。YAML本文、payload preimage、canonical postimage、description、tagsを保存しない。
 
-### YamlDB v1 inventory と recovery
+### YamlDB v1 read-only inventory と retirement
 
-- YamlDB v1の全rowをread-onlyでinventoryし、`nodeId`、`parentId`、name、schemaId、対応CoreDB node/parentの有無を検証する。
-- 各rowのcontentをYAML parseしてregistry schemaで検証し、CoreDB parentの存在とfolder型、同一node IDの既存target、`parentId + metadata.name`のsibling index targetを調べる。
-- 各rowを`duplicate/no-op`、`recoverable`（recoverable orphan）、`orphan/blocked`、`conflict`、`invalid`、`explicitly discarded`のいずれかとしてaccountする。`duplicate/no-op`はYamlDB rowから構成するcanonical targetと既存CoreDB nodeのnode ID、node type、parent ID、`metadata.name`、canonical subtype、schemaId、contentがすべて一致し、string fieldがbyte-for-byteで同一の場合だけとする。その他の既存node IDまたはsibling index衝突は`conflict`とする。CoreDBにtarget nodeがなく、node IDとsibling indexが衝突せず、回復先parentが存在してfolder型の場合だけ`recoverable`とし、この状態をrecoverable orphanと定義する。target nodeがなくても、回復先parentがmissingまたはfolder型でない場合は`orphan/blocked`とし、推測したparentへ付け替えない。discardは対象rowと理由をユーザーが明示承認した場合だけ許可し、inventory側で自動判断しない。
-- orphan、CoreDBとのnode ID / parent / payload conflict、`schemaId: ''`、missing name、invalid content、unknown/ambiguous mappingをskip、filename-only分類、自動copyで処理しない。全対象とtyped errorを報告する。
-- CoreDB migrationの成功はYamlDB inventoryのrowを削除または移動したことを意味しない。回復は別Issueで明示的に承認された規則だけを使う。
-- recovery sourceを確定する前にproduction YamlDB writerを除去してfenceし、read-only inventoryを作る。inventory snapshotが変化した場合はCoreDB write前に全体を失敗させる。cross-DB transactionがないため、snapshot固定を証明できない場合はrecoveryを開始しない。
-- ユーザーが明示承認したrecovery batchだけを対象に、全rowとtargetを再preflightした後、CoreDBの単一transactionで一括commitする。1件の失敗でbatch全体をabortし、source YamlDBは成功時も変更しない。
-- YamlDB runtime pathを廃止しても物理databaseを直ちに削除しない。CoreDB migrationの本番適用後、少なくとも30日かつ後続のstable releaseが1回受け入れ済みになるまで保持し、全row accountedとrollback不要を確認する別Issueでのみ削除できる。
+- YamlDB v1の全rowをread-onlyでinventoryし、historical v1 row shapeを`{ nodeId, parentId, name, schemaId, content }`の固定入力として検証する。runtimeの`YamlFileNodeData`型や将来のcanonical payload型へ結合しない。
+- inventory entrypointは`indexedDB.databases()`でaccepted production evidenceに基づくexact database name / native versionだけを確認する。missing、duplicate、version mismatch、unexpected upgrade、blocked、malformed topologyでは対象DBをopenせず、stable error codeでfail closedする。openする場合もexact native versionを指定し、`onupgradeneeded`をabortし、全transactionを`readonly`に固定する。
+- YamlDB source accountingはCoreDB target comparisonから分離する。source rowはYAML parse、registry schema、primary key一致、required string field、content redaction boundaryを検証し、`valid-legacy`または`invalid`へ決定的にaccountする。unknown/default bucket、skip、filename-only分類、schema/name推測、空schemaId補完を使わない。
+- CoreDBがcanonical targetとして利用可能な場合だけ、別のdiagnostic layerで`equivalent`、`target-absent`、`parent-blocked`、`conflict`等を報告してよい。ただしtarget comparisonはwrite authorityではない。`target-absent`、parent存在、sibling衝突なし、payload valid等の結果をCoreDB write可能性へ昇格しない。
+- 公開result、Issue comment、log、errorにはaggregate count、stable code、deterministic snapshot digestだけを含める。raw row、record ID、node ID、parent ID、metadata name、YAML本文、database prefix、credential、native errorを公開しない。
+- inventoryはCoreDB / YamlDBへのwrite、repair、normalization、migration、journal作成、canonical publication、copy、merge、rename、discard、delete、retry、fallbackを行わない。CoreDB migrationやactivationの成功はYamlDB rowを削除、移動、回復、discardしたことを意味しない。
+- YamlDB runtime pathを廃止しても物理databaseを直ちに削除しない。CoreDB migrationの本番適用後、少なくとも30日かつ後続のstable releaseが1回受け入れ済みになるまで保持する。物理削除は、exact対象DB、backup有無、削除条件、非可逆性を明記した別Issueと明示承認でのみ実行できる。
+- retention期間中はgeneric reset / bulk IndexedDB delete経路が保持対象YamlDBを削除してはならない。保持対象はaccepted production evidenceで確定したexact database nameだけとし、suffix、prefix、substring、schema推測で除外対象を広げない。
 
 ### Canonical ZIP import / export boundary
 
@@ -544,7 +544,7 @@ CoreDB / runtime laneのrollback順は次で固定する。
 8. inverse migration成功後に限り、必要なlegacy type consumerを起動する。
 9. production quiescence bridgeはinverse migrationとlegacy runtime復帰が完了するまで維持する。全activation-era contextが終了した後にだけ別releaseで無効化または除去でき、rollback途中で先にrevertしない。
 
-YamlDB laneのrollbackはCoreDB laneと別に扱う。物理databaseを保持している間にrevertできるのはread-only inventory / recovery accessだけとし、YamlDB writer、SSOT、cache、dual-writeを再有効化しない。物理database削除後はgit revertでrowを復元できないため、削除Issueで明示承認された検証済みbackupがなければrollbackをblockedとして停止する。別sourceからの自動copy、CoreDBからの逆生成、fallback、dual-writeで復元しない。
+YamlDB laneのrollbackはCoreDB laneと別に扱う。物理databaseを保持している間にrevertできるのはread-only inventory accessとretention保護だけとし、YamlDB writer、SSOT、cache、dual-writeを再有効化しない。物理database削除後はgit revertでrowを復元できないため、削除Issueで明示承認された検証済みbackupがなければrollbackをblockedとして停止する。別sourceからの自動copy、CoreDBからの逆生成、fallback、dual-writeで復元しない。
 
 ## Upstream blocker
 
@@ -599,7 +599,7 @@ graph TD
   Step4 --> NonSshIntegration["non-SSH snapshot / command integration"]
   SimulationRegression --> NonSshIntegration
 
-  QuiescenceBridge --> LegacyRecovery["YamlDB v1 read-only inventory / recovery"]
+  QuiescenceBridge --> LegacyRecovery["YamlDB v1 read-only inventory / retirement"]
   Activation --> LegacyRecovery
   LegacyRecovery --> RemoveYamlReads["残存read path除去 / runtime retirement"]
   RemoveYamlReads --> RetentionGate["30日 + stable release + 全row accounted"]
@@ -641,5 +641,5 @@ graph LR
 - activation release内では`quiescing`で旧tab / workerの停止とcloseを要求するがactual fence成立とはみなさず、read-only preflight後に同じ`openRequestId`でtarget versionを開く。`blocked`では同じrequestだけを待機し、`versionchanging`でactual fence成立、upgrade commit後に`initializing`、initialization成功後に`canonical-ready`へ進み、その後だけcanonical reader / writer / APIを公開する。failure、ID mismatch、illegal transitionはterminal `rejected`とし、retry、reset、別request、legacy fallback、v1 reopenを行わない。
 - migration commit成功前にcanonical `YamlFileNodeData`、dialog、ZIP、SimulationWorkflowまたはWorker APIを公開せず、各処理を別releaseへ分離しない。`SimulationWorkflow.runSimulation`のproduction return contractは同じactivationで`Promise<void>`へ切り替える。
 - activation前にdormant canonical SimulationWorkflow consumerの回帰を完了し、activation後にもproduction routingを対象とする回帰を行う。executor / Step 4と合わせたnon-SSH integrationを、SSH lifecycleを含むfinal integrationから分離する。
-- YamlDB laneはproduction write除去 / fence、read-only inventory / recovery、残存read path除去 / runtime retirementの順とする。物理database削除はruntime廃止、30日、後続stable release受入、全row accountedのすべてを満たす別Issueとする。
+- YamlDB laneはproduction write除去 / fence、read-only inventory、generic resetからのretention保護、残存read path除去 / runtime retirementの順とする。read-only inventoryはsource accountingとtarget comparisonだけを行い、recovery write authorityを持たない。物理database削除はruntime廃止、30日、後続stable release受入、全row accountedのすべてを満たす別Issueとする。
 - SSH client / UI integrationはupstream API公開と本仕様のrevision更新までblockedとし、完了後にfinal integrationへ進む。

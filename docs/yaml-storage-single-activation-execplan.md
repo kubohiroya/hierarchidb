@@ -334,5 +334,7 @@ workflow's base/head comparison exits zero. The Issue verification text must use
 non-regression form, or the unrelated baseline must be resolved under separately approved scope,
 before the Issue can truthfully claim every listed command exits zero.
 
-External publication and Issue status updates remain pending explicit approval. YamlDB physical
-recovery and retirement remain follow-up work for #1341 or a later Epic lane.
+External publication and Issue status updates remain pending explicit approval. YamlDB read-only
+inventory, retention protection, runtime retirement, and any later physical deletion remain follow-up
+work for #1341 or a later Epic lane. #1341 does not authorize YamlDB/CoreDB recovery writes; any
+future historical write path requires a separate explicit contract Issue.
