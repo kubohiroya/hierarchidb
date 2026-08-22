@@ -8,14 +8,14 @@ import type { TaskListViewPhase } from './shapeBuildProgressTypes';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import {
   createBuildSessionStateAtoms,
-  type BuildSessionLifecyclePhase,
-  type BuildSessionStateEvent,
 } from '@hierarchidb/ui-build-sessions';
+import type {
+  ShapeSessionPhase,
+  ShapeStageId,
+  ShapeStateEvent,
+} from './ShapeStageId.js';
 
-export type ShapeStageId = 'source' | 'geometry' | 'tileEmit';
-export type ShapeSessionPhase = BuildSessionLifecyclePhase;
 type ShapeTaskSummary = BuildTaskSummary;
-type ShapeStateEvent = BuildSessionStateEvent<ShapeStageId, ShapeSessionPhase, ShapeTaskSummary>;
 
 const resolveShapeStageId = (value: unknown): ShapeStageId => {
   if (value === 'source' || value === 'geometry' || value === 'tileEmit') {
@@ -53,6 +53,8 @@ const shapeSessionAtoms = createBuildSessionStateAtoms<ShapeStageId, ShapeSessio
   isRunningTaskStatus: (status) => status === 'running',
   isQueuedTaskStatus: (status) => status === 'queued',
 });
+
+export const buildSessionStateAtoms = shapeSessionAtoms;
 
 // --- Lifecycle extras (stopReason, criticalError) ---
 
@@ -526,3 +528,5 @@ export const completionDialogOpenAtom = atom(
     set(completionDialogOpenBaseAtom, next);
   },
 );
+
+export type { ShapeSessionPhase, ShapeStageId } from './ShapeStageId.js';

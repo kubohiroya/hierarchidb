@@ -13,7 +13,7 @@ import {
   taskViewportRangeByStageAtom,
 } from '../../../atoms/shapeBuildProgressAtomConstants';
 import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressTypes';
-import { useShapeBuildSession } from '../../../components/build-progress/internal/useShapeBuildSessionLogic.impl';
+import { useShapeBuildSession } from '../../../components/build-progress/internal/useShapeBuildSession';
 import { ShapeBuildProgressPanel } from '../../../components/build-progress/ShapeBuildProgressPanel/ShapeBuildProgressPanel';
 
 class ResizeObserverMock {

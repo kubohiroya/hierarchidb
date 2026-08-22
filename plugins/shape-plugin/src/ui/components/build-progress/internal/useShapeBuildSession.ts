@@ -23,18 +23,9 @@ import {
   getBuildSessionTransitionStatusLabel,
 } from './useShapeBuildSessionHelpers/startupTrace.js';
 import {
-  shouldResetElapsedState,
-} from './useShapeBuildSessionHelpers/elapsedConstants.js';
-import {
-  resolveDisplayBuildStatus,
   toBuildStatus,
   toProcessingStatus,
-  shouldRefreshTasksSnapshot,
 } from './useShapeBuildSessionHelpers/status.js';
-import {
-  resolveMostAdvancedInFlightStageId,
-  resolveMostAdvancedRunningStageId,
-} from './useShapeBuildSessionHelpers/stage.js';
 import { useShapeBuildSessionControlActions } from './useShapeBuildSessionControlActions.js';
 import { useShapeBuildSessionStartupLifecycle } from './useShapeBuildSessionStartupLifecycle.js';
 import { useShapeBuildSessionTransitionController } from './useShapeBuildSessionLogic/useShapeBuildSessionTransitionController.js';
@@ -54,14 +45,6 @@ import {
   stageTimingByStageAtom,
 } from '~/ui/atoms/buildSessionStateAtoms';
 import type { PendingUserAction } from '~/ui/atoms/buildSessionStateAtoms';
-
-export {
-  shouldResetElapsedState,
-  resolveDisplayBuildStatus,
-  resolveMostAdvancedRunningStageId,
-  resolveMostAdvancedInFlightStageId,
-  shouldRefreshTasksSnapshot,
-};
 
 type RuntimeBuildStatus = BuildSessionDisplayStatus['status'];
 
@@ -145,7 +128,6 @@ export const useShapeBuildSession = ({ data, nodeId }: Args) => {
   const pendingUserAction = useAtomValue(pendingUserActionAtom);
   const setPendingUserAction = useSetAtom(pendingUserActionAtom);
   const isStopRequestedInFlight = useAtomValue(isStopRequestedInFlightAtom);
-  const isSessionStopping = isStopRequestedInFlight;
 
   const setIsStopRequested = useCallback((next: boolean) => {
     if (next) {
@@ -182,17 +164,13 @@ export const useShapeBuildSession = ({ data, nodeId }: Args) => {
   const statusSource = useMemo(() => {
     return resolveBuildStatusSource(processingStatus, resolveRuntimeBuildStatus(runtimeStatus));
   }, [processingStatus, runtimeStatus]);
-  const effectiveStatusSource = useMemo(() => {
-    if (isSessionStopping) return 'paused';
-    return statusSource;
-  }, [isSessionStopping, statusSource]);
+  const effectiveStatusSource = statusSource;
   const reportTaskFailures = effectiveStatusSource === 'running';
   const baseBuildStatus = useMemo<BuildStatus>(() => (
     toBuildStatus(effectiveStatusSource)
   ), [effectiveStatusSource]);
   const stageState = useShapeBuildSessionStageState({
     activeNodeId,
-    isSessionStopping,
     stages,
     processingStatus,
     runtimeStatus: runtimeStatusForBuildStatus,

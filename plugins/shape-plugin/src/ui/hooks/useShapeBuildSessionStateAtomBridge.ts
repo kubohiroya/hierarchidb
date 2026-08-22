@@ -12,7 +12,7 @@ import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { useEffect } from 'react';
 import type { StageSnapshotUpdatedEvent } from '~/common/types/session-events';
-import type { ShapeStageId } from '~/ui/atoms/buildSessionStateAtoms';
+import type { ShapeStageId } from '~/ui/atoms/ShapeStageId';
 import {
   buildSessionRecoveryRevisionAtom,
   dispatchBuildSessionEventAtom,

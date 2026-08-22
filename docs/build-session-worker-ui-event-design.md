@@ -96,7 +96,7 @@ redundantly separated.
 | `startedAt` | `number \| undefined` | Unix ms — required after `starting` completes |
 | `completedAt` | `number \| undefined` | Unix ms — required for `completed` / `failed` |
 | `pausedAt` | `number \| undefined` | Unix ms — required only for `paused`; forbidden for every other phase |
-| `stopReason` | `StopReason \| undefined` | Why the session stopped (terminal/paused states); Shape accepts `route-leave / user-pause / auth-required / failed / completed / unknown` only |
+| `stopReason` | `StopReason \| undefined` | Why the session stopped (terminal/paused states); Shape accepts `route-leave / user-pause / failed / completed / unknown` only |
 | `stageId` | `StageId \| undefined` | Current stage at time of event |
 | `inactiveMs` | `number \| undefined` | Cumulative session inactivity; absence means none recorded |
 | `stageStartedAt` | `number \| undefined` | Unix ms — required when `stageId` is present |

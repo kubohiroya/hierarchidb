@@ -38,7 +38,7 @@ import {
   emitSessionStatusUpdated,
   emitStageSnapshotUpdated,
   readStartedStageTiming,
-} from './eventEmissionConstants.js';
+} from './eventEmissionConstantsUtils.js';
 import type { ShapeBuildStopReason, ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import { isStopReason } from './taskQueueManagement.js';
 // Custom error types for better error classification
@@ -774,7 +774,6 @@ const startBuildSessionInternal = async (
             selectedArrayByCountries: draftEntity.selectedArrayByCountries,
             status: 'paused',
             startedAt: buildStartedAt,
-            stopReason: 'auth-required',
             lastHeartbeatAt: pausedAt,
             canResume: true,
           });
@@ -1120,7 +1119,7 @@ const startBuildSessionInternal = async (
             nodeForSession,
             {
               status: 'paused',
-              stopReason: 'auth-required',
+              stopReason: 'user-pause',
               lastHeartbeatAt: pausedAt,
               canResume: true,
             },

@@ -14,7 +14,6 @@ const updateBuildSessionMock = vi.hoisted(() => vi.fn(async () => undefined));
 const emitHeartbeatMock = vi.hoisted(() => vi.fn());
 const emitSessionLifecyclePhaseUpdatedMock = vi.hoisted(() => vi.fn());
 const emitSessionStatusUpdatedMock = vi.hoisted(() => vi.fn());
-const emitHeartbeatMock = vi.hoisted(() => vi.fn());
 const activePipelineStore = vi.hoisted(() => new Map<string, ActivePipeline>());
 const invalidatedRunIds = vi.hoisted(() => new Map<string, string>());
 const countTaskQueueStatusesMock = vi.hoisted(() =>
@@ -60,7 +59,7 @@ vi.mock('../../services/build/ShapeBuildAPIClient.js', () => ({
   },
 }));
 
-vi.mock('../../worker/api/eventEmissionConstants.js', () => ({
+vi.mock('../../worker/api/eventEmissionConstantsUtils.js', () => ({
   emitHeartbeat: (...args: Parameters<typeof emitHeartbeatMock>) => emitHeartbeatMock(...args),
   emitSessionLifecyclePhaseUpdated: (
     ...args: Parameters<typeof emitSessionLifecyclePhaseUpdatedMock>

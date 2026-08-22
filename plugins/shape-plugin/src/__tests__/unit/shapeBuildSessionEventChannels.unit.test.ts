@@ -37,7 +37,7 @@ import {
   readStartedStageTiming,
   validateSessionTimingContract,
   validateStageTimingContract,
-} from '../../worker/api/eventEmissionConstants';
+} from '../../worker/api/eventEmissionConstantsUtils';
 
 const asNodeId = (value: string): NodeId => value as NodeId;
 

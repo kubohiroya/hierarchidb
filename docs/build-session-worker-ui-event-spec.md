@@ -33,7 +33,7 @@ type SessionStatusUpdatedEvent = {
     startedAt?: number;            // required after starting completes
     completedAt?: number;          // required for completed/failed
     pausedAt?: number;             // required only for paused
-    stopReason?: string;           // 'route-leave' | 'user-pause' | 'auth-required' | 'failed' | 'completed' | 'unknown'
+    stopReason?: string;           // 'route-leave' | 'user-pause' | 'failed' | 'completed' | 'unknown'
     stageId?: StageId;             // current stage at time of event (undefined if no stage is active)
     inactiveMs?: number;           // cumulative session inactivity; absence means none recorded
     stageStartedAt?: number;       // required when stageId is present

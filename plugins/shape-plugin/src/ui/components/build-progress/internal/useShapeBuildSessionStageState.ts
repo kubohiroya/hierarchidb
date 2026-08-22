@@ -49,6 +49,7 @@ type Args = {
   reportFailures: boolean;
   baseBuildStatus: BuildStatus;
   hasNodeId: boolean;
+  isSessionStopping?: boolean;
   onTerminalStageCompletion?: (options: {
     completed: boolean;
     hasFailedTerminalTasks: boolean;

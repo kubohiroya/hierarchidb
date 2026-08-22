@@ -45,7 +45,7 @@ export const validateSessionTimingContract = (
     phase: SessionPhase,
     timing: Pick<
         SessionStatusUpdatedEvent['payload'],
-        'startedAt' | 'completedAt' | 'inactiveMs' | 'stageId' | 'stageStartedAt' | 'stageInactiveMs'
+        'startedAt' | 'completedAt' | 'pausedAt' | 'inactiveMs' | 'stageId' | 'stageStartedAt' | 'stageInactiveMs'
     >,
 ): void => {
     const startedAt = timing.startedAt === undefined
@@ -57,6 +57,9 @@ export const validateSessionTimingContract = (
     const completedAt = timing.completedAt === undefined
         ? undefined
         : requireFiniteNonNegativeNumber(timing.completedAt, 'completedAt');
+    const pausedAt = timing.pausedAt === undefined
+        ? undefined
+        : requireFiniteNonNegativeNumber(timing.pausedAt, 'pausedAt');
 
     if (phase !== 'idle' && phase !== 'starting' && startedAt === undefined) {
         throw new Error(`[eventEmission] startedAt is required for phase ${phase}`);
@@ -64,10 +67,22 @@ export const validateSessionTimingContract = (
     if ((phase === 'completed' || phase === 'failed') && completedAt === undefined) {
         throw new Error(`[eventEmission] completedAt is required for phase ${phase}`);
     }
+    if (phase === 'paused' && pausedAt === undefined) {
+        throw new Error('[eventEmission] pausedAt is required for phase paused');
+    }
+    if (phase !== 'paused' && pausedAt !== undefined) {
+        throw new Error(`[eventEmission] pausedAt must be absent for phase ${phase}`);
+    }
     if (startedAt !== undefined && completedAt !== undefined) {
         const durationMs = completedAt - startedAt - inactiveMs;
         if (!Number.isFinite(durationMs) || durationMs < 0) {
             throw new Error(`[eventEmission] session duration must be finite and non-negative, received ${durationMs}`);
+        }
+    }
+    if (startedAt !== undefined && pausedAt !== undefined) {
+        const durationMs = pausedAt - startedAt - inactiveMs;
+        if (!Number.isFinite(durationMs) || durationMs < 0) {
+            throw new Error(`[eventEmission] paused session duration must be finite and non-negative, received ${durationMs}`);
         }
     }
 
@@ -172,6 +187,7 @@ export const emitSessionLifecyclePhaseUpdated = (
     validateSessionTimingContract(phase, {
         startedAt: sessionRecord.startedAt,
         completedAt: sessionRecord.completedAt,
+        pausedAt: phase === 'paused' ? sessionRecord.lastHeartbeatAt : undefined,
         inactiveMs: sessionRecord.inactiveMs,
         stageId: sessionRecord.stageId,
         stageStartedAt: sessionRecord.stageStartedAt,
@@ -185,6 +201,7 @@ export const emitSessionLifecyclePhaseUpdated = (
       isActive: isActiveSessionPhase(phase),
             startedAt: sessionRecord.startedAt,
             completedAt: sessionRecord.completedAt,
+            pausedAt: phase === 'paused' ? sessionRecord.lastHeartbeatAt : undefined,
             stopReason: sessionRecord.stopReason,
             stageId: sessionRecord.stageId,
             inactiveMs: sessionRecord.inactiveMs,
