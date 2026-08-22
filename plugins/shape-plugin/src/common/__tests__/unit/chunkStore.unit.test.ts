@@ -8,7 +8,9 @@ import {
   listRawDataDataSourceMetadataForNode,
   storeRawDataDataSourceBufferForNode,
 } from '../../../services/utils/chunkStore';
+import { createShapeNetworkPort } from '../../../services/utils/createShapeNetworkPort';
 import { initializeShapeChunkStore } from '../../../services/utils/initializeShapeChunkStore';
+import { setShapeCorsProxyBaseURL } from '../../../services/utils/setShapeCorsProxyBaseURL';
 
 const textEncoder = new TextEncoder();
 
@@ -22,7 +24,22 @@ describe('chunkStore raw data metadata-id based cache deletion', () => {
   });
 
   afterEach(async () => {
+    setShapeCorsProxyBaseURL('');
     await Dexie.delete(dbName);
+  });
+
+  it('uses the explicitly propagated CORS proxy for new Shape network ports', async () => {
+    const authFetch = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }));
+    const sourceURL = 'https://source.example/boundaries.geojson';
+
+    setShapeCorsProxyBaseURL('https://shape-proxy.example/');
+    const network = createShapeNetworkPort({ authFetch });
+    await network.get(sourceURL);
+
+    expect(authFetch).toHaveBeenCalledWith(
+      'https://shape-proxy.example/?url=https%3A%2F%2Fsource.example%2Fboundaries.geojson',
+      expect.objectContaining({ method: 'GET' })
+    );
   });
 
   it('rejects a conflicting database name before opening IndexedDB', () => {

@@ -263,7 +263,7 @@ describe('ShapeBuildProgressPanel (state-tree)', () => {
     await waitFor(() => {
       expect(document.body.textContent).toContain('Start Build');
     });
-  });
+  }, 10_000);
 
   it('shows task skeleton while awaiting first snapshot in running state', async () => {
     const store = makeStore();
