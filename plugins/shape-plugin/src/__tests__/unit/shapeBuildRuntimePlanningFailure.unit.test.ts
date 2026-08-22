@@ -12,6 +12,11 @@ const buildSourceTasksMock = vi.hoisted(() => vi.fn(async () => ({ tasks: [] }))
 const emitHeartbeatMock = vi.hoisted(() => vi.fn());
 const emitSessionStatusUpdatedMock = vi.hoisted(() => vi.fn());
 const setPausedMock = vi.hoisted(() => vi.fn(async () => undefined));
+const registerActivePipelineMock = vi.hoisted(() => vi.fn());
+const runShapePipelineMock = vi.hoisted(() => vi.fn(async () => undefined));
+const runShapeArtifactCascadeCleanupMock = vi.hoisted(() => vi.fn(async () => undefined));
+const setBuildSessionContextMock = vi.hoisted(() => vi.fn());
+const clearBuildSessionContextMock = vi.hoisted(() => vi.fn());
 const getActivePipelineMock = vi.hoisted(() =>
   vi.fn(
     (): {
@@ -32,8 +37,8 @@ vi.mock('@hierarchidb/auth', () => {
     AuthRequiredError: MockAuthRequiredError,
     AuthService: {
       getSingleton: vi.fn(async () => ({
-        clearBuildSessionContext: vi.fn(),
-        setBuildSessionContext: vi.fn(),
+        clearBuildSessionContext: clearBuildSessionContextMock,
+        setBuildSessionContext: setBuildSessionContextMock,
       })),
     },
   };
@@ -50,7 +55,8 @@ vi.mock('../../worker/api/shapeBuildRuntimeCore.js', () => ({
   setPaused: (...args: Parameters<typeof setPausedMock>) => setPausedMock(...args),
   waitIfPaused: vi.fn(async () => undefined),
   getShapeEntityHandler: () => ({ getEntity: getEntityMock }),
-  registerActivePipeline: vi.fn(),
+  registerActivePipeline: (...args: Parameters<typeof registerActivePipelineMock>) =>
+    registerActivePipelineMock(...args),
   clearActivePipeline: vi.fn(() => true),
   getActivePipeline: (...args: Parameters<typeof getActivePipelineMock>) =>
     getActivePipelineMock(...args),
@@ -80,6 +86,17 @@ vi.mock('../../services/CacheValidator.js', () => ({
   cacheValidator: {
     cleanupInvalidEntries: cleanupInvalidEntriesMock,
   },
+}));
+
+vi.mock('../../services/vt/runShapePipeline.js', () => ({
+  runShapePipeline: (...args: Parameters<typeof runShapePipelineMock>) =>
+    runShapePipelineMock(...args),
+}));
+
+vi.mock('../../services/vt/runShapeArtifactCascadeCleanup.js', () => ({
+  runShapeArtifactCascadeCleanup: (
+    ...args: Parameters<typeof runShapeArtifactCascadeCleanupMock>
+  ) => runShapeArtifactCascadeCleanupMock(...args),
 }));
 
 vi.mock('../../worker/api/eventEmissionConstantsUtils.js', () => ({
@@ -179,6 +196,120 @@ describe('shape build runtime zero-task planning failure', () => {
     expect(receivedError).not.toBe(persistenceError);
     expect(upsertBuildSessionMock).toHaveBeenCalledOnce();
     expect(emitSessionStatusUpdatedMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects a paused session that is not explicitly resumable before planning or cleanup', async () => {
+    getBuildSessionRecordMock.mockResolvedValue({
+      nodeId,
+      status: 'paused',
+      startedAt: 500,
+      updatedAt: 900,
+      progress: { total: 1, completed: 0, failed: 0, skipped: 0, percentage: 0 },
+      stages: {},
+      stopReason: 'user-pause',
+      canResume: false,
+    });
+
+    await expect(startBuildSession()).rejects.toMatchObject({
+      name: 'ShapeBuildResumeContractError',
+      code: 'SHAPE_BUILD_RESUME_CONTRACT',
+    });
+
+    expect(buildSourceTasksMock).not.toHaveBeenCalled();
+    expect(cleanupInvalidEntriesMock).not.toHaveBeenCalled();
+    expect(setPausedMock).not.toHaveBeenCalled();
+    expect(upsertBuildSessionMock).not.toHaveBeenCalled();
+    expect(updateBuildSessionMock).not.toHaveBeenCalledWith(
+      nodeId,
+      expect.objectContaining({
+        status: expect.any(String),
+      })
+    );
+  });
+
+  it('preserves the original session identity when planning fails during resume', async () => {
+    const pausedSession = {
+      nodeId,
+      status: 'paused' as const,
+      startedAt: 500,
+      updatedAt: 900,
+      progress: { total: 1, completed: 0, failed: 0, skipped: 0, percentage: 0 },
+      stages: {},
+      stopReason: 'user-pause' as const,
+      canResume: true,
+    };
+    const failedSession = {
+      ...pausedSession,
+      status: 'failed' as const,
+      updatedAt: 1_000,
+      completedAt: 1_000,
+      stopReason: 'failed' as const,
+      canResume: false,
+    };
+    getBuildSessionRecordMock
+      .mockResolvedValueOnce(pausedSession)
+      .mockResolvedValue(failedSession);
+
+    await expect(startBuildSession()).rejects.toThrow(expectedErrorMessage);
+
+    expect(upsertBuildSessionMock).not.toHaveBeenCalled();
+    expect(updateBuildSessionMock).toHaveBeenCalledWith(nodeId, {
+      status: 'failed',
+      stopReason: 'failed',
+      canResume: false,
+      completedAt: 1_000,
+    });
+    expect(emitSessionStatusUpdatedMock).toHaveBeenCalledWith(nodeId, failedSession);
+  });
+
+  it('recreates runtime ownership from a persisted paused session and reuses its task queue', async () => {
+    vi.useRealTimers();
+    const pausedSession = {
+      nodeId,
+      status: 'paused' as const,
+      selectedArrayByCountries,
+      startedAt: 500,
+      updatedAt: 900,
+      progress: { total: 1, completed: 0, failed: 0, skipped: 0, percentage: 0 },
+      stages: {},
+      stopReason: 'user-pause' as const,
+      canResume: true,
+    };
+    const runningSession = {
+      ...pausedSession,
+      status: 'running' as const,
+      updatedAt: 1_000,
+      stopReason: undefined,
+      canResume: false,
+    };
+    getBuildSessionRecordMock
+      .mockResolvedValueOnce(pausedSession)
+      .mockResolvedValue(runningSession);
+    buildSourceTasksMock.mockResolvedValue({ tasks: [{} as never] });
+    runShapePipelineMock.mockReturnValueOnce(new Promise<void>(() => {}));
+
+    await expect(startBuildSession()).resolves.toBe(nodeId);
+
+    expect(setPausedMock).toHaveBeenCalledWith(nodeId, false);
+    expect(runShapeArtifactCascadeCleanupMock).not.toHaveBeenCalled();
+    expect(upsertBuildSessionMock).not.toHaveBeenCalled();
+    expect(updateBuildSessionMock).toHaveBeenCalledWith(nodeId, {
+      status: 'running',
+      stopReason: undefined,
+      canResume: false,
+      completedAt: undefined,
+    });
+    expect(setBuildSessionContextMock).toHaveBeenCalledWith(String(nodeId), 500);
+    expect(runShapePipelineMock).toHaveBeenCalledWith(
+      expect.objectContaining({ nodeId, resumeExistingTasks: true })
+    );
+    expect(registerActivePipelineMock).toHaveBeenCalledWith(
+      nodeId,
+      expect.objectContaining({ runId: expect.stringMatching(/^planning-zero-node:500$/) })
+    );
+    expect(setPausedMock.mock.invocationCallOrder[0]).toBeLessThan(
+      runShapePipelineMock.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY
+    );
   });
 
   it('persists an authentication planning pause with an explicit heartbeat endpoint', async () => {
