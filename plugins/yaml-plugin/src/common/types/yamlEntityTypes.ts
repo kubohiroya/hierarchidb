@@ -1,2 +1,5 @@
-import type { YamlFileNodeData } from '@hierarchidb/yaml-api';
-export type YamlDraft = Partial<YamlFileNodeData>;
+import type { YamlFileNodeData, YamlSubtype } from '@hierarchidb/yaml-api';
+
+export type YamlDraft = Partial<YamlFileNodeData> & {
+  readonly subtype?: YamlSubtype;
+};
