@@ -4,6 +4,10 @@ Last updated: 2026-04-05
 
 A geographic shape data management plugin for HierarchiDB. Imports country and administrative-area shape data from online data sources (Natural Earth, geoBoundaries, GADM), generates vector tiles, and visualizes results in a Map preview. Supports batch processing via BuildSession, stage-based pipeline execution, and pause/resume capabilities.
 
+## External GeoJSON Payload Contracts
+
+Shape source ingestion validates external GeoJSON in two layers. The generic layer checks only the `FeatureCollection` container shape. Provider-specific validators then enforce the properties that strategy code depends on: Natural Earth identity/name fields, GADM `GID_0`/`NAME_0` plus requested ADM-level keys, and geoBoundaries `shapeName`. The validators use JSON Schema with Ajv and do not coerce values, apply defaults, or remove additional upstream properties.
+
 ## Node Type and Inheritance
 
 | Field | Value |

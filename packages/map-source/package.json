@@ -15,6 +15,7 @@
   "scripts": {
     "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
     "clean": "rm -rf dist",
+    "test": "pnpm run build && node --test src/__tests__/*.test.mjs",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "peerDependencies": {

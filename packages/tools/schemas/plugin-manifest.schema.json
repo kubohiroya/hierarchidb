@@ -29,13 +29,18 @@
       "additionalProperties": true
     },
     "category": {
-      "type": ["object", "string"],
-      "properties": {
-        "treeId": { "type": "string" },
-        "menuGroup": { "enum": ["basic", "container", "document", "advanced"] },
-        "createOrder": { "type": "number" }
-      },
-      "additionalProperties": true
+      "anyOf": [
+        { "type": "string" },
+        {
+          "type": "object",
+          "properties": {
+            "treeId": { "type": "string" },
+            "menuGroup": { "enum": ["basic", "container", "document", "advanced"] },
+            "createOrder": { "type": "number" }
+          },
+          "additionalProperties": true
+        }
+      ]
     },
     "capabilities": { "type": "object" },
     "schema": { "type": "object" },

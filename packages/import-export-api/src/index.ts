@@ -14,3 +14,4 @@ export type {
   ValidationWarning,
 } from './ImportExportAPI.js';
 export type { FileLike } from './import-export-types.js';
+export { importDataJsonSchema } from './importDataJsonSchema.js';

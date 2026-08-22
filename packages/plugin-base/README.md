@@ -13,6 +13,7 @@ Base package for the HierarchiDB plugin system. Provides plugin manifest type de
 - `draftAtoms` — Jotai-based draft state management atoms
 - Lifecycle hook types (`EntityLifecycleHooks`)
 - Search criteria types (`BaseSearchCriteria`)
+- `dependencyGraphJsonSchema` — Permissive public dependency graph artifact schema
 
 ## Installation
 
@@ -47,6 +48,12 @@ interface PluginManifest {
   // ... and more
 }
 ```
+
+### Dependency Graph Schema
+
+The dependency graph schema validates the required public artifact envelope with Ajv strict
+mode and no coercion, defaults, or additional-property removal. It intentionally keeps
+`additionalProperties: true` for graph, node, edge, metadata, and group extension fields.
 
 ### PluginStepRegistry
 
