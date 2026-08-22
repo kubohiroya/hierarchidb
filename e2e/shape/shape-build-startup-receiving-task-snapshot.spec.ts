@@ -1,5 +1,6 @@
 import '../utils/skip-if-disabled';
 import type { ConsoleMessage, Page, Worker } from '@playwright/test';
+import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '../../packages/shape-api/src/defaultConstants';
 import { expect, test } from '../fixtures/canonicalAuthFixture';
 import {
   buildAppUrl,
@@ -10,6 +11,41 @@ import {
 } from '../utils/test-helpers';
 
 type SelectedArrayByCountries = Record<string, boolean[]>;
+
+const createE2EShapeBuildConfig = () => ({
+  ...DEFAULT_BUILD_CONFIG,
+  sourceConfig: {
+    ...DEFAULT_BUILD_CONFIG.sourceConfig,
+    maxConcurrent: 1,
+    retryAttempts: 3,
+    retryDelay: 1000,
+    retryLimit: 3,
+    retryBackoff: 'linear',
+  },
+  geometryConfig: {
+    ...DEFAULT_BUILD_CONFIG.geometryConfig,
+    zoomBandBoundaries: [1, 2, 3],
+    maxConcurrent: 1,
+  },
+  tileEmitConfig: {
+    ...DEFAULT_BUILD_CONFIG.tileEmitConfig,
+    maxConcurrent: 1,
+    dynamicConcurrency: {
+      enabled: true,
+      minConcurrent: 1,
+      highWatermark: 0.85,
+      lowWatermark: 0.6,
+      adjustStep: 1,
+      sampleMs: 2000,
+    },
+    extent: 4096,
+    bufferSize: 256,
+    tileSize: 256,
+  },
+  cleanupConfig: {
+    ...DEFAULT_BUILD_CONFIG.cleanupConfig,
+  },
+});
 
 type ConsolePayload = Record<string, unknown>;
 type WorkerDiagnostics = Record<string, unknown>;
@@ -196,7 +232,7 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
     test.setTimeout(180000);
     await canonicalAuth.signIn();
 
-    await page.goto(buildAppUrl('t/r'), { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await page.goto(buildAppUrl('d/r'), { waitUntil: 'domcontentloaded', timeout: 120000 });
     await dismissGuidedTour(page);
     await waitForTreeTableLoad(page);
     await page.waitForFunction(() => Boolean((window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__?.client), null, {
@@ -211,79 +247,10 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
       }
     });
     const selectedArrayByCountries: SelectedArrayByCountries = { JP: [true] };
-    const buildConfig = await page.evaluate(() => {
-      return {
-        dataSourceName: 'geoboundaries',
-        sourceConfig: {
-          maxConcurrent: 1,
-          deleteOnComplete: false,
-          timeoutMs: 300000,
-          retryAttempts: 3,
-          retryDelay: 1000,
-          retryLimit: 3,
-          retryBackoff: 'linear',
-        },
-        geometryConfig: {
-          zoomBandBoundaries: [1, 2, 3],
-          maxConcurrent: 1,
-          enableFeatureFiltering: true,
-          featureAreaThreshold: 1.0,
-          minVertexCountForAreaFilter: 10,
-          aspectRatioThreshold: 5,
-          featureFilterMethod: 'hybrid',
-          hybridFilterConfig: {
-            quickRejectThreshold: 0.002,
-            regularShapeMinRatio: 0.5,
-            regularShapeMaxRatio: 2.0,
-            simpleShapeVertexThreshold: 10,
-            elongatedShapeCorrectionFactor: 1.3,
-          },
-          deleteOnComplete: false,
-          tolerance: 0.2,
-          areaThreshold: 1.0,
-          excludePolygonAreaCoefficient: 1,
-          omitDetailsConfig: {
-            level: 'strong',
-          },
-          minRingVertices: 4,
-          boundaryDisableAtZoomOrAbove: 3,
-        },
-        tileEmitConfig: {
-          enableTopojsonSimplify: true,
-          maxConcurrent: 1,
-          dynamicConcurrency: {
-            enabled: true,
-            minConcurrent: 1,
-            highWatermark: 0.85,
-            lowWatermark: 0.6,
-            adjustStep: 1,
-            sampleMs: 2000,
-          },
-          tolerance: 0,
-          extent: 4096,
-          bufferSize: 256,
-          boundaryDedupe: true,
-          indexMaxPoints: 100000,
-          layerSetName: 'shape',
-          promoteId: 'id',
-          tileSize: 256,
-          inputFormat: 'geojson',
-          inputCompression: 'none',
-          tileExpandFactor: 1,
-          tileExpandMargin: 0,
-          format: 'mvt',
-          compression: 'gzip',
-        },
-        cleanupConfig: {
-          deleteFetchApiCache: false,
-          deleteFetchFilteredCache: false,
-          deleteGeometryCache: false,
-          deleteVTCache: false,
-        },
-      };
-    });
+    const buildConfig = createE2EShapeBuildConfig();
+    const processingConfig = DEFAULT_PROCESSING_CONFIG;
 
-    const shapeNode = await page.evaluate(async ({ buildConfig, selectedArrayByCountries }) => {
+    const shapeNode = await page.evaluate(async ({ buildConfig, processingConfig, selectedArrayByCountries }) => {
       const client = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__?.client;
       if (!client?.getQueryAPI || !client?.getMutationAPI || !client?.getTreeNodeUpdaterAPI) {
         throw new Error('Worker client not ready');
@@ -295,20 +262,22 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
       const trees = await queryAPI.listTrees();
       const tree = trees.find((t: { id: string }) => t.id === 'r') ?? trees[0];
       if (!tree) throw new Error('No tree available');
+      const name = `Shape Startup ${Date.now()}`;
       const createResult = await mutationAPI.createNode({
         nodeType: 'shape',
         treeId: tree.id,
         parentId: tree.rootId,
-        name: `Shape Startup ${Date.now()}`,
+        name,
       });
       if (!createResult.success) {
         throw new Error(`Failed to create shape node: ${String(createResult.error ?? 'unknown')}`);
       }
       const nodeId = createResult.nodeId;
       const draftPayload = {
-        name: `Shape Startup ${Date.now()}`,
+        name,
         description: 'E2E startup receiving-task-snapshot test',
         buildConfig,
+        processingConfig,
         selectedArrayByCountries,
         processingStatus: 'idle',
         licenseAgreement: true,
@@ -320,15 +289,15 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
         draftData: draftPayload,
       });
       return { treeId: tree.id, pageNodeId: tree.rootId, nodeId, name: draftPayload.name };
-    }, { buildConfig, selectedArrayByCountries });
+    }, { buildConfig, processingConfig, selectedArrayByCountries });
 
-    await page.goto(buildAppUrl(`t/${shapeNode.treeId}/${shapeNode.pageNodeId}`), {
+    await page.goto(buildAppUrl(`d/${shapeNode.treeId}/${shapeNode.pageNodeId}`), {
       waitUntil: 'domcontentloaded',
       timeout: 120000,
     });
     await waitForTreeTableLoad(page);
 
-    const shapeNodeLink = page.locator(`a[href$="/${shapeNode.nodeId}"]`).first();
+    const shapeNodeLink = page.getByRole('link', { name: shapeNode.name }).first();
     await expect(shapeNodeLink).toBeVisible({ timeout: 20000 });
     await shapeNodeLink.click();
 
@@ -439,13 +408,10 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
     page.on('console', handleStartupConsole);
 
     try {
-      const openEditButton = page.getByRole('button', { name: /ノードを編集|Edit/i }).first();
-      await expect(openEditButton).toBeVisible({ timeout: 10000 });
-      await openEditButton.click();
-
-      const buildStepButton = page.getByRole('button', { name: /^5\s*(ビルド|Build)/ }).first();
-      await expect(buildStepButton).toBeVisible({ timeout: 10000 });
-      await buildStepButton.click();
+      const openBuildPanelButton = page.getByRole('button', { name: /ビルドを開始|ビルド開始|Build/i }).first();
+      await expect(openBuildPanelButton).toBeVisible({ timeout: 10000 });
+      await expect(openBuildPanelButton).toBeEnabled({ timeout: 10000 });
+      await openBuildPanelButton.click();
 
       const launchBuildButtonByTestId = page.getByTestId('build-control-start-resume-button');
       const launchBuildButton = await launchBuildButtonByTestId.isVisible({ timeout: 3000 }).catch(() => false)
@@ -514,7 +480,7 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
     test.setTimeout(180000);
     await canonicalAuth.signIn();
 
-    await page.goto(buildAppUrl('t/r'), { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await page.goto(buildAppUrl('d/r'), { waitUntil: 'domcontentloaded', timeout: 120000 });
     await dismissGuidedTour(page);
     await waitForTreeTableLoad(page);
     await page.waitForFunction(() => Boolean((window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__?.client), null, {
@@ -530,79 +496,10 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
     });
 
     const selectedArrayByCountries: SelectedArrayByCountries = { JP: [true] };
-    const buildConfig = await page.evaluate(() => {
-      return {
-        dataSourceName: 'geoboundaries',
-        sourceConfig: {
-          maxConcurrent: 1,
-          deleteOnComplete: false,
-          timeoutMs: 300000,
-          retryAttempts: 3,
-          retryDelay: 1000,
-          retryLimit: 3,
-          retryBackoff: 'linear',
-        },
-        geometryConfig: {
-          zoomBandBoundaries: [1, 2, 3],
-          maxConcurrent: 1,
-          enableFeatureFiltering: true,
-          featureAreaThreshold: 1.0,
-          minVertexCountForAreaFilter: 10,
-          aspectRatioThreshold: 5,
-          featureFilterMethod: 'hybrid',
-          hybridFilterConfig: {
-            quickRejectThreshold: 0.002,
-            regularShapeMinRatio: 0.5,
-            regularShapeMaxRatio: 2.0,
-            simpleShapeVertexThreshold: 10,
-            elongatedShapeCorrectionFactor: 1.3,
-          },
-          deleteOnComplete: false,
-          tolerance: 0.2,
-          areaThreshold: 1.0,
-          excludePolygonAreaCoefficient: 1,
-          omitDetailsConfig: {
-            level: 'strong',
-          },
-          minRingVertices: 4,
-          boundaryDisableAtZoomOrAbove: 3,
-        },
-        tileEmitConfig: {
-          enableTopojsonSimplify: true,
-          maxConcurrent: 1,
-          dynamicConcurrency: {
-            enabled: true,
-            minConcurrent: 1,
-            highWatermark: 0.85,
-            lowWatermark: 0.6,
-            adjustStep: 1,
-            sampleMs: 2000,
-          },
-          tolerance: 0,
-          extent: 4096,
-          bufferSize: 256,
-          boundaryDedupe: true,
-          indexMaxPoints: 100000,
-          layerSetName: 'shape',
-          promoteId: 'id',
-          tileSize: 256,
-          inputFormat: 'geojson',
-          inputCompression: 'none',
-          tileExpandFactor: 1,
-          tileExpandMargin: 0,
-          format: 'mvt',
-          compression: 'gzip',
-        },
-        cleanupConfig: {
-          deleteFetchApiCache: false,
-          deleteFetchFilteredCache: false,
-          deleteGeometryCache: false,
-          deleteVTCache: false,
-        },
-      };
-    });
+    const buildConfig = createE2EShapeBuildConfig();
+    const processingConfig = DEFAULT_PROCESSING_CONFIG;
 
-    const shapeNode = await page.evaluate(async ({ buildConfig, selectedArrayByCountries }) => {
+    const shapeNode = await page.evaluate(async ({ buildConfig, processingConfig, selectedArrayByCountries }) => {
       const client = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__?.client;
       if (!client) throw new Error('Worker client not ready');
       const queryAPI = await client.getQueryAPI();
@@ -627,6 +524,7 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
         name,
         description: 'E2E build task list visibility test',
         buildConfig,
+        processingConfig,
         selectedArrayByCountries,
         processingStatus: 'idle',
         licenseAgreement: true,
@@ -638,25 +536,22 @@ test.describe('Shape build startup receiving-task-snapshot UX', () => {
         draftData: draftPayload,
       });
       return { treeId: tree.id, pageNodeId: tree.rootId, nodeId, name: draftPayload.name };
-    }, { buildConfig, selectedArrayByCountries });
+    }, { buildConfig, processingConfig, selectedArrayByCountries });
 
-    await page.goto(buildAppUrl(`t/${shapeNode.treeId}/${shapeNode.pageNodeId}`), {
+    await page.goto(buildAppUrl(`d/${shapeNode.treeId}/${shapeNode.pageNodeId}`), {
       waitUntil: 'domcontentloaded',
       timeout: 120000,
     });
     await waitForTreeTableLoad(page);
 
-    const shapeNodeLink = page.locator(`a[href$="/${shapeNode.nodeId}"]`).first();
+    const shapeNodeLink = page.getByRole('link', { name: shapeNode.name }).first();
     await expect(shapeNodeLink).toBeVisible({ timeout: 20000 });
     await shapeNodeLink.click();
 
-    const openEditButton = page.getByRole('button', { name: /ノードを編集|Edit/i }).first();
-    await expect(openEditButton).toBeVisible({ timeout: 10000 });
-    await openEditButton.click();
-
-    const buildStepButton = page.getByRole('button', { name: /^5\s*(ビルド|Build)/ }).first();
-    await expect(buildStepButton).toBeVisible({ timeout: 10000 });
-    await buildStepButton.click();
+    const openBuildPanelButton = page.getByRole('button', { name: /ビルドを開始|ビルド開始|Build/i }).first();
+    await expect(openBuildPanelButton).toBeVisible({ timeout: 10000 });
+    await expect(openBuildPanelButton).toBeEnabled({ timeout: 10000 });
+    await openBuildPanelButton.click();
 
     const zeroCountChip = page.locator('[aria-label="Completed 0/0"]').first();
     await expect(zeroCountChip).toBeVisible({ timeout: 10000 });
