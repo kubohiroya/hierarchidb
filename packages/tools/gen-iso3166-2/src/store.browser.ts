@@ -29,6 +29,10 @@ const memoryStore = {
   subdivisions: new Map<string, SubdivisionRecord>(),
 };
 
+type BrowserGlobalWithAppBase = typeof globalThis & {
+  __HDB_APP_BASE__?: unknown;
+};
+
 const normalizeBasePath = (value: string): string => {
   const trimmed = value.trim();
   if (!trimmed) {
@@ -36,26 +40,43 @@ const normalizeBasePath = (value: string): string => {
   }
   if (/^https?:\/\//i.test(trimmed)) {
     const url = new URL(trimmed);
-    const path = url.pathname;
-    if (!path || path === "/") {
-      throw new Error("Vite BASE_URL must include the deployed application base path.");
-    }
+    const path = url.pathname || "/";
     return path.endsWith("/") ? path : `${path}/`;
   }
   const withLeading = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
   return withLeading.endsWith("/") ? withLeading : `${withLeading}/`;
 };
 
-const requireViteBaseUrl = (): string => {
+const getViteBaseUrl = (): string | null => {
   const baseUrl = import.meta.env.BASE_URL;
-  if (typeof baseUrl !== "string" || baseUrl.length === 0) {
-    throw new Error("Vite BASE_URL is required to resolve ISO-3166 CSV assets.");
+  if (typeof baseUrl !== "string" || baseUrl.length === 0 || baseUrl === "undefined") {
+    return null;
   }
   return baseUrl;
 };
 
+const getHintedBaseUrl = (): string | null => {
+  const hinted = (globalThis as BrowserGlobalWithAppBase).__HDB_APP_BASE__;
+  return typeof hinted === "string" && hinted.length > 0 ? hinted : null;
+};
+
+const getDocumentBaseUrl = (): string | null => {
+  if (typeof document === "undefined") {
+    return null;
+  }
+  const baseUri = document.baseURI;
+  if (typeof baseUri !== "string" || baseUri.length === 0) {
+    return null;
+  }
+  return new URL(".", baseUri).pathname;
+};
+
 const resolveBaseUrl = (): string => {
-  return normalizeBasePath(requireViteBaseUrl());
+  const baseUrl = getViteBaseUrl() ?? getHintedBaseUrl() ?? getDocumentBaseUrl();
+  if (baseUrl === null) {
+    throw new Error("Vite BASE_URL is required to resolve ISO-3166 CSV assets.");
+  }
+  return normalizeBasePath(baseUrl);
 };
 
 export const resolveIso3166CsvUrl = (csvFile = "iso3166-2-level1.csv"): string => {

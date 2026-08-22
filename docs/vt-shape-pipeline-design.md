@@ -68,6 +68,8 @@ inert な Shape chunk-store 参照を一度だけ初期化する。UI entry の�
 - 内部の基準コード体系は ISO2 を採用し、`sourceKey` とキャッシュキーは ISO2 統一で運用する
 - 例: GeoBoundaries/GADM の URL は ISO3 を要求するため、strategy 側で ISO2 → ISO3 変換して URL を生成する
 - SharedWorker / worker asset から ISO3166 CSV を読む場合も、app base path（例: `/hierarchidb/`）配下の `iso3166-2-level1.csv` を解決し、base path 欠落による ISO3→ISO2 変換失敗を silent fallback で吸収しない
+- `@hierarchidb/gen-iso3166-2/browser` は Vite production worker bundle で置換可能な direct `import.meta.env.BASE_URL` を ISO3166 asset base の第一情報源とする。`import.meta` を別名化して `env.BASE_URL` を読む実装は禁止する
+- Vite `BASE_URL` が存在しないブラウザ実行文脈に限り、明示 browser hint（`globalThis.__HDB_APP_BASE__`）と `document.baseURI` から base path を解決する。SharedWorker では `window` / `document` に依存せず、`/iso3166-2-level1.csv` への暗黙 fallback で継続しない
 
 ### Raw source cache の network 所有境界
 
