@@ -136,6 +136,16 @@ Storage implementation は default-off feature flag 配下で導入する。flag
 - 既存 source / geometry / tileEmit record の identity、cleanup、resume behavior を変更しない。
 - 新規 schema が存在しても既存 build の成功条件に影響させない。
 
+初期実装の feature flag 名は `HDB_SHAPE_BORDER_GEOMETRY_STORAGE` とする。`ShapeDB` の Dexie v3 schema は次の table を border geometry storage 専用に所有する。
+
+| Table | Root identity |
+| --- | --- |
+| `borderGeometryDatasets` | `datasetId` |
+| `borderGeometryArcs` | `[datasetId+arcId]` |
+| `borderGeometryRings` | `[datasetId+ringId]` |
+| `borderGeometryPolygonRelations` | `[datasetId+polygonId]` |
+| `borderSpatialIndexes` | `[datasetId+indexId]` |
+
 永続 schema を追加する issue は、migration / recovery / non-reversible operation の扱いをその issue 本文と PR に明記する。rollback は flag off と対象 border geometry artifact の破棄を基本とし、既存 cache identity の再解釈を rollback 手段にしない。
 
 ## Follow-up Issue Contracts
