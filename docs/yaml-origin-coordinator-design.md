@@ -413,6 +413,14 @@ historical `hidb-core` native-v2 interrupted artifact, an absent or exact YamlDB
 absent dedicated recovery database. Unknown, non-empty, duplicate, malformed, blocked, or
 version-mismatched state is terminal.
 
+Production follow-up for Issue #1388 found the historical `hidb-core` artifact to be exact
+logical-v1 / native-v10 / non-empty. Later preservation diagnostics accounted the snapshot as valid,
+but the additional node remained `otherString / otherPayload` and therefore graph-preserved
+non-YAML. This evidence does not broaden `incident-1388-v1`: the state is still non-empty/mismatched
+relative to the accepted set, so recovery must not ignore `hidb-core` and fresh-create canonical
+CoreDB. No recovery write authority exists unless a separate issue first defines an explicit
+historical nodeType literal and payload contract.
+
 The one executor is selected by creating the dedicated
 `<prefix>-yaml-storage-recovery` native-v1 database and its exact `claimed` record in the same
 versionchange transaction. An existing database or record is never accepted as a retry claim. Only
