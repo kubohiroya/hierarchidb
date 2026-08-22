@@ -1957,6 +1957,9 @@ importers:
       '@hierarchidb/ui-i18n':
         specifier: workspace:*
         version: link:../i18n
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../../util
       '@mui/icons-material':
         specifier: ^7.3.6
         version: 7.3.9(@mui/material@7.3.9(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
@@ -3224,6 +3227,9 @@ importers:
       '@hierarchidb/ui-theme':
         specifier: workspace:*
         version: link:../theme
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../../util
       '@mui/icons-material':
         specifier: ^7.3.6
         version: 7.3.9(@mui/material@7.3.9(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)

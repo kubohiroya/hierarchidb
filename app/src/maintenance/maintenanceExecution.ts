@@ -1,10 +1,11 @@
+import { isRetainedLegacyYamlDatabaseName } from '@hierarchidb/util';
+import { broadcastMaintenanceShutdownRequest } from './maintenanceChannelConstants.js';
 import {
   clearMaintenanceLock,
-  setMaintenanceLock,
   type MaintenanceLockRecord,
+  setMaintenanceLock,
 } from './maintenanceLock.js';
-import { broadcastMaintenanceShutdownRequest } from './maintenanceChannelConstants.js';
-import { shutdownRuntimeHandles, type RuntimeShutdownResult } from './runtimeShutdown.js';
+import { type RuntimeShutdownResult, shutdownRuntimeHandles } from './runtimeShutdown.js';
 
 const DEFAULT_LOCK_DURATION_MS = 120_000;
 const DEFAULT_DELETE_RETRIES = 2;
@@ -76,7 +77,10 @@ const listDatabaseNames = async (factory: IndexedDbFactoryWithDatabases): Promis
     new Set(
       databases
         .map((db) => db.name)
-        .filter((name): name is string => typeof name === 'string' && name.length > 0)
+        .filter(
+          (name): name is string =>
+            typeof name === 'string' && name.length > 0 && !isRetainedLegacyYamlDatabaseName(name)
+        )
     )
   );
 };
@@ -91,10 +95,7 @@ const deleteDatabaseOnce = async (
     let settled = false;
     let blocked = false;
 
-    const finish = (
-      status: 'deleted' | 'blocked' | 'failed',
-      errorMessage?: string
-    ): void => {
+    const finish = (status: 'deleted' | 'blocked' | 'failed', errorMessage?: string): void => {
       if (settled) return;
       settled = true;
       resolve({ status, errorMessage });
@@ -214,7 +215,10 @@ export const executeIndexedDbMaintenance = async (
     onStep?.({ step: 'broadcast-shutdown', message: 'Sent shutdown request to open tabs.' });
     broadcastShutdown(options.sessionId);
 
-    onStep?.({ step: 'local-shutdown', message: 'Shutting down local workers and closing handles.' });
+    onStep?.({
+      step: 'local-shutdown',
+      message: 'Shutting down local workers and closing handles.',
+    });
     const shutdownResult = await shutdownRuntime();
     shutdownWarnings = shutdownResult.warnings;
 
