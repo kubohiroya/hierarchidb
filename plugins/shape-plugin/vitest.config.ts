@@ -74,6 +74,14 @@ export default defineConfig({
         ),
       },
       {
+        find: '~/configTypes',
+        replacement: path.resolve(__dirname, '../../packages/gis-sdk/src/configTypes.ts'),
+      },
+      {
+        find: '~/geometryEngineUtils',
+        replacement: path.resolve(__dirname, '../../packages/gis-sdk/src/geometryEngineUtils.ts'),
+      },
+      {
         find: /^~\/task\/(.*)$/,
         replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/task/$1'),
       },
