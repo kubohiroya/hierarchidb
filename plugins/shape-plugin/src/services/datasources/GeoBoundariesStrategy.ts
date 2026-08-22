@@ -22,7 +22,7 @@ import {
   jsonDeserializer,
   jsonSerializer,
   type RetryConfig,
-} from '~/services/utils/chunkStore';
+} from '~/services/utils/createShapeChunkStore';
 import {
   GEOBOUNDARIES_API_BASE_URL,
   GEOBOUNDARIES_RELEASE_TYPE,

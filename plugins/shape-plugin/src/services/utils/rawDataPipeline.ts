@@ -6,8 +6,8 @@ import {
   bufferDeserializer,
   bufferSerializer,
   createShapeChunkStore,
-  createShapeNetworkPort,
-} from './chunkStore.js';
+} from './createShapeChunkStore.js';
+import { createShapeNetworkPort } from './createShapeNetworkPort.js';
 
 export type RawDataPipelineResult<TRawData> = {
   decoded: TRawData;

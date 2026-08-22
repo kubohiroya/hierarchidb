@@ -6,7 +6,7 @@ import { ephemeralShapeAPIImpl, shapeQueryAPIImpl } from '~/services/build/Shape
 import {
   countRawDataDataSourceBuffersForNode,
   deleteRawDataDataSourceBuffersForNode,
-} from '~/services/utils/chunkStore';
+} from '~/services/utils/createShapeChunkStore';
 
 export const SHAPE_NODE_TYPE = 'shape' as NodeType;
 export const KNOWN_TASK_STAGES: TaskStage[] = ['source', 'geometry', 'tileEmit'];

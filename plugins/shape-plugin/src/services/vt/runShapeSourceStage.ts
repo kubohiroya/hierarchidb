@@ -46,7 +46,7 @@ import {
   getOrFetchWithRetry,
   jsonDeserializer,
   jsonSerializer,
-} from '~/services/utils/chunkStore';
+} from '~/services/utils/createShapeChunkStore';
 import { buildGeoBoundariesMetadataUrl } from '~/services/utils/geoboundariesEndpoints';
 import { fetchRawDataWithPipeline } from '~/services/utils/rawDataPipeline';
 import {

@@ -7,7 +7,7 @@ import type {
 } from './SourceStageStrategy.ts';
 import type { DataSourceName, SourceTask, SourceTaskPayload } from '~/common/types/index';
 import { buildSourceTaskId, generateDownloadTaskPayloadsFromSelection } from '~/services/utils/shapeBuildUtils';
-import { buildRawDataDataSourceCacheKey } from '~/services/utils/chunkStore';
+import { buildRawDataDataSourceCacheKey } from '~/services/utils/createShapeChunkStore';
 
 export class GeoBoundariesSourceStageStrategy implements SourceStageStrategy {
   private readonly dataSource: DataSourceName;

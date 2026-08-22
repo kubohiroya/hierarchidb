@@ -1,12 +1,12 @@
 import {
   buildShapeCacheKey,
   createShapeChunkStoreWithNetworkPort,
-  createShapeNetworkPort,
   jsonDeserializer,
   jsonSerializer,
   textDeserializer,
   textSerializer,
-} from '~/services/utils/chunkStore';
+} from '~/services/utils/createShapeChunkStore';
+import { createShapeNetworkPort } from '~/services/utils/createShapeNetworkPort';
 import type { CountryMetadata } from '~/common/types/index';
 import {
   DEFAULT_ISO3166_CSV_URL,

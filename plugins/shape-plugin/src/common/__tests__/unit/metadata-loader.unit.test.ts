@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { metadataLoader } from '../../../services/metadata/MetadataLoader';
-import * as chunkStore from '../../../services/utils/chunkStore';
+import * as chunkStore from '../../../services/utils/createShapeChunkStore';
 import { GEOBOUNDARIES_ALL_METADATA_URL } from '../../../services/utils/geoboundariesEndpoints';
 
 const cache = new Map<string, { value: unknown; metadata?: unknown }>();
@@ -47,7 +47,7 @@ vi.mock('../../../services/utils/iso3166.js', () => ({
   ...isoMocks,
 }));
 
-vi.mock('../../../services/utils/chunkStore.js', () => ({
+vi.mock('../../../services/utils/createShapeChunkStore.js', () => ({
   buildShapeCacheKey: vi.fn((prefix: string, url: string) => `${prefix}:${url}`),
   createShapeChunkStore: vi.fn(() => ({
     getOrFetchForNode,
@@ -81,13 +81,16 @@ vi.mock('../../../services/utils/chunkStore.js', () => ({
       relationsByNode.set(nodeId, set);
     }),
   })),
-  createShapeNetworkPort: vi.fn(() => ({
-    fetch: vi.fn(),
-  })),
   jsonSerializer: vi.fn(),
   jsonDeserializer: vi.fn(),
   textSerializer: vi.fn(),
   textDeserializer: vi.fn(),
+}));
+
+vi.mock('../../../services/utils/createShapeNetworkPort.js', () => ({
+  createShapeNetworkPort: vi.fn(() => ({
+    fetch: vi.fn(),
+  })),
 }));
 
 describe('MetadataLoader', () => {

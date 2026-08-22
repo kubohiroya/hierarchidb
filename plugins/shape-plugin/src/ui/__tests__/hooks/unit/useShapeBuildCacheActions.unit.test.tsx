@@ -52,7 +52,7 @@ vi.mock('@hierarchidb/ui-worker-client', () => {
   };
 });
 
-vi.mock('../../../../services/utils/chunkStore.js', () => ({
+vi.mock('../../../../services/utils/createShapeChunkStore.js', () => ({
   countRawDataDataSourceBuffersForNode: mocks.countRawDataDataSourceBuffersForNode,
   deleteRawDataDataSourceBuffersForNode: mocks.deleteRawDataDataSourceBuffersForNode,
 }));

@@ -3,12 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   countRawDataDataSourceBuffersForNode,
   createShapeChunkStore,
-  createShapeNetworkPort,
   deleteRawDataDataSourceBuffersForNode,
   deleteRawDataDataSourceBuffersForNodeMetadataIds,
   listRawDataDataSourceMetadataForNode,
   storeRawDataDataSourceBufferForNode,
-} from '../../../services/utils/chunkStore';
+} from '../../../services/utils/createShapeChunkStore';
+import { createShapeNetworkPort } from '../../../services/utils/createShapeNetworkPort';
 import { initializeShapeChunkStore } from '../../../services/utils/initializeShapeChunkStore';
 import { setShapeCorsProxyBaseURL } from '../../../services/utils/setShapeCorsProxyBaseURL';
 

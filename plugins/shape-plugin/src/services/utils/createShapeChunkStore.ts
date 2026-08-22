@@ -7,89 +7,57 @@ import {
   DexieChunkStore,
 } from '@hierarchidb/chunk-store';
 import type { NodeId } from '@hierarchidb/core-types';
-import {
-  FetchNetworkPort,
-  type FetchNetworkPortOptions,
-  getCorsProxyBaseURL,
-} from '@hierarchidb/download';
+import type { FetchNetworkPort } from '@hierarchidb/download';
 import { sleep } from '@hierarchidb/util';
+import { getShapeNetworkPort } from './createShapeNetworkPort.js';
 import { getShapeChunkStoreDatabaseName } from './initializeShapeChunkStore.js';
 
+// Shape chunk stores share the explicitly configured worker network port.
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
-let sharedNet: FetchNetworkPort | null = null;
-let sharedNetCorsProxyBaseURL: string | undefined;
-
-// Auth is handled inside FetchNetworkPort via @hierarchidb/download smartFetch → AuthService.
-
-export const createShapeNetworkPort = (options: FetchNetworkPortOptions = {}): FetchNetworkPort => {
-  const corsProxyBaseURL = getCorsProxyBaseURL() || undefined;
-  return new FetchNetworkPort({
-    perHostConcurrency: 4,
-    corsProxyBaseURL,
-    auth: { scope: 'shape' },
-    ...options,
-  });
-};
-
-const getShapeNetworkPort = (): FetchNetworkPort => {
-  const corsProxyBaseURL = getCorsProxyBaseURL() || undefined;
-  if (sharedNet && sharedNetCorsProxyBaseURL === corsProxyBaseURL) return sharedNet;
-  sharedNet = createShapeNetworkPort();
-  sharedNetCorsProxyBaseURL = corsProxyBaseURL;
-  return sharedNet;
-};
-
 export const createShapeChunkStore = <T>(
   serializer: ChunkStoreSerializer<T>,
-  deserializer: ChunkStoreDeserializer<T>,
-): DexieChunkStore<T> => (
+  deserializer: ChunkStoreDeserializer<T>
+): DexieChunkStore<T> =>
   new DexieChunkStore<T>({
     dbName: getShapeChunkStoreDatabaseName(),
     serializer,
     deserializer,
     networkPort: getShapeNetworkPort(),
-  })
-);
+  });
 
 export const createShapeChunkStoreWithNetworkPort = <T>(
   serializer: ChunkStoreSerializer<T>,
   deserializer: ChunkStoreDeserializer<T>,
-  networkPort: FetchNetworkPort,
-): DexieChunkStore<T> => (
+  networkPort: FetchNetworkPort
+): DexieChunkStore<T> =>
   new DexieChunkStore<T>({
     dbName: getShapeChunkStoreDatabaseName(),
     serializer,
     deserializer,
     networkPort,
-  })
-);
+  });
 
-export const jsonSerializer = (value: unknown): ArrayBuffer => (
-  textEncoder.encode(JSON.stringify(value)).buffer
-);
+export const jsonSerializer = (value: unknown): ArrayBuffer =>
+  textEncoder.encode(JSON.stringify(value)).buffer;
 
 export const jsonDeserializer = <T>(buffer: ArrayBuffer): T => {
   const text = textDecoder.decode(new Uint8Array(buffer));
   return JSON.parse(text) as T;
 };
 
-export const textSerializer = (value: string): ArrayBuffer => (
-  textEncoder.encode(value).buffer
-);
+export const textSerializer = (value: string): ArrayBuffer => textEncoder.encode(value).buffer;
 
-export const textDeserializer = (buffer: ArrayBuffer): string => (
-  textDecoder.decode(new Uint8Array(buffer))
-);
+export const textDeserializer = (buffer: ArrayBuffer): string =>
+  textDecoder.decode(new Uint8Array(buffer));
 
 export const bufferSerializer = (value: ArrayBuffer): ArrayBuffer => value;
 
 export const bufferDeserializer = (value: ArrayBuffer): ArrayBuffer => value;
 
-export const buildShapeCacheKey = (prefix: string, url: string): string => (
-  `${prefix}:${hashString(url)}`
-);
+export const buildShapeCacheKey = (prefix: string, url: string): string =>
+  `${prefix}:${hashString(url)}`;
 
 const RAW_DATA_DEFAULT_CONTENT_TYPE = 'application/octet-stream';
 const RAW_DATA_CACHE_PREFIX = 'download:';
@@ -117,9 +85,12 @@ export const isRawDataDataSourceCacheKey = (cacheKey?: string | null): boolean =
   return cacheKey.startsWith('http://') || cacheKey.startsWith('https://');
 };
 
-const compressGzip = async (buffer: ArrayBuffer): Promise<{ buffer: ArrayBuffer; contentType: string }> => (
-  { buffer, contentType: RAW_DATA_DEFAULT_CONTENT_TYPE }
-);
+const compressGzip = async (
+  buffer: ArrayBuffer
+): Promise<{ buffer: ArrayBuffer; contentType: string }> => ({
+  buffer,
+  contentType: RAW_DATA_DEFAULT_CONTENT_TYPE,
+});
 
 const decompressGzip = async (buffer: ArrayBuffer): Promise<ArrayBuffer> => {
   if (typeof DecompressionStream !== 'function') {
@@ -142,7 +113,8 @@ export const storeRawDataDataSourceBufferForNode = async (params: {
   const startedAt = Date.now();
   const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
   const compressed = await compressGzip(buffer);
-  const resolvedContentType = params.contentType ?? compressed.contentType ?? RAW_DATA_DEFAULT_CONTENT_TYPE;
+  const resolvedContentType =
+    params.contentType ?? compressed.contentType ?? RAW_DATA_DEFAULT_CONTENT_TYPE;
   const compressedMs = Date.now() - startedAt;
   console.debug('[shape-chunk-store] Raw data buffer compressed', {
     cacheKey,
@@ -162,7 +134,10 @@ export const storeRawDataDataSourceBufferForNode = async (params: {
   return { contentType: resolvedContentType, sizeBytes: compressed.buffer.byteLength };
 };
 
-export const readRawDataDataSourceBuffer = async (nodeId: NodeId, cacheKey: string): Promise<ArrayBuffer | null> => {
+export const readRawDataDataSourceBuffer = async (
+  nodeId: NodeId,
+  cacheKey: string
+): Promise<ArrayBuffer | null> => {
   const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
   const hasRelation = await store.hasRelationForNode(nodeId, cacheKey);
   if (!hasRelation) return null;
@@ -175,7 +150,9 @@ export const readRawDataDataSourceBuffer = async (nodeId: NodeId, cacheKey: stri
   return entry.value;
 };
 
-export const listRawDataDataSourceMetadataForNode = async (nodeId: NodeId): Promise<ChunkStoreMetadata[]> => {
+export const listRawDataDataSourceMetadataForNode = async (
+  nodeId: NodeId
+): Promise<ChunkStoreMetadata[]> => {
   const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
   return store.listMetadataForNode(nodeId);
 };
@@ -185,14 +162,17 @@ export const countRawDataDataSourceBuffersForNode = async (nodeId: NodeId): Prom
   return metadata.filter((entry) => isRawDataDataSourceCacheKey(entry.cacheKey)).length;
 };
 
-export const hasRawDataDataSourceBuffer = async (nodeId: NodeId, cacheKey: string): Promise<boolean> => {
+export const hasRawDataDataSourceBuffer = async (
+  nodeId: NodeId,
+  cacheKey: string
+): Promise<boolean> => {
   const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
   return store.hasRelationForNode(nodeId, cacheKey);
 };
 
 export const deleteRawDataDataSourceBuffersForDataSource = async (
   nodeId: NodeId,
-  dataSource: string,
+  dataSource: string
 ): Promise<number> => {
   const normalized = (dataSource ?? '').toLowerCase();
   if (!normalized) return 0;
@@ -201,7 +181,7 @@ export const deleteRawDataDataSourceBuffersForDataSource = async (
   const metadata = await store.listMetadataForNode(nodeId);
   const keys = metadata
     .map((entry) => entry.cacheKey)
-    .filter((key): key is string => Boolean(key && key.startsWith(prefix)));
+    .filter((key): key is string => Boolean(key?.startsWith(prefix)));
   for (const key of keys) {
     await store.deleteForNode(nodeId, key);
   }
@@ -210,11 +190,13 @@ export const deleteRawDataDataSourceBuffersForDataSource = async (
 
 export const deleteRawDataDataSourceBuffersForNodeMetadataIds = async (
   nodeId: NodeId,
-  metadataIds: string[],
+  metadataIds: string[]
 ): Promise<number> => {
   if (!metadataIds.length) return 0;
   const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
-  const uniqueMetadataIds = Array.from(new Set(metadataIds)).filter((metadataId) => metadataId.length > 0);
+  const uniqueMetadataIds = Array.from(new Set(metadataIds)).filter(
+    (metadataId) => metadataId.length > 0
+  );
   for (const metadataId of uniqueMetadataIds) {
     await store.deleteForNodeByMetadataId(nodeId, metadataId);
   }
@@ -223,7 +205,7 @@ export const deleteRawDataDataSourceBuffersForNodeMetadataIds = async (
 
 export const deleteRawDataDataSourceBuffersForNodeKeys = async (
   nodeId: NodeId,
-  cacheKeys: string[],
+  cacheKeys: string[]
 ): Promise<number> => {
   if (!cacheKeys.length) return 0;
   const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
@@ -243,13 +225,13 @@ export const deleteRawDataDataSourceBuffersForNode = async (nodeId: NodeId): Pro
     nodeId,
     metadata
       .filter((entry) => isRawDataDataSourceCacheKey(entry.cacheKey))
-      .map((entry) => entry.metadataId),
+      .map((entry) => entry.metadataId)
   );
 };
 
 export const ensureRawDataDataSourceBufferForNode = async (
   nodeId: NodeId,
-  cacheKey: string,
+  cacheKey: string
 ): Promise<boolean> => {
   const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
   const entry = await store.get(cacheKey);
@@ -272,12 +254,18 @@ export type RetryConfig = {
 };
 
 export const getOrFetchWithRetry = async <T>(
-  store: { getOrFetchForNode: (nodeId: NodeId, url: string, options?: ChunkStoreFetchOptions) => Promise<ChunkStoreEntry<T>> },
+  store: {
+    getOrFetchForNode: (
+      nodeId: NodeId,
+      url: string,
+      options?: ChunkStoreFetchOptions
+    ) => Promise<ChunkStoreEntry<T>>;
+  },
   nodeId: NodeId,
   url: string,
   options: ChunkStoreFetchOptions,
   retries: RetryConfig,
-  onRetryAttempt?: (attempt: number, error: unknown) => void | Promise<void>,
+  onRetryAttempt?: (attempt: number, error: unknown) => void | Promise<void>
 ): Promise<ChunkStoreEntry<T>> => {
   const attempts = Math.max(1, retries.count);
   for (let attempt = 0; attempt < attempts; attempt += 1) {
@@ -314,9 +302,8 @@ const hashString = (input: string): string => {
   return hash.toString(16);
 };
 
-const isAbortError = (error: unknown): boolean => (
-  error instanceof Error && error.name === 'AbortError'
-);
+const isAbortError = (error: unknown): boolean =>
+  error instanceof Error && error.name === 'AbortError';
 
 const computeDelay = (retries: RetryConfig, attempt: number): number => {
   if (retries.backoff === 'linear') {

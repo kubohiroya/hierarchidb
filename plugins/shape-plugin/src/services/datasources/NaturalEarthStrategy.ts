@@ -15,7 +15,7 @@ import {
   createShapeChunkStore,
   getOrFetchWithRetry,
   type RetryConfig,
-} from '~/services/utils/chunkStore';
+} from '~/services/utils/createShapeChunkStore';
 import { summarizeGeojsonFeatures } from './summarizeGeojsonFeatures.js';
 
 //  Natural Earth
