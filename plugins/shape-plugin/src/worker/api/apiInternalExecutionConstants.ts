@@ -6,7 +6,7 @@
  * This module merges both responsibilities into the runtime API surface used by API assembly.
  */
 
-import * as shapeBuildRuntimeCore from './shapeBuildRuntimeCore.js';
+import { shapeBuildRuntimeCore } from './shapeBuildRuntimeCore.js';
 import { shapeBuildRuntimeExecutionControl } from './shapeBuildRuntimeExecutionControl.js';
 
 export const shapeBuildRuntime = {
