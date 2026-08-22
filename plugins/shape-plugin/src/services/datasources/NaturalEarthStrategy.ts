@@ -21,7 +21,7 @@ import {
   type FetchOptions,
   type ProcessOptions,
 } from './DataSourceStrategy.js';
-import { assertNaturalEarthGeoJsonSourcePayload } from './providerGeoJsonSourcePayloadSchemas.js';
+import { assertNaturalEarthGeoJsonSourcePayload } from './providerGeoJsonSourcePayloadValidators.js';
 import { summarizeGeojsonFeatures } from './summarizeGeojsonFeatures.js';
 
 //  Natural Earth

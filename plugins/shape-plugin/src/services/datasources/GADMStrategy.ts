@@ -19,7 +19,7 @@ import {
   type RawDataPipeline,
   type RawDataPipelineContext,
 } from './DataSourceStrategy.js';
-import { assertGadmGeoJsonSourcePayload } from './providerGeoJsonSourcePayloadSchemas.js';
+import { assertGadmGeoJsonSourcePayload } from './providerGeoJsonSourcePayloadValidators.js';
 import { summarizeGeojsonFeatures } from './summarizeGeojsonFeatures.js';
 
 //  GADM

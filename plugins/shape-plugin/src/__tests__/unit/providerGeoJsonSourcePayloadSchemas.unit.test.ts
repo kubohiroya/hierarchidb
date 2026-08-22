@@ -4,7 +4,7 @@ import {
   assertGenericGeoJsonSourcePayload,
   assertGeoBoundariesGeoJsonSourcePayload,
   assertNaturalEarthGeoJsonSourcePayload,
-} from '../../services/datasources/providerGeoJsonSourcePayloadSchemas.js';
+} from '../../services/datasources/providerGeoJsonSourcePayloadValidators.js';
 
 const polygonGeometry = {
   type: 'Polygon',

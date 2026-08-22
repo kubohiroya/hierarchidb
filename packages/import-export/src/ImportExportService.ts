@@ -20,9 +20,9 @@ import {
   type JsonExportEnvelope,
   type VectorTileArchiveMetadata,
   type VectorTileArchiveSummary,
-} from './exportArtifactSchemas.js';
-import { validateImportDataPayload } from './importDataValidation.js';
+} from './exportArtifactSchemaValidators.js';
 import type { ImportExportDBPort, VectorTileRecord } from './types.js';
+import { validateImportDataPayload } from './validateImportDataPayload.js';
 
 type ImportNodeInput<T> = ImportData<T>['nodes'][number];
 type ExportFormat = ExportNodesParams['format'];

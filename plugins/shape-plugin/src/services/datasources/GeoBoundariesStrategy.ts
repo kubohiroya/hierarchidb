@@ -34,7 +34,7 @@ import {
   type RawDataPipeline,
   type RawDataPipelineContext,
 } from './DataSourceStrategy.js';
-import { assertGeoBoundariesGeoJsonSourcePayload } from './providerGeoJsonSourcePayloadSchemas.js';
+import { assertGeoBoundariesGeoJsonSourcePayload } from './providerGeoJsonSourcePayloadValidators.js';
 import { summarizeGeojsonFeatures } from './summarizeGeojsonFeatures.js';
 
 type GeoBoundariesProperties = Record<string, unknown>;
