@@ -28,9 +28,9 @@ read-only inventoryは全rowを次のいずれか1分類へaccountする。
 - `orphan/blocked`: 回復先parentが存在しない、またはfolderではない。
 - `conflict`: target nodeまたは同一parentのsiblingが存在するが、完全一致ではない。
 - `invalid`: row shape、key、registry tuple、canonical payload validationのいずれかが不正である。
-- `explicitly-discarded`: node IDと理由を含む別途のユーザー承認記録が存在する。
+- `explicitly-discarded`: rowのstable identifierと理由を含む別途のユーザー承認記録が存在する。
 
-これらの分類はaccounting evidenceであり、`recoverable`はwrite authorityではない。`explicitly-discarded`もsource rowを削除しない。row単位のevidenceはclassificationとstable digest identifierだけを公開し、node ID、parent ID、filename、schemaId、YAML content、credential、native errorを公開しない。
+これらの分類はaccounting evidenceであり、`recoverable`はwrite authorityではない。`explicitly-discarded`もsource rowを削除しない。row単位のevidenceはclassificationとclassification非依存のstable digest identifierだけを公開し、node ID、parent ID、filename、schemaId、YAML content、credential、native errorを公開しない。malformedなdiscard承認と曖昧なcanonical target snapshotはskipや入力順上書きにせずfail-closedにする。
 
 ## ライセンス
 

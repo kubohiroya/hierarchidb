@@ -211,8 +211,9 @@ validation、serialization、`importProject` のいずれかが失敗した場�
 - `orphan/blocked` は、回復先parentが存在しない、またはfolder型ではない場合に用いる。parent、schema、filename、subtype、contentを推測または補完して`recoverable`へ昇格しない。
 - `conflict` は、同一node IDのtargetが存在するが完全一致しない場合、または同一parent/nameの別nodeが存在する場合に用いる。conflict rowを自動merge、overwrite、rename、discardしない。
 - `invalid` は、legacy rowのshape、primary key、registry tuple、canonical payload validationのいずれかが不正な場合に用いる。invalid rowをrepair、補完、recoveryしない。
-- `explicitly-discarded` は、対象node IDと理由を含むユーザー承認記録が別途存在する場合だけaccountできる。discard承認はrow削除ではなくaccounting分類であり、YamlDB source rowを変更しない。
-- YamlDB inventoryのpublic resultはaggregate count、stable code、rowごとのclassificationとstable identifier、deterministic source digestに限定し、YAML本文、credential、raw native error、個別row値を含めない。stable identifierはrow digestであり、node ID、parent ID、filename、schemaId、contentを公開しない。
+- `explicitly-discarded` は、対象rowのstable identifierと理由を含むユーザー承認記録が別途存在する場合だけaccountできる。discard承認はrow削除ではなくaccounting分類であり、YamlDB source rowを変更しない。承認記録のshape不備や空理由はfail-closedにし、黙って無視しない。
+- YamlDB inventoryのpublic resultはaggregate count、stable code、rowごとのclassificationとstable identifier、deterministic source digestに限定し、YAML本文、credential、raw native error、個別row値を含めない。stable identifierはclassificationに依存しないrow digestであり、node ID、parent ID、filename、schemaId、contentを公開しない。
+- canonical target snapshotはnode IDと同一parent/name identityが一意でなければならない。重複またはmalformed targetは配列順で上書きせずfail-closedにする。
 
 ### Nonempty interrupted CoreDB preservation classification
 

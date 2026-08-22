@@ -335,10 +335,10 @@ describe('getLegacyYamlDbReadOnlyInventory', () => {
           nodeId: 'file-parent',
           nodeType: 'yaml-file',
           parentId: 'parent-node',
-          name: 'scenario.yml',
-          subtype: 'scenario',
-          schemaId: 'ide-gsm/scenario',
-          content: 'name: parent\n',
+          name: 'remote.yml',
+          subtype: 'remote',
+          schemaId: 'ide-gsm/remote',
+          content: 'url: https://example.com/remote\n',
         },
       ],
     });
@@ -380,9 +380,15 @@ describe('getLegacyYamlDbReadOnlyInventory', () => {
       },
     ]);
 
+    const baseline = await getLegacyYamlDbReadOnlyInventory({ databaseName });
+    expect(baseline.status).toBe('accepted');
+    if (baseline.status !== 'accepted') throw new Error('Expected accepted inventory');
+    const stableIdentifier = baseline.accountingEvidence[0]?.stableIdentifier;
+    if (stableIdentifier === undefined) throw new Error('Expected accounting evidence');
+
     const result = await getLegacyYamlDbReadOnlyInventory({
       databaseName,
-      explicitDiscardApprovals: [{ nodeId: 'discarded-node', reason: 'user-approved' }],
+      explicitDiscardApprovals: [{ stableIdentifier, reason: 'user-approved' }],
     });
 
     expect(result).toMatchObject({
@@ -401,6 +407,122 @@ describe('getLegacyYamlDbReadOnlyInventory', () => {
           classification: 'explicitly-discarded',
         },
       ],
+    });
+    expect(result.status).toBe('accepted');
+    if (result.status !== 'accepted') throw new Error('Expected accepted inventory');
+    expect(result.accountingEvidence[0]?.stableIdentifier).toBe(stableIdentifier);
+
+    await deleteDatabase(databaseName);
+  });
+
+  it('keeps stable identifiers independent from accounting classification', async () => {
+    const databaseName = nextDatabaseName();
+    await createLegacyDatabase(databaseName, [
+      {
+        nodeId: 'stable-node',
+        parentId: 'parent-node',
+        name: 'scenario.yml',
+        schemaId: 'ide-gsm/scenario',
+        content: 'name: stable\n',
+      },
+    ]);
+
+    const baseline = await getLegacyYamlDbReadOnlyInventory({ databaseName });
+    expect(baseline.status).toBe('accepted');
+    if (baseline.status !== 'accepted') throw new Error('Expected accepted inventory');
+    const stableIdentifier = baseline.accountingEvidence[0]?.stableIdentifier;
+    if (stableIdentifier === undefined) throw new Error('Expected accounting evidence');
+
+    const compared = await getLegacyYamlDbReadOnlyInventory({
+      databaseName,
+      canonicalTargets: [
+        {
+          nodeId: 'parent-node',
+          nodeType: 'folder',
+          parentId: 'root-node',
+          name: 'Parent',
+          schemaId: 'folder',
+          content: '',
+        },
+      ],
+    });
+
+    expect(compared.status).toBe('accepted');
+    if (compared.status !== 'accepted') throw new Error('Expected accepted inventory');
+    expect(compared.accountingEvidence).toEqual([
+      {
+        stableIdentifier,
+        classification: 'recoverable',
+      },
+    ]);
+
+    await deleteDatabase(databaseName);
+  });
+
+  it('fails closed on malformed discard approvals', async () => {
+    const databaseName = nextDatabaseName();
+    await createLegacyDatabase(databaseName, [
+      {
+        nodeId: 'approval-node',
+        parentId: 'parent-node',
+        name: 'scenario.yml',
+        schemaId: 'ide-gsm/scenario',
+        content: 'name: approval\n',
+      },
+    ]);
+
+    const result = await getLegacyYamlDbReadOnlyInventory({
+      databaseName,
+      explicitDiscardApprovals: [{ stableIdentifier: 'approval-node', reason: '' }],
+    });
+
+    expect(result).toEqual({
+      contractVersion: 1,
+      status: 'failed',
+      code: 'LEGACY_YAMLDB_DISCARD_APPROVAL_MALFORMED',
+    });
+
+    await deleteDatabase(databaseName);
+  });
+
+  it('fails closed on ambiguous canonical target snapshots', async () => {
+    const databaseName = nextDatabaseName();
+    await createLegacyDatabase(databaseName, [
+      {
+        nodeId: 'target-node',
+        parentId: 'parent-node',
+        name: 'scenario.yml',
+        schemaId: 'ide-gsm/scenario',
+        content: 'name: target\n',
+      },
+    ]);
+
+    const result = await getLegacyYamlDbReadOnlyInventory({
+      databaseName,
+      canonicalTargets: [
+        {
+          nodeId: 'parent-node',
+          nodeType: 'folder',
+          parentId: 'root-node',
+          name: 'Parent',
+          schemaId: 'folder',
+          content: '',
+        },
+        {
+          nodeId: 'parent-node',
+          nodeType: 'folder',
+          parentId: 'root-node',
+          name: 'Duplicate Parent',
+          schemaId: 'folder',
+          content: '',
+        },
+      ],
+    });
+
+    expect(result).toEqual({
+      contractVersion: 1,
+      status: 'failed',
+      code: 'LEGACY_YAMLDB_CANONICAL_TARGETS_MALFORMED',
     });
 
     await deleteDatabase(databaseName);
