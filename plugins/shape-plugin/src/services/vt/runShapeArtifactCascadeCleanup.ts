@@ -398,6 +398,11 @@ const deletePersistentArtifactsByNode = async (nodeId: NodeId): Promise<void> =>
       shapeDB.tileSummaries,
       shapeDB.featureMetadata,
       shapeDB.dataSourceMetadata,
+      shapeDB.borderGeometryDatasets,
+      shapeDB.borderGeometryArcs,
+      shapeDB.borderGeometryRings,
+      shapeDB.borderGeometryPolygonRelations,
+      shapeDB.borderSpatialIndexes,
     ],
     async () => {
       await Promise.all([
@@ -405,6 +410,11 @@ const deletePersistentArtifactsByNode = async (nodeId: NodeId): Promise<void> =>
         shapeDB.tileSummaries.delete(nodeId),
         shapeDB.featureMetadata.where('nodeId').equals(nodeId).delete(),
         shapeDB.dataSourceMetadata.where('nodeId').equals(nodeId).delete(),
+        shapeDB.borderGeometryDatasets.where('nodeId').equals(nodeId).delete(),
+        shapeDB.borderGeometryArcs.where('nodeId').equals(nodeId).delete(),
+        shapeDB.borderGeometryRings.where('nodeId').equals(nodeId).delete(),
+        shapeDB.borderGeometryPolygonRelations.where('nodeId').equals(nodeId).delete(),
+        shapeDB.borderSpatialIndexes.where('nodeId').equals(nodeId).delete(),
       ]);
     }
   );

@@ -151,6 +151,40 @@ describe('Border geometry storage', () => {
     await expect(db.borderSpatialIndexes.count()).resolves.toBe(1);
   });
 
+  it('clears border geometry artifacts by node for pipeline rollback cleanup', async () => {
+    const options = { enabled: true };
+    const otherNodeId = 'other-node' as NodeId;
+    await db.putBorderGeometryDataset(createDatasetRecord(), options);
+    await db.putBorderGeometryArc(createArcRecord(), options);
+    await db.putBorderGeometryRing(createRingRecord(), options);
+    await db.putBorderGeometryPolygonRelation(createPolygonRelationRecord(), options);
+    await db.putBorderSpatialIndex(createSpatialIndexRecord(), options);
+    await db.putBorderGeometryDataset(
+      createDatasetRecord({
+        datasetId: 'dataset:US:1:rev-2026',
+        nodeId: otherNodeId,
+        countryCode: 'US',
+        sourceKey: 'US:1',
+      }),
+      options
+    );
+
+    await db.clearBorderGeometryByNode(NODE_ID, options);
+
+    await expect(db.borderGeometryDatasets.where('nodeId').equals(NODE_ID).count()).resolves.toBe(
+      0
+    );
+    await expect(db.borderGeometryArcs.where('nodeId').equals(NODE_ID).count()).resolves.toBe(0);
+    await expect(db.borderGeometryRings.where('nodeId').equals(NODE_ID).count()).resolves.toBe(0);
+    await expect(
+      db.borderGeometryPolygonRelations.where('nodeId').equals(NODE_ID).count()
+    ).resolves.toBe(0);
+    await expect(db.borderSpatialIndexes.where('nodeId').equals(NODE_ID).count()).resolves.toBe(0);
+    await expect(
+      db.borderGeometryDatasets.where('nodeId').equals(otherNodeId).count()
+    ).resolves.toBe(1);
+  });
+
   it('rejects invalid dataset identity instead of supplementing defaults', async () => {
     await expect(
       db.putBorderGeometryDataset(
