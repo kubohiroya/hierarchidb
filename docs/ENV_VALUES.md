@@ -134,6 +134,7 @@ This document lists all environment variables used by the browser application an
 - `import.meta.env.MODE`: build mode (`development` / `production` / custom)
 - `import.meta.env.DEV`: boolean, true in dev server
 - `import.meta.env.PROD`: boolean, true in production build
+- `import.meta.env.BASE_URL`: Vite build base path. Browser and worker bundles must read this as a direct `import.meta.env.BASE_URL` expression when they need asset URLs under the deployed app base, including the ISO3166 CSV asset used by Shape source planning.
 
 ## Notes
 - Only variables prefixed with `VITE_` are exposed to the client bundle. Non-prefixed `process.env.*` is not available in browser code.
