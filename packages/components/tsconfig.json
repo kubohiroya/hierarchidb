@@ -18,12 +18,8 @@
         "./src/*.cjs",
         "./src/*.json"
       ],
-      "~/public/*": [
-        "./public/*"
-      ]
+      "~/public/*": ["./public/*"]
     }
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*"]
 }

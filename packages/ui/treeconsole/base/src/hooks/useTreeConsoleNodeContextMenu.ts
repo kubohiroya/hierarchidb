@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Dispatch, MouseEvent, SetStateAction } from 'react';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
+import type { Dispatch, MouseEvent, SetStateAction } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface TreeConsoleNodeContextMenuProps {
   anchorEl: HTMLElement | null;
@@ -97,7 +97,10 @@ export const useTreeConsoleNodeContextMenu = (
       open: translateWithFallback('treeConsole.contextMenu.open', 'Open'),
       edit: translateWithFallback('treeConsole.contextMenu.edit', 'Edit'),
       duplicate: translateWithFallback('treeConsole.contextMenu.duplicate', 'Duplicate'),
-      moveToArchive: translateWithFallback('treeConsole.contextMenu.moveToArchive', 'Move to Archive'),
+      moveToArchive: translateWithFallback(
+        'treeConsole.contextMenu.moveToArchive',
+        'Move to Archive'
+      ),
       visible: translateWithFallback('treeConsole.contextMenu.visible', 'Visible'),
       hidden: translateWithFallback('treeConsole.contextMenu.hidden', 'Hidden'),
       preview: translateWithFallback('treeConsole.contextMenu.preview', 'Preview'),
@@ -207,9 +210,7 @@ export const useTreeConsoleNodeContextMenu = (
   const handleToggleVisible = useCallback(() => {
     const onToggleVisible = propsRef.current.onToggleVisible;
     const effectiveVisible =
-      localInvisible !== null
-        ? !localInvisible
-        : (typeof isVisible === 'boolean' ? isVisible : true);
+      localInvisible !== null ? !localInvisible : typeof isVisible === 'boolean' ? isVisible : true;
     const nextVisible = !effectiveVisible;
     setLocalInvisible(!nextVisible);
     requestAnimationFrame(() => {
@@ -224,8 +225,10 @@ export const useTreeConsoleNodeContextMenu = (
     }
   }, [anchorEl]);
 
-  const isFolder = nodeType === 'folder' || nodeType === 'ProjectFolder' || nodeType === 'ResourceFolder';
-  const allowArchive = (typeof canArchive === 'boolean' ? canArchive : undefined) ?? canRemove ?? true;
+  const isFolder =
+    nodeType === 'folder' || nodeType === 'ProjectFolder' || nodeType === 'ResourceFolder';
+  const allowArchive =
+    (typeof canArchive === 'boolean' ? canArchive : undefined) ?? canRemove ?? true;
 
   const safeAnchorEl = useMemo(() => {
     try {
@@ -247,9 +250,7 @@ export const useTreeConsoleNodeContextMenu = (
   }, [open, safeAnchorEl, fallbackAnchorPosition, handleMainMenuClose]);
 
   const effectiveVisible =
-    localInvisible !== null
-      ? !localInvisible
-      : (typeof isVisible === 'boolean' ? isVisible : true);
+    localInvisible !== null ? !localInvisible : typeof isVisible === 'boolean' ? isVisible : true;
   const effectiveInvisible = !effectiveVisible;
 
   return {

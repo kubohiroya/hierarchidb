@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { GeometryConfig } from '@hierarchidb/gis-sdk';
+import { describe, expect, it } from 'vitest';
 import { resolveSimplifyToleranceProfile } from '../createTransformByBandHandler/helpers/resolveSimplifyToleranceProfile.js';
 
 const createBaseTransformConfig = (): GeometryConfig => ({

@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
+import { useMemo } from 'react';
 
 export interface NavLinkMenuItemViewModel {
   key: string;
@@ -18,34 +18,39 @@ export interface UseNavLinkMenuViewResult {
 }
 
 export function useNavLinkMenuView(
-  items: Array<{ name: string; url: string; icon: ReactNode }>,
+  items: Array<{ name: string; url: string; icon: ReactNode }>
 ): UseNavLinkMenuViewResult {
-  const baseLinkStyle = useMemo<CSSProperties>(() => ({
-    display: 'flex',
-    alignItems: 'center',
-    width: '100%',
-    textDecoration: 'none',
-  }), []);
+  const baseLinkStyle = useMemo<CSSProperties>(
+    () => ({
+      display: 'flex',
+      alignItems: 'center',
+      width: '100%',
+      textDecoration: 'none',
+    }),
+    []
+  );
 
   const activeLinkStyle = useMemo<CSSProperties>(
     () => ({ ...baseLinkStyle, color: '#c34' }),
-    [baseLinkStyle],
+    [baseLinkStyle]
   );
 
   const inactiveLinkStyle = useMemo<CSSProperties>(
     () => ({ ...baseLinkStyle, color: '#545e6f' }),
-    [baseLinkStyle],
+    [baseLinkStyle]
   );
 
-  const itemViewModels = useMemo<NavLinkMenuItemViewModel[]>(() => (
-    items.map((item) => ({
-      key: item.url || item.name,
-      target: item.url,
-      name: item.name,
-      icon: item.icon,
-      isEmpty: !item.url && !item.name,
-    }))
-  ), [items]);
+  const itemViewModels = useMemo<NavLinkMenuItemViewModel[]>(
+    () =>
+      items.map((item) => ({
+        key: item.url || item.name,
+        target: item.url,
+        name: item.name,
+        icon: item.icon,
+        isEmpty: !item.url && !item.name,
+      })),
+    [items]
+  );
 
   return {
     hasItems: items.length > 0,

@@ -51,11 +51,7 @@ const readExplicitGlobalEnv = (): RuntimeEnvRecord | undefined => {
 
 type EnvSource = () => RuntimeEnvRecord | undefined;
 
-const ENV_SOURCES: EnvSource[] = [
-  readExplicitGlobalEnv,
-  readImportMetaEnv,
-  readNodeProcessEnv,
-];
+const ENV_SOURCES: EnvSource[] = [readExplicitGlobalEnv, readImportMetaEnv, readNodeProcessEnv];
 
 export type ReadEnvOptions = {
   /**
@@ -89,10 +85,20 @@ export function readRuntimeEnvFlag(key: string, fallback = false): boolean {
   const raw = readRuntimeEnvValue(key);
   if (raw == null) return fallback;
   const normalized = raw.trim().toLowerCase();
-  if (normalized === 'true' || normalized === '1' || normalized === 'on' || normalized === 'enabled') {
+  if (
+    normalized === 'true' ||
+    normalized === '1' ||
+    normalized === 'on' ||
+    normalized === 'enabled'
+  ) {
     return true;
   }
-  if (normalized === 'false' || normalized === '0' || normalized === 'off' || normalized === 'disabled') {
+  if (
+    normalized === 'false' ||
+    normalized === '0' ||
+    normalized === 'off' ||
+    normalized === 'disabled'
+  ) {
     return false;
   }
   return fallback;
@@ -107,8 +113,8 @@ export function readRuntimeEnvNumber(key: string): number | undefined {
 
 export function readRuntimeMode(): string | undefined {
   return (
-    readRuntimeEnvValue('MODE', { prefixes: [''] })
-    ?? readRuntimeEnvValue('NODE_ENV', { prefixes: [''] })
+    readRuntimeEnvValue('MODE', { prefixes: [''] }) ??
+    readRuntimeEnvValue('NODE_ENV', { prefixes: [''] })
   );
 }
 

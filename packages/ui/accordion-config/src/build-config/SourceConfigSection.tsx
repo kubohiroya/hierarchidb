@@ -1,3 +1,9 @@
+import type { BaseBuildConfig, OmitDetailsLevel } from '@hierarchidb/gis-sdk';
+import {
+  CloudDownload as CloudDownloadIcon,
+  ExpandMore as ExpandMoreIcon,
+  VisibilityOff as VisibilityOffIcon,
+} from '@mui/icons-material';
 import {
   Accordion,
   AccordionDetails,
@@ -5,21 +11,15 @@ import {
   Box,
   Grid,
   Paper,
-  Typography,
   Stack,
+  Typography,
 } from '@mui/material';
-import {
-  CloudDownload as CloudDownloadIcon,
-  ExpandMore as ExpandMoreIcon,
-  VisibilityOff as VisibilityOffIcon,
-} from '@mui/icons-material';
-import type { BaseBuildConfig, OmitDetailsLevel } from '@hierarchidb/gis-sdk';
 import type { ReactNode } from 'react';
-import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
-import { DownloadRetryControls, type DownloadRetryConfig } from './DownloadRetryControls.js';
-import { BuildConfigSectionTitle } from './BuildConfigSectionTitle.js';
 import { BuildConfigAccordionSummary } from './BuildConfigAccordionSummary.js';
+import { BuildConfigSectionTitle } from './BuildConfigSectionTitle.js';
 import { getBuildConfigHoverCardSx } from './buildConfigCardStyles.js';
+import { type DownloadRetryConfig, DownloadRetryControls } from './DownloadRetryControls.js';
+import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 
 type TranslateFn = (key: string, fallback?: string, options?: Record<string, unknown>) => string;
 
@@ -74,12 +74,10 @@ export const SourceConfigSection = <TDataSourceName,>({
     ...DEFAULT_DETAIL_PRESETS,
     ...(detailPresets ?? {}),
   } as Record<OmitDetailsLevel, DetailPreset>;
-  const previewItems = FILTERING_PREVIEW_LEVELS
-    .map((level) => ({
-      level,
-      imageUrl: filteringPreviewImages?.[level],
-    }))
-    .filter((item) => Boolean(item.imageUrl));
+  const previewItems = FILTERING_PREVIEW_LEVELS.map((level) => ({
+    level,
+    imageUrl: filteringPreviewImages?.[level],
+  })).filter((item) => Boolean(item.imageUrl));
   const showPreview = previewItems.length > 0;
   const resolvedRetryConfig: DownloadRetryConfig = fetchRetryConfig ?? {
     timeoutMs: baseFetchConfig.timeoutMs,
@@ -113,7 +111,7 @@ export const SourceConfigSection = <TDataSourceName,>({
           title={t('processing.source.title', 'Source')}
           info={t(
             'processing.source.descriptionTooltip',
-            'Loads source data, applies intake filtering, and prepares input for Geometry.',
+            'Loads source data, applies intake filtering, and prepares input for Geometry.'
           )}
         />
       </AccordionSummary>
@@ -125,7 +123,10 @@ export const SourceConfigSection = <TDataSourceName,>({
                 title={t('processing.download.workers', 'Concurrent Source Workers')}
                 value={baseFetchConfig.maxConcurrent}
                 icon={<CloudDownloadIcon fontSize="small" color="primary" />}
-                helperText={t('processing.download.workersHelp', 'Controls how many source tasks run in parallel.')}
+                helperText={t(
+                  'processing.download.workersHelp',
+                  'Controls how many source tasks run in parallel.'
+                )}
                 warningText={undefined}
                 onChange={(maxConcurrent) =>
                   update({
@@ -138,7 +139,9 @@ export const SourceConfigSection = <TDataSourceName,>({
                 min={1}
                 max={4}
                 step={1}
-                formatLabel={(value) => t('processing.workers.countLabel', '{{count}} workers', { count: value })}
+                formatLabel={(value) =>
+                  t('processing.workers.countLabel', '{{count}} workers', { count: value })
+                }
                 disabled={disabled}
               />
             </Grid>
@@ -167,7 +170,10 @@ export const SourceConfigSection = <TDataSourceName,>({
               <Stack spacing={2}>
                 <BuildConfigSectionTitle
                   icon={<VisibilityOffIcon fontSize="small" color="primary" />}
-                  title={t('processing.filter.omitDetailsTitle', 'Filtering small shapes (islands and enclaves)')}
+                  title={t(
+                    'processing.filter.omitDetailsTitle',
+                    'Filtering small shapes (islands and enclaves)'
+                  )}
                 />
                 {showPreview ? (
                   <Grid container spacing={2}>
@@ -180,8 +186,12 @@ export const SourceConfigSection = <TDataSourceName,>({
                             borderRadius: 1,
                             border: 2,
                             cursor: disabled ? 'not-allowed' : 'pointer',
-                            borderColor: omitDetailsLevel === item.level ? 'primary.main' : 'divider',
-                            bgcolor: omitDetailsLevel === item.level ? 'action.selected' : 'background.paper',
+                            borderColor:
+                              omitDetailsLevel === item.level ? 'primary.main' : 'divider',
+                            bgcolor:
+                              omitDetailsLevel === item.level
+                                ? 'action.selected'
+                                : 'background.paper',
                             opacity: disabled ? 0.5 : 1,
                             '&:hover': disabled ? {} : { bgcolor: 'action.hover' },
                           }}
@@ -196,10 +206,19 @@ export const SourceConfigSection = <TDataSourceName,>({
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
                               {item.level === 'weak'
-                                ? t('processing.filter.omitDetailsLevelWeakHelp', 'Keeps large, medium, and small islands.')
+                                ? t(
+                                    'processing.filter.omitDetailsLevelWeakHelp',
+                                    'Keeps large, medium, and small islands.'
+                                  )
                                 : item.level === 'medium'
-                                  ? t('processing.filter.omitDetailsLevelMediumHelp', 'Keeps large and medium islands.')
-                                  : t('processing.filter.omitDetailsLevelStrongHelp', 'Keeps only large islands.')}
+                                  ? t(
+                                      'processing.filter.omitDetailsLevelMediumHelp',
+                                      'Keeps large and medium islands.'
+                                    )
+                                  : t(
+                                      'processing.filter.omitDetailsLevelStrongHelp',
+                                      'Keeps only large islands.'
+                                    )}
                             </Typography>
                             <Box
                               component="img"
@@ -211,7 +230,12 @@ export const SourceConfigSection = <TDataSourceName,>({
                                     ? t('processing.filter.omitDetailsLevelMedium', 'Medium detail')
                                     : t('processing.filter.omitDetailsLevelStrong', 'Low detail')
                               }
-                              sx={{ width: '100%', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}
+                              sx={{
+                                width: '100%',
+                                borderRadius: 1,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                              }}
                             />
                           </Stack>
                         </Box>
@@ -222,11 +246,7 @@ export const SourceConfigSection = <TDataSourceName,>({
               </Stack>
             </Paper>
           </Grid>
-          {additionalCards ? (
-            <Grid size={{ xs: 12 }}>
-              {additionalCards}
-            </Grid>
-          ) : null}
+          {additionalCards ? <Grid size={{ xs: 12 }}>{additionalCards}</Grid> : null}
         </Grid>
       </AccordionDetails>
     </Accordion>

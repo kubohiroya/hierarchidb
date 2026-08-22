@@ -8,7 +8,5 @@
     "allowSkipLibCheck": true,
     "reason": "react-joyride/@gilbarbara/types/type-fest generics require TS>=5; isolate here only"
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*"]
 }

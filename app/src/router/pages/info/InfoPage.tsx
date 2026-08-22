@@ -24,14 +24,8 @@ export function InfoPage({ appConfig }: { appConfig: LoadAppConfigReturn }) {
           <Typography variant="h4" gutterBottom>
             {appConfig.appTitle}
           </Typography>
-          <Typography variant="body1" >
-            {appConfig.appDescription}
-          </Typography>
-          {appConfig.appDetails && (
-            <Typography variant="body2" >
-              {appConfig.appDetails}
-            </Typography>
-          )}
+          <Typography variant="body1">{appConfig.appDescription}</Typography>
+          {appConfig.appDetails && <Typography variant="body2">{appConfig.appDetails}</Typography>}
           <Typography variant="body2" color="text.secondary">
             {`Developed by ${appConfig.appAttribution}`}
           </Typography>

@@ -191,11 +191,7 @@ export const MemoryUsageBar: React.FC<MemoryUsageBarProps> = ({
             Memory Usage
           </Typography>
           {showValues && (
-            <Typography
-              variant="body2"
-              color={valueColor}
-              sx={{ fontFamily: 'monospace' }}
-            >
+            <Typography variant="body2" color={valueColor} sx={{ fontFamily: 'monospace' }}>
               {formatBytes(memoryInfo.used)} / {formatBytes(memoryInfo.total)}
             </Typography>
           )}

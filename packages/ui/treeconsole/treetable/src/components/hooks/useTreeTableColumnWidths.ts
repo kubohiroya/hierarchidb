@@ -1,12 +1,13 @@
 import {
+  type MouseEvent as ReactMouseEvent,
+  type RefObject,
   useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
-  type RefObject,
-  type MouseEvent as ReactMouseEvent,
 } from 'react';
+import type { ColumnWidthMap } from '~/utils/column-width-cache';
 import {
   cacheColumnWidths,
   columnWidthsEqual,
@@ -14,7 +15,6 @@ import {
   mergeWithDefaults,
   resolveInitialColumnWidths,
 } from '~/utils/column-width-cache';
-import type { ColumnWidthMap } from '~/utils/column-width-cache';
 
 const MIN_COLUMN_WIDTH = 50;
 const FIXED_COLUMNS = new Set(['selection']);
@@ -36,7 +36,7 @@ export interface UseTreeTableColumnWidthsResult {
 
 const applyColumnMap = (
   source: ColumnWidthMap | null | undefined,
-  setter: React.Dispatch<React.SetStateAction<Record<string, number>>>,
+  setter: React.Dispatch<React.SetStateAction<Record<string, number>>>
 ) => {
   setter((prev) => {
     const next = mergeWithDefaults(source);
@@ -44,7 +44,9 @@ const applyColumnMap = (
   });
 };
 
-export function useTreeTableColumnWidths({ pageNodeId }: UseTreeTableColumnWidthsOptions): UseTreeTableColumnWidthsResult {
+export function useTreeTableColumnWidths({
+  pageNodeId,
+}: UseTreeTableColumnWidthsOptions): UseTreeTableColumnWidthsResult {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const observerTargetRef = useRef<HTMLElement | null>(null);
   const resizeRef = useRef<{
@@ -55,7 +57,9 @@ export function useTreeTableColumnWidths({ pageNodeId }: UseTreeTableColumnWidth
     rightId: string;
   }>({ startX: 0, leftStart: 0, rightStart: 0, leftId: '', rightId: '' });
 
-  const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => resolveInitialColumnWidths(pageNodeId));
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() =>
+    resolveInitialColumnWidths(pageNodeId)
+  );
   const [columnWidthsHydrated, setColumnWidthsHydrated] = useState<boolean>(!pageNodeId);
   const [resizingColumn, setResizingColumn] = useState<string | null>(null);
   const [hasMeasured, setHasMeasured] = useState<boolean>(false);
@@ -140,8 +144,14 @@ export function useTreeTableColumnWidths({ pageNodeId }: UseTreeTableColumnWidth
         const adjustableEntries = Object.entries(prev).filter(([key]) => !FIXED_COLUMNS.has(key));
         if (adjustableEntries.length === 0) return prev;
 
-        const currentAdjustableSum = adjustableEntries.reduce((sum, [, value]) => sum + (value || 0), 0);
-        const targetAdjustableSum = Math.max(MIN_COLUMN_WIDTH * adjustableEntries.length, width - fixedSum);
+        const currentAdjustableSum = adjustableEntries.reduce(
+          (sum, [, value]) => sum + (value || 0),
+          0
+        );
+        const targetAdjustableSum = Math.max(
+          MIN_COLUMN_WIDTH * adjustableEntries.length,
+          width - fixedSum
+        );
         if (targetAdjustableSum <= 0 || currentAdjustableSum <= 0) return prev;
         if (Math.abs(targetAdjustableSum - currentAdjustableSum) < 1) return prev;
 
@@ -188,38 +198,53 @@ export function useTreeTableColumnWidths({ pageNodeId }: UseTreeTableColumnWidth
     };
   }, []);
 
-  const handleResizeStart = useCallback((leftColumnId: string, rightColumnId: string, event: ReactMouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
+  const handleResizeStart = useCallback(
+    (leftColumnId: string, rightColumnId: string, event: ReactMouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
 
-    const handleRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    const startX = handleRect.left + handleRect.width / 2;
-    const leftStart = columnWidths[leftColumnId] || 100;
-    const rightStart = columnWidths[rightColumnId] || 100;
+      const handleRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+      const startX = handleRect.left + handleRect.width / 2;
+      const leftStart = columnWidths[leftColumnId] || 100;
+      const rightStart = columnWidths[rightColumnId] || 100;
 
-    resizeRef.current = { startX, leftStart, rightStart, leftId: leftColumnId, rightId: rightColumnId };
-    setResizingColumn(leftColumnId);
+      resizeRef.current = {
+        startX,
+        leftStart,
+        rightStart,
+        leftId: leftColumnId,
+        rightId: rightColumnId,
+      };
+      setResizingColumn(leftColumnId);
 
-    const handleMouseMove = (nativeEvent: MouseEvent) => {
-      const { startX: originX, leftStart: initialLeft, rightStart: initialRight, leftId, rightId } = resizeRef.current;
-      const deltaX = nativeEvent.clientX - originX;
-      const maxPositive = initialRight - MIN_COLUMN_WIDTH;
-      const maxNegative = initialLeft - MIN_COLUMN_WIDTH;
-      const clamped = Math.max(-maxNegative, Math.min(deltaX, maxPositive));
-      const leftNew = Math.max(MIN_COLUMN_WIDTH, initialLeft + clamped);
-      const rightNew = Math.max(MIN_COLUMN_WIDTH, initialRight - clamped);
-      setColumnWidths((prev) => ({ ...prev, [leftId]: leftNew, [rightId]: rightNew }));
-    };
+      const handleMouseMove = (nativeEvent: MouseEvent) => {
+        const {
+          startX: originX,
+          leftStart: initialLeft,
+          rightStart: initialRight,
+          leftId,
+          rightId,
+        } = resizeRef.current;
+        const deltaX = nativeEvent.clientX - originX;
+        const maxPositive = initialRight - MIN_COLUMN_WIDTH;
+        const maxNegative = initialLeft - MIN_COLUMN_WIDTH;
+        const clamped = Math.max(-maxNegative, Math.min(deltaX, maxPositive));
+        const leftNew = Math.max(MIN_COLUMN_WIDTH, initialLeft + clamped);
+        const rightNew = Math.max(MIN_COLUMN_WIDTH, initialRight - clamped);
+        setColumnWidths((prev) => ({ ...prev, [leftId]: leftNew, [rightId]: rightNew }));
+      };
 
-    const handleMouseUp = () => {
-      setResizingColumn(null);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
+      const handleMouseUp = () => {
+        setResizingColumn(null);
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  }, [columnWidths]);
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    },
+    [columnWidths]
+  );
 
   const setContainerElement = useCallback((element: HTMLDivElement | null) => {
     containerRef.current = element;

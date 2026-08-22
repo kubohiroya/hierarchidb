@@ -1,5 +1,5 @@
-import type { BandConfig, StageHandlerResult } from '~/types/types';
 import { parentToChildRange } from '~/tiles/tileId';
+import type { BandConfig, StageHandlerResult } from '~/types/types';
 import { TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
 import { tileToBBox } from './vtStageGeometryTileUtils.js';
 import {
@@ -12,7 +12,7 @@ import type { CollectedVtFeatures } from './vtStageTaskTypes.js';
 
 const buildTilesByZoom = (
   band: BandConfig,
-  parent: { z: number; x: number; y: number },
+  parent: { z: number; x: number; y: number }
 ): Map<number, { total: number; generated: number }> => {
   const tilesByZoom = new Map<number, { total: number; generated: number }>();
   for (let z = band.zMin; z <= band.zMax; z++) {
@@ -26,7 +26,7 @@ const buildTilesByZoom = (
 export const buildVtParentMetadata = (
   band: BandConfig,
   parent: { z: number; x: number; y: number },
-  collected: CollectedVtFeatures,
+  collected: CollectedVtFeatures
 ) => {
   const { collection, featureStats } = collected;
   const adminFeatureSummary = buildAdminFeatureSummary(collection);
@@ -41,7 +41,10 @@ export const buildVtParentMetadata = (
   const parentInputMetadata = {
     [TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY]: parentInputSummary,
   };
-  const totalTiles = Array.from(tilesByZoom.values()).reduce((sum, counts) => sum + counts.total, 0);
+  const totalTiles = Array.from(tilesByZoom.values()).reduce(
+    (sum, counts) => sum + counts.total,
+    0
+  );
   return {
     adminFeatureSummary,
     tilesByZoom,

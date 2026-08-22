@@ -1,7 +1,7 @@
-import type { TabularDataApi } from '@hierarchidb/ui-tabular';
 import { createPluginTabularApi } from '@hierarchidb/spreadsheet-plugin';
-import { LocationTabularMetadataManager } from './LocationTabularMetadataManager.js';
+import type { TabularDataApi } from '@hierarchidb/ui-tabular';
 import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
+import { LocationTabularMetadataManager } from './LocationTabularMetadataManager.js';
 
 const LOCATION_PLUGIN_ID = 'location';
 

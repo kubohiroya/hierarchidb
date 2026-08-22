@@ -1,12 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildStage } from './shapeBuildTypes.js';
 
-export type ShapeProcessingState =
-  | 'idle'
-  | 'processing'
-  | 'paused'
-  | 'completed'
-  | 'failed';
+export type ShapeProcessingState = 'idle' | 'processing' | 'paused' | 'completed' | 'failed';
 
 export interface ShapeProcessingStatus {
   status: ShapeProcessingState;

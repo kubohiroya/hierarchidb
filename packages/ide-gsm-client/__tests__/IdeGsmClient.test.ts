@@ -1,9 +1,9 @@
 import type { Client as WsClient } from 'graphql-ws';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { deriveWsUrl, IdeGsmClient, IdeGsmTaskError } from '../src/IdeGsmClient.js';
 import type { WsClientFactory } from '../src/IdeGsmClient.js';
-import { IDE_GSM_COMMAND_IDS } from '../src/ideGsmTypes.js';
+import { deriveWsUrl, IdeGsmClient, IdeGsmTaskError } from '../src/IdeGsmClient.js';
 import type { IdeGsmCommand, TaskStatus } from '../src/ideGsmTypes.js';
+import { IDE_GSM_COMMAND_IDS } from '../src/ideGsmTypes.js';
 
 type SinkLike = {
   next: (value: unknown) => void;

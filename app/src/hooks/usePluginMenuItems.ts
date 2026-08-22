@@ -4,10 +4,7 @@
 import type { TreeId } from '@hierarchidb/core-types';
 import { prefetchMuiIcons } from '@hierarchidb/ui-plugin-shell/ui-icon';
 import { useEffect, useState } from 'react';
-import type {
-  PluginMenuItem as LoaderMenuItem,
-  TreeContext,
-} from '~/plugin-loaders/menu-builders';
+import type { PluginMenuItem as LoaderMenuItem, TreeContext } from '~/plugin-loaders/menu-builders';
 // Local replicas of menu types to avoid hard dependency on virtual modules
 
 export type PluginMenuItem = LoaderMenuItem;
@@ -32,8 +29,8 @@ const collectIconNames = (list: PluginMenuItem[]): string[] =>
     const own = item.icon?.muiIconName ? [item.icon.muiIconName] : [];
     const childIcons = Array.isArray(item.children)
       ? item.children
-        .map((child) => child.icon?.muiIconName)
-        .filter((name): name is string => Boolean(name))
+          .map((child) => child.icon?.muiIconName)
+          .filter((name): name is string => Boolean(name))
       : [];
     return [...own, ...childIcons];
   });

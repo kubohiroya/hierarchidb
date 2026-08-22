@@ -4,9 +4,9 @@
  */
 
 import type React from 'react';
+import type { MapLibreMapInstance } from '~/types/maplibre-public';
 import type { VectorTileProps } from '~/types/unified-map-props';
 import { DEFAULT_MAP_CONFIG } from '~/types/unified-map-props';
-import type { MapLibreMapInstance } from '~/types/maplibre-public';
 import { useVectorTileLayer } from './useVectorTileLayer.js';
 
 export interface VectorTileLayerProps extends VectorTileProps {

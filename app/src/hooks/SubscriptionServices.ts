@@ -1,7 +1,7 @@
-import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { SubscriptionId } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 
 export type SubscriptionKind = 'archive' | 'page';
 export type SubscriptionCallback = (event: unknown) => void;

@@ -24,7 +24,7 @@ const toKey = (value: NodeId | string | number | null | undefined): string | nul
 export function buildVisibleNodes<T extends TreeNode>(
   nodes: readonly T[],
   expandedRowIds: ReadonlySet<NodeId | string> | undefined,
-  options: BuildVisibleNodesOptions = {},
+  options: BuildVisibleNodesOptions = {}
 ): T[] {
   if (!nodes.length) {
     return [];

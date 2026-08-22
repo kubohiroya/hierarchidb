@@ -29,7 +29,7 @@ export class InMemoryDataProvider<T extends DataItem = DataItem> implements Data
     if (params.search) {
       const searchLower = params.search.toLowerCase();
       result = result.filter((item) =>
-        Object.values(item).some((value) => String(value).toLowerCase().includes(searchLower)),
+        Object.values(item).some((value) => String(value).toLowerCase().includes(searchLower))
       );
     }
 
@@ -207,8 +207,10 @@ export class InMemoryDataProvider<T extends DataItem = DataItem> implements Data
       case 'between': {
         if (!Array.isArray(filterValue) || filterValue.length < 2) return false;
         const [min, max] = filterValue;
-        return this.compareNumbers(value, min, (left, right) => left >= right) &&
-          this.compareNumbers(value, max, (left, right) => left <= right);
+        return (
+          this.compareNumbers(value, min, (left, right) => left >= right) &&
+          this.compareNumbers(value, max, (left, right) => left <= right)
+        );
       }
 
       case 'in':
@@ -233,7 +235,7 @@ export class InMemoryDataProvider<T extends DataItem = DataItem> implements Data
             ? `"${stringValue.replace(/"/g, '""')}"`
             : stringValue;
         })
-        .join(','),
+        .join(',')
     );
 
     return [headers.join(','), ...rows].join('\n');
@@ -245,7 +247,7 @@ export class InMemoryDataProvider<T extends DataItem = DataItem> implements Data
 
   private readField(item: T, field: string): unknown {
     const record = item as Record<string, unknown>;
-    return  Object.hasOwn(record, field) ? record[field] : undefined;
+    return Object.hasOwn(record, field) ? record[field] : undefined;
   }
 
   private compareValues(a: unknown, b: unknown): number {
@@ -287,7 +289,7 @@ export class InMemoryDataProvider<T extends DataItem = DataItem> implements Data
   private compareNumbers(
     leftValue: unknown,
     rightValue: unknown,
-    comparator: (left: number, right: number) => boolean,
+    comparator: (left: number, right: number) => boolean
   ): boolean {
     const left = this.toNumber(leftValue);
     const right = this.toNumber(rightValue);

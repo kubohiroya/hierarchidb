@@ -4,7 +4,9 @@ export function isFlagEnabled(name: string, fallback = false): boolean {
   const value = readFlagValue(name);
   if (value === undefined) return fallback;
   const normalized = value.toLowerCase();
-  return normalized === '1' || normalized === 'true' || normalized === 'on' || normalized === 'enabled';
+  return (
+    normalized === '1' || normalized === 'true' || normalized === 'on' || normalized === 'enabled'
+  );
 }
 
 function readFlagValue(name: string): string | undefined {

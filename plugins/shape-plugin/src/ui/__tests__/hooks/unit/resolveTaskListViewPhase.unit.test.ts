@@ -3,42 +3,50 @@ import { resolveTaskListViewPhase } from '../../../components/build-progress/int
 
 describe('resolveTaskListViewPhase', () => {
   it('returns idle when no tasks and no loading/progress signals', () => {
-    expect(resolveTaskListViewPhase({
-      baseBuildStatus: 'idle',
-      displayTaskCount: 0,
-      isLoading: false,
-      hasProgressTaskSignal: false,
-      hasAnyTaskSnapshot: false,
-    })).toBe('idle');
+    expect(
+      resolveTaskListViewPhase({
+        baseBuildStatus: 'idle',
+        displayTaskCount: 0,
+        isLoading: false,
+        hasProgressTaskSignal: false,
+        hasAnyTaskSnapshot: false,
+      })
+    ).toBe('idle');
   });
 
   it('does not force ui-initializing only from running status', () => {
-    expect(resolveTaskListViewPhase({
-      baseBuildStatus: 'running',
-      displayTaskCount: 0,
-      isLoading: false,
-      hasProgressTaskSignal: false,
-      hasAnyTaskSnapshot: false,
-    })).toBe('settledEmpty');
+    expect(
+      resolveTaskListViewPhase({
+        baseBuildStatus: 'running',
+        displayTaskCount: 0,
+        isLoading: false,
+        hasProgressTaskSignal: false,
+        hasAnyTaskSnapshot: false,
+      })
+    ).toBe('settledEmpty');
   });
 
   it('returns ui-initializing when loading is true', () => {
-    expect(resolveTaskListViewPhase({
-      baseBuildStatus: 'idle',
-      displayTaskCount: 0,
-      isLoading: true,
-      hasProgressTaskSignal: false,
-      hasAnyTaskSnapshot: false,
-    })).toBe('ui-initializing');
+    expect(
+      resolveTaskListViewPhase({
+        baseBuildStatus: 'idle',
+        displayTaskCount: 0,
+        isLoading: true,
+        hasProgressTaskSignal: false,
+        hasAnyTaskSnapshot: false,
+      })
+    ).toBe('ui-initializing');
   });
 
   it('returns streaming when task list is present', () => {
-    expect(resolveTaskListViewPhase({
-      baseBuildStatus: 'running',
-      displayTaskCount: 1,
-      isLoading: false,
-      hasProgressTaskSignal: false,
-      hasAnyTaskSnapshot: true,
-    })).toBe('streaming');
+    expect(
+      resolveTaskListViewPhase({
+        baseBuildStatus: 'running',
+        displayTaskCount: 1,
+        isLoading: false,
+        hasProgressTaskSignal: false,
+        hasAnyTaskSnapshot: true,
+      })
+    ).toBe('streaming');
   });
 });

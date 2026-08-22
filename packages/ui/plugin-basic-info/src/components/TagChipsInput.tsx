@@ -1,5 +1,5 @@
-import { type KeyboardEvent, type ReactNode } from 'react';
 import { Box, Chip, Stack, TextField, Typography, useTheme } from '@mui/material';
+import { type KeyboardEvent, type ReactNode } from 'react';
 import { useTagChipsInput } from './useTagChipsInput.js';
 
 export interface TagChipsInputProps {
@@ -57,36 +57,38 @@ export const TagChipsInput: React.FC<TagChipsInputProps> = ({
     <Box data-ui-core="TagChipsInput" sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
       {label && (
         <Typography id={labelId} variant="subtitle2">
-          {label}{required ? ' *' : ''}
+          {label}
+          {required ? ' *' : ''}
         </Typography>
       )}
 
       {/* Selected tags */}
-      {value && value.length > 0 && <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 0.5 }}>
-        {value.map((t) => (
-          <Chip
-            key={t}
-            label={t}
-            color="primary" // default to primary for visibility in dark mode
-            clickable={Boolean(onTagClick) && !disabled}
-            onClick={disabled ? undefined : onTagClick ? () => onTagClick(t) : undefined}
-            onDelete={
-              disabled
-                ? undefined
-                : (event) => {
-                    event.stopPropagation();
-                    if (onTagDeleteRequest) {
-                      onTagDeleteRequest(t);
-                      return;
+      {value && value.length > 0 && (
+        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 0.5 }}>
+          {value.map((t) => (
+            <Chip
+              key={t}
+              label={t}
+              color="primary" // default to primary for visibility in dark mode
+              clickable={Boolean(onTagClick) && !disabled}
+              onClick={disabled ? undefined : onTagClick ? () => onTagClick(t) : undefined}
+              onDelete={
+                disabled
+                  ? undefined
+                  : (event) => {
+                      event.stopPropagation();
+                      if (onTagDeleteRequest) {
+                        onTagDeleteRequest(t);
+                        return;
+                      }
+                      removeTag(t);
                     }
-                    removeTag(t);
-                  }
-            }
-            size="small"
-          />
-        ))}
-      </Stack>
-      }
+              }
+              size="small"
+            />
+          ))}
+        </Stack>
+      )}
 
       {/* Input */}
       <TextField

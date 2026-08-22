@@ -6,13 +6,13 @@
 // Import base setup (includes all _obsolate_common mocks)
 import 'fake-indexeddb/auto';
 import '../../vitest.database-prefix.setup.ts';
+import { ReadableStream, WritableStream } from 'node:stream/web';
+import { gunzipSync, gzipSync } from 'node:zlib';
 import { initializeEphemeralDB } from '@hierarchidb/gis-sdk';
 import { initializeLocationDB } from '@hierarchidb/location-store';
 import { initializeRouteDB } from '@hierarchidb/route-store';
 import { initializeShapeDB } from '@hierarchidb/shape-store';
 import { getDBName } from '@hierarchidb/util';
-import { ReadableStream, WritableStream } from 'node:stream/web';
-import { gzipSync, gunzipSync } from 'node:zlib';
 
 initializeEphemeralDB(getDBName('test', 'ephemeral'));
 initializeLocationDB(getDBName('test', 'location'));
@@ -113,7 +113,11 @@ if (!globalWithCompression.DecompressionStream) {
       }
       const { readable, writable } = createBufferedStream((input) => {
         const decompressed = gunzipSync(Buffer.from(input));
-        return new Uint8Array(decompressed.buffer, decompressed.byteOffset, decompressed.byteLength);
+        return new Uint8Array(
+          decompressed.buffer,
+          decompressed.byteOffset,
+          decompressed.byteLength
+        );
       });
       this.readable = readable;
       this.writable = writable;
@@ -144,7 +148,18 @@ const createMockEntitiesDB = (): EntitiesDbAdapter => {
 };
 
 const overrides = (globalWithOverrides.__HDB_PLUGIN_ENTITY_OVERRIDES__ ??= {});
-for (const type of ['folder', 'route', 'resolver', 'shape', 'location', 'spreadsheet', 'styler', 'basemap', 'linker', 'timeline']) {
+for (const type of [
+  'folder',
+  'route',
+  'resolver',
+  'shape',
+  'location',
+  'spreadsheet',
+  'styler',
+  'basemap',
+  'linker',
+  'timeline',
+]) {
   if (!overrides[type]) {
     overrides[type] = async () => createMockEntitiesDB();
   }

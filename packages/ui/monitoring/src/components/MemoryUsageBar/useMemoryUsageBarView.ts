@@ -77,7 +77,9 @@ export function useMemoryUsageBarView({
       }
 
       if ('memory' in performance) {
-        const memory = (performance as { memory: { usedJSHeapSize: number; jsHeapSizeLimit?: number } }).memory;
+        const memory = (
+          performance as { memory: { usedJSHeapSize: number; jsHeapSizeLimit?: number } }
+        ).memory;
         const used = memory.usedJSHeapSize;
         const total = memory.jsHeapSizeLimit || maxMemory;
         const percentage = total > 0 ? (used / total) * 100 : 0;
@@ -95,7 +97,9 @@ export function useMemoryUsageBarView({
         console.warn('Memory measurement failed:', String(error));
       }
       if ('memory' in performance) {
-        const memory = (performance as { memory: { usedJSHeapSize: number; jsHeapSizeLimit?: number } }).memory;
+        const memory = (
+          performance as { memory: { usedJSHeapSize: number; jsHeapSizeLimit?: number } }
+        ).memory;
         const used = memory.usedJSHeapSize;
         const total = memory.jsHeapSizeLimit || maxMemory;
         const percentage = total > 0 ? (used / total) * 100 : 0;
@@ -129,7 +133,12 @@ export function useMemoryUsageBarView({
     memoryInfo,
     isSupported,
     severity,
-    valueColor: severity === 'critical' ? 'error.main' : severity === 'warning' ? 'warning.main' : 'text.secondary',
+    valueColor:
+      severity === 'critical'
+        ? 'error.main'
+        : severity === 'warning'
+          ? 'warning.main'
+          : 'text.secondary',
     percentageTextColorCompact: memoryInfo.percentage > 50 ? 'white' : 'text.primary',
     percentageTextColorInline: memoryInfo.percentage > 70 ? 'white' : 'text.primary',
   };

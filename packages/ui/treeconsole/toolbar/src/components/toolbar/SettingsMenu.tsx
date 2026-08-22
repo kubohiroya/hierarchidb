@@ -1,9 +1,15 @@
 import {
+  TREE_CONSOLE_ZOOM_BAND_MAX_RANGES,
+  TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
+  TREE_CONSOLE_ZOOM_BAND_MIN_RANGES,
+  TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
+} from '@hierarchidb/util';
+import {
   CheckBox,
   DisabledByDefault,
   Edit,
-  Settings as SettingsIcon,
   Save,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import {
   Divider,
@@ -19,12 +25,6 @@ import {
   Switch,
   Typography,
 } from '@mui/material';
-import {
-  TREE_CONSOLE_ZOOM_BAND_MAX_RANGES,
-  TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
-  TREE_CONSOLE_ZOOM_BAND_MIN_RANGES,
-  TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
-} from '@hierarchidb/util';
 import { type ReactNode } from 'react';
 import type { TreeConsoleToolbarActionParams } from '~/types';
 import { useSettingsMenu } from './useSettingsMenu.js';
@@ -126,13 +126,18 @@ export function SettingsMenu({
                 value="Select/Navigate"
                 control={<Radio size="small" />}
                 label={
-                  <LabelWithIcon icon={<CheckBox fontSize="small" />} text={labels.rowClickSelectNavigate} />
+                  <LabelWithIcon
+                    icon={<CheckBox fontSize="small" />}
+                    text={labels.rowClickSelectNavigate}
+                  />
                 }
               />
               <FormControlLabel
                 value="Edit"
                 control={<Radio size="small" />}
-                label={<LabelWithIcon icon={<Edit fontSize="small" />} text={labels.rowClickEdit} />}
+                label={
+                  <LabelWithIcon icon={<Edit fontSize="small" />} text={labels.rowClickEdit} />
+                }
               />
             </RadioGroup>
 
@@ -218,7 +223,6 @@ export function SettingsMenu({
                 </Typography>
               </Stack>
             </Stack>
-
           </Paper>
         </MenuItem>
 

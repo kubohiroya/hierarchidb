@@ -1,27 +1,28 @@
-import type { ImportExportAPI } from '@hierarchidb/import-export-api';
-import type { TreeTableExpandedAPI, TreeNodeData } from '@hierarchidb/tree-api';
-import type {
-  TreeMutationAPI,
-  TreeNodeUpdaterAPI,
-  TreeQueryAPI,
-  TreeSubscriptionAPI,
-} from '@hierarchidb/tree-api';
-import type { TagAPI } from '@hierarchidb/tag-api';
 import type { NodeType } from '@hierarchidb/core-types';
+import { initializeEphemeralDB } from '@hierarchidb/gis-sdk';
 import { enableAllExporters, enableAllImporters } from '@hierarchidb/import-export';
+import type { ImportExportAPI } from '@hierarchidb/import-export-api';
 import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/location-api';
 import { initializeLocationDB } from '@hierarchidb/location-store';
 import type { PluginLifecycleAPI } from '@hierarchidb/plugin-base';
 import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/route-api';
 import type { RouteDatabaseHandle } from '@hierarchidb/route-store';
 import { initializeRouteDB } from '@hierarchidb/route-store';
-import { initializeEphemeralDB } from '@hierarchidb/gis-sdk';
+import type { ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import { initializeShapeDB, type ShapeDB } from '@hierarchidb/shape-store';
+import type { StyleMutationAPI, StyleQueryAPI } from '@hierarchidb/style-api';
 import { StylerDB } from '@hierarchidb/styler-store';
 import { TagService } from '@hierarchidb/tag';
+import type { TagAPI } from '@hierarchidb/tag-api';
+import type {
+  TreeMutationAPI,
+  TreeNodeData,
+  TreeNodeUpdaterAPI,
+  TreeQueryAPI,
+  TreeSubscriptionAPI,
+  TreeTableExpandedAPI,
+} from '@hierarchidb/tree-api';
 import { getBuildDatabasePrefix, getDBName, SingletonMixin } from '@hierarchidb/util';
-import type { ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
-import type { StyleMutationAPI, StyleQueryAPI } from '@hierarchidb/style-api';
 import type {
   YamlCanonicalZipAPI,
   YamlCanonicalZipServiceFactory,
@@ -150,10 +151,7 @@ export class WorkerService {
       );
 
       const shapeDB = initializeShapeDB(getDBName(options.databasePrefix, 'shape'));
-      const shapeChunkStoreDatabaseName = getDBName(
-        options.databasePrefix,
-        'shape-chunks'
-      );
+      const shapeChunkStoreDatabaseName = getDBName(options.databasePrefix, 'shape-chunks');
 
       // Import/Export services
       const iePort = new ImportExportDBPortCoreDBAdapter(coreDB, shapeDB);
@@ -187,25 +185,23 @@ export class WorkerService {
         },
       };
 
-      const uiStateDB = await UIStateDB.getSingleton(
-        getDBName(options.databasePrefix, 'ui-atoms')
-      );
+      const uiStateDB = await UIStateDB.getSingleton(getDBName(options.databasePrefix, 'ui-atoms'));
       const treeTableExpandedService: TreeTableExpandedAPI = new TreeTableExpandedService(
         uiStateDB,
         treeQueryService
       );
 
-      const styleDB = await StylerDB.getSingleton(
-        getDBName(options.databasePrefix, 'style')
-      );
+      const styleDB = await StylerDB.getSingleton(getDBName(options.databasePrefix, 'style'));
       const styleService: StyleQueryAPI & StyleMutationAPI =
         await StyleService.getSingleton(styleDB);
       const shapeQueryService: ShapeQueryAPI = await ShapeQueryService.getSingleton(
         shapeDB,
         shapeChunkStoreDatabaseName
       );
-      const shapeMutationService: ShapeMutationAPI =
-        await ShapeMutationService.getSingleton(shapeDB, shapeChunkStoreDatabaseName);
+      const shapeMutationService: ShapeMutationAPI = await ShapeMutationService.getSingleton(
+        shapeDB,
+        shapeChunkStoreDatabaseName
+      );
       initializeLocationDB(getDBName(options.databasePrefix, 'location'));
       const locationQueryService: LocationQueryAPI = await LocationQueryService.getSingleton();
       const locationMutationService: LocationMutationAPI =
@@ -323,8 +319,7 @@ export class WorkerService {
     const shouldLogInfo =
       typeof console !== 'undefined' &&
       typeof console.log === 'function' &&
-      !(globalThis as { __HDB_SILENCE_WORKER_LOGS__?: boolean })
-        .__HDB_SILENCE_WORKER_LOGS__;
+      !(globalThis as { __HDB_SILENCE_WORKER_LOGS__?: boolean }).__HDB_SILENCE_WORKER_LOGS__;
     if (shouldLogInfo) {
       console.log('[WorkerAPIImpl] ping() called');
     }

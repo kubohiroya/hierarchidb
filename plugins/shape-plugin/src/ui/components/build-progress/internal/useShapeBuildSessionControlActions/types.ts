@@ -1,11 +1,13 @@
-import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
-import type { BuildSessionTransitionNotificationLevel } from '@hierarchidb/ui-build-progress/build-session';
-import type { BuildSessionTransitionLogLevel } from '@hierarchidb/ui-build-progress/build-session';
 import type { BuildSessionStatus } from '@hierarchidb/build-api';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildSessionRecord, ShapeBuildStopReason } from '@hierarchidb/shape-api';
-import type { ShapeEntity } from '~/common/types/index';
+import type {
+  BuildSessionTransitionLogLevel,
+  BuildSessionTransitionNotificationLevel,
+} from '@hierarchidb/ui-build-progress/build-session';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import type { BuildWorkerBridge } from '@hierarchidb/ui-worker-client';
+import type { ShapeEntity } from '~/common/types/index';
 
 export type ShapeBuildPauseReason = ShapeBuildStopReason;
 
@@ -68,15 +70,23 @@ export type ControlActionsArgs = {
     options?: {
       message?: string;
       level?: BuildSessionTransitionNotificationLevel;
-    },
+    }
   ) => void;
   finishBuildSessionTransition: (options?: {
     message?: string;
     level?: BuildSessionTransitionNotificationLevel;
   }) => void;
   beginBuildStartupStep: (step: BuildStartupStep, extra?: Record<string, unknown>) => void;
-  finishBuildStartupStep: (step: BuildStartupStep, outcome: BuildStartupStepOutcome, extra?: Record<string, unknown>) => void;
-  emitBuildSessionTransitionLog: (level: BuildSessionTransitionLogLevel, message: string, extra?: Record<string, unknown>) => void;
+  finishBuildStartupStep: (
+    step: BuildStartupStep,
+    outcome: BuildStartupStepOutcome,
+    extra?: Record<string, unknown>
+  ) => void;
+  emitBuildSessionTransitionLog: (
+    level: BuildSessionTransitionLogLevel,
+    message: string,
+    extra?: Record<string, unknown>
+  ) => void;
   clearStartPendingRef: React.MutableRefObject<(() => void) | null>;
   releaseBuildLock: () => void;
   tryAcquireBuildLock: (options?: { notifyOnFailure?: boolean }) => Promise<boolean>;

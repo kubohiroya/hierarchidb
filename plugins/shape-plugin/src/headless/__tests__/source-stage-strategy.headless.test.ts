@@ -2,7 +2,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildProcessConfig } from '../../services/build/types';
+import { ephemeralDB } from '@hierarchidb/gis-sdk';
+import type { Feature, FeatureCollection } from 'geojson';
 import type { SourceTaskPayload } from '../../common/types/index';
 import { DEFAULT_BUILD_CONFIG } from '../../common/types/index';
 //import { getShapeDbApiClient } from '../services/build/ShapeBuildApiClient.js';
@@ -10,8 +11,7 @@ import { encodeFlatGeoJson } from '../../services/build/strategies/flatgeobufUti
 import { GadmSourceStageStrategy } from '../../services/build/strategies/GadmSourceStageStrategy';
 import { GeoBoundariesSourceStageStrategy } from '../../services/build/strategies/GeoBoundariesSourceStageStrategy';
 import { NaturalEarthDownloadStrategy } from '../../services/build/strategies/NaturalEarthDownloadStrategy';
-import type { Feature, FeatureCollection } from 'geojson';
-import { ephemeralDB } from '@hierarchidb/gis-sdk';
+import type { BuildProcessConfig } from '../../services/build/types';
 import { metadataLoader } from '../../services/metadata/MetadataLoader';
 import {
   buildRawDataDataSourceCacheKey,
@@ -39,7 +39,7 @@ const createConfig = (dataSource: string): BuildProcessConfig => ({
   },
 });
 
-const createFetchTaskPayload = (overrides: Partial<SourceTaskPayload>[]): SourceTaskPayload[] => (
+const createFetchTaskPayload = (overrides: Partial<SourceTaskPayload>[]): SourceTaskPayload[] =>
   overrides.map((item, index) => ({
     url: `https://example.com/${index}`,
     countryCode: 'JP',
@@ -47,8 +47,7 @@ const createFetchTaskPayload = (overrides: Partial<SourceTaskPayload>[]): Source
     adminLevel: 0,
     dataSource: 'gadm',
     ...item,
-  }))
-);
+  }));
 
 describe('Source stage strategies', () => {
   const nodeId = 'node-1' as NodeId;
@@ -93,7 +92,7 @@ describe('Source stage strategies', () => {
         countryCode: 'JP',
         adminLevel: 0,
         url: sourceTaskPayloads[0]?.url,
-      }),
+      })
     );
     expect(postprocess.outputs[1]?.inputBufferId).toBe(
       buildRawDataDataSourceCacheKey({
@@ -101,7 +100,7 @@ describe('Source stage strategies', () => {
         countryCode: 'ID',
         adminLevel: 1,
         url: sourceTaskPayloads[1]?.url,
-      }),
+      })
     );
   });
 
@@ -134,7 +133,7 @@ describe('Source stage strategies', () => {
         countryCode: 'JP',
         adminLevel: 0,
         url: sourceTaskPayloads[0]?.url,
-      }),
+      })
     );
     expect(postprocess.outputs[1]?.inputBufferId).toBe(
       buildRawDataDataSourceCacheKey({
@@ -142,7 +141,7 @@ describe('Source stage strategies', () => {
         countryCode: 'ID',
         adminLevel: 1,
         url: sourceTaskPayloads[1]?.url,
-      }),
+      })
     );
   });
 
@@ -163,8 +162,16 @@ describe('Source stage strategies', () => {
     expect(tasks).toHaveLength(2);
 
     const features = [
-      { type: 'Feature', geometry: { type: 'Point', coordinates: [139.7, 35.6] }, properties: { ISO_A2: 'JP' } },
-      { type: 'Feature', geometry: { type: 'Point', coordinates: [106.8, -6.2] }, properties: { ISO_A2: 'ID' } },
+      {
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [139.7, 35.6] },
+        properties: { ISO_A2: 'JP' },
+      },
+      {
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [106.8, -6.2] },
+        properties: { ISO_A2: 'ID' },
+      },
     ] satisfies Feature[];
     const collection = { type: 'FeatureCollection', features } satisfies FeatureCollection;
     const encoded = await encodeFlatGeoJson(collection);
@@ -189,24 +196,26 @@ describe('Source stage strategies', () => {
       cacheKey: sourceKeyAdm1,
       buffer: encoded,
     });
-    const getCountriesMetadataSpy = vi.spyOn(metadataLoader, 'getCountriesMetadata').mockResolvedValue([
-      {
-        countryCode: 'JP',
-        countryName: 'Japan',
-        continent: 'Asia',
-        availableAdminLevels: [0, 1],
-        iso2: 'JP',
-        iso3: 'JPN',
-      },
-      {
-        countryCode: 'ID',
-        countryName: 'Indonesia',
-        continent: 'Asia',
-        availableAdminLevels: [0, 1],
-        iso2: 'ID',
-        iso3: 'IDN',
-      },
-    ]);
+    const getCountriesMetadataSpy = vi
+      .spyOn(metadataLoader, 'getCountriesMetadata')
+      .mockResolvedValue([
+        {
+          countryCode: 'JP',
+          countryName: 'Japan',
+          continent: 'Asia',
+          availableAdminLevels: [0, 1],
+          iso2: 'JP',
+          iso3: 'JPN',
+        },
+        {
+          countryCode: 'ID',
+          countryName: 'Indonesia',
+          continent: 'Asia',
+          availableAdminLevels: [0, 1],
+          iso2: 'ID',
+          iso3: 'IDN',
+        },
+      ]);
 
     const postprocess = await strategy.buildPostprocessOutputs({
       nodeId,
@@ -229,8 +238,8 @@ describe('Source stage strategies', () => {
           countryCode: 'JP',
           adminLevel: 0,
           url: taskAdm0ForVerify?.url,
-        }),
-      ),
+        })
+      )
     ).toBe(true);
     expect(
       outputIds.has(
@@ -239,8 +248,8 @@ describe('Source stage strategies', () => {
           countryCode: 'ID',
           adminLevel: 0,
           url: taskAdm0ForVerify?.url,
-        }),
-      ),
+        })
+      )
     ).toBe(true);
     expect(
       outputIds.has(
@@ -249,8 +258,8 @@ describe('Source stage strategies', () => {
           countryCode: 'JP',
           adminLevel: 1,
           url: taskAdm1ForVerify?.url,
-        }),
-      ),
+        })
+      )
     ).toBe(true);
     expect(
       outputIds.has(
@@ -259,8 +268,8 @@ describe('Source stage strategies', () => {
           countryCode: 'ID',
           adminLevel: 1,
           url: taskAdm1ForVerify?.url,
-        }),
-      ),
+        })
+      )
     ).toBe(true);
   }, 30_000);
 });

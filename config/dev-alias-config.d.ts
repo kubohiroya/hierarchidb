@@ -31,7 +31,7 @@ export declare function loadDevAliasConfig(repoRoot: string): DevAliasConfigFile
 
 export declare function parseDevAliasOverride(
   overrideRaw: string | undefined,
-  base: DevAliasConfigFile,
+  base: DevAliasConfigFile
 ): DevAliasConfigFile;
 
 export declare function createDevAliasSelection(config: DevAliasConfigFile): DevAliasSelection;
@@ -41,13 +41,13 @@ export declare function cloneEmptySelection(): DevAliasSelection;
 export declare function shouldUseSource(
   selection: DevAliasSelection,
   specifier: string,
-  group?: string | null,
+  group?: string | null
 ): boolean;
 
 export declare function shouldUsePluginSource(
   selection: DevAliasSelection,
   packageName: string,
-  nodeType?: string | null,
+  nodeType?: string | null
 ): boolean;
 
 export declare function toPosixRelative(from: string, to: string): string;

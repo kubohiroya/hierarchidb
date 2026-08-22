@@ -1,9 +1,9 @@
 /**
-  * CategorySelector Component
+ * CategorySelector Component
  * UI
-  */
+ */
 
-import type React from 'react';
+import { Category as CategoryIcon } from '@mui/icons-material';
 import {
   Box,
   Chip,
@@ -16,7 +16,7 @@ import {
   Select,
   Typography,
 } from '@mui/material';
-import { Category as CategoryIcon } from '@mui/icons-material';
+import type React from 'react';
 import { useCategorySelector } from './useCategorySelector.js';
 
 export interface CategoryOption<T extends string> {
@@ -43,18 +43,18 @@ export interface CategorySelectorProps<T extends string> {
 }
 
 export const CategorySelector = <T extends string>({
-                                                     value,
-                                                     onChange,
-                                                     options,
-                                                     label = 'カテゴリ',
-                                                     placeholder = 'カテゴリを選択してください',
-                                                     required = false,
-                                                     disabled = false,
-                                                     error = false,
-                                                     helperText,
-                                                     variant = 'select',
-                                                     fullWidth = true,
-                                                   }: CategorySelectorProps<T>) => {
+  value,
+  onChange,
+  options,
+  label = 'カテゴリ',
+  placeholder = 'カテゴリを選択してください',
+  required = false,
+  disabled = false,
+  error = false,
+  helperText,
+  variant = 'select',
+  fullWidth = true,
+}: CategorySelectorProps<T>) => {
   const { handleSelect, selectedOption } = useCategorySelector({
     value,
     options,
@@ -75,11 +75,11 @@ export const CategorySelector = <T extends string>({
             <Chip
               key={option.value}
               label={option.label}
-              icon={option.icon ? (
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  {option.icon}
-                </Box>
-              ) : undefined}
+              icon={
+                option.icon ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>{option.icon}</Box>
+                ) : undefined
+              }
               onClick={() => !option.disabled && handleSelect(option.value)}
               variant={value === option.value ? 'filled' : 'outlined'}
               color={value === option.value ? 'primary' : 'default'}
@@ -89,9 +89,7 @@ export const CategorySelector = <T extends string>({
                   backgroundColor: value === option.value ? option.color : undefined,
                   borderColor: option.color,
                   '&:hover': {
-                    backgroundColor: value === option.value
-                      ? option.color
-                      : `${option.color}20`,
+                    backgroundColor: value === option.value ? option.color : `${option.color}20`,
                   },
                 }),
               }}
@@ -109,15 +107,8 @@ export const CategorySelector = <T extends string>({
   }
 
   return (
-    <FormControl
-      fullWidth={fullWidth}
-      required={required}
-      error={error}
-      disabled={disabled}
-    >
-      <InputLabel id={`category-select-label-${label}`}>
-        {label}
-      </InputLabel>
+    <FormControl fullWidth={fullWidth} required={required} error={error} disabled={disabled}>
+      <InputLabel id={`category-select-label-${label}`}>{label}</InputLabel>
       <Select
         labelId={`category-select-label-${label}`}
         value={value || ''}
@@ -126,14 +117,10 @@ export const CategorySelector = <T extends string>({
         displayEmpty
         renderValue={(selected) => {
           if (!selected) {
-            return (
-              <Typography color="text.secondary">
-                {placeholder}
-              </Typography>
-            );
+            return <Typography color="text.secondary">{placeholder}</Typography>;
           }
 
-          const option = selectedOption ?? options.find(opt => opt.value === selected);
+          const option = selectedOption ?? options.find((opt) => opt.value === selected);
           if (!option) return selected;
 
           return (
@@ -171,16 +158,10 @@ export const CategorySelector = <T extends string>({
         )}
 
         {options.map((option) => (
-          <MenuItem
-            key={option.value}
-            value={option.value}
-            disabled={option.disabled}
-          >
+          <MenuItem key={option.value} value={option.value} disabled={option.disabled}>
             <ListItemIcon sx={{ minWidth: 36 }}>
               {option.icon ? (
-                <Box sx={{ color: option.color }}>
-                  {option.icon}
-                </Box>
+                <Box sx={{ color: option.color }}>{option.icon}</Box>
               ) : option.color ? (
                 <Box
                   sx={{
@@ -207,11 +188,7 @@ export const CategorySelector = <T extends string>({
         ))}
       </Select>
 
-      {helperText && (
-        <FormHelperText>
-          {helperText}
-        </FormHelperText>
-      )}
+      {helperText && <FormHelperText>{helperText}</FormHelperText>}
     </FormControl>
   );
 };

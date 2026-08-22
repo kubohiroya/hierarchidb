@@ -4,7 +4,6 @@
  * Centralises the logic for fetching, normalising, and sorting console data.
  */
 
-import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { DualKeyMap } from '@hierarchidb/util';
@@ -13,6 +12,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import { useCallback, useEffect, useRef } from 'react';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms';
 import { buildVisibleRows, syncNodeIndex } from '~/state/treeconsole.deriveUtils';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import type { TreeConsoleState } from './types.js';
 
 interface Params {

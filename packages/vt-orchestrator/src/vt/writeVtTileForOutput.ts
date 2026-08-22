@@ -1,7 +1,10 @@
 import type { Tile } from 'geojson-vt';
 import type { VtTileOutputWriterInput } from './vtStageTaskOutputTypes.js';
 import type { TileVisitResult } from './vtStageTaskOutputWriterActionsHandle.js';
-import { handleTileWithoutLayers, handleTileWithLayers } from './vtStageTaskOutputWriterActionsHandle.js';
+import {
+  handleTileWithLayers,
+  handleTileWithoutLayers,
+} from './vtStageTaskOutputWriterActionsHandle.js';
 
 export const writeVtTileForOutput = async ({
   context,

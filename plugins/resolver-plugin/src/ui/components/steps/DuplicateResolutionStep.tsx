@@ -1,4 +1,10 @@
-import type React from 'react';
+import {
+  Block as BlockIcon,
+  Functions as FunctionsIcon,
+  MergeType as MergeIcon,
+  SkipNext as SkipIcon,
+  Update as UpdateIcon,
+} from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -17,14 +23,12 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import {
-  Block as BlockIcon,
-  Functions as FunctionsIcon,
-  MergeType as MergeIcon,
-  SkipNext as SkipIcon,
-  Update as UpdateIcon,
-} from '@mui/icons-material';
-import type { DuplicateResolutionStrategy, ResolverUpdaterPayload, PropertyMappingRule } from '~/common/types/index';
+import type React from 'react';
+import type {
+  DuplicateResolutionStrategy,
+  PropertyMappingRule,
+  ResolverUpdaterPayload,
+} from '~/common/types/index';
 import { useDuplicateResolutionStep } from './useDuplicateResolutionStep.js';
 
 interface DuplicateResolutionStepProps {
@@ -67,10 +71,10 @@ const RESOLUTION_STRATEGIES = [
 ];
 
 export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = ({
-                                                                                  data,
-                                                                                  onUpdate,
-                                                                                  onValidationChange,
-                                                                                }) => {
+  data,
+  onUpdate,
+  onValidationChange,
+}) => {
   const {
     customFunction,
     customFunctionError,
@@ -112,21 +116,13 @@ export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = (
               helperText="Specify which properties should be merged when duplicates are found"
             />
             <Alert severity="info" sx={{ mt: 2 }}>
-              <Typography variant="body2">
-                Merge behavior by data type:
-              </Typography>
+              <Typography variant="body2">Merge behavior by data type:</Typography>
               <List dense>
                 <ListItem>
-                  <ListItemText
-                    primary="Numbers"
-                    secondary="Sum values by default"
-                  />
+                  <ListItemText primary="Numbers" secondary="Sum values by default" />
                 </ListItem>
                 <ListItem>
-                  <ListItemText
-                    primary="Arrays"
-                    secondary="Concatenate and remove duplicates"
-                  />
+                  <ListItemText primary="Arrays" secondary="Concatenate and remove duplicates" />
                 </ListItem>
                 <ListItem>
                   <ListItemText
@@ -135,10 +131,7 @@ export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = (
                   />
                 </ListItem>
                 <ListItem>
-                  <ListItemText
-                    primary="Strings"
-                    secondary="Keep the last value"
-                  />
+                  <ListItemText primary="Strings" secondary="Keep the last value" />
                 </ListItem>
               </List>
             </Alert>
@@ -159,7 +152,10 @@ export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = (
               value={customFunction}
               onChange={handleCustomFunctionChange}
               error={!!customFunctionError}
-              helperText={customFunctionError || 'Write a function that receives (existing, duplicate) and returns the resolved value'}
+              helperText={
+                customFunctionError ||
+                'Write a function that receives (existing, duplicate) and returns the resolved value'
+              }
               placeholder={`function resolveDuplicate(existing, duplicate) {
   // Example: Keep the record with higher priority
   if (duplicate.priority > existing.priority) {
@@ -186,8 +182,8 @@ export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = (
         return (
           <Alert severity="info" sx={{ mt: 2 }}>
             <Typography variant="body2">
-              When duplicates are detected, the newer record will completely replace the existing one.
-              This is useful when you trust the latest data source more than previous ones.
+              When duplicates are detected, the newer record will completely replace the existing
+              one. This is useful when you trust the latest data source more than previous ones.
             </Typography>
           </Alert>
         );
@@ -196,8 +192,9 @@ export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = (
         return (
           <Alert severity="info" sx={{ mt: 2 }}>
             <Typography variant="body2">
-              When duplicates are detected, they will be skipped and only the first occurrence will be kept.
-              This is useful when you want to preserve the original data without modifications.
+              When duplicates are detected, they will be skipped and only the first occurrence will
+              be kept. This is useful when you want to preserve the original data without
+              modifications.
             </Typography>
           </Alert>
         );
@@ -230,7 +227,9 @@ export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = (
         control={
           <Switch
             checked={enableDuplicateDetection}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => setEnableDuplicateDetection(event.target.checked)}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+              setEnableDuplicateDetection(event.target.checked)
+            }
           />
         }
         label="Enable duplicate detection"
@@ -241,12 +240,8 @@ export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = (
         <>
           <FormControl component="fieldset">
             <FormLabel component="legend">Resolution Strategy</FormLabel>
-            <RadioGroup
-              value={strategy}
-              onChange={handleStrategyChange}
-              sx={{ mt: 2 }}
-            >
-              {RESOLUTION_STRATEGIES.map((option: typeof RESOLUTION_STRATEGIES[number]) => (
+            <RadioGroup value={strategy} onChange={handleStrategyChange} sx={{ mt: 2 }}>
+              {RESOLUTION_STRATEGIES.map((option: (typeof RESOLUTION_STRATEGIES)[number]) => (
                 <FormControlLabel
                   key={option.value}
                   value={option.value}
@@ -298,7 +293,8 @@ export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = (
           </Box>
           {(!data.draftData?.mappingRules || data.draftData?.mappingRules.length === 0) && (
             <Alert severity="warning" sx={{ mt: 2 }}>
-              No mapping rules defined yet. Complete the Property Mapping step to configure duplicate detection keys.
+              No mapping rules defined yet. Complete the Property Mapping step to configure
+              duplicate detection keys.
             </Alert>
           )}
         </>
@@ -307,7 +303,8 @@ export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = (
       {!enableDuplicateDetection && (
         <Alert severity="info">
           <Typography variant="body2">
-            Duplicate detection is disabled. All records will be processed without checking for duplicates.
+            Duplicate detection is disabled. All records will be processed without checking for
+            duplicates.
           </Typography>
         </Alert>
       )}

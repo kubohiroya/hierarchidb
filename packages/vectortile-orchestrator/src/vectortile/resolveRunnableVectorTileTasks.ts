@@ -14,14 +14,20 @@ export async function resolveRunnableVectorTileTasks<TTask = VectorTileTask>(par
   taskRegistry: {
     resolveStageTasks: (
       stage: 'vectortile',
-      tasks: TTask[],
-    ) => Promise<{ runnableTasks: TTask[]; completedCount: number; failedCount: number; total: number }>;
+      tasks: TTask[]
+    ) => Promise<{
+      runnableTasks: TTask[];
+      completedCount: number;
+      failedCount: number;
+      total: number;
+    }>;
   };
   tasks: TTask[];
 }): Promise<ResolveRunnableResult<TTask>> {
   const { nodeId, taskRegistry, tasks } = params;
 
-  const { runnableTasks, completedCount, failedCount, total } = await taskRegistry.resolveStageTasks('vectortile', tasks);
+  const { runnableTasks, completedCount, failedCount, total } =
+    await taskRegistry.resolveStageTasks('vectortile', tasks);
   const baseCompleted = Math.min(completedCount, total);
   const baseFailed = Math.min(failedCount, total - baseCompleted);
   const baseDone = Math.min(total, baseCompleted + baseFailed);
@@ -38,7 +44,9 @@ export async function resolveRunnableVectorTileTasks<TTask = VectorTileTask>(par
   return { runnableTasks, total, baseCompleted, baseFailed, baseDone };
 }
 
-export function buildVectorTileProgressReporter<TProgress extends ProgressInfo = ProgressInfo>(params: {
+export function buildVectorTileProgressReporter<
+  TProgress extends ProgressInfo = ProgressInfo,
+>(params: {
   total: number;
   baseCompleted: number;
   baseFailed: number;

@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef } from 'react';
 import { useStore } from 'jotai';
 import type { Store } from 'jotai/vanilla/store';
+import { useEffect, useMemo, useRef } from 'react';
 import {
-  type MapInteractionInitialState,
   createMapInteractionStore,
+  type MapInteractionInitialState,
   mapSearchMatchesAtom,
   mapSearchTargetsAtom,
   mapSearchTextAtom,
@@ -48,7 +48,5 @@ export const useMapInteractionInitializer = ({
 
 export const useResolvedMapInteractionStore = ({
   store,
-}: UseResolvedMapInteractionStoreArgs): Store => useMemo(
-  () => store ?? createMapInteractionStore(),
-  [store],
-);
+}: UseResolvedMapInteractionStoreArgs): Store =>
+  useMemo(() => store ?? createMapInteractionStore(), [store]);

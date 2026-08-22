@@ -1,14 +1,13 @@
 /**
-  * TreeConsoleHeader
-  * props
-  */
+ * TreeConsoleHeader
+ * props
+ */
 
-import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { TreeConsoleHeader } from '../TreeConsoleHeader';
-import type { TreeConsoleHeaderProps, TreeViewController } from '../../types';
 import { type NodeId, type NodeType, toNodeId } from '@hierarchidb/core-types';
-import type { TreeNodeWithChildren } from '../../types';
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import type { TreeConsoleHeaderProps, TreeNodeWithChildren, TreeViewController } from '../../types';
+import { TreeConsoleHeader } from '../TreeConsoleHeader';
 
 const mockController: TreeViewController = {
   currentNode: null,
@@ -18,24 +17,15 @@ const mockController: TreeViewController = {
   selectionMode: 'checkbox' as const,
   data: [],
   expandedRowIds: new Set(),
-  selectNode: () => {
-  },
-  selectMultipleNodes: () => {
-  },
-  expandNode: () => {
-  },
-  collapseNode: () => {
-  },
-  moveNodes: async () => {
-  },
-  archiveNodes: async () => {
-  },
-  duplicateNodes: async () => {
-  },
-  startEdit: async () => {
-  },
-  startCreate: async () => {
-  },
+  selectNode: () => {},
+  selectMultipleNodes: () => {},
+  expandNode: () => {},
+  collapseNode: () => {},
+  moveNodes: async () => {},
+  archiveNodes: async () => {},
+  duplicateNodes: async () => {},
+  startEdit: async () => {},
+  startCreate: async () => {},
   undo: async () => ({ success: true }),
   redo: async () => ({ success: true }),
   canUndo: false,
@@ -169,7 +159,7 @@ describe('TreeConsoleHeader', () => {
     ];
 
     render(
-      <TreeConsoleHeader {...defaultProps} previousNodePath={previousNodePath} isRootNode={false} />,
+      <TreeConsoleHeader {...defaultProps} previousNodePath={previousNodePath} isRootNode={false} />
     );
 
     expect(screen.queryByText(/Path: Root > Parent/)).toBeNull();

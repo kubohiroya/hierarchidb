@@ -23,7 +23,8 @@ export function getTreeNodeName(node: TreeNode): string {
 
 export function getTreeNodeDescription(node: TreeNode): string {
   const metaRaw = (node as { metadata?: { description?: unknown } }).metadata?.description;
-  const draftRaw = (node as { draftMetadata?: { description?: unknown } | null }).draftMetadata?.description;
+  const draftRaw = (node as { draftMetadata?: { description?: unknown } | null }).draftMetadata
+    ?.description;
   const metaDescription = normalizeText(metaRaw);
 
   if (draftRaw !== undefined && draftRaw !== null) {

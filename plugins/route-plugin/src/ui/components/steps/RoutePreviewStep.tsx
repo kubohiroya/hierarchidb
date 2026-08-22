@@ -2,9 +2,17 @@
  * RoutePreviewStep - Step 6 of route creation dialog.
  */
 
-import type React from 'react';
+import { FloatingWindow } from '@hierarchidb/components';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { RouteEntity } from '@hierarchidb/route-api';
 import {
-  useTheme,
+  DEFAULT_MAP_CONFIG,
+  MapToggleCard,
+  ResourceLayerMap,
+  RoutePreviewList,
+} from '@hierarchidb/ui-map';
+import { FilterAlt, Palette, TableChart } from '@mui/icons-material';
+import {
   Alert,
   Box,
   Button,
@@ -16,20 +24,17 @@ import {
   Slider,
   TextField,
   Typography,
+  useTheme,
 } from '@mui/material';
-import { FilterAlt, Palette, TableChart } from '@mui/icons-material';
-import { FloatingWindow } from '@hierarchidb/components';
+import type React from 'react';
 import { RoutePreviewEmptyContent, RoutePreviewHoverSnackbar } from './RoutePreviewStepElements.js';
-import { DEFAULT_MAP_CONFIG, MapToggleCard, ResourceLayerMap, RoutePreviewList } from '@hierarchidb/ui-map';
-import type { NodeId } from '@hierarchidb/core-types';
-import type { RouteEntity } from '@hierarchidb/route-api';
-import { useRoutePreviewStep } from './useRoutePreviewStep.js';
 import {
   LINE_WIDTH_MAX,
   LINE_WIDTH_MIN,
   ROUTE_MODE_COLUMNS,
   ROUTE_STYLE_OPTIONS,
 } from './routeSelectionConstants.js';
+import { useRoutePreviewStep } from './useRoutePreviewStep.js';
 
 interface RoutePreviewStepProps {
   draft: Partial<RouteEntity>;
@@ -89,19 +94,21 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
     <Box display="flex" flexDirection="column" gap={2}>
       <Typography variant="h6">{t('preview.title', 'Preview')}</Typography>
       <Typography variant="body2" color="text.secondary">
-        {t('preview.description', 'Preview the generated route geometry once the stage is complete.')}
+        {t(
+          'preview.description',
+          'Preview the generated route geometry once the stage is complete.'
+        )}
       </Typography>
 
       {showMissingGeometry && (
         <Alert severity="info">
-          {t('preview.missing', 'No route geometry is available yet. Run Build to generate a preview.')}
+          {t(
+            'preview.missing',
+            'No route geometry is available yet. Run Build to generate a preview.'
+          )}
         </Alert>
       )}
-      {lineStringsError && (
-        <Alert severity="error">
-          {lineStringsError}
-        </Alert>
-      )}
+      {lineStringsError && <Alert severity="error">{lineStringsError}</Alert>}
       {buildErrors.length > 0 && (
         <Alert severity="warning">
           <Typography variant="body2" fontWeight={600}>
@@ -189,10 +196,12 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                     loading={lineStringsLoading}
                     error={lineStringsError ?? undefined}
                     columnLabels={columnLabels}
-                    modeMeta={Object.fromEntries(Object.entries(modeMeta).map(([key, meta]) => [
-                      key,
-                      { ...meta, icon: <meta.Icon fontSize="small" /> },
-                    ]))}
+                    modeMeta={Object.fromEntries(
+                      Object.entries(modeMeta).map(([key, meta]) => [
+                        key,
+                        { ...meta, icon: <meta.Icon fontSize="small" /> },
+                      ])
+                    )}
                     search={{
                       value: listSearch,
                       onChange: setListSearch,
@@ -202,11 +211,13 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                     countLabels={countLabels}
                     matchedRows={matchedIdSet}
                     selectedRows={new Set(selectedIds)}
-                    onSelectionChange={(next: Set<string | number>) => setSelectedIds(Array.from(next).map(String))}
+                    onSelectionChange={(next: Set<string | number>) =>
+                      setSelectedIds(Array.from(next).map(String))
+                    }
                     errorSummaryById={staleSummaryById}
                     errorColumnLabels={errorColumnLabels}
                     statusLabels={statusLabels}
-                    toolbarActions={(
+                    toolbarActions={
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Button
                           size="small"
@@ -224,10 +235,12 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                           </Typography>
                         ) : null}
                       </Box>
-                    )}
-                    emptyContent={emptyContentProps ? (
-                      <RoutePreviewEmptyContent {...emptyContentProps} />
-                    ) : undefined}
+                    }
+                    emptyContent={
+                      emptyContentProps ? (
+                        <RoutePreviewEmptyContent {...emptyContentProps} />
+                      ) : undefined
+                    }
                   />
                 </FloatingWindow>
               ) : null}
@@ -249,7 +262,10 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                 >
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <Typography variant="caption" color="text.secondary">
-                      {t('routeConfig.style.description', 'Configure colors and line styles per transport mode.')}
+                      {t(
+                        'routeConfig.style.description',
+                        'Configure colors and line styles per transport mode.'
+                      )}
                     </Typography>
                     <Typography variant="subtitle2">
                       {t('routeConfig.style.modeColorsTitle', 'Mode colors')}
@@ -266,8 +282,14 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                               type="color"
                               size="small"
                               value={routeStyleConfig.modeColors[mode.id]}
-                              onChange={(event) => handleModeColorChange(mode.id, event.target.value)}
-                              inputProps={{ 'aria-label': String(t('routeConfig.style.modeColorLabel', 'Color')) }}
+                              onChange={(event) =>
+                                handleModeColorChange(mode.id, event.target.value)
+                              }
+                              inputProps={{
+                                'aria-label': String(
+                                  t('routeConfig.style.modeColorLabel', 'Color')
+                                ),
+                              }}
                             />
                           </Box>
                         </Grid>
@@ -306,7 +328,7 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                   </Box>
                 </FloatingWindow>
               ) : null}
-              {(showModeWindowButton || showListWindowButton || showStyleWindowButton) ? (
+              {showModeWindowButton || showListWindowButton || showStyleWindowButton ? (
                 <Box position="absolute" top={8} right={8} zIndex={3}>
                   <Box display="flex" flexDirection="column" gap={1}>
                     {showModeWindowButton ? (
@@ -314,7 +336,9 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                         variant="contained"
                         color="primary"
                         size="large"
-                        aria-label={String(t('preview.modeFilters.reopen', 'Show route mode filters'))}
+                        aria-label={String(
+                          t('preview.modeFilters.reopen', 'Show route mode filters')
+                        )}
                         onClick={modeWindow.handlers.show}
                       >
                         <FilterAlt />
@@ -346,13 +370,18 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                 </Box>
               ) : null}
               {mapInstance ? (
-                  <RoutePreviewHoverSnackbar
-                    {...hoverSnackbarProps}
-                    isDarkMode={isDarkMode}
-                    popupHint={String(t('preview.hoverShortcutHelp', 'Click one of the nearby routes to add/remove selection.'))}
-                  />
-                ) : null}
-              </Box>
+                <RoutePreviewHoverSnackbar
+                  {...hoverSnackbarProps}
+                  isDarkMode={isDarkMode}
+                  popupHint={String(
+                    t(
+                      'preview.hoverShortcutHelp',
+                      'Click one of the nearby routes to add/remove selection.'
+                    )
+                  )}
+                />
+              ) : null}
+            </Box>
           </Paper>
         </>
       )}

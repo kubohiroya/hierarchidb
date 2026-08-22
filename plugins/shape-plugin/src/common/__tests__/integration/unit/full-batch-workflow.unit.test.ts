@@ -1,16 +1,16 @@
 // @ts-nocheck
 /**
-  * @file full-build-workflow.test.ts
+ * @file full-build-workflow.test.ts
  * @description
-  * :
+ * :
  * 1. - geoBoundaries
  * 2. 1 -
  * 3. 2 -
  * 4. -
-  * :
+ * :
  * - Level 0
  * -
-  */
+ */
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import 'fake-indexeddb/auto';
@@ -52,122 +52,148 @@ describe('Full Build Workflow Integration Tests', () => {
   });
 
   describe('Lightweight Test - Japan Only', () => {
-    it('should complete full workflow for Japan Level 0 data', async () => {
-      // Given: Japan-only test entity
-      const japanEntity = createTestShapeEntityJapanOnly();
+    it(
+      'should complete full workflow for Japan Level 0 data',
+      async () => {
+        // Given: Japan-only test entity
+        const japanEntity = createTestShapeEntityJapanOnly();
 
-      // Mock successful geoBoundaries API response
-      const mockJapanGeoJSON = {
-        type: 'FeatureCollection',
-        features: [{
-          type: 'Feature',
-          properties: {
-            shapeName: 'Japan',
-            shapeISO: 'JPN',
-            shapeID: 'JPN-ADM0-1_0_0-B1',
-            shapeGroup: 'JPN',
-            shapeType: 'ADM0',
-          },
-          geometry: {
-            type: 'Polygon',
-            coordinates: [[
-              [129.408463, 31.029579],
-              [129.468994, 31.029579],
-              [129.468994, 31.090110],
-              [129.408463, 31.090110],
-              [129.408463, 31.029579],
-            ]],
-          },
-        }],
-      };
+        // Mock successful geoBoundaries API response
+        const mockJapanGeoJSON = {
+          type: 'FeatureCollection',
+          features: [
+            {
+              type: 'Feature',
+              properties: {
+                shapeName: 'Japan',
+                shapeISO: 'JPN',
+                shapeID: 'JPN-ADM0-1_0_0-B1',
+                shapeGroup: 'JPN',
+                shapeType: 'ADM0',
+              },
+              geometry: {
+                type: 'Polygon',
+                coordinates: [
+                  [
+                    [129.408463, 31.029579],
+                    [129.468994, 31.029579],
+                    [129.468994, 31.09011],
+                    [129.408463, 31.09011],
+                    [129.408463, 31.029579],
+                  ],
+                ],
+              },
+            },
+          ],
+        };
 
-      (global.fetch).mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockJapanGeoJSON,
-      });
+        global.fetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockJapanGeoJSON,
+        });
 
-      // When: Execute full build workflow
-      const startTime = Date.now();
+        // When: Execute full build workflow
+        const startTime = Date.now();
 
-      try {
-        // Stage 1: Source
-        console.log('🔄 Starting source stage...');
-        const fetchResult = await simulateFetchStage(japanEntity);
-        expect(fetchResult.success).toBe(true);
-        expect(fetchResult.filesDownloaded).toBe(EXPECTED_BATCH_RESULTS.japanOnly.fetchStage.expectedFiles);
+        try {
+          // Stage 1: Source
+          console.log('🔄 Starting source stage...');
+          const fetchResult = await simulateFetchStage(japanEntity);
+          expect(fetchResult.success).toBe(true);
+          expect(fetchResult.filesDownloaded).toBe(
+            EXPECTED_BATCH_RESULTS.japanOnly.fetchStage.expectedFiles
+          );
 
-        // Stage 2: Geometry
-        console.log('🔄 Starting geometry stage...');
-        const transformResult = await simulateTransformStage(fetchResult.data);
-        expect(transformResult.success).toBe(true);
-        expect(transformResult.transformedFeatures).toBe(EXPECTED_BATCH_RESULTS.japanOnly.transformStage.expectedTransformedFeatures);
+          // Stage 2: Geometry
+          console.log('🔄 Starting geometry stage...');
+          const transformResult = await simulateTransformStage(fetchResult.data);
+          expect(transformResult.success).toBe(true);
+          expect(transformResult.transformedFeatures).toBe(
+            EXPECTED_BATCH_RESULTS.japanOnly.transformStage.expectedTransformedFeatures
+          );
 
-        // Stage 3: Vector Tiles Generation
-        console.log('🔄 Starting tileEmit stage...');
-        const vectorTilesResult = await simulateVtStage(transformResult.data);
-        expect(vectorTilesResult.success).toBe(true);
-        expect(vectorTilesResult.tilesGenerated).toBeGreaterThanOrEqual(EXPECTED_BATCH_RESULTS.japanOnly.vtStage.expectedMinTiles);
-        expect(vectorTilesResult.tilesGenerated).toBeLessThanOrEqual(EXPECTED_BATCH_RESULTS.japanOnly.vtStage.expectedMaxTiles);
+          // Stage 3: Vector Tiles Generation
+          console.log('🔄 Starting tileEmit stage...');
+          const vectorTilesResult = await simulateVtStage(transformResult.data);
+          expect(vectorTilesResult.success).toBe(true);
+          expect(vectorTilesResult.tilesGenerated).toBeGreaterThanOrEqual(
+            EXPECTED_BATCH_RESULTS.japanOnly.vtStage.expectedMinTiles
+          );
+          expect(vectorTilesResult.tilesGenerated).toBeLessThanOrEqual(
+            EXPECTED_BATCH_RESULTS.japanOnly.vtStage.expectedMaxTiles
+          );
 
-        const totalTime = Date.now() - startTime;
-        console.log(`✅ Full workflow completed in ${totalTime}ms`);
-
-      } catch (error) {
-        console.error('❌ Workflow failed:', error);
-        throw error;
-      }
-
-    }, TEST_TIMEOUTS.fullWorkflow);
+          const totalTime = Date.now() - startTime;
+          console.log(`✅ Full workflow completed in ${totalTime}ms`);
+        } catch (error) {
+          console.error('❌ Workflow failed:', error);
+          throw error;
+        }
+      },
+      TEST_TIMEOUTS.fullWorkflow
+    );
   });
 
   describe('Full Test - Japan, Germany, USA', () => {
-    it('should complete full workflow for three countries Level 0 data', async () => {
-      // Given: Three countries test entity  
-      const testEntity = createTestShapeEntity();
+    it(
+      'should complete full workflow for three countries Level 0 data',
+      async () => {
+        // Given: Three countries test entity
+        const testEntity = createTestShapeEntity();
 
-      // Mock geoBoundaries API responses for all three countries
-      setupMockGeoBoundariesResponses();
+        // Mock geoBoundaries API responses for all three countries
+        setupMockGeoBoundariesResponses();
 
-      // When: Execute full build workflow
-      const startTime = Date.now();
+        // When: Execute full build workflow
+        const startTime = Date.now();
 
-      try {
-        // Stage 1: Source (multiple countries)
-        console.log('🔄 Starting source stage for 3 countries...');
-        const fetchResult = await simulateFetchStage(testEntity);
-        expect(fetchResult.success).toBe(true);
-        expect(fetchResult.filesDownloaded).toBe(EXPECTED_BATCH_RESULTS.threeCountries.fetchStage.expectedFiles);
-        expect(fetchResult.countriesProcessed).toEqual(['JPN', 'DEU', 'USA']);
+        try {
+          // Stage 1: Source (multiple countries)
+          console.log('🔄 Starting source stage for 3 countries...');
+          const fetchResult = await simulateFetchStage(testEntity);
+          expect(fetchResult.success).toBe(true);
+          expect(fetchResult.filesDownloaded).toBe(
+            EXPECTED_BATCH_RESULTS.threeCountries.fetchStage.expectedFiles
+          );
+          expect(fetchResult.countriesProcessed).toEqual(['JPN', 'DEU', 'USA']);
 
-        // Stage 2: Geometry (bulk processing)
-        console.log('🔄 Starting geometry stage for 3 countries...');
-        const transformResult = await simulateTransformStage(fetchResult.data);
-        expect(transformResult.success).toBe(true);
-        expect(transformResult.transformedFeatures).toBe(EXPECTED_BATCH_RESULTS.threeCountries.transformStage.expectedTransformedFeatures);
+          // Stage 2: Geometry (bulk processing)
+          console.log('🔄 Starting geometry stage for 3 countries...');
+          const transformResult = await simulateTransformStage(fetchResult.data);
+          expect(transformResult.success).toBe(true);
+          expect(transformResult.transformedFeatures).toBe(
+            EXPECTED_BATCH_RESULTS.threeCountries.transformStage.expectedTransformedFeatures
+          );
 
-        // Stage 3: Vector Tiles (multi-country coverage)
-        console.log('🔄 Starting tileEmit stage for 3 countries...');
-        const vectorTilesResult = await simulateVtStage(transformResult.data);
-        expect(vectorTilesResult.success).toBe(true);
-        expect(vectorTilesResult.tilesGenerated).toBeGreaterThanOrEqual(EXPECTED_BATCH_RESULTS.threeCountries.vtStage.expectedMinTiles);
-        expect(vectorTilesResult.tilesGenerated).toBeLessThanOrEqual(EXPECTED_BATCH_RESULTS.threeCountries.vtStage.expectedMaxTiles);
-        expect(vectorTilesResult.zoomLevels).toEqual(EXPECTED_BATCH_RESULTS.threeCountries.vtStage.expectedZoomLevels);
+          // Stage 3: Vector Tiles (multi-country coverage)
+          console.log('🔄 Starting tileEmit stage for 3 countries...');
+          const vectorTilesResult = await simulateVtStage(transformResult.data);
+          expect(vectorTilesResult.success).toBe(true);
+          expect(vectorTilesResult.tilesGenerated).toBeGreaterThanOrEqual(
+            EXPECTED_BATCH_RESULTS.threeCountries.vtStage.expectedMinTiles
+          );
+          expect(vectorTilesResult.tilesGenerated).toBeLessThanOrEqual(
+            EXPECTED_BATCH_RESULTS.threeCountries.vtStage.expectedMaxTiles
+          );
+          expect(vectorTilesResult.zoomLevels).toEqual(
+            EXPECTED_BATCH_RESULTS.threeCountries.vtStage.expectedZoomLevels
+          );
 
-        const totalTime = Date.now() - startTime;
-        console.log(`✅ Full workflow for 3 countries completed in ${totalTime}ms`);
-
-      } catch (error) {
-        console.error('❌ Three countries workflow failed:', error);
-        throw error;
-      }
-
-    }, TEST_TIMEOUTS.fullWorkflow);
+          const totalTime = Date.now() - startTime;
+          console.log(`✅ Full workflow for 3 countries completed in ${totalTime}ms`);
+        } catch (error) {
+          console.error('❌ Three countries workflow failed:', error);
+          throw error;
+        }
+      },
+      TEST_TIMEOUTS.fullWorkflow
+    );
   });
 
   describe('Error Handling Integration', () => {
     it('should handle network errors gracefully during source', async () => {
       // Given: Network error scenario
-      (global.fetch).mockRejectedValueOnce(new Error('Network request failed'));
+      global.fetch.mockRejectedValueOnce(new Error('Network request failed'));
 
       // When: Execute source with network failure
       const fetchResult = await simulateFetchStage(testEntity);
@@ -185,7 +211,7 @@ describe('Full Build Workflow Integration Tests', () => {
       // When: Execute geometry with corrupt data
       const transformResult = await simulateTransformStage(corruptData);
 
-      // Then: Data error should be handled  
+      // Then: Data error should be handled
       expect(transformResult.success).toBe(false);
       expect(transformResult.error).toBeDefined();
       expect(transformResult.error?.type).toBe('INVALID_DATA_FORMAT');
@@ -231,7 +257,11 @@ describe('Full Build Workflow Integration Tests', () => {
       // Check if source load was mocked and successful
       if (global.fetch) {
         for (const country of countries) {
-          await fetch(GEOBOUNDARIES_TEST_ENDPOINTS.download[country as keyof typeof GEOBOUNDARIES_TEST_ENDPOINTS.download]);
+          await fetch(
+            GEOBOUNDARIES_TEST_ENDPOINTS.download[
+              country as keyof typeof GEOBOUNDARIES_TEST_ENDPOINTS.download
+            ]
+          );
         }
       }
 
@@ -240,7 +270,7 @@ describe('Full Build Workflow Integration Tests', () => {
         filesDownloaded,
         countriesProcessed: countries,
         data: {
-          features: countries.map(country => ({
+          features: countries.map((country) => ({
             country,
             geometry: { type: 'Polygon', coordinates: [] },
             properties: { name: country },
@@ -302,7 +332,7 @@ describe('Full Build Workflow Integration Tests', () => {
         tilesGenerated,
         zoomLevels,
         data: {
-          tiles: zoomLevels.map(zoom => ({
+          tiles: zoomLevels.map((zoom) => ({
             zoom,
             tileCount: Math.ceil(features / (zoom + 1)),
           })),
@@ -321,42 +351,72 @@ describe('Full Build Workflow Integration Tests', () => {
     const mockResponses = {
       JPN: {
         type: 'FeatureCollection',
-        features: [{
-          type: 'Feature',
-          properties: { shapeName: 'Japan', shapeISO: 'JPN' },
-          geometry: {
-            type: 'Polygon',
-            coordinates: [[[129.4, 31.0], [129.5, 31.0], [129.5, 31.1], [129.4, 31.1], [129.4, 31.0]]],
+        features: [
+          {
+            type: 'Feature',
+            properties: { shapeName: 'Japan', shapeISO: 'JPN' },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [
+                [
+                  [129.4, 31.0],
+                  [129.5, 31.0],
+                  [129.5, 31.1],
+                  [129.4, 31.1],
+                  [129.4, 31.0],
+                ],
+              ],
+            },
           },
-        }],
+        ],
       },
       DEU: {
         type: 'FeatureCollection',
-        features: [{
-          type: 'Feature',
-          properties: { shapeName: 'Germany', shapeISO: 'DEU' },
-          geometry: {
-            type: 'Polygon',
-            coordinates: [[[8.0, 50.0], [8.1, 50.0], [8.1, 50.1], [8.0, 50.1], [8.0, 50.0]]],
+        features: [
+          {
+            type: 'Feature',
+            properties: { shapeName: 'Germany', shapeISO: 'DEU' },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [
+                [
+                  [8.0, 50.0],
+                  [8.1, 50.0],
+                  [8.1, 50.1],
+                  [8.0, 50.1],
+                  [8.0, 50.0],
+                ],
+              ],
+            },
           },
-        }],
+        ],
       },
       USA: {
         type: 'FeatureCollection',
-        features: [{
-          type: 'Feature',
-          properties: { shapeName: 'United States', shapeISO: 'USA' },
-          geometry: {
-            type: 'Polygon',
-            coordinates: [[[-100.0, 40.0], [-99.9, 40.0], [-99.9, 40.1], [-100.0, 40.1], [-100.0, 40.0]]],
+        features: [
+          {
+            type: 'Feature',
+            properties: { shapeName: 'United States', shapeISO: 'USA' },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [
+                [
+                  [-100.0, 40.0],
+                  [-99.9, 40.0],
+                  [-99.9, 40.1],
+                  [-100.0, 40.1],
+                  [-100.0, 40.0],
+                ],
+              ],
+            },
           },
-        }],
+        ],
       },
     };
 
-    (global.fetch).mockImplementation((url: string) => {
-      const country = Object.keys(GEOBOUNDARIES_TEST_ENDPOINTS.download).find(c =>
-        url.includes(c),
+    global.fetch.mockImplementation((url: string) => {
+      const country = Object.keys(GEOBOUNDARIES_TEST_ENDPOINTS.download).find((c) =>
+        url.includes(c)
       );
 
       if (country && mockResponses[country as keyof typeof mockResponses]) {

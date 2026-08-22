@@ -1,38 +1,35 @@
-import { Dexie, type Table } from 'dexie';
 import type { NodeId } from '@hierarchidb/core-types';
 import {
-  RESET_LEGACY_BUILD_SESSION_AND_TASKS,
   isShapeBuildSessionRecoverableContractError,
+  RESET_LEGACY_BUILD_SESSION_AND_TASKS,
   type ShapeBuildSessionRecoverableContractError,
   type ShapeBuildSessionRecoveryRequest,
   type ShapeBuildSessionRecoveryResult,
 } from '@hierarchidb/shape-api';
+import { Dexie, type Table } from 'dexie';
 import type {
-  BuildSessionRecord,
   BuildSessionHeartbeat,
+  BuildSessionRecord,
   BuildSessionStatus,
   BuildStage,
   BuildStageStatus,
   EphemeralBuildTaskRecord,
-  EphemeralSourceCacheMetaRecord,
-  EphemeralSourceCacheRecord,
-  EphemeralTileIdToBufferRelation,
   EphemeralGeometryCacheMetaRecord,
   EphemeralGeometryCacheRecord,
   EphemeralGeometryErrorRecord,
+  EphemeralSourceCacheMetaRecord,
+  EphemeralSourceCacheRecord,
+  EphemeralTileIdToBufferRelation,
 } from './EphemeralDBRecordTypes';
-import { probeBuildSession } from './sessionHelpers';
 import {
   EPHEMERAL_DB_SCHEMA_V1,
   EPHEMERAL_DB_SCHEMA_V2,
   EPHEMERAL_DB_SCHEMA_V3,
   EPHEMERAL_DB_SCHEMA_V4,
 } from './EphemeralDBRecordTypes';
+import { probeBuildSession } from './sessionHelpers';
 
-const applyTopLevelMods = <T extends object>(
-  current: T,
-  mods: Record<string, unknown>,
-): T => {
+const applyTopLevelMods = <T extends object>(current: T, mods: Record<string, unknown>): T => {
   const next = { ...current } as Record<string, unknown>;
   const safeMods: Record<string, unknown> = {};
   Object.entries(mods).forEach(([key, value]) => {
@@ -85,7 +82,9 @@ const toSourceCacheMeta = (record: EphemeralSourceCacheRecord): EphemeralSourceC
   return meta;
 };
 
-const toGeometryCacheMeta = (record: EphemeralGeometryCacheRecord): EphemeralGeometryCacheMetaRecord => {
+const toGeometryCacheMeta = (
+  record: EphemeralGeometryCacheRecord
+): EphemeralGeometryCacheMetaRecord => {
   return {
     id: record.id,
     nodeId: record.nodeId,
@@ -189,7 +188,7 @@ export class EphemeralDB extends Dexie {
   buildSessionHeartbeats!: Table<BuildSessionHeartbeat, string>;
   buildSessionStatuses!: Table<BuildSessionStatus, string>;
   buildStageStatuses!: Table<BuildStageStatus, string>;
-  
+
   // Other tables
   buildTasks!: Table<EphemeralBuildTaskRecord, string>;
   sourceCache!: Table<EphemeralSourceCacheRecord, string>;
@@ -210,11 +209,10 @@ export class EphemeralDB extends Dexie {
       sessions: null, // Remove old sessions table
     });
     // V5: keep schema at buildSessionConfigs without compatibility migration
-    this.version(5)
-      .stores({
-        ...EPHEMERAL_DB_SCHEMA_V4,
-        sessions: null,
-      });
+    this.version(5).stores({
+      ...EPHEMERAL_DB_SCHEMA_V4,
+      sessions: null,
+    });
     // V6: schema-stable no-op bump (keeps current runtime at latest version)
     this.version(6).stores({
       ...EPHEMERAL_DB_SCHEMA_V4,
@@ -226,7 +224,7 @@ export class EphemeralDB extends Dexie {
     this.buildSessionHeartbeats = this.table('buildSessionHeartbeats');
     this.buildSessionStatuses = this.table('buildSessionStatuses');
     this.buildStageStatuses = this.table('buildStageStatuses');
-    
+
     // Other tables
     this.buildTasks = this.table('buildTasks');
     this.sourceCache = this.table('sourceCache');
@@ -266,7 +264,7 @@ export class EphemeralDB extends Dexie {
         }
         fireAndForgetMetaOperation(
           () => this.sourceCacheMeta.delete(primaryKey),
-          'sourceCacheMeta:delete',
+          'sourceCacheMeta:delete'
         );
       }
     });
@@ -278,7 +276,10 @@ export class EphemeralDB extends Dexie {
         void tx.table('geometryCacheMeta').put(meta);
         return;
       }
-      fireAndForgetMetaOperation(() => this.geometryCacheMeta.put(meta), 'geometryCacheMeta:create');
+      fireAndForgetMetaOperation(
+        () => this.geometryCacheMeta.put(meta),
+        'geometryCacheMeta:create'
+      );
     });
     this.geometryCache.hook('updating', (mods, _primaryKey, record, transaction) => {
       if (!isEphemeralGeometryCacheRecord(record) || !isRecord(mods)) return;
@@ -290,7 +291,7 @@ export class EphemeralDB extends Dexie {
       } else {
         fireAndForgetMetaOperation(
           () => this.geometryCacheMeta.put(meta),
-          'geometryCacheMeta:update',
+          'geometryCacheMeta:update'
         );
       }
       return mods;
@@ -304,38 +305,42 @@ export class EphemeralDB extends Dexie {
         }
         fireAndForgetMetaOperation(
           () => this.geometryCacheMeta.delete(primaryKey),
-          'geometryCacheMeta:delete',
+          'geometryCacheMeta:delete'
         );
       }
     });
   }
 
   async clearNodeData(nodeId: NodeId): Promise<void> {
-    await this.transaction('rw', [
-      this.sourceCache,
-      this.sourceCacheMeta,
-      this.geometryCache,
-      this.geometryCacheMeta,
-      this.buildSessionConfigs,
-      this.buildSessionHeartbeats,
-      this.buildSessionStatuses,
-      this.buildStageStatuses,
-      this.tileEmitBufferRelations,
-      this.buildTasks,
-      this.geometryErrors,
-    ], async () => {
-      await this.sourceCache.where('nodeId').equals(nodeId).delete();
-      await this.sourceCacheMeta.where('nodeId').equals(nodeId).delete();
-      await this.geometryCache.where('nodeId').equals(nodeId).delete();
-      await this.geometryCacheMeta.where('nodeId').equals(nodeId).delete();
-      await this.buildSessionConfigs.where('nodeId').equals(nodeId).delete();
-      await this.buildSessionHeartbeats.where('nodeId').equals(nodeId).delete();
-      await this.buildSessionStatuses.where('nodeId').equals(nodeId).delete();
-      await this.buildStageStatuses.where('nodeId').equals(nodeId).delete();
-      await this.tileEmitBufferRelations.where('nodeId').equals(nodeId).delete();
-      await this.buildTasks.where('nodeId').equals(nodeId).delete();
-      await this.geometryErrors.where('nodeId').equals(nodeId).delete();
-    });
+    await this.transaction(
+      'rw',
+      [
+        this.sourceCache,
+        this.sourceCacheMeta,
+        this.geometryCache,
+        this.geometryCacheMeta,
+        this.buildSessionConfigs,
+        this.buildSessionHeartbeats,
+        this.buildSessionStatuses,
+        this.buildStageStatuses,
+        this.tileEmitBufferRelations,
+        this.buildTasks,
+        this.geometryErrors,
+      ],
+      async () => {
+        await this.sourceCache.where('nodeId').equals(nodeId).delete();
+        await this.sourceCacheMeta.where('nodeId').equals(nodeId).delete();
+        await this.geometryCache.where('nodeId').equals(nodeId).delete();
+        await this.geometryCacheMeta.where('nodeId').equals(nodeId).delete();
+        await this.buildSessionConfigs.where('nodeId').equals(nodeId).delete();
+        await this.buildSessionHeartbeats.where('nodeId').equals(nodeId).delete();
+        await this.buildSessionStatuses.where('nodeId').equals(nodeId).delete();
+        await this.buildStageStatuses.where('nodeId').equals(nodeId).delete();
+        await this.tileEmitBufferRelations.where('nodeId').equals(nodeId).delete();
+        await this.buildTasks.where('nodeId').equals(nodeId).delete();
+        await this.geometryErrors.where('nodeId').equals(nodeId).delete();
+      }
+    );
   }
 
   async recoverLegacyBuildSession(
@@ -405,58 +410,68 @@ export class EphemeralDB extends Dexie {
   }
 
   async hasStageData(nodeId: NodeId, stage: BuildStage): Promise<boolean> {
-    return this.transaction('r', [this.sourceCacheMeta, this.geometryCacheMeta, this.tileEmitBufferRelations], async () => {
-      switch (stage) {
-        case 'source':
-          return (await this.sourceCacheMeta.where('nodeId').equals(nodeId).count()) > 0;
-        case 'geometry':
-          return (await this.geometryCacheMeta
-            .where('[nodeId+timestamp]')
-            .between([nodeId, 1], [nodeId, Dexie.maxKey])
-            .count()) > 0;
-        case 'tileEmit':
-          return (await this.tileEmitBufferRelations.where('nodeId').equals(nodeId).count()) > 0;
-        default:
-          return false;
+    return this.transaction(
+      'r',
+      [this.sourceCacheMeta, this.geometryCacheMeta, this.tileEmitBufferRelations],
+      async () => {
+        switch (stage) {
+          case 'source':
+            return (await this.sourceCacheMeta.where('nodeId').equals(nodeId).count()) > 0;
+          case 'geometry':
+            return (
+              (await this.geometryCacheMeta
+                .where('[nodeId+timestamp]')
+                .between([nodeId, 1], [nodeId, Dexie.maxKey])
+                .count()) > 0
+            );
+          case 'tileEmit':
+            return (await this.tileEmitBufferRelations.where('nodeId').equals(nodeId).count()) > 0;
+          default:
+            return false;
+        }
       }
-    });
+    );
   }
 
   async clearStage(nodeId: NodeId, stage: BuildStage): Promise<void> {
-    await this.transaction('rw', [
-      this.sourceCache,
-      this.sourceCacheMeta,
-      this.geometryCache,
-      this.geometryCacheMeta,
-      this.buildSessionConfigs,
-      this.buildSessionHeartbeats,
-      this.buildSessionStatuses,
-      this.buildStageStatuses,
-      this.tileEmitBufferRelations,
-      this.geometryErrors,
-    ], async () => {
-      switch (stage) {
-        case 'source':
-          await this.sourceCache.where('nodeId').equals(nodeId).delete();
-          await this.sourceCacheMeta.where('nodeId').equals(nodeId).delete();
-          break;
-        case 'geometry':
-          await this.geometryCache.where('nodeId').equals(nodeId).delete();
-          await this.geometryCacheMeta.where('nodeId').equals(nodeId).delete();
-          await this.tileEmitBufferRelations.where('nodeId').equals(nodeId).delete();
-          await this.geometryErrors.where('nodeId').equals(nodeId).delete();
-          break;
-        case 'tileEmit':
-          await this.tileEmitBufferRelations.where('nodeId').equals(nodeId).delete();
-          break;
-        default:
-          break;
+    await this.transaction(
+      'rw',
+      [
+        this.sourceCache,
+        this.sourceCacheMeta,
+        this.geometryCache,
+        this.geometryCacheMeta,
+        this.buildSessionConfigs,
+        this.buildSessionHeartbeats,
+        this.buildSessionStatuses,
+        this.buildStageStatuses,
+        this.tileEmitBufferRelations,
+        this.geometryErrors,
+      ],
+      async () => {
+        switch (stage) {
+          case 'source':
+            await this.sourceCache.where('nodeId').equals(nodeId).delete();
+            await this.sourceCacheMeta.where('nodeId').equals(nodeId).delete();
+            break;
+          case 'geometry':
+            await this.geometryCache.where('nodeId').equals(nodeId).delete();
+            await this.geometryCacheMeta.where('nodeId').equals(nodeId).delete();
+            await this.tileEmitBufferRelations.where('nodeId').equals(nodeId).delete();
+            await this.geometryErrors.where('nodeId').equals(nodeId).delete();
+            break;
+          case 'tileEmit':
+            await this.tileEmitBufferRelations.where('nodeId').equals(nodeId).delete();
+            break;
+          default:
+            break;
+        }
+        await this.buildSessionConfigs.where('nodeId').equals(nodeId).delete();
+        await this.buildSessionHeartbeats.where('nodeId').equals(nodeId).delete();
+        await this.buildSessionStatuses.where('nodeId').equals(nodeId).delete();
+        await this.buildStageStatuses.where('nodeId').equals(nodeId).delete();
       }
-      await this.buildSessionConfigs.where('nodeId').equals(nodeId).delete();
-      await this.buildSessionHeartbeats.where('nodeId').equals(nodeId).delete();
-      await this.buildSessionStatuses.where('nodeId').equals(nodeId).delete();
-      await this.buildStageStatuses.where('nodeId').equals(nodeId).delete();
-    });
+    );
   }
 
   async getNumCaches(): Promise<{
@@ -465,57 +480,66 @@ export class EphemeralDB extends Dexie {
     numSessions: number;
     totalSize: number;
   }> {
-    return this.transaction('r', [this.sourceCacheMeta, this.geometryCacheMeta, this.buildSessionConfigs], async () => {
-      const [numSourceCaches, numGeometryCaches, numSessions] = await Promise.all([
-        this.sourceCacheMeta.count(),
-        this.geometryCacheMeta.count(),
-        this.buildSessionConfigs.count(),
-      ]);
-      const rawBuffers = await this.sourceCacheMeta.toArray();
-      const totalSize = rawBuffers.reduce((sum, buffer) => (
-        sum + (typeof buffer.size === 'number' ? buffer.size : 0)
-      ), 0);
-      return {
-        numSourceCaches,
-        numGeometryCaches,
-        numSessions,
-        totalSize,
-      };
-    });
+    return this.transaction(
+      'r',
+      [this.sourceCacheMeta, this.geometryCacheMeta, this.buildSessionConfigs],
+      async () => {
+        const [numSourceCaches, numGeometryCaches, numSessions] = await Promise.all([
+          this.sourceCacheMeta.count(),
+          this.geometryCacheMeta.count(),
+          this.buildSessionConfigs.count(),
+        ]);
+        const rawBuffers = await this.sourceCacheMeta.toArray();
+        const totalSize = rawBuffers.reduce(
+          (sum, buffer) => sum + (typeof buffer.size === 'number' ? buffer.size : 0),
+          0
+        );
+        return {
+          numSourceCaches,
+          numGeometryCaches,
+          numSessions,
+          totalSize,
+        };
+      }
+    );
   }
 
   async clearAll(): Promise<void> {
-    await this.transaction('rw', [
-      this.sourceCache,
-      this.sourceCacheMeta,
-      this.geometryCache,
-      this.geometryCacheMeta,
-      this.buildSessionConfigs,
-      this.buildSessionHeartbeats,
-      this.buildSessionStatuses,
-      this.buildStageStatuses,
-      this.tileEmitBufferRelations,
-      this.buildTasks,
-      this.geometryErrors,
-    ], async () => {
-      await Promise.all([
-        this.sourceCache.clear(),
-        this.sourceCacheMeta.clear(),
-        this.geometryCache.clear(),
-        this.geometryCacheMeta.clear(),
-        this.buildSessionConfigs.clear(),
-        this.buildSessionHeartbeats.clear(),
-        this.buildSessionStatuses.clear(),
-        this.buildStageStatuses.clear(),
-        this.tileEmitBufferRelations.clear(),
-        this.buildTasks.clear(),
-        this.geometryErrors.clear(),
-      ]);
-    });
+    await this.transaction(
+      'rw',
+      [
+        this.sourceCache,
+        this.sourceCacheMeta,
+        this.geometryCache,
+        this.geometryCacheMeta,
+        this.buildSessionConfigs,
+        this.buildSessionHeartbeats,
+        this.buildSessionStatuses,
+        this.buildStageStatuses,
+        this.tileEmitBufferRelations,
+        this.buildTasks,
+        this.geometryErrors,
+      ],
+      async () => {
+        await Promise.all([
+          this.sourceCache.clear(),
+          this.sourceCacheMeta.clear(),
+          this.geometryCache.clear(),
+          this.geometryCacheMeta.clear(),
+          this.buildSessionConfigs.clear(),
+          this.buildSessionHeartbeats.clear(),
+          this.buildSessionStatuses.clear(),
+          this.buildStageStatuses.clear(),
+          this.tileEmitBufferRelations.clear(),
+          this.buildTasks.clear(),
+          this.geometryErrors.clear(),
+        ]);
+      }
+    );
   }
 
   async createBuildTask(
-    task: Omit<EphemeralBuildTaskRecord, 'taskId'> & { taskId?: string },
+    task: Omit<EphemeralBuildTaskRecord, 'taskId'> & { taskId?: string }
   ): Promise<EphemeralBuildTaskRecord> {
     const taskId = task.taskId ?? crypto.randomUUID();
     const fullTask: EphemeralBuildTaskRecord = {
@@ -553,14 +577,15 @@ export function getEphemeralDB(): EphemeralDB {
   return ephemeralDatabase;
 }
 
-const createEphemeralDatabaseReference = (): EphemeralDB => new Proxy({} as EphemeralDB, {
-  get: (_target, property) => {
-    const database = getEphemeralDB();
-    const value = Reflect.get(database, property, database) as unknown;
-    return typeof value === 'function' ? value.bind(database) : value;
-  },
-  set: (_target, property, value) => Reflect.set(getEphemeralDB(), property, value),
-});
+const createEphemeralDatabaseReference = (): EphemeralDB =>
+  new Proxy({} as EphemeralDB, {
+    get: (_target, property) => {
+      const database = getEphemeralDB();
+      const value = Reflect.get(database, property, database) as unknown;
+      return typeof value === 'function' ? value.bind(database) : value;
+    },
+    set: (_target, property, value) => Reflect.set(getEphemeralDB(), property, value),
+  });
 
 /** Stable reference backed only by an explicitly initialized database. */
 export const ephemeralDB = createEphemeralDatabaseReference();

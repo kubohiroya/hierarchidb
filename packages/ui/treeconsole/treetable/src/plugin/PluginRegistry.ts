@@ -1,20 +1,20 @@
 /**
-  * Plugin Registry Implementation
-  * TreeTable
-   */
+ * Plugin Registry Implementation
+ * TreeTable
+ */
 
 import type {
   HookExecutionMode,
+  PluginRegistry as IPluginRegistry,
   PluginLifecycleState,
   PluginPriority,
-  PluginRegistry as IPluginRegistry,
   TreeTableHooks,
   TreeTablePlugin,
 } from './types.js';
 import { HookExecutionError, PluginError, PluginRegistrationError } from './types.js';
 
 /**
-    */
+ */
 interface PluginRuntimeInfo {
   plugin: TreeTablePlugin;
   state: PluginLifecycleState;
@@ -26,7 +26,7 @@ interface PluginRuntimeInfo {
 }
 
 /**
-    */
+ */
 interface HookExecutionConfig {
   mode: HookExecutionMode;
   timeout?: number;
@@ -35,8 +35,8 @@ interface HookExecutionConfig {
 }
 
 /**
-  * TreeTable
-  */
+ * TreeTable
+ */
 export class PluginRegistry implements IPluginRegistry {
   private plugins: Map<string, PluginRuntimeInfo> = new Map();
   private hookConfigs: Map<keyof TreeTableHooks, HookExecutionConfig> = new Map();
@@ -67,7 +67,7 @@ export class PluginRegistry implements IPluginRegistry {
   }
 
   /**
-            */
+   */
   register(plugin: TreeTablePlugin): void {
     try {
       this.validatePlugin(plugin);
@@ -75,7 +75,7 @@ export class PluginRegistry implements IPluginRegistry {
       if (this.plugins.has(plugin.name)) {
         throw new PluginRegistrationError(
           plugin.name,
-          'Plugin with this name is already registered',
+          'Plugin with this name is already registered'
         );
       }
 
@@ -96,7 +96,6 @@ export class PluginRegistry implements IPluginRegistry {
 
       this.debug(`Plugin registered: ${plugin.name} v${plugin.version}`);
       this.emit('plugin:registered', { plugin: plugin.name });
-
     } catch (error) {
       this.debug(`Failed to register plugin ${plugin.name}:`, error);
       throw error;
@@ -104,7 +103,7 @@ export class PluginRegistry implements IPluginRegistry {
   }
 
   /**
-            */
+   */
   unregister(pluginName: string): void {
     const runtimeInfo = this.plugins.get(pluginName);
     if (!runtimeInfo) {
@@ -119,7 +118,6 @@ export class PluginRegistry implements IPluginRegistry {
 
       this.debug(`Plugin unregistered: ${pluginName}`);
       this.emit('plugin:unregistered', { plugin: pluginName });
-
     } catch (error) {
       this.debug(`Error during plugin unregistration ${pluginName}:`, error);
       throw new PluginError(`Failed to unregister plugin: ${error}`, pluginName);
@@ -127,29 +125,28 @@ export class PluginRegistry implements IPluginRegistry {
   }
 
   /**
-            */
+   */
   getPlugin(name: string): TreeTablePlugin | undefined {
     return this.plugins.get(name)?.plugin;
   }
 
   /**
-            */
+   */
   getPlugins(): TreeTablePlugin[] {
     return Array.from(this.plugins.values())
-      .filter(info => info.state === 'initialized')
+      .filter((info) => info.state === 'initialized')
       .sort((a, b) => this.comparePriority(a.priority, b.priority))
-      .map(info => info.plugin);
+      .map((info) => info.plugin);
   }
 
   /**
-            */
+   */
   hasPlugin(name: string): boolean {
-    return this.plugins.has(name) &&
-      this.plugins.get(name)?.state === 'initialized';
+    return this.plugins.has(name) && this.plugins.get(name)?.state === 'initialized';
   }
 
   /**
-            */
+   */
   executeHook<T extends keyof TreeTableHooks>(
     hookName: T,
     ...args: Parameters<NonNullable<TreeTableHooks[T]>>
@@ -202,20 +199,20 @@ export class PluginRegistry implements IPluginRegistry {
   }
 
   /**
-            */
+   */
   setHookConfig(hookName: keyof TreeTableHooks, config: Partial<HookExecutionConfig>): void {
     const currentConfig = this.hookConfigs.get(hookName) || this.getDefaultHookConfig();
     this.hookConfigs.set(hookName, { ...currentConfig, ...config });
   }
 
   /**
-            */
+   */
   getPluginState(pluginName: string): PluginLifecycleState | undefined {
     return this.plugins.get(pluginName)?.state;
   }
 
   /**
-            */
+   */
   getPluginStats(pluginName: string) {
     const info = this.plugins.get(pluginName);
     if (!info) return undefined;
@@ -234,13 +231,13 @@ export class PluginRegistry implements IPluginRegistry {
   }
 
   /**
-            */
+   */
   setDebugMode(enabled: boolean): void {
     this.debugMode = enabled;
   }
 
   /**
-            */
+   */
   on(event: string, listener: (event: unknown) => void): void {
     let listeners = this.eventListeners.get(event);
     if (!listeners) {
@@ -251,7 +248,7 @@ export class PluginRegistry implements IPluginRegistry {
   }
 
   /**
-            */
+   */
   off(event: string, listener: (event: unknown) => void): void {
     this.eventListeners.get(event)?.delete(listener);
   }
@@ -266,7 +263,10 @@ export class PluginRegistry implements IPluginRegistry {
     }
 
     if (!plugin.version || typeof plugin.version !== 'string') {
-      throw new PluginRegistrationError(plugin.name, 'Plugin version is required and must be a string');
+      throw new PluginRegistrationError(
+        plugin.name,
+        'Plugin version is required and must be a string'
+      );
     }
 
     if (!plugin.hooks || typeof plugin.hooks !== 'object') {
@@ -279,10 +279,7 @@ export class PluginRegistry implements IPluginRegistry {
 
     for (const dependency of plugin.dependencies) {
       if (!this.hasPlugin(dependency)) {
-        throw new PluginRegistrationError(
-          plugin.name,
-          `Missing dependency: ${dependency}`,
-        );
+        throw new PluginRegistrationError(plugin.name, `Missing dependency: ${dependency}`);
       }
     }
   }
@@ -300,7 +297,6 @@ export class PluginRegistry implements IPluginRegistry {
 
       runtimeInfo.state = 'initialized';
       this.debug(`Plugin initialized: ${pluginName}`);
-
     } catch (error) {
       runtimeInfo.state = 'error';
       runtimeInfo.errors.push(error as Error);
@@ -319,7 +315,6 @@ export class PluginRegistry implements IPluginRegistry {
 
       runtimeInfo.state = 'destroyed';
       this.debug(`Plugin destroyed: ${pluginName}`);
-
     } catch (error) {
       this.debug(`Error destroying plugin ${pluginName}:`, error);
       runtimeInfo.errors.push(error as Error);
@@ -328,10 +323,7 @@ export class PluginRegistry implements IPluginRegistry {
 
   private getAvailablePluginsForHook(hookName: keyof TreeTableHooks): PluginRuntimeInfo[] {
     return Array.from(this.plugins.values())
-      .filter(info =>
-        info.state === 'initialized' &&
-        info.plugin.hooks[hookName],
-      )
+      .filter((info) => info.state === 'initialized' && info.plugin.hooks[hookName])
       .sort((a, b) => this.comparePriority(a.priority, b.priority));
   }
 
@@ -339,7 +331,7 @@ export class PluginRegistry implements IPluginRegistry {
     hookName: T,
     plugins: PluginRuntimeInfo[],
     args: Parameters<NonNullable<TreeTableHooks[T]>>,
-    config: HookExecutionConfig,
+    config: HookExecutionConfig
   ): Array<Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>>> {
     const results: Array<Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>>> = [];
 
@@ -353,7 +345,6 @@ export class PluginRegistry implements IPluginRegistry {
         } else if (hookName === 'onAfterCellRender' && result != null) {
           args[0] = result as Parameters<NonNullable<TreeTableHooks['onAfterCellRender']>>[0];
         }
-
       } catch (error) {
         this.handlePluginError(pluginInfo, hookName, error as Error);
         if (!config.continueOnError) {
@@ -369,7 +360,7 @@ export class PluginRegistry implements IPluginRegistry {
     hookName: T,
     plugins: PluginRuntimeInfo[],
     args: Parameters<NonNullable<TreeTableHooks[T]>>,
-    config: HookExecutionConfig,
+    config: HookExecutionConfig
   ): Array<Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>>> {
     // Note: historical behavior executes synchronously; keep it to avoid behavior changes.
     return plugins.map((pluginInfo) => {
@@ -389,7 +380,7 @@ export class PluginRegistry implements IPluginRegistry {
     hookName: T,
     plugins: PluginRuntimeInfo[],
     args: Parameters<NonNullable<TreeTableHooks[T]>>,
-    config: HookExecutionConfig,
+    config: HookExecutionConfig
   ): Array<Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>>> {
     for (const pluginInfo of plugins) {
       try {
@@ -412,7 +403,7 @@ export class PluginRegistry implements IPluginRegistry {
     hookName: T,
     plugins: PluginRuntimeInfo[],
     args: Parameters<NonNullable<TreeTableHooks[T]>>,
-    config: HookExecutionConfig,
+    config: HookExecutionConfig
   ): Array<Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>>> {
     const results: Array<Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>>> = [];
 
@@ -440,7 +431,7 @@ export class PluginRegistry implements IPluginRegistry {
   private executePluginHook<T extends keyof TreeTableHooks>(
     pluginInfo: PluginRuntimeInfo,
     hookName: T,
-    args: Parameters<NonNullable<TreeTableHooks[T]>>,
+    args: Parameters<NonNullable<TreeTableHooks[T]>>
   ): Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>> {
     const hook = pluginInfo.plugin.hooks[hookName];
     if (!hook) return undefined as Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>>;
@@ -449,25 +440,24 @@ export class PluginRegistry implements IPluginRegistry {
       pluginInfo.executionCount++;
       pluginInfo.lastExecuted = Date.now();
 
-      const hookFunction = hook as (...params: Parameters<NonNullable<TreeTableHooks[T]>>) => ReturnType<NonNullable<TreeTableHooks[T]>>;
+      const hookFunction = hook as (
+        ...params: Parameters<NonNullable<TreeTableHooks[T]>>
+      ) => ReturnType<NonNullable<TreeTableHooks[T]>>;
       const result = hookFunction(...args);
 
-      this.debug(`Hook ${String(hookName)} executed successfully in plugin ${pluginInfo.plugin.name}`);
-      return result as Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>>;
-
-    } catch (error) {
-      throw new HookExecutionError(
-        pluginInfo.plugin.name,
-        hookName,
-        error as Error,
+      this.debug(
+        `Hook ${String(hookName)} executed successfully in plugin ${pluginInfo.plugin.name}`
       );
+      return result as Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>>;
+    } catch (error) {
+      throw new HookExecutionError(pluginInfo.plugin.name, hookName, error as Error);
     }
   }
 
   private handlePluginError(
     pluginInfo: PluginRuntimeInfo,
     hookName: keyof TreeTableHooks,
-    error: Error,
+    error: Error
   ): void {
     pluginInfo.errors.push(error);
 

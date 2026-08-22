@@ -4,9 +4,9 @@
  * The Deck.gl dependency stays optional via peerDependencies.
  */
 
+import type { Layer, PickingInfo } from '@deck.gl/core';
 import type React from 'react';
 import type { MapLibreMapProps } from './MapLibreMap.js';
-import type { Layer, PickingInfo } from '@deck.gl/core';
 import { useMapWithDeckGL } from './useMapWithDeckGL.js';
 
 export interface DeckOverlayProps {
@@ -20,15 +20,22 @@ export type MapWithDeckGLProps = MapLibreMapProps & {
   deck: DeckOverlayProps;
 };
 
-type DeckTooltip = null | string | {
-  text?: string;
-  html?: string;
-  className?: string;
-  style?: Partial<CSSStyleDeclaration>;
-};
+type DeckTooltip =
+  | null
+  | string
+  | {
+      text?: string;
+      html?: string;
+      className?: string;
+      style?: Partial<CSSStyleDeclaration>;
+    };
 
 export const MapWithDeckGL: React.FC<MapWithDeckGLProps> = ({ deck, onLoad, ...mapProps }) => {
-  const { MapComponent, handleLoad, fallbackStyle } = useMapWithDeckGL({ deck, onLoad, ...mapProps });
+  const { MapComponent, handleLoad, fallbackStyle } = useMapWithDeckGL({
+    deck,
+    onLoad,
+    ...mapProps,
+  });
 
   if (!MapComponent) {
     return <div style={fallbackStyle} />;

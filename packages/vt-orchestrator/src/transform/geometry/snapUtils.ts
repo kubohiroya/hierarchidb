@@ -1,6 +1,13 @@
+import { type GeometryEngine, geometrySimplify } from '@hierarchidb/gis-sdk';
 import type { Geometry } from 'geojson';
-import { geometrySimplify, type GeometryEngine } from '@hierarchidb/gis-sdk';
-import { lonLatToMercator, mercatorToLonLat, mapGeometry, metersPerPixel, resolveQuantizeFactor, type LonLat } from './metrics';
+import {
+  type LonLat,
+  lonLatToMercator,
+  mapGeometry,
+  mercatorToLonLat,
+  metersPerPixel,
+  resolveQuantizeFactor,
+} from './metrics';
 
 export const snapGeometryToGridWithStep = (geometry: Geometry, step: number): Geometry => {
   const snapCoord = (coord: LonLat): LonLat => {
@@ -12,7 +19,11 @@ export const snapGeometryToGridWithStep = (geometry: Geometry, step: number): Ge
   return mapGeometry(geometry, snapCoord);
 };
 
-export const snapGeometryToGrid = (geometry: Geometry, zTarget: number, quantize?: number): Geometry => {
+export const snapGeometryToGrid = (
+  geometry: Geometry,
+  zTarget: number,
+  quantize?: number
+): Geometry => {
   const factor = resolveQuantizeFactor(quantize);
   return snapGeometryToGridWithStep(geometry, metersPerPixel(zTarget) * factor);
 };
@@ -20,7 +31,7 @@ export const snapGeometryToGrid = (geometry: Geometry, zTarget: number, quantize
 export const simplifyGeometryInMercator = (
   geometry: Geometry,
   toleranceMeters: number,
-  geometryEngine: GeometryEngine,
+  geometryEngine: GeometryEngine
 ): Geometry => {
   const toMercator = (coord: LonLat): LonLat => {
     const [x, y] = lonLatToMercator(coord);

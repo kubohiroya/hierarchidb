@@ -1,6 +1,6 @@
-import { useCallback } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
+import { useCallback } from 'react';
 import type { WorkerAPIAdapter } from '~/adapters/index';
 import type { CRUDResult } from '~/types/index';
 
@@ -39,7 +39,9 @@ export interface UseCRUDOperationsReturn {
   startCreate: (parentId: NodeId, name: string) => Promise<void>;
 }
 
-export function useCRUDOperations<T>(options: UseCRUDOperationsOptions<T> = {}): UseCRUDOperationsReturn {
+export function useCRUDOperations<T>(
+  options: UseCRUDOperationsOptions<T> = {}
+): UseCRUDOperationsReturn {
   const {
     stateManager,
     workerAdapter,
@@ -79,14 +81,16 @@ export function useCRUDOperations<T>(options: UseCRUDOperationsOptions<T> = {}):
               error: res.error ?? 'Unknown error',
             };
           }
-          onExpandedNodesChange?.((prev) => (prev.includes(targetParentId) ? prev : [...prev, targetParentId]));
+          onExpandedNodesChange?.((prev) =>
+            prev.includes(targetParentId) ? prev : [...prev, targetParentId]
+          );
         } finally {
           setIsLoading?.(false);
         }
       }
       return { result: true };
     },
-    [workerAdapter, stateManager, setIsLoading, onExpandedNodesChange],
+    [workerAdapter, stateManager, setIsLoading, onExpandedNodesChange]
   );
 
   const moveNodes = useCallback(
@@ -110,7 +114,7 @@ export function useCRUDOperations<T>(options: UseCRUDOperationsOptions<T> = {}):
       }
       return { result: true };
     },
-    [workerAdapter, setIsLoading, onExpandedNodesChange],
+    [workerAdapter, setIsLoading, onExpandedNodesChange]
   );
 
   const archiveNode = useCallback(
@@ -130,7 +134,8 @@ export function useCRUDOperations<T>(options: UseCRUDOperationsOptions<T> = {}):
         }
       } else {
         const deleteFn = stateManager?.deleteNode ?? stateManager?.archiveNode;
-        if (typeof deleteFn !== 'function') throw new Error('No adapter available for archive operation');
+        if (typeof deleteFn !== 'function')
+          throw new Error('No adapter available for archive operation');
         setIsLoading?.(true);
         try {
           await deleteFn(nodeId);
@@ -142,7 +147,14 @@ export function useCRUDOperations<T>(options: UseCRUDOperationsOptions<T> = {}):
         }
       }
     },
-    [workerAdapter, stateManager, setIsLoading, onSelectedNodesChange, onExpandedNodesChange, onCurrentNodeChange],
+    [
+      workerAdapter,
+      stateManager,
+      setIsLoading,
+      onSelectedNodesChange,
+      onExpandedNodesChange,
+      onCurrentNodeChange,
+    ]
   );
 
   const archiveNodes = useCallback(
@@ -175,7 +187,14 @@ export function useCRUDOperations<T>(options: UseCRUDOperationsOptions<T> = {}):
         setIsLoading?.(false);
       }
     },
-    [workerAdapter, stateManager, setIsLoading, onSelectedNodesChange, onExpandedNodesChange, onCurrentNodeChange],
+    [
+      workerAdapter,
+      stateManager,
+      setIsLoading,
+      onSelectedNodesChange,
+      onExpandedNodesChange,
+      onCurrentNodeChange,
+    ]
   );
 
   const duplicateNode = useCallback(
@@ -197,7 +216,11 @@ export function useCRUDOperations<T>(options: UseCRUDOperationsOptions<T> = {}):
 
           // Expand parentId of duplicated node if available
           if (duplicated?.parentId) {
-            onExpandedNodesChange?.((prev) => (prev.includes(duplicated.parentId as NodeId) ? prev : [...prev, duplicated.parentId as NodeId]));
+            onExpandedNodesChange?.((prev) =>
+              prev.includes(duplicated.parentId as NodeId)
+                ? prev
+                : [...prev, duplicated.parentId as NodeId]
+            );
           }
 
           // Set current node to duplicated node when available
@@ -217,7 +240,14 @@ export function useCRUDOperations<T>(options: UseCRUDOperationsOptions<T> = {}):
         setIsLoading?.(false);
       }
     },
-    [workerAdapter, setIsLoading, stateManager, onSelectedNodesChange, onExpandedNodesChange, onCurrentNodeChange],
+    [
+      workerAdapter,
+      setIsLoading,
+      stateManager,
+      onSelectedNodesChange,
+      onExpandedNodesChange,
+      onCurrentNodeChange,
+    ]
   );
 
   const duplicateNodes = useCallback(
@@ -242,7 +272,7 @@ export function useCRUDOperations<T>(options: UseCRUDOperationsOptions<T> = {}):
 
       return { result: true };
     },
-    [workerAdapter, setIsLoading, onExpandedNodesChange],
+    [workerAdapter, setIsLoading, onExpandedNodesChange]
   );
 
   //  Working Copy
@@ -255,7 +285,7 @@ export function useCRUDOperations<T>(options: UseCRUDOperationsOptions<T> = {}):
       const editSession = await workerAdapter.startNodeEdit(nodeId);
       console.log('Edit session started:', editSession);
     },
-    [workerAdapter],
+    [workerAdapter]
   );
 
   const startCreate = useCallback(
@@ -267,7 +297,7 @@ export function useCRUDOperations<T>(options: UseCRUDOperationsOptions<T> = {}):
       const createSession = await workerAdapter.startNodeCreate(parentId, name, undefined);
       console.log('Create session started:', createSession);
     },
-    [workerAdapter],
+    [workerAdapter]
   );
 
   return {

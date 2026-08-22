@@ -2,17 +2,18 @@
 // Runs in the same process for simplicity; fake-indexeddb provides IndexedDB in Node.
 import 'fake-indexeddb/auto';
 import type { ImportExportAPI } from '@hierarchidb/import-export-api';
-import type { TreeTableExpandedAPI, TreeNodeData } from '@hierarchidb/tree-api';
+import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/location-api';
+import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/route-api';
+import type { ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
+import type { StyleMutationAPI, StyleQueryAPI } from '@hierarchidb/style-api';
 import type {
   TreeMutationAPI,
+  TreeNodeData,
   TreeNodeUpdaterAPI,
   TreeQueryAPI,
   TreeSubscriptionAPI,
+  TreeTableExpandedAPI,
 } from '@hierarchidb/tree-api';
-import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/location-api';
-import type { StyleMutationAPI, StyleQueryAPI } from '@hierarchidb/style-api';
-import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/route-api';
-import type { ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import { getBuildDatabasePrefix } from '@hierarchidb/util';
 import type { Endpoint as ComlinkEndpoint } from 'comlink';
 import { expose, proxy } from 'comlink';

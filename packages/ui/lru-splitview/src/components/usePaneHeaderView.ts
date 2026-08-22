@@ -1,18 +1,18 @@
-import { useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
-import { useTheme } from '@mui/material';
 import {
+  CheckCircle as CheckCircleIcon,
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
-  CheckCircle as CheckCircleIcon,
   ErrorOutline as ErrorOutlineIcon,
+  ExpandLess as ExpandLessIcon,
+  ExpandMore as ExpandMoreIcon,
   PauseCircle as PauseCircleIcon,
   PauseCircleOutline as PauseCircleOutlineIcon,
   PlayCircle as PlayCircleIcon,
-  ExpandLess as ExpandLessIcon,
-  ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
+import { useTheme } from '@mui/material';
 import type { SvgIconProps } from '@mui/material/SvgIcon';
+import { type ComponentType, useEffect, useMemo, useRef, useState } from 'react';
 import type { PaneHeaderComponentProps } from './PaneHeader.js';
 
 interface UsePaneHeaderViewArgs extends PaneHeaderComponentProps {}
@@ -69,8 +69,9 @@ export const usePaneHeaderView = ({
   const statusIcon = useMemo(() => {
     if (!progress) return null as IconComponent | null;
     const summaryTotal = progress.summary?.total ?? 0;
-    const isZeroTasks = summaryTotal === 0
-      || ((progress.taskCount ?? 0) === 0 && (progress.completedCount ?? 0) === 0);
+    const isZeroTasks =
+      summaryTotal === 0 ||
+      ((progress.taskCount ?? 0) === 0 && (progress.completedCount ?? 0) === 0);
     const status = progress.status;
     if (status === 'failed') return ErrorOutlineIcon;
     if (isZeroTasks) return PauseCircleOutlineIcon;
@@ -85,8 +86,9 @@ export const usePaneHeaderView = ({
   const statusColor = useMemo(() => {
     if (!progress) return theme.palette.text.secondary;
     const summaryTotal = progress.summary?.total ?? 0;
-    const isZeroTasks = summaryTotal === 0
-      || ((progress.taskCount ?? 0) === 0 && (progress.completedCount ?? 0) === 0);
+    const isZeroTasks =
+      summaryTotal === 0 ||
+      ((progress.taskCount ?? 0) === 0 && (progress.completedCount ?? 0) === 0);
     if (progress.status === 'failed') return theme.palette.error.main;
     if (isZeroTasks) return theme.palette.text.secondary;
     switch (progress.status) {

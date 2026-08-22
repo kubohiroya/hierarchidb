@@ -1,5 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
+import { CoreDB } from '@hierarchidb/runtime-worker';
 import type { TreeNode, TreeNodeMetadata } from '@hierarchidb/tree-api';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import type {
   DataTransformation,
   DuplicateResolutionStrategy,
@@ -9,8 +11,6 @@ import type {
   SchemaInfo,
   ValidationRule,
 } from '~/common/entities/ResolverEntity';
-import { CoreDB } from '@hierarchidb/runtime-worker';
-import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 
 type ResolverEntityPayload = ResolverEntity & {
   name: string;
@@ -56,7 +56,10 @@ const isResolverEntity = (value: unknown): value is ResolverEntity => {
   );
 };
 
-const mergeMetadata = (base: TreeNodeMetadata, updates?: Partial<TreeNodeMetadata>): TreeNodeMetadata => ({
+const mergeMetadata = (
+  base: TreeNodeMetadata,
+  updates?: Partial<TreeNodeMetadata>
+): TreeNodeMetadata => ({
   ...base,
   ...(updates ?? {}),
 });
@@ -80,7 +83,8 @@ export class ResolverEntityService {
   }
 
   private resolveMetadata(node: TreeNode): TreeNodeMetadata {
-    const hasDraft = (node as { draftMetadata?: unknown }).draftMetadata !== null &&
+    const hasDraft =
+      (node as { draftMetadata?: unknown }).draftMetadata !== null &&
       typeof (node as { draftMetadata?: unknown }).draftMetadata !== 'undefined';
     return hasDraft && node.draftMetadata ? node.draftMetadata : node.metadata;
   }
@@ -245,7 +249,9 @@ export class ResolverEntityService {
     return this.createEntity(newNodeId, duplicateData);
   }
 
-  async validateMapping(nodeId: NodeId): Promise<{ isValid: boolean; errors: string[]; warnings: string[] }> {
+  async validateMapping(
+    nodeId: NodeId
+  ): Promise<{ isValid: boolean; errors: string[]; warnings: string[] }> {
     const entity = await this.getEntity(nodeId);
     if (!entity) {
       return { isValid: false, errors: ['Entity not found'], warnings: [] };

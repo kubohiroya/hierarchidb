@@ -1,8 +1,8 @@
+import type { BuildTaskSummary, TaskStage } from '@hierarchidb/build-api';
+import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import type { TaskCountSummary } from '@hierarchidb/ui-build-sessions';
 import type { BuildProgress } from './shapeBuildProgressTypes.js';
-import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
-import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
-import type { BuildTaskSummary, TaskStage } from '@hierarchidb/build-api';
 import { resolveStageAliasArray, resolveStageAliasValue } from './stageIdAliases';
 
 type TaskStageCarrier = BuildTaskSummary & { stage: TaskStage };
@@ -19,7 +19,7 @@ export const createStageTaskCounts = ({
   tasksByStage: Record<string, (BuildTaskSummary & TaskStageCarrier)[]>;
   isSkippedTask: (task: BuildTaskSummary & TaskStageCarrier) => boolean;
   isExcludedTask: (task: BuildTaskSummary & TaskStageCarrier) => boolean;
-}): Record<string, StageCountInfo> => (
+}): Record<string, StageCountInfo> =>
   stages.reduce<Record<string, StageCountInfo>>((acc, stage) => {
     const stageTasks = resolveStageAliasArray(tasksByStage, stage.id);
     if (stageTasks.length === 0) {
@@ -60,8 +60,7 @@ export const createStageTaskCounts = ({
       hasIncomplete: done < counts.total,
     };
     return acc;
-  }, {})
-);
+  }, {});
 
 export const buildStageCountPlan = ({
   stages,
@@ -77,13 +76,18 @@ export const buildStageCountPlan = ({
   stages.reduce<Record<string, StageCountInfo>>((acc, stage) => {
     const stageInfo = stageTaskCounts[stage.id];
     const actualCounts = stageInfo?.counts ?? { total: 0, completed: 0, failed: 0, skipped: 0 };
-    const shouldUsePlanned = actualCounts.total > 0 || buildStatus === 'running' || buildStatus === 'paused';
-    const plannedCounts = shouldUsePlanned && effectiveProgress?.stageTotals
-      ? resolveStageAliasValue(
-        effectiveProgress.stageTotals as Record<string, { total: number; completed: number; failed: number; skipped: number }>,
-        stage.id,
-      )
-      : undefined;
+    const shouldUsePlanned =
+      actualCounts.total > 0 || buildStatus === 'running' || buildStatus === 'paused';
+    const plannedCounts =
+      shouldUsePlanned && effectiveProgress?.stageTotals
+        ? resolveStageAliasValue(
+            effectiveProgress.stageTotals as Record<
+              string,
+              { total: number; completed: number; failed: number; skipped: number }
+            >,
+            stage.id
+          )
+        : undefined;
     const mergedCompleted = Math.max(actualCounts.completed, plannedCounts?.completed ?? 0);
     const mergedFailed = Math.max(actualCounts.failed, plannedCounts?.failed ?? 0);
     const mergedSkipped = Math.max(actualCounts.skipped, plannedCounts?.skipped ?? 0);
@@ -102,10 +106,16 @@ export const buildStageCountPlan = ({
     return acc;
   }, {});
 
-export const makeStageTotals = (stages: BuildStage[], stageCountsWithPlan: Record<string, StageCountInfo>): Record<string, TaskCountSummary> => (
+export const makeStageTotals = (
+  stages: BuildStage[],
+  stageCountsWithPlan: Record<string, StageCountInfo>
+): Record<string, TaskCountSummary> =>
   stages.reduce<Record<string, TaskCountSummary>>((acc, stage) => {
-    acc[stage.id] = stageCountsWithPlan[stage.id]?.counts
-      ?? { total: 0, completed: 0, failed: 0, skipped: 0 };
+    acc[stage.id] = stageCountsWithPlan[stage.id]?.counts ?? {
+      total: 0,
+      completed: 0,
+      failed: 0,
+      skipped: 0,
+    };
     return acc;
-  }, {})
-);
+  }, {});

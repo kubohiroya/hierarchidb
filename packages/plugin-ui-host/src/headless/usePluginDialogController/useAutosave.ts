@@ -1,6 +1,6 @@
 import type { PeerEntity } from '@hierarchidb/core-types';
-import type { TreeNodeData } from '@hierarchidb/tree-api';
 import type { TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
+import type { TreeNodeData } from '@hierarchidb/tree-api';
 import { useEffect, useRef } from 'react';
 
 type Params<TPayload extends PeerEntity<TreeNodeData>> = {

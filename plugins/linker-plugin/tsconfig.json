@@ -1,9 +1,7 @@
 {
   "extends": "../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
-    "types": [
-      "node"
-    ],
+    "types": ["node"],
     "jsx": "react-jsx",
     "allowImportingTsExtensions": true,
     "allowArbitraryExtensions": true,
@@ -14,14 +12,6 @@
     "allowSkipLibCheck": true,
     "reason": "Deck.gl/luma + date-fns v3 d.ts require TS5; isolate to this package"
   },
-  "include": [
-    "../../global.d.ts",
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/*.test.ts",
-    "**/*.test.tsx"
-  ]
+  "include": ["../../global.d.ts", "src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx"]
 }

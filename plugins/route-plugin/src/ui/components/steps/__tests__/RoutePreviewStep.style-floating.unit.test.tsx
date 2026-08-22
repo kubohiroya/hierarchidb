@@ -1,6 +1,6 @@
+import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
 
 vi.mock('@hierarchidb/ui-map', () => ({
   DEFAULT_MAP_CONFIG: {

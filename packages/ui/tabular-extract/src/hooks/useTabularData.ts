@@ -3,12 +3,10 @@
  * @description Hook for managing Tabular table metadata
  */
 
+import { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { useCallback, useEffect, useState } from 'react';
 import { useTabularApi } from '../context/TabularContext';
-import type {
-  TabularProcessingConfig,
-} from '../types/index';
-import { TabularTableMetadata } from '@hierarchidb/tabular-store';
+import type { TabularProcessingConfig } from '../types/index';
 
 /**
  * Options for useTabularData hook
@@ -40,9 +38,15 @@ export interface UseTabularDataResult {
   error: string | null;
 
   /** Upload Tabular file */
-  importTabularFile: (file: File, config?: TabularProcessingConfig) => Promise<TabularTableMetadata>;
+  importTabularFile: (
+    file: File,
+    config?: TabularProcessingConfig
+  ) => Promise<TabularTableMetadata>;
   /** Download Tabular from URL */
-  downloadTabularFromUrl: (url: string, config?: TabularProcessingConfig) => Promise<TabularTableMetadata>;
+  downloadTabularFromUrl: (
+    url: string,
+    config?: TabularProcessingConfig
+  ) => Promise<TabularTableMetadata>;
   /** Reload current metadata */
   reload: () => Promise<void>;
   /** Add reference to current table */
@@ -61,10 +65,19 @@ export interface UseTabularDataResult {
  * Hook for managing Tabular table metadata
  */
 export const useTabularData = (options: UseTabularDataOptions): UseTabularDataResult => {
-  const { tableMetadataId, autoload = true, pluginId, nodeId, onImportSuccess, onImportError } = options;
+  const {
+    tableMetadataId,
+    autoload = true,
+    pluginId,
+    nodeId,
+    onImportSuccess,
+    onImportError,
+  } = options;
   const tabularApi = useTabularApi();
 
-  const [tabularTableMetadata, setTabularTableMetadata] = useState<TabularTableMetadata | null>(null);
+  const [tabularTableMetadata, setTabularTableMetadata] = useState<TabularTableMetadata | null>(
+    null
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -73,101 +86,104 @@ export const useTabularData = (options: UseTabularDataOptions): UseTabularDataRe
   /**
    * Load table metadata by ID
    */
-  const loadMetadata = useCallback(async (id: string) => {
-    try {
-      setLoading(true);
-      setError(null);
+  const loadMetadata = useCallback(
+    async (id: string) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      const data = await tabularApi.getTableMetadata(id);
-      setTabularTableMetadata(data);
+        const data = await tabularApi.getTableMetadata(id);
+        setTabularTableMetadata(data);
 
-      if (!data) {
-        setError(`Table metadata not found: ${id}`);
+        if (!data) {
+          setError(`Table metadata not found: ${id}`);
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to load metadata';
+        setError(message);
+        setTabularTableMetadata(null);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load metadata';
-      setError(message);
-      setTabularTableMetadata(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [tabularApi]);
+    },
+    [tabularApi]
+  );
 
   /**
    * Upload Tabular file
    */
-  const uploadTabularFile = useCallback(async (
-    file: File,
-    config: TabularProcessingConfig = {},
-  ): Promise<TabularTableMetadata> => {
-    try {
-      setIsUploading(true);
-      setUploadError(null);
+  const uploadTabularFile = useCallback(
+    async (file: File, config: TabularProcessingConfig = {}): Promise<TabularTableMetadata> => {
+      try {
+        setIsUploading(true);
+        setUploadError(null);
 
-      const defaultConfig: TabularProcessingConfig = {
-        delimiter: ',',
-        encoding: 'utf-8',
-        hasHeader: true,
-        ...config,
-      };
+        const defaultConfig: TabularProcessingConfig = {
+          delimiter: ',',
+          encoding: 'utf-8',
+          hasHeader: true,
+          ...config,
+        };
 
-      const newMetadata = await tabularApi.uploadTabularFile(file, defaultConfig);
-      setTabularTableMetadata(newMetadata);
+        const newMetadata = await tabularApi.uploadTabularFile(file, defaultConfig);
+        setTabularTableMetadata(newMetadata);
 
-      // Add reference for this plugin
-      await tabularApi.addTableReference(newMetadata.id, pluginId);
+        // Add reference for this plugin
+        await tabularApi.addTableReference(newMetadata.id, pluginId);
 
-      // Call success callback
-      onImportSuccess?.(newMetadata);
+        // Call success callback
+        onImportSuccess?.(newMetadata);
 
-      return newMetadata;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to upload file';
-      setUploadError(message);
-      onImportError?.(message);
-      throw err;
-    } finally {
-      setIsUploading(false);
-    }
-  }, [tabularApi, pluginId]);
+        return newMetadata;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to upload file';
+        setUploadError(message);
+        onImportError?.(message);
+        throw err;
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [tabularApi, pluginId]
+  );
 
   /**
    * Download CSV from URL
    */
-  const downloadTabularFromUrl = useCallback(async (
-    url: string,
-    config: TabularProcessingConfig = {},
-  ): Promise<TabularTableMetadata> => {
-    try {
-      setIsUploading(true);
-      setUploadError(null);
+  const downloadTabularFromUrl = useCallback(
+    async (url: string, config: TabularProcessingConfig = {}): Promise<TabularTableMetadata> => {
+      try {
+        setIsUploading(true);
+        setUploadError(null);
 
-      const defaultConfig: TabularProcessingConfig = {
-        delimiter: ',',
-        encoding: 'utf-8',
-        hasHeader: true,
-        ...config,
-      };
+        const defaultConfig: TabularProcessingConfig = {
+          delimiter: ',',
+          encoding: 'utf-8',
+          hasHeader: true,
+          ...config,
+        };
 
-      const newMetadata = await tabularApi.downloadTabularFromUrl(url, defaultConfig, nodeId);
-      setTabularTableMetadata(newMetadata);
+        const newMetadata = await tabularApi.downloadTabularFromUrl(url, defaultConfig, nodeId);
+        setTabularTableMetadata(newMetadata);
 
-      // Add reference for this plugin
-      await tabularApi.addTableReference(newMetadata.id, pluginId);
+        // Add reference for this plugin
+        await tabularApi.addTableReference(newMetadata.id, pluginId);
 
-      // Call success callback
-      onImportSuccess?.(newMetadata);
+        // Call success callback
+        onImportSuccess?.(newMetadata);
 
-      return newMetadata;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to download from URL';
-      setUploadError(message);
-      onImportError?.(message);
-      throw err;
-    } finally {
-      setIsUploading(false);
-    }
-  }, [tabularApi, pluginId, nodeId]);
+        return newMetadata;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to download from URL';
+        setUploadError(message);
+        onImportError?.(message);
+        throw err;
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [tabularApi, pluginId, nodeId]
+  );
 
   /**
    * Reload current metadata

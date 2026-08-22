@@ -4,10 +4,10 @@ import type {
   BaseBuildConfig,
   CleanupConfig,
   DynamicConcurrencyConfig,
-  SourceConfig,
   GeometryConfig,
-  VectorTileFormat,
+  SourceConfig,
   TileEmitConfig,
+  VectorTileFormat,
 } from '@hierarchidb/gis-sdk';
 import type { BuildSessionConfig, ResourceUsage, StageStatus } from '@hierarchidb/shape-store';
 import type { DataSourceName } from './data-source.js';

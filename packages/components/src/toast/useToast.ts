@@ -1,5 +1,5 @@
-import { useContext, type ReactNode } from 'react';
-import { ToastContext, type ToastConfig, type ToastContextType } from './ToastProvider.js';
+import { type ReactNode, useContext } from 'react';
+import { type ToastConfig, ToastContext, type ToastContextType } from './ToastProvider.js';
 
 /**
  * Hook to use toast functionality

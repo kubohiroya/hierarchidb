@@ -1,13 +1,12 @@
 /**
-  * WorkerAPIAdapter
-  * API
-   */
+ * WorkerAPIAdapter
+ * API
+ */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Observable } from 'rxjs';
-
+import { type NodeId, toNodeId } from '@hierarchidb/core-types';
 import type { CommandResult, TreeChangeEvent } from '@hierarchidb/tree-api';
-import { toNodeId, type NodeId } from '@hierarchidb/core-types';
+import { Observable } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AdapterContext } from '../types';
 import { WorkerAPIAdapter } from '../WorkerAPIAdapter';
 
@@ -48,38 +47,37 @@ type MockTreeNodeUpdaterAPI = {
   discardDraft: ReturnType<typeof vi.fn>;
 };
 
-const createMockWorkerAPI = (): MockWorkerAPI =>
-  ({
-    // TreeObservableService methods
-    observeNode: vi.fn(),
-    observeChildren: vi.fn(),
-    observeSubtree: vi.fn(),
-    observeDrafts: vi.fn(),
-    getActiveSubscriptions: vi.fn(),
-    cleanupOrphanedSubscriptions: vi.fn(),
+const createMockWorkerAPI = (): MockWorkerAPI => ({
+  // TreeObservableService methods
+  observeNode: vi.fn(),
+  observeChildren: vi.fn(),
+  observeSubtree: vi.fn(),
+  observeDrafts: vi.fn(),
+  getActiveSubscriptions: vi.fn(),
+  cleanupOrphanedSubscriptions: vi.fn(),
 
-    // TreeMutationService methods
-    createDraftForCreate: vi.fn(),
-    createDraft: vi.fn(),
-    discardDraftForCreate: vi.fn(),
-    discardDraft: vi.fn(),
-    commitDraftForCreate: vi.fn(),
-    commitDraft: vi.fn(),
-    moveNodes: vi.fn(),
-    duplicateNodes: vi.fn(),
-    pasteNodes: vi.fn(),
-    moveToArchive: vi.fn(),
-    remove: vi.fn(),
-    restoreFromArchive: vi.fn(),
-    importNodes: vi.fn(),
-    undo: vi.fn(),
-    redo: vi.fn(),
+  // TreeMutationService methods
+  createDraftForCreate: vi.fn(),
+  createDraft: vi.fn(),
+  discardDraftForCreate: vi.fn(),
+  discardDraft: vi.fn(),
+  commitDraftForCreate: vi.fn(),
+  commitDraft: vi.fn(),
+  moveNodes: vi.fn(),
+  duplicateNodes: vi.fn(),
+  pasteNodes: vi.fn(),
+  moveToArchive: vi.fn(),
+  remove: vi.fn(),
+  restoreFromArchive: vi.fn(),
+  importNodes: vi.fn(),
+  undo: vi.fn(),
+  redo: vi.fn(),
 
-    //  TreeQueryService methods ()
-    // getNode: vi.fn(),
-    // getChildren: vi.fn(),
-    //  ...
-  });
+  //  TreeQueryService methods ()
+  // getNode: vi.fn(),
+  // getChildren: vi.fn(),
+  //  ...
+});
 
 describe('WorkerAPIAdapter', () => {
   let mockWorkerAPI: MockWorkerAPI;
@@ -170,7 +168,7 @@ describe('WorkerAPIAdapter', () => {
           commandId: expect.any(String),
           groupId: expect.any(String),
           issuedAt: expect.any(Number),
-        }),
+        })
       );
 
       // Test callback functionality
@@ -185,8 +183,7 @@ describe('WorkerAPIAdapter', () => {
       const error = new Error('Connection failed');
       mockWorkerAPI.observeSubtree.mockRejectedValue(error);
 
-      await expect(adapter.subscribeToSubtree(toNodeId('test-node'), () => {
-      })).rejects.toThrow();
+      await expect(adapter.subscribeToSubtree(toNodeId('test-node'), () => {})).rejects.toThrow();
     });
   });
 
@@ -206,7 +203,7 @@ describe('WorkerAPIAdapter', () => {
           nodeIds: ['node1', 'node2'],
           toParentId: 'target-parent',
           onNameConflict: 'error',
-        }),
+        })
       );
     });
 
@@ -220,9 +217,9 @@ describe('WorkerAPIAdapter', () => {
 
       mockWorkerAPI.moveNodes.mockResolvedValue(failureResult);
 
-      await expect(adapter.moveNodes([toNodeId('node1')], toNodeId('invalid-target'))).rejects.toThrow(
-        'Failed to move nodes: Target not found',
-      );
+      await expect(
+        adapter.moveNodes([toNodeId('node1')], toNodeId('invalid-target'))
+      ).rejects.toThrow('Failed to move nodes: Target not found');
     });
 
     it('should handle deleteNodes (moveToArchive) conversion', async () => {
@@ -250,7 +247,7 @@ describe('WorkerAPIAdapter', () => {
           draftId: expect.any(String),
           sourceId: 'test-node',
           isCreate: false,
-        }),
+        })
       );
 
       expect(updaterAPI.updateTreeNodeDraftMetadata).not.toHaveBeenCalled();
@@ -258,26 +255,28 @@ describe('WorkerAPIAdapter', () => {
     });
 
     it('should handle startNodeCreate correctly', async () => {
-      const editSession = await adapter.startNodeCreate(toNodeId('parent-node'), 'New Node', 'Description');
+      const editSession = await adapter.startNodeCreate(
+        toNodeId('parent-node'),
+        'New Node',
+        'Description'
+      );
 
       expect(editSession).toEqual(
         expect.objectContaining({
           draftId: expect.any(String),
           parentId: 'parent-node',
           isCreate: true,
-        }),
+        })
       );
     });
   });
 
   describe('Lifecycle Management', () => {
     it('should cleanup all subscriptions on cleanup()', async () => {
-      const mockObservable = new Observable<TreeChangeEvent>(() => {
-      });
+      const mockObservable = new Observable<TreeChangeEvent>(() => {});
       mockWorkerAPI.observeSubtree.mockResolvedValue(mockObservable);
 
-      await adapter.subscribeToSubtree(toNodeId('test-node'), () => {
-      });
+      await adapter.subscribeToSubtree(toNodeId('test-node'), () => {});
 
       let stats = adapter.getAdapterInfo().subscriptionStats;
       expect(stats.total).toBeGreaterThan(0);
@@ -300,7 +299,7 @@ describe('WorkerAPIAdapter', () => {
             children: 0,
           }),
           byNodeId: expect.any(Object),
-        }),
+        })
       );
     });
   });
@@ -326,7 +325,7 @@ describe('WorkerAPIAdapter', () => {
           nodeIds: ['node1'],
           toParentId: 'target',
           onNameConflict: 'error',
-        }),
+        })
       );
     });
   });

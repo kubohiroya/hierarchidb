@@ -1,20 +1,22 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { LocationEntity } from '~/common/types/index';
-import { useTranslation } from '@hierarchidb/ui-i18n';
-import { parseIdeGsmRecords } from '@hierarchidb/location-api';
 import { notify } from '@hierarchidb/components';
-import { buildAvailabilityMapFromIdeGsmPoints, buildSelectionMapFromAvailability } from '~/ui/utils/ideGsmSelectionUtils';
-import type { LocationType } from '~/common/types/index';
 import type { IdeGsmSourceEntry } from '@hierarchidb/location-api';
+import { parseIdeGsmRecords } from '@hierarchidb/location-api';
 import {
-  useIsoCountries,
   type Country,
-  type MatrixConfig,
   type MatrixColumn,
+  type MatrixConfig,
   type MatrixSelection,
+  useIsoCountries,
 } from '@hierarchidb/ui-country-select';
-import { BASE_LOCATION_TYPES, resolveTypesForSource } from './locationTypes.js';
+import { useTranslation } from '@hierarchidb/ui-i18n';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createLocationTabularApi } from '~/common/tabular/createLocationTabularApi';
+import type { LocationEntity, LocationType } from '~/common/types/index';
+import {
+  buildAvailabilityMapFromIdeGsmPoints,
+  buildSelectionMapFromAvailability,
+} from '~/ui/utils/ideGsmSelectionUtils';
+import { BASE_LOCATION_TYPES, resolveTypesForSource } from './locationTypes.js';
 
 interface LocationSelectionStepProps {
   draft: Partial<LocationEntity>;
@@ -23,11 +25,15 @@ interface LocationSelectionStepProps {
     countryCodes: string[],
     columns: Array<{ id: string }>,
     nextSelections: MatrixSelection[],
-    allowedTypeSet: Set<LocationType>,
+    allowedTypeSet: Set<LocationType>
   ) => Record<string, boolean[]>;
 }
 
-export const useLocationSelectionStep = ({ draft, onUpdate, buildSelectionRecord }: LocationSelectionStepProps) => {
+export const useLocationSelectionStep = ({
+  draft,
+  onUpdate,
+  buildSelectionRecord,
+}: LocationSelectionStepProps) => {
   const { t } = useTranslation('location-plugin');
   const iso = useIsoCountries();
   const tabularApi = useMemo(() => createLocationTabularApi(), []);
@@ -53,34 +59,39 @@ export const useLocationSelectionStep = ({ draft, onUpdate, buildSelectionRecord
     },
   };
 
-  const deepEqualSelectionRecord = useCallback((
-    current: Record<string, boolean[]>,
-    next: Record<string, boolean[]>,
-  ): boolean => {
-    if (iso.status !== 'ready') return true;
-    for (const country of iso.countries) {
-      const rowA = current[country.code] ?? [];
-      const rowB = next[country.code] ?? [];
-      if (rowA.length !== rowB.length) return false;
-      for (let j = 0; j < rowA.length; j += 1) {
-        if (rowA[j] !== rowB[j]) return false;
+  const deepEqualSelectionRecord = useCallback(
+    (current: Record<string, boolean[]>, next: Record<string, boolean[]>): boolean => {
+      if (iso.status !== 'ready') return true;
+      for (const country of iso.countries) {
+        const rowA = current[country.code] ?? [];
+        const rowB = next[country.code] ?? [];
+        if (rowA.length !== rowB.length) return false;
+        for (let j = 0; j < rowA.length; j += 1) {
+          if (rowA[j] !== rowB[j]) return false;
+        }
       }
-    }
-    return true;
-  }, [iso.countries, iso.status]);
+      return true;
+    },
+    [iso.countries, iso.status]
+  );
 
   type CountryMatrixSelection = MatrixSelection;
 
-  const selectionByCountries = useMemo(() => draft.selectedArrayByCountries ?? {}, [draft.selectedArrayByCountries]);
+  const selectionByCountries = useMemo(
+    () => draft.selectedArrayByCountries ?? {},
+    [draft.selectedArrayByCountries]
+  );
   const ideGsmSources = useMemo<IdeGsmSourceEntry[]>(() => {
     if (draft.ideGsmSources && draft.ideGsmSources.length > 0) {
       return draft.ideGsmSources;
     }
     if (draft.tabularSourceId) {
-      return [{
-        fileName: draft.ideGsmFileName ?? '',
-        tabularSourceId: draft.tabularSourceId,
-      }];
+      return [
+        {
+          fileName: draft.ideGsmFileName ?? '',
+          tabularSourceId: draft.tabularSourceId,
+        },
+      ];
     }
     return [];
   }, [draft.ideGsmFileName, draft.ideGsmSources, draft.tabularSourceId]);
@@ -91,12 +102,12 @@ export const useLocationSelectionStep = ({ draft, onUpdate, buildSelectionRecord
   const initializedRef = useRef(false);
   const typeIndex = useMemo(
     () => new Map(BASE_LOCATION_TYPES.map((type, index) => [type.id, index])),
-    [],
+    []
   );
 
   const hasAvailability = useMemo(
     () => Object.keys(availabilityByCountry).length > 0,
-    [availabilityByCountry],
+    [availabilityByCountry]
   );
 
   useEffect(() => {
@@ -112,10 +123,13 @@ export const useLocationSelectionStep = ({ draft, onUpdate, buildSelectionRecord
         const parsedList = await Promise.all(
           sources.map(async (source) => {
             const tableId = source.tabularSourceId;
-            const result = await tabularApi.getFilteredData(tableId, { valueColumns: [], filterRules: [] });
+            const result = await tabularApi.getFilteredData(tableId, {
+              valueColumns: [],
+              filterRules: [],
+            });
             const headers = result.columns.map((column) => column.name);
             return parseIdeGsmRecords(headers, result.rows);
-          }),
+          })
         );
         const points = parsedList.flatMap((parsed) => parsed.points);
         const availabilityMap = buildAvailabilityMapFromIdeGsmPoints(points, BASE_LOCATION_TYPES);
@@ -131,21 +145,16 @@ export const useLocationSelectionStep = ({ draft, onUpdate, buildSelectionRecord
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        notify.error(`${t('dataSource.ideGsm.parseError', 'Failed to parse IDE-GSM CSV.')} ${message}`);
+        notify.error(
+          `${t('dataSource.ideGsm.parseError', 'Failed to parse IDE-GSM CSV.')} ${message}`
+        );
       } finally {
         parseInFlightRef.current = false;
       }
     };
 
     void run();
-  }, [
-    draft.dataSource,
-    hasAvailability,
-    ideGsmSources,
-    onUpdate,
-    t,
-    tabularApi,
-  ]);
+  }, [draft.dataSource, hasAvailability, ideGsmSources, onUpdate, t, tabularApi]);
 
   const selectionMatrixSource = useMemo(() => {
     if (iso.status !== 'ready') return [];
@@ -176,13 +185,21 @@ export const useLocationSelectionStep = ({ draft, onUpdate, buildSelectionRecord
         iso.countries.map((c) => c.code),
         matrixConfig.columns,
         nextSelections,
-        allowedTypeSet,
+        allowedTypeSet
       );
       if (!deepEqualSelectionRecord(selectionRecordSource, normalized)) {
         onUpdate({ selectedArrayByCountries: normalized });
       }
     },
-    [allowedTypeSet, deepEqualSelectionRecord, iso.countries, iso.status, matrixConfig.columns, onUpdate, selectionRecordSource],
+    [
+      allowedTypeSet,
+      deepEqualSelectionRecord,
+      iso.countries,
+      iso.status,
+      matrixConfig.columns,
+      onUpdate,
+      selectionRecordSource,
+    ]
   );
 
   const isCellEnabled = useCallback(
@@ -195,7 +212,7 @@ export const useLocationSelectionStep = ({ draft, onUpdate, buildSelectionRecord
       if (idx == null) return false;
       return Boolean(row[idx]);
     },
-    [allowedTypeSet, availabilityByCountry, draft.dataSource, typeIndex],
+    [allowedTypeSet, availabilityByCountry, draft.dataSource, typeIndex]
   );
 
   return {

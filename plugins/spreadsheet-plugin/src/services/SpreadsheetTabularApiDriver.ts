@@ -1,29 +1,35 @@
-import type {
-  TabularDataResult,
-  TabularFilterRule,
-  TabularProcessingConfig,
-  TabularSelectionConfig,
-  TabularTableListResult,
-  PaginationOptions,
-  TabularDataApi,
-} from '@hierarchidb/ui-tabular';
+import type { AuthScope } from '@hierarchidb/auth-api';
+import { DexieChunkStore } from '@hierarchidb/chunk-store';
+import type { NodeId } from '@hierarchidb/core-types';
+import { toNodeId } from '@hierarchidb/core-types';
+import { FetchNetworkPort } from '@hierarchidb/download';
+import { TabularService } from '@hierarchidb/tabular-source';
 import {
   getRowStoreDB,
   type TabularDatabaseManager,
   type TabularTableMetadata,
   type TabularTableMetadataLike,
 } from '@hierarchidb/tabular-store';
-import { TabularService } from '@hierarchidb/tabular-source';
-import { DexieChunkStore } from '@hierarchidb/chunk-store';
-import { FetchNetworkPort } from '@hierarchidb/download';
-import type { AuthScope } from '@hierarchidb/auth-api';
-import type { NodeId } from '@hierarchidb/core-types';
-import { toNodeId } from '@hierarchidb/core-types';
+import type {
+  PaginationOptions,
+  TabularDataApi,
+  TabularDataResult,
+  TabularFilterRule,
+  TabularProcessingConfig,
+  TabularSelectionConfig,
+  TabularTableListResult,
+} from '@hierarchidb/ui-tabular';
+import { SPREADSHEET_PLUGIN_ID } from '../common/constants.js';
 import { SpreadsheetMetadataManager } from './SpreadsheetMetadataManager.js';
 import { SpreadsheetStorePort } from './SpreadsheetStorePort.js';
+import {
+  matchesFilters,
+  normalizeValueForResult,
+  type PreparedFilter,
+  prepareFilters,
+  type TabularRow,
+} from './utils/filtering.js';
 import { hashFile } from './utils/hashUtils.js';
-import { matchesFilters, normalizeValueForResult, prepareFilters, type PreparedFilter, type TabularRow } from './utils/filtering.js';
-import { SPREADSHEET_PLUGIN_ID } from '../common/constants.js';
 
 type RowChunkLike = {
   binaryData: ArrayBuffer;
@@ -32,7 +38,14 @@ type RowChunkLike = {
 const chunkDecoder = new TextDecoder();
 
 const resolveAuthScope = (pluginId: string): AuthScope => {
-  const knownScopes = new Set<AuthScope>(['shape', 'location', 'route', 'spreadsheet', 'styler', 'generic']);
+  const knownScopes = new Set<AuthScope>([
+    'shape',
+    'location',
+    'route',
+    'spreadsheet',
+    'styler',
+    'generic',
+  ]);
   return knownScopes.has(pluginId as AuthScope) ? (pluginId as AuthScope) : 'spreadsheet';
 };
 
@@ -48,9 +61,7 @@ const decodeChunkRows = (chunk: RowChunkLike): TabularRow[] => {
 
 const DEFAULT_TABULAR_NODE_ID = 'spreadsheet-shared' as NodeId;
 
-const buildCacheKey = (pluginId: string, url: string): string => (
-  `${pluginId}:${hashString(url)}`
-);
+const buildCacheKey = (pluginId: string, url: string): string => `${pluginId}:${hashString(url)}`;
 
 const hashString = (input: string): string => {
   let hash = 0;
@@ -90,7 +101,10 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
     this.rowStoreDatabaseName = rowStoreDatabaseName;
   }
 
-  async uploadTabularFile(file: File, config: TabularProcessingConfig = {}): Promise<TabularTableMetadata> {
+  async uploadTabularFile(
+    file: File,
+    config: TabularProcessingConfig = {}
+  ): Promise<TabularTableMetadata> {
     const contentHash = await hashFile(file);
     const existing = await this.metadataManager.findByContentHash(contentHash);
     if (existing) {
@@ -117,14 +131,17 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
     return this.toMetadata(result.metadata);
   }
 
-  async uploadCSVFile(file: File, config: TabularProcessingConfig = {}): Promise<TabularTableMetadata> {
+  async uploadCSVFile(
+    file: File,
+    config: TabularProcessingConfig = {}
+  ): Promise<TabularTableMetadata> {
     return this.uploadTabularFile(file, config);
   }
 
   async downloadTabularFromUrl(
     url: string,
     config: TabularProcessingConfig = {},
-    nodeId?: string,
+    nodeId?: string
   ): Promise<TabularTableMetadata> {
     try {
       const resolvedNodeId = nodeId ? toNodeId(nodeId) : DEFAULT_TABULAR_NODE_ID;
@@ -153,7 +170,7 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
   async downloadCSVFromUrl(
     url: string,
     config: TabularProcessingConfig = {},
-    nodeId?: string,
+    nodeId?: string
   ): Promise<TabularTableMetadata> {
     return this.downloadTabularFromUrl(url, config, nodeId);
   }
@@ -187,7 +204,10 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
     return metadata ? this.toMetadata(metadata) : null;
   }
 
-  async listTables(pluginId?: string, pagination?: PaginationOptions): Promise<TabularTableListResult> {
+  async listTables(
+    pluginId?: string,
+    pagination?: PaginationOptions
+  ): Promise<TabularTableListResult> {
     const records = await this.metadataManager.list();
     const filtered = pluginId
       ? records.filter((entry) => entry.referencingPlugins?.includes(pluginId))
@@ -208,7 +228,11 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
     await this.removeRowData(tableMetadataId);
   }
 
-  async getFilteredPreview(tableId: string, filters: TabularFilterRule[], rowCount: number): Promise<TabularDataResult> {
+  async getFilteredPreview(
+    tableId: string,
+    filters: TabularFilterRule[],
+    rowCount: number
+  ): Promise<TabularDataResult> {
     const metadata = await this.metadataManager.get(tableId);
     if (!metadata) {
       throw new Error('Table not found');
@@ -231,7 +255,10 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
     };
   }
 
-  async getFilteredData(tableId: string, selection: TabularSelectionConfig): Promise<TabularDataResult> {
+  async getFilteredData(
+    tableId: string,
+    selection: TabularSelectionConfig
+  ): Promise<TabularDataResult> {
     const metadata = await this.metadataManager.get(tableId);
     if (!metadata) throw new Error('Table not found');
     const prepared = prepareFilters(selection.filterRules ?? []);
@@ -239,7 +266,12 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
       selection.valueColumns && selection.valueColumns.length > 0
         ? selection.valueColumns
         : this.getColumnOrder(metadata);
-    const { rows, totalMatches } = await this.collectRows(tableId, prepared, Number.POSITIVE_INFINITY, columns);
+    const { rows, totalMatches } = await this.collectRows(
+      tableId,
+      prepared,
+      Number.POSITIVE_INFINITY,
+      columns
+    );
     return {
       columns: metadata.columns ?? [],
       rows,
@@ -291,7 +323,7 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
       columns: input.columns ?? [],
       createdAt: input.createdAt ?? Date.now(),
       updatedAt: input.updatedAt,
-      referenceCount: input.referenceCount ?? (input.referencingPlugins?.length ?? 0),
+      referenceCount: input.referenceCount ?? input.referencingPlugins?.length ?? 0,
       referencingPlugins: input.referencingPlugins ?? [],
       isChunked: input.isChunked,
       chunkCount: input.chunkCount,
@@ -306,7 +338,7 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
     tableId: string,
     filters: PreparedFilter[],
     limit: number,
-    projectionOrder: string[],
+    projectionOrder: string[]
   ): Promise<{ rows: Array<Record<string, string | number | null>>; totalMatches: number }> {
     const db = getRowStoreDB(this.rowStoreDatabaseName);
     const chunks = await db.rowChunks
@@ -334,7 +366,7 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
 
   private projectRow(
     row: TabularRow,
-    projectionOrder: string[],
+    projectionOrder: string[]
   ): Record<string, string | number | null> {
     const projected: Record<string, string | number | null> = {};
     const columns = projectionOrder.length > 0 ? projectionOrder : Object.keys(row);

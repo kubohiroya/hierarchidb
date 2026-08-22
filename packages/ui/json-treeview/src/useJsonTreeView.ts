@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
 import {
+  type ColumnDef,
+  type ExpandedState,
   getCoreRowModel,
   getExpandedRowModel,
   useReactTable,
-  type ColumnDef,
-  type ExpandedState,
 } from '@tanstack/react-table';
+import { useMemo, useState } from 'react';
 
 export type JsonNode = {
   id: string;
@@ -52,14 +52,14 @@ const buildNodes = (value: unknown, key: string, path: string): JsonNode => {
     const record = value as Record<string, unknown>;
     const keys = Object.keys(record).sort((a, b) => a.localeCompare(b));
     const children = keys.map((childKey) =>
-      buildNodes(record[childKey], childKey, `${path}.${childKey}`),
+      buildNodes(record[childKey], childKey, `${path}.${childKey}`)
     );
     return { id: path, key, value, type, children };
   }
   if (type === 'array') {
     const list = Array.isArray(value) ? value : [];
     const children = list.map((child, index) =>
-      buildNodes(child, `[${index}]`, `${path}[${index}]`),
+      buildNodes(child, `[${index}]`, `${path}[${index}]`)
     );
     return { id: path, key, value, type, children };
   }
@@ -70,7 +70,7 @@ const buildExpandedState = (
   node: JsonNode,
   maxDepth: number,
   depth = 0,
-  expanded: Record<string, boolean> = {},
+  expanded: Record<string, boolean> = {}
 ) => {
   if (node.children && node.children.length > 0 && depth < maxDepth) {
     expanded[node.id] = true;
@@ -89,7 +89,7 @@ export const useJsonTreeView = ({ data, defaultExpandedDepth, columns }: UseJson
   const rootNode = useMemo(() => buildNodes(data, '(root)', 'root'), [data]);
   const tableData = useMemo(() => [rootNode], [rootNode]);
   const [expanded, setExpanded] = useState<ExpandedState>(() =>
-    buildExpandedState(rootNode, Math.max(defaultExpandedDepth, 0)),
+    buildExpandedState(rootNode, Math.max(defaultExpandedDepth, 0))
   );
 
   const table = useReactTable({

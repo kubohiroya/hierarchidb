@@ -1,8 +1,7 @@
 import type { VTStageContext } from '~/contextTypes';
-import type { VtCollectionResult } from './vtStageTaskTypes.js';
-import type { VtLayerBuildInput, VtLayerBuildResult } from './vtStageTaskLayerBuilderTypes.js';
 import { buildLayersForVtTask } from './buildLayersForVtTask.js';
-import type { VtLayerRunInput } from './vtStageTaskTypes.js';
+import type { VtLayerBuildInput, VtLayerBuildResult } from './vtStageTaskLayerBuilderTypes.js';
+import type { VtCollectionResult, VtLayerRunInput } from './vtStageTaskTypes.js';
 
 type LayerBuildExecutorInput = {
   context: VTStageContext;

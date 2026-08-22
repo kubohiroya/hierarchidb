@@ -1,5 +1,5 @@
-import type { TabularTableMetadataLike } from '@hierarchidb/tabular-store';
 import { shapeDB } from '@hierarchidb/shape-store';
+import type { TabularTableMetadataLike } from '@hierarchidb/tabular-store';
 
 /**
  * Metadata manager dedicated to Shape plugin tabular datasets.
@@ -9,21 +9,22 @@ export class ShapeTabularMetadataManager {
   private table = shapeDB.tabularMetadata;
 
   private ensureRefs(
-    m?: TabularTableMetadataLike,
+    m?: TabularTableMetadataLike
   ): Required<Pick<TabularTableMetadataLike, 'referencingPlugins' | 'referenceCount'>> {
     return {
       referencingPlugins: Array.isArray(m?.referencingPlugins)
         ? [...(m!.referencingPlugins as string[])]
         : [],
-      referenceCount: typeof m?.referenceCount === 'number'
-        ? (m!.referenceCount as number)
-        : (m?.referencingPlugins?.length || 0),
+      referenceCount:
+        typeof m?.referenceCount === 'number'
+          ? (m!.referenceCount as number)
+          : m?.referencingPlugins?.length || 0,
     };
   }
 
   async create(
     metadata: TabularTableMetadataLike,
-    pluginId: string,
+    pluginId: string
   ): Promise<TabularTableMetadataLike> {
     return await shapeDB.transaction('rw', this.table, async () => {
       const id = metadata.id || crypto.randomUUID();

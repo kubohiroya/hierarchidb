@@ -3,9 +3,9 @@
  * @description Modeless dialog manager with stacking and restore icons for the map page.
  */
 
-import type { NodeId } from '@hierarchidb/core-types';
-import { FloatingWindow } from '@hierarchidb/components';
 import type { WindowState } from '@hierarchidb/components';
+import { FloatingWindow } from '@hierarchidb/components';
+import type { NodeId } from '@hierarchidb/core-types';
 import type {
   LayerSetDefinition,
   LayerSetId,
@@ -17,11 +17,11 @@ import type {
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import { MapToggleCard } from '@hierarchidb/ui-plugin-shell/ui-map';
 import {
-  Route as RouteIcon,
   Brush as BrushIcon,
   InfoOutlined as InfoOutlinedIcon,
   Layers as LayersIcon,
   PlaceOutlined as PlaceOutlinedIcon,
+  Route as RouteIcon,
   TableView as TableViewIcon,
 } from '@mui/icons-material';
 import { Box, IconButton, Tooltip } from '@mui/material';
@@ -33,11 +33,11 @@ import type { ModelessIconAppearance, ModelessIconPlacement } from './ModelessDi
 import { ModelessDialogProvider, useModelessDialogContext } from './ModelessDialogProvider.js';
 import {
   MapInfoContent,
+  type MapInfoSummary,
+  MapLayerContent,
   MapLocationListContent,
   MapRouteListContent,
   MapShapeListContent,
-  type MapInfoSummary,
-  MapLayerContent,
   MapStylerContent,
 } from './modelessDialogContent.js';
 import type { MapDialogDefinitionBase, MapDialogWindowState } from './modelessDialogLayout.js';
@@ -100,7 +100,14 @@ const MapDialogWindow: React.FC<MapDialogWindowProps> = ({
       isVisible: windowState.isVisible,
       zIndex,
     }),
-    [windowState.displayMode, windowState.isMinimized, windowState.isVisible, windowState.position, windowState.size, zIndex]
+    [
+      windowState.displayMode,
+      windowState.isMinimized,
+      windowState.isVisible,
+      windowState.position,
+      windowState.size,
+      zIndex,
+    ]
   );
   const handleStateChange = useCallback(
     (next: WindowState) => {
@@ -428,7 +435,26 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
         ),
       },
     ],
-    [basemapStyles, formattedZxy, geoJsonLayers, layerSetVisibility, layerSets, locationTypeOptions, locationTypeSelection, mapInfo, nodeId, onToggleLayerSet, onToggleLocationType, onToggleRouteMode, onToggleStyler, routeModeOptions, routeModeSelection, stylerSummaries, stylerToggles, vectorLayers]
+    [
+      basemapStyles,
+      formattedZxy,
+      geoJsonLayers,
+      layerSetVisibility,
+      layerSets,
+      locationTypeOptions,
+      locationTypeSelection,
+      mapInfo,
+      nodeId,
+      onToggleLayerSet,
+      onToggleLocationType,
+      onToggleRouteMode,
+      onToggleStyler,
+      routeModeOptions,
+      routeModeSelection,
+      stylerSummaries,
+      stylerToggles,
+      vectorLayers,
+    ]
   );
 
   const storageKey = useMemo(() => `hdb.map.dialogs.${nodeId}`, [nodeId]);

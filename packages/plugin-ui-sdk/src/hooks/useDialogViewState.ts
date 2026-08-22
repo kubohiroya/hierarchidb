@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
 import type { DialogDisplayMode, DialogPosition, DialogSize } from '@hierarchidb/tree-api';
+import { useCallback, useState } from 'react';
 
 export interface DialogViewState {
   size: DialogSize;
@@ -23,20 +23,17 @@ export const useDialogViewState = (options: UseDialogViewStateOptions) => {
     activeStepIndex: options.initialActiveStepIndex,
   });
 
-  const updateDialogViewState = useCallback(
-    (patch: Partial<DialogViewState>) => {
-      setDialogViewState((prev) => ({
-        ...prev,
-        ...patch,
-        size: patch.size ?? prev.size,
-        position: patch.position ?? prev.position,
-        displayMode: patch.displayMode ?? prev.displayMode,
-        activeStepIndex:
-          typeof patch.activeStepIndex === 'number' ? patch.activeStepIndex : prev.activeStepIndex,
-      }));
-    },
-    []
-  );
+  const updateDialogViewState = useCallback((patch: Partial<DialogViewState>) => {
+    setDialogViewState((prev) => ({
+      ...prev,
+      ...patch,
+      size: patch.size ?? prev.size,
+      position: patch.position ?? prev.position,
+      displayMode: patch.displayMode ?? prev.displayMode,
+      activeStepIndex:
+        typeof patch.activeStepIndex === 'number' ? patch.activeStepIndex : prev.activeStepIndex,
+    }));
+  }, []);
 
   return { dialogViewState, updateDialogViewState };
 };

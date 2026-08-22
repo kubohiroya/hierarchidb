@@ -1,6 +1,5 @@
-import type { FC, MouseEvent } from 'react';
-import type { ReactNode } from 'react';
 import { type SxProps, type Theme, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import type { FC, MouseEvent, ReactNode } from 'react';
 
 export type ButtonGroupItemType = {
   icon?: ReactNode;
@@ -17,13 +16,13 @@ export interface ToggleButtonGrouprops {
 }
 
 export const ToggleButtonItemGroup: FC<ToggleButtonGrouprops> = ({
-                                                                   buttonGroupSx,
-                                                                   buttonSx,
-                                                                   selectedValues,
-                                                                   handleSelectedValues,
-                                                                   items,
-                                                                   orientation,
-                                                                 }) => {
+  buttonGroupSx,
+  buttonSx,
+  selectedValues,
+  handleSelectedValues,
+  items,
+  orientation,
+}) => {
   const onChange = (_: MouseEvent<HTMLElement>, newValues: string[]) => {
     handleSelectedValues(newValues);
   };

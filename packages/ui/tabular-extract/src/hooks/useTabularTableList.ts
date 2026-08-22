@@ -1,7 +1,7 @@
+import type { TabularTableMetadataLike } from '@hierarchidb/tabular-store';
 import { useCallback, useEffect, useState } from 'react';
 import { useTabularApi } from '../context/TabularContext';
 import type { PaginationOptions, TabularTableListResult } from '../types/index';
-import type { TabularTableMetadataLike } from '@hierarchidb/tabular-store';
 
 /**
  * Options for useTabularTableList hook
@@ -37,7 +37,9 @@ export interface UseTabularTableListResult {
 /**
  * Hook for managing CSV table list
  */
-export const useTabularTableList = (options: UseTabularTableListOptions = {}): UseTabularTableListResult => {
+export const useTabularTableList = (
+  options: UseTabularTableListOptions = {}
+): UseTabularTableListResult => {
   const { pluginId, pagination, autoload = true } = options;
   const tabularApi = useTabularApi();
 
@@ -45,29 +47,35 @@ export const useTabularTableList = (options: UseTabularTableListOptions = {}): U
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadTables = useCallback(async (paginationOptions?: PaginationOptions) => {
-    try {
-      setLoading(true);
-      setError(null);
+  const loadTables = useCallback(
+    async (paginationOptions?: PaginationOptions) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      const data = await tabularApi.listTables(pluginId, paginationOptions);
-      setResult(data);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load table list';
-      setError(message);
-      setResult({ tables: [], total: 0 });
-    } finally {
-      setLoading(false);
-    }
-  }, [tabularApi, pluginId]);
+        const data = await tabularApi.listTables(pluginId, paginationOptions);
+        setResult(data);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to load table list';
+        setError(message);
+        setResult({ tables: [], total: 0 });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [tabularApi, pluginId]
+  );
 
   const reload = useCallback(async () => {
     await loadTables(pagination);
   }, [loadTables, pagination]);
 
-  const loadPage = useCallback(async (paginationOptions: PaginationOptions) => {
-    await loadTables(paginationOptions);
-  }, [loadTables]);
+  const loadPage = useCallback(
+    async (paginationOptions: PaginationOptions) => {
+      await loadTables(paginationOptions);
+    },
+    [loadTables]
+  );
 
   useEffect(() => {
     if (autoload) {

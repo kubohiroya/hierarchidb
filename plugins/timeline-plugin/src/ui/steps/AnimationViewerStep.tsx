@@ -1,9 +1,20 @@
-import { useMemo } from 'react';
-import { Box, Chip, IconButton, Paper, Slider, Stack, Switch, TextField, Tooltip, Typography } from '@mui/material';
-import { Map as MapIcon, PlayArrow, Pause, SkipNext, SkipPrevious } from '@mui/icons-material';
-import { useFramePlayer } from '~/ui/utils/useFramePlayer';
 import { useTranslation } from '@hierarchidb/ui-i18n';
+import { Map as MapIcon, Pause, PlayArrow, SkipNext, SkipPrevious } from '@mui/icons-material';
+import {
+  Box,
+  Chip,
+  IconButton,
+  Paper,
+  Slider,
+  Stack,
+  Switch,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@mui/material';
+import { useMemo } from 'react';
 import type { TimelineFrame } from '~/common/types/index';
+import { useFramePlayer } from '~/ui/utils/useFramePlayer';
 
 export interface AnimationViewerStepProps {
   frames: TimelineFrame[];
@@ -12,7 +23,12 @@ export interface AnimationViewerStepProps {
   loop?: boolean;
 }
 
-export function AnimationViewerStep({ frames, initialIndex = 0, initialFps = 12, loop = true }: AnimationViewerStepProps) {
+export function AnimationViewerStep({
+  frames,
+  initialIndex = 0,
+  initialFps = 12,
+  loop = true,
+}: AnimationViewerStepProps) {
   const player = useFramePlayer({ length: frames.length, initialIndex, initialFps, loop });
   const { t } = useTranslation('timeline-plugin');
   const current = frames[player.index] || null;
@@ -35,7 +51,8 @@ export function AnimationViewerStep({ frames, initialIndex = 0, initialFps = 12,
           position: 'relative',
           overflow: 'hidden',
           borderRadius: 2,
-          background: 'radial-gradient(circle at 15% 25%, rgba(33,150,243,0.35), transparent 60%),\
+          background:
+            'radial-gradient(circle at 15% 25%, rgba(33,150,243,0.35), transparent 60%),\
             radial-gradient(circle at 82% 25%, rgba(156,39,176,0.32), transparent 55%),\
             linear-gradient(145deg, rgba(33,150,243,0.25), rgba(0,0,0,0.45))',
           '&::after': {
@@ -87,7 +104,9 @@ export function AnimationViewerStep({ frames, initialIndex = 0, initialFps = 12,
         >
           <Typography variant="body2">
             {t('animation.playback', 'Playback {{atoms}} at {{fps}} fps', {
-              state: player.playing ? t('animation.running', 'running') : t('animation.paused', 'paused'),
+              state: player.playing
+                ? t('animation.running', 'running')
+                : t('animation.paused', 'paused'),
               fps: player.fps,
             })}
           </Typography>
@@ -101,13 +120,21 @@ export function AnimationViewerStep({ frames, initialIndex = 0, initialFps = 12,
       </Paper>
 
       <Stack direction="row" spacing={1} alignItems="center">
-        <IconButton onClick={player.prev} size="small"><SkipPrevious fontSize="small" /></IconButton>
+        <IconButton onClick={player.prev} size="small">
+          <SkipPrevious fontSize="small" />
+        </IconButton>
         {player.playing ? (
-          <IconButton onClick={player.pause} size="small" color="primary"><Pause fontSize="small" /></IconButton>
+          <IconButton onClick={player.pause} size="small" color="primary">
+            <Pause fontSize="small" />
+          </IconButton>
         ) : (
-          <IconButton onClick={player.play} size="small" color="primary"><PlayArrow fontSize="small" /></IconButton>
+          <IconButton onClick={player.play} size="small" color="primary">
+            <PlayArrow fontSize="small" />
+          </IconButton>
         )}
-        <IconButton onClick={player.next} size="small"><SkipNext fontSize="small" /></IconButton>
+        <IconButton onClick={player.next} size="small">
+          <SkipNext fontSize="small" />
+        </IconButton>
 
         <Box sx={{ flex: 1, px: 2 }}>
           <Slider

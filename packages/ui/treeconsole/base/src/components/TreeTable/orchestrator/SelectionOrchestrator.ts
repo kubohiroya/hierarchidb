@@ -1,16 +1,22 @@
 /**
-  * SelectionOrchestrator
-   * -
+ * SelectionOrchestrator
+ * -
  * -
  * - /
  * -
-  */
+ */
 
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import type { NodeId } from '@hierarchidb/core-types';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useCallback } from 'react';
+import {
+  clearSelectionAtom,
+  rowSelectionAtom,
+  selectAllAtom,
+  selectedNodeIdsAtom,
+  selectionModeAtom,
+} from '~/components/TreeTable/state/index';
 import type { TreeViewController } from '~/types/index';
-import { clearSelectionAtom, rowSelectionAtom, selectAllAtom, selectedNodeIdsAtom, selectionModeAtom } from '~/components/TreeTable/state/index';
 
 export interface SelectionOrchestratorResult {
   // State
@@ -26,9 +32,9 @@ export interface SelectionOrchestratorResult {
 }
 
 /**
-    */
+ */
 export function useSelectionOrchestrator(
-  controller: TreeViewController | null,
+  controller: TreeViewController | null
 ): SelectionOrchestratorResult {
   // State atoms
   const [_rowSelection, setRowSelection] = useAtom(rowSelectionAtom);
@@ -54,7 +60,7 @@ export function useSelectionOrchestrator(
       //  Controller
       controller?.selectNode?.(nodeId as NodeId);
     },
-    [selectionMode, setRowSelection, controller],
+    [selectionMode, setRowSelection, controller]
   );
 
   const selectMultipleNodes = useCallback(
@@ -71,7 +77,7 @@ export function useSelectionOrchestrator(
       //  Controller
       controller?.selectMultipleNodes?.(nodeIds as NodeId[]);
     },
-    [selectionMode, setRowSelection, controller],
+    [selectionMode, setRowSelection, controller]
   );
 
   //  Ctrl+
@@ -91,7 +97,7 @@ export function useSelectionOrchestrator(
       //  Controller
       controller?.selectNode?.(nodeId as NodeId);
     },
-    [selectionMode, setRowSelection, controller],
+    [selectionMode, setRowSelection, controller]
   );
 
   const handleClearSelection = useCallback(() => {

@@ -1,6 +1,6 @@
-import { renderHook } from '@testing-library/react';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
+import { renderHook } from '@testing-library/react';
 import { useShapeBuildAutoResume } from '../../../components/build-progress/useShapeBuildAutoResume/useShapeBuildAutoResume';
 
 describe('useShapeBuildAutoResume reload behavior', () => {
@@ -8,20 +8,22 @@ describe('useShapeBuildAutoResume reload behavior', () => {
   const makeHook = (args: Partial<Parameters<typeof useShapeBuildAutoResume>[0]> = {}) => {
     const handleStart = vi.fn().mockResolvedValue(true);
     const handlePause = vi.fn();
-    const result = renderHook(() => useShapeBuildAutoResume({
-      activeNodeId,
-      buildStatus: 'idle' as BuildStatus,
-      stopReason: undefined,
-      runtimeStatus: 'running',
-      handleStart,
-      handlePause,
-      hasFailedSourceTasks: false,
-      hasDataSource: true,
-      hasSelection: true,
-      isProcessingValid: true,
-      isLockSupported: true,
-      ...args,
-    }));
+    const result = renderHook(() =>
+      useShapeBuildAutoResume({
+        activeNodeId,
+        buildStatus: 'idle' as BuildStatus,
+        stopReason: undefined,
+        runtimeStatus: 'running',
+        handleStart,
+        handlePause,
+        hasFailedSourceTasks: false,
+        hasDataSource: true,
+        hasSelection: true,
+        isProcessingValid: true,
+        isLockSupported: true,
+        ...args,
+      })
+    );
     return { result, handleStart, handlePause };
   };
 

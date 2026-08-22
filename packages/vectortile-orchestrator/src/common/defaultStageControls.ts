@@ -9,7 +9,9 @@ const neverAbortController = new AbortController();
  * - getSignal: abort されない AbortSignal（この module 内の controller は abort されない）
  * - requestPause: 何もしない
  */
-export function defaultStageControls(): Required<Pick<StageControls, 'waitIfPaused' | 'getSignal' | 'requestPause'>> {
+export function defaultStageControls(): Required<
+  Pick<StageControls, 'waitIfPaused' | 'getSignal' | 'requestPause'>
+> {
   return {
     waitIfPaused: async () => {},
     getSignal: () => neverAbortController.signal,

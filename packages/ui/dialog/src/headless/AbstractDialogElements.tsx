@@ -1,5 +1,11 @@
 import type { ReactElement, ReactNode } from 'react';
-import type { HeadlessDialogContentProps, HeadlessDialogFooterProps, HeadlessDialogHeaderProps, HeadlessFooterRenderProps, HeadlessHeaderRenderProps } from './types.js';
+import type {
+  HeadlessDialogContentProps,
+  HeadlessDialogFooterProps,
+  HeadlessDialogHeaderProps,
+  HeadlessFooterRenderProps,
+  HeadlessHeaderRenderProps,
+} from './types.js';
 
 export type AbstractDialogHeaderProps<TData> = {
   HeaderComponent: React.ComponentType<HeadlessDialogHeaderProps<TData>>;

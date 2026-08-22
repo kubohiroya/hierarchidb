@@ -45,8 +45,10 @@ const fetchUrlOk = async (url: string): Promise<void> => {
 
 describe('generateDownloadTaskPayloads', () => {
   it('creates naturalearth URLs for JP/ID levels 0/1', () => {
-    const admin0 = 'https://www.naturalearthdata.com/download/50m/cultural/ne_50m_admin_0_countries.zip';
-    const admin1 = 'https://www.naturalearthdata.com/download/50m/cultural/ne_50m_admin_1_states_provinces.zip';
+    const admin0 =
+      'https://www.naturalearthdata.com/download/50m/cultural/ne_50m_admin_0_countries.zip';
+    const admin1 =
+      'https://www.naturalearthdata.com/download/50m/cultural/ne_50m_admin_1_states_provinces.zip';
     assertUrls('naturalearth', [admin0, admin1, admin0, admin1]);
   });
 
@@ -67,7 +69,6 @@ describe('generateDownloadTaskPayloads', () => {
       'https://geodata.ucdavis.edu/gadm/gadm4.1/json/gadm41_IDN_1.json.zip',
     ]);
   });
-
 });
 
 describe('generateDownloadTaskPayloads (network)', () => {

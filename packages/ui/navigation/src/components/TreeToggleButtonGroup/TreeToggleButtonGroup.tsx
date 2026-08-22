@@ -3,8 +3,8 @@
  * @description Flexible button group for toggling between multiple console pages
  */
 
-import type { ReactElement } from 'react';
 import { Button, ButtonGroup, type ButtonProps, Tooltip } from '@mui/material';
+import type { ReactElement } from 'react';
 
 const useNavigate = (): ((path: string, options?: any) => void) => {
   return () => {
@@ -73,19 +73,19 @@ export interface TreeToggleButtonGroupProps {
  * Flexible console toggle button group component
  */
 export function TreeToggleButtonGroup({
-                                        trees,
-                                        selectedTreeId,
-                                        currentPageNodeId,
-                                        appPrefix: _appPrefix = '',
-                                        getSavedPageNodeId,
-                                        savePageNodeId,
-                                        getNodeTreeId,
-                                        orientation = 'horizontal',
-                                        size = 'medium',
-                                        showLabelsOnSmallScreens = false,
-                                        sx,
-                                        onTreeSelect,
-                                      }: TreeToggleButtonGroupProps): ReactElement | null {
+  trees,
+  selectedTreeId,
+  currentPageNodeId,
+  appPrefix: _appPrefix = '',
+  getSavedPageNodeId,
+  savePageNodeId,
+  getNodeTreeId,
+  orientation = 'horizontal',
+  size = 'medium',
+  showLabelsOnSmallScreens = false,
+  sx,
+  onTreeSelect,
+}: TreeToggleButtonGroupProps): ReactElement | null {
   const navigate = useNavigate();
 
   // Safe handling of loader data that might not be available
@@ -141,14 +141,14 @@ export function TreeToggleButtonGroup({
   const buttonSx = showLabelsOnSmallScreens
     ? {}
     : {
-      '& .MuiButton-startIcon': {
-        marginRight: { xs: 0, sm: 0, md: 0, lg: '8px' },
-      },
-      minWidth: { xs: 'auto', sm: 'auto', md: 'auto', lg: '64px' },
-      '& .button-text': {
-        display: { xs: 'none', sm: 'none', md: 'none', lg: 'inline' },
-      },
-    };
+        '& .MuiButton-startIcon': {
+          marginRight: { xs: 0, sm: 0, md: 0, lg: '8px' },
+        },
+        minWidth: { xs: 'auto', sm: 'auto', md: 'auto', lg: '64px' },
+        '& .button-text': {
+          display: { xs: 'none', sm: 'none', md: 'none', lg: 'inline' },
+        },
+      };
 
   return (
     <ButtonGroup
@@ -159,12 +159,12 @@ export function TreeToggleButtonGroup({
       sx={{
         ...(orientation === 'vertical'
           ? {
-            '& .MuiButton-root': {
-              justifyContent: 'flex-start',
-              textTransform: 'none',
-              width: '100%',
-            },
-          }
+              '& .MuiButton-root': {
+                justifyContent: 'flex-start',
+                textTransform: 'none',
+                width: '100%',
+              },
+            }
           : {}),
         // Apply rounded corners
         '& .MuiButtonGroup-grouped': {
@@ -218,7 +218,7 @@ export function TreeToggleButtonGroup({
  */
 export function createResourcesTreeConfig(
   icon: React.ComponentType<any>,
-  overrides?: Partial<TreeConfig>,
+  overrides?: Partial<TreeConfig>
 ): TreeConfig {
   return {
     id: 'resources',
@@ -235,7 +235,7 @@ export function createResourcesTreeConfig(
  */
 export function createProjectsTreeConfig(
   icon: React.ComponentType<any>,
-  overrides?: Partial<TreeConfig>,
+  overrides?: Partial<TreeConfig>
 ): TreeConfig {
   return {
     id: 'projects',

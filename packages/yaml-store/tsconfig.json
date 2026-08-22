@@ -1,7 +1,5 @@
 {
-    "extends": "../../tsconfig.package.local-alias.base.json",
-    "compilerOptions": {},
-    "include": [
-        "src/**/*"
-    ]
+  "extends": "../../tsconfig.package.local-alias.base.json",
+  "compilerOptions": {},
+  "include": ["src/**/*"]
 }

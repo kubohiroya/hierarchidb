@@ -1,13 +1,13 @@
-import type { Feature, FeatureCollection, GeoJSON, Geometry, MultiPolygon, Polygon } from 'geojson';
 import area from '@turf/area';
 import bbox from '@turf/bbox';
 import bboxClip from '@turf/bbox-clip';
 import booleanContains from '@turf/boolean-contains';
 import booleanIntersects from '@turf/boolean-intersects';
 import booleanValid from '@turf/boolean-valid';
-import simplify from '@turf/simplify';
 import { cleanCoords } from '@turf/clean-coords';
+import simplify from '@turf/simplify';
 import unkink from '@turf/unkink-polygon';
+import type { Feature, FeatureCollection, GeoJSON, Geometry, MultiPolygon, Polygon } from 'geojson';
 
 export type GeosModule = {
   engine: 'turf';
@@ -19,9 +19,8 @@ const TURF_MODULE: GeosModule = { engine: 'turf' };
 
 let initialized = false;
 
-const isFeatureCollection = (value: GeoJSON): value is FeatureCollection => (
-  value.type === 'FeatureCollection'
-);
+const isFeatureCollection = (value: GeoJSON): value is FeatureCollection =>
+  value.type === 'FeatureCollection';
 
 const isFeature = (value: GeoJSON): value is Feature => value.type === 'Feature';
 
@@ -62,7 +61,9 @@ export const geosIsValid = (geojson: GeoJSON): boolean => {
   return booleanValid(toFeature(geojson));
 };
 
-export const geosIsValidDetail = (geojson: GeoJSON): {
+export const geosIsValidDetail = (
+  geojson: GeoJSON
+): {
   valid: boolean;
   reason?: string;
   location?: [number, number];
@@ -80,7 +81,7 @@ export const geosIsValidDetail = (geojson: GeoJSON): {
 const simplifyFeature = (
   feature: Feature,
   tolerance: number,
-  options?: { preserveTopology?: boolean },
+  options?: { preserveTopology?: boolean }
 ): Feature => {
   void options;
   if (!Number.isFinite(tolerance) || tolerance <= 0) {
@@ -97,14 +98,14 @@ const simplifyFeature = (
 export const geosSimplify = (
   geojson: GeoJSON,
   tolerance: number,
-  options?: { preserveTopology?: boolean },
+  options?: { preserveTopology?: boolean }
 ): GeoJSON => {
   if (isFeatureCollection(geojson)) {
     return {
       ...geojson,
-      features: geojson.features.map((feature) => (
-        geosSimplify(feature as GeoJSON, tolerance, options) as Feature
-      )),
+      features: geojson.features.map(
+        (feature) => geosSimplify(feature as GeoJSON, tolerance, options) as Feature
+      ),
     };
   }
   if (isFeature(geojson)) {
@@ -123,8 +124,8 @@ const ensureValidFeatureGeometry = (feature: Feature): Feature => {
   if (!geometry || (geometry.type !== 'Polygon' && geometry.type !== 'MultiPolygon')) {
     return cleaned;
   }
-  const pieces = unkink(cleaned as Feature<Polygon | MultiPolygon>).features
-    .map((entry) => entry.geometry)
+  const pieces = unkink(cleaned as Feature<Polygon | MultiPolygon>)
+    .features.map((entry) => entry.geometry)
     .filter((entry): entry is Polygon => Boolean(entry) && entry.type === 'Polygon');
   if (pieces.length === 0) {
     return cleaned;
@@ -152,9 +153,7 @@ export const geosMakeValid = (geojson: GeoJSON): GeoJSON => {
   if (isFeatureCollection(geojson)) {
     return {
       ...geojson,
-      features: geojson.features.map((feature) => (
-        geosMakeValid(feature as GeoJSON) as Feature
-      )),
+      features: geojson.features.map((feature) => geosMakeValid(feature as GeoJSON) as Feature),
     };
   }
   if (isFeature(geojson)) {
@@ -172,6 +171,9 @@ export const geosContains = (left: GeoJSON, right: GeoJSON): boolean => {
   return booleanContains(toFeature(left), toFeature(right));
 };
 
-export const geosClip = (feature: Feature, clipBbox: [number, number, number, number]): Feature | null => {
+export const geosClip = (
+  feature: Feature,
+  clipBbox: [number, number, number, number]
+): Feature | null => {
   return bboxClip(feature as Feature<Polygon | MultiPolygon>, clipBbox) as Feature | null;
 };

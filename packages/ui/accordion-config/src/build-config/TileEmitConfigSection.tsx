@@ -1,34 +1,34 @@
+import type { BaseBuildConfig } from '@hierarchidb/gis-sdk';
+import {
+  ArrowDownward as ArrowDownwardIcon,
+  ArrowUpward as ArrowUpwardIcon,
+  BorderAll as BorderAllIcon,
+  DensityLarge as DensityLargeIcon,
+  DensitySmall as DensitySmallIcon,
+  ExpandMore as ExpandMoreIcon,
+  GridView as GridViewIcon,
+  Layers as LayersIcon,
+  Speed as SpeedIcon,
+  Tune as TuneIcon,
+  Update as UpdateIcon,
+} from '@mui/icons-material';
 import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
   Grid,
+  InputAdornment,
   Paper,
+  Slider,
   Stack,
   TextField,
   Typography,
-  Slider,
-  InputAdornment,
 } from '@mui/material';
-import {
-  BorderAll as BorderAllIcon,
-  ExpandMore as ExpandMoreIcon,
-  Layers as LayersIcon,
-  GridView as GridViewIcon,
-  Speed as SpeedIcon,
-  Tune as TuneIcon,
-  ArrowDownward as ArrowDownwardIcon,
-  ArrowUpward as ArrowUpwardIcon,
-  DensityLarge as DensityLargeIcon,
-  DensitySmall as DensitySmallIcon,
-  Update as UpdateIcon,
-} from '@mui/icons-material';
 import type { ReactNode } from 'react';
-import type { BaseBuildConfig } from '@hierarchidb/gis-sdk';
 import { BuildConfigAccordionSummary } from './BuildConfigAccordionSummary.js';
-import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { BuildConfigSectionTitle } from './BuildConfigSectionTitle.js';
 import { useTileEmitConfigSection } from './useTileEmitConfigSection.js';
+import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 
 type TranslateFn = (key: string, fallback?: string, options?: Record<string, unknown>) => string;
 
@@ -81,7 +81,7 @@ export const TileEmitConfigSection = <TDataSourceName,>({
           title={t('processing.tileEmit.title', 'TileEmit generation')}
           info={t(
             'processing.tile.descriptionTooltip',
-            'Generate TileEmit outputs for the selected zoom range.',
+            'Generate TileEmit outputs for the selected zoom range.'
           )}
         />
       </AccordionSummary>
@@ -116,7 +116,7 @@ export const TileEmitConfigSection = <TDataSourceName,>({
                     onChange={(event) => onExtentChange(event.target.value)}
                     helperText={t(
                       'processing.tile.extentHelp',
-                      'Controls the resolution of tile coordinates.',
+                      'Controls the resolution of tile coordinates.'
                     )}
                     inputProps={{ min: 0 }}
                     disabled={disabled}
@@ -144,7 +144,7 @@ export const TileEmitConfigSection = <TDataSourceName,>({
                     <Typography variant="caption" color="text.secondary">
                       {t(
                         'processing.tile.toleranceHelp',
-                        'Simplification tolerance applied during tile generation.',
+                        'Simplification tolerance applied during tile generation.'
                       )}
                     </Typography>
                   </Stack>
@@ -154,7 +154,11 @@ export const TileEmitConfigSection = <TDataSourceName,>({
                     fullWidth
                     type="number"
                     label={t('processing.tile.buffer', 'Tile buffer (px)')}
-                    value={buildConfig.tileEmitConfig.buffer ?? buildConfig.tileEmitConfig.bufferSize ?? 64}
+                    value={
+                      buildConfig.tileEmitConfig.buffer ??
+                      buildConfig.tileEmitConfig.bufferSize ??
+                      64
+                    }
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -163,10 +167,7 @@ export const TileEmitConfigSection = <TDataSourceName,>({
                       ),
                     }}
                     onChange={(event) => onBufferChange(event.target.value)}
-                    helperText={t(
-                      'processing.tile.bufferHelp',
-                      'Tile buffer on each side in px.',
-                    )}
+                    helperText={t('processing.tile.bufferHelp', 'Tile buffer on each side in px.')}
                     inputProps={{ min: 0, max: 512 }}
                     disabled={disabled}
                   />
@@ -180,7 +181,7 @@ export const TileEmitConfigSection = <TDataSourceName,>({
                     onChange={(event) => onIndexMaxPointsChange(event.target.value)}
                     helperText={t(
                       'processing.tile.indexMaxPointsHelp',
-                      'Maximum number of points per tile in the initial index.',
+                      'Maximum number of points per tile in the initial index.'
                     )}
                     inputProps={{ min: 1 }}
                     disabled={disabled}
@@ -203,14 +204,19 @@ export const TileEmitConfigSection = <TDataSourceName,>({
                       icon={<LayersIcon fontSize="small" color="primary" />}
                       title={t('processing.tile.workers', 'Concurrent TileEmit Workers')}
                       value={resolvedMaxConcurrent}
-                      helperText={t('processing.tile.workersHelp', 'Concurrent workers for TileEmit generation.')}
+                      helperText={t(
+                        'processing.tile.workersHelp',
+                        'Concurrent workers for TileEmit generation.'
+                      )}
                       warningText={undefined}
                       disableHoverEffect={disableHoverLift}
                       onChange={onMaxConcurrentChange}
                       min={1}
                       max={8}
                       step={1}
-                      formatLabel={(value) => t('processing.workers.countLabel', '{{count}} workers', { count: value })}
+                      formatLabel={(value) =>
+                        t('processing.workers.countLabel', '{{count}} workers', { count: value })
+                      }
                       disabled={disabled}
                     />
                   </Grid>
@@ -238,7 +244,9 @@ export const TileEmitConfigSection = <TDataSourceName,>({
                           valueLabelDisplay="auto"
                           onChange={(_, value) => onWatermarkRangeChange(value)}
                           disabled={disabled || !dynamicConcurrencyActive}
-                          getAriaLabel={() => t('processing.tile.dynamicConcurrencyWatermarkRange', 'Watermark range')}
+                          getAriaLabel={() =>
+                            t('processing.tile.dynamicConcurrencyWatermarkRange', 'Watermark range')
+                          }
                         />
                         <ArrowUpwardIcon fontSize="small" color="action" />
                       </Stack>
@@ -258,7 +266,10 @@ export const TileEmitConfigSection = <TDataSourceName,>({
                     <TextField
                       fullWidth
                       type="number"
-                      label={t('processing.tile.dynamicConcurrencySampleMs', 'Sample interval (ms)')}
+                      label={t(
+                        'processing.tile.dynamicConcurrencySampleMs',
+                        'Sample interval (ms)'
+                      )}
                       value={dynamicConcurrency.sampleMs}
                       InputProps={{
                         startAdornment: (
@@ -275,13 +286,12 @@ export const TileEmitConfigSection = <TDataSourceName,>({
                 <Typography variant="caption" color="text.secondary">
                   {t(
                     'processing.tile.dynamicConcurrencyHelp',
-                    'Adjusts TileEmit worker counts based on runtime load.',
+                    'Adjusts TileEmit worker counts based on runtime load.'
                   )}
                 </Typography>
               </Stack>
             </Paper>
           ) : null}
-
         </Stack>
       </AccordionDetails>
     </Accordion>

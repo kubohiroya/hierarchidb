@@ -1,23 +1,20 @@
-import type { ReactElement } from 'react';
+import type { NodeId } from '@hierarchidb/core-types';
 import { type PluginStepProps, PluginStepRegistry } from '@hierarchidb/plugin-base';
-import type {
-  ShapeEntity,
-  SelectedArrayByCountries,
-} from '~/common/types/ShapeEntity';
+import { i18n } from '@hierarchidb/ui-i18n';
+import type { ReactElement } from 'react';
 import {
   DEFAULT_BUILD_CONFIG,
   DEFAULT_PROCESSING_CONFIG,
   summarizeCheckboxState,
   validateBuildConfig,
 } from '~/common/types/index';
-import type { NodeId } from '@hierarchidb/core-types';
+import type { SelectedArrayByCountries, ShapeEntity } from '~/common/types/ShapeEntity';
+import { ShapeBuildConfigStep } from './build-config/ShapeBuildConfigStep.tsx';
+import { ShapeBuildStep } from './build-progress/ShapeBuildStep/ShapeBuildStep.tsx';
+import { ShapeCountrySelectionStep } from './country-selection/ShapeCountrySelectionStep.tsx';
 import { ShapeDataSourceStep } from './data-source/ShapeDataSourceStep.tsx';
 import { ShapePreviewStep } from './preview/ShapePreviewStep.tsx';
-import { i18n } from '@hierarchidb/ui-i18n';
 import type { ShapeDialogStepProps } from './ShapeDialogStepProps.js';
-import { ShapeBuildConfigStep } from './build-config/ShapeBuildConfigStep.tsx';
-import { ShapeCountrySelectionStep } from './country-selection/ShapeCountrySelectionStep.tsx';
-import { ShapeBuildStep } from './build-progress/ShapeBuildStep/ShapeBuildStep.tsx';
 import { useShapeStepAdapter } from './useShapeStepAdapter.js';
 
 const registry = PluginStepRegistry.getInstance();
@@ -25,7 +22,7 @@ const registry = PluginStepRegistry.getInstance();
 type ShapeStepProps = PluginStepProps<Partial<ShapeEntity>>;
 
 function createStepAdapter(
-  Component: React.ComponentType<ShapeDialogStepProps>,
+  Component: React.ComponentType<ShapeDialogStepProps>
 ): (props: ShapeStepProps) => ReactElement {
   return function ShapeStepAdapter(props: ShapeStepProps) {
     const { data, handleChange } = useShapeStepAdapter({
@@ -50,8 +47,9 @@ const ShapeCountrySelection = createStepAdapter(ShapeCountrySelectionStep);
 const ShapePreview = createStepAdapter(ShapePreviewStep);
 const ShapeBuildProgress = createStepAdapter(ShapeBuildStep);
 
-const resolveSelectedArrayByCountries = (data?: Partial<ShapeEntity>): SelectedArrayByCountries | undefined =>
-  data?.selectedArrayByCountries;
+const resolveSelectedArrayByCountries = (
+  data?: Partial<ShapeEntity>
+): SelectedArrayByCountries | undefined => data?.selectedArrayByCountries;
 
 const canStartShapeBuild = (data?: Partial<ShapeEntity>): boolean => {
   // data reflects draftData (payload) only
@@ -60,7 +58,7 @@ const canStartShapeBuild = (data?: Partial<ShapeEntity>): boolean => {
   if (!data?.buildConfig) return false;
   const processingValid = validateBuildConfig(
     data.buildConfig,
-    data.processingConfig ?? DEFAULT_PROCESSING_CONFIG,
+    data.processingConfig ?? DEFAULT_PROCESSING_CONFIG
   ).isValid;
   return hasSelection && hasDataSource && processingValid;
 };
@@ -92,15 +90,13 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
         id: 'data-source',
         label: t('steps.dataSource.label', 'Data Source'),
         componentFactory: (props: ShapeStepProps) => <ShapeDataSource {...props} />,
-        validate: (data?: Partial<ShapeEntity>) =>
-          Boolean(data?.buildConfig?.dataSourceName),
+        validate: (data?: Partial<ShapeEntity>) => Boolean(data?.buildConfig?.dataSourceName),
       },
       {
         id: 'country-selection',
         label: t('steps.countrySelection.label', 'Country Selection'),
         componentFactory: (props: ShapeStepProps) => <ShapeCountrySelection {...props} />,
-        validate: (data?: Partial<ShapeEntity>) =>
-          Boolean(data?.buildConfig?.dataSourceName),
+        validate: (data?: Partial<ShapeEntity>) => Boolean(data?.buildConfig?.dataSourceName),
       },
       {
         id: 'processing-configuration',
@@ -109,7 +105,7 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
         validate: (data?: Partial<ShapeEntity>) =>
           validateBuildConfig(
             data?.buildConfig ?? DEFAULT_BUILD_CONFIG,
-            data?.processingConfig ?? DEFAULT_PROCESSING_CONFIG,
+            data?.processingConfig ?? DEFAULT_PROCESSING_CONFIG
           ).isValid,
       },
       {
@@ -129,7 +125,8 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
         componentFactory: (props: ShapeStepProps) => <ShapePreview {...props} />,
         validate: (data?: Partial<ShapeEntity>) => isShapePreviewReady(data),
         capabilities: {
-          canNavigateTo: (_fromStep: number, data?: Partial<ShapeEntity>) => isShapePreviewReady(data),
+          canNavigateTo: (_fromStep: number, data?: Partial<ShapeEntity>) =>
+            isShapePreviewReady(data),
         },
       },
     ];

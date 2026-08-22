@@ -1,5 +1,5 @@
-import { ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import { useTranslation } from '@hierarchidb/ui-i18n';
+import { ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import type { LanguageSelection } from './useUserMenu.js';
 
 export interface LanguageOption {

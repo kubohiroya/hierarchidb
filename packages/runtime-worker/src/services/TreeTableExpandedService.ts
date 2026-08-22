@@ -1,5 +1,5 @@
-import type { TreeQueryAPI } from '@hierarchidb/tree-api';
 import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeQueryAPI } from '@hierarchidb/tree-api';
 import type { TreeTableExpandedRow, UIStateDB } from './UIStateDB.js';
 
 export class TreeTableExpandedService {

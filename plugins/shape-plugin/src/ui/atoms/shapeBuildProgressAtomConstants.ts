@@ -1,8 +1,5 @@
 import { atom } from 'jotai';
-import type {
-  TaskScrollTarget,
-  TaskViewportRange,
-} from '~/ui/atoms/shapeBuildProgressTypes';
+import type { TaskScrollTarget, TaskViewportRange } from '~/ui/atoms/shapeBuildProgressTypes';
 
 export type {
   TaskScrollTarget,

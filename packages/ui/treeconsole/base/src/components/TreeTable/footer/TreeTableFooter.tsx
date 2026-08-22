@@ -1,5 +1,3 @@
-import { memo } from 'react';
-import { Box, Button, Chip, IconButton, LinearProgress, Tooltip, Typography } from '@mui/material';
 import {
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,
@@ -7,6 +5,8 @@ import {
   Refresh as RefreshIcon,
   Warning as WarningIcon,
 } from '@mui/icons-material';
+import { Box, Button, Chip, IconButton, LinearProgress, Tooltip, Typography } from '@mui/material';
+import { memo } from 'react';
 
 export interface TreeTableFooterProps {
   readonly totalItems: number;
@@ -25,7 +25,9 @@ export interface TreeTableFooterProps {
   readonly onToggleDetails?: () => void;
 }
 
-export const TreeTableFooter = memo(function TreeTableFooter(props: TreeTableFooterProps): React.JSX.Element {
+export const TreeTableFooter = memo(function TreeTableFooter(
+  props: TreeTableFooterProps
+): React.JSX.Element {
   const {
     totalItems,
     selectedItems,

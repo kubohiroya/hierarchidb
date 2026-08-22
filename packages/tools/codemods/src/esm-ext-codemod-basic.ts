@@ -9,8 +9,8 @@
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import * as globby from 'globby';
 import * as process from 'node:process';
+import * as globby from 'globby';
 
 const args = process.argv.slice(2);
 let write = false;
@@ -73,7 +73,8 @@ for (const file of files) {
   let out = src;
   let fileChanged = false;
 
-  const re = /(import\s+[^'"\n]+from\s+|export\s+[^'"\n]*from\s+|export\s+\*\s+from\s+)(["'])([^"']+)(\2)/g;
+  const re =
+    /(import\s+[^'"\n]+from\s+|export\s+[^'"\n]*from\s+|export\s+\*\s+from\s+)(["'])([^"']+)(\2)/g;
   out = out.replace(re, (m, prefix, q, spec, q2) => {
     if (!needsExtension(spec)) return m;
     let next = resolveIndexIfDir(dir, spec);

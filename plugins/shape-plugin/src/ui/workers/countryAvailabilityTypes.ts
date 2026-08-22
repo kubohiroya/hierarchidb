@@ -18,12 +18,16 @@ export type UiStorageBridge = {
 
 export interface CountryAvailabilityWorkerAPI {
   setUiStorageBridge(bridge: UiStorageBridge): Promise<void>;
-  loadAvailability(dataSource: DataSourceName, nodeId: string): Promise<SerializedCountryAvailability>;
+  loadAvailability(
+    dataSource: DataSourceName,
+    nodeId: string
+  ): Promise<SerializedCountryAvailability>;
   loadMetadata(
     dataSource: DataSourceName,
     nodeId: string,
-    options?: { force?: boolean },
+    options?: { force?: boolean }
   ): Promise<CountryMetadata[]>;
   clearMetadataCache(dataSource?: DataSourceName): Promise<void>;
 }
+
 import type { CountryMetadata, DataSourceName } from '~/common/types/index';

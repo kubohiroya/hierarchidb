@@ -1,19 +1,13 @@
-import { atom } from 'jotai';
 import type { BuildTaskSummary } from '@hierarchidb/build-api';
 import type {
   ShapeBuildSessionRecoverableContractError,
   ShapeBuildStopReason,
 } from '@hierarchidb/shape-api';
-import type { TaskListViewPhase } from './shapeBuildProgressTypes';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
-import {
-  createBuildSessionStateAtoms,
-} from '@hierarchidb/ui-build-sessions';
-import type {
-  ShapeSessionPhase,
-  ShapeStageId,
-  ShapeStateEvent,
-} from './ShapeStageId.js';
+import { createBuildSessionStateAtoms } from '@hierarchidb/ui-build-sessions';
+import { atom } from 'jotai';
+import type { ShapeSessionPhase, ShapeStageId, ShapeStateEvent } from './ShapeStageId.js';
+import type { TaskListViewPhase } from './shapeBuildProgressTypes';
 
 type ShapeTaskSummary = BuildTaskSummary;
 
@@ -26,30 +20,34 @@ const resolveShapeStageId = (value: unknown): ShapeStageId => {
 
 const assertProgressRange = (value: number): number => {
   if (!Number.isFinite(value) || value < 0 || value > 100) {
-    throw new Error(`[shape buildSessionStateAtoms] progress must be within 0..100, received ${String(value)}`);
+    throw new Error(
+      `[shape buildSessionStateAtoms] progress must be within 0..100, received ${String(value)}`
+    );
   }
   return value;
 };
 
-const isActivePhase = (phase: ShapeSessionPhase): boolean => (
-  phase === 'starting'
-  || phase === 'queued'
-  || phase === 'running'
-  || phase === 'pausing'
-  || phase === 'resuming'
-  || phase === 'finalizing'
-);
+const isActivePhase = (phase: ShapeSessionPhase): boolean =>
+  phase === 'starting' ||
+  phase === 'queued' ||
+  phase === 'running' ||
+  phase === 'pausing' ||
+  phase === 'resuming' ||
+  phase === 'finalizing';
 
 // --- createBuildSessionStateAtoms instance ---
 
-const shapeSessionAtoms = createBuildSessionStateAtoms<ShapeStageId, ShapeSessionPhase, ShapeTaskSummary>({
+const shapeSessionAtoms = createBuildSessionStateAtoms<
+  ShapeStageId,
+  ShapeSessionPhase,
+  ShapeTaskSummary
+>({
   stages: ['source', 'geometry', 'tileEmit'] as const,
   defaultStageId: 'source',
   idlePhase: 'idle',
   resolveTaskStageId: (task) => resolveShapeStageId(task.stage),
-  isTerminalTaskStatus: (status) => (
-    status === 'completed' || status === 'failed' || status === 'recycled'
-  ),
+  isTerminalTaskStatus: (status) =>
+    status === 'completed' || status === 'failed' || status === 'recycled',
   isRunningTaskStatus: (status) => status === 'running',
   isQueuedTaskStatus: (status) => status === 'queued',
 });
@@ -80,7 +78,9 @@ const initialUiSyncPhaseByStage = (): Record<ShapeStageId, StageUiSyncPhase> => 
 });
 
 const lifecycleExtrasAtom = atom<LifecycleExtras>(initialLifecycleExtras());
-const uiSyncPhaseByStageAtom = atom<Record<ShapeStageId, StageUiSyncPhase>>(initialUiSyncPhaseByStage());
+const uiSyncPhaseByStageAtom = atom<Record<ShapeStageId, StageUiSyncPhase>>(
+  initialUiSyncPhaseByStage()
+);
 
 // --- Canonical 4-event types (Worker → UI) ---
 
@@ -201,28 +201,31 @@ export const buildSessionLifecycleAtom = atom((get) => {
   };
 });
 
-export const buildSessionTaskStreamConnectedAtom = atom((get) => (
-  get(shapeSessionAtoms.buildSessionStateAtom).execution.taskStreamConnected
-));
+export const buildSessionTaskStreamConnectedAtom = atom(
+  (get) => get(shapeSessionAtoms.buildSessionStateAtom).execution.taskStreamConnected
+);
 
-export const buildSessionStartButtonLoadingAtom = shapeSessionAtoms.buildSessionStartButtonLoadingAtom;
+export const buildSessionStartButtonLoadingAtom =
+  shapeSessionAtoms.buildSessionStartButtonLoadingAtom;
 
 export const buildSessionStageCountersAtom = shapeSessionAtoms.buildSessionStageCountersAtom;
 
-export const buildSessionTasksByStageAtom = atom<Record<ShapeStageId, BuildTaskSummary[]>>((get) => {
-  const state = get(shapeSessionAtoms.buildSessionStateAtom);
-  const toSummary = (stageId: ShapeStageId): BuildTaskSummary[] => {
-    const stage = state.execution.stages[stageId];
-    return stage.taskOrder
-      .map((taskId) => stage.tasksById[taskId])
-      .filter((task): task is ShapeTaskSummary => task !== undefined);
-  };
-  return {
-    source: toSummary('source'),
-    geometry: toSummary('geometry'),
-    tileEmit: toSummary('tileEmit'),
-  };
-});
+export const buildSessionTasksByStageAtom = atom<Record<ShapeStageId, BuildTaskSummary[]>>(
+  (get) => {
+    const state = get(shapeSessionAtoms.buildSessionStateAtom);
+    const toSummary = (stageId: ShapeStageId): BuildTaskSummary[] => {
+      const stage = state.execution.stages[stageId];
+      return stage.taskOrder
+        .map((taskId) => stage.tasksById[taskId])
+        .filter((task): task is ShapeTaskSummary => task !== undefined);
+    };
+    return {
+      source: toSummary('source'),
+      geometry: toSummary('geometry'),
+      tileEmit: toSummary('tileEmit'),
+    };
+  }
+);
 
 export const buildSessionStageProgressAtom = atom<Record<ShapeStageId, number>>((get) => {
   const state = get(shapeSessionAtoms.buildSessionStateAtom);
@@ -248,13 +251,13 @@ export const stageTimingByStageAtom = atom((get) => {
 // keeping this function pure (no Date.now()). Live durations for running stages must be
 // computed by the build-session progress hook from the current clock.
 const computeCompletedStageDuration = (
-  timing: { stageStartedAt: number; stageInactiveMs: number; stageCompletedAt?: number } | null,
+  timing: { stageStartedAt: number; stageInactiveMs: number; stageCompletedAt?: number } | null
 ): number => {
   if (!timing || timing.stageCompletedAt === undefined) return 0;
   const durationMs = timing.stageCompletedAt - timing.stageStartedAt - timing.stageInactiveMs;
   if (!Number.isFinite(durationMs) || durationMs < 0) {
     throw new Error(
-      `[shape buildSessionStateAtoms] stage duration must be finite and non-negative, received ${durationMs}`,
+      `[shape buildSessionStateAtoms] stage duration must be finite and non-negative, received ${durationMs}`
     );
   }
   return durationMs;
@@ -275,9 +278,9 @@ export const stageDurationMsByStageAtom = atom<Record<ShapeStageId, number>>((ge
 export const buildSessionSnapshotHandshakeReceivedAtom = atom<boolean>((get) => {
   const uiSyncByStage = get(uiSyncPhaseByStageAtom);
   return (
-    uiSyncByStage.source === 'running'
-    || uiSyncByStage.geometry === 'running'
-    || uiSyncByStage.tileEmit === 'running'
+    uiSyncByStage.source === 'running' ||
+    uiSyncByStage.geometry === 'running' ||
+    uiSyncByStage.tileEmit === 'running'
   );
 });
 
@@ -287,11 +290,8 @@ export const buildSessionTaskListViewPhaseAtom = atom<TaskListViewPhase>((get) =
   const uiSyncByStage = get(uiSyncPhaseByStageAtom);
   const activeStageUiSyncPhase = uiSyncByStage[state.view.activeStageId];
   const tasksByStage = get(buildSessionTasksByStageAtom);
-  const totalTasks = (
-    tasksByStage.source.length
-    + tasksByStage.geometry.length
-    + tasksByStage.tileEmit.length
-  );
+  const totalTasks =
+    tasksByStage.source.length + tasksByStage.geometry.length + tasksByStage.tileEmit.length;
   if (totalTasks > 0) return 'streaming';
   if (lifecycle.phase === 'idle') return 'idle';
   if (isActivePhase(lifecycle.phase)) {
@@ -305,17 +305,14 @@ export const buildSessionTaskListViewPhaseAtom = atom<TaskListViewPhase>((get) =
 
 // --- Reset ---
 
-const resetBuildSessionStateAtom = atom(
-  null,
-  (_get, set) => {
-    set(shapeSessionAtoms.dispatchBuildSessionEventAtom, { type: 'reset' });
-    set(lifecycleExtrasAtom, initialLifecycleExtras());
-    set(uiSyncPhaseByStageAtom, initialUiSyncPhaseByStage());
-    set(pendingUserActionBaseAtom, 'none');
-    set(completionSnapshotBaseAtom, null);
-    set(completionDialogOpenBaseAtom, false);
-  },
-);
+const resetBuildSessionStateAtom = atom(null, (_get, set) => {
+  set(shapeSessionAtoms.dispatchBuildSessionEventAtom, { type: 'reset' });
+  set(lifecycleExtrasAtom, initialLifecycleExtras());
+  set(uiSyncPhaseByStageAtom, initialUiSyncPhaseByStage());
+  set(pendingUserActionBaseAtom, 'none');
+  set(completionSnapshotBaseAtom, null);
+  set(completionDialogOpenBaseAtom, false);
+});
 
 const buildSessionRecoveryRevisionBaseAtom = atom(0);
 
@@ -467,7 +464,7 @@ const applyBuildSessionEventAtom = atom(
       default:
         return;
     }
-  },
+  }
 );
 
 export const dispatchBuildSessionEventAtom = atom(
@@ -478,7 +475,7 @@ export const dispatchBuildSessionEventAtom = atom(
       return;
     }
     set(applyBuildSessionEventAtom, event);
-  },
+  }
 );
 
 // --- (D) Pending user action ---
@@ -493,7 +490,7 @@ export const pendingUserActionAtom = atom(
     const current = get(pendingUserActionBaseAtom);
     if (current === next) return;
     set(pendingUserActionBaseAtom, next);
-  },
+  }
 );
 
 export const isStopRequestedInFlightAtom = atom((get) => {
@@ -517,7 +514,7 @@ export const completionSnapshotAtom = atom(
   (get) => get(completionSnapshotBaseAtom),
   (_get, set, next: CompletionSnapshotData) => {
     set(completionSnapshotBaseAtom, next);
-  },
+  }
 );
 
 const completionDialogOpenBaseAtom = atom(false);
@@ -526,7 +523,7 @@ export const completionDialogOpenAtom = atom(
   (get) => get(completionDialogOpenBaseAtom),
   (_get, set, next: boolean) => {
     set(completionDialogOpenBaseAtom, next);
-  },
+  }
 );
 
 export type { ShapeSessionPhase, ShapeStageId } from './ShapeStageId.js';

@@ -3,26 +3,26 @@
  * Reusable checkbox matrix for multi-dimensional selection
  */
 
-import type React from 'react';
-import { useCallback, useMemo, forwardRef } from 'react';
+import type { SvgIconComponent } from '@mui/icons-material';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import {
   Box,
   Checkbox,
   Chip,
+  Paper,
   Table,
   TableBody,
+  TableCell,
   TableContainer,
   TableHead,
-  Paper,
-  TableCell,
   TableRow,
   Tooltip,
   Typography,
 } from '@mui/material';
-import type { SvgIconComponent } from '@mui/icons-material';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import { TableVirtuoso, type ItemProps, type TableComponents } from 'react-virtuoso';
+import type React from 'react';
+import { forwardRef, useCallback, useMemo } from 'react';
+import { type ItemProps, type TableComponents, TableVirtuoso } from 'react-virtuoso';
 
 export interface SelectionMatrixColumn {
   id: string;
@@ -60,12 +60,15 @@ export interface SelectionMatrixProps<T = any> {
     row: SelectionMatrixRow<T>,
     column: SelectionMatrixColumn,
     rowIndex: number,
-    colIndex: number,
+    colIndex: number
   ) => boolean;
-  renderUnavailableCell?: (row: SelectionMatrixRow<T>, column: SelectionMatrixColumn) => React.ReactNode;
+  renderUnavailableCell?: (
+    row: SelectionMatrixRow<T>,
+    column: SelectionMatrixColumn
+  ) => React.ReactNode;
   getRowProps?: (
     row: SelectionMatrixRow<T>,
-    rowIndex: number,
+    rowIndex: number
   ) => React.HTMLAttributes<HTMLTableRowElement>;
   /** Optional row height for virtualization */
   rowHeight?: number;
@@ -92,40 +95,40 @@ export interface SelectionMatrixProps<T = any> {
 }
 
 export function SelectionMatrix<T = any>({
-                                           rows,
-                                           columns,
-                                           state,
-                                           onChange,
-                                           onSelectAll,
-                                           onSelectRow,
-                                           showRowSelection = false,
-                                           showColumnSelection = true,
-                                           showSelectionCount = false,
-                                           maxHeight,
-                                           height,
-                                           stickyHeader = true,
-                                           dense = false,
-                                           rowHeaderLabel = 'Region',
-                                           isCellEnabled = () => true,
-                                           renderUnavailableCell = () => (
-                                             <Typography variant="caption" color="text.disabled">
-                                               -
-                                             </Typography>
-                                           ),
-                                           getRowProps,
-                                           rowHeight = 48,
-                                           rowMetaColumns,
-                                           onColumnHeaderClick,
-                                           onRowMetaHeaderClick,
-                                           getColumnSortDirection,
-                                           getColumnHeaderState,
-                                           getRowMetaSortDirection,
-                                           virtuosoRef,
-                                         }: SelectionMatrixProps<T>): React.ReactElement {
-  const resolvedHeight = useMemo(() => height ?? (maxHeight ?? '100%'), [height, maxHeight]);
+  rows,
+  columns,
+  state,
+  onChange,
+  onSelectAll,
+  onSelectRow,
+  showRowSelection = false,
+  showColumnSelection = true,
+  showSelectionCount = false,
+  maxHeight,
+  height,
+  stickyHeader = true,
+  dense = false,
+  rowHeaderLabel = 'Region',
+  isCellEnabled = () => true,
+  renderUnavailableCell = () => (
+    <Typography variant="caption" color="text.disabled">
+      -
+    </Typography>
+  ),
+  getRowProps,
+  rowHeight = 48,
+  rowMetaColumns,
+  onColumnHeaderClick,
+  onRowMetaHeaderClick,
+  getColumnSortDirection,
+  getColumnHeaderState,
+  getRowMetaSortDirection,
+  virtuosoRef,
+}: SelectionMatrixProps<T>): React.ReactElement {
+  const resolvedHeight = useMemo(() => height ?? maxHeight ?? '100%', [height, maxHeight]);
   const resolvedRowHeight = useMemo(
-    () => (dense ? Math.min(rowHeight ?? 40, 40) : rowHeight ?? 48),
-    [dense, rowHeight],
+    () => (dense ? Math.min(rowHeight ?? 40, 40) : (rowHeight ?? 48)),
+    [dense, rowHeight]
   );
   const containerStyle = useMemo<React.CSSProperties>(() => {
     const style: React.CSSProperties = {};
@@ -147,92 +150,113 @@ export function SelectionMatrix<T = any>({
       const rowDef = rows[rowIndex];
       if (!rowDef || !isCellEnabled(rowDef, column, rowIndex, colIndex)) return count;
       return count + (row[colIndex] ? 1 : 0);
-    }, 0),
+    }, 0)
   );
 
   const columnEnabledCounts = columns.map((column, colIndex) =>
-    rows.reduce((count, row, rowIndex) => (
-      isCellEnabled(row, column, rowIndex, colIndex) ? count + 1 : count
-    ), 0),
+    rows.reduce(
+      (count, row, rowIndex) =>
+        isCellEnabled(row, column, rowIndex, colIndex) ? count + 1 : count,
+      0
+    )
   );
 
-  const rowCounts = rows.map((row, rowIndex) =>
-    state[rowIndex]?.reduce((count, cell, colIndex) => {
-      const column = columns[colIndex];
-      if (!column || !isCellEnabled(row, column, rowIndex, colIndex)) return count;
-      return count + (cell ? 1 : 0);
-    }, 0) || 0,
+  const rowCounts = rows.map(
+    (row, rowIndex) =>
+      state[rowIndex]?.reduce((count, cell, colIndex) => {
+        const column = columns[colIndex];
+        if (!column || !isCellEnabled(row, column, rowIndex, colIndex)) return count;
+        return count + (cell ? 1 : 0);
+      }, 0) || 0
   );
 
-  const isColumnFullySelected = useCallback((colIndex: number) => {
-    const enabled = columnEnabledCounts[colIndex] ?? 0;
-    const selected = columnCounts[colIndex] ?? 0;
-    return enabled > 0 && selected === enabled;
-  }, [columnCounts, columnEnabledCounts]);
+  const isColumnFullySelected = useCallback(
+    (colIndex: number) => {
+      const enabled = columnEnabledCounts[colIndex] ?? 0;
+      const selected = columnCounts[colIndex] ?? 0;
+      return enabled > 0 && selected === enabled;
+    },
+    [columnCounts, columnEnabledCounts]
+  );
 
-  const isColumnIndeterminate = useCallback((colIndex: number) => {
-    const enabled = columnEnabledCounts[colIndex] ?? 0;
-    const selected = columnCounts[colIndex] ?? 0;
-    return enabled > 0 && selected > 0 && selected < enabled;
-  }, [columnCounts, columnEnabledCounts]);
+  const isColumnIndeterminate = useCallback(
+    (colIndex: number) => {
+      const enabled = columnEnabledCounts[colIndex] ?? 0;
+      const selected = columnCounts[colIndex] ?? 0;
+      return enabled > 0 && selected > 0 && selected < enabled;
+    },
+    [columnCounts, columnEnabledCounts]
+  );
 
   // Check if entire row is selected
-  const isRowSelected = useCallback((rowIndex: number) => {
-    let enabled = 0;
-    const allSelected = columns.every((column, colIndex) => {
-      const row = rows[rowIndex];
-      if (!row) return false;
-      if (!isCellEnabled(row, column, rowIndex, colIndex)) return true;
-      enabled += 1;
-      return Boolean(state[rowIndex]?.[colIndex]);
-    });
-    return enabled > 0 && allSelected;
-  }, [columns, isCellEnabled, rows, state]);
+  const isRowSelected = useCallback(
+    (rowIndex: number) => {
+      let enabled = 0;
+      const allSelected = columns.every((column, colIndex) => {
+        const row = rows[rowIndex];
+        if (!row) return false;
+        if (!isCellEnabled(row, column, rowIndex, colIndex)) return true;
+        enabled += 1;
+        return Boolean(state[rowIndex]?.[colIndex]);
+      });
+      return enabled > 0 && allSelected;
+    },
+    [columns, isCellEnabled, rows, state]
+  );
 
   // Check if entire row is indeterminate
-  const isRowIndeterminate = useCallback((rowIndex: number) => {
-    let enabled = 0;
-    let selected = 0;
-    const row = rows[rowIndex];
-    columns.forEach((column, colIndex) => {
-      if (!row || !isCellEnabled(row, column, rowIndex, colIndex)) return;
-      enabled += 1;
-      if (state[rowIndex]?.[colIndex]) selected += 1;
-    });
-    return enabled > 0 && selected > 0 && selected < enabled;
-  }, [columns, isCellEnabled, rows, state]);
+  const isRowIndeterminate = useCallback(
+    (rowIndex: number) => {
+      let enabled = 0;
+      let selected = 0;
+      const row = rows[rowIndex];
+      columns.forEach((column, colIndex) => {
+        if (!row || !isCellEnabled(row, column, rowIndex, colIndex)) return;
+        enabled += 1;
+        if (state[rowIndex]?.[colIndex]) selected += 1;
+      });
+      return enabled > 0 && selected > 0 && selected < enabled;
+    },
+    [columns, isCellEnabled, rows, state]
+  );
 
   // Handle column header checkbox click
-  const handleColumnSelectAll = useCallback((colIndex: number) => {
-    if (onSelectAll) {
-      const overrideState = getColumnHeaderState?.(colIndex);
-      const isSelected = overrideState ? overrideState.checked : isColumnFullySelected(colIndex);
-      const enabledRows = rows
-        .map((row, rowIndex) => ({ row, rowIndex }))
-        .filter(({ row }, rowIndex) => {
-          const column = columns[colIndex];
-          return column ? isCellEnabled(row, column, rowIndex, colIndex) : false;
-        })
-        .map(({ rowIndex }) => rowIndex);
-      onSelectAll(colIndex, !isSelected, enabledRows);
-    }
-  }, [columns, getColumnHeaderState, isCellEnabled, isColumnFullySelected, onSelectAll, rows]);
+  const handleColumnSelectAll = useCallback(
+    (colIndex: number) => {
+      if (onSelectAll) {
+        const overrideState = getColumnHeaderState?.(colIndex);
+        const isSelected = overrideState ? overrideState.checked : isColumnFullySelected(colIndex);
+        const enabledRows = rows
+          .map((row, rowIndex) => ({ row, rowIndex }))
+          .filter(({ row }, rowIndex) => {
+            const column = columns[colIndex];
+            return column ? isCellEnabled(row, column, rowIndex, colIndex) : false;
+          })
+          .map(({ rowIndex }) => rowIndex);
+        onSelectAll(colIndex, !isSelected, enabledRows);
+      }
+    },
+    [columns, getColumnHeaderState, isCellEnabled, isColumnFullySelected, onSelectAll, rows]
+  );
 
   // Handle row checkbox click
-  const handleRowSelectAll = useCallback((rowIndex: number) => {
-    if (onSelectRow) {
-      const enabledColumns = columns
-        .map((column, colIndex) => ({ column, colIndex }))
-        .filter(({ column }, colIndex) => {
-          const row = rows[rowIndex];
-          return row && isCellEnabled(row, column, rowIndex, colIndex);
-        })
-        .map(({ colIndex }) => colIndex);
-      if (enabledColumns.length === 0) return;
-      const isSelected = enabledColumns.every((colIndex) => Boolean(state[rowIndex]?.[colIndex]));
-      onSelectRow(rowIndex, !isSelected, enabledColumns);
-    }
-  }, [columns, isCellEnabled, onSelectRow, rows, state]);
+  const handleRowSelectAll = useCallback(
+    (rowIndex: number) => {
+      if (onSelectRow) {
+        const enabledColumns = columns
+          .map((column, colIndex) => ({ column, colIndex }))
+          .filter(({ column }, colIndex) => {
+            const row = rows[rowIndex];
+            return row && isCellEnabled(row, column, rowIndex, colIndex);
+          })
+          .map(({ colIndex }) => colIndex);
+        if (enabledColumns.length === 0) return;
+        const isSelected = enabledColumns.every((colIndex) => Boolean(state[rowIndex]?.[colIndex]));
+        onSelectRow(rowIndex, !isSelected, enabledColumns);
+      }
+    },
+    [columns, isCellEnabled, onSelectRow, rows, state]
+  );
 
   const isRowSelectable = useCallback(
     (rowIndex: number) =>
@@ -240,7 +264,7 @@ export function SelectionMatrix<T = any>({
         const row = rows[rowIndex];
         return row && isCellEnabled(row, column, rowIndex, colIndex);
       }),
-    [columns, isCellEnabled, rows],
+    [columns, isCellEnabled, rows]
   );
 
   const { allSelected, allIndeterminate } = useMemo(() => {
@@ -299,36 +323,35 @@ export function SelectionMatrix<T = any>({
           />
         </TableCell>
       )}
-      {showRowSelection && (
-        <TableCell padding="checkbox" sx={{ width: 50 }} />
-      )}
+      {showRowSelection && <TableCell padding="checkbox" sx={{ width: 50 }} />}
       {rowMetaColumns && rowMetaColumns.length > 0 ? (
         rowMetaColumns.map((meta, idx) => (
-      <TableCell
-        key={`meta-${idx}`}
-        sx={{
-          minWidth: 120,
-          width: meta.width,
-          cursor: onRowMetaHeaderClick ? 'pointer' : undefined,
-          pl: '8px',
-          pr: '8px',
-          pt: '4px',
-          pb: '4px',
-        }}
-        onClick={onRowMetaHeaderClick ? () => onRowMetaHeaderClick(idx) : undefined}
-      >
-        <Box display="flex" alignItems="center" gap={0.5}>
-          <Typography variant="subtitle2">
-            {meta.header}
-          </Typography>
-          {getRowMetaSortDirection && (() => {
-            const dir = getRowMetaSortDirection(idx);
-            if (dir === 'asc') return <ArrowUpwardIcon fontSize="inherit" sx={{ fontSize: 16 }} />;
-            if (dir === 'desc') return <ArrowDownwardIcon fontSize="inherit" sx={{ fontSize: 16 }} />;
-            return null;
-          })()}
-        </Box>
-      </TableCell>
+          <TableCell
+            key={`meta-${idx}`}
+            sx={{
+              minWidth: 120,
+              width: meta.width,
+              cursor: onRowMetaHeaderClick ? 'pointer' : undefined,
+              pl: '8px',
+              pr: '8px',
+              pt: '4px',
+              pb: '4px',
+            }}
+            onClick={onRowMetaHeaderClick ? () => onRowMetaHeaderClick(idx) : undefined}
+          >
+            <Box display="flex" alignItems="center" gap={0.5}>
+              <Typography variant="subtitle2">{meta.header}</Typography>
+              {getRowMetaSortDirection &&
+                (() => {
+                  const dir = getRowMetaSortDirection(idx);
+                  if (dir === 'asc')
+                    return <ArrowUpwardIcon fontSize="inherit" sx={{ fontSize: 16 }} />;
+                  if (dir === 'desc')
+                    return <ArrowDownwardIcon fontSize="inherit" sx={{ fontSize: 16 }} />;
+                  return null;
+                })()}
+            </Box>
+          </TableCell>
         ))
       ) : (
         <TableCell sx={{ minWidth: 200, p: '4px' }}>
@@ -338,82 +361,102 @@ export function SelectionMatrix<T = any>({
       {columns.map((column, colIndex) => {
         const isColumnDisabled = Boolean(column.disabled);
         return (
-        <TableCell
-          key={column.id}
-          align="center"
-          sx={{ width: column.width || 120, pl: '8px', pr: '8px', pt: '4px', pb: '4px' }}
-          onClick={onColumnHeaderClick && !isColumnDisabled ? () => onColumnHeaderClick(colIndex) : undefined}
-        >
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              cursor: onColumnHeaderClick && !isColumnDisabled ? 'pointer' : 'default',
-            }}
+          <TableCell
+            key={column.id}
+            align="center"
+            sx={{ width: column.width || 120, pl: '8px', pr: '8px', pt: '4px', pb: '4px' }}
+            onClick={
+              onColumnHeaderClick && !isColumnDisabled
+                ? () => onColumnHeaderClick(colIndex)
+                : undefined
+            }
           >
-            <Tooltip
-              title={`${column.label}: ${columnCounts[colIndex]} selected`}
-              disableInteractive
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                cursor: onColumnHeaderClick && !isColumnDisabled ? 'pointer' : 'default',
+              }}
             >
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                {showColumnSelection && onSelectAll && (
-                  <Checkbox
-                    checked={getColumnHeaderState?.(colIndex)?.checked ?? isColumnFullySelected(colIndex)}
-                    indeterminate={getColumnHeaderState?.(colIndex)?.indeterminate ?? isColumnIndeterminate(colIndex)}
-                    onClick={(event) => event.stopPropagation()}
-                    onMouseDown={(event) => event.stopPropagation()}
-                    onChange={(event) => {
-                      event.stopPropagation();
-                      handleColumnSelectAll(colIndex);
-                    }}
-                    disabled={
-                      isColumnDisabled ||
-                      !rows.some((row, rowIndex) =>
-                        isCellEnabled(row, column, rowIndex, colIndex),
-                      )
-                    }
-                    size="small"
-                  />
-                )}
-                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
-                  {column.icon && (() => {
-                    const Icon = column.icon;
-                    return (
-                      <Icon
-                        fontSize="small"
-                        sx={{ color: isColumnDisabled ? 'text.disabled' : 'text.secondary' }}
-                      />
-                    );
-                  })()}
-                  {column.description ? (
-                    <Typography variant="caption" sx={{ cursor: 'help' }} color={isColumnDisabled ? 'text.disabled' : undefined}>
-                      {column.label}
-                    </Typography>
-                  ) : (
-                    <Typography variant="caption" color={isColumnDisabled ? 'text.disabled' : undefined}>
-                      {column.label}
-                    </Typography>
+              <Tooltip
+                title={`${column.label}: ${columnCounts[colIndex]} selected`}
+                disableInteractive
+              >
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  {showColumnSelection && onSelectAll && (
+                    <Checkbox
+                      checked={
+                        getColumnHeaderState?.(colIndex)?.checked ?? isColumnFullySelected(colIndex)
+                      }
+                      indeterminate={
+                        getColumnHeaderState?.(colIndex)?.indeterminate ??
+                        isColumnIndeterminate(colIndex)
+                      }
+                      onClick={(event) => event.stopPropagation()}
+                      onMouseDown={(event) => event.stopPropagation()}
+                      onChange={(event) => {
+                        event.stopPropagation();
+                        handleColumnSelectAll(colIndex);
+                      }}
+                      disabled={
+                        isColumnDisabled ||
+                        !rows.some((row, rowIndex) =>
+                          isCellEnabled(row, column, rowIndex, colIndex)
+                        )
+                      }
+                      size="small"
+                    />
                   )}
-                  {getColumnSortDirection && (() => {
-                    const dir = getColumnSortDirection(colIndex);
-                    if (dir === 'asc') return <ArrowUpwardIcon fontSize="inherit" sx={{ fontSize: 16 }} />;
-                    if (dir === 'desc') return <ArrowDownwardIcon fontSize="inherit" sx={{ fontSize: 16 }} />;
-                    return null;
-                  })()}
+                  <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                    {column.icon &&
+                      (() => {
+                        const Icon = column.icon;
+                        return (
+                          <Icon
+                            fontSize="small"
+                            sx={{ color: isColumnDisabled ? 'text.disabled' : 'text.secondary' }}
+                          />
+                        );
+                      })()}
+                    {column.description ? (
+                      <Typography
+                        variant="caption"
+                        sx={{ cursor: 'help' }}
+                        color={isColumnDisabled ? 'text.disabled' : undefined}
+                      >
+                        {column.label}
+                      </Typography>
+                    ) : (
+                      <Typography
+                        variant="caption"
+                        color={isColumnDisabled ? 'text.disabled' : undefined}
+                      >
+                        {column.label}
+                      </Typography>
+                    )}
+                    {getColumnSortDirection &&
+                      (() => {
+                        const dir = getColumnSortDirection(colIndex);
+                        if (dir === 'asc')
+                          return <ArrowUpwardIcon fontSize="inherit" sx={{ fontSize: 16 }} />;
+                        if (dir === 'desc')
+                          return <ArrowDownwardIcon fontSize="inherit" sx={{ fontSize: 16 }} />;
+                        return null;
+                      })()}
+                  </Box>
+                  {showSelectionCount && (
+                    <Chip
+                      label={columnCounts[colIndex]}
+                      size="small"
+                      variant="outlined"
+                      sx={{ mt: 0.5, minWidth: 32, height: 20 }}
+                    />
+                  )}
                 </Box>
-                {showSelectionCount && (
-                  <Chip
-                    label={columnCounts[colIndex]}
-                    size="small"
-                    variant="outlined"
-                    sx={{ mt: 0.5, minWidth: 32, height: 20 }}
-                  />
-                )}
-              </Box>
-            </Tooltip>
-          </Box>
-        </TableCell>
+              </Tooltip>
+            </Box>
+          </TableCell>
         );
       })}
       {showSelectionCount && (
@@ -466,9 +509,7 @@ export function SelectionMatrix<T = any>({
                   </Typography>
                 </Tooltip>
               ) : (
-                <Typography variant="body2">
-                  {row.label}
-                </Typography>
+                <Typography variant="body2">{row.label}</Typography>
               )}
               {row.subLabel && (
                 <Typography variant="caption" color="text.secondary">
@@ -511,29 +552,27 @@ export function SelectionMatrix<T = any>({
 
   const TableRowComponent = useMemo(
     () =>
-      forwardRef<HTMLTableRowElement, ItemProps<SelectionMatrixRow<T>>>(
-        (rowProps, rowRef) => {
-          const { item, style, ...rest } = rowProps;
-          const extraProps = getRowProps?.(item, rowProps['data-index']) ?? {};
-          return (
-            <TableRow
-              {...rest}
-              {...extraProps}
-              ref={rowRef}
-              hover
-              style={{
-                ...style,
-                ...(extraProps as { style?: React.CSSProperties }).style,
-                opacity: item?.disabled ? 0.5 : 1,
-              }}
-              sx={{
-                '&:hover': { bgcolor: 'action.hover' },
-              }}
-            />
-          );
-        },
-      ),
-    [getRowProps],
+      forwardRef<HTMLTableRowElement, ItemProps<SelectionMatrixRow<T>>>((rowProps, rowRef) => {
+        const { item, style, ...rest } = rowProps;
+        const extraProps = getRowProps?.(item, rowProps['data-index']) ?? {};
+        return (
+          <TableRow
+            {...rest}
+            {...extraProps}
+            ref={rowRef}
+            hover
+            style={{
+              ...style,
+              ...(extraProps as { style?: React.CSSProperties }).style,
+              opacity: item?.disabled ? 0.5 : 1,
+            }}
+            sx={{
+              '&:hover': { bgcolor: 'action.hover' },
+            }}
+          />
+        );
+      }),
+    [getRowProps]
   );
 
   const VirtuosoTableComponents = useMemo<TableComponents<SelectionMatrixRow<T>>>(
@@ -546,7 +585,7 @@ export function SelectionMatrix<T = any>({
             ref={scrollerRef}
             sx={{ ...containerStyle, ...style }}
           />
-        ),
+        )
       ),
       Table: forwardRef<HTMLTableElement, React.TableHTMLAttributes<HTMLTableElement>>(
         (tableProps, tableRef) => (
@@ -556,17 +595,17 @@ export function SelectionMatrix<T = any>({
             stickyHeader={stickyHeader}
             size={dense ? 'small' : 'medium'}
           />
-        ),
+        )
       ),
       TableHead: forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
-        (headProps, headRef) => <TableHead {...headProps} ref={headRef} />,
+        (headProps, headRef) => <TableHead {...headProps} ref={headRef} />
       ),
       TableBody: forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
-        (bodyProps, bodyRef) => <TableBody {...bodyProps} ref={bodyRef} />,
+        (bodyProps, bodyRef) => <TableBody {...bodyProps} ref={bodyRef} />
       ),
       TableRow: TableRowComponent,
     }),
-    [TableRowComponent, containerStyle, dense, stickyHeader],
+    [TableRowComponent, containerStyle, dense, stickyHeader]
   );
 
   return (

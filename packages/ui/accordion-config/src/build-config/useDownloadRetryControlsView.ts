@@ -23,7 +23,7 @@ export function useDownloadRetryControlsView({
 }: UseDownloadRetryControlsViewParams): UseDownloadRetryControlsViewResult {
   const retryAttemptsValue = useMemo(
     () => Math.min(baseRetryConfig.retryAttempts, RETRY_ATTEMPTS_MAX),
-    [baseRetryConfig.retryAttempts],
+    [baseRetryConfig.retryAttempts]
   );
 
   useEffect(() => {
@@ -34,39 +34,51 @@ export function useDownloadRetryControlsView({
     });
   }, [baseRetryConfig, onChange, retryAttemptsValue]);
 
-  const updateTimeoutMs = useCallback((rawValue: string) => {
-    const timeoutMs = Number(rawValue);
-    onChange({
-      ...baseRetryConfig,
-      timeoutMs: Number.isFinite(timeoutMs) ? timeoutMs : baseRetryConfig.timeoutMs,
-    });
-  }, [baseRetryConfig, onChange]);
+  const updateTimeoutMs = useCallback(
+    (rawValue: string) => {
+      const timeoutMs = Number(rawValue);
+      onChange({
+        ...baseRetryConfig,
+        timeoutMs: Number.isFinite(timeoutMs) ? timeoutMs : baseRetryConfig.timeoutMs,
+      });
+    },
+    [baseRetryConfig, onChange]
+  );
 
-  const updateRetryDelay = useCallback((rawValue: string) => {
-    const retryDelay = Number(rawValue);
-    onChange({
-      ...baseRetryConfig,
-      retryDelay: Number.isFinite(retryDelay) ? retryDelay : baseRetryConfig.retryDelay,
-    });
-  }, [baseRetryConfig, onChange]);
+  const updateRetryDelay = useCallback(
+    (rawValue: string) => {
+      const retryDelay = Number(rawValue);
+      onChange({
+        ...baseRetryConfig,
+        retryDelay: Number.isFinite(retryDelay) ? retryDelay : baseRetryConfig.retryDelay,
+      });
+    },
+    [baseRetryConfig, onChange]
+  );
 
-  const updateRetryAttempts = useCallback((value: number | null) => {
-    const nextValue = value === null ? retryAttemptsValue : value;
-    const retryAttempts = Math.min(nextValue, RETRY_ATTEMPTS_MAX);
-    const retryLimit = Math.min(baseRetryConfig.retryLimit, retryAttempts);
-    onChange({
-      ...baseRetryConfig,
-      retryAttempts,
-      retryLimit,
-    });
-  }, [baseRetryConfig, onChange, retryAttemptsValue]);
+  const updateRetryAttempts = useCallback(
+    (value: number | null) => {
+      const nextValue = value === null ? retryAttemptsValue : value;
+      const retryAttempts = Math.min(nextValue, RETRY_ATTEMPTS_MAX);
+      const retryLimit = Math.min(baseRetryConfig.retryLimit, retryAttempts);
+      onChange({
+        ...baseRetryConfig,
+        retryAttempts,
+        retryLimit,
+      });
+    },
+    [baseRetryConfig, onChange, retryAttemptsValue]
+  );
 
-  const updateRetryBackoff = useCallback((value: DownloadRetryConfig['retryBackoff']) => {
-    onChange({
-      ...baseRetryConfig,
-      retryBackoff: value,
-    });
-  }, [baseRetryConfig, onChange]);
+  const updateRetryBackoff = useCallback(
+    (value: DownloadRetryConfig['retryBackoff']) => {
+      onChange({
+        ...baseRetryConfig,
+        retryBackoff: value,
+      });
+    },
+    [baseRetryConfig, onChange]
+  );
 
   return {
     retryAttemptsMax: RETRY_ATTEMPTS_MAX,

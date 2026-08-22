@@ -1,13 +1,13 @@
 import type { StageHandlerResult } from '~/types/types';
+import { finalizeVtTileOutput } from './finalizeVtTileOutput.js';
+import { runVtTileOutputWriter } from './runVtTileOutputWriter.js';
 import { getHeapSnapshot } from './vtStageCoreUtils.js';
 import type { VtTileOutputContext } from './vtStageTaskOutputTypes.js';
-import { runVtTileOutputWriter } from './runVtTileOutputWriter.js';
-import { finalizeVtTileOutput } from './finalizeVtTileOutput.js';
 
 type VtTaskOutputFlowInput = VtTileOutputContext;
 
 export const runVtTileOutputFlow = async (
-  outputContext: VtTaskOutputFlowInput,
+  outputContext: VtTaskOutputFlowInput
 ): Promise<StageHandlerResult> => {
   const {
     context,
@@ -21,12 +21,15 @@ export const runVtTileOutputFlow = async (
     adminFeatureSummary,
   } = outputContext;
 
-  console.info('[tileEmit] encode/store start', JSON.stringify({
-    ...taskContext,
-    totalTiles,
-    bufferCount: input.bufferIds.length,
-    heap: getHeapSnapshot(),
-  }));
+  console.info(
+    '[tileEmit] encode/store start',
+    JSON.stringify({
+      ...taskContext,
+      totalTiles,
+      bufferCount: input.bufferIds.length,
+      heap: getHeapSnapshot(),
+    })
+  );
 
   const tileOutputSession = await runVtTileOutputWriter(outputContext);
 

@@ -1,61 +1,61 @@
 {
-    "name": "@hierarchidb/yaml-store",
-    "version": "0.1.0",
-    "private": true,
-    "type": "module",
-    "main": "dist/index.js",
-    "module": "dist/index.js",
-    "types": "dist/index.d.ts",
-    "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.js"
-        },
-        "./legacy-close": {
-            "types": "./dist/legacy-close/index.d.ts",
-            "import": "./dist/legacy-close/index.js"
-        },
-        "./readonly-inventory": {
-            "types": "./dist/readonly-inventory/index.d.ts",
-            "import": "./dist/readonly-inventory/index.js"
-        }
+  "name": "@hierarchidb/yaml-store",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
-    "typesVersions": {
-        "*": {
-            "legacy-close": [
-                "dist/legacy-close/index.d.ts"
-            ],
-            "readonly-inventory": [
-                "dist/readonly-inventory/index.d.ts"
-            ],
-            "*": [
-                "dist/index.d.ts"
-            ]
-        }
+    "./legacy-close": {
+      "types": "./dist/legacy-close/index.d.ts",
+      "import": "./dist/legacy-close/index.js"
     },
-    "scripts": {
-        "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist && tsdown src/legacy-close/index.ts --config ../../tsdown.config.ts --outDir dist/legacy-close && tsdown src/readonly-inventory/index.ts --config ../../tsdown.config.ts --outDir dist/readonly-inventory",
-        "clean": "rm -rf dist",
-        "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
-        "test": "vitest run --passWithNoTests",
-        "test:run": "vitest run"
-    },
-    "peerDependencies": {
-        "@hierarchidb/core-types": "workspace:*",
-        "@hierarchidb/util": "workspace:*",
-        "@hierarchidb/yaml-api": "workspace:*",
-        "dexie": "^4.2.0"
-    },
-    "devDependencies": {
-        "@hierarchidb/core-types": "workspace:*",
-        "@hierarchidb/util": "workspace:*",
-        "@hierarchidb/yaml-api": "workspace:*",
-        "ajv": "^8.18.0",
-        "dexie": "^4.2.0",
-        "fake-indexeddb": "^4.0.2",
-        "fast-check": "^4.5.3",
-        "typescript": "workspace:^5.9.3",
-        "vitest": "^4.1.0",
-        "yaml": "^2.0.0"
+    "./readonly-inventory": {
+      "types": "./dist/readonly-inventory/index.d.ts",
+      "import": "./dist/readonly-inventory/index.js"
     }
+  },
+  "typesVersions": {
+    "*": {
+      "legacy-close": [
+        "dist/legacy-close/index.d.ts"
+      ],
+      "readonly-inventory": [
+        "dist/readonly-inventory/index.d.ts"
+      ],
+      "*": [
+        "dist/index.d.ts"
+      ]
+    }
+  },
+  "scripts": {
+    "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist && tsdown src/legacy-close/index.ts --config ../../tsdown.config.ts --outDir dist/legacy-close && tsdown src/readonly-inventory/index.ts --config ../../tsdown.config.ts --outDir dist/readonly-inventory",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
+    "test": "vitest run --passWithNoTests",
+    "test:run": "vitest run"
+  },
+  "peerDependencies": {
+    "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/yaml-api": "workspace:*",
+    "dexie": "^4.2.0"
+  },
+  "devDependencies": {
+    "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/yaml-api": "workspace:*",
+    "ajv": "^8.18.0",
+    "dexie": "^4.2.0",
+    "fake-indexeddb": "^4.0.2",
+    "fast-check": "^4.5.3",
+    "typescript": "workspace:^5.9.3",
+    "vitest": "^4.1.0",
+    "yaml": "^2.0.0"
+  }
 }

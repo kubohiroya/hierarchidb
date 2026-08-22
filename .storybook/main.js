@@ -26,19 +26,19 @@ const config = {
           ...viteConfig.resolve?.alias,
           '@deck.gl/core': path.resolve(
             __dirname,
-            '../packages/plugin-loader/linker-plugin/node_modules/@deck.gl/core',
+            '../packages/plugin-loader/linker-plugin/node_modules/@deck.gl/core'
           ),
           '@deck.gl/layers': path.resolve(
             __dirname,
-            '../packages/plugin-loader/linker-plugin/node_modules/@deck.gl/layers',
+            '../packages/plugin-loader/linker-plugin/node_modules/@deck.gl/layers'
           ),
           '@deck.gl/geo-layers': path.resolve(
             __dirname,
-            '../packages/plugin-loader/linker-plugin/node_modules/@deck.gl/geo-layers',
+            '../packages/plugin-loader/linker-plugin/node_modules/@deck.gl/geo-layers'
           ),
           '@deck.gl/mapbox': path.resolve(
             __dirname,
-            '../packages/plugin-loader/linker-plugin/node_modules/@deck.gl/mapbox',
+            '../packages/plugin-loader/linker-plugin/node_modules/@deck.gl/mapbox'
           ),
         },
       },

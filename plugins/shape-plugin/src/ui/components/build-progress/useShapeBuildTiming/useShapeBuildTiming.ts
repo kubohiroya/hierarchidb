@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
-import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
-import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import type { TaskStage } from '@hierarchidb/build-api';
+import { useBuildSessionTiming } from '@hierarchidb/build-runtime-services';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import {
   appendBuildSample,
   BUILD_MONITOR_SAMPLE_INTERVAL_MS,
@@ -10,7 +10,7 @@ import {
   recordBuildFinish,
   recordBuildStart,
 } from '@hierarchidb/ui-monitoring';
-import { useBuildSessionTiming } from '@hierarchidb/build-runtime-services';
+import { useEffect } from 'react';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 
 const buildMonitorConfig = {
@@ -60,9 +60,9 @@ export const useShapeBuildTiming = ({
     if (buildStatus !== 'running') return;
     const startedAt = session?.startedAt ?? Date.now();
     recordBuildStart(buildMonitorConfig, monitorKey, {
-        nodeId: nodeId ? String(nodeId) : undefined,
-        startedAt,
-      });
+      nodeId: nodeId ? String(nodeId) : undefined,
+      startedAt,
+    });
     const interval = window.setInterval(() => {
       appendBuildSample(buildMonitorConfig, monitorKey, {
         timestamp: Date.now(),

@@ -87,7 +87,11 @@ function isAuthRegistry(value: unknown): value is AuthNotificationRegistry {
   return typeof record.onAuthRequired === 'function';
 }
 
-function extractOsrmRoute(payload: unknown): { distance: number; duration?: number; coordinates: Coordinate[] } {
+function extractOsrmRoute(payload: unknown): {
+  distance: number;
+  duration?: number;
+  coordinates: Coordinate[];
+} {
   if (typeof payload !== 'object' || payload === null) {
     throw new Error('OSRM response was not an object');
   }
@@ -104,9 +108,10 @@ function extractOsrmRoute(payload: unknown): { distance: number; duration?: numb
     const duration = toFiniteNumber(routeRecord.duration);
 
     const geometry = routeRecord.geometry;
-    const coordinatesCandidate = typeof geometry === 'object' && geometry !== null
-      ? (geometry as Record<string, unknown>).coordinates
-      : geometry;
+    const coordinatesCandidate =
+      typeof geometry === 'object' && geometry !== null
+        ? (geometry as Record<string, unknown>).coordinates
+        : geometry;
     const coordinates = toCoordinatePairs(coordinatesCandidate);
     if (!coordinates) continue;
 

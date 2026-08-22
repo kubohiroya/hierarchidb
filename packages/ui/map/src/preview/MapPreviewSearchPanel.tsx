@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
-import type { SxProps } from '@mui/material/styles';
 import { Box, IconButton, InputAdornment, Paper, TextField } from '@mui/material';
+import type { SxProps } from '@mui/material/styles';
+import type { ReactNode } from 'react';
 import { useMapPreviewSearchPanelView } from './useMapPreviewSearchPanelView.js';
 
 export type MapPreviewSearchPanelProps = {
@@ -85,11 +85,7 @@ export const MapPreviewSearchPanel = ({
                   </IconButton>
                 ) : null}
                 {showSettingsButton ? (
-                  <IconButton
-                    aria-label="Search settings"
-                    size="small"
-                    onClick={onOpenSettings}
-                  >
+                  <IconButton aria-label="Search settings" size="small" onClick={onOpenSettings}>
                     {settingsIcon}
                   </IconButton>
                 ) : null}

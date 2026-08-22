@@ -52,10 +52,14 @@ export function useValidationConfigStep({
   const availableProperties = useMemo(() => {
     const properties = new Set<string>();
     if (sourceSchema) {
-      sourceSchema.properties.forEach((prop: { name: string }) => properties.add(`source.${prop.name}`));
+      sourceSchema.properties.forEach((prop: { name: string }) =>
+        properties.add(`source.${prop.name}`)
+      );
     }
     if (targetSchema) {
-      targetSchema.properties.forEach((prop: { name: string }) => properties.add(`target.${prop.name}`));
+      targetSchema.properties.forEach((prop: { name: string }) =>
+        properties.add(`target.${prop.name}`)
+      );
     }
     return Array.from(properties);
   }, [sourceSchema, targetSchema]);
@@ -102,20 +106,22 @@ export function useValidationConfigStep({
     };
 
     if (editingRule) {
-      setValidationRules((prev: ValidationRule[]) => prev.map((r: ValidationRule) => r.id === rule.id ? rule : r));
+      setValidationRules((prev: ValidationRule[]) =>
+        prev.map((r: ValidationRule) => (r.id === rule.id ? rule : r))
+      );
     } else {
-      setValidationRules(prev => [...prev, rule]);
+      setValidationRules((prev) => [...prev, rule]);
     }
 
     closeRuleDialog();
   }, [editingRule, ruleFormData, closeRuleDialog]);
 
   const deleteRule = useCallback((ruleId: string) => {
-    setValidationRules(prev => prev.filter(r => r.id !== ruleId));
+    setValidationRules((prev) => prev.filter((r) => r.id !== ruleId));
   }, []);
 
   const updateRuleFormData = useCallback((updates: Partial<ValidationRuleFormData>) => {
-    setRuleFormData(prev => ({ ...prev, ...updates }));
+    setRuleFormData((prev) => ({ ...prev, ...updates }));
   }, []);
 
   const formatRuleDescription = useCallback((rule: ValidationRule) => {
@@ -124,7 +130,7 @@ export function useValidationConfigStep({
         return 'Must have a value';
       case 'type':
         return `Must be of type: ${rule.parameters.expectedType}`;
-      case 'range':{
+      case 'range': {
         const min = rule.parameters.min;
         const max = rule.parameters.max;
         return `Range: ${min ?? '-'} to ${max ?? '-'}`;

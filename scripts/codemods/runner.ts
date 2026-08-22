@@ -1,5 +1,5 @@
-import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const CURRENT_DIR = path.dirname(fileURLToPath(import.meta.url));
 
@@ -70,7 +70,9 @@ function resolveWorkspaceRoot(): string {
   return path.resolve(CURRENT_DIR, '..', '..');
 }
 
-async function resolveTargetFiles(options: RunnerOptionsBase): Promise<{ files: string[]; workspaceRoot: string }> {
+async function resolveTargetFiles(
+  options: RunnerOptionsBase
+): Promise<{ files: string[]; workspaceRoot: string }> {
   const workspaceRoot = resolveWorkspaceRoot();
   const { globby } = await import('globby');
   const patterns: string[] = [];
@@ -80,7 +82,9 @@ async function resolveTargetFiles(options: RunnerOptionsBase): Promise<{ files: 
   }
 
   if (options.plugin) {
-    const pluginSlug = options.plugin.endsWith('-plugin') ? options.plugin : `${options.plugin}-plugin`;
+    const pluginSlug = options.plugin.endsWith('-plugin')
+      ? options.plugin
+      : `${options.plugin}-plugin`;
     patterns.push(`packages/plugins/${pluginSlug}/**/*.{ts,tsx}`);
   }
 
@@ -131,12 +135,14 @@ async function main() {
     console.info(module.describe());
   }
 
-  console.info(`[codemod runner] Executing "${context.codemod}" on ${files.length} file(s). Dry-run: ${context.dryRun}`);
+  console.info(
+    `[codemod runner] Executing "${context.codemod}" on ${files.length} file(s). Dry-run: ${context.dryRun}`
+  );
 
   await module.runCodemod(context);
 }
 
-main().catch(error => {
+main().catch((error) => {
   console.error('[codemod runner] Execution failed:', error);
   process.exitCode = 1;
 });

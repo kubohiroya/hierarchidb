@@ -1,7 +1,7 @@
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
-import { type ReactElement, createElement, useCallback, useEffect, useMemo, useState } from 'react';
+import { createElement, type ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
 import { ResourcesGuidedTour } from '~/router/pages/tree/tour/ResourcesGuidedTour';
 
 type ContextMenuHandler = (
@@ -66,10 +66,7 @@ export function useTreeConsoleSpeedDial({
     return null;
   }, [handleTourFinish, tourRun, treeId]);
 
-  const rawContextAction = useMemo(
-    () => onContextMenuAction ?? (() => {}),
-    [onContextMenuAction]
-  );
+  const rawContextAction = useMemo(() => onContextMenuAction ?? (() => {}), [onContextMenuAction]);
 
   const resolvedContextAction = useCallback<ContextMenuHandler>(
     (action, node, options) => {
@@ -104,7 +101,10 @@ export function useTreeConsoleSpeedDial({
   } as HierarchicalTreeNode;
 
   const hideSpeedDial = !canCreate || isDialogRoute || speedDialSuppressed;
-  const suppressSpeedDial = useCallback(() => setSpeedDialSuppressed(true), [setSpeedDialSuppressed]);
+  const suppressSpeedDial = useCallback(
+    () => setSpeedDialSuppressed(true),
+    [setSpeedDialSuppressed]
+  );
 
   return {
     guidedTour,

@@ -1,21 +1,24 @@
 import 'fake-indexeddb/auto';
 import type { BuildContinuationPolicy } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeBuildSessionRecord, ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
-import type { SourceTaskPayload, ShapeBuildConfig } from '../../common/types/index';
-import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
+import type {
+  ShapeBuildSessionRecord,
+  ShapeMutationAPI,
+  ShapeQueryAPI,
+} from '@hierarchidb/shape-api';
 import * as Comlink from 'comlink';
-vi.mock('comlink', async () => (
-  await vi.importActual('comlink')
-));
-import { describe, expect, it, vi } from 'vitest';
-import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
-vi.mock('@hierarchidb/gis-sdk', async () => (
-  await import('@hierarchidb/gis-sdk')
-));
+import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants';
+import type { ShapeBuildConfig, SourceTaskPayload } from '../../common/types/index';
 
-const mockMetadata = vi.hoisted(() => ([
+vi.mock('comlink', async () => await vi.importActual('comlink'));
+
+import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('@hierarchidb/gis-sdk', async () => await import('@hierarchidb/gis-sdk'));
+
+const mockMetadata = vi.hoisted(() => [
   {
     countryCode: 'JP',
     countryName: 'Japan',
@@ -24,9 +27,9 @@ const mockMetadata = vi.hoisted(() => ([
     iso2: 'JP',
     iso3: 'JPN',
   },
-]));
+]);
 
-const mockEntities = vi.hoisted(() => ([
+const mockEntities = vi.hoisted(() => [
   {
     geometry: {
       type: 'Polygon',
@@ -44,7 +47,7 @@ const mockEntities = vi.hoisted(() => ([
       name: 'Test Feature',
     },
   },
-]));
+]);
 
 let strategyCreateCount = 0;
 
@@ -58,7 +61,7 @@ vi.mock('~/services/metadata/MetadataLoader', () => {
       return mockMetadata;
     }
 
-    async getCountryMetadata(): Promise<typeof mockMetadata[number] | undefined> {
+    async getCountryMetadata(): Promise<(typeof mockMetadata)[number] | undefined> {
       return mockMetadata[0];
     }
 
@@ -233,9 +236,7 @@ const setupAdditionalClient = async (): Promise<WorkerSetup> => {
 };
 
 const closeClientPorts = async (setup: WorkerSetup): Promise<void> => {
-  const release = (setup.client)[
-    Comlink.releaseProxy
-  ];
+  const release = setup.client[Comlink.releaseProxy];
   if (release) {
     await release.call(setup.client);
   }
@@ -246,9 +247,7 @@ const closeClientPorts = async (setup: WorkerSetup): Promise<void> => {
 
 const cleanupWorker = async (setup: WorkerSetup): Promise<void> => {
   if (!setup.closed) {
-    const release = (setup.client)[
-      Comlink.releaseProxy
-    ];
+    const release = setup.client[Comlink.releaseProxy];
     if (release) {
       await release.call(setup.client);
     }
@@ -305,9 +304,7 @@ const createTestBuildConfig = (): ShapeBuildConfig => {
     tileEmitConfig: {
       ...DEFAULT_BUILD_CONFIG.tileEmitConfig,
       maxConcurrent: 1,
-      dynamicConcurrency: dynamicBase
-        ? { ...dynamicBase, enabled: false }
-        : undefined,
+      dynamicConcurrency: dynamicBase ? { ...dynamicBase, enabled: false } : undefined,
     },
   };
 };
@@ -341,16 +338,38 @@ const completeSession = async (
       taskType: 'tileEmit',
     },
     stages: {
-      source: { status: 'completed', progress: 100, tasksTotal: 1, tasksCompleted: 1, tasksFailed: 0 },
-      geometry: { status: 'completed', progress: 100, tasksTotal: 1, tasksCompleted: 1, tasksFailed: 0 },
-      tileEmit: { status: 'completed', progress: 100, tasksTotal: 1, tasksCompleted: 1, tasksFailed: 0 },
+      source: {
+        status: 'completed',
+        progress: 100,
+        tasksTotal: 1,
+        tasksCompleted: 1,
+        tasksFailed: 0,
+      },
+      geometry: {
+        status: 'completed',
+        progress: 100,
+        tasksTotal: 1,
+        tasksCompleted: 1,
+        tasksFailed: 0,
+      },
+      tileEmit: {
+        status: 'completed',
+        progress: 100,
+        tasksTotal: 1,
+        tasksCompleted: 1,
+        tasksFailed: 0,
+      },
     },
   });
 };
 
 const waitFor = async (
   check: () => Promise<boolean>,
-  { timeoutMs = 20000, intervalMs = 50, label = 'condition' }: {
+  {
+    timeoutMs = 20000,
+    intervalMs = 50,
+    label = 'condition',
+  }: {
     timeoutMs?: number;
     intervalMs?: number;
     label?: string;
@@ -368,78 +387,100 @@ const waitFor = async (
 };
 
 const debugGeometryCacheAccess = async (nodeId: NodeId): Promise<void> => {
-  const relations = await ephemeralDB.tileEmitBufferRelations.where('nodeId').equals(nodeId).toArray();
+  const relations = await ephemeralDB.tileEmitBufferRelations
+    .where('nodeId')
+    .equals(nodeId)
+    .toArray();
   const bufferIds = Array.from(new Set(relations.map((relation) => relation.bufferId)));
-  console.info('[test][debug] geometryCache buffers', JSON.stringify({
-    nodeId,
-    relationCount: relations.length,
-    bufferCount: bufferIds.length,
-    bufferSample: bufferIds.slice(0, 3),
-  }));
+  console.info(
+    '[test][debug] geometryCache buffers',
+    JSON.stringify({
+      nodeId,
+      relationCount: relations.length,
+      bufferCount: bufferIds.length,
+      bufferSample: bufferIds.slice(0, 3),
+    })
+  );
   if (bufferIds.length === 0) return;
   const sampleId = bufferIds[0];
   const getStartedAt = Date.now();
   const record = await ephemeralDB.geometryCache.get(sampleId);
   const recordData = record?.data;
-  const recordDataKeys = recordData && typeof recordData === 'object'
-    ? Object.keys(recordData as Record<string, unknown>).slice(0, 8)
-    : null;
-  const isBuffer = typeof Buffer !== 'undefined' && typeof Buffer.isBuffer === 'function'
-    ? Buffer.isBuffer(recordData)
-    : false;
-  console.info('[test][debug] geometryCache get done', JSON.stringify({
-    nodeId,
-    bufferId: sampleId,
-    hasRecord: Boolean(record),
-    durationMs: Date.now() - getStartedAt,
-    dataType: recordData ? typeof recordData : null,
-    dataConstructorName: recordData && typeof recordData === 'object'
-      ? (recordData as { constructor?: { name?: string } }).constructor?.name ?? null
-      : null,
-    dataKeys: recordDataKeys,
-    isArrayBuffer: recordData instanceof ArrayBuffer,
-    isArrayBufferView: recordData ? ArrayBuffer.isView(recordData as ArrayBufferView) : false,
-    isUint8Array: recordData instanceof Uint8Array,
-    isBuffer,
-    byteLength: recordData && typeof recordData === 'object'
-      ? (recordData as { byteLength?: number }).byteLength ?? null
-      : null,
-    length: recordData && typeof recordData === 'object'
-      ? (recordData as { length?: number }).length ?? null
-      : null,
-  }));
+  const recordDataKeys =
+    recordData && typeof recordData === 'object'
+      ? Object.keys(recordData as Record<string, unknown>).slice(0, 8)
+      : null;
+  const isBuffer =
+    typeof Buffer !== 'undefined' && typeof Buffer.isBuffer === 'function'
+      ? Buffer.isBuffer(recordData)
+      : false;
+  console.info(
+    '[test][debug] geometryCache get done',
+    JSON.stringify({
+      nodeId,
+      bufferId: sampleId,
+      hasRecord: Boolean(record),
+      durationMs: Date.now() - getStartedAt,
+      dataType: recordData ? typeof recordData : null,
+      dataConstructorName:
+        recordData && typeof recordData === 'object'
+          ? ((recordData as { constructor?: { name?: string } }).constructor?.name ?? null)
+          : null,
+      dataKeys: recordDataKeys,
+      isArrayBuffer: recordData instanceof ArrayBuffer,
+      isArrayBufferView: recordData ? ArrayBuffer.isView(recordData as ArrayBufferView) : false,
+      isUint8Array: recordData instanceof Uint8Array,
+      isBuffer,
+      byteLength:
+        recordData && typeof recordData === 'object'
+          ? ((recordData as { byteLength?: number }).byteLength ?? null)
+          : null,
+      length:
+        recordData && typeof recordData === 'object'
+          ? ((recordData as { length?: number }).length ?? null)
+          : null,
+    })
+  );
   const bulkStartedAt = Date.now();
   const bulk = await ephemeralDB.geometryCache.bulkGet([sampleId]);
   const bulkCount = bulk.filter((item) => Boolean(item)).length;
   const bulkRecord = bulk.find((item) => Boolean(item));
   const bulkData = bulkRecord?.data;
-  const bulkKeys = bulkData && typeof bulkData === 'object'
-    ? Object.keys(bulkData as Record<string, unknown>).slice(0, 8)
-    : null;
-  const bulkIsBuffer = typeof Buffer !== 'undefined' && typeof Buffer.isBuffer === 'function'
-    ? Buffer.isBuffer(bulkData)
-    : false;
-  console.info('[test][debug] geometryCache bulkGet done', JSON.stringify({
-    nodeId,
-    bufferId: sampleId,
-    recordCount: bulkCount,
-    durationMs: Date.now() - bulkStartedAt,
-    dataType: bulkData ? typeof bulkData : null,
-    dataConstructorName: bulkData && typeof bulkData === 'object'
-      ? (bulkData as { constructor?: { name?: string } }).constructor?.name ?? null
-      : null,
-    dataKeys: bulkKeys,
-    isArrayBuffer: bulkData instanceof ArrayBuffer,
-    isArrayBufferView: bulkData ? ArrayBuffer.isView(bulkData as ArrayBufferView) : false,
-    isUint8Array: bulkData instanceof Uint8Array,
-    isBuffer: bulkIsBuffer,
-    byteLength: bulkData && typeof bulkData === 'object'
-      ? (bulkData as { byteLength?: number }).byteLength ?? null
-      : null,
-    length: bulkData && typeof bulkData === 'object'
-      ? (bulkData as { length?: number }).length ?? null
-      : null,
-  }));
+  const bulkKeys =
+    bulkData && typeof bulkData === 'object'
+      ? Object.keys(bulkData as Record<string, unknown>).slice(0, 8)
+      : null;
+  const bulkIsBuffer =
+    typeof Buffer !== 'undefined' && typeof Buffer.isBuffer === 'function'
+      ? Buffer.isBuffer(bulkData)
+      : false;
+  console.info(
+    '[test][debug] geometryCache bulkGet done',
+    JSON.stringify({
+      nodeId,
+      bufferId: sampleId,
+      recordCount: bulkCount,
+      durationMs: Date.now() - bulkStartedAt,
+      dataType: bulkData ? typeof bulkData : null,
+      dataConstructorName:
+        bulkData && typeof bulkData === 'object'
+          ? ((bulkData as { constructor?: { name?: string } }).constructor?.name ?? null)
+          : null,
+      dataKeys: bulkKeys,
+      isArrayBuffer: bulkData instanceof ArrayBuffer,
+      isArrayBufferView: bulkData ? ArrayBuffer.isView(bulkData as ArrayBufferView) : false,
+      isUint8Array: bulkData instanceof Uint8Array,
+      isBuffer: bulkIsBuffer,
+      byteLength:
+        bulkData && typeof bulkData === 'object'
+          ? ((bulkData as { byteLength?: number }).byteLength ?? null)
+          : null,
+      length:
+        bulkData && typeof bulkData === 'object'
+          ? ((bulkData as { length?: number }).length ?? null)
+          : null,
+    })
+  );
 };
 
 const logStructuredCloneSanity = async (): Promise<void> => {
@@ -461,18 +502,20 @@ const logStructuredCloneSanity = async (): Promise<void> => {
   }
   const payload = new ArrayBuffer(8);
   const cloned = structuredClone(payload);
-  const isBuffer = typeof Buffer !== 'undefined' && typeof Buffer.isBuffer === 'function'
-    ? Buffer.isBuffer(cloned)
-    : false;
-  const clonedConstructor = cloned && typeof cloned === 'object'
-    ? (cloned as { constructor?: { name?: string } }).constructor?.name ?? null
-    : null;
-  const clonedConstructorEquals = cloned && typeof cloned === 'object'
-    ? (cloned as { constructor?: unknown }).constructor === ArrayBuffer
-    : null;
-  const toStringTag = cloned && typeof cloned === 'object'
-    ? Object.prototype.toString.call(cloned)
-    : null;
+  const isBuffer =
+    typeof Buffer !== 'undefined' && typeof Buffer.isBuffer === 'function'
+      ? Buffer.isBuffer(cloned)
+      : false;
+  const clonedConstructor =
+    cloned && typeof cloned === 'object'
+      ? ((cloned as { constructor?: { name?: string } }).constructor?.name ?? null)
+      : null;
+  const clonedConstructorEquals =
+    cloned && typeof cloned === 'object'
+      ? (cloned as { constructor?: unknown }).constructor === ArrayBuffer
+      : null;
+  const toStringTag =
+    cloned && typeof cloned === 'object' ? Object.prototype.toString.call(cloned) : null;
   console.info('[test][debug] structuredClone sanity', {
     available: true,
     utilAvailable: Boolean(utilClone),
@@ -486,12 +529,12 @@ const logStructuredCloneSanity = async (): Promise<void> => {
     isArrayBufferView: cloned ? ArrayBuffer.isView(cloned as ArrayBufferView) : false,
     isUint8Array: cloned instanceof Uint8Array,
     isBuffer,
-    byteLength: cloned && typeof cloned === 'object'
-      ? (cloned as { byteLength?: number }).byteLength ?? null
-      : null,
+    byteLength:
+      cloned && typeof cloned === 'object'
+        ? ((cloned as { byteLength?: number }).byteLength ?? null)
+        : null,
   });
 };
-
 
 const ensureCompressionStreams = async (): Promise<void> => {
   const needsCompression = typeof CompressionStream !== 'function';
@@ -499,10 +542,10 @@ const ensureCompressionStreams = async (): Promise<void> => {
   if (!needsCompression && !needsDecompression) return;
   const streamWeb = await import('node:stream/web');
   if (needsCompression) {
-    (globalThis).CompressionStream = streamWeb.CompressionStream;
+    globalThis.CompressionStream = streamWeb.CompressionStream;
   }
   if (needsDecompression) {
-    (globalThis).DecompressionStream = streamWeb.DecompressionStream;
+    globalThis.DecompressionStream = streamWeb.DecompressionStream;
   }
 };
 
@@ -516,7 +559,7 @@ const logProgress = (label: string, details?: Record<string, unknown>): void => 
 
 const withTimeout = async <T>(
   promise: Promise<T>,
-  { label, timeoutMs }: { label: string; timeoutMs: number },
+  { label, timeoutMs }: { label: string; timeoutMs: number }
 ): Promise<T> => {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   const timeoutPromise = new Promise<never>((_, reject) => {
@@ -565,19 +608,25 @@ describe('Comlink + fake-indexeddb integration: shape build background (real pip
         resumeExistingTasks: false,
       });
 
-      await waitFor(async () => {
-        const tasks = await query.listBuildTaskRecordsByStage(nodeId, 'source');
-        return tasks.length > 0;
-      }, { label: 'source task creation' });
+      await waitFor(
+        async () => {
+          const tasks = await query.listBuildTaskRecordsByStage(nodeId, 'source');
+          return tasks.length > 0;
+        },
+        { label: 'source task creation' }
+      );
 
       const observer = await setupAdditionalClient();
       try {
         await closeClientPorts(setup);
         const observerPipeline = await observer.client.getShapePipelineTestAPI();
-        await waitFor(async () => {
-          const state = await observerPipeline.getPipelineState(nodeId);
-          return state === 'running' || state === 'completed';
-        }, { label: 'pipeline running after disconnect', timeoutMs: 5000 });
+        await waitFor(
+          async () => {
+            const state = await observerPipeline.getPipelineState(nodeId);
+            return state === 'running' || state === 'completed';
+          },
+          { label: 'pipeline running after disconnect', timeoutMs: 5000 }
+        );
       } finally {
         await closeClientPorts(observer);
       }
@@ -591,7 +640,8 @@ describe('Comlink + fake-indexeddb integration: shape build background (real pip
     const label = `real pipeline step ${step}`;
     logProgress(`${label}: start`);
     (globalThis as { __HDB_VT_COLLECT_TIMEOUT_MS?: number }).__HDB_VT_COLLECT_TIMEOUT_MS = 15000;
-    (globalThis as { __HDB_VT_ASYNC_ITER_TIMEOUT_MS?: number }).__HDB_VT_ASYNC_ITER_TIMEOUT_MS = 15000;
+    (globalThis as { __HDB_VT_ASYNC_ITER_TIMEOUT_MS?: number }).__HDB_VT_ASYNC_ITER_TIMEOUT_MS =
+      15000;
     (globalThis as { __HDB_VT_DEBUG_COLLECT?: boolean }).__HDB_VT_DEBUG_COLLECT = true;
     (globalThis as { __HDB_VT_COLLECT_BULKGET?: boolean }).__HDB_VT_COLLECT_BULKGET = true;
     (globalThis as { __HDB_VT_COLLECT_GET_EACH?: boolean }).__HDB_VT_COLLECT_GET_EACH = true;
@@ -614,7 +664,6 @@ describe('Comlink + fake-indexeddb integration: shape build background (real pip
       await admin.clearShapeEphemeralCache(nodeId, 'tileEmitBufferRelations');
       logProgress(`${label}: cleanup done`);
 
-
       await mutation.upsertBuildSession(createBaseSession(nodeId, Date.now()));
       logProgress(`${label}: base session created`);
 
@@ -626,10 +675,13 @@ describe('Comlink + fake-indexeddb integration: shape build background (real pip
       });
       logProgress(`${label}: pipeline started`);
 
-      await waitFor(async () => {
-        const tasks = await query.listBuildTaskRecordsByStage(nodeId, 'source');
-        return tasks.length > 0;
-      }, { label: 'source task creation' });
+      await waitFor(
+        async () => {
+          const tasks = await query.listBuildTaskRecordsByStage(nodeId, 'source');
+          return tasks.length > 0;
+        },
+        { label: 'source task creation' }
+      );
       logProgress(`${label}: source tasks created`);
 
       const observer = await setupAdditionalClient();
@@ -647,26 +699,29 @@ describe('Comlink + fake-indexeddb integration: shape build background (real pip
           .count();
         logProgress(`${label}: pre tile relations count`, { count: preRelationCount });
         await withTimeout(
-          waitFor(async () => (
-            (await ephemeralDB.tileEmitBufferRelations.where('nodeId').equals(nodeId).count()) > 0
-          ), { label: 'tile relation creation' }),
-          { label: 'waitFor tile relations', timeoutMs: 12000 },
+          waitFor(
+            async () =>
+              (await ephemeralDB.tileEmitBufferRelations.where('nodeId').equals(nodeId).count()) >
+              0,
+            { label: 'tile relation creation' }
+          ),
+          { label: 'waitFor tile relations', timeoutMs: 12000 }
         );
         logProgress(`${label}: tile relations created`);
         await debugGeometryCacheAccess(nodeId);
         logProgress(`${label}: debug geometry cache done`);
         if (step === 1) return;
         logProgress(`${label}: wait for pipeline completion`);
-        await withTimeout(
-          observerPipeline.waitForPipeline(nodeId),
-          { label: 'waitForPipeline', timeoutMs: 24000 },
-        );
+        await withTimeout(observerPipeline.waitForPipeline(nodeId), {
+          label: 'waitForPipeline',
+          timeoutMs: 24000,
+        });
         logProgress(`${label}: pipeline completed`);
         if (step === 2) return;
         const taskQueue = new VtTaskQueueDb();
         const queueTasks = await withTimeout(
           taskQueue.tasks.where('nodeId').equals(nodeId).toArray(),
-          { label: 'load taskQueue tasks', timeoutMs: 6000 },
+          { label: 'load taskQueue tasks', timeoutMs: 6000 }
         );
         if (queueTasks.length === 0) {
           throw new Error('taskQueue tasks missing');
@@ -678,24 +733,30 @@ describe('Comlink + fake-indexeddb integration: shape build background (real pip
         const geometryTasks = queueTasks.filter((task) => stageOf(task) === 'geometry');
         const tileEmitTasks = queueTasks.filter((task) => stageOf(task) === 'tileEmit');
         if (sourceTasks.length === 0 || geometryTasks.length === 0 || tileEmitTasks.length === 0) {
-          const sourceSummary = sourceTasks.map((task) => (
-            `${task.taskId}:${task.status}:${task.errorMessage ?? 'ok'}`
-          ));
+          const sourceSummary = sourceTasks.map(
+            (task) => `${task.taskId}:${task.status}:${task.errorMessage ?? 'ok'}`
+          );
           throw new Error(
             `taskQueue stage counts: source=${sourceTasks.length}, geometry=${geometryTasks.length}, tileEmit=${tileEmitTasks.length} (source=${sourceSummary.join(', ')})`
           );
         }
         const failedSource = sourceTasks.filter((task) => task.status === 'failed');
         if (failedSource.length > 0) {
-          throw new Error(`source tasks failed: ${failedSource.map((task) => task.errorMessage ?? 'unknown').join('; ')}`);
+          throw new Error(
+            `source tasks failed: ${failedSource.map((task) => task.errorMessage ?? 'unknown').join('; ')}`
+          );
         }
         const failedGeometry = geometryTasks.filter((task) => task.status === 'failed');
         if (failedGeometry.length > 0) {
-          throw new Error(`geometry tasks failed: ${failedGeometry.map((task) => task.errorMessage ?? 'unknown').join('; ')}`);
+          throw new Error(
+            `geometry tasks failed: ${failedGeometry.map((task) => task.errorMessage ?? 'unknown').join('; ')}`
+          );
         }
         const failedTileEmit = tileEmitTasks.filter((task) => task.status === 'failed');
         if (failedTileEmit.length > 0) {
-          throw new Error(`tileEmit tasks failed: ${failedTileEmit.map((task) => task.errorMessage ?? 'unknown').join('; ')}`);
+          throw new Error(
+            `tileEmit tasks failed: ${failedTileEmit.map((task) => task.errorMessage ?? 'unknown').join('; ')}`
+          );
         }
         expect(strategyCreateCount).toBeGreaterThan(0);
         const counts = await observerAdmin.getShapeEphemeralCounts(nodeId);
@@ -707,10 +768,10 @@ describe('Comlink + fake-indexeddb integration: shape build background (real pip
         await completeSession(await observer.client.getShapeMutationAPI(), nodeId, Date.now());
         const record = await observerQuery.getBuildSessionRecord(nodeId);
         expect(record?.status).toBe('completed');
-        const tiles = await withTimeout(
-          observerQuery.getVectorTileSummary(nodeId),
-          { label: 'getVectorTileSummary', timeoutMs: 6000 },
-        );
+        const tiles = await withTimeout(observerQuery.getVectorTileSummary(nodeId), {
+          label: 'getVectorTileSummary',
+          timeoutMs: 6000,
+        });
         expect(tiles.tiles).toBeGreaterThan(0);
         logProgress(`${label}: vector tiles ok`, { tiles: tiles.tiles });
       } finally {
@@ -718,7 +779,8 @@ describe('Comlink + fake-indexeddb integration: shape build background (real pip
       }
     } finally {
       delete (globalThis as { __HDB_VT_COLLECT_TIMEOUT_MS?: number }).__HDB_VT_COLLECT_TIMEOUT_MS;
-      delete (globalThis as { __HDB_VT_ASYNC_ITER_TIMEOUT_MS?: number }).__HDB_VT_ASYNC_ITER_TIMEOUT_MS;
+      delete (globalThis as { __HDB_VT_ASYNC_ITER_TIMEOUT_MS?: number })
+        .__HDB_VT_ASYNC_ITER_TIMEOUT_MS;
       delete (globalThis as { __HDB_VT_DEBUG_COLLECT?: boolean }).__HDB_VT_DEBUG_COLLECT;
       delete (globalThis as { __HDB_VT_COLLECT_BULKGET?: boolean }).__HDB_VT_COLLECT_BULKGET;
       delete (globalThis as { __HDB_VT_COLLECT_GET_EACH?: boolean }).__HDB_VT_COLLECT_GET_EACH;
@@ -726,19 +788,35 @@ describe('Comlink + fake-indexeddb integration: shape build background (real pip
     }
   };
 
-  realPipelineIt('real pipeline step 1 (tile relations)', async () => {
-    await runRealPipelineSteps(1);
-  }, 120_000);
+  realPipelineIt(
+    'real pipeline step 1 (tile relations)',
+    async () => {
+      await runRealPipelineSteps(1);
+    },
+    120_000
+  );
 
-  realPipelineIt('real pipeline step 1+2 (wait for pipeline)', async () => {
-    await runRealPipelineSteps(2);
-  }, 120_000);
+  realPipelineIt(
+    'real pipeline step 1+2 (wait for pipeline)',
+    async () => {
+      await runRealPipelineSteps(2);
+    },
+    120_000
+  );
 
-  realPipelineIt('real pipeline step 1+2+3 (task queue)', async () => {
-    await runRealPipelineSteps(3);
-  }, 120_000);
+  realPipelineIt(
+    'real pipeline step 1+2+3 (task queue)',
+    async () => {
+      await runRealPipelineSteps(3);
+    },
+    120_000
+  );
 
-  realPipelineIt('real pipeline step 1+2+3+4 (vector tiles)', async () => {
-    await runRealPipelineSteps(4);
-  }, 120_000);
+  realPipelineIt(
+    'real pipeline step 1+2+3+4 (vector tiles)',
+    async () => {
+      await runRealPipelineSteps(4);
+    },
+    120_000
+  );
 });

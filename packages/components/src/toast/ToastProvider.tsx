@@ -3,10 +3,10 @@
  * @description Customizable toast notification provider with hide/show functionality
  */
 
-import { createContext, type ReactNode, useCallback, useMemo, useState } from 'react';
-import type { ReactElement } from 'react';
-import { Alert, type AlertColor, Box, Button, IconButton, Snackbar } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
+import { Alert, type AlertColor, Box, Button, IconButton, Snackbar } from '@mui/material';
+import type { ReactElement } from 'react';
+import { createContext, type ReactNode, useCallback, useMemo, useState } from 'react';
 
 /**
  * Toast notification configuration with enhanced customization
@@ -156,19 +156,18 @@ interface ToastProviderProps {
  * Provider component for toast notifications
  */
 export function ToastProvider({
-                                children,
-                                maxToasts = 3,
-                                defaultConfig = {},
-                              }: ToastProviderProps): ReactElement {
+  children,
+  maxToasts = 3,
+  defaultConfig = {},
+}: ToastProviderProps): ReactElement {
   const [toasts, setToasts] = useState<ActiveToast[]>([]);
 
   const mergedDefaultConfig = useMemo(
     () => ({ ...DEFAULT_TOAST_CONFIG, ...defaultConfig }),
-    [defaultConfig],
+    [defaultConfig]
   );
 
-  const generateId = () =>
-    `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const generateId = () => `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
   const showToast = useCallback(
     (config: ToastConfig): string => {
@@ -201,7 +200,7 @@ export function ToastProvider({
 
       return id;
     },
-    [mergedDefaultConfig, maxToasts],
+    [mergedDefaultConfig, maxToasts]
   );
 
   const hideToast = useCallback((id?: string) => {
@@ -238,25 +237,18 @@ export function ToastProvider({
     (id: string): boolean => {
       return toasts.some((toast) => toast.id === id && toast.open);
     },
-    [toasts],
+    [toasts]
   );
 
-  const updateToast = useCallback(
-    (id: string, updates: Partial<ToastConfig>) => {
-      setToasts((prev) =>
-        prev.map((toast) =>
-          toast.id === id ? { ...toast, ...updates } : toast,
-        ),
-      );
-    },
-    [],
-  );
+  const updateToast = useCallback((id: string, updates: Partial<ToastConfig>) => {
+    setToasts((prev) => prev.map((toast) => (toast.id === id ? { ...toast, ...updates } : toast)));
+  }, []);
 
   const handleClose = useCallback(
     (id: string) => {
       hideToast(id);
     },
-    [hideToast],
+    [hideToast]
   );
 
   return (
@@ -286,22 +278,14 @@ export function ToastProvider({
               transform: 'none',
             },
             // Adjust position based on stack index
-            bottom:
-              toast.position?.vertical === 'bottom'
-                ? `${80 + index * 70}px`
-                : undefined,
-            top:
-              toast.position?.vertical === 'top'
-                ? `${80 + index * 70}px`
-                : undefined,
+            bottom: toast.position?.vertical === 'bottom' ? `${80 + index * 70}px` : undefined,
+            top: toast.position?.vertical === 'top' ? `${80 + index * 70}px` : undefined,
           }}
           {...toast.snackbarProps}
         >
           <Alert
             severity={toast.severity}
-            onClose={
-              toast.closable?.enabled ? () => handleClose(toast.id) : undefined
-            }
+            onClose={toast.closable?.enabled ? () => handleClose(toast.id) : undefined}
             sx={{
               ...toast.style,
               '& .MuiAlert-message': {

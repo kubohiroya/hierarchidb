@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { UIEvent, MouseEvent as ReactMouseEvent } from 'react';
 import type { TabularColumnInfo, TabularColumnType } from '@hierarchidb/tabular-store';
+import type { MouseEvent as ReactMouseEvent, UIEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TabularFilterOperator, TabularFilterRule } from '../types/index';
 
 export type FilterOperatorOption = {
@@ -78,17 +78,22 @@ export function useTabularDataFilterRulesVirtualLogic({
 
   const ensureRule = useCallback(
     (rule: TabularFilterRule): TabularFilterRule => {
-      const columnName = rule.column && columns.some((column) => column.name === rule.column)
-        ? rule.column
-        : firstColumnName;
+      const columnName =
+        rule.column && columns.some((column) => column.name === rule.column)
+          ? rule.column
+          : firstColumnName;
       const columnType = normalizeType(columns.find((column) => column.name === columnName)?.type);
-      const availableOps = operatorOptions.filter((operator) => operator.types.includes(columnType));
+      const availableOps = operatorOptions.filter((operator) =>
+        operator.types.includes(columnType)
+      );
       const operator = availableOps.some((option) => option.value === rule.operator)
         ? rule.operator
-        : availableOps[0]?.value ?? 'equals';
+        : (availableOps[0]?.value ?? 'equals');
       const shouldRequireValue = operator ? requiresValue(operator) : false;
       const value = rule.value ?? '';
-      const enabled = shouldRequireValue ? (rule.enabled && String(value).trim().length > 0) : rule.enabled;
+      const enabled = shouldRequireValue
+        ? rule.enabled && String(value).trim().length > 0
+        : rule.enabled;
       return {
         ...rule,
         column: columnName,
@@ -97,7 +102,7 @@ export function useTabularDataFilterRulesVirtualLogic({
         enabled,
       };
     },
-    [columns, firstColumnName, operatorOptions],
+    [columns, firstColumnName, operatorOptions]
   );
 
   const normalizedRules = useMemo<TabularFilterRule[]>(() => {
@@ -121,7 +126,7 @@ export function useTabularDataFilterRulesVirtualLogic({
         onChange(next);
       }
     },
-    [ensureRule, onChange],
+    [ensureRule, onChange]
   );
 
   const handleAddRule = useCallback(() => {
@@ -147,7 +152,7 @@ export function useTabularDataFilterRulesVirtualLogic({
         onChange(next);
       }
     },
-    [normalizedRules, onChange],
+    [normalizedRules, onChange]
   );
 
   const totalHeight = normalizedRules.length * rowHeight;
@@ -166,23 +171,29 @@ export function useTabularDataFilterRulesVirtualLogic({
     setScrollTop(event.currentTarget.scrollTop);
   }, []);
 
-  const handleResizeStart = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    resizingRef.current = { startY: event.clientY, startHeight: viewportHeight };
-    const handleMove = (mouseEvent: globalThis.MouseEvent) => {
-      if (!resizingRef.current) return;
-      const delta = mouseEvent.clientY - resizingRef.current.startY;
-      const next = Math.max(rowHeight * 5, Math.min(rowHeight * 30, resizingRef.current.startHeight + delta));
-      setViewportHeight(next);
-    };
-    const handleUp = () => {
-      resizingRef.current = null;
-      window.removeEventListener('mousemove', handleMove);
-      window.removeEventListener('mouseup', handleUp);
-    };
-    window.addEventListener('mousemove', handleMove);
-    window.addEventListener('mouseup', handleUp);
-  }, [rowHeight, viewportHeight]);
+  const handleResizeStart = useCallback(
+    (event: ReactMouseEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      resizingRef.current = { startY: event.clientY, startHeight: viewportHeight };
+      const handleMove = (mouseEvent: globalThis.MouseEvent) => {
+        if (!resizingRef.current) return;
+        const delta = mouseEvent.clientY - resizingRef.current.startY;
+        const next = Math.max(
+          rowHeight * 5,
+          Math.min(rowHeight * 30, resizingRef.current.startHeight + delta)
+        );
+        setViewportHeight(next);
+      };
+      const handleUp = () => {
+        resizingRef.current = null;
+        window.removeEventListener('mousemove', handleMove);
+        window.removeEventListener('mouseup', handleUp);
+      };
+      window.addEventListener('mousemove', handleMove);
+      window.addEventListener('mouseup', handleUp);
+    },
+    [rowHeight, viewportHeight]
+  );
 
   useEffect(() => {
     const element = containerRef.current;
@@ -199,8 +210,8 @@ export function useTabularDataFilterRulesVirtualLogic({
 
   useEffect(() => {
     if (
-      rulesEqual(normalizedRulesRef.current, normalizedRules)
-      && Object.keys(draftValuesRef.current).length === normalizedRules.length
+      rulesEqual(normalizedRulesRef.current, normalizedRules) &&
+      Object.keys(draftValuesRef.current).length === normalizedRules.length
     ) {
       return;
     }
@@ -214,8 +225,11 @@ export function useTabularDataFilterRulesVirtualLogic({
       const prevKeys = Object.keys(prev);
       const nextKeys = Object.keys(next);
       const sameLength = prevKeys.length === nextKeys.length;
-      const sameEntries = sameLength
-        && prevKeys.every((key) => Object.prototype.hasOwnProperty.call(next, key) && prev[key] === next[key]);
+      const sameEntries =
+        sameLength &&
+        prevKeys.every(
+          (key) => Object.prototype.hasOwnProperty.call(next, key) && prev[key] === next[key]
+        );
       if (sameEntries) {
         draftValuesRef.current = prev;
         return prev;

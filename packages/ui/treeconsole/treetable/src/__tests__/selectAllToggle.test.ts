@@ -1,10 +1,10 @@
-import { renderHook } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { type NodeId, toNodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { DualKeyMap } from '@hierarchidb/util';
+import { renderHook } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { useTreeTableSelectionOverlay } from '../components/hooks/useTreeTableSelectionOverlay';
 import type { TreeTableController } from '../types';
-import { toNodeId, type NodeId } from '@hierarchidb/core-types';
 
 describe('useTreeTableSelectionOverlay', () => {
   it('invokes controller to clear selections when selectAll is toggled off', () => {
@@ -60,7 +60,7 @@ describe('useTreeTableSelectionOverlay', () => {
           selectAll: true,
           rowSelection: initialRowSelection,
         },
-      },
+      }
     );
 
     onNodeSelect.mockClear();

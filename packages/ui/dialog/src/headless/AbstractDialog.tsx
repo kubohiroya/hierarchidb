@@ -5,9 +5,13 @@
 
 import { Fragment } from 'react';
 import { PluginDialogProvider } from '../hooks/useDialogContext.js';
+import {
+  AbstractDialogContent,
+  AbstractDialogFooter,
+  AbstractDialogHeader,
+} from './AbstractDialogElements.js';
 import type { HeadlessDialogProps } from './types.js';
 import { useAbstractDialog } from './useAbstractDialog.js';
-import { AbstractDialogContent, AbstractDialogFooter, AbstractDialogHeader } from './AbstractDialogElements.js';
 
 /**
  * Headless dialog container. Renders provided header/content/footer components
@@ -18,9 +22,15 @@ export function AbstractDialog<TData>(props: HeadlessDialogProps<TData>) {
 
   return (
     <PluginDialogProvider value={contextValue}>
-      <Fragment><AbstractDialogHeader {...headerProps} /></Fragment>
-      <Fragment><AbstractDialogContent {...contentProps} /></Fragment>
-      <Fragment><AbstractDialogFooter {...footerProps} /></Fragment>
+      <Fragment>
+        <AbstractDialogHeader {...headerProps} />
+      </Fragment>
+      <Fragment>
+        <AbstractDialogContent {...contentProps} />
+      </Fragment>
+      <Fragment>
+        <AbstractDialogFooter {...footerProps} />
+      </Fragment>
     </PluginDialogProvider>
   );
 }

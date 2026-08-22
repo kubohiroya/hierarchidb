@@ -4,13 +4,13 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  __columnWidthCacheTesting,
   cacheColumnWidths,
   columnWidthsEqual,
   DEFAULT_COLUMN_WIDTHS,
   loadCachedColumnWidths,
   mergeWithDefaults,
   resolveInitialColumnWidths,
-  __columnWidthCacheTesting,
 } from '../utils/column-width-cache';
 
 declare global {

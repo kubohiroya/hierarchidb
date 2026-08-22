@@ -1,3 +1,7 @@
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import ArrowLeftIcon from '@mui/icons-material/ArrowLeft';
+import ArrowRightIcon from '@mui/icons-material/ArrowRight';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import {
   Box,
   Fab,
@@ -9,10 +13,6 @@ import {
   type PopperProps,
   SpeedDialAction,
 } from '@mui/material';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import ArrowLeftIcon from '@mui/icons-material/ArrowLeft';
-import ArrowRightIcon from '@mui/icons-material/ArrowRight';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import type { SxProps, Theme } from '@mui/material/styles';
 import type { MouseEvent as ReactMouseEvent, ReactNode } from 'react';
 import { useSpeedDialSubmenuActionsView } from './useSpeedDialSubmenuActionsView.js';
@@ -52,7 +52,9 @@ export interface SpeedDialSubmenuActionsProps {
 const DEFAULT_SUBMENU_OFFSET_PX = 4;
 const DEFAULT_SUBMENU_CLOSE_DELAY_MS = 140;
 
-function getPlacementDirection(placement: PopperProps['placement']): 'left' | 'right' | 'top' | 'bottom' {
+function getPlacementDirection(
+  placement: PopperProps['placement']
+): 'left' | 'right' | 'top' | 'bottom' {
   if (!placement) return 'left';
   if (placement.startsWith('right')) return 'right';
   if (placement.startsWith('top')) return 'top';
@@ -132,7 +134,8 @@ export function SpeedDialSubmenuActions({
       {actions.map((action) => {
         const parentOpen = submenuOpen && action.id === activeParentId;
         const tooltipTitle = action.tooltipTitle ?? action.label;
-        const triggerTestId = action.submenuTriggerTestId ?? `${action.testId ?? action.id}-submenu-trigger`;
+        const triggerTestId =
+          action.submenuTriggerTestId ?? `${action.testId ?? action.id}-submenu-trigger`;
         return (
           <SpeedDialAction
             key={action.id}

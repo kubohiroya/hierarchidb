@@ -3,11 +3,11 @@
  * @description TDD tests for TreeViewController undo/redo behavior
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type NodeId } from '@hierarchidb/core-types';
 import { act, renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TreeViewControllerProps } from './useTreeViewController.js';
 import { useTreeViewController } from './useTreeViewController.js';
-import { type NodeId } from '@hierarchidb/core-types';
 
 vi.mock('comlink', () => ({
   proxy: <T,>(value: T) => value,
@@ -99,7 +99,7 @@ describe('useTreeViewController', () => {
               type: 'deleteNode',
               nodeId: 'node-1',
             }),
-          }),
+          })
         );
         expect(mockStateManager.undo).toHaveBeenCalledTimes(1);
       });
@@ -121,7 +121,7 @@ describe('useTreeViewController', () => {
           expect.objectContaining({
             success: false,
             error: 'No operations to undo',
-          }),
+          })
         );
       });
 
@@ -153,7 +153,7 @@ describe('useTreeViewController', () => {
               success: true,
               restoredNode: undoneNode,
             }),
-          }),
+          })
         );
       });
     });
@@ -188,7 +188,7 @@ describe('useTreeViewController', () => {
               type: 'deleteNode',
               nodeId: 'node-1',
             }),
-          }),
+          })
         );
         expect(mockStateManager.redo).toHaveBeenCalledTimes(1);
       });
@@ -210,7 +210,7 @@ describe('useTreeViewController', () => {
           expect.objectContaining({
             success: false,
             error: 'No operations to redo',
-          }),
+          })
         );
       });
     });
@@ -271,13 +271,12 @@ describe('useTreeViewController', () => {
       });
 
       it('should update undo/redo states after operations', async () => {
-        mockStateManager.canUndo = vi
-          .fn()
-          .mockReturnValueOnce(false).mockReturnValueOnce(true); //  undo
+        mockStateManager.canUndo = vi.fn().mockReturnValueOnce(false).mockReturnValueOnce(true); //  undo
 
         mockStateManager.canRedo = vi
           .fn()
-          .mockReturnValueOnce(false).mockReturnValueOnce(false) //  undoredo
+          .mockReturnValueOnce(false)
+          .mockReturnValueOnce(false) //  undoredo
           .mockReturnValueOnce(true); //  undo
 
         const { result } = renderHook(() => useTreeViewController(mockProps));

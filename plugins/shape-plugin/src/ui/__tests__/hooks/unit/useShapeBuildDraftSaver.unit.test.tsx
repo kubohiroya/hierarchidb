@@ -1,6 +1,6 @@
+import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 
 const mocks = vi.hoisted(() => ({
   getTreeNodeUpdaterAPI: vi.fn(),
@@ -36,15 +36,17 @@ describe('useShapeBuildDraftSaver', () => {
         getTreeNodeUpdaterAPI: mocks.getTreeNodeUpdaterAPI,
       }),
     };
-    const { result } = renderHook(() => useShapeBuildDraftSaver({
-      activeNodeId: 'node-1',
-      data: {
-        buildConfig: {
-          dataSourceName: 'source-a',
+    const { result } = renderHook(() =>
+      useShapeBuildDraftSaver({
+        activeNodeId: 'node-1',
+        data: {
+          buildConfig: {
+            dataSourceName: 'source-a',
+          },
         },
-      },
-      workerClient: workerClient as unknown as WorkerClientRef,
-    }));
+        workerClient: workerClient as unknown as WorkerClientRef,
+      })
+    );
 
     let saved = false;
     await act(async () => {

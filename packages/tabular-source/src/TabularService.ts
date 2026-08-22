@@ -1,9 +1,15 @@
-import type { DetectionResult, FileLike, ParseOptions, TabularParseResult, TabularSchema } from './types.js';
-import { detectFormat, parseWithBest, registerParser } from './registryUtils.js';
 import { createTabularLikeParser } from './parsers/createTabularLikeParser.js';
 import { jsonlParser } from './parsers/jsonlParser.js';
-import type { TabularIngestResult, TabularStorePort } from './storeTypes.js';
 import type { TabularContext, TabularProcessor } from './processor.js';
+import { detectFormat, parseWithBest, registerParser } from './registryUtils.js';
+import type { TabularIngestResult, TabularStorePort } from './storeTypes.js';
+import type {
+  DetectionResult,
+  FileLike,
+  ParseOptions,
+  TabularParseResult,
+  TabularSchema,
+} from './types.js';
 
 // Register built-in parsers by default
 registerParser(createTabularLikeParser('csv', ','));
@@ -26,8 +32,8 @@ export class TabularService {
       filename?: string;
       sizeBytes?: number;
       processors?: TabularProcessor[];
-      context?: TabularContext
-    },
+      context?: TabularContext;
+    }
   ): Promise<TabularIngestResult<TMeta>> {
     const parsed = await this.parse(input, options);
     // Processor: mapSchema
@@ -69,7 +75,11 @@ export class TabularService {
           }
           if (r) transformed.push(r);
         }
-        await store.writeChunk(session, { rows: transformed, index: chunk.index, hasMore: chunk.hasMore });
+        await store.writeChunk(session, {
+          rows: transformed,
+          index: chunk.index,
+          hasMore: chunk.hasMore,
+        });
       }
       totalRows += chunk.rows.length;
       chunkCount += 1;

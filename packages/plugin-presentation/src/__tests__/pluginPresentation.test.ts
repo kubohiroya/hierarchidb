@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  setPluginPresentationDefinitions,
-  getPresentation,
   getIconComponent,
+  getPresentation,
   prefetchAllIcons,
   resetPluginPresentationCacheForTests,
+  setPluginPresentationDefinitions,
 } from '../index';
 
 const baseDefinition = {

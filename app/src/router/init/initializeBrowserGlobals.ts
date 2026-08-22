@@ -50,10 +50,7 @@ const openDebugLogDb = (): Promise<IDBDatabase> => {
       reject(new Error('indexedDB is not available'));
       return;
     }
-    const request = indexedDB.open(
-      getDBName(getBuildDatabasePrefix(), 'debug-log'),
-      1
-    );
+    const request = indexedDB.open(getDBName(getBuildDatabasePrefix(), 'debug-log'), 1);
     request.onupgradeneeded = () => {
       const db = request.result;
       if (!db.objectStoreNames.contains('logs')) {

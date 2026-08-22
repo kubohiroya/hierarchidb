@@ -1,6 +1,10 @@
 import type { PeerEntity, Timestamp } from '@hierarchidb/core-types';
-import type { TabularFilterRule, TabularDataResult, TabularProcessingConfig } from '@hierarchidb/ui-tabular';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
+import type {
+  TabularDataResult,
+  TabularFilterRule,
+  TabularProcessingConfig,
+} from '@hierarchidb/ui-tabular';
 
 export type DataSourceType = 'file' | 'url';
 

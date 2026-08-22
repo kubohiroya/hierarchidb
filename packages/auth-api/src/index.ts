@@ -1,5 +1,4 @@
 export type { AuthRuntimeBridge } from './AuthRuntimeBridge.js';
-export type { AuthContext, AuthHeadersProvider, AuthScope } from './types.js';
 export type {
   AuthCancelledNotification,
   AuthNotification,
@@ -11,3 +10,4 @@ export type {
   PluginType,
   StorageWarningNotification,
 } from './notificationTypes.js';
+export type { AuthContext, AuthHeadersProvider, AuthScope } from './types.js';

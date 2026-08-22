@@ -1,10 +1,7 @@
 {
   "extends": "../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
-    "lib": [
-      "ES2022",
-      "DOM"
-    ],
+    "lib": ["ES2022", "DOM"],
     "experimentalDecorators": true,
     "strictNullChecks": true,
     "strictFunctionTypes": true,
@@ -13,8 +10,5 @@
     "jsx": "react-jsx",
     "baseUrl": "."
   },
-  "include": [
-    "../../global.d.ts",
-    "src/**/*"
-  ]
+  "include": ["../../global.d.ts", "src/**/*"]
 }

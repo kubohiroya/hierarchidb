@@ -1,11 +1,11 @@
 /**
-   * DATA_SOURCE_STRATEGY_DESIGN.md
-  */
+ * DATA_SOURCE_STRATEGY_DESIGN.md
+ */
 
 import type { DataSourceStrategy } from './DataSourceStrategy.js';
-import { NaturalEarthStrategy } from './NaturalEarthStrategy.js';
 import { GADMStrategy } from './GADMStrategy.js';
 import { GeoBoundariesStrategy } from './GeoBoundariesStrategy.js';
+import { NaturalEarthStrategy } from './NaturalEarthStrategy.js';
 
 export type DataSourceStrategyId =
   | 'natural-earth-shapes'
@@ -13,7 +13,7 @@ export type DataSourceStrategyId =
   | 'geoboundaries-admin-areas';
 
 /**
-    */
+ */
 export interface DataSourceInfo {
   id: DataSourceStrategyId;
   name: string;
@@ -28,7 +28,7 @@ export interface DataSourceInfo {
 }
 
 /**
-    */
+ */
 export class DataSourceStrategyFactory {
   private strategies = new Map<DataSourceStrategyId, () => DataSourceStrategy>();
   private strategyInfo = new Map<DataSourceStrategyId, DataSourceInfo>();
@@ -38,83 +38,71 @@ export class DataSourceStrategyFactory {
   }
 
   /**
-            */
+   */
   private registerDefaultStrategies(): void {
     //  Natural Earth
-    this.register(
-      'natural-earth-shapes',
-      () => new NaturalEarthStrategy(),
-      {
-        id: 'natural-earth-shapes',
-        name: 'Natural Earth',
-        description: 'Free vector and raster map data at multiple scales',
-        category: 'general',
-        dataTypes: ['countries', 'states', 'cities', 'coastlines', 'rivers', 'lakes'],
-        coverageLevel: 'global',
-        updateFrequency: 'yearly',
-        license: 'Public Domain',
-        attribution: 'Natural Earth',
-        supported: true,
-      },
-    );
+    this.register('natural-earth-shapes', () => new NaturalEarthStrategy(), {
+      id: 'natural-earth-shapes',
+      name: 'Natural Earth',
+      description: 'Free vector and raster map data at multiple scales',
+      category: 'general',
+      dataTypes: ['countries', 'states', 'cities', 'coastlines', 'rivers', 'lakes'],
+      coverageLevel: 'global',
+      updateFrequency: 'yearly',
+      license: 'Public Domain',
+      attribution: 'Natural Earth',
+      supported: true,
+    });
 
     //  GADM
-    this.register(
-      'gadm-administrative-areas',
-      () => new GADMStrategy(),
-      {
-        id: 'gadm-administrative-areas',
-        name: 'GADM',
-        description: 'Database of Global Administrative Areas',
-        category: 'administrative',
-        dataTypes: ['countries', 'states', 'counties', 'municipalities'],
-        coverageLevel: 'global',
-        updateFrequency: 'yearly',
-        license: 'Free for non-commercial use',
-        attribution: 'GADM',
-        supported: true,
-      },
-    );
+    this.register('gadm-administrative-areas', () => new GADMStrategy(), {
+      id: 'gadm-administrative-areas',
+      name: 'GADM',
+      description: 'Database of Global Administrative Areas',
+      category: 'administrative',
+      dataTypes: ['countries', 'states', 'counties', 'municipalities'],
+      coverageLevel: 'global',
+      updateFrequency: 'yearly',
+      license: 'Free for non-commercial use',
+      attribution: 'GADM',
+      supported: true,
+    });
 
     //  GeoBoundaries
-    this.register(
-      'geoboundaries-admin-areas',
-      () => new GeoBoundariesStrategy(),
-      {
-        id: 'geoboundaries-admin-areas',
-        name: 'GeoBoundaries',
-        description: 'Open, research-ready administrative boundaries',
-        category: 'administrative',
-        dataTypes: ['administrative-boundaries'],
-        coverageLevel: 'global',
-        updateFrequency: 'yearly',
-        license: 'Various open licenses',
-        attribution: 'GeoBoundaries',
-        supported: true,
-      },
-    );
+    this.register('geoboundaries-admin-areas', () => new GeoBoundariesStrategy(), {
+      id: 'geoboundaries-admin-areas',
+      name: 'GeoBoundaries',
+      description: 'Open, research-ready administrative boundaries',
+      category: 'administrative',
+      dataTypes: ['administrative-boundaries'],
+      coverageLevel: 'global',
+      updateFrequency: 'yearly',
+      license: 'Various open licenses',
+      attribution: 'GeoBoundaries',
+      supported: true,
+    });
   }
 
   /**
-            */
+   */
   register(
     id: DataSourceStrategyId,
     factory: () => DataSourceStrategy,
-    info: DataSourceInfo,
+    info: DataSourceInfo
   ): void {
     this.strategies.set(id, factory);
     this.strategyInfo.set(id, info);
   }
 
   /**
-            */
+   */
   unregister(id: DataSourceStrategyId): void {
     this.strategies.delete(id);
     this.strategyInfo.delete(id);
   }
 
   /**
-            */
+   */
   create(id: DataSourceStrategyId): DataSourceStrategy {
     const factory = this.strategies.get(id);
     if (!factory) {
@@ -124,15 +112,15 @@ export class DataSourceStrategyFactory {
   }
 
   /**
-      * ID
-      */
+   * ID
+   */
   getAvailableStrategies(): DataSourceStrategyId[] {
     return Array.from(this.strategies.keys());
   }
 
   /**
-      * ID
-      */
+   * ID
+   */
   getSupportedStrategies(): DataSourceStrategyId[] {
     return Array.from(this.strategyInfo.entries())
       .filter(([_, info]) => info.supported)
@@ -140,19 +128,19 @@ export class DataSourceStrategyFactory {
   }
 
   /**
-            */
+   */
   getStrategyInfo(id: DataSourceStrategyId): DataSourceInfo | undefined {
     return this.strategyInfo.get(id);
   }
 
   /**
-            */
+   */
   getAllStrategyInfo(): DataSourceInfo[] {
     return Array.from(this.strategyInfo.values());
   }
 
   /**
-            */
+   */
   getStrategiesByCategory(category: DataSourceInfo['category']): DataSourceStrategyId[] {
     return Array.from(this.strategyInfo.entries())
       .filter(([_, info]) => info.category === category && info.supported)
@@ -160,7 +148,7 @@ export class DataSourceStrategyFactory {
   }
 
   /**
-            */
+   */
   getStrategiesByCoverageLevel(level: DataSourceInfo['coverageLevel']): DataSourceStrategyId[] {
     return Array.from(this.strategyInfo.entries())
       .filter(([_, info]) => info.coverageLevel === level && info.supported)
@@ -168,32 +156,32 @@ export class DataSourceStrategyFactory {
   }
 
   /**
-            */
+   */
   findStrategiesByDataType(dataType: string): DataSourceStrategyId[] {
     return Array.from(this.strategyInfo.entries())
-      .filter(([_, info]) =>
-          info.supported && info.dataTypes.some(type =>
-            type.toLowerCase().includes(dataType.toLowerCase()),
-          ),
+      .filter(
+        ([_, info]) =>
+          info.supported &&
+          info.dataTypes.some((type) => type.toLowerCase().includes(dataType.toLowerCase()))
       )
       .map(([id, _]) => id);
   }
 
   /**
-            */
+   */
   hasStrategy(id: DataSourceStrategyId): boolean {
     return this.strategies.has(id);
   }
 
   /**
-            */
+   */
   isStrategySupported(id: DataSourceStrategyId): boolean {
     const info = this.strategyInfo.get(id);
     return info?.supported || false;
   }
 
   /**
-            */
+   */
   async healthCheck(id: DataSourceStrategyId): Promise<boolean> {
     try {
       const strategy = this.create(id);
@@ -208,7 +196,7 @@ export class DataSourceStrategyFactory {
   }
 
   /**
-            */
+   */
   async healthCheckAll(): Promise<Map<DataSourceStrategyId, boolean>> {
     const results = new Map<DataSourceStrategyId, boolean>();
     const strategies = this.getSupportedStrategies();
@@ -217,14 +205,14 @@ export class DataSourceStrategyFactory {
       strategies.map(async (id) => {
         const isHealthy = await this.healthCheck(id);
         results.set(id, isHealthy);
-      }),
+      })
     );
 
     return results;
   }
 
   /**
-            */
+   */
   getStatistics(): {
     total: number;
     supported: number;
@@ -232,7 +220,7 @@ export class DataSourceStrategyFactory {
     byCoverageLevel: Record<string, number>;
   } {
     const allInfo = this.getAllStrategyInfo();
-    const supported = allInfo.filter(info => info.supported);
+    const supported = allInfo.filter((info) => info.supported);
 
     const byCategory: Record<string, number> = {};
     const byCoverageLevel: Record<string, number> = {};
@@ -251,25 +239,31 @@ export class DataSourceStrategyFactory {
   }
 
   /**
-            */
-  getRecommendedStrategy(purpose: 'administrative' | 'natural' | 'realtime' | 'research'): DataSourceStrategyId | null {
+   */
+  getRecommendedStrategy(
+    purpose: 'administrative' | 'natural' | 'realtime' | 'research'
+  ): DataSourceStrategyId | null {
     const strategies = this.getSupportedStrategies();
 
     switch (purpose) {
       case 'administrative':
         //  GADMGeoBoundaries
-        return strategies.find(id => ['gadm-administrative-areas', 'geoboundaries-admin-areas'].includes(id)) || null;
+        return (
+          strategies.find((id) =>
+            ['gadm-administrative-areas', 'geoboundaries-admin-areas'].includes(id)
+          ) || null
+        );
 
       case 'natural':
         //  Natural Earth
-        return strategies.find(id => id === 'natural-earth-shapes') || null;
+        return strategies.find((id) => id === 'natural-earth-shapes') || null;
 
       case 'realtime':
         return null;
 
       case 'research':
         //  GeoBoundaries
-        return strategies.find(id => id === 'geoboundaries-admin-areas') || null;
+        return strategies.find((id) => id === 'geoboundaries-admin-areas') || null;
 
       default:
         return strategies[0] || null;
@@ -278,5 +272,5 @@ export class DataSourceStrategyFactory {
 }
 
 /**
-    */
+ */
 export const defaultDataSourceFactory = new DataSourceStrategyFactory();

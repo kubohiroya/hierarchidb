@@ -28,7 +28,9 @@ const createSourceId = (): string => {
   return `${now}-${rand}`;
 };
 
-const createRuntimeBroadcastChannel = <TPayload = unknown>(channelName: string): RuntimeBroadcastChannel<TPayload> => {
+const createRuntimeBroadcastChannel = <TPayload = unknown>(
+  channelName: string
+): RuntimeBroadcastChannel<TPayload> => {
   const sourceId = createSourceId();
   let channel: BroadcastChannel | null = null;
 
@@ -70,12 +72,11 @@ const createRuntimeBroadcastChannel = <TPayload = unknown>(channelName: string):
   };
 };
 
-const broadcastChannel = createRuntimeBroadcastChannel<BuildSessionBroadcastPayload>('hdb:runtime-worker:build-sessions');
+const broadcastChannel = createRuntimeBroadcastChannel<BuildSessionBroadcastPayload>(
+  'hdb:runtime-worker:build-sessions'
+);
 
-export const publishBuildSessionUpdate = (payload?: {
-  nodeId?: NodeId;
-  status?: string;
-}): void => {
+export const publishBuildSessionUpdate = (payload?: { nodeId?: NodeId; status?: string }): void => {
   broadcastChannel.publish({
     type: 'build-session-update',
     payload,
@@ -83,7 +84,7 @@ export const publishBuildSessionUpdate = (payload?: {
 };
 
 export const subscribeToBuildSessionBroadcast = (
-  handler: (message: BuildSessionBroadcastMessage) => void,
+  handler: (message: BuildSessionBroadcastMessage) => void
 ): (() => void) => {
   return broadcastChannel.subscribe((message) => {
     if (message.type !== 'build-session-update') return;

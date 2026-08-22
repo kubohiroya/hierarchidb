@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import process from 'node:process';
+import * as globby from 'globby';
 /**
  * Script: packages/tools/codemods/src/esm-ext-codemod.ts
  * Purpose: TypeScript implementation of the `.mjs` codemod that appends ESM
@@ -9,12 +13,8 @@
  * files are generated.
  */
 import { Project } from 'ts-morph';
-import * as path from 'node:path';
-import * as fs from 'node:fs';
-import * as globby from 'globby';
-import process from 'node:process';
 
-type Args = { write: boolean; roots: string[] }
+type Args = { write: boolean; roots: string[] };
 
 function parseArgs(): Args {
   const args = process.argv.slice(2);
@@ -33,7 +33,11 @@ function parseArgs(): Args {
 }
 
 const logCodemodWarning = (message: string, error: unknown): void => {
-  if (error && typeof (error as NodeJS.ErrnoException).code === 'string' && (error as NodeJS.ErrnoException).code === 'ENOENT') {
+  if (
+    error &&
+    typeof (error as NodeJS.ErrnoException).code === 'string' &&
+    (error as NodeJS.ErrnoException).code === 'ENOENT'
+  ) {
     return;
   }
   console.warn('[esm-ext-codemod]', message, error);
@@ -66,7 +70,14 @@ async function main() {
   const { write, roots } = parseArgs();
   const patterns = roots.map((r) => `${r}/**/*.{ts,tsx}`);
   const files = await globby.globby(patterns, {
-    ignore: ['**/*.d.ts', '**/*.test.*', '**/*.spec.*', '**/*.stories.*', '**/node_modules/**', '**/dist/**'],
+    ignore: [
+      '**/*.d.ts',
+      '**/*.test.*',
+      '**/*.spec.*',
+      '**/*.stories.*',
+      '**/node_modules/**',
+      '**/dist/**',
+    ],
   });
 
   const project = new Project({ skipAddingFilesFromTsConfig: true });

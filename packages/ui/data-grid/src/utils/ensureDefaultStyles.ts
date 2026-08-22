@@ -34,4 +34,3 @@ export function ensureDefaultStyles(datasetId: string, opts: EnsureDefaultStyles
   });
   CrossViewStyles.setStyles(datasetId, styles);
 }
-

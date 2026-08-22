@@ -4,11 +4,7 @@ export const START_DIAGNOSTIC_TIMEOUT_MS = 45_000;
 
 export type BuildStartupTransitionWarnStep = 0 | 1 | 2 | 3;
 
-export type StartupTransitionWatchdogEventKind =
-  | 'none'
-  | 'wait'
-  | 'long-wait'
-  | 'timeout';
+export type StartupTransitionWatchdogEventKind = 'none' | 'wait' | 'long-wait' | 'timeout';
 
 export type StartupTransitionWatchdogEvent = {
   kind: StartupTransitionWatchdogEventKind;
@@ -21,7 +17,7 @@ export type ResolveStartupTransitionWatchdogEventInput = {
 };
 
 export const resolveStartupTransitionWatchdogEvent = (
-  input: ResolveStartupTransitionWatchdogEventInput,
+  input: ResolveStartupTransitionWatchdogEventInput
 ): StartupTransitionWatchdogEvent => {
   if (input.durationMs >= START_DIAGNOSTIC_TIMEOUT_MS && input.warnStep < 3) {
     return {

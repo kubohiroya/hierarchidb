@@ -8,10 +8,10 @@ import type {
   TabularStorePort,
 } from '@hierarchidb/tabular-source';
 import {
-  TabularWriter,
   type TabularColumnInfo,
   type TabularColumnType,
   type TabularTableMetadataLike,
+  TabularWriter,
 } from '@hierarchidb/tabular-store';
 import type { SpreadsheetMetadataManager } from './SpreadsheetMetadataManager.js';
 
@@ -62,13 +62,28 @@ const trackSampleValue = (stats: ColumnStats, value: string | number): void => {
 };
 
 const resolveColumnType = (stats: ColumnStats): TabularColumnType => {
-  if (stats.numberCount > 0 && stats.stringCount === 0 && stats.booleanCount === 0 && stats.dateCount === 0) {
+  if (
+    stats.numberCount > 0 &&
+    stats.stringCount === 0 &&
+    stats.booleanCount === 0 &&
+    stats.dateCount === 0
+  ) {
     return 'number';
   }
-  if (stats.booleanCount > 0 && stats.numberCount === 0 && stats.stringCount === 0 && stats.dateCount === 0) {
+  if (
+    stats.booleanCount > 0 &&
+    stats.numberCount === 0 &&
+    stats.stringCount === 0 &&
+    stats.dateCount === 0
+  ) {
     return 'boolean';
   }
-  if (stats.dateCount > 0 && stats.numberCount === 0 && stats.booleanCount === 0 && stats.stringCount === 0) {
+  if (
+    stats.dateCount > 0 &&
+    stats.numberCount === 0 &&
+    stats.booleanCount === 0 &&
+    stats.stringCount === 0
+  ) {
     return 'date';
   }
   return 'string';
@@ -92,7 +107,10 @@ export class SpreadsheetStorePort implements TabularStorePort<TabularTableMetada
     this.rowStoreDatabaseName = options.rowStoreDatabaseName;
   }
 
-  async beginIngest(schema: TabularSchema, _ctx: TabularIngestContext): Promise<TabularIngestSession> {
+  async beginIngest(
+    schema: TabularSchema,
+    _ctx: TabularIngestContext
+  ): Promise<TabularIngestSession> {
     if (!schema.columns || schema.columns.length === 0) {
       throw new Error('No columns found in uploaded file');
     }
@@ -133,7 +151,10 @@ export class SpreadsheetStorePort implements TabularStorePort<TabularTableMetada
     await current.writer.writeRows(normalizedRows);
   }
 
-  async commit(session: TabularIngestSession, summary: TabularIngestSummary): Promise<TabularIngestResult<TabularTableMetadataLike>> {
+  async commit(
+    session: TabularIngestSession,
+    summary: TabularIngestSummary
+  ): Promise<TabularIngestResult<TabularTableMetadataLike>> {
     const current = this.sessions.get(session.id);
     if (!current) {
       throw new Error(`Unknown ingest session: ${session.id}`);
@@ -176,7 +197,7 @@ export class SpreadsheetStorePort implements TabularStorePort<TabularTableMetada
 
   private normalizeRow(
     row: Record<string, unknown>,
-    columns: ColumnStats[],
+    columns: ColumnStats[]
   ): Record<string, string | number | boolean | null> {
     const normalized: Record<string, string | number | boolean | null> = {};
     for (const stats of columns) {

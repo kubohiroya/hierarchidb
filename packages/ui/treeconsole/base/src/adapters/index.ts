@@ -1,31 +1,27 @@
 /**
-  * TreeConsole API
-  * API
-  */
+ * TreeConsole API
+ * API
+ */
 
-export { WorkerAPIAdapter } from './WorkerAPIAdapter.js';
-
-export { TreeObservableAdapter } from './subscriptions/TreeObservableAdapter.js';
-export { TreeMutationCommandsAdapter } from './commands/TreeMutationCommands.js';
+export {
+  createAdapterCommandId,
+  createAdapterGroupId,
+  createCommand,
+  createTimestamp,
+} from './commandEnvelopeFactories.js';
+export type { DraftEditSession } from './commands/DraftCommands.js';
 export { DraftCommandsAdapter } from './commands/DraftCommands.js';
+export { TreeMutationCommandsAdapter } from './commands/TreeMutationCommands.js';
 export { SubscriptionManager } from './subscriptions/SubscriptionManager.js';
-
+export { TreeObservableAdapter } from './subscriptions/TreeObservableAdapter.js';
 export type {
-  WorkerAPIAdapterConfig,
   AdapterContext,
   CommandAdapterOptions,
   LegacyCallback,
-  LegacyUnsubscribe,
   LegacyExpandedStateChanges,
   LegacySubTreeChanges,
+  LegacyUnsubscribe,
   TreeConsoleAdapterError,
+  WorkerAPIAdapterConfig,
 } from './types.js';
-
-export type { DraftEditSession } from './commands/DraftCommands.js';
-
-export {
-  createCommand,
-  createAdapterGroupId,
-  createAdapterCommandId,
-  createTimestamp,
-} from './commandEnvelopeFactories.js';
+export { WorkerAPIAdapter } from './WorkerAPIAdapter.js';

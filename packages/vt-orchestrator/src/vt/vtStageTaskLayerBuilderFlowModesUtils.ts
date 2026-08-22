@@ -1,8 +1,12 @@
 import type { Tile } from 'geojson-vt';
 import type { StageHandlerResult } from '~/types/types';
 import type { GeojsonVtIndex } from './buildTileLayerIndexFromFeatures.js';
-import type { VtLayerBuildResult, TaskLayerContext, LayerBuildBranchResult } from './vtStageTaskLayerBuilderTypes.js';
 import { layerBuildSkipReason } from './vtStageTaskLayerBuilderPolicy.js';
+import type {
+  LayerBuildBranchResult,
+  TaskLayerContext,
+  VtLayerBuildResult,
+} from './vtStageTaskLayerBuilderTypes.js';
 
 type LayerBuildNoLayerLogInput = LayerBuildResultLogInput & {
   message: string;
@@ -18,7 +22,7 @@ type LayerBuildResultLogInput = {
 
 const buildNoLayerResult = (
   message: string,
-  completedWithParentInputSummary: (message: string) => StageHandlerResult,
+  completedWithParentInputSummary: (message: string) => StageHandlerResult
 ): VtLayerBuildResult => ({
   kind: 'skipped',
   result: completedWithParentInputSummary(message),
@@ -26,7 +30,7 @@ const buildNoLayerResult = (
 
 const buildReadyLayerResult = (
   aggregatedLayersByTileId: Map<number, Record<string, Tile>> | null,
-  indexes: Map<string, GeojsonVtIndex> | null,
+  indexes: Map<string, GeojsonVtIndex> | null
 ): VtLayerBuildResult => ({
   kind: 'ready',
   aggregatedLayersByTileId,
@@ -40,11 +44,14 @@ const logNoLayerResult = ({
   extra,
 }: LayerBuildResultLogInput): void => {
   if (!extra) {
-    console.warn('[tileEmit] no layers', JSON.stringify({
-      ...taskContext,
-      parentTile: parent,
-      reason: message,
-    }));
+    console.warn(
+      '[tileEmit] no layers',
+      JSON.stringify({
+        ...taskContext,
+        parentTile: parent,
+        reason: message,
+      })
+    );
     return;
   }
 
@@ -54,7 +61,7 @@ const logNoLayerResult = ({
       ...taskContext,
       parentTile: parent,
       ...extra,
-    }),
+    })
   );
 };
 

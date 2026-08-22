@@ -1,6 +1,6 @@
-import { memo, type InputHTMLAttributes } from 'react';
-import { TextField, InputAdornment, IconButton, type SxProps, type Theme } from '@mui/material';
-import { Search as SearchIcon, Close as CloseIcon } from '@mui/icons-material';
+import { Close as CloseIcon, Search as SearchIcon } from '@mui/icons-material';
+import { IconButton, InputAdornment, type SxProps, TextField, type Theme } from '@mui/material';
+import { type InputHTMLAttributes, memo } from 'react';
 import { useTreeTableSearchInputView } from './useTreeTableSearchInputView.ts';
 
 const BASE_SEARCH_FIELD_WIDTH_PX = 300;
@@ -152,27 +152,31 @@ export const TreeTableSearchInput = memo(function TreeTableSearchInput({
             <SearchIcon fontSize="small" />
           </InputAdornment>
         ),
-        endAdornment: resolvedClearHandler !== undefined ? (
-          <InputAdornment position="end" sx={{ visibility: shouldShowClearButton ? 'visible' : 'hidden' }}>
-            <IconButton
-              size="large"
-              color="default"
-              onClick={() => resolvedClearHandler()}
-              aria-label="Clear search"
-              tabIndex={shouldShowClearButton ? 0 : -1}
-              sx={{
-                p: 1,
-                minWidth: 36,
-                minHeight: 36,
-                '& .MuiSvgIcon-root': {
-                  fontSize: '1.3rem',
-                },
-              }}
+        endAdornment:
+          resolvedClearHandler !== undefined ? (
+            <InputAdornment
+              position="end"
+              sx={{ visibility: shouldShowClearButton ? 'visible' : 'hidden' }}
             >
-              <CloseIcon fontSize="large" />
-            </IconButton>
-          </InputAdornment>
-        ) : undefined,
+              <IconButton
+                size="large"
+                color="default"
+                onClick={() => resolvedClearHandler()}
+                aria-label="Clear search"
+                tabIndex={shouldShowClearButton ? 0 : -1}
+                sx={{
+                  p: 1,
+                  minWidth: 36,
+                  minHeight: 36,
+                  '& .MuiSvgIcon-root': {
+                    fontSize: '1.3rem',
+                  },
+                }}
+              >
+                <CloseIcon fontSize="large" />
+              </IconButton>
+            </InputAdornment>
+          ) : undefined,
       }}
       sx={mergedSx}
     />

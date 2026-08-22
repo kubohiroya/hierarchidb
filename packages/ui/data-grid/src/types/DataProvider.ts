@@ -51,7 +51,17 @@ export interface FilterParams {
   /** Field to filter by */
   field: string;
   /** Filter operator */
-  operator: 'equals' | 'contains' | 'startsWith' | 'endsWith' | 'gt' | 'gte' | 'lt' | 'lte' | 'between' | 'in';
+  operator:
+    | 'equals'
+    | 'contains'
+    | 'startsWith'
+    | 'endsWith'
+    | 'gt'
+    | 'gte'
+    | 'lt'
+    | 'lte'
+    | 'between'
+    | 'in';
   /** Filter value(s) */
   value: any;
 }

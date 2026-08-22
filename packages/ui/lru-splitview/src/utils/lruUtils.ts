@@ -12,7 +12,7 @@ export function createPane(
   id: string,
   title: string,
   content: React.ReactNode,
-  options: Partial<PaneConfig> = {},
+  options: Partial<PaneConfig> = {}
 ): PaneConfig {
   return {
     id,
@@ -28,7 +28,7 @@ export function createPane(
 export function createProgress(
   paneId: string,
   progress: number,
-  options: Partial<Omit<PaneProgress, 'paneId' | 'progress'>> = {},
+  options: Partial<Omit<PaneProgress, 'paneId' | 'progress'>> = {}
 ): PaneProgress {
   return {
     paneId,
@@ -49,11 +49,11 @@ export function calculateProgress(completed: number, total: number): number {
  * Find the least recently used pane among expanded panes
  */
 export function findLRUPane(paneStates: PaneState[]): PaneState | null {
-  const expandedPanes = paneStates.filter(p => p.isExpanded);
+  const expandedPanes = paneStates.filter((p) => p.isExpanded);
   if (expandedPanes.length === 0) return null;
 
   return expandedPanes.reduce((lru, current) =>
-    current.lastAccessTime < lru.lastAccessTime ? current : lru,
+    current.lastAccessTime < lru.lastAccessTime ? current : lru
   );
 }
 
@@ -61,11 +61,11 @@ export function findLRUPane(paneStates: PaneState[]): PaneState | null {
  * Find the most recently used pane among expanded panes
  */
 export function findMRUPane(paneStates: PaneState[]): PaneState | null {
-  const expandedPanes = paneStates.filter(p => p.isExpanded);
+  const expandedPanes = paneStates.filter((p) => p.isExpanded);
   if (expandedPanes.length === 0) return null;
 
   return expandedPanes.reduce((mru, current) =>
-    current.lastAccessTime > mru.lastAccessTime ? current : mru,
+    current.lastAccessTime > mru.lastAccessTime ? current : mru
   );
 }
 
@@ -80,7 +80,7 @@ export function sortByAccessTime(paneStates: PaneState[]): PaneState[] {
  * Get panes that can be collapsed (expanded panes that aren't the only expanded one)
  */
 export function getCollapsiblePanes(paneStates: PaneState[]): PaneState[] {
-  const expandedPanes = paneStates.filter(p => p.isExpanded);
+  const expandedPanes = paneStates.filter((p) => p.isExpanded);
   return expandedPanes.length > 1 ? expandedPanes : [];
 }
 
@@ -90,10 +90,10 @@ export function getCollapsiblePanes(paneStates: PaneState[]): PaneState[] {
 export function calculateOptimalSizes(
   paneStates: PaneState[],
   totalSpace: number = 1000,
-  defaultCollapsedSize: number = 60,
+  defaultCollapsedSize: number = 60
 ): number[] {
-  const expandedPanes = paneStates.filter(p => p.isExpanded);
-  const collapsedPanes = paneStates.filter(p => !p.isExpanded);
+  const expandedPanes = paneStates.filter((p) => p.isExpanded);
+  const collapsedPanes = paneStates.filter((p) => !p.isExpanded);
 
   if (expandedPanes.length === 0) {
     // All collapsed - equal distribution
@@ -102,18 +102,17 @@ export function calculateOptimalSizes(
   }
 
   // Calculate space for collapsed panes
-  const collapsedSpace = collapsedPanes.reduce((sum, pane) =>
-    sum + (pane.collapsedSize || defaultCollapsedSize), 0,
+  const collapsedSpace = collapsedPanes.reduce(
+    (sum, pane) => sum + (pane.collapsedSize || defaultCollapsedSize),
+    0
   );
 
   // Remaining space for expanded panes
   const expandedSpace = Math.max(0, totalSpace - collapsedSpace);
   const sizePerExpanded = expandedSpace / expandedPanes.length;
 
-  return paneStates.map(pane =>
-    pane.isExpanded
-      ? sizePerExpanded
-      : pane.collapsedSize || defaultCollapsedSize,
+  return paneStates.map((pane) =>
+    pane.isExpanded ? sizePerExpanded : pane.collapsedSize || defaultCollapsedSize
   );
 }
 
@@ -148,12 +147,12 @@ export const AutoExpandPresets = {
     onStart: true,
     custom: (progress: PaneProgress[], _currentStates: PaneState[]) => {
       // Find pane with highest activity (progress > 0 but < 100)
-      const activePanes = progress.filter(p => p.progress > 0 && p.progress < 100);
+      const activePanes = progress.filter((p) => p.progress > 0 && p.progress < 100);
       if (activePanes.length === 0) return null;
 
       // Prioritize by highest progress
       const mostActive = activePanes.reduce((max, current) =>
-        current.progress > max.progress ? current : max,
+        current.progress > max.progress ? current : max
       );
 
       return mostActive.paneId;
@@ -166,8 +165,8 @@ export const AutoExpandPresets = {
     onStart: false,
     custom: (progress: PaneProgress[], _currentStates: PaneState[]) => {
       // Find recently completed panes and expand the next logical one
-      const completedPanes = progress.filter(p => p.progress === 100);
-      const incompletePanes = progress.filter(p => p.progress < 100 && p.progress > 0);
+      const completedPanes = progress.filter((p) => p.progress === 100);
+      const incompletePanes = progress.filter((p) => p.progress < 100 && p.progress > 0);
 
       if (completedPanes.length > 0 && incompletePanes.length > 0) {
         // Return first incomplete pane
@@ -190,19 +189,20 @@ export function batchUpdateProgress(
     taskCount?: number;
     completedCount?: number;
     status?: string;
-  }>,
+  }>
 ): PaneProgress[] {
-  const progressMap = new Map(currentProgress.map(p => [p.paneId, p]));
+  const progressMap = new Map(currentProgress.map((p) => [p.paneId, p]));
 
-  updates.forEach(update => {
+  updates.forEach((update) => {
     const existing = progressMap.get(update.paneId);
     if (existing) {
       progressMap.set(update.paneId, {
         ...existing,
         ...update,
-        progress: update.progress !== undefined
-          ? Math.max(0, Math.min(100, update.progress))
-          : existing.progress,
+        progress:
+          update.progress !== undefined
+            ? Math.max(0, Math.min(100, update.progress))
+            : existing.progress,
       });
     } else {
       progressMap.set(update.paneId, {

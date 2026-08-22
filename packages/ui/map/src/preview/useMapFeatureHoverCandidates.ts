@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
+import { defaultFeatureIdAccessor, resolveIdentifyCandidates } from '~/lib/feature-identification';
+import { isFloatingWindowInteractionActive } from '~/lib/floating-window-interaction';
 import type {
   MapLibreGeoJSONFeature,
   MapLibreMapInstance,
   MapLibreMapMouseEvent,
 } from '~/types/maplibre-public';
-import { defaultFeatureIdAccessor, resolveIdentifyCandidates } from '~/lib/feature-identification';
-import { isFloatingWindowInteractionActive } from '~/lib/floating-window-interaction';
 
 const isPointLayer = (feature: MapLibreGeoJSONFeature): boolean => {
   const layerType = feature.layer?.type;
@@ -13,8 +13,10 @@ const isPointLayer = (feature: MapLibreGeoJSONFeature): boolean => {
 };
 
 const hasPointGeometry = (
-  feature: MapLibreGeoJSONFeature,
-): feature is MapLibreGeoJSONFeature & { geometry: { type: 'Point'; coordinates: [number, number] } } => {
+  feature: MapLibreGeoJSONFeature
+): feature is MapLibreGeoJSONFeature & {
+  geometry: { type: 'Point'; coordinates: [number, number] };
+} => {
   const geometry = (feature as { geometry?: { type?: string; coordinates?: unknown } }).geometry;
   if (geometry?.type !== 'Point' || !Array.isArray(geometry.coordinates)) return false;
   const [lng, lat] = geometry.coordinates;
@@ -22,12 +24,13 @@ const hasPointGeometry = (
 };
 
 const canSortByDistance = (features: MapLibreGeoJSONFeature[]): boolean =>
-  features.length > 1 && features.every((feature) => isPointLayer(feature) && hasPointGeometry(feature));
+  features.length > 1 &&
+  features.every((feature) => isPointLayer(feature) && hasPointGeometry(feature));
 
 const sortByDistance = (
   map: MapLibreMapInstance,
   event: MapLibreMapMouseEvent,
-  features: MapLibreGeoJSONFeature[],
+  features: MapLibreGeoJSONFeature[]
 ): MapLibreGeoJSONFeature[] => {
   if (!event.point || !canSortByDistance(features)) return features;
   const mapWithProject = map as MapLibreMapInstance & {
@@ -35,7 +38,8 @@ const sortByDistance = (
   };
   const { x, y } = event.point;
   const scored = features.map((feature, index) => {
-    const [lng, lat] = (feature as { geometry: { coordinates: [number, number] } }).geometry.coordinates;
+    const [lng, lat] = (feature as { geometry: { coordinates: [number, number] } }).geometry
+      .coordinates;
     const projected = mapWithProject.project({ lng, lat });
     const distance = Math.hypot(projected.x - x, projected.y - y);
     return { feature, distance, index };
@@ -48,7 +52,7 @@ const sortByPriorityAndDistance = (
   map: MapLibreMapInstance,
   event: MapLibreMapMouseEvent,
   features: MapLibreGeoJSONFeature[],
-  layerPriorityById?: Map<string, number>,
+  layerPriorityById?: Map<string, number>
 ): MapLibreGeoJSONFeature[] => {
   if (!layerPriorityById || layerPriorityById.size === 0) {
     return sortByDistance(map, event, features);
@@ -65,7 +69,8 @@ const sortByPriorityAndDistance = (
     const priority = layerPriorityById.get(layerId) ?? 0;
     let distance = 0;
     if (canSortDistance && mapWithProject && event.point) {
-      const [lng, lat] = (feature as { geometry: { coordinates: [number, number] } }).geometry.coordinates;
+      const [lng, lat] = (feature as { geometry: { coordinates: [number, number] } }).geometry
+        .coordinates;
       const projected = mapWithProject.project({ lng, lat });
       distance = Math.hypot(projected.x - x, projected.y - y);
     }
@@ -79,7 +84,9 @@ const sortByPriorityAndDistance = (
   return scored.map((entry) => entry.feature);
 };
 
-export type UseMapFeatureHoverCandidatesParams<HighlightEntry extends { source: string; id: string | number }> = {
+export type UseMapFeatureHoverCandidatesParams<
+  HighlightEntry extends { source: string; id: string | number },
+> = {
   mapInstance: MapLibreMapInstance | null;
   highlightLayerIds: string[];
   layerPriorityById?: Map<string, number>;
@@ -88,7 +95,9 @@ export type UseMapFeatureHoverCandidatesParams<HighlightEntry extends { source: 
   onHoverChange: (entries: HighlightEntry[], features: MapLibreGeoJSONFeature[]) => void;
 };
 
-export const useMapFeatureHoverCandidates = <HighlightEntry extends { source: string; id: string | number }>({
+export const useMapFeatureHoverCandidates = <
+  HighlightEntry extends { source: string; id: string | number },
+>({
   mapInstance,
   highlightLayerIds,
   layerPriorityById,
@@ -108,7 +117,9 @@ export const useMapFeatureHoverCandidates = <HighlightEntry extends { source: st
         return;
       }
       blockedRef.current = false;
-      const activeLayerIds = highlightLayerIds.filter((layerId) => Boolean(mapInstance.getLayer(layerId)));
+      const activeLayerIds = highlightLayerIds.filter((layerId) =>
+        Boolean(mapInstance.getLayer(layerId))
+      );
       if (activeLayerIds.length === 0) {
         onHoverChange([], []);
         return;
@@ -118,7 +129,12 @@ export const useMapFeatureHoverCandidates = <HighlightEntry extends { source: st
         radius,
         getFeatureId: defaultFeatureIdAccessor,
       });
-      const orderedFeatures = sortByPriorityAndDistance(mapInstance, event, result.features, layerPriorityById);
+      const orderedFeatures = sortByPriorityAndDistance(
+        mapInstance,
+        event,
+        result.features,
+        layerPriorityById
+      );
       const entries = orderedFeatures
         .map((feature) => buildHighlightEntry(feature))
         .filter((entry): entry is HighlightEntry => Boolean(entry));
@@ -136,5 +152,12 @@ export const useMapFeatureHoverCandidates = <HighlightEntry extends { source: st
       mapInstance.off('mousemove', handleMouseMove as (...args: unknown[]) => void);
       canvas.removeEventListener('mouseleave', handleMouseLeave);
     };
-  }, [buildHighlightEntry, highlightLayerIds, layerPriorityById, mapInstance, onHoverChange, radius]);
+  }, [
+    buildHighlightEntry,
+    highlightLayerIds,
+    layerPriorityById,
+    mapInstance,
+    onHoverChange,
+    radius,
+  ]);
 };

@@ -1,4 +1,5 @@
 import type { TaskQueueRecord } from '@hierarchidb/build-api';
+import { type MetadataDescriptor, reconcileByMetadata } from '@hierarchidb/build-runtime-services';
 import type { NodeId } from '@hierarchidb/core-types';
 import {
   deleteTasksByIds,
@@ -6,7 +7,6 @@ import {
   putTasks,
   type VtTaskQueueDb,
 } from '@hierarchidb/vt-orchestrator';
-import { reconcileByMetadata, type MetadataDescriptor } from '@hierarchidb/build-runtime-services';
 import { resolveTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
 
 type TaskLike = TaskQueueRecord<unknown, unknown>;
@@ -27,7 +27,7 @@ const buildDescriptor = (task: TaskLike): MetadataDescriptor => {
 
 export const reconcileStageTasksByMetadata = <TInput, TOutput>(
   desiredTasks: Array<TaskQueueRecord<TInput, TOutput>>,
-  existingTasks: Array<TaskQueueRecord<TInput, TOutput>>,
+  existingTasks: Array<TaskQueueRecord<TInput, TOutput>>
 ): ReconcileResult<TInput, TOutput> => {
   const sourceEntries = desiredTasks.map((task) => ({
     task,
@@ -71,7 +71,7 @@ export type ApplyStageTaskReconcileResult<TInput, TOutput> = {
 };
 
 export const applyStageTaskReconcile = async <TInput, TOutput>(
-  params: ApplyStageTaskReconcileParams<TInput, TOutput>,
+  params: ApplyStageTaskReconcileParams<TInput, TOutput>
 ): Promise<ApplyStageTaskReconcileResult<TInput, TOutput>> => {
   params.desiredTasks.forEach((task) => {
     buildDescriptor(task as TaskLike);
@@ -87,8 +87,11 @@ export const applyStageTaskReconcile = async <TInput, TOutput>(
     };
   }
 
-  const existingTasks = params.existingTasks
-    ?? await listTasksByStage(params.taskQueue, params.nodeId, params.stage) as Array<TaskQueueRecord<TInput, TOutput>>;
+  const existingTasks =
+    params.existingTasks ??
+    ((await listTasksByStage(params.taskQueue, params.nodeId, params.stage)) as Array<
+      TaskQueueRecord<TInput, TOutput>
+    >);
   if (existingTasks.length === 0) {
     if (params.desiredTasks.length > 0) {
       await putTasks(params.taskQueue, params.desiredTasks);
@@ -100,7 +103,10 @@ export const applyStageTaskReconcile = async <TInput, TOutput>(
     };
   }
 
-  const { missingTasks, obsoleteTaskIds } = reconcileStageTasksByMetadata(params.desiredTasks, existingTasks);
+  const { missingTasks, obsoleteTaskIds } = reconcileStageTasksByMetadata(
+    params.desiredTasks,
+    existingTasks
+  );
   if (obsoleteTaskIds.length > 0) {
     await deleteTasksByIds(params.taskQueue, obsoleteTaskIds);
   }

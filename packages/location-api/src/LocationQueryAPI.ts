@@ -1,5 +1,9 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { LocationFeature, LocationGroupItemData, LocationRelationMeta } from './locationTypes.js';
+import type {
+  LocationFeature,
+  LocationGroupItemData,
+  LocationRelationMeta,
+} from './locationTypes.js';
 
 export interface LocationGroupItem {
   id: string;
@@ -72,8 +76,12 @@ export interface LocationQueryAPI {
     bbox: LocationViewportBbox,
     zoom: number,
     types?: string[],
-    options?: LocationViewportQueryOptions,
+    options?: LocationViewportQueryOptions
   ): Promise<LocationFeature[]>;
-  queryByMortonPrefixes(nodeId: NodeId, prefixes: string[], types?: string[]): Promise<LocationFeature[]>;
+  queryByMortonPrefixes(
+    nodeId: NodeId,
+    prefixes: string[],
+    types?: string[]
+  ): Promise<LocationFeature[]>;
   findNearestLocationPoint(query: LocationNearestPointQuery): Promise<LocationNearestPointResponse>;
 }

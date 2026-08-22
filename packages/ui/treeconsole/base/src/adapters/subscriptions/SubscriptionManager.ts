@@ -1,14 +1,14 @@
 /**
-  * SubscriptionManager
-  * TreeConsole
-   */
+ * SubscriptionManager
+ * TreeConsole
+ */
 
-import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNodeEvent } from '@hierarchidb/tree-api';
-import { TreeObservableAdapter } from './TreeObservableAdapter.js';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { AdapterContext, UnsubscribeFunction } from '~/types/index';
 import { TreeConsoleAdapterError } from '~/types/index';
+import { TreeObservableAdapter } from './TreeObservableAdapter.js';
 
 type TreeNodeEventCallback = (event: TreeNodeEvent) => void;
 
@@ -32,16 +32,16 @@ export class SubscriptionManager<T> {
   }
 
   /**
-            * @param nodeId ID
+   * @param nodeId ID
    * @param expandedChangesCallback
    * @param subtreeChangesCallback
    * @param context
    * @returns ID
-      */
+   */
   async subscribeToSubtree(
     nodeId: NodeId,
     callback: TreeNodeEventCallback,
-    context: AdapterContext,
+    context: AdapterContext
   ): Promise<string> {
     try {
       const subscriptionId = `subtree_${nodeId}_${Date.now()}`;
@@ -62,21 +62,21 @@ export class SubscriptionManager<T> {
       throw new TreeConsoleAdapterError(
         `Failed to create subtree subscription for node ${nodeId}`,
         'SUBTREE_SUBSCRIPTION_MANAGER_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
 
   /**
-            * @param nodeId ID
+   * @param nodeId ID
    * @param callback
    * @param context
    * @returns ID
-      */
+   */
   async subscribeToNode(
     nodeId: NodeId,
     callback: TreeNodeEventCallback,
-    context: AdapterContext,
+    context: AdapterContext
   ): Promise<string> {
     try {
       const subscriptionId = `node_${nodeId}_${Date.now()}`;
@@ -97,21 +97,21 @@ export class SubscriptionManager<T> {
       throw new TreeConsoleAdapterError(
         `Failed to create node subscription for node ${nodeId}`,
         'NODE_SUBSCRIPTION_MANAGER_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
 
   /**
-            * @param parentId ID
+   * @param parentId ID
    * @param callback
    * @param context
    * @returns ID
-      */
+   */
   async subscribeToChildren(
     parentId: NodeId,
     callback: TreeNodeEventCallback,
-    context: AdapterContext,
+    context: AdapterContext
   ): Promise<string> {
     try {
       const subscriptionId = `children_${parentId}_${Date.now()}`;
@@ -132,14 +132,14 @@ export class SubscriptionManager<T> {
       throw new TreeConsoleAdapterError(
         `Failed to create children subscription for node ${parentId}`,
         'CHILDREN_SUBSCRIPTION_MANAGER_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
 
   /**
-            * @param subscriptionId ID
-      */
+   * @param subscriptionId ID
+   */
   unsubscribe(subscriptionId: string): void {
     const entry = this.subscriptions.get(subscriptionId);
     if (entry) {
@@ -153,8 +153,8 @@ export class SubscriptionManager<T> {
   }
 
   /**
-            * @param nodeId ID
-      */
+   * @param nodeId ID
+   */
   unsubscribeByNodeId(nodeId: NodeId): void {
     const toRemove: string[] = [];
 
@@ -168,8 +168,8 @@ export class SubscriptionManager<T> {
   }
 
   /**
-            * @param type
-      */
+   * @param type
+   */
   unsubscribeByType(type: 'subtree' | 'node' | 'children'): void {
     const toRemove: string[] = [];
 
@@ -183,7 +183,7 @@ export class SubscriptionManager<T> {
   }
 
   /**
-            */
+   */
   cleanupAll(): void {
     this.subscriptions.forEach((entry, subscriptionId) => {
       try {
@@ -198,8 +198,8 @@ export class SubscriptionManager<T> {
   }
 
   /**
-            * @param maxAgeMs 1
-      */
+   * @param maxAgeMs 1
+   */
   cleanupOldSubscriptions(maxAgeMs: number = 3600000): void {
     const now = Date.now();
     const toRemove: string[] = [];
@@ -214,7 +214,7 @@ export class SubscriptionManager<T> {
   }
 
   /**
-            */
+   */
   getSubscriptionStats(): {
     total: number;
     byType: Record<string, number>;

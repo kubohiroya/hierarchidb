@@ -1,8 +1,17 @@
-import type React from 'react';
-import { Box, CircularProgress, Dialog, DialogContent, DialogTitle, IconButton, Stack, Typography } from '@mui/material';
-import { Place as PlaceIcon, Recycling as RecyclingIcon } from '@mui/icons-material';
 import { FloatingWindow } from '@hierarchidb/components';
 import { JsonTreeView } from '@hierarchidb/ui-json-treeview';
+import { Place as PlaceIcon, Recycling as RecyclingIcon } from '@mui/icons-material';
+import {
+  Box,
+  CircularProgress,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Stack,
+  Typography,
+} from '@mui/material';
+import type React from 'react';
 import { MapPreviewFloatingTable } from './MapPreviewFloatingTable.js';
 import { useLocationPreviewList } from './useLocationPreviewList.js';
 import { useLocationPreviewListView } from './useLocationPreviewListView.js';
@@ -12,7 +21,10 @@ export type LocationPreviewListProps = {
   tableId?: string | null;
   rows?: Array<Record<string, unknown>>;
   columns?: string[];
-  columnFormatters?: Record<string, (value: unknown, row: Record<string, unknown>) => React.ReactNode>;
+  columnFormatters?: Record<
+    string,
+    (value: unknown, row: Record<string, unknown>) => React.ReactNode
+  >;
   toolbarActions?: React.ReactNode;
   rowFilterConfig?: {
     mode: 'all' | 'viewport';
@@ -77,13 +89,14 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
     columnFormatters,
     rowFilterConfig,
   });
-  const { shouldShowEmpty, shouldShowTable, recyclingDisabled, recyclingIconColor } = useLocationPreviewList({
-    tableId,
-    normalizedRowsLength: normalizedRows.length,
-    loading,
-    errorText,
-    recyclingState,
-  });
+  const { shouldShowEmpty, shouldShowTable, recyclingDisabled, recyclingIconColor } =
+    useLocationPreviewList({
+      tableId,
+      normalizedRowsLength: normalizedRows.length,
+      loading,
+      errorText,
+      recyclingState,
+    });
 
   let content: React.ReactNode = null;
   if (loading) {
@@ -129,21 +142,23 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
           onCellClick={handleCellClick}
           enableColumnSelector
           rowFilterConfig={rowFilterConfig}
-          toolbarActions={onToggleRecycling || toolbarActions ? (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {onToggleRecycling ? (
-                <IconButton
-                  aria-label="Toggle recycling"
-                  size="small"
-                  onClick={onToggleRecycling}
-                  disabled={recyclingDisabled}
-                >
-                  <RecyclingIcon fontSize="small" color={recyclingIconColor} />
-                </IconButton>
-              ) : null}
-              {toolbarActions}
-            </Box>
-          ) : null}
+          toolbarActions={
+            onToggleRecycling || toolbarActions ? (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {onToggleRecycling ? (
+                  <IconButton
+                    aria-label="Toggle recycling"
+                    size="small"
+                    onClick={onToggleRecycling}
+                    disabled={recyclingDisabled}
+                  >
+                    <RecyclingIcon fontSize="small" color={recyclingIconColor} />
+                  </IconButton>
+                ) : null}
+                {toolbarActions}
+              </Box>
+            ) : null
+          }
           containerSx={{
             position: 'static',
             width: '100%',
@@ -169,9 +184,7 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
       onStateChange={handlers.onStateChange}
       onClose={onClose}
     >
-      <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-        {content}
-      </Box>
+      <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>{content}</Box>
       <Dialog
         open={jsonDialogOpen}
         onClose={closeJsonDialog}

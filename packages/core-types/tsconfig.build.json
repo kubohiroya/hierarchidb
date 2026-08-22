@@ -1,9 +1,7 @@
 {
   "extends": "../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
-    "types": [
-      "node"
-    ],
+    "types": ["node"],
     "noEmit": false,
     "rootDir": "src",
     "outDir": "dist",
@@ -11,14 +9,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "include": [
-
-    "src/**/*"
-
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "vite.config.ts"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "vite.config.ts"]
 }

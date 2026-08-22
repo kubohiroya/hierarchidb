@@ -26,11 +26,11 @@ export interface ChartDataPoint {
 }
 
 /**
-  * : Canvas
+ * : Canvas
  * :
  * :
  * : Canvas API
-  */
+ */
 export class CanvasRenderer {
   private canvas: HTMLCanvasElement | null = null;
   private ctx: CanvasRenderingContext2D | null = null;
@@ -38,10 +38,10 @@ export class CanvasRenderer {
   private animationId: number | null = null;
 
   /**
-      * : Canvas
+   * : Canvas
    * :
    * : Canvas API
-      */
+   */
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
@@ -55,11 +55,11 @@ export class CanvasRenderer {
   }
 
   /**
-      * : Retina/DPI
+   * : Retina/DPI
    * :
    * :
    * : CanvasDPI
-      */
+   */
   private setupHighDPI(): void {
     if (!this.canvas || !this.ctx) return;
 
@@ -80,11 +80,11 @@ export class CanvasRenderer {
   }
 
   /**
-      * :
    * :
    * :
    * :
-      */
+   * :
+   */
   addDataPoint(memoryData: MemoryData, maxDataPoints: number = 100): void {
     //  :
     this.dataPoints.push({
@@ -99,20 +99,20 @@ export class CanvasRenderer {
   }
 
   /**
-      * :
    * :
    * :
-      */
+   * :
+   */
   clearData(): void {
     this.dataPoints = [];
   }
 
   /**
-      * :
    * :
    * :
    * :
-      */
+   * :
+   */
   render(options: CanvasRenderOptions): void {
     if (!this.canvas || !this.ctx || this.dataPoints.length === 0) return;
 
@@ -144,16 +144,16 @@ export class CanvasRenderer {
   }
 
   /**
-      * :
+   * :
    * :
    * :
    * : Canvas
-      */
+   */
   private drawGrid(
     padding: { top: number; right: number; bottom: number; left: number },
     chartWidth: number,
     chartHeight: number,
-    options: CanvasRenderOptions,
+    options: CanvasRenderOptions
   ): void {
     if (!this.ctx) return;
 
@@ -185,16 +185,16 @@ export class CanvasRenderer {
   }
 
   /**
-      * :
    * :
    * :
    * :
-      */
+   * :
+   */
   private drawThresholdLines(
     padding: { top: number; right: number; bottom: number; left: number },
     chartWidth: number,
     chartHeight: number,
-    options: CanvasRenderOptions,
+    options: CanvasRenderOptions
   ): void {
     if (!this.ctx || this.dataPoints.length === 0) return;
 
@@ -226,16 +226,16 @@ export class CanvasRenderer {
   }
 
   /**
-      * :
    * :
    * :
    * :
-      */
+   * :
+   */
   private drawChart(
     padding: { top: number; right: number; bottom: number; left: number },
     chartWidth: number,
     chartHeight: number,
-    options: CanvasRenderOptions,
+    options: CanvasRenderOptions
   ): void {
     if (!this.ctx || this.dataPoints.length < 2) return;
 
@@ -288,16 +288,16 @@ export class CanvasRenderer {
   }
 
   /**
-      * : XY
+   * : XY
    * :
    * :
    * :
-      */
+   */
   private drawAxes(
     padding: { top: number; right: number; bottom: number; left: number },
     chartWidth: number,
     chartHeight: number,
-    options: CanvasRenderOptions,
+    options: CanvasRenderOptions
   ): void {
     if (!this.ctx || this.dataPoints.length === 0) return;
 
@@ -330,11 +330,11 @@ export class CanvasRenderer {
   }
 
   /**
-      * : Canvas
+   * : Canvas
    * :
    * :
    * :
-      */
+   */
   dispose(): void {
     //  :
     if (this.animationId !== null) {

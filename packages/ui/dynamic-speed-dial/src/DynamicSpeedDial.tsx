@@ -1,22 +1,16 @@
+import { SpeedDialSubmenuActions } from '@hierarchidb/components';
 import { Box, Portal, SpeedDial, SpeedDialIcon } from '@mui/material';
 import type {
   DynamicSpeedDialIconResolver,
   DynamicSpeedDialMenuItem,
   DynamicSpeedDialTranslator,
 } from './types.js';
-import {
-  SpeedDialSubmenuActions,
-} from '@hierarchidb/components';
 import { useDynamicSpeedDial } from './useDynamicSpeedDial.js';
 import { useDynamicSpeedDialSubmenuActions } from './useDynamicSpeedDialSubmenuActions.js';
 
 export interface DynamicSpeedDialProps<TNode = unknown> {
   treeId?: string;
-  onCreateAction: (
-    action: string,
-    node: TNode,
-    options?: { openInNewTab?: boolean }
-  ) => void;
+  onCreateAction: (action: string, node: TNode, options?: { openInNewTab?: boolean }) => void;
   position?: {
     bottom?: number;
     right?: number;

@@ -10,12 +10,9 @@
  * - Integration with TanStack Router beforeLoad hooks
  */
 
-import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import type { Remote } from 'comlink';
-import {
-  ensureWorkerInitialized,
-  getWorkerSnapshot,
-} from '~/worker-runtime/WorkerStateStore';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
+import { ensureWorkerInitialized, getWorkerSnapshot } from '~/worker-runtime/WorkerStateStore';
 
 /**
  * Configuration options for Worker initialization

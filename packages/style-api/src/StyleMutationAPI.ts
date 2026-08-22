@@ -1,5 +1,5 @@
-import type { StyleRecord } from './styleTypes.js';
 import type { NodeId } from '@hierarchidb/core-types';
+import type { StyleRecord } from './styleTypes.js';
 
 export interface StyleMutationAPI {
   upsertStyle(record: StyleRecord): Promise<void>;

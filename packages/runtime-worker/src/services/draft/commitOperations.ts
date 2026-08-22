@@ -1,8 +1,8 @@
 import type { NodeId, Timestamp } from '@hierarchidb/core-types';
 import type { DialogUIState, OnNameConflict, TreeNode } from '@hierarchidb/tree-api';
-import type { CoreDB } from '~/services/CoreDB';
 import type { CommandResult } from '~/command-types';
 import { WorkerErrorCodeValue } from '~/command-types';
+import type { CoreDB } from '~/services/CoreDB';
 import { checkDraftConflict } from './lookupOperationUtils.js';
 import { createNewName, getChildNames } from './nameUtils.js';
 
@@ -78,8 +78,7 @@ export async function commitTreeNodeDraft(
   const shouldLogDebug =
     typeof console !== 'undefined' &&
     typeof console.debug === 'function' &&
-    !(globalThis as { __HDB_SILENCE_WORKER_LOGS__?: boolean })
-      .__HDB_SILENCE_WORKER_LOGS__;
+    !(globalThis as { __HDB_SILENCE_WORKER_LOGS__?: boolean }).__HDB_SILENCE_WORKER_LOGS__;
   if (shouldLogDebug) {
     console.debug('[commitDraft] finalizing draft', {
       id: draft.id,

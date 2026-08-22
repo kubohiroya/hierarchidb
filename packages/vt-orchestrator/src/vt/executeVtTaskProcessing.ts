@@ -1,16 +1,14 @@
-import type { StageHandlerResult, VtTaskInput } from '~/types/types';
 import type { VTStageContext } from '~/contextTypes';
-import { assertNotAborted } from './vtStageCoreUtils.js';
-import type { TaskContextForVt, VtTaskRunInput, VtTaskRunMetadata } from './vtStageTaskTypes.js';
-import {
-  logVtTaskFailure,
-} from './vtStageTaskProcessorLoggerUtils.js';
+import type { StageHandlerResult, VtTaskInput } from '~/types/types';
 import { collectVtTaskForExecution } from './collectVtTaskForExecution.js';
-import { writeVtTaskFromExecution } from './writeVtTaskFromExecution.js';
+import { assertNotAborted } from './vtStageCoreUtils.js';
 import {
   buildSkippedVtTaskResult,
   buildVtTaskRunInput,
 } from './vtStageTaskProcessorExecutionHelpers.js';
+import { logVtTaskFailure } from './vtStageTaskProcessorLoggerUtils.js';
+import type { TaskContextForVt, VtTaskRunInput, VtTaskRunMetadata } from './vtStageTaskTypes.js';
+import { writeVtTaskFromExecution } from './writeVtTaskFromExecution.js';
 
 type VtTaskProcessorExecutionInput = {
   context: VTStageContext;
@@ -27,7 +25,7 @@ type VtTaskProcessorExecutionInput = {
 };
 
 export const executeVtTaskProcessing = async (
-  input: VtTaskProcessorExecutionInput,
+  input: VtTaskProcessorExecutionInput
 ): Promise<StageHandlerResult> => {
   const {
     context,

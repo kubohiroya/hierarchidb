@@ -6,14 +6,14 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { LocationFeature } from '@hierarchidb/location-api';
 import { Dexie, type Table } from 'dexie';
 
-
 export class LocationDB extends Dexie {
   features!: Table<LocationFeature, [NodeId, string]>;
 
   constructor(databaseName: string) {
     super(databaseName);
     this.version(1).stores({
-      features: '&[nodeId+id], nodeId, [nodeId+mortonKey], [nodeId+type+mortonKey], centroidForShapeContainerNodeId',
+      features:
+        '&[nodeId+id], nodeId, [nodeId+mortonKey], [nodeId+type+mortonKey], centroidForShapeContainerNodeId',
     });
 
     this.features = this.table('features');
@@ -60,9 +60,7 @@ export async function clearLocationDatabases(databaseName: string): Promise<void
   await Dexie.delete(requireLocationDatabaseName(databaseName));
 }
 
-export async function hasLocationReferencesToShapes(
-  shapeNodeIds: NodeId[]
-): Promise<boolean> {
+export async function hasLocationReferencesToShapes(shapeNodeIds: NodeId[]): Promise<boolean> {
   if (!shapeNodeIds.length) return false;
   const db = getLocationDB();
   await db.open?.();

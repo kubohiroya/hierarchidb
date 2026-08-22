@@ -1,12 +1,7 @@
 {
   "extends": "../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable",
-      "WebWorker"
-    ],
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker"],
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "experimentalDecorators": true,
@@ -16,10 +11,7 @@
     "jsxImportSource": "react",
     "baseUrl": "."
   },
-  "include": [
-    "src/**/*",
-    "../../global.d.ts"
-  ],
+  "include": ["src/**/*", "../../global.d.ts"],
   "exclude": [
     "dist",
     "node_modules",

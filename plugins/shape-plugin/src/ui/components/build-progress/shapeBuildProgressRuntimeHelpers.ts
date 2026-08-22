@@ -1,7 +1,7 @@
-import { computePercentage, type TaskCountSummary } from '@hierarchidb/ui-build-sessions';
-import type { BuildProgress } from './shapeBuildProgressTypes.js';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
+import { computePercentage, type TaskCountSummary } from '@hierarchidb/ui-build-sessions';
 import type { StageCountInfo } from './shapeBuildProgressSummaryCountHelpers.js';
+import type { BuildProgress } from './shapeBuildProgressTypes.js';
 
 export type CountsWithPercentage = TaskCountSummary & { percentage: number };
 
@@ -28,7 +28,11 @@ export const makeRawDisplayCounts = ({
     };
   }
 
-  if ((buildStatus === 'running' || buildStatus === 'paused') && aggregatedCounts.total === 0 && derivedCounts) {
+  if (
+    (buildStatus === 'running' || buildStatus === 'paused') &&
+    aggregatedCounts.total === 0 &&
+    derivedCounts
+  ) {
     return {
       ...derivedCounts,
       percentage: computePercentage(derivedCounts),
@@ -107,6 +111,4 @@ export const shouldExposeBuildStatus = ({
 }: {
   buildStatus: BuildStatus;
   hasProgressData: boolean;
-}): boolean => (
-  (buildStatus === 'running' || buildStatus === 'paused') && hasProgressData
-);
+}): boolean => (buildStatus === 'running' || buildStatus === 'paused') && hasProgressData;

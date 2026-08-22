@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { TaskDisplayPayload } from '@hierarchidb/build-api';
+import { describe, expect, it } from 'vitest';
 import { formatTaskDisplayMessage } from '~/ui/components/build-progress/formatTaskDisplayMessage';
 
 const fallbackTranslator = (_key: string, fallback?: string): string => fallback ?? _key;
@@ -31,4 +31,3 @@ describe('formatTaskDisplayMessage phase fallback', () => {
     expect(message).toBe('decode progress');
   });
 });
-

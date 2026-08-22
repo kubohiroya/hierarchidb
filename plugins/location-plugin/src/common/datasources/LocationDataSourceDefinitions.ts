@@ -47,14 +47,14 @@ export interface LocationDataSourceBase {
  * Location types supported by data sources
  */
 export type LocationType =
-  | 'all'           // All types
+  | 'all' // All types
   | 'administrative' // Administrative centers
-  | 'airport'       // Airports
-  | 'port'          // Ports/harbors
-  | 'station'       // Railway stations
-  | 'government'    // Government facilities
-  | 'commercial'    // Commercial facilities
-  | 'natural'       // Natural features;
+  | 'airport' // Airports
+  | 'port' // Ports/harbors
+  | 'station' // Railway stations
+  | 'government' // Government facilities
+  | 'commercial' // Commercial facilities
+  | 'natural'; // Natural features;
 
 /**
  * OpenStreetMap (Overpass API) data source definition
@@ -72,8 +72,16 @@ export const OpenStreetMapOverpassDataSource: LocationDataSourceBase = {
   updateFrequency: 'realtime',
   supportedTypes: ['all'],
   availableAttributes: [
-    'name', 'name:en', 'name:ja', 'lat', 'lon',
-    'amenity', 'aeroway', 'railway', 'highway', 'place',
+    'name',
+    'name:en',
+    'name:ja',
+    'lat',
+    'lon',
+    'amenity',
+    'aeroway',
+    'railway',
+    'highway',
+    'place',
   ],
   description: 'Query OSM points via Overpass API',
   maxAdminLevel: 0,
@@ -103,8 +111,16 @@ export const OpenStreetMapNominatimDataSource: LocationDataSourceBase = {
   updateFrequency: 'realtime',
   supportedTypes: ['all'],
   availableAttributes: [
-    'display_name', 'lat', 'lon', 'place_id', 'osm_type', 'osm_id',
-    'class', 'type', 'importance', 'boundingbox',
+    'display_name',
+    'lat',
+    'lon',
+    'place_id',
+    'osm_type',
+    'osm_id',
+    'class',
+    'type',
+    'importance',
+    'boundingbox',
   ],
   description: 'Geocoding and place search from OSM',
   maxAdminLevel: 0,
@@ -135,9 +151,17 @@ export const GeoNamesDataSource: LocationDataSourceBase = {
   updateFrequency: 'daily',
   supportedTypes: ['all'],
   availableAttributes: [
-    'name', 'asciiname', 'alternatenames', 'latitude', 'longitude',
-    'feature_class', 'feature_code', 'country_code', 'admin1_code',
-    'population', 'elevation',
+    'name',
+    'asciiname',
+    'alternatenames',
+    'latitude',
+    'longitude',
+    'feature_class',
+    'feature_code',
+    'country_code',
+    'admin1_code',
+    'population',
+    'elevation',
   ],
   description: 'Worldwide place names with attributes and population',
   maxAdminLevel: 0,
@@ -169,8 +193,14 @@ export const NaturalEarthDataSource: LocationDataSourceBase = {
   updateFrequency: 'irregular',
   supportedTypes: ['administrative', 'airport', 'port'],
   availableAttributes: [
-    'name', 'nameascii', 'latitude', 'longitude', 'scalerank',
-    'featurecla', 'adm0name', 'adm1name',
+    'name',
+    'nameascii',
+    'latitude',
+    'longitude',
+    'scalerank',
+    'featurecla',
+    'adm0name',
+    'adm1name',
   ],
   maxAdminLevel: 0,
   category: 'location',
@@ -196,8 +226,15 @@ export const OurAirportsDataSource: LocationDataSourceBase = {
   updateFrequency: 'weekly',
   supportedTypes: ['airport'],
   availableAttributes: [
-    'ident', 'name', 'latitude_deg', 'longitude_deg', 'elevation_ft',
-    'type', 'municipality', 'iso_country', 'iso_region',
+    'ident',
+    'name',
+    'latitude_deg',
+    'longitude_deg',
+    'elevation_ft',
+    'type',
+    'municipality',
+    'iso_country',
+    'iso_region',
   ],
   maxAdminLevel: 0,
   category: 'location',
@@ -223,8 +260,16 @@ export const OpenFlightsDataSource: LocationDataSourceBase = {
   updateFrequency: 'irregular',
   supportedTypes: ['airport', 'station'],
   availableAttributes: [
-    'name', 'city', 'country', 'IATA', 'ICAO', 'latitude',
-    'longitude', 'altitude', 'timezone', 'DST',
+    'name',
+    'city',
+    'country',
+    'IATA',
+    'ICAO',
+    'latitude',
+    'longitude',
+    'altitude',
+    'timezone',
+    'DST',
   ],
   maxAdminLevel: 0,
   category: 'location',
@@ -250,13 +295,20 @@ export const WorldPortIndexDataSource: LocationDataSourceBase = {
   updateFrequency: 'yearly',
   supportedTypes: ['port'],
   availableAttributes: [
-    'port_name', 'country', 'latitude', 'longitude', 'harbor_size',
-    'harbor_type', 'shelter', 'tide_range',
+    'port_name',
+    'country',
+    'latitude',
+    'longitude',
+    'harbor_size',
+    'harbor_type',
+    'shelter',
+    'tide_range',
   ],
   maxAdminLevel: 0,
   category: 'location',
   endpoints: {
-    ports: 'https://msi.nga.mil/api/publications/download?type=view&key=16920959/SFH00000/UpdatedPub150.csv',
+    ports:
+      'https://msi.nga.mil/api/publications/download?type=view&key=16920959/SFH00000/UpdatedPub150.csv',
   },
 };
 
@@ -276,13 +328,7 @@ export const IdeGsmDataSource: LocationDataSourceBase = {
   licenseType: 'varies',
   updateFrequency: 'irregular',
   supportedTypes: ['all'],
-  availableAttributes: [
-    'name',
-    'type',
-    'country',
-    'lat',
-    'lon',
-  ],
+  availableAttributes: ['name', 'type', 'country', 'lat', 'lon'],
   maxAdminLevel: 0,
   category: 'location',
 };
@@ -293,10 +339,10 @@ export const IdeGsmDataSource: LocationDataSourceBase = {
 export const LocationDataSources: Record<string, LocationDataSourceBase> = {
   'openstreetmap-overpass': OpenStreetMapOverpassDataSource,
   'openstreetmap-nominatim': OpenStreetMapNominatimDataSource,
-  'geonames': GeoNamesDataSource,
+  geonames: GeoNamesDataSource,
   'natural-earth': NaturalEarthDataSource,
-  'ourairports': OurAirportsDataSource,
-  'openflights': OpenFlightsDataSource,
+  ourairports: OurAirportsDataSource,
+  openflights: OpenFlightsDataSource,
   'world-port-index': WorldPortIndexDataSource,
   'ide-gsm': IdeGsmDataSource,
 };
@@ -312,8 +358,9 @@ export function getLocationDataSource(id: string): LocationDataSourceBase | unde
  * Get data sources by supported location type
  */
 export function getLocationDataSourcesByType(locationType: LocationType): LocationDataSourceBase[] {
-  return Object.values(LocationDataSources).filter(source =>
-    source.supportedTypes.includes('all') || source.supportedTypes.includes(locationType),
+  return Object.values(LocationDataSources).filter(
+    (source) =>
+      source.supportedTypes.includes('all') || source.supportedTypes.includes(locationType)
   );
 }
 
@@ -321,7 +368,5 @@ export function getLocationDataSourcesByType(locationType: LocationType): Locati
  * Get data sources by license type
  */
 export function getLocationDataSourcesByLicense(license: string): LocationDataSourceBase[] {
-  return Object.values(LocationDataSources).filter(source =>
-    source.license === license,
-  );
+  return Object.values(LocationDataSources).filter((source) => source.license === license);
 }

@@ -32,10 +32,12 @@ describe('ShapeBuildAPIClient.updateBuildSession', () => {
   it('rejects a partial normalized session when the status row is missing', async () => {
     await ephemeralDB.buildSessionStatuses.delete(nodeId);
 
-    await expect(shapeMutationAPIImpl.updateBuildSession(nodeId, {
-      status: 'paused',
-      stopReason: 'user-pause',
-    } as never)).rejects.toThrow('build session status is missing');
+    await expect(
+      shapeMutationAPIImpl.updateBuildSession(nodeId, {
+        status: 'paused',
+        stopReason: 'user-pause',
+      } as never)
+    ).rejects.toThrow('build session status is missing');
 
     expect(await ephemeralDB.buildSessionStatuses.get(nodeId)).toBeUndefined();
   });
@@ -63,12 +65,14 @@ describe('ShapeBuildAPIClient.updateBuildSession', () => {
   });
 
   it('rejects a new running stage without explicit timing', async () => {
-    await expect(shapeMutationAPIImpl.updateBuildSession(nodeId, {
-      stages: {
-        geometry: { status: 'running' },
-      },
-      stageId: 'geometry:run-1',
-    } as never)).rejects.toThrow('stageStartedAt must be a finite non-negative number');
+    await expect(
+      shapeMutationAPIImpl.updateBuildSession(nodeId, {
+        stages: {
+          geometry: { status: 'running' },
+        },
+        stageId: 'geometry:run-1',
+      } as never)
+    ).rejects.toThrow('stageStartedAt must be a finite non-negative number');
 
     expect(await ephemeralDB.buildStageStatuses.get(`${nodeId}:geometry`)).toBeUndefined();
   });
@@ -89,10 +93,12 @@ describe('ShapeBuildAPIClient.updateBuildSession', () => {
   });
 
   it('rejects an invalid heartbeat before writing any normalized row', async () => {
-    await expect(shapeMutationAPIImpl.updateBuildSession(nodeId, {
-      lastHeartbeatAt: Number.NaN,
-      status: 'paused',
-    } as never)).rejects.toThrow('lastHeartbeatAt must be a finite non-negative number');
+    await expect(
+      shapeMutationAPIImpl.updateBuildSession(nodeId, {
+        lastHeartbeatAt: Number.NaN,
+        status: 'paused',
+      } as never)
+    ).rejects.toThrow('lastHeartbeatAt must be a finite non-negative number');
 
     expect(await ephemeralDB.buildSessionHeartbeats.get(nodeId)).toBeUndefined();
     expect(await ephemeralDB.buildSessionStatuses.get(nodeId)).toEqual({
@@ -104,9 +110,11 @@ describe('ShapeBuildAPIClient.updateBuildSession', () => {
   it('does not create an orphan heartbeat when the session config is missing', async () => {
     await ephemeralDB.buildSessionConfigs.delete(nodeId);
 
-    await expect(shapeMutationAPIImpl.updateBuildSession(nodeId, {
-      lastHeartbeatAt: 1_200,
-    } as never)).rejects.toThrow('build session config is missing');
+    await expect(
+      shapeMutationAPIImpl.updateBuildSession(nodeId, {
+        lastHeartbeatAt: 1_200,
+      } as never)
+    ).rejects.toThrow('build session config is missing');
 
     expect(await ephemeralDB.buildSessionHeartbeats.get(nodeId)).toBeUndefined();
   });

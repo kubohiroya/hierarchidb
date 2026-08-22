@@ -12,13 +12,12 @@ import { LocationBuildSession } from './LocationBuildSession.js';
 
 export class LocationBuildManager extends CanonicalBuildSessionManager {
   async startBuildSession(nodeId: NodeId): Promise<BuildSessionStatus> {
-    throw new Error(`startBuildSession requires config; use startLocationBuildSession(nodeId, config) instead. nodeId=${nodeId}`);
+    throw new Error(
+      `startBuildSession requires config; use startLocationBuildSession(nodeId, config) instead. nodeId=${nodeId}`
+    );
   }
 
-  async startLocationBuildSession(
-    nodeId: NodeId,
-    config: LocationBuildConfig,
-  ): Promise<NodeId> {
+  async startLocationBuildSession(nodeId: NodeId, config: LocationBuildConfig): Promise<NodeId> {
     const existing = this.sessions.get(nodeId);
     if (existing?.hasActiveRun()) {
       throw new Error(`Location build session still has an active run for node ${String(nodeId)}`);
@@ -45,7 +44,7 @@ export class LocationBuildManager extends CanonicalBuildSessionManager {
 
   async collectLocationPoints(
     nodeId: NodeId,
-    config: LocationBuildConfig,
+    config: LocationBuildConfig
   ): Promise<LocationPointProperties[]> {
     const session = new LocationBuildSession(nodeId, config);
     return session.collectLocationPoints(config);

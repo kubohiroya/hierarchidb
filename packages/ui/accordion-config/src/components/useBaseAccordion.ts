@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
 import type React from 'react';
+import { useCallback, useState } from 'react';
 
 export interface UseBaseAccordionParams {
   defaultExpanded: boolean;
@@ -17,10 +17,13 @@ export function useBaseAccordion({
 }: UseBaseAccordionParams): UseBaseAccordionResult {
   const [expanded, setExpanded] = useState(defaultExpanded);
 
-  const handleChange = useCallback((_event: React.SyntheticEvent, isExpanded: boolean) => {
-    setExpanded(isExpanded);
-    onExpansionChange?.(isExpanded);
-  }, [onExpansionChange]);
+  const handleChange = useCallback(
+    (_event: React.SyntheticEvent, isExpanded: boolean) => {
+      setExpanded(isExpanded);
+      onExpansionChange?.(isExpanded);
+    },
+    [onExpansionChange]
+  );
 
   return {
     expanded,

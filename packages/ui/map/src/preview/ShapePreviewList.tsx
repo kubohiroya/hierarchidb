@@ -1,19 +1,17 @@
-import React from 'react';
-import { IconButton } from '@mui/material';
-import { Hexagon } from '@mui/icons-material';
-import { alpha, useTheme } from '@mui/material/styles';
-import { Recycling as RecyclingIcon } from '@mui/icons-material';
-import { Typography } from '@mui/material';
 import type { WindowState } from '@hierarchidb/components';
 import { FloatingWindow } from '@hierarchidb/components';
 import type { GridColumn } from '@hierarchidb/ui-grid';
+import { Hexagon, Recycling as RecyclingIcon } from '@mui/icons-material';
+import { IconButton, Typography } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
+import React from 'react';
+import type { FeatureTableSearchConfig } from './FeatureTableToolbar.js';
 import {
-  MapPreviewFloatingTable,
-  type MapPreviewErrorSummaryById,
   type MapPreviewErrorColumnLabels,
+  type MapPreviewErrorSummaryById,
+  MapPreviewFloatingTable,
   type MapPreviewStatusLabels,
 } from './MapPreviewFloatingTable.js';
-import type { FeatureTableSearchConfig } from './FeatureTableToolbar.js';
 import { useShapePreviewListView } from './useShapePreviewListView.js';
 
 type ShapePreviewRowBase = {
@@ -135,39 +133,54 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
     rowFilterConfig,
     onWindowStateChange,
   });
-  const columns = React.useMemo<GridColumn<(typeof tableRows)[number]>[]>(() => ([
-    { id: 'featureId', label: columnLabels.featureId, width: 220, sortable: true },
-    { id: 'countryName', label: columnLabels.countryName, width: 180, sortable: true },
-    { id: 'countryCode', label: columnLabels.countryCode, width: 120, sortable: true },
-    { id: 'adminName', label: columnLabels.adminName, width: 180, sortable: true },
-    {
-      id: 'adminLevel',
-      label: columnLabels.adminLevel,
-      width: 120,
-      align: 'right',
-      sortable: true,
-    },
-    { id: 'adminCode', label: columnLabels.adminCode, width: 120, sortable: true },
-    { id: 'dataSource', label: columnLabels.dataSource, width: 140, sortable: true },
-    { id: 'createdAt', label: columnLabels.createdAt, width: 180, sortable: true },
-    { id: 'vertexCount', label: columnLabels.vertexCount, width: 120, align: 'right', sortable: true },
-    { id: 'polygonCount', label: columnLabels.polygonCount, width: 120, align: 'right', sortable: true },
-    { id: 'bbox', label: columnLabels.bbox, width: 220, sortable: true },
-    {
-      id: 'area',
-      label: columnLabels.area,
-      width: 140,
-      align: 'right',
-      sortable: true,
-      format: (value: unknown) => {
-        const text = String(value ?? '');
-        if (text === 'N/A') {
-          return <Typography color="error.main">N/A</Typography>;
-        }
-        return text;
+  const columns = React.useMemo<GridColumn<(typeof tableRows)[number]>[]>(
+    () => [
+      { id: 'featureId', label: columnLabels.featureId, width: 220, sortable: true },
+      { id: 'countryName', label: columnLabels.countryName, width: 180, sortable: true },
+      { id: 'countryCode', label: columnLabels.countryCode, width: 120, sortable: true },
+      { id: 'adminName', label: columnLabels.adminName, width: 180, sortable: true },
+      {
+        id: 'adminLevel',
+        label: columnLabels.adminLevel,
+        width: 120,
+        align: 'right',
+        sortable: true,
       },
-    },
-  ]), [columnLabels, tableRows]);
+      { id: 'adminCode', label: columnLabels.adminCode, width: 120, sortable: true },
+      { id: 'dataSource', label: columnLabels.dataSource, width: 140, sortable: true },
+      { id: 'createdAt', label: columnLabels.createdAt, width: 180, sortable: true },
+      {
+        id: 'vertexCount',
+        label: columnLabels.vertexCount,
+        width: 120,
+        align: 'right',
+        sortable: true,
+      },
+      {
+        id: 'polygonCount',
+        label: columnLabels.polygonCount,
+        width: 120,
+        align: 'right',
+        sortable: true,
+      },
+      { id: 'bbox', label: columnLabels.bbox, width: 220, sortable: true },
+      {
+        id: 'area',
+        label: columnLabels.area,
+        width: 140,
+        align: 'right',
+        sortable: true,
+        format: (value: unknown) => {
+          const text = String(value ?? '');
+          if (text === 'N/A') {
+            return <Typography color="error.main">N/A</Typography>;
+          }
+          return text;
+        },
+      },
+    ],
+    [columnLabels, tableRows]
+  );
 
   return (
     <FloatingWindow
@@ -219,20 +232,30 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
         errorSummaryById={errorSummaryById}
         errorColumnLabels={errorColumnLabels}
         statusLabels={statusLabels}
-        statusAdornment={(row) => (row.recycling ? <RecyclingIcon fontSize="small" color="success" /> : null)}
-        toolbarActions={onToggleRecycling ? (
-          <IconButton
-            aria-label="Toggle recycling"
-            size="small"
-            onClick={onToggleRecycling}
-            disabled={recyclingSelectionState === 'none'}
-          >
-            <RecyclingIcon
-              fontSize="small"
-              color={recyclingSelectionState === 'on' ? 'success' : recyclingSelectionState === 'partial' ? 'warning' : 'inherit'}
-            />
-          </IconButton>
-          ) : null}
+        statusAdornment={(row) =>
+          row.recycling ? <RecyclingIcon fontSize="small" color="success" /> : null
+        }
+        toolbarActions={
+          onToggleRecycling ? (
+            <IconButton
+              aria-label="Toggle recycling"
+              size="small"
+              onClick={onToggleRecycling}
+              disabled={recyclingSelectionState === 'none'}
+            >
+              <RecyclingIcon
+                fontSize="small"
+                color={
+                  recyclingSelectionState === 'on'
+                    ? 'success'
+                    : recyclingSelectionState === 'partial'
+                      ? 'warning'
+                      : 'inherit'
+                }
+              />
+            </IconButton>
+          ) : null
+        }
         maxHeight={maxHeight}
         rowFilterConfig={rowFilterConfig}
         grouping={noGrouping}

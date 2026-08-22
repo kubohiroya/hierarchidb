@@ -2,18 +2,11 @@
   "extends": "../../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "types": [
-      "@cloudflare/workers-types",
-      "node"
-    ],
-    "lib": [
-      "ES2022"
-    ],
+    "types": ["@cloudflare/workers-types", "node"],
+    "lib": ["ES2022"],
     "target": "ES2022"
   },
-  "include": [
-    "src/**/*"
-  ],
+  "include": ["src/**/*"],
   "checkDeps": {
     "allowSkipLibCheck": true,
     "reason": "Temporary: upstream/transitive types; scheduled to remove."

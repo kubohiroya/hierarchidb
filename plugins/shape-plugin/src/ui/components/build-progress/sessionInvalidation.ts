@@ -1,7 +1,7 @@
+import { type NodeId, toNodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildStage } from '@hierarchidb/shape-api';
-import { toNodeId, type NodeId } from '@hierarchidb/core-types';
-import { ephemeralShapeAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
+import { ephemeralShapeAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 
 const STAGE_ORDER: ShapeBuildStage[] = ['source', 'geometry', 'tileEmit'];
 
@@ -28,7 +28,10 @@ const uniqueStages = (stages: ShapeBuildStage[]): ShapeBuildStage[] => {
 export const resolveShapeNodeId = (nodeId?: NodeId | string | null): NodeId | undefined =>
   nodeId ? toNodeId(String(nodeId)) : undefined;
 
-export async function clearStagesIfPresent(nodeId: NodeId, stages: ShapeBuildStage[]): Promise<ShapeBuildStage[]> {
+export async function clearStagesIfPresent(
+  nodeId: NodeId,
+  stages: ShapeBuildStage[]
+): Promise<ShapeBuildStage[]> {
   const targetStages = uniqueStages(stages);
   const cleared: ShapeBuildStage[] = [];
   for (const stage of targetStages) {
@@ -42,7 +45,7 @@ export async function clearStagesIfPresent(nodeId: NodeId, stages: ShapeBuildSta
 
 export function resolveBuildConfigInvalidation(
   prevConfig: ShapeBuildConfig | undefined,
-  nextConfig: ShapeBuildConfig | undefined,
+  nextConfig: ShapeBuildConfig | undefined
 ): ShapeBuildStage[] {
   if (!prevConfig || !nextConfig) {
     return FULL_INVALIDATION_STAGES;
@@ -70,8 +73,4 @@ export function resolveBuildConfigInvalidation(
   return uniqueStages(Array.from(stages));
 }
 
-export const FULL_INVALIDATION_STAGES: ShapeBuildStage[] = [
-  'source',
-  'geometry',
-  'tileEmit'
-];
+export const FULL_INVALIDATION_STAGES: ShapeBuildStage[] = ['source', 'geometry', 'tileEmit'];

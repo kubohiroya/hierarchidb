@@ -41,12 +41,12 @@ export const MapPreviewSearchSettingsDialog = <TargetId extends string>({
             {group.targetIds.map((targetId) => (
               <FormControlLabel
                 key={targetId}
-                control={(
+                control={
                   <Checkbox
                     checked={Boolean(searchTargets[targetId])}
                     onChange={() => onToggleTarget(targetId)}
                   />
-                )}
+                }
                 label={targetDefinitions[targetId].label}
               />
             ))}

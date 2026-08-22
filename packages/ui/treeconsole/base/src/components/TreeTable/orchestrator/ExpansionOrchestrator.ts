@@ -1,16 +1,20 @@
 /**
-  * ExpansionOrchestrator
-  * /
+ * ExpansionOrchestrator
+ * /
  * - /
  * - /
  * -
-  */
+ */
 
+import type { NodeId } from '@hierarchidb/core-types';
 import { useAtom, useSetAtom } from 'jotai';
 import { useCallback } from 'react';
-import type { NodeId } from '@hierarchidb/core-types';
+import {
+  expandedAtom,
+  toggleAllExpandedAtom,
+  toggleExpandedAtom,
+} from '~/components/TreeTable/state/index';
 import type { TreeViewController } from '~/types/index';
-import { expandedAtom, toggleAllExpandedAtom, toggleExpandedAtom } from '~/components/TreeTable/state/index';
 
 export interface ExpansionOrchestratorResult {
   // State
@@ -26,9 +30,9 @@ export interface ExpansionOrchestratorResult {
 }
 
 /**
-    */
+ */
 export function useExpansionOrchestrator(
-  controller: TreeViewController | null,
+  controller: TreeViewController | null
 ): ExpansionOrchestratorResult {
   // State atoms
   const [expanded, setExpanded] = useAtom(expandedAtom);
@@ -48,7 +52,7 @@ export function useExpansionOrchestrator(
         controller?.expandNode?.(nodeId as NodeId);
       }
     },
-    [expanded, toggleExpanded, controller],
+    [expanded, toggleExpanded, controller]
   );
 
   const expandNode = useCallback(
@@ -58,7 +62,7 @@ export function useExpansionOrchestrator(
         controller?.expandNode?.(nodeId as NodeId);
       }
     },
-    [expanded, setExpanded, controller],
+    [expanded, setExpanded, controller]
   );
 
   const collapseNode = useCallback(
@@ -68,7 +72,7 @@ export function useExpansionOrchestrator(
         controller?.collapseNode?.(nodeId as NodeId);
       }
     },
-    [expanded, setExpanded, controller],
+    [expanded, setExpanded, controller]
   );
 
   const toggleAllNodes = useCallback(() => {

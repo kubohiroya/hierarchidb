@@ -1,9 +1,8 @@
-import { useCallback, useMemo } from 'react';
-import { useId } from 'react';
-import { DEFAULT_BUILD_CONFIG, applyBuildConfigPatch } from '~/common/types/index';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeBuildConfig, ShapeBuildConfigPatch } from '~/common/types/index';
 import { useTranslation } from '@hierarchidb/ui-i18n';
+import { useCallback, useId, useMemo } from 'react';
+import type { ShapeBuildConfig, ShapeBuildConfigPatch } from '~/common/types/index';
+import { applyBuildConfigPatch, DEFAULT_BUILD_CONFIG } from '~/common/types/index';
 import { useShapeBuildCacheActions } from './useShapeBuildCacheActions.ts';
 
 type Args = {
@@ -14,7 +13,13 @@ type Args = {
   onResetSession?: () => void;
 };
 
-export const useSourceConfigSection = ({ config, nodeId, disabled, onChange, onResetSession }: Args) => {
+export const useSourceConfigSection = ({
+  config,
+  nodeId,
+  disabled,
+  onChange,
+  onResetSession,
+}: Args) => {
   const { t } = useTranslation('shape-plugin');
   const switchId = useId();
   const baseSourceConfig = config.sourceConfig;
@@ -37,57 +42,76 @@ export const useSourceConfigSection = ({ config, nodeId, disabled, onChange, onR
   } = useShapeBuildCacheActions({ nodeId, disabled, onResetSession });
 
   const countUnit = t('processing.download.countUnit', '');
-  const formatDeleteLabel = useCallback((label: string, count: number, unit = '') => (
-    count > 0 ? `${label} (${count}${unit})` : label
-  ), []);
-  const formatDeleteLabelI18n = useCallback((key: string, fallback: string, count: number) => (
-    count > 0
-      ? t(key, '{{label}} ({{count}}{{unit}})', {
-        label: fallback,
-        count,
-        unit: countUnit,
-      })
-      : fallback
-  ), [countUnit, t]);
+  const formatDeleteLabel = useCallback(
+    (label: string, count: number, unit = '') => (count > 0 ? `${label} (${count}${unit})` : label),
+    []
+  );
+  const formatDeleteLabelI18n = useCallback(
+    (key: string, fallback: string, count: number) =>
+      count > 0
+        ? t(key, '{{label}} ({{count}}{{unit}})', {
+            label: fallback,
+            count,
+            unit: countUnit,
+          })
+        : fallback,
+    [countUnit, t]
+  );
   const sourceApiDeleteCount = counts.sourceApi;
   const sourceFilteredDeleteCount = counts.sourceFiltered;
   const geometryDeleteCount = counts.geometry;
   const tileEmitDeleteCount = counts.tileEmit;
   const metadataDeleteCount = resultCounts.featureMetadata;
-  const deleteSourceApiLabel = useMemo(() => (
-    formatDeleteLabelI18n(
-      'processing.download.deleteApiCacheWithCount',
-      t('processing.download.deleteApiCache', 'Delete API cache'),
-      sourceApiDeleteCount,
-    )
-  ), [sourceApiDeleteCount, formatDeleteLabelI18n, t]);
-  const deleteSourceFilteredLabel = useMemo(() => (
-    formatDeleteLabelI18n(
-      'processing.download.deleteFilteredCacheWithCount',
-      t('processing.download.deleteFilteredCache', 'Delete filtered cache'),
-      sourceFilteredDeleteCount,
-    )
-  ), [sourceFilteredDeleteCount, formatDeleteLabelI18n, t]);
-  const deleteGeometryLabel = useMemo(() => (
-    formatDeleteLabelI18n(
-      'processing.download.deleteStage1CacheWithCount',
-      t('processing.download.deleteStage1Cache', 'Delete simplified cache'),
-      geometryDeleteCount,
-    )
-  ), [formatDeleteLabelI18n, t, geometryDeleteCount]);
-  const deleteTileEmitLabel = useMemo(() => (
-    formatDeleteLabel(
-      t('processing.download.deleteTiles', 'Delete tile data'),
-      tileEmitDeleteCount,
-    )
-  ), [formatDeleteLabel, t, tileEmitDeleteCount]);
-  const deleteMetadataLabel = useMemo(() => (
-    formatDeleteLabel(t('processing.download.deleteMetadata', 'Delete feature metadata'), metadataDeleteCount)
-  ), [formatDeleteLabel, metadataDeleteCount, t]);
+  const deleteSourceApiLabel = useMemo(
+    () =>
+      formatDeleteLabelI18n(
+        'processing.download.deleteApiCacheWithCount',
+        t('processing.download.deleteApiCache', 'Delete API cache'),
+        sourceApiDeleteCount
+      ),
+    [sourceApiDeleteCount, formatDeleteLabelI18n, t]
+  );
+  const deleteSourceFilteredLabel = useMemo(
+    () =>
+      formatDeleteLabelI18n(
+        'processing.download.deleteFilteredCacheWithCount',
+        t('processing.download.deleteFilteredCache', 'Delete filtered cache'),
+        sourceFilteredDeleteCount
+      ),
+    [sourceFilteredDeleteCount, formatDeleteLabelI18n, t]
+  );
+  const deleteGeometryLabel = useMemo(
+    () =>
+      formatDeleteLabelI18n(
+        'processing.download.deleteStage1CacheWithCount',
+        t('processing.download.deleteStage1Cache', 'Delete simplified cache'),
+        geometryDeleteCount
+      ),
+    [formatDeleteLabelI18n, t, geometryDeleteCount]
+  );
+  const deleteTileEmitLabel = useMemo(
+    () =>
+      formatDeleteLabel(
+        t('processing.download.deleteTiles', 'Delete tile data'),
+        tileEmitDeleteCount
+      ),
+    [formatDeleteLabel, t, tileEmitDeleteCount]
+  );
+  const deleteMetadataLabel = useMemo(
+    () =>
+      formatDeleteLabel(
+        t('processing.download.deleteMetadata', 'Delete feature metadata'),
+        metadataDeleteCount
+      ),
+    [formatDeleteLabel, metadataDeleteCount, t]
+  );
 
-  const update = useCallback((partial: ShapeBuildConfigPatch) => {
-    onChange((prevConfig) => applyBuildConfigPatch(prevConfig, partial));
-  }, [onChange]);
+  const update = useCallback(
+    (partial: ShapeBuildConfigPatch) => {
+      onChange((prevConfig) => applyBuildConfigPatch(prevConfig, partial));
+    },
+    [onChange]
+  );
 
   const handleResetDefaults = useCallback(() => {
     onChange((prevConfig) => ({

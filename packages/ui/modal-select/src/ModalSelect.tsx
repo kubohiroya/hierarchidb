@@ -1,6 +1,6 @@
-import { forwardRef, useMemo } from 'react';
 import Select, { type SelectProps } from '@mui/material/Select';
 import type { SxProps, Theme } from '@mui/material/styles';
+import { forwardRef, useMemo } from 'react';
 
 export type ModalSelectProps<T = unknown> = SelectProps<T> & {
   /**
@@ -22,7 +22,7 @@ export type ModalSelectProps<T = unknown> = SelectProps<T> & {
 
 export const ModalSelect = forwardRef<HTMLDivElement, ModalSelectProps<any>>(function ModalSelect(
   { MenuProps, menuZIndexOffset = 1000, menuContainer, usePortal = true, ...rest },
-  ref,
+  ref
 ) {
   const mergedMenuProps = useMemo<Partial<SelectProps['MenuProps']>>(() => {
     // Always portal to escape overflow/stacking; use provided container if set, otherwise body.
@@ -43,7 +43,7 @@ export const ModalSelect = forwardRef<HTMLDivElement, ModalSelectProps<any>>(fun
       : (theme) => ({ zIndex: baseZIndex(theme) });
 
     return {
-       disablePortal,
+      disablePortal,
       container: disablePortal ? undefined : resolvedContainer,
       PaperProps: {
         ...MenuProps?.PaperProps,

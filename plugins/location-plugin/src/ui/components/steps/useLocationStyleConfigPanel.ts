@@ -1,12 +1,7 @@
-import { useEffect, useMemo } from 'react';
-import {
-  Anchor,
-  FlightTakeoff,
-  ForkRight,
-  LocationCity,
-  Subway,
-} from '@mui/icons-material';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { SvgIconComponent } from '@mui/icons-material';
+import { Anchor, FlightTakeoff, ForkRight, LocationCity, Subway } from '@mui/icons-material';
+import { useEffect, useMemo } from 'react';
 import type {
   LocationEntity,
   LocationIconConfig,
@@ -15,7 +10,6 @@ import type {
   LocationRepresentationByZoomLevelConfig,
   LocationType,
 } from '~/common/types/index';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
 
 export const MIN_ZOOM_LEVEL = 0;
@@ -46,13 +40,14 @@ const DEFAULT_ICON_IDS: Record<LocationType, LocationIconId> = {
   interchange: 'fork_right',
 };
 
-export const ICON_OPTIONS: Array<{ id: LocationIconId; Icon: SvgIconComponent; labelKey: string }> = [
-  { id: 'location_city', Icon: LocationCity, labelKey: 'location_city' },
-  { id: 'flight_takeoff', Icon: FlightTakeoff, labelKey: 'flight_takeoff' },
-  { id: 'directions_boat', Icon: Anchor, labelKey: 'directions_boat' },
-  { id: 'train', Icon: Subway, labelKey: 'train' },
-  { id: 'fork_right', Icon: ForkRight, labelKey: 'fork_right' },
-];
+export const ICON_OPTIONS: Array<{ id: LocationIconId; Icon: SvgIconComponent; labelKey: string }> =
+  [
+    { id: 'location_city', Icon: LocationCity, labelKey: 'location_city' },
+    { id: 'flight_takeoff', Icon: FlightTakeoff, labelKey: 'flight_takeoff' },
+    { id: 'directions_boat', Icon: Anchor, labelKey: 'directions_boat' },
+    { id: 'train', Icon: Subway, labelKey: 'train' },
+    { id: 'fork_right', Icon: ForkRight, labelKey: 'fork_right' },
+  ];
 
 const DEFAULT_ICON_SIZE_RANGE: [number, number] = [2, 8];
 const DEFAULT_LABEL_SIZE_RANGE: [number, number] = [2, 6];
@@ -70,14 +65,21 @@ const clamp = (value: number, min: number, max: number): number => {
   return Math.min(max, Math.max(min, value));
 };
 
-export const normalizeRange = (value: number[] | number, min: number, max: number): [number, number] => {
+export const normalizeRange = (
+  value: number[] | number,
+  min: number,
+  max: number
+): [number, number] => {
   const array = Array.isArray(value) ? value : [value, value];
   const first = clamp(Number(array[0] ?? min), min, max);
   const second = clamp(Number(array[1] ?? first), min, max);
   return first <= second ? [first, second] : [second, first];
 };
 
-const normalizeZoomStops = (values: number[], maxZoom: number): [number, number, number, number] => {
+const normalizeZoomStops = (
+  values: number[],
+  maxZoom: number
+): [number, number, number, number] => {
   const clamped = values.map((value) => clamp(Math.round(value), MIN_ZOOM_LEVEL, maxZoom));
   const normalized: number[] = [];
   let last = MIN_ZOOM_LEVEL;
@@ -89,13 +91,13 @@ const normalizeZoomStops = (values: number[], maxZoom: number): [number, number,
   return normalized as [number, number, number, number];
 };
 
-const buildDefaultRepresentationConfig = (maxZoom: number): LocationRepresentationByZoomLevelConfig => {
-  const stops = normalizeZoomStops([
-    0,
-    Math.round(maxZoom * 0.4),
-    Math.round(maxZoom * 0.6),
-    Math.round(maxZoom * 0.8),
-  ], maxZoom);
+const buildDefaultRepresentationConfig = (
+  maxZoom: number
+): LocationRepresentationByZoomLevelConfig => {
+  const stops = normalizeZoomStops(
+    [0, Math.round(maxZoom * 0.4), Math.round(maxZoom * 0.6), Math.round(maxZoom * 0.8)],
+    maxZoom
+  );
   return LOCATION_TYPES.reduce((acc, type) => {
     acc[type] = {
       pointFromZoom: stops[0],
@@ -107,7 +109,7 @@ const buildDefaultRepresentationConfig = (maxZoom: number): LocationRepresentati
   }, {} as LocationRepresentationByZoomLevelConfig);
 };
 
-const buildDefaultIconConfig = (): LocationIconConfig => (
+const buildDefaultIconConfig = (): LocationIconConfig =>
   LOCATION_TYPES.reduce((acc, type) => {
     acc[type] = {
       color: DEFAULT_TYPE_COLORS[type],
@@ -115,14 +117,14 @@ const buildDefaultIconConfig = (): LocationIconConfig => (
       sizeRange: DEFAULT_ICON_SIZE_RANGE,
     };
     return acc;
-  }, {} as LocationIconConfig)
-);
+  }, {} as LocationIconConfig);
 
 const buildDefaultLabelConfig = (maxZoom: number): LocationLabelConfig => {
-  const zoomRange = normalizeRange([
-    Math.round(maxZoom * 0.6),
-    Math.round(maxZoom * 0.8),
-  ], MIN_ZOOM_LEVEL, maxZoom);
+  const zoomRange = normalizeRange(
+    [Math.round(maxZoom * 0.6), Math.round(maxZoom * 0.8)],
+    MIN_ZOOM_LEVEL,
+    maxZoom
+  );
   return LOCATION_TYPES.reduce((acc, type) => {
     acc[type] = {
       color: DEFAULT_TYPE_COLORS[type],
@@ -135,45 +137,54 @@ const buildDefaultLabelConfig = (maxZoom: number): LocationLabelConfig => {
 
 export const useLocationStyleConfigPanel = (
   draftProp: Partial<LocationEntity>,
-  onUpdate?: (updates: Partial<LocationEntity>) => void,
+  onUpdate?: (updates: Partial<LocationEntity>) => void
 ) => {
   const { t } = useTranslation('location-plugin');
   const draft = draftProp ?? {};
-  const tilesMaxZoom = clamp(draft.tilesMaxZoom ?? DEFAULT_MAX_ZOOM, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
+  const tilesMaxZoom = clamp(
+    draft.tilesMaxZoom ?? DEFAULT_MAX_ZOOM,
+    MIN_ZOOM_LEVEL,
+    MAX_ZOOM_LEVEL
+  );
 
   const representationDefaults = useMemo(
     () => buildDefaultRepresentationConfig(tilesMaxZoom),
-    [tilesMaxZoom],
+    [tilesMaxZoom]
   );
   const iconDefaults = useMemo(() => buildDefaultIconConfig(), []);
-  const labelDefaults = useMemo(
-    () => buildDefaultLabelConfig(tilesMaxZoom),
-    [tilesMaxZoom],
+  const labelDefaults = useMemo(() => buildDefaultLabelConfig(tilesMaxZoom), [tilesMaxZoom]);
+
+  const representationConfig = useMemo(
+    () =>
+      LOCATION_TYPES.reduce((acc, type) => {
+        acc[type] = draft.representationByZoomLevelConfig?.[type] ?? representationDefaults[type];
+        return acc;
+      }, {} as LocationRepresentationByZoomLevelConfig),
+    [draft.representationByZoomLevelConfig, representationDefaults]
   );
 
-  const representationConfig = useMemo(() => (
-    LOCATION_TYPES.reduce((acc, type) => {
-      acc[type] = draft.representationByZoomLevelConfig?.[type] ?? representationDefaults[type];
-      return acc;
-    }, {} as LocationRepresentationByZoomLevelConfig)
-  ), [draft.representationByZoomLevelConfig, representationDefaults]);
+  const iconConfig = useMemo(
+    () =>
+      LOCATION_TYPES.reduce((acc, type) => {
+        acc[type] = draft.iconConfig?.[type] ?? iconDefaults[type];
+        return acc;
+      }, {} as LocationIconConfig),
+    [draft.iconConfig, iconDefaults]
+  );
 
-  const iconConfig = useMemo(() => (
-    LOCATION_TYPES.reduce((acc, type) => {
-      acc[type] = draft.iconConfig?.[type] ?? iconDefaults[type];
-      return acc;
-    }, {} as LocationIconConfig)
-  ), [draft.iconConfig, iconDefaults]);
-
-  const labelConfig = useMemo(() => (
-    LOCATION_TYPES.reduce((acc, type) => {
-      acc[type] = draft.labelConfig?.[type] ?? labelDefaults[type];
-      return acc;
-    }, {} as LocationLabelConfig)
-  ), [draft.labelConfig, labelDefaults]);
+  const labelConfig = useMemo(
+    () =>
+      LOCATION_TYPES.reduce((acc, type) => {
+        acc[type] = draft.labelConfig?.[type] ?? labelDefaults[type];
+        return acc;
+      }, {} as LocationLabelConfig),
+    [draft.labelConfig, labelDefaults]
+  );
 
   useEffect(() => {
-    const needsRepresentation = LOCATION_TYPES.some((type) => !draft.representationByZoomLevelConfig?.[type]);
+    const needsRepresentation = LOCATION_TYPES.some(
+      (type) => !draft.representationByZoomLevelConfig?.[type]
+    );
     if (needsRepresentation) {
       onUpdate?.({ representationByZoomLevelConfig: representationConfig });
     }

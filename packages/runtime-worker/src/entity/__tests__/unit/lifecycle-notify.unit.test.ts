@@ -1,5 +1,6 @@
-import { toNodeId, toNodeType } from '@hierarchidb/core-types';
 import type { NodeId, Timestamp, TreeId } from '@hierarchidb/core-types';
+import { toNodeId, toNodeType } from '@hierarchidb/core-types';
+import type { ImportExportDBPort } from '@hierarchidb/import-export';
 import type {
   CommandEnvelope,
   DuplicateNodesPayload,
@@ -7,7 +8,6 @@ import type {
   PasteNodesPayload,
   TreeNode,
 } from '@hierarchidb/tree-api';
-import type { ImportExportDBPort } from '@hierarchidb/import-export';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandProcessor } from '../../../services/CommandProcessor';
 import { CoreDB } from '../../../services/CoreDB';
@@ -56,7 +56,9 @@ describe('Entity lifecycle notifications from services', () => {
     const { EntityLifecycleManager } = await import('../../EntityLifecycleManager');
     Reflect.set(EntityLifecycleManager, 'instance', undefined);
     const lifecycleManager = EntityLifecycleManager.getSingleton(core);
-    const handleCommandSpy = vi.spyOn(lifecycleManager, 'handleCommand').mockResolvedValue(undefined);
+    const handleCommandSpy = vi
+      .spyOn(lifecycleManager, 'handleCommand')
+      .mockResolvedValue(undefined);
 
     const { TreeMutationService } = await import('../../../services/TreeMutationService');
     const commandStub = new CommandProcessor(core);
@@ -79,7 +81,9 @@ describe('Entity lifecycle notifications from services', () => {
     const { EntityLifecycleManager } = await import('../../EntityLifecycleManager');
     Reflect.set(EntityLifecycleManager, 'instance', undefined);
     const lifecycleManager = EntityLifecycleManager.getSingleton(core);
-    const handleCommandSpy = vi.spyOn(lifecycleManager, 'handleCommand').mockResolvedValue(undefined);
+    const handleCommandSpy = vi
+      .spyOn(lifecycleManager, 'handleCommand')
+      .mockResolvedValue(undefined);
 
     const { TreeMutationService } = await import('../../../services/TreeMutationService');
     const commandStub = new CommandProcessor(core);

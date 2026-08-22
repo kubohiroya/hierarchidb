@@ -1,13 +1,10 @@
 import type { StageHandlerResult } from '~/types/types';
-import type { VtLayerBuildResult } from './vtStageTaskLayerBuilderTypes.js';
-import {
-  isLayerBuildSkipMode,
-  layerBuildSkipReason,
-} from './vtStageTaskLayerBuilderPolicy.js';
 import type { SkipCheckInput } from './vtStageTaskLayerBuilderFlowSkipTypes.js';
+import { isLayerBuildSkipMode, layerBuildSkipReason } from './vtStageTaskLayerBuilderPolicy.js';
+import type { VtLayerBuildResult } from './vtStageTaskLayerBuilderTypes.js';
 
 const resolveNoLayerSkipResult = (
-  input: SkipCheckInput,
+  input: SkipCheckInput
 ): { kind: 'skipped'; result: StageHandlerResult } | null => {
   const {
     taskContext,
@@ -36,13 +33,16 @@ const resolveNoLayerSkipResult = (
       featureId: stats.featureId,
       geojsonByteSize: stats.geojsonByteSize,
     }));
-    console.warn(layerBuildSkipReason.noIntersectingFeatures, JSON.stringify({
-      ...taskContext,
-      parentTile: parent,
-      totalFeatures,
-      featureStatsCount: featureStats.length,
-      sample,
-    }));
+    console.warn(
+      layerBuildSkipReason.noIntersectingFeatures,
+      JSON.stringify({
+        ...taskContext,
+        parentTile: parent,
+        totalFeatures,
+        featureStatsCount: featureStats.length,
+        sample,
+      })
+    );
     return {
       kind: 'skipped',
       result: completed(layerBuildPolicy.skipReason ?? layerBuildSkipReason.noIntersectingFeatures),
@@ -52,9 +52,7 @@ const resolveNoLayerSkipResult = (
   return null;
 };
 
-export const buildSkipResultIfNeeded = (
-  input: SkipCheckInput,
-): VtLayerBuildResult | null => {
+export const buildSkipResultIfNeeded = (input: SkipCheckInput): VtLayerBuildResult | null => {
   if (isLayerBuildSkipMode(input.layerBuildPolicy.mode)) {
     const skipped = resolveNoLayerSkipResult(input);
     if (skipped) {
@@ -66,6 +64,8 @@ export const buildSkipResultIfNeeded = (
   }
   return {
     kind: 'skipped',
-    result: input.completedWithParentInputSummary(input.layerBuildPolicy.skipReason ?? layerBuildSkipReason.noLayers),
+    result: input.completedWithParentInputSummary(
+      input.layerBuildPolicy.skipReason ?? layerBuildSkipReason.noLayers
+    ),
   };
 };

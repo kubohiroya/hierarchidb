@@ -5,20 +5,13 @@
     "moduleResolution": "Bundler",
     "module": "ESNext",
     "outDir": "dist",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "composite": false,
     "incremental": false,
     "declaration": false,
     "declarationMap": false,
     "jsx": "react-jsx",
-    "types": [
-      "vite/client",
-      "node"
-    ],
+    "types": ["vite/client", "node"],
     "esModuleInterop": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
@@ -27,45 +20,27 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "paths": {
-      "~/*": [
-        "app/src/*"
-      ],
-      "~": [
-        "app/src"
-      ],
-      "~~/*": [
-        "app/src/*"
-      ],
-      "~~": [
-        "app/src"
-      ],
-      "@hierarchidb/location-plugin/common": [
-        "plugins/location-plugin/dist/common/index.d.ts"
-      ],
-      "@hierarchidb/route-plugin/common": [
-        "plugins/route-plugin/dist/common/index.d.ts"
-      ],
-      "@hierarchidb/shape-plugin/common": [
-        "plugins/shape-plugin/dist/common/index.d.ts"
+      "~/*": ["app/src/*"],
+      "~": ["app/src"],
+      "~~/*": ["app/src/*"],
+      "~~": ["app/src"],
+      "@hierarchidb/location-plugin/common": ["plugins/location-plugin/dist/common/index.d.ts"],
+      "@hierarchidb/route-plugin/common": ["plugins/route-plugin/dist/common/index.d.ts"],
+      "@hierarchidb/shape-plugin/common": ["plugins/shape-plugin/dist/common/index.d.ts"],
+      "@hierarchidb/yaml-api/migration": ["packages/yaml-api/dist/migration/index.d.ts"],
+      "@hierarchidb/yaml-api/validation": ["packages/yaml-api/dist/validation/index.d.ts"],
+      "@hierarchidb/yaml-api/inverse-migration": [
+        "packages/yaml-api/dist/inverse-migration/index.d.ts"
       ],
       "@hierarchidb/*": [
         "packages/*/dist/index.d.ts",
         "plugins/*/dist/index.d.ts",
         "packages/tools/*/dist/index.d.ts"
       ],
-      "@hierarchidb/ui-*": [
-        "packages/ui/*/dist/index.d.ts"
-      ],
-      "@hierarchidb/ui-treeconsole-*": [
-        "packages/ui/treeconsole/*/dist/index.d.ts"
-      ]
+      "@hierarchidb/ui-*": ["packages/ui/*/dist/index.d.ts"],
+      "@hierarchidb/ui-treeconsole-*": ["packages/ui/treeconsole/*/dist/index.d.ts"]
     }
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "vite.config.ts",
-    "../types/**/*.d.ts"
-  ],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts", "../types/**/*.d.ts"],
   "files": []
 }

@@ -29,10 +29,7 @@ const pluginIconColorMap: ReadonlyMap<string, string> = new Map<string, string>(
     ['spreadsheet', normalizeColor('#dcbc50')],
     ['styler', normalizeColor('#dcbc50')],
     ['timeline', normalizeColor('#8a7cbf')],
-  ].map(
-    ([nodeType, color]) =>
-      [nodeType, color ?? '#808080'] as [string, string]
-  )
+  ].map(([nodeType, color]) => [nodeType, color ?? '#808080'] as [string, string])
 );
 
 export function isFolderNodeType(nodeType?: string | null): boolean {

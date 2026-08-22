@@ -1,18 +1,17 @@
-import type { Feature, Geometry } from 'geojson';
 import type { NodeId } from '@hierarchidb/core-types';
+import type { EphemeralDB } from '@hierarchidb/gis-sdk';
 import type { ShapeDataSourceMetadata } from '@hierarchidb/shape-api';
 import type { ShapeDB } from '@hierarchidb/shape-store';
-import type { EphemeralDB } from '@hierarchidb/gis-sdk';
 import { VectorTile } from '@mapbox/vector-tile';
+import type { Feature, Geometry } from 'geojson';
 import Pbf from 'pbf';
 import type { CountryMetadata, DataSourceName } from '~/common/types/index';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 
 const ORIGIN_KEY_PROP = '__hdbOriginKey';
 
-const buildOriginKey = (dataSource: DataSourceName, sourceKey: string): string => (
-  `${dataSource}:${sourceKey}`
-);
+const buildOriginKey = (dataSource: DataSourceName, sourceKey: string): string =>
+  `${dataSource}:${sourceKey}`;
 
 const splitOriginKey = (originKey: string): { dataSource: string; sourceKey: string } | null => {
   const index = originKey.indexOf(':');
@@ -44,7 +43,11 @@ const buildCountryLookup = (metadata: CountryMetadata[]): Map<string, CountryMet
   return map;
 };
 
-const buildOriginLabel = (countryName?: string, countryCode?: string, adminLevel?: number): string => {
+const buildOriginLabel = (
+  countryName?: string,
+  countryCode?: string,
+  adminLevel?: number
+): string => {
   const country = countryName ?? countryCode ?? 'Unknown';
   if (typeof adminLevel !== 'number') return country;
   return `${country} / ADM${adminLevel}`;
@@ -61,7 +64,10 @@ const countVerticesFromGeometry = (geometry?: Geometry | null): number => {
   if (!geometry) return 0;
   if (geometry.type === 'GeometryCollection') {
     const geometries = Array.isArray(geometry.geometries) ? geometry.geometries : [];
-    return geometries.reduce((sum: number, child: Geometry) => sum + countVerticesFromGeometry(child), 0);
+    return geometries.reduce(
+      (sum: number, child: Geometry) => sum + countVerticesFromGeometry(child),
+      0
+    );
   }
   return countVertices(geometry.coordinates);
 };
@@ -70,7 +76,10 @@ const countPolygonsFromGeometry = (geometry?: Geometry | null): number => {
   if (!geometry) return 0;
   if (geometry.type === 'GeometryCollection') {
     const geometries = Array.isArray(geometry.geometries) ? geometry.geometries : [];
-    return geometries.reduce((sum: number, child: Geometry) => sum + countPolygonsFromGeometry(child), 0);
+    return geometries.reduce(
+      (sum: number, child: Geometry) => sum + countPolygonsFromGeometry(child),
+      0
+    );
   }
   if (geometry.type === 'Polygon') {
     return 1;
@@ -81,7 +90,9 @@ const countPolygonsFromGeometry = (geometry?: Geometry | null): number => {
   return 0;
 };
 
-const summarizeGeometry = (geometry?: Geometry | null): { vertexCount: number; polygonCount: number } => ({
+const summarizeGeometry = (
+  geometry?: Geometry | null
+): { vertexCount: number; polygonCount: number } => ({
   vertexCount: countVerticesFromGeometry(geometry),
   polygonCount: countPolygonsFromGeometry(geometry),
 });
@@ -114,7 +125,7 @@ const buildOriginBase = (
     countryName?: string;
     continent?: string;
     createdAt: number;
-  },
+  }
 ): DataSourceMetadata => ({
   originKey,
   originLabel: buildOriginLabel(info.countryName, info.countryCode, info.adminLevel),
@@ -140,7 +151,7 @@ const ensureOrigin = (
     countryName?: string;
     continent?: string;
     createdAt: number;
-  },
+  }
 ): DataSourceMetadata => {
   const existing = map.get(originKey);
   if (existing) return existing;
@@ -157,7 +168,7 @@ const accumulate = (target: StageTotals, next?: StageTotals | null): void => {
 
 const resolveOriginInfo = (
   originKey: string,
-  lookup: Map<string, CountryMetadata>,
+  lookup: Map<string, CountryMetadata>
 ): { countryCode?: string; adminLevel?: number; countryName?: string; continent?: string } => {
   const parts = splitOriginKey(originKey);
   const sourceKey = parts?.sourceKey ?? originKey;
@@ -175,7 +186,7 @@ const readTileFeatureStats = (
   data: ArrayBuffer,
   x: number,
   y: number,
-  z: number,
+  z: number
 ): Array<{ originKey: string; stats: StageTotals }> => {
   const result: Array<{ originKey: string; stats: StageTotals }> = [];
   const tile = new VectorTile(new Pbf(new Uint8Array(data)));
@@ -212,52 +223,60 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
   assertMetadataPipelineActive(params.abortSignal);
   const lookup = buildCountryLookup(metadata);
   const now = Date.now();
-  const existingRows = await params.shapeDb.dataSourceMetadata
+  const existingRows = (await params.shapeDb.dataSourceMetadata
     .where('nodeId')
     .equals(String(params.nodeId))
-    .toArray() as ShapeDataSourceMetadata[];
+    .toArray()) as ShapeDataSourceMetadata[];
   assertMetadataPipelineActive(params.abortSignal);
-  const createdAtByOrigin = new Map(existingRows.map((row) => [row.originKey, row.createdAt] as const));
+  const createdAtByOrigin = new Map(
+    existingRows.map((row) => [row.originKey, row.createdAt] as const)
+  );
 
   const origins = new Map<string, DataSourceMetadata>();
 
-  await params.shapeStore.sourceCacheMeta.where('nodeId').equals(params.nodeId).each((buffer) => {
-    assertMetadataPipelineActive(params.abortSignal);
-    const originKey = buildOriginKey(params.dataSource, buffer.sourceKey);
-    const info = resolveOriginInfo(originKey, lookup);
-    const origin = ensureOrigin(origins, originKey, {
-      dataSource: params.dataSource,
-      countryCode: buffer.countryCode ?? info.countryCode,
-      adminLevel: buffer.adminLevel ?? info.adminLevel,
-      countryName: info.countryName,
-      continent: info.continent,
-      createdAt: createdAtByOrigin.get(originKey) ?? now,
+  await params.shapeStore.sourceCacheMeta
+    .where('nodeId')
+    .equals(params.nodeId)
+    .each((buffer) => {
+      assertMetadataPipelineActive(params.abortSignal);
+      const originKey = buildOriginKey(params.dataSource, buffer.sourceKey);
+      const info = resolveOriginInfo(originKey, lookup);
+      const origin = ensureOrigin(origins, originKey, {
+        dataSource: params.dataSource,
+        countryCode: buffer.countryCode ?? info.countryCode,
+        adminLevel: buffer.adminLevel ?? info.adminLevel,
+        countryName: info.countryName,
+        continent: info.continent,
+        createdAt: createdAtByOrigin.get(originKey) ?? now,
+      });
+      accumulate(origin.source, {
+        vertexCount: buffer.vertexCount ?? 0,
+        polygonCount: buffer.polygonCount ?? 0,
+      });
     });
-    accumulate(origin.source, {
-      vertexCount: buffer.vertexCount ?? 0,
-      polygonCount: buffer.polygonCount ?? 0,
-    });
-  });
   assertMetadataPipelineActive(params.abortSignal);
 
-  await params.shapeStore.geometryCacheMeta.where('nodeId').equals(params.nodeId).each((buffer) => {
-    assertMetadataPipelineActive(params.abortSignal);
-    if (buffer.domainType !== 'shape') return;
-    const originKey = buildOriginKey(params.dataSource, buffer.sourceKey);
-    const info = resolveOriginInfo(originKey, lookup);
-    const origin = ensureOrigin(origins, originKey, {
-      dataSource: params.dataSource,
-      countryCode: buffer.countryCode ?? info.countryCode,
-      adminLevel: buffer.adminLevel ?? info.adminLevel,
-      countryName: info.countryName,
-      continent: info.continent,
-      createdAt: createdAtByOrigin.get(originKey) ?? now,
+  await params.shapeStore.geometryCacheMeta
+    .where('nodeId')
+    .equals(params.nodeId)
+    .each((buffer) => {
+      assertMetadataPipelineActive(params.abortSignal);
+      if (buffer.domainType !== 'shape') return;
+      const originKey = buildOriginKey(params.dataSource, buffer.sourceKey);
+      const info = resolveOriginInfo(originKey, lookup);
+      const origin = ensureOrigin(origins, originKey, {
+        dataSource: params.dataSource,
+        countryCode: buffer.countryCode ?? info.countryCode,
+        adminLevel: buffer.adminLevel ?? info.adminLevel,
+        countryName: info.countryName,
+        continent: info.continent,
+        createdAt: createdAtByOrigin.get(originKey) ?? now,
+      });
+      accumulate(origin.geometry, {
+        vertexCount: buffer.vertexCount ?? 0,
+        polygonCount: buffer.polygonCount ?? 0,
+      });
     });
-    accumulate(origin.geometry, {
-      vertexCount: buffer.vertexCount ?? 0,
-      polygonCount: buffer.polygonCount ?? 0,
-    });
-  });
   assertMetadataPipelineActive(params.abortSignal);
 
   const tiles = await params.shapeDb.vectorTiles.where('nodeId').equals(params.nodeId).toArray();
@@ -265,7 +284,7 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
   tiles.forEach((tile) => {
     const buffer = tile.data_Uint8Array.buffer.slice(
       tile.data_Uint8Array.byteOffset,
-      tile.data_Uint8Array.byteOffset + tile.data_Uint8Array.byteLength,
+      tile.data_Uint8Array.byteOffset + tile.data_Uint8Array.byteLength
     );
     const stats = readTileFeatureStats(buffer, tile.x, tile.y, tile.z);
     stats.forEach(({ originKey, stats }) => {

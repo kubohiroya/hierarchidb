@@ -6,9 +6,9 @@ import type { NodeId, NodeType, Timestamp, TreeId } from '@hierarchidb/core-type
 import type {
   CommitDraftForCreatePayload,
   CommitDraftPayload,
+  CopyNodesPayload,
   CommandEnvelope as CoreCommandEnvelope,
   CommandResult as CoreCommandResult,
-  CopyNodesPayload,
   CreateDraftForCreatePayload,
   CreateDraftPayload,
   DiscardDraftPayload,

@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { ShapeBuildConfig, ShapeBuildConfigPatch } from '~/common/types/index';
 import { applyBuildConfigPatch } from '~/common/types/index';
+
 //import { TileEmitConfig } from '@hierarchidb/shape-store/ShapeDB.js';
 
 type Args = {
@@ -9,9 +10,12 @@ type Args = {
 };
 
 export const useTileEmitConfigSection = ({ buildConfig, onChange }: Args) => {
-  const update = useCallback((partial: ShapeBuildConfigPatch) => {
-    onChange((prevConfig) => applyBuildConfigPatch(prevConfig, partial));
-  }, [onChange]);
+  const update = useCallback(
+    (partial: ShapeBuildConfigPatch) => {
+      onChange((prevConfig) => applyBuildConfigPatch(prevConfig, partial));
+    },
+    [onChange]
+  );
 
   return {
     buildConfig,

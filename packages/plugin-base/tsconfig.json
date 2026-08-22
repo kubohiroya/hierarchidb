@@ -3,13 +3,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "rootDir": ".",
-    "types": [
-      "react",
-      "react/jsx-runtime"
-    ],
+    "types": ["react", "react/jsx-runtime"],
     "jsx": "react-jsx"
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*"]
 }

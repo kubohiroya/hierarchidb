@@ -1,5 +1,5 @@
 export type {
-  LocationPeerData,
   LocationGroupItemData,
+  LocationPeerData,
   LocationRelationMeta,
 } from '@hierarchidb/location-api';

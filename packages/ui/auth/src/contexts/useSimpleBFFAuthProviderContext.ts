@@ -59,7 +59,7 @@ export function useSimpleBFFAuthProviderContext({
       getAccessToken,
       getIdToken,
       refreshAccessToken,
-    ],
+    ]
   );
 
   React.useEffect(() => {

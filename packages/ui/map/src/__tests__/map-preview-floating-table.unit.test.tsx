@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render } from '@testing-library/react';
 import type { GridColumn } from '@hierarchidb/ui-grid';
+import { render } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const gridProps: Array<Record<string, unknown>> = [];
 
@@ -18,9 +18,7 @@ import { MapPreviewFloatingTable } from '../preview/MapPreviewFloatingTable';
 
 type TestRow = { id: number; name: string };
 
-const columns: GridColumn<TestRow>[] = [
-  { id: 'name', label: 'Name' },
-];
+const columns: GridColumn<TestRow>[] = [{ id: 'name', label: 'Name' }];
 
 const rows: TestRow[] = [{ id: 1, name: 'Alpha' }];
 
@@ -30,14 +28,7 @@ describe('MapPreviewFloatingTable', () => {
   });
 
   it('passes maxHeight to TanstackDataGrid', () => {
-    render(
-      <MapPreviewFloatingTable
-        title="Test"
-        rows={rows}
-        columns={columns}
-        maxHeight={360}
-      />
-    );
+    render(<MapPreviewFloatingTable title="Test" rows={rows} columns={columns} maxHeight={360} />);
     const props = gridProps[0] as { maxHeight?: number };
     expect(props.maxHeight).toBe(360);
   });

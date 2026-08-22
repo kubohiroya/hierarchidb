@@ -1,10 +1,15 @@
-import { listTasksByStage, listTasksByStageAndStatus, updateTask, VtTaskQueueDb } from './task/taskQueue.js';
+import {
+  listTasksByStage,
+  listTasksByStageAndStatus,
+  updateTask,
+  VtTaskQueueDb,
+} from './task/taskQueue.js';
 import type {
   FailureHandling,
   LaneExecutionPolicy,
   RunStageOptions,
-  TaskQueueRecord,
   TaskFilter,
+  TaskQueueRecord,
 } from './types/types.js';
 import { resolveRunStageIdentity } from './types/types.js';
 
@@ -46,12 +51,13 @@ const release = (gate: ConcurrencyGate): void => {
   }
 };
 
-const buildTaskFilter = <TInput = unknown, TOutput = unknown>(
-  taskFilter?: TaskFilter<TInput, TOutput>,
-) => (task: StageTask<TInput, TOutput>): boolean => taskFilter ? taskFilter(task) : true;
+const buildTaskFilter =
+  <TInput = unknown, TOutput = unknown>(taskFilter?: TaskFilter<TInput, TOutput>) =>
+  (task: StageTask<TInput, TOutput>): boolean =>
+    taskFilter ? taskFilter(task) : true;
 
 const buildLanePolicy = <TInput = unknown, TOutput = unknown>(
-  lanePolicy?: LaneExecutionPolicy<TInput, TOutput>,
+  lanePolicy?: LaneExecutionPolicy<TInput, TOutput>
 ) => {
   const enabled = lanePolicy?.enabled === true;
   const laneOfTask = lanePolicy?.laneOfTask;
@@ -80,19 +86,13 @@ const isAuthRequiredError = (error: unknown): boolean => {
 export async function runStageTasks<TInput = unknown, TOutput = unknown>(
   options: RunStageOptions<TInput, TOutput>
 ): Promise<void> {
-  const {
-    nodeId,
-    handler,
-    waitIfPaused,
-    maxConcurrent,
-    taskFilter,
-    lanePolicy,
-  } = options;
+  const { nodeId, handler, waitIfPaused, maxConcurrent, taskFilter, lanePolicy } = options;
   const { stage, stageId, capability } = resolveRunStageIdentity(options);
   const failureHandling: FailureHandling = options.failureHandling ?? 'continue';
   const stopOnFailure = failureHandling === 'stop';
   const skipOnFailure = failureHandling === 'skip';
-  const abortController = options.abortController ?? (stopOnFailure ? new AbortController() : undefined);
+  const abortController =
+    options.abortController ?? (stopOnFailure ? new AbortController() : undefined);
   const abortSignal = abortController?.signal;
   const db = new VtTaskQueueDb();
   const tasks = await listTasksByStage(db, nodeId, stage);
@@ -177,7 +177,7 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
   const markTaskFailed = async (
     taskId: string,
     errorMessage: string,
-    metadata?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ): Promise<void> => {
     await updateTask(db, taskId, {
       status: 'failed',
@@ -191,7 +191,7 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
   const markTaskSkipped = async (
     taskId: string,
     reason: string,
-    metadata?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ): Promise<void> => {
     const skippedMetadata = {
       ...(metadata ? { ...metadata } : {}),
@@ -210,8 +210,11 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
   const hasPendingTasks = () => cursor < pending.length;
 
   const readHeapUsageRatio = (): number | null => {
-    const memory = (globalThis as { performance?: { memory?: { usedJSHeapSize?: number; jsHeapSizeLimit?: number } } })
-      .performance?.memory;
+    const memory = (
+      globalThis as {
+        performance?: { memory?: { usedJSHeapSize?: number; jsHeapSizeLimit?: number } };
+      }
+    ).performance?.memory;
     if (!memory) return null;
     const used = memory.usedJSHeapSize ?? 0;
     const limit = memory.jsHeapSizeLimit ?? 0;
@@ -240,11 +243,17 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
     const usageRatio = readHeapUsageRatio();
     if (usageRatio === null) return;
     if (usageRatio >= dynamicConfig.highWatermark) {
-      desiredConcurrent = Math.max(minConcurrent, desiredConcurrent - Math.max(1, dynamicConfig.adjustStep));
+      desiredConcurrent = Math.max(
+        minConcurrent,
+        desiredConcurrent - Math.max(1, dynamicConfig.adjustStep)
+      );
       return;
     }
     if (usageRatio <= dynamicConfig.lowWatermark) {
-      desiredConcurrent = Math.min(maxConcurrentLimit, desiredConcurrent + Math.max(1, dynamicConfig.adjustStep));
+      desiredConcurrent = Math.min(
+        maxConcurrentLimit,
+        desiredConcurrent + Math.max(1, dynamicConfig.adjustStep)
+      );
     }
   };
 
@@ -288,9 +297,10 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
         if (aborted || abortSignal?.aborted) return;
         if (loggedTaskStart < maxTaskLogs) {
           loggedTaskStart += 1;
-          const inputKeys = task.inputData && typeof task.inputData === 'object'
-            ? Object.keys(task.inputData as Record<string, unknown>)
-            : null;
+          const inputKeys =
+            task.inputData && typeof task.inputData === 'object'
+              ? Object.keys(task.inputData as Record<string, unknown>)
+              : null;
           console.warn('[tileEmit-orchestrator][runStageTasks] task start', {
             nodeId,
             stage,
@@ -370,26 +380,31 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
           loggedTaskError += 1;
           const errorMessage = error instanceof Error ? error.message : String(error);
           console.warn(
-            `[tileEmit-orchestrator][runStageTasks] task error`
-            + ` nodeId=${nodeId}`
-            + ` stage=${stage}`
-            + ` taskId=${task.taskId}`
-            + ` error=${errorMessage}`,
+            `[tileEmit-orchestrator][runStageTasks] task error` +
+              ` nodeId=${nodeId}` +
+              ` stage=${stage}` +
+              ` taskId=${task.taskId}` +
+              ` error=${errorMessage}`
           );
         }
         if (isAuthRequiredError(error)) {
-          await updateTask(db, task.taskId, {
-            status: 'queued',
-            progress: 0,
-            startedAt: undefined,
-            completedAt: undefined,
-            errorMessage: undefined,
-            message: 'Authentication required. Waiting for sign-in.',
-            metadata: {
-              authState: 'required',
-              authRequiredAt: Date.now(),
+          await updateTask(
+            db,
+            task.taskId,
+            {
+              status: 'queued',
+              progress: 0,
+              startedAt: undefined,
+              completedAt: undefined,
+              errorMessage: undefined,
+              message: 'Authentication required. Waiting for sign-in.',
+              metadata: {
+                authState: 'required',
+                authRequiredAt: Date.now(),
+              },
             },
-          }, { allowTerminalStatusTransition: true });
+            { allowTerminalStatusTransition: true }
+          );
           continue;
         }
         const err = normalizeErrorMessage(error);
@@ -457,9 +472,7 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
     await Promise.all(
       [...queued, ...running]
         .filter((task) => trackedTaskIds.has(task.taskId))
-        .map((task) => (
-          markTaskFailed(task.taskId, `aborted: ${reason}`)
-        ))
+        .map((task) => markTaskFailed(task.taskId, `aborted: ${reason}`))
     );
     throw failureError;
   }

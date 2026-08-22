@@ -1,8 +1,8 @@
-import React from 'react';
 import { toNodeId } from '@hierarchidb/core-types';
-import type { LocationDialogProps } from '~/common/types/index';
-import type { LocationPanelProps } from '~/common/components/LocationPanel';
 import type { ReactElement } from 'react';
+import React from 'react';
+import type { LocationPanelProps } from '~/common/components/LocationPanel';
+import type { LocationDialogProps } from '~/common/types/index';
 
 type PluginDialogComponent = (props: HostPluginDialogProps) => ReactElement | null;
 type PluginPanelComponent = (props: HostPluginPanelProps) => ReactElement | null;

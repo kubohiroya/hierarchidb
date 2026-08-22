@@ -1,6 +1,4 @@
-import type {
-  BuildContinuationPolicy,
-} from '@hierarchidb/build-api';
+import type { BuildContinuationPolicy } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
@@ -213,7 +211,10 @@ export function useTreeConsoleToolbarActions({
         case 'restore': {
           if (!treeId) break;
           const resolvedArchiveNodeId =
-            params && typeof params === 'object' && 'archiveNodeId' in params && params.archiveNodeId
+            params &&
+            typeof params === 'object' &&
+            'archiveNodeId' in params &&
+            params.archiveNodeId
               ? params.archiveNodeId
               : (archiveRootIdRef.current ?? (treeId ? `${treeId}:archive` : 'archive'));
           navigate({
@@ -224,7 +225,10 @@ export function useTreeConsoleToolbarActions({
         case 'empty': {
           if (!treeId) break;
           const resolvedArchiveNodeId =
-            params && typeof params === 'object' && 'archiveNodeId' in params && params.archiveNodeId
+            params &&
+            typeof params === 'object' &&
+            'archiveNodeId' in params &&
+            params.archiveNodeId
               ? params.archiveNodeId
               : (archiveRootIdRef.current ?? (treeId ? `${treeId}:archive` : 'archive'));
           navigate({
@@ -295,8 +299,8 @@ export function useTreeConsoleToolbarActions({
     isResourcesPage: pageTreeNode?.metadata?.name?.toLowerCase().includes('resource'),
     controller: {
       searchText: searchTerm,
-      handleSearchTextChange: actions.handleSearchChange ?? (() => { }),
-      handleSearchCommit: actions.handleSearchCommit ?? (() => { }),
+      handleSearchTextChange: actions.handleSearchChange ?? (() => {}),
+      handleSearchCommit: actions.handleSearchCommit ?? (() => {}),
     },
     hasArchiveItems,
     onAction: handleToolbarAction,

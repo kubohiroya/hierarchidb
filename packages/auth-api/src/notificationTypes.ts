@@ -1,6 +1,10 @@
 export type AuthSource = 'worker' | 'cors-proxy' | 'bff' | 'external-api';
 export type PluginType = 'shape' | 'location' | 'route' | 'spreadsheet' | 'styler';
-export type AuthNotificationType = 'AUTH_REQUIRED' | 'AUTH_SUCCESS' | 'AUTH_CANCELLED' | 'STORAGE_WARNING';
+export type AuthNotificationType =
+  | 'AUTH_REQUIRED'
+  | 'AUTH_SUCCESS'
+  | 'AUTH_CANCELLED'
+  | 'STORAGE_WARNING';
 
 export interface AuthRequiredNotification {
   type: 'AUTH_REQUIRED';

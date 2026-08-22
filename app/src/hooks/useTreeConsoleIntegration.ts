@@ -7,16 +7,19 @@
 
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode, TreeTableExpandedAPI } from '@hierarchidb/tree-api';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar';
 import { DualKeyMap } from '@hierarchidb/util';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useImportExport } from '~/hooks/useImportExport';
 import { getMenuSpec } from '~/plugin-loaders/menu-spec';
 import { useTreeConsoleSSOT } from '~/state/treeconsole.atoms';
 import { buildVisibleRows, syncNodeIndex } from '~/state/treeconsole.deriveUtils';
-import { convertTreeNodeToTreeNodeData, createDefaultColumns } from '~/utils/treeNodeConverterUtils';
+import {
+  convertTreeNodeToTreeNodeData,
+  createDefaultColumns,
+} from '~/utils/treeNodeConverterUtils';
 import { createTreeConsoleActions } from './treeconsole/createTreeConsoleActions.js';
 import { applySortFilterSearch, deriveConfigFromState } from './treeconsole/sortFilter.js';
 import type {
@@ -148,10 +151,10 @@ export function useTreeConsoleIntegration({
 
   const expandedApiRef = useRef<TreeTableExpandedAPI | null>(null);
   const prevExpandedIdsRef = useRef<NodeId[]>([]);
-  const incRefRef = useRef<() => void>(() => { });
-  const decRefRef = useRef<() => void>(() => { });
-  const setupSubscriptionRef = useRef<(id: NodeId) => Promise<void> | void>(() => { });
-  const teardownSubscriptionRef = useRef<(id: NodeId) => Promise<void> | void>(() => { });
+  const incRefRef = useRef<() => void>(() => {});
+  const decRefRef = useRef<() => void>(() => {});
+  const setupSubscriptionRef = useRef<(id: NodeId) => Promise<void> | void>(() => {});
+  const teardownSubscriptionRef = useRef<(id: NodeId) => Promise<void> | void>(() => {});
   const clientRef = useRef(client);
 
   const clientReady = Boolean(client);

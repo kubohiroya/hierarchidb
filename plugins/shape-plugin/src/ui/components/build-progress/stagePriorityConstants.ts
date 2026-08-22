@@ -1,4 +1,5 @@
 type StageRef = { id: string };
+
 import { normalizeUiStageId } from './stageIdAliases';
 
 const CANONICAL_STAGE_ORDER = ['source', 'geometry', 'tileEmit'] as const;
@@ -10,10 +11,7 @@ const resolveCanonicalStageRank = (stageId: string): number | null => {
   return index >= 0 ? index : null;
 };
 
-export const resolveStagePriority = (
-  stageId: string,
-  stages: StageRef[],
-): number => {
+export const resolveStagePriority = (stageId: string, stages: StageRef[]): number => {
   const canonicalRank = resolveCanonicalStageRank(stageId);
   if (canonicalRank !== null) {
     return canonicalRank;
@@ -27,7 +25,7 @@ export const resolveStagePriority = (
 
 export const resolveMostAdvancedStageId = (
   stageIds: Iterable<string>,
-  stages: StageRef[],
+  stages: StageRef[]
 ): string | null => {
   let selectedStageId: string | null = null;
   let selectedPriority = Number.MIN_SAFE_INTEGER;

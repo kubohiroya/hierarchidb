@@ -1,62 +1,60 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
-import { useBuildProgress } from '~/ui/components/build-progress/useBuildProgress/useBuildProgress';
-import { useTranslation } from '@hierarchidb/ui-i18n';
-import {
-  DEFAULT_PROCESSING_CONFIG,
-  summarizeCheckboxState,
-  validateBuildConfig,
-  type ShapeEntity,
-} from '~/common/types/index';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
-import { useShapeBuildAutoResume } from '~/ui/components/build-progress/useShapeBuildAutoResume/useShapeBuildAutoResume';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
-import { useShapeBuildStages } from '~/ui/components/build-progress/useShapeBuildStages/useShapeBuildStages';
-import { useShapeBuildLabels } from '~/ui/components/build-progress/useShapeBuildLabels/useShapeBuildLabels';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import {
+  DEFAULT_PROCESSING_CONFIG,
+  type ShapeEntity,
+  summarizeCheckboxState,
+  validateBuildConfig,
+} from '~/common/types/index';
 import { resolveBuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
 import type { BuildSessionDisplayStatus } from '~/ui/components/build-progress/shapeBuildProgressTypes';
+import { useBuildProgress } from '~/ui/components/build-progress/useBuildProgress/useBuildProgress';
+import { useShapeBuildAutoResume } from '~/ui/components/build-progress/useShapeBuildAutoResume/useShapeBuildAutoResume';
+import { useShapeBuildLabels } from '~/ui/components/build-progress/useShapeBuildLabels/useShapeBuildLabels';
+import { useShapeBuildStages } from '~/ui/components/build-progress/useShapeBuildStages/useShapeBuildStages';
 import { useShapeBuildSessionState } from './useShapeBuildSessionState.js';
 
 const POLL_INTERVAL_MS = 1000;
-import {
-  getBuildSessionTransitionStatusLabel,
-} from './useShapeBuildSessionHelpers/startupTrace.js';
-import {
-  toBuildStatus,
-  toProcessingStatus,
-} from './useShapeBuildSessionHelpers/status.js';
-import { useShapeBuildSessionControlActions } from './useShapeBuildSessionControlActions.js';
-import { useShapeBuildSessionStartupLifecycle } from './useShapeBuildSessionStartupLifecycle.js';
-import { useShapeBuildSessionTransitionController } from './useShapeBuildSessionLogic/useShapeBuildSessionTransitionController.js';
-import { useShapeBuildSessionStageState } from './useShapeBuildSessionStageState.js';
-import { useShapeBuildSessionProgressState } from './useShapeBuildSessionLogic/useShapeBuildSessionProgressState.js';
-import type { BuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
+
 import { notify } from '@hierarchidb/components/notify';
-import { useShapeBuildDraftSaver } from './useShapeBuildSessionLogic/useShapeBuildDraftSaver.js';
-import { useShapeBuildProgressResidueMonitor } from './useShapeBuildSessionLogic/useShapeBuildProgressResidueMonitor.js';
 import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import { useAtomValue, useSetAtom } from 'jotai';
+import type { PendingUserAction } from '~/ui/atoms/buildSessionStateAtoms';
 import {
   buildSessionLifecycleAtom,
-  pendingUserActionAtom,
   isStopRequestedInFlightAtom,
+  pendingUserActionAtom,
   stageDurationMsByStageAtom,
   stageTimingByStageAtom,
 } from '~/ui/atoms/buildSessionStateAtoms';
-import type { PendingUserAction } from '~/ui/atoms/buildSessionStateAtoms';
+import type { BuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
+import { useShapeBuildSessionControlActions } from './useShapeBuildSessionControlActions.js';
+import { getBuildSessionTransitionStatusLabel } from './useShapeBuildSessionHelpers/startupTrace.js';
+import { toBuildStatus, toProcessingStatus } from './useShapeBuildSessionHelpers/status.js';
+import { useShapeBuildDraftSaver } from './useShapeBuildSessionLogic/useShapeBuildDraftSaver.js';
+import { useShapeBuildProgressResidueMonitor } from './useShapeBuildSessionLogic/useShapeBuildProgressResidueMonitor.js';
+import { useShapeBuildSessionProgressState } from './useShapeBuildSessionLogic/useShapeBuildSessionProgressState.js';
+import { useShapeBuildSessionTransitionController } from './useShapeBuildSessionLogic/useShapeBuildSessionTransitionController.js';
+import { useShapeBuildSessionStageState } from './useShapeBuildSessionStageState.js';
+import { useShapeBuildSessionStartupLifecycle } from './useShapeBuildSessionStartupLifecycle.js';
 
 type RuntimeBuildStatus = BuildSessionDisplayStatus['status'];
 
-const resolveRuntimeBuildStatus = (status?: RuntimeBuildStatus | null): BuildStatusSource | null => {
+const resolveRuntimeBuildStatus = (
+  status?: RuntimeBuildStatus | null
+): BuildStatusSource | null => {
   if (status == null) return null;
   if (
-    status === 'idle'
-    || status === 'running'
-    || status === 'queued'
-    || status === 'completed'
-    || status === 'paused'
-    || status === 'failed'
+    status === 'idle' ||
+    status === 'running' ||
+    status === 'queued' ||
+    status === 'completed' ||
+    status === 'paused' ||
+    status === 'failed'
   ) {
     return status;
   }
@@ -75,32 +73,40 @@ export const useShapeBuildSession = ({ data, nodeId }: Args) => {
   const stageDurationMsByStage = useAtomValue(stageDurationMsByStageAtom);
   const stageTimingByStage = useAtomValue(stageTimingByStageAtom);
 
-  const releaseBuildLock = useCallback(() => { }, []);
+  const releaseBuildLock = useCallback(() => {}, []);
 
-  const tryAcquireBuildLock = useCallback(async (options?: { notifyOnFailure?: boolean }): Promise<boolean> => {
-    if (options?.notifyOnFailure && typeof navigator !== 'undefined' && typeof navigator.locks?.request !== 'function') {
-      notify.warning('Web Locks API is unavailable. Continuing in SharedWorker queue mode.');
-    }
-    return true;
-  }, []);
+  const tryAcquireBuildLock = useCallback(
+    async (options?: { notifyOnFailure?: boolean }): Promise<boolean> => {
+      if (
+        options?.notifyOnFailure &&
+        typeof navigator !== 'undefined' &&
+        typeof navigator.locks?.request !== 'function'
+      ) {
+        notify.warning('Web Locks API is unavailable. Continuing in SharedWorker queue mode.');
+      }
+      return true;
+    },
+    []
+  );
 
   const sleep = useCallback((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)), []);
 
   const cancelStartRequestRef = useRef(false);
 
-  const waitForBuildLock = useCallback(async (_requestedAt: number): Promise<boolean> => {
-    if (!activeNodeId) return false;
-    while (!cancelStartRequestRef.current) {
-      await sleep(POLL_INTERVAL_MS);
-      return true;
-    }
-    return false;
-  }, [activeNodeId, sleep]);
+  const waitForBuildLock = useCallback(
+    async (_requestedAt: number): Promise<boolean> => {
+      if (!activeNodeId) return false;
+      while (!cancelStartRequestRef.current) {
+        await sleep(POLL_INTERVAL_MS);
+        return true;
+      }
+      return false;
+    },
+    [activeNodeId, sleep]
+  );
   const crashCheckStartedAtRef = useRef<number>(Date.now());
   const clearStartPendingRef = useRef<(() => void) | null>(null);
-  const {
-    updateSessionRecord,
-  } = useShapeBuildSessionState({
+  const { updateSessionRecord } = useShapeBuildSessionState({
     activeNodeId,
   });
   const {
@@ -117,41 +123,48 @@ export const useShapeBuildSession = ({ data, nodeId }: Args) => {
     clearStartPendingRef,
   });
 
-
   const { progress, status, error } = useBuildProgress(activeNodeId);
   const hasNodeId = Boolean(activeNodeId && !error);
   const effectiveProgress = hasNodeId ? progress : null;
   const effectiveStatus = hasNodeId ? status : null;
-  const stages = useShapeBuildStages({ t: (key: string, fallback?: string): string => String(t(key, fallback ?? key)) });
+  const stages = useShapeBuildStages({
+    t: (key: string, fallback?: string): string => String(t(key, fallback ?? key)),
+  });
   const runtimeStatusForBuildStatus: BuildSessionDisplayStatus['status'] = status?.status ?? 'idle';
   const runtimeStatus: BuildSessionDisplayStatus['status'] = runtimeStatusForBuildStatus;
   const pendingUserAction = useAtomValue(pendingUserActionAtom);
   const setPendingUserAction = useSetAtom(pendingUserActionAtom);
   const isStopRequestedInFlight = useAtomValue(isStopRequestedInFlightAtom);
 
-  const setIsStopRequested = useCallback((next: boolean) => {
-    if (next) {
-      setPendingUserAction('stopping');
-    } else {
-      if (pendingUserAction === 'stopping') {
-        setPendingUserAction('none');
+  const setIsStopRequested = useCallback(
+    (next: boolean) => {
+      if (next) {
+        setPendingUserAction('stopping');
+      } else {
+        if (pendingUserAction === 'stopping') {
+          setPendingUserAction('none');
+        }
       }
-    }
-  }, [setPendingUserAction, pendingUserAction]);
+    },
+    [setPendingUserAction, pendingUserAction]
+  );
 
   const setIsStopAccepted = useCallback((_next: boolean) => {
     // Stop acceptance is now tracked via pendingUserAction transitions
   }, []);
 
-  const setRequestedControlAction = useCallback((next: 'none' | 'start' | 'pause' | 'cancel') => {
-    const mapping: Record<string, PendingUserAction> = {
-      none: 'none',
-      start: 'starting',
-      pause: 'pausing',
-      cancel: 'cancelling',
-    };
-    setPendingUserAction(mapping[next] ?? 'none');
-  }, [setPendingUserAction]);
+  const setRequestedControlAction = useCallback(
+    (next: 'none' | 'start' | 'pause' | 'cancel') => {
+      const mapping: Record<string, PendingUserAction> = {
+        none: 'none',
+        start: 'starting',
+        pause: 'pausing',
+        cancel: 'cancelling',
+      };
+      setPendingUserAction(mapping[next] ?? 'none');
+    },
+    [setPendingUserAction]
+  );
 
   const requestedControlAction = useMemo(() => {
     if (pendingUserAction === 'starting') return 'start' as const;
@@ -166,9 +179,10 @@ export const useShapeBuildSession = ({ data, nodeId }: Args) => {
   }, [processingStatus, runtimeStatus]);
   const effectiveStatusSource = statusSource;
   const reportTaskFailures = effectiveStatusSource === 'running';
-  const baseBuildStatus = useMemo<BuildStatus>(() => (
-    toBuildStatus(effectiveStatusSource)
-  ), [effectiveStatusSource]);
+  const baseBuildStatus = useMemo<BuildStatus>(
+    () => toBuildStatus(effectiveStatusSource),
+    [effectiveStatusSource]
+  );
   const stageState = useShapeBuildSessionStageState({
     activeNodeId,
     stages,
@@ -176,11 +190,12 @@ export const useShapeBuildSession = ({ data, nodeId }: Args) => {
     runtimeStatus: runtimeStatusForBuildStatus,
     effectiveProgress: effectiveProgress
       ? {
-        percentage: effectiveProgress.percentage,
-        stage: effectiveProgress.stage,
-        progressTaskId: effectiveProgress.progressTaskId,
-        progressTaskStage: (effectiveProgress as { progressTaskStage?: string | null }).progressTaskStage ?? null,
-      }
+          percentage: effectiveProgress.percentage,
+          stage: effectiveProgress.stage,
+          progressTaskId: effectiveProgress.progressTaskId,
+          progressTaskStage:
+            (effectiveProgress as { progressTaskStage?: string | null }).progressTaskStage ?? null,
+        }
       : null,
     sessionProgressTotal: effectiveProgress?.total,
     hasNodeId,
@@ -190,7 +205,11 @@ export const useShapeBuildSession = ({ data, nodeId }: Args) => {
       if (buildSessionTransition.active) {
         return;
       }
-      if (!completed || runtimeStatusForBuildStatus === 'completed' || runtimeStatusForBuildStatus === 'failed') {
+      if (
+        !completed ||
+        runtimeStatusForBuildStatus === 'completed' ||
+        runtimeStatusForBuildStatus === 'failed'
+      ) {
         return;
       }
       const status = hasFailedTerminalTasks ? 'failed' : 'completed';
@@ -247,50 +266,45 @@ export const useShapeBuildSession = ({ data, nodeId }: Args) => {
     },
   });
 
-  const { buildSessionTransitionElapsedMs: startupLifecycleElapsedMs } = useShapeBuildSessionStartupLifecycle({
-    activeNodeId,
-    buildSessionTransition,
-    buildStatus: effectiveStatusSource,
-    resolveStage: effectiveProgress?.progressTaskStage ?? null,
-    effectiveProgress,
-    progressTerminalLogKeyRef,
-    emitBuildSessionTransitionLog,
-  });
+  const { buildSessionTransitionElapsedMs: startupLifecycleElapsedMs } =
+    useShapeBuildSessionStartupLifecycle({
+      activeNodeId,
+      buildSessionTransition,
+      buildStatus: effectiveStatusSource,
+      resolveStage: effectiveProgress?.progressTaskStage ?? null,
+      effectiveProgress,
+      progressTerminalLogKeyRef,
+      emitBuildSessionTransitionLog,
+    });
 
   const selectedArrayByCountries = data?.selectedArrayByCountries;
-  const {
-    statusLabel,
-    warningMessage,
-    stageLabel,
-    taskLabel,
-    taskUnitLabel,
-  } = useShapeBuildLabels({
-    t,
-    buildStatus,
-    effectiveStatus: effectiveStatus ?? null,
-    effectiveProgress: effectiveProgress ?? null,
-    stages,
-    resolvedTaskType: timingStageId ?? resolvedStageFromState,
-    displayStageId: progressSummary.displayStageId,
-    rawDisplayCounts: progressSummary.rawDisplayCounts,
-  });
+  const { statusLabel, warningMessage, stageLabel, taskLabel, taskUnitLabel } = useShapeBuildLabels(
+    {
+      t,
+      buildStatus,
+      effectiveStatus: effectiveStatus ?? null,
+      effectiveProgress: effectiveProgress ?? null,
+      stages,
+      resolvedTaskType: timingStageId ?? resolvedStageFromState,
+      displayStageId: progressSummary.displayStageId,
+      rawDisplayCounts: progressSummary.rawDisplayCounts,
+    }
+  );
 
   const isProcessingValid = useMemo(() => {
     if (!data?.buildConfig) return false;
-    return validateBuildConfig(
-      data.buildConfig,
-      data.processingConfig ?? DEFAULT_PROCESSING_CONFIG,
-    ).isValid;
+    return validateBuildConfig(data.buildConfig, data.processingConfig ?? DEFAULT_PROCESSING_CONFIG)
+      .isValid;
   }, [data?.buildConfig, data?.processingConfig]);
 
-  const showResumeLabel = useMemo(() => (
-    buildStatus !== 'paused' && (!buildSessionTransition.active && displayTasks.length > 0)
-  ), [buildStatus, displayTasks.length, buildSessionTransition.active]);
+  const showResumeLabel = useMemo(
+    () => buildStatus !== 'paused' && !buildSessionTransition.active && displayTasks.length > 0,
+    [buildStatus, displayTasks.length, buildSessionTransition.active]
+  );
   const hasSelection = summarizeCheckboxState(selectedArrayByCountries).hasSelection;
   const hasDataSource = Boolean(data?.buildConfig?.dataSourceName);
-  const buildStatusForProgressMonitor: BuildSessionDisplayStatus['status'] = (
-    buildStatus === 'running' ? 'running' : buildStatus
-  );
+  const buildStatusForProgressMonitor: BuildSessionDisplayStatus['status'] =
+    buildStatus === 'running' ? 'running' : buildStatus;
   const bridgeRef = useRef(getBuildWorkerBridge());
   const workerClientHook = useMemo(() => {
     try {
@@ -323,15 +337,11 @@ export const useShapeBuildSession = ({ data, nodeId }: Args) => {
     runtimeHeartbeatAt: runtime.heartbeatAt,
     shouldMonitor: runtimeStatusForBuildStatus === 'running' && runtime.completedAt === undefined,
     t: (key: string, fallback: string) => t(key, fallback),
-    closeCrashSuspect: () => { },
-    closeSuspendSuspect: () => { },
+    closeCrashSuspect: () => {},
+    closeSuspendSuspect: () => {},
   });
 
-  const {
-    handleStart,
-    handlePause,
-    handleCancelQueued,
-  } = useShapeBuildSessionControlActions({
+  const { handleStart, handlePause, handleCancelQueued } = useShapeBuildSessionControlActions({
     activeNodeId,
     data,
     buildStatus,
@@ -369,9 +379,9 @@ export const useShapeBuildSession = ({ data, nodeId }: Args) => {
   useEffect(() => {
     if (!isStopRequestedInFlight) return;
     if (
-      runtimeStatusForBuildStatus === 'paused'
-      || runtimeStatusForBuildStatus === 'completed'
-      || runtimeStatusForBuildStatus === 'failed'
+      runtimeStatusForBuildStatus === 'paused' ||
+      runtimeStatusForBuildStatus === 'completed' ||
+      runtimeStatusForBuildStatus === 'failed'
     ) {
       setPendingUserAction('none');
     }
@@ -395,7 +405,11 @@ export const useShapeBuildSession = ({ data, nodeId }: Args) => {
   }, [clearStartPending]);
   const effectiveBuildStatus: BuildStatus = buildStatus;
   const effectiveStatusLabel = buildSessionTransition.active
-    ? getBuildSessionTransitionStatusLabel(t, buildSessionTransition.phase, startupLifecycleElapsedMs)
+    ? getBuildSessionTransitionStatusLabel(
+        t,
+        buildSessionTransition.phase,
+        startupLifecycleElapsedMs
+      )
     : isStartPending && buildStatus === 'idle'
       ? t('build.status.starting', 'Starting stage...')
       : statusLabel;

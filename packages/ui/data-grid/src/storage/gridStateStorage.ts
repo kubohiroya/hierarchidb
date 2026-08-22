@@ -5,9 +5,8 @@ const canUseLocalStorage = (): boolean => {
   return typeof window.localStorage !== 'undefined';
 };
 
-export const buildGridStateKey = (baseKey: string, segment: string): string => (
-  `${baseKey}:${segment}`
-);
+export const buildGridStateKey = (baseKey: string, segment: string): string =>
+  `${baseKey}:${segment}`;
 
 export const loadGridStateValue = <T extends GridStateValue>(key: string): T | undefined => {
   if (!canUseLocalStorage()) return undefined;

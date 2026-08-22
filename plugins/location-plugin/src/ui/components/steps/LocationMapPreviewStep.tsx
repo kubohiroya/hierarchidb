@@ -2,17 +2,25 @@
  * Map preview step for Location dialog.
  */
 
-import type React from 'react';
-import { Box, Button, LinearProgress } from '@mui/material';
-import { LocationOn, Palette, LocationCity } from '@mui/icons-material';
-import type { NodeId } from '@hierarchidb/core-types';
-import { DEFAULT_MAP_CONFIG, MapToggleCard, LocationPreviewList, MapPreviewShell } from '@hierarchidb/ui-map';
-import type { LocationEntity } from '~/common/types/index';
 import { FloatingWindow } from '@hierarchidb/components';
+import type { NodeId } from '@hierarchidb/core-types';
+import {
+  DEFAULT_MAP_CONFIG,
+  LocationPreviewList,
+  MapPreviewShell,
+  MapToggleCard,
+} from '@hierarchidb/ui-map';
+import { LocationCity, LocationOn, Palette } from '@mui/icons-material';
+import { Box, Button, LinearProgress } from '@mui/material';
+import type React from 'react';
+import type { LocationEntity } from '~/common/types/index';
+import { LocationPreviewHoverSnackbar } from './LocationMapPreviewMapElements.js';
+import {
+  LocationAdmin0Formatter,
+  LocationTypeFormatter,
+} from './LocationMapPreviewStepElements.js';
 import { LocationStyleConfigPanel } from './LocationStyleConfigPanel.js';
 import { useLocationMapPreviewStep } from './useLocationMapPreviewStep.js';
-import { LocationAdmin0Formatter, LocationTypeFormatter } from './LocationMapPreviewStepElements.js';
-import { LocationPreviewHoverSnackbar } from './LocationMapPreviewMapElements.js';
 
 interface LocationMapPreviewStepProps {
   draft: Partial<LocationEntity>;
@@ -20,7 +28,11 @@ interface LocationMapPreviewStepProps {
   onUpdate?: (updates: Partial<LocationEntity>) => void;
 }
 
-export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ draft, nodeId, onUpdate }) => {
+export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({
+  draft,
+  nodeId,
+  onUpdate,
+}) => {
   const {
     t,
     initialViewState,
@@ -102,7 +114,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
           onLoad: handleMapLoad,
           onMoveEnd: handleMapMoveEnd,
         }}
-        overlay={(
+        overlay={
           <>
             {showIdeGsmProgress ? (
               <Box position="absolute" top={0} left={0} right={0} zIndex={5}>
@@ -162,10 +174,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
                 onClose={styleConfigWindow.handlers.onClose}
               >
                 <Box sx={{ height: '100%', minHeight: 0, overflow: 'auto' }}>
-                  <LocationStyleConfigPanel
-                    draft={draft}
-                    onUpdate={onUpdate}
-                  />
+                  <LocationStyleConfigPanel draft={draft} onUpdate={onUpdate} />
                 </Box>
               </FloatingWindow>
             ) : null}
@@ -187,7 +196,15 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
               </FloatingWindow>
             ) : null}
             {!terrainWindow.windowState.isVisible || !styleConfigWindow.windowState.isVisible ? (
-              <Box position="absolute" top={8} right={8} zIndex={3} display="flex" flexDirection="column" gap={1}>
+              <Box
+                position="absolute"
+                top={8}
+                right={8}
+                zIndex={3}
+                display="flex"
+                flexDirection="column"
+                gap={1}
+              >
                 {!terrainWindow.windowState.isVisible ? (
                   <Button
                     variant="contained"
@@ -213,7 +230,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
               </Box>
             ) : null}
           </>
-        )}
+        }
       />
     </Box>
   );

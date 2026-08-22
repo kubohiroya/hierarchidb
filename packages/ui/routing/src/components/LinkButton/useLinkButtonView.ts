@@ -1,5 +1,5 @@
-import { useId } from 'react';
 import type { ButtonProps } from '@mui/material';
+import { useId } from 'react';
 import type { LinkButtonProps } from './LinkButton.js';
 
 export interface UseLinkButtonViewResult {

@@ -1,9 +1,12 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { Box } from '@mui/material';
-import { useState } from 'react';
 import type { TabularColumnInfo } from '@hierarchidb/tabular-store';
+import { Box } from '@mui/material';
+import type { Meta, StoryObj } from '@storybook/react';
+import { useState } from 'react';
 import type { TabularFilterRule } from '../types/index';
-import { TabularDataFilterRulesTable, type FilterOperatorOption } from './TabularDataFilterRulesTable.js';
+import {
+  type FilterOperatorOption,
+  TabularDataFilterRulesTable,
+} from './TabularDataFilterRulesTable.js';
 
 const operatorOptions: FilterOperatorOption[] = [
   { value: 'equals', label: 'Equals', types: ['string', 'number', 'date', 'boolean'] },
@@ -65,7 +68,12 @@ export const Playground: Story = {
 
     return (
       <Box sx={{ maxWidth: 960, p: 3 }}>
-        <TabularDataFilterRulesTable filters={rules} onChange={setRules} columns={columns} operatorOptions={operatorOptions} />
+        <TabularDataFilterRulesTable
+          filters={rules}
+          onChange={setRules}
+          columns={columns}
+          operatorOptions={operatorOptions}
+        />
       </Box>
     );
   },

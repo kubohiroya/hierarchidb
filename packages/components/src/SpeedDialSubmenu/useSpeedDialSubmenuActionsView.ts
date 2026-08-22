@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SpeedDialSubmenuAction, SpeedDialSubmenuItem } from './SpeedDialSubmenuActions.js';
 
 function hasChildren(action: SpeedDialSubmenuAction): action is SpeedDialSubmenuAction & {
@@ -23,7 +23,10 @@ export interface UseSpeedDialSubmenuActionsViewResult {
   clearCloseTimer: () => void;
   scheduleCloseSubmenu: () => void;
   handlePrimaryActionEnter: (action: SpeedDialSubmenuAction, currentTarget: HTMLElement) => void;
-  handlePrimaryActionClick: (action: SpeedDialSubmenuAction, event: ReactMouseEvent<HTMLElement>) => void;
+  handlePrimaryActionClick: (
+    action: SpeedDialSubmenuAction,
+    event: ReactMouseEvent<HTMLElement>
+  ) => void;
   handleSubmenuItemClick: (item: SpeedDialSubmenuItem, event: ReactMouseEvent<HTMLElement>) => void;
   isActionWithChildren: (action: SpeedDialSubmenuAction) => boolean;
 }
@@ -89,7 +92,7 @@ export function useSpeedDialSubmenuActionsView({
       setActiveParentId(action.id);
       setAnchorEl(currentTarget);
     },
-    [clearCloseTimer, closeSubmenu],
+    [clearCloseTimer, closeSubmenu]
   );
 
   const handlePrimaryActionClick = useCallback(
@@ -98,7 +101,7 @@ export function useSpeedDialSubmenuActionsView({
       closeSubmenu();
       onRequestClose();
     },
-    [closeSubmenu, onRequestClose],
+    [closeSubmenu, onRequestClose]
   );
 
   const handleSubmenuItemClick = useCallback(
@@ -107,7 +110,7 @@ export function useSpeedDialSubmenuActionsView({
       closeSubmenu();
       onRequestClose();
     },
-    [closeSubmenu, onRequestClose],
+    [closeSubmenu, onRequestClose]
   );
 
   return {

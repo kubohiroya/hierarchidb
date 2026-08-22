@@ -1,16 +1,16 @@
-import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children, ...props }: any) => (
-    <a {...props}>{children}</a>
-  ),
+  Link: ({ children, ...props }: any) => <a {...props}>{children}</a>,
 }));
-import type { ReactNode } from 'react';
-import type { ColumnBuilderParams } from '../components/internal/createTreeTableColumns';
-import { createTreeTableColumns } from '../components/internal/createTreeTableColumns';
+
 import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { DualKeyMap } from '@hierarchidb/util';
+import type { ReactNode } from 'react';
+import type { ColumnBuilderParams } from '../components/internal/createTreeTableColumns';
+import { createTreeTableColumns } from '../components/internal/createTreeTableColumns';
 
 describe('TreeTable Draft chip', () => {
   const defaultParams: ColumnBuilderParams = {

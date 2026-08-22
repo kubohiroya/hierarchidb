@@ -38,18 +38,15 @@ const ROUTE_GENERATION_METHODS = new Set<RouteGenerationConfig['method']>([
   'custom',
 ]);
 
-export const buildRouteSourceIdentity = (
-  input: RouteSourceIdentityInput
-): RouteSourceIdentity => {
+export const buildRouteSourceIdentity = (input: RouteSourceIdentityInput): RouteSourceIdentity => {
   const routeMode = requireRouteMode(input.routeMode);
   const start = requireEndpoint('start', input.start);
   const end = requireEndpoint('end', input.end);
   const generation = requireGenerationConfig(input.generation);
   const sourceConfig = requireSourceConfig(input.sourceConfig);
   const bidirectional = resolveBidirectional(input.metadata);
-  const [from, to] = bidirectional && compareEndpoints(start, end) > 0
-    ? [end, start]
-    : [start, end];
+  const [from, to] =
+    bidirectional && compareEndpoints(start, end) > 0 ? [end, start] : [start, end];
   const sourceKey = `${routeMode}:${String(from.locationId)}:${String(to.locationId)}`;
   const inputHash = buildStableJsonSignature({
     pipelineVersion: 'route-source-v1',
@@ -103,14 +100,14 @@ const requireCoordinate = (label: string, value: unknown): [number, number] => {
   }
   const [longitude, latitude] = value;
   if (
-    typeof longitude !== 'number'
-    || !Number.isFinite(longitude)
-    || longitude < -180
-    || longitude > 180
-    || typeof latitude !== 'number'
-    || !Number.isFinite(latitude)
-    || latitude < -90
-    || latitude > 90
+    typeof longitude !== 'number' ||
+    !Number.isFinite(longitude) ||
+    longitude < -180 ||
+    longitude > 180 ||
+    typeof latitude !== 'number' ||
+    !Number.isFinite(latitude) ||
+    latitude < -90 ||
+    latitude > 90
   ) {
     return contractViolation(label, 'contains invalid coordinates');
   }
@@ -182,9 +179,8 @@ const toSignatureEndpoint = (endpoint: RouteSourceEndpoint) => ({
   latitude: endpoint.coordinates[1],
 });
 
-const isRecord = (value: unknown): value is Record<string, unknown> => (
-  value !== null && typeof value === 'object' && !Array.isArray(value)
-);
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
 
 const contractViolation = (field: string, expectation: string): never => {
   throw new Error(`[route-source-identity] ${field} ${expectation}`);

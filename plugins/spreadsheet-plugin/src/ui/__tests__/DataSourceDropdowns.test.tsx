@@ -1,14 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import { render, screen, cleanup } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import {
-  TabularDataImport,
-  TabularProvider,
-  type TabularDataApi,
-} from '@hierarchidb/ui-tabular';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
+import { type TabularDataApi, TabularDataImport, TabularProvider } from '@hierarchidb/ui-tabular';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { cleanup, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 const baseMetadata: TabularTableMetadata = {
   id: 'meta-1',
@@ -60,7 +56,7 @@ const renderUploadStep = () => {
           menuContainer={modalRoot}
         />
       </TabularProvider>
-    </ThemeProvider>,
+    </ThemeProvider>
   );
 };
 

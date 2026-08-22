@@ -1,11 +1,11 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import {
-  dismissGuidedTour,
-  waitForTreeTableLoad,
-  setupConsoleErrorTracking,
-  clearTestData,
-  waitForSubTreeUpdate,
   buildAppUrl,
+  clearTestData,
+  dismissGuidedTour,
+  setupConsoleErrorTracking,
+  waitForSubTreeUpdate,
+  waitForTreeTableLoad,
 } from '../utils/test-helpers';
 
 /**
@@ -230,7 +230,9 @@ test.describe('TreeTable Expansion', () => {
     await waitForTreeTableLoad(page);
 
     // 大量ノードを持つフォルダを展開
-    const largeNode = page.locator('[data-testid="console-node"][data-has-children="true"]').first();
+    const largeNode = page
+      .locator('[data-testid="console-node"][data-has-children="true"]')
+      .first();
 
     const startTime = Date.now();
     await largeNode.locator('[data-testid="expand-button"]').click();

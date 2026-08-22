@@ -3,10 +3,10 @@
  * @description Toggle button group for switching between Resources and Projects pages
  */
 
-import { Button, ButtonGroup, type ButtonProps } from '@mui/material';
 import type { NodeId } from '@hierarchidb/core-types';
+import { AccountTree as AccountTreeIcon, Folder as FolderIcon } from '@mui/icons-material';
+import { Button, ButtonGroup, type ButtonProps } from '@mui/material';
 import { useLoaderData, useNavigate } from '@tanstack/react-router';
-import { Folder as FolderIcon, AccountTree as AccountTreeIcon } from '@mui/icons-material';
 
 export type ResourceProjectType = 'resources' | 'projects' | 'none';
 export type ResourceProjectToggleOrientation = 'horizontal' | 'vertical';
@@ -32,15 +32,15 @@ interface ResourceProjectToggleProps {
 }
 
 export function ResourceProjectToggle({
-                                        selected = 'none',
-                                        currentPageNodeId,
-                                        appPrefix: _appPrefix,
-                                        getSavedPageNodeId,
-                                        savePageNodeId,
-                                        getNodeContext,
-                                        orientation = 'horizontal',
-                                        size = 'medium',
-                                      }: ResourceProjectToggleProps) {
+  selected = 'none',
+  currentPageNodeId,
+  appPrefix: _appPrefix,
+  getSavedPageNodeId,
+  savePageNodeId,
+  getNodeContext,
+  orientation = 'horizontal',
+  size = 'medium',
+}: ResourceProjectToggleProps) {
   const navigate = useNavigate();
   const loaderData = useLoaderData({ strict: false }) as { pageNodeId?: string } | undefined;
   const pageNodeId = loaderData?.pageNodeId;
@@ -69,7 +69,9 @@ export function ResourceProjectToggle({
 
     // Navigate to target page (don't include appPrefix since it's already in basename)
     const basePath = targetType === 'resources' ? 'r' : 'p';
-    const targetPath = savedPageNodeId ? `/f/${basePath}/${savedPageNodeId}/-/folder/list` : `/f/${basePath}`;
+    const targetPath = savedPageNodeId
+      ? `/f/${basePath}/${savedPageNodeId}/-/folder/list`
+      : `/f/${basePath}`;
 
     void navigate({ to: targetPath, replace: true });
   };
@@ -83,12 +85,12 @@ export function ResourceProjectToggle({
       sx={{
         ...(orientation === 'vertical'
           ? {
-            '& .MuiButton-root': {
-              justifyContent: 'flex-start',
-              textTransform: 'none',
-              width: '100%',
-            },
-          }
+              '& .MuiButton-root': {
+                justifyContent: 'flex-start',
+                textTransform: 'none',
+                width: '100%',
+              },
+            }
           : undefined),
         // Apply rounded corners to match PreviewStep button style
         '& .MuiButtonGroup-grouped': {

@@ -16,17 +16,14 @@ export type NavLinkItemType = {
 };
 
 export const NavLinkMenu = ({ items }: { items: NavLinkItemType[] }) => {
-  const { hasItems, activeLinkStyle, inactiveLinkStyle, itemViewModels } = useNavLinkMenuView(items);
+  const { hasItems, activeLinkStyle, inactiveLinkStyle, itemViewModels } =
+    useNavLinkMenuView(items);
   if (!hasItems) return null;
 
   return (
     <MenuList sx={{ marginBottom: '30px', backgroundColor: 'red' }}>
       {itemViewModels.map((viewModel) => (
-        <MenuItem
-          key={viewModel.key}
-          sx={{ padding: 0, margin: 0 }}
-          aria-label={viewModel.name}
-        >
+        <MenuItem key={viewModel.key} sx={{ padding: 0, margin: 0 }} aria-label={viewModel.name}>
           <Link
             to={viewModel.target}
             preload="intent"

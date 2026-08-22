@@ -1,28 +1,36 @@
 /**
-  * NodeContextMenu -
-  * TreeTable
-  * eria-cartographRowContextMenuMUI
-  */
+ * NodeContextMenu -
+ * TreeTable
+ * eria-cartographRowContextMenuMUI
+ */
 
-import { type ReactElement } from 'react';
-import { Divider, ListItemIcon, ListItemText, Menu, MenuItem, Switch, Tooltip } from '@mui/material';
 import {
   Add as AddIcon,
   ChevronRight as ChevronRightIcon,
   Clear as ClearIcon,
+  Construction as ConstructionIcon,
   ContentCopy as ContentCopyIcon,
   ContentCut as ContentCutIcon,
-  Construction as ConstructionIcon,
+  FileCopy as DuplicateIcon,
   Edit as EditIcon,
   FileDownload as FileDownloadIcon,
   FileUpload as FileUploadIcon,
-  FileCopy as DuplicateIcon,
   Folder as FolderIcon,
   OpenInNew as OpenInNewIcon,
   PlayArrow as PlayArrowIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
+import {
+  Divider,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Switch,
+  Tooltip,
+} from '@mui/material';
+import { type ReactElement } from 'react';
 import { useNodeContextMenu } from './useNodeContextMenu';
 
 export type OpenStepOption = { step: number; label?: string; disabled?: boolean };
@@ -98,9 +106,9 @@ export interface NodeContextMenuProps {
 }
 
 /**
-  * NodeContextMenu
+ * NodeContextMenu
  * eria-cartographRowContextMenuMUI
-  */
+ */
 export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | null {
   const {
     canEdit = true,
@@ -177,12 +185,15 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
   return (
     <>
       {/*
-*/}
+       */}
       <Menu
         anchorEl={anchorForMenu}
         anchorReference={anchorReference}
         anchorPosition={resolvedAnchorPosition ?? undefined}
-        open={open && (anchorReference === 'anchorPosition' ? !!resolvedAnchorPosition : !!anchorForMenu)}
+        open={
+          open &&
+          (anchorReference === 'anchorPosition' ? !!resolvedAnchorPosition : !!anchorForMenu)
+        }
         onClose={handleMainMenuClose}
         disablePortal={false}
         keepMounted={false}
@@ -261,14 +272,22 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
           <ListItemText primary={copyLabel} />
         </MenuItem>
 
-        <MenuItem onClick={handleDuplicateClick} disabled={!canDuplicate} aria-label={duplicateLabel}>
+        <MenuItem
+          onClick={handleDuplicateClick}
+          disabled={!canDuplicate}
+          aria-label={duplicateLabel}
+        >
           <ListItemIcon>
             <DuplicateIcon />
           </ListItemIcon>
           <ListItemText primary={duplicateLabel} />
         </MenuItem>
 
-        <MenuItem onClick={handleArchiveClick} disabled={!allowArchive} aria-label={moveToArchiveLabel}>
+        <MenuItem
+          onClick={handleArchiveClick}
+          disabled={!allowArchive}
+          aria-label={moveToArchiveLabel}
+        >
           <ListItemIcon>
             <ClearIcon color="error" />
           </ListItemIcon>
@@ -301,7 +320,11 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
         {[
           <Divider key="divider-action-group" />,
           isFolder ? (
-            <MenuItem key="menuitem-open-folder" onClick={(event) => handleOpenFolderClick(event)} aria-label={openFolderLabel}>
+            <MenuItem
+              key="menuitem-open-folder"
+              onClick={(event) => handleOpenFolderClick(event)}
+              aria-label={openFolderLabel}
+            >
               <ListItemIcon>
                 <FolderIcon />
               </ListItemIcon>
@@ -313,7 +336,11 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
               ) : null}
             </MenuItem>
           ) : hasOpenSteps ? (
-            <MenuItem key="menuitem-open-steps" onClick={handleOpenStepMenuClick} aria-label={openLabel}>
+            <MenuItem
+              key="menuitem-open-steps"
+              onClick={handleOpenStepMenuClick}
+              aria-label={openLabel}
+            >
               <ListItemIcon>
                 <FolderIcon />
               </ListItemIcon>
@@ -321,7 +348,11 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
               <ChevronRightIcon sx={{ marginLeft: 'auto' }} />
             </MenuItem>
           ) : (
-            <MenuItem key="menuitem-open" onClick={(event) => handleOpenClick(event)} aria-label={openLabel}>
+            <MenuItem
+              key="menuitem-open"
+              onClick={(event) => handleOpenClick(event)}
+              aria-label={openLabel}
+            >
               <ListItemIcon>
                 <FolderIcon />
               </ListItemIcon>
@@ -333,7 +364,12 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
               ) : null}
             </MenuItem>
           ),
-          <MenuItem key="menuitem-edit" onClick={(event) => handleEditClick(event)} disabled={!canEdit} aria-label={editLabel}>
+          <MenuItem
+            key="menuitem-edit"
+            onClick={(event) => handleEditClick(event)}
+            disabled={!canEdit}
+            aria-label={editLabel}
+          >
             <ListItemIcon>
               <EditIcon />
             </ListItemIcon>
@@ -425,9 +461,11 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
           const localizedLabel = ci.labelKey
             ? translateWithFallback(ci.labelKey, ci.label)
             : translateWithFallback(`plugins.${ci.nodeType}.name`, ci.label);
-          const localizedDescription = (ci.descriptionKey
-            ? translateWithFallback(ci.descriptionKey, ci.description ?? '')
-            : translateWithFallback(`plugins.${ci.nodeType}.description`, ci.description ?? '')).trim();
+          const localizedDescription = (
+            ci.descriptionKey
+              ? translateWithFallback(ci.descriptionKey, ci.description ?? '')
+              : translateWithFallback(`plugins.${ci.nodeType}.description`, ci.description ?? '')
+          ).trim();
 
           if (hasChildren) {
             return (
@@ -463,9 +501,18 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
           }
 
           return (
-            <Tooltip key={`${createType}-${language}`} title={localizedDescription} placement="right" enterDelay={300} arrow>
+            <Tooltip
+              key={`${createType}-${language}`}
+              title={localizedDescription}
+              placement="right"
+              enterDelay={300}
+              arrow
+            >
               <span style={{ display: 'block' }}>
-                <MenuItem onClick={(event) => handleCreateClick(createType, event)} aria-label={localizedLabel}>
+                <MenuItem
+                  onClick={(event) => handleCreateClick(createType, event)}
+                  aria-label={localizedLabel}
+                >
                   <ListItemIcon>{IconEl}</ListItemIcon>
                   <ListItemText>{localizedLabel}</ListItemText>
                   {isShiftPressed ? (
@@ -520,9 +567,14 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
           const localizedLabel = item.labelKey
             ? translateWithFallback(item.labelKey, item.label)
             : translateWithFallback(`plugins.${item.nodeType}.name`, item.label);
-          const localizedDescription = (item.descriptionKey
-            ? translateWithFallback(item.descriptionKey, item.description ?? '')
-            : translateWithFallback(`plugins.${item.nodeType}.description`, item.description ?? '')).trim();
+          const localizedDescription = (
+            item.descriptionKey
+              ? translateWithFallback(item.descriptionKey, item.description ?? '')
+              : translateWithFallback(
+                  `plugins.${item.nodeType}.description`,
+                  item.description ?? ''
+                )
+          ).trim();
 
           if (localizedDescription.length === 0) {
             return (
@@ -551,7 +603,10 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
               arrow
             >
               <span style={{ display: 'block' }}>
-                <MenuItem onClick={(event) => handleCreateClick(createType, event)} aria-label={localizedLabel}>
+                <MenuItem
+                  onClick={(event) => handleCreateClick(createType, event)}
+                  aria-label={localizedLabel}
+                >
                   <ListItemIcon>{IconEl}</ListItemIcon>
                   <ListItemText>{localizedLabel}</ListItemText>
                   {isShiftPressed ? (
@@ -605,7 +660,9 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
       >
         {openStepsLoading && openSteps.length === 0 ? (
           <MenuItem key="step-loading" disabled aria-label="Loading">
-            <ListItemText primary={translateWithFallback('treeConsole.contextMenu.loading', 'Loading...')} />
+            <ListItemText
+              primary={translateWithFallback('treeConsole.contextMenu.loading', 'Loading...')}
+            />
           </MenuItem>
         ) : (
           openSteps.map((entry) => {

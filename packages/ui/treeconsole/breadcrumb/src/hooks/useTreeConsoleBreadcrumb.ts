@@ -1,9 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { ComponentProps, ComponentType, Dispatch, KeyboardEvent, MouseEvent, SetStateAction } from 'react';
-import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
-import type { BreadcrumbNode, TreeConsoleBreadcrumbProps } from '~/types';
-import { NodeContextMenu, type OpenStepOption } from '~/components/NodeContextMenu';
 import { NodeTypeIcon } from '@hierarchidb/components';
+import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
+import type {
+  ComponentProps,
+  ComponentType,
+  Dispatch,
+  KeyboardEvent,
+  MouseEvent,
+  SetStateAction,
+} from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { NodeContextMenu, type OpenStepOption } from '~/components/NodeContextMenu';
+import type { BreadcrumbNode, TreeConsoleBreadcrumbProps } from '~/types';
 
 interface UseTreeConsoleBreadcrumbResult {
   pathToUse: BreadcrumbNode[];
@@ -122,7 +129,10 @@ export const useTreeConsoleBreadcrumb = (
 
   const handleConfirmArchive = useCallback(() => {
     if (pendingDeleteNodeId && pendingDeleteNode && onContextAction) {
-      onContextAction('archive', pendingDeleteNode, { navigateToParent: true, source: 'breadcrumb' });
+      onContextAction('archive', pendingDeleteNode, {
+        navigateToParent: true,
+        source: 'breadcrumb',
+      });
     }
     setConfirmDialogOpen(false);
     setPendingDeleteNodeId(null);

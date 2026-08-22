@@ -1,16 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
-
-import { runVectorTileStageOrchestrator } from '../runVectorTileStageOrchestrator';
+import type { RunVectorTileStageOrchestratorParams } from '../orchestratorTypes';
 
 import type { ProgressInfo } from '../ports/sharedTypes';
-import type { RunVectorTileStageOrchestratorParams } from '../orchestratorTypes';
+import { runVectorTileStageOrchestrator } from '../runVectorTileStageOrchestrator';
 
 import {
   makeAdapter,
   makeAfterRun,
-  makeSummaryCapture,
   makeInputs,
   makePostprocess,
+  makeSummaryCapture,
   makeTaskRegistry,
   makeTasks,
 } from './helpers/fakes.js';
@@ -24,7 +23,12 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
     const afterRun = makeAfterRun(afterOut);
 
     const adapter = makeAdapter({ result: { processed: 0, failed: 0 } });
-    const taskRegistry = makeTaskRegistry({ runnableTasks: [], completedCount: 2, failedCount: 0, total: 2 });
+    const taskRegistry = makeTaskRegistry({
+      runnableTasks: [],
+      completedCount: 2,
+      failedCount: 0,
+      total: 2,
+    });
     const postprocess = makePostprocess();
 
     await runVectorTileStageOrchestrator({
@@ -84,7 +88,12 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
       result: { processed: 2, failed: 1 },
     });
 
-    const taskRegistry = makeTaskRegistry({ runnableTasks: tasks, completedCount: 1, failedCount: 0, total: 3 });
+    const taskRegistry = makeTaskRegistry({
+      runnableTasks: tasks,
+      completedCount: 1,
+      failedCount: 0,
+      total: 3,
+    });
     (taskRegistry.registerTasks as ReturnType<typeof vi.fn>).mockImplementation(async () => {
       calls.push('taskRegistry.registerTasks');
     });
@@ -135,12 +144,19 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
     });
 
     // Intercept controls
-    (adapter.process as ReturnType<typeof vi.fn>).mockImplementation(async (_tasks, _report, controls) => {
-      expect(controls?.maxConcurrent).toBe(7);
-      return { processed: _tasks.length, failed: 0 };
-    });
+    (adapter.process as ReturnType<typeof vi.fn>).mockImplementation(
+      async (_tasks, _report, controls) => {
+        expect(controls?.maxConcurrent).toBe(7);
+        return { processed: _tasks.length, failed: 0 };
+      }
+    );
 
-    const taskRegistry = makeTaskRegistry({ runnableTasks: tasks, completedCount: 0, failedCount: 0, total: 2 });
+    const taskRegistry = makeTaskRegistry({
+      runnableTasks: tasks,
+      completedCount: 0,
+      failedCount: 0,
+      total: 2,
+    });
     const postprocess = makePostprocess();
 
     await runVectorTileStageOrchestrator({
@@ -207,10 +223,12 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
       result: { processed: 1, failed: 0 },
     });
 
-    (adapter.process as ReturnType<typeof vi.fn>).mockImplementation(async (_tasks, _report, controls) => {
-      expect(controls?.getSignal()).toBe(controller.signal);
-      return { processed: 1, failed: 0 };
-    });
+    (adapter.process as ReturnType<typeof vi.fn>).mockImplementation(
+      async (_tasks, _report, controls) => {
+        expect(controls?.getSignal()).toBe(controller.signal);
+        return { processed: 1, failed: 0 };
+      }
+    );
 
     await runVectorTileStageOrchestrator({
       nodeId: 'node:test' as RunVectorTileStageOrchestratorParams['nodeId'],
@@ -227,7 +245,12 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
 
   it('should aggregate progress with baseCompleted/baseFailed into progressCallback', async () => {
     const tasks = makeTasks(3);
-    const taskRegistry = makeTaskRegistry({ runnableTasks: tasks, completedCount: 1, failedCount: 0, total: 3 });
+    const taskRegistry = makeTaskRegistry({
+      runnableTasks: tasks,
+      completedCount: 1,
+      failedCount: 0,
+      total: 3,
+    });
     const postprocess = makePostprocess();
 
     const adapter = makeAdapter({
@@ -272,7 +295,12 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
     const tasks = makeTasks(2);
 
     const adapter = makeAdapter({ result: { processed: 0, failed: 0 } });
-    const taskRegistry = makeTaskRegistry({ runnableTasks: [], completedCount: 2, failedCount: 0, total: 2 });
+    const taskRegistry = makeTaskRegistry({
+      runnableTasks: [],
+      completedCount: 2,
+      failedCount: 0,
+      total: 2,
+    });
     const postprocess = makePostprocess();
 
     // This is a type-level contract test only. Do not execute it at runtime.

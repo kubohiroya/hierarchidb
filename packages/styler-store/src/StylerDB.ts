@@ -1,6 +1,6 @@
+import type { StyleRecord } from '@hierarchidb/style-api';
 import { SingletonMixin } from '@hierarchidb/util';
 import { Dexie, type Table } from 'dexie';
-import type { StyleRecord } from '@hierarchidb/style-api';
 
 export class StylerDB extends Dexie {
   styles!: Table<StyleRecord, string>;

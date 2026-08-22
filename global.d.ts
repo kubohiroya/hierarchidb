@@ -19,5 +19,4 @@ declare module '*.module.css' {
 
 declare module 'maplibre-gl/dist/maplibre-gl.css';
 
-
 // NOTE: Module declarations for non-TS assets / ESM-entry shims live under /types/*.d.ts

@@ -1,3 +1,5 @@
+import type { NodeId } from '@hierarchidb/core-types';
+import type { CountryMetadata } from '~/common/types/index';
 import {
   buildShapeCacheKey,
   createShapeChunkStoreWithNetworkPort,
@@ -7,22 +9,18 @@ import {
   textDeserializer,
   textSerializer,
 } from '~/services/utils/chunkStore';
-import type { CountryMetadata } from '~/common/types/index';
+import { GEOBOUNDARIES_ALL_METADATA_URL } from '~/services/utils/geoboundariesEndpoints';
 import {
-  DEFAULT_ISO3166_CSV_URL,
   type ContinentCode,
+  DEFAULT_ISO3166_CSV_URL,
   normalizeCountryCodeForDataSource,
   resolveCountryContinentCode,
   resolveCountryContinentName,
 } from '~/services/utils/iso3166';
-import type { NodeId } from '@hierarchidb/core-types';
-import { GEOBOUNDARIES_ALL_METADATA_URL } from '~/services/utils/geoboundariesEndpoints';
 
 type GeoBoundariesRecord = Record<string, unknown>;
 
-const isOffline = (): boolean => (
-  typeof navigator !== 'undefined' && navigator.onLine === false
-);
+const isOffline = (): boolean => typeof navigator !== 'undefined' && navigator.onLine === false;
 
 const GADM_MAPS_URL = 'https://gadm.org/maps.html';
 
@@ -54,14 +52,13 @@ const determineDataQuality = (levels: number[]): 'high' | 'medium' | 'low' => {
   return 'low';
 };
 
-const decodeHtmlEntities = (value: string): string => (
+const decodeHtmlEntities = (value: string): string =>
   value
     .replace(/&amp;/g, '&')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
     .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-);
+    .replace(/&gt;/g, '>');
 
 const normalizeWhitespace = (value: string): string => value.replace(/\s+/g, ' ').trim();
 
@@ -77,7 +74,7 @@ const parseGeoBoundariesItems = (payload: unknown): GeoBoundariesRecord[] => {
 const resolveGeoBoundariesContinent = (
   rawContinent: string,
   resolvedContinentCode: ContinentCode,
-  resolvedContinentName: string,
+  resolvedContinentName: string
 ): string => {
   if (resolvedContinentCode !== 'XX') return resolvedContinentName;
   const trimmed = rawContinent.trim();
@@ -91,9 +88,8 @@ type MetadataFetchOptions = {
 
 const METADATA_FETCH_TIMEOUT_MS = 45_000;
 
-const isAbortError = (error: unknown): boolean => (
-  error instanceof Error && error.name === 'AbortError'
-);
+const isAbortError = (error: unknown): boolean =>
+  error instanceof Error && error.name === 'AbortError';
 
 const getCachedOrFetchForNode = async <T>(params: {
   store: ReturnType<typeof createShapeChunkStoreWithNetworkPort<T>>;
@@ -156,30 +152,33 @@ const getCachedOrFetchForNode = async <T>(params: {
 
 export async function fetchGeoBoundariesMetadata(
   nodeId: NodeId,
-  options?: MetadataFetchOptions,
+  options?: MetadataFetchOptions
 ): Promise<CountryMetadata[]> {
   const store = createShapeChunkStoreWithNetworkPort(
     jsonSerializer,
     jsonDeserializer,
-    createShapeNetworkPort(),
+    createShapeNetworkPort()
   );
   const cacheKey = buildShapeCacheKey('geoboundaries:metadata:all', GEOBOUNDARIES_ALL_METADATA_URL);
   const entry = isOffline()
     ? await store.get(cacheKey)
     : await getCachedOrFetchForNode({
-      store,
-      nodeId,
-      url: GEOBOUNDARIES_ALL_METADATA_URL,
-      accept: 'application/json',
-      cacheKey,
-      force: options?.force,
-    });
+        store,
+        nodeId,
+        url: GEOBOUNDARIES_ALL_METADATA_URL,
+        accept: 'application/json',
+        cacheKey,
+        force: options?.force,
+      });
   if (!entry) {
     throw new Error('Offline: geoboundaries metadata cache is missing.');
   }
 
   const items = parseGeoBoundariesItems(entry.value);
-  const entries = new Map<string, { iso3: string; name?: string; continent?: string; levels: Set<number> }>();
+  const entries = new Map<
+    string,
+    { iso3: string; name?: string; continent?: string; levels: Set<number> }
+  >();
 
   for (const item of items) {
     if (!item || typeof item !== 'object') continue;
@@ -193,12 +192,9 @@ export async function fetchGeoBoundariesMetadata(
       'shapeISO',
     ]);
     if (!iso3) continue;
-    const level = parseAdminLevel(readFirstString(record, [
-      'boundaryType',
-      'boundaryLevel',
-      'adm',
-      'ADM',
-    ]));
+    const level = parseAdminLevel(
+      readFirstString(record, ['boundaryType', 'boundaryLevel', 'adm', 'ADM'])
+    );
     const name = readFirstString(record, [
       'boundaryName',
       'shapeName',
@@ -206,10 +202,7 @@ export async function fetchGeoBoundariesMetadata(
       'name',
       'shapeGroup',
     ]);
-    const continent = readFirstString(record, [
-      'Continent',
-      'continent',
-    ]);
+    const continent = readFirstString(record, ['Continent', 'continent']);
     const key = iso3.toUpperCase();
     const entry = entries.get(key) ?? { iso3: key, levels: new Set<number>() };
     if (name && !entry.name) entry.name = name;
@@ -240,11 +233,19 @@ export async function fetchGeoBoundariesMetadata(
       csvUrl: DEFAULT_ISO3166_CSV_URL,
     });
     const rawContinent = (entry.continent ?? '').trim();
-    const resolvedContinent = resolveGeoBoundariesContinent(rawContinent, resolvedContinentCode, fallbackContinent);
+    const resolvedContinent = resolveGeoBoundariesContinent(
+      rawContinent,
+      resolvedContinentCode,
+      fallbackContinent
+    );
     if (!rawContinent && resolvedContinentCode === 'XX') {
       // missingContinentCount += 1;
       if (fallbackSamples.length < 5) {
-        fallbackSamples.push({ iso2: normalizedIso2, iso3: entry.iso3, metadata: rawContinent || null });
+        fallbackSamples.push({
+          iso2: normalizedIso2,
+          iso3: entry.iso3,
+          metadata: rawContinent || null,
+        });
       }
     }
     results.push({
@@ -257,7 +258,7 @@ export async function fetchGeoBoundariesMetadata(
       dataQuality: determineDataQuality(levels),
     });
   }
-    if (unresolvedSamples.length > 0) {
+  if (unresolvedSamples.length > 0) {
     console.warn('[shape-plugin][geoboundaries] metadata entries unresolved to ISO2', {
       unresolvedCount: unresolvedSamples.length,
       fallbackSamples,
@@ -266,7 +267,6 @@ export async function fetchGeoBoundariesMetadata(
   }
   return results;
 }
-
 
 type GadmCountryEntry = {
   iso3: string;
@@ -314,7 +314,7 @@ const parseGadmLevelsFromHtml = (html: string): number[] => {
 const mapWithConcurrency = async <T, R>(
   items: T[],
   concurrency: number,
-  mapper: (item: T, index: number) => Promise<R>,
+  mapper: (item: T, index: number) => Promise<R>
 ): Promise<R[]> => {
   const results: R[] = [];
   for (let i = 0; i < items.length; i += concurrency) {
@@ -327,12 +327,12 @@ const mapWithConcurrency = async <T, R>(
 
 export async function fetchGadmMetadata(
   nodeId: NodeId,
-  options?: MetadataFetchOptions,
+  options?: MetadataFetchOptions
 ): Promise<CountryMetadata[]> {
   const store = createShapeChunkStoreWithNetworkPort(
     textSerializer,
     textDeserializer,
-    createShapeNetworkPort(),
+    createShapeNetworkPort()
   );
   const htmlEntry = await getCachedOrFetchForNode({
     store,
@@ -350,68 +350,74 @@ export async function fetchGadmMetadata(
 
   let gadmMissingCount = 0;
   const gadmMissingSamples: Array<{ iso3: string; metadata: string | null }> = [];
-  const results = await mapWithConcurrency<GadmCountryEntry, CountryMetadata>(entries, 6, async (entry) => {
-    try {
-      const countryEntry = await getCachedOrFetchForNode({
-        store,
-        nodeId,
-        url: entry.url,
-        accept: 'text/html',
-        cacheKey: buildShapeCacheKey(`gadm:country:${entry.iso3}`, entry.url),
-        force: options?.force,
-      });
-      const countryHtml = countryEntry.value;
-      const levels = parseGadmLevelsFromHtml(countryHtml);
-      const normalizedCountryCode = await normalizeCountryCodeForDataSource(entry.iso3, 'iso2', {
-        csvUrl: DEFAULT_ISO3166_CSV_URL,
-      });
-      const normalizedIso2 = normalizedCountryCode.length === 2 ? normalizedCountryCode : undefined;
-      const continent = await resolveCountryContinentName(normalizedIso2 ?? entry.iso3, {
-        csvUrl: DEFAULT_ISO3166_CSV_URL,
-      });
-      const countryCode = normalizedIso2 ?? entry.iso3;
+  const results = await mapWithConcurrency<GadmCountryEntry, CountryMetadata>(
+    entries,
+    6,
+    async (entry) => {
+      try {
+        const countryEntry = await getCachedOrFetchForNode({
+          store,
+          nodeId,
+          url: entry.url,
+          accept: 'text/html',
+          cacheKey: buildShapeCacheKey(`gadm:country:${entry.iso3}`, entry.url),
+          force: options?.force,
+        });
+        const countryHtml = countryEntry.value;
+        const levels = parseGadmLevelsFromHtml(countryHtml);
+        const normalizedCountryCode = await normalizeCountryCodeForDataSource(entry.iso3, 'iso2', {
+          csvUrl: DEFAULT_ISO3166_CSV_URL,
+        });
+        const normalizedIso2 =
+          normalizedCountryCode.length === 2 ? normalizedCountryCode : undefined;
+        const continent = await resolveCountryContinentName(normalizedIso2 ?? entry.iso3, {
+          csvUrl: DEFAULT_ISO3166_CSV_URL,
+        });
+        const countryCode = normalizedIso2 ?? entry.iso3;
 
-      return {
-        countryCode,
-        countryName: entry.name,
-        continent,
-        availableAdminLevels: levels,
-        iso2: normalizedIso2,
-        iso3: entry.iso3,
-        dataQuality: determineDataQuality(levels),
-      } satisfies CountryMetadata;
-    } catch (error) {
-      const levels: number[] = [];
-      console.warn('[MetadataLoader] failed to parse GADM levels', {
-        iso3: entry.iso3,
-        url: entry.url,
-        error,
-      });
-      const normalizedCountryCode = await normalizeCountryCodeForDataSource(entry.iso3, 'iso2', {
-        csvUrl: DEFAULT_ISO3166_CSV_URL,
-      });
-      const normalizedIso2 = normalizedCountryCode.length === 2 ? normalizedCountryCode : undefined;
-      const continent = await resolveCountryContinentName(normalizedIso2 ?? entry.iso3, {
-        csvUrl: DEFAULT_ISO3166_CSV_URL,
-      });
-      const countryCode = normalizedIso2 ?? entry.iso3;
+        return {
+          countryCode,
+          countryName: entry.name,
+          continent,
+          availableAdminLevels: levels,
+          iso2: normalizedIso2,
+          iso3: entry.iso3,
+          dataQuality: determineDataQuality(levels),
+        } satisfies CountryMetadata;
+      } catch (error) {
+        const levels: number[] = [];
+        console.warn('[MetadataLoader] failed to parse GADM levels', {
+          iso3: entry.iso3,
+          url: entry.url,
+          error,
+        });
+        const normalizedCountryCode = await normalizeCountryCodeForDataSource(entry.iso3, 'iso2', {
+          csvUrl: DEFAULT_ISO3166_CSV_URL,
+        });
+        const normalizedIso2 =
+          normalizedCountryCode.length === 2 ? normalizedCountryCode : undefined;
+        const continent = await resolveCountryContinentName(normalizedIso2 ?? entry.iso3, {
+          csvUrl: DEFAULT_ISO3166_CSV_URL,
+        });
+        const countryCode = normalizedIso2 ?? entry.iso3;
 
-      gadmMissingCount += 1;
-      if (gadmMissingSamples.length < 5) {
-        gadmMissingSamples.push({ iso3: entry.iso3, metadata: null });
+        gadmMissingCount += 1;
+        if (gadmMissingSamples.length < 5) {
+          gadmMissingSamples.push({ iso3: entry.iso3, metadata: null });
+        }
+
+        return {
+          countryCode,
+          countryName: entry.name,
+          continent,
+          availableAdminLevels: levels,
+          iso2: normalizedIso2,
+          iso3: entry.iso3,
+          dataQuality: determineDataQuality(levels),
+        } satisfies CountryMetadata;
       }
-
-      return {
-        countryCode,
-        countryName: entry.name,
-        continent,
-        availableAdminLevels: levels,
-        iso2: normalizedIso2,
-        iso3: entry.iso3,
-        dataQuality: determineDataQuality(levels),
-      } satisfies CountryMetadata;
     }
-  });
+  );
 
   if (gadmMissingCount > 0) {
     console.warn('[shape-plugin][gadm] continent metadata missing (fallback to ISO3166)', {
@@ -423,12 +429,14 @@ export async function fetchGadmMetadata(
 }
 
 export async function fetchNaturalEarthMetadata(_nodeId: NodeId): Promise<CountryMetadata[]> {
-  return [{
-    countryCode: 'WW',
-    countryName: 'Worldwide',
-    continent: 'N/A',
-    availableAdminLevels: [0, 1],
-    iso2: 'WW',
-    dataQuality: 'medium',
-  }];
+  return [
+    {
+      countryCode: 'WW',
+      countryName: 'Worldwide',
+      continent: 'N/A',
+      availableAdminLevels: [0, 1],
+      iso2: 'WW',
+      dataQuality: 'medium',
+    },
+  ];
 }

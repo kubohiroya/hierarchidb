@@ -1,3 +1,5 @@
 export type { RegisterLocationWorkerStoresOptions } from './registerLocationWorkerStores.js';
-export { registerLocationWorkerStores, loadLocationEntitiesDbModule } from './registerLocationWorkerStores.js';
-
+export {
+  loadLocationEntitiesDbModule,
+  registerLocationWorkerStores,
+} from './registerLocationWorkerStores.js';

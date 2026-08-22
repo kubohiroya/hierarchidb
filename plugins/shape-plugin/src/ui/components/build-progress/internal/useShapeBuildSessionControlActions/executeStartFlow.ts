@@ -1,10 +1,14 @@
 import {
+  getErrorMessage,
+  summarizeSelectedEntries,
+  toTransitionErrorMessage,
+} from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/errorConstants';
+import type { StartExecutionArgs } from './types.js';
+import {
   onTraceFailure,
   runStartSessionRequest,
   toPersistedStartStatusPatch,
 } from './useShapeBuildStartExecutionConstantsUtils.js';
-import type { StartExecutionArgs } from './types.js';
-import { getErrorMessage, summarizeSelectedEntries, toTransitionErrorMessage } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/errorConstants';
 
 export const executeStartFlow = async (args: StartExecutionArgs): Promise<boolean> => {
   const {
@@ -52,7 +56,7 @@ export const executeStartFlow = async (args: StartExecutionArgs): Promise<boolea
     'acquiring-lock',
     options?.autoResume || shouldResumeSession
       ? 'Resuming build session...'
-      : 'Starting build session...',
+      : 'Starting build session...'
   );
   beginBuildStartupStep('lock-acquire', {
     source: startupSource,
@@ -62,9 +66,11 @@ export const executeStartFlow = async (args: StartExecutionArgs): Promise<boolea
   try {
     let acquired = false;
     try {
-      acquired = await runTimedStep('lock-acquire', () => tryAcquireBuildLock({
-        notifyOnFailure: !options?.autoResume,
-      }));
+      acquired = await runTimedStep('lock-acquire', () =>
+        tryAcquireBuildLock({
+          notifyOnFailure: !options?.autoResume,
+        })
+      );
       finishBuildStartupStep('lock-acquire', 'success', { acquired });
     } catch (error) {
       finishBuildStartupStep('lock-acquire', 'error', { errorMessage: getErrorMessage(error) });
@@ -142,7 +148,9 @@ export const executeStartFlow = async (args: StartExecutionArgs): Promise<boolea
       await runTimedStep('worker-initialize', () => bridgeApi.initialize());
       finishBuildStartupStep('worker-initialize', 'success');
     } catch (error) {
-      finishBuildStartupStep('worker-initialize', 'error', { errorMessage: getErrorMessage(error) });
+      finishBuildStartupStep('worker-initialize', 'error', {
+        errorMessage: getErrorMessage(error),
+      });
       throw error;
     }
 
@@ -195,20 +203,20 @@ export const executeStartFlow = async (args: StartExecutionArgs): Promise<boolea
       updateSessionRecord,
     });
 
-    const nextStatus = statusResult.status === 'completed'
-      ? 'completed'
-      : statusResult.status === 'failed'
-        ? 'failed'
-        : 'processing';
-    void updateSessionRecord(toPersistedStartStatusPatch(
-      statusResult.status,
-      statusResult.completedAt,
-    ));
+    const nextStatus =
+      statusResult.status === 'completed'
+        ? 'completed'
+        : statusResult.status === 'failed'
+          ? 'failed'
+          : 'processing';
+    void updateSessionRecord(
+      toPersistedStartStatusPatch(statusResult.status, statusResult.completedAt)
+    );
 
     if (nextStatus === 'failed') {
       const message = toTransitionErrorMessage(
         statusResult.error,
-        'Build failed before task execution started.',
+        'Build failed before task execution started.'
       );
       finishBuildSessionTransition({
         level: 'error',

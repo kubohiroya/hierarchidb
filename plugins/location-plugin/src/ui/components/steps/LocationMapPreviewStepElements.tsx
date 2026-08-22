@@ -1,10 +1,14 @@
-import type { ReactElement } from 'react';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { Box, Typography } from '@mui/material';
+import type { ReactElement } from 'react';
 import type { LocationIconConfig, LocationType } from '~/common/types/index';
-import { LOCATION_ICON_COMPONENTS, DEFAULT_ICON_IDS, DEFAULT_TYPE_COLORS } from './locationMapPreviewConstants.js';
-import { LOCATION_TYPE_STYLES } from './locationTypes.js';
+import {
+  DEFAULT_ICON_IDS,
+  DEFAULT_TYPE_COLORS,
+  LOCATION_ICON_COMPONENTS,
+} from './locationMapPreviewConstants.js';
 import { resolveCountryFlag, resolveLocationType } from './locationMapPreviewUtils.js';
+import { LOCATION_TYPE_STYLES } from './locationTypes.js';
 
 export type LocationAdmin0FormatterProps = {
   value: unknown;

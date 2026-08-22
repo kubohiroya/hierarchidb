@@ -1,23 +1,22 @@
-import { useCallback, useEffect, useMemo } from 'react';
 import {
-  resolveZoomBandSettings,
-  TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES,
+  areZoomBandBoundariesEqual,
   loadTreeConsoleSettings,
   normalizeZoomBandBoundaries,
-  areZoomBandBoundariesEqual,
-  ZOOM_BAND_MIN_ZOOM,
-  ZOOM_BAND_MAX_ZOOM,
+  resolveZoomBandSettings,
+  TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES,
   ZOOM_BAND_MAX_RANGES,
+  ZOOM_BAND_MAX_ZOOM,
+  ZOOM_BAND_MIN_ZOOM,
 } from '@hierarchidb/util';
+import { useCallback, useEffect, useMemo } from 'react';
+import type { ShapeBuildConfig, ShapeEntity } from '~/common/types/index';
 import {
-  DEFAULT_BUILD_CONFIG,
-  DEFAULT_PROCESSING_CONFIG,
   applyBuildConfigPatch,
   assertShapeBuildConfigTileEmitContract,
+  DEFAULT_BUILD_CONFIG,
+  DEFAULT_PROCESSING_CONFIG,
   mergeProcessingConfig,
 } from '~/common/types/index';
-import type { ShapeEntity } from '~/common/types/index';
-import type { ShapeBuildConfig } from '~/common/types/index';
 
 type Args = {
   data: Partial<ShapeEntity>;
@@ -42,7 +41,7 @@ const resolveInitialBuildConfig = (): ShapeBuildConfig => {
 
 const normalizeZoomBandConfig = (
   baseConfig: ShapeBuildConfig,
-  overrides?: ShapeBuildConfig,
+  overrides?: ShapeBuildConfig
 ): ShapeBuildConfig => {
   if (overrides) {
     assertShapeBuildConfigTileEmitContract(overrides);
@@ -53,7 +52,7 @@ const normalizeZoomBandConfig = (
     Array.isArray(rawBoundaries) ? rawBoundaries : baseConfig.geometryConfig.zoomBandBoundaries,
     ZOOM_BAND_MIN_ZOOM,
     ZOOM_BAND_MAX_ZOOM,
-    ZOOM_BAND_MAX_RANGES,
+    ZOOM_BAND_MAX_RANGES
   );
   if (areZoomBandBoundariesEqual(rawBoundaries, normalizedBoundaries)) {
     return merged;
@@ -111,9 +110,12 @@ export const useShapeBuildConfigStep = ({ data, onChange }: Args) => {
     }
   }, [data?.buildConfig, data?.processingConfig, onChange]);
 
-  const handleChange = useCallback((nextConfig: ShapeBuildConfig) => {
-    onChange({ buildConfig: nextConfig });
-  }, [onChange]);
+  const handleChange = useCallback(
+    (nextConfig: ShapeBuildConfig) => {
+      onChange({ buildConfig: nextConfig });
+    },
+    [onChange]
+  );
 
   return { config, handleChange };
 };

@@ -10,7 +10,9 @@ const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureColl
   }
   if (typeof (decoded as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
     const features: FeatureCollection['features'] = [];
-    const iterator = (decoded as AsyncIterable<FeatureCollection['features'][number]>)[Symbol.asyncIterator]();
+    const iterator = (decoded as AsyncIterable<FeatureCollection['features'][number]>)[
+      Symbol.asyncIterator
+    ]();
     while (true) {
       const next = await iterator.next();
       if (next.done) break;
@@ -21,7 +23,9 @@ const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureColl
   return null;
 };
 
-export const decodeTransformByBandCache = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
+export const decodeTransformByBandCache = async (
+  buffer: ArrayBuffer
+): Promise<FeatureCollection | null> => {
   const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
   return normalizeFeatureCollection(decoded);
 };

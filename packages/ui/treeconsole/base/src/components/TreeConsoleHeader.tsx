@@ -2,8 +2,8 @@ import { Box, Button, Typography } from '@mui/material';
 import type { TreeConsoleHeaderProps } from '~/types/index';
 
 /**
-  * TreeConsoleHeader
-    */
+ * TreeConsoleHeader
+ */
 export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Element {
   const {
     title,
@@ -114,7 +114,7 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
         )}
 
         {/*
-*/}
+         */}
         {onClose && (
           <Button
             onClick={onClose}

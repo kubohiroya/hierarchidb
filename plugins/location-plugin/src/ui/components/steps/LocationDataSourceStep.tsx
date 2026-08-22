@@ -2,17 +2,26 @@
  * Location Data Source Selection Step
  */
 
-import type React from 'react';
-import { useCallback } from 'react';
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from '@mui/material';
+import type { NodeId, Timestamp } from '@hierarchidb/core-types';
 import {
+  type DataSourceOption,
   DataSourceSelectionStep,
   type DataSourceSelectorProps,
-  type DataSourceOption,
   IdeGsmImportPanel,
 } from '@hierarchidb/ui-datasource';
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Stack,
+  Typography,
+} from '@mui/material';
+import type React from 'react';
+import { useCallback } from 'react';
 import type { LocationDataSource, LocationEntity } from '~/common/types/index';
-import type { NodeId, Timestamp } from '@hierarchidb/core-types';
 import { useLocationDataSourceStep } from './useLocationDataSourceStep.js';
 
 interface LocationDataSourceStepProps {
@@ -100,7 +109,7 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
         </Stack>
       );
     },
-    [getSupportedIcons, ideGsmOptionMeta],
+    [getSupportedIcons, ideGsmOptionMeta]
   );
 
   return (
@@ -115,10 +124,9 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
         }}
         onChange={handleSelectionChange}
         licenseRequired={licenseRequired}
-        licenseRequiredText={String(t(
-          'dataSource.licenseRequired',
-          'License agreement is required to proceed.',
-        ))}
+        licenseRequiredText={String(
+          t('dataSource.licenseRequired', 'License agreement is required to proceed.')
+        )}
         disabled={disabled}
         description={description}
         renderOption={renderOption}
@@ -142,14 +150,14 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
           <Typography variant="body2">
             {t(
               'dataSource.ideGsm.removeConfirmMessage',
-              'Removing this file will discard its locations and re-import the remaining files.',
+              'Removing this file will discard its locations and re-import the remaining files.'
             )}
           </Typography>
           {routeRefCount != null && routeRefCount > 0 ? (
             <Typography variant="body2" color="warning.main">
               {t(
                 'dataSource.ideGsm.removeCascadeWarning',
-                'Referenced routes will also be deleted to keep route/location consistency.',
+                'Referenced routes will also be deleted to keep route/location consistency.'
               )}
             </Typography>
           ) : null}
@@ -159,13 +167,14 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
             </Typography>
           ) : routeRefError ? (
             <Typography variant="body2" color="error">
-              {t('dataSource.ideGsm.routeRefError', 'Failed to check route references.')} {routeRefError}
+              {t('dataSource.ideGsm.routeRefError', 'Failed to check route references.')}{' '}
+              {routeRefError}
             </Typography>
           ) : routeRefCount != null ? (
             <Typography variant="body2" color={routeRefCount > 0 ? 'error' : 'text.secondary'}>
               {t(
                 'dataSource.ideGsm.routeRefCount',
-                'Routes referencing this location node: {count}',
+                'Routes referencing this location node: {count}'
               ).replace('{count}', String(routeRefCount))}
             </Typography>
           ) : null}
@@ -178,7 +187,12 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
           >
             {t('common.cancel', 'Cancel')}
           </Button>
-          <Button onClick={confirmRemoveFile} color="error" variant="contained" disabled={removeInProgress}>
+          <Button
+            onClick={confirmRemoveFile}
+            color="error"
+            variant="contained"
+            disabled={removeInProgress}
+          >
             {t('dataSource.ideGsm.removeConfirmAction', 'Remove')}
           </Button>
         </DialogActions>

@@ -1,10 +1,7 @@
 import type { CrashInsight } from '@hierarchidb/ui-monitoring';
 import { normalizeUiStageId } from '~/ui/components/build-progress/stageIdAliases';
 
-export type ShapeBuildStage =
-  | 'source'
-  | 'geometry'
-  | 'tileEmit';
+export type ShapeBuildStage = 'source' | 'geometry' | 'tileEmit';
 
 export type ShapeBuildConfigSnapshot = {
   downloadConcurrency?: number;
@@ -15,7 +12,7 @@ export type ShapeBuildConfigSnapshot = {
 export const getStageConcurrencyWarning = (
   insight: CrashInsight<ShapeBuildStage, ShapeBuildConfigSnapshot> | null,
   stage: ShapeBuildStage,
-  currentValue?: number,
+  currentValue?: number
 ): { message: string; threshold?: number } | null => {
   const insightStage = normalizeUiStageId(insight?.stage);
   const normalizedStage = normalizeUiStageId(stage);
@@ -36,7 +33,9 @@ export const getStageConcurrencyWarning = (
     }
   })();
   if (threshold == null || currentValue < threshold) return null;
-  const ratioText = insight.peakRatio ? `peak ${(insight.peakRatio * 100).toFixed(1)}%` : 'peak unknown';
+  const ratioText = insight.peakRatio
+    ? `peak ${(insight.peakRatio * 100).toFixed(1)}%`
+    : 'peak unknown';
   return {
     threshold,
     message: `Last crash suspected in ${normalizedStage} (${ratioText}). Reduce concurrency below ${threshold}.`,

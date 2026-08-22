@@ -1,8 +1,8 @@
-import { useMemo } from 'react';
-import { useRouterState } from '@tanstack/react-router';
-import { useTranslation } from '@hierarchidb/ui-i18n';
-import { resolveStepTitleFromRegistry } from '@hierarchidb/plugin-registry/derivations';
 import type { StepTitleTranslator } from '@hierarchidb/plugin-registry/derivations';
+import { resolveStepTitleFromRegistry } from '@hierarchidb/plugin-registry/derivations';
+import { useTranslation } from '@hierarchidb/ui-i18n';
+import { useRouterState } from '@tanstack/react-router';
+import { useMemo } from 'react';
 import { pluginRegistry } from '~/plugin-loaders/index';
 import { resolveTreePageTitle, useAppDocumentTitle } from '~/router/title/pageTitle';
 

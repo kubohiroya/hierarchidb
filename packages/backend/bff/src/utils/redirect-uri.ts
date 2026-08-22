@@ -13,7 +13,10 @@ const parseAppBaseUrls = (value?: string): string[] => {
     .filter((entry) => entry.length > 0);
 };
 
-const resolveAppBaseUrlForOrigin = (origin: string | undefined, appBaseUrls: string[]): string | undefined => {
+const resolveAppBaseUrlForOrigin = (
+  origin: string | undefined,
+  appBaseUrls: string[]
+): string | undefined => {
   if (!origin) return undefined;
   for (const baseUrl of appBaseUrls) {
     try {
@@ -45,7 +48,8 @@ const resolveFallbackAppBaseUrl = (c: BffContext, appBaseUrls: string[]): string
   } catch {
     requestHost = '';
   }
-  const preferLocalhost = requestHost.startsWith('localhost') || requestHost.startsWith('127.0.0.1');
+  const preferLocalhost =
+    requestHost.startsWith('localhost') || requestHost.startsWith('127.0.0.1');
   if (preferLocalhost) {
     return appBaseUrls.find(isLocalhostUrl) ?? appBaseUrls[0];
   }
@@ -105,12 +109,16 @@ export function buildAppCallbackUrl(c: BffContext, appBaseUrl: string): URL {
   return baseUrl;
 }
 
-export function resolveStateOrigin(c: BffContext, returnOrigin?: string | null): string | undefined {
+export function resolveStateOrigin(
+  c: BffContext,
+  returnOrigin?: string | null
+): string | undefined {
   const env = getEnv(c);
   const appBaseUrls = parseAppBaseUrls(env.APP_BASE_URLS);
   const allowedOrigins = parseAllowedOrigins(env.ALLOWED_ORIGINS || '');
-  const candidates = [returnOrigin ?? undefined, c.req.header('Origin') ?? undefined]
-    .filter((value): value is string => typeof value === 'string' && value.length > 0);
+  const candidates = [returnOrigin ?? undefined, c.req.header('Origin') ?? undefined].filter(
+    (value): value is string => typeof value === 'string' && value.length > 0
+  );
 
   for (const candidate of candidates) {
     try {
@@ -124,10 +132,10 @@ export function resolveStateOrigin(c: BffContext, returnOrigin?: string | null):
       if (matchedBase) return matchedBase;
       if (allowedOrigins.includes(origin)) return origin;
       if (
-        origin.startsWith('http://localhost:')
-        || origin.startsWith('http://127.0.0.1:')
-        || origin.startsWith('https://localhost:')
-        || origin.startsWith('https://127.0.0.1:')
+        origin.startsWith('http://localhost:') ||
+        origin.startsWith('http://127.0.0.1:') ||
+        origin.startsWith('https://localhost:') ||
+        origin.startsWith('https://127.0.0.1:')
       ) {
         return origin;
       }
@@ -157,10 +165,7 @@ export function getAppCallbackUrlFromState(
     try {
       // State might contain origin info
       const stateData = JSON.parse(atob(state));
-      stateOrigin =
-        stateData.origin ||
-        stateData.returnOrigin ||
-        stateData.return_origin;
+      stateOrigin = stateData.origin || stateData.returnOrigin || stateData.return_origin;
     } catch {
       // State is not JSON encoded, ignore
     }
@@ -169,7 +174,8 @@ export function getAppCallbackUrlFromState(
   const matchedStateBaseUrl =
     (stateOrigin ? appBaseUrls.find((entry) => entry === stateOrigin) : undefined) ??
     resolveAppBaseUrlForOrigin(stateOrigin, appBaseUrls);
-  const matchedBaseUrl = matchedStateBaseUrl ?? resolveAppBaseUrlForOrigin(requestOrigin, appBaseUrls);
+  const matchedBaseUrl =
+    matchedStateBaseUrl ?? resolveAppBaseUrlForOrigin(requestOrigin, appBaseUrls);
   if (matchedBaseUrl) {
     return matchedBaseUrl;
   }

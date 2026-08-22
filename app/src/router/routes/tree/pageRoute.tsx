@@ -6,13 +6,12 @@
  * Corresponds to React Router route `t.($treeId).($pageNodeId).tsx`
  */
 
+import type { SortMode, ViewMode } from '@hierarchidb/tree-api';
 import { createRoute } from '@tanstack/react-router';
 import { loadPageNode } from '~/router/loaders/treeLoaders';
 // Import the existing React Router component to reuse
 import TreePageLayout from '~/router/routes/t.($treeId).($pageNodeId)';
 import { treeLayoutRoute } from './layoutRoute.js';
-
-import type { ViewMode, SortMode } from '@hierarchidb/tree-api';
 
 /** Parsed search params for the tree page route. */
 export interface TreePageSearch {
@@ -23,7 +22,14 @@ export interface TreePageSearch {
 
 const VALID_VIEW_MODES: readonly string[] = ['icon', 'list', 'column'];
 const VALID_SORT_MODES: readonly string[] = [
-  'none', 'name', 'type', 'lastOpened', 'created', 'modified', 'size', 'tag',
+  'none',
+  'name',
+  'type',
+  'lastOpened',
+  'created',
+  'modified',
+  'size',
+  'tag',
 ];
 
 export const treePageRoute = createRoute({
@@ -39,10 +45,7 @@ export const treePageRoute = createRoute({
       ? (search.sort as SortMode)
       : undefined;
     const zoomRaw = Number(search.zoom);
-    const zoom =
-      Number.isInteger(zoomRaw) && zoomRaw >= 0 && zoomRaw <= 100
-        ? zoomRaw
-        : undefined;
+    const zoom = Number.isInteger(zoomRaw) && zoomRaw >= 0 && zoomRaw <= 100 ? zoomRaw : undefined;
     return { view, sort, zoom };
   },
   loader: async ({ params }) => {

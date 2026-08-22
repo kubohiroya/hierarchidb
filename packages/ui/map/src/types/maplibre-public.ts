@@ -82,12 +82,20 @@ export interface MapLibreMapInstance {
   addControl(control: unknown, position?: string): void;
   removeControl(control: unknown): void;
 
-  queryRenderedFeatures(geometry?: MapLibreQueryGeometry, parameters?: { layers?: string[]; filter?: MapLibreFilter }): MapLibreGeoJSONFeature[];
+  queryRenderedFeatures(
+    geometry?: MapLibreQueryGeometry,
+    parameters?: { layers?: string[]; filter?: MapLibreFilter }
+  ): MapLibreGeoJSONFeature[];
   setFeatureState(
     target: { source: string; id?: MapLibreFeatureIdentifier; sourceLayer?: string },
     state: Record<string, unknown>
   ): void;
-  removeFeatureState(target: { source: string; id?: MapLibreFeatureIdentifier; key?: string; sourceLayer?: string }): void;
+  removeFeatureState(target: {
+    source: string;
+    id?: MapLibreFeatureIdentifier;
+    key?: string;
+    sourceLayer?: string;
+  }): void;
 
   // Commonly used convenience methods (subset of MapLibre Map API)
   getCenter(): { lng: number; lat: number };
@@ -103,8 +111,19 @@ export interface MapLibreMapInstance {
   getPitch(): number;
   zoomIn(): void;
   zoomOut(): void;
-  flyTo(opts: { center?: [number, number]; zoom?: number; bearing?: number; pitch?: number; speed?: number }): void;
-  jumpTo(opts: { center?: [number, number]; zoom?: number; bearing?: number; pitch?: number }): void;
+  flyTo(opts: {
+    center?: [number, number];
+    zoom?: number;
+    bearing?: number;
+    pitch?: number;
+    speed?: number;
+  }): void;
+  jumpTo(opts: {
+    center?: [number, number];
+    zoom?: number;
+    bearing?: number;
+    pitch?: number;
+  }): void;
   setPitch(pitch: number): void;
   setStyle(style: string | MapLibreStyle): void;
   fitBounds(bounds: [[number, number], [number, number]], options?: { padding?: number }): void;

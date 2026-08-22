@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FocusEvent, type MouseEvent } from 'react';
+import { type FocusEvent, type MouseEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
 interface UseImportExportMenuParams {
   allowImport: boolean;
@@ -22,21 +22,30 @@ export function useImportExportMenu({ allowImport, templates }: UseImportExportM
     setTemplateAnchor(null);
   }, []);
 
-  const openTemplateMenuFromMouse = useCallback((event: MouseEvent<HTMLElement>) => {
-    if (!allowImport) return;
-    event.preventDefault();
-    event.stopPropagation();
-    setTemplateAnchor(event.currentTarget);
-  }, [allowImport]);
+  const openTemplateMenuFromMouse = useCallback(
+    (event: MouseEvent<HTMLElement>) => {
+      if (!allowImport) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setTemplateAnchor(event.currentTarget);
+    },
+    [allowImport]
+  );
 
-  const openTemplateMenuFromFocus = useCallback((event: FocusEvent<HTMLElement>) => {
-    if (!allowImport) return;
-    event.preventDefault();
-    event.stopPropagation();
-    setTemplateAnchor(event.currentTarget as HTMLElement);
-  }, [allowImport]);
+  const openTemplateMenuFromFocus = useCallback(
+    (event: FocusEvent<HTMLElement>) => {
+      if (!allowImport) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setTemplateAnchor(event.currentTarget as HTMLElement);
+    },
+    [allowImport]
+  );
 
-  const hasTemplates = useMemo(() => allowImport && templates.length > 0, [allowImport, templates.length]);
+  const hasTemplates = useMemo(
+    () => allowImport && templates.length > 0,
+    [allowImport, templates.length]
+  );
 
   useEffect(() => {
     if (!allowImport) {

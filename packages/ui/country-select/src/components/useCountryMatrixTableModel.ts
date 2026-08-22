@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
-import { useAtomValue } from 'jotai';
-import type { PrimitiveAtom } from 'jotai';
 import type { SelectionMatrixColumn, SelectionMatrixRow } from '@hierarchidb/components';
+import type { PrimitiveAtom } from 'jotai';
+import { useAtomValue } from 'jotai';
+import { useMemo } from 'react';
 import type { Country } from '~/types/Country';
 
 type UseCountryMatrixTableModelParams = {
@@ -28,7 +28,7 @@ export const useCountryMatrixTableModel = ({
         ...row,
         tooltip: row.data.country.name,
       })),
-    [rows],
+    [rows]
   );
 
   const columnHeaderState = useMemo(() => {
@@ -55,4 +55,3 @@ export const useCountryMatrixTableModel = ({
     columnHeaderState,
   };
 };
-

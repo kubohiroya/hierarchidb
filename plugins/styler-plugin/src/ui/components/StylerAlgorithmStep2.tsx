@@ -14,9 +14,9 @@ import {
   FormControl,
   FormControlLabel,
   InputLabel,
-  Skeleton,
   Radio,
   RadioGroup,
+  Skeleton,
   Slider,
   Stack,
   TextField,
@@ -25,10 +25,7 @@ import {
   Typography,
 } from '@mui/material';
 import type React from 'react';
-import {
-  type StylerConfig,
-  type StylerStepData,
-} from '~/common/types/StylerEntity';
+import { type StylerConfig, type StylerStepData } from '~/common/types/StylerEntity';
 import { generateColorGradient } from '~/common/utils/colorUtils';
 import { GradientSwatch } from './GradientSwatch.tsx';
 import { useStylerAlgorithmStep2 } from './useStylerAlgorithmStep2.ts';

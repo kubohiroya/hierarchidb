@@ -1,10 +1,10 @@
 import type { BuildSessionStatus } from '@hierarchidb/build-api';
-import type { ShapeBuildSessionPatch, StartExecutionArgs } from './types.js';
 import {
   getErrorMessage,
   summarizeSelectedEntries,
 } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/errorConstants';
 import { SHAPE_NODE_TYPE } from '~/ui/components/build-progress/shapeBuildTaskSyncDebug';
+import type { ShapeBuildSessionPatch, StartExecutionArgs } from './types.js';
 
 type BaseRequestContext = Pick<
   StartExecutionArgs,
@@ -70,7 +70,7 @@ export const toPersistedStartStatusPatch = (
 export const onTraceFailure = (
   onTrace: StartExecutionArgs['onTrace'],
   requestStartedAt: number,
-  error: unknown,
+  error: unknown
 ): void => {
   onTrace({
     event: 'request-finished:error',
@@ -81,7 +81,9 @@ export const onTraceFailure = (
   });
 };
 
-export const runStartSessionRequest = async (context: StartSessionRequestContext): Promise<StartSessionResult> => {
+export const runStartSessionRequest = async (
+  context: StartSessionRequestContext
+): Promise<StartSessionResult> => {
   const {
     activeNodeId,
     bridgeRef,
@@ -123,9 +125,9 @@ export const runStartSessionRequest = async (context: StartSessionRequestContext
     selectedCountryCount: selectionSummary.selectedCountryCount,
     selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
   });
-  const statusResult = await runTimedStep('session-start-request', () => (
+  const statusResult = await runTimedStep('session-start-request', () =>
     bridgeApi.startBuildSession(SHAPE_NODE_TYPE, activeNodeId)
-  ));
+  );
   finishBuildStartupStep('session-start-request', 'success', {
     status: statusResult.status,
     hasError: Boolean(statusResult.error),

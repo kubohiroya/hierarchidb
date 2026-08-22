@@ -1,4 +1,10 @@
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
+import type { LocationMutationAPI } from '@hierarchidb/location-api';
+import { getLocationDB } from '@hierarchidb/location-store';
+import type { RouteMutationAPI } from '@hierarchidb/route-api';
+import { getRouteDB } from '@hierarchidb/route-store';
+import type { ShapeMutationAPI } from '@hierarchidb/shape-api';
+import { shapeDB } from '@hierarchidb/shape-store';
 import type {
   CommitDraftPayload,
   DiscardDraftPayload,
@@ -7,14 +13,8 @@ import type {
   PasteNodesPayload,
   TreeNode,
 } from '@hierarchidb/tree-api';
-import type { LocationMutationAPI } from '@hierarchidb/location-api';
-import type { RouteMutationAPI } from '@hierarchidb/route-api';
-import type { ShapeMutationAPI } from '@hierarchidb/shape-api';
-import { getLocationDB } from '@hierarchidb/location-store';
-import { getRouteDB } from '@hierarchidb/route-store';
-import { shapeDB } from '@hierarchidb/shape-store';
-import type { CoreDB } from '~/services/CoreDB';
 import type { CommandEnvelope } from '~/command-types';
+import type { CoreDB } from '~/services/CoreDB';
 
 type DiscardDraftEnvelope = CommandEnvelope<'discardDraft', DiscardDraftPayload>;
 type CommitDraftEnvelope = CommandEnvelope<'commitDraft', CommitDraftPayload>;
@@ -296,8 +296,14 @@ export class EntityLifecycleManager {
     if (nodeType === 'shape') {
       await shapeDB.open?.();
       await Promise.all([
-        shapeDB.featureMetadata.where('nodeId').anyOf(nodeIds.map((nodeId) => String(nodeId))).delete(),
-        shapeDB.dataSourceMetadata.where('nodeId').anyOf(nodeIds.map((nodeId) => String(nodeId))).delete(),
+        shapeDB.featureMetadata
+          .where('nodeId')
+          .anyOf(nodeIds.map((nodeId) => String(nodeId)))
+          .delete(),
+        shapeDB.dataSourceMetadata
+          .where('nodeId')
+          .anyOf(nodeIds.map((nodeId) => String(nodeId)))
+          .delete(),
       ]);
       return;
     }

@@ -20,7 +20,7 @@ const encodeLocationPointKey = (lat: number, lon: number): Uint8Array => {
 
 export const buildLocationPointIdFromLatLon = async (
   lat: number,
-  lon: number,
+  lon: number
 ): Promise<LocationPointId> => {
   const hash = await digestSha256Hex(encodeLocationPointKey(lat, lon));
   return `${LOCATION_POINT_ID_PREFIX}:${hash}` as LocationPointId;

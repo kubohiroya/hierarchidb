@@ -1,5 +1,5 @@
-import type { CachePort, ContentIndexPort, HashAlgorithm, HashPort, ResponseLike } from '~/types';
 import type { NetworkPort } from '@hierarchidb/download';
+import type { CachePort, ContentIndexPort, HashAlgorithm, HashPort, ResponseLike } from '~/types';
 
 export interface FetchToCasOptions {
   url: string;
@@ -21,9 +21,8 @@ export class ContentAddressableStore {
     private net: NetworkPort,
     private cache: CachePort,
     private index: ContentIndexPort,
-    private hash: HashPort,
-  ) {
-  }
+    private hash: HashPort
+  ) {}
 
   async fetchToCas(opts: FetchToCasOptions): Promise<CasResult> {
     const algo: HashAlgorithm = opts.algo || 'sha3-256';
@@ -81,7 +80,10 @@ export class ContentAddressableStore {
   }
 }
 
-function header(headers: Headers | Record<string, string> | undefined, key: string): string | undefined {
+function header(
+  headers: Headers | Record<string, string> | undefined,
+  key: string
+): string | undefined {
   if (!headers) return undefined;
   if (headers instanceof Headers) return headers.get(key) ?? undefined;
   const target = key.toLowerCase();

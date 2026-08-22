@@ -1,6 +1,5 @@
 import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
 import type { CommandId, Seq, TreeNode } from '@hierarchidb/tree-api';
-import type { CoreDB } from '~/services/CoreDB';
 import type {
   CommandEnvelope,
   CommandEvent,
@@ -8,6 +7,7 @@ import type {
   WorkerErrorCode,
 } from '~/command-types';
 import { WorkerErrorCodeValue } from '~/command-types';
+import type { CoreDB } from '~/services/CoreDB';
 import { createNewName } from '~/services/DraftTreeNodeOperations';
 
 type SanitizedLogResult = {

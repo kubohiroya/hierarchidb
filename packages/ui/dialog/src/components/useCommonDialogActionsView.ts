@@ -12,7 +12,10 @@ export function useCommonDialogActionsView({
   mode,
   isValid = true,
   isSubmitting = false,
-}: Pick<CommonDialogActionsProps, 'displayMode' | 'mode' | 'isValid' | 'isSubmitting'>): UseCommonDialogActionsViewResult {
+}: Pick<
+  CommonDialogActionsProps,
+  'displayMode' | 'mode' | 'isValid' | 'isSubmitting'
+>): UseCommonDialogActionsViewResult {
   const submitLabel = useMemo(() => {
     if (isSubmitting) return 'Saving...';
     return mode === 'create' ? 'Create' : 'Save';

@@ -1,9 +1,6 @@
 import { useMemo } from 'react';
-import type {
-  RoutePreviewLineRow,
-  RoutePreviewListCountLabels,
-} from './RoutePreviewList.js';
 import type { MapPreviewSearchConfig } from './MapPreviewFloatingTable.js';
+import type { RoutePreviewLineRow, RoutePreviewListCountLabels } from './RoutePreviewList.js';
 
 type UseRoutePreviewListViewArgs = {
   rows: RoutePreviewLineRow[];
@@ -34,9 +31,7 @@ export const useRoutePreviewListView = ({
 }: UseRoutePreviewListViewArgs) => {
   const tableRows = useMemo(() => {
     const keyword = search?.value.trim().toLowerCase();
-    const filtered = keyword
-      ? rows.filter((row) => matchedRows?.has(String(row.id)))
-      : rows;
+    const filtered = keyword ? rows.filter((row) => matchedRows?.has(String(row.id))) : rows;
     return filtered.map((row) => ({
       id: row.id,
       lineId: row.id,

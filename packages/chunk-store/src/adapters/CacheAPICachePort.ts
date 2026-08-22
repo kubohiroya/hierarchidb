@@ -17,7 +17,12 @@ export class CacheAPICachePort implements CachePort {
     };
   }
 
-  async put(hash: string, algo: HashAlgorithm, data: ArrayBuffer, contentType?: string): Promise<void> {
+  async put(
+    hash: string,
+    algo: HashAlgorithm,
+    data: ArrayBuffer,
+    contentType?: string
+  ): Promise<void> {
     const cache = await caches.open('hdb-cas');
     const body = new Blob([data], { type: contentType || 'application/octet-stream' });
     const res = new Response(body);

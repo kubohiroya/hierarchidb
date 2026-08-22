@@ -1,11 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { isTaskSkipped } from '~/common/utils/taskMessageUtils';
-import { resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
-import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
-import type { BuildProgress, BuildSessionDisplayStatus } from '~/ui/components/build-progress/shapeBuildProgressTypes';
 import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { isTaskSkipped, resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
-import { useShapeBuildProgressSummaryComputation } from '~/ui/components/build-progress/useShapeBuildProgressSummaryComputation.js';
 import {
   buildElapsedByStageWithActiveStage,
   resolveSessionElapsedMs,
@@ -17,6 +14,12 @@ import {
   resolveMostAdvancedInFlightStageId,
   resolveMostAdvancedRunningStageId,
 } from '~/ui/components/build-progress/internal/useShapeBuildSessionHelpers/stage.js';
+import type {
+  BuildProgress,
+  BuildSessionDisplayStatus,
+} from '~/ui/components/build-progress/shapeBuildProgressTypes';
+import { useShapeBuildProgressSummaryComputation } from '~/ui/components/build-progress/useShapeBuildProgressSummaryComputation.js';
+
 type StageId = string;
 
 type RuntimeTimingLike = {
@@ -31,7 +34,9 @@ type RuntimeTimingLike = {
   stageCompletedAt?: number;
 };
 
-type SummaryResult = ReturnType<typeof useShapeBuildProgressSummaryComputation<ShapeBuildTaskSummary>>;
+type SummaryResult = ReturnType<
+  typeof useShapeBuildProgressSummaryComputation<ShapeBuildTaskSummary>
+>;
 
 type Args = {
   buildStatus: BuildStatus;
@@ -65,41 +70,49 @@ export const useShapeBuildSessionProgressState = ({
   // sessionStageDurationByStageSnapshot is already computed by stageDurationMsByStageAtom
   // (derived directly from stageTimingByStageAtom — no React state duplication needed)
   const sessionStageDurationSnapshot = useMemo<Record<string, number>>(
-    () => (sessionStageDurationByStageSnapshot ?? {}),
-    [sessionStageDurationByStageSnapshot],
+    () => sessionStageDurationByStageSnapshot ?? {},
+    [sessionStageDurationByStageSnapshot]
   );
-  const sessionStageTimingStageIdSnapshot = useMemo(() => (
-    runtimeTiming.stageId ?? null
-  ), [runtimeTiming.stageId]);
+  const sessionStageTimingStageIdSnapshot = useMemo(
+    () => runtimeTiming.stageId ?? null,
+    [runtimeTiming.stageId]
+  );
 
-  const [timingStageId, setTimingStageId] = useState<string | null>(sessionStageTimingStageIdSnapshot);
+  const [timingStageId, setTimingStageId] = useState<string | null>(
+    sessionStageTimingStageIdSnapshot
+  );
   const [displayStageRemainingMs, setDisplayStageRemainingMs] = useState<number | null>(null);
   const stageRemainingTickRef = useRef<number | null>(null);
   const latestStageRemainingMsRef = useRef<number | null>(null);
   const isTaskSummaryLoading = false;
 
-  const runningStageIdFromTasks = useMemo(() => resolveMostAdvancedRunningStageId({
-    stages,
-    tasks: displayTasks,
-  }), [displayTasks, stages]);
-  const inFlightStageIdFromTasks = useMemo(() => resolveMostAdvancedInFlightStageId({
-    stages,
-    tasks: displayTasks,
-  }), [displayTasks, stages]);
+  const runningStageIdFromTasks = useMemo(
+    () =>
+      resolveMostAdvancedRunningStageId({
+        stages,
+        tasks: displayTasks,
+      }),
+    [displayTasks, stages]
+  );
+  const inFlightStageIdFromTasks = useMemo(
+    () =>
+      resolveMostAdvancedInFlightStageId({
+        stages,
+        tasks: displayTasks,
+      }),
+    [displayTasks, stages]
+  );
 
   const isElapsedResetState = useMemo(
-    () => shouldResetElapsedState({
-      buildStatus,
-      buildDurationMs: runtimeTiming.durationMs ?? undefined,
-      sessionStageDurationByStage: sessionStageDurationSnapshot,
-      // No local state to check — atom value is the single source of truth
-      localStageDurationByStage: sessionStageDurationSnapshot,
-    }),
-    [
-      buildStatus,
-      runtimeTiming.durationMs,
-      sessionStageDurationSnapshot,
-    ],
+    () =>
+      shouldResetElapsedState({
+        buildStatus,
+        buildDurationMs: runtimeTiming.durationMs ?? undefined,
+        sessionStageDurationByStage: sessionStageDurationSnapshot,
+        // No local state to check — atom value is the single source of truth
+        localStageDurationByStage: sessionStageDurationSnapshot,
+      }),
+    [buildStatus, runtimeTiming.durationMs, sessionStageDurationSnapshot]
   );
 
   useEffect(() => {
@@ -111,13 +124,14 @@ export const useShapeBuildSessionProgressState = ({
     }
 
     const fallbackStageId = buildStatus === 'running' ? timingFallbackStage : null;
-    const nextStageId = runningStageIdFromTasks
-      ?? inFlightStageIdFromTasks
-      ?? liveStage
-      ?? timingStageId
-      ?? sessionStageTimingStageIdSnapshot
-      ?? fallbackStageId
-      ?? null;
+    const nextStageId =
+      runningStageIdFromTasks ??
+      inFlightStageIdFromTasks ??
+      liveStage ??
+      timingStageId ??
+      sessionStageTimingStageIdSnapshot ??
+      fallbackStageId ??
+      null;
     if (nextStageId && nextStageId !== timingStageId) {
       setTimingStageId(nextStageId);
     }
@@ -149,14 +163,17 @@ export const useShapeBuildSessionProgressState = ({
     if (runtimeTiming.stageInactiveMs === undefined) {
       throw new Error('[shape elapsed] stageInactiveMs is required for the active stage');
     }
-    const stageEndAt = buildStatus === 'running'
-      ? Date.now()
-      : (runtimeTiming.stageCompletedAt ?? runtimeTiming.heartbeatAt);
+    const stageEndAt =
+      buildStatus === 'running'
+        ? Date.now()
+        : (runtimeTiming.stageCompletedAt ?? runtimeTiming.heartbeatAt);
     if (stageEndAt === undefined) {
       if (buildStatus === 'paused') {
         return stageElapsedMs;
       }
-      throw new Error(`[shape elapsed] stage end timestamp is required for build status ${buildStatus}`);
+      throw new Error(
+        `[shape elapsed] stage end timestamp is required for build status ${buildStatus}`
+      );
     }
     const activeStageElapsedMs = resolveStageElapsedMs({
       stageStartedAt: runtimeTiming.stageStartedAt,
@@ -175,13 +192,15 @@ export const useShapeBuildSessionProgressState = ({
     timingStageId,
   ]);
 
-  const stageElapsedByStage = useMemo<Record<string, number>>(() => (
-    buildElapsedByStageWithActiveStage({
-      stageDurationByStage: sessionStageDurationSnapshot,
-      timingStageId,
-      timingStageElapsedMs: resolvedStageElapsedMs,
-    })
-  ), [sessionStageDurationSnapshot, resolvedStageElapsedMs, timingStageId]);
+  const stageElapsedByStage = useMemo<Record<string, number>>(
+    () =>
+      buildElapsedByStageWithActiveStage({
+        stageDurationByStage: sessionStageDurationSnapshot,
+        timingStageId,
+        timingStageElapsedMs: resolvedStageElapsedMs,
+      }),
+    [sessionStageDurationSnapshot, resolvedStageElapsedMs, timingStageId]
+  );
 
   const resolvedSessionElapsedMs = useMemo(() => {
     if (buildStatus === 'paused' && runtimeTiming.heartbeatAt === undefined) {
@@ -204,11 +223,15 @@ export const useShapeBuildSessionProgressState = ({
     stageElapsedByStage,
   ]);
 
-  const totalElapsedMs = useMemo(() => resolveTotalElapsedMs({
-    buildStatus,
-    stageDurationByStage: stageElapsedByStage,
-    sessionDurationMs: resolvedSessionElapsedMs,
-  }), [buildStatus, resolvedSessionElapsedMs, stageElapsedByStage]);
+  const totalElapsedMs = useMemo(
+    () =>
+      resolveTotalElapsedMs({
+        buildStatus,
+        stageDurationByStage: stageElapsedByStage,
+        sessionDurationMs: resolvedSessionElapsedMs,
+      }),
+    [buildStatus, resolvedSessionElapsedMs, stageElapsedByStage]
+  );
 
   useEffect(() => {
     if (!isElapsedResetState) return;
@@ -220,14 +243,14 @@ export const useShapeBuildSessionProgressState = ({
     }
   }, [isElapsedResetState, timingStageId]);
 
-  const failedProbeStageId = useMemo<StageId | null>(() => (
-    stages[0]?.id ?? null
-  ), [stages]);
+  const failedProbeStageId = useMemo<StageId | null>(() => stages[0]?.id ?? null, [stages]);
   const hasFailedSourceTasks = useMemo(() => {
     if (!failedProbeStageId) {
       return false;
     }
-    return displayTasks.some((task) => task.status === 'failed' && task.stage === failedProbeStageId);
+    return displayTasks.some(
+      (task) => task.status === 'failed' && task.stage === failedProbeStageId
+    );
   }, [displayTasks, failedProbeStageId]);
 
   const progressSummary: SummaryResult = useShapeBuildProgressSummaryComputation({
@@ -239,7 +262,8 @@ export const useShapeBuildSessionProgressState = ({
     effectiveStatus,
     stage: stageFromState ?? undefined,
     tasks: displayTasks,
-    isSkippedTask: (task: ShapeBuildTaskSummary) => isTaskSkipped(task.display, resolveTaskMetadataMessage(task.metadata)),
+    isSkippedTask: (task: ShapeBuildTaskSummary) =>
+      isTaskSkipped(task.display, resolveTaskMetadataMessage(task.metadata)),
     timingStageMs: resolvedStageElapsedMs,
   });
 

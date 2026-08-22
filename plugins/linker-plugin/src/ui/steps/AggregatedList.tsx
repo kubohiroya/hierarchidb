@@ -1,17 +1,16 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Box, List, ListItem, ListItemText, Typography } from '@mui/material';
-import type { ResourceSummary } from './ResourcePicker.js';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { TreeNode, TreeNodeData } from '@hierarchidb/tree-api';
-import type { WorkerAPI } from '@hierarchidb/worker-api';
-import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
-import type { TreeQueryAPI } from '@hierarchidb/tree-api';
-import type { Remote } from 'comlink';
+import type { TreeNode, TreeNodeData, TreeQueryAPI } from '@hierarchidb/tree-api';
 import { useTranslation } from '@hierarchidb/ui-i18n';
+import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
+import { Box, List, ListItem, ListItemText, Typography } from '@mui/material';
+import type { Remote } from 'comlink';
+import React, { useEffect, useMemo, useState } from 'react';
+import type { ResourceSummary } from './ResourcePicker.js';
 
 export interface AggregatedListProps {
   selfNodeId?: NodeId; // Linker node (edit時)
-  selected: ResourceSummary[];   // Step2で選択した集合
+  selected: ResourceSummary[]; // Step2で選択した集合
 }
 
 type LinkerPayload = { likedNodeIdSet?: string[] | Set<string> };
@@ -47,7 +46,9 @@ export const AggregatedList: React.FC<AggregatedListProps> = ({ selfNodeId, sele
           const query: TreeQueryAPI = await client.getQueryAPI();
           // 現行APIへ置換: listAncestors/listDescendants を使用し、nodeType でフィルタ
           const ancestorsAll = (await query.listAncestors(selfNodeId)) as TreeNode<LinkerPayload>[];
-          const descendantsAll = (await query.listDescendants(selfNodeId)) as TreeNode<LinkerPayload>[];
+          const descendantsAll = (await query.listDescendants(
+            selfNodeId
+          )) as TreeNode<LinkerPayload>[];
           const linkerAnc = (ancestorsAll || []).filter((n) => n?.nodeType === 'linker');
           const linkerDesc = (descendantsAll || []).filter((n) => n?.nodeType === 'linker');
 
@@ -57,23 +58,36 @@ export const AggregatedList: React.FC<AggregatedListProps> = ({ selfNodeId, sele
               try {
                 const t = (await query.getNode(ln.id)) as LinkerNode | undefined;
                 const liked = t?.data?.likedNodeIdSet;
-                const arr = Array.isArray(liked) ? liked : (liked instanceof Set ? Array.from(liked) : []);
+                const arr = Array.isArray(liked)
+                  ? liked
+                  : liked instanceof Set
+                    ? Array.from(liked)
+                    : [];
                 for (const id of arr) {
                   const s: ResourceSummary = { nodeId: String(id) };
                   base.set(s.nodeId, s);
                 }
-              } catch { /* noop */ }
+              } catch {
+                /* noop */
+              }
             }
           };
           await collectFrom(linkerAnc);
           await collectFrom(linkerDesc);
         }
-        if (!disposed) setItems(Array.from(base.values()).sort((a,b)=> (a.name||a.nodeId).localeCompare(b.name||b.nodeId)));
+        if (!disposed)
+          setItems(
+            Array.from(base.values()).sort((a, b) =>
+              (a.name || a.nodeId).localeCompare(b.name || b.nodeId)
+            )
+          );
       } catch {
         if (!disposed) setItems(selected);
       }
     })();
-    return () => { disposed = true; };
+    return () => {
+      disposed = true;
+    };
   }, [client, selfNodeId, selected]);
 
   const count = useMemo(() => items.length, [items]);
@@ -81,7 +95,11 @@ export const AggregatedList: React.FC<AggregatedListProps> = ({ selfNodeId, sele
   return (
     <Box sx={{ p: 2 }}>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        {t('aggregated.description', 'Aggregated resources from ancestors/self/descendants ({{count}} items)', { count })}
+        {t(
+          'aggregated.description',
+          'Aggregated resources from ancestors/self/descendants ({{count}} items)',
+          { count }
+        )}
       </Typography>
       <List dense>
         {items.map((it) => (

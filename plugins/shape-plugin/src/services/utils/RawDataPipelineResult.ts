@@ -1,7 +1,15 @@
+import {
+  type ChunkStoreMetadata,
+  type HashAlgorithm,
+  NobleSha3HashPort,
+} from '@hierarchidb/chunk-store';
 import type { NodeId } from '@hierarchidb/core-types';
-import { NobleSha3HashPort, type ChunkStoreMetadata, type HashAlgorithm } from '@hierarchidb/chunk-store';
 import { sleep } from '@hierarchidb/util';
-import type { FetchOptions, RawDataPipeline, RetryConfig } from '~/services/datasources/DataSourceStrategy';
+import type {
+  FetchOptions,
+  RawDataPipeline,
+  RetryConfig,
+} from '~/services/datasources/DataSourceStrategy';
 import {
   bufferDeserializer,
   bufferSerializer,
@@ -19,9 +27,7 @@ const SOURCE_HASH_ALGORITHM: HashAlgorithm = 'sha3-256';
 
 const hashPort = new NobleSha3HashPort();
 
-const isOffline = (): boolean => (
-  typeof navigator !== 'undefined' && navigator.onLine === false
-);
+const isOffline = (): boolean => typeof navigator !== 'undefined' && navigator.onLine === false;
 
 const resolveTimeoutSignal = (signal: AbortSignal | undefined, timeoutMs: number | undefined) => {
   if (!timeoutMs || timeoutMs <= 0) {
@@ -50,13 +56,7 @@ export const fetchRawDataWithPipeline = async <TRawData>(params: {
   onRetryAttempt?: (attempt: number, error: unknown) => void | Promise<void>;
   onDownloadProgress?: (percentage: number) => void | Promise<void>;
 }): Promise<RawDataPipelineResult<TRawData>> => {
-  const {
-    nodeId,
-    fetchOptions,
-    pipeline,
-    retryConfig,
-    onRetryAttempt,
-  } = params;
+  const { nodeId, fetchOptions, pipeline, retryConfig, onRetryAttempt } = params;
   const request = pipeline.prepareRequest(fetchOptions);
   const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
 
@@ -103,14 +103,13 @@ export const fetchRawDataWithPipeline = async <TRawData>(params: {
   }
 };
 
-export const bufferToStream = (buffer: ArrayBuffer): ReadableStream<Uint8Array> => (
+export const bufferToStream = (buffer: ArrayBuffer): ReadableStream<Uint8Array> =>
   new ReadableStream({
     start(controller) {
       controller.enqueue(new Uint8Array(buffer));
       controller.close();
     },
-  })
-);
+  });
 
 export const streamToBuffer = async (stream: ReadableStream<Uint8Array>): Promise<ArrayBuffer> => {
   const reader = stream.getReader();

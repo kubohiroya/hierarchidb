@@ -5,7 +5,10 @@ export async function postprocessVectorTileStage(params: {
   syncVectorTilesToShapeStore: () => Promise<void>;
   metadataEnabled: boolean;
   summarizeVectorTilesByOrigin: () => Promise<Map<string, GeometryStatsSummary>>;
-  updateDataSourceMetadataStage: (stage: 'vectorTile', statsByOrigin: Map<string, GeometryStatsSummary>) => Promise<void>;
+  updateDataSourceMetadataStage: (
+    stage: 'vectorTile',
+    statsByOrigin: Map<string, GeometryStatsSummary>
+  ) => Promise<void>;
   clearFeatureCache?: () => void;
 }): Promise<void> {
   const {
@@ -27,4 +30,3 @@ export async function postprocessVectorTileStage(params: {
 
   clearFeatureCache?.();
 }
-

@@ -1,8 +1,8 @@
 import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CoreDB } from '../../CoreDB';
 import { CommandProcessor } from '../../CommandProcessor';
+import type { CoreDB } from '../../CoreDB';
 
 const asNodeId = (value: string): NodeId => value as NodeId;
 const asNodeType = (value: string): NodeType => value as NodeType;
@@ -88,10 +88,7 @@ describe('TreeMutationService command processor routing', () => {
     const processor = createProcessorMock(core);
 
     const { TreeMutationService } = await import('../../TreeMutationService');
-    const svc = new TreeMutationService(
-      core,
-      processor
-    );
+    const svc = new TreeMutationService(core, processor);
 
     const outcome = await svc.moveNodes({
       nodeIds: [asNodeId('child-1')],
@@ -113,10 +110,7 @@ describe('TreeMutationService command processor routing', () => {
     const processor = createProcessorMock(core);
 
     const { TreeMutationService } = await import('../../TreeMutationService');
-    const svc = new TreeMutationService(
-      core,
-      processor
-    );
+    const svc = new TreeMutationService(core, processor);
 
     const result = await svc.removeNodes([asNodeId('child-1')]);
 

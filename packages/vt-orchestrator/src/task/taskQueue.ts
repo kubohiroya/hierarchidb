@@ -1,11 +1,9 @@
-import { Dexie, type Table } from 'dexie';
 import type { NodeId } from '@hierarchidb/core-types';
-import { ephemeralDB, type EphemeralBuildTaskRecord } from '@hierarchidb/gis-sdk';
+import { type EphemeralBuildTaskRecord, ephemeralDB } from '@hierarchidb/gis-sdk';
+import { Dexie, type Table } from 'dexie';
 import type { TaskQueueEvent, TaskQueueRecord, TaskStage, TaskStatus } from '~/types/types';
 // import { logDebug } from '../debug/persistentDebugLog.js';
 //import type { TaskQueueEvent, TaskQueueRecord, TaskStage, TaskStatus } from '@hierarchidb/gis-sdk';
-
-
 
 export type StoredTaskRecord = EphemeralBuildTaskRecord & { version?: number };
 
@@ -16,13 +14,10 @@ const TASK_STAGE_TO_STAGE_ID: Record<TaskStage, string> = {
   tileEmit: 'tile-emit-stage',
 };
 
-const isTaskStage = (value: unknown): value is TaskStage => (
-  typeof value === 'string' && TASK_STAGES.includes(value as TaskStage)
-);
+const isTaskStage = (value: unknown): value is TaskStage =>
+  typeof value === 'string' && TASK_STAGES.includes(value as TaskStage);
 
-export const toTaskQueueRecord = (
-  task: StoredTaskRecord
-): TaskQueueRecord => {
+export const toTaskQueueRecord = (task: StoredTaskRecord): TaskQueueRecord => {
   const { stage } = task;
   if (stage === undefined) {
     throw new Error(`Task ${task.taskId} is missing required stage`);
@@ -79,11 +74,10 @@ function emitTaskDeleteEvent(nodeId: NodeId, taskId: string): void {
   });
 }
 
-const asRecord = (value: unknown): Record<string, unknown> | undefined => (
+const asRecord = (value: unknown): Record<string, unknown> | undefined =>
   value && typeof value === 'object' && !Array.isArray(value)
-    ? value as Record<string, unknown>
-    : undefined
-);
+    ? (value as Record<string, unknown>)
+    : undefined;
 
 const normalizeTaskVersion = (value: unknown): number | null => {
   if (typeof value !== 'number' || !Number.isFinite(value)) return null;
@@ -96,7 +90,10 @@ export function emitTaskUpdate(task: TaskQueueRecord): void {
   emitTaskEvent(task.nodeId, task);
 }
 
-export function onTaskQueueUpdate(nodeId: NodeId, callback: (event: TaskQueueEvent) => void): () => void {
+export function onTaskQueueUpdate(
+  nodeId: NodeId,
+  callback: (event: TaskQueueEvent) => void
+): () => void {
   const existing = listeners.get(nodeId);
   if (existing) {
     existing.add(callback);
@@ -112,10 +109,7 @@ export function onTaskQueueUpdate(nodeId: NodeId, callback: (event: TaskQueueEve
   };
 }
 
-export async function putTasks(
-  db: VtTaskQueueDb,
-  tasks: Array<TaskQueueRecord>
-): Promise<void> {
+export async function putTasks(db: VtTaskQueueDb, tasks: Array<TaskQueueRecord>): Promise<void> {
   if (tasks.length === 0) return;
   const now = Date.now();
   const payload: StoredTaskRecord[] = tasks.map((task) => {
@@ -151,34 +145,31 @@ export async function updateTask(
   const mergedMetadata = updatesMetadata
     ? { ...(currentMetadata ?? {}), ...updatesMetadata }
     : currentMetadata;
-  const lockedStatus = (currentStatus === 'completed' || currentStatus === 'failed' || currentStatus === 'recycled')
-    && !options?.allowTerminalStatusTransition;
-  const blocksStatusRegression = lockedStatus
-    && nextStatusCandidate !== undefined
-    && nextStatusCandidate !== currentStatus;
+  const lockedStatus =
+    (currentStatus === 'completed' || currentStatus === 'failed' || currentStatus === 'recycled') &&
+    !options?.allowTerminalStatusTransition;
+  const blocksStatusRegression =
+    lockedStatus && nextStatusCandidate !== undefined && nextStatusCandidate !== currentStatus;
   const payload: Partial<StoredTaskRecord> = blocksStatusRegression
     ? {
-      status: currentStatus,
-      version: currentVersion + 1,
-      updatedAt: now,
-      ...(mergedMetadata !== undefined ? { metadata: mergedMetadata } : {}),
-    }
+        status: currentStatus,
+        version: currentVersion + 1,
+        updatedAt: now,
+        ...(mergedMetadata !== undefined ? { metadata: mergedMetadata } : {}),
+      }
     : {
-      ...updates,
-      version: currentVersion + 1,
-      status: nextStatusCandidate ?? currentStatus,
-      updatedAt: now,
-      ...(mergedMetadata !== undefined ? { metadata: mergedMetadata } : {}),
-    };
+        ...updates,
+        version: currentVersion + 1,
+        status: nextStatusCandidate ?? currentStatus,
+        updatedAt: now,
+        ...(mergedMetadata !== undefined ? { metadata: mergedMetadata } : {}),
+      };
   await db.tasks.update(taskId, payload);
   const task = await db.tasks.get(taskId);
   if (task) emitTaskEvent(task.nodeId, toTaskQueueRecord(task));
 }
 
-export async function listTasks(
-  db: VtTaskQueueDb,
-  nodeId: NodeId
-): Promise<TaskQueueRecord[]> {
+export async function listTasks(db: VtTaskQueueDb, nodeId: NodeId): Promise<TaskQueueRecord[]> {
   const tasks = await db.tasks
     .where('[nodeId+index]')
     .between([nodeId, Dexie.minKey], [nodeId, Dexie.maxKey])
@@ -223,10 +214,7 @@ export async function listTasksByStageAndStatus(
   return tasks.map((task) => toTaskQueueRecord(task));
 }
 
-export async function deleteTasksByNode(
-  db: VtTaskQueueDb,
-  nodeId: NodeId
-): Promise<void> {
+export async function deleteTasksByNode(db: VtTaskQueueDb, nodeId: NodeId): Promise<void> {
   const tasks = await db.tasks.where('nodeId').equals(nodeId).toArray();
   if (tasks.length === 0) return;
   await db.tasks.where('nodeId').equals(nodeId).delete();
@@ -239,10 +227,7 @@ export async function deleteTasksByNode(
   });
 }
 
-export async function deleteTasksByIds(
-  db: VtTaskQueueDb,
-  taskIds: string[]
-): Promise<void> {
+export async function deleteTasksByIds(db: VtTaskQueueDb, taskIds: string[]): Promise<void> {
   if (taskIds.length === 0) return;
   const tasks = await db.tasks.bulkGet(taskIds);
   const seen = new Set<string>();

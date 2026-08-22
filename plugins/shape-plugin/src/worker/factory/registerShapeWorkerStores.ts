@@ -4,7 +4,9 @@ export interface RegisterShapeWorkerStoresOptions {
   signal?: AbortSignal;
 }
 
-export async function registerShapeWorkerStores(options: RegisterShapeWorkerStoresOptions = {}): Promise<void> {
+export async function registerShapeWorkerStores(
+  options: RegisterShapeWorkerStoresOptions = {}
+): Promise<void> {
   if (options.signal?.aborted) return;
 }
 

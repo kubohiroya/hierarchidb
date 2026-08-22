@@ -1,17 +1,13 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { LocationFeatureId, LocationQueryAPI } from '@hierarchidb/location-api';
-import type {
-  IdeGsmCsvError,
-  IdeGsmLocationRecord,
-  RouteFeature,
-} from '@hierarchidb/route-api';
+import type { IdeGsmCsvError, IdeGsmLocationRecord, RouteFeature } from '@hierarchidb/route-api';
 import { parseIdeGsmRouteCsv as parseIdeGsmRouteCsvCore } from '@hierarchidb/route-api';
 
 type LocationLookup = Map<string, IdeGsmLocationRecord>;
 
 export async function buildIdeGsmLocationIndex(
   api: LocationQueryAPI,
-  nodeIds: NodeId[],
+  nodeIds: NodeId[]
 ): Promise<LocationLookup> {
   const index = new Map<string, IdeGsmLocationRecord>();
   for (const nodeId of nodeIds) {
@@ -42,7 +38,7 @@ export async function buildIdeGsmLocationIndex(
 export function parseIdeGsmRouteCsv(
   csvText: string,
   locationIndex: LocationLookup,
-  nodeId: NodeId,
+  nodeId: NodeId
 ): { lineStrings: RouteFeature[]; errors: IdeGsmCsvError[] } {
   return parseIdeGsmRouteCsvCore(csvText, locationIndex, nodeId);
 }

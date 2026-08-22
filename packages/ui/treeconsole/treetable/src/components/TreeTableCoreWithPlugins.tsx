@@ -1,13 +1,13 @@
 /**
-  * TreeTableCore with Optional Plugin Support
-  * TreeTableCore
-   */
+ * TreeTableCore with Optional Plugin Support
+ * TreeTableCore
+ */
 
-import { TreeTableCore as TreeTableCoreOriginal } from './TreeTableCore.js';
 import type { ReactElement } from 'react';
 import { PluginProvider } from '~/plugin/PluginProvider';
-import type { TreeTableCoreProps } from '~/types';
 import type { PluginEvent, TreeTablePlugin, TreeTablePluginConfig } from '~/plugin/types';
+import type { TreeTableCoreProps } from '~/types';
+import { TreeTableCore as TreeTableCoreOriginal } from './TreeTableCore.js';
 
 export interface TreeTableCorePropsWithPlugins extends TreeTableCoreProps {
   plugins?: TreeTablePlugin[];
@@ -18,10 +18,10 @@ export interface TreeTableCorePropsWithPlugins extends TreeTableCoreProps {
 }
 
 /**
-  * TreeTableCore
-  * Provider
  * TreeTableCore
-  */
+ * Provider
+ * TreeTableCore
+ */
 export function TreeTableCoreWithPlugins(props: TreeTableCorePropsWithPlugins): ReactElement {
   const {
     plugins,

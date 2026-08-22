@@ -11,13 +11,13 @@ import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-plugin-shell/ui-treeconso
 import { TreeConsolePanel } from '@hierarchidb/ui-treeconsole-base';
 import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
 import { Alert, Box, CircularProgress } from '@mui/material';
+import { useCallback } from 'react';
 import { useWorker } from '~/contexts/WorkerProvider';
 import { DynamicSpeedDial } from './DynamicSpeedDial.js';
+import { useTreeConsoleIntegrationInner } from './hooks/useTreeConsoleIntegrationInner.js';
 import { useTreeConsoleSpeedDial } from './hooks/useTreeConsoleSpeedDial.js';
 import { TreeNodeInfoPanel } from './TreeNodeInfoPanel.js';
 import { canImportFromNode } from './treeConsoleIntegrationUtils.js';
-import { useTreeConsoleIntegrationInner } from './hooks/useTreeConsoleIntegrationInner.js';
-import { useCallback } from 'react';
 
 export interface TreeConsoleIntegrationProps {
   readonly treeId?: string;
@@ -144,23 +144,25 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
               columnDetailSlot={
                 columnTargetNodeId && columnTargetNodeId !== '-'
                   ? (() => {
-                    const targetNode = treeConsolePanelProps.data.find(
-                      (n) => String(n.id) === columnTargetNodeId
-                    );
-                    if (!targetNode) return undefined;
-                    // Only show detail panel for non-folder nodes
-                    const nodeType = (targetNode.nodeType ?? '').toLowerCase();
-                    if (nodeType === 'folder' || nodeType === 'folder-plugin') return undefined;
-                    return (
-                      <TreeNodeInfoPanel
-                        {...infoPanelProps}
-                        node={targetNode as import('@hierarchidb/tree-api').TreeNode}
-                        pageNodeId={columnTargetNodeId as import('@hierarchidb/core-types').NodeId}
-                        verticalAlign="top"
-                        hideBackButton
-                      />
-                    );
-                  })()
+                      const targetNode = treeConsolePanelProps.data.find(
+                        (n) => String(n.id) === columnTargetNodeId
+                      );
+                      if (!targetNode) return undefined;
+                      // Only show detail panel for non-folder nodes
+                      const nodeType = (targetNode.nodeType ?? '').toLowerCase();
+                      if (nodeType === 'folder' || nodeType === 'folder-plugin') return undefined;
+                      return (
+                        <TreeNodeInfoPanel
+                          {...infoPanelProps}
+                          node={targetNode as import('@hierarchidb/tree-api').TreeNode}
+                          pageNodeId={
+                            columnTargetNodeId as import('@hierarchidb/core-types').NodeId
+                          }
+                          verticalAlign="top"
+                          hideBackButton
+                        />
+                      );
+                    })()
                   : undefined
               }
             />

@@ -6,7 +6,7 @@ import {
   type AuthSuccessNotification,
   type StorageWarningNotification,
 } from '@hierarchidb/auth';
-import { toNodeId, toNodeType, type NodeType } from '@hierarchidb/core-types';
+import { type NodeType, toNodeId, toNodeType } from '@hierarchidb/core-types';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useEffect, useRef, useState } from 'react';
 
@@ -123,7 +123,7 @@ export function useAuthRequiredDialogHost(): AuthRequiredDialogHostState {
               await workerBridgeRef.current.pauseBuildSession(
                 target.nodeType,
                 target.nodeId,
-                'auth-required',
+                'auth-required'
               );
             } catch (error) {
               console.warn('[auth][ui] failed to pause build session on auth required', error);
@@ -205,7 +205,9 @@ export function useAuthRequiredDialogHost(): AuthRequiredDialogHostState {
         }
         // Display storage warning to user
         console.warn('[Auth Storage Warning]', next.context.message);
-        alert(`認証システム警告: ${next.context.message}\n\nlocalStorage機能が利用できない環境では、このアプリケーションは正常に動作しません。ブラウザの設定を確認してください。`);
+        alert(
+          `認証システム警告: ${next.context.message}\n\nlocalStorage機能が利用できない環境では、このアプリケーションは正常に動作しません。ブラウザの設定を確認してください。`
+        );
       },
     });
 

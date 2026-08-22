@@ -1,6 +1,6 @@
-import { useShapeBuildProgressPanelControllerBase } from './useShapeBuildProgressPanelController/base/useShapeBuildProgressPanelControllerBase.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
+import { useShapeBuildProgressPanelControllerBase } from './useShapeBuildProgressPanelController/base/useShapeBuildProgressPanelControllerBase.js';
 import { useShapeBuildProgressPanelControllerOverlay } from './useShapeBuildProgressPanelController/useShapeBuildProgressPanelControllerOverlay.js';
 
 export type ShapeBuildProgressPanelControllerProps = {
@@ -9,7 +9,9 @@ export type ShapeBuildProgressPanelControllerProps = {
   onChange?: (patch: Partial<ShapeEntity>) => void;
 };
 
-export const useShapeBuildProgressPanelController = (props: ShapeBuildProgressPanelControllerProps) => {
+export const useShapeBuildProgressPanelController = (
+  props: ShapeBuildProgressPanelControllerProps
+) => {
   const base = useShapeBuildProgressPanelControllerBase(props);
   const overlay = useShapeBuildProgressPanelControllerOverlay(base);
   return {

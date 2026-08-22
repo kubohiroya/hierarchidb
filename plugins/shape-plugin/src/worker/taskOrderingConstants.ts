@@ -1,8 +1,7 @@
 import type { TaskQueueRecord } from '@hierarchidb/build-api';
 
-const isFiniteNumber = (value: unknown): value is number => (
-  typeof value === 'number' && Number.isFinite(value)
-);
+const isFiniteNumber = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value);
 
 export const resolveTaskActivityTimestamp = (task: TaskQueueRecord): number => {
   const candidate = task.updatedAt ?? task.startedAt ?? task.createdAt ?? 0;
@@ -20,7 +19,11 @@ export const selectLatestTaskByProgress = (tasks: TaskQueueRecord[]): TaskQueueR
     if (!latest) return task;
     const latestProgress = latest.progress;
     const nextProgress = task.progress;
-    if (isFiniteNumber(nextProgress) && isFiniteNumber(latestProgress) && nextProgress !== latestProgress) {
+    if (
+      isFiniteNumber(nextProgress) &&
+      isFiniteNumber(latestProgress) &&
+      nextProgress !== latestProgress
+    ) {
       return nextProgress > latestProgress ? task : latest;
     }
     const latestTime = resolveTaskActivityTimestamp(latest);

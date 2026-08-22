@@ -1,13 +1,6 @@
-import type React from 'react';
-import {
-  Box,
-  Chip,
-  Paper,
-  Rating,
-  Stack,
-  Typography,
-} from '@mui/material';
 import EngineeringIcon from '@mui/icons-material/Engineering';
+import { Box, Chip, Paper, Rating, Stack, Typography } from '@mui/material';
+import type React from 'react';
 import { getBuildConfigHoverCardSx } from './buildConfigCardStyles.js';
 
 type WorkerNumberConfigCardProps = {
@@ -49,7 +42,9 @@ export const WorkerNumberConfigCard: React.FC<WorkerNumberConfigCardProps> = ({
   const labelValue = Math.round(clampedValue);
   const headerIcon = icon ?? <EngineeringIcon fontSize="large" color="primary" />;
   const ratingFilledIcon = ratingIcon ?? <EngineeringIcon fontSize="small" />;
-  const ratingEmptyDisplayIcon = ratingEmptyIcon ?? <EngineeringIcon fontSize="small" color="disabled" />;
+  const ratingEmptyDisplayIcon = ratingEmptyIcon ?? (
+    <EngineeringIcon fontSize="small" color="disabled" />
+  );
   const handleChange = (_: React.SyntheticEvent, next: number | null) => {
     if (disabled) return;
     const resolved = next ?? min;

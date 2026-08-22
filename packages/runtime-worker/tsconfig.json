@@ -2,10 +2,7 @@
   "extends": "../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "lib": [
-      "ES2022",
-      "WebWorker"
-    ],
+    "lib": ["ES2022", "WebWorker"],
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "strictNullChecks": false,
@@ -17,14 +14,7 @@
     "composite": true,
     "incremental": true
   },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "src/e2e*.test.ts",
-    "src*.spec.ts"
-  ],
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "src/e2e*.test.ts", "src*.spec.ts"],
   "references": []
 }

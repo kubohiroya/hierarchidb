@@ -3,6 +3,7 @@
  * eria-cartographTreeConsoleBreadcrumbUI
  */
 
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { rainbowColors } from '@hierarchidb/ui-theme';
 import { NavigateNext as NavigateNextIcon } from '@mui/icons-material';
 import {
@@ -20,12 +21,11 @@ import type { Theme } from '@mui/material/styles';
 import { styled } from '@mui/material/styles';
 import { Link as RouterLink } from '@tanstack/react-router';
 import type { DragEvent, KeyboardEvent, MouseEvent, ReactElement } from 'react';
-import { useTranslation } from '@hierarchidb/ui-i18n';
+import { useTreeConsoleBreadcrumb } from '~/hooks/useTreeConsoleBreadcrumb';
 import type { BreadcrumbNode, TreeConsoleBreadcrumbProps } from '~/types';
 import type { BuildTreeConsoleLinkOptions } from '~/utils/linkFactory';
 import { buildTreeConsoleLinkHref } from '~/utils/linkFactory';
 import { getPluginIconColor, isFolderNodeType } from '~/utils/nodeTypeIconColor';
-import { useTreeConsoleBreadcrumb } from '~/hooks/useTreeConsoleBreadcrumb';
 
 const DRAGGED_NODE_MIME = 'text/hdb-node';
 const DESCENDANT_MIME = 'application/hdb-node-descendants';
@@ -50,7 +50,7 @@ const readDraggedNodeId = (event: DragEvent<HTMLElement>): string | null => {
 /**
  * BreadcrumbContainer -
  */
-const BreadcrumbContainer = styled(Box) <{ theme?: Theme }>`
+const BreadcrumbContainer = styled(Box)<{ theme?: Theme }>`
   width: 100%;
   opacity: 1;
   height: 48px;
@@ -149,13 +149,7 @@ type TreeConsoleBreadcrumbBaseProps = Omit<TreeConsoleBreadcrumbProps, 'renderer
 
 function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): ReactElement | null {
   const { t } = useTranslation();
-  const {
-    depthOffset: _depthOffset = 0,
-    pageNodeId,
-    onContextAction,
-    leftSlot,
-    treeId,
-  } = props;
+  const { depthOffset: _depthOffset = 0, pageNodeId, onContextAction, leftSlot, treeId } = props;
 
   const {
     pathToUse,
@@ -216,11 +210,7 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
             px: 2,
           }}
         >
-          {leftSlot && (
-            <Box sx={{ display: 'flex', alignItems: 'center', mr: 1 }}>
-              {leftSlot}
-            </Box>
-          )}
+          {leftSlot && <Box sx={{ display: 'flex', alignItems: 'center', mr: 1 }}>{leftSlot}</Box>}
           {isNavigating && <CircularProgress size={20} sx={{ mr: 2 }} />}
 
           <Breadcrumbs
@@ -245,10 +235,11 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
                   ? Math.max(0, Math.round(absoluteDepth))
                   : Math.max(0, index + _depthOffset);
               const baseIconColor = rainbowColors[fallbackDepth % rainbowColors.length];
-              const nodeType = nodeWithAbsolute.nodeType || nodeWithAbsolute.type || 'folder-plugin';
+              const nodeType =
+                nodeWithAbsolute.nodeType || nodeWithAbsolute.type || 'folder-plugin';
               const isBuildRequiredForNode = Boolean(
                 nodeWithAbsolute.draftMetadata?.buildMetadata?.buildRequired ||
-                nodeWithAbsolute.metadata?.buildMetadata?.buildRequired
+                  nodeWithAbsolute.metadata?.buildMetadata?.buildRequired
               );
               const manifestIconColor = getPluginIconColor(nodeType);
               const iconColor = isFolderNodeType(nodeType)
@@ -292,10 +283,10 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
                     onClick={
                       iconInteractive
                         ? (event: MouseEvent<HTMLElement>) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          openContextMenu(node, event.currentTarget as HTMLElement);
-                        }
+                            event.preventDefault();
+                            event.stopPropagation();
+                            openContextMenu(node, event.currentTarget as HTMLElement);
+                          }
                         : undefined
                     }
                   />
@@ -409,10 +400,16 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
           else handleContextMenuClose();
         }}
         onOpen={() =>
-          handleNodeClick(contextMenuNode?.id || contextMenuNode?.id || '', contextMenuNode || undefined)
+          handleNodeClick(
+            contextMenuNode?.id || contextMenuNode?.id || '',
+            contextMenuNode || undefined
+          )
         }
         onOpenFolder={() =>
-          handleNodeClick(contextMenuNode?.id || contextMenuNode?.id || '', contextMenuNode || undefined)
+          handleNodeClick(
+            contextMenuNode?.id || contextMenuNode?.id || '',
+            contextMenuNode || undefined
+          )
         }
         onOpenStep={(step) => {
           if (contextMenuNode && onContextAction) {
@@ -420,14 +417,19 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
           }
         }}
         buildRequired={contextMenuBuildRequired}
-        canBuild={isFolderNodeType(contextMenuNode?.nodeType ?? contextMenuNode?.type)
-          ? contextMenuBuildRequired
-          : isBuildActionNodeType}
+        canBuild={
+          isFolderNodeType(contextMenuNode?.nodeType ?? contextMenuNode?.type)
+            ? contextMenuBuildRequired
+            : isBuildActionNodeType
+        }
         openSteps={openSteps}
         openStepsLoading={openStepsLoading}
         onToggleVisible={(nextVisible) => {
           if (contextMenuNode && onContextAction) {
-            onContextAction('toggle-visibility', contextMenuNode, { source: 'breadcrumb', nextVisible });
+            onContextAction('toggle-visibility', contextMenuNode, {
+              source: 'breadcrumb',
+              nextVisible,
+            });
           }
         }}
         onPreview={() => {
@@ -443,10 +445,15 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
       />
 
       <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)}>
-        <DialogTitle>{t('treeConsole.infoPanel.confirmArchiveTitle', 'Move to Archive')}</DialogTitle>
+        <DialogTitle>
+          {t('treeConsole.infoPanel.confirmArchiveTitle', 'Move to Archive')}
+        </DialogTitle>
         <DialogContent>
           <Typography>
-            {t('treeConsole.infoPanel.confirmArchiveDescription', 'Move this item and all its children to archive?')}
+            {t(
+              'treeConsole.infoPanel.confirmArchiveDescription',
+              'Move this item and all its children to archive?'
+            )}
           </Typography>
         </DialogContent>
         <DialogActions>

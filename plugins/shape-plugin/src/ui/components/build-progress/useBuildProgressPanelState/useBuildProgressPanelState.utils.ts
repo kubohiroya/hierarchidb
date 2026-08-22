@@ -1,5 +1,5 @@
-import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 import { resolveMostAdvancedStageId } from '~/ui/components/build-progress/stagePriorityConstants';
 
 export const isDev = import.meta.env.DEV;
@@ -58,22 +58,23 @@ export const logRunningResiduePanel = (
     runningCount: number;
     runningTaskIds: string[];
     reasons: string[];
-  },
+  }
 ): void => {
   if (!isShapeBuildPanelDebugEnabled('runningResiduePanel')) return;
-  const line = `${RUNNING_RESIDUE_LOG_PREFIX} ${keyword}`
-    + ` nodeId=${formatRunningResidueValue(payload.nodeId)}`
-    + ` stage=${formatRunningResidueValue(payload.stage)}`
-    + ` taskId=${formatRunningResidueValue(payload.runningTaskIds.join(','))}`
-    + ` source=ui`
-    + ` eventType=aggregate`
-    + ` reason=${formatRunningResidueValue(payload.reasons.join(','))}`
-    + ` runningCount=${formatRunningResidueValue(payload.runningCount)}`
-    + ` queuedCount=- totalCount=-`
-    + ` stageIsRunning=${formatRunningResidueValue(payload.indicatorIsRunning)}`
-    + ` buildStatus=${formatRunningResidueValue(payload.buildStatus)}`
-    + ` activeStageId=${formatRunningResidueValue(payload.activeStageId)}`
-    + ` timestamp=${formatRunningResidueValue(Date.now())}`;
+  const line =
+    `${RUNNING_RESIDUE_LOG_PREFIX} ${keyword}` +
+    ` nodeId=${formatRunningResidueValue(payload.nodeId)}` +
+    ` stage=${formatRunningResidueValue(payload.stage)}` +
+    ` taskId=${formatRunningResidueValue(payload.runningTaskIds.join(','))}` +
+    ` source=ui` +
+    ` eventType=aggregate` +
+    ` reason=${formatRunningResidueValue(payload.reasons.join(','))}` +
+    ` runningCount=${formatRunningResidueValue(payload.runningCount)}` +
+    ` queuedCount=- totalCount=-` +
+    ` stageIsRunning=${formatRunningResidueValue(payload.indicatorIsRunning)}` +
+    ` buildStatus=${formatRunningResidueValue(payload.buildStatus)}` +
+    ` activeStageId=${formatRunningResidueValue(payload.activeStageId)}` +
+    ` timestamp=${formatRunningResidueValue(Date.now())}`;
   console.log(line, payload);
 };
 

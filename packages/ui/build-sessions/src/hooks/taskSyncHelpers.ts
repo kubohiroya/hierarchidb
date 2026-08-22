@@ -12,7 +12,10 @@ export const resolveTaskIndex = (task: TaskSyncItem): number => {
   return Number.MAX_SAFE_INTEGER;
 };
 
-export const compareTaskOrderByIndexThenId = <T extends TaskSyncItem>(left: T, right: T): number => {
+export const compareTaskOrderByIndexThenId = <T extends TaskSyncItem>(
+  left: T,
+  right: T
+): number => {
   const leftIndex = resolveTaskIndex(left);
   const rightIndex = resolveTaskIndex(right);
   if (leftIndex !== rightIndex) {
@@ -37,9 +40,8 @@ const findInsertPosition = <T extends TaskSyncItem>(items: T[], task: T): number
   return low;
 };
 
-export const sortTasksByIndex = <T extends TaskSyncItem>(items: T[]): T[] => (
-  [...items].sort((a, b) => resolveTaskIndex(a) - resolveTaskIndex(b))
-);
+export const sortTasksByIndex = <T extends TaskSyncItem>(items: T[]): T[] =>
+  [...items].sort((a, b) => resolveTaskIndex(a) - resolveTaskIndex(b));
 
 export const upsertTaskInOrder = <T extends TaskSyncItem>(current: T[], task: T): T[] => {
   const existingIndex = current.findIndex((item) => item.taskId === task.taskId);
@@ -66,13 +68,12 @@ export const removeTaskById = <T extends TaskSyncItem>(current: T[], taskId: str
 
 export const shouldApplyTaskUpdate = <T extends TaskSyncItem>(
   current: T | undefined,
-  next: T,
+  next: T
 ): boolean => {
   if (!current) return true;
 
-  const resolveStatus = (task: TaskSyncItem): string => (
-    typeof task.status === 'string' ? task.status.toLowerCase() : ''
-  );
+  const resolveStatus = (task: TaskSyncItem): string =>
+    typeof task.status === 'string' ? task.status.toLowerCase() : '';
   const isTerminalStatus = (task: TaskSyncItem): boolean => {
     const status = resolveStatus(task);
     return status === 'completed' || status === 'failed' || status === 'skipped';
@@ -80,8 +81,12 @@ export const shouldApplyTaskUpdate = <T extends TaskSyncItem>(
 
   const currentIsTerminal = isTerminalStatus(current);
   const nextIsTerminal = isTerminalStatus(next);
-  const currentProgress = typeof current.progress === 'number' && Number.isFinite(current.progress) ? current.progress : 0;
-  const nextProgress = typeof next.progress === 'number' && Number.isFinite(next.progress) ? next.progress : 0;
+  const currentProgress =
+    typeof current.progress === 'number' && Number.isFinite(current.progress)
+      ? current.progress
+      : 0;
+  const nextProgress =
+    typeof next.progress === 'number' && Number.isFinite(next.progress) ? next.progress : 0;
 
   if (currentIsTerminal && !nextIsTerminal) {
     return false;

@@ -26,15 +26,25 @@ export class TabularDatabaseManager {
   }
 
   // ---- Common helpers ----
-  private ensureRefs(m?: TabularTableMetadataLike): Required<Pick<TabularTableMetadataLike, 'referencingPlugins' | 'referenceCount'>> {
+  private ensureRefs(
+    m?: TabularTableMetadataLike
+  ): Required<Pick<TabularTableMetadataLike, 'referencingPlugins' | 'referenceCount'>> {
     return {
-      referencingPlugins: Array.isArray(m?.referencingPlugins) ? [...(m!.referencingPlugins as string[])] : [],
-      referenceCount: typeof m?.referenceCount === 'number' ? (m!.referenceCount as number) : (m?.referencingPlugins?.length || 0),
+      referencingPlugins: Array.isArray(m?.referencingPlugins)
+        ? [...(m!.referencingPlugins as string[])]
+        : [],
+      referenceCount:
+        typeof m?.referenceCount === 'number'
+          ? (m!.referenceCount as number)
+          : m?.referencingPlugins?.length || 0,
     };
   }
 
   // ---- Spreadsheet-style API ----
-  async create(metadata: TabularTableMetadataLike, pluginId: string): Promise<TabularTableMetadataLike> {
+  async create(
+    metadata: TabularTableMetadataLike,
+    pluginId: string
+  ): Promise<TabularTableMetadataLike> {
     return await this.db.transaction('rw', this.db.tabularMetadata, async () => {
       const id = metadata.id || crypto.randomUUID();
       const base: TabularTableMetadataLike = {

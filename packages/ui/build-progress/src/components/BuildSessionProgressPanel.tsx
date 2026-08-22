@@ -1,4 +1,11 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material';
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Typography,
+} from '@mui/material';
 import type { ReactNode } from 'react';
 import { BuildProgressPanel, type BuildProgressPanelProps } from './BuildProgressPanel.js';
 
@@ -31,19 +38,10 @@ const BuildSessionStateDialog = ({
   message,
   closeLabel,
 }: BuildSessionStateDialogProps) => (
-  <Dialog
-    open={open}
-    onClose={onClose}
-    maxWidth="sm"
-    fullWidth
-  >
+  <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
     <DialogTitle>{title}</DialogTitle>
     <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-      {typeof message === 'string' ? (
-        <Typography variant="body2">
-          {message}
-        </Typography>
-      ) : message}
+      {typeof message === 'string' ? <Typography variant="body2">{message}</Typography> : message}
     </DialogContent>
     <DialogActions sx={{ px: 3, pb: 2 }}>
       <Button onClick={onClose} variant="contained">
@@ -102,11 +100,5 @@ export const BuildSessionProgressPanel: React.FC<BuildSessionProgressPanelProps>
     </>
   );
 
-  return (
-    <BuildProgressPanel
-      {...panelProps}
-      footer={mergedFooter}
-    />
-  );
+  return <BuildProgressPanel {...panelProps} footer={mergedFooter} />;
 };
-

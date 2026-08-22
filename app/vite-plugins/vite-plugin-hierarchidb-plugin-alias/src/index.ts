@@ -1,2 +1,2 @@
 export { createNodeTypeAliasPlugin } from './alias.js';
-export type { CreateAliasPluginOptions, PluginEntryKind, AliasEntry } from './types.js';
+export type { AliasEntry, CreateAliasPluginOptions, PluginEntryKind } from './types.js';

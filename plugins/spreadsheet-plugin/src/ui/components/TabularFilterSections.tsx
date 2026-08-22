@@ -1,5 +1,5 @@
-import React from 'react';
 import type { TabularDataFilterProps } from '@hierarchidb/ui-tabular';
+import React from 'react';
 import { TabularKeyValuePanels } from './TabularKeyValuePanels.js';
 
 export interface TabularFilterSectionsProps {
@@ -29,7 +29,9 @@ export const TabularFilterSections: React.FC<TabularFilterSectionsProps> = ({
 }) => {
   const effectiveDialogRef =
     dialogRef ??
-    (menuContainer ? ({ current: menuContainer as HTMLElement } as React.RefObject<HTMLElement>) : undefined);
+    (menuContainer
+      ? ({ current: menuContainer as HTMLElement } as React.RefObject<HTMLElement>)
+      : undefined);
 
   return (
     <TabularKeyValuePanels

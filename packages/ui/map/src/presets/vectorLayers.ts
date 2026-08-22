@@ -5,7 +5,7 @@ export const pointCirclePreset = (opts?: {
   radius?: number;
   stroke?: string;
   strokeWidth?: number;
-  sourceLayer?: string
+  sourceLayer?: string;
 }): VectorTileLayerConfig => ({
   layerId: 'points-circle',
   sourceId: 'points-source',
@@ -25,7 +25,7 @@ export const pointCirclePreset = (opts?: {
 export const lineStrokePreset = (opts?: {
   color?: string;
   width?: number;
-  sourceLayer?: string
+  sourceLayer?: string;
 }): VectorTileLayerConfig => ({
   layerId: 'lines-stroke',
   sourceId: 'lines-source',
@@ -43,7 +43,7 @@ export const lineStrokePreset = (opts?: {
 export const polygonFillPreset = (opts?: {
   fill?: string;
   outline?: string;
-  sourceLayer?: string
+  sourceLayer?: string;
 }): VectorTileLayerConfig => ({
   layerId: 'polygons-fill',
   sourceId: 'polygons-source',

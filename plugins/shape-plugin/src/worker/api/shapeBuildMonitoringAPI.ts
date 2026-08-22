@@ -1,8 +1,8 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ProcessingStatus, TileInfo } from '~/common/types/index';
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
-import { deleteRawDataDataSourceBuffersForNode } from '~/services/utils/chunkStore';
+import type { ProcessingStatus, TileInfo } from '~/common/types/index';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
+import { deleteRawDataDataSourceBuffersForNode } from '~/services/utils/chunkStore';
 import { shapeBuildRuntime } from './shapeBuildRuntime.js';
 
 export const shapeBuildMonitoringAPI = {
@@ -14,7 +14,7 @@ export const shapeBuildMonitoringAPI = {
     nodeId: NodeId,
     z: number,
     x: number,
-    y: number,
+    y: number
   ): Promise<TileInfo | undefined> => {
     const tile = await shapeQueryAPIImpl.getVectorTileInfo(nodeId, z, x, y);
     if (!tile) return undefined;
@@ -35,7 +35,9 @@ export const shapeBuildMonitoringAPI = {
       const summary = await shapeBuildRuntime.buildTaskQueueSummary(nodeId, vtTasks);
       const paused = shapeBuildRuntime.getPauseState(nodeId).paused;
       const latestTask = shapeBuildRuntime.selectLatestTaskByProgress(vtTasks);
-      const lastProcessed = latestTask ? shapeBuildRuntime.resolveTaskProcessingTimestamp(latestTask) : 0;
+      const lastProcessed = latestTask
+        ? shapeBuildRuntime.resolveTaskProcessingTimestamp(latestTask)
+        : 0;
       return {
         status: paused
           ? 'paused'
@@ -57,9 +59,7 @@ export const shapeBuildMonitoringAPI = {
 
     const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId);
     if (sessionRecord) {
-      const status = sessionRecord.status === 'running'
-        ? 'processing'
-        : sessionRecord.status;
+      const status = sessionRecord.status === 'running' ? 'processing' : sessionRecord.status;
       return {
         status,
         lastProcessed: undefined,

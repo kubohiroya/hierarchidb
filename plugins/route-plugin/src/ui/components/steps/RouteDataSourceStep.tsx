@@ -3,12 +3,9 @@
  * @description Step 2: select data source for route generation.
  */
 
-import { Stack, Typography } from '@mui/material';
-import {
-  DataSourceSelectionStep,
-  IdeGsmImportPanel,
-} from '@hierarchidb/ui-datasource';
 import type { RouteEntity } from '@hierarchidb/route-api';
+import { DataSourceSelectionStep, IdeGsmImportPanel } from '@hierarchidb/ui-datasource';
+import { Stack, Typography } from '@mui/material';
 import { useRouteDataSourceStep } from './useRouteDataSourceStep.ts';
 
 export interface RouteDataSourceStepProps {
@@ -54,14 +51,14 @@ export const RouteDataSourceStep: React.FC<RouteDataSourceStepProps> = ({
       disabled={disabled}
       description={t(
         'dataSource.description',
-        'Choose the primary dataset or service that provides route geometry.',
+        'Choose the primary dataset or service that provides route geometry.'
       )}
       createAgreedAt={() => Date.now()}
       selectionTitle={String(t('dataSource.selectionTitle', 'Data Source'))}
       detailsTitle={String(t('dataSource.detailsTitle', 'Data Source Details'))}
       licenseRequiredText={t(
         'dataSource.licenseRequired',
-        'License agreement is required to proceed.',
+        'License agreement is required to proceed.'
       )}
       showDetailsCard={false}
       renderOption={(option, active) => {

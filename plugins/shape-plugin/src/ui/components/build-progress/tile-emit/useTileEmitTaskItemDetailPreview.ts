@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Feature, Geometry } from 'geojson';
 import type { NodeId } from '@hierarchidb/core-types';
-import { DEFAULT_BUILD_CONFIG } from '@hierarchidb/shape-api';
-import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
-import { buildBands, decodeGeometryCache } from '~/services/vt/shapePipelineShared';
+import { DEFAULT_BUILD_CONFIG } from '@hierarchidb/shape-api';
 import { unpackTileId } from '@hierarchidb/vt-orchestrator';
-import type { TaskDetailSelection } from '~/ui/components/build-progress/TaskItemCard/TaskItemDetailTypes';
+import type { Feature, Geometry } from 'geojson';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
+import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
+import { buildBands, decodeGeometryCache } from '~/services/vt/shapePipelineShared';
+import type { TaskDetailSelection } from '~/ui/components/build-progress/TaskItemCard/TaskItemDetailTypes';
 import type { TileBBox } from './TileEmitGeometryPreviewMap';
 
 type TileEmitTaskTileInfo = {
@@ -46,9 +46,8 @@ const resolveTileBuffer = (config: { buffer?: number; bufferSize?: number }): nu
   return 64;
 };
 
-export const resolveIndexMaxPoints = (value: number | null | undefined): number => (
-  Number.isFinite(value) && (value as number) > 0 ? (value as number) : 100000
-);
+export const resolveIndexMaxPoints = (value: number | null | undefined): number =>
+  Number.isFinite(value) && (value as number) > 0 ? (value as number) : 100000;
 
 const parseTileEmitTaskId = (taskId: string | undefined): TileEmitTaskTileInfo | null => {
   if (!taskId) return null;
@@ -59,7 +58,8 @@ const parseTileEmitTaskId = (taskId: string | undefined): TileEmitTaskTileInfo |
   const bandIndex = Number.parseInt(bandIndexRaw ?? '', 10);
   const zBase = Number.parseInt(zBaseRaw ?? '', 10);
   const tileId = Number.parseInt(tileIdRaw ?? '', 10);
-  if (!Number.isFinite(bandIndex) || !Number.isFinite(zBase) || !Number.isFinite(tileId)) return null;
+  if (!Number.isFinite(bandIndex) || !Number.isFinite(zBase) || !Number.isFinite(tileId))
+    return null;
   const tile = unpackTileId(tileId, zBase);
   return {
     bandIndex,
@@ -71,10 +71,10 @@ const parseTileEmitTaskId = (taskId: string | undefined): TileEmitTaskTileInfo |
 
 const tileToBBox = (z: number, x: number, y: number): TileBBox => {
   const n = 2 ** z;
-  const lon1 = x / n * 360 - 180;
-  const lon2 = (x + 1) / n * 360 - 180;
-  const lat1 = (180 / Math.PI) * Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n)));
-  const lat2 = (180 / Math.PI) * Math.atan(Math.sinh(Math.PI * (1 - 2 * (y + 1) / n)));
+  const lon1 = (x / n) * 360 - 180;
+  const lon2 = ((x + 1) / n) * 360 - 180;
+  const lat1 = (180 / Math.PI) * Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n)));
+  const lat2 = (180 / Math.PI) * Math.atan(Math.sinh(Math.PI * (1 - (2 * (y + 1)) / n)));
   return { minX: lon1, minY: lat2, maxX: lon2, maxY: lat1 };
 };
 
@@ -95,12 +95,8 @@ const expandTileBBox = (bbox: TileBBox, buffer: number, extent: number): TileBBo
   };
 };
 
-const bboxIntersects = (a: TileBBox, b: TileBBox): boolean => (
-  a.minX <= b.maxX
-  && a.maxX >= b.minX
-  && a.minY <= b.maxY
-  && a.maxY >= b.minY
-);
+const bboxIntersects = (a: TileBBox, b: TileBBox): boolean =>
+  a.minX <= b.maxX && a.maxX >= b.minX && a.minY <= b.maxY && a.maxY >= b.minY;
 
 const resolveFeatureId = (feature: Feature): string | null => {
   const props = feature.properties as Record<string, unknown> | undefined;
@@ -113,7 +109,10 @@ const resolveFeatureId = (feature: Feature): string | null => {
   return null;
 };
 
-const collectPositions = (coords: unknown, acc: Array<[number, number]> = []): Array<[number, number]> => {
+const collectPositions = (
+  coords: unknown,
+  acc: Array<[number, number]> = []
+): Array<[number, number]> => {
   if (!Array.isArray(coords)) return acc;
   if (coords.length === 0) return acc;
   if (typeof coords[0] === 'number') {
@@ -139,7 +138,12 @@ const computeFeatureBBox = (feature: Feature<Geometry>): TileBBox | null => {
     maxX = Math.max(maxX, x);
     maxY = Math.max(maxY, y);
   });
-  if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) {
+  if (
+    !Number.isFinite(minX) ||
+    !Number.isFinite(minY) ||
+    !Number.isFinite(maxX) ||
+    !Number.isFinite(maxY)
+  ) {
     return null;
   }
   return { minX, minY, maxX, maxY };
@@ -147,8 +151,11 @@ const computeFeatureBBox = (feature: Feature<Geometry>): TileBBox | null => {
 
 const resolveDisplayName = (metadata: Record<string, unknown> | null): string => {
   if (!metadata) return 'Unknown';
-  const adminLevel = typeof metadata.adminLevel === 'number' ? Math.max(0, Math.floor(metadata.adminLevel)) : 0;
-  const admin0 = (metadata.admin0Name ?? metadata.countryName ?? metadata.countryCode) as string | undefined;
+  const adminLevel =
+    typeof metadata.adminLevel === 'number' ? Math.max(0, Math.floor(metadata.adminLevel)) : 0;
+  const admin0 = (metadata.admin0Name ?? metadata.countryName ?? metadata.countryCode) as
+    | string
+    | undefined;
   const admin1 = metadata.admin1Name as string | undefined;
   const admin2 = metadata.admin2Name as string | undefined;
   if (adminLevel <= 0) return admin0 ?? 'Unknown';
@@ -163,13 +170,16 @@ const resolveCountryCode = (metadata: Record<string, unknown> | null): string | 
   return /^[A-Z]{2}$/.test(normalized) ? normalized : null;
 };
 
-const sumGeojsonBytes = (features: FeaturePreviewEntry[]): number => (
-  features.reduce((sum, entry) => sum + entry.geojsonBytes, 0)
-);
+const sumGeojsonBytes = (features: FeaturePreviewEntry[]): number =>
+  features.reduce((sum, entry) => sum + entry.geojsonBytes, 0);
 
-const resolveParentInputSummaryBytes = (metadata: Record<string, unknown> | undefined): number | null => {
+const resolveParentInputSummaryBytes = (
+  metadata: Record<string, unknown> | undefined
+): number | null => {
   if (!metadata || typeof metadata !== 'object') return null;
-  const summary = (metadata as Record<string, unknown>).tileEmitParentInputSummary as Record<string, unknown> | undefined;
+  const summary = (metadata as Record<string, unknown>).tileEmitParentInputSummary as
+    | Record<string, unknown>
+    | undefined;
   const rawBytes = summary?.intersectingGeojsonByteSize;
   if (typeof rawBytes === 'number' && Number.isFinite(rawBytes)) {
     return Math.max(0, Math.round(rawBytes));
@@ -190,7 +200,10 @@ const resolveBandRange = (buildConfig: ShapeBuildConfig, bandIndex: number) => {
   return bands.find((band) => band.bandIndex === bandIndex) ?? null;
 };
 
-const tileWithinParent = (parent: { z: number; x: number; y: number }, tile: { z: number; x: number; y: number }): boolean => {
+const tileWithinParent = (
+  parent: { z: number; x: number; y: number },
+  tile: { z: number; x: number; y: number }
+): boolean => {
   if (tile.z < parent.z) return false;
   const scale = 1 << (tile.z - parent.z);
   const xStart = parent.x * scale;
@@ -221,9 +234,7 @@ export const useTileEmitTaskItemDetailPreview = ({ detail, buildConfig }: Args) 
   const [hoveredFeatureId, setHoveredFeatureId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const resolvedBuildConfig = useMemo(() => (
-    buildConfig ?? DEFAULT_BUILD_CONFIG
-  ), [buildConfig]);
+  const resolvedBuildConfig = useMemo(() => buildConfig ?? DEFAULT_BUILD_CONFIG, [buildConfig]);
   const tileEmitConfig = resolvedBuildConfig.tileEmitConfig ?? DEFAULT_BUILD_CONFIG.tileEmitConfig;
   const tileBuffer = resolveTileBuffer(tileEmitConfig);
   const effectiveIndexMaxPoints = resolveIndexMaxPoints(tileEmitConfig.indexMaxPoints);
@@ -251,11 +262,13 @@ export const useTileEmitTaskItemDetailPreview = ({ detail, buildConfig }: Args) 
         shapeQueryAPIImpl.listTileEmitMetadata(nodeId),
       ]);
       const metadataById = new Map(featureMetadata.map((row) => [row.featureId, row]));
-      const collections = await Promise.all(bufferIds.map((bufferId) => (
-        shapeQueryAPIImpl.getGeometryCache(bufferId).then((record) => (
-          record?.data ? decodeGeometryCache(record.data) : null
-        ))
-      )));
+      const collections = await Promise.all(
+        bufferIds.map((bufferId) =>
+          shapeQueryAPIImpl
+            .getGeometryCache(bufferId)
+            .then((record) => (record?.data ? decodeGeometryCache(record.data) : null))
+        )
+      );
       const features: Feature<Geometry>[] = [];
       collections.forEach((collection) => {
         if (!collection) return;
@@ -273,9 +286,10 @@ export const useTileEmitTaskItemDetailPreview = ({ detail, buildConfig }: Args) 
         const meta = metadataById.get(featureId) as Record<string, unknown> | undefined;
         const label = resolveDisplayName(meta ?? null);
         const countryCode = resolveCountryCode(meta ?? null);
-        const geojsonBytes = typeof meta?.geojsonByteSize === 'number' && Number.isFinite(meta.geojsonByteSize)
-          ? Math.max(0, Math.round(meta.geojsonByteSize))
-          : 0;
+        const geojsonBytes =
+          typeof meta?.geojsonByteSize === 'number' && Number.isFinite(meta.geojsonByteSize)
+            ? Math.max(0, Math.round(meta.geojsonByteSize))
+            : 0;
         if (!entriesMap.has(featureId)) {
           entriesMap.set(featureId, {
             id: featureId,
@@ -285,14 +299,19 @@ export const useTileEmitTaskItemDetailPreview = ({ detail, buildConfig }: Args) 
           });
         }
       });
-      const entries = Array.from(entriesMap.values()).sort((a, b) => a.label.localeCompare(b.label));
-      const inputBytes = resolveParentInputSummaryBytes(detail.task.metadata) ?? sumGeojsonBytes(entries);
+      const entries = Array.from(entriesMap.values()).sort((a, b) =>
+        a.label.localeCompare(b.label)
+      );
+      const inputBytes =
+        resolveParentInputSummaryBytes(detail.task.metadata) ?? sumGeojsonBytes(entries);
       const bandRange = resolveBandRange(resolvedBuildConfig, tileInfo.bandIndex);
       const zMax = bandRange?.zMax ?? tileInfo.zBase;
-      const parentTileCandidates = vtMetadata.filter((row) => (
-        row.z === tileInfo.tile.z && row.x === tileInfo.tile.x && row.y === tileInfo.tile.y
-      ));
-      const parentTileBytes = parentTileCandidates.sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0))[0]?.size ?? null;
+      const parentTileCandidates = vtMetadata.filter(
+        (row) => row.z === tileInfo.tile.z && row.x === tileInfo.tile.x && row.y === tileInfo.tile.y
+      );
+      const parentTileBytes =
+        parentTileCandidates.sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0))[0]?.size ??
+        null;
       let totalTileBytes = 0;
       let totalTileCount = 0;
       vtMetadata.forEach((row) => {

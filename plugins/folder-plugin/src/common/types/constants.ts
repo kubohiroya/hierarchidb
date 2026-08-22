@@ -1,6 +1,6 @@
 /**
-  * Folder plugin constants - UIWorker
-  */
+ * Folder plugin constants - UIWorker
+ */
 
 /**
  * Folder validation constants
@@ -30,7 +30,7 @@ export const FOLDER_DISPLAY = {
     '#e64a19', // Deep Orange
     '#00796b', // Teal
     '#303f9f', // Indigo
-    '#c2185b',  // Pink
+    '#c2185b', // Pink
   ] as const,
 
   DEFAULT_ICON_COLOR: '#FFC107',
@@ -43,4 +43,3 @@ export const FOLDER_DISPLAY = {
   VIEW_MODES: ['list', 'grid', 'console'] as const,
   DEFAULT_VIEW_MODE: 'list' as const,
 } as const;
-

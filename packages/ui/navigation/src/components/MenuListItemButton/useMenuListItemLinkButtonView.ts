@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
-import type { CSSProperties, MouseEvent } from 'react';
 import { useLocation } from '@tanstack/react-router';
+import type { CSSProperties, MouseEvent } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { MenuItemLinkType } from './MenuListItemLinkButton.js';
 
 export interface UseMenuListItemLinkButtonViewParams {
@@ -49,7 +49,7 @@ export function useMenuListItemLinkButtonView({
       justifyContent: 'flex-start',
       color: 'inherit',
     }),
-    [],
+    []
   );
 
   const itemKeys = useMemo(() => {

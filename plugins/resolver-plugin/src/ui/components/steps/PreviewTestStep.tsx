@@ -1,4 +1,15 @@
-import React from 'react';
+import {
+  CheckCircle as CheckIcon,
+  Error as ErrorIcon,
+  ExpandLess as ExpandLessIcon,
+  ExpandMore as ExpandMoreIcon,
+  Memory as MemoryIcon,
+  PlayArrow as PlayIcon,
+  Speed as SpeedIcon,
+  Stop as StopIcon,
+  Storage as StorageIcon,
+  Warning as WarningIcon,
+} from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -23,19 +34,14 @@ import {
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import {
-  CheckCircle as CheckIcon,
-  Error as ErrorIcon,
-  ExpandLess as ExpandLessIcon,
-  ExpandMore as ExpandMoreIcon,
-  Memory as MemoryIcon,
-  PlayArrow as PlayIcon,
-  Speed as SpeedIcon,
-  Stop as StopIcon,
-  Storage as StorageIcon,
-  Warning as WarningIcon,
-} from '@mui/icons-material';
-import type { MappingValidationResult, ResolverUpdaterPayload, SchemaInfo, PropertyInfo, ValidationWarning } from '~/common/types/index';
+import React from 'react';
+import type {
+  MappingValidationResult,
+  PropertyInfo,
+  ResolverUpdaterPayload,
+  SchemaInfo,
+  ValidationWarning,
+} from '~/common/types/index';
 import { usePreviewTestStep } from './usePreviewTestStep.js';
 
 interface PreviewTestStepProps {
@@ -55,20 +61,18 @@ interface TabPanelProps {
 
 const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
   return (
-    <div hidden={value !== index}>
-      {value === index && <Box sx={{ pt: 2 }}>{children}</Box>}
-    </div>
+    <div hidden={value !== index}>{value === index && <Box sx={{ pt: 2 }}>{children}</Box>}</div>
   );
 };
 
 export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
-                                                                  data,
-                                                                  onUpdate: _onUpdate,
-                                                                  onValidationChange,
-                                                                  sourceSchema,
-                                                                  targetSchema,
-                                                                  onValidationResult,
-                                                                }) => {
+  data,
+  onUpdate: _onUpdate,
+  onValidationChange,
+  sourceSchema,
+  targetSchema,
+  onValidationResult,
+}) => {
   const {
     draftData,
     executionTime,
@@ -134,9 +138,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
           </Button>
         </Box>
 
-        {isRunning && (
-          <LinearProgress sx={{ mt: 2 }} />
-        )}
+        {isRunning && <LinearProgress sx={{ mt: 2 }} />}
       </Paper>
 
       {/* Performance Metrics */}
@@ -150,9 +152,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                   <Typography variant="body2" color="text.secondary">
                     Execution Time
                   </Typography>
-                  <Typography variant="h6">
-                    {executionTime.toFixed(2)} ms
-                  </Typography>
+                  <Typography variant="h6">{executionTime.toFixed(2)} ms</Typography>
                 </Box>
               </Box>
             </Paper>
@@ -166,9 +166,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                   <Typography variant="body2" color="text.secondary">
                     Memory Usage
                   </Typography>
-                  <Typography variant="h6">
-                    {formatBytes(memoryUsage)}
-                  </Typography>
+                  <Typography variant="h6">{formatBytes(memoryUsage)}</Typography>
                 </Box>
               </Box>
             </Paper>
@@ -215,48 +213,41 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                     {targetSchema.properties.slice(0, 5).map((prop: PropertyInfo) => (
                       <TableCell key={prop.name}>{prop.name}</TableCell>
                     ))}
-                    {targetSchema.properties.length > 5 && (
-                      <TableCell>...</TableCell>
-                    )}
+                    {targetSchema.properties.length > 5 && <TableCell>...</TableCell>}
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {(previewResult.mappedData ?? []).map((row: Record<string, unknown>, index: number) => (
-                    <React.Fragment key={index}>
-                      <TableRow hover>
-                        <TableCell>
-                          <IconButton
-                            size="small"
-                            onClick={() => toggleRowExpansion(index)}
-                          >
-                            {expandedRows.has(index) ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                          </IconButton>
-                        </TableCell>
-                    {targetSchema.properties.slice(0, 5).map((prop: PropertyInfo) => (
-                      <TableCell key={prop.name}>
-                        {String(row[prop.name] ?? '-')}
-                      </TableCell>
-                    ))}
-                        {targetSchema.properties.length > 5 && (
-                          <TableCell>...</TableCell>
-                        )}
-                      </TableRow>
-                      <TableRow>
-                        <TableCell colSpan={targetSchema.properties.length + 2} sx={{ py: 0 }}>
-                          <Collapse in={expandedRows.has(index)} timeout="auto" unmountOnExit>
-                            <Box sx={{ p: 2, bgcolor: 'grey.50' }}>
-                              <Typography variant="subtitle2" gutterBottom>
-                                Full Record
-                              </Typography>
-                              <pre style={{ fontSize: '0.8rem', overflow: 'auto' }}>
-                                {JSON.stringify(row, null, 2)}
-                              </pre>
-                            </Box>
-                          </Collapse>
-                        </TableCell>
-                      </TableRow>
-                    </React.Fragment>
-                  ))}
+                  {(previewResult.mappedData ?? []).map(
+                    (row: Record<string, unknown>, index: number) => (
+                      <React.Fragment key={index}>
+                        <TableRow hover>
+                          <TableCell>
+                            <IconButton size="small" onClick={() => toggleRowExpansion(index)}>
+                              {expandedRows.has(index) ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                            </IconButton>
+                          </TableCell>
+                          {targetSchema.properties.slice(0, 5).map((prop: PropertyInfo) => (
+                            <TableCell key={prop.name}>{String(row[prop.name] ?? '-')}</TableCell>
+                          ))}
+                          {targetSchema.properties.length > 5 && <TableCell>...</TableCell>}
+                        </TableRow>
+                        <TableRow>
+                          <TableCell colSpan={targetSchema.properties.length + 2} sx={{ py: 0 }}>
+                            <Collapse in={expandedRows.has(index)} timeout="auto" unmountOnExit>
+                              <Box sx={{ p: 2, bgcolor: 'grey.50' }}>
+                                <Typography variant="subtitle2" gutterBottom>
+                                  Full Record
+                                </Typography>
+                                <pre style={{ fontSize: '0.8rem', overflow: 'auto' }}>
+                                  {JSON.stringify(row, null, 2)}
+                                </pre>
+                              </Box>
+                            </Collapse>
+                          </TableCell>
+                        </TableRow>
+                      </React.Fragment>
+                    )
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -290,17 +281,19 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                       Errors ({validationResult?.errors?.length ?? 0})
                     </Typography>
                     <List dense>
-                      {(validationResult?.errors ?? []).map((error: MappingValidationResult['errors'][number], index: number) => (
-                        <ListItem key={index}>
-                          <ListItemIcon>
-                            <ErrorIcon color="error" fontSize="small" />
-                          </ListItemIcon>
-                          <ListItemText
-                            primary={error.message}
-                            secondary={`Property: ${error.property}`}
-                          />
-                        </ListItem>
-                      ))}
+                      {(validationResult?.errors ?? []).map(
+                        (error: MappingValidationResult['errors'][number], index: number) => (
+                          <ListItem key={index}>
+                            <ListItemIcon>
+                              <ErrorIcon color="error" fontSize="small" />
+                            </ListItemIcon>
+                            <ListItemText
+                              primary={error.message}
+                              secondary={`Property: ${error.property}`}
+                            />
+                          </ListItem>
+                        )
+                      )}
                     </List>
                   </Box>
                 )}
@@ -311,25 +304,25 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                       Warnings ({validationResult?.warnings?.length ?? 0})
                     </Typography>
                     <List dense>
-                      {(validationResult?.warnings ?? []).map((warning: ValidationWarning, index: number) => (
-                        <ListItem key={index}>
-                          <ListItemIcon>
-                            <WarningIcon color="warning" fontSize="small" />
-                          </ListItemIcon>
-                          <ListItemText
-                            primary={warning.message}
-                            secondary={warning.suggestion}
-                          />
-                        </ListItem>
-                      ))}
+                      {(validationResult?.warnings ?? []).map(
+                        (warning: ValidationWarning, index: number) => (
+                          <ListItem key={index}>
+                            <ListItemIcon>
+                              <WarningIcon color="warning" fontSize="small" />
+                            </ListItemIcon>
+                            <ListItemText
+                              primary={warning.message}
+                              secondary={warning.suggestion}
+                            />
+                          </ListItem>
+                        )
+                      )}
                     </List>
                   </Box>
                 )}
 
                 {validationResult?.isValid && (validationResult.warnings?.length ?? 0) === 0 && (
-                  <Alert severity="success">
-                    All validation checks passed successfully.
-                  </Alert>
+                  <Alert severity="success">All validation checks passed successfully.</Alert>
                 )}
               </Box>
             )}

@@ -119,8 +119,7 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
     const shouldLogWarn =
       typeof console !== 'undefined' &&
       typeof console.warn === 'function' &&
-      !(globalThis as { __HDB_SILENCE_WORKER_LOGS__?: boolean })
-        .__HDB_SILENCE_WORKER_LOGS__;
+      !(globalThis as { __HDB_SILENCE_WORKER_LOGS__?: boolean }).__HDB_SILENCE_WORKER_LOGS__;
     if (!specifier) {
       throw new Error(`[PluginWorkerModuleLoader] Unknown worker plugin: ${nodeType}`);
     }

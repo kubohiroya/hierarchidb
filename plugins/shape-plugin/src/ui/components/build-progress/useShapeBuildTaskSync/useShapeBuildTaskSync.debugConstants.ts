@@ -1,13 +1,10 @@
-import {
-  isTaskPhaseDisplay,
-  resolveTaskMetadataMessage,
-} from '~/common/utils/taskMessageUtils';
+import { isTaskPhaseDisplay, resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import type {
   RunningResidueLogPayload,
   TaskSyncDebugChannel,
   TaskSyncDebugConfig,
 } from './useShapeBuildTaskSyncTypes.js';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 
 const isDev = import.meta.env.DEV;
 const RUNNING_RESIDUE_LOG_PREFIX = '[ShapeRunningResidue]';
@@ -61,35 +58,38 @@ export const emitRunningResidueLog = (keyword: string, payload: RunningResidueLo
   if (runningResidueLogCount >= RUNNING_RESIDUE_LOG_LIMIT) {
     if (!runningResidueLogLimitNotified) {
       runningResidueLogLimitNotified = true;
-      console.log(`${RUNNING_RESIDUE_LOG_PREFIX} LOG_LIMIT_REACHED limit=${RUNNING_RESIDUE_LOG_LIMIT}`);
+      console.log(
+        `${RUNNING_RESIDUE_LOG_PREFIX} LOG_LIMIT_REACHED limit=${RUNNING_RESIDUE_LOG_LIMIT}`
+      );
     }
     return;
   }
   runningResidueLogCount += 1;
-  const logPayload: Required<Pick<RunningResidueLogPayload, 'nodeId'>> & RunningResidueLogPayload = {
-    ...payload,
-    nodeId: payload.nodeId,
-    timestamp: payload.timestamp ?? Date.now(),
-  };
-  const line = `${RUNNING_RESIDUE_LOG_PREFIX} ${keyword}`
-    + ` nodeId=${formatLogValue(logPayload.nodeId)}`
-    + ` stage=${formatLogValue(logPayload.stage)}`
-    + ` taskId=${formatLogValue(logPayload.taskId)}`
-    + ` prevStatus=${formatLogValue(logPayload.prevStatus)}`
-    + ` nextStatus=${formatLogValue(logPayload.nextStatus)}`
-    + ` source=${formatLogValue(logPayload.source)}`
-    + ` eventType=${formatLogValue(logPayload.eventType)}`
-    + ` reason=${formatLogValue(logPayload.reason)}`
-    + ` runningCount=${formatLogValue(logPayload.runningCount)}`
-    + ` queuedCount=${formatLogValue(logPayload.queuedCount)}`
-    + ` totalCount=${formatLogValue(logPayload.totalCount)}`
-    + ` timestamp=${formatLogValue(logPayload.timestamp)}`;
+  const logPayload: Required<Pick<RunningResidueLogPayload, 'nodeId'>> & RunningResidueLogPayload =
+    {
+      ...payload,
+      nodeId: payload.nodeId,
+      timestamp: payload.timestamp ?? Date.now(),
+    };
+  const line =
+    `${RUNNING_RESIDUE_LOG_PREFIX} ${keyword}` +
+    ` nodeId=${formatLogValue(logPayload.nodeId)}` +
+    ` stage=${formatLogValue(logPayload.stage)}` +
+    ` taskId=${formatLogValue(logPayload.taskId)}` +
+    ` prevStatus=${formatLogValue(logPayload.prevStatus)}` +
+    ` nextStatus=${formatLogValue(logPayload.nextStatus)}` +
+    ` source=${formatLogValue(logPayload.source)}` +
+    ` eventType=${formatLogValue(logPayload.eventType)}` +
+    ` reason=${formatLogValue(logPayload.reason)}` +
+    ` runningCount=${formatLogValue(logPayload.runningCount)}` +
+    ` queuedCount=${formatLogValue(logPayload.queuedCount)}` +
+    ` totalCount=${formatLogValue(logPayload.totalCount)}` +
+    ` timestamp=${formatLogValue(logPayload.timestamp)}`;
   console.log(line, logPayload);
 };
 
-export const isProgressTaskMessageSkippable = (task: ShapeBuildTaskSummary): boolean => (
-  task.progress >= 100 && isTaskPhaseDisplay(task.display)
-);
+export const isProgressTaskMessageSkippable = (task: ShapeBuildTaskSummary): boolean =>
+  task.progress >= 100 && isTaskPhaseDisplay(task.display);
 
 export const logTaskUpdate100 = (task: ShapeBuildTaskSummary): void => {
   if (!isTaskSyncDebugEnabled('taskUpdate100')) return;
@@ -97,7 +97,9 @@ export const logTaskUpdate100 = (task: ShapeBuildTaskSummary): void => {
   if (taskUpdate100LogCount >= TASK_UPDATE100_LOG_LIMIT) {
     if (!taskUpdate100LogLimitNotified) {
       taskUpdate100LogLimitNotified = true;
-      console.log(`[TaskUpdate100] log limit reached (${TASK_UPDATE100_LOG_LIMIT}); suppressing further logs`);
+      console.log(
+        `[TaskUpdate100] log limit reached (${TASK_UPDATE100_LOG_LIMIT}); suppressing further logs`
+      );
     }
     return;
   }
@@ -108,10 +110,9 @@ export const logTaskUpdate100 = (task: ShapeBuildTaskSummary): void => {
   const indexValue = taskIdParts.length >= 4 ? taskIdParts[3] : taskIdParts[2];
   const resolvedCountry = countryIndex || 'unknown';
   const resolvedIndex = typeof indexValue === 'string' && indexValue.length > 0 ? indexValue : '0';
-  const resolvedMessage = resolveTaskMetadataMessage(task.metadata)
-    || task.errorMessage
-    || task.status;
+  const resolvedMessage =
+    resolveTaskMetadataMessage(task.metadata) || task.errorMessage || task.status;
   console.log(
-    `[TaskUpdate100] ${resolvedCountry}, ${resolvedIndex}, ${resolvedMessage}, ${task.status}`,
+    `[TaskUpdate100] ${resolvedCountry}, ${resolvedIndex}, ${resolvedMessage}, ${task.status}`
   );
 };

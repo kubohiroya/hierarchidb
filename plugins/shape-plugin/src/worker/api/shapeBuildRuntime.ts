@@ -2,10 +2,11 @@
  * Internal worker API runtime assembly
  * for shape plugin build API.
  */
-import { shapeBuildRuntimeAggregation } from './shapeBuildRuntimeAggregation.js';
-import { shapeBuildRuntimePublic } from './shapeBuildRuntimePublic.js';
+
 import { shapeBuildRuntime as shapeBuildRuntimeExecution } from './apiInternalExecutionConstants.js';
+import { shapeBuildRuntimeAggregation } from './shapeBuildRuntimeAggregation.js';
 import * as shapeBuildRuntimeCore from './shapeBuildRuntimeCore.js';
+import { shapeBuildRuntimePublic } from './shapeBuildRuntimePublic.js';
 
 export const shapeBuildRuntime = {
   ...shapeBuildRuntimePublic,

@@ -9,15 +9,17 @@ export type TaskCollectionMetadata = {
   parentInputMetadata: Record<string, unknown>;
   intersectingFeatureCount: number;
   parentInputSummary: ReturnType<typeof buildVtParentMetadata> extends {
-    parentInputSummary: infer P
-  } ? P : never;
+    parentInputSummary: infer P;
+  }
+    ? P
+    : never;
   buildCompletedResult: (message: string) => StageHandlerResult;
 };
 
 export const buildTaskCollectionMetadata = (
   band: BandConfig,
   parent: { z: number; x: number; y: number },
-  collected: CollectedVtFeatures,
+  collected: CollectedVtFeatures
 ): TaskCollectionMetadata => {
   const metadata = buildVtParentMetadata(band, parent, collected);
   return {

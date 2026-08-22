@@ -14,13 +14,13 @@ export function useDuplicateResolutionStep({
 }: UseDuplicateResolutionStepProps) {
   const draftData = data.draftData ?? {};
   const [strategy, setStrategy] = useState<DuplicateResolutionStrategy['strategy']>(
-    draftData.duplicateResolution?.strategy || 'ignore',
+    draftData.duplicateResolution?.strategy || 'ignore'
   );
   const [customFunction, setCustomFunction] = useState<string>(
-    draftData.duplicateResolution?.customFunction || '',
+    draftData.duplicateResolution?.customFunction || ''
   );
   const [mergeProperties, setMergeProperties] = useState<string>(
-    draftData.duplicateResolution?.mergeProperties?.join(', ') || '',
+    draftData.duplicateResolution?.mergeProperties?.join(', ') || ''
   );
   const [enableDuplicateDetection, setEnableDuplicateDetection] = useState(true);
   const [customFunctionError, setCustomFunctionError] = useState<string>('');
@@ -29,9 +29,13 @@ export function useDuplicateResolutionStep({
     const duplicateResolution: DuplicateResolutionStrategy = {
       strategy,
       customFunction: strategy === 'custom' ? customFunction : undefined,
-      mergeProperties: strategy === 'merge' && mergeProperties
-        ? mergeProperties.split(',').map((p: string) => p.trim()).filter((p: string) => p.length > 0)
-        : undefined,
+      mergeProperties:
+        strategy === 'merge' && mergeProperties
+          ? mergeProperties
+              .split(',')
+              .map((p: string) => p.trim())
+              .filter((p: string) => p.length > 0)
+          : undefined,
     };
 
     onUpdate({ draftData: { duplicateResolution } });

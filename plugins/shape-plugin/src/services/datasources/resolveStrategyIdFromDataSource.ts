@@ -1,7 +1,9 @@
-import type { DataSourceStrategyId } from './DataSourceStrategyFactory.js';
 import type { DataSourceName } from '~/common/types/index';
+import type { DataSourceStrategyId } from './DataSourceStrategyFactory.js';
 
-export const resolveStrategyIdFromDataSource = (source?: DataSourceName): DataSourceStrategyId | null => {
+export const resolveStrategyIdFromDataSource = (
+  source?: DataSourceName
+): DataSourceStrategyId | null => {
   switch (source) {
     case 'gadm':
       return 'gadm-administrative-areas';

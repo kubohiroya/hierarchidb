@@ -1,9 +1,8 @@
 import { tabularRowsAtom } from '@hierarchidb/spreadsheet-plugin/ui';
-import { i18n } from '@hierarchidb/ui-i18n';
+import { i18n, useTranslation } from '@hierarchidb/ui-i18n';
 import type { TabularFilterRule } from '@hierarchidb/ui-tabular';
 import { useAtomValue } from 'jotai';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   MAPLIBRE_PROPERTY_METADATA,
   type StylerConfig,
@@ -13,8 +12,8 @@ import {
   type StylerTableRow,
 } from '~/common/types/StylerEntity';
 import { normalizeStylerConfig } from '~/common/utils/colorUtils';
-import { useTabularFilterWorker } from '~/ui/hooks/useTabularFilterWorker';
 import type { StylerStepProps } from '~/ui/components/StylerStepProps';
+import { useTabularFilterWorker } from '~/ui/hooks/useTabularFilterWorker';
 
 const useValueColorScale = ({
   baseConfig,

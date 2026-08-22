@@ -1,5 +1,10 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { NodeTagAssociation, TagAssociationScope, TagEntity, TagId } from '@hierarchidb/tag-api';
+import type {
+  NodeTagAssociation,
+  TagAssociationScope,
+  TagEntity,
+  TagId,
+} from '@hierarchidb/tag-api';
 
 export interface TagDBPort {
   createTag(tag: TagEntity): Promise<void>;
@@ -20,11 +25,7 @@ export interface TagDBPort {
     scope: TagAssociationScope
   ): Promise<NodeTagAssociation | undefined>;
 
-  removeTagAssociation(
-    nodeId: NodeId,
-    tagId: TagId,
-    scope: TagAssociationScope
-  ): Promise<boolean>;
+  removeTagAssociation(nodeId: NodeId, tagId: TagId, scope: TagAssociationScope): Promise<boolean>;
 
   removeAllTagAssociations(tagId: TagId): Promise<number>;
 

@@ -1,24 +1,31 @@
 import type { NodeId } from '@hierarchidb/core-types';
+import {
+  type EphemeralBuildSessionRecord,
+  type EphemeralBuildTaskRecord,
+  ephemeralDB,
+  getSessionWithDetails,
+  probeBuildSession as probeEphemeralBuildSession,
+} from '@hierarchidb/gis-sdk';
 import type {
   ShapeBuildProgressSummary,
+  ShapeBuildSessionProbeResult,
   ShapeBuildSessionRecord,
   ShapeBuildSessionSummary,
   ShapeBuildStage,
   ShapeBuildTaskRecord,
   ShapeBuildTaskSummary,
+  ShapeDataSourceMetadata,
   ShapeFeatureMetadata,
-  ShapeSourceCache,
+  ShapeGeometryCache,
+  ShapeGeometryErrorRecord,
   ShapeProcessingStatus,
   ShapeQueryAPI,
-  ShapeDataSourceMetadata,
+  ShapeSourceCache,
+  ShapeTileEmitMetadata,
   ShapeTileInfo,
   ShapeTileSummary,
   ShapeTileSummaryEntry,
-  ShapeGeometryCache,
-  ShapeGeometryErrorRecord,
   ShapeVectorTileRecord,
-  ShapeTileEmitMetadata,
-  ShapeBuildSessionProbeResult,
 } from '@hierarchidb/shape-api';
 import type {
   BuildSessionRecord,
@@ -28,13 +35,6 @@ import type {
   ShapeDB,
   StageStatus,
 } from '@hierarchidb/shape-store';
-import {
-  ephemeralDB,
-  type EphemeralBuildSessionRecord,
-  type EphemeralBuildTaskRecord,
-  getSessionWithDetails,
-  probeBuildSession as probeEphemeralBuildSession,
-} from '@hierarchidb/gis-sdk';
 import { SingletonMixin } from '@hierarchidb/util';
 import {
   countSourceDataSourceBuffersForNode,
@@ -46,15 +46,12 @@ import { toCanonicalStageIdFromLegacyStage, toLegacyBuildStage } from './stageAl
 
 const toBuildStage = (
   stage: ShapeBuildProgressSummary['stage'],
-  stageId?: string,
+  stageId?: string
 ): ProgressInfo['stage'] => {
   return toLegacyBuildStage(stage, stageId);
 };
 
-const toProgressInfo = (
-  progress: ShapeBuildProgressSummary,
-  stageId?: string,
-): ProgressInfo => ({
+const toProgressInfo = (progress: ShapeBuildProgressSummary, stageId?: string): ProgressInfo => ({
   total: progress.total,
   completed: progress.completed,
   failed: progress.failed,
@@ -65,14 +62,14 @@ const toProgressInfo = (
 
 const toShapeBuildStage = (
   stage?: ProgressInfo['stage'],
-  stageId?: string,
+  stageId?: string
 ): ShapeBuildStage | undefined => {
   return toLegacyBuildStage(stage, stageId);
 };
 
 const toShapeBuildProgressSummary = (
   progress: ProgressInfo,
-  stageId?: string,
+  stageId?: string
 ): ShapeBuildProgressSummary => ({
   total: progress.total,
   completed: progress.completed,
@@ -135,8 +132,9 @@ const toTaskSummary = (task: ShapeBuildTaskRecord): ShapeBuildTaskSummary => ({
   progress: task.progress,
   errorMessage: task.errorMessage,
   metadata: task.metadata,
-  retryAttempt: typeof (task.metadata as { retryAttempt?: unknown } | undefined)?.retryAttempt === 'number'
-    && Number.isFinite((task.metadata as { retryAttempt?: unknown } | undefined)?.retryAttempt ?? NaN)
+  retryAttempt:
+    typeof (task.metadata as { retryAttempt?: unknown } | undefined)?.retryAttempt === 'number' &&
+    Number.isFinite((task.metadata as { retryAttempt?: unknown } | undefined)?.retryAttempt ?? NaN)
       ? Math.max(0, Math.floor((task.metadata as { retryAttempt: number }).retryAttempt))
       : undefined,
 });
@@ -147,35 +145,41 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const isNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
 
-const isDefined = <T>(value: T | null | undefined): value is T => (
-  value !== null && value !== undefined
-);
+const isDefined = <T>(value: T | null | undefined): value is T =>
+  value !== null && value !== undefined;
 
 const isTaskStatus = (value: unknown): value is StageStatus['status'] =>
-  value === 'queued'
-  || value === 'running'
-  || value === 'completed'
-  || value === 'failed'
-  || value === 'recycled';
+  value === 'queued' ||
+  value === 'running' ||
+  value === 'completed' ||
+  value === 'failed' ||
+  value === 'recycled';
 
 const isStageStatus = (value: unknown): value is StageStatus => {
   if (!isRecord(value)) return false;
-  return isTaskStatus(value.status)
-    && isNumber(value.progress)
-    && isNumber(value.tasksTotal)
-    && isNumber(value.tasksCompleted)
-    && isNumber(value.tasksFailed)
-    && (value.message === undefined || typeof value.message === 'string');
+  return (
+    isTaskStatus(value.status) &&
+    isNumber(value.progress) &&
+    isNumber(value.tasksTotal) &&
+    isNumber(value.tasksCompleted) &&
+    isNumber(value.tasksFailed) &&
+    (value.message === undefined || typeof value.message === 'string')
+  );
 };
 
 const isProgressSummary = (value: unknown): value is ShapeBuildProgressSummary => {
   if (!isRecord(value)) return false;
-  return isNumber(value.total)
-    && isNumber(value.completed)
-    && isNumber(value.failed)
-    && isNumber(value.skipped)
-    && isNumber(value.percentage)
-    && (value.stage === undefined || value.stage === 'source' || value.stage === 'geometry' || value.stage === 'tileEmit');
+  return (
+    isNumber(value.total) &&
+    isNumber(value.completed) &&
+    isNumber(value.failed) &&
+    isNumber(value.skipped) &&
+    isNumber(value.percentage) &&
+    (value.stage === undefined ||
+      value.stage === 'source' ||
+      value.stage === 'geometry' ||
+      value.stage === 'tileEmit')
+  );
 };
 
 const readStageMap = (value: unknown): Record<BuildTaskType, StageStatus> | null => {
@@ -189,12 +193,14 @@ const readStageMap = (value: unknown): Record<BuildTaskType, StageStatus> | null
 
 const readResourceUsage = (value: unknown): ResourceUsage | undefined => {
   if (!isRecord(value)) return undefined;
-  if (!isNumber(value.memoryUsed)
-    || !isNumber(value.memoryPeak)
-    || !isNumber(value.cpuPercent)
-    || !isNumber(value.storageUsed)
-    || !isNumber(value.networkBytesReceived)
-    || !isNumber(value.networkBytesSent)) {
+  if (
+    !isNumber(value.memoryUsed) ||
+    !isNumber(value.memoryPeak) ||
+    !isNumber(value.cpuPercent) ||
+    !isNumber(value.storageUsed) ||
+    !isNumber(value.networkBytesReceived) ||
+    !isNumber(value.networkBytesSent)
+  ) {
     return undefined;
   }
   return {
@@ -245,11 +251,10 @@ const toShapeBuildTaskRecordFromEphemeral = (
 ): ShapeBuildTaskRecord | null => {
   if (!isShapeBuildStage(task.stage)) return null;
   const rawVersion = (task as unknown as { version?: unknown }).version;
-  const version = typeof rawVersion === 'number'
-    && Number.isFinite(rawVersion)
-    && rawVersion >= 1
-    ? Math.floor(rawVersion)
-    : 1;
+  const version =
+    typeof rawVersion === 'number' && Number.isFinite(rawVersion) && rawVersion >= 1
+      ? Math.floor(rawVersion)
+      : 1;
   return {
     taskId: task.taskId,
     nodeId: task.nodeId,
@@ -274,7 +279,9 @@ const isShapeBuildTaskRecord = (
 /**
  * Query session data from EphemeralDB using the unified query interface
  */
-async function getEphemeralSessionWithDetails(nodeId: NodeId): Promise<EphemeralBuildSessionRecord | null> {
+async function getEphemeralSessionWithDetails(
+  nodeId: NodeId
+): Promise<EphemeralBuildSessionRecord | null> {
   return ephemeralDB.transaction(
     'r',
     [
@@ -284,13 +291,15 @@ async function getEphemeralSessionWithDetails(nodeId: NodeId): Promise<Ephemeral
       ephemeralDB.buildStageStatuses,
       ephemeralDB.buildTasks,
     ],
-    async () => getSessionWithDetails(nodeId, {
-      getConfig: async (nodeId) => ephemeralDB.buildSessionConfigs.get(nodeId),
-      getHeartbeat: async (nodeId) => ephemeralDB.buildSessionHeartbeats.get(nodeId),
-      getStatus: async (nodeId) => ephemeralDB.buildSessionStatuses.get(nodeId),
-      getStageStatuses: async (nodeId) => ephemeralDB.buildStageStatuses.where('nodeId').equals(nodeId).toArray(),
-      getTasks: async (nodeId) => ephemeralDB.buildTasks.where('nodeId').equals(nodeId).toArray(),
-    })
+    async () =>
+      getSessionWithDetails(nodeId, {
+        getConfig: async (nodeId) => ephemeralDB.buildSessionConfigs.get(nodeId),
+        getHeartbeat: async (nodeId) => ephemeralDB.buildSessionHeartbeats.get(nodeId),
+        getStatus: async (nodeId) => ephemeralDB.buildSessionStatuses.get(nodeId),
+        getStageStatuses: async (nodeId) =>
+          ephemeralDB.buildStageStatuses.where('nodeId').equals(nodeId).toArray(),
+        getTasks: async (nodeId) => ephemeralDB.buildTasks.where('nodeId').equals(nodeId).toArray(),
+      })
   );
 }
 
@@ -320,12 +329,16 @@ async function probeEphemeralSession(nodeId: NodeId): Promise<ShapeBuildSessionP
 /**
  * Query session data from ShapeDB using the unified query interface
  */
-async function getShapeSessionWithDetails(db: ShapeDB, nodeId: NodeId): Promise<EphemeralBuildSessionRecord | null> {
+async function getShapeSessionWithDetails(
+  db: ShapeDB,
+  nodeId: NodeId
+): Promise<EphemeralBuildSessionRecord | null> {
   return getSessionWithDetails(nodeId, {
     getConfig: async (nodeId) => db.buildSessionConfigs.get(nodeId),
     getHeartbeat: async (nodeId) => db.buildSessionHeartbeats.get(nodeId),
     getStatus: async (nodeId) => db.buildSessionStatuses.get(nodeId),
-    getStageStatuses: async (nodeId) => db.buildStageStatuses.where('nodeId').equals(nodeId).toArray(),
+    getStageStatuses: async (nodeId) =>
+      db.buildStageStatuses.where('nodeId').equals(nodeId).toArray(),
     getTasks: async (nodeId) => ephemeralDB.buildTasks.where('nodeId').equals(nodeId).toArray(),
   });
 }
@@ -361,30 +374,30 @@ export class ShapeQueryService implements ShapeQueryAPI {
   async listBuildSessions(nodeId: NodeId): Promise<ShapeBuildSessionSummary[]> {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
-    
+
     // Get all session configs for this node
     const configs = await ephemeralDB.buildSessionConfigs.where('nodeId').equals(nodeId).toArray();
-    
+
     // Query each session using unified interface
     const sessions = await Promise.all(
-      configs.map(config => getEphemeralSessionWithDetails(config.nodeId))
+      configs.map((config) => getEphemeralSessionWithDetails(config.nodeId))
     );
-    
+
     const records = sessions
       .filter(isNonNull)
       .map(toBuildSessionRecordFromEphemeral)
       .filter(isNonNull);
-    
+
     return records.map(toSessionSummary);
   }
 
   async getBuildSession(nodeId: NodeId): Promise<ShapeBuildSessionSummary | null> {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
-    
+
     const session = await getEphemeralSessionWithDetails(nodeId);
     const record = session ? toBuildSessionRecordFromEphemeral(session) : null;
-    
+
     return record ? toSessionSummary(record) : null;
   }
 
@@ -396,30 +409,30 @@ export class ShapeQueryService implements ShapeQueryAPI {
   async listBuildSessionRecords(nodeId: NodeId): Promise<ShapeBuildSessionRecord[]> {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
-    
+
     // Get all session configs for this node
     const configs = await ephemeralDB.buildSessionConfigs.where('nodeId').equals(nodeId).toArray();
-    
+
     // Query each session using unified interface
     const sessions = await Promise.all(
-      configs.map(config => getEphemeralSessionWithDetails(config.nodeId))
+      configs.map((config) => getEphemeralSessionWithDetails(config.nodeId))
     );
-    
+
     const records = sessions
       .filter(isNonNull)
       .map(toBuildSessionRecordFromEphemeral)
       .filter(isNonNull);
-    
+
     return records.map(toShapeBuildSessionRecord);
   }
 
   async getBuildSessionRecord(nodeId: NodeId): Promise<ShapeBuildSessionRecord | null> {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
-    
+
     const session = await getEphemeralSessionWithDetails(nodeId);
     const record = session ? toBuildSessionRecordFromEphemeral(session) : null;
-    
+
     return record ? toShapeBuildSessionRecord(record) : null;
   }
 
@@ -428,32 +441,30 @@ export class ShapeQueryService implements ShapeQueryAPI {
   ): Promise<ShapeBuildSessionRecord[]> {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
-    
+
     // Query buildSessionStatuses table for matching statuses
     const statusRecords = await ephemeralDB.buildSessionStatuses
       .where('status')
       .anyOf(statuses)
       .toArray();
-    
+
     // Get full session details for each matching status
     const sessions = await Promise.all(
-      statusRecords.map(status => getEphemeralSessionWithDetails(status.nodeId))
+      statusRecords.map((status) => getEphemeralSessionWithDetails(status.nodeId))
     );
-    
+
     const records = sessions
       .filter(isNonNull)
       .map(toBuildSessionRecordFromEphemeral)
       .filter(isNonNull);
-    
+
     return records.map(toShapeBuildSessionRecord);
   }
 
   async listBuildTasks(nodeId: NodeId): Promise<ShapeBuildTaskSummary[]> {
     await this.ensureOpen();
     const tasks = await ephemeralDB.buildTasks.where('nodeId').equals(nodeId).toArray();
-    const records = tasks
-      .map(toShapeBuildTaskRecordFromEphemeral)
-      .filter(isShapeBuildTaskRecord);
+    const records = tasks.map(toShapeBuildTaskRecordFromEphemeral).filter(isShapeBuildTaskRecord);
     return records.map(toTaskSummary);
   }
 
@@ -480,10 +491,10 @@ export class ShapeQueryService implements ShapeQueryAPI {
   async getProcessingStatus(nodeId: NodeId): Promise<ShapeProcessingStatus | null> {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
-    
+
     // Get all session configs for this node
     const configs = await ephemeralDB.buildSessionConfigs.where('nodeId').equals(nodeId).toArray();
-    
+
     if (configs.length === 0) {
       return {
         status: 'idle',
@@ -491,17 +502,17 @@ export class ShapeQueryService implements ShapeQueryAPI {
         errorMessages: [],
       };
     }
-    
+
     // Query each session using unified interface
     const sessions = await Promise.all(
-      configs.map(config => getEphemeralSessionWithDetails(config.nodeId))
+      configs.map((config) => getEphemeralSessionWithDetails(config.nodeId))
     );
-    
+
     // Get latest session by startedAt (from config)
     const latest = sessions
       .filter(isNonNull)
       .sort((a, b) => (b.startedAt ?? 0) - (a.startedAt ?? 0))[0];
-    
+
     if (!latest) {
       return {
         status: 'idle',
@@ -509,7 +520,7 @@ export class ShapeQueryService implements ShapeQueryAPI {
         errorMessages: [],
       };
     }
-    
+
     const latestSession = toBuildSessionRecordFromEphemeral(latest);
     if (!latestSession) {
       return {
@@ -518,10 +529,10 @@ export class ShapeQueryService implements ShapeQueryAPI {
         errorMessages: [],
       };
     }
-    
+
     const totalFeatures = await this.getProcessedFeatureCount(nodeId);
     const totalVectorTiles = await this.db.vectorTiles.where('nodeId').equals(nodeId).count();
-    
+
     return {
       status: mapStatus(latestSession.status),
       lastProcessed: latestSession.completedAt ?? latestSession.updatedAt,
@@ -676,7 +687,9 @@ export class ShapeQueryService implements ShapeQueryAPI {
     const records = await ephemeralDB.geometryCache.bulkGet(ids);
     return records
       .filter(isDefined)
-      .filter((record): record is ShapeGeometryCache => record.nodeId === nodeId && record.timestamp > 0);
+      .filter(
+        (record): record is ShapeGeometryCache => record.nodeId === nodeId && record.timestamp > 0
+      );
   }
 
   async getGeometryCache(bufferId: string): Promise<ShapeGeometryCache | null> {

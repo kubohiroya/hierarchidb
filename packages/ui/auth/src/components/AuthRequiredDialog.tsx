@@ -6,6 +6,7 @@
  * and needs user intervention to continue.
  */
 
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   Close as CloseIcon,
   Lock as LockIcon,
@@ -26,7 +27,6 @@ import {
 } from '@mui/material';
 import { useAuthRequiredDialog } from '../hooks/useAuthRequiredDialog';
 import { useAuthRequiredDialogView } from './useAuthRequiredDialogView.js';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 
 // Local minimal type to avoid workspace linking issues during typecheck.
 // Aligns with @hierarchidb/_obsolate_common-auth AuthRequiredNotification shape used here.
@@ -169,9 +169,7 @@ export function AuthRequiredDialog({
       <DialogContent id={dialogDescriptionId}>
         {/* Main Alert */}
         <Alert severity={getErrorSeverity()} icon={false} sx={{ mb: 3 }}>
-          <Typography variant="body1">
-            {resolvedMessage}
-          </Typography>
+          <Typography variant="body1">{resolvedMessage}</Typography>
           {retryMessage && (
             <Typography variant="body2" sx={{ mt: 1, opacity: 0.8 }}>
               {retryMessage}
@@ -237,7 +235,11 @@ export function AuthRequiredDialog({
                   color="secondary"
                   size="large"
                   startIcon={
-                    isSelected && isAuthenticating ? <CircularProgress size={20} color="inherit" /> : <Icon />
+                    isSelected && isAuthenticating ? (
+                      <CircularProgress size={20} color="inherit" />
+                    ) : (
+                      <Icon />
+                    )
                   }
                   onClick={() => handleSignIn(provider)}
                   disabled={isDisabled}

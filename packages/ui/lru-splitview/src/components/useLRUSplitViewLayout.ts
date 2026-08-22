@@ -1,10 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { LRUSplitViewConfig } from '~/types/LRUSplitView';
 
-interface UseLRUSplitViewLayoutArgs extends Pick<
-  LRUSplitViewConfig,
-  'panes' | 'maxExpandedPanes' | 'responsiveBreakpoints' | 'initialPaneSizesByBreakpoint' | 'autoCloseCountsByBreakpoint' | 'autoExpand' | 'progress'
-> {}
+interface UseLRUSplitViewLayoutArgs
+  extends Pick<
+    LRUSplitViewConfig,
+    | 'panes'
+    | 'maxExpandedPanes'
+    | 'responsiveBreakpoints'
+    | 'initialPaneSizesByBreakpoint'
+    | 'autoCloseCountsByBreakpoint'
+    | 'autoExpand'
+    | 'progress'
+  > {}
 
 const resolveBreakpointIndex = (width: number, breakpoints?: number[]) => {
   if (!breakpoints || breakpoints.length === 0) return 0;
@@ -12,7 +19,7 @@ const resolveBreakpointIndex = (width: number, breakpoints?: number[]) => {
   return foundIndex === -1 ? breakpoints.length : foundIndex;
 };
 
-const resolveByBreakpoint = <T,>(values: T[] | undefined, index: number) => {
+const resolveByBreakpoint = <T>(values: T[] | undefined, index: number) => {
   if (!values || values.length === 0) return undefined;
   const safeIndex = Math.min(index, values.length - 1);
   return values[safeIndex];
@@ -44,11 +51,11 @@ export const useLRUSplitViewLayout = ({
 
   const breakpointIndex = useMemo(
     () => resolveBreakpointIndex(containerWidth, responsiveBreakpoints),
-    [containerWidth, responsiveBreakpoints],
+    [containerWidth, responsiveBreakpoints]
   );
   const autoCloseCount = useMemo(
     () => resolveByBreakpoint(autoCloseCountsByBreakpoint, breakpointIndex),
-    [autoCloseCountsByBreakpoint, breakpointIndex],
+    [autoCloseCountsByBreakpoint, breakpointIndex]
   );
   const responsiveMaxExpandedPanes = useMemo(() => {
     if (autoCloseCount === undefined) return maxExpandedPanes;

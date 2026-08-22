@@ -27,7 +27,6 @@ export type {
   WorkerInitState,
 } from './types.js';
 export * from './types.js';
-export * from './workerInitializationUtils.js';
 export { WorkerInitializationChannel } from './WorkerInitializationChannel.js';
 export { WorkerInitializationReporter } from './WorkerInitializationReporter.js';
 export {
@@ -43,3 +42,4 @@ export {
   ensureWorkerAPI,
   getBuildWorkerBridge,
 } from './workerBridge.js';
+export * from './workerInitializationUtils.js';

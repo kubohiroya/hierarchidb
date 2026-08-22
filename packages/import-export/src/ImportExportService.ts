@@ -1,6 +1,4 @@
-import { zipSync, strToU8 } from 'fflate';
 import type { NodeId, NodeType, PeerEntity } from '@hierarchidb/core-types';
-import type { TreeNode, TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type {
   ExportNodesParams,
   ExportResult,
@@ -8,12 +6,14 @@ import type {
   ImportExportAPI,
   ImportNodesParams,
   ImportResult,
-  OperationStatus,
-  ValidateImportParams,
   ImportValidationIssue,
   ImportValidationResult,
+  OperationStatus,
+  ValidateImportParams,
 } from '@hierarchidb/import-export-api';
-import { SingletonMixin, generateUUID } from '@hierarchidb/util';
+import type { TreeNode, TreeNodeMetadata } from '@hierarchidb/tree-api';
+import { generateUUID, SingletonMixin } from '@hierarchidb/util';
+import { strToU8, zipSync } from 'fflate';
 import type { ImportExportDBPort, VectorTileRecord } from './types.js';
 
 type ImportNodeInput<T> = ImportData<T>['nodes'][number];
@@ -37,8 +37,7 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
     return SingletonMixin.getSingleton('ImportExportService', () => new ImportExportService(db));
   }
 
-  constructor(private db: ImportExportDBPort) {
-  }
+  constructor(private db: ImportExportDBPort) {}
 
   async importNodes(params: ImportNodesParams<T>): Promise<ImportResult> {
     const operationId = this.generateOperationId();
@@ -125,11 +124,14 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
           }
           const nodeId = generateUUID() as NodeId;
           const parentDepth = await resolveParentDepth(params.targetParentId);
-          const parentId: NodeId = (params.targetParentId ?? (nodeData as { parentNodeId?: NodeId })?.parentNodeId ?? nodeId) as NodeId;
-          const metaObj =
-            (nodeData.metadata && typeof nodeData.metadata === 'object'
+          const parentId: NodeId = (params.targetParentId ??
+            (nodeData as { parentNodeId?: NodeId })?.parentNodeId ??
+            nodeId) as NodeId;
+          const metaObj = (
+            nodeData.metadata && typeof nodeData.metadata === 'object'
               ? (nodeData.metadata as Record<string, unknown>)
-              : {}) as Record<string, unknown>;
+              : {}
+          ) as Record<string, unknown>;
           const sourceName =
             (typeof (nodeData as { name?: unknown }).name === 'string'
               ? (nodeData as { name?: string }).name
@@ -139,9 +141,13 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
               ? (nodeData as { description?: string }).description
               : (metaObj as { description?: string }).description) ?? '';
           const sourceTags = Array.isArray((nodeData as { tags?: unknown }).tags)
-            ? ((nodeData as { tags?: unknown[] }).tags || []).filter((t): t is string => typeof t === 'string')
+            ? ((nodeData as { tags?: unknown[] }).tags || []).filter(
+                (t): t is string => typeof t === 'string'
+              )
             : Array.isArray((metaObj as { tags?: unknown }).tags)
-              ? (((metaObj as { tags?: unknown[] }).tags || []).filter((t): t is string => typeof t === 'string'))
+              ? ((metaObj as { tags?: unknown[] }).tags || []).filter(
+                  (t): t is string => typeof t === 'string'
+                )
               : [];
 
           const uniqueName = await resolveConflictingName(parentId, sourceName);
@@ -150,8 +156,8 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
             description: sourceDescription,
             tags: sourceTags,
           };
-          const draftDataFromTemplate =
-            (nodeData as { draftData?: Partial<PeerEntity<T>> }).draftData;
+          const draftDataFromTemplate = (nodeData as { draftData?: Partial<PeerEntity<T>> })
+            .draftData;
 
           const node: TreeNode = {
             id: nodeId,
@@ -163,11 +169,15 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
             version: (nodeData as { version?: number }).version ?? 1,
             metadata,
             draftMetadata:
-              ((nodeData as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata as TreeNodeMetadata | null | undefined) ??
-              null,
+              ((nodeData as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata as
+                | TreeNodeMetadata
+                | null
+                | undefined) ?? null,
             data:
-              ((nodeData as { data?: Record<string, unknown> | null }).data as Record<string, unknown> | null | undefined) ??
-              null,
+              ((nodeData as { data?: Record<string, unknown> | null }).data as
+                | Record<string, unknown>
+                | null
+                | undefined) ?? null,
             draftData: draftDataFromTemplate,
             visible: true,
           };
@@ -288,15 +298,23 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
         case 'mvf': {
           const shapeNodeIds = [
             ...new Set(
-              collectedNodes
-                .filter((node) => node.nodeType === 'shape')
-                .map((node) => node.id),
+              collectedNodes.filter((node) => node.nodeType === 'shape').map((node) => node.id)
             ),
           ];
           const tiles = await this.collectVectorTileRecords(shapeNodeIds);
 
-          const summary = this.buildVectorTileSummary(shapeNodeIds, tiles, params.format, params.includeMetadata);
-          exportedData = this.buildVectorTileZipExport(params.format, tiles, summary, params.includeMetadata);
+          const summary = this.buildVectorTileSummary(
+            shapeNodeIds,
+            tiles,
+            params.format,
+            params.includeMetadata
+          );
+          exportedData = this.buildVectorTileZipExport(
+            params.format,
+            tiles,
+            summary,
+            params.includeMetadata
+          );
           mimeType = params.format === 'mvf' ? 'application/octet-stream' : 'application/zip';
           exportedCount = tiles.length;
           break;
@@ -321,7 +339,6 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
       operation.completedAt = Date.now();
       operation.result = result;
       return result;
-
     } catch (error) {
       operation.status = 'failed';
       operation.completedAt = Date.now();
@@ -358,11 +375,17 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
     };
 
     if (!params.data?.nodes) {
-      issues.push({ code: 'INVALID_STRUCTURE', message: 'Import data must contain a nodes array', path: 'nodes' });
+      issues.push({
+        code: 'INVALID_STRUCTURE',
+        message: 'Import data must contain a nodes array',
+        path: 'nodes',
+      });
     } else if (!Array.isArray(params.data.nodes)) {
       issues.push({ code: 'INVALID_NODES', message: 'Nodes must be an array', path: 'nodes' });
     } else {
-      params.data.nodes.map((node: ImportNodeInput<T>, index: number) => validateNode(node, `nodes[${index}]`, 0));
+      params.data.nodes.map((node: ImportNodeInput<T>, index: number) =>
+        validateNode(node, `nodes[${index}]`, 0)
+      );
     }
 
     if (issues.length === 0) {
@@ -436,13 +459,16 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
           if (value === null || value === undefined) return '';
           if (
             typeof value === 'string' &&
-            (value.includes(',') || value.includes('"') || value.includes('\n') || value.includes('\r'))
+            (value.includes(',') ||
+              value.includes('"') ||
+              value.includes('\n') ||
+              value.includes('\r'))
           ) {
             return `"${value.replace(/"/g, '""')}"`;
           }
           return String(value);
         })
-        .join(','),
+        .join(',')
     );
     return [headers, ...rows].join('\n');
   }
@@ -474,7 +500,7 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
   } {
     const totalBytes = tiles.reduce(
       (acc, tile) => acc + (tile.size || tile.data_Uint8Array.byteLength),
-      0,
+      0
     );
     return {
       exportDate: new Date().toISOString(),
@@ -495,8 +521,7 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
   ): Blob {
     const files: Record<string, Uint8Array> = {};
     const sortedTiles = [...tiles].sort(
-      (a, b) =>
-        a.nodeId.localeCompare(b.nodeId) || a.z - b.z || a.x - b.x || a.y - b.y,
+      (a, b) => a.nodeId.localeCompare(b.nodeId) || a.z - b.z || a.x - b.x || a.y - b.y
     );
     for (const tile of sortedTiles) {
       const bytes =
@@ -508,15 +533,14 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
 
     if (includeMetadata) {
       files['metadata.json'] = strToU8(
-        JSON.stringify({ format: 'vector-tile-export', summary }, null, 2),
+        JSON.stringify({ format: 'vector-tile-export', summary }, null, 2)
       );
     }
     files['summary.json'] = strToU8(JSON.stringify(summary, null, 2));
 
     // zipSync with DEFLATE compression (level 6)
     const zipped = zipSync(files, { level: 6 });
-    const blobType =
-      format === 'mvf' ? 'application/octet-stream' : 'application/zip';
+    const blobType = format === 'mvf' ? 'application/octet-stream' : 'application/zip';
     return new Blob([zipped], { type: blobType });
   }
 
@@ -525,7 +549,6 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
     if (format === 'mvf') return `export-${Date.now()}.mvf`;
     return `export-${Date.now()}.${format}`;
   }
-
 }
 
 function createUniqueName(existingNames: Set<string>, baseName: string): string {

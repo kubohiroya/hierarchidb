@@ -1,8 +1,6 @@
-import type { StageHandlerResult } from '~/types/types';
 import type { VTStageContext } from '~/contextTypes';
-import type { VtTaskRunInput } from './vtStageTaskTypes.js';
-import type { VtTaskInput } from '~/types/types';
-import type { VtCollectionResult } from './vtStageTaskTypes.js';
+import type { StageHandlerResult, VtTaskInput } from '~/types/types';
+import type { VtCollectionResult, VtTaskRunInput } from './vtStageTaskTypes.js';
 import { writeVtTaskByRunFlow } from './writeVtTaskByRunFlow.js';
 
 type VtTaskBuildExecutionInput = {
@@ -17,7 +15,7 @@ type VtTaskBuildExecutionInput = {
 };
 
 export const writeVtTaskFromExecution = async (
-  input: VtTaskBuildExecutionInput,
+  input: VtTaskBuildExecutionInput
 ): Promise<StageHandlerResult> => {
   return writeVtTaskByRunFlow(input);
 };

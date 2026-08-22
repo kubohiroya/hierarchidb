@@ -1,6 +1,14 @@
-import type React from 'react';
-import { Box, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Typography } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
+import {
+  Box,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Typography,
+} from '@mui/material';
+import type React from 'react';
 import { useAutoHideFullScreenDialogView } from './useAutoHideFullScreenDialogView.js';
 
 export interface AutoHideFullScreenDialogProps {
@@ -54,18 +62,18 @@ export interface AutoHideFullScreenDialogProps {
  * Full-screen dialog with auto-hiding header and footer
  */
 export function AutoHideFullScreenDialog({
-                                           title,
-                                           open,
-                                           onClose,
-                                           children,
-                                           subtitle,
-                                           icon,
-                                           titleActions,
-                                           footerActions,
-                                           autoHide = true,
-                                           autoHideDelay = 300,
-                                           hoverZoneHeight = 40,
-                                         }: AutoHideFullScreenDialogProps): React.ReactElement {
+  title,
+  open,
+  onClose,
+  children,
+  subtitle,
+  icon,
+  titleActions,
+  footerActions,
+  autoHide = true,
+  autoHideDelay = 300,
+  hoverZoneHeight = 40,
+}: AutoHideFullScreenDialogProps): React.ReactElement {
   const {
     headerVisible,
     footerVisible,

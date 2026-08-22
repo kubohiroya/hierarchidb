@@ -1,5 +1,5 @@
-import { atom } from 'jotai';
 import type { TreeNode } from '@hierarchidb/tree-api';
+import { atom } from 'jotai';
 
 export const tableDataAtom = atom<TreeNode[]>([]);
 
@@ -11,7 +11,9 @@ export const filteredDataAtom = atom<TreeNode[]>((get) => {
 
   if (!searchTerm) return data;
 
-  return data.filter((item) => item.metadata.name?.toLowerCase().includes(searchTerm.toLowerCase()));
+  return data.filter((item) =>
+    item.metadata.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 });
 
 export const totalCountAtom = atom<number>((get) => {

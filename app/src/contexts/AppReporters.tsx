@@ -1,6 +1,6 @@
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useSimpleBFFAuth } from '@hierarchidb/ui-plugin-shell/ui-auth';
 import { useEffect } from 'react';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useBootProgress } from '~/contexts/BootProgressProvider';
 import { useWorker } from '~/contexts/WorkerProvider';
 

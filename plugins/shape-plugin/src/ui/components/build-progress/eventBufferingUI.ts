@@ -20,25 +20,25 @@ export type NotificationType = 'session-state' | 'stage-snapshot' | 'task-progre
 
 /** A buffered event in the FIFO queue (session-state / stage-snapshot only). */
 export interface BufferedEvent {
-    notificationType: NotificationType;
-    payload: unknown;
-    timestamp: number;
+  notificationType: NotificationType;
+  payload: unknown;
+  timestamp: number;
 }
 
 export interface FifoEventQueue {
-    events: BufferedEvent[];
+  events: BufferedEvent[];
 }
 
 export interface EventBufferManager {
-    enqueue(event: BufferedEvent): void;
-    /** Flush all queued events for the given FIFO notification type. */
-    flushFifo(notificationType: 'session-state' | 'stage-snapshot'): BufferedEvent[];
-    /**
-     * Apply a task-progress event with per-taskId version deduplication.
-     * Returns true if accepted, false if dropped (stale or duplicate).
-     */
-    applyTaskProgress(taskId: string, version: number): boolean;
-    reset(): void;
+  enqueue(event: BufferedEvent): void;
+  /** Flush all queued events for the given FIFO notification type. */
+  flushFifo(notificationType: 'session-state' | 'stage-snapshot'): BufferedEvent[];
+  /**
+   * Apply a task-progress event with per-taskId version deduplication.
+   * Returns true if accepted, false if dropped (stale or duplicate).
+   */
+  applyTaskProgress(taskId: string, version: number): boolean;
+  reset(): void;
 }
 
 /**
@@ -48,67 +48,69 @@ export interface EventBufferManager {
  * task-progress uses per-taskId version tracking to drop stale events.
  */
 export class UIEventBufferManager implements EventBufferManager {
-    private fifoQueues: Record<'session-state' | 'stage-snapshot', FifoEventQueue> = {
-        'session-state': { events: [] },
-        'stage-snapshot': { events: [] },
+  private fifoQueues: Record<'session-state' | 'stage-snapshot', FifoEventQueue> = {
+    'session-state': { events: [] },
+    'stage-snapshot': { events: [] },
+  };
+
+  /** Last accepted version per taskId. */
+  private lastVersionByTaskId: Map<string, number> = new Map();
+
+  enqueue(event: BufferedEvent): void {
+    if (event.notificationType === 'task-progress') {
+      throw new Error(
+        '[UIEventBufferManager] task-progress events must use applyTaskProgress(), not enqueue()'
+      );
+    }
+    const queue = this.fifoQueues[event.notificationType];
+    if (!queue) {
+      throw new Error(
+        `[UIEventBufferManager] Unknown notification type: ${event.notificationType}`
+      );
+    }
+    queue.events.push(event);
+  }
+
+  flushFifo(notificationType: 'session-state' | 'stage-snapshot'): BufferedEvent[] {
+    const queue = this.fifoQueues[notificationType];
+    if (!queue) {
+      throw new Error(`[UIEventBufferManager] Unknown notification type: ${notificationType}`);
+    }
+    const drained = queue.events;
+    this.fifoQueues[notificationType] = { events: [] };
+    return drained;
+  }
+
+  applyTaskProgress(taskId: string, version: number): boolean {
+    const last = this.lastVersionByTaskId.get(taskId);
+    if (last !== undefined && version <= last) {
+      // stale or duplicate — drop
+      return false;
+    }
+    this.lastVersionByTaskId.set(taskId, version);
+    return true;
+  }
+
+  reset(): void {
+    this.fifoQueues = {
+      'session-state': { events: [] },
+      'stage-snapshot': { events: [] },
     };
-
-    /** Last accepted version per taskId. */
-    private lastVersionByTaskId: Map<string, number> = new Map();
-
-    enqueue(event: BufferedEvent): void {
-        if (event.notificationType === 'task-progress') {
-            throw new Error(
-                '[UIEventBufferManager] task-progress events must use applyTaskProgress(), not enqueue()',
-            );
-        }
-        const queue = this.fifoQueues[event.notificationType];
-        if (!queue) {
-            throw new Error(`[UIEventBufferManager] Unknown notification type: ${event.notificationType}`);
-        }
-        queue.events.push(event);
-    }
-
-    flushFifo(notificationType: 'session-state' | 'stage-snapshot'): BufferedEvent[] {
-        const queue = this.fifoQueues[notificationType];
-        if (!queue) {
-            throw new Error(`[UIEventBufferManager] Unknown notification type: ${notificationType}`);
-        }
-        const drained = queue.events;
-        this.fifoQueues[notificationType] = { events: [] };
-        return drained;
-    }
-
-    applyTaskProgress(taskId: string, version: number): boolean {
-        const last = this.lastVersionByTaskId.get(taskId);
-        if (last !== undefined && version <= last) {
-            // stale or duplicate — drop
-            return false;
-        }
-        this.lastVersionByTaskId.set(taskId, version);
-        return true;
-    }
-
-    reset(): void {
-        this.fifoQueues = {
-            'session-state': { events: [] },
-            'stage-snapshot': { events: [] },
-        };
-        this.lastVersionByTaskId = new Map();
-    }
+    this.lastVersionByTaskId = new Map();
+  }
 }
 
 /**
  * Heartbeat events are processed immediately without buffering.
  */
 export interface HeartbeatProcessor {
-    processHeartbeat(event: { nodeId: string; heartbeatAt?: number }): void;
+  processHeartbeat(event: { nodeId: string; heartbeatAt?: number }): void;
 }
 
 export class ImmediateHeartbeatProcessor implements HeartbeatProcessor {
-    constructor(private callback: (event: { nodeId: string; heartbeatAt?: number }) => void) { }
+  constructor(private callback: (event: { nodeId: string; heartbeatAt?: number }) => void) {}
 
-    processHeartbeat(event: { nodeId: string; heartbeatAt?: number }): void {
-        this.callback(event);
-    }
+  processHeartbeat(event: { nodeId: string; heartbeatAt?: number }): void {
+    this.callback(event);
+  }
 }

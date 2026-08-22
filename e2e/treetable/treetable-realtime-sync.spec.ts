@@ -1,13 +1,13 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import {
-  dismissGuidedTour,
-  waitForTreeTableLoad,
-  setupConsoleErrorTracking,
+  buildAppUrl,
   clearTestData,
   createTestFolder,
-  waitForSubTreeUpdate,
+  dismissGuidedTour,
+  setupConsoleErrorTracking,
   waitForDraftUpdate,
-  buildAppUrl,
+  waitForSubTreeUpdate,
+  waitForTreeTableLoad,
 } from '../utils/test-helpers';
 
 type PerformanceWithMemory = Performance & {
@@ -32,7 +32,6 @@ type RealtimeSyncWindow = Window & {
  * Tests the SubTree subscription system and real-time updates.
  * Based on the specification in docs/12-1-e2e-treetable.md
  */
-
 
 test.describe('TreeTable Real-time Synchronization', () => {
   test.beforeEach(async ({ page }) => {
@@ -149,7 +148,6 @@ test.describe('TreeTable Real-time Synchronization', () => {
   });
 
   test('複数ノードの同時更新処理', async ({ page }) => {
-
     // 複数ノードの同時更新をシミュレート
     await page.evaluate(async () => {
       const worker = (window as RealtimeSyncWindow).__hierarchidb_worker__;
@@ -185,40 +183,43 @@ test.describe('TreeTable Real-time Synchronization', () => {
 
   test('ネットワーク切断時の再接続処理', async ({ page }) => {
     // ネットワーク切断をシミュレート
-    page.context().browser().newContext().then(async(c)=>{
-      await c.setOffline(true)
+    page
+      .context()
+      .browser()
+      .newContext()
+      .then(async (c) => {
+        await c.setOffline(true);
 
-      // オフライン状態の表示確認
-      await expect(page.locator('[data-testid="offline-indicator"]')).toBeVisible({ timeout: 5000 });
+        // オフライン状態の表示確認
+        await expect(page.locator('[data-testid="offline-indicator"]')).toBeVisible({
+          timeout: 5000,
+        });
 
-      // SubTree購読のステータス確認
-      await expect(page.locator('[data-testid="subtree-subscription-status"]')).toHaveAttribute(
-        'data-status',
-        'disconnected'
-      );
+        // SubTree購読のステータス確認
+        await expect(page.locator('[data-testid="subtree-subscription-status"]')).toHaveAttribute(
+          'data-status',
+          'disconnected'
+        );
 
-      // ネットワーク復旧
-      await c.setOffline(false);
+        // ネットワーク復旧
+        await c.setOffline(false);
 
-      // 再接続処理の確認
-      await expect(page.locator('[data-testid="reconnecting-indicator"]')).toBeVisible({
-        timeout: 3000,
+        // 再接続処理の確認
+        await expect(page.locator('[data-testid="reconnecting-indicator"]')).toBeVisible({
+          timeout: 3000,
+        });
+
+        // 接続復旧の確認
+        await expect(page.locator('[data-testid="subtree-subscription-status"]')).toHaveAttribute(
+          'data-status',
+          'active',
+          { timeout: 10000 }
+        );
+
+        // オフライン中に蓄積された変更の同期確認
+        await waitForSubTreeUpdate(page);
+        await expect(page.locator('[data-testid="sync-completed-notification"]')).toBeVisible();
       });
-
-      // 接続復旧の確認
-      await expect(page.locator('[data-testid="subtree-subscription-status"]')).toHaveAttribute(
-        'data-status',
-        'active',
-        { timeout: 10000 }
-      );
-
-      // オフライン中に蓄積された変更の同期確認
-      await waitForSubTreeUpdate(page);
-      await expect(page.locator('[data-testid="sync-completed-notification"]')).toBeVisible();
-
-    });
-
-
   });
 
   test('Working Copy状態でのリアルタイム同期制御', async ({ page }) => {
@@ -339,7 +340,9 @@ test.describe('TreeTable Real-time Synchronization', () => {
     // 最終的にすべての更新が反映されることを確認
     await waitForSubTreeUpdate(page, 10000);
 
-    const highFrequencyNodes = page.locator('[data-testid="console-node"]:has-text("High Frequency")');
+    const highFrequencyNodes = page.locator(
+      '[data-testid="console-node"]:has-text("High Frequency")'
+    );
     await expect(highFrequencyNodes).toHaveCount(45); // スロットリングで一部が結合される可能性
   });
 

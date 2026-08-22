@@ -18,4 +18,4 @@ export const UIShellPackages = [
   'ui-usermenu',
 ] as const;
 
-export type UIShellPackageId = typeof UIShellPackages[number];
+export type UIShellPackageId = (typeof UIShellPackages)[number];

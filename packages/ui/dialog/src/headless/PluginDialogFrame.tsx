@@ -19,7 +19,7 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
       onPointerDown={state.handleFramePointerDown}
     >
       <AbstractDialog {...state.augmentedHeadlessProps} />
-      {state.allowResizeHandles && (
+      {state.allowResizeHandles &&
         state.resizeHandles.map((handle) => (
           <Box
             key={handle.key}
@@ -36,8 +36,7 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
               state.augmentedHeadlessProps.onResizeHandlePointerDown?.(event);
             }}
           />
-        ))
-      )}
+        ))}
     </Box>
   );
 

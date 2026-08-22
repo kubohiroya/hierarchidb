@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { SubTreeChanges } from '../../state/features/subscription.atoms';
 import { coalesceBatches } from '../mergeUtils';
 
@@ -19,4 +19,3 @@ describe('coalesceBatches', () => {
     expect(m?.newParentId).toBe('r');
   });
 });
-

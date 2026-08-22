@@ -1,4 +1,3 @@
-import { SingletonMixin } from '@hierarchidb/util';
 import type {
   AuthCancelledNotification,
   AuthContext,
@@ -9,6 +8,7 @@ import type {
   AuthSuccessNotification,
   PluginType,
 } from '@hierarchidb/auth-api';
+import { SingletonMixin } from '@hierarchidb/util';
 import { AuthNotificationFactory, AuthNotificationRegistry } from './AuthNotificationSystem.js';
 
 type UiStorageBridge = {
@@ -125,7 +125,9 @@ export class AuthService implements AuthHeadersProvider {
 
       if (isWorkerEnvironment) {
         // Always enable debug in worker environment to help diagnose token access issues
-        console.debug('[auth][service] Debug force-enabled in worker environment for Issue #822 debugging');
+        console.debug(
+          '[auth][service] Debug force-enabled in worker environment for Issue #822 debugging'
+        );
         return true;
       }
 
@@ -155,7 +157,11 @@ export class AuthService implements AuthHeadersProvider {
     }
   }
 
-  async fetchWithAuth(url: string, init: RequestInit = {}, ctx: AuthContext = {}): Promise<Response> {
+  async fetchWithAuth(
+    url: string,
+    init: RequestInit = {},
+    ctx: AuthContext = {}
+  ): Promise<Response> {
     // Resolve session identity: explicit ctx wins, then buildSessionContext.
     const sessionId = ctx.sessionId ?? this.buildSessionContext?.sessionId;
     const sessionStartedAt = ctx.sessionStartedAt ?? this.buildSessionContext?.sessionStartedAt;
@@ -259,11 +265,17 @@ export class AuthService implements AuthHeadersProvider {
           });
         }
         const requestId = `auth-req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-        const authRes = await this.awaitAuth(requestId, url, init, { sessionId, sessionStartedAt, scope, maxRetries }, {
-          errorCode: 401,
-          errorMessage: 'Unauthorized',
-          source: isLikelyCorsProxyUrl(url) ? 'cors-proxy' : 'external-api',
-        });
+        const authRes = await this.awaitAuth(
+          requestId,
+          url,
+          init,
+          { sessionId, sessionStartedAt, scope, maxRetries },
+          {
+            errorCode: 401,
+            errorMessage: 'Unauthorized',
+            source: isLikelyCorsProxyUrl(url) ? 'cors-proxy' : 'external-api',
+          }
+        );
         if (authRes.status !== 401) return authRes;
         lastErr = new Error(`HTTP ${authRes.status}`);
       } catch (error) {
@@ -312,11 +324,17 @@ export class AuthService implements AuthHeadersProvider {
       errorMessage?: string;
       source?: AuthSource;
       retryCount?: number;
-    },
+    }
   ): Promise<Response> {
     const pluginTypeNarrow: PluginType = ((): PluginType => {
       const p = ctx.scope ?? 'shape';
-      return (p === 'shape' || p === 'location' || p === 'route' || p === 'spreadsheet' || p === 'styler') ? p : 'shape';
+      return p === 'shape' ||
+        p === 'location' ||
+        p === 'route' ||
+        p === 'spreadsheet' ||
+        p === 'styler'
+        ? p
+        : 'shape';
     })();
 
     if (this.isAuthDebugEnabled()) {
@@ -357,7 +375,7 @@ export class AuthService implements AuthHeadersProvider {
     void url;
     void init;
     void ctx;
-    this.registry.dispatch(notification).catch(() => { });
+    this.registry.dispatch(notification).catch(() => {});
     throw new AuthRequiredError('Authentication required');
   }
 
@@ -478,7 +496,9 @@ export class AuthService implements AuthHeadersProvider {
     // First try uiStorage if available
     const storageBridge = this.uiStorage;
     if (storageBridge) {
-      console.debug('[auth][service] Attempting uiStorage.getItem("access_token") - Issue #823 debug');
+      console.debug(
+        '[auth][service] Attempting uiStorage.getItem("access_token") - Issue #823 debug'
+      );
       const uiStorageStart = performance.now();
       const token = await storageBridge.getItem('access_token');
       const uiStorageEnd = performance.now();
@@ -493,12 +513,16 @@ export class AuthService implements AuthHeadersProvider {
 
       return this.validateTokenExpiration(token || '', 'uiStorage', storageBridge);
     } else {
-      console.debug('[auth][service] uiStorage not available, skipping to next method - Issue #823 debug');
+      console.debug(
+        '[auth][service] uiStorage not available, skipping to next method - Issue #823 debug'
+      );
     }
 
     // Fallback to localStorage if available (main thread only)
     if (typeof localStorage !== 'undefined') {
-      console.debug('[auth][service] Attempting localStorage.getItem("access_token") - Issue #823 debug');
+      console.debug(
+        '[auth][service] Attempting localStorage.getItem("access_token") - Issue #823 debug'
+      );
       const localStorageStart = performance.now();
       const token = localStorage.getItem('access_token');
       const localStorageEnd = performance.now();
@@ -517,13 +541,16 @@ export class AuthService implements AuthHeadersProvider {
     }
 
     const resolutionEnd = performance.now();
-    console.debug('[auth][service] resolveStoredToken: no storage available or no token found - Issue #823 debug:', {
-      hasUiStorage: Boolean(this.uiStorage),
-      hasLocalStorage: typeof localStorage !== 'undefined',
-      isWorkerEnvironment,
-      totalTimeMs: Math.round(resolutionEnd - resolutionStart),
-      timestamp: new Date().toISOString(),
-    });
+    console.debug(
+      '[auth][service] resolveStoredToken: no storage available or no token found - Issue #823 debug:',
+      {
+        hasUiStorage: Boolean(this.uiStorage),
+        hasLocalStorage: typeof localStorage !== 'undefined',
+        isWorkerEnvironment,
+        totalTimeMs: Math.round(resolutionEnd - resolutionStart),
+        timestamp: new Date().toISOString(),
+      }
+    );
     return null;
   }
 }
@@ -558,7 +585,7 @@ function decodeJwtPayload(token: string): { exp?: number } | null {
     }
 
     const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
-    const padded = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
     const decoded = atob(padded);
 
     return JSON.parse(decoded);

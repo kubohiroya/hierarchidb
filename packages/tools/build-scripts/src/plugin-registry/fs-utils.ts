@@ -1,6 +1,6 @@
 import { promises as fs } from 'node:fs';
-import path from 'node:path';
 import { createRequire } from 'node:module';
+import path from 'node:path';
 
 import { appDir, appPkgPath, repoRoot } from './paths.js';
 
@@ -80,8 +80,12 @@ export async function removeLegacyArtifacts(): Promise<void> {
         await fs.rm(legacyPath, { recursive: true, force: true });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        console.warn('[generate-plugin-registry] failed to remove legacy artefact', legacyPath, message);
+        console.warn(
+          '[generate-plugin-registry] failed to remove legacy artefact',
+          legacyPath,
+          message
+        );
       }
-    }),
+    })
   );
 }

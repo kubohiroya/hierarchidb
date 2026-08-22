@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { CrossViewStyles } from '~/CrossViewStyles';
 import type { Id } from '~/CrossViewStyles';
+import { CrossViewStyles } from '~/CrossViewStyles';
 
 const logCrossHighlightWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -13,7 +13,10 @@ export interface UseCrossHighlightSyncOptions {
   withDeckAccessors?: boolean;
 }
 
-export function useCrossHighlightSync({ datasetId, withDeckAccessors = true }: UseCrossHighlightSyncOptions) {
+export function useCrossHighlightSync({
+  datasetId,
+  withDeckAccessors = true,
+}: UseCrossHighlightSyncOptions) {
   const [, force] = React.useReducer((x) => x + 1, 0);
 
   const toFeatureId = React.useCallback((value: unknown): Id | null => {
@@ -37,23 +40,27 @@ export function useCrossHighlightSync({ datasetId, withDeckAccessors = true }: U
   const rowSets = React.useMemo(() => CrossViewStyles.getRowSets(datasetId), [datasetId, force]);
 
   // DataGrid helpers
-  const dataGrid = React.useMemo(() => ({
-    hoveredRows: rowSets.hovered,
-    selectedRows: rowSets.selected,
-    matchedRows: rowSets.matched,
-    disabledRows: rowSets.disabled,
-    draggingRows: rowSets.dragging,
-    dropTargetRows: rowSets.dropTarget,
-    onRowHover: (row: any, rowId: string | number) => {
-      CrossViewStyles.setState(datasetId, 'rows', 'hovered', new Set<Id>([rowId]));
-      CrossViewStyles.emitFocus(datasetId, { datasetId, source: 'row', id: rowId, data: row });
-    },
-    onRowLeave: (_row: any, _rowId: string | number) => {
-      CrossViewStyles.setState(datasetId, 'rows', 'hovered', new Set());
-      CrossViewStyles.emitBlur(datasetId);
-    },
-    rowSx: (state: { rowId: string | number }) => CrossViewStyles.resolveRowStyle(datasetId, state.rowId)?.sx,
-  }), [datasetId, rowSets]);
+  const dataGrid = React.useMemo(
+    () => ({
+      hoveredRows: rowSets.hovered,
+      selectedRows: rowSets.selected,
+      matchedRows: rowSets.matched,
+      disabledRows: rowSets.disabled,
+      draggingRows: rowSets.dragging,
+      dropTargetRows: rowSets.dropTarget,
+      onRowHover: (row: any, rowId: string | number) => {
+        CrossViewStyles.setState(datasetId, 'rows', 'hovered', new Set<Id>([rowId]));
+        CrossViewStyles.emitFocus(datasetId, { datasetId, source: 'row', id: rowId, data: row });
+      },
+      onRowLeave: (_row: any, _rowId: string | number) => {
+        CrossViewStyles.setState(datasetId, 'rows', 'hovered', new Set());
+        CrossViewStyles.emitBlur(datasetId);
+      },
+      rowSx: (state: { rowId: string | number }) =>
+        CrossViewStyles.resolveRowStyle(datasetId, state.rowId)?.sx,
+    }),
+    [datasetId, rowSets]
+  );
 
   // deck.gl helpers
   const deck = React.useMemo(() => {
@@ -64,7 +71,12 @@ export function useCrossHighlightSync({ datasetId, withDeckAccessors = true }: U
         const fid = toFeatureId(info?.object?.id);
         if (fid != null) {
           CrossViewStyles.setState(datasetId, 'features', 'hovered', new Set<Id>([fid]));
-          CrossViewStyles.emitFocus(datasetId, { datasetId, source: 'features', id: fid, data: info.object?.properties });
+          CrossViewStyles.emitFocus(datasetId, {
+            datasetId,
+            source: 'features',
+            id: fid,
+            data: info.object?.properties,
+          });
         } else {
           CrossViewStyles.setState(datasetId, 'features', 'hovered', new Set());
           CrossViewStyles.emitBlur(datasetId);
@@ -80,7 +92,12 @@ export function useCrossHighlightSync({ datasetId, withDeckAccessors = true }: U
   }, [datasetId, toFeatureId, withDeckAccessors]);
 
   // MapLibre helpers
-  function bindMapLibre(map: any, sourceId: string, layerIds: string[], opts?: { selectOnClick?: boolean }) {
+  function bindMapLibre(
+    map: any,
+    sourceId: string,
+    layerIds: string[],
+    opts?: { selectOnClick?: boolean }
+  ) {
     const onMove = (e: any) => {
       const f = e.features?.[0];
       const fid = toFeatureId(f?.id);
@@ -89,10 +106,19 @@ export function useCrossHighlightSync({ datasetId, withDeckAccessors = true }: U
         return;
       }
       CrossViewStyles.setState(datasetId, 'features', 'hovered', new Set<Id>([fid]));
-      CrossViewStyles.emitFocus(datasetId, { datasetId, source: 'features', id: fid, data: f.properties });
+      CrossViewStyles.emitFocus(datasetId, {
+        datasetId,
+        source: 'features',
+        id: fid,
+        data: f.properties,
+      });
       CrossViewStyles.applyMapLibreFeatureState(datasetId, map, sourceId);
     };
-    const onLeave = () => { CrossViewStyles.setState(datasetId, 'features', 'hovered', new Set()); CrossViewStyles.emitBlur(datasetId); CrossViewStyles.applyMapLibreFeatureState(datasetId, map, sourceId); };
+    const onLeave = () => {
+      CrossViewStyles.setState(datasetId, 'features', 'hovered', new Set());
+      CrossViewStyles.emitBlur(datasetId);
+      CrossViewStyles.applyMapLibreFeatureState(datasetId, map, sourceId);
+    };
     const onClick = (e: any) => {
       if (!opts?.selectOnClick) return;
       const f = e.features?.[0];

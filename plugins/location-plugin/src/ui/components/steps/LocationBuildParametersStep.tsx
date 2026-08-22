@@ -3,9 +3,9 @@
  * @description Build parameter configuration step for Location dialog.
  */
 
+import type { NodeId } from '@hierarchidb/core-types';
 import type React from 'react';
 import type { LocationEntity } from '~/common/types/index';
-import type { NodeId } from '@hierarchidb/core-types';
 import { useIdeGsmImportOnEntry } from '~/ui/hooks/useIdeGsmImportOnEntry';
 import { LocationStyleConfigPanel } from './LocationStyleConfigPanel.js';
 
@@ -24,11 +24,5 @@ export const LocationBuildParametersStep: React.FC<LocationBuildParametersStepPr
 }) => {
   useIdeGsmImportOnEntry({ draft, nodeId, onUpdate });
 
-  return (
-    <LocationStyleConfigPanel
-      draft={draft}
-      onUpdate={onUpdate}
-      disabled={disabled}
-    />
-  );
+  return <LocationStyleConfigPanel draft={draft} onUpdate={onUpdate} disabled={disabled} />;
 };

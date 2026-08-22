@@ -1,8 +1,8 @@
 import type {
   PluginDefinition,
+  PluginManifest,
   PluginModuleInfo,
   PluginModuleSet,
-  PluginManifest,
   PluginRegistryEntry,
 } from './types.ts';
 
@@ -21,7 +21,7 @@ function hasSpecifier(moduleInfo: PluginModuleInfo | undefined): moduleInfo is P
 }
 
 export function derivePluginDefinitions(
-  registry: readonly PluginRegistryEntry[],
+  registry: readonly PluginRegistryEntry[]
 ): PluginDefinition[] {
   return registry.map((entry) => ({
     nodeType: entry.nodeType,
@@ -47,7 +47,7 @@ export function derivePluginDefinitions(
 
 export function derivePluginModuleSpecifiers(
   registry: readonly PluginRegistryEntry[],
-  moduleKey: PluginModuleKey,
+  moduleKey: PluginModuleKey
 ): Record<string, string> {
   const pairs: Array<[string, string]> = [];
   for (const entry of registry) {
@@ -61,7 +61,7 @@ export function derivePluginModuleSpecifiers(
 
 export function derivePluginModuleSources(
   registry: readonly PluginRegistryEntry[],
-  moduleKey: PluginModuleKey,
+  moduleKey: PluginModuleKey
 ): Record<string, string | undefined> {
   const pairs: Array<[string, string | undefined]> = [];
   for (const entry of registry) {

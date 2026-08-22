@@ -1,6 +1,6 @@
 import type { SvgIconProps } from '@mui/material/SvgIcon';
-import { describe, expect, it } from 'vitest';
 import { isValidElement } from 'react';
+import { describe, expect, it } from 'vitest';
 import {
   getMuiIconComponent,
   getMuiIconWithColor,

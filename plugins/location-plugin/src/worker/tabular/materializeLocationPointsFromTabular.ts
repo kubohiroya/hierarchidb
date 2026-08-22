@@ -1,8 +1,9 @@
 import type { NodeId } from '@hierarchidb/core-types';
+import { buildLocationPointIdFromLatLon, buildTileIdByZoom } from '@hierarchidb/location-store';
 import type { TabularDataResult } from '@hierarchidb/ui-tabular';
 import type { LocationPointProperties } from '~/common/entities/LocationPoint';
-import { buildLocationPointIdFromLatLon, buildTileIdByZoom } from '@hierarchidb/location-store';
 import { replaceLocationPoints } from '~/services/pointRepository';
+
 type ProgressReporter = (progress: {
   stage?: string;
   completed?: number;
@@ -11,7 +12,8 @@ type ProgressReporter = (progress: {
 }) => void;
 
 const toNumber = (val: unknown): number | null => (typeof val === 'number' ? val : null);
-const toStringVal = (val: unknown): string | undefined => (typeof val === 'string' ? val : undefined);
+const toStringVal = (val: unknown): string | undefined =>
+  typeof val === 'string' ? val : undefined;
 const normalizeMetadataValue = (value: unknown): string | number | null => {
   if (value == null) return null;
   if (typeof value === 'string' || typeof value === 'number') return value;
@@ -49,7 +51,11 @@ export async function materializeLocationPointsFromTabular(
     const admin0Code = toStringVal(r.admin0Code) ?? toStringVal(r.countryCode) ?? '';
     const admin1 = toStringVal(r.admin1) ?? toStringVal(r.adminCode1);
     const admin2 = toStringVal(r.admin2) ?? toStringVal(r.adminCode2);
-    const admin0 = toStringVal(r.admin0) ?? toStringVal(r.admin0Name) ?? toStringVal(r.countryName) ?? toStringVal(r.country);
+    const admin0 =
+      toStringVal(r.admin0) ??
+      toStringVal(r.admin0Name) ??
+      toStringVal(r.countryName) ??
+      toStringVal(r.country);
 
     normalized.push({
       schemaVersion: 2,

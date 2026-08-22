@@ -1,15 +1,15 @@
 /**
-  * Optional Plugin Context Hook
-   * null
-  */
+ * Optional Plugin Context Hook
+ * null
+ */
 
 import { useContext } from 'react';
 import { PluginContext } from './PluginProvider.js';
 import type { PluginContext as IPluginContext } from './types.js';
 
 /**
-   * @returns null
-  */
+ * @returns null
+ */
 export function useOptionalPluginContext(): IPluginContext | null {
   // PluginContext is created with a default `null` value, so this is safe even
   // when no Provider is mounted.
@@ -17,14 +17,14 @@ export function useOptionalPluginContext(): IPluginContext | null {
 }
 
 /**
-    */
+ */
 export function usePluginsEnabled(): boolean {
   const context = useOptionalPluginContext();
   return context !== null;
 }
 
 /**
-    */
+ */
 export function useSafePluginHook() {
   const context = useOptionalPluginContext();
 

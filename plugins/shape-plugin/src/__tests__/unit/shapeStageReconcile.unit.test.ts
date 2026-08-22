@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
+import { describe, expect, it } from 'vitest';
 import { reconcileStageTasksByMetadata } from '../../services/vt/shapeStageReconcile';
 import { ShapeTaskCacheIdentityContractError } from '../../services/vt/shapeTaskCacheIdentity';
 
@@ -12,11 +12,7 @@ type TestInput = {
 
 type TestTask = TaskQueueRecord<TestInput, unknown>;
 
-const buildTask = (
-  taskId: string,
-  value: string,
-  overrides?: Partial<TestInput>,
-): TestTask => ({
+const buildTask = (taskId: string, value: string, overrides?: Partial<TestInput>): TestTask => ({
   taskId,
   nodeId: 'node-1' as NodeId,
   stage: 'source',
@@ -71,7 +67,7 @@ describe('reconcileStageTasksByMetadata', () => {
   it('rejects a task with missing persisted identity before reconciliation', () => {
     const desired = [buildTask('t1', 'a')];
     expect(() => reconcileStageTasksByMetadata(desired, [])).toThrowError(
-      ShapeTaskCacheIdentityContractError,
+      ShapeTaskCacheIdentityContractError
     );
   });
 });

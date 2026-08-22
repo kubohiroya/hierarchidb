@@ -3,9 +3,7 @@ import { buildLayerResultFromBranch } from './vtStageTaskLayerBuilderFlowModesUt
 import type { LayerBuildFlowInput } from './vtStageTaskLayerBuilderFlowTypes.js';
 import type { VtLayerBuildResult } from './vtStageTaskLayerBuilderTypes.js';
 
-export const buildSingleLayer = async (
-  input: LayerBuildFlowInput,
-): Promise<VtLayerBuildResult> => {
+export const buildSingleLayer = async (input: LayerBuildFlowInput): Promise<VtLayerBuildResult> => {
   const {
     context,
     taskContext,
@@ -26,7 +24,7 @@ export const buildSingleLayer = async (
     layerMap,
     debugCollect,
     assertNotAborted,
-    buildLayerIndexForTile,
+    buildLayerIndexForTile
   );
   return buildLayerResultFromBranch({
     branchResult,

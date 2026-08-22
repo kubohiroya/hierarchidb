@@ -1,5 +1,5 @@
-import type { Feature, Geometry, Position } from 'geojson';
 import { Box, Paper, Stack } from '@mui/material';
+import type { Feature, Geometry, Position } from 'geojson';
 import { useTransposedFeaturePreviewCardView } from './useTransposedFeaturePreviewCardView.js';
 
 export type TileBBox = {
@@ -33,12 +33,17 @@ const lonLatToMercator = (lon: number, lat: number): Point | null => {
   const maxLat = 85.05112878;
   const clampedLat = Math.max(-maxLat, Math.min(maxLat, lat));
   const rad = Math.PI / 180;
-  const x = lon * 20037508.34 / 180;
-  const y = Math.log(Math.tan((90 + clampedLat) * rad / 2)) * 20037508.34 / Math.PI;
+  const x = (lon * 20037508.34) / 180;
+  const y = (Math.log(Math.tan(((90 + clampedLat) * rad) / 2)) * 20037508.34) / Math.PI;
   return { x, y };
 };
 
-const projectPoint = (coord: Position, view: MercatorBBox, width: number, height: number): Point | null => {
+const projectPoint = (
+  coord: Position,
+  view: MercatorBBox,
+  width: number,
+  height: number
+): Point | null => {
   const [lon, lat] = coord;
   if (typeof lon !== 'number' || typeof lat !== 'number') return null;
   const projected = lonLatToMercator(lon, lat);
@@ -57,7 +62,7 @@ const toPath = (
   coords: Position[] | Position[][] | Position[][][],
   view: MercatorBBox,
   width: number,
-  height: number,
+  height: number
 ): string => {
   const parts: string[] = [];
   const pushPath = (ring: Position[]) => {
@@ -168,56 +173,68 @@ export const TransposedFeaturePreviewCard = ({
                   strokeWidth="1.5"
                 />
               ) : null}
-              {view ? features.map((feature, index) => {
-                const id = resolveFeatureId(feature);
-                const isSelected = id ? selectedFeatureIds?.has(id) : false;
-                const color = isSelected ? '#ef6c00' : '#1976d2';
-                const opacity = isSelected ? 0.7 : 0.25;
-                if (!feature.geometry) return null;
-                if (feature.geometry.type === 'Point') {
-                  const pt = projectPoint(feature.geometry.coordinates as Position, view, width, height);
-                  if (!pt) return null;
-                  return (
-                    <circle
-                      key={`${id ?? 'pt'}-${index}`}
-                      cx={pt.x}
-                      cy={pt.y}
-                      r={2.5}
-                      fill={color}
-                      opacity={opacity}
-                    />
-                  );
-                }
-                if (feature.geometry.type === 'MultiPoint') {
-                  const coords = feature.geometry.coordinates as Position[];
-                  return coords.map((coord, subIndex) => {
-                    const pt = projectPoint(coord, view, width, height);
-                    if (!pt) return null;
+              {view
+                ? features.map((feature, index) => {
+                    const id = resolveFeatureId(feature);
+                    const isSelected = id ? selectedFeatureIds?.has(id) : false;
+                    const color = isSelected ? '#ef6c00' : '#1976d2';
+                    const opacity = isSelected ? 0.7 : 0.25;
+                    if (!feature.geometry) return null;
+                    if (feature.geometry.type === 'Point') {
+                      const pt = projectPoint(
+                        feature.geometry.coordinates as Position,
+                        view,
+                        width,
+                        height
+                      );
+                      if (!pt) return null;
+                      return (
+                        <circle
+                          key={`${id ?? 'pt'}-${index}`}
+                          cx={pt.x}
+                          cy={pt.y}
+                          r={2.5}
+                          fill={color}
+                          opacity={opacity}
+                        />
+                      );
+                    }
+                    if (feature.geometry.type === 'MultiPoint') {
+                      const coords = feature.geometry.coordinates as Position[];
+                      return coords.map((coord, subIndex) => {
+                        const pt = projectPoint(coord, view, width, height);
+                        if (!pt) return null;
+                        return (
+                          <circle
+                            key={`${id ?? 'mp'}-${index}-${subIndex}`}
+                            cx={pt.x}
+                            cy={pt.y}
+                            r={2.5}
+                            fill={color}
+                            opacity={opacity}
+                          />
+                        );
+                      });
+                    }
+                    const path = toPath(
+                      feature.geometry.coordinates as Position[] | Position[][] | Position[][][],
+                      view,
+                      width,
+                      height
+                    );
+                    if (!path) return null;
                     return (
-                      <circle
-                        key={`${id ?? 'mp'}-${index}-${subIndex}`}
-                        cx={pt.x}
-                        cy={pt.y}
-                        r={2.5}
-                        fill={color}
+                      <path
+                        key={`${id ?? 'path'}-${index}`}
+                        d={path}
+                        fill={feature.geometry.type.includes('Polygon') ? color : 'none'}
+                        stroke={color}
+                        strokeWidth={feature.geometry.type.includes('Polygon') ? 0.5 : 1}
                         opacity={opacity}
                       />
                     );
-                  });
-                }
-                const path = toPath(feature.geometry.coordinates as Position[] | Position[][] | Position[][][], view, width, height);
-                if (!path) return null;
-                return (
-                  <path
-                    key={`${id ?? 'path'}-${index}`}
-                    d={path}
-                    fill={feature.geometry.type.includes('Polygon') ? color : 'none'}
-                    stroke={color}
-                    strokeWidth={feature.geometry.type.includes('Polygon') ? 0.5 : 1}
-                    opacity={opacity}
-                  />
-                );
-              }) : null}
+                  })
+                : null}
             </g>
           </svg>
         </Box>

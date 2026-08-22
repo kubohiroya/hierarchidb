@@ -1,17 +1,17 @@
-import type { Tile } from 'geojson-vt';
+import { parseShapeSourceLayerName } from '@hierarchidb/gis-sdk';
 import type { Feature, FeatureCollection } from 'geojson';
+import type { Tile } from 'geojson-vt';
 import {
   type InputFeatureStats,
   type TileBBox,
   type VtParentInputSummaryMetadata,
 } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
-import { parseShapeSourceLayerName } from '@hierarchidb/gis-sdk';
-import { bboxIntersects } from './vtStageGeometryTileUtils.js';
 import {
   countTileLineStrings,
   countTilePolygons,
   countTileVertices,
 } from './vtStageGeometryCountsUtils.js';
+import { bboxIntersects } from './vtStageGeometryTileUtils.js';
 
 export type GeojsonVtEmptyTileDetail = {
   z: number;
@@ -61,15 +61,20 @@ export const buildVtParentInputSummary = (params: {
     if (!bboxIntersects(stats.bbox, params.parentBBox)) return;
     intersectingFeatureCount += 1;
     intersectingGeojsonByteSize += stats.geojsonByteSize ?? 0;
-    const countryCode = typeof stats.countryCode === 'string' ? stats.countryCode.trim().toUpperCase() : '';
-    const area = typeof stats.featureAreaSqMeters === 'number' && Number.isFinite(stats.featureAreaSqMeters)
-      ? Math.max(0, stats.featureAreaSqMeters)
-      : 0;
+    const countryCode =
+      typeof stats.countryCode === 'string' ? stats.countryCode.trim().toUpperCase() : '';
+    const area =
+      typeof stats.featureAreaSqMeters === 'number' && Number.isFinite(stats.featureAreaSqMeters)
+        ? Math.max(0, stats.featureAreaSqMeters)
+        : 0;
     if (!countryCode || area <= 0) return;
-    intersectingAreaByCountry.set(countryCode, (intersectingAreaByCountry.get(countryCode) ?? 0) + area);
+    intersectingAreaByCountry.set(
+      countryCode,
+      (intersectingAreaByCountry.get(countryCode) ?? 0) + area
+    );
   });
   const topCountriesByIntersectingArea = Array.from(intersectingAreaByCountry.entries())
-    .sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0]))
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, 2)
     .map(([countryCode, intersectingAreaSqMeters]) => ({
       countryCode,
@@ -85,7 +90,9 @@ export const buildVtParentInputSummary = (params: {
 
 const formatCount = (value: number): string => value.toLocaleString('en-US');
 
-export const buildTileSummary = (tilesByZoom: Map<number, { total: number; generated: number }>): string => {
+export const buildTileSummary = (
+  tilesByZoom: Map<number, { total: number; generated: number }>
+): string => {
   if (tilesByZoom.size === 0) return 'tiles -> 0/0';
   const parts = Array.from(tilesByZoom.entries())
     .sort((a, b) => a[0] - b[0])
@@ -93,28 +100,32 @@ export const buildTileSummary = (tilesByZoom: Map<number, { total: number; gener
   return `tiles -> ${parts.join(', ')}`;
 };
 
-export const buildSkippedMessage = (featureSummary: string, tileSummary: string, reason: string): string => (
-  `${featureSummary}, ${tileSummary} (skipped: ${reason})`
-);
+export const buildSkippedMessage = (
+  featureSummary: string,
+  tileSummary: string,
+  reason: string
+): string => `${featureSummary}, ${tileSummary} (skipped: ${reason})`;
 
-export const buildGeojsonVtEmptyTileReason = (detail: GeojsonVtEmptyTileDetail): string => ([
-  'geojson-vt produced empty tile for clipped features',
-  `tile=${detail.z}/${detail.x}/${detail.y}`,
-  `layer=${detail.layerName}`,
-  `clippedFeatures=${detail.clippedFeatureCount}`,
-  `layerFeatures=${detail.featureCount}`,
-].join(', '));
+export const buildGeojsonVtEmptyTileReason = (detail: GeojsonVtEmptyTileDetail): string =>
+  [
+    'geojson-vt produced empty tile for clipped features',
+    `tile=${detail.z}/${detail.x}/${detail.y}`,
+    `layer=${detail.layerName}`,
+    `clippedFeatures=${detail.clippedFeatureCount}`,
+    `layerFeatures=${detail.featureCount}`,
+  ].join(', ');
 
 export const buildGeojsonVtEmptyTileSummaryReason = (
   emptyCount: number,
-  firstDetail: GeojsonVtEmptyTileDetail,
-): string => (
+  firstDetail: GeojsonVtEmptyTileDetail
+): string =>
   emptyCount <= 1
     ? buildGeojsonVtEmptyTileReason(firstDetail)
-    : `${buildGeojsonVtEmptyTileReason(firstDetail)}, emptyTileCount=${formatCount(emptyCount)}`
-);
+    : `${buildGeojsonVtEmptyTileReason(firstDetail)}, emptyTileCount=${formatCount(emptyCount)}`;
 
-export const computeOutputTileTotals = (tiles: Tile[]): {
+export const computeOutputTileTotals = (
+  tiles: Tile[]
+): {
   featureCount: number;
   vertexCount: number;
   polygonCount: number;

@@ -20,7 +20,10 @@ interface GitHubCornerProps {
   visible?: boolean;
 }
 
-export const GitHubCorner = ({ url, visible = false }: GitHubCornerProps): React.ReactElement | null => {
+export const GitHubCorner = ({
+  url,
+  visible = false,
+}: GitHubCornerProps): React.ReactElement | null => {
   if (!visible) {
     return null;
   }

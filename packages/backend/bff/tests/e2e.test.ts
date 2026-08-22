@@ -57,10 +57,10 @@ describe.skipIf(skipE2E)('BFF E2E Tests (Deployed)', () => {
     it('should support PKCE flow', async () => {
       const response = await fetch(
         `${DEPLOYED_BFF_URL}/auth/authorize/google?` +
-        'code_challenge=test123&code_challenge_method=S256',
+          'code_challenge=test123&code_challenge_method=S256',
         {
           redirect: 'manual',
-        },
+        }
       );
 
       expect(response.status).toBe(302);

@@ -1,7 +1,7 @@
-import { rainbowColors } from '@hierarchidb/ui-theme';
 import type { TreeNode } from '@hierarchidb/tree-api';
+import { rainbowColors } from '@hierarchidb/ui-theme';
 import { getPluginIconColor, isFolderNodeType } from '@hierarchidb/ui-treeconsole-breadcrumb';
-import { useCallback, useMemo, type MouseEvent as ReactMouseEvent } from 'react';
+import { type MouseEvent as ReactMouseEvent, useCallback, useMemo } from 'react';
 import type { HierarchicalTreeNode } from '~/types/index';
 import type { TreeTableViewProps } from './TreeTableView.js';
 
@@ -62,7 +62,10 @@ export function useTreeTableViewState({
 
   const isSelected = useCallback((nodeId: string) => selectedIds.includes(nodeId), [selectedIds]);
 
-  const isExpanded = useCallback((nodeId: string) => expandedSet.has(String(nodeId)), [expandedSet]);
+  const isExpanded = useCallback(
+    (nodeId: string) => expandedSet.has(String(nodeId)),
+    [expandedSet]
+  );
 
   const isVisible = useCallback(
     (nodeId: string): boolean => {
@@ -78,7 +81,7 @@ export function useTreeTableViewState({
       }
       return true;
     },
-    [parentMap, expandedSet],
+    [parentMap, expandedSet]
   );
 
   const visibleNodes = useMemo(() => data.filter((node) => isVisible(node.id)), [data, isVisible]);
@@ -98,7 +101,7 @@ export function useTreeTableViewState({
         onNodeSelect(targets, checked);
       }
     },
-    [data, isSelected, isVisible, onNodeSelect],
+    [data, isSelected, isVisible, onNodeSelect]
   );
 
   const getAbsoluteDepth = useCallback((node: HierarchicalTreeNode): number => {
@@ -116,7 +119,7 @@ export function useTreeTableViewState({
 
   const getNodeLevel = useCallback(
     (node: HierarchicalTreeNode): number => Math.max(0, getAbsoluteDepth(node) - baseDepth),
-    [baseDepth, getAbsoluteDepth],
+    [baseDepth, getAbsoluteDepth]
   );
 
   const getNodeIconColor = useCallback(
@@ -130,7 +133,7 @@ export function useTreeTableViewState({
       const manifestIconColor = getPluginIconColor(nodeType);
       return isFolderNodeType(nodeType) ? baseIconColor : (manifestIconColor ?? baseIconColor);
     },
-    [getAbsoluteDepth],
+    [getAbsoluteDepth]
   );
 
   const handleRowClick = useCallback(
@@ -141,7 +144,7 @@ export function useTreeTableViewState({
       }
       onNodeClick?.(node);
     },
-    [onNodeClick],
+    [onNodeClick]
   );
 
   return {

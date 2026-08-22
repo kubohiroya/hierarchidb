@@ -1,4 +1,7 @@
-import type { GeometryConfig, GeometrySimplifyToleranceByAdminLevelConfig } from '@hierarchidb/gis-sdk';
+import type {
+  GeometryConfig,
+  GeometrySimplifyToleranceByAdminLevelConfig,
+} from '@hierarchidb/gis-sdk';
 
 export type SimplifyToleranceProfile = {
   multiplierByBand: number[];
@@ -21,12 +24,13 @@ const resolveProfileByKey = (
   geometryConfig: GeometryConfig,
   config: GeometrySimplifyToleranceByAdminLevelConfig | undefined,
   key: SimplifyAdminLevelKey,
-  previous: SimplifyToleranceProfile | null,
+  previous: SimplifyToleranceProfile | null
 ): SimplifyToleranceProfile => {
-  const fallbackSearchIterations = typeof geometryConfig.toleranceSearchMaxIterations === 'number'
-    && Number.isFinite(geometryConfig.toleranceSearchMaxIterations)
-    ? Math.max(1, Math.min(64, Math.round(geometryConfig.toleranceSearchMaxIterations)))
-    : 24;
+  const fallbackSearchIterations =
+    typeof geometryConfig.toleranceSearchMaxIterations === 'number' &&
+    Number.isFinite(geometryConfig.toleranceSearchMaxIterations)
+      ? Math.max(1, Math.min(64, Math.round(geometryConfig.toleranceSearchMaxIterations)))
+      : 24;
   const fallbackMultiplierByBand = Array.isArray(geometryConfig.toleranceMultiplierByBand)
     ? geometryConfig.toleranceMultiplierByBand
     : [];
@@ -43,25 +47,29 @@ const resolveProfileByKey = (
     return previous;
   }
 
-  const multiplierByBand = Array.isArray(raw?.multiplierByBand) && raw.multiplierByBand.length > 0
-    ? raw.multiplierByBand
-    : (fallbackMultiplierByBand.length > 0
-      ? fallbackMultiplierByBand
-      : []);
-  const minRatioByBand = Array.isArray(raw?.minRatioByBand) && raw.minRatioByBand.length > 0
-    ? raw.minRatioByBand
-    : (fallbackMinRatioByBand.length > 0
-      ? fallbackMinRatioByBand
-      : []);
-  const maxRatioByBand = Array.isArray(raw?.maxRatioByBand) && raw.maxRatioByBand.length > 0
-    ? raw.maxRatioByBand
-    : (fallbackMaxRatioByBand.length > 0
-      ? fallbackMaxRatioByBand
-      : []);
-  const toleranceSearchMaxIterations = typeof raw?.toleranceSearchMaxIterations === 'number'
-    && Number.isFinite(raw.toleranceSearchMaxIterations)
-    ? Math.max(1, Math.min(64, Math.round(raw.toleranceSearchMaxIterations)))
-    : fallbackSearchIterations;
+  const multiplierByBand =
+    Array.isArray(raw?.multiplierByBand) && raw.multiplierByBand.length > 0
+      ? raw.multiplierByBand
+      : fallbackMultiplierByBand.length > 0
+        ? fallbackMultiplierByBand
+        : [];
+  const minRatioByBand =
+    Array.isArray(raw?.minRatioByBand) && raw.minRatioByBand.length > 0
+      ? raw.minRatioByBand
+      : fallbackMinRatioByBand.length > 0
+        ? fallbackMinRatioByBand
+        : [];
+  const maxRatioByBand =
+    Array.isArray(raw?.maxRatioByBand) && raw.maxRatioByBand.length > 0
+      ? raw.maxRatioByBand
+      : fallbackMaxRatioByBand.length > 0
+        ? fallbackMaxRatioByBand
+        : [];
+  const toleranceSearchMaxIterations =
+    typeof raw?.toleranceSearchMaxIterations === 'number' &&
+    Number.isFinite(raw.toleranceSearchMaxIterations)
+      ? Math.max(1, Math.min(64, Math.round(raw.toleranceSearchMaxIterations)))
+      : fallbackSearchIterations;
 
   return {
     multiplierByBand,
@@ -73,13 +81,28 @@ const resolveProfileByKey = (
 
 export const resolveSimplifyToleranceProfile = (
   geometryConfig: GeometryConfig,
-  adminLevel: number | undefined,
+  adminLevel: number | undefined
 ): SimplifyToleranceProfile => {
   const simplifyToleranceByAdminLevel = geometryConfig.simplifyToleranceByAdminLevel;
   const admin0 = resolveProfileByKey(geometryConfig, simplifyToleranceByAdminLevel, 'admin0', null);
-  const admin1 = resolveProfileByKey(geometryConfig, simplifyToleranceByAdminLevel, 'admin1', admin0);
-  const admin2 = resolveProfileByKey(geometryConfig, simplifyToleranceByAdminLevel, 'admin2', admin1);
-  const admin3Plus = resolveProfileByKey(geometryConfig, simplifyToleranceByAdminLevel, 'admin3Plus', admin2);
+  const admin1 = resolveProfileByKey(
+    geometryConfig,
+    simplifyToleranceByAdminLevel,
+    'admin1',
+    admin0
+  );
+  const admin2 = resolveProfileByKey(
+    geometryConfig,
+    simplifyToleranceByAdminLevel,
+    'admin2',
+    admin1
+  );
+  const admin3Plus = resolveProfileByKey(
+    geometryConfig,
+    simplifyToleranceByAdminLevel,
+    'admin3Plus',
+    admin2
+  );
   const lookup: Record<SimplifyAdminLevelKey, SimplifyToleranceProfile> = {
     admin0,
     admin1,

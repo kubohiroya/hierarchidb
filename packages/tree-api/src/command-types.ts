@@ -1,5 +1,5 @@
-import type { CommitStatus } from './commit-types.js';
 import type { NodeId } from '@hierarchidb/core-types';
+import type { CommitStatus } from './commit-types.js';
 import type { TreeNode } from './NODE_TYPES.js';
 
 /**
@@ -60,7 +60,6 @@ export interface RecoverFromArchivePayload {
 }
 
 export type RestoreFromArchivePayload = RecoverFromArchivePayload;
-
 
 export type TreeChangeEventType =
   | 'node-created'

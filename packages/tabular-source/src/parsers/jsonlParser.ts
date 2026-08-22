@@ -48,7 +48,8 @@ export const jsonlParser: TabularParserPort = {
     if (lines.length === 0) {
       const preview: TabularPreview = { schema: { columns: [] }, sample: [], totalRows: 0 };
 
-      async function* empty(): AsyncGenerator<TabularChunk> { /* no rows */
+      async function* empty(): AsyncGenerator<TabularChunk> {
+        /* no rows */
       }
 
       return { preview, [Symbol.asyncIterator]: () => empty() } as TabularParseResult;

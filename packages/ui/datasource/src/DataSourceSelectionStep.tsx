@@ -1,9 +1,9 @@
-import type React from 'react';
-import { Box, Typography } from '@mui/material';
 import { LicenseAgreementStep } from '@hierarchidb/ui-license';
-import type { DataSourceSelectorProps, DataSourceOption } from './DataSourceSelector.js';
+import { Box, Typography } from '@mui/material';
+import type React from 'react';
 import { DataSourceDetailsCard } from './DataSourceDetailsCard.js';
 import { DataSourceSelectionCard } from './DataSourceSelectionCard.js';
+import type { DataSourceOption, DataSourceSelectorProps } from './DataSourceSelector.js';
 import { useDataSourceSelectionStep } from './useDataSourceSelectionStep.js';
 
 export interface DataSourceSelectionOption extends DataSourceOption {
@@ -36,7 +36,7 @@ export interface DataSourceSelectionStepProps<TAgreedAt = string | number | unde
       agreedAtIso?: string;
       onAgree: () => void;
       state: DataSourceSelectionState<TAgreedAt>;
-    },
+    }
   ) => React.ReactNode | null | undefined;
   selectionTitle?: string;
   detailsTitle?: string;
@@ -110,11 +110,11 @@ export const DataSourceSelectionStep = <TAgreedAt,>({
               disabled={disabled}
               renderExtra={
                 licenseRequired
-                  ? licenseRequiredText ?? (
-                    <Typography variant="caption" color="text.secondary">
-                      License agreement is required to proceed.
-                    </Typography>
-                  )
+                  ? (licenseRequiredText ?? (
+                      <Typography variant="caption" color="text.secondary">
+                        License agreement is required to proceed.
+                      </Typography>
+                    ))
                   : undefined
               }
             />

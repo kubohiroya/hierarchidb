@@ -1,11 +1,11 @@
 // Lightweight adapter to bind MapLibre GL JS and deck.gl together on demand.
 // Heavy libs are peerDependencies; pass constructors at runtime-worker to avoid bundling.
 
+import { readRuntimeEnvValue } from '@hierarchidb/util';
+import type { Deck, LayersList } from 'deck.gl';
+import type * as MapLibreNS from 'maplibre-gl';
 import type { MapAdapterPort } from '~/portTypes';
 import type { DeckLayerSpec, MapStyleSpec, ViewState } from '~/types';
-import type * as MapLibreNS from 'maplibre-gl';
-import type { Deck, LayersList } from 'deck.gl';
-import { readRuntimeEnvValue } from '@hierarchidb/util';
 
 type MapLibreCtor = typeof import('maplibre-gl');
 type DeckCtor = typeof import('deck.gl').Deck;
@@ -35,9 +35,13 @@ export class MapLibreDeckAdapter implements MapAdapterPort {
   private _maplibregl?: MapLibreCtor;
   private _Deck?: DeckCtor;
 
-  constructor(private opts: MapLibreDeckAdapterOptions) { }
+  constructor(private opts: MapLibreDeckAdapterOptions) {}
 
-  async init(container: HTMLDivElement, initialView: ViewState, style?: MapStyleSpec): Promise<void> {
+  async init(
+    container: HTMLDivElement,
+    initialView: ViewState,
+    style?: MapStyleSpec
+  ): Promise<void> {
     const { mapOptions } = this.opts;
     const { maplibregl, Deck } = await this.ensureLibs();
     this.map = new maplibregl.Map({
@@ -121,9 +125,11 @@ export class MapLibreDeckAdapter implements MapAdapterPort {
     }
     // Lazy load at runtime-worker. Allow overrides via env/global or options.
     const globalOverrides = globalThis as EnvOverrides;
-    const viteEnv = (typeof import.meta !== 'undefined'
-      ? ((import.meta as { env?: ViteEnvOverrides }).env ?? {})
-      : {}) as ViteEnvOverrides;
+    const viteEnv = (
+      typeof import.meta !== 'undefined'
+        ? ((import.meta as { env?: ViteEnvOverrides }).env ?? {})
+        : {}
+    ) as ViteEnvOverrides;
     const envOverrides: EnvOverrides = {
       MAP_ADAPTER_MAPLIBRE_PKG: readRuntimeEnvValue('MAP_ADAPTER_MAPLIBRE_PKG', { prefixes: [''] }),
       MAP_ADAPTER_DECK_PKG: readRuntimeEnvValue('MAP_ADAPTER_DECK_PKG', { prefixes: [''] }),
@@ -145,7 +151,8 @@ export class MapLibreDeckAdapter implements MapAdapterPort {
     const modDeck = await import(/* @vite-ignore */ deckName);
     const maplibregl = resolveMapLibreCtor(modMap);
     const Deck = resolveDeckCtor(modDeck);
-    if (!maplibregl?.Map || !Deck) throw new Error('Failed to load maplibre-gl/deck.gl at runtime-worker');
+    if (!maplibregl?.Map || !Deck)
+      throw new Error('Failed to load maplibre-gl/deck.gl at runtime-worker');
     this._maplibregl = maplibregl;
     this._Deck = Deck;
     return { maplibregl, Deck };
@@ -157,7 +164,7 @@ function toLayers(specs: DeckLayerSpec[]): LayersList {
 }
 
 function resolveMapLibreCtor(mod: unknown): MapLibreCtor {
-  const candidate = mod as Partial<MapLibreCtor> & { default?: MapLibreCtor } | undefined;
+  const candidate = mod as (Partial<MapLibreCtor> & { default?: MapLibreCtor }) | undefined;
   if (candidate && candidate.Map) {
     return candidate as MapLibreCtor;
   }

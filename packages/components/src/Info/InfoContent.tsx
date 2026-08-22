@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
 import { Box, Link, Typography } from '@mui/material';
+import type { ReactNode } from 'react';
 
 export interface InfoContentProps {
   /**
@@ -53,18 +53,18 @@ export interface InfoContentProps {
  * with consistent styling and layout.
  */
 export const InfoContent = ({
-                              title,
-                              description,
-                              details,
-                              attribution,
-                              githubUrl,
-                              githubLinkText = 'available on GitHub',
-                              footer,
-                              titleVariant = 'h3',
-                              titleColor = 'grey',
-                              descriptionColor = 'grey',
-                              detailsColor = 'lightGrey',
-                            }: InfoContentProps): React.ReactElement => {
+  title,
+  description,
+  details,
+  attribution,
+  githubUrl,
+  githubLinkText = 'available on GitHub',
+  footer,
+  titleVariant = 'h3',
+  titleColor = 'grey',
+  descriptionColor = 'grey',
+  detailsColor = 'lightGrey',
+}: InfoContentProps): React.ReactElement => {
   return (
     <Box sx={{ textAlign: 'center', py: 2 }}>
       <Typography variant={titleVariant} component="h1" color={titleColor} textAlign="center">

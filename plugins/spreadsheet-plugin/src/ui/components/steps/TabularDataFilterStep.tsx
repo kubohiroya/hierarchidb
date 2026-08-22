@@ -1,20 +1,20 @@
+import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import {
   TabularDataFilter,
-  TabularProvider,
   type TabularDataFilterProps,
   type TabularDataResult,
   type TabularFilterRule,
+  TabularProvider,
 } from '@hierarchidb/ui-tabular';
-import type { SpreadsheetDraft } from '~/common/types/SpreadsheetEntity';
 import { Box, CircularProgress, Typography } from '@mui/material';
-import { useTabularDataFilterStep } from '~/ui/hooks/useTabularDataFilterStep';
+import type { SpreadsheetDraft } from '~/common/types/SpreadsheetEntity';
 import { TabularFilterSections } from '~/ui/components/TabularFilterSections';
-import type { PluginStepProps } from '@hierarchidb/plugin-base';
-import type { useTabularKeyValueState } from '~/ui/hooks/useTabularKeyValueState';
 import type { useTabularDataFilter } from '~/ui/hooks/useTabularDataFilter';
+import { useTabularDataFilterStep } from '~/ui/hooks/useTabularDataFilterStep';
+import type { useTabularKeyValueState } from '~/ui/hooks/useTabularKeyValueState';
 import {
-  useTabularDataFilterStepView,
   type TabularDataFilterStepProps,
+  useTabularDataFilterStepView,
 } from './useTabularDataFilterStepView.js';
 
 type FilterInnerProps<T extends SpreadsheetDraft> = ReturnType<typeof useTabularDataFilter<T>> & {
@@ -83,14 +83,17 @@ const TabularDataFilterInner = <T extends SpreadsheetDraft>({
     return (
       <Box display="grid" gap={0.5}>
         <Typography color="text.secondary">
-          {t('filtering.instructions.uploadFirst', 'Upload a dataset in Step 1 to configure filters.')}
+          {t(
+            'filtering.instructions.uploadFirst',
+            'Upload a dataset in Step 1 to configure filters.'
+          )}
         </Typography>
         {dialogData?.dataSource?.source ? (
           <Typography variant="body2" color="text.secondary">
             {t(
               'filtering.instructions.previousSource',
               'Previous source: {{value}}. Reopen Step 1 to re-download the tabular file.',
-              { value: dialogData.dataSource.source },
+              { value: dialogData.dataSource.source }
             )}
           </Typography>
         ) : null}
@@ -108,11 +111,7 @@ const TabularDataFilterInner = <T extends SpreadsheetDraft>({
     );
   }
   if (error) {
-    return (
-      <Typography color="error">
-        {error}
-      </Typography>
-    );
+    return <Typography color="error">{error}</Typography>;
   }
   return (
     <TabularDataFilter

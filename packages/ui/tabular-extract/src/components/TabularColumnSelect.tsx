@@ -3,7 +3,12 @@
  * @description Column selection and mapping interface for Tabular data
  */
 
-import type React from 'react';
+import { TabularTableMetadata } from '@hierarchidb/tabular-store';
+import {
+  ExpandMore as ExpandMoreIcon,
+  SwapHoriz as SwapHorizIcon,
+  VisibilityOff as VisibilityOffIcon,
+} from '@mui/icons-material';
 import {
   Accordion,
   AccordionDetails,
@@ -27,16 +32,8 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import {
-  ExpandMore as ExpandMoreIcon,
-  SwapHoriz as SwapHorizIcon,
-  VisibilityOff as VisibilityOffIcon,
-} from '@mui/icons-material';
-import type {
-  TabularColumnMapping,
-  TabularDataResult,
-} from '../types/index';
-import { TabularTableMetadata } from '@hierarchidb/tabular-store';
+import type React from 'react';
+import type { TabularColumnMapping, TabularDataResult } from '../types/index';
 import { useTabularColumnSelect } from './useTabularColumnSelect.js';
 
 export interface TabularColumnSelectProps {
@@ -51,11 +48,11 @@ export interface TabularColumnSelectProps {
 }
 
 export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
-                                                                                tableMetadata,
-                                                                                previewData,
-                                                                                targetColumns = [],
-                                                                                onSelectionChanged,
-                                                                                onPreviewChanged,
+  tableMetadata,
+  previewData,
+  targetColumns = [],
+  onSelectionChanged,
+  onPreviewChanged,
   allowRename = true,
   allowTypeChange = true,
   maxPreviewRows = 50,
@@ -128,8 +125,8 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
             {view.columnMappings.map((mapping) => {
               const sampleData = previewData?.rows
                 .slice(0, 3)
-                .map(row => row[mapping.sourceColumn])
-                .filter(val => val != null && val !== '')
+                .map((row) => row[mapping.sourceColumn])
+                .filter((val) => val != null && val !== '')
                 .slice(0, 2);
 
               return (
@@ -137,7 +134,9 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
                   <TableCell padding="checkbox">
                     <Checkbox
                       checked={mapping.included}
-                      onChange={(e) => view.handleToggleColumn(mapping.sourceColumn, e.target.checked)}
+                      onChange={(e) =>
+                        view.handleToggleColumn(mapping.sourceColumn, e.target.checked)
+                      }
                     />
                   </TableCell>
 
@@ -154,29 +153,33 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
                     <Chip size="small" label={mapping.sourceType} variant="outlined" />
                   </TableCell>
 
-         {allowRename && (
-            <TableCell>
-              <TextField
-                size="small"
-                id={`${view.controlId}-target-column-${mapping.sourceColumn}`}
-                name={`target-column-${mapping.sourceColumn}`}
-                value={mapping.targetColumn}
-                onChange={(e) => view.handleColumnRename(mapping.sourceColumn, e.target.value)}
-                disabled={!mapping.included}
-                placeholder="Target column name"
-              />
+                  {allowRename && (
+                    <TableCell>
+                      <TextField
+                        size="small"
+                        id={`${view.controlId}-target-column-${mapping.sourceColumn}`}
+                        name={`target-column-${mapping.sourceColumn}`}
+                        value={mapping.targetColumn}
+                        onChange={(e) =>
+                          view.handleColumnRename(mapping.sourceColumn, e.target.value)
+                        }
+                        disabled={!mapping.included}
+                        placeholder="Target column name"
+                      />
                     </TableCell>
                   )}
 
                   {allowTypeChange && (
                     <TableCell>
-              <FormControl size="small" sx={{ minWidth: 100 }}>
-                <Select
-                  id={`${view.controlId}-type-${mapping.sourceColumn}`}
-                  value={mapping.targetType}
-                  onChange={(e) => view.handleTypeChange(mapping.sourceColumn, e.target.value)}
-                  disabled={!mapping.included}
-                >
+                      <FormControl size="small" sx={{ minWidth: 100 }}>
+                        <Select
+                          id={`${view.controlId}-type-${mapping.sourceColumn}`}
+                          value={mapping.targetType}
+                          onChange={(e) =>
+                            view.handleTypeChange(mapping.sourceColumn, e.target.value)
+                          }
+                          disabled={!mapping.included}
+                        >
                           <MenuItem value="string">String</MenuItem>
                           <MenuItem value="number">Number</MenuItem>
                           <MenuItem value="date">Date</MenuItem>
@@ -188,22 +191,26 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
 
                   {targetColumns.length > 0 && (
                     <TableCell>
-              <FormControl size="small" sx={{ minWidth: 150 }}>
-                <Select
-                  id={`${view.controlId}-mapping-${mapping.sourceColumn}`}
-                  value={mapping.targetColumn}
-                  onChange={(e) => view.handleTargetMapping(mapping.sourceColumn, e.target.value)}
-                  disabled={!mapping.included}
-                  displayEmpty
-                >
+                      <FormControl size="small" sx={{ minWidth: 150 }}>
+                        <Select
+                          id={`${view.controlId}-mapping-${mapping.sourceColumn}`}
+                          value={mapping.targetColumn}
+                          onChange={(e) =>
+                            view.handleTargetMapping(mapping.sourceColumn, e.target.value)
+                          }
+                          disabled={!mapping.included}
+                          displayEmpty
+                        >
                           <MenuItem value="">
                             <em>Select target...</em>
                           </MenuItem>
-                          {targetColumns.map(tc => (
+                          {targetColumns.map((tc) => (
                             <MenuItem key={tc.name} value={tc.name}>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 {tc.name}
-                                {tc.required && <Chip size="small" label="Required" color="warning" />}
+                                {tc.required && (
+                                  <Chip size="small" label="Required" color="warning" />
+                                )}
                               </Box>
                             </MenuItem>
                           ))}
@@ -213,23 +220,29 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
                   )}
 
                   <TableCell>
-            <TextField
-              type="number"
-              size="small"
-              id={`${view.controlId}-order-${mapping.sourceColumn}`}
-              name={`order-${mapping.sourceColumn}`}
-              value={mapping.order}
-              onChange={(e) => view.handleOrderChange(mapping.sourceColumn, parseInt(e.target.value))}
-              disabled={!mapping.included}
-              inputProps={{ min: 0, max: view.columnMappings.length - 1, style: { width: 60 } }}
-            />
+                    <TextField
+                      type="number"
+                      size="small"
+                      id={`${view.controlId}-order-${mapping.sourceColumn}`}
+                      name={`order-${mapping.sourceColumn}`}
+                      value={mapping.order}
+                      onChange={(e) =>
+                        view.handleOrderChange(mapping.sourceColumn, parseInt(e.target.value))
+                      }
+                      disabled={!mapping.included}
+                      inputProps={{
+                        min: 0,
+                        max: view.columnMappings.length - 1,
+                        style: { width: 60 },
+                      }}
+                    />
                   </TableCell>
 
                   <TableCell>
                     <Box sx={{ maxWidth: 200 }}>
                       {sampleData && sampleData.length > 0 ? (
                         <Typography variant="caption" color="text.secondary">
-                          {sampleData.map(val => String(val)).join(', ')}
+                          {sampleData.map((val) => String(val)).join(', ')}
                           {sampleData.length === 2 && '...'}
                         </Typography>
                       ) : (
@@ -281,8 +294,10 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {targetColumns.map(tc => {
-                    const mapping = view.columnMappings.find(m => m.targetColumn === tc.name && m.included);
+                  {targetColumns.map((tc) => {
+                    const mapping = view.columnMappings.find(
+                      (m) => m.targetColumn === tc.name && m.included
+                    );
                     return (
                       <TableRow key={tc.name}>
                         <TableCell>{tc.name}</TableCell>
@@ -299,9 +314,7 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
                         <TableCell>
                           {mapping ? (
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Typography variant="body2">
-                                {mapping.sourceColumn}
-                              </Typography>
+                              <Typography variant="body2">{mapping.sourceColumn}</Typography>
                               <SwapHorizIcon fontSize="small" color="primary" />
                             </Box>
                           ) : (
@@ -329,35 +342,31 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
       {view.showPreview && previewData && (
         <Accordion sx={{ mt: 3 }}>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle1">
-              Data Preview with Selected Columns
-            </Typography>
+            <Typography variant="subtitle1">Data Preview with Selected Columns</Typography>
           </AccordionSummary>
           <AccordionDetails>
             <TableContainer component={Paper} variant="outlined">
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    {view.selectedColumnsSorted.map(mapping => (
-                        <TableCell key={mapping.sourceColumn}>
-                          <Typography variant="subtitle2">
-                            {mapping.targetColumn}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {mapping.sourceColumn} → {mapping.targetType}
-                          </Typography>
-                        </TableCell>
-                      ))}
+                    {view.selectedColumnsSorted.map((mapping) => (
+                      <TableCell key={mapping.sourceColumn}>
+                        <Typography variant="subtitle2">{mapping.targetColumn}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {mapping.sourceColumn} → {mapping.targetType}
+                        </Typography>
+                      </TableCell>
+                    ))}
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {previewData.rows.slice(0, maxPreviewRows).map((row, index) => (
                     <TableRow key={index}>
-                      {view.selectedColumnsSorted.map(mapping => (
-                          <TableCell key={mapping.sourceColumn}>
-                            {row[mapping.sourceColumn]?.toString() || ''}
-                          </TableCell>
-                        ))}
+                      {view.selectedColumnsSorted.map((mapping) => (
+                        <TableCell key={mapping.sourceColumn}>
+                          {row[mapping.sourceColumn]?.toString() || ''}
+                        </TableCell>
+                      ))}
                     </TableRow>
                   ))}
                 </TableBody>
@@ -368,16 +377,31 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
       )}
 
       {/* Summary */}
-      <Box sx={{ mt: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1, border: 1, borderColor: 'divider' }}>
+      <Box
+        sx={{
+          mt: 3,
+          p: 2,
+          bgcolor: 'background.paper',
+          borderRadius: 1,
+          border: 1,
+          borderColor: 'divider',
+        }}
+      >
         <Typography variant="subtitle2" gutterBottom>
           Selection Summary
         </Typography>
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2 }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: 2,
+          }}
+        >
           <Box>
             <Typography variant="body2" color="text.secondary">
               Selected Columns
             </Typography>
-              <Typography variant="h6">
+            <Typography variant="h6">
               {view.selectedColumns.length} of {view.columnMappings.length}
             </Typography>
           </Box>
@@ -385,7 +409,10 @@ export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
             <Typography variant="body2" color="text.secondary">
               Mapping Status
             </Typography>
-            <Typography variant="h6" color={view.validation.isValid ? 'success.main' : 'error.main'}>
+            <Typography
+              variant="h6"
+              color={view.validation.isValid ? 'success.main' : 'error.main'}
+            >
               {view.validation.isValid ? 'Valid' : 'Invalid'}
             </Typography>
           </Box>

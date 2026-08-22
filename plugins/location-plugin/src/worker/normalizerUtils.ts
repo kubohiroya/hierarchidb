@@ -1,10 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { FeatureItemBase } from '@hierarchidb/runtime-worker';
-import type {
-  LocationPeerData,
-  LocationGroupItemData,
-} from '~/common/types/entities';
 import { mortonKeyFromLonLat } from '@hierarchidb/location-store';
+import type { FeatureItemBase } from '@hierarchidb/runtime-worker';
+import type { LocationGroupItemData, LocationPeerData } from '~/common/types/entities';
 import type { LocationFeature } from './locationEntitiesDB.js';
 
 type Progress = NonNullable<LocationPeerData['lastProgress']>;
@@ -54,7 +51,7 @@ const normalizeMetadataValue = (value: unknown): string | number | null => {
 const sanitizeMetadata = (value: unknown): Record<string, string | number | null> | undefined => {
   if (!isRecord(value)) return undefined;
   return Object.fromEntries(
-    Object.entries(value).map(([key, val]) => [key, normalizeMetadataValue(val)]),
+    Object.entries(value).map(([key, val]) => [key, normalizeMetadataValue(val)])
   );
 };
 
@@ -67,9 +64,8 @@ const normalizeCentroidForShapeId = (value: unknown): number | undefined => {
   return undefined;
 };
 
-const normalizeCentroidForShapeContainerNodeId = (value: unknown): NodeId | undefined => (
-  typeof value === 'string' && value.trim().length > 0 ? (value as NodeId) : undefined
-);
+const normalizeCentroidForShapeContainerNodeId = (value: unknown): NodeId | undefined =>
+  typeof value === 'string' && value.trim().length > 0 ? (value as NodeId) : undefined;
 
 export const normalizePeerData = (data: unknown): LocationPeerData => {
   if (isObject(data) && data.schemaVersion === 1) {
@@ -94,10 +90,11 @@ export const normalizePeerData = (data: unknown): LocationPeerData => {
 };
 
 const isGroupData = (value: unknown): value is LocationGroupItemData =>
-  isObject(value)
-  && (typeof (value as Record<string, unknown>).pointId === 'string'
-    || typeof (value as Record<string, unknown>).pid === 'string')
-  && (((value as Record<string, unknown>).schemaVersion === 1) || ((value as Record<string, unknown>).schemaVersion === 2));
+  isObject(value) &&
+  (typeof (value as Record<string, unknown>).pointId === 'string' ||
+    typeof (value as Record<string, unknown>).pid === 'string') &&
+  ((value as Record<string, unknown>).schemaVersion === 1 ||
+    (value as Record<string, unknown>).schemaVersion === 2);
 
 const normalizeGroupData = (value: unknown): LocationGroupItemData => {
   if (isGroupData(value)) {
@@ -163,36 +160,41 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
     };
   }
 
-  const pointId = typeof (value as Record<string, unknown>).pointId === 'string'
-    ? (value as Record<string, unknown>).pointId as string
-    : typeof (value as Record<string, unknown>).pid === 'string'
-      ? (value as Record<string, unknown>).pid as string
-      : '';
+  const pointId =
+    typeof (value as Record<string, unknown>).pointId === 'string'
+      ? ((value as Record<string, unknown>).pointId as string)
+      : typeof (value as Record<string, unknown>).pid === 'string'
+        ? ((value as Record<string, unknown>).pid as string)
+        : '';
   const valueRecord = value as Record<string, unknown>;
   const name = typeof valueRecord.name === 'string' ? valueRecord.name : '';
   const latitude = typeof valueRecord.latitude === 'number' ? valueRecord.latitude : 0;
   const longitude = typeof valueRecord.longitude === 'number' ? valueRecord.longitude : 0;
   const type = typeof valueRecord.type === 'string' ? valueRecord.type : 'unknown';
-  const admin0Code = typeof (value as Record<string, unknown>).admin0Code === 'string'
-    ? (value as Record<string, unknown>).admin0Code as string
-    : typeof (value as Record<string, unknown>).gid0 === 'string'
-      ? (value as Record<string, unknown>).gid0 as string
-      : '';
-  const admin1 = typeof (value as Record<string, unknown>).admin1 === 'string'
-    ? (value as Record<string, unknown>).admin1 as string
-    : typeof (value as Record<string, unknown>).gid1 === 'string'
-      ? (value as Record<string, unknown>).gid1 as string
-      : undefined;
-  const admin2 = typeof (value as Record<string, unknown>).admin2 === 'string'
-    ? (value as Record<string, unknown>).admin2 as string
-    : typeof (value as Record<string, unknown>).gid2 === 'string'
-      ? (value as Record<string, unknown>).gid2 as string
-      : undefined;
-  const admin0 = typeof (value as Record<string, unknown>).admin0 === 'string'
-    ? (value as Record<string, unknown>).admin0 as string
-    : typeof (value as Record<string, unknown>).admin0Name === 'string'
-      ? (value as Record<string, unknown>).admin0Name as string
-      : undefined;
+  const admin0Code =
+    typeof (value as Record<string, unknown>).admin0Code === 'string'
+      ? ((value as Record<string, unknown>).admin0Code as string)
+      : typeof (value as Record<string, unknown>).gid0 === 'string'
+        ? ((value as Record<string, unknown>).gid0 as string)
+        : '';
+  const admin1 =
+    typeof (value as Record<string, unknown>).admin1 === 'string'
+      ? ((value as Record<string, unknown>).admin1 as string)
+      : typeof (value as Record<string, unknown>).gid1 === 'string'
+        ? ((value as Record<string, unknown>).gid1 as string)
+        : undefined;
+  const admin2 =
+    typeof (value as Record<string, unknown>).admin2 === 'string'
+      ? ((value as Record<string, unknown>).admin2 as string)
+      : typeof (value as Record<string, unknown>).gid2 === 'string'
+        ? ((value as Record<string, unknown>).gid2 as string)
+        : undefined;
+  const admin0 =
+    typeof (value as Record<string, unknown>).admin0 === 'string'
+      ? ((value as Record<string, unknown>).admin0 as string)
+      : typeof (value as Record<string, unknown>).admin0Name === 'string'
+        ? ((value as Record<string, unknown>).admin0Name as string)
+        : undefined;
 
   const centroidForShapeId = normalizeCentroidForShapeId(valueRecord.centroidForShapeId);
   const centroidForShapeContainerNodeId = normalizeCentroidForShapeContainerNodeId(
@@ -211,14 +213,16 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
     admin2,
     ...(centroidForShapeId !== undefined && { centroidForShapeId }),
     ...(centroidForShapeContainerNodeId && { centroidForShapeContainerNodeId }),
-    metadata: sanitizeMetadata((value as Record<string, unknown>).metadata ?? (value as Record<string, unknown>).payload),
+    metadata: sanitizeMetadata(
+      (value as Record<string, unknown>).metadata ?? (value as Record<string, unknown>).payload
+    ),
   };
 };
 
 export const toGroupRow = (
   nodeId: NodeId,
   item: FeatureItemBase<LocationGroupItemData>,
-  timestamp = Date.now(),
+  timestamp = Date.now()
 ): LocationFeature => {
   const normalizedData = normalizeGroupData(item.data ?? {});
   const centroidForShapeId = normalizedData?.centroidForShapeId;
@@ -227,9 +231,10 @@ export const toGroupRow = (
     nodeId,
     id: String(item.id) as LocationFeature['id'],
     type: normalizedData.type,
-    mortonKey: item.data && Number.isFinite(item.data.longitude) && Number.isFinite(item.data.latitude)
-      ? mortonKeyFromLonLat(item.data.longitude, item.data.latitude)
-      : undefined,
+    mortonKey:
+      item.data && Number.isFinite(item.data.longitude) && Number.isFinite(item.data.latitude)
+        ? mortonKeyFromLonLat(item.data.longitude, item.data.latitude)
+        : undefined,
     data: normalizedData,
     ...(centroidForShapeId !== undefined && { centroidForShapeId }),
     ...(centroidForShapeContainerNodeId && { centroidForShapeContainerNodeId }),
@@ -237,9 +242,7 @@ export const toGroupRow = (
   };
 };
 
-export const fromGroupRow = (
-  rows: LocationFeature[],
-): FeatureItemBase<LocationGroupItemData>[] =>
+export const fromGroupRow = (rows: LocationFeature[]): FeatureItemBase<LocationGroupItemData>[] =>
   rows.map(({ id, data, updatedAt }) => ({
     id,
     data: data ? normalizeGroupData(data) : undefined,

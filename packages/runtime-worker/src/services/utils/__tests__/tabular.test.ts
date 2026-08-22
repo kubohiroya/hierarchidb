@@ -1,4 +1,3 @@
-import { afterEach, describe, expect, it } from 'vitest';
 import {
   closeRowStoreDB,
   getRowStoreDB,
@@ -7,6 +6,7 @@ import {
   TabularWriter,
 } from '@hierarchidb/tabular-store';
 import { getDBName } from '@hierarchidb/util';
+import { afterEach, describe, expect, it } from 'vitest';
 import { loadTabularTableRows } from '../loadTabularTableRows';
 
 const deleteDatabase = async (name: string): Promise<void> => {
@@ -43,9 +43,7 @@ describe('loadTabularTableRows', () => {
     await writer.writeRows([{ name: 'Tokyo', latitude: 35.6764, longitude: 139.65 }]);
     await writer.commit();
     await closeRowStoreDB();
-    const reopenedRowStore = getRowStoreDB(
-      getDBName(sourcePrefix, 'tabular-source-rowstore-db')
-    );
+    const reopenedRowStore = getRowStoreDB(getDBName(sourcePrefix, 'tabular-source-rowstore-db'));
     const chunks = await reopenedRowStore.rowChunks
       .where('[pluginId+tableId]')
       .equals(['location', tableId])
@@ -54,17 +52,18 @@ describe('loadTabularTableRows', () => {
     expect(readChunkRows(chunks[0] as (typeof chunks)[number])).toHaveLength(1);
     const queryService = new TabularQueryService(
       'location',
-      getDBName(sourcePrefix, 'tabular-source-rowstore-db'),
+      getDBName(sourcePrefix, 'tabular-source-rowstore-db')
     );
-    await expect(queryService.query(tableId, [{ column: 'name', op: 'eq', value: 'Tokyo' }]))
-      .resolves.toEqual([{ name: 'Tokyo', latitude: 35.6764, longitude: 139.65 }]);
+    await expect(
+      queryService.query(tableId, [{ column: 'name', op: 'eq', value: 'Tokyo' }])
+    ).resolves.toEqual([{ name: 'Tokyo', latitude: 35.6764, longitude: 139.65 }]);
     await closeRowStoreDB();
     expect(
       await getRowStoreDB(getDBName(sourcePrefix, 'tabular-source-rowstore-db')).rowChunks.count()
     ).toBe(1);
 
     await expect(loadTabularTableRows('location', tableId, workerDefaultPrefix)).rejects.toThrow(
-      'Tabular table not found',
+      'Tabular table not found'
     );
 
     const result = await loadTabularTableRows('location', tableId, sourcePrefix);

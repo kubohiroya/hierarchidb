@@ -54,11 +54,8 @@ export const updateProgressState = ({
   lastMessage: message ?? null,
 });
 
-export const calculateProgress = (processedTiles: number, totalTiles: number): number => (
-  totalTiles > 0
-    ? Math.min(100, Math.max(0, Math.round((processedTiles / totalTiles) * 100)))
-    : 0
-);
+export const calculateProgress = (processedTiles: number, totalTiles: number): number =>
+  totalTiles > 0 ? Math.min(100, Math.max(0, Math.round((processedTiles / totalTiles) * 100))) : 0;
 
 export type VtTileProgressPayload = {
   processedTiles: number;

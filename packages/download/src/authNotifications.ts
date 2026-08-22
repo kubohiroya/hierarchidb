@@ -7,7 +7,10 @@ export type AuthNotification = {
 
 const authNotifiers = new Map<string, (info: AuthNotification) => void>();
 
-export function registerPluginAuthNotifier(pluginId: string, fn: (info: AuthNotification) => void): void {
+export function registerPluginAuthNotifier(
+  pluginId: string,
+  fn: (info: AuthNotification) => void
+): void {
   authNotifiers.set(pluginId, fn);
 }
 
@@ -18,12 +21,15 @@ export function notifyPluginAuthRequired(pluginId: string, info: AuthNotificatio
     return;
   }
   const globalScope = globalThis as {
-    AuthNotificationRegistry?: { getInstance?: () => { onAuthRequired?: (payload: AuthNotification) => void } };
+    AuthNotificationRegistry?: {
+      getInstance?: () => { onAuthRequired?: (payload: AuthNotification) => void };
+    };
     authNotificationRegistry?: { onAuthRequired?: (payload: AuthNotification) => void };
     authRegistry?: { onAuthRequired?: (payload: AuthNotification) => void };
   };
-  const registry = globalScope.AuthNotificationRegistry?.getInstance?.()
-    ?? globalScope.authNotificationRegistry
-    ?? globalScope.authRegistry;
+  const registry =
+    globalScope.AuthNotificationRegistry?.getInstance?.() ??
+    globalScope.authNotificationRegistry ??
+    globalScope.authRegistry;
   registry?.onAuthRequired?.(info);
 }

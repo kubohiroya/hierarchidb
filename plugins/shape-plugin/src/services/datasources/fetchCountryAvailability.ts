@@ -1,9 +1,9 @@
-import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import type { NodeId } from '@hierarchidb/core-types';
+import { SHAPE_DATA_SOURCE_BY_NAME } from '~/common/types/constants';
 import type { DataSourceName } from '~/common/types/index';
+import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import { defaultDataSourceFactory } from './DataSourceStrategyFactory.js';
 import { resolveStrategyIdFromDataSource } from './resolveStrategyIdFromDataSource.js';
-import { SHAPE_DATA_SOURCE_BY_NAME } from '~/common/types/constants';
 
 type AvailabilitySource = 'strategy' | 'metadata' | 'none';
 
@@ -46,7 +46,7 @@ const toMaxAdminLevel = (levels: Iterable<number>): number => {
 
 const buildAvailabilityFromMetadata = async (
   dataSource: DataSourceName,
-  nodeId: NodeId,
+  nodeId: NodeId
 ): Promise<CountryAvailabilityMatrix> => {
   const metadata = await metadataLoader.loadMetadata(dataSource, nodeId);
   const entries = new Map<string, number[]>();
@@ -58,10 +58,7 @@ const buildAvailabilityFromMetadata = async (
     }
   });
   const fallbackMax = SHAPE_DATA_SOURCE_BY_NAME[dataSource]?.maxAdminLevel ?? 0;
-  const maxAdminLevel = Math.max(
-    fallbackMax,
-    toMaxAdminLevel(Array.from(entries.values()).flat()),
-  );
+  const maxAdminLevel = Math.max(fallbackMax, toMaxAdminLevel(Array.from(entries.values()).flat()));
   return {
     dataSource,
     availableAdminLevels: entries,
@@ -70,7 +67,9 @@ const buildAvailabilityFromMetadata = async (
   };
 };
 
-const fetchAvailabilityFromStrategy = async (dataSource: DataSourceName): Promise<CountryAvailabilityMatrix | null> => {
+const fetchAvailabilityFromStrategy = async (
+  dataSource: DataSourceName
+): Promise<CountryAvailabilityMatrix | null> => {
   const strategyId = resolveStrategyIdFromDataSource(dataSource);
   if (!strategyId) return null;
   const strategy = defaultDataSourceFactory.create(strategyId) as StrategyAvailabilityProvider;
@@ -81,18 +80,28 @@ const fetchAvailabilityFromStrategy = async (dataSource: DataSourceName): Promis
 
   const countries = await strategy.getAvailableCountries();
   const entries = new Map<string, number[]>();
-  for (let offset = 0; offset < countries.length; offset += STRATEGY_ADMIN_LEVEL_FETCH_CONCURRENCY) {
+  for (
+    let offset = 0;
+    offset < countries.length;
+    offset += STRATEGY_ADMIN_LEVEL_FETCH_CONCURRENCY
+  ) {
     const chunk = countries.slice(offset, offset + STRATEGY_ADMIN_LEVEL_FETCH_CONCURRENCY);
-    const resolvedChunk = await Promise.all(chunk.map(async (country) => {
-      try {
-        const levelsRaw = await getAvailableAdminLevels(country);
-        const levels = normalizeLevels(levelsRaw);
-        return { country, levels };
-      } catch (error) {
-        console.warn('[CountryAvailabilityResolver] failed to load levels for country', country, error);
-        return null;
-      }
-    }));
+    const resolvedChunk = await Promise.all(
+      chunk.map(async (country) => {
+        try {
+          const levelsRaw = await getAvailableAdminLevels(country);
+          const levels = normalizeLevels(levelsRaw);
+          return { country, levels };
+        } catch (error) {
+          console.warn(
+            '[CountryAvailabilityResolver] failed to load levels for country',
+            country,
+            error
+          );
+          return null;
+        }
+      })
+    );
     resolvedChunk.forEach((entry) => {
       if (!entry) return;
       const key = entry.country.trim().toUpperCase();
@@ -107,10 +116,7 @@ const fetchAvailabilityFromStrategy = async (dataSource: DataSourceName): Promis
   }
 
   const fallbackMax = SHAPE_DATA_SOURCE_BY_NAME[dataSource]?.maxAdminLevel ?? 0;
-  const maxAdminLevel = Math.max(
-    fallbackMax,
-    toMaxAdminLevel(Array.from(entries.values()).flat()),
-  );
+  const maxAdminLevel = Math.max(fallbackMax, toMaxAdminLevel(Array.from(entries.values()).flat()));
 
   return {
     dataSource,
@@ -122,10 +128,13 @@ const fetchAvailabilityFromStrategy = async (dataSource: DataSourceName): Promis
 
 export const fetchCountryAvailability = async (
   dataSource: DataSourceName,
-  nodeId: NodeId,
+  nodeId: NodeId
 ): Promise<CountryAvailabilityMatrix> => {
   const strategyAvailability = await fetchAvailabilityFromStrategy(dataSource).catch((error) => {
-    console.warn('[CountryAvailabilityResolver] strategy availability failed', { dataSource, error });
+    console.warn('[CountryAvailabilityResolver] strategy availability failed', {
+      dataSource,
+      error,
+    });
     return null;
   });
   if (strategyAvailability) {

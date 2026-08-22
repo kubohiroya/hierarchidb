@@ -2,7 +2,8 @@ import type { NodeType } from '@hierarchidb/core-types';
 
 export const PLUGIN_ID = '@hierarchidb/shape-plugin' as const;
 export const PLUGIN_VERSION = '0.1.0' as const;
-export const PLUGIN_DESCRIPTION = 'Geographic shape data management plugin for HierarchiDB' as const;
+export const PLUGIN_DESCRIPTION =
+  'Geographic shape data management plugin for HierarchiDB' as const;
 export const PLUGIN_NODE_TYPE = 'shape' as NodeType;
 
 export const PLUGIN_MANIFEST = {

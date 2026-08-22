@@ -12,7 +12,11 @@ export interface TagInputProps {
  * Minimal TagInput implementation for plugin consumers.
  * Replace with a richer component when ready.
  */
-export const TagInput: React.FC<TagInputProps> = ({ value = [], onChange: _onChange, placeholder }) => {
+export const TagInput: React.FC<TagInputProps> = ({
+  value = [],
+  onChange: _onChange,
+  placeholder,
+}) => {
   return (
     <div data-ui-core="TagInput" style={{ border: '1px solid #ddd', padding: 8, borderRadius: 4 }}>
       <div style={{ fontWeight: 600, marginBottom: 4 }}>Tags</div>
@@ -21,14 +25,19 @@ export const TagInput: React.FC<TagInputProps> = ({ value = [], onChange: _onCha
           <span style={{ color: '#999' }}>{placeholder ?? 'No tags'}</span>
         ) : (
           value.map((t) => (
-            <span key={t.id} style={{
-              display: 'inline-block',
-              padding: '2px 6px',
-              borderRadius: 4,
-              background: t.color ?? '#eee',
-              color: '#333',
-              fontSize: 12,
-            }}>{t.name}</span>
+            <span
+              key={t.id}
+              style={{
+                display: 'inline-block',
+                padding: '2px 6px',
+                borderRadius: 4,
+                background: t.color ?? '#eee',
+                color: '#333',
+                fontSize: 12,
+              }}
+            >
+              {t.name}
+            </span>
           ))
         )}
       </div>

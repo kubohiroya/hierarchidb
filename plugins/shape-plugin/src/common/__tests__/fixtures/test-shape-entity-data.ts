@@ -1,12 +1,12 @@
 /**
-  * @file test-shape-plugin-entity-data.ts
+ * @file test-shape-plugin-entity-data.ts
  * @description Test fixture data for Shape plugin integration tests
-  * ShapeEntity:
+ * ShapeEntity:
  * - : geoBoundaries
  * - : (JP), (DE), (US)
  * - Admin Level: 0 ()
  * - :
-  */
+ */
 
 // Minimal type definitions for standalone testing
 type NodeId = string & { readonly __brand: 'NodeId' };
@@ -51,14 +51,14 @@ interface BuildConfig {
 }
 
 /**
-  * NodeIdEntityId
-  */
+ * NodeIdEntityId
+ */
 export const TEST_NODE_ID = 'test-shape-plugin-node-jpu-deu-usa' as NodeId;
 export const TEST_ENTITY_ID = 'test-shape-plugin-entity-jpu-deu-usa' as EntityId;
 
 /**
-  * 3Level 0BuildConfig
-  */
+ * 3Level 0BuildConfig
+ */
 export function createTestBuildConfig(): BuildConfig {
   // Default configuration without external dependencies
 
@@ -100,8 +100,8 @@ export function createTestBuildConfig(): BuildConfig {
 }
 
 /**
-  * ShapeEntity - 3Level 0
-  */
+ * ShapeEntity - 3Level 0
+ */
 export function createTestShapeEntity(): ShapeEntity {
   return {
     id: TEST_ENTITY_ID,
@@ -117,8 +117,8 @@ export function createTestShapeEntity(): ShapeEntity {
 }
 
 /**
-  * ShapeEntity -
-  */
+ * ShapeEntity -
+ */
 export function createTestShapeEntityJapanOnly(): ShapeEntity {
   const baseEntity = createTestShapeEntity();
 
@@ -141,7 +141,7 @@ export function createTestShapeEntityJapanOnly(): ShapeEntity {
 }
 
 /**
-     */
+ */
 export const EXPECTED_BATCH_RESULTS = {
   //  3 Level 0
   threeCountries: {
@@ -178,9 +178,9 @@ export const EXPECTED_BATCH_RESULTS = {
 };
 
 /**
-  * geoBoundaries API
+ * geoBoundaries API
  * API
-  */
+ */
 export const GEOBOUNDARIES_TEST_ENDPOINTS = {
   metadata: 'https://geoboundaries.org/api/current/gbOpen/',
   download: {
@@ -191,10 +191,10 @@ export const GEOBOUNDARIES_TEST_ENDPOINTS = {
 };
 
 /**
-    */
+ */
 export const TEST_TIMEOUTS = {
-  source: 30000,    //  30 -
-  geometry: 60000,   //  60 -
+  source: 30000, //  30 -
+  geometry: 60000, //  60 -
   tileEmit: 90000, //  90 -
   fullWorkflow: 300000, //  5 -
 };

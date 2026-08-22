@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { LocationGroupItem } from '@hierarchidb/location-api';
-import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { TreeNodeData } from '@hierarchidb/tree-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { Remote } from 'comlink';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DEBUG_PREFIX } from './locationMapPreviewConstants.js';
 import { formatTimestamp, resolveLocationType } from './locationMapPreviewUtils.js';
 
@@ -24,7 +24,7 @@ const METADATA_COLUMNS_ORDER = [
   'metadata',
 ] as const;
 
-const buildMetadataRows = (items: LocationGroupItem[]): Array<Record<string, unknown>> => (
+const buildMetadataRows = (items: LocationGroupItem[]): Array<Record<string, unknown>> =>
   items.map((item) => {
     const data = item.data;
     const rawType = typeof data?.type === 'string' ? data.type : undefined;
@@ -46,18 +46,24 @@ const buildMetadataRows = (items: LocationGroupItem[]): Array<Record<string, unk
       updatedAt: formatTimestamp(item.updatedAt),
       metadata: data?.metadata,
     };
-  })
-);
+  });
 
 export const buildMetadataColumns = (rows: Array<Record<string, unknown>>): string[] => {
-  const forcedColumns = new Set(['admin0', 'admin0Code', 'admin1', 'admin1Code', 'admin2', 'admin2Code']);
-  const baseColumns = METADATA_COLUMNS_ORDER.filter((col) => (
-    forcedColumns.has(col) || rows.some((row) => row[col] != null && row[col] !== '')
-  ));
+  const forcedColumns = new Set([
+    'admin0',
+    'admin0Code',
+    'admin1',
+    'admin1Code',
+    'admin2',
+    'admin2Code',
+  ]);
+  const baseColumns = METADATA_COLUMNS_ORDER.filter(
+    (col) => forcedColumns.has(col) || rows.some((row) => row[col] != null && row[col] !== '')
+  );
   const extra = new Set<string>();
   rows.forEach((row) => {
     Object.keys(row).forEach((key) => {
-      if (METADATA_COLUMNS_ORDER.includes(key as typeof METADATA_COLUMNS_ORDER[number])) return;
+      if (METADATA_COLUMNS_ORDER.includes(key as (typeof METADATA_COLUMNS_ORDER)[number])) return;
       if (row[key] == null || row[key] === '') return;
       extra.add(key);
     });
@@ -89,15 +95,9 @@ type UseLocationMapPreviewMetadataResult = {
 };
 
 export const useLocationMapPreviewMetadata = (
-  args: UseLocationMapPreviewMetadataArgs,
+  args: UseLocationMapPreviewMetadataArgs
 ): UseLocationMapPreviewMetadataResult => {
-  const {
-    nodeId,
-    workerApi,
-    workerLoading,
-    workerError,
-    refreshKey,
-  } = args;
+  const { nodeId, workerApi, workerLoading, workerError, refreshKey } = args;
 
   const [metadataRows, setMetadataRows] = useState<Array<Record<string, unknown>>>([]);
   const [metadataItems, setMetadataItems] = useState<LocationGroupItem[]>([]);
@@ -115,7 +115,9 @@ export const useLocationMapPreviewMetadata = (
 
   const handleMetadataSelectionChange = useCallback((selected: Set<string | number>) => {
     const next = new Set<string>();
-    selected.forEach((value) => { next.add(String(value)); });
+    selected.forEach((value) => {
+      next.add(String(value));
+    });
     setSelectedMetadataIds(next);
   }, []);
 
@@ -142,15 +144,16 @@ export const useLocationMapPreviewMetadata = (
       setMetadataError(
         workerError
           ? `Worker error: ${workerError.message}`
-          : 'Worker is not ready. Please wait for worker initialization.',
+          : 'Worker is not ready. Please wait for worker initialization.'
       );
       return;
     }
-    type LocationGroupItemWithData = LocationGroupItem & { data: NonNullable<LocationGroupItem['data']> };
+    type LocationGroupItemWithData = LocationGroupItem & {
+      data: NonNullable<LocationGroupItem['data']>;
+    };
     const selectedItems = metadataItems.filter(
-      (item): item is LocationGroupItemWithData => (
+      (item): item is LocationGroupItemWithData =>
         selectedMetadataIds.has(String(item.id)) && item.data?.schemaVersion === 2
-      )
     );
     if (selectedItems.length === 0) return;
     const nextValue = selectedItems.length;
@@ -172,16 +175,12 @@ export const useLocationMapPreviewMetadata = (
     const api = await activeWorkerApi.getLocationMutationAPI();
     await api.upsertLocationGroups(nodeId, updatedItems);
     const updatedMap = new Map(updatedItems.map((item) => [String(item.id), item]));
-    const nextItems: LocationGroupItem[] = metadataItems.map((item) => updatedMap.get(String(item.id)) ?? item);
+    const nextItems: LocationGroupItem[] = metadataItems.map(
+      (item) => updatedMap.get(String(item.id)) ?? item
+    );
     setMetadataItems(nextItems);
     setMetadataRows(buildMetadataRows(nextItems));
-  }, [
-    metadataItems,
-    nodeId,
-    selectedMetadataIds,
-    workerError,
-    workerReady,
-  ]);
+  }, [metadataItems, nodeId, selectedMetadataIds, workerError, workerReady]);
 
   useEffect(() => {
     if (!nodeId) {
@@ -248,7 +247,7 @@ export const useLocationMapPreviewMetadata = (
 
   const metadataById = useMemo(
     () => new Map(metadataItems.map((item) => [String(item.id), item])),
-    [metadataItems],
+    [metadataItems]
   );
 
   return {

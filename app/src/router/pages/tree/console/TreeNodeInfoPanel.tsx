@@ -31,7 +31,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
-import { useCallback, useMemo, type MouseEvent } from 'react';
+import { type MouseEvent, useCallback, useMemo } from 'react';
 import { BuildSessionSpinnerButton } from '~/components/BuildSessionSpinnerButton';
 import { useTreeNodeInfoPanel } from './hooks/useTreeNodeInfoPanel.js';
 
@@ -99,7 +99,7 @@ export function TreeNodeInfoPanel({
       : labels.unnamedNodeLabel;
   const originalDescription =
     typeof currentNode?.metadata?.description === 'string' &&
-      currentNode.metadata.description.trim().length > 0
+    currentNode.metadata.description.trim().length > 0
       ? currentNode.metadata.description
       : labels.emptyDescriptionLabel;
   const resolvedPageNodeId = pageNodeId

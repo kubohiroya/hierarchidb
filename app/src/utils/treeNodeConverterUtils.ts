@@ -74,7 +74,8 @@ export function createDefaultColumns(options?: ColumnOptions): TreeTableColumn[]
 
     if (diffDays === 0) return t('archive.timestamps.today', 'Today {{time}}', { time });
     if (diffDays === 1) return t('archive.timestamps.yesterday', 'Yesterday {{time}}', { time });
-    if (diffDays === 2) return t('archive.timestamps.twoDaysAgo', 'Two days ago {{time}}', { time });
+    if (diffDays === 2)
+      return t('archive.timestamps.twoDaysAgo', 'Two days ago {{time}}', { time });
 
     const dateFormatter = new Intl.DateTimeFormat(locale, {
       year: 'numeric',

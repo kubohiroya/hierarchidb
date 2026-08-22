@@ -21,13 +21,17 @@ export async function detectFormat(input: FileLike): Promise<DetectionResult> {
       // ignore
     }
   }
-  return results.sort((a, b) => b.confidence - a.confidence)[0] ?? { format: 'unknown', confidence: 0 };
+  return (
+    results.sort((a, b) => b.confidence - a.confidence)[0] ?? { format: 'unknown', confidence: 0 }
+  );
 }
 
-export async function parseWithBest(input: FileLike, options?: ParseOptions): Promise<TabularParseResult> {
+export async function parseWithBest(
+  input: FileLike,
+  options?: ParseOptions
+): Promise<TabularParseResult> {
   const result = await detectFormat(input);
   const candidate = parsers.find((p) => p.id === result.format);
   if (!candidate) throw new Error(`No parser registered for detected format: ${result.format}`);
   return candidate.parse(input, options);
 }
-

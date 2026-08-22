@@ -1,16 +1,16 @@
 /**
-  * TreeConsoleFooter -
-  * eria-cartographTreeConsoleFooterUI
-   */
+ * TreeConsoleFooter -
+ * eria-cartographTreeConsoleFooterUI
+ */
 
-import { Box, IconButton, Typography } from '@mui/material';
 import { HelpOutline } from '@mui/icons-material';
+import { Box, IconButton, Typography } from '@mui/material';
 import type { TreeConsoleFooterProps } from '~/types';
 
 /**
-  * TreeConsoleFooter
  * TreeConsoleFooter
-  */
+ * TreeConsoleFooter
+ */
 export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Element {
   const {
     controller,
@@ -43,30 +43,25 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
           height,
         }}
       >
-        {
-          showTour && onStartTour ? (
-            <IconButton
-              size="small"
-              onClick={onStartTour}
-              aria-label="Start guided tour"
-              sx={{
-                mr: 1,
-                color: 'text.secondary',
-                '&:hover': {
-                  color: 'primary.main',
-                },
-              }}
-            >
-              <HelpOutline fontSize="small" />
-            </IconButton>
-
-          ) : (
-            <Box sx={{ width: 16, color: 'text.secondary' }} />
-          )}
-        <Typography
-          variant="body2"
-          sx={{ color: 'text.secondary' }}
-        >
+        {showTour && onStartTour ? (
+          <IconButton
+            size="small"
+            onClick={onStartTour}
+            aria-label="Start guided tour"
+            sx={{
+              mr: 1,
+              color: 'text.secondary',
+              '&:hover': {
+                color: 'primary.main',
+              },
+            }}
+          >
+            <HelpOutline fontSize="small" />
+          </IconButton>
+        ) : (
+          <Box sx={{ width: 16, color: 'text.secondary' }} />
+        )}
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {customText}
         </Typography>
       </Box>
@@ -112,10 +107,7 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
         ) : (
           <Box sx={{ width: 16, color: 'text.secondary' }} />
         )}
-        <Typography
-          variant="body2"
-          sx={{ color: 'text.secondary' }}
-        >
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           Loading...
         </Typography>
       </Box>
@@ -185,10 +177,7 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
       ) : (
         <Box sx={{ width: 16, color: 'text.secondary' }} />
       )}
-      <Typography
-        variant="body2"
-        sx={{ color: 'text.secondary' }}
-      >
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
         {getFooterText()}
       </Typography>
       {rightSlot && (

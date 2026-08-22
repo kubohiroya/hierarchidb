@@ -1,25 +1,28 @@
-import type { ReactElement } from 'react';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Box, Slider, Typography } from '@mui/material';
-import type { TreeTableColumn } from './TreeTable/index.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import { type BuildSessionIndicator, TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
-import type { TreeNodeInUI } from '@hierarchidb/ui-treeconsole-treetable';
-import type { OpenStepOption, TreeConsoleBreadcrumbRendererProps as BreadcrumbRendererProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import type {
+  TreeConsoleBreadcrumbRendererProps as BreadcrumbRendererProps,
+  OpenStepOption,
+} from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { NodeContextMenu, TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
-import { TreeConsoleFooter } from './TreeConsoleFooter.js';
-import type { HierarchicalTreeNode } from '~/types/index';
+import type { TreeNodeInUI } from '@hierarchidb/ui-treeconsole-treetable';
+import { type BuildSessionIndicator, TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
 import type { DualKeyMap } from '@hierarchidb/util';
+import { Box, Slider, Typography } from '@mui/material';
+import type { ReactElement } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useColumnView } from '~/hooks/useColumnView.js';
 import type { PanelBreadcrumbNode } from '~/hooks/useTreeConsolePanel';
 import { useTreeConsolePanel } from '~/hooks/useTreeConsolePanel';
-import { TagsLinkButton } from './TagsLinkButton.js';
-import type { ViewMode, SortMode } from '~/types/view-mode-types';
-import { IconView } from './IconView.js';
-import { ColumnView } from './ColumnView.js';
-import { useColumnView } from '~/hooks/useColumnView.js';
-import { BackgroundContextMenu } from './BackgroundContextMenu.js';
+import type { HierarchicalTreeNode } from '~/types/index';
+import type { SortMode, ViewMode } from '~/types/view-mode-types';
 import { computeReorganizedPositions, computeZoomLayout } from '~/utils/zoom-layout';
+import { BackgroundContextMenu } from './BackgroundContextMenu.js';
+import { ColumnView } from './ColumnView.js';
+import { IconView } from './IconView.js';
+import { TagsLinkButton } from './TagsLinkButton.js';
+import { TreeConsoleFooter } from './TreeConsoleFooter.js';
+import type { TreeTableColumn } from './TreeTable/index.js';
 
 export type TreeConsoleBreadcrumbRendererProps = BreadcrumbRendererProps;
 
@@ -149,15 +152,13 @@ export interface TreeConsolePanelProps {
 
 export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsolePanelProps) {
   const tagsLeftSlot =
-    props.treeId && props.pageNodeId && props.onNavigateTags
-      ? (
-        <TagsLinkButton
-          treeId={props.treeId}
-          pageNodeId={props.pageNodeId}
-          onNavigate={props.onNavigateTags}
-        />
-      )
-      : undefined;
+    props.treeId && props.pageNodeId && props.onNavigateTags ? (
+      <TagsLinkButton
+        treeId={props.treeId}
+        pageNodeId={props.pageNodeId}
+        onNavigate={props.onNavigateTags}
+      />
+    ) : undefined;
 
   const {
     controller,
@@ -210,30 +211,43 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     position: { left: number; top: number };
   } | null>(null);
 
-  const handleIconContextMenu = useCallback((node: TreeNodeInUI, position: { left: number; top: number }) => {
-    controller.onNodeSelect?.([node.id], true);
-    setIconContextMenu({ node, position });
-  }, [controller]);
+  const handleIconContextMenu = useCallback(
+    (node: TreeNodeInUI, position: { left: number; top: number }) => {
+      controller.onNodeSelect?.([node.id], true);
+      setIconContextMenu({ node, position });
+    },
+    [controller]
+  );
 
   const handleIconContextMenuClose = useCallback(() => {
     setIconContextMenu(null);
   }, []);
 
-  const [bgContextMenu, setBgContextMenu] = useState<{ left: number; top: number; targetNodeId: string } | null>(null);
+  const [bgContextMenu, setBgContextMenu] = useState<{
+    left: number;
+    top: number;
+    targetNodeId: string;
+  } | null>(null);
 
-  const handleBgContextMenu = useCallback((position: { left: number; top: number }, targetNodeId?: string) => {
-    controller.onNodeSelect?.([], false);
-    setBgContextMenu({ ...position, targetNodeId: targetNodeId ?? props.pageNodeId ?? '' });
-  }, [controller, props.pageNodeId]);
+  const handleBgContextMenu = useCallback(
+    (position: { left: number; top: number }, targetNodeId?: string) => {
+      controller.onNodeSelect?.([], false);
+      setBgContextMenu({ ...position, targetNodeId: targetNodeId ?? props.pageNodeId ?? '' });
+    },
+    [controller, props.pageNodeId]
+  );
 
   const handleBgContextMenuClose = useCallback(() => {
     setBgContextMenu(null);
   }, []);
 
-  const handleColumnBgContextMenu = useCallback((folderId: string, position: { left: number; top: number }) => {
-    controller.onNodeSelect?.([], false);
-    setBgContextMenu({ ...position, targetNodeId: folderId });
-  }, [controller]);
+  const handleColumnBgContextMenu = useCallback(
+    (folderId: string, position: { left: number; top: number }) => {
+      controller.onNodeSelect?.([], false);
+      setBgContextMenu({ ...position, targetNodeId: folderId });
+    },
+    [controller]
+  );
 
   const handleReorganizeIcons = useCallback(() => {
     const nodes = controller.data ?? [];
@@ -260,7 +274,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     (action: string, node: { id: string }, options?: Record<string, unknown>) => {
       controller.onContextAction?.(action, node as TreeNodeInUI, options);
     },
-    [controller],
+    [controller]
   );
 
   if (!isPageContextValid) {
@@ -311,9 +325,15 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
                 zoomLevel={props.zoomLevel ?? 50}
                 sortMode={props.sortMode ?? 'none'}
                 selectedIds={selectedIdSet}
-                onIconPositionChange={props.onIconPositionChange ?? (() => { })}
-                onNodeClick={controller.onNodeClick ? (nodeId) => controller.onNodeClick?.(nodeId) : undefined}
-                onNodeDoubleClick={controller.onNodeClick ? (nodeId, node) => controller.onNodeClick?.(nodeId, node) : undefined}
+                onIconPositionChange={props.onIconPositionChange ?? (() => {})}
+                onNodeClick={
+                  controller.onNodeClick ? (nodeId) => controller.onNodeClick?.(nodeId) : undefined
+                }
+                onNodeDoubleClick={
+                  controller.onNodeClick
+                    ? (nodeId, node) => controller.onNodeClick?.(nodeId, node)
+                    : undefined
+                }
                 onNodeSelect={controller.onNodeSelect}
                 onContextMenu={handleIconContextMenu}
                 onBackgroundContextMenu={handleBgContextMenu}
@@ -370,9 +390,15 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
               zoomLevel={props.zoomLevel ?? 50}
               sortMode={props.sortMode ?? 'none'}
               selectedIds={selectedIdSet}
-              onIconPositionChange={props.onIconPositionChange ?? (() => { })}
-              onNodeClick={controller.onNodeClick ? (nodeId) => controller.onNodeClick?.(nodeId) : undefined}
-              onNodeDoubleClick={controller.onNodeClick ? (nodeId, node) => controller.onNodeClick?.(nodeId, node) : undefined}
+              onIconPositionChange={props.onIconPositionChange ?? (() => {})}
+              onNodeClick={
+                controller.onNodeClick ? (nodeId) => controller.onNodeClick?.(nodeId) : undefined
+              }
+              onNodeDoubleClick={
+                controller.onNodeClick
+                  ? (nodeId, node) => controller.onNodeClick?.(nodeId, node)
+                  : undefined
+              }
               onNodeSelect={controller.onNodeSelect}
               onContextMenu={handleIconContextMenu}
               onBackgroundContextMenu={handleBgContextMenu}
@@ -416,18 +442,22 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
           onStartTour={props.onStartTour}
           height={32}
           loadingText={`${footerTopLevel} / ${footerSelected}`}
-          loadingTooltip={(
+          loadingTooltip={
             <Box sx={{ p: 0.5 }}>
-              <Typography variant="caption" display="block">From left to right:</Typography>
+              <Typography variant="caption" display="block">
+                From left to right:
+              </Typography>
               <Typography variant="caption" display="block">
                 - Number of top-level children in the subscribed subtree
               </Typography>
               <Typography variant="caption" display="block">
                 - Number of loaded nodes (visible + expanded)
               </Typography>
-              <Typography variant="caption" display="block">- Number of selected nodes</Typography>
+              <Typography variant="caption" display="block">
+                - Number of selected nodes
+              </Typography>
             </Box>
-          )}
+          }
           rightSlot={
             props.viewMode === 'icon' && props.onZoomLevelChange ? (
               <Slider
@@ -524,7 +554,15 @@ interface ColumnViewWrapperProps {
   columnDetailSlot?: React.ReactNode;
 }
 
-function ColumnViewWrapper({ controller, onNodeClick: _onNodeClick, columnTargetNodeId, onColumnNavigate, onIconContextMenu, onBackgroundContextMenu, columnDetailSlot }: ColumnViewWrapperProps) {
+function ColumnViewWrapper({
+  controller,
+  onNodeClick: _onNodeClick,
+  columnTargetNodeId,
+  onColumnNavigate,
+  onIconContextMenu,
+  onBackgroundContextMenu,
+  columnDetailSlot,
+}: ColumnViewWrapperProps) {
   const { rootNodes, childrenMap, nodesWithChildren, nodeById } = useMemo(() => {
     const allNodes = controller.data ?? [];
     const childrenMap = new Map<NodeId, TreeNodeInUI[]>();
@@ -549,9 +587,7 @@ function ColumnViewWrapper({ controller, onNodeClick: _onNodeClick, columnTarget
     if (rootId) {
       roots = childrenMap.get(rootId) ?? [];
     } else {
-      const minDepth = allNodes.length > 0
-        ? Math.min(...allNodes.map((n) => n.depth))
-        : 0;
+      const minDepth = allNodes.length > 0 ? Math.min(...allNodes.map((n) => n.depth)) : 0;
       roots = allNodes.filter((n) => n.depth === minDepth);
     }
 
@@ -580,7 +616,7 @@ function ColumnViewWrapper({ controller, onNodeClick: _onNodeClick, columnTarget
 
   const getChildren = useCallback(
     (nodeId: NodeId): TreeNodeInUI[] => childrenMap.get(nodeId) ?? [],
-    [childrenMap],
+    [childrenMap]
   );
 
   const hasChildren = useCallback(
@@ -589,18 +625,19 @@ function ColumnViewWrapper({ controller, onNodeClick: _onNodeClick, columnTarget
       const node = nodeById.get(nodeId);
       return node?.hasChildren ?? false;
     },
-    [nodesWithChildren, nodeById],
+    [nodesWithChildren, nodeById]
   );
 
   const columnApi = useColumnView({
     getChildren,
     hasChildren,
-    initialState: initialExpandedPath.length > 0
-      ? {
-        expandedPath: initialExpandedPath,
-        selectedNodeId: initialExpandedPath[initialExpandedPath.length - 1] ?? null,
-      }
-      : undefined,
+    initialState:
+      initialExpandedPath.length > 0
+        ? {
+            expandedPath: initialExpandedPath,
+            selectedNodeId: initialExpandedPath[initialExpandedPath.length - 1] ?? null,
+          }
+        : undefined,
   });
 
   // Expand ancestor nodes to load their children incrementally
@@ -632,7 +669,7 @@ function ColumnViewWrapper({ controller, onNodeClick: _onNodeClick, columnTarget
         onColumnNavigate(nodeId);
       }
     },
-    [columnApi, nodeById, nodesWithChildren, onColumnNavigate, controller],
+    [columnApi, nodeById, nodesWithChildren, onColumnNavigate, controller]
   );
 
   return (

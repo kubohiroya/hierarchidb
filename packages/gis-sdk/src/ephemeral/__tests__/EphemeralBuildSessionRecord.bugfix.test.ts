@@ -1,27 +1,27 @@
 /**
  * Bug Condition Exploration Test for Ephemeral Session Record Refactor
- * 
+ *
  * **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5**
- * 
+ *
  * This test encodes the EXPECTED behavior after the fix.
  * It MUST FAIL on unfixed code - failure confirms the bug exists.
- * 
+ *
  * After the refactor, this test verifies the fix is working correctly.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import type { NodeId } from '@hierarchidb/core-types';
 import * as fc from 'fast-check';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EphemeralDB } from '../EphemeralDB';
 import type {
-  BuildSessionRecord,
   BuildSessionHeartbeat,
+  BuildSessionRecord,
   BuildSessionStatus,
+  BuildStage,
   BuildStageStatus,
   BuildStatus,
-  BuildStage,
   EphemeralBuildTaskRecord,
 } from '../EphemeralDBRecordTypes';
-import type { NodeId } from '@hierarchidb/core-types';
 import { getSessionWithDetails } from '../sessionHelpers';
 
 describe('Bug Condition Exploration: Normalized Session Schema', () => {
@@ -39,13 +39,13 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
 
   /**
    * Property 1: Fault Condition - Normalized Session Schema Eliminates Redundancy
-   * 
+   *
    * This test verifies that the session schema is normalized into four distinct tables:
    * 1. BuildSessionRecord (immutable config)
    * 2. BuildSessionHeartbeat (1-second updates)
    * 3. BuildSessionStatus (state transitions)
    * 4. BuildStageStatus (per-stage tracking with history)
-   * 
+   *
    * EXPECTED OUTCOME AFTER FIX: PASS
    * - Schema uses four normalized tables
    * - Heartbeat updates only touch buildSessionHeartbeats table
@@ -95,10 +95,10 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
 
     // TEST 1: Verify schema has separate tables
     const hasNormalizedTables =
-      db.tables.some(t => t.name === 'buildSessionConfigs') &&
-      db.tables.some(t => t.name === 'buildSessionHeartbeats') &&
-      db.tables.some(t => t.name === 'buildSessionStatuses') &&
-      db.tables.some(t => t.name === 'buildStageStatuses');
+      db.tables.some((t) => t.name === 'buildSessionConfigs') &&
+      db.tables.some((t) => t.name === 'buildSessionHeartbeats') &&
+      db.tables.some((t) => t.name === 'buildSessionStatuses') &&
+      db.tables.some((t) => t.name === 'buildStageStatuses');
 
     expect(hasNormalizedTables).toBe(true);
 
@@ -139,17 +139,14 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
     await db.buildStageStatuses.add(geometryStageStatus);
 
     // Verify both stage records exist (history preserved)
-    const stageHistory = await db.buildStageStatuses
-      .where('nodeId')
-      .equals(nodeId)
-      .toArray();
+    const stageHistory = await db.buildStageStatuses.where('nodeId').equals(nodeId).toArray();
 
     expect(stageHistory.length).toBe(2);
-    expect(stageHistory.some(s => s.stage === 'source')).toBe(true);
-    expect(stageHistory.some(s => s.stage === 'geometry')).toBe(true);
+    expect(stageHistory.some((s) => s.stage === 'source')).toBe(true);
+    expect(stageHistory.some((s) => s.stage === 'geometry')).toBe(true);
 
     // Verify source stage has completion time
-    const sourceStage = stageHistory.find(s => s.stage === 'source');
+    const sourceStage = stageHistory.find((s) => s.stage === 'source');
     expect(sourceStage?.completedAt).toBe(geometryStageTime);
 
     // TEST 4: Verify computed fields are not stored in config table
@@ -167,7 +164,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
 
   /**
    * Property-Based Test: Session operations with normalized schema
-   * 
+   *
    * This test generates random session operations and verifies that:
    * - Heartbeat updates are efficient (small serialization size)
    * - Stage transitions preserve history
@@ -179,7 +176,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
       fc.asyncProperty(
         // Generate random session data
         fc.record({
-          nodeId: fc.string({ minLength: 5, maxLength: 20 }).map(s => `test-${s}` as NodeId),
+          nodeId: fc.string({ minLength: 5, maxLength: 20 }).map((s) => `test-${s}` as NodeId),
           status: fc.constantFrom<BuildStatus>('idle', 'running', 'paused', 'completed', 'failed'),
           stage: fc.constantFrom<BuildStage>('source', 'geometry', 'tileEmit'),
           selectedArrayByCountries: fc.dictionary(
@@ -229,7 +226,9 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
 
           // Property 1: Heartbeat updates should be efficient
           const beforeSize = JSON.stringify(heartbeat).length;
-          await db.buildSessionHeartbeats.update(sessionData.nodeId, { lastHeartbeatAt: now + 1000 });
+          await db.buildSessionHeartbeats.update(sessionData.nodeId, {
+            lastHeartbeatAt: now + 1000,
+          });
           const afterHeartbeat = await db.buildSessionHeartbeats.get(sessionData.nodeId);
           const afterSize = JSON.stringify(afterHeartbeat).length;
 
@@ -263,7 +262,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
 
   /**
    * Counterexample Documentation Test
-   * 
+   *
    * This test documents that the bug has been fixed by demonstrating:
    * 1. Heartbeat updates only serialize 16-byte record (nodeId + timestamp)
    * 2. Stage transitions preserve historical data in separate table
@@ -353,10 +352,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
     };
     await db.buildStageStatuses.add(geometryStage);
 
-    const stageHistory = await db.buildStageStatuses
-      .where('nodeId')
-      .equals(nodeId)
-      .toArray();
+    const stageHistory = await db.buildStageStatuses.where('nodeId').equals(nodeId).toArray();
 
     console.log(`Demonstration 2: Stage transition preserves history`);
     console.log(`  Source stage started at: ${sourceStageStart}`);
@@ -366,13 +362,17 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
     console.log(`  Source stage history: PRESERVED (separate stage history table)`);
 
     expect(stageHistory.length).toBe(2);
-    expect(stageHistory.some(s => s.stage === 'source')).toBe(true);
-    expect(stageHistory.some(s => s.stage === 'geometry')).toBe(true);
+    expect(stageHistory.some((s) => s.stage === 'source')).toBe(true);
+    expect(stageHistory.some((s) => s.stage === 'geometry')).toBe(true);
 
     // Demonstration 3: Computed fields not stored
     console.log(`Demonstration 3: Computed fields not stored in config table`);
-    console.log(`  progress field present in config: ${configAfterHeartbeat.progress !== undefined}`);
-    console.log(`  stages field present in config: ${(configAfterHeartbeat as any).stages !== undefined}`);
+    console.log(
+      `  progress field present in config: ${configAfterHeartbeat.progress !== undefined}`
+    );
+    console.log(
+      `  stages field present in config: ${(configAfterHeartbeat as any).stages !== undefined}`
+    );
     console.log(`  Expected: These should be computed from tasks, not stored`);
 
     expect(configAfterHeartbeat).not.toHaveProperty('progress');
@@ -380,9 +380,15 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
 
     // Demonstration 4: Config ownership remains normalized
     console.log(`Demonstration 4: Compatibility/status fields absent from config`);
-    console.log(`  expiresAt present in config: ${(configAfterHeartbeat as any).expiresAt !== undefined}`);
-    console.log(`  canResume present in config: ${(configAfterHeartbeat as any).canResume !== undefined}`);
-    console.log(`  resourceUsage present in config: ${(configAfterHeartbeat as any).resourceUsage !== undefined}`);
+    console.log(
+      `  expiresAt present in config: ${(configAfterHeartbeat as any).expiresAt !== undefined}`
+    );
+    console.log(
+      `  canResume present in config: ${(configAfterHeartbeat as any).canResume !== undefined}`
+    );
+    console.log(
+      `  resourceUsage present in config: ${(configAfterHeartbeat as any).resourceUsage !== undefined}`
+    );
     console.log(`  Expected: These fields should not exist in the config row`);
 
     expect(configAfterHeartbeat).not.toHaveProperty('expiresAt');
@@ -392,7 +398,7 @@ describe('Bug Condition Exploration: Normalized Session Schema', () => {
 
   /**
    * Unified Query Interface Test
-   * 
+   *
    * This test verifies that the unified query interface (getSessionWithDetails)
    * correctly reconstructs the session record from the four normalized tables
    * and computes progress/stages from tasks.

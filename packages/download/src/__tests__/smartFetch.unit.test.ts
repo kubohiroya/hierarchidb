@@ -3,10 +3,11 @@ import { smartFetch } from '../smartFetch';
 
 const originalFetch = globalThis.fetch;
 
-const makeResponse = (status: number): Response => ({
-  status,
-  ok: status >= 200 && status < 300,
-} as Response);
+const makeResponse = (status: number): Response =>
+  ({
+    status,
+    ok: status >= 200 && status < 300,
+  }) as Response;
 
 describe('smartFetch', () => {
   afterEach(() => {
@@ -16,12 +17,13 @@ describe('smartFetch', () => {
 
   it('requires auth.scope when auth is enabled', async () => {
     await expect(
-      smartFetch('https://example.com/resource', { auth: { enabled: true } }),
+      smartFetch('https://example.com/resource', { auth: { enabled: true } })
     ).rejects.toThrow('[download][smartFetch] auth.scope is required');
   });
 
   it('retries on retryable statuses when auth is disabled', async () => {
-    const fetchMock = vi.fn()
+    const fetchMock = vi
+      .fn()
       .mockResolvedValueOnce(makeResponse(500))
       .mockResolvedValueOnce(makeResponse(200));
     vi.stubGlobal('fetch', fetchMock as typeof fetch);
@@ -43,10 +45,12 @@ describe('smartFetch', () => {
         controller.close();
       },
     });
-    const fetchMock = vi.fn().mockResolvedValueOnce(new Response(body, {
-      status: 200,
-      headers: { 'content-length': '4' },
-    }));
+    const fetchMock = vi.fn().mockResolvedValueOnce(
+      new Response(body, {
+        status: 200,
+        headers: { 'content-length': '4' },
+      })
+    );
     vi.stubGlobal('fetch', fetchMock as typeof fetch);
     const percentages: number[] = [];
 

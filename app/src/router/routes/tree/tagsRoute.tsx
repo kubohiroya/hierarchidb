@@ -59,8 +59,7 @@ function TreeTagsDialog() {
     const query = searchQuery.toLowerCase();
     return tags.filter((tag) => {
       return (
-        tag.name.toLowerCase().includes(query) ||
-        tag.description?.toLowerCase().includes(query)
+        tag.name.toLowerCase().includes(query) || tag.description?.toLowerCase().includes(query)
       );
     });
   }, [searchQuery, tags]);

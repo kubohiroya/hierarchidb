@@ -1,19 +1,29 @@
-import { PluginStepRegistry, type PluginStepProps, type PluginStepConfig, type StepData } from '@hierarchidb/plugin-base';
-import { SchemaSelectionStep } from './steps/SchemaSelectionStep.js';
-import { PropertyMappingStep } from './steps/PropertyMappingStep.js';
-import { ValidationConfigStep } from './steps/ValidationConfigStep.js';
+import type { NodeId } from '@hierarchidb/core-types';
+import {
+  type PluginStepConfig,
+  type PluginStepProps,
+  PluginStepRegistry,
+  type StepData,
+} from '@hierarchidb/plugin-base';
+import { i18n } from '@hierarchidb/ui-i18n';
+import type {
+  MappingValidationResult,
+  ResolverUpdaterPayload,
+  SchemaInfo,
+} from '~/common/types/index';
 import { DuplicateResolutionStep } from './steps/DuplicateResolutionStep.js';
 import { PreviewTestStep } from './steps/PreviewTestStep.js';
-import type { ResolverUpdaterPayload, SchemaInfo, MappingValidationResult } from '~/common/types/index';
-import type { NodeId } from '@hierarchidb/core-types';
+import { PropertyMappingStep } from './steps/PropertyMappingStep.js';
 import { ResolverBuildStep } from './steps/ResolverBuildStep.js';
-import { i18n } from '@hierarchidb/ui-i18n';
+import { SchemaSelectionStep } from './steps/SchemaSelectionStep.js';
+import { ValidationConfigStep } from './steps/ValidationConfigStep.js';
 
 const registry = PluginStepRegistry.getInstance();
 
-type ResolverData = StepData & ResolverUpdaterPayload & {
-  lastValidation?: MappingValidationResult | null;
-};
+type ResolverData = StepData &
+  ResolverUpdaterPayload & {
+    lastValidation?: MappingValidationResult | null;
+  };
 
 type ResolverStepProps = PluginStepProps<ResolverUpdaterPayload>;
 
@@ -174,7 +184,11 @@ registry.registerConfigProvider<ResolverUpdaterPayload>({
         },
         capabilities: {
           canStartBuild: (data: ResolverUpdaterPayload) =>
-            Boolean(data?.draftMetadata?.name?.trim() && data?.draftData?.sourceSchema && data?.draftData?.targetSchema),
+            Boolean(
+              data?.draftMetadata?.name?.trim() &&
+                data?.draftData?.sourceSchema &&
+                data?.draftData?.targetSchema
+            ),
         },
         validate: (data?: ResolverUpdaterPayload) => isResolverBuildPersisted(data),
       },
@@ -201,5 +215,7 @@ registry.registerConfigProvider<ResolverUpdaterPayload>({
       },
     ];
   },
-  getEditStepConfigs(_nodeId: string) { return this.getCreateStepConfigs(); },
+  getEditStepConfigs(_nodeId: string) {
+    return this.getCreateStepConfigs();
+  },
 });

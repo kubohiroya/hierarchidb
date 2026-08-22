@@ -67,4 +67,4 @@ export const calculateStatistics = (values: number[]): TabularStatistics => {
 };
 
 export const coerceSpreadsheetEntity = (value: unknown): SpreadsheetDraft =>
-  (typeof value === 'object' && value !== null ? (value as SpreadsheetDraft) : {});
+  typeof value === 'object' && value !== null ? (value as SpreadsheetDraft) : {};

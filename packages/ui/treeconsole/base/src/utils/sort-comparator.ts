@@ -6,8 +6,8 @@
  * For string sorts (name, type, tag), uses localeCompare for proper i18n ordering.
  */
 
-import type { SortMode } from '~/types/view-mode-types';
 import type { TreeNodeInUI } from '@hierarchidb/ui-treeconsole-treetable';
+import type { SortMode } from '~/types/view-mode-types';
 
 /**
  * Resolves the "size" of a tree node for sorting purposes.
@@ -30,36 +30,36 @@ export const DEFAULT_NODE_SIZE_RESOLVER: NodeSizeResolver = () => 0;
  * @returns A comparator function `(a, b) => number`
  */
 export function createSortComparator(
-    sortMode: SortMode,
-    nodeSizeResolver: NodeSizeResolver = DEFAULT_NODE_SIZE_RESOLVER,
+  sortMode: SortMode,
+  nodeSizeResolver: NodeSizeResolver = DEFAULT_NODE_SIZE_RESOLVER
 ): (a: TreeNodeInUI, b: TreeNodeInUI) => number {
-    switch (sortMode) {
-        case 'none':
-            return () => 0;
+  switch (sortMode) {
+    case 'none':
+      return () => 0;
 
-        case 'name':
-            return (a, b) => a.metadata.name.localeCompare(b.metadata.name);
+    case 'name':
+      return (a, b) => a.metadata.name.localeCompare(b.metadata.name);
 
-        case 'type':
-            return (a, b) => a.nodeType.localeCompare(b.nodeType);
+    case 'type':
+      return (a, b) => a.nodeType.localeCompare(b.nodeType);
 
-        case 'lastOpened':
-            // Descending: most recent first
-            return (a, b) => (b.lastTouchedAt ?? 0) - (a.lastTouchedAt ?? 0);
+    case 'lastOpened':
+      // Descending: most recent first
+      return (a, b) => (b.lastTouchedAt ?? 0) - (a.lastTouchedAt ?? 0);
 
-        case 'created':
-            // Descending: most recent first
-            return (a, b) => b.createdAt - a.createdAt;
+    case 'created':
+      // Descending: most recent first
+      return (a, b) => b.createdAt - a.createdAt;
 
-        case 'modified':
-            // Descending: most recent first
-            return (a, b) => b.updatedAt - a.updatedAt;
+    case 'modified':
+      // Descending: most recent first
+      return (a, b) => b.updatedAt - a.updatedAt;
 
-        case 'size':
-            // Descending: largest first
-            return (a, b) => nodeSizeResolver(b) - nodeSizeResolver(a);
+    case 'size':
+      // Descending: largest first
+      return (a, b) => nodeSizeResolver(b) - nodeSizeResolver(a);
 
-        case 'tag':
-            return (a, b) => a.metadata.tags.join(',').localeCompare(b.metadata.tags.join(','));
-    }
+    case 'tag':
+      return (a, b) => a.metadata.tags.join(',').localeCompare(b.metadata.tags.join(','));
+  }
 }

@@ -1,11 +1,11 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeQueryAPI } from '@hierarchidb/shape-api';
-import type { Feature, MultiPolygon, Polygon } from 'geojson';
-import type { GeometryEngine } from './configTypes.js';
-import { geometryPointInPolygon } from './geometryEngineUtils.js';
 import { VectorTile } from '@mapbox/vector-tile';
+import type { Feature, MultiPolygon, Polygon } from 'geojson';
 import Pbf from 'pbf';
 import { LRUCache } from 'typescript-lru-cache';
+import type { GeometryEngine } from './configTypes.js';
+import { geometryPointInPolygon } from './geometryEngineUtils.js';
 import {
   latToTileY,
   lonToTileX,
@@ -75,7 +75,7 @@ const buildCacheKey = (nodeId: NodeId, z: number, x: number, y: number, layerNam
 const resolveZoom = async (
   query: ShapeQueryAPI,
   nodeId: NodeId,
-  options?: VectorTileGeocodeOptions,
+  options?: VectorTileGeocodeOptions
 ): Promise<number> => {
   if (typeof options?.zoom === 'number' && Number.isFinite(options.zoom)) {
     return options.zoom;
@@ -92,7 +92,7 @@ const decodeVectorTileLayer = (
   z: number,
   x: number,
   y: number,
-  layerName: string,
+  layerName: string
 ): Array<Feature<Polygon | MultiPolygon>> => {
   const tile = new VectorTile(new Pbf(tileData));
   const layer = tile.layers[layerName];
@@ -116,7 +116,7 @@ const loadVectorTileLayer = async (
   x: number,
   y: number,
   layerName: string,
-  cache: LRUCache<string, VectorTileLayerCache>,
+  cache: LRUCache<string, VectorTileLayerCache>
 ): Promise<VectorTileLayerCache | null> => {
   const key = buildCacheKey(nodeId, z, x, y, layerName);
   const cached = cache.get(key);
@@ -143,7 +143,7 @@ export const geocodePointInShapeTiles = async (
   query: ShapeQueryAPI,
   nodeIds: NodeId[] | NodeId,
   location: GeoPoint,
-  options?: VectorTileGeocodeOptions,
+  options?: VectorTileGeocodeOptions
 ): Promise<VectorTileGeocodeMatch[]> => {
   const targets = Array.isArray(nodeIds) ? nodeIds : [nodeIds];
   const layerName = options?.layerName ?? DEFAULT_LAYER_NAME;
@@ -164,7 +164,10 @@ export const geocodePointInShapeTiles = async (
       if (!geometryPointInPolygon(testCoord, feature, geometryEngine)) continue;
       const properties = (feature.properties ?? {}) as Record<string, unknown>;
       const adminLevel = pickAdminLevel(properties);
-      if (options?.adminLevels?.length && (adminLevel == null || !options.adminLevels.includes(adminLevel))) {
+      if (
+        options?.adminLevels?.length &&
+        (adminLevel == null || !options.adminLevels.includes(adminLevel))
+      ) {
         continue;
       }
       results.push({

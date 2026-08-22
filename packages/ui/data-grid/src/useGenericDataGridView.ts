@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { ChangeEvent, RefObject } from 'react';
-import type { GridColumn, GenericDataGridProps } from './GenericDataGrid.js';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { GenericDataGridProps, GridColumn } from './GenericDataGrid.js';
 
 type RowRecord = { id?: string | number } & Record<PropertyKey, unknown>;
 
@@ -100,7 +100,7 @@ export const useGenericDataGridView = <T extends RowRecord>({
           const value = getCellValue(row, col.id);
           if (value == null) return false;
           return String(value).toLowerCase().includes(searchTerm.toLowerCase());
-        }),
+        })
       );
     }
 
@@ -148,57 +148,71 @@ export const useGenericDataGridView = <T extends RowRecord>({
 
   const virtualRows = enableVirtualization ? virtualizer.getVirtualItems() : [];
   const totalVirtualSize = enableVirtualization ? virtualizer.getTotalSize() : 0;
-  const paddingTop = virtualRows.length > 0 ? virtualRows[0]?.start ?? 0 : 0;
-  const paddingBottom = virtualRows.length > 0
-    ? totalVirtualSize - (virtualRows[virtualRows.length - 1]?.end ?? 0)
-    : 0;
+  const paddingTop = virtualRows.length > 0 ? (virtualRows[0]?.start ?? 0) : 0;
+  const paddingBottom =
+    virtualRows.length > 0 ? totalVirtualSize - (virtualRows[virtualRows.length - 1]?.end ?? 0) : 0;
 
-  const handleChangePage = useCallback((_event: unknown, newPage: number) => {
-    onPageChange?.(newPage);
-  }, [onPageChange]);
+  const handleChangePage = useCallback(
+    (_event: unknown, newPage: number) => {
+      onPageChange?.(newPage);
+    },
+    [onPageChange]
+  );
 
-  const handleChangeRowsPerPage = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    const newRowsPerPage = parseInt(event.target.value, 10);
-    onRowsPerPageChange?.(newRowsPerPage);
-    onPageChange?.(0);
-  }, [onPageChange, onRowsPerPageChange]);
+  const handleChangeRowsPerPage = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const newRowsPerPage = parseInt(event.target.value, 10);
+      onRowsPerPageChange?.(newRowsPerPage);
+      onPageChange?.(0);
+    },
+    [onPageChange, onRowsPerPageChange]
+  );
 
-  const handleSort = useCallback((columnId: string) => {
-    if (!onSort) return;
-    const newDirection = sortColumn === columnId && sortDirection === 'asc' ? 'desc' : 'asc';
-    onSort(columnId, newDirection);
-  }, [onSort, sortColumn, sortDirection]);
+  const handleSort = useCallback(
+    (columnId: string) => {
+      if (!onSort) return;
+      const newDirection = sortColumn === columnId && sortDirection === 'asc' ? 'desc' : 'asc';
+      onSort(columnId, newDirection);
+    },
+    [onSort, sortColumn, sortDirection]
+  );
 
-  const handleSelectAll = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    if (!onSelectionChange) return;
+  const handleSelectAll = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      if (!onSelectionChange) return;
 
-    if (event.target.checked) {
-      const startIndex = page * rowsPerPage;
-      const allIds = new Set(displayRows.map((row, index) => getRowId(row, startIndex + index)));
-      onSelectionChange(allIds);
-      return;
-    }
+      if (event.target.checked) {
+        const startIndex = page * rowsPerPage;
+        const allIds = new Set(displayRows.map((row, index) => getRowId(row, startIndex + index)));
+        onSelectionChange(allIds);
+        return;
+      }
 
-    onSelectionChange(new Set());
-  }, [displayRows, getRowId, onSelectionChange, page, rowsPerPage]);
+      onSelectionChange(new Set());
+    },
+    [displayRows, getRowId, onSelectionChange, page, rowsPerPage]
+  );
 
-  const handleSelectRow = useCallback((row: T, absoluteIndex: number) => {
-    if (!onSelectionChange) return;
+  const handleSelectRow = useCallback(
+    (row: T, absoluteIndex: number) => {
+      if (!onSelectionChange) return;
 
-    const rowId = getRowId(row, absoluteIndex);
-    const newSelection = new Set(selectedRows);
+      const rowId = getRowId(row, absoluteIndex);
+      const newSelection = new Set(selectedRows);
 
-    if (selectionMode === 'single') {
-      newSelection.clear();
-      newSelection.add(rowId);
-    } else if (newSelection.has(rowId)) {
-      newSelection.delete(rowId);
-    } else {
-      newSelection.add(rowId);
-    }
+      if (selectionMode === 'single') {
+        newSelection.clear();
+        newSelection.add(rowId);
+      } else if (newSelection.has(rowId)) {
+        newSelection.delete(rowId);
+      } else {
+        newSelection.add(rowId);
+      }
 
-    onSelectionChange(newSelection);
-  }, [getRowId, onSelectionChange, selectedRows, selectionMode]);
+      onSelectionChange(newSelection);
+    },
+    [getRowId, onSelectionChange, selectedRows, selectionMode]
+  );
 
   const visibleColumns = useMemo(() => columns.filter((col) => !col.hidden), [columns]);
   const padColSpan = visibleColumns.length + (selectable ? 1 : 0);
@@ -208,18 +222,24 @@ export const useGenericDataGridView = <T extends RowRecord>({
   }, []);
 
   const searchInputValue = onSearchChange ? searchValue : localSearchValue;
-  const handleSearchInputChange = useCallback((value: string) => {
-    if (onSearchChange) {
-      onSearchChange(value);
-      return;
-    }
-    setLocalSearchValue(value);
-  }, [onSearchChange]);
+  const handleSearchInputChange = useCallback(
+    (value: string) => {
+      if (onSearchChange) {
+        onSearchChange(value);
+        return;
+      }
+      setLocalSearchValue(value);
+    },
+    [onSearchChange]
+  );
 
-  const handleFilterInputChange = useCallback((columnId: string, value: string) => {
-    if (!onFilterChange) return;
-    onFilterChange({ ...filters, [columnId]: value });
-  }, [filters, onFilterChange]);
+  const handleFilterInputChange = useCallback(
+    (columnId: string, value: string) => {
+      if (!onFilterChange) return;
+      onFilterChange({ ...filters, [columnId]: value });
+    },
+    [filters, onFilterChange]
+  );
 
   return {
     displayRows,

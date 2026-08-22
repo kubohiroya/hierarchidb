@@ -4,18 +4,18 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
+import { CoreDB } from '@hierarchidb/runtime-worker';
+import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import type { TreeNodeUpdaterPayload } from '@hierarchidb/tree-api';
-import type { DataSourceName } from '~/common/types/index';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
+import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
 import type {
+  DataSourceName,
+  SelectedArrayByCountries,
   ShapeEntity,
   ShapePreviewMapView,
   ShapeStageTimingSnapshot,
-  SelectedArrayByCountries,
 } from '~/common/types/index';
-import type { ShapeBuildConfig } from '~/common/types/BuildTaskResult';
-import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
-import { CoreDB } from '@hierarchidb/runtime-worker';
-import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -23,11 +23,9 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const isNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
 
-const isBoolean = (value: unknown): value is boolean =>
-  typeof value === 'boolean';
+const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
 
-const isString = (value: unknown): value is string =>
-  typeof value === 'string';
+const isString = (value: unknown): value is string => typeof value === 'string';
 
 const getString = (record: Record<string, unknown>, key: string): string | undefined =>
   isString(record[key]) ? record[key] : undefined;
@@ -37,7 +35,6 @@ const getNumber = (record: Record<string, unknown>, key: string): number | undef
 
 const getBoolean = (record: Record<string, unknown>, key: string): boolean | undefined =>
   isBoolean(record[key]) ? record[key] : undefined;
-
 
 const isShapeBuildConfig = (value: unknown): value is ShapeBuildConfig =>
   isRecord(value) && isString(value.dataSourceName);
@@ -57,7 +54,7 @@ const readShapeBuildStopReason = (value: unknown): ShapeBuildStopReason | undefi
 };
 
 const isProcessingStatus = (
-  value: unknown,
+  value: unknown
 ): value is 'idle' | 'processing' | 'paused' | 'completed' | 'failed' =>
   isString(value) && ['idle', 'processing', 'paused', 'completed', 'failed'].includes(value);
 
@@ -87,17 +84,22 @@ const isStageTimingSnapshot = (value: unknown): value is ShapeStageTimingSnapsho
   return true;
 };
 
-const isStageTimingByStage = (value: unknown): value is Record<string, ShapeStageTimingSnapshot> => {
+const isStageTimingByStage = (
+  value: unknown
+): value is Record<string, ShapeStageTimingSnapshot> => {
   if (!isRecord(value)) return false;
   return Object.values(value).every((entry) => isStageTimingSnapshot(entry));
 };
 
-const toShapeEntity = (record: Record<string, unknown>, node: {
-  id: NodeId;
-  createdAt: number;
-  updatedAt: number;
-  version: number;
-}): ShapeEntity => {
+const toShapeEntity = (
+  record: Record<string, unknown>,
+  node: {
+    id: NodeId;
+    createdAt: number;
+    updatedAt: number;
+    version: number;
+  }
+): ShapeEntity => {
   const buildConfigValue = record.buildConfig;
   const selectedArrayByCountriesValue = record.selectedArrayByCountries;
   const previewMapViewValue = record.previewMapView;
@@ -113,7 +115,9 @@ const toShapeEntity = (record: Record<string, unknown>, node: {
     selectedArrayByCountries: isSelectedArrayByCountries(selectedArrayByCountriesValue)
       ? selectedArrayByCountriesValue
       : undefined,
-    processingStatus: isProcessingStatus(record.processingStatus) ? record.processingStatus : undefined,
+    processingStatus: isProcessingStatus(record.processingStatus)
+      ? record.processingStatus
+      : undefined,
     stopReason: readShapeBuildStopReason(record.stopReason),
     buildStartedAt: getNumber(record, 'buildStartedAt'),
     buildFinishedAt: getNumber(record, 'buildFinishedAt'),
@@ -122,8 +126,12 @@ const toShapeEntity = (record: Record<string, unknown>, node: {
     stageElapsedMs: getNumber(record, 'stageElapsedMs'),
     stageResumedAt: getNumber(record, 'stageResumedAt'),
     stageElapsedStageId: getString(record, 'stageElapsedStageId'),
-    stageElapsedByStage: isNumberRecord(record.stageElapsedByStage) ? record.stageElapsedByStage : undefined,
-    stageTimingByStage: isStageTimingByStage(record.stageTimingByStage) ? record.stageTimingByStage : undefined,
+    stageElapsedByStage: isNumberRecord(record.stageElapsedByStage)
+      ? record.stageElapsedByStage
+      : undefined,
+    stageTimingByStage: isStageTimingByStage(record.stageTimingByStage)
+      ? record.stageTimingByStage
+      : undefined,
     previewMapView: isPreviewMapView(previewMapViewValue) ? previewMapViewValue : undefined,
   };
 };
@@ -165,10 +173,7 @@ export class ShapeEntityService {
     return null;
   }
 
-  async updateEntity(
-    nodeId: NodeId,
-    updates: Partial<ShapeEntity>,
-  ): Promise<void> {
+  async updateEntity(nodeId: NodeId, updates: Partial<ShapeEntity>): Promise<void> {
     const coreDB = await this.ensureCoreDB();
     const node = await coreDB.getNode(nodeId);
     if (!node) {
@@ -191,7 +196,7 @@ export class ShapeEntityService {
   async updateProcessingStatus(
     nodeId: NodeId,
     status: 'idle' | 'processing' | 'completed' | 'failed',
-    batchSessionId?: string,
+    batchSessionId?: string
   ): Promise<void> {
     const coreDB = await this.ensureCoreDB();
     const node = await coreDB.getNode(nodeId);

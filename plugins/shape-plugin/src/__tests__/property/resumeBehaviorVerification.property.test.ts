@@ -3,12 +3,12 @@
  * Validates Requirements 8.1, 8.2, 8.3, 8.4
  */
 
-import fc from 'fast-check';
-import { describe, it, beforeEach, afterEach, expect } from 'vitest';
-import type { NodeId } from '@hierarchidb/core-types';
 import type { TaskStatus } from '@hierarchidb/build-api';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildStatus } from '@hierarchidb/gis-sdk';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
+import fc from 'fast-check';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 const touchedNodeIds = new Set<NodeId>();
 
@@ -62,7 +62,7 @@ describe('Property 14: Resume Continuation', () => {
   it('should continue from exact point where pause occurred', async () => {
     await fc.assert(
       fc.asyncProperty(
-        fc.string({ minLength: 1, maxLength: 10 }).map(s => s as NodeId),
+        fc.string({ minLength: 1, maxLength: 10 }).map((s) => s as NodeId),
         fc.integer({ min: 0, max: 100 }),
         fc.constantFrom('running', 'completed'),
         async (nodeId: NodeId, pauseProgress: number, pauseStatus: BuildStatus) => {
@@ -74,7 +74,7 @@ describe('Property 14: Resume Continuation', () => {
           sessionBeforePause.progress.percentage = pauseProgress;
 
           // Create tasks representing the state at pause
-          const tasksAtPause = Array.from({ length: 5 }, (_, i) => 
+          const tasksAtPause = Array.from({ length: 5 }, (_, i) =>
             createMockTask(
               `${String(nodeId)}:task-${i}`,
               nodeId,
@@ -100,12 +100,15 @@ describe('Property 14: Resume Continuation', () => {
 
           // Simulate resume - should continue from exact same point
           const resumedSession = await ephemeralDB.buildSessionConfigs.get(nodeId);
-          const resumedTasks = await ephemeralDB.buildTasks.where('nodeId').equals(nodeId).toArray();
+          const resumedTasks = await ephemeralDB.buildTasks
+            .where('nodeId')
+            .equals(nodeId)
+            .toArray();
 
           // Verify resume continues from exact pause point
           expect(resumedSession).toBeDefined();
           expect(resumedTasks.length).toBe(tasksAtPause.length);
-          
+
           // Verify task states are preserved
           resumedTasks.forEach((task, index) => {
             expect(task.status).toBe(tasksAtPause[index].status);
@@ -125,12 +128,17 @@ describe('Property 15: Pause/Resume Equivalence', () => {
   it('should produce identical results to uninterrupted execution', async () => {
     await fc.assert(
       fc.asyncProperty(
-        fc.string({ minLength: 1, maxLength: 10 }).map(s => s as NodeId),
+        fc.string({ minLength: 1, maxLength: 10 }).map((s) => s as NodeId),
         fc.array(fc.integer({ min: 0, max: 100 }), { minLength: 3, maxLength: 10 }),
         async (nodeId: NodeId, taskProgresses: number[]) => {
           // Simulate uninterrupted execution
-          const uninterruptedTasks = taskProgresses.map((progress, i) => 
-            createMockTask(`task-${i}`, nodeId, progress === 100 ? 'completed' : 'running', progress)
+          const uninterruptedTasks = taskProgresses.map((progress, i) =>
+            createMockTask(
+              `task-${i}`,
+              nodeId,
+              progress === 100 ? 'completed' : 'running',
+              progress
+            )
           );
 
           // Simulate pause/resume execution with same input
@@ -143,7 +151,7 @@ describe('Property 15: Pause/Resume Equivalence', () => {
 
           // Both executions should produce equivalent final states
           expect(pauseResumeTasks.length).toBe(uninterruptedTasks.length);
-          
+
           pauseResumeTasks.forEach((pauseResumeTask, index) => {
             const uninterruptedTask = uninterruptedTasks[index];
             expect(pauseResumeTask.status).toBe(uninterruptedTask.status);
@@ -163,7 +171,7 @@ describe('Property 16: Multi-Cycle State Consistency', () => {
   it('should maintain state consistency across multiple pause/resume cycles', async () => {
     await fc.assert(
       fc.asyncProperty(
-        fc.string({ minLength: 1, maxLength: 10 }).map(s => s as NodeId),
+        fc.string({ minLength: 1, maxLength: 10 }).map((s) => s as NodeId),
         fc.integer({ min: 2, max: 5 }),
         async (nodeId: NodeId, cycleCount: number) => {
           touchedNodeIds.add(nodeId);
@@ -173,11 +181,12 @@ describe('Property 16: Multi-Cycle State Consistency', () => {
           // Simulate multiple pause/resume cycles
           for (let cycle = 0; cycle < cycleCount; cycle++) {
             currentProgress = Math.min(100, currentProgress + progressIncrement);
-            
+
             // Determine status based on progress
             const isLastCycle = cycle === cycleCount - 1;
-            const status: BuildStatus = (isLastCycle && currentProgress >= 100) ? 'completed' : 'running';
-            
+            const status: BuildStatus =
+              isLastCycle && currentProgress >= 100 ? 'completed' : 'running';
+
             // Create session state for this cycle
             const sessionState = createMockBuildSession(nodeId, status);
             sessionState.progress.completed = currentProgress;
@@ -199,7 +208,7 @@ describe('Property 16: Multi-Cycle State Consistency', () => {
             // Verify state consistency after each cycle
             const storedSession = await ephemeralDB.buildSessionConfigs.get(nodeId);
             const storedStatus = await ephemeralDB.buildSessionStatuses.get(nodeId);
-            
+
             expect(storedSession).toBeDefined();
             expect(storedStatus).toBeDefined();
             expect(storedStatus?.status).toBe(sessionState.status);
@@ -208,7 +217,7 @@ describe('Property 16: Multi-Cycle State Consistency', () => {
           // Final verification - should reach completion or be running at final progress
           const finalStatus = await ephemeralDB.buildSessionStatuses.get(nodeId);
           expect(finalStatus?.status).toMatch(/^(completed|running)$/);
-          
+
           // If we reached 100% progress, status should be completed
           if (currentProgress >= 100) {
             expect(finalStatus?.status).toBe('completed');
@@ -227,7 +236,7 @@ describe('Property 17: Progress Reporting Accuracy', () => {
   it('should maintain accurate progress reporting across pause/resume boundaries', async () => {
     await fc.assert(
       fc.asyncProperty(
-        fc.string({ minLength: 1, maxLength: 10 }).map(s => s as NodeId),
+        fc.string({ minLength: 1, maxLength: 10 }).map((s) => s as NodeId),
         fc.array(fc.integer({ min: 0, max: 100 }), { minLength: 5, maxLength: 15 }),
         async (nodeId: NodeId, taskProgresses: number[]) => {
           touchedNodeIds.add(nodeId);
@@ -237,7 +246,7 @@ describe('Property 17: Progress Reporting Accuracy', () => {
           let totalProgress = 0;
 
           // Calculate expected progress metrics
-          taskProgresses.forEach(progress => {
+          taskProgresses.forEach((progress) => {
             if (progress === 100) completedTasks++;
             totalProgress += progress;
           });
@@ -245,7 +254,7 @@ describe('Property 17: Progress Reporting Accuracy', () => {
           const expectedPercentage = Math.floor(totalProgress / totalTasks);
 
           // Create tasks with given progress values
-          const tasks = taskProgresses.map((progress, i) => 
+          const tasks = taskProgresses.map((progress, i) =>
             createMockTask(
               `${String(nodeId)}:task-${i}`,
               nodeId,
@@ -259,7 +268,9 @@ describe('Property 17: Progress Reporting Accuracy', () => {
 
           // Calculate actual progress from stored tasks
           const storedTasks = await ephemeralDB.buildTasks.where('nodeId').equals(nodeId).toArray();
-          const actualCompletedTasks = storedTasks.filter(task => task.status === 'completed').length;
+          const actualCompletedTasks = storedTasks.filter(
+            (task) => task.status === 'completed'
+          ).length;
           const actualTotalProgress = storedTasks.reduce((sum, task) => sum + task.progress, 0);
           const actualPercentage = Math.floor(actualTotalProgress / storedTasks.length);
 
@@ -269,7 +280,7 @@ describe('Property 17: Progress Reporting Accuracy', () => {
           expect(actualPercentage).toBe(expectedPercentage);
 
           // Verify progress is monotonic (never decreases)
-          storedTasks.forEach(task => {
+          storedTasks.forEach((task) => {
             expect(task.progress).toBeGreaterThanOrEqual(0);
             expect(task.progress).toBeLessThanOrEqual(100);
             // Progress should be consistent with status

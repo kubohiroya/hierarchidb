@@ -1,26 +1,24 @@
-export * from './isBuildControlAPIV2Enabled.js';
-export {
-  canonicalPluginBuildAPIMethodNames,
-} from './CanonicalPluginBuildAPI.js';
 export type {
   CanonicalPluginBuildAPI,
   CanonicalPluginBuildStartRequest,
   CanonicalPluginBuildUnsubscribe,
 } from './CanonicalPluginBuildAPI.js';
+export { canonicalPluginBuildAPIMethodNames } from './CanonicalPluginBuildAPI.js';
+export * from './isBuildControlAPIV2Enabled.js';
 export type {
-  BuildStage,
   BuildContinuationPolicy,
+  BuildStage,
   TaskProgressUpdatedEvent,
 } from './progress-types.js';
 export type {
+  CanonicalSessionEvent,
+  CriticalErrorEvent,
+  HeartbeatEvent,
   SessionPhase,
   SessionStatusUpdatedEvent,
-  TaskSummary,
   StageSnapshotUpdatedEvent,
-  HeartbeatEvent,
+  TaskSummary,
   WorkerLogEvent,
-  CriticalErrorEvent,
-  CanonicalSessionEvent,
 } from './session-event-types.js';
 export type {
   StageHandler,

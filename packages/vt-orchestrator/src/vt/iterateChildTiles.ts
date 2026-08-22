@@ -1,4 +1,4 @@
-import { parentToChildRange, packTileId } from '~/tiles/tileId';
+import { packTileId, parentToChildRange } from '~/tiles/tileId';
 
 export type ChildTile = {
   z: number;

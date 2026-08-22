@@ -12,48 +12,48 @@ export type { TaskProgressUpdatedEvent };
  * Session lifecycle phase — canonical set per build-session-worker-ui-event-spec.md
  */
 export type SessionPhase =
-    | 'idle'
-    | 'starting'
-    | 'running'
-    | 'pausing'
-    | 'paused'
-    | 'resuming'
-    | 'finalizing'
-    | 'completed'
-    | 'failed';
+  | 'idle'
+  | 'starting'
+  | 'running'
+  | 'pausing'
+  | 'paused'
+  | 'resuming'
+  | 'finalizing'
+  | 'completed'
+  | 'failed';
 
 /**
  * sessionStatusUpdated — replaces runtimeSnapshotReceived + sessionRecordReceived.
  * Emitted on every lifecycle phase change and on initial subscription.
  */
 export interface SessionStatusUpdatedEvent {
-    type: 'sessionStatusUpdated';
-    payload: {
-        nodeId: NodeId;
-        phase: SessionPhase;
-        isActive: boolean;
-        startedAt?: number;       // required after starting completes
-        completedAt?: number;     // required for completed/failed
-        pausedAt?: number;        // required only for paused
-        stopReason?: string;
-        stageId?: string;
-        inactiveMs?: number;      // optional; absence means no recorded inactivity
-        stageStartedAt?: number;  // required when stageId is present
-        stageInactiveMs?: number; // required when stageId is present
-    };
+  type: 'sessionStatusUpdated';
+  payload: {
+    nodeId: NodeId;
+    phase: SessionPhase;
+    isActive: boolean;
+    startedAt?: number; // required after starting completes
+    completedAt?: number; // required for completed/failed
+    pausedAt?: number; // required only for paused
+    stopReason?: string;
+    stageId?: string;
+    inactiveMs?: number; // optional; absence means no recorded inactivity
+    stageStartedAt?: number; // required when stageId is present
+    stageInactiveMs?: number; // required when stageId is present
+  };
 }
 
 /**
  * Minimal task summary carried inside StageSnapshotUpdatedEvent.
  */
 export interface TaskSummary {
-    taskId: string;
-    stage: string;
-    status: string;
-    progress: number;
-    version: number;
-    errorMessage?: string;
-    metadata?: Record<string, unknown>;
+  taskId: string;
+  stage: string;
+  status: string;
+  progress: number;
+  version: number;
+  errorMessage?: string;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -62,14 +62,14 @@ export interface TaskSummary {
  * Must NOT be emitted for stages that have not yet started (stageStartedAt required).
  */
 export interface StageSnapshotUpdatedEvent {
-    type: 'stageSnapshotUpdated';
-    payload: {
-        stageId: string;
-        tasks: TaskSummary[];
-        stageStartedAt: number;   // required — only emitted after stage has started
-        stageInactiveMs: number;
-        stageCompletedAt?: number;
-    };
+  type: 'stageSnapshotUpdated';
+  payload: {
+    stageId: string;
+    tasks: TaskSummary[];
+    stageStartedAt: number; // required — only emitted after stage has started
+    stageInactiveMs: number;
+    stageCompletedAt?: number;
+  };
 }
 
 /**
@@ -77,42 +77,42 @@ export interface StageSnapshotUpdatedEvent {
  * Must not carry phase or task data.
  */
 export interface HeartbeatEvent {
-    type: 'heartbeat';
-    payload: {
-        nodeId: NodeId;
-        heartbeatAt: number;      // finite timestamp (ms) — violation throws
-    };
+  type: 'heartbeat';
+  payload: {
+    nodeId: NodeId;
+    heartbeatAt: number; // finite timestamp (ms) — violation throws
+  };
 }
 
 /**
  * Worker log event (debugging / monitoring — not part of the 4-event canonical set).
  */
 export interface WorkerLogEvent {
-    nodeId: NodeId;
-    timestamp: number;
-    level: 'log' | 'warn' | 'error';
-    message: string;
-    data?: Record<string, unknown>;
+  nodeId: NodeId;
+  timestamp: number;
+  level: 'log' | 'warn' | 'error';
+  message: string;
+  data?: Record<string, unknown>;
 }
 
 /**
  * Critical error event (contract violation detected in UI layer).
  */
 export interface CriticalErrorEvent {
-    nodeId: NodeId;
-    timestamp: number;
-    message: string;
-    error: string;
-    errorName: string;
-    severity: 'critical';
-    contractViolation: boolean;
+  nodeId: NodeId;
+  timestamp: number;
+  message: string;
+  error: string;
+  errorName: string;
+  severity: 'critical';
+  contractViolation: boolean;
 }
 
 /**
  * Union of all canonical Worker→UI events.
  */
 export type CanonicalSessionEvent =
-    | SessionStatusUpdatedEvent
-    | StageSnapshotUpdatedEvent
-    | TaskProgressUpdatedEvent
-    | HeartbeatEvent;
+  | SessionStatusUpdatedEvent
+  | StageSnapshotUpdatedEvent
+  | TaskProgressUpdatedEvent
+  | HeartbeatEvent;

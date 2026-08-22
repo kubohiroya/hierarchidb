@@ -48,9 +48,7 @@ type FloatingWindowController = {
   isProviderPortal: boolean;
 };
 
-export function useFloatingWindowController(
-  props: FloatingWindowProps
-): FloatingWindowController {
+export function useFloatingWindowController(props: FloatingWindowProps): FloatingWindowController {
   const {
     initialState,
     onStateChange,
@@ -151,16 +149,18 @@ export function useFloatingWindowController(
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
-  const isSameWindowState = useCallback((lhs: WindowState, rhs: WindowState): boolean => (
-    lhs.position.x === rhs.position.x
-    && lhs.position.y === rhs.position.y
-    && lhs.size.width === rhs.size.width
-    && lhs.size.height === rhs.size.height
-    && lhs.isMinimized === rhs.isMinimized
-    && lhs.isFullscreen === rhs.isFullscreen
-    && lhs.isVisible === rhs.isVisible
-    && lhs.zIndex === rhs.zIndex
-  ), []);
+  const isSameWindowState = useCallback(
+    (lhs: WindowState, rhs: WindowState): boolean =>
+      lhs.position.x === rhs.position.x &&
+      lhs.position.y === rhs.position.y &&
+      lhs.size.width === rhs.size.width &&
+      lhs.size.height === rhs.size.height &&
+      lhs.isMinimized === rhs.isMinimized &&
+      lhs.isFullscreen === rhs.isFullscreen &&
+      lhs.isVisible === rhs.isVisible &&
+      lhs.zIndex === rhs.zIndex,
+    []
+  );
   const applyWindowStyle = useCallback((next: WindowState) => {
     const node = windowRef.current;
     if (!node) {
@@ -184,17 +184,20 @@ export function useFloatingWindowController(
     stateRef.current = next;
     applyWindowStyle(next);
   }, [applyWindowStyle]);
-  const scheduleInteractionState = useCallback((next: WindowState) => {
-    pendingStateRef.current = next;
-    interactionStateUpdatedRef.current = true;
-    if (rafPendingRef.current !== null) {
-      return;
-    }
-    rafPendingRef.current = requestAnimationFrame(() => {
-      rafPendingRef.current = null;
-      flushPendingInteractionState();
-    });
-  }, [flushPendingInteractionState]);
+  const scheduleInteractionState = useCallback(
+    (next: WindowState) => {
+      pendingStateRef.current = next;
+      interactionStateUpdatedRef.current = true;
+      if (rafPendingRef.current !== null) {
+        return;
+      }
+      rafPendingRef.current = requestAnimationFrame(() => {
+        rafPendingRef.current = null;
+        flushPendingInteractionState();
+      });
+    },
+    [flushPendingInteractionState]
+  );
   const normalStateRef = useRef<{
     position: { x: number; y: number };
     size: { width: number; height: number };
@@ -242,9 +245,8 @@ export function useFloatingWindowController(
         }
         return value;
       };
-      const normalizeZIndex = (value: number | undefined) => (
-        typeof value === 'number' && Number.isFinite(value) ? value : prev.zIndex
-      );
+      const normalizeZIndex = (value: number | undefined) =>
+        typeof value === 'number' && Number.isFinite(value) ? value : prev.zIndex;
       const next: WindowState = {
         position: normalizePosition(incoming.position),
         size: normalizeSize(incoming.size),
@@ -253,12 +255,14 @@ export function useFloatingWindowController(
         isVisible: incoming.isVisible ?? prev.isVisible,
         zIndex: normalizeZIndex(incoming.zIndex),
       };
-      const samePosition = next.position.x === prev.position.x && next.position.y === prev.position.y;
+      const samePosition =
+        next.position.x === prev.position.x && next.position.y === prev.position.y;
       const sameSize = next.size.width === prev.size.width && next.size.height === prev.size.height;
-      const sameFlags = next.isMinimized === prev.isMinimized
-        && next.isFullscreen === prev.isFullscreen
-        && next.isVisible === prev.isVisible
-        && next.zIndex === prev.zIndex;
+      const sameFlags =
+        next.isMinimized === prev.isMinimized &&
+        next.isFullscreen === prev.isFullscreen &&
+        next.isVisible === prev.isVisible &&
+        next.zIndex === prev.zIndex;
       if (samePosition && sameSize && sameFlags) return null;
       return next;
     },
@@ -322,59 +326,65 @@ export function useFloatingWindowController(
     return next;
   }, [clamp, effectiveMaxHeight, effectiveMaxWidth, minHeight, minWidth, resolveBounds]);
 
-  const handleMouseDown = useCallback((event: React.PointerEvent) => {
-    if (!draggable || event.button !== 0) return;
+  const handleMouseDown = useCallback(
+    (event: React.PointerEvent) => {
+      if (!draggable || event.button !== 0) return;
 
-    const target = event.target as HTMLElement;
-    if (!target.closest('.title-bar')) return;
-    if (target.closest('button')) return;
+      const target = event.target as HTMLElement;
+      if (!target.closest('.title-bar')) return;
+      if (target.closest('button')) return;
 
-    if (event.detail > 1) {
-      return;
-    }
+      if (event.detail > 1) {
+        return;
+      }
 
-    interactionNotifySuppressedRef.current = true;
-    setIsInteracting(true);
-    const interactionState = exitFullscreenForInteraction();
-    isDragging.current = true;
-    activePointerIdRef.current = event.pointerId;
-    windowRef.current?.setPointerCapture(event.pointerId);
-    setInteractionActive(true);
-    setOverlayActive(true);
-    bringToFront();
-    dragStart.current = {
-      x: event.clientX - interactionState.position.x,
-      y: event.clientY - interactionState.position.y,
-    };
-    event.preventDefault();
-  }, [bringToFront, draggable, exitFullscreenForInteraction, setInteractionActive, setIsInteracting]);
+      interactionNotifySuppressedRef.current = true;
+      setIsInteracting(true);
+      const interactionState = exitFullscreenForInteraction();
+      isDragging.current = true;
+      activePointerIdRef.current = event.pointerId;
+      windowRef.current?.setPointerCapture(event.pointerId);
+      setInteractionActive(true);
+      setOverlayActive(true);
+      bringToFront();
+      dragStart.current = {
+        x: event.clientX - interactionState.position.x,
+        y: event.clientY - interactionState.position.y,
+      };
+      event.preventDefault();
+    },
+    [bringToFront, draggable, exitFullscreenForInteraction, setInteractionActive, setIsInteracting]
+  );
 
-  const handleResizeMouseDown = useCallback((direction: string) => (event: React.PointerEvent) => {
-    if (!resizable || event.button !== 0) return;
-    if (stateRef.current.isMinimized) return;
+  const handleResizeMouseDown = useCallback(
+    (direction: string) => (event: React.PointerEvent) => {
+      if (!resizable || event.button !== 0) return;
+      if (stateRef.current.isMinimized) return;
 
-    interactionNotifySuppressedRef.current = true;
-    setIsInteracting(true);
-    const interactionState = exitFullscreenForInteraction();
-    isResizing.current = true;
-    activePointerIdRef.current = event.pointerId;
-    windowRef.current?.setPointerCapture(event.pointerId);
-    setInteractionActive(true);
-    setOverlayActive(true);
-    bringToFront();
-    resizeDirection.current = direction;
-    resizeStart.current = {
-      width: interactionState.size.width,
-      height: interactionState.size.height,
-      x: event.clientX,
-      y: event.clientY,
-      positionX: interactionState.position.x,
-      positionY: interactionState.position.y,
-    };
+      interactionNotifySuppressedRef.current = true;
+      setIsInteracting(true);
+      const interactionState = exitFullscreenForInteraction();
+      isResizing.current = true;
+      activePointerIdRef.current = event.pointerId;
+      windowRef.current?.setPointerCapture(event.pointerId);
+      setInteractionActive(true);
+      setOverlayActive(true);
+      bringToFront();
+      resizeDirection.current = direction;
+      resizeStart.current = {
+        width: interactionState.size.width,
+        height: interactionState.size.height,
+        x: event.clientX,
+        y: event.clientY,
+        positionX: interactionState.position.x,
+        positionY: interactionState.position.y,
+      };
 
-    event.preventDefault();
-    event.stopPropagation();
-  }, [bringToFront, exitFullscreenForInteraction, resizable, setInteractionActive, setIsInteracting]);
+      event.preventDefault();
+      event.stopPropagation();
+    },
+    [bringToFront, exitFullscreenForInteraction, resizable, setInteractionActive, setIsInteracting]
+  );
 
   const interactionEnabled = state.isVisible;
   useEffect(() => {
@@ -405,17 +415,29 @@ export function useFloatingWindowController(
         let newY = resizeStart.current.positionY;
 
         if (dir.includes('e')) {
-          newWidth = Math.max(minWidth, Math.min(resizeStart.current.width + deltaX, effectiveMaxWidth));
+          newWidth = Math.max(
+            minWidth,
+            Math.min(resizeStart.current.width + deltaX, effectiveMaxWidth)
+          );
         } else if (dir.includes('w')) {
-          const clampedWidth = Math.max(minWidth, Math.min(resizeStart.current.width - deltaX, effectiveMaxWidth));
+          const clampedWidth = Math.max(
+            minWidth,
+            Math.min(resizeStart.current.width - deltaX, effectiveMaxWidth)
+          );
           newWidth = clampedWidth;
           newX = resizeStart.current.positionX + (resizeStart.current.width - clampedWidth);
         }
 
         if (dir.includes('s')) {
-          newHeight = Math.max(minHeight, Math.min(resizeStart.current.height + deltaY, effectiveMaxHeight));
+          newHeight = Math.max(
+            minHeight,
+            Math.min(resizeStart.current.height + deltaY, effectiveMaxHeight)
+          );
         } else if (dir.includes('n')) {
-          const clampedHeight = Math.max(minHeight, Math.min(resizeStart.current.height - deltaY, effectiveMaxHeight));
+          const clampedHeight = Math.max(
+            minHeight,
+            Math.min(resizeStart.current.height - deltaY, effectiveMaxHeight)
+          );
           newHeight = clampedHeight;
           newY = resizeStart.current.positionY + (resizeStart.current.height - clampedHeight);
         }
@@ -436,7 +458,8 @@ export function useFloatingWindowController(
     const handleMouseUp = () => {
       releaseActivePointerCapture();
       flushPendingInteractionState();
-      const shouldNotify = interactionNotifySuppressedRef.current && interactionStateUpdatedRef.current;
+      const shouldNotify =
+        interactionNotifySuppressedRef.current && interactionStateUpdatedRef.current;
       const latestState = stateRef.current;
       isDragging.current = false;
       isResizing.current = false;
@@ -447,7 +470,9 @@ export function useFloatingWindowController(
       setInteractionActive(false);
       setOverlayActive(false);
       if (shouldNotify) {
-        setState((prev: WindowState) => (isSameWindowState(prev, latestState) ? prev : latestState));
+        setState((prev: WindowState) =>
+          isSameWindowState(prev, latestState) ? prev : latestState
+        );
       }
     };
 
@@ -518,7 +543,10 @@ export function useFloatingWindowController(
         isFullscreen: true,
         isMinimized: false,
         position: { x: 0, y: 0 },
-        size: { width: Math.max(minWidth, window.innerWidth), height: Math.max(minHeight, window.innerHeight) },
+        size: {
+          width: Math.max(minWidth, window.innerWidth),
+          height: Math.max(minHeight, window.innerHeight),
+        },
       };
     });
   }, [bringToFront, minHeight, minWidth, resetInteractionState]);
@@ -538,7 +566,10 @@ export function useFloatingWindowController(
           return {
             ...prev,
             position: { x: 0, y: 0 },
-            size: { width: Math.max(minWidth, window.innerWidth), height: Math.max(minHeight, window.innerHeight) },
+            size: {
+              width: Math.max(minWidth, window.innerWidth),
+              height: Math.max(minHeight, window.innerHeight),
+            },
           };
         }
         return prev;
@@ -564,15 +595,21 @@ export function useFloatingWindowController(
     ...style,
   };
 
-  const handleWindowMouseDownCapture = useCallback((event: React.PointerEvent) => {
-    if (event.button !== 0) return;
-    bringToFront();
-  }, [bringToFront]);
+  const handleWindowMouseDownCapture = useCallback(
+    (event: React.PointerEvent) => {
+      if (event.button !== 0) return;
+      bringToFront();
+    },
+    [bringToFront]
+  );
 
-  const handleTitleBarMouseDownCapture = useCallback((event: React.PointerEvent) => {
-    if (event.button !== 0) return;
-    bringToFront();
-  }, [bringToFront]);
+  const handleTitleBarMouseDownCapture = useCallback(
+    (event: React.PointerEvent) => {
+      if (event.button !== 0) return;
+      bringToFront();
+    },
+    [bringToFront]
+  );
 
   const handleTitleBarDoubleClick = useCallback(() => {
     if (!draggable || state.isMinimized) return;

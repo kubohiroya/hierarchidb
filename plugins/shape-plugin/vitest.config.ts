@@ -1,12 +1,14 @@
-import { defineConfig } from 'vitest/config';
 import * as path from 'path';
 import tsconfigPaths from 'vite-tsconfig-paths';
+import { defineConfig } from 'vitest/config';
 
 const useForkPool = process.env.SHAPE_VITEST_POOL === 'forks';
 const includeDeepTests = process.env.ENABLE_SHAPE_DEEP_TESTS === '1';
 const explicitlyRequestedWflTest = process.argv.some((arg) => arg.includes('__tests__/wfl/'));
 const includeWflTests = includeDeepTests || explicitlyRequestedWflTest;
-const explicitlyRequestedIntegrationTest = process.argv.some((arg) => arg.includes('__tests__/integration/'));
+const explicitlyRequestedIntegrationTest = process.argv.some((arg) =>
+  arg.includes('__tests__/integration/')
+);
 const includeIntegrationTests = includeDeepTests || explicitlyRequestedIntegrationTest;
 
 export default defineConfig({
@@ -20,13 +22,10 @@ export default defineConfig({
     minWorkers: 1,
     ...(useForkPool
       ? {
-        execArgv: ['--max-old-space-size=8192'],
-      }
+          execArgv: ['--max-old-space-size=8192'],
+        }
       : {}),
-    include: [
-      'src/**/*.test.ts',
-      'src/**/*.test.tsx',
-    ],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
 
     exclude: [
       'src/**/migration/**',
@@ -50,10 +49,16 @@ export default defineConfig({
   },
   resolve: {
     alias: [
-      { find: '~/i18n/index', replacement: path.resolve(__dirname, '../../packages/ui/i18n/src/i18n/index.ts') },
+      {
+        find: '~/i18n/index',
+        replacement: path.resolve(__dirname, '../../packages/ui/i18n/src/i18n/index.ts'),
+      },
       {
         find: '~/debug/persistentDebugLog',
-        replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/debug/persistentDebugLog.ts'),
+        replacement: path.resolve(
+          __dirname,
+          '../../packages/vt-orchestrator/src/debug/persistentDebugLog.ts'
+        ),
       },
       {
         find: '~/utils/env',
@@ -63,14 +68,14 @@ export default defineConfig({
         find: '~/transform/topojsonGrid.js',
         replacement: path.resolve(
           __dirname,
-          '../../packages/vt-orchestrator/src/transform/topojsonGrid.ts',
+          '../../packages/vt-orchestrator/src/transform/topojsonGrid.ts'
         ),
       },
       {
         find: '~/transform/topojsonRuntimeAdapter.js',
         replacement: path.resolve(
           __dirname,
-          '../../packages/vt-orchestrator/src/transform/topojsonRuntimeAdapter.ts',
+          '../../packages/vt-orchestrator/src/transform/topojsonRuntimeAdapter.ts'
         ),
       },
       {
@@ -85,19 +90,70 @@ export default defineConfig({
         find: /^~\/task\/(.*)$/,
         replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/task/$1'),
       },
-      { find: /^~\/contexts$/, replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/contexts') },
-      { find: /^~\/types\/(.*)$/, replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/types/$1') },
-      { find: /^~\/types$/, replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/types') },
-      { find: /^~\/tiles\/(.*)$/, replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/tiles/$1') },
-      { find: /^~\/tiles$/, replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/tiles') },
-      { find: /^~\/transform\/(.*)$/, replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/transform/$1') },
-      { find: /^~\/transform$/, replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/transform') },
-      { find: /^~\/compareTaskOrder\/(.*)$/, replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/compareTaskOrder/$1') },
-      { find: /^~\/compareTaskOrder$/, replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/compareTaskOrder.ts') },
-      { find: /^~\/vt\/(.*)$/, replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/vt/$1') },
-      { find: /^~\/vt$/, replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/vt') },
-      { find: /^~\/hooks\/useLRUPanes$/, replacement: path.resolve(__dirname, '../../packages/ui/lru-splitview/src/hooks/useLRUPanes.ts') },
-      { find: /^~\/types\/LRUSplitView$/, replacement: path.resolve(__dirname, '../../packages/ui/lru-splitview/src/types/LRUSplitView.ts') },
+      {
+        find: /^~\/contexts$/,
+        replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/contexts'),
+      },
+      {
+        find: /^~\/types\/(.*)$/,
+        replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/types/$1'),
+      },
+      {
+        find: /^~\/types$/,
+        replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/types'),
+      },
+      {
+        find: /^~\/tiles\/(.*)$/,
+        replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/tiles/$1'),
+      },
+      {
+        find: /^~\/tiles$/,
+        replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/tiles'),
+      },
+      {
+        find: /^~\/transform\/(.*)$/,
+        replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/transform/$1'),
+      },
+      {
+        find: /^~\/transform$/,
+        replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/transform'),
+      },
+      {
+        find: /^~\/compareTaskOrder\/(.*)$/,
+        replacement: path.resolve(
+          __dirname,
+          '../../packages/vt-orchestrator/src/compareTaskOrder/$1'
+        ),
+      },
+      {
+        find: /^~\/compareTaskOrder$/,
+        replacement: path.resolve(
+          __dirname,
+          '../../packages/vt-orchestrator/src/compareTaskOrder.ts'
+        ),
+      },
+      {
+        find: /^~\/vt\/(.*)$/,
+        replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/vt/$1'),
+      },
+      {
+        find: /^~\/vt$/,
+        replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/vt'),
+      },
+      {
+        find: /^~\/hooks\/useLRUPanes$/,
+        replacement: path.resolve(
+          __dirname,
+          '../../packages/ui/lru-splitview/src/hooks/useLRUPanes.ts'
+        ),
+      },
+      {
+        find: /^~\/types\/LRUSplitView$/,
+        replacement: path.resolve(
+          __dirname,
+          '../../packages/ui/lru-splitview/src/types/LRUSplitView.ts'
+        ),
+      },
       { find: /^~\/(.*)$/, replacement: path.resolve(__dirname, 'src/$1') },
       { find: '~', replacement: path.resolve(__dirname, 'src') },
       {
@@ -123,15 +179,24 @@ export default defineConfig({
       // Deep import subpaths must be listed before the bare package alias
       {
         find: '@hierarchidb/ui-build-progress/build-session',
-        replacement: path.resolve(__dirname, '../../packages/ui/build-progress/dist/build-session/index.js'),
+        replacement: path.resolve(
+          __dirname,
+          '../../packages/ui/build-progress/dist/build-session/index.js'
+        ),
       },
       {
         find: '@hierarchidb/ui-build-progress/build-status',
-        replacement: path.resolve(__dirname, '../../packages/ui/build-progress/dist/build-status/index.js'),
+        replacement: path.resolve(
+          __dirname,
+          '../../packages/ui/build-progress/dist/build-status/index.js'
+        ),
       },
       {
         find: '@hierarchidb/ui-build-progress/build-stage',
-        replacement: path.resolve(__dirname, '../../packages/ui/build-progress/dist/build-stage/index.js'),
+        replacement: path.resolve(
+          __dirname,
+          '../../packages/ui/build-progress/dist/build-stage/index.js'
+        ),
       },
       {
         find: '@hierarchidb/ui-build-progress',
@@ -154,7 +219,7 @@ export default defineConfig({
         find: '@hierarchidb/runtime-ui-datasource',
         replacement: path.resolve(
           __dirname,
-          '../../packages/runtime-worker-ui/datasource/src/index.ts',
+          '../../packages/runtime-worker-ui/datasource/src/index.ts'
         ),
       },
       {
@@ -171,10 +236,7 @@ export default defineConfig({
       },
       {
         find: '@hierarchidb/resolver-store',
-        replacement: path.resolve(
-          __dirname,
-          '../../packages/resolver-store/src/index.ts',
-        ),
+        replacement: path.resolve(__dirname, '../../packages/resolver-store/src/index.ts'),
       },
       {
         find: '@hierarchidb/location-store',
@@ -194,17 +256,11 @@ export default defineConfig({
       },
       {
         find: /^@hierarchidb\/gen-iso3166-2\/browser$/,
-        replacement: path.resolve(
-          __dirname,
-          '../../packages/tools/gen-iso3166-2/src/browser.ts',
-        ),
+        replacement: path.resolve(__dirname, '../../packages/tools/gen-iso3166-2/src/browser.ts'),
       },
       {
         find: /^@hierarchidb\/gen-iso3166-2$/,
-        replacement: path.resolve(
-          __dirname,
-          '../../packages/tools/gen-iso3166-2/src/index.ts',
-        ),
+        replacement: path.resolve(__dirname, '../../packages/tools/gen-iso3166-2/src/index.ts'),
       },
       // App client hook is now injected via registerWorkerClientHook in tests
     ],

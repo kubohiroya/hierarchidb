@@ -1,14 +1,11 @@
-import { useMemo } from 'react';
+import type { SpeedDialSubmenuAction, SpeedDialSubmenuItem } from '@hierarchidb/components';
 import type { MouseEvent } from 'react';
+import { useMemo } from 'react';
 import type {
   DynamicSpeedDialIconResolver,
   DynamicSpeedDialMenuItem,
   DynamicSpeedDialTranslator,
 } from './types.js';
-import type {
-  SpeedDialSubmenuAction,
-  SpeedDialSubmenuItem,
-} from '@hierarchidb/components';
 
 export interface UseDynamicSpeedDialSubmenuActionsParams {
   useVM: boolean;
@@ -43,7 +40,10 @@ export function useDynamicSpeedDialSubmenuActions({
       const localizedLabel = buildItemLabel(item);
       const localizedDescription = item.descriptionKey
         ? translateWithFallback(item.descriptionKey, (item.description ?? '').trim()).trim()
-        : translateWithFallback(`plugins.${item.nodeType}.description`, (item.description ?? '').trim()).trim();
+        : translateWithFallback(
+            `plugins.${item.nodeType}.description`,
+            (item.description ?? '').trim()
+          ).trim();
       const tooltipTemplate = translateWithFallback(
         'treeConsole.contextMenu.createTooltip',
         '{{label}}: {{description}}'
@@ -64,7 +64,10 @@ export function useDynamicSpeedDialSubmenuActions({
       return typeof icon.color === 'string' ? `${icon.color}33` : item.backgroundColor;
     };
 
-    const buildLeafAction = (item: DynamicSpeedDialMenuItem, testId: string): SpeedDialSubmenuItem => ({
+    const buildLeafAction = (
+      item: DynamicSpeedDialMenuItem,
+      testId: string
+    ): SpeedDialSubmenuItem => ({
       id: `create:${toCreateType(item)}:${language}`,
       label: buildItemLabel(item),
       icon: resolveIcon({ nodeType: item.nodeType, icon: item.icon }),

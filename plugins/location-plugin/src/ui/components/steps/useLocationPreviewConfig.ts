@@ -26,7 +26,10 @@ const normalizeRange = (value: number[] | number, min: number, max: number): [nu
   return first <= second ? [first, second] : [second, first];
 };
 
-const normalizeZoomStops = (values: number[], maxZoom: number): [number, number, number, number] => {
+const normalizeZoomStops = (
+  values: number[],
+  maxZoom: number
+): [number, number, number, number] => {
   const clamped = values.map((value) => clamp(Math.round(value), MIN_ZOOM_LEVEL, maxZoom));
   const normalized: number[] = [];
   let last = MIN_ZOOM_LEVEL;
@@ -38,13 +41,13 @@ const normalizeZoomStops = (values: number[], maxZoom: number): [number, number,
   return normalized as [number, number, number, number];
 };
 
-const buildDefaultRepresentationConfig = (maxZoom: number): LocationRepresentationByZoomLevelConfig => {
-  const stops = normalizeZoomStops([
-    0,
-    Math.round(maxZoom * 0.4),
-    Math.round(maxZoom * 0.6),
-    Math.round(maxZoom * 0.8),
-  ], maxZoom);
+const buildDefaultRepresentationConfig = (
+  maxZoom: number
+): LocationRepresentationByZoomLevelConfig => {
+  const stops = normalizeZoomStops(
+    [0, Math.round(maxZoom * 0.4), Math.round(maxZoom * 0.6), Math.round(maxZoom * 0.8)],
+    maxZoom
+  );
   return KNOWN_LOCATION_TYPES.reduce((acc, type) => {
     acc[type] = {
       pointFromZoom: stops[0],
@@ -56,7 +59,7 @@ const buildDefaultRepresentationConfig = (maxZoom: number): LocationRepresentati
   }, {} as LocationRepresentationByZoomLevelConfig);
 };
 
-const buildDefaultIconConfig = (): LocationIconConfig => (
+const buildDefaultIconConfig = (): LocationIconConfig =>
   KNOWN_LOCATION_TYPES.reduce((acc, type) => {
     acc[type] = {
       color: DEFAULT_TYPE_COLORS[type],
@@ -64,14 +67,14 @@ const buildDefaultIconConfig = (): LocationIconConfig => (
       sizeRange: DEFAULT_ICON_SIZE_RANGE,
     };
     return acc;
-  }, {} as LocationIconConfig)
-);
+  }, {} as LocationIconConfig);
 
 const buildDefaultLabelConfig = (maxZoom: number): LocationLabelConfig => {
-  const zoomRange = normalizeRange([
-    Math.round(maxZoom * 0.6),
-    Math.round(maxZoom * 0.8),
-  ], MIN_ZOOM_LEVEL, maxZoom);
+  const zoomRange = normalizeRange(
+    [Math.round(maxZoom * 0.6), Math.round(maxZoom * 0.8)],
+    MIN_ZOOM_LEVEL,
+    maxZoom
+  );
   return KNOWN_LOCATION_TYPES.reduce((acc, type) => {
     acc[type] = {
       color: DEFAULT_TYPE_COLORS[type],
@@ -83,7 +86,11 @@ const buildDefaultLabelConfig = (maxZoom: number): LocationLabelConfig => {
 };
 
 export const useLocationPreviewConfig = (draft: Partial<LocationEntity>) => {
-  const tilesMaxZoom = clamp(draft.tilesMaxZoom ?? DEFAULT_MAX_ZOOM, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
+  const tilesMaxZoom = clamp(
+    draft.tilesMaxZoom ?? DEFAULT_MAX_ZOOM,
+    MIN_ZOOM_LEVEL,
+    MAX_ZOOM_LEVEL
+  );
   const representationConfig = useMemo(() => {
     const defaults = buildDefaultRepresentationConfig(tilesMaxZoom);
     return KNOWN_LOCATION_TYPES.reduce((acc, type) => {
@@ -113,4 +120,3 @@ export const useLocationPreviewConfig = (draft: Partial<LocationEntity>) => {
     labelConfig,
   };
 };
-

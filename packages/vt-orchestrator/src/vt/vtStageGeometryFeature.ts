@@ -1,4 +1,13 @@
-import type { Feature, Geometry, LineString, MultiLineString, MultiPoint, MultiPolygon, Point, Polygon } from 'geojson';
+import type {
+  Feature,
+  Geometry,
+  LineString,
+  MultiLineString,
+  MultiPoint,
+  MultiPolygon,
+  Point,
+  Polygon,
+} from 'geojson';
 import type { TileBBox } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
 
 type NumberIndexable = ArrayBufferView & ArrayLike<number>;
@@ -19,21 +28,18 @@ export const isEmptyGeometry = (geometry: Geometry | null | undefined): boolean 
 };
 
 export const isClipGeometry = (
-  geometry: Geometry,
-): geometry is LineString | MultiLineString | Polygon | MultiPolygon => (
-  geometry.type === 'LineString'
-  || geometry.type === 'MultiLineString'
-  || geometry.type === 'Polygon'
-  || geometry.type === 'MultiPolygon'
-);
+  geometry: Geometry
+): geometry is LineString | MultiLineString | Polygon | MultiPolygon =>
+  geometry.type === 'LineString' ||
+  geometry.type === 'MultiLineString' ||
+  geometry.type === 'Polygon' ||
+  geometry.type === 'MultiPolygon';
 
-export const isPointGeometry = (geometry: Geometry): geometry is Point | MultiPoint => (
-  geometry.type === 'Point' || geometry.type === 'MultiPoint'
-);
+export const isPointGeometry = (geometry: Geometry): geometry is Point | MultiPoint =>
+  geometry.type === 'Point' || geometry.type === 'MultiPoint';
 
-export const isPointInBBox = (x: number, y: number, bbox: TileBBox): boolean => (
-  x >= bbox.minX && x <= bbox.maxX && y >= bbox.minY && y <= bbox.maxY
-);
+export const isPointInBBox = (x: number, y: number, bbox: TileBBox): boolean =>
+  x >= bbox.minX && x <= bbox.maxX && y >= bbox.minY && y <= bbox.maxY;
 
 export const isAnyPointInBBox = (geometry: Point | MultiPoint, bbox: TileBBox): boolean => {
   if (geometry.type === 'Point') {
@@ -56,26 +62,22 @@ type BboxVisitContext = {
   hasValue: boolean;
 };
 
-const isNumericArrayView = (value: unknown): value is NumberIndexable => (
-  value instanceof Int8Array
-  || value instanceof Uint8Array
-  || value instanceof Uint16Array
-  || value instanceof Uint32Array
-  || value instanceof Int16Array
-  || value instanceof Int32Array
-  || value instanceof Float32Array
-  || value instanceof Float64Array
-  || value instanceof Uint8ClampedArray
-);
+const isNumericArrayView = (value: unknown): value is NumberIndexable =>
+  value instanceof Int8Array ||
+  value instanceof Uint8Array ||
+  value instanceof Uint16Array ||
+  value instanceof Uint32Array ||
+  value instanceof Int16Array ||
+  value instanceof Int32Array ||
+  value instanceof Float32Array ||
+  value instanceof Float64Array ||
+  value instanceof Uint8ClampedArray;
 
-const isNumberArrayView = (value: unknown): value is ArrayBufferView & NumberIndexable => (
-  isNumericArrayView(value)
-  && value.length > 0
-);
+const isNumberArrayView = (value: unknown): value is ArrayBufferView & NumberIndexable =>
+  isNumericArrayView(value) && value.length > 0;
 
-const isNumberArrayLike = (value: unknown): value is ArrayLike<number> => (
-  Array.isArray(value) && typeof value[0] === 'number'
-);
+const isNumberArrayLike = (value: unknown): value is ArrayLike<number> =>
+  Array.isArray(value) && typeof value[0] === 'number';
 
 const visitCoordinates = (coordinates: unknown, context: BboxVisitContext): void => {
   if (isNumberArrayView(coordinates)) {
@@ -161,8 +163,7 @@ export type FeatureWithBBox = {
   bbox: TileBBox;
 };
 
-export const buildFeaturesWithBBox = (features: Feature[]): FeatureWithBBox[] => (
+export const buildFeaturesWithBBox = (features: Feature[]): FeatureWithBBox[] =>
   features
     .map((feature) => ({ feature, bbox: featureBBox(feature) }))
-    .filter((entry): entry is FeatureWithBBox => Boolean(entry.bbox))
-);
+    .filter((entry): entry is FeatureWithBBox => Boolean(entry.bbox));

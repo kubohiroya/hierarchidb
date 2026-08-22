@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { RouteEntity } from '@hierarchidb/route-api';
 import {
   type DataSourceSelectionOption,
   type IdeGsmImportPayload,
 } from '@hierarchidb/ui-datasource';
 import { useTranslation } from '@hierarchidb/ui-i18n';
-import type { RouteEntity } from '@hierarchidb/route-api';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ROUTE_DATA_SOURCES } from '~/common/datasource/ROUTE_DATA_SOURCES';
 import { createRouteTabularApi } from '~/common/tabular/createRouteTabularApi';
 
@@ -16,7 +16,7 @@ export interface RouteDataSourceStepHookParams {
 
 const DATA_SOURCE_OPTIONS = [{ id: 'ide-gsm', key: 'ide-gsm' }] as const;
 
-type DataSourceKey = typeof DATA_SOURCE_OPTIONS[number]['id'];
+type DataSourceKey = (typeof DATA_SOURCE_OPTIONS)[number]['id'];
 
 const ensureTabularXlsx = async (): Promise<void> => {
   await import('@hierarchidb/tabular-source-xlsx');
@@ -53,7 +53,7 @@ export const useRouteDataSourceStep = ({
   const resolvedSource = (draft.dataSourceName as DataSourceKey | undefined) ?? 'ide-gsm';
   const dataSourceMap = useMemo(
     () => new Map(ROUTE_DATA_SOURCES.map((source) => [source.name, source])),
-    [],
+    []
   );
   const ideGsmLabels = useMemo(
     () => ({
@@ -66,10 +66,10 @@ export const useRouteDataSourceStep = ({
       buttonLabel: t('dataSource.ideGsm.buttonLabel', 'Select IDE-GSM file'),
       instructions: t(
         'dataSource.ideGsm.instructions',
-        'Provide an IDE-GSM schema file (location/resource) via upload or URL.',
+        'Provide an IDE-GSM schema file (location/resource) via upload or URL.'
       ),
     }),
-    [t],
+    [t]
   );
   const options = useMemo<DataSourceSelectionOption[]>(
     () =>
@@ -85,7 +85,7 @@ export const useRouteDataSourceStep = ({
           disabled: id !== 'ide-gsm',
         };
       }),
-    [dataSourceMap, t],
+    [dataSourceMap, t]
   );
 
   const emitUpdate = useCallback(
@@ -94,13 +94,12 @@ export const useRouteDataSourceStep = ({
         ...updates,
       });
     },
-    [onUpdate],
+    [onUpdate]
   );
 
   useEffect(() => {
-    const isValid = resolvedSource === 'ide-gsm'
-      ? Boolean(draft.tabularSourceId)
-      : Boolean(resolvedSource);
+    const isValid =
+      resolvedSource === 'ide-gsm' ? Boolean(draft.tabularSourceId) : Boolean(resolvedSource);
     onValidationChange(isValid);
   }, [draft.tabularSourceId, onValidationChange, resolvedSource]);
 
@@ -110,25 +109,28 @@ export const useRouteDataSourceStep = ({
     }
   }, [draft.dataSourceName, emitUpdate, resolvedSource]);
 
-  const handleIdeGsmImport = useCallback(async (payload: IdeGsmImportPayload) => {
-    if (importInProgress) return;
-    setImportInProgress(true);
-    try {
-      await ensureTabularXlsx();
-      const metadata = await tabularApi.uploadTabularFile(payload.file, {});
-      emitUpdate({
-        ideGsmFileName: metadata.filename ?? payload.file.name,
-        ideGsmFileSizeBytes: metadata.fileSizeBytes ?? payload.file.size,
-        tabularSourceId: metadata.id,
-        ideGsmSourceUrl: undefined,
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error('[RouteDataSourceStep] failed to import IDE-GSM file', message);
-    } finally {
-      setImportInProgress(false);
-    }
-  }, [emitUpdate, importInProgress, tabularApi]);
+  const handleIdeGsmImport = useCallback(
+    async (payload: IdeGsmImportPayload) => {
+      if (importInProgress) return;
+      setImportInProgress(true);
+      try {
+        await ensureTabularXlsx();
+        const metadata = await tabularApi.uploadTabularFile(payload.file, {});
+        emitUpdate({
+          ideGsmFileName: metadata.filename ?? payload.file.name,
+          ideGsmFileSizeBytes: metadata.fileSizeBytes ?? payload.file.size,
+          tabularSourceId: metadata.id,
+          ideGsmSourceUrl: undefined,
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error('[RouteDataSourceStep] failed to import IDE-GSM file', message);
+      } finally {
+        setImportInProgress(false);
+      }
+    },
+    [emitUpdate, importInProgress, tabularApi]
+  );
 
   const handleIdeGsmClear = useCallback(async () => {
     if (!draft.tabularSourceId) {
@@ -164,7 +166,8 @@ export const useRouteDataSourceStep = ({
       setImportInProgress(true);
       try {
         await ensureTabularXlsx();
-        const fallbackName = draft.ideGsmFileName ?? String(t('dataSource.ideGsm.fileFallback', 'Imported file'));
+        const fallbackName =
+          draft.ideGsmFileName ?? String(t('dataSource.ideGsm.fileFallback', 'Imported file'));
         const dataUrlFile = decodeDataUrlToFile(draft.ideGsmSourceUrl ?? '', fallbackName);
         const metadata = dataUrlFile
           ? await tabularApi.uploadTabularFile(dataUrlFile, {})
@@ -189,7 +192,15 @@ export const useRouteDataSourceStep = ({
     return () => {
       cancelled = true;
     };
-  }, [draft.ideGsmFileName, draft.ideGsmSourceUrl, draft.tabularSourceId, emitUpdate, importInProgress, t, tabularApi]);
+  }, [
+    draft.ideGsmFileName,
+    draft.ideGsmSourceUrl,
+    draft.tabularSourceId,
+    emitUpdate,
+    importInProgress,
+    t,
+    tabularApi,
+  ]);
 
   const handleSelectionChange = useCallback(
     (next: { dataSourceId?: string; licenseAgreement?: boolean; licenseAgreedAt?: number }) => {
@@ -203,7 +214,13 @@ export const useRouteDataSourceStep = ({
         tabularSourceId: nextSource === 'ide-gsm' ? draft.tabularSourceId : undefined,
       });
     },
-    [draft.ideGsmFileName, draft.ideGsmFileSizeBytes, draft.tabularSourceId, emitUpdate, resolvedSource],
+    [
+      draft.ideGsmFileName,
+      draft.ideGsmFileSizeBytes,
+      draft.tabularSourceId,
+      emitUpdate,
+      resolvedSource,
+    ]
   );
 
   return {

@@ -1,6 +1,6 @@
-import type { Feature, FeatureCollection, Geometry, Polygon, MultiPolygon } from 'geojson';
 import type { GeometryEngine, GeometrySimplifyAlgorithm } from '@hierarchidb/gis-sdk';
 import { geometryUnkinkPolygons } from '@hierarchidb/gis-sdk';
+import type { Feature, FeatureCollection, Geometry, MultiPolygon, Polygon } from 'geojson';
 import {
   decodeSourceCache,
   decodeTopoJsonSourceCache,
@@ -37,7 +37,7 @@ export const simplifyOnlyCollection = (
   zTarget: number,
   toleranceK: number,
   geometryOps: GeometryOps,
-  _options?: { skipLargeArea?: boolean },
+  _options?: { skipLargeArea?: boolean }
 ): FeatureCollection => geometryOps.simplifyCollection(collection, zTarget, toleranceK);
 
 export type GeojsonValidationIssue = {
@@ -49,16 +49,11 @@ export type GeojsonValidationIssue = {
   sampleCoords?: number[][];
 };
 
-export const isFiniteNumber = (value: unknown): value is number => (
-  typeof value === 'number' && Number.isFinite(value)
-);
+export const isFiniteNumber = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value);
 
-export const isValidPosition = (value: unknown): value is number[] => (
-  Array.isArray(value)
-  && value.length >= 2
-  && isFiniteNumber(value[0])
-  && isFiniteNumber(value[1])
-);
+export const isValidPosition = (value: unknown): value is number[] =>
+  Array.isArray(value) && value.length >= 2 && isFiniteNumber(value[0]) && isFiniteNumber(value[1]);
 
 export const isClosedRing = (ring: number[][]): boolean => {
   if (ring.length < 4) return false;
@@ -93,22 +88,24 @@ export const validateGeometryForVt = (geometry: Geometry | null | undefined): st
     case 'Point':
       return isValidPosition(geometry.coordinates) ? null : 'invalid point coordinates';
     case 'MultiPoint':
-      return Array.isArray(geometry.coordinates)
-        && geometry.coordinates.every((coord) => isValidPosition(coord))
+      return Array.isArray(geometry.coordinates) &&
+        geometry.coordinates.every((coord) => isValidPosition(coord))
         ? null
         : 'invalid multipoint coordinates';
     case 'LineString':
-      return validateLineStringCoords(geometry.coordinates) ? null : 'invalid linestring coordinates';
+      return validateLineStringCoords(geometry.coordinates)
+        ? null
+        : 'invalid linestring coordinates';
     case 'MultiLineString':
-      return Array.isArray(geometry.coordinates)
-        && geometry.coordinates.every((line) => validateLineStringCoords(line))
+      return Array.isArray(geometry.coordinates) &&
+        geometry.coordinates.every((line) => validateLineStringCoords(line))
         ? null
         : 'invalid multilinestring coordinates';
     case 'Polygon':
       return validatePolygonCoords(geometry.coordinates) ? null : 'invalid polygon coordinates';
     case 'MultiPolygon':
-      return Array.isArray(geometry.coordinates)
-        && geometry.coordinates.every((poly) => validatePolygonCoords(poly))
+      return Array.isArray(geometry.coordinates) &&
+        geometry.coordinates.every((poly) => validatePolygonCoords(poly))
         ? null
         : 'invalid multipolygon coordinates';
     case 'GeometryCollection':
@@ -131,7 +128,10 @@ export const countVerticesFromGeometry = (geometry?: Geometry | null): number =>
   if (!geometry) return 0;
   if (geometry.type === 'GeometryCollection') {
     const geometries = Array.isArray(geometry.geometries) ? geometry.geometries : [];
-    return geometries.reduce((sum: number, child: Geometry) => sum + countVerticesFromGeometry(child), 0);
+    return geometries.reduce(
+      (sum: number, child: Geometry) => sum + countVerticesFromGeometry(child),
+      0
+    );
   }
   return countVertices(geometry.coordinates);
 };
@@ -151,7 +151,10 @@ export const countPolygonsFromGeometry = (geometry?: Geometry | null): number =>
   if (!geometry) return 0;
   if (geometry.type === 'GeometryCollection') {
     const geometries = Array.isArray(geometry.geometries) ? geometry.geometries : [];
-    return geometries.reduce((sum: number, child: Geometry) => sum + countPolygonsFromGeometry(child), 0);
+    return geometries.reduce(
+      (sum: number, child: Geometry) => sum + countPolygonsFromGeometry(child),
+      0
+    );
   }
   if (geometry.type === 'Polygon') {
     return 1;
@@ -165,7 +168,7 @@ export const countPolygonsFromGeometry = (geometry?: Geometry | null): number =>
 export const repairCollectionSelfIntersections = (
   collection: FeatureCollection,
   geometryOps: GeometryOps,
-  engine: GeometryEngine,
+  engine: GeometryEngine
 ): { collection: FeatureCollection; repairedFeatureCount: number } => {
   let repairedFeatureCount = 0;
   const repairedFeatures = collection.features.map((feature) => {

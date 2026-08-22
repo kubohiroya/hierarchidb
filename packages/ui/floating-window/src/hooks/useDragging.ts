@@ -3,9 +3,8 @@
  * @description Low-level hook for drag operations
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
- 
 import type React from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Position } from '~/types/WindowState';
 
 export interface UseDraggingOptions {
@@ -27,30 +26,28 @@ export interface UseDraggingResult {
 }
 
 export function useDragging(options: UseDraggingOptions = {}): UseDraggingResult {
-  const {
-    onDragStart,
-    onDrag,
-    onDragEnd,
-    constraints,
-  } = options;
+  const { onDragStart, onDrag, onDragEnd, constraints } = options;
 
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState<Position>({ x: 0, y: 0 });
   const dragStartPos = useRef<Position>({ x: 0, y: 0 });
   const initialMousePos = useRef<Position>({ x: 0, y: 0 });
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button !== 0) return; // Only left click
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.button !== 0) return; // Only left click
 
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    dragStartPos.current = { x: rect.left, y: rect.top };
-    initialMousePos.current = { x: e.clientX, y: e.clientY };
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      dragStartPos.current = { x: rect.left, y: rect.top };
+      initialMousePos.current = { x: e.clientX, y: e.clientY };
 
-    setIsDragging(true);
-    onDragStart?.();
+      setIsDragging(true);
+      onDragStart?.();
 
-    e.preventDefault();
-  }, [onDragStart]);
+      e.preventDefault();
+    },
+    [onDragStart]
+  );
 
   useEffect(() => {
     if (!isDragging) return;

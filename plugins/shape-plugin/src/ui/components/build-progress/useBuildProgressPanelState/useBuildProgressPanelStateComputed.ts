@@ -1,20 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
-import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
-import type { ShapeEntity } from '~/common/types/ShapeEntity';
-import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '~/common/types/index';
-import { resolveShapeTaskTitle } from '~/common/utils/taskTitleUtils';
 import {
   ensureIso3166CountryNamesI18n,
   getLocalizedCountryName,
 } from '@hierarchidb/gen-iso3166-2/browser';
+import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
+import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '~/common/types/index';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
+import { resolveShapeTaskTitle } from '~/common/utils/taskTitleUtils';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
-import {
-  buildStageTaskScan,
-  type FailureInfo,
-  type StageTaskScan,
-} from './buildStageTaskScan.ts';
+import { buildStageTaskScan, type FailureInfo, type StageTaskScan } from './buildStageTaskScan.ts';
 import {
   resolveCompletedStatusText,
   resolveFailureMessage,
@@ -63,25 +59,27 @@ export type BuildProgressPanelStateComputed = {
   completionSnapshotData: CompletionSnapshotData;
 };
 
-const resolveStatusLabel = (t: TranslateFn) => (statusValue?: string, skipped?: boolean): string => {
-  if (skipped) return t('build.taskStatus.skipped', 'Skipped');
-  switch (statusValue) {
-    case 'running':
-      return t('build.taskStatus.running', 'Running');
-    case 'completed':
-      return t('build.taskStatus.completed', 'Completed');
-    case 'recycled':
-      return t('build.taskStatus.recycled', 'Recycled');
-    case 'failed':
-      return t('build.taskStatus.failed', 'Failed');
-    case 'paused':
-      return t('build.taskStatus.paused', 'Paused');
-    case 'queued':
-      return t('build.taskStatus.queued', 'Queued');
-    default:
-      return t('build.taskStatus.waiting', 'Waiting');
-  }
-};
+const resolveStatusLabel =
+  (t: TranslateFn) =>
+  (statusValue?: string, skipped?: boolean): string => {
+    if (skipped) return t('build.taskStatus.skipped', 'Skipped');
+    switch (statusValue) {
+      case 'running':
+        return t('build.taskStatus.running', 'Running');
+      case 'completed':
+        return t('build.taskStatus.completed', 'Completed');
+      case 'recycled':
+        return t('build.taskStatus.recycled', 'Recycled');
+      case 'failed':
+        return t('build.taskStatus.failed', 'Failed');
+      case 'paused':
+        return t('build.taskStatus.paused', 'Paused');
+      case 'queued':
+        return t('build.taskStatus.queued', 'Queued');
+      default:
+        return t('build.taskStatus.waiting', 'Waiting');
+    }
+  };
 
 const resolveStatusColor = (statusValue?: string, skipped?: boolean): StageTaskStatusColor => {
   if (skipped) return 'warning';
@@ -128,7 +126,7 @@ const formatDuration = (durationMs: number | null | undefined, t: TranslateFn): 
 const buildFailedTaskInfo = (
   stages: BuildStage[],
   stageTaskScan: StageTaskScan,
-  resolveTaskTitle: (task: TaskItemWithMetadata) => string,
+  resolveTaskTitle: (task: TaskItemWithMetadata) => string
 ): FailureInfo => {
   for (const stage of stages) {
     const failedTask = stageTaskScan[stage.id]?.failedTask ?? null;
@@ -144,16 +142,10 @@ const buildFailedTaskInfo = (
   return {};
 };
 
-export const useBuildProgressPanelStateComputed = (args: ComputeArgs): BuildProgressPanelStateComputed => {
-  const {
-    data,
-    summary,
-    t,
-    locale,
-    stages,
-    stageProgress,
-    tasksByStage,
-  } = args;
+export const useBuildProgressPanelStateComputed = (
+  args: ComputeArgs
+): BuildProgressPanelStateComputed => {
+  const { data, summary, t, locale, stages, stageProgress, tasksByStage } = args;
   const [countryNamesReadyEpoch, setCountryNamesReadyEpoch] = useState(0);
 
   useEffect(() => {
@@ -170,7 +162,7 @@ export const useBuildProgressPanelStateComputed = (args: ComputeArgs): BuildProg
 
   const stageTaskScan = useMemo(
     () => buildStageTaskScan(stages, tasksByStage as Record<string, ShapeBuildTaskSummary[]>),
-    [stages, tasksByStage],
+    [stages, tasksByStage]
   );
 
   const activeStageId = useMemo(() => {
@@ -181,19 +173,17 @@ export const useBuildProgressPanelStateComputed = (args: ComputeArgs): BuildProg
     return runningStageIds[0] ?? null;
   }, [summary.buildStatus, stages, stageTaskScan]);
 
-  const resolveTaskTitle = useCallback((task: TaskItemWithMetadata) => (
-    resolveShapeTaskTitle(
-      task,
-      t('stage.tasks.unknown', '(Title unavailable)'),
-      {
+  const resolveTaskTitle = useCallback(
+    (task: TaskItemWithMetadata) =>
+      resolveShapeTaskTitle(task, t('stage.tasks.unknown', '(Title unavailable)'), {
         resolveCountryNameByCode: (code) => getLocalizedCountryName(code, locale) ?? undefined,
-      },
-    )
-  ), [countryNamesReadyEpoch, locale, t]);
+      }),
+    [countryNamesReadyEpoch, locale, t]
+  );
 
   const failedTaskInfo = useMemo(
     () => buildFailedTaskInfo(stages, stageTaskScan, resolveTaskTitle),
-    [resolveTaskTitle, stages, stageTaskScan],
+    [resolveTaskTitle, stages, stageTaskScan]
   );
 
   const completionStageLabel = summary.stageLabel?.trim()
@@ -204,10 +194,10 @@ export const useBuildProgressPanelStateComputed = (args: ComputeArgs): BuildProg
   const isFinalStageLabel = finalStage
     ? completionStageLabel === finalStage.title || completionStageLabel === finalStage.id
     : true;
-  const completionTaskTitle = failedTaskInfo.title
-    ?? t('stage.tasks.unknown', '(Task unavailable)');
-  const completionTaskMessage = failedTaskInfo.message
-    ?? t('stage.progress.failedReason', 'Build failed due to task errors.');
+  const completionTaskTitle =
+    failedTaskInfo.title ?? t('stage.tasks.unknown', '(Task unavailable)');
+  const completionTaskMessage =
+    failedTaskInfo.message ?? t('stage.progress.failedReason', 'Build failed due to task errors.');
   const completionFailedStageLabel = (() => {
     if (!failedTaskInfo.stageId) return completionStageLabel;
     const failedStage = stages.find((stage) => stage.id === failedTaskInfo.stageId);
@@ -218,17 +208,22 @@ export const useBuildProgressPanelStateComputed = (args: ComputeArgs): BuildProg
   const emptyValue = t('stage.timing.unknown', '-');
   const isBuildStarted = summary.buildStatus !== 'idle' || summary.totalElapsedMs > 0;
 
-  const controlDetails = useMemo(() => ([{
-    label: t('stage.timing.totalElapsed', 'Total elapsed:'),
-    value: isBuildStarted
-      ? formatDuration(summary.totalElapsedMs, t)
-      : emptyValue,
-    icon: 'timelapse' as const,
-  }]), [emptyValue, isBuildStarted, summary.buildStatus, summary.totalElapsedMs, t]);
+  const controlDetails = useMemo(
+    () => [
+      {
+        label: t('stage.timing.totalElapsed', 'Total elapsed:'),
+        value: isBuildStarted ? formatDuration(summary.totalElapsedMs, t) : emptyValue,
+        icon: 'timelapse' as const,
+      },
+    ],
+    [emptyValue, isBuildStarted, summary.buildStatus, summary.totalElapsedMs, t]
+  );
 
-  const resolveStageValue = useCallback((stageId: string): number => (
-    Math.min(100, Math.max(0, stageProgress[stageId] ?? summary.overallProgress))
-  ), [summary.overallProgress, stageProgress]);
+  const resolveStageValue = useCallback(
+    (stageId: string): number =>
+      Math.min(100, Math.max(0, stageProgress[stageId] ?? summary.overallProgress)),
+    [summary.overallProgress, stageProgress]
+  );
 
   const stageConcurrencyIndicators = useMemo(() => {
     const processingConfig = data?.processingConfig
@@ -236,19 +231,23 @@ export const useBuildProgressPanelStateComputed = (args: ComputeArgs): BuildProg
       : DEFAULT_PROCESSING_CONFIG;
     const isBuildRunning = summary.buildStatus === 'running';
 
-    return stages.reduce<Record<string, { maxConcurrent: number; isRunning: boolean }>>((acc, stage) => {
-      const isStageRunning = isBuildRunning && Boolean(stageTaskScan[stage.id]?.hasRunning);
-      const maxConcurrent = stage.id === 'source'
-        ? processingConfig.source.maxConcurrent
-        : stage.id === 'geometry'
-          ? processingConfig.geometry.maxConcurrent
-          : stage.id === 'tileEmit'
-            ? processingConfig.tileEmit.maxConcurrent
-            : undefined;
-      if (maxConcurrent === undefined) return acc;
-      acc[stage.id] = { maxConcurrent, isRunning: isStageRunning };
-      return acc;
-    }, {});
+    return stages.reduce<Record<string, { maxConcurrent: number; isRunning: boolean }>>(
+      (acc, stage) => {
+        const isStageRunning = isBuildRunning && Boolean(stageTaskScan[stage.id]?.hasRunning);
+        const maxConcurrent =
+          stage.id === 'source'
+            ? processingConfig.source.maxConcurrent
+            : stage.id === 'geometry'
+              ? processingConfig.geometry.maxConcurrent
+              : stage.id === 'tileEmit'
+                ? processingConfig.tileEmit.maxConcurrent
+                : undefined;
+        if (maxConcurrent === undefined) return acc;
+        acc[stage.id] = { maxConcurrent, isRunning: isStageRunning };
+        return acc;
+      },
+      {}
+    );
   }, [data?.processingConfig, stageTaskScan, stages, summary.buildStatus]);
 
   return {

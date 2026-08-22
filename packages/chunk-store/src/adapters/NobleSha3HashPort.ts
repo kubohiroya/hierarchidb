@@ -5,7 +5,9 @@ export class NobleSha3HashPort implements HashPort {
   digest(buffer: ArrayBuffer, algo: HashAlgorithm): string {
     if (algo === 'sha3-256') {
       const out = sha3_256(new Uint8Array(buffer));
-      return Array.from(out).map((b) => b.toString(16).padStart(2, '0')).join('');
+      return Array.from(out)
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
     }
     throw new Error(`Unsupported hash algorithm: ${algo}`);
   }

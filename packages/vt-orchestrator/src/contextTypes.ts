@@ -1,5 +1,9 @@
-import type { EphemeralDB } from '@hierarchidb/gis-sdk';
-import type { GeometryEngine, GeometryConfig, TileEmitConfig } from '@hierarchidb/gis-sdk';
+import type {
+  EphemeralDB,
+  GeometryConfig,
+  GeometryEngine,
+  TileEmitConfig,
+} from '@hierarchidb/gis-sdk';
 import type { BandConfig } from './types/types.js';
 
 export type GeometryStageContext = {

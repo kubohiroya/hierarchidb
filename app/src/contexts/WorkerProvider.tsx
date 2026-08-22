@@ -90,7 +90,10 @@ const resetWorkerClient = () => {
       WorkerAPIClient.reset();
     })
     .catch((error) => {
-      logWorkerProviderWarning(WORKER_PROVIDER_DIAGNOSTIC_MESSAGES.resetWorkerApiClientFailed, error);
+      logWorkerProviderWarning(
+        WORKER_PROVIDER_DIAGNOSTIC_MESSAGES.resetWorkerApiClientFailed,
+        error
+      );
     });
 };
 
@@ -136,7 +139,8 @@ const WORKER_UNAVAILABLE_REASONS = {
   providerNotReady: 'Provider context is not initialized',
   clientNotReady: 'Worker client is not initialized',
 } as const;
-type WorkerUnavailableReason = (typeof WORKER_UNAVAILABLE_REASONS)[keyof typeof WORKER_UNAVAILABLE_REASONS];
+type WorkerUnavailableReason =
+  (typeof WORKER_UNAVAILABLE_REASONS)[keyof typeof WORKER_UNAVAILABLE_REASONS];
 const getWorkerUnavailableMessage = (reason: WorkerUnavailableReason): string =>
   `${WORKER_UNAVAILABLE_BASE_MESSAGE} (${reason}).`;
 const throwWorkerUnavailable = (reason: WorkerUnavailableReason): Remote<BuildWorkerAPI> => {
@@ -251,12 +255,7 @@ type WorkerClientGateProps = {
   children: ReactNode;
 };
 
-function WorkerClientGate({
-  status,
-  renderOverlay,
-  onRetry,
-  children,
-}: WorkerClientGateProps) {
+function WorkerClientGate({ status, renderOverlay, onRetry, children }: WorkerClientGateProps) {
   if (status.error) {
     return <ErrorOverlay error={status.error} onRetry={onRetry} />;
   }
@@ -494,11 +493,11 @@ export const WorkerProvider = ({
     const bootCompleted =
       typeof window !== 'undefined' && (window as BootWindow).__HDB_INIT_COMPLETE__ === true;
     return (
-      currentProxyState === 'ready'
-      || hasCachedClient
-      || workerClientReady
-      || bootCompleted
-      || completionMarkedRef.current
+      currentProxyState === 'ready' ||
+      hasCachedClient ||
+      workerClientReady ||
+      bootCompleted ||
+      completionMarkedRef.current
     );
   }, [proxy]);
 
@@ -508,9 +507,10 @@ export const WorkerProvider = ({
     }
     const initializationTask = (async () => {
       completionMarkedRef.current = false;
-      const timeoutMs = Number.isFinite(timeout) && timeout > 0
-        ? Math.floor(timeout)
-        : DEFAULT_WORKER_INIT_TIMEOUT_MS;
+      const timeoutMs =
+        Number.isFinite(timeout) && timeout > 0
+          ? Math.floor(timeout)
+          : DEFAULT_WORKER_INIT_TIMEOUT_MS;
 
       bootLog('WorkerProvider initialize() start');
       latestProgressRef.current = 0;
@@ -530,7 +530,10 @@ export const WorkerProvider = ({
           (window as BootWindow).__HDB_INIT_STARTED__ = true;
         }
       } catch (error) {
-        logWorkerProviderWarning(WORKER_PROVIDER_DIAGNOSTIC_MESSAGES.setInitStartedFlagFailed, error);
+        logWorkerProviderWarning(
+          WORKER_PROVIDER_DIAGNOSTIC_MESSAGES.setInitStartedFlagFailed,
+          error
+        );
       }
 
       try {
@@ -565,9 +568,9 @@ export const WorkerProvider = ({
         const timedOut = normalizedRaw.name === 'AbortError';
         const normalized = timedOut
           ? new Error(
-            `Worker initialization timed out after ${Math.max(0, Number(timeout) || DEFAULT_WORKER_INIT_TIMEOUT_MS)}ms `
-            + `(progress=${latestProgressRef.current}%, step="${latestProgressMessageRef.current}").`
-          )
+              `Worker initialization timed out after ${Math.max(0, Number(timeout) || DEFAULT_WORKER_INIT_TIMEOUT_MS)}ms ` +
+                `(progress=${latestProgressRef.current}%, step="${latestProgressMessageRef.current}").`
+            )
           : normalizedRaw;
         const latestProxyState = proxy.getState();
         const hasCachedClient = Boolean(proxy.getCachedClient());
@@ -685,7 +688,10 @@ export const WorkerProvider = ({
           if (pollTimer) window.clearInterval(pollTimer);
         }
       } catch (error) {
-        logWorkerProviderWarning(WORKER_PROVIDER_DIAGNOSTIC_MESSAGES.pollWorkerReadinessFailed, error);
+        logWorkerProviderWarning(
+          WORKER_PROVIDER_DIAGNOSTIC_MESSAGES.pollWorkerReadinessFailed,
+          error
+        );
       }
     };
     pollTimer = window.setInterval(poll, 150);
@@ -724,7 +730,16 @@ export const WorkerProvider = ({
       reset,
       getAPI,
     }),
-    [safeClient, status.isInitialized, status.initProgress, status.initMessage, status.error, initialize, reset, getAPI]
+    [
+      safeClient,
+      status.isInitialized,
+      status.initProgress,
+      status.initMessage,
+      status.error,
+      initialize,
+      reset,
+      getAPI,
+    ]
   );
 
   const suspenseFallback = useMemo(() => {

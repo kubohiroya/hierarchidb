@@ -3,35 +3,33 @@
  * Exposes build-oriented operations for runtime worker adapters
  */
 
-import type { NodeId } from '@hierarchidb/core-types';
+import { AuthRequiredError, AuthService } from '@hierarchidb/auth';
 import type { BuildContinuationPolicy } from '@hierarchidb/build-api';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { ShapeBuildSessionRecord, ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import type {
-  ShapeBuildConfig,
-  ShapeRuntimeBuildConfig,
   CountryMetadata,
   DataSourceName,
-  SourceTaskPayload,
   SelectedArrayByCountries,
+  ShapeBuildConfig,
   ShapeProcessingConfig,
+  ShapeRuntimeBuildConfig,
+  SourceTaskPayload,
 } from '~/common/types/index';
 import {
-  DEFAULT_BUILD_CONFIG,
-  DEFAULT_PROCESSING_CONFIG,
-  composeRuntimeBuildConfig,
   applyBuildConfigPatch,
   assertShapeBuildConfigTileEmitContract,
+  composeRuntimeBuildConfig,
+  DEFAULT_BUILD_CONFIG,
+  DEFAULT_PROCESSING_CONFIG,
   mergeProcessingConfig,
   requireDataSourceName,
   validateBuildConfig,
 } from '~/common/types/index';
-
-import { metadataLoader } from '~/services/metadata/MetadataLoader';
-import { cacheValidator } from '~/services/CacheValidator';
-import { AuthRequiredError, AuthService } from '@hierarchidb/auth';
-import {
-  countSelectedAdminPairs,
-} from '~/services/utils/shapeBuildUtils';
 import { resolveSourceStageStrategy } from '~/services/build/strategies/resolveSourceStageStrategy';
+import { cacheValidator } from '~/services/CacheValidator';
+import { metadataLoader } from '~/services/metadata/MetadataLoader';
+import { countSelectedAdminPairs } from '~/services/utils/shapeBuildUtils';
 import {
   emitHeartbeat,
   emitSessionLifecyclePhaseUpdated,
@@ -39,7 +37,7 @@ import {
   emitStageSnapshotUpdated,
   readStartedStageTiming,
 } from './eventEmissionConstantsUtils.js';
-import type { ShapeBuildStopReason, ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
+
 // Custom error types for better error classification
 class SourceTaskPayloadGenerationError extends Error {
   constructor(message: string) {
@@ -56,9 +54,11 @@ export class ShapeBuildPauseShutdownTimeoutError extends Error {
   constructor(
     readonly nodeId: NodeId,
     readonly runId: string,
-    readonly timeoutMs: number,
+    readonly timeoutMs: number
   ) {
-    super(`[shapeBuildAPI] Pipeline shutdown timed out after ${timeoutMs}ms: ${String(nodeId)}:${runId}`);
+    super(
+      `[shapeBuildAPI] Pipeline shutdown timed out after ${timeoutMs}ms: ${String(nodeId)}:${runId}`
+    );
     this.name = 'ShapeBuildPauseShutdownTimeoutError';
   }
 }
@@ -75,33 +75,42 @@ export class ShapeBuildPauseActivePipelineMissingError extends Error {
 export class ShapeBuildResumeContractError extends Error {
   readonly code = 'SHAPE_BUILD_RESUME_CONTRACT';
 
-  constructor(readonly nodeId: NodeId, message: string) {
+  constructor(
+    readonly nodeId: NodeId,
+    message: string
+  ) {
     super(`[shapeBuildAPI] ${message}: ${String(nodeId)}`);
     this.name = 'ShapeBuildResumeContractError';
   }
 }
 
 const createActivePipelineAlreadyExistsError = (nodeId: NodeId, runId: string): Error => {
-  const error = new Error(`[shapeBuildAPI] active pipeline already exists: ${String(nodeId)}:${runId}`);
+  const error = new Error(
+    `[shapeBuildAPI] active pipeline already exists: ${String(nodeId)}:${runId}`
+  );
   error.name = 'ShapeBuildActivePipelineAlreadyExistsError';
   return error;
 };
 
+import type { BuildSessionConfig } from '@hierarchidb/shape-store';
 import {
-  VtTaskQueueDb,
   deleteTasksByNode,
   listTasks,
   listTasksByStatus,
   updateTask,
+  VtTaskQueueDb,
 } from '@hierarchidb/vt-orchestrator';
-import type { BuildSessionConfig } from '@hierarchidb/shape-store';
-import { runShapePipeline } from '~/services/vt/runShapePipeline';
-import { ephemeralShapeAPIImpl, shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
-import { setSourcePlannedTotal } from '~/services/vt/shapeProgressPlanUtils';
+import {
+  ephemeralShapeAPIImpl,
+  shapeMutationAPIImpl,
+  shapeQueryAPIImpl,
+} from '~/services/build/ShapeBuildAPIClient';
 import { runShapeArtifactCascadeCleanup } from '~/services/vt/runShapeArtifactCascadeCleanup';
+import { runShapePipeline } from '~/services/vt/runShapePipeline';
+import { setSourcePlannedTotal } from '~/services/vt/shapeProgressPlanUtils';
 import { shouldReuseTaskQueueOnStart } from '../shouldReuseTaskQueueOnStart.js';
-import * as shapeBuildRuntimeCore from './shapeBuildRuntimeCore.js';
 import { summarizeTaskQueueStatus } from './progressAnalysis.js';
+import * as shapeBuildRuntimeCore from './shapeBuildRuntimeCore.js';
 import {
   finalizePipelineOutcome,
   persistFailureAndRethrow,
@@ -121,14 +130,16 @@ const {
 } = shapeBuildRuntimeCore;
 
 // Placeholder functions for missing implementations
-const startSessionTracking = (_nodeId: string) => { };
+const startSessionTracking = (_nodeId: string) => {};
 const clearStalePipelineStateIfInactive = (
   _nodeId: string,
   _previousSession?: ShapeBuildSessionRecord,
-  _startupScope?: string,
-) => { };
+  _startupScope?: string
+) => {};
 const clearBuildSessionAuthContext = (): void => {
-  AuthService.getSingleton().then((auth) => auth.clearBuildSessionContext()).catch(() => { });
+  AuthService.getSingleton()
+    .then((auth) => auth.clearBuildSessionContext())
+    .catch(() => {});
 };
 const clearActivePipelineRuntimeState = (nodeId: NodeId, runId: string): void => {
   if (!clearActivePipeline(nodeId, runId)) return;
@@ -137,7 +148,7 @@ const clearActivePipelineRuntimeState = (nodeId: NodeId, runId: string): void =>
 
 const requirePausedHeartbeatAt = (
   status: ShapeBuildSessionRecord['status'] | undefined,
-  lastHeartbeatAt: number | undefined,
+  lastHeartbeatAt: number | undefined
 ): void => {
   if (status !== 'paused') return;
   if (
@@ -222,7 +233,9 @@ const upsertBuildSessionSnapshot = async (data: {
   if (data.status) {
     const newSessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(data.nodeId);
     if (!newSessionRecord) {
-      throw new Error(`[shapeBuildAPI] build session record is missing after update: ${String(data.nodeId)}`);
+      throw new Error(
+        `[shapeBuildAPI] build session record is missing after update: ${String(data.nodeId)}`
+      );
     }
     emitSessionStatusUpdated(data.nodeId, newSessionRecord);
   }
@@ -237,7 +250,7 @@ const updateBuildSessionFromTasks = async (
     lastHeartbeatAt?: number;
     canResume?: boolean;
   },
-  requireCurrentPipelineRun?: () => void,
+  requireCurrentPipelineRun?: () => void
 ): Promise<void> => {
   requirePausedHeartbeatAt(data.status, data.lastHeartbeatAt);
   requireCurrentPipelineRun?.();
@@ -258,7 +271,9 @@ const updateBuildSessionFromTasks = async (
     const newSessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId);
     requireCurrentPipelineRun?.();
     if (!newSessionRecord) {
-      throw new Error(`[shapeBuildAPI] build session record is missing after task update: ${String(nodeId)}`);
+      throw new Error(
+        `[shapeBuildAPI] build session record is missing after task update: ${String(nodeId)}`
+      );
     }
     emitSessionStatusUpdated(nodeId, newSessionRecord);
   }
@@ -266,12 +281,12 @@ const updateBuildSessionFromTasks = async (
 
 const requireResumablePausedSessionStartedAt = (
   nodeId: NodeId,
-  previousSession: ShapeBuildSessionRecord,
+  previousSession: ShapeBuildSessionRecord
 ): number => {
   if (previousSession.canResume !== true) {
     throw new ShapeBuildResumeContractError(
       nodeId,
-      'paused build session is not explicitly resumable',
+      'paused build session is not explicitly resumable'
     );
   }
   if (
@@ -281,7 +296,7 @@ const requireResumablePausedSessionStartedAt = (
   ) {
     throw new ShapeBuildResumeContractError(
       nodeId,
-      'paused build session is missing a valid startedAt',
+      'paused build session is missing a valid startedAt'
     );
   }
   return previousSession.startedAt;
@@ -290,13 +305,15 @@ const requireResumablePausedSessionStartedAt = (
 const initializeAndReadStageTiming = async (
   nodeId: NodeId,
   stage: TaskStage,
-  requireCurrentPipelineRun: () => void,
+  requireCurrentPipelineRun: () => void
 ): Promise<{ stageStartedAt: number; stageInactiveMs: number }> => {
   requireCurrentPipelineRun();
   let sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId);
   requireCurrentPipelineRun();
   if (!sessionRecord) {
-    throw new Error(`[shapeBuildAPI] build session record is missing before stage snapshot: ${String(nodeId)}`);
+    throw new Error(
+      `[shapeBuildAPI] build session record is missing before stage snapshot: ${String(nodeId)}`
+    );
   }
   const currentTiming = readStartedStageTiming(sessionRecord);
   if (currentTiming?.stage !== stage) {
@@ -314,12 +331,16 @@ const initializeAndReadStageTiming = async (
     sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId);
     requireCurrentPipelineRun();
     if (!sessionRecord) {
-      throw new Error(`[shapeBuildAPI] build session record is missing after stage start: ${String(nodeId)}`);
+      throw new Error(
+        `[shapeBuildAPI] build session record is missing after stage start: ${String(nodeId)}`
+      );
     }
   }
   const timing = readStartedStageTiming(sessionRecord, stage);
   if (!timing) {
-    throw new Error(`[shapeBuildAPI] stage timing is missing after stage start: ${String(nodeId)}:${stage}`);
+    throw new Error(
+      `[shapeBuildAPI] stage timing is missing after stage start: ${String(nodeId)}:${stage}`
+    );
   }
   return {
     stageStartedAt: timing.stageStartedAt,
@@ -332,7 +353,7 @@ type TaskStage = 'source' | 'geometry' | 'tileEmit';
 const buildBuildSessionConfig = (buildConfig: ShapeRuntimeBuildConfig): BuildSessionConfig => {
   const resolvedDataSource = requireDataSourceName(
     buildConfig.dataSourceName,
-    'buildBuildSessionConfig',
+    'buildBuildSessionConfig'
   );
 
   return {
@@ -350,9 +371,13 @@ const buildSourceStageOptions = (buildConfig: ShapeRuntimeBuildConfig) => ({
 });
 
 const summarizeSelectedArrayByCountries = (
-  selectedArrayByCountries: SelectedArrayByCountries | undefined,
+  selectedArrayByCountries: SelectedArrayByCountries | undefined
 ): { selectedCountryCount: number; selectedAdminPairCount: number } => {
-  if (!selectedArrayByCountries || typeof selectedArrayByCountries !== 'object' || Array.isArray(selectedArrayByCountries)) {
+  if (
+    !selectedArrayByCountries ||
+    typeof selectedArrayByCountries !== 'object' ||
+    Array.isArray(selectedArrayByCountries)
+  ) {
     return { selectedCountryCount: 0, selectedAdminPairCount: 0 };
   }
   let selectedCountryCount = 0;
@@ -385,7 +410,9 @@ const resolveSourceTaskPayloadsForPlan = async (input: {
     hasDownloadTaskPayloads: Boolean(input.downloadTaskPayloads?.length),
     downloadTaskPayloadsCount: input.downloadTaskPayloads?.length ?? 0,
     hasSelectedArrayByCountries: Boolean(input.selectedArrayByCountries),
-    selectedArrayByCountriesKeys: input.selectedArrayByCountries ? Object.keys(input.selectedArrayByCountries) : [],
+    selectedArrayByCountriesKeys: input.selectedArrayByCountries
+      ? Object.keys(input.selectedArrayByCountries)
+      : [],
   });
 
   if (input.downloadTaskPayloads && input.downloadTaskPayloads.length > 0) {
@@ -407,10 +434,12 @@ const resolveSourceTaskPayloadsForPlan = async (input: {
     nodeId: input.nodeId,
     selectedAdminPairCount,
     selectedArrayByCountriesSample: Object.fromEntries(
-      Object.entries(input.selectedArrayByCountries).slice(0, 3).map(([key, value]) => [
-        key,
-        Array.isArray(value) ? `Array(${value.length})` : typeof value
-      ])
+      Object.entries(input.selectedArrayByCountries)
+        .slice(0, 3)
+        .map(([key, value]) => [
+          key,
+          Array.isArray(value) ? `Array(${value.length})` : typeof value,
+        ])
     ),
   });
 
@@ -418,7 +447,7 @@ const resolveSourceTaskPayloadsForPlan = async (input: {
     console.warn('[shapeBuildAPI] building payloads from metadata', {
       nodeId: input.nodeId,
       metadataCount: countryMetadata.length,
-      metadataSample: countryMetadata.slice(0, 2).map(meta => ({
+      metadataSample: countryMetadata.slice(0, 2).map((meta) => ({
         countryCode: meta.countryCode,
         adminLevels: meta.availableAdminLevels?.length ?? 0,
       })),
@@ -430,7 +459,7 @@ const resolveSourceTaskPayloadsForPlan = async (input: {
     console.warn('[shapeBuildAPI] payloads built from metadata', {
       nodeId: input.nodeId,
       payloadCount: payloads.length,
-      payloadSample: payloads.slice(0, 2).map(payload => ({
+      payloadSample: payloads.slice(0, 2).map((payload) => ({
         countryCode: payload.countryCode,
         adminLevel: payload.adminLevel,
         hasGeometry: Boolean(payload.url),
@@ -447,7 +476,7 @@ const resolveSourceTaskPayloadsForPlan = async (input: {
   console.warn('[shapeBuildAPI] metadata loaded from cache', {
     nodeId: input.nodeId,
     metadataCount: countryMetadata.length,
-    metadataCountryCodes: countryMetadata.map(m => m.countryCode).slice(0, 10),
+    metadataCountryCodes: countryMetadata.map((m) => m.countryCode).slice(0, 10),
   });
 
   const payloadsFromCache = buildPayloads(countryMetadata);
@@ -459,22 +488,27 @@ const resolveSourceTaskPayloadsForPlan = async (input: {
     });
     return payloadsFromCache;
   }
-  console.warn('[shapeBuildAPI] no source payloads from cached metadata; retrying with force refresh', {
-    nodeId: input.nodeId,
-    dataSource: input.dataSource,
-    selectedAdminPairCount,
-    cachedMetadataCount: countryMetadata.length,
-  });
+  console.warn(
+    '[shapeBuildAPI] no source payloads from cached metadata; retrying with force refresh',
+    {
+      nodeId: input.nodeId,
+      dataSource: input.dataSource,
+      selectedAdminPairCount,
+      cachedMetadataCount: countryMetadata.length,
+    }
+  );
   metadataLoader.clearCache(input.dataSource);
   console.warn('[shapeBuildAPI] metadata cache cleared, loading with force refresh', {
     nodeId: input.nodeId,
     dataSource: input.dataSource,
   });
-  const refreshedMetadata = await metadataLoader.loadMetadata(input.dataSource, input.nodeId, { force: true });
+  const refreshedMetadata = await metadataLoader.loadMetadata(input.dataSource, input.nodeId, {
+    force: true,
+  });
   console.warn('[shapeBuildAPI] refreshed metadata loaded', {
     nodeId: input.nodeId,
     refreshedMetadataCount: refreshedMetadata.length,
-    refreshedMetadataCountryCodes: refreshedMetadata.map(m => m.countryCode).slice(0, 10),
+    refreshedMetadataCountryCodes: refreshedMetadata.map((m) => m.countryCode).slice(0, 10),
     metadataChanged: refreshedMetadata.length !== countryMetadata.length,
   });
 
@@ -493,12 +527,13 @@ const resolveSourceTaskPayloadsForPlan = async (input: {
     cachedMetadataCount: countryMetadata.length,
     refreshedMetadataCount: refreshedMetadata.length,
     selectedArrayByCountriesKeys: Object.keys(input.selectedArrayByCountries || {}),
-    selectedArrayByCountriesSample: input.selectedArrayByCountries ?
-      Object.fromEntries(Object.entries(input.selectedArrayByCountries).slice(0, 5)) : null,
+    selectedArrayByCountriesSample: input.selectedArrayByCountries
+      ? Object.fromEntries(Object.entries(input.selectedArrayByCountries).slice(0, 5))
+      : null,
   });
   throw new SourceTaskPayloadGenerationError(
-    `[shapeBuildAPI] No source task payloads generated for ${selectedAdminPairCount}`
-    + ' selected entries. Metadata may be stale or incompatible with the current selection.',
+    `[shapeBuildAPI] No source task payloads generated for ${selectedAdminPairCount}` +
+      ' selected entries. Metadata may be stale or incompatible with the current selection.'
   );
 };
 
@@ -510,7 +545,7 @@ const estimatePlannedSourceTotal = async (input: {
 }): Promise<{ plannedSourceTotal: number; payloadCount: number }> => {
   const dataSource = requireDataSourceName(
     input.buildConfig.dataSourceName,
-    'estimatePlannedSourceTotal',
+    'estimatePlannedSourceTotal'
   );
   const payloads = await resolveSourceTaskPayloadsForPlan({
     nodeId: input.nodeId,
@@ -550,7 +585,7 @@ const buildSelectionSet = (selection: SelectedArrayByCountries | undefined): Set
 
 const computeRemovedSelectionPairs = (
   prevSelection: SelectedArrayByCountries | undefined,
-  nextSelection: SelectedArrayByCountries | undefined,
+  nextSelection: SelectedArrayByCountries | undefined
 ): Array<{ countryCode: string; adminLevel: number }> => {
   if (!prevSelection || Array.isArray(prevSelection)) return [];
   const prevSet = buildSelectionSet(prevSelection);
@@ -568,7 +603,7 @@ const computeRemovedSelectionPairs = (
 const applySelectionDiffCleanup = async (
   nodeId: NodeId,
   prevSelection: SelectedArrayByCountries | undefined,
-  nextSelection: SelectedArrayByCountries | undefined,
+  nextSelection: SelectedArrayByCountries | undefined
 ): Promise<void> => {
   const removedPairs = computeRemovedSelectionPairs(prevSelection, nextSelection);
   if (removedPairs.length === 0) return;
@@ -585,7 +620,7 @@ const clearBuildTasksByStage = async (nodeId: NodeId, stages: Array<TaskStage>):
   const uniqueStages = Array.from(new Set(stages));
   if (uniqueStages.length === 0) return;
   const taskRows = await Promise.all(
-    uniqueStages.map((stage) => ephemeralShapeAPIImpl.listBuildTasksByStage(nodeId, stage)),
+    uniqueStages.map((stage) => ephemeralShapeAPIImpl.listBuildTasksByStage(nodeId, stage))
   );
   const taskIds = taskRows.flatMap((rows) => rows.map((task) => task.taskId));
   if (taskIds.length > 0) {
@@ -601,7 +636,7 @@ const startBuildSessionInternal = async (
   buildConfig: ShapeBuildConfig,
   processingConfig: ShapeProcessingConfig | undefined,
   downloadTaskPayloads: SourceTaskPayload[],
-  buildContinuationPolicy?: BuildContinuationPolicy,
+  buildContinuationPolicy?: BuildContinuationPolicy
 ): Promise<NodeId> => {
   const activePipelineBeforeStartup = getActivePipeline(draftId);
   if (
@@ -615,20 +650,21 @@ const startBuildSessionInternal = async (
   }
   let startupNodeId: NodeId = draftId;
   const startupScope = scope;
-  const getStartupErrorMessage = (error: unknown): string => (
-    error instanceof Error ? error.message : String(error)
-  );
+  const getStartupErrorMessage = (error: unknown): string =>
+    error instanceof Error ? error.message : String(error);
   const emitStartupStepLog = (
     phase: 'start' | 'finish',
     step: string,
-    extra?: Record<string, unknown>,
+    extra?: Record<string, unknown>
   ): void => {
     // stageHeartbeatAt keeps the session alive during long startup steps.
     // stageId is NOT written here — startup:* values are not valid StageIds
     // and must not appear in the session record per the event spec.
-    void shapeMutationAPIImpl.updateBuildSession(startupNodeId, {
-      stageHeartbeatAt: Date.now(),
-    }).catch(() => { });
+    void shapeMutationAPIImpl
+      .updateBuildSession(startupNodeId, {
+        stageHeartbeatAt: Date.now(),
+      })
+      .catch(() => {});
     const payload = {
       scope: startupScope,
       phase,
@@ -642,7 +678,7 @@ const startBuildSessionInternal = async (
   const executeStartupStep = async <T>(
     step: string,
     runner: () => Promise<T>,
-    extra?: Record<string, unknown>,
+    extra?: Record<string, unknown>
   ): Promise<T> => {
     const startedAt = Date.now();
     emitStartupStepLog('start', step, extra);
@@ -667,9 +703,8 @@ const startBuildSessionInternal = async (
 
   // Prefer persisted draft config when provided to avoid stale zoom settings.
   const handler = getShapeEntityHandler();
-  const draftEntity = await executeStartupStep(
-    'load-draft',
-    async () => handler.getEntity(draftId),
+  const draftEntity = await executeStartupStep('load-draft', async () =>
+    handler.getEntity(draftId)
   );
   const draftBuildConfig = draftEntity?.buildConfig;
   const draftProcessingConfig = draftEntity?.processingConfig;
@@ -686,7 +721,7 @@ const startBuildSessionInternal = async (
   const normalizedBuildConfig = applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, buildConfig);
   const normalizedProcessingConfig = mergeProcessingConfig(
     DEFAULT_PROCESSING_CONFIG,
-    processingConfig ?? {},
+    processingConfig ?? {}
   );
   const mergedBatchConfig = normalizedDraftConfig
     ? applyBuildConfigPatch(normalizedDraftConfig, normalizedBuildConfig)
@@ -717,33 +752,27 @@ const startBuildSessionInternal = async (
     throw new Error(`Working copy not found: ${draftId}`);
   }
 
-  const selectionSummary = await executeStartupStep(
-    'summarize-selection',
-    async () => summarizeSelectedArrayByCountries(draftEntity.selectedArrayByCountries),
+  const selectionSummary = await executeStartupStep('summarize-selection', async () =>
+    summarizeSelectedArrayByCountries(draftEntity.selectedArrayByCountries)
   );
   const selectedAdminPairCount = selectionSummary.selectedAdminPairCount;
   // Allow empty builds (zero selection) - they should succeed with empty output
 
   const nodeForSession = draftId;
   startupNodeId = nodeForSession;
-  const previousSession = await executeStartupStep(
-    'load-session-record',
-    async () => shapeQueryAPIImpl.getBuildSessionRecord(nodeForSession),
+  const previousSession = await executeStartupStep('load-session-record', async () =>
+    shapeQueryAPIImpl.getBuildSessionRecord(nodeForSession)
   );
   const activePipelineAtStartup = getActivePipeline(nodeForSession);
   if (
-    activePipelineAtStartup !== null
-    && (previousSession?.status !== 'running'
-      || !isActivePipelineRunCurrent(nodeForSession, activePipelineAtStartup.runId))
+    activePipelineAtStartup !== null &&
+    (previousSession?.status !== 'running' ||
+      !isActivePipelineRunCurrent(nodeForSession, activePipelineAtStartup.runId))
   ) {
     throw createActivePipelineAlreadyExistsError(nodeForSession, activePipelineAtStartup.runId);
   }
   if (previousSession?.status === 'running') {
-    await clearStalePipelineStateIfInactive(
-      nodeForSession,
-      previousSession,
-      startupScope,
-    );
+    await clearStalePipelineStateIfInactive(nodeForSession, previousSession, startupScope);
   }
   if (previousSession?.status === 'running') {
     await setPaused(nodeForSession, false);
@@ -757,9 +786,10 @@ const startBuildSessionInternal = async (
     return nodeForSession;
   }
   const resumeExistingTasks = shouldReuseTaskQueueOnStart(previousSession?.status);
-  const buildStartedAt = resumeExistingTasks && previousSession
-    ? requireResumablePausedSessionStartedAt(nodeForSession, previousSession)
-    : Date.now();
+  const buildStartedAt =
+    resumeExistingTasks && previousSession
+      ? requireResumablePausedSessionStartedAt(nodeForSession, previousSession)
+      : Date.now();
   let sourcePlan: Awaited<ReturnType<typeof estimatePlannedSourceTotal>>;
   try {
     console.warn('[shapeBuildAPI] Starting plan-source-total step', {
@@ -770,23 +800,24 @@ const startBuildSessionInternal = async (
 
     sourcePlan = await executeStartupStep(
       'plan-source-total',
-      async () => estimatePlannedSourceTotal({
-        nodeId: nodeForSession,
-        buildConfig: mergedRuntimeConfig,
-        selectedArrayByCountries: draftEntity.selectedArrayByCountries,
-        downloadTaskPayloads,
-      }),
+      async () =>
+        estimatePlannedSourceTotal({
+          nodeId: nodeForSession,
+          buildConfig: mergedRuntimeConfig,
+          selectedArrayByCountries: draftEntity.selectedArrayByCountries,
+          downloadTaskPayloads,
+        }),
       {
         payloadCount: downloadTaskPayloads.length,
         selectedCountryCount: selectionSummary.selectedCountryCount,
         selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
-      },
+      }
     );
 
     if (selectedAdminPairCount > 0 && sourcePlan.plannedSourceTotal === 0) {
       throw new Error(
-        '[shapeBuildAPI] Build has selected inputs but generated 0 source tasks.'
-        + ' Please reload country metadata and retry.',
+        '[shapeBuildAPI] Build has selected inputs but generated 0 source tasks.' +
+          ' Please reload country metadata and retry.'
       );
     }
 
@@ -889,46 +920,36 @@ const startBuildSessionInternal = async (
     const taskQueue = new VtTaskQueueDb();
 
     // Clean up invalid cache entries before processing any tasks (Requirements 4.1, 4.2, 4.3, 4.4)
-    await executeStartupStep(
-      'cleanup-invalid-cache-entries',
-      async () => {
-        const cleanupResult = await cacheValidator.cleanupInvalidEntries(nodeForSession);
-        console.log(
-          `[shapeBuildAPI] Cache cleanup completed for node ${nodeForSession}:`,
-          {
-            geometryDeleted: cleanupResult.geometryDeleted,
-            sourceDeleted: cleanupResult.sourceDeleted,
-            totalDeleted: cleanupResult.geometryDeleted + cleanupResult.sourceDeleted
-          }
-        );
-        return cleanupResult;
-      },
-    );
+    await executeStartupStep('cleanup-invalid-cache-entries', async () => {
+      const cleanupResult = await cacheValidator.cleanupInvalidEntries(nodeForSession);
+      console.log(`[shapeBuildAPI] Cache cleanup completed for node ${nodeForSession}:`, {
+        geometryDeleted: cleanupResult.geometryDeleted,
+        sourceDeleted: cleanupResult.sourceDeleted,
+        totalDeleted: cleanupResult.geometryDeleted + cleanupResult.sourceDeleted,
+      });
+      return cleanupResult;
+    });
 
-    await executeStartupStep(
-      'selection-diff-cleanup',
-      async () => applySelectionDiffCleanup(
+    await executeStartupStep('selection-diff-cleanup', async () =>
+      applySelectionDiffCleanup(
         nodeForSession,
         previousSession?.selectedArrayByCountries,
-        draftEntity.selectedArrayByCountries,
-      ),
+        draftEntity.selectedArrayByCountries
+      )
     );
     if (!resumeExistingTasks) {
-      await executeStartupStep(
-        'fresh-build-tile-artifact-invalidation',
-        async () => runShapeArtifactCascadeCleanup({
+      await executeStartupStep('fresh-build-tile-artifact-invalidation', async () =>
+        runShapeArtifactCascadeCleanup({
           nodeId: nodeForSession,
           target: { kind: 'stage', stage: 'tileEmit' },
-        }),
+        })
       );
-      await executeStartupStep(
-        'clear-build-task-history',
-        async () => clearBuildTasksByStage(nodeForSession, ['source', 'geometry', 'tileEmit']),
+      await executeStartupStep('clear-build-task-history', async () =>
+        clearBuildTasksByStage(nodeForSession, ['source', 'geometry', 'tileEmit'])
       );
     }
-    let existingTaskCount = await executeStartupStep(
-      'count-existing-tasks',
-      async () => taskQueue.tasks.where('nodeId').equals(nodeForSession).count(),
+    let existingTaskCount = await executeStartupStep('count-existing-tasks', async () =>
+      taskQueue.tasks.where('nodeId').equals(nodeForSession).count()
     );
     if (!resumeExistingTasks && existingTaskCount > 0) {
       await executeStartupStep(
@@ -940,13 +961,14 @@ const startBuildSessionInternal = async (
         {
           existingTaskCount,
           previousSessionStatus: previousSession?.status ?? null,
-        },
+        }
       );
     }
     const existingSourceTaskCount = await executeStartupStep(
       'count-existing-source-tasks',
-      async () => taskQueue.tasks.where('[nodeId+stage]').equals([nodeForSession, 'source']).count(),
-      { existingTaskCount },
+      async () =>
+        taskQueue.tasks.where('[nodeId+stage]').equals([nodeForSession, 'source']).count(),
+      { existingTaskCount }
     );
     const plannedSourceTotal = Math.max(sourcePlan.plannedSourceTotal, existingSourceTaskCount);
     setSourcePlannedTotal(nodeForSession, plannedSourceTotal);
@@ -984,7 +1006,7 @@ const startBuildSessionInternal = async (
       const timing = await initializeAndReadStageTiming(
         payload.nodeId,
         payload.stage,
-        requireCurrentPipelineRun,
+        requireCurrentPipelineRun
       );
       await emitStageSnapshotUpdated(
         payload.nodeId,
@@ -992,7 +1014,7 @@ const startBuildSessionInternal = async (
         timing.stageStartedAt,
         timing.stageInactiveMs,
         undefined,
-        isCurrentPipelineRun,
+        isCurrentPipelineRun
       );
     };
     const emitStageTaskSnapshotBarrier = async (payload: {
@@ -1006,7 +1028,7 @@ const startBuildSessionInternal = async (
       const timing = await initializeAndReadStageTiming(
         payload.nodeId,
         payload.stage,
-        requireCurrentPipelineRun,
+        requireCurrentPipelineRun
       );
       await emitStageSnapshotUpdated(
         payload.nodeId,
@@ -1014,7 +1036,7 @@ const startBuildSessionInternal = async (
         timing.stageStartedAt,
         timing.stageInactiveMs,
         undefined,
-        isCurrentPipelineRun,
+        isCurrentPipelineRun
       );
     };
     emitStartupStepLog('start', 'pipeline-dispatch', {
@@ -1024,7 +1046,7 @@ const startBuildSessionInternal = async (
     });
     const resolvedDataSource = requireDataSourceName(
       mergedRuntimeConfig.dataSourceName,
-      startupScope,
+      startupScope
     );
     startSessionTracking(nodeForSession);
     console.warn(`[shapeBuildAPI] ${startupScope} pipeline start`, {
@@ -1032,9 +1054,11 @@ const startBuildSessionInternal = async (
       runId: pipelineRunId,
       payloadCount: downloadTaskPayloads.length,
     });
-    void shapeMutationAPIImpl.updateBuildSession(nodeForSession, {
-      stageHeartbeatAt: Date.now(),
-    }).catch(() => { });
+    void shapeMutationAPIImpl
+      .updateBuildSession(nodeForSession, {
+        stageHeartbeatAt: Date.now(),
+      })
+      .catch(() => {});
     // Handle empty builds (no selections and no download payloads)
     if (selectedAdminPairCount === 0 && downloadTaskPayloads.length === 0) {
       console.warn(`[shapeBuildAPI] ${startupScope} empty build - completing immediately`, {
@@ -1301,9 +1325,7 @@ const startBuildSessionInternal = async (
         console.error('[shapeBuildAPI] Failed to persist startup failure', {
           nodeId: nodeForSession,
           persistenceError:
-            persistenceError instanceof Error
-              ? persistenceError.message
-              : String(persistenceError),
+            persistenceError instanceof Error ? persistenceError.message : String(persistenceError),
         });
       }
     );
@@ -1316,7 +1338,7 @@ const waitForPipelineShutdown = async (
   nodeId: NodeId,
   runId: string,
   pipelinePromise: Promise<void>,
-  timeoutMs: number,
+  timeoutMs: number
 ): Promise<void> => {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   try {
@@ -1340,13 +1362,20 @@ const resetRunningTasks = async (nodeId: NodeId): Promise<void> => {
 
   // Runtime shutdown is already confirmed at this boundary. Requeue only tasks
   // interrupted while running and preserve their task payload/result metadata.
-  await Promise.all(runningTasks.map((task) => (
-    updateTask(taskQueue, task.taskId, {
-      status: 'queued',
-      // Preserve all existing state: startedAt, completedAt, outputData, errorMessage, display, message
-      // Do NOT set these to undefined as that would violate state preservation requirements
-    }, { allowTerminalStatusTransition: true })
-  )));
+  await Promise.all(
+    runningTasks.map((task) =>
+      updateTask(
+        taskQueue,
+        task.taskId,
+        {
+          status: 'queued',
+          // Preserve all existing state: startedAt, completedAt, outputData, errorMessage, display, message
+          // Do NOT set these to undefined as that would violate state preservation requirements
+        },
+        { allowTerminalStatusTransition: true }
+      )
+    )
+  );
 };
 
 const isShapeBuildStopReason = (value: unknown): value is ShapeBuildStopReason =>
@@ -1359,7 +1388,7 @@ const isShapeBuildStopReason = (value: unknown): value is ShapeBuildStopReason =
 
 const resolveCommandStopReason = (
   command: 'session/pause' | 'session/cancel-queued',
-  value: unknown,
+  value: unknown
 ): ShapeBuildStopReason => {
   if (value === undefined) return 'user-pause';
   if (isShapeBuildStopReason(value)) return value;
@@ -1368,7 +1397,7 @@ const resolveCommandStopReason = (
 
 const invokeShapeBuildCommand = async (
   command: string,
-  payload: Record<string, unknown>,
+  payload: Record<string, unknown>
 ): Promise<void> => {
   if (command === 'session/pause') {
     const nodeId = payload.nodeId as NodeId;
@@ -1546,7 +1575,9 @@ const invokeShapeBuildCommand = async (
   throw new Error(`[shapeBuildAPI] Unknown build command: ${command}`);
 };
 
-const toErrorDiagnostics = (error: unknown): {
+const toErrorDiagnostics = (
+  error: unknown
+): {
   errorMessage: string;
   errorName?: string;
   errorStack?: string;

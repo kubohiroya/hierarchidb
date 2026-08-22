@@ -1,15 +1,14 @@
 import type { Tile } from 'geojson-vt';
 
 const canonicalLineKey = (coords: number[][]): string => {
-  const toKey = (points: number[][]): string => (
+  const toKey = (points: number[][]): string =>
     points
       .map((point) => {
         const x = point[0] ?? 0;
         const y = point[1] ?? 0;
         return ((x << 16) ^ y).toString();
       })
-      .join(',')
-  );
+      .join(',');
   const forward = toKey(coords);
   const reverse = toKey([...coords].reverse());
   return forward < reverse ? forward : reverse;
@@ -17,17 +16,16 @@ const canonicalLineKey = (coords: number[][]): string => {
 
 type TileLineGeometry = number[][][];
 
-const isTileLineGeometry = (value: unknown): value is TileLineGeometry => (
-  Array.isArray(value)
-  && value.every((line) => (
-    Array.isArray(line)
-    && line.every((point) => (
-      Array.isArray(point)
-      && typeof point[0] === 'number'
-      && typeof point[1] === 'number'
-    ))
-  ))
-);
+const isTileLineGeometry = (value: unknown): value is TileLineGeometry =>
+  Array.isArray(value) &&
+  value.every(
+    (line) =>
+      Array.isArray(line) &&
+      line.every(
+        (point) =>
+          Array.isArray(point) && typeof point[0] === 'number' && typeof point[1] === 'number'
+      )
+  );
 
 export const dedupeTileLines = (tile: Tile): Tile => {
   const seen = new Set<string>();

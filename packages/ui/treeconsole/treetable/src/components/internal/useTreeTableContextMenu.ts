@@ -1,6 +1,6 @@
-import { isFolderNodeType, type OpenStepOption } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
+import { isFolderNodeType, type OpenStepOption } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { BuildSessionIndicator, TreeNodeInUI, TreeTableController } from '~/types';
 
@@ -67,12 +67,16 @@ export function useTreeTableContextMenu({
   const isRoot = !!node && node.depth === 0;
   const open = Boolean(contextMenuState.anchorEl) || Boolean(contextMenuState.anchorPosition);
 
-  const isBuildRunning = Boolean(node?.id && buildSessionIndicator?.runningNodeIds.has(node.id as NodeId));
+  const isBuildRunning = Boolean(
+    node?.id && buildSessionIndicator?.runningNodeIds.has(node.id as NodeId)
+  );
 
-  const nodeDraftMetadata = node?.draftMetadata as { buildMetadata?: { buildRequired?: boolean } } | undefined;
+  const nodeDraftMetadata = node?.draftMetadata as
+    | { buildMetadata?: { buildRequired?: boolean } }
+    | undefined;
 
   const isBuildRequiredForNode = Boolean(
-    node?.metadata?.buildMetadata?.buildRequired || nodeDraftMetadata?.buildMetadata?.buildRequired,
+    node?.metadata?.buildMetadata?.buildRequired || nodeDraftMetadata?.buildMetadata?.buildRequired
   );
 
   const nodeType = String(node?.nodeType ?? '');
@@ -156,33 +160,42 @@ export function useTreeTableContextMenu({
       if (!node) return;
       controller?.onContextAction?.(action, node, options);
     },
-    [controller, node],
+    [controller, node]
   );
 
-  const onToggleVisible = useCallback((nextVisible: boolean) => {
-    if (!node) return;
-    triggerContextAction('toggle-visibility', { source: 'treetable', nextVisible });
-  }, [node, triggerContextAction]);
+  const onToggleVisible = useCallback(
+    (nextVisible: boolean) => {
+      if (!node) return;
+      triggerContextAction('toggle-visibility', { source: 'treetable', nextVisible });
+    },
+    [node, triggerContextAction]
+  );
 
-  const onCreate = useCallback((type: string, options?: { openInNewTab?: boolean }) => {
-    if (node) {
-      triggerContextAction(`create:${type}`, {
-        expandTarget: true,
-        source: 'treetable',
-        openInNewTab: options?.openInNewTab,
-      });
-    }
-    handleClose();
-  }, [handleClose, node, triggerContextAction]);
-
-  const onEdit = useCallback((options?: { openInNewTab?: boolean }) => {
-    if (!node || isRoot) {
+  const onCreate = useCallback(
+    (type: string, options?: { openInNewTab?: boolean }) => {
+      if (node) {
+        triggerContextAction(`create:${type}`, {
+          expandTarget: true,
+          source: 'treetable',
+          openInNewTab: options?.openInNewTab,
+        });
+      }
       handleClose();
-      return;
-    }
-    triggerContextAction('edit', { source: 'treetable', openInNewTab: options?.openInNewTab });
-    handleClose();
-  }, [handleClose, isRoot, node, triggerContextAction]);
+    },
+    [handleClose, node, triggerContextAction]
+  );
+
+  const onEdit = useCallback(
+    (options?: { openInNewTab?: boolean }) => {
+      if (!node || isRoot) {
+        handleClose();
+        return;
+      }
+      triggerContextAction('edit', { source: 'treetable', openInNewTab: options?.openInNewTab });
+      handleClose();
+    },
+    [handleClose, isRoot, node, triggerContextAction]
+  );
 
   const onDuplicate = useCallback(() => {
     if (!node || isRoot) {
@@ -226,26 +239,32 @@ export function useTreeTableContextMenu({
     }
   }, [node, triggerContextAction]);
 
-  const onOpen = useCallback((options?: { openInNewTab?: boolean }) => {
-    if (node) {
-      if (options?.openInNewTab) {
-        triggerContextAction('navigate', { source: 'treetable', openInNewTab: true });
-      } else {
-        controller?.onNodeClick?.(node.id, node);
+  const onOpen = useCallback(
+    (options?: { openInNewTab?: boolean }) => {
+      if (node) {
+        if (options?.openInNewTab) {
+          triggerContextAction('navigate', { source: 'treetable', openInNewTab: true });
+        } else {
+          controller?.onNodeClick?.(node.id, node);
+        }
       }
-    }
-    handleClose();
-  }, [controller, handleClose, node, triggerContextAction]);
+      handleClose();
+    },
+    [controller, handleClose, node, triggerContextAction]
+  );
 
-  const onOpenStep = useCallback((step: number, options?: { openInNewTab?: boolean }) => {
-    if (node) {
-      triggerContextAction(`open-step:${step}`, {
-        source: 'treetable',
-        openInNewTab: options?.openInNewTab,
-      });
-    }
-    handleClose();
-  }, [handleClose, node, triggerContextAction]);
+  const onOpenStep = useCallback(
+    (step: number, options?: { openInNewTab?: boolean }) => {
+      if (node) {
+        triggerContextAction(`open-step:${step}`, {
+          source: 'treetable',
+          openInNewTab: options?.openInNewTab,
+        });
+      }
+      handleClose();
+    },
+    [handleClose, node, triggerContextAction]
+  );
 
   const onPreview = useCallback(() => {
     if (node) {
@@ -261,7 +280,10 @@ export function useTreeTableContextMenu({
     handleClose();
   }, [handleClose, node, triggerContextAction]);
 
-  const canPreview = useMemo(() => (previewGuardState?.canOpen ?? true) && !previewGuardLoading, [previewGuardLoading, previewGuardState?.canOpen]);
+  const canPreview = useMemo(
+    () => (previewGuardState?.canOpen ?? true) && !previewGuardLoading,
+    [previewGuardLoading, previewGuardState?.canOpen]
+  );
 
   return {
     node,

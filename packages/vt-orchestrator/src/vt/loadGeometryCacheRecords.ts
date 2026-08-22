@@ -11,16 +11,9 @@ type FeatureCollectorLoadConfig = {
 };
 
 export const loadGeometryCacheRecords = async (
-  config: FeatureCollectorLoadConfig,
+  config: FeatureCollectorLoadConfig
 ): Promise<EphemeralGeometryCacheRecord[]> => {
-  const {
-    context,
-    nodeId,
-    bufferIds,
-    useBulkGet,
-    useGetEach,
-    debugCollect,
-  } = config;
+  const { context, nodeId, bufferIds, useBulkGet, useGetEach, debugCollect } = config;
   return context.ephemeralDB.transaction('r', [context.ephemeralDB.geometryCache], async () => {
     if (debugCollect) {
       console.info('[tileEmit][debug] collect transaction start', JSON.stringify({ nodeId }));
@@ -34,11 +27,14 @@ export const loadGeometryCacheRecords = async (
         }
         const record = await context.ephemeralDB.geometryCache.get(bufferId);
         if (debugCollect) {
-          console.info('[tileEmit][debug] collect get done', JSON.stringify({
-            nodeId,
-            bufferId,
-            hasRecord: Boolean(record),
-          }));
+          console.info(
+            '[tileEmit][debug] collect get done',
+            JSON.stringify({
+              nodeId,
+              bufferId,
+              hasRecord: Boolean(record),
+            })
+          );
         }
         if (record) {
           collected.push(record);
@@ -46,13 +42,11 @@ export const loadGeometryCacheRecords = async (
       }
       loaded = collected;
     } else if (useBulkGet) {
-      loaded = (await context.ephemeralDB.geometryCache.bulkGet(bufferIds))
-        .filter((record): record is EphemeralGeometryCacheRecord => Boolean(record));
+      loaded = (await context.ephemeralDB.geometryCache.bulkGet(bufferIds)).filter(
+        (record): record is EphemeralGeometryCacheRecord => Boolean(record)
+      );
     } else {
-      loaded = await context.ephemeralDB.geometryCache
-        .where('id')
-        .anyOf(bufferIds)
-        .toArray();
+      loaded = await context.ephemeralDB.geometryCache.where('id').anyOf(bufferIds).toArray();
     }
     if (debugCollect) {
       console.info('[tileEmit][debug] collect transaction done', JSON.stringify({ nodeId }));

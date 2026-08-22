@@ -1,16 +1,16 @@
-import { resolve } from "node:path";
-import { defineConfig } from "vitest/config";
+import { resolve } from 'node:path';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
     root: __dirname,
-    environment: "jsdom",
+    environment: 'jsdom',
     globals: true,
-    include: ["src/**/*.unit.test.ts"],
+    include: ['src/**/*.unit.test.ts'],
   },
   resolve: {
     alias: {
-      "@hierarchidb/util": resolve(__dirname, "../../util/src/index.ts"),
+      '@hierarchidb/util': resolve(__dirname, '../../util/src/index.ts'),
     },
   },
 });

@@ -1,7 +1,7 @@
 /**
-  * TreeTable Utilities
-  * TreeTable
-  */
+ * TreeTable Utilities
+ * TreeTable
+ */
 
 import type { NodeId } from '@hierarchidb/core-types';
 import { getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
@@ -29,7 +29,7 @@ export function flattenTree(
   nodes: TreeNode[],
   expandedIds: Set<string>,
   parentId: string | null = null,
-  depth: number = 0,
+  depth: number = 0
 ): TreeNode[] {
   const result: TreeNode[] = [];
 
@@ -87,13 +87,15 @@ export function getDescendantIds(nodeId: NodeId, allNodes: TreeNode[]): Set<Node
 export { computeDescendants } from './descendants.js';
 
 /**
-  * ID
-  */
+ * ID
+ */
 export function getAncestorIds(nodeId: NodeId, allNodes: TreeNode[]): NodeId[] {
   const ancestors: NodeId[] = [];
 
   const nodeMap = new Map<string, TreeNode>();
-  allNodes.forEach((node) => {nodeMap.set(String(node.id), node)});
+  allNodes.forEach((node) => {
+    nodeMap.set(String(node.id), node);
+  });
 
   const collectAncestors = (currentKey: string) => {
     const node = nodeMap.get(currentKey);
@@ -136,11 +138,11 @@ export function filterNodesBySearch(nodes: TreeNode[], searchText: string): Tree
 }
 
 /**
-    */
+ */
 export function getNodePath(
   nodeId: NodeId,
   allNodes: TreeNode[],
-  separator: string = ' > ',
+  separator: string = ' > '
 ): string {
   const ancestors = getAncestorIds(nodeId, allNodes);
   const node = allNodes.find((n) => String(n.id) === String(nodeId));
@@ -148,9 +150,7 @@ export function getNodePath(
   if (!node) return '';
 
   const pathNodes = [
-    ...ancestors
-      .map((id) => allNodes.find((n) => String(n.id) === String(id)))
-      .filter(Boolean),
+    ...ancestors.map((id) => allNodes.find((n) => String(n.id) === String(id))).filter(Boolean),
     node,
   ];
 
@@ -167,7 +167,7 @@ export function canDropNode(
   draggingNodeId: NodeId,
   targetNodeId: NodeId,
   position: 'before' | 'after' | 'into',
-  allNodes: TreeNode[],
+  allNodes: TreeNode[]
 ): boolean {
   const draggingKey = String(draggingNodeId);
   const targetKey = String(targetNodeId);

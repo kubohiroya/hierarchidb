@@ -1,16 +1,20 @@
 import type { Feature, Geometry } from 'geojson';
 import type { Tile } from 'geojson-vt';
 import type { VTStageContext } from '~/contextTypes';
+import { packTileId, parentToChildRange } from '~/tiles/tileId';
 import type { BandConfig } from '~/types/types';
-import type { TaskLayerContext } from './vtStageTaskLayerBuilderTypes.js';
-import { parentToChildRange, packTileId } from '~/tiles/tileId';
-import { featureBBox, isEmptyGeometry } from './vtStageGeometryFeature.js';
+import { logSingleLayerPerFeatureNoResult } from './logSingleLayerPerFeatureNoResult.js';
 import { clipFeatureForTile } from './vtStageGeometryClippingUtils.js';
 import { countVerticesFromGeometry } from './vtStageGeometryCountsUtils.js';
-import { bboxIntersects, expandTileBBox, resolveTileBufferPx, tileToBBox } from './vtStageGeometryTileUtils.js';
+import { featureBBox, isEmptyGeometry } from './vtStageGeometryFeature.js';
+import {
+  bboxIntersects,
+  expandTileBBox,
+  resolveTileBufferPx,
+  tileToBBox,
+} from './vtStageGeometryTileUtils.js';
 import { mergeLayerTiles } from './vtStageTaskLayerBuilderHelpers.js';
-import type { BuildLayerIndexForTile } from './vtStageTaskLayerBuilderTypes.js';
-import { logSingleLayerPerFeatureNoResult } from './logSingleLayerPerFeatureNoResult.js';
+import type { BuildLayerIndexForTile, TaskLayerContext } from './vtStageTaskLayerBuilderTypes.js';
 
 type SingleLayerPerFeatureInput = {
   context: VTStageContext;
@@ -23,13 +27,14 @@ type SingleLayerPerFeatureInput = {
   buildLayerIndexForTile: BuildLayerIndexForTile;
 };
 
-export const calculateSingleLayerVertexStats = (
-  features: Feature<Geometry>[],
-) => ({
-  layerVertexCount: features.reduce((sum, feature) => sum + countVerticesFromGeometry(feature.geometry), 0),
+export const calculateSingleLayerVertexStats = (features: Feature<Geometry>[]) => ({
+  layerVertexCount: features.reduce(
+    (sum, feature) => sum + countVerticesFromGeometry(feature.geometry),
+    0
+  ),
   maxFeatureVertices: features.reduce(
     (max, feature) => Math.max(max, countVerticesFromGeometry(feature.geometry)),
-    0,
+    0
   ),
 });
 

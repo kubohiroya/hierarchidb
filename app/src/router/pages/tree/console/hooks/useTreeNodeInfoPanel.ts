@@ -1,5 +1,6 @@
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import { getTreeNodeDescription, getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   getPluginIconColor,
   isFolderNodeType,
@@ -11,19 +12,18 @@ import { useLocation, useNavigate } from '@tanstack/react-router';
 import { proxy as comlinkProxy } from 'comlink';
 import type { MouseEvent } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useWorker } from '~/contexts/WorkerProvider';
 import { Subscriptions } from '~/hooks/SubscriptionServices';
+import { resolvePreviewGuardState } from '~/hooks/treeconsole/actions/dialog';
+import { resolveOpenStepsForNode } from '~/hooks/treeconsole/resolveOpenStepUtils';
 import { useTreeConsoleSSOT } from '~/state/treeconsole.atoms';
-import { convertTreeNodeToTreeNodeData } from '~/utils/treeNodeConverterUtils';
 import { sanitizeForComlink } from '~/utils/comlinkSanitizerUtils';
+import { convertTreeNodeToTreeNodeData } from '~/utils/treeNodeConverterUtils';
 import {
   collectBuildUrlsForFolder,
   resolveBuildTargetForNode,
   startBuildFlow,
 } from '../buildFlow.ts';
-import { resolvePreviewGuardState } from '~/hooks/treeconsole/actions/dialog';
-import { resolveOpenStepsForNode } from '~/hooks/treeconsole/resolveOpenStepUtils';
 
 type ContextMenuHandler = NonNullable<TreeConsolePanelProps['onContextMenuAction']>;
 
@@ -366,7 +366,10 @@ export function useTreeNodeInfoPanel({
   }, []);
 
   const descriptionText = currentNode ? getTreeNodeDescription(currentNode).trim() : '';
-  const emptyDescriptionLabel = getString('treeConsole.infoPanel.emptyDescription', 'No description provided.');
+  const emptyDescriptionLabel = getString(
+    'treeConsole.infoPanel.emptyDescription',
+    'No description provided.'
+  );
   const description = descriptionText || emptyDescriptionLabel || '';
   const nodeTypeLabel = currentNode?.nodeType ?? 'node';
   const nodeDataDepth = nodeData?.depth ?? node?.depth;
@@ -399,10 +402,15 @@ export function useTreeNodeInfoPanel({
     return undefined;
   };
   const resolvedBuildRequiredForCurrentNode = readBuildRequired(currentNode);
-  const resolvedBuildRequiredForFallbackNode = resolvedBuildRequiredForCurrentNode ?? readBuildRequired(node);
+  const resolvedBuildRequiredForFallbackNode =
+    resolvedBuildRequiredForCurrentNode ?? readBuildRequired(node);
   const isBuildRequired = isFolderNodeType(nodeTypeLabel)
-    ? Boolean(resolvedBuildRequiredForCurrentNode || resolvedBuildRequiredForFallbackNode || folderBuildReady)
-    : resolvedBuildRequiredForCurrentNode ?? resolvedBuildRequiredForFallbackNode;
+    ? Boolean(
+        resolvedBuildRequiredForCurrentNode ||
+          resolvedBuildRequiredForFallbackNode ||
+          folderBuildReady
+      )
+    : (resolvedBuildRequiredForCurrentNode ?? resolvedBuildRequiredForFallbackNode);
   const isDraft = statusSourceNode?.version === 0 || node?.version === 0;
 
   const labels = {
@@ -418,7 +426,10 @@ export function useTreeNodeInfoPanel({
       'Move this item and all its children to archive?'
     ),
     confirmArchiveCancel: getString('treeConsole.infoPanel.confirmArchiveCancel', 'Cancel'),
-    confirmArchiveConfirm: getString('treeConsole.infoPanel.confirmArchiveConfirm', 'Move to Archive'),
+    confirmArchiveConfirm: getString(
+      'treeConsole.infoPanel.confirmArchiveConfirm',
+      'Move to Archive'
+    ),
     nodeTypeLabel,
     iconTooltip: getString('treeConsole.infoPanel.openContextMenu', 'Node actions'),
     nodeTypeCaption: getString('treeConsole.infoPanel.nodeTypeLabel', '{{type}}', {
@@ -441,9 +452,7 @@ export function useTreeNodeInfoPanel({
   };
 
   const isFolderNode = Boolean(nodeTypeLabel && isFolderNodeType(nodeTypeLabel));
-  const isBuildableByMetadata = isFolderNode
-    ? folderBuildReady
-    : Boolean(buildTarget?.stepNumber);
+  const isBuildableByMetadata = isFolderNode ? folderBuildReady : Boolean(buildTarget?.stepNumber);
   const canPreview = previewGuardState?.canOpen ?? true;
 
   return {

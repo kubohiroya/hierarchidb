@@ -1,11 +1,21 @@
-import { type ForwardedRef, type MutableRefObject, useCallback, useEffect, useMemo, useRef } from 'react';
-import { type Virtualizer, useVirtualizer } from '@tanstack/react-virtual';
+import { useVirtualizer, type Virtualizer } from '@tanstack/react-virtual';
 import { useSetAtom } from 'jotai';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
+import {
+  type ForwardedRef,
+  type MutableRefObject,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import { taskViewportRangeByStageAtom } from '~/ui/atoms/shapeBuildProgressAtomConstants';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
+import {
+  isGeometryLikeStageId,
+  isTileEmitLikeStageId,
+} from '~/ui/components/build-progress/stageIdAliases';
 import { TASK_ITEM_HEIGHT } from '~/ui/components/build-progress/TaskItem/TASK_ITEM_HEIGHT';
 import { type TaskItemWithMetadata } from './types.js';
-import { isGeometryLikeStageId, isTileEmitLikeStageId } from '~/ui/components/build-progress/stageIdAliases';
 
 type TaskItemCardListArgs = {
   stageId: string;
@@ -23,7 +33,9 @@ type TaskItemCardListState = {
   virtualizer: Virtualizer<HTMLDivElement, Element>;
 };
 
-const getVectorTileCoordsFromTitle = (task: ShapeBuildTaskSummary): { z: number; x: number; y: number } | null => {
+const getVectorTileCoordsFromTitle = (
+  task: ShapeBuildTaskSummary
+): { z: number; x: number; y: number } | null => {
   const title = (task as TaskItemWithMetadata).title;
   if (!title) return null;
   const match = title.match(/z\s*(\d+)\s*\/\s*(\d+)\s*\/\s*(\d+)/i);
@@ -79,15 +91,18 @@ export const useTaskItemCardList = ({
 }: TaskItemCardListArgs): TaskItemCardListState => {
   const shouldVirtualize = virtualize;
   const parentRef = useRef<HTMLDivElement | null>(null);
-  const setRefs = useCallback((node: HTMLDivElement | null) => {
-    parentRef.current = node;
-    if (!ref) return;
-    if (typeof ref === 'function') {
-      ref(node);
-      return;
-    }
-    (ref as MutableRefObject<HTMLDivElement | null>).current = node;
-  }, [ref]);
+  const setRefs = useCallback(
+    (node: HTMLDivElement | null) => {
+      parentRef.current = node;
+      if (!ref) return;
+      if (typeof ref === 'function') {
+        ref(node);
+        return;
+      }
+      (ref as MutableRefObject<HTMLDivElement | null>).current = node;
+    },
+    [ref]
+  );
   const setViewportRangeByStage = useSetAtom(taskViewportRangeByStageAtom);
   const lastScrollRequestRef = useRef<number | null>(null);
   const lastViewportRef = useRef<{
@@ -142,7 +157,7 @@ export const useTaskItemCardList = ({
       const startIndex = Math.min(Math.max(Math.floor(scrollTop / TASK_ITEM_HEIGHT), 0), total - 1);
       const endIndex = Math.min(
         Math.max(Math.floor((scrollTop + viewportHeight - 1) / TASK_ITEM_HEIGHT), startIndex),
-        total - 1,
+        total - 1
       );
       const startTaskId = orderedTasks[startIndex]?.taskId ?? '';
       const endTaskId = orderedTasks[endIndex]?.taskId ?? startTaskId;
@@ -157,13 +172,13 @@ export const useTaskItemCardList = ({
       };
       const prev = lastViewportRef.current;
       if (
-        prev
-        && prev.stageId === next.stageId
-        && prev.startIndex === next.startIndex
-        && prev.endIndex === next.endIndex
-        && prev.startTaskId === next.startTaskId
-        && prev.endTaskId === next.endTaskId
-        && prev.total === next.total
+        prev &&
+        prev.stageId === next.stageId &&
+        prev.startIndex === next.startIndex &&
+        prev.endIndex === next.endIndex &&
+        prev.startTaskId === next.startTaskId &&
+        prev.endTaskId === next.endTaskId &&
+        prev.total === next.total
       ) {
         return;
       }
@@ -207,13 +222,13 @@ export const useTaskItemCardList = ({
     };
     const prev = lastViewportRef.current;
     if (
-      prev
-      && prev.stageId === next.stageId
-      && prev.startIndex === next.startIndex
-      && prev.endIndex === next.endIndex
-      && prev.startTaskId === next.startTaskId
-      && prev.endTaskId === next.endTaskId
-      && prev.total === next.total
+      prev &&
+      prev.stageId === next.stageId &&
+      prev.startIndex === next.startIndex &&
+      prev.endIndex === next.endIndex &&
+      prev.startTaskId === next.startTaskId &&
+      prev.endTaskId === next.endTaskId &&
+      prev.total === next.total
     ) {
       return;
     }

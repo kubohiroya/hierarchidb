@@ -2,23 +2,13 @@
   "extends": "../../../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "types": [
-      "react"
-    ],
+    "types": ["react"],
     "jsxImportSource": "react"
   },
-  "exclude": [
-    "dist",
-    "node_modules",
-    "**/*.test.*",
-    "**/*.spec.*",
-    "src/__tests__/**"
-  ],
+  "exclude": ["dist", "node_modules", "**/*.test.*", "**/*.spec.*", "src/__tests__/**"],
   "checkDeps": {
     "allowSkipLibCheck": true,
     "reason": "Temporary: upstream/transitive types; scheduled to remove."
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*"]
 }

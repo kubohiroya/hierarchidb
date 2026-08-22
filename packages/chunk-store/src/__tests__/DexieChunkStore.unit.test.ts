@@ -1,7 +1,7 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/core-types';
-import { Dexie } from 'dexie';
 import type { NetworkPort, ResponseLike } from '@hierarchidb/download';
+import { Dexie } from 'dexie';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DexieChunkStore } from '../index';
 
 const encoder = new TextEncoder();
@@ -10,15 +10,20 @@ const decoder = new TextDecoder();
 const serialize = (value: string): ArrayBuffer => encoder.encode(value).buffer;
 const deserialize = (buffer: ArrayBuffer): string => decoder.decode(new Uint8Array(buffer));
 
-const createStore = (dbName: string, networkPort?: NetworkPort) => new DexieChunkStore<string>({
-  serializer: serialize,
-  deserializer: deserialize,
-  dbName,
-  networkPort,
-  networkOptions: { auth: { enabled: false } },
-});
+const createStore = (dbName: string, networkPort?: NetworkPort) =>
+  new DexieChunkStore<string>({
+    serializer: serialize,
+    deserializer: deserialize,
+    dbName,
+    networkPort,
+    networkOptions: { auth: { enabled: false } },
+  });
 
-const makeResponse = (status: number, body = '', headers?: Record<string, string>): ResponseLike => ({
+const makeResponse = (
+  status: number,
+  body = '',
+  headers?: Record<string, string>
+): ResponseLike => ({
   ok: status >= 200 && status < 300,
   status,
   headers: headers ? new Headers(headers) : new Headers(),
@@ -40,10 +45,13 @@ describe('DexieChunkStore', () => {
   it('rejects a missing database name before IndexedDB open', () => {
     const openSpy = vi.spyOn(indexedDB, 'open');
 
-    expect(() => new DexieChunkStore<string>({
-      serializer: serialize,
-      deserializer: deserialize,
-    })).toThrow('chunk-store-database-name-required');
+    expect(
+      () =>
+        new DexieChunkStore<string>({
+          serializer: serialize,
+          deserializer: deserialize,
+        })
+    ).toThrow('chunk-store-database-name-required');
     expect(openSpy).not.toHaveBeenCalled();
     openSpy.mockRestore();
   });
@@ -51,12 +59,15 @@ describe('DexieChunkStore', () => {
   it('rejects conflicting database authorities', () => {
     const db = new Dexie('chunk-store-explicit');
 
-    expect(() => new DexieChunkStore<string>({
-      db,
-      dbName: 'chunk-store-conflicting',
-      serializer: serialize,
-      deserializer: deserialize,
-    })).toThrow('chunk-store-database-name-mismatch');
+    expect(
+      () =>
+        new DexieChunkStore<string>({
+          db,
+          dbName: 'chunk-store-conflicting',
+          serializer: serialize,
+          deserializer: deserialize,
+        })
+    ).toThrow('chunk-store-database-name-mismatch');
     db.close();
   });
 
@@ -133,10 +144,9 @@ describe('DexieChunkStore', () => {
     const metadataId = beforeMeta[0]?.metadataId;
     expect(metadataId).toBeTypeOf('string');
 
-    await (store as { deleteForNodeByMetadataId: (nodeId: NodeId, metadataId: string) => Promise<void> }).deleteForNodeByMetadataId(
-      'node-a' as NodeId,
-      metadataId ?? '',
-    );
+    await (
+      store as { deleteForNodeByMetadataId: (nodeId: NodeId, metadataId: string) => Promise<void> }
+    ).deleteForNodeByMetadataId('node-a' as NodeId, metadataId ?? '');
 
     const afterNodeAMetadata = await store.listMetadataForNode('node-a' as NodeId);
     const afterNodeBMetadata = await store.listMetadataForNode('node-b' as NodeId);
@@ -158,26 +168,26 @@ describe('DexieChunkStore', () => {
     await store.setForNode('node-a' as NodeId, soloCacheKey, 'solo');
 
     const metaForA = await store.listMetadataForNode('node-a' as NodeId);
-    const sharedMetadataId = metaForA.find((entry) => entry.cacheKey === sharedCacheKey)?.metadataId;
+    const sharedMetadataId = metaForA.find(
+      (entry) => entry.cacheKey === sharedCacheKey
+    )?.metadataId;
     const soloMetadataId = metaForA.find((entry) => entry.cacheKey === soloCacheKey)?.metadataId;
     expect(sharedMetadataId).toBeTypeOf('string');
     expect(soloMetadataId).toBeTypeOf('string');
 
-    await (store as { deleteForNodeByMetadataId: (nodeId: NodeId, metadataId: string) => Promise<void> }).deleteForNodeByMetadataId(
-      'node-a' as NodeId,
-      sharedMetadataId ?? '',
-    );
-    await (store as { deleteForNodeByMetadataId: (nodeId: NodeId, metadataId: string) => Promise<void> }).deleteForNodeByMetadataId(
-      'node-a' as NodeId,
-      soloMetadataId ?? '',
-    );
+    await (
+      store as { deleteForNodeByMetadataId: (nodeId: NodeId, metadataId: string) => Promise<void> }
+    ).deleteForNodeByMetadataId('node-a' as NodeId, sharedMetadataId ?? '');
+    await (
+      store as { deleteForNodeByMetadataId: (nodeId: NodeId, metadataId: string) => Promise<void> }
+    ).deleteForNodeByMetadataId('node-a' as NodeId, soloMetadataId ?? '');
 
     const nodeAMetadata = await store.listMetadataForNode('node-a' as NodeId);
     const nodeBMetadata = await store.listMetadataForNode('node-b' as NodeId);
     expect(nodeAMetadata).toHaveLength(0);
     expect(nodeBMetadata).toHaveLength(1);
     expect(await store.get(sharedCacheKey)).toBeTruthy();
-    expect((await store.get(soloCacheKey))).toBeUndefined();
+    expect(await store.get(soloCacheKey)).toBeUndefined();
     expect(nodeBMetadata[0]?.cacheKey).toBe(sharedCacheKey);
   });
 });

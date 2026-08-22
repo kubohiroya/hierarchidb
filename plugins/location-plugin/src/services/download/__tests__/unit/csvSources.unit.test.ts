@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { Timestamp } from '@hierarchidb/core-types';
+import { describe, expect, it } from 'vitest';
 import {
   parseOpenFlightsCsv,
   parseOurAirportsCsv,

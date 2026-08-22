@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { LocationFeatureId } from '@hierarchidb/location-api';
-import type { RouteMode, RouteLineString } from '@hierarchidb/route-api';
+import type { RouteLineString, RouteMode } from '@hierarchidb/route-api';
 import {
   clearRouteDatabases,
   closeRouteDB,
@@ -61,7 +61,9 @@ const createRouteLineString = (overrides: RouteLineStringFixture = {}): RouteLin
   const routeStartPoint = {
     latitude: startLocation.latitude ?? 0,
     longitude: startLocation.longitude ?? 0,
-    ...(startLocation.locationId !== undefined && { locationId: asNodeId(startLocation.locationId) }),
+    ...(startLocation.locationId !== undefined && {
+      locationId: asNodeId(startLocation.locationId),
+    }),
     ...(startLocation.locationFeatureId !== undefined && {
       locationFeatureId: asLocationFeatureId(startLocation.locationFeatureId),
     }),
@@ -208,23 +210,25 @@ describe('route location reference indexing and legacy fallback', () => {
 
     const findRouteIdsReferencingLocationFeatures = Reflect.get(
       service as object,
-      'findRouteIdsReferencingLocationFeatures',
+      'findRouteIdsReferencingLocationFeatures'
     );
     if (typeof findRouteIdsReferencingLocationFeatures !== 'function') {
       throw new Error('findRouteIdsReferencingLocationFeatures is unavailable');
     }
 
-    const matched = await (findRouteIdsReferencingLocationFeatures as (
-      routeDb: ReturnType<typeof getRouteDB>,
-      locationNodeId: NodeId,
-      locationFeatureIds: string[],
-    ) => Promise<NodeId[]>)(
-      db,
-      locationNodeId,
-      ['feature-1', 'feature-2', 'feature-3'],
-    );
+    const matched = await (
+      findRouteIdsReferencingLocationFeatures as (
+        routeDb: ReturnType<typeof getRouteDB>,
+        locationNodeId: NodeId,
+        locationFeatureIds: string[]
+      ) => Promise<NodeId[]>
+    )(db, locationNodeId, ['feature-1', 'feature-2', 'feature-3']);
     expect(new Set(matched)).toEqual(
-      new Set([asNodeId('modern-matched'), asNodeId('legacy-matched'), asNodeId('legacy-end-matched')]),
+      new Set([
+        asNodeId('modern-matched'),
+        asNodeId('legacy-matched'),
+        asNodeId('legacy-end-matched'),
+      ])
     );
   });
 });

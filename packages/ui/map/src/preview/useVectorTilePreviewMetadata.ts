@@ -1,13 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
+import { useEffect, useRef, useState } from 'react';
 
 export type VectorTileMetadataLoader<Row> = (nodeId: NodeId) => Promise<Row[]>;
 
-export const useVectorTilePreviewMetadata = <Row,>(
+export const useVectorTilePreviewMetadata = <Row>(
   metadataEnabled: boolean,
   nodeId: NodeId | null,
   loadRows: VectorTileMetadataLoader<Row>,
-  pollIntervalMs?: number,
+  pollIntervalMs?: number
 ) => {
   const [metadataRows, setMetadataRows] = useState<Row[]>([]);
   const [metadataLoading, setMetadataLoading] = useState(false);
@@ -37,7 +37,8 @@ export const useVectorTilePreviewMetadata = <Row,>(
     const runLoad = () => {
       setMetadataLoading((prev) => (prev ? prev : true));
       setMetadataError((prev) => (prev ? null : prev));
-      void loadRowsRef.current(nodeId)
+      void loadRowsRef
+        .current(nodeId)
         .then((rows) => {
           if (!cancelled) {
             setMetadataRows(rows);

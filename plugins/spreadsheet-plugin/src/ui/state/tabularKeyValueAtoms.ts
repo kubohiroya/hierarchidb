@@ -1,5 +1,5 @@
-import { atom, type Getter } from 'jotai';
 import type { TabularFilterOperator, TabularFilterRule } from '@hierarchidb/ui-tabular';
+import { atom, type Getter } from 'jotai';
 import { calculateStatistics, type TabularRow } from './tabularStatisticsUtils.ts';
 
 export const tabularRowsAtom = atom<TabularRow[]>([]);
@@ -101,10 +101,12 @@ const matchesRule = (row: TabularRow, rule: TabularFilterRule): boolean => {
 
 export const filteredRowsAtom = atom((get: Getter) => {
   const rows = get(tabularRowsAtom);
-  const rules = get(filterRulesAtom).filter((r: TabularFilterRule) => r.enabled !== false && r.column);
+  const rules = get(filterRulesAtom).filter(
+    (r: TabularFilterRule) => r.enabled !== false && r.column
+  );
   if (!rules.length) return rows;
   return rows.filter((row: TabularRow) =>
-    rules.every((rule: TabularFilterRule) => matchesRule(row, rule)),
+    rules.every((rule: TabularFilterRule) => matchesRule(row, rule))
   );
 });
 
@@ -117,7 +119,9 @@ export const numericValuesAtom = atom((get: Getter) => {
   const rows = get(filteredRowsAtom);
   return rows
     .map((row: TabularRow) => row[valueColumn])
-    .map((val: unknown) => (typeof val === 'number' ? val : typeof val === 'string' ? Number(val) : NaN))
+    .map((val: unknown) =>
+      typeof val === 'number' ? val : typeof val === 'string' ? Number(val) : NaN
+    )
     .filter((v: number) => Number.isFinite(v));
 });
 
@@ -140,7 +144,8 @@ export const histogramStatsAtom = atom((get: Getter) => {
 export const histogramBinsAtom = atom((get: Getter) => {
   const values = get(numericValuesAtom);
   const bins = Math.max(1, Math.min(256, get(binCountAtom)));
-  if (!values.length) return { binCount: bins, counts: Array(bins).fill(0), mode: 0, min: 0, max: 0 };
+  if (!values.length)
+    return { binCount: bins, counts: Array(bins).fill(0), mode: 0, min: 0, max: 0 };
   const min = Math.min(...values);
   const max = Math.max(...values);
   if (min === max) {

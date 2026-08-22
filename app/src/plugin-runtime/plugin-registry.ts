@@ -5,8 +5,8 @@ import type {
   PluginManifest,
   PluginRegistryEntry,
 } from '@hierarchidb/plugin-registry/types';
-import appPackageJson from '../../package.json' with { type: 'json' };
 import { pluginRegistry } from '~/plugin-loaders/index';
+import appPackageJson from '../../package.json' with { type: 'json' };
 
 interface PackageJsonShape {
   dependencies?: Record<string, unknown>;

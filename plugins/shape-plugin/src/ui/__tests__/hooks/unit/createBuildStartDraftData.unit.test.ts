@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import type { ShapeBuildUrlRule, ShapeEntity } from '../../../../common/types';
 import { createBuildStartDraftData } from '../../../components/build-progress/createBuildStartDraftData';
-import type { ShapeBuildUrlRule } from '../../../../common/types';
-import type { ShapeEntity } from '../../../../common/types';
 
 describe('createBuildStartDraftData', () => {
   it('persists live selection when current draft does not have selection', () => {

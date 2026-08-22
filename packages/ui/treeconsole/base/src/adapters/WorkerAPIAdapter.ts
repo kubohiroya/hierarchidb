@@ -1,11 +1,16 @@
-import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { OnNameConflict, TreeNodeEvent, ViewProperties } from '@hierarchidb/tree-api';
-import { TreeMutationCommandsAdapter } from './commands/TreeMutationCommands.js';
-import { DraftCommandsAdapter, type DraftEditSession } from './commands/DraftCommands.js';
-import { SubscriptionManager } from './subscriptions/SubscriptionManager.js';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import { createAdapterGroupId } from './commandEnvelopeFactories.js';
-import type { AdapterContext, CommandAdapterOptions, UnsubscribeFunction, WorkerAPIAdapterConfig } from './types.js';
+import { DraftCommandsAdapter, type DraftEditSession } from './commands/DraftCommands.js';
+import { TreeMutationCommandsAdapter } from './commands/TreeMutationCommands.js';
+import { SubscriptionManager } from './subscriptions/SubscriptionManager.js';
+import type {
+  AdapterContext,
+  CommandAdapterOptions,
+  UnsubscribeFunction,
+  WorkerAPIAdapterConfig,
+} from './types.js';
 
 type TreeNodeEventCallback = (event: TreeNodeEvent) => void;
 
@@ -46,7 +51,7 @@ export class WorkerAPIAdapter<T> {
   async subscribeToSubtree(
     nodeId: NodeId,
     callback: TreeNodeEventCallback,
-    contextOverrides?: Partial<AdapterContext>,
+    contextOverrides?: Partial<AdapterContext>
   ): Promise<UnsubscribeFunction> {
     const context = this.createDefaultContext(contextOverrides);
     return this.subscriptionManager
@@ -57,7 +62,7 @@ export class WorkerAPIAdapter<T> {
   async subscribeToNode(
     nodeId: NodeId,
     callback: TreeNodeEventCallback,
-    contextOverrides?: Partial<AdapterContext>,
+    contextOverrides?: Partial<AdapterContext>
   ): Promise<UnsubscribeFunction> {
     const context = this.createDefaultContext(contextOverrides);
     return this.subscriptionManager
@@ -68,7 +73,7 @@ export class WorkerAPIAdapter<T> {
   async subscribeToChildren(
     parentId: NodeId,
     callback: TreeNodeEventCallback,
-    contextOverrides?: Partial<AdapterContext>,
+    contextOverrides?: Partial<AdapterContext>
   ): Promise<UnsubscribeFunction> {
     const context = this.createDefaultContext(contextOverrides);
     return this.subscriptionManager
@@ -79,7 +84,7 @@ export class WorkerAPIAdapter<T> {
   async moveNodes(
     nodeIds: NodeId[],
     targetParentId: NodeId,
-    contextOverrides?: Partial<AdapterContext>,
+    contextOverrides?: Partial<AdapterContext>
   ): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.mutationAdapter.moveNodes(nodeIds, targetParentId, options);
@@ -93,7 +98,7 @@ export class WorkerAPIAdapter<T> {
   async duplicateNodes(
     nodeIds: NodeId[],
     targetParentId: NodeId,
-    contextOverrides?: Partial<AdapterContext>,
+    contextOverrides?: Partial<AdapterContext>
   ): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.mutationAdapter.duplicateNodes(nodeIds, targetParentId, options);
@@ -101,7 +106,7 @@ export class WorkerAPIAdapter<T> {
 
   async pasteNodes(
     targetParentId: NodeId,
-    contextOverrides?: Partial<AdapterContext>,
+    contextOverrides?: Partial<AdapterContext>
   ): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.mutationAdapter.pasteNodes(targetParentId, options);
@@ -115,7 +120,7 @@ export class WorkerAPIAdapter<T> {
   async restoreFromArchive(
     nodeIds: NodeId[],
     targetParentId?: NodeId,
-    contextOverrides?: Partial<AdapterContext>,
+    contextOverrides?: Partial<AdapterContext>
   ): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.mutationAdapter.restoreFromArchive(nodeIds, targetParentId, options);
@@ -127,7 +132,7 @@ export class WorkerAPIAdapter<T> {
 
   async startNodeEdit(
     sourceNodeId: NodeId,
-    contextOverrides?: Partial<AdapterContext>,
+    contextOverrides?: Partial<AdapterContext>
   ): Promise<DraftEditSession> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.draftAdapter.startNodeEdit(sourceNodeId, options);
@@ -138,7 +143,7 @@ export class WorkerAPIAdapter<T> {
     name: string,
     description?: string,
     nodeType: string = 'folder',
-    contextOverrides?: Partial<AdapterContext>,
+    contextOverrides?: Partial<AdapterContext>
   ): Promise<DraftEditSession> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.draftAdapter.startNodeCreate(parentId, name, description, nodeType, options);
@@ -146,7 +151,7 @@ export class WorkerAPIAdapter<T> {
 
   async commitNodeEdit(
     editSession: DraftEditSession,
-    contextOverrides?: Partial<AdapterContext>,
+    contextOverrides?: Partial<AdapterContext>
   ): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.draftAdapter.commitNodeEdit(editSession, options);
@@ -154,7 +159,7 @@ export class WorkerAPIAdapter<T> {
 
   async commitNodeCreate(
     editSession: DraftEditSession,
-    contextOverrides?: Partial<AdapterContext>,
+    contextOverrides?: Partial<AdapterContext>
   ): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.draftAdapter.commitNodeCreate(editSession, options);
@@ -162,7 +167,7 @@ export class WorkerAPIAdapter<T> {
 
   async discardDraft(
     editSession: DraftEditSession,
-    contextOverrides?: Partial<AdapterContext>,
+    contextOverrides?: Partial<AdapterContext>
   ): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.draftAdapter.discardDraft(editSession, options);

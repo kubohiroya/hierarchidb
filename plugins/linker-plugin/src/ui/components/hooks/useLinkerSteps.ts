@@ -1,15 +1,19 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
-import type { ResourceSummary } from '~/ui/steps/ResourcePicker';
-import type { LinkerDraft } from '~/common/types/index';
 import type { StepData } from '@hierarchidb/plugin-base';
+import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
+import type { LinkerDraft } from '~/common/types/index';
+import type { ResourceSummary } from '~/ui/steps/ResourcePicker';
 
 type LinkerStepData = StepData & LinkerDraft;
 
 export const useLinkerSteps = () => {
   const ensureDraft = (data?: LinkerStepData): LinkerStepData => ({
     treeNodeId: (data?.treeNodeId ?? '') as NodeId,
-    draftMetadata: (data?.draftMetadata ?? { name: '', description: '', tags: [] }) as TreeNodeMetadata,
+    draftMetadata: (data?.draftMetadata ?? {
+      name: '',
+      description: '',
+      tags: [],
+    }) as TreeNodeMetadata,
     draftData: data?.draftData ?? {},
   });
 

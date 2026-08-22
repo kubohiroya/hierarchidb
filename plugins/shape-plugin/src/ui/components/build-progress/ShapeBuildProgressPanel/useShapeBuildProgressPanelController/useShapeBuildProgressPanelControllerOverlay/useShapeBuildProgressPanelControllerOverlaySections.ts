@@ -1,15 +1,19 @@
-import { type ReactNode } from 'react';
 import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
+import { type ReactNode } from 'react';
 import type { ShapeBuildProgressPanelControllerBaseResult } from '~/ui/components/build-progress/ShapeBuildProgressPanel/useShapeBuildProgressPanelController/base/useShapeBuildProgressPanelControllerBase';
+import {
+  resolveStageAliasArray,
+  resolveStageAliasValue,
+} from '~/ui/components/build-progress/stageIdAliases';
 import {
   ShapeBuildProgressPanelOverlaySectionContent,
   ShapeBuildProgressPanelOverlaySectionProgressContent,
 } from './ShapeBuildProgressPanelControllerOverlaySectionsView.js';
-import { resolveStageAliasArray, resolveStageAliasValue } from '~/ui/components/build-progress/stageIdAliases';
 
 type StageRecord = Record<string, ReactNode>;
 
-export type UseShapeBuildProgressPanelControllerOverlaySectionsArgs = ShapeBuildProgressPanelControllerBaseResult;
+export type UseShapeBuildProgressPanelControllerOverlaySectionsArgs =
+  ShapeBuildProgressPanelControllerBaseResult;
 
 type UseShapeBuildProgressPanelControllerOverlaySectionsResult = {
   stageProgressContent: StageRecord;

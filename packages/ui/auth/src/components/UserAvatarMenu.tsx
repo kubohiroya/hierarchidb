@@ -138,7 +138,11 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
         </MenuItem>
       </Menu>
 
-      <Menu anchorEl={languageAnchorEl} open={Boolean(languageAnchorEl)} onClose={closeLanguageMenu}>
+      <Menu
+        anchorEl={languageAnchorEl}
+        open={Boolean(languageAnchorEl)}
+        onClose={closeLanguageMenu}
+      >
         <MenuItem selected={language === 'system'} onClick={() => selectLanguage('system')}>
           System
         </MenuItem>

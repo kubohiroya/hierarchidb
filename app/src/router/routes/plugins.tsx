@@ -2,11 +2,10 @@
 // import type { Remote } from 'comlink';
 // import type { WorkerAPI } from '@hierarchidb/_obsolate_common-api';
 import { useIconRegistry } from '@hierarchidb/components';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 // UIPluginRegistry is legacy; this page now reads vite-generated metadata
 // import { getUIPluginRegistry } from '@hierarchidb/ui-plugin-shell/ui-core';
 import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-plugin-shell/ui-dialog';
-import { loadAppConfig } from '~/loadAppConfig';
-import { formatAppTitle, useAppDocumentTitle } from '~/router/title/pageTitle';
 import {
   AccountTree as AccountTreeIcon,
   CheckCircle as CheckCircleIcon,
@@ -56,9 +55,10 @@ import {
 import { useNavigate } from '@tanstack/react-router';
 import type React from 'react';
 import { useId, useState } from 'react';
-import { useTranslation } from '@hierarchidb/ui-i18n';
-import { usePluginsPageState } from './usePluginsPageState.js';
+import { loadAppConfig } from '~/loadAppConfig';
+import { formatAppTitle, useAppDocumentTitle } from '~/router/title/pageTitle';
 import type { DisplayPlugin } from './pluginsTypes.js';
+import { usePluginsPageState } from './usePluginsPageState.js';
 
 // Meta function for React Router v7
 export function meta() {
@@ -538,7 +538,7 @@ export default function PluginsPage() {
     closeResetDialog,
   } = usePluginsPageState();
 
-// UI plugin-loaders list now comes from vite metadata (uiPluginsList)
+  // UI plugin-loaders list now comes from vite metadata (uiPluginsList)
 
   if (loading) {
     return (

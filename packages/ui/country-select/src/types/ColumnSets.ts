@@ -16,7 +16,12 @@ import {
   Train,
 } from '@mui/icons-material';
 
-import type { AdminLevelColumn, ColumnSet, RouteTypeColumn, TransportHubColumn } from './MatrixColumn.js';
+import type {
+  AdminLevelColumn,
+  ColumnSet,
+  RouteTypeColumn,
+  TransportHubColumn,
+} from './MatrixColumn.js';
 
 /** Administrative levels column set (for shapes/boundaries) */
 export const ADMIN_LEVELS_COLUMN_SET: ColumnSet = {
@@ -241,8 +246,8 @@ export const COLUMN_SETS: Record<string, ColumnSet> = {
   'admin-levels': ADMIN_LEVELS_COLUMN_SET,
   'transport-hubs': TRANSPORT_HUBS_COLUMN_SET,
   'route-types': ROUTE_TYPES_COLUMN_SET,
-  'airports': AIRPORTS_COLUMN_SET,
-  'ports': PORTS_COLUMN_SET,
+  airports: AIRPORTS_COLUMN_SET,
+  ports: PORTS_COLUMN_SET,
 };
 
 /** Get column set by type */

@@ -1,9 +1,9 @@
-export { ToneCurveEditor } from './ToneCurveEditor.js';
 export type {
-  ToneCurveAxisMark,
   ToneCurveAnchor,
+  ToneCurveAxisMark,
   ToneCurveAxisRange,
+  ToneCurveEditorProps,
   ToneCurveLineStyle,
   ToneCurveOverlaySeries,
-  ToneCurveEditorProps,
 } from './ToneCurveEditor.js';
+export { ToneCurveEditor } from './ToneCurveEditor.js';

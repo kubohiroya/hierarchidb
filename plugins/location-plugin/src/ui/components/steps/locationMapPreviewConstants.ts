@@ -1,5 +1,12 @@
-import { Anchor, FlightTakeoff, ForkRight, LocationCity, Public, Subway } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
+import {
+  Anchor,
+  FlightTakeoff,
+  ForkRight,
+  LocationCity,
+  Public,
+  Subway,
+} from '@mui/icons-material';
 import type { LocationIconId, LocationType } from '~/common/types/index';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
 
@@ -27,7 +34,8 @@ export const MAX_HOVER_RESULTS = 10;
 export const CIRCLE_RADIUS_MIN = 2;
 export const CIRCLE_RADIUS_MAX_ZOOM = 11;
 export const CIRCLE_RADIUS_SLOPE = 0.6;
-export const CIRCLE_RADIUS_AT_MAX = CIRCLE_RADIUS_MIN + CIRCLE_RADIUS_MAX_ZOOM * CIRCLE_RADIUS_SLOPE;
+export const CIRCLE_RADIUS_AT_MAX =
+  CIRCLE_RADIUS_MIN + CIRCLE_RADIUS_MAX_ZOOM * CIRCLE_RADIUS_SLOPE;
 
 export const MAX_TILE_ID_ZOOM = 9;
 export const MIN_ZOOM_LEVEL = 0;

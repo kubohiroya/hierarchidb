@@ -1,8 +1,8 @@
-import type { DiscardDraftOptions } from '@hierarchidb/tree-api';
 import type { NodeId } from '@hierarchidb/core-types';
+import type { DiscardDraftOptions } from '@hierarchidb/tree-api';
 import { generateUUID } from '@hierarchidb/util';
-import type { CoreDB } from '~/services/CoreDB';
 import type { CommandEnvelope } from '~/command-types';
+import type { CoreDB } from '~/services/CoreDB';
 
 /**
  * Discard a draft by clearing draftMetadata/draftData/dialogUIState on the node.

@@ -1,15 +1,15 @@
 export type {
+  DataTransformation,
+  DuplicateResolutionStrategy,
+  MappingPreviewResult,
+  MappingValidationResult,
+  PropertyInfo,
+  PropertyMappingRule,
   ResolverEntity,
   ResolverUpdaterPayload,
-  PropertyMappingRule,
-  ValidationRule,
-  DuplicateResolutionStrategy,
-  DataTransformation,
   SchemaInfo,
-  PropertyInfo,
-  MappingValidationResult,
-  MappingPreviewResult,
   StylerIntegration,
+  ValidationRule,
 } from './common/types/index.js';
 
 export async function loadResolverPanelModule() {
@@ -18,7 +18,9 @@ export async function loadResolverPanelModule() {
 
 export async function getDialogComponent() {
   if (typeof console !== 'undefined' && typeof console.warn === 'function') {
-    console.warn('[resolver-plugin] getDialogComponent() is deprecated. Dialogs are provided by PluginDialogHost.');
+    console.warn(
+      '[resolver-plugin] getDialogComponent() is deprecated. Dialogs are provided by PluginDialogHost.'
+    );
   }
   return () => null;
 }

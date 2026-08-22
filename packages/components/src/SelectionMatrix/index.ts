@@ -1,6 +1,6 @@
-export { SelectionMatrix } from './SelectionMatrix.js';
 export type {
-  SelectionMatrixProps,
   SelectionMatrixColumn,
+  SelectionMatrixProps,
   SelectionMatrixRow,
 } from './SelectionMatrix.js';
+export { SelectionMatrix } from './SelectionMatrix.js';

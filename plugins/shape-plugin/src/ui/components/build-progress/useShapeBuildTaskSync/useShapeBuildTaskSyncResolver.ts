@@ -1,4 +1,10 @@
+import { isTaskSkipped, resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
+import { isTileEmitLikeStageId } from '~/ui/components/build-progress/stageIdAliases';
+import {
+  isCompletedAtFullProgress,
+  resolveTaskSummaryFromRaw,
+} from './useShapeBuildTaskSync.comparisonUtils.js';
 import {
   buildTileEmitParentInputSummaryMessage,
   mergeTaskMessage,
@@ -6,14 +12,7 @@ import {
   resolveTaskDisplayStatus,
   resolveTaskProgress,
 } from './useShapeBuildTaskSync.task-utils.js';
-import type { HandlerRefs } from './useShapeBuildTaskSyncTypes.js';
-import type { RawTaskSummary } from './useShapeBuildTaskSyncTypes.js';
-import {
-  isCompletedAtFullProgress,
-  resolveTaskSummaryFromRaw,
-} from './useShapeBuildTaskSync.comparisonUtils.js';
-import { isTaskSkipped, resolveTaskMetadataMessage } from '~/common/utils/taskMessageUtils';
-import { isTileEmitLikeStageId } from '~/ui/components/build-progress/stageIdAliases';
+import type { HandlerRefs, RawTaskSummary } from './useShapeBuildTaskSyncTypes.js';
 
 const resolveTaskMetadataText = (task: ReturnType<typeof resolveTaskSummaryFromRaw>): string => {
   const metadataMessage = resolveTaskMetadataMessage(task.metadata)?.trim();
@@ -26,16 +25,12 @@ const resolveTaskMetadataText = (task: ReturnType<typeof resolveTaskSummaryFromR
   return '';
 };
 
-const asRecord = (value: unknown): Record<string, unknown> | null => (
-  value && typeof value === 'object' ? value as Record<string, unknown> : null
-);
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
 
 type ResolverDeps = {
   sessionNodeId: string | null;
-  refs: Pick<
-    HandlerRefs,
-    'completedTasksRef' | 'vtParentInputDebugLogKeysRef'
-  >;
+  refs: Pick<HandlerRefs, 'completedTasksRef' | 'vtParentInputDebugLogKeysRef'>;
   resolveProgressValue: (value: unknown) => number;
 };
 
@@ -66,12 +61,17 @@ export const useShapeBuildTaskSyncResolver = ({
       normalizedTask.status,
       progress,
       normalizedTask.display,
-      metadataMessage,
+      metadataMessage
     );
     const resolvedTask: ShapeBuildTaskSummary = {
       ...normalizedTask,
       status: resolvedStatus,
-      progress: resolveTaskProgress(resolvedStatus, normalizedTask.display, metadataMessage, progress),
+      progress: resolveTaskProgress(
+        resolvedStatus,
+        normalizedTask.display,
+        metadataMessage,
+        progress
+      ),
     };
     const retryAttemptCandidates = [
       resolveNumberFromMetadata(resolvedTask.metadata?.retryAttempt),
@@ -83,10 +83,12 @@ export const useShapeBuildTaskSyncResolver = ({
       resolveNumberFromMetadata(resolvedTask.metadata?.retryMax),
       resolveNumberFromMetadata(asRecord(resolvedTask.metadata?.metadata)?.retryMax),
     ].filter((value): value is number => value !== null && value >= 0);
-    const retryMax = retryMaxCandidates.length > 0 ? Math.floor(Math.max(...retryMaxCandidates)) : null;
+    const retryMax =
+      retryMaxCandidates.length > 0 ? Math.floor(Math.max(...retryMaxCandidates)) : null;
     if (retryAttemptCandidates.length > 0) {
       const retryAttempt = Math.floor(Math.max(...retryAttemptCandidates));
-      resolvedTask.retryAttempt = retryMax !== null ? Math.min(retryAttempt, retryMax) : retryAttempt;
+      resolvedTask.retryAttempt =
+        retryMax !== null ? Math.min(retryAttempt, retryMax) : retryAttempt;
     }
 
     const resolvedStageId = resolvedTask.stageId ?? resolvedTask.stage;
@@ -120,8 +122,12 @@ export const useShapeBuildTaskSyncResolver = ({
       return resolvedTask;
     }
     if (resolvedTask.status === 'running' || resolvedTask.status === 'queued') {
-      const isRetryableCompletedTask = completedTask.status === 'failed'
-        || isTaskSkipped(completedTask.display, resolveTaskMetadataMessage(completedTask.metadata) ?? null);
+      const isRetryableCompletedTask =
+        completedTask.status === 'failed' ||
+        isTaskSkipped(
+          completedTask.display,
+          resolveTaskMetadataMessage(completedTask.metadata) ?? null
+        );
       if (isRetryableCompletedTask) {
         return resolvedTask;
       }

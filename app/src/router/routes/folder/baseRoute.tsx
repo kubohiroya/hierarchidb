@@ -10,12 +10,12 @@ import { loadWorkerAPIClient } from '~/router/loaders/treeLoaders';
 import { rootRoute } from '~/router/routes/rootRoute';
 
 export const folderBaseRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: 'f',
-    shouldReload: false,
-    staleTime: Infinity,
-    loader: async () => {
-        return await loadWorkerAPIClient();
-    },
-    component: () => <Outlet />,
+  getParentRoute: () => rootRoute,
+  path: 'f',
+  shouldReload: false,
+  staleTime: Infinity,
+  loader: async () => {
+    return await loadWorkerAPIClient();
+  },
+  component: () => <Outlet />,
 });

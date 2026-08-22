@@ -1,10 +1,10 @@
+import type { RouteBuildConfig } from '@hierarchidb/route-api';
+import type { RouteUpdaterPayload } from '@hierarchidb/route-store';
+import { useTranslation } from '@hierarchidb/ui-i18n';
+import { Box, Grid, Slider, TextField, Typography } from '@mui/material';
 import type React from 'react';
 import { useEffect, useId } from 'react';
-import { Box, Grid, Slider, TextField, Typography } from '@mui/material';
-import type { RouteUpdaterPayload } from '@hierarchidb/route-store';
-import type { RouteBuildConfig } from '@hierarchidb/route-api';
 import { DEFAULT_ROUTE_BUILD_CONFIG, mergeRouteBuildConfig } from '~/common/config/buildConfig';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 
 interface RouteTileSettingsStepProps {
   draft: RouteUpdaterPayload;
@@ -25,15 +25,27 @@ const clamp = (value: number, min: number, max: number): number => {
   return Math.min(max, Math.max(min, value));
 };
 
-export const RouteTileSettingsStep: React.FC<RouteTileSettingsStepProps> = ({ draft, onUpdate, disabled }) => {
+export const RouteTileSettingsStep: React.FC<RouteTileSettingsStepProps> = ({
+  draft,
+  onUpdate,
+  disabled,
+}) => {
   const fieldId = useId();
   const { t } = useTranslation('route-plugin');
   const rawConfig = draft.draftData?.buildConfig as Partial<RouteBuildConfig> | undefined;
   const buildConfig = mergeRouteBuildConfig(DEFAULT_ROUTE_BUILD_CONFIG, rawConfig);
   const zoomBandBoundaries = buildConfig.geometryConfig.zoomBandBoundaries;
   const minZoom = clamp(zoomBandBoundaries[0] ?? DEFAULT_MIN_ZOOM, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
-  const maxZoom = clamp(zoomBandBoundaries[zoomBandBoundaries.length - 1] ?? DEFAULT_MAX_ZOOM, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
-  const buffer = clamp(buildConfig.tileEmitConfig.bufferSize ?? DEFAULT_BUFFER, MIN_BUFFER, MAX_BUFFER);
+  const maxZoom = clamp(
+    zoomBandBoundaries[zoomBandBoundaries.length - 1] ?? DEFAULT_MAX_ZOOM,
+    MIN_ZOOM_LEVEL,
+    MAX_ZOOM_LEVEL
+  );
+  const buffer = clamp(
+    buildConfig.tileEmitConfig.bufferSize ?? DEFAULT_BUFFER,
+    MIN_BUFFER,
+    MAX_BUFFER
+  );
 
   useEffect(() => {
     const nextConfig = mergeRouteBuildConfig(buildConfig, {
@@ -54,7 +66,7 @@ export const RouteTileSettingsStep: React.FC<RouteTileSettingsStepProps> = ({ dr
   }, []);
 
   const handleBufferChange = (_: Event, value: number | number[]) => {
-    const raw = Array.isArray(value) ? value[0] ?? buffer : value ?? buffer;
+    const raw = Array.isArray(value) ? (value[0] ?? buffer) : (value ?? buffer);
     const nextBuffer = clamp(Number(raw), MIN_BUFFER, MAX_BUFFER);
     const nextConfig = mergeRouteBuildConfig(buildConfig, {
       tileEmitConfig: {
@@ -65,7 +77,9 @@ export const RouteTileSettingsStep: React.FC<RouteTileSettingsStepProps> = ({ dr
     onUpdate({ buildConfig: nextConfig });
   };
 
-  const handleMinZoomChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleMinZoomChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const raw = Number(event.target.value);
     const nextMin = clamp(raw, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
     const adjustedMax = Math.max(nextMin, maxZoom);
@@ -78,7 +92,9 @@ export const RouteTileSettingsStep: React.FC<RouteTileSettingsStepProps> = ({ dr
     onUpdate({ buildConfig: nextConfig, zoomRange: [nextMin, adjustedMax] });
   };
 
-  const handleMaxZoomChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleMaxZoomChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const raw = Number(event.target.value);
     const nextMax = clamp(raw, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
     const adjustedMin = Math.min(nextMax, minZoom);
@@ -113,9 +129,7 @@ export const RouteTileSettingsStep: React.FC<RouteTileSettingsStepProps> = ({ dr
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
-          <Typography gutterBottom>
-            {t('tileSettings.zoomLabel', 'Tile zoom range')}
-          </Typography>
+          <Typography gutterBottom>{t('tileSettings.zoomLabel', 'Tile zoom range')}</Typography>
           <Grid container spacing={2} columns={{ xs: 12 }}>
             <Grid size={{ xs: 6 }}>
               <TextField
@@ -124,7 +138,12 @@ export const RouteTileSettingsStep: React.FC<RouteTileSettingsStepProps> = ({ dr
                 id={`${fieldId}-min-zoom`}
                 name="min-zoom"
                 value={minZoom}
-                inputProps={{ min: MIN_ZOOM_LEVEL, max: MAX_ZOOM_LEVEL, id: `${fieldId}-min-zoom`, name: 'min-zoom' }}
+                inputProps={{
+                  min: MIN_ZOOM_LEVEL,
+                  max: MAX_ZOOM_LEVEL,
+                  id: `${fieldId}-min-zoom`,
+                  name: 'min-zoom',
+                }}
                 onChange={handleMinZoomChange}
                 disabled={disabled}
               />
@@ -136,7 +155,12 @@ export const RouteTileSettingsStep: React.FC<RouteTileSettingsStepProps> = ({ dr
                 id={`${fieldId}-max-zoom`}
                 name="max-zoom"
                 value={maxZoom}
-                inputProps={{ min: MIN_ZOOM_LEVEL, max: MAX_ZOOM_LEVEL, id: `${fieldId}-max-zoom`, name: 'max-zoom' }}
+                inputProps={{
+                  min: MIN_ZOOM_LEVEL,
+                  max: MAX_ZOOM_LEVEL,
+                  id: `${fieldId}-max-zoom`,
+                  name: 'max-zoom',
+                }}
                 onChange={handleMaxZoomChange}
                 disabled={disabled}
               />

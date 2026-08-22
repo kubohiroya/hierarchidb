@@ -1,9 +1,8 @@
 import { PLUGIN_MANIFEST } from './plugin-manifest.js';
 
 export { PLUGIN_MANIFEST as TimelinePluginManifest } from './plugin-manifest.js';
-
-export { TimelineFramesService, timelineServices } from './services/index.js';
 export type { TimelineFrame } from './services/index.js';
+export { TimelineFramesService, timelineServices } from './services/index.js';
 
 export const version = PLUGIN_MANIFEST.version;
 const Index = {};

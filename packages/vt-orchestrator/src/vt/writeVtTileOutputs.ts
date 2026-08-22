@@ -1,11 +1,10 @@
 import { resolveTileLayersForOutput } from './resolveTileLayersForOutput.js';
 import { visitTilesForOutput } from './visitTilesForOutput.js';
-import type { VtTileOutputCounts } from './vtStageTaskOutputTypes.js';
-import type { VtTileOutputWriterInput } from './vtStageTaskOutputTypes.js';
+import type { VtTileOutputCounts, VtTileOutputWriterInput } from './vtStageTaskOutputTypes.js';
 import { writeVtTileForOutput } from './writeVtTileForOutput.js';
 
 export const writeVtTileOutputs = async (
-  input: VtTileOutputWriterInput,
+  input: VtTileOutputWriterInput
 ): Promise<VtTileOutputCounts> => {
   return visitTilesForOutput({
     parent: input.parent,

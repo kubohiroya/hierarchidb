@@ -16,9 +16,10 @@ export const normalizeAppBasePath = (value: string | undefined): string => {
   return value.replace(/^\/+|\/+$/g, '');
 };
 
-const resolveAppName = (): string => normalizeAppBasePath(
-  process.env.VITE_APP_NAME ?? process.env.PLAYWRIGHT_APP_NAME ?? DEFAULT_E2E_APP_NAME,
-);
+const resolveAppName = (): string =>
+  normalizeAppBasePath(
+    process.env.VITE_APP_NAME ?? process.env.PLAYWRIGHT_APP_NAME ?? DEFAULT_E2E_APP_NAME
+  );
 
 const resolveDefaultBaseURL = (appName: string): string => {
   const port = process.env.PLAYWRIGHT_PREVIEW_PORT ?? DEFAULT_E2E_PORT;

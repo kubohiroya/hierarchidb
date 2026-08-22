@@ -37,8 +37,8 @@ export const ResolverBuildStep: React.FC<ResolverBuildStepProps> = ({ draft }) =
       )}
 
       <Alert severity="success">
-        The <strong>Build</strong> button below will start validation tests and compile your resolver
-        configuration.
+        The <strong>Build</strong> button below will start validation tests and compile your
+        resolver configuration.
       </Alert>
     </Box>
   );

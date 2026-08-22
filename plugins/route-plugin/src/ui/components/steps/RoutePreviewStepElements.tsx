@@ -1,11 +1,5 @@
+import { Alert, Box, Checkbox, Paper, Typography } from '@mui/material';
 import type { ReactElement } from 'react';
-import {
-  Alert,
-  Box,
-  Checkbox,
-  Paper,
-  Typography,
-} from '@mui/material';
 
 export type RoutePreviewHoverMatch = {
   id: string;
@@ -89,7 +83,7 @@ export const RoutePreviewHoverSnackbar = ({
                   cx={match.miniMapLabelX}
                   cy={match.miniMapLabelY}
                   r={9}
-                  fill={match.isSelected ? selectedPathColor : (isDarkMode ? '#121212' : '#ffffff')}
+                  fill={match.isSelected ? selectedPathColor : isDarkMode ? '#121212' : '#ffffff'}
                   fillOpacity={match.isSelected ? 0.2 : 0.75}
                   stroke={match.isSelected ? selectedPathColor : match.modeColor}
                   strokeWidth={match.isSelected ? 2 : 1}
@@ -102,7 +96,7 @@ export const RoutePreviewHoverSnackbar = ({
                   fontSize="10"
                   fontWeight="700"
                   fill={match.modeColor}
-                  stroke={match.isSelected ? rootBg : (isDarkMode ? '#121212' : '#ffffff')}
+                  stroke={match.isSelected ? rootBg : isDarkMode ? '#121212' : '#ffffff'}
                   strokeWidth={3}
                   paintOrder="stroke"
                   opacity={match.isSelected ? 1 : 0.9}
@@ -126,105 +120,102 @@ export const RoutePreviewHoverSnackbar = ({
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, minWidth: 240 }}>
           {popupHint ? (
-            <Typography
-              variant="caption"
-              sx={{ color: subTextColor, mb: 0.25 }}
-            >
+            <Typography variant="caption" sx={{ color: subTextColor, mb: 0.25 }}>
               {popupHint}
             </Typography>
           ) : null}
-            {matches.map((match) => (
+          {matches.map((match) => (
+            <Box
+              key={`label-${match.id}`}
+              onClick={() => onToggleMatchSelection(match.id)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+                  event.preventDefault();
+                  onToggleMatchSelection(match.id);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label={`Select route ${match.index}`}
+              sx={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 1,
+                cursor: 'pointer',
+              }}
+            >
               <Box
-                key={`label-${match.id}`}
-                onClick={() => onToggleMatchSelection(match.id)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
-                    event.preventDefault();
-                    onToggleMatchSelection(match.id);
-                  }
-                }}
-                role="button"
-                tabIndex={0}
-                aria-label={`Select route ${match.index}`}
                 sx={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 1,
-                  cursor: 'pointer',
+                  width: 24,
+                  minWidth: 24,
+                  mt: 0.25,
+                  borderRadius: '50%',
+                  border: `1px solid ${match.isSelected ? selectedPathColor : radarStroke}`,
+                  color: match.isSelected ? selectedPathColor : textColor,
+                  backgroundColor: match.isSelected ? `${selectedPathColor}22` : 'transparent',
+                  lineHeight: '16px',
+                  fontSize: '12px',
+                  height: 18,
+                  textAlign: 'center',
+                  fontFamily: 'inherit',
+                  padding: 0,
+                  flexShrink: 0,
+                  appearance: 'none',
+                  borderColor: match.isSelected ? selectedPathColor : radarStroke,
+                  '&:focus-visible': {
+                    outline: `2px solid ${selectedText}`,
+                    outlineOffset: 1,
+                  },
                 }}
+                aria-hidden="true"
               >
-                <Box
-                  sx={{
-                    width: 24,
-                    minWidth: 24,
-                    mt: 0.25,
-                    borderRadius: '50%',
-                    border: `1px solid ${match.isSelected ? selectedPathColor : radarStroke}`,
-                    color: match.isSelected ? selectedPathColor : textColor,
-                    backgroundColor: match.isSelected ? `${selectedPathColor}22` : 'transparent',
-                    lineHeight: '16px',
-                    fontSize: '12px',
-                    height: 18,
-                    textAlign: 'center',
-                    fontFamily: 'inherit',
-                    padding: 0,
-                    flexShrink: 0,
-                    appearance: 'none',
-                    borderColor: match.isSelected ? selectedPathColor : radarStroke,
-                    '&:focus-visible': {
-                      outline: `2px solid ${selectedText}`,
-                      outlineOffset: 1,
-                    },
-                  }}
-                  aria-hidden="true"
-                >
-                  {match.index}.
-                </Box>
-                <Box sx={{ mt: -0.1 }}>
-                  <Checkbox
-                    size="small"
-                    checked={match.isSelected}
-                    onChange={(event) => {
-                      event.stopPropagation();
-                      onToggleMatchSelection(match.id);
-                    }}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                    }}
-                    inputProps={{ 'aria-label': `Select route ${match.index}` }}
-                    sx={{
-                      p: 0.25,
-                      mr: 0,
-                      color: match.isSelected ? selectedPathColor : radarStroke,
-                    }}
-                  />
-                </Box>
-                <Box>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontWeight: 600,
-                      lineHeight: 1.2,
-                      color: match.isSelected ? selectedText : textColor,
-                    }}
-                  >
-                    {match.summaryLine}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{ color: match.isSelected ? selectedText : subTextColor }}
-                  >
-                    {match.routeName}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{ color: match.isSelected ? selectedText : subTextColor }}
-                  >
-                    {match.distanceLabel}
-                  </Typography>
-                </Box>
+                {match.index}.
               </Box>
-            ))}
+              <Box sx={{ mt: -0.1 }}>
+                <Checkbox
+                  size="small"
+                  checked={match.isSelected}
+                  onChange={(event) => {
+                    event.stopPropagation();
+                    onToggleMatchSelection(match.id);
+                  }}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                  }}
+                  inputProps={{ 'aria-label': `Select route ${match.index}` }}
+                  sx={{
+                    p: 0.25,
+                    mr: 0,
+                    color: match.isSelected ? selectedPathColor : radarStroke,
+                  }}
+                />
+              </Box>
+              <Box>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    lineHeight: 1.2,
+                    color: match.isSelected ? selectedText : textColor,
+                  }}
+                >
+                  {match.summaryLine}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{ color: match.isSelected ? selectedText : subTextColor }}
+                >
+                  {match.routeName}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{ color: match.isSelected ? selectedText : subTextColor }}
+                >
+                  {match.distanceLabel}
+                </Typography>
+              </Box>
+            </Box>
+          ))}
         </Box>
       </Box>
     </Paper>
@@ -235,7 +226,9 @@ export type RoutePreviewEmptyContentProps = {
   message: string;
 };
 
-export const RoutePreviewEmptyContent = ({ message }: RoutePreviewEmptyContentProps): ReactElement => (
+export const RoutePreviewEmptyContent = ({
+  message,
+}: RoutePreviewEmptyContentProps): ReactElement => (
   <Alert severity="info" sx={{ m: 2 }}>
     {message}
   </Alert>

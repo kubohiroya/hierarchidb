@@ -1,8 +1,11 @@
-import { SpreadsheetTabularApiDriver } from '../../../../spreadsheet-plugin/src/services/SpreadsheetTabularApiDriver.js';
-import { SPREADSHEET_PLUGIN_ID, SPREADSHEET_NODE_TYPE } from '../../../../spreadsheet-plugin/src/common/constants.js';
-import type { TabularDataApi } from '@hierarchidb/ui-tabular';
 import type { TabularDatabaseManager } from '@hierarchidb/tabular-store';
+import type { TabularDataApi } from '@hierarchidb/ui-tabular';
 import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
+import {
+  SPREADSHEET_NODE_TYPE,
+  SPREADSHEET_PLUGIN_ID,
+} from '../../../../spreadsheet-plugin/src/common/constants.js';
+import { SpreadsheetTabularApiDriver } from '../../../../spreadsheet-plugin/src/services/SpreadsheetTabularApiDriver.js';
 
 export { SPREADSHEET_PLUGIN_ID, SPREADSHEET_NODE_TYPE };
 
@@ -16,7 +19,9 @@ export interface PluginTabularApiOptions {
   enableCorsProxy?: boolean;
 }
 
-export function createSpreadsheetTabularApi(pluginId: string = SPREADSHEET_PLUGIN_ID): TabularDataApi {
+export function createSpreadsheetTabularApi(
+  pluginId: string = SPREADSHEET_PLUGIN_ID
+): TabularDataApi {
   return new SpreadsheetTabularApiDriver(
     pluginId,
     undefined,
@@ -31,7 +36,7 @@ export function createPluginTabularApi(options: PluginTabularApiOptions): Tabula
     options.metadataManager,
     options.pluginId,
     options.downloadDatabaseName,
-    options.rowStoreDatabaseName,
+    options.rowStoreDatabaseName
   ) as TabularDataApi;
 }
 

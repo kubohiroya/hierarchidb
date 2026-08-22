@@ -1,12 +1,12 @@
-import { NodeAction } from '@hierarchidb/tree-api';
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
+import { NodeAction } from '@hierarchidb/tree-api';
 import { loadTreeConsoleSettings, TREE_CONSOLE_SETTINGS_STORAGE_KEY } from '@hierarchidb/util';
 import { useLocation, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { shiftBuildQueue } from '~/router/pages/tree/console/buildQueueConstants';
 import { useTreeConsoleSSOT } from '~/state/treeconsole.atoms';
-import { treeRouteIds } from './treeRouteIds.ts';
 import type { PluginDialogLoaderData } from './PluginDialogRoute.tsx';
+import { treeRouteIds } from './treeRouteIds.ts';
 
 const resolveDialogDisplayMode = (value?: string): 'normal' | 'maximize' | 'full-screen' => {
   switch (String(value ?? '').toLowerCase()) {
@@ -19,16 +19,13 @@ const resolveDialogDisplayMode = (value?: string): 'normal' | 'maximize' | 'full
   }
 };
 
-const parseDialogModeStepFromPath = (
-  pathLike?: string,
-): { mode?: string; step?: string } => {
-  const normalized = String(pathLike ?? '')
-    .trim()
-    .replace(/^#/, '')
-    .split('?')[0] ?? '';
-  const segments = normalized
-    .split('/')
-    .filter((segment) => segment.length > 0);
+const parseDialogModeStepFromPath = (pathLike?: string): { mode?: string; step?: string } => {
+  const normalized =
+    String(pathLike ?? '')
+      .trim()
+      .replace(/^#/, '')
+      .split('?')[0] ?? '';
+  const segments = normalized.split('/').filter((segment) => segment.length > 0);
   const treeRootIndex = segments.indexOf('t');
   if (treeRootIndex < 0) return {};
   const modeIndex = treeRootIndex + 6;
@@ -53,7 +50,6 @@ const toUrlModeSegment = (value: 'normal' | 'maximize' | 'full-screen'): string 
   }
 };
 
-
 export function usePluginDialogRoute(data: PluginDialogLoaderData) {
   const { tree, pageNodeId, targetNodeId, nodeType, action, params } = data;
 
@@ -62,12 +58,15 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
   const { state: ssot } = useTreeConsoleSSOT(pageNodeId ? String(pageNodeId) : undefined);
 
   /** Build /f/ folder URL preserving current viewMode/sortMode. */
-  const buildFolderUrl = useCallback((treeId: string, pageId: string) => {
-    const vm = ssot.viewMode || 'list';
-    const sm = ssot.sortMode || 'name';
-    const viewSuffix = sm !== 'name' ? `${vm}/${sm}` : vm;
-    return `/f/${treeId}/${pageId}/-/folder/${viewSuffix}`;
-  }, [ssot.viewMode, ssot.sortMode]);
+  const buildFolderUrl = useCallback(
+    (treeId: string, pageId: string) => {
+      const vm = ssot.viewMode || 'list';
+      const sm = ssot.sortMode || 'name';
+      const viewSuffix = sm !== 'name' ? `${vm}/${sm}` : vm;
+      return `/f/${treeId}/${pageId}/-/folder/${viewSuffix}`;
+    },
+    [ssot.viewMode, ssot.sortMode]
+  );
 
   const matches = useRouterState({ select: (state) => state.matches });
   const routeParams = useMemo(() => {
@@ -77,9 +76,7 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
       treeRouteIds.dialog,
     ] as const;
     for (const routeId of priorityRouteIds) {
-      const matched = [...matches]
-        .reverse()
-        .find((match) => match.routeId === routeId);
+      const matched = [...matches].reverse().find((match) => match.routeId === routeId);
       if (matched?.params) {
         return matched.params as PluginDialogLoaderData['params'];
       }

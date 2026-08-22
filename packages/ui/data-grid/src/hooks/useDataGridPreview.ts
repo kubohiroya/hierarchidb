@@ -1,19 +1,21 @@
-import { useEffect, useMemo, useState, useId } from 'react';
+import {
+  type ColumnFilter,
+  TabularDatabaseManager,
+  TabularQueryService,
+} from '@hierarchidb/tabular-store';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
+import { useEffect, useId, useMemo, useState } from 'react';
+import type { Id } from '~/CrossViewStyles';
 import { useCrossHighlightSync } from '~/hooks/useCrossHighlightSync';
 import { ensureDefaultStyles } from '~/utils/ensureDefaultStyles';
-import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
-import { type ColumnFilter, TabularDatabaseManager, TabularQueryService } from '@hierarchidb/tabular-store';
-import type { Id } from '~/CrossViewStyles';
 
 export type DataGridPreviewOp = ColumnFilter['op'];
 type DataGridRow = Record<string, unknown> & { id?: string | number };
 
-const isValidId = (value: unknown): value is Id => typeof value === 'string' || typeof value === 'number';
-const isDataGridRow = (value: unknown): value is DataGridRow => (
-  typeof value === 'object'
-  && value !== null
-  && !Array.isArray(value)
-);
+const isValidId = (value: unknown): value is Id =>
+  typeof value === 'string' || typeof value === 'number';
+const isDataGridRow = (value: unknown): value is DataGridRow =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 export interface UseDataGridPreviewOptions {
   pluginId?: string;
@@ -32,7 +34,9 @@ export const useDataGridPreview = ({
   const [rows, setRows] = useState<DataGridRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | undefined>();
-  const [filters, setFilters] = useState<Array<{ column: string; op: DataGridPreviewOp; value: string }>>([]);
+  const [filters, setFilters] = useState<
+    Array<{ column: string; op: DataGridPreviewOp; value: string }>
+  >([]);
   const [visibleCols, setVisibleCols] = useState<string[] | null>(null);
   const [sortState, setSortState] = useState<{ column?: string; direction?: 'asc' | 'desc' }>({
     column: undefined,
@@ -74,7 +78,10 @@ export const useDataGridPreview = ({
     return cols;
   }, [columns, detectedNumeric, visibleCols]);
 
-  const datasetId = useMemo(() => `${pluginId}:${tableId || 'unknown'}` as const, [pluginId, tableId]);
+  const datasetId = useMemo(
+    () => `${pluginId}:${tableId || 'unknown'}` as const,
+    [pluginId, tableId]
+  );
   const { rowSets, dataGrid } = useCrossHighlightSync({ datasetId });
 
   useEffect(() => {
@@ -94,7 +101,11 @@ export const useDataGridPreview = ({
     let cancelled = false;
     (async () => {
       if (Array.isArray(providedRows) && providedRows.length > 0) {
-        setColumns(providedColumns && providedColumns.length ? providedColumns : Object.keys(providedRows[0] ?? {}));
+        setColumns(
+          providedColumns && providedColumns.length
+            ? providedColumns
+            : Object.keys(providedRows[0] ?? {})
+        );
         if (!visibleCols && providedColumns) setVisibleCols(providedColumns);
         setRows(providedRows);
         setLoading(false);
@@ -138,9 +149,13 @@ export const useDataGridPreview = ({
         }
         const svc = new TabularQueryService(
           pluginId,
-          getDBName(getBuildDatabasePrefix(), 'tabular-source-rowstore-db'),
+          getDBName(getBuildDatabasePrefix(), 'tabular-source-rowstore-db')
         );
-        const filterArgs: ColumnFilter[] = filters.map(({ column, op, value }) => ({ column, op, value }));
+        const filterArgs: ColumnFilter[] = filters.map(({ column, op, value }) => ({
+          column,
+          op,
+          value,
+        }));
         const data = await svc.query(tableId, filterArgs, 1000);
         if (!cancelled) setRows(data.filter(isDataGridRow));
       } catch (err) {
@@ -168,8 +183,10 @@ export const useDataGridPreview = ({
 
   const addFilter = () => setFilters((fs) => [...fs, { column: '', op: 'contains', value: '' }]);
   const removeFilter = (i: number) => setFilters((fs) => fs.filter((_, idx) => idx !== i));
-  const updateFilter = (i: number, patch: Partial<{ column: string; op: DataGridPreviewOp; value: string }>) =>
-    setFilters((fs) => fs.map((f, idx) => (idx === i ? { ...f, ...patch } : f)));
+  const updateFilter = (
+    i: number,
+    patch: Partial<{ column: string; op: DataGridPreviewOp; value: string }>
+  ) => setFilters((fs) => fs.map((f, idx) => (idx === i ? { ...f, ...patch } : f)));
 
   const sortedRows = useMemo(() => {
     const { column, direction } = sortState;

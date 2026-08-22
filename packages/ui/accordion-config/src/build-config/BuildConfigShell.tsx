@@ -1,6 +1,6 @@
-import type React from 'react';
 import { Box, Stack } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
+import type React from 'react';
 
 export type BuildConfigShellProps = {
   children: React.ReactNode;

@@ -1,4 +1,4 @@
-import { beforeAll, afterAll } from 'vitest';
+import { afterAll, beforeAll } from 'vitest';
 import { WorkerAPIImpl } from './mocks/WorkerAPIImpl.js';
 
 export type WorkerClientRefLike = {

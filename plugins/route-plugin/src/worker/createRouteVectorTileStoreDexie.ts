@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import { createDexieVectorTileStore } from '@hierarchidb/runtime-worker';
-import type { VectorTileStore } from '@hierarchidb/runtime-worker';
 import type { RouteDB, RouteVectorTileRecord } from '@hierarchidb/route-store';
+import type { VectorTileStore } from '@hierarchidb/runtime-worker';
+import { createDexieVectorTileStore } from '@hierarchidb/runtime-worker';
 
 type Item = RouteVectorTileRecord & { id: string };
 

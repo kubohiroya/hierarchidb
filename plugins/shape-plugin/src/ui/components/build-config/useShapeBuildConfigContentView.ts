@@ -1,25 +1,25 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { AlertColor } from '@mui/material';
+import type { NodeId } from '@hierarchidb/core-types';
 import { useHeapPressureMonitor } from '@hierarchidb/ui-memory';
-import { useSourceConfigSection } from '~/ui/hooks/useSourceConfigSection';
+import type { AlertColor } from '@mui/material';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  applyBuildConfigPatch,
   composeRuntimeBuildConfig,
   DEFAULT_PROCESSING_CONFIG,
-  applyBuildConfigPatch,
   mergeProcessingConfig,
   type ShapeBuildConfig,
   type ShapeEntity,
   type ShapeRuntimeBuildConfig,
 } from '~/common/types/index';
-import type { NodeId } from '@hierarchidb/core-types';
 import {
   filteringHighUrl,
   filteringLowUrl,
   filteringMediumUrl,
 } from '~/ui/assets/filtering-samples/filteringSampleConstants';
+import { useSourceConfigSection } from '~/ui/hooks/useSourceConfigSection';
 
 const toBuildConfigUpdate = (
-  partial: Partial<ShapeRuntimeBuildConfig>,
+  partial: Partial<ShapeRuntimeBuildConfig>
 ): Partial<ShapeBuildConfig> => {
   const next: Partial<ShapeBuildConfig> = {};
   if (partial.dataSourceName !== undefined) {
@@ -96,11 +96,11 @@ export const useShapeBuildConfigContentView = ({
 
   const processingConfig = useMemo(
     () => mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG, data?.processingConfig),
-    [data?.processingConfig],
+    [data?.processingConfig]
   );
   const runtimeBuildConfig = useMemo(
     () => composeRuntimeBuildConfig(workingConfig, processingConfig),
-    [processingConfig, workingConfig],
+    [processingConfig, workingConfig]
   );
 
   const filteringPreviewImages = useMemo(
@@ -109,29 +109,36 @@ export const useShapeBuildConfigContentView = ({
       medium: filteringMediumUrl,
       strong: filteringHighUrl,
     }),
-    [],
+    []
   );
 
-  const updateWorkingConfig = useCallback((next: ShapeBuildConfig | ((prev: ShapeBuildConfig) => ShapeBuildConfig)) => {
-    setWorkingConfig((prevConfig) => {
-      const nextConfig = typeof next === 'function' ? next(prevConfig) : next;
-      if (areBuildConfigEqual(prevConfig, nextConfig)) {
-        return prevConfig;
-      }
-      return nextConfig;
-    });
-  }, []);
+  const updateWorkingConfig = useCallback(
+    (next: ShapeBuildConfig | ((prev: ShapeBuildConfig) => ShapeBuildConfig)) => {
+      setWorkingConfig((prevConfig) => {
+        const nextConfig = typeof next === 'function' ? next(prevConfig) : next;
+        if (areBuildConfigEqual(prevConfig, nextConfig)) {
+          return prevConfig;
+        }
+        return nextConfig;
+      });
+    },
+    []
+  );
 
   const updateRuntimeBuildConfig = useCallback(
     (partial: Partial<ShapeRuntimeBuildConfig>) => {
-      updateWorkingConfig((prevConfig) => applyBuildConfigPatch(prevConfig, toBuildConfigUpdate(partial)));
+      updateWorkingConfig((prevConfig) =>
+        applyBuildConfigPatch(prevConfig, toBuildConfigUpdate(partial))
+      );
     },
-    [updateWorkingConfig],
+    [updateWorkingConfig]
   );
 
   useEffect(() => {
     if (!registerStepDraftCommitter) return;
-    const unregister = registerStepDraftCommitter(() => ({ buildConfig: workingConfigRef.current }));
+    const unregister = registerStepDraftCommitter(() => ({
+      buildConfig: workingConfigRef.current,
+    }));
     if (typeof unregister === 'function') {
       return unregister;
     }
@@ -160,7 +167,7 @@ export const useShapeBuildConfigContentView = ({
           ratio: ratioPercent,
           used: usedMb,
           limit: limitMb,
-        },
+        }
       ),
     };
   }, [heapPressure, t]);

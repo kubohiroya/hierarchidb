@@ -4,8 +4,8 @@
  */
 
 import {
-  LocationDataSources,
   type LocationDataSourceBase,
+  LocationDataSources,
 } from './LocationDataSourceDefinitions.js';
 
 export type LocationDataSourceCategory = 'location';
@@ -42,8 +42,7 @@ function toConfig(source: LocationDataSourceBase): LocationDataSourceConfig {
  * Default location data sources provided by this plugin.
  * Derived from LocationDataSourceDefinitions.ts to keep a single source of truth.
  */
-export const LOCATION_DATA_SOURCES: ReadonlyArray<LocationDataSourceConfig> = Object
-  .values(LocationDataSources)
-  .map(toConfig);
+export const LOCATION_DATA_SOURCES: ReadonlyArray<LocationDataSourceConfig> =
+  Object.values(LocationDataSources).map(toConfig);
 
 export default LOCATION_DATA_SOURCES;

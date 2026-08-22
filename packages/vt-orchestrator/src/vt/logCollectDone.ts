@@ -5,13 +5,16 @@ export const logCollectDone = (
   taskContext: TaskContextForVt,
   bufferCount: number,
   durationMs: number,
-  collected: boolean,
+  collected: boolean
 ): void => {
-  console.info('[tileEmit] collect done', JSON.stringify({
-    ...taskContext,
-    bufferCount,
-    duration: durationMs,
-    collected,
-    heap: getHeapSnapshot(),
-  }));
+  console.info(
+    '[tileEmit] collect done',
+    JSON.stringify({
+      ...taskContext,
+      bufferCount,
+      duration: durationMs,
+      collected,
+      heap: getHeapSnapshot(),
+    })
+  );
 };

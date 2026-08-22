@@ -1,1 +1,1 @@
-export { YamlPluginIcon, default } from './YamlPluginIcon.js';
+export { default, YamlPluginIcon } from './YamlPluginIcon.js';

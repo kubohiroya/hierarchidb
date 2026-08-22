@@ -1,8 +1,9 @@
-import type { ReactNode, MouseEvent } from 'react';
+import type { ShapeBuildSessionRecoverableContractError } from '@hierarchidb/shape-api';
+import type { BuildControlMenuItem, BuildStepStageMenu } from '@hierarchidb/ui-build-progress';
 import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
-import type { BuildControlMenuItem, BuildStepStageMenu } from '@hierarchidb/ui-build-progress';
 import type { PaneProgress } from '@hierarchidb/ui-lru-splitview';
+import type { MouseEvent, ReactNode } from 'react';
 import type { ShapeBuildConfig, ShapeProcessingConfig } from '~/common/types/BuildTaskResult';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import type {
@@ -12,9 +13,8 @@ import type {
 } from '~/ui/atoms/shapeBuildProgressTypes';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 import type { BuildProgressPanelStateComputed } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelStateComputed';
-import type { StartWarning } from '~/ui/components/build-progress/useBuildProgressPanelState/useShapeBuildProgressWarnings';
 import type { TranslateFn } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelStateComputedHelpers';
-import type { ShapeBuildSessionRecoverableContractError } from '@hierarchidb/shape-api';
+import type { StartWarning } from '~/ui/components/build-progress/useBuildProgressPanelState/useShapeBuildProgressWarnings';
 
 type StageMetadataMap<T> = Record<string, T>;
 type CrashSuspectControls = {

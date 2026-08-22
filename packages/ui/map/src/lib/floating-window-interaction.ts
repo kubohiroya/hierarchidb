@@ -4,4 +4,3 @@ export const isFloatingWindowInteractionActive = (): boolean => {
   if (!body) return false;
   return body.dataset.hdbFloatingWindowInteraction === '1';
 };
-

@@ -1,6 +1,6 @@
+import type { NodeId } from '@hierarchidb/core-types';
 import type { ContinentCode } from '@hierarchidb/ui-country-select';
 import type { CountryMetadata } from '~/common/types/index';
-import type { NodeId } from '@hierarchidb/core-types';
 import type { SerializedCountryAvailability } from '~/ui/workers/countryAvailabilityTypes';
 
 export const CONTINENT_CODES: ContinentCode[] = ['AF', 'AS', 'EU', 'NA', 'SA', 'OC', 'AN', 'XX'];
@@ -24,7 +24,8 @@ const CONTINENT_ALIASES: Record<string, ContinentCode> = {
   an: 'AN',
 };
 
-const isContinentCode = (value: string): value is ContinentCode => CONTINENT_CODES.includes(value as ContinentCode);
+const isContinentCode = (value: string): value is ContinentCode =>
+  CONTINENT_CODES.includes(value as ContinentCode);
 
 export const normalizeContinentCode = (continent?: string): ContinentCode | undefined => {
   if (!continent) return undefined;
@@ -37,7 +38,10 @@ export const normalizeContinentCode = (continent?: string): ContinentCode | unde
   return undefined;
 };
 
-export const normalizeCountryCodeFromMetadata = (country: Partial<CountryMetadata>, index: number): string => {
+export const normalizeCountryCodeFromMetadata = (
+  country: Partial<CountryMetadata>,
+  index: number
+): string => {
   const iso2 = country.iso2?.trim();
   if (iso2) return iso2.toUpperCase();
   const countryCode = country.countryCode?.trim();
@@ -49,7 +53,7 @@ export const normalizeCountryCodeFromMetadata = (country: Partial<CountryMetadat
 
 export const isSelectionEqual = (
   left?: Record<string, boolean[]>,
-  right?: Record<string, boolean[]>,
+  right?: Record<string, boolean[]>
 ): boolean => {
   if (!left || !right) return false;
   const leftKeys = Object.keys(left).sort();
@@ -87,8 +91,10 @@ export type CountrySelectionBootstrapCacheEntry = {
   fetchedAt: number;
 };
 
-export const countrySelectionBootstrapCache = new Map<string, CountrySelectionBootstrapCacheEntry>();
+export const countrySelectionBootstrapCache = new Map<
+  string,
+  CountrySelectionBootstrapCacheEntry
+>();
 
-export const buildBootstrapCacheKey = (nodeId: NodeId, dataSourceKey: string): string => (
-  `${String(nodeId)}:${dataSourceKey}`
-);
+export const buildBootstrapCacheKey = (nodeId: NodeId, dataSourceKey: string): string =>
+  `${String(nodeId)}:${dataSourceKey}`;

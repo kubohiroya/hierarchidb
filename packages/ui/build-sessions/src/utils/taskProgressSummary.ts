@@ -20,14 +20,12 @@ type TaskCountSummaryOptions<T> = {
   isExcluded?: (task: T) => boolean;
 };
 
-export const isFailureStatus = (status?: string | null): boolean => (
-  status === 'failed'
-);
+export const isFailureStatus = (status?: string | null): boolean => status === 'failed';
 
 export const buildTaskCountSummary = <T extends TaskLike>(
   tasks: T[],
   isSkipped: (task: T) => boolean,
-  options?: TaskCountSummaryOptions<T>,
+  options?: TaskCountSummaryOptions<T>
 ): TaskCountSummary => {
   const counts: TaskCountSummary = { total: 0, completed: 0, failed: 0, skipped: 0 };
   tasks.forEach((task) => {
@@ -54,7 +52,7 @@ export const buildStageTaskSummary = <T extends TaskStageCarrier>(
   tasks: T[],
   getStageKey: (task: T) => string,
   isSkipped: (task: T) => boolean,
-  options?: TaskCountSummaryOptions<T>,
+  options?: TaskCountSummaryOptions<T>
 ): Record<string, TaskCountSummary> => {
   const summary: Record<string, TaskCountSummary> = {};
   tasks.forEach((task) => {
@@ -87,6 +85,5 @@ export const computePercentage = (counts: TaskCountSummary): number => {
   return counts.total > 0 ? Math.round((done / counts.total) * 100) : 0;
 };
 
-export const formatPercentageLabel = (counts: TaskCountSummary): string => (
-  `${computePercentage(counts)}%`
-);
+export const formatPercentageLabel = (counts: TaskCountSummary): string =>
+  `${computePercentage(counts)}%`;

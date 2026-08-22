@@ -12,20 +12,8 @@
 import { promises as fs } from 'node:fs';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
-
-import type { GeneratePluginRegistryOptions, PluginSpecifierMode } from './plugin-registry/types.js';
-import { collectManifests } from './plugin-registry/manifest-collector.js';
-import {
-  generateDatabaseLoadersSource,
-  generateDerivationsSource,
-  generateIconLoadersSource,
-  generateModuleDeclarationSource,
-  generatePluginDefinitionsSource,
-  generateRegistrySource,
-  generateUiLoadersSource,
-  generateWorkerLoadersSource,
-} from './plugin-registry/registry-generator.js';
 import { removeLegacyArtifacts, writeFileIfChanged } from './plugin-registry/fs-utils.js';
+import { collectManifests } from './plugin-registry/manifest-collector.js';
 import {
   registryDatabaseLoadersFile,
   registryDeclarationsFile,
@@ -37,11 +25,30 @@ import {
   registryUiLoadersFile,
   registryWorkerLoadersFile,
 } from './plugin-registry/paths.js';
+import {
+  generateDatabaseLoadersSource,
+  generateDerivationsSource,
+  generateIconLoadersSource,
+  generateModuleDeclarationSource,
+  generatePluginDefinitionsSource,
+  generateRegistrySource,
+  generateUiLoadersSource,
+  generateWorkerLoadersSource,
+} from './plugin-registry/registry-generator.js';
+import type {
+  GeneratePluginRegistryOptions,
+  PluginSpecifierMode,
+} from './plugin-registry/types.js';
 import { validateEntryPaths } from './plugin-registry/validator.js';
 
-export async function generatePluginRegistry(options: GeneratePluginRegistryOptions = {}): Promise<void> {
-  const requestedMode = (options.mode ?? (process.env.HDB_PLUGIN_SPEC_MODE as PluginSpecifierMode | undefined) ?? 'package')
-    .toLowerCase() as PluginSpecifierMode;
+export async function generatePluginRegistry(
+  options: GeneratePluginRegistryOptions = {}
+): Promise<void> {
+  const requestedMode = (
+    options.mode ??
+    (process.env.HDB_PLUGIN_SPEC_MODE as PluginSpecifierMode | undefined) ??
+    'package'
+  ).toLowerCase() as PluginSpecifierMode;
   const summaries = await collectManifests(requestedMode);
   validateEntryPaths(summaries, requestedMode);
   const registrySource = generateRegistrySource(summaries, requestedMode);
@@ -56,9 +63,15 @@ export async function generatePluginRegistry(options: GeneratePluginRegistryOpti
   const registryChanged = await writeFileIfChanged(registryOutputFile, registrySource);
   const declarationsChanged = await writeFileIfChanged(registryDeclarationsFile, declarationSource);
   const uiLoadersChanged = await writeFileIfChanged(registryUiLoadersFile, uiLoadersSource);
-  const workerLoadersChanged = await writeFileIfChanged(registryWorkerLoadersFile, workerLoadersSource);
+  const workerLoadersChanged = await writeFileIfChanged(
+    registryWorkerLoadersFile,
+    workerLoadersSource
+  );
   const iconLoadersChanged = await writeFileIfChanged(registryIconLoadersFile, iconLoadersSource);
-  const databaseLoadersChanged = await writeFileIfChanged(registryDatabaseLoadersFile, databaseLoadersSource);
+  const databaseLoadersChanged = await writeFileIfChanged(
+    registryDatabaseLoadersFile,
+    databaseLoadersSource
+  );
   const derivationsChanged = await writeFileIfChanged(registryDerivationsFile, derivationsSource);
   const pluginDefinitionsChanged = await writeFileIfChanged(
     registryPluginDefinitionsFile,

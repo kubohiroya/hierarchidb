@@ -1,25 +1,37 @@
-import type { Feature, Geometry } from 'geojson';
-import { geometryCleanCoords, geometryIsValid } from '@hierarchidb/gis-sdk';
 import type { GeometryEngine, RingFixConfig } from '@hierarchidb/gis-sdk';
-import { applyRingFix } from './ringUtils.js';
+import { geometryCleanCoords, geometryIsValid } from '@hierarchidb/gis-sdk';
+import type { Feature, Geometry } from 'geojson';
 import {
   countRingsFromGeometry,
   countVerticesFromGeometry,
+  type GeometryWithCoords,
   hasNonFiniteCoords,
   hasNonFiniteGeometry,
-  type GeometryWithCoords,
 } from './metrics.js';
+import { applyRingFix } from './ringUtils.js';
 
 const hasOpenRings = (geometry: Geometry): boolean => {
   if (geometry.type === 'Polygon') {
     const rings = Array.isArray(geometry.coordinates) ? geometry.coordinates : [];
-    return rings.some((ring) => ring.length < 4 || ring[0]?.[0] !== ring[ring.length - 1]?.[0] || ring[0]?.[1] !== ring[ring.length - 1]?.[1]);
+    return rings.some(
+      (ring) =>
+        ring.length < 4 ||
+        ring[0]?.[0] !== ring[ring.length - 1]?.[0] ||
+        ring[0]?.[1] !== ring[ring.length - 1]?.[1]
+    );
   }
   if (geometry.type === 'MultiPolygon') {
     const polygons = Array.isArray(geometry.coordinates) ? geometry.coordinates : [];
-    return polygons.some((rings) => (Array.isArray(rings) ? rings.some((ring) => (
-      ring.length < 4 || ring[0]?.[0] !== ring[ring.length - 1]?.[0] || ring[0]?.[1] !== ring[ring.length - 1]?.[1]
-    )) : false));
+    return polygons.some((rings) =>
+      Array.isArray(rings)
+        ? rings.some(
+            (ring) =>
+              ring.length < 4 ||
+              ring[0]?.[0] !== ring[ring.length - 1]?.[0] ||
+              ring[0]?.[1] !== ring[ring.length - 1]?.[1]
+          )
+        : false
+    );
   }
   return false;
 };
@@ -71,7 +83,7 @@ export const validateSimplifiedGeometry = (
   ringFix: RingFixConfig,
   minRingArea: number,
   dropInvalidHoles: boolean,
-  geometryEngine: GeometryEngine,
+  geometryEngine: GeometryEngine
 ): Geometry => {
   const cleaned = cleanGeometry(geometry);
   const ringFixed = applyRingFix(cleaned, ringFix, minRingArea, dropInvalidHoles, geometryEngine);

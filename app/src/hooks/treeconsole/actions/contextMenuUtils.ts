@@ -2,9 +2,9 @@
  * Context menu action handler for TreeConsole.
  */
 
+import { notify } from '@hierarchidb/components';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import { notify } from '@hierarchidb/components';
 import { isFolderNodeType } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import {
@@ -13,11 +13,12 @@ import {
   resolveNodeCreateDefaults,
   resolveNodeTemplateExecution,
 } from '~/features/templates/nodeCreateTemplates';
+import type { ContextAction, TreeConsoleActionDeps } from '~/hooks/treeconsole/types';
 import { loadUIPlugin } from '~/plugin-loaders/uiPluginLoaderUtils';
 import { startBuildFlow } from '~/router/pages/tree/console/buildFlow';
-import type { ContextAction, TreeConsoleActionDeps } from '~/hooks/treeconsole/types';
-import { PREVIEW_GUARD_MESSAGE, PREVIEW_GUARD_NODE_TYPES } from './dialog.js';
 import { openInNewTab } from '~/utils/openInNewTab';
+import { PREVIEW_GUARD_MESSAGE, PREVIEW_GUARD_NODE_TYPES } from './dialog.js';
+import type { NavigationHelpers } from './navigation.js';
 import {
   createUniqueName,
   fireCmdEvent,
@@ -25,7 +26,6 @@ import {
   resolvePreviewStepIndex,
   showCommandError,
 } from './treeConsoleActionUtils.ts';
-import type { NavigationHelpers } from './navigation.js';
 
 type OpenEditDialog = (
   targetNodeId: NodeId,
@@ -129,14 +129,15 @@ export const createContextMenuAction = (
 
         if (normalizedAction === 'open' || normalizedAction === 'openFolder') {
           // For folder nodes, navigate to column view with this folder as target
-          const isFolderLike = (node.nodeType ?? '').toLowerCase() === 'folder'
-            || Boolean(node.hasChildren);
+          const isFolderLike =
+            (node.nodeType ?? '').toLowerCase() === 'folder' || Boolean(node.hasChildren);
           if (isFolderLike && treeId) {
             const vm = ssot.viewMode || 'list';
             const sm = ssot.sortMode || 'name';
-            const targetPath = vm === 'column'
-              ? `/f/${treeId}/${targetNodeId}/${targetNodeId}/folder/column${sm !== 'name' ? `/${sm}` : ''}`
-              : `/f/${treeId}/${targetNodeId}/-/folder/${vm}${sm !== 'name' ? `/${sm}` : ''}`;
+            const targetPath =
+              vm === 'column'
+                ? `/f/${treeId}/${targetNodeId}/${targetNodeId}/folder/column${sm !== 'name' ? `/${sm}` : ''}`
+                : `/f/${treeId}/${targetNodeId}/-/folder/${vm}${sm !== 'name' ? `/${sm}` : ''}`;
             if (options?.openInNewTab) {
               openInNewTab(targetPath);
             } else if (pushPath) {
@@ -196,9 +197,9 @@ export const createContextMenuAction = (
               }) ?? {};
             const mergedBuildMetadata = patch.buildMetadata
               ? {
-                ...(currentMeta.buildMetadata ?? {}),
-                ...patch.buildMetadata,
-              }
+                  ...(currentMeta.buildMetadata ?? {}),
+                  ...patch.buildMetadata,
+                }
               : currentMeta.buildMetadata;
             await updaterAPI.updateTreeNodeDraftMetadata(createdNodeId, {
               ...currentMeta,
@@ -352,9 +353,7 @@ export const createContextMenuAction = (
           if (isFolderExportAction && pushPath && treeId && pageNodeId) {
             const parentForRoute = (node.parentId as NodeId | undefined) ?? pageNodeId;
             const targetId = targetNodeId;
-            pushPath(
-              `/d/${treeId}/${parentForRoute}/${targetId}/folder-export/export/normal/1`
-            );
+            pushPath(`/d/${treeId}/${parentForRoute}/${targetId}/folder-export/export/normal/1`);
             return;
           }
 

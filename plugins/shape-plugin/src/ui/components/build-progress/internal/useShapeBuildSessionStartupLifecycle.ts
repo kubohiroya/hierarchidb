@@ -1,14 +1,10 @@
+import type { BuildSessionTransitionState } from '@hierarchidb/ui-build-progress/build-session';
 import { useState } from 'react';
-import { useShapeBuildSessionStartupTrace } from './useShapeBuildSessionStartupLifecycle/useShapeBuildSessionStartupTrace';
-import { useShapeBuildSessionStartupProgressTerminalLog } from './useShapeBuildSessionStartupLifecycle/useShapeBuildSessionStartupProgressTerminalLog';
-import type {
-  BuildSessionTransitionState,
-} from '@hierarchidb/ui-build-progress/build-session';
-import type { BuildProgress } from '~/ui/components/build-progress/shapeBuildProgressTypes';
 import type { BuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
-import type {
-  BuildSessionTransitionPhase,
-} from './useShapeBuildSessionHelpers/startupTrace';
+import type { BuildProgress } from '~/ui/components/build-progress/shapeBuildProgressTypes';
+import type { BuildSessionTransitionPhase } from './useShapeBuildSessionHelpers/startupTrace';
+import { useShapeBuildSessionStartupProgressTerminalLog } from './useShapeBuildSessionStartupLifecycle/useShapeBuildSessionStartupProgressTerminalLog';
+import { useShapeBuildSessionStartupTrace } from './useShapeBuildSessionStartupLifecycle/useShapeBuildSessionStartupTrace';
 
 const POLL_INTERVAL_MS = 1000;
 
@@ -22,7 +18,7 @@ type UseShapeBuildSessionStartupLifecycleArgs = {
   emitBuildSessionTransitionLog: (
     level: 'info' | 'warn' | 'error',
     message: string,
-    payload?: Record<string, unknown>,
+    payload?: Record<string, unknown>
   ) => void;
 };
 

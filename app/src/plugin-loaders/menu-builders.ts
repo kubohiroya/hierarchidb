@@ -8,8 +8,8 @@ import {
   getNodeCreateTemplateMenuEntries,
   type TemplateTreeContext,
 } from '~/features/templates/nodeCreateTemplates';
-import { getPresentation, prefetchAllIcons } from '~/plugin-runtime/pluginPresentationUtils';
 import { getInstalledPlugins, type InstalledPlugin } from '~/plugin-runtime/plugin-registry';
+import { getPresentation, prefetchAllIcons } from '~/plugin-runtime/pluginPresentationUtils';
 import { getMenuSpec, type MenuGroup } from './menu-spec.ts';
 
 export type TreeContext = 'resources' | 'projects';

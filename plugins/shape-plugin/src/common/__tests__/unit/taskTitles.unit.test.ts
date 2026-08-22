@@ -67,19 +67,22 @@ describe('taskTitles', () => {
   });
 
   it('resolves localized country name from code when the source name is only a code token', () => {
-    const title = buildShapeTaskTitle({
-      stage: 'geometry',
-      inputData: {
-        countryName: 'AND',
-        countryCode: 'AND',
-        adminLevel: 1,
-        bandIndex: 0,
-        bandMinZoom: 1,
-        bandMaxZoom: 2,
+    const title = buildShapeTaskTitle(
+      {
+        stage: 'geometry',
+        inputData: {
+          countryName: 'AND',
+          countryCode: 'AND',
+          adminLevel: 1,
+          bandIndex: 0,
+          bandMinZoom: 1,
+          bandMaxZoom: 2,
+        },
       },
-    }, {
-      resolveCountryNameByCode: (code) => (code === 'AND' ? 'Andorra' : undefined),
-    });
+      {
+        resolveCountryNameByCode: (code) => (code === 'AND' ? 'Andorra' : undefined),
+      }
+    );
 
     expect(title).toBe('Andorra (AND) Admin1 / band 0 z1-2');
   });
@@ -101,14 +104,16 @@ describe('taskTitles', () => {
   });
 
   it('throws when geometry task misses zoom range required for title', () => {
-    expect(() => buildShapeTaskTitle({
-      stage: 'geometry',
-      inputData: {
-        countryName: 'Japan',
-        countryCode: 'JP',
-        adminLevel: 0,
-        bandIndex: 1,
-      },
-    })).toThrow('[shape-plugin] geometry task title requires bandMinZoom and bandMaxZoom');
+    expect(() =>
+      buildShapeTaskTitle({
+        stage: 'geometry',
+        inputData: {
+          countryName: 'Japan',
+          countryCode: 'JP',
+          adminLevel: 0,
+          bandIndex: 1,
+        },
+      })
+    ).toThrow('[shape-plugin] geometry task title requires bandMinZoom and bandMaxZoom');
   });
 });

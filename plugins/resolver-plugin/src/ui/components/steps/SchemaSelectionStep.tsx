@@ -1,5 +1,4 @@
-import type React from 'react';
-import { useId } from 'react';
+import { CheckCircle as CheckIcon, Schema as SchemaIcon } from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -16,7 +15,8 @@ import {
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { CheckCircle as CheckIcon, Schema as SchemaIcon } from '@mui/icons-material';
+import type React from 'react';
+import { useId } from 'react';
 import type { PropertyInfo, ResolverUpdaterPayload, SchemaInfo } from '~/common/types/index';
 import { useSchemaSelectionStep } from './hooks/useSchemaSelectionStep.js';
 
@@ -35,10 +35,10 @@ const SCHEMA_INPUT_METHODS = [
 ];
 
 export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
-                                                                          data,
-                                                                          onUpdate,
-                                                                          onValidationChange,
-                                                                          onSourceSchemaChange,
+  data,
+  onUpdate,
+  onValidationChange,
+  onSourceSchemaChange,
   onTargetSchemaChange,
 }) => {
   const controlId = useId();
@@ -92,9 +92,7 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
         ))}
         {schema.properties.length > 8 && (
           <ListItem>
-            <ListItemText
-              secondary={`... and ${schema.properties.length - 8} more properties`}
-            />
+            <ListItemText secondary={`... and ${schema.properties.length - 8} more properties`} />
           </ListItem>
         )}
       </List>
@@ -107,8 +105,8 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
         Schema Selection
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Define your source and target data schemas. You can paste sample JSON data to automatically detect the schema
-        structure.
+        Define your source and target data schemas. You can paste sample JSON data to automatically
+        detect the schema structure.
       </Typography>
 
       <Grid container spacing={3}>
@@ -128,7 +126,7 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
               onChange={(e) => setSourceInputMethod(e.target.value)}
               label="Input Method"
             >
-              {SCHEMA_INPUT_METHODS.map((method: typeof SCHEMA_INPUT_METHODS[number]) => (
+              {SCHEMA_INPUT_METHODS.map((method: (typeof SCHEMA_INPUT_METHODS)[number]) => (
                 <MenuItem key={method.value} value={method.value}>
                   {method.label}
                 </MenuItem>
@@ -170,7 +168,7 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
               onChange={(e) => setTargetInputMethod(e.target.value)}
               label="Input Method"
             >
-              {SCHEMA_INPUT_METHODS.map((method: typeof SCHEMA_INPUT_METHODS[number]) => (
+              {SCHEMA_INPUT_METHODS.map((method: (typeof SCHEMA_INPUT_METHODS)[number]) => (
                 <MenuItem key={method.value} value={method.value}>
                   {method.label}
                 </MenuItem>
@@ -200,8 +198,8 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
       {sourceSchema && targetSchema && (
         <Alert severity="success" sx={{ mt: 3 }}>
           <Typography variant="subtitle2">Schemas Ready</Typography>
-          Both source and target schemas have been successfully detected.
-          You can now proceed to define property mapping rules.
+          Both source and target schemas have been successfully detected. You can now proceed to
+          define property mapping rules.
         </Alert>
       )}
 

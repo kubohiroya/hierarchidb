@@ -2,7 +2,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { MapHighlightState, MapHighlightStyles } from '~/types/index';
 
 /**
-    */
+ */
 export class MapHighlightService {
   private searchMatchedNodes = new Set<NodeId>();
   private selectedNodes = new Set<NodeId>();
@@ -11,17 +11,19 @@ export class MapHighlightService {
 
   private defaultStyles: MapHighlightStyles = {
     searchMatch: {
-      fillColor: '#FFE082', fillOpacity: 0.6,
+      fillColor: '#FFE082',
+      fillOpacity: 0.6,
     },
     selection: {
-      strokeColor: '#1976D2', strokeWidth: 3,
+      strokeColor: '#1976D2',
+      strokeWidth: 3,
       strokeOpacity: 0.9,
     },
   };
 
   constructor(
     private customStyles?: Partial<MapHighlightStyles>,
-    private mapInstance?: any, //  MapLibre GL JS
+    private mapInstance?: any //  MapLibre GL JS
   ) {
     if (customStyles) {
       this.defaultStyles = { ...this.defaultStyles, ...customStyles };
@@ -29,13 +31,13 @@ export class MapHighlightService {
   }
 
   /**
-            */
+   */
   setOnStateChange(callback: (state: MapHighlightState) => void): void {
     this.onStateChangeCallback = callback;
   }
 
   /**
-            */
+   */
   setSearchMatched(nodeIds: NodeId[]): void {
     this.searchMatchedNodes.clear();
     nodeIds.forEach((id) => this.searchMatchedNodes.add(id));
@@ -44,7 +46,7 @@ export class MapHighlightService {
   }
 
   /**
-            */
+   */
   setSelected(nodeIds: NodeId[]): void {
     this.selectedNodes.clear();
     nodeIds.forEach((id) => this.selectedNodes.add(id));
@@ -53,7 +55,7 @@ export class MapHighlightService {
   }
 
   /**
-            */
+   */
   addSearchMatched(nodeId: NodeId): void {
     this.searchMatchedNodes.add(nodeId);
     this.notifyStateChange();
@@ -61,7 +63,7 @@ export class MapHighlightService {
   }
 
   /**
-            */
+   */
   addSelected(nodeId: NodeId): void {
     this.selectedNodes.add(nodeId);
     this.notifyStateChange();
@@ -69,7 +71,7 @@ export class MapHighlightService {
   }
 
   /**
-            */
+   */
   removeSearchMatched(nodeId: NodeId): void {
     this.searchMatchedNodes.delete(nodeId);
     this.notifyStateChange();
@@ -77,7 +79,7 @@ export class MapHighlightService {
   }
 
   /**
-            */
+   */
   removeSelected(nodeId: NodeId): void {
     this.selectedNodes.delete(nodeId);
     this.notifyStateChange();
@@ -85,7 +87,7 @@ export class MapHighlightService {
   }
 
   /**
-            */
+   */
   clearAll(): void {
     this.searchMatchedNodes.clear();
     this.selectedNodes.clear();
@@ -94,7 +96,7 @@ export class MapHighlightService {
   }
 
   /**
-            */
+   */
   clearSearchMatched(): void {
     this.searchMatchedNodes.clear();
     this.notifyStateChange();
@@ -102,7 +104,7 @@ export class MapHighlightService {
   }
 
   /**
-            */
+   */
   clearSelected(): void {
     this.selectedNodes.clear();
     this.notifyStateChange();
@@ -110,7 +112,7 @@ export class MapHighlightService {
   }
 
   /**
-            */
+   */
   getState(): MapHighlightState {
     return {
       searchMatched: new Set(this.searchMatchedNodes),
@@ -121,21 +123,21 @@ export class MapHighlightService {
   }
 
   /**
-            */
+   */
   getStyles(): MapHighlightStyles {
     return this.defaultStyles;
   }
 
   /**
-            */
+   */
   updateStyles(styles: Partial<MapHighlightStyles>): void {
     this.defaultStyles = { ...this.defaultStyles, ...styles };
     this.updateMapHighlight();
   }
 
   /**
-      * MapLibre GL JS
-      */
+   * MapLibre GL JS
+   */
   setMapInstance(mapInstance: any): void {
     this.mapInstance = mapInstance;
     this.setupMapLayers();
@@ -143,7 +145,7 @@ export class MapHighlightService {
   }
 
   /**
-            */
+   */
   private notifyStateChange(): void {
     if (this.onStateChangeCallback) {
       this.onStateChangeCallback(this.getState());
@@ -151,7 +153,7 @@ export class MapHighlightService {
   }
 
   /**
-            */
+   */
   private setupMapLayers(): void {
     if (!this.mapInstance) return;
 
@@ -184,7 +186,7 @@ export class MapHighlightService {
   }
 
   /**
-            */
+   */
   private updateMapHighlight(): void {
     if (!this.mapInstance) return;
 

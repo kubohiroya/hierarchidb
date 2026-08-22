@@ -1,17 +1,11 @@
-export {
-  useShapeBuildSession,
-} from './useShapeBuildSession.js';
+export { useShapeBuildSession } from './useShapeBuildSession.js';
 
+export { shouldResetElapsedState } from './useShapeBuildSessionHelpers/elapsedConstants.js';
 export {
-  shouldResetElapsedState,
-} from './useShapeBuildSessionHelpers/elapsedConstants.js';
-
+  resolveMostAdvancedInFlightStageId,
+  resolveMostAdvancedRunningStageId,
+} from './useShapeBuildSessionHelpers/stage.js';
 export {
   resolveDisplayBuildStatus,
   shouldRefreshTasksSnapshot,
 } from './useShapeBuildSessionHelpers/status.js';
-
-export {
-  resolveMostAdvancedRunningStageId,
-  resolveMostAdvancedInFlightStageId,
-} from './useShapeBuildSessionHelpers/stage.js';

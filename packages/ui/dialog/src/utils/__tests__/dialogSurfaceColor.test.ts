@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { createTheme, darken, lighten } from '@mui/material/styles';
+import { describe, expect, it } from 'vitest';
 import { getDialogSurfaceColor } from '../dialogSurfaceColor';
 
 describe('getDialogSurfaceColor', () => {

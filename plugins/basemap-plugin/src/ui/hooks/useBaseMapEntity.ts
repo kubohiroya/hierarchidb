@@ -3,13 +3,9 @@
  * @description React hook for fetching and managing BaseMap entity data
  */
 
-import type {
-  TreeNode,
-  TreeNodeMetadata,
-  TreeNodeUpdater,
-} from '@hierarchidb/tree-api';
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import { createTreeNodeUpdaterActions, useTreeNodeUpdater } from '@hierarchidb/plugin-ui-sdk';
+import type { TreeNode, TreeNodeMetadata, TreeNodeUpdater } from '@hierarchidb/tree-api';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DEFAULT_VIEWPORT as BASEMAP_DEFAULT_VIEWPORT } from '~/common/constants/constants';
@@ -305,7 +301,7 @@ export function useBaseMapEntity(
               }
             : prev
         );
-      if (treeNodeUpdater) {
+        if (treeNodeUpdater) {
           void updatePayload({ viewport: cached });
         }
         return;

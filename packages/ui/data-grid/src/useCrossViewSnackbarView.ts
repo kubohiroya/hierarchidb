@@ -17,7 +17,10 @@ type UseCrossViewSnackbarViewArgs = {
   format?: (ev: CrossViewEvent) => CrossViewContent;
 };
 
-const resolveContent = (payload: CrossViewEvent | null, format?: (ev: CrossViewEvent) => CrossViewContent): CrossViewContent => {
+const resolveContent = (
+  payload: CrossViewEvent | null,
+  format?: (ev: CrossViewEvent) => CrossViewContent
+): CrossViewContent => {
   if (!payload) return { title: undefined, message: undefined };
   if (format) return format(payload);
 
@@ -25,7 +28,9 @@ const resolveContent = (payload: CrossViewEvent | null, format?: (ev: CrossViewE
   const type = payload.data?.type ?? payload.data?.nodeType;
   const description = payload.data?.description;
   const coordinates = payload.data?.coordinates || payload.data?.point || payload.data?.center;
-  const coordinateText = Array.isArray(coordinates) ? `(${coordinates[0]}, ${coordinates[1]})` : undefined;
+  const coordinateText = Array.isArray(coordinates)
+    ? `(${coordinates[0]}, ${coordinates[1]})`
+    : undefined;
 
   return {
     title: `[${payload.source}] ${type ?? ''}`.trim(),
@@ -33,10 +38,7 @@ const resolveContent = (payload: CrossViewEvent | null, format?: (ev: CrossViewE
   };
 };
 
-export const useCrossViewSnackbarView = ({
-  datasetId,
-  format,
-}: UseCrossViewSnackbarViewArgs) => {
+export const useCrossViewSnackbarView = ({ datasetId, format }: UseCrossViewSnackbarViewArgs) => {
   const [open, setOpen] = useState(false);
   const [payload, setPayload] = useState<CrossViewEvent | null>(null);
 

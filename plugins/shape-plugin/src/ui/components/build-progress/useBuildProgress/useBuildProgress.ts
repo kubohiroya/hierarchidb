@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useAtomValue } from 'jotai';
+import { useEffect, useMemo, useRef } from 'react';
 import {
   buildSessionLifecycleAtom,
   buildSessionStageCountersAtom,
@@ -13,7 +13,6 @@ import {
 } from '~/ui/components/build-progress/shapeBuildProgressTypes';
 
 export type { BuildProgress, BuildSessionDisplayStatus };
-
 
 export interface ShapeProgressState {
   progress: BuildProgress | null;
@@ -42,13 +41,16 @@ const isBuildProgressDebugEnabled = (): boolean => {
   return config.all === true || config.mapping === true;
 };
 
-const logProgressMapping = (nodeId: string | null, payload: {
-  unifiedExists: boolean;
-  mappedExists: boolean;
-  progressTaskId?: string | null;
-  progressTaskStatus?: string | null;
-  stageTotals?: string;
-}): void => {
+const logProgressMapping = (
+  nodeId: string | null,
+  payload: {
+    unifiedExists: boolean;
+    mappedExists: boolean;
+    progressTaskId?: string | null;
+    progressTaskStatus?: string | null;
+    stageTotals?: string;
+  }
+): void => {
   if (!isDev) return;
   const hasStageTotals = payload.stageTotals !== undefined;
   console.debug('[ShapeBuildProgressMappingTrace]', {
@@ -62,7 +64,7 @@ const logProgressMapping = (nodeId: string | null, payload: {
 };
 
 export function useBuildProgress(
-  nodeId: NodeId | null,
+  nodeId: NodeId | null
 ): ShapeProgressState & { subscribe: () => void; unsubscribe: () => void } {
   const runtime = useAtomValue(buildSessionLifecycleAtom);
   const counters = useAtomValue(buildSessionStageCountersAtom);
@@ -80,9 +82,11 @@ export function useBuildProgress(
         acc.failed += stageCounter.failed;
         return acc;
       },
-      { total: 0, completed: 0, failed: 0 },
+      { total: 0, completed: 0, failed: 0 }
     );
-    const stageTotals = (['source', 'geometry', 'tileEmit'] as const).reduce<BuildProgress['stageTotals']>((acc, stageId) => {
+    const stageTotals = (['source', 'geometry', 'tileEmit'] as const).reduce<
+      BuildProgress['stageTotals']
+    >((acc, stageId) => {
       const stageCounter = counters[stageId];
       acc ??= {};
       acc[stageId] = {
@@ -93,8 +97,9 @@ export function useBuildProgress(
       };
       return acc;
     }, undefined);
-    const progressTask = (tasksByStage[activeStageId] ?? [])
-      .find((task) => task && (task.status === 'running' || task.status === 'queued'));
+    const progressTask = (tasksByStage[activeStageId] ?? []).find(
+      (task) => task && (task.status === 'running' || task.status === 'queued')
+    );
     return {
       total: aggregate.total,
       completed: aggregate.completed,
@@ -135,17 +140,15 @@ export function useBuildProgress(
   }, [nodeId, progress?.percentage, runtime.activeStageId, runtime.phase]);
 
   const error: Error | null = null;
-  const subscribe = () => { };
-  const unsubscribe = () => { };
+  const subscribe = () => {};
+  const unsubscribe = () => {};
 
   const previousSignature = useRef<string | null>(null);
   useEffect(() => {
     if (!isBuildProgressDebugEnabled()) return;
     const mappedExists = progress !== null;
     const unifiedExists = progress !== null;
-    const stageTotals = mappedExists
-      ? JSON.stringify(progress?.stageTotals)
-      : undefined;
+    const stageTotals = mappedExists ? JSON.stringify(progress?.stageTotals) : undefined;
     const signature = JSON.stringify({
       progress,
       derivedStatus,

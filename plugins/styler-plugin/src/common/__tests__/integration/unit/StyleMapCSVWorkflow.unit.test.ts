@@ -4,8 +4,10 @@
  */
 
 import 'fake-indexeddb/auto';
-import { SpreadsheetTabularApiDriver as StylerTabularApiDriver } from '@hierarchidb/spreadsheet-plugin';
-import { SPREADSHEET_PLUGIN_ID } from '@hierarchidb/spreadsheet-plugin';
+import {
+  SPREADSHEET_PLUGIN_ID,
+  SpreadsheetTabularApiDriver as StylerTabularApiDriver,
+} from '@hierarchidb/spreadsheet-plugin';
 import type { TabularColumnMapping, TabularFilterRule } from '@hierarchidb/ui-tabular';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StylerMetadataManager } from '../../../../services/StylerMetadataManager';
@@ -74,11 +76,7 @@ describe('Styler CSV Workflow Integration', () => {
 
   beforeEach(async () => {
     tableManager = new StylerMetadataManager('test-styler-workflow-metadata');
-    csvApi = new StylerTabularApiDriver(
-      tableManager,
-      undefined,
-      'test-styler-workflow-chunks'
-    );
+    csvApi = new StylerTabularApiDriver(tableManager, undefined, 'test-styler-workflow-chunks');
   });
 
   afterEach(async () => {

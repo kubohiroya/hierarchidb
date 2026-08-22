@@ -1,10 +1,10 @@
-import React, { type ReactNode } from 'react';
-import { describe, expect, it, vi, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
-import type { ColumnBuilderParams } from '../components/internal/createTreeTableColumns';
-import { createTreeTableColumns } from '../components/internal/createTreeTableColumns';
 import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
+import { cleanup, render, screen } from '@testing-library/react';
+import React, { type ReactNode } from 'react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { ColumnBuilderParams } from '../components/internal/createTreeTableColumns';
+import { createTreeTableColumns } from '../components/internal/createTreeTableColumns';
 
 const mockGetPluginIconColor = vi.hoisted(() => vi.fn(() => undefined));
 const mockIsFolderNodeType = vi.hoisted(() => vi.fn((nodeType: string) => nodeType === 'folder'));
@@ -24,7 +24,8 @@ vi.mock('../components/TreeTableStyles.js', async () => {
   return {
     ...actual,
     NameCell: ({ children }: { children: ReactNode }) => React.createElement('div', null, children),
-    IndentSpace: ({ depth }: { depth: number }) => React.createElement('span', { 'data-testid': 'indent-space', 'data-depth': depth }),
+    IndentSpace: ({ depth }: { depth: number }) =>
+      React.createElement('span', { 'data-testid': 'indent-space', 'data-depth': depth }),
   };
 });
 
@@ -79,39 +80,39 @@ describe('TreeTable Name column indentation', () => {
     setEditingNodeId: () => {},
     setEditingField: () => {},
     treeId: 'console',
-  setContextMenuState: () => {},
-  visualSelectionSet: new Set(),
-  useArchiveColumns: false,
-  archiveAction: 'restore',
-  formatTimestamp: () => '-',
-  columnLabels: {
-    name: 'Name',
-    description: 'Description',
-    created: 'Created',
-    updated: 'Updated',
-    removed: 'Removed',
-  },
-  draftChipLabels: {
-    self: 'Draft',
-    descendant: {
-      singular: 'Draft child',
-      plural: 'Draft children',
+    setContextMenuState: () => {},
+    visualSelectionSet: new Set(),
+    useArchiveColumns: false,
+    archiveAction: 'restore',
+    formatTimestamp: () => '-',
+    columnLabels: {
+      name: 'Name',
+      description: 'Description',
+      created: 'Created',
+      updated: 'Updated',
+      removed: 'Removed',
     },
-  },
-  draftFlags: {
-    hasDraft: new Set(),
-    hasDescendantDraft: () => false,
-  },
-  validationMessages: {
-    invalidName: 'Invalid name',
-    invalidDescription: 'Invalid description',
-  },
-  placeholders: {
-    nameEdit: 'Press Enter to confirm / Esc to cancel',
-    descriptionEdit: 'Press Ctrl+Enter to confirm / Esc to cancel',
-  },
-  emptyValue: '-',
-};
+    draftChipLabels: {
+      self: 'Draft',
+      descendant: {
+        singular: 'Draft child',
+        plural: 'Draft children',
+      },
+    },
+    draftFlags: {
+      hasDraft: new Set(),
+      hasDescendantDraft: () => false,
+    },
+    validationMessages: {
+      invalidName: 'Invalid name',
+      invalidDescription: 'Invalid description',
+    },
+    placeholders: {
+      nameEdit: 'Press Enter to confirm / Esc to cancel',
+      descriptionEdit: 'Press Ctrl+Enter to confirm / Esc to cancel',
+    },
+    emptyValue: '-',
+  };
 
   const buildNode = (overrides: Partial<TreeNode> = {}): TreeNode => ({
     id: 'node-1' as NodeId,

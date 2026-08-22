@@ -1,18 +1,18 @@
+import { notify } from '@hierarchidb/components';
+import { type NodeId, toNodeId } from '@hierarchidb/core-types';
+import {
+  type PluginStepConfig,
+  type PluginStepProps,
+  PluginStepRegistry,
+  type StartBuildContext,
+} from '@hierarchidb/plugin-base';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import { FolderExportFormatStep } from './folder-export/FolderExportFormatStep';
 import { FolderExportOptionsStep } from './folder-export/FolderExportOptionsStep';
 import { FolderExportPurposeStep } from './folder-export/FolderExportPurposeStep';
 import { FolderExportReviewStep } from './folder-export/FolderExportReviewStep';
 import { FolderExportTargetStep } from './folder-export/FolderExportTargetStep';
-import { normalizeFolderExportDraft, type FolderExportDraftData } from './folder-export/types';
-import { notify } from '@hierarchidb/components';
-import { toNodeId, type NodeId } from '@hierarchidb/core-types';
-import {
-  type PluginStepConfig,
-  type PluginStepProps,
-  type StartBuildContext,
-  PluginStepRegistry,
-} from '@hierarchidb/plugin-base';
-import type { TreeNode } from '@hierarchidb/tree-api';
+import { type FolderExportDraftData, normalizeFolderExportDraft } from './folder-export/types';
 
 type FolderExportNode = Pick<TreeNode, 'id' | 'nodeType' | 'metadata'>;
 
@@ -61,7 +61,7 @@ type FolderExportDataPatch = Partial<FolderExportDraftData>;
 
 const createDraftUpdater = (
   initial: FolderExportDraftData,
-  onChange: FolderExportStepProps['onChange'],
+  onChange: FolderExportStepProps['onChange']
 ) => {
   let latestDraft = normalizeFolderExportDraft(initial);
   const serializeComparable = (value: unknown): string => {
@@ -88,7 +88,9 @@ const createDraftUpdater = (
   };
 };
 
-export const normalizeFolderExportFormat = (data: FolderExportDraftData): 'json' | 'pbf.zip' | 'mvf' => {
+export const normalizeFolderExportFormat = (
+  data: FolderExportDraftData
+): 'json' | 'pbf.zip' | 'mvf' => {
   const draft = normalizeFolderExportDraft(data);
   return draft.format;
 };
@@ -96,7 +98,7 @@ export const normalizeFolderExportFormat = (data: FolderExportDraftData): 'json'
 export const resolveFolderExportNodes = async (
   queryAPI: FolderExportWorkerQueryAPI,
   rootNodeId: NodeId,
-  targetScope: FolderExportDraftData['targetScope'],
+  targetScope: FolderExportDraftData['targetScope']
 ): Promise<FolderExportNode[]> => {
   const root = await queryAPI.getNode(rootNodeId);
   if (!root) {
@@ -115,7 +117,7 @@ export const resolveFolderExportNodes = async (
 export const createFolderExportFilename = (
   baseName: string,
   format: 'json' | 'pbf.zip' | 'mvf',
-  timestamp = new Date(),
+  timestamp = new Date()
 ): string => {
   const safeBase = baseName.trim() || 'folder';
   const sanitized = safeBase.replace(/[\\/:*?"<>|]/g, '_').trim();
@@ -164,7 +166,9 @@ const getWorkerClient = (): FolderExportWorkerRef => {
 const isJsonBlob = (value: string | Blob): value is Blob => value instanceof Blob;
 
 const downloadExportResult = (data: string | Blob, filename: string, mimeType: string): void => {
-  const blob = isJsonBlob(data) ? data : new Blob([data], { type: mimeType || 'application/octet-stream' });
+  const blob = isJsonBlob(data)
+    ? data
+    : new Blob([data], { type: mimeType || 'application/octet-stream' });
   const objectUrl = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = objectUrl;
@@ -175,7 +179,10 @@ const downloadExportResult = (data: string | Blob, filename: string, mimeType: s
   URL.revokeObjectURL(objectUrl);
 };
 
-const startFolderExport = async (draft: FolderExportDraftData, context: FolderExportStartContext) => {
+const startFolderExport = async (
+  draft: FolderExportDraftData,
+  context: FolderExportStartContext
+) => {
   const normalizedDraft = normalizeFolderExportDraft(draft);
   const targetNodeId = context.nodeId ?? context.parentId;
   if (!targetNodeId) {
@@ -218,7 +225,11 @@ const startFolderExport = async (draft: FolderExportDraftData, context: FolderEx
 
     const targetNode = await queryAPI.getNode(nodeId);
     const baseName = targetNode?.metadata?.name || targetNodeId || 'folder-export';
-    const filename = createFolderExportFilename(baseName, normalizeFolderExportFormat(normalizedDraft), new Date());
+    const filename = createFolderExportFilename(
+      baseName,
+      normalizeFolderExportFormat(normalizedDraft),
+      new Date()
+    );
     downloadExportResult(exportResult.data, filename, exportResult.mimeType);
     notify.success(`Export started: ${filename}`);
   } catch (error) {
@@ -235,13 +246,7 @@ const createFolderExportSteps = (): ReadonlyArray<PluginStepConfig<FolderExportD
     componentFactory: (props: FolderExportStepProps) => {
       const draft = normalizeFolderExportDraft(props.data);
       const onUpdate = createDraftUpdater(draft, props.onChange);
-      return (
-        <FolderExportPurposeStep
-          {...props}
-          data={draft}
-          onChange={onUpdate}
-        />
-      );
+      return <FolderExportPurposeStep {...props} data={draft} onChange={onUpdate} />;
     },
     validate: (data) => Boolean(normalizeFolderExportDraft(data).exportMode),
   },
@@ -251,13 +256,7 @@ const createFolderExportSteps = (): ReadonlyArray<PluginStepConfig<FolderExportD
     componentFactory: (props: FolderExportStepProps) => {
       const draft = normalizeFolderExportDraft(props.data);
       const onUpdate = createDraftUpdater(draft, props.onChange);
-      return (
-        <FolderExportTargetStep
-          {...props}
-          data={draft}
-          onChange={onUpdate}
-        />
-      );
+      return <FolderExportTargetStep {...props} data={draft} onChange={onUpdate} />;
     },
     validate: (data) => {
       const normalized = normalizeFolderExportDraft(data);
@@ -270,13 +269,7 @@ const createFolderExportSteps = (): ReadonlyArray<PluginStepConfig<FolderExportD
     componentFactory: (props: FolderExportStepProps) => {
       const draft = normalizeFolderExportDraft(props.data);
       const onUpdate = createDraftUpdater(draft, props.onChange);
-      return (
-        <FolderExportFormatStep
-          {...props}
-          data={draft}
-          onChange={onUpdate}
-        />
-      );
+      return <FolderExportFormatStep {...props} data={draft} onChange={onUpdate} />;
     },
     validate: (data) => {
       const normalized = normalizeFolderExportDraft(data);
@@ -291,13 +284,7 @@ const createFolderExportSteps = (): ReadonlyArray<PluginStepConfig<FolderExportD
     componentFactory: (props: FolderExportStepProps) => {
       const draft = normalizeFolderExportDraft(props.data);
       const onUpdate = createDraftUpdater(draft, props.onChange);
-      return (
-        <FolderExportOptionsStep
-          {...props}
-          data={draft}
-          onChange={onUpdate}
-        />
-      );
+      return <FolderExportOptionsStep {...props} data={draft} onChange={onUpdate} />;
     },
     validate: (data) => {
       const normalized = normalizeFolderExportDraft(data);
@@ -318,13 +305,7 @@ const createFolderExportSteps = (): ReadonlyArray<PluginStepConfig<FolderExportD
     componentFactory: (props: FolderExportStepProps) => {
       const draft = normalizeFolderExportDraft(props.data);
       const onUpdate = createDraftUpdater(draft, props.onChange);
-      return (
-        <FolderExportReviewStep
-          {...props}
-          data={draft}
-          onChange={onUpdate}
-        />
-      );
+      return <FolderExportReviewStep {...props} data={draft} onChange={onUpdate} />;
     },
     validate: (data) => canStartFolderExport(data),
     capabilities: {

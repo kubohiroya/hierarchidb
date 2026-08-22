@@ -1,6 +1,9 @@
 import type { Tile } from 'geojson-vt';
-import { buildTileProgressMessage, buildTileLayerFeatureCounts } from './vtStageTaskOutputLogging.js';
 import { processTileForVtOutput } from './processTileForVtOutput.js';
+import {
+  buildTileLayerFeatureCounts,
+  buildTileProgressMessage,
+} from './vtStageTaskOutputLogging.js';
 import type { VtTileOutputWriterInput } from './vtStageTaskOutputTypes.js';
 
 export type TileVisitInput = {
@@ -19,13 +22,8 @@ export type TileVisitResult = {
 };
 
 export const handleTileWithoutLayers = async ({
-  context: {
-    reportTileProgress,
-  },
-  tile: {
-    processedTiles,
-    generatedTiles,
-  },
+  context: { reportTileProgress },
+  tile: { processedTiles, generatedTiles },
 }: TileVisitInput): Promise<TileVisitResult> => {
   await reportTileProgress({
     processedTiles,
@@ -39,13 +37,7 @@ export const handleTileWithoutLayers = async ({
 
 export const handleTileWithLayers = async ({
   context,
-  tile: {
-    z,
-    x,
-    y,
-    processedTiles,
-    generatedTiles,
-  },
+  tile: { z, x, y, processedTiles, generatedTiles },
   layers,
 }: TileVisitInput & {
   context: VtTileOutputWriterInput;
@@ -98,13 +90,16 @@ export const handleTileWithLayers = async ({
     outputStats,
     layerFeatureCounts,
   });
-  console.debug('[tileEmit] tile persisted', JSON.stringify({
-    ...taskContext,
-    z,
-    x,
-    y,
-    layerFeatureCounts,
-  }));
+  console.debug(
+    '[tileEmit] tile persisted',
+    JSON.stringify({
+      ...taskContext,
+      z,
+      x,
+      y,
+      layerFeatureCounts,
+    })
+  );
   await reportTileProgress({
     processedTiles,
     generatedTiles: generatedTiles + 1,

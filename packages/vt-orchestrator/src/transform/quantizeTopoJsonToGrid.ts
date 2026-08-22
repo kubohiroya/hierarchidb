@@ -18,11 +18,15 @@ const normalizeFeatureCollection = (value: FeatureCollection | Feature): Feature
 
 const snapFeatureCollectionToGrid = (
   collection: FeatureCollection,
-  config: ZoomGridConfig,
+  config: ZoomGridConfig
 ): FeatureCollection => {
   const snapped = collection.features.map((feature) => {
     if (!feature?.geometry) return feature;
-    const geometry = snapGeometryToGrid(feature.geometry, config.zTarget, config.quantize) as Geometry;
+    const geometry = snapGeometryToGrid(
+      feature.geometry,
+      config.zTarget,
+      config.quantize
+    ) as Geometry;
     return { ...feature, geometry };
   });
   return { ...collection, features: snapped };
@@ -30,7 +34,7 @@ const snapFeatureCollectionToGrid = (
 
 export const quantizeTopoJsonToGrid = async (
   topology: Topology,
-  config: ZoomGridConfig,
+  config: ZoomGridConfig
 ): Promise<Topology> => {
   const objects = topology.objects ?? {};
   const entries = Object.entries(objects);

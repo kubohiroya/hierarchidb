@@ -1,11 +1,10 @@
 import type { LocationType } from '~/common/types/index';
 import { KNOWN_LOCATION_TYPES } from './locationMapPreviewConstants.js';
 
-export const resolveLocationType = (value: string): LocationType => (
+export const resolveLocationType = (value: string): LocationType =>
   (KNOWN_LOCATION_TYPES as readonly string[]).includes(value)
-    ? value as LocationType
-    : 'area_centroid'
-);
+    ? (value as LocationType)
+    : 'area_centroid';
 
 export const formatTimestamp = (value?: number): string | undefined => {
   if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;

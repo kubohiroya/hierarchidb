@@ -1,16 +1,16 @@
 /**
-  * TreeConsoleContent - TreeTableCore
-   * TanStack Table + Virtual
-  * eria-cartographTreeTableCore
-  */
+ * TreeConsoleContent - TreeTableCore
+ * TanStack Table + Virtual
+ * eria-cartographTreeTableCore
+ */
 
-import type React from 'react';
-import { memo } from 'react';
+import { TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import type { TreeConsoleContentProps } from '~/types/index';
-import { TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
+import type React from 'react';
+import { memo } from 'react';
 import { useTreeConsoleContent } from '~/hooks/useTreeConsoleContent';
+import type { TreeConsoleContentProps } from '~/types/index';
 
 const StyledDialogContent = styled(Box)`
   padding: 0;
@@ -47,9 +47,9 @@ const StableContentContainer = styled(Box)`
 `;
 
 /**
-  * TreeConsoleContent
+ * TreeConsoleContent
  * TreeTableCore
-  */
+ */
 export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
   ({
     controller,
@@ -130,9 +130,13 @@ export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
           {/* Lightweight debug info for tests/diagnostics (ensure single instance per document) */}
           {shouldRenderDebugInfo ? (
             <Box sx={{ p: 1 }} data-testid="treeconsole-debug-info">
-              <Typography variant="caption">TreeTypes Root: {String(_treeRootNodeId || '')}</Typography>
+              <Typography variant="caption">
+                TreeTypes Root: {String(_treeRootNodeId || '')}
+              </Typography>
               {_mode && (
-                <Typography variant="caption" sx={{ ml: 2 }}>Mode: {_mode}</Typography>
+                <Typography variant="caption" sx={{ ml: 2 }}>
+                  Mode: {_mode}
+                </Typography>
               )}
               <Typography variant="caption" sx={{ ml: 2 }}>
                 Controller: {controller ? 'Available' : 'Unavailable'}
@@ -142,7 +146,7 @@ export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
         </StableContentContainer>
       </StyledDialogContent>
     );
-  },
+  }
 );
 
 TreeConsoleContent.displayName = 'TreeConsoleContent';

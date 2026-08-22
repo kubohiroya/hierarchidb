@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type PointerEvent, type WheelEvent } from 'react';
+import { type PointerEvent, useCallback, useMemo, useRef, useState, type WheelEvent } from 'react';
 import type { TileBBox } from './TransposedFeaturePreviewCard';
 
 type Point = { x: number; y: number };
@@ -11,8 +11,8 @@ const lonLatToMercator = (lon: number, lat: number): Point | null => {
   const maxLat = 85.05112878;
   const clampedLat = Math.max(-maxLat, Math.min(maxLat, lat));
   const rad = Math.PI / 180;
-  const x = lon * 20037508.34 / 180;
-  const y = Math.log(Math.tan((90 + clampedLat) * rad / 2)) * 20037508.34 / Math.PI;
+  const x = (lon * 20037508.34) / 180;
+  const y = (Math.log(Math.tan(((90 + clampedLat) * rad) / 2)) * 20037508.34) / Math.PI;
   return { x, y };
 };
 
@@ -41,7 +41,11 @@ type Args = {
   onMouseLeave?: () => void;
 };
 
-export const useTransposedFeaturePreviewCardView = ({ bufferBBox, tileBBox, onMouseLeave }: Args) => {
+export const useTransposedFeaturePreviewCardView = ({
+  bufferBBox,
+  tileBBox,
+  onMouseLeave,
+}: Args) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState<Point>({ x: 0, y: 0 });
@@ -50,38 +54,41 @@ export const useTransposedFeaturePreviewCardView = ({ bufferBBox, tileBBox, onMo
 
   const view = useMemo(() => toMercatorBBox(bufferBBox), [bufferBBox]);
   const tileView = useMemo(() => toMercatorBBox(tileBBox), [tileBBox]);
-  const tileTopLeft = view && tileView
-    ? (() => {
-      const [lon, lat] = [tileBBox.minX, tileBBox.maxY];
-      const projected = lonLatToMercator(lon, lat);
-      if (!projected || !view) return null;
-      const spanX = view.maxX - view.minX;
-      const spanY = view.maxY - view.minY;
-      const x = 16 + ((projected.x - view.minX) / spanX) * Math.max(1, WIDTH - 32);
-      const y = 16 + ((view.maxY - projected.y) / spanY) * Math.max(1, HEIGHT - 32);
-      return { x, y };
-    })()
-    : null;
-  const tileBottomRight = view && tileView
-    ? (() => {
-      const [lon, lat] = [tileBBox.maxX, tileBBox.minY];
-      const projected = lonLatToMercator(lon, lat);
-      if (!projected || !view) return null;
-      const spanX = view.maxX - view.minX;
-      const spanY = view.maxY - view.minY;
-      const x = 16 + ((projected.x - view.minX) / spanX) * Math.max(1, WIDTH - 32);
-      const y = 16 + ((view.maxY - projected.y) / spanY) * Math.max(1, HEIGHT - 32);
-      return { x, y };
-    })()
-    : null;
-  const tileRect = tileTopLeft && tileBottomRight
-    ? {
-      x: tileTopLeft.x,
-      y: tileTopLeft.y,
-      width: tileBottomRight.x - tileTopLeft.x,
-      height: tileBottomRight.y - tileTopLeft.y,
-    }
-    : null;
+  const tileTopLeft =
+    view && tileView
+      ? (() => {
+          const [lon, lat] = [tileBBox.minX, tileBBox.maxY];
+          const projected = lonLatToMercator(lon, lat);
+          if (!projected || !view) return null;
+          const spanX = view.maxX - view.minX;
+          const spanY = view.maxY - view.minY;
+          const x = 16 + ((projected.x - view.minX) / spanX) * Math.max(1, WIDTH - 32);
+          const y = 16 + ((view.maxY - projected.y) / spanY) * Math.max(1, HEIGHT - 32);
+          return { x, y };
+        })()
+      : null;
+  const tileBottomRight =
+    view && tileView
+      ? (() => {
+          const [lon, lat] = [tileBBox.maxX, tileBBox.minY];
+          const projected = lonLatToMercator(lon, lat);
+          if (!projected || !view) return null;
+          const spanX = view.maxX - view.minX;
+          const spanY = view.maxY - view.minY;
+          const x = 16 + ((projected.x - view.minX) / spanX) * Math.max(1, WIDTH - 32);
+          const y = 16 + ((view.maxY - projected.y) / spanY) * Math.max(1, HEIGHT - 32);
+          return { x, y };
+        })()
+      : null;
+  const tileRect =
+    tileTopLeft && tileBottomRight
+      ? {
+          x: tileTopLeft.x,
+          y: tileTopLeft.y,
+          width: tileBottomRight.x - tileTopLeft.x,
+          height: tileBottomRight.y - tileTopLeft.y,
+        }
+      : null;
 
   const resetView = useCallback(() => {
     setScale(1);
@@ -116,13 +123,16 @@ export const useTransposedFeaturePreviewCardView = ({ bufferBBox, tileBBox, onMo
     setLastPoint({ x: event.clientX, y: event.clientY });
   }, []);
 
-  const handlePointerMove = useCallback((event: PointerEvent<HTMLDivElement>) => {
-    if (!dragging || !lastPoint) return;
-    const dx = event.clientX - lastPoint.x;
-    const dy = event.clientY - lastPoint.y;
-    setOffset((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
-    setLastPoint({ x: event.clientX, y: event.clientY });
-  }, [dragging, lastPoint]);
+  const handlePointerMove = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      if (!dragging || !lastPoint) return;
+      const dx = event.clientX - lastPoint.x;
+      const dy = event.clientY - lastPoint.y;
+      setOffset((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
+      setLastPoint({ x: event.clientX, y: event.clientY });
+    },
+    [dragging, lastPoint]
+  );
 
   const handlePointerUp = useCallback((event?: PointerEvent<HTMLDivElement>) => {
     if (event) {
@@ -139,11 +149,14 @@ export const useTransposedFeaturePreviewCardView = ({ bufferBBox, tileBBox, onMo
     onMouseLeave?.();
   }, [onMouseLeave, resetView]);
 
-  const handlePointerLeave = useCallback((event: PointerEvent<HTMLDivElement>) => {
-    handlePointerUp(event);
-    resetView();
-    onMouseLeave?.();
-  }, [handlePointerUp, onMouseLeave, resetView]);
+  const handlePointerLeave = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      handlePointerUp(event);
+      resetView();
+      onMouseLeave?.();
+    },
+    [handlePointerUp, onMouseLeave, resetView]
+  );
 
   return {
     containerRef,

@@ -1,8 +1,8 @@
-import type React from 'react';
-import { Box, Typography } from '@mui/material';
-import { DataSourceSelector } from './DataSourceSelector.js';
-import type { DataSourceOption, DataSourceSelectorProps } from './DataSourceSelector.js';
 import { LicenseAgreementStep } from '@hierarchidb/ui-license';
+import { Box, Typography } from '@mui/material';
+import type React from 'react';
+import type { DataSourceOption, DataSourceSelectorProps } from './DataSourceSelector.js';
+import { DataSourceSelector } from './DataSourceSelector.js';
 import { useDataSourceWithLicense } from './useDataSourceWithLicense.js';
 
 export interface DataSourceWithLicenseOption extends DataSourceOption {

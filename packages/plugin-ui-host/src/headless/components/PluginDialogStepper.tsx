@@ -1,4 +1,8 @@
 import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
+import { useTranslation } from '@hierarchidb/ui-i18n';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import OpenInNewOffIcon from '@mui/icons-material/OpenInNewOff';
 import {
   ListItemIcon,
   ListItemText,
@@ -10,14 +14,10 @@ import {
   Stepper,
   Typography,
 } from '@mui/material';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import OpenInNewOffIcon from '@mui/icons-material/OpenInNewOff';
 import type { Theme } from '@mui/material/styles';
 import { useLocation } from '@tanstack/react-router';
 import type React from 'react';
 import { useCallback, useState } from 'react';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 import { StepStatusIcon } from './StepStatusIcon.js';
 
 type WorkerStepState = {
@@ -164,7 +164,8 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
       <Stepper nonLinear activeStep={activeStepIndex} alternativeLabel>
         {steps.map((step, index) => {
           const workerStep = workerStepMap?.get(step.id) ?? dialogState?.steps?.[index];
-          const fallbackCanNavigate = enabledStepIndices.includes(index) || index === activeStepIndex;
+          const fallbackCanNavigate =
+            enabledStepIndices.includes(index) || index === activeStepIndex;
           const canNavigate = workerStep?.enabled ?? fallbackCanNavigate;
           const completed = workerStep?.completed ?? validatedStepIndices.includes(index);
           const baseLabel = step.label ?? step.id;
@@ -178,7 +179,8 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
             index === 0
               ? true
               : (previousWorkerStep?.completed ?? validatedStepIndices.includes(index - 1));
-          const isValidatedButDisabled = completed && !canNavigate && index > 0 && !previousCompleted;
+          const isValidatedButDisabled =
+            completed && !canNavigate && index > 0 && !previousCompleted;
           const showBuildProgress =
             step.id === 'build' && isActive && buildStepRunning && !completed;
           const isDisabled = !canNavigate || navigationLocked;
@@ -244,19 +246,25 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
           <ListItemIcon>
             <OpenInNewIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>{t('dialogs.pluginDialog.contextMenu.openInNewTab', 'Open In New Tab')}</ListItemText>
+          <ListItemText>
+            {t('dialogs.pluginDialog.contextMenu.openInNewTab', 'Open In New Tab')}
+          </ListItemText>
         </MenuItem>
         <MenuItem onClick={openInNewWindow}>
           <ListItemIcon>
             <OpenInNewOffIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>{t('dialogs.pluginDialog.contextMenu.openInNewWindow', 'Open In New Window')}</ListItemText>
+          <ListItemText>
+            {t('dialogs.pluginDialog.contextMenu.openInNewWindow', 'Open In New Window')}
+          </ListItemText>
         </MenuItem>
         <MenuItem onClick={copyLinkUrl}>
           <ListItemIcon>
             <ContentCopyIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>{t('dialogs.pluginDialog.contextMenu.copyLinkUrl', 'Copy Link URL')}</ListItemText>
+          <ListItemText>
+            {t('dialogs.pluginDialog.contextMenu.copyLinkUrl', 'Copy Link URL')}
+          </ListItemText>
         </MenuItem>
       </DialogSafeMenu>
     </>

@@ -2,14 +2,15 @@ import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
 
 const requireFiniteNonNegativeNumber = (value: unknown, label: string): number => {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
-    throw new Error(`[shape elapsed] ${label} must be a finite non-negative number, received ${String(value)}`);
+    throw new Error(
+      `[shape elapsed] ${label} must be a finite non-negative number, received ${String(value)}`
+    );
   }
   return value;
 };
 
-const resolveInactiveMs = (inactiveMs: number | undefined, label: string): number => (
-  inactiveMs === undefined ? 0 : requireFiniteNonNegativeNumber(inactiveMs, label)
-);
+const resolveInactiveMs = (inactiveMs: number | undefined, label: string): number =>
+  inactiveMs === undefined ? 0 : requireFiniteNonNegativeNumber(inactiveMs, label);
 
 export const resolveStageElapsedMs = (params: {
   stageStartedAt: number;
@@ -21,7 +22,9 @@ export const resolveStageElapsedMs = (params: {
   const endAt = requireFiniteNonNegativeNumber(params.endAt, 'stage endAt');
   const durationMs = endAt - stageStartedAt - stageInactiveMs;
   if (!Number.isFinite(durationMs) || durationMs < 0) {
-    throw new Error(`[shape elapsed] stage duration must be finite and non-negative, received ${durationMs}`);
+    throw new Error(
+      `[shape elapsed] stage duration must be finite and non-negative, received ${durationMs}`
+    );
   }
   return durationMs;
 };
@@ -34,26 +37,32 @@ export const resolveSessionElapsedMs = (params: {
   inactiveMs?: number;
   now: number;
 }): number => {
-  const startedAt = params.startedAt === undefined
-    ? undefined
-    : requireFiniteNonNegativeNumber(params.startedAt, 'startedAt');
+  const startedAt =
+    params.startedAt === undefined
+      ? undefined
+      : requireFiniteNonNegativeNumber(params.startedAt, 'startedAt');
   const inactiveMs = resolveInactiveMs(params.inactiveMs, 'inactiveMs');
-  const completedAt = params.completedAt === undefined
-    ? undefined
-    : requireFiniteNonNegativeNumber(params.completedAt, 'completedAt');
+  const completedAt =
+    params.completedAt === undefined
+      ? undefined
+      : requireFiniteNonNegativeNumber(params.completedAt, 'completedAt');
 
   if (params.buildStatus === 'idle') {
     if (startedAt !== undefined && completedAt !== undefined) {
       const durationMs = completedAt - startedAt - inactiveMs;
       if (!Number.isFinite(durationMs) || durationMs < 0) {
-        throw new Error(`[shape elapsed] session duration must be finite and non-negative, received ${durationMs}`);
+        throw new Error(
+          `[shape elapsed] session duration must be finite and non-negative, received ${durationMs}`
+        );
       }
     }
     return 0;
   }
 
   if (startedAt === undefined) {
-    throw new Error('[shape elapsed] startedAt must be a finite non-negative number, received undefined');
+    throw new Error(
+      '[shape elapsed] startedAt must be a finite non-negative number, received undefined'
+    );
   }
   let endAt: number;
   if (params.buildStatus === 'running') {
@@ -65,7 +74,9 @@ export const resolveSessionElapsedMs = (params: {
   }
   const durationMs = endAt - startedAt - inactiveMs;
   if (!Number.isFinite(durationMs) || durationMs < 0) {
-    throw new Error(`[shape elapsed] session duration must be finite and non-negative, received ${durationMs}`);
+    throw new Error(
+      `[shape elapsed] session duration must be finite and non-negative, received ${durationMs}`
+    );
   }
   return durationMs;
 };
@@ -73,7 +84,7 @@ export const resolveSessionElapsedMs = (params: {
 export const runWithTimeout = async <T>(
   action: Promise<T>,
   timeoutMs: number,
-  timeoutMessage: string,
+  timeoutMessage: string
 ): Promise<T> => {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   try {
@@ -94,7 +105,7 @@ export const runWithTimeout = async <T>(
 export const waitForSessionStateSync = async (
   checkCondition: () => boolean,
   timeoutMs: number,
-  pollIntervalMs: number = 500,
+  pollIntervalMs: number = 500
 ): Promise<boolean> => {
   const startTime = Date.now();
 
@@ -117,7 +128,10 @@ export const waitForSessionStateSync = async (
   });
 };
 
-export const shallowEqualNumberRecord = (left: Record<string, number>, right: Record<string, number>): boolean => {
+export const shallowEqualNumberRecord = (
+  left: Record<string, number>,
+  right: Record<string, number>
+): boolean => {
   if (left === right) return true;
   const leftKeys = Object.keys(left);
   const rightKeys = Object.keys(right);
@@ -125,11 +139,12 @@ export const shallowEqualNumberRecord = (left: Record<string, number>, right: Re
   return leftKeys.every((key) => left[key] === right[key]);
 };
 
-export const sumNumberRecord = (values: Record<string, number>): number => (
-  Object.entries(values).reduce((acc, [stageId, value]) => (
-    acc + requireFiniteNonNegativeNumber(value, `stageDurationByStage.${stageId}`)
-  ), 0)
-);
+export const sumNumberRecord = (values: Record<string, number>): number =>
+  Object.entries(values).reduce(
+    (acc, [stageId, value]) =>
+      acc + requireFiniteNonNegativeNumber(value, `stageDurationByStage.${stageId}`),
+    0
+  );
 
 export const buildElapsedByStageWithActiveStage = (params: {
   stageDurationByStage: Record<string, number>;
@@ -142,12 +157,13 @@ export const buildElapsedByStageWithActiveStage = (params: {
     return stageDurationByStage;
   }
   const currentValue = stageDurationByStage[timingStageId];
-  const currentElapsedMs = currentValue === undefined
-    ? 0
-    : requireFiniteNonNegativeNumber(currentValue, `stageDurationByStage.${timingStageId}`);
+  const currentElapsedMs =
+    currentValue === undefined
+      ? 0
+      : requireFiniteNonNegativeNumber(currentValue, `stageDurationByStage.${timingStageId}`);
   const validatedTimingStageElapsedMs = requireFiniteNonNegativeNumber(
     timingStageElapsedMs,
-    `timingStageElapsedMs.${timingStageId}`,
+    `timingStageElapsedMs.${timingStageId}`
   );
   const nextElapsedMs = Math.max(currentElapsedMs, validatedTimingStageElapsedMs);
   if (nextElapsedMs === currentElapsedMs) {
@@ -165,7 +181,10 @@ export const resolveTotalElapsedMs = (params: {
   sessionDurationMs: number;
 }): number => {
   const stageTotalElapsedMs = sumNumberRecord(params.stageDurationByStage);
-  const sessionDurationMs = requireFiniteNonNegativeNumber(params.sessionDurationMs, 'sessionDurationMs');
+  const sessionDurationMs = requireFiniteNonNegativeNumber(
+    params.sessionDurationMs,
+    'sessionDurationMs'
+  );
   if (params.buildStatus === 'running') {
     return stageTotalElapsedMs;
   }
@@ -184,16 +203,17 @@ export const hasPositiveDuration = (values: Record<string, number>): boolean => 
 
 export const mergeElapsedByStage = (
   currentStageDurationByStage: Record<string, number>,
-  snapshotStageDurationByStage: Record<string, number>,
+  snapshotStageDurationByStage: Record<string, number>
 ): Record<string, number> => {
   hasPositiveDuration(currentStageDurationByStage);
   const next: Record<string, number> = { ...currentStageDurationByStage };
   Object.entries(snapshotStageDurationByStage).forEach(([stageId, snapshotDurationMs]) => {
     requireFiniteNonNegativeNumber(snapshotDurationMs, `snapshotStageDurationByStage.${stageId}`);
     const currentValue = next[stageId];
-    const currentMs = currentValue === undefined
-      ? 0
-      : requireFiniteNonNegativeNumber(currentValue, `currentStageDurationByStage.${stageId}`);
+    const currentMs =
+      currentValue === undefined
+        ? 0
+        : requireFiniteNonNegativeNumber(currentValue, `currentStageDurationByStage.${stageId}`);
     if (snapshotDurationMs > currentMs) {
       next[stageId] = snapshotDurationMs;
     }
@@ -207,9 +227,10 @@ export const shouldResetElapsedState = (params: {
   sessionStageDurationByStage: Record<string, number>;
   localStageDurationByStage: Record<string, number>;
 }): boolean => {
-  const buildDurationMs = params.buildDurationMs === undefined
-    ? undefined
-    : requireFiniteNonNegativeNumber(params.buildDurationMs, 'buildDurationMs');
+  const buildDurationMs =
+    params.buildDurationMs === undefined
+      ? undefined
+      : requireFiniteNonNegativeNumber(params.buildDurationMs, 'buildDurationMs');
   const hasSessionStageDuration = hasPositiveDuration(params.sessionStageDurationByStage);
   const hasLocalStageDuration = hasPositiveDuration(params.localStageDurationByStage);
   if (params.buildStatus === 'running') return false;

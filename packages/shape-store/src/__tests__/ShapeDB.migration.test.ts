@@ -1,15 +1,15 @@
 /**
  * ShapeDB Migration Test
- * 
+ *
  * Tests the migration from version 1 (monolithic sessions table) to version 2
  * (four normalized tables: buildSessionConfigs, buildSessionHeartbeats, buildSessionStatuses, buildStageStatuses)
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { Dexie } from 'dexie';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildSessionRecord } from "../VectorTileRecord";
-import { ShapeDB } from "../ShapeDB";
+import { Dexie } from 'dexie';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { ShapeDB } from '../ShapeDB';
+import type { BuildSessionRecord } from '../VectorTileRecord';
 
 describe('ShapeDB Migration from V1 to V2', () => {
   let testDbName: string;
@@ -167,84 +167,86 @@ describe('ShapeDB Migration from V1 to V2', () => {
         });
 
         // Version 2: Refactored schema with migration
-        this.version(2).stores({
-          vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
-          tileSummaries: '&nodeId',
-          featureMetadata: '&id, nodeId',
-          sourceMetadata: '&id, nodeId',
-          tabularMetadata: '&id, contentHash, filename, createdAt, *referencingPlugins',
-          buildSessionConfigs: '&nodeId',
-          buildSessionHeartbeats: '&nodeId',
-          buildSessionStatuses: '&nodeId, status',
-          buildStageStatuses: '&id, nodeId, [nodeId+stage], [nodeId+startedAt]',
-          sessions: null, // Remove old sessions table
-        }).upgrade(async (tx) => {
-          // Migration logic: Transform old BuildSessionRecord into four new tables
-          const tableNames = Array.from(tx.idbtrans.objectStoreNames);
-          if (!tableNames.includes('sessions')) {
-            return;
-          }
+        this.version(2)
+          .stores({
+            vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
+            tileSummaries: '&nodeId',
+            featureMetadata: '&id, nodeId',
+            sourceMetadata: '&id, nodeId',
+            tabularMetadata: '&id, contentHash, filename, createdAt, *referencingPlugins',
+            buildSessionConfigs: '&nodeId',
+            buildSessionHeartbeats: '&nodeId',
+            buildSessionStatuses: '&nodeId, status',
+            buildStageStatuses: '&id, nodeId, [nodeId+stage], [nodeId+startedAt]',
+            sessions: null, // Remove old sessions table
+          })
+          .upgrade(async (tx) => {
+            // Migration logic: Transform old BuildSessionRecord into four new tables
+            const tableNames = Array.from(tx.idbtrans.objectStoreNames);
+            if (!tableNames.includes('sessions')) {
+              return;
+            }
 
-          const oldSessionsTable = tx.idbtrans.objectStore('sessions');
-          const oldSessions: BuildSessionRecord[] = [];
-          const cursorRequest = oldSessionsTable.openCursor();
+            const oldSessionsTable = tx.idbtrans.objectStore('sessions');
+            const oldSessions: BuildSessionRecord[] = [];
+            const cursorRequest = oldSessionsTable.openCursor();
 
-          await new Promise<void>((resolve, reject) => {
-            cursorRequest.onsuccess = (event) => {
-              const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
-              if (cursor) {
-                oldSessions.push(cursor.value as BuildSessionRecord);
-                cursor.continue();
-              } else {
-                resolve();
+            await new Promise<void>((resolve, reject) => {
+              cursorRequest.onsuccess = (event) => {
+                const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+                if (cursor) {
+                  oldSessions.push(cursor.value as BuildSessionRecord);
+                  cursor.continue();
+                } else {
+                  resolve();
+                }
+              };
+              cursorRequest.onerror = () => reject(cursorRequest.error);
+            });
+
+            // Transform each old session into four new table records
+            for (const old of oldSessions) {
+              // 1. Create BuildSessionRecord (immutable config)
+              await tx.table('buildSessionConfigs').add({
+                nodeId: old.nodeId,
+                domainType: 'shape',
+                selectedArrayByCountries: old.selectedArrayByCountries,
+                selectedArrayVersion: undefined,
+                startedAt: old.startedAt,
+                sourceStageMaxima: old.sourceStageMaxima,
+              });
+
+              // 2. Create BuildSessionHeartbeat (if lastHeartbeatAt exists)
+              if (old.lastHeartbeatAt !== undefined) {
+                await tx.table('buildSessionHeartbeats').add({
+                  nodeId: old.nodeId,
+                  lastHeartbeatAt: old.lastHeartbeatAt,
+                });
               }
-            };
-            cursorRequest.onerror = () => reject(cursorRequest.error);
+
+              // 3. Create BuildSessionStatus (session-level status)
+              await tx.table('buildSessionStatuses').add({
+                nodeId: old.nodeId,
+                status: old.status,
+                stopReason: old.stopReason,
+                completedAt: old.completedAt,
+              });
+
+              // 4. Create BuildStageStatus (current stage only)
+              if (old.stage) {
+                await tx.table('buildStageStatuses').add({
+                  id: `${old.nodeId}:${old.stage}`,
+                  nodeId: old.nodeId,
+                  stage: old.stage,
+                  status: old.status === 'running' ? 'running' : 'completed',
+                  startedAt: old.stageStartedAt ?? old.startedAt,
+                  completedAt: old.status === 'completed' ? old.completedAt : undefined,
+                  inactiveMs: old.stageInactiveMs,
+                  stageId: old.stageId,
+                });
+              }
+            }
           });
-
-          // Transform each old session into four new table records
-          for (const old of oldSessions) {
-            // 1. Create BuildSessionRecord (immutable config)
-            await tx.table('buildSessionConfigs').add({
-              nodeId: old.nodeId,
-              domainType: 'shape',
-              selectedArrayByCountries: old.selectedArrayByCountries,
-              selectedArrayVersion: undefined,
-              startedAt: old.startedAt,
-              sourceStageMaxima: old.sourceStageMaxima,
-            });
-
-            // 2. Create BuildSessionHeartbeat (if lastHeartbeatAt exists)
-            if (old.lastHeartbeatAt !== undefined) {
-              await tx.table('buildSessionHeartbeats').add({
-                nodeId: old.nodeId,
-                lastHeartbeatAt: old.lastHeartbeatAt,
-              });
-            }
-
-            // 3. Create BuildSessionStatus (session-level status)
-            await tx.table('buildSessionStatuses').add({
-              nodeId: old.nodeId,
-              status: old.status,
-              stopReason: old.stopReason,
-              completedAt: old.completedAt,
-            });
-
-            // 4. Create BuildStageStatus (current stage only)
-            if (old.stage) {
-              await tx.table('buildStageStatuses').add({
-                id: `${old.nodeId}:${old.stage}`,
-                nodeId: old.nodeId,
-                stage: old.stage,
-                status: old.status === 'running' ? 'running' : 'completed',
-                startedAt: old.stageStartedAt ?? old.startedAt,
-                completedAt: old.status === 'completed' ? old.completedAt : undefined,
-                inactiveMs: old.stageInactiveMs,
-                stageId: old.stageId,
-              });
-            }
-          }
-        });
 
         this.buildSessionConfigs = this.table('buildSessionConfigs');
         this.buildSessionHeartbeats = this.table('buildSessionHeartbeats');
@@ -262,7 +264,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
     const sessions = await db.buildSessionConfigs.toArray();
     expect(sessions).toHaveLength(2);
 
-    const session1 = sessions.find(s => s.nodeId === 'node-1');
+    const session1 = sessions.find((s) => s.nodeId === 'node-1');
     expect(session1).toBeDefined();
     expect(session1?.nodeId).toBe('node-1');
     expect(session1?.domainType).toBe('shape');
@@ -270,7 +272,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
     expect(session1?.startedAt).toBe(1000000);
     expect(session1?.sourceStageMaxima).toEqual({ featureMax: 1000, polygonMax: 500 });
 
-    const session2 = sessions.find(s => s.nodeId === 'node-2');
+    const session2 = sessions.find((s) => s.nodeId === 'node-2');
     expect(session2).toBeDefined();
     expect(session2?.nodeId).toBe('node-2');
     expect(session2?.selectedArrayByCountries).toEqual({ UK: [true, true, false] });
@@ -280,11 +282,11 @@ describe('ShapeDB Migration from V1 to V2', () => {
     const heartbeats = await db.buildSessionHeartbeats.toArray();
     expect(heartbeats).toHaveLength(2);
 
-    const heartbeat1 = heartbeats.find(h => h.nodeId === 'node-1');
+    const heartbeat1 = heartbeats.find((h) => h.nodeId === 'node-1');
     expect(heartbeat1).toBeDefined();
     expect(heartbeat1?.lastHeartbeatAt).toBe(1000200);
 
-    const heartbeat2 = heartbeats.find(h => h.nodeId === 'node-2');
+    const heartbeat2 = heartbeats.find((h) => h.nodeId === 'node-2');
     expect(heartbeat2).toBeDefined();
     expect(heartbeat2?.lastHeartbeatAt).toBe(2000450);
 
@@ -292,13 +294,13 @@ describe('ShapeDB Migration from V1 to V2', () => {
     const statuses = await db.buildSessionStatuses.toArray();
     expect(statuses).toHaveLength(2);
 
-    const status1 = statuses.find(s => s.nodeId === 'node-1');
+    const status1 = statuses.find((s) => s.nodeId === 'node-1');
     expect(status1).toBeDefined();
     expect(status1?.status).toBe('running');
     expect(status1?.stopReason).toBeUndefined();
     expect(status1?.completedAt).toBeUndefined();
 
-    const status2 = statuses.find(s => s.nodeId === 'node-2');
+    const status2 = statuses.find((s) => s.nodeId === 'node-2');
     expect(status2).toBeDefined();
     expect(status2?.status).toBe('completed');
     expect(status2?.stopReason).toBe('completed');
@@ -308,7 +310,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
     const stageStatuses = await db.buildStageStatuses.toArray();
     expect(stageStatuses).toHaveLength(2);
 
-    const stageStatus1 = stageStatuses.find(s => s.nodeId === 'node-1');
+    const stageStatus1 = stageStatuses.find((s) => s.nodeId === 'node-1');
     expect(stageStatus1).toBeDefined();
     expect(stageStatus1?.id).toBe('node-1:source');
     expect(stageStatus1?.stage).toBe('source');
@@ -318,7 +320,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
     expect(stageStatus1?.stageId).toBe('stage-source-1');
     expect(stageStatus1?.completedAt).toBeUndefined();
 
-    const stageStatus2 = stageStatuses.find(s => s.nodeId === 'node-2');
+    const stageStatus2 = stageStatuses.find((s) => s.nodeId === 'node-2');
     expect(stageStatus2).toBeDefined();
     expect(stageStatus2?.id).toBe('node-2:tileEmit');
     expect(stageStatus2?.stage).toBe('tileEmit');
@@ -327,7 +329,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
     expect(stageStatus2?.completedAt).toBe(2000500);
 
     // Verify old sessions table no longer exists
-    const tableNames = db.tables.map(t => t.name);
+    const tableNames = db.tables.map((t) => t.name);
     expect(tableNames).not.toContain('sessions');
     expect(tableNames).toContain('buildSessionConfigs');
     expect(tableNames).toContain('buildSessionHeartbeats');
@@ -444,78 +446,80 @@ describe('ShapeDB Migration from V1 to V2', () => {
         });
 
         // Version 2: Refactored schema with migration (same as ShapeDB)
-        this.version(2).stores({
-          vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
-          tileSummaries: '&nodeId',
-          featureMetadata: '&id, nodeId',
-          sourceMetadata: '&id, nodeId',
-          tabularMetadata: '&id, contentHash, filename, createdAt, *referencingPlugins',
-          buildSessionConfigs: '&nodeId',
-          buildSessionHeartbeats: '&nodeId',
-          buildSessionStatuses: '&nodeId, status',
-          buildStageStatuses: '&id, nodeId, [nodeId+stage], [nodeId+startedAt]',
-          sessions: null,
-        }).upgrade(async (tx) => {
-          const tableNames = Array.from(tx.idbtrans.objectStoreNames);
-          if (!tableNames.includes('sessions')) {
-            return;
-          }
+        this.version(2)
+          .stores({
+            vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
+            tileSummaries: '&nodeId',
+            featureMetadata: '&id, nodeId',
+            sourceMetadata: '&id, nodeId',
+            tabularMetadata: '&id, contentHash, filename, createdAt, *referencingPlugins',
+            buildSessionConfigs: '&nodeId',
+            buildSessionHeartbeats: '&nodeId',
+            buildSessionStatuses: '&nodeId, status',
+            buildStageStatuses: '&id, nodeId, [nodeId+stage], [nodeId+startedAt]',
+            sessions: null,
+          })
+          .upgrade(async (tx) => {
+            const tableNames = Array.from(tx.idbtrans.objectStoreNames);
+            if (!tableNames.includes('sessions')) {
+              return;
+            }
 
-          const oldSessionsTable = tx.idbtrans.objectStore('sessions');
-          const oldSessions: BuildSessionRecord[] = [];
-          const cursorRequest = oldSessionsTable.openCursor();
+            const oldSessionsTable = tx.idbtrans.objectStore('sessions');
+            const oldSessions: BuildSessionRecord[] = [];
+            const cursorRequest = oldSessionsTable.openCursor();
 
-          await new Promise<void>((resolve, reject) => {
-            cursorRequest.onsuccess = (event) => {
-              const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
-              if (cursor) {
-                oldSessions.push(cursor.value as BuildSessionRecord);
-                cursor.continue();
-              } else {
-                resolve();
+            await new Promise<void>((resolve, reject) => {
+              cursorRequest.onsuccess = (event) => {
+                const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+                if (cursor) {
+                  oldSessions.push(cursor.value as BuildSessionRecord);
+                  cursor.continue();
+                } else {
+                  resolve();
+                }
+              };
+              cursorRequest.onerror = () => reject(cursorRequest.error);
+            });
+
+            for (const old of oldSessions) {
+              await tx.table('buildSessionConfigs').add({
+                nodeId: old.nodeId,
+                domainType: 'shape',
+                selectedArrayByCountries: old.selectedArrayByCountries,
+                selectedArrayVersion: undefined,
+                startedAt: old.startedAt,
+                sourceStageMaxima: old.sourceStageMaxima,
+              });
+
+              if (old.lastHeartbeatAt !== undefined) {
+                await tx.table('buildSessionHeartbeats').add({
+                  nodeId: old.nodeId,
+                  lastHeartbeatAt: old.lastHeartbeatAt,
+                });
               }
-            };
-            cursorRequest.onerror = () => reject(cursorRequest.error);
+
+              await tx.table('buildSessionStatuses').add({
+                nodeId: old.nodeId,
+                status: old.status,
+                stopReason: old.stopReason,
+                completedAt: old.completedAt,
+              });
+
+              if (old.stage) {
+                await tx.table('buildStageStatuses').add({
+                  id: `${old.nodeId}:${old.stage}`,
+                  nodeId: old.nodeId,
+                  stage: old.stage,
+                  status: old.status === 'running' ? 'running' : 'completed',
+                  startedAt: old.stageStartedAt ?? old.startedAt,
+                  completedAt: old.status === 'completed' ? old.completedAt : undefined,
+                  inactiveMs: old.stageInactiveMs,
+                  stageId: old.stageId,
+                });
+              }
+            }
           });
-
-          for (const old of oldSessions) {
-            await tx.table('buildSessionConfigs').add({
-              nodeId: old.nodeId,
-              domainType: 'shape',
-              selectedArrayByCountries: old.selectedArrayByCountries,
-              selectedArrayVersion: undefined,
-              startedAt: old.startedAt,
-              sourceStageMaxima: old.sourceStageMaxima,
-            });
-
-            if (old.lastHeartbeatAt !== undefined) {
-              await tx.table('buildSessionHeartbeats').add({
-                nodeId: old.nodeId,
-                lastHeartbeatAt: old.lastHeartbeatAt,
-              });
-            }
-
-            await tx.table('buildSessionStatuses').add({
-              nodeId: old.nodeId,
-              status: old.status,
-              stopReason: old.stopReason,
-              completedAt: old.completedAt,
-            });
-
-            if (old.stage) {
-              await tx.table('buildStageStatuses').add({
-                id: `${old.nodeId}:${old.stage}`,
-                nodeId: old.nodeId,
-                stage: old.stage,
-                status: old.status === 'running' ? 'running' : 'completed',
-                startedAt: old.stageStartedAt ?? old.startedAt,
-                completedAt: old.status === 'completed' ? old.completedAt : undefined,
-                inactiveMs: old.stageInactiveMs,
-                stageId: old.stageId,
-              });
-            }
-          }
-        });
 
         this.buildSessionConfigs = this.table('buildSessionConfigs');
         this.buildSessionHeartbeats = this.table('buildSessionHeartbeats');
@@ -637,78 +641,80 @@ describe('ShapeDB Migration from V1 to V2', () => {
         });
 
         // Version 2: Refactored schema with migration (same as ShapeDB)
-        this.version(2).stores({
-          vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
-          tileSummaries: '&nodeId',
-          featureMetadata: '&id, nodeId',
-          sourceMetadata: '&id, nodeId',
-          tabularMetadata: '&id, contentHash, filename, createdAt, *referencingPlugins',
-          buildSessionConfigs: '&nodeId',
-          buildSessionHeartbeats: '&nodeId',
-          buildSessionStatuses: '&nodeId, status',
-          buildStageStatuses: '&id, nodeId, [nodeId+stage], [nodeId+startedAt]',
-          sessions: null,
-        }).upgrade(async (tx) => {
-          const tableNames = Array.from(tx.idbtrans.objectStoreNames);
-          if (!tableNames.includes('sessions')) {
-            return;
-          }
+        this.version(2)
+          .stores({
+            vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
+            tileSummaries: '&nodeId',
+            featureMetadata: '&id, nodeId',
+            sourceMetadata: '&id, nodeId',
+            tabularMetadata: '&id, contentHash, filename, createdAt, *referencingPlugins',
+            buildSessionConfigs: '&nodeId',
+            buildSessionHeartbeats: '&nodeId',
+            buildSessionStatuses: '&nodeId, status',
+            buildStageStatuses: '&id, nodeId, [nodeId+stage], [nodeId+startedAt]',
+            sessions: null,
+          })
+          .upgrade(async (tx) => {
+            const tableNames = Array.from(tx.idbtrans.objectStoreNames);
+            if (!tableNames.includes('sessions')) {
+              return;
+            }
 
-          const oldSessionsTable = tx.idbtrans.objectStore('sessions');
-          const oldSessions: BuildSessionRecord[] = [];
-          const cursorRequest = oldSessionsTable.openCursor();
+            const oldSessionsTable = tx.idbtrans.objectStore('sessions');
+            const oldSessions: BuildSessionRecord[] = [];
+            const cursorRequest = oldSessionsTable.openCursor();
 
-          await new Promise<void>((resolve, reject) => {
-            cursorRequest.onsuccess = (event) => {
-              const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
-              if (cursor) {
-                oldSessions.push(cursor.value as BuildSessionRecord);
-                cursor.continue();
-              } else {
-                resolve();
+            await new Promise<void>((resolve, reject) => {
+              cursorRequest.onsuccess = (event) => {
+                const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+                if (cursor) {
+                  oldSessions.push(cursor.value as BuildSessionRecord);
+                  cursor.continue();
+                } else {
+                  resolve();
+                }
+              };
+              cursorRequest.onerror = () => reject(cursorRequest.error);
+            });
+
+            for (const old of oldSessions) {
+              await tx.table('buildSessionConfigs').add({
+                nodeId: old.nodeId,
+                domainType: 'shape',
+                selectedArrayByCountries: old.selectedArrayByCountries,
+                selectedArrayVersion: undefined,
+                startedAt: old.startedAt,
+                sourceStageMaxima: old.sourceStageMaxima,
+              });
+
+              if (old.lastHeartbeatAt !== undefined) {
+                await tx.table('buildSessionHeartbeats').add({
+                  nodeId: old.nodeId,
+                  lastHeartbeatAt: old.lastHeartbeatAt,
+                });
               }
-            };
-            cursorRequest.onerror = () => reject(cursorRequest.error);
+
+              await tx.table('buildSessionStatuses').add({
+                nodeId: old.nodeId,
+                status: old.status,
+                stopReason: old.stopReason,
+                completedAt: old.completedAt,
+              });
+
+              if (old.stage) {
+                await tx.table('buildStageStatuses').add({
+                  id: `${old.nodeId}:${old.stage}`,
+                  nodeId: old.nodeId,
+                  stage: old.stage,
+                  status: old.status === 'running' ? 'running' : 'completed',
+                  startedAt: old.stageStartedAt ?? old.startedAt,
+                  completedAt: old.status === 'completed' ? old.completedAt : undefined,
+                  inactiveMs: old.stageInactiveMs,
+                  stageId: old.stageId,
+                });
+              }
+            }
           });
-
-          for (const old of oldSessions) {
-            await tx.table('buildSessionConfigs').add({
-              nodeId: old.nodeId,
-              domainType: 'shape',
-              selectedArrayByCountries: old.selectedArrayByCountries,
-              selectedArrayVersion: undefined,
-              startedAt: old.startedAt,
-              sourceStageMaxima: old.sourceStageMaxima,
-            });
-
-            if (old.lastHeartbeatAt !== undefined) {
-              await tx.table('buildSessionHeartbeats').add({
-                nodeId: old.nodeId,
-                lastHeartbeatAt: old.lastHeartbeatAt,
-              });
-            }
-
-            await tx.table('buildSessionStatuses').add({
-              nodeId: old.nodeId,
-              status: old.status,
-              stopReason: old.stopReason,
-              completedAt: old.completedAt,
-            });
-
-            if (old.stage) {
-              await tx.table('buildStageStatuses').add({
-                id: `${old.nodeId}:${old.stage}`,
-                nodeId: old.nodeId,
-                stage: old.stage,
-                status: old.status === 'running' ? 'running' : 'completed',
-                startedAt: old.stageStartedAt ?? old.startedAt,
-                completedAt: old.status === 'completed' ? old.completedAt : undefined,
-                inactiveMs: old.stageInactiveMs,
-                stageId: old.stageId,
-              });
-            }
-          }
-        });
 
         this.buildSessionConfigs = this.table('buildSessionConfigs');
         this.buildSessionHeartbeats = this.table('buildSessionHeartbeats');

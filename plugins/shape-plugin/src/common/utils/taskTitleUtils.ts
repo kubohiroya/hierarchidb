@@ -9,13 +9,11 @@ type ResolveTaskTitleOptions = {
   resolveCountryNameByCode?: (code: string) => string | undefined;
 };
 
-const readString = (value: unknown): string | null => (
-  typeof value === 'string' && value.trim().length > 0 ? value : null
-);
+const readString = (value: unknown): string | null =>
+  typeof value === 'string' && value.trim().length > 0 ? value : null;
 
-const readNumber = (value: unknown): number | null => (
-  typeof value === 'number' && Number.isFinite(value) ? value : null
-);
+const readNumber = (value: unknown): number | null =>
+  typeof value === 'number' && Number.isFinite(value) ? value : null;
 
 const readCode = (value: unknown): string | null => {
   const text = readString(value);
@@ -29,22 +27,21 @@ const readCountryName = (value: unknown): string | null => {
   return text.trim();
 };
 
-const equalsCodeToken = (name: string | null, code: string | null): boolean => (
-  typeof name === 'string'
-  && typeof code === 'string'
-  && name.trim().toUpperCase() === code.trim().toUpperCase()
-);
+const equalsCodeToken = (name: string | null, code: string | null): boolean =>
+  typeof name === 'string' &&
+  typeof code === 'string' &&
+  name.trim().toUpperCase() === code.trim().toUpperCase();
 
 const resolveCountryNameWithCode = (
   input: Record<string, unknown>,
-  options?: ResolveTaskTitleOptions,
+  options?: ResolveTaskTitleOptions
 ): { countryName: string | null; countryCode: string | null } => {
-  const countryCode = readCode(input.admin0Code)
-    ?? readCode(input.countryCode)
-    ?? readCode(input.urlCountryCode);
-  const rawName = readCountryName(input.admin0Name)
-    ?? readCountryName(input.countryName)
-    ?? readCountryName(input.sourceCountryName);
+  const countryCode =
+    readCode(input.admin0Code) ?? readCode(input.countryCode) ?? readCode(input.urlCountryCode);
+  const rawName =
+    readCountryName(input.admin0Name) ??
+    readCountryName(input.countryName) ??
+    readCountryName(input.sourceCountryName);
   const shouldResolveFromCode = !rawName || equalsCodeToken(rawName, countryCode);
   if (!shouldResolveFromCode || !countryCode || !options?.resolveCountryNameByCode) {
     return { countryName: rawName, countryCode };
@@ -65,9 +62,8 @@ const resolveStageKey = (task: StageLike): string | undefined => {
   return task.stage;
 };
 
-const isRecord = (value: unknown): value is Record<string, unknown> => (
-  typeof value === 'object' && value !== null
-);
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
 
 const buildInputFromPreview = (metadata: unknown): Record<string, unknown> | undefined => {
   if (!isRecord(metadata)) return undefined;
@@ -106,9 +102,12 @@ const buildInputFromPreview = (metadata: unknown): Record<string, unknown> | und
 
 const buildSourceTitle = (
   input: Record<string, unknown>,
-  options?: ResolveTaskTitleOptions,
+  options?: ResolveTaskTitleOptions
 ): string | undefined => {
-  const { countryName: admin0Name, countryCode: admin0Code } = resolveCountryNameWithCode(input, options);
+  const { countryName: admin0Name, countryCode: admin0Code } = resolveCountryNameWithCode(
+    input,
+    options
+  );
   const adminLevel = readNumber(input.adminLevel);
   if (admin0Name && admin0Code && adminLevel !== null && !equalsCodeToken(admin0Name, admin0Code)) {
     return `${admin0Name} (${admin0Code}) Admin${Math.floor(adminLevel)}`;
@@ -117,28 +116,32 @@ const buildSourceTitle = (
     return `${admin0Name} Admin${Math.floor(adminLevel)}`;
   }
   const adminLevelLabel = adminLevel !== null ? `Admin${Math.floor(adminLevel)}` : undefined;
-  const title = [admin0Name, admin0Code ? `(${admin0Code})` : undefined, adminLevelLabel].filter(Boolean).join(' ');
+  const title = [admin0Name, admin0Code ? `(${admin0Code})` : undefined, adminLevelLabel]
+    .filter(Boolean)
+    .join(' ');
   return title.length > 0 ? title : undefined;
 };
 
 const buildGeometryTitle = (
   input: Record<string, unknown>,
-  options?: ResolveTaskTitleOptions,
+  options?: ResolveTaskTitleOptions
 ): string | undefined => {
-  const { countryName: admin0Name, countryCode: admin0Code } = resolveCountryNameWithCode(input, options);
-  const countryLabel = admin0Name && admin0Code && !equalsCodeToken(admin0Name, admin0Code)
-    ? `${admin0Name} (${admin0Code})`
-    : admin0Name ?? (admin0Code ? `(${admin0Code})` : undefined);
+  const { countryName: admin0Name, countryCode: admin0Code } = resolveCountryNameWithCode(
+    input,
+    options
+  );
+  const countryLabel =
+    admin0Name && admin0Code && !equalsCodeToken(admin0Name, admin0Code)
+      ? `${admin0Name} (${admin0Code})`
+      : (admin0Name ?? (admin0Code ? `(${admin0Code})` : undefined));
   const adminLevel = readNumber(input.adminLevel);
   const adminLabel = adminLevel !== null ? `Admin${Math.floor(adminLevel)}` : undefined;
   const bandIndex = readNumber(input.bandIndex);
   const bandLabel = bandIndex !== null ? `band ${Math.floor(bandIndex)}` : undefined;
-  const bandMinZoom = readNumber(input.bandMinZoom)
-    ?? readNumber(input.zMin)
-    ?? readNumber(input.minZoom);
-  const bandMaxZoom = readNumber(input.bandMaxZoom)
-    ?? readNumber(input.zMax)
-    ?? readNumber(input.maxZoom);
+  const bandMinZoom =
+    readNumber(input.bandMinZoom) ?? readNumber(input.zMin) ?? readNumber(input.minZoom);
+  const bandMaxZoom =
+    readNumber(input.bandMaxZoom) ?? readNumber(input.zMax) ?? readNumber(input.maxZoom);
   if (bandMinZoom === null || bandMaxZoom === null) {
     throw new Error('[shape-plugin] geometry task title requires bandMinZoom and bandMaxZoom');
   }
@@ -157,34 +160,31 @@ const buildTileEmitTitle = (input: Record<string, unknown>): string | undefined 
   const zBase = readNumber(input.zBase);
   const tileId = readNumber(input.tileId);
   const bandLabel = bandIndex !== null ? `band${bandIndex}` : undefined;
-  const unpackTileId = (tileIdValue: number, zBaseValue: number): { x: number; y: number } | null => {
-    const offset = tileIdValue - (zBaseValue * TILE_INDEX_STRIDE);
+  const unpackTileId = (
+    tileIdValue: number,
+    zBaseValue: number
+  ): { x: number; y: number } | null => {
+    const offset = tileIdValue - zBaseValue * TILE_INDEX_STRIDE;
     if (!Number.isFinite(offset)) return null;
     const x = Math.floor(offset / TILE_INDEX_SCALE);
-    const y = offset - (x * TILE_INDEX_SCALE);
+    const y = offset - x * TILE_INDEX_SCALE;
     if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0) return null;
     return { x, y };
   };
-  const coords = zBase !== null && tileId !== null
-    ? unpackTileId(tileId, zBase)
-    : null;
-  const zoomLabel = zBase !== null && coords
-    ? `z${zBase}/${coords.x}/${coords.y}`
-    : undefined;
+  const coords = zBase !== null && tileId !== null ? unpackTileId(tileId, zBase) : null;
+  const zoomLabel = zBase !== null && coords ? `z${zBase}/${coords.x}/${coords.y}` : undefined;
   const title = [bandLabel, zoomLabel].filter(Boolean).join(' ');
   return title.length > 0 ? title : undefined;
 };
 
 export const buildShapeTaskTitle = (
   task: StageLike,
-  options?: ResolveTaskTitleOptions,
+  options?: ResolveTaskTitleOptions
 ): string | undefined => {
   const stage = resolveStageKey(task);
   const existing = readString(task.title);
   if (existing && stage !== 'geometry') return existing;
-  const input = isRecord(task.inputData)
-    ? task.inputData
-    : buildInputFromPreview(task.metadata);
+  const input = isRecord(task.inputData) ? task.inputData : buildInputFromPreview(task.metadata);
   if (stage === 'geometry' && !input) {
     throw new Error('[shape-plugin] geometry task title requires inputData or metadata.preview');
   }
@@ -198,7 +198,7 @@ export const buildShapeTaskTitle = (
 export const resolveShapeTaskTitle = (
   task: StageLike,
   fallback = '',
-  options?: ResolveTaskTitleOptions,
+  options?: ResolveTaskTitleOptions
 ): string => {
   const title = buildShapeTaskTitle(task, options);
   if (title) return title;

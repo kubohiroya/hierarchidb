@@ -1,7 +1,7 @@
-import path from 'path';
-import process from 'process';
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
+import path from 'path';
+import process from 'process';
 
 type PackageInfo = Record<string, unknown>;
 
@@ -14,17 +14,21 @@ interface LicenseInfo {
 async function main() {
   const executionCwd = process.cwd();
   const initCwdRaw = process.env.INIT_CWD;
-  const initCwd = typeof initCwdRaw === 'string' && initCwdRaw.length > 0 ? path.resolve(initCwdRaw) : undefined;
+  const initCwd =
+    typeof initCwdRaw === 'string' && initCwdRaw.length > 0 ? path.resolve(initCwdRaw) : undefined;
   const cliStartArgIndex = process.argv.indexOf('--start');
   const cliStartArg = cliStartArgIndex >= 0 ? process.argv[cliStartArgIndex + 1] : undefined;
-  const start = cliStartArg ? path.resolve(cliStartArg) : initCwd ?? executionCwd;
+  const start = cliStartArg ? path.resolve(cliStartArg) : (initCwd ?? executionCwd);
 
   const require = createRequire(import.meta.url);
   const checkerBin = require.resolve('license-checker/bin/license-checker');
   const args = [checkerBin, '--production', '--json', '--direct', '--start', start];
 
-  const packages: Record<string, PackageInfo> = await new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, args, { cwd: executionCwd, stdio: ['ignore', 'pipe', 'inherit'] });
+  const packages: Record<string, PackageInfo> = (await new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, args, {
+      cwd: executionCwd,
+      stdio: ['ignore', 'pipe', 'inherit'],
+    });
     let stdout = '';
     child.stdout.setEncoding('utf8');
     child.stdout.on('data', (chunk) => {
@@ -44,9 +48,12 @@ async function main() {
       }
     });
   }).catch((error) => {
-    console.error('[licenses] Failed to analyze dependencies:', error instanceof Error ? error.message : String(error));
+    console.error(
+      '[licenses] Failed to analyze dependencies:',
+      error instanceof Error ? error.message : String(error)
+    );
     process.exit(3);
-  }) as Record<string, PackageInfo>;
+  })) as Record<string, PackageInfo>;
 
   // Normalize entries: convert string values into objects
   const normalizedEntries = Object.entries(packages).map(([key, value]) => {

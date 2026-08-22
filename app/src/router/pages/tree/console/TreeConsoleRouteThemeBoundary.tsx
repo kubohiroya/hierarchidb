@@ -1,6 +1,6 @@
+import { createTheme, ThemeProvider, useTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
-import { createTheme, ThemeProvider, useTheme } from '@mui/material/styles';
 
 type TreeConsoleRouteThemeBoundaryProps = {
   treeId?: string;

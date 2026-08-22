@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { OAuthProviderError } from '../src/auth/OAuthProviderError.js';
 import { exchangeCodeForToken } from '../src/auth/callback.js';
+import { OAuthProviderError } from '../src/auth/OAuthProviderError.js';
 import type { RawEnv } from '../src/env-mapper.js';
 import type { BffBindings } from '../src/utils/env.js';
 

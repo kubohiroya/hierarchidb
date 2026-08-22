@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ensureIso3166Data, getCountry } from '@hierarchidb/gen-iso3166-2/browser';
 import type {
   MapAttributionItem,
+  MapLibreGeoJSONFeature,
   MapViewState,
+  ResolvedLayerSetEntry,
   ResourceGeoJsonLayer,
   ResourceVectorLayer,
-  ResolvedLayerSetEntry,
 } from '@hierarchidb/ui-map';
-import type { MapLibreGeoJSONFeature } from '@hierarchidb/ui-map';
 import {
   buildShapeLayerEntryId,
   formatAdminLevelLabel,
@@ -18,18 +18,17 @@ import {
   TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
   TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
 } from '@hierarchidb/util';
-import {
-  ensureIso3166Data,
-  getCountry,
-} from '@hierarchidb/gen-iso3166-2/browser';
-import { getDataSourceConfig } from '~/services/utils/shapeBuildUtils';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ShapeEntity } from '~/common/types/index';
+import { getDataSourceConfig } from '~/services/utils/shapeBuildUtils';
 import { useShapePreviewStep } from '~/ui/components/preview/useShapePreviewStep';
 
 const resolveCommonZoomBounds = () => {
   const settings = loadTreeConsoleSettings();
   const boundaries = Array.isArray(settings.zoomBandBoundaries)
-    ? settings.zoomBandBoundaries.filter((value) => typeof value === 'number' && Number.isFinite(value))
+    ? settings.zoomBandBoundaries.filter(
+        (value) => typeof value === 'number' && Number.isFinite(value)
+      )
     : [];
   if (boundaries.length === 0) {
     return {
@@ -56,9 +55,10 @@ const resolveCountryFlag = (countryCode?: string): string | undefined => {
 };
 
 const resolveIso3166CsvUrl = (): string => {
-  const meta = (typeof import.meta !== 'undefined'
-    ? (import.meta as { env?: { BASE_URL?: string; VITE_BASE_URL?: string } })
-    : null);
+  const meta =
+    typeof import.meta !== 'undefined'
+      ? (import.meta as { env?: { BASE_URL?: string; VITE_BASE_URL?: string } })
+      : null;
   const envBase = meta?.env?.VITE_BASE_URL || meta?.env?.BASE_URL || '/';
   const normalizedBase = envBase.endsWith('/') ? envBase : `${envBase}/`;
   return `${normalizedBase}iso3166-2-level1.csv`;
@@ -72,7 +72,10 @@ const toPropertyString = (value: unknown): string | undefined => {
   return undefined;
 };
 
-const pickFirstString = (properties: Record<string, unknown>, keys: string[]): string | undefined => {
+const pickFirstString = (
+  properties: Record<string, unknown>,
+  keys: string[]
+): string | undefined => {
   for (const key of keys) {
     const value = toPropertyString(properties[key]);
     if (value) return value;
@@ -175,11 +178,14 @@ const SHAPE_PREVIEW_DETAIL_TOGGLE_IDS: ShapePreviewLayerDetailId[] = [
   'adm2Fill',
 ];
 
-const SHAPE_LAYER_VISIBILITY_KEYS_BY_LEVEL: Record<number, {
-  group: ShapePreviewLayerGroupId;
-  boundary: ShapePreviewLayerDetailId;
-  fill: ShapePreviewLayerDetailId;
-}> = {
+const SHAPE_LAYER_VISIBILITY_KEYS_BY_LEVEL: Record<
+  number,
+  {
+    group: ShapePreviewLayerGroupId;
+    boundary: ShapePreviewLayerDetailId;
+    fill: ShapePreviewLayerDetailId;
+  }
+> = {
   0: { group: 'adm0', boundary: 'adm0Boundary', fill: 'adm0Fill' },
   1: { group: 'adm1', boundary: 'adm1Boundary', fill: 'adm1Fill' },
   2: { group: 'adm2', boundary: 'adm2Boundary', fill: 'adm2Fill' },
@@ -187,29 +193,29 @@ const SHAPE_LAYER_VISIBILITY_KEYS_BY_LEVEL: Record<number, {
 
 const isResolvedLayerEntryVisible = (
   entry: ResolvedLayerSetEntry,
-  visibility: ShapePreviewLayerVisibility,
+  visibility: ShapePreviewLayerVisibility
 ): boolean => {
   if (typeof entry.adminLevel !== 'number') return true;
   const keys = SHAPE_LAYER_VISIBILITY_KEYS_BY_LEVEL[entry.adminLevel];
   if (!keys) return true;
-  const detailKey = (entry.boundary === true || entry.layerType === 'line') ? keys.boundary : keys.fill;
+  const detailKey =
+    entry.boundary === true || entry.layerType === 'line' ? keys.boundary : keys.fill;
   return visibility[keys.group] && visibility[detailKey];
 };
 
 const areShapePreviewLayerFeatureCountsEqual = (
   current: ShapePreviewLayerFeatureCounts,
-  next: ShapePreviewLayerFeatureCounts,
-): boolean => (
-  current.adm0 === next.adm0
-  && current.adm0Boundary === next.adm0Boundary
-  && current.adm0Fill === next.adm0Fill
-  && current.adm1 === next.adm1
-  && current.adm1Boundary === next.adm1Boundary
-  && current.adm1Fill === next.adm1Fill
-  && current.adm2 === next.adm2
-  && current.adm2Boundary === next.adm2Boundary
-  && current.adm2Fill === next.adm2Fill
-);
+  next: ShapePreviewLayerFeatureCounts
+): boolean =>
+  current.adm0 === next.adm0 &&
+  current.adm0Boundary === next.adm0Boundary &&
+  current.adm0Fill === next.adm0Fill &&
+  current.adm1 === next.adm1 &&
+  current.adm1Boundary === next.adm1Boundary &&
+  current.adm1Fill === next.adm1Fill &&
+  current.adm2 === next.adm2 &&
+  current.adm2Boundary === next.adm2Boundary &&
+  current.adm2Fill === next.adm2Fill;
 
 const buildFeatureCountKey = (feature: MapLibreGeoJSONFeature): string => {
   const source = typeof feature.source === 'string' ? feature.source : '';
@@ -219,7 +225,8 @@ const buildFeatureCountKey = (feature: MapLibreGeoJSONFeature): string => {
     return `${source}:${sourceLayer}:id:${String(id)}`;
   }
   const properties = feature.properties ?? {};
-  const fallbackId = properties.id ?? properties.featureId ?? properties.shapeID ?? properties.shapeId;
+  const fallbackId =
+    properties.id ?? properties.featureId ?? properties.shapeID ?? properties.shapeId;
   if (typeof fallbackId === 'string' || typeof fallbackId === 'number') {
     return `${source}:${sourceLayer}:prop:${String(fallbackId)}`;
   }
@@ -227,17 +234,16 @@ const buildFeatureCountKey = (feature: MapLibreGeoJSONFeature): string => {
   return `${source}:${sourceLayer}:anon:${name}`;
 };
 
-export const useShapePreviewStepView = (
-  data: Partial<ShapeEntity>,
-  nodeId: string,
-) => {
+export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: string) => {
   const preview = useShapePreviewStep(data, nodeId);
   const { minZoom, maxZoom } = useMemo(() => resolveCommonZoomBounds(), []);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const lastZoomRef = useRef<number | null>(null);
   const [zoomSnackbarMessage, setZoomSnackbarMessage] = useState<string>('');
   const [zoomSnackbarOpen, setZoomSnackbarOpen] = useState(false);
-  const [countryByCode, setCountryByCode] = useState<Map<string, { name: string; alpha2?: string }>>(new Map());
+  const [countryByCode, setCountryByCode] = useState<
+    Map<string, { name: string; alpha2?: string }>
+  >(new Map());
   const [isoReady, setIsoReady] = useState(false);
   const pendingCountryCodesRef = useRef<Set<string>>(new Set());
   const [mapRenderPending, setMapRenderPending] = useState(false);
@@ -254,12 +260,12 @@ export const useShapePreviewStepView = (
     };
   }, []);
 
-  const [shapePreviewLayerVisibility, setShapePreviewLayerVisibility] = useState<ShapePreviewLayerVisibility>(
-    () => ({ ...SHAPE_PREVIEW_LAYER_VISIBILITY_DEFAULT }),
-  );
-  const [shapePreviewLayerFeatureCounts, setShapePreviewLayerFeatureCounts] = useState<ShapePreviewLayerFeatureCounts>(
-    () => ({ ...SHAPE_PREVIEW_LAYER_FEATURE_COUNTS_DEFAULT }),
-  );
+  const [shapePreviewLayerVisibility, setShapePreviewLayerVisibility] =
+    useState<ShapePreviewLayerVisibility>(() => ({ ...SHAPE_PREVIEW_LAYER_VISIBILITY_DEFAULT }));
+  const [shapePreviewLayerFeatureCounts, setShapePreviewLayerFeatureCounts] =
+    useState<ShapePreviewLayerFeatureCounts>(() => ({
+      ...SHAPE_PREVIEW_LAYER_FEATURE_COUNTS_DEFAULT,
+    }));
 
   const toggleShapePreviewLayerVisibility = useCallback((id: ShapePreviewLayerToggleId) => {
     setShapePreviewLayerVisibility((prev) => ({
@@ -268,154 +274,169 @@ export const useShapePreviewStepView = (
     }));
   }, []);
 
-  const handleViewStateChange = useCallback((viewState: MapViewState) => {
-    const zoom = Number(viewState.zoom);
-    if (!Number.isFinite(zoom)) return;
-    const lastZoom = lastZoomRef.current;
-    if (lastZoom !== null && Math.abs(lastZoom - zoom) < 0.01) return;
-    lastZoomRef.current = zoom;
-    setZoomSnackbarMessage(String(preview.t('preview.zoom', 'Zoom: {{zoom}}', { zoom: zoom.toFixed(2) })));
-    setZoomSnackbarOpen(true);
-  }, [preview.t]);
+  const handleViewStateChange = useCallback(
+    (viewState: MapViewState) => {
+      const zoom = Number(viewState.zoom);
+      if (!Number.isFinite(zoom)) return;
+      const lastZoom = lastZoomRef.current;
+      if (lastZoom !== null && Math.abs(lastZoom - zoom) < 0.01) return;
+      lastZoomRef.current = zoom;
+      setZoomSnackbarMessage(
+        String(preview.t('preview.zoom', 'Zoom: {{zoom}}', { zoom: zoom.toFixed(2) }))
+      );
+      setZoomSnackbarOpen(true);
+    },
+    [preview.t]
+  );
 
   const handleZoomSnackbarClose = useCallback(() => {
     setZoomSnackbarOpen(false);
   }, []);
 
-  const queueCountryCode = useCallback((code: string) => {
-    const upper = code.toUpperCase();
-    if (!upper) return;
-    if (countryByCode.has(upper)) return;
-    if (pendingCountryCodesRef.current.has(upper)) return;
-    pendingCountryCodesRef.current.add(upper);
-    getCountry(upper)
-      .then((result) => {
-        const resolved = result?.country ?? null;
-        if (!resolved) return;
-        setCountryByCode((prev) => {
-          const next = new Map(prev);
-          const name = resolved.countryEn;
-          const alpha2 = resolved.alpha2;
-          if (resolved.alpha2) next.set(resolved.alpha2.toUpperCase(), { name, alpha2 });
-          if (resolved.alpha3) next.set(resolved.alpha3.toUpperCase(), { name, alpha2 });
-          return next;
+  const queueCountryCode = useCallback(
+    (code: string) => {
+      const upper = code.toUpperCase();
+      if (!upper) return;
+      if (countryByCode.has(upper)) return;
+      if (pendingCountryCodesRef.current.has(upper)) return;
+      pendingCountryCodesRef.current.add(upper);
+      getCountry(upper)
+        .then((result) => {
+          const resolved = result?.country ?? null;
+          if (!resolved) return;
+          setCountryByCode((prev) => {
+            const next = new Map(prev);
+            const name = resolved.countryEn;
+            const alpha2 = resolved.alpha2;
+            if (resolved.alpha2) next.set(resolved.alpha2.toUpperCase(), { name, alpha2 });
+            if (resolved.alpha3) next.set(resolved.alpha3.toUpperCase(), { name, alpha2 });
+            return next;
+          });
+        })
+        .catch(() => {
+          // ignore
+        })
+        .finally(() => {
+          pendingCountryCodesRef.current.delete(upper);
         });
-      })
-      .catch(() => {
-        // ignore
-      })
-      .finally(() => {
-        pendingCountryCodesRef.current.delete(upper);
-      });
-  }, [countryByCode]);
+    },
+    [countryByCode]
+  );
 
-  const buildAdminHoverCandidate = useCallback((properties: Record<string, unknown>) => {
-    const level = resolveAdminLevel(properties);
-    if (level == null) return null;
-    const adminLabel = formatAdminLevelLabel(level);
-    const adminName = pickFirstString(properties, [
-      'name',
-      'NAME',
-      'name_en',
-      'NAME_EN',
-      'shapeName',
-      'NAME_1',
-      'NAME_2',
-      'NAME_3',
-      'NAME_4',
-      'NAME_5',
-      'adminName',
-    ]);
-    const countryNameCandidate = pickFirstString(properties, [
-      'countryName',
-      'country',
-      'COUNTRY',
-      'COUNTRY_NAME',
-      'NAME_0',
-      'ADMIN',
-      'SOVEREIGNT',
-    ]);
-    const countryCodeCandidate = pickFirstString(properties, [
-      'countryCode',
-      'ISO_A2',
-      'ISO2',
-      'ISO_2',
-      'ISO_A3',
-      'ADM0_A3',
-      'ISO3',
-      'shapeISO',
-    ]);
-    const codeFromName = (!countryCodeCandidate && countryNameCandidate && /^[A-Z]{2,3}$/.test(countryNameCandidate))
-      ? countryNameCandidate
-      : undefined;
-    const countryCode = countryCodeCandidate ?? codeFromName;
-    if (isoReady && countryCode) {
-      queueCountryCode(countryCode);
-    }
-    const mappedCountry = countryCode ? countryByCode.get(countryCode.toUpperCase()) : undefined;
-    const mappedCountryName = mappedCountry?.name;
-    const countryName =
-      mappedCountryName ??
-      (countryNameCandidate && !/^[A-Z]{2,3}$/.test(countryNameCandidate) ? countryNameCandidate : undefined);
-    const flag = resolveCountryFlag(mappedCountry?.alpha2 ?? countryCode);
-    const countryLabel = countryName
-      ? `${flag ? `${flag} ` : ''}${countryName}`
-      : countryCode
-        ? `${flag ? `${flag} ` : ''}${countryCode}`
-        : 'Unknown';
+  const buildAdminHoverCandidate = useCallback(
+    (properties: Record<string, unknown>) => {
+      const level = resolveAdminLevel(properties);
+      if (level == null) return null;
+      const adminLabel = formatAdminLevelLabel(level);
+      const adminName = pickFirstString(properties, [
+        'name',
+        'NAME',
+        'name_en',
+        'NAME_EN',
+        'shapeName',
+        'NAME_1',
+        'NAME_2',
+        'NAME_3',
+        'NAME_4',
+        'NAME_5',
+        'adminName',
+      ]);
+      const countryNameCandidate = pickFirstString(properties, [
+        'countryName',
+        'country',
+        'COUNTRY',
+        'COUNTRY_NAME',
+        'NAME_0',
+        'ADMIN',
+        'SOVEREIGNT',
+      ]);
+      const countryCodeCandidate = pickFirstString(properties, [
+        'countryCode',
+        'ISO_A2',
+        'ISO2',
+        'ISO_2',
+        'ISO_A3',
+        'ADM0_A3',
+        'ISO3',
+        'shapeISO',
+      ]);
+      const codeFromName =
+        !countryCodeCandidate && countryNameCandidate && /^[A-Z]{2,3}$/.test(countryNameCandidate)
+          ? countryNameCandidate
+          : undefined;
+      const countryCode = countryCodeCandidate ?? codeFromName;
+      if (isoReady && countryCode) {
+        queueCountryCode(countryCode);
+      }
+      const mappedCountry = countryCode ? countryByCode.get(countryCode.toUpperCase()) : undefined;
+      const mappedCountryName = mappedCountry?.name;
+      const countryName =
+        mappedCountryName ??
+        (countryNameCandidate && !/^[A-Z]{2,3}$/.test(countryNameCandidate)
+          ? countryNameCandidate
+          : undefined);
+      const flag = resolveCountryFlag(mappedCountry?.alpha2 ?? countryCode);
+      const countryLabel = countryName
+        ? `${flag ? `${flag} ` : ''}${countryName}`
+        : countryCode
+          ? `${flag ? `${flag} ` : ''}${countryCode}`
+          : 'Unknown';
 
-    if (level <= 0) {
-      return { level, label: `${adminLabel}: ${countryLabel}` };
-    }
-    if (level === 1) {
-      const admin1 = adminName ?? countryName ?? 'Unknown';
-      return { level, label: `${adminLabel}: ${admin1} / ${countryLabel}` };
-    }
-    const admin2 = adminName ?? 'Unknown';
-    const admin1 = pickFirstString(properties, [
-      'admin1Name',
-      'NAME_1',
-      'name_1',
-      'ADM1_NAME',
-      'admin1',
-    ]);
-    const parts = [admin2, admin1, countryLabel].filter(
-      (part): part is string => Boolean(part && part.trim().length > 0),
-    );
-    return { level, label: `${adminLabel}: ${parts.join(' / ')}` };
-  }, [countryByCode, isoReady, queueCountryCode]);
-
-  const hoverSnackbarContent = useCallback((features: MapLibreGeoJSONFeature[]) => {
-    if (features.length === 0) return '';
-    const adminCandidates = features
-      .map((feature, index) => {
-        const props = (feature.properties ?? {}) as Record<string, unknown>;
-        const adminParts = buildAdminHoverCandidate(props);
-        if (!adminParts) return null;
-        return { index, ...adminParts };
-      })
-      .filter(
-        (candidate): candidate is { index: number; level: number; label: string } =>
-          Boolean(candidate),
+      if (level <= 0) {
+        return { level, label: `${adminLabel}: ${countryLabel}` };
+      }
+      if (level === 1) {
+        const admin1 = adminName ?? countryName ?? 'Unknown';
+        return { level, label: `${adminLabel}: ${admin1} / ${countryLabel}` };
+      }
+      const admin2 = adminName ?? 'Unknown';
+      const admin1 = pickFirstString(properties, [
+        'admin1Name',
+        'NAME_1',
+        'name_1',
+        'ADM1_NAME',
+        'admin1',
+      ]);
+      const parts = [admin2, admin1, countryLabel].filter((part): part is string =>
+        Boolean(part && part.trim().length > 0)
       );
-    if (adminCandidates.length > 0) {
-      adminCandidates.sort((a, b) => (b.level - a.level) || (a.index - b.index));
-      return adminCandidates[0]?.label ?? '';
-    }
-    const labels = features
-      .slice(0, 3)
-      .map((feature) => {
+      return { level, label: `${adminLabel}: ${parts.join(' / ')}` };
+    },
+    [countryByCode, isoReady, queueCountryCode]
+  );
+
+  const hoverSnackbarContent = useCallback(
+    (features: MapLibreGeoJSONFeature[]) => {
+      if (features.length === 0) return '';
+      const adminCandidates = features
+        .map((feature, index) => {
+          const props = (feature.properties ?? {}) as Record<string, unknown>;
+          const adminParts = buildAdminHoverCandidate(props);
+          if (!adminParts) return null;
+          return { index, ...adminParts };
+        })
+        .filter((candidate): candidate is { index: number; level: number; label: string } =>
+          Boolean(candidate)
+        );
+      if (adminCandidates.length > 0) {
+        adminCandidates.sort((a, b) => b.level - a.level || a.index - b.index);
+        return adminCandidates[0]?.label ?? '';
+      }
+      const labels = features.slice(0, 3).map((feature) => {
         const props = (feature.properties ?? {}) as Record<string, unknown>;
         return buildDefaultHoverLabel(props) ?? 'Feature';
       });
-    return labels.join(' / ');
-  }, [buildAdminHoverCandidate]);
+      return labels.join(' / ');
+    },
+    [buildAdminHoverCandidate]
+  );
 
   useEffect(() => {
     if (!isoReady) return;
     preview.featureListRows.forEach((row) => {
-      const code = row.countryCode
-        ?? (row.countryName && /^[A-Z]{2,3}$/.test(row.countryName) ? row.countryName : undefined);
+      const code =
+        row.countryCode ??
+        (row.countryName && /^[A-Z]{2,3}$/.test(row.countryName) ? row.countryName : undefined);
       if (code) queueCountryCode(code);
     });
   }, [isoReady, preview.featureListRows, queueCountryCode]);
@@ -423,16 +444,16 @@ export const useShapePreviewStepView = (
   const featureListRowsWithFlags = useMemo(() => {
     if (!preview.featureListRows.length) return preview.featureListRows;
     return preview.featureListRows.map((row) => {
-      const code = row.countryCode
-        ?? (row.countryName && /^[A-Z]{2,3}$/.test(row.countryName) ? row.countryName : undefined);
+      const code =
+        row.countryCode ??
+        (row.countryName && /^[A-Z]{2,3}$/.test(row.countryName) ? row.countryName : undefined);
       const mapped = code ? countryByCode.get(code.toUpperCase()) : undefined;
-      const name = mapped?.name
-        ?? (row.countryName && !/^[A-Z]{2,3}$/.test(row.countryName) ? row.countryName : undefined)
-        ?? '';
+      const name =
+        mapped?.name ??
+        (row.countryName && !/^[A-Z]{2,3}$/.test(row.countryName) ? row.countryName : undefined) ??
+        '';
       const flag = resolveCountryFlag(mapped?.alpha2 ?? code);
-      const countryName = name
-        ? `${flag ? `${flag} ` : ''}${name}`
-        : row.countryName ?? '';
+      const countryName = name ? `${flag ? `${flag} ` : ''}${name}` : (row.countryName ?? '');
       return {
         ...row,
         countryName,
@@ -443,16 +464,16 @@ export const useShapePreviewStepView = (
   const displayedFeatureRowsWithFlags = useMemo(() => {
     if (!preview.displayedFeatureRows.length) return preview.displayedFeatureRows;
     return preview.displayedFeatureRows.map((row) => {
-      const code = row.countryCode
-        ?? (row.countryName && /^[A-Z]{2,3}$/.test(row.countryName) ? row.countryName : undefined);
+      const code =
+        row.countryCode ??
+        (row.countryName && /^[A-Z]{2,3}$/.test(row.countryName) ? row.countryName : undefined);
       const mapped = code ? countryByCode.get(code.toUpperCase()) : undefined;
-      const name = mapped?.name
-        ?? (row.countryName && !/^[A-Z]{2,3}$/.test(row.countryName) ? row.countryName : undefined)
-        ?? '';
+      const name =
+        mapped?.name ??
+        (row.countryName && !/^[A-Z]{2,3}$/.test(row.countryName) ? row.countryName : undefined) ??
+        '';
       const flag = resolveCountryFlag(mapped?.alpha2 ?? code);
-      const countryName = name
-        ? `${flag ? `${flag} ` : ''}${name}`
-        : row.countryName ?? '';
+      const countryName = name ? `${flag ? `${flag} ` : ''}${name}` : (row.countryName ?? '');
       return {
         ...row,
         countryName,
@@ -461,18 +482,13 @@ export const useShapePreviewStepView = (
   }, [countryByCode, preview.displayedFeatureRows]);
 
   const layerSetName = data.buildConfig?.tileEmitConfig?.layerSetName ?? 'shape';
-  const layerSetDefinition = useMemo(
-    () => getLayerSetDefinition(layerSetName),
-    [layerSetName],
-  );
+  const layerSetDefinition = useMemo(() => getLayerSetDefinition(layerSetName), [layerSetName]);
 
   const resolvedLayerSetEntries = useMemo<ResolvedLayerSetEntry[]>(() => {
     if (!layerSetDefinition) return [];
-    return resolveLayerSetEntries(
-      preview.tileLayerNames ?? [],
-      layerSetDefinition,
-      { allowedAdminLevels: preview.shapeLayerAdminLevels },
-    );
+    return resolveLayerSetEntries(preview.tileLayerNames ?? [], layerSetDefinition, {
+      allowedAdminLevels: preview.shapeLayerAdminLevels,
+    });
   }, [layerSetDefinition, preview.tileLayerNames, preview.shapeLayerAdminLevels]);
 
   const shapePreviewLayerToggleItems = useMemo<ShapePreviewLayerToggleItem[]>(
@@ -505,7 +521,7 @@ export const useShapePreviewStepView = (
         label: preview.t('preview.layerSets.adm2Fill', `${formatAdminLevelLabel(2)} Fill`),
       },
     ],
-    [preview.t],
+    [preview.t]
   );
 
   const vectorLayers = useMemo<ResourceVectorLayer[]>(() => {
@@ -533,8 +549,10 @@ export const useShapePreviewStepView = (
     };
     return resolvedLayerSetEntries
       .filter((entry) => isResolvedLayerEntryVisible(entry, shapePreviewLayerVisibility))
-      .filter((entry): entry is ResolvedLayerSetEntry & { sourceLayer: string } =>
-        typeof entry.sourceLayer === 'string' && entry.sourceLayer.length > 0)
+      .filter(
+        (entry): entry is ResolvedLayerSetEntry & { sourceLayer: string } =>
+          typeof entry.sourceLayer === 'string' && entry.sourceLayer.length > 0
+      )
       .map((entry) => ({
         ...baseLayer,
         layerPriority: entry.priority,
@@ -563,16 +581,18 @@ export const useShapePreviewStepView = (
   ]);
 
   const vectorLayerIds = useMemo(
-    () => vectorLayers.map((layer) => layer.layerConfig?.layerId ?? `resource-layer-${layer.nodeId}`),
-    [vectorLayers],
+    () =>
+      vectorLayers.map((layer) => layer.layerConfig?.layerId ?? `resource-layer-${layer.nodeId}`),
+    [vectorLayers]
   );
   const shapePreviewLayerSourceIds = useMemo(
-    () => new Set(
-      vectorLayers
-        .map((layer) => layer.layerConfig?.sourceId)
-        .filter((sourceId): sourceId is string => Boolean(sourceId)),
-    ),
-    [vectorLayers],
+    () =>
+      new Set(
+        vectorLayers
+          .map((layer) => layer.layerConfig?.sourceId)
+          .filter((sourceId): sourceId is string => Boolean(sourceId))
+      ),
+    [vectorLayers]
   );
   const refreshCountsTimeoutRef = useRef<number | null>(null);
   const sourceLoadStateRef = useRef<Map<string, boolean>>(new Map());
@@ -583,19 +603,21 @@ export const useShapePreviewStepView = (
       map.set(detailId, []);
     });
     resolvedLayerSetEntries
-      .filter((entry): entry is ResolvedLayerSetEntry & { sourceLayer: string } =>
-        typeof entry.sourceLayer === 'string' && entry.sourceLayer.length > 0,
+      .filter(
+        (entry): entry is ResolvedLayerSetEntry & { sourceLayer: string } =>
+          typeof entry.sourceLayer === 'string' && entry.sourceLayer.length > 0
       )
       .forEach((entry) => {
-      if (typeof entry.adminLevel !== 'number') return;
-      const keys = SHAPE_LAYER_VISIBILITY_KEYS_BY_LEVEL[entry.adminLevel];
-      if (!keys) return;
-      const detailId = (entry.boundary === true || entry.layerType === 'line') ? keys.boundary : keys.fill;
-      const layerId = `${preview.baseLayerId}-${entry.id}`;
-      const existing = map.get(detailId);
-      if (!existing) return;
-      existing.push(layerId);
-    });
+        if (typeof entry.adminLevel !== 'number') return;
+        const keys = SHAPE_LAYER_VISIBILITY_KEYS_BY_LEVEL[entry.adminLevel];
+        if (!keys) return;
+        const detailId =
+          entry.boundary === true || entry.layerType === 'line' ? keys.boundary : keys.fill;
+        const layerId = `${preview.baseLayerId}-${entry.id}`;
+        const existing = map.get(detailId);
+        if (!existing) return;
+        existing.push(layerId);
+      });
     return map;
   }, [resolvedLayerSetEntries, preview.baseLayerId, shapePreviewLayerVisibility]);
 
@@ -630,11 +652,11 @@ export const useShapePreviewStepView = (
   const refreshShapePreviewLayerFeatureCounts = useCallback(() => {
     const map = preview.mapInstance;
     if (!map || !map.isStyleLoaded()) {
-      setShapePreviewLayerFeatureCounts((current) => (
+      setShapePreviewLayerFeatureCounts((current) =>
         areShapePreviewLayerFeatureCountsEqual(current, SHAPE_PREVIEW_LAYER_FEATURE_COUNTS_DEFAULT)
           ? current
           : { ...SHAPE_PREVIEW_LAYER_FEATURE_COUNTS_DEFAULT }
-      ));
+      );
       return;
     }
 
@@ -645,11 +667,11 @@ export const useShapePreviewStepView = (
       layerIdsByDetail.set(detailId, new Set());
     });
     if (layerIdsForQuery.length === 0) {
-      setShapePreviewLayerFeatureCounts((current) => (
+      setShapePreviewLayerFeatureCounts((current) =>
         areShapePreviewLayerFeatureCountsEqual(current, SHAPE_PREVIEW_LAYER_FEATURE_COUNTS_DEFAULT)
           ? current
           : { ...SHAPE_PREVIEW_LAYER_FEATURE_COUNTS_DEFAULT }
-      ));
+      );
       return;
     }
 
@@ -681,18 +703,9 @@ export const useShapePreviewStepView = (
     const adm1FillFeatures = layerIdsByDetail.get('adm1Fill') ?? new Set<string>();
     const adm2BoundaryFeatures = layerIdsByDetail.get('adm2Boundary') ?? new Set<string>();
     const adm2FillFeatures = layerIdsByDetail.get('adm2Fill') ?? new Set<string>();
-    const adm0Features = new Set<string>([
-      ...adm0BoundaryFeatures,
-      ...adm0FillFeatures,
-    ]);
-    const adm1Features = new Set<string>([
-      ...adm1BoundaryFeatures,
-      ...adm1FillFeatures,
-    ]);
-    const adm2Features = new Set<string>([
-      ...adm2BoundaryFeatures,
-      ...adm2FillFeatures,
-    ]);
+    const adm0Features = new Set<string>([...adm0BoundaryFeatures, ...adm0FillFeatures]);
+    const adm1Features = new Set<string>([...adm1BoundaryFeatures, ...adm1FillFeatures]);
+    const adm2Features = new Set<string>([...adm2BoundaryFeatures, ...adm2FillFeatures]);
 
     const nextCounts: ShapePreviewLayerFeatureCounts = {
       adm0: adm0Features.size,
@@ -706,14 +719,10 @@ export const useShapePreviewStepView = (
       adm2Fill: adm2FillFeatures.size,
     };
 
-    setShapePreviewLayerFeatureCounts((current) => (
+    setShapePreviewLayerFeatureCounts((current) =>
       areShapePreviewLayerFeatureCountsEqual(current, nextCounts) ? current : nextCounts
-    ));
-  }, [
-    detailIdsByLayerId,
-    preview.mapInstance,
-    visibleLayerIdsForCounts,
-  ]);
+    );
+  }, [detailIdsByLayerId, preview.mapInstance, visibleLayerIdsForCounts]);
 
   const scheduleRefreshShapePreviewLayerFeatureCounts = useCallback(() => {
     if (refreshCountsTimeoutRef.current !== null) {
@@ -726,12 +735,15 @@ export const useShapePreviewStepView = (
     }, 250);
   }, [refreshShapePreviewLayerFeatureCounts]);
 
-  useEffect(() => () => {
-    if (refreshCountsTimeoutRef.current !== null) {
-      window.clearTimeout(refreshCountsTimeoutRef.current);
-      refreshCountsTimeoutRef.current = null;
-    }
-  }, []);
+  useEffect(
+    () => () => {
+      if (refreshCountsTimeoutRef.current !== null) {
+        window.clearTimeout(refreshCountsTimeoutRef.current);
+        refreshCountsTimeoutRef.current = null;
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     const map = preview.mapInstance;
@@ -773,7 +785,7 @@ export const useShapePreviewStepView = (
   useEffect(() => {
     const map = preview.mapInstance;
     if (!map) return;
-  const handleRefresh = () => {
+    const handleRefresh = () => {
       scheduleRefreshShapePreviewLayerFeatureCounts();
     };
     const handleSourceData = (...args: unknown[]) => {
@@ -811,7 +823,11 @@ export const useShapePreviewStepView = (
       map.off('moveend', handleRefresh);
       map.off('sourcedata', handleSourceData);
     };
-  }, [preview.mapInstance, scheduleRefreshShapePreviewLayerFeatureCounts, shapePreviewLayerSourceIds]);
+  }, [
+    preview.mapInstance,
+    scheduleRefreshShapePreviewLayerFeatureCounts,
+    shapePreviewLayerSourceIds,
+  ]);
 
   const resolvedLayerNames = useMemo(() => {
     const tileLayerNames = preview.tileLayerNames ?? [];
@@ -824,8 +840,12 @@ export const useShapePreviewStepView = (
       available: tileLayerNames,
       admin0: admin0Fill?.sourceLayer ?? admin0Boundary?.sourceLayer ?? null,
       admin1: admin1Fill?.sourceLayer ?? admin1Boundary?.sourceLayer ?? null,
-      admin0IsBoundary: Boolean(admin0Boundary?.sourceLayer) && admin0Boundary?.sourceLayer !== admin0Fill?.sourceLayer,
-      admin1IsBoundary: Boolean(admin1Boundary?.sourceLayer) && admin1Boundary?.sourceLayer !== admin1Fill?.sourceLayer,
+      admin0IsBoundary:
+        Boolean(admin0Boundary?.sourceLayer) &&
+        admin0Boundary?.sourceLayer !== admin0Fill?.sourceLayer,
+      admin1IsBoundary:
+        Boolean(admin1Boundary?.sourceLayer) &&
+        admin1Boundary?.sourceLayer !== admin1Fill?.sourceLayer,
     };
   }, [preview.tileLayerNames, resolvedLayerSetEntries]);
 
@@ -837,41 +857,41 @@ export const useShapePreviewStepView = (
     const baseOutline = preview.theme.palette.primary.dark;
     return {
       fill: {
-        'fill-color': ['case', hasSelected, preview.theme.palette.primary.main, hasHover, preview.theme.palette.primary.light, hasSearch, preview.theme.palette.secondary.light, baseFill],
-        'fill-outline-color': ['case', hasSelected, preview.theme.palette.primary.dark, hasHover, preview.theme.palette.primary.main, hasSearch, preview.theme.palette.secondary.main, baseOutline],
-        'fill-opacity': [
+        'fill-color': [
           'case',
           hasSelected,
-          0.6,
+          preview.theme.palette.primary.main,
           hasHover,
-          0.5,
+          preview.theme.palette.primary.light,
           hasSearch,
-          0.45,
-          0.35,
+          preview.theme.palette.secondary.light,
+          baseFill,
         ],
+        'fill-outline-color': [
+          'case',
+          hasSelected,
+          preview.theme.palette.primary.dark,
+          hasHover,
+          preview.theme.palette.primary.main,
+          hasSearch,
+          preview.theme.palette.secondary.main,
+          baseOutline,
+        ],
+        'fill-opacity': ['case', hasSelected, 0.6, hasHover, 0.5, hasSearch, 0.45, 0.35],
       },
       line: {
-        'line-color': ['case', hasSelected, preview.theme.palette.primary.main, hasHover, preview.theme.palette.primary.light, hasSearch, preview.theme.palette.secondary.light, baseOutline],
-        'line-opacity': [
+        'line-color': [
           'case',
           hasSelected,
-          0.9,
+          preview.theme.palette.primary.main,
           hasHover,
-          0.8,
+          preview.theme.palette.primary.light,
           hasSearch,
-          0.7,
-          0.6,
+          preview.theme.palette.secondary.light,
+          baseOutline,
         ],
-        'line-width': [
-          'case',
-          hasSelected,
-          3,
-          hasHover,
-          2.5,
-          hasSearch,
-          2,
-          1.5,
-        ],
+        'line-opacity': ['case', hasSelected, 0.9, hasHover, 0.8, hasSearch, 0.7, 0.6],
+        'line-width': ['case', hasSelected, 3, hasHover, 2.5, hasSearch, 2, 1.5],
       },
     };
   }, [
@@ -886,13 +906,15 @@ export const useShapePreviewStepView = (
     if (!preview.selectionDataSource) return [];
     const config = getDataSourceConfig(preview.selectionDataSource);
     if (!config) return [];
-    return [{
-      id: `shape:${config.name}`,
-      label: config.displayName ?? config.name,
-      attribution: config.attribution,
-      license: config.license,
-      licenseUrl: config.licenseUrl,
-    }];
+    return [
+      {
+        id: `shape:${config.name}`,
+        label: config.displayName ?? config.name,
+        attribution: config.attribution,
+        license: config.license,
+        licenseUrl: config.licenseUrl,
+      },
+    ];
   }, [preview.selectionDataSource]);
 
   const geoJsonLayers = useMemo<ResourceGeoJsonLayer[]>(() => {

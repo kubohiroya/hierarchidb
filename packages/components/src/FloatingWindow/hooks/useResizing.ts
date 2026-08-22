@@ -3,9 +3,8 @@
  * @description Low-level hook for resize operations
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
- 
 import type React from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Size } from '../types/WindowState.js';
 
 export interface UseResizingOptions {
@@ -41,25 +40,28 @@ export function useResizing(options: UseResizingOptions = {}): UseResizingResult
   const initialMousePos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const elementRef = useRef<HTMLElement | null>(null);
 
-  const handleMouseDown = useCallback((direction: string) => (e: React.MouseEvent) => {
-    if (e.button !== 0) return; // Only left click
+  const handleMouseDown = useCallback(
+    (direction: string) => (e: React.MouseEvent) => {
+      if (e.button !== 0) return; // Only left click
 
-    const element = (e.currentTarget as HTMLElement).closest('.floating-window') as HTMLElement;
-    if (!element) return;
+      const element = (e.currentTarget as HTMLElement).closest('.floating-window') as HTMLElement;
+      if (!element) return;
 
-    elementRef.current = element;
-    const rect = element.getBoundingClientRect();
+      elementRef.current = element;
+      const rect = element.getBoundingClientRect();
 
-    initialSize.current = { width: rect.width, height: rect.height };
-    initialMousePos.current = { x: e.clientX, y: e.clientY };
+      initialSize.current = { width: rect.width, height: rect.height };
+      initialMousePos.current = { x: e.clientX, y: e.clientY };
 
-    setIsResizing(true);
-    setResizeDirection(direction);
-    onResizeStart?.();
+      setIsResizing(true);
+      setResizeDirection(direction);
+      onResizeStart?.();
 
-    e.preventDefault();
-    e.stopPropagation();
-  }, [onResizeStart]);
+      e.preventDefault();
+      e.stopPropagation();
+    },
+    [onResizeStart]
+  );
 
   useEffect(() => {
     if (!isResizing) return;
@@ -130,7 +132,16 @@ export function useResizing(options: UseResizingOptions = {}): UseResizingResult
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isResizing, resizeDirection, onResize, onResizeEnd, minWidth, minHeight, maxWidth, maxHeight]);
+  }, [
+    isResizing,
+    resizeDirection,
+    onResize,
+    onResizeEnd,
+    minWidth,
+    minHeight,
+    maxWidth,
+    maxHeight,
+  ]);
 
   return {
     isResizing,

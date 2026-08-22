@@ -1,13 +1,14 @@
-import { Dexie, type Table } from "dexie";
-import { getBuildDatabasePrefix, getDBName } from "@hierarchidb/util";
-import { parseCsv } from "./csv.js";
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
+import { Dexie, type Table } from 'dexie';
+import { parseCsv } from './csv.js';
+import { generateIso3166Data } from './scraper.js';
 import type {
   CountryRecord,
   EnsureIsoOptions,
   SubdivisionRecord,
   SubdivisionRow,
-} from "./types.js";
-import { generateIso3166Data } from "./scraper.js";
+} from './types.js';
+
 class Iso3166Dexie extends Dexie {
   countries!: Table<CountryRecord, string>;
   subdivisions!: Table<SubdivisionRecord, string>;
@@ -15,13 +16,13 @@ class Iso3166Dexie extends Dexie {
   constructor(name: string) {
     super(name);
     this.version(1).stores({
-      countries: "&alpha2, alpha3",
-      subdivisions: "&code, alpha2, alpha3",
+      countries: '&alpha2, alpha3',
+      subdivisions: '&code, alpha2, alpha3',
     });
   }
 }
 
-const hasIndexedDB = () => typeof indexedDB !== "undefined";
+const hasIndexedDB = () => typeof indexedDB !== 'undefined';
 let dexieDb: Iso3166Dexie | null = null;
 const memoryStore = {
   countries: new Map<string, CountryRecord>(),
@@ -52,7 +53,10 @@ const addCountryRecord = (countriesMap: Map<string, CountryRecord>, row: Subdivi
   });
 };
 
-export function rowsToRecords(rows: SubdivisionRow[]): { countries: CountryRecord[]; subdivisions: SubdivisionRecord[] } {
+export function rowsToRecords(rows: SubdivisionRow[]): {
+  countries: CountryRecord[];
+  subdivisions: SubdivisionRecord[];
+} {
   const countriesMap = new Map<string, CountryRecord>();
   const subdivisions: SubdivisionRecord[] = [];
   rows.forEach((r) => {
@@ -67,18 +71,18 @@ export function rowsToRecords(rows: SubdivisionRow[]): { countries: CountryRecor
 
 async function populateStore(
   records: { countries: CountryRecord[]; subdivisions: SubdivisionRecord[] },
-  db: Iso3166Dexie | null,
+  db: Iso3166Dexie | null
 ) {
   if (db) {
-    await db.transaction("rw", db.countries, db.subdivisions, async () => {
+    await db.transaction('rw', db.countries, db.subdivisions, async () => {
       await db.countries.bulkPut(records.countries);
       await db.subdivisions.bulkPut(records.subdivisions);
     });
-    return "dexie" as const;
+    return 'dexie' as const;
   }
   records.countries.map((c) => memoryStore.countries.set(c.alpha2, c));
   records.subdivisions.map((s) => memoryStore.subdivisions.set(s.code, s));
-  return "memory" as const;
+  return 'memory' as const;
 }
 
 async function loadCsvToStore(csvText: string, db: Iso3166Dexie | null) {
@@ -89,15 +93,14 @@ async function loadCsvToStore(csvText: string, db: Iso3166Dexie | null) {
 
 export async function ensureIso3166Data(options: EnsureIsoOptions = {}) {
   const db = hasIndexedDB()
-    ? (dexieDb ?? (dexieDb = new Iso3166Dexie(
-      getDBName(getBuildDatabasePrefix(), "iso3166-2-cache"),
-    )))
+    ? (dexieDb ??
+      (dexieDb = new Iso3166Dexie(getDBName(getBuildDatabasePrefix(), 'iso3166-2-cache'))))
     : null;
-  const useScraper = options.useScraper ?? (typeof window === "undefined");
+  const useScraper = options.useScraper ?? typeof window === 'undefined';
 
   if (db) {
     const count = await db.subdivisions.count();
-    if (count > 0) return { source: "dexie-cached" as const };
+    if (count > 0) return { source: 'dexie-cached' as const };
   }
 
   if (options.csvText) {
@@ -107,8 +110,8 @@ export async function ensureIso3166Data(options: EnsureIsoOptions = {}) {
 
   if (options.csvPath) {
     try {
-      const fs = await import("node:fs/promises");
-      const csv = await fs.readFile(options.csvPath, "utf8");
+      const fs = await import('node:fs/promises');
+      const csv = await fs.readFile(options.csvPath, 'utf8');
       const source = await loadCsvToStore(csv, db);
       return { source };
     } catch {
@@ -116,7 +119,7 @@ export async function ensureIso3166Data(options: EnsureIsoOptions = {}) {
     }
   }
 
-  if (options.csvUrl && typeof fetch !== "undefined") {
+  if (options.csvUrl && typeof fetch !== 'undefined') {
     try {
       const res = await fetch(options.csvUrl);
       if (res.ok) {
@@ -133,10 +136,10 @@ export async function ensureIso3166Data(options: EnsureIsoOptions = {}) {
     const { rows } = await generateIso3166Data();
     const records = rowsToRecords(rows);
     const source = await populateStore(records, db);
-    return { source: source === "dexie" ? "scrape-dexie" : "scrape-memory" };
+    return { source: source === 'dexie' ? 'scrape-dexie' : 'scrape-memory' };
   }
 
-  return { source: "none" as const };
+  return { source: 'none' as const };
 }
 
 export async function getCountry(alpha: string) {
@@ -145,19 +148,17 @@ export async function getCountry(alpha: string) {
   if (db) {
     const country =
       (await db.countries.get(key)) ||
-      (await db.countries.where("alpha3").equals(key).first()) ||
+      (await db.countries.where('alpha3').equals(key).first()) ||
       null;
     const subdivisions = country
-      ? await db.subdivisions.where("alpha2").equals(country.alpha2).toArray()
+      ? await db.subdivisions.where('alpha2').equals(country.alpha2).toArray()
       : [];
     return { country, subdivisions };
   }
 
   let country = memoryStore.countries.get(key) || null;
   if (!country) {
-    country =
-      Array.from(memoryStore.countries.values()).find((c) => c.alpha3 === key) ||
-      null;
+    country = Array.from(memoryStore.countries.values()).find((c) => c.alpha3 === key) || null;
   }
   const subdivisions = country
     ? Array.from(memoryStore.subdivisions.values()).filter((s) => s.alpha2 === country.alpha2)

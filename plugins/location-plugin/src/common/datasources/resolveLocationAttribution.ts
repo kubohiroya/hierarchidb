@@ -36,7 +36,10 @@ const FALLBACK_ATTRIBUTIONS: Record<string, LocationAttributionInfo> = {
   },
 };
 
-const buildFromDefinition = (key: string, source: typeof LocationDataSources[keyof typeof LocationDataSources]): LocationAttributionInfo => ({
+const buildFromDefinition = (
+  key: string,
+  source: (typeof LocationDataSources)[keyof typeof LocationDataSources]
+): LocationAttributionInfo => ({
   id: key,
   label: source.displayName ?? source.name,
   attribution: source.attribution,
@@ -45,12 +48,15 @@ const buildFromDefinition = (key: string, source: typeof LocationDataSources[key
   licenseUrl: source.licenseUrl,
 });
 
-export const resolveLocationAttribution = (dataSource?: string | null): LocationAttributionInfo | null => {
+export const resolveLocationAttribution = (
+  dataSource?: string | null
+): LocationAttributionInfo | null => {
   if (!dataSource) return null;
   const normalized = dataSource.toLowerCase();
-  const alias = normalized === 'openstreetmap' || normalized === 'overpass'
-    ? 'openstreetmap-overpass'
-    : normalized;
+  const alias =
+    normalized === 'openstreetmap' || normalized === 'overpass'
+      ? 'openstreetmap-overpass'
+      : normalized;
   const source = LocationDataSources[alias];
   if (source) return buildFromDefinition(normalized, source);
   return FALLBACK_ATTRIBUTIONS[normalized] ?? null;

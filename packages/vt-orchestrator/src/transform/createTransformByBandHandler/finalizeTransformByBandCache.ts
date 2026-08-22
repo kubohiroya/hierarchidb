@@ -1,8 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type {
-  EphemeralDB,
-  EphemeralGeometryCacheRecord,
-} from '@hierarchidb/gis-sdk';
+import type { EphemeralDB, EphemeralGeometryCacheRecord } from '@hierarchidb/gis-sdk';
 import { logDebug } from '~/debug/persistentDebugLog';
 import {
   TASKDEBUG_BUILD_TAG,
@@ -11,7 +8,11 @@ import {
   withTimeout,
 } from './helpers/core.js';
 
-type UpdateTaskStrict = (taskId: string, updates: Record<string, unknown>, operation: string) => Promise<void>;
+type UpdateTaskStrict = (
+  taskId: string,
+  updates: Record<string, unknown>,
+  operation: string
+) => Promise<void>;
 
 type GeometryCacheRecord = {
   id: string;
@@ -72,20 +73,26 @@ export const finalizeTransformByBandCache = async (params: {
       taskId: params.taskId,
       elapsedMs: Date.now() - cacheStartedAt,
     });
-    void params.updateTaskStrict(params.taskId, {
-      display: {
-        kind: 'info',
-        key: 'stage.taskWarning.cachePutSlow',
-        params: {
-          elapsedSeconds: Math.max(1, Math.floor((Date.now() - cacheStartedAt) / 1000)),
+    void params
+      .updateTaskStrict(
+        params.taskId,
+        {
+          display: {
+            kind: 'info',
+            key: 'stage.taskWarning.cachePutSlow',
+            params: {
+              elapsedSeconds: Math.max(1, Math.floor((Date.now() - cacheStartedAt) / 1000)),
+            },
+          },
         },
-      },
-    }, 'cache-put:slow-warning').catch((error) => {
-      console.error('[ShapeGeometry] failed to publish cache write warning', {
-        taskId: params.taskId,
-        error,
+        'cache-put:slow-warning'
+      )
+      .catch((error) => {
+        console.error('[ShapeGeometry] failed to publish cache write warning', {
+          taskId: params.taskId,
+          error,
+        });
       });
-    });
   }, 5000);
 
   try {
@@ -103,15 +110,16 @@ export const finalizeTransformByBandCache = async (params: {
         taskId: params.taskId,
         operation: 'cache-write:geometryCache.put',
         timeoutMs: TRANSFORM_DB_WRITE_TIMEOUT_MS,
-        promise: params.ephemeralDB.transaction('rw', [
-          params.ephemeralDB.geometryCache,
-          params.ephemeralDB.geometryCacheMeta,
-        ], async () => {
-          await params.ephemeralDB.geometryCache.put({
-            ...params.cacheRecord,
-            timestamp: completedAt,
-          });
-        }),
+        promise: params.ephemeralDB.transaction(
+          'rw',
+          [params.ephemeralDB.geometryCache, params.ephemeralDB.geometryCacheMeta],
+          async () => {
+            await params.ephemeralDB.geometryCache.put({
+              ...params.cacheRecord,
+              timestamp: completedAt,
+            });
+          }
+        ),
       });
     } finally {
       clearTimeout(slowWriteLogId);
@@ -143,18 +151,22 @@ export const finalizeTransformByBandCache = async (params: {
     });
   }, 5000);
 
-  await params.updateTaskStrict(params.taskId, {
-    status: 'completed',
-    progress: 100,
-    display: {
-      kind: 'summary',
-      key: 'stage.taskSummary.metrics',
-      metrics: params.metrics,
+  await params.updateTaskStrict(
+    params.taskId,
+    {
+      status: 'completed',
+      progress: 100,
+      display: {
+        kind: 'summary',
+        key: 'stage.taskSummary.metrics',
+        metrics: params.metrics,
+      },
+      metadata: params.metadata ?? params.cacheRecord.metadata,
+      outputData: params.outputData,
+      completedAt,
     },
-    metadata: params.metadata ?? params.cacheRecord.metadata,
-    outputData: params.outputData,
-    completedAt,
-  }, 'task:complete');
+    'task:complete'
+  );
 
   clearTimeout(taskWaitTimer);
   if (taskWaitLogged) {

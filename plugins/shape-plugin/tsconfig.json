@@ -1,22 +1,14 @@
 {
   "extends": "../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable",
-      "WebWorker"
-    ],
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker"],
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "allowArbitraryExtensions": true,
     "experimentalDecorators": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "types": [
-      "vite/client",
-      "node"
-    ],
+    "types": ["vite/client", "node"],
     "baseUrl": "."
   },
   "include": [
@@ -31,11 +23,5 @@
     "src/worker/handlers/**/*",
     "src/worker/plugin.ts"
   ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/__tests__/**",
-    "**/*.test.*",
-    "**/*.spec.*"
-  ]
+  "exclude": ["node_modules", "dist", "**/__tests__/**", "**/*.test.*", "**/*.spec.*"]
 }

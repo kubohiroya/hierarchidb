@@ -1,8 +1,8 @@
 import { DragIndicator } from '@mui/icons-material';
 import { Box, Tooltip } from '@mui/material';
-import { isProdEnv } from '~/utils/env';
 import { MemoryUsageChart } from '~/components/MemoryUsageBar/index';
 import { MemoryUsageBar } from '~/components/MemoryUsageBar/MemoryUsageBar';
+import { isProdEnv } from '~/utils/env';
 import { useMemoryUsageMonitor } from './useMemoryUsageMonitor';
 
 interface DevelopmentTimestampProps {

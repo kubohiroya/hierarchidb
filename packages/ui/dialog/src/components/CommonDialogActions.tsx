@@ -2,8 +2,8 @@
  * @fileoverview CommonDialogActions - Standardized base-dialog action buttons
  */
 
-import type React from 'react';
 import { Button, DialogActions, Stack } from '@mui/material';
+import type React from 'react';
 import { useCommonDialogActionsView } from './useCommonDialogActionsView.js';
 
 export interface CommonDialogActionsProps {
@@ -17,14 +17,14 @@ export interface CommonDialogActionsProps {
 }
 
 export const CommonDialogActions: React.FC<CommonDialogActionsProps> = ({
-                                                                          mode,
-                                                                          isValid = true,
-                                                                          isSubmitting = false,
-                                                                          onSubmit,
-                                                                          onCancel,
-                                                                          additionalActions,
-                                                                          displayMode = 'normal',
-                                                                        }) => {
+  mode,
+  isValid = true,
+  isSubmitting = false,
+  onSubmit,
+  onCancel,
+  additionalActions,
+  displayMode = 'normal',
+}) => {
   const { shouldRender, submitLabel, submitDisabled } = useCommonDialogActionsView({
     displayMode,
     mode,
@@ -45,12 +45,7 @@ export const CommonDialogActions: React.FC<CommonDialogActionsProps> = ({
         <Stack direction="row" spacing={2}>
           {additionalActions}
 
-          <Button
-            onClick={onSubmit}
-            variant="contained"
-            size="large"
-            disabled={submitDisabled}
-          >
+          <Button onClick={onSubmit} variant="contained" size="large" disabled={submitDisabled}>
             {submitLabel}
           </Button>
         </Stack>

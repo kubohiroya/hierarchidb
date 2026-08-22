@@ -1,5 +1,5 @@
-import type { ReactElement } from 'react';
 import type { SvgIconComponent } from '@mui/icons-material';
+import type { ReactElement } from 'react';
 
 export type LocationViewportIconProps = {
   Icon: SvgIconComponent;

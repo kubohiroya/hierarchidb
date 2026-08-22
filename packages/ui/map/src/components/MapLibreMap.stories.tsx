@@ -1,16 +1,17 @@
 /* eslint-disable storybook/no-renderer-packages */
+
+import { Box, Divider, Paper, Stack, Typography } from '@mui/material';
 import type { Meta, StoryObj } from '@storybook/react';
+import type { FeatureCollection } from 'geojson';
 import type React from 'react';
 import { useCallback, useState } from 'react';
-import { Box, Divider, Paper, Stack, Typography } from '@mui/material';
-import type { FeatureCollection } from 'geojson';
-import { MapLibreMap } from './MapLibreMap.js';
 import type { MapLibreMapInstance } from '~/types/maplibre-public';
 import type {
   MapClickEvent,
-  MapFeatureIdentifyResult,
   MapFeatureIdentifier,
+  MapFeatureIdentifyResult,
 } from '~/types/unified-map-props';
+import { MapLibreMap } from './MapLibreMap.js';
 
 const DEMO_SOURCE_ID = 'demo-click-points';
 const DEMO_LAYER_ID = 'demo-click-points-layer';
@@ -146,8 +147,9 @@ const FeatureIdentifyContent: React.FC = () => {
           クリックしたフィーチャー
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          identifyFeatureOnClick（radius=12px, layerIds で絞り込み）と onClick(event.identifiedFeatureIds)
-          の出力例です。queryRenderedFeatures で見つからない場合は event.features からフォールバックします。
+          identifyFeatureOnClick（radius=12px, layerIds で絞り込み）と
+          onClick(event.identifiedFeatureIds) の出力例です。queryRenderedFeatures
+          で見つからない場合は event.features からフォールバックします。
         </Typography>
         <Divider sx={{ my: 1.5 }} />
         <Typography variant="subtitle2">identifyFeatureOnClick.onIdentify</Typography>

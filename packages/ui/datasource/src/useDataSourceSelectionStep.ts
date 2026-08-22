@@ -1,5 +1,5 @@
-import { useCallback, useMemo } from 'react';
 import type React from 'react';
+import { useCallback, useMemo } from 'react';
 import type {
   DataSourceSelectionOption,
   DataSourceSelectionState,
@@ -16,11 +16,11 @@ interface UseDataSourceSelectionStepArgs<TAgreedAt> {
       agreedAtIso?: string;
       onAgree: () => void;
       state: DataSourceSelectionState<TAgreedAt>;
-    },
+    }
   ) => React.ReactNode | null | undefined;
 }
 
-export const useDataSourceSelectionStep = <TAgreedAt,>({
+export const useDataSourceSelectionStep = <TAgreedAt>({
   options,
   state,
   onChange,
@@ -36,19 +36,20 @@ export const useDataSourceSelectionStep = <TAgreedAt,>({
       : String(state.licenseAgreedAt)
     : undefined;
 
-  const handleSelect = useCallback((next: string) => {
-    if (next === value) return;
-    onChange({
-      dataSourceId: next,
-      licenseAgreement: false,
-      licenseAgreedAt: undefined,
-    });
-  }, [onChange, value]);
+  const handleSelect = useCallback(
+    (next: string) => {
+      if (next === value) return;
+      onChange({
+        dataSourceId: next,
+        licenseAgreement: false,
+        licenseAgreedAt: undefined,
+      });
+    },
+    [onChange, value]
+  );
 
   const handleAgree = useCallback(() => {
-    const buildAgreedAt =
-      createAgreedAt ??
-      (() => new Date().toISOString() as TAgreedAt);
+    const buildAgreedAt = createAgreedAt ?? (() => new Date().toISOString() as TAgreedAt);
     if (selected?.licenseUrl) {
       window.open(selected.licenseUrl, '_blank', 'noopener,noreferrer');
     }
@@ -58,11 +59,11 @@ export const useDataSourceSelectionStep = <TAgreedAt,>({
     });
   }, [createAgreedAt, onChange, selected?.licenseUrl]);
 
-  const detailsContent = useMemo(() => (
-    selected
-      ? renderDetails?.(selected, { agreedAtIso, onAgree: handleAgree, state })
-      : null
-  ), [agreedAtIso, handleAgree, renderDetails, selected, state]);
+  const detailsContent = useMemo(
+    () =>
+      selected ? renderDetails?.(selected, { agreedAtIso, onAgree: handleAgree, state }) : null,
+    [agreedAtIso, handleAgree, renderDetails, selected, state]
+  );
 
   return {
     value,

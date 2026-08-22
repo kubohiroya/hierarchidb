@@ -136,7 +136,6 @@ export interface TreeConsoleToolbarProps {
    */
   zoomBandBoundaries?: number[];
 
-
   /**
    * Callback when zoom band boundaries change.
    */
@@ -151,7 +150,6 @@ export interface TreeConsoleToolbarProps {
    * Callback when build continuation policy changes.
    */
   onBuildContinuationPolicyChange?: (policy: BuildContinuationPolicy) => void;
-
 
   /**
    * Undo/Redo availability

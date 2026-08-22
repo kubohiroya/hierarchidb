@@ -1,6 +1,6 @@
 import type { FeatureCollection } from 'geojson';
-import type { GeometryOps } from './core.js';
 import { analyzeGeometryIssues, isGeometryBooleanValid } from './analysis.js';
+import type { GeometryOps } from './core.js';
 import { countPolygonsFromGeometry } from './validation.js';
 
 export const assertNotAborted = (signal?: AbortSignal): void => {
@@ -9,17 +9,14 @@ export const assertNotAborted = (signal?: AbortSignal): void => {
   }
 };
 
-export const formatArea = (value: number | null): string => (
-  value === null || !Number.isFinite(value) ? '-' : value.toExponential(2)
-);
+export const formatArea = (value: number | null): string =>
+  value === null || !Number.isFinite(value) ? '-' : value.toExponential(2);
 
-export const formatAverage = (value: number | null): string => (
-  value === null || !Number.isFinite(value) ? '-' : value.toFixed(2)
-);
+export const formatAverage = (value: number | null): string =>
+  value === null || !Number.isFinite(value) ? '-' : value.toFixed(2);
 
-export const formatToleranceForDisplay = (value: number): number => (
-  Number.isFinite(value) ? Number(value.toFixed(4)) : value
-);
+export const formatToleranceForDisplay = (value: number): number =>
+  Number.isFinite(value) ? Number(value.toFixed(4)) : value;
 
 export const runStageWithLabel = async <T>(label: string, fn: () => T | Promise<T>): Promise<T> => {
   try {
@@ -51,24 +48,27 @@ export const runWithStallTimeout = async <T>(params: {
   let intervalId: ReturnType<typeof setInterval> | null = null;
   let lastHeartbeatAt = Date.now();
   const stallPromise = new Promise<never>((_resolve, reject) => {
-    intervalId = setInterval(() => {
-      const now = Date.now();
-      const lastProgressAt = getLastProgressAt();
-      const idleMs = now - lastProgressAt;
-      if (idleMs >= timeoutMs) {
-        reject(new Error(`geometry failed: ${stage} stalled (${idleMs}ms without progress)`));
-        return;
-      }
-      if (now - lastHeartbeatAt >= heartbeatMs) {
-        lastHeartbeatAt = now;
-        console.warn('[geometry] stage heartbeat', {
-          nodeId,
-          taskId,
-          stage,
-          idleMs,
-        });
-      }
-    }, Math.min(heartbeatMs, 10000));
+    intervalId = setInterval(
+      () => {
+        const now = Date.now();
+        const lastProgressAt = getLastProgressAt();
+        const idleMs = now - lastProgressAt;
+        if (idleMs >= timeoutMs) {
+          reject(new Error(`geometry failed: ${stage} stalled (${idleMs}ms without progress)`));
+          return;
+        }
+        if (now - lastHeartbeatAt >= heartbeatMs) {
+          lastHeartbeatAt = now;
+          console.warn('[geometry] stage heartbeat', {
+            nodeId,
+            taskId,
+            stage,
+            idleMs,
+          });
+        }
+      },
+      Math.min(heartbeatMs, 10000)
+    );
   });
   try {
     return await Promise.race([promise, stallPromise]);
@@ -82,14 +82,14 @@ export const runWithStallTimeout = async <T>(params: {
 export const buildCollectionDiagnostics = (
   collection: FeatureCollection | null,
   label: string,
-  geometryOps: GeometryOps,
+  geometryOps: GeometryOps
 ): string | null => {
   if (!collection) return null;
   const featureCount = collection.features.length;
   const missingGeometry = collection.features.filter((feature) => !feature?.geometry).length;
   const polygonCount = collection.features.reduce(
     (sum, feature) => sum + countPolygonsFromGeometry(feature?.geometry),
-    0,
+    0
   );
   let invalidFeatureCount = 0;
   let invalidRingCount = 0;
@@ -121,35 +121,38 @@ export const buildCollectionDiagnostics = (
       invalidFeatureCount += 1;
     }
     if (summary.minRingVertices !== null) {
-      minRingVertices = minRingVertices === null
-        ? summary.minRingVertices
-        : Math.min(minRingVertices, summary.minRingVertices);
+      minRingVertices =
+        minRingVertices === null
+          ? summary.minRingVertices
+          : Math.min(minRingVertices, summary.minRingVertices);
     }
     if (summary.maxRingVertices !== null) {
-      maxRingVertices = maxRingVertices === null
-        ? summary.maxRingVertices
-        : Math.max(maxRingVertices, summary.maxRingVertices);
+      maxRingVertices =
+        maxRingVertices === null
+          ? summary.maxRingVertices
+          : Math.max(maxRingVertices, summary.maxRingVertices);
     }
     if (summary.minRingArea !== null) {
-      minRingArea = minRingArea === null
-        ? summary.minRingArea
-        : Math.min(minRingArea, summary.minRingArea);
+      minRingArea =
+        minRingArea === null ? summary.minRingArea : Math.min(minRingArea, summary.minRingArea);
     }
     if (summary.maxRingArea !== null) {
-      maxRingArea = maxRingArea === null
-        ? summary.maxRingArea
-        : Math.max(maxRingArea, summary.maxRingArea);
+      maxRingArea =
+        maxRingArea === null ? summary.maxRingArea : Math.max(maxRingArea, summary.maxRingArea);
     }
     if (summary.avgRingVertices !== null && summary.ringCount > 0) {
       ringVertexTotal += summary.avgRingVertices * summary.ringCount;
       ringCount += summary.ringCount;
     }
     if (sampleDetails.length < 3) {
-      const featureId = feature.id
-        ?? (feature.properties && 'id' in feature.properties ? String(feature.properties.id) : undefined)
-        ?? `${label}:${sampleDetails.length}`;
+      const featureId =
+        feature.id ??
+        (feature.properties && 'id' in feature.properties
+          ? String(feature.properties.id)
+          : undefined) ??
+        `${label}:${sampleDetails.length}`;
       sampleDetails.push(
-        `${featureId} type=${summary.geometryType} rings=${summary.ringCount} minRingVertices=${summary.minRingVertices ?? '-'} kinks=${summary.selfIntersectionCount} degenerateRings=${summary.degenerateRingCount} minRingArea=${formatArea(summary.minRingArea)} invalidRings=${summary.invalidRingCount} openRings=${summary.openRingCount} nonFinite=${summary.nonFiniteCoordCount} booleanValid=${isValid ? '1' : '0'}`,
+        `${featureId} type=${summary.geometryType} rings=${summary.ringCount} minRingVertices=${summary.minRingVertices ?? '-'} kinks=${summary.selfIntersectionCount} degenerateRings=${summary.degenerateRingCount} minRingArea=${formatArea(summary.minRingArea)} invalidRings=${summary.invalidRingCount} openRings=${summary.openRingCount} nonFinite=${summary.nonFiniteCoordCount} booleanValid=${isValid ? '1' : '0'}`
       );
     }
   }

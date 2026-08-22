@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
-  ColumnSizingState,
   ColumnDef,
+  ColumnSizingState,
   GroupingState,
   Header,
   RowSelectionState,
@@ -18,6 +17,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   GridColumnSizingState,
   GridColumnVisibilityState,
@@ -53,9 +53,8 @@ type UseTanstackDataGridViewArgs = {
   dropTargetRows?: Set<string | number>;
 };
 
-const resolveUpdater = <T,>(updater: Updater<T>, prev: T): T => (
-  typeof updater === 'function' ? (updater as (value: T) => T)(prev) : updater
-);
+const resolveUpdater = <T>(updater: Updater<T>, prev: T): T =>
+  typeof updater === 'function' ? (updater as (value: T) => T)(prev) : updater;
 
 const MIN_COLUMN_WIDTH = 60;
 const toDefaultRowId = <T extends RowRecord>(row: T, index?: number): string | number => {
@@ -93,9 +92,14 @@ export const useTanstackDataGridView = ({
 }: UseTanstackDataGridViewArgs) => {
   const [internalSorting, setInternalSorting] = useState<GridSortingState>(sorting ?? []);
   const [internalGrouping, setInternalGrouping] = useState<GridGroupingState>(grouping ?? []);
-  const [internalColumnVisibility, setInternalColumnVisibility] = useState<GridColumnVisibilityState>(columnVisibility ?? {});
-  const [internalColumnSizing, setInternalColumnSizing] = useState<GridColumnSizingState>(columnSizing ?? {});
-  const [internalSelectedRows, setInternalSelectedRows] = useState<Set<string | number>>(selectedRows ?? new Set());
+  const [internalColumnVisibility, setInternalColumnVisibility] =
+    useState<GridColumnVisibilityState>(columnVisibility ?? {});
+  const [internalColumnSizing, setInternalColumnSizing] = useState<GridColumnSizingState>(
+    columnSizing ?? {}
+  );
+  const [internalSelectedRows, setInternalSelectedRows] = useState<Set<string | number>>(
+    selectedRows ?? new Set()
+  );
   const headerContainerRef = useRef<HTMLDivElement | null>(null);
   const bodyContainerRef = useRef<HTMLDivElement | null>(null);
   const resizeRef = useRef<{
@@ -114,23 +118,23 @@ export const useTanstackDataGridView = ({
 
   const normalizedSelectedRows = useMemo(
     () => new Set(Array.from(resolvedSelectedRows).map(String)),
-    [resolvedSelectedRows],
+    [resolvedSelectedRows]
   );
   const normalizedMatchedRows = useMemo(
     () => (matchedRows ? new Set(Array.from(matchedRows).map(String)) : undefined),
-    [matchedRows],
+    [matchedRows]
   );
   const normalizedHoveredRows = useMemo(
     () => (hoveredRows ? new Set(Array.from(hoveredRows).map(String)) : undefined),
-    [hoveredRows],
+    [hoveredRows]
   );
   const normalizedDraggingRows = useMemo(
     () => (draggingRows ? new Set(Array.from(draggingRows).map(String)) : undefined),
-    [draggingRows],
+    [draggingRows]
   );
   const normalizedDropTargetRows = useMemo(
     () => (dropTargetRows ? new Set(Array.from(dropTargetRows).map(String)) : undefined),
-    [dropTargetRows],
+    [dropTargetRows]
   );
 
   useEffect(() => {
@@ -157,94 +161,118 @@ export const useTanstackDataGridView = ({
     return mapping;
   }, [normalizedSelectedRows]);
 
-  const handleRowSelectionChange = useCallback((updater: Updater<RowSelectionState>) => {
-    const next = resolveUpdater(updater, rowSelectionState);
-    let normalized = next;
+  const handleRowSelectionChange = useCallback(
+    (updater: Updater<RowSelectionState>) => {
+      const next = resolveUpdater(updater, rowSelectionState);
+      let normalized = next;
 
-    if (selectionMode === 'single') {
-      const entries = Object.entries(next).filter(([, value]) => value);
-      normalized = entries.length > 0 ? { [entries[entries.length - 1]![0]]: true } : {};
-    }
+      if (selectionMode === 'single') {
+        const entries = Object.entries(next).filter(([, value]) => value);
+        normalized = entries.length > 0 ? { [entries[entries.length - 1]![0]]: true } : {};
+      }
 
-    const nextSet = new Set<string | number>();
-    Object.entries(normalized).forEach(([key, value]) => {
-      if (value) nextSet.add(key);
-    });
+      const nextSet = new Set<string | number>();
+      Object.entries(normalized).forEach(([key, value]) => {
+        if (value) nextSet.add(key);
+      });
 
-    if (selectedRows === undefined) {
-      setInternalSelectedRows(nextSet);
-    }
-    onSelectionChange?.(nextSet);
-  }, [onSelectionChange, rowSelectionState, selectedRows, selectionMode]);
+      if (selectedRows === undefined) {
+        setInternalSelectedRows(nextSet);
+      }
+      onSelectionChange?.(nextSet);
+    },
+    [onSelectionChange, rowSelectionState, selectedRows, selectionMode]
+  );
 
-  const handleSortingChange = useCallback((updater: Updater<SortingState>) => {
-    const next = resolveUpdater(updater, resolvedSorting);
-    if (sorting === undefined) setInternalSorting(next);
-    onSortingChange?.(next);
-  }, [onSortingChange, resolvedSorting, sorting]);
+  const handleSortingChange = useCallback(
+    (updater: Updater<SortingState>) => {
+      const next = resolveUpdater(updater, resolvedSorting);
+      if (sorting === undefined) setInternalSorting(next);
+      onSortingChange?.(next);
+    },
+    [onSortingChange, resolvedSorting, sorting]
+  );
 
-  const handleGroupingChange = useCallback((updater: Updater<GroupingState>) => {
-    const next = resolveUpdater(updater, resolvedGrouping);
-    if (grouping === undefined) setInternalGrouping(next);
-    onGroupingChange?.(next);
-  }, [grouping, onGroupingChange, resolvedGrouping]);
+  const handleGroupingChange = useCallback(
+    (updater: Updater<GroupingState>) => {
+      const next = resolveUpdater(updater, resolvedGrouping);
+      if (grouping === undefined) setInternalGrouping(next);
+      onGroupingChange?.(next);
+    },
+    [grouping, onGroupingChange, resolvedGrouping]
+  );
 
-  const handleColumnVisibilityChange = useCallback((updater: Updater<VisibilityState>) => {
-    const next = resolveUpdater(updater, resolvedColumnVisibility);
-    if (columnVisibility === undefined) setInternalColumnVisibility(next);
-    onColumnVisibilityChange?.(next);
-  }, [columnVisibility, onColumnVisibilityChange, resolvedColumnVisibility]);
+  const handleColumnVisibilityChange = useCallback(
+    (updater: Updater<VisibilityState>) => {
+      const next = resolveUpdater(updater, resolvedColumnVisibility);
+      if (columnVisibility === undefined) setInternalColumnVisibility(next);
+      onColumnVisibilityChange?.(next);
+    },
+    [columnVisibility, onColumnVisibilityChange, resolvedColumnVisibility]
+  );
 
-  const handleColumnSizingChange = useCallback((updater: Updater<ColumnSizingState>) => {
-    const next = resolveUpdater(updater, resolvedColumnSizing);
-    if (columnSizing === undefined) setInternalColumnSizing(next);
-    onColumnSizingChange?.(next);
-  }, [columnSizing, onColumnSizingChange, resolvedColumnSizing]);
+  const handleColumnSizingChange = useCallback(
+    (updater: Updater<ColumnSizingState>) => {
+      const next = resolveUpdater(updater, resolvedColumnSizing);
+      if (columnSizing === undefined) setInternalColumnSizing(next);
+      onColumnSizingChange?.(next);
+    },
+    [columnSizing, onColumnSizingChange, resolvedColumnSizing]
+  );
 
-  const handleResizeStart = useCallback(<T,>(
-    leftHeader: Header<T, unknown>,
-    rightHeader: Header<T, unknown>,
-    event: React.MouseEvent<HTMLDivElement>,
-  ) => {
-    event.preventDefault();
-    event.stopPropagation();
+  const handleResizeStart = useCallback(
+    <T>(
+      leftHeader: Header<T, unknown>,
+      rightHeader: Header<T, unknown>,
+      event: React.MouseEvent<HTMLDivElement>
+    ) => {
+      event.preventDefault();
+      event.stopPropagation();
 
-    const handleRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    const startX = handleRect.left + handleRect.width / 2;
-    const leftStart = leftHeader.getSize();
-    const rightStart = rightHeader.getSize();
+      const handleRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+      const startX = handleRect.left + handleRect.width / 2;
+      const leftStart = leftHeader.getSize();
+      const rightStart = rightHeader.getSize();
 
-    resizeRef.current = {
-      startX,
-      leftStart,
-      rightStart,
-      leftId: leftHeader.column.id,
-      rightId: rightHeader.column.id,
-    };
+      resizeRef.current = {
+        startX,
+        leftStart,
+        rightStart,
+        leftId: leftHeader.column.id,
+        rightId: rightHeader.column.id,
+      };
 
-    const handleMouseMove = (nativeEvent: MouseEvent) => {
-      const { startX: originX, leftStart: initialLeft, rightStart: initialRight, leftId, rightId } = resizeRef.current;
-      const deltaX = nativeEvent.clientX - originX;
-      const maxPositive = initialRight - MIN_COLUMN_WIDTH;
-      const maxNegative = initialLeft - MIN_COLUMN_WIDTH;
-      const clamped = Math.max(-maxNegative, Math.min(deltaX, maxPositive));
-      const leftNew = Math.max(MIN_COLUMN_WIDTH, initialLeft + clamped);
-      const rightNew = Math.max(MIN_COLUMN_WIDTH, initialRight - clamped);
-      handleColumnSizingChange((prev) => ({
-        ...prev,
-        [leftId]: leftNew,
-        [rightId]: rightNew,
-      }));
-    };
+      const handleMouseMove = (nativeEvent: MouseEvent) => {
+        const {
+          startX: originX,
+          leftStart: initialLeft,
+          rightStart: initialRight,
+          leftId,
+          rightId,
+        } = resizeRef.current;
+        const deltaX = nativeEvent.clientX - originX;
+        const maxPositive = initialRight - MIN_COLUMN_WIDTH;
+        const maxNegative = initialLeft - MIN_COLUMN_WIDTH;
+        const clamped = Math.max(-maxNegative, Math.min(deltaX, maxPositive));
+        const leftNew = Math.max(MIN_COLUMN_WIDTH, initialLeft + clamped);
+        const rightNew = Math.max(MIN_COLUMN_WIDTH, initialRight - clamped);
+        handleColumnSizingChange((prev) => ({
+          ...prev,
+          [leftId]: leftNew,
+          [rightId]: rightNew,
+        }));
+      };
 
-    const handleMouseUp = () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
+      const handleMouseUp = () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  }, [handleColumnSizingChange]);
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    },
+    [handleColumnSizingChange]
+  );
 
   const table = useReactTable({
     data: rows,
@@ -301,11 +329,19 @@ export const useTanstackDataGridView = ({
 
   const virtualRows = enableVirtualization
     ? virtualizer.getVirtualItems()
-    : rowModel.map((_, index) => ({ index, start: index * rowHeight, size: rowHeight, end: 0, key: index }));
-  const paddingTop = enableVirtualization && virtualRows.length > 0 ? virtualRows[0]?.start ?? 0 : 0;
-  const paddingBottom = enableVirtualization && virtualRows.length > 0
-    ? virtualizer.getTotalSize() - (virtualRows[virtualRows.length - 1]?.end ?? 0)
-    : 0;
+    : rowModel.map((_, index) => ({
+        index,
+        start: index * rowHeight,
+        size: rowHeight,
+        end: 0,
+        key: index,
+      }));
+  const paddingTop =
+    enableVirtualization && virtualRows.length > 0 ? (virtualRows[0]?.start ?? 0) : 0;
+  const paddingBottom =
+    enableVirtualization && virtualRows.length > 0
+      ? virtualizer.getTotalSize() - (virtualRows[virtualRows.length - 1]?.end ?? 0)
+      : 0;
   const leafColumnCount = table.getAllLeafColumns().length;
   const measureRowElement = enableVirtualization ? virtualizer.measureElement : undefined;
 

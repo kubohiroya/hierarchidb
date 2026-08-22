@@ -1,6 +1,6 @@
 import { useMemo, useSyncExternalStore } from 'react';
-import { isRenderableNode } from './resourceLayerMapHelpers.js';
 import type { MapStatsStore } from '../useResourceLayerMapStats.js';
+import { isRenderableNode } from './resourceLayerMapHelpers.js';
 
 type UseMapStatsPanelParams = {
   store: MapStatsStore;

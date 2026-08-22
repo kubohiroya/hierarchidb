@@ -3,14 +3,14 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import type { TreeNode } from '@hierarchidb/tree-api';
 import { composeStepConfigs } from '@hierarchidb/plugin-base';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { DualKeyMap } from '@hierarchidb/util';
-import { loadUIPlugin } from '~/plugin-loaders/uiPluginLoaderUtils';
 import type { TreeConsoleActionDeps } from '~/hooks/treeconsole/types';
-import { showCommandError } from './treeConsoleActionUtils.ts';
+import { loadUIPlugin } from '~/plugin-loaders/uiPluginLoaderUtils';
 import { openInNewTab } from '~/utils/openInNewTab';
+import { showCommandError } from './treeConsoleActionUtils.ts';
 
 export const PREVIEW_GUARD_NODE_TYPES = new Set([
   'basemap',
@@ -93,9 +93,12 @@ export const resolvePreviewGuardState = async ({
   const finalConfigIndex = configs.length - 1;
   const basicInfoValid = composed.hasHostBase
     ? true
-    : Boolean(String(nodeSnapshot?.draftMetadata?.name ?? nodeSnapshot?.metadata?.name ?? '').trim());
+    : Boolean(
+        String(nodeSnapshot?.draftMetadata?.name ?? nodeSnapshot?.metadata?.name ?? '').trim()
+      );
   const requiredBeforeFinalValid =
-    basicInfoValid && configs.slice(0, finalConfigIndex).every((cfg, idx) => cfg.optional || results[idx]);
+    basicInfoValid &&
+    configs.slice(0, finalConfigIndex).every((cfg, idx) => cfg.optional || results[idx]);
   const finalStepValid = results[finalConfigIndex] ?? true;
   const finalStepIndex = composed.hasHostBase ? finalConfigIndex + 1 : finalConfigIndex + 2;
   const canStartProcessing =

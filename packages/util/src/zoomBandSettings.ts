@@ -22,7 +22,7 @@ export const normalizeZoomBandBoundaries = (
   boundaries: number[],
   minZoom = ZOOM_BAND_MIN_ZOOM,
   maxZoom = ZOOM_BAND_MAX_ZOOM,
-  maxRanges = ZOOM_BAND_MAX_RANGES,
+  maxRanges = ZOOM_BAND_MAX_RANGES
 ): number[] => {
   const maxHandles = Math.max(1, maxRanges + 1);
   const raw = boundaries
@@ -37,11 +37,7 @@ export const normalizeZoomBandBoundaries = (
 
   const normalized: number[] = [minZoom];
   const lastRaw = raw[raw.length - 1];
-  const resolvedLast = clamp(
-    typeof lastRaw === 'number' ? lastRaw : minZoom,
-    minZoom,
-    maxZoom,
-  );
+  const resolvedLast = clamp(typeof lastRaw === 'number' ? lastRaw : minZoom, minZoom, maxZoom);
 
   const middle = raw.filter((value) => value > minZoom && value < resolvedLast);
   const maxMiddle = Math.max(0, maxHandles - 2);
@@ -65,7 +61,7 @@ export const normalizeZoomBandBoundaries = (
 export const buildEvenZoomBandBoundaries = (
   rangeCount: number,
   minZoom = ZOOM_BAND_MIN_ZOOM,
-  maxZoom = ZOOM_BAND_MAX_ZOOM,
+  maxZoom = ZOOM_BAND_MAX_ZOOM
 ): number[] => {
   if (rangeCount <= 0) return [minZoom];
   if (rangeCount === 1) return [minZoom, maxZoom];
@@ -80,7 +76,7 @@ export const buildEvenZoomBandBoundaries = (
 export const buildZoomBandRanges = (
   boundaries: number[],
   minZoom = ZOOM_BAND_MIN_ZOOM,
-  maxZoom = ZOOM_BAND_MAX_ZOOM,
+  maxZoom = ZOOM_BAND_MAX_ZOOM
 ): ZoomBandRange[] => {
   const normalized = normalizeZoomBandBoundaries(boundaries, minZoom, maxZoom);
   if (normalized.length < 2) return [];
@@ -114,11 +110,10 @@ export const resolveZoomBandSettings = (params: {
   const maxRanges = params.maxRanges ?? ZOOM_BAND_MAX_RANGES;
   const fallback = params.fallbackBoundaries ?? DEFAULT_ZOOM_BAND_BOUNDARIES;
 
-  const normalizeCandidate = (boundaries?: number[]) => (
+  const normalizeCandidate = (boundaries?: number[]) =>
     Array.isArray(boundaries)
       ? normalizeZoomBandBoundaries(boundaries, minZoom, maxZoom, maxRanges)
-      : undefined
-  );
+      : undefined;
 
   const common = normalizeCandidate(params.commonBoundaries);
   const entity = normalizeCandidate(params.entityBoundaries);

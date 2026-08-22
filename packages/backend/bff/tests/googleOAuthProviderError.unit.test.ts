@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { OAuthProviderError } from '../src/auth/OAuthProviderError.js';
 import { exchangeCodeForTokens, getGoogleUserInfo } from '../src/auth/google.js';
+import { OAuthProviderError } from '../src/auth/OAuthProviderError.js';
 
 const config = {
   clientId: 'google-client-id',

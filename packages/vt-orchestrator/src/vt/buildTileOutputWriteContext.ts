@@ -1,8 +1,8 @@
 import type { VTStageContext } from '~/contextTypes';
 import type { VtTaskInput } from '~/types/types';
-import type { VtCollectionResult, VtTaskRunInput } from './vtStageTaskTypes.js';
-import type { VtTileOutputContext } from './vtStageTaskOutputTypes.js';
 import type { VtLayerBuildResult } from './vtStageTaskLayerBuilderTypes.js';
+import type { VtTileOutputContext } from './vtStageTaskOutputTypes.js';
+import type { VtCollectionResult, VtTaskRunInput } from './vtStageTaskTypes.js';
 
 export type VtTaskOutputWriteInput = {
   context: VTStageContext;

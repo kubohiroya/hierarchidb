@@ -2,21 +2,18 @@ import { describe, expect, it } from 'vitest';
 import {
   buildShapeLayerEntryId,
   buildShapeLayerShortId,
-  buildSourceLayerName,
   buildShapeSourceLayerName,
+  buildSourceLayerName,
+  getLayerSetDefinition,
   parseShapeSourceLayerName,
   resolveLayerSetEntries,
-  getLayerSetDefinition,
 } from '../layerSetDefinitions';
 
 describe('layerSetDefinitions sourceLayer parsing', () => {
   it('resolves canonical source layer names used by shape tiles', () => {
     const shapeSet = getLayerSetDefinition('shape');
     expect(shapeSet).toBeTruthy();
-    const resolved = resolveLayerSetEntries(
-      ['0', '1-b', '2'],
-      shapeSet!,
-    );
+    const resolved = resolveLayerSetEntries(['0', '1-b', '2'], shapeSet!);
     const byId = new Map(resolved.map((entry) => [entry.id, entry.sourceLayer ?? null]));
     expect(byId.get(buildShapeLayerEntryId(0, false))).toBe('0');
     expect(byId.get(buildShapeLayerEntryId(1, true))).toBe('1-b');
@@ -28,10 +25,7 @@ describe('layerSetDefinitions sourceLayer parsing', () => {
   it('resolves shape layer entries by canonical name match', () => {
     const shapeSet = getLayerSetDefinition('shape');
     expect(shapeSet).toBeTruthy();
-    const resolved = resolveLayerSetEntries(
-      ['0', '0-b', '1', '2-b'],
-      shapeSet!,
-    );
+    const resolved = resolveLayerSetEntries(['0', '0-b', '1', '2-b'], shapeSet!);
     const byId = new Map(resolved.map((entry) => [entry.id, entry.sourceLayer ?? null]));
     expect(byId.get(buildShapeLayerEntryId(0, false))).toBe('0');
     expect(byId.get(buildShapeLayerEntryId(0, true))).toBe('0-b');
@@ -43,21 +37,19 @@ describe('layerSetDefinitions sourceLayer parsing', () => {
     const shapeSet = getLayerSetDefinition('shape');
     expect(shapeSet).toBeTruthy();
 
-    const resolvedFillOnly = resolveLayerSetEntries(
-      ['0', '1', '2'],
-      shapeSet!,
+    const resolvedFillOnly = resolveLayerSetEntries(['0', '1', '2'], shapeSet!);
+    const fillById = new Map(
+      resolvedFillOnly.map((entry) => [entry.id, entry.sourceLayer ?? null])
     );
-    const fillById = new Map(resolvedFillOnly.map((entry) => [entry.id, entry.sourceLayer ?? null]));
     expect(fillById.get(buildShapeLayerEntryId(0, false))).toBe('0');
     expect(fillById.get(buildShapeLayerEntryId(0, true))).toBeNull();
     expect(fillById.get(buildShapeLayerEntryId(1, false))).toBe('1');
     expect(fillById.get(buildShapeLayerEntryId(2, false))).toBe('2');
 
-    const resolvedBoundaryOnly = resolveLayerSetEntries(
-      ['0-b', '1-b', '2-b'],
-      shapeSet!,
+    const resolvedBoundaryOnly = resolveLayerSetEntries(['0-b', '1-b', '2-b'], shapeSet!);
+    const boundaryById = new Map(
+      resolvedBoundaryOnly.map((entry) => [entry.id, entry.sourceLayer ?? null])
     );
-    const boundaryById = new Map(resolvedBoundaryOnly.map((entry) => [entry.id, entry.sourceLayer ?? null]));
     expect(boundaryById.get(buildShapeLayerEntryId(0, true))).toBe('0-b');
     expect(boundaryById.get(buildShapeLayerEntryId(1, true))).toBe('1-b');
     expect(boundaryById.get(buildShapeLayerEntryId(2, true))).toBe('2-b');
@@ -66,11 +58,9 @@ describe('layerSetDefinitions sourceLayer parsing', () => {
   it('filters shape layers by allowed admin levels', () => {
     const shapeSet = getLayerSetDefinition('shape');
     expect(shapeSet).toBeTruthy();
-    const resolved = resolveLayerSetEntries(
-      ['0', '0-b', '1', '1-b', '2', '2-b'],
-      shapeSet!,
-      { allowedAdminLevels: [0, 1] },
-    );
+    const resolved = resolveLayerSetEntries(['0', '0-b', '1', '1-b', '2', '2-b'], shapeSet!, {
+      allowedAdminLevels: [0, 1],
+    });
     const byId = new Map(resolved.map((entry) => [entry.id, entry.sourceLayer ?? null]));
     expect(byId.get(buildShapeLayerEntryId(0, false))).toBe('0');
     expect(byId.get(buildShapeLayerEntryId(0, true))).toBe('0-b');
@@ -86,7 +76,7 @@ describe('layerSetDefinitions sourceLayer parsing', () => {
 
     const resolved = resolveLayerSetEntries(
       ['shape-adm', 'admin-level-1', 'admin0-buffer', 'shape-admX'],
-      shapeSet!,
+      shapeSet!
     );
     const byId = new Map(resolved.map((entry) => [entry.id, entry.sourceLayer ?? null]));
     expect(byId.get(buildShapeLayerEntryId(0, false))).toBeNull();
@@ -98,11 +88,9 @@ describe('layerSetDefinitions sourceLayer parsing', () => {
     const shapeSet = getLayerSetDefinition('shape');
     expect(shapeSet).toBeTruthy();
 
-    const resolved = resolveLayerSetEntries(
-      ['0', '0-b', '1', '1-b'],
-      shapeSet!,
-      { allowedAdminLevels: [] },
-    );
+    const resolved = resolveLayerSetEntries(['0', '0-b', '1', '1-b'], shapeSet!, {
+      allowedAdminLevels: [],
+    });
     const byId = new Map(resolved.map((entry) => [entry.id, entry.sourceLayer ?? null]));
     expect(byId.get(buildShapeLayerEntryId(0, false))).toBeNull();
     expect(byId.get(buildShapeLayerEntryId(0, true))).toBeNull();
@@ -128,13 +116,10 @@ describe('layerSetDefinitions sourceLayer parsing', () => {
   it('matches source names after canonical normalization', () => {
     const shapeSet = getLayerSetDefinition('shape');
     expect(shapeSet).toBeTruthy();
-    const resolved = resolveLayerSetEntries(
-      ['1-b', '2'],
-      shapeSet!,
-    );
+    const resolved = resolveLayerSetEntries(['1-b', '2'], shapeSet!);
     const byId = new Map(resolved.map((entry) => [entry.id, entry.sourceLayer ?? null]));
     expect(byId.get(buildShapeLayerEntryId(1, true))).toBe('1-b');
     expect(byId.get(buildShapeLayerEntryId(2, false))).toBe('2');
     expect(byId.get(buildShapeLayerEntryId(1, false))).toBeNull();
   });
-}); 
+});

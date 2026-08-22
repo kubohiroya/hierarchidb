@@ -1,9 +1,9 @@
 import {
   buildShapeSourceLayerName as buildShapeSourceLayerNameFromSdk,
-  parseShapeSourceLayerName,
-  type LayerNameBoundaryMode,
   type ShapeLayerBoundarySymbol as GisShapeLayerBoundarySymbol,
   type ShapeSourceLayerName as GisShapeSourceLayerName,
+  type LayerNameBoundaryMode,
+  parseShapeSourceLayerName,
 } from '@hierarchidb/gis-sdk';
 
 type BrandedString<T extends string, TBrand extends string> = T & { readonly __brand: TBrand };
@@ -20,21 +20,17 @@ export type ShapeLayerBoundarySymbol = GisShapeLayerBoundarySymbol;
 export type ShapeLayerShortId = BrandedString<string, 'ShapeLayerShortId'>;
 export type LayerSetEntryId = BrandedString<string, 'LayerSetEntryId'>;
 type ShapeBoundaryMode = LayerNameBoundaryMode;
-const toShapeLayerBoundarySymbol = (boundary: LayerNameBoundaryMode): ShapeLayerBoundarySymbol => (
-  boundary === 'boundary' ? 'b' : 'f'
-) as ShapeLayerBoundarySymbol;
+const toShapeLayerBoundarySymbol = (boundary: LayerNameBoundaryMode): ShapeLayerBoundarySymbol =>
+  (boundary === 'boundary' ? 'b' : 'f') as ShapeLayerBoundarySymbol;
 
-export const buildShapeLayerShortId = (adminLevel: number, boundary: boolean): ShapeLayerShortId => (
-  `${adminLevel}-${toShapeLayerBoundarySymbol(boundary ? 'boundary' : 'fill')}` as ShapeLayerShortId
-);
+export const buildShapeLayerShortId = (adminLevel: number, boundary: boolean): ShapeLayerShortId =>
+  `${adminLevel}-${toShapeLayerBoundarySymbol(boundary ? 'boundary' : 'fill')}` as ShapeLayerShortId;
 
-const toNodeTypeSymbol = (nodeType: LayerSetId): NodeTypeSymbol => (
-  nodeType === 'shape' ? 's' : nodeType === 'route' ? 'r' : 'l'
-) as NodeTypeSymbol;
+const toNodeTypeSymbol = (nodeType: LayerSetId): NodeTypeSymbol =>
+  (nodeType === 'shape' ? 's' : nodeType === 'route' ? 'r' : 'l') as NodeTypeSymbol;
 
-const toLocationLayerSymbol = (layerType: 'points' | 'symbols'): LocationLayerSymbol => (
-  layerType === 'points' ? 'p' : 's'
-) as LocationLayerSymbol;
+const toLocationLayerSymbol = (layerType: 'points' | 'symbols'): LocationLayerSymbol =>
+  (layerType === 'points' ? 'p' : 's') as LocationLayerSymbol;
 export const toLayerSetEntryId = (value: string): LayerSetEntryId => value as LayerSetEntryId;
 
 export const buildLocationLayerSetEntryId = (layerType: 'points' | 'symbols'): LayerSetEntryId =>
@@ -59,7 +55,7 @@ export const buildLayerSetEntryId = (params: BuildLayerSetEntryIdParams): LayerS
       throw new Error('[LayerSetDefinition] Shape layer must provide adminLevel.');
     }
     return toLayerSetEntryId(
-      `${toNodeTypeSymbol('shape')}-${adminLevel}-${params.boundary ? 'b' : 'f'}`,
+      `${toNodeTypeSymbol('shape')}-${adminLevel}-${params.boundary ? 'b' : 'f'}`
     );
   }
   if (params.layerSetId === 'location') {
@@ -79,17 +75,20 @@ export const buildLayerSetEntryId = (params: BuildLayerSetEntryIdParams): LayerS
 
 export const buildShapeSourceLayerName = (
   adminLevel: number,
-  mode: ShapeBoundaryMode = 'fill',
-): ShapeSourceLayerName =>
-  buildShapeSourceLayerNameFromSdk(adminLevel, mode);
+  mode: ShapeBoundaryMode = 'fill'
+): ShapeSourceLayerName => buildShapeSourceLayerNameFromSdk(adminLevel, mode);
 
 export { parseShapeSourceLayerName };
 
-export const buildSourceLayerName = (adminLevel: number, boundary?: boolean): ShapeSourceLayerName =>
-  buildShapeSourceLayerName(adminLevel, boundary ? 'boundary' : 'fill');
+export const buildSourceLayerName = (
+  adminLevel: number,
+  boundary?: boolean
+): ShapeSourceLayerName => buildShapeSourceLayerName(adminLevel, boundary ? 'boundary' : 'fill');
 
-export const buildShapeSourceLayerShortId = (adminLevel: number, boundary: boolean): ShapeLayerShortId =>
-  buildShapeLayerShortId(adminLevel, boundary);
+export const buildShapeSourceLayerShortId = (
+  adminLevel: number,
+  boundary: boolean
+): ShapeLayerShortId => buildShapeLayerShortId(adminLevel, boundary);
 
 export const buildRouteSourceLayerName = (): string => 'layer0';
 
@@ -126,9 +125,13 @@ const normalizeSourceLayerNames = (layerNames: string[]): ReadonlySet<string> =>
   const normalized = new Set<string>();
   layerNames
     .map((name) => parseShapeSourceLayerName(name))
-    .filter((parsed): parsed is { adminLevel: number; boundary: ShapeLayerBoundarySymbol } => Boolean(parsed))
+    .filter((parsed): parsed is { adminLevel: number; boundary: ShapeLayerBoundarySymbol } =>
+      Boolean(parsed)
+    )
     .forEach((parsed) => {
-      normalized.add(buildShapeSourceLayerName(parsed.adminLevel, parsed.boundary === 'b' ? 'boundary' : 'fill'));
+      normalized.add(
+        buildShapeSourceLayerName(parsed.adminLevel, parsed.boundary === 'b' ? 'boundary' : 'fill')
+      );
     });
   return normalized;
 };
@@ -147,33 +150,70 @@ export const DEFAULT_LAYER_SETS: LayerSetDefinition[] = [
     id: 'route',
     label: 'Route',
     priority: 2,
-    entries: [
-      { id: ROUTE_LINE_ENTRY_ID, label: 'Route Line', layerType: 'line' },
-    ],
+    entries: [{ id: ROUTE_LINE_ENTRY_ID, label: 'Route Line', layerType: 'line' }],
   },
   {
     id: 'shape',
     label: 'Shape',
     priority: 1,
     entries: [
-      { id: buildShapeLayerEntryId(0, true), label: 'ADM0 Boundary', adminLevel: 0, boundary: true, layerType: 'line' },
-      { id: buildShapeLayerEntryId(0, false), label: 'ADM0 Fill', adminLevel: 0, boundary: false, layerType: 'fill' },
-      { id: buildShapeLayerEntryId(1, true), label: 'ADM1 Boundary', adminLevel: 1, boundary: true, layerType: 'line' },
-      { id: buildShapeLayerEntryId(1, false), label: 'ADM1 Fill', adminLevel: 1, boundary: false, layerType: 'fill' },
-      { id: buildShapeLayerEntryId(2, true), label: 'ADM2 Boundary', adminLevel: 2, boundary: true, layerType: 'line' },
-      { id: buildShapeLayerEntryId(2, false), label: 'ADM2 Fill', adminLevel: 2, boundary: false, layerType: 'fill' },
+      {
+        id: buildShapeLayerEntryId(0, true),
+        label: 'ADM0 Boundary',
+        adminLevel: 0,
+        boundary: true,
+        layerType: 'line',
+      },
+      {
+        id: buildShapeLayerEntryId(0, false),
+        label: 'ADM0 Fill',
+        adminLevel: 0,
+        boundary: false,
+        layerType: 'fill',
+      },
+      {
+        id: buildShapeLayerEntryId(1, true),
+        label: 'ADM1 Boundary',
+        adminLevel: 1,
+        boundary: true,
+        layerType: 'line',
+      },
+      {
+        id: buildShapeLayerEntryId(1, false),
+        label: 'ADM1 Fill',
+        adminLevel: 1,
+        boundary: false,
+        layerType: 'fill',
+      },
+      {
+        id: buildShapeLayerEntryId(2, true),
+        label: 'ADM2 Boundary',
+        adminLevel: 2,
+        boundary: true,
+        layerType: 'line',
+      },
+      {
+        id: buildShapeLayerEntryId(2, false),
+        label: 'ADM2 Fill',
+        adminLevel: 2,
+        boundary: false,
+        layerType: 'fill',
+      },
     ],
   },
 ];
 
-export const getLayerSetDefinition = (id: string | null | undefined): LayerSetDefinition | undefined =>
-  DEFAULT_LAYER_SETS.find((set) => set.id === id);
+export const getLayerSetDefinition = (
+  id: string | null | undefined
+): LayerSetDefinition | undefined => DEFAULT_LAYER_SETS.find((set) => set.id === id);
 
 export type ResolveLayerSetEntriesOptions = {
   allowedAdminLevels?: ReadonlySet<number> | readonly number[];
 };
 
-const toAllowedAdminLevelSet = (value?: ResolveLayerSetEntriesOptions['allowedAdminLevels']): ReadonlySet<number> | null => {
+const toAllowedAdminLevelSet = (
+  value?: ResolveLayerSetEntriesOptions['allowedAdminLevels']
+): ReadonlySet<number> | null => {
   if (!value) return null;
   if (value instanceof Set) {
     return value;
@@ -187,15 +227,21 @@ const toAllowedAdminLevelSet = (value?: ResolveLayerSetEntriesOptions['allowedAd
 export const resolveLayerSetEntries = (
   tileLayerNames: string[],
   layerSet: LayerSetDefinition,
-  options: ResolveLayerSetEntriesOptions = {},
+  options: ResolveLayerSetEntriesOptions = {}
 ): ResolvedLayerSetEntry[] => {
   const canonicalLayerNames = normalizeSourceLayerNames(tileLayerNames);
   const allowedAdminLevels = toAllowedAdminLevelSet(options.allowedAdminLevels);
   const totalEntries = layerSet.entries.length;
   return layerSet.entries.map((entry, index) => {
     const expectedLayerName =
-      typeof entry.adminLevel === 'number' ? buildSourceLayerName(entry.adminLevel, entry.boundary) : undefined;
-    if (allowedAdminLevels && typeof entry.adminLevel === 'number' && !allowedAdminLevels.has(entry.adminLevel)) {
+      typeof entry.adminLevel === 'number'
+        ? buildSourceLayerName(entry.adminLevel, entry.boundary)
+        : undefined;
+    if (
+      allowedAdminLevels &&
+      typeof entry.adminLevel === 'number' &&
+      !allowedAdminLevels.has(entry.adminLevel)
+    ) {
       const priorityBase = layerSet.priority * 100;
       const priority = priorityBase + entry.adminLevel * 10 + (entry.boundary ? 1 : 0);
       return {
@@ -213,9 +259,10 @@ export const resolveLayerSetEntries = (
       : undefined;
     const sourceLayer = entry.adminLevel == null ? undefined : resolvedLayerName;
     const priorityBase = layerSet.priority * 100;
-    const priority = typeof entry.adminLevel === 'number'
-      ? priorityBase + entry.adminLevel * 10 + (entry.boundary ? 1 : 0)
-      : priorityBase + (totalEntries - index);
+    const priority =
+      typeof entry.adminLevel === 'number'
+        ? priorityBase + entry.adminLevel * 10 + (entry.boundary ? 1 : 0)
+        : priorityBase + (totalEntries - index);
     return {
       ...entry,
       layerSetId: layerSet.id,

@@ -1,5 +1,5 @@
-import type { CoreDB } from '~/services/CoreDB';
 import type { CommandEnvelope, CommandResult } from '~/command-types';
+import type { CoreDB } from '~/services/CoreDB';
 
 /**
  * Wraps Dexie transaction execution for command handlers and coordinates

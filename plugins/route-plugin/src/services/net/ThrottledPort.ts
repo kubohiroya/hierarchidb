@@ -1,5 +1,8 @@
 export interface NetworkPortLike {
-  get(url: string, init?: RequestInit): Promise<{ ok: boolean; status: number; arrayBuffer(): Promise<ArrayBuffer> }>;
+  get(
+    url: string,
+    init?: RequestInit
+  ): Promise<{ ok: boolean; status: number; arrayBuffer(): Promise<ArrayBuffer> }>;
 }
 
 class Semaphore {
@@ -15,12 +18,13 @@ class Semaphore {
       this.c--;
       return Promise.resolve();
     }
-    return new Promise(r => this.q.push(r));
+    return new Promise((r) => this.q.push(r));
   }
 
   release(): void {
     const r = this.q.shift();
-    if (r) r(); else this.c = Math.min(this.c + 1, this.cap);
+    if (r) r();
+    else this.c = Math.min(this.c + 1, this.cap);
   }
 }
 
@@ -54,7 +58,7 @@ class TokenBucket {
       this.tokens--;
       return;
     }
-    return new Promise(r => this.waiters.push(r));
+    return new Promise((r) => this.waiters.push(r));
   }
 }
 
@@ -67,7 +71,10 @@ export class ThrottledPort implements NetworkPortLike {
   private sem?: Semaphore;
   private bucket?: TokenBucket;
 
-  constructor(private base: NetworkPortLike, opts: ThrottleOptions = {}) {
+  constructor(
+    private base: NetworkPortLike,
+    opts: ThrottleOptions = {}
+  ) {
     if (opts.concurrency && opts.concurrency > 0) this.sem = new Semaphore(opts.concurrency);
     if (opts.rps && opts.rps > 0) this.bucket = new TokenBucket(opts.rps);
   }

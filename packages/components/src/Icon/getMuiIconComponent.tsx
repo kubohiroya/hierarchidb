@@ -6,22 +6,23 @@
  * `@mui/icon-material/<Name>` を React.lazy + dynamic import で読み込みます。
  * 読み込み中/失敗時は Add アイコンをフォールバック表示します。
  */
-import type { ReactNode } from 'react';
-import type { SvgIconProps } from '@mui/material/SvgIcon';
-import type React from 'react';
+
 import {
+  AccessTime as AccessTimeIcon,
+  AccountTree as AccountTreeIcon,
   Add as AddIcon,
+  Assessment as AssessmentIcon,
+  Extension as ExtensionIcon,
   Folder as FolderIcon,
-  Public as PublicIcon,
   Hexagon as HexagonIcon,
   LocationOn as LocationOnIcon,
-  Route as RouteIcon,
-  Assessment as AssessmentIcon,
   Palette as PaletteIcon,
-  Extension as ExtensionIcon,
-  AccountTree as AccountTreeIcon,
-  AccessTime as AccessTimeIcon,
+  Public as PublicIcon,
+  Route as RouteIcon,
 } from '@mui/icons-material';
+import type { SvgIconProps } from '@mui/material/SvgIcon';
+import type React from 'react';
+import type { ReactNode } from 'react';
 
 export function toPascalCase(name?: string): string {
   if (!name) return '';
@@ -47,7 +48,9 @@ function normalizeMuiName(name?: string): string | undefined {
     resolver: 'Extension',
     styler: 'Palette',
   };
-  const key = String(name).replace(/[^a-z0-9]/gi, '').toLowerCase();
+  const key = String(name)
+    .replace(/[^a-z0-9]/gi, '')
+    .toLowerCase();
   return map[key] ?? name;
 }
 
@@ -127,7 +130,7 @@ export function setGlobalMuiIconMap(map: Record<string, React.ComponentType<SvgI
 export function getMuiIconWithColor(
   muiIconName?: string,
   emoji?: string,
-  color?: string,
+  color?: string
 ): ReactNode {
   const normalized = normalizeMuiName(muiIconName);
   const globalCandidates = collectPascalCandidates([muiIconName, normalized]);

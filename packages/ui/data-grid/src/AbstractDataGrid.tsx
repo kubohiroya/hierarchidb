@@ -5,7 +5,15 @@
  * completely decoupled from specific data types or storage implementations.
  */
 
-import React, { type ReactElement } from 'react';
+import {
+  Download,
+  FilterList,
+  KeyboardArrowDown,
+  KeyboardArrowUp,
+  Refresh,
+  Search,
+  ViewColumn,
+} from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -26,29 +34,24 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import {
-  Download,
-  FilterList,
-  KeyboardArrowDown,
-  KeyboardArrowUp,
-  Refresh,
-  Search,
-  ViewColumn,
-} from '@mui/icons-material';
 import { alpha } from '@mui/material/styles';
+import React, { type ReactElement } from 'react';
 import type {
   ColumnDefinition,
   DataItem,
   DataProvider,
   QueryParams,
 } from './types/DataProvider.js';
-import { useAbstractDataGridView } from './useAbstractDataGridView.js';
 import { useAbstractDataGridControlId } from './useAbstractDataGridControlId.js';
+import { useAbstractDataGridView } from './useAbstractDataGridView.js';
 
-const getItemValue = <T extends DataItem>(item: T, field: ColumnDefinition<T>['field']): unknown => {
+const getItemValue = <T extends DataItem>(
+  item: T,
+  field: ColumnDefinition<T>['field']
+): unknown => {
   const key = typeof field === 'string' ? field : String(field);
   const record = item as Record<string, unknown>;
-  return  Object.hasOwn(record, key) ? record[key] : undefined;
+  return Object.hasOwn(record, key) ? record[key] : undefined;
 };
 
 const renderDefaultValue = (value: unknown): React.ReactNode => {
@@ -140,36 +143,36 @@ export interface AbstractDataGridProps<T extends DataItem = DataItem> {
 }
 
 export function AbstractDataGrid<T extends DataItem = DataItem>({
-                                                                  dataProvider,
-                                                                  columns: initialColumns,
-                                                                  initialQuery = {},
-                                                                  paginate = true,
-                                                                  sortable = true,
-                                                                  filterable = true,
-                                                                  searchable = true,
-                                                                  selectable = false,
-                                                                  selectionMode = 'multiple',
-                                                                  exportable = false,
-                                                                  refreshable = true,
-                                                                  realtime = false,
-                                                                  columnToggle = false,
-                                                                  virtual = false,
-                                                                  rowHeight = 52,
-                                                                  height = 600,
-                                                                  dense = false,
-                                                                  stickyHeader = true,
-                                                                  striped = false,
-                                                                  gridLines = false,
-                                                                  onRowClick,
-                                                                  onRowDoubleClick,
-                                                                  onSelectionChange,
-                                                                  onExport,
-                                                                  onError,
-                                                                  emptyMessage = 'No data available',
-                                                                  errorComponent,
-                                                                  loadingComponent,
-                                                                  toolbarActions,
-                                                                }: AbstractDataGridProps<T>): ReactElement {
+  dataProvider,
+  columns: initialColumns,
+  initialQuery = {},
+  paginate = true,
+  sortable = true,
+  filterable = true,
+  searchable = true,
+  selectable = false,
+  selectionMode = 'multiple',
+  exportable = false,
+  refreshable = true,
+  realtime = false,
+  columnToggle = false,
+  virtual = false,
+  rowHeight = 52,
+  height = 600,
+  dense = false,
+  stickyHeader = true,
+  striped = false,
+  gridLines = false,
+  onRowClick,
+  onRowDoubleClick,
+  onSelectionChange,
+  onExport,
+  onError,
+  emptyMessage = 'No data available',
+  errorComponent,
+  loadingComponent,
+  toolbarActions,
+}: AbstractDataGridProps<T>): ReactElement {
   const controlId = useAbstractDataGridControlId();
   const {
     columns,
@@ -332,9 +335,9 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
           maxHeight: !virtual ? height : undefined,
           '& .MuiTableCell-root': gridLines
             ? {
-              border: '1px solid',
-              borderColor: 'divider',
-            }
+                border: '1px solid',
+                borderColor: 'divider',
+              }
             : undefined,
         }}
         ref={virtual ? parentRef : undefined}
@@ -406,8 +409,8 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
           </TableHead>
           <TableBody>
             {(virtual
-                ? virtualizer.getVirtualItems()
-                : data.map((_item, index) => ({ index }))
+              ? virtualizer.getVirtualItems()
+              : data.map((_item, index) => ({ index }))
             ).map((virtualRow: { index: number }) => {
               const item = data[virtualRow.index];
               if (!item) return null;
@@ -448,7 +451,9 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
                   )}
                   {visibleColumns.map((column) => {
                     const value = getItemValue(item, column.field);
-                    const formatted = column.formatter ? column.formatter(value, item) : renderDefaultValue(value);
+                    const formatted = column.formatter
+                      ? column.formatter(value, item)
+                      : renderDefaultValue(value);
 
                     return (
                       <TableCell key={String(column.field)} align={column.align}>

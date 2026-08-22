@@ -30,7 +30,7 @@ const collectRowsFromChunks = (chunks: Array<{ binaryData: ArrayBuffer }>): Tabu
 const loadRowsFromStore = async (
   dbName: string,
   pluginId: string,
-  tableId: string,
+  tableId: string
 ): Promise<TabularRowRecord[]> => {
   const db = new RowStoreDB(dbName);
   try {
@@ -48,7 +48,7 @@ const loadRowsFromStore = async (
 const resolveMetadataHeaders = async (
   pluginId: string,
   tableId: string,
-  dbPrefix: string,
+  dbPrefix: string
 ): Promise<string[]> => {
   const metadataDbName = getDBName(dbPrefix, `${pluginId}-metadata`);
   const metadataManager = new TabularDatabaseManager(metadataDbName);
@@ -58,7 +58,9 @@ const resolveMetadataHeaders = async (
       throw new Error('Tabular table not found');
     }
     const headers = Array.isArray(metadata.columns)
-      ? metadata.columns.map((column) => column.name).filter((name) => typeof name === 'string' && name.length > 0)
+      ? metadata.columns
+          .map((column) => column.name)
+          .filter((name) => typeof name === 'string' && name.length > 0)
       : [];
     if (headers.length === 0) {
       throw new Error('Tabular table has no columns');
@@ -77,7 +79,7 @@ export type TabularTableLoadResult = {
 export const loadTabularTableRows = async (
   pluginId: string,
   tableId: string,
-  dbPrefix: string,
+  dbPrefix: string
 ): Promise<TabularTableLoadResult> => {
   const headers = await resolveMetadataHeaders(pluginId, tableId, dbPrefix);
   const rowStoreDbName = getDBName(dbPrefix, ROW_STORE_SUFFIX);

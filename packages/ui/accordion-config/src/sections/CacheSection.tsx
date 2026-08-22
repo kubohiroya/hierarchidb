@@ -1,3 +1,4 @@
+import { Delete as DeleteIcon, Info } from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -10,7 +11,6 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { Delete as DeleteIcon, Info } from '@mui/icons-material';
 import { useCacheSection } from './useCacheSection.js';
 import { useCacheSectionView } from './useCacheSectionView.js';
 
@@ -41,23 +41,19 @@ interface CacheSectionProps {
 }
 
 export function CacheSection({
-                               nodeId,
-                               deleteOnComplete,
-                               onDeleteOnCompleteChange,
-                               config,
-                               sx = {},
-                             severity = 'warning',
-                             }: CacheSectionProps) {
-  const {
-    isDeleting,
-    deleteResult,
-    handleDeleteCache,
-    handleDeleteOnCompleteChange,
-  } = useCacheSectionView({
-    nodeId,
-    config,
-    onDeleteOnCompleteChange,
-  });
+  nodeId,
+  deleteOnComplete,
+  onDeleteOnCompleteChange,
+  config,
+  sx = {},
+  severity = 'warning',
+}: CacheSectionProps) {
+  const { isDeleting, deleteResult, handleDeleteCache, handleDeleteOnCompleteChange } =
+    useCacheSectionView({
+      nodeId,
+      config,
+      onDeleteOnCompleteChange,
+    });
   const { switchInputProps, onDeleteOnCompleteSwitchChange } = useCacheSection({
     onDeleteOnCompleteChange: handleDeleteOnCompleteChange,
   });
@@ -95,9 +91,7 @@ export function CacheSection({
               variant="outlined"
               color="error"
               size="small"
-              startIcon={
-                isDeleting ? <CircularProgress size={16} /> : <DeleteIcon />
-              }
+              startIcon={isDeleting ? <CircularProgress size={16} /> : <DeleteIcon />}
               onClick={handleDeleteCache}
               disabled={isDeleting}
             >
@@ -109,10 +103,7 @@ export function CacheSection({
           </Stack>
 
           {deleteResult && (
-            <Alert
-              severity={deleteResult.success ? 'success' : 'error'}
-              sx={{ mt: 1 }}
-            >
+            <Alert severity={deleteResult.success ? 'success' : 'error'} sx={{ mt: 1 }}>
               {deleteResult.message}
             </Alert>
           )}

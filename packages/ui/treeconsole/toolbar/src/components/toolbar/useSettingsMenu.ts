@@ -1,13 +1,13 @@
 import {
+  buildEvenZoomBandBoundaries,
+  normalizeZoomBandBoundaries,
   TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES,
   TREE_CONSOLE_ZOOM_BAND_MAX_RANGES,
   TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
   TREE_CONSOLE_ZOOM_BAND_MIN_RANGES,
   TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
-  buildEvenZoomBandBoundaries,
-  normalizeZoomBandBoundaries,
 } from '@hierarchidb/util';
-import { useCallback, useMemo, useState, type MouseEvent } from 'react';
+import { type MouseEvent, useCallback, useMemo, useState } from 'react';
 import type { TreeConsoleToolbarActionParams } from '~/types';
 
 type RowClickAction = 'Select/Navigate' | 'Edit';
@@ -56,14 +56,14 @@ export function useSettingsMenu({
         resolvedBoundaries,
         TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
         TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
-        TREE_CONSOLE_ZOOM_BAND_MAX_RANGES,
+        TREE_CONSOLE_ZOOM_BAND_MAX_RANGES
       ),
-    [resolvedBoundaries],
+    [resolvedBoundaries]
   );
 
   const rangeCount = Math.min(
     Math.max(normalizedBoundaries.length - 1, TREE_CONSOLE_ZOOM_BAND_MIN_RANGES),
-    TREE_CONSOLE_ZOOM_BAND_MAX_RANGES,
+    TREE_CONSOLE_ZOOM_BAND_MAX_RANGES
   );
 
   const handleMenuClose = useCallback(() => {
@@ -91,7 +91,7 @@ export function useSettingsMenu({
       }
       scheduleCloseSettingsMenu();
     },
-    [onAction, onRowClickActionChange, scheduleCloseSettingsMenu],
+    [onAction, onRowClickActionChange, scheduleCloseSettingsMenu]
   );
 
   const handleAutosaveChange = useCallback(
@@ -103,7 +103,7 @@ export function useSettingsMenu({
       }
       scheduleCloseSettingsMenu();
     },
-    [onAction, onAutosaveEnabledChange, scheduleCloseSettingsMenu],
+    [onAction, onAutosaveEnabledChange, scheduleCloseSettingsMenu]
   );
 
   const handleDialogBackdropDismissChange = useCallback(
@@ -115,7 +115,7 @@ export function useSettingsMenu({
       }
       scheduleCloseSettingsMenu();
     },
-    [onAction, onDialogBackdropDismissEnabledChange, scheduleCloseSettingsMenu],
+    [onAction, onDialogBackdropDismissEnabledChange, scheduleCloseSettingsMenu]
   );
 
   const handleZoomBandBoundariesChange = useCallback(
@@ -126,7 +126,7 @@ export function useSettingsMenu({
         onAction('setZoomBandBoundaries', nextBoundaries);
       }
     },
-    [onAction, onZoomBandBoundariesChange],
+    [onAction, onZoomBandBoundariesChange]
   );
 
   const handleRangeCountChange = useCallback(
@@ -135,10 +135,14 @@ export function useSettingsMenu({
       if (typeof raw !== 'number') return;
       const currentMax =
         normalizedBoundaries[normalizedBoundaries.length - 1] ?? TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM;
-      const nextBoundaries = buildEvenZoomBandBoundaries(raw, TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM, currentMax);
+      const nextBoundaries = buildEvenZoomBandBoundaries(
+        raw,
+        TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
+        currentMax
+      );
       handleZoomBandBoundariesChange(nextBoundaries);
     },
-    [handleZoomBandBoundariesChange, normalizedBoundaries],
+    [handleZoomBandBoundariesChange, normalizedBoundaries]
   );
 
   const handleBoundariesChange = useCallback(
@@ -152,11 +156,11 @@ export function useSettingsMenu({
         nextValues,
         TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
         TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
-        TREE_CONSOLE_ZOOM_BAND_MAX_RANGES,
+        TREE_CONSOLE_ZOOM_BAND_MAX_RANGES
       );
       handleZoomBandBoundariesChange(nextBoundaries);
     },
-    [handleZoomBandBoundariesChange],
+    [handleZoomBandBoundariesChange]
   );
 
   return {

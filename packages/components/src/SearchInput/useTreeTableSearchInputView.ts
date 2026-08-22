@@ -1,15 +1,15 @@
+import type { SxProps, Theme } from '@mui/material';
 import {
-  useCallback,
-  useId,
-  useRef,
   type ChangeEvent,
   type FocusEvent,
   type InputHTMLAttributes,
   type KeyboardEvent,
   type MouseEvent,
   type PointerEvent,
+  useCallback,
+  useId,
+  useRef,
 } from 'react';
-import type { SxProps, Theme } from '@mui/material';
 
 type SearchFieldCommitMode = 'change' | 'blur' | 'enter' | 'blur-and-enter';
 
@@ -60,8 +60,7 @@ export const useTreeTableSearchInputView = ({
 }: UseTreeTableSearchInputViewArgs) => {
   const controlId = useId();
   const isLegacyProps =
-    typeof searchText === 'string' &&
-    typeof handleSearchTextChange === 'function';
+    typeof searchText === 'string' && typeof handleSearchTextChange === 'function';
   const value = isLegacyProps ? searchText : valueProp;
   const resolvedValue = value ?? '';
   const onValueChange = isLegacyProps ? handleSearchTextChange : onChangeProp;
@@ -74,15 +73,14 @@ export const useTreeTableSearchInputView = ({
     ? handleSearchCommit
       ? 'blur-and-enter'
       : 'change'
-    : commitModeProp ?? 'change';
-  const resolvedOnCommit =
-    isLegacyProps
-      ? handleSearchCommit === undefined
-        ? undefined
-        : () => handleSearchCommit()
-      : onCommitProp === undefined
-        ? undefined
-        : (nextValue: string) => onCommitProp(nextValue);
+    : (commitModeProp ?? 'change');
+  const resolvedOnCommit = isLegacyProps
+    ? handleSearchCommit === undefined
+      ? undefined
+      : () => handleSearchCommit()
+    : onCommitProp === undefined
+      ? undefined
+      : (nextValue: string) => onCommitProp(nextValue);
   const resolvedOnBlur = isLegacyProps ? undefined : onBlurProp;
   const resolvedInputProps = isLegacyProps ? undefined : inputProps;
   const resolvedClearHandler = isLegacyProps ? undefined : onClear;
@@ -126,7 +124,7 @@ export const useTreeTableSearchInputView = ({
         resolvedOnCommit(nextValue);
       }
     },
-    [resolvedCommitMode, resolvedOnCommit],
+    [resolvedCommitMode, resolvedOnCommit]
   );
 
   const handleChange = useCallback(
@@ -137,7 +135,7 @@ export const useTreeTableSearchInputView = ({
         resolvedOnCommit?.(nextValue);
       }
     },
-    [resolvedCommitMode, resolvedOnCommit, onValueChange],
+    [resolvedCommitMode, resolvedOnCommit, onValueChange]
   );
 
   const handleBlur = useCallback(
@@ -147,7 +145,7 @@ export const useTreeTableSearchInputView = ({
         runCommit(event.target.value);
       }
     },
-    [resolvedCommitMode, resolvedOnBlur, runCommit],
+    [resolvedCommitMode, resolvedOnBlur, runCommit]
   );
 
   const handleKeyDown = useCallback(
@@ -159,7 +157,7 @@ export const useTreeTableSearchInputView = ({
         }
       }
     },
-    [resolvedCommitMode, resolvedOnCommit],
+    [resolvedCommitMode, resolvedOnCommit]
   );
 
   const focusInputElement = useCallback(() => {
@@ -170,23 +168,29 @@ export const useTreeTableSearchInputView = ({
     inputElement.focus({ preventScroll: true });
   }, [resolvedDisabled]);
 
-  const handleMouseDownCapture = useCallback((event: MouseEvent) => {
-    event.stopPropagation();
-    if (event.button === 0) {
-      queueMicrotask(() => {
-        focusInputElement();
-      });
-    }
-  }, [focusInputElement]);
+  const handleMouseDownCapture = useCallback(
+    (event: MouseEvent) => {
+      event.stopPropagation();
+      if (event.button === 0) {
+        queueMicrotask(() => {
+          focusInputElement();
+        });
+      }
+    },
+    [focusInputElement]
+  );
 
-  const handlePointerDownCapture = useCallback((event: PointerEvent) => {
-    event.stopPropagation();
-    if (event.button === 0) {
-      queueMicrotask(() => {
-        focusInputElement();
-      });
-    }
-  }, [focusInputElement]);
+  const handlePointerDownCapture = useCallback(
+    (event: PointerEvent) => {
+      event.stopPropagation();
+      if (event.button === 0) {
+        queueMicrotask(() => {
+          focusInputElement();
+        });
+      }
+    },
+    [focusInputElement]
+  );
 
   return {
     controlId,

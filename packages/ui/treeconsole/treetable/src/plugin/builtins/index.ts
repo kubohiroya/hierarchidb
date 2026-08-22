@@ -6,19 +6,17 @@
  */
 
 export {
+  defaultPlugins,
+  fullFeaturedPlugins,
+  minimalPlugins,
+} from './defaultPlugins.js';
+export type { InlineEditPluginConfig } from './InlineEditPlugin.js';
+export {
   createInlineEditPlugin,
   inlineEditPlugin,
 } from './InlineEditPlugin.js';
-export type { InlineEditPluginConfig } from './InlineEditPlugin.js';
-
+export type { KeyboardNavigationPluginConfig } from './KeyboardNavigationPlugin.js';
 export {
   createKeyboardNavigationPlugin,
   keyboardNavigationPlugin,
 } from './KeyboardNavigationPlugin.js';
-export type { KeyboardNavigationPluginConfig } from './KeyboardNavigationPlugin.js';
-
-export {
-  defaultPlugins,
-  minimalPlugins,
-  fullFeaturedPlugins,
-} from './defaultPlugins.js';

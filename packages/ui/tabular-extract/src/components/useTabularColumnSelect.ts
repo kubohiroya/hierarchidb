@@ -1,5 +1,9 @@
+import {
+  TabularColumnInfo,
+  TabularColumnType,
+  TabularTableMetadata,
+} from '@hierarchidb/tabular-store';
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
-import { TabularColumnInfo, TabularColumnType, TabularTableMetadata } from '@hierarchidb/tabular-store';
 import type { TabularColumnMapping } from '../types/index';
 
 interface TargetColumn {
@@ -51,48 +55,66 @@ export const useTabularColumnSelect = ({
     onPreviewChanged?.(showPreview);
   }, [showPreview, onPreviewChanged]);
 
-  const updateMapping = useCallback((
-    sourceColumn: string,
-    updater: (mapping: TabularColumnMapping) => TabularColumnMapping,
-  ) => {
-    setColumnMappings((prev) => prev.map((mapping) => (
-      mapping.sourceColumn === sourceColumn ? updater(mapping) : mapping
-    )));
-  }, []);
+  const updateMapping = useCallback(
+    (sourceColumn: string, updater: (mapping: TabularColumnMapping) => TabularColumnMapping) => {
+      setColumnMappings((prev) =>
+        prev.map((mapping) => (mapping.sourceColumn === sourceColumn ? updater(mapping) : mapping))
+      );
+    },
+    []
+  );
 
-  const handleToggleColumn = useCallback((sourceColumn: string, included: boolean) => {
-    updateMapping(sourceColumn, (mapping) => ({ ...mapping, included }));
-  }, [updateMapping]);
+  const handleToggleColumn = useCallback(
+    (sourceColumn: string, included: boolean) => {
+      updateMapping(sourceColumn, (mapping) => ({ ...mapping, included }));
+    },
+    [updateMapping]
+  );
 
   const handleSelectAll = useCallback((checked: boolean) => {
     setSelectAll(checked);
     setColumnMappings((prev) => prev.map((mapping) => ({ ...mapping, included: checked })));
   }, []);
 
-  const handleColumnRename = useCallback((sourceColumn: string, targetColumn: string) => {
-    updateMapping(sourceColumn, (mapping) => ({ ...mapping, targetColumn }));
-  }, [updateMapping]);
+  const handleColumnRename = useCallback(
+    (sourceColumn: string, targetColumn: string) => {
+      updateMapping(sourceColumn, (mapping) => ({ ...mapping, targetColumn }));
+    },
+    [updateMapping]
+  );
 
-  const handleTypeChange = useCallback((sourceColumn: string, targetType: string) => {
-    updateMapping(sourceColumn, (mapping) => ({ ...mapping, targetType: targetType as TabularColumnType }));
-  }, [updateMapping]);
+  const handleTypeChange = useCallback(
+    (sourceColumn: string, targetType: string) => {
+      updateMapping(sourceColumn, (mapping) => ({
+        ...mapping,
+        targetType: targetType as TabularColumnType,
+      }));
+    },
+    [updateMapping]
+  );
 
-  const handleTargetMapping = useCallback((sourceColumn: string, targetColumn: string) => {
-    updateMapping(sourceColumn, (mapping) => ({ ...mapping, targetColumn }));
-  }, [updateMapping]);
+  const handleTargetMapping = useCallback(
+    (sourceColumn: string, targetColumn: string) => {
+      updateMapping(sourceColumn, (mapping) => ({ ...mapping, targetColumn }));
+    },
+    [updateMapping]
+  );
 
-  const handleOrderChange = useCallback((sourceColumn: string, order: number) => {
-    updateMapping(sourceColumn, (mapping) => ({ ...mapping, order }));
-  }, [updateMapping]);
+  const handleOrderChange = useCallback(
+    (sourceColumn: string, order: number) => {
+      updateMapping(sourceColumn, (mapping) => ({ ...mapping, order }));
+    },
+    [updateMapping]
+  );
 
   const selectedColumns = useMemo(
     () => columnMappings.filter((mapping) => mapping.included),
-    [columnMappings],
+    [columnMappings]
   );
 
   const selectedColumnsSorted = useMemo(
     () => [...selectedColumns].sort((a, b) => a.order - b.order),
-    [selectedColumns],
+    [selectedColumns]
   );
 
   const validation = useMemo(() => {
@@ -125,15 +147,19 @@ export const useTabularColumnSelect = ({
 
   const requiredColumnsCount = useMemo(
     () => targetColumns.filter((targetColumn) => targetColumn.required).length,
-    [targetColumns],
+    [targetColumns]
   );
 
   const requiredColumnsMappedCount = useMemo(
-    () => targetColumns.filter((targetColumn) => (
-      targetColumn.required
-      && columnMappings.some((mapping) => mapping.targetColumn === targetColumn.name && mapping.included)
-    )).length,
-    [columnMappings, targetColumns],
+    () =>
+      targetColumns.filter(
+        (targetColumn) =>
+          targetColumn.required &&
+          columnMappings.some(
+            (mapping) => mapping.targetColumn === targetColumn.name && mapping.included
+          )
+      ).length,
+    [columnMappings, targetColumns]
   );
 
   const selectAllIndeterminate = selectAll !== (selectedColumns.length === columnMappings.length);

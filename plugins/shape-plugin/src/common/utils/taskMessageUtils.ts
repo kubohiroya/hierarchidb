@@ -25,7 +25,7 @@ const readMetadataMessage = (metadata: MetadataRecord, paths: string[]): string 
   return null;
 };
 
-export const resolveTaskMetadataMessage = (metadata: MetadataRecord): string | null => (
+export const resolveTaskMetadataMessage = (metadata: MetadataRecord): string | null =>
   readMetadataMessage(metadata, [
     'message',
     'statusMessage',
@@ -34,8 +34,7 @@ export const resolveTaskMetadataMessage = (metadata: MetadataRecord): string | n
     'result.message',
     'summary.message',
     'completionMessage',
-  ])
-);
+  ]);
 
 export const isSkippedMessage = (message?: string | null): boolean => {
   if (!message) return false;
@@ -49,14 +48,15 @@ export const isTaskSkipped = (display?: TaskDisplayPayload, message?: string | n
   return isSkippedMessage(message);
 };
 
-export const isTaskPhaseDisplay = (display?: TaskDisplayPayload): boolean => (
-  display?.kind === 'phase'
-);
+export const isTaskPhaseDisplay = (display?: TaskDisplayPayload): boolean =>
+  display?.kind === 'phase';
 
 export const isTaskPhaseMessage = (message?: string | null): boolean => {
   if (!message) return false;
   const normalized = message.trim().toLowerCase();
   if (!normalized) return false;
-  const withoutPrefix = normalized.startsWith('phase=') ? normalized.slice('phase='.length) : normalized;
+  const withoutPrefix = normalized.startsWith('phase=')
+    ? normalized.slice('phase='.length)
+    : normalized;
   return /^[a-z0-9]+(?:[._-][a-z0-9]+)*(?::[a-z0-9]+(?:[._-][a-z0-9]+)*)+$/.test(withoutPrefix);
 };

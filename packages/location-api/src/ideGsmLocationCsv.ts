@@ -1,8 +1,17 @@
-import { ensureIso3166Data, getAllCountries, getCountry, resolveIso3166CsvUrl } from '@hierarchidb/gen-iso3166-2/browser';
-import type { IdeGsmSelectionEntry, LocationFeatureProperties, LocationType } from './locationTypes.js';
-import { buildLocationPointIdFromLatLon } from './locationPointId.js';
-import { buildTileIdByZoom } from './morton.js';
+import {
+  ensureIso3166Data,
+  getAllCountries,
+  getCountry,
+  resolveIso3166CsvUrl,
+} from '@hierarchidb/gen-iso3166-2/browser';
 import { parseCsvTable } from './csvUtils.js';
+import { buildLocationPointIdFromLatLon } from './locationPointId.js';
+import type {
+  IdeGsmSelectionEntry,
+  LocationFeatureProperties,
+  LocationType,
+} from './locationTypes.js';
+import { buildTileIdByZoom } from './morton.js';
 
 const DEFAULT_CSV_URL = resolveIso3166CsvUrl();
 
@@ -69,7 +78,9 @@ const findHeaderIndex = (headers: string[], candidates: string[]): number => {
   return -1;
 };
 
-const getCountryByName = async (countryName?: string): Promise<{ alpha2: string; countryEn: string } | null> => {
+const getCountryByName = async (
+  countryName?: string
+): Promise<{ alpha2: string; countryEn: string } | null> => {
   if (!countryName) return null;
   const raw = countryName.trim();
   if (raw) {
@@ -94,7 +105,7 @@ const getCountryByName = async (countryName?: string): Promise<{ alpha2: string;
         if (country.alpha2) entries.push([country.alpha2.toLowerCase(), payload]);
         if (country.alpha3) entries.push([country.alpha3.toLowerCase(), payload]);
         return entries;
-      }),
+      })
     );
   }
   const normalized = normalizeCountryKey(countryName);
@@ -104,16 +115,20 @@ const getCountryByName = async (countryName?: string): Promise<{ alpha2: string;
 
 const normalizeAdminName = (value?: string) => value?.trim().toLowerCase() ?? '';
 
-const resolveAdmin1Code = async (countryCode?: string, admin1?: string): Promise<string | undefined> => {
+const resolveAdmin1Code = async (
+  countryCode?: string,
+  admin1?: string
+): Promise<string | undefined> => {
   const alpha2 = countryCode?.trim().toUpperCase();
   if (!alpha2 || !admin1) return undefined;
   if (!subdivisionCache.has(alpha2)) {
     const { subdivisions } = await getCountry(alpha2);
-    const rows: SubdivisionEntry[] = subdivisions?.map((row: SubdivisionEntry) => ({
-      code: row.code?.toUpperCase(),
-      subdivisionEn: row.subdivisionEn ?? '',
-      subdivisionLocal: row.subdivisionLocal ?? '',
-    })) ?? [];
+    const rows: SubdivisionEntry[] =
+      subdivisions?.map((row: SubdivisionEntry) => ({
+        code: row.code?.toUpperCase(),
+        subdivisionEn: row.subdivisionEn ?? '',
+        subdivisionLocal: row.subdivisionLocal ?? '',
+      })) ?? [];
     subdivisionCache.set(alpha2, rows);
   }
   const normalized = normalizeAdminName(admin1);
@@ -142,18 +157,13 @@ const buildRowValues = (headers: string[], row: Record<string, unknown>): string
 
 export const parseIdeGsmTable = async (
   headers: string[],
-  rows: string[][],
+  rows: string[][]
 ): Promise<IdeGsmParseResult> => {
   const points: LocationFeatureProperties[] = [];
   const nameIndex = findHeaderIndex(headers, ['name', 'location', 'place']);
   const latIndex = findHeaderIndex(headers, ['lat', 'latitude']);
   const lonIndex = findHeaderIndex(headers, ['lon', 'lng', 'longitude', 'long']);
-  const countryIndex = findHeaderIndex(headers, [
-    'country',
-    'countryname',
-    'admin0',
-    'admin0name',
-  ]);
+  const countryIndex = findHeaderIndex(headers, ['country', 'countryname', 'admin0', 'admin0name']);
   const admin1Index = findHeaderIndex(headers, [
     'admin1',
     'admin1name',
@@ -184,26 +194,24 @@ export const parseIdeGsmTable = async (
     const lat = Number(row?.[latIndex >= 0 ? latIndex : 1]);
     const lon = Number(row?.[lonIndex >= 0 ? lonIndex : 2]);
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
-    const admin0 =
-      row[countryIndex >= 0 ? countryIndex : 3]?.trim() || undefined;
-    const admin1 =
-      row[admin1Index >= 0 ? admin1Index : 4]?.trim() || undefined;
+    const admin0 = row[countryIndex >= 0 ? countryIndex : 3]?.trim() || undefined;
+    const admin1 = row[admin1Index >= 0 ? admin1Index : 4]?.trim() || undefined;
     const adminCenterFlag = row[adminCenterIndex >= 0 ? adminCenterIndex : 5]?.trim() ?? '0';
     const isAdminCenter = adminCenterFlag === '1';
     const type = toLocationType(name, isAdminCenter);
-    const rawCountryCode =
-      row[countryCodeIndex >= 0 ? countryCodeIndex : -1]?.trim() || undefined;
-    const normalizedCode = rawCountryCode
-      ? rawCountryCode.trim().toUpperCase()
-      : undefined;
-    const metadata = headers.reduce<Record<string, string | number | null>>((acc, header, colIdx) => {
-      if (colIdx < 6) return acc;
-      const key = header?.trim();
-      if (!key) return acc;
-      const value = normalizeMetadataValue(row[colIdx]);
-      acc[key] = value;
-      return acc;
-    }, {});
+    const rawCountryCode = row[countryCodeIndex >= 0 ? countryCodeIndex : -1]?.trim() || undefined;
+    const normalizedCode = rawCountryCode ? rawCountryCode.trim().toUpperCase() : undefined;
+    const metadata = headers.reduce<Record<string, string | number | null>>(
+      (acc, header, colIdx) => {
+        if (colIdx < 6) return acc;
+        const key = header?.trim();
+        if (!key) return acc;
+        const value = normalizeMetadataValue(row[colIdx]);
+        acc[key] = value;
+        return acc;
+      },
+      {}
+    );
 
     points.push({
       schemaVersion: 2,
@@ -254,9 +262,11 @@ export const parseIdeGsmTable = async (
 
 export const parseIdeGsmRecords = async (
   headers: string[],
-  rows: Array<Record<string, unknown>>,
+  rows: Array<Record<string, unknown>>
 ): Promise<IdeGsmParseResult> => {
-  const normalizedHeaders = headers.map((header) => header.trim()).filter((header) => header.length > 0);
+  const normalizedHeaders = headers
+    .map((header) => header.trim())
+    .filter((header) => header.length > 0);
   if (normalizedHeaders.length === 0) {
     return { points: [], rowCount: 0 };
   }
@@ -271,7 +281,7 @@ export const parseIdeGsmCsv = async (csvText: string): Promise<IdeGsmParseResult
 
 export const filterIdeGsmPointsBySelection = (
   points: LocationFeatureProperties[],
-  entries: IdeGsmSelectionEntry[],
+  entries: IdeGsmSelectionEntry[]
 ): LocationFeatureProperties[] => {
   if (entries.length === 0) return points;
   const countrySet = new Set(entries.map((entry) => entry.countryCode));
@@ -281,9 +291,9 @@ export const filterIdeGsmPointsBySelection = (
     const normalizedCode = point.admin0Code?.toUpperCase();
     const normalizedName = point.admin0?.toLowerCase();
     const matchesCountry =
-      (!normalizedCode && !normalizedName)
-      || (normalizedCode && countrySet.has(normalizedCode))
-      || (normalizedName && countryNameSet.has(normalizedName));
+      (!normalizedCode && !normalizedName) ||
+      (normalizedCode && countrySet.has(normalizedCode)) ||
+      (normalizedName && countryNameSet.has(normalizedName));
     const matchesType = typeSet.size === 0 || typeSet.has(point.type as LocationType);
     return matchesCountry && matchesType;
   });

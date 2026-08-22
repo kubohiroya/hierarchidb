@@ -1,8 +1,8 @@
+import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
-import { RoutePreviewHoverSnackbar } from '../RoutePreviewStepElements.js';
 import type { RoutePreviewHoverMatch } from '../RoutePreviewStepElements.js';
+import { RoutePreviewHoverSnackbar } from '../RoutePreviewStepElements.js';
 
 describe('RoutePreviewHoverSnackbar', () => {
   it('calls onToggleMatchSelection when row is clicked', () => {
@@ -28,7 +28,7 @@ describe('RoutePreviewHoverSnackbar', () => {
         isDarkMode={false}
         onToggleMatchSelection={onToggleMatchSelection}
         popupHint="hint"
-      />,
+      />
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Select route 1' }));
@@ -58,7 +58,7 @@ describe('RoutePreviewHoverSnackbar', () => {
         isDarkMode={false}
         onToggleMatchSelection={onToggleMatchSelection}
         popupHint="hint"
-      />,
+      />
     );
 
     const row = screen.getByRole('button', { name: 'Select route 1' });
@@ -89,7 +89,7 @@ describe('RoutePreviewHoverSnackbar', () => {
         isDarkMode={false}
         onToggleMatchSelection={onToggleMatchSelection}
         popupHint="hint"
-      />,
+      />
     );
 
     const row = screen.getByRole('button', { name: 'Select route 1' });
@@ -97,4 +97,3 @@ describe('RoutePreviewHoverSnackbar', () => {
     expect(onToggleMatchSelection).toHaveBeenCalledWith('r1');
   });
 });
-

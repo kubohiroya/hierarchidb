@@ -54,7 +54,7 @@ export const treeBaseRoute = createRoute({
                 finish();
               }
             })
-            .catch(() => { });
+            .catch(() => {});
         }, 100);
         // Soft cap; child loaders also set their own timeout
         bootWindow.setTimeout(() => {

@@ -1,5 +1,5 @@
-import React from 'react';
 import { Box } from '@mui/material';
+import React from 'react';
 import { useValueHistogram } from './useValueHistogram.js';
 
 interface ValueHistogramProps {
@@ -86,13 +86,7 @@ export const ValueHistogram: React.FC<ValueHistogramProps> = ({
             : '#90caf9';
           return (
             <g key={idx}>
-              <rect
-                x={x}
-                y={y}
-                width={Math.max(barWidth - 1, 0)}
-                height={barHeight}
-                fill={fill}
-              />
+              <rect x={x} y={y} width={Math.max(barWidth - 1, 0)} height={barHeight} fill={fill} />
               {barHeight > 12 && (
                 <text
                   x={x + Math.max(barWidth - 1, 0) / 2}

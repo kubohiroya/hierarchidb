@@ -1,6 +1,6 @@
 import type { Theme } from '@mui/material/styles';
-import { useCallback, useEffect, useId, useMemo, useState, type MouseEvent } from 'react';
-import { STATUS, type CallBackProps, type Step } from 'react-joyride';
+import { type MouseEvent, useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { type CallBackProps, STATUS, type Step } from 'react-joyride';
 import { GuidedTourStateManager } from '~/managers/GuidedTourStateManager';
 
 type UseGenericGuidedTourParams = {
@@ -163,7 +163,8 @@ export const useGenericGuidedTour = ({
         animation: 'pulse 2s ease-in-out infinite',
       },
       overlay: {
-        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.3)',
+        backgroundColor:
+          theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.3)',
         backdropFilter: 'blur(0.5px)',
       },
     }),

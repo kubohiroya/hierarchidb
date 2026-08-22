@@ -2,13 +2,19 @@ import type { ReactNode } from 'react';
 import { createContext, createElement, useContext } from 'react';
 import {
   getMuiIconComponent,
+  getMuiIconWithColor,
+  prefetchMuiIcons,
+  setGlobalMuiIconMap,
+  toPascalCase,
+} from './getMuiIconComponent.js';
+
+export {
+  getMuiIconComponent,
   toPascalCase,
   prefetchMuiIcons,
   setGlobalMuiIconMap,
   getMuiIconWithColor,
-} from './getMuiIconComponent.js';
-
-export { getMuiIconComponent, toPascalCase, prefetchMuiIcons, setGlobalMuiIconMap, getMuiIconWithColor };
+};
 export * from './EriaCartLogo.js';
 
 export interface IconDescriptorInput {

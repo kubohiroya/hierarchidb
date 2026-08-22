@@ -1,27 +1,38 @@
 /**
-  * TreeTableOrchestrator (Facade)
-     * :
+ * TreeTableOrchestrator (Facade)
+ * :
  * -
  * - UI
  * -
-  */
+ */
 
-import { useMemo } from 'react';
-import type { TreeViewController } from '~/types/index';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import { useAtomValue } from 'jotai';
+import { useMemo } from 'react';
 import { tableDataAtom } from '~/components/TreeTable/state/index';
-
-// Individual Orchestrators
-import { type SelectionOrchestratorResult, useSelectionOrchestrator } from './SelectionOrchestrator.js';
-import { type ExpansionOrchestratorResult, useExpansionOrchestrator } from './ExpansionOrchestrator.js';
+import type { TreeViewController } from '~/types/index';
+import {
+  type DragDropOrchestratorResult,
+  useDragDropOrchestrator,
+} from './DragDropOrchestrator.js';
 import { type EditingOrchestratorResult, useEditingOrchestrator } from './EditingOrchestrator.js';
-import { type DragDropOrchestratorResult, useDragDropOrchestrator } from './DragDropOrchestrator.js';
+import {
+  type ExpansionOrchestratorResult,
+  useExpansionOrchestrator,
+} from './ExpansionOrchestrator.js';
 import { type SearchOrchestratorResult, useSearchOrchestrator } from './SearchOrchestrator.js';
-import { type SubscriptionOrchestratorResult, useSubscriptionOrchestrator } from './SubscriptionOrchestrator.js';
+// Individual Orchestrators
+import {
+  type SelectionOrchestratorResult,
+  useSelectionOrchestrator,
+} from './SelectionOrchestrator.js';
+import {
+  type SubscriptionOrchestratorResult,
+  useSubscriptionOrchestrator,
+} from './SubscriptionOrchestrator.js';
 
 /**
-    */
+ */
 export interface TreeTableOrchestratorResult {
   //  Sub-orchestrators ()
   selection: SelectionOrchestratorResult;
@@ -38,25 +49,25 @@ export interface TreeTableOrchestratorResult {
 }
 
 /**
-  * TreeTableOrchestrator Hook (Facade)
-  * :
+ * TreeTableOrchestrator Hook (Facade)
+ * :
  * ```typescript
  * const orchestrator = useTreeTableOrchestrator(controller, workerAPI);
-  * //
+ * //
  * orchestrator.selection.selectNode(nodeId);
  * orchestrator.expansion.toggleNode(nodeId);
  * orchestrator.editing.startEdit(nodeId, value);
-  * //
+ * //
  * const { selectedNodeIds, isLoading } = orchestrator;
  * ```
-  */
+ */
 export function useTreeTableOrchestrator<T>(
   controller: TreeViewController | null,
   workerAPI: WorkerAPI<T>,
   _options?: {
     enableSubscription?: boolean;
     subscriptionDepth?: number;
-  },
+  }
 ): TreeTableOrchestratorResult {
   // Get table data for orchestrators that need it
   const tableData = useAtomValue(tableDataAtom);
@@ -85,7 +96,7 @@ export function useTreeTableOrchestrator<T>(
       isLoading: false, // TODO: Implement loading atoms
       error: null, // TODO: Implement error atoms
     }),
-    [selection, expansion, editing, dragDrop, search, subscription],
+    [selection, expansion, editing, dragDrop, search, subscription]
   );
 
   return result;

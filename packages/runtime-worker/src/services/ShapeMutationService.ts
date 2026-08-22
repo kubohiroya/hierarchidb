@@ -1,30 +1,25 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type {
-  ShapeBuildSessionRecord,
-  ShapeBuildTaskRecordInput,
-  ShapeBuildTaskRecordUpdate,
-  ShapeFeatureMetadata,
-  ShapeSourceCache,
-  ShapeMutationAPI,
-  ShapeDataSourceMetadata,
-  ShapeGeometryCache,
-  ShapeVectorTileRecord,
-  ShapeBuildSessionRecoveryRequest,
-  ShapeBuildSessionRecoveryResult,
-} from '@hierarchidb/shape-api';
-import type {
-  BuildStage,
-  LayerInfo,
-  ShapeDB,
-  VectorTileRecord,
-} from '@hierarchidb/shape-store';
 import {
-  ephemeralDB,
-  type BuildSessionRecord,
   type BuildSessionHeartbeat,
+  type BuildSessionRecord,
   type BuildSessionStatus,
   type BuildStageStatus,
+  ephemeralDB,
 } from '@hierarchidb/gis-sdk';
+import type {
+  ShapeBuildSessionRecord,
+  ShapeBuildSessionRecoveryRequest,
+  ShapeBuildSessionRecoveryResult,
+  ShapeBuildTaskRecordInput,
+  ShapeBuildTaskRecordUpdate,
+  ShapeDataSourceMetadata,
+  ShapeFeatureMetadata,
+  ShapeGeometryCache,
+  ShapeMutationAPI,
+  ShapeSourceCache,
+  ShapeVectorTileRecord,
+} from '@hierarchidb/shape-api';
+import type { BuildStage, LayerInfo, ShapeDB, VectorTileRecord } from '@hierarchidb/shape-store';
 import { SingletonMixin } from '@hierarchidb/util';
 import { publishBuildSessionUpdate } from './buildSessionBroadcastUtils.js';
 import { storeRawDataDataSourceBufferForNode } from './shapeChunkStoreUtils.js';
@@ -58,14 +53,16 @@ const requireFiniteNonNegativeTiming = (value: unknown, label: string): number =
 
 /**
  * Convert ShapeBuildSessionRecord to four normalized table records
- * 
+ *
  * Splits the monolithic session record into:
  * - config: Immutable session configuration (BuildSessionRecord)
  * - heartbeat: High-frequency heartbeat tracking (BuildSessionHeartbeat)
  * - status: Session-level status (BuildSessionStatus)
  * - stageStatus: Current stage status (BuildStageStatus)
  */
-const toBuildSessionRecords = (session: ShapeBuildSessionRecord): {
+const toBuildSessionRecords = (
+  session: ShapeBuildSessionRecord
+): {
   config: BuildSessionRecord;
   heartbeat?: BuildSessionHeartbeat;
   status: BuildSessionStatus;
@@ -193,7 +190,7 @@ export class ShapeMutationService implements ShapeMutationAPI {
   async upsertBuildSession(session: ShapeBuildSessionRecord): Promise<void> {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
-    
+
     // Split session into four normalized records
     const records = toBuildSessionRecords(session);
 
@@ -437,7 +434,11 @@ export class ShapeMutationService implements ShapeMutationAPI {
     );
   }
 
-  async putGeometryCaches(buffers: ShapeGeometryCache[], taskId?: string, taskQueue?: any): Promise<void> {
+  async putGeometryCaches(
+    buffers: ShapeGeometryCache[],
+    taskId?: string,
+    taskQueue?: any
+  ): Promise<void> {
     if (buffers.length === 0) return;
     const emptyBuffer = buffers.find((buffer) => buffer.data.byteLength === 0);
     if (emptyBuffer) {
@@ -448,15 +449,19 @@ export class ShapeMutationService implements ShapeMutationAPI {
     // This function focuses on the actual cache write operation
 
     const pending = buffers.map((buffer) => ({ ...buffer, timestamp: 0 }));
-    await ephemeralDB.transaction('rw', [ephemeralDB.geometryCache, ephemeralDB.geometryCacheMeta], async () => {
-      await ephemeralDB.geometryCache.bulkPut(pending);
-      const completedAt = Date.now();
-      await Promise.all(
-        pending.map((buffer) =>
-          ephemeralDB.geometryCache.update(buffer.id, { timestamp: completedAt })
-        )
-      );
-    });
+    await ephemeralDB.transaction(
+      'rw',
+      [ephemeralDB.geometryCache, ephemeralDB.geometryCacheMeta],
+      async () => {
+        await ephemeralDB.geometryCache.bulkPut(pending);
+        const completedAt = Date.now();
+        await Promise.all(
+          pending.map((buffer) =>
+            ephemeralDB.geometryCache.update(buffer.id, { timestamp: completedAt })
+          )
+        );
+      }
+    );
   }
 
   async putDataSourceMetadata(rows: ShapeDataSourceMetadata[]): Promise<void> {

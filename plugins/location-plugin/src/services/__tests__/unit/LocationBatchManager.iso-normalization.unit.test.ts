@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { LocationPointProperties } from '../../../common/entities/LocationPoint';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LocationBuildConfig } from '../../../common/entities/LocationEntity';
+import type { LocationPointProperties } from '../../../common/entities/LocationPoint';
 
 const { strategySearch } = vi.hoisted(() => ({
   strategySearch: vi.fn(),
@@ -20,10 +20,10 @@ vi.mock('../../pointRepository.js', () => ({
 
 vi.mock('@hierarchidb/gen-iso3166-2/browser', () => ({
   ensureIso3166Data: vi.fn(async () => ({ source: 'memory' })),
-  getAllCountries: vi.fn(async () => ([
+  getAllCountries: vi.fn(async () => [
     { alpha2: 'US', alpha3: 'USA', countryEn: 'United States', location: 'Americas' },
     { alpha2: 'JP', alpha3: 'JPN', countryEn: 'Japan', location: 'Asia' },
-  ])),
+  ]),
   resolveIso3166CsvUrl: vi.fn(() => 'https://example.com/iso.csv'),
 }));
 

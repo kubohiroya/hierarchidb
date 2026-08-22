@@ -3,8 +3,8 @@
  * @module @hierarchidb/ui-lru-splitview/components
  */
 
-import type React from 'react';
 import { Box, Chip, IconButton, Stack, Typography } from '@mui/material';
+import type React from 'react';
 
 import type { PaneHeaderProps } from '~/types/LRUSplitView';
 import { PaneProgressSummary } from './PaneProgressSummary.js';
@@ -30,15 +30,15 @@ export interface PaneHeaderComponentProps extends PaneHeaderProps {
  * - Support for header actions
  */
 export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
-                                                                 pane,
-                                                                 state,
-                                                                 progress,
-                                                                 onToggle,
-                                                                 clickable = true,
-                                                                 vertical = false,
-                                                               showProgress = true,
-                                                               onClick,
-                                                             }) => {
+  pane,
+  state,
+  progress,
+  onToggle,
+  clickable = true,
+  vertical = false,
+  showProgress = true,
+  onClick,
+}) => {
   const view = usePaneHeaderView({
     pane,
     state,
@@ -68,8 +68,8 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
         transition: 'background-color 0.2s ease-in-out',
         '&:hover': clickable
           ? {
-            backgroundColor: view.theme.palette.action.hover,
-          }
+              backgroundColor: view.theme.palette.action.hover,
+            }
           : {},
       }}
       ref={view.headerRef}
@@ -81,7 +81,9 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
           <ToggleIcon />
         </IconButton>
 
-        {!view.isCompact && pane.icon && <Box sx={{ display: 'flex', alignItems: 'center' }}>{pane.icon}</Box>}
+        {!view.isCompact && pane.icon && (
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>{pane.icon}</Box>
+        )}
 
         {!view.isCompact && (
           <Typography variant="subtitle2" noWrap sx={{ flex: 1 }}>
@@ -98,29 +100,32 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
             {/* Task count chip */}
             {view.showCounts && progress.summary ? (
               <PaneProgressSummary summary={progress.summary} />
-            ) : view.showCounts && (progress.taskCount !== undefined || progress.completedCount !== undefined) && (
-              <Chip
-                label={
-                  progress.taskCount !== undefined && progress.completedCount !== undefined
-                    ? `${progress.completedCount}/${progress.taskCount}`
-                    : progress.taskCount !== undefined
-                      ? `${progress.taskCount} tasks`
-                      : `${progress.completedCount} done`
-                }
-                size="small"
-                color={
-                  (progress.taskCount ?? 0) === 0 && (progress.completedCount ?? 0) === 0
-                    ? 'default'
-                    : progress.status === 'failed'
-                    ? 'error'
-                    : progress.status === 'completed'
-                      ? 'success'
-                      : progress.progress > 0
-                        ? 'primary'
-                        : 'default'
-                }
-                variant={progress.progress > 0 ? 'filled' : 'outlined'}
-              />
+            ) : (
+              view.showCounts &&
+              (progress.taskCount !== undefined || progress.completedCount !== undefined) && (
+                <Chip
+                  label={
+                    progress.taskCount !== undefined && progress.completedCount !== undefined
+                      ? `${progress.completedCount}/${progress.taskCount}`
+                      : progress.taskCount !== undefined
+                        ? `${progress.taskCount} tasks`
+                        : `${progress.completedCount} done`
+                  }
+                  size="small"
+                  color={
+                    (progress.taskCount ?? 0) === 0 && (progress.completedCount ?? 0) === 0
+                      ? 'default'
+                      : progress.status === 'failed'
+                        ? 'error'
+                        : progress.status === 'completed'
+                          ? 'success'
+                          : progress.progress > 0
+                            ? 'primary'
+                            : 'default'
+                  }
+                  variant={progress.progress > 0 ? 'filled' : 'outlined'}
+                />
+              )
             )}
 
             {/* Progress percentage */}

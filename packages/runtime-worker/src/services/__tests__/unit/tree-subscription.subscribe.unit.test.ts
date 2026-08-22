@@ -1,4 +1,3 @@
-import type { TreeQueryAPI } from '@hierarchidb/tree-api';
 import type { NodeId, NodeType, Timestamp, TreeId } from '@hierarchidb/core-types';
 import type {
   ObserveNodePayload,
@@ -6,13 +5,14 @@ import type {
   TreeChangeEvent,
   TreeNode,
   TreeNodeEvent,
+  TreeQueryAPI,
 } from '@hierarchidb/tree-api';
-import { Subject } from 'rxjs';
 import type { PromiseExtended } from 'dexie';
+import { Subject } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../../CoreDB';
-import type { CommandEnvelope } from '../../WorkerErrorCodeValue';
 import { TreeSubscriptionService } from '../../TreeSubscriptionService';
+import type { CommandEnvelope } from '../../WorkerErrorCodeValue';
 
 type CoreDBForTreeSubscriptionService = {
   changeSubject: Subject<TreeChangeEvent>;
@@ -29,9 +29,7 @@ type CoreStub = CoreDBForTreeSubscriptionService & {
   __store: Map<NodeId, TreeNode>;
 };
 
-function createCoreStub(
-  initialNodes: TreeNode[] = []
-): CoreStub {
+function createCoreStub(initialNodes: TreeNode[] = []): CoreStub {
   const changeSubject = new Subject<TreeChangeEvent>();
   const store = new Map<NodeId, TreeNode>(initialNodes.map((node) => [node.id, node]));
 
@@ -48,13 +46,15 @@ function createCoreStub(
     ),
     getNode: vi.fn(async (id: NodeId) => store.get(id)),
     listTrees: vi.fn(async () => []),
-    getTree: vi.fn(async (_treeId: TreeId): Promise<Tree> => ({
-      id: _treeId,
-      name: '',
-      rootId: 'r:root' as NodeId,
-      archiveRootId: 'r:archive' as NodeId,
-      superRootId: 'r:super-root' as NodeId,
-    })),
+    getTree: vi.fn(
+      async (_treeId: TreeId): Promise<Tree> => ({
+        id: _treeId,
+        name: '',
+        rootId: 'r:root' as NodeId,
+        archiveRootId: 'r:archive' as NodeId,
+        superRootId: 'r:super-root' as NodeId,
+      })
+    ),
     nodes: {
       get: (id: NodeId) => toPromiseExtended(store.get(id)),
     },

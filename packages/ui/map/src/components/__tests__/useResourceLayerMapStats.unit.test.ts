@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { MapLibreGeoJSONFeature, MapLibreMapInstance } from '../../types/maplibre-public';
 import { buildShapeLayerEntryId } from '../../preview/layerSetDefinitions';
+import type { MapLibreGeoJSONFeature, MapLibreMapInstance } from '../../types/maplibre-public';
 import { resolveVectorLayerFeatureCounts } from '../useResourceLayerMapStats';
 
 type MockVectorLayerEntry = {
@@ -27,7 +27,7 @@ const createMockMap = (options: {
     setTerrain: () => {},
     once: () => {},
     on: () => {},
-    getContainer: () => ({} as HTMLElement),
+    getContainer: () => ({}) as HTMLElement,
     addLayer: () => {},
     getSource: (sourceId: string) => sources[sourceId],
     addSource: () => {},
@@ -44,7 +44,7 @@ const createMockMap = (options: {
     removeFeatureState: () => {},
     getCenter: () => ({ lng: 0, lat: 0 }),
     getZoom: () => 0,
-    getCanvas: () => ({} as HTMLCanvasElement),
+    getCanvas: () => ({}) as HTMLCanvasElement,
     getBounds: () => ({
       getWest: () => 0,
       getSouth: () => 0,
@@ -100,9 +100,24 @@ describe('resolveVectorLayerFeatureCounts', () => {
     const map = createMockMap({
       sourceFeatures: {},
       renderedFeatures: [
-        { id: 1, layer: { id: buildShapeLayerEntryId(0, false) }, source: 'shape-source', sourceLayer: '0' },
-        { id: 2, layer: { id: buildShapeLayerEntryId(0, false) }, source: 'shape-source', sourceLayer: '0' },
-        { id: 3, layer: { id: buildShapeLayerEntryId(1, false) }, source: 'shape-source', sourceLayer: '1' },
+        {
+          id: 1,
+          layer: { id: buildShapeLayerEntryId(0, false) },
+          source: 'shape-source',
+          sourceLayer: '0',
+        },
+        {
+          id: 2,
+          layer: { id: buildShapeLayerEntryId(0, false) },
+          source: 'shape-source',
+          sourceLayer: '0',
+        },
+        {
+          id: 3,
+          layer: { id: buildShapeLayerEntryId(1, false) },
+          source: 'shape-source',
+          sourceLayer: '1',
+        },
       ],
       sources: { 'shape-source': {} },
     });

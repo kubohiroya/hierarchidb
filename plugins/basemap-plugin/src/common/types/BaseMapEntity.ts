@@ -4,8 +4,8 @@
  */
 
 import type { PeerEntity, Timestamp } from '@hierarchidb/core-types';
-import type { NodePayload } from '@hierarchidb/tree-api';
 import type { BaseSearchCriteria } from '@hierarchidb/plugin-base';
+import type { NodePayload } from '@hierarchidb/tree-api';
 
 /**
  * Map style configuration

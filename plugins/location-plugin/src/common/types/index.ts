@@ -1,10 +1,12 @@
 /**
-  * Location Plugin Type Definitions
-   */
+ * Location Plugin Type Definitions
+ */
 
 //  @hierarchidb/_obsolate_common-type
 import type { ISO2, NodeId, TreeId } from '@hierarchidb/core-types';
+
 export type { NodeId } from '@hierarchidb/core-types';
+
 import type { TabularFilterRule, TabularSelectionConfig } from '@hierarchidb/ui-tabular';
 
 // ================================
@@ -13,22 +15,22 @@ import type { TabularFilterRule, TabularSelectionConfig } from '@hierarchidb/ui-
 
 import type { Timestamp } from '@hierarchidb/core-types';
 import type {
-  LocationEntity as LocationEntityDefinition,
-  LocationDataSource,
   LocationBuildConfig,
   LocationBuildFilterCriteria,
   LocationBuildProcessingOptions,
-  LocationType,
-  LocationSearchConfig,
+  LocationDataSource,
+  LocationEntity as LocationEntityDefinition,
   LocationIconConfig,
   LocationIconId,
   LocationLabelConfig,
   LocationRepresentationByZoomLevelConfig,
+  LocationSearchConfig,
+  LocationType,
 } from '~/common/entities/LocationEntity';
 import type {
-  LocationPointProperties,
-  LocationPointKind,
   LocationPointId,
+  LocationPointKind,
+  LocationPointProperties,
 } from '~/common/entities/LocationPoint';
 
 export type LocationEntity = LocationEntityDefinition;
@@ -100,8 +102,8 @@ export interface LocationDialogProps {
 
 // Worker entity metadata types
 import type {
-  LocationPeerData,
   LocationGroupItemData,
+  LocationPeerData,
   LocationRelationMeta,
 } from '@hierarchidb/location-api';
 export type { LocationPeerData, LocationGroupItemData, LocationRelationMeta };

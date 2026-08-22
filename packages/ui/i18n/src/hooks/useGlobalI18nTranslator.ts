@@ -35,7 +35,11 @@ export function useGlobalI18nTranslator(options: TranslatorOptions = {}) {
   }, [i18n]);
 
   const translator = useCallback(
-    (key: string, fallback: string, interpolateOptions: TOptions | undefined = undefined): string => {
+    (
+      key: string,
+      fallback: string,
+      interpolateOptions: TOptions | undefined = undefined
+    ): string => {
       if (typeof i18n.t !== 'function') {
         return fallback;
       }

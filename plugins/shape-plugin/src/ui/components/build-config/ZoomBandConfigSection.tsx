@@ -1,8 +1,8 @@
 import { ZoomBandConfigSection as SharedZoomBandConfigSection } from '@hierarchidb/ui-accordion-config';
 import { useTranslation } from '@hierarchidb/ui-i18n';
-import { useGeometryConfigSection } from '~/ui/hooks/useGeometryConfigSection';
 import type { ShapeBuildConfig } from '~/common/types/index';
 import { resampleToleranceByBand } from '~/services/utils/toleranceByBand';
+import { useGeometryConfigSection } from '~/ui/hooks/useGeometryConfigSection';
 
 type Props = {
   config: ShapeBuildConfig;
@@ -34,113 +34,113 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
           baseGeometryConfig.toleranceByBand,
           baseGeometryConfig.zoomBandBoundaries,
           zoomBandBoundaries,
-          toleranceFallback,
+          toleranceFallback
         );
         const nextMultiplierByBand = resampleToleranceByBand(
           baseGeometryConfig.toleranceMultiplierByBand,
           baseGeometryConfig.zoomBandBoundaries,
           zoomBandBoundaries,
-          multiplierFallback,
+          multiplierFallback
         );
         const nextMinRatioByBand = resampleToleranceByBand(
           baseGeometryConfig.toleranceMinRatioByBand,
           baseGeometryConfig.zoomBandBoundaries,
           zoomBandBoundaries,
-          minRatioFallback,
+          minRatioFallback
         );
         const nextMaxRatioByBand = resampleToleranceByBand(
           baseGeometryConfig.toleranceMaxRatioByBand,
           baseGeometryConfig.zoomBandBoundaries,
           zoomBandBoundaries,
-          maxRatioFallback,
+          maxRatioFallback
         );
         const nextSimplifyToleranceByAdminLevel = simplifyToleranceByAdminLevel
           ? {
-            admin0: {
-              ...simplifyToleranceByAdminLevel.admin0,
-              multiplierByBand: resampleToleranceByBand(
-                simplifyToleranceByAdminLevel.admin0?.multiplierByBand,
-                baseGeometryConfig.zoomBandBoundaries,
-                zoomBandBoundaries,
-                multiplierFallback,
-              ),
-              minRatioByBand: resampleToleranceByBand(
-                simplifyToleranceByAdminLevel.admin0?.minRatioByBand,
-                baseGeometryConfig.zoomBandBoundaries,
-                zoomBandBoundaries,
-                minRatioFallback,
-              ),
-              maxRatioByBand: resampleToleranceByBand(
-                simplifyToleranceByAdminLevel.admin0?.maxRatioByBand,
-                baseGeometryConfig.zoomBandBoundaries,
-                zoomBandBoundaries,
-                maxRatioFallback,
-              ),
-            },
-            admin1: {
-              ...simplifyToleranceByAdminLevel.admin1,
-              multiplierByBand: resampleToleranceByBand(
-                simplifyToleranceByAdminLevel.admin1?.multiplierByBand,
-                baseGeometryConfig.zoomBandBoundaries,
-                zoomBandBoundaries,
-                multiplierFallback,
-              ),
-              minRatioByBand: resampleToleranceByBand(
-                simplifyToleranceByAdminLevel.admin1?.minRatioByBand,
-                baseGeometryConfig.zoomBandBoundaries,
-                zoomBandBoundaries,
-                minRatioFallback,
-              ),
-              maxRatioByBand: resampleToleranceByBand(
-                simplifyToleranceByAdminLevel.admin1?.maxRatioByBand,
-                baseGeometryConfig.zoomBandBoundaries,
-                zoomBandBoundaries,
-                maxRatioFallback,
-              ),
-            },
-            admin2: {
-              ...simplifyToleranceByAdminLevel.admin2,
-              multiplierByBand: resampleToleranceByBand(
-                simplifyToleranceByAdminLevel.admin2?.multiplierByBand,
-                baseGeometryConfig.zoomBandBoundaries,
-                zoomBandBoundaries,
-                multiplierFallback,
-              ),
-              minRatioByBand: resampleToleranceByBand(
-                simplifyToleranceByAdminLevel.admin2?.minRatioByBand,
-                baseGeometryConfig.zoomBandBoundaries,
-                zoomBandBoundaries,
-                minRatioFallback,
-              ),
-              maxRatioByBand: resampleToleranceByBand(
-                simplifyToleranceByAdminLevel.admin2?.maxRatioByBand,
-                baseGeometryConfig.zoomBandBoundaries,
-                zoomBandBoundaries,
-                maxRatioFallback,
-              ),
-            },
-            admin3Plus: {
-              ...simplifyToleranceByAdminLevel.admin3Plus,
-              multiplierByBand: resampleToleranceByBand(
-                simplifyToleranceByAdminLevel.admin3Plus?.multiplierByBand,
-                baseGeometryConfig.zoomBandBoundaries,
-                zoomBandBoundaries,
-                multiplierFallback,
-              ),
-              minRatioByBand: resampleToleranceByBand(
-                simplifyToleranceByAdminLevel.admin3Plus?.minRatioByBand,
-                baseGeometryConfig.zoomBandBoundaries,
-                zoomBandBoundaries,
-                minRatioFallback,
-              ),
-              maxRatioByBand: resampleToleranceByBand(
-                simplifyToleranceByAdminLevel.admin3Plus?.maxRatioByBand,
-                baseGeometryConfig.zoomBandBoundaries,
-                zoomBandBoundaries,
-                maxRatioFallback,
-              ),
-            },
-          }
+              admin0: {
+                ...simplifyToleranceByAdminLevel.admin0,
+                multiplierByBand: resampleToleranceByBand(
+                  simplifyToleranceByAdminLevel.admin0?.multiplierByBand,
+                  baseGeometryConfig.zoomBandBoundaries,
+                  zoomBandBoundaries,
+                  multiplierFallback
+                ),
+                minRatioByBand: resampleToleranceByBand(
+                  simplifyToleranceByAdminLevel.admin0?.minRatioByBand,
+                  baseGeometryConfig.zoomBandBoundaries,
+                  zoomBandBoundaries,
+                  minRatioFallback
+                ),
+                maxRatioByBand: resampleToleranceByBand(
+                  simplifyToleranceByAdminLevel.admin0?.maxRatioByBand,
+                  baseGeometryConfig.zoomBandBoundaries,
+                  zoomBandBoundaries,
+                  maxRatioFallback
+                ),
+              },
+              admin1: {
+                ...simplifyToleranceByAdminLevel.admin1,
+                multiplierByBand: resampleToleranceByBand(
+                  simplifyToleranceByAdminLevel.admin1?.multiplierByBand,
+                  baseGeometryConfig.zoomBandBoundaries,
+                  zoomBandBoundaries,
+                  multiplierFallback
+                ),
+                minRatioByBand: resampleToleranceByBand(
+                  simplifyToleranceByAdminLevel.admin1?.minRatioByBand,
+                  baseGeometryConfig.zoomBandBoundaries,
+                  zoomBandBoundaries,
+                  minRatioFallback
+                ),
+                maxRatioByBand: resampleToleranceByBand(
+                  simplifyToleranceByAdminLevel.admin1?.maxRatioByBand,
+                  baseGeometryConfig.zoomBandBoundaries,
+                  zoomBandBoundaries,
+                  maxRatioFallback
+                ),
+              },
+              admin2: {
+                ...simplifyToleranceByAdminLevel.admin2,
+                multiplierByBand: resampleToleranceByBand(
+                  simplifyToleranceByAdminLevel.admin2?.multiplierByBand,
+                  baseGeometryConfig.zoomBandBoundaries,
+                  zoomBandBoundaries,
+                  multiplierFallback
+                ),
+                minRatioByBand: resampleToleranceByBand(
+                  simplifyToleranceByAdminLevel.admin2?.minRatioByBand,
+                  baseGeometryConfig.zoomBandBoundaries,
+                  zoomBandBoundaries,
+                  minRatioFallback
+                ),
+                maxRatioByBand: resampleToleranceByBand(
+                  simplifyToleranceByAdminLevel.admin2?.maxRatioByBand,
+                  baseGeometryConfig.zoomBandBoundaries,
+                  zoomBandBoundaries,
+                  maxRatioFallback
+                ),
+              },
+              admin3Plus: {
+                ...simplifyToleranceByAdminLevel.admin3Plus,
+                multiplierByBand: resampleToleranceByBand(
+                  simplifyToleranceByAdminLevel.admin3Plus?.multiplierByBand,
+                  baseGeometryConfig.zoomBandBoundaries,
+                  zoomBandBoundaries,
+                  multiplierFallback
+                ),
+                minRatioByBand: resampleToleranceByBand(
+                  simplifyToleranceByAdminLevel.admin3Plus?.minRatioByBand,
+                  baseGeometryConfig.zoomBandBoundaries,
+                  zoomBandBoundaries,
+                  minRatioFallback
+                ),
+                maxRatioByBand: resampleToleranceByBand(
+                  simplifyToleranceByAdminLevel.admin3Plus?.maxRatioByBand,
+                  baseGeometryConfig.zoomBandBoundaries,
+                  zoomBandBoundaries,
+                  maxRatioFallback
+                ),
+              },
+            }
           : undefined;
         update({
           geometryConfig: {

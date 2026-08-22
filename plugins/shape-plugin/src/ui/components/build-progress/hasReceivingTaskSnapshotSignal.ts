@@ -10,7 +10,11 @@ export const hasReceivingTaskSnapshotSignal = (input: {
   if (typeof input.progressTaskId === 'string' && input.progressTaskId.length > 0) {
     return true;
   }
-  if (typeof input.progressTotal === 'number' && Number.isFinite(input.progressTotal) && input.progressTotal > 0) {
+  if (
+    typeof input.progressTotal === 'number' &&
+    Number.isFinite(input.progressTotal) &&
+    input.progressTotal > 0
+  ) {
     return true;
   }
   return false;

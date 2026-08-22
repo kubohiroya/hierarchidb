@@ -1,7 +1,7 @@
 import type {
   DataSourceType as SpreadsheetDataSourceType,
-  SpreadSheetDataSourceType as SpreadsheetSpreadSheetDataSourceType,
   SpreadsheetEntity as SpreadsheetEntityType,
+  SpreadSheetDataSourceType as SpreadsheetSpreadSheetDataSourceType,
   UploadedFileSummary as SpreadsheetUploadedFileSummary,
 } from '@hierarchidb/spreadsheet-store';
 

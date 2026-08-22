@@ -5,7 +5,6 @@
  * useTreeConsoleIntegration hook modules.
  */
 
-import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type { CommandResult, TreeNode } from '@hierarchidb/tree-api';
 import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
@@ -14,8 +13,9 @@ import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar'
 import type { Remote } from 'comlink';
 import type { Dispatch, SetStateAction } from 'react';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 
-export type { ViewMode, SortMode } from '@hierarchidb/ui-treeconsole-base';
+export type { SortMode, ViewMode } from '@hierarchidb/ui-treeconsole-base';
 
 export type ContextAction =
   | 'open'

@@ -1,5 +1,5 @@
-import path from 'node:path';
 import fs from 'node:fs';
+import path from 'node:path';
 import { dirExists, readJsonFile, resolveCandidate } from './fs-utils.js';
 import type {
   DetectPluginsOptions,
@@ -35,7 +35,12 @@ const SUBPATH_DEFINITIONS: readonly SubpathDefinition[] = [
     kind: 'common',
     exportKey: './_obsolate_common',
     requireExport: false,
-    candidateBases: ['src/_obsolate_common/index', 'src/_obsolate_common', 'src/shared/index', 'src/shared'],
+    candidateBases: [
+      'src/_obsolate_common/index',
+      'src/_obsolate_common',
+      'src/shared/index',
+      'src/shared',
+    ],
   },
   {
     kind: 'ui',
@@ -122,7 +127,10 @@ export function detectNodeTypePlugins(options: DetectPluginsOptions): NodeTypePl
     const nodeType = pluginMeta?.nodeType ?? dirent.name.replace(/-plugin$/, '');
     const manifestPath = resolveManifestPath(packageDir, manifestFallback);
 
-    const subpaths: Record<PluginEntryKind, PluginSubpathInfo> = {} as Record<PluginEntryKind, PluginSubpathInfo>;
+    const subpaths: Record<PluginEntryKind, PluginSubpathInfo> = {} as Record<
+      PluginEntryKind,
+      PluginSubpathInfo
+    >;
     for (const def of SUBPATH_DEFINITIONS) {
       const exportPresent = hasExport(pkg.exports, def.exportKey);
       const sourcePath = resolveCandidate(candidateFiles(packageDir, def.candidateBases));
@@ -130,7 +138,9 @@ export function detectNodeTypePlugins(options: DetectPluginsOptions): NodeTypePl
         kind: def.kind,
         exportKey: def.exportKey,
         sourcePath,
-        hasExport: def.requireExport ? exportPresent && !!sourcePath : !!sourcePath || exportPresent,
+        hasExport: def.requireExport
+          ? exportPresent && !!sourcePath
+          : !!sourcePath || exportPresent,
       };
     }
 

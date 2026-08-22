@@ -7,7 +7,5 @@ const MONOCHROME_STYLE_URLS = {
 
 export const useMonochromeBasemapStyleUrl = (): string => {
   const theme = useTheme();
-  return theme.palette.mode === 'dark'
-    ? MONOCHROME_STYLE_URLS.dark
-    : MONOCHROME_STYLE_URLS.light;
+  return theme.palette.mode === 'dark' ? MONOCHROME_STYLE_URLS.dark : MONOCHROME_STYLE_URLS.light;
 };

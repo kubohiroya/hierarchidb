@@ -23,15 +23,8 @@ export interface TabularProviderProps {
  * Tabular Provider Component
  * Injects Tabular API implementation into the component console
  */
-export const TabularProvider: React.FC<TabularProviderProps> = ({
-                                                          children,
-                                                          tabularApi,
-                                                        }) => {
-  return (
-    <TabularApiContext.Provider value={tabularApi}>
-      {children}
-    </TabularApiContext.Provider>
-  );
+export const TabularProvider: React.FC<TabularProviderProps> = ({ children, tabularApi }) => {
+  return <TabularApiContext.Provider value={tabularApi}>{children}</TabularApiContext.Provider>;
 };
 
 /**
@@ -43,7 +36,7 @@ export const useTabularApi = (): TabularDataApi => {
   if (!api) {
     throw new Error(
       'useTabularApi must be used within TabularProvider. ' +
-      'Ensure your component is wrapped with <TabularProvider tabularApi={yourApiImplementation}>',
+        'Ensure your component is wrapped with <TabularProvider tabularApi={yourApiImplementation}>'
     );
   }
   return api;

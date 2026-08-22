@@ -1,5 +1,4 @@
-import { useId } from 'react';
-import { useCallback } from 'react';
+import { useCallback, useId } from 'react';
 
 export interface UseCacheSectionParams {
   onDeleteOnCompleteChange: (checked: boolean) => void;
@@ -22,7 +21,7 @@ export function useCacheSection({
     (checked: boolean) => {
       onDeleteOnCompleteChange(checked);
     },
-    [onDeleteOnCompleteChange],
+    [onDeleteOnCompleteChange]
   );
 
   return {

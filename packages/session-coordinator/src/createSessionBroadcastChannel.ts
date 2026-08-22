@@ -7,13 +7,13 @@ export type SessionBroadcastMessage<TPayload = unknown> = {
 
 export type SessionBroadcastChannel<TPayload = unknown> = {
   channelName: string;
-  publish: (message: Omit<SessionBroadcastMessage<TPayload>, 'sourceId' | 'updatedAt'> & {
-    sourceId?: string;
-    updatedAt?: number;
-  }) => void;
-  subscribe: (
-    handler: (message: SessionBroadcastMessage<TPayload>) => void
-  ) => () => void;
+  publish: (
+    message: Omit<SessionBroadcastMessage<TPayload>, 'sourceId' | 'updatedAt'> & {
+      sourceId?: string;
+      updatedAt?: number;
+    }
+  ) => void;
+  subscribe: (handler: (message: SessionBroadcastMessage<TPayload>) => void) => () => void;
   close: () => void;
 };
 

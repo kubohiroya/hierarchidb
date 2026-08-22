@@ -5,6 +5,10 @@ export {
 } from './di/container.js';
 export type { PluginWorkerModuleLoaderContract } from './di/PluginWorkerModuleLoaderContract.js';
 export { WorkerDiTokens } from './di/WorkerDiTokens.js';
+export {
+  createDexieFeatureStore,
+  createDexieVectorTileStore,
+} from './entity/dexie-stores.js';
 // Public re-exports for plugin-side stores and registry
 export type {
   FeatureItemBase,
@@ -14,25 +18,21 @@ export type {
   VectorTileItemBase,
   VectorTileStore,
 } from './entity/storeTypes.js';
-export {
-  createDexieFeatureStore,
-  createDexieVectorTileStore,
-} from './entity/dexie-stores.js';
 export * from './module-paths.js';
+export {
+  publishBuildSessionUpdate,
+  subscribeToBuildSessionBroadcast,
+} from './services/buildSessionBroadcastUtils.js';
 // CoreDB and draft utilities (for plugin-side usage)
 export { CoreDB } from './services/CoreDB.js';
 export * from './services/downloadAdapter.js';
-export { discardTreeNodeDraft } from './services/draft/discardTreeNodeDraft.js';
 export { commitTreeNodeDraft } from './services/draft/commitOperations.js';
+export { discardTreeNodeDraft } from './services/draft/discardTreeNodeDraft.js';
 export {
   getTreeNode,
   updateTreeNodeDraftData,
   updateTreeNodeDraftMetadata,
 } from './services/draft/lookupOperationUtils.js';
-export {
-  type RuntimeWorkerAdapterOptions,
-  registerPluginRuntimeWorkerAdapters,
-} from './services/registerPluginRuntimeWorkerAdapters.js';
 export {
   getRuntimeWorkerClient,
   hasRuntimeWorkerClient,
@@ -41,6 +41,12 @@ export {
   registerRuntimeWorkerClient,
   unregisterRuntimeWorkerClient,
 } from './services/RuntimeWorkerService.js';
+export {
+  type RuntimeWorkerAdapterOptions,
+  registerPluginRuntimeWorkerAdapters,
+} from './services/registerPluginRuntimeWorkerAdapters.js';
+export { ShapeMutationService } from './services/ShapeMutationService.js';
+export { ShapeQueryService } from './services/ShapeQueryService.js';
 export {
   createStageWorkerClient,
   getStageProcessingClient,
@@ -55,8 +61,5 @@ export {
   writeVectorTileInput,
 } from './services/vectorTileStageRunner.js';
 export { resolveDefaultNodeName } from './utils/resolveDefaultNodeName.js';
-export { ShapeMutationService } from './services/ShapeMutationService.js';
-export { publishBuildSessionUpdate, subscribeToBuildSessionBroadcast } from './services/buildSessionBroadcastUtils.js';
-export { ShapeQueryService } from './services/ShapeQueryService.js';
 // Worker service (public API for worker bootstrap)
 export { WorkerService, type WorkerServiceOptions } from './WorkerService.js';

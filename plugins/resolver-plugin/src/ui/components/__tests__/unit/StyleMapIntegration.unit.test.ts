@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { ResolverEntity } from '../../_obsolate_common/types/index';
 import { MappingCompiler } from '../../../../services/SimpleMappingCompiler.ts';
+import type { ResolverEntity } from '../../_obsolate_common/types/index';
 
 describe('Styler Integration with Resolver', () => {
   let compiler: MappingCompiler;
@@ -241,12 +241,7 @@ describe('Styler Integration with Resolver', () => {
           isActive: true,
           severity: 'error' as const,
           customValidator: (coords: number[]) => {
-            return (
-              coords[0] >= -180 &&
-              coords[0] <= 180 &&
-              coords[1] >= -90 &&
-              coords[1] <= 90
-            );
+            return coords[0] >= -180 && coords[0] <= 180 && coords[1] >= -90 && coords[1] <= 90;
           },
         },
       ];

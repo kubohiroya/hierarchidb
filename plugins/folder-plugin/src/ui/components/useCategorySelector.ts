@@ -15,7 +15,7 @@ export function useCategorySelector<T extends string>({
   disabled,
 }: UseCategorySelectorProps<T>) {
   const selectedOption = useMemo(
-    () => options.find(opt => opt.value === value) ?? null,
+    () => options.find((opt) => opt.value === value) ?? null,
     [options, value]
   );
 

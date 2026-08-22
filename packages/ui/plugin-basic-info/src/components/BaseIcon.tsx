@@ -21,7 +21,17 @@ export interface BaseIconProps {
    * Color of the icon (can be MUI color tokens or CSS color values)
    * @default 'currentColor'
    */
-  color?: 'inherit' | 'action' | 'disabled' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' | string;
+  color?:
+    | 'inherit'
+    | 'action'
+    | 'disabled'
+    | 'primary'
+    | 'secondary'
+    | 'error'
+    | 'info'
+    | 'success'
+    | 'warning'
+    | string;
 
   /**
    * Additional CSS class name
@@ -66,15 +76,15 @@ export interface SvgIconDefinition {
  */
 export function createSvgIcon(
   definition: SvgIconDefinition,
-  displayName: string,
+  displayName: string
 ): React.FC<BaseIconProps> {
   const Icon: React.FC<BaseIconProps> = ({
-                                           size = 24,
-                                           color = 'currentColor',
-                                           className,
-                                           testId,
-                                           style,
-                                         }) => {
+    size = 24,
+    color = 'currentColor',
+    className,
+    testId,
+    style,
+  }) => {
     const { viewBox = '0 0 24 24', paths } = definition;
 
     return (
@@ -121,29 +131,39 @@ export function createSvgIcon(
  */
 export function createMuiIconWrapper<P extends BaseIconProps>(
   getIcon: (props: P) => React.ComponentType<SvgIconProps>,
-  displayName: string,
+  displayName: string
 ): React.FC<P> {
   const Icon: React.FC<P> = (props) => {
-    const {
-      size = 24,
-      color = 'primary',
-      className,
-      testId,
-      style,
-      ...restProps
-    } = props;
+    const { size = 24, color = 'primary', className, testId, style, ...restProps } = props;
 
     const IconComponent = getIcon(props);
 
     // Map size to MUI fontSize
     const fontSize: 'small' | 'medium' | 'large' =
-      size <= 16 ? 'small' :
-        size <= 24 ? 'medium' :
-          'large';
+      size <= 16 ? 'small' : size <= 24 ? 'medium' : 'large';
 
     // Map color to MUI color or use style for custom colors
-    const muiColor = ['inherit', 'action', 'disabled', 'primary', 'secondary', 'error', 'info', 'success', 'warning'].includes(color)
-      ? color as 'inherit' | 'action' | 'disabled' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'
+    const muiColor = [
+      'inherit',
+      'action',
+      'disabled',
+      'primary',
+      'secondary',
+      'error',
+      'info',
+      'success',
+      'warning',
+    ].includes(color)
+      ? (color as
+          | 'inherit'
+          | 'action'
+          | 'disabled'
+          | 'primary'
+          | 'secondary'
+          | 'error'
+          | 'info'
+          | 'success'
+          | 'warning')
       : undefined;
 
     const iconStyle = muiColor ? style : { ...style, color };
@@ -155,7 +175,7 @@ export function createMuiIconWrapper<P extends BaseIconProps>(
         className={className}
         style={iconStyle}
         data-testid={testId || `${displayName.toLowerCase()}-icon`}
-        {...restProps as Omit<typeof restProps, 'ref'>}
+        {...(restProps as Omit<typeof restProps, 'ref'>)}
       />
     );
   };
@@ -168,13 +188,13 @@ export function createMuiIconWrapper<P extends BaseIconProps>(
  * Base icon component for simple implementations
  */
 export const BaseIcon: React.FC<BaseIconProps & { children?: React.ReactNode }> = ({
-                                                                                     size = 24,
-                                                                                     color = 'currentColor',
-                                                                                     className,
-                                                                                     testId,
-                                                                                     style,
-                                                                                     children,
-                                                                                   }) => {
+  size = 24,
+  color = 'currentColor',
+  className,
+  testId,
+  style,
+  children,
+}) => {
   return (
     <span
       className={className}

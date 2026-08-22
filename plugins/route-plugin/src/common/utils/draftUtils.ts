@@ -1,10 +1,10 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
 import { RouteEntity, RouteUpdaterPayload } from '@hierarchidb/route-store';
+import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
 
 export function toRouteUpdaterPayload(
   routeDraft: RouteUpdaterPayload | null,
-  effectiveNodeId: NodeId,
+  effectiveNodeId: NodeId
 ): RouteUpdaterPayload {
   if (!routeDraft) {
     return {
@@ -33,11 +33,11 @@ export function toRouteUpdaterPayload(
 
 export function getRouteUpdaterPayload(draft: RouteUpdaterPayload): Partial<RouteEntity> {
   if (
-    draft
-    && typeof draft === 'object'
-    && 'draftData' in draft
-    && typeof draft.draftData === 'object'
-    && draft.draftData !== null
+    draft &&
+    typeof draft === 'object' &&
+    'draftData' in draft &&
+    typeof draft.draftData === 'object' &&
+    draft.draftData !== null
   ) {
     return draft.draftData as Partial<RouteEntity>;
   }

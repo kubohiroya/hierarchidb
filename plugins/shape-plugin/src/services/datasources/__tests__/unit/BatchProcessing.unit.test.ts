@@ -1,10 +1,13 @@
 /**
-   * DATA_SOURCE_STRATEGY_DESIGN.md
-  */
+ * DATA_SOURCE_STRATEGY_DESIGN.md
+ */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DataSourceStrategyFactory, DataSourceStrategyId } from '../../DataSourceStrategyFactory.js';
 import type { FetchOptions, ProcessOptions, SaveTarget } from '../../DataSourceStrategy';
+import {
+  DataSourceStrategyFactory,
+  DataSourceStrategyId,
+} from '../../DataSourceStrategyFactory.js';
 
 // Mock AuthRecoveryService used by authFetch so strategies avoid real network
 vi.mock('@hierarchidb/auth', () => {
@@ -12,7 +15,7 @@ vi.mock('@hierarchidb/auth', () => {
     const url = String(input);
     // Natural Earth ZIP
     if (url.includes('naturalearthdata.com')) {
-      const JSZip = (await import('jszip'));
+      const JSZip = await import('jszip');
       const zip = new JSZip();
       zip.file('dummy.txt', 'hello');
       const buf = await zip.generateAsync({ type: 'arraybuffer' });
@@ -21,27 +24,67 @@ vi.mock('@hierarchidb/auth', () => {
     // GADM JSON (admin0) or JSON ZIP (admin1+)
     if (url.includes('geodata.ucdavis.edu/gadm/gadm4.1/json/')) {
       if (url.endsWith('.json.zip')) {
-        const JSZip = (await import('jszip'));
+        const JSZip = await import('jszip');
         const zip = new JSZip();
         zip.file('gadm41_JPN_1.json', JSON.stringify({ type: 'FeatureCollection', features: [] }));
         const buf = await zip.generateAsync({ type: 'arraybuffer' });
         return new Response(buf, { status: 200 });
       }
-      return new Response(JSON.stringify({ type: 'FeatureCollection', features: [] }), { status: 200 });
+      return new Response(JSON.stringify({ type: 'FeatureCollection', features: [] }), {
+        status: 200,
+      });
     }
     // GeoBoundaries metadata and download
     if (url.includes('geoboundaries.org/api/current/gbOpen/available')) {
-      return new Response(JSON.stringify({ USA: ['ADM0', 'ADM1'], JPN: ['ADM0', 'ADM1'] }), { status: 200 });
+      return new Response(JSON.stringify({ USA: ['ADM0', 'ADM1'], JPN: ['ADM0', 'ADM1'] }), {
+        status: 200,
+      });
     }
     if (url.includes('/gbOpen/')) {
-      return new Response(JSON.stringify({ simplifiedGeometryGeoJSON: 'https://mock.local/gb.geojson', boundaryYear: '2023', licenseDetail: 'Open' }), { status: 200 });
+      return new Response(
+        JSON.stringify({
+          simplifiedGeometryGeoJSON: 'https://mock.local/gb.geojson',
+          boundaryYear: '2023',
+          licenseDetail: 'Open',
+        }),
+        { status: 200 }
+      );
     }
     if (url.includes('mock.local/gb.geojson')) {
-      return new Response(JSON.stringify({ type: 'FeatureCollection', features: [{ type: 'Feature', geometry: { type: 'Polygon', coordinates: [[[0,0],[1,0],[1,1],[0,1],[0,0]]] }, properties: { shapeName: 'Mock' } }] }), { status: 200 });
+      return new Response(
+        JSON.stringify({
+          type: 'FeatureCollection',
+          features: [
+            {
+              type: 'Feature',
+              geometry: {
+                type: 'Polygon',
+                coordinates: [
+                  [
+                    [0, 0],
+                    [1, 0],
+                    [1, 1],
+                    [0, 1],
+                    [0, 0],
+                  ],
+                ],
+              },
+              properties: { shapeName: 'Mock' },
+            },
+          ],
+        }),
+        { status: 200 }
+      );
     }
     // OSM Overpass
     if (url.includes('overpass-api.de')) {
-      return new Response(JSON.stringify({ elements: [{ type: 'node', id: 1, lat: 0, lon: 0, tags: { name: 'Mock' } }], generator: 'mock' }), { status: 200 });
+      return new Response(
+        JSON.stringify({
+          elements: [{ type: 'node', id: 1, lat: 0, lon: 0, tags: { name: 'Mock' } }],
+          generator: 'mock',
+        }),
+        { status: 200 }
+      );
     }
     // Default OK
     return new Response('OK', { status: 200 });
@@ -95,7 +138,12 @@ interface BuildResult {
 interface BuildStatusReporter {
   startJob(jobId: string): void;
 
-  updatePhase(jobId: string, phase: BuildJob['progress']['phase'], percentage?: number, message?: string): void;
+  updatePhase(
+    jobId: string,
+    phase: BuildJob['progress']['phase'],
+    percentage?: number,
+    message?: string
+  ): void;
 
   completeJob(jobId: string): void;
 
@@ -149,7 +197,6 @@ class DataSourceBuildProcessor {
       this.statusReporter.completeJob(jobId);
 
       return result;
-
     } catch (error) {
       job.status = 'failed';
       job.error = error as Error;
@@ -162,7 +209,7 @@ class DataSourceBuildProcessor {
 
   private async waitForSlot(): Promise<void> {
     while (this.runningJobs.size >= this.maxConcurrentJobs) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
   }
 
@@ -232,11 +279,11 @@ class DataSourceBuildProcessor {
   }
 
   getPendingJobs(): BuildJob[] {
-    return this.getAllJobs().filter(job => job.status === 'pending');
+    return this.getAllJobs().filter((job) => job.status === 'pending');
   }
 
   getRunningJobs(): BuildJob[] {
-    return this.getAllJobs().filter(job => job.status === 'running');
+    return this.getAllJobs().filter((job) => job.status === 'running');
   }
 
   clearCompletedJobs(): void {
@@ -258,7 +305,12 @@ class MockBuildStatusReporter implements BuildStatusReporter {
     });
   }
 
-  updatePhase(jobId: string, phase: BuildJob['progress']['phase'], percentage = 0, message?: string): void {
+  updatePhase(
+    jobId: string,
+    phase: BuildJob['progress']['phase'],
+    percentage = 0,
+    message?: string
+  ): void {
     this.jobs.set(jobId, { phase, percentage, message });
   }
 
@@ -271,7 +323,8 @@ class MockBuildStatusReporter implements BuildStatusReporter {
 
   failJob(jobId: string, error: Error): void {
     this.jobs.set(jobId, {
-      phase: 'fetching', percentage: 0,
+      phase: 'fetching',
+      percentage: 0,
       message: error.message,
     });
   }
@@ -356,7 +409,7 @@ describe('Build System', () => {
       const jobPromise = batchProcessor.executeBuild(config);
 
       //  status
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       const runningJobs = batchProcessor.getRunningJobs();
       expect(runningJobs.length).toBeGreaterThanOrEqual(0);
@@ -389,14 +442,12 @@ describe('Build System', () => {
         },
       ];
 
-      const jobPromises = configs.map(config =>
-        batchProcessor.executeBuild(config),
-      );
+      const jobPromises = configs.map((config) => batchProcessor.executeBuild(config));
 
       const results = await Promise.all(jobPromises);
 
       expect(results).toHaveLength(3);
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.success).toBe(true);
         expect(result.jobId).toBeDefined();
       });
@@ -440,7 +491,7 @@ describe('Build System', () => {
       for (const config of invalidConfigs) {
         await expect(
           // Cast via unknown to satisfy strict type check for intentional invalid configs
-          batchProcessor.executeBuild(config as BuildConfig),
+          batchProcessor.executeBuild(config as BuildConfig)
         ).rejects.toThrow();
       }
     });
@@ -455,9 +506,7 @@ describe('Build System', () => {
         processOptions: {
           extract: true,
           tolerance: 0.001,
-          filters: [
-            { field: 'properties.POP_EST', operator: 'gt', value: 1000000 },
-          ],
+          filters: [{ field: 'properties.POP_EST', operator: 'gt', value: 1000000 }],
         },
         saveTarget: {
           type: 'hierarchidb',
@@ -499,18 +548,20 @@ describe('Build System', () => {
     });
 
     it('should respect concurrency limits', async () => {
-      const configs = Array(5).fill(null).map((_, i) => ({
-        strategyId: 'natural-earth-shapes',
-        fetchOptions: { endpoint: `test-${i}` },
-        saveTarget: { type: 'hierarchidb' },
-      }));
+      const configs = Array(5)
+        .fill(null)
+        .map((_, i) => ({
+          strategyId: 'natural-earth-shapes',
+          fetchOptions: { endpoint: `test-${i}` },
+          saveTarget: { type: 'hierarchidb' },
+        }));
 
-      const jobPromises = configs.map(config =>
-        batchProcessor.executeBuild(config as BuildConfig),
+      const jobPromises = configs.map((config) =>
+        batchProcessor.executeBuild(config as BuildConfig)
       );
 
       //  job
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
       const runningJobs = batchProcessor.getRunningJobs();
 
       //  maxConcurrentJobs = 3
@@ -519,7 +570,7 @@ describe('Build System', () => {
       //  job
       const results = await Promise.all(jobPromises);
       expect(results).toHaveLength(5);
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.success).toBe(true);
       });
     });

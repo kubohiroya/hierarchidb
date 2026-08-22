@@ -1,13 +1,5 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type ComponentType,
-  type Dispatch,
-  type MouseEvent as ReactMouseEvent,
-  type SetStateAction,
-} from 'react';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   getCoreRowModel,
@@ -17,16 +9,24 @@ import {
   type SortingState,
   useReactTable,
 } from '@tanstack/react-table';
-import type { NodeId } from '@hierarchidb/core-types';
-import type { TreeNode } from '@hierarchidb/tree-api';
+import {
+  type ComponentType,
+  type Dispatch,
+  type MouseEvent as ReactMouseEvent,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import type { BuildSessionIndicator, TreeNodeInUI, TreeTableController } from '~/types';
 import { createTreeTableColumns } from '../internal/createTreeTableColumns.js';
-import { useTreeTableStructure } from './useTreeTableStructure.js';
 import { useTreeTableColumnWidths } from './useTreeTableColumnWidths.js';
-import { useTreeTableSelectAll } from './useTreeTableSelectAll.js';
-import { useTreeTableSelectionOverlay } from './useTreeTableSelectionOverlay.js';
 import { useTreeTableEditing } from './useTreeTableEditing.js';
 import { useTreeTableRowInteractions } from './useTreeTableRowInteractions.js';
+import { useTreeTableSelectAll } from './useTreeTableSelectAll.js';
+import { useTreeTableSelectionOverlay } from './useTreeTableSelectionOverlay.js';
+import { useTreeTableStructure } from './useTreeTableStructure.js';
 
 export interface TreeTableContextMenuState {
   anchorEl: HTMLElement | null;
@@ -159,12 +159,15 @@ export function useTreeTableCoreModel({
     columnWidthsReady,
   } = useTreeTableColumnWidths({ pageNodeId });
 
-  const handleContainerRef = useCallback((node: HTMLDivElement | null) => {
-    setContainerElement(node);
-    const parent = node?.parentElement ?? null;
-    const grandParent = parent?.parentElement ?? null;
-    setObserverTarget(grandParent ?? parent ?? null);
-  }, [setContainerElement, setObserverTarget]);
+  const handleContainerRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      setContainerElement(node);
+      const parent = node?.parentElement ?? null;
+      const grandParent = parent?.parentElement ?? null;
+      setObserverTarget(grandParent ?? parent ?? null);
+    },
+    [setContainerElement, setObserverTarget]
+  );
 
   const { selectAll, selectAllHydrated, setSelectAll } = useTreeTableSelectAll({
     pageNodeId,
@@ -183,22 +186,17 @@ export function useTreeTableCoreModel({
     handleStartEdit,
   } = useTreeTableEditing({ controller });
 
-  const {
-    visualSelectionSet,
-    allRowsSelected,
-    someSelected,
-    handleSelectAll,
-    batchSelect,
-  } = useTreeTableSelectionOverlay({
-    data: structure.data,
-    rowSelection: structure.rowSelection,
-    selectAll,
-    selectAllHydrated,
-    setSelectAll,
-    controller,
-    visibleData: structure.visibleData,
-    getDescendants: structure.getDescendants,
-  });
+  const { visualSelectionSet, allRowsSelected, someSelected, handleSelectAll, batchSelect } =
+    useTreeTableSelectionOverlay({
+      data: structure.data,
+      rowSelection: structure.rowSelection,
+      selectAll,
+      selectAllHydrated,
+      setSelectAll,
+      controller,
+      visibleData: structure.visibleData,
+      getDescendants: structure.getDescendants,
+    });
 
   const { handleRowClick, handleRowDoubleClick } = useTreeTableRowInteractions({
     controller,
@@ -257,19 +255,20 @@ export function useTreeTableCoreModel({
       const date = dateFormatter.format(target);
       return commonT('treeTable.timestamps.dateTime', { date, time });
     },
-    [commonT, languageKey],
+    [commonT, languageKey]
   );
 
   const columns = useMemo(() => {
     const draftIds = new Set(
       structure.rawData
         .filter((node) => (node as { version?: number }).version === 0)
-        .map((node) => node.id as string as NodeId),
+        .map((node) => node.id as string as NodeId)
     );
 
     const removedLabel = (commonT('treeTable.columns.removed', 'Removed') ?? 'Removed') as string;
     const nameLabel = (commonT('treeTable.columns.name', 'Name') ?? 'Name') as string;
-    const descriptionLabel = (commonT('treeTable.columns.description', 'Description') ?? 'Description') as string;
+    const descriptionLabel = (commonT('treeTable.columns.description', 'Description') ??
+      'Description') as string;
     const createdLabel = (commonT('treeTable.columns.created', 'Created') ?? 'Created') as string;
     const updatedLabel = (commonT('treeTable.columns.updated', 'Updated') ?? 'Updated') as string;
 
@@ -340,13 +339,19 @@ export function useTreeTableCoreModel({
       },
       validationMessages: {
         invalidName: commonT('treeTable.validation.invalidName', 'Invalid name'),
-        invalidDescription: commonT('treeTable.validation.invalidDescription', 'Invalid description'),
+        invalidDescription: commonT(
+          'treeTable.validation.invalidDescription',
+          'Invalid description'
+        ),
       },
       placeholders: {
-        nameEdit: commonT('treeTable.placeholders.nameConfirm', 'Press Enter to confirm / Esc to cancel'),
+        nameEdit: commonT(
+          'treeTable.placeholders.nameConfirm',
+          'Press Enter to confirm / Esc to cancel'
+        ),
         descriptionEdit: commonT(
           'treeTable.placeholders.descriptionConfirm',
-          'Press Ctrl+Enter to confirm / Esc to cancel',
+          'Press Ctrl+Enter to confirm / Esc to cancel'
         ),
       },
       emptyValue: commonT('treeTable.emptyCell', '-'),

@@ -1,14 +1,23 @@
-import type { Feature, FeatureCollection, GeoJSON, Geometry, LineString, MultiLineString, MultiPolygon, Polygon } from 'geojson';
 import area from '@turf/area';
 import bbox from '@turf/bbox';
 import bboxClip from '@turf/bbox-clip';
 import bboxPolygon from '@turf/bbox-polygon';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import booleanValid from '@turf/boolean-valid';
-import simplify from '@turf/simplify';
 import { cleanCoords } from '@turf/clean-coords';
 import { point } from '@turf/helpers';
+import simplify from '@turf/simplify';
 import unkink from '@turf/unkink-polygon';
+import type {
+  Feature,
+  FeatureCollection,
+  GeoJSON,
+  Geometry,
+  LineString,
+  MultiLineString,
+  MultiPolygon,
+  Polygon,
+} from 'geojson';
 import type { GeometryEngine } from './configTypes.js';
 
 type Bbox = [number, number, number, number];
@@ -49,7 +58,7 @@ export const geometryBboxPolygon = (bounds: Bbox): Polygon => {
 export const geometryBboxClip = (
   feature: ClipFeature,
   bounds: Bbox,
-  engine: GeometryEngine,
+  engine: GeometryEngine
 ): Feature | null => {
   void engine;
   return bboxClip(feature, bounds) as Feature | null;
@@ -58,7 +67,7 @@ export const geometryBboxClip = (
 export const geometrySimplify = <T extends GeoJSON>(
   geojson: T,
   engine: GeometryEngine,
-  options: SimplifyOptions,
+  options: SimplifyOptions
 ): T => {
   void engine;
   const simplifyOptions: Parameters<typeof simplify>[1] = {
@@ -67,8 +76,9 @@ export const geometrySimplify = <T extends GeoJSON>(
     mutate: options.mutate ?? false,
   };
   if (options.preserveTopology !== undefined) {
-    (simplifyOptions as Parameters<typeof simplify>[1] & { preserveTopology?: boolean }).preserveTopology =
-      options.preserveTopology;
+    (
+      simplifyOptions as Parameters<typeof simplify>[1] & { preserveTopology?: boolean }
+    ).preserveTopology = options.preserveTopology;
   }
   return simplify(geojson as Feature | FeatureCollection, simplifyOptions) as T;
 };
@@ -82,7 +92,7 @@ export const geometryIsValid = (geojson: GeoJSON, engine: GeometryEngine): boole
 export const geometryPointInPolygon = (
   coord: [number, number],
   polygon: PolygonLike,
-  engine: GeometryEngine,
+  engine: GeometryEngine
 ): boolean => {
   void engine;
   const pt = point(coord);
@@ -97,7 +107,7 @@ export const geometryCleanCoords = (geojson: GeoJSON): GeoJSON => {
 
 export const geometryUnkinkPolygons = (
   feature: Feature<Polygon | MultiPolygon>,
-  engine: GeometryEngine,
+  engine: GeometryEngine
 ): Polygon[] => {
   void engine;
   const unkinked = unkink(feature);

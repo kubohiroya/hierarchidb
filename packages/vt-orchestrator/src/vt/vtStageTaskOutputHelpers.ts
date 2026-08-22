@@ -1,14 +1,12 @@
 import type { Tile } from 'geojson-vt';
+import type { GeojsonVtIndex } from './buildTileLayerIndexFromFeatures.js';
 import type { InputFeatureStats, TileBBox } from './TILE_EMIT_PARENT_INPUT_SUMMARY_METADATA_KEY.js';
-import {
-  bboxIntersects,
-} from './vtStageGeometryTileUtils.js';
 import {
   countTileLineStrings,
   countTilePolygons,
   countTileVertices,
 } from './vtStageGeometryCountsUtils.js';
-import type { GeojsonVtIndex } from './buildTileLayerIndexFromFeatures.js';
+import { bboxIntersects } from './vtStageGeometryTileUtils.js';
 
 type TileLayerMap = Record<string, Tile>;
 
@@ -31,7 +29,7 @@ export const collectLayersForTileFromIndexes = (
   indexes: Map<string, GeojsonVtIndex>,
   z: number,
   x: number,
-  y: number,
+  y: number
 ): TileLayerMap | null => {
   const layers: TileLayerMap = {};
   for (const [layerName, index] of indexes.entries()) {
@@ -47,7 +45,7 @@ export const collectLayersForTileFromIndexes = (
 export const calculateInputTileStats = (
   featureStats: InputFeatureStats[],
   bufferSizes: Map<string, number>,
-  bbox: TileBBox,
+  bbox: TileBBox
 ): VtInputTileStats => {
   let featureCount = 0;
   let vertexCount = 0;

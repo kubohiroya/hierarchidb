@@ -1,12 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { parseAdminLevelValue } from '../parseAdminLevelValue';
-import { collectShapeLayerAdminLevels } from '../useShapePreviewStepUtils';
-import { parseSourceKey } from '../useShapePreviewStepUtils';
+import { collectShapeLayerAdminLevels, parseSourceKey } from '../useShapePreviewStepUtils';
 
 vi.mock('@hierarchidb/ui-map', () => ({
-  formatAdminLevelLabel: (value?: number) => (
-    typeof value === 'number' && Number.isFinite(value) ? `ADM${value}` : 'Base'
-  ),
+  formatAdminLevelLabel: (value?: number) =>
+    typeof value === 'number' && Number.isFinite(value) ? `ADM${value}` : 'Base',
 }));
 
 describe('parseAdminLevelValue', () => {
@@ -38,18 +36,11 @@ describe('parseSourceKey', () => {
 
 describe('collectShapeLayerAdminLevels', () => {
   it('filters feature levels by selected data source levels when available', () => {
-    const dataSourceMetadataRows = [
-      { adminLevel: 0 },
-      { adminLevel: 1 },
-    ];
-    const featureMetadataRows = [
-      { adminLevel: 0 },
-      { adminLevel: 1 },
-      { adminLevel: 2 },
-    ];
+    const dataSourceMetadataRows = [{ adminLevel: 0 }, { adminLevel: 1 }];
+    const featureMetadataRows = [{ adminLevel: 0 }, { adminLevel: 1 }, { adminLevel: 2 }];
     const transformErrorRows = [{ adminLevel: 'ADM2' }, { adminLevel: '2' }];
     expect(
-      collectShapeLayerAdminLevels(dataSourceMetadataRows, featureMetadataRows, transformErrorRows),
+      collectShapeLayerAdminLevels(dataSourceMetadataRows, featureMetadataRows, transformErrorRows)
     ).toEqual([0, 1]);
   });
 
@@ -61,9 +52,9 @@ describe('collectShapeLayerAdminLevels', () => {
       { adminLevel: '2' },
       { adminLevel: 'ADM1' },
     ];
-    expect(
-      collectShapeLayerAdminLevels(dataSourceMetadataRows, featureMetadataRows, []),
-    ).toEqual([0, 1, 2]);
+    expect(collectShapeLayerAdminLevels(dataSourceMetadataRows, featureMetadataRows, [])).toEqual([
+      0, 1, 2,
+    ]);
   });
 
   it('removes invalid values and sorts numerically', () => {
@@ -75,37 +66,34 @@ describe('collectShapeLayerAdminLevels', () => {
       { adminLevel: 0 },
     ];
     expect(
-      collectShapeLayerAdminLevels(dataSourceMetadataRows, featureMetadataRows, [{ adminLevel: 'admin0' }]),
+      collectShapeLayerAdminLevels(dataSourceMetadataRows, featureMetadataRows, [
+        { adminLevel: 'admin0' },
+      ])
     ).toEqual([1]);
   });
 
   it('prefers selection levels over feature metadata when data source levels are absent', () => {
     const dataSourceMetadataRows = [];
-    const featureMetadataRows = [
-      { adminLevel: 0 },
-      { adminLevel: 1 },
-      { adminLevel: 2 },
-    ];
-    const selectionMetadataRows = [
-      { adminLevel: 'ADM0' },
-      { adminLevel: '1' },
-    ];
+    const featureMetadataRows = [{ adminLevel: 0 }, { adminLevel: 1 }, { adminLevel: 2 }];
+    const selectionMetadataRows = [{ adminLevel: 'ADM0' }, { adminLevel: '1' }];
 
     expect(
-      collectShapeLayerAdminLevels(dataSourceMetadataRows, featureMetadataRows, [], selectionMetadataRows),
+      collectShapeLayerAdminLevels(
+        dataSourceMetadataRows,
+        featureMetadataRows,
+        [],
+        selectionMetadataRows
+      )
     ).toEqual([0, 1]);
   });
 
   it('uses transform errors only for levels requested by data source/selection', () => {
     const dataSourceMetadataRows = [{ adminLevel: 'ADM1' }];
-    const featureMetadataRows = [
-      { adminLevel: 0 },
-      { adminLevel: 1 },
-    ];
+    const featureMetadataRows = [{ adminLevel: 0 }, { adminLevel: 1 }];
     const transformErrorRows = [{ adminLevel: 'ADM2' }, { adminLevel: '1' }];
 
     expect(
-      collectShapeLayerAdminLevels(dataSourceMetadataRows, featureMetadataRows, transformErrorRows),
+      collectShapeLayerAdminLevels(dataSourceMetadataRows, featureMetadataRows, transformErrorRows)
     ).toEqual([1]);
   });
 });

@@ -1,7 +1,10 @@
 import type { ReactElement } from 'react';
-import type { StageProgressContentArgs, StageContentArgs } from './useShapeBuildProgressPanelControllerOverlaySections.js';
-import { BuildSessionStageProgressBar } from '~/ui/components/build-progress/ShapeBuildProgressPanel/BuildSessionStageProgressBar/BuildSessionStageProgressBar.js';
 import { BuildSessionStageCard } from '~/ui/components/build-progress/ShapeBuildProgressPanel/BuildSessionStageCard/BuildSessionStageCard.js';
+import { BuildSessionStageProgressBar } from '~/ui/components/build-progress/ShapeBuildProgressPanel/BuildSessionStageProgressBar/BuildSessionStageProgressBar.js';
+import type {
+  StageContentArgs,
+  StageProgressContentArgs,
+} from './useShapeBuildProgressPanelControllerOverlaySections.js';
 
 export const ShapeBuildProgressPanelOverlaySectionProgressContent = ({
   summary,

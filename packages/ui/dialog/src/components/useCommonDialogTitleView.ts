@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
 import { useTranslation } from '@hierarchidb/ui-i18n';
+import { useCallback, useState } from 'react';
 
 export type DialogDisplayMode = 'normal' | 'maximize' | 'full-screen';
 
@@ -37,7 +37,9 @@ export function useCommonDialogTitleView({
   };
 
   const restoreLabel = String(t('dialogs.common.displayMode.restore', 'Restore'));
-  const exitFullScreenLabel = String(t('dialogs.common.displayMode.exitFullScreen', 'Exit full screen'));
+  const exitFullScreenLabel = String(
+    t('dialogs.common.displayMode.exitFullScreen', 'Exit full screen')
+  );
   const displayModeAriaLabel = String(t('dialogs.common.displayMode.ariaLabel', 'Display mode'));
 
   const closeModeMenu = useCallback(() => {
@@ -53,7 +55,7 @@ export function useCommonDialogTitleView({
       onChangeDisplayMode?.(next);
       closeModeMenu();
     },
-    [closeModeMenu, onChangeDisplayMode],
+    [closeModeMenu, onChangeDisplayMode]
   );
 
   const toggleMaximize = useCallback(() => {
@@ -69,7 +71,8 @@ export function useCommonDialogTitleView({
     isModeMenuOpen: Boolean(modeMenuAnchor),
     showMaximizeToggle: displayMode !== 'full-screen',
     maximizeToggleLabel: displayMode === 'maximize' ? restoreLabel : displayModeLabels.maximize,
-    fullscreenToggleLabel: displayMode === 'full-screen' ? exitFullScreenLabel : displayModeLabels['full-screen'],
+    fullscreenToggleLabel:
+      displayMode === 'full-screen' ? exitFullScreenLabel : displayModeLabels['full-screen'],
     displayModeLabels,
     displayModeAriaLabel,
     openModeMenu,

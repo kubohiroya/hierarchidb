@@ -1,8 +1,7 @@
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import type { TreeChangeEvent } from '@hierarchidb/tree-api';
-import type { TreeNode } from '@hierarchidb/tree-api';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { TreeChangeEvent, TreeNode } from '@hierarchidb/tree-api';
 import { Subject } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandProcessor } from '../../CommandProcessor';
 import type { CoreDB } from '../../CoreDB';
 

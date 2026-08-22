@@ -1,8 +1,7 @@
-import type { BuildStage, BuildStatus } from '@hierarchidb/ui-build-progress';
+import type { BuildTaskSummary, TaskStage } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
+import type { BuildStage, BuildStatus } from '@hierarchidb/ui-build-progress';
 import type { PaneProgress } from '@hierarchidb/ui-lru-splitview';
-import type { BuildTaskSummary } from '@hierarchidb/build-api';
-import type { TaskStage } from '@hierarchidb/build-api';
 
 export type ShapeBuildTaskSummary = Omit<BuildTaskSummary, 'stage'> & {
   nodeId?: NodeId;
@@ -32,12 +31,15 @@ export type TaskProgressSummary = {
   totalElapsedMs: number;
   stageElapsedMs: number;
   stageRemainingMs: number | null;
-  stageTotals: Record<string, {
-    total: number;
-    completed: number;
-    failed: number;
-    skipped: number;
-  }>;
+  stageTotals: Record<
+    string,
+    {
+      total: number;
+      completed: number;
+      failed: number;
+      skipped: number;
+    }
+  >;
 };
 
 export type TaskProgressControls = {
@@ -67,11 +69,7 @@ export type TaskViewportRange = {
   total: number;
 };
 
-export type TaskListViewPhase =
-  | 'idle'
-  | 'ui-initializing'
-  | 'streaming'
-  | 'settledEmpty';
+export type TaskListViewPhase = 'idle' | 'ui-initializing' | 'streaming' | 'settledEmpty';
 
 export type ShapeBuildProgressAtomShape = {
   stages: BuildStage[];

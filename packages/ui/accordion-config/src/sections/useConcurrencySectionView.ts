@@ -51,7 +51,7 @@ export function useConcurrencySectionView({
       { value: resolvedConfig.min, label: resolvedConfig.min.toString() },
       { value: resolvedConfig.max, label: resolvedConfig.max.toString() },
     ],
-    [resolvedConfig.max, resolvedConfig.min],
+    [resolvedConfig.max, resolvedConfig.min]
   );
 
   return {

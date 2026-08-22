@@ -85,9 +85,7 @@ export async function writeVectorTileInput(
 ): Promise<void> {
   const inputFormat = options.inputFormat ?? 'geojson';
   const inputCompression = options.inputCompression ?? 'none';
-  const contentType =
-    options.contentType ??
-    resolveInputContentType(inputFormat, inputCompression);
+  const contentType = options.contentType ?? resolveInputContentType(inputFormat, inputCompression);
   const nodeId = options.nodeId ?? DEFAULT_NODE_ID;
   const payload = await compressBuffer(buffer, inputCompression);
   const storageAdapter = new DexieChunkStore<ArrayBuffer>({

@@ -27,7 +27,5 @@ export async function hasDraftInSubtree(coreDB: CoreDB, rootId: NodeId): Promise
 
   // Limit check to subtree ids
   const subtree = await collectSubtreeIds(coreDB, rootId);
-  return all.some(
-    (n) => n.draftData !== undefined && subtree.has(n.id as NodeId)
-  );
+  return all.some((n) => n.draftData !== undefined && subtree.has(n.id as NodeId));
 }

@@ -3,9 +3,7 @@ import { ROUTE_MODES, type RouteFeature } from '@hierarchidb/route-store';
 
 const generator = new RouteGenerator({ searoute: new SearouteEngine() });
 
-export async function applyIdeGsmWaypoints(
-  lines: RouteFeature[],
-): Promise<RouteFeature[]> {
+export async function applyIdeGsmWaypoints(lines: RouteFeature[]): Promise<RouteFeature[]> {
   const out: RouteFeature[] = [];
   for (const line of lines) {
     out.push(await applyWaypoints(line));

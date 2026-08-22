@@ -2,8 +2,8 @@ import { formatBytes } from '@hierarchidb/util';
 import { Box, Paper, Tooltip, Typography, useTheme } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import type React from 'react';
-import { useMemoryUsageChartData } from './useMemoryUsageChartData.js';
 import { useMemoryUsageChartCanvas } from './useMemoryUsageChartCanvas.js';
+import { useMemoryUsageChartData } from './useMemoryUsageChartData.js';
 
 interface MemoryUsageChartProps {
   /**

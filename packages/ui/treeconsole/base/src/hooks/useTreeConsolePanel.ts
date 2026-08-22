@@ -1,16 +1,26 @@
-import { useMemo } from 'react';
-import type { ReactElement } from 'react';
+import { type NodeId, type NodeType, toNodeId, toNodeType } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
+import type {
+  OpenStepOption,
+  TreeConsoleBreadcrumbProps,
+  TreeConsoleBreadcrumbRendererProps,
+} from '@hierarchidb/ui-treeconsole-breadcrumb';
+import type {
+  BuildSessionIndicator,
+  TreeNodeInUI,
+  TreeTableController,
+} from '@hierarchidb/ui-treeconsole-treetable';
+import { DualKeyMap } from '@hierarchidb/util';
 import { useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { toNodeId, toNodeType, type NodeId, type NodeType } from '@hierarchidb/core-types';
-import type { TreeNode } from '@hierarchidb/tree-api';
-import type { BuildSessionIndicator, TreeNodeInUI, TreeTableController } from '@hierarchidb/ui-treeconsole-treetable';
-import type { OpenStepOption, TreeConsoleBreadcrumbProps, TreeConsoleBreadcrumbRendererProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
-import { DualKeyMap } from '@hierarchidb/util';
+import type { ReactElement } from 'react';
+import { useMemo } from 'react';
 import type { HierarchicalTreeNode } from '~/types/index';
 
 type DefaultBreadcrumbProps = TreeConsoleBreadcrumbProps;
-type DefaultBreadcrumbNode = DefaultBreadcrumbProps['nodePath'] extends readonly (infer T)[] ? T : never;
+type DefaultBreadcrumbNode = DefaultBreadcrumbProps['nodePath'] extends readonly (infer T)[]
+  ? T
+  : never;
 
 export type PanelBreadcrumbNode = {
   treeNodeId?: string;
@@ -20,7 +30,6 @@ export type PanelBreadcrumbNode = {
   name?: string;
   parentId?: string | null;
 };
-
 
 export interface TreeConsolePanelLogicArgs {
   readonly data: readonly HierarchicalTreeNode[];
@@ -70,7 +79,6 @@ export interface TreeConsolePanelLogicArgs {
   readonly buildSessionIndicator?: BuildSessionIndicator;
   readonly leftSlot?: ReactElement;
 }
-
 
 export interface TreeConsolePanelLogicResult {
   readonly controller: TreeTableController;
@@ -153,7 +161,9 @@ export function useTreeConsolePanel({
         ...node,
         nodeType: toNodeType(node.nodeType || 'folder'),
         metadata: { ...node.metadata, name: displayName },
-        hasChildren: Boolean(node.hasChildren ?? (Array.isArray(node.children) && node.children.length > 0)),
+        hasChildren: Boolean(
+          node.hasChildren ?? (Array.isArray(node.children) && node.children.length > 0)
+        ),
         depth: normalizedDepth,
         absoluteDepth: resolvedDepth,
       };
@@ -167,7 +177,11 @@ export function useTreeConsolePanel({
 
     const tableData = data.map((node) => toTreeNodeInUI(node, 1));
 
-    const resolveEditableNode = (nodeId: string, field: 'name' | 'description', newValue: string): HierarchicalTreeNode => {
+    const resolveEditableNode = (
+      nodeId: string,
+      field: 'name' | 'description',
+      newValue: string
+    ): HierarchicalTreeNode => {
       const target = data.find((node) => node.id === nodeId);
       if (target) {
         const nextMetadata = {
@@ -245,7 +259,8 @@ export function useTreeConsolePanel({
         ? (node: TreeNodeInUI) => resolvePreviewGuardState(node as HierarchicalTreeNode)
         : undefined,
       resolveOpenSteps: resolveOpenSteps
-        ? (node: TreeNodeInUI) => resolveOpenSteps(String(node.id ?? ''), String(node.nodeType || 'folder'))
+        ? (node: TreeNodeInUI) =>
+            resolveOpenSteps(String(node.id ?? ''), String(node.nodeType || 'folder'))
         : undefined,
       onContextAction: (
         action: string,

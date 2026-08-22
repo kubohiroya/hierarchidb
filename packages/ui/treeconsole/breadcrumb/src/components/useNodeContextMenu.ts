@@ -1,9 +1,9 @@
-import { type MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useIconRegistry } from '@hierarchidb/components';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
+import { type MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { isFolderNodeType } from '~/utils/nodeTypeIconColor';
-import { buildCreateMenuItems } from './buildCreateMenuItems.js';
 import type { CreateMenuEntry } from './buildCreateMenuItems.js';
+import { buildCreateMenuItems } from './buildCreateMenuItems.js';
 import type { NodeContextMenuProps } from './NodeContextMenu';
 
 const buildableNodeTypes = new Set(['styler', 'shape', 'route']);
@@ -119,29 +119,40 @@ export function useNodeContextMenu(props: NodeContextMenuProps): UseNodeContextM
   }, [t]);
 
   const createLabel = translateWithFallback('treeConsole.contextMenu.create', 'Create');
-  const openFolderLabel = translateWithFallback('treeConsole.contextMenu.openFolder', 'Open Folder');
+  const openFolderLabel = translateWithFallback(
+    'treeConsole.contextMenu.openFolder',
+    'Open Folder'
+  );
   const openLabel = translateWithFallback('treeConsole.contextMenu.open', 'Open');
   const editLabel = translateWithFallback('treeConsole.contextMenu.edit', 'Edit');
   const copyLabel = translateWithFallback('treeConsole.contextMenu.copy', 'Copy');
   const cutLabel = translateWithFallback('treeConsole.contextMenu.cut', 'Cut');
   const duplicateLabel = translateWithFallback('treeConsole.contextMenu.duplicate', 'Duplicate');
-  const moveToArchiveLabel = translateWithFallback('treeConsole.contextMenu.moveToArchive', 'Move to Archive');
+  const moveToArchiveLabel = translateWithFallback(
+    'treeConsole.contextMenu.moveToArchive',
+    'Move to Archive'
+  );
   const importLabel = translateWithFallback('treeConsole.contextMenu.import', 'Import');
   const exportLabel = translateWithFallback('treeConsole.contextMenu.export', 'Export');
-  const allowArchive = (typeof canArchive === 'boolean' ? canArchive : undefined) ?? (canRemove ?? true);
+  const allowArchive =
+    (typeof canArchive === 'boolean' ? canArchive : undefined) ?? canRemove ?? true;
   const visibleLabel = translateWithFallback('treeConsole.contextMenu.visible', 'Visible');
   const hiddenLabel = translateWithFallback('treeConsole.contextMenu.hidden', 'Hidden');
   const previewLabel = translateWithFallback('treeConsole.contextMenu.preview', 'Preview');
   const buildLabel = translateWithFallback('treeConsole.contextMenu.build', 'Build');
 
   const effectiveVisible =
-    localInvisible !== null ? !localInvisible : (typeof isVisible === 'boolean' ? isVisible : true);
+    localInvisible !== null ? !localInvisible : typeof isVisible === 'boolean' ? isVisible : true;
   const effectiveInvisible = !effectiveVisible;
-  const canPreview = typeof canPreviewOverride === 'boolean' ? canPreviewOverride : !effectiveInvisible;
-  const normalizedNodeType = String(nodeType ?? '').trim().toLowerCase();
+  const canPreview =
+    typeof canPreviewOverride === 'boolean' ? canPreviewOverride : !effectiveInvisible;
+  const normalizedNodeType = String(nodeType ?? '')
+    .trim()
+    .toLowerCase();
   const isLocationNode = normalizedNodeType === 'location';
   const isFolderNode = isFolderNodeType(nodeType);
-  const folderBuildReadyForNode = typeof folderBuildReady === 'boolean' ? folderBuildReady : undefined;
+  const folderBuildReadyForNode =
+    typeof folderBuildReady === 'boolean' ? folderBuildReady : undefined;
   const nodeBuildRequired = typeof buildRequired === 'boolean' ? buildRequired : undefined;
   const isBuildAllowed = typeof nodeBuildRequired === 'boolean' ? nodeBuildRequired : true;
   const canBuildForNode = (() => {
@@ -210,15 +221,18 @@ export function useNodeContextMenu(props: NodeContextMenuProps): UseNodeContextM
     }
   }, []);
 
-  const openCreateSubmenu = useCallback((event: MouseEvent<HTMLElement>, children: CreateMenuEntry[]) => {
-    event.stopPropagation();
-    event.preventDefault();
-    const menuItem = event.currentTarget.closest('li');
-    if (!menuItem) return;
-    setCreateSubmenuAnchor(menuItem as HTMLElement);
-    setCreateSubmenuItems(children);
-    setCreateSubmenuOpen(true);
-  }, []);
+  const openCreateSubmenu = useCallback(
+    (event: MouseEvent<HTMLElement>, children: CreateMenuEntry[]) => {
+      event.stopPropagation();
+      event.preventDefault();
+      const menuItem = event.currentTarget.closest('li');
+      if (!menuItem) return;
+      setCreateSubmenuAnchor(menuItem as HTMLElement);
+      setCreateSubmenuItems(children);
+      setCreateSubmenuOpen(true);
+    },
+    []
+  );
 
   const handleOpenStepMenuClick = useCallback((event: MouseEvent<HTMLElement>) => {
     event.stopPropagation();
@@ -261,55 +275,70 @@ export function useNodeContextMenu(props: NodeContextMenuProps): UseNodeContextM
     [isShiftPressed]
   );
 
-  const handleOpenClick = useCallback((event?: MouseEvent<HTMLElement>) => {
-    const onOpen = propsRef.current.onOpen;
-    const openInNewTab = resolveOpenInNew(event);
-    blurActive();
-    handleMainMenuClose();
-    setTimeout(() => {
-      onOpen?.({ openInNewTab });
-    }, 0);
-  }, [blurActive, handleMainMenuClose, resolveOpenInNew]);
+  const handleOpenClick = useCallback(
+    (event?: MouseEvent<HTMLElement>) => {
+      const onOpen = propsRef.current.onOpen;
+      const openInNewTab = resolveOpenInNew(event);
+      blurActive();
+      handleMainMenuClose();
+      setTimeout(() => {
+        onOpen?.({ openInNewTab });
+      }, 0);
+    },
+    [blurActive, handleMainMenuClose, resolveOpenInNew]
+  );
 
-  const handleOpenStepClick = useCallback((step: number, event?: MouseEvent<HTMLElement>) => {
-    const onOpenStep = propsRef.current.onOpenStep;
-    const openInNewTab = resolveOpenInNew(event);
-    blurActive();
-    handleMainMenuClose();
-    setTimeout(() => {
-      onOpenStep?.(step, { openInNewTab });
-    }, 0);
-  }, [blurActive, handleMainMenuClose, resolveOpenInNew]);
+  const handleOpenStepClick = useCallback(
+    (step: number, event?: MouseEvent<HTMLElement>) => {
+      const onOpenStep = propsRef.current.onOpenStep;
+      const openInNewTab = resolveOpenInNew(event);
+      blurActive();
+      handleMainMenuClose();
+      setTimeout(() => {
+        onOpenStep?.(step, { openInNewTab });
+      }, 0);
+    },
+    [blurActive, handleMainMenuClose, resolveOpenInNew]
+  );
 
-  const handleOpenFolderClick = useCallback((event?: MouseEvent<HTMLElement>) => {
-    const onOpenFolder = propsRef.current.onOpenFolder;
-    const openInNewTab = resolveOpenInNew(event);
-    blurActive();
-    handleMainMenuClose();
-    setTimeout(() => {
-      onOpenFolder?.({ openInNewTab });
-    }, 0);
-  }, [blurActive, handleMainMenuClose, resolveOpenInNew]);
+  const handleOpenFolderClick = useCallback(
+    (event?: MouseEvent<HTMLElement>) => {
+      const onOpenFolder = propsRef.current.onOpenFolder;
+      const openInNewTab = resolveOpenInNew(event);
+      blurActive();
+      handleMainMenuClose();
+      setTimeout(() => {
+        onOpenFolder?.({ openInNewTab });
+      }, 0);
+    },
+    [blurActive, handleMainMenuClose, resolveOpenInNew]
+  );
 
-  const handleEditClick = useCallback((event?: MouseEvent<HTMLElement>) => {
-    const onEdit = propsRef.current.onEdit;
-    const openInNewTab = resolveOpenInNew(event);
-    blurActive();
-    handleMainMenuClose();
-    setTimeout(() => {
-      onEdit?.({ openInNewTab });
-    }, 0);
-  }, [blurActive, handleMainMenuClose, resolveOpenInNew]);
+  const handleEditClick = useCallback(
+    (event?: MouseEvent<HTMLElement>) => {
+      const onEdit = propsRef.current.onEdit;
+      const openInNewTab = resolveOpenInNew(event);
+      blurActive();
+      handleMainMenuClose();
+      setTimeout(() => {
+        onEdit?.({ openInNewTab });
+      }, 0);
+    },
+    [blurActive, handleMainMenuClose, resolveOpenInNew]
+  );
 
-  const handleCreateClick = useCallback((type: string, event?: MouseEvent<HTMLElement>) => {
-    const onCreate = propsRef.current.onCreate;
-    const openInNewTab = resolveOpenInNew(event);
-    blurActive();
-    handleMainMenuClose();
-    setTimeout(() => {
-      onCreate?.(type, { openInNewTab });
-    }, 0);
-  }, [blurActive, handleMainMenuClose, resolveOpenInNew]);
+  const handleCreateClick = useCallback(
+    (type: string, event?: MouseEvent<HTMLElement>) => {
+      const onCreate = propsRef.current.onCreate;
+      const openInNewTab = resolveOpenInNew(event);
+      blurActive();
+      handleMainMenuClose();
+      setTimeout(() => {
+        onCreate?.(type, { openInNewTab });
+      }, 0);
+    },
+    [blurActive, handleMainMenuClose, resolveOpenInNew]
+  );
 
   const handleDuplicateClick = useCallback(() => {
     const onDuplicate = propsRef.current.onDuplicate;
@@ -366,25 +395,31 @@ export function useNodeContextMenu(props: NodeContextMenuProps): UseNodeContextM
     }, 0);
   }, [blurActive, handleMainMenuClose]);
 
-  const handlePreviewClick = useCallback((event?: MouseEvent<HTMLElement>) => {
-    const onPreview = propsRef.current.onPreview;
-    const openInNewTab = resolveOpenInNew(event);
-    blurActive();
-    handleMainMenuClose();
-    setTimeout(() => {
-      onPreview?.({ openInNewTab });
-    }, 0);
-  }, [blurActive, handleMainMenuClose, resolveOpenInNew]);
+  const handlePreviewClick = useCallback(
+    (event?: MouseEvent<HTMLElement>) => {
+      const onPreview = propsRef.current.onPreview;
+      const openInNewTab = resolveOpenInNew(event);
+      blurActive();
+      handleMainMenuClose();
+      setTimeout(() => {
+        onPreview?.({ openInNewTab });
+      }, 0);
+    },
+    [blurActive, handleMainMenuClose, resolveOpenInNew]
+  );
 
-  const handleBuildClick = useCallback((event?: MouseEvent<HTMLElement>) => {
-    const onBuild = propsRef.current.onBuild;
-    const openInNewTab = resolveOpenInNew(event);
-    blurActive();
-    handleMainMenuClose();
-    setTimeout(() => {
-      onBuild?.({ openInNewTab });
-    }, 0);
-  }, [blurActive, handleMainMenuClose, resolveOpenInNew]);
+  const handleBuildClick = useCallback(
+    (event?: MouseEvent<HTMLElement>) => {
+      const onBuild = propsRef.current.onBuild;
+      const openInNewTab = resolveOpenInNew(event);
+      blurActive();
+      handleMainMenuClose();
+      setTimeout(() => {
+        onBuild?.({ openInNewTab });
+      }, 0);
+    },
+    [blurActive, handleMainMenuClose, resolveOpenInNew]
+  );
 
   const handleToggleVisible = useCallback(() => {
     const onToggleVisible = propsRef.current.onToggleVisible;
@@ -420,7 +455,9 @@ export function useNodeContextMenu(props: NodeContextMenuProps): UseNodeContextM
   }, [anchorEl]);
 
   const hasAnchorPosition = Boolean(anchorPosition);
-  const anchorReference: 'anchorEl' | 'anchorPosition' = hasAnchorPosition ? 'anchorPosition' : 'anchorEl';
+  const anchorReference: 'anchorEl' | 'anchorPosition' = hasAnchorPosition
+    ? 'anchorPosition'
+    : 'anchorEl';
   const resolvedAnchorPosition = hasAnchorPosition ? (anchorPosition ?? null) : null;
   const anchorForMenu = anchorReference === 'anchorEl' ? safeAnchorEl : null;
 

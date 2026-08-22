@@ -5,7 +5,7 @@ export function formatBytes(bytes: number): string {
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round(bytes / k ** i * 100) / 100 + ' ' + sizes[i];
+  return Math.round((bytes / k ** i) * 100) / 100 + ' ' + sizes[i];
 }
 
 export function formatNumber(num: number): string {
@@ -19,10 +19,11 @@ export function calculateEstimatedSize(totalSelections: number): number {
 
 export function calculateEstimatedFeatures(
   totalSelections: number,
-  countries: CountryMetadata[],
+  countries: CountryMetadata[]
 ): number {
   // Rough estimate based on population density
-  const avgPopulation = countries.reduce((sum, c) => sum + (c.population || 0), 0) / countries.length;
+  const avgPopulation =
+    countries.reduce((sum, c) => sum + (c.population || 0), 0) / countries.length;
   const featuresPerMillion = 100;
   return Math.floor(totalSelections * (avgPopulation / 1000000) * featuresPerMillion);
 }

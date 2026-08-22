@@ -1,30 +1,32 @@
 import type { BuildControlMenuItem, BuildStageFilter } from '@hierarchidb/ui-build-progress';
-import { IconButton } from '@mui/material';
 import {
   type BuildSessionProgressPanelViewModel,
   resolveBuildSessionProgressPanelSplitViewProps,
 } from '@hierarchidb/ui-build-progress';
-import type { ReactNode } from 'react';
-import { createElement } from 'react';
-import RestartAltIcon from '@mui/icons-material/RestartAlt';
-import PlaylistRemoveIcon from '@mui/icons-material/PlaylistRemove';
+import CloudOffIcon from '@mui/icons-material/CloudOff';
 import FilterAltOffIcon from '@mui/icons-material/FilterAltOff';
 import FilterListOffIcon from '@mui/icons-material/FilterListOff';
 import PhonelinkEraseIcon from '@mui/icons-material/PhonelinkErase';
-import CloudOffIcon from '@mui/icons-material/CloudOff';
+import PlaylistRemoveIcon from '@mui/icons-material/PlaylistRemove';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import { IconButton } from '@mui/material';
+import type { ReactNode } from 'react';
+import { createElement } from 'react';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
-import type { useShapeBuildProgressPanelController } from './useShapeBuildProgressPanelController.js';
 import {
   ShapeBuildProgressPanelControlRightContent,
   ShapeBuildProgressPanelStartIcon,
 } from './ShapeBuildProgressPanelViewModel.js';
+import type { useShapeBuildProgressPanelController } from './useShapeBuildProgressPanelController.js';
 
 type UseShapeBuildProgressPanelViewModelArgs = {
   coreState: ShapeBuildProgressPanelControllerResult;
   nodeId?: ShapeEntity['id'];
 };
 
-type ShapeBuildProgressPanelControllerResult = ReturnType<typeof useShapeBuildProgressPanelController>;
+type ShapeBuildProgressPanelControllerResult = ReturnType<
+  typeof useShapeBuildProgressPanelController
+>;
 
 const SHAPE_DEFAULT_STAGE_FILTER: BuildStageFilter = {
   failedMode: false,
@@ -68,7 +70,13 @@ type ShapeBuildProgressPanelViewModel = {
   controlMenuAriaLabel?: string;
   controlMenuDisabled?: boolean;
   startLoading?: boolean;
-  resetDeleteMenuItems?: Array<{ id: string; label: string; onClick: () => void; disabled?: boolean; icon?: ReactNode }>;
+  resetDeleteMenuItems?: Array<{
+    id: string;
+    label: string;
+    onClick: () => void;
+    disabled?: boolean;
+    icon?: ReactNode;
+  }>;
   resetDeleteMenuAriaLabel?: string;
   resetDeleteMenuDisabled?: boolean;
   completionDialog: ShapeBuildProgressPanelControllerResult['completionDialog'];
@@ -126,30 +134,30 @@ export const useShapeBuildProgressPanelViewModel = ({
     handleResetSessionWithSkeleton,
   } = coreState;
 
-  const stagesWithPreviewTrigger = stages.map((stage) => (
-    {
-      ...stage,
-      icon: createElement(
-        IconButton,
-        {
-          size: 'small',
-          onClick: () => toggleStagePreviewWindow(stage.id),
-          color: (stagePreviewWindowOpenMap[stage.id] ?? true) ? 'default' : 'primary',
-          sx: { cursor: stagePreviewWindowPendingMap[stage.id] ? 'wait' : 'pointer' },
-          'aria-label': `Toggle ${stage.title} preview window`,
-          'aria-pressed': (stagePreviewWindowOpenMap[stage.id] ?? true) ? 'true' : 'false',
-        },
-        stage.icon,
-      ),
-    }
-  ));
+  const stagesWithPreviewTrigger = stages.map((stage) => ({
+    ...stage,
+    icon: createElement(
+      IconButton,
+      {
+        size: 'small',
+        onClick: () => toggleStagePreviewWindow(stage.id),
+        color: (stagePreviewWindowOpenMap[stage.id] ?? true) ? 'default' : 'primary',
+        sx: { cursor: stagePreviewWindowPendingMap[stage.id] ? 'wait' : 'pointer' },
+        'aria-label': `Toggle ${stage.title} preview window`,
+        'aria-pressed': (stagePreviewWindowOpenMap[stage.id] ?? true) ? 'true' : 'false',
+      },
+      stage.icon
+    ),
+  }));
   const requestedControlAction = controls.requestedControlAction ?? 'none';
-  const pauseLabel = controls.stopRequested && requestedControlAction === 'pause'
-    ? t('stage.controls.pausing', 'Pausing...')
-    : t('stage.controls.pause', 'Pause');
-  const cancelLabel = controls.stopRequested && requestedControlAction === 'cancel'
-    ? t('stage.controls.cancelling', 'Cancelling...')
-    : t('cancel', 'Cancel');
+  const pauseLabel =
+    controls.stopRequested && requestedControlAction === 'pause'
+      ? t('stage.controls.pausing', 'Pausing...')
+      : t('stage.controls.pause', 'Pause');
+  const cancelLabel =
+    controls.stopRequested && requestedControlAction === 'cancel'
+      ? t('stage.controls.cancelling', 'Cancelling...')
+      : t('cancel', 'Cancel');
 
   return {
     status: summary.buildStatus,
@@ -160,7 +168,10 @@ export const useShapeBuildProgressPanelViewModel = ({
     paneProgress: paneProgressForDisplay,
     tasksByStageForDisplay,
     stageLoadingState,
-    ...resolveBuildSessionProgressPanelSplitViewProps({ stagesLength: stagesWithPreviewTrigger.length, splitViewPanelSize: 250 }),
+    ...resolveBuildSessionProgressPanelSplitViewProps({
+      stagesLength: stagesWithPreviewTrigger.length,
+      splitViewPanelSize: 250,
+    }),
     stageContents,
     stageProgressContent,
     stageConcurrencyIndicators,
@@ -172,9 +183,11 @@ export const useShapeBuildProgressPanelViewModel = ({
     chipPlacement: 'bottom' as const,
     suppressStatusFallback: true,
     onResume: controls.canStart ? handleStartClickWithHold : undefined,
-    onPause: controls.stopRequested ? undefined : (() => {
-      void controls.handlePause?.();
-    }),
+    onPause: controls.stopRequested
+      ? undefined
+      : () => {
+          void controls.handlePause?.();
+        },
     onCancel: () => {
       void controls.handleCancelQueued?.();
     },
@@ -187,7 +200,8 @@ export const useShapeBuildProgressPanelViewModel = ({
     pauseLabel,
     cancelLabel,
     stopRequested: controls.stopRequested ?? false,
-    startPending: !isTerminalStatus && (controls.startPending || startPendingHold || isResetSessionLoading),
+    startPending:
+      !isTerminalStatus && (controls.startPending || startPendingHold || isResetSessionLoading),
     startLoading: isStartButtonLoading,
     showResumeLabel: false,
     startLabel: t('stage.controls.start', 'Start Build'),
@@ -199,51 +213,51 @@ export const useShapeBuildProgressPanelViewModel = ({
       controlRightContent,
     }),
     resetDeleteMenuItems: [
-      { 
-        id: 'reset-session', 
-        label: t('stage.controls.resetSession', 'Reset build session'), 
-        onClick: handleResetSessionWithSkeleton, 
+      {
+        id: 'reset-session',
+        label: t('stage.controls.resetSession', 'Reset build session'),
+        onClick: handleResetSessionWithSkeleton,
         disabled: false, // Reset is always available
-        icon: createElement(RestartAltIcon, { fontSize: 'small' }) 
+        icon: createElement(RestartAltIcon, { fontSize: 'small' }),
       },
       { id: 'divider-1', label: '---', onClick: () => {}, disabled: true },
-      { 
-        id: 'delete-metadata', 
-        label: t('stage.controls.deleteMetadata', 'Delete feature metadata'), 
-        onClick: handleDeleteMetadata, 
+      {
+        id: 'delete-metadata',
+        label: t('stage.controls.deleteMetadata', 'Delete feature metadata'),
+        onClick: handleDeleteMetadata,
         disabled: !canDeleteMetadata,
-        icon: createElement(PlaylistRemoveIcon, { fontSize: 'small' }) 
+        icon: createElement(PlaylistRemoveIcon, { fontSize: 'small' }),
       },
       { id: 'divider-2', label: '---', onClick: () => {}, disabled: true },
-      { 
-        id: 'delete-api-cache', 
-        label: t('stage.controls.deleteApiCache', 'Delete API cache'), 
-        onClick: handleDeleteSourceApiCache, 
+      {
+        id: 'delete-api-cache',
+        label: t('stage.controls.deleteApiCache', 'Delete API cache'),
+        onClick: handleDeleteSourceApiCache,
         disabled: !canDeleteSourceApiCache,
-        icon: createElement(CloudOffIcon, { fontSize: 'small' }) 
+        icon: createElement(CloudOffIcon, { fontSize: 'small' }),
       },
-      { 
-        id: 'delete-filtered-cache', 
-        label: t('stage.controls.deleteFilteredCache', 'Delete filtered cache'), 
-        onClick: handleDeleteSourceFilteredCache, 
+      {
+        id: 'delete-filtered-cache',
+        label: t('stage.controls.deleteFilteredCache', 'Delete filtered cache'),
+        onClick: handleDeleteSourceFilteredCache,
         disabled: !canDeleteSourceFilteredCache,
-        icon: createElement(FilterAltOffIcon, { fontSize: 'small' }) 
+        icon: createElement(FilterAltOffIcon, { fontSize: 'small' }),
       },
       { id: 'divider-3', label: '---', onClick: () => {}, disabled: true },
-      { 
-        id: 'delete-simplified-cache', 
-        label: t('stage.controls.deleteSimplifiedCache', 'Delete simplified cache'), 
-        onClick: handleDeleteGeometryCache, 
+      {
+        id: 'delete-simplified-cache',
+        label: t('stage.controls.deleteSimplifiedCache', 'Delete simplified cache'),
+        onClick: handleDeleteGeometryCache,
         disabled: !canDeleteGeometryCache,
-        icon: createElement(FilterListOffIcon, { fontSize: 'small' }) 
+        icon: createElement(FilterListOffIcon, { fontSize: 'small' }),
       },
       { id: 'divider-4', label: '---', onClick: () => {}, disabled: true },
-      { 
-        id: 'delete-tile-emit-cache', 
-        label: t('stage.controls.deleteTileEmitCache', 'Delete tile emit cache'), 
-        onClick: handleDeleteTileEmitCache, 
+      {
+        id: 'delete-tile-emit-cache',
+        label: t('stage.controls.deleteTileEmitCache', 'Delete tile emit cache'),
+        onClick: handleDeleteTileEmitCache,
         disabled: !canDeleteTileEmitCache,
-        icon: createElement(PhonelinkEraseIcon, { fontSize: 'small' }) 
+        icon: createElement(PhonelinkEraseIcon, { fontSize: 'small' }),
       },
     ],
     resetDeleteMenuAriaLabel: t('stage.controls.resetDeleteMenu', 'Reset/Delete menu'),

@@ -1,7 +1,6 @@
 import React from 'react';
-
-import { useToneCurveEditor } from './useToneCurveEditor';
 import { formatAnchorValueLabel } from './formatAnchorValueLabel.js';
+import { useToneCurveEditor } from './useToneCurveEditor';
 
 export interface ToneCurveAnchor {
   x: number;
@@ -63,12 +62,7 @@ export interface ToneCurveOverlaySeries {
 }
 
 export function ToneCurveEditor(props: ToneCurveEditorProps): React.JSX.Element {
-  const {
-    width,
-    height,
-    className,
-    style,
-  } = props;
+  const { width, height, className, style } = props;
 
   const {
     svgRef,
@@ -103,7 +97,14 @@ export function ToneCurveEditor(props: ToneCurveEditorProps): React.JSX.Element 
   return (
     <div
       ref={wrapperRef}
-      style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 10, width, ...style }}
+      style={{
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+        width,
+        ...style,
+      }}
       className={className}
     >
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -112,7 +113,12 @@ export function ToneCurveEditor(props: ToneCurveEditorProps): React.JSX.Element 
             <button type="button" onClick={addAnchor} aria-label="Add anchor">
               +
             </button>
-            <button type="button" onClick={removeAnchor} disabled={anchors.length <= 2} aria-label="Remove anchor">
+            <button
+              type="button"
+              onClick={removeAnchor}
+              disabled={anchors.length <= 2}
+              aria-label="Remove anchor"
+            >
               -
             </button>
           </>
@@ -231,7 +237,13 @@ export function ToneCurveEditor(props: ToneCurveEditorProps): React.JSX.Element 
                 points={points}
               />
               {curvePoints.map((anchor, pointIndex) => {
-                const cursor = getAnchorCursor(pointIndex, curvePoints.length, 'overlay', overlayIndex, overlayCurve.editable);
+                const cursor = getAnchorCursor(
+                  pointIndex,
+                  curvePoints.length,
+                  'overlay',
+                  overlayIndex,
+                  overlayCurve.editable
+                );
                 return (
                   <circle
                     key={`overlay-${overlayIndex}-anchor-${String(pointIndex)}`}
@@ -241,7 +253,12 @@ export function ToneCurveEditor(props: ToneCurveEditorProps): React.JSX.Element 
                     fill={overlayCurve.anchorPointColor}
                     stroke="#fff"
                     strokeWidth={1.5}
-                    onPointerDown={handlePointPointerDown('overlay', overlayIndex, pointIndex, overlayCurve.editable)}
+                    onPointerDown={handlePointPointerDown(
+                      'overlay',
+                      overlayIndex,
+                      pointIndex,
+                      overlayCurve.editable
+                    )}
                     onPointerEnter={handlePointPointerEnter(anchor)}
                     onPointerMove={handlePointPointerMove(anchor)}
                     onPointerLeave={hideDragPointerLabel}
@@ -273,7 +290,9 @@ export function ToneCurveEditor(props: ToneCurveEditorProps): React.JSX.Element 
           {`(${formatAnchorValueLabel(dragPointerLabel.dataX)}, ${formatAnchorValueLabel(dragPointerLabel.dataY)})`}
         </div>
       )}
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#64748b' }}>
+      <div
+        style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#64748b' }}
+      >
         <span>{`x: [${normalizedXRange.min}, ${normalizedXRange.max}]`}</span>
         <span>{`y: [${normalizedYRange.min}, ${normalizedYRange.max}]`}</span>
       </div>

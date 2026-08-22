@@ -1,16 +1,8 @@
-import {
-  Alert,
-  Grid,
-  Typography,
-  Stack,
-  TextField,
-} from '@mui/material';
-import { Link as LinkIcon } from '@mui/icons-material';
 import { BuildConfigSectionTitle } from '@hierarchidb/ui-accordion-config';
 import { useTranslation } from '@hierarchidb/ui-i18n';
-import type {
-  ShapeBuildConfig,
-} from '~/common/types/index';
+import { Link as LinkIcon } from '@mui/icons-material';
+import { Alert, Grid, Stack, TextField, Typography } from '@mui/material';
+import type { ShapeBuildConfig } from '~/common/types/index';
 import { useUrlBuildConfigRulesSection } from './useUrlBuildConfigRulesSection.js';
 
 type Props = {
@@ -21,7 +13,10 @@ type Props = {
 
 export const UrlBuildConfigRulesSection: React.FC<Props> = ({ config, onChange, disabled }) => {
   const { t } = useTranslation('shape-plugin');
-  const { text, error, handleBlur, handleChange } = useUrlBuildConfigRulesSection({ config, onChange });
+  const { text, error, handleBlur, handleChange } = useUrlBuildConfigRulesSection({
+    config,
+    onChange,
+  });
 
   return (
     <Stack spacing={1.5} sx={{ opacity: disabled ? 0.6 : 1 }}>
@@ -63,19 +58,15 @@ export const UrlBuildConfigRulesSection: React.FC<Props> = ({ config, onChange, 
 [
   { "key": "default", "matchType": "default", "buildConfig": { "geometryConfig": { "toleranceByBand": [0.12, 0.11, 0.1, 0.09, 0.08] } } },
   { "key": "russia-coast", "matchType": "regexp", "pattern": "(?i).*russia.*", "buildConfig": { "geometryConfig": { "toleranceByBand": [0.3, 0.25, 0.2, 0.18, 0.16] } }
-]`,
+]`
             )}
           </Alert>
         </Grid>
       </Grid>
-      <Typography
-        variant="body2"
-        color="text.secondary"
-        sx={{ whiteSpace: 'pre-wrap' }}
-      >
+      <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>
         {t(
           'processing.urlRules.description',
-          'Define per-URL overrides in JSON. This JSON is evaluated in order and each entry applies to matching URLs.',
+          'Define per-URL overrides in JSON. This JSON is evaluated in order and each entry applies to matching URLs.'
         )}
       </Typography>
     </Stack>

@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
 import type { FeatureCollection } from 'geojson';
+import { useEffect, useRef } from 'react';
 import type { MapLibreMapInstance } from '~/types/maplibre-public';
 import { normalizePaintLiteralArrays } from '~/utils/maplibre-style-utils';
 import type { ResourceGeoJsonLayer } from './ResourceLayerMap.types.js';
@@ -67,7 +67,9 @@ export const useGeoJsonLayerSync = ({
     });
 
     sourceData.forEach((data, sourceId) => {
-      const source = map.getSource(sourceId) as { setData?: (data: FeatureCollection) => void } | undefined;
+      const source = map.getSource(sourceId) as
+        | { setData?: (data: FeatureCollection) => void }
+        | undefined;
       if (source?.setData) {
         source.setData(data);
         return;
@@ -90,7 +92,7 @@ export const useGeoJsonLayerSync = ({
             layout: layer.layout ?? {},
             ...(layer.filter ? { filter: layer.filter } : {}),
           },
-          layer.beforeId,
+          layer.beforeId
         );
         return;
       }
@@ -110,18 +112,21 @@ export const useGeoJsonLayerSync = ({
     geoJsonSourceIdsRef.current = nextSourceIds;
   }, [mapInstance, orderedGeoJsonLayers]);
 
-  useEffect(() => () => {
-    const map = mapInstance as LayerMap | null;
-    if (!map) return;
-    if (isSetLike(geoJsonLayerIdsRef.current)) {
-      geoJsonLayerIdsRef.current.forEach((layerId) => {
-        if (map.getLayer(layerId)) map.removeLayer(layerId);
-      });
-    }
-    if (isSetLike(geoJsonSourceIdsRef.current)) {
-      geoJsonSourceIdsRef.current.forEach((sourceId) => {
-        if (map.getSource(sourceId)) map.removeSource(sourceId);
-      });
-    }
-  }, [mapInstance]);
+  useEffect(
+    () => () => {
+      const map = mapInstance as LayerMap | null;
+      if (!map) return;
+      if (isSetLike(geoJsonLayerIdsRef.current)) {
+        geoJsonLayerIdsRef.current.forEach((layerId) => {
+          if (map.getLayer(layerId)) map.removeLayer(layerId);
+        });
+      }
+      if (isSetLike(geoJsonSourceIdsRef.current)) {
+        geoJsonSourceIdsRef.current.forEach((sourceId) => {
+          if (map.getSource(sourceId)) map.removeSource(sourceId);
+        });
+      }
+    },
+    [mapInstance]
+  );
 };

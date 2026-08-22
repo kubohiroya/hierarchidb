@@ -6,7 +6,7 @@ const buildPropertyExpression = (keys: string[]) =>
 export const buildCategoryFilter = (
   enabledValues: string[],
   knownValues: string[],
-  propertyKeys: string[],
+  propertyKeys: string[]
 ): MapLibreFilter | null => {
   if (enabledValues.length === 0) return null;
   if (enabledValues.length === knownValues.length) return null;
@@ -18,7 +18,10 @@ export const buildCategoryFilter = (
   ] as MapLibreFilter;
 };
 
-export const mergeFilters = (base?: MapLibreFilter, next?: MapLibreFilter | null): MapLibreFilter | undefined => {
+export const mergeFilters = (
+  base?: MapLibreFilter,
+  next?: MapLibreFilter | null
+): MapLibreFilter | undefined => {
   if (!base) return next ?? undefined;
   if (!next) return base;
   return ['all', base, next] as MapLibreFilter;

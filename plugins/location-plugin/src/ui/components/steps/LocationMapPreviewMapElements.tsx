@@ -1,6 +1,6 @@
-import type { ReactElement } from 'react';
-import { Box, Typography } from '@mui/material';
 import type { SvgIconComponent } from '@mui/icons-material';
+import { Box, Typography } from '@mui/material';
+import type { ReactElement } from 'react';
 import type { LocationType } from '~/common/types/index';
 
 export type LocationMapPreviewIconProps = {
@@ -8,9 +8,10 @@ export type LocationMapPreviewIconProps = {
   color: string;
 };
 
-export const LocationMapPreviewIcon = ({ Icon, color }: LocationMapPreviewIconProps): ReactElement => (
-  <Icon htmlColor={color} />
-);
+export const LocationMapPreviewIcon = ({
+  Icon,
+  color,
+}: LocationMapPreviewIconProps): ReactElement => <Icon htmlColor={color} />;
 
 export type LocationPreviewHoverMatch = {
   id: string;

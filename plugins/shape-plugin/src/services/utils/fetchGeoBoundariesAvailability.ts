@@ -1,10 +1,10 @@
+import type { NodeId } from '@hierarchidb/core-types';
 import {
   buildShapeCacheKey,
   createShapeChunkStore,
   jsonDeserializer,
   jsonSerializer,
 } from './chunkStore.js';
-import type { NodeId } from '@hierarchidb/core-types';
 
 const parseAdminLevel = (value: unknown): number | null => {
   if (typeof value === 'number' && Number.isInteger(value)) return value;
@@ -32,7 +32,7 @@ export type GeoBoundariesAvailability = {
 
 export async function fetchGeoBoundariesAvailability(
   nodeId: NodeId,
-  url: string,
+  url: string
 ): Promise<GeoBoundariesAvailability> {
   const store = createShapeChunkStore(jsonSerializer, jsonDeserializer);
   const entry = await store.getOrFetchForNode(nodeId, url, {
@@ -56,19 +56,17 @@ export async function fetchGeoBoundariesAvailability(
       'countryCode',
       'countryISO',
     ]);
-    const boundaryType = readFirstString(record, [
-      'boundaryType',
-      'boundaryLevel',
-      'adm',
-      'ADM',
-    ]);
+    const boundaryType = readFirstString(record, ['boundaryType', 'boundaryLevel', 'adm', 'ADM']);
     if (!iso3 || !boundaryType) continue;
     const parsed = parseAdminLevel(boundaryType);
     if (parsed === null) continue;
     const key = iso3.toUpperCase();
     const existing = entries.get(key) ?? [];
     if (!existing.includes(parsed)) {
-      entries.set(key, [...existing, parsed].sort((a, b) => a - b));
+      entries.set(
+        key,
+        [...existing, parsed].sort((a, b) => a - b)
+      );
     }
   }
   return { entries, totalItems: items.length };

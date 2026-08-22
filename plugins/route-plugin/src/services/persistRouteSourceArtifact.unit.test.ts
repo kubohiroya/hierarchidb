@@ -36,7 +36,11 @@ describe('persistRouteSourceArtifact', () => {
       generationMethod: 'direct',
       identity,
       generationResult: {
-        lineGeometry: [[139, 35], [139.5, 35.5], [140, 36]],
+        lineGeometry: [
+          [139, 35],
+          [139.5, 35.5],
+          [140, 36],
+        ],
         distance: 150_000,
         duration: 3_600,
       },
@@ -71,23 +75,29 @@ describe('persistRouteSourceArtifact', () => {
     expect(decoded.features).toHaveLength(1);
     expect(decoded.features?.[0]?.geometry).toEqual({
       type: 'LineString',
-      coordinates: [[139, 35], [139.5, 35.5], [140, 36]],
+      coordinates: [
+        [139, 35],
+        [139.5, 35.5],
+        [140, 36],
+      ],
     });
   });
 
   it('rejects an invalid generator result without persisting an artifact', async () => {
-    await expect(persistRouteSourceArtifact({
-      nodeId,
-      routeMode: ROUTE_MODES.ROAD,
-      generationMethod: 'direct',
-      identity,
-      generationResult: {
-        lineGeometry: [],
-        distance: 0,
-      },
-      generationTimeMs: 1,
-      store,
-    })).rejects.toThrow('lineGeometry must contain at least two coordinates');
+    await expect(
+      persistRouteSourceArtifact({
+        nodeId,
+        routeMode: ROUTE_MODES.ROAD,
+        generationMethod: 'direct',
+        identity,
+        generationResult: {
+          lineGeometry: [],
+          distance: 0,
+        },
+        generationTimeMs: 1,
+        store,
+      })
+    ).rejects.toThrow('lineGeometry must contain at least two coordinates');
 
     await expect(store.sourceCache.count()).resolves.toBe(0);
     await expect(store.sourceCacheMeta.count()).resolves.toBe(0);

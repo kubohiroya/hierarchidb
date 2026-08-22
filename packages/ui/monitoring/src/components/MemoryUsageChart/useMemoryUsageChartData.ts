@@ -50,7 +50,9 @@ export function useMemoryUsageChartData({
           }
         }
       } else if ('memory' in performance) {
-        const memory = (performance as { memory: { jsHeapSizeLimit?: number; usedJSHeapSize?: number } }).memory;
+        const memory = (
+          performance as { memory: { jsHeapSizeLimit?: number; usedJSHeapSize?: number } }
+        ).memory;
         used = memory.usedJSHeapSize || 0;
         total = memory.jsHeapSizeLimit || maxMemory;
       } else {

@@ -54,7 +54,7 @@ export function useCacheSectionView({
     (checked: boolean) => {
       onDeleteOnCompleteChange(checked);
     },
-    [onDeleteOnCompleteChange],
+    [onDeleteOnCompleteChange]
   );
 
   return {

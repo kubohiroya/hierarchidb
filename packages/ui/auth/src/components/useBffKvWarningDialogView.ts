@@ -1,10 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '@hierarchidb/ui-i18n';
-import {
-  BFF_WARNING_EVENT,
-  type BffWarning,
-  isBffWarning,
-} from '~/services/BffWarning';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { BFF_WARNING_EVENT, type BffWarning, isBffWarning } from '~/services/BffWarning';
 
 const buildDetailKey = (operation: BffWarning['operation']): string =>
   `auth.kvFallback.detail.${operation}`;

@@ -1,17 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type {
-  ShapeBuildConfig,
-  ShapeBuildUrlRule,
-  ShapeUrlMatchType,
-} from '~/common/types/index';
+import type { ShapeBuildConfig, ShapeBuildUrlRule, ShapeUrlMatchType } from '~/common/types/index';
 
 const VALID_MATCH_TYPES = new Set<ShapeUrlMatchType>(['default', 'regexp', 'prefix']);
 
-const serializeRules = (rules?: ShapeBuildUrlRule[]): string => (
-  rules && rules.length > 0
-    ? JSON.stringify(rules, null, 2)
-    : ''
-);
+const serializeRules = (rules?: ShapeBuildUrlRule[]): string =>
+  rules && rules.length > 0 ? JSON.stringify(rules, null, 2) : '';
 
 const parseRules = (raw: string): { value?: ShapeBuildUrlRule[]; error?: string } => {
   const trimmed = raw.trim();
@@ -51,7 +44,10 @@ const parseRules = (raw: string): { value?: ShapeBuildUrlRule[]; error?: string 
     }
 
     const buildConfig = record.buildConfig;
-    if (buildConfig !== undefined && (typeof buildConfig !== 'object' || buildConfig === null || Array.isArray(buildConfig))) {
+    if (
+      buildConfig !== undefined &&
+      (typeof buildConfig !== 'object' || buildConfig === null || Array.isArray(buildConfig))
+    ) {
       return { error: `Rule ${index + 1}: buildConfig must be an object.` };
     }
 
@@ -73,7 +69,7 @@ type Args = {
 export const useUrlBuildConfigRulesSection = ({ config, onChange }: Args) => {
   const normalized = useMemo(
     () => serializeRules(config.urlBuildConfigRules),
-    [config.urlBuildConfigRules],
+    [config.urlBuildConfigRules]
   );
   const [text, setText] = useState(normalized);
   const [error, setError] = useState('');
@@ -83,12 +79,15 @@ export const useUrlBuildConfigRulesSection = ({ config, onChange }: Args) => {
     setError('');
   }, [normalized]);
 
-  const applyRules = useCallback((nextRules?: ShapeBuildUrlRule[]) => {
-    onChange((prevConfig) => ({
-      ...prevConfig,
-      urlBuildConfigRules: nextRules,
-    }));
-  }, [onChange]);
+  const applyRules = useCallback(
+    (nextRules?: ShapeBuildUrlRule[]) => {
+      onChange((prevConfig) => ({
+        ...prevConfig,
+        urlBuildConfigRules: nextRules,
+      }));
+    },
+    [onChange]
+  );
 
   const handleBlur = useCallback(() => {
     const { value, error: nextError } = parseRules(text);
@@ -100,18 +99,21 @@ export const useUrlBuildConfigRulesSection = ({ config, onChange }: Args) => {
     applyRules(value);
   }, [applyRules, text]);
 
-  const flushPendingRules = useCallback((options?: { emitError: boolean }) => {
-    const emitError = options?.emitError ?? true;
-    const { value, error: nextError } = parseRules(text);
-    if (nextError) {
-      if (emitError) {
-        setError((prev) => (prev || nextError));
+  const flushPendingRules = useCallback(
+    (options?: { emitError: boolean }) => {
+      const emitError = options?.emitError ?? true;
+      const { value, error: nextError } = parseRules(text);
+      if (nextError) {
+        if (emitError) {
+          setError((prev) => prev || nextError);
+        }
+        return;
       }
-      return;
-    }
-    setError('');
-    applyRules(value);
-  }, [applyRules, text]);
+      setError('');
+      applyRules(value);
+    },
+    [applyRules, text]
+  );
 
   useEffect(() => {
     return () => {
@@ -119,12 +121,15 @@ export const useUrlBuildConfigRulesSection = ({ config, onChange }: Args) => {
     };
   }, [flushPendingRules]);
 
-  const handleChange = useCallback((nextText: string) => {
-    setText(nextText);
-    if (error) {
-      setError('');
-    }
-  }, [error]);
+  const handleChange = useCallback(
+    (nextText: string) => {
+      setText(nextText);
+      if (error) {
+        setError('');
+      }
+    },
+    [error]
+  );
 
   return {
     error,

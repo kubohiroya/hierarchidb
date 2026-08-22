@@ -18,7 +18,10 @@ function matchOp(value: unknown, op: ColumnFilter['op'], target: unknown): boole
     case 'neq':
       return value !== target;
     case 'contains':
-      return typeof value === 'string' && String(value).toLowerCase().includes(String(target).toLowerCase());
+      return (
+        typeof value === 'string' &&
+        String(value).toLowerCase().includes(String(target).toLowerCase())
+      );
     case 'gt':
       return toNumber(value) > toNumber(target);
     case 'gte':
@@ -35,9 +38,8 @@ function matchOp(value: unknown, op: ColumnFilter['op'], target: unknown): boole
 export class TabularQueryService {
   constructor(
     private readonly pluginId: string,
-    private readonly rowStoreDbName: string,
-  ) {
-  }
+    private readonly rowStoreDbName: string
+  ) {}
 
   async query(tableId: string, filters: ColumnFilter[], limit = 1000): Promise<unknown[]> {
     const db = getRowStoreDB(this.rowStoreDbName);
@@ -66,8 +68,11 @@ export class TabularQueryService {
       }
       const rowIds = [...(acc || new Set<number>())].slice(0, limit);
       if (rowIds.length > 0) {
-        return await new TabularIndexer(this.pluginId, this.rowStoreDbName)
-          .getRowsByIds(tableId, rowIds, limit);
+        return await new TabularIndexer(this.pluginId, this.rowStoreDbName).getRowsByIds(
+          tableId,
+          rowIds,
+          limit
+        );
       }
     }
 

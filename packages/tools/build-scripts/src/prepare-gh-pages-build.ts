@@ -4,12 +4,13 @@
  * Invocation: run via `pnpm --filter @hierarchidb/tools-stage-scripts run prepare-gh-pages-stage` after `pnpm -C app stage`.
  * Output: Writes `.nojekyll`, updates `dist/index.html`, and maintains `dist/404.html` in `app/dist`.
  */
-import { access, readFile, unlink, writeFile } from 'node:fs/promises';
+
 import { constants as fsConstants } from 'node:fs';
+import { access, readFile, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { loadEnv } from 'vite';
-import process from 'node:process';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, '..', '..', '..', '..');

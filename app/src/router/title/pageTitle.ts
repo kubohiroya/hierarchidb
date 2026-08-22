@@ -1,12 +1,12 @@
-import { useEffect, useMemo } from 'react';
 import type { TreeNode } from '@hierarchidb/tree-api';
+import { useEffect, useMemo } from 'react';
 import { loadAppConfig } from '~/loadAppConfig';
-import { treeRouteIds } from '~/router/routes/tree/treeRouteIds';
 import type {
+  LoadNodeActionReturn,
   LoadPageNodeReturn,
   LoadTargetNodeReturn,
-  LoadNodeActionReturn,
 } from '~/router/loaders/treeLoaders';
+import { treeRouteIds } from '~/router/routes/tree/treeRouteIds';
 
 export type AppTitleOptions = {
   appNameOnly?: boolean;
@@ -53,7 +53,9 @@ export const formatAppTitle = (
 
 export const resolveNodeDisplayName = (node?: TreeNode | null): string | null => {
   if (!node) return null;
-  const draftName = safeTrim((node as { draftMetadata?: { name?: string } | null }).draftMetadata?.name);
+  const draftName = safeTrim(
+    (node as { draftMetadata?: { name?: string } | null }).draftMetadata?.name
+  );
   if (draftName) return draftName;
   const metadataName = safeTrim(node.metadata?.name);
   return metadataName;

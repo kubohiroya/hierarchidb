@@ -3,9 +3,15 @@ import type { Tile } from 'geojson-vt';
 import type { VTStageContext } from '~/contextTypes';
 import type { BandConfig } from '~/types/types';
 import { buildLayerIndexes } from './buildLayerIndexes.js';
-import { collectLayerForTile } from './vtStageTaskLayerBuilderHelpers.js';
-import { logLayerIndexBuildDone, logLayerIndexBuildStart } from './vtStageTaskLayerBuilderHelpers.js';
-import { collectTileLayersToMap, mergeAggregatedLayerMaps } from './vtStageTaskLayerBuilderTileAggregation.js';
+import {
+  collectLayerForTile,
+  logLayerIndexBuildDone,
+  logLayerIndexBuildStart,
+} from './vtStageTaskLayerBuilderHelpers.js';
+import {
+  collectTileLayersToMap,
+  mergeAggregatedLayerMaps,
+} from './vtStageTaskLayerBuilderTileAggregation.js';
 import type { TaskLayerContext } from './vtStageTaskLayerBuilderTypes.js';
 
 export const buildLayersWithMultipleLayers = async ({
@@ -58,7 +64,14 @@ export const buildLayersWithMultipleLayers = async ({
       assertNotAborted,
       abortSignal: context.abortSignal,
       collectLayersForTile: (z, x, y) => {
-        const tile = collectLayerForTile(layerIndex, layerName, z, x, y, tileEmitConfigBoundaryDedupe);
+        const tile = collectLayerForTile(
+          layerIndex,
+          layerName,
+          z,
+          x,
+          y,
+          tileEmitConfigBoundaryDedupe
+        );
         return tile ? { [layerName]: tile } : null;
       },
     });

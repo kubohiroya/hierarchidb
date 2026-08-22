@@ -1,13 +1,13 @@
-import { describe, it, expect } from 'vitest';
-import { getSessionWithDetails } from '../sessionHelpers.js';
+import type { NodeId } from '@hierarchidb/core-types';
+import { describe, expect, it } from 'vitest';
 import type {
-  BuildSessionRecord,
   BuildSessionHeartbeat,
+  BuildSessionRecord,
   BuildSessionStatus,
   BuildStageStatus,
   EphemeralBuildTaskRecord,
 } from '../EphemeralDBRecordTypes.js';
-import type { NodeId } from '@hierarchidb/core-types';
+import { getSessionWithDetails } from '../sessionHelpers.js';
 
 describe('getSessionWithDetails', () => {
   const mockNodeId = 'test-node-id' as NodeId;
@@ -40,33 +40,39 @@ describe('getSessionWithDetails', () => {
   });
 
   it('should reject an orphan heartbeat without required session rows', async () => {
-    await expect(getSessionWithDetails(mockNodeId, {
-      getConfig: async () => undefined,
-      getHeartbeat: async () => ({
-        nodeId: mockNodeId,
-        lastHeartbeatAt: 1_000,
-      }),
-      getStatus: async () => undefined,
-      getStageStatuses: async () => [],
-      getTasks: async () => [],
-    })).rejects.toThrow('normalized session has orphan rows');
+    await expect(
+      getSessionWithDetails(mockNodeId, {
+        getConfig: async () => undefined,
+        getHeartbeat: async () => ({
+          nodeId: mockNodeId,
+          lastHeartbeatAt: 1_000,
+        }),
+        getStatus: async () => undefined,
+        getStageStatuses: async () => [],
+        getTasks: async () => [],
+      })
+    ).rejects.toThrow('normalized session has orphan rows');
   });
 
   it('should reject an orphan stage without required session rows', async () => {
-    await expect(getSessionWithDetails(mockNodeId, {
-      getConfig: async () => undefined,
-      getHeartbeat: async () => undefined,
-      getStatus: async () => undefined,
-      getStageStatuses: async () => [{
-        id: `${mockNodeId}:source`,
-        nodeId: mockNodeId,
-        stage: 'source',
-        status: 'running',
-        startedAt: 1_000,
-        inactiveMs: 0,
-      }],
-      getTasks: async () => [],
-    })).rejects.toThrow('normalized session has orphan rows');
+    await expect(
+      getSessionWithDetails(mockNodeId, {
+        getConfig: async () => undefined,
+        getHeartbeat: async () => undefined,
+        getStatus: async () => undefined,
+        getStageStatuses: async () => [
+          {
+            id: `${mockNodeId}:source`,
+            nodeId: mockNodeId,
+            stage: 'source',
+            status: 'running',
+            startedAt: 1_000,
+            inactiveMs: 0,
+          },
+        ],
+        getTasks: async () => [],
+      })
+    ).rejects.toThrow('normalized session has orphan rows');
   });
 
   it('should reject a normalized session with a missing status row', async () => {
@@ -118,8 +124,20 @@ describe('getSessionWithDetails', () => {
       },
       stages: {
         source: { status: 'queued', progress: 0, tasksTotal: 0, tasksCompleted: 0, tasksFailed: 0 },
-        geometry: { status: 'queued', progress: 0, tasksTotal: 0, tasksCompleted: 0, tasksFailed: 0 },
-        tileEmit: { status: 'queued', progress: 0, tasksTotal: 0, tasksCompleted: 0, tasksFailed: 0 },
+        geometry: {
+          status: 'queued',
+          progress: 0,
+          tasksTotal: 0,
+          tasksCompleted: 0,
+          tasksFailed: 0,
+        },
+        tileEmit: {
+          status: 'queued',
+          progress: 0,
+          tasksTotal: 0,
+          tasksCompleted: 0,
+          tasksFailed: 0,
+        },
       },
       selectedArrayByCountries: undefined,
       selectedArrayVersion: undefined,
@@ -187,10 +205,38 @@ describe('getSessionWithDetails', () => {
     ];
 
     const tasks: EphemeralBuildTaskRecord[] = [
-      { taskId: '1', nodeId: mockNodeId, status: 'completed', index: 0, stage: 'source', progress: 100 },
-      { taskId: '2', nodeId: mockNodeId, status: 'completed', index: 1, stage: 'source', progress: 100 },
-      { taskId: '3', nodeId: mockNodeId, status: 'running', index: 2, stage: 'geometry', progress: 50 },
-      { taskId: '4', nodeId: mockNodeId, status: 'queued', index: 3, stage: 'geometry', progress: 0 },
+      {
+        taskId: '1',
+        nodeId: mockNodeId,
+        status: 'completed',
+        index: 0,
+        stage: 'source',
+        progress: 100,
+      },
+      {
+        taskId: '2',
+        nodeId: mockNodeId,
+        status: 'completed',
+        index: 1,
+        stage: 'source',
+        progress: 100,
+      },
+      {
+        taskId: '3',
+        nodeId: mockNodeId,
+        status: 'running',
+        index: 2,
+        stage: 'geometry',
+        progress: 50,
+      },
+      {
+        taskId: '4',
+        nodeId: mockNodeId,
+        status: 'queued',
+        index: 3,
+        stage: 'geometry',
+        progress: 0,
+      },
     ];
 
     const result = await getSessionWithDetails(mockNodeId, {
@@ -263,11 +309,46 @@ describe('getSessionWithDetails', () => {
     };
 
     const tasks: EphemeralBuildTaskRecord[] = [
-      { taskId: '1', nodeId: mockNodeId, status: 'completed', index: 0, stage: 'source', progress: 100 },
-      { taskId: '2', nodeId: mockNodeId, status: 'completed', index: 1, stage: 'source', progress: 100 },
-      { taskId: '3', nodeId: mockNodeId, status: 'failed', index: 2, stage: 'geometry', progress: 0 },
-      { taskId: '4', nodeId: mockNodeId, status: 'running', index: 3, stage: 'geometry', progress: 50 },
-      { taskId: '5', nodeId: mockNodeId, status: 'queued', index: 4, stage: 'tileEmit', progress: 0 },
+      {
+        taskId: '1',
+        nodeId: mockNodeId,
+        status: 'completed',
+        index: 0,
+        stage: 'source',
+        progress: 100,
+      },
+      {
+        taskId: '2',
+        nodeId: mockNodeId,
+        status: 'completed',
+        index: 1,
+        stage: 'source',
+        progress: 100,
+      },
+      {
+        taskId: '3',
+        nodeId: mockNodeId,
+        status: 'failed',
+        index: 2,
+        stage: 'geometry',
+        progress: 0,
+      },
+      {
+        taskId: '4',
+        nodeId: mockNodeId,
+        status: 'running',
+        index: 3,
+        stage: 'geometry',
+        progress: 50,
+      },
+      {
+        taskId: '5',
+        nodeId: mockNodeId,
+        status: 'queued',
+        index: 4,
+        stage: 'tileEmit',
+        progress: 0,
+      },
     ];
 
     const result = await getSessionWithDetails(mockNodeId, {
@@ -298,11 +379,46 @@ describe('getSessionWithDetails', () => {
     };
 
     const tasks: EphemeralBuildTaskRecord[] = [
-      { taskId: '1', nodeId: mockNodeId, status: 'completed', index: 0, stage: 'source', progress: 100 },
-      { taskId: '2', nodeId: mockNodeId, status: 'completed', index: 1, stage: 'source', progress: 100 },
-      { taskId: '3', nodeId: mockNodeId, status: 'running', index: 2, stage: 'geometry', progress: 50 },
-      { taskId: '4', nodeId: mockNodeId, status: 'queued', index: 3, stage: 'geometry', progress: 0 },
-      { taskId: '5', nodeId: mockNodeId, status: 'queued', index: 4, stage: 'tileEmit', progress: 0 },
+      {
+        taskId: '1',
+        nodeId: mockNodeId,
+        status: 'completed',
+        index: 0,
+        stage: 'source',
+        progress: 100,
+      },
+      {
+        taskId: '2',
+        nodeId: mockNodeId,
+        status: 'completed',
+        index: 1,
+        stage: 'source',
+        progress: 100,
+      },
+      {
+        taskId: '3',
+        nodeId: mockNodeId,
+        status: 'running',
+        index: 2,
+        stage: 'geometry',
+        progress: 50,
+      },
+      {
+        taskId: '4',
+        nodeId: mockNodeId,
+        status: 'queued',
+        index: 3,
+        stage: 'geometry',
+        progress: 0,
+      },
+      {
+        taskId: '5',
+        nodeId: mockNodeId,
+        status: 'queued',
+        index: 4,
+        stage: 'tileEmit',
+        progress: 0,
+      },
     ];
 
     const result = await getSessionWithDetails(mockNodeId, {
@@ -417,13 +533,15 @@ describe('getSessionWithDetails', () => {
       },
     ];
 
-    await expect(getSessionWithDetails(mockNodeId, {
-      getConfig: async () => config,
-      getHeartbeat: async () => undefined,
-      getStatus: async () => status,
-      getStageStatuses: async () => stageStatuses,
-      getTasks: async () => [],
-    })).rejects.toThrow('normalized session has ambiguous current stage');
+    await expect(
+      getSessionWithDetails(mockNodeId, {
+        getConfig: async () => config,
+        getHeartbeat: async () => undefined,
+        getStatus: async () => status,
+        getStageStatuses: async () => stageStatuses,
+        getTasks: async () => [],
+      })
+    ).rejects.toThrow('normalized session has ambiguous current stage');
   });
 
   it('should handle stage with failed tasks', async () => {
@@ -440,7 +558,14 @@ describe('getSessionWithDetails', () => {
     };
 
     const tasks: EphemeralBuildTaskRecord[] = [
-      { taskId: '1', nodeId: mockNodeId, status: 'completed', index: 0, stage: 'source', progress: 100 },
+      {
+        taskId: '1',
+        nodeId: mockNodeId,
+        status: 'completed',
+        index: 0,
+        stage: 'source',
+        progress: 100,
+      },
       { taskId: '2', nodeId: mockNodeId, status: 'failed', index: 1, stage: 'source', progress: 0 },
       { taskId: '3', nodeId: mockNodeId, status: 'failed', index: 2, stage: 'source', progress: 0 },
     ];

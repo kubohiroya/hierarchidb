@@ -1,6 +1,6 @@
-import type { ComponentType, ReactElement, ReactNode } from 'react';
 import type { HeadlessDialogProps } from '@hierarchidb/ui-dialog';
 import { PluginDialogContent } from '@hierarchidb/ui-dialog';
+import type { ComponentType, ReactElement, ReactNode } from 'react';
 import type { ConflictDialogProps } from './components/DialogScaffold.js';
 import { ConflictDialog } from './components/DialogScaffold.js';
 

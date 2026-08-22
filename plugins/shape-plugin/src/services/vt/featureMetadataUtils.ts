@@ -1,5 +1,5 @@
+import { type GeometryEngine, geometryArea, geometryBbox } from '@hierarchidb/gis-sdk';
 import type { Feature, Geometry } from 'geojson';
-import { geometryArea, geometryBbox, type GeometryEngine } from '@hierarchidb/gis-sdk';
 
 const geojsonTextEncoder = new TextEncoder();
 
@@ -36,17 +36,17 @@ const countPolygonsFromGeometry = (geometry?: Geometry | null): number => {
 
 const safeBbox = (
   feature: Feature<Geometry>,
-  geometryEngine: GeometryEngine,
+  geometryEngine: GeometryEngine
 ): [number, number, number, number] | null => {
   try {
     const result = geometryBbox(feature, geometryEngine);
     if (!Array.isArray(result) || result.length !== 4) return null;
     const [minLon, minLat, maxLon, maxLat] = result;
     if (
-      minLon === undefined
-      || minLat === undefined
-      || maxLon === undefined
-      || maxLat === undefined
+      minLon === undefined ||
+      minLat === undefined ||
+      maxLon === undefined ||
+      maxLat === undefined
     ) {
       return null;
     }
@@ -77,10 +77,7 @@ const toPropString = (value: unknown): string | undefined => {
   return undefined;
 };
 
-const pickFromProps = (
-  properties: Record<string, unknown>,
-  keys: string[],
-): string | undefined => {
+const pickFromProps = (properties: Record<string, unknown>, keys: string[]): string | undefined => {
   for (const key of keys) {
     const value = toPropString(properties[key]);
     if (value) return value;
@@ -90,7 +87,7 @@ const pickFromProps = (
 
 const parseAdminLevel = (
   properties: Record<string, unknown>,
-  fallback?: number,
+  fallback?: number
 ): number | undefined => {
   const candidates = [
     properties.adminLevel,
@@ -134,7 +131,12 @@ export const resolveAdminHierarchyFields = (params: {
   adminLevel?: number;
 }): AdminHierarchyFields => {
   const resolvedAdminLevel = parseAdminLevel(params.properties, params.adminLevel);
-  const genericAdminName = pickFromProps(params.properties, ['adminName', 'name', 'NAME', 'shapeName']);
+  const genericAdminName = pickFromProps(params.properties, [
+    'adminName',
+    'name',
+    'NAME',
+    'shapeName',
+  ]);
   const genericAdminCode = pickFromProps(params.properties, ['adminCode', 'code', 'shapeID']);
 
   let admin0Code = pickFromProps(params.properties, [
@@ -157,12 +159,7 @@ export const resolveAdminHierarchyFields = (params: {
     'ADM1_NAME',
     'admin1',
   ]);
-  let admin1Code = pickFromProps(params.properties, [
-    'admin1Code',
-    'GID_1',
-    'ADM1_CODE',
-    'HASC_1',
-  ]);
+  let admin1Code = pickFromProps(params.properties, ['admin1Code', 'GID_1', 'ADM1_CODE', 'HASC_1']);
   let admin2Name = pickFromProps(params.properties, [
     'admin2Name',
     'NAME_2',
@@ -170,12 +167,7 @@ export const resolveAdminHierarchyFields = (params: {
     'ADM2_NAME',
     'admin2',
   ]);
-  let admin2Code = pickFromProps(params.properties, [
-    'admin2Code',
-    'GID_2',
-    'ADM2_CODE',
-    'HASC_2',
-  ]);
+  let admin2Code = pickFromProps(params.properties, ['admin2Code', 'GID_2', 'ADM2_CODE', 'HASC_2']);
 
   if (!admin0Code) {
     admin0Code = normalizeCountryCode(params.countryCode);
@@ -201,9 +193,8 @@ export const resolveAdminHierarchyFields = (params: {
 
 export const measureFeatureGeoJsonByteSize = (feature: Feature): number => {
   try {
-    const text = JSON.stringify(
-      feature,
-      (_key, value) => (typeof value === 'bigint' ? value.toString() : value),
+    const text = JSON.stringify(feature, (_key, value) =>
+      typeof value === 'bigint' ? value.toString() : value
     );
     return geojsonTextEncoder.encode(text).byteLength;
   } catch {
@@ -214,7 +205,7 @@ export const measureFeatureGeoJsonByteSize = (feature: Feature): number => {
 export const buildFeatureId = (
   feature: Feature,
   index: number,
-  metadata: { countryCode?: string; adminLevel?: number; adminCode?: string },
+  metadata: { countryCode?: string; adminLevel?: number; adminCode?: string }
 ): string => {
   const normalizeFeatureId = (value: unknown): string => {
     if (typeof value === 'string') return value;
@@ -228,7 +219,7 @@ export const buildFeatureId = (
   }
   const rawBaseId = properties.id ?? feature.id ?? index;
   const baseId = normalizeFeatureId(rawBaseId).trim();
-  const fallbackBaseId = baseId.length > 0 ? baseId : metadata.adminCode ?? `feature-${index}`;
+  const fallbackBaseId = baseId.length > 0 ? baseId : (metadata.adminCode ?? `feature-${index}`);
   const prefixParts = [
     metadata.countryCode,
     metadata.adminLevel != null ? `ADM${metadata.adminLevel}` : undefined,
@@ -239,7 +230,10 @@ export const buildFeatureId = (
   return `${composed}:${index}`;
 };
 
-export const extractGeometryStats = (feature: Feature, geometryEngine: GeometryEngine): {
+export const extractGeometryStats = (
+  feature: Feature,
+  geometryEngine: GeometryEngine
+): {
   vertexCount: number;
   polygonCount: number;
   bbox?: [number, number, number, number];

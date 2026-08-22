@@ -1,8 +1,8 @@
-import { createContext, useContext, type PropsWithChildren } from 'react';
 import {
   type TabSessionCoordinator,
   type TabSessionCoordinatorOptions,
 } from '@hierarchidb/session-coordinator';
+import { createContext, type PropsWithChildren, useContext } from 'react';
 import { useTabSessionCoordinatorProviderView } from './useTabSessionCoordinatorProviderView.js';
 
 type TabSessionCoordinatorProviderProps = PropsWithChildren<{
@@ -11,7 +11,10 @@ type TabSessionCoordinatorProviderProps = PropsWithChildren<{
 
 const TabSessionCoordinatorContext = createContext<TabSessionCoordinator | null>(null);
 
-export const TabSessionCoordinatorProvider = ({ children, options }: TabSessionCoordinatorProviderProps) => {
+export const TabSessionCoordinatorProvider = ({
+  children,
+  options,
+}: TabSessionCoordinatorProviderProps) => {
   const { coordinator } = useTabSessionCoordinatorProviderView({ options });
   return (
     <TabSessionCoordinatorContext.Provider value={coordinator}>

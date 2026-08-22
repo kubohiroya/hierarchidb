@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
+import type { TreeNodeData, TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type { PrimitiveAtom } from 'jotai';
 import { atom } from 'jotai';
 import { createStore } from 'jotai/vanilla';
-import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
-import type { TreeNodeData, TreeNodeMetadata } from '@hierarchidb/tree-api';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { UseTreeNodeUpdaterOptions } from './useTreeNodeUpdater.js';
 import { useTreeNodeUpdater } from './useTreeNodeUpdater.js';
 
@@ -56,10 +56,8 @@ export type UseSingleSourceDialogAtomOptions<TEntity extends PeerEntity<TreeNode
  * to avoid redundant updates and render loops.
  */
 export function useSingleSourceDialogAtom<
-  TEntity extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>
->(
-  options: UseSingleSourceDialogAtomOptions<TEntity>
-): SingleSourceDialogAtomResult<TEntity> {
+  TEntity extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>,
+>(options: UseSingleSourceDialogAtomOptions<TEntity>): SingleSourceDialogAtomResult<TEntity> {
   const {
     treeNodeUpdater,
     hasUnsavedChanges,
@@ -101,21 +99,26 @@ export function useSingleSourceDialogAtom<
     if (!treeNodeUpdater) return;
     if (draftAtomRef.current) {
       const prev = store.get(draftAtomRef.current);
-      const next = (treeNodeUpdater.draftData ?? ({} as DraftShape<TEntity>)) as DraftShape<TEntity>;
+      const next = (treeNodeUpdater.draftData ??
+        ({} as DraftShape<TEntity>)) as DraftShape<TEntity>;
       if (!shallowEqual(prev, next)) {
         store.set(draftAtomRef.current, next);
       }
     }
     if (metadataAtomRef.current) {
       const prev = store.get(metadataAtomRef.current);
-      const next =
-        (treeNodeUpdater.draftMetadata ??
-          ({ name: '', description: '', tags: [] } as TreeNodeMetadata)) as TreeNodeMetadata;
+      const next = (treeNodeUpdater.draftMetadata ??
+        ({ name: '', description: '', tags: [] } as TreeNodeMetadata)) as TreeNodeMetadata;
       if (!shallowEqual(prev, next)) {
         store.set(metadataAtomRef.current, next);
       }
     }
-  }, [store, treeNodeUpdater?.draftData, treeNodeUpdater?.draftMetadata, treeNodeUpdater?.treeNodeId]);
+  }, [
+    store,
+    treeNodeUpdater?.draftData,
+    treeNodeUpdater?.draftMetadata,
+    treeNodeUpdater?.treeNodeId,
+  ]);
 
   const setDraft = useCallback(
     (updater: (prev: DraftShape<TEntity>) => DraftShape<TEntity>) => {

@@ -7,20 +7,29 @@
  */
 
 import { DialogSafeMenu, getDialogSurfaceColor } from '@hierarchidb/ui-dialog';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import CheckIcon from '@mui/icons-material/Check';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ConstructionIcon from '@mui/icons-material/Construction';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import OpenInNewOffIcon from '@mui/icons-material/OpenInNewOff';
 import type { ButtonProps } from '@mui/material';
-import { Box, Button, CircularProgress, ListItemIcon, ListItemText, MenuItem, Stack, Tooltip } from '@mui/material';
+import {
+  Box,
+  Button,
+  CircularProgress,
+  ListItemIcon,
+  ListItemText,
+  MenuItem,
+  Stack,
+  Tooltip,
+} from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 import { useLocation } from '@tanstack/react-router';
 import React, { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { DialogActionInFlight } from '~/headless/types';
 import { usePluginDialogFooterLogic } from './hooks/usePluginDialogFooterLogic.js';
 
@@ -118,7 +127,6 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
     setFooterVisible(false);
   }, [isFullScreen]);
 
-
   const handleInlineSave = useCallback(() => {
     ctx.onRequestCommit?.();
   }, [ctx]);
@@ -180,8 +188,7 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
     pendingAction?.type,
   ]);
 
-  const zIndex = useCallback((theme: Theme) => (theme.zIndex?.modal ?? 1300) + 2, [
-  ]);
+  const zIndex = useCallback((theme: Theme) => (theme.zIndex?.modal ?? 1300) + 2, []);
 
   const leftPrimaryLabel =
     primaryButtonOptions?.leftLabelOverride ??
@@ -394,7 +401,10 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
                     endIcon={<CheckIcon fontSize="small" />}
                     id="dialog-footer-save-draft-button"
                     role="button"
-                    aria-label={(saveDraftLabel ?? t(`${i18nBasePath}.buttons.saveDraft`, 'Save Draft')) || undefined}
+                    aria-label={
+                      (saveDraftLabel ?? t(`${i18nBasePath}.buttons.saveDraft`, 'Save Draft')) ||
+                      undefined
+                    }
                   >
                     {saveDraftLabel ?? t(`${i18nBasePath}.buttons.saveDraft`, 'Save Draft')}
                   </LoadingButton>
@@ -425,12 +435,14 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
                 endIcon={<ConstructionIcon fontSize="small" />}
                 id="dialog-footer-start-build-button"
                 role="button"
-                aria-label={(isStartingBuild 
-                  ? t(`${i18nBasePath}.buttons.building`, 'Building…') 
-                  : t(`${i18nBasePath}.buttons.build`, 'Build')) || undefined}
+                aria-label={
+                  (isStartingBuild
+                    ? t(`${i18nBasePath}.buttons.building`, 'Building…')
+                    : t(`${i18nBasePath}.buttons.build`, 'Build')) || undefined
+                }
               >
-                {isStartingBuild 
-                  ? t(`${i18nBasePath}.buttons.building`, 'Building…') 
+                {isStartingBuild
+                  ? t(`${i18nBasePath}.buttons.building`, 'Building…')
                   : t(`${i18nBasePath}.buttons.build`, 'Build')}
               </LoadingButton>
             )}
@@ -509,19 +521,25 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
           <ListItemIcon>
             <OpenInNewIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>{t(`${i18nBasePath}.contextMenu.openInNewTab`, 'Open In New Tab')}</ListItemText>
+          <ListItemText>
+            {t(`${i18nBasePath}.contextMenu.openInNewTab`, 'Open In New Tab')}
+          </ListItemText>
         </MenuItem>
         <MenuItem onClick={openInNewWindow}>
           <ListItemIcon>
             <OpenInNewOffIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>{t(`${i18nBasePath}.contextMenu.openInNewWindow`, 'Open In New Window')}</ListItemText>
+          <ListItemText>
+            {t(`${i18nBasePath}.contextMenu.openInNewWindow`, 'Open In New Window')}
+          </ListItemText>
         </MenuItem>
         <MenuItem onClick={copyLinkUrl}>
           <ListItemIcon>
             <ContentCopyIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>{t(`${i18nBasePath}.contextMenu.copyLinkUrl`, 'Copy Link URL')}</ListItemText>
+          <ListItemText>
+            {t(`${i18nBasePath}.contextMenu.copyLinkUrl`, 'Copy Link URL')}
+          </ListItemText>
         </MenuItem>
       </DialogSafeMenu>
     </>

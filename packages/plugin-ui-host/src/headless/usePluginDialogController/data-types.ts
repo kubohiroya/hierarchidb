@@ -13,7 +13,7 @@ export interface TreeNodeUpdaterPayload<
 }
 
 export interface TreeNodeUpdaterPatch<
-  T extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>
+  T extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>,
 > {
   draftMetadata?: TreeNodeMetadata | null;
   draftData?: Partial<T>;
@@ -39,9 +39,7 @@ export interface StepCompositionResult<
   dialogData: Partial<T>;
 }
 
-export interface StepAdapterProps<
-  T extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>
-> {
+export interface StepAdapterProps<T extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>> {
   cfg: import('@hierarchidb/plugin-base').PluginStepConfig<Partial<T>, DialogUiState>;
   mode: 'create' | 'edit';
   nodeId: string;

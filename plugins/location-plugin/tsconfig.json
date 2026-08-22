@@ -7,10 +7,7 @@
     "experimentalDecorators": true,
     "baseUrl": "."
   },
-  "include": [
-    "../../global.d.ts",
-    "src/**/*"
-  ],
+  "include": ["../../global.d.ts", "src/**/*"],
   "exclude": [
     "node_modules",
     "dist",

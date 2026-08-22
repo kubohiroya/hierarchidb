@@ -1,5 +1,5 @@
-import type { ManifestSummary, PluginSpecifierMode } from './types.js';
 import { hasExportPath } from './entry-resolver.js';
+import type { ManifestSummary, PluginSpecifierMode } from './types.js';
 
 export function validateEntryPaths(summaries: ManifestSummary[], mode: PluginSpecifierMode): void {
   const issues: string[] = [];
@@ -35,23 +35,33 @@ export function validateEntryPaths(summaries: ManifestSummary[], mode: PluginSpe
         issues.push(`${summary.nodeType}: UI entry exists but package export "ui" is missing.`);
       }
       if (hasWorkerEntry && !workerExported) {
-        issues.push(`${summary.nodeType}: worker entry exists but package export "worker" is missing.`);
+        issues.push(
+          `${summary.nodeType}: worker entry exists but package export "worker" is missing.`
+        );
       }
       if (hasDatabaseEntry && !databaseExported) {
-        issues.push(`${summary.nodeType}: database entry exists but package export "database" is missing.`);
+        issues.push(
+          `${summary.nodeType}: database entry exists but package export "database" is missing.`
+        );
       }
       if (hasCommonEntry && !commonExported) {
-        issues.push(`${summary.nodeType}: common entry exists but package export "common" is missing.`);
+        issues.push(
+          `${summary.nodeType}: common entry exists but package export "common" is missing.`
+        );
       }
 
       const iconSpecifier = summary.iconComponent?.specifier ?? '';
       if (iconSpecifier.startsWith(summary.packageName) && !hasExportPath(exportPaths, 'icon')) {
-        issues.push(`${summary.nodeType}: icon specifier points into package but export "icon" is missing.`);
+        issues.push(
+          `${summary.nodeType}: icon specifier points into package but export "icon" is missing.`
+        );
       }
     }
   }
 
   if (issues.length > 0) {
-    console.warn(`[generate-plugin-registry] Entry path validation warnings:\n- ${issues.join('\n- ')}`);
+    console.warn(
+      `[generate-plugin-registry] Entry path validation warnings:\n- ${issues.join('\n- ')}`
+    );
   }
 }

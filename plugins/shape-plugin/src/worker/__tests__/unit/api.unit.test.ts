@@ -2,23 +2,22 @@
  * Worker API implementation tests
  */
 
-import { describe, expect, it } from 'vitest';
 import type { NodeId } from '@hierarchidb/core-types';
+import { describe, expect, it } from 'vitest';
 import type { ShapeBuildConfig, ShapeProcessingConfig } from '../../../common/types/index';
 import {
+  applyBuildConfigPatch,
   DEFAULT_BUILD_CONFIG,
   DEFAULT_PROCESSING_CONFIG,
-  applyBuildConfigPatch,
   mergeProcessingConfig,
 } from '../../../common/types/index';
 import { shapeBuildAPI } from '../../api';
 
-const createBuildConfig = (
-  overrides: Partial<ShapeBuildConfig> = {},
-): ShapeBuildConfig => applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, overrides);
+const createBuildConfig = (overrides: Partial<ShapeBuildConfig> = {}): ShapeBuildConfig =>
+  applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, overrides);
 
 const createProcessingConfig = (
-  overrides: Partial<ShapeProcessingConfig> = {},
+  overrides: Partial<ShapeProcessingConfig> = {}
 ): ShapeProcessingConfig => mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG, overrides);
 
 describe('Shape Plugin API', () => {
@@ -98,7 +97,7 @@ describe('Shape Plugin API', () => {
       const result = await shapeBuildAPI.validateSelection(manyCountries, [0], 'naturalearth');
 
       expect(result.warnings).toContain(
-        'Large country selection may require significant processing time',
+        'Large country selection may require significant processing time'
       );
     });
   });
@@ -115,7 +114,7 @@ describe('Shape Plugin API', () => {
       });
 
       await expect(
-        shapeBuildAPI.startBuildSession(draftId, buildConfig, processingConfig, []),
+        shapeBuildAPI.startBuildSession(draftId, buildConfig, processingConfig, [])
       ).rejects.toThrow('Invalid processing config');
     });
   });

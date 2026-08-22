@@ -1,12 +1,16 @@
 import type { BuildStatus } from '@hierarchidb/ui-build-progress/build-status';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 import {
   isTaskPhaseDisplay,
   isTaskPhaseMessage,
   resolveTaskMetadataMessage,
 } from '~/common/utils/taskMessageUtils';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
 
-export type TranslateFn = (key: string, fallback?: string, options?: Record<string, unknown>) => string;
+export type TranslateFn = (
+  key: string,
+  fallback?: string,
+  options?: Record<string, unknown>
+) => string;
 
 const resolveTaskTextMessage = (task: ShapeBuildTaskSummary): string => {
   return resolveTaskMetadataMessage(task.metadata)?.trim() ?? '';
@@ -14,17 +18,17 @@ const resolveTaskTextMessage = (task: ShapeBuildTaskSummary): string => {
 
 export const isGenericFailureMessage = (
   message: string | null | undefined,
-  display?: ShapeBuildTaskSummary['display'],
+  display?: ShapeBuildTaskSummary['display']
 ): boolean => {
   if (!message) {
     return true;
   }
   const normalized = message.toLowerCase();
   return (
-    normalized === 'failed'
-    || normalized === 'stage task failed'
-    || isTaskPhaseMessage(message)
-    || isTaskPhaseDisplay(display)
+    normalized === 'failed' ||
+    normalized === 'stage task failed' ||
+    isTaskPhaseMessage(message) ||
+    isTaskPhaseDisplay(display)
   );
 };
 
@@ -41,7 +45,7 @@ export const resolveFailureMessage = (task: ShapeBuildTaskSummary): string | nul
 export const resolveCompletedStatusText = (
   buildStatus: BuildStatus,
   taskLabel: string | undefined,
-  t: TranslateFn,
+  t: TranslateFn
 ): string => {
   if (buildStatus === 'failed') {
     const candidate = taskLabel?.trim();

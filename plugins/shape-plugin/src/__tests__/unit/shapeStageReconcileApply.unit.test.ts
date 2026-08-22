@@ -1,8 +1,8 @@
 import 'fake-indexeddb/auto';
-import { afterEach, describe, expect, it } from 'vitest';
 import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import { listTasksByStage, putTasks, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
+import { afterEach, describe, expect, it } from 'vitest';
 import { applyStageTaskReconcile } from '../../services/vt/shapeStageReconcile';
 import { ShapeTaskCacheIdentityContractError } from '../../services/vt/shapeTaskCacheIdentity';
 
@@ -16,7 +16,7 @@ const NODE_ID = 'shape-stage-reconcile-apply-node' as NodeId;
 
 const buildTask = (
   taskId: string,
-  overrides?: Partial<TestTaskInput>,
+  overrides?: Partial<TestTaskInput>
 ): TaskQueueRecord<TestTaskInput, unknown> => ({
   taskId,
   nodeId: NODE_ID,
@@ -117,7 +117,7 @@ describe('applyStageTaskReconcile', () => {
         stage: 'source',
         desiredTasks: [buildTask('invalid')],
         resumeExistingTasks: false,
-      }),
+      })
     ).rejects.toThrowError(ShapeTaskCacheIdentityContractError);
 
     expect(await listTasksByStage(taskQueue, NODE_ID, 'source')).toEqual([]);
@@ -134,7 +134,7 @@ describe('applyStageTaskReconcile', () => {
         stage: 'source',
         desiredTasks: [buildTask('replacement', { cacheKey: 'k:1', inputHash: 'h:1' })],
         resumeExistingTasks: true,
-      }),
+      })
     ).rejects.toThrowError(ShapeTaskCacheIdentityContractError);
 
     const stored = await listTasksByStage(taskQueue, NODE_ID, 'source');

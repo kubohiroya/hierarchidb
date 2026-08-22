@@ -3,14 +3,14 @@
  * API
  */
 
-import type { WorkerAPI } from '@hierarchidb/worker-api';
 // Observable/Subscription types
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { OnNameConflict, TreeChangeEvent, TreeNode } from '@hierarchidb/tree-api';
+import type { NodeContextMenuProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { DualKeyMap } from '@hierarchidb/util';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { RowSelectionState } from '@tanstack/react-table';
 import type { ReactNode } from 'react';
-import type { NodeContextMenuProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
 
 /**
  */

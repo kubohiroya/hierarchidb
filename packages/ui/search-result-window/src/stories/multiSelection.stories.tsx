@@ -1,6 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Provider } from 'jotai';
-import { useState } from 'react';
+import type { NodeId } from '@hierarchidb/core-types';
 import {
   Box,
   Button,
@@ -14,9 +12,11 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Provider } from 'jotai';
+import { useState } from 'react';
 import { useMultiSelection } from '~/hooks/useMultiSelection';
 import type { SearchResult } from '~/types/index';
-import type { NodeId } from '@hierarchidb/core-types';
 
 const meta: Meta = {
   title: 'SearchResult/useMultiSelection',
@@ -136,7 +136,7 @@ function MultiSelectionDemo() {
 
       <Stack spacing={3}>
         {/*
-*/}
+         */}
         <Paper sx={{ p: 2 }}>
           <Typography variant="h6" gutterBottom>
             Selection Status
@@ -152,7 +152,7 @@ function MultiSelectionDemo() {
         </Paper>
 
         {/*
-*/}
+         */}
         <Paper sx={{ p: 2 }}>
           <Typography variant="h6" gutterBottom>
             Actions
@@ -182,7 +182,7 @@ function MultiSelectionDemo() {
         </Paper>
 
         {/*
-*/}
+         */}
         <Paper>
           <Typography variant="h6" sx={{ p: 2, pb: 0 }}>
             Search Results (Interactive)
@@ -229,7 +229,7 @@ function MultiSelectionDemo() {
         </Paper>
 
         {/*
-*/}
+         */}
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
           <Paper sx={{ flex: 1, p: 2 }}>
             <Typography variant="h6" gutterBottom>
@@ -275,7 +275,7 @@ function MultiSelectionDemo() {
         </Stack>
 
         {/*
-*/}
+         */}
         <Paper sx={{ p: 2 }}>
           <Typography variant="h6" gutterBottom>
             Selected Items Detail
@@ -322,13 +322,12 @@ function LargeDataDemo() {
     displayColumns: ['name', 'index'],
   }));
 
-  const { selectedResults, handleResultSelect, selectAll, clearSelection } =
-    useMultiSelection({
-      results: largeResults,
-      onSelectionChange: (selectedItems) => {
-        console.log(`Selection changed: ${selectedItems.length} items`);
-      },
-    });
+  const { selectedResults, handleResultSelect, selectAll, clearSelection } = useMultiSelection({
+    results: largeResults,
+    onSelectionChange: (selectedItems) => {
+      console.log(`Selection changed: ${selectedItems.length} items`);
+    },
+  });
 
   return (
     <Box sx={{ p: 3 }}>

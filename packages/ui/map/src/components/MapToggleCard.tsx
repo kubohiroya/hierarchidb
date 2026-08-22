@@ -1,5 +1,5 @@
-import type React from 'react';
 import { Box, Paper, Stack, ToggleButton, Typography } from '@mui/material';
+import type React from 'react';
 
 export type MapToggleOption = {
   id: string;
@@ -20,11 +20,9 @@ export const MapToggleCard: React.FC<{
 }> = ({ title, helperText, options, selection, onToggle, columns }) => (
   <Paper variant="outlined" sx={{ p: 1.5 }}>
     <Stack spacing={1}>
-      {(title || helperText) ? (
+      {title || helperText ? (
         <Box>
-          {title ? (
-            <Typography variant="subtitle2">{title}</Typography>
-          ) : null}
+          {title ? <Typography variant="subtitle2">{title}</Typography> : null}
           {helperText ? (
             <Typography variant="caption" color="text.secondary">
               {helperText}
@@ -32,7 +30,15 @@ export const MapToggleCard: React.FC<{
           ) : null}
         </Box>
       ) : null}
-      <Box sx={{ display: 'grid', gridTemplateColumns: columns ? `repeat(${columns}, minmax(72px, 1fr))` : 'repeat(auto-fit, minmax(72px, 1fr))', gap: 1 }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: columns
+            ? `repeat(${columns}, minmax(72px, 1fr))`
+            : 'repeat(auto-fit, minmax(72px, 1fr))',
+          gap: 1,
+        }}
+      >
         {options.map((option) => (
           <ToggleButton
             key={option.id}

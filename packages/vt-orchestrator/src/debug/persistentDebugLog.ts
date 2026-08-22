@@ -1,5 +1,5 @@
-import { Dexie, type Table } from 'dexie';
 import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
+import { Dexie, type Table } from 'dexie';
 
 export type PersistentDebugLogLevel = 'log' | 'warn' | 'error';
 
@@ -35,9 +35,7 @@ const isIndexedDbAvailable = (): boolean => typeof indexedDB !== 'undefined';
 const getDebugLogDb = (): DebugLogDB | null => {
   if (!isIndexedDbAvailable()) return null;
   if (!debugLogDb) {
-    debugLogDb = new DebugLogDB(
-      getDBName(getBuildDatabasePrefix(), 'debug-log')
-    );
+    debugLogDb = new DebugLogDB(getDBName(getBuildDatabasePrefix(), 'debug-log'));
   }
   return debugLogDb;
 };
@@ -85,7 +83,7 @@ export const persistDebugLog = async (
   level: PersistentDebugLogLevel,
   tag: string,
   message: string,
-  data?: unknown,
+  data?: unknown
 ): Promise<void> => {
   const db = getDebugLogDb();
   if (!db) return;
@@ -104,7 +102,7 @@ export const logDebug = (
   level: PersistentDebugLogLevel,
   tag: string,
   message: string,
-  data?: unknown,
+  data?: unknown
 ): void => {
   const formatted = `[${tag}][TaskDebug] ${message}`;
   if (level === 'error') {

@@ -1,4 +1,5 @@
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   Box,
   FormControl,
@@ -11,7 +12,6 @@ import {
 } from '@mui/material';
 import type React from 'react';
 import { useEffect, useMemo } from 'react';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 import type {
   MapLibreStyleProperty,
   StylerStepData,
@@ -202,8 +202,7 @@ export const StylerTargetStep: React.FC<
     const needsValueType = !mapping.valueType;
     const needsStyleType = !mapping.styleType;
     const needsOptionId = !mapping.targetOptionId;
-    const needsMappingMode =
-      mapping.valueType === 'number' ? !mapping.mappingMode : false;
+    const needsMappingMode = mapping.valueType === 'number' ? !mapping.mappingMode : false;
 
     if (!needsValueType && !needsStyleType && !needsOptionId && !needsMappingMode) return;
 

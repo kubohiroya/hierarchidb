@@ -137,7 +137,10 @@ export function TreeTableCore({
     ));
 
   return (
-    <StyledTableContainer ref={handleContainerRef} sx={{ height: viewHeight || '100%', width: '100%' }}>
+    <StyledTableContainer
+      ref={handleContainerRef}
+      sx={{ height: viewHeight || '100%', width: '100%' }}
+    >
       <StyledTable>
         {columnWidthsReady ? (
           <>

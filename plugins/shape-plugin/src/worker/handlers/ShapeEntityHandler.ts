@@ -1,5 +1,5 @@
 export {
-  ShapeEntityService as ShapeEntityHandler,
   type CreateShapeData,
+  ShapeEntityService as ShapeEntityHandler,
   type ShapeFilterCriteria,
 } from './ShapeEntityService.js';

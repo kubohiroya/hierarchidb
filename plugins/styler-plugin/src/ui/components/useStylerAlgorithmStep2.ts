@@ -1,7 +1,7 @@
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useTheme } from '@mui/material/styles';
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   type ColorAlgorithm,
   MAPLIBRE_PROPERTY_METADATA,
@@ -18,7 +18,7 @@ import { useStylerMappingState } from './useStylerMappingState.ts';
 type StylerAlgorithmStep2Params = Pick<
   PluginStepProps<StylerStepData>,
   'data' | 'onChange' | 'setValid' | 'setError'
->
+>;
 
 export const useStylerAlgorithmStep2 = ({
   data,
@@ -28,9 +28,7 @@ export const useStylerAlgorithmStep2 = ({
 }: StylerAlgorithmStep2Params) => {
   const { t } = useTranslation('styler-plugin');
   const theme = useTheme();
-  const {
-    pluginData,
-  } = useStylerMappingState({
+  const { pluginData } = useStylerMappingState({
     data,
     onChange,
     setValid,

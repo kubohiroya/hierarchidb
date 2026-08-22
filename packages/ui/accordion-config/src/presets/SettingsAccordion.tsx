@@ -1,7 +1,7 @@
-import React from 'react';
-import { StyledAccordion, type StyledAccordionProps } from '~/components/StyledAccordion';
 import { Restore, Save, Settings } from '@mui/icons-material';
 import { Box, IconButton, Tooltip } from '@mui/material';
+import React from 'react';
+import { StyledAccordion, type StyledAccordionProps } from '~/components/StyledAccordion';
 import { useSettingsAccordionView } from './useSettingsAccordionView.js';
 
 export interface SettingsAccordionProps extends Omit<StyledAccordionProps, 'headerActions'> {
@@ -26,16 +26,16 @@ export interface SettingsAccordionProps extends Omit<StyledAccordionProps, 'head
  * Includes save/reset actions and change indicators
  */
 export const SettingsAccordion: React.FC<SettingsAccordionProps> = ({
-                                                                      showSettingsIcon = true,
-                                                                      hasChanges = false,
-                                                                      onSave,
-                                                                      onReset,
-                                                                      customActions,
-                                                                      saveTooltip = 'Save changes',
-                                                                      resetTooltip = 'Reset to defaults',
-                                                                      icon,
-                                                                      ...accordionProps
-                                                                    }) => {
+  showSettingsIcon = true,
+  hasChanges = false,
+  onSave,
+  onReset,
+  customActions,
+  saveTooltip = 'Save changes',
+  resetTooltip = 'Reset to defaults',
+  icon,
+  ...accordionProps
+}) => {
   const {
     showDefaultSettingsIcon,
     hasChanges: hasPendingChanges,
@@ -72,10 +72,7 @@ export const SettingsAccordion: React.FC<SettingsAccordionProps> = ({
       ) : null}
       {hasResetAction ? (
         <Tooltip title={resetTooltip}>
-          <IconButton
-            size="small"
-            onClick={handleResetClick}
-          >
+          <IconButton size="small" onClick={handleResetClick}>
             <Restore fontSize="small" />
           </IconButton>
         </Tooltip>

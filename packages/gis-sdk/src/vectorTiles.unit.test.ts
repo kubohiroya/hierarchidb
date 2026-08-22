@@ -1,16 +1,18 @@
-import { describe, expect, it } from 'vitest';
-import { VectorTile } from '@mapbox/vector-tile';
-import Pbf from 'pbf';
-import type { FeatureCollection, Feature, Polygon } from 'geojson';
-import { generateVectorTilesFromFeatureCollection } from './vectorTiles/index';
 import type { NodeId } from '@hierarchidb/core-types';
+import { VectorTile } from '@mapbox/vector-tile';
+import type { Feature, FeatureCollection, Polygon } from 'geojson';
+import Pbf from 'pbf';
+import { describe, expect, it } from 'vitest';
+import { generateVectorTilesFromFeatureCollection } from './vectorTiles/index';
 
 const toNodeId = (value: string): NodeId => value as NodeId;
 
-const polygonFeatureCollection = (featureRows: Array<{
-  name: string;
-  properties: Record<string, unknown>;
-}>): FeatureCollection<Polygon, Record<string, unknown>> => ({
+const polygonFeatureCollection = (
+  featureRows: Array<{
+    name: string;
+    properties: Record<string, unknown>;
+  }>
+): FeatureCollection<Polygon, Record<string, unknown>> => ({
   type: 'FeatureCollection',
   features: featureRows.map((feature, index) => ({
     type: 'Feature',
@@ -51,7 +53,7 @@ describe('vectorTiles layer name resolution', () => {
         minZoom: 0,
         maxZoom: 0,
         metadataEnabled: false,
-      },
+      }
     );
 
     expect(result.tiles.length).toBe(1);
@@ -78,7 +80,7 @@ describe('vectorTiles layer name resolution', () => {
         minZoom: 0,
         maxZoom: 0,
         metadataEnabled: false,
-      },
+      }
     );
 
     const first = result.tiles[0];
@@ -100,7 +102,7 @@ describe('vectorTiles layer name resolution', () => {
         minZoom: 0,
         maxZoom: 0,
         metadataEnabled: false,
-      },
+      }
     );
 
     expect(result.tiles.length).toBe(1);
@@ -127,7 +129,7 @@ describe('vectorTiles layer name resolution', () => {
         metadataContext: {
           adminLevel: 1,
         },
-      },
+      }
     );
 
     expect(result.tiles.length).toBe(1);
@@ -136,5 +138,4 @@ describe('vectorTiles layer name resolution', () => {
     const layerNames = extractTileLayers(first.data, 0, 0, 0).sort();
     expect(layerNames).toEqual(['1']);
   });
-
 });

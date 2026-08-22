@@ -44,9 +44,7 @@ const loadTopojsonRuntime = async (): Promise<TopojsonRuntime> => {
   return topojsonRuntimePromise;
 };
 
-export const getTopojsonRuntime = async (): Promise<TopojsonRuntime> => (
-  loadTopojsonRuntime()
-);
+export const getTopojsonRuntime = async (): Promise<TopojsonRuntime> => loadTopojsonRuntime();
 
 export const __getTopojsonRuntimeLoadCount = (): number => topojsonRuntimeLoadCount;
 

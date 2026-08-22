@@ -1,4 +1,3 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
 import type { NodeId, NodeType, PeerEntity, Timestamp, TreeId } from '@hierarchidb/core-types';
 import type {
   CommitDraftMode,
@@ -8,15 +7,18 @@ import type {
   TreeNodeData,
   TreeNodeMetadata,
   TreeNodeUpdaterAPI,
+  TreeQueryAPI,
 } from '@hierarchidb/tree-api';
-import type { TreeQueryAPI } from '@hierarchidb/tree-api';
 import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import { Remote } from 'comlink';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 type WorkerApi = WorkerAPI<TreeNodeData>;
 
-export interface TreeNodeUpdaterState<TPayload extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>> {
+export interface TreeNodeUpdaterState<
+  TPayload extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>,
+> {
   treeNodeId: NodeId;
   draftMetadata: TreeNodeMetadata | null;
   draftData?: Partial<TPayload>;
@@ -28,7 +30,7 @@ export interface TreeNodeUpdaterState<TPayload extends PeerEntity<TreeNodeData> 
 }
 
 export interface UseTreeNodeUpdaterOptions<
-  TPayload extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>
+  TPayload extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>,
 > {
   mode: 'create' | 'edit';
   nodeType: string;
@@ -43,12 +45,15 @@ export interface UseTreeNodeUpdaterOptions<
 }
 
 export interface UseTreeNodeUpdaterResult<
-  TPayload extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>
+  TPayload extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>,
 > {
   treeNodeUpdater: TreeNodeUpdaterState<TPayload> | null;
   hasUnsavedChanges: boolean;
   updateTreeNodeUpdater: (data: Partial<TreeNodeUpdaterState<TPayload>>) => void;
-  commitTreeNodeUpdater: (mode: CommitDraftMode, data: TreeNodeUpdaterState<TPayload>) => Promise<NodeId>;
+  commitTreeNodeUpdater: (
+    mode: CommitDraftMode,
+    data: TreeNodeUpdaterState<TPayload>
+  ) => Promise<NodeId>;
   discardDraft: (options?: DiscardDraftOptions) => Promise<void>;
   loading: boolean;
   error: Error | null;
@@ -59,9 +64,8 @@ export interface UseTreeNodeUpdaterResult<
 }
 
 // Shared alias for dialog payloads; intentionally does not include metadata/version/timestamps.
-export type PluginDialogData<
-  TPayload extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>
-> = TPayload;
+export type PluginDialogData<TPayload extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>> =
+  TPayload;
 
 const DEFAULT_DIALOG_UI_STATE: DialogUIState = {};
 
@@ -94,7 +98,7 @@ const stableStringify = (value: unknown): string => {
 };
 
 export function useTreeNodeUpdater<
-  TPayload extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>
+  TPayload extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>,
 >({
   mode,
   nodeType,
@@ -119,28 +123,34 @@ export function useTreeNodeUpdater<
     return typeof value === 'object' && value !== null;
   }, []);
 
-  const toUpdater = useCallback((node: TreeNode): TreeNodeUpdaterState<TPayload> => {
-    const hasRemoteDraft = node.draftData !== undefined || node.draftMetadata != null;
-    const draftMetadata = (node as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata ?? null;
-    if (draftMetadata === null) {
-      throw new Error('Draft metadata must not be null');
-    }
-    const draftData =
-      node.draftData && isRecord(node.draftData) ? (node.draftData as Partial<TPayload>) : undefined;
-    const dialogUIState =
-      (node as { dialogUIState?: DialogUIState | null }).dialogUIState ?? DEFAULT_DIALOG_UI_STATE;
-    const isTemporary = (node as { isTemporary?: boolean }).isTemporary;
-    return {
-      treeNodeId: node.id as NodeId,
-      draftMetadata,
-      draftData,
-      dialogUIState,
-      isTemporary,
-      version: node.version,
-      updatedAt: node.updatedAt,
-      hasRemoteDraft,
-    };
-  }, [isRecord]);
+  const toUpdater = useCallback(
+    (node: TreeNode): TreeNodeUpdaterState<TPayload> => {
+      const hasRemoteDraft = node.draftData !== undefined || node.draftMetadata != null;
+      const draftMetadata =
+        (node as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata ?? null;
+      if (draftMetadata === null) {
+        throw new Error('Draft metadata must not be null');
+      }
+      const draftData =
+        node.draftData && isRecord(node.draftData)
+          ? (node.draftData as Partial<TPayload>)
+          : undefined;
+      const dialogUIState =
+        (node as { dialogUIState?: DialogUIState | null }).dialogUIState ?? DEFAULT_DIALOG_UI_STATE;
+      const isTemporary = (node as { isTemporary?: boolean }).isTemporary;
+      return {
+        treeNodeId: node.id as NodeId,
+        draftMetadata,
+        draftData,
+        dialogUIState,
+        isTemporary,
+        version: node.version,
+        updatedAt: node.updatedAt,
+        hasRemoteDraft,
+      };
+    },
+    [isRecord]
+  );
 
   const getClient = useCallback(async (): Promise<{
     wc: TreeNodeUpdaterAPI<TreeNodeData>;
@@ -168,9 +178,11 @@ export function useTreeNodeUpdater<
           if (!existing) throw new Error('Working copy not found for edit');
 
           // If drafts are empty or malformed, seed them from committed values so the dialog edits a draft copy.
-          const existingDraftMetadata = (existing as {
-            draftMetadata?: TreeNodeMetadata | null;
-          }).draftMetadata;
+          const existingDraftMetadata = (
+            existing as {
+              draftMetadata?: TreeNodeMetadata | null;
+            }
+          ).draftMetadata;
           const existingMetadata = (existing as { metadata?: TreeNodeMetadata }).metadata;
           const needsDraftMeta =
             existingMetadata !== undefined &&
@@ -179,16 +191,19 @@ export function useTreeNodeUpdater<
               typeof existingDraftMetadata.name !== 'string' ||
               typeof existingDraftMetadata.description !== 'string' ||
               !Array.isArray(existingDraftMetadata.tags));
-          const existingDraftData = (existing as { draftData?: Partial<PeerEntity<TreeNodeData>> }).draftData;
+          const existingDraftData = (existing as { draftData?: Partial<PeerEntity<TreeNodeData>> })
+            .draftData;
           const hasEmptyDraftData =
-            existingDraftData
-            && isRecord(existingDraftData)
-            && Object.keys(existingDraftData).length === 0;
+            existingDraftData &&
+            isRecord(existingDraftData) &&
+            Object.keys(existingDraftData).length === 0;
           const needsDraftData =
             (existingDraftData === undefined || hasEmptyDraftData) &&
             // Skip seeding when committed data is null (template-driven nodes often have draftData prefilled)
             existing.data !== null &&
-            (existing.data ? Object.keys(existing.data as Record<string, unknown>).length > 0 : false);
+            (existing.data
+              ? Object.keys(existing.data as Record<string, unknown>).length > 0
+              : false);
           if (needsDraftMeta) {
             const fallbackMetadata: TreeNodeMetadata = {
               ...(existingMetadata ?? { name: '', description: '', tags: [] }),
@@ -240,7 +255,9 @@ export function useTreeNodeUpdater<
 
         if (mode === 'create') {
           if (!parentId) {
-            console.warn('[useTreeNodeUpdater] Missing parentId for create mode; draft not initialized');
+            console.warn(
+              '[useTreeNodeUpdater] Missing parentId for create mode; draft not initialized'
+            );
             return;
           }
           const shouldMarkTemporary = !nodeId;
@@ -252,11 +269,7 @@ export function useTreeNodeUpdater<
               : {}),
             ...(shouldMarkTemporary ? { isTemporary: true } : {}),
           };
-          const wcNode = await wcAPI.initTreeNode(
-            nodeType as NodeType,
-            parentId,
-            initialPayload
-          );
+          const wcNode = await wcAPI.initTreeNode(nodeType as NodeType, parentId, initialPayload);
           const copy = toUpdater(wcNode);
           setDraft(copy);
           setOriginalCopy(copy);
@@ -275,16 +288,13 @@ export function useTreeNodeUpdater<
     initializeDraft();
   }, [workerClient, mode, nodeId, parentId, nodeType, treeId, toUpdater, getClient]);
 
-  const buildComparableDraft = useCallback(
-    (state: TreeNodeUpdaterState<TPayload> | null) => {
-      if (!state) return { draftMetadata: null, draftData: undefined };
-      return {
-        draftMetadata: normalizeComparableValue(state.draftMetadata ?? null),
-        draftData: normalizeComparableValue(state.draftData),
-      };
-    },
-    []
-  );
+  const buildComparableDraft = useCallback((state: TreeNodeUpdaterState<TPayload> | null) => {
+    if (!state) return { draftMetadata: null, draftData: undefined };
+    return {
+      draftMetadata: normalizeComparableValue(state.draftMetadata ?? null),
+      draftData: normalizeComparableValue(state.draftData),
+    };
+  }, []);
 
   const computeUnsaved = useCallback(() => {
     if (!draft || !originalCopy) return false;
@@ -297,128 +307,138 @@ export function useTreeNodeUpdater<
     setHasUnsaved(computeUnsaved());
   }, [computeUnsaved, draft, originalCopy]);
 
-  const updateTreeNodeUpdater = useCallback(
-    (data: Partial<TreeNodeUpdaterState<TPayload>>) => {
-      setDraft((prev) => {
-        if (!prev) return null;
+  const updateTreeNodeUpdater = useCallback((data: Partial<TreeNodeUpdaterState<TPayload>>) => {
+    setDraft((prev) => {
+      if (!prev) return null;
 
-        const nextDraftMetadata = data.draftMetadata !== undefined ? data.draftMetadata : prev.draftMetadata ?? null;
-        const nextDraftData =
-          data.draftData !== undefined ? data.draftData : prev.draftData;
-        const nextDialogUIState =
-          data.dialogUIState !== undefined
-            ? data.dialogUIState ?? DEFAULT_DIALOG_UI_STATE
-            : prev.dialogUIState ?? DEFAULT_DIALOG_UI_STATE;
+      const nextDraftMetadata =
+        data.draftMetadata !== undefined ? data.draftMetadata : (prev.draftMetadata ?? null);
+      const nextDraftData = data.draftData !== undefined ? data.draftData : prev.draftData;
+      const nextDialogUIState =
+        data.dialogUIState !== undefined
+          ? (data.dialogUIState ?? DEFAULT_DIALOG_UI_STATE)
+          : (prev.dialogUIState ?? DEFAULT_DIALOG_UI_STATE);
 
-        const merged: TreeNodeUpdaterState<TPayload> = {
-          treeNodeId: prev.treeNodeId,
-          draftMetadata: nextDraftMetadata ?? null,
-          draftData: nextDraftData,
-          dialogUIState: nextDialogUIState,
-          isTemporary: data.isTemporary ?? prev.isTemporary,
-          version: data.version ?? prev.version,
-          updatedAt: data.updatedAt ?? prev.updatedAt,
-          hasRemoteDraft: data.hasRemoteDraft ?? prev.hasRemoteDraft,
-        };
-        return merged;
-      });
-    },
-    []
-  );
+      const merged: TreeNodeUpdaterState<TPayload> = {
+        treeNodeId: prev.treeNodeId,
+        draftMetadata: nextDraftMetadata ?? null,
+        draftData: nextDraftData,
+        dialogUIState: nextDialogUIState,
+        isTemporary: data.isTemporary ?? prev.isTemporary,
+        version: data.version ?? prev.version,
+        updatedAt: data.updatedAt ?? prev.updatedAt,
+        hasRemoteDraft: data.hasRemoteDraft ?? prev.hasRemoteDraft,
+      };
+      return merged;
+    });
+  }, []);
 
-  const commitTreeNodeUpdater = useCallback(async (mode: CommitDraftMode, data: TreeNodeUpdaterState<TPayload>): Promise<NodeId> => {
-    if (!data) throw new Error('No draft to save');
-    const targetId = data.treeNodeId ?? workingNodeId;
-    if (!targetId) throw new Error('nodeId is required to save draft');
+  const commitTreeNodeUpdater = useCallback(
+    async (mode: CommitDraftMode, data: TreeNodeUpdaterState<TPayload>): Promise<NodeId> => {
+      if (!data) throw new Error('No draft to save');
+      const targetId = data.treeNodeId ?? workingNodeId;
+      if (!targetId) throw new Error('nodeId is required to save draft');
 
-    const finalData: TreeNodeUpdaterState<TPayload> = {
-      ...data,
-      treeNodeId: targetId,
-      draftData: data.draftData,
-      draftMetadata: (data.draftMetadata as TreeNodeMetadata | null) ?? null,
-      dialogUIState: data.dialogUIState ?? ({} as DialogUIState),
-      version: data.version,
-      updatedAt: data.updatedAt,
-      hasRemoteDraft: data.hasRemoteDraft,
-    };
+      const finalData: TreeNodeUpdaterState<TPayload> = {
+        ...data,
+        treeNodeId: targetId,
+        draftData: data.draftData,
+        draftMetadata: (data.draftMetadata as TreeNodeMetadata | null) ?? null,
+        dialogUIState: data.dialogUIState ?? ({} as DialogUIState),
+        version: data.version,
+        updatedAt: data.updatedAt,
+        hasRemoteDraft: data.hasRemoteDraft,
+      };
 
-    try {
-      setLoading(true);
-      persistDisableUntilRef.current = Date.now() + 300;
-      const { wc: wcAPI } = await getClient();
+      try {
+        setLoading(true);
+        persistDisableUntilRef.current = Date.now() + 300;
+        const { wc: wcAPI } = await getClient();
 
-      const res = await wcAPI.updateTreeNode(targetId, {
-        mode,
-        draftMetadata: finalData.draftMetadata ?? null,
-        draftData: finalData.draftData,
-        dialogUIState: finalData.dialogUIState ?? null,
-      });
+        const res = await wcAPI.updateTreeNode(targetId, {
+          mode,
+          draftMetadata: finalData.draftMetadata ?? null,
+          draftData: finalData.draftData,
+          dialogUIState: finalData.dialogUIState ?? null,
+        });
 
-      if (res.status === 'ok') {
-        const committedNodeId = (res.node?.id as NodeId | undefined) ?? res.nodeId ?? targetId;
+        if (res.status === 'ok') {
+          const committedNodeId = (res.node?.id as NodeId | undefined) ?? res.nodeId ?? targetId;
 
-        const latestNode = res.node;
+          const latestNode = res.node;
 
-        let refreshedCopy: TreeNodeUpdaterState<TPayload>;
-        if (latestNode) {
-          // Ensure draftMetadata exists for toUpdater even if commit cleared drafts
-          if ((latestNode as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata === null) {
-            (latestNode as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata =
-              (latestNode as { metadata?: TreeNodeMetadata | null }).metadata ?? {
+          let refreshedCopy: TreeNodeUpdaterState<TPayload>;
+          if (latestNode) {
+            // Ensure draftMetadata exists for toUpdater even if commit cleared drafts
+            if (
+              (latestNode as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata === null
+            ) {
+              (latestNode as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata = (
+                latestNode as { metadata?: TreeNodeMetadata | null }
+              ).metadata ?? {
                 name: '',
                 description: '',
                 tags: [],
               };
+            }
+            refreshedCopy = toUpdater(latestNode as TreeNode);
+            refreshedCopy = {
+              ...refreshedCopy,
+              dialogUIState: finalData.dialogUIState ?? refreshedCopy.dialogUIState ?? null,
+            };
+          } else {
+            refreshedCopy = {
+              ...finalData,
+              treeNodeId: committedNodeId,
+              version: typeof finalData.version === 'number' ? finalData.version + 1 : 1,
+              updatedAt: Date.now() as Timestamp,
+            };
           }
-          refreshedCopy = toUpdater(latestNode as TreeNode);
+
+          const shouldClearDraft = mode !== 'save-draft';
           refreshedCopy = {
             ...refreshedCopy,
-            dialogUIState: finalData.dialogUIState ?? refreshedCopy.dialogUIState ?? null,
+            draftMetadata: shouldClearDraft
+              ? null
+              : (refreshedCopy.draftMetadata ?? finalData.draftMetadata ?? null),
+            draftData: shouldClearDraft
+              ? undefined
+              : (refreshedCopy.draftData ?? finalData.draftData),
+            hasRemoteDraft: !shouldClearDraft,
           };
-        } else {
-          refreshedCopy = {
-            ...finalData,
-            treeNodeId: committedNodeId,
-            version: typeof finalData.version === 'number' ? finalData.version + 1 : 1,
-            updatedAt: Date.now() as Timestamp,
-          };
+
+          setDraft(refreshedCopy);
+          setOriginalCopy(refreshedCopy);
+          setWorkingNodeId(committedNodeId);
+          draftIdRef.current = committedNodeId;
+          return committedNodeId;
         }
 
-        const shouldClearDraft = mode !== 'save-draft';
-        refreshedCopy = {
-          ...refreshedCopy,
-          draftMetadata: shouldClearDraft ? null : refreshedCopy.draftMetadata ?? finalData.draftMetadata ?? null,
-          draftData: shouldClearDraft ? undefined : refreshedCopy.draftData ?? finalData.draftData,
-          hasRemoteDraft: !shouldClearDraft,
-        };
-
-        setDraft(refreshedCopy);
-        setOriginalCopy(refreshedCopy);
-        setWorkingNodeId(committedNodeId);
-        draftIdRef.current = committedNodeId;
-        return committedNodeId;
+        throw new Error(`Working copy commit failed: ${res.status}`);
+      } catch (err) {
+        setError(err as Error);
+        throw err;
+      } finally {
+        persistDisableUntilRef.current = 0;
+        setLoading(false);
       }
+    },
+    [draft, getClient, toUpdater, workingNodeId]
+  );
 
-      throw new Error(`Working copy commit failed: ${res.status}`);
-    } catch (err) {
-      setError(err as Error);
-      throw err;
-    } finally {
-      persistDisableUntilRef.current = 0;
-      setLoading(false);
-    }
-  }, [draft, getClient, toUpdater, workingNodeId]);
-
-  const discardDraft = useCallback(async (options?: DiscardDraftOptions) => {
-    const targetId = draft?.treeNodeId ?? workingNodeId;
-    if (!targetId) return;
-    const { wc: wcAPI } = await getClient();
-    await wcAPI.discardDraft(targetId, options);
-    setDraft(null);
-    setOriginalCopy(null);
-    setWorkingNodeId(null);
-    draftIdRef.current = null;
-  }, [draft?.treeNodeId, getClient, workingNodeId]);
+  const discardDraft = useCallback(
+    async (options?: DiscardDraftOptions) => {
+      const targetId = draft?.treeNodeId ?? workingNodeId;
+      if (!targetId) return;
+      const { wc: wcAPI } = await getClient();
+      await wcAPI.discardDraft(targetId, options);
+      setDraft(null);
+      setOriginalCopy(null);
+      setWorkingNodeId(null);
+      draftIdRef.current = null;
+    },
+    [draft?.treeNodeId, getClient, workingNodeId]
+  );
 
   useEffect(() => {
     draftIdRef.current = workingNodeId ?? nodeId ?? null;
@@ -437,8 +457,7 @@ export function useTreeNodeUpdater<
       if (!currentId) return;
       hasRequestedAutoDiscard = true;
       queueMicrotask(() => {
-        getClient()
-          .then(({ wc: wcAPI }) => wcAPI.discardDraft(currentId));
+        getClient().then(({ wc: wcAPI }) => wcAPI.discardDraft(currentId));
       });
     };
 

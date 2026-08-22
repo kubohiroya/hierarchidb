@@ -1,10 +1,12 @@
-import type { TabularDataApi, TabularProcessingConfig } from '@hierarchidb/ui-tabular';
 import type { TabularDatabaseManager } from '@hierarchidb/tabular-store';
-import { SpreadsheetTabularApiDriver } from './SpreadsheetTabularApiDriver.js';
-import { SPREADSHEET_PLUGIN_ID } from '../common/constants.js';
+import type { TabularDataApi, TabularProcessingConfig } from '@hierarchidb/ui-tabular';
 import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
+import { SPREADSHEET_PLUGIN_ID } from '../common/constants.js';
+import { SpreadsheetTabularApiDriver } from './SpreadsheetTabularApiDriver.js';
 
-export function createSpreadsheetTabularApi(pluginId: string = SPREADSHEET_PLUGIN_ID): TabularDataApi {
+export function createSpreadsheetTabularApi(
+  pluginId: string = SPREADSHEET_PLUGIN_ID
+): TabularDataApi {
   return new SpreadsheetTabularApiDriver(
     pluginId,
     undefined,
@@ -27,7 +29,8 @@ export type PluginTabularApiOptions = {
 const resolveCorsProxyBaseDefault = (): string | undefined => {
   const viteEnv = (import.meta as ImportMeta & { env?: Record<string, string> }).env;
   const fromVite = viteEnv?.VITE_CORS_PROXY_BASE_URL;
-  const fromGlobal = (globalThis as { ENV?: { VITE_CORS_PROXY_BASE_URL?: string } }).ENV?.VITE_CORS_PROXY_BASE_URL;
+  const fromGlobal = (globalThis as { ENV?: { VITE_CORS_PROXY_BASE_URL?: string } }).ENV
+    ?.VITE_CORS_PROXY_BASE_URL;
   return fromVite || fromGlobal || undefined;
 };
 
@@ -54,12 +57,16 @@ class PluginTabularApiDriver extends SpreadsheetTabularApiDriver {
       options.metadataManager,
       options.pluginId,
       options.downloadDatabaseName,
-      options.rowStoreDatabaseName,
+      options.rowStoreDatabaseName
     );
     this.resolveCorsProxyBaseURL = buildCorsProxyResolver(options);
   }
 
-  override async downloadTabularFromUrl(url: string, config: TabularProcessingConfig = {}, nodeId?: string) {
+  override async downloadTabularFromUrl(
+    url: string,
+    config: TabularProcessingConfig = {},
+    nodeId?: string
+  ) {
     const proxied = withCorsProxy(url, this.resolveCorsProxyBaseURL());
     return super.downloadTabularFromUrl(proxied, config, nodeId);
   }

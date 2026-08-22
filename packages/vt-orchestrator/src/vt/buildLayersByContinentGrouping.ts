@@ -2,14 +2,17 @@ import type { Feature, Geometry } from 'geojson';
 import type { Tile } from 'geojson-vt';
 import type { VTStageContext } from '~/contextTypes';
 import type { BandConfig } from '~/types/types';
+import { buildLayerIndexes } from './buildLayerIndexes.js';
 import { buildLayerMap } from './vtStageFeatureMetadataUtils.js';
 import {
   collectLayersForTileFromIndexes,
   logLayerIndexBuildDone,
   logLayerIndexBuildStart,
 } from './vtStageTaskLayerBuilderHelpers.js';
-import { buildLayerIndexes } from './buildLayerIndexes.js';
-import { collectTileLayersToMap, mergeAggregatedLayerMaps } from './vtStageTaskLayerBuilderTileAggregation.js';
+import {
+  collectTileLayersToMap,
+  mergeAggregatedLayerMaps,
+} from './vtStageTaskLayerBuilderTileAggregation.js';
 import type { TaskLayerContext } from './vtStageTaskLayerBuilderTypes.js';
 
 type Input = {
@@ -64,13 +67,8 @@ export const buildLayersByContinentGrouping = async ({
       },
       assertNotAborted,
       abortSignal: context.abortSignal,
-      collectLayersForTile: (z, x, y) => collectLayersForTileFromIndexes(
-        continentIndexes,
-        z,
-        x,
-        y,
-        tileEmitConfigBoundaryDedupe,
-      ),
+      collectLayersForTile: (z, x, y) =>
+        collectLayersForTileFromIndexes(continentIndexes, z, x, y, tileEmitConfigBoundaryDedupe),
     });
     mergeAggregatedLayerMaps(aggregatedLayersByTileId, continentTileLayers);
   }

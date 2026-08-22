@@ -1,11 +1,10 @@
 // Export step components for potential reuse
 export { ResolverPanel } from './ResolverPanel.js';
-
-export { SchemaSelectionStep } from './steps/SchemaSelectionStep.js';
-export { PropertyMappingStep } from './steps/PropertyMappingStep.js';
-export { ValidationConfigStep } from './steps/ValidationConfigStep.js';
 export { DuplicateResolutionStep } from './steps/DuplicateResolutionStep.js';
 export { PreviewTestStep } from './steps/PreviewTestStep.js';
+export { PropertyMappingStep } from './steps/PropertyMappingStep.js';
+export { SchemaSelectionStep } from './steps/SchemaSelectionStep.js';
+export { ValidationConfigStep } from './steps/ValidationConfigStep.js';
 
 export async function loadResolverPanelModule() {
   return import(/* @vite-ignore */ './ResolverPanel.js');

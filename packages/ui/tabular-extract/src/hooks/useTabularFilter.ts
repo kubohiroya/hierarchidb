@@ -127,7 +127,7 @@ export const useTabularFilter = (options: UseTabularFilterOptions): UseTabularFi
         const data = await tabularApi.getFilteredPreview(
           tableId,
           rules.filter((rule) => rule.enabled !== false),
-          maxPreviewRows,
+          maxPreviewRows
         );
 
         setPreviewData(data);
@@ -139,7 +139,7 @@ export const useTabularFilter = (options: UseTabularFilterOptions): UseTabularFi
         setIsLoading(false);
       }
     },
-    [tabularApi, tableId, maxPreviewRows],
+    [tabularApi, tableId, maxPreviewRows]
   );
 
   /**
@@ -149,7 +149,7 @@ export const useTabularFilter = (options: UseTabularFilterOptions): UseTabularFi
     async (rules: TabularFilterRule[]) => {
       await fetchPreview(rules);
     },
-    [fetchPreview],
+    [fetchPreview]
   );
 
   /**
@@ -240,11 +240,13 @@ export const useTabularFilter = (options: UseTabularFilterOptions): UseTabularFi
     (id: string) => {
       updateRule(id, { enabled: undefined }); // Will be inverted by the update logic
       setFilterRules((prev) => {
-        const next = prev.map((rule) => (rule.id === id ? { ...rule, enabled: !rule.enabled } : rule));
+        const next = prev.map((rule) =>
+          rule.id === id ? { ...rule, enabled: !rule.enabled } : rule
+        );
         return rulesEqual(prev, next) ? prev : next;
       });
     },
-    [updateRule],
+    [updateRule]
   );
 
   /**

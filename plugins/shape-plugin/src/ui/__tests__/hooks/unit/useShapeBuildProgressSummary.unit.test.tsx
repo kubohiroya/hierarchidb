@@ -1,12 +1,10 @@
+import type { BuildStage } from '@hierarchidb/ui-build-progress';
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import type { BuildStage } from '@hierarchidb/ui-build-progress';
 import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressTypes';
 import { useShapeBuildProgressSummaryComputation as useShapeBuildProgressSummary } from '../../../components/build-progress/useShapeBuildProgressSummaryComputation';
 
-const stages: BuildStage[] = [
-  { id: 'source', title: 'Source', icon: null },
-];
+const stages: BuildStage[] = [{ id: 'source', title: 'Source', icon: null }];
 
 describe('useShapeBuildProgressSummary', () => {
   it('excludes recycled tasks from progress totals and avoids divide-by-zero', () => {
@@ -20,18 +18,20 @@ describe('useShapeBuildProgressSummary', () => {
       } as ShapeBuildTaskSummary,
     ];
 
-    const { result } = renderHook(() => useShapeBuildProgressSummary({
-      stages,
-      resolvedTaskType: undefined,
-      overallProgress: 0,
-      buildStatus: 'running',
-      effectiveProgress: null,
-      effectiveStatus: null,
-      stage: undefined,
-      tasks,
-      isSkippedTask: () => false,
-      timingStageMs: 0,
-    }));
+    const { result } = renderHook(() =>
+      useShapeBuildProgressSummary({
+        stages,
+        resolvedTaskType: undefined,
+        overallProgress: 0,
+        buildStatus: 'running',
+        effectiveProgress: null,
+        effectiveStatus: null,
+        stage: undefined,
+        tasks,
+        isSkippedTask: () => false,
+        timingStageMs: 0,
+      })
+    );
 
     expect(result.current.displayCounts.total).toBe(0);
     expect(result.current.displayCounts.completed).toBe(0);
@@ -54,18 +54,20 @@ describe('useShapeBuildProgressSummary', () => {
       } as ShapeBuildTaskSummary,
     ];
 
-    const { result } = renderHook(() => useShapeBuildProgressSummary({
-      stages: multiStages,
-      resolvedTaskType: 'tileEmit',
-      overallProgress: 10,
-      buildStatus: 'running',
-      effectiveProgress: null,
-      effectiveStatus: null,
-      stage: 'tileEmit',
-      tasks,
-      isSkippedTask: () => false,
-      timingStageMs: 0,
-    }));
+    const { result } = renderHook(() =>
+      useShapeBuildProgressSummary({
+        stages: multiStages,
+        resolvedTaskType: 'tileEmit',
+        overallProgress: 10,
+        buildStatus: 'running',
+        effectiveProgress: null,
+        effectiveStatus: null,
+        stage: 'tileEmit',
+        tasks,
+        isSkippedTask: () => false,
+        timingStageMs: 0,
+      })
+    );
 
     expect(result.current.tasksByStage.tileEmit).toHaveLength(1);
     expect(result.current.tasksByStage.source ?? []).toHaveLength(0);
@@ -94,30 +96,32 @@ describe('useShapeBuildProgressSummary', () => {
       } as ShapeBuildTaskSummary,
     ];
 
-    const { result } = renderHook(() => useShapeBuildProgressSummary({
-      stages: multiStages,
-      resolvedTaskType: 'source',
-      overallProgress: 5,
-      buildStatus: 'running',
-      effectiveProgress: {
-        total: 8,
-        completed: 1,
-        failed: 0,
-        skipped: 0,
-        percentage: 12,
-        stage: 'source',
-        stageTotals: {
-          source: { total: 2, completed: 1, failed: 0, skipped: 0 },
-          geometry: { total: 4, completed: 0, failed: 0, skipped: 0 },
-          tileEmit: { total: 2, completed: 0, failed: 0, skipped: 0 },
+    const { result } = renderHook(() =>
+      useShapeBuildProgressSummary({
+        stages: multiStages,
+        resolvedTaskType: 'source',
+        overallProgress: 5,
+        buildStatus: 'running',
+        effectiveProgress: {
+          total: 8,
+          completed: 1,
+          failed: 0,
+          skipped: 0,
+          percentage: 12,
+          stage: 'source',
+          stageTotals: {
+            source: { total: 2, completed: 1, failed: 0, skipped: 0 },
+            geometry: { total: 4, completed: 0, failed: 0, skipped: 0 },
+            tileEmit: { total: 2, completed: 0, failed: 0, skipped: 0 },
+          },
         },
-      },
-      effectiveStatus: { status: 'running', progress: 12 },
-      stage: 'source',
-      tasks,
-      isSkippedTask: () => false,
-      timingStageMs: 0,
-    }));
+        effectiveStatus: { status: 'running', progress: 12 },
+        stage: 'source',
+        tasks,
+        isSkippedTask: () => false,
+        timingStageMs: 0,
+      })
+    );
 
     expect(result.current.displayStageId).toBe('geometry');
   });
@@ -145,30 +149,32 @@ describe('useShapeBuildProgressSummary', () => {
       } as ShapeBuildTaskSummary,
     ];
 
-    const { result } = renderHook(() => useShapeBuildProgressSummary({
-      stages: multiStages,
-      resolvedTaskType: 'source',
-      overallProgress: 20,
-      buildStatus: 'running',
-      effectiveProgress: {
-        total: 2,
-        completed: 0,
-        failed: 0,
-        skipped: 0,
-        percentage: 0,
-        stage: 'source',
-        stageTotals: {
-          source: { total: 2, completed: 0, failed: 0, skipped: 0 },
-          geometry: { total: 0, completed: 0, failed: 0, skipped: 0 },
-          tileEmit: { total: 0, completed: 0, failed: 0, skipped: 0 },
+    const { result } = renderHook(() =>
+      useShapeBuildProgressSummary({
+        stages: multiStages,
+        resolvedTaskType: 'source',
+        overallProgress: 20,
+        buildStatus: 'running',
+        effectiveProgress: {
+          total: 2,
+          completed: 0,
+          failed: 0,
+          skipped: 0,
+          percentage: 0,
+          stage: 'source',
+          stageTotals: {
+            source: { total: 2, completed: 0, failed: 0, skipped: 0 },
+            geometry: { total: 0, completed: 0, failed: 0, skipped: 0 },
+            tileEmit: { total: 0, completed: 0, failed: 0, skipped: 0 },
+          },
         },
-      },
-      effectiveStatus: { status: 'running', progress: 0 },
-      stage: 'source',
-      tasks,
-      isSkippedTask: () => false,
-      timingStageMs: 0,
-    }));
+        effectiveStatus: { status: 'running', progress: 0 },
+        stage: 'source',
+        tasks,
+        isSkippedTask: () => false,
+        timingStageMs: 0,
+      })
+    );
 
     expect(result.current.paneProgress[0]?.progress).toBe(30);
     expect(result.current.displayCounts.total).toBe(2);

@@ -2,7 +2,12 @@
  * @file types/openstreetmap-type.ts
  * @description Type definitions for Tabular data extraction system
  */
-import {TabularColumnInfo, TabularColumnType, TabularTableMetadata, TabularTableMetadataLike} from '@hierarchidb/tabular-store';
+import {
+  TabularColumnInfo,
+  TabularColumnType,
+  TabularTableMetadata,
+  TabularTableMetadataLike,
+} from '@hierarchidb/tabular-store';
 
 /**
  * Tabular Filter Rule for row filtering
@@ -53,7 +58,7 @@ export interface TabularProcessingConfig {
   /** Maximum number of rows to process (0 = no limit) */
   maxRows?: number;
   /** Quote character for Tabular parsing */
-  quoteChar?: '"' | '\'' | '';
+  quoteChar?: '"' | "'" | '';
   /** Escape character */
   escapeChar?: '\\';
   /** Whether to skip empty lines */
@@ -174,10 +179,7 @@ export interface TabularDataApi {
   /**
    * Upload and process CSV file
    */
-  uploadTabularFile(
-    file: File,
-    config: TabularProcessingConfig,
-  ): Promise<TabularTableMetadata>;
+  uploadTabularFile(file: File, config: TabularProcessingConfig): Promise<TabularTableMetadata>;
 
   /**
    * Download CSV from URL and process
@@ -185,7 +187,7 @@ export interface TabularDataApi {
   downloadTabularFromUrl(
     url: string,
     config: TabularProcessingConfig,
-    nodeId?: string,
+    nodeId?: string
   ): Promise<TabularTableMetadata>;
 
   /**
@@ -196,10 +198,7 @@ export interface TabularDataApi {
   /**
    * List available CSV tables
    */
-  listTables(
-    pluginId?: string,
-    pagination?: PaginationOptions,
-  ): Promise<TabularTableListResult>;
+  listTables(pluginId?: string, pagination?: PaginationOptions): Promise<TabularTableListResult>;
 
   /**
    * Delete CSV table (force delete, ignoring references)
@@ -212,32 +211,23 @@ export interface TabularDataApi {
   getFilteredPreview(
     tableId: string,
     filters: TabularFilterRule[],
-    rowCount: number,
+    rowCount: number
   ): Promise<TabularDataResult>;
 
   /**
    * Get full filtered dataset
    */
-  getFilteredData(
-    tableId: string,
-    selection: TabularSelectionConfig,
-  ): Promise<TabularDataResult>;
+  getFilteredData(tableId: string, selection: TabularSelectionConfig): Promise<TabularDataResult>;
 
   /**
    * Add plugin reference to CSV table (reference counting)
    */
-  addTableReference(
-    tableId: string,
-    pluginId: string,
-  ): Promise<void>;
+  addTableReference(tableId: string, pluginId: string): Promise<void>;
 
   /**
    * Remove plugin reference from CSV table
    */
-  removeTableReference(
-    tableId: string,
-    pluginId: string,
-  ): Promise<void>;
+  removeTableReference(tableId: string, pluginId: string): Promise<void>;
 
   /**
    * Get processing status for async operations

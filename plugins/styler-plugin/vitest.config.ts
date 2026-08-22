@@ -1,6 +1,7 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vitest/config';
+
 import * as path from 'path';
+import { defineConfig } from 'vitest/config';
 
 const workspaceRoot = path.resolve(__dirname, '../..');
 const basePluginEntry = path.resolve(__dirname, '../base-plugin/src/index.ts');
@@ -24,10 +25,7 @@ export default defineConfig({
         workspaceRoot,
         'packages/ui/tabular-extract/src/index.ts'
       ),
-      '@hierarchidb/ui-i18n': path.resolve(
-        workspaceRoot,
-        'packages/ui/i18n/src/index.ts'
-      ),
+      '@hierarchidb/ui-i18n': path.resolve(workspaceRoot, 'packages/ui/i18n/src/index.ts'),
       '@hierarchidb/util': path.resolve(workspaceRoot, 'packages/util/src/index.ts'),
     },
   },

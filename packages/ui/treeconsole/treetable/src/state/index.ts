@@ -1,12 +1,18 @@
 /**
-  * TreeTable State Management (Extracted)
-  * Jotai atomsTreeTable
+ * TreeTable State Management (Extracted)
+ * Jotai atomsTreeTable
  * version
-  */
+ */
 
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { atom } from 'jotai';
-import type { DragDropState, EditingState, ExpansionState, SearchState, SelectionState } from '~/types';
+import type {
+  DragDropState,
+  EditingState,
+  ExpansionState,
+  SearchState,
+  SelectionState,
+} from '~/types';
 
 // === Core Data Atoms ===
 

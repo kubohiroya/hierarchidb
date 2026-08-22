@@ -1,12 +1,12 @@
 // NOTE: Module shims live under /types/*.d.ts (do not keep hand-maintained .d.ts under src/).
 
 import type {
-  TabularParserPort,
   DetectionResult,
   FileLike,
   ParseOptions,
   TabularChunk,
   TabularParseResult,
+  TabularParserPort,
   TabularPreview,
 } from '@hierarchidb/tabular-source';
 
@@ -16,22 +16,36 @@ import type {
 export const xlsxParser: TabularParserPort = {
   id: 'xlsx',
   detect(input: FileLike): DetectionResult {
-    const name = typeof input === 'object' && input !== null && 'name' in input && typeof input.name === 'string'
-      ? input.name.toLowerCase()
-      : '';
-    const type = typeof input === 'object' && input !== null && 'type' in input && typeof input.type === 'string'
-      ? input.type.toLowerCase()
-      : '';
+    const name =
+      typeof input === 'object' &&
+      input !== null &&
+      'name' in input &&
+      typeof input.name === 'string'
+        ? input.name.toLowerCase()
+        : '';
+    const type =
+      typeof input === 'object' &&
+      input !== null &&
+      'type' in input &&
+      typeof input.type === 'string'
+        ? input.type.toLowerCase()
+        : '';
     const confidence = name.endsWith('.xlsx') || type.includes('spreadsheet') ? 0.9 : 0.1;
     return { format: 'xlsx', confidence };
   },
   async parse(input: FileLike, options?: ParseOptions): Promise<TabularParseResult> {
     const xlsxModule = await import('xlsx/xlsx.mjs');
-    const XLSX = ((xlsxModule as { default?: typeof import('xlsx/xlsx.mjs') }).default ?? xlsxModule) as typeof import('xlsx/xlsx.mjs');
+    const XLSX = ((xlsxModule as { default?: typeof import('xlsx/xlsx.mjs') }).default ??
+      xlsxModule) as typeof import('xlsx/xlsx.mjs');
 
     // Ensure Node-specific helpers are disabled when running in the browser.
-    if (typeof (XLSX as { set_fs?: (fs: unknown) => void }).set_fs === 'function' && (XLSX.utils as { fs_stub?: unknown }).fs_stub) {
-      (XLSX as { set_fs: (fs: unknown) => void }).set_fs((XLSX.utils as { fs_stub: unknown }).fs_stub);
+    if (
+      typeof (XLSX as { set_fs?: (fs: unknown) => void }).set_fs === 'function' &&
+      (XLSX.utils as { fs_stub?: unknown }).fs_stub
+    ) {
+      (XLSX as { set_fs: (fs: unknown) => void }).set_fs(
+        (XLSX.utils as { fs_stub: unknown }).fs_stub
+      );
     }
 
     const decodeBase64ToArrayBuffer = (base64: string): ArrayBuffer => {
@@ -45,7 +59,10 @@ export const xlsxParser: TabularParserPort = {
         return bytes.buffer;
       }
       type BufferCtor = {
-        from(data: string, encoding: string): Uint8Array & {
+        from(
+          data: string,
+          encoding: string
+        ): Uint8Array & {
           buffer: ArrayBufferLike;
           byteOffset: number;
           byteLength: number;

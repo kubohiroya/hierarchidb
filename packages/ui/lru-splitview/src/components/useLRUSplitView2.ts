@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useLRUPanes } from '~/hooks/useLRUPanes';
 import type { LRUSplitViewConfig, PaneProgress, PaneState } from '~/types/LRUSplitView';
@@ -15,7 +15,7 @@ const resolveBreakpointIndex = (width: number, breakpoints?: number[]) => {
   return foundIndex === -1 ? breakpoints.length : foundIndex;
 };
 
-const resolveByBreakpoint = <T,>(values: T[] | undefined, index: number) => {
+const resolveByBreakpoint = <T>(values: T[] | undefined, index: number) => {
   if (!values || values.length === 0) return undefined;
   const safeIndex = Math.min(index, values.length - 1);
   return values[safeIndex];
@@ -72,11 +72,11 @@ export const useLRUSplitView2 = ({
 
   const breakpointIndex = useMemo(
     () => resolveBreakpointIndex(containerWidth, responsiveBreakpoints),
-    [containerWidth, responsiveBreakpoints],
+    [containerWidth, responsiveBreakpoints]
   );
   const autoCloseCount = useMemo(
     () => resolveByBreakpoint(autoCloseCountsByBreakpoint, breakpointIndex),
-    [autoCloseCountsByBreakpoint, breakpointIndex],
+    [autoCloseCountsByBreakpoint, breakpointIndex]
   );
   const responsiveMaxExpandedPanes = useMemo(() => {
     if (autoCloseCount === undefined) return maxExpandedPanes;
@@ -104,7 +104,7 @@ export const useLRUSplitView2 = ({
         collapsedSize: pane.collapsedSize,
         content: null,
       })),
-    [panes],
+    [panes]
   );
 
   const { paneStates, togglePane, getSizes } = useLRUPanes({

@@ -1,6 +1,6 @@
-import type React from 'react';
 import { Provider } from 'jotai';
 import type { Store } from 'jotai/vanilla/store';
+import type React from 'react';
 import type { MapInteractionInitialState } from './mapInteractionStore.js';
 import {
   useMapInteractionInitializer,
@@ -13,7 +13,9 @@ export type MapInteractionProviderProps = {
   store?: Store;
 };
 
-const MapInteractionInitializer: React.FC<Pick<MapInteractionProviderProps, 'initialState'>> = ({ initialState }) => {
+const MapInteractionInitializer: React.FC<Pick<MapInteractionProviderProps, 'initialState'>> = ({
+  initialState,
+}) => {
   useMapInteractionInitializer({ initialState });
   return null;
 };

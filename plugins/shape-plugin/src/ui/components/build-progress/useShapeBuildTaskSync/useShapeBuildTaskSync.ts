@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressTypes';
-import type { SyncArgs } from './useShapeBuildTaskSyncTypes.js';
 import { useShapeBuildTaskSyncHandlers } from './useShapeBuildTaskSyncHandlers.js';
+import type { SyncArgs } from './useShapeBuildTaskSyncTypes.js';
 
 export const useShapeBuildTaskSync = ({
   sessionNodeId,
@@ -78,16 +78,19 @@ export const useShapeBuildTaskSync = ({
     handlers.resetPending();
   }, [sessionNodeId]);
 
-  useEffect(() => () => {
-    if (flushFrameRef.current !== null) {
-      window.cancelAnimationFrame(flushFrameRef.current);
-      flushFrameRef.current = null;
-    }
-    if (flushTimeoutRef.current !== null) {
-      window.clearTimeout(flushTimeoutRef.current);
-      flushTimeoutRef.current = null;
-    }
-  }, [flushFrameRef, flushTimeoutRef]);
+  useEffect(
+    () => () => {
+      if (flushFrameRef.current !== null) {
+        window.cancelAnimationFrame(flushFrameRef.current);
+        flushFrameRef.current = null;
+      }
+      if (flushTimeoutRef.current !== null) {
+        window.clearTimeout(flushTimeoutRef.current);
+        flushTimeoutRef.current = null;
+      }
+    },
+    [flushFrameRef, flushTimeoutRef]
+  );
 
   return {
     tasksRef,

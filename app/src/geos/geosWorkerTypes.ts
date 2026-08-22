@@ -13,12 +13,16 @@ export type GeosWorkerApi = {
   area: (geojson: GeoJSON) => Promise<number>;
   bbox: (geojson: GeoJSON) => Promise<Bbox | null>;
   clip: (feature: Feature, bbox: Bbox) => Promise<Feature | null>;
-  simplify: (geojson: GeoJSON, tolerance: number, options?: GeosSimplifyOptions) => Promise<GeoJSON>;
+  simplify: (
+    geojson: GeoJSON,
+    tolerance: number,
+    options?: GeosSimplifyOptions
+  ) => Promise<GeoJSON>;
   simplifyRepeated: (
     geojson: GeoJSON,
     tolerance: number,
     repeats: number,
-    options?: GeosSimplifyOptions,
+    options?: GeosSimplifyOptions
   ) => Promise<GeoJSON>;
   isValid: (geojson: GeoJSON) => Promise<boolean>;
   makeValid: (geojson: GeoJSON) => Promise<GeoJSON>;

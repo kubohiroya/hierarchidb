@@ -74,8 +74,8 @@ export const useMemoryUsageChart = ({
         } else if (types.includes('DOM')) {
           categories.DOM = (categories.DOM || 0) + bytes;
         } else if (
-          entry.url
-          && (entry.url.includes('.jpg') || entry.url.includes('.png') || entry.url.includes('.gif'))
+          entry.url &&
+          (entry.url.includes('.jpg') || entry.url.includes('.png') || entry.url.includes('.gif'))
         ) {
           categories.Images = (categories.Images || 0) + bytes;
         } else if (entry.url && (entry.url.includes('.css') || types.includes('CSS'))) {

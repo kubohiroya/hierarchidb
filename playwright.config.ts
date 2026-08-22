@@ -9,9 +9,9 @@ import { resolveE2EUrlContract } from './e2e/utils/e2e-url-contract';
 const skipWebServer = process.env.PLAYWRIGHT_SKIP_WEBSERVER === '1';
 const e2eUrlContract = resolveE2EUrlContract();
 const previewURL = new URL(e2eUrlContract.baseURL);
-const previewHost = process.env.PLAYWRIGHT_PREVIEW_HOST ?? (
-  previewURL.hostname === 'localhost' ? '127.0.0.1' : previewURL.hostname
-);
+const previewHost =
+  process.env.PLAYWRIGHT_PREVIEW_HOST ??
+  (previewURL.hostname === 'localhost' ? '127.0.0.1' : previewURL.hostname);
 const previewPort = previewURL.port || (previewURL.protocol === 'https:' ? '443' : '80');
 const shellValue = (value: string): string => JSON.stringify(value);
 const fastArtifacts = process.env.HIERARCHIDB_E2E_FAST_ARTIFACTS === '1';

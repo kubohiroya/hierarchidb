@@ -1,3 +1,4 @@
+import { TreeTableSearchInput } from '@hierarchidb/components';
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
   DialogDisplayMode,
@@ -13,15 +14,15 @@ import {
   PluginDialogFrame,
   useDialogContext,
 } from '@hierarchidb/ui-dialog';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import {
   type HierarchicalTreeNode,
-  TreeConsolePanel,
   type TreeConsoleBreadcrumbRendererProps,
+  TreeConsolePanel,
   type TreeConsolePanelProps,
   type TreeTableColumn,
 } from '@hierarchidb/ui-treeconsole-base';
-import { TreeTableSearchInput } from '@hierarchidb/components';
 import type { DualKeyMap } from '@hierarchidb/util';
 import {
   ArrowBack as ArrowBackIcon,
@@ -46,11 +47,10 @@ import {
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useCallback, useId, useMemo, useState } from 'react';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { LoadTreeReturn } from '~/loader';
 import { loadTree } from '~/loader';
-import { getArchiveDisplayName } from './getArchiveDisplayName.js';
 import { ArchiveBreadcrumb } from './ArchiveBreadcrumb.js';
+import { getArchiveDisplayName } from './getArchiveDisplayName.js';
 import { useArchiveDialog } from './useArchiveDialog.js';
 
 const ARCHIVE_DIALOG_FOOTER_HEIGHT = 72;
@@ -506,9 +506,7 @@ function ArchiveDialogContent({
           selectAllPersistence="session"
           archiveAction={mode}
           hideDragHandler
-          breadcrumbRenderer={({
-            defaultRendererProps,
-          }: TreeConsoleBreadcrumbRendererProps) => (
+          breadcrumbRenderer={({ defaultRendererProps }: TreeConsoleBreadcrumbRendererProps) => (
             <ArchiveBreadcrumb {...defaultRendererProps} />
           )}
           onNodeClick={(_node: HierarchicalTreeNode) => undefined}
@@ -669,7 +667,9 @@ export function ArchiveDialog({ data, params }: ArchiveDialogProps) {
         <ArchiveDialogHeader
           {...props}
           title={
-            mode === 'restore' ? t('dialogs.archive.title.restore') : t('dialogs.archive.title.empty')
+            mode === 'restore'
+              ? t('dialogs.archive.title.restore')
+              : t('dialogs.archive.title.empty')
           }
         />
       ),

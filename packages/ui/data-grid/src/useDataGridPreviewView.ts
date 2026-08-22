@@ -1,6 +1,6 @@
-import { useCallback, useMemo } from 'react';
 import type { SelectChangeEvent } from '@mui/material';
-import { useDataGridPreview, type DataGridPreviewOp } from './hooks/useDataGridPreview.js';
+import { useCallback, useMemo } from 'react';
+import { type DataGridPreviewOp, useDataGridPreview } from './hooks/useDataGridPreview.js';
 
 type UseDataGridPreviewViewArgs = {
   pluginId?: string;
@@ -26,13 +26,16 @@ export const useDataGridPreviewView = ({
 
   const operatorOptions = useMemo<DataGridPreviewOp[]>(
     () => ['eq', 'contains', 'gt', 'gte', 'lt', 'lte', 'neq'],
-    [],
+    []
   );
 
-  const handleVisibleColsChange = useCallback((event: SelectChangeEvent<string[]>) => {
-    const value = event.target.value;
-    dataPreview.setVisibleCols(Array.isArray(value) ? value : [value]);
-  }, [dataPreview]);
+  const handleVisibleColsChange = useCallback(
+    (event: SelectChangeEvent<string[]>) => {
+      const value = event.target.value;
+      dataPreview.setVisibleCols(Array.isArray(value) ? value : [value]);
+    },
+    [dataPreview]
+  );
 
   const renderVisibleColsValue = useCallback((selected: unknown) => {
     const values = Array.isArray(selected) ? selected : [];

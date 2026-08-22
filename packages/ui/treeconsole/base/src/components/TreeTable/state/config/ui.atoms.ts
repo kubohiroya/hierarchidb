@@ -1,9 +1,9 @@
 /**
-  * UI State Atoms
-  * UIatom
+ * UI State Atoms
+ * UIatom
  * -
  * -
-  */
+ */
 
 import { atom } from 'jotai';
 

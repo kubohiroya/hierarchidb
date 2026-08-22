@@ -1,10 +1,9 @@
-import { getHeapSnapshot } from './vtStageCoreUtils.js';
-import { collectForVtTask } from './collectForVtTask.js';
-import { logVtCollectDuration, logVtCollectStart } from './vtStageTaskProcessorLoggerUtils.js';
-import type { TaskContextForVt, VtTaskRunInput } from './vtStageTaskTypes.js';
-import type { VtTaskInput } from '~/types/types';
 import type { VTStageContext } from '~/contextTypes';
-import type { VtCollectionResult } from './vtStageTaskTypes.js';
+import type { VtTaskInput } from '~/types/types';
+import { collectForVtTask } from './collectForVtTask.js';
+import { getHeapSnapshot } from './vtStageCoreUtils.js';
+import { logVtCollectDuration, logVtCollectStart } from './vtStageTaskProcessorLoggerUtils.js';
+import type { TaskContextForVt, VtCollectionResult, VtTaskRunInput } from './vtStageTaskTypes.js';
 
 type VtTaskCollectionExecutionInput = {
   context: VTStageContext;
@@ -21,17 +20,13 @@ type VtTaskCollectionExecutionInput = {
 
 export const logCollectStartWithHeap = (
   taskContext: TaskContextForVt,
-  taskInput: VtTaskInput,
+  taskInput: VtTaskInput
 ): void => {
-  logVtCollectStart(
-    taskContext,
-    taskInput.bufferIds.length,
-    getHeapSnapshot(),
-  );
+  logVtCollectStart(taskContext, taskInput.bufferIds.length, getHeapSnapshot());
 };
 
 export const collectForVtTaskWithInput = async (
-  input: VtTaskCollectionExecutionInput,
+  input: VtTaskCollectionExecutionInput
 ): Promise<VtCollectionResult | null> => {
   const {
     context,
@@ -65,7 +60,7 @@ export const collectForVtTaskWithInput = async (
 export const logCollectDurationIfNeeded = (
   taskContext: TaskContextForVt,
   collectStartedAt: number,
-  collected: VtCollectionResult | null,
+  collected: VtCollectionResult | null
 ): void => {
   if (collected) {
     logVtCollectDuration(taskContext, Date.now() - collectStartedAt);

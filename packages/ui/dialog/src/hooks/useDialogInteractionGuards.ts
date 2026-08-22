@@ -1,4 +1,10 @@
-import { type CSSProperties, useCallback, useEffect, useRef, type WheelEvent as ReactWheelEvent } from 'react';
+import {
+  type CSSProperties,
+  type WheelEvent as ReactWheelEvent,
+  useCallback,
+  useEffect,
+  useRef,
+} from 'react';
 
 interface DialogInteractionGuardsOptions {
   onBackdropClick?: () => void;
@@ -12,22 +18,21 @@ interface DialogInteractionGuardsOptions {
  * right after drag/resize gestures.
  */
 export function useDialogInteractionGuards(options?: DialogInteractionGuardsOptions) {
-  const {
-    onBackdropClick,
-    backdropIgnoreDelayMs = 0,
-    stopWheelPropagation = true,
-  } = options ?? {};
+  const { onBackdropClick, backdropIgnoreDelayMs = 0, stopWheelPropagation = true } = options ?? {};
 
   const draggingRef = useRef(false);
   const ignoreBackdropClickRef = useRef(false);
   const ignoreBackdropTimeoutRef = useRef<number | null>(null);
 
-  useEffect(() => () => {
-    if (ignoreBackdropTimeoutRef.current !== null && typeof window !== 'undefined') {
-      window.clearTimeout(ignoreBackdropTimeoutRef.current);
-      ignoreBackdropTimeoutRef.current = null;
-    }
-  }, []);
+  useEffect(
+    () => () => {
+      if (ignoreBackdropTimeoutRef.current !== null && typeof window !== 'undefined') {
+        window.clearTimeout(ignoreBackdropTimeoutRef.current);
+        ignoreBackdropTimeoutRef.current = null;
+      }
+    },
+    []
+  );
 
   const scheduleBackdropClickIgnore = useCallback(() => {
     if (typeof window === 'undefined') {
@@ -40,10 +45,13 @@ export function useDialogInteractionGuards(options?: DialogInteractionGuardsOpti
     if (ignoreBackdropTimeoutRef.current !== null) {
       window.clearTimeout(ignoreBackdropTimeoutRef.current);
     }
-    ignoreBackdropTimeoutRef.current = window.setTimeout(() => {
-      ignoreBackdropClickRef.current = false;
-      ignoreBackdropTimeoutRef.current = null;
-    }, Math.max(backdropIgnoreDelayMs, 0));
+    ignoreBackdropTimeoutRef.current = window.setTimeout(
+      () => {
+        ignoreBackdropClickRef.current = false;
+        ignoreBackdropTimeoutRef.current = null;
+      },
+      Math.max(backdropIgnoreDelayMs, 0)
+    );
   }, [backdropIgnoreDelayMs]);
 
   const registerDragStart = useCallback(() => {
@@ -62,12 +70,15 @@ export function useDialogInteractionGuards(options?: DialogInteractionGuardsOpti
     onBackdropClick?.();
   }, [onBackdropClick]);
 
-  const handleWheelCapture = useCallback((event: ReactWheelEvent) => {
-    if (!stopWheelPropagation) return;
-    if (!draggingRef.current) {
-      event.stopPropagation();
-    }
-  }, [stopWheelPropagation]);
+  const handleWheelCapture = useCallback(
+    (event: ReactWheelEvent) => {
+      if (!stopWheelPropagation) return;
+      if (!draggingRef.current) {
+        event.stopPropagation();
+      }
+    },
+    [stopWheelPropagation]
+  );
 
   return {
     registerDragStart,
@@ -75,7 +86,9 @@ export function useDialogInteractionGuards(options?: DialogInteractionGuardsOpti
     handleBackdropClick,
     handleWheelCapture,
     isDraggingRef: draggingRef,
-    surfaceStyle: stopWheelPropagation ? { overscrollBehavior: 'contain' } as CSSProperties : undefined,
+    surfaceStyle: stopWheelPropagation
+      ? ({ overscrollBehavior: 'contain' } as CSSProperties)
+      : undefined,
     frameStyle: { overscrollBehavior: 'contain' } as CSSProperties,
   } as const;
 }

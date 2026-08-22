@@ -1,29 +1,30 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import {
-  encodeFlatGeobufFromFeatureCollection,
+  buildShapeSourceLayerName,
   type EphemeralDB,
   type EphemeralGeometryCacheRecord,
+  encodeFlatGeobufFromFeatureCollection,
 } from '@hierarchidb/gis-sdk';
 import type { Feature, FeatureCollection } from 'geojson';
+import type { GeometryStageTaskInput, StageHandlerResult } from '~/types/types';
 import type { TaskDisplayPayload } from '../../../../build-api';
-import type { StageHandlerResult, GeometryStageTaskInput } from '~/types/types';
 import { buildBoundaryFeature } from '../geometryTransformUtils.js';
 import { finalizeGeometryStageCache } from './finalizeGeometryStageCache.js';
-import { collectTileIdsForCollection, buildBoundaryDiagnostics, validateOutputForVt } from './helpers/collection.js';
+import {
+  buildBoundaryDiagnostics,
+  collectTileIdsForCollection,
+  validateOutputForVt,
+} from './helpers/collection.js';
 import type { GeometryOps } from './helpers/core.js';
 import {
+  isTaskDebugLoggingEnabled,
   TASKDEBUG_BUILD_TAG,
   TRANSFORM_DB_WRITE_TIMEOUT_MS,
-  isTaskDebugLoggingEnabled,
   validateEncodedFlatGeobuf,
   withTimeout,
 } from './helpers/core.js';
-import {
-  countPolygonsFromGeometry,
-  countVerticesFromGeometry,
-} from './helpers/validation.js';
 import { runStageWithLabel } from './helpers/runtimeUtils.js';
-import { buildShapeSourceLayerName } from '@hierarchidb/gis-sdk';
+import { countPolygonsFromGeometry, countVerticesFromGeometry } from './helpers/validation.js';
 
 type UpdateTaskPhase = (
   taskId: string,
@@ -32,7 +33,7 @@ type UpdateTaskPhase = (
   options?: {
     key?: string;
     params?: TaskDisplayPayload['params'];
-  },
+  }
 ) => Promise<void>;
 
 type GeometryStageOutputParams = {
@@ -64,7 +65,7 @@ type GeometryStageOutputParams = {
     taskId: string,
     processedPolygons: number,
     totalPolygons: number,
-    message?: string,
+    message?: string
   ) => Promise<void>;
   setStageLabel: (value: string) => void;
   logDebugPhase: (phase: string, details?: Record<string, unknown>) => void;
@@ -78,18 +79,19 @@ type GeometryStageOutputParams = {
 const collectArrayBufferSnapshot = (data: unknown): Record<string, unknown> => {
   const dataIsObject = data !== null && typeof data === 'object';
   const dataConstructorName = dataIsObject
-    ? (data as { constructor?: { name?: string } }).constructor?.name ?? null
+    ? ((data as { constructor?: { name?: string } }).constructor?.name ?? null)
     : null;
-  const dataByteLength = dataIsObject && 'byteLength' in (data as { byteLength?: number })
-    ? (data as { byteLength?: number }).byteLength ?? null
-    : null;
-  const dataSize = dataIsObject && 'size' in (data as { size?: number })
-    ? (data as { size?: number }).size ?? null
-    : null;
+  const dataByteLength =
+    dataIsObject && 'byteLength' in (data as { byteLength?: number })
+      ? ((data as { byteLength?: number }).byteLength ?? null)
+      : null;
+  const dataSize =
+    dataIsObject && 'size' in (data as { size?: number })
+      ? ((data as { size?: number }).size ?? null)
+      : null;
   const isArrayBuffer = typeof ArrayBuffer !== 'undefined' && data instanceof ArrayBuffer;
-  const isArrayBufferView = dataIsObject
-    && typeof ArrayBuffer !== 'undefined'
-    && typeof ArrayBuffer.isView === 'function'
+  const isArrayBufferView =
+    dataIsObject && typeof ArrayBuffer !== 'undefined' && typeof ArrayBuffer.isView === 'function'
       ? ArrayBuffer.isView(data as ArrayBufferView)
       : null;
   const isUint8Array = typeof Uint8Array !== 'undefined' && data instanceof Uint8Array;
@@ -105,7 +107,7 @@ const collectArrayBufferSnapshot = (data: unknown): Record<string, unknown> => {
 };
 
 export const runGeometryStageOutputPhase = async (
-  params: GeometryStageOutputParams,
+  params: GeometryStageOutputParams
 ): Promise<StageHandlerResult> => {
   const {
     taskId,
@@ -135,19 +137,20 @@ export const runGeometryStageOutputPhase = async (
   const simplifiedFeatureCount = simplified.features.length;
   const simplifiedVertexCount = simplified.features.reduce(
     (sum, feature) => sum + countVerticesFromGeometry(feature.geometry),
-    0,
+    0
   );
   const simplifiedPolygonCount = simplified.features.reduce(
     (sum, feature) => sum + countPolygonsFromGeometry(feature.geometry),
-    0,
+    0
   );
   const adminLevel = input.adminLevel;
   const resolvedAdminLevel = typeof adminLevel === 'number' ? adminLevel : 0;
   const layerName = buildShapeSourceLayerName(resolvedAdminLevel, 'fill');
   const boundaryLayerName = buildShapeSourceLayerName(resolvedAdminLevel, 'boundary');
-  const shouldBuildBoundary = typeof boundaryDisableAtZoomOrAbove === 'number'
-    ? band.zMax < boundaryDisableAtZoomOrAbove
-    : true;
+  const shouldBuildBoundary =
+    typeof boundaryDisableAtZoomOrAbove === 'number'
+      ? band.zMax < boundaryDisableAtZoomOrAbove
+      : true;
 
   await updateTaskPhase(taskId, 'output:build:start', taskProgressRange.outputBuildStart);
   logDebugPhase('output-build:start', {
@@ -175,9 +178,8 @@ export const runGeometryStageOutputPhase = async (
     outputPolygonCount += countPolygonsFromGeometry(featureWithId.geometry);
     if (shouldBuildBoundary) {
       setStageLabel('boundary');
-      const boundaryFeature = await runStageWithLabel(
-        'boundary',
-        () => buildBoundaryFeature(featureWithId, boundaryLayerName, adminLevel),
+      const boundaryFeature = await runStageWithLabel('boundary', () =>
+        buildBoundaryFeature(featureWithId, boundaryLayerName, adminLevel)
       );
       features.push(boundaryFeature);
       outputVertexCount += countVerticesFromGeometry(boundaryFeature.geometry);
@@ -226,31 +228,37 @@ export const runGeometryStageOutputPhase = async (
 
   const boundaryDiagnostics = buildBoundaryDiagnostics(outputCollectionValue);
   if (boundaryDiagnostics && isTaskDebugLoggingEnabled()) {
-    console.debug('[ShapeGeometry][BoundaryDiagnostics]', JSON.stringify({
-      nodeId,
-      taskId,
-      sourceKey: input.sourceKey,
-      adminLevel: input.adminLevel,
-      bandIndex: input.bandIndex,
-      zTarget: band.zMax,
-      boundary: boundaryDiagnostics,
-    }));
+    console.debug(
+      '[ShapeGeometry][BoundaryDiagnostics]',
+      JSON.stringify({
+        nodeId,
+        taskId,
+        sourceKey: input.sourceKey,
+        adminLevel: input.adminLevel,
+        bandIndex: input.bandIndex,
+        zTarget: band.zMax,
+        boundary: boundaryDiagnostics,
+      })
+    );
   }
 
   setStageLabel('validate:geojson');
   const issues = validateOutputForVt(outputCollectionValue);
   if (issues.length > 0) {
     const sample = issues.slice(0, 5);
-    console.error('[ShapeGeometry][GeojsonValidation]', JSON.stringify({
-      nodeId,
-      taskId,
-      sourceKey: input.sourceKey,
-      adminLevel: input.adminLevel,
-      bandIndex: input.bandIndex,
-      zTarget: band.zMax,
-      issueCount: issues.length,
-      sample,
-    }));
+    console.error(
+      '[ShapeGeometry][GeojsonValidation]',
+      JSON.stringify({
+        nodeId,
+        taskId,
+        sourceKey: input.sourceKey,
+        adminLevel: input.adminLevel,
+        bandIndex: input.bandIndex,
+        zTarget: band.zMax,
+        issueCount: issues.length,
+        sample,
+      })
+    );
     throw new Error(`geometry failed: invalid geojson for vt (issues=${issues.length})`);
   }
 
@@ -265,7 +273,9 @@ export const runGeometryStageOutputPhase = async (
     key: 'stage.taskPhase.geometryCacheEncodeStart',
   });
   logDebugPhase('encode:start', { featureCount: outputCollectionValue.features.length });
-  const encoded = await runStageWithLabel('encode', () => encodeFlatGeobufFromFeatureCollection(outputCollectionValue));
+  const encoded = await runStageWithLabel('encode', () =>
+    encodeFlatGeobufFromFeatureCollection(outputCollectionValue)
+  );
   if (encoded.byteLength === 0) {
     throw new Error('geometry failed: empty geometry cache buffer');
   }
@@ -287,7 +297,8 @@ export const runGeometryStageOutputPhase = async (
     key: 'stage.taskPhase.geometryCacheEncodeDone',
   });
 
-  const extractionRatio = inputFeatureCount > 0 ? simplified.features.length / inputFeatureCount : 0;
+  const extractionRatio =
+    inputFeatureCount > 0 ? simplified.features.length / inputFeatureCount : 0;
   setStageLabel('cache:put');
   assertNotAborted(abortSignal);
   await updateTaskPhase(taskId, 'cache:put:start', taskProgressRange.cachePutStart);
@@ -335,15 +346,18 @@ export const runGeometryStageOutputPhase = async (
   logDebugPhase('cache-put:done', { cacheId });
 
   const tileIds = collectTileIdsForCollection(outputCollectionValue, band.zBase, geometryOps);
-  console.info('[ShapeGeometry][TileIndex]', JSON.stringify({
-    nodeId: String(nodeId),
-    bandIndex: input.bandIndex,
-    zBase: band.zBase,
-    sourceKey: input.sourceKey,
-    adminLevel: input.adminLevel,
-    tileIdCount: tileIds.length,
-    tileIdSample: tileIds.slice(0, 5),
-  }));
+  console.info(
+    '[ShapeGeometry][TileIndex]',
+    JSON.stringify({
+      nodeId: String(nodeId),
+      bandIndex: input.bandIndex,
+      zBase: band.zBase,
+      sourceKey: input.sourceKey,
+      adminLevel: input.adminLevel,
+      tileIdCount: tileIds.length,
+      tileIdSample: tileIds.slice(0, 5),
+    })
+  );
   if (tileIds.length > 0) {
     const createdAt = Date.now();
     const cacheTimestamp = createdAt;
@@ -362,16 +376,16 @@ export const runGeometryStageOutputPhase = async (
         taskId,
         operation: 'tile-index:rebuild-relations',
         timeoutMs: TRANSFORM_DB_WRITE_TIMEOUT_MS,
-        promise: ephemeralDB.transaction('rw', [
-          ephemeralDB.tileEmitBufferRelations,
-        ], async () => {
+        promise: ephemeralDB.transaction('rw', [ephemeralDB.tileEmitBufferRelations], async () => {
           await ephemeralDB.tileEmitBufferRelations.where('bufferId').equals(cacheId).delete();
           await ephemeralDB.tileEmitBufferRelations.bulkPut(relations);
         }),
       });
     } catch (storageError) {
       const reason = storageError instanceof Error ? storageError.message : String(storageError);
-      throw new Error(`geometry failed: tile index relation write failed (taskId=${taskId}, reason=${reason})`);
+      throw new Error(
+        `geometry failed: tile index relation write failed (taskId=${taskId}, reason=${reason})`
+      );
     }
   }
 

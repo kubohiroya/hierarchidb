@@ -1,12 +1,11 @@
 /**
-  * Map Highlight Hook with Jotai
-  * jotai
-  */
+ * Map Highlight Hook with Jotai
+ * jotai
+ */
 
-import { useCallback, useEffect } from 'react';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { MapHighlightState, MapHighlightStyles } from '~/types/index';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useCallback, useEffect } from 'react';
 import {
   addHighlightedNodeAtom,
   addSearchMatchedNodeAtom,
@@ -23,6 +22,7 @@ import {
   setSearchMatchedNodesAtom,
   updateHighlightStylesAtom,
 } from '~/state/index';
+import type { MapHighlightState, MapHighlightStyles } from '~/types/index';
 
 interface UseMapHighlightProps {
   mapInstance?: any;
@@ -46,10 +46,10 @@ interface UseMapHighlightReturn {
 }
 
 export const useMapHighlight = ({
-                                  mapInstance,
-                                  initialStyles,
-                                  onStateChange,
-                                }: UseMapHighlightProps): UseMapHighlightReturn => {
+  mapInstance,
+  initialStyles,
+  onStateChange,
+}: UseMapHighlightProps): UseMapHighlightReturn => {
   // Atoms
   const [, setMapInstance] = useAtom(mapInstanceAtom);
   const [, setStyles] = useAtom(highlightStylesAtom);
@@ -86,29 +86,47 @@ export const useMapHighlight = ({
   }, [highlightState, onStateChange]);
 
   //  API
-  const setSearchMatched = useCallback((nodeIds: NodeId[]) => {
-    setSearchMatchedNodes(nodeIds);
-  }, [setSearchMatchedNodes]);
+  const setSearchMatched = useCallback(
+    (nodeIds: NodeId[]) => {
+      setSearchMatchedNodes(nodeIds);
+    },
+    [setSearchMatchedNodes]
+  );
 
-  const setSelected = useCallback((nodeIds: NodeId[]) => {
-    setHighlightedNodes(nodeIds);
-  }, [setHighlightedNodes]);
+  const setSelected = useCallback(
+    (nodeIds: NodeId[]) => {
+      setHighlightedNodes(nodeIds);
+    },
+    [setHighlightedNodes]
+  );
 
-  const addSearchMatched = useCallback((nodeId: NodeId) => {
-    addSearchMatchedNode(nodeId);
-  }, [addSearchMatchedNode]);
+  const addSearchMatched = useCallback(
+    (nodeId: NodeId) => {
+      addSearchMatchedNode(nodeId);
+    },
+    [addSearchMatchedNode]
+  );
 
-  const addSelected = useCallback((nodeId: NodeId) => {
-    addHighlightedNode(nodeId);
-  }, [addHighlightedNode]);
+  const addSelected = useCallback(
+    (nodeId: NodeId) => {
+      addHighlightedNode(nodeId);
+    },
+    [addHighlightedNode]
+  );
 
-  const removeSearchMatched = useCallback((nodeId: NodeId) => {
-    removeSearchMatchedNode(nodeId);
-  }, [removeSearchMatchedNode]);
+  const removeSearchMatched = useCallback(
+    (nodeId: NodeId) => {
+      removeSearchMatchedNode(nodeId);
+    },
+    [removeSearchMatchedNode]
+  );
 
-  const removeSelected = useCallback((nodeId: NodeId) => {
-    removeHighlightedNode(nodeId);
-  }, [removeHighlightedNode]);
+  const removeSelected = useCallback(
+    (nodeId: NodeId) => {
+      removeHighlightedNode(nodeId);
+    },
+    [removeHighlightedNode]
+  );
 
   const clearAll = useCallback(() => {
     clearAllHighlights();
@@ -118,9 +136,12 @@ export const useMapHighlight = ({
     clearHighlighted();
   }, [clearHighlighted]);
 
-  const setFocused = useCallback((nodeId: NodeId | null) => {
-    setFocusedNode(nodeId);
-  }, [setFocusedNode]);
+  const setFocused = useCallback(
+    (nodeId: NodeId | null) => {
+      setFocusedNode(nodeId);
+    },
+    [setFocusedNode]
+  );
 
   return {
     highlightState,

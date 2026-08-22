@@ -1,23 +1,28 @@
-import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import {
-  geometrySimplify,
   type GeometryEngine,
+  geometrySimplify,
   type OmitDetailsConfig,
   type PreSimplifyFilterConfig,
   type RingFixConfig,
   type SelfIntersectionConfig,
   type SelfIntersectionTuningConfig,
 } from '@hierarchidb/gis-sdk';
-import { applySelfIntersectionFix, applyOmitDetailsFilter, applyPolygonAreaExclusion, recoverInvalidSelfIntersection } from './filterUtils.js';
+import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import {
-  isGeometryValid,
-  cleanGeometry,
-  validateSimplifiedGeometry,
-  formatGeometryDiagnostics,
-} from './validationUtils.js';
+  applyOmitDetailsFilter,
+  applyPolygonAreaExclusion,
+  applySelfIntersectionFix,
+  recoverInvalidSelfIntersection,
+} from './filterUtils.js';
+import { countVerticesFromGeometry, hasNonFiniteGeometry, metersPerPixel } from './metrics.js';
 import { applyRingFix } from './ringUtils.js';
 import { snapGeometryToGrid } from './snapUtils.js';
-import { metersPerPixel, countVerticesFromGeometry, hasNonFiniteGeometry } from './metrics.js';
+import {
+  cleanGeometry,
+  formatGeometryDiagnostics,
+  isGeometryValid,
+  validateSimplifiedGeometry,
+} from './validationUtils.js';
 
 type SimplifyProgress = {
   processed: number;
@@ -71,14 +76,16 @@ export type SimplifyOptions = {
 };
 
 const resolveFeatureId = (feature: Feature, featureIndex: number): string => {
-  const rawId = feature.id ?? (feature.properties && 'id' in feature.properties ? feature.properties.id : undefined);
+  const rawId =
+    feature.id ??
+    (feature.properties && 'id' in feature.properties ? feature.properties.id : undefined);
   if (rawId !== undefined && rawId !== null) return String(rawId);
   return `featureIndex:${featureIndex}`;
 };
 
 const recordIssue = async (
   options: SimplifyOptions | undefined,
-  issue: SimplifyIssue,
+  issue: SimplifyIssue
 ): Promise<void> => {
   if (!options?.onIssue) return;
   await options.onIssue(issue);
@@ -96,7 +103,7 @@ export const simplifyFeatureCollection = async (
   excludePolygonAreaCoefficient: number,
   omitDetailsConfig: OmitDetailsConfig,
   geometryEngine?: GeometryEngine,
-  options?: SimplifyOptions,
+  options?: SimplifyOptions
 ): Promise<FeatureCollection> => {
   const metersPerPixelValue = metersPerPixel(zTarget);
   const engine = geometryEngine ?? 'turf';
@@ -163,9 +170,11 @@ export const simplifyFeatureCollection = async (
         if (vertexCount > maxVerticesPerFeature) {
           oversizedCount += 1;
           if (oversizedSamples.length < 3) {
-            const rawId = feature.id ?? (feature.properties && 'id' in feature.properties
-              ? feature.properties.id
-              : undefined);
+            const rawId =
+              feature.id ??
+              (feature.properties && 'id' in feature.properties
+                ? feature.properties.id
+                : undefined);
             const sampleId = rawId != null ? String(rawId) : `featureIndex:${index}`;
             oversizedSamples.push(sampleId);
           }
@@ -196,18 +205,27 @@ export const simplifyFeatureCollection = async (
         continue;
       }
       const cleaned = cleanGeometry(snapped);
-      const ringFixed = applyRingFix(cleaned, ringFix, minRingArea, preSimplify.dropInvalidHoles, engine);
+      const ringFixed = applyRingFix(
+        cleaned,
+        ringFix,
+        minRingArea,
+        preSimplify.dropInvalidHoles,
+        engine
+      );
       if (!ringFixed) {
         droppedRingFix += 1;
         const cleanedDiagnostics = formatGeometryDiagnostics(cleaned, engine);
         if (diagnosticLogsEmitted < diagnosticLogLimit) {
           diagnosticLogsEmitted += 1;
-          console.warn('[ShapeTransform][SimplifyDiagnostics] invalid after ring fix (rings removed)', {
-            featureId,
-            featureIndex: index,
-            zTarget,
-            input: cleanedDiagnostics,
-          });
+          console.warn(
+            '[ShapeTransform][SimplifyDiagnostics] invalid after ring fix (rings removed)',
+            {
+              featureId,
+              featureIndex: index,
+              zTarget,
+              input: cleanedDiagnostics,
+            }
+          );
         }
         await recordIssue(options, {
           featureId,
@@ -247,22 +265,30 @@ export const simplifyFeatureCollection = async (
           ringFix,
           minRingArea,
           preSimplify.dropInvalidHoles,
-          engine,
+          engine
         );
         if (recovered && isGeometryValid(recovered, engine)) {
           ringFixCandidate = recovered;
           if (diagnosticLogsEmitted < diagnosticLogLimit) {
             diagnosticLogsEmitted += 1;
-            console.warn('[ShapeTransform][SimplifyDiagnostics] recovered invalid ring fix via unkink', {
-              featureId,
-              featureIndex: index,
-              zTarget,
-              recovered: formatGeometryDiagnostics(recovered, engine),
-            });
+            console.warn(
+              '[ShapeTransform][SimplifyDiagnostics] recovered invalid ring fix via unkink',
+              {
+                featureId,
+                featureIndex: index,
+                zTarget,
+                recovered: formatGeometryDiagnostics(recovered, engine),
+              }
+            );
           }
         }
       }
-      const omittedDetails = applyOmitDetailsFilter(ringFixCandidate, omitDetailsConfig, zTarget, engine);
+      const omittedDetails = applyOmitDetailsFilter(
+        ringFixCandidate,
+        omitDetailsConfig,
+        zTarget,
+        engine
+      );
       if (!omittedDetails) {
         droppedOmitDetails += 1;
         await recordIssue(options, {
@@ -279,7 +305,7 @@ export const simplifyFeatureCollection = async (
         excludePolygonAreaCoefficient,
         zTarget,
         quantize,
-        engine,
+        engine
       );
       if (!areaFiltered) {
         droppedArea += 1;
@@ -308,7 +334,7 @@ export const simplifyFeatureCollection = async (
           splitSelfIntersections: preSimplify.splitSelfIntersections,
           dropSmallPolygons: preSimplify.dropSmallPolygons,
           minRingVertices: ringFix.minRingVertices,
-        },
+        }
       );
       if (!intersectionFixed) {
         droppedIntersection += 1;
@@ -329,7 +355,7 @@ export const simplifyFeatureCollection = async (
           ringFix,
           minRingArea,
           preSimplify.dropInvalidHoles,
-          engine,
+          engine
         );
         if (intersectionRepaired) {
           intersectionCandidate = intersectionRepaired;
@@ -341,7 +367,7 @@ export const simplifyFeatureCollection = async (
             ringFix,
             minRingArea,
             preSimplify.dropInvalidHoles,
-            engine,
+            engine
           );
           const recoveredFromIntersection = recoverInvalidSelfIntersection(
             intersectionCandidate,
@@ -349,19 +375,22 @@ export const simplifyFeatureCollection = async (
             ringFix,
             minRingArea,
             preSimplify.dropInvalidHoles,
-            engine,
+            engine
           );
           const recovered = recoveredFromArea ?? recoveredFromIntersection;
           if (recovered && isGeometryValid(recovered, engine)) {
             intersectionCandidate = recovered;
             if (diagnosticLogsEmitted < diagnosticLogLimit) {
               diagnosticLogsEmitted += 1;
-              console.warn('[ShapeTransform][SimplifyDiagnostics] recovered invalid self-intersection via unkink', {
-                featureId,
-                featureIndex: index,
-                zTarget,
-                recovered: formatGeometryDiagnostics(recovered, engine),
-              });
+              console.warn(
+                '[ShapeTransform][SimplifyDiagnostics] recovered invalid self-intersection via unkink',
+                {
+                  featureId,
+                  featureIndex: index,
+                  zTarget,
+                  recovered: formatGeometryDiagnostics(recovered, engine),
+                }
+              );
             }
           }
         }
@@ -372,13 +401,16 @@ export const simplifyFeatureCollection = async (
         const intersectionDiagnostics = formatGeometryDiagnostics(intersectionCandidate, engine);
         if (diagnosticLogsEmitted < diagnosticLogLimit) {
           diagnosticLogsEmitted += 1;
-          console.warn('[ShapeTransform][SimplifyDiagnostics] invalid after self-intersection fix', {
-            featureId,
-            featureIndex: index,
-            zTarget,
-            before: areaDiagnostics,
-            after: intersectionDiagnostics,
-          });
+          console.warn(
+            '[ShapeTransform][SimplifyDiagnostics] invalid after self-intersection fix',
+            {
+              featureId,
+              featureIndex: index,
+              zTarget,
+              before: areaDiagnostics,
+              after: intersectionDiagnostics,
+            }
+          );
         }
         await recordIssue(options, {
           featureId,
@@ -404,7 +436,7 @@ export const simplifyFeatureCollection = async (
         ringFix,
         minRingArea,
         preSimplify.dropInvalidHoles,
-        engine,
+        engine
       );
       features.push({ ...feature, geometry: validated });
     }
@@ -417,11 +449,14 @@ export const simplifyFeatureCollection = async (
     }
   }
   if (oversizedCount > 0) {
-    console.warn('[ShapeTransform][SimplifyDiagnostics] oversized features observed during simplify', {
-      oversizedCount,
-      maxVerticesPerFeature,
-      samples: oversizedSamples,
-    });
+    console.warn(
+      '[ShapeTransform][SimplifyDiagnostics] oversized features observed during simplify',
+      {
+        oversizedCount,
+        maxVerticesPerFeature,
+        samples: oversizedSamples,
+      }
+    );
   }
   if (options?.onPhase) {
     await options.onPhase('preprocess:done');

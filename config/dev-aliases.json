@@ -1,13 +1,5 @@
 {
-  "groups": [
-    "runtime",
-    "ui",
-    "features"
-  ],
-  "packages": [
-    "*"
-  ],
-  "plugins": [
-    "*"
-  ]
+  "groups": ["runtime", "ui", "features"],
+  "packages": ["*"],
+  "plugins": ["*"]
 }

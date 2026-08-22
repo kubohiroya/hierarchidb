@@ -1,9 +1,11 @@
-import { memo } from 'react';
 import type { ReactElement } from 'react';
+import { memo } from 'react';
 import { useDialogContext } from '../hooks/useDialogContext.js';
-import type { HeadlessFooterRenderProps, HeadlessDialogFooterProps } from './types.js';
+import type { HeadlessDialogFooterProps, HeadlessFooterRenderProps } from './types.js';
 
-function buildFooterRenderProps<TData>(ctx: ReturnType<typeof useDialogContext<TData>>): HeadlessFooterRenderProps<TData> {
+function buildFooterRenderProps<TData>(
+  ctx: ReturnType<typeof useDialogContext<TData>>
+): HeadlessFooterRenderProps<TData> {
   return {
     steps: ctx.stepComponents,
     activeStepIndex: ctx.activeStepIndex,
@@ -29,6 +31,6 @@ function PluginDialogFooterComponent<TData>({ children }: HeadlessDialogFooterPr
 
 PluginDialogFooterComponent.displayName = 'HeadlessPluginDialogFooter';
 
-export const PluginDialogFooter = memo(PluginDialogFooterComponent) as <TData,>(
-  props: HeadlessDialogFooterProps<TData>,
+export const PluginDialogFooter = memo(PluginDialogFooterComponent) as <TData>(
+  props: HeadlessDialogFooterProps<TData>
 ) => ReactElement | null;

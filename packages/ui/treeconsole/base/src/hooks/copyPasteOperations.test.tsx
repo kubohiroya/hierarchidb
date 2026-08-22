@@ -3,9 +3,9 @@
  * @description Regression tests for clipboard compatibility with target-aware guards.
  */
 
-import { describe, expect, it, vi } from 'vitest';
-import { act, renderHook } from '@testing-library/react';
 import type { NodeId } from '@hierarchidb/core-types';
+import { act, renderHook } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { useCopyPasteOperations } from './useCopyPasteOperations.js';
 
 describe('useCopyPasteOperations', () => {
@@ -16,7 +16,7 @@ describe('useCopyPasteOperations', () => {
         stateManager: {
           canPasteToTarget,
         },
-      }),
+      })
     );
 
     expect(result.current.canPasteToTarget('allowed-target' as NodeId)).toBe(true);
@@ -31,7 +31,7 @@ describe('useCopyPasteOperations', () => {
         stateManager: {
           canPaste,
         },
-      }),
+      })
     );
 
     expect(result.current.canPasteToTarget('allowed-target' as NodeId)).toBe(true);
@@ -67,7 +67,7 @@ describe('useCopyPasteOperations', () => {
           pasteNodes,
           clearClipboard,
         },
-      }),
+      })
     );
 
     await act(async () => {
@@ -98,7 +98,7 @@ describe('useCopyPasteOperations', () => {
           canPaste: vi.fn(() => true),
           pasteNodes,
         },
-      }),
+      })
     );
 
     await act(async () => {

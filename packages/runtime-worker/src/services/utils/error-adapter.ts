@@ -1,6 +1,6 @@
-import { PERFORMANCE_CONFIG } from '~/utils/PERFORMANCE_CONFIG';
 import type { WorkerErrorCode } from '~/command-types';
 import { WorkerErrorCodeValue } from '~/command-types';
+import { PERFORMANCE_CONFIG } from '~/utils/PERFORMANCE_CONFIG';
 
 const KNOWN_CODES = new Set<WorkerErrorCode>(Object.values(WorkerErrorCodeValue));
 const DATABASE_ERROR_NAMES = new Set([

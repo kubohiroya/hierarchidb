@@ -1,6 +1,6 @@
 /**
  * Base Vitest Setup Configuration
- * 
+ *
  * Common test environment setup for all packages.
  * Provides Web Worker, IndexedDB, and other browser API mocks for Node.js environment.
  */
@@ -33,7 +33,7 @@ const comlinkMock = {
   proxy: <T>(obj: T): T => obj,
   windowEndpoint: (globalWindow: Window) => globalWindow,
   createEndpoint: () => ({}),
-  releaseProxy: () => { },
+  releaseProxy: () => {},
 };
 
 vi.mock('comlink', () => comlinkMock);
@@ -52,13 +52,16 @@ if (typeof globalThis.self === 'undefined') {
 class WorkerMock {
   private listeners: Map<string, Function[]> = new Map();
 
-  constructor(public url: string | URL, public options?: WorkerOptions) { }
+  constructor(
+    public url: string | URL,
+    public options?: WorkerOptions
+  ) {}
 
   postMessage(message: any, _transfer?: Transferable[]): void {
     // Simulate async message handling
     setTimeout(() => {
       const handlers = this.listeners.get('message') || [];
-      handlers.forEach(handler => handler({ data: message }));
+      handlers.forEach((handler) => handler({ data: message }));
     }, 0);
   }
 
@@ -150,7 +153,13 @@ void (async () => {
   if (typeof globalThis.fetch !== 'function') {
     try {
       const fetchModule = await import('node-fetch');
-      const { default: nodeFetch, Headers, Request, Response, FormData } = fetchModule as {
+      const {
+        default: nodeFetch,
+        Headers,
+        Request,
+        Response,
+        FormData,
+      } = fetchModule as {
         default: typeof fetch;
         Headers: typeof globalThis.Headers;
         Request: typeof globalThis.Request;
@@ -173,7 +182,7 @@ void (async () => {
 // CompressionStream mock for compression tests
 if (!globalThis.CompressionStream) {
   globalThis.CompressionStream = class CompressionStream {
-    constructor(public format: string) { }
+    constructor(public format: string) {}
     writable = { getWriter: () => ({ write: vi.fn(), close: vi.fn() }) };
     readable = { getReader: () => ({ read: vi.fn() }) };
   } as typeof globalThis.CompressionStream;
@@ -181,7 +190,7 @@ if (!globalThis.CompressionStream) {
 
 if (!globalThis.DecompressionStream) {
   globalThis.DecompressionStream = class DecompressionStream {
-    constructor(public format: string) { }
+    constructor(public format: string) {}
     writable = { getWriter: () => ({ write: vi.fn(), close: vi.fn() }) };
     readable = { getReader: () => ({ read: vi.fn() }) };
   } as typeof globalThis.DecompressionStream;
@@ -196,7 +205,7 @@ if (!globalThis.URL?.createObjectURL) {
       value: vi.fn(() => 'blob:mock') as URL['createObjectURL'],
     });
   } else {
-    globalThis.URL = Object.assign(({} as unknown as URL), {
+    globalThis.URL = Object.assign({} as unknown as URL, {
       createObjectURL: vi.fn(() => 'blob:mock') as URL['createObjectURL'],
     });
   }
@@ -210,7 +219,7 @@ if (!globalThis.URL?.revokeObjectURL) {
       value: vi.fn() as URL['revokeObjectURL'],
     });
   } else {
-    globalThis.URL = Object.assign(({} as unknown as URL), {
+    globalThis.URL = Object.assign({} as unknown as URL, {
       revokeObjectURL: vi.fn() as URL['revokeObjectURL'],
     });
   }
@@ -237,7 +246,7 @@ try {
  * Use this in tests that need clean database atoms
  */
 export async function clearAllDatabases(): Promise<void> {
-  const databases = await indexedDB.databases?.() || [];
+  const databases = (await indexedDB.databases?.()) || [];
   for (const db of databases) {
     if (db.name) {
       await new Promise<void>((resolve, reject) => {

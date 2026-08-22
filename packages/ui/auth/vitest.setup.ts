@@ -45,8 +45,12 @@ type MutableCrypto = Partial<Crypto> & Record<string, unknown>;
 if (typeof window !== 'undefined' && window.addEventListener) {
   window.addEventListener('error', (event: Event) => {
     const errorEvent = event as ErrorEvent;
-    const message = typeof errorEvent.error?.message === 'string' ? errorEvent.error.message : errorEvent.message;
-    if (typeof message === 'string' && message.includes('useMultiAuth must be used within MultiAuthProvider')) {
+    const message =
+      typeof errorEvent.error?.message === 'string' ? errorEvent.error.message : errorEvent.message;
+    if (
+      typeof message === 'string' &&
+      message.includes('useMultiAuth must be used within MultiAuthProvider')
+    ) {
       event.preventDefault();
     }
   });

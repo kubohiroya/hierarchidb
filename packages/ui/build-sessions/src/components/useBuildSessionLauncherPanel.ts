@@ -1,14 +1,22 @@
-import { createElement, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
-import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
-import type { BuildSessionSnapshot } from '~/hooks/useBuildSessionSnapshots';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import { useWorkerQueryAPI } from '~/hooks/useWorkerQueryAPI';
+import type { BuildStage } from '@hierarchidb/ui-build-progress/build-stage';
 import {
   CloudDownload as CloudDownloadIcon,
   Layers as LayersIcon,
   Tune as TuneIcon,
 } from '@mui/icons-material';
+import {
+  createElement,
+  type MouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import type { BuildSessionSnapshot } from '~/hooks/useBuildSessionSnapshots';
+import { useWorkerQueryAPI } from '~/hooks/useWorkerQueryAPI';
 
 export type BuildSessionLauncherEntry = {
   session: BuildSessionSnapshot;
@@ -50,11 +58,13 @@ type UseBuildSessionLauncherPanelParams = {
 const isProgressSummary = (value: unknown): value is ProgressSummary => {
   if (!value || typeof value !== 'object') return false;
   const record = value as Record<string, unknown>;
-  return Number.isFinite(record.total)
-    && Number.isFinite(record.completed)
-    && Number.isFinite(record.failed)
-    && Number.isFinite(record.skipped)
-    && Number.isFinite(record.percentage);
+  return (
+    Number.isFinite(record.total) &&
+    Number.isFinite(record.completed) &&
+    Number.isFinite(record.failed) &&
+    Number.isFinite(record.skipped) &&
+    Number.isFinite(record.percentage)
+  );
 };
 
 const resolveProgressSummary = (value: unknown): ProgressSummary | null => {
@@ -123,7 +133,10 @@ const useBuildStages = (t: (key: string, fallback: string) => string): BuildStag
       {
         id: 'tileEmit',
         title: t('processing.tileEmit.title', 'TileEmit Generation'),
-        description: t('stage.stages.tileEmit.description', 'Generate vector tiles for the selected zoom range.'),
+        description: t(
+          'stage.stages.tileEmit.description',
+          'Generate vector tiles for the selected zoom range.'
+        ),
         icon: createElement(LayersIcon, { color: 'primary' }),
       },
     ],
@@ -131,12 +144,8 @@ const useBuildStages = (t: (key: string, fallback: string) => string): BuildStag
   );
 };
 
-const resolveRequestedAt = (session: BuildSessionSnapshot): number => (
-  session.lastHeartbeatAt
-  ?? session.completedAt
-  ?? session.startedAt
-  ?? session.revision
-);
+const resolveRequestedAt = (session: BuildSessionSnapshot): number =>
+  session.lastHeartbeatAt ?? session.completedAt ?? session.startedAt ?? session.revision;
 
 export const useBuildSessionLauncherPanel = ({
   sessions,
@@ -179,61 +188,66 @@ export const useBuildSessionLauncherPanel = ({
     });
   }, []);
 
-  const refreshEntries = useCallback(async (sessionSnapshots: readonly BuildSessionSnapshot[]) => {
-    if (!apiAvailable) {
-      scheduleEntriesUpdate([]);
-      return;
-    }
-    if (sessionSnapshots.length === 0) {
-      scheduleEntriesUpdate([]);
-      return;
-    }
-    const currentRefreshId = refreshIdRef.current + 1;
-    refreshIdRef.current = currentRefreshId;
-    const queryAPI = await getQueryAPIOrNull();
-    if (!queryAPI) {
-      if (currentRefreshId === refreshIdRef.current) {
-        const fallbackEntries: BuildSessionLauncherEntry[] = sessionSnapshots.map((session) => ({
-          session,
-          node: null,
-          nodePath: String(session.nodeId),
-        }));
-        scheduleEntriesUpdate(fallbackEntries);
+  const refreshEntries = useCallback(
+    async (sessionSnapshots: readonly BuildSessionSnapshot[]) => {
+      if (!apiAvailable) {
+        scheduleEntriesUpdate([]);
+        return;
       }
-      return;
-    }
-    const nodeIds = Array.from(new Set(sessionSnapshots.map((session) => String(session.nodeId))));
-    const updatedCache = new Map(nodeCacheRef.current);
-    await Promise.all(
-      nodeIds.map(async (nodeId) => {
-        if (updatedCache.has(nodeId)) return;
-        const pathNodes = await queryAPI.getNodePath(nodeId as NodeId).catch(() => []);
-        if (pathNodes.length === 0) return;
-        const node = pathNodes[pathNodes.length - 1] ?? null;
-        const nodePath = toNodePathLabel(pathNodes);
-        updatedCache.set(nodeId, { node, nodePath });
-      })
-    );
-    if (currentRefreshId !== refreshIdRef.current) return;
-    nodeCacheRef.current = updatedCache;
-    const nextEntries: BuildSessionLauncherEntry[] = sessionSnapshots
-      .map((session) => {
-        const nodeKey = String(session.nodeId);
-        const cached = updatedCache.get(nodeKey);
-        return {
-          session,
-          node: cached?.node ?? null,
-          nodePath: cached?.nodePath ?? '',
-        };
-      })
-      .sort((a, b) => {
-        const aRequestedAt = resolveRequestedAt(a.session);
-        const bRequestedAt = resolveRequestedAt(b.session);
-        if (aRequestedAt !== bRequestedAt) return aRequestedAt - bRequestedAt;
-        return a.nodePath.localeCompare(b.nodePath);
-      });
-    scheduleEntriesUpdate(nextEntries);
-  }, [apiAvailable, getQueryAPIOrNull, scheduleEntriesUpdate]);
+      if (sessionSnapshots.length === 0) {
+        scheduleEntriesUpdate([]);
+        return;
+      }
+      const currentRefreshId = refreshIdRef.current + 1;
+      refreshIdRef.current = currentRefreshId;
+      const queryAPI = await getQueryAPIOrNull();
+      if (!queryAPI) {
+        if (currentRefreshId === refreshIdRef.current) {
+          const fallbackEntries: BuildSessionLauncherEntry[] = sessionSnapshots.map((session) => ({
+            session,
+            node: null,
+            nodePath: String(session.nodeId),
+          }));
+          scheduleEntriesUpdate(fallbackEntries);
+        }
+        return;
+      }
+      const nodeIds = Array.from(
+        new Set(sessionSnapshots.map((session) => String(session.nodeId)))
+      );
+      const updatedCache = new Map(nodeCacheRef.current);
+      await Promise.all(
+        nodeIds.map(async (nodeId) => {
+          if (updatedCache.has(nodeId)) return;
+          const pathNodes = await queryAPI.getNodePath(nodeId as NodeId).catch(() => []);
+          if (pathNodes.length === 0) return;
+          const node = pathNodes[pathNodes.length - 1] ?? null;
+          const nodePath = toNodePathLabel(pathNodes);
+          updatedCache.set(nodeId, { node, nodePath });
+        })
+      );
+      if (currentRefreshId !== refreshIdRef.current) return;
+      nodeCacheRef.current = updatedCache;
+      const nextEntries: BuildSessionLauncherEntry[] = sessionSnapshots
+        .map((session) => {
+          const nodeKey = String(session.nodeId);
+          const cached = updatedCache.get(nodeKey);
+          return {
+            session,
+            node: cached?.node ?? null,
+            nodePath: cached?.nodePath ?? '',
+          };
+        })
+        .sort((a, b) => {
+          const aRequestedAt = resolveRequestedAt(a.session);
+          const bRequestedAt = resolveRequestedAt(b.session);
+          if (aRequestedAt !== bRequestedAt) return aRequestedAt - bRequestedAt;
+          return a.nodePath.localeCompare(b.nodePath);
+        });
+      scheduleEntriesUpdate(nextEntries);
+    },
+    [apiAvailable, getQueryAPIOrNull, scheduleEntriesUpdate]
+  );
 
   useEffect(() => {
     void refreshEntries(sessions);
@@ -259,15 +273,17 @@ export const useBuildSessionLauncherPanel = ({
           };
       const percentage = progressSummary?.percentage ?? 0;
       const stageId = progressSummary?.stage;
-      const stageTitle = stageId ? stageById.get(stageId)?.title ?? stageId : undefined;
+      const stageTitle = stageId ? (stageById.get(stageId)?.title ?? stageId) : undefined;
       const status = normalizeSessionStatus(entry.session.status);
       const rawCounts = counts.total > 0 ? counts : counts;
-      const stageLabel = stageTitle ?? (() => {
-        if (status === 'running') return t('stage.progress.unknownStage', 'processing');
-        if (status === 'paused') return t('stage.progress.pausedStage', 'paused');
-        if (status === 'completed') return t('stage.progress.completedStage', 'completed');
-        return t('stage.progress.idleStage', 'idle');
-      })();
+      const stageLabel =
+        stageTitle ??
+        (() => {
+          if (status === 'running') return t('stage.progress.unknownStage', 'processing');
+          if (status === 'paused') return t('stage.progress.pausedStage', 'paused');
+          if (status === 'completed') return t('stage.progress.completedStage', 'completed');
+          return t('stage.progress.idleStage', 'idle');
+        })();
       const taskLabel = (() => {
         if (status === 'completed') return t('stage.progress.done', 'Completed');
         if (status === 'failed') return t('stage.progress.failed', 'Failed');
@@ -298,13 +314,18 @@ export const useBuildSessionLauncherPanel = ({
 
   const filteredEntries = useMemo(() => {
     if (!excludeNodeId) return resolvedEntries;
-    return resolvedEntries.filter((entry) => String(entry.session.nodeId) !== String(excludeNodeId));
+    return resolvedEntries.filter(
+      (entry) => String(entry.session.nodeId) !== String(excludeNodeId)
+    );
   }, [excludeNodeId, resolvedEntries]);
 
-  const handleOpenMenu = useCallback((event: MouseEvent<HTMLButtonElement>, entry: ResolvedBuildSessionEntry) => {
-    setMenuAnchorEl(event.currentTarget);
-    setMenuEntry(entry);
-  }, []);
+  const handleOpenMenu = useCallback(
+    (event: MouseEvent<HTMLButtonElement>, entry: ResolvedBuildSessionEntry) => {
+      setMenuAnchorEl(event.currentTarget);
+      setMenuEntry(entry);
+    },
+    []
+  );
 
   const handleCloseMenu = useCallback(() => {
     setMenuAnchorEl(null);

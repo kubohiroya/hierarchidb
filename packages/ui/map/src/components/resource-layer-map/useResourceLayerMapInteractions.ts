@@ -1,27 +1,34 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import type { SxProps, Theme } from '@mui/material/styles';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import type { ReactNode } from 'react';
-import type { MapLibreGeoJSONFeature, MapLibreMapInstance } from '~/types/maplibre-public';
-import type { SxProps, Theme } from '@mui/material/styles';
-import { defaultFeatureIdAccessor } from '~/lib/feature-identification';
-import { useMapFeatureHighlights } from '~/preview/useMapFeatureHighlights';
-import { useMapFeatureHoverCandidates } from '~/preview/useMapFeatureHoverCandidates';
-import { useMapFeatureSearch } from '~/preview/useMapFeatureSearch';
-import { useMapFeatureSelectionGestures } from '~/preview/useMapFeatureSelectionGestures';
-import type { MapSearchTargetDefinition, MapSearchTargetGroup } from '~/preview/mapPreviewSearchTypes';
+import { useCallback, useEffect, useMemo } from 'react';
 import {
   buildHighlightKey,
+  type MapHighlightEntry,
   mapHoverCandidatesAtom,
-  mapHoverMatchesAtom,
   mapHoveredFeaturesAtom,
+  mapHoverMatchesAtom,
   mapSearchMatchesAtom,
   mapSearchTargetsAtom,
   mapSearchTextAtom,
   mapSelectedMatchesAtom,
   mapViewportFeatureIdsAtom,
-  type MapHighlightEntry,
 } from '~/interaction/mapInteractionStore';
-import { type Bounds, type ResourceGeoJsonLayer, type ResourceVectorLayer } from './ResourceLayerMap.types.js';
+import { defaultFeatureIdAccessor } from '~/lib/feature-identification';
+import type {
+  MapSearchTargetDefinition,
+  MapSearchTargetGroup,
+} from '~/preview/mapPreviewSearchTypes';
+import { useMapFeatureHighlights } from '~/preview/useMapFeatureHighlights';
+import { useMapFeatureHoverCandidates } from '~/preview/useMapFeatureHoverCandidates';
+import { useMapFeatureSearch } from '~/preview/useMapFeatureSearch';
+import { useMapFeatureSelectionGestures } from '~/preview/useMapFeatureSelectionGestures';
+import type { MapLibreGeoJSONFeature, MapLibreMapInstance } from '~/types/maplibre-public';
+import {
+  type Bounds,
+  type ResourceGeoJsonLayer,
+  type ResourceVectorLayer,
+} from './ResourceLayerMap.types.js';
 
 type InteractionConfig = {
   enabled?: boolean;
@@ -51,7 +58,14 @@ type InteractionConfig = {
   };
   snackbar?: {
     enabled?: boolean;
-    position?: 'top' | 'bottom' | 'bottom-center' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+    position?:
+      | 'top'
+      | 'bottom'
+      | 'bottom-center'
+      | 'top-left'
+      | 'top-right'
+      | 'bottom-left'
+      | 'bottom-right';
     content?: ReactNode;
     renderContent?: (features: MapLibreGeoJSONFeature[]) => ReactNode;
     autoHideDuration?: number | null;
@@ -61,7 +75,14 @@ type InteractionConfig = {
 };
 
 type BaseSnackbarConfig = {
-  position?: 'top' | 'bottom' | 'bottom-center' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  position?:
+    | 'top'
+    | 'bottom'
+    | 'bottom-center'
+    | 'top-left'
+    | 'top-right'
+    | 'bottom-left'
+    | 'bottom-right';
   content?: ReactNode;
   renderContent?: (features: MapLibreGeoJSONFeature[]) => ReactNode;
   autoHideDuration?: number | null;
@@ -118,20 +139,24 @@ export const useResourceLayerMapInteractions = ({
   const fitSelectionConfig = interaction?.fitSelection;
   const interactionSnackbar = interaction?.snackbar;
 
-  const searchEnabled = interactionEnabled && Boolean(searchConfig?.enabled ?? searchConfig?.targetDefinitions);
+  const searchEnabled =
+    interactionEnabled && Boolean(searchConfig?.enabled ?? searchConfig?.targetDefinitions);
   const hoverEnabled = interactionEnabled && (hoverConfig?.enabled ?? true);
   const selectionEnabled = interactionEnabled && (selectionConfig?.enabled ?? true);
   const fitSelectionEnabled = interactionEnabled && (fitSelectionConfig?.enabled ?? true);
-  const snackbarEnabled = interactionEnabled ? (interactionSnackbar?.enabled ?? true) : Boolean(snackbar);
+  const snackbarEnabled = interactionEnabled
+    ? (interactionSnackbar?.enabled ?? true)
+    : Boolean(snackbar);
 
   const vectorLayerEntries = useMemo(
-    () => orderedLayers.map((layer) => ({
-      id: layer.layerConfig?.layerId ?? `resource-layer-${layer.nodeId}`,
-      label: layer.layerConfig?.layerId ?? layer.nodeId,
-      sourceId: layer.layerConfig?.sourceId ?? `resource-source-${layer.nodeId}`,
-      sourceLayer: layer.layerConfig?.sourceLayer,
-    })),
-    [orderedLayers],
+    () =>
+      orderedLayers.map((layer) => ({
+        id: layer.layerConfig?.layerId ?? `resource-layer-${layer.nodeId}`,
+        label: layer.layerConfig?.layerId ?? layer.nodeId,
+        sourceId: layer.layerConfig?.sourceId ?? `resource-source-${layer.nodeId}`,
+        sourceLayer: layer.layerConfig?.sourceLayer,
+      })),
+    [orderedLayers]
   );
 
   const [searchText, setSearchText] = useAtom(mapSearchTextAtom);
@@ -150,7 +175,7 @@ export const useResourceLayerMapInteractions = ({
     if (!searchEnabled || !searchConfig?.targetDefinitions) return;
     if (Object.keys(searchTargets).length > 0) return;
     const defaults = Object.fromEntries(
-      Object.keys(searchConfig.targetDefinitions).map((targetId) => [targetId, true]),
+      Object.keys(searchConfig.targetDefinitions).map((targetId) => [targetId, true])
     );
     setSearchTargets(defaults as Record<string, boolean>);
   }, [searchConfig?.targetDefinitions, searchEnabled, searchTargets, setSearchTargets]);
@@ -158,7 +183,9 @@ export const useResourceLayerMapInteractions = ({
   const highlightLayerIds = useMemo(() => {
     if (interaction?.highlightLayerIds?.length) return interaction.highlightLayerIds;
     return [
-      ...orderedLayers.map((layer) => layer.layerConfig?.layerId ?? `resource-layer-${layer.nodeId}`),
+      ...orderedLayers.map(
+        (layer) => layer.layerConfig?.layerId ?? `resource-layer-${layer.nodeId}`
+      ),
       ...orderedGeoJsonLayers.map((layer) => layer.layerId),
     ];
   }, [interaction?.highlightLayerIds, orderedGeoJsonLayers, orderedLayers]);
@@ -188,7 +215,7 @@ export const useResourceLayerMapInteractions = ({
       const sourceLayer = typeof feature.sourceLayer === 'string' ? feature.sourceLayer : undefined;
       return { source, id, layerId, sourceLayer };
     },
-    [interaction],
+    [interaction]
   );
 
   const dedupeEntries = useCallback((entries: MapHighlightEntry[]) => {
@@ -236,7 +263,7 @@ export const useResourceLayerMapInteractions = ({
         return Array.from(next.values());
       });
     },
-    [dedupeEntries, setSelectedMatches],
+    [dedupeEntries, setSelectedMatches]
   );
 
   const fitPadding = fitSelectionConfig?.padding ?? 64;
@@ -256,10 +283,7 @@ export const useResourceLayerMapInteractions = ({
         maxLat: Math.max(bounds.maxLat, lat),
       };
     }
-    return coords.reduce(
-      (current, entry) => visitCoordinates(entry, current),
-      bounds,
-    );
+    return coords.reduce((current, entry) => visitCoordinates(entry, current), bounds);
   }, []);
 
   const fitToFeatures = useCallback(
@@ -278,10 +302,10 @@ export const useResourceLayerMapInteractions = ({
           [resolvedBounds.minLng, resolvedBounds.minLat],
           [resolvedBounds.maxLng, resolvedBounds.maxLat],
         ],
-        { padding },
+        { padding }
       );
     },
-    [mapInstance, visitCoordinates],
+    [mapInstance, visitCoordinates]
   );
 
   const handleFitSelection = useCallback(() => {
@@ -294,7 +318,9 @@ export const useResourceLayerMapInteractions = ({
     ];
     let features: MapLibreGeoJSONFeature[] = [];
     try {
-      features = mapInstance.queryRenderedFeatures(queryBounds, { layers: highlightLayerIds }) as MapLibreGeoJSONFeature[];
+      features = mapInstance.queryRenderedFeatures(queryBounds, {
+        layers: highlightLayerIds,
+      }) as MapLibreGeoJSONFeature[];
     } catch (error) {
       console.debug('[ResourceLayerMap] Failed to query selected features', error);
       return;
@@ -308,11 +334,7 @@ export const useResourceLayerMapInteractions = ({
     fitToFeatures(matched, fitPadding);
   }, [fitPadding, fitToFeatures, highlightLayerIds, mapInstance, selectedMatches]);
 
-  const {
-    runSearch,
-    handleSearchClear,
-    handleSearchTargetToggle,
-  } = useMapFeatureSearch({
+  const { runSearch, handleSearchClear, handleSearchTargetToggle } = useMapFeatureSearch({
     mapInstance: searchEnabled ? mapInstance : null,
     highlightLayerIds,
     searchText,
@@ -345,7 +367,10 @@ export const useResourceLayerMapInteractions = ({
           if (!entry) return null;
           return { entry, feature };
         })
-        .filter((candidate): candidate is { entry: MapHighlightEntry; feature: MapLibreGeoJSONFeature } => Boolean(candidate));
+        .filter(
+          (candidate): candidate is { entry: MapHighlightEntry; feature: MapLibreGeoJSONFeature } =>
+            Boolean(candidate)
+        );
       setHoverCandidates(candidates);
       setHoverMatches(entries);
     },
@@ -370,7 +395,9 @@ export const useResourceLayerMapInteractions = ({
     onMissingLayers: interaction?.onMissingLayers,
   });
 
-  const snackbarFeatures = interactionEnabled ? hoveredInteractionFeatures : (hoveredFeatures ?? []);
+  const snackbarFeatures = interactionEnabled
+    ? hoveredInteractionFeatures
+    : (hoveredFeatures ?? []);
   const effectiveSnackbar = interactionEnabled ? (interactionSnackbar ?? snackbar) : snackbar;
 
   return {

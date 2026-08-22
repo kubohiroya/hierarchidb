@@ -1,11 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, renderHook } from '@testing-library/react';
-import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { TreeNode } from '@hierarchidb/tree-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
+import { act, renderHook } from '@testing-library/react';
 import { Provider, useAtomValue, useSetAtom } from 'jotai';
-import { type FC, useEffect, type PropsWithChildren, type ReactElement } from 'react';
-import { useSubscriptionOrchestrator } from '../SubscriptionOrchestrator';
+import { type FC, type PropsWithChildren, type ReactElement, useEffect } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tableDataAtom } from '../../state/index';
+import { useSubscriptionOrchestrator } from '../SubscriptionOrchestrator';
 
 vi.mock('comlink', () => ({
   proxy: <T,>(value: T) => value,
@@ -21,7 +21,10 @@ const createWrapper = (initialData: TreeNode[] = []) => {
   return Wrapper;
 };
 
-const Initializer: FC<{ initialData: TreeNode[] } & PropsWithChildren> = ({ initialData, children }): ReactElement => {
+const Initializer: FC<{ initialData: TreeNode[] } & PropsWithChildren> = ({
+  initialData,
+  children,
+}): ReactElement => {
   const setTableData = useSetAtom(tableDataAtom);
 
   useEffect(() => {
@@ -61,13 +64,16 @@ describe('useSubscriptionOrchestrator', () => {
     const { workerAPI, subscribeSubtree } = createWorkerApiMock();
     const initialData = [{ id: 'legacy-node' } as TreeNode];
 
-    const { result } = renderHook(() => {
-      const subscription = useSubscriptionOrchestrator(workerAPI);
-      const tableData = useAtomValue(tableDataAtom);
-      return { subscription, tableData };
-    }, {
-      wrapper: createWrapper(initialData),
-    });
+    const { result } = renderHook(
+      () => {
+        const subscription = useSubscriptionOrchestrator(workerAPI);
+        const tableData = useAtomValue(tableDataAtom);
+        return { subscription, tableData };
+      },
+      {
+        wrapper: createWrapper(initialData),
+      }
+    );
 
     await act(async () => {
       await result.current.subscription.subscribe('root-node', 3);
@@ -78,7 +84,7 @@ describe('useSubscriptionOrchestrator', () => {
       expect.any(Function),
       expect.objectContaining({
         prefetch: { depth: 3 },
-      }),
+      })
     );
     expect(result.current.tableData).toEqual([]);
 
@@ -96,9 +102,7 @@ describe('useSubscriptionOrchestrator', () => {
     });
 
     expect(result.current.tableData).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ id: 'node-1', name: 'Prefetched' }),
-      ]),
+      expect.arrayContaining([expect.objectContaining({ id: 'node-1', name: 'Prefetched' })])
     );
   });
 
@@ -118,7 +122,7 @@ describe('useSubscriptionOrchestrator', () => {
       expect.any(Function),
       expect.objectContaining({
         prefetch: { depth: 2 },
-      }),
+      })
     );
   });
 });

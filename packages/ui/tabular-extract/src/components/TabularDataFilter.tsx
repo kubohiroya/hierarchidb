@@ -3,7 +3,8 @@
  * @description Filter rule creation and preview for Tabular data
  */
 
-import { type ReactNode } from 'react';
+import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
+import { ExpandMore as ExpandMoreIcon, Preview as PreviewIcon } from '@mui/icons-material';
 import {
   Accordion,
   AccordionDetails,
@@ -11,14 +12,13 @@ import {
   Alert,
   Box,
   GlobalStyles,
+  LinearProgress,
   Paper,
   Typography,
 } from '@mui/material';
-import { ExpandMore as ExpandMoreIcon, Preview as PreviewIcon } from '@mui/icons-material';
-import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
+import { type ReactNode } from 'react';
 import type { TabularDataResult, TabularFilterRule } from '../types/index';
 import { TabularDataFilterRulesVirtual } from './TabularDataFilterRulesVirtual.js';
-import { LinearProgress } from '@mui/material';
 import { TabularPreviewGrid } from './TabularPreviewGrid.js';
 import { FILTER_OPERATORS, useTabularDataFilter } from './useTabularDataFilter.js';
 
@@ -139,16 +139,17 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
         <Accordion defaultExpanded>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Box>
-              <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+              >
                 <PreviewIcon fontSize="small" />
                 Preview Tabular
               </Typography>
               {view.previewBusy && <LinearProgress variant="indeterminate" sx={{ mt: 0.5 }} />}
             </Box>
           </AccordionSummary>
-          <AccordionDetails sx={{ pb: 4, mb: 4 }}>
-            {previewNode}
-          </AccordionDetails>
+          <AccordionDetails sx={{ pb: 4, mb: 4 }}>{previewNode}</AccordionDetails>
         </Accordion>
       )}
     </Box>

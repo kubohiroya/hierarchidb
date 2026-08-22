@@ -13,11 +13,7 @@ describe('CommonDialogTitle', () => {
   it('triggers display mode quick toggles', () => {
     const onChange = vi.fn();
     const { rerender } = render(
-      <CommonDialogTitle
-        {...baseProps}
-        displayMode="normal"
-        onChangeDisplayMode={onChange}
-      />,
+      <CommonDialogTitle {...baseProps} displayMode="normal" onChangeDisplayMode={onChange} />
     );
 
     // normal → maximize: label is "Maximize" (fallback)
@@ -25,33 +21,21 @@ describe('CommonDialogTitle', () => {
     expect(onChange).toHaveBeenNthCalledWith(1, 'maximize');
 
     rerender(
-      <CommonDialogTitle
-        {...baseProps}
-        displayMode="maximize"
-        onChangeDisplayMode={onChange}
-      />,
+      <CommonDialogTitle {...baseProps} displayMode="maximize" onChangeDisplayMode={onChange} />
     );
     // maximize → normal: label is "Restore" (fallback)
     fireEvent.click(screen.getByLabelText('Restore'));
     expect(onChange).toHaveBeenNthCalledWith(2, 'normal');
 
     rerender(
-      <CommonDialogTitle
-        {...baseProps}
-        displayMode="normal"
-        onChangeDisplayMode={onChange}
-      />,
+      <CommonDialogTitle {...baseProps} displayMode="normal" onChangeDisplayMode={onChange} />
     );
     // normal → full-screen: label is "Full screen" (fallback)
     fireEvent.click(screen.getByLabelText('Full screen'));
     expect(onChange).toHaveBeenNthCalledWith(3, 'full-screen');
 
     rerender(
-      <CommonDialogTitle
-        {...baseProps}
-        displayMode="full-screen"
-        onChangeDisplayMode={onChange}
-      />,
+      <CommonDialogTitle {...baseProps} displayMode="full-screen" onChangeDisplayMode={onChange} />
     );
     // full-screen → normal: label is "Exit full screen" (fallback)
     fireEvent.click(screen.getByLabelText('Exit full screen'));
@@ -61,11 +45,7 @@ describe('CommonDialogTitle', () => {
   it('allows selecting display mode from the menu', async () => {
     const onChange = vi.fn();
     render(
-      <CommonDialogTitle
-        {...baseProps}
-        displayMode="normal"
-        onChangeDisplayMode={onChange}
-      />,
+      <CommonDialogTitle {...baseProps} displayMode="normal" onChangeDisplayMode={onChange} />
     );
 
     fireEvent.click(screen.getByLabelText('Display mode'));

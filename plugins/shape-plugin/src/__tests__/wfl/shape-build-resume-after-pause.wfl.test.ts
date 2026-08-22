@@ -1,21 +1,36 @@
 import 'fake-indexeddb/auto';
 import type { BuildContinuationPolicy, StageSnapshotUpdatedEvent } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeBuildSessionRecord, ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
-import type { SourceTaskPayload, SelectedArrayByCountries, ShapeBuildConfig, ShapeProcessingConfig } from '../../common/types/index';
-import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '../../common/types/constants';
+import type {
+  ShapeBuildSessionRecord,
+  ShapeMutationAPI,
+  ShapeQueryAPI,
+} from '@hierarchidb/shape-api';
 import * as Comlink from 'comlink';
-vi.mock('comlink', async () => (
-  await vi.importActual('comlink')
-));
+import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '../../common/types/constants';
+import type {
+  SelectedArrayByCountries,
+  ShapeBuildConfig,
+  ShapeProcessingConfig,
+  SourceTaskPayload,
+} from '../../common/types/index';
+
+vi.mock('comlink', async () => await vi.importActual('comlink'));
+
 import { describe, expect, it, vi } from 'vitest';
-vi.mock('@hierarchidb/gis-sdk', async () => (
-  await import('../../../../../packages/gis-sdk/src/index.ts')
-));
+
+vi.mock(
+  '@hierarchidb/gis-sdk',
+  async () => await import('../../../../../packages/gis-sdk/src/index.ts')
+);
 
 vi.mock('@hierarchidb/vt-orchestrator', async () => {
-  const actual = await vi.importActual<typeof import('@hierarchidb/vt-orchestrator')>('@hierarchidb/vt-orchestrator');
-  const { unpackTileId } = await import('../../../../../packages/vt-orchestrator/src/tiles/tileId.ts');
+  const actual = await vi.importActual<typeof import('@hierarchidb/vt-orchestrator')>(
+    '@hierarchidb/vt-orchestrator'
+  );
+  const { unpackTileId } = await import(
+    '../../../../../packages/vt-orchestrator/src/tiles/tileId.ts'
+  );
   const createGeometryStageHandler: typeof actual.createGeometryStageHandler = () => {
     type HandlerTask = Parameters<ReturnType<typeof actual.createGeometryStageHandler>>[0];
     return async (_task: HandlerTask) => ({ status: 'completed', progress: 100 });
@@ -45,17 +60,19 @@ vi.mock('@hierarchidb/vt-orchestrator', async () => {
 });
 
 vi.mock('../../../../../plugins/shape-plugin/src/services/vt/shapePipelineShared.ts', async () => {
-  const actual = await vi.importActual<typeof import('../../../../../plugins/shape-plugin/src/services/vt/shapePipelineShared.ts')>(
-    '../../../../../plugins/shape-plugin/src/services/vt/shapePipelineShared.ts',
+  const actual = await vi.importActual<
+    typeof import('../../../../../plugins/shape-plugin/src/services/vt/shapePipelineShared.ts')
+  >('../../../../../plugins/shape-plugin/src/services/vt/shapePipelineShared.ts');
+  const { packTileId } = await import(
+    '../../../../../packages/vt-orchestrator/src/tiles/tileId.ts'
   );
-  const { packTileId } = await import('../../../../../packages/vt-orchestrator/src/tiles/tileId.ts');
   const buildTileEmitTasks: typeof actual.buildTileEmitTasks = async (
     nodeId,
     _ephemeralStore,
     bands,
     _enableHighDetailBands,
     configSignature,
-    _geometryEngine,
+    _geometryEngine
   ) => {
     let index = 0;
     return bands.map((band) => ({
@@ -81,7 +98,7 @@ vi.mock('../../../../../plugins/shape-plugin/src/services/vt/shapePipelineShared
   };
   return { ...actual, buildTileEmitTasks };
 });
-const mockMetadata = vi.hoisted(() => ([
+const mockMetadata = vi.hoisted(() => [
   {
     countryCode: 'JP',
     countryName: 'Japan',
@@ -90,9 +107,9 @@ const mockMetadata = vi.hoisted(() => ([
     iso2: 'JP',
     iso3: 'JPN',
   },
-]));
+]);
 
-const mockEntities = vi.hoisted(() => ([
+const mockEntities = vi.hoisted(() => [
   {
     geometry: {
       type: 'Polygon',
@@ -110,7 +127,7 @@ const mockEntities = vi.hoisted(() => ([
       name: 'Test Feature',
     },
   },
-]));
+]);
 
 vi.mock('~/services/metadata/MetadataLoader', () => {
   class MetadataLoader {
@@ -122,7 +139,7 @@ vi.mock('~/services/metadata/MetadataLoader', () => {
       return mockMetadata;
     }
 
-    async getCountryMetadata(): Promise<typeof mockMetadata[number] | undefined> {
+    async getCountryMetadata(): Promise<(typeof mockMetadata)[number] | undefined> {
       return mockMetadata[0];
     }
 
@@ -295,7 +312,7 @@ const setupAdditionalClient = async (): Promise<WorkerSetup> => {
     client,
     port1,
     port2,
-    terminateAll: () => { },
+    terminateAll: () => {},
   };
 };
 
@@ -371,9 +388,7 @@ const createTestBuildConfig = (): ShapeBuildConfig => {
     tileEmitConfig: {
       ...DEFAULT_BUILD_CONFIG.tileEmitConfig,
       maxConcurrent: 1,
-      dynamicConcurrency: dynamicBase
-        ? { ...dynamicBase, enabled: false }
-        : undefined,
+      dynamicConcurrency: dynamicBase ? { ...dynamicBase, enabled: false } : undefined,
     },
   };
 };
@@ -407,16 +422,38 @@ const completeSession = async (
       taskType: 'tileEmit',
     },
     stages: {
-      source: { status: 'completed', progress: 100, tasksTotal: 1, tasksCompleted: 1, tasksFailed: 0 },
-      geometry: { status: 'completed', progress: 100, tasksTotal: 1, tasksCompleted: 1, tasksFailed: 0 },
-      tileEmit: { status: 'completed', progress: 100, tasksTotal: 1, tasksCompleted: 1, tasksFailed: 0 },
+      source: {
+        status: 'completed',
+        progress: 100,
+        tasksTotal: 1,
+        tasksCompleted: 1,
+        tasksFailed: 0,
+      },
+      geometry: {
+        status: 'completed',
+        progress: 100,
+        tasksTotal: 1,
+        tasksCompleted: 1,
+        tasksFailed: 0,
+      },
+      tileEmit: {
+        status: 'completed',
+        progress: 100,
+        tasksTotal: 1,
+        tasksCompleted: 1,
+        tasksFailed: 0,
+      },
     },
   });
 };
 
 const waitFor = async (
   check: () => Promise<boolean>,
-  { timeoutMs = 5000, intervalMs = 50, label = 'condition' }: {
+  {
+    timeoutMs = 5000,
+    intervalMs = 50,
+    label = 'condition',
+  }: {
     timeoutMs?: number;
     intervalMs?: number;
     label?: string;
@@ -481,7 +518,7 @@ describe('Comlink + fake-indexeddb integration: shape build pause/resume (pipeli
         nodeId,
         Comlink.proxy((event: StageSnapshotUpdatedEvent) => {
           snapshotEvents.push(event);
-        }),
+        })
       );
 
       await batch.startBuildSession({
@@ -530,16 +567,18 @@ describe('Comlink + fake-indexeddb integration: shape build pause/resume (pipeli
         resumeExistingTasks: false,
       });
 
-      await waitFor(async () => {
-        const tasks = await query.listBuildTaskRecordsByStage(nodeId, 'source');
-        return tasks.length > 0;
-      }, { label: 'source task creation' });
+      await waitFor(
+        async () => {
+          const tasks = await query.listBuildTaskRecordsByStage(nodeId, 'source');
+          return tasks.length > 0;
+        },
+        { label: 'source task creation' }
+      );
 
       await pipeline.pausePipeline(nodeId);
-      await waitFor(
-        async () => (await pipeline.getPipelineState(nodeId)) === 'paused',
-        { label: 'pipeline pause' }
-      );
+      await waitFor(async () => (await pipeline.getPipelineState(nodeId)) === 'paused', {
+        label: 'pipeline pause',
+      });
 
       await pipeline.resumePipeline(nodeId);
       await pipeline.waitForPipeline(nodeId);
@@ -583,16 +622,18 @@ describe('Comlink + fake-indexeddb integration: shape build pause/resume (pipeli
         resumeExistingTasks: false,
       });
 
-      await waitFor(async () => {
-        const tasks = await query.listBuildTaskRecordsByStage(nodeId, 'source');
-        return tasks.length > 0;
-      }, { label: 'source task creation' });
+      await waitFor(
+        async () => {
+          const tasks = await query.listBuildTaskRecordsByStage(nodeId, 'source');
+          return tasks.length > 0;
+        },
+        { label: 'source task creation' }
+      );
 
       await pipeline.pausePipeline(nodeId);
-      await waitFor(
-        async () => (await pipeline.getPipelineState(nodeId)) === 'paused',
-        { label: 'pipeline pause' }
-      );
+      await waitFor(async () => (await pipeline.getPipelineState(nodeId)) === 'paused', {
+        label: 'pipeline pause',
+      });
 
       await new Promise((resolve) => setTimeout(resolve, 250));
       const pausedState = await pipeline.getPipelineState(nodeId);
@@ -638,10 +679,13 @@ describe('Comlink + fake-indexeddb integration: shape build pause/resume (pipeli
         resumeExistingTasks: false,
       });
 
-      await waitFor(async () => {
-        const tasks = await query.listBuildTaskRecordsByStage(nodeId, 'source');
-        return tasks.length > 0;
-      }, { label: 'source task creation' });
+      await waitFor(
+        async () => {
+          const tasks = await query.listBuildTaskRecordsByStage(nodeId, 'source');
+          return tasks.length > 0;
+        },
+        { label: 'source task creation' }
+      );
 
       await pipeline.pausePipeline(nodeId);
       await mutation.updateBuildSession(nodeId, {
@@ -650,10 +694,9 @@ describe('Comlink + fake-indexeddb integration: shape build pause/resume (pipeli
         updatedAt: Date.now(),
       });
 
-      await waitFor(
-        async () => (await pipeline.getPipelineState(nodeId)) === 'paused',
-        { label: 'pipeline pause' }
-      );
+      await waitFor(async () => (await pipeline.getPipelineState(nodeId)) === 'paused', {
+        label: 'pipeline pause',
+      });
 
       const session = await query.getBuildSessionRecord(nodeId);
       if (shouldAutoResume(session)) {
@@ -697,10 +740,13 @@ describe('Comlink + fake-indexeddb integration: shape build pause/resume (pipeli
         resumeExistingTasks: false,
       });
 
-      await waitFor(async () => {
-        const tasks = await query.listBuildTaskRecordsByStage(nodeId, 'source');
-        return tasks.length > 0;
-      }, { label: 'source task creation' });
+      await waitFor(
+        async () => {
+          const tasks = await query.listBuildTaskRecordsByStage(nodeId, 'source');
+          return tasks.length > 0;
+        },
+        { label: 'source task creation' }
+      );
 
       await pipeline.pausePipeline(nodeId);
       await mutation.updateBuildSession(nodeId, {
@@ -709,10 +755,9 @@ describe('Comlink + fake-indexeddb integration: shape build pause/resume (pipeli
         updatedAt: Date.now(),
       });
 
-      await waitFor(
-        async () => (await pipeline.getPipelineState(nodeId)) === 'paused',
-        { label: 'pipeline pause' }
-      );
+      await waitFor(async () => (await pipeline.getPipelineState(nodeId)) === 'paused', {
+        label: 'pipeline pause',
+      });
 
       const session = await query.getBuildSessionRecord(nodeId);
       if (shouldAutoResume(session)) {
@@ -760,10 +805,13 @@ describe('Comlink + fake-indexeddb integration: shape build pause/resume (pipeli
         resumeExistingTasks: false,
       });
 
-      await waitFor(async () => {
-        const tasks = await query.listBuildTaskRecordsByStage(nodeId, 'source');
-        return tasks.length > 0;
-      }, { label: 'source task creation' });
+      await waitFor(
+        async () => {
+          const tasks = await query.listBuildTaskRecordsByStage(nodeId, 'source');
+          return tasks.length > 0;
+        },
+        { label: 'source task creation' }
+      );
 
       const observer = await setupAdditionalClient();
       try {
@@ -782,95 +830,104 @@ describe('Comlink + fake-indexeddb integration: shape build pause/resume (pipeli
     }
   }, 25_000);
 
-  it.each<[
-    string,
-    EphemeralCacheType,
-  ]>([
+  it.each<[string, EphemeralCacheType]>([
     ['source cache', 'sourceCache'],
     ['geometry cache', 'geometryCache'],
     ['geometry errors', 'geometryErrors'],
     ['tile buffer relations', 'tileEmitBufferRelations'],
     ['build tasks', 'buildTasks'],
-  ])('resumes after deleting %s and completes pipeline', async (_label, cacheType) => {
-    const nodeId = `shape-build-pipeline-${cacheType}` as NodeId;
-    const setup = await setupWorker();
+  ])(
+    'resumes after deleting %s and completes pipeline',
+    async (_label, cacheType) => {
+      const nodeId = `shape-build-pipeline-${cacheType}` as NodeId;
+      const setup = await setupWorker();
 
-    try {
-      const mutation = await setup.client.getShapeMutationAPI();
-      const query = await setup.client.getShapeQueryAPI();
-      const admin = await setup.client.getShapeEphemeralAdminAPI();
-      const pipeline = await setup.client.getShapePipelineTestAPI();
+      try {
+        const mutation = await setup.client.getShapeMutationAPI();
+        const query = await setup.client.getShapeQueryAPI();
+        const admin = await setup.client.getShapeEphemeralAdminAPI();
+        const pipeline = await setup.client.getShapePipelineTestAPI();
 
-      await mutation.deleteBuildSession(nodeId);
-      await mutation.deleteBuildTasks(nodeId);
-      await admin.clearShapeEphemeralCache(nodeId, 'sourceCache');
-      await admin.clearShapeEphemeralCache(nodeId, 'geometryCache');
-      await admin.clearShapeEphemeralCache(nodeId, 'geometryErrors');
-      await admin.clearShapeEphemeralCache(nodeId, 'tileEmitBufferRelations');
-
-      await mutation.upsertBuildSession(createBaseSession(nodeId, Date.now()));
-      await admin.seedShapeEphemeralCaches(nodeId);
-
-      if (cacheType === 'buildTasks') {
-        await pipeline.startPipeline({
-          nodeId,
-          buildConfig: createTestBuildConfig(),
-          downloadTaskPayloads,
-          resumeExistingTasks: false,
-        });
-
-        await waitFor(async () => {
-          const counts = await admin.getShapeEphemeralCounts(nodeId);
-          return counts.buildTasks > 0;
-        }, { label: 'build task creation' });
-
-        await pipeline.pausePipeline(nodeId);
-      } else {
-        await waitFor(async () => {
-          const counts = await admin.getShapeEphemeralCounts(nodeId);
-          return counts[cacheType] > 0;
-        }, { label: `seeded ${cacheType}` });
-
-        await pipeline.startPipeline({
-          nodeId,
-          buildConfig: createTestBuildConfig(),
-          downloadTaskPayloads,
-          resumeExistingTasks: false,
-          startPaused: true,
-        });
-      }
-
-      await waitFor(
-        async () => (await pipeline.getPipelineState(nodeId)) === 'paused',
-        { label: 'pipeline pause' }
-      );
-
-      if (cacheType === 'buildTasks') {
+        await mutation.deleteBuildSession(nodeId);
         await mutation.deleteBuildTasks(nodeId);
-      } else {
-        await admin.clearShapeEphemeralCache(nodeId, cacheType);
-      }
+        await admin.clearShapeEphemeralCache(nodeId, 'sourceCache');
+        await admin.clearShapeEphemeralCache(nodeId, 'geometryCache');
+        await admin.clearShapeEphemeralCache(nodeId, 'geometryErrors');
+        await admin.clearShapeEphemeralCache(nodeId, 'tileEmitBufferRelations');
 
-      await waitFor(async () => {
-        const counts = await admin.getShapeEphemeralCounts(nodeId);
+        await mutation.upsertBuildSession(createBaseSession(nodeId, Date.now()));
+        await admin.seedShapeEphemeralCaches(nodeId);
+
         if (cacheType === 'buildTasks') {
-          return counts.buildTasks === 0;
+          await pipeline.startPipeline({
+            nodeId,
+            buildConfig: createTestBuildConfig(),
+            downloadTaskPayloads,
+            resumeExistingTasks: false,
+          });
+
+          await waitFor(
+            async () => {
+              const counts = await admin.getShapeEphemeralCounts(nodeId);
+              return counts.buildTasks > 0;
+            },
+            { label: 'build task creation' }
+          );
+
+          await pipeline.pausePipeline(nodeId);
+        } else {
+          await waitFor(
+            async () => {
+              const counts = await admin.getShapeEphemeralCounts(nodeId);
+              return counts[cacheType] > 0;
+            },
+            { label: `seeded ${cacheType}` }
+          );
+
+          await pipeline.startPipeline({
+            nodeId,
+            buildConfig: createTestBuildConfig(),
+            downloadTaskPayloads,
+            resumeExistingTasks: false,
+            startPaused: true,
+          });
         }
-        return counts[cacheType] === 0;
-      }, { label: `deleted ${cacheType}` });
 
-      await pipeline.resumePipeline(nodeId);
-      await pipeline.waitForPipeline(nodeId);
+        await waitFor(async () => (await pipeline.getPipelineState(nodeId)) === 'paused', {
+          label: 'pipeline pause',
+        });
 
-      await completeSession(mutation, nodeId, Date.now());
+        if (cacheType === 'buildTasks') {
+          await mutation.deleteBuildTasks(nodeId);
+        } else {
+          await admin.clearShapeEphemeralCache(nodeId, cacheType);
+        }
 
-      const record = await query.getBuildSessionRecord(nodeId);
-      expect(record?.status).toBe('completed');
+        await waitFor(
+          async () => {
+            const counts = await admin.getShapeEphemeralCounts(nodeId);
+            if (cacheType === 'buildTasks') {
+              return counts.buildTasks === 0;
+            }
+            return counts[cacheType] === 0;
+          },
+          { label: `deleted ${cacheType}` }
+        );
 
-      const tiles = await query.getVectorTileSummary(nodeId);
-      expect(tiles.tiles).toBeGreaterThan(0);
-    } finally {
-      await cleanupWorker(setup);
-    }
-  }, 25_000);
+        await pipeline.resumePipeline(nodeId);
+        await pipeline.waitForPipeline(nodeId);
+
+        await completeSession(mutation, nodeId, Date.now());
+
+        const record = await query.getBuildSessionRecord(nodeId);
+        expect(record?.status).toBe('completed');
+
+        const tiles = await query.getVectorTileSummary(nodeId);
+        expect(tiles.tiles).toBeGreaterThan(0);
+      } finally {
+        await cleanupWorker(setup);
+      }
+    },
+    25_000
+  );
 });

@@ -1,19 +1,12 @@
 /**
-  * GeoBoundaries
+ * GeoBoundaries
  * https://www.geoboundaries.org/
-  */
+ */
 
-import {
-  BaseDataSourceStrategy,
-  type DataSourceConfig,
-  type FetchOptions,
-  type ProcessOptions,
-  type RawDataPipeline,
-  type RawDataPipelineContext,
-} from './DataSourceStrategy.js';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { ShapeFeaturePayload } from '~/common/types/index';
-import type { NodeId } from '@hierarchidb/core-types';
+import { decodeFlatGeoJson, encodeFlatGeoJson } from '~/services/build/strategies/flatgeobufUtils';
 import {
   buildRawDataDataSourceCacheKey,
   buildShapeCacheKey,
@@ -24,12 +17,23 @@ import {
   type RetryConfig,
 } from '~/services/utils/chunkStore';
 import {
+  buildGeoBoundariesMetadataUrl,
   GEOBOUNDARIES_API_BASE_URL,
   GEOBOUNDARIES_RELEASE_TYPE,
-  buildGeoBoundariesMetadataUrl,
 } from '~/services/utils/geoboundariesEndpoints';
-import { decodeFlatGeoJson, encodeFlatGeoJson } from '~/services/build/strategies/flatgeobufUtils';
-import { bufferToStream, fetchRawDataWithPipeline, streamToBuffer } from '~/services/utils/RawDataPipelineResult';
+import {
+  bufferToStream,
+  fetchRawDataWithPipeline,
+  streamToBuffer,
+} from '~/services/utils/RawDataPipelineResult';
+import {
+  BaseDataSourceStrategy,
+  type DataSourceConfig,
+  type FetchOptions,
+  type ProcessOptions,
+  type RawDataPipeline,
+  type RawDataPipelineContext,
+} from './DataSourceStrategy.js';
 import { summarizeGeojsonFeatures } from './summarizeGeojsonFeatures.js';
 
 type GeoBoundariesProperties = Record<string, unknown>;
@@ -79,12 +83,15 @@ export type GeoBoundariesProcessedData = Array<ShapeFeaturePayload> & {
     version: number;
     license?: string;
   };
-}
+};
 
 /**
-  * GeoBoundaries
-  */
-export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesRawData, GeoBoundariesProcessedData> {
+ * GeoBoundaries
+ */
+export class GeoBoundariesStrategy extends BaseDataSourceStrategy<
+  GeoBoundariesRawData,
+  GeoBoundariesProcessedData
+> {
   readonly id = 'geoboundaries-admin-areas';
   readonly name = 'GeoBoundaries Administrative Areas';
   readonly config: DataSourceConfig = {
@@ -107,9 +114,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
         { field: 'properties', rule: 'required' },
         { field: 'properties.shapeName', rule: 'required' },
       ],
-      transformations: [
-        { type: 'coordinate-system', from: 'EPSG:4326', to: 'EPSG:4326' },
-      ],
+      transformations: [{ type: 'coordinate-system', from: 'EPSG:4326', to: 'EPSG:4326' }],
     },
     cache: {
       ttl: 86400000 * 7, //  1
@@ -118,12 +123,12 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
   };
 
   private readonly adminLevels: Record<string, string> = {
-    'country': 'ADM0',
-    'state': 'ADM1',
-    'county': 'ADM2',
-    'municipality': 'ADM3',
-    'ward': 'ADM4',
-    'neighborhood': 'ADM5',
+    country: 'ADM0',
+    state: 'ADM1',
+    county: 'ADM2',
+    municipality: 'ADM3',
+    ward: 'ADM4',
+    neighborhood: 'ADM5',
     '0': 'ADM0',
     '1': 'ADM1',
     '2': 'ADM2',
@@ -135,11 +140,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
   private readonly releaseType: 'gbOpen' = GEOBOUNDARIES_RELEASE_TYPE;
 
   async fetchData(options?: FetchOptions): Promise<GeoBoundariesRawData> {
-    const {
-      country = 'USA',
-      adminLevel = '1',
-      signal,
-    } = options || {};
+    const { country = 'USA', adminLevel = '1', signal } = options || {};
     const resolvedNodeId = options?.nodeId;
     if (!resolvedNodeId) {
       throw new Error('GeoBoundaries fetchData requires nodeId.');
@@ -149,7 +150,9 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
     const normalizedCountry = this.normalizeCountryCode(country);
     const normalizedAdminLevel = this.normalizeAdminLevel(adminLevel.toString());
     const cacheKeyMode = options?.cacheKeyMode ?? 'legacy';
-    const retries = options?.retryConfig ?? { count: 1, delay: 0, backoff: 'exponential' } satisfies RetryConfig;
+    const retries =
+      options?.retryConfig ??
+      ({ count: 1, delay: 0, backoff: 'exponential' } satisfies RetryConfig);
     try {
       //  APIURL
       const apiData = await this.fetchBoundaryMetadata(
@@ -159,16 +162,20 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
         signal,
         cacheKeyMode,
         retries,
-        options?.onRetryAttempt,
+        options?.onRetryAttempt
       );
 
       if (!apiData || !apiData.simplifiedGeometryGeoJSON) {
-        throw new Error(`No boundary data available for ${normalizedCountry} ${normalizedAdminLevel}`);
+        throw new Error(
+          `No boundary data available for ${normalizedCountry} ${normalizedAdminLevel}`
+        );
       }
       const downloadUrl = apiData.simplifiedGeometryGeoJSON;
       const continent = this.resolveContinent(apiData);
 
-      console.log(`[GeoBoundaries] Downloading ${this.releaseType} data for ${normalizedCountry} ${normalizedAdminLevel}`);
+      console.log(
+        `[GeoBoundaries] Downloading ${this.releaseType} data for ${normalizedCountry} ${normalizedAdminLevel}`
+      );
       console.log(`[GeoBoundaries] URL: ${downloadUrl}`);
 
       const pipeline = this.createRawDataPipeline({
@@ -200,11 +207,15 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
           rawSourceCacheKey: cacheKey,
         },
       };
-
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      console.warn(`[GeoBoundaries] Download failed: ${normalizedCountry} ${normalizedAdminLevel}`, message);
-      throw new Error(`Failed to fetch GeoBoundaries data for ${normalizedCountry} ${normalizedAdminLevel}: ${message}`);
+      console.warn(
+        `[GeoBoundaries] Download failed: ${normalizedCountry} ${normalizedAdminLevel}`,
+        message
+      );
+      throw new Error(
+        `Failed to fetch GeoBoundaries data for ${normalizedCountry} ${normalizedAdminLevel}: ${message}`
+      );
     }
   }
 
@@ -220,14 +231,15 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
     const contentType = 'application/flatgeobuf';
     return {
       prepareRequest: () => {
-        const cacheKey = metadata.cacheKeyMode === 'url'
-          ? metadata.downloadUrl
-          : buildRawDataDataSourceCacheKey({
-            dataSource: 'geoboundaries',
-            countryCode: metadata.normalizedCountry,
-            adminLevel: Number(metadata.normalizedAdminLevel),
-            url: metadata.downloadUrl,
-          });
+        const cacheKey =
+          metadata.cacheKeyMode === 'url'
+            ? metadata.downloadUrl
+            : buildRawDataDataSourceCacheKey({
+                dataSource: 'geoboundaries',
+                countryCode: metadata.normalizedCountry,
+                adminLevel: Number(metadata.normalizedAdminLevel),
+                url: metadata.downloadUrl,
+              });
         return {
           url: metadata.downloadUrl,
           cacheKey,
@@ -257,7 +269,10 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
             country: metadata.normalizedCountry,
             adminLevel: metadata.normalizedAdminLevel,
             releaseType: this.releaseType,
-            version: typeof metadata.apiData.boundaryYear === 'number' ? metadata.apiData.boundaryYear : 2023,
+            version:
+              typeof metadata.apiData.boundaryYear === 'number'
+                ? metadata.apiData.boundaryYear
+                : 2023,
             format: 'geojson',
             apiResponse: metadata.apiData,
             continent: metadata.continent ?? undefined,
@@ -267,7 +282,10 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
     };
   }
 
-  async processData(rawData: GeoBoundariesRawData, options?: ProcessOptions): Promise<GeoBoundariesProcessedData> {
+  async processData(
+    rawData: GeoBoundariesRawData,
+    options?: ProcessOptions
+  ): Promise<GeoBoundariesProcessedData> {
     const { filters, transformations } = options || {};
 
     try {
@@ -276,7 +294,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
       }
 
       let features: GeoBoundariesFeature[] = rawData.geojson.features.filter(
-        (feature): feature is GeoBoundariesFeature => Boolean(feature),
+        (feature): feature is GeoBoundariesFeature => Boolean(feature)
       );
       const inputStats = summarizeGeojsonFeatures(features);
 
@@ -295,30 +313,32 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
       }
 
       //  ShapeEntity
-      const entities: ShapeFeaturePayload[] = features.map((feature: GeoBoundariesFeature, index: number) => {
-        const properties = feature.properties ?? {};
-        const processedAt = new Date().toISOString();
+      const entities: ShapeFeaturePayload[] = features.map(
+        (feature: GeoBoundariesFeature, index: number) => {
+          const properties = feature.properties ?? {};
+          const processedAt = new Date().toISOString();
 
-        return {
-          id: this.generateEntityId(properties, index),
-          nodeId: this.generateNodeId(properties, index),
-          geometry: feature.geometry ?? undefined,
-          properties: {
-            ...properties,
-            source: 'geoboundaries',
-            country: rawData.metadata?.country,
-            adminLevel: rawData.metadata?.adminLevel,
-            continent: rawData.metadata?.continent,
-            releaseType: rawData.metadata?.releaseType,
-            boundaryYear: rawData.metadata?.version,
-            geoboundariesVersion: rawData.metadata?.version,
-            downloadedAt: rawData.metadata?.downloadedAt,
-            processedAt,
-            originalIndex: index,
-            license: rawData.metadata?.apiResponse?.licenseDetail || 'Open Data',
-          },
-        };
-      });
+          return {
+            id: this.generateEntityId(properties, index),
+            nodeId: this.generateNodeId(properties, index),
+            geometry: feature.geometry ?? undefined,
+            properties: {
+              ...properties,
+              source: 'geoboundaries',
+              country: rawData.metadata?.country,
+              adminLevel: rawData.metadata?.adminLevel,
+              continent: rawData.metadata?.continent,
+              releaseType: rawData.metadata?.releaseType,
+              boundaryYear: rawData.metadata?.version,
+              geoboundariesVersion: rawData.metadata?.version,
+              downloadedAt: rawData.metadata?.downloadedAt,
+              processedAt,
+              originalIndex: index,
+              license: rawData.metadata?.apiResponse?.licenseDetail || 'Open Data',
+            },
+          };
+        }
+      );
 
       const version = rawData.metadata ? rawData.metadata.version + 1 : 1;
       const result = entities as GeoBoundariesProcessedData;
@@ -338,9 +358,10 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
       };
 
       return result;
-
     } catch (error) {
-      throw new Error(`Failed to process GeoBoundaries data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to process GeoBoundaries data: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -351,7 +372,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
     signal?: AbortSignal,
     cacheKeyMode: 'url' | 'legacy' = 'legacy',
     retryConfig?: RetryConfig,
-    onRetryAttempt?: (attempt: number, error: unknown) => void | Promise<void>,
+    onRetryAttempt?: (attempt: number, error: unknown) => void | Promise<void>
   ): Promise<GeoBoundariesApiResponse> {
     const url = buildGeoBoundariesMetadataUrl(country, adminLevel);
     console.log(`[GeoBoundaries] Fetching metadata: ${url}`);
@@ -360,38 +381,41 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
       const store = createShapeChunkStore(jsonSerializer, jsonDeserializer);
       const entry = retryConfig
         ? await getOrFetchWithRetry(
-          store,
-          nodeId,
-          url,
-          {
-            accept: 'application/json',
-            cacheKey: cacheKeyMode === 'url'
-              ? url
-              : buildShapeCacheKey(`geoboundaries:metadata:${country}:${adminLevel}`, url),
-            signal,
-          },
-          retryConfig,
-          onRetryAttempt,
-        )
+            store,
+            nodeId,
+            url,
+            {
+              accept: 'application/json',
+              cacheKey:
+                cacheKeyMode === 'url'
+                  ? url
+                  : buildShapeCacheKey(`geoboundaries:metadata:${country}:${adminLevel}`, url),
+              signal,
+            },
+            retryConfig,
+            onRetryAttempt
+          )
         : await store.getOrFetchForNode(nodeId, url, {
-          accept: 'application/json',
-          cacheKey: cacheKeyMode === 'url'
-            ? url
-            : buildShapeCacheKey(`geoboundaries:metadata:${country}:${adminLevel}`, url),
-          signal,
-        });
+            accept: 'application/json',
+            cacheKey:
+              cacheKeyMode === 'url'
+                ? url
+                : buildShapeCacheKey(`geoboundaries:metadata:${country}:${adminLevel}`, url),
+            signal,
+          });
       const data = entry.value as GeoBoundariesApiResponse;
       data.releaseType = this.releaseType;
       return data;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (/HTTP 404/.test(message)) {
-        throw new Error(`No boundary data found for ${country} ${adminLevel} in ${this.releaseType}`);
+        throw new Error(
+          `No boundary data found for ${country} ${adminLevel} in ${this.releaseType}`
+        );
       }
       throw new Error(`API error: ${message}`);
     }
   }
-
 
   private normalizeCountryCode(country: string): string {
     //  ISO 3166-1 alpha-3
@@ -405,32 +429,32 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
     //  /
     const countryMappings: Record<string, string> = {
       'UNITED STATES': 'USA',
-      'US': 'USA',
+      US: 'USA',
       'UNITED KINGDOM': 'GBR',
-      'UK': 'GBR',
+      UK: 'GBR',
       'GREAT BRITAIN': 'GBR',
-      'JAPAN': 'JPN',
-      'JP': 'JPN',
-      'GERMANY': 'DEU',
-      'DE': 'DEU',
-      'FRANCE': 'FRA',
-      'FR': 'FRA',
-      'ITALY': 'ITA',
-      'IT': 'ITA',
-      'SPAIN': 'ESP',
-      'ES': 'ESP',
-      'CANADA': 'CAN',
-      'CA': 'CAN',
-      'AUSTRALIA': 'AUS',
-      'AU': 'AUS',
-      'BRAZIL': 'BRA',
-      'BR': 'BRA',
-      'CHINA': 'CHN',
-      'CN': 'CHN',
-      'INDIA': 'IND',
-      'IN': 'IND',
-      'RUSSIA': 'RUS',
-      'RU': 'RUS',
+      JAPAN: 'JPN',
+      JP: 'JPN',
+      GERMANY: 'DEU',
+      DE: 'DEU',
+      FRANCE: 'FRA',
+      FR: 'FRA',
+      ITALY: 'ITA',
+      IT: 'ITA',
+      SPAIN: 'ESP',
+      ES: 'ESP',
+      CANADA: 'CAN',
+      CA: 'CAN',
+      AUSTRALIA: 'AUS',
+      AU: 'AUS',
+      BRAZIL: 'BRA',
+      BR: 'BRA',
+      CHINA: 'CHN',
+      CN: 'CHN',
+      INDIA: 'IND',
+      IN: 'IND',
+      RUSSIA: 'RUS',
+      RU: 'RUS',
     };
 
     return countryMappings[upperCountry] || upperCountry.substring(0, 3);

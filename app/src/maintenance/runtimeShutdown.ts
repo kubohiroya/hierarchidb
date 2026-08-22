@@ -35,7 +35,9 @@ export async function shutdownRuntimeHandles(): Promise<RuntimeShutdownResult> {
         ref.reset();
       }
     } catch (error) {
-      warnings.push(`worker-reset-failed:${error instanceof Error ? error.message : String(error)}`);
+      warnings.push(
+        `worker-reset-failed:${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 

@@ -1,9 +1,6 @@
 import type { Tile } from 'geojson-vt';
 import type { VTStageContext } from '~/contextTypes';
-import {
-  type VtInputTileStats,
-  type VtOutputTileStats,
-} from './vtStageTaskOutputHelpers.js';
+import { type VtInputTileStats, type VtOutputTileStats } from './vtStageTaskOutputHelpers.js';
 import type { VtTileTaskContext } from './vtStageTaskOutputTypes.js';
 
 type TileWriter = VTStageContext['tileWriter'];
@@ -54,17 +51,20 @@ export const encodeTileForVt = ({
     }) as Uint8Array;
     return { bytes, durationMs: Date.now() - encodeStartedAt };
   } catch (error) {
-    console.error('[tileEmit] failed to encode tile', JSON.stringify({
-      ...taskContext,
-      stage: 'encode',
-      z,
-      x,
-      y,
-      inputStats,
-      outputStats,
-      layerCount: Object.keys(layers).length,
-      error: error instanceof Error ? error.message : String(error),
-    }));
+    console.error(
+      '[tileEmit] failed to encode tile',
+      JSON.stringify({
+        ...taskContext,
+        stage: 'encode',
+        z,
+        x,
+        y,
+        inputStats,
+        outputStats,
+        layerCount: Object.keys(layers).length,
+        error: error instanceof Error ? error.message : String(error),
+      })
+    );
     throw error;
   }
 };
@@ -87,14 +87,17 @@ export const storeTileForVt = async ({
 }): Promise<TimedTileOperationResult> => {
   const storeStartedAt = Date.now();
   if (debugCollect) {
-    console.info('[tileEmit][debug] tileWriter start', JSON.stringify({
-      ...taskContext,
-      tileId,
-      z,
-      x,
-      y,
-      byteLength: bytes.byteLength,
-    }));
+    console.info(
+      '[tileEmit][debug] tileWriter start',
+      JSON.stringify({
+        ...taskContext,
+        tileId,
+        z,
+        x,
+        y,
+        byteLength: bytes.byteLength,
+      })
+    );
   }
   try {
     await tileWriter({
@@ -107,27 +110,33 @@ export const storeTileForVt = async ({
       layers,
     });
     if (debugCollect) {
-      console.info('[tileEmit][debug] tileWriter done', JSON.stringify({
-        ...taskContext,
-        tileId,
-        durationMs: Date.now() - storeStartedAt,
-      }));
+      console.info(
+        '[tileEmit][debug] tileWriter done',
+        JSON.stringify({
+          ...taskContext,
+          tileId,
+          durationMs: Date.now() - storeStartedAt,
+        })
+      );
     }
     return { byteLength: bytes.byteLength, durationMs: Date.now() - storeStartedAt };
   } catch (error) {
-    console.error('[tileEmit] tileWriter failed', JSON.stringify({
-      ...taskContext,
-      stage: 'tileWriter',
-      z,
-      x,
-      y,
-      tileId,
-      bufferSetHash,
-      inputStats,
-      outputStats,
-      byteLength: bytes.byteLength,
-      error: error instanceof Error ? error.message : String(error),
-    }));
+    console.error(
+      '[tileEmit] tileWriter failed',
+      JSON.stringify({
+        ...taskContext,
+        stage: 'tileWriter',
+        z,
+        x,
+        y,
+        tileId,
+        bufferSetHash,
+        inputStats,
+        outputStats,
+        byteLength: bytes.byteLength,
+        error: error instanceof Error ? error.message : String(error),
+      })
+    );
     throw error;
   }
 };

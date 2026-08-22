@@ -1,4 +1,10 @@
-import React from 'react';
+import {
+  Add as AddIcon,
+  Close as CloseIcon,
+  Delete as DeleteIcon,
+  Edit as EditIcon,
+  Rule as RuleIcon,
+} from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -24,17 +30,14 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Close as CloseIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  Rule as RuleIcon,
-} from '@mui/icons-material';
+import React from 'react';
 import type { ResolverUpdaterPayload, SchemaInfo, ValidationRule } from '~/common/types/index';
-import { useValidationConfigStepView } from './useValidationConfigStepView.js';
-import { ValidationRuleParameterFields, ValidationRuleTypeMenu } from './ValidationConfigStepViewElements.js';
 import { useValidationConfigStep } from './useValidationConfigStep.js';
+import { useValidationConfigStepView } from './useValidationConfigStepView.js';
+import {
+  ValidationRuleParameterFields,
+  ValidationRuleTypeMenu,
+} from './ValidationConfigStepViewElements.js';
 
 interface ValidationConfigStepProps {
   data: Partial<ResolverUpdaterPayload>;
@@ -73,10 +76,7 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
     targetSchema,
   });
 
-  const {
-    parameterFieldsProps,
-    ruleTypeMenuProps,
-  } = useValidationConfigStepView({
+  const { parameterFieldsProps, ruleTypeMenuProps } = useValidationConfigStepView({
     ruleFormData,
     updateRuleFormData,
   });
@@ -87,8 +87,8 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
         Validation Rules
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Configure validation rules to ensure data quality during property mapping. These rules will be applied to check
-        data integrity.
+        Configure validation rules to ensure data quality during property mapping. These rules will
+        be applied to check data integrity.
       </Typography>
 
       <FormControlLabel
@@ -104,7 +104,9 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
 
       {enableValidation && (
         <>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Box
+            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
+          >
             <Typography variant="subtitle1">
               <RuleIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
               Validation Rules ({validationRules.length})
@@ -121,7 +123,8 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
 
           {availableProperties.length === 0 && (
             <Alert severity="warning" sx={{ mb: 2 }}>
-              No properties available for validation. Please complete the Schema Selection step first.
+              No properties available for validation. Please complete the Schema Selection step
+              first.
             </Alert>
           )}
 
@@ -148,18 +151,12 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
                               color="primary"
                               variant="outlined"
                             />
-                            <Chip
-                              label={rule.ruleType}
-                              size="small"
-                              color="secondary"
-                            />
+                            <Chip label={rule.ruleType} size="small" color="secondary" />
                           </Box>
                         }
                         secondary={
                           <Box sx={{ mt: 1 }}>
-                            <Typography variant="body2">
-                              {formatRuleDescription(rule)}
-                            </Typography>
+                            <Typography variant="body2">{formatRuleDescription(rule)}</Typography>
                             {rule.errorMessage && (
                               <Typography variant="caption" color="error">
                                 Error message: {rule.errorMessage}
@@ -176,11 +173,7 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
                         >
                           <EditIcon />
                         </IconButton>
-                        <IconButton
-                          onClick={() => deleteRule(rule.id)}
-                          size="small"
-                          color="error"
-                        >
+                        <IconButton onClick={() => deleteRule(rule.id)} size="small" color="error">
                           <DeleteIcon />
                         </IconButton>
                       </ListItemSecondaryAction>
@@ -240,10 +233,12 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
             <InputLabel>Rule Type</InputLabel>
             <Select
               value={ruleFormData.ruleType}
-              onChange={(e) => updateRuleFormData({
-                ruleType: e.target.value as ValidationRule['ruleType'],
-                parameters: {},
-              })}
+              onChange={(e) =>
+                updateRuleFormData({
+                  ruleType: e.target.value as ValidationRule['ruleType'],
+                  parameters: {},
+                })
+              }
               label="Rule Type"
             >
               <ValidationRuleTypeMenu {...ruleTypeMenuProps} />

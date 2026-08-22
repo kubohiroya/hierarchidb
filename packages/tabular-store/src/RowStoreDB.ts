@@ -29,7 +29,8 @@ export class RowStoreDB extends Dexie {
   constructor(name: string) {
     super(name);
     this.version(1).stores({
-      rowChunks: '&id, [pluginId+tableId], [pluginId+tableId+startRowIndex], [pluginId+tableId+endRowIndex], tableId, pluginId, chunkIndex, createdAt',
+      rowChunks:
+        '&id, [pluginId+tableId], [pluginId+tableId+startRowIndex], [pluginId+tableId+endRowIndex], tableId, pluginId, chunkIndex, createdAt',
       rowIndexes: '&id, [pluginId+tableId+column], [pluginId+tableId+column+value]',
     });
   }

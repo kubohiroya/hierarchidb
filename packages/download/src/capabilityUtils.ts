@@ -11,4 +11,3 @@ export function disableDownload(): void {
 export function isDownloadEnabled(): boolean {
   return downloadEnabled;
 }
-

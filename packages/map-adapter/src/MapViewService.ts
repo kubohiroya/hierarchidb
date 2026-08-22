@@ -31,4 +31,3 @@ export class MapViewService {
     await this.adapter.updateDeckLayers(layers);
   }
 }
-

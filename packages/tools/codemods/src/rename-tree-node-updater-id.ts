@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+import * as path from 'node:path';
+import process from 'node:process';
+import * as globby from 'globby';
+import type { PropertySignature } from 'ts-morph';
 /**
  * Codemod: Rename TreeNodeUpdater id -> treeNodeId
  *
@@ -11,10 +15,6 @@
  * Dry run by default (omit --write).
  */
 import ts from 'ts-morph';
-import type { PropertySignature } from 'ts-morph';
-import * as path from 'node:path';
-import * as globby from 'globby';
-import process from 'node:process';
 
 type Args = { write: boolean; roots: string[] };
 
@@ -63,10 +63,7 @@ async function main() {
 
   for (const root of roots) {
     const rootPath = path.join(repoRoot, root);
-    const patterns = [
-      path.join(rootPath, '**/*.ts'),
-      path.join(rootPath, '**/*.tsx'),
-    ];
+    const patterns = [path.join(rootPath, '**/*.ts'), path.join(rootPath, '**/*.tsx')];
     const files = await globby.globby(patterns, { ignore: ignored });
     if (files.length === 0) {
       console.log(`[codemod] Skip root ${root}: no files`);
@@ -97,10 +94,12 @@ async function main() {
         if (!targetInterfaces.includes(alias.getName())) return;
         const typeNode = alias.getTypeNode()?.asKind(SyntaxKind.TypeLiteral);
         if (!typeNode) return;
-        const member = typeNode.getMembers().find(
-          (memberNode): memberNode is PropertySignature =>
-            Node.isPropertySignature(memberNode) && memberNode.getNameNode().getText() === oldName
-        );
+        const member = typeNode
+          .getMembers()
+          .find(
+            (memberNode): memberNode is PropertySignature =>
+              Node.isPropertySignature(memberNode) && memberNode.getNameNode().getText() === oldName
+          );
         if (member) {
           member.rename(newName);
           renamedProps++;
@@ -113,9 +112,13 @@ async function main() {
 
     if (write) {
       await project.save();
-      console.log(`[codemod] ${root}: applied in ${touchedFiles} files, ${renamedProps} props renamed.`);
+      console.log(
+        `[codemod] ${root}: applied in ${touchedFiles} files, ${renamedProps} props renamed.`
+      );
     } else {
-      console.log(`[codemod] ${root}: dry run would rename ${renamedProps} props across ${touchedFiles} files.`);
+      console.log(
+        `[codemod] ${root}: dry run would rename ${renamedProps} props across ${touchedFiles} files.`
+      );
     }
 
     totalRenamed += renamedProps;

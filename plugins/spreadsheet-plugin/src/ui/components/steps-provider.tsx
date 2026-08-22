@@ -1,9 +1,13 @@
-import { type PluginStepProps, PluginStepRegistry, type PluginStepConfig } from '@hierarchidb/plugin-base';
-import type { SpreadsheetDraft } from '~/common/types/SpreadsheetEntity';
-import { TabularDataSourceStep } from './steps/TabularDataSourceStep.js';
-import { TabularDataFilterStep } from './steps/TabularDataFilterStep.js';
-import { SPREADSHEET_NODE_TYPE } from '~/common/constants';
+import {
+  type PluginStepConfig,
+  type PluginStepProps,
+  PluginStepRegistry,
+} from '@hierarchidb/plugin-base';
 import { i18n } from '@hierarchidb/ui-i18n';
+import { SPREADSHEET_NODE_TYPE } from '~/common/constants';
+import type { SpreadsheetDraft } from '~/common/types/SpreadsheetEntity';
+import { TabularDataFilterStep } from './steps/TabularDataFilterStep.js';
+import { TabularDataSourceStep } from './steps/TabularDataSourceStep.js';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -18,7 +22,9 @@ registry.registerConfigProvider({
       {
         id: 'data-source',
         label: t('steps.dataSource.label', 'Data Source'),
-        componentFactory: (props: PluginStepProps<SpreadsheetDraft>) => <TabularDataSourceStep {...props} />,
+        componentFactory: (props: PluginStepProps<SpreadsheetDraft>) => (
+          <TabularDataSourceStep {...props} />
+        ),
         validate: (data?: SpreadsheetDraft) => isComplete(data),
         capabilities: {
           canProceedToNext: (value?: SpreadsheetDraft) => isComplete(value),

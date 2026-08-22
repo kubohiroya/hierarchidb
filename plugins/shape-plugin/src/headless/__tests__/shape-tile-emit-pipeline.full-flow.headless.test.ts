@@ -1,7 +1,7 @@
 // @vitest-environment node
 import 'fake-indexeddb/auto';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { NodeId } from '@hierarchidb/core-types';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants';
 import type { SourceTaskPayload } from '../../common/types/index';
 
@@ -50,10 +50,10 @@ const buildConfig = {
 
 const selectGeoBoundariesPayload = async (): Promise<SourceTaskPayload> => {
   const metadata = await metadataLoader.loadMetadata('geoboundaries', nodeId);
-  const candidate = metadata.find((entry) => (
-    entry.availableAdminLevels.includes(0)
-    && (entry.iso3 || entry.countryCode || entry.iso2)
-  ));
+  const candidate = metadata.find(
+    (entry) =>
+      entry.availableAdminLevels.includes(0) && (entry.iso3 || entry.countryCode || entry.iso2)
+  );
   if (!candidate) {
     throw new Error('No GeoBoundaries metadata entry with admin level 0 found.');
   }
@@ -98,47 +98,55 @@ describeNetwork('Shape full-flow pipeline', () => {
     await clearNodeArtifacts();
   });
 
-  it('runs source/geometry/tileEmit with real data and persists outputs', { timeout: 300000 }, async () => {
-    const downloadTaskPayloads = [await selectGeoBoundariesPayload()];
-    await runShapePipeline({
-      nodeId,
-      dataSource: 'geoboundaries',
-      buildConfig,
-      downloadTaskPayloads,
-    });
+  it(
+    'runs source/geometry/tileEmit with real data and persists outputs',
+    { timeout: 300000 },
+    async () => {
+      const downloadTaskPayloads = [await selectGeoBoundariesPayload()];
+      await runShapePipeline({
+        nodeId,
+        dataSource: 'geoboundaries',
+        buildConfig,
+        downloadTaskPayloads,
+      });
 
-    const taskQueue = new VtTaskQueueDb();
-    const [failedSource, failedGeometry, failedTileEmit] = await Promise.all([
-      listTasksByStageAndStatus(taskQueue, nodeId, 'source', 'failed'),
-      listTasksByStageAndStatus(taskQueue, nodeId, 'geometry', 'failed'),
-      listTasksByStageAndStatus(taskQueue, nodeId, 'tileEmit', 'failed'),
-    ]);
-    taskQueue.close();
+      const taskQueue = new VtTaskQueueDb();
+      const [failedSource, failedGeometry, failedTileEmit] = await Promise.all([
+        listTasksByStageAndStatus(taskQueue, nodeId, 'source', 'failed'),
+        listTasksByStageAndStatus(taskQueue, nodeId, 'geometry', 'failed'),
+        listTasksByStageAndStatus(taskQueue, nodeId, 'tileEmit', 'failed'),
+      ]);
+      taskQueue.close();
 
-    if (failedSource.length || failedGeometry.length || failedTileEmit.length) {
-      const format = (tasks: typeof failedSource) => (
-        tasks.map((task) => `${task.taskId}:${task.errorMessage ?? task.message ?? 'unknown'}`).join('; ')
-      );
-      throw new Error(
-        `Pipeline failures: source=${failedSource.length} (${format(failedSource)}), `
-        + `geometry=${failedGeometry.length} (${format(failedGeometry)}), `
-        + `tileEmit=${failedTileEmit.length} (${format(failedTileEmit)})`,
-      );
+      if (failedSource.length || failedGeometry.length || failedTileEmit.length) {
+        const format = (tasks: typeof failedSource) =>
+          tasks
+            .map((task) => `${task.taskId}:${task.errorMessage ?? task.message ?? 'unknown'}`)
+            .join('; ');
+        throw new Error(
+          `Pipeline failures: source=${failedSource.length} (${format(failedSource)}), ` +
+            `geometry=${failedGeometry.length} (${format(failedGeometry)}), ` +
+            `tileEmit=${failedTileEmit.length} (${format(failedTileEmit)})`
+        );
+      }
+
+      const sourceCount = await ephemeralDB.sourceCache.where('nodeId').equals(nodeId).count();
+      const geometryCount = await ephemeralDB.geometryCache.where('nodeId').equals(nodeId).count();
+      const tileCount = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).count();
+      const featureMetaCount = await shapeDB.featureMetadata.where('nodeId').equals(nodeId).count();
+      const dataSourceMetaCount = await shapeDB.dataSourceMetadata
+        .where('nodeId')
+        .equals(nodeId)
+        .count();
+      const tileSample = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).first();
+
+      expect(sourceCount).toBeGreaterThan(0);
+      expect(geometryCount).toBeGreaterThan(0);
+      expect(tileCount).toBeGreaterThan(0);
+      expect(featureMetaCount).toBeGreaterThan(0);
+      expect(dataSourceMetaCount).toBeGreaterThan(0);
+      expect(tileSample?.layers?.length ?? 0).toBeGreaterThan(0);
+      expect(tileSample?.data_Uint8Array?.length ?? 0).toBeGreaterThan(0);
     }
-
-    const sourceCount = await ephemeralDB.sourceCache.where('nodeId').equals(nodeId).count();
-    const geometryCount = await ephemeralDB.geometryCache.where('nodeId').equals(nodeId).count();
-    const tileCount = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).count();
-    const featureMetaCount = await shapeDB.featureMetadata.where('nodeId').equals(nodeId).count();
-    const dataSourceMetaCount = await shapeDB.dataSourceMetadata.where('nodeId').equals(nodeId).count();
-    const tileSample = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).first();
-
-    expect(sourceCount).toBeGreaterThan(0);
-    expect(geometryCount).toBeGreaterThan(0);
-    expect(tileCount).toBeGreaterThan(0);
-    expect(featureMetaCount).toBeGreaterThan(0);
-    expect(dataSourceMetaCount).toBeGreaterThan(0);
-    expect(tileSample?.layers?.length ?? 0).toBeGreaterThan(0);
-    expect(tileSample?.data_Uint8Array?.length ?? 0).toBeGreaterThan(0);
-  });
+  );
 });

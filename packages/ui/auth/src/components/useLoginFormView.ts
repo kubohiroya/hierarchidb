@@ -15,21 +15,24 @@ export const useLoginFormView = ({ onLogin }: UseLoginFormViewArgs): UseLoginFor
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleProviderClick = useCallback(async (provider: AuthProviderType) => {
-    setError(null);
-    setLoading(true);
+  const handleProviderClick = useCallback(
+    async (provider: AuthProviderType) => {
+      setError(null);
+      setLoading(true);
 
-    try {
-      const turnstileToken = 'dummy-token';
-      if (onLogin) {
-        await onLogin(provider, turnstileToken);
+      try {
+        const turnstileToken = 'dummy-token';
+        if (onLogin) {
+          await onLogin(provider, turnstileToken);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Authentication failed');
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Authentication failed');
-    } finally {
-      setLoading(false);
-    }
-  }, [onLogin]);
+    },
+    [onLogin]
+  );
 
   return {
     error,

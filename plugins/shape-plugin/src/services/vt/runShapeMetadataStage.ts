@@ -1,18 +1,17 @@
 import type { NodeId } from '@hierarchidb/core-types';
+import type { EphemeralDB } from '@hierarchidb/gis-sdk';
+import { type GeometryEngine, pickAdminCode } from '@hierarchidb/gis-sdk';
 import type { ShapeFeatureMetadata } from '@hierarchidb/shape-api';
+import type { shapeDB } from '@hierarchidb/shape-store';
+import type { CountryMetadata, DataSourceName } from '~/common/types/index';
+import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
+import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import {
   buildFeatureId,
   extractGeometryStats,
   measureFeatureGeoJsonByteSize,
   resolveAdminHierarchyFields,
 } from './featureMetadataUtils.ts';
-import { pickAdminCode, type GeometryEngine } from '@hierarchidb/gis-sdk';
-import type { CountryMetadata, DataSourceName } from '~/common/types/index';
-import { metadataLoader } from '~/services/metadata/MetadataLoader';
-import { updateShapeStageMetadata } from './updateShapeStageMetadata.js';
-import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
-import type { EphemeralDB } from '@hierarchidb/gis-sdk';
-import type { shapeDB } from '@hierarchidb/shape-store';
 import {
   buildCountryLookup,
   decodeGeometryCache,
@@ -20,6 +19,7 @@ import {
   readNumericProperty,
   resolveFeatureOriginInfo,
 } from './shapePipelineShared.ts';
+import { updateShapeStageMetadata } from './updateShapeStageMetadata.js';
 
 export type ShapeMetadataStageParams = {
   nodeId: NodeId;
@@ -46,7 +46,7 @@ export const runShapeMetadataStage = async (params: ShapeMetadataStageParams): P
     params.dataSource,
     params.ephemeralStore,
     params.geometryEngine,
-    params.recyclingByFeatureId,
+    params.recyclingByFeatureId
   );
   assertMetadataPipelineActive(params.abortSignal);
   if (featureMetadataRows.length > 0) {
@@ -66,10 +66,12 @@ export const runShapeMetadataStage = async (params: ShapeMetadataStageParams): P
   if (params.diffBuildEnabled && params.recyclingAllowlist.size > 0) {
     const latestRows = await shapeQueryAPIImpl.listFeatureMetadata(params.nodeId);
     assertMetadataPipelineActive(params.abortSignal);
-    const cleared = latestRows.filter((row) => params.recyclingAllowlist.has(row.featureId)).map((row) => ({
-      ...row,
-      recycling: false,
-    }));
+    const cleared = latestRows
+      .filter((row) => params.recyclingAllowlist.has(row.featureId))
+      .map((row) => ({
+        ...row,
+        recycling: false,
+      }));
     if (cleared.length > 0) {
       await shapeMutationAPIImpl.putFeatureMetadata(cleared);
       assertMetadataPipelineActive(params.abortSignal);
@@ -82,13 +84,16 @@ const buildFeatureMetadataFromGeometryCaches = async (
   dataSource: DataSourceName,
   ephemeralStore: EphemeralDB,
   geometryEngine: GeometryEngine,
-  recyclingByFeatureId?: Map<string, boolean>,
+  recyclingByFeatureId?: Map<string, boolean>
 ): Promise<ShapeFeatureMetadata[]> => {
   const records: ShapeFeatureMetadata[] = [];
   const createdAt = Date.now();
   const metadata = await metadataLoader.loadMetadata(dataSource, nodeId);
   const countryLookup = buildCountryLookup(metadata as CountryMetadata[]);
-  const geometryCacheIdsRaw = await ephemeralStore.geometryCacheMeta.where('nodeId').equals(nodeId).primaryKeys();
+  const geometryCacheIdsRaw = await ephemeralStore.geometryCacheMeta
+    .where('nodeId')
+    .equals(nodeId)
+    .primaryKeys();
   const geometryCacheIds = geometryCacheIdsRaw.map((id) => String(id));
   if (geometryCacheIds.length === 0) return records;
   const buffers = await ephemeralStore.geometryCache.bulkGet(geometryCacheIds);
@@ -110,8 +115,9 @@ const buildFeatureMetadataFromGeometryCaches = async (
         adminLevel,
       });
       const resolvedAdminLevel = adminHierarchy.resolvedAdminLevel ?? adminLevel;
-      const adminCode = pickAdminCode(properties)
-        ?? (resolvedAdminLevel === 2
+      const adminCode =
+        pickAdminCode(properties) ??
+        (resolvedAdminLevel === 2
           ? adminHierarchy.admin2Code
           : resolvedAdminLevel === 1
             ? adminHierarchy.admin1Code

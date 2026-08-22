@@ -1,9 +1,9 @@
 import {
+  clearMaintenanceSession,
   createMaintenanceSession,
   createMaintenanceSessionUrl,
   markMaintenanceSessionConsumed,
   validateMaintenanceSession,
-  clearMaintenanceSession,
 } from '../maintenanceSession.ts';
 
 describe('maintenanceSession', () => {
@@ -19,10 +19,13 @@ describe('maintenanceSession', () => {
     });
 
     const parsed = new URL(url);
-    const result = validateMaintenanceSession({
-      sessionId: parsed.searchParams.get('msid'),
-      sessionSecret: parsed.searchParams.get('msk'),
-    }, 30_000);
+    const result = validateMaintenanceSession(
+      {
+        sessionId: parsed.searchParams.get('msid'),
+        sessionSecret: parsed.searchParams.get('msk'),
+      },
+      30_000
+    );
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -49,10 +52,13 @@ describe('maintenanceSession', () => {
   it('rejects consumed session', () => {
     const session = createMaintenanceSession();
     markMaintenanceSessionConsumed(session.sessionId, 100);
-    const result = validateMaintenanceSession({
-      sessionId: session.sessionId,
-      sessionSecret: session.sessionSecret,
-    }, 101);
+    const result = validateMaintenanceSession(
+      {
+        sessionId: session.sessionId,
+        sessionSecret: session.sessionSecret,
+      },
+      101
+    );
 
     expect(result).toEqual({ ok: false, reason: 'session-consumed' });
   });

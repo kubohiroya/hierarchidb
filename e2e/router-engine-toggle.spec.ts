@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test';
+import { expect, Page, test } from '@playwright/test';
 import { buildAppUrl } from './utils/test-helpers';
 
 type RouterWindow = Window & {
@@ -14,10 +14,10 @@ const expectAppHomeReady = async (page: Page): Promise<void> => {
 
 /**
  * E2E Smoke Tests for Router Engine Toggle
- * 
+ *
  * Tests the ability to switch between React Router and TanStack Router
  * via the VITE_ROUTER_ENGINE environment variable.
- * 
+ *
  * Note: These tests verify that the app starts correctly with each router engine.
  * Full route functionality will be tested in later phases.
  */
@@ -27,9 +27,9 @@ test.describe('Router Engine Toggle - Smoke Tests', () => {
 
   test.beforeEach(async ({ page: testPage }) => {
     page = testPage;
-    
+
     // Enable console logging for debugging
-    page.on('console', msg => {
+    page.on('console', (msg) => {
       if (msg.type() === 'error') {
         console.error('Browser console error:', msg.text());
       } else if (msg.text().includes('[Router') || msg.text().includes('Router')) {
@@ -38,7 +38,7 @@ test.describe('Router Engine Toggle - Smoke Tests', () => {
     });
 
     // Log network errors
-    page.on('pageerror', error => {
+    page.on('pageerror', (error) => {
       console.error('Page error:', error);
     });
   });
@@ -47,7 +47,7 @@ test.describe('Router Engine Toggle - Smoke Tests', () => {
     // Navigate to the app (default uses React Router)
     await page.goto(buildAppUrl(), {
       waitUntil: 'domcontentloaded',
-      timeout: 30000
+      timeout: 30000,
     });
 
     // Wait for the app to be ready
@@ -56,14 +56,14 @@ test.describe('Router Engine Toggle - Smoke Tests', () => {
     // Verify no error screens are shown
     await expect(page.locator('text=/Initialization Error/i')).not.toBeVisible();
     await expect(page.locator('text=/Failed to initialize/i')).not.toBeVisible();
-    
+
     // Verify the main app content is loaded
     await expect(page.getByRole('heading', { name: 'hierarchidb' })).toBeVisible();
 
     // Check that we're on the home route
     const url = page.url();
     expect(url).toContain('/hierarchidb');
-    
+
     console.log('✅ React Router engine loaded successfully');
   });
 
@@ -71,7 +71,7 @@ test.describe('Router Engine Toggle - Smoke Tests', () => {
     // Navigate to the app
     await page.goto(buildAppUrl(), {
       waitUntil: 'domcontentloaded',
-      timeout: 30000
+      timeout: 30000,
     });
 
     // Wait for the app to be ready
@@ -82,10 +82,10 @@ test.describe('Router Engine Toggle - Smoke Tests', () => {
     // In browser mode, we should not have hash routing by default
     // (unless VITE_USE_HASH_ROUTING is true, which it is in production)
     console.log('Current URL:', url);
-    
+
     // Just verify the page loaded successfully
     expect(url).toBeTruthy();
-    
+
     console.log('✅ Browser routing mode handled successfully');
   });
 
@@ -100,23 +100,24 @@ test.describe('Router Engine Toggle - Smoke Tests', () => {
     // Navigate to the app
     await page.goto(buildAppUrl(), {
       waitUntil: 'domcontentloaded',
-      timeout: 30000
+      timeout: 30000,
     });
 
     // Wait for worker initialization event
     // The app should wait for worker initialization before rendering
     await page.waitForLoadState('domcontentloaded');
-    const workerInitialized = await page.waitForFunction(
-      () => (window as RouterWindow).__HDB_WORKER_READY__ === true,
-      undefined,
-      { timeout: 15000 },
-    ).then(() => true).catch(() => false);
+    const workerInitialized = await page
+      .waitForFunction(() => (window as RouterWindow).__HDB_WORKER_READY__ === true, undefined, {
+        timeout: 15000,
+      })
+      .then(() => true)
+      .catch(() => false);
 
     expect(workerInitialized).toBe(true);
 
     // Verify the app content is now visible
     await expectAppHomeReady(page);
-    
+
     console.log('✅ Worker initialized before app render');
   });
 
@@ -124,7 +125,7 @@ test.describe('Router Engine Toggle - Smoke Tests', () => {
     // Navigate to the app
     await page.goto(buildAppUrl(), {
       waitUntil: 'domcontentloaded',
-      timeout: 30000
+      timeout: 30000,
     });
 
     // Wait for the app to be ready
@@ -134,15 +135,16 @@ test.describe('Router Engine Toggle - Smoke Tests', () => {
     // These might include navigation, title, or main content areas
     const hasContent = await page.evaluate(() => {
       // Check for _obsolate_common elements that indicate successful page load
-      const hasMainContent = document.querySelector('h1')?.textContent?.includes('hierarchidb') ?? false;
+      const hasMainContent =
+        document.querySelector('h1')?.textContent?.includes('hierarchidb') ?? false;
       const hasNavigation = document.querySelector('nav, [role="navigation"]') !== null;
       const hasContainer = document.querySelector('.MuiContainer-root') !== null;
-      
+
       return hasMainContent || hasNavigation || hasContainer;
     });
 
     expect(hasContent).toBe(true);
-    
+
     console.log('✅ home page navigation successful');
   });
 
@@ -150,7 +152,7 @@ test.describe('Router Engine Toggle - Smoke Tests', () => {
     // Navigate to the app
     await page.goto(buildAppUrl(), {
       waitUntil: 'domcontentloaded',
-      timeout: 30000
+      timeout: 30000,
     });
 
     // Wait for the app to be ready
@@ -171,7 +173,7 @@ test.describe('Router Engine Toggle - Smoke Tests', () => {
 
     // Also check browser console for errors
     const consoleErrors: string[] = [];
-    page.on('console', msg => {
+    page.on('console', (msg) => {
       if (msg.type() === 'error') {
         consoleErrors.push(msg.text());
       }
@@ -181,30 +183,29 @@ test.describe('Router Engine Toggle - Smoke Tests', () => {
     await page.waitForTimeout(1000);
 
     // Filter out known non-critical errors
-    const criticalErrors = consoleErrors.filter(err => 
-      err.toLowerCase().includes('router') && 
-      !err.includes('react-router') // Ignore deprecation warnings
+    const criticalErrors = consoleErrors.filter(
+      (err) => err.toLowerCase().includes('router') && !err.includes('react-router') // Ignore deprecation warnings
     );
 
     expect(criticalErrors).toHaveLength(0);
-    
+
     console.log('✅ No router-related errors found');
   });
 });
 
 /**
  * Note for future phases:
- * 
+ *
  * When TanStack Router is fully implemented and enabled via VITE_ROUTER_ENGINE=tanstack,
  * add additional tests here to verify:
- * 
+ *
  * 1. Route transitions work correctly
  * 2. Loader functions execute properly
  * 3. Navigation atoms is maintained
  * 4. Deep links work (e.g., /t/:treeId/:pageNodeId)
  * 5. Browser back/forward buttons work
  * 6. Hash routing mode works (for GitHub Pages)
- * 
+ *
  * For now, these smoke tests just verify that the app starts successfully
  * with the router infrastructure in place.
  */

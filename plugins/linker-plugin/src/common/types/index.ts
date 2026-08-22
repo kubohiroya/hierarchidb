@@ -1,1 +1,1 @@
-export type { LinkerEntity, LinkerDraft } from '~/common/entities/LinkerEntity';
+export type { LinkerDraft, LinkerEntity } from '~/common/entities/LinkerEntity';

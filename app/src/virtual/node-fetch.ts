@@ -1,8 +1,8 @@
 import nodeFetch, {
-  Request as NodeRequest,
-  Response as NodeResponse,
   FormData as NodeFormData,
   Headers as NodeHeaders,
+  Request as NodeRequest,
+  Response as NodeResponse,
 } from 'node-fetch';
 
 type GlobalFetch = NonNullable<typeof globalThis.fetch>;
@@ -13,10 +13,7 @@ type NodeResponseType = Awaited<ReturnType<typeof nodeFetch>>;
 type FetchResponse = GlobalResponse | NodeResponseType;
 type NodeFetchInit = Parameters<typeof nodeFetch>[1];
 
-const fetchImpl = async (
-  input: FetchInput,
-  init?: FetchInit
-): Promise<FetchResponse> => {
+const fetchImpl = async (input: FetchInput, init?: FetchInit): Promise<FetchResponse> => {
   if (typeof globalThis.fetch === 'function') {
     return globalThis.fetch(input, init);
   }

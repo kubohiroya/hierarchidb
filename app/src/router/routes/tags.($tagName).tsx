@@ -1,18 +1,11 @@
 import type { TreeId } from '@hierarchidb/core-types';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import { LocalOffer as TagIcon } from '@mui/icons-material';
-import {
-  Box,
-  Container,
-  List,
-  ListItem,
-  Paper,
-  Typography,
-} from '@mui/material';
+import { Box, Container, List, ListItem, Paper, Typography } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import { useMemo } from 'react';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useTagsPage } from './useTagsPage.js';
 
 type TaggedNodeRow = {
@@ -82,10 +75,7 @@ export default function TagDetailPage({ tagName }: { tagName?: string }) {
         ) : (
           <List>
             {rows.map((row) => (
-              <ListItem
-                key={row.id}
-                sx={{ alignItems: 'center', flexDirection: 'row', py: 2 }}
-              >
+              <ListItem key={row.id} sx={{ alignItems: 'center', flexDirection: 'row', py: 2 }}>
                 <TreeConsoleBreadcrumb
                   nodePath={row.breadcrumbNodes}
                   currentNodeId={row.id}

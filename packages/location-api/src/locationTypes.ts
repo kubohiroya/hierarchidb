@@ -7,12 +7,7 @@ export type LocationPointMetadata = Record<string, string | number | null>;
 export type LocationPointId = string & { readonly __brand: 'LocationPointId' };
 export type LocationFeatureId = string & { readonly __brand: 'LocationFeatureId' };
 
-export type LocationType =
-  | 'area_centroid'
-  | 'airport'
-  | 'port'
-  | 'railway_station'
-  | 'interchange';
+export type LocationType = 'area_centroid' | 'airport' | 'port' | 'railway_station' | 'interchange';
 
 export type LocationDataSource =
   | 'openstreetmap'
@@ -42,7 +37,10 @@ export type LocationRepresentationByZoomLevel = {
   iconFixedFromZoom: number;
 };
 
-export type LocationRepresentationByZoomLevelConfig = Record<LocationType, LocationRepresentationByZoomLevel>;
+export type LocationRepresentationByZoomLevelConfig = Record<
+  LocationType,
+  LocationRepresentationByZoomLevel
+>;
 
 export type LocationIconId =
   | 'public'

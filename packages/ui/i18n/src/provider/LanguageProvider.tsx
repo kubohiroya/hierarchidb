@@ -14,9 +14,9 @@ import { i18n as configuredI18n } from '~/i18n/index';
 import {
   defaultContextValue,
   detectUserLanguage,
-  SUPPORTED_LANGUAGES,
   type LanguageConfig,
   type LanguageContextType,
+  SUPPORTED_LANGUAGES,
   useLanguageProviderMountState,
   useLanguageProviderState,
 } from './useLanguageProvider.js';

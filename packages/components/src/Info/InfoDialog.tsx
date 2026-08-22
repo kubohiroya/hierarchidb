@@ -1,6 +1,6 @@
-import { type ReactNode, useCallback } from 'react'
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 import { Info as InfoIcon } from '@mui/icons-material';
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
+import { type ReactNode, useCallback } from 'react';
 
 export interface InfoDialogProps {
   /**
@@ -50,22 +50,22 @@ export interface InfoDialogProps {
  * in a modal base-dialog with consistent styling and behavior.
  */
 export const InfoDialog = ({
-                             open,
-                             onClose,
-                             title = 'Information',
-                             titleIcon = (
-                               <InfoIcon
-                                 fontSize={'large'}
-                                 style={{ color: 'primary.main', width: 30, height: 30, verticalAlign: 'middle' }}
-                               />
-                             ),
-                             children,
-                             fullScreen = false,
-                             maxWidth = '1200px',
-                             //closeButtonText = 'Close',
-                             actions,
-                             disableTransition = false,
-                           }: InfoDialogProps): React.ReactElement => {
+  open,
+  onClose,
+  title = 'Information',
+  titleIcon = (
+    <InfoIcon
+      fontSize={'large'}
+      style={{ color: 'primary.main', width: 30, height: 30, verticalAlign: 'middle' }}
+    />
+  ),
+  children,
+  fullScreen = false,
+  maxWidth = '1200px',
+  //closeButtonText = 'Close',
+  actions,
+  disableTransition = false,
+}: InfoDialogProps): React.ReactElement => {
   const handleClose = useCallback(() => {
     onClose();
   }, [onClose]);

@@ -1,5 +1,5 @@
-import { useRef, useLayoutEffect, useState, type ReactNode } from 'react';
 import { Box, Button, CircularProgress } from '@mui/material';
+import { type ReactNode, useLayoutEffect, useRef, useState } from 'react';
 
 const SPINNER_SIZE_PX = 16;
 
@@ -8,7 +8,13 @@ const SPINNER_SIZE_PX = 16;
  * Measures the rendered icon width and ensures the container never shrinks
  * below the largest observed width (or the spinner size).
  */
-function StableIconSlot({ icon, loading }: { icon: ReactNode; loading: boolean }): React.JSX.Element {
+function StableIconSlot({
+  icon,
+  loading,
+}: {
+  icon: ReactNode;
+  loading: boolean;
+}): React.JSX.Element {
   const iconRef = useRef<HTMLSpanElement | null>(null);
   const [minWidth, setMinWidth] = useState(SPINNER_SIZE_PX);
 
@@ -20,13 +26,7 @@ function StableIconSlot({ icon, loading }: { icon: ReactNode; loading: boolean }
     }
   }, [icon, loading]);
 
-  const spinner = (
-    <CircularProgress
-      size={SPINNER_SIZE_PX}
-      thickness={5}
-      color="inherit"
-    />
-  );
+  const spinner = <CircularProgress size={SPINNER_SIZE_PX} thickness={5} color="inherit" />;
 
   return (
     <Box
@@ -52,17 +52,24 @@ function StableIconSlot({ icon, loading }: { icon: ReactNode; loading: boolean }
 
 type LoadingButtonProps = React.ComponentProps<typeof Button> & { loading?: boolean };
 export const LoadingButton: React.FC<LoadingButtonProps> = ({
-                                                              loading = false,
-                                                              disabled,
-                                                              startIcon,
-                                                              endIcon,
-                                                              sx,
-                                                              children,
-                                                              ...rest
-                                                            }) => {
+  loading = false,
+  disabled,
+  startIcon,
+  endIcon,
+  sx,
+  children,
+  ...rest
+}) => {
   const stableEndIcon = (
     <StableIconSlot
-      icon={endIcon ?? <Box component="span" sx={{ display: 'inline-flex', width: SPINNER_SIZE_PX, height: SPINNER_SIZE_PX }} />}
+      icon={
+        endIcon ?? (
+          <Box
+            component="span"
+            sx={{ display: 'inline-flex', width: SPINNER_SIZE_PX, height: SPINNER_SIZE_PX }}
+          />
+        )
+      }
       loading={loading}
     />
   );

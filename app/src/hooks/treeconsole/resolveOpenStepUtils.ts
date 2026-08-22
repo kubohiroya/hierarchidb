@@ -1,14 +1,14 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { TreeNode } from '@hierarchidb/tree-api';
-import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 import { composeStepConfigs } from '@hierarchidb/plugin-base';
+import type { TreeNode } from '@hierarchidb/tree-api';
+import { i18n } from '@hierarchidb/ui-i18n';
 import {
   isFolderNodeType,
   type OpenStepOption,
 } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
-import { i18n } from '@hierarchidb/ui-i18n';
 import type { Remote } from 'comlink';
 import { loadAllUIPlugins, loadUIPlugin } from '~/plugin-loaders/uiPluginLoaderUtils';
+import type { BuildWorkerAPI } from '~/types/workerApiTypes';
 
 type StepConfigLike = {
   id: string;
@@ -23,7 +23,10 @@ type StepConfigLike = {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-const normalizeNodeType = (value?: string): string => String(value ?? '').trim().toLowerCase();
+const normalizeNodeType = (value?: string): string =>
+  String(value ?? '')
+    .trim()
+    .toLowerCase();
 
 const buildDialogData = (node?: TreeNode | null): Record<string, unknown> => {
   if (!node) return {};
@@ -71,7 +74,11 @@ const resolveActiveStepIndex = (node?: TreeNode | null): number => {
   return 0;
 };
 
-const sequentiallyReachable = (index: number, optionalFlags: boolean[], filled: boolean[]): boolean => {
+const sequentiallyReachable = (
+  index: number,
+  optionalFlags: boolean[],
+  filled: boolean[]
+): boolean => {
   if (index <= 0) return true;
   for (let i = 0; i < index; i += 1) {
     if (optionalFlags[i]) continue;
@@ -130,8 +137,7 @@ export async function resolveOpenStepsForNode(params: {
       label: cfg.label ?? cfg.id,
       optional: Boolean(cfg.optional),
       validate: cfg.validate
-        ? (data: Record<string, unknown>) =>
-            Promise.resolve(cfg.validate?.(data)).then(Boolean)
+        ? (data: Record<string, unknown>) => Promise.resolve(cfg.validate?.(data)).then(Boolean)
         : undefined,
       capabilities: cfg.capabilities
         ? {

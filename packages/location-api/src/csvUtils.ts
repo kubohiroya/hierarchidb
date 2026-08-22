@@ -8,8 +8,7 @@ export type CsvTable = {
   rows: string[][];
 };
 
-const normalizeLineEndings = (text: string): string =>
-  text.replace(/\r\n?/g, '\n');
+const normalizeLineEndings = (text: string): string => text.replace(/\r\n?/g, '\n');
 
 const splitCsvLine = (line: string, delimiter: string): string[] => {
   const cells: string[] = [];
@@ -59,8 +58,7 @@ export const parseCsvTable = (text: string, options: CsvOptions = {}): CsvTable 
   };
 };
 
-const normalizeHeader = (value: string): string =>
-  value.toLowerCase().replace(/[^a-z0-9]+/g, '');
+const normalizeHeader = (value: string): string => value.toLowerCase().replace(/[^a-z0-9]+/g, '');
 
 export const buildHeaderIndex = (headers: string[]): Map<string, number> => {
   const map = new Map<string, number>();

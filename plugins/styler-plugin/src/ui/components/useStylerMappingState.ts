@@ -1,10 +1,6 @@
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import type {
-  MapLibreStyleProperty,
-  StylerStepData,
-  StyleType,
-} from '~/common/types/StylerEntity';
+import type { MapLibreStyleProperty, StylerStepData, StyleType } from '~/common/types/StylerEntity';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;

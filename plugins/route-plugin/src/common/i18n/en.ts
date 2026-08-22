@@ -38,7 +38,8 @@ export const en: RoutePluginTranslations = {
   // Basic info
   basicInfo: {
     title: 'Route Basic Information',
-    subtitle: 'Configure basic settings for route information. Specify route types and transportation modes to classify routes.',
+    subtitle:
+      'Configure basic settings for route information. Specify route types and transportation modes to classify routes.',
     nameLabel: 'Route Name',
     nameHelperText: 'Enter a clear and descriptive route name',
     nameRequired: 'Route name is required',
@@ -59,8 +60,10 @@ export const en: RoutePluginTranslations = {
   // Route selection
   routeSelection: {
     title: 'Route Selection & Configuration',
-    subtitle: 'Configure conditions for routes to retrieve or generate. You can specify routes by region, route type, and transportation mode combinations.',
-    alertMessage: 'Configure conditions for routes to retrieve or generate. You can specify routes by region, route type, and transportation mode combinations.',
+    subtitle:
+      'Configure conditions for routes to retrieve or generate. You can specify routes by region, route type, and transportation mode combinations.',
+    alertMessage:
+      'Configure conditions for routes to retrieve or generate. You can specify routes by region, route type, and transportation mode combinations.',
     routeTypeSettings: 'Route Type Settings',
     transportModeSettings: 'Transport Mode Settings',
     parametersTitle: 'Route Parameters',

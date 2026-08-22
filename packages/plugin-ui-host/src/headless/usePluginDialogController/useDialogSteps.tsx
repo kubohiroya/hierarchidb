@@ -1,11 +1,11 @@
 import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
-import type { TreeNodeData, TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type {
   composeStepConfigs,
   PluginStepProps as PluginPluginStepProps,
   PluginStepConfig,
   StepData,
 } from '@hierarchidb/plugin-base';
+import type { TreeNodeData, TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type {
   DialogStep,
   PluginStepProps as HeadlessPluginStepProps,
@@ -13,8 +13,8 @@ import type {
   StepValidationFn,
 } from '@hierarchidb/ui-dialog';
 import { BasicInfoStep } from '@hierarchidb/ui-plugin-basic-info';
-import { atom, useAtom } from 'jotai';
 import type { PrimitiveAtom } from 'jotai';
+import { atom, useAtom } from 'jotai';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -276,12 +276,12 @@ export function useDialogSteps({
     parentId: pageNodeId,
     basicInfo,
     uiState,
-  draftData,
-  setDraftData,
-  updateUiState: setUiState,
-  handleBasicInfoBridge,
+    draftData,
+    setDraftData,
+    updateUiState: setUiState,
+    handleBasicInfoBridge,
     onDraftMetadataChange,
-  dialogRef,
+    dialogRef,
   });
 
   stepContextRef.current = {
@@ -308,12 +308,7 @@ export function useDialogSteps({
       ...(toRecord(prev) ?? {}),
       ...nextWorkingData,
     }));
-  }, [
-    basicInfo,
-    basicInfoMeta,
-    draftData,
-    setDraftAtomValue,
-  ]);
+  }, [basicInfo, basicInfoMeta, draftData, setDraftAtomValue]);
   const normalizedConfigs = useMemo<
     PluginStepConfig<Partial<PluginDefinedEntity>, DialogUiState>[]
   >(() => {
@@ -430,46 +425,49 @@ export function useDialogSteps({
     Map<string, React.FC<HeadlessPluginStepProps<Partial<PluginDefinedEntity>>>>
   >(new Map());
 
-  const getOrCreateStepComponent = useCallback((cfgId: string) => {
-    const existing = stepComponentRegistryRef.current.get(cfgId);
-    if (existing) return existing;
+  const getOrCreateStepComponent = useCallback(
+    (cfgId: string) => {
+      const existing = stepComponentRegistryRef.current.get(cfgId);
+      if (existing) return existing;
 
-    const Component: React.FC<HeadlessPluginStepProps<Partial<PluginDefinedEntity>>> = (
-      stepProps
-    ) => {
-      const cfg = stepConfigRegistryRef.current.get(cfgId);
-      if (!cfg) return null;
-      const ctx = stepContextRef.current;
-      return (
-        <StepAdapterComponent
-          cfg={cfg}
-          mode={ctx.mode}
-          nodeId={String(ctx.nodeId)}
-          parentId={String(ctx.parentId)}
-          basicInfo={ctx.basicInfo}
-          uiState={ctx.uiState}
-          setDraftData={ctx.setDraftData}
-          updateUiState={ctx.updateUiState}
-          onDataChange={
-            cfg.id === 'basic-info'
-              ? (data) => {
-                  const metadata = extractMetadata(data);
-                  ctx.handleBasicInfoBridge(metadata);
-                  ctx.onDraftMetadataChange?.(metadata);
-                }
-              : undefined
-          }
-          dialogRef={ctx.dialogRef}
-          stepProps={stepProps}
-          stepData={cfg.id === 'basic-info' ? ctx.basicInfo : ctx.draftData}
-          draftAtom={draftAtom}
-        />
-      );
-    };
+      const Component: React.FC<HeadlessPluginStepProps<Partial<PluginDefinedEntity>>> = (
+        stepProps
+      ) => {
+        const cfg = stepConfigRegistryRef.current.get(cfgId);
+        if (!cfg) return null;
+        const ctx = stepContextRef.current;
+        return (
+          <StepAdapterComponent
+            cfg={cfg}
+            mode={ctx.mode}
+            nodeId={String(ctx.nodeId)}
+            parentId={String(ctx.parentId)}
+            basicInfo={ctx.basicInfo}
+            uiState={ctx.uiState}
+            setDraftData={ctx.setDraftData}
+            updateUiState={ctx.updateUiState}
+            onDataChange={
+              cfg.id === 'basic-info'
+                ? (data) => {
+                    const metadata = extractMetadata(data);
+                    ctx.handleBasicInfoBridge(metadata);
+                    ctx.onDraftMetadataChange?.(metadata);
+                  }
+                : undefined
+            }
+            dialogRef={ctx.dialogRef}
+            stepProps={stepProps}
+            stepData={cfg.id === 'basic-info' ? ctx.basicInfo : ctx.draftData}
+            draftAtom={draftAtom}
+          />
+        );
+      };
 
-    stepComponentRegistryRef.current.set(cfgId, Component);
-    return Component;
-  }, [draftAtom]);
+      stepComponentRegistryRef.current.set(cfgId, Component);
+      return Component;
+    },
+    [draftAtom]
+  );
 
   const stepDescriptors = useMemo<
     ReadonlyArray<StepComponentDescriptor<Partial<PluginDefinedEntity>>>

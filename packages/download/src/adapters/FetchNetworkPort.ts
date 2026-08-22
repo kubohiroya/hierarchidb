@@ -1,16 +1,18 @@
-import type { DownloadProgress, NetworkPort, NetworkRequestInit, ResponseLike } from '~/types';
+import { sleep } from '@hierarchidb/util';
 import { resolveNetworkUrl } from '~/helpers/resolveNetworkUrl';
 import { smartFetch } from '~/smartFetch';
-import { sleep } from '@hierarchidb/util';
+import type { DownloadProgress, NetworkPort, NetworkRequestInit, ResponseLike } from '~/types';
 
 export interface FetchNetworkPortOptions {
-  headers?: Record<string, string> | (() => Record<string, string> | Promise<Record<string, string>>);
+  headers?:
+    | Record<string, string>
+    | (() => Record<string, string> | Promise<Record<string, string>>);
   retries?: number;
   baseDelayMs?: number;
   maxDelayMs?: number;
   perHostConcurrency?: number; // simple semaphore per host
-  globalConcurrency?: number;   // optional global semaphore across hosts
-  rps?: number;                 // optional requests-per-second token bucket (global)
+  globalConcurrency?: number; // optional global semaphore across hosts
+  rps?: number; // optional requests-per-second token bucket (global)
   corsProxyBaseURL?: string;
   authFetch?: (url: string, init?: RequestInit) => Promise<Response>;
   auth?: {
@@ -105,7 +107,13 @@ export class FetchNetworkPort implements NetworkPort {
   private opts: Required<Omit<FetchNetworkPortOptions, 'corsProxyBaseURL' | 'authFetch'>> & {
     corsProxyBaseURL: string;
     authFetch?: (url: string, init?: RequestInit) => Promise<Response>;
-    auth: { enabled: boolean; scope: string; sessionId?: string; sessionStartedAt?: number; maxRetries?: number };
+    auth: {
+      enabled: boolean;
+      scope: string;
+      sessionId?: string;
+      sessionStartedAt?: number;
+      maxRetries?: number;
+    };
   };
   private semaphores = new Map<HostKey, Semaphore>();
   private globalSemaphore?: Semaphore;
@@ -130,13 +138,14 @@ export class FetchNetworkPort implements NetworkPort {
       authFetch: opts.authFetch,
       auth: {
         enabled: opts.auth?.enabled ?? true,
-        scope: (opts.auth?.scope ?? ''),
+        scope: opts.auth?.scope ?? '',
         sessionId: opts.auth?.sessionId,
         sessionStartedAt: opts.auth?.sessionStartedAt,
         maxRetries: opts.auth?.maxRetries,
       },
     };
-    if (this.opts.globalConcurrency > 0) this.globalSemaphore = new Semaphore(this.opts.globalConcurrency);
+    if (this.opts.globalConcurrency > 0)
+      this.globalSemaphore = new Semaphore(this.opts.globalConcurrency);
     if (this.opts.rps > 0) this.tokenBucket = new TokenBucket(this.opts.rps);
   }
 
@@ -148,7 +157,12 @@ export class FetchNetworkPort implements NetworkPort {
     return await this.request(url, { ...init, method: 'GET' });
   }
 
-  async getRange(url: string, start: number, endInclusive: number, init?: NetworkRequestInit): Promise<ResponseLike> {
+  async getRange(
+    url: string,
+    start: number,
+    endInclusive: number,
+    init?: NetworkRequestInit
+  ): Promise<ResponseLike> {
     const headers = new Headers(await this.resolveHeaders());
     headers.set('Range', `bytes=${start}-${endInclusive}`);
     return await this.request(url, { ...init, method: 'GET', headers });
@@ -176,7 +190,7 @@ export class FetchNetworkPort implements NetworkPort {
       if (this.opts.authFetch) {
         const res = await this.opts.authFetch(
           resolveNetworkUrl(url, { corsProxyBaseURL: this.opts.corsProxyBaseURL }),
-          { ...requestInit, headers },
+          { ...requestInit, headers }
         );
         if (onDownloadProgress) {
           const totalBytes = parseContentLength(res.headers);

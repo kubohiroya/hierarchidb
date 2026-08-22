@@ -3,6 +3,7 @@
  * @description Styler mapping configuration UI component (Step 5)
  */
 
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   AutoFixHigh as AutoFixHighIcon,
   BarChart as BarChartIcon,
@@ -30,7 +31,6 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useId } from 'react';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 
 import type { StylerConfig, StylerTableRow } from '~/common/types/StylerEntity';
 import { StylerConfigDefault } from '~/common/types/StylerEntity';

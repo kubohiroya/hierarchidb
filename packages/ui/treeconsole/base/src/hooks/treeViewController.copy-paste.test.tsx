@@ -3,11 +3,11 @@
  * @description TDD tests for TreeViewController copy/paste behavior
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type NodeId } from '@hierarchidb/core-types';
 import { act, renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TreeViewControllerProps } from './useTreeViewController.js';
 import { useTreeViewController } from './useTreeViewController.js';
-import { type NodeId } from '@hierarchidb/core-types';
 
 vi.mock('comlink', () => ({
   proxy: <T,>(value: T) => value,
@@ -85,7 +85,7 @@ describe('useTreeViewController', () => {
           useTreeViewController({
             ...mockProps,
             stateManager: undefined,
-          }),
+          })
         );
 
         //  : copy
@@ -362,7 +362,6 @@ describe('useTreeViewController', () => {
         expect(result.current.canPasteToTarget('allowed-target' as NodeId)).toBe(true); //  :
         expect(result.current.canPasteToTarget('denied-target' as NodeId)).toBe(false); //  :
       });
-
     });
   });
 });

@@ -65,18 +65,19 @@ export function useDialogFrameState({
   handlePositionChange: (next?: DialogPosition) => void;
   dialogRef: React.RefObject<HTMLDivElement | null>;
 } {
-  const [urlStateInternal, setUrlStateInternal] = useState<{ mode: DialogDisplayMode; step: number }>(
-    () => ({
-      mode:
-        !allowFullScreen && urlState?.mode === 'full-screen'
-          ? 'normal'
-          : (urlState?.mode ?? 'normal'),
-      step:
-        typeof urlState?.step === 'number' && Number.isFinite(urlState.step)
-          ? urlState.step
-          : Math.max(initialStep, 1),
-    })
-  );
+  const [urlStateInternal, setUrlStateInternal] = useState<{
+    mode: DialogDisplayMode;
+    step: number;
+  }>(() => ({
+    mode:
+      !allowFullScreen && urlState?.mode === 'full-screen'
+        ? 'normal'
+        : (urlState?.mode ?? 'normal'),
+    step:
+      typeof urlState?.step === 'number' && Number.isFinite(urlState.step)
+        ? urlState.step
+        : Math.max(initialStep, 1),
+  }));
   const urlStateSourceRef = useRef<'external' | 'internal' | null>(null);
 
   useEffect(() => {
@@ -120,10 +121,13 @@ export function useDialogFrameState({
     }
   }, [urlStep]);
 
-  const setUrlStepInternal = useCallback((nextIndex: number) => {
-    const nextStep = toStepNumber(nextIndex);
-    updateUrlState({ step: nextStep });
-  }, [updateUrlState]);
+  const setUrlStepInternal = useCallback(
+    (nextIndex: number) => {
+      const nextStep = toStepNumber(nextIndex);
+      updateUrlState({ step: nextStep });
+    },
+    [updateUrlState]
+  );
 
   const initialFrame = (() => {
     const viewport = getViewportSize();
@@ -155,10 +159,13 @@ export function useDialogFrameState({
     dialogPositionRef.current = dialogPosition;
   }, [dialogPosition]);
 
-  const persistDisplayMode = useCallback((value: DialogDisplayMode) => {
-    setDisplayModeState(value);
-    updateUrlState({ mode: value });
-  }, [updateUrlState]);
+  const persistDisplayMode = useCallback(
+    (value: DialogDisplayMode) => {
+      setDisplayModeState(value);
+      updateUrlState({ mode: value });
+    },
+    [updateUrlState]
+  );
 
   const persistPosition = useCallback((next: DialogPosition) => {
     setDialogPosition(next);
@@ -181,8 +188,7 @@ export function useDialogFrameState({
     const progressState = initialDialogUIState.dialogProgress;
     const hasUrlMode = typeof urlState?.mode === 'string';
     const requestedMode = (hasUrlMode ? urlState?.mode : windowState?.mode) ?? 'normal';
-    const mode =
-      !allowFullScreen && requestedMode === 'full-screen' ? 'normal' : requestedMode;
+    const mode = !allowFullScreen && requestedMode === 'full-screen' ? 'normal' : requestedMode;
     const size = windowState?.size ?? dialogSizeRef.current;
     const position = windowState?.position ?? dialogPositionRef.current;
 

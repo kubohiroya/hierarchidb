@@ -3,9 +3,9 @@
  * Encapsulates row click and double-click behaviour for TreeTable rows.
  */
 
-import { useCallback } from 'react';
 import type { MouseEvent } from 'react';
-import type { TreeTableController, TreeNodeInUI } from '~/types';
+import { useCallback } from 'react';
+import type { TreeNodeInUI, TreeTableController } from '~/types';
 import { isElementWithClosest } from '~/utils/treeTableHelpers';
 
 interface UseTreeTableRowInteractionsParams {
@@ -34,54 +34,60 @@ export function useTreeTableRowInteractions({
   selectAll,
   handleStartEdit,
 }: UseTreeTableRowInteractionsParams): UseTreeTableRowInteractionsResult {
-  const handleRowClick = useCallback((node: TreeNodeInUI, event: MouseEvent) => {
-    const target = (event.target as EventTarget) || null;
-    if (isElementWithClosest(target) && target.closest('a[href]')) {
-      return;
-    }
-
-    if (selectAll) {
-      onRowClick?.(node, event);
-      return;
-    }
-
-    if (rowClickAction === 'Select/Navigate' && selectionMode !== 'none') {
-      const prevSelection = { ...rowSelection };
-      const nextSelection = { ...rowSelection };
-
-      if (event.ctrlKey || event.metaKey) {
-        nextSelection[node.id] = !nextSelection[node.id];
-      } else {
-        Object.keys(nextSelection).forEach((id) => {
-          nextSelection[id] = false;
-        });
-        nextSelection[node.id] = true;
+  const handleRowClick = useCallback(
+    (node: TreeNodeInUI, event: MouseEvent) => {
+      const target = (event.target as EventTarget) || null;
+      if (isElementWithClosest(target) && target.closest('a[href]')) {
+        return;
       }
 
-      const prevIds = Object.keys(prevSelection).filter((id) => prevSelection[id]);
-      const nextIds = Object.keys(nextSelection).filter((id) => nextSelection[id]);
-      const toDeselect = prevIds.filter((id) => !nextSelection[id]);
-      const toSelect = nextIds.filter((id) => !prevSelection[id]);
+      if (selectAll) {
+        onRowClick?.(node, event);
+        return;
+      }
 
-      if (toDeselect.length) controller?.onNodeSelect?.(toDeselect, false);
-      if (toSelect.length) controller?.onNodeSelect?.(toSelect, true);
-    }
+      if (rowClickAction === 'Select/Navigate' && selectionMode !== 'none') {
+        const prevSelection = { ...rowSelection };
+        const nextSelection = { ...rowSelection };
 
-    onRowClick?.(node, event);
-  }, [controller, onRowClick, rowClickAction, rowSelection, selectAll, selectionMode]);
+        if (event.ctrlKey || event.metaKey) {
+          nextSelection[node.id] = !nextSelection[node.id];
+        } else {
+          Object.keys(nextSelection).forEach((id) => {
+            nextSelection[id] = false;
+          });
+          nextSelection[node.id] = true;
+        }
 
-  const handleRowDoubleClick = useCallback((node: TreeNodeInUI, event: MouseEvent) => {
-    const target = (event.target as EventTarget) || null;
-    if (isElementWithClosest(target) && target.closest('a[href]')) {
-      return;
-    }
+        const prevIds = Object.keys(prevSelection).filter((id) => prevSelection[id]);
+        const nextIds = Object.keys(nextSelection).filter((id) => nextSelection[id]);
+        const toDeselect = prevIds.filter((id) => !nextSelection[id]);
+        const toSelect = nextIds.filter((id) => !prevSelection[id]);
 
-    if (rowClickAction === 'Edit') {
-      handleStartEdit(node);
-    }
+        if (toDeselect.length) controller?.onNodeSelect?.(toDeselect, false);
+        if (toSelect.length) controller?.onNodeSelect?.(toSelect, true);
+      }
 
-    onRowDoubleClick?.(node, event);
-  }, [handleStartEdit, onRowDoubleClick, rowClickAction]);
+      onRowClick?.(node, event);
+    },
+    [controller, onRowClick, rowClickAction, rowSelection, selectAll, selectionMode]
+  );
+
+  const handleRowDoubleClick = useCallback(
+    (node: TreeNodeInUI, event: MouseEvent) => {
+      const target = (event.target as EventTarget) || null;
+      if (isElementWithClosest(target) && target.closest('a[href]')) {
+        return;
+      }
+
+      if (rowClickAction === 'Edit') {
+        handleStartEdit(node);
+      }
+
+      onRowDoubleClick?.(node, event);
+    },
+    [handleStartEdit, onRowDoubleClick, rowClickAction]
+  );
 
   return {
     handleRowClick,

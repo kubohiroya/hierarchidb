@@ -1,11 +1,19 @@
+import { useTheme } from '@mui/material';
 import React from 'react';
 import { BaseAccordion, BaseAccordionProps } from './BaseAccordion.js';
-import { useTheme } from '@mui/material';
 
 export type AccordionVariant = 'default' | 'outlined' | 'filled' | 'elevated';
-export type AccordionColorScheme = 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
+export type AccordionColorScheme =
+  | 'default'
+  | 'primary'
+  | 'secondary'
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'info';
 
-export interface StyledAccordionProps extends Omit<BaseAccordionProps, 'headerBackgroundColor' | 'headerTextColor' | 'elevation'> {
+export interface StyledAccordionProps
+  extends Omit<BaseAccordionProps, 'headerBackgroundColor' | 'headerTextColor' | 'elevation'> {
   /** Visual variant of the accordion */
   variant?: AccordionVariant;
   /** Color scheme to apply */
@@ -38,14 +46,14 @@ const borderRadiusValues = {
  * Styled accordion with predefined visual variants
  */
 export const StyledAccordion: React.FC<StyledAccordionProps> = ({
-                                                                  variant = 'default',
-                                                                  colorScheme = 'default',
-                                                                  customColor,
-                                                                  gradient = false,
-                                                                  borderRadius = 'medium',
-                                                                  padding = 'medium',
-                                                                  ...baseProps
-                                                                }) => {
+  variant = 'default',
+  colorScheme = 'default',
+  customColor,
+  gradient = false,
+  borderRadius = 'medium',
+  padding = 'medium',
+  ...baseProps
+}) => {
   const theme = useTheme();
 
   // Determine colors based on variant and color scheme
@@ -82,9 +90,10 @@ export const StyledAccordion: React.FC<StyledAccordionProps> = ({
           backgroundColor: gradient
             ? `linear-gradient(135deg, ${bgColor}, ${theme.palette.augmentColor({ color: { main: bgColor } }).dark})`
             : bgColor,
-          textColor: colorScheme === 'default'
-            ? theme.palette.text.primary
-            : theme.palette.getContrastText(bgColor),
+          textColor:
+            colorScheme === 'default'
+              ? theme.palette.text.primary
+              : theme.palette.getContrastText(bgColor),
         };
       }
 

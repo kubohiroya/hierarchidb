@@ -1,7 +1,7 @@
-import { createElement, useMemo, type ReactNode } from 'react';
 import { CloudDownload, Layers, Tune } from '@mui/icons-material';
-import type { BuildStage } from '../components/BuildStage.js';
+import { createElement, type ReactNode, useMemo } from 'react';
 import type { BuildSessionProgressPanelProps } from '../components/BuildSessionProgressPanel.js';
+import type { BuildStage } from '../components/BuildStage.js';
 
 type BuildStageId = 'source' | 'geometry' | 'tileEmit';
 
@@ -25,7 +25,9 @@ const DEFAULT_STAGE_ORDER: BuildStageId[] = ['source', 'geometry', 'tileEmit'];
 
 export type BuildSessionProgressPanelSplitViewLayoutProps = Pick<
   BuildSessionProgressPanelProps,
-  'splitViewBreakpoints' | 'splitViewInitialSizesByBreakpoint' | 'splitViewAutoCloseCountsByBreakpoint'
+  | 'splitViewBreakpoints'
+  | 'splitViewInitialSizesByBreakpoint'
+  | 'splitViewAutoCloseCountsByBreakpoint'
 >;
 
 export const resolveBuildStages = ({
@@ -36,10 +38,12 @@ export const resolveBuildStages = ({
   return DEFAULT_STAGE_ORDER.map((id) => {
     const label = overrides[id]?.title ?? t(`processing.${id}.title`, fallbackLabelById(id));
     const description = includeDescriptions
-      ? overrides[id]?.description ?? t(`processing.${id}.description`, fallbackDescriptionById(id))
+      ? (overrides[id]?.description ??
+        t(`processing.${id}.description`, fallbackDescriptionById(id)))
       : undefined;
-    const icon = overrides[id]?.icon
-      ?? (id === 'source'
+    const icon =
+      overrides[id]?.icon ??
+      (id === 'source'
         ? createElement(CloudDownload, { color: 'primary' })
         : id === 'geometry'
           ? createElement(Tune, { color: 'primary' })
@@ -85,44 +89,51 @@ export const useBuildProgressStages = ({
   includeDescriptions = false,
   overrides = {},
 }: ResolveBuildStagesOptions): BuildStage[] => {
-  return useMemo(() => resolveBuildStages({
-    t,
-    includeDescriptions,
-    overrides,
-  }), [t, includeDescriptions, overrides]);
+  return useMemo(
+    () =>
+      resolveBuildStages({
+        t,
+        includeDescriptions,
+        overrides,
+      }),
+    [t, includeDescriptions, overrides]
+  );
 };
 
-export const resolveSplitViewAutoCloseCounts = (stageCount: number): [number, number, number, number] => [
+export const resolveSplitViewAutoCloseCounts = (
+  stageCount: number
+): [number, number, number, number] => [
   Math.max(0, stageCount - 1),
   Math.max(0, stageCount - 2),
   Math.max(0, stageCount - 3),
   0,
 ];
 
-export const resolveSplitViewInitialSizes = (stageCount: number, panelSize = 300): SplitViewInitialSizes => {
+export const resolveSplitViewInitialSizes = (
+  stageCount: number,
+  panelSize = 300
+): SplitViewInitialSizes => {
   const size = Array.from({ length: stageCount }, () => panelSize);
-  return [
-    [...size],
-    [...size],
-    [...size],
-    [...size],
-  ];
+  return [[...size], [...size], [...size], [...size]];
 };
 
 export const SPLITVIEW_BREAKPOINTS: number[] = [600, 900, 1200];
 
 export type BuildSessionProgressPanelViewModel = Omit<
   BuildSessionProgressPanelProps,
-  'splitViewBreakpoints' | 'splitViewInitialSizesByBreakpoint' | 'splitViewAutoCloseCountsByBreakpoint'
+  | 'splitViewBreakpoints'
+  | 'splitViewInitialSizesByBreakpoint'
+  | 'splitViewAutoCloseCountsByBreakpoint'
 >;
 
-export const resolveBuildSessionProgressPanelSplitViewProps = (
-  params: {
-    stagesLength: number;
-    splitViewPanelSize?: number;
-  },
-): BuildSessionProgressPanelSplitViewLayoutProps => ({
+export const resolveBuildSessionProgressPanelSplitViewProps = (params: {
+  stagesLength: number;
+  splitViewPanelSize?: number;
+}): BuildSessionProgressPanelSplitViewLayoutProps => ({
   splitViewBreakpoints: SPLITVIEW_BREAKPOINTS,
-  splitViewInitialSizesByBreakpoint: resolveSplitViewInitialSizes(params.stagesLength, params.splitViewPanelSize),
+  splitViewInitialSizesByBreakpoint: resolveSplitViewInitialSizes(
+    params.stagesLength,
+    params.splitViewPanelSize
+  ),
   splitViewAutoCloseCountsByBreakpoint: resolveSplitViewAutoCloseCounts(params.stagesLength),
 });

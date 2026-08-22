@@ -8,7 +8,10 @@ import type { SxProps, Theme } from '@mui/material/styles';
 import { createPortal } from 'react-dom';
 import { AbstractDialog } from './AbstractDialog.js';
 import type { HeadlessDialogProps } from './types.js';
-import { type ResizeDirection, useModelessDialogFrameLogic } from './useModelessDialogFrameLogic.js';
+import {
+  type ResizeDirection,
+  useModelessDialogFrameLogic,
+} from './useModelessDialogFrameLogic.js';
 
 export interface ModelessDialogFrameProps<TData> {
   headlessProps: HeadlessDialogProps<TData>;
@@ -223,13 +226,7 @@ export function ModelessDialogFrame<TData>(props: ModelessDialogFrameProps<TData
   const containerPosition = disablePortal ? 'absolute' : 'fixed';
 
   const dialogNode = (
-    <Fade
-      in={open}
-      timeout={transitionTimeout}
-      appear={shouldAnimate}
-      mountOnEnter
-      unmountOnExit
-    >
+    <Fade in={open} timeout={transitionTimeout} appear={shouldAnimate} mountOnEnter unmountOnExit>
       <Box
         sx={(activeTheme) => ({
           position: containerPosition,

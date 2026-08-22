@@ -1,14 +1,16 @@
 import { DialogDisplayMode, DialogPosition, DialogSize } from '@hierarchidb/tree-api';
-import type { ReactNode, ComponentType, PointerEvent as ReactPointerEvent } from 'react';
+import type { ComponentType, ReactNode, PointerEvent as ReactPointerEvent } from 'react';
 
-export type StepDraftCommitter<TData> = () => Partial<TData> | void | Promise<Partial<TData> | void>;
+export type StepDraftCommitter<TData> = () =>
+  | Partial<TData>
+  | void
+  | Promise<Partial<TData> | void>;
 
 /** Step navigation commands emitted by the dialog shell. */
 export type StepNavigationEvent =
   | { type: 'direct'; targetIndex: number }
   | { type: 'next' }
   | { type: 'back' };
-
 
 /** Visibility policy for header / footer elements. */
 export type SectionVisibilityMode = 'visible' | 'hidden' | 'auto';

@@ -4,21 +4,14 @@
     "baseUrl": ".",
     "noImplicitAny": false,
     "skipLibCheck": true,
-    "types": [
-      "@cloudflare/workers-types",
-      "node"
-    ],
-    "lib": [
-      "ES2022"
-    ],
+    "types": ["@cloudflare/workers-types", "node"],
+    "lib": ["ES2022"],
     "target": "es2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "jsx": "react-jsx"
   },
-  "include": [
-    "src/**/*"
-  ],
+  "include": ["src/**/*"],
   "checkDeps": {
     "allowSkipLibCheck": true,
     "reason": "Temporary: upstream/transitive types; scheduled to remove."

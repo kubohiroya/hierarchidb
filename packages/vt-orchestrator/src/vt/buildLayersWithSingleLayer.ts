@@ -2,16 +2,19 @@ import type { Feature, Geometry } from 'geojson';
 import type { VTStageContext } from '~/contextTypes';
 import type { BandConfig } from '~/types/types';
 import { buildLayerIndexes } from './buildLayerIndexes.js';
+import {
+  logLayerIndexBuildDone,
+  logLayerIndexBuildStart,
+} from './vtStageTaskLayerBuilderHelpers.js';
+import {
+  buildLayerByFeatureIndex,
+  calculateSingleLayerVertexStats,
+} from './vtStageTaskLayerBuilderStrategySingleLayerPerFeatureUtils.js';
 import type {
   BuildLayerIndexForTile,
   LayerBuildBranchResult,
   TaskLayerContext,
 } from './vtStageTaskLayerBuilderTypes.js';
-import { buildLayerByFeatureIndex, calculateSingleLayerVertexStats } from './vtStageTaskLayerBuilderStrategySingleLayerPerFeatureUtils.js';
-import {
-  logLayerIndexBuildDone,
-  logLayerIndexBuildStart,
-} from './vtStageTaskLayerBuilderHelpers.js';
 
 export const buildLayersWithSingleLayer = async (
   context: VTStageContext,
@@ -21,7 +24,7 @@ export const buildLayersWithSingleLayer = async (
   layerMap: Map<string, Feature<Geometry>[]>,
   debugCollect: boolean,
   assertNotAborted: (signal?: AbortSignal) => void,
-  buildLayerIndexForTile: BuildLayerIndexForTile,
+  buildLayerIndexForTile: BuildLayerIndexForTile
 ): Promise<LayerBuildBranchResult> => {
   const entry = layerMap.entries().next();
   if (!entry.value) {
@@ -33,8 +36,8 @@ export const buildLayersWithSingleLayer = async (
   const { layerVertexCount, maxFeatureVertices } = features
     ? calculateSingleLayerVertexStats(features)
     : { layerVertexCount: 0, maxFeatureVertices: 0 };
-  const usePerFeatureIndex = layerVertexCount >= perFeatureVertexThreshold
-    || maxFeatureVertices >= perFeatureMaxVertices;
+  const usePerFeatureIndex =
+    layerVertexCount >= perFeatureVertexThreshold || maxFeatureVertices >= perFeatureMaxVertices;
   if (usePerFeatureIndex && features) {
     const aggregatedLayersByTileId = await buildLayerByFeatureIndex({
       context,

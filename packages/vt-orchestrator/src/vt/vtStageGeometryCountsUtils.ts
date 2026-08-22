@@ -1,19 +1,26 @@
 import type { Feature } from 'geojson';
 
-type NumberIndexable = Int8Array | Uint8Array | Uint16Array | Uint32Array | Int16Array | Int32Array
-  | Float32Array | Float64Array | Uint8ClampedArray;
+type NumberIndexable =
+  | Int8Array
+  | Uint8Array
+  | Uint16Array
+  | Uint32Array
+  | Int16Array
+  | Int32Array
+  | Float32Array
+  | Float64Array
+  | Uint8ClampedArray;
 
-const isNumericArrayView = (value: unknown): value is NumberIndexable => (
-  value instanceof Int8Array
-  || value instanceof Uint8Array
-  || value instanceof Uint16Array
-  || value instanceof Uint32Array
-  || value instanceof Int16Array
-  || value instanceof Int32Array
-  || value instanceof Float32Array
-  || value instanceof Float64Array
-  || value instanceof Uint8ClampedArray
-);
+const isNumericArrayView = (value: unknown): value is NumberIndexable =>
+  value instanceof Int8Array ||
+  value instanceof Uint8Array ||
+  value instanceof Uint16Array ||
+  value instanceof Uint32Array ||
+  value instanceof Int16Array ||
+  value instanceof Int32Array ||
+  value instanceof Float32Array ||
+  value instanceof Float64Array ||
+  value instanceof Uint8ClampedArray;
 
 const isNumberArrayView = (value: unknown): value is ArrayBufferView & NumberIndexable => {
   if (!isNumericArrayView(value)) return false;
@@ -108,8 +115,14 @@ const signedRingArea = (ring: number[][]): number => {
     const x2 = pointB[0];
     const y2 = pointB[1];
     if (x1 == null || y1 == null || x2 == null || y2 == null) continue;
-    if (!Number.isFinite(x1) || !Number.isFinite(y1) || !Number.isFinite(x2) || !Number.isFinite(y2)) continue;
-    sum += (x1 * y2) - (x2 * y1);
+    if (
+      !Number.isFinite(x1) ||
+      !Number.isFinite(y1) ||
+      !Number.isFinite(x2) ||
+      !Number.isFinite(y2)
+    )
+      continue;
+    sum += x1 * y2 - x2 * y1;
   }
   return sum / 2;
 };

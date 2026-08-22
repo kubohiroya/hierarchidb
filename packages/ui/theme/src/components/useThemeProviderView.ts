@@ -14,7 +14,7 @@ export function useThemeProviderView({
   defaultMode,
 }: UseThemeProviderViewParams): UseThemeProviderViewResult {
   const [themeMode, setThemeModeState] = useState<ThemeMode>(
-    () => getStoredThemeMode() || defaultMode,
+    () => getStoredThemeMode() || defaultMode
   );
   const [systemTheme, setSystemTheme] = useState<'light' | 'dark'>(getSystemTheme);
 
@@ -38,11 +38,14 @@ export function useThemeProviderView({
   }, []);
 
   const actualTheme = themeMode === 'system' ? systemTheme : themeMode;
-  const value = useMemo<ThemeContextType>(() => ({
-    mode: themeMode,
-    actualTheme,
-    setMode: setThemeMode,
-  }), [actualTheme, setThemeMode, themeMode]);
+  const value = useMemo<ThemeContextType>(
+    () => ({
+      mode: themeMode,
+      actualTheme,
+      setMode: setThemeMode,
+    }),
+    [actualTheme, setThemeMode, themeMode]
+  );
 
   return {
     value,

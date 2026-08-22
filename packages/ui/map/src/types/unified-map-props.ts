@@ -260,7 +260,12 @@ export interface VectorTileDataSource {
   tiles?: string[];
 
   /** Custom tile data provider function */
-  tileDataProvider?: (z: number, x: number, y: number, nodeId?: string) => Promise<ArrayBuffer | null>;
+  tileDataProvider?: (
+    z: number,
+    x: number,
+    y: number,
+    nodeId?: string
+  ) => Promise<ArrayBuffer | null>;
 
   /** Optional hook for tile request stats (Dexie or custom providers) */
   onTileRequest?: (stats: VectorTileRequestStats) => void;
@@ -313,7 +318,7 @@ export const DEFAULT_MAP_CONFIG = {
 
   dimensions: {
     width: '100%',
-    height: '400px',  // Standardized to 400px (was 400px/500px)
+    height: '400px', // Standardized to 400px (was 400px/500px)
   },
 
   mapStyleUrl: DEFAULT_MAP_STYLE_URL,
@@ -338,7 +343,7 @@ export const DEFAULT_MAP_CONFIG = {
     },
     layerType: 'fill' as const,
     minzoom: 0,
-    maxzoom: 22,  // Standardized to 22 (was 14/22)
+    maxzoom: 22, // Standardized to 22 (was 14/22)
     visible: true,
   } as VectorTileLayerConfig,
 } as const;

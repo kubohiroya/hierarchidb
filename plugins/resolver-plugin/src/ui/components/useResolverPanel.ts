@@ -12,7 +12,9 @@ interface MappingStatistics {
 
 export function useResolverPanel(entity: ResolverEntity | undefined, onCompile?: () => void) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [compilationStatus, setCompilationStatus] = useState<'idle' | 'compiling' | 'compiled' | 'error'>('idle');
+  const [compilationStatus, setCompilationStatus] = useState<
+    'idle' | 'compiling' | 'compiled' | 'error'
+  >('idle');
   const [statistics, setStatistics] = useState<MappingStatistics | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 

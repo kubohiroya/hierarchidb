@@ -46,33 +46,44 @@ export function usePreviewTestStep({
     const startMemory = readHeapUsage();
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       const mockResult: MappingPreviewResult = {
         success: true,
-        mappedData: sourceSchema.sampleData?.slice(0, 5).map((sample: Record<string, unknown>, index: number) => {
-          const mapped: Record<string, unknown> = {};
-          draftData.mappingRules!.forEach((rule: PropertyMappingRule) => {
-            if (sample && typeof sample === 'object' && rule.sourceProperty in sample) {
-              let value = (sample as Record<string, unknown>)[rule.sourceProperty];
+        mappedData:
+          sourceSchema.sampleData
+            ?.slice(0, 5)
+            .map((sample: Record<string, unknown>, index: number) => {
+              const mapped: Record<string, unknown> = {};
+              draftData.mappingRules!.forEach((rule: PropertyMappingRule) => {
+                if (sample && typeof sample === 'object' && rule.sourceProperty in sample) {
+                  let value = (sample as Record<string, unknown>)[rule.sourceProperty];
 
-              if (rule.transformFunction) {
-                if (rule.transformFunction === 'lowercase' && typeof value === 'string') {
-                  value = value.toLowerCase();
-                } else if (rule.transformFunction === 'uppercase' && typeof value === 'string') {
-                  value = value.toUpperCase();
+                  if (rule.transformFunction) {
+                    if (rule.transformFunction === 'lowercase' && typeof value === 'string') {
+                      value = value.toLowerCase();
+                    } else if (
+                      rule.transformFunction === 'uppercase' &&
+                      typeof value === 'string'
+                    ) {
+                      value = value.toUpperCase();
+                    }
+                  }
+
+                  mapped[rule.targetProperty] = value;
                 }
-              }
+              });
 
-              mapped[rule.targetProperty] = value;
-            }
-          });
-
-          mapped._id = index + 1;
-          return mapped;
-        }) || [],
+              mapped._id = index + 1;
+              return mapped;
+            }) || [],
         unmappedProperties: sourceSchema.properties
-          .filter((prop: PropertyInfo) => !draftData.mappingRules!.some((rule: PropertyMappingRule) => rule.sourceProperty === prop.name))
+          .filter(
+            (prop: PropertyInfo) =>
+              !draftData.mappingRules!.some(
+                (rule: PropertyMappingRule) => rule.sourceProperty === prop.name
+              )
+          )
           .map((prop: PropertyInfo) => prop.name),
         errors: [],
         statistics: {
@@ -93,11 +104,17 @@ export function usePreviewTestStep({
           message: err.message,
           suggestion: err.suggestion,
         })),
-        warnings: mockResult.unmappedProperties && mockResult.unmappedProperties.length > 0 ? [{
-          property: 'unmapped',
-          message: `${mockResult.unmappedProperties.length} source properties are not mapped`,
-          suggestion: 'Consider mapping all source properties for complete data transformation',
-        }] : [],
+        warnings:
+          mockResult.unmappedProperties && mockResult.unmappedProperties.length > 0
+            ? [
+                {
+                  property: 'unmapped',
+                  message: `${mockResult.unmappedProperties.length} source properties are not mapped`,
+                  suggestion:
+                    'Consider mapping all source properties for complete data transformation',
+                },
+              ]
+            : [],
         coverage: (draftData.mappingRules!.length / sourceSchema.properties.length) * 100,
       };
 
@@ -109,7 +126,6 @@ export function usePreviewTestStep({
 
       setExecutionTime(endTime - startTime);
       setMemoryUsage(Math.max(0, endMemory - startMemory));
-
     } catch (error) {
       console.error('Preview failed:', error);
 
@@ -133,15 +149,18 @@ export function usePreviewTestStep({
     }
   }, [sourceSchema, targetSchema, draftData.mappingRules, onValidationResult]);
 
-  const toggleRowExpansion = useCallback((rowIndex: number) => {
-    const newExpanded = new Set(expandedRows);
-    if (newExpanded.has(rowIndex)) {
-      newExpanded.delete(rowIndex);
-    } else {
-      newExpanded.add(rowIndex);
-    }
-    setExpandedRows(newExpanded);
-  }, [expandedRows]);
+  const toggleRowExpansion = useCallback(
+    (rowIndex: number) => {
+      const newExpanded = new Set(expandedRows);
+      if (newExpanded.has(rowIndex)) {
+        newExpanded.delete(rowIndex);
+      } else {
+        newExpanded.add(rowIndex);
+      }
+      setExpandedRows(newExpanded);
+    },
+    [expandedRows]
+  );
 
   const formatBytes = useCallback((bytes: number): string => {
     if (bytes === 0) return '0 B';
@@ -167,7 +186,9 @@ export function usePreviewTestStep({
   };
 }
 
-const hasMemory = (perf: Performance): perf is Performance & { memory: { usedJSHeapSize?: number }} => {
+const hasMemory = (
+  perf: Performance
+): perf is Performance & { memory: { usedJSHeapSize?: number } } => {
   return typeof (perf as { memory?: unknown }).memory !== 'undefined';
 };
 

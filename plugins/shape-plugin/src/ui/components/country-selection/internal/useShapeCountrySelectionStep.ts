@@ -1,23 +1,22 @@
-import { useCallback, useEffect, useMemo } from 'react';
-import { useSetAtom } from 'jotai';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { Country, MatrixConfig, MatrixSelection } from '@hierarchidb/ui-country-select';
 import { useDialogContext } from '@hierarchidb/ui-dialog';
-import { getBuildWorkerBridge, type BuildWorkerBridge } from '@hierarchidb/ui-worker-client';
+import { type BuildWorkerBridge, getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
+import { useSetAtom } from 'jotai';
+import { useCallback, useEffect, useMemo } from 'react';
+import type { ShapeEntity } from '~/common/types/index';
 import {
   type DataSourceName,
   isDataSourceName,
   SHAPE_DATA_SOURCE_BY_NAME,
 } from '~/common/types/index';
-import type { MatrixConfig, MatrixSelection } from '@hierarchidb/ui-country-select';
-import type { Country } from '@hierarchidb/ui-country-select';
-import { invalidateBuildForSelectionChange } from './invalidateBuildForSelectionChange.js';
 import { ShapeArtifactCascadeCleanupError } from '~/services/vt/runShapeArtifactCascadeCleanup';
-import { useShapeCountrySelectionStepDataLoader } from './useShapeCountrySelectionStepDataLoader.js';
-import { useShapeCountrySelectionStepSelectionState } from './useShapeCountrySelectionStepSelectionState.js';
-import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeEntity } from '~/common/types/index';
-import type { SerializedCountryAvailability } from '~/ui/workers/countryAvailabilityTypes';
-import type { CountrySelectionIsoState } from './useShapeCountrySelectionStepSelectionState.js';
 import { dispatchBuildSessionEventAtom } from '~/ui/atoms/buildSessionStateAtoms';
+import type { SerializedCountryAvailability } from '~/ui/workers/countryAvailabilityTypes';
+import { invalidateBuildForSelectionChange } from './invalidateBuildForSelectionChange.js';
+import { useShapeCountrySelectionStepDataLoader } from './useShapeCountrySelectionStepDataLoader.js';
+import type { CountrySelectionIsoState } from './useShapeCountrySelectionStepSelectionState.js';
+import { useShapeCountrySelectionStepSelectionState } from './useShapeCountrySelectionStepSelectionState.js';
 
 type Args = {
   data: Partial<ShapeEntity>;
@@ -53,14 +52,22 @@ const EMPTY_RESPONSE = {
 const useDataSourceState = (data: Partial<ShapeEntity>) => {
   return useMemo(() => {
     const anyData = data as Record<string, unknown>;
-    const hasData = Boolean(anyData && typeof anyData === 'object' && Object.keys(anyData).length > 0);
-    const draftData = (anyData && typeof anyData === 'object' && 'draftData' in anyData)
-      ? (anyData as { draftData?: unknown }).draftData as Record<string, unknown> | undefined
+    const hasData = Boolean(
+      anyData && typeof anyData === 'object' && Object.keys(anyData).length > 0
+    );
+    const draftData =
+      anyData && typeof anyData === 'object' && 'draftData' in anyData
+        ? ((anyData as { draftData?: unknown }).draftData as Record<string, unknown> | undefined)
+        : undefined;
+    const buildConfig =
+      anyData && typeof anyData === 'object' && 'buildConfig' in anyData
+        ? ((anyData as { buildConfig?: unknown }).buildConfig as
+            | Record<string, unknown>
+            | undefined)
+        : undefined;
+    const dsFromEntity = isDataSourceName(buildConfig?.dataSourceName)
+      ? buildConfig.dataSourceName
       : undefined;
-    const buildConfig = (anyData && typeof anyData === 'object' && 'buildConfig' in anyData)
-      ? (anyData as { buildConfig?: unknown }).buildConfig as Record<string, unknown> | undefined
-      : undefined;
-    const dsFromEntity = isDataSourceName(buildConfig?.dataSourceName) ? buildConfig.dataSourceName : undefined;
     const dsFromDraft = (() => {
       const bc = draftData?.buildConfig;
       if (!bc || typeof bc !== 'object') return undefined;
@@ -68,7 +75,9 @@ const useDataSourceState = (data: Partial<ShapeEntity>) => {
       return isDataSourceName(value) ? value : undefined;
     })();
     const candidate = dsFromDraft ?? dsFromEntity;
-    const hasBatchConfig = Boolean(draftData?.buildConfig && typeof draftData.buildConfig === 'object');
+    const hasBatchConfig = Boolean(
+      draftData?.buildConfig && typeof draftData.buildConfig === 'object'
+    );
     if (!candidate) {
       if (hasData && hasBatchConfig) {
         console.warn('[shape-plugin][country-selection] dataSource missing', {
@@ -76,48 +85,60 @@ const useDataSourceState = (data: Partial<ShapeEntity>) => {
         });
         return {
           dataSourceKey: undefined as undefined | DataSourceName,
-          dataSourceError: new Error('Data source is not set. Please go back to Data Source selection.'),
+          dataSourceError: new Error(
+            'Data source is not set. Please go back to Data Source selection.'
+          ),
         };
       }
-      return { dataSourceKey: undefined as undefined | DataSourceName, dataSourceError: null as Error | null };
+      return {
+        dataSourceKey: undefined as undefined | DataSourceName,
+        dataSourceError: null as Error | null,
+      };
     }
     return { dataSourceKey: candidate as DataSourceName, dataSourceError: null as Error | null };
   }, [data]);
 };
 
-export const useShapeCountrySelectionStep = ({ data, onChange, nodeId }: Args): CountrySelectionState => {
+export const useShapeCountrySelectionStep = ({
+  data,
+  onChange,
+  nodeId,
+}: Args): CountrySelectionState => {
   const { onStepNavigate } = useDialogContext<Partial<ShapeEntity>>();
   const bridgeRef = useMemo<BuildWorkerBridge>(() => getBuildWorkerBridge(), []);
   const dispatchBuildSessionEvent = useSetAtom(dispatchBuildSessionEventAtom);
 
-  const invalidateSelection = useCallback(async (
-    prev: Record<string, boolean[]>,
-    nextSelection: Record<string, boolean[]>,
-  ): Promise<void> => {
-    try {
-      await invalidateBuildForSelectionChange({
-        bridgeRef,
-        nodeId,
-        prev,
-        nextSelection,
-      });
-    } catch (error) {
-      dispatchBuildSessionEvent({
-        type: 'criticalError',
-        payload: {
-          nodeId: String(nodeId),
-          message: 'Shape build invalidation failed',
-          error: error instanceof Error ? error.message : String(error),
-          errorName: error instanceof Error ? error.name : 'Error',
-          timestamp: Date.now(),
-          severity: 'critical',
-          contractViolation:
-            error instanceof ShapeArtifactCascadeCleanupError && error.step === 'resolve-plan',
-        },
-      });
-      throw error;
-    }
-  }, [bridgeRef, dispatchBuildSessionEvent, nodeId]);
+  const invalidateSelection = useCallback(
+    async (
+      prev: Record<string, boolean[]>,
+      nextSelection: Record<string, boolean[]>
+    ): Promise<void> => {
+      try {
+        await invalidateBuildForSelectionChange({
+          bridgeRef,
+          nodeId,
+          prev,
+          nextSelection,
+        });
+      } catch (error) {
+        dispatchBuildSessionEvent({
+          type: 'criticalError',
+          payload: {
+            nodeId: String(nodeId),
+            message: 'Shape build invalidation failed',
+            error: error instanceof Error ? error.message : String(error),
+            errorName: error instanceof Error ? error.name : 'Error',
+            timestamp: Date.now(),
+            severity: 'critical',
+            contractViolation:
+              error instanceof ShapeArtifactCascadeCleanupError && error.step === 'resolve-plan',
+          },
+        });
+        throw error;
+      }
+    },
+    [bridgeRef, dispatchBuildSessionEvent, nodeId]
+  );
 
   const { dataSourceKey, dataSourceError } = useDataSourceState(data);
   useEffect(() => {
@@ -176,7 +197,8 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId }: Args): 
   });
 
   const error = dataSourceError ?? loader.availabilityError ?? loader.metadataError;
-  const combinedLoading = loader.metadataLoading || (loader.availabilityLoading && !loader.availability);
+  const combinedLoading =
+    loader.metadataLoading || (loader.availabilityLoading && !loader.availability);
   if (!dataSourceKey) {
     return EMPTY_RESPONSE;
   }

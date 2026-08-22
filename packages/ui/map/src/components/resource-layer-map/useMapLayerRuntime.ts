@@ -34,11 +34,16 @@ export const useMapLayerRuntime = ({
     const body = document.body;
     if (!body) return undefined;
     const updateState = () => {
-      setFloatingInteractionActive(document.body?.dataset?.hdbFloatingWindowInteraction ? true : false);
+      setFloatingInteractionActive(
+        document.body?.dataset?.hdbFloatingWindowInteraction ? true : false
+      );
     };
     updateState();
     const observer = new MutationObserver(() => updateState());
-    observer.observe(body, { attributes: true, attributeFilter: ['data-hdb-floating-window-interaction'] });
+    observer.observe(body, {
+      attributes: true,
+      attributeFilter: ['data-hdb-floating-window-interaction'],
+    });
     return () => observer.disconnect();
   }, []);
 
@@ -109,6 +114,6 @@ export const useMapLayerRuntime = ({
       floatingInteractionActive,
       setFloatingInteractionActive,
     }),
-    [fitControlContainer, floatingInteractionActive, mapControlContainer],
+    [fitControlContainer, floatingInteractionActive, mapControlContainer]
   );
 };

@@ -4,7 +4,7 @@ import type { LayerBuildFlowInput } from './vtStageTaskLayerBuilderFlowTypes.js'
 import type { VtLayerBuildResult } from './vtStageTaskLayerBuilderTypes.js';
 
 export const buildByContinentGrouping = async (
-  input: LayerBuildFlowInput,
+  input: LayerBuildFlowInput
 ): Promise<VtLayerBuildResult> => {
   const {
     context,

@@ -1,9 +1,9 @@
-import { useCallback, useMemo } from 'react';
-import type { TreeTableController } from '~/types';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { RowSelectionState } from '@tanstack/react-table';
-import { computeDescendants, collectDescendantIdList } from '~/utils/descendants';
+import { useCallback, useMemo } from 'react';
+import type { TreeTableController } from '~/types';
+import { collectDescendantIdList, computeDescendants } from '~/utils/descendants';
 import { EMPTY_SET, normalizeNodeKey } from '~/utils/treeTableHelpers';
 
 export interface UseTreeTableStructureOptions {
@@ -27,8 +27,13 @@ export interface UseTreeTableStructureResult {
   expandedFlatData: TreeNode[];
 }
 
-export function useTreeTableStructure({ controller }: UseTreeTableStructureOptions): UseTreeTableStructureResult {
-  const rowSelection = useMemo<RowSelectionState>(() => controller?.rowSelection || {}, [controller?.rowSelection]);
+export function useTreeTableStructure({
+  controller,
+}: UseTreeTableStructureOptions): UseTreeTableStructureResult {
+  const rowSelection = useMemo<RowSelectionState>(
+    () => controller?.rowSelection || {},
+    [controller?.rowSelection]
+  );
   const rootNodeId = controller?.rootNodeId ? String(controller.rootNodeId) : undefined;
   const nodeIndex = controller?.nodeIndex ?? null;
 
@@ -55,8 +60,9 @@ export function useTreeTableStructure({ controller }: UseTreeTableStructureOptio
       const id = normalizeNodeKey(primaryKey);
       if (id == null) return;
       const secondary = nodeIndex.getSecondaryKey(primaryKey as NodeId);
-      const parentKey = secondary != null ? normalizeNodeKey(secondary) ?? '' : '';
-      const depth = typeof value.depth === 'number' && Number.isFinite(value.depth) ? value.depth : 1;
+      const parentKey = secondary != null ? (normalizeNodeKey(secondary) ?? '') : '';
+      const depth =
+        typeof value.depth === 'number' && Number.isFinite(value.depth) ? value.depth : 1;
       const copy: TreeNode = {
         ...value,
         id: value.id ?? (primaryKey as NodeId),
@@ -122,31 +128,41 @@ export function useTreeTableStructure({ controller }: UseTreeTableStructureOptio
     return set;
   }, [orderedChildren]);
 
-  const hasSelectedAncestor = useCallback((nodeId: NodeId): boolean => {
-    const normalized = normalizeNodeKey(nodeId);
-    if (normalized == null) return false;
-    let current = parentMap.get(normalized) ?? null;
-    while (current) {
-      if (rowSelection[current]) return true;
-      current = parentMap.get(current) ?? null;
-    }
-    return false;
-  }, [parentMap, rowSelection]);
+  const hasSelectedAncestor = useCallback(
+    (nodeId: NodeId): boolean => {
+      const normalized = normalizeNodeKey(nodeId);
+      if (normalized == null) return false;
+      let current = parentMap.get(normalized) ?? null;
+      while (current) {
+        if (rowSelection[current]) return true;
+        current = parentMap.get(current) ?? null;
+      }
+      return false;
+    },
+    [parentMap, rowSelection]
+  );
 
-  const getDescendants = useCallback((nodeId: NodeId): Set<NodeId> => {
-    return computeDescendants(rawData, nodeId) as Set<NodeId>;
-  }, [rawData]);
+  const getDescendants = useCallback(
+    (nodeId: NodeId): Set<NodeId> => {
+      return computeDescendants(rawData, nodeId) as Set<NodeId>;
+    },
+    [rawData]
+  );
 
-  const collectDescendantIds = useCallback((nodeId: NodeId): string[] => {
-    const list = collectDescendantIdList(rawData, nodeId);
-    return list.length === 0 ? [String(nodeId)] : list;
-  }, [rawData]);
+  const collectDescendantIds = useCallback(
+    (nodeId: NodeId): string[] => {
+      const list = collectDescendantIdList(rawData, nodeId);
+      return list.length === 0 ? [String(nodeId)] : list;
+    },
+    [rawData]
+  );
 
   const data = rawData;
 
-  const expandedRowIds: ReadonlySet<string> = useMemo(() => (
-    (controller?.expandedRowIds as ReadonlySet<string> | undefined) ?? EMPTY_SET
-  ), [controller?.expandedRowIds]);
+  const expandedRowIds: ReadonlySet<string> = useMemo(
+    () => (controller?.expandedRowIds as ReadonlySet<string> | undefined) ?? EMPTY_SET,
+    [controller?.expandedRowIds]
+  );
 
   const rootKey = useMemo(() => normalizeNodeKey(rootNodeId ?? '') ?? '', [rootNodeId]);
 
@@ -186,17 +202,20 @@ export function useTreeTableStructure({ controller }: UseTreeTableStructureOptio
     return result;
   }, [controller?.data, expandedRowIds, nodeIndex, orderedChildren, rootKey]);
 
-  const getSubRows = useCallback((node: TreeNode): TreeNode[] => {
-    if (!nodeIndex) return [];
-    const id = normalizeNodeKey(node.id);
-    if (id == null) return [];
-    const depth = Number.isFinite(node.depth) ? (node.depth as number) : 1;
-    const children = orderedChildren.get(id) ?? [];
-    return children.map((child) => ({
-      ...child,
-      depth: Number.isFinite(child.depth) ? (child.depth as number) : depth + 1,
-    }));
-  }, [nodeIndex, orderedChildren]);
+  const getSubRows = useCallback(
+    (node: TreeNode): TreeNode[] => {
+      if (!nodeIndex) return [];
+      const id = normalizeNodeKey(node.id);
+      if (id == null) return [];
+      const depth = Number.isFinite(node.depth) ? (node.depth as number) : 1;
+      const children = orderedChildren.get(id) ?? [];
+      return children.map((child) => ({
+        ...child,
+        depth: Number.isFinite(child.depth) ? (child.depth as number) : depth + 1,
+      }));
+    },
+    [nodeIndex, orderedChildren]
+  );
 
   return {
     rawData,

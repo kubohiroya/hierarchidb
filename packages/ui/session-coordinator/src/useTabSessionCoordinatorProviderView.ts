@@ -1,9 +1,9 @@
-import { useMemo } from 'react';
 import {
   createTabSessionCoordinator,
   type TabSessionCoordinator,
   type TabSessionCoordinatorOptions,
 } from '@hierarchidb/session-coordinator';
+import { useMemo } from 'react';
 
 export interface UseTabSessionCoordinatorProviderViewParams {
   options?: TabSessionCoordinatorOptions;
@@ -25,7 +25,7 @@ export function useTabSessionCoordinatorProviderView({
       options?.storage,
       options?.storageKeys,
       options?.now,
-    ],
+    ]
   );
 
   return {

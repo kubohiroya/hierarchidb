@@ -2,18 +2,9 @@
  * usePluginDialogController – headless orchestrator for plugin dialogs.
  * Dialog UI atoms is persisted on TreeNode.dialogUIState via TreeNodeUpdaterAPI.
  */
-import type { WorkerAPI } from '@hierarchidb/worker-api';
+
+import { useIconRegistry } from '@hierarchidb/components';
 import type { NodeId, NodeType, PeerEntity, TreeId } from '@hierarchidb/core-types';
-import type {
-  DialogDisplayMode,
-  DialogPosition,
-  DialogSize,
-  DialogState,
-  DialogUIState,
-  DialogWindowState,
-  TreeNodeMetadata,
-  TreeNodeData,
-} from '@hierarchidb/tree-api';
 import {
   composeStepConfigs,
   HostProfileRegistry,
@@ -25,17 +16,24 @@ import {
 } from '@hierarchidb/plugin-presentation';
 import { type TreeNodeUpdaterState, useTreeNodeUpdater } from '@hierarchidb/plugin-ui-sdk';
 import type {
-  HeadlessDialogProps,
-  StepComponentDescriptor,
-} from '@hierarchidb/ui-dialog';
-import { useIconRegistry } from '@hierarchidb/components';
+  DialogDisplayMode,
+  DialogPosition,
+  DialogSize,
+  DialogState,
+  DialogUIState,
+  DialogWindowState,
+  TreeNodeData,
+  TreeNodeMetadata,
+} from '@hierarchidb/tree-api';
+import type { HeadlessDialogProps, StepComponentDescriptor } from '@hierarchidb/ui-dialog';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { Theme } from '@mui/material/styles';
 import { useNavigate } from '@tanstack/react-router';
 import type { Remote } from 'comlink';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   createContentComponent,
   createFooterComponent,
@@ -45,11 +43,13 @@ import type {
   PluginDialogFooterPrimaryButtonOptions,
   PluginDialogFooterProps,
 } from './components/PluginDialogFooter.js';
+import { toRecord } from './controller/step-guards.js';
 import type { PluginDialogConflictDialogProps } from './PluginDialogControllerElements.js';
 import { createPluginDialogContentComponent } from './PluginDialogControllerElements.js';
-import { toRecord } from './controller/step-guards.js';
-import { useAutosave } from './usePluginDialogController/useAutosave.js';
-import { useBasicInfoState } from './usePluginDialogController/useBasicInfoState.js';
+import type {
+  TreeNodeUpdaterPatch,
+  TreeNodeUpdaterPayload,
+} from './usePluginDialogController/data-types.js';
 import {
   buildDraftSignature,
   formatTimestamp,
@@ -59,17 +59,15 @@ import {
   useAutosavePreference,
   WINDOW_STATE_PERSIST_DEBOUNCE_MS,
 } from './usePluginDialogController/dialogSyncUtils.js';
-import { useStepCapabilities } from './usePluginDialogController/useStepCapabilities.js';
-import { useConflictGuard } from './usePluginDialogController/useConflictGuard.js';
-import type {
-  TreeNodeUpdaterPatch,
-  TreeNodeUpdaterPayload,
-} from './usePluginDialogController/data-types.js';
-import { useDialogUIStateSync } from './usePluginDialogController/useDialogUIStateSync.js';
-import { useDialogDirtyState } from './usePluginDialogController/useDialogDirtyState.js';
 import { useDialogFrameState } from './usePluginDialogController/frameStateUtils.js';
-import { usePendingAction } from './usePluginDialogController/usePendingAction.js';
+import { useAutosave } from './usePluginDialogController/useAutosave.js';
+import { useBasicInfoState } from './usePluginDialogController/useBasicInfoState.js';
+import { useConflictGuard } from './usePluginDialogController/useConflictGuard.js';
+import { useDialogDirtyState } from './usePluginDialogController/useDialogDirtyState.js';
 import { useDialogSteps } from './usePluginDialogController/useDialogSteps.js';
+import { useDialogUIStateSync } from './usePluginDialogController/useDialogUIStateSync.js';
+import { usePendingAction } from './usePluginDialogController/usePendingAction.js';
+import { useStepCapabilities } from './usePluginDialogController/useStepCapabilities.js';
 import { useStepNavigation } from './usePluginDialogController/useStepNavigation.js';
 
 type WorkerApi = WorkerAPI<TreeNodeData>;
@@ -242,10 +240,10 @@ export function usePluginDialogController(
     () =>
       draft
         ? {
-          treeNodeId: draft.treeNodeId,
-          draftMetadata: draft.draftMetadata ?? null,
-          draftData: draft.draftData,
-        }
+            treeNodeId: draft.treeNodeId,
+            draftMetadata: draft.draftMetadata ?? null,
+            draftData: draft.draftData,
+          }
         : null,
     [draft]
   );
@@ -368,12 +366,15 @@ export function usePluginDialogController(
         return patch;
       })
     );
-    return patches.reduce<Partial<PluginDefinedEntity>>((acc: Partial<PluginDefinedEntity>, patch: Partial<PluginDefinedEntity> | null) => {
-      if (patch) {
-        return { ...acc, ...patch };
-      }
-      return acc;
-    }, {});
+    return patches.reduce<Partial<PluginDefinedEntity>>(
+      (acc: Partial<PluginDefinedEntity>, patch: Partial<PluginDefinedEntity> | null) => {
+        if (patch) {
+          return { ...acc, ...patch };
+        }
+        return acc;
+      },
+      {}
+    );
   }, []);
 
   const displayModeTransitionRef = useRef(false);
@@ -384,8 +385,8 @@ export function usePluginDialogController(
         const resolved =
           typeof next === 'function'
             ? (next as (prevState: Partial<PluginDefinedEntity>) => Partial<PluginDefinedEntity>)(
-              prev
-            )
+                prev
+              )
             : next;
         localDraftDataRef.current = resolved ?? {};
         return resolved ?? {};
@@ -590,9 +591,9 @@ export function usePluginDialogController(
     const label = presentation?.label || nodeType;
     return dialogMode === 'create'
       ? t('dialogs.pluginDialog.titles.create', {
-        plugin: label,
-        defaultValue: 'Create {{plugin}}',
-      })
+          plugin: label,
+          defaultValue: 'Create {{plugin}}',
+        })
       : t('dialogs.pluginDialog.titles.edit', { plugin: label, defaultValue: 'Edit {{plugin}}' });
   }, [dialogMode, nodeType, presentation?.label, t]);
 
@@ -642,10 +643,7 @@ export function usePluginDialogController(
 
   useEffect(() => {
     const shouldPollBuildSession = Boolean(
-      open
-      && isDialogReady
-      && client
-      && activeStepId === 'build'
+      open && isDialogReady && client && activeStepId === 'build'
     );
     if (!shouldPollBuildSession) {
       setBuildStepRunning(false);
@@ -691,9 +689,10 @@ export function usePluginDialogController(
   const updateLocalDraft = useCallback(async () => {
     if (!treeUpdater) return;
     const stepPatch = await collectStepDraftPatch();
-    const mergedDraftData: Partial<PluginDefinedEntity> | undefined = nodeType === 'folder'
-      ? undefined
-      : { ...(localDraftDataRef.current ?? {}), ...(stepPatch ?? {}) };
+    const mergedDraftData: Partial<PluginDefinedEntity> | undefined =
+      nodeType === 'folder'
+        ? undefined
+        : { ...(localDraftDataRef.current ?? {}), ...(stepPatch ?? {}) };
     if (nodeType !== 'folder' && mergedDraftData) {
       localDraftDataRef.current = mergedDraftData;
       setLocalDraftData('stepDraftCommit', mergedDraftData);
@@ -757,8 +756,6 @@ export function usePluginDialogController(
   const saveDraftHandlerRef = useRef<(() => Promise<void>) | undefined>(undefined);
   const startBuildHandlerRef = useRef<(() => Promise<void>) | undefined>(undefined);
 
-
-
   const handleSubmitRef = useRef<(() => Promise<void>) | null>(null);
 
   const { handleNavigation } = useStepNavigation({
@@ -798,41 +795,44 @@ export function usePluginDialogController(
     };
   }, [dialogPosition, dialogSize, dialogUIStateRef, displayMode]);
 
-  const persistDialogUIStateDraft = useCallback(async (options?: { syncWindowStateOnPersist?: boolean }) => {
-    if (dialogMode === 'create' || dialogMode === 'preview') return;
-    const treeNodeId = (treeUpdater?.treeNodeId ?? nodeId) as NodeId | undefined;
-    if (!treeNodeId) return;
-    const shouldSyncWindowState = options?.syncWindowStateOnPersist === true;
-    const latestWindowState = shouldSyncWindowState ? buildLatestDialogWindowState() : null;
-    if (latestWindowState) {
-      updateDialogUIState({ dialogWindow: latestWindowState });
-    }
-    try {
-      const nextDialogUIState = buildDialogUIStateForPersist();
-      const payload: TreeNodeUpdaterState<PluginDefinedEntity> = {
-        treeNodeId,
-        draftMetadata: treeUpdater?.draftMetadata ?? null,
-        draftData: nodeType === 'folder' ? undefined : treeUpdater?.draftData,
-        dialogUIState: latestWindowState
-          ? { ...nextDialogUIState, dialogWindow: latestWindowState }
-          : nextDialogUIState,
-      };
-      await commitTreeNodeUpdater('save-draft', payload);
-    } catch (error) {
-      console.warn('[PluginDialogShell] failed to persist dialog UI state', error);
-    }
-  }, [
-    buildLatestDialogWindowState,
-    commitTreeNodeUpdater,
-    dialogMode,
-    buildDialogUIStateForPersist,
-    nodeId,
-    nodeType,
-    updateDialogUIState,
-    treeUpdater?.draftData,
-    treeUpdater?.draftMetadata,
-    treeUpdater?.treeNodeId,
-  ]);
+  const persistDialogUIStateDraft = useCallback(
+    async (options?: { syncWindowStateOnPersist?: boolean }) => {
+      if (dialogMode === 'create' || dialogMode === 'preview') return;
+      const treeNodeId = (treeUpdater?.treeNodeId ?? nodeId) as NodeId | undefined;
+      if (!treeNodeId) return;
+      const shouldSyncWindowState = options?.syncWindowStateOnPersist === true;
+      const latestWindowState = shouldSyncWindowState ? buildLatestDialogWindowState() : null;
+      if (latestWindowState) {
+        updateDialogUIState({ dialogWindow: latestWindowState });
+      }
+      try {
+        const nextDialogUIState = buildDialogUIStateForPersist();
+        const payload: TreeNodeUpdaterState<PluginDefinedEntity> = {
+          treeNodeId,
+          draftMetadata: treeUpdater?.draftMetadata ?? null,
+          draftData: nodeType === 'folder' ? undefined : treeUpdater?.draftData,
+          dialogUIState: latestWindowState
+            ? { ...nextDialogUIState, dialogWindow: latestWindowState }
+            : nextDialogUIState,
+        };
+        await commitTreeNodeUpdater('save-draft', payload);
+      } catch (error) {
+        console.warn('[PluginDialogShell] failed to persist dialog UI state', error);
+      }
+    },
+    [
+      buildLatestDialogWindowState,
+      commitTreeNodeUpdater,
+      dialogMode,
+      buildDialogUIStateForPersist,
+      nodeId,
+      nodeType,
+      updateDialogUIState,
+      treeUpdater?.draftData,
+      treeUpdater?.draftMetadata,
+      treeUpdater?.treeNodeId,
+    ]
+  );
 
   const schedulePersistDialogUIStateDraft = useCallback(() => {
     if (dialogMode === 'create' || dialogMode === 'preview') return;
@@ -912,7 +912,7 @@ export function usePluginDialogController(
           description: basicInfo.description,
           tags: basicInfo.tags,
         },
-        draftData: nodeType === 'folder' ? undefined : normalizedData ?? undefined,
+        draftData: nodeType === 'folder' ? undefined : (normalizedData ?? undefined),
         dialogUIState: buildDialogUIStateForCommit(activeStepIndex),
       };
       const savedNodeId = await commitTreeNodeUpdater('save', savePayload);
@@ -1115,7 +1115,15 @@ export function usePluginDialogController(
     if (!isAutoBuildComplete(dialogData)) return;
     autoBuildCompleteRef.current = true;
     autoBuild?.onComplete?.();
-  }, [activeStartBuild, autoBuild, autoBuildEnabled, canStartBuild, dialogData, isAutoBuildComplete, open]);
+  }, [
+    activeStartBuild,
+    autoBuild,
+    autoBuildEnabled,
+    canStartBuild,
+    dialogData,
+    isAutoBuildComplete,
+    open,
+  ]);
 
   const persistDialogUIState = useCallback(async () => {
     if (typeof window !== 'undefined' && dialogWindowPersistTimerRef.current !== null) {
@@ -1259,7 +1267,37 @@ export function usePluginDialogController(
       ContentComponent,
       FooterComponent,
     }),
-    [open, isDialogReady, safeStepDescriptors, stableStepData, handleStepDataChange, activeStepIndex, handleNavigation, registerStepDraftCommitter, stableEnabledStepIndices, stableValidatedStepIndices, stableCommittableStepIndices, invalidMessageMap, handleCloseRequest, handleRequestCommit, dialogDirty, dialogPosition, handlePositionChangeWithPersist, dialogSize, handleSizeChangeWithPersist, displayMode, allowFullScreen, options.removePaddingWithFullScreenMode, HeaderComponent, ContentComponent, FooterComponent, transitionDisplayMode, persistDialogWindow, dialogUIStateRef, nodeType]
+    [
+      open,
+      isDialogReady,
+      safeStepDescriptors,
+      stableStepData,
+      handleStepDataChange,
+      activeStepIndex,
+      handleNavigation,
+      registerStepDraftCommitter,
+      stableEnabledStepIndices,
+      stableValidatedStepIndices,
+      stableCommittableStepIndices,
+      invalidMessageMap,
+      handleCloseRequest,
+      handleRequestCommit,
+      dialogDirty,
+      dialogPosition,
+      handlePositionChangeWithPersist,
+      dialogSize,
+      handleSizeChangeWithPersist,
+      displayMode,
+      allowFullScreen,
+      options.removePaddingWithFullScreenMode,
+      HeaderComponent,
+      ContentComponent,
+      FooterComponent,
+      transitionDisplayMode,
+      persistDialogWindow,
+      dialogUIStateRef,
+      nodeType,
+    ]
   );
 
   return {

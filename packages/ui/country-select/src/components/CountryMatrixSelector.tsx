@@ -3,20 +3,24 @@
  * @module @hierarchidb/ui-country-select/components
  */
 
-import type React from 'react';
-import { Box, Chip, Stack, Typography, Alert } from '@mui/material';
-import { SelectionMatrix, type SelectionMatrixColumn, type SelectionMatrixRow } from '@hierarchidb/components';
-import { TreeTableSearchInput as SearchField } from '@hierarchidb/components';
+import {
+  TreeTableSearchInput as SearchField,
+  SelectionMatrix,
+  type SelectionMatrixColumn,
+  type SelectionMatrixRow,
+} from '@hierarchidb/components';
+import { Alert, Box, Chip, Stack, Typography } from '@mui/material';
 import type { PrimitiveAtom } from 'jotai';
 import { Provider } from 'jotai';
+import type React from 'react';
+import { useCountryI18n } from '~/hooks/useCountryI18n';
 import type { Country } from '~/types/Country';
 import type { MatrixConfig, MatrixSelection } from '~/types/MatrixColumn';
 import {
-  type VirtuosoHandle,
   useCountryMatrixSelectorLogic,
+  type VirtuosoHandle,
 } from './useCountryMatrixSelectorLogic';
 import { useCountryMatrixTableModel } from './useCountryMatrixTableModel';
-import { useCountryI18n } from '~/hooks/useCountryI18n';
 
 export interface CountryMatrixSelectorProps {
   /** Available countries to select from */
@@ -105,26 +109,26 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
   });
 
   if (loading || !virtuosoRef) {
-    return (
-      <Alert severity="info">Loading countries...</Alert>
-    );
+    return <Alert severity="info">Loading countries...</Alert>;
   }
 
   if (errorMessage) {
-    return (
-      <Alert severity="error">{errorMessage}</Alert>
-    );
+    return <Alert severity="error">{errorMessage}</Alert>;
   }
 
   if (!countries.length) {
-    return (
-      <Alert severity="warning">No countries available.</Alert>
-    );
+    return <Alert severity="warning">No countries available.</Alert>;
   }
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, flex: 1, minHeight: 0 }}>
-      <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" justifyContent="flex-start">
+      <Stack
+        direction="row"
+        spacing={2}
+        alignItems="center"
+        flexWrap="wrap"
+        justifyContent="flex-start"
+      >
         <Box sx={{ flexBasis: '260px', flexGrow: 0, flexShrink: 1, paddingBottom: 1 }}>
           <SearchField
             searchText={search}
@@ -297,13 +301,17 @@ const CountryMatrixTable: React.FC<CountryMatrixTableProps> = ({
       dense
       rowHeight={rowHeight}
       isCellEnabled={isCellEnabledWrapper}
-      getColumnHeaderState={(colIndex) => columnHeaderState[colIndex] ?? { checked: false, indeterminate: false }}
+      getColumnHeaderState={(colIndex) =>
+        columnHeaderState[colIndex] ?? { checked: false, indeterminate: false }
+      }
       onColumnHeaderClick={(colIndex: number) => {
         const column = selectionColumns[colIndex];
         if (!column) return;
         handleSortToggle('column', column.id);
       }}
-      onRowMetaHeaderClick={(metaIndex: number) => handleSortToggle(metaIndex === 0 ? 'region' : 'country')}
+      onRowMetaHeaderClick={(metaIndex: number) =>
+        handleSortToggle(metaIndex === 0 ? 'region' : 'country')
+      }
       getColumnSortDirection={getColumnSortDirection}
       getRowMetaSortDirection={getRowMetaSortDirection}
       virtuosoRef={virtuosoRef}

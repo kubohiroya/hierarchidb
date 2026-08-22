@@ -133,9 +133,8 @@ export interface TreeConsoleBreadcrumbProps {
       expandTarget?: boolean;
       source?: 'breadcrumb';
       nextVisible?: boolean;
-    },
+    }
   ) => void;
-
 
   /**
    * Optional element rendered to the left of breadcrumbs.
