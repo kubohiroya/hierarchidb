@@ -81,6 +81,42 @@ const testingAliasEntries: Alias[] = [
 ];
 
 const baseAliasEntries: Alias[] = [
+  {
+    find: /^~\/registry\/(.*)$/,
+    replacement: path.resolve(__dirname, '../plugin-base/src/registry/$1'),
+  },
+  {
+    find: '@hierarchidb/components',
+    replacement: path.resolve(__dirname, '../components/src/Icon/index.ts'),
+  },
+  {
+    find: '@hierarchidb/plugin-base',
+    replacement: path.resolve(__dirname, '../plugin-base/src/index.ts'),
+  },
+  {
+    find: '@hierarchidb/plugin-presentation',
+    replacement: path.resolve(__dirname, '../plugin-presentation/src/index.ts'),
+  },
+  {
+    find: '@hierarchidb/plugin-ui-sdk',
+    replacement: path.resolve(__dirname, '../plugin-ui-sdk/src/index.ts'),
+  },
+  {
+    find: '@hierarchidb/ui-dialog',
+    replacement: path.resolve(__dirname, '../ui/dialog/src/index.ts'),
+  },
+  {
+    find: '@hierarchidb/ui-i18n',
+    replacement: path.join(testingMocksRoot, 'stubs/uiI18nStub.ts'),
+  },
+  {
+    find: '@hierarchidb/util',
+    replacement: path.resolve(__dirname, '../util/src/index.ts'),
+  },
+  {
+    find: '@tanstack/react-router',
+    replacement: path.join(testingMocksRoot, 'stubs/tanstackReactRouterStub.tsx'),
+  },
   { find: '@hierarchidb/runtime-worker-worker/WorkerAPIImpl', replacement: runtimeWorkerStubPath },
   { find: '@hierarchidb/runtime-worker-worker', replacement: runtimeWorkerStubPath },
   {
@@ -113,6 +149,9 @@ export default defineConfig({
     passWithNoTests: true,
     pool: 'forks',
     maxWorkers: 1,
+    sequence: {
+      groupOrder: 1,
+    },
     isolate: false,
     execArgv: ['--max-old-space-size=8192'],
     typecheck: {
