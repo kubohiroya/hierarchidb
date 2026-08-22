@@ -33,6 +33,7 @@ import {
 } from '~/services/utils/shapeBuildUtils';
 import { resolveSourceStageStrategy } from '~/services/build/strategies/resolveSourceStageStrategy';
 import {
+  emitHeartbeat,
   emitSessionLifecyclePhaseUpdated,
   emitSessionStatusUpdated,
   emitStageSnapshotUpdated,
@@ -1362,6 +1363,8 @@ const invokeShapeBuildCommand = async (
         throw error;
       }
 
+      const pausedAt = Date.now();
+      emitHeartbeat(nodeId, pausedAt);
       await upsertBuildSessionSnapshot({
         nodeId,
         status: 'paused',

@@ -23,6 +23,7 @@ const defaultBaseURL = (() => {
 const rawBaseURL = process.env.PLAYWRIGHT_BASE_URL ?? defaultBaseURL;
 const normalizedBaseURL = rawBaseURL.replace(/\/*$/, '');
 const baseURLWithSlash = `${normalizedBaseURL}/`;
+const fastArtifacts = process.env.HIERARCHIDB_E2E_FAST_ARTIFACTS === '1';
 const chromiumWebGLLaunchArgs = [
   '--use-gl=swiftshader',
   '--enable-unsafe-swiftshader',
@@ -54,13 +55,13 @@ export default defineConfig({
     baseURL: baseURLWithSlash,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    trace: fastArtifacts ? 'off' : 'on-first-retry',
 
     /* Take screenshot only on failure */
-    screenshot: 'only-on-failure',
+    screenshot: fastArtifacts ? 'off' : 'only-on-failure',
 
     /* Record video only on failure */
-    video: 'retain-on-failure',
+    video: fastArtifacts ? 'off' : 'retain-on-failure',
 
     /* Emulate consistent timezone */
     timezoneId: 'Asia/Tokyo',

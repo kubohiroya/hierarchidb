@@ -11,6 +11,7 @@ type ActivePipeline = {
 
 const setPausedMock = vi.hoisted(() => vi.fn(async () => undefined));
 const updateBuildSessionMock = vi.hoisted(() => vi.fn(async () => undefined));
+const emitHeartbeatMock = vi.hoisted(() => vi.fn());
 const emitSessionLifecyclePhaseUpdatedMock = vi.hoisted(() => vi.fn());
 const activePipelineStore = vi.hoisted(() => new Map<string, ActivePipeline>());
 const invalidatedRunIds = vi.hoisted(() => new Map<string, string>());
@@ -54,6 +55,7 @@ vi.mock('../../services/build/ShapeBuildAPIClient.js', () => ({
 }));
 
 vi.mock('../../worker/api/eventEmissionConstants.js', () => ({
+  emitHeartbeat: (...args: Parameters<typeof emitHeartbeatMock>) => emitHeartbeatMock(...args),
   emitSessionLifecyclePhaseUpdated: (
     ...args: Parameters<typeof emitSessionLifecyclePhaseUpdatedMock>
   ) => emitSessionLifecyclePhaseUpdatedMock(...args),
@@ -182,6 +184,7 @@ describe('shape build pause command pipeline drain', () => {
       })
     );
     expect(countTaskQueueStatusesMock).toHaveBeenCalledTimes(1);
+    expect(emitHeartbeatMock).toHaveBeenCalledWith(TEST_NODE_ID, expect.any(Number));
     expect(updateBuildSessionMock).toHaveBeenCalledWith(TEST_NODE_ID, {
       status: 'paused',
       stopReason: 'user-pause',
