@@ -441,6 +441,19 @@ hydrate fallback remains mounted for an activation reload and for a terminal fai
 only after the runtime-ready provider tree commits. No branch retries bootstrap or falls back to a
 legacy runtime.
 
+The production SharedWorker entry URL carries release and gate query parameters. A dynamically
+loaded worker chunk must never import the queryless `shared-worker.js` entry, because the browser
+would evaluate that distinct module URL again inside the same worker and create a second set of
+module singletons. Shared runtime modules are emitted in a side-effect-free neutral chunk referenced
+by both the entry and dynamic chunks. Production build acceptance rejects any non-entry worker
+artifact that imports `shared-worker.js`.
+
+Generated worker-readable assets use the exact Vite `BASE_URL` that was replaced during the
+production build. The ISO-3166 CSV browser entry reads `import.meta.env.BASE_URL` directly so Vite
+can fold the deployed application base path into both window and worker bundles. Worker artifacts
+that still contain an `import.meta.env` ISO base resolver, `/iso3166-2-level1.csv`, or any other
+origin-root fallback fail the production boundary verifier.
+
 ## Source-controlled production preflight surface
 
 Production evidence before and after the single activation is collected by the independent Vite

@@ -1,15 +1,27 @@
-import { type MouseEvent as ReactMouseEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
-import { Box, IconButton, MenuItem, Stack, Typography } from '@mui/material';
+import { useTranslation } from '@hierarchidb/ui-i18n';
+import {
+  LRUSplitView2,
+  type LRUSplitView2Pane,
+  type LRUSplitView2RenderContext,
+  type PaneProgress,
+} from '@hierarchidb/ui-lru-splitview';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { LRUSplitView2, type LRUSplitView2Pane, type LRUSplitView2RenderContext, type PaneProgress } from '@hierarchidb/ui-lru-splitview';
-import { BuildStepStagePanel } from './BuildStepStagePanel.js';
-import { BuildStageFilterProvider, type BuildStageFilter } from './BuildStepStageFilterContext.js';
-import type { BuildStepStageMenuItem, BuildStepStageTaskCount } from './BuildStepStagePanel.js';
+import { Box, IconButton, MenuItem, Stack, Typography } from '@mui/material';
+import {
+  type MouseEvent as ReactMouseEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+import type { BuildStatus } from '../types/BuildStatus.js';
 import { BuildControlCard } from './BuildControlCard.js';
 import type { BuildStage } from './BuildStage.js';
-import type { BuildStatus } from '../types/BuildStatus.js';
+import { type BuildStageFilter, BuildStageFilterProvider } from './BuildStepStageFilterContext.js';
+import type { BuildStepStageMenuItem, BuildStepStageTaskCount } from './BuildStepStagePanel.js';
+import { BuildStepStagePanel } from './BuildStepStagePanel.js';
 
 export type BuildStepStageMenu = {
   items: BuildStepStageMenuItem[];
@@ -81,7 +93,13 @@ export type BuildStepPanelProps = {
   controlMenuAriaLabel?: string;
   controlMenuDisabled?: boolean;
   startLoading?: boolean;
-  resetDeleteMenuItems?: Array<{ id: string; label: string; onClick: () => void; disabled?: boolean; icon?: ReactNode }>;
+  resetDeleteMenuItems?: Array<{
+    id: string;
+    label: string;
+    onClick: () => void;
+    disabled?: boolean;
+    icon?: ReactNode;
+  }>;
   resetDeleteMenuAriaLabel?: string;
   resetDeleteMenuDisabled?: boolean;
 };
@@ -141,25 +159,30 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   const [stageFilters, setStageFilters] = useState<Record<string, BuildStageFilter>>({});
   const [controlMenuAnchorEl, setControlMenuAnchorEl] = useState<HTMLElement | null>(null);
 
-  const resolveStageFilter = useCallback((stageId: string): BuildStageFilter => (
-    stageFilters[stageId] ?? defaultStageFilter
-  ), [defaultStageFilter, stageFilters]);
+  const resolveStageFilter = useCallback(
+    (stageId: string): BuildStageFilter => stageFilters[stageId] ?? defaultStageFilter,
+    [defaultStageFilter, stageFilters]
+  );
 
-  const updateStageFilter = useCallback((stageId: string, patch: Partial<BuildStageFilter>) => {
-    setStageFilters((prev) => ({
-      ...prev,
-      [stageId]: {
-        ...defaultStageFilter,
-        ...prev[stageId],
-        ...patch,
-      },
-    }));
-  }, [defaultStageFilter]);
+  const updateStageFilter = useCallback(
+    (stageId: string, patch: Partial<BuildStageFilter>) => {
+      setStageFilters((prev) => ({
+        ...prev,
+        [stageId]: {
+          ...defaultStageFilter,
+          ...prev[stageId],
+          ...patch,
+        },
+      }));
+    },
+    [defaultStageFilter]
+  );
 
-  const resolveStageProgress = useCallback((stageId: string): number =>
-    Math.min(100, Math.max(0, stageProgress[stageId] ?? overallProgress ?? 0)), [
-    stageProgress, overallProgress
-  ]);
+  const resolveStageProgress = useCallback(
+    (stageId: string): number =>
+      Math.min(100, Math.max(0, stageProgress[stageId] ?? overallProgress ?? 0)),
+    [stageProgress, overallProgress]
+  );
 
   const computedPaneProgress = useMemo<PaneProgress[]>(
     () =>
@@ -168,7 +191,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
         progress: resolveStageProgress(stage.id),
         status,
       })),
-    [resolveStageProgress, stages, status],
+    [resolveStageProgress, stages, status]
   );
 
   const taskCountByStage = useMemo<Record<string, BuildStepStageTaskCount>>(() => {
@@ -179,7 +202,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
       const completed = summary?.success ?? progressEntry?.completedCount ?? 0;
       const failed = summary?.error ?? 0;
       const skipped = summary?.skip ?? 0;
-      const total = summary?.total ?? progressEntry?.taskCount ?? (completed + failed + skipped);
+      const total = summary?.total ?? progressEntry?.taskCount ?? completed + failed + skipped;
       acc[stage.id] = {
         Completed: completed,
         Failed: failed,
@@ -190,94 +213,109 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
     }, {});
   }, [computedPaneProgress, paneProgress, stages]);
 
-  const panes = useMemo<LRUSplitView2Pane[]>(() =>
-    stages.map((stage, index) => ({
-      id: stage.id,
-      defaultExpanded: index === 0,
-    })),
-  [stages]);
+  const panes = useMemo<LRUSplitView2Pane[]>(
+    () =>
+      stages.map((stage, index) => ({
+        id: stage.id,
+        defaultExpanded: index === 0,
+      })),
+    [stages]
+  );
 
   const stageById = useMemo(() => new Map(stages.map((stage) => [stage.id, stage])), [stages]);
 
-  const renderPane = useCallback(({ id, toggle }: LRUSplitView2RenderContext) => {
-    const stage = stageById.get(id);
-    if (!stage) return null;
-    const stageTasksForDisplay = tasksByStageForDisplay[stage.id] ?? [];
-    const stageProgressInfo = paneProgress?.find((entry) => entry.paneId === stage.id);
-    const hasStageSummaryTasks = (stageProgressInfo?.taskCount ?? 0) > 0;
-    const isStageLoading = Boolean(
-      stageLoadingState?.[stage.id]
-      && stageTasksForDisplay.length === 0
-      && !hasStageSummaryTasks,
-    );
-    const progressValue = resolveStageProgress(id);
-    const taskCount = taskCountByStage[id];
-    const filter = resolveStageFilter(id);
-    const indicator = stageConcurrencyIndicators?.[stage.id];
-    const stageProgressNode = stageProgressContent?.[stage.id];
-    const stageContentNode = stageContents?.[stage.id];
-    return (
-      <Box onDoubleClick={toggle} sx={{ height: '100%', minHeight: 0 }}>
-        <BuildStepStagePanel
-          title={stage.title}
-          icon={stage.icon}
-          description={stage.description}
-          progress={progressValue}
-          progressContent={stageProgressNode ? (
-            <BuildStageFilterProvider value={filter}>
-              {stageProgressNode}
-            </BuildStageFilterProvider>
-          ) : undefined}
-          headerMeta={stageHeaderMeta?.[stage.id]}
-          chipPlacement={chipPlacement === 'top' ? 'header' : chipPlacement === 'bottom' ? 'belowProgress' : chipPlacement}
-          taskCount={taskCount}
-          concurrencyIndicator={indicator ? {
-            count: indicator.maxConcurrent,
-            isRunning: indicator.isRunning,
-          } : undefined}
-          leadingControl={stageLeadingControls?.[stage.id]}
-          onConcurrencyIndicatorClick={onStageConcurrencyIndicatorClick
-            ? (event) => onStageConcurrencyIndicatorClick(stage.id, event)
-            : undefined}
-          concurrencyIndicatorAriaLabel={stageConcurrencyIndicatorAriaLabels?.[stage.id]}
-          menuItems={stageMenus?.[stage.id]?.items}
-          menuDisabled={stageMenus?.[stage.id]?.disabled}
-          menuAriaLabel={stageMenus?.[stage.id]?.ariaLabel}
-          failedMode={filter.failedMode}
-          onFailedModeUpdate={(next) => updateStageFilter(id, { failedMode: next })}
-          completedMode={filter.completedMode}
-          onCompletedModeUpdate={(next) => updateStageFilter(id, { completedMode: next })}
-          skippedMode={filter.skippedMode}
-          onSkippedModeUpdate={(next) => updateStageFilter(id, { skippedMode: next })}
-          loading={isStageLoading}
-        >
-          {stageContentNode ? (
-            <BuildStageFilterProvider value={filter}>
-              {stageContentNode}
-            </BuildStageFilterProvider>
-          ) : null}
-        </BuildStepStagePanel>
-      </Box>
-    );
-  }, [
-    onStageConcurrencyIndicatorClick,
-    resolveStageFilter,
-    resolveStageProgress,
-    stageById,
-    stageConcurrencyIndicatorAriaLabels,
-    stageConcurrencyIndicators,
-    stageLeadingControls,
-    stageContents,
-    stageLoadingState,
-    stageMenus,
-    stageProgressContent,
-    tasksByStageForDisplay,
-    paneProgress,
-    taskCountByStage,
-    updateStageFilter,
-    chipPlacement,
-    stageHeaderMeta,
-  ]);
+  const renderPane = useCallback(
+    ({ id, toggle }: LRUSplitView2RenderContext) => {
+      const stage = stageById.get(id);
+      if (!stage) return null;
+      const stageTasksForDisplay = tasksByStageForDisplay[stage.id] ?? [];
+      const stageProgressInfo = paneProgress?.find((entry) => entry.paneId === stage.id);
+      const hasStageSummaryTasks = (stageProgressInfo?.taskCount ?? 0) > 0;
+      const isStageLoading = Boolean(
+        stageLoadingState?.[stage.id] && stageTasksForDisplay.length === 0 && !hasStageSummaryTasks
+      );
+      const progressValue = resolveStageProgress(id);
+      const taskCount = taskCountByStage[id];
+      const filter = resolveStageFilter(id);
+      const indicator = stageConcurrencyIndicators?.[stage.id];
+      const stageProgressNode = stageProgressContent?.[stage.id];
+      const stageContentNode = stageContents?.[stage.id];
+      return (
+        <Box onDoubleClick={toggle} sx={{ height: '100%', minHeight: 0 }}>
+          <BuildStepStagePanel
+            title={stage.title}
+            icon={stage.icon}
+            description={stage.description}
+            progress={progressValue}
+            progressContent={
+              stageProgressNode ? (
+                <BuildStageFilterProvider value={filter}>
+                  {stageProgressNode}
+                </BuildStageFilterProvider>
+              ) : undefined
+            }
+            headerMeta={stageHeaderMeta?.[stage.id]}
+            chipPlacement={
+              chipPlacement === 'top'
+                ? 'header'
+                : chipPlacement === 'bottom'
+                  ? 'belowProgress'
+                  : chipPlacement
+            }
+            taskCount={taskCount}
+            concurrencyIndicator={
+              indicator
+                ? {
+                    count: indicator.maxConcurrent,
+                    isRunning: indicator.isRunning,
+                  }
+                : undefined
+            }
+            leadingControl={stageLeadingControls?.[stage.id]}
+            onConcurrencyIndicatorClick={
+              onStageConcurrencyIndicatorClick
+                ? (event) => onStageConcurrencyIndicatorClick(stage.id, event)
+                : undefined
+            }
+            concurrencyIndicatorAriaLabel={stageConcurrencyIndicatorAriaLabels?.[stage.id]}
+            menuItems={stageMenus?.[stage.id]?.items}
+            menuDisabled={stageMenus?.[stage.id]?.disabled}
+            menuAriaLabel={stageMenus?.[stage.id]?.ariaLabel}
+            failedMode={filter.failedMode}
+            onFailedModeUpdate={(next) => updateStageFilter(id, { failedMode: next })}
+            completedMode={filter.completedMode}
+            onCompletedModeUpdate={(next) => updateStageFilter(id, { completedMode: next })}
+            skippedMode={filter.skippedMode}
+            onSkippedModeUpdate={(next) => updateStageFilter(id, { skippedMode: next })}
+            loading={isStageLoading}
+          >
+            {stageContentNode ? (
+              <BuildStageFilterProvider value={filter}>{stageContentNode}</BuildStageFilterProvider>
+            ) : null}
+          </BuildStepStagePanel>
+        </Box>
+      );
+    },
+    [
+      onStageConcurrencyIndicatorClick,
+      resolveStageFilter,
+      resolveStageProgress,
+      stageById,
+      stageConcurrencyIndicatorAriaLabels,
+      stageConcurrencyIndicators,
+      stageLeadingControls,
+      stageContents,
+      stageLoadingState,
+      stageMenus,
+      stageProgressContent,
+      tasksByStageForDisplay,
+      paneProgress,
+      taskCountByStage,
+      updateStageFilter,
+      chipPlacement,
+      stageHeaderMeta,
+    ]
+  );
 
   const computedStatusLabel = (() => {
     switch (status) {
@@ -293,28 +331,29 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
         return t('buildControl.status.ready', 'Ready to start build');
     }
   })();
-  
+
   const hasControlMenuItems = (controlMenuItems?.length ?? 0) > 0;
   const controlMenuOpen = Boolean(controlMenuAnchorEl);
-  const controlMenuDisabledState = Boolean(controlMenuDisabled)
-    || Boolean(startPending)
-    || Boolean(startLoading)
-    || !hasControlMenuItems;
-  
+  const controlMenuDisabledState =
+    Boolean(controlMenuDisabled) ||
+    Boolean(startPending) ||
+    Boolean(startLoading) ||
+    !hasControlMenuItems;
+
   const handleControlMenuOpen = (event: ReactMouseEvent<HTMLButtonElement>) => {
     setControlMenuAnchorEl(event.currentTarget);
   };
-  
+
   const handleControlMenuClose = () => {
     setControlMenuAnchorEl(null);
   };
-  
+
   useEffect(() => {
     if (controlMenuDisabledState && controlMenuAnchorEl) {
       setControlMenuAnchorEl(null);
     }
   }, [controlMenuAnchorEl, controlMenuDisabledState]);
-  
+
   const handleControlMenuItemClick = (item: BuildControlMenuItem) => {
     item.onClick();
     handleControlMenuClose();
@@ -355,6 +394,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
                 anchorEl={controlMenuAnchorEl}
                 open={controlMenuOpen}
                 onClose={handleControlMenuClose}
+                disableRestoreFocus={false}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
               >
@@ -397,9 +437,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
           </Box>
         ) : null}
         {statusContent ? (
-          <Box minWidth={0}>
-            {statusContent}
-          </Box>
+          <Box minWidth={0}>{statusContent}</Box>
         ) : suppressStatusFallback ? null : (
           <Stack spacing={1} justifyContent="center">
             <Typography variant="body2" color="text.secondary">
@@ -416,8 +454,16 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
           progress={paneProgress ?? computedPaneProgress}
           maxExpandedPanes={2}
           responsiveBreakpoints={splitViewBreakpoints}
-          initialPaneSizesByBreakpoint={splitViewInitialSizesByBreakpoint ? Object.values(splitViewInitialSizesByBreakpoint) : undefined}
-          autoCloseCountsByBreakpoint={splitViewAutoCloseCountsByBreakpoint ? Object.values(splitViewAutoCloseCountsByBreakpoint) : undefined}
+          initialPaneSizesByBreakpoint={
+            splitViewInitialSizesByBreakpoint
+              ? Object.values(splitViewInitialSizesByBreakpoint)
+              : undefined
+          }
+          autoCloseCountsByBreakpoint={
+            splitViewAutoCloseCountsByBreakpoint
+              ? Object.values(splitViewAutoCloseCountsByBreakpoint)
+              : undefined
+          }
           defaultCollapsedSize={96}
           autoExpand={{ onStart: true, onComplete: true }}
           height="100%"

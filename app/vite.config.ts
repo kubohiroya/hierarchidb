@@ -893,8 +893,6 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
   }
   const pluginRegistryMode: PluginSpecifierMode = 'package';
 
-  const buildExternalIds = new Set<string>(['@maplibre/vt-pbf']);
-
   const repoRoot = path.resolve(__dirname, '..');
   const configuredSourceSha = env.HDB_SOURCE_SHA || process.env.HDB_SOURCE_SHA || '';
   const databasePrefix = env.VITE_APP_PREFIX;
@@ -1461,9 +1459,15 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
         comlink(),
       ],
       rollupOptions: {
-        external: ['@maplibre/vt-pbf'],
         output: {
           entryFileNames: '[name].js',
+          manualChunks(id: string) {
+            const moduleId = id.split('?', 1)[0]?.replaceAll('\\', '/');
+            if (moduleId?.endsWith('/app/src/worker-runtime/workerBootstrapUtils.ts')) {
+              return 'worker-runtime-shared';
+            }
+            return undefined;
+          },
         },
       },
     },
@@ -1483,7 +1487,6 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
             'src/origin-coordinator/originCoordinator.worker.ts',
           ),
         },
-        external: (id) => buildExternalIds.has(id),
         output: {
           entryFileNames: (chunkInfo) =>
             chunkInfo.name === 'hdb-origin-coordinator'

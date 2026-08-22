@@ -4,12 +4,15 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
+import { initializeEphemeralDB } from '@hierarchidb/gis-sdk';
 import type {
   RouteBuildConfig,
   RouteBuildRouteInput,
   RouteGenerationConfig,
 } from '@hierarchidb/route-api';
 import type { RouteEnginesProvider } from '@hierarchidb/route-engine';
+import { initializeRouteDB } from '@hierarchidb/route-store';
+import { getBuildDatabasePrefix, getDBName } from '@hierarchidb/util';
 import { deleteTasksByNode, putTasks, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import {
   RouteBuildSession,
@@ -67,6 +70,10 @@ export class RouteBuildManager {
       });
     }
 
+    if (this.deps?.session?.ephemeralStore === undefined) {
+      initializeEphemeralDB(getDBName(getBuildDatabasePrefix(), 'ephemeral'));
+      initializeRouteDB(getDBName(getBuildDatabasePrefix(), 'route'));
+    }
     const taskQueue = new VtTaskQueueDb();
     await deleteTasksByNode(taskQueue, nodeId);
     await putTasks(

@@ -49,6 +49,15 @@
   - 内部の基準コード体系は ISO2 を採用し、`sourceKey` とキャッシュキーは ISO2 統一で運用する
   - 例: GeoBoundaries/GADM の URL は ISO3 を要求するため、strategy 側で ISO2 → ISO3 変換して URL を生成する
 
+### Raw source cache の network 所有境界
+
+- upstream download は shape-plugin の data-source strategy が所有し、明示的な `FetchNetworkPort` と `auth.scope='shape'` を持つ ChunkStore だけが network access を実行する
+- runtime-worker の `ShapeQueryService` と raw source cache helper は、既存の IndexedDB cache に対する local read / write / list / count / relation 操作だけを所有する
+- 現行buildの raw source cache key は download URL（`http://` または `https://`）である。明示的に legacy key mode を選んだwriterが生成する `download:` key も raw source entry として識別する
+- 同じ ChunkStore 内の `geoboundaries:metadata:*` などのmetadata entryは raw source cacheのlist/count/read対象に含めない
+- runtime-worker の local-only Shape ChunkStore は `FetchNetworkPort` を生成せず、network fetch API を呼び出した場合は `LocalShapeChunkStoreNetworkAccessError`（`LOCAL_SHAPE_CHUNK_STORE_NETWORK_ACCESS_FORBIDDEN`）で即時に失敗する
+- auth scope の補完、auth無効化、stale cacheへの読み替えによって誤ったnetwork要求を継続してはならない
+
 ## geometry stage（shape）
 
 - ズーム帯ごとに簡略化した FGB を生成
