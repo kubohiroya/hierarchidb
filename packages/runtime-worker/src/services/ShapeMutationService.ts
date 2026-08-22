@@ -15,6 +15,7 @@ import type {
   ShapeDataSourceMetadata,
   ShapeFeatureMetadata,
   ShapeGeometryCache,
+  ShapeGeometryTaskQueue,
   ShapeMutationAPI,
   ShapeSourceCache,
   ShapeVectorTileRecord,
@@ -437,7 +438,7 @@ export class ShapeMutationService implements ShapeMutationAPI {
   async putGeometryCaches(
     buffers: ShapeGeometryCache[],
     taskId?: string,
-    taskQueue?: any
+    taskQueue?: ShapeGeometryTaskQueue
   ): Promise<void> {
     if (buffers.length === 0) return;
     const emptyBuffer = buffers.find((buffer) => buffer.data.byteLength === 0);

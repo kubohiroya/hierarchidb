@@ -11,9 +11,21 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ShapeDB } from '../ShapeDB';
 import type { BuildSessionRecord } from '../VectorTileRecord';
 
+type MigrationTestDB = Dexie &
+  Pick<
+    ShapeDB,
+    | 'vectorTiles'
+    | 'tileSummaries'
+    | 'tabularMetadata'
+    | 'buildSessionConfigs'
+    | 'buildSessionHeartbeats'
+    | 'buildSessionStatuses'
+    | 'buildStageStatuses'
+  >;
+
 describe('ShapeDB Migration from V1 to V2', () => {
   let testDbName: string;
-  let db: ShapeDB;
+  let db: MigrationTestDB | undefined;
 
   beforeEach(() => {
     // Use unique database name for each test
@@ -145,13 +157,13 @@ describe('ShapeDB Migration from V1 to V2', () => {
     // Step 3: Open database with V2 schema (triggers migration)
     // Create a custom ShapeDB class that uses our test database name
     class TestShapeDB extends Dexie {
-      vectorTiles!: any;
-      tileSummaries!: any;
-      tabularMetadata!: any;
-      buildSessionConfigs!: any;
-      buildSessionHeartbeats!: any;
-      buildSessionStatuses!: any;
-      buildStageStatuses!: any;
+      vectorTiles!: ShapeDB['vectorTiles'];
+      tileSummaries!: ShapeDB['tileSummaries'];
+      tabularMetadata!: ShapeDB['tabularMetadata'];
+      buildSessionConfigs!: ShapeDB['buildSessionConfigs'];
+      buildSessionHeartbeats!: ShapeDB['buildSessionHeartbeats'];
+      buildSessionStatuses!: ShapeDB['buildSessionStatuses'];
+      buildStageStatuses!: ShapeDB['buildStageStatuses'];
 
       constructor() {
         super(testDbName);
@@ -255,7 +267,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
       }
     }
 
-    db = new TestShapeDB() as any;
+    db = new TestShapeDB();
     await db.open();
 
     // Step 4: Verify migration results
@@ -427,10 +439,13 @@ describe('ShapeDB Migration from V1 to V2', () => {
 
     // Step 2: Open with V2 schema (triggers migration)
     class TestShapeDB extends Dexie {
-      buildSessionConfigs!: any;
-      buildSessionHeartbeats!: any;
-      buildSessionStatuses!: any;
-      buildStageStatuses!: any;
+      vectorTiles!: ShapeDB['vectorTiles'];
+      tileSummaries!: ShapeDB['tileSummaries'];
+      tabularMetadata!: ShapeDB['tabularMetadata'];
+      buildSessionConfigs!: ShapeDB['buildSessionConfigs'];
+      buildSessionHeartbeats!: ShapeDB['buildSessionHeartbeats'];
+      buildSessionStatuses!: ShapeDB['buildSessionStatuses'];
+      buildStageStatuses!: ShapeDB['buildStageStatuses'];
 
       constructor() {
         super(testDbName);
@@ -528,7 +543,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
       }
     }
 
-    db = new TestShapeDB() as any;
+    db = new TestShapeDB();
     await db.open();
 
     // Step 3: Verify migration
@@ -622,10 +637,13 @@ describe('ShapeDB Migration from V1 to V2', () => {
 
     // Step 2: Open with V2 schema (triggers migration)
     class TestShapeDB extends Dexie {
-      buildSessionConfigs!: any;
-      buildSessionHeartbeats!: any;
-      buildSessionStatuses!: any;
-      buildStageStatuses!: any;
+      vectorTiles!: ShapeDB['vectorTiles'];
+      tileSummaries!: ShapeDB['tileSummaries'];
+      tabularMetadata!: ShapeDB['tabularMetadata'];
+      buildSessionConfigs!: ShapeDB['buildSessionConfigs'];
+      buildSessionHeartbeats!: ShapeDB['buildSessionHeartbeats'];
+      buildSessionStatuses!: ShapeDB['buildSessionStatuses'];
+      buildStageStatuses!: ShapeDB['buildStageStatuses'];
 
       constructor() {
         super(testDbName);
@@ -723,7 +741,7 @@ describe('ShapeDB Migration from V1 to V2', () => {
       }
     }
 
-    db = new TestShapeDB() as any;
+    db = new TestShapeDB();
     await db.open();
 
     // Step 3: Verify discarded fields are not in new tables

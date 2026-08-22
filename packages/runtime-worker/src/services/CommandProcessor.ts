@@ -330,7 +330,7 @@ export class CommandProcessor {
    * :
    * : setCoreDB
    * :
-   * : any
+   * : dependency injection
    * : DI
    */
   constructor(private readonly coreDB: CoreDB) {

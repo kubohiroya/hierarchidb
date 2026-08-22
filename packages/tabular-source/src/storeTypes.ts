@@ -1,9 +1,9 @@
-import type { TabularChunk, TabularSchema } from './types.js';
+import type { FileLike, TabularChunk, TabularSchema } from './types.js';
 
 export interface TabularIngestContext {
   filename?: string;
   sizeBytes?: number;
-  source?: any; // File | Blob | ArrayBuffer | string (environment-specific)
+  source?: FileLike;
   format?: string;
 }
 
@@ -16,12 +16,12 @@ export interface TabularIngestSummary {
   chunkCount: number;
 }
 
-export interface TabularIngestResult<TMeta = any> {
+export interface TabularIngestResult<TMeta = unknown> {
   session: TabularIngestSession;
   metadata: TMeta;
 }
 
-export interface TabularStorePort<TMeta = any> {
+export interface TabularStorePort<TMeta = unknown> {
   beginIngest(schema: TabularSchema, ctx: TabularIngestContext): Promise<TabularIngestSession>;
 
   writeChunk(session: TabularIngestSession, chunk: TabularChunk): Promise<void>;

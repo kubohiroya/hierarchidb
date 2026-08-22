@@ -15,7 +15,7 @@ export {
   type ShapeBuildSessionRecoveryRequest,
   type ShapeBuildSessionRecoveryResult,
 } from './ShapeBuildSessionContractError.js';
-export type { ShapeMutationAPI } from './ShapeMutationAPI.js';
+export type { ShapeGeometryTaskQueue, ShapeMutationAPI } from './ShapeMutationAPI.js';
 export type { ShapeQueryAPI } from './ShapeQueryAPI.js';
 export type {
   ShapeBuildStage,

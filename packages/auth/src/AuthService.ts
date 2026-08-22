@@ -16,6 +16,18 @@ type UiStorageBridge = {
   removeItem(key: string): Promise<void>;
 };
 
+type WorkerGlobalCandidate = typeof globalThis & {
+  importScripts?: unknown;
+};
+
+const isWorkerEnvironmentGlobal = (): boolean => {
+  try {
+    return typeof (globalThis as WorkerGlobalCandidate).importScripts !== 'undefined';
+  } catch {
+    return false;
+  }
+};
+
 export class AuthRequiredError extends Error {
   constructor(message: string) {
     super(message);
@@ -115,13 +127,7 @@ export class AuthService implements AuthHeadersProvider {
 
       // In worker environment, enable debug logging if uiStorage is available
       // This helps with debugging worker-side authentication issues
-      const isWorkerEnvironment = (() => {
-        try {
-          return typeof (globalThis as any).importScripts !== 'undefined';
-        } catch {
-          return false;
-        }
-      })();
+      const isWorkerEnvironment = isWorkerEnvironmentGlobal();
 
       if (isWorkerEnvironment) {
         // Always enable debug in worker environment to help diagnose token access issues
@@ -145,13 +151,7 @@ export class AuthService implements AuthHeadersProvider {
         error: error instanceof Error ? error.message : String(error),
         hasLocalStorage: typeof localStorage !== 'undefined',
         hasUiStorage: Boolean(this.uiStorage),
-        isWorkerEnvironment: (() => {
-          try {
-            return typeof (globalThis as any).importScripts !== 'undefined';
-          } catch {
-            return false;
-          }
-        })(),
+        isWorkerEnvironment: isWorkerEnvironmentGlobal(),
       });
       return false;
     }
@@ -171,13 +171,7 @@ export class AuthService implements AuthHeadersProvider {
     let lastErr: unknown;
 
     // Issue #823: Enhanced debug logging for worker token request flow
-    const isWorkerEnvironment = (() => {
-      try {
-        return typeof (globalThis as any).importScripts !== 'undefined';
-      } catch {
-        return false;
-      }
-    })();
+    const isWorkerEnvironment = isWorkerEnvironmentGlobal();
 
     if (this.isAuthDebugEnabled()) {
       console.debug('[auth][service] fetchWithAuth starting - Issue #823 debug:', {
@@ -345,13 +339,7 @@ export class AuthService implements AuthHeadersProvider {
         url,
         method: init.method || 'GET',
         hasUiStorage: Boolean(this.uiStorage),
-        isWorkerEnvironment: (() => {
-          try {
-            return typeof (globalThis as any).importScripts !== 'undefined';
-          } catch {
-            return false;
-          }
-        })(),
+        isWorkerEnvironment: isWorkerEnvironmentGlobal(),
         isMainThread: typeof window !== 'undefined',
         errorCode: params?.errorCode,
         errorMessage: params?.errorMessage,
@@ -473,13 +461,7 @@ export class AuthService implements AuthHeadersProvider {
   }
 
   private async resolveStoredToken(): Promise<string | null> {
-    const isWorkerEnvironment = (() => {
-      try {
-        return typeof (globalThis as any).importScripts !== 'undefined';
-      } catch {
-        return false;
-      }
-    })();
+    const isWorkerEnvironment = isWorkerEnvironmentGlobal();
 
     // Issue #823: Enhanced debug logging for token resolution flow
     const resolutionStart = performance.now();

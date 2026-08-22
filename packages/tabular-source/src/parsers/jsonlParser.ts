@@ -6,6 +6,7 @@ import type {
   TabularChunk,
   TabularParseResult,
   TabularPreview,
+  TabularRow,
 } from '~/types';
 
 type FileMeta = { name?: string };
@@ -42,7 +43,7 @@ export const jsonlParser: TabularParserPort = {
     const lines = text.replace(/\r\n?/g, '\n').split('\n').filter(Boolean);
     const chunkSize = options?.chunkSize ?? 1000;
 
-    const sample: Record<string, any>[] = [];
+    const sample: TabularRow[] = [];
     let headers: string[] | undefined;
 
     if (lines.length === 0) {
@@ -56,13 +57,17 @@ export const jsonlParser: TabularParserPort = {
     }
 
     async function* iterator(): AsyncGenerator<TabularChunk> {
-      let buf: Record<string, any>[] = [];
+      let buf: TabularRow[] = [];
       let idx = 0;
       for (const [i, line] of lines.entries()) {
-        const obj = JSON.parse(line);
-        if (!headers) headers = Object.keys(obj);
-        if (sample.length < 50) sample.push(obj);
-        buf.push(obj);
+        const obj = JSON.parse(line) as unknown;
+        if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
+          throw new Error('jsonl-row-must-be-object');
+        }
+        const row = obj as TabularRow;
+        if (!headers) headers = Object.keys(row);
+        if (sample.length < 50) sample.push(row);
+        buf.push(row);
         if (buf.length >= chunkSize) {
           const hasMore = i < lines.length - 1;
           yield { rows: buf, index: idx++, hasMore };

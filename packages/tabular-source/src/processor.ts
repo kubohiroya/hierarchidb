@@ -1,9 +1,9 @@
-import type { TabularSchema } from './types.js';
+import type { TabularRow, TabularSchema } from './types.js';
 
 export interface TabularContext {
   holderId?: string;
   filename?: string;
-  userOptions?: Record<string, any>;
+  userOptions?: unknown;
 }
 
 export interface TabularProcessor {
@@ -11,10 +11,10 @@ export interface TabularProcessor {
   // Accept and return a proper TabularSchema (uses ColumnType).
   mapSchema?: (schema: TabularSchema, ctx: TabularContext) => TabularSchema;
   transformRow?: (
-    row: Record<string, any>,
+    row: TabularRow,
     ctx: TabularContext
-  ) => Record<string, any> | null | Promise<Record<string, any> | null>;
-  validateRow?: (row: Record<string, any>, ctx: TabularContext) => string[] | Promise<string[]>; // returns errors
+  ) => TabularRow | null | Promise<TabularRow | null>;
+  validateRow?: (row: TabularRow, ctx: TabularContext) => string[] | Promise<string[]>; // returns errors
 }
 
 const registry: TabularProcessor[] = [];

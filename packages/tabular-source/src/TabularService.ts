@@ -8,6 +8,7 @@ import type {
   FileLike,
   ParseOptions,
   TabularParseResult,
+  TabularRow,
   TabularSchema,
 } from './types.js';
 
@@ -25,7 +26,7 @@ export class TabularService {
     return await parseWithBest(input, options);
   }
 
-  async ingest<TMeta = any>(
+  async ingest<TMeta = unknown>(
     input: FileLike,
     store: TabularStorePort<TMeta>,
     options?: ParseOptions & {
@@ -57,16 +58,16 @@ export class TabularService {
       if (processors.length === 0) {
         await store.writeChunk(session, chunk);
       } else {
-        const transformed: any[] = [];
+        const transformed: TabularRow[] = [];
         for (const row of chunk.rows) {
-          let r: any | null = row;
+          let r: TabularRow | null = row;
           for (const p of processors) {
             if (p.transformRow) {
               r = await p.transformRow(r, ctx);
               if (r === null) break;
             }
-            if (p.validateRow) {
-              const errs = await p.validateRow(r!, ctx);
+            if (p.validateRow && r !== null) {
+              const errs = await p.validateRow(r, ctx);
               if (errs?.length) {
                 r = null;
                 break;

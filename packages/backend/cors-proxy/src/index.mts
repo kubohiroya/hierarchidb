@@ -294,7 +294,7 @@ async function main() {
 
     const exportsMap = new Map<string, ExportedDeclarations[]>();
     (own ?? new Map()).forEach((decls, name) => {
-      const inThis = decls.filter((d: any) => d.getSourceFile() === sf);
+      const inThis = decls.filter((d: ExportedDeclarations) => d.getSourceFile() === sf);
       if (inThis.length) exportsMap.set(name, inThis);
     });
 

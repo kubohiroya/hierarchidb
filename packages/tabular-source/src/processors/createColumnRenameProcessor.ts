@@ -1,5 +1,5 @@
 import type { TabularProcessor } from '~/processor';
-import type { TabularSchema } from '~/types';
+import type { TabularRow, TabularSchema } from '~/types';
 
 export interface ColumnRenameRule {
   from: string;
@@ -18,8 +18,8 @@ export function createColumnRenameProcessor(
         columns: schema.columns.map((c) => ({ name: map.get(c.name) || c.name, type: c.type })),
       };
     },
-    transformRow(row: Record<string, any>): Record<string, any> {
-      const out: Record<string, any> = {};
+    transformRow(row: TabularRow): TabularRow {
+      const out: TabularRow = {};
       for (const [k, v] of Object.entries(row)) {
         out[map.get(k) || k] = v;
       }

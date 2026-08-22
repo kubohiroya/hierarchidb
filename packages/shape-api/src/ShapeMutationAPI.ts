@@ -13,6 +13,11 @@ import type {
 } from './shapeBuildTypes.js';
 import type { ShapeBuildSessionRecord, ShapeVectorTileRecord } from './shapeDbTypes.js';
 
+export interface ShapeGeometryTaskQueue {
+  readonly tasks?: unknown;
+  readonly transaction?: unknown;
+}
+
 export interface ShapeMutationAPI {
   upsertBuildSession(session: ShapeBuildSessionRecord): Promise<void>;
   updateBuildSession(nodeId: NodeId, updates: Partial<ShapeBuildSessionRecord>): Promise<void>;
@@ -28,7 +33,11 @@ export interface ShapeMutationAPI {
   upsertBuildTasks(tasks: ReadonlyArray<ShapeBuildTaskRecordInput>): Promise<void>;
   updateBuildTask(taskId: string, updates: ShapeBuildTaskRecordUpdate): Promise<void>;
   putSourceCaches(buffers: ShapeSourceCache[]): Promise<void>;
-  putGeometryCaches(buffers: ShapeGeometryCache[], taskId?: string, taskQueue?: any): Promise<void>;
+  putGeometryCaches(
+    buffers: ShapeGeometryCache[],
+    taskId?: string,
+    taskQueue?: ShapeGeometryTaskQueue
+  ): Promise<void>;
   putDataSourceMetadata(rows: ShapeDataSourceMetadata[]): Promise<void>;
   deleteDataSourceMetadataByIds(ids: string[]): Promise<void>;
   deleteDataSourceMetadataByNode(nodeId: string): Promise<void>;

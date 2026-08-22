@@ -1,4 +1,5 @@
 import type { TabularProcessor } from '~/processor';
+import type { TabularRow } from '~/types';
 
 export interface NumberCoerceRule {
   column: string;
@@ -14,7 +15,7 @@ export function createNumberCoerceProcessor(
   const ruleFor = (c: string) => rules.find((r) => r.column === c);
   return {
     id,
-    transformRow(row: Record<string, any>) {
+    transformRow(row: TabularRow): TabularRow {
       const out = { ...row };
       for (const col of Object.keys(row)) {
         if (!set.has(col)) continue;

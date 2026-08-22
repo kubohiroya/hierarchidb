@@ -1,7 +1,7 @@
-import type { BBox, FeatureCollection, MapSourcePort, TileCoord } from '~/types';
+import type { BBox, FeatureCollection, GeoFeature, MapSourcePort, TileCoord } from '~/types';
 
 interface Cell {
-  feats: any[];
+  feats: GeoFeature[];
 }
 
 export class FeatureCollectionGridIndex implements MapSourcePort {
@@ -36,7 +36,7 @@ export class FeatureCollectionGridIndex implements MapSourcePort {
 
   async queryByBBox(bbox: BBox, _zoom?: number): Promise<FeatureCollection> {
     const [minI, maxI, minJ, maxJ] = cellsForBBox(bbox, this.cellSizeDeg);
-    const out: any[] = [];
+    const out: GeoFeature[] = [];
     for (let i = minI; i <= maxI; i++)
       for (let j = minJ; j <= maxJ; j++) {
         const cell = this.grid.get(`${i},${j}`);
@@ -63,30 +63,33 @@ function cellsForBBox(b: BBox, step: number): [number, number, number, number] {
   return [minI, maxI, minJ, maxJ];
 }
 
-function featureBBox(f: any): BBox | undefined {
-  const c = f?.geometry?.coordinates;
+function featureBBox(f: GeoFeature): BBox | undefined {
+  const c = f.geometry?.coordinates;
   if (!c) return undefined;
   let minX = Infinity,
     minY = Infinity,
     maxX = -Infinity,
     maxY = -Infinity;
-  const visit = (p: any) => {
-    if (typeof p?.[0] === 'number') {
-      const x = p[0],
-        y = p[1];
+  const visit = (p: unknown) => {
+    if (!Array.isArray(p)) return;
+    if (typeof p[0] === 'number' && typeof p[1] === 'number') {
+      const x = p[0];
+      const y = p[1];
       if (!Number.isFinite(x) || !Number.isFinite(y)) return;
       minX = Math.min(minX, x);
       minY = Math.min(minY, y);
       maxX = Math.max(maxX, x);
       maxY = Math.max(maxY, y);
-    } else for (const q of p) visit(q);
+    } else {
+      for (const q of p) visit(q);
+    }
   };
   visit(c);
   if (minX === Infinity) return undefined;
   return { minX, minY, maxX, maxY };
 }
 
-function intersectsBBox(f: any, bbox: BBox): boolean {
+function intersectsBBox(f: GeoFeature, bbox: BBox): boolean {
   const fb = featureBBox(f);
   if (!fb) return false;
   return !(

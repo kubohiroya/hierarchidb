@@ -1,5 +1,8 @@
 // Note: Keep this file decoupled from map-source to avoid workspace stage order issues.
 
+import type { Layer } from 'deck.gl';
+import type { StyleSpecification } from 'maplibre-gl';
+
 export interface ViewState {
   longitude: number;
   latitude: number;
@@ -10,10 +13,8 @@ export interface ViewState {
 
 export interface MapStyleSpec {
   styleUrl?: string; // maplibre style json url
-  styleObject?: any; // inline style json
+  styleObject?: StyleSpecification; // inline style json
 }
-
-import type { Layer } from 'deck.gl';
 
 export type DeckLayerSpec = Layer;
 
